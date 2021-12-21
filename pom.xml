@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+	<parent>
+		<groupId>org.bioimageanalysis.icy</groupId>
+		<artifactId>parent-pom-plugin</artifactId>
+		<version>1.0.3</version>
+	</parent>
+	<artifactId>DeepLearning</artifactId>
+	<version>1.0.0-SNAPSHOT</version>
+	<name>DeepLearning interface for Icy</name>
+	<description>This project holds the code allowing the interaction between Icy and TensorFlow.
+	</description>
+	<build>
+		<plugins>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-javadoc-plugin</artifactId>
+				<configuration>
+					<additionalOptions>
+						<additionalOption>-Xdoclint:none</additionalOption>
+					</additionalOptions>
+				</configuration>
+			</plugin>
+		</plugins>
+	</build>
+	<dependencies>
+		<dependency>
+			<groupId>org.bioimageanalysis.icy</groupId>
+			<artifactId>ezplug</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.bioimageanalysis.icy</groupId>
+			<artifactId>protocols</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.bioimageanalysis.icy</groupId>
+			<artifactId>tensor-flow-manager</artifactId>
+			<version>1.0.0</version>
+		</dependency>
+	</dependencies>
+	<repositories>
+		<repository>
+			<id>icy</id>
+			<url>https://icy-nexus.pasteur.fr/repository/Icy/</url>
+		</repository>
+	</repositories>
+</project>

@@ -1,0 +1,12 @@
+# maven specific files
+/target/
+
+# eclipse specific files
+/.settings/
+.classpath
+.project
+
+# icy specific files
+/plugins/
+/workspace/
+setting.xml
