@@ -167,4 +167,14 @@ public final class Tensor
     public Sequence getData() {
     	return this.sequence;
     }
+    
+    /**
+     * Empty the tensor information
+     */
+    public void close() {
+	   	tensorName = null;
+	   	axesArray = null;
+	   	sequence.close();;
+   	
+    }
 }
