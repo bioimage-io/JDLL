@@ -36,6 +36,10 @@ public class Model {
 	 * yaml file
 	 */
 	private String modelSource;
+	/**
+	 * Model name as defined in the yaml file. For identification purposes
+	 */
+	private String modelName;
 	
 	/**
 	 * Construct the object model with all the needed information to
@@ -129,6 +133,39 @@ public class Model {
 	public EngineLoader getEngineClassLoader()
 	{
 		return this.engineClassLoader;
+	}
+	
+	/**
+	 * Get the folder where this model is located
+	 * @return the folder where this model is located
+	 */
+	public String getModelFolder() {
+		return this.modelFolder;
+	}
+	
+	/**
+	 * Get the source of this model as specified in the yaml file
+	 * @return the source of this model from the yaml file
+	 */
+	public String getModelSource() {
+		return this.modelSource;
+	}
+	
+	/**
+	 * Sets the model name
+	 * @param modelName
+	 * 	the name of the model
+	 */
+	public void setModelName(String modelName) {
+		this.modelName = modelName;
+	}
+	
+	/**
+	 * Gets the name of the model
+	 * @return the name of the model
+	 */
+	public String getModelName() {
+		return this.modelName;
 	}
 
 }

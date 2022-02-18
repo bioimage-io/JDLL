@@ -1,6 +1,7 @@
 package org.bioimageanalysis.icy.deeplearning.utils;
 
 import java.io.File;
+import java.util.Objects;
 
 /**
  * Class to create an object that contains all the information about a 
@@ -54,6 +55,10 @@ public class EngineInfo {
 	 */
 	private String jarsDirectory;
 	/**
+	 * If the JARs directory is not going to change during the exction of the program
+	 */
+	private static String STATIC_JARS_DIRECTORY;
+	/**
 	 * Object containing all the supported versions for the selected
 	 * Deep Learning framework (engine)
 	 */
@@ -68,8 +73,44 @@ public class EngineInfo {
 	 * in the program
 	 */
 	private static String pytorchEngineName = "pytorch";
+	/**
+	 * Variable that stores which version of Tensorflow 1
+	 * has been already loaded to avoid errors for loading
+	 * two different native libraries in the same namespace
+	 */
+	private static String loadedTf1Version;
+	/**
+	 * Variable that stores which version of Tensorflow 2
+	 * has been already loaded to avoid errors for loading
+	 * two different native libraries in the same namespace
+	 */
+	private static String loadedTf2Version;
+	/**
+	 * Variable that stores which version of Pytorch
+	 * has been already loaded to avoid errors for loading
+	 * two different native libraries in the same namespace
+	 */
+	private static String loadedPytorchVersion;
+
 	
+	/**
+	 * Information needed to know how to launch the corresponding 
+	 * Deep Learning framework
+	 * 
+	 * @param engine
+	 * 	name of the Deep Learning framework (engine). For example: Pytorch, Tensorflow....
+	 * @param version
+	 * 	version of the training Deep Learning framework (engine)
+	 * @param jarsDirectory
+	 * 	directory where the folder containing the JARs needed to launch the 
+	 * 	corresponding engine are located
+	 * @return an object containing all the information needed to launch a 
+	 * 	Deep learning framework
+	 */
 	private EngineInfo(String engine, String version, String jarsDirectory) {
+		Objects.requireNonNull(engine, "The Deep Learning engine should not be null.");
+		Objects.requireNonNull(version, "The Deep Learning engine version should not be null.");
+		Objects.requireNonNull(STATIC_JARS_DIRECTORY, "The Jars directory should not be null.");
 		setEngine(engine);
 		this.version = version;
 		this.jarsDirectory = jarsDirectory;
@@ -89,12 +130,29 @@ public class EngineInfo {
 	 * @param version
 	 * 	version of the training Deep Learning framework (engine)
 	 * @param jarsDirectory
-	 * 	directory the JARs needed to launch the corresponding engine are located
+	 * 	directory where the folder containing the JARs needed to launch the 
+	 * 	corresponding engine are located
 	 * @return an object containing all the information needed to launch a 
 	 * 	Deep learning framework
 	 */
 	public static EngineInfo defineDLEngine(String engine, String version, String jarsDirectory) {
 		return new EngineInfo(engine, version, jarsDirectory);
+	}
+	
+	/**
+	 * Set the parameters to launch the wanted Deep Learning framework (engine)
+	 * in the program
+	 * 
+	 * @param engine
+	 * 	name of the Deep Learning framework (engine). For example: Pytorch, Tensorflow....
+	 * @param version
+	 * 	version of the training Deep Learning framework (engine)
+	 * @return an object containing all the information needed to launch a 
+	 * 	Deep learning framework
+	 */
+	public static EngineInfo defineDLEngine(String engine, String version) {
+		Objects.requireNonNull(STATIC_JARS_DIRECTORY, "The Jars directory should not be null.");
+		return new EngineInfo(engine, version, STATIC_JARS_DIRECTORY);
 	}
 	
 	/**
@@ -271,5 +329,59 @@ public class EngineInfo {
 	 */
 	public String getOS() {
 		return this.os;
+	}
+	
+	/**
+	 * Sets which versions have already been loaed to avoid
+	 * errors trying to load another version from the same engine,
+	 * which always crashes the application
+	 */
+	public void setLoadedVersion() {
+		if (this.engine.equals(tensorflowEngineName) 
+				&& this.version.startsWith("1")) {
+			loadedTf1Version = this.version;
+		} else if (this.engine.equals(tensorflowEngineName) 
+				&& this.version.startsWith("2")) {
+			loadedTf2Version = this.version;
+		} else if (this.engine.equals(pytorchEngineName)) {
+			loadedPytorchVersion = this.version;
+		}
+	}
+	
+	/**
+	 * REturns which versions have been already been loaded to 
+	 * avoid errors of overlapping versions
+	 * @param engine
+	 * 	the Deep Learning framework of interest
+	 * @param version
+	 * 	the Deep LEarning version of interest
+	 * @return the loaded version of the selected engine or null if 
+	 * 	no version has been loaded
+	 * @throws IllegalArgumentException if the engine is not supported yet
+	 */
+	public static String getLoadedVersions(String engine, String version)
+				throws IllegalArgumentException {
+		if (engine.toLowerCase().equals(tensorflowEngineName)  
+				&& version.startsWith("1")) {
+			return loadedTf1Version;
+		} else if (engine.toLowerCase().equals(tensorflowEngineName)  
+				&& version.startsWith("2")) {
+			return loadedTf2Version;
+		} else if (engine.toLowerCase().equals(pytorchEngineName)) {
+			return loadedPytorchVersion;
+		} else {
+			throw new IllegalArgumentException("The selected engine '" 
+								+ engine + "' is not supported yet.");
+		}
+	}
+	
+	/**
+	 * Set in a static manner the {@link #STATIC_JARS_DIRECTORY} if it is not going
+	 * to change during the execution of the program
+	 * @param jarsDirectory
+	 * 	the permanent jars directory
+	 */
+	public static void setStaticJarsDirectory(String jarsDirectory) {
+		STATIC_JARS_DIRECTORY = jarsDirectory;
 	}
 }

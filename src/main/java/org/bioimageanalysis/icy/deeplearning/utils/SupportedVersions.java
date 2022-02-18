@@ -121,7 +121,7 @@ public class SupportedVersions {
 	 * @param version
 	 * 	The wanted version of the Deep Learning framework
 	 * @param versionSet
-	 * 	Set of all the versions suppported by the program
+	 * 	Set of all the versions supported by the program
 	 * @return
 	 * 	the closest version to the available one
 	 * @throws Exception if the version is totally incompatible with the wanted one
