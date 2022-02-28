@@ -3,6 +3,8 @@ package org.bioimageanalysis.icy.deeplearning.utils;
 import java.io.File;
 import java.util.Objects;
 
+import org.bioimageanalysis.icy.system.PlatformDetection;
+
 /**
  * Class to create an object that contains all the information about a 
  * Deep Learning framework (engine) that is needed to launch the engine
@@ -64,6 +66,7 @@ public class EngineInfo {
 	 */
 	private SupportedVersions supportedVersions;
 	/**
+	 * TODO change by official bioimageio tags?
 	 * Variable containing the name used to refer to Tensorflow
 	 * in the program
 	 */
@@ -73,6 +76,16 @@ public class EngineInfo {
 	 * in the program
 	 */
 	private static String pytorchEngineName = "pytorch";
+	/**
+	 * Variable containing the name used to refer to Tensorflow
+	 * in the program
+	 */
+	private static String tensorflowJavaBioimageioTag = "tensorflow_saved_model_bundle";
+	/**
+	 * Variable containing the name used to refer to Pytorch
+	 * in the program
+	 */
+	private static String pytorchJavaBioimageioTag = "torchscript";
 	/**
 	 * Variable that stores which version of Tensorflow 1
 	 * has been already loaded to avoid errors for loading
@@ -110,11 +123,11 @@ public class EngineInfo {
 	private EngineInfo(String engine, String version, String jarsDirectory) {
 		Objects.requireNonNull(engine, "The Deep Learning engine should not be null.");
 		Objects.requireNonNull(version, "The Deep Learning engine version should not be null.");
-		Objects.requireNonNull(STATIC_JARS_DIRECTORY, "The Jars directory should not be null.");
+		Objects.requireNonNull(jarsDirectory, "The Jars directory should not be null.");
 		setEngine(engine);
 		this.version = version;
 		this.jarsDirectory = jarsDirectory;
-		this.os = findOs();
+		this.os = new PlatformDetection().toString();
 		this.engineMachine = findCpuGpuOrMkl();
 		setSupportedVersions();
 		this.versionJava = findCorrespondingJavaVersion();
@@ -361,13 +374,13 @@ public class EngineInfo {
 	 */
 	public static String getLoadedVersions(String engine, String version)
 				throws IllegalArgumentException {
-		if (engine.toLowerCase().equals(tensorflowEngineName)  
+		if (engine.toLowerCase().contains(tensorflowEngineName)  
 				&& version.startsWith("1")) {
 			return loadedTf1Version;
-		} else if (engine.toLowerCase().equals(tensorflowEngineName)  
+		} else if (engine.toLowerCase().contains(tensorflowEngineName)  
 				&& version.startsWith("2")) {
 			return loadedTf2Version;
-		} else if (engine.toLowerCase().equals(pytorchEngineName)) {
+		} else if (engine.toLowerCase().contains(pytorchEngineName)) {
 			return loadedPytorchVersion;
 		} else {
 			throw new IllegalArgumentException("The selected engine '" 
@@ -383,5 +396,14 @@ public class EngineInfo {
 	 */
 	public static void setStaticJarsDirectory(String jarsDirectory) {
 		STATIC_JARS_DIRECTORY = jarsDirectory;
+	}
+	
+	/**
+	 * Method that returns the name with which Tensorflow is defined needed at
+	 * some points to differentiate between tf1 and tf2
+	 * @return the String used for tensorflow 
+	 */
+	public static String getTfKey() {
+		return tensorflowEngineName;
 	}
 }
