@@ -179,7 +179,7 @@ public class EngineInfo {
 	 */
 	public String getDeepLearningVersionJarsDirectory() throws Exception {
 		if (engine != null || version != null) {
-			String vv = this.engine + "_" + this.versionJava + "_" + this.os + "_" + this.engineMachine;
+			String vv = this.engine + "-" + this.version + "-" + this.versionJava + "-" + this.os + "-" + this.engineMachine;
 			return this.jarsDirectory + File.separator + vv;
 		} else {
 			// TODO create exception
