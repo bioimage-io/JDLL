@@ -13,6 +13,8 @@ import java.util.HashMap;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
+import org.bioimageanalysis.icy.deeplearning.exceptions.LoadEngineException;
+
 /**
  * @author Carlos Garcia Lopez de Haro
  *
@@ -40,6 +42,11 @@ public class EngineLoader  extends ClassLoader{
 	 */
 	private DeepLearningInterface engineInstance;
 	/**
+	 * Keyword that the jar file that implements the needed interface has to implement
+	 * to be able to be recognized by the DL manager
+	 */
+	private static final String jarKeyword = "DlEngine";
+	/**
 	 * Name of the interface all the engines have to implement
 	 */
 	private static final String interfaceName = "org.bioimageanalysis.icy.deeplearning.utils.DeepLearningInterface";
@@ -62,8 +69,9 @@ public class EngineLoader  extends ClassLoader{
 	 * @param enginePath
 	 * 	String path where the new JARs containing the wanted classes
 	 * 	should be located
+	 * @throws LoadEngineException if there are errors loading the DL framework
 	 */
-	public EngineLoader(ClassLoader classloader, String enginePath) 
+	private EngineLoader(ClassLoader classloader, String enginePath) throws LoadEngineException
 	{
 		super();
 		this.icyClassloader = classloader;
@@ -76,10 +84,24 @@ public class EngineLoader  extends ClassLoader{
 	/**
 	 * Create an EngineLoader which creates an URLClassLoader
 	 * with all the jars in the provided String path
+	 * @throws LoadEngineException if there are errors loading the DL framework
 	 */
-	public EngineLoader(String enginePath) 
+	private EngineLoader(String enginePath) throws LoadEngineException 
 	{
 		this(Thread.currentThread().getContextClassLoader(), enginePath);
+	}
+	
+	/**
+	 * Returns the ClassLoader of the corresponding Deep Learning framework (engine)
+	 * @param enginePath
+	 * 	the path to the directory where all the JARs needed to load the corresponding
+	 * 	Deep Learning framework (engine) are stored
+	 * @return the ClassLoader corresponding to the wanted Deep Learning version
+	 * @throws LoadEngineException if there are errors loading the DL framework
+	 */
+	public static EngineLoader createEngine(String enginePath) throws LoadEngineException
+	{
+		return new EngineLoader(enginePath);
 	}
 	
 	/**
@@ -93,8 +115,6 @@ public class EngineLoader  extends ClassLoader{
 			return;
 		}
 		try {
-		    /*URL url = new File(this.enginePath).toURI().toURL();         
-		    URL[] urls = new URL[]{url};*/
 			URL[] urls = new URL[new File(this.enginePath).listFiles().length];
 			int c = 0;
 			for (File ff : new File(this.enginePath).listFiles()) {
@@ -107,18 +127,6 @@ public class EngineLoader  extends ClassLoader{
 		    // TODO refine exception
 		}
 		loadedEngines.put(this.enginePath, this.engineClassloader);
-	}
-	
-	/**
-	 * Returns the ClassLoader of the corresponding Deep Learning framework (engine)
-	 * @param enginePath
-	 * 	the path to the directory where all the JARs needed to load the corresponding
-	 * 	Deep Learning framework (engine) are stored
-	 * @return the ClassLoader corresponding to the wanted Deep Learning version
-	 */
-	public static EngineLoader createEngine(String enginePath)
-	{
-		return new EngineLoader(enginePath);
 	}
 	
 	/**
@@ -174,12 +182,21 @@ public class EngineLoader  extends ClassLoader{
 		return className;
 	}
 	
-	private void setEngineInstance()
+	/**
+	 * Finds the class that implements the interface that connects the java framework 
+	 * with the deep learning libraries
+	 * @throws LoadEngineException if there is any error finding and loading the DL libraries
+	 */
+	private void setEngineInstance() throws LoadEngineException
 	{
 		// Load all the classes in the engine folder and select the wanted interface
 		ZipFile jarFile;
+		String errMsg = "Missing '" + jarKeyword + "' jar file that implements the 'DeepLearningInterface";
 		try {
 			for (File ff : new File(this.enginePath).listFiles()) {
+				// Only allow .jar files
+				if (!ff.getName().endsWith(".jar") || !ff.getName().contains(jarKeyword))
+					continue;
 				jarFile = new ZipFile(ff);
 				Enumeration<? extends ZipEntry> entries = jarFile.entries();
 				this.engineInstance = getEngineClassFromEntries(entries, engineClassloader);
@@ -190,18 +207,16 @@ public class EngineLoader  extends ClassLoader{
 				jarFile.close();
 			}
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			errMsg = e.getMessage();
 		} catch (ClassNotFoundException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			errMsg = e.getMessage();
 		} catch (InstantiationException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			errMsg = e.getMessage();
 		} catch (IllegalAccessException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			errMsg = e.getMessage();
 		}
+		// As no interface has been found create an exception
+		throw new LoadEngineException(new File(this.enginePath), errMsg);
 	}
 	
 	/**

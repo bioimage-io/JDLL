@@ -5,6 +5,7 @@ package org.bioimageanalysis.icy.deeplearning;
 
 import java.util.List;
 
+import org.bioimageanalysis.icy.deeplearning.exceptions.LoadEngineException;
 import org.bioimageanalysis.icy.deeplearning.exceptions.LoadModelException;
 import org.bioimageanalysis.icy.deeplearning.exceptions.RunModelException;
 import org.bioimageanalysis.icy.deeplearning.utils.DeepLearningInterface;
@@ -44,10 +45,17 @@ public class Model {
 	/**
 	 * Construct the object model with all the needed information to
 	 * load a model and make inference
-	 * @param modelInfo
-	 * @throws Exception 
+	 * @param engineInfo
+	 * 	informaton needed about the model
+	 * @param modelFolder
+	 * 	directory where of the model folder
+	 * @param modelSource
+	 * 	name of the actual model file (.pt for torchscript)
+	 * @throws LoadEngineException if there is an error finding the Deep LEarningn interface
+	 * 	that connects with the DL libraries
+	 * @throws Exception if the directory is not found
 	 */
-	private Model(EngineInfo engineInfo, String modelFolder, String modelSource) throws Exception
+	private Model(EngineInfo engineInfo, String modelFolder, String modelSource) throws LoadEngineException, Exception
 	{
 		this.engineInfo = engineInfo;
 		this.modelFolder = modelFolder;
@@ -67,16 +75,24 @@ public class Model {
 	 * 	all the information needed to load the classes of
 	 *  a Deep Learning framework (engine)
 	 * @return the Model that is going to be used to make inference
-	 * @throws Exception
+	 * @throws LoadEngineException if there is an error finding the Deep LEarningn interface
+	 * 	that connects with the DL libraries
+	 * @throws Exception if the directory is not found
 	 */
 	public static Model createDeepLearningModel(String modelFolder, 
 												String modelSource, EngineInfo engineInfo) 
-														throws Exception
+														throws LoadEngineException, Exception
 	{
 		return new Model(engineInfo, modelFolder, modelSource);
 	}
 	
-	public void setEngineClassLoader() throws Exception {
+	/**
+	 * Sets the classloader containing the Deep Learning engine
+	 * @throws LoadEngineException if there is an error finding the Deep LEarningn interface
+	 * 	that connects with the DL libraries
+	 * @throws Exception if the directory is not found
+	 */
+	public void setEngineClassLoader() throws LoadEngineException, Exception {
 		this.engineClassLoader = EngineLoader.createEngine(engineInfo.getDeepLearningVersionJarsDirectory());
 	}
 	
