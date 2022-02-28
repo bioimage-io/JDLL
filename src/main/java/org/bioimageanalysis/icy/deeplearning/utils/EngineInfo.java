@@ -249,9 +249,9 @@ public class EngineInfo {
 	 * 	Deep Learning framework used for the model
 	 */
 	public void setEngine(String engine) {
-		if (engine.toLowerCase().contentEquals(tensorflowEngineName))
+		if (engine.toLowerCase().contentEquals(tensorflowJavaBioimageioTag))
 			this.engine = tensorflowEngineName;
-		else if (engine.toLowerCase().contentEquals(pytorchEngineName))
+		else if (engine.toLowerCase().contentEquals(pytorchJavaBioimageioTag))
 			this.engine = pytorchEngineName;
 	}
 	
@@ -374,13 +374,13 @@ public class EngineInfo {
 	 */
 	public static String getLoadedVersions(String engine, String version)
 				throws IllegalArgumentException {
-		if (engine.toLowerCase().contains(tensorflowEngineName)  
+		if (engine.toLowerCase().equals(tensorflowJavaBioimageioTag)  
 				&& version.startsWith("1")) {
 			return loadedTf1Version;
-		} else if (engine.toLowerCase().contains(tensorflowEngineName)  
+		} else if (engine.toLowerCase().equals(tensorflowJavaBioimageioTag)  
 				&& version.startsWith("2")) {
 			return loadedTf2Version;
-		} else if (engine.toLowerCase().contains(pytorchEngineName)) {
+		} else if (engine.toLowerCase().equals(pytorchJavaBioimageioTag)) {
 			return loadedPytorchVersion;
 		} else {
 			throw new IllegalArgumentException("The selected engine '" 
