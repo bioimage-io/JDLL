@@ -30,7 +30,7 @@ public class EngineInfo {
 	/**
 	 * Whether the version wanted is used for CPU, GPU or MKL
 	 */
-	private String engineMachine;
+	private String dlEngine;
 	/**
 	 * Operating system of the machine where the plugin is running
 	 */
@@ -128,7 +128,7 @@ public class EngineInfo {
 		this.version = version;
 		this.jarsDirectory = jarsDirectory;
 		this.os = new PlatformDetection().toString();
-		this.engineMachine = findCpuGpuOrMkl();
+		this.dlEngine = findCpuGpuOrMkl();
 		setSupportedVersions();
 		this.versionJava = findCorrespondingJavaVersion();
 		
@@ -179,7 +179,7 @@ public class EngineInfo {
 	 */
 	public String getDeepLearningVersionJarsDirectory() throws Exception {
 		if (engine != null || version != null) {
-			String vv = this.engine + "-" + this.version + "-" + this.versionJava + "-" + this.os + "-" + this.engineMachine;
+			String vv = this.engine + "-" + this.version + "-" + this.versionJava + "-" + this.os + "-" + this.dlEngine;
 			return this.jarsDirectory + File.separator + vv;
 		} else {
 			// TODO create exception
@@ -331,8 +331,8 @@ public class EngineInfo {
 	 * always "gpu"
 	 * @return the available machines for the engine
 	 */
-	public String getEngineMachine() {
-		return this.engineMachine;
+	public String getEngine() {
+		return this.dlEngine;
 	}
 	
 	/**
@@ -386,6 +386,19 @@ public class EngineInfo {
 			throw new IllegalArgumentException("The selected engine '" 
 								+ engine + "' is not supported yet.");
 		}
+	}
+	
+	/**
+	 * Get the major version of the Deep Learning framework. This is the first
+	 * number of the version until the first dot.
+	 * @return the major version of the engine
+	 */
+	public String getMajorVersion() {
+		int ind = version.indexOf(".");
+		String majorVersion = "" + version;
+		if (ind != -1)
+			majorVersion = version.substring(0, ind);
+		return majorVersion;
 	}
 	
 	/**

@@ -37,6 +37,11 @@ public class EngineLoader  extends ClassLoader{
 	 */
 	private String enginePath;
 	/**
+	 * Major version of the Deep Learning framework. This is the first
+	 * number of the version until the first dot.
+	 */
+	private String majorVersion;
+	/**
 	 * Instance of the class from the wanted Deep Learning engine
 	 * that is used to call all the needed methods to execute a model
 	 */
@@ -70,12 +75,15 @@ public class EngineLoader  extends ClassLoader{
 	 * 	String path where the new JARs containing the wanted classes
 	 * 	should be located
 	 * @throws LoadEngineException if there are errors loading the DL framework
+	 * @throws Exception if the DL engine does not contain all the needed libraries
 	 */
-	private EngineLoader(ClassLoader classloader, String enginePath) throws LoadEngineException
+	private EngineLoader(ClassLoader classloader, EngineInfo engineInfo) throws LoadEngineException,
+																				Exception
 	{
 		super();
 		this.icyClassloader = classloader;
-		this.enginePath = enginePath;
+		this.enginePath = engineInfo.getDeepLearningVersionJarsDirectory();
+		serEngineAndMajorVersion(engineInfo);
 		loadClasses();
 	    Thread.currentThread().setContextClassLoader(this.engineClassloader);
 	    setEngineInstance();
@@ -85,10 +93,11 @@ public class EngineLoader  extends ClassLoader{
 	 * Create an EngineLoader which creates an URLClassLoader
 	 * with all the jars in the provided String path
 	 * @throws LoadEngineException if there are errors loading the DL framework
+	 * @throws Exception if the DL engine does not contain all the needed libraries
 	 */
-	private EngineLoader(String enginePath) throws LoadEngineException 
+	private EngineLoader(EngineInfo engineInfo) throws LoadEngineException, Exception
 	{
-		this(Thread.currentThread().getContextClassLoader(), enginePath);
+		this(Thread.currentThread().getContextClassLoader(), engineInfo);
 	}
 	
 	/**
@@ -98,10 +107,11 @@ public class EngineLoader  extends ClassLoader{
 	 * 	Deep Learning framework (engine) are stored
 	 * @return the ClassLoader corresponding to the wanted Deep Learning version
 	 * @throws LoadEngineException if there are errors loading the DL framework
+	 * @throws Exception if the DL engine does not contain all the needed libraries
 	 */
-	public static EngineLoader createEngine(String enginePath) throws LoadEngineException
+	public static EngineLoader createEngine(EngineInfo engineInfo) throws LoadEngineException, Exception
 	{
-		return new EngineLoader(enginePath);
+		return new EngineLoader(engineInfo);
 	}
 	
 	/**
@@ -110,8 +120,8 @@ public class EngineLoader  extends ClassLoader{
 	 */
 	private void loadClasses() {
 		// If the ClassLoader was already created, use it
-		if (loadedEngines.get(enginePath) != null) {
-			this.engineClassloader = loadedEngines.get(enginePath);
+		if (loadedEngines.get(majorVersion) != null) {
+			this.engineClassloader = loadedEngines.get(majorVersion);
 			return;
 		}
 		try {
@@ -126,7 +136,7 @@ public class EngineLoader  extends ClassLoader{
 		{
 		    // TODO refine exception
 		}
-		loadedEngines.put(this.enginePath, this.engineClassloader);
+		loadedEngines.put(this.majorVersion, this.engineClassloader);
 	}
 	
 	/**
@@ -164,6 +174,13 @@ public class EngineLoader  extends ClassLoader{
             }
         }
 		return null;
+	}
+	
+	private void serEngineAndMajorVersion(EngineInfo engineInfo) {
+		String engine = engineInfo.getEngine();
+		String vv = engineInfo.getMajorVersion();
+		this.majorVersion = (engine + vv).toLowerCase();
+		
 	}
 	
 	/**
@@ -241,9 +258,6 @@ public class EngineLoader  extends ClassLoader{
 	public void close() {
 		engineInstance.closeModel();
 	    Thread.currentThread().setContextClassLoader(this.icyClassloader);
-	    engineInstance = null;
-	    engineClassloader = null;
-	    loadedEngines = new HashMap<String, ClassLoader>();
-	    System.out.print("Closed classloader");
+	    System.out.println("Exited engine ClassLoader");
 	}
 }

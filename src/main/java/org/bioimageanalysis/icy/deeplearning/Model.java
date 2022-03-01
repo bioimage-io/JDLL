@@ -93,7 +93,7 @@ public class Model {
 	 * @throws Exception if the directory is not found
 	 */
 	public void setEngineClassLoader() throws LoadEngineException, Exception {
-		this.engineClassLoader = EngineLoader.createEngine(engineInfo.getDeepLearningVersionJarsDirectory());
+		this.engineClassLoader = EngineLoader.createEngine(engineInfo);
 	}
 	
 	/**
