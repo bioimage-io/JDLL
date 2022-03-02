@@ -1,5 +1,7 @@
 package org.bioimageanalysis.icy.deeplearning;
 
+import java.util.List;
+
 import icy.sequence.Sequence;
 
 /**
@@ -175,6 +177,17 @@ public final class Tensor
 	   	tensorName = null;
 	   	axesArray = null;
 	   	sequence.close();;
-   	
+    }
+    
+    /**
+     * Retrieve tensor with the wanted name from a list of tensors
+     * @param lTensors
+     * 	list of tensors
+     * @param name
+     * 	name of the tensor of interest
+     * @return the tensor of interest
+     */
+    public static Tensor getTensorByNameFromList(List<Tensor> lTensors, String name) {
+    	return lTensors.stream().filter(pp -> pp.getName().equals(name)).findAny().orElse(null);
     }
 }
