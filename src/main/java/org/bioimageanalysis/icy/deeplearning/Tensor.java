@@ -87,8 +87,9 @@ public final class Tensor
      * @throws IllegalArgumentException if the String representation contains
      * repeated axes
      */
-    private int[] convertToTensorDimOrder(String dimOrder) throws IllegalArgumentException
+    public static int[] convertToTensorDimOrder(String dimOrder) throws IllegalArgumentException
     {
+    	dimOrder = dimOrder.toLowerCase();
         int[] tensorDimOrder = new int[dimOrder.length()];
         int hasB = 0, hasI = 0, hasT = 0, hasX = 0, hasY = 0, hasZ = 0, hasC = 0;
         for (int i = 0; i < dimOrder.length(); i++)
