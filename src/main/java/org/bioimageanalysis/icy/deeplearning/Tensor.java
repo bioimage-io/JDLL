@@ -5,6 +5,7 @@ import java.util.List;
 import icy.sequence.Sequence;
 
 /**
+ * TODO make agonostic to software, use buffers preliminarly
  * Tensors created to interact with a Deep Learning engine while
  * being agnostic to it. This class just contains the information to create
  * a tensor while maintaining flexibility to interact with any wanted
