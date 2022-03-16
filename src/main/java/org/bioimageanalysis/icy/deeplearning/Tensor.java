@@ -27,6 +27,10 @@ public final class Tensor
 	 * after it has been set
 	 */
 	private Sequence sequence;
+	/**
+	 * Whether the tensor represents an image or not
+	 */
+	private boolean isImage = false;
 	
 	/**
 	 * Create the tensor object. 
@@ -169,6 +173,23 @@ public final class Tensor
      */
     public Sequence getData() {
     	return this.sequence;
+    }
+    
+    /**
+     * Set whether the tensor represents an image or not
+     * @param isImage
+     * 	if the tensor is an image or not
+     */
+    public void setIsImage(boolean isImage) {
+    	this.isImage = isImage;
+    }
+    
+    /**
+     * Whether the tensor represents an image or not
+     * @return true if the tensor represents an image, false otherwise
+     */
+    public boolean isImage() {
+    	return isImage;
     }
     
     /**
