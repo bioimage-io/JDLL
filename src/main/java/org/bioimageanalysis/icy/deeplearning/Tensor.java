@@ -31,6 +31,11 @@ public final class Tensor
 	 * Whether the tensor represents an image or not
 	 */
 	private boolean isImage = false;
+	/**
+	 * TODO make more complex and complete
+	 * The data type of the tensor
+	 */
+	private String dType;
 	
 	/**
 	 * Create the tensor object. 
@@ -190,6 +195,23 @@ public final class Tensor
      */
     public boolean isImage() {
     	return isImage;
+    }
+    
+    /**
+     * Set the data type of the tensor
+     * @param dtype
+     * 	the data type of the tensor
+     */
+    public void dType(String dtype) {
+    	this.dType = dType;
+    }
+    
+    /**
+     * GEt the data type of the tensor
+     * @return the data type of the tensor
+     */
+    public String getDType() {
+    	return dType;
     }
     
     /**
