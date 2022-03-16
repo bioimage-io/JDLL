@@ -1,5 +1,6 @@
 package org.bioimageanalysis.icy.deeplearning;
 
+import java.nio.Buffer;
 import java.util.List;
 
 import icy.sequence.Sequence;
@@ -28,6 +29,10 @@ public final class Tensor
 	 * after it has been set
 	 */
 	private Sequence sequence;
+	/** TODO remove sequence ideally and only use buffers (or other object as agreed)
+	 * Software agnostic representation of the tensor data
+	 */
+	private Buffer bufferData;
 	/**
 	 * Whether the tensor represents an image or not
 	 */
@@ -203,7 +208,7 @@ public final class Tensor
      * @param dtype
      * 	the data type of the tensor
      */
-    public void dType(String dtype) {
+    public void dType(String dType) {
     	this.dType = dType;
     }
     
@@ -213,6 +218,18 @@ public final class Tensor
      */
     public String getDType() {
     	return dType;
+    }
+    
+    public void setBufferData(Buffer bufferData) {
+    	this.bufferData = bufferData;
+    }
+    
+    /**
+     * REturn the data in a software agnostic way using buffers
+     * @return the data of the tensor as a buffer
+     */
+    public Buffer getBufferData() {
+    	return this.bufferData;
     }
     
     /**
