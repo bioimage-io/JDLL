@@ -42,6 +42,11 @@ public final class Tensor
 	 * The data type of the tensor
 	 */
 	private String dType;
+	/**
+	 * TODO make a more robust case for shape
+	 * Shape of the tensor
+	 */
+	private int[] shape;
 	
 	/**
 	 * Create the tensor object. 
@@ -230,6 +235,23 @@ public final class Tensor
      */
     public Buffer getBufferData() {
     	return this.bufferData;
+    }
+    
+    /**
+     * Set the shape of the tensor
+     * @param shape
+     * 	shape of the tensor
+     */
+    public void setShape(int[] shape) {
+    	this.shape = shape;
+    }
+    
+    /**
+     * REturns the shape of the tensor
+     * @return the shape of the tensor
+     */
+    public int[] getShape() {
+    	return shape;
     }
     
     /**
