@@ -1,12 +1,10 @@
 package org.bioimageanalysis.icy.deeplearning;
 
-import java.nio.Buffer;
 import java.util.List;
 
-import icy.sequence.Sequence;
+import ai.djl.ndarray.NDArray;
 
 /**
- * TODO make agonostic to software, use buffers preliminarly
  * Tensors created to interact with a Deep Learning engine while
  * being agnostic to it. This class just contains the information to create
  * a tensor while maintaining flexibility to interact with any wanted
@@ -24,15 +22,10 @@ public final class Tensor
 	 * Name given to the tensor in the model.
 	 */
 	private int[] axesArray;
-	/**
-	 * Name given to the tensor in the model. Cannot be modified
-	 * after it has been set
-	 */
-	private Sequence sequence;
-	/** TODO remove sequence ideally and only use buffers (or other object as agreed)
+	/** 
 	 * Software agnostic representation of the tensor data
 	 */
-	private Buffer bufferData;
+	private NDArray data;
 	/**
 	 * Whether the tensor represents an image or not
 	 */
@@ -55,15 +48,14 @@ public final class Tensor
 	 * 	name of the tensor as defined by the model
 	 * @param axes
 	 * 	String containing the axes order of the tensor. For example: "bcyx"
-	 * @param sequence
-	 * 	the sequence that contains the information that will be transformed into
-	 * 	tensor
+	 * @param data
+	 * 	data structure similar to a Numpy array that contains all tensor numbers
 	 */
-    private Tensor(String tensorName, String axes, Sequence sequence)
+    private Tensor(String tensorName, String axes, NDArray data)
     {
     	this.tensorName = tensorName;
     	this.axesArray = convertToTensorDimOrder(axes);
-    	this.sequence = sequence;
+    	this.data = data;
     }
     
     /**
@@ -73,14 +65,13 @@ public final class Tensor
 	 * 	name of the tensor as defined by the model
 	 * @param axes
 	 * 	String containing the axes order of the tensor. For example: "bcyx"
-	 * @param sequence
-	 * 	the sequence that contains the information that will be transformed into
-	 * 	tensor
+	 * @param data
+	 * 	data structure similar to a Numpy array that contains all tensor numbers
      * @return the tensor
      */
-    public static Tensor build(String tensorName, String axes, Sequence sequence)
+    public static Tensor build(String tensorName, String axes, NDArray data)
     {
-    	return new Tensor(tensorName, axes, sequence);
+    	return new Tensor(tensorName, axes, data);
     }
     
     /**
@@ -175,23 +166,6 @@ public final class Tensor
     }
     
     /**
-     * Set the data of the Tensor 
-     * @param seq
-     * 	data of the tensor in the for of an Icy Sequence
-     */
-    public void setData(Sequence seq) {
-    	this.sequence = seq;
-    }
-    
-    /**
-     * Returns the data of the tensor. This data is contained in a sequence
-     * @return the sequence containing the data of the tensor
-     */
-    public Sequence getData() {
-    	return this.sequence;
-    }
-    
-    /**
      * Set whether the tensor represents an image or not
      * @param isImage
      * 	if the tensor is an image or not
@@ -225,16 +199,21 @@ public final class Tensor
     	return dType;
     }
     
-    public void setBufferData(Buffer bufferData) {
-    	this.bufferData = bufferData;
+    /**
+     * Set the data structure of the tensor that contains the numbers
+     * @param data
+     * 	the numbers of the tensor in a Numpy array like structure
+     */
+    public void setData(NDArray data) {
+    	this.data = data;
     }
     
     /**
      * REturn the data in a software agnostic way using buffers
      * @return the data of the tensor as a buffer
      */
-    public Buffer getBufferData() {
-    	return this.bufferData;
+    public NDArray getrData() {
+    	return this.data;
     }
     
     /**
@@ -260,7 +239,7 @@ public final class Tensor
     public void close() {
 	   	tensorName = null;
 	   	axesArray = null;
-	   	sequence.close();;
+	   	data.close();
     }
     
     /**
