@@ -2,6 +2,7 @@ package org.bioimageanalysis.icy.deeplearning.utils;
 
 import java.nio.Buffer;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -480,7 +481,36 @@ public class NDArrayToBuffer {
         return seqDimOrder;
     }
     
+    public static String translateStringAxesOrderToArr(String axesOrder) {
+    	HashMap<Integer, String> axesMap = new HashMap<Integer, String>();
+    	axesMap.put(0, "x");
+    	axesMap.put(1, "y");
+    	axesMap.put(2, "c");
+    	axesMap.put(3, "z");
+    	axesMap.put(4, "b");
+    	int[] axes = new int[axesOrder.length()];
+    	for (int ax : axesOrder)
+    		axes += axesMap.get(ax);
+    	return axes;
+    }
+    
+    /**
+     * MEthod that translates the int array axes order into a Stirng version
+     * x->0; y->1; c->2; z->3; b->4
+     * @param axesOrder
+     * 	axes order as an int array
+     * @return axes order as String
+     */
     public static String translateIntAxesOrderToString(int[] axesOrder) {
-    	
+    	HashMap<Integer, String> axesMap = new HashMap<Integer, String>();
+    	axesMap.put(0, "x");
+    	axesMap.put(1, "y");
+    	axesMap.put(2, "c");
+    	axesMap.put(3, "z");
+    	axesMap.put(4, "b");
+    	String axes = "";
+    	for (int ax : axesOrder)
+    		axes += axesMap.get(ax);
+    	return axes;
     }
 }
