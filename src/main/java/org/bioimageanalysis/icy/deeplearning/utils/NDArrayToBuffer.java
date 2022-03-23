@@ -481,16 +481,24 @@ public class NDArrayToBuffer {
         return seqDimOrder;
     }
     
-    public static String translateStringAxesOrderToArr(String axesOrder) {
-    	HashMap<Integer, String> axesMap = new HashMap<Integer, String>();
-    	axesMap.put(0, "x");
-    	axesMap.put(1, "y");
-    	axesMap.put(2, "c");
-    	axesMap.put(3, "z");
-    	axesMap.put(4, "b");
+    /**
+     * MEthod that translates the String axes order into an int array version
+     * x->0; y->1; c->2; z->3; b->4
+     * @param axesOrder
+     * 	axes order as a Streing
+     * @return axes order as int array
+     */
+    public static int[] translateStringAxesOrderToArr(String axesOrder) {
+    	HashMap<String, Integer> axesMap = new HashMap<String, Integer>();
+    	axesMap.put("x", 0);
+    	axesMap.put("y", 1);
+    	axesMap.put("c", 2);
+    	axesMap.put("z", 3);
+    	axesMap.put("b", 4);
     	int[] axes = new int[axesOrder.length()];
-    	for (int ax : axesOrder)
-    		axes += axesMap.get(ax);
+    	String[] arr = axesOrder.split("");
+    	for (int i = 0; i < axesOrder.length(); i ++)
+    		axes[i] = axesMap.get(arr[i]);
     	return axes;
     }
     
