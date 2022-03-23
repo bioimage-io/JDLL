@@ -2,6 +2,9 @@ package org.bioimageanalysis.icy.deeplearning.utils;
 
 import java.nio.Buffer;
 import java.util.Arrays;
+import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import ai.djl.ndarray.NDArray;
 import ai.djl.ndarray.types.DataType;
@@ -43,7 +46,7 @@ public class NDArrayToBuffer {
 		// are added at the end
 		int[] completeDimOrder = completeImageDimensions(tensorDimOrder, targetDimOrder.length);
 		// Get the order of the tensor with respect to the axes of anIcy sequence
-        int[] seqDimOrder = getSequenceDimOrder(completeDimOrder);
+        int[] seqDimOrder = getSequenceDimOrder(completeDimOrder, targetDimOrder);
         // GEt the size of the tensor for every dimension existing in an Icy sequence
         int[] seqSize = getSequenceSize(tensorDimOrder, tensor);
         // Create an Icy sequence of the same type of the tensor
@@ -357,6 +360,23 @@ public class NDArrayToBuffer {
                             + tensorDimOrder.length + " != " + tensor.getShape().dimension() + ")");
         }
     }
+    
+    public static void checkTargetDims(int[] tensorDims, int[] targetDims) {
+    	for (int dim : tensorDims) {
+    		boolean present = false;
+    		for (int targetDim : targetDims) {
+    			if (targetDim == dim) {
+    				present = true;
+    				break;
+    			}
+    			if (!present) {
+    				throw new IllegalArgumentException("The target axes dimensions must contain"
+    						+ " all the dimensions present in the original tensor. The target "
+    						+ "axes dimensions are ");
+    			}
+    		}
+    	}
+    }
 
     // TODO change ImageJ's axes order [xyczt] to Icy's axes order [xyztc]
     /**
@@ -425,11 +445,12 @@ public class NDArrayToBuffer {
     }
 
     /**
-     * Get the tensor dimensions order with respect to ImageJ's dimensions order ([xyczt]).
+     * Get the tensor dimensions order with respect to the target dimensions order (for example: [xycb]).
      * For example, for some tensor axes order is [bcyx], the tensorDimOrder will be
-     * [4, 2, 1, 0], this method will map the dimensions to the axes order of ImageJ ([xyczt]).
+     * [4, 2, 1, 0], this method will map the dimensions to the axes order of the target ([0,1,2,4]).
      * Dimension X is on the fourth axis of the tensor, dimension Y on the third and so on, so
-     * the result would be [3, 2, 1, -1, 0] (because axis Z is not presetn).
+     * the result would be [3, 2, 1, 0] .
+     * Both dimesnions need to be of the same length
      * @param tensorDimOrder
      * 	axes order of a tensor
      * @param targetDimOrder
@@ -439,11 +460,27 @@ public class NDArrayToBuffer {
      */
     private static int[] getSequenceDimOrder(int[] tensorDimOrder, int[] targetDimOrder)
     {
+    	if (tensorDimOrder.length != targetDimOrder.length)
+    		throw new IllegalArgumentException("Both arguments need to be of the same length.");
         int[] seqDimOrder = new int[targetDimOrder.length];
         for (int i = 0; i < tensorDimOrder.length; i++)
         {
-        	tensorDimOrder[targetDimOrder[i]] = i;
+        	for (int j = 0; j < tensorDimOrder.length; j ++) {
+        		if (targetDimOrder[i] == tensorDimOrder[j]) {
+                	tensorDimOrder[j] = i;
+        			break;
+        		}
+        	}
+        	/* TODO
+        	if (value == -1)
+        		throw new IllegalArgumentException("");
+    		*/
+        		
         }
         return seqDimOrder;
+    }
+    
+    public static String translateIntAxesOrderToString(int[] axesOrder) {
+    	
     }
 }
