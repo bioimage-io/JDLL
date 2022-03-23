@@ -3,6 +3,7 @@ package org.bioimageanalysis.icy.deeplearning;
 import java.util.List;
 
 import ai.djl.ndarray.NDArray;
+import ai.djl.ndarray.NDManager;
 
 /**
  * Tensors created to interact with a Deep Learning engine while
@@ -69,7 +70,7 @@ public final class Tensor
 	 * 	data structure similar to a Numpy array that contains all tensor numbers
      * @return the tensor
      */
-    public static Tensor build(String tensorName, String axes, NDArray data)
+    public static Tensor build(String tensorName, String axes, NDArray data, TensorManager manager)
     {
     	return new Tensor(tensorName, axes, data);
     }
@@ -252,5 +253,14 @@ public final class Tensor
      */
     public static Tensor getTensorByNameFromList(List<Tensor> lTensors, String name) {
     	return lTensors.stream().filter(pp -> pp.getName().equals(name)).findAny().orElse(null);
+    }
+    
+    public static void main(String[] args) {
+    	NDManager a = NDManager.newBaseManager();
+    	NDManager b = NDManager.newBaseManager();
+    	NDArray tensora = a.create(false);
+    	tensora.detach();
+    	String nameb = b.getName();
+    	tensora.attach(b);
     }
 }
