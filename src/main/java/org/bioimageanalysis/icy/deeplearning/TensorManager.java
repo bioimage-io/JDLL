@@ -1,5 +1,7 @@
 package org.bioimageanalysis.icy.deeplearning;
 
+import java.nio.FloatBuffer;
+
 import ai.djl.ndarray.NDArray;
 import ai.djl.ndarray.NDManager;
 
@@ -28,6 +30,16 @@ public class TensorManager implements AutoCloseable{
 		manager = NDManager.newBaseManager();
 		identifier = manager.getName();
 	}
+
+	/**
+	 * Manager that is needed to create Icy Tensors
+	 * @param manager
+	 * 	the NDManager used to create NDArrays
+	 */
+	private TensorManager(NDManager manager) {
+		this.manager = manager;
+		identifier = manager.getName();
+	}
 	
 	/**
 	 * Build the {@link #TensorManager()}
@@ -48,7 +60,20 @@ public class TensorManager implements AutoCloseable{
 	 * @return
 	 */
 	public Tensor createTensor(String tensorName, String axes, NDArray data) {
+		manager = data.getManager();
 		return Tensor.build(tensorName, axes, data, this);
+	}
+	
+	public Tensor createTensor(String tensorName, String originalAxes, String targetAxes, FloatBuffer dataBuff) {
+		return Tensor.build(tensorName, originalAxes, data, this);
+	}
+	
+	public Tensor createTensor(String tensorName, String originalAxes, String targetAxes, DoubleBuffer dataBuff) {
+		return Tensor.build(tensorName, originalAxes, data, this);
+	}
+	
+	public Tensor createTensor(String tensorName, String originalAxes, String targetAxes, IntBuffer dataBuff) {
+		return Tensor.build(tensorName, originalAxes, data, this);
 	}
 	
 	/**
