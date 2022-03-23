@@ -43,6 +43,7 @@ public class NDArrayToBuffer {
 		// TODO adapt to several batch sizes
 		// Check if the axes order is valid
 		checkTensorDimOrder(tensor, tensorDimOrder);
+		checkTargetDims(tensorDimOrder, targetDimOrder);
 		// Add missing dimensions to the tensor axes order. The missing dimensions
 		// are added at the end
 		int[] completeDimOrder = completeImageDimensions(tensorDimOrder, targetDimOrder.length);
@@ -373,7 +374,9 @@ public class NDArrayToBuffer {
     			if (!present) {
     				throw new IllegalArgumentException("The target axes dimensions must contain"
     						+ " all the dimensions present in the original tensor. The target "
-    						+ "axes dimensions are ");
+    						+ "axes dimensions are [" + translateIntAxesOrderToString(targetDims)
+    						+ "] and the tensor dimensions are [" + translateIntAxesOrderToString(tensorDims)
+    						+ "].");
     			}
     		}
     	}
