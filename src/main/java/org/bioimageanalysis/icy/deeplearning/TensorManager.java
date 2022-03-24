@@ -27,18 +27,6 @@ public class TensorManager implements AutoCloseable{
 	 * Manager that is needed to create Icy Tensors
 	 */
 	private TensorManager() {
-		manager = NDManager.newBaseManager();
-		identifier = manager.getName();
-	}
-
-	/**
-	 * Manager that is needed to create Icy Tensors
-	 * @param manager
-	 * 	the NDManager used to create NDArrays
-	 */
-	private TensorManager(NDManager manager) {
-		this.manager = manager;
-		identifier = manager.getName();
 	}
 	
 	/**
@@ -60,20 +48,16 @@ public class TensorManager implements AutoCloseable{
 	 * @return
 	 */
 	public Tensor createTensor(String tensorName, String axes, NDArray data) {
-		manager = data.getManager();
+		if (manager == null) {
+			manager = data.getManager();
+			identifier = manager.getName();
+		} else if (!manager.getName().equals(identifier)) {
+			throw new IllegalArgumentException("All the NDArrays associated to the same TensorManager"
+					+ " need to have been created with the same NDManager. In addition to this, "
+					+ "running models with DJL Pytorch will only work if all the NDArrays come"
+					+ " from the same NDManager.");
+		}
 		return Tensor.build(tensorName, axes, data, this);
-	}
-	
-	public Tensor createTensor(String tensorName, String originalAxes, String targetAxes, FloatBuffer dataBuff) {
-		return Tensor.build(tensorName, originalAxes, data, this);
-	}
-	
-	public Tensor createTensor(String tensorName, String originalAxes, String targetAxes, DoubleBuffer dataBuff) {
-		return Tensor.build(tensorName, originalAxes, data, this);
-	}
-	
-	public Tensor createTensor(String tensorName, String originalAxes, String targetAxes, IntBuffer dataBuff) {
-		return Tensor.build(tensorName, originalAxes, data, this);
 	}
 	
 	/**
