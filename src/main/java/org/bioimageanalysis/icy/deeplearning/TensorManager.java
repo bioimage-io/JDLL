@@ -24,8 +24,12 @@ public class TensorManager implements AutoCloseable{
 	
 	/**
 	 * Manager that is needed to create Icy Tensors
+	 * @param startManager
+	 * 	whether the manager should be initialized or not
 	 */
-	private TensorManager() {
+	private TensorManager(boolean startManager) {
+		if (startManager)
+			manager = NDManager.newBaseManager();
 	}
 	
 	/**
@@ -33,7 +37,17 @@ public class TensorManager implements AutoCloseable{
 	 * @return an instance of TensorManager
 	 */
 	public static TensorManager build() {
-		return new TensorManager();
+		return new TensorManager(false);
+	}
+	
+	/**
+	 * Build the {@link #TensorManager()}
+	 * @param startManager
+	 * 	whether the manager should be initialized or not
+	 * @return an instance of TensorManager
+	 */
+	public static TensorManager build(boolean startManager) {
+		return new TensorManager(startManager);
 	}
 	
 	/**
