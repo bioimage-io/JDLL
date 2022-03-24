@@ -57,7 +57,7 @@ public class TensorManager implements AutoCloseable{
 					+ "running models with DJL Pytorch will only work if all the NDArrays come"
 					+ " from the same NDManager.");
 		}
-		return Tensor.build(tensorName, axes, data, this);
+		return Tensor.build(tensorName, axes, data);
 	}
 	
 	/**

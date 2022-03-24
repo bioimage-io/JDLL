@@ -70,7 +70,7 @@ public final class Tensor
 	 * 	data structure similar to a Numpy array that contains all tensor numbers
      * @return the tensor
      */
-    public static Tensor build(String tensorName, String axes, NDArray data, TensorManager manager)
+    public static Tensor build(String tensorName, String axes, NDArray data)
     {
     	return new Tensor(tensorName, axes, data);
     }
@@ -210,10 +210,10 @@ public final class Tensor
     }
     
     /**
-     * REturn the data in a software agnostic way using buffers
+     * REturn the data in a software agnostic way using DJL NDArrays
      * @return the data of the tensor as a buffer
      */
-    public NDArray getrData() {
+    public NDArray getData() {
     	return this.data;
     }
     
