@@ -28,8 +28,10 @@ public class TensorManager implements AutoCloseable {
 	 * 	whether the manager should be initialized or not
 	 */
 	private TensorManager(boolean startManager) {
-		if (startManager)
+		if (startManager) {
 			manager = NDManager.newBaseManager();
+			identifier = manager.getName();
+		}
 	}
 	/**
 	 * 
@@ -39,6 +41,7 @@ public class TensorManager implements AutoCloseable {
 	 */
 	private TensorManager(NDManager manager) {
 		this.manager = manager;
+		identifier = manager.getName();
 	}
 	
 	/**
