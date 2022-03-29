@@ -12,7 +12,7 @@ import ai.djl.ndarray.NDManager;
  * @author Carlos Garcia Lopez de Haro
  *
  */
-public class TensorManager implements AutoCloseable{
+public class TensorManager implements AutoCloseable {
 	/**
 	 * NDManager used to create and manage NDArrays
 	 */
@@ -21,7 +21,7 @@ public class TensorManager implements AutoCloseable{
 	 * Unique identifier of the manager
 	 */
 	private String identifier;
-	
+
 	/**
 	 * Manager that is needed to create Icy Tensors
 	 * @param startManager
@@ -31,6 +31,15 @@ public class TensorManager implements AutoCloseable{
 		if (startManager)
 			manager = NDManager.newBaseManager();
 	}
+	/**
+	 * 
+	 * Manager that is needed to create Icy Tensors
+	 * @param manager
+	 * 	the {@link NDManager} that acts as the backend of the tensor manager
+	 */
+	private TensorManager(NDManager manager) {
+		this.manager = manager;
+	}
 	
 	/**
 	 * Build the {@link #TensorManager()}
@@ -38,6 +47,16 @@ public class TensorManager implements AutoCloseable{
 	 */
 	public static TensorManager build() {
 		return new TensorManager(false);
+	}
+	
+	/**
+	 * Build the {@link #TensorManager()}
+	 * @param manager
+	 * 	manager that will be in the backend of the tensor manager
+	 * @return an instance of TensorManager
+	 */
+	public static TensorManager build(NDManager manager) {
+		return new TensorManager(manager);
 	}
 	
 	/**
