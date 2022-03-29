@@ -20,9 +20,13 @@ public final class Tensor
 	 */
 	private String tensorName;
 	/**
-	 * Name given to the tensor in the model.
+	 * Axes order in int array form.
 	 */
 	private int[] axesArray;
+	/**
+	 * Axes order in String form.
+	 */
+	private String axesString;
 	/** 
 	 * Software agnostic representation of the tensor data
 	 */
@@ -35,7 +39,7 @@ public final class Tensor
 	 * TODO make more complex and complete
 	 * The data type of the tensor
 	 */
-	private String dType;
+	private String dType = "float32";
 	/**
 	 * TODO make a more robust case for shape
 	 * Shape of the tensor
@@ -55,6 +59,7 @@ public final class Tensor
     private Tensor(String tensorName, String axes, NDArray data)
     {
     	this.tensorName = tensorName;
+    	this.axesString = axes;
     	this.axesArray = convertToTensorDimOrder(axes);
     	this.data = data;
     }
@@ -235,6 +240,14 @@ public final class Tensor
     }
     
     /**
+     * REtrieve the axes order in String form
+	 * @return the axesString
+	 */
+	public String getAxesString() {
+		return axesString;
+	}
+
+	/**
      * Empty the tensor information
      */
     public void close() {
