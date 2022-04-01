@@ -34,7 +34,7 @@ public final class Tensor
 	/**
 	 * Whether the tensor represents an image or not
 	 */
-	private boolean isImage = false;
+	private boolean isImage = true;
 	/**
 	 * TODO make more complex and complete
 	 * The data type of the tensor
