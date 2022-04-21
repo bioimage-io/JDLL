@@ -253,7 +253,8 @@ public final class Tensor
     public void close() {
 	   	tensorName = null;
 	   	axesArray = null;
-	   	data.close();
+	   	if (data != null)
+	   		data.close();
     }
     
     /**
