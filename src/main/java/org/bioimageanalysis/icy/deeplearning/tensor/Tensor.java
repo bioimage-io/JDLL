@@ -1,4 +1,4 @@
-package org.bioimageanalysis.icy.deeplearning;
+package org.bioimageanalysis.icy.deeplearning.tensor;
 
 import java.util.List;
 
