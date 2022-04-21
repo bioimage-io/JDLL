@@ -4,7 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.bioimageanalysis.icy.deeplearning.Model;
-import org.bioimageanalysis.icy.deeplearning.Tensor;
+import org.bioimageanalysis.icy.deeplearning.tensor.Tensor;
 import org.bioimageanalysis.icy.deeplearning.utils.EngineInfo;
 
 import icy.main.Icy;

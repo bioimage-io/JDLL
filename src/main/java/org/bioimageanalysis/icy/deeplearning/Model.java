@@ -8,6 +8,7 @@ import java.util.List;
 import org.bioimageanalysis.icy.deeplearning.exceptions.LoadEngineException;
 import org.bioimageanalysis.icy.deeplearning.exceptions.LoadModelException;
 import org.bioimageanalysis.icy.deeplearning.exceptions.RunModelException;
+import org.bioimageanalysis.icy.deeplearning.tensor.Tensor;
 import org.bioimageanalysis.icy.deeplearning.utils.DeepLearningInterface;
 import org.bioimageanalysis.icy.deeplearning.utils.EngineLoader;
 import org.bioimageanalysis.icy.deeplearning.utils.EngineInfo;

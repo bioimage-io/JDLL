@@ -2,7 +2,7 @@ package org.bioimageanalysis.icy.deeplearning.utils;
 
 import java.util.List;
 
-import org.bioimageanalysis.icy.deeplearning.Tensor;
+import org.bioimageanalysis.icy.deeplearning.tensor.Tensor;
 import org.bioimageanalysis.icy.deeplearning.exceptions.LoadModelException;
 import org.bioimageanalysis.icy.deeplearning.exceptions.RunModelException;
 
