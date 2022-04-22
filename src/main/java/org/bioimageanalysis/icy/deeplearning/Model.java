@@ -15,7 +15,7 @@ import org.bioimageanalysis.icy.deeplearning.utils.EngineLoader;
 import org.bioimageanalysis.icy.deeplearning.utils.EngineInfo;
 
 /**
- * Class that manages a Deep Learning model to load it and run it.
+ * Class that manages a Deep Learning model to load it and run it.test
  * 
  * @author Carlos Garcia Lopez de Haro
  */
