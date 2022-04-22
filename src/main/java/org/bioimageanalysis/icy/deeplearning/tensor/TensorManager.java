@@ -108,6 +108,8 @@ public class TensorManager implements AutoCloseable {
      * Method that converts the backend data of the tensor from an {@link NDArray}
      * object to a {@link Buffer} object. Regard that after the data is converted
      * into a Buffer, the NDArray is closed and set to null.
+     * @param tensor
+     * 	tensor to be modified
      */
     public static void array2buffer(Tensor tensor) {
     	Buffer dataBuffer;
@@ -125,15 +127,33 @@ public class TensorManager implements AutoCloseable {
     		throw new IllegalArgumentException("Not supported data type: " + tensor.getDataType().toString());
     	tensor.getDataAsNDArray().close();
     	tensor.setNDArrayData(null);
+    	tensor.setBufferData(dataBuffer);
     }
     
     /**
      * Method that converts the backend data of the tensor from an {@link Buffer} 
      * object to a {@link NDArray} object. Regard that after the data is converted
      * into a NDArray, the buffer is closed and set to null.
+     * @param tensor
+     * 	tensor to be modified
      */
-    public void buffer2array () {
-    	
+    public void buffer2array (Tensor tensor) {
+    	Buffer dataBuffer;
+    	if (tensor.getDataType() == DataType.INT8 || tensor.getDataType() == DataType.INT8)
+    		dataBuffer = ByteBuffer.wrap(tensor.getDataAsNDArray().toByteArray());
+    	else if (tensor.getDataType() == DataType.FLOAT64)
+	    	dataBuffer = DoubleBuffer.wrap(tensor.getDataAsNDArray().toDoubleArray());
+    	else if (tensor.getDataType() == DataType.FLOAT32 || tensor.getDataType() == DataType.FLOAT16)
+	    	dataBuffer = FloatBuffer.wrap(tensor.getDataAsNDArray().toFloatArray());
+    	else if (tensor.getDataType() == DataType.INT32)
+	    	dataBuffer = IntBuffer.wrap(tensor.getDataAsNDArray().toIntArray());
+    	else if (tensor.getDataType() == DataType.INT64)
+	    	dataBuffer = LongBuffer.wrap(tensor.getDataAsNDArray().toLongArray());
+    	else 
+    		throw new IllegalArgumentException("Not supported data type: " + tensor.getDataType().toString());
+    	tensor.getDataAsNDArray().close();
+    	tensor.setNDArrayData(null);
+    	tensor.setBufferData(dataBuffer);
     }
 	
 	/**

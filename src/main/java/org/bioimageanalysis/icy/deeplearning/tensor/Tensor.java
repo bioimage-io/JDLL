@@ -214,6 +214,11 @@ public final class Tensor
     	if (data == null && this.data != null) {
     		this.data.close();
     		return;
+    	} else if (dataBuffer != null || this.data != null) {
+    		throw new IllegalArgumentException("Tensor '" + tensorName + "' has already "
+    				+ "been defined. Cannot redefine the backend data of a tensor once it has"
+    				+ " been set. In order to modify the tensor, please modify the NDArray "
+    				+ "used as backend for the tensor.");
     	}
     	this.data = data;
     	setShape();
