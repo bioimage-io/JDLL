@@ -150,7 +150,7 @@ public final class Tensor
      * into a NDArray, the buffer is closed and set to null.
      */
     public void buffer2array () {
-    	NDArray ndarray = manager.getManager().create(getDataAsbuffer(),
+    	NDArray ndarray = manager.getManager().create(getDataAsBuffer(),
     			Tensor.ndarrayShapeFromIntArr(getShape()), getDataType());
     	setBufferData(null);
     	setNDArrayData(ndarray);
@@ -217,7 +217,7 @@ public final class Tensor
      * REturn the data in a software agnostic way using Buffers
      * @return the data of the tensor as a buffer
      */
-    public Buffer getDataAsbuffer() {
+    public Buffer getDataAsBuffer() {
     	if (data == null && dataBuffer == null)
     		throw new IllegalArgumentException("Tensor '" + this.tensorName + "' is empty.");
     	else if (dataBuffer == null)
@@ -247,7 +247,11 @@ public final class Tensor
 	   	axesArray = null;
 	   	if (data != null)
 	   		data.close();
+	   	this.data = null;
 	   	this.dataBuffer = null;
+	   	this.axesString = null;
+	   	this.dType = null;
+	   	this.shape = null;
     }
     
     /**

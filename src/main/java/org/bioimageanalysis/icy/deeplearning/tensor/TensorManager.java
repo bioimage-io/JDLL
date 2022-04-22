@@ -125,6 +125,10 @@ public class TensorManager implements AutoCloseable {
 	public String getIdentifier() {
 		return identifier;
 	}
+	
+	public List<String> getTensorList(){
+		
+	}
 
 	@Override
 	/**
