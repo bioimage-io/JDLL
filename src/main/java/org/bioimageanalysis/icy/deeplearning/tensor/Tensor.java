@@ -231,6 +231,9 @@ public final class Tensor
     				+ "been defined. Cannot redefine the backend data of a tensor once it has"
     				+ " been set. In order to modify the tensor, please modify the NDArray "
     				+ "used as backend for the tensor.");
+    	}else if (data.getManager() != manager.getManager()) {
+    		throw new IllegalArgumentException("The NDManager of the NDArray must be the same"
+    				+ " as the NDManager of the tensor TensoManager (tensorManager.getManager()).");
     	}
     	this.data = data;
     	setShape();
