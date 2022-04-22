@@ -86,12 +86,18 @@ public final class Tensor
     	dType = data.getDataType();
     	setShape();
     	this.manager = manager;
+    	addToList();
     }
     
     private void addToList() {
     	List<Tensor> list = manager.getTensorList();
-    	getTensorByNameFromList(list, tensorName);
-    	
+    	Tensor coincidence = getTensorByNameFromList(list, tensorName);
+    	if (coincidence == null) {
+    		throw new IllegalArgumentException("There already exists a Tensor called '" + tensorName
+    				+ "' in the list of tensors associated to the parent TensorManager. Tensor names"
+    				+ " for the same TEnsorManager should be unique.");
+    	}
+    	manager.addTensorToList(this);
     }
     
     /**
@@ -352,6 +358,14 @@ public final class Tensor
             throw new IllegalArgumentException("There cannot be repeated dimensions in the axes "
             		+ "order as it is specified for this tensor (" + dimOrder + ").");
         return tensorDimOrder;
+    }
+    
+    /**
+     * Get the parent TensorManager of this tensor
+     * @return the parent TensorManager
+     */
+    public TensorManager getManager() {
+    	return manager;
     }
     
     /**

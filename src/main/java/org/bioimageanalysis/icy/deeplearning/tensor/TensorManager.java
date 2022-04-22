@@ -133,6 +133,20 @@ public class TensorManager implements AutoCloseable {
 	public List<Tensor> getTensorList(){
 		return this.tensors;
 	}
+	
+	/**
+	 * Add tensor to list of tensors owned by this tensor manager. REgard that the parent
+	 * TensorManager of the added tensor must be the same as the tensorManager instance.
+	 * @param tt
+	 * 	tensor to be added
+	 */
+	public void addTensorToList(Tensor tt) {
+		if (tt.getManager() != this) {
+			throw new IllegalArgumentException("The input tensor parent Tensormanager must "
+					+ "be the same as the TensorManager owning the list of tensors.");
+		}
+		tensors.add(tt);
+	}
 
 	@Override
 	/**
