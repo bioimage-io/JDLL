@@ -6,6 +6,7 @@ package org.bioimageanalysis.icy.deeplearning.utils;
 import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.Enumeration;
@@ -116,26 +117,25 @@ public class EngineLoader  extends ClassLoader{
 	
 	/**
 	 * Load the needed JAR files into a child ClassLoader of the 
-	 * ContextClassLoader
+	 * ContextClassLoader.The JAR files needed are the JARs that
+	 * contain the engine and the JAR containing this class
+	 * @throws URISyntaxException if there is an error creating an URL
+	 * @throws MalformedURLException if theURL is incorrect
 	 */
-	private void loadClasses() {
+	private void loadClasses() throws URISyntaxException, MalformedURLException {
 		// If the ClassLoader was already created, use it
 		if (loadedEngines.get(majorVersion) != null) {
 			this.engineClassloader = loadedEngines.get(majorVersion);
 			return;
 		}
-		try {
-			URL[] urls = new URL[new File(this.enginePath).listFiles().length];
-			int c = 0;
-			for (File ff : new File(this.enginePath).listFiles()) {
-				urls[c ++] = ff.toURI().toURL();
-			}
-		    this.engineClassloader = new URLClassLoader(urls, this.icyClassloader);
-		} 
-		catch (MalformedURLException e) 
-		{
-		    // TODO refine exception
+		URL[] urls = new URL[new File(this.enginePath).listFiles().length + 1];
+		int c = 0;
+		for (File ff : new File(this.enginePath).listFiles()) {
+			urls[c ++] = ff.toURI().toURL();
 		}
+		urls[c] = EngineLoader.class.getProtectionDomain().getCodeSource().getLocation().toURI().toURL();
+	    this.engineClassloader = new URLClassLoader(urls, this.icyClassloader);
+		
 		loadedEngines.put(this.majorVersion, this.engineClassloader);
 	}
 	

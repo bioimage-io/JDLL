@@ -15,12 +15,12 @@ public class TensorAPIManager {
 	
 	
 	/**
-	 * Method that changes the backend of all the tensors to buffer, so they can be transerred from
+	 * Method that changes the backend of all the tensors to buffer, so they can be transferred from
 	 * one API to another one
 	 * @param inputs
 	 * 	list of tensor inputs
 	 */
-	public static void prepareInputTensors(List<Tensor> inputs) {
+	public static void tensorsAsBuffers(List<Tensor> inputs) {
 		for (Tensor tt : inputs) {
 			try {
 				tt.array2buffer();
@@ -29,5 +29,19 @@ public class TensorAPIManager {
 			}
 		}
 	}
-
+	/**
+	 * Method that changes the backend of all the tensors to NDArrays, so they can be managed
+	 * easily by the user to do operations in a Numpy-like manner
+	 * @param inputs
+	 * 	list of tensor inputs
+	 */
+	public static void tensorsAsNDArrays(List<Tensor> inputs) {
+		for (Tensor tt : inputs) {
+			try {
+				tt.buffer2array();;
+			} catch (IllegalArgumentException ex) {
+				tt.getDataAsNDArray();
+			}
+		}
+	}
 }
