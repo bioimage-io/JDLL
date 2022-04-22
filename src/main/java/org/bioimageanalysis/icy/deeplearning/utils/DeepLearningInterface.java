@@ -3,10 +3,34 @@ package org.bioimageanalysis.icy.deeplearning.utils;
 import java.util.List;
 
 import org.bioimageanalysis.icy.deeplearning.tensor.Tensor;
+import org.bioimageanalysis.icy.deeplearning.tensor.TensorAPIManager;
 import org.bioimageanalysis.icy.deeplearning.exceptions.LoadModelException;
 import org.bioimageanalysis.icy.deeplearning.exceptions.RunModelException;
 
 public interface DeepLearningInterface {
+	
+	/**
+	 * Default method to run an external Deep Learning framework (engine). It converts first converts
+	 * the tensor lists from API version agnostic Buffer based tensors into API version dependent
+	 * NDArray based tensors.
+	 * @param inputTensors
+	 * 	list containing the input tensors
+	 * @param outputTensors
+	 * 	list containing only the information about output tensors
+	 * @return
+	 * 	output tensors produced by the model
+	 * @throws Exception if there is an error in the execution of the model
+	 */
+	default List<Tensor> runEngine(List<Tensor> inputTensors, List<Tensor> outputTensors) throws RunModelException {
+		// Convert the lists of tensors, which have to be using Buffers as backend, into
+		// a list of tensors using the corresponding API version NDArrays as backend
+		TensorAPIManager.tensorsAsBuffers(inputTensors);
+		TensorAPIManager.tensorsAsBuffers(outputTensors);
+		outputTensors = run(inputTensors, outputTensors);
+		TensorAPIManager.tensorsAsBuffers(outputTensors);
+		return outputTensors;
+		
+	}
 	
 	/**
 	 * Method that the interface implements to make inference.
