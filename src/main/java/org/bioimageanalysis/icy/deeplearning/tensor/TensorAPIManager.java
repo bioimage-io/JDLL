@@ -1,5 +1,7 @@
 package org.bioimageanalysis.icy.deeplearning.tensor;
 
+import java.util.List;
+
 /**
  * Class used to convert tensors that are defined in a particular API version into the API
  * version needed to execute the model. 
@@ -13,6 +15,12 @@ public class TensorAPIManager {
 	
 	
 	
-	public static void convertListOfTensors
+	public static void prepareMainSoftwareTensors(List<Tensor> inputs) {
+		for (Tensor tt : inputs) {
+			try {
+				TensorManager.
+			}
+		}
+	}
 
 }

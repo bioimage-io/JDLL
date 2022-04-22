@@ -47,6 +47,10 @@ public final class Tensor
 	 */
 	private DataType dType;
 	/**
+     * {@link TensorManager} that needs to be associated with each tensor
+	 */
+	private TensorManager manager;
+	/**
 	 * TODO make a more robust case for shape
 	 * Shape of the tensor
 	 */
@@ -61,8 +65,10 @@ public final class Tensor
 	 * 	String containing the axes order of the tensor. For example: "bcyx"
 	 * @param data
 	 * 	data structure similar to a Numpy array that contains all tensor numbers
+     * @param manager
+     * 	{@link TensorManager} that needs to be associated with each tensor
 	 */
-    private Tensor(String tensorName, String axes, NDArray data)
+    private Tensor(String tensorName, String axes, NDArray data, TensorManager manager)
     {
     	this.tensorName = tensorName;
     	this.axesString = axes;
@@ -70,6 +76,7 @@ public final class Tensor
     	this.data = data;
     	dType = data.getDataType();
     	setShape();
+    	this.manager = manager;
     }
     
     /**
@@ -81,9 +88,11 @@ public final class Tensor
 	 * 	String containing the axes order of the tensor. For example: "bcyx"
 	 * @param data
 	 * 	data structure similar to a Numpy array that contains all tensor numbers
+     * @param manager
+     * 	{@link TensorManager} that needs to be associated with each tensor
      * @return the tensor
      */
-    public static Tensor build(String tensorName, String axes, NDArray data)
+    public static Tensor build(String tensorName, String axes, NDArray data, TensorManager manager)
     {
     	if (data == null)
     		throw new IllegalArgumentException("Trying to create tensor from an empty NDArray");
@@ -97,9 +106,17 @@ public final class Tensor
 	 * 	name of the tensor as defined by the model
 	 * @param axes
 	 * 	String containing the axes order of the tensor. For example: "bcyx"
+     * @param manager
+     * 	{@link TensorManager} that needs to be associated with each tensor
      * @return the tensor
      */
-    public static Tensor buildEmptyTensor(String tensorName, String axes)
+    /**
+     * 
+     * @param tensorName
+     * @param axes
+     * @return
+     */
+    public static Tensor buildEmptyTensor(String tensorName, String axes, TensorManager manager)
     {
     	return new Tensor(tensorName, axes, null);
     }
@@ -235,11 +252,11 @@ public final class Tensor
     	// The tensor has to be first initialized with a NDArray as the backend.
     	// They cannot be initialized with Buffer
     	if (shape == null)
-    		throw new IllegalArgumentException("The tensor has to be initialized with an NDArray"
+    		throw new IllegalArgumentException("The tensor '" + this.tensorName + "' has to be initialized with an NDArray"
     				+ " first, using: tensor.setNDArrayData(ndarray)");
     	// If there already exist some information as the backend, throw an exception
     	if (bufferData != null && data != null) {
-    		throw new IllegalArgumentException("This tensor already contains data. The data"
+    		throw new IllegalArgumentException("This tensor  already contains data. The data"
     				+ " of a tensor cannot be changed by setting another object as the backend."
     				+ " In order to modify a tensor, the backend NDArray has to be modified.");
     	}

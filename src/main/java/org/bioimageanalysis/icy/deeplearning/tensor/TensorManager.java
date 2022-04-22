@@ -7,6 +7,8 @@ import java.nio.DoubleBuffer;
 import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
 import java.nio.LongBuffer;
+import java.util.ArrayList;
+import java.util.List;
 
 import ai.djl.ndarray.NDArray;
 import ai.djl.ndarray.NDManager;
@@ -29,6 +31,10 @@ public class TensorManager implements AutoCloseable {
 	 * Unique identifier of the manager
 	 */
 	private String identifier;
+	/**
+	 * List of tensors associated with this TensorManager
+	 */
+	private List<Tensor> tensors = new ArrayList<Tensor>();
 
 	/**
 	 * Manager that is needed to create Icy Tensors
