@@ -10,5 +10,9 @@ package org.bioimageanalysis.icy.deeplearning.tensor;
  *
  */
 public class TensorAPIManager {
+	
+	
+	
+	public static void convertListOfTensors
 
 }

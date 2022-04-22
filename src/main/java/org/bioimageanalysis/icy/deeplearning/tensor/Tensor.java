@@ -1,5 +1,6 @@
 package org.bioimageanalysis.icy.deeplearning.tensor;
 
+import java.nio.Buffer;
 import java.util.List;
 
 import ai.djl.ndarray.NDArray;
@@ -31,6 +32,10 @@ public final class Tensor
 	 * Software agnostic representation of the tensor data
 	 */
 	private NDArray data;
+	/** 
+	 * Data of the tensor stored in a buffer 
+	 */
+	private Buffer dataBuffer;
 	/**
 	 * Whether the tensor represents an image or not
 	 */
@@ -62,6 +67,7 @@ public final class Tensor
     	this.axesString = axes;
     	this.axesArray = convertToTensorDimOrder(axes);
     	this.data = data;
+    	setShape();
     }
     
     /**
@@ -77,6 +83,8 @@ public final class Tensor
      */
     public static Tensor build(String tensorName, String axes, NDArray data)
     {
+    	if (data == null)
+    		throw new IllegalArgumentException("Trying to create tensor from an empty NDArray");
     	return new Tensor(tensorName, axes, data);
     }
     
@@ -211,7 +219,10 @@ public final class Tensor
      * 	the numbers of the tensor in a Numpy array like structure
      */
     public void setData(NDArray data) {
+    	if (data == null)
+    		throw new IllegalArgumentException("Trying to create tensor from an empty NDArray");
     	this.data = data;
+    	setShape();
     }
     
     /**
@@ -223,12 +234,15 @@ public final class Tensor
     }
     
     /**
-     * Set the shape of the tensor
-     * @param shape
-     * 	shape of the tensor
+     * Set the shape of the tensor from the NDArray shape
      */
-    public void setShape(int[] shape) {
-    	this.shape = shape;
+    private void setShape() {
+    	if (data == null)
+    		throw new IllegalArgumentException("Trying to create tensor from an empty NDArray");
+    	long[] longShape = data.getShape().getShape();
+    	shape = new int[longShape.length];
+    	for (int i = 0; i < shape.length; i ++)
+    		shape[i] = (int) longShape[i];
     }
     
     /**
