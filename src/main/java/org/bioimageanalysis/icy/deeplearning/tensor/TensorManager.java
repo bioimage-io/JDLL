@@ -1,8 +1,16 @@
 package org.bioimageanalysis.icy.deeplearning.tensor;
 
 
+import java.nio.Buffer;
+import java.nio.ByteBuffer;
+import java.nio.DoubleBuffer;
+import java.nio.FloatBuffer;
+import java.nio.IntBuffer;
+import java.nio.LongBuffer;
+
 import ai.djl.ndarray.NDArray;
 import ai.djl.ndarray.NDManager;
+import ai.djl.ndarray.types.DataType;
 
 /**
  * Class created to mimic the Deep Java Library NDManager. that is needed 
@@ -95,6 +103,38 @@ public class TensorManager implements AutoCloseable {
 		}
 		return Tensor.build(tensorName, axes, data);
 	}
+    
+    /**
+     * Method that converts the backend data of the tensor from an {@link NDArray}
+     * object to a {@link Buffer} object. Regard that after the data is converted
+     * into a Buffer, the NDArray is closed and set to null.
+     */
+    public static void array2buffer(Tensor tensor) {
+    	Buffer dataBuffer;
+    	if (tensor.getDataType() == DataType.INT8 || tensor.getDataType() == DataType.INT8)
+    		dataBuffer = ByteBuffer.wrap(tensor.getDataAsNDArray().toByteArray());
+    	else if (tensor.getDataType() == DataType.FLOAT64)
+	    	dataBuffer = DoubleBuffer.wrap(tensor.getDataAsNDArray().toDoubleArray());
+    	else if (tensor.getDataType() == DataType.FLOAT32 || tensor.getDataType() == DataType.FLOAT16)
+	    	dataBuffer = FloatBuffer.wrap(tensor.getDataAsNDArray().toFloatArray());
+    	else if (tensor.getDataType() == DataType.INT32)
+	    	dataBuffer = IntBuffer.wrap(tensor.getDataAsNDArray().toIntArray());
+    	else if (tensor.getDataType() == DataType.INT64)
+	    	dataBuffer = LongBuffer.wrap(tensor.getDataAsNDArray().toLongArray());
+    	else 
+    		throw new IllegalArgumentException("Not supported data type: " + tensor.getDataType().toString());
+    	tensor.getDataAsNDArray().close();
+    	tensor.setNDArrayData(null);
+    }
+    
+    /**
+     * Method that converts the backend data of the tensor from an {@link Buffer} 
+     * object to a {@link NDArray} object. Regard that after the data is converted
+     * into a NDArray, the buffer is closed and set to null.
+     */
+    public void buffer2array () {
+    	
+    }
 	
 	/**
 	 * Retrieves the NDManager used to create tensors

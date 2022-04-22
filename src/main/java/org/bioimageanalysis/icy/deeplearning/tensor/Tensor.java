@@ -1,11 +1,6 @@
 package org.bioimageanalysis.icy.deeplearning.tensor;
 
 import java.nio.Buffer;
-import java.nio.ByteBuffer;
-import java.nio.DoubleBuffer;
-import java.nio.FloatBuffer;
-import java.nio.IntBuffer;
-import java.nio.LongBuffer;
 import java.util.List;
 
 import ai.djl.ndarray.NDArray;
@@ -107,37 +102,6 @@ public final class Tensor
     {
     	return new Tensor(tensorName, axes, null);
     }
-    
-    /**
-     * Method that converts the backend data of the tensor from an {@link NDArray}
-     * object to a {@link Buffer} object. Regard that after the data is converted
-     * into a Buffer, the NDArray is closed and set to null.
-     */
-    public void array2buffer() {
-    	if (data.getDataType() == DataType.INT8 || data.getDataType() == DataType.INT8)
-    		dataBuffer = ByteBuffer.wrap(data.toByteArray());
-    	else if (data.getDataType() == DataType.FLOAT64)
-	    	dataBuffer = DoubleBuffer.wrap(data.toDoubleArray());
-    	else if (data.getDataType() == DataType.FLOAT32 || data.getDataType() == DataType.FLOAT16)
-	    	dataBuffer = FloatBuffer.wrap(data.toFloatArray());
-    	else if (data.getDataType() == DataType.INT32)
-	    	dataBuffer = IntBuffer.wrap(data.toIntArray());
-    	else if (data.getDataType() == DataType.INT64)
-	    	dataBuffer = LongBuffer.wrap(data.toLongArray());
-    	else 
-    		throw new IllegalArgumentException("Not supported data type: " + data.getDataType().toString());
-    	data.close();
-    	data = null;
-    }
-    
-    /**
-     * Method that converts the backend data of the tensor from an {@link Buffer} 
-     * object to a {@link NDArray} object. Regard that after the data is converted
-     * into a NDArray, the buffer is closed and set to null.
-     */
-    public void buffer2array () {
-    	
-    }
 
     /**
      * Convert the String representation of the axes order into an int array 
@@ -237,8 +201,8 @@ public final class Tensor
      * GEt the data type of the tensor
      * @return the data type of the tensor
      */
-    public String getDType() {
-    	return dType.toString();
+    public DataType getDataType() {
+    	return dType;
     }
     
     /**
@@ -246,9 +210,11 @@ public final class Tensor
      * @param data
      * 	the numbers of the tensor in a Numpy array like structure
      */
-    public void setData(NDArray data) {
-    	if (data == null)
-    		throw new IllegalArgumentException("Trying to create tensor from an empty NDArray");
+    public void setNDArrayData(NDArray data) {
+    	if (data == null && this.data != null) {
+    		this.data.close();
+    		return;
+    	}
     	this.data = data;
     	setShape();
     	dType = data.getDataType();
@@ -264,7 +230,7 @@ public final class Tensor
     	else if (data == null)
     		throw new IllegalArgumentException("If you want to retrieve the tensor data as an NDArray,"
     				+ " please first transform the tensor data into an NDArray using: "
-    				+ "tensor.buffer2array()");
+    				+ "TensorManager.buffer2array(tensor)");
     	return this.data;
     }
     
@@ -278,7 +244,7 @@ public final class Tensor
     	else if (dataBuffer == null)
     		throw new IllegalArgumentException("If you want to retrieve the tensor data as a Buffer,"
     				+ " please first transform the tensor data into a Buffer using: "
-    				+ "tensor.buffer2array()");
+    				+ "TensorManager.buffer2array(tensor)");
     	return this.dataBuffer;
     }
     
@@ -318,6 +284,7 @@ public final class Tensor
 	   	axesArray = null;
 	   	if (data != null)
 	   		data.close();
+	   	this.dataBuffer = null;
     }
     
     /**
