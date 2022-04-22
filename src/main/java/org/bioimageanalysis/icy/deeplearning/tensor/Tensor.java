@@ -221,6 +221,26 @@ public final class Tensor
     }
     
     /**
+     * Set the data structure of the tensor that contains the numbers.
+     * @param data
+     * 	the numbers of the tensor in a buffer structure
+     */
+    public void setBufferData(Buffer bufferData) {
+    	// The tensor has to be first initialized with a NDArray as the backend.
+    	// They cannot be initialized with Buffer
+    	if (shape == null)
+    		throw new IllegalArgumentException("The tensor has to be initialized with an NDArray"
+    				+ " first, using: tensor.setNDArrayData(ndarray)");
+    	// If there already exist some information as the backend, throw an exception
+    	if (bufferData != null && data != null) {
+    		throw new IllegalArgumentException("This tensor already contains data. The data"
+    				+ " of a tensor cannot be changed by setting another object as the backend."
+    				+ " In order to modify a tensor, the backend NDArray has to be modified.");
+    	}
+    	this.dataBuffer = bufferData;
+    }
+    
+    /**
      * REturn the data in a software agnostic way using DJL NDArrays
      * @return the data of the tensor as a NDArray
      */
