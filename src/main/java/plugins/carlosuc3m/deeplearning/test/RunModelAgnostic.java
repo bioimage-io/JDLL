@@ -60,7 +60,7 @@ public class RunModelAgnostic  extends EzPlug
 	    		model.loadModel();
 	            System.out.println("Model loaded");
 	            outTensors = model.runModel(inTensors, outTensors);
-	            Sequence rebuiltSequence = outTensors.get(0).getData();
+	            Sequence rebuiltSequence = outTensors.get(0).getDataAsNDArray();
 	            rebuiltSequence.updateChannelsBounds();
 	            addSequence(rebuiltSequence);
 	            System.out.println("End Execution");
@@ -69,7 +69,7 @@ public class RunModelAgnostic  extends EzPlug
 	    		model.loadModel();
 	            System.out.println("Model loaded");
 	            outTensors2 = model.runModel(inTensors, outTensors2);
-	            Sequence rebuiltSequence2 = outTensors.get(0).getData();
+	            Sequence rebuiltSequence2 = outTensors.get(0).getDataAsNDArray();
 	            rebuiltSequence2.updateChannelsBounds();
 	            addSequence(rebuiltSequence2);
 	            System.out.println("End Execution");

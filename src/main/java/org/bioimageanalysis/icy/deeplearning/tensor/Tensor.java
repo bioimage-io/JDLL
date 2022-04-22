@@ -258,8 +258,18 @@ public final class Tensor
      * REturn the data in a software agnostic way using DJL NDArrays
      * @return the data of the tensor as a buffer
      */
-    public NDArray getData() {
+    public NDArray getDataAsNDArray() {
+    	if (data == null && dataBuffer == null)
+    		throw new IllegalArgumentException();
     	return this.data;
+    }
+    
+    /**
+     * REturn the data in a software agnostic way using DJL NDArrays
+     * @return the data of the tensor as a buffer
+     */
+    public NDArray getDataAsbuffer() {
+    	return this.dataBuffer;
     }
     
     /**
