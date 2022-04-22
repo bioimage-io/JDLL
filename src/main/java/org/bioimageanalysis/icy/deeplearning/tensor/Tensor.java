@@ -256,19 +256,29 @@ public final class Tensor
     
     /**
      * REturn the data in a software agnostic way using DJL NDArrays
-     * @return the data of the tensor as a buffer
+     * @return the data of the tensor as a NDArray
      */
     public NDArray getDataAsNDArray() {
     	if (data == null && dataBuffer == null)
-    		throw new IllegalArgumentException();
+    		throw new IllegalArgumentException("Tensor '" + this.tensorName + "' is empty.");
+    	else if (data == null)
+    		throw new IllegalArgumentException("If you want to retrieve the tensor data as an NDArray,"
+    				+ " please first transform the tensor data into an NDArray using: "
+    				+ "tensor.buffer2array()");
     	return this.data;
     }
     
     /**
-     * REturn the data in a software agnostic way using DJL NDArrays
+     * REturn the data in a software agnostic way using Buffers
      * @return the data of the tensor as a buffer
      */
-    public NDArray getDataAsbuffer() {
+    public Buffer getDataAsbuffer() {
+    	if (data == null && dataBuffer == null)
+    		throw new IllegalArgumentException("Tensor '" + this.tensorName + "' is empty.");
+    	else if (dataBuffer == null)
+    		throw new IllegalArgumentException("If you want to retrieve the tensor data as a Buffer,"
+    				+ " please first transform the tensor data into a Buffer using: "
+    				+ "tensor.buffer2array()");
     	return this.dataBuffer;
     }
     
