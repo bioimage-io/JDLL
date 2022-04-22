@@ -155,108 +155,6 @@ public final class Tensor
     	setBufferData(null);
     	setNDArrayData(ndarray);
     }
-
-    /**
-     * Convert the String representation of the axes order into an int array 
-     * representation, easier to handle by the program
-     * 
-     * @param dimOrder
-     * 	String representation of the axes
-     * @return the int[] representation of the axes
-     * @throws IllegalArgumentException if the String representation contains
-     * repeated axes
-     */
-    public static int[] convertToTensorDimOrder(String dimOrder) throws IllegalArgumentException
-    {
-    	dimOrder = dimOrder.toLowerCase();
-        int[] tensorDimOrder = new int[dimOrder.length()];
-        int hasB = 0, hasI = 0, hasT = 0, hasX = 0, hasY = 0, hasZ = 0, hasC = 0;
-        for (int i = 0; i < dimOrder.length(); i++)
-        {
-            switch (dimOrder.charAt(i))
-            {
-                case 'b':
-                    tensorDimOrder[i] = 4;
-                    hasB = 1;
-                    break;
-                case 'i':
-                    tensorDimOrder[i] = 4;
-                    hasI = 1;
-                    break;
-                case 't':
-                    tensorDimOrder[i] = 4;
-                    hasT = 1;
-                    break;
-                case 'z':
-                    tensorDimOrder[i] = 3;
-                    hasZ += 1;
-                    break;
-                case 'c':
-                    tensorDimOrder[i] = 2;
-                    hasC += 1;
-                    break;
-                case 'y':
-                    tensorDimOrder[i] = 1;
-                    hasY += 1;
-                    break;
-                case 'x':
-                    tensorDimOrder[i] = 0;
-                    hasX += 1;
-                    break;
-                default:
-                    throw new IllegalArgumentException(
-                            "Illegal axis for tensor dim order " + dimOrder + " (" + dimOrder.charAt(i)
-                                    + ")");
-            }
-        }
-        if (hasB + hasI + hasT > 1)
-            throw new IllegalArgumentException("Has at least two of b, i or t at the same time.");
-        else if (hasY > 1 || hasX > 1 || hasC > 1 || hasZ > 1)
-            throw new IllegalArgumentException("There cannot be repeated dimensions in the axes "
-            		+ "order as it is specified for this tensor (" + dimOrder + ").");
-        return tensorDimOrder;
-    }
-    
-    /**
-     * Get the name of the tensor
-     * @return the name of the tensor
-     */
-    public String getName() {
-    	return this.tensorName;
-    }
-    
-    /**
-     * Return the array containing the int representation of the axes order
-     * @return the axes order in int[] representation
-     */
-    public int[] getAxesOrder() {
-    	return this.axesArray;
-    }
-    
-    /**
-     * Set whether the tensor represents an image or not
-     * @param isImage
-     * 	if the tensor is an image or not
-     */
-    public void setIsImage(boolean isImage) {
-    	this.isImage = isImage;
-    }
-    
-    /**
-     * Whether the tensor represents an image or not
-     * @return true if the tensor represents an image, false otherwise
-     */
-    public boolean isImage() {
-    	return isImage;
-    }
-    
-    /**
-     * GEt the data type of the tensor
-     * @return the data type of the tensor
-     */
-    public DataType getDataType() {
-    	return dType;
-    }
     
     /**
      * Set the data structure of the tensor that contains the numbers
@@ -340,22 +238,6 @@ public final class Tensor
     	for (int i = 0; i < shape.length; i ++)
     		shape[i] = (int) longShape[i];
     }
-    
-    /**
-     * REturns the shape of the tensor
-     * @return the shape of the tensor
-     */
-    public int[] getShape() {
-    	return shape;
-    }
-    
-    /**
-     * REtrieve the axes order in String form
-	 * @return the axesString
-	 */
-	public String getAxesString() {
-		return axesString;
-	}
 
 	/**
      * Empty the tensor information
@@ -395,6 +277,124 @@ public final class Tensor
         	dimensionSizes[i] = (long) shapeArr[i];
         }
         return new Shape(dimensionSizes);
+    }
+
+    /**
+     * Convert the String representation of the axes order into an int array 
+     * representation, easier to handle by the program
+     * 
+     * @param dimOrder
+     * 	String representation of the axes
+     * @return the int[] representation of the axes
+     * @throws IllegalArgumentException if the String representation contains
+     * repeated axes
+     */
+    public static int[] convertToTensorDimOrder(String dimOrder) throws IllegalArgumentException
+    {
+    	dimOrder = dimOrder.toLowerCase();
+        int[] tensorDimOrder = new int[dimOrder.length()];
+        int hasB = 0, hasI = 0, hasT = 0, hasX = 0, hasY = 0, hasZ = 0, hasC = 0;
+        for (int i = 0; i < dimOrder.length(); i++)
+        {
+            switch (dimOrder.charAt(i))
+            {
+                case 'b':
+                    tensorDimOrder[i] = 4;
+                    hasB = 1;
+                    break;
+                case 'i':
+                    tensorDimOrder[i] = 4;
+                    hasI = 1;
+                    break;
+                case 't':
+                    tensorDimOrder[i] = 4;
+                    hasT = 1;
+                    break;
+                case 'z':
+                    tensorDimOrder[i] = 3;
+                    hasZ += 1;
+                    break;
+                case 'c':
+                    tensorDimOrder[i] = 2;
+                    hasC += 1;
+                    break;
+                case 'y':
+                    tensorDimOrder[i] = 1;
+                    hasY += 1;
+                    break;
+                case 'x':
+                    tensorDimOrder[i] = 0;
+                    hasX += 1;
+                    break;
+                default:
+                    throw new IllegalArgumentException(
+                            "Illegal axis for tensor dim order " + dimOrder + " (" + dimOrder.charAt(i)
+                                    + ")");
+            }
+        }
+        if (hasB + hasI + hasT > 1)
+            throw new IllegalArgumentException("Has at least two of b, i or t at the same time.");
+        else if (hasY > 1 || hasX > 1 || hasC > 1 || hasZ > 1)
+            throw new IllegalArgumentException("There cannot be repeated dimensions in the axes "
+            		+ "order as it is specified for this tensor (" + dimOrder + ").");
+        return tensorDimOrder;
+    }
+    
+    /**
+     * Get the name of the tensor
+     * @return the name of the tensor
+     */
+    public String getName() {
+    	return this.tensorName;
+    }
+    
+    /**
+     * REturns the shape of the tensor
+     * @return the shape of the tensor
+     */
+    public int[] getShape() {
+    	return shape;
+    }
+    
+    /**
+     * REtrieve the axes order in String form
+	 * @return the axesString
+	 */
+	public String getAxesString() {
+		return axesString;
+	}
+    
+    /**
+     * Return the array containing the int representation of the axes order
+     * @return the axes order in int[] representation
+     */
+    public int[] getAxesOrder() {
+    	return this.axesArray;
+    }
+    
+    /**
+     * Set whether the tensor represents an image or not
+     * @param isImage
+     * 	if the tensor is an image or not
+     */
+    public void setIsImage(boolean isImage) {
+    	this.isImage = isImage;
+    }
+    
+    /**
+     * Whether the tensor represents an image or not
+     * @return true if the tensor represents an image, false otherwise
+     */
+    public boolean isImage() {
+    	return isImage;
+    }
+    
+    /**
+     * GEt the data type of the tensor
+     * @return the data type of the tensor
+     */
+    public DataType getDataType() {
+    	return dType;
     }
     
     public static void main(String[] args) {
