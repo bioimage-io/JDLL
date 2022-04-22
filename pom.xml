@@ -26,19 +26,6 @@
 	</build>
 	<dependencies>
 		<dependency>
-			<groupId>org.bioimageanalysis.icy</groupId>
-			<artifactId>ezplug</artifactId>
-		</dependency>
-		<dependency>
-			<groupId>org.bioimageanalysis.icy</groupId>
-			<artifactId>protocols</artifactId>
-		</dependency>
-		<dependency>
-			<groupId>org.bioimageanalysis.icy</groupId>
-			<artifactId>tensor-flow-manager</artifactId>
-			<version>1.0.0</version>
-		</dependency>
-		<dependency>
 		    <groupId>ai.djl</groupId>
 		    <artifactId>api</artifactId>
 		    <version>0.15.0</version>
