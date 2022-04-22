@@ -3,7 +3,8 @@ package org.bioimageanalysis.icy.deeplearning.utils;
 import java.io.File;
 import java.util.Objects;
 
-import org.bioimageanalysis.icy.system.PlatformDetection;
+import org.bioimageanalysis.icy.deeplearning.system.PlatformDetection;
+
 
 /**
  * Class to create an object that contains all the information about a 
