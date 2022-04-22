@@ -1,6 +1,11 @@
 package org.bioimageanalysis.icy.deeplearning.tensor;
 
 import java.nio.Buffer;
+import java.nio.ByteBuffer;
+import java.nio.DoubleBuffer;
+import java.nio.FloatBuffer;
+import java.nio.IntBuffer;
+import java.nio.LongBuffer;
 import java.util.List;
 
 import ai.djl.ndarray.NDArray;
@@ -113,6 +118,42 @@ public final class Tensor
     public static Tensor buildEmptyTensor(String tensorName, String axes, TensorManager manager)
     {
     	return new Tensor(tensorName, axes, null, manager);
+    }
+    
+    /**
+     * Method that converts the backend data of the tensor from an {@link NDArray}
+     * object to a {@link Buffer} object. Regard that after the data is converted
+     * into a Buffer, the NDArray is closed and set to null.
+     */
+    public void array2buffer() {
+    	Buffer dataBuffer;
+    	if (getDataType() == DataType.INT8 || getDataType() == DataType.INT8)
+    		dataBuffer = ByteBuffer.wrap(getDataAsNDArray().toByteArray());
+    	else if (getDataType() == DataType.FLOAT64)
+	    	dataBuffer = DoubleBuffer.wrap(getDataAsNDArray().toDoubleArray());
+    	else if (getDataType() == DataType.FLOAT32 || getDataType() == DataType.FLOAT16)
+	    	dataBuffer = FloatBuffer.wrap(getDataAsNDArray().toFloatArray());
+    	else if (getDataType() == DataType.INT32)
+	    	dataBuffer = IntBuffer.wrap(getDataAsNDArray().toIntArray());
+    	else if (getDataType() == DataType.INT64)
+	    	dataBuffer = LongBuffer.wrap(getDataAsNDArray().toLongArray());
+    	else 
+    		throw new IllegalArgumentException("Not supported data type: " + getDataType().toString());
+    	getDataAsNDArray().close();
+    	setNDArrayData(null);
+    	setBufferData(dataBuffer);
+    }
+    
+    /**
+     * Method that converts the backend data of the tensor from an {@link Buffer} 
+     * object to a {@link NDArray} object. Regard that after the data is converted
+     * into a NDArray, the buffer is closed and set to null.
+     */
+    public void buffer2array () {
+    	NDArray ndarray = manager.getManager().create(getDataAsbuffer(),
+    			Tensor.ndarrayShapeFromIntArr(getShape()), getDataType());
+    	setBufferData(null);
+    	setNDArrayData(ndarray);
     }
 
     /**
