@@ -89,6 +89,9 @@ public final class Tensor
     	addToList();
     }
     
+    /**
+     * Add tensor to list of tensors owned by the parent TensorManager
+     */
     private void addToList() {
     	List<Tensor> list = manager.getTensorList();
     	Tensor coincidence = getTensorByNameFromList(list, tensorName);
@@ -268,6 +271,14 @@ public final class Tensor
 	   	this.axesString = null;
 	   	this.dType = null;
 	   	this.shape = null;
+	   	int i = 0;
+	   	for (Tensor tt : manager.getTensorList()) {
+	   		if (tt == this) {
+	   			manager.getTensorList().remove(i);
+	   			break;
+	   		}
+	   		i ++;
+	   	}
     }
     
     /**
