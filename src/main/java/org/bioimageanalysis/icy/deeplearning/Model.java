@@ -141,7 +141,9 @@ public class Model {
 		TensorAPIManager.tensorsAsBuffers(inTensors);
 		TensorAPIManager.tensorsAsBuffers(outTensors);
 		DeepLearningInterface engineInstance = getEngineClassLoader().getEngineInstance();
-		return engineInstance.run(inTensors, outTensors);
+		outTensors = engineInstance.runEngine(inTensors, outTensors);
+		TensorAPIManager.tensorsAsNDArrays(outTensors);
+		return outTensors;
 	}
 	
 	/**
