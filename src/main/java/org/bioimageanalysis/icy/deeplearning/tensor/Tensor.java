@@ -96,7 +96,7 @@ public final class Tensor
     {
     	if (data == null)
     		throw new IllegalArgumentException("Trying to create tensor from an empty NDArray");
-    	return new Tensor(tensorName, axes, data);
+    	return new Tensor(tensorName, axes, data, manager);
     }
     
     /**
@@ -110,15 +110,9 @@ public final class Tensor
      * 	{@link TensorManager} that needs to be associated with each tensor
      * @return the tensor
      */
-    /**
-     * 
-     * @param tensorName
-     * @param axes
-     * @return
-     */
     public static Tensor buildEmptyTensor(String tensorName, String axes, TensorManager manager)
     {
-    	return new Tensor(tensorName, axes, null);
+    	return new Tensor(tensorName, axes, null, manager);
     }
 
     /**
