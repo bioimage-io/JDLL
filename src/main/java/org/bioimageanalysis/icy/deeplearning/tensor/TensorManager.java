@@ -126,8 +126,12 @@ public class TensorManager implements AutoCloseable {
 		return identifier;
 	}
 	
-	public List<String> getTensorList(){
-		
+	/**
+	 * Get all the tensors created by the TensorManager
+	 * @return list of tensors associated to the TensorManager
+	 */
+	public List<Tensor> getTensorList(){
+		return this.tensors;
 	}
 
 	@Override

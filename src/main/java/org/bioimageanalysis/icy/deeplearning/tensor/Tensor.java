@@ -7,6 +7,7 @@ import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
 import java.nio.LongBuffer;
 import java.util.List;
+import java.util.Objects;
 
 import ai.djl.ndarray.NDArray;
 import ai.djl.ndarray.NDManager;
@@ -75,6 +76,9 @@ public final class Tensor
 	 */
     private Tensor(String tensorName, String axes, NDArray data, TensorManager manager)
     {
+    	Objects.requireNonNull(tensorName, "'tensorName' field should not be empty");
+    	Objects.requireNonNull(axes, "'axes' field should not be empty");
+    	Objects.requireNonNull(manager, "'manager' field should not be empty");
     	this.tensorName = tensorName;
     	this.axesString = axes;
     	this.axesArray = convertToTensorDimOrder(axes);
@@ -82,6 +86,12 @@ public final class Tensor
     	dType = data.getDataType();
     	setShape();
     	this.manager = manager;
+    }
+    
+    private void addToList() {
+    	List<Tensor> list = manager.getTensorList();
+    	getTensorByNameFromList(list, tensorName);
+    	
     }
     
     /**
