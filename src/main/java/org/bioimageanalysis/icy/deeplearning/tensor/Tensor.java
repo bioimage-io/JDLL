@@ -6,6 +6,7 @@ import java.util.List;
 import ai.djl.ndarray.NDArray;
 import ai.djl.ndarray.NDManager;
 import ai.djl.ndarray.types.DataType;
+import ai.djl.ndarray.types.Shape;
 
 /**
  * Tensors created to interact with a Deep Learning engine while
@@ -322,6 +323,23 @@ public final class Tensor
      */
     public static Tensor getTensorByNameFromList(List<Tensor> lTensors, String name) {
     	return lTensors.stream().filter(pp -> pp.getName().equals(name)).findAny().orElse(null);
+    }
+
+    /**
+     * Creates a tensor shape from an int array
+     * 
+     * @param shapeArr
+     * 	int array with the size of each dimension
+     * @return Shape with the image dimensions in the desired order.
+     */
+    public static Shape ndarrayShapeFromIntArr(int[] shapeArr)
+    {
+        long[] dimensionSizes = new long[shapeArr.length];
+        for (int i = 0; i < dimensionSizes.length; i++)
+        {
+        	dimensionSizes[i] = (long) shapeArr[i];
+        }
+        return new Shape(dimensionSizes);
     }
     
     public static void main(String[] args) {

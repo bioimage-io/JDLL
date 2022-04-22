@@ -111,7 +111,7 @@ public class TensorManager implements AutoCloseable {
      * @param tensor
      * 	tensor to be modified
      */
-    public static void array2buffer(Tensor tensor) {
+    public void array2buffer(Tensor tensor) {
     	Buffer dataBuffer;
     	if (tensor.getDataType() == DataType.INT8 || tensor.getDataType() == DataType.INT8)
     		dataBuffer = ByteBuffer.wrap(tensor.getDataAsNDArray().toByteArray());
@@ -138,22 +138,10 @@ public class TensorManager implements AutoCloseable {
      * 	tensor to be modified
      */
     public void buffer2array (Tensor tensor) {
-    	Buffer dataBuffer;
-    	if (tensor.getDataType() == DataType.INT8 || tensor.getDataType() == DataType.INT8)
-    		dataBuffer = ByteBuffer.wrap(tensor.getDataAsNDArray().toByteArray());
-    	else if (tensor.getDataType() == DataType.FLOAT64)
-	    	dataBuffer = DoubleBuffer.wrap(tensor.getDataAsNDArray().toDoubleArray());
-    	else if (tensor.getDataType() == DataType.FLOAT32 || tensor.getDataType() == DataType.FLOAT16)
-	    	dataBuffer = FloatBuffer.wrap(tensor.getDataAsNDArray().toFloatArray());
-    	else if (tensor.getDataType() == DataType.INT32)
-	    	dataBuffer = IntBuffer.wrap(tensor.getDataAsNDArray().toIntArray());
-    	else if (tensor.getDataType() == DataType.INT64)
-	    	dataBuffer = LongBuffer.wrap(tensor.getDataAsNDArray().toLongArray());
-    	else 
-    		throw new IllegalArgumentException("Not supported data type: " + tensor.getDataType().toString());
-    	tensor.getDataAsNDArray().close();
-    	tensor.setNDArrayData(null);
-    	tensor.setBufferData(dataBuffer);
+    	NDArray ndarray = getManager().create(tensor.getDataAsbuffer(),
+    			Tensor.ndarrayShapeFromIntArr(tensor.getShape()), tensor.getDataType());
+    	tensor.setBufferData(null);
+    	tensor.setNDArrayData(ndarray);
     }
 	
 	/**
