@@ -6,6 +6,7 @@ import java.nio.DoubleBuffer;
 import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
 import java.nio.LongBuffer;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 
@@ -206,7 +207,11 @@ public final class Tensor
     	this.data = data;
     	if (emptyTensor)
     		setShape();
-    	if (data.getShape().eq)
+    	if (!equalShape(data.getShape())) {
+    		throw new IllegalArgumentException("Trying to set an NDArray as the backend of the Tensor "
+    				+ "with a different shape than the Tensor. Tensor shape is: " + Arrays.asList(shape)
+    				+ " and NDArray shape is: " + Arrays.asList(data.getShape().getShape()));
+    	}
     	dType = data.getDataType();
     }
     
