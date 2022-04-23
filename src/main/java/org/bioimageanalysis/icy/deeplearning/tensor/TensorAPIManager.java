@@ -23,6 +23,8 @@ public class TensorAPIManager {
 	public static void tensorsAsBuffers(List<Tensor> inputs) {
 		for (Tensor tt : inputs) {
 			try {
+				if (tt.isEmpty())
+					continue;
 				tt.array2buffer();
 			} catch (IllegalArgumentException ex) {
 				tt.getDataAsBuffer();

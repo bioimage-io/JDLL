@@ -464,6 +464,14 @@ public final class Tensor
     }
     
     /**
+     * Whether the tensor has already been filled with an NDArray or not
+     * @return true if the tensor already has data or false otherwise
+     */
+    public boolean isEmpty() {
+    	return emptyTensor;
+    }
+    
+    /**
      * GEt the data type of the tensor
      * @return the data type of the tensor
      */
