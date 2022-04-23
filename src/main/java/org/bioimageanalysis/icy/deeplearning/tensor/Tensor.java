@@ -106,7 +106,7 @@ public final class Tensor
     private void addToList() {
     	List<Tensor> list = manager.getTensorList();
     	Tensor coincidence = getTensorByNameFromList(list, tensorName);
-    	if (coincidence == null) {
+    	if (coincidence != null) {
     		throw new IllegalArgumentException("There already exists a Tensor called '" + tensorName
     				+ "' in the list of tensors associated to the parent TensorManager. Tensor names"
     				+ " for the same TEnsorManager should be unique.");
