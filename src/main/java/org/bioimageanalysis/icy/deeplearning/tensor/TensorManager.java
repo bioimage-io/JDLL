@@ -52,11 +52,11 @@ public class TensorManager implements AutoCloseable {
 	}
 	
 	/**
-	 * Build the {@link #TensorManager()}
+	 * Build the {@link #TensorManager()}, by default it crates an {@link NDManager}
 	 * @return an instance of TensorManager
 	 */
 	public static TensorManager build() {
-		return new TensorManager(false);
+		return new TensorManager(true);
 	}
 	
 	/**
