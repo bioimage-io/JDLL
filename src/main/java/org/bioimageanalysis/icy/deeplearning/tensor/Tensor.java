@@ -49,6 +49,11 @@ public final class Tensor
 	 */
 	private boolean isImage = true;
 	/**
+	 * Whether the tensor has been created without an NDarray or not. Once
+	 * the NDarray is added, the tensor cannot be empty anymore
+	 */
+	private boolean emptyTensor;
+	/**
 	 * The data type of the tensor
 	 */
 	private DataType dType;
@@ -83,10 +88,15 @@ public final class Tensor
     	this.axesString = axes;
     	this.axesArray = convertToTensorDimOrder(axes);
     	this.data = data;
-    	dType = data.getDataType();
-    	setShape();
     	this.manager = manager;
     	addToList();
+    	if (data != null) {
+    		setShape();
+        	dType = data.getDataType();
+    		emptyTensor = false;
+    	} else {
+    		emptyTensor = true;
+    	}
     }
     
     /**
@@ -194,7 +204,9 @@ public final class Tensor
     				+ " as the NDManager of the tensor TensoManager (tensorManager.getManager()).");
     	}
     	this.data = data;
-    	setShape();
+    	if (emptyTensor)
+    		setShape();
+    	if (data.getShape().eq)
     	dType = data.getDataType();
     }
     
@@ -308,6 +320,23 @@ public final class Tensor
         	dimensionSizes[i] = (long) shapeArr[i];
         }
         return new Shape(dimensionSizes);
+    }
+    
+    /**
+     * If the shape of a tensor is the same as the same  as the shape of this tensor
+     * @param shape
+     * 	the shape of the other tensor
+     * @return whether the tensor has the same shape to this tensor
+     */
+    private boolean equalShape(Shape shape) {
+    	long[] longShape = shape.getShape();
+    	if (longShape.length != this.shape.length)
+    		return false;
+    	for (int i = 0; i < longShape.length; i ++) {
+    		if (((int) longShape[i]) != this.shape[i])
+    			return false;
+    	}
+    	return true;
     }
 
     /**
