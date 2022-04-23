@@ -40,6 +40,8 @@ public class TensorAPIManager {
 	public static void tensorsAsNDArrays(List<Tensor> inputs) {
 		for (Tensor tt : inputs) {
 			try {
+				if (tt.isEmpty())
+					continue;
 				tt.buffer2array();;
 			} catch (IllegalArgumentException ex) {
 				tt.getDataAsNDArray();
