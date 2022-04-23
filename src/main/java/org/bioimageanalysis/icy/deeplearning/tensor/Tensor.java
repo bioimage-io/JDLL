@@ -194,6 +194,7 @@ public final class Tensor
     public void setNDArrayData(NDArray data) {
     	if (data == null && this.data != null) {
     		this.data.close();
+    		this.data = null;
     		return;
     	} else if (dataBuffer != null || this.data != null) {
     		throw new IllegalArgumentException("Tensor '" + tensorName + "' has already "
