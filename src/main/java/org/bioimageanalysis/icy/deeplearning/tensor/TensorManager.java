@@ -1,18 +1,11 @@
 package org.bioimageanalysis.icy.deeplearning.tensor;
 
 
-import java.nio.Buffer;
-import java.nio.ByteBuffer;
-import java.nio.DoubleBuffer;
-import java.nio.FloatBuffer;
-import java.nio.IntBuffer;
-import java.nio.LongBuffer;
 import java.util.ArrayList;
 import java.util.List;
 
 import ai.djl.ndarray.NDArray;
 import ai.djl.ndarray.NDManager;
-import ai.djl.ndarray.types.DataType;
 
 /**
  * Class created to mimic the Deep Java Library NDManager. that is needed 
@@ -98,7 +91,7 @@ public class TensorManager implements AutoCloseable {
 	 * @throws IllegalArgumentException if the NDArray provided comes from a different NDManager
 	 */
 	public Tensor createTensor(String tensorName, String axes, NDArray data) throws IllegalArgumentException {
-		if (manager == null) {
+		if (manager == null && data != null) {
 			manager = data.getManager();
 			identifier = manager.getName();
 		} else if (!manager.getName().equals(identifier)) {
