@@ -1,6 +1,9 @@
 package org.bioimageanalysis.icy.deeplearning.tensor;
 
+import java.util.ArrayList;
 import java.util.List;
+
+import ai.djl.ndarray.NDArray;
 
 /**
  * Class used to convert tensors that are defined in a particular API version into the API
@@ -47,6 +50,26 @@ public class TensorAPIManager {
 				tt.getDataAsNDArray();
 			}
 		}
+	}
+	
+	/**
+	 * Create a copy of the original list of tensors from the Deep Learning Manager DJL API
+	 * into the DJL API of the DL engine that is going to be used
+	 * @param ogTensors
+	 * 	tensors from original DJL API version
+	 * @return tensors in the new DJL API version
+	 */
+	public static List<Tensor> createTensorsCopyAPI(List<Tensor> ogTensors) {
+		TensorManager manager = TensorManager.build();
+		List<Tensor> newTensors = new ArrayList<Tensor>();
+		for (Tensor tt : ogTensors) {
+			NDArray backendNDArr = manager.getManager().create(tt.getDataAsBuffer(), null);
+			// Empty the input tensor from the Deep Learning MAnager API version
+			tt.setBufferData(null);
+			Tensor nTensor = manager.createTensor(tt.getName(), tt.getAxesString(), backendNDArr);
+			newTensors.add(nTensor);
+		}
+		return newTensors;
 	}
 	
 }
