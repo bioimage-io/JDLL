@@ -59,7 +59,7 @@ public class TensorAPIManager {
 	 * 	tensors from original DJL API version 
 	 * @return tensors in the new DJL API version
 	 */
-	public static List<Tensor> createTensorsCopyAPI(List<Tensor> ogInTensors) {
+	public static List<Tensor> createTensorsCopyIntoAPI(List<Tensor> ogInTensors) {
 		TensorManager manager = TensorManager.build();
 		return createTensorsCopyIntoAPI(ogInTensors, manager);
 	}

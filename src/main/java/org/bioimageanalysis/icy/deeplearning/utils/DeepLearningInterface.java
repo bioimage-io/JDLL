@@ -4,6 +4,7 @@ import java.util.List;
 
 import org.bioimageanalysis.icy.deeplearning.tensor.Tensor;
 import org.bioimageanalysis.icy.deeplearning.tensor.TensorAPIManager;
+import org.bioimageanalysis.icy.deeplearning.tensor.TensorManager;
 import org.bioimageanalysis.icy.deeplearning.exceptions.LoadModelException;
 import org.bioimageanalysis.icy.deeplearning.exceptions.RunModelException;
 
@@ -26,9 +27,12 @@ public interface DeepLearningInterface {
 		// a list of tensors using the corresponding API version NDArrays as backend
 		TensorAPIManager.tensorsAsNDArrays(inputTensors);
 		TensorAPIManager.tensorsAsNDArrays(outputTensors);
-		outputTensors = run(inputTensors, outputTensors);
-		TensorAPIManager.tensorsAsBuffers(outputTensors);
-		return outputTensors;
+		List<Tensor> copyInputTensors = TensorAPIManager.createTensorsCopyIntoAPI(inputTensors);
+		TensorManager manager = inputTensors.get(0).getManager();
+		List<Tensor> copyOutputTensors = TensorAPIManager.createTensorsCopyIntoAPI(outputTensors, manager);
+		copyOutputTensors = run(copyInputTensors, copyOutputTensors);
+		TensorAPIManager.tensorsAsBuffers(copyOutputTensors);
+		return copyOutputTensors;
 		
 	}
 	
