@@ -63,6 +63,10 @@ public class TensorAPIManager {
 		TensorManager manager = TensorManager.build();
 		List<Tensor> newTensors = new ArrayList<Tensor>();
 		for (Tensor tt : ogTensors) {
+			if (tt.isEmpty()) {
+				newTensors.add(Tensor.buildEmptyTensor(tt.getName(), tt.getAxesString(), manager));
+				continue;
+			}
 			NDArray backendNDArr = manager.getManager().create(tt.getDataAsBuffer(), null);
 			// Empty the input tensor from the Deep Learning MAnager API version
 			tt.setBufferData(null);
