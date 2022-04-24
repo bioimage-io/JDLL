@@ -61,7 +61,7 @@ public class TensorAPIManager {
 	 */
 	public static List<Tensor> createTensorsCopyAPI(List<Tensor> ogInTensors) {
 		TensorManager manager = TensorManager.build();
-		return createTensorsCopyAPI(ogInTensors, manager);
+		return createTensorsCopyIntoAPI(ogInTensors, manager);
 	}
 	
 	/**
@@ -73,20 +73,52 @@ public class TensorAPIManager {
 	 * 	TensorManager used to create the new tensors
 	 * @return tensors in the new DJL API version
 	 */
-	public static List<Tensor> createTensorsCopyAPI(List<Tensor> ogInTensors, TensorManager manager) {
+	public static List<Tensor> createTensorsCopyIntoAPI(List<Tensor> ogInTensors, TensorManager manager) {
 		List<Tensor> newTensors = new ArrayList<Tensor>();
 		for (Tensor tt : ogInTensors) {
 			if (tt.isEmpty()) {
 				newTensors.add(Tensor.buildEmptyTensor(tt.getName(), tt.getAxesString(), manager));
 				continue;
 			}
-			NDArray backendNDArr = manager.getManager().create(tt.getDataAsBuffer(), null);
+			NDArray backendNDArr = manager.getManager().create(tt.getDataAsBuffer(), 
+										Tensor.ndarrayShapeFromIntArr(tt.getShape()));
 			// Empty the input tensor from the Deep Learning MAnager API version
 			tt.setBufferData(null);
 			Tensor nTensor = manager.createTensor(tt.getName(), tt.getAxesString(), backendNDArr);
 			newTensors.add(nTensor);
 		}
 		return newTensors;
+	}
+	
+	/**
+	 * Copy the backend of the source list of tensors into the target tensors.
+	 * Both list of tensors must contain tensors called with the same exact names.
+	 * @param source
+	 * 	source tensors created in some DJL API version
+	 * @param target
+	 * 	target tensors created in another DJL API version
+	 */
+	public static void copyTensorsIntoAPI(List<Tensor> source, List<Tensor> target) {
+		if (source.size() != target.size())
+			throw new IllegalArgumentException("Source and target tensors list must contain the same "
+					+ "number of tensors.");
+		for (Tensor ss : source) {
+			Tensor tt = Tensor.getTensorByNameFromList(target, ss.getName());
+			if (tt == null) {
+				throw new IllegalArgumentException("Source list contains a tensor called "
+						+ "'" + ss.getName() + "'. The target list must contain a tensor with the "
+								+ "same name.");
+			}
+			if (ss.isEmpty())
+				continue;
+			if (ss.getDataAsBuffer() == null)
+				throw new IllegalArgumentException("The backend of every source tensor must be defined "
+						+ "with a data Buffer.");
+			NDArray arr = tt.getManager().getManager().create(ss.getDataAsBuffer(), 
+										Tensor.ndarrayShapeFromIntArr(ss.getShape()));
+			tt.setNDArrayData(arr);
+			ss.setBufferData(null);
+		}
 	}
 	
 }

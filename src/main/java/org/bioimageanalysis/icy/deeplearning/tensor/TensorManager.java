@@ -146,6 +146,9 @@ public class TensorManager implements AutoCloseable {
 	 * Close all the tensors associated to the manager and the manager
 	 */
 	public void close() throws Exception {
-		manager.close();		
+		manager.close();
+		for (Tensor tt : getTensorList()) {
+			tt.close();
+		}
 	}
 }
