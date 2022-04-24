@@ -133,16 +133,16 @@ public class Model {
 	 * 	output tensors expected containing only the axes order and names. The
 	 * 	data will be filled with the outputs of the models
 	 * @return the output tensors produced by the model
-	 * @throws RunModelException  if the model was not run
+	 * @throws RunModelException  if the is any problem running the model
+	 * @throws RunModelException  if there is any problem closing the tensors
 	 */
-	public List<Tensor>  runModel(List<Tensor> inTensors, List<Tensor> outTensors) throws RunModelException
+	public List<Tensor>  runModel(List<Tensor> inTensors, List<Tensor> outTensors) throws RunModelException, Exception
 	{
 		// Convert Tensors to buffers first, and the to the corresponding DJL API
 		TensorAPIManager.tensorsAsBuffers(inTensors);
 		TensorAPIManager.tensorsAsBuffers(outTensors);
 		DeepLearningInterface engineInstance = getEngineClassLoader().getEngineInstance();
-		List<Tensor> outOtherAPITensors = engineInstance.runEngine(inTensors, outTensors);
-		TensorAPIManager.copyTensorsIntoAPIAsNDArrays(inTensors, outTensors)
+		outTensors = engineInstance.runEngine(inTensors, outTensors);
 		TensorAPIManager.tensorsAsNDArrays(outTensors);
 		return outTensors;
 	}

@@ -20,21 +20,26 @@ public interface DeepLearningInterface {
 	 * 	list containing only the information about output tensors
 	 * @return
 	 * 	output tensors produced by the model
-	 * @throws Exception if there is an error in the execution of the model
+	 * @throws RunModelException if there is an error in the execution of the model
+	 * @throws Exception if there is an error closing the tensors or tensormanager
 	 */
-	default List<Tensor> runEngine(List<Tensor> inputTensors, List<Tensor> outputTensors) throws RunModelException {
+	default List<Tensor> runEngine(List<Tensor> inputTensors, List<Tensor> outputTensors) throws RunModelException, Exception {
 		// Convert the lists of tensors, which have to be using Buffers as backend, into
 		// a list of tensors using the corresponding API version NDArrays as backend
 		TensorAPIManager.tensorsAsNDArrays(inputTensors);
 		TensorAPIManager.tensorsAsNDArrays(outputTensors);
 		List<Tensor> copyInputTensors = TensorAPIManager.createTensorsCopyIntoAPI(inputTensors);
-		TensorManager manager = inputTensors.get(0).getManager();
+		TensorManager manager = copyInputTensors.get(0).getManager();
 		List<Tensor> copyOutputTensors = TensorAPIManager.createTensorsCopyIntoAPI(outputTensors, manager);
 		copyOutputTensors = run(copyInputTensors, copyOutputTensors);
 		TensorAPIManager.tensorsAsBuffers(copyInputTensors);
 		TensorAPIManager.tensorsAsBuffers(copyOutputTensors);
 		TensorAPIManager.copyTensorsIntoAPIAsBuffers(copyInputTensors, inputTensors);
-		return copyOutputTensors;
+		TensorAPIManager.copyTensorsIntoAPIAsBuffers(copyOutputTensors, outputTensors);
+		manager.getManager().close();
+		copyInputTensors.stream().forEach(tensor -> tensor.close());
+		copyOutputTensors.stream().forEach(tensor -> tensor.close());
+		return outputTensors;
 		
 	}
 	
