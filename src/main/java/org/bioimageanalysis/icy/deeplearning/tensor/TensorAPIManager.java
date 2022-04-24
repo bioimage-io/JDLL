@@ -55,14 +55,27 @@ public class TensorAPIManager {
 	/**
 	 * Create a copy of the original list of tensors from the Deep Learning Manager DJL API
 	 * into the DJL API of the DL engine that is going to be used
-	 * @param ogTensors
-	 * 	tensors from original DJL API version
+	 * @param ogInTensors
+	 * 	tensors from original DJL API version 
 	 * @return tensors in the new DJL API version
 	 */
-	public static List<Tensor> createTensorsCopyAPI(List<Tensor> ogTensors) {
+	public static List<Tensor> createTensorsCopyAPI(List<Tensor> ogInTensors) {
 		TensorManager manager = TensorManager.build();
+		return createTensorsCopyAPI(ogInTensors, manager);
+	}
+	
+	/**
+	 * Create a copy of the original list of tensors from the Deep Learning Manager DJL API
+	 * into the DJL API of the DL engine that is going to be used
+	 * @param ogInTensors
+	 * 	tensors from original DJL API version 
+	 * @param manager
+	 * 	TensorManager used to create the new tensors
+	 * @return tensors in the new DJL API version
+	 */
+	public static List<Tensor> createTensorsCopyAPI(List<Tensor> ogInTensors, TensorManager manager) {
 		List<Tensor> newTensors = new ArrayList<Tensor>();
-		for (Tensor tt : ogTensors) {
+		for (Tensor tt : ogInTensors) {
 			if (tt.isEmpty()) {
 				newTensors.add(Tensor.buildEmptyTensor(tt.getName(), tt.getAxesString(), manager));
 				continue;
