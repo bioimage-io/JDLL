@@ -31,7 +31,9 @@ public interface DeepLearningInterface {
 		TensorManager manager = inputTensors.get(0).getManager();
 		List<Tensor> copyOutputTensors = TensorAPIManager.createTensorsCopyIntoAPI(outputTensors, manager);
 		copyOutputTensors = run(copyInputTensors, copyOutputTensors);
+		TensorAPIManager.tensorsAsBuffers(copyInputTensors);
 		TensorAPIManager.tensorsAsBuffers(copyOutputTensors);
+		TensorAPIManager.copyTensorsIntoAPIAsBuffers(copyInputTensors, inputTensors);
 		return copyOutputTensors;
 		
 	}

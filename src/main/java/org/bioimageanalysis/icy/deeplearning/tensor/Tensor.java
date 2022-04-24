@@ -206,14 +206,20 @@ public final class Tensor
     				+ " as the NDManager of the tensor TensoManager (tensorManager.getManager()).");
     	}
     	this.data = data;
-    	if (emptyTensor)
+    	if (emptyTensor) {
     		setShape();
+        	dType = data.getDataType();
+    	}
     	if (!equalShape(data.getShape())) {
     		throw new IllegalArgumentException("Trying to set an NDArray as the backend of the Tensor "
     				+ "with a different shape than the Tensor. Tensor shape is: " + Arrays.asList(shape)
     				+ " and NDArray shape is: " + Arrays.asList(data.getShape().getShape()));
     	}
-    	dType = data.getDataType();
+    	if (dType != data.getDataType()) {
+    		throw new IllegalArgumentException("Trying to set an NDArray as the backend of the Tensor "
+    				+ "with a different data type than the Tensor. Tensor data type is: " + dType.toString()
+    				+ " and NDArray data type is: " + data.getDataType().toString());
+    	}
     }
     
     /**
@@ -274,6 +280,38 @@ public final class Tensor
     	shape = new int[longShape.length];
     	for (int i = 0; i < shape.length; i ++)
     		shape[i] = (int) longShape[i];
+    }
+    
+    /**
+     * Copy the backend of a tensor (data either as an NDArray or Buffer)
+     * @param tt
+     * 	the tensor whose backedn is going to be copied
+     */
+    public void copyTensorBackendFrom(Tensor tt) {
+    	if (tt.getDataAsNDArray() != null) {
+    		setNDArrayData(tt.getDataAsNDArray());
+    		return;
+    	}
+    	if (tt.getDataAsBuffer() == null)
+			throw new IllegalArgumentException("The source tensor to be copied from does not have a backend, it is empty.");
+		if (emptyTensor) {
+			emptyTensor = false;
+	    	dataBuffer = tt.getDataAsBuffer();
+	    	shape = tt.getShape();
+	    	dType = tt.getDataType();
+		} else if (dType != tt.getDataType()) {
+			throw new IllegalArgumentException("The tensor to be copied from has a different data type."
+					+ " Data types must be the same."
+					+ " This data type of the tensor to be copied in is: " + dType.toString()
+					+ " and the tensor to be copied from data type is: " + tt.getDataType().toString());
+		} else if (shape != tt.getShape()) {
+			throw new IllegalArgumentException("The tensor to be copied from has a different shape."
+					+ " Shapes must be the same."
+					+ " The shape of the tensor to be copied in is: " + Arrays.asList(shape)
+					+ " and the tensor to be copied from data type is: " + Arrays.asList(tt.getShape()));
+		} else {
+			
+		}
     }
 
 	/**
