@@ -26,8 +26,6 @@ public interface DeepLearningInterface {
 	default List<Tensor> runEngine(List<Tensor> inputTensors, List<Tensor> outputTensors) throws RunModelException, Exception {
 		// Convert the lists of tensors, which have to be using Buffers as backend, into
 		// a list of tensors using the corresponding API version NDArrays as backend
-		TensorAPIManager.tensorsAsNDArrays(inputTensors);
-		TensorAPIManager.tensorsAsNDArrays(outputTensors);
 		List<Tensor> copyInputTensors = TensorAPIManager.createTensorsCopyIntoAPI(inputTensors);
 		TensorManager manager = copyInputTensors.get(0).getManager();
 		List<Tensor> copyOutputTensors = TensorAPIManager.createTensorsCopyIntoAPI(outputTensors, manager);
