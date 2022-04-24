@@ -287,11 +287,29 @@ public final class Tensor
      * @param tt
      * 	the tensor whose backedn is going to be copied
      */
-    public void copyTensorBackendFrom(Tensor tt) {
+    public void copyTensorBackend(Tensor tt) {
     	if (tt.getDataAsNDArray() != null) {
-    		setNDArrayData(tt.getDataAsNDArray());
-    		return;
+    		copyNDArrayTensorBackend(tt);
+    	} else {
+    		copyBufferTensorBackend(tt);
     	}
+    }
+    
+    /**
+     * Copy the NDArray backend of a tensor 
+     * @param tt
+     * 	the tensor whose backedn is going to be copied
+     */
+    public void copyNDArrayTensorBackend(Tensor tt) {
+		setNDArrayData(tt.getDataAsNDArray());
+    }
+    
+    /**
+     * Copy the Buffer backend of a tensor 
+     * @param tt
+     * 	the tensor whose backedn is going to be copied
+     */
+    public void copyBufferTensorBackend(Tensor tt) {
     	if (tt.getDataAsBuffer() == null)
 			throw new IllegalArgumentException("The source tensor to be copied from does not have a backend, it is empty.");
 		if (emptyTensor) {
@@ -310,7 +328,7 @@ public final class Tensor
 					+ " The shape of the tensor to be copied in is: " + Arrays.asList(shape)
 					+ " and the tensor to be copied from data type is: " + Arrays.asList(tt.getShape()));
 		} else {
-			
+	    	dataBuffer = tt.getDataAsBuffer();
 		}
     }
 

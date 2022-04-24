@@ -90,7 +90,7 @@ public class TensorAPIManager {
 		return newTensors;
 	}
 	
-	/**
+	/** TODO remove?
 	 * Copy the backend of the source list of tensors into the target tensors.
 	 * Both list of tensors must contain tensors called with the same exact names.
 	 * @param source
@@ -114,9 +114,8 @@ public class TensorAPIManager {
 			if (ss.getDataAsBuffer() == null)
 				throw new IllegalArgumentException("The backend of every source tensor must be defined "
 						+ "with a data Buffer.");
-			NDArray arr = tt.getManager().getManager().create(ss.getDataAsBuffer(), 
-										Tensor.ndarrayShapeFromIntArr(ss.getShape()));
-			tt.setNDArrayData(arr);
+			tt.copyBufferTensorBackend(ss);
+			tt.buffer2array();
 		}
 	}
 	
@@ -141,10 +140,7 @@ public class TensorAPIManager {
 			}
 			if (ss.isEmpty())
 				continue;
-			if (ss.getDataAsBuffer() == null)
-				throw new IllegalArgumentException("The backend of every source tensor must be defined "
-						+ "with a data Buffer.");
-			tt.setBufferData(ss.getDataAsBuffer());
+			tt.copyBufferTensorBackend(ss);
 		}
 	}
 	
