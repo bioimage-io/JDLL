@@ -54,7 +54,7 @@ public final class Tensor
 	 * the NDarray is added, the tensor cannot be empty anymore
 	 */
 	private boolean emptyTensor;
-	/**
+	/**TODO develop a DAtaType class for this Tensor class?
 	 * The data type of the tensor
 	 */
 	private DataType dType;
@@ -67,6 +67,10 @@ public final class Tensor
 	 * Shape of the tensor
 	 */
 	private int[] shape;
+	/**
+	 * Whether the tensor is closed or not. If it is, nothing can be done on the Tensor
+	 */
+	private boolean closed = false;
 	
 	/**
 	 * Create the tensor object. 
@@ -354,6 +358,7 @@ public final class Tensor
 	   		}
 	   		i ++;
 	   	}
+	   	closed = true;
     }
     
     /**
@@ -491,7 +496,7 @@ public final class Tensor
      * REtrieve the axes order in String form
 	 * @return the axesString
 	 */
-	public String getAxesString() {
+	public String getAxesOrderString() {
 		return axesString;
 	}
     

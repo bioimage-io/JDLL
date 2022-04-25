@@ -106,7 +106,7 @@ public class TensorAPIManager {
 		List<Tensor> newTensors = new ArrayList<Tensor>();
 		for (Tensor tt : ogInTensors) {
 			if (tt.isEmpty()) {
-				newTensors.add(Tensor.buildEmptyTensor(tt.getName(), tt.getAxesString(), manager));
+				newTensors.add(Tensor.buildEmptyTensor(tt.getName(), tt.getAxesOrderString(), manager));
 				continue;
 			}
 			NDArray backendNDArr = manager.getManager().create(tt.getDataAsBuffer(), 
@@ -114,7 +114,7 @@ public class TensorAPIManager {
 			// Empty the input tensor from the Deep Learning MAnager API version
 			if (setNullOg)
 				tt.setBufferData(null);
-			Tensor nTensor = manager.createTensor(tt.getName(), tt.getAxesString(), backendNDArr);
+			Tensor nTensor = manager.createTensor(tt.getName(), tt.getAxesOrderString(), backendNDArr);
 			newTensors.add(nTensor);
 		}
 		return newTensors;
