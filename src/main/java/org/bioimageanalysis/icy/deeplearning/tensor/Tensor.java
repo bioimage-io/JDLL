@@ -209,6 +209,7 @@ public final class Tensor
     	if (emptyTensor) {
     		setShape();
         	dType = data.getDataType();
+        	emptyTensor = false;
     	}
     	if (!equalShape(data.getShape())) {
     		throw new IllegalArgumentException("Trying to set an NDArray as the backend of the Tensor "
