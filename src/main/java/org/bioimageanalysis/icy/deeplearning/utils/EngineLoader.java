@@ -86,7 +86,6 @@ public class EngineLoader  extends ClassLoader{
 		this.enginePath = engineInfo.getDeepLearningVersionJarsDirectory();
 		serEngineAndMajorVersion(engineInfo);
 		loadClasses();
-	    Thread.currentThread().setContextClassLoader(this.engineClassloader);
 	    setEngineInstance();
 	}
 	
@@ -134,9 +133,23 @@ public class EngineLoader  extends ClassLoader{
 			urls[c ++] = ff.toURI().toURL();
 		}
 		urls[c] = EngineLoader.class.getProtectionDomain().getCodeSource().getLocation().toURI().toURL();
-	    this.engineClassloader = new URLClassLoader(urls, this.icyClassloader);
+	    this.engineClassloader = new URLClassLoader(urls);
 		
 		loadedEngines.put(this.majorVersion, this.engineClassloader);
+	}
+	
+	/**
+	 * Set the ClassLoader containing the engines classes as the Thread classloader
+	 */
+	public void setEngineClassLoader() {
+	    Thread.currentThread().setContextClassLoader(this.engineClassloader);
+	}
+	
+	/**
+	 * Set the original Icy ClassLoader as the Thread classloader
+	 */
+	public void setIcyClassLoader() {
+	    Thread.currentThread().setContextClassLoader(this.icyClassloader);
 	}
 	
 	/**
@@ -257,7 +270,7 @@ public class EngineLoader  extends ClassLoader{
 	// TODO is it necessary??
 	public void close() {
 		engineInstance.closeModel();
-	    Thread.currentThread().setContextClassLoader(this.icyClassloader);
+	    setIcyClassLoader();
 	    System.out.println("Exited engine ClassLoader");
 	}
 }

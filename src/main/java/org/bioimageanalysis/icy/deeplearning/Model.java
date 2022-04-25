@@ -105,8 +105,10 @@ public class Model {
 	 */
 	public void loadModel() throws LoadModelException
 	{
-		DeepLearningInterface engineInstance = getEngineClassLoader().getEngineInstance();
+		DeepLearningInterface engineInstance = engineClassLoader.getEngineInstance();
+		engineClassLoader.setEngineClassLoader();
 		engineInstance.loadModel(modelFolder, modelSource);
+		engineClassLoader.setIcyClassLoader();
 	}
 	
 	/**
@@ -116,10 +118,12 @@ public class Model {
 	public void closeModel()
 	{
 		DeepLearningInterface engineInstance = getEngineClassLoader().getEngineInstance();
+		engineClassLoader.setEngineClassLoader();
 		engineInstance.closeModel();
 		getEngineClassLoader().close();
 		engineInstance = null;
-		this.engineClassLoader = null;
+		engineClassLoader.setIcyClassLoader();
+		engineClassLoader = null;
 	}
 	
 	/**
@@ -141,8 +145,10 @@ public class Model {
 		// Convert Tensors to buffers first, and the to the corresponding DJL API
 		TensorAPIManager.tensorsAsBuffers(inTensors);
 		TensorAPIManager.tensorsAsBuffers(outTensors);
-		DeepLearningInterface engineInstance = getEngineClassLoader().getEngineInstance();
+		DeepLearningInterface engineInstance = engineClassLoader.getEngineInstance();
+		engineClassLoader.setEngineClassLoader();
 		outTensors = engineInstance.runEngine(inTensors, outTensors);
+		engineClassLoader.setIcyClassLoader();
 		TensorAPIManager.tensorsAsNDArrays(outTensors);
 		return outTensors;
 	}
