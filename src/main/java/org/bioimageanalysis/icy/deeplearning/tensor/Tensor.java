@@ -351,6 +351,7 @@ public final class Tensor
 	   		}
 	   		i ++;
 	   	}
+	   	manager = null;
 	   	closed = true;
     }
     
