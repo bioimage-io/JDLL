@@ -105,20 +105,6 @@ public final class Tensor
     }
     
     /**
-     * Add tensor to list of tensors owned by the parent TensorManager
-     */
-    private void addToList() {
-    	List<Tensor> list = manager.getTensorList();
-    	Tensor coincidence = getTensorByNameFromList(list, tensorName);
-    	if (coincidence != null) {
-    		throw new IllegalArgumentException("There already exists a Tensor called '" + tensorName
-    				+ "' in the list of tensors associated to the parent TensorManager. Tensor names"
-    				+ " for the same TEnsorManager should be unique.");
-    	}
-    	manager.addTensorToList(this);
-    }
-    
-    /**
      * Return a tensor object
 	 * 
 	 * @param tensorName
@@ -160,6 +146,7 @@ public final class Tensor
      * into a Buffer, the NDArray is closed and set to null.
      */
     public void array2buffer() {
+    	throwExceptionIfClosed();
     	Buffer dataBuffer;
     	if (getDataType() == DataType.INT8 || getDataType() == DataType.INT8)
     		dataBuffer = ByteBuffer.wrap(getDataAsNDArray().toByteArray());
@@ -184,6 +171,7 @@ public final class Tensor
      * into a NDArray, the buffer is closed and set to null.
      */
     public void buffer2array () {
+    	throwExceptionIfClosed();
     	NDArray ndarray = manager.getManager().create(getDataAsBuffer(),
     			Tensor.ndarrayShapeFromIntArr(getShape()), getDataType());
     	setBufferData(null);
@@ -196,6 +184,7 @@ public final class Tensor
      * 	the numbers of the tensor in a Numpy array like structure
      */
     public void setNDArrayData(NDArray data) {
+    	throwExceptionIfClosed();
     	if (data == null && this.data != null) {
     		this.data.close();
     		this.data = null;
@@ -233,6 +222,7 @@ public final class Tensor
      * 	the numbers of the tensor in a buffer structure
      */
     public void setBufferData(Buffer bufferData) {
+    	throwExceptionIfClosed();
     	// The tensor has to be first initialized with a NDArray as the backend.
     	// They cannot be initialized with Buffer
     	if (shape == null)
@@ -252,6 +242,7 @@ public final class Tensor
      * @return the data of the tensor as a NDArray
      */
     public NDArray getDataAsNDArray() {
+    	throwExceptionIfClosed();
     	if (data == null && dataBuffer == null)
     		throw new IllegalArgumentException("Tensor '" + this.tensorName + "' is empty.");
     	else if (data == null)
@@ -266,6 +257,7 @@ public final class Tensor
      * @return the data of the tensor as a buffer
      */
     public Buffer getDataAsBuffer() {
+    	throwExceptionIfClosed();
     	if (data == null && dataBuffer == null)
     		throw new IllegalArgumentException("Tensor '" + this.tensorName + "' is empty.");
     	else if (dataBuffer == null)
@@ -276,23 +268,12 @@ public final class Tensor
     }
     
     /**
-     * Set the shape of the tensor from the NDArray shape
-     */
-    private void setShape() {
-    	if (data == null)
-    		throw new IllegalArgumentException("Trying to create tensor from an empty NDArray");
-    	long[] longShape = data.getShape().getShape();
-    	shape = new int[longShape.length];
-    	for (int i = 0; i < shape.length; i ++)
-    		shape[i] = (int) longShape[i];
-    }
-    
-    /**
      * Copy the backend of a tensor (data either as an NDArray or Buffer)
      * @param tt
      * 	the tensor whose backedn is going to be copied
      */
     public void copyTensorBackend(Tensor tt) {
+    	throwExceptionIfClosed();
     	if (tt.getDataAsNDArray() != null) {
     		copyNDArrayTensorBackend(tt);
     	} else {
@@ -306,6 +287,7 @@ public final class Tensor
      * 	the tensor whose backedn is going to be copied
      */
     public void copyNDArrayTensorBackend(Tensor tt) {
+    	throwExceptionIfClosed();
 		setNDArrayData(tt.getDataAsNDArray());
     }
     
@@ -315,6 +297,7 @@ public final class Tensor
      * 	the tensor whose backedn is going to be copied
      */
     public void copyBufferTensorBackend(Tensor tt) {
+    	throwExceptionIfClosed();
     	if (tt.getDataAsBuffer() == null)
 			throw new IllegalArgumentException("The source tensor to be copied from does not have a backend, it is empty.");
 		if (emptyTensor) {
@@ -335,6 +318,16 @@ public final class Tensor
 		} else {
 	    	dataBuffer = tt.getDataAsBuffer();
 		}
+    }
+    
+    /**
+     * Throw {@link IllegalStateException} if the tensor has been closed
+     */
+    private void throwExceptionIfClosed() {
+    	if (!closed)
+    		return;
+    	throw new IllegalStateException("The tensor that is trying to be modified has already been "
+    			+ "closed.");
     }
 
 	/**
@@ -466,6 +459,32 @@ public final class Tensor
             throw new IllegalArgumentException("There cannot be repeated dimensions in the axes "
             		+ "order as it is specified for this tensor (" + dimOrder + ").");
         return tensorDimOrder;
+    }
+    
+    /**
+     * Add tensor to list of tensors owned by the parent TensorManager
+     */
+    private void addToList() {
+    	List<Tensor> list = manager.getTensorList();
+    	Tensor coincidence = getTensorByNameFromList(list, tensorName);
+    	if (coincidence != null) {
+    		throw new IllegalArgumentException("There already exists a Tensor called '" + tensorName
+    				+ "' in the list of tensors associated to the parent TensorManager. Tensor names"
+    				+ " for the same TEnsorManager should be unique.");
+    	}
+    	manager.addTensorToList(this);
+    }
+    
+    /**
+     * Set the shape of the tensor from the NDArray shape
+     */
+    private void setShape() {
+    	if (data == null)
+    		throw new IllegalArgumentException("Trying to create tensor from an empty NDArray");
+    	long[] longShape = data.getShape().getShape();
+    	shape = new int[longShape.length];
+    	for (int i = 0; i < shape.length; i ++)
+    		shape[i] = (int) longShape[i];
     }
     
     /**
