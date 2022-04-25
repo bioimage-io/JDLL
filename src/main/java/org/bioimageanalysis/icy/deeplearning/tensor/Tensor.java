@@ -212,8 +212,8 @@ public final class Tensor
     	}
     	if (!equalShape(data.getShape())) {
     		throw new IllegalArgumentException("Trying to set an NDArray as the backend of the Tensor "
-    				+ "with a different shape than the Tensor. Tensor shape is: " + Arrays.asList(shape)
-    				+ " and NDArray shape is: " + Arrays.asList(data.getShape().getShape()));
+    				+ "with a different shape than the Tensor. Tensor shape is: " + Arrays.toString(shape)
+    				+ " and NDArray shape is: " + Arrays.toString(data.getShape().getShape()));
     	}
     	if (dType != data.getDataType()) {
     		throw new IllegalArgumentException("Trying to set an NDArray as the backend of the Tensor "
@@ -322,11 +322,11 @@ public final class Tensor
 					+ " Data types must be the same."
 					+ " This data type of the tensor to be copied in is: " + dType.toString()
 					+ " and the tensor to be copied from data type is: " + tt.getDataType().toString());
-		} else if (shape != tt.getShape()) {
+		} else if (tt.getShape().equals(shape)) {
 			throw new IllegalArgumentException("The tensor to be copied from has a different shape."
 					+ " Shapes must be the same."
-					+ " The shape of the tensor to be copied in is: " + Arrays.asList(shape)
-					+ " and the tensor to be copied from data type is: " + Arrays.asList(tt.getShape()));
+					+ " The shape of the tensor to be copied in is: " + Arrays.toString(shape)
+					+ " and the tensor to be copied from data type is: " + Arrays.toString(tt.getShape()));
 		} else {
 	    	dataBuffer = tt.getDataAsBuffer();
 		}
