@@ -346,9 +346,6 @@ public final class Tensor
 		   	this.axesString = null;
 		   	this.dType = null;
 		   	this.shape = null;
-		   	if (manager != null) {
-	   			manager.removeTensor(this);
-		   	}
 		   	manager = null;
 		   	tensorName = null;
     	} catch(Exception ex) {

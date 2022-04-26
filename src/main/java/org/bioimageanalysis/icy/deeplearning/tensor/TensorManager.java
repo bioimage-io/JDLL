@@ -164,11 +164,18 @@ public class TensorManager implements AutoCloseable {
 	 * Close all the tensors associated to the manager and the manager
 	 */
 	public void close() throws Exception {
-		manager.close();
-		if (tensors.size() == 0)
-			return;
-		for (Tensor tt : tensors) {
-			tt.close();
+		try {
+			if (tensors.size() == 0) {
+				manager.close();
+				return;
+			}
+			for (Tensor tt : tensors) 
+				tt.close();
+			manager.close();
+		} catch (Exception ex) {
+			String msg = "Error closing the TensorManager. ";
+			msg += ex.toString();
+			throw new IllegalStateException(msg);
 		}
 	}
 }
