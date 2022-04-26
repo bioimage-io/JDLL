@@ -337,6 +337,7 @@ public final class Tensor
     	if (closed)
     		return;
     	try {
+		   	closed = true;
 		   	axesArray = null;
 		   	if (data != null)
 		   		data.close();
@@ -350,7 +351,6 @@ public final class Tensor
 		   	}
 		   	manager = null;
 		   	tensorName = null;
-		   	closed = true;
     	} catch(Exception ex) {
 	   		closed = false;
 	   		String msg = "Error trying to close tensor: " + tensorName + ". ";

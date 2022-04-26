@@ -165,9 +165,9 @@ public class TensorManager implements AutoCloseable {
 	 */
 	public void close() throws Exception {
 		manager.close();
-		if (getTensorList().size() == 0)
+		if (tensors.size() == 0)
 			return;
-		for (Tensor tt : getTensorList()) {
+		for (Tensor tt : tensors) {
 			tt.close();
 		}
 	}
