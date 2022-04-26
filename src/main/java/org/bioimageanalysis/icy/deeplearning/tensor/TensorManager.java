@@ -140,6 +140,23 @@ public class TensorManager implements AutoCloseable {
 		}
 		tensors.add(tt);
 	}
+	
+	/**
+	 * Remove tensor from tensor list associated with manager
+	 * @param t
+	 * 	tensor to be removed
+	 */
+	public void removeTensorFromList(Tensor t) {
+		if (t.clo)
+		int i = 0;
+		for (Tensor tt : getTensorList()) {
+	   		if (tt == t) {
+	   			getTensorList().remove(i);
+	   			break;
+	   		}
+	   		i ++;
+	   	}
+	}
 
 	@Override
 	/**

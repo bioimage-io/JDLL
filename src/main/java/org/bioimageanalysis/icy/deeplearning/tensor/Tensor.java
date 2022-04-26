@@ -334,6 +334,8 @@ public final class Tensor
      * Empty the tensor information
      */
     public void close() {
+    	if (closed)
+    		return;
 	   	tensorName = null;
 	   	axesArray = null;
 	   	if (data != null)
@@ -343,15 +345,8 @@ public final class Tensor
 	   	this.axesString = null;
 	   	this.dType = null;
 	   	this.shape = null;
-	   	int i = 0;
 	   	if (manager != null) {
-		   	for (Tensor tt : manager.getTensorList()) {
-		   		if (tt == this) {
-		   			manager.getTensorList().remove(i);
-		   			break;
-		   		}
-		   		i ++;
-		   	}
+   			manager.removeTensorFromList(this);
 	   	}
 	   	manager = null;
 	   	closed = true;
@@ -561,6 +556,14 @@ public final class Tensor
      */
     public DataType getDataType() {
     	return dType;
+    }
+    
+    /**
+     * Whether the tensor is closed or not
+     * @return true if closed, false otherwise
+     */
+    public boolean isClosed() {
+    	return closed;
     }
     
     public static void main(String[] args) {
