@@ -133,7 +133,7 @@ public class TensorManager implements AutoCloseable {
 	 * @param tt
 	 * 	tensor to be added
 	 */
-	public void addTensorToList(Tensor tt) {
+	public void addTensor(Tensor tt) {
 		if (tt.getManager() != this) {
 			throw new IllegalArgumentException("The input tensor parent Tensormanager must "
 					+ "be the same as the TensorManager owning the list of tensors.");
@@ -146,17 +146,17 @@ public class TensorManager implements AutoCloseable {
 	 * @param t
 	 * 	tensor to be removed
 	 */
-	public void removeTensorFromList(Tensor t) {
-		if (!t.isClosed())
-			t.close();
+	public void removeTensor(Tensor t) {
 		int i = 0;
-		for (Tensor tt : getTensorList()) {
+		for (Tensor tt : tensors) {
 	   		if (tt == t) {
-	   			getTensorList().remove(i);
+	   			tensors.remove(i);
 	   			break;
 	   		}
 	   		i ++;
 	   	}
+		if (!t.isClosed())
+			t.close();
 	}
 
 	@Override

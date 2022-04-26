@@ -346,7 +346,7 @@ public final class Tensor
 		   	this.dType = null;
 		   	this.shape = null;
 		   	if (manager != null) {
-	   			manager.removeTensorFromList(this);
+	   			manager.removeTensor(this);
 		   	}
 		   	manager = null;
 		   	tensorName = null;
@@ -477,7 +477,7 @@ public final class Tensor
     				+ "' in the list of tensors associated to the parent TensorManager. Tensor names"
     				+ " for the same TEnsorManager should be unique.");
     	}
-    	manager.addTensorToList(this);
+    	manager.addTensor(this);
     }
     
     /**
