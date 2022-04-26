@@ -28,6 +28,10 @@ public class TensorManager implements AutoCloseable {
 	 * List of tensors associated with this TensorManager
 	 */
 	private List<Tensor> tensors = new ArrayList<Tensor>();
+	/**
+	 * Whether the tensor is closed or not
+	 */
+	private boolean closed = false;
 
 	/**
 	 * Manager that is needed to create Icy Tensors
@@ -91,6 +95,7 @@ public class TensorManager implements AutoCloseable {
 	 * @throws IllegalArgumentException if the NDArray provided comes from a different NDManager
 	 */
 	public Tensor createTensor(String tensorName, String axes, NDArray data) throws IllegalArgumentException {
+    	throwExceptionIfClosed();
 		if (manager == null && data != null) {
 			manager = data.getManager();
 			identifier = manager.getName();
@@ -108,6 +113,7 @@ public class TensorManager implements AutoCloseable {
 	 * @return the NDManager
 	 */
 	public NDManager getManager() {
+    	throwExceptionIfClosed();
 		return manager;
 	}
 	
@@ -116,6 +122,7 @@ public class TensorManager implements AutoCloseable {
 	 * @return the name or identifier of the instance
 	 */
 	public String getIdentifier() {
+    	throwExceptionIfClosed();
 		return identifier;
 	}
 	
@@ -124,6 +131,7 @@ public class TensorManager implements AutoCloseable {
 	 * @return list of tensors associated to the TensorManager
 	 */
 	public List<Tensor> getTensorList(){
+    	throwExceptionIfClosed();
 		return this.tensors;
 	}
 	
@@ -134,6 +142,7 @@ public class TensorManager implements AutoCloseable {
 	 * 	tensor to be added
 	 */
 	public void addTensor(Tensor tt) {
+    	throwExceptionIfClosed();
 		if (tt.getManager() != this) {
 			throw new IllegalArgumentException("The input tensor parent Tensormanager must "
 					+ "be the same as the TensorManager owning the list of tensors.");
@@ -147,6 +156,7 @@ public class TensorManager implements AutoCloseable {
 	 * 	tensor to be removed
 	 */
 	public void removeTensor(Tensor t) {
+    	throwExceptionIfClosed();
 		int i = 0;
 		for (Tensor tt : tensors) {
 	   		if (tt == t) {
@@ -164,6 +174,7 @@ public class TensorManager implements AutoCloseable {
 	 * Close all the tensors associated to the manager and the manager
 	 */
 	public void close() throws Exception {
+    	throwExceptionIfClosed();
 		try {
 			if (tensors.size() == 0) {
 				manager.close();
@@ -172,10 +183,30 @@ public class TensorManager implements AutoCloseable {
 			for (Tensor tt : tensors) 
 				tt.close();
 			manager.close();
+			closed = true;
 		} catch (Exception ex) {
+			closed = false;
 			String msg = "Error closing the TensorManager. ";
 			msg += ex.toString();
 			throw new IllegalStateException(msg);
 		}
 	}
+    
+    /**
+     * Throw {@link IllegalStateException} if the tensor has been closed
+     */
+    private void throwExceptionIfClosed() {
+    	if (!closed)
+    		return;
+    	throw new IllegalStateException("The tensor that is trying to be modified has already been "
+    			+ "closed.");
+    }
+    
+    /**
+     * Whether the tensor is closed or not
+     * @return true if closed, false otherwise
+     */
+    public boolean isClosed() {
+    	return closed;
+    }
 }
