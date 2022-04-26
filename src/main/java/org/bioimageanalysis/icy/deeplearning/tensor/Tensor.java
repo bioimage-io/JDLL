@@ -344,12 +344,14 @@ public final class Tensor
 	   	this.dType = null;
 	   	this.shape = null;
 	   	int i = 0;
-	   	for (Tensor tt : manager.getTensorList()) {
-	   		if (tt == this) {
-	   			manager.getTensorList().remove(i);
-	   			break;
-	   		}
-	   		i ++;
+	   	if (manager != null) {
+		   	for (Tensor tt : manager.getTensorList()) {
+		   		if (tt == this) {
+		   			manager.getTensorList().remove(i);
+		   			break;
+		   		}
+		   		i ++;
+		   	}
 	   	}
 	   	manager = null;
 	   	closed = true;
