@@ -147,7 +147,8 @@ public class TensorManager implements AutoCloseable {
 	 * 	tensor to be removed
 	 */
 	public void removeTensorFromList(Tensor t) {
-		if (t.clo)
+		if (!t.isClosed())
+			t.close();
 		int i = 0;
 		for (Tensor tt : getTensorList()) {
 	   		if (tt == t) {

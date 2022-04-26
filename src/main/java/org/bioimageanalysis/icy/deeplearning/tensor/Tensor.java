@@ -336,20 +336,27 @@ public final class Tensor
     public void close() {
     	if (closed)
     		return;
-	   	tensorName = null;
-	   	axesArray = null;
-	   	if (data != null)
-	   		data.close();
-	   	this.data = null;
-	   	this.dataBuffer = null;
-	   	this.axesString = null;
-	   	this.dType = null;
-	   	this.shape = null;
-	   	if (manager != null) {
-   			manager.removeTensorFromList(this);
+    	try {
+		   	axesArray = null;
+		   	if (data != null)
+		   		data.close();
+		   	this.data = null;
+		   	this.dataBuffer = null;
+		   	this.axesString = null;
+		   	this.dType = null;
+		   	this.shape = null;
+		   	if (manager != null) {
+	   			manager.removeTensorFromList(this);
+		   	}
+		   	manager = null;
+		   	tensorName = null;
+		   	closed = true;
+    	} catch(Exception ex) {
+	   		closed = false;
+	   		String msg = "Error trying to close tensor: " + tensorName + ". ";
+	   		msg += ex.toString();
+	   		throw new IllegalStateException(msg);
 	   	}
-	   	manager = null;
-	   	closed = true;
     }
     
     /**
