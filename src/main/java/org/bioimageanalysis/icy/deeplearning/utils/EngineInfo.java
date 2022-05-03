@@ -180,7 +180,8 @@ public class EngineInfo {
 	 */
 	public String getDeepLearningVersionJarsDirectory() throws Exception {
 		if (engine != null || version != null) {
-			String vv = this.engine + "-" + this.version + "-" + this.versionJava + "-" + this.os + "-" + this.isGPU;
+			String vv = this.engine + "-" + this.version + "-" + this.versionJava + "-" 
+		+ this.os + "-" + (this.isGPU ? "gpu" : "cpu");
 			return this.jarsDirectory + File.separator + vv;
 		} else {
 			// TODO create exception
