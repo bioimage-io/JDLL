@@ -29,9 +29,9 @@ public class EngineInfo {
 	 */
 	private String versionJava;
 	/**
-	 * Whether the version wanted is used for CPU, GPU or MKL
+	 * True if teh engine supports cpu or false otherwise
 	 */
-	private String dlEngine;
+	private boolean isGPU;
 	/**
 	 * Operating system of the machine where the plugin is running
 	 */
@@ -129,7 +129,7 @@ public class EngineInfo {
 		this.version = version;
 		this.jarsDirectory = jarsDirectory;
 		this.os = new PlatformDetection().toString();
-		this.dlEngine = findCpuGpuOrMkl();
+		findIsGPU();
 		setSupportedVersions();
 		this.versionJava = findCorrespondingJavaVersion();
 		
@@ -180,7 +180,7 @@ public class EngineInfo {
 	 */
 	public String getDeepLearningVersionJarsDirectory() throws Exception {
 		if (engine != null || version != null) {
-			String vv = this.engine + "-" + this.version + "-" + this.versionJava + "-" + this.os + "-" + this.dlEngine;
+			String vv = this.engine + "-" + this.version + "-" + this.versionJava + "-" + this.os + "-" + this.isGPU;
 			return this.jarsDirectory + File.separator + vv;
 		} else {
 			// TODO create exception
@@ -189,14 +189,12 @@ public class EngineInfo {
 	}
 	
 	/**
-	 * Method that finds if the machine has a GPU or not available,
-	 * or if it is MKL. If there is no GPU or MKL, it returns "cpu",
-	 * if there is MKL, "mkl", if there is GPU, "gpu", and if there is
-	 * everything "gpu".
-	 * @return whether the program runs on CPU, GPU or MKL
+	 * Method that finds if the machine has a GPU or not available.
+	 * TRue if the engine supports GPU or false otherwise
+	 * @return whether the engine can run on GPU or not
 	 */
-	public static String findCpuGpuOrMkl() {
-		return "cpu";
+	private void findIsGPU() {
+		isGPU = false;
 	}
 	
 	/**
@@ -326,14 +324,11 @@ public class EngineInfo {
 	}
 	
 	/**
-	 * Returns the machine that the jar is developed for.
-	 * If there is no MKL or GPU available, returns "cpu",
-	 * if there is Mkl and no GPU, "mkl" and if there is GPU,
-	 * always "gpu"
-	 * @return the available machines for the engine
+	 * True if the engine allows running on GPU or false otherwise
+	 * @return True if the engine allows running on GPU or false otherwise
 	 */
-	public String getEngine() {
-		return this.dlEngine;
+	public boolean isGPU() {
+		return this.isGPU;
 	}
 	
 	/**
