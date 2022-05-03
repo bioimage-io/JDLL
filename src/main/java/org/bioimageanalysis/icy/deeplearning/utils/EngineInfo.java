@@ -243,6 +243,14 @@ public class EngineInfo {
 	}
 	
 	/**
+	 * REturn the name of the engine (Deep Learning framework)
+	 * @return the name of the Deep Learning framework
+	 */
+	public String getEngine() {
+		return engine;
+	}
+	
+	/**
 	 * Set the Deep Learning framework (engine) of the model
 	 * @param engine
 	 * 	Deep Learning framework used for the model
