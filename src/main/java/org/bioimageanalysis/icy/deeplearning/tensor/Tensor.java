@@ -365,7 +365,7 @@ public final class Tensor
      * @return the tensor of interest
      */
     public static Tensor getTensorByNameFromList(List<Tensor> lTensors, String name) {
-    	return lTensors.stream().filter(pp -> pp.getName().equals(name)).findAny().orElse(null);
+    	return lTensors.stream().filter(pp -> !pp.isClosed() && pp.getName() != null && pp.getName().equals(name)).findAny().orElse(null);
     }
 
     /**
