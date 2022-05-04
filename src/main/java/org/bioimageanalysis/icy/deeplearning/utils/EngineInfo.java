@@ -29,9 +29,14 @@ public class EngineInfo {
 	 */
 	private String versionJava;
 	/**
-	 * True if teh engine supports cpu or false otherwise
+	 * True if the engine supports gpu or false otherwise. False by default.
 	 */
-	private boolean isGPU;
+	private boolean gpu = false;;
+	/**
+	 * True if the engine supports cpu or false otherwise. True by default because
+	 * at the moment of development all engines support cpu.
+	 */
+	private boolean cpu = true;
 	/**
 	 * Operating system of the machine where the plugin is running
 	 */
@@ -104,7 +109,7 @@ public class EngineInfo {
 	 * has been already loaded to avoid errors for loading
 	 * two different native libraries in the same namespace
 	 */
-	private static String loadedPytorchVersion;
+	private static String loadedPytorchVersion;	
 
 	
 	/**
@@ -129,7 +134,6 @@ public class EngineInfo {
 		this.version = version;
 		this.jarsDirectory = jarsDirectory;
 		this.os = new PlatformDetection().toString();
-		findIsGPU();
 		setSupportedVersions();
 		this.versionJava = findCorrespondingJavaVersion();
 		
@@ -150,7 +154,67 @@ public class EngineInfo {
 	 * 	Deep learning framework
 	 */
 	public static EngineInfo defineDLEngine(String engine, String version, String jarsDirectory) {
-		return new EngineInfo(engine, version, jarsDirectory);
+		boolean cpu = true;
+		boolean gpu = false;
+		if (engine.toLowerCase().equals(pytorchJavaBioimageioTag)) {
+			cpu = true;
+			gpu = true;
+		} else {
+			throw new IllegalArgumentException("Please spedicify whether the engine can CPU or not "
+					+ "and whether it can use GPU or not. Default values only exist for "
+					+ pytorchJavaBioimageioTag + " engines.");
+		}
+		return defineDLEngine(engine, version, jarsDirectory, cpu, gpu);
+	}
+	
+	/**
+	 * Set the parameters to launch the wanted Deep Learning framework (engine)
+	 * in the program
+	 * 
+	 * @param engine
+	 * 	name of the Deep Learning framework (engine). For example: Pytorch, Tensorflow....
+	 * @param version
+	 * 	version of the training Deep Learning framework (engine)
+	 * @param jarsDirectory
+	 * 	directory where the folder containing the JARs needed to launch the 
+	 * 	corresponding engine are located
+	 * @return an object containing all the information needed to launch a 
+	 * 	Deep learning framework
+	 */
+	public static EngineInfo defineDLEngine(String engine, String version, String jarsDirectory, boolean gpu) {
+		boolean cpu = true;
+		if (engine.toLowerCase().equals(tensorflowJavaBioimageioTag)) {
+			cpu = true;
+		} else if (engine.toLowerCase().equals(pytorchJavaBioimageioTag)) {
+			cpu = true;
+		} else {
+			throw new IllegalArgumentException("Please spedicify whether the engine can CPU or not "
+					+ "and whether it can use GPU or not. Default values only exist for "
+					+ tensorflowJavaBioimageioTag + " and " + pytorchJavaBioimageioTag + " engines.");
+		}
+		return defineDLEngine(engine, version, jarsDirectory, cpu, gpu);
+	}
+	
+	/**
+	 * Set the parameters to launch the wanted Deep Learning framework (engine)
+	 * in the program
+	 * 
+	 * @param engine
+	 * 	name of the Deep Learning framework (engine). For example: Pytorch, Tensorflow....
+	 * @param version
+	 * 	version of the training Deep Learning framework (engine)
+	 * @param jarsDirectory
+	 * 	directory where the folder containing the JARs needed to launch the 
+	 * 	corresponding engine are located
+	 * @return an object containing all the information needed to launch a 
+	 * 	Deep learning framework
+	 */
+	public static EngineInfo defineDLEngine(String engine, String version, String jarsDirectory,
+			boolean cpu, boolean gpu) {
+		EngineInfo engineInfo =  new EngineInfo(engine, version, jarsDirectory);
+		engineInfo.supportCPU(cpu);
+		engineInfo.supportGPU(gpu);
+		return engineInfo;
 	}
 	
 	/**
@@ -181,7 +245,7 @@ public class EngineInfo {
 	public String getDeepLearningVersionJarsDirectory() throws Exception {
 		if (engine != null || version != null) {
 			String vv = this.engine + "-" + this.version + "-" + this.versionJava + "-" 
-		+ this.os + "-" + (this.isGPU ? "gpu" : "cpu");
+		+ this.os + (this.cpu ? "-cpu" : "") + (this.gpu ? "-gpu" : "");
 			return this.jarsDirectory + File.separator + vv;
 		} else {
 			// TODO create exception
@@ -190,12 +254,23 @@ public class EngineInfo {
 	}
 	
 	/**
-	 * Method that finds if the machine has a GPU or not available.
-	 * TRue if the engine supports GPU or false otherwise
-	 * @return whether the engine can run on GPU or not
+	 * Set whether the engine supports GPU or not.
+	 * Does not support GPU by default.
+	 * @param support
+	 * 	true if it supports GPU and false otherwise
 	 */
-	private void findIsGPU() {
-		isGPU = false;
+	public void supportGPU(boolean support) {
+		gpu = support;
+	}
+	
+	/**
+	 * Set whether the engine supports CPU or not.
+	 * By default supports CPU
+	 * @param support
+	 * 	true if it supports CPU and false otherwise
+	 */
+	public void supportCPU(boolean support) {
+		cpu = support;
 	}
 	
 	/**
@@ -333,11 +408,19 @@ public class EngineInfo {
 	}
 	
 	/**
-	 * True if the engine allows running on GPU or false otherwise
+	 * True if the engine allows running on GPU or false otherwise. By default false
 	 * @return True if the engine allows running on GPU or false otherwise
 	 */
 	public boolean isGPU() {
-		return this.isGPU;
+		return this.gpu;
+	}
+	
+	/**
+	 * True if the engine allows running on CPU or false otherwise. True by default
+	 * @return True if the engine allows running on CPU or false otherwise
+	 */
+	public boolean isCPU() {
+		return this.cpu;
 	}
 	
 	/**
