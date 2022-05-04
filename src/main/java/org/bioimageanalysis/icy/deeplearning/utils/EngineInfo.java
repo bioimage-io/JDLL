@@ -230,7 +230,7 @@ public class EngineInfo {
 	 */
 	public static EngineInfo defineDLEngine(String engine, String version) {
 		Objects.requireNonNull(STATIC_JARS_DIRECTORY, "The Jars directory should not be null.");
-		return new EngineInfo(engine, version, STATIC_JARS_DIRECTORY);
+		return defineDLEngine(engine, version, STATIC_JARS_DIRECTORY);
 	}
 	
 	/**
