@@ -234,6 +234,52 @@ public class EngineInfo {
 	}
 	
 	/**
+	 * Set the parameters to launch the wanted Deep Learning framework (engine)
+	 * in the program
+	 * 
+	 * @param engine
+	 * 	name of the Deep Learning framework (engine). For example: Pytorch, Tensorflow....
+	 * @param version
+	 * 	version of the training Deep Learning framework (engine)
+	 * @return an object containing all the information needed to launch a 
+	 * 	Deep learning framework
+	 */
+	public static EngineInfo defineDLEngine(String engine, String version, boolean gpu) {
+		Objects.requireNonNull(STATIC_JARS_DIRECTORY, "The Jars directory should not be null.");
+		boolean cpu = true;
+		if (engine.toLowerCase().equals(tensorflowJavaBioimageioTag)) {
+			cpu = true;
+		} else if (engine.toLowerCase().equals(pytorchJavaBioimageioTag)) {
+			cpu = true;
+		} else {
+			throw new IllegalArgumentException("Please spedicify whether the engine can CPU or not "
+					+ "and whether it can use GPU or not. Default values only exist for "
+					+ tensorflowJavaBioimageioTag + " and " + pytorchJavaBioimageioTag + " engines.");
+		}
+		return defineDLEngine(engine, version, STATIC_JARS_DIRECTORY, cpu, gpu);
+	}
+	
+	/**
+	 * Set the parameters to launch the wanted Deep Learning framework (engine)
+	 * in the program
+	 * 
+	 * @param engine
+	 * 	name of the Deep Learning framework (engine). For example: Pytorch, Tensorflow....
+	 * @param version
+	 * 	version of the training Deep Learning framework (engine)
+	 * @return an object containing all the information needed to launch a 
+	 * 	Deep learning framework
+	 */
+	public static EngineInfo defineDLEngine(String engine, String version,
+			boolean cpu, boolean gpu) {
+		Objects.requireNonNull(STATIC_JARS_DIRECTORY, "The Jars directory should not be null.");
+		EngineInfo engineInfo =  new EngineInfo(engine, version, STATIC_JARS_DIRECTORY);
+		engineInfo.supportCPU(cpu);
+		engineInfo.supportGPU(gpu);
+		return engineInfo;
+	}
+	
+	/**
 	 * Retrieve the complete name of the Deep Learning framework (engine)
 	 * version. It includes the engine, the Java version, the os and the the machine.
 	 * It should be the name of the directory where the needed JARs are stored.
