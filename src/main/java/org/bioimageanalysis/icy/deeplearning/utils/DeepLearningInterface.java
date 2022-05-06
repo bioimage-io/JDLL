@@ -27,8 +27,12 @@ public interface DeepLearningInterface {
 	 * @throws InvocationTargetException if there is any error invoking the NDManager
 	 */
 	default void initializeNDArrays() throws ClassNotFoundException, NoSuchMethodException, SecurityException, IllegalAccessException, IllegalArgumentException, InvocationTargetException {
-		NDManager managerAux = NDManager.newBaseManager();
-		managerAux.close();
+		ClassLoader engineClassloader = Thread.currentThread().getContextClassLoader();
+		Class<?> cl = engineClassloader.loadClass("ai.djl.ndarray.NDManager");
+	    Method m = cl.getMethod("newBaseManager");
+	    Object manager = m.invoke(null);
+	    ((NDManager) manager).close();
+	    manager = null;
 	}
 	
 	/**
