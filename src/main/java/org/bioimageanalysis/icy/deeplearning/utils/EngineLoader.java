@@ -137,13 +137,13 @@ public class EngineLoader  extends ClassLoader{
 			this.engineClassloader = loadedEngines.get(majorVersion);
 			return;
 		}
-		URL[] urls = new URL[new File(this.enginePath).listFiles().length + 1];
+		URL[] urls = new URL[new File(this.enginePath).listFiles().length];
 		int c = 0;
 		for (File ff : new File(this.enginePath).listFiles()) {
 			urls[c ++] = ff.toURI().toURL();
 		}
 		// TODO the following line tried to add the JAR of the model runner without repetition but remove it for now
-		urls[c] = EngineLoader.class.getProtectionDomain().getCodeSource().getLocation().toURI().toURL();
+		//urls[c] = EngineLoader.class.getProtectionDomain().getCodeSource().getLocation().toURI().toURL();
 	    this.engineClassloader = new URLClassLoader(urls);
 		
 		//loadedEngines.put(this.majorVersion, this.engineClassloader);
