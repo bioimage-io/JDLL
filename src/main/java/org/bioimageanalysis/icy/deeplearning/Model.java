@@ -12,6 +12,9 @@ import org.bioimageanalysis.icy.deeplearning.tensor.Tensor;
 import org.bioimageanalysis.icy.deeplearning.tensor.TensorAPIManager;
 import org.bioimageanalysis.icy.deeplearning.utils.DeepLearningInterface;
 import org.bioimageanalysis.icy.deeplearning.utils.EngineLoader;
+
+import ai.djl.ndarray.NDManager;
+
 import org.bioimageanalysis.icy.deeplearning.utils.EngineInfo;
 
 /**
@@ -107,6 +110,8 @@ public class Model {
 	{
 		DeepLearningInterface engineInstance = engineClassLoader.getEngineInstance();
 		engineClassLoader.setEngineClassLoader();
+		NDManager aa = NDManager.newBaseManager();
+		aa.close();
 		engineInstance.loadModel(modelFolder, modelSource);
 		engineClassLoader.setIcyClassLoader();
 	}
