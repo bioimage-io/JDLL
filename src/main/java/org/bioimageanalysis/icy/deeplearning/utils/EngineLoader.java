@@ -165,6 +165,7 @@ public class EngineLoader  extends ClassLoader{
 	    Method m = cl.getMethod("newBaseManager");
 	    Object manager = m.invoke(null);
 	    ((NDManager) manager).close();
+	    manager = null;
 	    setIcyClassLoader();
 	}
 	
