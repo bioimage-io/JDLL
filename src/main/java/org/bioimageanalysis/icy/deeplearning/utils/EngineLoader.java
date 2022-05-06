@@ -5,6 +5,8 @@ package org.bioimageanalysis.icy.deeplearning.utils;
 
 import java.io.File;
 import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.net.MalformedURLException;
 import java.net.URISyntaxException;
 import java.net.URL;
@@ -120,8 +122,14 @@ public class EngineLoader  extends ClassLoader{
 	 * contain the engine and the JAR containing this class
 	 * @throws URISyntaxException if there is an error creating an URL
 	 * @throws MalformedURLException if theURL is incorrect
+	 * @throws InvocationTargetException 
+	 * @throws IllegalArgumentException 
+	 * @throws IllegalAccessException 
+	 * @throws SecurityException 
+	 * @throws NoSuchMethodException 
+	 * @throws ClassNotFoundException 
 	 */
-	private void loadClasses() throws URISyntaxException, MalformedURLException {
+	private void loadClasses() throws URISyntaxException, MalformedURLException, ClassNotFoundException, NoSuchMethodException, SecurityException, IllegalAccessException, IllegalArgumentException, InvocationTargetException {
 		// If the ClassLoader was already created, use it
 		if (loadedEngines.get(majorVersion) != null) {
 			this.engineClassloader = loadedEngines.get(majorVersion);
@@ -132,11 +140,21 @@ public class EngineLoader  extends ClassLoader{
 		for (File ff : new File(this.enginePath).listFiles()) {
 			urls[c ++] = ff.toURI().toURL();
 		}
+		initializeNDArrays();
 		// TODO the following line tried to add the JAR of the model runner without repetition but remove it for now
 		//urls[c] = EngineLoader.class.getProtectionDomain().getCodeSource().getLocation().toURI().toURL();
 	    this.engineClassloader = new URLClassLoader(urls);
 		
 		loadedEngines.put(this.majorVersion, this.engineClassloader);
+	}
+	
+	private void initializeNDArrays() throws ClassNotFoundException, NoSuchMethodException, SecurityException, IllegalAccessException, IllegalArgumentException, InvocationTargetException {
+		setEngineClassLoader();
+	    Class<?> cl = engineClassloader.loadClass("ai.djl.ndarray.NDManager");
+	    Method m = cl.getMethod("newBaseManager");
+	    m.invoke(null);
+	    System.out.println("loaded NDArrays");
+	    setIcyClassLoader();
 	}
 	
 	/**
