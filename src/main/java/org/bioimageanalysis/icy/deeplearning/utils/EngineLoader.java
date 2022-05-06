@@ -18,6 +18,8 @@ import java.util.zip.ZipFile;
 
 import org.bioimageanalysis.icy.deeplearning.exceptions.LoadEngineException;
 
+import ai.djl.ndarray.NDManager;
+
 /**
  * @author Carlos Garcia Lopez de Haro
  *
@@ -145,15 +147,24 @@ public class EngineLoader  extends ClassLoader{
 	    this.engineClassloader = new URLClassLoader(urls);
 		initializeNDArrays();
 		
-		loadedEngines.put(this.majorVersion, this.engineClassloader);
+		//loadedEngines.put(this.majorVersion, this.engineClassloader);
 	}
 	
+	/**
+	 * Load the 
+	 * @throws ClassNotFoundException
+	 * @throws NoSuchMethodException
+	 * @throws SecurityException
+	 * @throws IllegalAccessException
+	 * @throws IllegalArgumentException
+	 * @throws InvocationTargetException
+	 */
 	private void initializeNDArrays() throws ClassNotFoundException, NoSuchMethodException, SecurityException, IllegalAccessException, IllegalArgumentException, InvocationTargetException {
 		setEngineClassLoader();
 	    Class<?> cl = engineClassloader.loadClass("ai.djl.ndarray.NDManager");
 	    Method m = cl.getMethod("newBaseManager");
-	    m.invoke(null);
-	    System.out.println("loaded NDArrays");
+	    Object manager = m.invoke(null);
+	    ((NDManager) manager).close();
 	    setIcyClassLoader();
 	}
 	
