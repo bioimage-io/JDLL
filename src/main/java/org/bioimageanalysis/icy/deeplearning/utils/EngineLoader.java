@@ -127,7 +127,7 @@ public class EngineLoader  extends ClassLoader{
 			this.engineClassloader = loadedEngines.get(majorVersion);
 			return;
 		}
-		URL[] urls = new URL[new File(this.enginePath).listFiles().length + 1];
+		URL[] urls = new URL[new File(this.enginePath).listFiles().length];
 		int c = 0;
 		for (File ff : new File(this.enginePath).listFiles()) {
 			urls[c ++] = ff.toURI().toURL();

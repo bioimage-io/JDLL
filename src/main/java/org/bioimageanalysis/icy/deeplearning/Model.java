@@ -3,6 +3,10 @@
  */
 package org.bioimageanalysis.icy.deeplearning;
 
+import java.io.File;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.net.URLClassLoader;
 import java.util.List;
 
 import org.bioimageanalysis.icy.deeplearning.exceptions.LoadEngineException;
@@ -110,8 +114,6 @@ public class Model {
 	{
 		DeepLearningInterface engineInstance = engineClassLoader.getEngineInstance();
 		engineClassLoader.setEngineClassLoader();
-		NDManager aa = NDManager.newBaseManager();
-		aa.close();
 		engineInstance.loadModel(modelFolder, modelSource);
 		engineClassLoader.setIcyClassLoader();
 	}
