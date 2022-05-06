@@ -90,7 +90,9 @@ public class EngineLoader  extends ClassLoader{
 		this.enginePath = engineInfo.getDeepLearningVersionJarsDirectory();
 		serEngineAndMajorVersion(engineInfo);
 		loadClasses();
-	    setEngineInstance();
+		setEngineClassLoader();
+		setEngineInstance();
+		setIcyClassLoader();
 	}
 	
 	/**
@@ -145,7 +147,6 @@ public class EngineLoader  extends ClassLoader{
 		// TODO the following line tried to add the JAR of the model runner without repetition but remove it for now
 		//urls[c] = EngineLoader.class.getProtectionDomain().getCodeSource().getLocation().toURI().toURL();
 	    this.engineClassloader = new URLClassLoader(urls);
-		initializeNDArrays();
 		
 		//loadedEngines.put(this.majorVersion, this.engineClassloader);
 	}
