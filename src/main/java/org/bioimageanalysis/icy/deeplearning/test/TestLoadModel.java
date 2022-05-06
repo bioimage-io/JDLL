@@ -10,11 +10,11 @@ public class TestLoadModel {
 	public static void main(String[] args) throws LoadEngineException, Exception {
 		String enginesDir = "C:\\Users\\angel\\OneDrive\\Documentos\\pasteur\\git\\deep-icy\\engines";
 		boolean cpu = true;
-		boolean gpu = false;
-		EngineInfo engineInfo = EngineInfo.defineDLEngine("tensorflow_saved_model_bundle", "1.15.0", enginesDir, cpu, gpu);
+		boolean gpu = true;
+		EngineInfo engineInfo = EngineInfo.defineDLEngine("torchscript", "1.7.1", enginesDir, cpu, gpu);
 		
-		String modelFolder = "C:\\Users\\angel\\OneDrive\\Documentos\\pasteur\\git\\deep-icy\\models\\sample";
-		String modelSource = "C:\\Users\\angel\\OneDrive\\Documentos\\pasteur\\git\\deep-icy\\models\\sample\\tf_weights.zip";
+		String modelFolder = "C:\\Users\\angel\\OneDrive\\Documentos\\pasteur\\git\\deep-icy\\models\\arabidopsis-ovules-boundarymodel";
+		String modelSource = "C:\\Users\\angel\\OneDrive\\Documentos\\pasteur\\git\\deep-icy\\models\\arabidopsis-ovules-boundarymodel\\weights-torchscript.pt";
 
 		Model model = Model.createDeepLearningModel(modelFolder, modelSource, engineInfo);
 		model.loadModel();
