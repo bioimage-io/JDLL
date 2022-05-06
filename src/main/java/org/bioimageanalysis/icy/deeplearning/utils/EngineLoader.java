@@ -145,8 +145,28 @@ public class EngineLoader  extends ClassLoader{
 		// TODO the following line tried to add the JAR of the model runner without repetition but remove it for now
 		//urls[c] = EngineLoader.class.getProtectionDomain().getCodeSource().getLocation().toURI().toURL();
 	    this.engineClassloader = new URLClassLoader(urls);
+		initializeNDArrays();
 		
 		//loadedEngines.put(this.majorVersion, this.engineClassloader);
+	}
+	
+	/**
+	 * Load the NDArray neeeded dependencies into memory to load the needed engines and native libraries
+	 * @throws ClassNotFoundException if the NDManager class is not found
+	 * @throws NoSuchMethodException is the methods to create a NDManager are not found
+	 * @throws SecurityException if there is a security exception
+	 * @throws IllegalAccessException if there is an illegal access
+	 * @throws IllegalArgumentException if one of the argumnets does not correspond
+	 * @throws InvocationTargetException if there is any error invoking the NDManager
+	 */
+	private void initializeNDArrays() throws ClassNotFoundException, NoSuchMethodException, SecurityException, IllegalAccessException, IllegalArgumentException, InvocationTargetException {
+		setEngineClassLoader();
+	    Class<?> cl = engineClassloader.loadClass("ai.djl.ndarray.NDManager");
+	    Method m = cl.getMethod("newBaseManager");
+	    Object manager = m.invoke(null);
+	    ((NDManager) manager).close();
+	    manager = null;
+	    setIcyClassLoader();
 	}
 	
 	/**
