@@ -26,9 +26,9 @@
 	</build>
 	<dependencies>
 		<dependency>
-		    <groupId>ai.djl</groupId>
-		    <artifactId>api</artifactId>
-		    <version>0.10.0</version>
+			<groupId>org.nd4j</groupId>
+			<artifactId>nd4j-native</artifactId>
+			<version>1.0.0-M2</version>
 		</dependency>
 	</dependencies>
 	<repositories>
