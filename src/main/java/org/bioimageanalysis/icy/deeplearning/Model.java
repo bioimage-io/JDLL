@@ -114,7 +114,7 @@ public class Model {
 	{
 		DeepLearningInterface engineInstance = engineClassLoader.getEngineInstance();
 		engineClassLoader.setEngineClassLoader();
-		engineInstance.loadModel(modelFolder, modelSource);
+		engineInstance.loadModel(modelFolder, modelSource)
 		engineClassLoader.setIcyClassLoader();
 	}
 	
