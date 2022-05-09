@@ -61,10 +61,6 @@ public final class Tensor
 	 */
 	private DataType dType;
 	/**
-     * {@link TensorManager} that needs to be associated with each tensor
-	 */
-	private TensorManager manager;
-	/**
 	 * TODO make a more robust case for shape
 	 * Shape of the tensor
 	 */
@@ -83,19 +79,15 @@ public final class Tensor
 	 * 	String containing the axes order of the tensor. For example: "bcyx"
 	 * @param data
 	 * 	data structure similar to a Numpy array that contains all tensor numbers
-     * @param manager
-     * 	{@link TensorManager} that needs to be associated with each tensor
 	 */
-    private Tensor(String tensorName, String axes, INDArray data, TensorManager manager)
+    private Tensor(String tensorName, String axes, INDArray data)
     {
     	Objects.requireNonNull(tensorName, "'tensorName' field should not be empty");
     	Objects.requireNonNull(axes, "'axes' field should not be empty");
-    	Objects.requireNonNull(manager, "'manager' field should not be empty");
     	this.tensorName = tensorName;
     	this.axesString = axes;
     	this.axesArray = convertToTensorDimOrder(axes);
     	this.data = data;
-    	this.manager = manager;
     	addToList();
     	if (data != null) {
     		setShape();
@@ -119,11 +111,11 @@ public final class Tensor
      * 	{@link TensorManager} that needs to be associated with each tensor
      * @return the tensor
      */
-    public static Tensor build(String tensorName, String axes, INDArray data, TensorManager manager)
+    public static Tensor build(String tensorName, String axes, INDArray data)
     {
     	if (data == null)
     		throw new IllegalArgumentException("Trying to create tensor from an empty NDArray");
-    	return new Tensor(tensorName, axes, data, manager);
+    	return new Tensor(tensorName, axes, data);
     }
     
     /**
@@ -133,13 +125,11 @@ public final class Tensor
 	 * 	name of the tensor as defined by the model
 	 * @param axes
 	 * 	String containing the axes order of the tensor. For example: "bcyx"
-     * @param manager
-     * 	{@link TensorManager} that needs to be associated with each tensor
      * @return the tensor
      */
-    public static Tensor buildEmptyTensor(String tensorName, String axes, TensorManager manager)
+    public static Tensor buildEmptyTensor(String tensorName, String axes)
     {
-    	return new Tensor(tensorName, axes, null, manager);
+    	return new Tensor(tensorName, axes, null);
     }
     
     /**
@@ -197,25 +187,22 @@ public final class Tensor
     				+ "been defined. Cannot redefine the backend data of a tensor once it has"
     				+ " been set. In order to modify the tensor, please modify the NDArray "
     				+ "used as backend for the tensor.");
-    	}else if (data.getManager() != manager.getManager()) {
-    		throw new IllegalArgumentException("The NDManager of the NDArray must be the same"
-    				+ " as the NDManager of the tensor TensoManager (tensorManager.getManager()).");
     	}
     	this.data = data;
     	if (emptyTensor) {
     		setShape();
-        	dType = data.getDataType();
+        	dType = data.dataType();
         	emptyTensor = false;
     	}
-    	if (!equalShape(data.getShape())) {
+    	if (!equalShape(data.shape())) {
     		throw new IllegalArgumentException("Trying to set an NDArray as the backend of the Tensor "
     				+ "with a different shape than the Tensor. Tensor shape is: " + Arrays.toString(shape)
-    				+ " and NDArray shape is: " + Arrays.toString(data.getShape().getShape()));
+    				+ " and NDArray shape is: " + Arrays.toString(data.shape()));
     	}
-    	if (dType != data.getDataType()) {
+    	if (dType != data.dataType()) {
     		throw new IllegalArgumentException("Trying to set an NDArray as the backend of the Tensor "
     				+ "with a different data type than the Tensor. Tensor data type is: " + dType.toString()
-    				+ " and NDArray data type is: " + data.getDataType().toString());
+    				+ " and NDArray data type is: " + data.dataType().toString());
     	}
     }
     
@@ -349,7 +336,6 @@ public final class Tensor
 		   	this.axesString = null;
 		   	this.dType = null;
 		   	this.shape = null;
-		   	manager = null;
 		   	tensorName = null;
     	} catch(Exception ex) {
 	   		closed = false;
@@ -370,32 +356,14 @@ public final class Tensor
     public static Tensor getTensorByNameFromList(List<Tensor> lTensors, String name) {
     	return lTensors.stream().filter(pp -> !pp.isClosed() && pp.getName() != null && pp.getName().equals(name)).findAny().orElse(null);
     }
-
-    /**
-     * Creates a tensor shape from an int array
-     * 
-     * @param shapeArr
-     * 	int array with the size of each dimension
-     * @return Shape with the image dimensions in the desired order.
-     */
-    public static Shape ndarrayShapeFromIntArr(int[] shapeArr)
-    {
-        long[] dimensionSizes = new long[shapeArr.length];
-        for (int i = 0; i < dimensionSizes.length; i++)
-        {
-        	dimensionSizes[i] = (long) shapeArr[i];
-        }
-        return new Shape(dimensionSizes);
-    }
     
     /**
      * If the shape of a tensor is the same as the same  as the shape of this tensor
      * @param shape
-     * 	the shape of the other tensor
+     * 	the shape of the other tensor as a long arr
      * @return whether the tensor has the same shape to this tensor
      */
-    private boolean equalShape(Shape shape) {
-    	long[] longShape = shape.getShape();
+    private boolean equalShape(long[] longShape) {
     	if (longShape.length != this.shape.length)
     		return false;
     	for (int i = 0; i < longShape.length; i ++) {
@@ -467,37 +435,15 @@ public final class Tensor
     }
     
     /**
-     * Add tensor to list of tensors owned by the parent TensorManager
-     */
-    private void addToList() {
-    	List<Tensor> list = manager.getTensorList();
-    	Tensor coincidence = getTensorByNameFromList(list, tensorName);
-    	if (coincidence != null) {
-    		throw new IllegalArgumentException("There already exists a Tensor called '" + tensorName
-    				+ "' in the list of tensors associated to the parent TensorManager. Tensor names"
-    				+ " for the same TEnsorManager should be unique.");
-    	}
-    	manager.addTensor(this);
-    }
-    
-    /**
      * Set the shape of the tensor from the NDArray shape
      */
     private void setShape() {
     	if (data == null)
     		throw new IllegalArgumentException("Trying to create tensor from an empty NDArray");
-    	long[] longShape = data.getShape().getShape();
+    	long[] longShape = data.shape();
     	shape = new int[longShape.length];
     	for (int i = 0; i < shape.length; i ++)
     		shape[i] = (int) longShape[i];
-    }
-    
-    /**
-     * Get the parent TensorManager of this tensor
-     * @return the parent TensorManager
-     */
-    public TensorManager getManager() {
-    	return manager;
     }
     
     /**
@@ -574,11 +520,6 @@ public final class Tensor
     }
     
     public static void main(String[] args) {
-    	NDManager a = NDManager.newBaseManager();
-    	NDManager b = NDManager.newBaseManager();
-    	NDArray tensora = a.create(false);
-    	tensora.detach();
-    	String nameb = b.getName();
-    	tensora.attach(b);
+    	
     }
 }
