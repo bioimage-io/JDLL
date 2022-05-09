@@ -10,10 +10,12 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 
-import ai.djl.ndarray.NDArray;
-import ai.djl.ndarray.NDManager;
-import ai.djl.ndarray.types.DataType;
-import ai.djl.ndarray.types.Shape;
+import org.nd4j.linalg.api.buffer.DataType;
+import org.nd4j.linalg.api.ndarray.INDArray;
+import org.nd4j.linalg.factory.Nd4j;
+
+
+
 
 /**
  * Tensors created to interact with a Deep Learning engine while
@@ -40,7 +42,7 @@ public final class Tensor
 	/** 
 	 * Software agnostic representation of the tensor data
 	 */
-	private NDArray data;
+	private INDArray data;
 	/** 
 	 * Data of the tensor stored in a buffer 
 	 */
@@ -84,7 +86,7 @@ public final class Tensor
      * @param manager
      * 	{@link TensorManager} that needs to be associated with each tensor
 	 */
-    private Tensor(String tensorName, String axes, NDArray data, TensorManager manager)
+    private Tensor(String tensorName, String axes, INDArray data, TensorManager manager)
     {
     	Objects.requireNonNull(tensorName, "'tensorName' field should not be empty");
     	Objects.requireNonNull(axes, "'axes' field should not be empty");
@@ -97,7 +99,7 @@ public final class Tensor
     	addToList();
     	if (data != null) {
     		setShape();
-        	dType = data.getDataType();
+        	dType = data.dataType();
     		emptyTensor = false;
     	} else {
     		emptyTensor = true;
@@ -117,7 +119,7 @@ public final class Tensor
      * 	{@link TensorManager} that needs to be associated with each tensor
      * @return the tensor
      */
-    public static Tensor build(String tensorName, String axes, NDArray data, TensorManager manager)
+    public static Tensor build(String tensorName, String axes, INDArray data, TensorManager manager)
     {
     	if (data == null)
     		throw new IllegalArgumentException("Trying to create tensor from an empty NDArray");
@@ -149,15 +151,15 @@ public final class Tensor
     	throwExceptionIfClosed();
     	Buffer dataBuffer;
     	if (getDataType() == DataType.INT8 || getDataType() == DataType.INT8)
-    		dataBuffer = ByteBuffer.wrap(getDataAsNDArray().toByteArray());
-    	else if (getDataType() == DataType.FLOAT64)
-	    	dataBuffer = DoubleBuffer.wrap(getDataAsNDArray().toDoubleArray());
-    	else if (getDataType() == DataType.FLOAT32 || getDataType() == DataType.FLOAT16)
-	    	dataBuffer = FloatBuffer.wrap(getDataAsNDArray().toFloatArray());
+    		dataBuffer = getDataAsNDArray().data().asNio();
+    	else if (getDataType() == DataType.DOUBLE)
+	    	dataBuffer = getDataAsNDArray().data().asNioDouble();
+    	else if (getDataType() == DataType.FLOAT || getDataType() == DataType.FLOAT16)
+	    	dataBuffer = getDataAsNDArray().data().asNioFloat();
     	else if (getDataType() == DataType.INT32)
-	    	dataBuffer = IntBuffer.wrap(getDataAsNDArray().toIntArray());
+	    	dataBuffer = getDataAsNDArray().data().asNioInt();
     	else if (getDataType() == DataType.INT64)
-	    	dataBuffer = LongBuffer.wrap(getDataAsNDArray().toLongArray());
+	    	dataBuffer = getDataAsNDArray().data().asNioLong();
     	else 
     		throw new IllegalArgumentException("Not supported data type: " + getDataType().toString());
     	getDataAsNDArray().close();
@@ -174,6 +176,7 @@ public final class Tensor
     	throwExceptionIfClosed();
     	NDArray ndarray = manager.getManager().create(getDataAsBuffer(),
     			Tensor.ndarrayShapeFromIntArr(getShape()), getDataType());
+    	Nd4j.create(DataBuffer. getDataAsBuffer(),getShape(),'c');
     	setBufferData(null);
     	setNDArrayData(ndarray);
     }
@@ -183,7 +186,7 @@ public final class Tensor
      * @param data
      * 	the numbers of the tensor in a Numpy array like structure
      */
-    public void setNDArrayData(NDArray data) {
+    public void setNDArrayData(INDArray data) {
     	throwExceptionIfClosed();
     	if (data == null && this.data != null) {
     		this.data.close();
@@ -241,7 +244,7 @@ public final class Tensor
      * REturn the data in a software agnostic way using DJL NDArrays
      * @return the data of the tensor as a NDArray
      */
-    public NDArray getDataAsNDArray() {
+    public INDArray getDataAsNDArray() {
     	throwExceptionIfClosed();
     	if (data == null && dataBuffer == null)
     		throw new IllegalArgumentException("Tensor '" + this.tensorName + "' is empty.");
