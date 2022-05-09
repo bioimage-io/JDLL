@@ -6,7 +6,6 @@ package org.bioimageanalysis.icy.deeplearning.utils;
 import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 import java.net.MalformedURLException;
 import java.net.URISyntaxException;
 import java.net.URL;
@@ -18,7 +17,6 @@ import java.util.zip.ZipFile;
 
 import org.bioimageanalysis.icy.deeplearning.exceptions.LoadEngineException;
 
-import ai.djl.ndarray.NDManager;
 
 /**
  * @author Carlos Garcia Lopez de Haro
@@ -149,25 +147,6 @@ public class EngineLoader  extends ClassLoader{
 	    this.engineClassloader = new URLClassLoader(urls);
 		
 		//loadedEngines.put(this.majorVersion, this.engineClassloader);
-	}
-	
-	/**
-	 * Load the NDArray neeeded dependencies into memory to load the needed engines and native libraries
-	 * @throws ClassNotFoundException if the NDManager class is not found
-	 * @throws NoSuchMethodException is the methods to create a NDManager are not found
-	 * @throws SecurityException if there is a security exception
-	 * @throws IllegalAccessException if there is an illegal access
-	 * @throws IllegalArgumentException if one of the argumnets does not correspond
-	 * @throws InvocationTargetException if there is any error invoking the NDManager
-	 */
-	private void initializeNDArrays() throws ClassNotFoundException, NoSuchMethodException, SecurityException, IllegalAccessException, IllegalArgumentException, InvocationTargetException {
-		setEngineClassLoader();
-	    Class<?> cl = engineClassloader.loadClass("ai.djl.ndarray.NDManager");
-	    Method m = cl.getMethod("newBaseManager");
-	    Object manager = m.invoke(null);
-	    ((NDManager) manager).close();
-	    manager = null;
-	    setIcyClassLoader();
 	}
 	
 	/**

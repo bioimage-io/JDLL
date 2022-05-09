@@ -4,7 +4,6 @@ import java.util.List;
 
 import org.bioimageanalysis.icy.deeplearning.tensor.Tensor;
 import org.bioimageanalysis.icy.deeplearning.tensor.TensorAPIManager;
-import org.bioimageanalysis.icy.deeplearning.tensor.TensorManager;
 import org.bioimageanalysis.icy.deeplearning.exceptions.LoadModelException;
 import org.bioimageanalysis.icy.deeplearning.exceptions.RunModelException;
 
@@ -27,14 +26,12 @@ public interface DeepLearningInterface {
 		// Convert the lists of tensors, which have to be using Buffers as backend, into
 		// a list of tensors using the corresponding API version NDArrays as backend
 		List<Tensor> copyInputTensors = TensorAPIManager.createTensorsCopyIntoAPI(inputTensors);
-		TensorManager manager = copyInputTensors.get(0).getManager();
-		List<Tensor> copyOutputTensors = TensorAPIManager.createTensorsCopyIntoAPI(outputTensors, manager);
+		List<Tensor> copyOutputTensors = TensorAPIManager.createTensorsCopyIntoAPI(outputTensors);
 		copyOutputTensors = run(copyInputTensors, copyOutputTensors);
 		TensorAPIManager.tensorsAsBuffers(copyInputTensors);
 		TensorAPIManager.tensorsAsBuffers(copyOutputTensors);
 		TensorAPIManager.copyTensorsIntoAPIAsBuffers(copyInputTensors, inputTensors);
 		TensorAPIManager.copyTensorsIntoAPIAsBuffers(copyOutputTensors, outputTensors);
-		manager.getManager().close();
 		copyInputTensors.stream().forEach(tensor -> tensor.close());
 		copyOutputTensors.stream().forEach(tensor -> tensor.close());
 		return outputTensors;
