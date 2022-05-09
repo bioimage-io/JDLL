@@ -88,7 +88,6 @@ public final class Tensor
     	this.axesString = axes;
     	this.axesArray = convertToTensorDimOrder(axes);
     	this.data = data;
-    	addToList();
     	if (data != null) {
     		setShape();
         	dType = data.dataType();
