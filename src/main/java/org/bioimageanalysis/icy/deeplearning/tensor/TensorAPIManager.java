@@ -3,7 +3,6 @@ package org.bioimageanalysis.icy.deeplearning.tensor;
 import java.util.ArrayList;
 import java.util.List;
 
-import ai.djl.ndarray.NDArray;
 
 /**
  * Class used to convert tensors that are defined in a particular API version into the API
@@ -60,8 +59,7 @@ public class TensorAPIManager {
 	 * @return tensors in the new DJL API version
 	 */
 	public static List<Tensor> createTensorsCopyIntoAPI(List<Tensor> ogInTensors) {
-		TensorManager manager = TensorManager.build();
-		return createTensorsCopyIntoAPI(ogInTensors, manager, true);
+		return createTensorsCopyIntoAPI(ogInTensors, true);
 	}
 	
 	/**
@@ -71,38 +69,11 @@ public class TensorAPIManager {
 	 * 	tensors from original DJL API version 
 	 * @param manager
 	 * 	TensorManager used to create the new tensors
-	 * @return tensors in the new DJL API version
-	 */
-	public static List<Tensor> createTensorsCopyIntoAPI(List<Tensor> ogInTensors, TensorManager manager) {
-		return createTensorsCopyIntoAPI(ogInTensors, manager, true);
-	}
-	
-	/**
-	 * Create a copy of the original list of tensors from the Deep Learning Manager DJL API
-	 * into the DJL API of the DL engine that is going to be used
-	 * @param ogInTensors
-	 * 	tensors from original DJL API version 
 	 * @param setNullOg
 	 * 	whether the backend of the original tensor can be set to null or not. true saves memory as there is only one copy
 	 * @return tensors in the new DJL API version
 	 */
 	public static List<Tensor> createTensorsCopyIntoAPI(List<Tensor> ogInTensors, boolean setNullOg) {
-		TensorManager manager = TensorManager.build();
-		return createTensorsCopyIntoAPI(ogInTensors, manager,setNullOg);
-	}
-	
-	/**
-	 * Create a copy of the original list of tensors from the Deep Learning Manager DJL API
-	 * into the DJL API of the DL engine that is going to be used
-	 * @param ogInTensors
-	 * 	tensors from original DJL API version 
-	 * @param manager
-	 * 	TensorManager used to create the new tensors
-	 * @param setNullOg
-	 * 	whether the backend of the original tensor can be set to null or not. true saves memory as there is only one copy
-	 * @return tensors in the new DJL API version
-	 */
-	public static List<Tensor> createTensorsCopyIntoAPI(List<Tensor> ogInTensors, TensorManager manager, boolean setNullOg) {
 		List<Tensor> newTensors = new ArrayList<Tensor>();
 		for (Tensor tt : ogInTensors) {
 			if (tt.isEmpty()) {
