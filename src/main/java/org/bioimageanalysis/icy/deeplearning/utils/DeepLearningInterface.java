@@ -3,40 +3,10 @@ package org.bioimageanalysis.icy.deeplearning.utils;
 import java.util.List;
 
 import org.bioimageanalysis.icy.deeplearning.tensor.Tensor;
-import org.bioimageanalysis.icy.deeplearning.tensor.TensorAPIManager;
 import org.bioimageanalysis.icy.deeplearning.exceptions.LoadModelException;
 import org.bioimageanalysis.icy.deeplearning.exceptions.RunModelException;
 
 public interface DeepLearningInterface {
-	
-	/**
-	 * Default method to run an external Deep Learning framework (engine). It converts first converts
-	 * the tensor lists from API version agnostic Buffer based tensors into API version dependent
-	 * NDArray based tensors.
-	 * @param inputTensors
-	 * 	list containing the input tensors
-	 * @param outputTensors
-	 * 	list containing only the information about output tensors
-	 * @return
-	 * 	output tensors produced by the model
-	 * @throws RunModelException if there is an error in the execution of the model
-	 * @throws Exception if there is an error closing the tensors or tensormanager
-	 */
-	default List<Tensor> runEngine(List<Tensor> inputTensors, List<Tensor> outputTensors) throws RunModelException, Exception {
-		// Convert the lists of tensors, which have to be using Buffers as backend, into
-		// a list of tensors using the corresponding API version NDArrays as backend
-		List<Tensor> copyInputTensors = TensorAPIManager.createTensorsCopyIntoAPI(inputTensors);
-		List<Tensor> copyOutputTensors = TensorAPIManager.createTensorsCopyIntoAPI(outputTensors);
-		copyOutputTensors = run(copyInputTensors, copyOutputTensors);
-		TensorAPIManager.tensorsAsBuffers(copyInputTensors);
-		TensorAPIManager.tensorsAsBuffers(copyOutputTensors);
-		TensorAPIManager.copyTensorsIntoAPIAsBuffers(copyInputTensors, inputTensors);
-		TensorAPIManager.copyTensorsIntoAPIAsBuffers(copyOutputTensors, outputTensors);
-		copyInputTensors.stream().forEach(tensor -> tensor.close());
-		copyOutputTensors.stream().forEach(tensor -> tensor.close());
-		return outputTensors;
-		
-	}
 	
 	/**
 	 * Method that the interface implements to make inference.

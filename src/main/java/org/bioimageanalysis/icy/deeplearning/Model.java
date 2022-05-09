@@ -9,7 +9,6 @@ import org.bioimageanalysis.icy.deeplearning.exceptions.LoadEngineException;
 import org.bioimageanalysis.icy.deeplearning.exceptions.LoadModelException;
 import org.bioimageanalysis.icy.deeplearning.exceptions.RunModelException;
 import org.bioimageanalysis.icy.deeplearning.tensor.Tensor;
-import org.bioimageanalysis.icy.deeplearning.tensor.TensorAPIManager;
 import org.bioimageanalysis.icy.deeplearning.utils.DeepLearningInterface;
 import org.bioimageanalysis.icy.deeplearning.utils.EngineLoader;
 
@@ -143,14 +142,10 @@ public class Model {
 	 */
 	public List<Tensor>  runModel(List<Tensor> inTensors, List<Tensor> outTensors) throws RunModelException, Exception
 	{
-		// Convert Tensors to buffers first, and the to the corresponding DJL API
-		TensorAPIManager.tensorsAsBuffers(inTensors);
-		TensorAPIManager.tensorsAsBuffers(outTensors);
 		DeepLearningInterface engineInstance = engineClassLoader.getEngineInstance();
 		engineClassLoader.setEngineClassLoader();
-		outTensors = engineInstance.runEngine(inTensors, outTensors);
+		outTensors = engineInstance.run(inTensors, outTensors);
 		engineClassLoader.setIcyClassLoader();
-		TensorAPIManager.tensorsAsNDArrays(outTensors);
 		return outTensors;
 	}
 	
