@@ -1,18 +1,11 @@
 package org.bioimageanalysis.icy.deeplearning.tensor;
 
-import java.nio.Buffer;
-import java.nio.ByteBuffer;
-import java.nio.DoubleBuffer;
-import java.nio.FloatBuffer;
-import java.nio.IntBuffer;
-import java.nio.LongBuffer;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 
 import org.nd4j.linalg.api.buffer.DataType;
 import org.nd4j.linalg.api.ndarray.INDArray;
-import org.nd4j.linalg.factory.Nd4j;
 
 
 
