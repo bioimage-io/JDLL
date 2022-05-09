@@ -43,10 +43,6 @@ public final class Tensor
 	 * Software agnostic representation of the tensor data
 	 */
 	private INDArray data;
-	/** 
-	 * Data of the tensor stored in a buffer 
-	 */
-	private Buffer dataBuffer;
 	/**
 	 * Whether the tensor represents an image or not
 	 */
@@ -61,7 +57,6 @@ public final class Tensor
 	 */
 	private DataType dType;
 	/**
-	 * TODO make a more robust case for shape
 	 * Shape of the tensor
 	 */
 	private int[] shape;
@@ -132,45 +127,6 @@ public final class Tensor
     }
     
     /**
-     * Method that converts the backend data of the tensor from an {@link NDArray}
-     * object to a {@link Buffer} object. Regard that after the data is converted
-     * into a Buffer, the NDArray is closed and set to null.
-     */
-    public void array2buffer() {
-    	throwExceptionIfClosed();
-    	Buffer dataBuffer;
-    	if (getDataType() == DataType.INT8 || getDataType() == DataType.INT8)
-    		dataBuffer = getDataAsNDArray().data().asNio();
-    	else if (getDataType() == DataType.DOUBLE)
-	    	dataBuffer = getDataAsNDArray().data().asNioDouble();
-    	else if (getDataType() == DataType.FLOAT || getDataType() == DataType.FLOAT16)
-	    	dataBuffer = getDataAsNDArray().data().asNioFloat();
-    	else if (getDataType() == DataType.INT32)
-	    	dataBuffer = getDataAsNDArray().data().asNioInt();
-    	else if (getDataType() == DataType.INT64)
-	    	dataBuffer = getDataAsNDArray().data().asNioLong();
-    	else 
-    		throw new IllegalArgumentException("Not supported data type: " + getDataType().toString());
-    	getDataAsNDArray().close();
-    	setNDArrayData(null);
-    	setBufferData(dataBuffer);
-    }
-    
-    /**
-     * Method that converts the backend data of the tensor from an {@link Buffer} 
-     * object to a {@link NDArray} object. Regard that after the data is converted
-     * into a NDArray, the buffer is closed and set to null.
-     */
-    public void buffer2array () {
-    	throwExceptionIfClosed();
-    	NDArray ndarray = manager.getManager().create(getDataAsBuffer(),
-    			Tensor.ndarrayShapeFromIntArr(getShape()), getDataType());
-    	Nd4j.create(DataBuffer. getDataAsBuffer(),getShape(),'c');
-    	setBufferData(null);
-    	setNDArrayData(ndarray);
-    }
-    
-    /**
      * Set the data structure of the tensor that contains the numbers
      * @param data
      * 	the numbers of the tensor in a Numpy array like structure
@@ -181,7 +137,7 @@ public final class Tensor
     		this.data.close();
     		this.data = null;
     		return;
-    	} else if (dataBuffer != null || this.data != null) {
+    	} else if (this.data != null) {
     		throw new IllegalArgumentException("Tensor '" + tensorName + "' has already "
     				+ "been defined. Cannot redefine the backend data of a tensor once it has"
     				+ " been set. In order to modify the tensor, please modify the NDArray "
@@ -194,36 +150,15 @@ public final class Tensor
         	emptyTensor = false;
     	}
     	if (!equalShape(data.shape())) {
-    		throw new IllegalArgumentException("Trying to set an NDArray as the backend of the Tensor "
+    		throw new IllegalArgumentException("Trying to set an INDArray as the backend of the Tensor "
     				+ "with a different shape than the Tensor. Tensor shape is: " + Arrays.toString(shape)
-    				+ " and NDArray shape is: " + Arrays.toString(data.shape()));
+    				+ " and INDArray shape is: " + Arrays.toString(data.shape()));
     	}
     	if (dType != data.dataType()) {
-    		throw new IllegalArgumentException("Trying to set an NDArray as the backend of the Tensor "
+    		throw new IllegalArgumentException("Trying to set an INDArray as the backend of the Tensor "
     				+ "with a different data type than the Tensor. Tensor data type is: " + dType.toString()
-    				+ " and NDArray data type is: " + data.dataType().toString());
+    				+ " and INDArray data type is: " + data.dataType().toString());
     	}
-    }
-    
-    /**
-     * Set the data structure of the tensor that contains the numbers.
-     * @param data
-     * 	the numbers of the tensor in a buffer structure
-     */
-    public void setBufferData(Buffer bufferData) {
-    	throwExceptionIfClosed();
-    	// The tensor has to be first initialized with a NDArray as the backend.
-    	// They cannot be initialized with Buffer
-    	if (shape == null)
-    		throw new IllegalArgumentException("The tensor '" + this.tensorName + "' has to be initialized with an NDArray"
-    				+ " first, using: tensor.setNDArrayData(ndarray)");
-    	// If there already exist some information as the backend, throw an exception
-    	if (bufferData != null && data != null) {
-    		throw new IllegalArgumentException("This tensor  already contains data. The data"
-    				+ " of a tensor cannot be changed by setting another object as the backend."
-    				+ " In order to modify a tensor, the backend NDArray has to be modified.");
-    	}
-    	this.dataBuffer = bufferData;
     }
     
     /**
@@ -232,28 +167,13 @@ public final class Tensor
      */
     public INDArray getDataAsNDArray() {
     	throwExceptionIfClosed();
-    	if (data == null && dataBuffer == null)
+    	if (data == null && isEmpty())
     		throw new IllegalArgumentException("Tensor '" + this.tensorName + "' is empty.");
     	else if (data == null)
     		throw new IllegalArgumentException("If you want to retrieve the tensor data as an NDArray,"
     				+ " please first transform the tensor data into an NDArray using: "
     				+ "TensorManager.buffer2array(tensor)");
     	return this.data;
-    }
-    
-    /**
-     * REturn the data in a software agnostic way using Buffers
-     * @return the data of the tensor as a buffer
-     */
-    public Buffer getDataAsBuffer() {
-    	throwExceptionIfClosed();
-    	if (data == null && dataBuffer == null)
-    		throw new IllegalArgumentException("Tensor '" + this.tensorName + "' is empty.");
-    	else if (dataBuffer == null)
-    		throw new IllegalArgumentException("If you want to retrieve the tensor data as a Buffer,"
-    				+ " please first transform the tensor data into a Buffer using: "
-    				+ "TensorManager.buffer2array(tensor)");
-    	return this.dataBuffer;
     }
     
     /**
@@ -265,8 +185,6 @@ public final class Tensor
     	throwExceptionIfClosed();
     	if (tt.getDataAsNDArray() != null) {
     		copyNDArrayTensorBackend(tt);
-    	} else {
-    		copyBufferTensorBackend(tt);
     	}
     }
     
@@ -278,35 +196,6 @@ public final class Tensor
     public void copyNDArrayTensorBackend(Tensor tt) {
     	throwExceptionIfClosed();
 		setNDArrayData(tt.getDataAsNDArray());
-    }
-    
-    /**
-     * Copy the Buffer backend of a tensor 
-     * @param tt
-     * 	the tensor whose backedn is going to be copied
-     */
-    public void copyBufferTensorBackend(Tensor tt) {
-    	throwExceptionIfClosed();
-    	if (tt.getDataAsBuffer() == null)
-			throw new IllegalArgumentException("The source tensor to be copied from does not have a backend, it is empty.");
-		if (emptyTensor) {
-			emptyTensor = false;
-	    	dataBuffer = tt.getDataAsBuffer();
-	    	shape = tt.getShape();
-	    	dType = tt.getDataType();
-		} else if (dType != tt.getDataType()) {
-			throw new IllegalArgumentException("The tensor to be copied from has a different data type."
-					+ " Data types must be the same."
-					+ " This data type of the tensor to be copied in is: " + dType.toString()
-					+ " and the tensor to be copied from data type is: " + tt.getDataType().toString());
-		} else if (tt.getShape().equals(shape)) {
-			throw new IllegalArgumentException("The tensor to be copied from has a different shape."
-					+ " Shapes must be the same."
-					+ " The shape of the tensor to be copied in is: " + Arrays.toString(shape)
-					+ " and the tensor to be copied from data type is: " + Arrays.toString(tt.getShape()));
-		} else {
-	    	dataBuffer = tt.getDataAsBuffer();
-		}
     }
     
     /**
@@ -331,7 +220,6 @@ public final class Tensor
 		   	if (data != null)
 		   		data.close();
 		   	this.data = null;
-		   	this.dataBuffer = null;
 		   	this.axesString = null;
 		   	this.dType = null;
 		   	this.shape = null;
