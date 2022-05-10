@@ -144,7 +144,7 @@ public class EngineLoader  extends ClassLoader{
 		}
 		this.engineClassloader = new URLClassLoader(urls, icyClassloader);
 		
-		//loadedEngines.put(this.majorVersion, this.engineClassloader);
+		loadedEngines.put(this.majorVersion, this.engineClassloader);
 	}
 	
 	/**
