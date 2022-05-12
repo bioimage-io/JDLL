@@ -553,4 +553,13 @@ public class EngineInfo {
 	public static String getTfKey() {
 		return tensorflowEngineName;
 	}
+	
+	/**
+	 * Method that returns the name with which Tensorflow is defined
+	 * in the Bioimage.io.
+	 * @return the String used for tensorflow in the Bioimage.io
+	 */
+	public static String getBioimageioTfKey() {
+		return tensorflowEngineName;
+	}
 }
