@@ -560,6 +560,6 @@ public class EngineInfo {
 	 * @return the String used for tensorflow in the Bioimage.io
 	 */
 	public static String getBioimageioTfKey() {
-		return tensorflowEngineName;
+		return tensorflowJavaBioimageioTag;
 	}
 }
