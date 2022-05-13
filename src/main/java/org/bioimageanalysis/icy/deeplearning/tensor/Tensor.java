@@ -210,8 +210,11 @@ public final class Tensor
     	try {
 		   	closed = true;
 		   	axesArray = null;
-		   	if (data != null)
+		   	if (data != null) {
+		   		data.data().destroy();
+		   		data.data().close();
 		   		data.close();
+		   	}
 		   	this.data = null;
 		   	this.axesString = null;
 		   	this.dType = null;
