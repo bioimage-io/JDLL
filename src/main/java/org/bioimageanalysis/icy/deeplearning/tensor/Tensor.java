@@ -211,8 +211,8 @@ public final class Tensor
 		   	closed = true;
 		   	axesArray = null;
 		   	if (data != null) {
+		   		data.data().setData(new boolean[] {false});
 		   		data.data().destroy();
-		   		data.data().close();
 		   		data.close();
 		   	}
 		   	this.data = null;
