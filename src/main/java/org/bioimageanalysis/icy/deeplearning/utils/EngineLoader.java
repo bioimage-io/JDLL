@@ -268,15 +268,9 @@ public class EngineLoader  extends ClassLoader{
 	
 	/**
 	 * Close the created ClassLoader
-	 * @throws IOException if closing any file opened 
-	 * 	by this class loader resulted in an IOException. Any 
-	 * 	such exceptions are caught internally. If only one is caught,
-	 * 	then it is re-thrown. If more than one exception is caught, then
-	 * 	the second and following exceptions are added as suppressed exceptions of 
-	 * the first one caught, which is then re-thrown.
 	 */
 	// TODO is it necessary??
-	public void close() throws IOException{
+	public void close(){
 		engineInstance.closeModel();
 	    setIcyClassLoader();
 	    System.out.println("Exited engine ClassLoader");

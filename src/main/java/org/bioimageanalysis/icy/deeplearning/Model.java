@@ -115,9 +115,8 @@ public class Model {
 	/**
 	 * Close the Deep LEarning model in the ClassLoader where the Deep Learning
 	 * framework has been called and instantiated
-	 * @throws IOException  if there is any error closing the model on the instance of the other classloader
 	 */
-	public void closeModel() throws IOException
+	public void closeModel()
 	{
 		DeepLearningInterface engineInstance = getEngineClassLoader().getEngineInstance();
 		engineClassLoader.setEngineClassLoader();
