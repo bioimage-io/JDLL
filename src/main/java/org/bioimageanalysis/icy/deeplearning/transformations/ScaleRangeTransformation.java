@@ -1,6 +1,8 @@
 package org.bioimageanalysis.icy.deeplearning.transformations;
 
 
+import java.util.stream.IntStream;
+
 import org.bioimageanalysis.icy.deeplearning.tensor.Tensor;
 import org.nd4j.linalg.api.ndarray.INDArray;
 
@@ -80,8 +82,15 @@ public class ScaleRangeTransformation extends DefaultImageTransformation {
 					+ "arguments 'min_percentile' and 'max_percetile' in the"
 					+ " yaml file.");
 		}
+		String axesOrder = inputTensor.getAxesOrderString();
+		int[] percentileAxes = IntStream.range(0, axesOrder.length()).toArray();
+		if (axes != null) {
+			percentileAxes = IntStream.range(0, axesOrder.length()).toArray();
+		}
 		INDArray array = inputTensor.getDataAsNDArray();
-		array.per
+		INDArray minPercVals = array.percentile(minPercentile, percentileAxes);
+		INDArray maxPercVals = array.percentile(maxPercentile, percentileAxes);
+		array.sub
 		return input;
 	}
 }
