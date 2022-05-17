@@ -63,9 +63,6 @@ public class SupportedVersions {
 	 * framework in Java.
 	 * @param version
 	 * 	version of the Deep Learning framework (engine) used to create the model
-	 * @param allVersions
-	 * 	HashMap for a particular Deep Learning framework (engine) where all the available
-	 *  versions are the keys.
 	 * @return the corresponding Java version
 	 * @throws Exception throw exception in the case the version wanted is not
 	 * supported
@@ -159,7 +156,8 @@ public class SupportedVersions {
 	 * 	version of the Deep Learning framework as it is written in the JSON file.
 	 * 	It is the same as the original one but it might contain only 
 	 * @param allVersions
-	 * @return
+	 * 	list of all supported versions
+	 * @return get the Java version for a specific Pyrhon version
 	 */
 	public static String getJavaVersionFromVersionJSON(String version, LinkedTreeMap<String, Object> allVersions) {
 		LinkedTreeMap<String, String> versionJSON = (LinkedTreeMap<String, String>) allVersions.get(version);

@@ -94,8 +94,6 @@ public final class Tensor
 	 * 	String containing the axes order of the tensor. For example: "bcyx"
 	 * @param data
 	 * 	data structure similar to a Numpy array that contains all tensor numbers
-     * @param manager
-     * 	{@link TensorManager} that needs to be associated with each tensor
      * @return the tensor
      */
     public static Tensor build(String tensorName, String axes, INDArray data)

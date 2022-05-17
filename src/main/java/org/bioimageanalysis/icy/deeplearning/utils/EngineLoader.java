@@ -74,9 +74,8 @@ public class EngineLoader  extends ClassLoader{
 	 * 
 	 * @param classloader
 	 * 	parent ClassLoader of the wanted ClassLoader
-	 * @param enginePath
-	 * 	String path where the new JARs containing the wanted classes
-	 * 	should be located
+	 * @param engineInfo
+	 * 	object containing all the needed info to load a Deep LEarning framework
 	 * @throws LoadEngineException if there are errors loading the DL framework
 	 * @throws Exception if the DL engine does not contain all the needed libraries
 	 */
@@ -277,7 +276,7 @@ public class EngineLoader  extends ClassLoader{
 	 * the first one caught, which is then re-thrown.
 	 */
 	// TODO is it necessary??
-	public void close() {
+	public void close() throws IOException{
 		engineInstance.closeModel();
 	    setIcyClassLoader();
 	    System.out.println("Exited engine ClassLoader");

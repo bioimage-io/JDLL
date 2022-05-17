@@ -3,6 +3,7 @@
  */
 package org.bioimageanalysis.icy.deeplearning;
 
+import java.io.IOException;
 import java.util.List;
 
 import org.bioimageanalysis.icy.deeplearning.exceptions.LoadEngineException;
@@ -114,8 +115,9 @@ public class Model {
 	/**
 	 * Close the Deep LEarning model in the ClassLoader where the Deep Learning
 	 * framework has been called and instantiated
+	 * @throws IOException  if there is any error closing the model on the instance of the other classloader
 	 */
-	public void closeModel()
+	public void closeModel() throws IOException
 	{
 		DeepLearningInterface engineInstance = getEngineClassLoader().getEngineInstance();
 		engineClassLoader.setEngineClassLoader();

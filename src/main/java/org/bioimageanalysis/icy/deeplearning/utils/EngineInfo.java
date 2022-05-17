@@ -178,6 +178,8 @@ public class EngineInfo {
 	 * @param jarsDirectory
 	 * 	directory where the folder containing the JARs needed to launch the 
 	 * 	corresponding engine are located
+	 * @param gpu
+	 * 	whether the engine can use GPU or not
 	 * @return an object containing all the information needed to launch a 
 	 * 	Deep learning framework
 	 */
@@ -206,6 +208,10 @@ public class EngineInfo {
 	 * @param jarsDirectory
 	 * 	directory where the folder containing the JARs needed to launch the 
 	 * 	corresponding engine are located
+	 * @param cpu
+	 * 	whether the engine can use CPU or not
+	 * @param gpu
+	 * 	whether the engine can use GPU or not
 	 * @return an object containing all the information needed to launch a 
 	 * 	Deep learning framework
 	 */
@@ -410,7 +416,9 @@ public class EngineInfo {
 	 * Set the tags needed to load a Tensorflow model. These fields
 	 * are useless for other models
 	 * @param tag
+	 * 	tad used to open a Tf model
 	 * @param sigDef
+	 *  signature definition used to open a tf model
 	 */
 	public void setTags(String tag, String sigDef) {
 		if (this.engine.toLowerCase().contentEquals(tensorflowEngineName)) {

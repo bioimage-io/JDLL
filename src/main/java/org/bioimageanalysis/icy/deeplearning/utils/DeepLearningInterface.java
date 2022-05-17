@@ -19,7 +19,7 @@ public interface DeepLearningInterface {
 	 * 	list containing only the information about output tensors
 	 * @return
 	 * 	output tensors produced by the model
-	 * @throws Exception if there is an error in the execution of the model
+	 * @throws RunModelException if there is an error in the execution of the model
 	 */
     public List<Tensor> run(List<Tensor> inputTensors, List<Tensor> outputTensors) throws RunModelException;
     
@@ -33,7 +33,7 @@ public interface DeepLearningInterface {
 	 * @param modelSource
 	 * 	String path to the actual model file. In Pytorch is the path to a .pt file
 	 * 	and for Tf it is the same as the modelFolder
-     * @throws Exception if there is any problem loading the model, and the model
+     * @throws LoadModelException if there is any problem loading the model, and the model
      * cannot be loaded
      */
     public void loadModel(String modelFolder, String modelSource) throws LoadModelException;
