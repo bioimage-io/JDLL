@@ -400,7 +400,7 @@ public final class Tensor
      * @return the data type of the tensor
      */
     public DataType getDataType() {
-    	return dType;
+    	return data.dataType();
     }
     
     /**

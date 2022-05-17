@@ -92,7 +92,7 @@ public class ScaleRangeTransformation extends DefaultImageTransformation {
 		INDArray minPercVals = array.percentile(minPercentile, percentileAxes);
 		INDArray maxPercVals = array.percentile(maxPercentile, percentileAxes);
 		array = array.sub(minPercVals).div(array.sub(maxPercVals));
-		array = array.castTo(DataType.FLOAT);
-		return input;
+		inputTensor.convertToDataType(DataType.FLOAT);
+		return inputTensor;
 	}
 }
