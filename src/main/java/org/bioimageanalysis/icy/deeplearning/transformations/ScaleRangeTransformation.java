@@ -1,57 +1,56 @@
-/*-
- * #%L
- * Java implementation of the bioimage.io model specification.
- * %%
- * Copyright (C) 2020 - 2021 Center for Systems Biology Dresden
- * %%
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are met:
- * 
- * 1. Redistributions of source code must retain the above copyright notice,
- *    this list of conditions and the following disclaimer.
- * 2. Redistributions in binary form must reproduce the above copyright notice,
- *    this list of conditions and the following disclaimer in the documentation
- *    and/or other materials provided with the distribution.
- * 
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
- * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDERS OR CONTRIBUTORS BE
- * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
- * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
- * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
- * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
- * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- * POSSIBILITY OF SUCH DAMAGE.
- * #L%
- */
 package org.bioimageanalysis.icy.deeplearning.transformations;
 
 
+import org.bioimageanalysis.icy.deeplearning.tensor.Tensor;
 import org.nd4j.linalg.api.ndarray.INDArray;
 
 public class ScaleRangeTransformation extends DefaultImageTransformation {
-	public static final String name = "zero_mean_unit_variance";
-	private Number mean;
-	private Number std;
-	private INDArray input;
+	public static final String name = "scale_range";
+	/**
+	 * Compulsory parameter. Maximum percentile for the image
+	 */
+	private Number maxPercentile;
+	/**
+	 * Compulsory parameter. Minimum percentile
+	 */
+	private Number minPercentile;
+	/**
+	 * Compulsory, although it can be replaced by the INDArray input
+	 */
+	private Tensor inputTensor;
+	/**
+	 * Optional. Axes along which the transformation is calculated
+	 */
 	private String axes;
+	/**
+	 * Compulsory. Whether the method is applied per sample or per dataset
+	 */
 	private String mode;
+	/** TODO find out which is this for
+	 * Optional. REference tensor
+	 */
+	private String referenceTensor;
 
-	public ScaleRangeTransformation(INDArray input) {
-		this.input = input;
+	/**
+	 * Constructor for the transformation using a Tensor for the processing
+	 * @param input
+	 * 	input in the form of Tensor
+	 */
+	public ScaleRangeTransformation(Tensor input) {
+		inputTensor = input;
+	}
+	
+	/**
+	 * Set the maximum percentile
+	 * @param maxPercentile
+	 * 	maximum percentile
+	 */
+	public void setMaxPercentile(Number maxPercentile) {
+		this.maxPercentile = maxPercentile;
 	}
 
-	public ScaleRangeTransformation() {
-	}
-
-	public void setMaxPercentile(Number mean) {
-		this.mean = mean;
-	}
-
-	public void setMinPercentile(Number mean) {
-		this.mean = mean;
+	public void setMinPercentile(Number minPercentile) {
+		this.minPercentile = minPercentile;
 	}
 	
 	public void setAxes(String axes){
@@ -61,6 +60,10 @@ public class ScaleRangeTransformation extends DefaultImageTransformation {
 	public void setMode(String mode) {
 		this.mode = mode;
 	}
+	
+	public void setReferenceTensor(String referenceTensor) {
+		this.referenceTensor = referenceTensor;
+	}
 
 	@Override
 	public String getName() {
@@ -69,11 +72,16 @@ public class ScaleRangeTransformation extends DefaultImageTransformation {
 	
 	/**
 	 * 
-	 * @param axes
-	 * @param per_sample
-	 * @return
 	 */
-	public INDArray apply() {
+	public Tensor apply() {
+		if (minPercentile == null || maxPercentile == null) {
+			throw new IllegalArgumentException("Error defining the processing '"
+					+ name + "'. It should at least be provided with the "
+					+ "arguments 'min_percentile' and 'max_percetile' in the"
+					+ " yaml file.");
+		}
+		INDArray array = inputTensor.getDataAsNDArray();
+		array.per
 		return input;
 	}
 }
