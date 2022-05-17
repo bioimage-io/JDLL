@@ -247,6 +247,8 @@ public class EngineInfo {
 	 * 	name of the Deep Learning framework (engine). For example: Pytorch, Tensorflow....
 	 * @param version
 	 * 	version of the training Deep Learning framework (engine)
+	 * @param gpu
+	 * 	whether the engine can use GPU or not
 	 * @return an object containing all the information needed to launch a 
 	 * 	Deep learning framework
 	 */
@@ -273,6 +275,10 @@ public class EngineInfo {
 	 * 	name of the Deep Learning framework (engine). For example: Pytorch, Tensorflow....
 	 * @param version
 	 * 	version of the training Deep Learning framework (engine)
+	 * @param cpu
+	 * 	whether the engine can use CPU or not
+	 * @param gpu
+	 * 	whether the engine can use GPU or not
 	 * @return an object containing all the information needed to launch a 
 	 * 	Deep learning framework
 	 */

@@ -105,7 +105,7 @@ public class EngineLoader  extends ClassLoader{
 	
 	/**
 	 * Returns the ClassLoader of the corresponding Deep Learning framework (engine)
-	 * @param enginePath
+	 * @param engineInfo
 	 * 	the path to the directory where all the JARs needed to load the corresponding
 	 * 	Deep Learning framework (engine) are stored
 	 * @return the ClassLoader corresponding to the wanted Deep Learning version
