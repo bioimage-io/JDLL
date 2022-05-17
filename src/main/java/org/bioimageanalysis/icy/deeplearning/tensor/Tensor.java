@@ -134,21 +134,22 @@ public final class Tensor
     				+ " been set. In order to modify the tensor, please modify the NDArray "
     				+ "used as backend for the tensor.");
     	}
+    	if (!emptyTensor && !equalShape(data.shape())) {
+    		throw new IllegalArgumentException("Trying to set an INDArray as the backend of the Tensor "
+    				+ "with a different shape than the Tensor. Tensor shape is: " + Arrays.toString(shape)
+    				+ " and INDArray shape is: " + Arrays.toString(data.shape()));
+    	}
+    	if (!emptyTensor && this.data.dataType() != data.dataType()) {
+    		throw new IllegalArgumentException("Trying to set an INDArray as the backend of the Tensor "
+    				+ "with a different data type than the Tensor. Tensor data type is: " + dType.toString()
+    				+ " and INDArray data type is: " + data.dataType().toString());
+    	}
+    	dType = data.dataType();
     	this.data = data;
     	if (emptyTensor) {
     		setShape();
         	dType = data.dataType();
         	emptyTensor = false;
-    	}
-    	if (!equalShape(data.shape())) {
-    		throw new IllegalArgumentException("Trying to set an INDArray as the backend of the Tensor "
-    				+ "with a different shape than the Tensor. Tensor shape is: " + Arrays.toString(shape)
-    				+ " and INDArray shape is: " + Arrays.toString(data.shape()));
-    	}
-    	if (dType != data.dataType()) {
-    		throw new IllegalArgumentException("Trying to set an INDArray as the backend of the Tensor "
-    				+ "with a different data type than the Tensor. Tensor data type is: " + dType.toString()
-    				+ " and INDArray data type is: " + data.dataType().toString());
     	}
     }
     
@@ -187,6 +188,16 @@ public final class Tensor
     public void copyNDArrayTensorBackend(Tensor tt) {
     	throwExceptionIfClosed();
 		setNDArrayData(tt.getDataAsNDArray());
+    }
+    
+    /**
+     * Method to convert the Tensor from its data type to another
+     * @param dt
+     * 	the data type into which the tensor is going to be converted
+     */
+    public void convertToDataType(DataType dt) {
+    	data = data.castTo(dt);
+    	this.dType = dt;
     }
     
     /**

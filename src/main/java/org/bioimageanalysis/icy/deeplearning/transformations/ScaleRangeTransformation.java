@@ -4,6 +4,7 @@ package org.bioimageanalysis.icy.deeplearning.transformations;
 import java.util.stream.IntStream;
 
 import org.bioimageanalysis.icy.deeplearning.tensor.Tensor;
+import org.nd4j.linalg.api.buffer.DataType;
 import org.nd4j.linalg.api.ndarray.INDArray;
 
 public class ScaleRangeTransformation extends DefaultImageTransformation {
@@ -90,7 +91,8 @@ public class ScaleRangeTransformation extends DefaultImageTransformation {
 		INDArray array = inputTensor.getDataAsNDArray();
 		INDArray minPercVals = array.percentile(minPercentile, percentileAxes);
 		INDArray maxPercVals = array.percentile(maxPercentile, percentileAxes);
-		array.sub
+		array = array.sub(minPercVals).div(array.sub(maxPercVals));
+		array = array.castTo(DataType.FLOAT);
 		return input;
 	}
 }
