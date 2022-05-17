@@ -1,5 +1,7 @@
 package org.bioimageanalysis.icy.deeplearning.transformations;
 
+import org.bioimageanalysis.icy.deeplearning.tensor.Tensor;
+
 public class ScaleLinearTransformation extends DefaultImageTransformation {
 
 	public static final String name = "scale_linear";
@@ -25,5 +27,15 @@ public class ScaleLinearTransformation extends DefaultImageTransformation {
 	@Override
 	public String getName() {
 		return name;
+	}
+	
+	private Tensor tensor;
+	
+	public ScaleLinearTransformation(Tensor tensor) {
+		this.tensor = tensor;
+	}
+	
+	public Tensor apply() {
+		return tensor;
 	}
 }

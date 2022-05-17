@@ -1,5 +1,7 @@
 package org.bioimageanalysis.icy.deeplearning.transformations;
 
+import org.bioimageanalysis.icy.deeplearning.tensor.Tensor;
+
 public class ScaleMinMaxTransformation extends DefaultImageTransformation {
 
 	public static final String name = "scale_min_max";
@@ -34,5 +36,15 @@ public class ScaleMinMaxTransformation extends DefaultImageTransformation {
 	@Override
 	public String getName() {
 		return name;
+	}
+	
+	private Tensor tensor;
+	
+	public ScaleMinMaxTransformation(Tensor tensor) {
+		this.tensor = tensor;
+	}
+	
+	public Tensor apply() {
+		return tensor;
 	}
 }

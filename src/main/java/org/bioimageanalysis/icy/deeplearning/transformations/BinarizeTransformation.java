@@ -1,5 +1,7 @@
 package org.bioimageanalysis.icy.deeplearning.transformations;
 
+import org.bioimageanalysis.icy.deeplearning.tensor.Tensor;
+
 public class BinarizeTransformation extends DefaultImageTransformation {
 
 	public static final String name = "binarize";
@@ -16,5 +18,15 @@ public class BinarizeTransformation extends DefaultImageTransformation {
 	@Override
 	public String getName() {
 		return name;
+	}
+	
+	private Tensor tensor;
+	
+	public BinarizeTransformation(Tensor tensor) {
+		this.tensor = tensor;
+	}
+	
+	public Tensor apply() {
+		return tensor;
 	}
 }
