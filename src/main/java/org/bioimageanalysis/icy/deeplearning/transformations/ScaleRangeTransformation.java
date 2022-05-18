@@ -76,6 +76,22 @@ public class ScaleRangeTransformation extends DefaultImageTransformation {
 		return name;
 	}
 	
+	private int[] getAxesForPercentileCalc() {
+		String axesOrder = inputTensor.getAxesOrderString();
+		if (axes == null)
+			axes = axesOrder;
+		return IntStream.range(0, axesOrder.length())
+				.filter(i -> axes.indexOf(axesOrder.split("")[i]) == -1).toArray();
+	}
+	
+	private INDArray getPercentileMatrix(int[] percentileAxes) {
+		long[] shape = inputTensor.getDataAsNDArray().shape();
+		int[] percentileArrShape = new int[percentileAxes.length];
+		for (int i = 0; i < percentileAxes.length; i ++)
+			percentileArrShape[i] = (int) shape[percentileAxes[i]];
+		return Nd4j.zeros(percentileArrShape);
+	}
+	
 	/**
 	 * 
 	 */
@@ -88,16 +104,11 @@ public class ScaleRangeTransformation extends DefaultImageTransformation {
 		}
 		// Get memory manager to remove arrays created from off-heap memory
 		MemoryManager mm = Nd4j.getMemoryManager();
-		String axesOrder = inputTensor.getAxesOrderString();
-		int[] percentileAxes = IntStream.range(0, axesOrder.length()).toArray();
-		percentileAxes = IntStream.range(0, axesOrder.length())
-				.filter(i -> axes.indexOf(axesOrder.split("")[i]) == -1).toArray();
-		if (axes != null) {
-			percentileAxes = IntStream.range(0, axesOrder.length())
-					.filter(i -> axes.indexOf(axesOrder.split("")[i]) == -1).toArray();
-		}
+		int[] percentileAxes = getAxesForPercentileCalc();
+		INDArray percMatrix = getPercentileMatrix(percentileAxes);
+		
+		
 		percentileAxes = new int[]{1,2};
-		INDArray array = inputTensor.getDataAsNDArray();
 		double max = (double) array.maxNumber();
 		double min = (double) array.minNumber();
 		double minP = (max - min) * (int) minPercentile / 100 + min;
@@ -119,6 +130,7 @@ public class ScaleRangeTransformation extends DefaultImageTransformation {
 		ScaleRangeTransformation preproc = new ScaleRangeTransformation(tt);
 		preproc.setMinPercentile(10);
 		preproc.setMaxPercentile(90);
+		preproc.setAxes("yx");
 		preproc.apply();
 		System.out.println();
 	}
