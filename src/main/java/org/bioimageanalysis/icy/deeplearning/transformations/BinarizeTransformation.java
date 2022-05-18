@@ -31,7 +31,7 @@ public class BinarizeTransformation extends DefaultImageTransformation {
 		if (threshold == null) {
 			throw new IllegalArgumentException("Error defining the processing '"
 					+ name + "'. It should at least be provided with the "
-					+ "arguments 'threshold'"
+					+ "argument 'threshold' in the"
 					+ " yaml file.");
 		}
 	}
