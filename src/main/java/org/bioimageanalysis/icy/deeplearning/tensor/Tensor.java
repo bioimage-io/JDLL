@@ -125,6 +125,8 @@ public final class Tensor
     public void setNDArrayData(INDArray data) {
     	throwExceptionIfClosed();
     	if (data == null && this.data != null) {
+    		this.data.data().flush();
+    		this.data.data().destroy();
     		this.data.close();
     		this.data = null;
     		return;

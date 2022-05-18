@@ -89,26 +89,45 @@ public class ScaleRangeTransformation extends DefaultImageTransformation {
 		if (axes != null) {
 			percentileAxes = IntStream.range(0, axesOrder.length()).toArray();
 		}
+		double c = 1.0 / (1024.0 * 1024.0);
+		double aa = (Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory()) *c;
 		INDArray array = inputTensor.getDataAsNDArray();
+		double bb = (Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory()) *c;
 		INDArray minPercVals = array.percentile(minPercentile, percentileAxes);
+		double cc = (Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory()) *c;
 		INDArray maxPercVals = array.percentile(maxPercentile, percentileAxes);
+		double dd = (Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory()) *c;
+		INDArray aux1 = array.sub(minPercVals);
+		INDArray aux2 = array.sub(maxPercVals);
 		array = array.sub(minPercVals).div(array.sub(maxPercVals));
+		double ee = (Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory()) *c;
 		inputTensor.convertToDataType(DataType.FLOAT);
+		double ff = (Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory()) *c;
+		inputTensor.getDataAsNDArray().data().flush();
+		double gg = (Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory()) *c;
+		inputTensor.getDataAsNDArray().data().destroy();
+		double hh = (Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory()) *c;
+		inputTensor.getDataAsNDArray().close();
+		double ii = (Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory()) *c;
+		inputTensor.setNDArrayData(array);
 		return inputTensor;
 	}
 	
-	public static void main(String[] args) {
+	public static void main(String[] args) throws InterruptedException {
 		double c = 1.0 / (1024.0 * 1024.0);
+		double tot = (Runtime.getRuntime().totalMemory()) *c;
 		double aa = (Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory()) *c;
 		INDArray arr = Nd4j.rand(new int[] {1,3,128,128});
 		double bb = (Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory()) *c;
-		double dd = (Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory()) *c;
 		Tensor tt = Tensor.build("example", "bcyx", arr);
 		ScaleRangeTransformation preproc = new ScaleRangeTransformation(tt);
 		preproc.setMinPercentile(10);
 		preproc.setMaxPercentile(90);
+		double dd = (Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory()) *c;
 		preproc.apply();
 		double cc = (Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory()) *c;
+		Thread.sleep(10000);
+		double ee = (Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory()) *c;
 		System.out.println();
 	}
 }
