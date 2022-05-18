@@ -84,6 +84,27 @@ public class ScaleRangeTransformation extends DefaultImageTransformation {
 				.filter(i -> axes.indexOf(axesOrder.split("")[i]) != -1).toArray();
 	}
 	
+	private int[] getSqueezedShape(int[] percentileAxes) {
+		long[] squeezedShape = inputTensor.getDataAsNDArray().shape();
+		int[] shape = IntStream.range(0, squeezedShape.length).map(i -> (int) squeezedShape[i]).toArray();
+		for (int i = 0; i < percentileAxes.length; i ++) {
+			shape[percentileAxes[i]] = 1;
+		}
+		return shape;
+	}
+	
+	private INDArray getPercentileMat(int[] percentileAxes, Number perc) {
+		INDArray array = inputTensor.getDataAsNDArray();
+		long[] shape = array.shape();
+		INDArray maxP = array.max(percentileAxes);
+		INDArray minP = array.max(percentileAxes);
+		INDArray mat = minP.add(minP.sub(maxP).mul(perc));
+		int[] squeezedShape = getSqueezedShape(percentileAxes);
+		mat = mat.reshape(squeezedShape).broadcast(shape);
+		mat = mat.broadcast(shape);
+		return mat;
+	}
+	
 	/**
 	 * 
 	 */
@@ -97,19 +118,18 @@ public class ScaleRangeTransformation extends DefaultImageTransformation {
 		// Get memory manager to remove arrays created from off-heap memory
 		MemoryManager mm = Nd4j.getMemoryManager();
 		int[] percentileAxes = getAxesForPercentileCalc();
+
+		INDArray minPercMat = getPercentileMat(percentileAxes, minPercentile);
+		INDArray maxPercMat = getPercentileMat(percentileAxes, maxPercentile);
 		
 		INDArray array = inputTensor.getDataAsNDArray();
-		INDArray maxP = array.max(percentileAxes);
 		
-		percentileAxes = new int[]{1,2};
-		double max = (double) array.maxNumber();
-		double min = (double) array.minNumber();
-		double minP = (max - min) * (int) minPercentile / 100 + min;
-		INDArray finalArr = array;
+		INDArray finalArr = array.sub(minPercMat).div(array.sub(maxPercMat));
 		mm.invokeGc();
-		inputTensor.convertToDataType(DataType.FLOAT);
+		minPercMat.close();
+		maxPercMat.close();
 		array.close();
-		inputTensor.getDataAsNDArray().close();
+		inputTensor.convertToDataType(DataType.FLOAT);
 		inputTensor.setNDArrayData(null);
 		inputTensor.setNDArrayData(finalArr);
 		return inputTensor;
@@ -119,7 +139,7 @@ public class ScaleRangeTransformation extends DefaultImageTransformation {
 		double c = 1.0 / (1024.0 * 1024.0);
 		INDArray arr = Nd4j.arange(96);
 		arr = arr.reshape(new int[] {2,3,4,4});
-		Tensor tt = Tensor.build("example", "cyx", arr);
+		Tensor tt = Tensor.build("example", "bcyx", arr);
 		ScaleRangeTransformation preproc = new ScaleRangeTransformation(tt);
 		preproc.setMinPercentile(10);
 		preproc.setMaxPercentile(90);
