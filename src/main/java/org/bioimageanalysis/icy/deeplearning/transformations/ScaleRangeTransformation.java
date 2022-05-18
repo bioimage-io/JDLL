@@ -96,14 +96,9 @@ public class ScaleRangeTransformation extends DefaultImageTransformation {
 	
 	private INDArray getPercentileMat(int[] percentileAxes, Number perc) {
 		INDArray array = inputTensor.getDataAsNDArray();
-		//long[] shape = array.shape();
 		INDArray maxP = array.max(percentileAxes);
 		INDArray minP = array.min(percentileAxes);
-		//array.close();
 		double constant = ((int) perc) / 100.0;
-		//INDArray mat = maxP.sub(minP);
-		//mat.mul(constant, mat);
-		//mat.add(maxP, mat);
 		INDArray mat = minP.add((maxP.sub(minP)).mul(constant));
 		int[] squeezedShape = getSqueezedShape(percentileAxes);
 		INDArray mat2 = mat.reshape(squeezedShape).dup();//.broadcast(shape);
@@ -130,11 +125,8 @@ public class ScaleRangeTransformation extends DefaultImageTransformation {
 		
 		INDArray minPercMat = getPercentileMat(percentileAxes, minPercentile);
 		INDArray maxPercMat = getPercentileMat(percentileAxes, maxPercentile);
-		maxPercMat.close();
-		minPercMat.close();
-		mm.invokeGc();
-
-		/*INDArray arr = inputTensor.getDataAsNDArray();
+		
+		INDArray arr = inputTensor.getDataAsNDArray();
 		arr.sub(minPercMat).div(maxPercMat.sub(minPercMat), arr);
 
 		minPercMat.data().flush();
@@ -142,9 +134,9 @@ public class ScaleRangeTransformation extends DefaultImageTransformation {
 		minPercMat = null;
 		maxPercMat.data().flush();
 		maxPercMat.data().destroy();
-		maxPercMat = null;*/
+		maxPercMat = null;
 		mm.invokeGc();
-		//inputTensor.convertToDataType(DataType.FLOAT);
+		inputTensor.convertToDataType(DataType.FLOAT);
 		return inputTensor;
 	}
 	
@@ -157,7 +149,6 @@ public class ScaleRangeTransformation extends DefaultImageTransformation {
 		preproc.setMaxPercentile(90);
 		preproc.setAxes("bc");
 		preproc.apply();
-		//System.gc();
 		System.out.println();
 	}
 }
