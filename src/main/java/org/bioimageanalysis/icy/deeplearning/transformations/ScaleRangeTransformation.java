@@ -6,6 +6,7 @@ import java.util.stream.IntStream;
 import org.bioimageanalysis.icy.deeplearning.tensor.Tensor;
 import org.nd4j.linalg.api.buffer.DataType;
 import org.nd4j.linalg.api.ndarray.INDArray;
+import org.nd4j.linalg.factory.Nd4j;
 
 public class ScaleRangeTransformation extends DefaultImageTransformation {
 	public static final String name = "scale_range";
@@ -94,5 +95,22 @@ public class ScaleRangeTransformation extends DefaultImageTransformation {
 		array = array.sub(minPercVals).div(array.sub(maxPercVals));
 		inputTensor.convertToDataType(DataType.FLOAT);
 		return inputTensor;
+	}
+	
+	public static void main(String[] args) {
+		double c = 1.0 / (1024.0 * 1024.0);
+		long aa = Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory();
+		aa = (long) (aa * c);
+		INDArray arr = Nd4j.rand(new int[] {1,3,128,128});
+		long bb = Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory();
+		bb = (long) (bb * c);
+		Tensor tt = Tensor.build("example", "bcyx", arr);
+		ScaleRangeTransformation preproc = new ScaleRangeTransformation(tt);
+		preproc.setMinPercentile(0.1);
+		preproc.setMaxPercentile(0.9);
+		preproc.apply();
+		long cc = Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory();
+		cc = (long) (cc * cc);
+		System.out.println();
 	}
 }
