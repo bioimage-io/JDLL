@@ -97,11 +97,11 @@ public class ScaleRangeTransformation extends DefaultImageTransformation {
 		INDArray array = inputTensor.getDataAsNDArray();
 		long[] shape = array.shape();
 		INDArray maxP = array.max(percentileAxes);
-		INDArray minP = array.max(percentileAxes);
-		INDArray mat = minP.add(minP.sub(maxP).mul(perc));
+		INDArray minP = array.min(percentileAxes);
+		double constant = ((int) perc) / 100.0;
+		INDArray mat = minP.add((maxP.sub(minP)).mul(constant));
 		int[] squeezedShape = getSqueezedShape(percentileAxes);
 		mat = mat.reshape(squeezedShape).broadcast(shape);
-		mat = mat.broadcast(shape);
 		return mat;
 	}
 	
@@ -124,7 +124,7 @@ public class ScaleRangeTransformation extends DefaultImageTransformation {
 		
 		INDArray array = inputTensor.getDataAsNDArray();
 		
-		INDArray finalArr = array.sub(minPercMat).div(array.sub(maxPercMat));
+		INDArray finalArr = array.sub(minPercMat).div(maxPercMat.sub(minPercMat));
 		mm.invokeGc();
 		minPercMat.close();
 		maxPercMat.close();
