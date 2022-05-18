@@ -147,6 +147,9 @@ public final class Tensor
     				+ "with a different data type than the Tensor. Tensor data type is: " + dType.toString()
     				+ " and INDArray data type is: " + data.dataType().toString());
     	}
+    	if (!emptyTensor)
+    		chechDims(data, axesString);
+    	
     	dType = data.dataType();
     	this.data = data;
     	if (emptyTensor) {
