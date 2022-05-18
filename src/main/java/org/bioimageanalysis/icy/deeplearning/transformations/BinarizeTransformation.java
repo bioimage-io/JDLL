@@ -34,16 +34,26 @@ public class BinarizeTransformation extends DefaultImageTransformation {
 		}
 	}
 	
+	private float getFloatThreshold() {
+		if (threshold instanceof Integer)
+			return (float) (1.0 * (int) threshold);
+		else if (threshold instanceof Float)
+			return (float) threshold;
+		else if (threshold instanceof Double)
+			return (float) threshold;
+		else if (threshold instanceof Long)
+			return (float) (1.0 * (long) threshold);
+		else 
+			throw new IllegalArgumentException("Type '" + threshold.getClass().toString() + "' of the"
+					+ " threshold parameter for processing '"
+					+ name + "' not supported");
+	}
+	
 	public Tensor apply() {
 		checkCompulsoryArgs();
 		tensor.convertToDataType(DataType.FLOAT);
 		float[] data = tensor.getDataAsNDArray().data().asFloat();
-		float thres = (float) threshold;
-		long t1 = System.currentTimeMillis();
-		for (int i = 0; i < data.length; i ++) {
-			data[i] = 2 * (data[i] - thres) / Math.abs((data[i] - thres)) - 1;
-		}
-		long t2 = System.currentTimeMillis();
+		float thres = getFloatThreshold();
 		for (int i = 0; i < data.length; i ++) {
 			float aa = data[i] - thres;
 			if (aa > 0 )
@@ -51,10 +61,9 @@ public class BinarizeTransformation extends DefaultImageTransformation {
 			else
 				data[i] = 0;
 		}
-		long t3 = System.currentTimeMillis();
-		long aa = t2 - t1;
-		long bb = t3 - t2;
 		tensor.getDataAsNDArray().data().setData(data);
+		data = new float[] {};
+		System.gc();
 		return tensor;
 	}
 	
@@ -62,10 +71,8 @@ public class BinarizeTransformation extends DefaultImageTransformation {
 		INDArray arr = Nd4j.arange(96000000);
 		arr = arr.reshape(new int[] {2,3,4000,4000});
 		Tensor tt = Tensor.build("example", "bcyx", arr);
-		ScaleRangeTransformation preproc = new ScaleRangeTransformation(tt);
-		preproc.setMinPercentile(10);
-		preproc.setMaxPercentile(90);
-		preproc.setAxes("bc");
+		BinarizeTransformation preproc = new BinarizeTransformation(tt);
+		preproc.setThreshold(10);
 		preproc.apply();
 		System.out.println();
 	}
