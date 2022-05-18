@@ -141,7 +141,7 @@ public final class Tensor
     				+ "with a different shape than the Tensor. Tensor shape is: " + Arrays.toString(shape)
     				+ " and INDArray shape is: " + Arrays.toString(data.shape()));
     	}
-    	if (!emptyTensor && this.data.dataType() != data.dataType()) {
+    	if (!emptyTensor && this.data != null && this.data.dataType() != data.dataType()) {
     		throw new IllegalArgumentException("Trying to set an INDArray as the backend of the Tensor "
     				+ "with a different data type than the Tensor. Tensor data type is: " + dType.toString()
     				+ " and INDArray data type is: " + data.dataType().toString());

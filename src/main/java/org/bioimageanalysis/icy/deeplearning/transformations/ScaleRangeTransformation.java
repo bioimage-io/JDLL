@@ -99,7 +99,7 @@ public class ScaleRangeTransformation extends DefaultImageTransformation {
 		double dd = (Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory()) *c;
 		INDArray aux1 = array.sub(minPercVals);
 		INDArray aux2 = array.sub(maxPercVals);
-		array = array.sub(minPercVals).div(array.sub(maxPercVals));
+		INDArray finalArr = aux1.div(aux2);
 		double ee = (Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory()) *c;
 		inputTensor.convertToDataType(DataType.FLOAT);
 		double ff = (Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory()) *c;
@@ -109,7 +109,8 @@ public class ScaleRangeTransformation extends DefaultImageTransformation {
 		double hh = (Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory()) *c;
 		inputTensor.getDataAsNDArray().close();
 		double ii = (Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory()) *c;
-		inputTensor.setNDArrayData(array);
+		inputTensor.setNDArrayData(null);
+		inputTensor.setNDArrayData(finalArr);
 		return inputTensor;
 	}
 	
