@@ -72,6 +72,7 @@ public final class Tensor
     {
     	Objects.requireNonNull(tensorName, "'tensorName' field should not be empty");
     	Objects.requireNonNull(axes, "'axes' field should not be empty");
+    	chechDims(data, axes);
     	this.tensorName = tensorName;
     	this.axesString = axes;
     	this.axesArray = convertToTensorDimOrder(axes);
@@ -411,6 +412,22 @@ public final class Tensor
      */
     public boolean isClosed() {
     	return closed;
+    }
+    
+    /**
+     * Method to check if the number of dimensions of the {@link INDArray} corresponds
+     * to the number of dimensions specified by the {@link #axesString}
+     * @param data
+     * 	the array backend of the tensor
+     * @param axesOrder
+     * 	the axes order of the tensor
+     */
+    private void chechDims(INDArray data, String axesOrder) {
+    	if (data.shape().length != axesOrder.length())
+    		throw new IllegalArgumentException("The axes order introduced has to correspond "
+    				+ "to the same number of dimenensions that the INDArray has. In this case"
+    				+ " the axes order is specfied for " + axesOrder.length() + " dimensions "
+						+ "while the array has " + data.shape().length + " dimensions.");
     }
     
     public static void main(String[] args) {

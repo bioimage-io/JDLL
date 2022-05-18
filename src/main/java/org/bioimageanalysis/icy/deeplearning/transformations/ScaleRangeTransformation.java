@@ -81,15 +81,7 @@ public class ScaleRangeTransformation extends DefaultImageTransformation {
 		if (axes == null)
 			axes = axesOrder;
 		return IntStream.range(0, axesOrder.length())
-				.filter(i -> axes.indexOf(axesOrder.split("")[i]) == -1).toArray();
-	}
-	
-	private INDArray getPercentileMatrix(int[] percentileAxes) {
-		long[] shape = inputTensor.getDataAsNDArray().shape();
-		int[] percentileArrShape = new int[percentileAxes.length];
-		for (int i = 0; i < percentileAxes.length; i ++)
-			percentileArrShape[i] = (int) shape[percentileAxes[i]];
-		return Nd4j.zeros(percentileArrShape);
+				.filter(i -> axes.indexOf(axesOrder.split("")[i]) != -1).toArray();
 	}
 	
 	/**
@@ -105,8 +97,9 @@ public class ScaleRangeTransformation extends DefaultImageTransformation {
 		// Get memory manager to remove arrays created from off-heap memory
 		MemoryManager mm = Nd4j.getMemoryManager();
 		int[] percentileAxes = getAxesForPercentileCalc();
-		INDArray percMatrix = getPercentileMatrix(percentileAxes);
 		
+		INDArray array = inputTensor.getDataAsNDArray();
+		INDArray maxP = array.max(percentileAxes);
 		
 		percentileAxes = new int[]{1,2};
 		double max = (double) array.maxNumber();
@@ -124,8 +117,8 @@ public class ScaleRangeTransformation extends DefaultImageTransformation {
 	
 	public static void main(String[] args) throws InterruptedException {
 		double c = 1.0 / (1024.0 * 1024.0);
-		INDArray arr = Nd4j.arange(18);
-		arr = arr.reshape(new int[] {2,3,3});
+		INDArray arr = Nd4j.arange(96);
+		arr = arr.reshape(new int[] {2,3,4,4});
 		Tensor tt = Tensor.build("example", "cyx", arr);
 		ScaleRangeTransformation preproc = new ScaleRangeTransformation(tt);
 		preproc.setMinPercentile(10);
