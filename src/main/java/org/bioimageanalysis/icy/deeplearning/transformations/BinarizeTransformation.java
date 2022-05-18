@@ -1,6 +1,10 @@
 package org.bioimageanalysis.icy.deeplearning.transformations;
 
+import java.nio.FloatBuffer;
+import java.util.Collection;
+
 import org.bioimageanalysis.icy.deeplearning.tensor.Tensor;
+import org.nd4j.linalg.api.buffer.DataBuffer;
 import org.nd4j.linalg.api.buffer.DataType;
 import org.nd4j.linalg.api.ndarray.INDArray;
 import org.nd4j.linalg.factory.Nd4j;
@@ -49,23 +53,18 @@ public class BinarizeTransformation extends DefaultImageTransformation {
 					+ name + "' not supported");
 	}
 	
-	// TODO improve memory management
 	public Tensor apply() {
 		checkCompulsoryArgs();
 		tensor.convertToDataType(DataType.FLOAT);
-		INDArray dataArr = tensor.getDataAsNDArray();
-		//float[] data = tensor.getDataAsNDArray().data().asFloat();
+		FloatBuffer datab = tensor.getDataAsNDArray().data().asNioFloat();
 		float thres = getFloatThreshold();
-		for (int i = 0; i < dataArr.length(); i ++) {
-			float aa = dataArr.getFloat(i) - thres;
+		for (int i = 0; i < tensor.getDataAsNDArray().length(); i ++) {
+			float aa = datab.get(i) - thres;
 			if (aa > 0 )
-				dataArr.putScalar(i, 1);
+				datab.put(i, 1);
 			else
-				dataArr.putScalar(i, 0);
+				datab.put(i, 0);
 		}
-		//tensor.getDataAsNDArray().data().flush();
-		//tensor.getDataAsNDArray().data().destroy();
-		//tensor.getDataAsNDArray().data().setData(data);
 		return tensor;
 	}
 	
@@ -76,9 +75,10 @@ public class BinarizeTransformation extends DefaultImageTransformation {
 		long t1 = System.currentTimeMillis();
 		for (int i = 0; i < 1; i ++) {
 			BinarizeTransformation preproc = new BinarizeTransformation(tt);
-			preproc.setThreshold(10);
+			preproc.setThreshold(960000000);
 			preproc.apply();
 		}
 		System.out.println(System.currentTimeMillis() - t1);
+		System.out.println("done");
 	}
 }
