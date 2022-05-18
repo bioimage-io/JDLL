@@ -5,6 +5,8 @@ import java.util.stream.IntStream;
 
 import org.bioimageanalysis.icy.deeplearning.tensor.Tensor;
 import org.nd4j.linalg.api.buffer.DataType;
+import org.nd4j.linalg.api.memory.MemoryManager;
+import org.nd4j.linalg.api.memory.MemoryWorkspaceManager;
 import org.nd4j.linalg.api.ndarray.INDArray;
 import org.nd4j.linalg.factory.Nd4j;
 
@@ -84,31 +86,26 @@ public class ScaleRangeTransformation extends DefaultImageTransformation {
 					+ "arguments 'min_percentile' and 'max_percetile' in the"
 					+ " yaml file.");
 		}
+		// Get memory manager to remove arrays created from off-heap memory
+		MemoryManager mm = Nd4j.getMemoryManager();
 		String axesOrder = inputTensor.getAxesOrderString();
 		int[] percentileAxes = IntStream.range(0, axesOrder.length()).toArray();
+		percentileAxes = IntStream.range(0, axesOrder.length())
+				.filter(i -> axes.indexOf(axesOrder.split("")[i]) == -1).toArray();
 		if (axes != null) {
-			percentileAxes = IntStream.range(0, axesOrder.length()).toArray();
+			percentileAxes = IntStream.range(0, axesOrder.length())
+					.filter(i -> axes.indexOf(axesOrder.split("")[i]) == -1).toArray();
 		}
-		double c = 1.0 / (1024.0 * 1024.0);
-		double aa = (Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory()) *c;
+		percentileAxes = new int[]{1,2};
 		INDArray array = inputTensor.getDataAsNDArray();
-		double bb = (Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory()) *c;
-		INDArray minPercVals = array.percentile(minPercentile, percentileAxes);
-		double cc = (Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory()) *c;
-		INDArray maxPercVals = array.percentile(maxPercentile, percentileAxes);
-		double dd = (Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory()) *c;
-		INDArray aux1 = array.sub(minPercVals);
-		INDArray aux2 = array.sub(maxPercVals);
-		INDArray finalArr = aux1.div(aux2);
-		double ee = (Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory()) *c;
+		double max = (double) array.maxNumber();
+		double min = (double) array.minNumber();
+		double minP = (max - min) * (int) minPercentile / 100 + min;
+		INDArray finalArr = array;
+		mm.invokeGc();
 		inputTensor.convertToDataType(DataType.FLOAT);
-		double ff = (Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory()) *c;
-		inputTensor.getDataAsNDArray().data().flush();
-		double gg = (Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory()) *c;
-		inputTensor.getDataAsNDArray().data().destroy();
-		double hh = (Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory()) *c;
+		array.close();
 		inputTensor.getDataAsNDArray().close();
-		double ii = (Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory()) *c;
 		inputTensor.setNDArrayData(null);
 		inputTensor.setNDArrayData(finalArr);
 		return inputTensor;
@@ -116,19 +113,13 @@ public class ScaleRangeTransformation extends DefaultImageTransformation {
 	
 	public static void main(String[] args) throws InterruptedException {
 		double c = 1.0 / (1024.0 * 1024.0);
-		double tot = (Runtime.getRuntime().totalMemory()) *c;
-		double aa = (Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory()) *c;
-		INDArray arr = Nd4j.rand(new int[] {1,3,128,128});
-		double bb = (Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory()) *c;
-		Tensor tt = Tensor.build("example", "bcyx", arr);
+		INDArray arr = Nd4j.arange(18);
+		arr = arr.reshape(new int[] {2,3,3});
+		Tensor tt = Tensor.build("example", "cyx", arr);
 		ScaleRangeTransformation preproc = new ScaleRangeTransformation(tt);
 		preproc.setMinPercentile(10);
 		preproc.setMaxPercentile(90);
-		double dd = (Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory()) *c;
 		preproc.apply();
-		double cc = (Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory()) *c;
-		Thread.sleep(10000);
-		double ee = (Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory()) *c;
 		System.out.println();
 	}
 }
