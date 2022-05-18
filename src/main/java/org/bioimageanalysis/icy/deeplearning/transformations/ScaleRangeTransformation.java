@@ -6,6 +6,7 @@ import java.util.stream.IntStream;
 import org.bioimageanalysis.icy.deeplearning.tensor.Tensor;
 import org.nd4j.linalg.api.buffer.DataType;
 import org.nd4j.linalg.api.memory.MemoryManager;
+import org.nd4j.linalg.api.memory.MemoryWorkspace;
 import org.nd4j.linalg.api.memory.MemoryWorkspaceManager;
 import org.nd4j.linalg.api.ndarray.INDArray;
 import org.nd4j.linalg.factory.Nd4j;
@@ -86,7 +87,7 @@ public class ScaleRangeTransformation extends DefaultImageTransformation {
 	
 	private int[] getSqueezedShape(int[] percentileAxes) {
 		long[] squeezedShape = inputTensor.getDataAsNDArray().shape();
-		int[] shape = IntStream.range(0, squeezedShape.length).map(i -> (int) squeezedShape[i]).toArray();
+		int[] shape = IntStream.range(0, squeezedShape.length).map(i -> 0 + (int) squeezedShape[i]).toArray();
 		for (int i = 0; i < percentileAxes.length; i ++) {
 			shape[percentileAxes[i]] = 1;
 		}
@@ -95,14 +96,21 @@ public class ScaleRangeTransformation extends DefaultImageTransformation {
 	
 	private INDArray getPercentileMat(int[] percentileAxes, Number perc) {
 		INDArray array = inputTensor.getDataAsNDArray();
-		long[] shape = array.shape();
+		//long[] shape = array.shape();
 		INDArray maxP = array.max(percentileAxes);
 		INDArray minP = array.min(percentileAxes);
+		//array.close();
 		double constant = ((int) perc) / 100.0;
+		//INDArray mat = maxP.sub(minP);
+		//mat.mul(constant, mat);
+		//mat.add(maxP, mat);
 		INDArray mat = minP.add((maxP.sub(minP)).mul(constant));
 		int[] squeezedShape = getSqueezedShape(percentileAxes);
-		mat = mat.reshape(squeezedShape).broadcast(shape);
-		return mat;
+		INDArray mat2 = mat.reshape(squeezedShape).dup();//.broadcast(shape);
+		mat.close();
+		minP.close();
+		maxP.close();
+		return mat2;
 	}
 	
 	/**
@@ -116,35 +124,40 @@ public class ScaleRangeTransformation extends DefaultImageTransformation {
 					+ " yaml file.");
 		}
 		// Get memory manager to remove arrays created from off-heap memory
-		MemoryManager mm = Nd4j.getMemoryManager();
 		int[] percentileAxes = getAxesForPercentileCalc();
 
+		MemoryManager mm = Nd4j.getMemoryManager();
+		
 		INDArray minPercMat = getPercentileMat(percentileAxes, minPercentile);
 		INDArray maxPercMat = getPercentileMat(percentileAxes, maxPercentile);
-		
-		INDArray array = inputTensor.getDataAsNDArray();
-		
-		INDArray finalArr = array.sub(minPercMat).div(maxPercMat.sub(minPercMat));
-		mm.invokeGc();
-		minPercMat.close();
 		maxPercMat.close();
-		array.close();
-		inputTensor.convertToDataType(DataType.FLOAT);
-		inputTensor.setNDArrayData(null);
-		inputTensor.setNDArrayData(finalArr);
+		minPercMat.close();
+		mm.invokeGc();
+
+		/*INDArray arr = inputTensor.getDataAsNDArray();
+		arr.sub(minPercMat).div(maxPercMat.sub(minPercMat), arr);
+
+		minPercMat.data().flush();
+		minPercMat.data().destroy();
+		minPercMat = null;
+		maxPercMat.data().flush();
+		maxPercMat.data().destroy();
+		maxPercMat = null;*/
+		mm.invokeGc();
+		//inputTensor.convertToDataType(DataType.FLOAT);
 		return inputTensor;
 	}
 	
 	public static void main(String[] args) throws InterruptedException {
-		double c = 1.0 / (1024.0 * 1024.0);
-		INDArray arr = Nd4j.arange(96);
-		arr = arr.reshape(new int[] {2,3,4,4});
+		INDArray arr = Nd4j.arange(96000000);
+		arr = arr.reshape(new int[] {2,3,4000,4000});
 		Tensor tt = Tensor.build("example", "bcyx", arr);
 		ScaleRangeTransformation preproc = new ScaleRangeTransformation(tt);
 		preproc.setMinPercentile(10);
 		preproc.setMaxPercentile(90);
-		preproc.setAxes("yx");
+		preproc.setAxes("bc");
 		preproc.apply();
+		//System.gc();
 		System.out.println();
 	}
 }
