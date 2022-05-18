@@ -99,18 +99,16 @@ public class ScaleRangeTransformation extends DefaultImageTransformation {
 	
 	public static void main(String[] args) {
 		double c = 1.0 / (1024.0 * 1024.0);
-		long aa = Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory();
-		aa = (long) (aa * c);
+		double aa = (Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory()) *c;
 		INDArray arr = Nd4j.rand(new int[] {1,3,128,128});
-		long bb = Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory();
-		bb = (long) (bb * c);
+		double bb = (Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory()) *c;
+		double dd = (Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory()) *c;
 		Tensor tt = Tensor.build("example", "bcyx", arr);
 		ScaleRangeTransformation preproc = new ScaleRangeTransformation(tt);
-		preproc.setMinPercentile(0.1);
-		preproc.setMaxPercentile(0.9);
+		preproc.setMinPercentile(10);
+		preproc.setMaxPercentile(90);
 		preproc.apply();
-		long cc = Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory();
-		cc = (long) (cc * cc);
+		double cc = (Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory()) *c;
 		System.out.println();
 	}
 }
