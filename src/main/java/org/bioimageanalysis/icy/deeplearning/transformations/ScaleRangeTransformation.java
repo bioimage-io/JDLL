@@ -108,16 +108,20 @@ public class ScaleRangeTransformation extends DefaultImageTransformation {
 		return mat2;
 	}
 	
-	/**
-	 * 
-	 */
-	public Tensor apply() {
+	private void checkCompulsoryArgs() {
 		if (minPercentile == null || maxPercentile == null) {
 			throw new IllegalArgumentException("Error defining the processing '"
 					+ name + "'. It should at least be provided with the "
 					+ "arguments 'min_percentile' and 'max_percetile' in the"
 					+ " yaml file.");
 		}
+	}
+	
+	/**
+	 * 
+	 */
+	public Tensor apply() {
+		checkCompulsoryArgs();
 		// Get memory manager to remove arrays created from off-heap memory
 		int[] percentileAxes = getAxesForPercentileCalc();
 
