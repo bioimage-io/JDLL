@@ -49,21 +49,23 @@ public class BinarizeTransformation extends DefaultImageTransformation {
 					+ name + "' not supported");
 	}
 	
+	// TODO improve memory management
 	public Tensor apply() {
 		checkCompulsoryArgs();
 		tensor.convertToDataType(DataType.FLOAT);
-		float[] data = tensor.getDataAsNDArray().data().asFloat();
+		INDArray dataArr = tensor.getDataAsNDArray();
+		//float[] data = tensor.getDataAsNDArray().data().asFloat();
 		float thres = getFloatThreshold();
-		for (int i = 0; i < data.length; i ++) {
-			float aa = data[i] - thres;
+		for (int i = 0; i < dataArr.length(); i ++) {
+			float aa = dataArr.getFloat(i) - thres;
 			if (aa > 0 )
-				data[i] = 1;
+				dataArr.putScalar(i, 1);
 			else
-				data[i] = 0;
+				dataArr.putScalar(i, 0);
 		}
-		tensor.getDataAsNDArray().data().setData(data);
-		data = new float[] {};
-		System.gc();
+		//tensor.getDataAsNDArray().data().flush();
+		//tensor.getDataAsNDArray().data().destroy();
+		//tensor.getDataAsNDArray().data().setData(data);
 		return tensor;
 	}
 	
@@ -71,9 +73,12 @@ public class BinarizeTransformation extends DefaultImageTransformation {
 		INDArray arr = Nd4j.arange(96000000);
 		arr = arr.reshape(new int[] {2,3,4000,4000});
 		Tensor tt = Tensor.build("example", "bcyx", arr);
-		BinarizeTransformation preproc = new BinarizeTransformation(tt);
-		preproc.setThreshold(10);
-		preproc.apply();
-		System.out.println();
+		long t1 = System.currentTimeMillis();
+		for (int i = 0; i < 1; i ++) {
+			BinarizeTransformation preproc = new BinarizeTransformation(tt);
+			preproc.setThreshold(10);
+			preproc.apply();
+		}
+		System.out.println(System.currentTimeMillis() - t1);
 	}
 }
