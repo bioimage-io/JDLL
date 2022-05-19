@@ -6,11 +6,14 @@
 		<artifactId>parent-pom-plugin</artifactId>
 		<version>1.0.3</version>
 	</parent>
-	<artifactId>DeepLearning</artifactId>
-	<version>1.0.0-SNAPSHOT</version>
+    
+	<artifactId>dl-model-runner</artifactId>
+	<version>1.0.0</version>
+    
 	<name>DeepLearning interface for Icy</name>
 	<description>This project holds the code allowing the interaction between Icy and TensorFlow.
 	</description>
+    
 	<build>
 		<plugins>
 			<plugin>
@@ -24,16 +27,17 @@
 			</plugin>
 		</plugins>
 	</build>
+    
 	<dependencies>
+        <dependency>
+            <groupId>org.bioimageanalysis.icy</groupId>
+            <artifactId>google-gson</artifactId>
+            <version>2.9.0</version>
+        </dependency>
 		<dependency>
 			<groupId>org.nd4j</groupId>
 			<artifactId>nd4j-native</artifactId>
 			<version>1.0.0-M2</version>
-		</dependency>
-		<dependency>
-			<groupId>com.google.code.gson</groupId>
-			<artifactId>gson</artifactId>
-			<version>2.9.0</version>
 		</dependency>
 		<dependency>
 			<groupId>net.java.dev.jna</groupId>
@@ -46,6 +50,7 @@
 			<version>5.11.0</version>
 		</dependency>
 	</dependencies>
+    
 	<repositories>
 		<repository>
 			<id>icy</id>
