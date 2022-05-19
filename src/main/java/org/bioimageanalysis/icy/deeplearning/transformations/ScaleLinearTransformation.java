@@ -3,6 +3,7 @@ package org.bioimageanalysis.icy.deeplearning.transformations;
 import java.util.List;
 
 import org.bioimageanalysis.icy.deeplearning.tensor.Tensor;
+import org.nd4j.linalg.api.buffer.DataType;
 import org.nd4j.linalg.api.ndarray.INDArray;
 
 // TODO add functionality of offset and Gain being arrays
@@ -92,6 +93,7 @@ public class ScaleLinearTransformation extends DefaultImageTransformation {
 		INDArray arr = tensor.getDataAsNDArray();
 		arr.mul(gain, arr);
 		arr.add(offset, arr);
+		tensor.convertToDataType(DataType.FLOAT);
 		return tensor;
 	}
 }

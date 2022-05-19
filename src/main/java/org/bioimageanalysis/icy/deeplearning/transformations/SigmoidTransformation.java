@@ -9,8 +9,7 @@ import org.nd4j.linalg.factory.Nd4j;
 
 public class SigmoidTransformation extends DefaultImageTransformation {
 
-	public static final String name = "binarize";
-	private Number threshold;
+	public static final String name = "sigmoid";
 	
 	private Tensor tensor;
 	
@@ -18,41 +17,12 @@ public class SigmoidTransformation extends DefaultImageTransformation {
 		this.tensor = tensor;
 	}
 
-	public void setThreshold(Number threshold) {
-		this.threshold = threshold;
-	}
-
 	@Override
 	public String getName() {
 		return name;
 	}
 	
-	private void checkCompulsoryArgs() {
-		if (threshold == null) {
-			throw new IllegalArgumentException("Error defining the processing '"
-					+ name + "'. It should at least be provided with the "
-					+ "argument 'threshold' in the"
-					+ " yaml file.");
-		}
-	}
-	
-	private float getFloatThreshold() {
-		if (threshold instanceof Integer)
-			return (float) (1.0 * (int) threshold);
-		else if (threshold instanceof Float)
-			return (float) threshold;
-		else if (threshold instanceof Double)
-			return (float) threshold;
-		else if (threshold instanceof Long)
-			return (float) (1.0 * (long) threshold);
-		else 
-			throw new IllegalArgumentException("Type '" + threshold.getClass().toString() + "' of the"
-					+ " threshold parameter for processing '"
-					+ name + "' not supported");
-	}
-	
 	public Tensor apply() {
-		checkCompulsoryArgs();
 		tensor.convertToDataType(DataType.FLOAT);
 		FloatBuffer datab = tensor.getDataAsNDArray().data().asNioFloat();
 		float thres = getFloatThreshold();
