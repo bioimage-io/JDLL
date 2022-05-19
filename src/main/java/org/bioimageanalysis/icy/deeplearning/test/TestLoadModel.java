@@ -16,7 +16,7 @@ public class TestLoadModel {
 		String modelFolder = "C:\\Users\\angel\\OneDrive\\Documentos\\pasteur\\git\\deep-icy\\models\\arabidopsis-ovules-boundarymodel";
 		String modelSource = "C:\\Users\\angel\\OneDrive\\Documentos\\pasteur\\git\\deep-icy\\models\\arabidopsis-ovules-boundarymodel\\weights-torchscript.pt";
 
-		Model model = Model.createDeepLearningModel(modelFolder, modelSource, engineInfo);
+		Model model = Model.createDeepLearningModel(modelFolder, modelSource, engineInfo, null);
 		model.loadModel();
 		System.out.println("done");
 	}
