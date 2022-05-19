@@ -23,6 +23,7 @@ public class SigmoidTransformation extends DefaultImageTransformation {
 	}
 	
 	public Tensor apply() {
+		// Should it be directly converted to float 32?
 		tensor.convertToDataType(DataType.FLOAT);
 		FloatBuffer datab = tensor.getDataAsNDArray().data().asNioFloat();
 		for (int i = 0; i < tensor.getDataAsNDArray().length(); i ++) {
@@ -38,7 +39,6 @@ public class SigmoidTransformation extends DefaultImageTransformation {
 		long t1 = System.currentTimeMillis();
 		for (int i = 0; i < 1; i ++) {
 			SigmoidTransformation preproc = new SigmoidTransformation(tt);
-			preproc.setThreshold(960000000);
 			preproc.apply();
 		}
 		System.out.println(System.currentTimeMillis() - t1);
