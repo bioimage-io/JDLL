@@ -23,7 +23,7 @@ public class SigmoidTransformation extends DefaultImageTransformation {
 	}
 	
 	public Tensor apply() {
-		// Should it be directly converted to float 32?
+		// TODO Should it be directly converted to float 32?
 		tensor.convertToDataType(DataType.FLOAT);
 		FloatBuffer datab = tensor.getDataAsNDArray().data().asNioFloat();
 		for (int i = 0; i < tensor.getDataAsNDArray().length(); i ++) {
