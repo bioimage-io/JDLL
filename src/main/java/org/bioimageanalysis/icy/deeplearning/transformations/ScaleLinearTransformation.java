@@ -3,7 +3,9 @@ package org.bioimageanalysis.icy.deeplearning.transformations;
 import java.util.List;
 
 import org.bioimageanalysis.icy.deeplearning.tensor.Tensor;
+import org.nd4j.linalg.api.ndarray.INDArray;
 
+// TODO add functionality of offset and Gain being arrays
 public class ScaleLinearTransformation extends DefaultImageTransformation {
 
 	public static final String name = "scale_linear";
@@ -60,6 +62,7 @@ public class ScaleLinearTransformation extends DefaultImageTransformation {
 					+ " parameters for the processing '" + name + "' not supported.");
 	}
 	
+	// TODO
 	private void checkCompulsoryArgs() {
 		if (gain == null || offset == null) {
 			throw new IllegalArgumentException("Error defining the processing '"
@@ -67,10 +70,28 @@ public class ScaleLinearTransformation extends DefaultImageTransformation {
 					+ "arguments 'gain' and 'offset' in the"
 					+ " yaml file.");
 		}
+		if ((gainArr == null & gain == null) || (offsetArr == null && offset == null)) {
+			throw new IllegalArgumentException("Error defining the processing '"
+					+ name + "'. It should at least be provided with the "
+					+ "arguments 'gain' and 'offset' in the"
+					+ " yaml file.");
+		}
+	}
+	
+	// TODO
+	private void checkArgsCompatibility() {
+		if (axes == null && gainArr != null && gainArr.size() != 1
+				&& offsetArr != null && offsetArr.size() != 1) {
+			throw new IllegalArgumentException("In order to specify the 'gain' and 'offset' parameters "
+					+ "for several axes in the processing '" + name + "', please provide the 'axes' parameter too.");
+		} //else if (axes != null && (axes))
 	}
 	
 	public Tensor apply() {
 		checkCompulsoryArgs();
+		INDArray arr = tensor.getDataAsNDArray();
+		arr.mul(gain, arr);
+		arr.add(offset, arr);
 		return tensor;
 	}
 }
