@@ -94,6 +94,8 @@ public class ScaleRangeTransformation extends DefaultImageTransformation {
 		return shape;
 	}
 	
+	// TODO solve memory leak in max min calculation by nd4j, either solve it 
+	// with another method to find the max and min or try with wokspaces
 	private INDArray getPercentileMat(int[] percentileAxes, Number perc) {
 		INDArray array = inputTensor.getDataAsNDArray();
 		INDArray maxP = array.max(percentileAxes);
