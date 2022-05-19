@@ -1,12 +1,16 @@
 package org.bioimageanalysis.icy.deeplearning.transformations;
 
+import java.util.List;
+
 import org.bioimageanalysis.icy.deeplearning.tensor.Tensor;
 
 public class ScaleLinearTransformation extends DefaultImageTransformation {
 
 	public static final String name = "scale_linear";
 	private Number offset;
+	private List<Number> offsetArr;
 	private Number gain;
+	private List<Number> gainArr;
 	private String axes;
 	
 	private Tensor tensor;
@@ -20,8 +24,17 @@ public class ScaleLinearTransformation extends DefaultImageTransformation {
 		this.offset = offset;
 	}
 
+
+	public void setOffset(List<Number> offsetArr) {
+		this.offsetArr = offsetArr;
+	}
+
 	public void setGain(Number gain) {
 		this.gain = gain;
+	}
+
+	public void setGain(List<Number> gainArr) {
+		this.gainArr = gainArr;
 	}
 	
 	public void setAxes(String axes) {
