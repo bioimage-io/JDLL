@@ -25,13 +25,8 @@ public class SigmoidTransformation extends DefaultImageTransformation {
 	public Tensor apply() {
 		tensor.convertToDataType(DataType.FLOAT);
 		FloatBuffer datab = tensor.getDataAsNDArray().data().asNioFloat();
-		float thres = getFloatThreshold();
 		for (int i = 0; i < tensor.getDataAsNDArray().length(); i ++) {
-			float aa = datab.get(i) - thres;
-			if (aa > 0 )
-				datab.put(i, 1);
-			else
-				datab.put(i, 0);
+			datab.put(i, (float) (1.0 / ( 1.0 + Math.exp(-datab.get(i)))));
 		}
 		return tensor;
 	}
