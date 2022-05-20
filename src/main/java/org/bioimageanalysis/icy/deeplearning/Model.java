@@ -82,6 +82,31 @@ public class Model
      * @param engineInfo
      *        all the information needed to load the classes of
      *        a Deep Learning framework (engine)
+     * @return the Model that is going to be used to make inference
+     * @throws LoadEngineException
+     *         if there is an error finding the Deep LEarningn interface
+     *         that connects with the DL libraries
+     * @throws Exception
+     *         if the directory is not found
+     */
+    public static Model createDeepLearningModel(String modelFolder, String modelSource, EngineInfo engineInfo)
+            throws LoadEngineException, Exception
+    {
+        return new Model(engineInfo, modelFolder, modelSource, null);
+    }
+
+    /**
+     * Creates a DeepLearning model {@link Model} from the wanted Deep Learning
+     * framework (engine)
+     * 
+     * @param modelFolder
+     *        String path to the folder where all the components of the model are stored
+     * @param modelSource
+     *        String path to the actual model file. In Pytorch is the path to a .pt file
+     *        and for Tf it is the same as the modelFolder
+     * @param engineInfo
+     *        all the information needed to load the classes of
+     *        a Deep Learning framework (engine)
      * @param classLoader
      *        parent ClassLoader (can be null)
      * @return the Model that is going to be used to make inference
