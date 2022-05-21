@@ -12,6 +12,7 @@ import org.bioimageanalysis.icy.deeplearning.tensor.Tensor;
 import org.bioimageanalysis.icy.deeplearning.utils.DeepLearningInterface;
 import org.bioimageanalysis.icy.deeplearning.utils.EngineInfo;
 import org.bioimageanalysis.icy.deeplearning.utils.EngineLoader;
+import org.nd4j.linalg.api.buffer.DataType;
 
 /**
  * Class that manages a Deep Learning model to load it and run it.
@@ -188,6 +189,7 @@ public class Model
     {
         DeepLearningInterface engineInstance = engineClassLoader.getEngineInstance();
         engineClassLoader.setEngineClassLoader();
+        inTensors.stream().forEach(tt -> tt.convertToDataType(DataType.FLOAT));
         outTensors = engineInstance.run(inTensors, outTensors);
         engineClassLoader.setIcyClassLoader();
         return outTensors;
