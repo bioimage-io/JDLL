@@ -187,7 +187,6 @@ public class Model
      */
     public List<Tensor> runModel(List<Tensor> inTensors, List<Tensor> outTensors) throws RunModelException, Exception
     {
-    	int a = 0;
         DeepLearningInterface engineInstance = engineClassLoader.getEngineInstance();
         engineClassLoader.setEngineClassLoader();
         inTensors.stream().forEach(tt -> tt.convertToDataType(DataType.FLOAT));
