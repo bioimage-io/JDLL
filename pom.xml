@@ -1,60 +1,77 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
-	<modelVersion>4.0.0</modelVersion>
-	<parent>
-		<groupId>org.bioimageanalysis.icy</groupId>
-		<artifactId>parent-pom-plugin</artifactId>
-		<version>1.0.3</version>
-	</parent>
-    
-	<artifactId>dl-model-runner</artifactId>
-	<version>1.0.0</version>
-    
-	<name>DeepLearning interface for Icy</name>
-	<description>This project holds the code allowing the interaction between Icy and TensorFlow.
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <groupId>org.bioimageanalysis.icy</groupId>
+        <artifactId>parent-pom-plugin</artifactId>
+        <version>1.0.6</version>
+    </parent>
+
+    <artifactId>dl-model-runner</artifactId>
+    <version>1.0.0</version>
+
+    <name>DeepLearning interface for Icy</name>
+    <description>This project holds the code allowing the interaction between Icy and TensorFlow.
 	</description>
-    
-	<build>
-		<plugins>
-			<plugin>
-				<groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-javadoc-plugin</artifactId>
-				<configuration>
-					<additionalOptions>
-						<additionalOption>-Xdoclint:none</additionalOption>
-					</additionalOptions>
-				</configuration>
-			</plugin>
-		</plugins>
-	</build>
-    
-	<dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-javadoc-plugin</artifactId>
+                <configuration>
+                    <additionalOptions>
+                        <additionalOption>-Xdoclint:none</additionalOption>
+                    </additionalOptions>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
+
+    <dependencies>
+        <dependency>
+            <groupId>org.bioimageanalysis.icy</groupId>
+            <artifactId>apache-commons-lang</artifactId>
+            <version>3.12.0</version>
+        </dependency>
         <dependency>
             <groupId>org.bioimageanalysis.icy</groupId>
             <artifactId>google-gson</artifactId>
             <version>2.9.0</version>
         </dependency>
-		<dependency>
-			<groupId>org.nd4j</groupId>
-			<artifactId>nd4j-native</artifactId>
-			<version>1.0.0-M2</version>
-		</dependency>
-		<dependency>
-			<groupId>net.java.dev.jna</groupId>
-			<artifactId>jna</artifactId>
-			<version>5.11.0</version>
-		</dependency>
-		<dependency>
-			<groupId>net.java.dev.jna</groupId>
-			<artifactId>jna-platform</artifactId>
-			<version>5.11.0</version>
-		</dependency>
-	</dependencies>
-    
-	<repositories>
-		<repository>
-			<id>icy</id>
-			<url>https://icy-nexus.pasteur.fr/repository/Icy/</url>
-		</repository>
-	</repositories>
+        <dependency>
+            <groupId>org.bioimageanalysis.icy</groupId>
+            <artifactId>nd4j</artifactId>
+            <version>1.0.0</version>
+        </dependency>
+        <dependency>
+            <groupId>org.bioimageanalysis.icy</groupId>
+            <artifactId>jna</artifactId>
+            <version>5.11.0</version>
+        </dependency>
+        <!-- <dependency> -->
+        <!-- <groupId>org.nd4j</groupId> -->
+        <!-- <artifactId>nd4j-native</artifactId> -->
+        <!-- <version>1.0.0-M2</version> -->
+        <!-- </dependency> -->
+        <!-- <dependency> -->
+        <!-- <groupId>net.java.dev.jna</groupId> -->
+        <!-- <artifactId>jna</artifactId> -->
+        <!-- <version>5.11.0</version> -->
+        <!-- </dependency> -->
+        <!-- <dependency> -->
+        <!-- <groupId>net.java.dev.jna</groupId> -->
+        <!-- <artifactId>jna-platform</artifactId> -->
+        <!-- <version>5.11.0</version> -->
+        <!-- </dependency> -->
+    </dependencies>
+
+    <repositories>
+        <repository>
+            <id>icy</id>
+            <url>https://icy-nexus.pasteur.fr/repository/Icy/</url>
+        </repository>
+    </repositories>
 </project>
