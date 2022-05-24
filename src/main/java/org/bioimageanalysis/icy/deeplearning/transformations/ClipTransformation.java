@@ -42,18 +42,7 @@ public class ClipTransformation extends DefaultImageTransformation {
 	}
 	
 	private float getFloatVal(Number val) {
-		if (val instanceof Integer)
-			return (float) (1.0 * (int) val);
-		else if (val instanceof Float)
-			return (float) val;
-		else if (val instanceof Double)
-			return (float) val;
-		else if (val instanceof Long)
-			return (float) (1.0 * (long) val);
-		else 
-			throw new IllegalArgumentException("Type '" + val.getClass().toString() + "' of the"
-					+ " parameters for the processing '"
-					+ name + "' not supported");
+		return val.floatValue();
 	}
 	
 	private void checkArgsCompatible() {

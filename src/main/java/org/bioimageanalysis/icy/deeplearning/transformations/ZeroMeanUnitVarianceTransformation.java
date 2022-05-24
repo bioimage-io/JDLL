@@ -50,6 +50,10 @@ public class ZeroMeanUnitVarianceTransformation extends DefaultImageTransformati
 		return name;
 	}
 	
+	private float getFloatVal(Number val) {
+		return val.floatValue();
+	}
+	
 	/**
 	 * 
 	 * @param axes

@@ -37,18 +37,7 @@ public class BinarizeTransformation extends DefaultImageTransformation {
 	}
 	
 	private float getFloatThreshold() {
-		if (threshold instanceof Integer)
-			return (float) (1.0 * (int) threshold);
-		else if (threshold instanceof Float)
-			return (float) threshold;
-		else if (threshold instanceof Double)
-			return (float) threshold;
-		else if (threshold instanceof Long)
-			return (float) (1.0 * (long) threshold);
-		else 
-			throw new IllegalArgumentException("Type '" + threshold.getClass().toString() + "' of the"
-					+ " threshold parameter for processing '"
-					+ name + "' not supported");
+		return threshold.floatValue();
 	}
 	
 	public Tensor apply() {
