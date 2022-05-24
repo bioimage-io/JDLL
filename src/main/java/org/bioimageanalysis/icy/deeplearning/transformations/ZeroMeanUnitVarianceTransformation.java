@@ -1,20 +1,20 @@
 package org.bioimageanalysis.icy.deeplearning.transformations;
 
-import java.nio.Buffer;
 import java.nio.FloatBuffer;
 
-import org.nd4j.linalg.api.ndarray.INDArray;
+import org.bioimageanalysis.icy.deeplearning.tensor.Tensor;
+import org.nd4j.linalg.api.buffer.DataType;
 
 
 public class ZeroMeanUnitVarianceTransformation extends DefaultImageTransformation {
 	public static final String name = "zero_mean_unit_variance";
 	private Number mean;
 	private Number std;
-	private INDArray input;
+	private Tensor input;
 	private String axes;
 	private String mode;
 
-	public ZeroMeanUnitVarianceTransformation(INDArray input) {
+	public ZeroMeanUnitVarianceTransformation(Tensor input) {
 		this.input = input;
 	}
 
@@ -60,22 +60,22 @@ public class ZeroMeanUnitVarianceTransformation extends DefaultImageTransformati
 	 * @param per_sample
 	 * @return
 	 */
-	public INDArray apply() {
-		float[] arr = input.data().asFloat();
+	public Tensor apply() {
+		FloatBuffer arr = input.getDataAsNDArray().data().asNioFloat();
 		float mean = 0;
-		for (float i : arr)
-			mean += i;
-		mean = mean / (float) arr.length;
+		for (int i = 0; i < input.getDataAsNDArray().length(); i ++)
+			mean += arr.get();
+		mean = mean / input.getDataAsNDArray().length();
 		float std = 0;
-		for (float i : arr) {
-			std += ((i - mean) * (i - mean));
-		}
-		std = std / (float) arr.length;
+		for (int i = 0; i < input.getDataAsNDArray().length(); i ++)
+			std += ((arr.get(i) - mean) * (arr.get(i) - mean));
 		
-		for (int i = 0; i < arr.length; i ++) {
-			arr[i] = (arr[i] - mean) / std;
+		std = std / input.getDataAsNDArray().length();
+		
+		for (int i = 0; i < input.getDataAsNDArray().length(); i ++) {
+			arr.put(i, (arr.get(i) - mean) / std);
 		}
-		input.data().setData(arr);
+		input.convertToDataType(DataType.FLOAT);
 		return input;
 	}
 }
