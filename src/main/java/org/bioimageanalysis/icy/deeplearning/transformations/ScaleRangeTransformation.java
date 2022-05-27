@@ -1,6 +1,9 @@
 package org.bioimageanalysis.icy.deeplearning.transformations;
 
 
+import java.util.Arrays;
+import java.util.function.Supplier;
+import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import org.bioimageanalysis.icy.deeplearning.tensor.Tensor;
@@ -114,6 +117,40 @@ public class ScaleRangeTransformation extends DefaultImageTransformation {
 		return mat2;
 	}
 	
+	private INDArray getMax(INDArray arr, int[] interestAxes) {
+		int[] maxAxes = new int[arr.shape().length - interestAxes.length];
+		long[] maxArrSize = new long[arr.shape().length - interestAxes.length];
+		int c = 0;
+		for (int i = 0; i < arr.shape().length; i ++) {
+			boolean present = false;
+			for (int j = 0; j < interestAxes.length; j ++) {
+				if (i == j) {
+					present = true;
+					break;
+				}
+			}
+			if (!present) {
+				maxAxes[c] = i;
+				maxArrSize[c ++] = arr.shape()[i];
+			}
+		}
+		// Create list of indices and iterate over it
+		int nPositions = 1;
+		for (long ii : maxArrSize) {nPositions *= ii;}
+		int[] positionsFlat = new int[nPositions * maxArrSize.length];
+		for (int i = 0; i < nPositions; i ++) {
+			 for (int j = 0; j < maxArrSize.length; j ++) {
+				 int factor = 1;
+				 for (int k = 0; k < j; k ++) {factor *= maxArrSize[k];}
+				 int ind = j * nPositions;
+				 int auxVal = i / factor;
+				 int val = auxVal % ((int) maxArrSize[j]);
+				 positionsFlat[ind + i] = val;
+			 }
+		}
+		
+	}
+	
 	private void checkCompulsoryArgs() {
 		if (minPercentile == null || maxPercentile == null) {
 			throw new IllegalArgumentException("Error defining the processing '"
@@ -151,6 +188,22 @@ public class ScaleRangeTransformation extends DefaultImageTransformation {
 	}
 	
 	public static void main(String[] args) throws InterruptedException {
+		// Create list of indices and iterate over it
+		int[] maxArrSize = new int[] {3, 2, 2};
+		int nPositions = 1;
+		for (long ii : maxArrSize) {nPositions *= ii;}
+		int[] positionsFlat = new int[nPositions * maxArrSize.length];
+		for (int i = 0; i < nPositions; i ++) {
+			 for (int j = 0; j < maxArrSize.length; j ++) {
+				 int factor = 1;
+				 for (int k = 0; k < j; k ++) {factor *= maxArrSize[k];}
+				 int ind = j * nPositions;
+				 int auxVal = i / factor;
+				 int val = auxVal % ((int) maxArrSize[j]);
+				 positionsFlat[ind + i] = val;
+			 }
+		}
+
 		INDArray arr = Nd4j.arange(96000000);
 		arr = arr.reshape(new int[] {2,3,4000,4000});
 		Tensor tt = Tensor.build("example", "bcyx", arr);
