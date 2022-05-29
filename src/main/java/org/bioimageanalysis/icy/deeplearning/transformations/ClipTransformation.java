@@ -55,10 +55,10 @@ public class ClipTransformation extends DefaultImageTransformation {
 		checkCompulsoryArgs();
 		checkArgsCompatible();
 		tensor.convertToDataType(DataType.FLOAT);
-		FloatBuffer datab = tensor.getDataAsNDArray().data().asNioFloat();
+		FloatBuffer datab = tensor.getData().data().asNioFloat();
 		float minF = getFloatVal(min);
 		float maxF = getFloatVal(max);
-		for (int i = 0; i < tensor.getDataAsNDArray().length(); i ++) {
+		for (int i = 0; i < tensor.getData().length(); i ++) {
 			if (datab.get(i) > maxF)
 				datab.put(maxF);
 			else if (datab.get(i) < minF)

@@ -43,9 +43,9 @@ public class BinarizeTransformation extends DefaultImageTransformation {
 	public Tensor apply() {
 		checkCompulsoryArgs();
 		tensor.convertToDataType(DataType.FLOAT);
-		FloatBuffer datab = tensor.getDataAsNDArray().data().asNioFloat();
+		FloatBuffer datab = tensor.getData().data().asNioFloat();
 		float thres = getFloatThreshold();
-		for (int i = 0; i < tensor.getDataAsNDArray().length(); i ++) {
+		for (int i = 0; i < tensor.getData().length(); i ++) {
 			float aa = datab.get(i) - thres;
 			if (aa > 0 )
 				datab.put(i, 1);

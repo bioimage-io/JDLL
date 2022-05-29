@@ -124,7 +124,7 @@ public final class Tensor
      * @param data
      * 	the numbers of the tensor in a Numpy array like structure
      */
-    public void setNDArrayData(INDArray data) {
+    public void setData(INDArray data) {
     	throwExceptionIfClosed();
     	if (data == null && this.data != null) {
     		this.data.data().flush();
@@ -164,7 +164,7 @@ public final class Tensor
      * REturn the data in a software agnostic way using DJL NDArrays
      * @return the data of the tensor as a NDArray
      */
-    public INDArray getDataAsNDArray() {
+    public INDArray getData() {
     	throwExceptionIfClosed();
     	if (data == null && isEmpty())
     		throw new IllegalArgumentException("Tensor '" + this.tensorName + "' is empty.");
@@ -182,7 +182,7 @@ public final class Tensor
      */
     public void copyTensorBackend(Tensor tt) {
     	throwExceptionIfClosed();
-    	if (tt.getDataAsNDArray() != null) {
+    	if (tt.getData() != null) {
     		copyNDArrayTensorBackend(tt);
     	}
     }
@@ -194,7 +194,7 @@ public final class Tensor
      */
     public void copyNDArrayTensorBackend(Tensor tt) {
     	throwExceptionIfClosed();
-		setNDArrayData(tt.getDataAsNDArray());
+		setData(tt.getData());
     }
     
     /**

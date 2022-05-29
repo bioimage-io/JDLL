@@ -1,6 +1,7 @@
 package org.bioimageanalysis.icy.deeplearning.transformations;
 
 
+import java.nio.FloatBuffer;
 import java.util.Arrays;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
@@ -13,6 +14,8 @@ import org.nd4j.linalg.api.memory.MemoryWorkspace;
 import org.nd4j.linalg.api.memory.MemoryWorkspaceManager;
 import org.nd4j.linalg.api.ndarray.INDArray;
 import org.nd4j.linalg.factory.Nd4j;
+import org.nd4j.linalg.indexing.INDArrayIndex;
+import org.nd4j.linalg.indexing.NDArrayIndex;
 
 public class ScaleRangeTransformation extends DefaultImageTransformation {
 	public static final String name = "scale_range";
@@ -89,7 +92,7 @@ public class ScaleRangeTransformation extends DefaultImageTransformation {
 	}
 	
 	private int[] getSqueezedShape(int[] percentileAxes) {
-		long[] squeezedShape = inputTensor.getDataAsNDArray().shape();
+		long[] squeezedShape = inputTensor.getData().shape();
 		int[] shape = IntStream.range(0, squeezedShape.length).map(i -> 0 + (int) squeezedShape[i]).toArray();
 		for (int i = 0; i < percentileAxes.length; i ++) {
 			shape[percentileAxes[i]] = 1;
@@ -104,7 +107,8 @@ public class ScaleRangeTransformation extends DefaultImageTransformation {
 	// TODO solve memory leak in max min calculation by nd4j, either solve it 
 	// with another method to find the max and min or try with wokspaces
 	private INDArray getPercentileMat(int[] percentileAxes, Number perc) {
-		INDArray array = inputTensor.getDataAsNDArray();
+		INDArray array = inputTensor.getData();
+		getMax(array, percentileAxes);
 		INDArray maxP = array.max(percentileAxes);
 		INDArray minP = array.min(percentileAxes);
 		double constant = getFloatVal(perc) / 100.0;
@@ -134,21 +138,9 @@ public class ScaleRangeTransformation extends DefaultImageTransformation {
 				maxArrSize[c ++] = arr.shape()[i];
 			}
 		}
-		// Create list of indices and iterate over it
-		int nPositions = 1;
-		for (long ii : maxArrSize) {nPositions *= ii;}
-		int[] positionsFlat = new int[nPositions * maxArrSize.length];
-		for (int i = 0; i < nPositions; i ++) {
-			 for (int j = 0; j < maxArrSize.length; j ++) {
-				 int factor = 1;
-				 for (int k = 0; k < j; k ++) {factor *= maxArrSize[k];}
-				 int ind = j * nPositions;
-				 int auxVal = i / factor;
-				 int val = auxVal % ((int) maxArrSize[j]);
-				 positionsFlat[ind + i] = val;
-			 }
-		}
 		
+		INDArray result = Nd4j.zeros(maxArrSize);
+		return result;
 	}
 	
 	private void checkCompulsoryArgs() {
@@ -173,7 +165,7 @@ public class ScaleRangeTransformation extends DefaultImageTransformation {
 		INDArray minPercMat = getPercentileMat(percentileAxes, minPercentile);
 		INDArray maxPercMat = getPercentileMat(percentileAxes, maxPercentile);
 		
-		INDArray arr = inputTensor.getDataAsNDArray();
+		INDArray arr = inputTensor.getData();
 		arr.sub(minPercMat).div(maxPercMat.sub(minPercMat), arr);
 
 		minPercMat.data().flush();
@@ -188,21 +180,6 @@ public class ScaleRangeTransformation extends DefaultImageTransformation {
 	}
 	
 	public static void main(String[] args) throws InterruptedException {
-		// Create list of indices and iterate over it
-		int[] maxArrSize = new int[] {3, 2, 2};
-		int nPositions = 1;
-		for (long ii : maxArrSize) {nPositions *= ii;}
-		int[] positionsFlat = new int[nPositions * maxArrSize.length];
-		for (int i = 0; i < nPositions; i ++) {
-			 for (int j = 0; j < maxArrSize.length; j ++) {
-				 int factor = 1;
-				 for (int k = 0; k < j; k ++) {factor *= maxArrSize[k];}
-				 int ind = j * nPositions;
-				 int auxVal = i / factor;
-				 int val = auxVal % ((int) maxArrSize[j]);
-				 positionsFlat[ind + i] = val;
-			 }
-		}
 
 		INDArray arr = Nd4j.arange(96000000);
 		arr = arr.reshape(new int[] {2,3,4000,4000});

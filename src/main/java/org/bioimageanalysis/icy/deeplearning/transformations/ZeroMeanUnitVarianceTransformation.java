@@ -61,18 +61,18 @@ public class ZeroMeanUnitVarianceTransformation extends DefaultImageTransformati
 	 * @return
 	 */
 	public Tensor apply() {
-		FloatBuffer arr = input.getDataAsNDArray().data().asNioFloat();
+		FloatBuffer arr = input.getData().data().asNioFloat();
 		float mean = 0;
-		for (int i = 0; i < input.getDataAsNDArray().length(); i ++)
+		for (int i = 0; i < input.getData().length(); i ++)
 			mean += arr.get();
-		mean = mean / input.getDataAsNDArray().length();
+		mean = mean / input.getData().length();
 		float std = 0;
-		for (int i = 0; i < input.getDataAsNDArray().length(); i ++)
+		for (int i = 0; i < input.getData().length(); i ++)
 			std += ((arr.get(i) - mean) * (arr.get(i) - mean));
 		
-		std = std / input.getDataAsNDArray().length();
+		std = std / input.getData().length();
 		
-		for (int i = 0; i < input.getDataAsNDArray().length(); i ++) {
+		for (int i = 0; i < input.getData().length(); i ++) {
 			arr.put(i, (arr.get(i) - mean) / std);
 		}
 		input.convertToDataType(DataType.FLOAT);
