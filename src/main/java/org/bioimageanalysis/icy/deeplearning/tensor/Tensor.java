@@ -203,6 +203,7 @@ public final class Tensor
      * 	the data type into which the tensor is going to be converted
      */
     public void convertToDataType(DataType dt) {
+    	throwExceptionIfClosed();
     	data = data.castTo(dt);
     	this.dType = dt;
     }
@@ -358,6 +359,7 @@ public final class Tensor
      * @return the name of the tensor
      */
     public String getName() {
+    	throwExceptionIfClosed();
     	return this.tensorName;
     }
     
@@ -366,6 +368,7 @@ public final class Tensor
      * @return the shape of the tensor
      */
     public int[] getShape() {
+    	throwExceptionIfClosed();
     	return shape;
     }
     
@@ -374,6 +377,7 @@ public final class Tensor
 	 * @return the axesString
 	 */
 	public String getAxesOrderString() {
+    	throwExceptionIfClosed();
 		return axesString;
 	}
     
@@ -382,6 +386,7 @@ public final class Tensor
      * @return the axes order in int[] representation
      */
     public int[] getAxesOrder() {
+    	throwExceptionIfClosed();
     	return this.axesArray;
     }
     
@@ -391,6 +396,7 @@ public final class Tensor
      * 	if the tensor is an image or not
      */
     public void setIsImage(boolean isImage) {
+    	throwExceptionIfClosed();
     	if (!isImage)
     		assertIsList();
     	this.isImage = isImage;
@@ -401,6 +407,7 @@ public final class Tensor
      * @return true if the tensor represents an image, false otherwise
      */
     public boolean isImage() {
+    	throwExceptionIfClosed();
     	return isImage;
     }
     
@@ -409,6 +416,7 @@ public final class Tensor
      * @return true if the tensor already has data or false otherwise
      */
     public boolean isEmpty() {
+    	throwExceptionIfClosed();
     	return emptyTensor;
     }
     
@@ -417,6 +425,7 @@ public final class Tensor
      * @return the data type of the tensor
      */
     public DataType getDataType() {
+    	throwExceptionIfClosed();
     	return data.dataType();
     }
     
