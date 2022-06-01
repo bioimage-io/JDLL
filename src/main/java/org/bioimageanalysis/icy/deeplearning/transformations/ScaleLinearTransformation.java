@@ -80,10 +80,10 @@ public class ScaleLinearTransformation extends DefaultImageTransformation {
 	
 	public Tensor apply() {
 		checkCompulsoryArgs();
+		tensor.convertToDataType(DataType.FLOAT);
 		INDArray arr = tensor.getData();
 		arr.mul(gain, arr);
 		arr.add(offset, arr);
-		tensor.convertToDataType(DataType.FLOAT);
 		return tensor;
 	}
 }
