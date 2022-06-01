@@ -391,6 +391,8 @@ public final class Tensor
      * 	if the tensor is an image or not
      */
     public void setIsImage(boolean isImage) {
+    	if (!isImage)
+    		assertIsList();
     	this.isImage = isImage;
     }
     
@@ -440,6 +442,18 @@ public final class Tensor
     				+ "to the same number of dimenensions that the INDArray has. In this case"
     				+ " the axes order is specfied for " + axesOrder.length() + " dimensions "
 						+ "while the array has " + data.shape().length + " dimensions.");
+    }
+    
+    private void assertIsList() {
+    	boolean x = axesString.toLowerCase().indexOf("x") != -1;
+    	boolean y = axesString.toLowerCase().indexOf("y") != -1;
+    	boolean t = axesString.toLowerCase().indexOf("t") != -1;
+    	boolean z = axesString.toLowerCase().indexOf("z") != -1;
+    	if (x || y || t || z) {
+    		throw new IllegalArgumentException("Tensor '" + this.tensorName + "' cannot be represented as "
+    				+ "a ist because lists can only have the axes: 'b', 'i', 'c' and 'r'. The axes for this "
+    				+ "tensor are :" + axesString + ".");
+    	}
     }
     
     public static void main(String[] args) {
