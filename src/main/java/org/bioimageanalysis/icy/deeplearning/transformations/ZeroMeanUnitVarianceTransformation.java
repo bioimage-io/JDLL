@@ -1,6 +1,7 @@
 package org.bioimageanalysis.icy.deeplearning.transformations;
 
 import java.nio.FloatBuffer;
+import java.nio.IntBuffer;
 
 import org.bioimageanalysis.icy.deeplearning.tensor.Tensor;
 import org.nd4j.linalg.api.buffer.DataType;
@@ -61,6 +62,7 @@ public class ZeroMeanUnitVarianceTransformation extends DefaultImageTransformati
 	 * @return
 	 */
 	public Tensor apply() {
+		input.convertToDataType(DataType.FLOAT);
 		FloatBuffer arr = input.getData().data().asNioFloat();
 		float mean = 0;
 		for (int i = 0; i < input.getData().length(); i ++)
