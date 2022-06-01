@@ -286,7 +286,7 @@ public final class Tensor
     {
     	dimOrder = dimOrder.toLowerCase();
         int[] tensorDimOrder = new int[dimOrder.length()];
-        int hasB = 0, hasI = 0, hasT = 0, hasX = 0, hasY = 0, hasZ = 0, hasC = 0;
+        int hasB = 0, hasI = 0, hasT = 0, hasX = 0, hasY = 0, hasZ = 0, hasC = 0, hasR = 0;
         for (int i = 0; i < dimOrder.length(); i++)
         {
             switch (dimOrder.charAt(i))
@@ -296,7 +296,11 @@ public final class Tensor
                     hasB = 1;
                     break;
                 case 'i':
-                    tensorDimOrder[i] = 4;
+                    tensorDimOrder[i] = 3;
+                    hasI = 1;
+                    break;
+                case 'r':
+                    tensorDimOrder[i] = 3;
                     hasI = 1;
                     break;
                 case 't':
@@ -325,11 +329,15 @@ public final class Tensor
                                     + ")");
             }
         }
-        if (hasB + hasI + hasT > 1)
-            throw new IllegalArgumentException("Has at least two of b, i or t at the same time.");
-        else if (hasY > 1 || hasX > 1 || hasC > 1 || hasZ > 1)
+        if (hasB + hasT > 1)
+            throw new IllegalArgumentException("Tensor axes order can only have either one 'b' or "
+            		+ "one 't'. These axes are exclusive .");
+        else if (hasZ + hasR + hasI > 1)
+            throw new IllegalArgumentException("Tensor axes order can only have either one 'i', one 'z' or "
+            		+ "one 'r'.");
+        else if (hasY > 1 || hasX > 1 || hasC > 1 || hasZ > 1 || hasR > 1 || hasT > 1 || hasI > 1 || hasB > 1)
             throw new IllegalArgumentException("There cannot be repeated dimensions in the axes "
-            		+ "order as it is specified for this tensor (" + dimOrder + ").");
+            		+ "order as this tensor has (" + dimOrder + ").");
         return tensorDimOrder;
     }
     
