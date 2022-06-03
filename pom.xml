@@ -10,7 +10,7 @@
     </parent>
 
     <artifactId>dl-model-runner</artifactId>
-    <version>1.0.0</version>
+    <version>1.0.1</version>
 
     <name>DeepLearning interface for Icy</name>
     <description>This project holds the code allowing the interaction between Icy and TensorFlow.
