@@ -20,7 +20,7 @@ import net.imglib2.type.Type;
  * 
  * @author Carlos Garcia Lopez de Haro
  */
-public final class Tensor
+public final class Tensor <T extends Type<T>>
 {
 	/**
 	 * Name given to the tensor in the model.
@@ -37,7 +37,7 @@ public final class Tensor
 	/** 
 	 * Software agnostic representation of the tensor data
 	 */
-	private RandomAccessibleInterval< Type< ? >> data;
+	private RandomAccessibleInterval<T> data;
 	/**
 	 * Whether the tensor represents an image or not
 	 */
@@ -50,7 +50,7 @@ public final class Tensor
 	/**TODO develop a DAtaType class for this Tensor class?
 	 * The data type of the tensor
 	 */
-	private Type<?> dType;
+	private Type<T> dType;
 	/**
 	 * Shape of the tensor
 	 */
@@ -70,7 +70,7 @@ public final class Tensor
 	 * @param data
 	 * 	data structure similar to a Numpy array that contains all tensor numbers
 	 */
-    private Tensor(String tensorName, String axes, NDArray data)
+    private Tensor(String tensorName, String axes, RandomAccessibleInterval<T> data)
     {
     	Objects.requireNonNull(tensorName, "'tensorName' field should not be empty");
     	Objects.requireNonNull(axes, "'axes' field should not be empty");
@@ -100,7 +100,7 @@ public final class Tensor
 	 * 	data structure similar to a Numpy array that contains all tensor numbers
      * @return the tensor
      */
-    public static Tensor build(String tensorName, String axes, NDArray data)
+    public static <T extends Type<T>> Tensor build(String tensorName, String axes, RandomAccessibleInterval<T> data)
     {
     	if (data == null)
     		throw new IllegalArgumentException("Trying to create tensor from an empty NDArray");
@@ -126,12 +126,9 @@ public final class Tensor
      * @param data
      * 	the numbers of the tensor in a Numpy array like structure
      */
-    public void setData(NDArray data) {
+    public void setData(RandomAccessibleInterval<T> data) {
     	throwExceptionIfClosed();
     	if (data == null && this.data != null) {
-    		this.data.data().flush();
-    		this.data.data().destroy();
-    		this.data.close();
     		this.data = null;
     		return;
     	} else if (this.data != null) {
@@ -140,10 +137,10 @@ public final class Tensor
     				+ " been set. In order to modify the tensor, please modify the NDArray "
     				+ "used as backend for the tensor.");
     	}
-    	if (!emptyTensor && !equalShape(data.getShape().getShape())) {
+    	if (!emptyTensor && !equalShape(data.dimensionsAsLongArray())) {
     		throw new IllegalArgumentException("Trying to set an NDArray as the backend of the Tensor "
     				+ "with a different shape than the Tensor. Tensor shape is: " + Arrays.toString(shape)
-    				+ " and NDArray shape is: " + Arrays.toString(data.getShape().getShape()));
+    				+ " and NDArray shape is: " + Arrays.toString(data.dimensionsAsLongArray()));
     	}
     	if (!emptyTensor && this.data != null && this.data.getDataType() != data.getDataType()) {
     		throw new IllegalArgumentException("Trying to set an NDArray as the backend of the Tensor "
@@ -166,7 +163,7 @@ public final class Tensor
      * REturn the data in a software agnostic way using DJL NDArrays
      * @return the data of the tensor as a NDArray
      */
-    public NDArray getData() {
+    public RandomAccessibleInterval<T> getData() {
     	throwExceptionIfClosed();
     	if (data == null && isEmpty())
     		throw new IllegalArgumentException("Tensor '" + this.tensorName + "' is empty.");
@@ -231,9 +228,7 @@ public final class Tensor
 		   	closed = true;
 		   	axesArray = null;
 		   	if (data != null) {
-		   		data.data().setData(new boolean[] {false});
-		   		data.data().destroy();
-		   		data.close();
+		   		data = null;
 		   	}
 		   	this.data = null;
 		   	this.axesString = null;
@@ -351,7 +346,7 @@ public final class Tensor
     private void setShape() {
     	if (data == null)
     		throw new IllegalArgumentException("Trying to create tensor from an empty NDArray");
-    	long[] longShape = data.getShape().getShape();
+    	long[] longShape = data.dimensionsAsLongArray();
     	shape = new int[longShape.length];
     	for (int i = 0; i < shape.length; i ++)
     		shape[i] = (int) longShape[i];
@@ -427,9 +422,10 @@ public final class Tensor
      * GEt the data type of the tensor
      * @return the data type of the tensor
      */
-    public DataType getDataType() {
+    public Type<T> getDataType() {
     	throwExceptionIfClosed();
-    	return data.getDataType();
+    	this.data.randomAccess().
+    	return data;
     }
     
     /**
@@ -441,19 +437,19 @@ public final class Tensor
     }
     
     /**
-     * Method to check if the number of dimensions of the {@link NDArray} corresponds
+     * Method to check if the number of dimensions of the {@link RandomAccessibleInterval} corresponds
      * to the number of dimensions specified by the {@link #axesString}
      * @param data
      * 	the array backend of the tensor
      * @param axesOrder
      * 	the axes order of the tensor
      */
-    private void checkDims(NDArray data, String axesOrder) {
-    	if (data.getShape().getShape().length != axesOrder.length())
+    private void checkDims(RandomAccessibleInterval<T> data, String axesOrder) {
+    	if (data.dimensionsAsLongArray().length != axesOrder.length())
     		throw new IllegalArgumentException("The axes order introduced has to correspond "
     				+ "to the same number of dimenensions that the NDArray has. In this case"
     				+ " the axes order is specfied for " + axesOrder.length() + " dimensions "
-						+ "while the array has " + data.getShape().getShape().length + " dimensions.");
+						+ "while the array has " + data.dimensionsAsLongArray().length + " dimensions.");
     }
     
     private void assertIsList() {
