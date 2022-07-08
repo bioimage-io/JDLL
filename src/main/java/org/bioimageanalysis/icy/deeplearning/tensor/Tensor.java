@@ -4,10 +4,9 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 
-import ai.djl.ndarray.NDArray;
-import ai.djl.ndarray.types.DataType;
 import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.type.Type;
+import net.imglib2.util.Util;
 
 
 
@@ -82,7 +81,7 @@ public final class Tensor <T extends Type<T>>
     	this.data = data;
     	if (data != null) {
     		setShape();
-        	dType = data.getDataType();
+        	dType = Util.getTypeFromInterval(data);
     		emptyTensor = false;
     	} else {
     		emptyTensor = true;
@@ -142,19 +141,19 @@ public final class Tensor <T extends Type<T>>
     				+ "with a different shape than the Tensor. Tensor shape is: " + Arrays.toString(shape)
     				+ " and NDArray shape is: " + Arrays.toString(data.dimensionsAsLongArray()));
     	}
-    	if (!emptyTensor && this.data != null && this.data.getDataType() != data.getDataType()) {
+    	if (!emptyTensor && this.data != null && Util.getTypeFromInterval(this.data) != Util.getTypeFromInterval(data)) {
     		throw new IllegalArgumentException("Trying to set an NDArray as the backend of the Tensor "
     				+ "with a different data type than the Tensor. Tensor data type is: " + dType.toString()
-    				+ " and NDArray data type is: " + data.getDataType().toString());
+    				+ " and NDArray data type is: " + Util.getTypeFromInterval(data).toString());
     	}
     	if (!emptyTensor)
     		checkDims(data, axesString);
     	
-    	dType = data.getDataType();
+    	dType = Util.getTypeFromInterval(data);
     	this.data = data;
     	if (emptyTensor) {
     		setShape();
-        	dType = data.getDataType();
+        	dType = Util.getTypeFromInterval(data);
         	emptyTensor = false;
     	}
     }
@@ -201,7 +200,7 @@ public final class Tensor <T extends Type<T>>
      * @param dt
      * 	the data type into which the tensor is going to be converted
      */
-    public void convertToDataType(DataType dt) {
+    public void convertToDataType(Type dt) {
     	throwExceptionIfClosed();
     	// TODO check
     	data.toType(dt, false);
@@ -424,8 +423,7 @@ public final class Tensor <T extends Type<T>>
      */
     public Type<T> getDataType() {
     	throwExceptionIfClosed();
-    	this.data.randomAccess().
-    	return data;
+    	return Util.getTypeFromInterval( data );
     }
     
     /**
