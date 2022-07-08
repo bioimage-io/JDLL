@@ -4,8 +4,10 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 
-import org.nd4j.linalg.api.buffer.DataType;
-import org.nd4j.linalg.api.ndarray.INDArray;
+import ai.djl.ndarray.NDArray;
+import ai.djl.ndarray.types.DataType;
+import net.imglib2.RandomAccessibleInterval;
+import net.imglib2.type.Type;
 
 
 
@@ -35,7 +37,7 @@ public final class Tensor
 	/** 
 	 * Software agnostic representation of the tensor data
 	 */
-	private INDArray data;
+	private RandomAccessibleInterval< Type< ? >> data;
 	/**
 	 * Whether the tensor represents an image or not
 	 */
@@ -48,7 +50,7 @@ public final class Tensor
 	/**TODO develop a DAtaType class for this Tensor class?
 	 * The data type of the tensor
 	 */
-	private DataType dType;
+	private Type<?> dType;
 	/**
 	 * Shape of the tensor
 	 */
@@ -68,7 +70,7 @@ public final class Tensor
 	 * @param data
 	 * 	data structure similar to a Numpy array that contains all tensor numbers
 	 */
-    private Tensor(String tensorName, String axes, INDArray data)
+    private Tensor(String tensorName, String axes, NDArray data)
     {
     	Objects.requireNonNull(tensorName, "'tensorName' field should not be empty");
     	Objects.requireNonNull(axes, "'axes' field should not be empty");
@@ -80,7 +82,7 @@ public final class Tensor
     	this.data = data;
     	if (data != null) {
     		setShape();
-        	dType = data.dataType();
+        	dType = data.getDataType();
     		emptyTensor = false;
     	} else {
     		emptyTensor = true;
@@ -98,7 +100,7 @@ public final class Tensor
 	 * 	data structure similar to a Numpy array that contains all tensor numbers
      * @return the tensor
      */
-    public static Tensor build(String tensorName, String axes, INDArray data)
+    public static Tensor build(String tensorName, String axes, NDArray data)
     {
     	if (data == null)
     		throw new IllegalArgumentException("Trying to create tensor from an empty NDArray");
@@ -124,7 +126,7 @@ public final class Tensor
      * @param data
      * 	the numbers of the tensor in a Numpy array like structure
      */
-    public void setData(INDArray data) {
+    public void setData(NDArray data) {
     	throwExceptionIfClosed();
     	if (data == null && this.data != null) {
     		this.data.data().flush();
@@ -138,24 +140,24 @@ public final class Tensor
     				+ " been set. In order to modify the tensor, please modify the NDArray "
     				+ "used as backend for the tensor.");
     	}
-    	if (!emptyTensor && !equalShape(data.shape())) {
-    		throw new IllegalArgumentException("Trying to set an INDArray as the backend of the Tensor "
+    	if (!emptyTensor && !equalShape(data.getShape().getShape())) {
+    		throw new IllegalArgumentException("Trying to set an NDArray as the backend of the Tensor "
     				+ "with a different shape than the Tensor. Tensor shape is: " + Arrays.toString(shape)
-    				+ " and INDArray shape is: " + Arrays.toString(data.shape()));
+    				+ " and NDArray shape is: " + Arrays.toString(data.getShape().getShape()));
     	}
-    	if (!emptyTensor && this.data != null && this.data.dataType() != data.dataType()) {
-    		throw new IllegalArgumentException("Trying to set an INDArray as the backend of the Tensor "
+    	if (!emptyTensor && this.data != null && this.data.getDataType() != data.getDataType()) {
+    		throw new IllegalArgumentException("Trying to set an NDArray as the backend of the Tensor "
     				+ "with a different data type than the Tensor. Tensor data type is: " + dType.toString()
-    				+ " and INDArray data type is: " + data.dataType().toString());
+    				+ " and NDArray data type is: " + data.getDataType().toString());
     	}
     	if (!emptyTensor)
     		checkDims(data, axesString);
     	
-    	dType = data.dataType();
+    	dType = data.getDataType();
     	this.data = data;
     	if (emptyTensor) {
     		setShape();
-        	dType = data.dataType();
+        	dType = data.getDataType();
         	emptyTensor = false;
     	}
     }
@@ -164,7 +166,7 @@ public final class Tensor
      * REturn the data in a software agnostic way using DJL NDArrays
      * @return the data of the tensor as a NDArray
      */
-    public INDArray getData() {
+    public NDArray getData() {
     	throwExceptionIfClosed();
     	if (data == null && isEmpty())
     		throw new IllegalArgumentException("Tensor '" + this.tensorName + "' is empty.");
@@ -204,7 +206,8 @@ public final class Tensor
      */
     public void convertToDataType(DataType dt) {
     	throwExceptionIfClosed();
-    	data = data.castTo(dt);
+    	// TODO check
+    	data.toType(dt, false);
     	this.dType = dt;
     }
     
@@ -348,7 +351,7 @@ public final class Tensor
     private void setShape() {
     	if (data == null)
     		throw new IllegalArgumentException("Trying to create tensor from an empty NDArray");
-    	long[] longShape = data.shape();
+    	long[] longShape = data.getShape().getShape();
     	shape = new int[longShape.length];
     	for (int i = 0; i < shape.length; i ++)
     		shape[i] = (int) longShape[i];
@@ -426,7 +429,7 @@ public final class Tensor
      */
     public DataType getDataType() {
     	throwExceptionIfClosed();
-    	return data.dataType();
+    	return data.getDataType();
     }
     
     /**
@@ -438,19 +441,19 @@ public final class Tensor
     }
     
     /**
-     * Method to check if the number of dimensions of the {@link INDArray} corresponds
+     * Method to check if the number of dimensions of the {@link NDArray} corresponds
      * to the number of dimensions specified by the {@link #axesString}
      * @param data
      * 	the array backend of the tensor
      * @param axesOrder
      * 	the axes order of the tensor
      */
-    private void checkDims(INDArray data, String axesOrder) {
-    	if (data.shape().length != axesOrder.length())
+    private void checkDims(NDArray data, String axesOrder) {
+    	if (data.getShape().getShape().length != axesOrder.length())
     		throw new IllegalArgumentException("The axes order introduced has to correspond "
-    				+ "to the same number of dimenensions that the INDArray has. In this case"
+    				+ "to the same number of dimenensions that the NDArray has. In this case"
     				+ " the axes order is specfied for " + axesOrder.length() + " dimensions "
-						+ "while the array has " + data.shape().length + " dimensions.");
+						+ "while the array has " + data.getShape().getShape().length + " dimensions.");
     }
     
     private void assertIsList() {

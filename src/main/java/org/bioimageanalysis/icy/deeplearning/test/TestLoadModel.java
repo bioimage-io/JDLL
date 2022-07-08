@@ -4,6 +4,8 @@ import org.bioimageanalysis.icy.deeplearning.Model;
 import org.bioimageanalysis.icy.deeplearning.exceptions.LoadEngineException;
 import org.bioimageanalysis.icy.deeplearning.utils.EngineInfo;
 
+import ai.djl.engine.Engine;
+
 public class TestLoadModel {
 
 	
@@ -19,5 +21,6 @@ public class TestLoadModel {
 		Model model = Model.createDeepLearningModel(modelFolder, modelSource, engineInfo, null);
 		model.loadModel();
 		System.out.println("done");
+		Engine.registerEngine(null);
 	}
 }

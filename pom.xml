@@ -41,7 +41,18 @@
             <artifactId>google-gson</artifactId>
             <version>2.9.0</version>
         </dependency>
-        <dependency>
+		<dependency>
+		    <groupId>net.imglib2</groupId>
+		    <artifactId>imglib2</artifactId>
+		    <version>5.13.0</version>
+		</dependency>
+        <!-- 
+		<dependency>
+		  <groupId>ai.djl.java</groupId>
+		  <artifactId>java</artifactId>
+		  <version>0.18.0-SNAPSHOT</version>
+		  <type>module</type>
+		</dependency><dependency>
             <groupId>org.bioimageanalysis.icy</groupId>
             <artifactId>nd4j</artifactId>
             <version>1.0.1</version>
@@ -50,7 +61,7 @@
             <groupId>org.bioimageanalysis.icy</groupId>
             <artifactId>jna</artifactId>
             <version>5.11.0</version>
-        </dependency>
+        </dependency> -->
         <!-- <dependency> -->
         <!-- <groupId>org.nd4j</groupId> -->
         <!-- <artifactId>nd4j-native</artifactId> -->
@@ -73,5 +84,13 @@
             <id>icy</id>
             <url>https://icy-nexus.pasteur.fr/repository/Icy/</url>
         </repository>
+	        <repository>
+	        <id>oss-sonatype</id>
+	        <name>oss-sonatype</name>
+	        <url>https://oss.sonatype.org/content/repositories/snapshots/</url>
+	        <snapshots>
+	            <enabled>true</enabled>
+	        </snapshots>
+	    </repository>
     </repositories>
 </project>
