@@ -2,11 +2,14 @@ package org.bioimageanalysis.icy.deeplearning.transformations;
 
 import java.nio.FloatBuffer;
 
+import org.bioimageanalysis.icy.deeplearning.tensor.RaiToArray;
 import org.bioimageanalysis.icy.deeplearning.tensor.Tensor;
-import org.nd4j.linalg.api.buffer.DataType;
-import org.nd4j.linalg.api.ndarray.INDArray;
-import org.nd4j.linalg.factory.Nd4j;
 
+import net.imglib2.img.array.ArrayImgs;
+import net.imglib2.type.Type;
+import net.imglib2.type.numeric.real.FloatType;
+
+// TODO check efficiency
 public class BinarizeTransformation extends DefaultImageTransformation {
 
 	public static final String name = "binarize";
@@ -40,25 +43,25 @@ public class BinarizeTransformation extends DefaultImageTransformation {
 		return threshold.floatValue();
 	}
 	
-	public Tensor apply() {
+	public <T extends Type<T>> Tensor apply() {
 		checkCompulsoryArgs();
-		tensor.createCopyOfTensorInWantedDataType(DataType.FLOAT);
-		FloatBuffer datab = tensor.getData().data().asNioFloat();
+		tensor = Tensor.createCopyOfTensorInWantedDataType(tensor, new FloatType());
+		float[] arr = RaiToArray.floatArray(tensor.getData());
+		FloatBuffer buff = FloatBuffer.wrap(arr);
 		float thres = getFloatThreshold();
-		for (int i = 0; i < tensor.getData().length(); i ++) {
-			float aa = datab.get(i) - thres;
+		for (int i = 0; i < arr.length; i ++) {
+			float aa = buff.get(i) - thres;
 			if (aa > 0 )
-				datab.put(i, 1);
+				buff.put(i, 1);
 			else
-				datab.put(i, 0);
+				buff.put(i, 0);
 		}
+		tensor.setData(ArrayImgs.floats(arr, tensor.getData().dimensionsAsLongArray()));
 		return tensor;
 	}
 	
 	public static void main(String[] args) throws InterruptedException {
-		INDArray arr = Nd4j.arange(96000000);
-		arr = arr.reshape(new int[] {2,3,4000,4000});
-		Tensor tt = Tensor.build("example", "bcyx", arr);
+		Tensor tt = Tensor.build("example", "bcyx", null);
 		long t1 = System.currentTimeMillis();
 		for (int i = 0; i < 1; i ++) {
 			BinarizeTransformation preproc = new BinarizeTransformation(tt);
