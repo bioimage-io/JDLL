@@ -3,20 +3,23 @@ package org.bioimageanalysis.icy.deeplearning.transformations;
 import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
 
+import org.bioimageanalysis.icy.deeplearning.tensor.RaiToArray;
 import org.bioimageanalysis.icy.deeplearning.tensor.Tensor;
-import org.nd4j.linalg.api.buffer.DataType;
+
+import net.imglib2.img.array.ArrayImgs;
+import net.imglib2.type.numeric.real.FloatType;
 
 
 public class ZeroMeanUnitVarianceTransformation extends DefaultImageTransformation {
 	public static final String name = "zero_mean_unit_variance";
 	private Number mean;
 	private Number std;
-	private Tensor input;
+	private Tensor tensor;
 	private String axes;
 	private String mode;
 
-	public ZeroMeanUnitVarianceTransformation(Tensor input) {
-		this.input = input;
+	public ZeroMeanUnitVarianceTransformation(Tensor tensor) {
+		this.tensor = tensor;
 	}
 
 	public ZeroMeanUnitVarianceTransformation() {
@@ -62,22 +65,23 @@ public class ZeroMeanUnitVarianceTransformation extends DefaultImageTransformati
 	 * @return
 	 */
 	public Tensor apply() {
-		input.createCopyOfTensorInWantedDataType(DataType.FLOAT);
-		FloatBuffer arr = input.getData().data().asNioFloat();
+		tensor = Tensor.createCopyOfTensorInWantedDataType(tensor, new FloatType());
+		float[] arr = RaiToArray.floatArray(tensor.getData());
+		FloatBuffer datab = FloatBuffer.wrap(arr);
 		float mean = 0;
-		for (int i = 0; i < input.getData().length(); i ++)
-			mean += arr.get();
-		mean = mean / input.getData().length();
+		for (int i = 0; i < arr.length; i ++)
+			mean += datab.get();
+		mean = mean / arr.length;
 		float std = 0;
-		for (int i = 0; i < input.getData().length(); i ++)
-			std += ((arr.get(i) - mean) * (arr.get(i) - mean));
+		for (int i = 0; i < arr.length; i ++)
+			std += ((datab.get(i) - mean) * (datab.get(i) - mean));
 		
-		std = std / input.getData().length();
+		std = std / arr.length;
 		
-		for (int i = 0; i < input.getData().length(); i ++) {
-			arr.put(i, (arr.get(i) - mean) / std);
+		for (int i = 0; i < arr.length; i ++) {
+			datab.put(i, (datab.get(i) - mean) / std);
 		}
-		input.createCopyOfTensorInWantedDataType(DataType.FLOAT);
-		return input;
+		tensor.setData(ArrayImgs.floats(arr, tensor.getData().dimensionsAsLongArray()));
+		return tensor;
 	}
 }
