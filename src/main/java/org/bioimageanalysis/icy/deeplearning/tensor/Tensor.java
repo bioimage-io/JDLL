@@ -200,7 +200,7 @@ public final class Tensor <T extends Type<T>>
      * @param dt
      * 	the data type into which the tensor is going to be converted
      */
-    public void convertToDataType(Type dt) {
+    public void createCopyOfTensorInWantedDataType(Type dt) {
     	throwExceptionIfClosed();
     	// TODO check
     	data.toType(dt, false);

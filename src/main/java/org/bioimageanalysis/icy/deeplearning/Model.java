@@ -190,7 +190,7 @@ public class Model
     {
         DeepLearningInterface engineInstance = engineClassLoader.getEngineInstance();
         engineClassLoader.setEngineClassLoader();
-        inTensors.stream().forEach(tt -> tt.convertToDataType(new FloatType()));
+        inTensors.stream().forEach(tt -> tt.createCopyOfTensorInWantedDataType(new FloatType()));
         outTensors = engineInstance.run(inTensors, outTensors);
         engineClassLoader.setIcyClassLoader();
         return outTensors;

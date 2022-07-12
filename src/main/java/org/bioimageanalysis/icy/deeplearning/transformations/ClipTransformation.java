@@ -54,7 +54,7 @@ public class ClipTransformation extends DefaultImageTransformation {
 	public Tensor apply() {
 		checkCompulsoryArgs();
 		checkArgsCompatible();
-		tensor.convertToDataType(DataType.FLOAT);
+		tensor.createCopyOfTensorInWantedDataType(DataType.FLOAT);
 		FloatBuffer datab = tensor.getData().data().asNioFloat();
 		float minF = getFloatVal(min);
 		float maxF = getFloatVal(max);

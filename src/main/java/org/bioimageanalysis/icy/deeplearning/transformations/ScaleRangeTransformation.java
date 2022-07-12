@@ -157,7 +157,7 @@ public class ScaleRangeTransformation extends DefaultImageTransformation {
 	 */
 	public Tensor apply() {
 		checkCompulsoryArgs();
-		inputTensor.convertToDataType(DataType.FLOAT);
+		inputTensor.createCopyOfTensorInWantedDataType(DataType.FLOAT);
 		// Get memory manager to remove arrays created from off-heap memory
 		int[] percentileAxes = getAxesForPercentileCalc();
 

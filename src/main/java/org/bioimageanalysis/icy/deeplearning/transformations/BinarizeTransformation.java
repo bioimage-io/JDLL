@@ -42,7 +42,7 @@ public class BinarizeTransformation extends DefaultImageTransformation {
 	
 	public Tensor apply() {
 		checkCompulsoryArgs();
-		tensor.convertToDataType(DataType.FLOAT);
+		tensor.createCopyOfTensorInWantedDataType(DataType.FLOAT);
 		FloatBuffer datab = tensor.getData().data().asNioFloat();
 		float thres = getFloatThreshold();
 		for (int i = 0; i < tensor.getData().length(); i ++) {
