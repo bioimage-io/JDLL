@@ -11,6 +11,12 @@ import net.imglib2.img.array.ArrayImg;
 import net.imglib2.img.array.ArrayImgFactory;
 import net.imglib2.type.NativeType;
 import net.imglib2.type.Type;
+import net.imglib2.type.numeric.integer.ByteType;
+import net.imglib2.type.numeric.integer.IntType;
+import net.imglib2.type.numeric.integer.LongType;
+import net.imglib2.type.numeric.integer.UnsignedByteType;
+import net.imglib2.type.numeric.real.DoubleType;
+import net.imglib2.type.numeric.real.FloatType;
 import net.imglib2.util.Util;
 
 
@@ -198,6 +204,32 @@ public final class Tensor <T extends Type<T>>
     public void copyNDArrayTensorBackend(Tensor tt) {
     	throwExceptionIfClosed();
 		setData(tt.getData());
+    }
+    
+    /**
+     * MEthod that creates a copy of the tensor in the wanted data type. Everything is the same
+     * or the new tensor (including the name), except the data type of the data
+     * @param tt
+     * 	tensor where the copy is created from
+     * @param type
+     * 	data type of the wanted tensor
+     */
+    public static <T extends Type<T>> Tensor createCopyOfTensorInWantedDataType(Tensor tt, String type) {
+    	if (type.toLowerCase().equals("float32")) {
+			return createCopyOfTensorInWantedDataType(tt, new FloatType());
+		} else if (type.toLowerCase().equals("float64")) {
+			return createCopyOfTensorInWantedDataType(tt, new DoubleType());
+		} else if (type.toLowerCase().equals("int32")) {
+			return createCopyOfTensorInWantedDataType(tt, new IntType());
+		} else if (type.toLowerCase().equals("int64")) {
+			return createCopyOfTensorInWantedDataType(tt, new LongType());
+		} else if (type.toLowerCase().equals("int8") || type.toLowerCase().equals("byte")) {
+			return createCopyOfTensorInWantedDataType(tt, new ByteType());
+		} else if (type.toLowerCase().equals("uint8") || type.toLowerCase().equals("ubyte")) {
+			return createCopyOfTensorInWantedDataType(tt, new UnsignedByteType());
+		} else {
+			throw new IllegalArgumentException("Conversion to Data type: " + type + " not supported by DeepIcy.");
+		}
     }
     
     /**
