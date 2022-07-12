@@ -32,7 +32,6 @@ import net.imglib2.util.Intervals;
 public class RaiToArray {
 
 
-    // TODO add method to convert into byte sequences
 	public static byte[] byteArray(
 		final RandomAccessibleInterval<ByteType> image)
 	{
@@ -61,7 +60,6 @@ public class RaiToArray {
 		return array == null ? createIntArray(image) : array;
 	}
 
-    // TODO add method to convert into long sequences
 	public static long[] longArray(
 		final RandomAccessibleInterval<LongType> image)
 	{
@@ -69,7 +67,7 @@ public class RaiToArray {
 		return array == null ? createLongArray(image) : array;
 	}
 
-	public static byte[] createByteArray(
+	private static byte[] createByteArray(
 		final RandomAccessibleInterval<ByteType> image)
 	{
 		final long[] dims = Intervals.dimensionsAsLongArray(image);
@@ -78,7 +76,7 @@ public class RaiToArray {
 		return dest.update(null).getCurrentStorageArray();
 	}
 
-	public static double[] createDoubleArray(
+	private static double[] createDoubleArray(
 		final RandomAccessibleInterval<DoubleType> image)
 	{
 		final long[] dims = Intervals.dimensionsAsLongArray(image);
@@ -87,7 +85,7 @@ public class RaiToArray {
 		return dest.update(null).getCurrentStorageArray();
 	}
 
-	public static float[] createFloatArray(
+	private static float[] createFloatArray(
 		final RandomAccessibleInterval<FloatType> image)
 	{
 		final long[] dims = Intervals.dimensionsAsLongArray(image);
@@ -96,7 +94,7 @@ public class RaiToArray {
 		return dest.update(null).getCurrentStorageArray();
 	}
 
-	public static int[] createIntArray(
+	private static int[] createIntArray(
 		final RandomAccessibleInterval<IntType> image)
 	{
 		final long[] dims = Intervals.dimensionsAsLongArray(image);
@@ -105,7 +103,7 @@ public class RaiToArray {
 		return dest.update(null).getCurrentStorageArray();
 	}
 
-	public static long[] createLongArray(
+	private static long[] createLongArray(
 		final RandomAccessibleInterval<LongType> image)
 	{
 		final long[] dims = Intervals.dimensionsAsLongArray(image);
@@ -114,7 +112,7 @@ public class RaiToArray {
 		return dest.update(null).getCurrentStorageArray();
 	}
 
-	public static byte[] extractByteArray(
+	private static byte[] extractByteArray(
 		final RandomAccessibleInterval<ByteType> image)
 	{
 		if (!(image instanceof ArrayImg)) return null;
@@ -125,7 +123,7 @@ public class RaiToArray {
 			((ByteArray) dataAccess).getCurrentStorageArray() : null;
 	}
 
-	public static double[] extractDoubleArray(
+	private static double[] extractDoubleArray(
 		final RandomAccessibleInterval<DoubleType> image)
 	{
 		if (!(image instanceof ArrayImg)) return null;
@@ -136,7 +134,7 @@ public class RaiToArray {
 			((DoubleArray) dataAccess).getCurrentStorageArray() : null;
 	}
 
-	public static float[] extractFloatArray(
+	private static float[] extractFloatArray(
 		final RandomAccessibleInterval<FloatType> image)
 	{
 		if (!(image instanceof ArrayImg)) return null;
@@ -147,7 +145,7 @@ public class RaiToArray {
 			((FloatArray) dataAccess).getCurrentStorageArray() : null;
 	}
 
-	public static int[] extractIntArray(
+	private static int[] extractIntArray(
 		final RandomAccessibleInterval<IntType> image)
 	{
 		if (!(image instanceof ArrayImg)) return null;
@@ -158,7 +156,7 @@ public class RaiToArray {
 			((IntArray) dataAccess).getCurrentStorageArray() : null;
 	}
 
-	public static long[] extractLongArray(
+	private static long[] extractLongArray(
 		final RandomAccessibleInterval<LongType> image)
 	{
 		if (!(image instanceof ArrayImg)) return null;
@@ -169,7 +167,7 @@ public class RaiToArray {
 			((LongArray) dataAccess).getCurrentStorageArray() : null;
 	}
 
-	public static <T extends RealType<T>> void copy(
+	private static <T extends RealType<T>> void copy(
 		final RandomAccessibleInterval<T> source,
 		final IterableInterval<T> dest)
 	{
