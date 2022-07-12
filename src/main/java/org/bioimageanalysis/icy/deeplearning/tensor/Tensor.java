@@ -4,7 +4,12 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 
+import net.imglib2.Cursor;
+import net.imglib2.RandomAccess;
 import net.imglib2.RandomAccessibleInterval;
+import net.imglib2.img.array.ArrayImg;
+import net.imglib2.img.array.ArrayImgFactory;
+import net.imglib2.type.NativeType;
 import net.imglib2.type.Type;
 import net.imglib2.util.Util;
 
@@ -196,15 +201,32 @@ public final class Tensor <T extends Type<T>>
     }
     
     /**
-     * Method to convert the Tensor from its data type to another
-     * @param dt
-     * 	the data type into which the tensor is going to be converted
+     * MEthod that creates a copy of the tensor in the wanted data type. Everything is the same
+     * or the new tensor (including the name), except the data type of the data
+     * @param tt
+     * 	tensor where the copy is created from
+     * @param type
+     * 	data type of the wanted tensor
      */
-    public void createCopyOfTensorInWantedDataType(Type dt) {
-    	throwExceptionIfClosed();
-    	// TODO check
-    	data.toType(dt, false);
-    	this.dType = dt;
+    public static <T extends Type<T>> Tensor createCopyOfTensorInWantedDataType(Tensor tt, Type type) {
+    	tt.throwExceptionIfClosed();
+    	RandomAccessibleInterval<T> rai = tt.getData();
+		ArrayImg newIm = new ArrayImgFactory((NativeType) type).create(rai.dimensionsAsLongArray());
+		
+		Cursor< T > targetCursor = newIm.localizingCursor();
+		RandomAccess< T > sourceRandomAccess = rai.randomAccess();
+ 
+		// iterate over the input cursor
+		while ( targetCursor.hasNext())
+		{
+			// move input cursor forward
+			targetCursor.fwd();
+			// set the output cursor to the position of the input cursor
+			sourceRandomAccess.setPosition( targetCursor );
+			// set the value of this pixel of the output image, every Type supports T.set( T type )
+			targetCursor.get().set( sourceRandomAccess.get() );
+		}
+		return Tensor.build(tt.getName(), tt.getAxesOrderString(), newIm);
     }
     
     /**
