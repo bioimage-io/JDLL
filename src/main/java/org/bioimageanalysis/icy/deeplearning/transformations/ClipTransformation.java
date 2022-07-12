@@ -2,10 +2,11 @@ package org.bioimageanalysis.icy.deeplearning.transformations;
 
 import java.nio.FloatBuffer;
 
+import org.bioimageanalysis.icy.deeplearning.tensor.RaiToArray;
 import org.bioimageanalysis.icy.deeplearning.tensor.Tensor;
-import org.nd4j.linalg.api.buffer.DataType;
-import org.nd4j.linalg.api.ndarray.INDArray;
-import org.nd4j.linalg.factory.Nd4j;
+
+import net.imglib2.img.array.ArrayImgs;
+import net.imglib2.type.numeric.real.FloatType;
 
 public class ClipTransformation extends DefaultImageTransformation {
 
@@ -54,23 +55,23 @@ public class ClipTransformation extends DefaultImageTransformation {
 	public Tensor apply() {
 		checkCompulsoryArgs();
 		checkArgsCompatible();
-		tensor.createCopyOfTensorInWantedDataType(DataType.FLOAT);
-		FloatBuffer datab = tensor.getData().data().asNioFloat();
+		tensor = Tensor.createCopyOfTensorInWantedDataType(tensor, new FloatType());
+		float[] arr = RaiToArray.floatArray(tensor.getData());
+		FloatBuffer datab = FloatBuffer.wrap(arr);
 		float minF = getFloatVal(min);
 		float maxF = getFloatVal(max);
-		for (int i = 0; i < tensor.getData().length(); i ++) {
+		for (int i = 0; i < arr.length; i ++) {
 			if (datab.get(i) > maxF)
 				datab.put(maxF);
 			else if (datab.get(i) < minF)
 				datab.put(minF);
 		}
+		tensor.setData(ArrayImgs.floats(arr, tensor.getData().dimensionsAsLongArray()));
 		return tensor;
 	}
 	
 	public static void main(String[] args) throws InterruptedException {
-		INDArray arr = Nd4j.arange(96000000);
-		arr = arr.reshape(new int[] {2,3,4000,4000});
-		Tensor tt = Tensor.build("example", "bcyx", arr);
+		Tensor tt = Tensor.build("example", "bcyx", null);
 		long t1 = System.currentTimeMillis();
 		for (int i = 0; i < 1; i ++) {
 			ClipTransformation preproc = new ClipTransformation(tt);
