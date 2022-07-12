@@ -163,7 +163,7 @@ public final class Tensor <T extends Type<T>>
     	}
     }
     
-    /**
+    /** TODO get method to return data as a Java array
      * REturn the data in a software agnostic way using DJL NDArrays
      * @return the data of the tensor as a NDArray
      */
