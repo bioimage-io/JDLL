@@ -4,6 +4,7 @@ import net.imglib2.Cursor;
 import net.imglib2.IterableInterval;
 import net.imglib2.RandomAccess;
 import net.imglib2.RandomAccessibleInterval;
+import net.imglib2.img.Img;
 import net.imglib2.img.array.ArrayImg;
 import net.imglib2.img.array.ArrayImgs;
 import net.imglib2.img.basictypeaccess.array.ByteArray;
@@ -11,13 +12,16 @@ import net.imglib2.img.basictypeaccess.array.DoubleArray;
 import net.imglib2.img.basictypeaccess.array.FloatArray;
 import net.imglib2.img.basictypeaccess.array.IntArray;
 import net.imglib2.img.basictypeaccess.array.LongArray;
+import net.imglib2.type.Type;
 import net.imglib2.type.numeric.RealType;
 import net.imglib2.type.numeric.integer.ByteType;
 import net.imglib2.type.numeric.integer.IntType;
 import net.imglib2.type.numeric.integer.LongType;
+import net.imglib2.type.numeric.integer.UnsignedByteType;
 import net.imglib2.type.numeric.real.DoubleType;
 import net.imglib2.type.numeric.real.FloatType;
 import net.imglib2.util.Intervals;
+import net.imglib2.util.Util;
 
 /**
  * Class to copy RandomAccessibleIntervals into Java Arrays
@@ -30,9 +34,236 @@ import net.imglib2.util.Intervals;
  */
 
 public class RaiArrayUtils {
-
-
-	public static byte[] byteArray(
+    
+    /**
+     * MEthod that creates a copy of the tensor in the wanted data type. Everything is the same
+     * or the new tensor (including the name), except the data type of the data
+     * @param rai
+     * 	tensor where the copy is created from
+     * @param type
+     * 	data type of the wanted tensor
+     */
+    public static <T extends Type<T>> Img<T> createCopyOfTensorInWantedDataType(RandomAccessibleInterval<T> rai, String type) {
+    	if (type.toLowerCase().equals("float32")) {
+			return createCopyOfRaiInWantedDataType(rai, new FloatType());
+		} else if (type.toLowerCase().equals("float64")) {
+			return createCopyOfRaiInWantedDataType(rai, new DoubleType());
+		} else if (type.toLowerCase().equals("int32")) {
+			return createCopyOfRaiInWantedDataType(rai, new IntType());
+		} else if (type.toLowerCase().equals("int64")) {
+			return createCopyOfRaiInWantedDataType(rai, new LongType());
+		} else if (type.toLowerCase().equals("int8") || type.toLowerCase().equals("byte")) {
+			return createCopyOfRaiInWantedDataType(rai, new ByteType());
+		} else if (type.toLowerCase().equals("uint8") || type.toLowerCase().equals("ubyte")) {
+			return createCopyOfRaiInWantedDataType(rai, new UnsignedByteType());
+		} else {
+			throw new IllegalArgumentException("Conversion to Data type: " + type + " not supported by DeepIcy.");
+		}
+    }
+    
+    /**
+     * MEthod that creates a copy of the tensor in the wanted data type. Everything is the same
+     * or the new tensor (including the name), except the data type of the data
+     * @param tt
+     * 	tensor where the copy is created from
+     * @param type
+     * 	data type of the wanted tensor
+     */
+    public static <T extends Type<T>> Img<T> createCopyOfRaiInWantedDataType(RandomAccessibleInterval<T> rai, Type type) {
+    	if (Util.getTypeFromInterval(rai) instanceof FloatType) {
+    		return createCopyOfFloatRaiInWantedDataType((RandomAccessibleInterval<FloatType>) rai, type);
+    	} else if (Util.getTypeFromInterval(rai) instanceof IntType) {
+    		return createCopyOfIntRaiInWantedDataType((RandomAccessibleInterval<IntType>) rai, type);
+    	} else if (Util.getTypeFromInterval(rai) instanceof DoubleType) {
+    		return createCopyOfDoubleRaiInWantedDataType((RandomAccessibleInterval<DoubleType>) rai, type);
+    	} else if (Util.getTypeFromInterval(rai) instanceof LongType) {
+    		return createCopyOfLongRaiInWantedDataType((RandomAccessibleInterval<LongType>) rai, type);
+    	} else if (Util.getTypeFromInterval(rai) instanceof ByteType) {
+    		return createCopyOfByteRaiInWantedDataType((RandomAccessibleInterval<ByteType>) rai, type);
+    	} else {
+    		throw new IllegalArgumentException();
+    	}
+    }
+    
+    /**
+     * MEthod that creates a copy of the {@link RandomAccessibleInterval} of FloatType
+     *  in the wanted data type. 
+     * @param rai
+     * 	RandomAccessibleInterval where the copy is created from
+     * @param type
+     * 	data type of the wanted tensor
+     */
+    private static <T extends Type<T>> Img<T> createCopyOfFloatRaiInWantedDataType(RandomAccessibleInterval<FloatType> rai, Type type) {
+    	long[] tensorShape = rai.dimensionsAsLongArray();
+    	float[] arr = RaiArrayUtils.floatArray((RandomAccessibleInterval<FloatType>) rai);
+		if (type instanceof FloatType) {
+			ArrayImg<FloatType, FloatArray> tensorBackend = ArrayImgs.floats(arr, tensorShape);
+			return (Img<T>) tensorBackend;
+		} else if (type instanceof ByteType) {
+			ArrayImg<ByteType, ByteArray> tensorBackend = 
+					ArrayImgs.bytes(RaiArrayUtils.convertFloatArrIntoByteArr(arr), tensorShape);
+			return (Img<T>) tensorBackend;
+		} else if (type instanceof IntType) {
+			ArrayImg<IntType, IntArray> tensorBackend = 
+					ArrayImgs.ints(RaiArrayUtils.convertFloatArrIntoIntArr(arr), tensorShape);
+			return (Img<T>) tensorBackend;
+		} else if (type instanceof LongType) {
+			ArrayImg<LongType, LongArray> tensorBackend = 
+					ArrayImgs.longs(RaiArrayUtils.convertFloatArrIntoLongArr(arr), tensorShape);
+			return (Img<T>) tensorBackend;
+		} else if (type instanceof DoubleType) {
+			ArrayImg<DoubleType, DoubleArray> tensorBackend = 
+					ArrayImgs.doubles(RaiArrayUtils.convertFloatArrIntoDoubleArr(arr), tensorShape);
+			return (Img<T>) tensorBackend;
+		} else {
+			throw new IllegalArgumentException("");
+		}
+	}
+    
+    /**
+     * MEthod that creates a copy of the {@link RandomAccessibleInterval} of FloatType
+     *  in the wanted data type. 
+     * @param rai
+     * 	RandomAccessibleInterval where the copy is created from
+     * @param type
+     * 	data type of the wanted tensor
+     */
+    private static <T extends Type<T>> Img<T> createCopyOfIntRaiInWantedDataType(RandomAccessibleInterval<IntType> rai, Type type) {
+    	long[] tensorShape = rai.dimensionsAsLongArray();
+    	int[] arr = RaiArrayUtils.intArray((RandomAccessibleInterval<IntType>) rai);
+		if (type instanceof DoubleType) {
+			ArrayImg<DoubleType, DoubleArray> tensorBackend =
+					ArrayImgs.doubles(RaiArrayUtils.convertIntArrIntoDoubleArr(arr), tensorShape);
+			return (Img<T>) tensorBackend;
+		} else if (type instanceof ByteType) {
+			ArrayImg<ByteType, ByteArray> tensorBackend = 
+					ArrayImgs.bytes(RaiArrayUtils.convertIntArrIntoByteArr(arr), tensorShape);
+			return (Img<T>) tensorBackend;
+		} else if (type instanceof IntType) {
+			ArrayImg<IntType, IntArray> tensorBackend = ArrayImgs.ints(arr, tensorShape);
+			return (Img<T>) tensorBackend;
+		} else if (type instanceof LongType) {
+			ArrayImg<LongType, LongArray> tensorBackend =
+					ArrayImgs.longs(RaiArrayUtils.convertIntArrIntoLongArr(arr), tensorShape);
+			return (Img<T>) tensorBackend;
+		} else if (type instanceof FloatType) {
+			ArrayImg<FloatType, FloatArray> tensorBackend = 
+					ArrayImgs.floats(RaiArrayUtils.convertIntArrIntoFloatArr(arr), tensorShape);
+			return (Img<T>) tensorBackend;
+		} else {
+			throw new IllegalArgumentException("");
+		}
+	}
+    
+    /**
+     * MEthod that creates a copy of the {@link RandomAccessibleInterval} of FloatType
+     *  in the wanted data type. 
+     * @param rai
+     * 	RandomAccessibleInterval where the copy is created from
+     * @param type
+     * 	data type of the wanted tensor
+     */
+    private static <T extends Type<T>> Img<T> createCopyOfDoubleRaiInWantedDataType(RandomAccessibleInterval<DoubleType> rai, Type type) {
+    	long[] tensorShape = rai.dimensionsAsLongArray();
+		double[] arr = RaiArrayUtils.doubleArray((RandomAccessibleInterval<DoubleType>) rai);
+		if (type instanceof DoubleType) {
+			ArrayImg<DoubleType, DoubleArray> tensorBackend =
+					ArrayImgs.doubles(arr, tensorShape);
+			return (Img<T>) tensorBackend;
+		} else if (type instanceof ByteType) {
+			ArrayImg<ByteType, ByteArray> tensorBackend = 
+					ArrayImgs.bytes(RaiArrayUtils.convertDoubleArrIntoByteArr(arr), tensorShape);
+			return (Img<T>) tensorBackend;
+		} else if (type instanceof IntType) {
+			ArrayImg<IntType, IntArray> tensorBackend = 
+					ArrayImgs.ints(RaiArrayUtils.convertDoubleArrIntoIntArr(arr), tensorShape);
+			return (Img<T>) tensorBackend;
+		} else if (type instanceof LongType) {
+			ArrayImg<LongType, LongArray> tensorBackend =
+					ArrayImgs.longs(RaiArrayUtils.convertDoubleArrIntoLongArr(arr), tensorShape);
+			return (Img<T>) tensorBackend;
+		} else if (type instanceof FloatType) {
+			ArrayImg<FloatType, FloatArray> tensorBackend = 
+					ArrayImgs.floats(RaiArrayUtils.convertDoubleArrIntoFloatArr(arr), tensorShape);
+			return (Img<T>) tensorBackend;
+		} else {
+			throw new IllegalArgumentException("");
+		}
+	}
+    
+    /**
+     * MEthod that creates a copy of the {@link RandomAccessibleInterval} of FloatType
+     *  in the wanted data type. 
+     * @param rai
+     * 	RandomAccessibleInterval where the copy is created from
+     * @param type
+     * 	data type of the wanted tensor
+     */
+    private static <T extends Type<T>> Img<T> createCopyOfLongRaiInWantedDataType(RandomAccessibleInterval<LongType> rai, Type type) {
+		long[] arr = RaiArrayUtils.longArray((RandomAccessibleInterval<LongType>) rai);
+		long[] tensorShape = rai.dimensionsAsLongArray();
+		if (type instanceof DoubleType) {
+			ArrayImg<DoubleType, DoubleArray> tensorBackend =
+					ArrayImgs.doubles(RaiArrayUtils.convertLongArrIntoDoubleArr(arr), tensorShape);
+			return (Img<T>) tensorBackend;
+		} else if (type instanceof ByteType) {
+			ArrayImg<ByteType, ByteArray> tensorBackend = 
+					ArrayImgs.bytes(RaiArrayUtils.convertLongArrIntoByteArr(arr), tensorShape);
+			return (Img<T>) tensorBackend;
+		} else if (type instanceof IntType) {
+			ArrayImg<IntType, IntArray> tensorBackend = 
+					ArrayImgs.ints(RaiArrayUtils.convertLongArrIntoIntArr(arr), tensorShape);
+			return (Img<T>) tensorBackend;
+		} else if (type instanceof LongType) {
+			ArrayImg<LongType, LongArray> tensorBackend =
+					ArrayImgs.longs(arr, tensorShape);
+			return (Img<T>) tensorBackend;
+		} else if (type instanceof FloatType) {
+			ArrayImg<FloatType, FloatArray> tensorBackend = 
+					ArrayImgs.floats(RaiArrayUtils.convertLongArrIntoFloatArr(arr), tensorShape);
+			return (Img<T>) tensorBackend;
+		} else {
+			throw new IllegalArgumentException("");
+		}
+	}
+    
+    /**
+     * MEthod that creates a copy of the {@link RandomAccessibleInterval} of FloatType
+     *  in the wanted data type. 
+     * @param rai
+     * 	RandomAccessibleInterval where the copy is created from
+     * @param type
+     * 	data type of the wanted tensor
+     */
+    private static <T extends Type<T>> Img<T> createCopyOfByteRaiInWantedDataType(RandomAccessibleInterval<ByteType> rai, Type type) {
+		byte[] arr = RaiArrayUtils.byteArray((RandomAccessibleInterval<ByteType>) rai);
+		long[] tensorShape = rai.dimensionsAsLongArray();
+		if (type instanceof DoubleType) {
+			ArrayImg<DoubleType, DoubleArray> tensorBackend =
+					ArrayImgs.doubles(RaiArrayUtils.convertByteArrIntoDoubleArr(arr), tensorShape);
+			return (Img<T>) tensorBackend;
+		} else if (type instanceof ByteType) {
+			ArrayImg<ByteType, ByteArray> tensorBackend = 
+					ArrayImgs.bytes(arr, tensorShape);
+			return (Img<T>) tensorBackend;
+		} else if (type instanceof IntType) {
+			ArrayImg<IntType, IntArray> tensorBackend = 
+					ArrayImgs.ints(RaiArrayUtils.convertByteArrIntoIntArr(arr), tensorShape);
+			return (Img<T>) tensorBackend;
+		} else if (type instanceof LongType) {
+			ArrayImg<LongType, LongArray> tensorBackend =
+					ArrayImgs.longs(RaiArrayUtils.convertByteArrIntoLongArr(arr), tensorShape);
+			return (Img<T>) tensorBackend;
+		} else if (type instanceof FloatType) {
+			ArrayImg<FloatType, FloatArray> tensorBackend = 
+					ArrayImgs.floats(RaiArrayUtils.convertByteArrIntoFloatArr(arr), tensorShape);
+			return (Img<T>) tensorBackend;
+		} else {
+			throw new IllegalArgumentException("");
+		}
+	}
+    
+    public static byte[] byteArray(
 		final RandomAccessibleInterval<ByteType> image)
 	{
 		final byte[] array = extractByteArray(image);
