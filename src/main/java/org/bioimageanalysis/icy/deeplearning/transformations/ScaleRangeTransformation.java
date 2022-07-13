@@ -8,14 +8,6 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import org.bioimageanalysis.icy.deeplearning.tensor.Tensor;
-import org.nd4j.linalg.api.buffer.DataType;
-import org.nd4j.linalg.api.memory.MemoryManager;
-import org.nd4j.linalg.api.memory.MemoryWorkspace;
-import org.nd4j.linalg.api.memory.MemoryWorkspaceManager;
-import org.nd4j.linalg.api.ndarray.INDArray;
-import org.nd4j.linalg.factory.Nd4j;
-import org.nd4j.linalg.indexing.INDArrayIndex;
-import org.nd4j.linalg.indexing.NDArrayIndex;
 
 public class ScaleRangeTransformation extends DefaultImageTransformation {
 	public static final String name = "scale_range";
@@ -90,7 +82,7 @@ public class ScaleRangeTransformation extends DefaultImageTransformation {
 		return IntStream.range(0, axesOrder.length())
 				.filter(i -> axes.indexOf(axesOrder.split("")[i]) != -1).toArray();
 	}
-	
+	/**
 	private int[] getSqueezedShape(int[] percentileAxes) {
 		long[] squeezedShape = inputTensor.getData().shape();
 		int[] shape = IntStream.range(0, squeezedShape.length).map(i -> 0 + (int) squeezedShape[i]).toArray();
@@ -152,9 +144,6 @@ public class ScaleRangeTransformation extends DefaultImageTransformation {
 		}
 	}
 	
-	/**
-	 * 
-	 */
 	public Tensor apply() {
 		checkCompulsoryArgs();
 		inputTensor.createCopyOfTensorInWantedDataType(DataType.FLOAT);
@@ -191,4 +180,5 @@ public class ScaleRangeTransformation extends DefaultImageTransformation {
 		preproc.apply();
 		System.out.println();
 	}
+	*/
 }

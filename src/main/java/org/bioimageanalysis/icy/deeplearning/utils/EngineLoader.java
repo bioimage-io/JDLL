@@ -142,8 +142,7 @@ public class EngineLoader extends ClassLoader
         {
             urls[c++] = ff.toURI().toURL();
         }
-        // TODO this.engineClassloader = new URLClassLoader(urls, icyClassloader);
-        this.engineClassloader = new URLClassLoader(urls);
+        this.engineClassloader = new URLClassLoader(urls, icyClassloader);
 
         loadedEngines.put(this.majorVersion, this.engineClassloader);
     }

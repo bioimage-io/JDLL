@@ -1,5 +1,6 @@
 package org.bioimageanalysis.icy.deeplearning.tensor;
 
+import java.nio.Buffer;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
@@ -243,6 +244,35 @@ public final class Tensor <T extends Type<T>>
     public static <T extends Type<T>> Tensor createCopyOfTensorInWantedDataType(Tensor tt, Type type) {
     	tt.throwExceptionIfClosed();
     	RandomAccessibleInterval<T> rai = tt.getData();
+    	if (Util.getTypeFromInterval(rai) instanceof FloatType) {
+    		float[] arr = RaiToArray.floatArray((RandomAccessibleInterval<FloatType>) rai);
+    		if (type instanceof FloatType) {
+    			Arrays.stream(arr).
+    		} else if (type instanceof ByteType) {
+    			
+    		} else if (type instanceof IntType) {
+    			
+    		} else if (type instanceof LongType) {
+    			
+    		} else if (type instanceof DoubleType) {
+    			
+    		}
+    	} else if (Util.getTypeFromInterval(rai) instanceof IntType) {
+    		int[] arr = RaiToArray.intArray((RandomAccessibleInterval<IntType>) rai);
+    		if (type instanceof DoubleType) {
+    			Arrays.stream(arr).asDoubleStream();
+    			Buffer.block
+    		} else if (type instanceof ByteType) {
+    			
+    		} else if (type instanceof IntType) {
+    			
+    		} else if (type instanceof LongType) {
+    			Arrays.stream(arr).asLongStream();
+    		} else if (type instanceof FloatType) {
+    			
+    		}
+    	}
+    		
 		ArrayImg newIm = new ArrayImgFactory((NativeType) type).create(rai.dimensionsAsLongArray());
 		
 		Cursor< T > targetCursor = newIm.localizingCursor();
@@ -256,7 +286,7 @@ public final class Tensor <T extends Type<T>>
 			// set the output cursor to the position of the input cursor
 			sourceRandomAccess.setPosition( targetCursor );
 			// set the value of this pixel of the output image, every Type supports T.set( T type )
-			targetCursor.get().set( sourceRandomAccess.get() );
+			targetCursor.get().set( type. sourceRandomAccess.get() );
 		}
 		return Tensor.build(tt.getName(), tt.getAxesOrderString(), newIm);
     }
