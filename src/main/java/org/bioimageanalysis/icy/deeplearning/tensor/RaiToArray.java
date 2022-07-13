@@ -325,7 +325,7 @@ public class RaiToArray {
 		return arr;
 	}
 	
-	public static long[] convertLongArrIntoLongArr(float[] floatArr) {
+	public static long[] convertFloatArrIntoLongArr(float[] floatArr) {
 		long[] arr = new long[floatArr.length];
 		for ( byte i = 0; i < floatArr.length; i ++)
 			arr[i] = (long) floatArr
