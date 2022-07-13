@@ -43,7 +43,7 @@ public class RaiArrayUtils {
      * @param type
      * 	data type of the wanted tensor
      */
-    public static <T extends Type<T>> Img<T> createCopyOfTensorInWantedDataType(RandomAccessibleInterval<T> rai, String type) {
+    public static <T extends Type<T>> Img<T> createCopyOfRaiInWantedDataType(RandomAccessibleInterval<T> rai, String type) {
     	if (type.toLowerCase().equals("float32")) {
 			return createCopyOfRaiInWantedDataType(rai, new FloatType());
 		} else if (type.toLowerCase().equals("float64")) {
