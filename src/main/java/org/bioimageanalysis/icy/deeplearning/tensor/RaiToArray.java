@@ -184,84 +184,84 @@ public class RaiToArray {
 		}
 	}
 	
-	public float[] convertIntArrIntoFloatArr(int[] intArr) {
+	public static float[] convertIntArrIntoFloatArr(int[] intArr) {
 		float[] arr = new float[intArr.length];
 		for (int i = 0; i < intArr.length; i ++)
 			arr[i] = (float) intArr[i];
 		return arr;
 	}
 	
-	public float[] convertDoubleArrIntoFloatArr(double[] doubleArr) {
+	public static float[] convertDoubleArrIntoFloatArr(double[] doubleArr) {
 		float[] arr = new float[doubleArr.length];
 		for (int i = 0; i < doubleArr.length; i ++)
 			arr[i] = (float) doubleArr[i];
 		return arr;
 	}
 	
-	public float[] convertByteArrIntoFloatArr(byte[] byteArr) {
+	public static float[] convertByteArrIntoFloatArr(byte[] byteArr) {
 		float[] arr = new float[byteArr.length];
 		for (int i = 0; i < byteArr.length; i ++)
 			arr[i] = (float) byteArr[i];
 		return arr;
 	}
 	
-	public float[] convertLongArrIntoFloatArr(long[] longArr) {
+	public static float[] convertLongArrIntoFloatArr(long[] longArr) {
 		float[] arr = new float[longArr.length];
 		for (int i = 0; i < longArr.length; i ++)
 			arr[i] = (float) longArr[i];
 		return arr;
 	}
 	
-	public int[] convertFloatArrIntoIntArr(float[] floatArr) {
+	public static int[] convertFloatArrIntoIntArr(float[] floatArr) {
 		int[] arr = new int[floatArr.length];
 		for (int i = 0; i < floatArr.length; i ++)
 			arr[i] = (int) floatArr[i];
 		return arr;
 	}
 	
-	public int[] convertDoubleArrIntoIntArr(double[] doubleArr) {
+	public static int[] convertDoubleArrIntoIntArr(double[] doubleArr) {
 		int[] arr = new int[doubleArr.length];
 		for (int i = 0; i < doubleArr.length; i ++)
 			arr[i] = (int) doubleArr[i];
 		return arr;
 	}
 	
-	public int[] convertByteArrIntoIntArr(byte[] byteArr) {
+	public static int[] convertByteArrIntoIntArr(byte[] byteArr) {
 		int[] arr = new int[byteArr.length];
 		for (int i = 0; i < byteArr.length; i ++)
 			arr[i] = (int) byteArr[i];
 		return arr;
 	}
 	
-	public int[] convertLongArrIntoIntArr(long[] longArr) {
+	public static int[] convertLongArrIntoIntArr(long[] longArr) {
 		int[] arr = new int[longArr.length];
 		for (int i = 0; i < longArr.length; i ++)
 			arr[i] = (int) longArr[i];
 		return arr;
 	}
 	
-	public double[] convertIntArrIntoDoubleArr(int[] intArr) {
+	public static double[] convertIntArrIntoDoubleArr(int[] intArr) {
 		double[] arr = new double[intArr.length];
 		for (int i = 0; i < intArr.length; i ++)
 			arr[i] = (double) intArr[i];
 		return arr;
 	}
 	
-	public double[] convertFloatArrIntoDoubleArr(float[] floatArr) {
+	public static double[] convertFloatArrIntoDoubleArr(float[] floatArr) {
 		double[] arr = new double[floatArr.length];
 		for (int i = 0; i < floatArr.length; i ++)
 			arr[i] = (double) floatArr[i];
 		return arr;
 	}
 	
-	public double[] convertByteArrIntoDoubleArr(byte[] byteArr) {
+	public static double[] convertByteArrIntoDoubleArr(byte[] byteArr) {
 		double[] arr = new double[byteArr.length];
 		for (int i = 0; i < byteArr.length; i ++)
 			arr[i] = (double) byteArr[i];
 		return arr;
 	}
 	
-	public double[] convertLongArrIntoDoubleArr(long[] longArr) {
+	public static double[] convertLongArrIntoDoubleArr(long[] longArr) {
 		double[] arr = new double[longArr.length];
 		for (int i = 0; i < longArr.length; i ++)
 			arr[i] = (double) longArr
@@ -269,7 +269,7 @@ public class RaiToArray {
 		return arr;
 	}
 	
-	public byte[] convertIntArrIntoByteArr(int[] intArr) {
+	public static byte[] convertIntArrIntoByteArr(int[] intArr) {
 		byte[] arr = new byte[intArr.length];
 		for ( byte i = 0; i < intArr.length; i ++)
 			arr[i] = (byte) intArr
@@ -277,7 +277,7 @@ public class RaiToArray {
 		return arr;
 	}
 	
-	public byte[] convertDoubleArrIntoByteArr(double[] doubleArr) {
+	public static byte[] convertDoubleArrIntoByteArr(double[] doubleArr) {
 		byte[] arr = new byte[doubleArr.length];
 		for ( byte i = 0; i < doubleArr.length; i ++)
 			arr[i] = (byte) doubleArr
@@ -285,7 +285,7 @@ public class RaiToArray {
 		return arr;
 	}
 	
-	public byte[] convertFloatArrIntoByteArr(float[] floatArr) {
+	public static byte[] convertFloatArrIntoByteArr(float[] floatArr) {
 		byte[] arr = new byte[floatArr.length];
 		for ( byte i = 0; i < floatArr.length; i ++)
 			arr[i] = (byte) floatArr
@@ -293,7 +293,7 @@ public class RaiToArray {
 		return arr;
 	}
 	
-	public byte[] convertLongArrIntoByteArr(long[] longArr) {
+	public static byte[] convertLongArrIntoByteArr(long[] longArr) {
 		byte[] arr = new byte[longArr.length];
 		for ( byte i = 0; i < longArr.length; i ++)
 			arr[i] = (byte) longArr
@@ -301,7 +301,7 @@ public class RaiToArray {
 		return arr;
 	}
 	
-	public long[] convertIntArrIntoLongArr(int[] intArr) {
+	public static long[] convertIntArrIntoLongArr(int[] intArr) {
 		long[] arr = new long[intArr.length];
 		for ( byte i = 0; i < intArr.length; i ++)
 			arr[i] = (long) intArr
@@ -309,7 +309,7 @@ public class RaiToArray {
 		return arr;
 	}
 	
-	public long[] convertDoubleArrIntoLongArr(double[] doubleArr) {
+	public static long[] convertDoubleArrIntoLongArr(double[] doubleArr) {
 		long[] arr = new long[doubleArr.length];
 		for ( byte i = 0; i < doubleArr.length; i ++)
 			arr[i] = (long) doubleArr
@@ -317,7 +317,7 @@ public class RaiToArray {
 		return arr;
 	}
 	
-	public long[] convertByteArrIntoLongArr(byte[] byteArr) {
+	public static long[] convertByteArrIntoLongArr(byte[] byteArr) {
 		long[] arr = new long[byteArr.length];
 		for ( byte i = 0; i < byteArr.length; i ++)
 			arr[i] = (long) byteArr
@@ -325,12 +325,11 @@ public class RaiToArray {
 		return arr;
 	}
 	
-	public long[] convertLongArrIntoLongArr(float[] floatArr) {
+	public static long[] convertLongArrIntoLongArr(float[] floatArr) {
 		long[] arr = new long[floatArr.length];
 		for ( byte i = 0; i < floatArr.length; i ++)
 			arr[i] = (long) floatArr
 			[i];
 		return arr;
 	}
-	
 }
