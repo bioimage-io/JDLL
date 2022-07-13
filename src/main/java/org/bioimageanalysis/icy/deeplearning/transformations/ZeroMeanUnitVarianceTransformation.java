@@ -3,7 +3,7 @@ package org.bioimageanalysis.icy.deeplearning.transformations;
 import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
 
-import org.bioimageanalysis.icy.deeplearning.tensor.RaiToArray;
+import org.bioimageanalysis.icy.deeplearning.tensor.RaiArrayUtils;
 import org.bioimageanalysis.icy.deeplearning.tensor.Tensor;
 
 import net.imglib2.img.array.ArrayImgs;
@@ -66,7 +66,7 @@ public class ZeroMeanUnitVarianceTransformation extends DefaultImageTransformati
 	 */
 	public Tensor apply() {
 		tensor = Tensor.createCopyOfTensorInWantedDataType(tensor, new FloatType());
-		float[] arr = RaiToArray.floatArray(tensor.getData());
+		float[] arr = RaiArrayUtils.floatArray(tensor.getData());
 		FloatBuffer datab = FloatBuffer.wrap(arr);
 		float mean = 0;
 		for (int i = 0; i < arr.length; i ++)

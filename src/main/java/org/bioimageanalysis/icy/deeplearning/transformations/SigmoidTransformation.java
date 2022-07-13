@@ -2,7 +2,7 @@ package org.bioimageanalysis.icy.deeplearning.transformations;
 
 import java.nio.FloatBuffer;
 
-import org.bioimageanalysis.icy.deeplearning.tensor.RaiToArray;
+import org.bioimageanalysis.icy.deeplearning.tensor.RaiArrayUtils;
 import org.bioimageanalysis.icy.deeplearning.tensor.Tensor;
 
 import net.imglib2.img.array.ArrayImgs;
@@ -25,7 +25,7 @@ public class SigmoidTransformation extends DefaultImageTransformation {
 	
 	public Tensor apply() {
 		tensor = Tensor.createCopyOfTensorInWantedDataType(tensor, new FloatType());
-		float[] arr = RaiToArray.floatArray(tensor.getData());
+		float[] arr = RaiArrayUtils.floatArray(tensor.getData());
 		FloatBuffer datab = FloatBuffer.wrap(arr);
 		for (int i = 0; i < arr.length; i ++) {
 			datab.put(i, (float) (1.0 / ( 1.0 + Math.exp(-datab.get(i)))));

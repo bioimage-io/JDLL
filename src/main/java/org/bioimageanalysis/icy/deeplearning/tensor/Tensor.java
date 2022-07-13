@@ -252,85 +252,85 @@ public final class Tensor <T extends Type<T>>
     	RandomAccessibleInterval<T> rai = tt.getData();
     	long[] tensorShape = rai.dimensionsAsLongArray();
     	if (Util.getTypeFromInterval(rai) instanceof FloatType) {
-    		float[] arr = RaiToArray.floatArray((RandomAccessibleInterval<FloatType>) rai);
+    		float[] arr = RaiArrayUtils.floatArray((RandomAccessibleInterval<FloatType>) rai);
     		if (type instanceof FloatType) {
     			ArrayImg<FloatType, FloatArray> tensorBackend = ArrayImgs.floats(arr, tensorShape);
     			return Tensor.build(tt.tensorName, tt.getAxesOrderString(), tensorBackend);
     		} else if (type instanceof ByteType) {
     			ArrayImg<ByteType, ByteArray> tensorBackend = 
-    					ArrayImgs.bytes(RaiToArray.convertFloatArrIntoByteArr(arr), tensorShape);
+    					ArrayImgs.bytes(RaiArrayUtils.convertFloatArrIntoByteArr(arr), tensorShape);
     			return Tensor.build(tt.tensorName, tt.getAxesOrderString(), tensorBackend);
     		} else if (type instanceof IntType) {
     			ArrayImg<IntType, IntArray> tensorBackend = 
-    					ArrayImgs.ints(RaiToArray.convertFloatArrIntoIntArr(arr), tensorShape);
+    					ArrayImgs.ints(RaiArrayUtils.convertFloatArrIntoIntArr(arr), tensorShape);
     			return Tensor.build(tt.tensorName, tt.getAxesOrderString(), tensorBackend);
     		} else if (type instanceof LongType) {
     			ArrayImg<LongType, LongArray> tensorBackend = 
-    					ArrayImgs.longs(RaiToArray.convertFloatArrIntoLongArr(arr), tensorShape);
+    					ArrayImgs.longs(RaiArrayUtils.convertFloatArrIntoLongArr(arr), tensorShape);
     			return Tensor.build(tt.tensorName, tt.getAxesOrderString(), tensorBackend);
     		} else if (type instanceof DoubleType) {
     			ArrayImg<DoubleType, DoubleArray> tensorBackend = 
-    					ArrayImgs.doubles(RaiToArray.convertFloatArrIntoDoubleArr(arr), tensorShape);
+    					ArrayImgs.doubles(RaiArrayUtils.convertFloatArrIntoDoubleArr(arr), tensorShape);
     			return Tensor.build(tt.tensorName, tt.getAxesOrderString(), tensorBackend);
     		}
     	} else if (Util.getTypeFromInterval(rai) instanceof IntType) {
-    		int[] arr = RaiToArray.intArray((RandomAccessibleInterval<IntType>) rai);
+    		int[] arr = RaiArrayUtils.intArray((RandomAccessibleInterval<IntType>) rai);
     		if (type instanceof DoubleType) {
     			ArrayImg<DoubleType, DoubleArray> tensorBackend =
-    					ArrayImgs.doubles(RaiToArray.convertIntArrIntoDoubleArr(arr), tensorShape);
+    					ArrayImgs.doubles(RaiArrayUtils.convertIntArrIntoDoubleArr(arr), tensorShape);
     			return Tensor.build(tt.tensorName, tt.getAxesOrderString(), tensorBackend);
     		} else if (type instanceof ByteType) {
     			ArrayImg<ByteType, ByteArray> tensorBackend = 
-    					ArrayImgs.bytes(RaiToArray.convertIntArrIntoByteArr(arr), tensorShape);
+    					ArrayImgs.bytes(RaiArrayUtils.convertIntArrIntoByteArr(arr), tensorShape);
     			return Tensor.build(tt.tensorName, tt.getAxesOrderString(), tensorBackend);
     		} else if (type instanceof IntType) {
     			ArrayImg<IntType, IntArray> tensorBackend = ArrayImgs.ints(arr, tensorShape);
     			return Tensor.build(tt.tensorName, tt.getAxesOrderString(), tensorBackend);
     		} else if (type instanceof LongType) {
     			ArrayImg<LongType, LongArray> tensorBackend =
-    					ArrayImgs.longs(RaiToArray.convertIntArrIntoLongArr(arr), tensorShape);
+    					ArrayImgs.longs(RaiArrayUtils.convertIntArrIntoLongArr(arr), tensorShape);
     			return Tensor.build(tt.tensorName, tt.getAxesOrderString(), tensorBackend);
     		} else if (type instanceof FloatType) {
     			ArrayImg<FloatType, FloatArray> tensorBackend = 
-    					ArrayImgs.floats(RaiToArray.convertIntArrIntoFloatArr(arr), tensorShape);
+    					ArrayImgs.floats(RaiArrayUtils.convertIntArrIntoFloatArr(arr), tensorShape);
     			return Tensor.build(tt.tensorName, tt.getAxesOrderString(), tensorBackend);
     		}
     	} else if (Util.getTypeFromInterval(rai) instanceof DoubleType) {
-    		double[] arr = RaiToArray.doubleArray((RandomAccessibleInterval<DoubleType>) rai);
+    		double[] arr = RaiArrayUtils.doubleArray((RandomAccessibleInterval<DoubleType>) rai);
     		if (type instanceof DoubleType) {
     			ArrayImg<DoubleType, DoubleArray> tensorBackend =
     					ArrayImgs.doubles(arr, tensorShape);
     			return Tensor.build(tt.tensorName, tt.getAxesOrderString(), tensorBackend);
     		} else if (type instanceof ByteType) {
     			ArrayImg<ByteType, ByteArray> tensorBackend = 
-    					ArrayImgs.bytes(RaiToArray.convertDoubleArrIntoByteArr(arr), tensorShape);
+    					ArrayImgs.bytes(RaiArrayUtils.convertDoubleArrIntoByteArr(arr), tensorShape);
     			return Tensor.build(tt.tensorName, tt.getAxesOrderString(), tensorBackend);
     		} else if (type instanceof IntType) {
     			ArrayImg<IntType, IntArray> tensorBackend = 
-    					ArrayImgs.ints(RaiToArray.convertDoubleArrIntoIntArr(arr), tensorShape);
+    					ArrayImgs.ints(RaiArrayUtils.convertDoubleArrIntoIntArr(arr), tensorShape);
     			return Tensor.build(tt.tensorName, tt.getAxesOrderString(), tensorBackend);
     		} else if (type instanceof LongType) {
     			ArrayImg<LongType, LongArray> tensorBackend =
-    					ArrayImgs.longs(RaiToArray.convertDoubleArrIntoLongArr(arr), tensorShape);
+    					ArrayImgs.longs(RaiArrayUtils.convertDoubleArrIntoLongArr(arr), tensorShape);
     			return Tensor.build(tt.tensorName, tt.getAxesOrderString(), tensorBackend);
     		} else if (type instanceof FloatType) {
     			ArrayImg<FloatType, FloatArray> tensorBackend = 
-    					ArrayImgs.floats(RaiToArray.convertDoubleArrIntoFloatArr(arr), tensorShape);
+    					ArrayImgs.floats(RaiArrayUtils.convertDoubleArrIntoFloatArr(arr), tensorShape);
     			return Tensor.build(tt.tensorName, tt.getAxesOrderString(), tensorBackend);
     		}
     	} else if (Util.getTypeFromInterval(rai) instanceof LongType) {
-    		long[] arr = RaiToArray.longArray((RandomAccessibleInterval<LongType>) rai);
+    		long[] arr = RaiArrayUtils.longArray((RandomAccessibleInterval<LongType>) rai);
     		if (type instanceof DoubleType) {
     			ArrayImg<DoubleType, DoubleArray> tensorBackend =
-    					ArrayImgs.doubles(RaiToArray.convertLongArrIntoDoubleArr(arr), tensorShape);
+    					ArrayImgs.doubles(RaiArrayUtils.convertLongArrIntoDoubleArr(arr), tensorShape);
     			return Tensor.build(tt.tensorName, tt.getAxesOrderString(), tensorBackend);
     		} else if (type instanceof ByteType) {
     			ArrayImg<ByteType, ByteArray> tensorBackend = 
-    					ArrayImgs.bytes(RaiToArray.convertLongArrIntoByteArr(arr), tensorShape);
+    					ArrayImgs.bytes(RaiArrayUtils.convertLongArrIntoByteArr(arr), tensorShape);
     			return Tensor.build(tt.tensorName, tt.getAxesOrderString(), tensorBackend);
     		} else if (type instanceof IntType) {
     			ArrayImg<IntType, IntArray> tensorBackend = 
-    					ArrayImgs.ints(RaiToArray.convertLongArrIntoIntArr(arr), tensorShape);
+    					ArrayImgs.ints(RaiArrayUtils.convertLongArrIntoIntArr(arr), tensorShape);
     			return Tensor.build(tt.tensorName, tt.getAxesOrderString(), tensorBackend);
     		} else if (type instanceof LongType) {
     			ArrayImg<LongType, LongArray> tensorBackend =
@@ -338,14 +338,14 @@ public final class Tensor <T extends Type<T>>
     			return Tensor.build(tt.tensorName, tt.getAxesOrderString(), tensorBackend);
     		} else if (type instanceof FloatType) {
     			ArrayImg<FloatType, FloatArray> tensorBackend = 
-    					ArrayImgs.floats(RaiToArray.convertLongArrIntoFloatArr(arr), tensorShape);
+    					ArrayImgs.floats(RaiArrayUtils.convertLongArrIntoFloatArr(arr), tensorShape);
     			return Tensor.build(tt.tensorName, tt.getAxesOrderString(), tensorBackend);
     		}
     	} else if (Util.getTypeFromInterval(rai) instanceof ByteType) {
-    		byte[] arr = RaiToArray.byteArray((RandomAccessibleInterval<ByteType>) rai);
+    		byte[] arr = RaiArrayUtils.byteArray((RandomAccessibleInterval<ByteType>) rai);
     		if (type instanceof DoubleType) {
     			ArrayImg<DoubleType, DoubleArray> tensorBackend =
-    					ArrayImgs.doubles(RaiToArray.convertByteArrIntoDoubleArr(arr), tensorShape);
+    					ArrayImgs.doubles(RaiArrayUtils.convertByteArrIntoDoubleArr(arr), tensorShape);
     			return Tensor.build(tt.tensorName, tt.getAxesOrderString(), tensorBackend);
     		} else if (type instanceof ByteType) {
     			ArrayImg<ByteType, ByteArray> tensorBackend = 
@@ -353,15 +353,15 @@ public final class Tensor <T extends Type<T>>
     			return Tensor.build(tt.tensorName, tt.getAxesOrderString(), tensorBackend);
     		} else if (type instanceof IntType) {
     			ArrayImg<IntType, IntArray> tensorBackend = 
-    					ArrayImgs.ints(RaiToArray.convertByteArrIntoIntArr(arr), tensorShape);
+    					ArrayImgs.ints(RaiArrayUtils.convertByteArrIntoIntArr(arr), tensorShape);
     			return Tensor.build(tt.tensorName, tt.getAxesOrderString(), tensorBackend);
     		} else if (type instanceof LongType) {
     			ArrayImg<LongType, LongArray> tensorBackend =
-    					ArrayImgs.longs(RaiToArray.convertByteArrIntoLongArr(arr), tensorShape);
+    					ArrayImgs.longs(RaiArrayUtils.convertByteArrIntoLongArr(arr), tensorShape);
     			return Tensor.build(tt.tensorName, tt.getAxesOrderString(), tensorBackend);
     		} else if (type instanceof FloatType) {
     			ArrayImg<FloatType, FloatArray> tensorBackend = 
-    					ArrayImgs.floats(RaiToArray.convertByteArrIntoFloatArr(arr), tensorShape);
+    					ArrayImgs.floats(RaiArrayUtils.convertByteArrIntoFloatArr(arr), tensorShape);
     			return Tensor.build(tt.tensorName, tt.getAxesOrderString(), tensorBackend);
     		}
     	} else {

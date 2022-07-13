@@ -2,7 +2,7 @@ package org.bioimageanalysis.icy.deeplearning.transformations;
 
 import java.nio.FloatBuffer;
 
-import org.bioimageanalysis.icy.deeplearning.tensor.RaiToArray;
+import org.bioimageanalysis.icy.deeplearning.tensor.RaiArrayUtils;
 import org.bioimageanalysis.icy.deeplearning.tensor.Tensor;
 
 import net.imglib2.img.array.ArrayImgs;
@@ -56,7 +56,7 @@ public class ClipTransformation extends DefaultImageTransformation {
 		checkCompulsoryArgs();
 		checkArgsCompatible();
 		tensor = Tensor.createCopyOfTensorInWantedDataType(tensor, new FloatType());
-		float[] arr = RaiToArray.floatArray(tensor.getData());
+		float[] arr = RaiArrayUtils.floatArray(tensor.getData());
 		FloatBuffer datab = FloatBuffer.wrap(arr);
 		float minF = getFloatVal(min);
 		float maxF = getFloatVal(max);

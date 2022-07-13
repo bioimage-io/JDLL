@@ -2,7 +2,7 @@ package org.bioimageanalysis.icy.deeplearning.transformations;
 
 import java.nio.FloatBuffer;
 
-import org.bioimageanalysis.icy.deeplearning.tensor.RaiToArray;
+import org.bioimageanalysis.icy.deeplearning.tensor.RaiArrayUtils;
 import org.bioimageanalysis.icy.deeplearning.tensor.Tensor;
 
 import net.imglib2.img.array.ArrayImgs;
@@ -46,7 +46,7 @@ public class BinarizeTransformation extends DefaultImageTransformation {
 	public <T extends Type<T>> Tensor apply() {
 		checkCompulsoryArgs();
 		tensor = Tensor.createCopyOfTensorInWantedDataType(tensor, new FloatType());
-		float[] arr = RaiToArray.floatArray(tensor.getData());
+		float[] arr = RaiArrayUtils.floatArray(tensor.getData());
 		FloatBuffer buff = FloatBuffer.wrap(arr);
 		float thres = getFloatThreshold();
 		for (int i = 0; i < arr.length; i ++) {

@@ -1,9 +1,5 @@
 package org.bioimageanalysis.icy.deeplearning.tensor;
 
-import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
-import java.nio.IntBuffer;
-
 import net.imglib2.Cursor;
 import net.imglib2.IterableInterval;
 import net.imglib2.RandomAccess;
@@ -33,7 +29,7 @@ import net.imglib2.util.Intervals;
  *
  */
 
-public class RaiToArray {
+public class RaiArrayUtils {
 
 
 	public static byte[] byteArray(
