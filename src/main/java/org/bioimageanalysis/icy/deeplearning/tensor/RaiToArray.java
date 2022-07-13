@@ -2,6 +2,7 @@ package org.bioimageanalysis.icy.deeplearning.tensor;
 
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
+import java.nio.IntBuffer;
 
 import net.imglib2.Cursor;
 import net.imglib2.IterableInterval;
@@ -198,16 +199,10 @@ public class RaiToArray {
 	}
 	
 	public float[] convertByteArrIntoFloatArr(byte[] byteArr) {
-		float[] float32 = new float[byteArr.length / 4];
-		for ( int i = 0; i < byteArr.length / 4; i ++) {
-			byte[] floatArr = new byte[4];
-			floatArr[0] = byteArr[i * 4];
-			floatArr[1] = byteArr[i * 4 + 1];
-			floatArr[2] = byteArr[i * 4 + 2];
-			floatArr[3] = byteArr[i * 4 + 3];
-			float32[i] = ByteBuffer.wrap(floatArr).order(ByteOrder.LITTLE_ENDIAN).getFloat();
-		}
-		return float32;
+		float[] arr = new float[byteArr.length];
+		for (int i = 0; i < byteArr.length; i ++)
+			arr[i] = (float) byteArr[i];
+		return arr;
 	}
 	
 	public float[] convertLongArrIntoFloatArr(long[] longArr) {
@@ -232,16 +227,10 @@ public class RaiToArray {
 	}
 	
 	public int[] convertByteArrIntoIntArr(byte[] byteArr) {
-		int[] int32 = new int[byteArr.length / 4];
-		for ( int i = 0; i < byteArr.length / 4; i ++) {
-			byte[] intArr = new byte[4];
-			intArr[0] = byteArr[i * 4];
-			intArr[1] = byteArr[i * 4 + 1];
-			intArr[2] = byteArr[i * 4 + 2];
-			intArr[3] = byteArr[i * 4 + 3];
-			int32[i] = ByteBuffer.wrap(intArr).order(ByteOrder.LITTLE_ENDIAN).getInt();
-		}
-		return int32;
+		int[] arr = new int[byteArr.length];
+		for (int i = 0; i < byteArr.length; i ++)
+			arr[i] = (int) byteArr[i];
+		return arr;
 	}
 	
 	public int[] convertLongArrIntoIntArr(long[] longArr) {
@@ -266,20 +255,10 @@ public class RaiToArray {
 	}
 	
 	public double[] convertByteArrIntoDoubleArr(byte[] byteArr) {
-		double[] dd = new double[byteArr.length / 8];
-		for ( int i = 0; i < byteArr.length / 8; i ++) {
-			byte[] doubleArr = new byte[8];
-			doubleArr[0] = byteArr[i * 8];
-			doubleArr[1] = byteArr[i * 8 + 1];
-			doubleArr[2] = byteArr[i * 8 + 2];
-			doubleArr[3] = byteArr[i * 8 + 3];
-			doubleArr[4] = byteArr[i * 8 + 4];
-			doubleArr[5] = byteArr[i * 8 + 5];
-			doubleArr[6] = byteArr[i * 8 + 6];
-			doubleArr[7] = byteArr[i * 8 + 7];
-			dd[i] = ByteBuffer.wrap(doubleArr).order(ByteOrder.LITTLE_ENDIAN).getDouble();
-		}
-		return dd;
+		double[] arr = new double[byteArr.length];
+		for (int i = 0; i < byteArr.length; i ++)
+			arr[i] = (double) byteArr[i];
+		return arr;
 	}
 	
 	public double[] convertLongArrIntoDoubleArr(long[] longArr) {
@@ -291,54 +270,67 @@ public class RaiToArray {
 	}
 	
 	public byte[] convertIntArrIntoByteArr(int[] intArr) {
-
-		return null;
+		byte[] arr = new byte[intArr.length];
+		for ( byte i = 0; i < intArr.length; i ++)
+			arr[i] = (byte) intArr
+			[i];
+		return arr;
 	}
 	
 	public byte[] convertDoubleArrIntoByteArr(double[] doubleArr) {
-
-		return null;
+		byte[] arr = new byte[doubleArr.length];
+		for ( byte i = 0; i < doubleArr.length; i ++)
+			arr[i] = (byte) doubleArr
+			[i];
+		return arr;
 	}
 	
-	public byte[] convertFloatArrIntoByteArr(float[] byteArr) {
-
-		return null;
+	public byte[] convertFloatArrIntoByteArr(float[] floatArr) {
+		byte[] arr = new byte[floatArr.length];
+		for ( byte i = 0; i < floatArr.length; i ++)
+			arr[i] = (byte) floatArr
+			[i];
+		return arr;
 	}
 	
 	public byte[] convertLongArrIntoByteArr(long[] longArr) {
-
-		return null;
+		byte[] arr = new byte[longArr.length];
+		for ( byte i = 0; i < longArr.length; i ++)
+			arr[i] = (byte) longArr
+			[i];
+		return arr;
 	}
 	
 	public long[] convertIntArrIntoLongArr(int[] intArr) {
-
-		return null;
+		long[] arr = new long[intArr.length];
+		for ( byte i = 0; i < intArr.length; i ++)
+			arr[i] = (long) intArr
+			[i];
+		return arr;
 	}
 	
 	public long[] convertDoubleArrIntoLongArr(double[] doubleArr) {
-
-		return null;
+		long[] arr = new long[doubleArr.length];
+		for ( byte i = 0; i < doubleArr.length; i ++)
+			arr[i] = (long) doubleArr
+			[i];
+		return arr;
 	}
 	
 	public long[] convertByteArrIntoLongArr(byte[] byteArr) {
-		long[] dd = new long[byteArr.length / 8];
-		for ( int i = 0; i < byteArr.length / 8; i ++) {
-			byte[] doubleArr = new byte[8];
-			doubleArr[0] = byteArr[i * 8];
-			doubleArr[1] = byteArr[i * 8 + 1];
-			doubleArr[2] = byteArr[i * 8 + 2];
-			doubleArr[3] = byteArr[i * 8 + 3];
-			doubleArr[4] = byteArr[i * 8 + 4];
-			doubleArr[5] = byteArr[i * 8 + 5];
-			doubleArr[6] = byteArr[i * 8 + 6];
-			doubleArr[7] = byteArr[i * 8 + 7];
-			dd[i] = ByteBuffer.wrap(doubleArr).order(ByteOrder.LITTLE_ENDIAN).getLong();
-		}
-		return dd;
+		long[] arr = new long[byteArr.length];
+		for ( byte i = 0; i < byteArr.length; i ++)
+			arr[i] = (long) byteArr
+			[i];
+		return arr;
 	}
 	
-	public long[] convertLongArrIntoLongArr(float[] longArr) {
-		return null;
+	public long[] convertLongArrIntoLongArr(float[] floatArr) {
+		long[] arr = new long[floatArr.length];
+		for ( byte i = 0; i < floatArr.length; i ++)
+			arr[i] = (long) floatArr
+			[i];
+		return arr;
 	}
 	
 }
