@@ -81,7 +81,9 @@ public class RaiArrayUtils {
     	} else if (Util.getTypeFromInterval(rai) instanceof ByteType) {
     		return createCopyOfByteRaiInWantedDataType((RandomAccessibleInterval<ByteType>) rai, type);
     	} else {
-    		throw new IllegalArgumentException();
+    		throw new IllegalArgumentException("The input corresponds to " 
+    					+ Util.getTypeFromInterval(rai).getClass().toString()
+    					+ ", whose data type conversion is not supported yet.");
     	}
     }
     
@@ -116,12 +118,13 @@ public class RaiArrayUtils {
 					ArrayImgs.doubles(RaiArrayUtils.convertFloatArrIntoDoubleArr(arr), tensorShape);
 			return (Img<T>) tensorBackend;
 		} else {
-			throw new IllegalArgumentException("");
+			throw new IllegalArgumentException("Data type conversion of FloatType inputs to "
+					+ type.getClass().toString() + " is not supported yet.");
 		}
 	}
     
     /**
-     * MEthod that creates a copy of the {@link RandomAccessibleInterval} of FloatType
+     * MEthod that creates a copy of the {@link RandomAccessibleInterval} of IntType
      *  in the wanted data type. 
      * @param rai
      * 	RandomAccessibleInterval where the copy is created from
@@ -151,12 +154,13 @@ public class RaiArrayUtils {
 					ArrayImgs.floats(RaiArrayUtils.convertIntArrIntoFloatArr(arr), tensorShape);
 			return (Img<T>) tensorBackend;
 		} else {
-			throw new IllegalArgumentException("");
+			throw new IllegalArgumentException("Data type conversion of IntType inputs to "
+					+ type.getClass().toString() + " is not supported yet.");
 		}
 	}
     
     /**
-     * MEthod that creates a copy of the {@link RandomAccessibleInterval} of FloatType
+     * MEthod that creates a copy of the {@link RandomAccessibleInterval} of DoubleType
      *  in the wanted data type. 
      * @param rai
      * 	RandomAccessibleInterval where the copy is created from
@@ -187,12 +191,13 @@ public class RaiArrayUtils {
 					ArrayImgs.floats(RaiArrayUtils.convertDoubleArrIntoFloatArr(arr), tensorShape);
 			return (Img<T>) tensorBackend;
 		} else {
-			throw new IllegalArgumentException("");
+			throw new IllegalArgumentException("Data type conversion of DoubleType inputs to "
+					+ type.getClass().toString() + " is not supported yet.");
 		}
 	}
     
     /**
-     * MEthod that creates a copy of the {@link RandomAccessibleInterval} of FloatType
+     * MEthod that creates a copy of the {@link RandomAccessibleInterval} of LongType
      *  in the wanted data type. 
      * @param rai
      * 	RandomAccessibleInterval where the copy is created from
@@ -223,12 +228,13 @@ public class RaiArrayUtils {
 					ArrayImgs.floats(RaiArrayUtils.convertLongArrIntoFloatArr(arr), tensorShape);
 			return (Img<T>) tensorBackend;
 		} else {
-			throw new IllegalArgumentException("");
+			throw new IllegalArgumentException("Data type conversion of LongType inputs to "
+					+ type.getClass().toString() + " is not supported yet.");
 		}
 	}
     
     /**
-     * MEthod that creates a copy of the {@link RandomAccessibleInterval} of FloatType
+     * MEthod that creates a copy of the {@link RandomAccessibleInterval} of ByteType
      *  in the wanted data type. 
      * @param rai
      * 	RandomAccessibleInterval where the copy is created from
@@ -259,7 +265,8 @@ public class RaiArrayUtils {
 					ArrayImgs.floats(RaiArrayUtils.convertByteArrIntoFloatArr(arr), tensorShape);
 			return (Img<T>) tensorBackend;
 		} else {
-			throw new IllegalArgumentException("");
+			throw new IllegalArgumentException("Data type conversion of ByteType inputs to "
+					+ type.getClass().toString() + " is not supported yet.");
 		}
 	}
     
