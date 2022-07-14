@@ -81,7 +81,9 @@ public class ZeroMeanUnitVarianceTransformation extends DefaultImageTransformati
 		for (int i = 0; i < arr.length; i ++) {
 			datab.put(i, (datab.get(i) - mean) / std);
 		}
-		tensor.setData(ArrayImgs.floats(arr, tensor.getData().dimensionsAsLongArray()));
+		long[] tensorShape = tensor.getData().dimensionsAsLongArray();
+		tensor.setData(null);
+		tensor.setData(ArrayImgs.floats(arr, tensorShape));
 		return tensor;
 	}
 }

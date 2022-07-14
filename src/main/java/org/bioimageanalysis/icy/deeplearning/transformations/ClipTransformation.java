@@ -66,7 +66,9 @@ public class ClipTransformation extends DefaultImageTransformation {
 			else if (datab.get(i) < minF)
 				datab.put(minF);
 		}
-		tensor.setData(ArrayImgs.floats(arr, tensor.getData().dimensionsAsLongArray()));
+		long[] tensorShape = tensor.getData().dimensionsAsLongArray();
+		tensor.setData(null);
+		tensor.setData(ArrayImgs.floats(arr, tensorShape));
 		return tensor;
 	}
 	

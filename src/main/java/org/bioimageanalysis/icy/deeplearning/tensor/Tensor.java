@@ -140,7 +140,11 @@ public final class Tensor <T extends Type<T>>
     }
     
     /**
-     * Set the data structure of the tensor that contains the numbers
+     * Set the data structure of the tensor that contains the numbers.
+     * In order to change the data of the tensor, first do 'tensor.setData(null)'.
+     * Once the tensor data is null, set the wanted {@link Random AccessibleInterval}.
+     * The {@link RandomAccessibleInerval} needs to be of the same data type, shape
+     * and size as the tensor data.
      * @param data
      * 	the numbers of the tensor in a Numpy array like structure
      */

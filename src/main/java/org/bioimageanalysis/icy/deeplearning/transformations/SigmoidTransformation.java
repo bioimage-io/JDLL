@@ -30,7 +30,9 @@ public class SigmoidTransformation extends DefaultImageTransformation {
 		for (int i = 0; i < arr.length; i ++) {
 			datab.put(i, (float) (1.0 / ( 1.0 + Math.exp(-datab.get(i)))));
 		}
-		tensor.setData(ArrayImgs.floats(arr, tensor.getData().dimensionsAsLongArray()));
+		long[] tensorShape = tensor.getData().dimensionsAsLongArray();
+		tensor.setData(null);
+		tensor.setData(ArrayImgs.floats(arr, tensorShape));
 		return tensor;
 	}
 	

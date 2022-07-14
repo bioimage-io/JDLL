@@ -56,7 +56,9 @@ public class BinarizeTransformation extends DefaultImageTransformation {
 			else
 				buff.put(i, 0);
 		}
-		tensor.setData(ArrayImgs.floats(arr, tensor.getData().dimensionsAsLongArray()));
+		long[] tensorShape = tensor.getData().dimensionsAsLongArray();
+		tensor.setData(null);
+		tensor.setData(ArrayImgs.floats(arr, tensorShape));
 		return tensor;
 	}
 	
