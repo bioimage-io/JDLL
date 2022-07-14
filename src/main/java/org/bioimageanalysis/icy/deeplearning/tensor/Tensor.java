@@ -223,21 +223,10 @@ public final class Tensor <T extends Type<T>>
      * 	data type of the wanted tensor
      */
     public static <T extends Type<T>> Tensor createCopyOfTensorInWantedDataType(Tensor tt, String type) {
-    	if (type.toLowerCase().equals("float32")) {
-			return createCopyOfTensorInWantedDataType(tt, new FloatType());
-		} else if (type.toLowerCase().equals("float64")) {
-			return createCopyOfTensorInWantedDataType(tt, new DoubleType());
-		} else if (type.toLowerCase().equals("int32")) {
-			return createCopyOfTensorInWantedDataType(tt, new IntType());
-		} else if (type.toLowerCase().equals("int64")) {
-			return createCopyOfTensorInWantedDataType(tt, new LongType());
-		} else if (type.toLowerCase().equals("int8") || type.toLowerCase().equals("byte")) {
-			return createCopyOfTensorInWantedDataType(tt, new ByteType());
-		} else if (type.toLowerCase().equals("uint8") || type.toLowerCase().equals("ubyte")) {
-			return createCopyOfTensorInWantedDataType(tt, new UnsignedByteType());
-		} else {
-			throw new IllegalArgumentException("Conversion to Data type: " + type + " not supported by DeepIcy.");
-		}
+    	tt.throwExceptionIfClosed();
+    	RandomAccessibleInterval<T> rai = tt.getData();
+    	Img<T> tensoBackend = RaiArrayUtils.createCopyOfRaiInWantedDataType(rai, type);
+    	return Tensor.build(tt.getName(), tt.getAxesOrderString(), tensoBackend);
     }
     
     /**
