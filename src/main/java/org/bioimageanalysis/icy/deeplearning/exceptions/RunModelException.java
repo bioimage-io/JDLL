@@ -3,6 +3,7 @@ package org.bioimageanalysis.icy.deeplearning.exceptions;
 /**
  * Exception thrown when there have been problems running a Deep Learning model
  * @author Carlos Garcia Lopez de Haro
+ * 
  */
 public class RunModelException extends Exception {
 	
