@@ -1,40 +1,26 @@
 package org.bioimageanalysis.icy.deeplearning.tensor;
 
-import java.nio.Buffer;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 
-import net.imglib2.Cursor;
-import net.imglib2.RandomAccess;
 import net.imglib2.RandomAccessibleInterval;
+import net.imglib2.converter.RealTypeConverters;
 import net.imglib2.img.Img;
-import net.imglib2.img.array.ArrayImg;
-import net.imglib2.img.array.ArrayImgFactory;
-import net.imglib2.img.array.ArrayImgs;
-import net.imglib2.img.basictypeaccess.array.ByteArray;
-import net.imglib2.img.basictypeaccess.array.DoubleArray;
-import net.imglib2.img.basictypeaccess.array.FloatArray;
-import net.imglib2.img.basictypeaccess.array.IntArray;
-import net.imglib2.img.basictypeaccess.array.LongArray;
+import net.imglib2.img.ImgFactory;
 import net.imglib2.type.NativeType;
 import net.imglib2.type.Type;
-import net.imglib2.type.numeric.integer.ByteType;
-import net.imglib2.type.numeric.integer.IntType;
-import net.imglib2.type.numeric.integer.LongType;
-import net.imglib2.type.numeric.integer.UnsignedByteType;
-import net.imglib2.type.numeric.real.DoubleType;
-import net.imglib2.type.numeric.real.FloatType;
+import net.imglib2.type.numeric.RealType;
 import net.imglib2.util.Util;
 
 /**
  * Tensors created to interact with a Deep Learning engine while being agnostic
  * to it. This class just contains the information to create a tensor while
  * maintaining flexibility to interact with any wanted Deep Learning framework.
- * 
+ *
  * @author Carlos Garcia Lopez de Haro
  */
-public final class Tensor< T extends Type< T > >
+public final class Tensor< T extends RealType< T > & NativeType< T > >
 {
 	/**
 	 * Name given to the tensor in the model.
@@ -86,7 +72,7 @@ public final class Tensor< T extends Type< T > >
 
 	/**
 	 * Create the tensor object.
-	 * 
+	 *
 	 * @param tensorName
 	 *            name of the tensor as defined by the model
 	 * @param axes
@@ -96,7 +82,7 @@ public final class Tensor< T extends Type< T > >
 	 *            data structure similar to a Numpy array that contains all
 	 *            tensor numbers
 	 */
-	private Tensor( String tensorName, String axes, RandomAccessibleInterval< T > data )
+	private Tensor( final String tensorName, final String axes, final RandomAccessibleInterval< T > data )
 	{
 		Objects.requireNonNull( tensorName, "'tensorName' field should not be empty" );
 		Objects.requireNonNull( axes, "'axes' field should not be empty" );
@@ -120,7 +106,7 @@ public final class Tensor< T extends Type< T > >
 
 	/**
 	 * Return a tensor object
-	 * 
+	 *
 	 * @param tensorName
 	 *            name of the tensor as defined by the model
 	 * @param axes
@@ -131,16 +117,16 @@ public final class Tensor< T extends Type< T > >
 	 *            tensor numbers
 	 * @return the tensor
 	 */
-	public static < T extends Type< T > > Tensor build( String tensorName, String axes, RandomAccessibleInterval< T > data )
+	public static < T extends RealType< T > & NativeType< T > > Tensor< T > build( final String tensorName, final String axes, final RandomAccessibleInterval< T > data )
 	{
 		if ( data == null )
 			throw new IllegalArgumentException( "Trying to create tensor from an empty NDArray" );
-		return new Tensor( tensorName, axes, data );
+		return new Tensor<>( tensorName, axes, data );
 	}
 
 	/**
 	 * Creates a tensor without data. The idea is to fill the data later.
-	 * 
+	 *
 	 * @param tensorName
 	 *            name of the tensor as defined by the model
 	 * @param axes
@@ -148,9 +134,9 @@ public final class Tensor< T extends Type< T > >
 	 *            "bcyx"
 	 * @return the tensor
 	 */
-	public static Tensor buildEmptyTensor( String tensorName, String axes )
+	public static < T extends RealType< T > & NativeType< T > > Tensor< T > buildEmptyTensor( final String tensorName, final String axes )
 	{
-		return new Tensor( tensorName, axes, null );
+		return new Tensor<>( tensorName, axes, null );
 	}
 
 	/**
@@ -159,11 +145,11 @@ public final class Tensor< T extends Type< T > >
 	 * the tensor data is null, set the wanted {@link Random
 	 * AccessibleInterval}. The {@link RandomAccessibleInerval} needs to be of
 	 * the same data type, shape and size as the tensor data.
-	 * 
+	 *
 	 * @param data
 	 *            the numbers of the tensor in a Numpy array like structure
 	 */
-	public void setData( RandomAccessibleInterval< T > data )
+	public void setData( final RandomAccessibleInterval< T > data )
 	{
 		throwExceptionIfClosed();
 		if ( data == null && this.data != null )
@@ -201,7 +187,7 @@ public final class Tensor< T extends Type< T > >
 	/**
 	 * TODO get method to return data as a Java array REturn the data in a
 	 * software agnostic way using DJL NDArrays
-	 * 
+	 *
 	 * @return the data of the tensor as a NDArray
 	 */
 	public RandomAccessibleInterval< T > getData()
@@ -217,66 +203,51 @@ public final class Tensor< T extends Type< T > >
 	}
 
 	/**
-	 * Copy the backend of a tensor (data either as an NDArray or Buffer)
-	 * 
-	 * @param tt
-	 *            the tensor whose backedn is going to be copied
+	 * Copy from the backend of a tensor (data either as an NDArray or Buffer)
+	 *
+	 * @param source
+	 *            the tensor whose backend is going to be copied. Must be of the
+	 *            same type than this tensor.
 	 */
-	public void copyTensorBackend( Tensor tt )
+	public void copyTensorBackend( final Tensor< T > source )
 	{
 		throwExceptionIfClosed();
-		if ( tt.getData() != null )
-		{
-			copyNDArrayTensorBackend( tt );
-		}
+		if ( source.getData() != null )
+			copyNDArrayTensorBackend( source );
 	}
 
 	/**
 	 * Copy the NDArray backend of a tensor
-	 * 
-	 * @param tt
-	 *            the tensor whose backedn is going to be copied
+	 *
+	 * @param source
+	 *            the tensor whose backend is going to be copied. Must be of the
+	 *            same type than this tensor.
 	 */
-	public void copyNDArrayTensorBackend( Tensor tt )
+	public void copyNDArrayTensorBackend( final Tensor< T > source )
 	{
 		throwExceptionIfClosed();
-		setData( tt.getData() );
+		setData( source.getData() );
 	}
 
 	/**
-	 * MEthod that creates a copy of the tensor in the wanted data type.
+	 * Method that creates a copy of the tensor in the wanted data type.
 	 * Everything is the same or the new tensor (including the name), except the
 	 * data type of the data
-	 * 
+	 *
 	 * @param tt
 	 *            tensor where the copy is created from
 	 * @param type
 	 *            data type of the wanted tensor
 	 */
-	public static < T extends Type< T > > Tensor createCopyOfTensorInWantedDataType( Tensor tt, String type )
+	public static < T extends RealType< T > & NativeType< T >, R extends RealType< R > & NativeType< R > > Tensor< R > createCopyOfTensorInWantedDataType( final Tensor< T > tt, final R type )
 	{
 		tt.throwExceptionIfClosed();
-		RandomAccessibleInterval< T > rai = tt.getData();
-		Img< T > tensoBackend = RaiArrayUtils.createCopyOfRaiInWantedDataType( rai, type );
-		return Tensor.build( tt.getName(), tt.getAxesOrderString(), tensoBackend );
-	}
+		final RandomAccessibleInterval< T > input = tt.getData();
 
-	/**
-	 * MEthod that creates a copy of the tensor in the wanted data type.
-	 * Everything is the same or the new tensor (including the name), except the
-	 * data type of the data
-	 * 
-	 * @param tt
-	 *            tensor where the copy is created from
-	 * @param type
-	 *            data type of the wanted tensor
-	 */
-	public static < T extends Type< T > > Tensor createCopyOfTensorInWantedDataType( Tensor tt, Type type )
-	{
-		tt.throwExceptionIfClosed();
-		RandomAccessibleInterval< T > rai = tt.getData();
-		Img< T > tensoBackend = RaiArrayUtils.createCopyOfRaiInWantedDataType( rai, type );
-		return Tensor.build( tt.getName(), tt.getAxesOrderString(), tensoBackend );
+		final ImgFactory< R > factory = Util.getArrayOrCellImgFactory( input, type );
+		final Img< R > output = factory.create( input );
+		RealTypeConverters.copyFromTo( input, output );
+		return Tensor.build( tt.getName(), tt.getAxesOrderString(), output );
 	}
 
 	/**
@@ -310,7 +281,7 @@ public final class Tensor< T extends Type< T > >
 			this.shape = null;
 			tensorName = null;
 		}
-		catch ( Exception ex )
+		catch ( final Exception ex )
 		{
 			closed = false;
 			String msg = "Error trying to close tensor: " + tensorName + ". ";
@@ -321,14 +292,14 @@ public final class Tensor< T extends Type< T > >
 
 	/**
 	 * Retrieve tensor with the wanted name from a list of tensors
-	 * 
+	 *
 	 * @param lTensors
 	 *            list of tensors
 	 * @param name
 	 *            name of the tensor of interest
 	 * @return the tensor of interest
 	 */
-	public static Tensor getTensorByNameFromList( List< Tensor > lTensors, String name )
+	public static Tensor< ? > getTensorByNameFromList( final List< Tensor< ? > > lTensors, final String name )
 	{
 		return lTensors.stream().filter( pp -> !pp.isClosed() && pp.getName() != null && pp.getName().equals( name ) )
 				.findAny().orElse( null );
@@ -337,12 +308,12 @@ public final class Tensor< T extends Type< T > >
 	/**
 	 * If the shape of a tensor is the same as the same as the shape of this
 	 * tensor
-	 * 
+	 *
 	 * @param shape
 	 *            the shape of the other tensor as a long arr
 	 * @return whether the tensor has the same shape to this tensor
 	 */
-	private boolean equalShape( long[] longShape )
+	private boolean equalShape( final long[] longShape )
 	{
 		if ( longShape.length != this.shape.length )
 			return false;
@@ -357,7 +328,7 @@ public final class Tensor< T extends Type< T > >
 	/**
 	 * Convert the String representation of the axes order into an int array
 	 * representation, easier to handle by the program
-	 * 
+	 *
 	 * @param dimOrder
 	 *            String representation of the axes
 	 * @return the int[] representation of the axes
@@ -367,8 +338,9 @@ public final class Tensor< T extends Type< T > >
 	public static int[] convertToTensorDimOrder( String dimOrder ) throws IllegalArgumentException
 	{
 		dimOrder = dimOrder.toLowerCase();
-		int[] tensorDimOrder = new int[ dimOrder.length() ];
-		int hasB = 0, hasI = 0, hasT = 0, hasX = 0, hasY = 0, hasZ = 0, hasC = 0, hasR = 0;
+		final int[] tensorDimOrder = new int[ dimOrder.length() ];
+		int hasB = 0, hasI = 0, hasT = 0, hasX = 0, hasY = 0, hasZ = 0, hasC = 0;
+		final int hasR = 0;
 		for ( int i = 0; i < dimOrder.length(); i++ )
 		{
 			switch ( dimOrder.charAt( i ) )
@@ -429,7 +401,7 @@ public final class Tensor< T extends Type< T > >
 	{
 		if ( data == null )
 			throw new IllegalArgumentException( "Trying to create tensor from an empty NDArray" );
-		long[] longShape = data.dimensionsAsLongArray();
+		final long[] longShape = data.dimensionsAsLongArray();
 		shape = new int[ longShape.length ];
 		for ( int i = 0; i < shape.length; i++ )
 			shape[ i ] = ( int ) longShape[ i ];
@@ -437,7 +409,7 @@ public final class Tensor< T extends Type< T > >
 
 	/**
 	 * Get the name of the tensor
-	 * 
+	 *
 	 * @return the name of the tensor
 	 */
 	public String getName()
@@ -448,7 +420,7 @@ public final class Tensor< T extends Type< T > >
 
 	/**
 	 * REturns the shape of the tensor
-	 * 
+	 *
 	 * @return the shape of the tensor
 	 */
 	public int[] getShape()
@@ -459,7 +431,7 @@ public final class Tensor< T extends Type< T > >
 
 	/**
 	 * REtrieve the axes order in String form
-	 * 
+	 *
 	 * @return the axesString
 	 */
 	public String getAxesOrderString()
@@ -470,7 +442,7 @@ public final class Tensor< T extends Type< T > >
 
 	/**
 	 * Return the array containing the int representation of the axes order
-	 * 
+	 *
 	 * @return the axes order in int[] representation
 	 */
 	public int[] getAxesOrder()
@@ -481,11 +453,11 @@ public final class Tensor< T extends Type< T > >
 
 	/**
 	 * Set whether the tensor represents an image or not
-	 * 
+	 *
 	 * @param isImage
 	 *            if the tensor is an image or not
 	 */
-	public void setIsImage( boolean isImage )
+	public void setIsImage( final boolean isImage )
 	{
 		throwExceptionIfClosed();
 		if ( !isImage )
@@ -495,7 +467,7 @@ public final class Tensor< T extends Type< T > >
 
 	/**
 	 * Whether the tensor represents an image or not
-	 * 
+	 *
 	 * @return true if the tensor represents an image, false otherwise
 	 */
 	public boolean isImage()
@@ -506,7 +478,7 @@ public final class Tensor< T extends Type< T > >
 
 	/**
 	 * Whether the tensor has already been filled with an NDArray or not
-	 * 
+	 *
 	 * @return true if the tensor already has data or false otherwise
 	 */
 	public boolean isEmpty()
@@ -517,7 +489,7 @@ public final class Tensor< T extends Type< T > >
 
 	/**
 	 * GEt the data type of the tensor
-	 * 
+	 *
 	 * @return the data type of the tensor
 	 */
 	public Type< T > getDataType()
@@ -528,7 +500,7 @@ public final class Tensor< T extends Type< T > >
 
 	/**
 	 * Whether the tensor is closed or not
-	 * 
+	 *
 	 * @return true if closed, false otherwise
 	 */
 	public boolean isClosed()
@@ -540,13 +512,13 @@ public final class Tensor< T extends Type< T > >
 	 * Method to check if the number of dimensions of the
 	 * {@link RandomAccessibleInterval} corresponds to the number of dimensions
 	 * specified by the {@link #axesString}
-	 * 
+	 *
 	 * @param data
 	 *            the array backend of the tensor
 	 * @param axesOrder
 	 *            the axes order of the tensor
 	 */
-	private void checkDims( RandomAccessibleInterval< T > data, String axesOrder )
+	private void checkDims( final RandomAccessibleInterval< T > data, final String axesOrder )
 	{
 		if ( data.dimensionsAsLongArray().length != axesOrder.length() )
 			throw new IllegalArgumentException( "The axes order introduced has to correspond "
@@ -557,17 +529,17 @@ public final class Tensor< T extends Type< T > >
 
 	private void assertIsList()
 	{
-		boolean x = axesString.toLowerCase().indexOf( "x" ) != -1;
-		boolean y = axesString.toLowerCase().indexOf( "y" ) != -1;
-		boolean t = axesString.toLowerCase().indexOf( "t" ) != -1;
-		boolean z = axesString.toLowerCase().indexOf( "z" ) != -1;
+		final boolean x = axesString.toLowerCase().indexOf( "x" ) != -1;
+		final boolean y = axesString.toLowerCase().indexOf( "y" ) != -1;
+		final boolean t = axesString.toLowerCase().indexOf( "t" ) != -1;
+		final boolean z = axesString.toLowerCase().indexOf( "z" ) != -1;
 		if ( x || y || t || z )
 		{ throw new IllegalArgumentException( "Tensor '" + this.tensorName + "' cannot be represented as "
 				+ "a ist because lists can only have the axes: 'b', 'i', 'c' and 'r'. The axes for this "
 				+ "tensor are :" + axesString + "." ); }
 	}
 
-	public static void main( String[] args )
+	public static void main( final String[] args )
 	{
 
 	}
