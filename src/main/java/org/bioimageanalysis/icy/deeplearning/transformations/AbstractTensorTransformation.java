@@ -14,6 +14,8 @@ public abstract class AbstractTensorTransformation implements TensorTransformati
 
 	private final String name;
 
+	private Mode mode = Mode.FIXED;
+
 	protected AbstractTensorTransformation( final String name )
 	{
 		this.name = name;
@@ -50,5 +52,17 @@ public abstract class AbstractTensorTransformation implements TensorTransformati
 	public String getName()
 	{
 		return name;
+	}
+
+	@Override
+	public void setMode( final Mode mode )
+	{
+		this.mode = mode;
+	}
+
+	@Override
+	public Mode getMode()
+	{
+		return mode;
 	}
 }

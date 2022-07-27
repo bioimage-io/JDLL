@@ -84,4 +84,44 @@ public interface TensorTransformation
 	 */
 	public String getName();
 
+	default void setMode( final String mode )
+	{
+		for ( final Mode value : Mode.values() )
+		{
+			if ( value.toString().equalsIgnoreCase( mode ) )
+			{
+				setMode( value );
+				return;
+			}
+		}
+	}
+
+	public void setMode( Mode mode );
+
+	public Mode getMode();
+
+	/**
+	 * Tensor transformation modes.
+	 */
+	public enum Mode
+	{
+
+		FIXED( "fixed" ),
+		PER_DATASET( "per_dataset" ),
+		PER_SAMPLE( "per_sample" );
+
+		private final String name;
+
+		private Mode( final String name )
+		{
+			this.name = name;
+		}
+
+		@Override
+		public String toString()
+		{
+			return name;
+		}
+	}
+
 }
