@@ -1,35 +1,36 @@
 package org.bioimageanalysis.icy.deeplearning.transformations;
 
-import org.bioimageanalysis.icy.deeplearning.tensor.Tensor;
-
-import net.imglib2.loops.LoopBuilder;
-import net.imglib2.type.NativeType;
-import net.imglib2.type.numeric.RealType;
-
-public class ClipTensorTransformation extends AbstractTensorTransformation
+public class ClipTensorTransformation extends AbstractTensorPixelTransformation
 {
 
-	private final double min;
+	private static final class ClipFunction implements FloatUnaryOperator
+	{
 
-	private final double max;
+		private final float min;
+
+		private final float max;
+
+		private ClipFunction( final double min, final double max )
+		{
+			this.min = ( float ) Math.min( min, max );
+			this.max = ( float ) Math.max( min, max );
+		}
+
+		@Override
+		public final float applyAsFloat( final float in )
+		{
+			return ( in > max )
+					? max
+					: ( in < min )
+							? min
+							: in;
+		}
+	}
 
 	public ClipTensorTransformation( final double min, final double max )
 	{
-		super( "clip( " + Math.min( min, max ) + ", " + Math.max( min, max ) + " )" );
-		this.min = Math.min( min, max );
-		this.max = Math.max( min, max );
-	}
-
-	@Override
-	public < R extends RealType< R > & NativeType< R >, Q extends RealType< Q > & NativeType< Q > > void apply( final Tensor< R > input, final Tensor< Q > output )
-	{
-		LoopBuilder.setImages( input.getData(), output.getData() )
-				.multiThreaded()
-				.forEachPixel( ( i, o ) -> o.setReal(
-						i.getRealDouble() > max
-								? max
-								: i.getRealDouble() < min
-										? min
-										: i.getRealDouble() ) );
+		super(
+				"clip( " + Math.min( min, max ) + ", " + Math.max( min, max ) + " )",
+				new ClipFunction( min, max ) );
 	}
 }

@@ -5,6 +5,7 @@ import org.bioimageanalysis.icy.deeplearning.tensor.Tensor;
 import net.imglib2.loops.LoopBuilder;
 import net.imglib2.type.NativeType;
 import net.imglib2.type.numeric.RealType;
+import net.imglib2.type.numeric.real.FloatType;
 import net.imglib2.view.Views;
 
 public class ZeroMeanUnitVarianceTensorTransformation extends AbstractTensorTransformation
@@ -16,7 +17,32 @@ public class ZeroMeanUnitVarianceTensorTransformation extends AbstractTensorTran
 	}
 
 	@Override
-	public < R extends RealType< R > & NativeType< R >, Q extends RealType< Q > & NativeType< Q > > void apply( final Tensor< R > input, final Tensor< Q > output )
+	public < R extends RealType< R > & NativeType< R > > Tensor< FloatType > apply( final Tensor< R > input )
+	{
+		final float[] meanStd = meanStd( input );
+		final float mean = meanStd[ 0 ];
+		final float std = meanStd[ 1 ];
+
+		final Tensor< FloatType > output = makeOutput( input );
+		LoopBuilder.setImages( input.getData(), output.getData() )
+				.multiThreaded()
+				.forEachPixel( ( i, o ) -> o.setReal( ( i.getRealDouble() - mean ) / std ) );
+		return output;
+	}
+
+	@Override
+	public void applyInPlace( final Tensor< FloatType > input )
+	{
+		final float[] meanStd = meanStd( input );
+		final float mean = meanStd[ 0 ];
+		final float std = meanStd[ 1 ];
+
+		LoopBuilder.setImages( input.getData() )
+				.multiThreaded()
+				.forEachPixel( i -> i.set( ( i.get() - mean ) / std ) );
+	}
+
+	public static final < R extends RealType< R > & NativeType< R > > float[] meanStd( final Tensor< R > input )
 	{
 		// Mean.
 		double sum = 0.;
@@ -41,8 +67,6 @@ public class ZeroMeanUnitVarianceTensorTransformation extends AbstractTensorTran
 		final double variance = sumdx2 / ( n - 1 );
 		final double std = Math.sqrt( variance );
 
-		LoopBuilder.setImages( input.getData(), output.getData() )
-				.multiThreaded()
-				.forEachPixel( ( i, o ) -> o.setReal( ( i.getRealDouble() - mean ) / std ) );
+		return new float[] { ( float ) mean, ( float ) std };
 	}
 }
