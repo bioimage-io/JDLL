@@ -11,6 +11,8 @@ import org.bioimageanalysis.icy.deeplearning.utils.EngineInfo;
 import net.imglib2.img.Img;
 import net.imglib2.img.ImgFactory;
 import net.imglib2.img.cell.CellImgFactory;
+import net.imglib2.type.NativeType;
+import net.imglib2.type.numeric.RealType;
 import net.imglib2.type.numeric.real.FloatType;
 
 /**
@@ -20,7 +22,7 @@ import net.imglib2.type.numeric.real.FloatType;
  */
 public class ExampleLoadAndRunModel {
 	
-	public static void main(String[] args) throws LoadEngineException, Exception {
+	public static < T extends RealType< T > & NativeType< T > > void main(String[] args) throws LoadEngineException, Exception {
 		String engine = "torchscript";
 		String engineVersion = "1.7.1";
 		String enginesDir = "C:\\Users\\angel\\OneDrive\\Documentos\\pasteur\\git\\deep-icy\\engines";
@@ -31,15 +33,15 @@ public class ExampleLoadAndRunModel {
 		final ImgFactory< FloatType > imgFactory = new CellImgFactory<>( new FloatType(), 5 );
 		 
 		// create an 3d-Img with dimensions 20x30x40 (here cellsize is 5x5x5)Ø
-		final Img< FloatType > img1 = imgFactory.create( 1, 1, 512, 512);
+		final Img< T > img1 = (Img<T>) imgFactory.create( 1, 1, 512, 512);
 
-		Tensor inpTensor = Tensor.build("input0", "bcyx", img1);
-		List<Tensor> inputs = new ArrayList<Tensor>();
+		Tensor<T> inpTensor = Tensor.build("input0", "bcyx", img1);
+		List<Tensor<T>> inputs = new ArrayList<Tensor<T>>();
 		inputs.add(inpTensor);
 		
 		// We need to specify the output tensors with its axes order and name, but empty
-		Tensor outTensor = Tensor.buildEmptyTensor("output0", "bcyx");
-		List<Tensor> outputs = new ArrayList<Tensor>();
+		Tensor<T> outTensor = Tensor.buildEmptyTensor("output0", "bcyx");
+		List<Tensor<T>> outputs = new ArrayList<Tensor<T>>();
 		outputs.add(outTensor);
 		
 		outputs = model.runModel(inputs, outputs);

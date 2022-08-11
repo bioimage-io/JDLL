@@ -3,6 +3,10 @@ package org.bioimageanalysis.icy.deeplearning.utils;
 import java.util.List;
 
 import org.bioimageanalysis.icy.deeplearning.tensor.Tensor;
+
+import net.imglib2.type.NativeType;
+import net.imglib2.type.numeric.RealType;
+
 import org.bioimageanalysis.icy.deeplearning.exceptions.LoadModelException;
 import org.bioimageanalysis.icy.deeplearning.exceptions.RunModelException;
 
@@ -21,7 +25,7 @@ public interface DeepLearningInterface {
 	 * 	output tensors produced by the model
 	 * @throws RunModelException if there is an error in the execution of the model
 	 */
-    public List<Tensor> run(List<Tensor> inputTensors, List<Tensor> outputTensors) throws RunModelException;
+    public < T extends RealType< T > & NativeType< T > > List<Tensor<T>> run(List<Tensor<T>> inputTensors, List<Tensor<T>> outputTensors) throws RunModelException;
     
     /**
      * Load the model with the corresponding engine on the particular

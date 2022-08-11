@@ -19,6 +19,7 @@ import net.imglib2.img.basictypeaccess.array.IntArray;
 import net.imglib2.img.basictypeaccess.array.LongArray;
 import net.imglib2.type.NativeType;
 import net.imglib2.type.Type;
+import net.imglib2.type.numeric.RealType;
 import net.imglib2.type.numeric.integer.ByteType;
 import net.imglib2.type.numeric.integer.IntType;
 import net.imglib2.type.numeric.integer.LongType;
@@ -38,7 +39,7 @@ import net.imglib2.util.Util;
  * 
  * @author Carlos Garcia Lopez de Haro
  */
-public final class Tensor <T extends Type<T>>
+public final class Tensor < T extends RealType< T > & NativeType< T > >
 {
 	/**
 	 * Name given to the tensor in the model.
@@ -55,7 +56,7 @@ public final class Tensor <T extends Type<T>>
 	/** 
 	 * Software agnostic representation of the tensor data
 	 */
-	private RandomAccessibleInterval<T> data;
+	private RandomAccessibleInterval data;
 	/**
 	 * Whether the tensor represents an image or not
 	 */
@@ -68,7 +69,7 @@ public final class Tensor <T extends Type<T>>
 	/**TODO develop a DAtaType class for this Tensor class?
 	 * The data type of the tensor
 	 */
-	private Type<T> dType;
+	private Type dType;
 	/**
 	 * Shape of the tensor
 	 */
@@ -118,11 +119,11 @@ public final class Tensor <T extends Type<T>>
 	 * 	data structure similar to a Numpy array that contains all tensor numbers
      * @return the tensor
      */
-    public static <T extends Type<T>> Tensor build(String tensorName, String axes, RandomAccessibleInterval<T> data)
+    public static < T extends RealType< T > & NativeType< T > > Tensor<T> build(String tensorName, String axes, RandomAccessibleInterval<T> data)
     {
     	if (data == null)
     		throw new IllegalArgumentException("Trying to create tensor from an empty NDArray");
-    	return new Tensor(tensorName, axes, data);
+    	return new Tensor<T>(tensorName, axes, data);
     }
     
     /**
@@ -148,7 +149,7 @@ public final class Tensor <T extends Type<T>>
      * @param data
      * 	the numbers of the tensor in a Numpy array like structure
      */
-    public void setData(RandomAccessibleInterval<T> data) {
+    public < T extends RealType< T > & NativeType< T > > void setData(RandomAccessibleInterval<T> data) {
     	throwExceptionIfClosed();
     	if (data == null && this.data != null) {
     		this.data = null;
@@ -172,7 +173,7 @@ public final class Tensor <T extends Type<T>>
     	if (!emptyTensor)
     		checkDims(data, axesString);
     	
-    	dType = Util.getTypeFromInterval(data);
+    	dType = (Type<T>) Util.getTypeFromInterval(data);
     	this.data = data;
     	if (emptyTensor) {
     		setShape();
@@ -213,7 +214,7 @@ public final class Tensor <T extends Type<T>>
      * @param tt
      * 	the tensor whose backedn is going to be copied
      */
-    public void copyNDArrayTensorBackend(Tensor tt) {
+    public < T extends RealType< T > & NativeType< T > > void copyNDArrayTensorBackend(Tensor<T> tt) {
     	throwExceptionIfClosed();
 		setData(tt.getData());
     }
@@ -226,7 +227,7 @@ public final class Tensor <T extends Type<T>>
      * @param type
      * 	data type of the wanted tensor
      */
-    public static <T extends Type<T>> Tensor createCopyOfTensorInWantedDataType(Tensor tt, String type) {
+    public static < T extends RealType< T > & NativeType< T > > Tensor<T> createCopyOfTensorInWantedDataType(Tensor<T> tt, String type) {
     	tt.throwExceptionIfClosed();
     	RandomAccessibleInterval<T> rai = tt.getData();
     	Img<T> tensoBackend = RaiArrayUtils.createCopyOfRaiInWantedDataType(rai, type);
@@ -241,7 +242,7 @@ public final class Tensor <T extends Type<T>>
      * @param type
      * 	data type of the wanted tensor
      */
-    public static <T extends Type<T>> Tensor createCopyOfTensorInWantedDataType(Tensor tt, Type type) {
+    public static < T extends RealType< T > & NativeType< T > > Tensor<T> createCopyOfTensorInWantedDataType(Tensor<T> tt, Type type) {
     	tt.throwExceptionIfClosed();
     	RandomAccessibleInterval<T> rai = tt.getData();
     	Img<T> tensoBackend = RaiArrayUtils.createCopyOfRaiInWantedDataType(rai, type);
@@ -291,7 +292,7 @@ public final class Tensor <T extends Type<T>>
      * 	name of the tensor of interest
      * @return the tensor of interest
      */
-    public static Tensor getTensorByNameFromList(List<Tensor> lTensors, String name) {
+    public static < T extends RealType< T > & NativeType< T > > Tensor<T> getTensorByNameFromList(List<Tensor<T>> lTensors, String name) {
     	return lTensors.stream().filter(pp -> !pp.isClosed() && pp.getName() != null && pp.getName().equals(name)).findAny().orElse(null);
     }
     
@@ -483,7 +484,7 @@ public final class Tensor <T extends Type<T>>
      * @param axesOrder
      * 	the axes order of the tensor
      */
-    private void checkDims(RandomAccessibleInterval<T> data, String axesOrder) {
+    private < T extends RealType< T > & NativeType< T > > void checkDims(RandomAccessibleInterval<T> data, String axesOrder) {
     	if (data.dimensionsAsLongArray().length != axesOrder.length())
     		throw new IllegalArgumentException("The axes order introduced has to correspond "
     				+ "to the same number of dimenensions that the NDArray has. In this case"

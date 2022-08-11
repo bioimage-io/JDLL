@@ -13,6 +13,8 @@ import org.bioimageanalysis.icy.deeplearning.utils.DeepLearningInterface;
 import org.bioimageanalysis.icy.deeplearning.utils.EngineInfo;
 import org.bioimageanalysis.icy.deeplearning.utils.EngineLoader;
 
+import net.imglib2.type.NativeType;
+import net.imglib2.type.numeric.RealType;
 import net.imglib2.type.numeric.real.FloatType;
 
 /**
@@ -186,7 +188,8 @@ public class Model
      * @throws RunModelException
      *         if there is any problem closing the tensors
      */
-    public List<Tensor> runModel(List<Tensor> inTensors, List<Tensor> outTensors) throws RunModelException, Exception
+    public < T extends RealType< T > & NativeType< T > > List<Tensor<T>> runModel(List<Tensor<T>> inTensors, 
+    																	List<Tensor<T>> outTensors) throws RunModelException, Exception
     {
         DeepLearningInterface engineInstance = engineClassLoader.getEngineInstance();
         engineClassLoader.setEngineClassLoader();
