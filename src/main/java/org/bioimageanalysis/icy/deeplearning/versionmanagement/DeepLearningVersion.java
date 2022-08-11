@@ -5,7 +5,6 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import org.bioimageanalysis.icy.deeplearning.versionmanager.downloading.DeepLearningVersionDownloader;
 
 /**
  * An available tensor flow version with its properties and needed artifact URLs.
@@ -100,8 +99,8 @@ public class DeepLearningVersion
      * 	the folder where the JARs should be
      * @return the list with all the missing JAR files
      */
-    public List<String> checkMissingJars() {
-    	String[] jarsArr = new File(DeepLearningVersionDownloader.getEnginesFolderPath(), folderName()).list();
+    public List<String> checkMissingJars(String folderDir) {
+    	String[] jarsArr = new File(folderDir, folderName()).list();
     	List<String> folderJars = Arrays.asList(jarsArr);
     	List<String> missingJars = getJarsFileNames().stream().filter(jar -> !folderJars.contains(jar)).collect(Collectors.toList());
     	if (missingJars.size() != 0) {
