@@ -20,6 +20,8 @@ public class DeepLearningVersion
     private boolean cpu;
     private boolean gpu;
     private List<String> jars;
+    private String allEnginesDir;
+    private String engineName;
     public static String cpuKey = "cpu";
     public static String gpuKey = "gpu";
     
@@ -31,14 +33,19 @@ public class DeepLearningVersion
      * where the first word means the engine, the next version number is the python version
      * number, the next version number is the Java JAr version number, then it comes the
      * operating system and then either cpu, gpu or mkl
-     * @param str
-     * 	the engine folder name
+     * @param engineDir
+     * 	the engine folder 
      * @return a {@link #DeepLearningVersion()}
      * @throws Exception if no supported Deep Learning version coincides with the folder provided
      */
-    public static DeepLearningVersion fromString(String str) throws Exception {
+    public static DeepLearningVersion fromFile(File engineDir) throws Exception {
+    	if (!engineDir.isDirectory())
+    		throw new IllegalArgumentException("The file '" + engineDir.getAbsolutePath() + "' does not correspond "
+    				+ "to an existing directory.");
     	DeepLearningVersion dlVersion =  new DeepLearningVersion();
-    	String[] fields = str.split("-");
+    	dlVersion.engineName = engineDir.getName();
+    	dlVersion.allEnginesDir = engineDir.getParentFile().getAbsolutePath();
+    	String[] fields = dlVersion.engineName.split("-");
     	dlVersion.setEngine(fields[0]);
     	dlVersion.setPythonVersion(fields[1]);
     	dlVersion.setVersion(fields[2]);
@@ -95,12 +102,10 @@ public class DeepLearningVersion
     
     /**
      * Returns a list with all the missing Jars for a Deep Learning engine version
-     * @param folderDir
-     * 	the folder where the JARs should be
      * @return the list with all the missing JAR files
      */
-    public List<String> checkMissingJars(String folderDir) {
-    	String[] jarsArr = new File(folderDir, folderName()).list();
+    public List<String> checkMissingJars() {
+    	String[] jarsArr = new File(this.allEnginesDir, folderName()).list();
     	List<String> folderJars = Arrays.asList(jarsArr);
     	List<String> missingJars = getJarsFileNames().stream().filter(jar -> !folderJars.contains(jar)).collect(Collectors.toList());
     	if (missingJars.size() != 0) {
@@ -119,8 +124,10 @@ public class DeepLearningVersion
      * @return the name of the folder containing the JARs 
      */
     public String folderName() {
-    	return getEngine() + "-" + getPythonVersion() + "-" + getVersion() + "-" + getOs()
+    	if (this.engineName == null)
+    		engineName = getEngine() + "-" + getPythonVersion() + "-" + getVersion() + "-" + getOs()
                 + (getCPU() ? "-cpu" : "") + (getGPU() ? "-gpu" : "");
+    	return engineName;
     }
 
     /**

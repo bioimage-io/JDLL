@@ -55,7 +55,7 @@ public class InstalledDeepLearningVersions {
     	List<DeepLearningVersion> versions = Arrays.stream(this.getEnginePaths())
     			.map(t -> {
 					try {
-						return DeepLearningVersion.fromString(t);
+						return DeepLearningVersion.fromFile(t);
 					} catch (Exception e) {
 						// TODO print stack trace??
 						e.printStackTrace();
@@ -64,7 +64,7 @@ public class InstalledDeepLearningVersions {
 						return null;
 					}
 				})
-				.filter(v -> v != null && v.checkMissingJars().size() == 0).collect(Collectors.toList());
+				.filter(v -> v != null && v.checkMissingJars(path.toString()).size() == 0).collect(Collectors.toList());
         return versions;
     }
     
@@ -78,7 +78,7 @@ public class InstalledDeepLearningVersions {
     	List<String> versions = Arrays.stream(this.getEnginePaths())
     			.map(t -> {
 					try {
-						return DeepLearningVersion.fromString(t);
+						return DeepLearningVersion.fromFile(t);
 					} catch (Exception e) {
 						// TODO print stack trace??
 						e.printStackTrace();
@@ -111,7 +111,7 @@ public class InstalledDeepLearningVersions {
         List<DeepLearningVersion> versions = Arrays.stream(this.getEnginePaths())
     			.map(t -> {
 					try {
-						return DeepLearningVersion.fromString(t);
+						return DeepLearningVersion.fromFile(t);
 					} catch (Exception e) {
 						System.out.println("");
 						System.out.println("Folder '" + new File(t).getName() + "' does not contain a supported Deep Learning engine version");
@@ -156,7 +156,7 @@ public class InstalledDeepLearningVersions {
     	List<String> versions = Arrays.stream(this.getEnginePaths())
     			.map(t -> {
 					try {
-						return DeepLearningVersion.fromString(t);
+						return DeepLearningVersion.fromFile(t);
 					} catch (Exception e) {
 						System.out.println("");
 						System.out.println("Folder '" + new File(t).getName() + "' does not contain a supported Deep Learning engine version");
