@@ -21,6 +21,11 @@ public class InstalledDeepLearningVersions {
 	
 	private static String ENGINES_FOLDER_NAME = "engines";
 	
+	/**
+	 * Object used to find installed DL frameworks in the software
+	 * @param path
+	 * 	path to the folder where all the framewoks are installed
+	 */
 	private InstalledDeepLearningVersions(Path path) {
 		if (!path.toFile().isDirectory())
 			throw new IllegalArgumentException("");
