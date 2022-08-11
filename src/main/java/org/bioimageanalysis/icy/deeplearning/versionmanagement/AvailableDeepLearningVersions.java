@@ -31,6 +31,15 @@ public class AvailableDeepLearningVersions
 		engineKeys.put("onnx", "onnx");
 		engineKeys.put("keras_hdf5", "keras");
 	}
+	
+	/**
+	 * MEthod that returns all the possible names for each the DL engines existing at the moment
+	 * @return
+	 */
+	public static HashMap<String, String> getEngineKeys(){
+		return engineKeys;
+	}
+	
     /**
      * Creates an instance containing only Deep Learning versions compatible with the current system.
      * 
