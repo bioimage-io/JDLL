@@ -1,6 +1,7 @@
 package org.bioimageanalysis.icy.deeplearning.versionmanagement;
 
 import java.io.File;
+import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -38,7 +39,7 @@ public class InstalledDeepLearningVersions {
 	 * @return an object to find the installed DL frameworks in the software
 	 */
 	public static InstalledDeepLearningVersions buildEnginesFinder() {
-		return new InstalledDeepLearningVersions(Paths.get(".", ENGINES_FOLDER_NAME).toAbsolutePath());
+		return new InstalledDeepLearningVersions(Paths.get(ENGINES_FOLDER_NAME).toAbsolutePath());
 	}
 	
 	/**
@@ -199,5 +200,16 @@ public class InstalledDeepLearningVersions {
                 .map(DeepLearningVersion::getPythonVersion)
 				.collect(Collectors.toList());
         return versions;
+    }
+    
+    public static String getInstalledVersionsDir() {
+    	return Paths.get(ENGINES_FOLDER_NAME).toAbsolutePath().toString();
+    }
+    
+    public static void setEnginesDirectory(String dir) throws IOException {
+    	if (!(new File(dir).isDirectory()))
+    		throw new IOException("The engines directory must correspond to an already existing folder. "
+    				+ "The provided path is not  valid: " + dir);
+    	ENGINES_FOLDER_NAME = dir;
     }
 }

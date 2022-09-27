@@ -401,4 +401,8 @@ public class DeepLearningVersion
         return true;
     }
 
+	public void setEnginesDir() {
+		allEnginesDir = InstalledDeepLearningVersions.getInstalledVersionsDir();
+	}
+
 }

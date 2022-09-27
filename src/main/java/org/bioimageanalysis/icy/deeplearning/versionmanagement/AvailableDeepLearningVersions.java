@@ -51,6 +51,7 @@ public class AvailableDeepLearningVersions
         String currentPlatform = new PlatformDetection().toString();
         availableVersions.setVersions(availableVersions.getVersions().stream()
                 .filter(v -> v.getOs().equals(currentPlatform)).collect(Collectors.toList()));
+        availableVersions.getVersions().stream().forEach(x -> x.setEnginesDir());
         return availableVersions;
     }
     
