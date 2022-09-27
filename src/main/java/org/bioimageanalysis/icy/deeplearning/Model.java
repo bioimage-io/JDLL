@@ -13,6 +13,8 @@ import org.bioimageanalysis.icy.deeplearning.utils.DeepLearningInterface;
 import org.bioimageanalysis.icy.deeplearning.utils.EngineInfo;
 import org.bioimageanalysis.icy.deeplearning.utils.EngineLoader;
 
+import net.imglib2.type.NativeType;
+import net.imglib2.type.numeric.RealType;
 import net.imglib2.type.numeric.real.FloatType;
 
 /**
@@ -255,5 +257,4 @@ public class Model
 	{
 		return this.modelName;
 	}
-
 }

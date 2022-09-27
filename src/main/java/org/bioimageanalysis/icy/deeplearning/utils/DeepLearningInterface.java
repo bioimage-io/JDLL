@@ -3,6 +3,10 @@ package org.bioimageanalysis.icy.deeplearning.utils;
 import java.util.List;
 
 import org.bioimageanalysis.icy.deeplearning.tensor.Tensor;
+
+import net.imglib2.type.NativeType;
+import net.imglib2.type.numeric.RealType;
+
 import org.bioimageanalysis.icy.deeplearning.exceptions.LoadModelException;
 import org.bioimageanalysis.icy.deeplearning.exceptions.RunModelException;
 
