@@ -257,6 +257,24 @@ public final class Tensor< T extends RealType< T > & NativeType< T > >
 	}
 
 	/**
+	 * Method that creates a copy of the tensor in the wanted data type.
+	 * Everything is the same or the new tensor (including the name), except the
+	 * data type of the data
+	 *
+	 * @param tt
+	 *            tensor where the copy is created from
+	 * @param type
+	 *            data type of the wanted tensor
+	 */
+	public static < T extends RealType< T > & NativeType< T >, R extends RealType< R > & NativeType< R > > RandomAccessibleInterval< R > createCopyOfRaiInWantedDataType( final RandomAccessibleInterval< T > input, final R type )
+	{
+		final ImgFactory< R > factory = Util.getArrayOrCellImgFactory( input, type );
+		final Img< R > output = factory.create( input );
+		RealTypeConverters.copyFromTo( input, output );
+		return output;
+	}
+
+	/**
 	 * Throw {@link IllegalStateException} if the tensor has been closed
 	 */
 	private void throwExceptionIfClosed()
