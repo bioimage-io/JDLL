@@ -18,11 +18,14 @@ import net.imglib2.type.numeric.real.FloatType;
 public class AbstractTensorPixelTransformation extends AbstractTensorTransformation
 {
 
-	private final FloatUnaryOperator fun;
+	private FloatUnaryOperator fun;
 
-	protected AbstractTensorPixelTransformation( final String name, final FloatUnaryOperator fun )
+	protected AbstractTensorPixelTransformation( final String name)
 	{
 		super( name );
+	}
+	
+	protected void setFloatUnitaryOperator(final FloatUnaryOperator fun) {
 		this.fun = fun;
 	}
 
