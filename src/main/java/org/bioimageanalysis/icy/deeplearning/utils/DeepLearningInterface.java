@@ -26,7 +26,13 @@ public interface DeepLearningInterface
 	 * @throws RunModelException
 	 *             if there is an error in the execution of the model
 	 */
-	public List< Tensor > run( List< Tensor > inputTensors, List< Tensor > outputTensors ) throws RunModelException;
+	/*
+	 * TODO
+	 * TODO
+	 * TODO should it be like the commented option? ask jean-yves
+	 */
+	//public List< Tensor > run( List< Tensor > inputTensors, List< Tensor > outputTensors ) throws RunModelException;
+	public List< Tensor  < ? > > run( List< Tensor  < ? > > inputTensors, List< Tensor  < ? > > outputTensors ) throws RunModelException;
 
 	/**
 	 * Load the model with the corresponding engine on the particular

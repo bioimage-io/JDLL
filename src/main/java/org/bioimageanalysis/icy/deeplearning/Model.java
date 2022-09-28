@@ -195,7 +195,7 @@ public class Model
 	 * @throws RunModelException
 	 *             if there is any problem closing the tensors
 	 */
-	public List< Tensor > runModel( List< Tensor > inTensors, List< Tensor > outTensors ) throws RunModelException, Exception
+	public List< Tensor < ? > > runModel( List< Tensor < ? > > inTensors, List< Tensor < ? > > outTensors ) throws RunModelException, Exception
 	{
 		DeepLearningInterface engineInstance = engineClassLoader.getEngineInstance();
 		engineClassLoader.setEngineClassLoader();

@@ -60,8 +60,8 @@ public final class Tensor< T extends RealType< T > & NativeType< T > >
 	private boolean emptyTensor;
 
 	/**
-	 * TODO develop a DAtaType class for this Tensor class? The data type of the
-	 * tensor
+	 * TODO develop a DAtaType class for this Tensor class? 
+	 * The data type of the tensor
 	 */
 	private Type< T > dType;
 
