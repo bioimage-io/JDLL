@@ -52,11 +52,9 @@ public class ClipTensorTransformation extends AbstractTensorPixelTransformation
 	
 	public void checkRequiredArgs() {
 		if (min == null) {
-			throw new IllegalArgumentException("Cannot execute Clip BioImage.io transformation because 'min' "
-					+ "parameter was not set.");
+			throw new IllegalArgumentException(String.format(DEFAULT_MISSING_ARG_ERR, "min"));
 		} else if (max == null) {
-			throw new IllegalArgumentException("Cannot execute Clip BioImage.io transformation because 'max' "
-					+ "parameter was not set.");
+			throw new IllegalArgumentException(String.format(DEFAULT_MISSING_ARG_ERR, "max"));
 		}
 	}
 

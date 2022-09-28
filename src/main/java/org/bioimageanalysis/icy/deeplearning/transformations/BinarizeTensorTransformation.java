@@ -19,8 +19,7 @@ public class BinarizeTensorTransformation extends AbstractTensorPixelTransformat
 	
 	public void checkRequiredArgs() {
 		if (threshold == null) {
-			throw new IllegalArgumentException("Cannot execute Clip BioImage.io transformation because 'threshold' "
-					+ "parameter was not set.");
+			throw new IllegalArgumentException(String.format(DEFAULT_MISSING_ARG_ERR, "threshold"));
 		}
 	}
 
