@@ -36,12 +36,12 @@ public class ExampleLoadAndRunModel {
 		final Img< T > img1 = (Img<T>) imgFactory.create( 1, 1, 512, 512);
 
 		Tensor<T> inpTensor = Tensor.build("input0", "bcyx", img1);
-		List<Tensor> inputs = new ArrayList<Tensor>();
+		List<Tensor<?>> inputs = new ArrayList<Tensor<?>>();
 		inputs.add(inpTensor);
 		
 		// We need to specify the output tensors with its axes order and name, but empty
 		Tensor<T> outTensor = Tensor.buildEmptyTensor("output0", "bcyx");
-		List<Tensor> outputs = new ArrayList<Tensor>();
+		List<Tensor<?>> outputs = new ArrayList<Tensor<?>>();
 		outputs.add(outTensor);
 		
 		outputs = model.runModel(inputs, outputs);
