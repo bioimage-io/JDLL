@@ -87,6 +87,7 @@ public class ScaleLinearTransformation extends AbstractTensorPixelTransformation
 			super.setFloatUnitaryOperator( v -> gainDouble.floatValue() * v + offsetDouble.floatValue() );
 			return super.apply(input);
 		} else if (input.getAxesOrderString().replace("b", "").length() - selectedAxes.length() == 2) {
+			// TODO improve efficiency in this method
 			final Tensor< FloatType > output = makeOutput( input );
 			int[] iterAxes = new int[selectedAxes.length()];
 			for (int i = 0; i < selectedAxes.length(); i ++)
