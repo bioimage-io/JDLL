@@ -10,10 +10,46 @@ import net.imglib2.view.Views;
 
 public class ZeroMeanUnitVarianceTensorTransformation extends AbstractTensorTransformation
 {
+	
+	private static String name = "zero_mean_unit_variace";
+	private Double meanVal;
+	private Double stdVal;
+	private double[] meanArr;
+	private double[] stdArr;
+	private Mode mode;
+	private String axes;
 
 	public ZeroMeanUnitVarianceTensorTransformation()
 	{
-		super( "sigmoid" );
+		super( name );
+	}
+	
+	public void getMean(double mean) {
+		this.meanVal = mean;
+	}
+	
+	public void getMean(double[] meanArr) {
+		this.meanArr = meanArr;
+	}
+	
+	public void getStd(double std) {
+		this.stdVal = std;
+	}
+	
+	public void getStd(double[] std) {
+		this.stdArr = std;
+	}
+	
+	public void getAxes(String axes) {
+		this.axes = axes;
+	}
+	
+	public void getMode(String mode) {
+		this.mode = Mode.valueOf(mode);
+	}
+	
+	public void getMode(Mode mode) {
+		this.mode = mode;
 	}
 
 	@Override
