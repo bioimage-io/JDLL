@@ -34,12 +34,22 @@ public class ZeroMeanUnitVarianceTensorTransformation extends AbstractTensorTran
 		this.meanArr = meanArr;
 	}
 	
+	public void getMean(double[][] meanArr) {
+		//TODO allow scaling of more complex structures
+		throw new IllegalArgumentException("At the moment, only allowed calculations on planes.");
+	}
+	
 	public void getStd(double std) {
 		this.stdVal = std;
 	}
 	
 	public void getStd(double[] std) {
 		this.stdArr = std;
+	}
+	
+	public void getStd(double[][] std) {
+		//TODO allow scaling of more complex structures
+		throw new IllegalArgumentException("At the moment, only allowed calculations on planes.");
 	}
 	
 	public void getAxes(String axes) {
@@ -52,10 +62,6 @@ public class ZeroMeanUnitVarianceTensorTransformation extends AbstractTensorTran
 	
 	public void getMode(Mode mode) {
 		this.mode = mode;
-	}
-	
-	private void calculateMeanStd() {
-		
 	}
 	
 	public void checkRequiredArgs() {
