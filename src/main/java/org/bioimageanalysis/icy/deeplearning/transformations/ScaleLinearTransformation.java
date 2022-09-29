@@ -67,6 +67,7 @@ public class ScaleLinearTransformation extends AbstractTensorPixelTransformation
 		}
 	}
 
+	@Override
 	public < R extends RealType< R > & NativeType< R > > Tensor< FloatType > apply( final Tensor< R > input )
 	{
 		checkRequiredArgs();
@@ -84,30 +85,29 @@ public class ScaleLinearTransformation extends AbstractTensorPixelTransformation
 						+ "The parameters gain and offset cannot be arrays with"
 						+ " the given axes parameter provided.");
 			super.setFloatUnitaryOperator( v -> gainDouble.floatValue() * v + offsetDouble.floatValue() );
+			return super.apply(input);
 		} else if (input.getAxesOrderString().replace("b", "").length() - selectedAxes.length() == 2) {
+			final Tensor< FloatType > output = makeOutput( input );
 			int[] iterAxes = new int[selectedAxes.length()];
 			for (int i = 0; i < selectedAxes.length(); i ++)
 				iterAxes[i] = input.getAxesOrderString().indexOf(selectedAxes.split("")[i]);
-			long nIter = 1;
-			for (int i = 0; i < iterAxes.length; i ++) {
-				nIter *= input.getData().dimension(iterAxes[i]);
-			}
+			long[] start = new long[output.getData().numDimensions()];
+			long[] end = output.getData().dimensionsAsLongArray();
 			if (iterAxes.length == 1) {
 				for (int i = 0; i < input.getData().dimension(iterAxes[0]); i ++) {
-					IntervalView<R> plane = Views.interval( input.getData(), new long[] { 200, 200 }, new long[]{ 500, 350 } );
-					gainDouble = gainArr[i];
-					offsetDouble = offsetArr[i];
-					applyInPlaceToRaiWithFun((RandomAccessibleInterval<FloatType>) plane, 
-							(v -> gainDouble.floatValue() * v + offsetDouble.floatValue()));
+					start[iterAxes[0]] = i; end[iterAxes[0]] = i + 1;
+					IntervalView<FloatType> plane = Views.interval( output.getData(), start, end );
+					gainDouble = gainArr[i]; offsetDouble = offsetArr[i];
+					applyInPlaceToRaiWithFun(plane, (v -> gainDouble.floatValue() * v + offsetDouble.floatValue()));
 				}
 			} else if (iterAxes.length == 2) {
 				for (int i = 0; i < input.getData().dimension(iterAxes[0]); i ++) {
 					for (int j = 0; j < input.getData().dimension(iterAxes[1]); j ++) {
-						IntervalView<R> plane = Views.interval( input.getData(), new long[] { 200, 200 }, new long[]{ 500, 350 } );
-						gainDouble = gainArr[i];
-						offsetDouble = offsetArr[i];
-						applyInPlaceToRaiWithFun((RandomAccessibleInterval<FloatType>) plane, 
-								(v -> gainDouble.floatValue() * v + offsetDouble.floatValue()));
+						start[iterAxes[0]] = i; end[iterAxes[0]] = i + 1;
+						start[iterAxes[1]] = j; end[iterAxes[1]] = j + 1;
+						IntervalView<FloatType> plane = Views.interval( output.getData(), start, end );
+						gainDouble = gainArr[(int) (i * input.getData().dimension(iterAxes[1]) + j)]; offsetDouble = offsetArr[j];
+						applyInPlaceToRaiWithFun(plane, (v -> gainDouble.floatValue() * v + offsetDouble.floatValue()));
 					}
 				}
 			} else {
@@ -115,12 +115,63 @@ public class ScaleLinearTransformation extends AbstractTensorPixelTransformation
 				throw new IllegalArgumentException("At the moment, only allowed scaling of planes in"
 						+ " tensors with at most 5 dimensions (including batch dimension).");
 			}
-				
+			return output;
 		} else {
 			//TODO allow scaling of more complex structures
 			throw new IllegalArgumentException("At the moment, only allowed scaling of planes.");
 		}
-		return super.apply(input);
+	}
+
+	public void applyInPlace( final Tensor< FloatType > input )
+	{
+		checkRequiredArgs();
+		String selectedAxes = "";
+		for (String ax : input.getAxesOrderString().split("")) {
+			if (axes != null && !axes.toLowerCase().contains(ax.toLowerCase())
+					&& !ax.toLowerCase().equals("b"))
+				selectedAxes += ax;
+		}
+		if (axes == null || selectedAxes.equals("") 
+				|| input.getAxesOrderString().replace("b", "").length() - selectedAxes.length() == 1) {
+			if (gainDouble == null)
+				throw new IllegalArgumentException("The 'axes' parameter is not"
+						+ " compatible with the parameters 'gain' and 'offset'."
+						+ "The parameters gain and offset cannot be arrays with"
+						+ " the given axes parameter provided.");
+			super.setFloatUnitaryOperator( v -> gainDouble.floatValue() * v + offsetDouble.floatValue() );
+			super.applyInPlace(input);
+		} else if (input.getAxesOrderString().replace("b", "").length() - selectedAxes.length() == 2) {
+			int[] iterAxes = new int[selectedAxes.length()];
+			for (int i = 0; i < selectedAxes.length(); i ++)
+				iterAxes[i] = input.getAxesOrderString().indexOf(selectedAxes.split("")[i]);
+			long[] start = new long[input.getData().numDimensions()];
+			long[] end = input.getData().dimensionsAsLongArray();
+			if (iterAxes.length == 1) {
+				for (int i = 0; i < input.getData().dimension(iterAxes[0]); i ++) {
+					start[iterAxes[0]] = i; end[iterAxes[0]] = i + 1;
+					IntervalView<FloatType> plane = Views.interval( input.getData(), start, end );
+					gainDouble = gainArr[i]; offsetDouble = offsetArr[i];
+					applyInPlaceToRaiWithFun(plane, (v -> gainDouble.floatValue() * v + offsetDouble.floatValue()));
+				}
+			} else if (iterAxes.length == 2) {
+				for (int i = 0; i < input.getData().dimension(iterAxes[0]); i ++) {
+					for (int j = 0; j < input.getData().dimension(iterAxes[1]); j ++) {
+						start[iterAxes[0]] = i; end[iterAxes[0]] = i + 1;
+						start[iterAxes[1]] = j; end[iterAxes[1]] = j + 1;
+						IntervalView<FloatType> plane = Views.interval( input.getData(), start, end );
+						gainDouble = gainArr[(int) (i * input.getData().dimension(iterAxes[1]) + j)]; offsetDouble = offsetArr[j];
+						applyInPlaceToRaiWithFun(plane, (v -> gainDouble.floatValue() * v + offsetDouble.floatValue()));
+					}
+				}
+			} else {
+				//TODO allow scaling of more complex structures
+				throw new IllegalArgumentException("At the moment, only allowed scaling of planes in"
+						+ " tensors with at most 5 dimensions (including batch dimension).");
+			}
+		} else {
+			//TODO allow scaling of more complex structures
+			throw new IllegalArgumentException("At the moment, only allowed scaling of planes.");
+		}
 	}
 
 	public void applyInPlaceToRaiWithFun( final RandomAccessibleInterval< FloatType > input, 
@@ -130,11 +181,5 @@ public class ScaleLinearTransformation extends AbstractTensorPixelTransformation
 				.setImages( input )
 				.multiThreaded()
 				.forEachPixel( i -> i.set( fun.applyAsFloat( i.get() ) ) );
-	}
-
-	public void applyInPlace( final Tensor< FloatType > input )
-	{
-		checkRequiredArgs();
-		super.apply(input);
 	}
 }
