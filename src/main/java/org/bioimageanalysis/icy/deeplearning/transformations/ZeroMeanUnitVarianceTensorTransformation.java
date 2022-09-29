@@ -16,7 +16,7 @@ public class ZeroMeanUnitVarianceTensorTransformation extends AbstractTensorTran
 	private Double stdVal;
 	private double[] meanArr;
 	private double[] stdArr;
-	private Mode mode;
+	private Mode mode = Mode.PER_SAMPLE;
 	private String axes;
 
 	public ZeroMeanUnitVarianceTensorTransformation()
@@ -50,6 +50,26 @@ public class ZeroMeanUnitVarianceTensorTransformation extends AbstractTensorTran
 	
 	public void getMode(Mode mode) {
 		this.mode = mode;
+	}
+	
+	private void calculateMeanStd() {
+		
+	}
+	
+	public void checkRequiredArgs() {
+		if (this.mode == Mode.FIXED && this.meanArr == null && this.meanVal == null) {
+			throw new IllegalArgumentException(String.format(DEFAULT_MISSING_ARG_ERR, "mean")
+					+ System.lineSeparator() + "If 'mode' parameter equals 'fixed', the 'mean' "
+							+ "argument should be provided too.");
+		} else if (this.mode == Mode.FIXED && this.stdArr == null && this.stdVal == null) {
+			throw new IllegalArgumentException(String.format(DEFAULT_MISSING_ARG_ERR, "std")
+					+ System.lineSeparator() + "If 'mode' parameter equals 'fixed', the 'std' "
+					+ "argument should be provided too.");
+		} else if (this.mode == Mode.FIXED && ((stdVal == null && meanVal != null)
+				|| (stdVal != null && meanVal == null))) {
+			throw new IllegalArgumentException("Both arguments 'mean' and "
+					+ "'std' need to be of the same type. Either a single value or an array.");
+		}
 	}
 
 	@Override

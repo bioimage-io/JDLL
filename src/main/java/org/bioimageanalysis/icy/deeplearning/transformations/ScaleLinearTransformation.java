@@ -63,7 +63,7 @@ public class ScaleLinearTransformation extends AbstractTensorPixelTransformation
 		} else if ((offsetDouble == null && gainDouble != null)
 				|| (offsetDouble != null && gainDouble == null)) {
 			throw new IllegalArgumentException("Both arguments 'gain' and "
-					+ "'offset' need to be of the same type.");
+					+ "'offset' need to be of the same type. Either a single value or an array.");
 		}
 	}
 
