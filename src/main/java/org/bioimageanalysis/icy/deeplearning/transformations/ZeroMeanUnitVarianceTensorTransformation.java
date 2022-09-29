@@ -69,6 +69,9 @@ public class ZeroMeanUnitVarianceTensorTransformation extends AbstractTensorTran
 				|| (stdVal != null && meanVal == null))) {
 			throw new IllegalArgumentException("Both arguments 'mean' and "
 					+ "'std' need to be of the same type. Either a single value or an array.");
+		} else if (this.mode == Mode.FIXED && this.meanArr != null && axes == null) {
+			throw new IllegalArgumentException("If 'mean' and 'std' are provided as arrays "
+					+ "and 'mode' is 'fixed', the corresponding 'axes' argument should be provided too.");
 		}
 	}
 
