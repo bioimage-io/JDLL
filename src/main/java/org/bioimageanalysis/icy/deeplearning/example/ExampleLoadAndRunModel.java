@@ -3,7 +3,6 @@ package org.bioimageanalysis.icy.deeplearning.example;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.bioimageanalysis.icy.deeplearning.Model;
 import org.bioimageanalysis.icy.deeplearning.exceptions.LoadEngineException;
 import org.bioimageanalysis.icy.deeplearning.tensor.Tensor;
 import org.bioimageanalysis.icy.deeplearning.utils.EngineInfo;
@@ -21,7 +20,7 @@ import net.imglib2.type.numeric.real.FloatType;
  *
  */
 public class ExampleLoadAndRunModel {
-	
+	/*
 	public static < T extends RealType< T > & NativeType< T > > void main(String[] args) throws LoadEngineException, Exception {
 		String engine = "torchscript";
 		String engineVersion = "1.7.1";
@@ -33,9 +32,9 @@ public class ExampleLoadAndRunModel {
 		final ImgFactory< FloatType > imgFactory = new CellImgFactory<>( new FloatType(), 5 );
 		 
 		// create an 3d-Img with dimensions 20x30x40 (here cellsize is 5x5x5)Ø
-		final Img< T > img1 = (Img<T>) imgFactory.create( 1, 1, 512, 512);
+		final Img< FloatType > img1 = imgFactory.create( 1, 1, 512, 512);
 
-		Tensor<T> inpTensor = Tensor.build("input0", "bcyx", img1);
+		Tensor<FloatType> inpTensor = Tensor.build("input0", "bcyx", img1);
 		List<Tensor<?>> inputs = new ArrayList<Tensor<?>>();
 		inputs.add(inpTensor);
 		
@@ -58,5 +57,5 @@ public class ExampleLoadAndRunModel {
 		Model model = Model.createDeepLearningModel(modelFolder, modelSource, engineInfo);
 		model.loadModel();
 		return model;
-	}
+	}*/
 }
