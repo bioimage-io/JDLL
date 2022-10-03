@@ -49,26 +49,10 @@ public class ScaleRangeTransformation extends AbstractTensorTransformation
 	public void setMode(Mode mode) {
 		this.mode = mode;
 	}
-	
-	public void checkRequiredArgs() {
-		if (offsetDouble == null && offsetArr == null) {
-			throw new IllegalArgumentException(String.format(DEFAULT_MISSING_ARG_ERR, "offset"));
-		} else if (gainDouble == null && gainArr == null) {
-			throw new IllegalArgumentException(String.format(DEFAULT_MISSING_ARG_ERR, "gain"));
-		} else if ((offsetDouble == null && gainDouble != null)
-				|| (offsetDouble != null && gainDouble == null)) {
-			throw new IllegalArgumentException("Both arguments 'gain' and "
-					+ "'offset' need to be of the same type. Either a single value or an array.");
-		} else if (offsetArr != null && axes == null) {
-			throw new IllegalArgumentException("If 'offset' and 'gain' are provided as arrays, "
-					+ "the corresponding 'axes' argument should be provided too.");
-		}
-	}
 
 	@Override
 	public < R extends RealType< R > & NativeType< R > > Tensor< FloatType > apply( final Tensor< R > input )
 	{
-		checkRequiredArgs();
 		final Tensor< FloatType > output = makeOutput( input );
 		applyInPlace(output);
 		return output;

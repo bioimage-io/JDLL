@@ -82,6 +82,7 @@ public class ScaleLinearTransformation extends AbstractTensorTransformation
 
 	@Override
 	public void applyInPlace(Tensor<FloatType> input) {
+		checkRequiredArgs();
 		String selectedAxes = "";
 		for (String ax : input.getAxesOrderString().split("")) {
 			if (axes != null && !axes.toLowerCase().contains(ax.toLowerCase())
