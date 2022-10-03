@@ -26,41 +26,41 @@ public class ZeroMeanUnitVarianceTensorTransformation extends AbstractTensorTran
 		super( name );
 	}
 	
-	public void getMean(double mean) {
+	public void setMean(double mean) {
 		this.meanVal = mean;
 	}
 	
-	public void getMean(double[] meanArr) {
+	public void setMean(double[] meanArr) {
 		this.meanArr = meanArr;
 	}
 	
-	public void getMean(double[][] meanArr) {
+	public void setMean(double[][] meanArr) {
 		//TODO allow scaling of more complex structures
 		throw new IllegalArgumentException("At the moment, only allowed calculations on planes.");
 	}
 	
-	public void getStd(double std) {
+	public void setStd(double std) {
 		this.stdVal = std;
 	}
 	
-	public void getStd(double[] std) {
+	public void setStd(double[] std) {
 		this.stdArr = std;
 	}
 	
-	public void getStd(double[][] std) {
+	public void setStd(double[][] std) {
 		//TODO allow scaling of more complex structures
 		throw new IllegalArgumentException("At the moment, only allowed calculations on planes.");
 	}
 	
-	public void getAxes(String axes) {
+	public void setAxes(String axes) {
 		this.axes = axes;
 	}
 	
-	public void getMode(String mode) {
+	public void setMode(String mode) {
 		this.mode = Mode.valueOf(mode);
 	}
 	
-	public void getMode(Mode mode) {
+	public void setMode(Mode mode) {
 		this.mode = mode;
 	}
 	
