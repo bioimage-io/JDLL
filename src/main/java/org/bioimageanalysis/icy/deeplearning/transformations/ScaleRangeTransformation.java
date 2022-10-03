@@ -4,6 +4,9 @@ import org.bioimageanalysis.icy.deeplearning.tensor.RaiArrayUtils;
 import org.bioimageanalysis.icy.deeplearning.tensor.Tensor;
 
 import net.imglib2.RandomAccessibleInterval;
+import net.imglib2.img.array.ArrayImg;
+import net.imglib2.img.array.ArrayImgs;
+import net.imglib2.img.basictypeaccess.array.FloatArray;
 import net.imglib2.loops.LoopBuilder;
 import net.imglib2.type.NativeType;
 import net.imglib2.type.numeric.RealType;
@@ -17,11 +20,11 @@ public class ScaleRangeTransformation extends AbstractTensorTransformation
 
 	private static final String name = "scale_range";
 	private double minPercentile = 0;
-	private double maxPercentile = 100;
+	private double maxPercentile = 1;
 	private String axes;
 	private Mode mode = Mode.PER_SAMPLE;
 	private String tensorName;
-	private float eps = 10^-6;
+	private float eps = (float) Math.pow(10, -6);
 	
 	public ScaleRangeTransformation()
 	{
@@ -29,11 +32,11 @@ public class ScaleRangeTransformation extends AbstractTensorTransformation
 	}
 	
 	public void setMinPercentile(double minPercentile) {
-		this.minPercentile = minPercentile;
+		this.minPercentile = minPercentile / 100;
 	}
 	
 	public void setMaxPercentile(double maxPercentile) {
-		this.maxPercentile = maxPercentile;
+		this.maxPercentile = maxPercentile / 100;
 	}
 	
 	public void setAxes(String axes) {
@@ -89,8 +92,10 @@ public class ScaleRangeTransformation extends AbstractTensorTransformation
 	}
 	
 	private float findPercentileValue(RandomAccessibleInterval<FloatType> rai, double percentile) {
-		double percentileVal = Util.percentile(RaiArrayUtils.convertFloatArrIntoDoubleArr(RaiArrayUtils.floatArray(rai)), percentile);
-		return (float) percentileVal;
+		double[] tmpArray = RaiArrayUtils.convertFloatArrIntoDoubleArr(RaiArrayUtils.floatArray(rai));
+		double max = Util.max(tmpArray);
+		double min = Util.min(tmpArray);
+		return (float) ((max - min) * percentile + min);
 	}
 	
 	private void axesScale( final Tensor< FloatType > output, String axesOfInterest) {
@@ -112,7 +117,10 @@ public class ScaleRangeTransformation extends AbstractTensorTransformation
 				start[(int) indOfDims[i]] = pp[i];
 				dims[(int) indOfDims[i]] = pp[i] + 1;
 			}
-			IntervalView<FloatType> plane = Views.interval( output.getData(), start, dims );
+			// Define the view by defining the length per axis
+			long[] end = new long[dims.length];
+			for (int i = 0; i < dims.length; i ++) end[i] = dims[i] - start[i];
+			IntervalView<FloatType> plane = Views.offsetInterval( output.getData(), start, end );
 			float minPercentileVal = findPercentileValue(plane, minPercentile);
 			float maxPercentileVal = findPercentileValue(plane, maxPercentile);
 			LoopBuilder.setImages( plane )
@@ -137,5 +145,37 @@ public class ScaleRangeTransformation extends AbstractTensorTransformation
 			}
 		}
 		return allPoints;
+	}
+	
+	public static void main(String[] args) {
+		test1();
+		test2();
+	}
+	
+	public static void test1() {
+		float[] arr = new float[9];
+		for (int i = 0; i < arr.length; i ++) {
+			arr[i] = i;
+		}
+		 ArrayImg<FloatType, FloatArray> rai = ArrayImgs.floats(arr, new long[] {3, 3});
+		 ScaleRangeTransformation preprocessing = new ScaleRangeTransformation();
+		 Tensor<FloatType> tt = Tensor.build("name", "xy", rai);
+		 preprocessing.applyInPlace(tt);
+		 System.out.print(true);
+	}
+	
+	public static void test2() {
+		float[] arr = new float[18];
+		for (int i = 0; i < arr.length; i ++) {
+			arr[i] = i;
+		}
+		 ArrayImg<FloatType, FloatArray> rai = ArrayImgs.floats(arr, new long[] {3, 3, 2});
+		 ScaleRangeTransformation preprocessing = new ScaleRangeTransformation();
+		 preprocessing.setAxes("xy");
+		 preprocessing.setMaxPercentile(99);
+		 preprocessing.setMinPercentile(1);
+		 Tensor<FloatType> tt = Tensor.build("name", "xyc", rai);
+		 preprocessing.applyInPlace(tt);
+		 System.out.print(true);
 	}
 }
