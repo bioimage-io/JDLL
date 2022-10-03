@@ -1,6 +1,7 @@
 package org.bioimageanalysis.icy.deeplearning.transformations;
 
 import org.bioimageanalysis.icy.deeplearning.tensor.Tensor;
+import org.bioimageanalysis.icy.deeplearning.transformations.TensorTransformation.Mode;
 
 import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.loops.LoopBuilder;
@@ -10,7 +11,7 @@ import net.imglib2.type.numeric.real.FloatType;
 import net.imglib2.view.IntervalView;
 import net.imglib2.view.Views;
 
-public class ScaleLinearTransformation extends AbstractTensorPixelTransformation
+public class ScaleLinearTransformation extends AbstractTensorTransformation
 {
 
 	private static final String name = "scale_linear";
@@ -74,6 +75,13 @@ public class ScaleLinearTransformation extends AbstractTensorPixelTransformation
 	public < R extends RealType< R > & NativeType< R > > Tensor< FloatType > apply( final Tensor< R > input )
 	{
 		checkRequiredArgs();
+		final Tensor< FloatType > output = makeOutput( input );
+		applyInPlace(output);
+		return output;
+	}
+
+	@Override
+	public void applyInPlace(Tensor<FloatType> input) {
 		String selectedAxes = "";
 		for (String ax : input.getAxesOrderString().split("")) {
 			if (axes != null && !axes.toLowerCase().contains(ax.toLowerCase())
@@ -87,103 +95,65 @@ public class ScaleLinearTransformation extends AbstractTensorPixelTransformation
 						+ " compatible with the parameters 'gain' and 'offset'."
 						+ "The parameters gain and offset cannot be arrays with"
 						+ " the given axes parameter provided.");
-			super.setFloatUnitaryOperator( v -> gainDouble.floatValue() * v + offsetDouble.floatValue() );
-			return super.apply(input);
+			globalScale(input);
 		} else if (input.getAxesOrderString().replace("b", "").length() - selectedAxes.length() == 2) {
-			// TODO improve efficiency in this method
-			final Tensor< FloatType > output = makeOutput( input );
-			int[] iterAxes = new int[selectedAxes.length()];
-			for (int i = 0; i < selectedAxes.length(); i ++)
-				iterAxes[i] = input.getAxesOrderString().indexOf(selectedAxes.split("")[i]);
-			long[] start = new long[output.getData().numDimensions()];
-			long[] end = output.getData().dimensionsAsLongArray();
-			if (iterAxes.length == 1) {
-				for (int i = 0; i < input.getData().dimension(iterAxes[0]); i ++) {
-					start[iterAxes[0]] = i; end[iterAxes[0]] = i + 1;
-					IntervalView<FloatType> plane = Views.interval( output.getData(), start, end );
-					gainDouble = gainArr[i]; offsetDouble = offsetArr[i];
-					applyInPlaceToRaiWithFun(plane, (v -> gainDouble.floatValue() * v + offsetDouble.floatValue()));
-				}
-			} else if (iterAxes.length == 2) {
-				for (int i = 0; i < input.getData().dimension(iterAxes[0]); i ++) {
-					for (int j = 0; j < input.getData().dimension(iterAxes[1]); j ++) {
-						start[iterAxes[0]] = i; end[iterAxes[0]] = i + 1;
-						start[iterAxes[1]] = j; end[iterAxes[1]] = j + 1;
-						IntervalView<FloatType> plane = Views.interval( output.getData(), start, end );
-						gainDouble = gainArr[(int) (i * input.getData().dimension(iterAxes[1]) + j)]; offsetDouble = offsetArr[j];
-						applyInPlaceToRaiWithFun(plane, (v -> gainDouble.floatValue() * v + offsetDouble.floatValue()));
-					}
-				}
-			} else {
-				//TODO allow scaling of more complex structures
-				throw new IllegalArgumentException("At the moment, only allowed scaling of planes in"
-						+ " tensors with at most 5 dimensions (including batch dimension).");
-			}
-			return output;
+			axesScale(input, selectedAxes);
 		} else {
 			//TODO allow scaling of more complex structures
 			throw new IllegalArgumentException("At the moment, only allowed scaling of planes.");
 		}
+		
 	}
-
-	public void applyInPlace( final Tensor< FloatType > input )
-	{
-		checkRequiredArgs();
-		String selectedAxes = "";
-		for (String ax : input.getAxesOrderString().split("")) {
-			if (axes != null && !axes.toLowerCase().contains(ax.toLowerCase())
-					&& !ax.toLowerCase().equals("b"))
-				selectedAxes += ax;
-		}
-		if (axes == null || selectedAxes.equals("") 
-				|| input.getAxesOrderString().replace("b", "").length() - selectedAxes.length() == 1) {
-			if (gainDouble == null)
-				throw new IllegalArgumentException("The 'axes' parameter is not"
-						+ " compatible with the parameters 'gain' and 'offset'."
-						+ "The parameters gain and offset cannot be arrays with"
-						+ " the given axes parameter provided.");
-			super.setFloatUnitaryOperator( v -> gainDouble.floatValue() * v + offsetDouble.floatValue() );
-			super.applyInPlace(input);
-		} else if (input.getAxesOrderString().replace("b", "").length() - selectedAxes.length() == 2) {
-			int[] iterAxes = new int[selectedAxes.length()];
-			for (int i = 0; i < selectedAxes.length(); i ++)
-				iterAxes[i] = input.getAxesOrderString().indexOf(selectedAxes.split("")[i]);
-			long[] start = new long[input.getData().numDimensions()];
-			long[] end = input.getData().dimensionsAsLongArray();
-			if (iterAxes.length == 1) {
-				for (int i = 0; i < input.getData().dimension(iterAxes[0]); i ++) {
-					start[iterAxes[0]] = i; end[iterAxes[0]] = i + 1;
-					IntervalView<FloatType> plane = Views.interval( input.getData(), start, end );
-					gainDouble = gainArr[i]; offsetDouble = offsetArr[i];
-					applyInPlaceToRaiWithFun(plane, (v -> gainDouble.floatValue() * v + offsetDouble.floatValue()));
-				}
-			} else if (iterAxes.length == 2) {
-				for (int i = 0; i < input.getData().dimension(iterAxes[0]); i ++) {
-					for (int j = 0; j < input.getData().dimension(iterAxes[1]); j ++) {
-						start[iterAxes[0]] = i; end[iterAxes[0]] = i + 1;
-						start[iterAxes[1]] = j; end[iterAxes[1]] = j + 1;
-						IntervalView<FloatType> plane = Views.interval( input.getData(), start, end );
-						gainDouble = gainArr[(int) (i * input.getData().dimension(iterAxes[1]) + j)]; offsetDouble = offsetArr[j];
-						applyInPlaceToRaiWithFun(plane, (v -> gainDouble.floatValue() * v + offsetDouble.floatValue()));
-					}
-				}
-			} else {
-				//TODO allow scaling of more complex structures
-				throw new IllegalArgumentException("At the moment, only allowed scaling of planes in"
-						+ " tensors with at most 5 dimensions (including batch dimension).");
-			}
-		} else {
-			//TODO allow scaling of more complex structures
-			throw new IllegalArgumentException("At the moment, only allowed scaling of planes.");
-		}
-	}
-
-	public void applyInPlaceToRaiWithFun( final RandomAccessibleInterval< FloatType > input, 
-											FloatUnaryOperator fun )
-	{
-		LoopBuilder
-				.setImages( input )
+	
+	private void globalScale( final Tensor< FloatType > output ) {
+		LoopBuilder.setImages( output.getData() )
 				.multiThreaded()
-				.forEachPixel( i -> i.set( fun.applyAsFloat( i.get() ) ) );
+				.forEachPixel( i -> i.set( gainDouble.floatValue() * i.get() + offsetDouble.floatValue() ) );
+	}
+	
+	private void axesScale( final Tensor< FloatType > output, String axesOfInterest) {
+		long[] start = new long[output.getData().numDimensions()];
+		long[] dims = output.getData().dimensionsAsLongArray();
+		long[] indOfDims = new long[axesOfInterest.length()];
+		long[] sizeOfDims = new long[axesOfInterest.length()];
+		for (int i = 0; i < indOfDims.length; i ++) {
+			indOfDims[i] = output.getAxesOrderString().indexOf(axesOfInterest.split("")[i]);
+		}
+		for (int i = 0; i < sizeOfDims.length; i ++) {
+			sizeOfDims[i] = dims[(int) indOfDims[i]];
+		}
+		
+		long[][] points = getAllCombinations(sizeOfDims);
+		int c = 0;
+		for (long[] pp : points) {
+			for (int i = 0; i < pp.length; i ++) {
+				start[(int) indOfDims[i]] = pp[i];
+				dims[(int) indOfDims[i]] = pp[i] + 1;
+			}
+			IntervalView<FloatType> plane = Views.interval( output.getData(), start, dims );
+			final float gain = (float) this.gainArr[c];
+			final float offset = (float) this.offsetArr[c ++ ];
+			LoopBuilder.setImages( plane )
+					.multiThreaded()
+					.forEachPixel( i -> i.set( i.get() * gain + offset ) );
+		}
+	}
+	
+	private static long[][] getAllCombinations(long[] arr){
+		long n = 1;
+		for (long nn : arr) n *= nn;
+		long[][] allPoints = new long[(int) n][arr.length];
+		for (int i = 0; i < n; i ++) {
+			for (int j = 0; j < arr.length; j ++) {
+				int factor = 1;
+				for (int k = 0; k < j; k ++) {
+					factor *= arr[k];
+				}
+				int auxVal = i / factor;
+				int val = auxVal % ((int) arr[j]);
+				allPoints[i][j] = val;
+			}
+		}
+		return allPoints;
 	}
 }
