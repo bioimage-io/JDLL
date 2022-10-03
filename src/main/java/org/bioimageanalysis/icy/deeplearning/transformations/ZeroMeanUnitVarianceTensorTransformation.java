@@ -88,6 +88,14 @@ public class ZeroMeanUnitVarianceTensorTransformation extends AbstractTensorTran
 	{
 		checkRequiredArgs();
 		final Tensor< FloatType > output = makeOutput( input );
+		applyInPlace(output);
+		return output;
+	}
+
+	@Override
+	public void applyInPlace( final Tensor< FloatType > input )
+	{
+		checkRequiredArgs();
 		String selectedAxes = "";
 		for (String ax : input.getAxesOrderString().split("")) {
 			if (axes != null && !axes.toLowerCase().contains(ax.toLowerCase())
@@ -100,24 +108,20 @@ public class ZeroMeanUnitVarianceTensorTransformation extends AbstractTensorTran
 				throw new IllegalArgumentException("The 'axes' parameter is not"
 						+ " compatible with the parameters 'mean' and 'std' if 'mode' is 'fixed'."
 						+ "The parameters 'mean' and 'std' cannot be arrays with the introduced 'axes'.");
-			fixedModeGlobalMeanStd(output);
-			return output;
+			fixedModeGlobalMeanStd(input);
 		} else if (mode != Mode.FIXED && (axes == null || selectedAxes.equals("") 
 				|| input.getAxesOrderString().replace("b", "").length() - selectedAxes.length() == 1)) {
 			if (meanVal == null)
 				throw new IllegalArgumentException("The 'axes' parameter is not"
 						+ " compatible with the parameters 'mean' and 'std' if 'mode' is 'fixed'."
 						+ "The parameters 'mean' and 'std' cannot be arrays with the introduced 'axes'.");
-			notFixedModeGlobalMeanStd(output);
-			return output;
+			notFixedModeGlobalMeanStd(input);
 		} else if (mode != Mode.FIXED 
 				&& input.getAxesOrderString().replace("b", "").length() - selectedAxes.length() == 2) {
-			notFixedAxesMeanStd(output, selectedAxes);
-			return output;
+			notFixedAxesMeanStd(input, selectedAxes);
 		} else if (mode == Mode.FIXED 
 				&& input.getAxesOrderString().replace("b", "").length() - selectedAxes.length() == 2) {
-			fixedAxesMeanStd(output, selectedAxes);
-			return output;
+			fixedAxesMeanStd(input, selectedAxes);
 		} else {
 			//TODO allow scaling of more complex structures
 			throw new IllegalArgumentException("At the moment, only allowed scaling of planes.");
@@ -194,18 +198,6 @@ public class ZeroMeanUnitVarianceTensorTransformation extends AbstractTensorTran
 		final float mean = meanStd[ 0 ];
 		final float std = meanStd[ 1 ];
 		LoopBuilder.setImages( output.getData() )
-				.multiThreaded()
-				.forEachPixel( i -> i.set( ( i.get() - mean ) / std ) );
-	}
-
-	@Override
-	public void applyInPlace( final Tensor< FloatType > input )
-	{
-		final float[] meanStd = meanStd( input.getData() );
-		final float mean = meanStd[ 0 ];
-		final float std = meanStd[ 1 ];
-
-		LoopBuilder.setImages( input.getData() )
 				.multiThreaded()
 				.forEachPixel( i -> i.set( ( i.get() - mean ) / std ) );
 	}
