@@ -1,9 +1,7 @@
 package org.bioimageanalysis.icy.deeplearning.transformations;
 
 import org.bioimageanalysis.icy.deeplearning.tensor.Tensor;
-import org.bioimageanalysis.icy.deeplearning.transformations.TensorTransformation.Mode;
 
-import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.loops.LoopBuilder;
 import net.imglib2.type.NativeType;
 import net.imglib2.type.numeric.RealType;
@@ -131,7 +129,10 @@ public class ScaleLinearTransformation extends AbstractTensorTransformation
 				start[(int) indOfDims[i]] = pp[i];
 				dims[(int) indOfDims[i]] = pp[i] + 1;
 			}
-			IntervalView<FloatType> plane = Views.interval( output.getData(), start, dims );
+			// Define the view by defining the length per axis
+			long[] end = new long[dims.length];
+			for (int i = 0; i < dims.length; i ++) end[i] = dims[i] - start[i];
+			IntervalView<FloatType> plane = Views.offsetInterval( output.getData(), start, end );
 			final float gain = (float) this.gainArr[c];
 			final float offset = (float) this.offsetArr[c ++ ];
 			LoopBuilder.setImages( plane )

@@ -154,7 +154,10 @@ public class ZeroMeanUnitVarianceTensorTransformation extends AbstractTensorTran
 				start[(int) indOfDims[i]] = pp[i];
 				dims[(int) indOfDims[i]] = pp[i] + 1;
 			}
-			IntervalView<FloatType> plane = Views.interval( output.getData(), start, dims );
+			// Define the view by defining the length per axis
+			long[] end = new long[dims.length];
+			for (int i = 0; i < dims.length; i ++) end[i] = dims[i] - start[i];
+			IntervalView<FloatType> plane = Views.offsetInterval( output.getData(), start, end );
 			final float[] meanStd = meanStd( plane );
 			final float mean = meanStd[ 0 ];
 			final float std = meanStd[ 1 ];
@@ -183,7 +186,10 @@ public class ZeroMeanUnitVarianceTensorTransformation extends AbstractTensorTran
 				start[(int) indOfDims[i]] = pp[i];
 				dims[(int) indOfDims[i]] = pp[i] + 1;
 			}
-			IntervalView<FloatType> plane = Views.interval( output.getData(), start, dims );
+			// Define the view by defining the length per axis
+			long[] end = new long[dims.length];
+			for (int i = 0; i < dims.length; i ++) end[i] = dims[i] - start[i];
+			IntervalView<FloatType> plane = Views.offsetInterval( output.getData(), start, end );
 			final float mean = (float) this.meanArr[c];
 			final float std = (float) this.stdArr[c ++ ];
 			LoopBuilder.setImages( plane )
