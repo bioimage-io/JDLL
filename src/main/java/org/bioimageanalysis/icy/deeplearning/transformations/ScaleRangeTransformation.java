@@ -1,13 +1,14 @@
 package org.bioimageanalysis.icy.deeplearning.transformations;
 
+import org.bioimageanalysis.icy.deeplearning.tensor.RaiArrayUtils;
 import org.bioimageanalysis.icy.deeplearning.tensor.Tensor;
-import org.bioimageanalysis.icy.deeplearning.transformations.TensorTransformation.Mode;
 
 import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.loops.LoopBuilder;
 import net.imglib2.type.NativeType;
 import net.imglib2.type.numeric.RealType;
 import net.imglib2.type.numeric.real.FloatType;
+import net.imglib2.util.Util;
 import net.imglib2.view.IntervalView;
 import net.imglib2.view.Views;
 
@@ -20,6 +21,7 @@ public class ScaleRangeTransformation extends AbstractTensorTransformation
 	private String axes;
 	private Mode mode = Mode.PER_SAMPLE;
 	private String tensorName;
+	private float eps = 10^-6;
 	
 	public ScaleRangeTransformation()
 	{
@@ -68,11 +70,6 @@ public class ScaleRangeTransformation extends AbstractTensorTransformation
 		}
 		if (axes == null || selectedAxes.equals("") 
 				|| input.getAxesOrderString().replace("b", "").length() - selectedAxes.length() == 1) {
-			if (gainDouble == null)
-				throw new IllegalArgumentException("The 'axes' parameter is not"
-						+ " compatible with the parameters 'gain' and 'offset'."
-						+ "The parameters gain and offset cannot be arrays with"
-						+ " the given axes parameter provided.");
 			globalScale(input);
 		} else if (input.getAxesOrderString().replace("b", "").length() - selectedAxes.length() == 2) {
 			axesScale(input, selectedAxes);
@@ -84,9 +81,16 @@ public class ScaleRangeTransformation extends AbstractTensorTransformation
 	}
 	
 	private void globalScale( final Tensor< FloatType > output ) {
+		float minPercentileVal = findPercentileValue(output.getData(), minPercentile);
+		float maxPercentileVal = findPercentileValue(output.getData(), maxPercentile);
 		LoopBuilder.setImages( output.getData() )
 				.multiThreaded()
-				.forEachPixel( i -> i.set( gainDouble.floatValue() * i.get() + offsetDouble.floatValue() ) );
+				.forEachPixel( i -> i.set( ( i.get() - minPercentileVal ) / ( maxPercentileVal - minPercentileVal + eps ) ) );
+	}
+	
+	private float findPercentileValue(RandomAccessibleInterval<FloatType> rai, double percentile) {
+		double percentileVal = Util.percentile(RaiArrayUtils.convertFloatArrIntoDoubleArr(RaiArrayUtils.floatArray(rai)), percentile);
+		return (float) percentileVal;
 	}
 	
 	private void axesScale( final Tensor< FloatType > output, String axesOfInterest) {
@@ -109,11 +113,11 @@ public class ScaleRangeTransformation extends AbstractTensorTransformation
 				dims[(int) indOfDims[i]] = pp[i] + 1;
 			}
 			IntervalView<FloatType> plane = Views.interval( output.getData(), start, dims );
-			final float gain = (float) this.gainArr[c];
-			final float offset = (float) this.offsetArr[c ++ ];
+			float minPercentileVal = findPercentileValue(plane, minPercentile);
+			float maxPercentileVal = findPercentileValue(plane, maxPercentile);
 			LoopBuilder.setImages( plane )
 					.multiThreaded()
-					.forEachPixel( i -> i.set( i.get() * gain + offset ) );
+					.forEachPixel( i -> i.set( ( i.get() - minPercentileVal ) / ( maxPercentileVal - minPercentileVal  + eps) ) );
 		}
 	}
 	
