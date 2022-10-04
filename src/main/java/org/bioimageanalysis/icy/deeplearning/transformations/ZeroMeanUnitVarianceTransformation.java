@@ -60,7 +60,7 @@ public class ZeroMeanUnitVarianceTransformation extends AbstractTensorTransforma
 	}
 	
 	public void setMode(String mode) {
-		this.mode = Mode.valueOf(mode.toLowerCase());
+		this.mode = Mode.valueOf(mode.toUpperCase());
 	}
 	
 	public void setMode(Mode mode) {
@@ -267,11 +267,14 @@ public class ZeroMeanUnitVarianceTransformation extends AbstractTensorTransforma
 		for (int i = 0; i < arr.length; i ++) {
 			arr[i] = i;
 		}
-		 ArrayImg<FloatType, FloatArray> rai = ArrayImgs.floats(arr, new long[] {3, 3});
-		 ZeroMeanUnitVarianceTransformation preprocessing = new ZeroMeanUnitVarianceTransformation();
-		 Tensor<FloatType> tt = Tensor.build("name", "xy", rai);
-		 preprocessing.applyInPlace(tt);
-		 System.out.print(true);
+		ZeroMeanUnitVarianceTransformation preprocessing = new ZeroMeanUnitVarianceTransformation();
+		preprocessing.setMean(4);
+		preprocessing.setStd(4);
+		preprocessing.setMode("fixed");
+		ArrayImg<FloatType, FloatArray> rai = ArrayImgs.floats(arr, new long[] {3, 3});
+		Tensor<FloatType> tt = Tensor.build("name", "xy", rai);
+		preprocessing.applyInPlace(tt);
+		System.out.print(true);
 	}
 	
 	public static void test2() {
@@ -279,12 +282,12 @@ public class ZeroMeanUnitVarianceTransformation extends AbstractTensorTransforma
 		for (int i = 0; i < arr.length; i ++) {
 			arr[i] = i;
 		}
-		 ArrayImg<FloatType, FloatArray> rai = ArrayImgs.floats(arr, new long[] {3, 3, 2});
-		 ZeroMeanUnitVarianceTransformation preprocessing = new ZeroMeanUnitVarianceTransformation();
-		 preprocessing.setAxes("xy");
-		 preprocessing.setMode("per_sample");
-		 Tensor<FloatType> tt = Tensor.build("name", "xyc", rai);
-		 preprocessing.applyInPlace(tt);
-		 System.out.print(true);
+		ArrayImg<FloatType, FloatArray> rai = ArrayImgs.floats(arr, new long[] {3, 3, 2});
+		ZeroMeanUnitVarianceTransformation preprocessing = new ZeroMeanUnitVarianceTransformation();
+		preprocessing.setAxes("xy");
+		preprocessing.setMode("per_sample");
+		Tensor<FloatType> tt = Tensor.build("name", "xyc", rai);
+		preprocessing.applyInPlace(tt);
+		System.out.print(true);
 	}
 }
