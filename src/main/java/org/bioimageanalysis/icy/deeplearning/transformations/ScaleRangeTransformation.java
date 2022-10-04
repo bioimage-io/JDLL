@@ -48,7 +48,7 @@ public class ScaleRangeTransformation extends AbstractTensorTransformation
 	}
 	
 	public void setMode(String mode) {
-		this.mode = Mode.valueOf(mode);
+		this.mode = Mode.valueOf(mode.toLowerCase());
 	}
 	
 	public void setMode(Mode mode) {

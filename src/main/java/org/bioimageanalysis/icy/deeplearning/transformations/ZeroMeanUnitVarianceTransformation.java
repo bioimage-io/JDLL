@@ -60,7 +60,7 @@ public class ZeroMeanUnitVarianceTransformation extends AbstractTensorTransforma
 	}
 	
 	public void setMode(String mode) {
-		this.mode = Mode.valueOf(mode);
+		this.mode = Mode.valueOf(mode.toLowerCase());
 	}
 	
 	public void setMode(Mode mode) {
@@ -282,8 +282,7 @@ public class ZeroMeanUnitVarianceTransformation extends AbstractTensorTransforma
 		 ArrayImg<FloatType, FloatArray> rai = ArrayImgs.floats(arr, new long[] {3, 3, 2});
 		 ZeroMeanUnitVarianceTransformation preprocessing = new ZeroMeanUnitVarianceTransformation();
 		 preprocessing.setAxes("xy");
-		 preprocessing.setMaxPercentile(99);
-		 preprocessing.setMinPercentile(1);
+		 preprocessing.setMode("per_sample");
 		 Tensor<FloatType> tt = Tensor.build("name", "xyc", rai);
 		 preprocessing.applyInPlace(tt);
 		 System.out.print(true);
