@@ -88,14 +88,14 @@ public class ScaleLinearTransformation extends AbstractTensorTransformation
 				selectedAxes += ax;
 		}
 		if (axes == null || selectedAxes.equals("") 
-				|| input.getAxesOrderString().replace("b", "").length() - selectedAxes.length() == 1) {
+				|| input.getAxesOrderString().replace("b", "").length() == selectedAxes.length()) {
 			if (gainDouble == null)
 				throw new IllegalArgumentException("The 'axes' parameter is not"
 						+ " compatible with the parameters 'gain' and 'offset'."
 						+ "The parameters gain and offset cannot be arrays with"
 						+ " the given axes parameter provided.");
 			globalScale(input);
-		} else if (input.getAxesOrderString().replace("b", "").length() - selectedAxes.length() == 2) {
+		} else if (axes.length() <= 2 && axes.length() > 0) {
 			axesScale(input, selectedAxes);
 		} else {
 			//TODO allow scaling of more complex structures

@@ -106,24 +106,24 @@ public class ZeroMeanUnitVarianceTransformation extends AbstractTensorTransforma
 				selectedAxes += ax;
 		}
 		if (mode == Mode.FIXED &&  (axes == null || selectedAxes.equals("") 
-				|| input.getAxesOrderString().replace("b", "").length() - selectedAxes.length() == 1)) {
+				|| input.getAxesOrderString().replace("b", "").length() == selectedAxes.length())) {
 			if (meanVal == null)
 				throw new IllegalArgumentException("The 'axes' parameter is not"
 						+ " compatible with the parameters 'mean' and 'std' if 'mode' is 'fixed'."
 						+ "The parameters 'mean' and 'std' cannot be arrays with the introduced 'axes'.");
 			fixedModeGlobalMeanStd(input);
 		} else if (mode != Mode.FIXED && (axes == null || selectedAxes.equals("") 
-				|| input.getAxesOrderString().replace("b", "").length() - selectedAxes.length() == 1)) {
+				|| input.getAxesOrderString().replace("b", "").length() == selectedAxes.length())) {
 			if (meanVal == null)
 				throw new IllegalArgumentException("The 'axes' parameter is not"
 						+ " compatible with the parameters 'mean' and 'std' if 'mode' is 'fixed'."
 						+ "The parameters 'mean' and 'std' cannot be arrays with the introduced 'axes'.");
 			notFixedModeGlobalMeanStd(input);
 		} else if (mode != Mode.FIXED 
-				&& input.getAxesOrderString().replace("b", "").length() - selectedAxes.length() == 2) {
+				&& axes.length() <= 2 && axes.length() > 0) {
 			notFixedAxesMeanStd(input, selectedAxes);
 		} else if (mode == Mode.FIXED 
-				&& input.getAxesOrderString().replace("b", "").length() - selectedAxes.length() == 2) {
+				&& axes.length() <= 2 && axes.length() > 0) {
 			fixedAxesMeanStd(input, selectedAxes);
 		} else {
 			//TODO allow scaling of more complex structures
@@ -258,8 +258,9 @@ public class ZeroMeanUnitVarianceTransformation extends AbstractTensorTransforma
 	}
 	
 	public static void main(String[] args) {
-		//test1();
+		test1();
 		test2();
+		test3();
 	}
 	
 	public static void test1() {
@@ -287,6 +288,22 @@ public class ZeroMeanUnitVarianceTransformation extends AbstractTensorTransforma
 		preprocessing.setAxes("xy");
 		preprocessing.setMode("per_sample");
 		Tensor<FloatType> tt = Tensor.build("name", "xyc", rai);
+		preprocessing.applyInPlace(tt);
+		System.out.print(true);
+	}
+	
+	public static void test3() {
+		float[] arr = new float[9];
+		for (int i = 0; i < arr.length; i ++) {
+			arr[i] = i;
+		}
+		ArrayImg<FloatType, FloatArray> rai = ArrayImgs.floats(arr, new long[] {1, 1, 3, 3});
+		ZeroMeanUnitVarianceTransformation preprocessing = new ZeroMeanUnitVarianceTransformation();
+		preprocessing.setAxes("y");
+		preprocessing.setMode("fixed");
+		preprocessing.setMean(new double[] {1, 4, 7});
+		preprocessing.setStd(new double[] {0.81650, 0.81650, 0.81650});
+		Tensor<FloatType> tt = Tensor.build("name", "bcyx", rai);
 		preprocessing.applyInPlace(tt);
 		System.out.print(true);
 	}
