@@ -3,6 +3,9 @@ package org.bioimageanalysis.icy.deeplearning.transformations;
 import org.bioimageanalysis.icy.deeplearning.tensor.Tensor;
 
 import net.imglib2.RandomAccessibleInterval;
+import net.imglib2.img.array.ArrayImg;
+import net.imglib2.img.array.ArrayImgs;
+import net.imglib2.img.basictypeaccess.array.FloatArray;
 import net.imglib2.loops.LoopBuilder;
 import net.imglib2.type.NativeType;
 import net.imglib2.type.numeric.RealType;
@@ -10,7 +13,7 @@ import net.imglib2.type.numeric.real.FloatType;
 import net.imglib2.view.IntervalView;
 import net.imglib2.view.Views;
 
-public class ZeroMeanUnitVarianceTensorTransformation extends AbstractTensorTransformation
+public class ZeroMeanUnitVarianceTransformation extends AbstractTensorTransformation
 {
 	
 	private static String name = "zero_mean_unit_variace";
@@ -21,7 +24,7 @@ public class ZeroMeanUnitVarianceTensorTransformation extends AbstractTensorTran
 	private Mode mode = Mode.PER_SAMPLE;
 	private String axes;
 
-	public ZeroMeanUnitVarianceTensorTransformation()
+	public ZeroMeanUnitVarianceTransformation()
 	{
 		super( name );
 	}
@@ -255,6 +258,34 @@ public class ZeroMeanUnitVarianceTensorTransformation extends AbstractTensorTran
 	}
 	
 	public static void main(String[] args) {
-		getAllCombinations(new long[] {6,1,4});
+		//test1();
+		test2();
+	}
+	
+	public static void test1() {
+		float[] arr = new float[9];
+		for (int i = 0; i < arr.length; i ++) {
+			arr[i] = i;
+		}
+		 ArrayImg<FloatType, FloatArray> rai = ArrayImgs.floats(arr, new long[] {3, 3});
+		 ZeroMeanUnitVarianceTransformation preprocessing = new ZeroMeanUnitVarianceTransformation();
+		 Tensor<FloatType> tt = Tensor.build("name", "xy", rai);
+		 preprocessing.applyInPlace(tt);
+		 System.out.print(true);
+	}
+	
+	public static void test2() {
+		float[] arr = new float[18];
+		for (int i = 0; i < arr.length; i ++) {
+			arr[i] = i;
+		}
+		 ArrayImg<FloatType, FloatArray> rai = ArrayImgs.floats(arr, new long[] {3, 3, 2});
+		 ZeroMeanUnitVarianceTransformation preprocessing = new ZeroMeanUnitVarianceTransformation();
+		 preprocessing.setAxes("xy");
+		 preprocessing.setMaxPercentile(99);
+		 preprocessing.setMinPercentile(1);
+		 Tensor<FloatType> tt = Tensor.build("name", "xyc", rai);
+		 preprocessing.applyInPlace(tt);
+		 System.out.print(true);
 	}
 }
