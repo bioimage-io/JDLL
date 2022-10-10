@@ -26,10 +26,13 @@ public class InstalledDeepLearningVersions {
 	 * Object used to find installed DL frameworks in the software
 	 * @param path
 	 * 	path to the folder where all the framewoks are installed
+	 * @throws IOException 
 	 */
-	private InstalledDeepLearningVersions(Path path) {
-		if (!path.toFile().isDirectory())
-			throw new IllegalArgumentException("");
+	private InstalledDeepLearningVersions(Path path) throws IOException {
+		boolean success;
+		if (!path.toFile().isDirectory() && !path.toFile().mkdirs())
+			throw new IOException("Unable to find or create Deep Learning engines "
+					+ "directory: " + path.toString());
 		this.path = path;
 	}
 	
@@ -37,8 +40,9 @@ public class InstalledDeepLearningVersions {
 	 * Constructor that will try to find the DL engines in the folder called {@link #ENGINES_FOLDER_NAME} 
 	 * ("engines") inside the software directory
 	 * @return an object to find the installed DL frameworks in the software
+	 * @throws IOException 
 	 */
-	public static InstalledDeepLearningVersions buildEnginesFinder() {
+	public static InstalledDeepLearningVersions buildEnginesFinder() throws IOException {
 		return new InstalledDeepLearningVersions(Paths.get(ENGINES_FOLDER_NAME).toAbsolutePath());
 	}
 	
@@ -47,8 +51,9 @@ public class InstalledDeepLearningVersions {
 	 * @param enginesDirectory
 	 * 	path to the folder where the installed engines should be
 	 * @return an object to find the installed DL frameworks in the software
+	 * @throws IOException 
 	 */
-	public static InstalledDeepLearningVersions buildEnginesFinder(String enginesDirectory) {
+	public static InstalledDeepLearningVersions buildEnginesFinder(String enginesDirectory) throws IOException {
 		return new InstalledDeepLearningVersions(Paths.get(enginesDirectory));
 	}
     
