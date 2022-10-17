@@ -226,7 +226,6 @@ public class ZeroMeanUnitVarianceTransformation extends AbstractTensorTransforma
 	public static float[] meanStd( final RandomAccessibleInterval< FloatType > rai )
 	{
 		// Mean.
-		double aa = Util.average(Util.asDoubleArray(rai));
 		double sum = 0.;
 		long n = 0;
 		for ( final FloatType p : Views.iterable( rai ) )
