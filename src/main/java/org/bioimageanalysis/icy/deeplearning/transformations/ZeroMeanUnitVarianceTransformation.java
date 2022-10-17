@@ -24,6 +24,11 @@ public class ZeroMeanUnitVarianceTransformation extends AbstractTensorTransforma
 	private Mode mode = Mode.PER_SAMPLE;
 	private String axes;
 
+	private static String FIXED_MODE_ERR = "If the mode is 'fixed', the parameters 'mean' and"
+			+ " 'std need to be specified";
+	private static String NOT_FIXED_MODE_ERR = "Only the mode 'fixed' requires providing the "
+			+ "'std' and 'mean parameters.";
+
 	public ZeroMeanUnitVarianceTransformation()
 	{
 		super( name );
@@ -107,23 +112,29 @@ public class ZeroMeanUnitVarianceTransformation extends AbstractTensorTransforma
 		}
 		if (mode == Mode.FIXED &&  (axes == null || selectedAxes.equals("") 
 				|| input.getAxesOrderString().replace("b", "").length() == selectedAxes.length())) {
-			if (meanVal == null)
-				throw new IllegalArgumentException("The 'axes' parameter is not"
-						+ " compatible with the parameters 'mean' and 'std' if 'mode' is 'fixed'."
-						+ "The parameters 'mean' and 'std' cannot be arrays with the introduced 'axes'.");
+			if (meanVal == null && meanArr == null)
+				throw new IllegalArgumentException(FIXED_MODE_ERR);
+			else if (meanVal == null)
+				throw new IllegalArgumentException("The parameters 'mean' and 'std' "
+						+ "cannot be arrays with the introduced 'axes'.");
 			fixedModeGlobalMeanStd(input);
 		} else if (mode != Mode.FIXED && (axes == null || selectedAxes.equals("") 
 				|| input.getAxesOrderString().replace("b", "").length() == selectedAxes.length())) {
-			if (meanVal == null)
-				throw new IllegalArgumentException("The 'axes' parameter is not"
-						+ " compatible with the parameters 'mean' and 'std' if 'mode' is 'fixed'."
-						+ "The parameters 'mean' and 'std' cannot be arrays with the introduced 'axes'.");
+			if (meanVal != null || meanArr != null)
+				throw new IllegalArgumentException(NOT_FIXED_MODE_ERR);
 			notFixedModeGlobalMeanStd(input);
 		} else if (mode != Mode.FIXED 
 				&& axes.length() <= 2 && axes.length() > 0) {
+			if (meanVal != null || meanArr != null)
+				throw new IllegalArgumentException(NOT_FIXED_MODE_ERR);
 			notFixedAxesMeanStd(input, selectedAxes);
 		} else if (mode == Mode.FIXED 
 				&& axes.length() <= 2 && axes.length() > 0) {
+			if (meanVal == null && meanArr == null)
+				throw new IllegalArgumentException(FIXED_MODE_ERR);
+			else if (meanVal != null)
+				throw new IllegalArgumentException("The parameters 'mean' and ' std' "
+						+ "have to be arrays with the introduced 'axes'.");
 			fixedAxesMeanStd(input, selectedAxes);
 		} else {
 			//TODO allow scaling of more complex structures
