@@ -31,28 +31,58 @@ public class ScaleRangeTransformation extends AbstractTensorTransformation
 		super( name );
 	}
 	
-	public void setMinPercentile(double minPercentile) {
-		this.minPercentile = minPercentile / 100;
+	public void setMinPercentile(Object minPercentile) {
+		if (minPercentile instanceof Integer) {
+			this.minPercentile = Double.valueOf((int) minPercentile) / 100;
+		} else if (minPercentile instanceof Double) {
+			this.minPercentile = ((double) minPercentile) / 100;
+		} else if (minPercentile instanceof String) {
+			this.minPercentile = Double.valueOf((String) minPercentile) / 100;
+		} else {
+			throw new IllegalArgumentException("'minPercentile' parameter has to be either and instance of "
+					+ Integer.class + " or " + Double.class
+					+ ". The provided argument is an instance of: " + minPercentile.getClass());
+		}
 	}
 	
-	public void setMaxPercentile(double maxPercentile) {
-		this.maxPercentile = maxPercentile / 100;
+	public void setMaxPercentile(Object maxPercentile) {
+		if (maxPercentile instanceof Integer) {
+			this.maxPercentile = Double.valueOf((int) maxPercentile) / 100;
+		} else if (maxPercentile instanceof Double) {
+			this.maxPercentile = ((double) maxPercentile) / 100;
+		} else if (maxPercentile instanceof String) {
+			this.maxPercentile = Double.valueOf((String) maxPercentile) / 100;
+		} else {
+			throw new IllegalArgumentException("'maxPercentile' parameter has to be either and instance of "
+					+ Integer.class + " or " + Double.class
+					+ ". The provided argument is an instance of: " + maxPercentile.getClass());
+		}
 	}
 	
-	public void setAxes(String axes) {
-		this.axes = axes;
+	public void setAxes(Object axes) {
+		if (axes instanceof String )
+			this.axes = (String) axes;
+		else
+			throw new IllegalArgumentException("'axes' parameter has to be an instance of " + String.class
+					 + ". The provided argument is " + axes.getClass());
 	}
 	
-	public void setTensorName(String tensorName) {
-		this.tensorName = tensorName;
+	public void setTensorName(Object tensorName) {
+		if (tensorName instanceof String )
+			this.tensorName = (String) tensorName;
+		else
+			throw new IllegalArgumentException("'tensorName' parameter has to be an instance of " + String.class
+					 + ". The provided argument is " + tensorName.getClass());
 	}
 	
-	public void setMode(String mode) {
-		this.mode = Mode.valueOf(mode.toUpperCase());
-	}
-	
-	public void setMode(Mode mode) {
-		this.mode = mode;
+	public void setMode(Object mode) {
+		if (mode instanceof String )
+			this.mode = Mode.valueOf(((String) mode).toUpperCase());
+		else if (mode instanceof Mode)
+			this.mode = (Mode) mode;
+		else
+			throw new IllegalArgumentException("'mode' parameter has to be either and instance of " + String.class
+					+ " or " + Mode.class + ". The provided argument is an instance of: " + mode.getClass());
 	}
 
 	@Override
