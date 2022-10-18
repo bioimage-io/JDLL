@@ -1,5 +1,7 @@
 package org.bioimageanalysis.icy.deeplearning.transformations;
 
+import java.util.ArrayList;
+
 import org.bioimageanalysis.icy.deeplearning.tensor.Tensor;
 
 import net.imglib2.loops.LoopBuilder;
@@ -24,34 +26,76 @@ public class ScaleLinearTransformation extends AbstractTensorTransformation
 		super( name );
 	}
 	
-	public void setGain(double gain) {
-		this.gainDouble = gain;
+	public void setGain(Object gain) {
+		if (gain instanceof Integer) {
+			this.gainDouble = Double.valueOf((int) gain);
+		} else if (gain instanceof Double) {
+			this.gainDouble = (double) gain;
+		} else if (gain instanceof String) {
+			this.gainDouble = Double.valueOf((String) gain);
+		} else if (gain instanceof ArrayList) {
+			gainArr = new double[((ArrayList) gain).size()];
+			int c = 0;
+			for (Object elem : (ArrayList) gain) {
+				if (elem instanceof Integer) {
+					gainArr[c ++] = Double.valueOf((int) elem);
+				} else if (elem instanceof Double) {
+					gainArr[c ++] = (double) elem;
+				} else if (elem instanceof ArrayList) {
+					throw new IllegalArgumentException("'gain' parameter cannot be an ArrayList containing"
+							+ " another ArrayList. At the moment, only transformations of planes is allowed.");
+				} else {
+					//TODO allow scaling of more complex structures
+					throw new IllegalArgumentException("If the 'gain' parameter is an array, its elements"
+							+ "  have to be instances of" + Integer.class + " or " + Double.class
+							+ ". The provided ArrayList contains instances of: " + elem.getClass());
+				}
+			}
+		} else {
+			throw new IllegalArgumentException("'gain' parameter has to be either and instance of "
+					+ Integer.class + ", " + Double.class + " or " + ArrayList.class 
+					+ ". The provided argument is an instance of: " + gain.getClass());
+		}
 	}
 	
-	public void setGain(double[] gain) {
-		this.gainArr = gain;
+	public void setOffset(Object offset) {
+		if (offset instanceof Integer) {
+			this.offsetDouble = Double.valueOf((int) offset);
+		} else if (offset instanceof Double) {
+			this.offsetDouble = (double) offset;
+		} else if (offset instanceof String) {
+			this.offsetDouble = Double.valueOf((String) offset);
+		} else if (offset instanceof ArrayList) {
+			offsetArr = new double[((ArrayList) offset).size()];
+			int c = 0;
+			for (Object elem : (ArrayList) offset) {
+				if (elem instanceof Integer) {
+					offsetArr[c ++] = Double.valueOf((int) elem);
+				} else if (elem instanceof Double) {
+					offsetArr[c ++] = (double) elem;
+				} else if (elem instanceof ArrayList) {
+					throw new IllegalArgumentException("'offset' parameter cannot be an ArrayList containing"
+							+ " another ArrayList. At the moment, only transformations of planes is allowed.");
+				} else {
+					//TODO allow scaling of more complex structures
+					throw new IllegalArgumentException("If the 'offset' parameter is an array, its elements"
+							+ "  have to be instances of" + Integer.class + " or " + Double.class
+							+ ". The provided ArrayList contains instances of: " + elem.getClass());
+				}
+			}
+		} else {
+			throw new IllegalArgumentException("'offset' parameter has to be either and instance of "
+					+ Integer.class + ", " + Double.class + " or " + ArrayList.class 
+					+ ". The provided argument is an instance of: " + offset.getClass());
+		}
 	}
 	
-	public void setGain(double[][] gain) {
-		//TODO allow scaling of more complex structures
-		throw new IllegalArgumentException("At the moment, only allowed scaling of planes.");
-	}
-	
-	public void setOffset(double offset) {
-		this.offsetDouble = offset;
-	}
-	
-	public void setOffset(double[] offset) {
-		this.offsetArr = offset;
-	}
-	
-	public void setOffset(double[][] offset) {
-		//TODO allow scaling of more complex structures
-		throw new IllegalArgumentException("At the moment, only allowed scaling of planes.");
-	}
-	
-	public void setAxes(String axes) {
-		this.axes = axes;
+	public void setAxes(Object axes) {
+		if (axes instanceof String )
+			this.axes = (String) axes;
+		else
+			throw new IllegalArgumentException("'axes' parameter has to be an instance of " + String.class
+					 + ". The provided argument is " + axes.getClass());
 	}
 	
 	public void checkRequiredArgs() {
