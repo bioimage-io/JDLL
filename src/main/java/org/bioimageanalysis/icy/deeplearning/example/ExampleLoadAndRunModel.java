@@ -3,6 +3,7 @@ package org.bioimageanalysis.icy.deeplearning.example;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.bioimageanalysis.icy.deeplearning.Model;
 import org.bioimageanalysis.icy.deeplearning.exceptions.LoadEngineException;
 import org.bioimageanalysis.icy.deeplearning.tensor.Tensor;
 import org.bioimageanalysis.icy.deeplearning.utils.EngineInfo;
@@ -20,7 +21,7 @@ import net.imglib2.type.numeric.real.FloatType;
  *
  */
 public class ExampleLoadAndRunModel {
-	/*
+	
 	public static < T extends RealType< T > & NativeType< T > > void main(String[] args) throws LoadEngineException, Exception {
 		String engine = "torchscript";
 		String engineVersion = "1.7.1";
@@ -57,5 +58,5 @@ public class ExampleLoadAndRunModel {
 		Model model = Model.createDeepLearningModel(modelFolder, modelSource, engineInfo);
 		model.loadModel();
 		return model;
-	}*/
+	}
 }

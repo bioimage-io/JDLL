@@ -4,8 +4,6 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.apache.commons.lang.SystemUtils;
-
 /**
  * Represents the detected platform in a given system. When a new instance is
  * created it is assigned the local detected platform but it can be changed
@@ -55,31 +53,32 @@ public class PlatformDetection
 	public PlatformDetection()
 	{
 		// resolve OS
-		if ( SystemUtils.IS_OS_WINDOWS )
+		if ( System.getProperty("os.name").toLowerCase().contains("win") )
 		{
 			this.setOs( OS_WINDOWS );
 		}
-		else if ( SystemUtils.IS_OS_MAC_OSX )
+		else if ( System.getProperty("os.name").toLowerCase().contains("macosx") )
 		{
 			this.setOs( OS_OSX );
 		}
-		else if ( SystemUtils.IS_OS_SOLARIS )
+		else if ( System.getProperty("os.name").toLowerCase().contains("solaris")  )
 		{
 			this.setOs( OS_SOLARIS );
 		}
-		else if ( SystemUtils.IS_OS_LINUX )
+		else if ( System.getProperty("os.name").toLowerCase().contains("linux") 
+        		|| System.getProperty("os.name").toLowerCase().endsWith("ix") )
 		{
 			this.setOs( OS_LINUX );
 		}
 		else
 		{
-			throw new IllegalArgumentException( "Unknown operating system " + SystemUtils.OS_NAME );
+			throw new IllegalArgumentException( "Unknown operating system " + System.getProperty("os.name") );
 		}
 
 		// resolve architecture
-		this.setArch( archMap.get( SystemUtils.OS_ARCH ) );
+		this.setArch( archMap.get( System.getProperty("os.arch") ) );
 		if ( this.arch == null )
-		{ throw new IllegalArgumentException( "Unknown architecture " + SystemUtils.OS_ARCH ); }
+		{ throw new IllegalArgumentException( "Unknown architecture " + System.getProperty("os.arch") ); }
 	}
 
 	/**
