@@ -19,8 +19,8 @@ public class ZeroMeanUnitVarianceTransformation extends AbstractTensorTransforma
 {
 	
 	private static String name = "zero_mean_unit_variace";
-	private Double meanVal;
-	private Double stdVal;
+	private Double meanDouble;
+	private Double stdDouble;
 	private double[] meanArr;
 	private double[] stdArr;
 	private Mode mode = Mode.PER_SAMPLE;
@@ -38,11 +38,11 @@ public class ZeroMeanUnitVarianceTransformation extends AbstractTensorTransforma
 	
 	public void setMean(Object mean) {
 		if (mean instanceof Integer) {
-			this.meanVal = Double.valueOf((int) mean);
+			this.meanDouble = Double.valueOf((int) mean);
 		} else if (mean instanceof Double) {
-			this.meanVal = (double) mean;
+			this.meanDouble = (double) mean;
 		} else if (mean instanceof String) {
-			this.meanVal = Double.valueOf((String) mean);
+			this.meanDouble = Double.valueOf((String) mean);
 		} else if (mean instanceof ArrayList) {
 			meanArr = new double[((ArrayList) mean).size()];
 			int c = 0;
@@ -70,11 +70,11 @@ public class ZeroMeanUnitVarianceTransformation extends AbstractTensorTransforma
 	
 	public void setStd(Object std) {
 		if (std instanceof Integer) {
-			this.stdVal = Double.valueOf((int) std);
+			this.stdDouble = Double.valueOf((int) std);
 		} else if (std instanceof Double) {
-			this.stdVal = (double) std;
+			this.stdDouble = (double) std;
 		} else if (std instanceof String) {
-			this.stdVal = Double.valueOf((String) std);
+			this.stdDouble = Double.valueOf((String) std);
 		} else if (std instanceof ArrayList) {
 			stdArr = new double[((ArrayList) std).size()];
 			int c = 0;
@@ -118,16 +118,16 @@ public class ZeroMeanUnitVarianceTransformation extends AbstractTensorTransforma
 	}
 	
 	public void checkRequiredArgs() {
-		if (this.mode == Mode.FIXED && this.meanArr == null && this.meanVal == null) {
+		if (this.mode == Mode.FIXED && this.meanArr == null && this.meanDouble == null) {
 			throw new IllegalArgumentException(String.format(DEFAULT_MISSING_ARG_ERR, "mean")
 					+ System.lineSeparator() + "If 'mode' parameter equals 'fixed', the 'mean' "
 							+ "argument should be provided too.");
-		} else if (this.mode == Mode.FIXED && this.stdArr == null && this.stdVal == null) {
+		} else if (this.mode == Mode.FIXED && this.stdArr == null && this.stdDouble == null) {
 			throw new IllegalArgumentException(String.format(DEFAULT_MISSING_ARG_ERR, "std")
 					+ System.lineSeparator() + "If 'mode' parameter equals 'fixed', the 'std' "
 					+ "argument should be provided too.");
-		} else if (this.mode == Mode.FIXED && ((stdVal == null && meanVal != null)
-				|| (stdVal != null && meanVal == null))) {
+		} else if (this.mode == Mode.FIXED && ((stdDouble == null && meanDouble != null)
+				|| (stdDouble != null && meanDouble == null))) {
 			throw new IllegalArgumentException("Both arguments 'mean' and "
 					+ "'std' need to be of the same type. Either a single value or an array.");
 		} else if (this.mode == Mode.FIXED && this.meanArr != null && axes == null) {
@@ -157,27 +157,27 @@ public class ZeroMeanUnitVarianceTransformation extends AbstractTensorTransforma
 		}
 		if (mode == Mode.FIXED &&  (axes == null || selectedAxes.equals("") 
 				|| input.getAxesOrderString().replace("b", "").length() == selectedAxes.length())) {
-			if (meanVal == null && meanArr == null)
+			if (meanDouble == null && meanArr == null)
 				throw new IllegalArgumentException(FIXED_MODE_ERR);
-			else if (meanVal == null)
+			else if (meanDouble == null)
 				throw new IllegalArgumentException("The parameters 'mean' and 'std' "
 						+ "cannot be arrays with the introduced 'axes'.");
 			fixedModeGlobalMeanStd(input);
 		} else if (mode != Mode.FIXED && (axes == null || selectedAxes.equals("") 
 				|| input.getAxesOrderString().replace("b", "").length() == selectedAxes.length())) {
-			if (meanVal != null || meanArr != null)
+			if (meanDouble != null || meanArr != null)
 				throw new IllegalArgumentException(NOT_FIXED_MODE_ERR);
 			notFixedModeGlobalMeanStd(input);
 		} else if (mode != Mode.FIXED 
 				&& axes.length() <= 2 && axes.length() > 0) {
-			if (meanVal != null || meanArr != null)
+			if (meanDouble != null || meanArr != null)
 				throw new IllegalArgumentException(NOT_FIXED_MODE_ERR);
 			notFixedAxesMeanStd(input, selectedAxes);
 		} else if (mode == Mode.FIXED 
 				&& axes.length() <= 2 && axes.length() > 0) {
-			if (meanVal == null && meanArr == null)
+			if (meanDouble == null && meanArr == null)
 				throw new IllegalArgumentException(FIXED_MODE_ERR);
-			else if (meanVal != null)
+			else if (meanDouble != null)
 				throw new IllegalArgumentException("The parameters 'mean' and ' std' "
 						+ "have to be arrays with the introduced 'axes'.");
 			fixedAxesMeanStd(input, selectedAxes);
@@ -191,7 +191,7 @@ public class ZeroMeanUnitVarianceTransformation extends AbstractTensorTransforma
 
 		LoopBuilder.setImages( output.getData() )
 				.multiThreaded()
-				.forEachPixel( i -> i.set( ( i.get() - meanVal.floatValue() ) / stdVal.floatValue() ) );
+				.forEachPixel( i -> i.set( ( i.get() - meanDouble.floatValue() ) / stdDouble.floatValue() ) );
 	}
 	
 	private void notFixedAxesMeanStd( final Tensor< FloatType > output, String axesOfInterest) {
