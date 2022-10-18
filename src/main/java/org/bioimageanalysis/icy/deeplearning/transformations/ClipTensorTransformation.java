@@ -42,12 +42,32 @@ public class ClipTensorTransformation extends AbstractTensorPixelTransformation
 		super(name);
 	}
 	
-	public void setMin(Double min) {
-		this.min = min;
+	public void setMin(Object min) {
+		if (min instanceof Integer) {
+			this.min = Double.valueOf((int) min);
+		} else if (min instanceof Double) {
+			this.min = (double) min;
+		} else if (min instanceof String) {
+			this.min = Double.valueOf((String) min);
+		} else {
+			throw new IllegalArgumentException("'min' parameter has to be either and instance of "
+					+ Integer.class + " or " + Double.class
+					+ ". The provided argument is an instance of: " + min.getClass());
+		}
 	}
 	
-	public void setMax(Double max) {
-		this.max = max;
+	public void setMax(Object max) {
+		if (max instanceof Integer) {
+			this.max = Double.valueOf((int) max);
+		} else if (max instanceof Double) {
+			this.max = (double) max;
+		} else if (max instanceof String) {
+			this.max = Double.valueOf((String) max);
+		} else {
+			throw new IllegalArgumentException("'max' parameter has to be either and instance of "
+					+ Integer.class + " or " + Double.class
+					+ ". The provided argument is an instance of: " + max.getClass());
+		}
 	}
 	
 	public void checkRequiredArgs() {
