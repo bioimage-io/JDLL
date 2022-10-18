@@ -1,5 +1,7 @@
 package org.bioimageanalysis.icy.deeplearning.transformations;
 
+import java.util.ArrayList;
+
 import org.bioimageanalysis.icy.deeplearning.tensor.Tensor;
 
 import net.imglib2.RandomAccessibleInterval;
@@ -10,7 +12,6 @@ import net.imglib2.loops.LoopBuilder;
 import net.imglib2.type.NativeType;
 import net.imglib2.type.numeric.RealType;
 import net.imglib2.type.numeric.real.FloatType;
-import net.imglib2.util.Util;
 import net.imglib2.view.IntervalView;
 import net.imglib2.view.Views;
 
@@ -35,37 +36,74 @@ public class ZeroMeanUnitVarianceTransformation extends AbstractTensorTransforma
 		super( name );
 	}
 	
-	public void setMean(double mean) {
-		this.meanVal = mean;
+	public void setMean(Object mean) {
+		if (mean instanceof Integer) {
+			this.meanVal = Double.valueOf((int) mean);
+		} else if (mean instanceof Double) {
+			this.meanVal = (double) mean;
+		} else if (mean instanceof String) {
+			this.meanVal = Double.valueOf((String) mean);
+		} else if (mean instanceof ArrayList) {
+			meanArr = new double[((ArrayList) mean).size()];
+			int c = 0;
+			for (Object elem : (ArrayList) mean) {
+				if (elem instanceof Integer) {
+					meanArr[c ++] = Double.valueOf((int) elem);
+				} else if (elem instanceof Double) {
+					meanArr[c ++] = (double) elem;
+				} else if (elem instanceof ArrayList) {
+					//TODO allow scaling of more complex structures
+					throw new IllegalArgumentException("'mean' parameter cannot be an ArrayList containing"
+							+ " another ArrayList. At the moment, only transformations of planes is allowed.");
+				} else {
+					throw new IllegalArgumentException("If the 'mean' parameter is an array, its elements"
+							+ "  have to be instances of" + Integer.class + " or " + Double.class
+							+ ". The provided ArrayList contains instances of: " + elem.getClass());
+				}
+			}
+		} else {
+			throw new IllegalArgumentException("'mean' parameter has to be either and instance of "
+					+ Integer.class + ", " + Double.class + " or " + ArrayList.class 
+					+ ". The provided argument is an instance of: " + mean.getClass());
+		}
 	}
 	
-	public void setMean(double[] meanArr) {
-		this.meanArr = meanArr;
-	}
-	
-	public void setMean(double[][] meanArr) {
-		//TODO allow scaling of more complex structures
-		throw new IllegalArgumentException("At the moment, only allowed calculations on planes.");
-	}
-	
-	public void setStd(double std) {
-		this.stdVal = std;
-	}
-	
-	public void setStd(double[] std) {
-		this.stdArr = std;
-	}
-	
-	public void setStd(double[][] std) {
-		//TODO allow scaling of more complex structures
-		throw new IllegalArgumentException("At the moment, only allowed calculations on planes.");
+	public void setStd(Object std) {
+		if (std instanceof Integer) {
+			this.stdVal = Double.valueOf((int) std);
+		} else if (std instanceof Double) {
+			this.stdVal = (double) std;
+		} else if (std instanceof String) {
+			this.stdVal = Double.valueOf((String) std);
+		} else if (std instanceof ArrayList) {
+			stdArr = new double[((ArrayList) std).size()];
+			int c = 0;
+			for (Object elem : (ArrayList) std) {
+				if (elem instanceof Integer) {
+					stdArr[c ++] = Double.valueOf((int) elem);
+				} else if (elem instanceof Double) {
+					stdArr[c ++] = (double) elem;
+				} else if (elem instanceof ArrayList) {
+					throw new IllegalArgumentException("'std' parameter cannot be an ArrayList containing"
+							+ " another ArrayList. At the moment, only transformations of planes is allowed.");
+				} else {
+					throw new IllegalArgumentException("If the 'std' parameter is an array, its elements"
+							+ "  have to be instances of" + Integer.class + " or " + Double.class
+							+ ". The provided ArrayList contains instances of: " + elem.getClass());
+				}
+			}
+		} else {
+			throw new IllegalArgumentException("'std' parameter has to be either and instance of "
+					+ Integer.class + ", " + Double.class + " or " + ArrayList.class 
+					+ ". The provided argument is an instance of: " + std.getClass());
+		}
 	}
 	
 	public void setAxes(Object axes) {
 		if (axes instanceof String )
 			this.axes = (String) axes;
 		else
-			throw new IllegalArgumentException("'axes' parameter has to be a " + String.class
+			throw new IllegalArgumentException("'axes' parameter has to be an instance of " + String.class
 					 + ". The provided argument is " + axes.getClass());
 	}
 	
@@ -75,12 +113,8 @@ public class ZeroMeanUnitVarianceTransformation extends AbstractTensorTransforma
 		else if (mode instanceof Mode)
 			this.mode = (Mode) mode;
 		else
-			throw new IllegalArgumentException("'mode' parameter has to be either " + String.class
-					+ " or " + Mode.class + ". The provided argument is " + mode.getClass());
-	}
-	
-	public void setMode(Mode mode) {
-		this.mode = mode;
+			throw new IllegalArgumentException("'mode' parameter has to be either and instance of " + String.class
+					+ " or " + Mode.class + ". The provided argument is an instance of: " + mode.getClass());
 	}
 	
 	public void checkRequiredArgs() {
