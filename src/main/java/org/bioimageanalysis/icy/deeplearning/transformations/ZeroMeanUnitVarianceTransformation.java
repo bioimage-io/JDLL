@@ -61,12 +61,22 @@ public class ZeroMeanUnitVarianceTransformation extends AbstractTensorTransforma
 		throw new IllegalArgumentException("At the moment, only allowed calculations on planes.");
 	}
 	
-	public void setAxes(String axes) {
-		this.axes = axes;
+	public void setAxes(Object axes) {
+		if (axes instanceof String )
+			this.axes = (String) axes;
+		else
+			throw new IllegalArgumentException("'axes' parameter has to be a " + String.class
+					 + ". The provided argument is " + axes.getClass());
 	}
 	
-	public void setMode(String mode) {
-		this.mode = Mode.valueOf(mode.toUpperCase());
+	public void setMode(Object mode) {
+		if (mode instanceof String )
+			this.mode = Mode.valueOf(((String) mode).toUpperCase());
+		else if (mode instanceof Mode)
+			this.mode = (Mode) mode;
+		else
+			throw new IllegalArgumentException("'mode' parameter has to be either " + String.class
+					+ " or " + Mode.class + ". The provided argument is " + mode.getClass());
 	}
 	
 	public void setMode(Mode mode) {
