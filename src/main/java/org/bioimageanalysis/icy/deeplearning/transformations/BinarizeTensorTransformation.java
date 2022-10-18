@@ -1,5 +1,7 @@
 package org.bioimageanalysis.icy.deeplearning.transformations;
 
+import java.util.ArrayList;
+
 import org.bioimageanalysis.icy.deeplearning.tensor.Tensor;
 
 import net.imglib2.type.NativeType;
@@ -15,6 +17,20 @@ public class BinarizeTensorTransformation extends AbstractTensorPixelTransformat
 	public BinarizeTensorTransformation()
 	{
 		super( name );
+	}
+	
+	public void setThreshold(Object threshold) {
+		if (threshold instanceof Integer) {
+			this.threshold = Double.valueOf((int) threshold);
+		} else if (threshold instanceof Double) {
+			this.threshold = (double) threshold;
+		} else if (threshold instanceof String) {
+			this.threshold = Double.valueOf((String) threshold);
+		} else {
+			throw new IllegalArgumentException("'threshold' parameter has to be either and instance of "
+					+ Integer.class + " or " + Double.class
+					+ ". The provided argument is an instance of: " + threshold.getClass());
+		}
 	}
 	
 	public void checkRequiredArgs() {
