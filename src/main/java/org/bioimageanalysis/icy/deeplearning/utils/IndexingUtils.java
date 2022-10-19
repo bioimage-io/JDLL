@@ -31,4 +31,26 @@ public class IndexingUtils
 		return flat;
 	}
 
+	/**
+	 * Obtain a flat index position from a multidimensional index position
+	 * 
+	 * @param ind
+	 *            the multidimensional indexes
+	 * @param size
+	 *            size of the tensor
+	 * @return the index of the position as if it was a flat array
+	 */
+	public static int multidimensionalIntoFlatIndex( long[] ind, long[] size )
+	{
+		int flat = 0;
+		for ( int i = 0; i < ind.length; i++ )
+		{
+			int inter = (int) ind[ i ];
+			for ( int j = i + 1; j < size.length; j++ )
+				inter *= size[ j ];
+			flat += inter;
+		}
+		return flat;
+	}
+
 }
