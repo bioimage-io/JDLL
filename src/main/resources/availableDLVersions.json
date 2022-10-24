@@ -738,7 +738,7 @@
 				"https://repo1.maven.org/maven2/ai/djl/api/0.14.0/api-0.14.0.jar",
 				"https://repo1.maven.org/maven2/org/slf4j/slf4j-simple/1.7.25/slf4j-simple-1.7.25.jar"	,
 				"https://sandbox.zenodo.org/record/1075494/files/ptDlEngine.jar?download=1",
-				"https://mvnrepository.com/artifact/net.java.dev.jna/jna/5.12.1",
+				"https://repo1.maven.org/maven2/net/java/dev/jna/jna/5.12.1/jna-5.12.1.jar",
 				"https://repo1.maven.org/maven2/org/apache/commons/commons-compress/1.21/commons-compress-1.21.jar"			
 			]
 		},
@@ -755,7 +755,7 @@
 				"https://repo1.maven.org/maven2/ai/djl/api/0.14.0/api-0.14.0.jar",
 				"https://repo1.maven.org/maven2/org/slf4j/slf4j-simple/1.7.25/slf4j-simple-1.7.25.jar"	,
 				"https://sandbox.zenodo.org/record/1075494/files/ptDlEngine.jar?download=1",
-				"https://mvnrepository.com/artifact/net.java.dev.jna/jna/5.12.1",
+				"https://repo1.maven.org/maven2/net/java/dev/jna/jna/5.12.1/jna-5.12.1.jar",
 				"https://repo1.maven.org/maven2/org/apache/commons/commons-compress/1.21/commons-compress-1.21.jar"		
 			]
 		},
@@ -772,7 +772,7 @@
 				"https://repo1.maven.org/maven2/ai/djl/api/0.14.0/api-0.14.0.jar",
 				"https://repo1.maven.org/maven2/org/slf4j/slf4j-simple/1.7.25/slf4j-simple-1.7.25.jar",
 				"https://sandbox.zenodo.org/record/1075494/files/ptDlEngine.jar?download=1",
-				"https://mvnrepository.com/artifact/net.java.dev.jna/jna/5.12.1",
+				"https://repo1.maven.org/maven2/net/java/dev/jna/jna/5.12.1/jna-5.12.1.jar",
 				"https://repo1.maven.org/maven2/org/apache/commons/commons-compress/1.21/commons-compress-1.21.jar"		
 			]
 		},
@@ -789,7 +789,7 @@
 				"https://repo1.maven.org/maven2/ai/djl/api/0.13.0/api-0.13.0.jar",
 				"https://repo1.maven.org/maven2/org/slf4j/slf4j-simple/1.7.25/slf4j-simple-1.7.25.jar",
 				"https://sandbox.zenodo.org/record/1075494/files/ptDlEngine.jar?download=1",
-				"https://mvnrepository.com/artifact/net.java.dev.jna/jna/5.12.1",
+				"https://repo1.maven.org/maven2/net/java/dev/jna/jna/5.12.1/jna-5.12.1.jar",
 				"https://repo1.maven.org/maven2/org/apache/commons/commons-compress/1.21/commons-compress-1.21.jar"			
 			]
 		},
@@ -806,7 +806,7 @@
 				"https://repo1.maven.org/maven2/ai/djl/api/0.13.0/api-0.13.0.jar",
 				"https://repo1.maven.org/maven2/org/slf4j/slf4j-simple/1.7.25/slf4j-simple-1.7.25.jar",
 				"https://sandbox.zenodo.org/record/1075494/files/ptDlEngine.jar?download=1",
-				"https://mvnrepository.com/artifact/net.java.dev.jna/jna/5.12.1",
+				"https://repo1.maven.org/maven2/net/java/dev/jna/jna/5.12.1/jna-5.12.1.jar",
 				"https://repo1.maven.org/maven2/org/apache/commons/commons-compress/1.21/commons-compress-1.21.jar"			
 			]
 		},
@@ -823,7 +823,7 @@
 				"https://repo1.maven.org/maven2/ai/djl/api/0.13.0/api-0.13.0.jar",
 				"https://repo1.maven.org/maven2/org/slf4j/slf4j-simple/1.7.25/slf4j-simple-1.7.25.jar",
 				"https://sandbox.zenodo.org/record/1075494/files/ptDlEngine.jar?download=1",
-				"https://mvnrepository.com/artifact/net.java.dev.jna/jna/5.12.1",
+				"https://repo1.maven.org/maven2/net/java/dev/jna/jna/5.12.1/jna-5.12.1.jar",
 				"https://repo1.maven.org/maven2/org/apache/commons/commons-compress/1.21/commons-compress-1.21.jar"				
 			]
 		},
@@ -840,7 +840,7 @@
 				"https://repo1.maven.org/maven2/ai/djl/api/0.12.0/api-0.12.0.jar",
 				"https://repo1.maven.org/maven2/org/slf4j/slf4j-simple/1.7.25/slf4j-simple-1.7.25.jar",
 				"https://sandbox.zenodo.org/record/1075494/files/ptDlEngine.jar?download=1",
-				"https://mvnrepository.com/artifact/net.java.dev.jna/jna/5.12.1",
+				"https://repo1.maven.org/maven2/net/java/dev/jna/jna/5.12.1/jna-5.12.1.jar",
 				"https://repo1.maven.org/maven2/org/apache/commons/commons-compress/1.21/commons-compress-1.21.jar"			
 			]
 		},
@@ -857,7 +857,7 @@
 				"https://repo1.maven.org/maven2/ai/djl/api/0.12.0/api-0.12.0.jar",
 				"https://repo1.maven.org/maven2/org/slf4j/slf4j-simple/1.7.25/slf4j-simple-1.7.25.jar",
 				"https://sandbox.zenodo.org/record/1075494/files/ptDlEngine.jar?download=1",
-				"https://mvnrepository.com/artifact/net.java.dev.jna/jna/5.12.1",
+				"https://repo1.maven.org/maven2/net/java/dev/jna/jna/5.12.1/jna-5.12.1.jar",
 				"https://repo1.maven.org/maven2/org/apache/commons/commons-compress/1.21/commons-compress-1.21.jar"			
 			]
 		},
@@ -874,7 +874,7 @@
 				"https://repo1.maven.org/maven2/ai/djl/api/0.12.0/api-0.12.0.jar",
 				"https://repo1.maven.org/maven2/org/slf4j/slf4j-simple/1.7.25/slf4j-simple-1.7.25.jar",
 				"https://sandbox.zenodo.org/record/1075494/files/ptDlEngine.jar?download=1",
-				"https://mvnrepository.com/artifact/net.java.dev.jna/jna/5.12.1",
+				"https://repo1.maven.org/maven2/net/java/dev/jna/jna/5.12.1/jna-5.12.1.jar",
 				"https://repo1.maven.org/maven2/org/apache/commons/commons-compress/1.21/commons-compress-1.21.jar"			
 			]
 		},
@@ -891,7 +891,7 @@
 				"https://repo1.maven.org/maven2/ai/djl/api/0.10.0/api-0.10.0.jar",
 				"https://repo1.maven.org/maven2/org/slf4j/slf4j-simple/1.7.25/slf4j-simple-1.7.25.jar",
 				"https://sandbox.zenodo.org/record/1075494/files/ptDlEngine.jar?download=1",
-				"https://mvnrepository.com/artifact/net.java.dev.jna/jna/5.12.1",
+				"https://repo1.maven.org/maven2/net/java/dev/jna/jna/5.12.1/jna-5.12.1.jar",
 				"https://repo1.maven.org/maven2/org/apache/commons/commons-compress/1.21/commons-compress-1.21.jar"				
 			]
 		},
@@ -908,7 +908,7 @@
 				"https://repo1.maven.org/maven2/ai/djl/api/0.10.0/api-0.10.0.jar",
 				"https://repo1.maven.org/maven2/org/slf4j/slf4j-simple/1.7.25/slf4j-simple-1.7.25.jar"	,
 				"https://sandbox.zenodo.org/record/1075494/files/ptDlEngine.jar?download=1",
-				"https://mvnrepository.com/artifact/net.java.dev.jna/jna/5.12.1",
+				"https://repo1.maven.org/maven2/net/java/dev/jna/jna/5.12.1/jna-5.12.1.jar",
 				"https://repo1.maven.org/maven2/org/apache/commons/commons-compress/1.21/commons-compress-1.21.jar"				
 			]
 		},
@@ -925,7 +925,7 @@
 				"https://repo1.maven.org/maven2/ai/djl/api/0.10.0/api-0.10.0.jar",
 				"https://repo1.maven.org/maven2/org/slf4j/slf4j-simple/1.7.25/slf4j-simple-1.7.25.jar",
 				"https://sandbox.zenodo.org/record/1075494/files/ptDlEngine.jar?download=1",
-				"https://mvnrepository.com/artifact/net.java.dev.jna/jna/5.12.1",
+				"https://repo1.maven.org/maven2/net/java/dev/jna/jna/5.12.1/jna-5.12.1.jar",
 				"https://repo1.maven.org/maven2/org/apache/commons/commons-compress/1.21/commons-compress-1.21.jar"			
 			]
 		},
@@ -942,7 +942,7 @@
 				"https://repo1.maven.org/maven2/ai/djl/api/0.9.0/api-0.9.0.jar",
 				"https://repo1.maven.org/maven2/org/slf4j/slf4j-simple/1.7.25/slf4j-simple-1.7.25.jar",
 				"https://sandbox.zenodo.org/record/1075494/files/ptDlEngine.jar?download=1",
-				"https://mvnrepository.com/artifact/net.java.dev.jna/jna/5.12.1",
+				"https://repo1.maven.org/maven2/net/java/dev/jna/jna/5.12.1/jna-5.12.1.jar",
 				"https://repo1.maven.org/maven2/org/apache/commons/commons-compress/1.21/commons-compress-1.21.jar"		
 			]
 		},
@@ -959,7 +959,7 @@
 				"https://repo1.maven.org/maven2/ai/djl/api/0.9.0/api-0.9.0.jar",
 				"https://repo1.maven.org/maven2/org/slf4j/slf4j-simple/1.7.25/slf4j-simple-1.7.25.jar",
 				"https://sandbox.zenodo.org/record/1075494/files/ptDlEngine.jar?download=1",
-				"https://mvnrepository.com/artifact/net.java.dev.jna/jna/5.12.1",
+				"https://repo1.maven.org/maven2/net/java/dev/jna/jna/5.12.1/jna-5.12.1.jar",
 				"https://repo1.maven.org/maven2/org/apache/commons/commons-compress/1.21/commons-compress-1.21.jar"
 			]
 		},
@@ -976,7 +976,7 @@
 				"https://repo1.maven.org/maven2/ai/djl/api/0.9.0/api-0.9.0.jar",
 				"https://repo1.maven.org/maven2/org/slf4j/slf4j-simple/1.7.25/slf4j-simple-1.7.25.jar",
 				"https://sandbox.zenodo.org/record/1075494/files/ptDlEngine.jar?download=1",
-				"https://mvnrepository.com/artifact/net.java.dev.jna/jna/5.12.1",
+				"https://repo1.maven.org/maven2/net/java/dev/jna/jna/5.12.1/jna-5.12.1.jar",
 				"https://repo1.maven.org/maven2/org/apache/commons/commons-compress/1.21/commons-compress-1.21.jar"				
 			]
 		},
@@ -993,7 +993,7 @@
 				"https://repo1.maven.org/maven2/ai/djl/api/0.8.0/api-0.8.0.jar",
 				"https://repo1.maven.org/maven2/org/slf4j/slf4j-simple/1.7.25/slf4j-simple-1.7.25.jar",
 				"https://sandbox.zenodo.org/record/1075494/files/ptDlEngine.jar?download=1",
-				"https://mvnrepository.com/artifact/net.java.dev.jna/jna/5.12.1",
+				"https://repo1.maven.org/maven2/net/java/dev/jna/jna/5.12.1/jna-5.12.1.jar",
 				"https://repo1.maven.org/maven2/org/apache/commons/commons-compress/1.21/commons-compress-1.21.jar"				
 			]
 		},
@@ -1010,7 +1010,7 @@
 				"https://repo1.maven.org/maven2/ai/djl/api/0.8.0/api-0.8.0.jar",
 				"https://repo1.maven.org/maven2/org/slf4j/slf4j-simple/1.7.25/slf4j-simple-1.7.25.jar",
 				"https://sandbox.zenodo.org/record/1075494/files/ptDlEngine.jar?download=1",
-				"https://mvnrepository.com/artifact/net.java.dev.jna/jna/5.12.1",
+				"https://repo1.maven.org/maven2/net/java/dev/jna/jna/5.12.1/jna-5.12.1.jar",
 				"https://repo1.maven.org/maven2/org/apache/commons/commons-compress/1.21/commons-compress-1.21.jar"				
 			]
 		},
@@ -1027,7 +1027,7 @@
 				"https://repo1.maven.org/maven2/ai/djl/api/0.8.0/api-0.8.0.jar",
 				"https://repo1.maven.org/maven2/org/slf4j/slf4j-simple/1.7.25/slf4j-simple-1.7.25.jar",
 				"https://sandbox.zenodo.org/record/1075494/files/ptDlEngine.jar?download=1",
-				"https://mvnrepository.com/artifact/net.java.dev.jna/jna/5.12.1",
+				"https://repo1.maven.org/maven2/net/java/dev/jna/jna/5.12.1/jna-5.12.1.jar",
 				"https://repo1.maven.org/maven2/org/apache/commons/commons-compress/1.21/commons-compress-1.21.jar"		
 			]
 		},
@@ -1044,7 +1044,7 @@
 				"https://repo1.maven.org/maven2/ai/djl/api/0.6.0/api-0.6.0.jar",
 				"https://repo1.maven.org/maven2/org/slf4j/slf4j-simple/1.7.25/slf4j-simple-1.7.25.jar",
 				"https://sandbox.zenodo.org/record/1075494/files/ptDlEngine.jar?download=1",
-				"https://mvnrepository.com/artifact/net.java.dev.jna/jna/5.12.1",
+				"https://repo1.maven.org/maven2/net/java/dev/jna/jna/5.12.1/jna-5.12.1.jar",
 				"https://repo1.maven.org/maven2/org/apache/commons/commons-compress/1.21/commons-compress-1.21.jar"		
 			]
 		},
@@ -1061,7 +1061,7 @@
 				"https://repo1.maven.org/maven2/ai/djl/api/0.6.0/api-0.6.0.jar",
 				"https://repo1.maven.org/maven2/org/slf4j/slf4j-simple/1.7.25/slf4j-simple-1.7.25.jar",
 				"https://sandbox.zenodo.org/record/1075494/files/ptDlEngine.jar?download=1",
-				"https://mvnrepository.com/artifact/net.java.dev.jna/jna/5.12.1",
+				"https://repo1.maven.org/maven2/net/java/dev/jna/jna/5.12.1/jna-5.12.1.jar",
 				"https://repo1.maven.org/maven2/org/apache/commons/commons-compress/1.21/commons-compress-1.21.jar"		
 			]
 		},
@@ -1078,7 +1078,7 @@
 				"https://repo1.maven.org/maven2/ai/djl/api/0.6.0/api-0.6.0.jar",
 				"https://repo1.maven.org/maven2/org/slf4j/slf4j-simple/1.7.25/slf4j-simple-1.7.25.jar",
 				"https://sandbox.zenodo.org/record/1075494/files/ptDlEngine.jar?download=1",
-				"https://mvnrepository.com/artifact/net.java.dev.jna/jna/5.12.1",
+				"https://repo1.maven.org/maven2/net/java/dev/jna/jna/5.12.1/jna-5.12.1.jar",
 				"https://repo1.maven.org/maven2/org/apache/commons/commons-compress/1.21/commons-compress-1.21.jar"
 			]
 		},
@@ -1095,7 +1095,7 @@
 				"https://repo1.maven.org/maven2/ai/djl/api/0.5.0/api-0.5.0.jar",
 				"https://repo1.maven.org/maven2/org/slf4j/slf4j-simple/1.7.25/slf4j-simple-1.7.25.jar",
 				"https://sandbox.zenodo.org/record/1075494/files/ptDlEngine.jar?download=1",
-				"https://mvnrepository.com/artifact/net.java.dev.jna/jna/5.12.1",
+				"https://repo1.maven.org/maven2/net/java/dev/jna/jna/5.12.1/jna-5.12.1.jar",
 				"https://repo1.maven.org/maven2/org/apache/commons/commons-compress/1.21/commons-compress-1.21.jar"	
 			]
 		},
@@ -1112,7 +1112,7 @@
 				"https://repo1.maven.org/maven2/ai/djl/api/0.5.0/api-0.5.0.jar",
 				"https://repo1.maven.org/maven2/org/slf4j/slf4j-simple/1.7.25/slf4j-simple-1.7.25.jar",
 				"https://sandbox.zenodo.org/record/1075494/files/ptDlEngine.jar?download=1",
-				"https://mvnrepository.com/artifact/net.java.dev.jna/jna/5.12.1",
+				"https://repo1.maven.org/maven2/net/java/dev/jna/jna/5.12.1/jna-5.12.1.jar",
 				"https://repo1.maven.org/maven2/org/apache/commons/commons-compress/1.21/commons-compress-1.21.jar"		
 			]
 		},
@@ -1129,7 +1129,7 @@
 				"https://repo1.maven.org/maven2/ai/djl/api/0.5.0/api-0.5.0.jar",
 				"https://repo1.maven.org/maven2/org/slf4j/slf4j-simple/1.7.25/slf4j-simple-1.7.25.jar",
 				"https://sandbox.zenodo.org/record/1075494/files/ptDlEngine.jar?download=1",
-				"https://mvnrepository.com/artifact/net.java.dev.jna/jna/5.12.1",
+				"https://repo1.maven.org/maven2/net/java/dev/jna/jna/5.12.1/jna-5.12.1.jar",
 				"https://repo1.maven.org/maven2/org/apache/commons/commons-compress/1.21/commons-compress-1.21.jar"
 			]
 		}
