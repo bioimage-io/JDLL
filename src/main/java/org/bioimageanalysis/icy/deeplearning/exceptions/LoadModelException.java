@@ -18,25 +18,29 @@ public class LoadModelException extends Exception
 	/**
 	 * Message given by the Deep Learning engine interface
 	 */
-	private String msg;
+	private static String defaultMsg = "Error loading a Deep Learning model.";
 
-	public LoadModelException( String ex, String msg )
+	public LoadModelException( String ex )
 	{
-		super( msg + "\n" + ex );
-		this.ex = ex;
-		this.msg = msg;
+		super( defaultMsg + System.lineSeparator() + ex );
+		this.ex = defaultMsg + System.lineSeparator() + ex;
 	}
 
+	public LoadModelException( String msg, String ex )
+	{
+		super( msg + System.lineSeparator() + ex );
+		this.ex = msg + System.lineSeparator() + ex;
+	}
+	
 	public LoadModelException()
 	{
-		super( "Error loading a Deep Learning model." );
-		this.ex = "";
-		this.msg = "";
+		super( defaultMsg );
+		this.ex = defaultMsg;
 	}
 
 	public String toString()
 	{
-		return this.msg + "\n" + this.ex;
+		return this.ex;
 	}
 
 }
