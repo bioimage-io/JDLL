@@ -57,7 +57,7 @@ public class PlatformDetection
 		{
 			this.setOs( OS_WINDOWS );
 		}
-		else if ( System.getProperty("os.name").toLowerCase().contains("macosx") )
+		else if ( System.getProperty("os.name").toLowerCase().replace(" ", "").contains("macosx") )
 		{
 			this.setOs( OS_OSX );
 		}
