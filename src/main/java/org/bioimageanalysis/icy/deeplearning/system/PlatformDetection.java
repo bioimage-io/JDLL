@@ -27,6 +27,8 @@ public class PlatformDetection
 
 	public static final String ARCH_X86_64 = "x86_64";
 
+	public static final String M1 = "aarch64";
+
 	public static final Map< String, String > archMap;
 
 	static
@@ -40,6 +42,8 @@ public class PlatformDetection
 		architectures.put( "x86_64", ARCH_X86_64 );
 		architectures.put( "amd64", ARCH_X86_64 );
 		architectures.put( "powerpc", ARCH_PPC );
+		architectures.put("aarch64", M1);
+		architectures.put("arm64", M1);
 		archMap = Collections.unmodifiableMap( architectures );
 	}
 
@@ -79,6 +83,10 @@ public class PlatformDetection
 		this.setArch( archMap.get( System.getProperty("os.arch") ) );
 		if ( this.arch == null )
 		{ throw new IllegalArgumentException( "Unknown architecture " + System.getProperty("os.arch") ); }
+	}
+	
+	public static void main(String[] args) {
+		new PlatformDetection();
 	}
 
 	/**
