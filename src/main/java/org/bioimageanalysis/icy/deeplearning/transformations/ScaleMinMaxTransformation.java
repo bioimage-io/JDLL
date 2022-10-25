@@ -4,47 +4,46 @@ import org.bioimageanalysis.icy.deeplearning.tensor.Tensor;
 
 public class ScaleMinMaxTransformation extends DefaultImageTransformation {
 
-	public static final String name = "scale_min_max";
-	private String referenceInput;
-	private Number minPercentile;
-	private Number maxPercentile;
+    public static final String name = "scale_min_max";
+    private String referenceInput;
+    private Number minPercentile;
+    private Number maxPercentile;
+    private Tensor tensor;
 
-	public Number getMinPercentile() {
-		return minPercentile;
-	}
+    public ScaleMinMaxTransformation(Tensor tensor) {
+        this.tensor = tensor;
+    }
 
-	public void setMinPercentile(Number minPercentile) {
-		this.minPercentile = minPercentile;
-	}
+    public Number getMinPercentile() {
+        return minPercentile;
+    }
 
-	public Number getMaxPercentile() {
-		return maxPercentile;
-	}
+    public void setMinPercentile(Number minPercentile) {
+        this.minPercentile = minPercentile;
+    }
 
-	public void setMaxPercentile(Number maxPercentile) {
-		this.maxPercentile = maxPercentile;
-	}
+    public Number getMaxPercentile() {
+        return maxPercentile;
+    }
 
-	public String getReferenceInput() {
-		return referenceInput;
-	}
+    public void setMaxPercentile(Number maxPercentile) {
+        this.maxPercentile = maxPercentile;
+    }
 
-	public void setReferenceInput(String referenceInput) {
-		this.referenceInput = referenceInput;
-	}
+    public String getReferenceInput() {
+        return referenceInput;
+    }
 
-	@Override
-	public String getName() {
-		return name;
-	}
-	
-	private Tensor tensor;
-	
-	public ScaleMinMaxTransformation(Tensor tensor) {
-		this.tensor = tensor;
-	}
-	
-	public Tensor apply() {
-		return tensor;
-	}
+    public void setReferenceInput(String referenceInput) {
+        this.referenceInput = referenceInput;
+    }
+
+    @Override
+    public String getName() {
+        return name;
+    }
+
+    public Tensor apply() {
+        return tensor;
+    }
 }
