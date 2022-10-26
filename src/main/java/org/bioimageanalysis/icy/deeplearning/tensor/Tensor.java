@@ -5,8 +5,12 @@ import java.util.List;
 import java.util.Objects;
 
 import net.imglib2.RandomAccessibleInterval;
+import net.imglib2.converter.RealTypeConverters;
 import net.imglib2.img.Img;
+import net.imglib2.img.ImgFactory;
+import net.imglib2.type.NativeType;
 import net.imglib2.type.Type;
+import net.imglib2.type.numeric.RealType;
 import net.imglib2.util.Util;
 
 
@@ -145,6 +149,24 @@ public final class Tensor<T extends Type<T>> {
      */
     public static Tensor getTensorByNameFromList(List<Tensor> lTensors, String name) {
         return lTensors.stream().filter(pp -> !pp.isClosed() && pp.getName() != null && pp.getName().equals(name)).findAny().orElse(null);
+    }
+
+    /**
+     * Method that creates a copy of the tensor in the wanted data type.
+     * Everything is the same or the new tensor (including the name), except the
+     * data type of the data
+     *
+     * @param input
+     *            tensor where the copy is created from
+     * @param type
+     *            data type of the wanted tensor
+     */
+    public static < T extends RealType< T > & NativeType< T >, R extends RealType< R > & NativeType< R > > RandomAccessibleInterval< R > createCopyOfRaiInWantedDataType(final RandomAccessibleInterval< T > input, final R type )
+    {
+        final ImgFactory< R > factory = Util.getArrayOrCellImgFactory( input, type );
+        final Img< R > output = factory.create( input );
+        RealTypeConverters.copyFromTo( input, output );
+        return output;
     }
 
     /**

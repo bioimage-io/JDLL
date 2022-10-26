@@ -54,6 +54,5 @@ public class LoadModelTest {
 
         model.closeModel();
         log.info("done all");
-        System.out.println("SOS");
     }
 }
