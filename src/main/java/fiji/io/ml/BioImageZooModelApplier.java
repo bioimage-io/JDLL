@@ -1,11 +1,9 @@
 package fiji.io.ml;
 
 import org.bioimageanalysis.icy.deeplearning.Model;
-import org.bioimageanalysis.icy.deeplearning.utils.ModelDescription;
+import org.bioimageanalysis.icy.deeplearning.utils.model.description.ModelDescription;
 
 import net.imglib2.RandomAccessibleInterval;
-import net.imglib2.cache.img.ReadOnlyCachedCellImgFactory;
-import net.imglib2.cache.img.ReadOnlyCachedCellImgOptions;
 import net.imglib2.type.Type;
 
 public class BioImageZooModelApplier {
@@ -24,11 +22,12 @@ public class BioImageZooModelApplier {
     }
 
     public RandomAccessibleInterval<?> applyModel() {
-        return new ReadOnlyCachedCellImgFactory().create(
-            data.dimensionsAsLongArray(),
-            dataType,
-            new DataLoader(model, modelDescription, data),
-            ReadOnlyCachedCellImgOptions.options().cellDimensions(dimensionsAsLongArray)
-        );
+//        return new ReadOnlyCachedCellImgFactory().create(
+//            data.dimensionsAsLongArray(),
+//            dataType,
+//            new DataLoader(model, modelDescription, data),
+//            ReadOnlyCachedCellImgOptions.options().cellDimensions(dimensionsAsLongArray)
+//        );
+        return null;
     }
 }

@@ -1,4 +1,4 @@
-package org.bioimageanalysis.icy.deeplearning.utils;
+package org.bioimageanalysis.icy.deeplearning.utils.model.description;
 
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;

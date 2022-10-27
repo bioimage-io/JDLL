@@ -7,7 +7,7 @@ import java.util.List;
 import org.bioimageanalysis.icy.deeplearning.Model;
 import org.bioimageanalysis.icy.deeplearning.exceptions.LoadModelException;
 import org.bioimageanalysis.icy.deeplearning.tensor.Tensor;
-import org.bioimageanalysis.icy.deeplearning.utils.ModelDescription;
+import org.bioimageanalysis.icy.deeplearning.utils.model.description.ModelDescription;
 
 import lombok.extern.slf4j.Slf4j;
 import net.imglib2.RandomAccessibleInterval;
@@ -60,14 +60,14 @@ public class DataLoader implements CellLoader<FloatType> {
         RandomAccessibleInterval<FloatType> rr2 = Views.addDimension(rr, 0, 0);
         rr2 = Views.moveAxis(rr2, rr.numDimensions(), 0);
         rr2 = Views.addDimension(rr2, 0, 0);
-        Tensor<FloatType> inpTensor = Tensor.build(modelDescription.getInputs().getName(), modelDescription.getInputs().getAxes(), rr2);
+        Tensor<FloatType> inpTensor = Tensor.build(modelDescription.getInputs().get(0).getName(), modelDescription.getInputs().get(0).getAxes(), rr2);
         return Collections.singletonList(inpTensor);
     }
 
     private List<Tensor> prepareOutput() {
         log.info("create output");
         ArrayImg<FloatType, FloatArray> arr2 = ArrayImgs.floats(new long[]{1, 256, 256, 8, 1});
-        Tensor<FloatType> otpTensor = Tensor.build(modelDescription.getOutputs().getName(), modelDescription.getOutputs().getAxes(), arr2);
+        Tensor<FloatType> otpTensor = Tensor.build(modelDescription.getOutputs().get(0).getName(), modelDescription.getOutputs().get(0).getAxes(), arr2);
         return Collections.singletonList(otpTensor);
     }
 }
