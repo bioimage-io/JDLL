@@ -40,7 +40,7 @@ public class ExampleLoadAndRunModel {
 		inputs.add(inpTensor);
 		
 		// We need to specify the output tensors with its axes order and name, but empty
-		Tensor<T> outTensor = Tensor.buildEmptyTensor("output0", "bcyx");
+		Tensor<T> outTensor = Tensor.buildEmptyTensor("output0", "bcyx", new long[] {1,2,3,4}, datatype);
 		List<Tensor<?>> outputs = new ArrayList<Tensor<?>>();
 		outputs.add(outTensor);
 		

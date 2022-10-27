@@ -27,7 +27,7 @@ public class PlatformDetection
 
 	public static final String ARCH_X86_64 = "x86_64";
 
-	public static final String M1 = "aarch64";
+	public static final String M1 = "x86_64";
 
 	public static final Map< String, String > archMap;
 
