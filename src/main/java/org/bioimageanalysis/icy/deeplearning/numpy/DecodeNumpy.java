@@ -80,15 +80,10 @@ public class DecodeNumpy {
         }
         String typeStr = m.group(1);
         String shapeStr = m.group(2);
-        long[] shape;
-        long nPositions = 1;
-        if (shapeStr.isEmpty()) {
-            shape = new long[0];
-            nPositions = 0;
-        } else {
+        long[] shape = new long[0];
+        if (!shapeStr.isEmpty()) {
             String[] tokens = shapeStr.split(", ?");
             shape = Arrays.stream(tokens).mapToLong(Long::parseLong).toArray();
-            LongStream.range(0, shape.length).map(i -> nPositions *= shape[(int) i] );
         }
         long numBytes = 1;
         if (typeStr.toLowerCase().equals("float32")) {
@@ -112,7 +107,7 @@ public class DecodeNumpy {
         }
         readData(dis, data, len);
 
-        return manager.create(dataType.asDataType(data), shape, dataType);
+        return build(data, typeStr, shape);
     }
 
     private static void readData(DataInputStream dis, ByteBuffer data, int len) throws IOException {
@@ -140,52 +135,47 @@ public class DecodeNumpy {
      *         If the tensor type is not supported.
      */
     @SuppressWarnings("unchecked")
-    public static <T extends Type<T>> Img<T> build(ByteBuffer data, String typeStr) throws IllegalArgumentException
+    public static <T extends Type<T>> Img<T> build(ByteBuffer buf, String typeStr, long[] shape) throws IllegalArgumentException
     {
         // Create an INDArray of the same type of the tensor
+    	byte[] data = new byte[buf.remaining()];
+    	buf.get(data);
     	if (typeStr.equals("byte")) {
-            return (Img<T>) buildFromTensorByte(data);
+            return (Img<T>) buildFromTensorByte(data, shape);
     	} else if (typeStr.equals("int32")) {
-            return (Img<T>) buildFromTensorInt(data);
+            return (Img<T>) buildFromTensorInt(data, shape);
     	} else if (typeStr.equals("ubyte")) {
-            return (Img<T>) buildFromTensoUByte((data);
+            return (Img<T>) buildFromTensoUByte(data, shape);
     	} else if (typeStr.equals("float32")) {
-            return (Img<T>) buildFromTensorFloat(data);
+            return (Img<T>) buildFromTensorFloat(data, shape);
     	} else if (typeStr.equals("float64")) {
-            return (Img<T>) buildFromTensorDouble(data);
+            return (Img<T>) buildFromTensorDouble(data, shape);
     	} else if (typeStr.equals("int64")) {
-            return (Img<T>) buildFromTensorLong(data);
+            return (Img<T>) buildFromTensorLong(data, shape);
     	} else if (typeStr.equals("float32")) {
-            return (Img<T>) buildFromTensorFloat(data);
+            return (Img<T>) buildFromTensorFloat(data, shape);
     	} else {
             throw new IllegalArgumentException("Unsupported tensor type: " + typeStr);
     	}
     }
 
-    /**
+    /** TODO check BigEndian LittleEndian
      * Builds a {@link Img} from a unsigned byte-typed {@link Tensor}.
      * 
      * @param tensor
      *        The tensor data is read from.
      * @return The INDArray built from the tensor of type {@link DataType#UBYTE}.
      */
-    private static Img<ByteType> buildFromTensorByte(ByteBuffer tensor)
+    private static Img<ByteType> buildFromTensorByte(byte[] tensor, ByteOrder byteOrder, long[] tensorShape)
     {
-    	long[] tensorShape = tensor.shape();
     	final ImgFactory< ByteType > factory = new CellImgFactory<>( new ByteType(), 5 );
         final Img< ByteType > outputImg = (Img<ByteType>) factory.create(tensorShape);
     	Cursor<ByteType> tensorCursor= outputImg.cursor();
-		int totalSize = 1;
-		for (long i : tensorShape) {totalSize *= i;}
-        byte[] flatArr = new byte[totalSize];
-		ByteBuffer outBuff = ByteBuffer.wrap(flatArr);
-	 	tensor.writeTo(outBuff);
-	 	outBuff = null;
 		while (tensorCursor.hasNext()) {
 			tensorCursor.fwd();
 			long[] cursorPos = tensorCursor.positionAsLongArray();
         	int flatPos = IndexingUtils.multidimensionalIntoFlatIndex(cursorPos, tensorShape);
-        	byte val = flatArr[flatPos];
+        	byte val = tensor[flatPos];
         	tensorCursor.get().set(val);
 		}
 	 	return outputImg;
@@ -198,18 +188,12 @@ public class DecodeNumpy {
      *        The tensor data is read from.
      * @return The sequence built from the tensor of type {@link DataType#INT}.
      */
-    private static Img<IntType> buildFromTensorInt(ByteBuffer tensor)
+    private static Img<IntType> buildFromTensorInt(byte[] tensor, long[] tensorShape)
     {
-    	long[] tensorShape = tensor.shape();
     	final ImgFactory< IntType > factory = new CellImgFactory<>( new IntType(), 5 );
         final Img< IntType > outputImg = (Img<IntType>) factory.create(tensorShape);
     	Cursor<IntType> tensorCursor= outputImg.cursor();
-		int totalSize = 1;
-		for (long i : tensorShape) {totalSize *= i;}
-        int[] flatArr = new int[totalSize];
-        IntBuffer outBuff = IntBuffer.wrap(flatArr);
-	 	tensor.writeTo(outBuff);
-	 	outBuff = null;
+        int[] flatArr = ByteArrayUtils.convertIntoSignedInt32(tensor);
 		while (tensorCursor.hasNext()) {
 			tensorCursor.fwd();
 			long[] cursorPos = tensorCursor.positionAsLongArray();
@@ -227,18 +211,12 @@ public class DecodeNumpy {
      *        The tensor data is read from.
      * @return The INDArray built from the tensor of type {@link DataType#FLOAT}.
      */
-    private static Img<FloatType> buildFromTensorFloat(ByteBuffer tensor)
+    private static Img<FloatType> buildFromTensorFloat(byte[] tensor , long[] tensorShape)
     {
-    	long[] tensorShape = tensor.shape();
     	final ImgFactory< FloatType > factory = new CellImgFactory<>( new FloatType(), 5 );
         final Img< FloatType > outputImg = (Img<FloatType>) factory.create(tensorShape);
     	Cursor<FloatType> tensorCursor= outputImg.cursor();
-		int totalSize = 1;
-		for (long i : tensorShape) {totalSize *= i;}
-        float[] flatArr = new float[totalSize];
-        FloatBuffer outBuff = FloatBuffer.wrap(flatArr);
-	 	tensor.writeTo(outBuff);
-	 	outBuff = null;
+        float[] flatArr = ByteArrayUtils.convertIntoSignedFloat32(tensor);
 		while (tensorCursor.hasNext()) {
 			tensorCursor.fwd();
 			long[] cursorPos = tensorCursor.positionAsLongArray();
@@ -256,18 +234,12 @@ public class DecodeNumpy {
      *        The tensor data is read from.
      * @return The INDArray built from the tensor of type {@link DataType#DOUBLE}.
      */
-    private static Img<DoubleType> buildFromTensorDouble(ByteBuffer tensor)
+    private static Img<DoubleType> buildFromTensorDouble(byte[] tensor, long[] tensorShape)
     {
-    	long[] tensorShape = tensor.shape();
     	final ImgFactory< DoubleType > factory = new CellImgFactory<>( new DoubleType(), 5 );
         final Img< DoubleType > outputImg = (Img<DoubleType>) factory.create(tensorShape);
     	Cursor<DoubleType> tensorCursor= outputImg.cursor();
-		int totalSize = 1;
-		for (long i : tensorShape) {totalSize *= i;}
-		double[] flatArr = new double[totalSize];
-        DoubleBuffer outBuff = DoubleBuffer.wrap(flatArr);
-	 	tensor.writeTo(outBuff);
-	 	outBuff = null;
+		double[] flatArr = ByteArrayUtils.convertIntoSignedFloat64(tensor);
 		while (tensorCursor.hasNext()) {
 			tensorCursor.fwd();
 			long[] cursorPos = tensorCursor.positionAsLongArray();
