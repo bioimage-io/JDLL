@@ -35,7 +35,7 @@ public class ByteArrayUtils {
 		}
 		return int16;
 	}
-		
+	
 	/**
 	 * Converts byte array into a signed integer 32 bit array stored in 
 	 * a buffer.
@@ -43,8 +43,8 @@ public class ByteArrayUtils {
 	 * 	the byte array
 	 * @return a int array containing the wanted data
 	 */
-	public static int[] convertIntoSignedInt32(byte[] arr) {
-		return convertIntoSignedInt32(arr, ByteOrder.LITTLE_ENDIAN);
+	public static int[] convertIntoUInt8(byte[] arr) {
+		return convertIntoUInt8(arr, ByteOrder.LITTLE_ENDIAN);
 	}
 			
 	/**
@@ -54,6 +54,32 @@ public class ByteArrayUtils {
 	 * 	the byte array
 	 * @return a int array containing the wanted data
 	 */
+	public static int[] convertIntoUInt8(byte[] arr, ByteOrder byteOrder) {
+		int[] int32 = new int[arr.length];
+		for ( int i = 0; i < arr.length / 4; i ++) {
+			int32[i] = arr[i];
+		}
+		return int32;
+	}
+	
+	/**
+	* Converts byte array into a signed integer 32 bit array stored in 
+	* a buffer.
+	* @param arr
+	* 	the byte array
+	* @return a int array containing the wanted data
+	*/
+	public static int[] convertIntoSignedInt32(byte[] arr) {
+		return convertIntoSignedInt32(arr, ByteOrder.LITTLE_ENDIAN);
+	}
+		
+	/**
+	* Converts byte array into a signed integer 32 bit array stored in 
+	* a buffer.
+	* @param arr
+	* 	the byte array
+	* @return a int array containing the wanted data
+	*/
 	public static int[] convertIntoSignedInt32(byte[] arr, ByteOrder byteOrder) {
 		int[] int32 = new int[arr.length / 4];
 		for ( int i = 0; i < arr.length / 4; i ++) {

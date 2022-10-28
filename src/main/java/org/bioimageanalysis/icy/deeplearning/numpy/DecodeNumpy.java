@@ -26,6 +26,7 @@ import net.imglib2.type.Type;
 import net.imglib2.type.numeric.RealType;
 import net.imglib2.type.numeric.integer.ByteType;
 import net.imglib2.type.numeric.integer.IntType;
+import net.imglib2.type.numeric.integer.UnsignedByteType;
 import net.imglib2.type.numeric.real.DoubleType;
 import net.imglib2.type.numeric.real.FloatType;
 
@@ -100,14 +101,18 @@ public class DecodeNumpy {
         len = Math.toIntExact(shape.length * numBytes);
         ByteBuffer data = ByteBuffer.allocate(len);
         char order = typeStr.charAt(0);
+        ByteOrder byteOrder = null;
         if (order == '>') {
-            data.order(ByteOrder.BIG_ENDIAN);
+        	byteOrder = ByteOrder.BIG_ENDIAN;
         } else if (order == '<') {
-            data.order(ByteOrder.LITTLE_ENDIAN);
+        	byteOrder = ByteOrder.LITTLE_ENDIAN;
+        } else {
+        	new IllegalArgumentException("Not supported ByteOrder for the provided .npy array.");
         }
+        data.order(byteOrder);
         readData(dis, data, len);
 
-        return build(data, typeStr, shape);
+        return build(data, byteOrder, typeStr, shape);
     }
 
     private static void readData(DataInputStream dis, ByteBuffer data, int len) throws IOException {
@@ -135,25 +140,25 @@ public class DecodeNumpy {
      *         If the tensor type is not supported.
      */
     @SuppressWarnings("unchecked")
-    public static <T extends Type<T>> Img<T> build(ByteBuffer buf, String typeStr, long[] shape) throws IllegalArgumentException
+    public static <T extends Type<T>> Img<T> build(ByteBuffer buf, ByteOrder byteOrder, String typeStr, long[] shape) throws IllegalArgumentException
     {
         // Create an INDArray of the same type of the tensor
     	byte[] data = new byte[buf.remaining()];
     	buf.get(data);
     	if (typeStr.equals("byte")) {
-            return (Img<T>) buildFromTensorByte(data, shape);
+            return (Img<T>) buildFromTensorByte(data, byteOrder, shape);
     	} else if (typeStr.equals("int32")) {
-            return (Img<T>) buildFromTensorInt(data, shape);
+            return (Img<T>) buildFromTensorInt(data, byteOrder, shape);
     	} else if (typeStr.equals("ubyte")) {
-            return (Img<T>) buildFromTensoUByte(data, shape);
+            return (Img<T>) buildFromTensorUByte(data, byteOrder, shape);
     	} else if (typeStr.equals("float32")) {
-            return (Img<T>) buildFromTensorFloat(data, shape);
+            return (Img<T>) buildFromTensorFloat(data, byteOrder, shape);
     	} else if (typeStr.equals("float64")) {
-            return (Img<T>) buildFromTensorDouble(data, shape);
+            return (Img<T>) buildFromTensorDouble(data, byteOrder, shape);
     	} else if (typeStr.equals("int64")) {
-            return (Img<T>) buildFromTensorLong(data, shape);
+            return (Img<T>) buildFromTensorLong(data, byteOrder, shape);
     	} else if (typeStr.equals("float32")) {
-            return (Img<T>) buildFromTensorFloat(data, shape);
+            return (Img<T>) buildFromTensorFloat(data, byteOrder, shape);
     	} else {
             throw new IllegalArgumentException("Unsupported tensor type: " + typeStr);
     	}
@@ -181,6 +186,29 @@ public class DecodeNumpy {
 	 	return outputImg;
 	}
 
+    /** TODO check BigEndian LittleEndian
+     * Builds a {@link Img} from a unsigned byte-typed {@link Tensor}.
+     * 
+     * @param tensor
+     *        The tensor data is read from.
+     * @return The INDArray built from the tensor of type {@link DataType#UBYTE}.
+     */
+    private static Img<UnsignedByteType> buildFromTensorUByte(byte[] tensor, ByteOrder byteOrder, long[] tensorShape)
+    {
+    	final ImgFactory< UnsignedByteType > factory = new CellImgFactory<>( new UnsignedByteType(), 5 );
+        final Img< UnsignedByteType > outputImg = (Img<UnsignedByteType>) factory.create(tensorShape);
+    	Cursor<UnsignedByteType> tensorCursor= outputImg.cursor();
+        int[] flatArr = ByteArrayUtils.un(tensor);
+		while (tensorCursor.hasNext()) {
+			tensorCursor.fwd();
+			long[] cursorPos = tensorCursor.positionAsLongArray();
+        	int flatPos = IndexingUtils.multidimensionalIntoFlatIndex(cursorPos, tensorShape);
+        	byte val = tensor[flatPos];
+        	tensorCursor.get().set(val);
+		}
+	 	return outputImg;
+	}
+
     /**
      * Builds a {@link Img} from a unsigned integer-typed {@link Tensor}.
      * 
@@ -188,7 +216,7 @@ public class DecodeNumpy {
      *        The tensor data is read from.
      * @return The sequence built from the tensor of type {@link DataType#INT}.
      */
-    private static Img<IntType> buildFromTensorInt(byte[] tensor, long[] tensorShape)
+    private static Img<IntType> buildFromTensorInt(byte[] tensor, ByteOrder byteOrder, long[] tensorShape)
     {
     	final ImgFactory< IntType > factory = new CellImgFactory<>( new IntType(), 5 );
         final Img< IntType > outputImg = (Img<IntType>) factory.create(tensorShape);
@@ -211,7 +239,7 @@ public class DecodeNumpy {
      *        The tensor data is read from.
      * @return The INDArray built from the tensor of type {@link DataType#FLOAT}.
      */
-    private static Img<FloatType> buildFromTensorFloat(byte[] tensor , long[] tensorShape)
+    private static Img<FloatType> buildFromTensorFloat(byte[] tensor, ByteOrder byteOrder, long[] tensorShape)
     {
     	final ImgFactory< FloatType > factory = new CellImgFactory<>( new FloatType(), 5 );
         final Img< FloatType > outputImg = (Img<FloatType>) factory.create(tensorShape);
@@ -234,7 +262,7 @@ public class DecodeNumpy {
      *        The tensor data is read from.
      * @return The INDArray built from the tensor of type {@link DataType#DOUBLE}.
      */
-    private static Img<DoubleType> buildFromTensorDouble(byte[] tensor, long[] tensorShape)
+    private static Img<DoubleType> buildFromTensorDouble(byte[] tensor, ByteOrder byteOrder, long[] tensorShape)
     {
     	final ImgFactory< DoubleType > factory = new CellImgFactory<>( new DoubleType(), 5 );
         final Img< DoubleType > outputImg = (Img<DoubleType>) factory.create(tensorShape);
@@ -245,6 +273,29 @@ public class DecodeNumpy {
 			long[] cursorPos = tensorCursor.positionAsLongArray();
         	int flatPos = IndexingUtils.multidimensionalIntoFlatIndex(cursorPos, tensorShape);
         	double val = flatArr[flatPos];
+        	tensorCursor.get().set(val);
+		}
+	 	return outputImg;
+    }
+
+    /**
+     * Builds a {@link Img} from a unsigned double-typed {@link Tensor}.
+     * 
+     * @param tensor
+     *        The tensor data is read from.
+     * @return The INDArray built from the tensor of type {@link DataType#DOUBLE}.
+     */
+    private static Img<DoubleType> buildFromTensorLong(byte[] tensor, ByteOrder byteOrder, long[] tensorShape)
+    {
+    	final ImgFactory< DoubleType > factory = new CellImgFactory<>( new DoubleType(), 5 );
+        final Img< DoubleType > outputImg = (Img<DoubleType>) factory.create(tensorShape);
+    	Cursor<DoubleType> tensorCursor= outputImg.cursor();
+		long[] flatArr = ByteArrayUtils.convertIntoSignedInt64(tensor);
+		while (tensorCursor.hasNext()) {
+			tensorCursor.fwd();
+			long[] cursorPos = tensorCursor.positionAsLongArray();
+        	int flatPos = IndexingUtils.multidimensionalIntoFlatIndex(cursorPos, tensorShape);
+        	long val = flatArr[flatPos];
         	tensorCursor.get().set(val);
 		}
 	 	return outputImg;
