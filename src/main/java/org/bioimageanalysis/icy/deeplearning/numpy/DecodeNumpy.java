@@ -198,12 +198,12 @@ public class DecodeNumpy {
     	final ImgFactory< UnsignedByteType > factory = new CellImgFactory<>( new UnsignedByteType(), 5 );
         final Img< UnsignedByteType > outputImg = (Img<UnsignedByteType>) factory.create(tensorShape);
     	Cursor<UnsignedByteType> tensorCursor= outputImg.cursor();
-        int[] flatArr = ByteArrayUtils.un(tensor);
+        int[] flatArr = ByteArrayUtils.convertIntoUInt8(tensor);
 		while (tensorCursor.hasNext()) {
 			tensorCursor.fwd();
 			long[] cursorPos = tensorCursor.positionAsLongArray();
         	int flatPos = IndexingUtils.multidimensionalIntoFlatIndex(cursorPos, tensorShape);
-        	byte val = tensor[flatPos];
+        	int val = flatArr[flatPos];
         	tensorCursor.get().set(val);
 		}
 	 	return outputImg;

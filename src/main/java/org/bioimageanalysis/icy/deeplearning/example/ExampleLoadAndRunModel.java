@@ -40,7 +40,14 @@ public class ExampleLoadAndRunModel {
 		inputs.add(inpTensor);
 		
 		// We need to specify the output tensors with its axes order and name, but empty
-		Tensor<T> outTensor = Tensor.buildEmptyTensor("output0", "bcyx", new long[] {1,2,3,4}, datatype);
+		/* TODO
+		 * TODO
+		 * TODO implement this for Tischer
+		 * TODO
+		 * TODO
+		 * Tensor<T> outTensor = Tensor.buildEmptyTensor("output0", "bcyx", new long[] {1,2,3,4}, datatype);
+		 */
+		Tensor<T> outTensor = Tensor.buildEmptyTensor("output0", "bcyx");
 		List<Tensor<?>> outputs = new ArrayList<Tensor<?>>();
 		outputs.add(outTensor);
 		
