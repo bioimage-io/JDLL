@@ -88,6 +88,11 @@ public class EngineInfo
 	private static String pytorchEngineName = "pytorch";
 
 	/**
+	 * Variable containing the name used to refer to Onnx in the program
+	 */
+	private static String onnxEngineName = "onnx";
+
+	/**
 	 * Variable containing the name used to refer to Tensorflow in the program
 	 */
 	private static String tensorflowJavaBioimageioTag = "tensorflow_saved_model_bundle";
@@ -96,6 +101,11 @@ public class EngineInfo
 	 * Variable containing the name used to refer to Pytorch in the program
 	 */
 	private static String pytorchJavaBioimageioTag = "torchscript";
+
+	/**
+	 * Variable containing the name used to refer to Pytorch in the program
+	 */
+	private static String onnxJavaBioimageioTag = "onnx";
 
 	/**
 	 * Variable that stores which version of Tensorflow 1 has been already
@@ -117,6 +127,13 @@ public class EngineInfo
 	 * namespace
 	 */
 	private static String loadedPytorchVersion;
+
+	/**
+	 * Variable that stores which version of Onnx has been already loaded to
+	 * avoid errors for loading two different native libraries in the same
+	 * namespace
+	 */
+	private static String loadedOnnxVersion;
 
 	/**
 	 * Information needed to know how to launch the corresponding Deep Learning
@@ -200,7 +217,8 @@ public class EngineInfo
 	public static EngineInfo defineDLEngine( String engine, String version, String jarsDirectory, boolean gpu )
 	{
 		boolean cpu = true;
-		if ( engine.toLowerCase().equals( tensorflowJavaBioimageioTag ) )
+		if ( engine.toLowerCase().equals( tensorflowJavaBioimageioTag ) 
+				|| engine.toLowerCase().equals( onnxJavaBioimageioTag ))
 		{
 			cpu = true;
 		}
@@ -281,7 +299,8 @@ public class EngineInfo
 	{
 		Objects.requireNonNull( STATIC_JARS_DIRECTORY, "The Jars directory should not be null." );
 		boolean cpu = true;
-		if ( engine.toLowerCase().equals( tensorflowJavaBioimageioTag ) )
+		if ( engine.toLowerCase().equals( tensorflowJavaBioimageioTag ) 
+				|| engine.toLowerCase().equals( onnxJavaBioimageioTag ))
 		{
 			cpu = true;
 		}
@@ -375,34 +394,6 @@ public class EngineInfo
 	}
 
 	/**
-	 * Method that finds the operating system where the program is running
-	 * 
-	 * @return the operating system
-	 */
-	public static String findOs()
-	{
-		String os = null;
-		String operSys = System.getProperty( "os.name" ).toLowerCase();
-		if ( operSys.contains( "win" ) )
-		{
-			os = "windows";
-		}
-		else if ( operSys.contains( "nix" ) || operSys.contains( "nux" ) || operSys.contains( "aix" ) )
-		{
-			os = "linux";
-		}
-		else if ( operSys.contains( "mac" ) )
-		{
-			os = "mac";
-		}
-		else if ( operSys.contains( "sunos" ) )
-		{
-			os = "solaris";
-		}
-		return os;
-	}
-
-	/**
 	 * Finds the version of Deep Learning framework (engine) equivalent or
 	 * compatible with the one used to train the model. This is done because
 	 * sometimes APIs for different languages are named differently
@@ -454,6 +445,8 @@ public class EngineInfo
 			this.engine = tensorflowEngineName;
 		else if ( engine.toLowerCase().contentEquals( pytorchJavaBioimageioTag ) )
 			this.engine = pytorchEngineName;
+		else if ( engine.toLowerCase().contentEquals( onnxJavaBioimageioTag ) )
+			this.engine = onnxEngineName;
 	}
 
 	/**
@@ -592,6 +585,10 @@ public class EngineInfo
 		{
 			loadedPytorchVersion = this.version;
 		}
+		else if ( this.engine.equals( onnxEngineName ) )
+		{
+			loadedOnnxVersion = this.version;
+		}
 	}
 
 	/**
@@ -620,6 +617,10 @@ public class EngineInfo
 		else if ( engine.toLowerCase().equals( pytorchJavaBioimageioTag ) )
 		{
 			return loadedPytorchVersion;
+		}
+		else if ( engine.toLowerCase().equals( onnxJavaBioimageioTag ) )
+		{
+			return loadedOnnxVersion;
 		}
 		else
 		{

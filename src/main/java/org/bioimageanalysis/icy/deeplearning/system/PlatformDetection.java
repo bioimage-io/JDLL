@@ -65,7 +65,8 @@ public class PlatformDetection
 		{
 			this.setOs( OS_OSX );
 		}
-		else if ( System.getProperty("os.name").toLowerCase().contains("solaris")  )
+		else if ( System.getProperty("os.name").toLowerCase().contains("sunos") 
+        		|| System.getProperty("os.name").toLowerCase().endsWith("solaris") )
 		{
 			this.setOs( OS_SOLARIS );
 		}
