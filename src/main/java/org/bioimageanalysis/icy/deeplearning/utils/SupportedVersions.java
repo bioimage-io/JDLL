@@ -21,15 +21,6 @@ import java.lang.reflect.Type;
  */
 public class SupportedVersions
 {
-	/**
-	 * Variable containing the name used to refer to Tensorflow in the program
-	 */
-	private static String tensorflowEngineName = "tensorflow";
-
-	/**
-	 * Variable containing the name used to refer to Pytorch in the program
-	 */
-	private static String pytorchEngineName = "pytorch";
 
 	/**
 	 * Key for the Java equivalent version in the JSON file
