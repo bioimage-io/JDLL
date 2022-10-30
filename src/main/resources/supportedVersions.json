@@ -280,5 +280,52 @@
 				{
 					"javaVersion": "1.4.0"
 				}
+		},
+	"onnx":
+		{
+			"8":
+				{
+					"javaVersion": "1.3.1"
+				},
+			"9":
+				{
+					"javaVersion": "1.4.0"
+				},
+			"10":
+				{
+					"javaVersion": "1.5.2"
+				},
+			"11":
+				{
+					"javaVersion": "1.6.0"
+				},
+			"12":
+				{
+					"javaVersion": "1.8.1"
+				},
+			"13":
+				{
+					"javaVersion": "1.7.1"
+				},
+			"14":
+				{
+					"javaVersion": "1.9.0"
+				},
+			"15":
+				{
+					"javaVersion": "1.10.0"
+				},
+			"16":
+				{
+					"javaVersion": "1.11.0"
+				},
+			"17":
+				{
+					"javaVersion": "1.12.1"
+				},
+			"18":
+				{
+					"javaVersion": "1.13.1"
+				}
 		}
 }
