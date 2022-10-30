@@ -105,6 +105,7 @@ public class DecodeNumpy {
             String[] tokens = shapeStr.split(", ?");
             shape = Arrays.stream(tokens).mapToLong(Long::parseLong).toArray();
         }
+        // TODO fix the data type identification
         long numBytes = 1;
         if (typeStr.toLowerCase().equals("float32")) {
         	numBytes = 4;
