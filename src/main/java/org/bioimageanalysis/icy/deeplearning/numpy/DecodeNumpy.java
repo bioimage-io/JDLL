@@ -1,6 +1,9 @@
 package org.bioimageanalysis.icy.deeplearning.numpy;
 
 import java.io.DataInputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.ByteBuffer;
@@ -36,6 +39,7 @@ public class DecodeNumpy {
 
     private static final int BUFFER_SIZE = 1024 * 1024;
     private static final String MAGIC_NUMBER = "NDAR";
+    private static final String NUMPY_EXTENSION = ".npy";
     private static final byte[] NUMPY_HEADER = {(byte) 0x93, 'N', 'U', 'M', 'P', 'Y'};
     private static final int ARRAY_ALIGN = 64;
 
@@ -43,8 +47,23 @@ public class DecodeNumpy {
             Pattern.compile("\\{'descr': '(.+)', 'fortran_order': False, 'shape': \\((.*)\\),");
 	
 
+    public static void main(String[] args) throws FileNotFoundException, IOException {
+    	String npy = "/Users/Cgarcia/git/deep-icy/models/HPA Bestfitting Densenet_30102022_214717/test_input.npy";
+    	RandomAccessibleInterval<?> aa = retrieveImgLib2FromNpy(npy);
+    }
+    
+    public static < T extends RealType< T > & NativeType< T > > 
+								RandomAccessibleInterval<T> retrieveImgLib2FromNpy(String path) throws FileNotFoundException, IOException{
+    	File npyFile = new File(path);
+    	if (!npyFile.isFile() || !path.endsWith(NUMPY_EXTENSION)) {
+    		throw new IllegalArgumentException("Path provided does not correspond to a Numpy file: " + path);
+    	}
+    	try (InputStream targetStream = new FileInputStream(npyFile)) {
+    		return decodeNumpy(targetStream);
+    	}
+    }
 
-    static < T extends RealType< T > & NativeType< T > > 
+    private static < T extends RealType< T > & NativeType< T > > 
     				RandomAccessibleInterval<T> decodeNumpy(InputStream is) throws IOException {
         DataInputStream dis;
         if (is instanceof DataInputStream) {
