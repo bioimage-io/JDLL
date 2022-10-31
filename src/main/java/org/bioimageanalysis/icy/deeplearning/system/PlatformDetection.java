@@ -1,8 +1,12 @@
 package org.bioimageanalysis.icy.deeplearning.system;
 
+import java.io.IOException;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+
+import org.bioimageanalysis.icy.jep.install.TerminalProcessManager;
+import org.bioimageanalysis.icy.jep.install.system.PlatformDetection;
 
 /**
  * Represents the detected platform in a given system. When a new instance is
@@ -27,7 +31,10 @@ public class PlatformDetection
 
 	public static final String ARCH_X86_64 = "x86_64";
 
-	public static final String M1 = "x86_64";
+    // Aarch64 and arm64 are equivalent architectures
+    public static final String ARCH_AARCH64 = "aarch64";
+    
+    public static final String ARCH_ARM64 = "arm64";
 
 	public static final Map< String, String > archMap;
 
@@ -42,14 +49,18 @@ public class PlatformDetection
 		architectures.put( "x86_64", ARCH_X86_64 );
 		architectures.put( "amd64", ARCH_X86_64 );
 		architectures.put( "powerpc", ARCH_PPC );
-		architectures.put("aarch64", M1);
-		architectures.put("arm64", M1);
+        architectures.put("arm64", ARCH_ARM64);
+        architectures.put("aarch64", ARCH_ARM64);
 		archMap = Collections.unmodifiableMap( architectures );
 	}
+    
+    private static String DETECT_CHIP_TERMINAL_COMMAND = "uname -m";
 
 	private String os;
 
 	private String arch;
+	
+    private boolean rossetta = false;
 
 	/**
 	 * Creates a platform detection using the local platform.
@@ -83,7 +94,24 @@ public class PlatformDetection
 		// resolve architecture
 		this.setArch( archMap.get( System.getProperty("os.arch") ) );
 		if ( this.arch == null )
-		{ throw new IllegalArgumentException( "Unknown architecture " + System.getProperty("os.arch") ); }
+		{ 
+			throw new IllegalArgumentException( "Unknown architecture " + System.getProperty("os.arch") ); 
+		}
+        if (getOs().equals(PlatformDetection.OS_OSX) && this.arch.equals(ARCH_X86_64)) {
+			try {
+				Process proc = Runtime.getRuntime().exec(
+						new String[] {"bash", "-c", DETECT_CHIP_TERMINAL_COMMAND});
+	    		TerminalProcessManager pManager = TerminalProcessManager.build(proc,
+	    				"Error checking the chip architecture with bash");
+	    		pManager.waitProcessExecution(false);
+	    		String txt = pManager.getStreamTxt();
+	    		if (txt.toLowerCase().equals(ARCH_ARM64) || txt.toLowerCase().equals(ARCH_ARM64))
+	    			rossetta = true;
+			} catch (IOException e) {
+				e.printStackTrace();
+				System.out.println("Error checking the chip architecture with bash");
+			}
+        }
 	}
 	
 	public static void main(String[] args) {
@@ -135,4 +163,8 @@ public class PlatformDetection
 
 		return os + "-" + arch;
 	}
+    
+    public boolean isUsingRosseta() {
+    	return this.rossetta;
+    }
 }
