@@ -23,9 +23,13 @@ import net.imglib2.type.numeric.real.FloatType;
 public class ExampleLoadAndRunModel {
 	
 	public static < T extends RealType< T > & NativeType< T > > void main(String[] args) throws LoadEngineException, Exception {
-		String engine = "torchscript";
-		String engineVersion = "1.7.1";
-		String enginesDir = "C:\\Users\\angel\\OneDrive\\Documentos\\pasteur\\git\\deep-icy\\engines";
+		System.load("/Users/Cgarcia/.djl.ai/pytorch/1.9.1-cpu-osx-x86_64/libiomp5.dylib");
+		System.load("/Users/Cgarcia/.djl.ai/pytorch/1.9.1-cpu-osx-x86_64/libc10.dylib");
+		System.load("/Users/Cgarcia/.djl.ai/pytorch/1.9.1-cpu-osx-x86_64/libc10.dylib");
+		System.load("/Users/Cgarcia/.djl.ai/pytorch/1.9.1-cpu-osx-x86_64/libc10.dylib");
+		String engine = "onnx";
+		String engineVersion = "15";
+		String enginesDir = "/Users/Cgarcia/git/deep-icy/engines";
 		String modelFolder = "C:\\Users\\angel\\OneDrive\\Documentos\\pasteur\\git\\deep-icy\\models\\arabidopsis-ovules-boundarymodel";
 		String modelSource = "C:\\Users\\angel\\OneDrive\\Documentos\\pasteur\\git\\deep-icy\\models\\arabidopsis-ovules-boundarymodel\\weights-torchscript.pt";
 		Model model = loadModel(engine, engineVersion, enginesDir, modelFolder, modelSource);
@@ -33,9 +37,9 @@ public class ExampleLoadAndRunModel {
 		final ImgFactory< FloatType > imgFactory = new CellImgFactory<>( new FloatType(), 5 );
 		 
 		// create an 3d-Img with dimensions 20x30x40 (here cellsize is 5x5x5)Ø
-		final Img< FloatType > img1 = imgFactory.create( 1, 1, 512, 512);
+		final Img< FloatType > img1 = imgFactory.create( 1, 4, 128, 128);
 
-		Tensor<FloatType> inpTensor = Tensor.build("input0", "bcyx", img1);
+		Tensor<FloatType> inpTensor = Tensor.build("image", "bcyx", img1);
 		List<Tensor<?>> inputs = new ArrayList<Tensor<?>>();
 		inputs.add(inpTensor);
 		
@@ -52,6 +56,7 @@ public class ExampleLoadAndRunModel {
 		outputs.add(outTensor);
 		
 		outputs = model.runModel(inputs, outputs);
+		System.out.print(false);
 		
 		// The result is stored in the list of tensors "outputs"
 	}
@@ -59,7 +64,7 @@ public class ExampleLoadAndRunModel {
 	public static Model loadModel(String engine, String engineVersion, String enginesDir, String modelFolder, String modelSource) throws LoadEngineException, Exception {
 		
 		boolean cpu = true;
-		boolean gpu = true;
+		boolean gpu = false;
 		EngineInfo engineInfo = EngineInfo.defineDLEngine(engine, engineVersion, enginesDir, cpu, gpu);
 		
 		Model model = Model.createDeepLearningModel(modelFolder, modelSource, engineInfo);
