@@ -60,7 +60,7 @@ public class PlatformDetection
 
 	private String arch;
 	
-    private boolean rossetta = false;
+    private boolean rosetta = false;
 
 	/**
 	 * Creates a platform detection using the local platform.
@@ -106,7 +106,7 @@ public class PlatformDetection
 	    		pManager.waitProcessExecution(false);
 	    		String txt = pManager.getStreamTxt();
 	    		if (txt.toLowerCase().equals(ARCH_ARM64) || txt.toLowerCase().equals(ARCH_ARM64))
-	    			rossetta = true;
+	    			rosetta = true;
 			} catch (IOException e) {
 				e.printStackTrace();
 				System.out.println("Error checking the chip architecture with bash");
@@ -165,6 +165,6 @@ public class PlatformDetection
 	}
     
     public boolean isUsingRosseta() {
-    	return this.rossetta;
+    	return this.rosetta;
     }
 }
