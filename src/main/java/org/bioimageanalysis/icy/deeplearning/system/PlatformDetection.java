@@ -1,12 +1,11 @@
 package org.bioimageanalysis.icy.deeplearning.system;
 
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
-
-import org.bioimageanalysis.icy.jep.install.TerminalProcessManager;
-import org.bioimageanalysis.icy.jep.install.system.PlatformDetection;
 
 /**
  * Represents the detected platform in a given system. When a new instance is
@@ -97,14 +96,11 @@ public class PlatformDetection
 		{ 
 			throw new IllegalArgumentException( "Unknown architecture " + System.getProperty("os.arch") ); 
 		}
-        if (getOs().equals(PlatformDetection.OS_OSX) && this.arch.equals(ARCH_X86_64)) {
+        if (this.arch.equals(ARCH_X86_64)) {
 			try {
 				Process proc = Runtime.getRuntime().exec(
 						new String[] {"bash", "-c", DETECT_CHIP_TERMINAL_COMMAND});
-	    		TerminalProcessManager pManager = TerminalProcessManager.build(proc,
-	    				"Error checking the chip architecture with bash");
-	    		pManager.waitProcessExecution(false);
-	    		String txt = pManager.getStreamTxt();
+				String txt = waitProcessExecutionAndGetOutputText(proc);
 	    		if (txt.toLowerCase().equals(ARCH_ARM64) || txt.toLowerCase().equals(ARCH_ARM64))
 	    			rosetta = true;
 			} catch (IOException e) {
@@ -167,4 +163,31 @@ public class PlatformDetection
     public boolean isUsingRosseta() {
     	return this.rosetta;
     }
+	
+	public String waitProcessExecutionAndGetOutputText(Process proc) throws IOException {
+		BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(proc.getInputStream()));
+		String inputStreamTxt = "";
+		boolean first = true;
+		while (proc.isAlive() || first) {
+			first = false;
+			try {
+				String txtAux1 = readBufferedReaderIntoStringIntoString(bufferedReader);
+				inputStreamTxt += txtAux1;
+				Thread.sleep(300);
+			} catch (InterruptedException e) {
+				throw new IOException("Interrumped process");
+			}
+		}
+		bufferedReader.close();
+		return inputStreamTxt;
+	}
+	
+	public static String readBufferedReaderIntoStringIntoString(BufferedReader input) throws IOException {
+		String text = "";
+		String line;
+	    while ((line = input.readLine()) != null) {
+	    	text += line + System.lineSeparator();
+	    }
+	    return text;
+	}
 }
