@@ -7,13 +7,13 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.bioimageanalysis.icy.jep.install.system.PlatformDetection;
 
 /**
  * Represents the detected platform in a given system. When a new instance is
  * created it is assigned the local detected platform but it can be changed
  * using the available setters.
  * 
+ * @author Carlos Javier Garcia Lopez de Haro
  * @author Daniel Felipe Gonzalez Obando
  */
 public class PlatformDetection
