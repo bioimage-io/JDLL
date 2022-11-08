@@ -1462,14 +1462,14 @@
 		},
 		{
 			"engine": "onnx",
-			"version": "1.12.0",
+			"version": "1.12.1",
 			"pythonVersion": "17",
 			"os": "macosx-x86_64",
 			"gpu": false,
 			"cpu": true,
 			"rosetta": true,
 			"jars": [
-				"https://repo1.maven.org/maven2/com/microsoft/onnxruntime/onnxruntime/1.12.0/onnxruntime-1.12.0.jar"
+				"https://repo1.maven.org/maven2/com/microsoft/onnxruntime/onnxruntime/1.12.1/onnxruntime-1.12.1.jar"
 			]
 		},
 		{
@@ -1642,14 +1642,14 @@
 		},
 		{
 			"engine": "onnx",
-			"version": "1.12.0",
+			"version": "1.12.1",
 			"pythonVersion": "17",
 			"os": "macosx-arm64",
 			"gpu": false,
 			"cpu": true,
 			"rosetta": false,
 			"jars": [
-				"https://repo1.maven.org/maven2/com/microsoft/onnxruntime/onnxruntime/1.12.0/onnxruntime-1.12.0.jar"
+				"https://repo1.maven.org/maven2/com/microsoft/onnxruntime/onnxruntime/1.12.1/onnxruntime-1.12.1.jar"
 			]
 		},
 		{
@@ -1678,14 +1678,14 @@
 		},
 		{
 			"engine": "onnx",
-			"version": "1.12.0",
+			"version": "1.12.1",
 			"pythonVersion": "17",
 			"os": "linux-x86_64",
 			"gpu": false,
 			"cpu": true,
 			"rosetta": true,
 			"jars": [
-				"https://repo1.maven.org/maven2/com/microsoft/onnxruntime/onnxruntime/1.12.0/onnxruntime-1.12.0.jar"
+				"https://repo1.maven.org/maven2/com/microsoft/onnxruntime/onnxruntime/1.12.1/onnxruntime-1.12.1.jar"
 			]
 		},
 		{
@@ -1858,14 +1858,14 @@
 		},
 		{
 			"engine": "onnx",
-			"version": "1.12.0",
+			"version": "1.12.1",
 			"pythonVersion": "17",
 			"os": "linux-arm64",
 			"gpu": false,
 			"cpu": true,
 			"rosetta": false,
 			"jars": [
-				"https://repo1.maven.org/maven2/com/microsoft/onnxruntime/onnxruntime/1.12.0/onnxruntime-1.12.0.jar"
+				"https://repo1.maven.org/maven2/com/microsoft/onnxruntime/onnxruntime/1.12.1/onnxruntime-1.12.1.jar"
 			]
 		},
 		{
@@ -1894,14 +1894,14 @@
 		},
 		{
 			"engine": "onnx",
-			"version": "1.12.0",
+			"version": "1.12.1",
 			"pythonVersion": "17",
 			"os": "windows-x86_64",
 			"gpu": false,
 			"cpu": true,
 			"rosetta": false,
 			"jars": [
-				"https://repo1.maven.org/maven2/com/microsoft/onnxruntime/onnxruntime/1.12.0/onnxruntime-1.12.0.jar"
+				"https://repo1.maven.org/maven2/com/microsoft/onnxruntime/onnxruntime/1.12.1/onnxruntime-1.12.1.jar"
 			]
 		},
 		{
@@ -2074,14 +2074,14 @@
 		},
 		{
 			"engine": "onnx",
-			"version": "1.12.0",
+			"version": "1.12.1",
 			"pythonVersion": "17",
 			"os": "linux-x86_64",
 			"gpu": true,
 			"cpu": true,
 			"rosetta": true,
 			"jars": [
-				"https://repo1.maven.org/maven2/com/microsoft/onnxruntime/onnxruntime_gpu/1.12.0/onnxruntime_gpu-1.12.0.jar"
+				"https://repo1.maven.org/maven2/com/microsoft/onnxruntime/onnxruntime_gpu/1.12.1/onnxruntime_gpu-1.12.1.jar"
 			]
 		},
 		{
@@ -2254,14 +2254,14 @@
 		},
 		{
 			"engine": "onnx",
-			"version": "1.12.0",
+			"version": "1.12.1",
 			"pythonVersion": "17",
 			"os": "windows-x86_64",
 			"gpu": true,
 			"cpu": true,
 			"rosetta": false,
 			"jars": [
-				"https://repo1.maven.org/maven2/com/microsoft/onnxruntime/onnxruntime_gpu/1.12.0/onnxruntime_gpu-1.12.0.jar"
+				"https://repo1.maven.org/maven2/com/microsoft/onnxruntime/onnxruntime_gpu/1.12.1/onnxruntime_gpu-1.12.1.jar"
 			]
 		},
 		{
