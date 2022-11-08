@@ -10,6 +10,7 @@ import java.net.MalformedURLException;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLClassLoader;
+import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.zip.ZipEntry;
@@ -146,14 +147,17 @@ public class EngineLoader extends ClassLoader
 			this.engineClassloader = loadedEngines.get( majorVersion );
 			return;
 		}
-		URL[] urls = new URL[ new File( this.enginePath ).listFiles().length ];
-		int c = 0;
+		ArrayList<URL> urlList = new ArrayList<URL>();
+		// TODO  remove URL[] urls = new URL[ new File( this.enginePath ).listFiles().length ];
+		// TODO remove int c = 0;
 		for ( File ff : new File( this.enginePath ).listFiles() )
 		{
 			if (!ff.getName().endsWith(".jar"))
 					continue;
-			urls[ c++ ] = ff.toURI().toURL();
+			urlList.add(ff.toURI().toURL());
 		}
+		URL[] urls = new URL[urlList.size()];
+		urlList.toArray(urls);
 		this.engineClassloader = new URLClassLoader( urls, icyClassloader );
 
 		loadedEngines.put( this.majorVersion, this.engineClassloader );
