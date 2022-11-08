@@ -150,6 +150,8 @@ public class EngineLoader extends ClassLoader
 		int c = 0;
 		for ( File ff : new File( this.enginePath ).listFiles() )
 		{
+			if (!ff.getName().endsWith(".jar"))
+					continue;
 			urls[ c++ ] = ff.toURI().toURL();
 		}
 		this.engineClassloader = new URLClassLoader( urls, icyClassloader );
@@ -185,10 +187,14 @@ public class EngineLoader extends ClassLoader
 	 * @throws ClassNotFoundException
 	 * @throws IllegalAccessException
 	 * @throws InstantiationException
+	 * @throws SecurityException 
+	 * @throws NoSuchMethodException 
+	 * @throws InvocationTargetException 
+	 * @throws IllegalArgumentException 
 	 */
 	private static DeepLearningInterface getEngineClassFromEntries( Enumeration< ? extends ZipEntry > entries,
 			ClassLoader engineClassloader )
-			throws ClassNotFoundException, InstantiationException, IllegalAccessException
+			throws ClassNotFoundException, InstantiationException, IllegalAccessException, IllegalArgumentException, InvocationTargetException, NoSuchMethodException, SecurityException
 	{
 		while ( entries.hasMoreElements() )
 		{
@@ -205,7 +211,7 @@ public class EngineLoader extends ClassLoader
 					{
 						// Assume that DeepLearningInterface has no arguments
 						// for the constructor
-						return ( DeepLearningInterface ) c.newInstance();
+						return ( DeepLearningInterface ) c.getDeclaredConstructor().newInstance();
 					}
 				}
 				// REmove references
@@ -272,21 +278,11 @@ public class EngineLoader extends ClassLoader
 				jarFile.close();
 			}
 		}
-		catch ( IOException e )
+		catch ( IOException | ClassNotFoundException | InstantiationException
+				| IllegalAccessException | IllegalArgumentException 
+				| InvocationTargetException | NoSuchMethodException | SecurityException e )
 		{
-			errMsg = e.getMessage();
-		}
-		catch ( ClassNotFoundException e )
-		{
-			errMsg = e.getMessage();
-		}
-		catch ( InstantiationException e )
-		{
-			errMsg = e.getMessage();
-		}
-		catch ( IllegalAccessException e )
-		{
-			errMsg = e.getMessage();
+			errMsg = e.getCause().toString();
 		}
 		// As no interface has been found create an exception
 		throw new LoadEngineException( new File( this.enginePath ), errMsg );
