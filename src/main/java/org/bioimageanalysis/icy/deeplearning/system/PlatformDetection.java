@@ -7,11 +7,13 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
+
 /**
  * Represents the detected platform in a given system. When a new instance is
  * created it is assigned the local detected platform but it can be changed
  * using the available setters.
  * 
+ * @author Carlos Javier Garcia Lopez de Haro
  * @author Daniel Felipe Gonzalez Obando
  */
 public class PlatformDetection
@@ -190,4 +192,28 @@ public class PlatformDetection
 	    }
 	    return text;
 	}
+    
+    public static boolean isWindows() {
+    	return new PlatformDetection().getOs().equals(PlatformDetection.OS_WINDOWS);
+    }
+    
+    public static boolean isWindows(PlatformDetection platform) {
+    	return platform.getOs().equals(PlatformDetection.OS_WINDOWS);
+    }
+    
+    public static boolean isLinux() {
+    	return new PlatformDetection().getOs().equals(PlatformDetection.OS_LINUX);
+    }
+    
+    public static boolean isLinux(PlatformDetection platform) {
+    	return platform.getOs().equals(PlatformDetection.OS_LINUX);
+    }
+    
+    public static boolean isMacOS() {
+    	return new PlatformDetection().getOs().equals(PlatformDetection.OS_OSX);
+    }
+    
+    public static boolean isMacOS(PlatformDetection platform) {
+    	return platform.getOs().equals(PlatformDetection.OS_OSX);
+    }
 }
