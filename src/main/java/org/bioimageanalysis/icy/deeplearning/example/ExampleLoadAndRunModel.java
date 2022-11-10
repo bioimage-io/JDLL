@@ -23,15 +23,11 @@ import net.imglib2.type.numeric.real.FloatType;
 public class ExampleLoadAndRunModel {
 	
 	public static < T extends RealType< T > & NativeType< T > > void main(String[] args) throws LoadEngineException, Exception {
-		System.load("/Users/Cgarcia/.djl.ai/pytorch/1.9.1-cpu-osx-x86_64/libiomp5.dylib");
-		System.load("/Users/Cgarcia/.djl.ai/pytorch/1.9.1-cpu-osx-x86_64/libc10.dylib");
-		System.load("/Users/Cgarcia/.djl.ai/pytorch/1.9.1-cpu-osx-x86_64/libc10.dylib");
-		System.load("/Users/Cgarcia/.djl.ai/pytorch/1.9.1-cpu-osx-x86_64/libc10.dylib");
 		String engine = "onnx";
-		String engineVersion = "15";
+		String engineVersion = "17";
 		String enginesDir = "/Users/Cgarcia/git/deep-icy/engines";
-		String modelFolder = "C:\\Users\\angel\\OneDrive\\Documentos\\pasteur\\git\\deep-icy\\models\\arabidopsis-ovules-boundarymodel";
-		String modelSource = "C:\\Users\\angel\\OneDrive\\Documentos\\pasteur\\git\\deep-icy\\models\\arabidopsis-ovules-boundarymodel\\weights-torchscript.pt";
+		String modelFolder = "/Users/Cgarcia/git/deep-icy/models/HPA Bestfitting InceptionV3_30102022_133313";
+		String modelSource = "/Users/Cgarcia/git/deep-icy/models/HPA Bestfitting InceptionV3_30102022_133313/bestfitting-inceptionv3-single-cell.onnx";
 		Model model = loadModel(engine, engineVersion, enginesDir, modelFolder, modelSource);
 		
 		final ImgFactory< FloatType > imgFactory = new CellImgFactory<>( new FloatType(), 5 );
@@ -51,9 +47,11 @@ public class ExampleLoadAndRunModel {
 		 * TODO
 		 * Tensor<T> outTensor = Tensor.buildEmptyTensor("output0", "bcyx", new long[] {1,2,3,4}, datatype);
 		 */
-		Tensor<T> outTensor = Tensor.buildEmptyTensor("output0", "bcyx");
+		Tensor<T> outTensor = Tensor.buildEmptyTensor("classes", "bc");
+		Tensor<T> outTensor2 = Tensor.buildEmptyTensor("features", "bc");
 		List<Tensor<?>> outputs = new ArrayList<Tensor<?>>();
 		outputs.add(outTensor);
+		outputs.add(outTensor2);
 		
 		outputs = model.runModel(inputs, outputs);
 		System.out.print(false);
