@@ -55,7 +55,7 @@ public class PlatformDetection
 		archMap = Collections.unmodifiableMap( architectures );
 	}
     
-    private static String DETECT_CHIP_TERMINAL_COMMAND = "uname -m";
+    private static String DETECT_CHIP_TERMINAL_COMMAND = "sysctl -n machdep.cpu.brand_string";
 
 	private String os;
 
