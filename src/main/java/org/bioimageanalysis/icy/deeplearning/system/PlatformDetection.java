@@ -62,6 +62,8 @@ public class PlatformDetection
 	private String arch;
 	
     private boolean rosetta = false;
+    
+    private static String UNAME_M;
 
 	/**
 	 * Creates a platform detection using the local platform.
@@ -166,7 +168,7 @@ public class PlatformDetection
     	return this.rosetta;
     }
 	
-	public String waitProcessExecutionAndGetOutputText(Process proc) throws IOException {
+	public static String waitProcessExecutionAndGetOutputText(Process proc) throws IOException {
 		BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(proc.getInputStream()));
 		String inputStreamTxt = "";
 		boolean first = true;
@@ -215,5 +217,19 @@ public class PlatformDetection
     
     public static boolean isMacOS(PlatformDetection platform) {
     	return platform.getOs().equals(PlatformDetection.OS_OSX);
+    }
+    
+    public static String executeUnameM() {
+    	if (UNAME_M != null)
+    		return UNAME_M;
+    	Process proc;
+		try {
+			proc = Runtime.getRuntime().exec(
+					new String[] {"bash", "-c", "uname -m"});
+			UNAME_M = archMap.get(waitProcessExecutionAndGetOutputText(proc));
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		return UNAME_M;
     }
 }
