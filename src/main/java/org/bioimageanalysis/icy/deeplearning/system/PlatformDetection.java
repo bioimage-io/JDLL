@@ -100,7 +100,7 @@ public class PlatformDetection
 		{ 
 			throw new IllegalArgumentException( "Unknown architecture " + System.getProperty("os.arch") ); 
 		}
-        if (this.arch.equals(ARCH_X86_64)) {
+        if (this.arch.equals(ARCH_X86_64) && !getOs().equals(PlatformDetection.OS_WINDOWS)) {
 			try {
 				Process proc = Runtime.getRuntime().exec(
 						new String[] {"bash", "-c", DETECT_CHIP_TERMINAL_COMMAND});
