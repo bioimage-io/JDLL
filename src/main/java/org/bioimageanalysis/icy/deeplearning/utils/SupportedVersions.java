@@ -93,8 +93,7 @@ public class SupportedVersions
 				SupportedVersions.class.getClassLoader().getResourceAsStream( "supportedVersions.json" ) ) );
 		Gson g = new Gson();
 		// Create the type that we want to read from the json file
-		Type mapType = new TypeToken< HashMap< String, Object > >()
-		{}.getType();
+		Type mapType = new TypeToken< HashMap< String, Object > >(){}.getType();
 		HashMap< String, Object > supportedVersions = g.fromJson( br, mapType );
 		return supportedVersions;
 	}
