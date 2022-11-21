@@ -29,7 +29,6 @@ public class InstalledDeepLearningVersions {
 	 * @throws IOException 
 	 */
 	private InstalledDeepLearningVersions(Path path) throws IOException {
-		boolean success;
 		if (!path.toFile().isDirectory() && !path.toFile().mkdirs())
 			throw new IOException("Unable to find or create Deep Learning engines "
 					+ "directory: " + path.toString());
