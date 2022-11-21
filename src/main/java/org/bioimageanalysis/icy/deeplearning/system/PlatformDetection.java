@@ -15,9 +15,9 @@ import java.util.Map;
  */
 public class PlatformDetection
 {
-    public static final String OS_WINDOWS = "Windows";
-    public static final String OS_OSX = "MacOSX";
-    public static final String OS_LINUX = "Linux";
+    public static final String OS_WINDOWS = "windows";
+    public static final String OS_OSX = "macosx";
+    public static final String OS_LINUX = "linux";
     public static final String ARCH_PPC64LE = "ppc64le";
     public static final String ARCH_X86_32 = "x86";
     public static final String ARCH_X86_64 = "x86_64";
