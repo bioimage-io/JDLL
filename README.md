@@ -142,16 +142,16 @@ The creation of tensors in the main program side is reduced to the creation of I
      
   All the input tensors should be put together in a List, same for the output tensors. Then the model should be called as `model.runModel(....)`. The output list of tensors is then updated inplace.
      
-     ```
-      // List that will contain the input tensors
-      List<Tensors> inputTensors = new ArrayList<Tensor>();
-      // List that will contain the output tensors
-      List<Tensors> outputTensors = new ArrayList<Tensor>();
-      inputTensors.add(inputTensor);
-      outputTensors.add(outputTensor);
-      model.runModel(inputTensors, outputTensors);
-      // The results of applying inference will be // stored in the Tensors of the list ‘outputTensors’ variable
-     ```
+  ```
+   // List that will contain the input tensors
+   List<Tensors> inputTensors = new ArrayList<Tensor>();
+   // List that will contain the output tensors
+   List<Tensors> outputTensors = new ArrayList<Tensor>();
+   inputTensors.add(inputTensor);
+   outputTensors.add(outputTensor);
+   model.runModel(inputTensors, outputTensors);
+   // The results of applying inference will be // stored in the Tensors of the list ‘outputTensors’ variable
+  ```
      
   A code example can be found at: https://github.com/bioimage-io/model-runner-java/blob/finish-first-iteration/src/main/java/org/bioimageanalysis/icy/deeplearning/example/ExampleLoadAndRunModel.java
      
