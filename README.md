@@ -94,6 +94,69 @@ With this information an example code snippet would be:
 
    The above piece of code would call the corresponding engine instance in a separate classloader and load the model in its corresponding engine. This model can now be used to make inference.
    </ul>
+   
+   ### 2.   Creating agnostic tensors
+   
+   <ul>
+   The java model runner implements its own agnostic tensors that act as a vehicle to communicate between the main Java software and the Java Deep Learning framework.
+   
+   
+   Thanks to the agnostic tensors the main program does not have to deal with the creation of different tensors depending on the DL framework, unifying the task.
+   
+   Agnostic tensors use ImgLib2 RandomAccessibleIntervals as the backend to store the data. ImgLib2 provides an all-in-Java fast and lightweight framework to handle the data and communicate with particular Deep Learning frameworks.
+The creation of tensors in the main program side is reduced to the creation of ImgLib2 RandomAcessibleIntevals (or objects that extend them).
+   
+   Once the ImgLib2 object is created, the creation of a model runner tensor is simple. Apart from the data as ImgLib2 it requires the name of the tensor and the axes order of the tensor (as defined in the rdf.yaml). 
+   
+   An example would be:
+   
+   ```
+   RandomAccessibleInterval<FloatType> data = …..;
+   Tensor tensor = Tensor.build(“name”, “bcyx”, data);
+   ```
+   
+   Note that it is also necessary to generate the agnostic tensors that correspond to the output of the model. 
+   
+   These tensors are going to host the results of the inference. 
+   
+   Output tensors can be created as empty tensors and only contain the name and axes order of the output tensor:
+   
+   ```
+   Tensor.buildEmptyTensor(“outputName”, “bcyx”);
+   ```
+   
+   Or can be constructed with an ImgLib2 object with the expected shape and data type of the output to allocate memory prior to execution.
+   
+   ```
+   RandomAccessibleInterval<FloatType> expectedData = …;
+   Tensor output = Tensor.build(“outputName”, “bcyx”, expectedData);
+   ```
+   </ul>
+   
+   ### 3.   Making inference
+   
+  <ul>
+  Once the model and tensors have been defined, everything is ready to make inference.
+     
+  The process should be relatively easy to implement in the main software.
+     
+  All the input tensors should be put together in a List, same for the output tensors. Then the model should be called as `model.runModel(....)`. The output list of tensors is then updated inplace.
+     
+     ```
+      // List that will contain the input tensors
+      List<Tensors> inputTensors = new ArrayList<Tensor>();
+      // List that will contain the output tensors
+      List<Tensors> outputTensors = new ArrayList<Tensor>();
+      inputTensors.add(inputTensor);
+      outputTensors.add(outputTensor);
+      model.runModel(inputTensors, outputTensors);
+      // The results of applying inference will be // stored in the Tensors of the list ‘outputTensors’ variable
+     ```
+     
+  A code example can be found at: https://github.com/bioimage-io/model-runner-java/blob/finish-first-iteration/src/main/java/org/bioimageanalysis/icy/deeplearning/example/ExampleLoadAndRunModel.java
+     
+  </ul>
+   
 
    
 
