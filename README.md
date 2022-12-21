@@ -45,6 +45,13 @@ An example of this is shown in the images below:
    <p>It needs to implement an interface from the model runner library so that it can be called in an agnostic manner. The <code>DlEngine</code> file is in charge of converting the agnostic tensors into framework specific tensors, loading the model, making inference and converting the results into agnostic tensors again and sending them back.</p>
    
    <p>Currently the <code>DlEngine</code> exists for Pytorch, Tensorflow 1, Tensorflow 2 and Onnx.
-   Below there is a table with links to the JAR files and the code of the existing DlEngines</p>
+   Below there is a table with links to the JAR files and the code of the existing <code>DlEngines</code></p>
 </ul>
 
+| **Engine**                               | **Link to JAR**       | **Source code**                                                   |
+|------------------------------------------|-----------------------|-------------------------------------------------------------------|
+| Pytorch                                  |     To be released    | https://gitlab.pasteur.fr/bia/pytorch-interface                   |
+| Tensorflow 1                             |     To be released    | https://gitlab.pasteur.fr/bia/deep-icy-tf1                        |
+|Tensorflow   2 API 0.2.0                  |     To be released    | https://gitlab.pasteur.fr/bia/tensorflow-2-interface-0.2.0        |
+|Tensorflow   2 all APIs but 0.2.0         |     To be released    | https://gitlab.pasteur.fr/bia/tensorflow-2-interface-0.3.0        |
+| Onnx                                     |     To be released    | https://github.com/bioimage-io/onnx-java-interface                |
