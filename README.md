@@ -55,3 +55,47 @@ An example of this is shown in the images below:
 |Tensorflow   2 API 0.2.0                  |     To be released    | https://gitlab.pasteur.fr/bia/tensorflow-2-interface-0.2.0        |
 |Tensorflow   2 all APIs but 0.2.0         |     To be released    | https://gitlab.pasteur.fr/bia/tensorflow-2-interface-0.3.0        |
 | Onnx                                     |     To be released    | https://github.com/bioimage-io/onnx-java-interface                |
+
+   <ul>
+      <ul>
+      <p>Finally, the information about the engines supported currently by the model runner, for which OS and architectures and which JAR files are required each of the engines is stored in the following json file: https://github.com/bioimage-io/model-runner-java/blob/finish-first-iteration/src/main/resources/availableDLVersions.json</p>
+      </ul>
+
+   <p>Note that the model runner will be in **constant development** and that it is open to community collaboration, so **pull requests** to the official repository of the model runner to improve functionality or to add new engines are **very welcomed**.</p>
+   </ul>
+
+## Implementing the Java model runner
+   The Java model runner was developed with the objective of being as easy as possible to implement in already existing Java softwares.
+There are three key points: loading a model, creating the tensors, and making inference with the model on the tensors.
+
+   ### 1.	Loading a model
+
+   <ul>
+   In order to load a model, the library needs to know first in which framework the model is going to be loaded, and then where is the model of interest.
+   
+   The user needs to give information about the DL framework. For that the creation of an object called [`EngineInfo`](https://github.com/bioimage-io/model-runner-java/blob/main/src/main/java/org/bioimageanalysis/icy/deeplearning/utils/EngineInfo.java) is required. An `EngineInfo` object has to be created with the framework name that is given by the [Bioimage.io specs](https://github.com/bioimage-io/spec-bioimage-io/blob/gh-pages/weight_formats_spec_0_4.md). **Tensorflow** should be `tensorflow_saved_model_bundled`, **Pytorch for Java**, `torchscript` and **Onnx**, `onnx`. 
+   
+   The other required parameters are the  version of the framework in Python (sometimes it differs from the Java API version) that wants to be loaded (1.15.0, 1.9.1, 15….) and the directory where all the engines folders are stored. Looking at the previous example this directory would be C:\Users\carlos\icy\engines.
+With this information an example code snippet would be: 
+
+   ```
+   EngineInfo engineInfo = EngineInfo.defineDLEngine(“pytorch”, “1.9.1”, “C:\Users\carlos\icy\engines”);
+   ```
+
+   This engine info must be used to load the corresponding model. Model loading requires 3 parameters, the model folder (directory where all the files for a model are stored), the model source (path to the file that is specified in the weights>source field in the rdf.yaml file) and the EngineInfo object previously created.
+
+   An example code to load a model would be:
+
+   ```
+   String modelPath = “C:\Users\carlos\icy\models\EnhancerMitochondriaEM2D_13102022_171141”;
+   String modelSource = modelPath + “weights-torchscript.pt”;
+   Model model = Model.createDeepLearningModel(modelPath, modelSource, engineInfo);
+   ```
+
+   The above piece of code would call the corresponding engine instance in a separate classloader and load the model in its corresponding engine. This model can now be used to make inference.
+   </ul>
+
+   
+
+   
+
