@@ -56,8 +56,11 @@ public class ByteArrayUtils {
 	 */
 	public static int[] convertIntoUInt8(byte[] arr, ByteOrder byteOrder) {
 		int[] int32 = new int[arr.length];
-		for ( int i = 0; i < arr.length / 4; i ++) {
-			int32[i] = arr[i];
+		for ( int i = 0; i < arr.length; i ++) {
+			if (arr[i] < 0)
+				int32[i] = 256 + arr[i];
+			else
+				int32[i] = arr[i];
 		}
 		return int32;
 	}
@@ -93,18 +96,25 @@ public class ByteArrayUtils {
 		return int32;
 	}
 	
-	/**
-	 * Converts byte array into a unsigned integer 16 bit array stored in 
-	 * a buffer.
-	 *  However, as this data type does not exist in Java, the values are stored
-	 * in an int32 array containing the values that would correspond to
-	 * an uin16 array
-	 * @param arr
-	 * 	the byte array
-	 * @return an int array containing the wanted data
-	 */
-	public static int[] convertIntoUnignedIn16(byte[] arr) {
-		return convertIntoUnignedIn16(arr, ByteOrder.LITTLE_ENDIAN);
+	public static long[] convertIntoUnsignedInt32(byte[] arr) {
+		return convertIntoUnsignedInt32(arr, ByteOrder.LITTLE_ENDIAN);
+	}
+	
+	public static long[] convertIntoUnsignedInt32(byte[] arr, ByteOrder byteOrder) {
+		long[] uint32 = new long[arr.length / 4];
+		for ( int i = 0; i < arr.length / 4; i ++) {
+			byte[] intArr = new byte[4];
+			intArr[0] = arr[i * 4];
+			intArr[1] = arr[i * 4 + 1];
+			intArr[2] = arr[i * 4 + 2];
+			intArr[3] = arr[i * 4 + 3];
+			int number = ByteBuffer.wrap(intArr).order(byteOrder).getInt();
+			if (number < 0)
+				uint32[i] = 2^32 + number;
+			else
+				uint32[i] = number;
+		}
+		return uint32;
 	}
 	
 	/**
@@ -117,27 +127,33 @@ public class ByteArrayUtils {
 	 * 	the byte array
 	 * @return an int array containing the wanted data
 	 */
-	public static int[] convertIntoUnignedIn16(byte[] arr, ByteOrder byteOrder) {
-		short[] signedShortArr = convertIntoSignedShort16(arr, byteOrder);
-		int[] uint16 = new int[signedShortArr.length];
-		int nVals = (2^16);
-		for (int i = 0; i < signedShortArr.length; i ++) {
-			if (signedShortArr[i] < 0) {
-				uint16[i] = nVals + signedShortArr[i];
-				continue;
-			}
-			uint16[i] = signedShortArr[i];
+	public static int[] convertIntoUnsignedIn16(byte[] arr) {
+		return convertIntoUnsignedIn16(arr, ByteOrder.LITTLE_ENDIAN);
+	}
+	
+	/**
+	 * Converts byte array into a unsigned integer 16 bit array stored in 
+	 * a buffer.
+	 *  However, as this data type does not exist in Java, the values are stored
+	 * in an int32 array containing the values that would correspond to
+	 * an uin16 array
+	 * @param arr
+	 * 	the byte array
+	 * @return an int array containing the wanted data
+	 */
+	public static int[] convertIntoUnsignedIn16(byte[] arr, ByteOrder byteOrder) {
+		int[] int16 = new int[arr.length / 2];
+		for ( int i = 0; i < arr.length / 4; i ++) {
+			byte[] intArr = new byte[2];
+			intArr[0] = arr[i * 2];
+			intArr[1] = arr[i * 4 + 1];
+			short number = ByteBuffer.wrap(intArr).order(byteOrder).getShort();
+			if (number < 0)
+				int16[i] = 2^16 + number;
+			else
+				int16[i] = number;
 		}
-		for ( int i = 0; i < arr.length / 2; i ++) {
-			byte[] shortArr = new byte[2];
-			shortArr[0] = arr[i * 2];
-			shortArr[1] = arr[i * 2 + 1];
-			uint16[i] = (int)(
-			        (int)(shortArr[1] & 0xff) << 8  |
-			        (int)(shortArr[0] & 0xff)
-			         );
-		}
-		return uint16;
+		return int16;
 	}
 	
 	/**
