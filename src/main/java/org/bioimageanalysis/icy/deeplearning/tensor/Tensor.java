@@ -8,15 +8,11 @@ import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.converter.RealTypeConverters;
 import net.imglib2.img.Img;
 import net.imglib2.img.ImgFactory;
+import net.imglib2.img.cell.CellImgFactory;
+import net.imglib2.loops.LoopBuilder;
 import net.imglib2.type.NativeType;
 import net.imglib2.type.Type;
 import net.imglib2.type.numeric.RealType;
-import net.imglib2.type.numeric.integer.ByteType;
-import net.imglib2.type.numeric.integer.IntType;
-import net.imglib2.type.numeric.integer.LongType;
-import net.imglib2.type.numeric.integer.UnsignedByteType;
-import net.imglib2.type.numeric.real.DoubleType;
-import net.imglib2.type.numeric.real.FloatType;
 import net.imglib2.util.Util;
 
 /**
@@ -146,6 +142,31 @@ public final class Tensor< T extends RealType< T > & NativeType< T > >
 	}
 
 	/**
+	 * Creates a tensor without data. However, the memory that this tensor will consume is already
+	 * allocated during its creation
+	 *
+	 * @param tensorName
+	 *            name of the tensor as defined by the model
+	 * @param axes
+	 *            String containing the axes order of the tensor. For example:
+	 *            "bcyx"
+	 * @param shape
+	 * 			  Shape of the tensor
+	 * @param dtype
+	 * 			  data type of the tensor
+	 * @return the tensor
+	 */
+	public static < T extends RealType< T > & NativeType< T > , R extends RealType< R > & NativeType< R > > 
+				Tensor< R > buildEmptyTensorAndAllocateMemory( final String tensorName, 
+																final String axes, final long[] shape,
+																final R dtype)
+	{
+		final ImgFactory< R > imgFactory = new CellImgFactory<>( dtype, 5 );
+		final Img<R> backendData = imgFactory.create(shape);
+		return new Tensor<>( tensorName, axes, backendData );
+	}
+
+	/**
 	 * Set the data structure of the tensor that contains the numbers. In order
 	 * to change the data of the tensor, first do 'tensor.setData(null)'. Once
 	 * the tensor data is null, set the wanted {@link Random
@@ -155,6 +176,7 @@ public final class Tensor< T extends RealType< T > & NativeType< T > >
 	 * @param data
 	 *            the numbers of the tensor in a Numpy array like structure
 	 */
+	/** TODO remove once it is clear that tensors can be rewritten
 	public void setData( final RandomAccessibleInterval< T > data )
 	{
 		throwExceptionIfClosed();
@@ -189,12 +211,43 @@ public final class Tensor< T extends RealType< T > & NativeType< T > >
 			emptyTensor = false;
 		}
 	}
+	*/
+	public void setData( final RandomAccessibleInterval< T > data )
+	{
+		throwExceptionIfClosed();
+		if ( data == null && this.data != null ) {
+			this.data = null;
+			return;
+		}
+		
+		if ( !emptyTensor )
+			checkDims( data, axesString );
+		
+		if ( !emptyTensor && !equalShape( data.dimensionsAsLongArray() ) ) { 
+			throw new IllegalArgumentException( "Trying to set an array as the backend of the Tensor "
+				+ "with a different shape than the Tensor. Tensor shape is: " + Arrays.toString( shape )
+				+ " and array shape is: " + Arrays.toString( data.dimensionsAsLongArray() ) ); 
+		}
+		if ( !emptyTensor && this.data != null
+				&& Util.getTypeFromInterval( this.data ) != Util.getTypeFromInterval( data ) ) { 
+			throw new IllegalArgumentException( "Trying to set an array as the backend of the Tensor "
+				+ "with a different data type than the Tensor. Tensor data type is: " + dType.toString()
+				+ " and array data type is: " + Util.getTypeFromInterval( data ).toString() ); 
+		}
+		
+		LoopBuilder.setImages( this.data, data )
+			.multiThreaded().forEachPixel( ( i, o ) -> o.set( i ) );
+		
+		if ( emptyTensor ) {
+			setShape();
+			dType = Util.getTypeFromInterval( data );
+			emptyTensor = false;
+		}
+	}
 
 	/**
-	 * TODO get method to return data as a Java array REturn the data in a
-	 * software agnostic way using DJL NDArrays
 	 *
-	 * @return the data of the tensor as a NDArray
+	 * @return the data of the tensor as a RandomAccessible interval
 	 */
 	public RandomAccessibleInterval< T > getData()
 	{
@@ -209,7 +262,7 @@ public final class Tensor< T extends RealType< T > & NativeType< T > >
 	}
 
 	/**
-	 * Copy from the backend of a tensor (data either as an NDArray or Buffer)
+	 * Copy from the backend of a tensor 
 	 *
 	 * @param source
 	 *            the tensor whose backend is going to be copied. Must be of the
@@ -219,7 +272,7 @@ public final class Tensor< T extends RealType< T > & NativeType< T > >
 	{
 		throwExceptionIfClosed();
 		if ( source.getData() != null )
-			copyNDArrayTensorBackend( source );
+			copyRAITensorBackend( source );
 	}
 
 	/**
@@ -229,7 +282,7 @@ public final class Tensor< T extends RealType< T > & NativeType< T > >
 	 *            the tensor whose backend is going to be copied. Must be of the
 	 *            same type than this tensor.
 	 */
-	public void copyNDArrayTensorBackend( final Tensor< T > source )
+	public void copyRAITensorBackend( final Tensor< T > source )
 	{
 		throwExceptionIfClosed();
 		setData( source.getData() );

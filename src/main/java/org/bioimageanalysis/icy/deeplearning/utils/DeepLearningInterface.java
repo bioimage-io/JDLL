@@ -19,6 +19,7 @@ public interface DeepLearningInterface
 	 *            list containing the input tensors
 	 * @param outputTensors
 	 *            list containing only the information about output tensors
+	 * @return 
 	 * @return output tensors produced by the model
 	 * @throws RunModelException
 	 *             if there is an error in the execution of the model
@@ -28,8 +29,8 @@ public interface DeepLearningInterface
 	 * TODO
 	 * TODO should it be like the commented option? ask jean-yves
 	 */
-	//public List< Tensor > run( List< Tensor > inputTensors, List< Tensor > outputTensors ) throws RunModelException;
-	public List< Tensor  < ? > > run( List< Tensor  < ? > > inputTensors, List< Tensor  < ? > > outputTensors ) throws RunModelException;
+	//public void run( List< Tensor > inputTensors, List< Tensor > outputTensors ) throws RunModelException;
+	public void run( List< Tensor  < ? > > inputTensors, List< Tensor  < ? > > outputTensors ) throws RunModelException;
 
 	/**
 	 * Load the model with the corresponding engine on the particular
