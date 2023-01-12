@@ -1,5 +1,4 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<<<<<<< HEAD
 <project xmlns="http://maven.apache.org/POM/4.0.0"
 	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
 	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
@@ -13,10 +12,10 @@
 	
 	<groupId>org.bioimageanalysis.icy</groupId>
 	<artifactId>dl-model-runner</artifactId>
-	<version>1.0.1</version>
+	<version>1.0.0</version>
 	
 	<name>DeepLearning interface for Icy</name>
-	<description>This project holds the code allowing the interaction between Icy and TensorFlow.
+	<description>This project holds the code allowing the interaction between Java and Deep Learning frameworks.
 	</description>
 	<url>https://github.com/bioimage-io/model-runner-java</url> 
 	<inceptionYear>2022</inceptionYear>
@@ -31,23 +30,6 @@
 			<distribution>repo</distribution>
 		</license>
 	</licenses>
-=======
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
-	<modelVersion>4.0.0</modelVersion>
-
-	<parent>
-		<groupId>org.bioimageanalysis.icy</groupId>
-		<artifactId>parent-pom-plugin</artifactId>
-		<version>1.0.6</version>
-	</parent>
-
-	<artifactId>dl-model-runner</artifactId>
-	<version>1.0.0</version>
-
-	<name>DeepLearning interface for Icy</name>
-	<description>This project holds the code allowing the interaction between Icy and TensorFlow.</description>
->>>>>>> branch 'finish-first-iteration' of https://github.com/bioimage-io/model-runner-java.git
-
 	<developers>
 		<developer>
 			<id>carlosuc3m</id>
@@ -147,19 +129,9 @@
 			<id>icy</id>
 			<url>https://icy-nexus.pasteur.fr/repository/Icy/</url>
 		</repository>
-<!--		
 		<repository>
 			<id>scijava.public</id>
 			<url>https://maven.scijava.org/content/groups/public</url>
 		</repository>
-		<repository>
-			<id>oss-sonatype</id>
-			<name>oss-sonatype</name>
-			<url>https://oss.sonatype.org/content/repositories/snapshots/</url>
-			<snapshots>
-				<enabled>true</enabled>
-			</snapshots>
-		</repository>
--->		
 	</repositories>
 </project>
