@@ -1,4 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
+<<<<<<< HEAD
 <project xmlns="http://maven.apache.org/POM/4.0.0"
 	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
 	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
@@ -30,6 +31,22 @@
 			<distribution>repo</distribution>
 		</license>
 	</licenses>
+=======
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+
+	<parent>
+		<groupId>org.bioimageanalysis.icy</groupId>
+		<artifactId>parent-pom-plugin</artifactId>
+		<version>1.0.6</version>
+	</parent>
+
+	<artifactId>dl-model-runner</artifactId>
+	<version>1.0.0</version>
+
+	<name>DeepLearning interface for Icy</name>
+	<description>This project holds the code allowing the interaction between Icy and TensorFlow.</description>
+>>>>>>> branch 'finish-first-iteration' of https://github.com/bioimage-io/model-runner-java.git
 
 	<developers>
 		<developer>
@@ -116,11 +133,13 @@
 			<artifactId>imglib2</artifactId>
 			<version>5.13.0</version>
 		</dependency>
+<!--
 		<dependency>
 			<groupId>org.yaml</groupId>
 			<artifactId>snakeyaml</artifactId>
 			<version>1.30</version>
 		</dependency>
+!-->
 	</dependencies>
 
 	<repositories>
@@ -128,6 +147,7 @@
 			<id>icy</id>
 			<url>https://icy-nexus.pasteur.fr/repository/Icy/</url>
 		</repository>
+<!--		
 		<repository>
 			<id>scijava.public</id>
 			<url>https://maven.scijava.org/content/groups/public</url>
@@ -140,5 +160,6 @@
 				<enabled>true</enabled>
 			</snapshots>
 		</repository>
+-->		
 	</repositories>
 </project>
