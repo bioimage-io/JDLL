@@ -6,11 +6,11 @@ import net.imglib2.type.NativeType;
 import net.imglib2.type.numeric.RealType;
 import net.imglib2.type.numeric.real.FloatType;
 
-public class SigmoidTensorTransformation extends AbstractTensorPixelTransformation
+public class SigmoidTransformation extends AbstractTensorPixelTransformation
 {
 	private static String name = "sigmoid";
 
-	public SigmoidTensorTransformation()
+	public SigmoidTransformation()
 	{
 		super(name);
 	}

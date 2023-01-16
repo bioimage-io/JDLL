@@ -8,13 +8,13 @@ import net.imglib2.type.NativeType;
 import net.imglib2.type.numeric.RealType;
 import net.imglib2.type.numeric.real.FloatType;
 
-public class BinarizeTensorTransformation extends AbstractTensorPixelTransformation
+public class BinarizeTransformation extends AbstractTensorPixelTransformation
 {
 	
 	private static String name = "binarize";
 	private Double threshold;
 
-	public BinarizeTensorTransformation()
+	public BinarizeTransformation()
 	{
 		super( name );
 	}

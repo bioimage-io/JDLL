@@ -234,9 +234,21 @@ public final class Tensor< T extends RealType< T > & NativeType< T > >
 				+ "with a different data type than the Tensor. Tensor data type is: " + dType.toString()
 				+ " and array data type is: " + Util.getTypeFromInterval( data ).toString() ); 
 		}
+		/**
+		 * TODO
+		 * Copy or reference?
+		if (this.data == null) {
+			final ImgFactory< T > factory = Util.getArrayOrCellImgFactory( data, Util.getTypeFromInterval(data) );
+			this.data = factory.create( data );
+		}
+		 */
 		
-		LoopBuilder.setImages( this.data, data )
-			.multiThreaded().forEachPixel( ( i, o ) -> o.set( i ) );
+		if (this.data == null) {
+			this.data = data;
+		} else {
+			LoopBuilder.setImages( this.data, data )
+				.multiThreaded().forEachPixel( ( i, o ) -> o.set( i ) );
+		}
 		
 		if ( emptyTensor ) {
 			setShape();

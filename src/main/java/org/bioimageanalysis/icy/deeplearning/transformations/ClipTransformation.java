@@ -6,7 +6,7 @@ import net.imglib2.type.NativeType;
 import net.imglib2.type.numeric.RealType;
 import net.imglib2.type.numeric.real.FloatType;
 
-public class ClipTensorTransformation extends AbstractTensorPixelTransformation
+public class ClipTransformation extends AbstractTensorPixelTransformation
 {
 
 	private static final class ClipFunction implements FloatUnaryOperator
@@ -37,7 +37,7 @@ public class ClipTensorTransformation extends AbstractTensorPixelTransformation
 	private Double min;
 	private Double max;
 
-	public ClipTensorTransformation()
+	public ClipTransformation()
 	{
 		super(name);
 	}
