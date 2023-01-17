@@ -139,30 +139,8 @@ public class ScaleRangeTransformation extends AbstractTensorTransformation
 		Arrays.sort(flatArr);
 		
 		int percentilePos = (int) (flatSize * percentile);
+		percentilePos = percentilePos >= flatArr.length ? flatArr.length - 1 : percentilePos;
 		return (float) flatArr[percentilePos];
-	}
-	
-	private float[] getMinMax(RandomAccessibleInterval<FloatType> imgTensor) {
-		Cursor<FloatType> tensorCursor;
-		if (imgTensor instanceof IntervalView)
-			tensorCursor = ((IntervalView<FloatType>) imgTensor).cursor();
-		else if (imgTensor instanceof Img)
-			tensorCursor = ((Img<FloatType>) imgTensor).cursor();
-		else
-			throw new IllegalArgumentException("The data of the " + Tensor.class + " has "
-					+ "to be an instance of " + Img.class + " or " + IntervalView.class);
-		float max = imgTensor.getAt(new long[imgTensor.numDimensions()]).getRealFloat();
-		// Avoid referencing adding 0
-		float min = max + 0;
-		while ( tensorCursor.hasNext() )
-		{
-			float val = tensorCursor.next().getRealFloat();
-			if (val > max) 
-				max = val;
-			else if (val< min)
-				min = val;
-		}
-		return new float[] {min, max};
 	}
 	
 	private void axesScale( final Tensor< FloatType > output, String axesOfInterest) {
