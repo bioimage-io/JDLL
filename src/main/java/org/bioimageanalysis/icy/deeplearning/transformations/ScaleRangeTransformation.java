@@ -1,8 +1,11 @@
 package org.bioimageanalysis.icy.deeplearning.transformations;
 
+import java.util.Arrays;
+
 import org.bioimageanalysis.icy.deeplearning.tensor.Tensor;
 
 import net.imglib2.Cursor;
+import net.imglib2.IterableInterval;
 import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.img.Img;
 import net.imglib2.img.array.ArrayImg;
@@ -20,7 +23,7 @@ public class ScaleRangeTransformation extends AbstractTensorTransformation
 
 	private static final String name = "scale_range";
 	private double minPercentile = 0;
-	private double maxPercentile = 1;
+	private double maxPercentile = 100;
 	private String axes;
 	private Mode mode = Mode.PER_SAMPLE;
 	private String tensorName;
@@ -122,10 +125,21 @@ public class ScaleRangeTransformation extends AbstractTensorTransformation
 	}
 	
 	private float findPercentileValue(RandomAccessibleInterval<FloatType> rai, double percentile) {
-		float[] minMax = getMinMax(rai);
-		float min = minMax[0];
-		float max = minMax[1];
-		return (float) ((max - min) * percentile + min);
+		final IterableInterval<FloatType> flatImage = Views.iterable(rai);
+		final Cursor<FloatType> cursor = flatImage.cursor();
+		long flatSize = Arrays.stream(flatImage.dimensionsAsLongArray()).reduce(1, (a, b) -> a * b);
+		double[] flatArr = new double[(int) flatSize];
+		
+		int count = 0;
+		while ( cursor.hasNext() )
+		{
+			cursor.next();
+			flatArr[count ++] = cursor.get().get();
+		}
+		Arrays.sort(flatArr);
+		
+		int percentilePos = (int) (flatSize * percentile);
+		return (float) flatArr[percentilePos];
 	}
 	
 	private float[] getMinMax(RandomAccessibleInterval<FloatType> imgTensor) {
