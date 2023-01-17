@@ -25,6 +25,7 @@ public class ZeroMeanUnitVarianceTransformation extends AbstractTensorTransforma
 	private double[] stdArr;
 	private Mode mode = Mode.PER_SAMPLE;
 	private String axes;
+	private float eps = (float) Math.pow(10, -6);
 
 	private static String FIXED_MODE_ERR = "If the mode is 'fixed', the parameters 'mean' and"
 			+ " 'std need to be specified";
@@ -191,7 +192,7 @@ public class ZeroMeanUnitVarianceTransformation extends AbstractTensorTransforma
 
 		LoopBuilder.setImages( output.getData() )
 				.multiThreaded()
-				.forEachPixel( i -> i.set( ( i.get() - meanDouble.floatValue() ) / stdDouble.floatValue() ) );
+				.forEachPixel( i -> i.set( ( i.get() - meanDouble.floatValue() ) / ( stdDouble.floatValue() + eps ) ) );
 	}
 	
 	private void notFixedAxesMeanStd( final Tensor< FloatType > output, String axesOfInterest) {
@@ -222,7 +223,7 @@ public class ZeroMeanUnitVarianceTransformation extends AbstractTensorTransforma
 			final float std = meanStd[ 1 ];
 			LoopBuilder.setImages( plane )
 					.multiThreaded()
-					.forEachPixel( i -> i.set( ( i.get() - mean ) / std ) );
+					.forEachPixel( i -> i.set( ( i.get() - mean ) / ( std  + eps ) ) );
 		}
 	}
 	
@@ -253,7 +254,7 @@ public class ZeroMeanUnitVarianceTransformation extends AbstractTensorTransforma
 			final float std = (float) this.stdArr[c ++ ];
 			LoopBuilder.setImages( plane )
 					.multiThreaded()
-					.forEachPixel( i -> i.set( ( i.get() - mean ) / std ) );
+					.forEachPixel( i -> i.set( ( i.get() - mean ) / ( std  + eps ) ) );
 		}
 	}
 	
@@ -264,7 +265,7 @@ public class ZeroMeanUnitVarianceTransformation extends AbstractTensorTransforma
 		final float std = meanStd[ 1 ];
 		LoopBuilder.setImages( output.getData() )
 				.multiThreaded()
-				.forEachPixel( i -> i.set( ( i.get() - mean ) / std ) );
+				.forEachPixel( i -> i.set( ( i.get() - mean ) / ( std  + eps ) ) );
 	}
 
 	public static float[] meanStd( final RandomAccessibleInterval< FloatType > rai )
@@ -314,7 +315,7 @@ public class ZeroMeanUnitVarianceTransformation extends AbstractTensorTransforma
 	}
 	
 	public static void main(String[] args) {
-		test1();
+		//test1();
 		test2();
 		test3();
 	}
