@@ -122,7 +122,13 @@ The creation of tensors in the main program side is reduced to the creation of I
    Output tensors can be created as empty tensors and only contain the name and axes order of the output tensor:
    
    ```
+   // Without allocation of memory
    Tensor.buildEmptyTensor(“outputName”, “bcyx”);
+   // Allocating memory
+   Tensor<FloatType> outTensor = Tensor.buildEmptyTensorAndAllocateMemory("output0", 
+																				"bcyx", 
+																				new long[] {1, 2, 512, 512}, 
+																				new FloatType());
    ```
    
    Or can be constructed with an ImgLib2 object with the expected shape and data type of the output to allocate memory prior to execution.
