@@ -78,8 +78,10 @@ public class ExampleLoadAndRunModel {
 		// will be rewritten with the result of the execution
 		model.runModel(inputs, outputs);
 		System.out.print(false);
-		
 		// The result is stored in the list of tensors "outputs"
+		model.closeModel();
+		inputs.stream().forEach(t -> t.close());
+		outputs.stream().forEach(t -> t.close());
 	}
 	
 	/**
