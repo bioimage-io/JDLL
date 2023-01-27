@@ -229,7 +229,7 @@ public final class Tensor< T extends RealType< T > & NativeType< T > >
 				+ " and array shape is: " + Arrays.toString( data.dimensionsAsLongArray() ) ); 
 		}
 		if ( !emptyTensor && this.data != null
-				&& Util.getTypeFromInterval( this.data ) != Util.getTypeFromInterval( data ) ) { 
+				&& this.getDataType().getClass() != Util.getTypeFromInterval( data ).getClass() ) { 
 			throw new IllegalArgumentException( "Trying to set an array as the backend of the Tensor "
 				+ "with a different data type than the Tensor. Tensor data type is: " + dType.toString()
 				+ " and array data type is: " + Util.getTypeFromInterval( data ).toString() ); 

@@ -21,6 +21,9 @@ import net.imglib2.type.numeric.real.FloatType;
  * REgard that in order to this example to work, a Deep Learning model needs to be downloaded from the
  * Bioimage.io repo and a Java Deep Learning framework needs to be installed too.
  * 
+ * The example model for this example is: https://bioimage.io/#/?tags=10.5281%2Fzenodo.6406756&id=10.5281%2Fzenodo.6406756
+ * 
+ * 
  * @author Carlos Garcia Lopez de Haro
  *
  */
@@ -28,16 +31,17 @@ public class ExampleLoadAndRunModel {
 	
 	public static < T extends RealType< T > & NativeType< T > > void main(String[] args) throws LoadEngineException, Exception {
 		// Tag for the DL framework (engine) that wants to be used
-		String engine = "onnx";
+		String engine = "torchscript";
 		// Version of the engine
-		String engineVersion = "17";
+		String engineVersion = "1.9.1";
 		// Directory where all the engines are stored
-		String enginesDir = "/Users/Cgarcia/git/deep-icy/engines";
+		String enginesDir = "C:\\Users\\angel\\OneDrive\\Documentos\\pasteur\\git\\deep-icy\\engines";
 		// Path to the model folder
-		String modelFolder = "/Users/Cgarcia/git/deep-icy/models/HPA Bestfitting InceptionV3_30102022_133313";
+		String modelFolder = "C:\\Users\\angel\\OneDrive\\Documentos\\pasteur\\git\\deep-icy\\models\\EnhancerMitochondriaEM2D_13012023_130426";
 		// Path to the model source. The model source locally is the path to the source file defined in the 
 		// yaml inside the model folder
-		String modelSource = "/Users/Cgarcia/git/deep-icy/models/HPA Bestfitting InceptionV3_30102022_133313/bestfitting-inceptionv3-single-cell.onnx";
+		String modelSource = "C:\\Users\\angel\\OneDrive\\Documentos\\pasteur\\git\\deep-icy\\models\\"
+				+ "EnhancerMitochondriaEM2D_13012023_130426\\weights-torchscript.pt";
 		// Whether the engine is supported by CPu or not
 		boolean cpu = true;
 		// Whether the engine is supported by GPU or not
@@ -51,23 +55,24 @@ public class ExampleLoadAndRunModel {
 		Model model = loadModel(modelFolder, modelSource, engineInfo);
 		// Create an image that will be the backend of the Input Tensor
 		final ImgFactory< FloatType > imgFactory = new CellImgFactory<>( new FloatType(), 5 );
-		final Img< FloatType > img1 = imgFactory.create( 1, 4, 128, 128);
+		final Img< FloatType > img1 = imgFactory.create( 1, 1, 512, 512 );
 		// Create the input tensor with the nameand axes given by the rdf.yaml file
 		// and add it to the list of input tensors
-		Tensor<FloatType> inpTensor = Tensor.build("image", "bcyx", img1);
+		Tensor<FloatType> inpTensor = Tensor.build("input0", "bcyx", img1);
 		List<Tensor<?>> inputs = new ArrayList<Tensor<?>>();
 		inputs.add(inpTensor);
 		
-		// Create the output tensors defined in the rdf.yaml file witht their corresponding 
+		// Create the output tensors defined in the rdf.yaml file with their corresponding 
 		// name and axes and add them to the output list of tensors.
 		/// Regard that output tensors can be built empty without allocating memory
-		// or allocating memory by craeting the tensor with a sample empty image, or by
+		// or allocating memory by creating the tensor with a sample empty image, or by
 		// defining the dimensions and data type
-		Tensor<T> outTensor = Tensor.buildEmptyTensor("classes", "bc");
-		Tensor<T> outTensor2 = Tensor.buildEmptyTensor("features", "bc");
+		Tensor<FloatType> outTensor = Tensor.buildEmptyTensorAndAllocateMemory("output0", 
+																				"bcyx", 
+																				new long[] {1, 2, 512, 512}, 
+																				new FloatType());
 		List<Tensor<?>> outputs = new ArrayList<Tensor<?>>();
 		outputs.add(outTensor);
-		outputs.add(outTensor2);
 		
 		// Run the model on the input tensors. THe output tensors 
 		// will be rewritten with the result of the execution
