@@ -185,22 +185,19 @@ public class Model
 	 * @param inTensors
 	 *            input tensors containing all the tensor data
 	 * @param outTensors
-	 *            output tensors expected containing only the axes order and
-	 *            names. The data will be filled with the outputs of the models
-	 * @return the output tensors produced by the model
+	 *            expected output tensors. Their backend data will be rewritten with the result of the inference
 	 * @throws RunModelException
 	 *             if the is any problem running the model
 	 * @throws RunModelException
 	 *             if there is any problem closing the tensors
 	 */
-	public List< Tensor < ? > > runModel( List< Tensor < ? > > inTensors, List< Tensor < ? > > outTensors ) throws RunModelException, Exception
+	public void runModel( List< Tensor < ? > > inTensors, List< Tensor < ? > > outTensors ) throws RunModelException, Exception
 	{
 		DeepLearningInterface engineInstance = engineClassLoader.getEngineInstance();
 		engineClassLoader.setEngineClassLoader();
 		inTensors.stream().forEach( tt -> tt = Tensor.createCopyOfTensorInWantedDataType( tt, new FloatType() ) );
 		engineInstance.run( inTensors, outTensors );
 		engineClassLoader.setIcyClassLoader();
-		return outTensors;
 	}
 
 	/**
