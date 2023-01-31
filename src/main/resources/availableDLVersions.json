@@ -771,6 +771,276 @@
 			]
 		},
 		{
+			"engine": "Tensorflow",
+			"version": "0.4.0",
+			"pythonVersion": "2.7.0",
+			"os": "windows-x86_64",
+			"gpu": false,
+			"cpu": true,
+			"rosetta": false,
+			"jars": [
+				"https://repo1.maven.org/maven2/org/tensorflow/tensorflow-core-api/0.4.0/tensorflow-core-api-0.4.0.jar",
+				"https://repo1.maven.org/maven2/com/google/protobuf/protobuf-java/3.8.0/protobuf-java-3.8.0.jar",
+				"https://repo1.maven.org/maven2/org/tensorflow/ndarray/0.4.0/ndarray-0.4.0.jar",
+				"https://repo1.maven.org/maven2/org/tensorflow/tensorflow-core-api/0.4.0/tensorflow-core-api-0.4.0-windows-x86_64.jar",
+				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.4/javacpp-1.5.4.jar",
+				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.4/javacpp-1.5.4-windows-x86_64.jar",
+				"https://icy-nexus.pasteur.fr/repository/Icy/org/bioimageanalysis/icy/tensor-flow-2-interface-0.3.0/0.0.1/tensor-flow-2-interface-0.3.0-0.0.1.jar"
+			]
+		},
+		{
+			"engine": "Tensorflow",
+			"version": "0.4.0",
+			"pythonVersion": "2.7.0",
+			"os": "windows-x86_64",
+			"gpu": true,
+			"cpu": true,
+			"rosetta": false,
+			"jars": [
+				"https://repo1.maven.org/maven2/org/tensorflow/tensorflow-core-api/0.4.0/tensorflow-core-api-0.4.0.jar",
+				"https://repo1.maven.org/maven2/com/google/protobuf/protobuf-java/3.8.0/protobuf-java-3.8.0.jar",
+				"https://repo1.maven.org/maven2/org/tensorflow/ndarray/0.4.0/ndarray-0.4.0.jar",
+				"https://repo1.maven.org/maven2/org/tensorflow/tensorflow-core-api/0.4.0/tensorflow-core-api-0.4.0-windows-x86_64-gpu.jar",
+				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.4/javacpp-1.5.4.jar",
+				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.4/javacpp-1.5.4-windows-x86_64.jar",
+				"https://icy-nexus.pasteur.fr/repository/Icy/org/bioimageanalysis/icy/tensor-flow-2-interface-0.3.0/0.0.1/tensor-flow-2-interface-0.3.0-0.0.1.jar"
+			]
+		},
+		{
+			"engine": "Tensorflow",
+			"version": "0.4.0",
+			"pythonVersion": "2.7.0",
+			"os": "linux-x86_64",
+			"gpu": false,
+			"cpu": true,
+			"rosetta": false,
+			"jars": [
+				"https://repo1.maven.org/maven2/org/tensorflow/tensorflow-core-api/0.4.0/tensorflow-core-api-0.4.0.jar",
+				"https://repo1.maven.org/maven2/com/google/protobuf/protobuf-java/3.8.0/protobuf-java-3.8.0.jar",
+				"https://repo1.maven.org/maven2/org/tensorflow/ndarray/0.4.0/ndarray-0.4.0.jar",
+				"https://repo1.maven.org/maven2/org/tensorflow/tensorflow-core-api/0.4.0/tensorflow-core-api-0.4.0-linux-x86_64.jar",
+				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.4/javacpp-1.5.4.jar",
+				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.4/javacpp-1.5.4-linux-x86_64.jar",
+				"https://icy-nexus.pasteur.fr/repository/Icy/org/bioimageanalysis/icy/tensor-flow-2-interface-0.3.0/0.0.1/tensor-flow-2-interface-0.3.0-0.0.1.jar"
+			]
+		},
+		{
+			"engine": "Tensorflow",
+			"version": "0.4.0",
+			"pythonVersion": "2.7.0",
+			"os": "linux-x86_64",
+			"gpu": true,
+			"cpu": true,
+			"rosetta": false,
+			"jars": [
+				"https://repo1.maven.org/maven2/org/tensorflow/tensorflow-core-api/0.4.0/tensorflow-core-api-0.4.0.jar",
+				"https://repo1.maven.org/maven2/com/google/protobuf/protobuf-java/3.8.0/protobuf-java-3.8.0.jar",
+				"https://repo1.maven.org/maven2/org/tensorflow/ndarray/0.4.0/ndarray-0.4.0.jar",
+				"https://repo1.maven.org/maven2/org/tensorflow/tensorflow-core-api/0.4.0/tensorflow-core-api-0.4.0-linux-x86_64-gpu.jar",
+				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.4/javacpp-1.5.4.jar",
+				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.4/javacpp-1.5.4-linux-x86_64.jar",
+				"https://icy-nexus.pasteur.fr/repository/Icy/org/bioimageanalysis/icy/tensor-flow-2-interface-0.3.0/0.0.1/tensor-flow-2-interface-0.3.0-0.0.1.jar"
+			]
+		},
+		{
+			"engine": "Tensorflow",
+			"version": "0.4.0",
+			"pythonVersion": "2.7.0",
+			"os": "macosx-x86_64",
+			"gpu": false,
+			"cpu": true,
+			"rosetta": false,
+			"jars": [
+				"https://repo1.maven.org/maven2/org/tensorflow/tensorflow-core-api/0.4.0/tensorflow-core-api-0.4.0.jar",
+				"https://repo1.maven.org/maven2/com/google/protobuf/protobuf-java/3.8.0/protobuf-java-3.8.0.jar",
+				"https://repo1.maven.org/maven2/org/tensorflow/ndarray/0.4.0/ndarray-0.4.0.jar",
+				"https://repo1.maven.org/maven2/org/tensorflow/tensorflow-core-api/0.4.0/tensorflow-core-api-0.4.0-macosx-x86_64.jar",
+				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.4/javacpp-1.5.4.jar",
+				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.4/javacpp-1.5.4-macosx-x86_64.jar",
+				"https://icy-nexus.pasteur.fr/repository/Icy/org/bioimageanalysis/icy/tensor-flow-2-interface-0.3.0/0.0.1/tensor-flow-2-interface-0.3.0-0.0.1.jar"
+			]
+		},
+		{
+			"engine": "Tensorflow",
+			"version": "0.4.1",
+			"pythonVersion": "2.7.1",
+			"os": "windows-x86_64",
+			"gpu": false,
+			"cpu": true,
+			"rosetta": false,
+			"jars": [
+				"https://repo1.maven.org/maven2/org/tensorflow/tensorflow-core-api/0.4.1/tensorflow-core-api-0.4.1.jar",
+				"https://repo1.maven.org/maven2/com/google/protobuf/protobuf-java/3.8.0/protobuf-java-3.8.0.jar",
+				"https://repo1.maven.org/maven2/org/tensorflow/ndarray/0.4.0/ndarray-0.4.0.jar",
+				"https://repo1.maven.org/maven2/org/tensorflow/tensorflow-core-api/0.4.1/tensorflow-core-api-0.4.1-windows-x86_64.jar",
+				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.4/javacpp-1.5.4.jar",
+				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.4/javacpp-1.5.4-windows-x86_64.jar",
+				"https://icy-nexus.pasteur.fr/repository/Icy/org/bioimageanalysis/icy/tensor-flow-2-interface-0.3.0/0.0.1/tensor-flow-2-interface-0.3.0-0.0.1.jar"
+			]
+		},
+		{
+			"engine": "Tensorflow",
+			"version": "0.4.1",
+			"pythonVersion": "2.7.1",
+			"os": "windows-x86_64",
+			"gpu": true,
+			"cpu": true,
+			"rosetta": false,
+			"jars": [
+				"https://repo1.maven.org/maven2/org/tensorflow/tensorflow-core-api/0.4.1/tensorflow-core-api-0.4.1.jar",
+				"https://repo1.maven.org/maven2/com/google/protobuf/protobuf-java/3.8.0/protobuf-java-3.8.0.jar",
+				"https://repo1.maven.org/maven2/org/tensorflow/ndarray/0.4.0/ndarray-0.4.0.jar",
+				"https://repo1.maven.org/maven2/org/tensorflow/tensorflow-core-api/0.4.1/tensorflow-core-api-0.4.1-windows-x86_64-gpu.jar",
+				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.4/javacpp-1.5.4.jar",
+				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.4/javacpp-1.5.4-windows-x86_64.jar",
+				"https://icy-nexus.pasteur.fr/repository/Icy/org/bioimageanalysis/icy/tensor-flow-2-interface-0.3.0/0.0.1/tensor-flow-2-interface-0.3.0-0.0.1.jar"
+			]
+		},
+		{
+			"engine": "Tensorflow",
+			"version": "0.4.1",
+			"pythonVersion": "2.7.1",
+			"os": "linux-x86_64",
+			"gpu": false,
+			"cpu": true,
+			"rosetta": false,
+			"jars": [
+				"https://repo1.maven.org/maven2/org/tensorflow/tensorflow-core-api/0.4.1/tensorflow-core-api-0.4.1.jar",
+				"https://repo1.maven.org/maven2/com/google/protobuf/protobuf-java/3.8.0/protobuf-java-3.8.0.jar",
+				"https://repo1.maven.org/maven2/org/tensorflow/ndarray/0.4.0/ndarray-0.4.0.jar",
+				"https://repo1.maven.org/maven2/org/tensorflow/tensorflow-core-api/0.4.1/tensorflow-core-api-0.4.1-linux-x86_64.jar",
+				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.4/javacpp-1.5.4.jar",
+				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.4/javacpp-1.5.4-linux-x86_64.jar",
+				"https://icy-nexus.pasteur.fr/repository/Icy/org/bioimageanalysis/icy/tensor-flow-2-interface-0.3.0/0.0.1/tensor-flow-2-interface-0.3.0-0.0.1.jar"
+			]
+		},
+		{
+			"engine": "Tensorflow",
+			"version": "0.4.1",
+			"pythonVersion": "2.7.1",
+			"os": "linux-x86_64",
+			"gpu": true,
+			"cpu": true,
+			"rosetta": false,
+			"jars": [
+				"https://repo1.maven.org/maven2/org/tensorflow/tensorflow-core-api/0.4.1/tensorflow-core-api-0.4.1.jar",
+				"https://repo1.maven.org/maven2/com/google/protobuf/protobuf-java/3.8.0/protobuf-java-3.8.0.jar",
+				"https://repo1.maven.org/maven2/org/tensorflow/ndarray/0.4.0/ndarray-0.4.0.jar",
+				"https://repo1.maven.org/maven2/org/tensorflow/tensorflow-core-api/0.4.1/tensorflow-core-api-0.4.1-linux-x86_64-gpu.jar",
+				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.4/javacpp-1.5.4.jar",
+				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.4/javacpp-1.5.4-linux-x86_64.jar",
+				"https://icy-nexus.pasteur.fr/repository/Icy/org/bioimageanalysis/icy/tensor-flow-2-interface-0.3.0/0.0.1/tensor-flow-2-interface-0.3.0-0.0.1.jar"
+			]
+		},
+		{
+			"engine": "Tensorflow",
+			"version": "0.4.1",
+			"pythonVersion": "2.7.1",
+			"os": "macosx-x86_64",
+			"gpu": false,
+			"cpu": true,
+			"rosetta": false,
+			"jars": [
+				"https://repo1.maven.org/maven2/org/tensorflow/tensorflow-core-api/0.4.1/tensorflow-core-api-0.4.1.jar",
+				"https://repo1.maven.org/maven2/com/google/protobuf/protobuf-java/3.8.0/protobuf-java-3.8.0.jar",
+				"https://repo1.maven.org/maven2/org/tensorflow/ndarray/0.4.0/ndarray-0.4.0.jar",
+				"https://repo1.maven.org/maven2/org/tensorflow/tensorflow-core-api/0.4.1/tensorflow-core-api-0.4.1-macosx-x86_64.jar",
+				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.4/javacpp-1.5.4.jar",
+				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.4/javacpp-1.5.4-macosx-x86_64.jar",
+				"https://icy-nexus.pasteur.fr/repository/Icy/org/bioimageanalysis/icy/tensor-flow-2-interface-0.3.0/0.0.1/tensor-flow-2-interface-0.3.0-0.0.1.jar"
+			]
+		},
+		{
+			"engine": "Tensorflow",
+			"version": "0.4.2",
+			"pythonVersion": "2.7.4",
+			"os": "windows-x86_64",
+			"gpu": false,
+			"cpu": true,
+			"rosetta": false,
+			"jars": [
+				"https://repo1.maven.org/maven2/org/tensorflow/tensorflow-core-api/0.4.2/tensorflow-core-api-0.4.2.jar",
+				"https://repo1.maven.org/maven2/com/google/protobuf/protobuf-java/3.8.0/protobuf-java-3.8.0.jar",
+				"https://repo1.maven.org/maven2/org/tensorflow/ndarray/0.4.0/ndarray-0.4.0.jar",
+				"https://repo1.maven.org/maven2/org/tensorflow/tensorflow-core-api/0.4.2/tensorflow-core-api-0.4.2-windows-x86_64.jar",
+				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.4/javacpp-1.5.4.jar",
+				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.4/javacpp-1.5.4-windows-x86_64.jar",
+				"https://icy-nexus.pasteur.fr/repository/Icy/org/bioimageanalysis/icy/tensor-flow-2-interface-0.3.0/0.0.1/tensor-flow-2-interface-0.3.0-0.0.1.jar"
+			]
+		},
+		{
+			"engine": "Tensorflow",
+			"version": "0.4.2",
+			"pythonVersion": "2.7.4",
+			"os": "windows-x86_64",
+			"gpu": true,
+			"cpu": true,
+			"rosetta": false,
+			"jars": [
+				"https://repo1.maven.org/maven2/org/tensorflow/tensorflow-core-api/0.4.2/tensorflow-core-api-0.4.2.jar",
+				"https://repo1.maven.org/maven2/com/google/protobuf/protobuf-java/3.8.0/protobuf-java-3.8.0.jar",
+				"https://repo1.maven.org/maven2/org/tensorflow/ndarray/0.4.0/ndarray-0.4.0.jar",
+				"https://repo1.maven.org/maven2/org/tensorflow/tensorflow-core-api/0.4.2/tensorflow-core-api-0.4.2-windows-x86_64-gpu.jar",
+				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.4/javacpp-1.5.4.jar",
+				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.4/javacpp-1.5.4-windows-x86_64.jar",
+				"https://icy-nexus.pasteur.fr/repository/Icy/org/bioimageanalysis/icy/tensor-flow-2-interface-0.3.0/0.0.1/tensor-flow-2-interface-0.3.0-0.0.1.jar"
+			]
+		},
+		{
+			"engine": "Tensorflow",
+			"version": "0.4.2",
+			"pythonVersion": "2.7.4",
+			"os": "linux-x86_64",
+			"gpu": false,
+			"cpu": true,
+			"rosetta": false,
+			"jars": [
+				"https://repo1.maven.org/maven2/org/tensorflow/tensorflow-core-api/0.4.2/tensorflow-core-api-0.4.2.jar",
+				"https://repo1.maven.org/maven2/com/google/protobuf/protobuf-java/3.8.0/protobuf-java-3.8.0.jar",
+				"https://repo1.maven.org/maven2/org/tensorflow/ndarray/0.4.0/ndarray-0.4.0.jar",
+				"https://repo1.maven.org/maven2/org/tensorflow/tensorflow-core-api/0.4.2/tensorflow-core-api-0.4.2-linux-x86_64.jar",
+				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.4/javacpp-1.5.4.jar",
+				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.4/javacpp-1.5.4-linux-x86_64.jar",
+				"https://icy-nexus.pasteur.fr/repository/Icy/org/bioimageanalysis/icy/tensor-flow-2-interface-0.3.0/0.0.1/tensor-flow-2-interface-0.3.0-0.0.1.jar"
+			]
+		},
+		{
+			"engine": "Tensorflow",
+			"version": "0.4.2",
+			"pythonVersion": "2.7.4",
+			"os": "linux-x86_64",
+			"gpu": true,
+			"cpu": true,
+			"rosetta": false,
+			"jars": [
+				"https://repo1.maven.org/maven2/org/tensorflow/tensorflow-core-api/0.4.2/tensorflow-core-api-0.4.2.jar",
+				"https://repo1.maven.org/maven2/com/google/protobuf/protobuf-java/3.8.0/protobuf-java-3.8.0.jar",
+				"https://repo1.maven.org/maven2/org/tensorflow/ndarray/0.4.0/ndarray-0.4.0.jar",
+				"https://repo1.maven.org/maven2/org/tensorflow/tensorflow-core-api/0.4.2/tensorflow-core-api-0.4.2-linux-x86_64-gpu.jar",
+				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.4/javacpp-1.5.4.jar",
+				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.4/javacpp-1.5.4-linux-x86_64.jar",
+				"https://icy-nexus.pasteur.fr/repository/Icy/org/bioimageanalysis/icy/tensor-flow-2-interface-0.3.0/0.0.1/tensor-flow-2-interface-0.3.0-0.0.1.jar"
+			]
+		},
+		{
+			"engine": "Tensorflow",
+			"version": "0.4.2",
+			"pythonVersion": "2.7.4",
+			"os": "macosx-x86_64",
+			"gpu": false,
+			"cpu": true,
+			"rosetta": false,
+			"jars": [
+				"https://repo1.maven.org/maven2/org/tensorflow/tensorflow-core-api/0.4.2/tensorflow-core-api-0.4.2.jar",
+				"https://repo1.maven.org/maven2/com/google/protobuf/protobuf-java/3.8.0/protobuf-java-3.8.0.jar",
+				"https://repo1.maven.org/maven2/org/tensorflow/ndarray/0.4.0/ndarray-0.4.0.jar",
+				"https://repo1.maven.org/maven2/org/tensorflow/tensorflow-core-api/0.4.2/tensorflow-core-api-0.4.2-macosx-x86_64.jar",
+				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.4/javacpp-1.5.4.jar",
+				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.4/javacpp-1.5.4-macosx-x86_64.jar",
+				"https://icy-nexus.pasteur.fr/repository/Icy/org/bioimageanalysis/icy/tensor-flow-2-interface-0.3.0/0.0.1/tensor-flow-2-interface-0.3.0-0.0.1.jar"
+			]
+		},
+		{
 			"engine": "Pytorch",
 			"version": "1.13.0",
 			"pythonVersion": "1.13.0",
