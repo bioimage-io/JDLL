@@ -50,8 +50,8 @@ An example of this is shown in the images below:
 
 | **Engine**                               | **Link to JAR**       | **Source code**                                                   |
 |------------------------------------------|-----------------------|-------------------------------------------------------------------|
-| Pytorch                                  |     [download here](org/bioimageanalysis/icy/pytorch-interface/0.0.1/pytorch-interface-0.0.1.jar)    | https://gitlab.pasteur.fr/bia/pytorch-interface                   |
-| Tensorflow 1                             |     [downoad here](org/bioimageanalysis/icy/tensor-flow-1-interface/0.0.1/tensor-flow-1-interface-0.0.1.jar)    | https://gitlab.pasteur.fr/bia/deep-icy-tf1                        |
+| Pytorch                                  |     [download here](https://icy-nexus.pasteur.fr/repository/Icy/org/bioimageanalysis/icy/pytorch-interface/0.0.1/pytorch-interface-0.0.1.jar)    | https://gitlab.pasteur.fr/bia/pytorch-interface                   |
+| Tensorflow 1                             |     [downoad here](https://icy-nexus.pasteur.fr/repository/Icy/org/bioimageanalysis/icy/tensor-flow-1-interface/0.0.1/tensor-flow-1-interface-0.0.1.jar)    | https://gitlab.pasteur.fr/bia/deep-icy-tf1                        |
 |Tensorflow   2 API 0.2.0                  |     To be released    | https://gitlab.pasteur.fr/bia/tensorflow-2-interface-0.2.0        |
 |Tensorflow   2 all APIs but 0.2.0         |     To be released    | https://gitlab.pasteur.fr/bia/tensorflow-2-interface-0.3.0        |
 | Onnx                                     |     [download here](https://icy-nexus.pasteur.fr/repository/icy-core/org/bioimageanalysis/icy/onnx-interface/0.0.1/onnx-interface-0.0.1.jar)    | https://github.com/bioimage-io/onnx-java-interface                |
