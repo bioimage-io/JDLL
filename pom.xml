@@ -12,7 +12,7 @@
 	
 	<groupId>org.bioimageanalysis.icy</groupId>
 	<artifactId>dl-model-runner</artifactId>
-	<version>1.0.0</version>
+	<version>0.0.1</version>
 	
 	<name>DeepLearning interface for Icy</name>
 	<description>This project holds the code allowing the interaction between Java and Deep Learning frameworks.
@@ -123,6 +123,19 @@
 		</dependency>
 !-->
 	</dependencies>
+
+	<distributionManagement>
+        <repository>
+            <id>icy-core-prod</id>
+            <name>Icy's Nexus</name>
+            <url>https://icy-nexus.pasteur.fr/repository/icy-core/</url>
+        </repository>
+        <snapshotRepository>
+            <id>icy-core-dev</id>
+            <name>Icy Dev's Nexus</name>
+            <url>https://icy-nexus-dev.pasteur.cloud/repository/icy-core/</url>
+        </snapshotRepository>
+    </distributionManagement>
 
 	<repositories>
 		<repository>
