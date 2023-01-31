@@ -335,7 +335,7 @@
 				"https://repo1.maven.org/maven2/org/tensorflow/tensorflow-core-api/0.2.0/tensorflow-core-api-0.2.0-windows-x86_64.jar",
 				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.4/javacpp-1.5.4.jar",
 				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.4/javacpp-1.5.4-windows-x86_64.jar",
-				"https://sandbox.zenodo.org/record/1075494/files/tf2-0.2.0-DlEngine.jar?download=1"
+				"https://icy-nexus.pasteur.fr/repository/Icy/org/bioimageanalysis/icy/tensor-flow-2-interface-0.2.0/0.0.1/tensor-flow-2-interface-0.2.0-0.0.1.jar"
 			]
 		},
 		{
@@ -353,7 +353,7 @@
 				"https://repo1.maven.org/maven2/org/tensorflow/tensorflow-core-api/0.2.0/tensorflow-core-api-0.2.0-windows-x86_64-gpu.jar",
 				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.4/javacpp-1.5.4.jar",
 				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.4/javacpp-1.5.4-windows-x86_64.jar",
-				"https://sandbox.zenodo.org/record/1075494/files/tf2-0.2.0-DlEngine.jar?download=1"
+				"https://icy-nexus.pasteur.fr/repository/Icy/org/bioimageanalysis/icy/tensor-flow-2-interface-0.2.0/0.0.1/tensor-flow-2-interface-0.2.0-0.0.1.jar"
 			]
 		},
 		{
@@ -371,7 +371,7 @@
 				"https://repo1.maven.org/maven2/org/tensorflow/tensorflow-core-api/0.2.0/tensorflow-core-api-0.2.0-linux-x86_64.jar",
 				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.4/javacpp-1.5.4.jar",
 				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.4/javacpp-1.5.4-linux-x86_64.jar",
-				"https://sandbox.zenodo.org/record/1075494/files/tf2-0.2.0-DlEngine.jar?download=1"
+				"https://icy-nexus.pasteur.fr/repository/Icy/org/bioimageanalysis/icy/tensor-flow-2-interface-0.2.0/0.0.1/tensor-flow-2-interface-0.2.0-0.0.1.jar"
 			]
 		},
 		{
@@ -389,7 +389,7 @@
 				"https://repo1.maven.org/maven2/org/tensorflow/tensorflow-core-api/0.2.0/tensorflow-core-api-0.2.0-linux-x86_64-gpu.jar",
 				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.4/javacpp-1.5.4.jar",
 				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.4/javacpp-1.5.4-linux-x86_64.jar",
-				"https://sandbox.zenodo.org/record/1075494/files/tf2-0.2.0-DlEngine.jar?download=1"
+				"https://icy-nexus.pasteur.fr/repository/Icy/org/bioimageanalysis/icy/tensor-flow-2-interface-0.2.0/0.0.1/tensor-flow-2-interface-0.2.0-0.0.1.jar"
 			]
 		},
 		{
@@ -407,7 +407,7 @@
 				"https://repo1.maven.org/maven2/org/tensorflow/tensorflow-core-api/0.2.0/tensorflow-core-api-0.2.0-macosx-x86_64.jar",
 				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.4/javacpp-1.5.4.jar",
 				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.4/javacpp-1.5.4-macosx-x86_64.jar",
-				"https://sandbox.zenodo.org/record/1075494/files/tf2-0.2.0-DlEngine.jar?download=1"
+				"https://icy-nexus.pasteur.fr/repository/Icy/org/bioimageanalysis/icy/tensor-flow-2-interface-0.2.0/0.0.1/tensor-flow-2-interface-0.2.0-0.0.1.jar"
 			]
 		},
 		{
@@ -425,7 +425,7 @@
 				"https://repo1.maven.org/maven2/org/tensorflow/tensorflow-core-api/0.3.0/tensorflow-core-api-0.3.0-windows-x86_64.jar",
 				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.4/javacpp-1.5.4.jar",
 				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.4/javacpp-1.5.4-windows-x86_64.jar",
-				"https://sandbox.zenodo.org/record/1075494/files/tf2-0.3.0-DlEngine.jar?download=1"
+				"https://icy-nexus.pasteur.fr/repository/Icy/org/bioimageanalysis/icy/tensor-flow-2-interface-0.3.0/0.0.1/tensor-flow-2-interface-0.3.0-0.0.1.jar"
 			]
 		},
 		{
@@ -443,7 +443,7 @@
 				"https://repo1.maven.org/maven2/org/tensorflow/tensorflow-core-api/0.3.0/tensorflow-core-api-0.3.0-windows-x86_64-gpu.jar",
 				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.4/javacpp-1.5.4.jar",
 				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.4/javacpp-1.5.4-windows-x86_64.jar",
-				"https://sandbox.zenodo.org/record/1075494/files/tf2-0.3.0-DlEngine.jar?download=1"
+				"https://icy-nexus.pasteur.fr/repository/Icy/org/bioimageanalysis/icy/tensor-flow-2-interface-0.3.0/0.0.1/tensor-flow-2-interface-0.3.0-0.0.1.jar"
 			]
 		},
 		{
@@ -461,7 +461,7 @@
 				"https://repo1.maven.org/maven2/org/tensorflow/tensorflow-core-api/0.3.0/tensorflow-core-api-0.3.0-linux-x86_64.jar",
 				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.4/javacpp-1.5.4.jar",
 				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.4/javacpp-1.5.4-linux-x86_64.jar",
-				"https://sandbox.zenodo.org/record/1075494/files/tf2-0.3.0-DlEngine.jar?download=1"
+				"https://icy-nexus.pasteur.fr/repository/Icy/org/bioimageanalysis/icy/tensor-flow-2-interface-0.3.0/0.0.1/tensor-flow-2-interface-0.3.0-0.0.1.jar"
 			]
 		},
 		{
@@ -479,7 +479,7 @@
 				"https://repo1.maven.org/maven2/org/tensorflow/tensorflow-core-api/0.3.0/tensorflow-core-api-0.3.0-linux-x86_64-gpu.jar",
 				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.4/javacpp-1.5.4.jar",
 				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.4/javacpp-1.5.4-linux-x86_64.jar",
-				"https://sandbox.zenodo.org/record/1075494/files/tf2-0.3.0-DlEngine.jar?download=1"
+				"https://icy-nexus.pasteur.fr/repository/Icy/org/bioimageanalysis/icy/tensor-flow-2-interface-0.3.0/0.0.1/tensor-flow-2-interface-0.3.0-0.0.1.jar"
 			]
 		},
 		{
@@ -497,7 +497,7 @@
 				"https://repo1.maven.org/maven2/org/tensorflow/tensorflow-core-api/0.3.0/tensorflow-core-api-0.3.0-macosx-x86_64.jar",
 				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.4/javacpp-1.5.4.jar",
 				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.4/javacpp-1.5.4-macosx-x86_64.jar",
-				"https://sandbox.zenodo.org/record/1075494/files/tf2-0.3.0-DlEngine.jar?download=1"
+				"https://icy-nexus.pasteur.fr/repository/Icy/org/bioimageanalysis/icy/tensor-flow-2-interface-0.3.0/0.0.1/tensor-flow-2-interface-0.3.0-0.0.1.jar"
 			]
 		},
 		{
@@ -515,7 +515,7 @@
 				"https://repo1.maven.org/maven2/org/tensorflow/tensorflow-core-api/0.3.1/tensorflow-core-api-0.3.1-windows-x86_64.jar",
 				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.4/javacpp-1.5.4.jar",
 				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.4/javacpp-1.5.4-windows-x86_64.jar",
-				"https://sandbox.zenodo.org/record/1075494/files/tf2-0.3.0-DlEngine.jar?download=1"
+				"https://icy-nexus.pasteur.fr/repository/Icy/org/bioimageanalysis/icy/tensor-flow-2-interface-0.3.0/0.0.1/tensor-flow-2-interface-0.3.0-0.0.1.jar"
 			]
 		},
 		{
@@ -533,7 +533,7 @@
 				"https://repo1.maven.org/maven2/org/tensorflow/tensorflow-core-api/0.3.1/tensorflow-core-api-0.3.1-windows-x86_64-gpu.jar",
 				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.4/javacpp-1.5.4.jar",
 				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.4/javacpp-1.5.4-windows-x86_64.jar",
-				"https://sandbox.zenodo.org/record/1075494/files/tf2-0.3.0-DlEngine.jar?download=1"
+				"https://icy-nexus.pasteur.fr/repository/Icy/org/bioimageanalysis/icy/tensor-flow-2-interface-0.3.0/0.0.1/tensor-flow-2-interface-0.3.0-0.0.1.jar"
 			]
 		},
 		{
@@ -551,7 +551,7 @@
 				"https://repo1.maven.org/maven2/org/tensorflow/tensorflow-core-api/0.3.1/tensorflow-core-api-0.3.1-linux-x86_64.jar",
 				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.4/javacpp-1.5.4.jar",
 				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.4/javacpp-1.5.4-linux-x86_64.jar",
-				"https://sandbox.zenodo.org/record/1075494/files/tf2-0.3.0-DlEngine.jar?download=1"
+				"https://icy-nexus.pasteur.fr/repository/Icy/org/bioimageanalysis/icy/tensor-flow-2-interface-0.3.0/0.0.1/tensor-flow-2-interface-0.3.0-0.0.1.jar"
 			]
 		},
 		{
@@ -569,7 +569,7 @@
 				"https://repo1.maven.org/maven2/org/tensorflow/tensorflow-core-api/0.3.1/tensorflow-core-api-0.3.1-linux-x86_64-gpu.jar",
 				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.4/javacpp-1.5.4.jar",
 				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.4/javacpp-1.5.4-linux-x86_64.jar",
-				"https://sandbox.zenodo.org/record/1075494/files/tf2-0.3.0-DlEngine.jar?download=1"
+				"https://icy-nexus.pasteur.fr/repository/Icy/org/bioimageanalysis/icy/tensor-flow-2-interface-0.3.0/0.0.1/tensor-flow-2-interface-0.3.0-0.0.1.jar"
 			]
 		},
 		{
@@ -587,7 +587,7 @@
 				"https://repo1.maven.org/maven2/org/tensorflow/tensorflow-core-api/0.3.1/tensorflow-core-api-0.3.1-macosx-x86_64.jar",
 				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.4/javacpp-1.5.4.jar",
 				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.4/javacpp-1.5.4-macosx-x86_64.jar",
-				"https://sandbox.zenodo.org/record/1075494/files/tf2-0.3.0-DlEngine.jar?download=1"
+				"https://icy-nexus.pasteur.fr/repository/Icy/org/bioimageanalysis/icy/tensor-flow-2-interface-0.3.0/0.0.1/tensor-flow-2-interface-0.3.0-0.0.1.jar"
 			]
 		},
 		{
@@ -605,7 +605,7 @@
 				"https://repo1.maven.org/maven2/org/tensorflow/tensorflow-core-api/0.3.2/tensorflow-core-api-0.3.2-windows-x86_64.jar",
 				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.4/javacpp-1.5.4.jar",
 				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.4/javacpp-1.5.4-windows-x86_64.jar",
-				"https://sandbox.zenodo.org/record/1075494/files/tf2-0.3.0-DlEngine.jar?download=1"
+				"https://icy-nexus.pasteur.fr/repository/Icy/org/bioimageanalysis/icy/tensor-flow-2-interface-0.3.0/0.0.1/tensor-flow-2-interface-0.3.0-0.0.1.jar"
 			]
 		},
 		{
@@ -623,7 +623,7 @@
 				"https://repo1.maven.org/maven2/org/tensorflow/tensorflow-core-api/0.3.2/tensorflow-core-api-0.3.2-windows-x86_64-gpu.jar",
 				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.4/javacpp-1.5.4.jar",
 				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.4/javacpp-1.5.4-windows-x86_64.jar",
-				"https://sandbox.zenodo.org/record/1075494/files/tf2-0.3.0-DlEngine.jar?download=1"
+				"https://icy-nexus.pasteur.fr/repository/Icy/org/bioimageanalysis/icy/tensor-flow-2-interface-0.3.0/0.0.1/tensor-flow-2-interface-0.3.0-0.0.1.jar"
 			]
 		},
 		{
@@ -641,7 +641,7 @@
 				"https://repo1.maven.org/maven2/org/tensorflow/tensorflow-core-api/0.3.2/tensorflow-core-api-0.3.2-linux-x86_64.jar",
 				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.4/javacpp-1.5.4.jar",
 				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.4/javacpp-1.5.4-linux-x86_64.jar",
-				"https://sandbox.zenodo.org/record/1075494/files/tf2-0.3.0-DlEngine.jar?download=1"
+				"https://icy-nexus.pasteur.fr/repository/Icy/org/bioimageanalysis/icy/tensor-flow-2-interface-0.3.0/0.0.1/tensor-flow-2-interface-0.3.0-0.0.1.jar"
 			]
 		},
 		{
@@ -659,7 +659,7 @@
 				"https://repo1.maven.org/maven2/org/tensorflow/tensorflow-core-api/0.3.2/tensorflow-core-api-0.3.2-linux-x86_64-gpu.jar",
 				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.4/javacpp-1.5.4.jar",
 				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.4/javacpp-1.5.4-linux-x86_64.jar",
-				"https://sandbox.zenodo.org/record/1075494/files/tf2-0.3.0-DlEngine.jar?download=1"
+				"https://icy-nexus.pasteur.fr/repository/Icy/org/bioimageanalysis/icy/tensor-flow-2-interface-0.3.0/0.0.1/tensor-flow-2-interface-0.3.0-0.0.1.jar"
 			]
 		},
 		{
@@ -677,7 +677,7 @@
 				"https://repo1.maven.org/maven2/org/tensorflow/tensorflow-core-api/0.3.2/tensorflow-core-api-0.3.2-macosx-x86_64.jar",
 				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.4/javacpp-1.5.4.jar",
 				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.4/javacpp-1.5.4-macosx-x86_64.jar",
-				"https://sandbox.zenodo.org/record/1075494/files/tf2-0.3.0-DlEngine.jar?download=1"
+				"https://icy-nexus.pasteur.fr/repository/Icy/org/bioimageanalysis/icy/tensor-flow-2-interface-0.3.0/0.0.1/tensor-flow-2-interface-0.3.0-0.0.1.jar"
 			]
 		},
 		{
@@ -695,7 +695,7 @@
 				"https://repo1.maven.org/maven2/org/tensorflow/tensorflow-core-api/0.3.3/tensorflow-core-api-0.3.3-windows-x86_64.jar",
 				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.4/javacpp-1.5.4.jar",
 				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.4/javacpp-1.5.4-windows-x86_64.jar",
-				"https://sandbox.zenodo.org/record/1075494/files/tf2-0.3.0-DlEngine.jar?download=1"
+				"https://icy-nexus.pasteur.fr/repository/Icy/org/bioimageanalysis/icy/tensor-flow-2-interface-0.3.0/0.0.1/tensor-flow-2-interface-0.3.0-0.0.1.jar"
 			]
 		},
 		{
@@ -713,7 +713,7 @@
 				"https://repo1.maven.org/maven2/org/tensorflow/tensorflow-core-api/0.3.3/tensorflow-core-api-0.3.3-windows-x86_64-gpu.jar",
 				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.4/javacpp-1.5.4.jar",
 				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.4/javacpp-1.5.4-windows-x86_64.jar",
-				"https://sandbox.zenodo.org/record/1075494/files/tf2-0.3.0-DlEngine.jar?download=1"
+				"https://icy-nexus.pasteur.fr/repository/Icy/org/bioimageanalysis/icy/tensor-flow-2-interface-0.3.0/0.0.1/tensor-flow-2-interface-0.3.0-0.0.1.jar"
 			]
 		},
 		{
@@ -731,7 +731,7 @@
 				"https://repo1.maven.org/maven2/org/tensorflow/tensorflow-core-api/0.3.3/tensorflow-core-api-0.3.3-linux-x86_64.jar",
 				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.4/javacpp-1.5.4.jar",
 				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.4/javacpp-1.5.4-linux-x86_64.jar",
-				"https://sandbox.zenodo.org/record/1075494/files/tf2-0.3.0-DlEngine.jar?download=1"
+				"https://icy-nexus.pasteur.fr/repository/Icy/org/bioimageanalysis/icy/tensor-flow-2-interface-0.3.0/0.0.1/tensor-flow-2-interface-0.3.0-0.0.1.jar"
 			]
 		},
 		{
@@ -749,7 +749,7 @@
 				"https://repo1.maven.org/maven2/org/tensorflow/tensorflow-core-api/0.3.3/tensorflow-core-api-0.3.3-linux-x86_64-gpu.jar",
 				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.4/javacpp-1.5.4.jar",
 				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.4/javacpp-1.5.4-linux-x86_64.jar",
-				"https://sandbox.zenodo.org/record/1075494/files/tf2-0.3.0-DlEngine.jar?download=1"
+				"https://icy-nexus.pasteur.fr/repository/Icy/org/bioimageanalysis/icy/tensor-flow-2-interface-0.3.0/0.0.1/tensor-flow-2-interface-0.3.0-0.0.1.jar"
 			]
 		},
 		{
@@ -766,8 +766,8 @@
 				"https://repo1.maven.org/maven2/org/tensorflow/ndarray/0.3.3/ndarray-0.3.3.jar",
 				"https://repo1.maven.org/maven2/org/tensorflow/tensorflow-core-api/0.3.3/tensorflow-core-api-0.3.3-macosx-x86_64.jar",
 				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.4/javacpp-1.5.4.jar",
-				 "https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.4/javacpp-1.5.4-macosx-x86_64.jar",
-				"https://sandbox.zenodo.org/record/1075494/files/tf2-0.3.0-DlEngine.jar?download=1"
+				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.4/javacpp-1.5.4-macosx-x86_64.jar",
+				"https://icy-nexus.pasteur.fr/repository/Icy/org/bioimageanalysis/icy/tensor-flow-2-interface-0.3.0/0.0.1/tensor-flow-2-interface-0.3.0-0.0.1.jar"
 			]
 		},
 		{
