@@ -32,7 +32,7 @@ public class ExampleLoadAndRunModel {
 		// Tag for the DL framework (engine) that wants to be used
 		String engine = "torchscript";
 		// Version of the engine
-		String engineVersion = "1.9.1";
+		String engineVersion = "1.9.0";
 		// Directory where all the engines are stored
 		String enginesDir = "C:\\Users\\angel\\OneDrive\\Documentos\\pasteur\\git\\deep-icy\\engines";
 		// Path to the model folder
@@ -76,11 +76,11 @@ public class ExampleLoadAndRunModel {
 		// Run the model on the input tensors. THe output tensors 
 		// will be rewritten with the result of the execution
 		model.runModel(inputs, outputs);
-		System.out.print(false);
 		// The result is stored in the list of tensors "outputs"
 		model.closeModel();
 		inputs.stream().forEach(t -> t.close());
 		outputs.stream().forEach(t -> t.close());
+		System.out.print("Success!!");
 	}
 	
 	/**

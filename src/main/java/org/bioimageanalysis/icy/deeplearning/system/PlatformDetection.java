@@ -173,7 +173,7 @@ public class PlatformDetection
 			try {
 				String txtAux1 = readBufferedReaderIntoStringIntoString(bufferedReader);
 				inputStreamTxt += txtAux1;
-				Thread.sleep(300);
+				Thread.sleep(10);
 			} catch (InterruptedException e) {
 				throw new IOException("Interrumped process");
 			}

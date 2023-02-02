@@ -675,7 +675,7 @@ public class EngineInfo
 	 */
 	public static String getPytorchKey()
 	{
-		return TENSORFLOW_ENGINE_NAME;
+		return PYTORCH_ENGINE_NAME;
 	}
 
 	/**
@@ -686,7 +686,7 @@ public class EngineInfo
 	 */
 	public static String getOnnxKey()
 	{
-		return TENSORFLOW_ENGINE_NAME;
+		return ONNX_ENGINE_NAME;
 	}
 
 	/**

@@ -64,7 +64,7 @@ public class EngineLoader extends ClassLoader
 	 * Name of the interface all the engines have to implement
 	 */
 	private static final String ENGINE_INTERFACE_NAME = 
-			"org.bioimageanalysis.icy.deeplearning.utils.DeepLearningInterface";
+			"org.bioimageanalysis.icy.deeplearning.engine.DeepLearningEngineInterface";
 
 	/**
 	 * HashMap containing all the already loaded ClassLoader. This variables
@@ -264,7 +264,7 @@ public class EngineLoader extends ClassLoader
 		// Load all the classes in the engine folder and select the wanted
 		// interface
 		ZipFile jarFile;
-		String jarKeyword = ENGINE_INTERFACE_JARS_MAP.get(this.majorVersion);
+		String jarKeyword = getCorrespondingEngineJar();
 		String errMsg = "Missing '" + jarKeyword + "' jar file that implements the 'DeepLearningInterface";
 		try
 		{
@@ -315,6 +315,11 @@ public class EngineLoader extends ClassLoader
 		System.out.println( "Exited engine ClassLoader" );
 	}
 	
+	/**
+	 * Create the static map that associates each of the supported DL engines with the 
+	 * corresponding engine JAR needed that implements {@link DeepLearningEngineInterface}
+	 * @return
+	 */
 	private static HashMap<String, String> getDlInterfaceJarsMap(){
 		HashMap<String, String> map = new HashMap<String, String>();
 		map.put(EngineInfo.getTensorflowKey() + "2", "tensor-flow-2-interface-");
@@ -322,5 +327,22 @@ public class EngineLoader extends ClassLoader
 		map.put(EngineInfo.getOnnxKey(), EngineInfo.getOnnxKey() + "-interface-");
 		map.put(EngineInfo.getPytorchKey(), EngineInfo.getPytorchKey() + "-interface-");
 		return map;
+	}
+	
+	/**
+	 * Helper to extract the JAR name from the {@link #ENGINE_INTERFACE_JARS_MAP}. A helper is
+	 * neeed because Tensorflow needs to specify the major version, but Pytorch does not.
+	 * @return
+	 */
+	private String getCorrespondingEngineJar() {
+		if (this.majorVersion.startsWith(EngineInfo.getTensorflowKey()))
+			return ENGINE_INTERFACE_JARS_MAP.get(this.majorVersion);
+		else if (this.majorVersion.startsWith(EngineInfo.getPytorchKey()))
+			return ENGINE_INTERFACE_JARS_MAP.get(EngineInfo.getPytorchKey());
+		else if (this.majorVersion.startsWith(EngineInfo.getOnnxKey()))
+			return ENGINE_INTERFACE_JARS_MAP.get(EngineInfo.getOnnxKey());
+		else
+			throw new IllegalArgumentException("Selected Deep Learning framework (" + this.majorVersion + ") "
+					+ "not supported at the moment.");
 	}
 }
