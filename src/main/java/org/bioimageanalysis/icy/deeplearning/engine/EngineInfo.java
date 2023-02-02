@@ -662,7 +662,29 @@ public class EngineInfo
 	 * 
 	 * @return the String used for tensorflow
 	 */
-	public static String getTfKey()
+	public static String getTensorflowKey()
+	{
+		return TENSORFLOW_ENGINE_NAME;
+	}
+
+	/**
+	 * Method that returns the name with which Tensorflow is defined needed at
+	 * some points to differentiate between tf1 and tf2
+	 * 
+	 * @return the String used for tensorflow
+	 */
+	public static String getPytorchKey()
+	{
+		return TENSORFLOW_ENGINE_NAME;
+	}
+
+	/**
+	 * Method that returns the name with which Tensorflow is defined needed at
+	 * some points to differentiate between tf1 and tf2
+	 * 
+	 * @return the String used for tensorflow
+	 */
+	public static String getOnnxKey()
 	{
 		return TENSORFLOW_ENGINE_NAME;
 	}
