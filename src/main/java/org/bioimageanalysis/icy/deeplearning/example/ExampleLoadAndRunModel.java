@@ -3,11 +3,10 @@ package org.bioimageanalysis.icy.deeplearning.example;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.bioimageanalysis.icy.deeplearning.Model;
+import org.bioimageanalysis.icy.deeplearning.model.Model;
+import org.bioimageanalysis.icy.deeplearning.engine.EngineInfo;
 import org.bioimageanalysis.icy.deeplearning.exceptions.LoadEngineException;
 import org.bioimageanalysis.icy.deeplearning.tensor.Tensor;
-import org.bioimageanalysis.icy.deeplearning.utils.EngineInfo;
-
 import net.imglib2.img.Img;
 import net.imglib2.img.ImgFactory;
 import net.imglib2.img.cell.CellImgFactory;

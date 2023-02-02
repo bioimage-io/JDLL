@@ -1,17 +1,17 @@
 /**
  * 
  */
-package org.bioimageanalysis.icy.deeplearning;
+package org.bioimageanalysis.icy.deeplearning.model;
 
 import java.util.List;
 
+import org.bioimageanalysis.icy.deeplearning.engine.DeepLearningEngineInterface;
+import org.bioimageanalysis.icy.deeplearning.engine.EngineInfo;
+import org.bioimageanalysis.icy.deeplearning.engine.EngineLoader;
 import org.bioimageanalysis.icy.deeplearning.exceptions.LoadEngineException;
 import org.bioimageanalysis.icy.deeplearning.exceptions.LoadModelException;
 import org.bioimageanalysis.icy.deeplearning.exceptions.RunModelException;
 import org.bioimageanalysis.icy.deeplearning.tensor.Tensor;
-import org.bioimageanalysis.icy.deeplearning.utils.DeepLearningInterface;
-import org.bioimageanalysis.icy.deeplearning.utils.EngineInfo;
-import org.bioimageanalysis.icy.deeplearning.utils.EngineLoader;
 
 import net.imglib2.type.numeric.real.FloatType;
 
@@ -156,7 +156,7 @@ public class Model
 	 */
 	public void loadModel() throws LoadModelException
 	{
-		DeepLearningInterface engineInstance = engineClassLoader.getEngineInstance();
+		DeepLearningEngineInterface engineInstance = engineClassLoader.getEngineInstance();
 		engineClassLoader.setEngineClassLoader();
 		engineInstance.loadModel( modelFolder, modelSource );
 		engineClassLoader.setIcyClassLoader();
@@ -168,7 +168,7 @@ public class Model
 	 */
 	public void closeModel()
 	{
-		DeepLearningInterface engineInstance = getEngineClassLoader().getEngineInstance();
+		DeepLearningEngineInterface engineInstance = getEngineClassLoader().getEngineInstance();
 		engineClassLoader.setEngineClassLoader();
 		engineInstance.closeModel();
 		getEngineClassLoader().close();
@@ -193,7 +193,7 @@ public class Model
 	 */
 	public void runModel( List< Tensor < ? > > inTensors, List< Tensor < ? > > outTensors ) throws RunModelException, Exception
 	{
-		DeepLearningInterface engineInstance = engineClassLoader.getEngineInstance();
+		DeepLearningEngineInterface engineInstance = engineClassLoader.getEngineInstance();
 		engineClassLoader.setEngineClassLoader();
 		inTensors.stream().forEach( tt -> tt = Tensor.createCopyOfTensorInWantedDataType( tt, new FloatType() ) );
 		engineInstance.run( inTensors, outTensors );

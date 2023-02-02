@@ -1,4 +1,4 @@
-package org.bioimageanalysis.icy.deeplearning.utils;
+package org.bioimageanalysis.icy.deeplearning.versionmanagement;
 
 import java.io.BufferedReader;
 import java.io.InputStreamReader;

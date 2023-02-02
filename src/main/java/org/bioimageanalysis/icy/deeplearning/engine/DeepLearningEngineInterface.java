@@ -1,4 +1,4 @@
-package org.bioimageanalysis.icy.deeplearning.utils;
+package org.bioimageanalysis.icy.deeplearning.engine;
 
 import java.util.List;
 
@@ -7,7 +7,7 @@ import org.bioimageanalysis.icy.deeplearning.tensor.Tensor;
 import org.bioimageanalysis.icy.deeplearning.exceptions.LoadModelException;
 import org.bioimageanalysis.icy.deeplearning.exceptions.RunModelException;
 
-public interface DeepLearningInterface
+public interface DeepLearningEngineInterface
 {
 
 	/**

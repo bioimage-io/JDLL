@@ -1,7 +1,7 @@
 /**
  * 
  */
-package org.bioimageanalysis.icy.deeplearning.utils;
+package org.bioimageanalysis.icy.deeplearning.engine;
 
 import java.io.File;
 import java.io.IOException;
@@ -52,7 +52,7 @@ public class EngineLoader extends ClassLoader
 	 * Instance of the class from the wanted Deep Learning engine that is used
 	 * to call all the needed methods to execute a model
 	 */
-	private DeepLearningInterface engineInstance;
+	private DeepLearningEngineInterface engineInstance;
 
 	/**
 	 * Keyword that the jar file that implements the needed interface has to
@@ -181,7 +181,7 @@ public class EngineLoader extends ClassLoader
 	}
 
 	/**
-	 * Find the wanted interface {@link DeepLearningInterface} from the entries
+	 * Find the wanted interface {@link DeepLearningEngineInterface} from the entries
 	 * of a JAR file. REturns null if the interface is not in the entries
 	 * 
 	 * @param entries
@@ -196,7 +196,7 @@ public class EngineLoader extends ClassLoader
 	 * @throws InvocationTargetException 
 	 * @throws IllegalArgumentException 
 	 */
-	private static DeepLearningInterface getEngineClassFromEntries( Enumeration< ? extends ZipEntry > entries,
+	private static DeepLearningEngineInterface getEngineClassFromEntries( Enumeration< ? extends ZipEntry > entries,
 			ClassLoader engineClassloader )
 			throws ClassNotFoundException, InstantiationException, IllegalAccessException, IllegalArgumentException, InvocationTargetException, NoSuchMethodException, SecurityException
 	{
@@ -215,7 +215,7 @@ public class EngineLoader extends ClassLoader
 					{
 						// Assume that DeepLearningInterface has no arguments
 						// for the constructor
-						return ( DeepLearningInterface ) c.getDeclaredConstructor().newInstance();
+						return ( DeepLearningEngineInterface ) c.getDeclaredConstructor().newInstance();
 					}
 				}
 				// REmove references
@@ -297,7 +297,7 @@ public class EngineLoader extends ClassLoader
 	 * 
 	 * @return engine instance
 	 */
-	public DeepLearningInterface getEngineInstance()
+	public DeepLearningEngineInterface getEngineInstance()
 	{
 		return this.engineInstance;
 	}

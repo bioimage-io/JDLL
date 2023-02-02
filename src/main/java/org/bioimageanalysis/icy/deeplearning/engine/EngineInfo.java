@@ -1,9 +1,10 @@
-package org.bioimageanalysis.icy.deeplearning.utils;
+package org.bioimageanalysis.icy.deeplearning.engine;
 
 import java.io.File;
 import java.util.Objects;
 
 import org.bioimageanalysis.icy.deeplearning.system.PlatformDetection;
+import org.bioimageanalysis.icy.deeplearning.versionmanagement.SupportedVersions;
 
 /**
  * Class to create an object that contains all the information about a Deep
