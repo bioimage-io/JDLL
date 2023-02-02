@@ -39,21 +39,21 @@ An example of this is shown in the images below:
    Another example: the folder `Tensorflow-1.12.0-1.12.0-windows-x86_64-cpu` contains a Tensorflow engine, Python version 1.12.0, same as the Java version, for Windows operating system, architecture x86_64 (64 bits), that runs only in CPU.
    
    <ul>
-   <h3>The <code>DlEngine</code> JAR</h3>
-   <p>When examining the JAR files provided inside a particular engine folder, you will notice that they correspond to the standard dependencies of the framework, plus a JAR file containing the keyword <code>DlEngine</code>. This file needs to be created for each DL framework and enables the connection to the main model runner library.</p>
+   <h3>The <code><engine>-interface</code> JAR</h3>
+   <p>When examining the JAR files provided inside a particular engine folder, you will notice that they correspond to the standard dependencies of the framework, plus a JAR file defined as <engine_name>-interface (for example: pytorch-interface or tensorflow-1-interface). This file needs to be created for each DL framework and enables the connection to the main model runner library.</p>
    
-   <p>It needs to implement an interface from the model runner library so that it can be called in an agnostic manner. The <code>DlEngine</code> file is in charge of converting the agnostic tensors into framework specific tensors, loading the model, making inference and converting the results into agnostic tensors again and sending them back.</p>
+   <p>It needs to implement an interface from the model runner library so that it can be called in an agnostic manner. The <code><engine-interface></code> file is in charge of converting the agnostic tensors into framework specific tensors, loading the model, making inference and converting the results into agnostic tensors again and sending them back.</p>
    
-   <p>Currently the <code>DlEngine</code> exists for Pytorch, Tensorflow 1, Tensorflow 2 and Onnx.
-   Below there is a table with links to the JAR files and the code of the existing <code>DlEngines</code></p>
+   <p>Currently the <code><engine>-interface</code> jar exists for Pytorch, Tensorflow 1, Tensorflow 2 and Onnx.
+   Below there is a table with links to the JAR files and the code of the existing <code><engine>-interface</code> jars:</p>
 </ul>
 
 | **Engine**                               | **Link to JAR**       | **Source code**                                                   |
 |------------------------------------------|-----------------------|-------------------------------------------------------------------|
 | Pytorch                                  |     [download here](https://icy-nexus.pasteur.fr/repository/Icy/org/bioimageanalysis/icy/pytorch-interface/0.0.1/pytorch-interface-0.0.1.jar)    | https://gitlab.pasteur.fr/bia/pytorch-interface                   |
 | Tensorflow 1                             |     [downoad here](https://icy-nexus.pasteur.fr/repository/Icy/org/bioimageanalysis/icy/tensor-flow-1-interface/0.0.1/tensor-flow-1-interface-0.0.1.jar)    | https://gitlab.pasteur.fr/bia/deep-icy-tf1                        |
-|Tensorflow   2 API 0.2.0                  |     To be released    | https://gitlab.pasteur.fr/bia/tensorflow-2-interface-0.2.0        |
-|Tensorflow   2 all APIs but 0.2.0         |     To be released    | https://gitlab.pasteur.fr/bia/tensorflow-2-interface-0.3.0        |
+|Tensorflow   2 API 0.2.0                  |     [download here](https://icy-nexus.pasteur.fr/repository/Icy/org/bioimageanalysis/icy/tensor-flow-2-interface-0.2.0/0.0.1/tensor-flow-2-interface-0.2.0-0.0.1.jar)    | https://gitlab.pasteur.fr/bia/tensorflow-2-interface-0.2.0        |
+|Tensorflow   2 all APIs but 0.2.0         |     [download here](https://icy-nexus.pasteur.fr/repository/Icy/org/bioimageanalysis/icy/tensor-flow-2-interface-0.3.0/0.0.1/tensor-flow-2-interface-0.3.0-0.0.1.jar)    | https://gitlab.pasteur.fr/bia/tensorflow-2-interface-0.3.0        |
 | Onnx                                     |     [download here](https://icy-nexus.pasteur.fr/repository/icy-core/org/bioimageanalysis/icy/onnx-interface/0.0.1/onnx-interface-0.0.1.jar)    | https://github.com/bioimage-io/onnx-java-interface                |
 
    <ul>
