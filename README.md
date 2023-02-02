@@ -39,13 +39,13 @@ An example of this is shown in the images below:
    Another example: the folder `Tensorflow-1.12.0-1.12.0-windows-x86_64-cpu` contains a Tensorflow engine, Python version 1.12.0, same as the Java version, for Windows operating system, architecture x86_64 (64 bits), that runs only in CPU.
    
    <ul>
-   <h3>The <code><engine>-interface</code> JAR</h3>
-   <p>When examining the JAR files provided inside a particular engine folder, you will notice that they correspond to the standard dependencies of the framework, plus a JAR file defined as <engine_name>-interface (for example: pytorch-interface or tensorflow-1-interface). This file needs to be created for each DL framework and enables the connection to the main model runner library.</p>
+   <h3>The <code>engine_name-interface</code> JAR</h3>
+   <p>When examining the JAR files provided inside a particular engine folder, you will notice that they correspond to the standard dependencies of the framework, plus a JAR file defined as <code>engine_name-interface (for example: pytorch-interface or tensorflow-1-interface)</code>. This file needs to be created for each DL framework and enables the connection to the main model runner library.</p>
    
-   <p>It needs to implement an interface from the model runner library so that it can be called in an agnostic manner. The <code><engine-interface></code> file is in charge of converting the agnostic tensors into framework specific tensors, loading the model, making inference and converting the results into agnostic tensors again and sending them back.</p>
+   <p>It needs to implement an interface from the model runner library so that it can be called in an agnostic manner. The <code>engine_name-interface</code> file is in charge of converting the agnostic tensors into framework specific tensors, loading the model, making inference and converting the results into agnostic tensors again and sending them back.</p>
    
-   <p>Currently the <code><engine>-interface</code> jar exists for Pytorch, Tensorflow 1, Tensorflow 2 and Onnx.
-   Below there is a table with links to the JAR files and the code of the existing <code><engine>-interface</code> jars:</p>
+   <p>Currently the <code>engine_name-interface</code> jar exists for Pytorch, Tensorflow 1, Tensorflow 2 and Onnx.
+   Below there is a table with links to the JAR files and the code of the existing <code>engine_name-interface</code> jars:</p>
 </ul>
 
 | **Engine**                               | **Link to JAR**       | **Source code**                                                   |
