@@ -176,42 +176,6 @@ public final class Tensor< T extends RealType< T > & NativeType< T > >
 	 * @param data
 	 *            the numbers of the tensor in a Numpy array like structure
 	 */
-	/** TODO remove once it is clear that tensors can be rewritten
-	public void setData( final RandomAccessibleInterval< T > data )
-	{
-		throwExceptionIfClosed();
-		if ( data == null && this.data != null )
-		{
-			this.data = null;
-			return;
-		}
-		else if ( this.data != null )
-		{ throw new IllegalArgumentException( "Tensor '" + tensorName + "' has already "
-				+ "been defined. Cannot redefine the backend data of a tensor once it has"
-				+ " been set. In order to modify the tensor, please modify the NDArray "
-				+ "used as backend for the tensor." ); }
-		if ( !emptyTensor && !equalShape( data.dimensionsAsLongArray() ) )
-		{ throw new IllegalArgumentException( "Trying to set an NDArray as the backend of the Tensor "
-				+ "with a different shape than the Tensor. Tensor shape is: " + Arrays.toString( shape )
-				+ " and NDArray shape is: " + Arrays.toString( data.dimensionsAsLongArray() ) ); }
-		if ( !emptyTensor && this.data != null
-				&& Util.getTypeFromInterval( this.data ) != Util.getTypeFromInterval( data ) )
-		{ throw new IllegalArgumentException( "Trying to set an NDArray as the backend of the Tensor "
-				+ "with a different data type than the Tensor. Tensor data type is: " + dType.toString()
-				+ " and NDArray data type is: " + Util.getTypeFromInterval( data ).toString() ); }
-		if ( !emptyTensor )
-			checkDims( data, axesString );
-
-		dType = Util.getTypeFromInterval( data );
-		this.data = data;
-		if ( emptyTensor )
-		{
-			setShape();
-			dType = Util.getTypeFromInterval( data );
-			emptyTensor = false;
-		}
-	}
-	*/
 	public void setData( final RandomAccessibleInterval< T > data )
 	{
 		throwExceptionIfClosed();
