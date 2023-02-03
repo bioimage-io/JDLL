@@ -13,6 +13,7 @@ import net.imglib2.img.cell.CellImgFactory;
 import net.imglib2.type.NativeType;
 import net.imglib2.type.numeric.RealType;
 import net.imglib2.type.numeric.real.FloatType;
+import net.imglib2.util.Util;
 
 /**
  * This is an example of the library that runs a Deep Learning model on a supported engine locally
@@ -32,7 +33,7 @@ public class ExampleLoadAndRunModel {
 		// Tag for the DL framework (engine) that wants to be used
 		String engine = "torchscript";
 		// Version of the engine
-		String engineVersion = "1.9.0";
+		String engineVersion = "1.11.0";
 		// Directory where all the engines are stored
 		String enginesDir = "C:\\Users\\angel\\OneDrive\\Documentos\\pasteur\\git\\deep-icy\\engines";
 		// Path to the model folder
@@ -66,16 +67,20 @@ public class ExampleLoadAndRunModel {
 		/// Regard that output tensors can be built empty without allocating memory
 		// or allocating memory by creating the tensor with a sample empty image, or by
 		// defining the dimensions and data type
-		Tensor<FloatType> outTensor = Tensor.buildEmptyTensorAndAllocateMemory("output0", 
-																				"bcyx", 
-																				new long[] {1, 2, 512, 512}, 
-																				new FloatType());
+		/*Tensor<FloatType> outTensor = Tensor.buildEmptyTensorAndAllocateMemory("output0", 
+				"bcyx", 
+				new long[] {1, 2, 512, 512}, 
+				new FloatType());*/
+		final Img< FloatType > img2 = imgFactory.create( 1, 2, 512, 512 );
+		Tensor<FloatType> outTensor = Tensor.build("output0", "bcyx", img2);
 		List<Tensor<?>> outputs = new ArrayList<Tensor<?>>();
 		outputs.add(outTensor);
 		
 		// Run the model on the input tensors. THe output tensors 
 		// will be rewritten with the result of the execution
+		System.out.println(Util.average(Util.asDoubleArray(outputs.get(0).getData())));
 		model.runModel(inputs, outputs);
+		System.out.println(Util.average(Util.asDoubleArray(outputs.get(0).getData())));
 		// The result is stored in the list of tensors "outputs"
 		model.closeModel();
 		inputs.stream().forEach(t -> t.close());
