@@ -28,7 +28,8 @@ The [Java model runner](<https://github.com/bioimage-io/model-runner-java/tree/m
    To load frameworks in separate classloaders, the library requires that the executable JAR files be stored in identifiable folders, with all DL frameworks stored in the same directory. 
 An example of this is shown in the images below:
 
-   ADD IMAGE
+   ![alt text](https://raw.githubusercontent.com/bioimage-io/model-runner-java/main/wiki/engines_folders.png)
+   
 
    All engines should be stored in the same directory (in the example, **C:\Users\carlos\icy\engines**), with each engine following the naming convention:
    
