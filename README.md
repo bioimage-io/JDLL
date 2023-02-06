@@ -19,6 +19,16 @@ The [Java model runner](<https://github.com/bioimage-io/model-runner-java/tree/m
      <version>0.0.1</version>
    </dependency>
    ```
+   
+   and add to </repositories> the following:
+
+	```
+	<repository>
+	  <id>icy</id>
+	  <url>https://icy-nexus.pasteur.fr/repository/Icy/</url>
+	</repository>
+	```
+
 2. Prepare the environment
 
    Certain pairs of DL frameworks cannot be loaded in the same classloader due to incompatible classes with the same names. For example, the Java APIs of Tensorflow 1 and Tensorflow 2 are incompatible, which has slowed the adoption of newer versions of Tensorflow in Java softwares, disrupting the connection with the latest deep learning developments.
@@ -28,7 +38,8 @@ The [Java model runner](<https://github.com/bioimage-io/model-runner-java/tree/m
    To load frameworks in separate classloaders, the library requires that the executable JAR files be stored in identifiable folders, with all DL frameworks stored in the same directory. 
 An example of this is shown in the images below:
 
-   ADD IMAGE
+   ![alt text](https://raw.githubusercontent.com/bioimage-io/model-runner-java/main/wiki/engines_folders.png)
+   
 
    All engines should be stored in the same directory (in the example, **C:\Users\carlos\icy\engines**), with each engine following the naming convention:
    
@@ -58,7 +69,7 @@ An example of this is shown in the images below:
 
    <ul>
       <ul>
-      <p>Finally, the information about the engines supported currently by the model runner, for which OS and architectures and which JAR files are required each of the engines is stored in the following json file: https://github.com/bioimage-io/model-runner-java/blob/finish-first-iteration/src/main/resources/availableDLVersions.json</p>
+      <p>Finally, the information about the engines supported currently by the model runner, for which OS and architectures and which JAR files are required each of the engines is stored in the following json file: https://github.com/bioimage-io/model-runner-java/blob/main/src/main/resources/availableDLVersions.json</p>
       </ul>
 
    <p>Note that the model runner will be in **constant development** and that it is open to community collaboration, so **pull requests** to the official repository of the model runner to improve functionality or to add new engines are **very welcomed**.</p>
@@ -159,7 +170,7 @@ The creation of tensors in the main program side is reduced to the creation of I
    // The results of applying inference will be // stored in the Tensors of the list ‘outputTensors’ variable
   ```
      
-  A code example can be found at: https://github.com/bioimage-io/model-runner-java/blob/finish-first-iteration/src/main/java/org/bioimageanalysis/icy/deeplearning/example/ExampleLoadAndRunModel.java
+  A code example can be found at: https://github.com/bioimage-io/model-runner-java/blob/main/src/main/java/org/bioimageanalysis/icy/deeplearning/example/ExampleLoadAndRunModel.java
      
   </ul>
    
