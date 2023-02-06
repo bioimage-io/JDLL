@@ -22,7 +22,7 @@ import net.imglib2.util.Util;
  *  - Tf1: https://bioimage.io/#/?tags=Neuron%20Segmentation%20in%202D%20EM%20%28Membrane%29&id=10.5281%2Fzenodo.5817052
  *  - Tf2: https://github.com/stardist/stardist-icy/raw/main/src/main/resources/models/2D/dsb2018_paper.zip
  * 
- * 
+ * It also requires the installation of a TF1 and a TF2 engine
  * 
  * 
  * @author Carlos Garcia Lopez de Haro
