@@ -169,9 +169,9 @@ public final class Tensor< T extends RealType< T > & NativeType< T > >
 	/**
 	 * Set the data structure of the tensor that contains the numbers. In order
 	 * to change the data of the tensor, first do 'tensor.setData(null)'. Once
-	 * the tensor data is null, set the wanted {@link Random
-	 * AccessibleInterval}. The {@link RandomAccessibleInerval} needs to be of
-	 * the same data type, shape and size as the tensor data.
+	 * the tensor data is null, set the wanted {@link RandomAccessibleInterval}.
+	 * The {@link RandomAccessibleInterval} needs to be of the same data type,
+	 * shape and size as the tensor data.
 	 *
 	 * @param data
 	 *            the numbers of the tensor in a Numpy array like structure
@@ -282,7 +282,7 @@ public final class Tensor< T extends RealType< T > & NativeType< T > >
 	 * Everything is the same or the new tensor (including the name), except the
 	 * data type of the data
 	 *
-	 * @param tt
+	 * @param input
 	 *            tensor where the copy is created from
 	 * @param type
 	 *            data type of the wanted tensor
@@ -354,7 +354,7 @@ public final class Tensor< T extends RealType< T > & NativeType< T > >
 	 * If the shape of a tensor is the same as the same as the shape of this
 	 * tensor
 	 *
-	 * @param shape
+	 * @param longShape
 	 *            the shape of the other tensor as a long arr
 	 * @return whether the tensor has the same shape to this tensor
 	 */
