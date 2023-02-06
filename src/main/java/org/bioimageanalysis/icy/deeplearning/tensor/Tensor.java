@@ -583,9 +583,4 @@ public final class Tensor< T extends RealType< T > & NativeType< T > >
 				+ "a ist because lists can only have the axes: 'b', 'i', 'c' and 'r'. The axes for this "
 				+ "tensor are :" + axesString + "." ); }
 	}
-
-	public static void main( final String[] args )
-	{
-
-	}
 }

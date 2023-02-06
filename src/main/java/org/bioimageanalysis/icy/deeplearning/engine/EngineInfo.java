@@ -35,7 +35,7 @@ public class EngineInfo
 	/**
 	 * True if the engine supports gpu or false otherwise. False by default.
 	 */
-	private boolean gpu = false;;
+	private boolean gpu = false;
 
 	/**
 	 * True if the engine supports cpu or false otherwise. True by default
