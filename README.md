@@ -160,7 +160,7 @@ The creation of tensors in the main program side is reduced to the creation of I
    // The results of applying inference will be // stored in the Tensors of the list ‘outputTensors’ variable
   ```
      
-  A code example can be found at: https://github.com/bioimage-io/model-runner-java/blob/finish-first-iteration/src/main/java/org/bioimageanalysis/icy/deeplearning/example/ExampleLoadAndRunModel.java
+  A code example can be found at: https://github.com/bioimage-io/model-runner-java/blob/main/src/main/java/org/bioimageanalysis/icy/deeplearning/example/ExampleLoadAndRunModel.java
      
   </ul>
    
