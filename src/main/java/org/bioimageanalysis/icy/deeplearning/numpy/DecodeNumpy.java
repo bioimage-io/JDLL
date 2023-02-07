@@ -15,8 +15,6 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import javax.activation.UnsupportedDataTypeException;
-
 import org.bioimageanalysis.icy.deeplearning.utils.IndexingUtils;
 
 import net.imglib2.Cursor;
@@ -146,7 +144,7 @@ public class DecodeNumpy {
         return build(data, byteOrder, dtype, shape);
     }
     
-    public static String getDataType(String npDtype) throws UnsupportedDataTypeException {
+    public static String getDataType(String npDtype) throws IllegalArgumentException {
     	if (npDtype.startsWith(">") || npDtype.startsWith("<"))
     		npDtype = npDtype.substring(1);
     	if (npDtype.equals("i1") || npDtype.equals("b") || npDtype.equals("c"))
@@ -174,13 +172,13 @@ public class DecodeNumpy {
     		return "float64";
     	else if (npDtype.equals("u8") || npDtype.equals("L")
     			|| npDtype.equals("Q"))
-    		throw new UnsupportedDataTypeException("Numpy dtype 'uint64' cannot "
+    		throw new IllegalArgumentException("Numpy dtype 'uint64' cannot "
     				+ " be supported in Java.");
     	else if (npDtype.equals("c8"))
-    		throw new UnsupportedDataTypeException("Numpy dtype 'complex64' is not "
+    		throw new IllegalArgumentException("Numpy dtype 'complex64' is not "
     				+ "supported at the moment.");
     	else
-    		throw new UnsupportedDataTypeException("Numpy dtype '" + npDtype + "' is not "
+    		throw new IllegalArgumentException("Numpy dtype '" + npDtype + "' is not "
     				+ "supported at the moment.");
     }
 

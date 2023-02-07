@@ -35,7 +35,7 @@ public class EngineInfo
 	/**
 	 * True if the engine supports gpu or false otherwise. False by default.
 	 */
-	private boolean gpu = false;;
+	private boolean gpu = false;
 
 	/**
 	 * True if the engine supports cpu or false otherwise. True by default
@@ -57,16 +57,25 @@ public class EngineInfo
 
 	/**
 	 * Directory where the all the jars needed to load a version are stored. It
-	 * should be organized in the following way: - jarsDirectory -
-	 * engineName1_engineJavaVersion1_engineOs1_engineMachine1 - engine1Jar1.jar
-	 * - engine1Jar2.jar - ... - engine1JarN.jar -
-	 * engineName2_engineJavaVersion2_engineOs2_engineMachine2 - engine2Jar1.jar
-	 * - engine2Jar2.jar - ... - engine2JarN.jar
+	 * should be organized in the following way:
+	 * <pre>
+	 * - jarsDirectory
+	 * 	- engineName1_engineJavaVersion1_engineOs1_engineMachine1
+	 * 		- engine1Jar1.jar
+	 * 		- engine1Jar2.jar
+	 * 		- ...
+	 * 		- engine1JarN.jar
+	 * 	- engineName2_engineJavaVersion2_engineOs2_engineMachine2
+	 * 		- engine2Jar1.jar
+	 * 		- engine2Jar2.jar
+	 * 		- ...
+	 * 		- engine2JarN.jar
+	 * </pre>
 	 */
 	private String jarsDirectory;
 
 	/**
-	 * If the JARs directory is not going to change during the exction of the
+	 * If the JARs directory is not going to change during the execution of the
 	 * program
 	 */
 	private static String STATIC_JARS_DIRECTORY;
@@ -452,7 +461,7 @@ public class EngineInfo
 
 	/**
 	 * Set the directory where the program will look for the Deep Learning
-	 * framework jars See {@link jarsDirectory} for more explanation
+	 * framework jars See {@link #jarsDirectory} for more explanation
 	 * 
 	 * @param jarsDirectory
 	 *            directory where all the folders containing the JARs are stored
@@ -464,7 +473,7 @@ public class EngineInfo
 
 	/**
 	 * Return the String path to the directory where all the jars to load a Deep
-	 * Learning framework (engine) are stored. See {@link jarsDirectory} for
+	 * Learning framework (engine) are stored. See {@link #jarsDirectory} for
 	 * more explanation
 	 * 
 	 * @return String path to the directory where all the jars are stored
