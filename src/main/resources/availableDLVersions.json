@@ -1994,19 +1994,6 @@
 		},
 		{
 			"engine": "onnx",
-			"version": "1.7.1",
-			"pythonVersion": "12",
-			"os": "macosx-x86_64",
-			"gpu": false,
-			"cpu": true,
-			"rosetta": true,
-			"jars": [
-				"https://repo1.maven.org/maven2/com/microsoft/onnxruntime/onnxruntime/1.7.1/onnxruntime-1.7.1.jar",
-				"https://icy-nexus.pasteur.fr/repository/icy-core/org/bioimageanalysis/icy/onnx-interface/0.0.1/onnx-interface-0.0.1.jar"
-			]
-		},
-		{
-			"engine": "onnx",
 			"version": "1.7.0",
 			"pythonVersion": "12",
 			"os": "macosx-x86_64",
@@ -2228,19 +2215,6 @@
 		},
 		{
 			"engine": "onnx",
-			"version": "1.7.1",
-			"pythonVersion": "12",
-			"os": "linux-x86_64",
-			"gpu": false,
-			"cpu": true,
-			"rosetta": true,
-			"jars": [
-				"https://repo1.maven.org/maven2/com/microsoft/onnxruntime/onnxruntime/1.7.1/onnxruntime-1.7.1.jar",
-				"https://icy-nexus.pasteur.fr/repository/icy-core/org/bioimageanalysis/icy/onnx-interface/0.0.1/onnx-interface-0.0.1.jar"
-			]
-		},
-		{
-			"engine": "onnx",
 			"version": "1.7.0",
 			"pythonVersion": "12",
 			"os": "linux-x86_64",
@@ -2457,19 +2431,6 @@
 			"rosetta": false,
 			"jars": [
 				"https://repo1.maven.org/maven2/com/microsoft/onnxruntime/onnxruntime/1.8.0/onnxruntime-1.8.0.jar",
-				"https://icy-nexus.pasteur.fr/repository/icy-core/org/bioimageanalysis/icy/onnx-interface/0.0.1/onnx-interface-0.0.1.jar"
-			]
-		},
-		{
-			"engine": "onnx",
-			"version": "1.7.1",
-			"pythonVersion": "12",
-			"os": "windows-x86_64",
-			"gpu": false,
-			"cpu": true,
-			"rosetta": false,
-			"jars": [
-				"https://repo1.maven.org/maven2/com/microsoft/onnxruntime/onnxruntime/1.7.1/onnxruntime-1.7.1.jar",
 				"https://icy-nexus.pasteur.fr/repository/icy-core/org/bioimageanalysis/icy/onnx-interface/0.0.1/onnx-interface-0.0.1.jar"
 			]
 		},
