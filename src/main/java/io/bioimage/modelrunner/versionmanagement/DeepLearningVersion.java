@@ -171,7 +171,7 @@ public class DeepLearningVersion
     }
 
     /**
-     * @param whether GPU is supported by the version or not
+     * @param gpu whether GPU is supported by the version or not
      */
     public void setGPU(boolean gpu)
     {
@@ -213,7 +213,7 @@ public class DeepLearningVersion
     }
 
     /**
-     * @return The TensorFlow library version.
+     * @return The Python library version.
      */
     public String getPythonVersion()
     {
@@ -221,8 +221,8 @@ public class DeepLearningVersion
     }
 
     /**
-     * @param tensorFlowVersion
-     *        The TensorFlow library version.
+     * @param pythonVersion
+     *        The Python library version.
      */
     public void setPythonVersion(String pythonVersion)
     {
@@ -270,8 +270,8 @@ public class DeepLearningVersion
     }
 
     /**
-     * @param mode
-     *        whether GPU is supported by the version or not
+     * @param cpu
+     *        whether CPU is supported by the version or not
      */
     public void setCPU(boolean cpu)
     {
@@ -340,7 +340,7 @@ public class DeepLearningVersion
      * This method compares to versions expressed as Strings. Returns 
      * -1 if the first version is bigger, 1 if the second argument is
      * bigger or 0 if the versions are equal.
-     * Examples: 2.1 > 2.0; 3.1.2 < 3.2; 3.1.2 > 3.1
+     * Examples: 2.1 &gt; 2.0; 3.1.2 &lt; 3.2; 3.1.2 &gt; 3.1
      * @param v1
      * 	first version
      * @param v2
@@ -373,7 +373,7 @@ public class DeepLearningVersion
     }
 
     /**
-     * @implNote The string representation is {@code "TensorFlowVersion[version=x, tensorFlowVersion=y, os=z, mode=u, jars=[...]"}.
+     * The string representation is {@code "TensorFlowVersion[version=x, tensorFlowVersion=y, os=z, mode=u, jars=[...]"}.
      */
     @Override
     public String toString()

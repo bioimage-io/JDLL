@@ -53,14 +53,14 @@ import net.imglib2.util.Util;
  * This is an example where a Tensorflow 2.4.1 and Tensorflow 1.15.0 are loaded on the same run.
  * 
  * The models used for this example are:
- *  - Tf1: https://bioimage.io/#/?tags=Neuron%20Segmentation%20in%202D%20EM%20%28Membrane%29&id=10.5281%2Fzenodo.5817052
- *  - Tf2: https://github.com/stardist/stardist-icy/raw/main/src/main/resources/models/2D/dsb2018_paper.zip
+*  <ul>
+*  <li><a href="https://bioimage.io/#/?tags=Neuron%20Segmentation%20in%202D%20EM%20%28Membrane%29&id=10.5281%2Fzenodo.5817052">Tf1</a></li>
+*  <li><a href="https://github.com/stardist/stardist-icy/raw/main/src/main/resources/models/2D/dsb2018_paper.zip">Tf2</a></li>
+*  </ul>
  * 
  * It also requires the installation of a TF1 and a TF2 engine
  * 
- * 
  * @author Carlos Garcia Lopez de Haro
- *
  */
 public class ExampleLoadTensorflow1Tensorflow2 {
 	

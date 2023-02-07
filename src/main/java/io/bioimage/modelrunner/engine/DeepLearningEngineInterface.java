@@ -51,8 +51,6 @@ public interface DeepLearningEngineInterface
 	 *            list containing the input tensors
 	 * @param outputTensors
 	 *            list containing only the information about output tensors
-	 * @return 
-	 * @return output tensors produced by the model
 	 * @throws RunModelException
 	 *             if there is an error in the execution of the model
 	 */

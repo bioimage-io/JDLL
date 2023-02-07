@@ -109,7 +109,7 @@ public class InstalledDeepLearningVersions {
     }
 
     /**
-     * REturns a list of all the downloaded {@link package io.bioimage.modelrunner.versionmanager.version.DeepLearningVersions}
+     * Returns a list of all the downloaded {@link DeepLearningVersion}s
      * 
      * @return list with the downloaded DeepLearningVersion
      */
@@ -192,7 +192,7 @@ public class InstalledDeepLearningVersions {
     }
 
     /**
-     * REturns a list of all the downloaded {@link package io.bioimage.modelrunner.versionmanager.version.DeepLearningVersions}
+     * Returns a list of all the downloaded {@link DeepLearningVersion}s
      * that are compatible with the operating system
      * @return list with the downloaded DeepLearningVersion
      */

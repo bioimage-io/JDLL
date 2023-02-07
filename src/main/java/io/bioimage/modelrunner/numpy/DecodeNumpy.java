@@ -230,18 +230,24 @@ public class DecodeNumpy {
     }
 
     /**
-     * Creates a {@link Img} from a given {@link Tensor} and an array with its dimensions order.
+     * Creates a {@link Img} from a given {@link ByteBuffer} and an array with its dimensions order.
      * 
-     * @param tensor
-     *        The tensor data is read from.
-     * @return The INDArray built from the tensor.
+     * @param buf
+     *        The buffer data is read from.
+		 * @param byteOrder
+		 *        Endianness of the buffer data.
+		 * @param dtype
+		 *        NumPy dtype of the data.
+		 * @param shape
+		 *        NumPy shape of the data.
+     * @return The Img built from the tensor.
      * @throws IllegalArgumentException
      *         If the tensor type is not supported.
      */
     @SuppressWarnings("unchecked")
     public static <T extends Type<T>> Img<T> build(ByteBuffer buf, ByteOrder byteOrder, String dtype, long[] shape) throws IllegalArgumentException
     {
-        // Create an INDArray of the same type of the tensor
+        // Create an Img of the same type of the tensor
     	byte[] data = new byte[buf.remaining()];
     	buf.get(data);
     	if (dtype.equals("byte")) {
@@ -268,11 +274,11 @@ public class DecodeNumpy {
     }
 
     /** TODO check BigEndian LittleEndian
-     * Builds a {@link Img} from a unsigned byte-typed {@link Tensor}.
+     * Builds a {@link Img} from a unsigned byte-typed {@code Tensor}.
      * 
      * @param tensor
      *        The tensor data is read from.
-     * @return The INDArray built from the tensor of type {@link DataType#UBYTE}.
+     * @return The Img built from the tensor of type {@link DataType#UBYTE}.
      */
     private static Img<ByteType> buildByteFromByte(byte[] tensor, ByteOrder byteOrder, long[] tensorShape)
     {
@@ -290,11 +296,11 @@ public class DecodeNumpy {
 	}
 
     /** TODO check BigEndian LittleEndian
-     * Builds a {@link Img} from a unsigned byte-typed {@link Tensor}.
+     * Builds a {@link Img} from a unsigned byte-typed {@code Tensor}.
      * 
      * @param tensor
      *        The tensor data is read from.
-     * @return The INDArray built from the tensor of type {@link DataType#UBYTE}.
+     * @return The Img built from the tensor of type {@link DataType#UBYTE}.
      */
     private static Img<UnsignedByteType> buildUByteFromByte(byte[] tensor, ByteOrder byteOrder, long[] tensorShape)
     {
@@ -313,7 +319,7 @@ public class DecodeNumpy {
 	}
 
     /**
-     * Builds a {@link Img} from a unsigned integer-typed {@link Tensor}.
+     * Builds a {@link Img} from a unsigned integer-typed {@code Tensor}.
      * 
      * @param tensor
      *        The tensor data is read from.
@@ -336,7 +342,7 @@ public class DecodeNumpy {
     }
 
     /**
-     * Builds a {@link Img} from a unsigned integer-typed {@link Tensor}.
+     * Builds a {@link Img} from a unsigned integer-typed {@code Tensor}.
      * 
      * @param tensor
      *        The tensor data is read from.
@@ -359,7 +365,7 @@ public class DecodeNumpy {
     }
 
     /**
-     * Builds a {@link Img} from a unsigned integer-typed {@link Tensor}.
+     * Builds a {@link Img} from a unsigned integer-typed {@code Tensor}.
      * 
      * @param tensor
      *        The tensor data is read from.
@@ -382,7 +388,7 @@ public class DecodeNumpy {
     }
 
     /**
-     * Builds a {@link Img} from a unsigned integer-typed {@link Tensor}.
+     * Builds a {@link Img} from a unsigned integer-typed {@code Tensor}.
      * 
      * @param tensor
      *        The tensor data is read from.
@@ -405,11 +411,11 @@ public class DecodeNumpy {
     }
 
     /**
-     * Builds a {@link Img} from a unsigned float-typed {@link Tensor}.
+     * Builds a {@link Img} from a unsigned float-typed {@code Tensor}.
      * 
      * @param tensor
      *        The tensor data is read from.
-     * @return The INDArray built from the tensor of type {@link DataType#FLOAT}.
+     * @return The Img built from the tensor of type {@link DataType#FLOAT}.
      */
     private static Img<FloatType> buildFloat32FromByte(byte[] tensor, ByteOrder byteOrder, long[] tensorShape)
     {
@@ -428,11 +434,11 @@ public class DecodeNumpy {
     }
 
     /**
-     * Builds a {@link Img} from a unsigned double-typed {@link Tensor}.
+     * Builds a {@link Img} from a unsigned double-typed {@code Tensor}.
      * 
      * @param tensor
      *        The tensor data is read from.
-     * @return The INDArray built from the tensor of type {@link DataType#DOUBLE}.
+     * @return The Img built from the tensor of type {@link DataType#DOUBLE}.
      */
     private static Img<DoubleType> buildFloat64FromByte(byte[] tensor, ByteOrder byteOrder, long[] tensorShape)
     {
@@ -451,11 +457,11 @@ public class DecodeNumpy {
     }
 
     /**
-     * Builds a {@link Img} from a unsigned double-typed {@link Tensor}.
+     * Builds a {@link Img} from a unsigned double-typed {@code Tensor}.
      * 
      * @param tensor
      *        The tensor data is read from.
-     * @return The INDArray built from the tensor of type {@link DataType#DOUBLE}.
+     * @return The Img built from the tensor of type {@link DataType#DOUBLE}.
      */
     private static Img<LongType> buildInt64FromByte(byte[] tensor, ByteOrder byteOrder, long[] tensorShape)
     {
