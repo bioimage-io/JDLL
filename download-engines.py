@@ -2,9 +2,7 @@ import json
 from pathlib import Path
 import platform
 import traceback
-import urllib
-
-import requests # so that urllib.request exists WTF
+import urllib.request
 
 # HACK: Disable SSL certification validation for urllib.
 # Because otherwise we see for all attempts ;-) :
