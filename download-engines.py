@@ -1,6 +1,7 @@
 import json
 from pathlib import Path
 import platform
+import sys
 import traceback
 import urllib.request
 
@@ -9,6 +10,9 @@ import urllib.request
 # urllib.error.URLError: <urlopen error [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1108)>
 import ssl
 ssl._create_default_https_context = ssl._create_unverified_context
+
+engine_filter = sys.argv[1] if len(sys.argv) > 1 else ''
+version_filter = sys.argv[2] if len(sys.argv) > 2 else ''
 
 with open("src/main/resources/availableDLVersions.json") as f:
     data = json.load(f)
@@ -23,6 +27,12 @@ for entry in data["versions"]:
     engine = entry["engine"]
     version = entry["version"]
     pythonVersion = entry["pythonVersion"]
+
+    if (
+        engine_filter.lower() not in engine.lower() or
+        version_filter.lower() not in version.lower()
+    ):
+        continue
 
     os = entry["os"]
     if os != my_os:
