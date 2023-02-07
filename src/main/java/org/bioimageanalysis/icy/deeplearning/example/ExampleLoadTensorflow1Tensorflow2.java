@@ -1,12 +1,9 @@
 package org.bioimageanalysis.icy.deeplearning.example;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.bioimageanalysis.icy.deeplearning.model.Model;
-import org.bioimageanalysis.icy.deeplearning.engine.EngineInfo;
-import org.bioimageanalysis.icy.deeplearning.exceptions.LoadEngineException;
-import org.bioimageanalysis.icy.deeplearning.tensor.Tensor;
 import net.imglib2.img.Img;
 import net.imglib2.img.ImgFactory;
 import net.imglib2.img.cell.CellImgFactory;
@@ -14,6 +11,11 @@ import net.imglib2.type.NativeType;
 import net.imglib2.type.numeric.RealType;
 import net.imglib2.type.numeric.real.FloatType;
 import net.imglib2.util.Util;
+
+import org.bioimageanalysis.icy.deeplearning.engine.EngineInfo;
+import org.bioimageanalysis.icy.deeplearning.exceptions.LoadEngineException;
+import org.bioimageanalysis.icy.deeplearning.model.Model;
+import org.bioimageanalysis.icy.deeplearning.tensor.Tensor;
 
 /**
  * This is an example where a Tensorflow 2.4.1 and Tensorflow 1.15.0 are loaded on the same run.
@@ -30,6 +32,9 @@ import net.imglib2.util.Util;
  */
 public class ExampleLoadTensorflow1Tensorflow2 {
 	
+	private static final String CWD = System.getProperty("user.dir");
+	private static final String ENGINES_DIR = new File(CWD, "engines").getAbsolutePath();
+	private static final String MODELS_DIR = new File(CWD, "models").getAbsolutePath();
 	
 	public static void loadAndRunTf2() throws LoadEngineException, Exception {
 		// Tag for the DL framework (engine) that wants to be used
@@ -37,12 +42,12 @@ public class ExampleLoadTensorflow1Tensorflow2 {
 		// Version of the engine
 		String engineVersion = "2.4.1";
 		// Directory where all the engines are stored
-		String enginesDir = "C:\\Users\\angel\\OneDrive\\Documentos\\pasteur\\git\\deep-icy\\engines";
+		String enginesDir = ENGINES_DIR;
 		// Path to the model folder
-		String modelFolder = "C:\\Users\\angel\\OneDrive\\Documentos\\pasteur\\git\\deep-icy\\models\\dsb2018_paper";
+		String modelFolder = new File(MODELS_DIR, "dsb2018_paper").getAbsolutePath();
 		// Path to the model source. The model source locally is the path to the source file defined in the 
 		// yaml inside the model folder
-		String modelSource = "C:\\Users\\angel\\OneDrive\\Documentos\\pasteur\\git\\deep-icy\\models\\dsb2018_paper";
+		String modelSource = new File(MODELS_DIR, "dsb2018_paper").getAbsolutePath();
 		// Whether the engine is supported by CPu or not
 		boolean cpu = true;
 		// Whether the engine is supported by GPU or not
@@ -92,12 +97,12 @@ public class ExampleLoadTensorflow1Tensorflow2 {
 		// Version of the engine
 		String engineVersion = "1.15.0";
 		// Directory where all the engines are stored
-		String enginesDir = "C:\\Users\\angel\\OneDrive\\Documentos\\pasteur\\git\\deep-icy\\engines";
+		String enginesDir = ENGINES_DIR;
 		// Path to the model folder
-		String modelFolder = "C:\\Users\\angel\\OneDrive\\Documentos\\pasteur\\git\\deep-icy\\models\\Neuron Segmentation in 2D EM (Membrane)_02022023_175546";
+		String modelFolder = new File(MODELS_DIR, "Neuron Segmentation in 2D EM (Membrane)_02022023_175546").getAbsolutePath();
 		// Path to the model source. The model source locally is the path to the source file defined in the 
 		// yaml inside the model folder
-		String modelSource = "C:\\Users\\angel\\OneDrive\\Documentos\\pasteur\\git\\deep-icy\\models\\Neuron Segmentation in 2D EM (Membrane)_02022023_175546";
+		String modelSource = modelFolder;
 		// Whether the engine is supported by CPu or not
 		boolean cpu = true;
 		// Whether the engine is supported by GPU or not
@@ -141,6 +146,7 @@ public class ExampleLoadTensorflow1Tensorflow2 {
 	}
 	
 	public static < T extends RealType< T > & NativeType< T > > void main(String[] args) throws LoadEngineException, Exception {
+		System.out.println(System.getProperty("user.dir"));
 		loadAndRunTf1();
 		loadAndRunTf2();
 	}
