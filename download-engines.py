@@ -20,7 +20,6 @@ machine = platform.machine()
 if my_os == "windows" and machine.endswith('64'):
     machine = "x86_64"
 my_os = f"{my_os}-{machine}"
-print(f"my_os={my_os}")
 
 for entry in data["versions"]:
     engine = entry["engine"]
