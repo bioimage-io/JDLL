@@ -13,11 +13,14 @@ ssl._create_default_https_context = ssl._create_unverified_context
 with open("src/main/resources/availableDLVersions.json") as f:
     data = json.load(f)
 
-# TODO: Make sure this maps to "windows" for Windows...
 my_os = platform.system().lower()
 if my_os == "darwin":
     my_os = "macosx"
-my_os = f"{my_os}-{platform.machine()}"
+machine = platform.machine()
+if my_os == "windows" and machine.endswith('64'):
+    machine = "x86_64"
+my_os = f"{my_os}-{machine}"
+print(f"my_os={my_os}")
 
 for entry in data["versions"]:
     engine = entry["engine"]
