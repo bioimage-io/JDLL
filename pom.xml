@@ -97,8 +97,7 @@
 	</ciManagement>
 
 	<properties>
-		<package-name>org.bioimageanalysis.icy.deeplearning</package-name>
-		<main-class>org.bioimageanalysis.icy.deeplearning.Model</main-class>
+		<package-name>io.bioimage.modelrunner</package-name>
 		<license.licenseName>BSD-3-Clause</license.licenseName>
 		<license.copyrightOwners>Institut Pasteur</license.copyrightOwners>
 	</properties>
