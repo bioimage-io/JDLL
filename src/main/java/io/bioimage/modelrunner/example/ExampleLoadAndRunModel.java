@@ -50,12 +50,13 @@ import net.imglib2.type.numeric.real.FloatType;
 import net.imglib2.util.Util;
 
 /**
- * This is an example of the library that runs a Deep Learning model on a supported engine locally
- * on your computer.
- * Regard that in order to this example to work, a Deep Learning model needs to be downloaded from the
- * Bioimage.io repo and a Java Deep Learning framework needs to be installed too.
- * 
- * The example model for this example is <a href="https://bioimage.io/#/?tags=10.5281%2Fzenodo.6406756&id=10.5281%2Fzenodo.6406756">here</a>.
+ * This is an example of the library that runs a Deep Learning model on a
+ * supported engine locally on your computer. Regard that in order to this
+ * example to work, a Deep Learning model needs to be downloaded from the
+ * Bioimage.io repo and a Java Deep Learning framework needs to be installed
+ * too, in your user directory. This example uses the torchscript/DeepImageJ
+ * model <a href=
+ * "https://bioimage.io/#/?tags=10.5281%2Fzenodo.6406756&id=10.5281%2Fzenodo.6406756">here</a>.
  * 
  * @author Carlos Garcia Lopez de Haro
  */
