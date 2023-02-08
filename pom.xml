@@ -93,7 +93,8 @@
 		<url>https://github.com/bioimage-io/model-runner-java/issues</url>
 	</issueManagement>
 	<ciManagement>
-		<system>None</system>
+		<system>GitHub Actions</system>
+		<url>https://github.com/bioimage-io/model-runner-java/actions</url>
 	</ciManagement>
 
 	<properties>
