@@ -1,3 +1,6 @@
+/engines/
+/models/
+
 # maven specific files
 /target/
 
@@ -5,11 +8,3 @@
 /.settings/
 .classpath
 .project
-
-# icy specific files
-/plugins/
-/workspace/
-setting.xml
-/pom - Copy.xml
-/pom - Copy (2).xml
-/.DS_Store
