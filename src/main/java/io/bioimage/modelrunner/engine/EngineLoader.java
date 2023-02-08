@@ -75,22 +75,22 @@ public class EngineLoader extends ClassLoader
 	private String enginePath;
 
 	/**
-	 * Major version of the Deep Learning framework. This is the first number of
-	 * the version until the first dot.
+	 * Engine name of the Deep Learning framework.
 	 */
-	private String majorVersion;
+	private String engine;
+
+	/**
+	 * Engine name plus major version of the Deep Learning framework.
+	 *
+	 * Key for the cache of loaded engines.
+	 */
+	private String versionedEngine;
 
 	/**
 	 * Instance of the class from the wanted Deep Learning engine that is used
 	 * to call all the needed methods to execute a model
 	 */
 	private DeepLearningEngineInterface engineInstance;
-
-	/**
-	 * Keyword that the jar file that implements the needed interface has to
-	 * implement to be able to be recognized by the DL manager
-	 */
-	private static final HashMap<String, String> ENGINE_INTERFACE_JARS_MAP = getDlInterfaceJarsMap();
 
 	/**
 	 * Name of the interface all the engines have to implement
@@ -126,7 +126,8 @@ public class EngineLoader extends ClassLoader
 		super();
 		this.baseClassloader = classloader;
 		this.enginePath = engineInfo.getDeepLearningVersionJarsDirectory();
-		serEngineAndMajorVersion( engineInfo );
+		this.engine = engineInfo.getEngine();
+		this.versionedEngine = this.engine + engineInfo.getMajorVersion();
 		loadClasses();
 		setEngineClassLoader();
 		setEngineInstance();
@@ -175,9 +176,9 @@ public class EngineLoader extends ClassLoader
 			SecurityException, IllegalAccessException, IllegalArgumentException, InvocationTargetException
 	{
 		// If the ClassLoader was already created, use it
-		if ( loadedEngines.get( majorVersion ) != null )
+		if ( loadedEngines.get( versionedEngine ) != null )
 		{
-			this.engineClassloader = loadedEngines.get( majorVersion );
+			this.engineClassloader = loadedEngines.get( versionedEngine );
 			return;
 		}
 		ArrayList<URL> urlList = new ArrayList<URL>();
@@ -193,7 +194,7 @@ public class EngineLoader extends ClassLoader
 		urlList.toArray(urls);
 		this.engineClassloader = new URLClassLoader( urls, baseClassloader );
 
-		loadedEngines.put( this.majorVersion, this.engineClassloader );
+		loadedEngines.put( this.versionedEngine, this.engineClassloader );
 	}
 
 	/**
@@ -259,14 +260,6 @@ public class EngineLoader extends ClassLoader
 		return null;
 	}
 
-	private void serEngineAndMajorVersion( EngineInfo engineInfo )
-	{
-		String engine = engineInfo.getEngine();
-		String vv = engineInfo.getMajorVersion();
-		this.majorVersion = ( engine + vv ).toLowerCase();
-
-	}
-
 	/**
 	 * Return the name of the class as seen by the ClassLoader from the name of
 	 * the file entry in the JAR file. Basically removes the .class suffix and
@@ -296,15 +289,18 @@ public class EngineLoader extends ClassLoader
 		// Load all the classes in the engine folder and select the wanted
 		// interface
 		ZipFile jarFile;
-		String jarKeyword = getCorrespondingEngineJar();
-		String errMsg = "Missing '" + jarKeyword + "' jar file that implements the 'DeepLearningInterface";
+		String jarPrefix = "dl-modelrunner-" + this.engine;
+		String errMsg = "Missing " + jarPrefix + " jar file that implements the 'DeepLearningInterface";
 		try
 		{
 			for ( File ff : new File( this.enginePath ).listFiles() )
 			{
-				// Only allow .jar files
-				if ( !ff.getName().endsWith( ".jar" ) || !ff.getName().startsWith( jarKeyword ) )
+				// Find the correct dl-modelrunner-<engine> JAR file.
+				if (!ff.getName().endsWith(".jar") ||
+						!ff.getName().startsWith(jarPrefix + "-"))
+				{
 					continue;
+				}
 				jarFile = new ZipFile( ff );
 				Enumeration< ? extends ZipEntry > entries = jarFile.entries();
 				this.engineInstance = getEngineClassFromEntries( entries, engineClassloader );
@@ -345,36 +341,5 @@ public class EngineLoader extends ClassLoader
 		engineInstance.closeModel();
 		setBaseClassLoader();
 		System.out.println( "Exited engine ClassLoader" );
-	}
-	
-	/**
-	 * Create the static map that associates each of the supported DL engines with the 
-	 * corresponding engine JAR needed that implements {@link DeepLearningEngineInterface}
-	 * @return
-	 */
-	private static HashMap<String, String> getDlInterfaceJarsMap(){
-		HashMap<String, String> map = new HashMap<String, String>();
-		map.put(EngineInfo.getTensorflowKey() + "2", "tensor-flow-2-interface-");
-		map.put(EngineInfo.getTensorflowKey() + "1", "tensor-flow-1-interface-");
-		map.put(EngineInfo.getOnnxKey(), EngineInfo.getOnnxKey() + "-interface-");
-		map.put(EngineInfo.getPytorchKey(), EngineInfo.getPytorchKey() + "-interface-");
-		return map;
-	}
-	
-	/**
-	 * Helper to extract the JAR name from the {@link #ENGINE_INTERFACE_JARS_MAP}. A helper is
-	 * neeed because Tensorflow needs to specify the major version, but Pytorch does not.
-	 * @return
-	 */
-	private String getCorrespondingEngineJar() {
-		if (this.majorVersion.startsWith(EngineInfo.getTensorflowKey()))
-			return ENGINE_INTERFACE_JARS_MAP.get(this.majorVersion);
-		else if (this.majorVersion.startsWith(EngineInfo.getPytorchKey()))
-			return ENGINE_INTERFACE_JARS_MAP.get(EngineInfo.getPytorchKey());
-		else if (this.majorVersion.startsWith(EngineInfo.getOnnxKey()))
-			return ENGINE_INTERFACE_JARS_MAP.get(EngineInfo.getOnnxKey());
-		else
-			throw new IllegalArgumentException("Selected Deep Learning framework (" + this.majorVersion + ") "
-					+ "not supported at the moment.");
 	}
 }
