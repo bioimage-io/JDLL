@@ -66,7 +66,7 @@ public class EngineLoader extends ClassLoader
 	 * Child ClassLoader of the System ClassLoader that adds the JARs needed to
 	 * the classes
 	 */
-	private ClassLoader icyClassloader;
+	private ClassLoader baseClassloader;
 
 	/**
 	 * Path to the folder containing all the jars needed to load the
@@ -124,13 +124,13 @@ public class EngineLoader extends ClassLoader
 	private EngineLoader( ClassLoader classloader, EngineInfo engineInfo ) throws LoadEngineException, Exception
 	{
 		super();
-		this.icyClassloader = classloader;
+		this.baseClassloader = classloader;
 		this.enginePath = engineInfo.getDeepLearningVersionJarsDirectory();
 		serEngineAndMajorVersion( engineInfo );
 		loadClasses();
 		setEngineClassLoader();
 		setEngineInstance();
-		setIcyClassLoader();
+		setBaseClassLoader();
 	}
 
 	/**
@@ -191,7 +191,7 @@ public class EngineLoader extends ClassLoader
 		}
 		URL[] urls = new URL[urlList.size()];
 		urlList.toArray(urls);
-		this.engineClassloader = new URLClassLoader( urls, icyClassloader );
+		this.engineClassloader = new URLClassLoader( urls, baseClassloader );
 
 		loadedEngines.put( this.majorVersion, this.engineClassloader );
 	}
@@ -206,11 +206,11 @@ public class EngineLoader extends ClassLoader
 	}
 
 	/**
-	 * Set the original Icy ClassLoader as the Thread classloader
+	 * Set the parent ClassLoader as the Thread classloader
 	 */
-	public void setIcyClassLoader()
+	public void setBaseClassLoader()
 	{
-		Thread.currentThread().setContextClassLoader( this.icyClassloader );
+		Thread.currentThread().setContextClassLoader( this.baseClassloader );
 	}
 
 	/**
@@ -248,7 +248,7 @@ public class EngineLoader extends ClassLoader
 					{
 						// Assume that DeepLearningInterface has no arguments
 						// for the constructor
-						return ( DeepLearningEngineInterface ) c.getDeclaredConstructor().newInstance();
+						return ( DeepLearningEngineInterface ) c.newInstance();
 					}
 				}
 				// REmove references
@@ -343,7 +343,7 @@ public class EngineLoader extends ClassLoader
 	public void close()
 	{
 		engineInstance.closeModel();
-		setIcyClassLoader();
+		setBaseClassLoader();
 		System.out.println( "Exited engine ClassLoader" );
 	}
 	

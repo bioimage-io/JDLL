@@ -191,7 +191,7 @@ public class Model
 		DeepLearningEngineInterface engineInstance = engineClassLoader.getEngineInstance();
 		engineClassLoader.setEngineClassLoader();
 		engineInstance.loadModel( modelFolder, modelSource );
-		engineClassLoader.setIcyClassLoader();
+		engineClassLoader.setBaseClassLoader();
 	}
 
 	/**
@@ -205,7 +205,7 @@ public class Model
 		engineInstance.closeModel();
 		getEngineClassLoader().close();
 		engineInstance = null;
-		engineClassLoader.setIcyClassLoader();
+		engineClassLoader.setBaseClassLoader();
 		engineClassLoader = null;
 	}
 
@@ -229,7 +229,7 @@ public class Model
 		engineClassLoader.setEngineClassLoader();
 		inTensors.stream().forEach( tt -> tt = Tensor.createCopyOfTensorInWantedDataType( tt, new FloatType() ) );
 		engineInstance.run( inTensors, outTensors );
-		engineClassLoader.setIcyClassLoader();
+		engineClassLoader.setBaseClassLoader();
 	}
 
 	/**
