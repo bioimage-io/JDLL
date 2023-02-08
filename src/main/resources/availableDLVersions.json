@@ -1,7 +1,7 @@
 {
 	"versions": [
 		{
-			"engine": "Tensorflow",
+			"engine": "tensorflow",
 			"version": "1.12.0",
 			"pythonVersion": "1.12.0",
 			"os": "windows-x86_64",
@@ -17,7 +17,7 @@
 			]
 		},
 		{
-			"engine": "Tensorflow",
+			"engine": "tensorflow",
 			"version": "1.12.0",
 			"pythonVersion": "1.12.0",
 			"os": "windows-x86_64",
@@ -33,7 +33,7 @@
 			]
 		},
 		{
-			"engine": "Tensorflow",
+			"engine": "tensorflow",
 			"version": "1.12.0",
 			"pythonVersion": "1.12.0",
 			"os": "macosx-x86_64",
@@ -49,7 +49,7 @@
 			]
 		},
 		{
-			"engine": "Tensorflow",
+			"engine": "tensorflow",
 			"version": "1.12.0",
 			"pythonVersion": "1.12.0",
 			"os": "linux-x86_64",
@@ -65,7 +65,7 @@
 			]
 		},
 		{
-			"engine": "Tensorflow",
+			"engine": "tensorflow",
 			"version": "1.12.0",
 			"pythonVersion": "1.12.0",
 			"os": "linux-x86_64",
@@ -81,7 +81,7 @@
 			]
 		},
 		{
-			"engine": "Tensorflow",
+			"engine": "tensorflow",
 			"version": "1.13.1",
 			"pythonVersion": "1.13.1",
 			"os": "windows-x86_64",
@@ -97,7 +97,7 @@
 			]
 		},
 		{
-			"engine": "Tensorflow",
+			"engine": "tensorflow",
 			"version": "1.13.1",
 			"pythonVersion": "1.13.1",
 			"os": "windows-x86_64",
@@ -113,7 +113,7 @@
 			]
 		},
 		{
-			"engine": "Tensorflow",
+			"engine": "tensorflow",
 			"version": "1.13.1",
 			"pythonVersion": "1.13.1",
 			"os": "macosx-x86_64",
@@ -129,7 +129,7 @@
 			]
 		},
 		{
-			"engine": "Tensorflow",
+			"engine": "tensorflow",
 			"version": "1.13.1",
 			"pythonVersion": "1.13.1",
 			"os": "linux-x86_64",
@@ -145,7 +145,7 @@
 			]
 		},
 		{
-			"engine": "Tensorflow",
+			"engine": "tensorflow",
 			"version": "1.13.1",
 			"pythonVersion": "1.13.1",
 			"os": "linux-x86_64",
@@ -161,7 +161,7 @@
 			]
 		},
 		{
-			"engine": "Tensorflow",
+			"engine": "tensorflow",
 			"version": "1.14.0",
 			"pythonVersion": "1.14.0",
 			"os": "windows-x86_64",
@@ -177,7 +177,7 @@
 			]
 		},
 		{
-			"engine": "Tensorflow",
+			"engine": "tensorflow",
 			"version": "1.14.0",
 			"pythonVersion": "1.14.0",
 			"os": "windows-x86_64",
@@ -193,7 +193,7 @@
 			]
 		},
 		{
-			"engine": "Tensorflow",
+			"engine": "tensorflow",
 			"version": "1.14.0",
 			"pythonVersion": "1.14.0",
 			"os": "macosx-x86_64",
@@ -209,7 +209,7 @@
 			]
 		},
 		{
-			"engine": "Tensorflow",
+			"engine": "tensorflow",
 			"version": "1.14.0",
 			"pythonVersion": "1.14.0",
 			"os": "linux-x86_64",
@@ -225,7 +225,7 @@
 			]
 		},
 		{
-			"engine": "Tensorflow",
+			"engine": "tensorflow",
 			"version": "1.14.0",
 			"pythonVersion": "1.14.0",
 			"os": "linux-x86_64",
@@ -241,7 +241,7 @@
 			]
 		},
 		{
-			"engine": "Tensorflow",
+			"engine": "tensorflow",
 			"version": "1.15.0",
 			"pythonVersion": "1.15.0",
 			"os": "windows-x86_64",
@@ -257,7 +257,7 @@
 			]
 		},
 		{
-			"engine": "Tensorflow",
+			"engine": "tensorflow",
 			"version": "1.15.0",
 			"pythonVersion": "1.15.0",
 			"os": "windows-x86_64",
@@ -273,7 +273,7 @@
 			]
 		},
 		{
-			"engine": "Tensorflow",
+			"engine": "tensorflow",
 			"version": "1.15.0",
 			"pythonVersion": "1.15.0",
 			"os": "macosx-x86_64",
@@ -289,7 +289,7 @@
 			]
 		},
 		{
-			"engine": "Tensorflow",
+			"engine": "tensorflow",
 			"version": "1.15.0",
 			"pythonVersion": "1.15.0",
 			"os": "linux-x86_64",
@@ -305,7 +305,7 @@
 			]
 		},
 		{
-			"engine": "Tensorflow",
+			"engine": "tensorflow",
 			"version": "1.15.0",
 			"pythonVersion": "1.15.0",
 			"os": "linux-x86_64",
@@ -321,7 +321,7 @@
 			]
 		},
 		{
-			"engine": "Tensorflow",
+			"engine": "tensorflow",
 			"version": "0.2.0",
 			"pythonVersion": "2.3.1",
 			"os": "windows-x86_64",
@@ -339,7 +339,7 @@
 			]
 		},
 		{
-			"engine": "Tensorflow",
+			"engine": "tensorflow",
 			"version": "0.2.0",
 			"pythonVersion": "2.3.1",
 			"os": "windows-x86_64",
@@ -357,7 +357,7 @@
 			]
 		},
 		{
-			"engine": "Tensorflow",
+			"engine": "tensorflow",
 			"version": "0.2.0",
 			"pythonVersion": "2.3.1",
 			"os": "linux-x86_64",
@@ -375,7 +375,7 @@
 			]
 		},
 		{
-			"engine": "Tensorflow",
+			"engine": "tensorflow",
 			"version": "0.2.0",
 			"pythonVersion": "2.3.1",
 			"os": "linux-x86_64",
@@ -393,7 +393,7 @@
 			]
 		},
 		{
-			"engine": "Tensorflow",
+			"engine": "tensorflow",
 			"version": "0.2.0",
 			"pythonVersion": "2.3.1",
 			"os": "macosx-x86_64",
@@ -411,7 +411,7 @@
 			]
 		},
 		{
-			"engine": "Tensorflow",
+			"engine": "tensorflow",
 			"version": "0.3.0",
 			"pythonVersion": "2.4.1",
 			"os": "windows-x86_64",
@@ -429,7 +429,7 @@
 			]
 		},
 		{
-			"engine": "Tensorflow",
+			"engine": "tensorflow",
 			"version": "0.3.0",
 			"pythonVersion": "2.4.1",
 			"os": "windows-x86_64",
@@ -447,7 +447,7 @@
 			]
 		},
 		{
-			"engine": "Tensorflow",
+			"engine": "tensorflow",
 			"version": "0.3.0",
 			"pythonVersion": "2.4.1",
 			"os": "linux-x86_64",
@@ -465,7 +465,7 @@
 			]
 		},
 		{
-			"engine": "Tensorflow",
+			"engine": "tensorflow",
 			"version": "0.3.0",
 			"pythonVersion": "2.4.1",
 			"os": "linux-x86_64",
@@ -483,7 +483,7 @@
 			]
 		},
 		{
-			"engine": "Tensorflow",
+			"engine": "tensorflow",
 			"version": "0.3.0",
 			"pythonVersion": "2.4.1",
 			"os": "macosx-x86_64",
@@ -501,7 +501,7 @@
 			]
 		},
 		{
-			"engine": "Tensorflow",
+			"engine": "tensorflow",
 			"version": "0.3.1",
 			"pythonVersion": "2.4.1",
 			"os": "windows-x86_64",
@@ -519,7 +519,7 @@
 			]
 		},
 		{
-			"engine": "Tensorflow",
+			"engine": "tensorflow",
 			"version": "0.3.1",
 			"pythonVersion": "2.4.1",
 			"os": "windows-x86_64",
@@ -537,7 +537,7 @@
 			]
 		},
 		{
-			"engine": "Tensorflow",
+			"engine": "tensorflow",
 			"version": "0.3.1",
 			"pythonVersion": "2.4.1",
 			"os": "linux-x86_64",
@@ -555,7 +555,7 @@
 			]
 		},
 		{
-			"engine": "Tensorflow",
+			"engine": "tensorflow",
 			"version": "0.3.1",
 			"pythonVersion": "2.4.1",
 			"os": "linux-x86_64",
@@ -573,7 +573,7 @@
 			]
 		},
 		{
-			"engine": "Tensorflow",
+			"engine": "tensorflow",
 			"version": "0.3.1",
 			"pythonVersion": "2.4.1",
 			"os": "macosx-x86_64",
@@ -591,7 +591,7 @@
 			]
 		},
 		{
-			"engine": "Tensorflow",
+			"engine": "tensorflow",
 			"version": "0.3.2",
 			"pythonVersion": "2.4.1",
 			"os": "windows-x86_64",
@@ -609,7 +609,7 @@
 			]
 		},
 		{
-			"engine": "Tensorflow",
+			"engine": "tensorflow",
 			"version": "0.3.2",
 			"pythonVersion": "2.4.1",
 			"os": "windows-x86_64",
@@ -627,7 +627,7 @@
 			]
 		},
 		{
-			"engine": "Tensorflow",
+			"engine": "tensorflow",
 			"version": "0.3.2",
 			"pythonVersion": "2.4.1",
 			"os": "linux-x86_64",
@@ -645,7 +645,7 @@
 			]
 		},
 		{
-			"engine": "Tensorflow",
+			"engine": "tensorflow",
 			"version": "0.3.2",
 			"pythonVersion": "2.4.1",
 			"os": "linux-x86_64",
@@ -663,7 +663,7 @@
 			]
 		},
 		{
-			"engine": "Tensorflow",
+			"engine": "tensorflow",
 			"version": "0.3.2",
 			"pythonVersion": "2.4.1",
 			"os": "macosx-x86_64",
@@ -681,7 +681,7 @@
 			]
 		},
 		{
-			"engine": "Tensorflow",
+			"engine": "tensorflow",
 			"version": "0.3.3",
 			"pythonVersion": "2.4.1",
 			"os": "windows-x86_64",
@@ -699,7 +699,7 @@
 			]
 		},
 		{
-			"engine": "Tensorflow",
+			"engine": "tensorflow",
 			"version": "0.3.3",
 			"pythonVersion": "2.4.1",
 			"os": "windows-x86_64",
@@ -717,7 +717,7 @@
 			]
 		},
 		{
-			"engine": "Tensorflow",
+			"engine": "tensorflow",
 			"version": "0.3.3",
 			"pythonVersion": "2.4.1",
 			"os": "linux-x86_64",
@@ -735,7 +735,7 @@
 			]
 		},
 		{
-			"engine": "Tensorflow",
+			"engine": "tensorflow",
 			"version": "0.3.3",
 			"pythonVersion": "2.4.1",
 			"os": "linux-x86_64",
@@ -753,7 +753,7 @@
 			]
 		},
 		{
-			"engine": "Tensorflow",
+			"engine": "tensorflow",
 			"version": "0.3.3",
 			"pythonVersion": "2.4.1",
 			"os": "macosx-x86_64",
@@ -771,7 +771,7 @@
 			]
 		},
 		{
-			"engine": "Tensorflow",
+			"engine": "tensorflow",
 			"version": "0.4.0",
 			"pythonVersion": "2.7.0",
 			"os": "windows-x86_64",
@@ -789,7 +789,7 @@
 			]
 		},
 		{
-			"engine": "Tensorflow",
+			"engine": "tensorflow",
 			"version": "0.4.0",
 			"pythonVersion": "2.7.0",
 			"os": "windows-x86_64",
@@ -807,7 +807,7 @@
 			]
 		},
 		{
-			"engine": "Tensorflow",
+			"engine": "tensorflow",
 			"version": "0.4.0",
 			"pythonVersion": "2.7.0",
 			"os": "linux-x86_64",
@@ -825,7 +825,7 @@
 			]
 		},
 		{
-			"engine": "Tensorflow",
+			"engine": "tensorflow",
 			"version": "0.4.0",
 			"pythonVersion": "2.7.0",
 			"os": "linux-x86_64",
@@ -843,7 +843,7 @@
 			]
 		},
 		{
-			"engine": "Tensorflow",
+			"engine": "tensorflow",
 			"version": "0.4.0",
 			"pythonVersion": "2.7.0",
 			"os": "macosx-x86_64",
@@ -861,7 +861,7 @@
 			]
 		},
 		{
-			"engine": "Tensorflow",
+			"engine": "tensorflow",
 			"version": "0.4.0",
 			"pythonVersion": "2.7.0",
 			"os": "macosx-arm64",
@@ -879,7 +879,7 @@
 			]
 		},
 		{
-			"engine": "Tensorflow",
+			"engine": "tensorflow",
 			"version": "0.4.1",
 			"pythonVersion": "2.7.1",
 			"os": "windows-x86_64",
@@ -897,7 +897,7 @@
 			]
 		},
 		{
-			"engine": "Tensorflow",
+			"engine": "tensorflow",
 			"version": "0.4.1",
 			"pythonVersion": "2.7.1",
 			"os": "windows-x86_64",
@@ -915,7 +915,7 @@
 			]
 		},
 		{
-			"engine": "Tensorflow",
+			"engine": "tensorflow",
 			"version": "0.4.1",
 			"pythonVersion": "2.7.1",
 			"os": "linux-x86_64",
@@ -933,7 +933,7 @@
 			]
 		},
 		{
-			"engine": "Tensorflow",
+			"engine": "tensorflow",
 			"version": "0.4.1",
 			"pythonVersion": "2.7.1",
 			"os": "linux-x86_64",
@@ -951,7 +951,7 @@
 			]
 		},
 		{
-			"engine": "Tensorflow",
+			"engine": "tensorflow",
 			"version": "0.4.1",
 			"pythonVersion": "2.7.1",
 			"os": "macosx-x86_64",
@@ -969,7 +969,7 @@
 			]
 		},
 		{
-			"engine": "Tensorflow",
+			"engine": "tensorflow",
 			"version": "0.4.2",
 			"pythonVersion": "2.7.4",
 			"os": "windows-x86_64",
@@ -987,7 +987,7 @@
 			]
 		},
 		{
-			"engine": "Tensorflow",
+			"engine": "tensorflow",
 			"version": "0.4.2",
 			"pythonVersion": "2.7.4",
 			"os": "windows-x86_64",
@@ -1005,7 +1005,7 @@
 			]
 		},
 		{
-			"engine": "Tensorflow",
+			"engine": "tensorflow",
 			"version": "0.4.2",
 			"pythonVersion": "2.7.4",
 			"os": "linux-x86_64",
@@ -1023,7 +1023,7 @@
 			]
 		},
 		{
-			"engine": "Tensorflow",
+			"engine": "tensorflow",
 			"version": "0.4.2",
 			"pythonVersion": "2.7.4",
 			"os": "linux-x86_64",
@@ -1041,7 +1041,7 @@
 			]
 		},
 		{
-			"engine": "Tensorflow",
+			"engine": "tensorflow",
 			"version": "0.4.2",
 			"pythonVersion": "2.7.4",
 			"os": "macosx-x86_64",
@@ -1059,7 +1059,7 @@
 			]
 		},
 		{
-			"engine": "Pytorch",
+			"engine": "pytorch",
 			"version": "1.13.0",
 			"pythonVersion": "1.13.0",
 			"os": "macosx-x86_64",
@@ -1078,7 +1078,7 @@
 			]
 		},
 		{
-			"engine": "Pytorch",
+			"engine": "pytorch",
 			"version": "1.13.0",
 			"pythonVersion": "1.13.0",
 			"os": "macosx-arm64",
@@ -1097,7 +1097,7 @@
 			]
 		},
 		{
-			"engine": "Pytorch",
+			"engine": "pytorch",
 			"version": "1.13.0",
 			"pythonVersion": "1.13.0",
 			"os": "linux-x86_64",
@@ -1116,7 +1116,7 @@
 			]
 		},
 		{
-			"engine": "Pytorch",
+			"engine": "pytorch",
 			"version": "1.13.0",
 			"pythonVersion": "1.13.0",
 			"os": "linux-arm64",
@@ -1135,7 +1135,7 @@
 			]
 		},
 		{
-			"engine": "Pytorch",
+			"engine": "pytorch",
 			"version": "1.13.0",
 			"pythonVersion": "1.13.0",
 			"os": "windows-x86_64",
@@ -1154,7 +1154,7 @@
 			]
 		},
 		{
-			"engine": "Pytorch",
+			"engine": "pytorch",
 			"version": "1.12.1",
 			"pythonVersion": "1.12.1",
 			"os": "macosx-x86_64",
@@ -1173,7 +1173,7 @@
 			]
 		},
 		{
-			"engine": "Pytorch",
+			"engine": "pytorch",
 			"version": "1.12.1",
 			"pythonVersion": "1.12.1",
 			"os": "macosx-arm64",
@@ -1192,7 +1192,7 @@
 			]
 		},
 		{
-			"engine": "Pytorch",
+			"engine": "pytorch",
 			"version": "1.12.1",
 			"pythonVersion": "1.12.1",
 			"os": "linux-x86_64",
@@ -1211,7 +1211,7 @@
 			]
 		},
 		{
-			"engine": "Pytorch",
+			"engine": "pytorch",
 			"version": "1.12.1",
 			"pythonVersion": "1.12.1",
 			"os": "linux-arm64",
@@ -1230,7 +1230,7 @@
 			]
 		},
 		{
-			"engine": "Pytorch",
+			"engine": "pytorch",
 			"version": "1.12.1",
 			"pythonVersion": "1.12.1",
 			"os": "windows-x86_64",
@@ -1249,7 +1249,7 @@
 			]
 		},
 		{
-			"engine": "Pytorch",
+			"engine": "pytorch",
 			"version": "1.11.0",
 			"pythonVersion": "1.11.0",
 			"os": "macosx-x86_64",
@@ -1268,7 +1268,7 @@
 			]
 		},
 		{
-			"engine": "Pytorch",
+			"engine": "pytorch",
 			"version": "1.11.0",
 			"pythonVersion": "1.11.0",
 			"os": "macosx-arm64",
@@ -1287,7 +1287,7 @@
 			]
 		},
 		{
-			"engine": "Pytorch",
+			"engine": "pytorch",
 			"version": "1.11.0",
 			"pythonVersion": "1.11.0",
 			"os": "linux-x86_64",
@@ -1306,7 +1306,7 @@
 			]
 		},
 		{
-			"engine": "Pytorch",
+			"engine": "pytorch",
 			"version": "1.11.0",
 			"pythonVersion": "1.11.0",
 			"os": "linux-arm64",
@@ -1325,7 +1325,7 @@
 			]
 		},
 		{
-			"engine": "Pytorch",
+			"engine": "pytorch",
 			"version": "1.11.0",
 			"pythonVersion": "1.11.0",
 			"os": "windows-x86_64",
@@ -1344,7 +1344,7 @@
 			]
 		},
 		{
-			"engine": "Pytorch",
+			"engine": "pytorch",
 			"version": "1.10.0",
 			"pythonVersion": "1.10.0",
 			"os": "macosx-x86_64",
@@ -1363,7 +1363,7 @@
 			]
 		},
 		{
-			"engine": "Pytorch",
+			"engine": "pytorch",
 			"version": "1.10.0",
 			"pythonVersion": "1.10.0",
 			"os": "linux-x86_64",
@@ -1382,7 +1382,7 @@
 			]
 		},
 		{
-			"engine": "Pytorch",
+			"engine": "pytorch",
 			"version": "1.10.0",
 			"pythonVersion": "1.10.0",
 			"os": "windows-x86_64",
@@ -1401,7 +1401,7 @@
 			]
 		},
 		{
-			"engine": "Pytorch",
+			"engine": "pytorch",
 			"version": "1.9.1",
 			"pythonVersion": "1.9.1",
 			"os": "macosx-x86_64",
@@ -1420,7 +1420,7 @@
 			]
 		},
 		{
-			"engine": "Pytorch",
+			"engine": "pytorch",
 			"version": "1.9.1",
 			"pythonVersion": "1.9.1",
 			"os": "linux-x86_64",
@@ -1439,7 +1439,7 @@
 			]
 		},
 		{
-			"engine": "Pytorch",
+			"engine": "pytorch",
 			"version": "1.9.1",
 			"pythonVersion": "1.9.1",
 			"os": "windows-x86_64",
@@ -1458,7 +1458,7 @@
 			]
 		},
 		{
-			"engine": "Pytorch",
+			"engine": "pytorch",
 			"version": "1.9.0",
 			"pythonVersion": "1.9.0",
 			"os": "macosx-x86_64",
@@ -1477,7 +1477,7 @@
 			]
 		},
 		{
-			"engine": "Pytorch",
+			"engine": "pytorch",
 			"version": "1.9.0",
 			"pythonVersion": "1.9.0",
 			"os": "linux-x86_64",
@@ -1496,7 +1496,7 @@
 			]
 		},
 		{
-			"engine": "Pytorch",
+			"engine": "pytorch",
 			"version": "1.9.0",
 			"pythonVersion": "1.9.0",
 			"os": "windows-x86_64",
@@ -1515,7 +1515,7 @@
 			]
 		},
 		{
-			"engine": "Pytorch",
+			"engine": "pytorch",
 			"version": "1.8.1",
 			"pythonVersion": "1.8.1",
 			"os": "macosx-x86_64",
@@ -1534,7 +1534,7 @@
 			]
 		},
 		{
-			"engine": "Pytorch",
+			"engine": "pytorch",
 			"version": "1.8.1",
 			"pythonVersion": "1.8.1",
 			"os": "linux-x86_64",
@@ -1553,7 +1553,7 @@
 			]
 		},
 		{
-			"engine": "Pytorch",
+			"engine": "pytorch",
 			"version": "1.8.1",
 			"pythonVersion": "1.8.1",
 			"os": "windows-x86_64",
@@ -1572,7 +1572,7 @@
 			]
 		},
 		{
-			"engine": "Pytorch",
+			"engine": "pytorch",
 			"version": "1.7.1",
 			"pythonVersion": "1.7.1",
 			"os": "macosx-x86_64",
@@ -1591,7 +1591,7 @@
 			]
 		},
 		{
-			"engine": "Pytorch",
+			"engine": "pytorch",
 			"version": "1.7.1",
 			"pythonVersion": "1.7.1",
 			"os": "linux-x86_64",
@@ -1610,7 +1610,7 @@
 			]
 		},
 		{
-			"engine": "Pytorch",
+			"engine": "pytorch",
 			"version": "1.7.1",
 			"pythonVersion": "1.7.1",
 			"os": "windows-x86_64",
@@ -1629,7 +1629,7 @@
 			]
 		},
 		{
-			"engine": "Pytorch",
+			"engine": "pytorch",
 			"version": "1.7.0",
 			"pythonVersion": "1.7.0",
 			"os": "macosx-x86_64",
@@ -1648,7 +1648,7 @@
 			]
 		},
 		{
-			"engine": "Pytorch",
+			"engine": "pytorch",
 			"version": "1.7.0",
 			"pythonVersion": "1.7.0",
 			"os": "linux-x86_64",
@@ -1667,7 +1667,7 @@
 			]
 		},
 		{
-			"engine": "Pytorch",
+			"engine": "pytorch",
 			"version": "1.7.0",
 			"pythonVersion": "1.7.0",
 			"os": "windows-x86_64",
@@ -1686,7 +1686,7 @@
 			]
 		},
 		{
-			"engine": "Pytorch",
+			"engine": "pytorch",
 			"version": "1.6.0",
 			"pythonVersion": "1.6.0",
 			"os": "macosx-x86_64",
@@ -1705,7 +1705,7 @@
 			]
 		},
 		{
-			"engine": "Pytorch",
+			"engine": "pytorch",
 			"version": "1.6.0",
 			"pythonVersion": "1.6.0",
 			"os": "linux-x86_64",
@@ -1724,7 +1724,7 @@
 			]
 		},
 		{
-			"engine": "Pytorch",
+			"engine": "pytorch",
 			"version": "1.6.0",
 			"pythonVersion": "1.6.0",
 			"os": "windows-x86_64",
@@ -1743,7 +1743,7 @@
 			]
 		},
 		{
-			"engine": "Pytorch",
+			"engine": "pytorch",
 			"version": "1.5.0",
 			"pythonVersion": "1.5.0",
 			"os": "macosx-x86_64",
@@ -1762,7 +1762,7 @@
 			]
 		},
 		{
-			"engine": "Pytorch",
+			"engine": "pytorch",
 			"version": "1.5.0",
 			"pythonVersion": "1.5.0",
 			"os": "linux-x86_64",
@@ -1781,7 +1781,7 @@
 			]
 		},
 		{
-			"engine": "Pytorch",
+			"engine": "pytorch",
 			"version": "1.5.0",
 			"pythonVersion": "1.5.0",
 			"os": "windows-x86_64",
@@ -1800,7 +1800,7 @@
 			]
 		},
 		{
-			"engine": "Pytorch",
+			"engine": "pytorch",
 			"version": "1.4.0",
 			"pythonVersion": "1.4.0",
 			"os": "macosx-x86_64",
@@ -1819,7 +1819,7 @@
 			]
 		},
 		{
-			"engine": "Pytorch",
+			"engine": "pytorch",
 			"version": "1.4.0",
 			"pythonVersion": "1.4.0",
 			"os": "linux-x86_64",
@@ -1838,7 +1838,7 @@
 			]
 		},
 		{
-			"engine": "Pytorch",
+			"engine": "pytorch",
 			"version": "1.4.0",
 			"pythonVersion": "1.4.0",
 			"os": "windows-x86_64",

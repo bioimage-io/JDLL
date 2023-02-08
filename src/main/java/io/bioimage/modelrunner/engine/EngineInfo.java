@@ -225,7 +225,7 @@ public class EngineInfo
 	{
 		boolean cpu = true;
 		boolean gpu = false;
-		if ( engine.toLowerCase().equals( PYTORCH_JAVA_BIOIMAGEIO_TAG ) )
+		if ( engine.equals( PYTORCH_JAVA_BIOIMAGEIO_TAG ) )
 		{
 			cpu = true;
 			gpu = true;
@@ -259,12 +259,12 @@ public class EngineInfo
 	public static EngineInfo defineDLEngine( String engine, String version, String jarsDirectory, boolean gpu )
 	{
 		boolean cpu = true;
-		if ( engine.toLowerCase().equals( TENSORFLOW_JAVA_BIOIMAGEIO_TAG ) 
-				|| engine.toLowerCase().equals( ONNX_JAVA_BIOIMAGEIO_TAG ))
+		if ( engine.equals( TENSORFLOW_JAVA_BIOIMAGEIO_TAG )
+				|| engine.equals( ONNX_JAVA_BIOIMAGEIO_TAG ))
 		{
 			cpu = true;
 		}
-		else if ( engine.toLowerCase().equals( PYTORCH_JAVA_BIOIMAGEIO_TAG ) )
+		else if ( engine.equals( PYTORCH_JAVA_BIOIMAGEIO_TAG ) )
 		{
 			cpu = true;
 		}
@@ -341,12 +341,12 @@ public class EngineInfo
 	{
 		Objects.requireNonNull( STATIC_JARS_DIRECTORY, "The Jars directory should not be null." );
 		boolean cpu = true;
-		if ( engine.toLowerCase().equals( TENSORFLOW_JAVA_BIOIMAGEIO_TAG ) 
-				|| engine.toLowerCase().equals( ONNX_JAVA_BIOIMAGEIO_TAG ))
+		if ( engine.equals( TENSORFLOW_JAVA_BIOIMAGEIO_TAG )
+				|| engine.equals( ONNX_JAVA_BIOIMAGEIO_TAG ))
 		{
 			cpu = true;
 		}
-		else if ( engine.toLowerCase().equals( PYTORCH_JAVA_BIOIMAGEIO_TAG ) )
+		else if ( engine.equals( PYTORCH_JAVA_BIOIMAGEIO_TAG ) )
 		{
 			cpu = true;
 		}
@@ -483,11 +483,11 @@ public class EngineInfo
 	 */
 	public void setEngine( String engine )
 	{
-		if ( engine.toLowerCase().contentEquals( TENSORFLOW_JAVA_BIOIMAGEIO_TAG ) )
+		if ( engine.contentEquals( TENSORFLOW_JAVA_BIOIMAGEIO_TAG ) )
 			this.engine = TENSORFLOW_ENGINE_NAME;
-		else if ( engine.toLowerCase().contentEquals( PYTORCH_JAVA_BIOIMAGEIO_TAG ) )
+		else if ( engine.contentEquals( PYTORCH_JAVA_BIOIMAGEIO_TAG ) )
 			this.engine = PYTORCH_ENGINE_NAME;
-		else if ( engine.toLowerCase().contentEquals( ONNX_JAVA_BIOIMAGEIO_TAG ) )
+		else if ( engine.contentEquals( ONNX_JAVA_BIOIMAGEIO_TAG ) )
 			this.engine = ONNX_ENGINE_NAME;
 	}
 
@@ -526,7 +526,7 @@ public class EngineInfo
 	 */
 	public void setTags( String tag, String sigDef )
 	{
-		if ( this.engine.toLowerCase().contentEquals( TENSORFLOW_ENGINE_NAME ) )
+		if ( this.engine.contentEquals( TENSORFLOW_ENGINE_NAME ) )
 		{
 			this.tfTag = tag;
 			this.tfSigDef = sigDef;
@@ -648,19 +648,19 @@ public class EngineInfo
 	 */
 	public static String getLoadedVersions( String engine, String version ) throws IllegalArgumentException
 	{
-		if ( engine.toLowerCase().equals( TENSORFLOW_JAVA_BIOIMAGEIO_TAG ) && version.startsWith( "1" ) )
+		if ( engine.equals( TENSORFLOW_JAVA_BIOIMAGEIO_TAG ) && version.startsWith( "1" ) )
 		{
 			return loadedTf1Version;
 		}
-		else if ( engine.toLowerCase().equals( TENSORFLOW_JAVA_BIOIMAGEIO_TAG ) && version.startsWith( "2" ) )
+		else if ( engine.equals( TENSORFLOW_JAVA_BIOIMAGEIO_TAG ) && version.startsWith( "2" ) )
 		{
 			return loadedTf2Version;
 		}
-		else if ( engine.toLowerCase().equals( PYTORCH_JAVA_BIOIMAGEIO_TAG ) )
+		else if ( engine.equals( PYTORCH_JAVA_BIOIMAGEIO_TAG ) )
 		{
 			return loadedPytorchVersion;
 		}
-		else if ( engine.toLowerCase().equals( ONNX_JAVA_BIOIMAGEIO_TAG ) )
+		else if ( engine.equals( ONNX_JAVA_BIOIMAGEIO_TAG ) )
 		{
 			return loadedOnnxVersion;
 		}
