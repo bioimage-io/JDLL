@@ -96,7 +96,7 @@ public class EngineLoader extends ClassLoader
 	 * Name of the interface all the engines have to implement
 	 */
 	private static final String ENGINE_INTERFACE_NAME = 
-			"package io.bioimage.modelrunner.engine.DeepLearningEngineInterface";
+			"io.bioimage.modelrunner.engine.DeepLearningEngineInterface";
 
 	/**
 	 * HashMap containing all the already loaded ClassLoader. This variables
