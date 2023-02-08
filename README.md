@@ -41,7 +41,7 @@ The [Java model runner](<https://github.com/bioimage-io/model-runner-java/tree/m
 
    ![alt text](https://raw.githubusercontent.com/bioimage-io/model-runner-java/main/wiki/engines_folders.png)
 
-   All engines should be stored in the same directory (in the example, **C:\Users\carlos\icy\engines**), with each engine following the naming convention:
+   All engines should be stored in the same directory (in the example, `C:\Users\carlos\icy\engines`), with each engine following the naming convention:
 
    ```
    <DL_framework_name>-<python_version>-<java_api_version>-<os>-<architecture>-<cpu_if_it_runs_in_cpu>-<gpu_if_it_runs_in_gpu>
@@ -51,7 +51,7 @@ The [Java model runner](<https://github.com/bioimage-io/model-runner-java/tree/m
 
    Another example: the folder `Tensorflow-1.12.0-1.12.0-windows-x86_64-cpu` contains a Tensorflow engine, Python version 1.12.0, same as the Java version, for Windows operating system, architecture x86_64 (64 bits), that runs only in CPU.
 
-   The script `download-engines.py` can be used to download desired engines for your platform (OS and architecture).
+   The script `download-engines.py` can be used to download desired engines for your platform (OS and architecture):
    ```
    python download-engines.py <engine-filter> <version-filter>
    ```
@@ -75,7 +75,7 @@ Currently, the following `engine_name-interface` engines exist:
 | Tensorflow 2 all APIs but 0.2.0 | https://github.com/bioimage-io/tensorflow-2-java-interface     |
 | Onnx                            | https://github.com/bioimage-io/onnx-java-interface             |
 
-The information about the engines supported currently by the model runner, for which OS and architectures and which JAR files are required each of the engines is stored in [this json file](https://github.com/bioimage-io/model-runner-java/blob/main/src/main/resources/availableDLVersions.json).
+The information about the engines supported currently by the model runner, for which OS and architectures and which JAR files are required for each of the engines is stored in [this json file](https://github.com/bioimage-io/model-runner-java/blob/main/src/main/resources/availableDLVersions.json).
 
 Note that the model runner will be in **constant development** and that it is open to community collaboration, so **pull requests** to the official repository of the model runner to improve functionality or to add new engines are **very welcomed**.
 
@@ -88,7 +88,7 @@ There are three key points: loading a model, creating the tensors, and making in
 
 In order to load a model, the library needs to know first in which framework the model is going to be loaded, and then where is the model of interest.
 
-The user needs to give information about the DL framework. For that the creation of an object called [`EngineInfo`](https://github.com/bioimage-io/model-runner-java/blob/main/src/main/java/io/bioimage/modelrunner/utils/EngineInfo.java) is required. An `EngineInfo` object has to be created with the framework name that is given by the [Bioimage.io specs](https://github.com/bioimage-io/spec-bioimage-io/blob/gh-pages/weight_formats_spec_0_4.md). **Tensorflow** should be `tensorflow_saved_model_bundled`, **PyTorch for Java**, `torchscript` and **Onnx**, `onnx`.
+The user needs to give information about the DL framework. For that the creation of an object called [`EngineInfo`](https://github.com/bioimage-io/model-runner-java/blob/main/src/main/java/io/bioimage/modelrunner/engine/EngineInfo.java) is required. An `EngineInfo` object has to be created with the framework name that is given by the [Bioimage.io specs](https://github.com/bioimage-io/spec-bioimage-io/blob/gh-pages/weight_formats_spec_0_4.md). **Tensorflow** should be `tensorflow_saved_model_bundled`, **PyTorch for Java**, `torchscript` and **Onnx**, `onnx`.
 
 The other required parameters are the version of the framework in Python (sometimes it differs from the Java API version) that wants to be loaded (1.15.0, 1.9.1, 15...) and the directory where all the engines folders are stored. Looking at the previous example this directory would be `C:\Users\carlos\icy\engines`.
 With this information an example code snippet would be:
@@ -156,9 +156,9 @@ Once the model and tensors have been defined, everything is ready to make infere
 
 The process should be relatively easy to implement in the main software.
 
-All the input tensors should be put together in a List, same for the output tensors. Then the model should be called as `model.runModel(....)`. The output list of tensors is then updated inplace.
+All the input tensors should be put together in a `List`, same for the output tensors. Then the model should be called as `model.runModel(....)`. The output list of tensors is then updated inplace.
 
-```
+```java
 // List that will contain the input tensors
 List<Tensors> inputTensors = new ArrayList<Tensor>();
 // List that will contain the output tensors
