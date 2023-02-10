@@ -73,6 +73,11 @@
 			<url>https://github.com/ctrueden</url>
 			<properties><id>ctrueden</id></properties>
 		</contributor>
+		<contributor>
+			<name>Mark Hiner</name>
+			<url>https://github.com/hinerm</url>
+			<properties><id>hinerm</id></properties>
+		</contributor>
 	</contributors>
 
 	<mailingLists>
