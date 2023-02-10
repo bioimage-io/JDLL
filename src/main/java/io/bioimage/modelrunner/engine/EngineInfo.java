@@ -232,7 +232,7 @@ public class EngineInfo
 		}
 		else
 		{
-			throw new IllegalArgumentException( "Please spedicify whether the engine can CPU or not "
+			throw new IllegalArgumentException( "Please specify whether the engine can CPU or not "
 					+ "and whether it can use GPU or not. Default values only exist for " + PYTORCH_JAVA_BIOIMAGEIO_TAG
 					+ " engines." );
 		}
