@@ -8,3 +8,9 @@
 /.settings/
 .classpath
 .project
+
+# intellij specific files
+.idea
+
+# miscellaneous
+*.swp
