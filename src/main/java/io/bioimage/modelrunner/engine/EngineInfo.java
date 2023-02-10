@@ -399,10 +399,8 @@ public class EngineInfo
 	{
 		if ( engine != null || version != null )
 		{
-			String vv = this.engine + "-" + this.version + "-" + this.versionJava + "-" + this.os
+			final String vv = this.engine + "-" + this.version + "-" + this.versionJava + "-" + this.os
 					+ ( this.cpu ? "-cpu" : "" ) + ( this.gpu ? "-gpu" : "" );
-			// TODO fix
-			vv = vv.substring( 0, 1 ).toUpperCase() + vv.substring( 1 );
 			return this.jarsDirectory + File.separator + vv;
 		}
 		else
