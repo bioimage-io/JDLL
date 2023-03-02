@@ -45,7 +45,7 @@
 				"https://repo1.maven.org/maven2/org/tensorflow/libtensorflow_jni/1.12.0/libtensorflow_jni-1.12.0.jar",
 				"https://repo1.maven.org/maven2/com/google/protobuf/protobuf-java/3.5.1/protobuf-java-3.5.1.jar",
 				"https://repo1.maven.org/maven2/org/tensorflow/proto/1.15.0/proto-1.15.0.jar",
-				"https://maven.scijava.org/content/repositories/snapshots/io/bioimage/dl-modelrunner-tensorflow-1/0.1.1-SNAPSHOT/dl-modelrunner-tensorflow-1-0.1.1-20230302.153136-13.jar"
+				"https://maven.scijava.org/service/local/repositories/snapshots/content/io/bioimage/dl-modelrunner-tensorflow-1/0.1.1-SNAPSHOT/dl-modelrunner-tensorflow-1-0.1.1-20230302.155745-14.jar"
 			]
 		},
 		{
@@ -125,7 +125,7 @@
 				"https://repo1.maven.org/maven2/org/tensorflow/libtensorflow_jni/1.13.1/libtensorflow_jni-1.13.1.jar",
 				"https://repo1.maven.org/maven2/com/google/protobuf/protobuf-java/3.5.1/protobuf-java-3.5.1.jar",
 				"https://repo1.maven.org/maven2/org/tensorflow/proto/1.15.0/proto-1.15.0.jar",
-				"https://maven.scijava.org/content/repositories/snapshots/io/bioimage/dl-modelrunner-tensorflow-1/0.1.1-SNAPSHOT/dl-modelrunner-tensorflow-1-0.1.1-20230302.153136-13.jar"
+				"https://maven.scijava.org/service/local/repositories/snapshots/content/io/bioimage/dl-modelrunner-tensorflow-1/0.1.1-SNAPSHOT/dl-modelrunner-tensorflow-1-0.1.1-20230302.155745-14.jar"
 			]
 		},
 		{
@@ -205,7 +205,7 @@
 				"https://repo1.maven.org/maven2/org/tensorflow/libtensorflow_jni/1.14.0/libtensorflow_jni-1.14.0.jar",
 				"https://repo1.maven.org/maven2/com/google/protobuf/protobuf-java/3.5.1/protobuf-java-3.5.1.jar",
 				"https://repo1.maven.org/maven2/org/tensorflow/proto/1.15.0/proto-1.15.0.jar",
-				"https://maven.scijava.org/content/repositories/snapshots/io/bioimage/dl-modelrunner-tensorflow-1/0.1.1-SNAPSHOT/dl-modelrunner-tensorflow-1-0.1.1-20230302.153136-13.jar"
+				"https://maven.scijava.org/service/local/repositories/snapshots/content/io/bioimage/dl-modelrunner-tensorflow-1/0.1.1-SNAPSHOT/dl-modelrunner-tensorflow-1-0.1.1-20230302.155745-14.jar"
 			]
 		},
 		{
@@ -285,7 +285,7 @@
 				"https://repo1.maven.org/maven2/org/tensorflow/libtensorflow_jni/1.15.0/libtensorflow_jni-1.15.0.jar",
 				"https://repo1.maven.org/maven2/com/google/protobuf/protobuf-java/3.5.1/protobuf-java-3.5.1.jar",
 				"https://repo1.maven.org/maven2/org/tensorflow/proto/1.15.0/proto-1.15.0.jar",
-				"https://maven.scijava.org/content/repositories/snapshots/io/bioimage/dl-modelrunner-tensorflow-1/0.1.1-SNAPSHOT/dl-modelrunner-tensorflow-1-0.1.1-20230302.153136-13.jar"
+				"https://maven.scijava.org/service/local/repositories/snapshots/content/io/bioimage/dl-modelrunner-tensorflow-1/0.1.1-SNAPSHOT/dl-modelrunner-tensorflow-1-0.1.1-20230302.155745-14.jar"
 			]
 		},
 		{
