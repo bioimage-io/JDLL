@@ -18,7 +18,7 @@ The [Java model runner](<https://github.com/bioimage-io/model-runner-java/tree/m
    <dependency>
      <groupId>io.bioimage</groupId>
      <artifactId>dl-modelrunner</artifactId>
-     <version>0.1.0</version>
+     <version>0.2.0</version>
    </dependency>
    ```
 
