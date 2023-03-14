@@ -135,6 +135,11 @@ public class EngineInfo
 	private static final String ONNX_ENGINE_NAME = "onnx";
 
 	/**
+	 * Variable containing the name used to refer to Keras in the program
+	 */
+	private static final String KERAS_ENGINE_NAME = "keras";
+
+	/**
 	 * Variable containing the name used to refer to Tensorflow in the program
 	 */
 	private static final String TENSORFLOW_JAVA_BIOIMAGEIO_TAG = "tensorflow_saved_model_bundle";
@@ -148,6 +153,11 @@ public class EngineInfo
 	 * Variable containing the name used to refer to Pytorch in the program
 	 */
 	private static final String ONNX_JAVA_BIOIMAGEIO_TAG = "onnx";
+
+	/**
+	 * Variable containing the name used to refer to Keras in the program
+	 */
+	private static final String KERAS_JAVA_BIOIMAGEIO_TAG = "keras_hdf5";
 
 	/**
 	 * Variable that stores which version of Tensorflow 1 has been already
@@ -707,10 +717,9 @@ public class EngineInfo
 	}
 
 	/**
-	 * Method that returns the name with which Tensorflow is defined needed at
-	 * some points to differentiate between tf1 and tf2
+	 * Method that returns the name with which Pytorch is defined
 	 * 
-	 * @return the String used for tensorflow
+	 * @return the String used for Pytorch
 	 */
 	public static String getPytorchKey()
 	{
@@ -718,14 +727,23 @@ public class EngineInfo
 	}
 
 	/**
-	 * Method that returns the name with which Tensorflow is defined needed at
-	 * some points to differentiate between tf1 and tf2
+	 * Method that returns the name with which Onnx is defined
 	 * 
-	 * @return the String used for tensorflow
+	 * @return the String used for Onnx
 	 */
 	public static String getOnnxKey()
 	{
 		return ONNX_ENGINE_NAME;
+	}
+
+	/**
+	 * Method that returns the name with which Keras is defined 
+	 * 
+	 * @return the String used for Keras
+	 */
+	public static String getKerasKey()
+	{
+		return KERAS_ENGINE_NAME;
 	}
 
 	/**
@@ -737,5 +755,38 @@ public class EngineInfo
 	public static String getBioimageioTfKey()
 	{
 		return TENSORFLOW_JAVA_BIOIMAGEIO_TAG;
+	}
+
+	/**
+	 * Method that returns the name with which Pytorch is defined in the
+	 * Bioimage.io.
+	 * 
+	 * @return the String used for Pytorch in the Bioimage.io
+	 */
+	public static String getBioimageioPytorchKey()
+	{
+		return PYTORCH_JAVA_BIOIMAGEIO_TAG;
+	}
+
+	/**
+	 * Method that returns the name with which Onnx is defined in the
+	 * Bioimage.io.
+	 * 
+	 * @return the String used for Onnx in the Bioimage.io
+	 */
+	public static String getBioimageioOnnxKey()
+	{
+		return ONNX_JAVA_BIOIMAGEIO_TAG;
+	}
+
+	/**
+	 * Method that returns the name with which Keras is defined in the
+	 * Bioimage.io.
+	 * 
+	 * @return the String used for Onnx in the Bioimage.io
+	 */
+	public static String getBioimageioKerasKey()
+	{
+		return KERAS_JAVA_BIOIMAGEIO_TAG;
 	}
 }

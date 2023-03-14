@@ -39,6 +39,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import io.bioimage.modelrunner.engine.EngineInfo;
 import io.bioimage.modelrunner.system.PlatformDetection;
 
 import com.google.gson.Gson;
@@ -58,10 +59,10 @@ public class AvailableDeepLearningVersions
 	private static HashMap<String, String> engineKeys;
 	static {
 		engineKeys = new HashMap<String, String>();
-		engineKeys.put("torchscript", "pytorch");
-		engineKeys.put("tensorflow_saved_model_bundle", "tensorflow");
-		engineKeys.put("onnx", "onnx");
-		engineKeys.put("keras_hdf5", "keras");
+		engineKeys.put(EngineInfo.getBioimageioPytorchKey(), EngineInfo.getPytorchKey());
+		engineKeys.put(EngineInfo.getBioimageioTfKey(), EngineInfo.getTensorflowKey());
+		engineKeys.put(EngineInfo.getBioimageioOnnxKey(), EngineInfo.getOnnxKey());
+		engineKeys.put(EngineInfo.getBioimageioKerasKey(), EngineInfo.getKerasKey());
 	}
 	
 	/**
