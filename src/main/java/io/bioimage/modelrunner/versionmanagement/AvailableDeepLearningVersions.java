@@ -219,8 +219,6 @@ public class AvailableDeepLearningVersions
 	 * 	whether the engine supports cpu or not
 	 * @param gpu
 	 * 	whether the engine supports gpu or not
-	 * @param consumer
-	 * 	consumer used to communicate the progress made donwloading files
      * @return true if the engine exists and false otherwise
      */
     public static boolean isEngineSupported(String framework, String version, boolean cpu, boolean gpu) {
