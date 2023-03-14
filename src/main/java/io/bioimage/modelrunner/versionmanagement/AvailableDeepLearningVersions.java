@@ -37,6 +37,7 @@ import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 import io.bioimage.modelrunner.engine.EngineInfo;
@@ -223,12 +224,15 @@ public class AvailableDeepLearningVersions
      * @return true if the engine exists and false otherwise
      */
     public static boolean isEngineSupported(String framework, String version, boolean cpu, boolean gpu) {
-    	if (AvailableDeepLearningVersions.getEngineKeys().get(framework) != null)
+    	Map<String, String> enginesMap = getEngineKeys().entrySet().stream()
+    			.collect(Collectors.toMap(Map.Entry::getValue, Map.Entry::getKey));
+    	if (enginesMap.get(framework) != null)
 			framework = AvailableDeepLearningVersions.getEngineKeys().get(framework);
-		DeepLearningVersion engine = AvailableDeepLearningVersions.getAvailableVersionsForEngine(framework).getVersions()
-				.stream().filter(v -> (v.getPythonVersion() == version)
-					&& (v.getCPU() == cpu)
-					&& (v.getGPU() == gpu)).findFirst().orElse(null);
+    	DeepLearningVersion engine = AvailableDeepLearningVersions.getAvailableVersionsForEngine(framework).getVersions()
+				.stream().filter(v -> v.getPythonVersion().equals(version) 
+						&& v.getOs().equals(new PlatformDetection().toString())
+						&& v.getCPU() == cpu
+						&& v.getGPU() == gpu).findFirst().orElse(null);
 		if (engine == null) 
 			return false;
 		return true;
