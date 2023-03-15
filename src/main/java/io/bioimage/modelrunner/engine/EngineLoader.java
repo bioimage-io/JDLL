@@ -182,8 +182,8 @@ public class EngineLoader extends ClassLoader
 			return;
 		}
 		ArrayList<URL> urlList = new ArrayList<URL>();
-		// TODO  remove URL[] urls = new URL[ new File( this.enginePath ).listFiles().length ];
-		// TODO remove int c = 0;
+		if ( !(new File( this.enginePath ).isDirectory()) )
+			throw new IllegalArgumentException("Engine directory does not exist: " + enginePath);
 		for ( File ff : new File( this.enginePath ).listFiles() )
 		{
 			if (!ff.getName().endsWith(".jar"))
