@@ -355,8 +355,8 @@ public class DeepLearningVersion
     		return 1;
     	else if (v2 == null)
     		return -1;
-    	String[] v1Arr = v1.split(".");
-    	String[] v2Arr = v2.split(".");
+    	String[] v1Arr = v1.split("\\.");
+    	String[] v2Arr = v2.split("\\.");
     	int minNVersions = v1Arr.length > v2Arr.length ? v2Arr.length : v1Arr.length;
     	for (int i = 0; i < minNVersions; i ++) {
     		if (Integer.parseInt(v1Arr[i]) > Integer.parseInt(v2Arr[i])) {
