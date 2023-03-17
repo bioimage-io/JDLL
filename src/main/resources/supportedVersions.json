@@ -305,11 +305,11 @@
 				},
 			"12":
 				{
-					"javaVersion": "1.8.1"
+					"javaVersion": "1.7.0"
 				},
 			"13":
 				{
-					"javaVersion": "1.7.1"
+					"javaVersion": "1.8.1"
 				},
 			"14":
 				{
