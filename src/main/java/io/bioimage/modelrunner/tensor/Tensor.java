@@ -40,7 +40,7 @@ import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.converter.RealTypeConverters;
 import net.imglib2.img.Img;
 import net.imglib2.img.ImgFactory;
-import net.imglib2.img.cell.CellImgFactory;
+import net.imglib2.img.array.ArrayImgFactory;
 import net.imglib2.loops.LoopBuilder;
 import net.imglib2.type.NativeType;
 import net.imglib2.type.Type;
@@ -193,7 +193,7 @@ public final class Tensor< T extends RealType< T > & NativeType< T > >
 																final String axes, final long[] shape,
 																final R dtype)
 	{
-		final ImgFactory< R > imgFactory = new CellImgFactory<>( dtype, 5 );
+		final ArrayImgFactory< R > imgFactory = new ArrayImgFactory<>( dtype );
 		final Img<R> backendData = imgFactory.create(shape);
 		return new Tensor<>( tensorName, axes, backendData );
 	}

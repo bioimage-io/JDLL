@@ -32,8 +32,6 @@
  */
 package io.bioimage.modelrunner.transformations;
 
-import java.util.ArrayList;
-
 import io.bioimage.modelrunner.tensor.Tensor;
 
 import net.imglib2.type.NativeType;
