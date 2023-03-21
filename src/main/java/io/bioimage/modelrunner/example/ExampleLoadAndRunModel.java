@@ -66,6 +66,13 @@ public class ExampleLoadAndRunModel {
 	private static final String ENGINES_DIR = new File(CWD, "engines").getAbsolutePath();
 	private static final String MODELS_DIR = new File(CWD, "models").getAbsolutePath();
 
+	/**
+	 * 
+	 * @param <T>
+	 * @param args
+	 * @throws LoadEngineException
+	 * @throws Exception
+	 */
 	public static < T extends RealType< T > & NativeType< T > > void main(String[] args) throws LoadEngineException, Exception {
 		// Tag for the DL framework (engine) that wants to be used
 		String engine = "torchscript";
@@ -154,7 +161,7 @@ public class ExampleLoadAndRunModel {
 	 * 	framework compatible with the wanted model
 	 * @return a loaded DL model
 	 * @throws LoadEngineException if there is any error loading the model
-	 * @throws Exception 
+	 * @throws Exception if anything fails loading the model
 	 */
 	public static Model loadModel(String modelFolder, String modelSource, EngineInfo engineInfo) throws LoadEngineException, Exception {
 		

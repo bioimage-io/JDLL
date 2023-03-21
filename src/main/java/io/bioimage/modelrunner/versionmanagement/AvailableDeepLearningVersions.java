@@ -68,7 +68,9 @@ public class AvailableDeepLearningVersions
 	
 	/**
 	 * MEthod that returns all the possible names for each the DL engines existing at the moment
-	 * @return
+	 * @return the map that associates the bioimage.io key for each weight with the weights of 
+	 * each of the frameworks as defined by the engine tag at:
+	 * https://raw.githubusercontent.com/bioimage-io/model-runner-java/main/src/main/resources/availableDLVersions.json
 	 */
 	public static HashMap<String, String> getEngineKeys(){
 		return engineKeys;
@@ -131,6 +133,9 @@ public class AvailableDeepLearningVersions
      * Creates an instance containing only Deep Learning versions compatible with
      * the current system and corresponding to the version of interest
      * 
+     * @param engine
+     * 	engine name as specified by the bioimage.io, defined at
+     * 	https://github.com/bioimage-io/spec-bioimage-io/blob/gh-pages/weight_formats_spec_0_4.md
      * @return The available versions instance.
      */
     public static AvailableDeepLearningVersions getAvailableVersionsForEngine(String engine) {

@@ -68,6 +68,11 @@ public class ExampleLoadTensorflow1Tensorflow2 {
 	private static final String ENGINES_DIR = new File(CWD, "engines").getAbsolutePath();
 	private static final String MODELS_DIR = new File(CWD, "models").getAbsolutePath();
 	
+	/**
+	 * Loads a TF2 model and runs it
+	 * @throws LoadEngineException if there is any error loading an engine
+	 * @throws Exception if there is any exception running the model
+	 */
 	public static void loadAndRunTf2() throws LoadEngineException, Exception {
 		// Tag for the DL framework (engine) that wants to be used
 		String engine = "tensorflow_saved_model_bundle";
@@ -121,8 +126,12 @@ public class ExampleLoadTensorflow1Tensorflow2 {
 		outputs.stream().forEach(t -> t.close());
 		System.out.print("Success running Tensorflow 2!!");
 	}
-	
-	
+
+	/**
+	 * Loads a TF1 model and runs it
+	 * @throws LoadEngineException if there is any error loading an engine
+	 * @throws Exception if there is any exception running the model
+	 */
 	public static void loadAndRunTf1() throws LoadEngineException, Exception {
 		// Tag for the DL framework (engine) that wants to be used
 		String engine = "tensorflow_saved_model_bundle";
@@ -177,6 +186,15 @@ public class ExampleLoadTensorflow1Tensorflow2 {
 		System.out.print("Success running Tensorflow 1!!");
 	}
 	
+	/**
+	 * Run the test
+	 * @param <T>
+	 * 	type of the tensors
+	 * @param args
+	 * 	arguments of the main method
+	 * @throws LoadEngineException if there is any exception loading the engine
+	 * @throws Exception if there is any exception in the tests
+	 */
 	public static < T extends RealType< T > & NativeType< T > > void main(String[] args) throws LoadEngineException, Exception {
 		loadAndRunTf1();
 		loadAndRunTf2();
@@ -212,7 +230,7 @@ public class ExampleLoadTensorflow1Tensorflow2 {
 	 * 	framework compatible with the wanted model
 	 * @return a loaded DL model
 	 * @throws LoadEngineException if there is any error loading the model
-	 * @throws Exception 
+	 * @throws Exception if there is any exception loading the model
 	 */
 	public static Model loadModel(String modelFolder, String modelSource, EngineInfo engineInfo) throws LoadEngineException, Exception {
 		
