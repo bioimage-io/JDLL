@@ -122,10 +122,6 @@ public class InstalledDeepLearningVersions {
 					try {
 						return DeepLearningVersion.fromFile(t);
 					} catch (Exception e) {
-						// TODO print stack trace??
-						e.printStackTrace();
-						System.out.println("");
-						System.out.println("Folder '" + t.getName() + "' does not contain a supported Deep Learning engine version");
 						return null;
 					}
 				})
@@ -178,8 +174,6 @@ public class InstalledDeepLearningVersions {
 					try {
 						return DeepLearningVersion.fromFile(t);
 					} catch (Exception e) {
-						System.out.println("");
-						System.out.println("Folder '" + t.getName() + "' does not contain a supported Deep Learning engine version");
 						return null;
 					}
 				})
@@ -223,8 +217,6 @@ public class InstalledDeepLearningVersions {
 					try {
 						return DeepLearningVersion.fromFile(t);
 					} catch (Exception e) {
-						System.out.println("");
-						System.out.println("Folder '" + t.getName() + "' does not contain a supported Deep Learning engine version");
 						return null;
 					}
 				})
