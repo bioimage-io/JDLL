@@ -55,6 +55,8 @@ public class ByteArrayUtils {
 	 * a buffer.
 	 * @param arr
 	 * 	the byte array
+	 * @param byteOrder
+	 * 	the order of the bytes in the array, LittleEndian or BigEndian
 	 * @return a integer 16 buffer containing the wanted data
 	 */
 	public static short[] convertIntoSignedShort16(byte[] arr, ByteOrder byteOrder) {
@@ -84,6 +86,8 @@ public class ByteArrayUtils {
 	 * a buffer.
 	 * @param arr
 	 * 	the byte array
+	 * @param byteOrder
+	 * 	the order of the bytes in the array, LittleEndian or BigEndian
 	 * @return a int array containing the wanted data
 	 */
 	public static int[] convertIntoUInt8(byte[] arr, ByteOrder byteOrder) {
@@ -113,6 +117,8 @@ public class ByteArrayUtils {
 	* a buffer.
 	* @param arr
 	* 	the byte array
+	 * @param byteOrder
+	 * 	the order of the bytes in the array, LittleEndian or BigEndian
 	* @return a int array containing the wanted data
 	*/
 	public static int[] convertIntoSignedInt32(byte[] arr, ByteOrder byteOrder) {
@@ -128,10 +134,32 @@ public class ByteArrayUtils {
 		return int32;
 	}
 	
+	/**
+	 * Converts byte array into a unsigned integer 32 bit array stored in 
+	 * a buffer.
+	 *  However, as this data type does not exist in Java, the values are stored
+	 * in an long (int64) array containing the values that would correspond to
+	 * an uin32 array
+	 * @param arr
+	 * 	the byte array
+	 * @return an long array containing the wanted data
+	 */
 	public static long[] convertIntoUnsignedInt32(byte[] arr) {
 		return convertIntoUnsignedInt32(arr, ByteOrder.LITTLE_ENDIAN);
 	}
 	
+	/**
+	 * Converts byte array into a unsigned integer 32 bit array stored in 
+	 * a buffer.
+	 *  However, as this data type does not exist in Java, the values are stored
+	 * in an long (int64) array containing the values that would correspond to
+	 * an uin32 array
+	 * @param arr
+	 * 	the byte array
+	 * @param byteOrder
+	 * 	the order of the bytes in the array, LittleEndian or BigEndian
+	 * @return an long array containing the wanted data
+	 */
 	public static long[] convertIntoUnsignedInt32(byte[] arr, ByteOrder byteOrder) {
 		long[] uint32 = new long[arr.length / 4];
 		for ( int i = 0; i < arr.length / 4; i ++) {
@@ -159,8 +187,8 @@ public class ByteArrayUtils {
 	 * 	the byte array
 	 * @return an int array containing the wanted data
 	 */
-	public static int[] convertIntoUnsignedIn16(byte[] arr) {
-		return convertIntoUnsignedIn16(arr, ByteOrder.LITTLE_ENDIAN);
+	public static int[] convertIntoUnsignedInt16(byte[] arr) {
+		return convertIntoUnsignedInt16(arr, ByteOrder.LITTLE_ENDIAN);
 	}
 	
 	/**
@@ -171,9 +199,11 @@ public class ByteArrayUtils {
 	 * an uin16 array
 	 * @param arr
 	 * 	the byte array
+	 * @param byteOrder
+	 * 	the order of the bytes in the array, LittleEndian or BigEndian
 	 * @return an int array containing the wanted data
 	 */
-	public static int[] convertIntoUnsignedIn16(byte[] arr, ByteOrder byteOrder) {
+	public static int[] convertIntoUnsignedInt16(byte[] arr, ByteOrder byteOrder) {
 		int[] int16 = new int[arr.length / 2];
 		for ( int i = 0; i < arr.length / 4; i ++) {
 			byte[] intArr = new byte[2];
@@ -204,6 +234,8 @@ public class ByteArrayUtils {
 	 * a buffer.
 	 * @param arr
 	 * 	the byte array
+	 * @param byteOrder
+	 * 	the order of the bytes in the array, LittleEndian or BigEndian
 	 * @return a float arr containing the wanted data
 	 */
 	public static float[] convertIntoSignedFloat32(byte[] arr, ByteOrder byteOrder) {
@@ -235,6 +267,8 @@ public class ByteArrayUtils {
 	 * a buffer.
 	 * @param arr
 	 * 	the byte array
+	 * @param byteOrder
+	 * 	the order of the bytes in the array, LittleEndian or BigEndian
 	 * @return a double arr containing the wanted data
 	 */
 	public static double[] convertIntoSignedFloat64(byte[] arr, ByteOrder byteOrder) {
@@ -270,6 +304,8 @@ public class ByteArrayUtils {
 	 * a buffer.
 	 * @param arr
 	 * 	the byte array
+	 * @param byteOrder
+	 * 	the order of the bytes in the array, LittleEndian or BigEndian
 	 * @return a long arr containing the wanted data
 	 */
 	public static long[] convertIntoSignedInt64(byte[] arr, ByteOrder byteOrder) {

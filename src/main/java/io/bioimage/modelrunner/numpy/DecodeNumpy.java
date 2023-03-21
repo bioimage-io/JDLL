@@ -353,7 +353,7 @@ public class DecodeNumpy {
     	final ImgFactory< UnsignedShortType > factory = new CellImgFactory<>( new UnsignedShortType(), 5 );
         final Img< UnsignedShortType > outputImg = (Img<UnsignedShortType>) factory.create(tensorShape);
     	Cursor<UnsignedShortType> tensorCursor= outputImg.cursor();
-        int[] flatArr = ByteArrayUtils.convertIntoUnsignedIn16(tensor, byteOrder);
+        int[] flatArr = ByteArrayUtils.convertIntoUnsignedInt16(tensor, byteOrder);
 		while (tensorCursor.hasNext()) {
 			tensorCursor.fwd();
 			long[] cursorPos = tensorCursor.positionAsLongArray();
