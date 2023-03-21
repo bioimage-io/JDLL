@@ -20,6 +20,8 @@ public class VersionManagement {
     /**
      * Returns all the available Deep LEarning versions from different frameworks.
      * 
+     * @param enginesPath
+     * 	path to where the engines are stored
      * @return List of available versions
      */
     public static List<String> getAvailableDeepLearningVersions(String enginesPath) {
@@ -42,6 +44,11 @@ public class VersionManagement {
 	 * only one version is downloaded, the only one downloaded.
 	 * @param trainingVersion
 	 * 	the version used to train the model
+	 * @param versionList
+	 * 	list of all the versions that are installed
+	 * @param engine
+	 * 	Deep Learning framework (tensorflow, pytorch, onnx...) as defined with the engine tag 
+	 * at https://raw.githubusercontent.com/bioimage-io/model-runner-java/main/src/main/resources/availableDLVersions.json
 	 * @return the most convenient version
 	 */
 	public static String getMostCompatibleEngineVersion(String version, List<String> versionList, String engine) {
@@ -93,7 +100,8 @@ public class VersionManagement {
 	 * @param versionList
 	 * 	list of available versions
 	 * @param engine
-	 * 	engine of interest
+	 * 	engine of interest (tensorflow, pytorch, onnx...) as defined with the engine tag 
+	 * at https://raw.githubusercontent.com/bioimage-io/model-runner-java/main/src/main/resources/availableDLVersions.json
 	 * @return version wanted
 	 */
 	private static String missingArgument(String version, List<String> versionList, String engine) {
