@@ -42,8 +42,8 @@ public class VersionManagement {
 	 * the version specified in the yaml file. The most convenient is either the 
 	 * actual training version, the closest higher version existing or in the case 
 	 * only one version is downloaded, the only one downloaded.
-	 * @param trainingVersion
-	 * 	the version used to train the model
+	 * @param version
+	 * 	the version of interest
 	 * @param versionList
 	 * 	list of all the versions that are installed
 	 * @param engine

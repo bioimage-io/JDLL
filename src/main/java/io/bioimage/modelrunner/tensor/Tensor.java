@@ -141,6 +141,8 @@ public final class Tensor< T extends RealType< T > & NativeType< T > >
 	/**
 	 * Return a tensor object
 	 *
+	 * @param <T>
+	 * 			  the possible ImgLib2 datatypes that the backend ImgLib2 img can have
 	 * @param tensorName
 	 *            name of the tensor as defined by the model
 	 * @param axes
@@ -161,6 +163,8 @@ public final class Tensor< T extends RealType< T > & NativeType< T > >
 	/**
 	 * Creates a tensor without data. The idea is to fill the data later.
 	 *
+	 * @param <T>
+	 * 			  the possible ImgLib2 datatypes that the backend ImgLib2 img can have
 	 * @param tensorName
 	 *            name of the tensor as defined by the model
 	 * @param axes
@@ -177,6 +181,8 @@ public final class Tensor< T extends RealType< T > & NativeType< T > >
 	 * Creates a tensor without data. However, the memory that this tensor will consume is already
 	 * allocated during its creation
 	 *
+	 * @param <T>
+	 * 			  the possible ImgLib2 datatypes that the backend ImgLib2 img can have
 	 * @param tensorName
 	 *            name of the tensor as defined by the model
 	 * @param axes
@@ -293,6 +299,8 @@ public final class Tensor< T extends RealType< T > & NativeType< T > >
 	 * Everything is the same or the new tensor (including the name), except the
 	 * data type of the data
 	 *
+	 * @param <T>
+	 * 			  the possible ImgLib2 datatypes that the backend ImgLib2 img can have
 	 * @param tt
 	 *            tensor where the copy is created from
 	 * @param type
@@ -314,6 +322,8 @@ public final class Tensor< T extends RealType< T > & NativeType< T > >
 	 * Everything is the same or the new tensor (including the name), except the
 	 * data type of the data
 	 *
+	 * @param <T>
+	 * 			  the possible ImgLib2 datatypes that the backend ImgLib2 img can have
 	 * @param input
 	 *            tensor where the copy is created from
 	 * @param type

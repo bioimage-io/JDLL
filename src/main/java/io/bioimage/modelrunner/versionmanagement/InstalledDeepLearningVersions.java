@@ -49,16 +49,21 @@ import io.bioimage.modelrunner.system.PlatformDetection;
  *
  */
 public class InstalledDeepLearningVersions {
-	
+	/**
+	 * Path to the engines folder
+	 */
 	private Path path;
-	
+	/**
+	 * Name of the engines folder
+	 */
 	private static String ENGINES_FOLDER_NAME = "engines";
 	
 	/**
 	 * Object used to find installed DL frameworks in the software
 	 * @param path
 	 * 	path to the folder where all the framewoks are installed
-	 * @throws IOException 
+	 * @throws IOException if the path is not a directory or if it is impossible to create 
+	 * 	 a dir in that path
 	 */
 	private InstalledDeepLearningVersions(Path path) throws IOException {
 		if (!path.toFile().isDirectory() && !path.toFile().mkdirs())
@@ -71,7 +76,8 @@ public class InstalledDeepLearningVersions {
 	 * Constructor that will try to find the DL engines in the folder called {@link #ENGINES_FOLDER_NAME} 
 	 * ("engines") inside the software directory
 	 * @return an object to find the installed DL frameworks in the software
-	 * @throws IOException 
+	 * @throws IOException if the path is not a directory or if it is impossible to create 
+	 * 	 a dir in that path
 	 */
 	public static InstalledDeepLearningVersions buildEnginesFinder() throws IOException {
 		return new InstalledDeepLearningVersions(Paths.get(ENGINES_FOLDER_NAME).toAbsolutePath());
@@ -82,7 +88,8 @@ public class InstalledDeepLearningVersions {
 	 * @param enginesDirectory
 	 * 	path to the folder where the installed engines should be
 	 * @return an object to find the installed DL frameworks in the software
-	 * @throws IOException 
+	 * @throws IOException if the path is not a directory or if it is impossible to create 
+	 * 	 a dir in that path
 	 */
 	public static InstalledDeepLearningVersions buildEnginesFinder(String enginesDirectory) throws IOException {
 		return new InstalledDeepLearningVersions(Paths.get(enginesDirectory));
@@ -161,6 +168,10 @@ public class InstalledDeepLearningVersions {
      * Creates a list containing only downloaded Deep Learning versions compatible with
      * the current system and corresponding to the engine of interest
      * 
+     * @param engine
+     * 	name of the engine as defined with the engine tag at:
+     * 	https://raw.githubusercontent.com/bioimage-io/model-runner-java/main/src/main/resources/availableDLVersions.json
+     * 	for example tensorflow, pytorch, onnx
      * @return The available versions instance.
      */
     public List<DeepLearningVersion> getDownloadedCompatibleEnginesForEngine(String engine) {
