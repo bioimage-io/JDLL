@@ -115,7 +115,7 @@ public class AvailableEngines
     }
     
     /**
-     * Return a list of all the Python versions compatible to the host system
+     * Return a list of all the engine versions in Python compatible to the host system
      * 
      * @return the list of deep learning versions for the given engine
      */

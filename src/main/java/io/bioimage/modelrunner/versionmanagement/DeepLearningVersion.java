@@ -433,8 +433,11 @@ public class DeepLearningVersion
         return true;
     }
 
+    /**
+     * Return the directory where all the engines are installed
+     */
 	public void setEnginesDir() {
-		allEnginesDir = InstalledEngines.getInstalledVersionsDir();
+		allEnginesDir = InstalledEngines.getEnginesDir();
 	}
 
 }
