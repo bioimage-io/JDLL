@@ -49,6 +49,7 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
 import io.bioimage.modelrunner.exceptions.LoadEngineException;
+import io.bioimage.modelrunner.versionmanagement.DeepLearningVersion;
 
 /**
  * @author Carlos Garcia Lopez de Haro
@@ -164,16 +165,19 @@ public class EngineLoader extends ClassLoader
 	 *             if there is an error creating an URL
 	 * @throws MalformedURLException
 	 *             if theURL is incorrect
-	 * @throws InvocationTargetException
-	 * @throws IllegalArgumentException
-	 * @throws IllegalAccessException
-	 * @throws SecurityException
-	 * @throws NoSuchMethodException
-	 * @throws ClassNotFoundException
+	 * @throws InvocationTargetException if there is 
+	 * 	any error creating the instance of the engine with reflect
+	 * @throws IllegalArgumentException if there is any error in any argument
+	 * @throws IllegalAccessException if the class to load cannot be accessed
+	 * @throws SecurityException if there is any security exception loading the class with reflect
+	 * @throws NoSuchMethodException if the wanted method to load is not found
+	 * @throws ClassNotFoundException if the class that wants to be loaded is not found
+	 * @throws Exception if there is any other possible exception, this one should not happen
 	 */
 	private void loadClasses()
 			throws URISyntaxException, MalformedURLException, ClassNotFoundException, NoSuchMethodException,
-			SecurityException, IllegalAccessException, IllegalArgumentException, InvocationTargetException
+			SecurityException, IllegalAccessException, IllegalArgumentException, InvocationTargetException,
+			Exception
 	{
 		// If the ClassLoader was already created, use it
 		if ( loadedEngines.get( versionedEngine ) != null )
@@ -184,9 +188,10 @@ public class EngineLoader extends ClassLoader
 		ArrayList<URL> urlList = new ArrayList<URL>();
 		if ( !(new File( this.enginePath ).isDirectory()) )
 			throw new IllegalArgumentException("Engine directory does not exist: " + enginePath);
+		DeepLearningVersion dlv = DeepLearningVersion.fromFile(new File( this.enginePath ));
 		for ( File ff : new File( this.enginePath ).listFiles() )
 		{
-			if (!ff.getName().endsWith(".jar"))
+			if (!ff.getName().endsWith(".jar") || !dlv.doesJarBelongToEngine(ff.getAbsolutePath()))
 					continue;
 			urlList.add(ff.toURI().toURL());
 		}

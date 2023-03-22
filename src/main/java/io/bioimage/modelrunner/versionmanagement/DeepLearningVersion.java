@@ -152,6 +152,21 @@ public class DeepLearningVersion
     }
     
     /**
+     * Check whether the provided file path corresponds to a JAR that can be found
+     * in the particular DL engine
+     * @param jarDir
+     * 	path to the JAR of interest
+     * @return true if it belongs or false otherwise
+     */
+    public boolean doesJarBelongToEngine(String jarDir) {
+    	File jarFile = new File(jarDir);
+    	if (!jarFile.isFile())
+    		return false;
+    	String jarName = jarFile.getName();
+    	return this.jars.stream().anyMatch(i -> i.contains(jarName));
+    }
+    
+    /**
      * Creates the name that the folder containing this Deep Learning version is going to have
      * @return the name of the folder containing the JARs 
      */
