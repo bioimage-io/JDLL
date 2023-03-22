@@ -1,6 +1,5 @@
 package io.bioimage.modelrunner.versionmanagement;
 
-import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -10,32 +9,13 @@ import java.util.stream.Collectors;
 import io.bioimage.modelrunner.engine.EngineInfo;
 
 /**
- * Class that contains methods for version management. It has methods that identify the closest
+ * Class that contains methods to manipulate and compare the version Strings.
+ * It has methods that identify the closest
  * version or identify if two versions are equal for example.
  * @author Carlos Garcia Lopez de Haro
  *
  */
-public class DownloadedEngines {
-    
-    /**
-     * Returns all the available Deep LEarning versions from different frameworks.
-     * 
-     * @param enginesPath
-     * 	path to where the engines are stored
-     * @return List of available versions
-     */
-    public static List<String> getAvailableDeepLearningVersions(String enginesPath) {
-    	File enginesDir = new File(enginesPath);
-    	List<String> downloadedVersions = new ArrayList<String>();
-    	if (!enginesDir.isDirectory()) {
-    		// Create the directory for engines
-    		enginesDir.mkdir();
-    		return downloadedVersions;
-    	}
-    	// GEt all the supported versions by the Deep Learning Manager
-        List<String> availableVersions = AvailableEngines.getAvailableCompatiblePythonVersions();
-        return availableVersions;
-    }		
+public class VersionStringUtils {	
 
 	/** TODO clean a little bit the code
 	 * Return the most convenient engine version to load the model trained with
@@ -132,7 +112,7 @@ public class DownloadedEngines {
 	 */
 	private static List<Integer> listOfStringVersionsIntoListOfIntVersions(List<String> strs){
 		List<Integer> intVersionList = strs.stream()
-				.map(DownloadedEngines::convertVersionIntoInteger)
+				.map(VersionStringUtils::convertVersionIntoInteger)
 				.collect(Collectors.toList());
 		return intVersionList;
 	}
