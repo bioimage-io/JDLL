@@ -715,7 +715,7 @@ public class EngineInfo
 	 * @return the most compatible engine with the one defined, if it exists
 	 * @throws IOException if no engine of the same DL framework is found
 	 */
-	public EngineInfo getEngineInfoOfTheClosestEngineVersion() throws IOException {
+	public EngineInfo getEngineInfoOfTheClosestInstalledEngineVersion() throws IOException {
 		String newV = InstalledEngines.getMostCompatibleVersionForEngine(jarsDirectory, engine, version);
 		String msg = "There are no installed engines of the DL framework: "  + engine + version.split("\\.")[0];
 		if (newV == null)
