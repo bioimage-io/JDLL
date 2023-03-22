@@ -67,11 +67,29 @@ import net.imglib2.type.numeric.integer.UnsignedShortType;
 import net.imglib2.type.numeric.real.DoubleType;
 import net.imglib2.type.numeric.real.FloatType;
 
+/**
+ * Class to convert numpy arrays stored in npy files into ImgLib2 images
+ * @author Carlos Garcia Lopez de Haro
+ *
+ */
 public class DecodeNumpy {
 
+	/**
+	 * Size of the chunks used to read the bytes 
+	 */
     private static final int BUFFER_SIZE = 1024 * 1024;
+    /**
+     * Numpy file extension
+     */
     private static final String NUMPY_EXTENSION = ".npy";
+    /**
+     * Prefix used to identify every numpy array
+     */
     private static final byte[] MAGIC_PREFIX = {(byte) 0x93, 'N', 'U', 'M', 'P', 'Y'};
+    /**
+     * Map containing the relation between the datatypes used by numpy and their 
+     * explicit name
+     */
     private static final Map<String, Integer> DATA_TYPES_MAP = new HashMap<>();
 
     static
@@ -89,15 +107,35 @@ public class DecodeNumpy {
         DATA_TYPES_MAP.put("float64", 8);
     }
 
+    /**
+     * PAttern that matches the metadata description of a numpy file
+     */
     private static final Pattern HEADER_PATTERN =
             Pattern.compile("\\{'descr': '(.+)', 'fortran_order': False, 'shape': \\((.*)\\),");
 	
-
+    /**
+     * Main method to test the ImgLib2 creation
+     * @param args
+     * 	no args are needed
+     * @throws FileNotFoundException if the numpy array file is not found
+     * @throws IOException if there is any error opening the files
+     */
     public static void main(String[] args) throws FileNotFoundException, IOException {
     	String npy = "C:\\Users\\angel\\OneDrive\\Documentos\\pasteur\\git\\deep-icy\\models\\HPA Bestfitting InceptionV3_13102022_173532\\test_input.npy";
     	RandomAccessibleInterval<?> aa = retrieveImgLib2FromNpy(npy);
     }
     
+    /**
+     * Method that retreives an ImgLib2 image from a numpy array stored in the file specified by 
+     * the argument
+     * @param <T>
+     * 	possible data types that the ImgLib2 image can have
+     * @param path
+     * 	path to the file where the .npy file containing the numpy array is stored
+     * @return an ImgLib2 image with the same datatype, shape and data that the numpy array
+     * @throws FileNotFoundException if the numpy file is not found
+     * @throws IOException if there is any error opening the numpy file
+     */
     public static < T extends RealType< T > & NativeType< T > > 
 								RandomAccessibleInterval<T> retrieveImgLib2FromNpy(String path) throws FileNotFoundException, IOException{
     	File npyFile = new File(path);
@@ -108,7 +146,17 @@ public class DecodeNumpy {
     		return decodeNumpy(targetStream);
     	}
     }
-
+    
+    /**
+     * MEthod to decode the bytes corresponding to a numpy array stored in the numpy file
+     * @param <T>
+     * 	possible data types that the ImgLib2 image can have
+     * @param is
+     * 	{@link InputStream} that results after reading the numpy file. Contains the byte info of the
+     * 	numpy array
+     * @return an ImgLib2 image with the same datatype, shape and data that the numpy array
+     * @throws IOException if there is any error reading the {@link InputStream}
+     */
     private static < T extends RealType< T > & NativeType< T > > 
     				RandomAccessibleInterval<T> decodeNumpy(InputStream is) throws IOException {
         DataInputStream dis;
@@ -176,6 +224,14 @@ public class DecodeNumpy {
         return build(data, byteOrder, dtype, shape);
     }
     
+    /**
+     * Get a String representing a datatype explicitly from the String that numpy uses to
+     * name datatypes
+     * @param npDtype
+     * 	datatype defined per Numpy
+     * @return a String defining the datatype in a explicit manner
+     * @throws IllegalArgumentException if the String provided is not a numpy datatype
+     */
     public static String getDataType(String npDtype) throws IllegalArgumentException {
     	if (npDtype.startsWith(">") || npDtype.startsWith("<"))
     		npDtype = npDtype.substring(1);
@@ -214,6 +270,16 @@ public class DecodeNumpy {
     				+ "supported at the moment.");
     }
 
+    /**
+     * Read the data from the input stream into a byte buffer
+     * @param dis
+     * 	the {@link DataInputStream} from where the data is read from
+     * @param data
+     * 	{@link ByteBuffer} where the info is copied to
+     * @param len
+     * 	remaining number of bytes in the {@link DataInputStream}
+     * @throws IOException if there is any error reading the {@link DataInputStream}
+     */
     private static void readData(DataInputStream dis, ByteBuffer data, int len) throws IOException {
         if (len > 0) {
             byte[] buf = new byte[BUFFER_SIZE];
@@ -295,7 +361,7 @@ public class DecodeNumpy {
 	 	return outputImg;
 	}
 
-    /** TODO check BigEndian LittleEndian
+    /** 
      * Builds a {@link Img} from a unsigned byte-typed {@code Tensor}.
      * 
      * @param tensor
