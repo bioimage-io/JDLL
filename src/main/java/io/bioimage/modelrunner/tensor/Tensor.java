@@ -182,7 +182,9 @@ public final class Tensor< T extends RealType< T > & NativeType< T > >
 	 * allocated during its creation
 	 *
 	 * @param <T>
-	 * 			  the possible ImgLib2 datatypes that the backend ImgLib2 img can have
+	 * 			  the possible ImgLib2 datatypes that the input backend ImgLib2 img can have
+	 * @param <R>
+	 * 			  the possible ImgLib2 datatypes that the output backend ImgLib2 img can have
 	 * @param tensorName
 	 *            name of the tensor as defined by the model
 	 * @param axes

@@ -298,14 +298,16 @@ public class DecodeNumpy {
     /**
      * Creates a {@link Img} from a given {@link ByteBuffer} and an array with its dimensions order.
      * 
+     * @param <T>
+     * 		  possible ImgLib2 dataypes that the img can be
      * @param buf
      *        The buffer data is read from.
-		 * @param byteOrder
-		 *        Endianness of the buffer data.
-		 * @param dtype
-		 *        NumPy dtype of the data.
-		 * @param shape
-		 *        NumPy shape of the data.
+	 * @param byteOrder
+	 *        Endianness of the buffer data.
+	 * @param dtype
+	 *        NumPy dtype of the data.
+	 * @param shape
+	 *        NumPy shape of the data.
      * @return The Img built from the tensor.
      * @throws IllegalArgumentException
      *         If the tensor type is not supported.

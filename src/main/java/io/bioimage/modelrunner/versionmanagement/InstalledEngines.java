@@ -283,7 +283,6 @@ public class InstalledEngines {
 	 * @param version
 	 * 	the version of interest
 	 * @return the closest version to the version provided for the engine provided
-	 * @throws IOException if engines directory is not found
 	 */
     public String getMostCompatibleVersionForEngine(String engine, String version) {
 		List<String> downloadedVersions = getDownloadedCompatiblePythonVersionsForEngine(engine);
@@ -303,7 +302,6 @@ public class InstalledEngines {
 	 * @param version
 	 * 	the version of interest
 	 * @return the closest version to the version provided for the engine provided
-	 * @throws IOException if engines directory is not found
 	 */
     public static String getMostCompatibleVersionForEngine(String enginesDir, String engine, String version) {
 		try {
