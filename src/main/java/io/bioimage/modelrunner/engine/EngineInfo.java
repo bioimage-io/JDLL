@@ -733,9 +733,7 @@ public class EngineInfo
 		String msg = "There are no installed engines of the DL framework: "  + engine + version.split("\\.")[0];
 		if (newV == null)
 			throw new IOException(msg);
-		EngineInfo newInfo = EngineInfo.defineDLEngine(engine, newV, jarsDirectory);
-		newInfo.cpu = this.isCPU();
-		newInfo.gpu = this.isGPU();
+		EngineInfo newInfo = EngineInfo.defineDLEngine(engine, newV, jarsDirectory, this.isCPU(), this.isGPU());
 		if (!newInfo.isEngineInstalled())
 			newInfo.gpu = !this.gpu;
 		if (!newInfo.isEngineInstalled())
