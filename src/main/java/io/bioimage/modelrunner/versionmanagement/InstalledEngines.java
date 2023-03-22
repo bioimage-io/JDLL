@@ -143,25 +143,9 @@ public class InstalledEngines {
      */
     public List<String> getDownloadedCompatiblePythonVersions() {
         String currentPlatform = new PlatformDetection().toString();
-    	List<String> versions = Arrays.stream(this.getEnginePathsAsFiles())
-    			.map(t -> {
-					try {
-						return DeepLearningVersion.fromFile(t);
-					} catch (Exception e) {
-						// TODO print stack trace??
-						e.printStackTrace();
-						System.out.println("");
-						System.out.println("Folder '" + t.getName() + "' does not contain a supported Deep Learning engine version");
-						return null;
-					}
-				})
-				.filter(v -> v != null 
-					&& v.checkMissingJars().size() == 0 
-					&& v.getOs().equals(currentPlatform)
-					)
+        return loadDownloaded().stream().filter(v -> v.getOs().equals(currentPlatform))
                 .map(DeepLearningVersion::getPythonVersion)
 				.collect(Collectors.toList());
-        return versions;
     }
     
     /**
@@ -179,21 +163,9 @@ public class InstalledEngines {
     	if (!engineExists) {
     		return new ArrayList<DeepLearningVersion>();
     	}
-        String currentPlatform = new PlatformDetection().toString();
-        List<DeepLearningVersion> versions = Arrays.stream(this.getEnginePathsAsFiles())
-    			.map(t -> {
-					try {
-						return DeepLearningVersion.fromFile(t);
-					} catch (Exception e) {
-						return null;
-					}
-				})
-				.filter(v -> v != null && v.checkMissingJars().size() == 0 
-					&& v.getOs().equals(currentPlatform) 
-					&& AvailableEngines.getEngineKeys().get(engine).toLowerCase().contains(v.getEngine().toLowerCase())
-				)
-                .collect(Collectors.toList());
-        return versions;
+        return loadDownloadedCompatible().stream()
+	        .filter(v -> AvailableEngines.getEngineKeys().get(engine).toLowerCase().contains(v.getEngine().toLowerCase()))
+			.collect(Collectors.toList());
     }
 
     /**
@@ -218,27 +190,8 @@ public class InstalledEngines {
      * @return the list of deep learning versions for the given engine
      */
     public List<String> getDownloadedCompatiblePythonVersionsForEngine(String engine) {
-    	boolean engineExists = AvailableEngines.getEngineKeys().keySet().stream().anyMatch(i -> i.equals(engine));
-    	if (!engineExists) {
-    		return new ArrayList<String>();
-    	}
-        String currentPlatform = new PlatformDetection().toString();
-    	List<String> versions = Arrays.stream(this.getEnginePathsAsFiles())
-    			.map(t -> {
-					try {
-						return DeepLearningVersion.fromFile(t);
-					} catch (Exception e) {
-						return null;
-					}
-				})
-				.filter(v -> v != null 
-						&& v.checkMissingJars().size() == 0 
-						&& v.getOs().equals(currentPlatform) 
-						&& AvailableEngines.getEngineKeys().get(engine).toLowerCase().contains(v.getEngine().toLowerCase())
-						)
-                .map(DeepLearningVersion::getPythonVersion)
-				.collect(Collectors.toList());
-        return versions;
+    	return getDownloadedCompatibleEnginesForEngine(engine).stream()
+    			.map(DeepLearningVersion::getPythonVersion).collect(Collectors.toList());
     }
     
     public static String getInstalledVersionsDir() {
