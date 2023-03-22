@@ -163,12 +163,11 @@ public class InstalledEngines {
      * @return The available versions instance.
      */
     public List<DeepLearningVersion> getDownloadedCompatibleEnginesForEngine(String engine) {
-    	boolean engineExists = AvailableEngines.getEngineKeys().keySet().stream().anyMatch(i -> i.equals(engine));
-    	if (!engineExists) {
+    	String searchEngine = AvailableEngines.getSupportedVersionsEngineTag(engine);
+    	if (searchEngine == null)
     		return new ArrayList<DeepLearningVersion>();
-    	}
         return loadDownloadedCompatible().stream()
-	        .filter(v -> AvailableEngines.getEngineKeys().get(engine).toLowerCase().contains(v.getEngine().toLowerCase()))
+	        .filter(v -> searchEngine.contains(v.getEngine().toLowerCase()))
 			.collect(Collectors.toList());
     }	
     

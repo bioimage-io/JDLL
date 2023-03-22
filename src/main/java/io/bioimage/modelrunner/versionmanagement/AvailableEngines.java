@@ -37,7 +37,6 @@ import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.stream.Collectors;
 
 import io.bioimage.modelrunner.engine.EngineInfo;
@@ -139,9 +138,9 @@ public class AvailableEngines
      * @return The available versions instance.
      */
     public static AvailableEngines getAvailableVersionsForEngine(String engine) {
-    	boolean engineExists = engineKeys.keySet().stream().anyMatch(i -> i.equals(engine));
     	AvailableEngines availableVersions = new AvailableEngines();
-    	if (!engineExists) {
+    	String searchEngine = AvailableEngines.getSupportedVersionsEngineTag(engine);
+    	if (searchEngine == null) {
     		availableVersions.setVersions(new ArrayList<DeepLearningVersion>());
     		return availableVersions;
     	}
@@ -149,7 +148,7 @@ public class AvailableEngines
         String currentPlatform = new PlatformDetection().toString();
         availableVersions.setVersions(availableVersions.getVersions().stream()
                 .filter(v -> v.getOs().equals(currentPlatform) 
-                		&& engineKeys.get(engine).toLowerCase().contains(v.getEngine().toLowerCase())
+                		&& searchEngine.equals(v.getEngine())
                 		)
                 .collect(Collectors.toList()));
         return availableVersions;
@@ -164,14 +163,13 @@ public class AvailableEngines
      * @return the list of deep learning versions for the given engine
      */
     public static List<String> getAvailableCompatiblePythonVersionsForEngine(String engine) {
-    	boolean engineExists = engineKeys.keySet().stream().anyMatch(i -> i.equals(engine));
-    	if (!engineExists) {
+    	String searchEngine = AvailableEngines.getSupportedVersionsEngineTag(engine);
+    	if (searchEngine == null)
     		return new ArrayList<String>();
-    	}
     	AvailableEngines availableVersions = load();
         String currentPlatform = new PlatformDetection().toString();
         List<String> availablePythonVersions = availableVersions.getVersions().stream()
-                .filter(v -> v.getOs().equals(currentPlatform) && engineKeys.get(engine).toLowerCase().contains(v.getEngine().toLowerCase()))
+                .filter(v -> v.getOs().equals(currentPlatform) && searchEngine.equals(v.getEngine()))
                 .map(DeepLearningVersion::getPythonVersion)
                 .collect(Collectors.toList());
         return availablePythonVersions;
@@ -227,11 +225,10 @@ public class AvailableEngines
      * @return true if the engine exists and false otherwise
      */
     public static boolean isEngineSupported(String framework, String version, boolean cpu, boolean gpu) {
-    	Map<String, String> enginesMap = getEngineKeys().entrySet().stream()
-    			.collect(Collectors.toMap(Map.Entry::getValue, Map.Entry::getKey));
-    	if (enginesMap.get(framework) != null)
-			framework = AvailableEngines.getEngineKeys().get(framework);
-    	DeepLearningVersion engine = AvailableEngines.getAvailableVersionsForEngine(framework).getVersions()
+    	String searchEngine = AvailableEngines.getSupportedVersionsEngineTag(framework);
+    	if (searchEngine == null)
+    		return false;
+    	DeepLearningVersion engine = AvailableEngines.getAvailableVersionsForEngine(searchEngine).getVersions()
 				.stream().filter(v -> v.getPythonVersion().equals(version) 
 						&& v.getOs().equals(new PlatformDetection().toString())
 						&& v.getCPU() == cpu
@@ -239,6 +236,29 @@ public class AvailableEngines
 		if (engine == null) 
 			return false;
 		return true;
+    }
+    
+    /**
+     * MEthod to get the correct engine tag to parse the engine files.
+     * If it receives the engine name given by the BioImage.io (torchscript, tensorflow_saved_model...)
+     * it produces the names specified in the resources files (pytorch, tensorflow...).
+     * If it receives the later it does nothing 
+     * @param engine
+     * 	an engine tag
+     * @return the correct engine tag format to parse the files at resources
+     */
+    protected static String getSupportedVersionsEngineTag(String engine) {
+    	boolean engineExists = AvailableEngines.getEngineKeys().keySet().stream().anyMatch(i -> i.equals(engine));
+    	boolean engineExists2 = AvailableEngines.getEngineKeys().entrySet()
+    			.stream().anyMatch(i -> i.getValue().equals(engine));
+    	final String searchEngine;
+    	if (!engineExists && !engineExists2) 
+    		return null;
+    	else if (!engineExists2)
+    		searchEngine = AvailableEngines.getEngineKeys().get(engine).toLowerCase();
+    	else 
+    		searchEngine = engine;
+    	return searchEngine;
     }
 
 }
