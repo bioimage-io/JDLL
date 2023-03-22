@@ -48,7 +48,7 @@ import io.bioimage.modelrunner.system.PlatformDetection;
  * @author Carlos Garcia Lopez de Haro
  *
  */
-public class InstalledDeepLearningVersions {
+public class InstalledEngines {
 	/**
 	 * Path to the engines folder
 	 */
@@ -65,7 +65,7 @@ public class InstalledDeepLearningVersions {
 	 * @throws IOException if the path is not a directory or if it is impossible to create 
 	 * 	 a dir in that path
 	 */
-	private InstalledDeepLearningVersions(Path path) throws IOException {
+	private InstalledEngines(Path path) throws IOException {
 		if (!path.toFile().isDirectory() && !path.toFile().mkdirs())
 			throw new IOException("Unable to find or create Deep Learning engines "
 					+ "directory: " + path.toString());
@@ -79,8 +79,8 @@ public class InstalledDeepLearningVersions {
 	 * @throws IOException if the path is not a directory or if it is impossible to create 
 	 * 	 a dir in that path
 	 */
-	public static InstalledDeepLearningVersions buildEnginesFinder() throws IOException {
-		return new InstalledDeepLearningVersions(Paths.get(ENGINES_FOLDER_NAME).toAbsolutePath());
+	public static InstalledEngines buildEnginesFinder() throws IOException {
+		return new InstalledEngines(Paths.get(ENGINES_FOLDER_NAME).toAbsolutePath());
 	}
 	
 	/**
@@ -91,8 +91,8 @@ public class InstalledDeepLearningVersions {
 	 * @throws IOException if the path is not a directory or if it is impossible to create 
 	 * 	 a dir in that path
 	 */
-	public static InstalledDeepLearningVersions buildEnginesFinder(String enginesDirectory) throws IOException {
-		return new InstalledDeepLearningVersions(Paths.get(enginesDirectory));
+	public static InstalledEngines buildEnginesFinder(String enginesDirectory) throws IOException {
+		return new InstalledEngines(Paths.get(enginesDirectory));
 	}
     
     /**
@@ -175,7 +175,7 @@ public class InstalledDeepLearningVersions {
      * @return The available versions instance.
      */
     public List<DeepLearningVersion> getDownloadedCompatibleEnginesForEngine(String engine) {
-    	boolean engineExists = AvailableDeepLearningVersions.getEngineKeys().keySet().stream().anyMatch(i -> i.equals(engine));
+    	boolean engineExists = AvailableEngines.getEngineKeys().keySet().stream().anyMatch(i -> i.equals(engine));
     	if (!engineExists) {
     		return new ArrayList<DeepLearningVersion>();
     	}
@@ -190,7 +190,7 @@ public class InstalledDeepLearningVersions {
 				})
 				.filter(v -> v != null && v.checkMissingJars().size() == 0 
 					&& v.getOs().equals(currentPlatform) 
-					&& AvailableDeepLearningVersions.getEngineKeys().get(engine).toLowerCase().contains(v.getEngine().toLowerCase())
+					&& AvailableEngines.getEngineKeys().get(engine).toLowerCase().contains(v.getEngine().toLowerCase())
 				)
                 .collect(Collectors.toList());
         return versions;
@@ -218,7 +218,7 @@ public class InstalledDeepLearningVersions {
      * @return the list of deep learning versions for the given engine
      */
     public List<String> getDownloadedCompatiblePythonVersionsForEngine(String engine) {
-    	boolean engineExists = AvailableDeepLearningVersions.getEngineKeys().keySet().stream().anyMatch(i -> i.equals(engine));
+    	boolean engineExists = AvailableEngines.getEngineKeys().keySet().stream().anyMatch(i -> i.equals(engine));
     	if (!engineExists) {
     		return new ArrayList<String>();
     	}
@@ -234,7 +234,7 @@ public class InstalledDeepLearningVersions {
 				.filter(v -> v != null 
 						&& v.checkMissingJars().size() == 0 
 						&& v.getOs().equals(currentPlatform) 
-						&& AvailableDeepLearningVersions.getEngineKeys().get(engine).toLowerCase().contains(v.getEngine().toLowerCase())
+						&& AvailableEngines.getEngineKeys().get(engine).toLowerCase().contains(v.getEngine().toLowerCase())
 						)
                 .map(DeepLearningVersion::getPythonVersion)
 				.collect(Collectors.toList());

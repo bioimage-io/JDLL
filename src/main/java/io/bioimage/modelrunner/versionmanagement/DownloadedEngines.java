@@ -15,7 +15,7 @@ import io.bioimage.modelrunner.engine.EngineInfo;
  * @author Carlos Garcia Lopez de Haro
  *
  */
-public class VersionManagement {
+public class DownloadedEngines {
     
     /**
      * Returns all the available Deep LEarning versions from different frameworks.
@@ -33,7 +33,7 @@ public class VersionManagement {
     		return downloadedVersions;
     	}
     	// GEt all the supported versions by the Deep Learning Manager
-        List<String> availableVersions = AvailableDeepLearningVersions.getAvailableCompatiblePythonVersions();
+        List<String> availableVersions = AvailableEngines.getAvailableCompatiblePythonVersions();
         return availableVersions;
     }		
 
@@ -132,7 +132,7 @@ public class VersionManagement {
 	 */
 	private static List<Integer> listOfStringVersionsIntoListOfIntVersions(List<String> strs){
 		List<Integer> intVersionList = strs.stream()
-				.map(VersionManagement::convertVersionIntoInteger)
+				.map(DownloadedEngines::convertVersionIntoInteger)
 				.collect(Collectors.toList());
 		return intVersionList;
 	}

@@ -51,7 +51,7 @@ import com.google.gson.Gson;
  * 
  * @author Daniel Felipe Gonzalez Obando and Carlos Garcia Lopez de Haro
  */
-public class AvailableDeepLearningVersions
+public class AvailableEngines
 {
 	/**
 	 * HashMap that translates the keys used to name Deep Learning engines
@@ -81,9 +81,9 @@ public class AvailableDeepLearningVersions
      * 
      * @return The available versions instance.
      */
-    public static AvailableDeepLearningVersions loadCompatibleOnly()
+    public static AvailableEngines loadCompatibleOnly()
     {
-        AvailableDeepLearningVersions availableVersions = load();
+        AvailableEngines availableVersions = load();
         String currentPlatform = new PlatformDetection().toString();
         availableVersions.setVersions(availableVersions.getVersions().stream()
                 .filter(v -> v.getOs().equals(currentPlatform)).collect(Collectors.toList()));
@@ -120,7 +120,7 @@ public class AvailableDeepLearningVersions
      * @return the list of deep learning versions for the given engine
      */
     public static List<String> getAvailableCompatiblePythonVersions() {
-        AvailableDeepLearningVersions availableVersions = load();
+        AvailableEngines availableVersions = load();
         String currentPlatform = new PlatformDetection().toString();
         List<String> availablePythonVersions = availableVersions.getVersions().stream()
 				                .filter(v -> v.getOs().equals(currentPlatform))
@@ -138,9 +138,9 @@ public class AvailableDeepLearningVersions
      * 	https://github.com/bioimage-io/spec-bioimage-io/blob/gh-pages/weight_formats_spec_0_4.md
      * @return The available versions instance.
      */
-    public static AvailableDeepLearningVersions getAvailableVersionsForEngine(String engine) {
+    public static AvailableEngines getAvailableVersionsForEngine(String engine) {
     	boolean engineExists = engineKeys.keySet().stream().anyMatch(i -> i.equals(engine));
-    	AvailableDeepLearningVersions availableVersions = new AvailableDeepLearningVersions();
+    	AvailableEngines availableVersions = new AvailableEngines();
     	if (!engineExists) {
     		availableVersions.setVersions(new ArrayList<DeepLearningVersion>());
     		return availableVersions;
@@ -168,7 +168,7 @@ public class AvailableDeepLearningVersions
     	if (!engineExists) {
     		return new ArrayList<String>();
     	}
-    	AvailableDeepLearningVersions availableVersions = load();
+    	AvailableEngines availableVersions = load();
         String currentPlatform = new PlatformDetection().toString();
         List<String> availablePythonVersions = availableVersions.getVersions().stream()
                 .filter(v -> v.getOs().equals(currentPlatform) && engineKeys.get(engine).toLowerCase().contains(v.getEngine().toLowerCase()))
@@ -182,12 +182,12 @@ public class AvailableDeepLearningVersions
      * 
      * @return The instance of all available versions.
      */
-    public static AvailableDeepLearningVersions load()
+    public static AvailableEngines load()
     {
         BufferedReader br = new BufferedReader(new InputStreamReader(
-                AvailableDeepLearningVersions.class.getClassLoader().getResourceAsStream("availableDLVersions.json")));
+                AvailableEngines.class.getClassLoader().getResourceAsStream("availableDLVersions.json")));
         Gson g = new Gson();
-        AvailableDeepLearningVersions availableVersions = g.fromJson(br, AvailableDeepLearningVersions.class);
+        AvailableEngines availableVersions = g.fromJson(br, AvailableEngines.class);
         return availableVersions;
     }
 
@@ -230,8 +230,8 @@ public class AvailableDeepLearningVersions
     	Map<String, String> enginesMap = getEngineKeys().entrySet().stream()
     			.collect(Collectors.toMap(Map.Entry::getValue, Map.Entry::getKey));
     	if (enginesMap.get(framework) != null)
-			framework = AvailableDeepLearningVersions.getEngineKeys().get(framework);
-    	DeepLearningVersion engine = AvailableDeepLearningVersions.getAvailableVersionsForEngine(framework).getVersions()
+			framework = AvailableEngines.getEngineKeys().get(framework);
+    	DeepLearningVersion engine = AvailableEngines.getAvailableVersionsForEngine(framework).getVersions()
 				.stream().filter(v -> v.getPythonVersion().equals(version) 
 						&& v.getOs().equals(new PlatformDetection().toString())
 						&& v.getCPU() == cpu

@@ -113,7 +113,7 @@ public class DeepLearningVersion
      * @throws Exception if the version does not coincide with any of the supported versions
      */
     public void checkSupportedAndSetJars() throws Exception {
-    	AvailableDeepLearningVersions availableVersions = AvailableDeepLearningVersions.load();
+    	AvailableEngines availableVersions = AvailableEngines.load();
         // To find the wanted version compare everything but the JAR files
     	List<DeepLearningVersion> versionsOfInterest = availableVersions.getVersions().stream()
         	.filter(v -> v.getEngine().toLowerCase().equals(getEngine().toLowerCase()) 
@@ -434,7 +434,7 @@ public class DeepLearningVersion
     }
 
 	public void setEnginesDir() {
-		allEnginesDir = InstalledDeepLearningVersions.getInstalledVersionsDir();
+		allEnginesDir = InstalledEngines.getInstalledVersionsDir();
 	}
 
 }
