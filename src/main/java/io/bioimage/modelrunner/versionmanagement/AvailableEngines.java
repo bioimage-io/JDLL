@@ -55,24 +55,49 @@ public class AvailableEngines
 	/**
 	 * HashMap that translates the keys used to name Deep Learning engines
 	 * in the rdf.yaml to the ones used by the Deep Learning manager
+	 * 
 	 */
-	private static HashMap<String, String> engineKeys;
+	private static HashMap<String, String> BIOIMAGEIO_TO_MODELRUNNER_KEYS_MAP;
 	static {
-		engineKeys = new HashMap<String, String>();
-		engineKeys.put(EngineInfo.getBioimageioPytorchKey(), EngineInfo.getPytorchKey());
-		engineKeys.put(EngineInfo.getBioimageioTfKey(), EngineInfo.getTensorflowKey());
-		engineKeys.put(EngineInfo.getBioimageioOnnxKey(), EngineInfo.getOnnxKey());
-		engineKeys.put(EngineInfo.getBioimageioKerasKey(), EngineInfo.getKerasKey());
+		BIOIMAGEIO_TO_MODELRUNNER_KEYS_MAP = new HashMap<String, String>();
+		BIOIMAGEIO_TO_MODELRUNNER_KEYS_MAP.put(EngineInfo.getBioimageioPytorchKey(), EngineInfo.getPytorchKey());
+		BIOIMAGEIO_TO_MODELRUNNER_KEYS_MAP.put(EngineInfo.getBioimageioTfKey(), EngineInfo.getTensorflowKey());
+		BIOIMAGEIO_TO_MODELRUNNER_KEYS_MAP.put(EngineInfo.getBioimageioOnnxKey(), EngineInfo.getOnnxKey());
+		BIOIMAGEIO_TO_MODELRUNNER_KEYS_MAP.put(EngineInfo.getBioimageioKerasKey(), EngineInfo.getKerasKey());
+	}
+	/**
+	 * HashMap that translates the keys used by the Deep Learning manager to the ones
+	 *  used to name Deep Learning engines in the rdf.yaml
+	 */
+	private static HashMap<String, String> MODELRUNNER_TO_BIOIMAGEIO_KEYS_MAP;
+	static {
+		MODELRUNNER_TO_BIOIMAGEIO_KEYS_MAP = new HashMap<String, String>();
+		MODELRUNNER_TO_BIOIMAGEIO_KEYS_MAP.put(EngineInfo.getPytorchKey(), EngineInfo.getBioimageioPytorchKey());
+		MODELRUNNER_TO_BIOIMAGEIO_KEYS_MAP.put(EngineInfo.getTensorflowKey(), EngineInfo.getBioimageioTfKey());
+		MODELRUNNER_TO_BIOIMAGEIO_KEYS_MAP.put(EngineInfo.getOnnxKey(), EngineInfo.getBioimageioOnnxKey());
+		MODELRUNNER_TO_BIOIMAGEIO_KEYS_MAP.put(EngineInfo.getKerasKey(), EngineInfo.getBioimageioKerasKey());
 	}
 	
 	/**
-	 * MEthod that returns all the possible names for each the DL engines existing at the moment
-	 * @return the map that associates the bioimage.io key for each weight with the weights of 
-	 * each of the frameworks as defined by the engine tag at:
+	 * 
+	 * @return that translates the keys used to name Deep Learning engines in the rdf.yaml to
+	 * the model runner keys defined in the resource files
+	 * https://raw.githubusercontent.com/bioimage-io/model-runner-java/main/src/main/resources/availableDLVersions.json
+	 * https://github.com/bioimage-io/model-runner-java/blob/main/src/main/resources/availableDLVersions.json
+	 */
+	public static HashMap<String, String> bioimageioToModelRunnerKeysMap(){
+		return BIOIMAGEIO_TO_MODELRUNNER_KEYS_MAP;
+	}
+
+	/**
+	 * 
+	 * @return the map that translates the keys used by the model runner library to the ones
+	 *  used to name Deep Learning engines in the rdf.yaml
+	 *  https://github.com/bioimage-io/model-runner-java/blob/main/src/main/resources/availableDLVersions.json
 	 * https://raw.githubusercontent.com/bioimage-io/model-runner-java/main/src/main/resources/availableDLVersions.json
 	 */
-	public static HashMap<String, String> getEngineKeys(){
-		return engineKeys;
+	public static HashMap<String, String> modelRunnerToBioimageioKeysMap(){
+		return MODELRUNNER_TO_BIOIMAGEIO_KEYS_MAP;
 	}
 	
     /**
@@ -247,15 +272,15 @@ public class AvailableEngines
      * 	an engine tag
      * @return the correct engine tag format to parse the files at resources
      */
-    protected static String getSupportedVersionsEngineTag(String engine) {
-    	boolean engineExists = AvailableEngines.getEngineKeys().keySet().stream().anyMatch(i -> i.equals(engine));
-    	boolean engineExists2 = AvailableEngines.getEngineKeys().entrySet()
+    public static String getSupportedVersionsEngineTag(String engine) {
+    	boolean engineExists = AvailableEngines.bioimageioToModelRunnerKeysMap().keySet().stream().anyMatch(i -> i.equals(engine));
+    	boolean engineExists2 = AvailableEngines.bioimageioToModelRunnerKeysMap().entrySet()
     			.stream().anyMatch(i -> i.getValue().equals(engine));
     	final String searchEngine;
     	if (!engineExists && !engineExists2) 
     		return null;
     	else if (!engineExists2)
-    		searchEngine = AvailableEngines.getEngineKeys().get(engine).toLowerCase();
+    		searchEngine = AvailableEngines.bioimageioToModelRunnerKeysMap().get(engine).toLowerCase();
     	else 
     		searchEngine = engine;
     	return searchEngine;

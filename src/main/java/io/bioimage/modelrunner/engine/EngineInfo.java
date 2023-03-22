@@ -37,6 +37,7 @@ import java.io.IOException;
 import java.util.Objects;
 
 import io.bioimage.modelrunner.system.PlatformDetection;
+import io.bioimage.modelrunner.versionmanagement.AvailableEngines;
 import io.bioimage.modelrunner.versionmanagement.DeepLearningVersion;
 import io.bioimage.modelrunner.versionmanagement.InstalledEngines;
 import io.bioimage.modelrunner.versionmanagement.SupportedVersions;
@@ -235,7 +236,9 @@ public class EngineInfo
 	 *         learning framework
 	 */
 	public static EngineInfo defineDLEngine( String engine, String version, String jarsDirectory )
-	{
+	{	
+		if (AvailableEngines.modelRunnerToBioimageioKeysMap().keySet().contains(engine))
+			engine = AvailableEngines.modelRunnerToBioimageioKeysMap().get(engine);
 		boolean cpu = true;
 		boolean gpu = false;
 		if ( engine.equals( PYTORCH_JAVA_BIOIMAGEIO_TAG ) )
@@ -245,7 +248,7 @@ public class EngineInfo
 		}
 		else
 		{
-			throw new IllegalArgumentException( "Please specify whether the engine can CPU or not "
+			throw new IllegalArgumentException( "Please specify whether the engine can be CPU or not "
 					+ "and whether it can use GPU or not. Default values only exist for " + PYTORCH_JAVA_BIOIMAGEIO_TAG
 					+ " engines." );
 		}
@@ -271,6 +274,8 @@ public class EngineInfo
 	 */
 	public static EngineInfo defineDLEngine( String engine, String version, String jarsDirectory, boolean gpu )
 	{
+		if (AvailableEngines.modelRunnerToBioimageioKeysMap().keySet().contains(engine))
+			engine = AvailableEngines.modelRunnerToBioimageioKeysMap().get(engine);
 		boolean cpu = true;
 		if ( engine.equals( TENSORFLOW_JAVA_BIOIMAGEIO_TAG )
 				|| engine.equals( ONNX_JAVA_BIOIMAGEIO_TAG ))
@@ -312,6 +317,8 @@ public class EngineInfo
 	public static EngineInfo defineDLEngine( String engine, String version, String jarsDirectory, boolean cpu,
 			boolean gpu )
 	{
+		if (AvailableEngines.modelRunnerToBioimageioKeysMap().keySet().contains(engine))
+			engine = AvailableEngines.modelRunnerToBioimageioKeysMap().get(engine);
 		EngineInfo engineInfo = new EngineInfo( engine, version, jarsDirectory );
 		engineInfo.supportCPU( cpu );
 		engineInfo.supportGPU( gpu );
@@ -332,6 +339,8 @@ public class EngineInfo
 	 */
 	public static EngineInfo defineDLEngine( String engine, String version )
 	{
+		if (AvailableEngines.modelRunnerToBioimageioKeysMap().keySet().contains(engine))
+			engine = AvailableEngines.modelRunnerToBioimageioKeysMap().get(engine);
 		Objects.requireNonNull( STATIC_JARS_DIRECTORY, "The Jars directory should not be null." );
 		return defineDLEngine( engine, version, STATIC_JARS_DIRECTORY );
 	}
@@ -352,6 +361,8 @@ public class EngineInfo
 	 */
 	public static EngineInfo defineDLEngine( String engine, String version, boolean gpu )
 	{
+		if (AvailableEngines.modelRunnerToBioimageioKeysMap().keySet().contains(engine))
+			engine = AvailableEngines.modelRunnerToBioimageioKeysMap().get(engine);
 		Objects.requireNonNull( STATIC_JARS_DIRECTORY, "The Jars directory should not be null." );
 		boolean cpu = true;
 		if ( engine.equals( TENSORFLOW_JAVA_BIOIMAGEIO_TAG )
@@ -390,6 +401,8 @@ public class EngineInfo
 	 */
 	public static EngineInfo defineDLEngine( String engine, String version, boolean cpu, boolean gpu )
 	{
+		if (AvailableEngines.modelRunnerToBioimageioKeysMap().keySet().contains(engine))
+			engine = AvailableEngines.modelRunnerToBioimageioKeysMap().get(engine);
 		Objects.requireNonNull( STATIC_JARS_DIRECTORY, "The Jars directory should not be null." );
 		EngineInfo engineInfo = new EngineInfo( engine, version, STATIC_JARS_DIRECTORY );
 		engineInfo.supportCPU( cpu );
