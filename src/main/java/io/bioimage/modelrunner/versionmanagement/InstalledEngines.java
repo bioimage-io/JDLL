@@ -271,4 +271,47 @@ public class InstalledEngines {
     				+ "The provided path is not  valid: " + dir);
     	ENGINES_FOLDER_NAME = dir;
     }
+
+	/**
+	 * For a specific Deep Learning framework, specified by the parameter
+	 * engine, and a specific version of interest, return the closest existing
+	 * version among the installed ones for the DL framework
+     * @param engine
+     * 	the engine of interest
+	 * 	Deep Learning framework (tensorflow, pytorch, onnx...) as defined with the engine tag 
+	 * at https://raw.githubusercontent.com/bioimage-io/model-runner-java/main/src/main/resources/availableDLVersions.json
+	 * @param version
+	 * 	the version of interest
+	 * @return the closest version to the version provided for the engine provided
+	 * @throws IOException if engines directory is not found
+	 */
+    public String getMostCompatibleVersionForEngine(String engine, String version) {
+		List<String> downloadedVersions = getDownloadedCompatiblePythonVersionsForEngine(engine);
+		return  VersionStringUtils.getMostCompatibleEngineVersion(version, downloadedVersions, engine);
+    }
+
+	/**
+	 * For a specific Deep Learning framework, specified by the parameter
+	 * engine, and a specific version of interest, return the closest existing
+	 * version among the installed ones for the DL framework
+     * @param enginesDir
+     * 	path to where the engines are stored
+     * @param engine
+     * 	the engine of interest
+	 * 	Deep Learning framework (tensorflow, pytorch, onnx...) as defined with the engine tag 
+	 * at https://raw.githubusercontent.com/bioimage-io/model-runner-java/main/src/main/resources/availableDLVersions.json
+	 * @param version
+	 * 	the version of interest
+	 * @return the closest version to the version provided for the engine provided
+	 * @throws IOException if engines directory is not found
+	 */
+    public static String getMostCompatibleVersionForEngine(String enginesDir, String engine, String version) {
+		try {
+			InstalledEngines installed = InstalledEngines.buildEnginesFinder(enginesDir);
+			List<String> downloadedVersions = installed.getDownloadedCompatiblePythonVersionsForEngine(engine);
+			return  VersionStringUtils.getMostCompatibleEngineVersion(version, downloadedVersions, engine);
+		} catch (IOException e) {
+			return null;
+		}
+    }
 }

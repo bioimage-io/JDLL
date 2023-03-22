@@ -33,9 +33,12 @@
 package io.bioimage.modelrunner.engine;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.Objects;
 
 import io.bioimage.modelrunner.system.PlatformDetection;
+import io.bioimage.modelrunner.versionmanagement.DeepLearningVersion;
+import io.bioimage.modelrunner.versionmanagement.InstalledEngines;
 import io.bioimage.modelrunner.versionmanagement.SupportedVersions;
 
 /**
@@ -401,23 +404,12 @@ public class EngineInfo
 	 * stored.
 	 * 
 	 * @return a String with all the characteristics of the Deep Learning engine
-	 * @throws Exception
-	 *             throws exception if the Deep Learning framework is not fully
-	 *             defined
 	 */
-	public String getDeepLearningVersionJarsDirectory() throws Exception
+	public String getDeepLearningVersionJarsDirectory()
 	{
-		if ( engine != null || version != null )
-		{
-			final String vv = this.engine + "-" + this.version + "-" + this.versionJava + "-" + this.os
+		final String vv = this.engine + "-" + this.version + "-" + this.versionJava + "-" + this.os
 					+ ( this.cpu ? "-cpu" : "" ) + ( this.gpu ? "-gpu" : "" );
-			return this.jarsDirectory + File.separator + vv;
-		}
-		else
-		{
-			// TODO create exception
-			throw new Exception();
-		}
+		return this.jarsDirectory + File.separator + vv;
 	}
 
 	/**
@@ -691,6 +683,51 @@ public class EngineInfo
 		if ( ind != -1 )
 			majorVersion = version.substring( 0, ind );
 		return majorVersion;
+	}
+	
+	/**
+	 * Method that checks if the Deep Learning engine specified by the {@link EngineInfo}
+	 * object is 
+	 * @return true if the engine is installed and false otherwise
+	 */
+	public boolean isEngineInstalled() {
+		File file = new File(this.getDeepLearningVersionJarsDirectory());
+		try {
+			boolean missingJars = (DeepLearningVersion.fromFile(file).checkMissingJars().size() == 0);
+			if (!missingJars)
+				return false;
+		} catch (Exception e) {
+			return false;
+		}
+		return true;
+	}
+	
+	/**
+	 * Find the installed engine that has a version closes to the one defined for this instance.
+	 * If this instance has version 1.4 and the only installed engine for the same DL framework
+	 * is 1.8, the result will be an engine info object with the same characteristics and different
+	 * engine version.
+	 * If the original engine was cpu gpu and there are cpu installed but not gpu, a cpu will be returned.
+	 * 
+	 * If there is an installed engine for the original EngineInfo instance, the same EngineInfo will
+	 * be returned
+	 * 
+	 * @return the most compatible engine with the one defined, if it exists
+	 * @throws IOException if no engine of the same DL framework is found
+	 */
+	public EngineInfo getEngineInfoOfTheClosestEngineVersion() throws IOException {
+		String newV = InstalledEngines.getMostCompatibleVersionForEngine(jarsDirectory, engine, version);
+		String msg = "There are no installed engines of the DL framework: "  + engine + version.split("\\.")[0];
+		if (newV == null)
+			throw new IOException(msg);
+		EngineInfo newInfo = EngineInfo.defineDLEngine(engine, newV, jarsDirectory);
+		newInfo.cpu = this.isCPU();
+		newInfo.gpu = this.isGPU();
+		if (!newInfo.isEngineInstalled())
+			newInfo.gpu = !this.gpu;
+		if (!newInfo.isEngineInstalled())
+			throw new IOException(msg);
+		return newInfo;
 	}
 
 	/**
