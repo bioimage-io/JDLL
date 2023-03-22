@@ -135,17 +135,21 @@ public class InstalledEngines {
 				.filter(v -> v != null && v.checkMissingJars().size() == 0).collect(Collectors.toList());
         return versions;
     }
-    
+
     /**
-     * Return a list of all the downloaded Python versions compatible to the host system
+     * Returns a list of all the downloaded {@link DeepLearningVersion}s
      * 
-     * @return the list of deep learning versions for the given engine
+     * @param enginesPath
+     * 	path to where the engines are stored
+     * @return list with the downloaded DeepLearningVersion
      */
-    public List<String> getDownloadedCompatiblePythonVersions() {
-        String currentPlatform = new PlatformDetection().toString();
-        return loadDownloaded().stream().filter(v -> v.getOs().equals(currentPlatform))
-                .map(DeepLearningVersion::getPythonVersion)
-				.collect(Collectors.toList());
+    public static List<DeepLearningVersion> loadDownloaded(String enginesPath)
+    {
+    	try{
+    		return buildEnginesFinder(enginesPath).loadDownloaded();
+    	} catch (IOException ex) {
+    		return new ArrayList<DeepLearningVersion>();
+    	}
     }
     
     /**
@@ -166,7 +170,27 @@ public class InstalledEngines {
         return loadDownloadedCompatible().stream()
 	        .filter(v -> AvailableEngines.getEngineKeys().get(engine).toLowerCase().contains(v.getEngine().toLowerCase()))
 			.collect(Collectors.toList());
-    }
+    }	
+    
+    /**
+     * Creates a list containing only downloaded Deep Learning versions compatible with
+     * the current system and corresponding to the engine of interest
+     * 
+     * @param enginesPath
+     * 	path to where the engines are stored
+     * @param engine
+     * 	name of the engine as defined with the engine tag at:
+     * 	https://raw.githubusercontent.com/bioimage-io/model-runner-java/main/src/main/resources/availableDLVersions.json
+     * 	for example tensorflow, pytorch, onnx
+     * @return The available versions instance.
+     */
+    public static List<DeepLearningVersion> getDownloadedCompatibleEnginesForEngine(String enginesPath, String engine) {
+    	try{
+    		return buildEnginesFinder(enginesPath).getDownloadedCompatibleEnginesForEngine(engine);
+    	} catch (IOException ex) {
+    		return new ArrayList<DeepLearningVersion>();
+    	}
+    }	
 
     /**
      * Returns a list of all the downloaded {@link DeepLearningVersion}s
@@ -182,6 +206,21 @@ public class InstalledEngines {
     }
     
     /**
+     * Returns all the available installed engines compatible with the OS.
+     * 
+     * @param enginesPath
+     * 	path to where the engines are stored
+     * @return List of available engines engines compatible with the OS.
+     */
+    public static List<DeepLearningVersion> loadDownloadedCompatible(String enginesPath) {
+    	try{
+    		return buildEnginesFinder(enginesPath).loadDownloadedCompatible();
+    	} catch (IOException ex) {
+    		return new ArrayList<DeepLearningVersion>();
+    	}
+    }
+    
+    /**
      * Return a list of all the downloaded Python versions of the corresponding engine
      * are installed in the local machine
      * 
@@ -194,10 +233,38 @@ public class InstalledEngines {
     			.map(DeepLearningVersion::getPythonVersion).collect(Collectors.toList());
     }
     
-    public static String getInstalledVersionsDir() {
+    /**
+     * Return a list of all the downloaded Python versions of the corresponding engine
+     * are installed in the local machine
+     * 
+     * @param enginesPath
+     * 	path to where the engines are stored
+     * @param engine
+     * 	the engine of interest
+     * @return the list of deep learning versions for the given engine
+     */
+    public static List<String> getDownloadedCompatiblePythonVersionsForEngine(String enginesPath, String engine) {
+    	try{
+    		return buildEnginesFinder(enginesPath).getDownloadedCompatiblePythonVersionsForEngine(engine);
+    	} catch (IOException ex) {
+    		return new ArrayList<String>();
+    	}
+    }
+    
+    /**
+     * 
+     * @return the string path to the folder where the engines are installed
+     */
+    public static String getEnginesDir() {
     	return Paths.get(ENGINES_FOLDER_NAME).toAbsolutePath().toString();
     }
     
+    /**
+     * Statically set the string path to the folder where the engines are installed
+     * @param dir
+     * 	the string path to the folder where the engines are installed
+     * @throws IOException if the dir does not exist
+     */
     public static void setEnginesDirectory(String dir) throws IOException {
     	if (!(new File(dir).isDirectory()))
     		throw new IOException("The engines directory must correspond to an already existing folder. "
