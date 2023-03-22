@@ -16,6 +16,10 @@ import io.bioimage.modelrunner.engine.EngineInfo;
  *
  */
 public class VersionStringUtils {	
+	/**
+	 * Version number given if there is no version known
+	 */
+	private static final int WRONG_VERSION = -10000000;
 
 	/** TODO clean a little bit the code
 	 * Return the most convenient engine version to load the model trained with
@@ -51,22 +55,23 @@ public class VersionStringUtils {
 		// Find the closest version if the wanted version is not available
 		int closestBiggerInd = indexOfBiggerClosestVersion(versionDists);
 		if (closestBiggerInd != -1 ) {
-			int possibleVersion = intVersionList.get(closestBiggerInd);
+			String possibleVersion = versionList.get(closestBiggerInd);
 			// Make sure that for Tensorflow, there is no interference between Tf1 and Tf2
-			if (engine.toLowerCase().contains(EngineInfo.getTensorflowKey().toLowerCase()) && Math.floor(possibleVersion / 100) == Math.floor(intVersion / 100))
-				return versionList.get(closestBiggerInd);
+			if (engine.toLowerCase().contains(EngineInfo.getTensorflowKey().toLowerCase()) 
+					&& version.split("\\.")[0].equals(possibleVersion.split("\\.")[0]))
+				return possibleVersion;
 			else if (!engine.equals(EngineInfo.getTensorflowKey()))
-				return versionList.get(closestBiggerInd);
+				return possibleVersion;
 		}
 		int closestSmallerInd = indexOfSmallerClosestVersion(versionDists);
 		if (closestSmallerInd != -1 ) {
-			int possibleVersion = intVersionList.get(closestSmallerInd);
+			String possibleVersion = versionList.get(closestSmallerInd);
 			// Make sure that for Tensorflow, there is no interference between Tf1 and Tf2
-			if (engine.toLowerCase().contains(EngineInfo.getTensorflowKey().toLowerCase()) 
-					&& Math.floor(possibleVersion / 100) == Math.floor(intVersion / 100))
-				return versionList.get(closestSmallerInd);
+			if (engine.toLowerCase().contains(EngineInfo.getTensorflowKey().toLowerCase())  
+					&& version.split("\\.")[0].equals(possibleVersion.split("\\.")[0]))
+				return possibleVersion;
 			else if (!engine.equals(EngineInfo.getTensorflowKey()))
-				return versionList.get(closestSmallerInd);
+				return possibleVersion;
 		}
 		return null;
 	}
@@ -235,7 +240,7 @@ public class VersionStringUtils {
 	 */
 	private static int convertVersionIntoIntegerOrGetFromList(String version, List<Integer> intVersionList){
 		int versionInt = convertVersionIntoInteger(version);
-		if (versionInt == -1)
+		if (versionInt == WRONG_VERSION)
 			versionInt = getHighestAvailable(intVersionList);
 		return versionInt;
 	}
@@ -262,7 +267,7 @@ public class VersionStringUtils {
 	 */
 	private static int indexOfBiggerClosestVersion(List<Integer> list){
 		int ind = -1;
-		int biggerClosestDist = 999;
+		int biggerClosestDist = Integer.MAX_VALUE;
 		for (int i = 0; i < list.size(); i++) {
 			if (list.get(i) < 0)
 				continue;
@@ -283,7 +288,7 @@ public class VersionStringUtils {
 	 */
 	private static int indexOfSmallerClosestVersion(List<Integer> list){
 		int ind = -1;
-		int smallerClosestDist = -999;
+		int smallerClosestDist = Integer.MIN_VALUE;
 		for (int i = 0; i < list.size(); i++) {
 			if (list.get(i) > 0)
 				continue;
@@ -306,18 +311,17 @@ public class VersionStringUtils {
 	 */
 	public static int convertVersionIntoInteger(String version) {
 		if (version == null || version.toLowerCase().contains("unknown"))
-			return -1;
-		String noPoints = version.replace(".", "");
-		int intV;
+			return WRONG_VERSION;
+		String[] separated = version.split("\\.");
+		int scaleFactor = separated.length;
+		int intV = 0;
 		try {
-			intV = Integer.parseInt(noPoints);
+			for (int i = 0; i < scaleFactor; i ++) {
+				intV += Integer.parseInt(separated[i]) * Math.pow(10, (scaleFactor - 1 - i) * 4);
+			}
 		} catch (NumberFormatException ex) {
-			return -1;
+			return WRONG_VERSION;
 		}
-		if (intV < 10)
-			intV *=10;
-		if (intV < 100)
-			intV *= 10;
 		return intV;
 	}
 }
