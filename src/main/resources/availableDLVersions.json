@@ -330,10 +330,10 @@
 			"rosetta": false,
 			"jars": [
 				"https://repo1.maven.org/maven2/org/tensorflow/tensorflow-core-api/0.2.0/tensorflow-core-api-0.2.0.jar",
-				"https://repo1.maven.org/maven2/com/google/protobuf/protobuf-java/3.8.0/protobuf-java-3.8.0.jar",
+				"https://repo1.maven.org/maven2/com/google/protobuf/protobuf-java/3.22.0/protobuf-java-3.22.0.jar",
 				"https://repo1.maven.org/maven2/org/tensorflow/ndarray/0.2.0/ndarray-0.2.0.jar",
 				"https://repo1.maven.org/maven2/org/tensorflow/tensorflow-core-api/0.2.0/tensorflow-core-api-0.2.0-windows-x86_64.jar",
-				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.4/javacpp-1.5.4.jar",
+				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.8/javacpp-1.5.8.jar",
 				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.4/javacpp-1.5.4-windows-x86_64.jar",
 				"https://maven.scijava.org/content/repositories/releases/io/bioimage/dl-modelrunner-tensorflow-2a/0.2.0/dl-modelrunner-tensorflow-2a-0.2.0.jar"
 			]
@@ -348,10 +348,10 @@
 			"rosetta": false,
 			"jars": [
 				"https://repo1.maven.org/maven2/org/tensorflow/tensorflow-core-api/0.2.0/tensorflow-core-api-0.2.0.jar",
-				"https://repo1.maven.org/maven2/com/google/protobuf/protobuf-java/3.8.0/protobuf-java-3.8.0.jar",
+				"https://repo1.maven.org/maven2/com/google/protobuf/protobuf-java/3.22.0/protobuf-java-3.22.0.jar",
 				"https://repo1.maven.org/maven2/org/tensorflow/ndarray/0.2.0/ndarray-0.2.0.jar",
 				"https://repo1.maven.org/maven2/org/tensorflow/tensorflow-core-api/0.2.0/tensorflow-core-api-0.2.0-windows-x86_64-gpu.jar",
-				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.4/javacpp-1.5.4.jar",
+				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.8/javacpp-1.5.8.jar",
 				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.4/javacpp-1.5.4-windows-x86_64.jar",
 				"https://maven.scijava.org/content/repositories/releases/io/bioimage/dl-modelrunner-tensorflow-2a/0.2.0/dl-modelrunner-tensorflow-2a-0.2.0.jar"
 			]
@@ -366,10 +366,10 @@
 			"rosetta": false,
 			"jars": [
 				"https://repo1.maven.org/maven2/org/tensorflow/tensorflow-core-api/0.2.0/tensorflow-core-api-0.2.0.jar",
-				"https://repo1.maven.org/maven2/com/google/protobuf/protobuf-java/3.8.0/protobuf-java-3.8.0.jar",
+				"https://repo1.maven.org/maven2/com/google/protobuf/protobuf-java/3.22.0/protobuf-java-3.22.0.jar",
 				"https://repo1.maven.org/maven2/org/tensorflow/ndarray/0.2.0/ndarray-0.2.0.jar",
 				"https://repo1.maven.org/maven2/org/tensorflow/tensorflow-core-api/0.2.0/tensorflow-core-api-0.2.0-linux-x86_64.jar",
-				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.4/javacpp-1.5.4.jar",
+				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.8/javacpp-1.5.8.jar",
 				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.4/javacpp-1.5.4-linux-x86_64.jar",
 				"https://maven.scijava.org/content/repositories/releases/io/bioimage/dl-modelrunner-tensorflow-2a/0.2.0/dl-modelrunner-tensorflow-2a-0.2.0.jar"
 			]
@@ -384,10 +384,10 @@
 			"rosetta": false,
 			"jars": [
 				"https://repo1.maven.org/maven2/org/tensorflow/tensorflow-core-api/0.2.0/tensorflow-core-api-0.2.0.jar",
-				"https://repo1.maven.org/maven2/com/google/protobuf/protobuf-java/3.8.0/protobuf-java-3.8.0.jar",
+				"https://repo1.maven.org/maven2/com/google/protobuf/protobuf-java/3.22.0/protobuf-java-3.22.0.jar",
 				"https://repo1.maven.org/maven2/org/tensorflow/ndarray/0.2.0/ndarray-0.2.0.jar",
 				"https://repo1.maven.org/maven2/org/tensorflow/tensorflow-core-api/0.2.0/tensorflow-core-api-0.2.0-linux-x86_64-gpu.jar",
-				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.4/javacpp-1.5.4.jar",
+				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.8/javacpp-1.5.8.jar",
 				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.4/javacpp-1.5.4-linux-x86_64.jar",
 				"https://maven.scijava.org/content/repositories/releases/io/bioimage/dl-modelrunner-tensorflow-2a/0.2.0/dl-modelrunner-tensorflow-2a-0.2.0.jar"
 			]
@@ -402,286 +402,16 @@
 			"rosetta": false,
 			"jars": [
 				"https://repo1.maven.org/maven2/org/tensorflow/tensorflow-core-api/0.2.0/tensorflow-core-api-0.2.0.jar",
-				"https://repo1.maven.org/maven2/com/google/protobuf/protobuf-java/3.8.0/protobuf-java-3.8.0.jar",
+				"https://repo1.maven.org/maven2/com/google/protobuf/protobuf-java/3.22.0/protobuf-java-3.22.0.jar",
 				"https://repo1.maven.org/maven2/org/tensorflow/ndarray/0.2.0/ndarray-0.2.0.jar",
 				"https://repo1.maven.org/maven2/org/tensorflow/tensorflow-core-api/0.2.0/tensorflow-core-api-0.2.0-macosx-x86_64.jar",
-				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.4/javacpp-1.5.4.jar",
+				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.8/javacpp-1.5.8.jar",
 				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.4/javacpp-1.5.4-macosx-x86_64.jar",
 				"https://maven.scijava.org/content/repositories/releases/io/bioimage/dl-modelrunner-tensorflow-2a/0.2.0/dl-modelrunner-tensorflow-2a-0.2.0.jar"
 			]
 		},
 		{
 			"engine": "tensorflow",
-			"version": "0.3.0",
-			"pythonVersion": "2.4.1",
-			"os": "windows-x86_64",
-			"gpu": false,
-			"cpu": true,
-			"rosetta": false,
-			"jars": [
-				"https://repo1.maven.org/maven2/org/tensorflow/tensorflow-core-api/0.3.0/tensorflow-core-api-0.3.0.jar",
-				"https://repo1.maven.org/maven2/com/google/protobuf/protobuf-java/3.8.0/protobuf-java-3.8.0.jar",
-				"https://repo1.maven.org/maven2/org/tensorflow/ndarray/0.3.0/ndarray-0.3.0.jar",
-				"https://repo1.maven.org/maven2/org/tensorflow/tensorflow-core-api/0.3.0/tensorflow-core-api-0.3.0-windows-x86_64.jar",
-				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.4/javacpp-1.5.4.jar",
-				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.4/javacpp-1.5.4-windows-x86_64.jar",
-				"https://maven.scijava.org/content/repositories/releases/io/bioimage/dl-modelrunner-tensorflow-2b/0.2.0/dl-modelrunner-tensorflow-2b-0.2.0.jar"
-			]
-		},
-		{
-			"engine": "tensorflow",
-			"version": "0.3.0",
-			"pythonVersion": "2.4.1",
-			"os": "windows-x86_64",
-			"gpu": true,
-			"cpu": true,
-			"rosetta": false,
-			"jars": [
-				"https://repo1.maven.org/maven2/org/tensorflow/tensorflow-core-api/0.3.0/tensorflow-core-api-0.3.0.jar",
-				"https://repo1.maven.org/maven2/com/google/protobuf/protobuf-java/3.8.0/protobuf-java-3.8.0.jar",
-				"https://repo1.maven.org/maven2/org/tensorflow/ndarray/0.3.0/ndarray-0.3.0.jar",
-				"https://repo1.maven.org/maven2/org/tensorflow/tensorflow-core-api/0.3.0/tensorflow-core-api-0.3.0-windows-x86_64-gpu.jar",
-				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.4/javacpp-1.5.4.jar",
-				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.4/javacpp-1.5.4-windows-x86_64.jar",
-				"https://maven.scijava.org/content/repositories/releases/io/bioimage/dl-modelrunner-tensorflow-2b/0.2.0/dl-modelrunner-tensorflow-2b-0.2.0.jar"
-			]
-		},
-		{
-			"engine": "tensorflow",
-			"version": "0.3.0",
-			"pythonVersion": "2.4.1",
-			"os": "linux-x86_64",
-			"gpu": false,
-			"cpu": true,
-			"rosetta": false,
-			"jars": [
-				"https://repo1.maven.org/maven2/org/tensorflow/tensorflow-core-api/0.3.0/tensorflow-core-api-0.3.0.jar",
-				"https://repo1.maven.org/maven2/com/google/protobuf/protobuf-java/3.8.0/protobuf-java-3.8.0.jar",
-				"https://repo1.maven.org/maven2/org/tensorflow/ndarray/0.3.0/ndarray-0.3.0.jar",
-				"https://repo1.maven.org/maven2/org/tensorflow/tensorflow-core-api/0.3.0/tensorflow-core-api-0.3.0-linux-x86_64.jar",
-				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.4/javacpp-1.5.4.jar",
-				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.4/javacpp-1.5.4-linux-x86_64.jar",
-				"https://maven.scijava.org/content/repositories/releases/io/bioimage/dl-modelrunner-tensorflow-2b/0.2.0/dl-modelrunner-tensorflow-2b-0.2.0.jar"
-			]
-		},
-		{
-			"engine": "tensorflow",
-			"version": "0.3.0",
-			"pythonVersion": "2.4.1",
-			"os": "linux-x86_64",
-			"gpu": true,
-			"cpu": true,
-			"rosetta": false,
-			"jars": [
-				"https://repo1.maven.org/maven2/org/tensorflow/tensorflow-core-api/0.3.0/tensorflow-core-api-0.3.0.jar",
-				"https://repo1.maven.org/maven2/com/google/protobuf/protobuf-java/3.8.0/protobuf-java-3.8.0.jar",
-				"https://repo1.maven.org/maven2/org/tensorflow/ndarray/0.3.0/ndarray-0.3.0.jar",
-				"https://repo1.maven.org/maven2/org/tensorflow/tensorflow-core-api/0.3.0/tensorflow-core-api-0.3.0-linux-x86_64-gpu.jar",
-				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.4/javacpp-1.5.4.jar",
-				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.4/javacpp-1.5.4-linux-x86_64.jar",
-				"https://maven.scijava.org/content/repositories/releases/io/bioimage/dl-modelrunner-tensorflow-2b/0.2.0/dl-modelrunner-tensorflow-2b-0.2.0.jar"
-			]
-		},
-		{
-			"engine": "tensorflow",
-			"version": "0.3.0",
-			"pythonVersion": "2.4.1",
-			"os": "macosx-x86_64",
-			"gpu": false,
-			"cpu": true,
-			"rosetta": false,
-			"jars": [
-				"https://repo1.maven.org/maven2/org/tensorflow/tensorflow-core-api/0.3.0/tensorflow-core-api-0.3.0.jar",
-				"https://repo1.maven.org/maven2/com/google/protobuf/protobuf-java/3.8.0/protobuf-java-3.8.0.jar",
-				"https://repo1.maven.org/maven2/org/tensorflow/ndarray/0.3.0/ndarray-0.3.0.jar",
-				"https://repo1.maven.org/maven2/org/tensorflow/tensorflow-core-api/0.3.0/tensorflow-core-api-0.3.0-macosx-x86_64.jar",
-				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.4/javacpp-1.5.4.jar",
-				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.4/javacpp-1.5.4-macosx-x86_64.jar",
-				"https://maven.scijava.org/content/repositories/releases/io/bioimage/dl-modelrunner-tensorflow-2b/0.2.0/dl-modelrunner-tensorflow-2b-0.2.0.jar"
-			]
-		},
-		{
-			"engine": "tensorflow",
-			"version": "0.3.1",
-			"pythonVersion": "2.4.1",
-			"os": "windows-x86_64",
-			"gpu": false,
-			"cpu": true,
-			"rosetta": false,
-			"jars": [
-				"https://repo1.maven.org/maven2/org/tensorflow/tensorflow-core-api/0.3.1/tensorflow-core-api-0.3.1.jar",
-				"https://repo1.maven.org/maven2/com/google/protobuf/protobuf-java/3.8.0/protobuf-java-3.8.0.jar",
-				"https://repo1.maven.org/maven2/org/tensorflow/ndarray/0.3.1/ndarray-0.3.1.jar",
-				"https://repo1.maven.org/maven2/org/tensorflow/tensorflow-core-api/0.3.1/tensorflow-core-api-0.3.1-windows-x86_64.jar",
-				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.4/javacpp-1.5.4.jar",
-				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.4/javacpp-1.5.4-windows-x86_64.jar",
-				"https://maven.scijava.org/content/repositories/releases/io/bioimage/dl-modelrunner-tensorflow-2b/0.2.0/dl-modelrunner-tensorflow-2b-0.2.0.jar"
-			]
-		},
-		{
-			"engine": "tensorflow",
-			"version": "0.3.1",
-			"pythonVersion": "2.4.1",
-			"os": "windows-x86_64",
-			"gpu": true,
-			"cpu": true,
-			"rosetta": false,
-			"jars": [
-				"https://repo1.maven.org/maven2/org/tensorflow/tensorflow-core-api/0.3.1/tensorflow-core-api-0.3.1.jar",
-				"https://repo1.maven.org/maven2/com/google/protobuf/protobuf-java/3.8.0/protobuf-java-3.8.0.jar",
-				"https://repo1.maven.org/maven2/org/tensorflow/ndarray/0.3.1/ndarray-0.3.1.jar",
-				"https://repo1.maven.org/maven2/org/tensorflow/tensorflow-core-api/0.3.1/tensorflow-core-api-0.3.1-windows-x86_64-gpu.jar",
-				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.4/javacpp-1.5.4.jar",
-				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.4/javacpp-1.5.4-windows-x86_64.jar",
-				"https://maven.scijava.org/content/repositories/releases/io/bioimage/dl-modelrunner-tensorflow-2b/0.2.0/dl-modelrunner-tensorflow-2b-0.2.0.jar"
-			]
-		},
-		{
-			"engine": "tensorflow",
-			"version": "0.3.1",
-			"pythonVersion": "2.4.1",
-			"os": "linux-x86_64",
-			"gpu": false,
-			"cpu": true,
-			"rosetta": false,
-			"jars": [
-				"https://repo1.maven.org/maven2/org/tensorflow/tensorflow-core-api/0.3.1/tensorflow-core-api-0.3.1.jar",
-				"https://repo1.maven.org/maven2/com/google/protobuf/protobuf-java/3.8.0/protobuf-java-3.8.0.jar",
-				"https://repo1.maven.org/maven2/org/tensorflow/ndarray/0.3.1/ndarray-0.3.1.jar",
-				"https://repo1.maven.org/maven2/org/tensorflow/tensorflow-core-api/0.3.1/tensorflow-core-api-0.3.1-linux-x86_64.jar",
-				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.4/javacpp-1.5.4.jar",
-				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.4/javacpp-1.5.4-linux-x86_64.jar",
-				"https://maven.scijava.org/content/repositories/releases/io/bioimage/dl-modelrunner-tensorflow-2b/0.2.0/dl-modelrunner-tensorflow-2b-0.2.0.jar"
-			]
-		},
-		{
-			"engine": "tensorflow",
-			"version": "0.3.1",
-			"pythonVersion": "2.4.1",
-			"os": "linux-x86_64",
-			"gpu": true,
-			"cpu": true,
-			"rosetta": false,
-			"jars": [
-				"https://repo1.maven.org/maven2/org/tensorflow/tensorflow-core-api/0.3.1/tensorflow-core-api-0.3.1.jar",
-				"https://repo1.maven.org/maven2/com/google/protobuf/protobuf-java/3.8.0/protobuf-java-3.8.0.jar",
-				"https://repo1.maven.org/maven2/org/tensorflow/ndarray/0.3.1/ndarray-0.3.1.jar",
-				"https://repo1.maven.org/maven2/org/tensorflow/tensorflow-core-api/0.3.1/tensorflow-core-api-0.3.1-linux-x86_64-gpu.jar",
-				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.4/javacpp-1.5.4.jar",
-				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.4/javacpp-1.5.4-linux-x86_64.jar",
-				"https://maven.scijava.org/content/repositories/releases/io/bioimage/dl-modelrunner-tensorflow-2b/0.2.0/dl-modelrunner-tensorflow-2b-0.2.0.jar"
-			]
-		},
-		{
-			"engine": "tensorflow",
-			"version": "0.3.1",
-			"pythonVersion": "2.4.1",
-			"os": "macosx-x86_64",
-			"gpu": false,
-			"cpu": true,
-			"rosetta": false,
-			"jars": [
-				"https://repo1.maven.org/maven2/org/tensorflow/tensorflow-core-api/0.3.1/tensorflow-core-api-0.3.1.jar",
-				"https://repo1.maven.org/maven2/com/google/protobuf/protobuf-java/3.8.0/protobuf-java-3.8.0.jar",
-				"https://repo1.maven.org/maven2/org/tensorflow/ndarray/0.3.1/ndarray-0.3.1.jar",
-				"https://repo1.maven.org/maven2/org/tensorflow/tensorflow-core-api/0.3.1/tensorflow-core-api-0.3.1-macosx-x86_64.jar",
-				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.4/javacpp-1.5.4.jar",
-				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.4/javacpp-1.5.4-macosx-x86_64.jar",
-				"https://maven.scijava.org/content/repositories/releases/io/bioimage/dl-modelrunner-tensorflow-2b/0.2.0/dl-modelrunner-tensorflow-2b-0.2.0.jar"
-			]
-		},
-		{
-			"engine": "tensorflow",
-			"version": "0.3.2",
-			"pythonVersion": "2.4.1",
-			"os": "windows-x86_64",
-			"gpu": false,
-			"cpu": true,
-			"rosetta": false,
-			"jars": [
-				"https://repo1.maven.org/maven2/org/tensorflow/tensorflow-core-api/0.3.2/tensorflow-core-api-0.3.2.jar",
-				"https://repo1.maven.org/maven2/com/google/protobuf/protobuf-java/3.8.0/protobuf-java-3.8.0.jar",
-				"https://repo1.maven.org/maven2/org/tensorflow/ndarray/0.3.2/ndarray-0.3.2.jar",
-				"https://repo1.maven.org/maven2/org/tensorflow/tensorflow-core-api/0.3.2/tensorflow-core-api-0.3.2-windows-x86_64.jar",
-				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.4/javacpp-1.5.4.jar",
-				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.4/javacpp-1.5.4-windows-x86_64.jar",
-				"https://maven.scijava.org/content/repositories/releases/io/bioimage/dl-modelrunner-tensorflow-2b/0.2.0/dl-modelrunner-tensorflow-2b-0.2.0.jar"
-			]
-		},
-		{
-			"engine": "tensorflow",
-			"version": "0.3.2",
-			"pythonVersion": "2.4.1",
-			"os": "windows-x86_64",
-			"gpu": true,
-			"cpu": true,
-			"rosetta": false,
-			"jars": [
-				"https://repo1.maven.org/maven2/org/tensorflow/tensorflow-core-api/0.3.2/tensorflow-core-api-0.3.2.jar",
-				"https://repo1.maven.org/maven2/com/google/protobuf/protobuf-java/3.8.0/protobuf-java-3.8.0.jar",
-				"https://repo1.maven.org/maven2/org/tensorflow/ndarray/0.3.2/ndarray-0.3.2.jar",
-				"https://repo1.maven.org/maven2/org/tensorflow/tensorflow-core-api/0.3.2/tensorflow-core-api-0.3.2-windows-x86_64-gpu.jar",
-				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.4/javacpp-1.5.4.jar",
-				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.4/javacpp-1.5.4-windows-x86_64.jar",
-				"https://maven.scijava.org/content/repositories/releases/io/bioimage/dl-modelrunner-tensorflow-2b/0.2.0/dl-modelrunner-tensorflow-2b-0.2.0.jar"
-			]
-		},
-		{
-			"engine": "tensorflow",
-			"version": "0.3.2",
-			"pythonVersion": "2.4.1",
-			"os": "linux-x86_64",
-			"gpu": false,
-			"cpu": true,
-			"rosetta": false,
-			"jars": [
-				"https://repo1.maven.org/maven2/org/tensorflow/tensorflow-core-api/0.3.2/tensorflow-core-api-0.3.2.jar",
-				"https://repo1.maven.org/maven2/com/google/protobuf/protobuf-java/3.8.0/protobuf-java-3.8.0.jar",
-				"https://repo1.maven.org/maven2/org/tensorflow/ndarray/0.3.2/ndarray-0.3.2.jar",
-				"https://repo1.maven.org/maven2/org/tensorflow/tensorflow-core-api/0.3.2/tensorflow-core-api-0.3.2-linux-x86_64.jar",
-				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.4/javacpp-1.5.4.jar",
-				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.4/javacpp-1.5.4-linux-x86_64.jar",
-				"https://maven.scijava.org/content/repositories/releases/io/bioimage/dl-modelrunner-tensorflow-2b/0.2.0/dl-modelrunner-tensorflow-2b-0.2.0.jar"
-			]
-		},
-		{
-			"engine": "tensorflow",
-			"version": "0.3.2",
-			"pythonVersion": "2.4.1",
-			"os": "linux-x86_64",
-			"gpu": true,
-			"cpu": true,
-			"rosetta": false,
-			"jars": [
-				"https://repo1.maven.org/maven2/org/tensorflow/tensorflow-core-api/0.3.2/tensorflow-core-api-0.3.2.jar",
-				"https://repo1.maven.org/maven2/com/google/protobuf/protobuf-java/3.8.0/protobuf-java-3.8.0.jar",
-				"https://repo1.maven.org/maven2/org/tensorflow/ndarray/0.3.2/ndarray-0.3.2.jar",
-				"https://repo1.maven.org/maven2/org/tensorflow/tensorflow-core-api/0.3.2/tensorflow-core-api-0.3.2-linux-x86_64-gpu.jar",
-				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.4/javacpp-1.5.4.jar",
-				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.4/javacpp-1.5.4-linux-x86_64.jar",
-				"https://maven.scijava.org/content/repositories/releases/io/bioimage/dl-modelrunner-tensorflow-2b/0.2.0/dl-modelrunner-tensorflow-2b-0.2.0.jar"
-			]
-		},
-		{
-			"engine": "tensorflow",
-			"version": "0.3.2",
-			"pythonVersion": "2.4.1",
-			"os": "macosx-x86_64",
-			"gpu": false,
-			"cpu": true,
-			"rosetta": false,
-			"jars": [
-				"https://repo1.maven.org/maven2/org/tensorflow/tensorflow-core-api/0.3.2/tensorflow-core-api-0.3.2.jar",
-				"https://repo1.maven.org/maven2/com/google/protobuf/protobuf-java/3.8.0/protobuf-java-3.8.0.jar",
-				"https://repo1.maven.org/maven2/org/tensorflow/ndarray/0.3.2/ndarray-0.3.2.jar",
-				"https://repo1.maven.org/maven2/org/tensorflow/tensorflow-core-api/0.3.2/tensorflow-core-api-0.3.2-macosx-x86_64.jar",
-				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.4/javacpp-1.5.4.jar",
-				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.4/javacpp-1.5.4-macosx-x86_64.jar",
-				"https://maven.scijava.org/content/repositories/releases/io/bioimage/dl-modelrunner-tensorflow-2b/0.2.0/dl-modelrunner-tensorflow-2b-0.2.0.jar"
-			]
-		},
-		{
-			"engine": "tensorflow",
 			"version": "0.3.3",
 			"pythonVersion": "2.4.1",
 			"os": "windows-x86_64",
@@ -690,10 +420,10 @@
 			"rosetta": false,
 			"jars": [
 				"https://repo1.maven.org/maven2/org/tensorflow/tensorflow-core-api/0.3.3/tensorflow-core-api-0.3.3.jar",
-				"https://repo1.maven.org/maven2/com/google/protobuf/protobuf-java/3.8.0/protobuf-java-3.8.0.jar",
+				"https://repo1.maven.org/maven2/com/google/protobuf/protobuf-java/3.22.0/protobuf-java-3.22.0.jar",
 				"https://repo1.maven.org/maven2/org/tensorflow/ndarray/0.3.3/ndarray-0.3.3.jar",
 				"https://repo1.maven.org/maven2/org/tensorflow/tensorflow-core-api/0.3.3/tensorflow-core-api-0.3.3-windows-x86_64.jar",
-				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.4/javacpp-1.5.4.jar",
+				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.8/javacpp-1.5.8.jar",
 				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.4/javacpp-1.5.4-windows-x86_64.jar",
 				"https://maven.scijava.org/content/repositories/releases/io/bioimage/dl-modelrunner-tensorflow-2b/0.2.0/dl-modelrunner-tensorflow-2b-0.2.0.jar"
 			]
@@ -708,10 +438,10 @@
 			"rosetta": false,
 			"jars": [
 				"https://repo1.maven.org/maven2/org/tensorflow/tensorflow-core-api/0.3.3/tensorflow-core-api-0.3.3.jar",
-				"https://repo1.maven.org/maven2/com/google/protobuf/protobuf-java/3.8.0/protobuf-java-3.8.0.jar",
+				"https://repo1.maven.org/maven2/com/google/protobuf/protobuf-java/3.22.0/protobuf-java-3.22.0.jar",
 				"https://repo1.maven.org/maven2/org/tensorflow/ndarray/0.3.3/ndarray-0.3.3.jar",
 				"https://repo1.maven.org/maven2/org/tensorflow/tensorflow-core-api/0.3.3/tensorflow-core-api-0.3.3-windows-x86_64-gpu.jar",
-				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.4/javacpp-1.5.4.jar",
+				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.8/javacpp-1.5.8.jar",
 				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.4/javacpp-1.5.4-windows-x86_64.jar",
 				"https://maven.scijava.org/content/repositories/releases/io/bioimage/dl-modelrunner-tensorflow-2b/0.2.0/dl-modelrunner-tensorflow-2b-0.2.0.jar"
 			]
@@ -726,10 +456,10 @@
 			"rosetta": false,
 			"jars": [
 				"https://repo1.maven.org/maven2/org/tensorflow/tensorflow-core-api/0.3.3/tensorflow-core-api-0.3.3.jar",
-				"https://repo1.maven.org/maven2/com/google/protobuf/protobuf-java/3.8.0/protobuf-java-3.8.0.jar",
+				"https://repo1.maven.org/maven2/com/google/protobuf/protobuf-java/3.22.0/protobuf-java-3.22.0.jar",
 				"https://repo1.maven.org/maven2/org/tensorflow/ndarray/0.3.3/ndarray-0.3.3.jar",
 				"https://repo1.maven.org/maven2/org/tensorflow/tensorflow-core-api/0.3.3/tensorflow-core-api-0.3.3-linux-x86_64.jar",
-				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.4/javacpp-1.5.4.jar",
+				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.8/javacpp-1.5.8.jar",
 				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.4/javacpp-1.5.4-linux-x86_64.jar",
 				"https://maven.scijava.org/content/repositories/releases/io/bioimage/dl-modelrunner-tensorflow-2b/0.2.0/dl-modelrunner-tensorflow-2b-0.2.0.jar"
 			]
@@ -744,10 +474,10 @@
 			"rosetta": false,
 			"jars": [
 				"https://repo1.maven.org/maven2/org/tensorflow/tensorflow-core-api/0.3.3/tensorflow-core-api-0.3.3.jar",
-				"https://repo1.maven.org/maven2/com/google/protobuf/protobuf-java/3.8.0/protobuf-java-3.8.0.jar",
+				"https://repo1.maven.org/maven2/com/google/protobuf/protobuf-java/3.22.0/protobuf-java-3.22.0.jar",
 				"https://repo1.maven.org/maven2/org/tensorflow/ndarray/0.3.3/ndarray-0.3.3.jar",
 				"https://repo1.maven.org/maven2/org/tensorflow/tensorflow-core-api/0.3.3/tensorflow-core-api-0.3.3-linux-x86_64-gpu.jar",
-				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.4/javacpp-1.5.4.jar",
+				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.8/javacpp-1.5.8.jar",
 				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.4/javacpp-1.5.4-linux-x86_64.jar",
 				"https://maven.scijava.org/content/repositories/releases/io/bioimage/dl-modelrunner-tensorflow-2b/0.2.0/dl-modelrunner-tensorflow-2b-0.2.0.jar"
 			]
@@ -762,10 +492,10 @@
 			"rosetta": false,
 			"jars": [
 				"https://repo1.maven.org/maven2/org/tensorflow/tensorflow-core-api/0.3.3/tensorflow-core-api-0.3.3.jar",
-				"https://repo1.maven.org/maven2/com/google/protobuf/protobuf-java/3.8.0/protobuf-java-3.8.0.jar",
+				"https://repo1.maven.org/maven2/com/google/protobuf/protobuf-java/3.22.0/protobuf-java-3.22.0.jar",
 				"https://repo1.maven.org/maven2/org/tensorflow/ndarray/0.3.3/ndarray-0.3.3.jar",
 				"https://repo1.maven.org/maven2/org/tensorflow/tensorflow-core-api/0.3.3/tensorflow-core-api-0.3.3-macosx-x86_64.jar",
-				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.4/javacpp-1.5.4.jar",
+				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.8/javacpp-1.5.8.jar",
 				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.4/javacpp-1.5.4-macosx-x86_64.jar",
 				"https://maven.scijava.org/content/repositories/releases/io/bioimage/dl-modelrunner-tensorflow-2b/0.2.0/dl-modelrunner-tensorflow-2b-0.2.0.jar"
 			]
@@ -780,11 +510,11 @@
 			"rosetta": false,
 			"jars": [
 				"https://repo1.maven.org/maven2/org/tensorflow/tensorflow-core-api/0.4.0/tensorflow-core-api-0.4.0.jar",
-				"https://repo1.maven.org/maven2/com/google/protobuf/protobuf-java/3.8.0/protobuf-java-3.8.0.jar",
-				"https://repo1.maven.org/maven2/org/tensorflow/ndarray/0.4.0/ndarray-0.4.0.jar",
+				"https://repo1.maven.org/maven2/com/google/protobuf/protobuf-java/3.22.0/protobuf-java-3.22.0.jar",
+				"https://repo1.maven.org/maven2/org/tensorflow/ndarray/0.3.3/ndarray-0.3.3.jar",
 				"https://repo1.maven.org/maven2/org/tensorflow/tensorflow-core-api/0.4.0/tensorflow-core-api-0.4.0-windows-x86_64.jar",
-				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.4/javacpp-1.5.4.jar",
-				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.4/javacpp-1.5.4-windows-x86_64.jar",
+				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.8/javacpp-1.5.8.jar",
+				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.6/javacpp-1.5.6-windows-x86_64.jar",
 				"https://maven.scijava.org/content/repositories/releases/io/bioimage/dl-modelrunner-tensorflow-2b/0.2.0/dl-modelrunner-tensorflow-2b-0.2.0.jar"
 			]
 		},
@@ -798,11 +528,11 @@
 			"rosetta": false,
 			"jars": [
 				"https://repo1.maven.org/maven2/org/tensorflow/tensorflow-core-api/0.4.0/tensorflow-core-api-0.4.0.jar",
-				"https://repo1.maven.org/maven2/com/google/protobuf/protobuf-java/3.8.0/protobuf-java-3.8.0.jar",
-				"https://repo1.maven.org/maven2/org/tensorflow/ndarray/0.4.0/ndarray-0.4.0.jar",
+				"https://repo1.maven.org/maven2/com/google/protobuf/protobuf-java/3.22.0/protobuf-java-3.22.0.jar",
+				"https://repo1.maven.org/maven2/org/tensorflow/ndarray/0.3.3/ndarray-0.3.3.jar",
 				"https://repo1.maven.org/maven2/org/tensorflow/tensorflow-core-api/0.4.0/tensorflow-core-api-0.4.0-windows-x86_64-gpu.jar",
-				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.4/javacpp-1.5.4.jar",
-				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.4/javacpp-1.5.4-windows-x86_64.jar",
+				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.8/javacpp-1.5.8.jar",
+				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.6/javacpp-1.5.6-windows-x86_64.jar",
 				"https://maven.scijava.org/content/repositories/releases/io/bioimage/dl-modelrunner-tensorflow-2b/0.2.0/dl-modelrunner-tensorflow-2b-0.2.0.jar"
 			]
 		},
@@ -816,11 +546,11 @@
 			"rosetta": false,
 			"jars": [
 				"https://repo1.maven.org/maven2/org/tensorflow/tensorflow-core-api/0.4.0/tensorflow-core-api-0.4.0.jar",
-				"https://repo1.maven.org/maven2/com/google/protobuf/protobuf-java/3.8.0/protobuf-java-3.8.0.jar",
-				"https://repo1.maven.org/maven2/org/tensorflow/ndarray/0.4.0/ndarray-0.4.0.jar",
+				"https://repo1.maven.org/maven2/com/google/protobuf/protobuf-java/3.22.0/protobuf-java-3.22.0.jar",
+				"https://repo1.maven.org/maven2/org/tensorflow/ndarray/0.3.3/ndarray-0.3.3.jar",
 				"https://repo1.maven.org/maven2/org/tensorflow/tensorflow-core-api/0.4.0/tensorflow-core-api-0.4.0-linux-x86_64.jar",
-				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.4/javacpp-1.5.4.jar",
-				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.4/javacpp-1.5.4-linux-x86_64.jar",
+				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.8/javacpp-1.5.8.jar",
+				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.6/javacpp-1.5.6-linux-x86_64.jar",
 				"https://maven.scijava.org/content/repositories/releases/io/bioimage/dl-modelrunner-tensorflow-2b/0.2.0/dl-modelrunner-tensorflow-2b-0.2.0.jar"
 			]
 		},
@@ -834,11 +564,11 @@
 			"rosetta": false,
 			"jars": [
 				"https://repo1.maven.org/maven2/org/tensorflow/tensorflow-core-api/0.4.0/tensorflow-core-api-0.4.0.jar",
-				"https://repo1.maven.org/maven2/com/google/protobuf/protobuf-java/3.8.0/protobuf-java-3.8.0.jar",
-				"https://repo1.maven.org/maven2/org/tensorflow/ndarray/0.4.0/ndarray-0.4.0.jar",
+				"https://repo1.maven.org/maven2/com/google/protobuf/protobuf-java/3.22.0/protobuf-java-3.22.0.jar",
+				"https://repo1.maven.org/maven2/org/tensorflow/ndarray/0.3.3/ndarray-0.3.3.jar",
 				"https://repo1.maven.org/maven2/org/tensorflow/tensorflow-core-api/0.4.0/tensorflow-core-api-0.4.0-linux-x86_64-gpu.jar",
-				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.4/javacpp-1.5.4.jar",
-				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.4/javacpp-1.5.4-linux-x86_64.jar",
+				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.8/javacpp-1.5.8.jar",
+				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.6/javacpp-1.5.6-linux-x86_64.jar",
 				"https://maven.scijava.org/content/repositories/releases/io/bioimage/dl-modelrunner-tensorflow-2b/0.2.0/dl-modelrunner-tensorflow-2b-0.2.0.jar"
 			]
 		},
@@ -852,11 +582,11 @@
 			"rosetta": false,
 			"jars": [
 				"https://repo1.maven.org/maven2/org/tensorflow/tensorflow-core-api/0.4.0/tensorflow-core-api-0.4.0.jar",
-				"https://repo1.maven.org/maven2/com/google/protobuf/protobuf-java/3.8.0/protobuf-java-3.8.0.jar",
-				"https://repo1.maven.org/maven2/org/tensorflow/ndarray/0.4.0/ndarray-0.4.0.jar",
+				"https://repo1.maven.org/maven2/com/google/protobuf/protobuf-java/3.22.0/protobuf-java-3.22.0.jar",
+				"https://repo1.maven.org/maven2/org/tensorflow/ndarray/0.3.3/ndarray-0.3.3.jar",
 				"https://repo1.maven.org/maven2/org/tensorflow/tensorflow-core-api/0.4.0/tensorflow-core-api-0.4.0-macosx-x86_64.jar",
-				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.4/javacpp-1.5.4.jar",
-				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.4/javacpp-1.5.4-macosx-x86_64.jar",
+				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.8/javacpp-1.5.8.jar",
+				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.6/javacpp-1.5.6-macosx-x86_64.jar",
 				"https://maven.scijava.org/content/repositories/releases/io/bioimage/dl-modelrunner-tensorflow-2b/0.2.0/dl-modelrunner-tensorflow-2b-0.2.0.jar"
 			]
 		},
@@ -870,11 +600,11 @@
 			"rosetta": false,
 			"jars": [
 				"https://sandbox.zenodo.org/record/1154165/files/tensorflow-core-api-0.4.0-SNAPSHOT-macosx-arm64.jar?download=1",
-				"https://repo1.maven.org/maven2/com/google/protobuf/protobuf-java/3.8.0/protobuf-java-3.8.0.jar",
-				"https://repo1.maven.org/maven2/org/tensorflow/ndarray/0.4.0/ndarray-0.4.0.jar",
+				"https://repo1.maven.org/maven2/com/google/protobuf/protobuf-java/3.22.0/protobuf-java-3.22.0.jar",
+				"https://repo1.maven.org/maven2/org/tensorflow/ndarray/0.3.3/ndarray-0.3.3.jar",
 				"https://sandbox.zenodo.org/record/1154165/files/tensorflow-core-api-0.4.0-SNAPSHOT.jar?download=1",
 				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.8/javacpp-1.5.8.jar",
-				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.8/javacpp-1.5.8-macosx-arm64.jar",
+				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.8/javacpp-1.5.6-macosx-arm64.jar",
 				"https://maven.scijava.org/content/repositories/releases/io/bioimage/dl-modelrunner-tensorflow-2b/0.2.0/dl-modelrunner-tensorflow-2b-0.2.0.jar"
 			]
 		},
@@ -888,11 +618,11 @@
 			"rosetta": false,
 			"jars": [
 				"https://repo1.maven.org/maven2/org/tensorflow/tensorflow-core-api/0.4.1/tensorflow-core-api-0.4.1.jar",
-				"https://repo1.maven.org/maven2/com/google/protobuf/protobuf-java/3.8.0/protobuf-java-3.8.0.jar",
-				"https://repo1.maven.org/maven2/org/tensorflow/ndarray/0.4.0/ndarray-0.4.0.jar",
+				"https://repo1.maven.org/maven2/com/google/protobuf/protobuf-java/3.22.0/protobuf-java-3.22.0.jar",
+				"https://repo1.maven.org/maven2/org/tensorflow/ndarray/0.3.3/ndarray-0.3.3.jar",
 				"https://repo1.maven.org/maven2/org/tensorflow/tensorflow-core-api/0.4.1/tensorflow-core-api-0.4.1-windows-x86_64.jar",
-				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.4/javacpp-1.5.4.jar",
-				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.4/javacpp-1.5.4-windows-x86_64.jar",
+				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.8/javacpp-1.5.8.jar",
+				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.6/javacpp-1.5.6-windows-x86_64.jar",
 				"https://maven.scijava.org/content/repositories/releases/io/bioimage/dl-modelrunner-tensorflow-2b/0.2.0/dl-modelrunner-tensorflow-2b-0.2.0.jar"
 			]
 		},
@@ -906,11 +636,11 @@
 			"rosetta": false,
 			"jars": [
 				"https://repo1.maven.org/maven2/org/tensorflow/tensorflow-core-api/0.4.1/tensorflow-core-api-0.4.1.jar",
-				"https://repo1.maven.org/maven2/com/google/protobuf/protobuf-java/3.8.0/protobuf-java-3.8.0.jar",
-				"https://repo1.maven.org/maven2/org/tensorflow/ndarray/0.4.0/ndarray-0.4.0.jar",
+				"https://repo1.maven.org/maven2/com/google/protobuf/protobuf-java/3.22.0/protobuf-java-3.22.0.jar",
+				"https://repo1.maven.org/maven2/org/tensorflow/ndarray/0.3.3/ndarray-0.3.3.jar",
 				"https://repo1.maven.org/maven2/org/tensorflow/tensorflow-core-api/0.4.1/tensorflow-core-api-0.4.1-windows-x86_64-gpu.jar",
-				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.4/javacpp-1.5.4.jar",
-				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.4/javacpp-1.5.4-windows-x86_64.jar",
+				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.8/javacpp-1.5.8.jar",
+				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.6/javacpp-1.5.6-windows-x86_64.jar",
 				"https://maven.scijava.org/content/repositories/releases/io/bioimage/dl-modelrunner-tensorflow-2b/0.2.0/dl-modelrunner-tensorflow-2b-0.2.0.jar"
 			]
 		},
@@ -924,11 +654,11 @@
 			"rosetta": false,
 			"jars": [
 				"https://repo1.maven.org/maven2/org/tensorflow/tensorflow-core-api/0.4.1/tensorflow-core-api-0.4.1.jar",
-				"https://repo1.maven.org/maven2/com/google/protobuf/protobuf-java/3.8.0/protobuf-java-3.8.0.jar",
-				"https://repo1.maven.org/maven2/org/tensorflow/ndarray/0.4.0/ndarray-0.4.0.jar",
+				"https://repo1.maven.org/maven2/com/google/protobuf/protobuf-java/3.22.0/protobuf-java-3.22.0.jar",
+				"https://repo1.maven.org/maven2/org/tensorflow/ndarray/0.3.3/ndarray-0.3.3.jar",
 				"https://repo1.maven.org/maven2/org/tensorflow/tensorflow-core-api/0.4.1/tensorflow-core-api-0.4.1-linux-x86_64.jar",
-				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.4/javacpp-1.5.4.jar",
-				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.4/javacpp-1.5.4-linux-x86_64.jar",
+				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.8/javacpp-1.5.8.jar",
+				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.6/javacpp-1.5.6-linux-x86_64.jar",
 				"https://maven.scijava.org/content/repositories/releases/io/bioimage/dl-modelrunner-tensorflow-2b/0.2.0/dl-modelrunner-tensorflow-2b-0.2.0.jar"
 			]
 		},
@@ -942,11 +672,11 @@
 			"rosetta": false,
 			"jars": [
 				"https://repo1.maven.org/maven2/org/tensorflow/tensorflow-core-api/0.4.1/tensorflow-core-api-0.4.1.jar",
-				"https://repo1.maven.org/maven2/com/google/protobuf/protobuf-java/3.8.0/protobuf-java-3.8.0.jar",
-				"https://repo1.maven.org/maven2/org/tensorflow/ndarray/0.4.0/ndarray-0.4.0.jar",
+				"https://repo1.maven.org/maven2/com/google/protobuf/protobuf-java/3.22.0/protobuf-java-3.22.0.jar",
+				"https://repo1.maven.org/maven2/org/tensorflow/ndarray/0.3.3/ndarray-0.3.3.jar",
 				"https://repo1.maven.org/maven2/org/tensorflow/tensorflow-core-api/0.4.1/tensorflow-core-api-0.4.1-linux-x86_64-gpu.jar",
-				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.4/javacpp-1.5.4.jar",
-				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.4/javacpp-1.5.4-linux-x86_64.jar",
+				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.8/javacpp-1.5.8.jar",
+				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.6/javacpp-1.5.6-linux-x86_64.jar",
 				"https://maven.scijava.org/content/repositories/releases/io/bioimage/dl-modelrunner-tensorflow-2b/0.2.0/dl-modelrunner-tensorflow-2b-0.2.0.jar"
 			]
 		},
@@ -960,11 +690,11 @@
 			"rosetta": false,
 			"jars": [
 				"https://repo1.maven.org/maven2/org/tensorflow/tensorflow-core-api/0.4.1/tensorflow-core-api-0.4.1.jar",
-				"https://repo1.maven.org/maven2/com/google/protobuf/protobuf-java/3.8.0/protobuf-java-3.8.0.jar",
-				"https://repo1.maven.org/maven2/org/tensorflow/ndarray/0.4.0/ndarray-0.4.0.jar",
+				"https://repo1.maven.org/maven2/com/google/protobuf/protobuf-java/3.22.0/protobuf-java-3.22.0.jar",
+				"https://repo1.maven.org/maven2/org/tensorflow/ndarray/0.3.3/ndarray-0.3.3.jar",
 				"https://repo1.maven.org/maven2/org/tensorflow/tensorflow-core-api/0.4.1/tensorflow-core-api-0.4.1-macosx-x86_64.jar",
-				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.4/javacpp-1.5.4.jar",
-				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.4/javacpp-1.5.4-macosx-x86_64.jar",
+				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.8/javacpp-1.5.8.jar",
+				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.6/javacpp-1.5.6-macosx-x86_64.jar",
 				"https://maven.scijava.org/content/repositories/releases/io/bioimage/dl-modelrunner-tensorflow-2b/0.2.0/dl-modelrunner-tensorflow-2b-0.2.0.jar"
 			]
 		},
@@ -978,11 +708,11 @@
 			"rosetta": false,
 			"jars": [
 				"https://repo1.maven.org/maven2/org/tensorflow/tensorflow-core-api/0.4.2/tensorflow-core-api-0.4.2.jar",
-				"https://repo1.maven.org/maven2/com/google/protobuf/protobuf-java/3.8.0/protobuf-java-3.8.0.jar",
-				"https://repo1.maven.org/maven2/org/tensorflow/ndarray/0.4.0/ndarray-0.4.0.jar",
+				"https://repo1.maven.org/maven2/com/google/protobuf/protobuf-java/3.22.0/protobuf-java-3.22.0.jar",
+				"https://repo1.maven.org/maven2/org/tensorflow/ndarray/0.3.3/ndarray-0.3.3.jar",
 				"https://repo1.maven.org/maven2/org/tensorflow/tensorflow-core-api/0.4.2/tensorflow-core-api-0.4.2-windows-x86_64.jar",
-				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.4/javacpp-1.5.4.jar",
-				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.4/javacpp-1.5.4-windows-x86_64.jar",
+				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.8/javacpp-1.5.8.jar",
+				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.6/javacpp-1.5.6-windows-x86_64.jar",
 				"https://maven.scijava.org/content/repositories/releases/io/bioimage/dl-modelrunner-tensorflow-2b/0.2.0/dl-modelrunner-tensorflow-2b-0.2.0.jar"
 			]
 		},
@@ -996,11 +726,11 @@
 			"rosetta": false,
 			"jars": [
 				"https://repo1.maven.org/maven2/org/tensorflow/tensorflow-core-api/0.4.2/tensorflow-core-api-0.4.2.jar",
-				"https://repo1.maven.org/maven2/com/google/protobuf/protobuf-java/3.8.0/protobuf-java-3.8.0.jar",
-				"https://repo1.maven.org/maven2/org/tensorflow/ndarray/0.4.0/ndarray-0.4.0.jar",
+				"https://repo1.maven.org/maven2/com/google/protobuf/protobuf-java/3.22.0/protobuf-java-3.22.0.jar",
+				"https://repo1.maven.org/maven2/org/tensorflow/ndarray/0.3.3/ndarray-0.3.3.jar",
 				"https://repo1.maven.org/maven2/org/tensorflow/tensorflow-core-api/0.4.2/tensorflow-core-api-0.4.2-windows-x86_64-gpu.jar",
-				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.4/javacpp-1.5.4.jar",
-				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.4/javacpp-1.5.4-windows-x86_64.jar",
+				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.8/javacpp-1.5.8.jar",
+				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.6/javacpp-1.5.6-windows-x86_64.jar",
 				"https://maven.scijava.org/content/repositories/releases/io/bioimage/dl-modelrunner-tensorflow-2b/0.2.0/dl-modelrunner-tensorflow-2b-0.2.0.jar"
 			]
 		},
@@ -1014,11 +744,11 @@
 			"rosetta": false,
 			"jars": [
 				"https://repo1.maven.org/maven2/org/tensorflow/tensorflow-core-api/0.4.2/tensorflow-core-api-0.4.2.jar",
-				"https://repo1.maven.org/maven2/com/google/protobuf/protobuf-java/3.8.0/protobuf-java-3.8.0.jar",
-				"https://repo1.maven.org/maven2/org/tensorflow/ndarray/0.4.0/ndarray-0.4.0.jar",
+				"https://repo1.maven.org/maven2/com/google/protobuf/protobuf-java/3.22.0/protobuf-java-3.22.0.jar",
+				"https://repo1.maven.org/maven2/org/tensorflow/ndarray/0.3.3/ndarray-0.3.3.jar",
 				"https://repo1.maven.org/maven2/org/tensorflow/tensorflow-core-api/0.4.2/tensorflow-core-api-0.4.2-linux-x86_64.jar",
-				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.4/javacpp-1.5.4.jar",
-				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.4/javacpp-1.5.4-linux-x86_64.jar",
+				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.8/javacpp-1.5.8.jar",
+				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.6/javacpp-1.5.6-linux-x86_64.jar",
 				"https://maven.scijava.org/content/repositories/releases/io/bioimage/dl-modelrunner-tensorflow-2b/0.2.0/dl-modelrunner-tensorflow-2b-0.2.0.jar"
 			]
 		},
@@ -1032,11 +762,11 @@
 			"rosetta": false,
 			"jars": [
 				"https://repo1.maven.org/maven2/org/tensorflow/tensorflow-core-api/0.4.2/tensorflow-core-api-0.4.2.jar",
-				"https://repo1.maven.org/maven2/com/google/protobuf/protobuf-java/3.8.0/protobuf-java-3.8.0.jar",
-				"https://repo1.maven.org/maven2/org/tensorflow/ndarray/0.4.0/ndarray-0.4.0.jar",
+				"https://repo1.maven.org/maven2/com/google/protobuf/protobuf-java/3.22.0/protobuf-java-3.22.0.jar",
+				"https://repo1.maven.org/maven2/org/tensorflow/ndarray/0.3.3/ndarray-0.3.3.jar",
 				"https://repo1.maven.org/maven2/org/tensorflow/tensorflow-core-api/0.4.2/tensorflow-core-api-0.4.2-linux-x86_64-gpu.jar",
-				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.4/javacpp-1.5.4.jar",
-				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.4/javacpp-1.5.4-linux-x86_64.jar",
+				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.8/javacpp-1.5.8.jar",
+				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.6/javacpp-1.5.6-linux-x86_64.jar",
 				"https://maven.scijava.org/content/repositories/releases/io/bioimage/dl-modelrunner-tensorflow-2b/0.2.0/dl-modelrunner-tensorflow-2b-0.2.0.jar"
 			]
 		},
@@ -1050,11 +780,11 @@
 			"rosetta": false,
 			"jars": [
 				"https://repo1.maven.org/maven2/org/tensorflow/tensorflow-core-api/0.4.2/tensorflow-core-api-0.4.2.jar",
-				"https://repo1.maven.org/maven2/com/google/protobuf/protobuf-java/3.8.0/protobuf-java-3.8.0.jar",
-				"https://repo1.maven.org/maven2/org/tensorflow/ndarray/0.4.0/ndarray-0.4.0.jar",
+				"https://repo1.maven.org/maven2/com/google/protobuf/protobuf-java/3.22.0/protobuf-java-3.22.0.jar",
+				"https://repo1.maven.org/maven2/org/tensorflow/ndarray/0.3.3/ndarray-0.3.3.jar",
 				"https://repo1.maven.org/maven2/org/tensorflow/tensorflow-core-api/0.4.2/tensorflow-core-api-0.4.2-macosx-x86_64.jar",
-				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.4/javacpp-1.5.4.jar",
-				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.4/javacpp-1.5.4-macosx-x86_64.jar",
+				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.8/javacpp-1.5.8.jar",
+				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.6/javacpp-1.5.6-macosx-x86_64.jar",
 				"https://maven.scijava.org/content/repositories/releases/io/bioimage/dl-modelrunner-tensorflow-2b/0.2.0/dl-modelrunner-tensorflow-2b-0.2.0.jar"
 			]
 		},
