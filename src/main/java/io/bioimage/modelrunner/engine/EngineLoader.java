@@ -36,12 +36,11 @@
 package io.bioimage.modelrunner.engine;
 
 import java.io.File;
-import java.io.IOException;
+
 import java.lang.reflect.InvocationTargetException;
 import java.net.MalformedURLException;
 import java.net.URISyntaxException;
 import java.net.URL;
-import java.net.URLClassLoader;
 import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.HashMap;
@@ -197,8 +196,8 @@ public class EngineLoader extends ClassLoader
 		}
 		URL[] urls = new URL[urlList.size()];
 		urlList.toArray(urls);
-		this.engineClassloader = new URLClassLoader( urls, baseClassloader );
-
+		this.engineClassloader = new ParentLastURLClassLoader( urls, baseClassloader );
+		
 		loadedEngines.put( this.versionedEngine, this.engineClassloader );
 	}
 
@@ -317,11 +316,8 @@ public class EngineLoader extends ClassLoader
 				jarFile.close();
 			}
 		}
-		catch ( IOException | ClassNotFoundException | InstantiationException
-				| IllegalAccessException | IllegalArgumentException 
-				| InvocationTargetException | NoSuchMethodException | SecurityException e )
-		{
-			errMsg = e.getCause().toString();
+		catch (Exception ex) {
+			errMsg = ex.getCause().toString();
 		}
 		// As no interface has been found create an exception
 		throw new LoadEngineException( new File( this.enginePath ), errMsg );
