@@ -47,7 +47,7 @@ import java.net.URLClassLoader;
  * the JARs to the classpath, thus the native libraries were never found. With a child-first/parent-last
  * the classes from the JARs are always loaded on the child classloader (engineclassloader) making its 
  * classpath include the JARs that contain the native libraries.
- * See {@link org.bytedeco.javacpp#findResources} at line 894 to find the conflicting part, where
+ * See  org.bytedeco.javacpp#findResources at line 894 to find the conflicting part, where
  * if the classloader was not parent-last, the needed resource was not found
  * @author Carlos Garcia Lopez de Haro
  *

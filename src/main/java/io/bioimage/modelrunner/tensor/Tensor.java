@@ -303,6 +303,9 @@ public final class Tensor< T extends RealType< T > & NativeType< T > >
 	 *
 	 * @param <T>
 	 * 			  the possible ImgLib2 datatypes that the backend ImgLib2 img can have
+	 * @param <R>
+	 * 			  the possible ImgLib2 datatypes that the backend ImgLib2 img for the copy tensor
+	 * 				can have
 	 * @param tt
 	 *            tensor where the copy is created from
 	 * @param type
@@ -325,7 +328,9 @@ public final class Tensor< T extends RealType< T > & NativeType< T > >
 	 * data type of the data
 	 *
 	 * @param <T>
-	 * 			  the possible ImgLib2 datatypes that the backend ImgLib2 img can have
+	 * 			  the possible ImgLib2 datatypes that the ImgLib2 img can have
+	 * @param <R>
+	 * 			  the possible ImgLib2 datatypes that the copy ImgLib2 img can have
 	 * @param input
 	 *            tensor where the copy is created from
 	 * @param type
