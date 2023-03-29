@@ -660,6 +660,7 @@
 				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.8/javacpp-1.5.8.jar",
 				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.6/javacpp-1.5.6-linux-x86_64.jar",
 				"https://maven.scijava.org/service/local/repositories/snapshots/content/io/bioimage/dl-modelrunner-tensorflow-2b/0.2.1-SNAPSHOT/dl-modelrunner-tensorflow-2b-0.2.1-20230329.014229-10.jar"
+			]
 		},
 		{
 			"engine": "tensorflow",
