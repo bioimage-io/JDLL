@@ -45,7 +45,7 @@ import com.google.gson.JsonParser;
 /**
  * Class to interact with the Bioimage.io API. Used to get information
  * about models and to download them
- * @author Carlos Javier Garcia Lopez de Haro 
+ * @author Carlos Javier Garcia Lopez de Haro
  *
  */
 public class ModelRepo {
