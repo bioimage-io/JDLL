@@ -23,8 +23,8 @@
 	</organization>
 	<licenses>
 		<license>
-			<name>BSD-3-Clause</name>
-			<url>https://opensource.org/licenses/BSD-3-Clause</url>
+			<name>Apache License, Version 2.0</name>
+			<url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
 			<distribution>repo</distribution>
 		</license>
 	</licenses>
@@ -104,7 +104,7 @@
 
 	<properties>
 		<package-name>io.bioimage.modelrunner</package-name>
-		<license.licenseName>bsd_3</license.licenseName>
+		<license.licenseName>apache_2</license.licenseName>
 		<license.copyrightOwners>Institut Pasteur and BioImage.IO developers.</license.copyrightOwners>
 		<license.excludes>**/*.json</license.excludes>
 
