@@ -28,10 +28,21 @@ public class SamTransformation {
 		int hInd = input.getAxesOrderString().toLowerCase().indexOf("y");
 		int wInd = input.getAxesOrderString().toLowerCase().indexOf("x");
 		int[] origSize = new int[] {hInd, wInd};
-		generateCropBoxes(origSize, this.cropNLayers, this.cropOverlapRatio);
+		Object[] cropBoxesLayerIdxs = generateCropBoxes(origSize, this.cropNLayers, this.cropOverlapRatio);
+		List<int[]> cropBoxes = (List<int[]>) cropBoxesLayerIdxs[0];
+		List<Integer> layerIdxs = (List<Integer>) cropBoxesLayerIdxs[1];
+		
+		for (int i = 0; i < cropBoxes.size(); i ++) {
+			processCrop(input, cropBoxes.get(i), layerIdxs.get(i), origSize);
+		}
 	}
 	
-	private static void generateCropBoxes(int[] imSize, int nLayers, double overlapRatio) {
+	private < R extends RealType< R > & NativeType< R > > void processCrop(final Tensor< R > image, 
+			int[] cropBox, int cropLayer, int[] origSize) {
+		int x0 = cropBox[0]; int y0 = cropBox[1]; int x1 = cropBox[2]; int y1 = cropBox[3];
+	}
+	
+	private static Object[] generateCropBoxes(int[] imSize, int nLayers, double overlapRatio) {
 		List<int[]> cropBoxes = new ArrayList<int[]>();
 		List<Integer> layerIdxs = new ArrayList<Integer>();
 		int imH = imSize[0];
@@ -52,7 +63,17 @@ public class SamTransformation {
 			for (int i = 0; i < nCropsPerSide; i ++) {
 				cropBoxX0[i] = (cropW - overlap) * i;
 				cropBoxY0[i] = (cropH - overlap) * i;
+				for (int i0 = 0; i0 < cropBoxX0.length; i ++) {
+					for (int i1 = 0; i1 < cropBoxY0.length; i ++) {
+						int[] box = {cropBoxX0[i0], cropBoxY0[i1],
+								Math.min(cropBoxX0[i0] + cropW, imW),
+								Math.min(cropBoxY0[i1] + cropH, imH)};
+						cropBoxes.add(box);
+						layerIdxs.add(iLayer + 1);
+					}
+				}
 			}
 		}
+		return new Object[] {cropBoxes, layerIdxs};
 	}
 }
