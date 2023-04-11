@@ -790,6 +790,46 @@
 		},
 		{
 			"engine": "pytorch",
+			"version": "1.14.0",
+			"pythonVersion": "1.14.0",
+			"os": "windows-x86_64",
+			"gpu": true,
+			"cpu": true,
+			"rosetta": false,
+			"jars": [
+				"https://oss.sonatype.org/content/repositories/snapshots/org/bytedeco/pytorch-platform/1.13.1-1.5.9-SNAPSHOT/pytorch-platform-1.13.1-1.5.9-20230404.055134-18.jar",
+				"https://oss.sonatype.org/content/repositories/snapshots/org/bytedeco/pytorch/1.13.1-1.5.9-SNAPSHOT/pytorch-1.13.1-1.5.9-20230404.071430-36.jar",
+				"https://oss.sonatype.org/content/repositories/snapshots/org/bytedeco/pytorch/1.13.1-1.5.9-SNAPSHOT/pytorch-1.13.1-1.5.9-20230404.071430-36-windows-x86_64.jar",
+				"https://oss.sonatype.org/content/repositories/snapshots/org/bytedeco/javacpp-platform/1.5.9-SNAPSHOT/javacpp-platform-1.5.9-20230409.122134-298.jar",
+				"https://oss.sonatype.org/content/repositories/snapshots/org/bytedeco/javacpp/1.5.9-SNAPSHOT/javacpp-1.5.9-20230407.112849-215.jar",
+				"https://oss.sonatype.org/content/repositories/snapshots/org/bytedeco/javacpp/1.5.9-SNAPSHOT/javacpp-1.5.9-20230407.112849-215-windows-x86_64.jar",
+				"https://oss.sonatype.org/content/repositories/snapshots/org/bytedeco/openblas-platform/0.3.23-1.5.9-SNAPSHOT/openblas-platform-0.3.23-1.5.9-20230409.045817-48.jar",
+				"https://oss.sonatype.org/content/repositories/snapshots/org/bytedeco/openblas/0.3.23-1.5.9-SNAPSHOT/openblas-0.3.23-1.5.9-20230404.015544-39.jar",
+				"https://oss.sonatype.org/content/repositories/snapshots/org/bytedeco/openblas/0.3.23-1.5.9-SNAPSHOT/openblas-0.3.23-1.5.9-20230404.015544-39-windows-x86_64.jar"
+			]
+		},	
+		{
+			"engine": "pytorch",
+			"version": "1.14.0",
+			"pythonVersion": "1.14.0",
+			"os": "linux-x86_64",
+			"gpu": true,
+			"cpu": true,
+			"rosetta": true,
+			"jars": [
+				"https://oss.sonatype.org/content/repositories/snapshots/org/bytedeco/pytorch-platform/1.13.1-1.5.9-SNAPSHOT/pytorch-platform-1.13.1-1.5.9-20230404.055134-18.jar",
+				"https://oss.sonatype.org/content/repositories/snapshots/org/bytedeco/pytorch/1.13.1-1.5.9-SNAPSHOT/pytorch-1.13.1-1.5.9-20230404.071430-36.jar",
+				"https://oss.sonatype.org/content/repositories/snapshots/org/bytedeco/pytorch/1.13.1-1.5.9-SNAPSHOT/pytorch-1.13.1-1.5.9-20230404.071430-36-linux-x86_64.jar",
+				"https://oss.sonatype.org/content/repositories/snapshots/org/bytedeco/javacpp-platform/1.5.9-SNAPSHOT/javacpp-platform-1.5.9-20230409.122134-298.jar",
+				"https://oss.sonatype.org/content/repositories/snapshots/org/bytedeco/javacpp/1.5.9-SNAPSHOT/javacpp-1.5.9-20230407.112849-215.jar",
+				"https://oss.sonatype.org/content/repositories/snapshots/org/bytedeco/javacpp/1.5.9-SNAPSHOT/javacpp-1.5.9-20230407.112849-215-linux-x86_64.jar",
+				"https://oss.sonatype.org/content/repositories/snapshots/org/bytedeco/openblas-platform/0.3.23-1.5.9-SNAPSHOT/openblas-platform-0.3.23-1.5.9-20230409.045817-48.jar",
+				"https://oss.sonatype.org/content/repositories/snapshots/org/bytedeco/openblas/0.3.23-1.5.9-SNAPSHOT/openblas-0.3.23-1.5.9-20230404.015544-39.jar",
+				"https://oss.sonatype.org/content/repositories/snapshots/org/bytedeco/openblas/0.3.23-1.5.9-SNAPSHOT/openblas-0.3.23-1.5.9-20230404.015544-39-linux-x86_64.jar"
+			]
+		},
+		{
+			"engine": "pytorch",
 			"version": "1.13.1",
 			"pythonVersion": "1.13.1",
 			"os": "macosx-x86_64",
