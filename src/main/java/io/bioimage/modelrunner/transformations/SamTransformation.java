@@ -3,7 +3,11 @@ package io.bioimage.modelrunner.transformations;
 import java.util.ArrayList;
 import java.util.List;
 
+import io.bioimage.modelrunner.engine.EngineInfo;
+import io.bioimage.modelrunner.exceptions.LoadEngineException;
+import io.bioimage.modelrunner.model.Model;
 import io.bioimage.modelrunner.tensor.Tensor;
+import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.RealRandomAccessible;
 import net.imglib2.img.Img;
 import net.imglib2.img.array.ArrayImgFactory;
@@ -18,6 +22,8 @@ import net.imglib2.view.Views;
 
 public class SamTransformation {
 
+	private static float eps = (float) Math.pow(10, -6);
+	
 	private int cropNLayers = 0;
 	private double cropOverlapRatio = 512 / 1500;
 	private long imageSize = 1024;
@@ -76,14 +82,36 @@ public class SamTransformation {
 	}
 	
 	
-	private < R extends RealType< R > & NativeType< R > > void setTorchImage(Img<R> image) {
+	private < R extends RealType< R > & NativeType< R > > void setTorchImage(Img<R> image) throws LoadEngineException, Exception {
 		resetImage();
 		inputSize = new long[] {image.dimensionsAsLongArray()[2], image.dimensionsAsLongArray()[2]}; 
+		preprocess((Img<FloatType>) image);
+		
+		// TODO get encoder and run model
+		EngineInfo engineInfo = EngineInfo.defineDLEngine("pytorch", "1.13.1", true, true);
+		Model model = Model.createDeepLearningModel("path/to/cache", "path/to/cache/model.pt", engineInfo);
+		model.loadModel();
+		// TODO Create input and output tensor lists
+		// TODO Create input and output tensor lists
+		// TODO Create input and output tensor lists
+		// TODO Create input and output tensor lists
+		// TODO Create input and output tensor lists
+		model.runModel(null, null);
+		isImageSet = true;
 		
 	}
 	
-	public static < R extends RealType< R > & NativeType< R > > void preprocess(Img<R> image) {
-		
+	public static void preprocess(Img<FloatType> image) {
+		final float[] meanStd = ZeroMeanUnitVarianceTransformation.meanStd( image );
+		final float mean = meanStd[ 0 ];
+		final float std = meanStd[ 1 ];
+		LoopBuilder.setImages( image ).multiThreaded()
+			.forEachPixel( i -> i.set( ( i.get() - mean ) / ( std + eps ) ) );
+		// TODO add padding
+		// TODO add padding
+		// TODO add padding
+		// TODO add padding
+		// TODO add padding
 	}
 	
 	private < R extends RealType< R > & NativeType< R > > void resize(Img<R> image, long targetLength, String axes) {
@@ -98,7 +126,7 @@ public class SamTransformation {
 		// TODO TODO TODO review this
 		// TODO TODO TODO review this interpolation
 		
-		RealRandomAccessible<R> interpolated = Views.interpolate(image, interpFactory).;
+		RealRandomAccessible<R> interpolated = Views.interpolate(image, interpFactory);
 	}
 	
 	private static int[] getPreprocessShape(long oldH, long oldW, long longSideLength) {
