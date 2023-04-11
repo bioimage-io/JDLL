@@ -797,15 +797,6 @@
 			"cpu": true,
 			"rosetta": false,
 			"jars": [
-				"https://oss.sonatype.org/content/repositories/snapshots/org/bytedeco/pytorch-platform/1.13.1-1.5.9-SNAPSHOT/pytorch-platform-1.13.1-1.5.9-20230404.055134-18.jar",
-				"https://oss.sonatype.org/content/repositories/snapshots/org/bytedeco/pytorch/1.13.1-1.5.9-SNAPSHOT/pytorch-1.13.1-1.5.9-20230404.071430-36.jar",
-				"https://oss.sonatype.org/content/repositories/snapshots/org/bytedeco/pytorch/1.13.1-1.5.9-SNAPSHOT/pytorch-1.13.1-1.5.9-20230404.071430-36-windows-x86_64.jar",
-				"https://oss.sonatype.org/content/repositories/snapshots/org/bytedeco/javacpp-platform/1.5.9-SNAPSHOT/javacpp-platform-1.5.9-20230409.122134-298.jar",
-				"https://oss.sonatype.org/content/repositories/snapshots/org/bytedeco/javacpp/1.5.9-SNAPSHOT/javacpp-1.5.9-20230407.112849-215.jar",
-				"https://oss.sonatype.org/content/repositories/snapshots/org/bytedeco/javacpp/1.5.9-SNAPSHOT/javacpp-1.5.9-20230407.112849-215-windows-x86_64.jar",
-				"https://oss.sonatype.org/content/repositories/snapshots/org/bytedeco/openblas-platform/0.3.23-1.5.9-SNAPSHOT/openblas-platform-0.3.23-1.5.9-20230409.045817-48.jar",
-				"https://oss.sonatype.org/content/repositories/snapshots/org/bytedeco/openblas/0.3.23-1.5.9-SNAPSHOT/openblas-0.3.23-1.5.9-20230404.015544-39.jar",
-				"https://oss.sonatype.org/content/repositories/snapshots/org/bytedeco/openblas/0.3.23-1.5.9-SNAPSHOT/openblas-0.3.23-1.5.9-20230404.015544-39-windows-x86_64.jar"
 			]
 		},	
 		{
@@ -817,15 +808,6 @@
 			"cpu": true,
 			"rosetta": true,
 			"jars": [
-				"https://oss.sonatype.org/content/repositories/snapshots/org/bytedeco/pytorch-platform/1.13.1-1.5.9-SNAPSHOT/pytorch-platform-1.13.1-1.5.9-20230404.055134-18.jar",
-				"https://oss.sonatype.org/content/repositories/snapshots/org/bytedeco/pytorch/1.13.1-1.5.9-SNAPSHOT/pytorch-1.13.1-1.5.9-20230404.071430-36.jar",
-				"https://oss.sonatype.org/content/repositories/snapshots/org/bytedeco/pytorch/1.13.1-1.5.9-SNAPSHOT/pytorch-1.13.1-1.5.9-20230404.071430-36-linux-x86_64.jar",
-				"https://oss.sonatype.org/content/repositories/snapshots/org/bytedeco/javacpp-platform/1.5.9-SNAPSHOT/javacpp-platform-1.5.9-20230409.122134-298.jar",
-				"https://oss.sonatype.org/content/repositories/snapshots/org/bytedeco/javacpp/1.5.9-SNAPSHOT/javacpp-1.5.9-20230407.112849-215.jar",
-				"https://oss.sonatype.org/content/repositories/snapshots/org/bytedeco/javacpp/1.5.9-SNAPSHOT/javacpp-1.5.9-20230407.112849-215-linux-x86_64.jar",
-				"https://oss.sonatype.org/content/repositories/snapshots/org/bytedeco/openblas-platform/0.3.23-1.5.9-SNAPSHOT/openblas-platform-0.3.23-1.5.9-20230409.045817-48.jar",
-				"https://oss.sonatype.org/content/repositories/snapshots/org/bytedeco/openblas/0.3.23-1.5.9-SNAPSHOT/openblas-0.3.23-1.5.9-20230404.015544-39.jar",
-				"https://oss.sonatype.org/content/repositories/snapshots/org/bytedeco/openblas/0.3.23-1.5.9-SNAPSHOT/openblas-0.3.23-1.5.9-20230404.015544-39-linux-x86_64.jar"
 			]
 		},
 		{
@@ -837,14 +819,15 @@
 			"cpu": true,
 			"rosetta": true,
 			"jars": [
-				"https://repo1.maven.org/maven2/ai/djl/pytorch/pytorch-jni/1.13.1-0.21.0/pytorch-jni-1.13.1-0.21.0.jar",
-				"https://repo1.maven.org/maven2/ai/djl/pytorch/pytorch-engine/0.21.0/pytorch-engine-0.21.0.jar",
-				"https://repo1.maven.org/maven2/ai/djl/api/0.21.0/api-0.21.0.jar",
-				"https://repo1.maven.org/maven2/org/slf4j/slf4j-simple/1.7.25/slf4j-simple-1.7.25.jar",
-				"https://maven.scijava.org/content/repositories/releases/io/bioimage/dl-modelrunner-pytorch/0.2.0/dl-modelrunner-pytorch-0.2.0.jar",
-				"https://repo1.maven.org/maven2/net/java/dev/jna/jna/5.13.0/jna-5.13.0.jar",
-				"https://repo1.maven.org/maven2/org/apache/commons/commons-compress/1.21/commons-compress-1.21.jar",
-				"https://repo1.maven.org/maven2/org/slf4j/slf4j-api/2.0.6/slf4j-api-2.0.6.jar"				
+				"https://oss.sonatype.org/content/repositories/snapshots/org/bytedeco/pytorch-platform/1.13.1-1.5.9-SNAPSHOT/pytorch-platform-1.13.1-1.5.9-20230404.055134-18.jar",
+				"https://oss.sonatype.org/content/repositories/snapshots/org/bytedeco/pytorch/1.13.1-1.5.9-SNAPSHOT/pytorch-1.13.1-1.5.9-20230404.071430-36.jar",
+				"https://oss.sonatype.org/content/repositories/snapshots/org/bytedeco/pytorch/1.13.1-1.5.9-SNAPSHOT/pytorch-1.13.1-1.5.9-20230404.071430-36-macosx-x86_64.jar",
+				"https://oss.sonatype.org/content/repositories/snapshots/org/bytedeco/javacpp-platform/1.5.9-SNAPSHOT/javacpp-platform-1.5.9-20230409.122134-298.jar",
+				"https://oss.sonatype.org/content/repositories/snapshots/org/bytedeco/javacpp/1.5.9-SNAPSHOT/javacpp-1.5.9-20230407.112849-215.jar",
+				"https://oss.sonatype.org/content/repositories/snapshots/org/bytedeco/javacpp/1.5.9-SNAPSHOT/javacpp-1.5.9-20230407.112849-215-macosx-x86_64.jar",
+				"https://oss.sonatype.org/content/repositories/snapshots/org/bytedeco/openblas-platform/0.3.23-1.5.9-SNAPSHOT/openblas-platform-0.3.23-1.5.9-20230409.045817-48.jar",
+				"https://oss.sonatype.org/content/repositories/snapshots/org/bytedeco/openblas/0.3.23-1.5.9-SNAPSHOT/openblas-0.3.23-1.5.9-20230404.015544-39.jar",
+				"https://oss.sonatype.org/content/repositories/snapshots/org/bytedeco/openblas/0.3.23-1.5.9-SNAPSHOT/openblas-0.3.23-1.5.9-20230404.015544-39-macosx-x86_64.jar"		
 			]
 		},
 		{
@@ -875,14 +858,15 @@
 			"cpu": true,
 			"rosetta": true,
 			"jars": [
-				"https://repo1.maven.org/maven2/ai/djl/pytorch/pytorch-jni/1.13.1-0.21.0/pytorch-jni-1.13.1-0.21.0.jar",
-				"https://repo1.maven.org/maven2/ai/djl/pytorch/pytorch-engine/0.21.0/pytorch-engine-0.21.0.jar",
-				"https://repo1.maven.org/maven2/ai/djl/api/0.21.0/api-0.21.0.jar",
-				"https://repo1.maven.org/maven2/org/slf4j/slf4j-simple/1.7.25/slf4j-simple-1.7.25.jar"	,
-				"https://maven.scijava.org/content/repositories/releases/io/bioimage/dl-modelrunner-pytorch/0.2.0/dl-modelrunner-pytorch-0.2.0.jar",
-				"https://repo1.maven.org/maven2/net/java/dev/jna/jna/5.13.0/jna-5.13.0.jar",
-				"https://repo1.maven.org/maven2/org/apache/commons/commons-compress/1.21/commons-compress-1.21.jar",
-				"https://repo1.maven.org/maven2/org/slf4j/slf4j-api/2.0.6/slf4j-api-2.0.6.jar"		
+				"https://oss.sonatype.org/content/repositories/snapshots/org/bytedeco/pytorch-platform/1.13.1-1.5.9-SNAPSHOT/pytorch-platform-1.13.1-1.5.9-20230404.055134-18.jar",
+				"https://oss.sonatype.org/content/repositories/snapshots/org/bytedeco/pytorch/1.13.1-1.5.9-SNAPSHOT/pytorch-1.13.1-1.5.9-20230404.071430-36.jar",
+				"https://oss.sonatype.org/content/repositories/snapshots/org/bytedeco/pytorch/1.13.1-1.5.9-SNAPSHOT/pytorch-1.13.1-1.5.9-20230404.071430-36-linux-x86_64.jar",
+				"https://oss.sonatype.org/content/repositories/snapshots/org/bytedeco/javacpp-platform/1.5.9-SNAPSHOT/javacpp-platform-1.5.9-20230409.122134-298.jar",
+				"https://oss.sonatype.org/content/repositories/snapshots/org/bytedeco/javacpp/1.5.9-SNAPSHOT/javacpp-1.5.9-20230407.112849-215.jar",
+				"https://oss.sonatype.org/content/repositories/snapshots/org/bytedeco/javacpp/1.5.9-SNAPSHOT/javacpp-1.5.9-20230407.112849-215-linux-x86_64.jar",
+				"https://oss.sonatype.org/content/repositories/snapshots/org/bytedeco/openblas-platform/0.3.23-1.5.9-SNAPSHOT/openblas-platform-0.3.23-1.5.9-20230409.045817-48.jar",
+				"https://oss.sonatype.org/content/repositories/snapshots/org/bytedeco/openblas/0.3.23-1.5.9-SNAPSHOT/openblas-0.3.23-1.5.9-20230404.015544-39.jar",
+				"https://oss.sonatype.org/content/repositories/snapshots/org/bytedeco/openblas/0.3.23-1.5.9-SNAPSHOT/openblas-0.3.23-1.5.9-20230404.015544-39-linux-x86_64.jar"
 			]
 		},
 		{
@@ -913,14 +897,15 @@
 			"cpu": true,
 			"rosetta": false,
 			"jars": [
-				"https://repo1.maven.org/maven2/ai/djl/pytorch/pytorch-jni/1.13.1-0.21.0/pytorch-jni-1.13.1-0.21.0.jar",
-				"https://repo1.maven.org/maven2/ai/djl/pytorch/pytorch-engine/0.21.0/pytorch-engine-0.21.0.jar",
-				"https://repo1.maven.org/maven2/ai/djl/api/0.21.0/api-0.21.0.jar",
-				"https://repo1.maven.org/maven2/org/slf4j/slf4j-simple/1.7.25/slf4j-simple-1.7.25.jar",
-				"https://maven.scijava.org/content/repositories/releases/io/bioimage/dl-modelrunner-pytorch/0.2.0/dl-modelrunner-pytorch-0.2.0.jar",
-				"https://repo1.maven.org/maven2/net/java/dev/jna/jna/5.13.0/jna-5.13.0.jar",
-				"https://repo1.maven.org/maven2/org/apache/commons/commons-compress/1.21/commons-compress-1.21.jar",
-				"https://repo1.maven.org/maven2/org/slf4j/slf4j-api/2.0.6/slf4j-api-2.0.6.jar"		
+				"https://oss.sonatype.org/content/repositories/snapshots/org/bytedeco/pytorch-platform/1.13.1-1.5.9-SNAPSHOT/pytorch-platform-1.13.1-1.5.9-20230404.055134-18.jar",
+				"https://oss.sonatype.org/content/repositories/snapshots/org/bytedeco/pytorch/1.13.1-1.5.9-SNAPSHOT/pytorch-1.13.1-1.5.9-20230404.071430-36.jar",
+				"https://oss.sonatype.org/content/repositories/snapshots/org/bytedeco/pytorch/1.13.1-1.5.9-SNAPSHOT/pytorch-1.13.1-1.5.9-20230404.071430-36-windows-x86_64.jar",
+				"https://oss.sonatype.org/content/repositories/snapshots/org/bytedeco/javacpp-platform/1.5.9-SNAPSHOT/javacpp-platform-1.5.9-20230409.122134-298.jar",
+				"https://oss.sonatype.org/content/repositories/snapshots/org/bytedeco/javacpp/1.5.9-SNAPSHOT/javacpp-1.5.9-20230407.112849-215.jar",
+				"https://oss.sonatype.org/content/repositories/snapshots/org/bytedeco/javacpp/1.5.9-SNAPSHOT/javacpp-1.5.9-20230407.112849-215-windows-x86_64.jar",
+				"https://oss.sonatype.org/content/repositories/snapshots/org/bytedeco/openblas-platform/0.3.23-1.5.9-SNAPSHOT/openblas-platform-0.3.23-1.5.9-20230409.045817-48.jar",
+				"https://oss.sonatype.org/content/repositories/snapshots/org/bytedeco/openblas/0.3.23-1.5.9-SNAPSHOT/openblas-0.3.23-1.5.9-20230404.015544-39.jar",
+				"https://oss.sonatype.org/content/repositories/snapshots/org/bytedeco/openblas/0.3.23-1.5.9-SNAPSHOT/openblas-0.3.23-1.5.9-20230404.015544-39-windows-x86_64.jar"
 			]
 		},		
 		{
@@ -970,14 +955,15 @@
 			"cpu": true,
 			"rosetta": true,
 			"jars": [
-				"https://repo1.maven.org/maven2/ai/djl/pytorch/pytorch-jni/1.13.0-0.20.0/pytorch-jni-1.13.0-0.20.0.jar",
-				"https://repo1.maven.org/maven2/ai/djl/pytorch/pytorch-engine/0.20.0/pytorch-engine-0.20.0.jar",
-				"https://repo1.maven.org/maven2/ai/djl/api/0.20.0/api-0.20.0.jar",
-				"https://repo1.maven.org/maven2/org/slf4j/slf4j-simple/1.7.25/slf4j-simple-1.7.25.jar"	,
-				"https://maven.scijava.org/content/repositories/releases/io/bioimage/dl-modelrunner-pytorch/0.2.0/dl-modelrunner-pytorch-0.2.0.jar",
-				"https://repo1.maven.org/maven2/net/java/dev/jna/jna/5.13.0/jna-5.13.0.jar",
-				"https://repo1.maven.org/maven2/org/apache/commons/commons-compress/1.21/commons-compress-1.21.jar",
-				"https://repo1.maven.org/maven2/org/slf4j/slf4j-api/2.0.6/slf4j-api-2.0.6.jar"		
+				"https://oss.sonatype.org/content/repositories/snapshots/org/bytedeco/pytorch-platform/1.13.0-1.5.9-SNAPSHOT/pytorch-platform-1.13.0-1.5.9-20221221.012439-26.jar",
+				"https://oss.sonatype.org/content/repositories/snapshots/org/bytedeco/pytorch/1.13.0-1.5.9-SNAPSHOT/pytorch-1.13.0-1.5.9-20221221.015404-51.jar",
+				"https://oss.sonatype.org/content/repositories/snapshots/org/bytedeco/pytorch/1.13.0-1.5.9-SNAPSHOT/pytorch-1.13.0-1.5.9-20221221.015404-51-linux-x86_64.jar",
+				"https://oss.sonatype.org/content/repositories/snapshots/org/bytedeco/javacpp-platform/1.5.9-SNAPSHOT/javacpp-platform-1.5.9-20230409.122134-298.jar",
+				"https://oss.sonatype.org/content/repositories/snapshots/org/bytedeco/javacpp/1.5.9-SNAPSHOT/javacpp-1.5.9-20230407.112849-215.jar",
+				"https://oss.sonatype.org/content/repositories/snapshots/org/bytedeco/javacpp/1.5.9-SNAPSHOT/javacpp-1.5.9-20230407.112849-215-linux-x86_64.jar",
+				"https://oss.sonatype.org/content/repositories/snapshots/org/bytedeco/openblas-platform/0.3.23-1.5.9-SNAPSHOT/openblas-platform-0.3.23-1.5.9-20230409.045817-48.jar",
+				"https://oss.sonatype.org/content/repositories/snapshots/org/bytedeco/openblas/0.3.23-1.5.9-SNAPSHOT/openblas-0.3.23-1.5.9-20230404.015544-39.jar",
+				"https://oss.sonatype.org/content/repositories/snapshots/org/bytedeco/openblas/0.3.23-1.5.9-SNAPSHOT/openblas-0.3.23-1.5.9-20230404.015544-39-linux-x86_64.jar"
 			]
 		},
 		{
@@ -1008,14 +994,15 @@
 			"cpu": true,
 			"rosetta": false,
 			"jars": [
-				"https://repo1.maven.org/maven2/ai/djl/pytorch/pytorch-jni/1.13.0-0.20.0/pytorch-jni-1.13.0-0.20.0.jar",
-				"https://repo1.maven.org/maven2/ai/djl/pytorch/pytorch-engine/0.20.0/pytorch-engine-0.20.0.jar",
-				"https://repo1.maven.org/maven2/ai/djl/api/0.20.0/api-0.20.0.jar",
-				"https://repo1.maven.org/maven2/org/slf4j/slf4j-simple/1.7.25/slf4j-simple-1.7.25.jar",
-				"https://maven.scijava.org/content/repositories/releases/io/bioimage/dl-modelrunner-pytorch/0.2.0/dl-modelrunner-pytorch-0.2.0.jar",
-				"https://repo1.maven.org/maven2/net/java/dev/jna/jna/5.13.0/jna-5.13.0.jar",
-				"https://repo1.maven.org/maven2/org/apache/commons/commons-compress/1.21/commons-compress-1.21.jar",
-				"https://repo1.maven.org/maven2/org/slf4j/slf4j-api/2.0.6/slf4j-api-2.0.6.jar"		
+				"https://oss.sonatype.org/content/repositories/snapshots/org/bytedeco/pytorch-platform/1.13.0-1.5.9-SNAPSHOT/pytorch-platform-1.13.0-1.5.9-20221221.012439-26.jar",
+				"https://oss.sonatype.org/content/repositories/snapshots/org/bytedeco/pytorch/1.13.0-1.5.9-SNAPSHOT/pytorch-1.13.0-1.5.9-20221221.015404-51.jar",
+				"https://oss.sonatype.org/content/repositories/snapshots/org/bytedeco/pytorch/1.13.0-1.5.9-SNAPSHOT/pytorch-1.13.0-1.5.9-20221221.015404-51-windows-x86_64.jar",
+				"https://oss.sonatype.org/content/repositories/snapshots/org/bytedeco/javacpp-platform/1.5.9-SNAPSHOT/javacpp-platform-1.5.9-20230409.122134-298.jar",
+				"https://oss.sonatype.org/content/repositories/snapshots/org/bytedeco/javacpp/1.5.9-SNAPSHOT/javacpp-1.5.9-20230407.112849-215.jar",
+				"https://oss.sonatype.org/content/repositories/snapshots/org/bytedeco/javacpp/1.5.9-SNAPSHOT/javacpp-1.5.9-20230407.112849-215-windows-x86_64.jar",
+				"https://oss.sonatype.org/content/repositories/snapshots/org/bytedeco/openblas-platform/0.3.23-1.5.9-SNAPSHOT/openblas-platform-0.3.23-1.5.9-20230409.045817-48.jar",
+				"https://oss.sonatype.org/content/repositories/snapshots/org/bytedeco/openblas/0.3.23-1.5.9-SNAPSHOT/openblas-0.3.23-1.5.9-20230404.015544-39.jar",
+				"https://oss.sonatype.org/content/repositories/snapshots/org/bytedeco/openblas/0.3.23-1.5.9-SNAPSHOT/openblas-0.3.23-1.5.9-20230404.015544-39-windows-x86_64.jar"
 			]
 		},
 		{
@@ -1027,14 +1014,15 @@
 			"cpu": true,
 			"rosetta": true,
 			"jars": [
-				"https://repo1.maven.org/maven2/ai/djl/pytorch/pytorch-jni/1.12.1-0.19.0/pytorch-jni-1.12.1-0.19.0.jar",
-				"https://repo1.maven.org/maven2/ai/djl/pytorch/pytorch-engine/0.19.0/pytorch-engine-0.19.0.jar",
-				"https://repo1.maven.org/maven2/ai/djl/api/0.19.0/api-0.19.0.jar",
-				"https://repo1.maven.org/maven2/org/slf4j/slf4j-simple/1.7.25/slf4j-simple-1.7.25.jar"	,
-				"https://maven.scijava.org/content/repositories/releases/io/bioimage/dl-modelrunner-pytorch/0.2.0/dl-modelrunner-pytorch-0.2.0.jar",
-				"https://repo1.maven.org/maven2/net/java/dev/jna/jna/5.13.0/jna-5.13.0.jar",
-				"https://repo1.maven.org/maven2/org/apache/commons/commons-compress/1.21/commons-compress-1.21.jar",
-				"https://repo1.maven.org/maven2/org/slf4j/slf4j-api/2.0.6/slf4j-api-2.0.6.jar"			
+				"https://oss.sonatype.org/content/repositories/snapshots/org/bytedeco/pytorch-platform/1.13.0-1.5.9-SNAPSHOT/pytorch-platform-1.13.0-1.5.9-20221221.012439-26.jar",
+				"https://oss.sonatype.org/content/repositories/snapshots/org/bytedeco/pytorch/1.13.0-1.5.9-SNAPSHOT/pytorch-1.13.0-1.5.9-20221221.015404-51.jar",
+				"https://oss.sonatype.org/content/repositories/snapshots/org/bytedeco/pytorch/1.13.0-1.5.9-SNAPSHOT/pytorch-1.13.0-1.5.9-20221221.015404-51-macosx-x86_64.jar",
+				"https://oss.sonatype.org/content/repositories/snapshots/org/bytedeco/javacpp-platform/1.5.9-SNAPSHOT/javacpp-platform-1.5.9-20230409.122134-298.jar",
+				"https://oss.sonatype.org/content/repositories/snapshots/org/bytedeco/javacpp/1.5.9-SNAPSHOT/javacpp-1.5.9-20230407.112849-215.jar",
+				"https://oss.sonatype.org/content/repositories/snapshots/org/bytedeco/javacpp/1.5.9-SNAPSHOT/javacpp-1.5.9-20230407.112849-215-macosx-x86_64.jar",
+				"https://oss.sonatype.org/content/repositories/snapshots/org/bytedeco/openblas-platform/0.3.23-1.5.9-SNAPSHOT/openblas-platform-0.3.23-1.5.9-20230409.045817-48.jar",
+				"https://oss.sonatype.org/content/repositories/snapshots/org/bytedeco/openblas/0.3.23-1.5.9-SNAPSHOT/openblas-0.3.23-1.5.9-20230404.015544-39.jar",
+				"https://oss.sonatype.org/content/repositories/snapshots/org/bytedeco/openblas/0.3.23-1.5.9-SNAPSHOT/openblas-0.3.23-1.5.9-20230404.015544-39-macosx-x86_64.jar"
 			]
 		},
 		{
