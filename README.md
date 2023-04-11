@@ -173,3 +173,10 @@ model.runModel(inputTensors, outputTensors);
 
 * [ExampleLoadAndRunModel](https://github.com/bioimage-io/model-runner-java/blob/main/src/main/java/io/bioimage/modelrunner/example/ExampleLoadAndRunModel.java) (PyTorch)
 * [ExampleLoadTensorflow1Tensorflow2](https://github.com/bioimage-io/model-runner-java/blob/main/src/main/java/io/bioimage/modelrunner/example/ExampleLoadTensorflow1Tensorflow2.java)
+
+
+## Acknowledgements.
+
+This library was initially developed by the Icy team following the development of the DeepImageJ project. 
+We acknowledge the financial support of France-Bioimaging.
+We also acknowledge the AI for Life consortium that supported a hackathon in Milan (February 2023) during which we received feedback and advices from an excellent community.
