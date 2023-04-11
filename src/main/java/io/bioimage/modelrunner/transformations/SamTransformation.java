@@ -4,15 +4,31 @@ import java.util.ArrayList;
 import java.util.List;
 
 import io.bioimage.modelrunner.tensor.Tensor;
+import net.imglib2.RealRandomAccessible;
 import net.imglib2.img.Img;
+import net.imglib2.img.array.ArrayImgFactory;
+import net.imglib2.interpolation.randomaccess.NLinearInterpolatorFactory;
+import net.imglib2.loops.LoopBuilder;
 import net.imglib2.type.NativeType;
 import net.imglib2.type.numeric.RealType;
+import net.imglib2.type.numeric.integer.ByteType;
 import net.imglib2.type.numeric.real.FloatType;
+import net.imglib2.view.IntervalView;
+import net.imglib2.view.Views;
 
 public class SamTransformation {
 
 	private int cropNLayers = 0;
 	private double cropOverlapRatio = 512 / 1500;
+	private long imageSize = 1024;
+	private boolean isImageSet = false;
+    private Object features = null;
+    private int origH = 0;
+    private int origW = 0;
+    private int inputH = 0;
+    private int inputW = 0;
+    private long[] inputSize;
+    private long[] originalSize;
 	
 	public < R extends RealType< R > & NativeType< R > > void apply( final Tensor< R > input )
 	{
@@ -40,6 +56,57 @@ public class SamTransformation {
 	private < R extends RealType< R > & NativeType< R > > void processCrop(final Tensor< R > image, 
 			int[] cropBox, int cropLayer, int[] origSize) {
 		int x0 = cropBox[0]; int y0 = cropBox[1]; int x1 = cropBox[2]; int y1 = cropBox[3];
+		String axes = image.getAxesOrderString().toLowerCase();
+		int hInd = axes.indexOf("y");
+		int wInd = axes.indexOf("x");
+		long[] start = new long[axes.length()];
+		long[] end = new long[axes.length()];
+		start[hInd] = y0; start[wInd] = x0;
+		end[hInd] = y1; end[wInd] = x1;
+		IntervalView<R> croppedIm = Views.interval(image.getData(), start, end);
+		int[] croppedImSize = new int[] {y1 - y0, x1 - x0};
+		long[] tensorShape = croppedIm.dimensionsAsLongArray();
+    	final ArrayImgFactory< R > factory = new ArrayImgFactory<>( image.getData().getAt(0) );
+        final Img< R > croppedIm2 = (Img<R>) factory.create(tensorShape);
+
+		LoopBuilder.setImages( image.getData(), croppedIm2 )
+				.multiThreaded()
+				.forEachPixel( (i, j) -> j.set( i ));
+		resize(croppedIm2, imageSize, axes);
+	}
+	
+	
+	private < R extends RealType< R > & NativeType< R > > void setTorchImage(Img<R> image) {
+		resetImage();
+		inputSize = new long[] {image.dimensionsAsLongArray()[2], image.dimensionsAsLongArray()[2]}; 
+		
+	}
+	
+	public static < R extends RealType< R > & NativeType< R > > void preprocess(Img<R> image) {
+		
+	}
+	
+	private < R extends RealType< R > & NativeType< R > > void resize(Img<R> image, long targetLength, String axes) {
+		int hInd = axes.indexOf("y"); int wInd = axes.indexOf("x");
+		int[] targetSize = getPreprocessShape(image.dimensionsAsLongArray()[hInd], 
+				image.dimensionsAsLongArray()[wInd], targetLength);
+		NLinearInterpolatorFactory<R> interpFactory = new NLinearInterpolatorFactory<R>();
+		
+		// TODO TODO TODO review this
+		// TODO TODO TODO review this
+		// TODO TODO TODO review this
+		// TODO TODO TODO review this
+		// TODO TODO TODO review this interpolation
+		
+		RealRandomAccessible<R> interpolated = Views.interpolate(image, interpFactory).;
+	}
+	
+	private static int[] getPreprocessShape(long oldH, long oldW, long longSideLength) {
+		double scale = ((double) longSideLength) * 1 / Math.max(oldW, oldH);
+		double newh = oldH * scale; double neww = oldW * scale;
+		int neww2 = (int) Math.floor(neww + 0.5);
+		int newh2 = (int) Math.floor(newh + 0.5);
+		return new int[] {newh2, neww2};
 	}
 	
 	private static Object[] generateCropBoxes(int[] imSize, int nLayers, double overlapRatio) {
@@ -75,5 +142,12 @@ public class SamTransformation {
 			}
 		}
 		return new Object[] {cropBoxes, layerIdxs};
+	}
+	
+	private void resetImage() {
+	    origH = 0;
+	    origW = 0;
+	    inputH = 0;
+	    inputW = 0;
 	}
 }
