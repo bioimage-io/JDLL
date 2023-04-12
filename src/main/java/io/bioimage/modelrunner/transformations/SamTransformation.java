@@ -6,10 +6,12 @@ import java.util.List;
 import java.util.stream.DoubleStream;
 import java.util.stream.IntStream;
 
+import ij.ImageJ;
 import io.bioimage.modelrunner.engine.EngineInfo;
 import io.bioimage.modelrunner.exceptions.LoadEngineException;
 import io.bioimage.modelrunner.model.Model;
 import io.bioimage.modelrunner.tensor.Tensor;
+import io.scif.img.IO;
 import net.imglib2.Cursor;
 import net.imglib2.FinalInterval;
 import net.imglib2.FinalRealInterval;
@@ -20,6 +22,7 @@ import net.imglib2.RealRandomAccessible;
 import net.imglib2.img.Img;
 import net.imglib2.img.array.ArrayImg;
 import net.imglib2.img.array.ArrayImgFactory;
+import net.imglib2.img.display.imagej.ImageJFunctions;
 import net.imglib2.interpolation.randomaccess.NLinearInterpolatorFactory;
 import net.imglib2.loops.LoopBuilder;
 import net.imglib2.type.NativeType;
@@ -49,8 +52,9 @@ public class SamTransformation {
     private long[] originalSize;
     
     public static void main(String[] args) {
-    	ArrayImg<FloatType, ?> img = new ArrayImgFactory<>(new FloatType()).create(new int[] {1, 3, 3240, 4320});
-    	new SamTransformation().apply(Tensor.build("name", "bcyx", img));
+    	Img< FloatType > img = IO.openImgs( "C:\\Users\\angel\\OneDrive\\Imágenes\\Lisboa 2016\\P1050318.JPG", new FloatType() ).get(0);
+    	//ArrayImg<FloatType, ?> img = new ArrayImgFactory<>(new FloatType()).create(new int[] {1, 3, 3240, 4320});
+    	new SamTransformation().apply(Tensor.build("name", "yxc", img));
     }
 	
 	public < R extends RealType< R > & NativeType< R > > void apply( final Tensor< R > input )
@@ -134,8 +138,8 @@ public class SamTransformation {
 	
 	private < R extends RealType< R > & NativeType< R > > void resize(Img<R> image, long targetLength, String axes) {
 		int hInd = axes.indexOf("y"); int wInd = axes.indexOf("x");
-		int[] targetSizeRedu = getPreprocessShape(image.dimensionsAsLongArray()[hInd], 
-				image.dimensionsAsLongArray()[wInd], targetLength);
+		long[] imageSize = image.dimensionsAsLongArray();
+		int[] targetSizeRedu = getPreprocessShape(imageSize[hInd], imageSize[wInd], targetLength);
 		long[] targetSize = image.dimensionsAsLongArray();
 		targetSize[hInd] = targetSizeRedu[0]; targetSize[wInd] = targetSizeRedu[1];
 		NLinearInterpolatorFactory<R> interpFactory = new NLinearInterpolatorFactory<R>();
@@ -143,13 +147,18 @@ public class SamTransformation {
 		RealRandomAccessible< R > interpolant = Views.interpolate(
 				Views.extendMirrorSingle( image ), interpFactory );
 
-		double[] min = new double[]{ 0, 0, 0, 0 };
-		double[] max = Arrays.stream(targetSize).mapToDouble(i -> (double) (i - 1)).toArray();;
+		double[] min = Arrays.stream(imageSize).mapToDouble(i -> (double) (0)).toArray();;
+		double[] max = Arrays.stream(imageSize).mapToDouble(i -> (double) (i - 1)).toArray();;
 		double[] scalingFactor = IntStream.range(0, max.length)
-				.mapToDouble(i -> (double) targetSize[i] / (double) image.dimensionsAsLongArray()[i]).toArray();
+				.mapToDouble(i -> (double) targetSize[i] / (double) imageSize[i]).toArray();
+		//min = new double[]{ 0.12, 0.43, 0 };
+		//max = new double[]{ 2529.56, 2374.933, 3 };
 		FinalRealInterval interval = new FinalRealInterval( min, max );
 		R type = Util.getTypeFromInterval(image);
-		magnify( interpolant, interval, new ArrayImgFactory<>( type ), scalingFactor );
+		Img<R> resized = new ArrayImgFactory<>( type ).create(targetSize);
+		ImageJFunctions.show(image);
+		magnify( interpolant, interval, resized, scalingFactor );
+		ImageJFunctions.show(resized);
 			
 		
 		FinalInterval biggerInterval = new FinalInterval( Arrays.stream( Intervals.dimensionsAsLongArray(image)).map( x -> x * 4 ).toArray());
@@ -218,7 +227,7 @@ public class SamTransformation {
 	 * @param magnification - the ratio of magnification
 	 * @return - an Img that contains the magnified image content
 	 */
-	public static < T extends RealType< T > & NativeType< T > > Img< T > magnify( RealRandomAccessible< T > source,
+	public static < T extends RealType< T > & NativeType< T > > Img< T > magnify2( RealRandomAccessible< T > source,
 		RealInterval interval, ArrayImgFactory< T > factory, double[] magnification )
 	{
 		int numDimensions = interval.numDimensions();
@@ -229,7 +238,7 @@ public class SamTransformation {
 		for ( int d = 0; d < numDimensions; ++d )
 		{
 			intervalSize[ d ] = interval.realMax( d ) - interval.realMin( d );
-			pixelSize[ d ] = Math.round( intervalSize[ d ] * magnification[d] ) + 1;
+			pixelSize[ d ] = (long) Math.ceil( intervalSize[ d ] * magnification[d] );
 		}
 
 		// create the output image
@@ -246,14 +255,65 @@ public class SamTransformation {
 			cursor.fwd();
 			// compute the appropriate location of the interpolator
 			for ( int d = 0; d < numDimensions; ++d )
-				tmp[ d ] = cursor.getDoublePosition( d ) / output.realMax( d ) * intervalSize[ d ]
-						+ interval.realMin( d );
+				tmp[ d ] = cursor.getDoublePosition( d ) / (output.realMax( d ) * intervalSize[ d ] + eps * eps)
+						+ interval.realMin( d ) + 0;
 			// set the position
 			realRandomAccess.setPosition( tmp );
 			// set the new value
-			cursor.get().set( realRandomAccess.get() );
+			T tt = realRandomAccess.get();
+			cursor.get().set( tt );
 		}
 
 		return output;
+	}
+	
+
+	/**
+	 * Compute a magnified version of a given real interval
+	 *
+	 * @param source - the input data
+	 * @param interval - the real interval on the source that should be magnified
+	 * @param factory - the image factory for the output image
+	 * @param magnification - the ratio of magnification
+	 * @return - an Img that contains the magnified image content
+	 */
+	public static < T extends RealType< T > & NativeType< T > > void magnify( RealRandomAccessible< T > source,
+		RealInterval interval, Img< T > output, double[] magnification )
+	{
+		int numDimensions = interval.numDimensions();
+
+		// compute the number of pixels of the output and the size of the real interval
+		double[] intervalSize = new double[ numDimensions ];
+
+		for ( int d = 0; d < numDimensions; ++d )
+		{
+			intervalSize[ d ] = interval.realMax( d ) - interval.realMin( d );
+		}
+
+		// cursor to iterate over all pixels
+		Cursor< T > cursor = output.localizingCursor();
+
+		// create a RealRandomAccess on the source (interpolator)
+		RealRandomAccess< T > realRandomAccess = source.realRandomAccess();
+
+		// the temporary array to compute the position
+		double[] tmp = new double[ numDimensions ];
+
+		// for all pixels of the output image
+		while ( cursor.hasNext() )
+		{
+			cursor.fwd();
+
+			// compute the appropriate location of the interpolator
+			for ( int d = 0; d < numDimensions; ++d )
+				tmp[ d ] = cursor.getDoublePosition( d ) / output.realMax( d ) * intervalSize[ d ]
+						+ interval.realMin( d );
+
+			// set the position
+			realRandomAccess.setPosition( tmp );
+
+			// set the new value
+			cursor.get().set( realRandomAccess.get() );
+		}
 	}
 }
