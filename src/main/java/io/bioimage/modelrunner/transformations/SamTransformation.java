@@ -1,15 +1,24 @@
 package io.bioimage.modelrunner.transformations;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+import java.util.stream.DoubleStream;
+import java.util.stream.IntStream;
 
 import io.bioimage.modelrunner.engine.EngineInfo;
 import io.bioimage.modelrunner.exceptions.LoadEngineException;
 import io.bioimage.modelrunner.model.Model;
 import io.bioimage.modelrunner.tensor.Tensor;
+import net.imglib2.Cursor;
+import net.imglib2.FinalInterval;
+import net.imglib2.FinalRealInterval;
 import net.imglib2.RandomAccessibleInterval;
+import net.imglib2.RealInterval;
+import net.imglib2.RealRandomAccess;
 import net.imglib2.RealRandomAccessible;
 import net.imglib2.img.Img;
+import net.imglib2.img.array.ArrayImg;
 import net.imglib2.img.array.ArrayImgFactory;
 import net.imglib2.interpolation.randomaccess.NLinearInterpolatorFactory;
 import net.imglib2.loops.LoopBuilder;
@@ -17,7 +26,10 @@ import net.imglib2.type.NativeType;
 import net.imglib2.type.numeric.RealType;
 import net.imglib2.type.numeric.integer.ByteType;
 import net.imglib2.type.numeric.real.FloatType;
+import net.imglib2.util.Intervals;
+import net.imglib2.util.Util;
 import net.imglib2.view.IntervalView;
+import net.imglib2.view.RandomAccessibleOnRealRandomAccessible;
 import net.imglib2.view.Views;
 
 public class SamTransformation {
@@ -35,6 +47,11 @@ public class SamTransformation {
     private int inputW = 0;
     private long[] inputSize;
     private long[] originalSize;
+    
+    public static void main(String[] args) {
+    	ArrayImg<FloatType, ?> img = new ArrayImgFactory<>(new FloatType()).create(new int[] {1, 3, 3240, 4320});
+    	new SamTransformation().apply(Tensor.build("name", "bcyx", img));
+    }
 	
 	public < R extends RealType< R > & NativeType< R > > void apply( final Tensor< R > input )
 	{
@@ -42,14 +59,14 @@ public class SamTransformation {
 	}
 
 	private < R extends RealType< R > & NativeType< R > > void generate( final Tensor< R > input ) {
-		maskData = generateMasks(input);
+		generateMasks(input);
 	}
 
 	private < R extends RealType< R > & NativeType< R > > void generateMasks( final Tensor< R > input ) {
 		long[] dims = input.getData().dimensionsAsLongArray();
 		int hInd = input.getAxesOrderString().toLowerCase().indexOf("y");
 		int wInd = input.getAxesOrderString().toLowerCase().indexOf("x");
-		int[] origSize = new int[] {hInd, wInd};
+		int[] origSize = new int[] {(int) dims[hInd], (int) dims[wInd]};
 		Object[] cropBoxesLayerIdxs = generateCropBoxes(origSize, this.cropNLayers, this.cropOverlapRatio);
 		List<int[]> cropBoxes = (List<int[]>) cropBoxesLayerIdxs[0];
 		List<Integer> layerIdxs = (List<Integer>) cropBoxesLayerIdxs[1];
@@ -66,13 +83,14 @@ public class SamTransformation {
 		int hInd = axes.indexOf("y");
 		int wInd = axes.indexOf("x");
 		long[] start = new long[axes.length()];
-		long[] end = new long[axes.length()];
+		long[] end = image.getData().dimensionsAsLongArray();
+		for (int i = 0; i < end.length; i ++) {end[i] -= 1;}
 		start[hInd] = y0; start[wInd] = x0;
-		end[hInd] = y1; end[wInd] = x1;
+		end[hInd] = y1 - 1; end[wInd] = x1 - 1;
 		IntervalView<R> croppedIm = Views.interval(image.getData(), start, end);
 		int[] croppedImSize = new int[] {y1 - y0, x1 - x0};
 		long[] tensorShape = croppedIm.dimensionsAsLongArray();
-    	final ArrayImgFactory< R > factory = new ArrayImgFactory<>( image.getData().getAt(0) );
+    	final ArrayImgFactory< R > factory = new ArrayImgFactory<>( Util.getTypeFromInterval(image.getData()) );
         final Img< R > croppedIm2 = (Img<R>) factory.create(tensorShape);
 
 		LoopBuilder.setImages( image.getData(), croppedIm2 )
@@ -116,17 +134,29 @@ public class SamTransformation {
 	
 	private < R extends RealType< R > & NativeType< R > > void resize(Img<R> image, long targetLength, String axes) {
 		int hInd = axes.indexOf("y"); int wInd = axes.indexOf("x");
-		int[] targetSize = getPreprocessShape(image.dimensionsAsLongArray()[hInd], 
+		int[] targetSizeRedu = getPreprocessShape(image.dimensionsAsLongArray()[hInd], 
 				image.dimensionsAsLongArray()[wInd], targetLength);
+		long[] targetSize = image.dimensionsAsLongArray();
+		targetSize[hInd] = targetSizeRedu[0]; targetSize[wInd] = targetSizeRedu[1];
 		NLinearInterpolatorFactory<R> interpFactory = new NLinearInterpolatorFactory<R>();
 		
-		// TODO TODO TODO review this
-		// TODO TODO TODO review this
-		// TODO TODO TODO review this
-		// TODO TODO TODO review this
-		// TODO TODO TODO review this interpolation
+		RealRandomAccessible< R > interpolant = Views.interpolate(
+				Views.extendMirrorSingle( image ), interpFactory );
+
+		double[] min = new double[]{ 0, 0, 0, 0 };
+		double[] max = Arrays.stream(targetSize).mapToDouble(i -> (double) (i - 1)).toArray();;
+		double[] scalingFactor = IntStream.range(0, max.length)
+				.mapToDouble(i -> (double) targetSize[i] / (double) image.dimensionsAsLongArray()[i]).toArray();
+		FinalRealInterval interval = new FinalRealInterval( min, max );
+		R type = Util.getTypeFromInterval(image);
+		magnify( interpolant, interval, new ArrayImgFactory<>( type ), scalingFactor );
+			
 		
-		RealRandomAccessible<R> interpolated = Views.interpolate(image, interpFactory);
+		FinalInterval biggerInterval = new FinalInterval( Arrays.stream( Intervals.dimensionsAsLongArray(image)).map( x -> x * 4 ).toArray());
+				
+		RealRandomAccessible<R> interpolated = Views.interpolate( Views.extendZero(image), interpFactory ); // you have this already
+		
+		
 	}
 	
 	private static int[] getPreprocessShape(long oldH, long oldW, long longSideLength) {
@@ -177,5 +207,53 @@ public class SamTransformation {
 	    origW = 0;
 	    inputH = 0;
 	    inputW = 0;
+	}
+	
+	/**
+	 * Compute a magnified version of a given real interval
+	 *
+	 * @param source - the input data
+	 * @param interval - the real interval on the source that should be magnified
+	 * @param factory - the image factory for the output image
+	 * @param magnification - the ratio of magnification
+	 * @return - an Img that contains the magnified image content
+	 */
+	public static < T extends RealType< T > & NativeType< T > > Img< T > magnify( RealRandomAccessible< T > source,
+		RealInterval interval, ArrayImgFactory< T > factory, double[] magnification )
+	{
+		int numDimensions = interval.numDimensions();
+		// compute the number of pixels of the output and the size of the real interval
+		long[] pixelSize = new long[ numDimensions ];
+		double[] intervalSize = new double[ numDimensions ];
+
+		for ( int d = 0; d < numDimensions; ++d )
+		{
+			intervalSize[ d ] = interval.realMax( d ) - interval.realMin( d );
+			pixelSize[ d ] = Math.round( intervalSize[ d ] * magnification[d] ) + 1;
+		}
+
+		// create the output image
+		Img< T > output = factory.create( pixelSize );
+		// cursor to iterate over all pixels
+		Cursor<T> cursor = output.localizingCursor();
+		// create a RealRandomAccess on the source (interpolator)
+		RealRandomAccess< T > realRandomAccess = source.realRandomAccess();
+		// the temporary array to compute the position
+		double[] tmp = new double[ numDimensions ];
+		// for all pixels of the output image
+		while ( cursor.hasNext() )
+		{
+			cursor.fwd();
+			// compute the appropriate location of the interpolator
+			for ( int d = 0; d < numDimensions; ++d )
+				tmp[ d ] = cursor.getDoublePosition( d ) / output.realMax( d ) * intervalSize[ d ]
+						+ interval.realMin( d );
+			// set the position
+			realRandomAccess.setPosition( tmp );
+			// set the new value
+			cursor.get().set( realRandomAccess.get() );
+		}
+
+		return output;
 	}
 }
