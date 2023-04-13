@@ -53,6 +53,7 @@ public class SamTransformation {
     private List<int[][]> pointGrids;
     private int pointsPerBatch = 64;
     private int targetLength = 1024;
+    private int[] imageEmbeddingSize = new int[] {64, 64};
     
     public static void main(String[] args) {
     	ArrayImg<FloatType, ?> img = new ArrayImgFactory<>(new FloatType()).create(new int[] {1, 3, 3240, 4320});
@@ -131,7 +132,58 @@ public class SamTransformation {
 		int origH = origSize[0]; int origW = origSize[1];
 		double[][] transformedPoints = applyCoords(points, origSize);
 		int[][] inLabels = new int[transformedPoints.length][transformedPoints[0].length];
+		for (int i = 0; i < inLabels.length; i ++) {
+			for (int j = 0; j < inLabels[0].length; j ++) {
+				inLabels[i][j] = 1;
+			}
+		}
+		Tensor inLabelsTensor = Tensor.buildEmptyTensor("inLabels", "bcy");
+		Tensor inPointsTensor = Tensor.buildEmptyTensor("inLabels", "bcy");
+	}
+	
+	private void predictTorch(Tensor<FloatType> pointCoords, Tensor<IntType> pointLabels,
+			Tensor<FloatType> boxes, Tensor<FloatType> maskInput, boolean multimaskOutput,
+			boolean returnLogits) {
+		if (!this.isImageSet)
+			throw new IllegalArgumentException("");
+		List<Tensor> points = null;
+		if (pointCoords != null) {
+			points = new ArrayList<Tensor>();
+			points.add(pointCoords);
+			points.add(pointLabels);
+		}
+		List<Tensor> promptEncoderOuts = runPromptEncoder(points, boxes, maskInput);
+		Tensor sparseEmbeddings = promptEncoderOuts.get(0);
+		Tensor denseEmbeddings = promptEncoderOuts.get(1);
 		
+		List<Tensor> decoderOuts = runMaskDecoder(this.features, getDensePe().get(0),
+				sparseEmbeddings, denseEmbeddings,
+				multimaskOutput);
+		Tensor lowResMasks = decoderOuts.get(0);
+		Tensor iouPredictions = decoderOuts.get(1);
+	}
+	
+	private List<Tensor> getDensePe() {
+		// TODO this has to be improved. Change code in Python so tensor 
+		// is inputed instead of tuple
+	}
+	
+	private List<Tensor> runPromptEncoder(List<Tensor> points, Tensor boxes, Tensor masks) {
+		EngineInfo engine = EngineInfo.defineDLEngine("pytorch", "1.13.1");
+		Model model = Model.createDeepLearningModel("prompt_encoder", "prompt_encoder.pt", engine);
+		List<Tensor> outputTensors:
+		model.runModel(null, outputTensors);
+		return outputTensors;
+	}
+	
+	private List<Tensor> runMaskDecoder(Tensor imageEmbeddings, Tensor imagePe,
+			Tensor sparsePromptEmbeddings, Tensor densePromptEmbeddings,
+			boolean multimaskOutput) {
+		EngineInfo engine = EngineInfo.defineDLEngine("pytorch", "1.13.1");
+		Model model = Model.createDeepLearningModel("mask_decoder", "mask_decoder.pt", engine);
+		List<Tensor> outputTensors:
+		model.runModel(null, outputTensors);
+		return outputTensors;
 	}
 	
 	private double[][] applyCoords(int[][] coords, int[] originalSize) {
