@@ -43,18 +43,20 @@ public class SamTransformation {
 	private double cropOverlapRatio = 512 / 1500;
 	private long imageSize = 1024;
 	private boolean isImageSet = false;
-    private Object features = null;
+    private Img<FloatType> features = null;
     private int origH = 0;
     private int origW = 0;
     private int inputH = 0;
     private int inputW = 0;
     private long[] inputSize;
     private long[] originalSize;
+    private List<int[][]> pointGrids;
+    private int pointsPerBatch = 64;
+    private int targetLength = 1024;
     
     public static void main(String[] args) {
-    	Img< FloatType > img = IO.openImgs( "C:\\Users\\angel\\OneDrive\\Imágenes\\Lisboa 2016\\P1050318.JPG", new FloatType() ).get(0);
-    	//ArrayImg<FloatType, ?> img = new ArrayImgFactory<>(new FloatType()).create(new int[] {1, 3, 3240, 4320});
-    	new SamTransformation().apply(Tensor.build("name", "yxc", img));
+    	ArrayImg<FloatType, ?> img = new ArrayImgFactory<>(new FloatType()).create(new int[] {1, 3, 3240, 4320});
+    	new SamTransformation().apply(Tensor.build("name", "bcyx", img));
     }
 	
 	public < R extends RealType< R > & NativeType< R > > void apply( final Tensor< R > input )
@@ -81,7 +83,7 @@ public class SamTransformation {
 	}
 	
 	private < R extends RealType< R > & NativeType< R > > void processCrop(final Tensor< R > image, 
-			int[] cropBox, int cropLayer, int[] origSize) {
+			int[] cropBox, int cropLayerIdx, int[] origSize) throws LoadEngineException, Exception {
 		int x0 = cropBox[0]; int y0 = cropBox[1]; int x1 = cropBox[2]; int y1 = cropBox[3];
 		String axes = image.getAxesOrderString().toLowerCase();
 		int hInd = axes.indexOf("y");
@@ -101,6 +103,53 @@ public class SamTransformation {
 				.multiThreaded()
 				.forEachPixel( (i, j) -> j.set( i ));
 		resize(croppedIm2, imageSize, axes);
+		setTorchImage(croppedIm2);
+		int[][] pointsScale = new int[1][2];
+		pointsScale[0] = croppedImSize;
+		int[][] pointsForImageAux = pointGrids.get(cropLayerIdx);
+		int[][] pointsForImage = new int[pointsForImageAux.length][1];
+		for (int i = 0; i < pointsForImageAux.length; i++) {
+		    for (int j = 0; j < pointsForImageAux[0].length; j++) {
+		        	pointsForImage[i][j] += pointsForImageAux[i][j] * pointsScale[0][j];
+		    }
+		}
+		int batchSize = pointsForImage.length / pointsPerBatch;
+		for (int batch = 0; batch < pointsPerBatch; batch ++) {
+			int nBatchSize = Math.min(batchSize,  pointsForImage.length -batch *batchSize);
+			int[][] points = new int[nBatchSize][pointsForImageAux[0].length];
+			for (int i = 0; i < nBatchSize; i ++) {
+				for (int j = 0; j < pointsForImageAux[0].length; j ++) {
+					points[i][j] = pointsForImage[i + batch * batchSize][j];
+				}
+			}
+			batchData = processBatch(points, croppedImSize, cropBox, origSize);
+		}
+		
+	}
+	
+	private void processBatch(int[][] points, int[] ImSize, int[]cropBox, int[]origSize) {
+		int origH = origSize[0]; int origW = origSize[1];
+		double[][] transformedPoints = applyCoords(points, origSize);
+		int[][] inLabels = new int[transformedPoints.length][transformedPoints[0].length];
+		
+	}
+	
+	private double[][] applyCoords(int[][] coords, int[] originalSize) {
+		int oldH = originalSize[0]; int oldW = originalSize[1];
+		int[] newHW = getPreprocessShape(oldH, oldW, this.targetLength);
+		double[][] doubleCoords = new double[coords.length][coords[0].length];
+		for (int i = 0; i < doubleCoords.length; i++) {
+		    for (int j = 0; j < doubleCoords[0].length; j++) {
+		    	doubleCoords[i][j] = (double) coords[i][j];
+		    }
+		}
+		for (int i = 0; i < doubleCoords.length; i ++) {
+			doubleCoords[i][0] = doubleCoords[i][0] * (newHW[1] / oldW);
+		}
+		for (int i = 0; i < doubleCoords.length; i ++) {
+			doubleCoords[i][1] = doubleCoords[i][1] * (newHW[0] / oldH);
+		}
+		return doubleCoords;
 	}
 	
 	
@@ -113,11 +162,6 @@ public class SamTransformation {
 		EngineInfo engineInfo = EngineInfo.defineDLEngine("pytorch", "1.13.1", true, true);
 		Model model = Model.createDeepLearningModel("path/to/cache", "path/to/cache/model.pt", engineInfo);
 		model.loadModel();
-		// TODO Create input and output tensor lists
-		// TODO Create input and output tensor lists
-		// TODO Create input and output tensor lists
-		// TODO Create input and output tensor lists
-		// TODO Create input and output tensor lists
 		model.runModel(null, null);
 		isImageSet = true;
 		
@@ -156,16 +200,9 @@ public class SamTransformation {
 		FinalRealInterval interval = new FinalRealInterval( min, max );
 		R type = Util.getTypeFromInterval(image);
 		Img<R> resized = new ArrayImgFactory<>( type ).create(targetSize);
-		ImageJFunctions.show(image);
-		magnify( interpolant, interval, resized, scalingFactor );
-		ImageJFunctions.show(resized);
-			
-		
-		FinalInterval biggerInterval = new FinalInterval( Arrays.stream( Intervals.dimensionsAsLongArray(image)).map( x -> x * 4 ).toArray());
-				
-		RealRandomAccessible<R> interpolated = Views.interpolate( Views.extendZero(image), interpFactory ); // you have this already
-		
-		
+		// TODO for this interpolation , just use x and y slices
+		//magnify( interpolant, interval, resized, scalingFactor );
+		System.out.println(false);
 	}
 	
 	private static int[] getPreprocessShape(long oldH, long oldW, long longSideLength) {
