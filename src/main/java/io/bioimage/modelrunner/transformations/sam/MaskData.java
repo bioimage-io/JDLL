@@ -7,10 +7,12 @@ import java.util.Map.Entry;
 
 import io.bioimage.modelrunner.tensor.Tensor;
 import net.imglib2.Cursor;
+import net.imglib2.IterableInterval;
 import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.img.Img;
 import net.imglib2.img.array.ArrayImgFactory;
 import net.imglib2.type.numeric.real.FloatType;
+import net.imglib2.view.Views;
 
 public class MaskData {
 	private HashMap<String, Object> stats; 
@@ -79,7 +81,31 @@ public class MaskData {
 		}
 	}
 	
-	public static RandomAccessibleInterval<FloatType> keepPlanes(RandomAccessibleInterval<FloatType> rai, boolean[] keep) {
+	public void cat(MaskData data) {
+		for (Entry<String, Object> entry : data.stats.entrySet()) {
+			if (stats.get(entry.getKey()) == null || !stats.keySet().contains(entry.getKey())) {
+				stats.put(entry.getKey(), entry.getValue());
+			} else if (stats.get(entry.getKey()) instanceof RandomAccessibleInterval) {
+				RandomAccessibleInterval<FloatType> res = concat((RandomAccessibleInterval<FloatType>) stats.get(entry.getKey()), (RandomAccessibleInterval<FloatType>) entry.getValue());
+				stats.put(entry.getKey(), res);
+			} else if (stats.get(entry.getKey()) instanceof Tensor) {
+				RandomAccessibleInterval rai1 = ((Tensor) stats.get(entry.getKey())).getData();
+				RandomAccessibleInterval rai2 = ((Tensor) entry.getValue()).getData();
+				Tensor nTensor = Tensor.build(((Tensor) entry.getValue()).getName(), ((Tensor) entry.getValue()).getAxesOrderString(), 
+						concat(rai1, rai2));
+				((Tensor) entry.getValue()).close();
+				stats.put(entry.getKey(), nTensor);
+			} else if (stats.get(entry.getKey()) instanceof List) {
+				List<Object> list = (List<Object>) stats.get(entry.getKey());
+				for (Object obj : ((List<Object>) entry.getValue())) {
+					list.add(obj);
+				}
+				stats.put(entry.getKey(), list);
+			}
+		}
+	}
+	
+	private static RandomAccessibleInterval<FloatType> keepPlanes(RandomAccessibleInterval<FloatType> rai, boolean[] keep) {
 		long[] orShape = rai.dimensionsAsLongArray();
 		List<Long> keptSlices = new ArrayList<Long>();
 		long nSlices = 0;
@@ -97,6 +123,29 @@ public class MaskData {
 			cursor.get().set(rai.getAt(oldPos));
 		}
 		return nRai;
+	}
+	
+	private static RandomAccessibleInterval<FloatType> concat(RandomAccessibleInterval<FloatType> rai1,
+			RandomAccessibleInterval<FloatType> rai2){
+		long[] shape1 = rai1.dimensionsAsLongArray();
+		long[] shape2 = rai2.dimensionsAsLongArray();
+		if (shape1.length != shape2.length)
+			throw new IllegalArgumentException("The two images need to have the same number of dims");
+		long[] fShape = shape1;
+		fShape[0] = shape1[0] + shape2[0];
+		Img<FloatType> nImg = new ArrayImgFactory<>(new FloatType()).create(fShape);
+		Cursor<FloatType> cursor = ((IterableInterval<FloatType>) rai1).cursor();
+		while (cursor.hasNext()) {
+			long[] pos = cursor.positionAsLongArray();
+			nImg.getAt(pos).set(cursor.get());
+		}
+		cursor = ((IterableInterval<FloatType>) rai2).cursor();
+		while (cursor.hasNext()) {
+			long[] pos = cursor.positionAsLongArray();
+			pos[0] = pos[0] + shape1[0];
+			nImg.getAt(pos).set(cursor.get());
+		}
+		return nImg;
 	}
 
 }
