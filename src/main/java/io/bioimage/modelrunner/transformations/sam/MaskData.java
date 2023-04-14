@@ -2,6 +2,7 @@ package io.bioimage.modelrunner.transformations.sam;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map.Entry;
 
 import io.bioimage.modelrunner.tensor.Tensor;
@@ -64,6 +65,7 @@ public class MaskData {
 	
 	public static RandomAccessibleInterval<FloatType> keepPlanes(RandomAccessibleInterval<FloatType> rai, boolean[] keep) {
 		long[] orShape = rai.dimensionsAsLongArray();
+		List<Integer> keptSlices = new ArrayList<Integer>();
 		
 	}
 
