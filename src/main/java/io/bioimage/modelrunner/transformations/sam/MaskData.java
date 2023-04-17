@@ -25,6 +25,10 @@ public class MaskData {
 		stats = kwargs;
 	}
 	
+	public MaskData() {
+		stats = new HashMap<String, Object>();
+	}
+
 	private void checkArgs(HashMap<String, Object> kwargs) {
 		for (Entry<String, Object> entry : kwargs.entrySet()) {
 			if (!checkArg(entry.getValue()))

@@ -1,8 +1,12 @@
 package io.bioimage.modelrunner.transformations.sam;
 
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 import io.bioimage.modelrunner.tensor.Tensor;
 import net.imglib2.Cursor;
@@ -46,7 +50,7 @@ public class AutomaticMaskGenerator {
 		MaskData maskData = generateMasks(input);
 		
 		if (minMaskRegionArea > 0) {
-			maskData = preprocessSmallRegions(maskData, minMaskRegionArea, Math.max(boxNmsThres, cropNmsThres));
+			maskData = postprocessSmallRegions(maskData, minMaskRegionArea, Math.max(boxNmsThres, cropNmsThres));
 		}
 		
 		if (outputMode.equals(COCO_MODE)) {
@@ -90,13 +94,68 @@ public class AutomaticMaskGenerator {
 		List<int[]> cropBoxes = (List<int[]>) cropBoxesLayerIdxs[0];
 		List<Integer> layerIdxs = (List<Integer>) cropBoxesLayerIdxs[1];
 		
+		MaskData data = new MaskData();
 		for (int i = 0; i < cropBoxes.size(); i ++) {
 			processCrop(input, cropBoxes.get(i), layerIdxs.get(i), origSize);
 		}
-		return null;
+		
+		if (cropBoxes.size() > 1) {
+			List<Double> scores = boxArea((List<Double[]>) data.get(ANN_CB_KEY));
+			for (int i = 0; i < scores.size(); i ++)
+				scores.set(i, 1 / (scores.get(i) + 1e-20));
+			int[] keepByNms = batchedNms(data.get(BOXES_KEY), scores,
+					new double[((List<double[]>) data.get(BOXES_KEY)).size()], 
+					this.cropNmsThres);
+			data.filter(keepByNms);
+		}
 	}
 	
-	private MaskData preprocessSmallRegions(MaskData maskData, int minArea, float nmsThres) {
+	public static int[] batchedNms(List<double[]> boxes, List<Double> scores,
+										double[] idxs, float iouThreshold) {
+		return batchedNmsVanilla(boxes, scores, idxs, iouThreshold);
+		// TODO batchedNmsCoordinateTrick();
+	}
+	
+	private static int[] batchedNmsVanilla(List<double[]> boxes, List<Double> scores,
+			double[] idxs, float iouThreshold) {
+		boolean[] keepMask = new boolean[scores.size()];
+		List<Double> uniqueVals = Arrays.stream(idxs)
+	            .distinct().boxed().collect(Collectors.toList());
+		for (int i = 0; i < uniqueVals.size(); i ++) {
+			final Double val = uniqueVals.get(i);
+			int[] currIndices = IntStream.range(0, idxs.length)
+					.filter(j -> idxs[j] == val).toArray();
+			List<double[]> newBoxes = Arrays.stream(currIndices)
+					.mapToObj(boxes::get).collect(Collectors.toList());
+			List<Double> newScores = Arrays.stream(currIndices)
+					.mapToObj(scores::get).collect(Collectors.toList());
+			List<Integer> currKeepIndices = NMS.greedyNMS(newBoxes, newScores, iouThreshold);
+			for (int ii : currKeepIndices) {
+				keepMask[currIndices[ii]] = true;
+			}
+		}
+		List<Integer> keepIndices = new ArrayList<Integer>();
+		for (int i = 0; i < keepMask.length; i ++) {
+			if (keepMask[i])
+				keepIndices.add(i);
+		}
+		List<Integer> indices = new ArrayList<>();
+        for (int i = 0; i < keepIndices.size(); i++) {
+            indices.add(i);
+        }
+        List<Double> newScores = keepIndices.stream()
+				.map(scores::get).collect(Collectors.toList());
+        // Sort the indices list based on the values in list2
+        Collections.sort(indices, (i, j) -> -Double.compare(newScores.get(i), newScores.get(j)));
+        
+        // Create a new list that is sorted based on list2
+        int[] sortedList = new int[indices.size()];
+        for (int i = 0; i < indices.size(); i ++) 
+        	sortedList[i] = keepIndices.get(indices.get(i));
+		return sortedList;
+	}
+	
+	private MaskData postprocessSmallRegions(MaskData maskData, int minArea, float nmsThres) {
 		return null;
 	}
 	
@@ -141,5 +200,14 @@ public class AutomaticMaskGenerator {
 		xywh[2] = xywh[2] - xywh[0];
 		xywh[3] = xywh[3] - xywh[1];
 		return xywh;
+	}
+	
+	public static List<Double> boxArea(List<Double[]> vertices) {
+		List<Double> areas = new ArrayList<Double>();
+		for (int i = 0; i < vertices.size(); i ++) {
+			Double[] arr = vertices.get(i);
+			areas.add((arr[2] - arr[0]) * (arr[3] - arr[1]));
+		}
+		return areas;
 	}
 }
