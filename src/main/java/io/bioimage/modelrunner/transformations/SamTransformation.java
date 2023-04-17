@@ -45,14 +45,7 @@ public class SamTransformation {
 	private int cropNLayers = 0;
 	private double cropOverlapRatio = 512 / 1500;
 	private long imageSize = 1024;
-	private boolean isImageSet = false;
     private Img<FloatType> features = null;
-    private int origH = 0;
-    private int origW = 0;
-    private int inputH = 0;
-    private int inputW = 0;
-    private long[] inputSize;
-    private long[] originalSize;
     private List<int[][]> pointGrids;
     private int pointsPerBatch = 64;
     private int targetLength = 1024;
@@ -67,51 +60,6 @@ public class SamTransformation {
 	{
 		this.amg = new AutomaticMaskGenerator();
 		amg.generate(input);
-	}
-	
-	private < R extends RealType< R > & NativeType< R > > void processCrop(final Tensor< R > image, 
-			int[] cropBox, int cropLayerIdx, int[] origSize) throws LoadEngineException, Exception {
-		int x0 = cropBox[0]; int y0 = cropBox[1]; int x1 = cropBox[2]; int y1 = cropBox[3];
-		String axes = image.getAxesOrderString().toLowerCase();
-		int hInd = axes.indexOf("y");
-		int wInd = axes.indexOf("x");
-		long[] start = new long[axes.length()];
-		long[] end = image.getData().dimensionsAsLongArray();
-		for (int i = 0; i < end.length; i ++) {end[i] -= 1;}
-		start[hInd] = y0; start[wInd] = x0;
-		end[hInd] = y1 - 1; end[wInd] = x1 - 1;
-		IntervalView<R> croppedIm = Views.interval(image.getData(), start, end);
-		int[] croppedImSize = new int[] {y1 - y0, x1 - x0};
-		long[] tensorShape = croppedIm.dimensionsAsLongArray();
-    	final ArrayImgFactory< R > factory = new ArrayImgFactory<>( Util.getTypeFromInterval(image.getData()) );
-        final Img< R > croppedIm2 = (Img<R>) factory.create(tensorShape);
-
-		LoopBuilder.setImages( image.getData(), croppedIm2 )
-				.multiThreaded()
-				.forEachPixel( (i, j) -> j.set( i ));
-		resize(croppedIm2, imageSize, axes);
-		setTorchImage(croppedIm2);
-		int[][] pointsScale = new int[1][2];
-		pointsScale[0] = croppedImSize;
-		int[][] pointsForImageAux = pointGrids.get(cropLayerIdx);
-		int[][] pointsForImage = new int[pointsForImageAux.length][1];
-		for (int i = 0; i < pointsForImageAux.length; i++) {
-		    for (int j = 0; j < pointsForImageAux[0].length; j++) {
-		        	pointsForImage[i][j] += pointsForImageAux[i][j] * pointsScale[0][j];
-		    }
-		}
-		int batchSize = pointsForImage.length / pointsPerBatch;
-		for (int batch = 0; batch < pointsPerBatch; batch ++) {
-			int nBatchSize = Math.min(batchSize,  pointsForImage.length -batch *batchSize);
-			int[][] points = new int[nBatchSize][pointsForImageAux[0].length];
-			for (int i = 0; i < nBatchSize; i ++) {
-				for (int j = 0; j < pointsForImageAux[0].length; j ++) {
-					points[i][j] = pointsForImage[i + batch * batchSize][j];
-				}
-			}
-			batchData = processBatch(points, croppedImSize, cropBox, origSize);
-		}
-		
 	}
 	
 	private void processBatch(int[][] points, int[] ImSize, int[]cropBox, int[]origSize) {
@@ -190,34 +138,6 @@ public class SamTransformation {
 		return doubleCoords;
 	}
 	
-	
-	private < R extends RealType< R > & NativeType< R > > void setTorchImage(Img<R> image) throws LoadEngineException, Exception {
-		resetImage();
-		inputSize = new long[] {image.dimensionsAsLongArray()[2], image.dimensionsAsLongArray()[2]}; 
-		preprocess((Img<FloatType>) image);
-		
-		// TODO get encoder and run model
-		EngineInfo engineInfo = EngineInfo.defineDLEngine("pytorch", "1.13.1", true, true);
-		Model model = Model.createDeepLearningModel("path/to/cache", "path/to/cache/model.pt", engineInfo);
-		model.loadModel();
-		model.runModel(null, null);
-		isImageSet = true;
-		
-	}
-	
-	public static void preprocess(Img<FloatType> image) {
-		final float[] meanStd = ZeroMeanUnitVarianceTransformation.meanStd( image );
-		final float mean = meanStd[ 0 ];
-		final float std = meanStd[ 1 ];
-		LoopBuilder.setImages( image ).multiThreaded()
-			.forEachPixel( i -> i.set( ( i.get() - mean ) / ( std + eps ) ) );
-		// TODO add padding
-		// TODO add padding
-		// TODO add padding
-		// TODO add padding
-		// TODO add padding
-	}
-	
 	private < R extends RealType< R > & NativeType< R > > void resize(Img<R> image, long targetLength, String axes) {
 		int hInd = axes.indexOf("y"); int wInd = axes.indexOf("x");
 		long[] imageSize = image.dimensionsAsLongArray();
@@ -284,13 +204,6 @@ public class SamTransformation {
 			}
 		}
 		return new Object[] {cropBoxes, layerIdxs};
-	}
-	
-	private void resetImage() {
-	    origH = 0;
-	    origW = 0;
-	    inputH = 0;
-	    inputW = 0;
 	}
 	
 	/**

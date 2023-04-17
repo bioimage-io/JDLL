@@ -8,14 +8,19 @@ import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
+import io.bioimage.modelrunner.exceptions.LoadEngineException;
 import io.bioimage.modelrunner.tensor.Tensor;
 import net.imglib2.Cursor;
 import net.imglib2.img.Img;
 import net.imglib2.img.array.ArrayImg;
 import net.imglib2.img.array.ArrayImgFactory;
+import net.imglib2.loops.LoopBuilder;
 import net.imglib2.type.NativeType;
 import net.imglib2.type.numeric.RealType;
 import net.imglib2.type.numeric.integer.IntType;
+import net.imglib2.util.Util;
+import net.imglib2.view.IntervalView;
+import net.imglib2.view.Views;
 
 public class AutomaticMaskGenerator {
 	
@@ -23,6 +28,7 @@ public class AutomaticMaskGenerator {
 	private float boxNmsThres = 2;
 	private float cropNmsThres = 2;
 	private String outputMode;
+	private SamPredictor predictor;
 	
 	private static final String COCO_MODE = "coco_rle";
 	private static final String BINARY_MODE = "binary_mask";
@@ -43,8 +49,11 @@ public class AutomaticMaskGenerator {
 	private static final String ANN_PC_KEY = "point_coords";
 	private static final String ANN_SS_KEY = "stability_score";
 	private static final String ANN_CB_KEY = "crop_box";
-
-
+	
+	
+	public AutomaticMaskGenerator() {
+		predictor = new SamPredictor();
+	}
 
 	public < R extends RealType< R > & NativeType< R > > List<HashMap<String, Object>> generate( final Tensor< R > input ) {
 		MaskData maskData = generateMasks(input);
@@ -96,7 +105,8 @@ public class AutomaticMaskGenerator {
 		
 		MaskData data = new MaskData();
 		for (int i = 0; i < cropBoxes.size(); i ++) {
-			processCrop(input, cropBoxes.get(i), layerIdxs.get(i), origSize);
+			MaskData newData = processCrop(input, cropBoxes.get(i), layerIdxs.get(i), origSize);
+			data.cat(newData);
 		}
 		
 		if (cropBoxes.size() > 1) {
@@ -107,7 +117,53 @@ public class AutomaticMaskGenerator {
 					new double[((List<double[]>) data.get(BOXES_KEY)).size()], 
 					this.cropNmsThres);
 			data.filter(keepByNms);
+			return data;
 		}
+	}
+	
+	private < R extends RealType< R > & NativeType< R > > MaskData processCrop(final Tensor< R > image, 
+			int[] cropBox, int cropLayerIdx, int[] origSize) throws LoadEngineException, Exception {
+		int x0 = cropBox[0]; int y0 = cropBox[1]; int x1 = cropBox[2]; int y1 = cropBox[3];
+		String axes = image.getAxesOrderString().toLowerCase();
+		int hInd = axes.indexOf("y");
+		int wInd = axes.indexOf("x");
+		long[] start = new long[axes.length()];
+		long[] end = image.getData().dimensionsAsLongArray();
+		for (int i = 0; i < end.length; i ++) {end[i] -= 1;}
+		start[hInd] = y0; start[wInd] = x0;
+		end[hInd] = y1 - 1; end[wInd] = x1 - 1;
+		IntervalView<R> croppedIm = Views.interval(image.getData(), start, end);
+		int[] croppedImSize = new int[] {y1 - y0, x1 - x0};
+		long[] tensorShape = croppedIm.dimensionsAsLongArray();
+    	final ArrayImgFactory< R > factory = new ArrayImgFactory<>( Util.getTypeFromInterval(image.getData()) );
+        final Img< R > croppedIm2 = (Img<R>) factory.create(tensorShape);
+
+		LoopBuilder.setImages( image.getData(), croppedIm2 )
+				.multiThreaded()
+				.forEachPixel( (i, j) -> j.set( i ));
+		resize(croppedIm2, imageSize, axes);
+		predictor.setTorchImage(croppedIm2);
+		int[][] pointsScale = new int[1][2];
+		pointsScale[0] = croppedImSize;
+		int[][] pointsForImageAux = pointGrids.get(cropLayerIdx);
+		int[][] pointsForImage = new int[pointsForImageAux.length][1];
+		for (int i = 0; i < pointsForImageAux.length; i++) {
+		    for (int j = 0; j < pointsForImageAux[0].length; j++) {
+		        	pointsForImage[i][j] += pointsForImageAux[i][j] * pointsScale[0][j];
+		    }
+		}
+		int batchSize = pointsForImage.length / pointsPerBatch;
+		for (int batch = 0; batch < pointsPerBatch; batch ++) {
+			int nBatchSize = Math.min(batchSize,  pointsForImage.length -batch *batchSize);
+			int[][] points = new int[nBatchSize][pointsForImageAux[0].length];
+			for (int i = 0; i < nBatchSize; i ++) {
+				for (int j = 0; j < pointsForImageAux[0].length; j ++) {
+					points[i][j] = pointsForImage[i + batch * batchSize][j];
+				}
+			}
+			batchData = processBatch(points, croppedImSize, cropBox, origSize);
+		}
+		
 	}
 	
 	public static int[] batchedNms(List<double[]> boxes, List<Double> scores,
