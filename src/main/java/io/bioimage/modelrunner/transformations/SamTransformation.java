@@ -11,6 +11,7 @@ import io.bioimage.modelrunner.engine.EngineInfo;
 import io.bioimage.modelrunner.exceptions.LoadEngineException;
 import io.bioimage.modelrunner.model.Model;
 import io.bioimage.modelrunner.tensor.Tensor;
+import io.bioimage.modelrunner.transformations.sam.AutomaticMaskGenerator;
 import io.scif.img.IO;
 import net.imglib2.Cursor;
 import net.imglib2.FinalInterval;
@@ -36,6 +37,8 @@ import net.imglib2.view.RandomAccessibleOnRealRandomAccessible;
 import net.imglib2.view.Views;
 
 public class SamTransformation {
+	
+	private AutomaticMaskGenerator amg;
 
 	private static float eps = (float) Math.pow(10, -6);
 	
@@ -62,25 +65,8 @@ public class SamTransformation {
 	
 	public < R extends RealType< R > & NativeType< R > > void apply( final Tensor< R > input )
 	{
-		generate(input);
-	}
-
-	private < R extends RealType< R > & NativeType< R > > void generate( final Tensor< R > input ) {
-		generateMasks(input);
-	}
-
-	private < R extends RealType< R > & NativeType< R > > void generateMasks( final Tensor< R > input ) {
-		long[] dims = input.getData().dimensionsAsLongArray();
-		int hInd = input.getAxesOrderString().toLowerCase().indexOf("y");
-		int wInd = input.getAxesOrderString().toLowerCase().indexOf("x");
-		int[] origSize = new int[] {(int) dims[hInd], (int) dims[wInd]};
-		Object[] cropBoxesLayerIdxs = generateCropBoxes(origSize, this.cropNLayers, this.cropOverlapRatio);
-		List<int[]> cropBoxes = (List<int[]>) cropBoxesLayerIdxs[0];
-		List<Integer> layerIdxs = (List<Integer>) cropBoxesLayerIdxs[1];
-		
-		for (int i = 0; i < cropBoxes.size(); i ++) {
-			processCrop(input, cropBoxes.get(i), layerIdxs.get(i), origSize);
-		}
+		this.amg = new AutomaticMaskGenerator();
+		amg.generate(input);
 	}
 	
 	private < R extends RealType< R > & NativeType< R > > void processCrop(final Tensor< R > image, 
