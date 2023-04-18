@@ -42,6 +42,8 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 
+import io.bioimage.modelrunner.bioimageio.description.ModelDescriptor;
+
 /**
  * Class to interact with the Bioimage.io API. Used to get information
  * about models and to download them
