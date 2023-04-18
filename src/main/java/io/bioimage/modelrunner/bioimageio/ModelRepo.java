@@ -28,13 +28,13 @@ import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Consumer;
 
 import javax.net.ssl.HttpsURLConnection;
 
@@ -53,6 +53,14 @@ import io.bioimage.modelrunner.utils.Log;
  */
 public class ModelRepo {
 	/**
+	 * Message displayed when there are no models found
+	 */
+	private static final String MODELS_NOT_FOUND_MSG = "BioImage.io: Unable to find models.";
+	/**
+	 * Message displayed when there is an API error
+	 */
+	private static final String API_ERR_MSG = "BioImage.io: There has been an error accessing the API. No model retrieved.";
+	/**
 	 * URL to the file containing all the model zoo models
 	 */
 	public static String location = "https://raw.githubusercontent.com/bioimage-io/collection-bioimage-io/gh-pages/collection.json";
@@ -67,12 +75,19 @@ public class ModelRepo {
 	 */
 	private static List<String> modelIDs;
 	
+	private Consumer<String> consumer;
+	
 	public static void main(String[] args) {
 		connect().listAllModels();
 	}
 	
 	public ModelRepo() {
-		setColelctionsRepo();
+		setCollectionsRepo();
+	}
+	
+	public ModelRepo(Consumer<String> consumer) {
+		this.consumer = consumer;
+		setCollectionsRepo();
 	}
 	
 	/**
@@ -85,16 +100,25 @@ public class ModelRepo {
 	}
 	
 	/**
+	 * Create an instance of the models stored in the Bioimage.io repository reading the 
+	 * collections rdf.yaml.
+	 * @return an instance of the {@link ModelRepo}
+	 */
+	public static ModelRepo connect(Consumer<String> consumer) {
+		return new ModelRepo(consumer);
+	}
+	
+	/**
 	 * Method that connects to the BioImage.io API and retrieves the models available
 	 * at the Bioimage.io model repository
 	 * @return an object containing the zip location of the model as key and the {@link ModelDescriptor}
 	 * 	with the yaml file information in the value
 	 */
 	public Map<Path, ModelDescriptor> listAllModels() {
-		System.out.println(Log.gct() + " -- BioImage.io: Accessing the BioImage.io API to retrieve available models");
+		Log.addProgressAndShowInTerminal(consumer, "BioImage.io: Accessing the BioImage.io API to retrieve available models", true);
 		Map<Path, ModelDescriptor> models = new HashMap<Path, ModelDescriptor>();
 		if (collections == null) {
-			System.out.println(Log.gct() + " -- BioImage.io: Unable to retrieve models.");
+			Log.addProgressAndShowInTerminal(consumer, MODELS_NOT_FOUND_MSG, true);
 			return models;
 		}
 		for (Object resource : collections) {
@@ -114,8 +138,8 @@ public class ModelRepo {
 				// Only display error message if there was an error creating
 				// the descriptor from the yaml file
 				if (modelPath != null) {
-                    System.err.println("Could not load descriptor for the Bioimage.io model " + modelPath.getFileName() + ": " + ex.getMessage());
-                    ex.printStackTrace();
+					String errMSg = "Could not load descriptor for the Bioimage.io model " + modelPath.getFileName() + ": " + ex.toString();
+					Log.addProgressAndShowInTerminal(consumer, errMSg, true);
 				}
                 ex.printStackTrace();
 			}
@@ -126,13 +150,13 @@ public class ModelRepo {
 	/**
 	 * Method that stores all the model IDs for the models available in the BIoImage.io repo
 	 */
-	private void setColelctionsRepo() {
+	private void setCollectionsRepo() {
 		modelIDs = new ArrayList<String>();
 		String text = getJSONFromUrl(location);
 		if (text == null) {
-			System.out.println(Log.gct() + " -- BioImage.io: Unable to find models.");
-			System.out.println(Log.gct() + " -- BioImage.io: Cannot access file: " + location);
-			System.out.println(Log.gct() + " -- BioImage.io: Please review the certificates needed to access the website.");
+			Log.addProgressAndShowInTerminal(consumer, MODELS_NOT_FOUND_MSG, true);
+			Log.addProgressAndShowInTerminal(consumer, "BioImage.io: Cannot access file: " + location, true);
+			Log.addProgressAndShowInTerminal(consumer, "BioImage.io: Please review the certificates needed to access the website.", true);
 			return;
 		}
 		JsonObject json = null;
@@ -140,17 +164,16 @@ public class ModelRepo {
 			json = (JsonObject) JsonParser.parseString(text);
 		} catch (Exception ex) {
 			collections = null;
-			System.out.println(Log.gct() + " -- BioImage.io: Unable to find models.");
+			Log.addProgressAndShowInTerminal(consumer, MODELS_NOT_FOUND_MSG, true);
 			return;
 		}
 		// Iterate over the array corresponding to the key: "resources"
 		// which contains all the resources of the Bioimage.io
 		collections = (JsonArray) json.get("collection");
 		if (collections == null) {
-			System.out.println(Log.gct() + " -- BioImage.io: Unable to find models.");
+			Log.addProgressAndShowInTerminal(consumer, MODELS_NOT_FOUND_MSG, true);
 			return;
 		}
-		System.out.println(Log.gct() + " -- BioImage.io: Get the model IDs.");
 		for (Object resource : collections) {
 			JsonObject jsonResource = (JsonObject) resource;
 			if (jsonResource.get("type") == null || !jsonResource.get("type").getAsString().equals("model"))
@@ -167,6 +190,18 @@ public class ModelRepo {
 	 * @return a String representation of the file. It is null if the file was not accessed
 	 */
 	private static String getJSONFromUrl(String url) {
+		return getJSONFromUrl(url, null);
+	}
+
+	/**
+	 * Method used to read a yaml or json file from a server as a raw string
+	 * @param url
+	 * 	String url of the file
+	 * @param consumer
+	 * 	object to communicate with the main interface
+	 * @return a String representation of the file. It is null if the file was not accessed
+	 */
+	private static String getJSONFromUrl(String url, Consumer<String> consumer) {
 
 		HttpsURLConnection con = null;
 		try {
@@ -186,12 +221,8 @@ public class ModelRepo {
 			 result.close();
 			 return txt;
 		} 
-		catch (MalformedURLException ex) {
-			System.out.println(Log.gct() + " -- BioImage.io: There has been an error accessing the API. No model retrieved");
-			ex.printStackTrace();
-		} 
 		catch (IOException ex) {
-			System.out.println(Log.gct() + " -- BioImage.io: There has been an error accessing the API. No model retrieved");
+			Log.addProgressAndShowInTerminal(consumer, API_ERR_MSG, true);
 			ex.printStackTrace();
 		} 
 		finally {
