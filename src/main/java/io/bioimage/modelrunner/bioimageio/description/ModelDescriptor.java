@@ -94,7 +94,7 @@ public class ModelDescriptor
     public static ModelDescriptor loadFromLocalFile(String modelFile) throws Exception
     {
     	// Get the date to be able to log with the time
-    	System.out.println(Log.getCurrentTime() + " -- LOCAL: Searching model at " + new File(modelFile).getParent());
+    	System.out.println(Log.gct() + " -- LOCAL: Searching model at " + new File(modelFile).getParent());
         Map<String, Object> yamlElements = YAMLUtils.load(modelFile);
         yamlElements.put(fromLocalKey, true);
         yamlElements.put(modelPathKey, new File(modelFile).getParent());
@@ -121,9 +121,9 @@ public class ModelDescriptor
     	Map<String,Object> yamlElements = YAMLUtils.loadFromString(yamlText);
     	// Let the user know the model the plugin is trying to load
     	if (yamlElements.get("name") != null) {
-        	System.out.println(Log.getCurrentTime() + " -- Bioimage.io: Inspecting model: " + (String) yamlElements.get("name"));
+        	System.out.println(Log.gct() + " -- Bioimage.io: Inspecting model: " + (String) yamlElements.get("name"));
     	} else {
-        	System.out.println(Log.getCurrentTime() + " -- Bioimage.io: Inspecting defined by: " + yamlText);
+        	System.out.println(Log.gct() + " -- Bioimage.io: Inspecting defined by: " + yamlText);
     	}
         yamlElements.put(fromLocalKey, false);
         return buildModelDescription(yamlElements);
@@ -149,9 +149,9 @@ public class ModelDescriptor
     	Map<String,Object> yamlElements = new Gson().fromJson(yamlText, new TypeToken<Map<String, Object>>(){}.getType());
     	// Let the user know the model the plugin is trying to load
     	if (yamlElements.get("name") != null) {
-        	System.out.println(Log.getCurrentTime() + " -- Bioimage.io: Inspecting model: " + (String) yamlElements.get("name"));
+        	System.out.println(Log.gct() + " -- Bioimage.io: Inspecting model: " + (String) yamlElements.get("name"));
     	} else {
-        	System.out.println(Log.getCurrentTime() + " -- Bioimage.io: Inspecting defined by: " + yamlText);
+        	System.out.println(Log.gct() + " -- Bioimage.io: Inspecting defined by: " + yamlText);
     	}
         yamlElements.put(fromLocalKey, false);
         return buildModelDescription(yamlElements);
@@ -344,7 +344,7 @@ public class ModelDescriptor
 				 // TODO sampleModels.add(CollectionUtils.createEntry(Paths.get(sample), loadFromYamlTextString(txt)));
 			} catch (Exception e) {
 				e.printStackTrace();
-				System.out.println(Log.getCurrentTime() + " -- BioEngine: unable to load sample model " + sample);
+				System.out.println(Log.gct() + " -- BioEngine: unable to load sample model " + sample);
 			}
     	}
     	return sampleModels;

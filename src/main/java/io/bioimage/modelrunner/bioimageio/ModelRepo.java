@@ -91,10 +91,10 @@ public class ModelRepo {
 	 * 	with the yaml file information in the value
 	 */
 	public Map<Path, ModelDescriptor> listAllModels() {
-		System.out.println(Log.getCurrentTime() + " -- BioImage.io: Accessing the BioImage.io API to retrieve available models");
+		System.out.println(Log.gct() + " -- BioImage.io: Accessing the BioImage.io API to retrieve available models");
 		Map<Path, ModelDescriptor> models = new HashMap<Path, ModelDescriptor>();
 		if (collections == null) {
-			System.out.println(Log.getCurrentTime() + " -- BioImage.io: Unable to retrieve models.");
+			System.out.println(Log.gct() + " -- BioImage.io: Unable to retrieve models.");
 			return models;
 		}
 		for (Object resource : collections) {
@@ -130,9 +130,9 @@ public class ModelRepo {
 		modelIDs = new ArrayList<String>();
 		String text = getJSONFromUrl(location);
 		if (text == null) {
-			System.out.println(Log.getCurrentTime() + " -- BioImage.io: Unable to find models.");
-			System.out.println(Log.getCurrentTime() + " -- BioImage.io: Cannot access file: " + location);
-			System.out.println(Log.getCurrentTime() + " -- BioImage.io: Please review the certificates needed to access the website.");
+			System.out.println(Log.gct() + " -- BioImage.io: Unable to find models.");
+			System.out.println(Log.gct() + " -- BioImage.io: Cannot access file: " + location);
+			System.out.println(Log.gct() + " -- BioImage.io: Please review the certificates needed to access the website.");
 			return;
 		}
 		JsonObject json = null;
@@ -140,17 +140,17 @@ public class ModelRepo {
 			json = (JsonObject) JsonParser.parseString(text);
 		} catch (Exception ex) {
 			collections = null;
-			System.out.println(Log.getCurrentTime() + " -- BioImage.io: Unable to find models.");
+			System.out.println(Log.gct() + " -- BioImage.io: Unable to find models.");
 			return;
 		}
 		// Iterate over the array corresponding to the key: "resources"
 		// which contains all the resources of the Bioimage.io
 		collections = (JsonArray) json.get("collection");
 		if (collections == null) {
-			System.out.println(Log.getCurrentTime() + " -- BioImage.io: Unable to find models.");
+			System.out.println(Log.gct() + " -- BioImage.io: Unable to find models.");
 			return;
 		}
-		System.out.println(Log.getCurrentTime() + " -- BioImage.io: Get the model IDs.");
+		System.out.println(Log.gct() + " -- BioImage.io: Get the model IDs.");
 		for (Object resource : collections) {
 			JsonObject jsonResource = (JsonObject) resource;
 			if (jsonResource.get("type") == null || !jsonResource.get("type").getAsString().equals("model"))
@@ -187,11 +187,11 @@ public class ModelRepo {
 			 return txt;
 		} 
 		catch (MalformedURLException ex) {
-			System.out.println(Log.getCurrentTime() + " -- BioImage.io: There has been an error accessing the API. No model retrieved");
+			System.out.println(Log.gct() + " -- BioImage.io: There has been an error accessing the API. No model retrieved");
 			ex.printStackTrace();
 		} 
 		catch (IOException ex) {
-			System.out.println(Log.getCurrentTime() + " -- BioImage.io: There has been an error accessing the API. No model retrieved");
+			System.out.println(Log.gct() + " -- BioImage.io: There has been an error accessing the API. No model retrieved");
 			ex.printStackTrace();
 		} 
 		finally {

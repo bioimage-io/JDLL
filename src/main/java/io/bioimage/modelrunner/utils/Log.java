@@ -10,11 +10,12 @@ public class Log {
 	public static SimpleDateFormat format = new SimpleDateFormat("HH:mm:ss");
 
 	/**
+	 * Get current time.
 	 * REturns the time of the day in "HH:mm:ss" format with military time.
 	 * Example 16:20:59
 	 * @return the time
 	 */
-	public static String getCurrentTime() {
+	public static String gct() {
 		return format.format(new Date());
 		
 	}
