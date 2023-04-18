@@ -20,6 +20,7 @@ import java.util.stream.Collectors;
 
 import io.bioimage.modelrunner.engine.EngineInfo;
 import io.bioimage.modelrunner.system.PlatformDetection;
+import io.bioimage.modelrunner.utils.Log;
 import io.bioimage.modelrunner.versionmanagement.AvailableEngines;
 import io.bioimage.modelrunner.versionmanagement.DeepLearningVersion;
 
@@ -449,10 +450,10 @@ public class EngineManagement {
 				Path filePath = Paths.get(website.getPath()).getFileName();
 				String engineDir = ENGINES_DIR + File.separator + engine.folderName();
 				fos = new FileOutputStream(new File(engineDir, filePath.toString()));
-				addProgress(consumer, PROGRESS_JAR_KEYWORD + engineDir + File.separator
+				Log.addProgress(consumer, PROGRESS_JAR_KEYWORD + engineDir + File.separator
 						+ filePath.toString());
-				addProgress(consumer, PROGRESS_SIZE_KEYWORD + size);
-				addProgress(consumer, PROGRESS_JAR_TIME_KEYWORD + new SimpleDateFormat("HH:mm:ss").format(now));
+				Log.addProgress(consumer, PROGRESS_SIZE_KEYWORD + size);
+				Log.addProgress(consumer, PROGRESS_JAR_TIME_KEYWORD + new SimpleDateFormat("HH:mm:ss").format(now));
 				ModelDownloader downloader = new ModelDownloader(rbc, fos);
 				downloader.call();
 				rbc.close();
@@ -513,12 +514,6 @@ public class EngineManagement {
 					&& (v.getCPU() == cpu)
 					&& (v.getGPU() == gpu)).findFirst().orElse(null);
 		return installEngine(engine, consumer);
-	}
-	
-	private static void addProgress(Consumer<String> consumer, String str) {
-		if (consumer == null)
-			return;
-		consumer.accept(str + System.lineSeparator());
 	}
     
     private Consumer<String> getInstallationProgressConsumer() {
