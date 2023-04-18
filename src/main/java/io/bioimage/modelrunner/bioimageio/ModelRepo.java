@@ -268,4 +268,16 @@ public class ModelRepo {
 	public static List<String> getModelIDs(){
 		return modelIDs;
 	}
+	
+	public ModelDescriptor selecByID(String modelID) {
+		
+	}
+	
+	public ModelDescriptor selectByName(String name) {
+		
+	}
+	
+	public ModelDescriptor selectByRdfSource(String rdfURL) {
+		
+	}
 }
