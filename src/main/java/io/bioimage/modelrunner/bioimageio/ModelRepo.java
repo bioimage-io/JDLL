@@ -43,6 +43,7 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 
 import io.bioimage.modelrunner.bioimageio.description.ModelDescriptor;
+import io.bioimage.modelrunner.utils.Log;
 
 /**
  * Class to interact with the Bioimage.io API. Used to get information
@@ -89,9 +90,9 @@ public class ModelRepo {
 	 * @return an object containing the zip location of the model as key and the {@link ModelDescriptor}
 	 * 	with the yaml file information in the value
 	 */
-	public List<Map.Entry<Path, ModelDescriptor>> listAllModels() {
+	public Map<Path, ModelDescriptor> listAllModels() {
 		System.out.println(Log.getCurrentTime() + " -- BioImage.io: Accessing the BioImage.io API to retrieve available models");
-		List<Map.Entry<Path, ModelDescriptor>> models = new ArrayList<Map.Entry<Path, ModelDescriptor>>();
+		Map<Path, ModelDescriptor> models = new HashMap<Path, ModelDescriptor>();
 		if (collections == null) {
 			System.out.println(Log.getCurrentTime() + " -- BioImage.io: Unable to retrieve models.");
 			return models;
@@ -107,7 +108,7 @@ public class ModelRepo {
 				String stringRDF = getJSONFromUrl(jsonResource.get("rdf_source").getAsString());
 				modelPath = createPathFromURLString(jsonResource.get("rdf_source").getAsString());
 				ModelDescriptor descriptor = ModelDescriptor.loadFromYamlTextString(stringRDF);
-				models.add(CollectionUtils.createEntry(modelPath, descriptor));
+				models.put(modelPath, descriptor);
 			} catch (Exception ex) {
 				// TODO Maybe add some error message? This should be responsibility of the BioImage.io user
 				// Only display error message if there was an error creating

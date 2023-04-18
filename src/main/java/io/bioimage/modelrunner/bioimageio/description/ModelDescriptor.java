@@ -8,7 +8,6 @@ import java.net.MalformedURLException;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -18,8 +17,11 @@ import java.util.Set;
 import java.util.Map.Entry;
 import java.util.stream.Collectors;
 
+import org.bioimageanalysis.icy.deepicy.model.description.Author;
+
 import io.bioimage.modelrunner.bioimageio.ModelRepo;
 import io.bioimage.modelrunner.bioimageio.description.weights.ModelWeight;
+import io.bioimage.modelrunner.utils.Log;
 import io.bioimage.modelrunner.utils.YAMLUtils;
 
 import com.google.gson.Gson;
@@ -70,10 +72,6 @@ public class ModelDescriptor
     private static List<String> sampleBioengineModels = Arrays.asList(new String[] {"cell_pose"});//, "inception", "stardist"});
     private String modelID;
     private String localModelPath;
-    /**
-     * Object containing the infromation about which model is supported by the BioEngine
-     */
-    private static BioEngineAvailableModels BIOENGINE_MODELS;
 
     private ModelDescriptor()
     {
@@ -164,9 +162,6 @@ public class ModelDescriptor
     {
         ModelDescriptor modelDescription = new ModelDescriptor();
 
-        String[] requiredFields = new String[] {"format_version", "name", "timestamp",
-        		"description", "authors", "cite", "tags", "license",
-            "inputs", "outputs", "covers", "weights"};
         Set<String> yamlFields = yamlElements.keySet();
         String[] yamlFieldsArr = new String[yamlFields.size()];
         Arrays.sort(yamlFields.toArray(yamlFieldsArr));
@@ -311,9 +306,7 @@ public class ModelDescriptor
     	List<String> modelIDs = ModelRepo.getModelIDs();
     	if (modelID == null)
     		modelID = getConfig().getID();
-    	if (BIOENGINE_MODELS == null)
-    		BIOENGINE_MODELS = ModelWeight.getBioEngAvailableModels();
-    	if (modelID == null || !BIOENGINE_MODELS.isModelSupportedByBioengine(modelID))
+    	if (modelID == null)
     		return;
     	for (String id : modelIDs) {
     		String auxID = id + "/";
@@ -327,6 +320,9 @@ public class ModelDescriptor
     }
     
     /**
+     * TODO
+     * TODO
+     * TODO ADD BIOENGINE SOON
      * Method that retrieves the sample BioEngine models that Icy provides as an example
      * to test the BioEngine
      */
@@ -345,7 +341,7 @@ public class ModelDescriptor
 				 String txt = result.toString("UTF-8");
 				 result.close();
 				 inputStream.close();
-				 sampleModels.add(CollectionUtils.createEntry(Paths.get(sample), loadFromYamlTextString(txt)));
+				 // TODO sampleModels.add(CollectionUtils.createEntry(Paths.get(sample), loadFromYamlTextString(txt)));
 			} catch (Exception e) {
 				e.printStackTrace();
 				System.out.println(Log.getCurrentTime() + " -- BioEngine: unable to load sample model " + sample);
