@@ -1,4 +1,4 @@
-package org.bioimageanalysis.icy.deepicy.model.description;
+package io.bioimage.modelrunner.bioimageio.description;
 
 
 /**
