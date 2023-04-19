@@ -341,7 +341,13 @@ public class BioimageioRepo {
 	}
 	
 	public void downloadModel(ModelDescriptor descriptor) {
-		
+		for (String file : files) {
+			new FileDownloader(file);
+			if (consumer) {
+				new DownloaderInfo(modelPath, modelSize, consumer, Thread.currentThread());
+				Thread.start()
+			}
+		}
 	}
 	
 	public void downloadModelByID(String id) {
