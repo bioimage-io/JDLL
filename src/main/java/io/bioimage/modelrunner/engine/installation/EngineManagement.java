@@ -1,8 +1,9 @@
-package io.bioimage.modelrunner.bioimageio;
+package io.bioimage.modelrunner.engine.installation;
 
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.net.HttpURLConnection;
 import java.net.URL;
 import java.nio.channels.Channels;
 import java.nio.channels.ReadableByteChannel;
@@ -378,7 +379,7 @@ public class EngineManagement {
 			return;
 		Consumer<String> consumer = getInstallationProgressConsumer();
 		missingEngineFolders = missingEngineFolders.entrySet().stream()
-				.filter(v -> !installSpecificEngine(v.getValue(), consumer))
+				.filter(v -> !installEngineByCompleteName(v.getValue(), consumer))
 				.collect(Collectors.toMap(v -> v.getKey(), v -> v.getValue()));
 	}
 	
@@ -390,8 +391,8 @@ public class EngineManagement {
 	 * 	dl-modelrunner naming convention (https://github.com/bioimage-io/model-runner-java#readme)
 	 * @return true if the installation was successful and false otherwise
 	 */
-	public static boolean installSpecificEngine(String engineDir) {
-		return installSpecificEngine(engineDir, null);
+	public static boolean installEngineByCompleteName(String engineDir) {
+		return installEngineByCompleteName(engineDir, null);
 	}
 	
 	/**
@@ -404,7 +405,7 @@ public class EngineManagement {
 	 * 	consumer used to communicate the progress made donwloading files. It can be null
 	 * @return true if the installation was successful and false otherwise
 	 */
-	public static boolean installSpecificEngine(String engineDir, Consumer<String> consumer) {
+	public static boolean installEngineByCompleteName(String engineDir, Consumer<String> consumer) {
 		File engineFileDir = new File(engineDir);
 		if (!engineFileDir.isDirectory() && engineFileDir.mkdirs() == false)
 			return false;
@@ -436,15 +437,15 @@ public class EngineManagement {
 	 * @return true if the installation was successful and false otherwise
 	 */
 	public static boolean installEngine(DeepLearningVersion engine, Consumer<String> consumer) {
-		addProgress(consumer, PROGRESS_ENGINE_KEYWORD + engine.folderName());
+		Log.addProgress(consumer, PROGRESS_ENGINE_KEYWORD + engine.folderName());
 		Date now = new Date();
-		addProgress(consumer, PROGRESS_ENGINE_TIME_KEYWORD + new SimpleDateFormat("HH:mm:ss").format(now));
+		Log.addProgress(consumer, PROGRESS_ENGINE_TIME_KEYWORD + new SimpleDateFormat("HH:mm:ss").format(now));
 		ReadableByteChannel rbc = null;
 		FileOutputStream fos = null;
 		try {
 			for (String jar : engine.getJars()) {
 				URL website = new URL(jar);
-				long size = InstallerDialog.getFileSize(website);
+				long size = getFileSize(website);
 				rbc = Channels.newChannel(website.openStream());
 				// Create the new model file as a zip
 				Path filePath = Paths.get(website.getPath()).getFileName();
@@ -454,7 +455,7 @@ public class EngineManagement {
 						+ filePath.toString());
 				Log.addProgress(consumer, PROGRESS_SIZE_KEYWORD + size);
 				Log.addProgress(consumer, PROGRESS_JAR_TIME_KEYWORD + new SimpleDateFormat("HH:mm:ss").format(now));
-				ModelDownloader downloader = new ModelDownloader(rbc, fos);
+				FileDownloader downloader = new FileDownloader(rbc, fos);
 				downloader.call();
 				rbc.close();
 				fos.close();
@@ -616,4 +617,38 @@ public class EngineManagement {
 			return false;
 		return true;
     }
+	
+    /**
+     * Get file size of the file located in the given url
+     * @param strUrl
+     * 		url of interest
+     * @return the size of the file at the url or -1 if there is any error
+     */
+	public static long getFileSize(URL url) {
+		long totSize = -1;
+		HttpURLConnection conn = null;
+		try {
+			conn = (HttpURLConnection) url.openConnection();
+			conn.setRequestMethod("HEAD");
+			totSize = conn.getContentLengthLong();
+		} catch (IOException e) {
+		}
+		return totSize;
+	}
+	
+    /**
+     * Get file size of the file located in the given url
+     * @param strUrl
+     * 		url of interest as a String 
+     * @return the size of the file at the url or -1 if there is any error
+     */
+	public long getFileSize(String strUrl) {
+		long totSize = -1;
+		try {
+			URL url = new URL(strUrl);
+			totSize = getFileSize(url);
+		} catch (IOException e) {
+		}
+		return totSize;
+	}
 }
