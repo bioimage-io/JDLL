@@ -34,6 +34,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.function.Consumer;
 
 import javax.net.ssl.HttpsURLConnection;
@@ -64,8 +65,6 @@ public class ModelRepo {
 	 * URL to the file containing all the model zoo models
 	 */
 	public static String location = "https://raw.githubusercontent.com/bioimage-io/collection-bioimage-io/gh-pages/collection.json";
-
-	public HashMap<String, ModelDescriptor> models = new HashMap<String, ModelDescriptor>();
 	/**
 	 * JSon containing all the info about the Bioimage.io models
 	 */
@@ -74,6 +73,8 @@ public class ModelRepo {
 	 * List of all the model IDs of the models existing in the BioImage.io
 	 */
 	private static List<String> modelIDs;
+	
+	private Map<Path, ModelDescriptor> models;
 	
 	private Consumer<String> consumer;
 	
@@ -115,10 +116,24 @@ public class ModelRepo {
 	 * 	with the yaml file information in the value
 	 */
 	public Map<Path, ModelDescriptor> listAllModels() {
-		Log.addProgressAndShowInTerminal(consumer, "BioImage.io: Accessing the BioImage.io API to retrieve available models", true);
-		Map<Path, ModelDescriptor> models = new HashMap<Path, ModelDescriptor>();
+		return listAllModels(true);
+	}
+	
+	/**
+	 * Method that connects to the BioImage.io API and retrieves the models available
+	 * at the Bioimage.io model repository
+	 * @return an object containing the zip location of the model as key and the {@link ModelDescriptor}
+	 * 	with the yaml file information in the value
+	 */
+	public Map<Path, ModelDescriptor> listAllModels(boolean verbose) {
+		if (models != null && models.entrySet().size() > 0)
+			return models;
+		if (verbose)
+			Log.addProgressAndShowInTerminal(consumer, "BioImage.io: Accessing the BioImage.io API to retrieve available models", true);
+		models = new HashMap<Path, ModelDescriptor>();
 		if (collections == null) {
-			Log.addProgressAndShowInTerminal(consumer, MODELS_NOT_FOUND_MSG, true);
+			if (verbose)
+				Log.addProgressAndShowInTerminal(consumer, MODELS_NOT_FOUND_MSG, true);
 			return models;
 		}
 		for (Object resource : collections) {
@@ -137,7 +152,7 @@ public class ModelRepo {
 				// TODO Maybe add some error message? This should be responsibility of the BioImage.io user
 				// Only display error message if there was an error creating
 				// the descriptor from the yaml file
-				if (modelPath != null) {
+				if (modelPath != null && verbose) {
 					String errMSg = "Could not load descriptor for the Bioimage.io model " + modelPath.getFileName() + ": " + ex.toString();
 					Log.addProgressAndShowInTerminal(consumer, errMSg, true);
 				}
@@ -269,15 +284,60 @@ public class ModelRepo {
 		return modelIDs;
 	}
 	
-	public ModelDescriptor selecByID(String modelID) {
-		
+	/**
+	 * Return the {@link ModelDescriptor} for the model defined by the modelID
+	 * (field 'id' in the rdf.yaml) introduced as a parameter.
+	 * @param modelID
+	 * 	unique ID for each Bioimage.io model
+	 * @return the {@link ModelDescriptor} of the model
+	 */
+	public ModelDescriptor selectByID(String modelID) {
+		Entry<Path, ModelDescriptor> modelEntry = this.listAllModels().entrySet().stream()
+				.filter(ee -> {
+					String id = ee.getValue().getModelID();
+					if (id.length() - id.replace("/", "").length() == 2) {
+						id = id.substring(0, id.lastIndexOf("/"));
+					}
+					String reqId = modelID;
+					if (modelID.length() - modelID.replace("/", "").length() == 2) {
+						return modelID.substring(0, modelID.lastIndexOf("/")).equals(id);
+					}
+					return modelID.equals(id);
+				}).findFirst().orElse(null);
+		if (modelEntry != null)
+			return modelEntry.getValue();
+		return null;
 	}
 	
+	/**
+	 * Return the {@link ModelDescriptor} for the model defined by the name
+	 * (field 'name' in the rdf.yaml) introduced as a parameter.
+	 * @param name
+	 * 	unique name for each Bioimage.io model
+	 * @return the {@link ModelDescriptor} of the model
+	 */
 	public ModelDescriptor selectByName(String name) {
+		Entry<Path, ModelDescriptor> modelEntry = this.listAllModels().entrySet().stream()
+				.filter(ee -> ee.getValue().getName().equals(name)).findFirst().orElse(null);
+		if (modelEntry != null)
+			return modelEntry.getValue();
+		return null;
 		
 	}
 	
+	/**
+	 * Return the {@link ModelDescriptor} for the model defined by the url to the rdf file
+	 * (field 'rdf_source' in the rdf.yaml) introduced as a parameter.
+	 * @param rdfURL
+	 * 	unique url of the rdf file of each Bioimage.io model
+	 * @return the {@link ModelDescriptor} of the model
+	 */
 	public ModelDescriptor selectByRdfSource(String rdfURL) {
+		Entry<Path, ModelDescriptor> modelEntry = this.listAllModels().entrySet().stream()
+				.filter(ee -> ee.getValue().getRDFSource().equals(rdfURL)).findFirst().orElse(null);
+		if (modelEntry != null)
+			return modelEntry.getValue();
+		return null;
 		
 	}
 }
