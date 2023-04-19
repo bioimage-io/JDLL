@@ -52,7 +52,7 @@ import io.bioimage.modelrunner.utils.Log;
  * @author Carlos Javier Garcia Lopez de Haro
  *
  */
-public class ModelRepo {
+public class BioimageioRepo {
 	/**
 	 * Message displayed when there are no models found
 	 */
@@ -82,11 +82,11 @@ public class ModelRepo {
 		connect().listAllModels();
 	}
 	
-	public ModelRepo() {
+	public BioimageioRepo() {
 		setCollectionsRepo();
 	}
 	
-	public ModelRepo(Consumer<String> consumer) {
+	public BioimageioRepo(Consumer<String> consumer) {
 		this.consumer = consumer;
 		setCollectionsRepo();
 	}
@@ -94,19 +94,19 @@ public class ModelRepo {
 	/**
 	 * Create an instance of the models stored in the Bioimage.io repository reading the 
 	 * collections rdf.yaml.
-	 * @return an instance of the {@link ModelRepo}
+	 * @return an instance of the {@link BioimageioRepo}
 	 */
-	public static ModelRepo connect() {
-		return new ModelRepo();
+	public static BioimageioRepo connect() {
+		return new BioimageioRepo();
 	}
 	
 	/**
 	 * Create an instance of the models stored in the Bioimage.io repository reading the 
 	 * collections rdf.yaml.
-	 * @return an instance of the {@link ModelRepo}
+	 * @return an instance of the {@link BioimageioRepo}
 	 */
-	public static ModelRepo connect(Consumer<String> consumer) {
-		return new ModelRepo(consumer);
+	public static BioimageioRepo connect(Consumer<String> consumer) {
+		return new BioimageioRepo(consumer);
 	}
 	
 	/**
@@ -338,6 +338,30 @@ public class ModelRepo {
 		if (modelEntry != null)
 			return modelEntry.getValue();
 		return null;
+	}
+	
+	public void downloadModel(ModelDescriptor descriptor) {
 		
+	}
+	
+	public void downloadModelByID(String id) {
+		ModelDescriptor model = selectByID(id);
+		if (model == null)
+			throw new IllegalArgumentException("");
+		downloadModel(model);
+	}
+	
+	public void downloadByName(String name) {
+		ModelDescriptor model = selectByName(name);
+		if (model == null)
+			throw new IllegalArgumentException("");
+		downloadModel(model);
+	}
+	
+	public void downloadByRdfSource(String rdfUrl) {
+		ModelDescriptor model = selectByRdfSource(rdfUrl);
+		if (model == null)
+			throw new IllegalArgumentException("");
+		downloadModel(model);
 	}
 }

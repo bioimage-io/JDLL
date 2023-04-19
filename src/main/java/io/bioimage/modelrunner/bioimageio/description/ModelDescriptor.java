@@ -17,7 +17,7 @@ import java.util.Set;
 import java.util.Map.Entry;
 import java.util.stream.Collectors;
 
-import io.bioimage.modelrunner.bioimageio.ModelRepo;
+import io.bioimage.modelrunner.bioimageio.BioimageioRepo;
 import io.bioimage.modelrunner.bioimageio.description.weights.ModelWeight;
 import io.bioimage.modelrunner.utils.Log;
 import io.bioimage.modelrunner.utils.YAMLUtils;
@@ -301,7 +301,7 @@ public class ModelDescriptor
 			// TODO weights.addBioEngine("https://hypha.imjoy.io");
 			return;
 	    }
-    	List<String> modelIDs = ModelRepo.getModelIDs();
+    	List<String> modelIDs = BioimageioRepo.getModelIDs();
     	if (modelID == null)
     		modelID = getConfig().getID();
     	if (modelID == null)
