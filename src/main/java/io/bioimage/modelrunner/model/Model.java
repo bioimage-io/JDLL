@@ -27,8 +27,11 @@
  */
 package io.bioimage.modelrunner.model;
 
+import java.io.File;
+import java.io.IOException;
 import java.util.List;
 
+import io.bioimage.modelrunner.bioimageio.description.ModelDescriptor;
 import io.bioimage.modelrunner.engine.DeepLearningEngineInterface;
 import io.bioimage.modelrunner.engine.EngineInfo;
 import io.bioimage.modelrunner.engine.EngineLoader;
@@ -124,6 +127,13 @@ public class Model
 			throws LoadEngineException, Exception
 	{
 		return new Model( engineInfo, modelFolder, modelSource, null );
+	}
+	
+	public static Model createBioimageioModel(String bioimageioModelFolder) throws Exception {
+		if (new File(bioimageioModelFolder, "rdf.yaml").isFile() == false)
+			throw new IOException("A Bioimage.io model folder should contain its corresponding rdf.yaml file.");
+		ModelDescriptor descriptor = ModelDescriptor.loadFromLocalFile(bioimageioModelFolder + File.separator + "rdf.yaml");
+		descriptor.getWeights().getEnginesListWithVersions();
 	}
 
 	/**
