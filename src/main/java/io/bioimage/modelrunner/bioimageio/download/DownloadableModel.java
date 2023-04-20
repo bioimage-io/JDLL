@@ -15,7 +15,6 @@ import java.util.Calendar;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.function.Consumer;
 import java.util.stream.IntStream;
 
@@ -23,6 +22,7 @@ import io.bioimage.modelrunner.bioimageio.description.ModelDescriptor;
 import io.bioimage.modelrunner.bioimageio.description.SampleImage;
 import io.bioimage.modelrunner.bioimageio.description.weights.ModelWeight;
 import io.bioimage.modelrunner.bioimageio.description.weights.WeightFormatInterface;
+import io.bioimage.modelrunner.engine.installation.FileDownloader;
 import io.bioimage.modelrunner.utils.Log;
 
 /**
@@ -284,30 +284,6 @@ public class DownloadableModel {
 	}
 	
 	/**
-	 * Download the model from the BioImage.io insicating the progress that is being made file
-	 * by file
-	 * @throws IOException if there is any error creating the folder or downloading the files
-	 * @throws InterruptedException if the thread was stopped by the user
-	 */
-	public void downloadModelAsFiles() throws IOException, InterruptedException {
-		boolean downloadZip = downloadableLinks.keySet().contains(downloadURLKey);
-		if (downloadZip) {
-			downloadZipModel();
-		} else {
-			downloadModelFileByFile(false);
-		}
-	}
-	
-	/**
-	 * Download the model from the BioImage.io indicating the progress of the download as a whole
-	 * @throws IOException if there is any error creating the folder or downloading the files
-	 * @throws InterruptedException if the thread was stopped by the user
-	 */
-	public void downloadModelAsWhole() throws IOException, InterruptedException {
-		downloadModelFileByFile(true);
-	}
-	
-	/**
 	 * Add the timestamp to the String given
 	 * @param str
 	 * 	String to add the time stamp
@@ -337,14 +313,12 @@ public class DownloadableModel {
 	 * @throws IOException if there is any error creating the folder or downloading the files
 	 * @throws InterruptedException if the thread was stopped by the user
 	 */
-	private void downloadModelFileByFile(boolean asWhole) throws IOException, InterruptedException {
+	public void downloadModel() throws IOException, InterruptedException {
 		modelFolder = MODELS_PATH + File.separator + addTimeStampToFileName(descriptor.getName());
 		File folder = new File(modelFolder);
 		boolean created = folder.mkdirs();
 		if (!created)
 			throw new IOException("Unable to create model folder ->" + modelFolder);
-		if (asWhole)
-			createUniqueTrackerForAllModelFiles();
 		for (int i = 0; i < getListOfLinks().size(); i ++) {
         	if (Thread.interrupted())
                 throw new InterruptedException("Interrupted before downloading the remaining files: "
@@ -352,8 +326,6 @@ public class DownloadableModel {
             									.mapToObj(j -> getListOfLinks().get(j)).toArray()));
 			String item = getListOfLinks().get(i);
 			String fileName = getFileNameFromURLString(item);
-			if (!asWhole)
-				createSingleFileDownloaderTracker(item);
 			downloadFileFromInternet(item, new File(modelFolder, fileName));
 		}
 		
@@ -380,7 +352,6 @@ public class DownloadableModel {
 	public void downloadFileFromInternet(String downloadURL, File targetFile) throws InterruptedException {
 		FileOutputStream fos = null;
 		ReadableByteChannel rbc = null;
-		// TODO if apache works fine, get rid of the other download class
 		try {
 			URL website = new URL(downloadURL);
 			rbc = Channels.newChannel(website.openStream());
@@ -388,16 +359,14 @@ public class DownloadableModel {
 			fos = new FileOutputStream(targetFile);
 			// Send the correct parameters to the progress screen
 			FileDownloader downloader = new FileDownloader(rbc, fos);
-			System.out.println(Log.getCurrentTime() + " -- Downloading " + targetFile.getName());
-			// TODO remove FileUtils.copyURLToFile(website, targetFile);
+			Log.addProgress(consumer, "Downloading " + targetFile.getName(), true);
 			downloader.call();
 		} catch (IOException e) {
-			MessageDialog.showDialog("The link for the file: " + targetFile.getName() 
-									+ " is broken.\nDeepIcy will continue with the "
-									+ "download but the model might be downloaded incorrectly.", MessageDialog.ERROR_MESSAGE);
+			String msg = "The link for the file: " + targetFile.getName() + " is broken." + System.lineSeparator() 
+						+ "JDLL will continue with the download but the model might be "
+						+ "downloaded incorrectly.";
 			e.printStackTrace();
 		} finally {
-			fdt = null;
 			try {
 				if (fos != null)
 						fos.close();
@@ -412,45 +381,6 @@ public class DownloadableModel {
             throw new InterruptedException(
                     "Interrupted while downloading: " + targetFile.getName());
         }
-	}
-	
-	/**
-	 * Create a tracker that monitors the download of all the files of a 
-	 * model
-	 * @throws MalformedURLException if any of the URLs for the files is incorrect
-	 */
-	private void createUniqueTrackerForAllModelFiles() throws MalformedURLException {
-		String msg = System.lineSeparator() + Log.getCurrentTime() + " -- Getting size"
-				+ " of the files to be downloaded." + System.lineSeparator()
-				+ "  If it takes too long maybe the connection is unstable. Try: "
-				+ System.lineSeparator() + "  " + getListOfLinks().get(0);
-		System.out.println(msg);
-		long totSize = 0;
-		for (String item : getListOfLinks()) {
-			URL website = new URL(item);
-			totSize += getFileSize(website);
-		}
-		setFileDownloaderTracker(modelFolder, totSize);
-	}
-	
-	/**
-	 * Create a tracker that monitors the download of the file defined by the input
-	 * parameter, that should always correspond to an URL
-	 * @param downloadURL
-	 * 	the url for the given file
-	 * @throws MalformedURLException if there is an error in the url of the file
-	 */
-	private void createSingleFileDownloaderTracker(String downloadURL) throws MalformedURLException {
-		Objects.requireNonNull(downloadURL);
-		Objects.requireNonNull(modelFolder);
-		String fileName = getFileNameFromURLString(downloadURL);
-		String msg = System.lineSeparator() + Log.getCurrentTime() + " -- Getting size"
-				+ " of the file to be downloaded." + System.lineSeparator()
-				+ "  If it takes too long maybe the connection is unstable. Try: "
-				+ System.lineSeparator() + "  " +  downloadURL;
-		System.out.println(msg);
-		URL website = new URL(downloadURL);
-		setFileDownloaderTracker(new File(modelFolder, fileName).getAbsolutePath(), getFileSize(website));
 	}
 	
 	/**
