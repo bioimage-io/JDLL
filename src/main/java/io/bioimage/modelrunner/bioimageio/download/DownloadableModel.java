@@ -40,6 +40,10 @@ public class DownloadableModel {
 	 */
 	private ModelDescriptor descriptor;
 	/**
+	 * Folder where the model is going to be downloaded
+	 */
+	private String modelFolder;
+	/**
 	 * Key for the map that contains the download URL of the model 
 	 */
 	private static String downloadURLKey = "download_url";
@@ -81,8 +85,9 @@ public class DownloadableModel {
 	 * @param descriptor
 	 * 	information about the model from the rdf.yaml
 	 */
-	private DownloadableModel(ModelDescriptor descriptor) {
+	private DownloadableModel(ModelDescriptor descriptor, String modelFolder) {
 		this.descriptor = descriptor;
+		this.modelFolder = modelFolder;
 		retriveDownloadModelLinks();
 	}
 
@@ -91,8 +96,8 @@ public class DownloadableModel {
 	 * @param descriptor
 	 * 	information about the model from the rdf.yaml
 	 */
-	public static DownloadableModel build(ModelDescriptor descriptor) {
-		return new DownloadableModel(descriptor);
+	public static DownloadableModel build(ModelDescriptor descriptor, String modelFolder) {
+		return new DownloadableModel(descriptor, modelFolder);
 	}
 	
 	/**
@@ -305,7 +310,7 @@ public class DownloadableModel {
 	 * @throws IOException if there is any error creating the folder or downloading the files
 	 * @throws InterruptedException if the thread was stopped by the user
 	 */
-	public void downloadModel(String modelFolder) throws IOException, InterruptedException {
+	public void downloadModel() throws IOException, InterruptedException {
 		File folder = new File(modelFolder);
 		if (!folder.isDirectory())
 			throw new IOException("The provided directory where the model is to be downloaded does not exist ->" + modelFolder);

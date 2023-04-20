@@ -342,10 +342,10 @@ public class BioimageioRepo {
 	}
 	
 	public void downloadModel(ModelDescriptor descriptor, String modelsDirectory) {
-		DownloadableModel downloadModel = DownloadableModel.build(descriptor);
+		DownloadableModel downloadModel = DownloadableModel.build(descriptor, modelsDirectory);
 		downloadModel.setConsumer(this.consumer);
 		HashMap<String, Long> fileSizes = downloadModel.getModelSizeFileByFile();
-		downloadModel.downloadModel(modelsDirectory);
+		downloadModel.downloadModel();
 		for (String file : files) {
 			new FileDownloader(file);
 			if (consumer) {

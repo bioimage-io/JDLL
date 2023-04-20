@@ -1,22 +1,29 @@
 package io.bioimage.modelrunner.bioimageio.download;
 
+import java.io.File;
+import java.io.IOException;
+import java.net.HttpURLConnection;
+import java.net.URL;
 import java.util.HashMap;
+import java.util.List;
 import java.util.UUID;
 import java.util.function.Consumer;
+import java.util.stream.Collectors;
+
 
 public class ModelDownloadTracker {
 	/**
 	 * Consumer used to report the download progress to the main thread
 	 */
-	Consumer<String> consumer;
+	Consumer<HashMap<String, Long>> consumer;
 	/**
 	 * Map containing the size of each of the files to be downloaded
 	 */
 	HashMap<String, Long> sizeFiles;
 	/**
-	 * Whether a file or a folder are being downloaded
+	 * Files that have not been downloaded yet
 	 */
-	private boolean isFile = false;
+	List<File> remainingFiles;
 	/**
 	 * Thread where the download is being done
 	 */
@@ -25,35 +32,21 @@ public class ModelDownloadTracker {
 	 * Unique identifier associated to the download
 	 */
 	private final String uniqueIdentifier;
-	/**
-	 * Name of the folder that is going to be donwloaded
-	 */
-	public static final String DOWNLOAD_FOLDERNAME = "-* FOLDER NAME *-";
-	/**
-	 * Name of the file that is going to be donwloaded
-	 */
-	public static final String DOWNLOAD_FILERNAME = "-* FILE NAME *-";
-	/**
-	 * Keyword identifying the beginning of a download
-	 */
-	public static final String START_KEY = "-* START *-";
-	/**
-	 * Keyword identifying the end of a download
-	 */
-	public static final String END_KEY = "-* END *-";
 	
+	/**
+	 * URL to check if the access to zenodo is fine
+	 */
+	public static final String ZENODO_URL = "https://zenodo.org/record/6559475/files/README.md?download=1";
 	/**
 	 * 
 	 * @param consumer
 	 * @param sizeFiles
 	 */
-	public ModelDownloadTracker(Consumer<String> consumer, HashMap<String, Long> sizeFiles, Thread thread) {
+	public ModelDownloadTracker(Consumer<HashMap<String, Long>> consumer, HashMap<String, Long> sizeFiles, Thread thread) {
 		this.consumer = consumer;
 		this.sizeFiles = sizeFiles;
+		this.remainingFiles = sizeFiles.keySet().stream().map(i -> new File(i)).collect(Collectors.toList());
 		this.uniqueIdentifier = createID();
-		if (sizeFiles.entrySet().size() == 1) {
-			isFile = true;
-		}
 		this.downloadThread = thread;
 	}
 	
@@ -72,5 +65,53 @@ public class ModelDownloadTracker {
 	public String getID() {
 		return this.uniqueIdentifier;
 	}
+	
+	public void trackDownloadofFilesFromFileSystem() throws IOException {
+		HashMap<String, Long> infoMap = new HashMap<String, Long>();
+		int nTimesWoChange = 0;
+		long downloadSize = 0;
+		while (this.downloadThread.isAlive() && remainingFiles.size() > 0) {
+			for (int i = 0; i < this.remainingFiles.size(); i ++) {
+				File ff = remainingFiles.get(i);
+				if (ff.isFile() && ff.length() != this.sizeFiles.get(ff.getAbsolutePath())){
+					infoMap.put(ff.getAbsolutePath(), ff.length());
+					break;
+				} else if (remainingFiles.get(i).isFile()) {
+					infoMap.put(ff.getAbsolutePath(), ff.length());
+					remainingFiles.remove(i);
+					break;
+				}
+			}
+			long totDownload = infoMap.values().stream().mapToLong(Long::longValue).sum();
+			if (downloadSize != totDownload) {
+				downloadSize = totDownload;
+				nTimesWoChange = 0;
+			} else {
+				nTimesWoChange += 1;
+			}
+			if (nTimesWoChange > 30 && !checkInternet(ZENODO_URL)) {
+				throw new IOException("The download seems to have stopped. There has been no "
+						+ "progress during more than 10 seconds. The internet connection seems unstable.");
+			} else if (nTimesWoChange > 60) {
+				throw new IOException("The download seems to have stopped. There has been no "
+						+ "progress during more than 20 seconds, please review your internet connection or computer permissions");
+			}
+		}
+	}
+	
+	public static boolean checkInternet(String urlStr) {
+        try {
+			URL url = new URL(urlStr);
+	        HttpURLConnection connection = (HttpURLConnection)url.openConnection();
+	        connection.setRequestMethod("GET");
+	        connection.connect();
+	        int code = connection.getResponseCode();
+	        if (code != 200)
+	        	throw new IOException();
+        } catch (Exception ex) {
+        	return false;
+        }
+        return true;
+    }
 
 }
