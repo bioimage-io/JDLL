@@ -341,11 +341,11 @@ public class BioimageioRepo {
 		return null;
 	}
 	
-	public void downloadModel(ModelDescriptor descriptor) {
+	public void downloadModel(ModelDescriptor descriptor, String modelsDirectory) {
 		DownloadableModel downloadModel = DownloadableModel.build(descriptor);
 		downloadModel.setConsumer(this.consumer);
 		HashMap<String, Long> fileSizes = downloadModel.getModelSizeFileByFile();
-		downloadModel.downloadModel();
+		downloadModel.downloadModel(modelsDirectory);
 		for (String file : files) {
 			new FileDownloader(file);
 			if (consumer) {
@@ -355,24 +355,24 @@ public class BioimageioRepo {
 		}
 	}
 	
-	public void downloadModelByID(String id) {
+	public void downloadModelByID(String id, String modelsDirectory) {
 		ModelDescriptor model = selectByID(id);
 		if (model == null)
 			throw new IllegalArgumentException("");
-		downloadModel(model);
+		downloadModel(model, modelsDirectory);
 	}
 	
-	public void downloadByName(String name) {
+	public void downloadByName(String name, String modelsDirectory) {
 		ModelDescriptor model = selectByName(name);
 		if (model == null)
 			throw new IllegalArgumentException("");
-		downloadModel(model);
+		downloadModel(model, modelsDirectory);
 	}
 	
-	public void downloadByRdfSource(String rdfUrl) {
+	public void downloadByRdfSource(String rdfUrl, String modelsDirectory) {
 		ModelDescriptor model = selectByRdfSource(rdfUrl);
 		if (model == null)
 			throw new IllegalArgumentException("");
-		downloadModel(model);
+		downloadModel(model, modelsDirectory);
 	}
 }

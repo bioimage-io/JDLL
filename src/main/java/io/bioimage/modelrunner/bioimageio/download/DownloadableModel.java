@@ -40,10 +40,6 @@ public class DownloadableModel {
 	 */
 	private ModelDescriptor descriptor;
 	/**
-	 * String path to the folder where the model has been downloaded
-	 */
-	private String modelFolder;
-	/**
 	 * Key for the map that contains the download URL of the model 
 	 */
 	private static String downloadURLKey = "download_url";
@@ -75,10 +71,6 @@ public class DownloadableModel {
 	 * Key for the map that contains the test outputs of the model 
 	 */
 	private static String testOutputsKey = "test_output";
-	/**
-	 * Name of the folder where the models are downloaded and stored
-	 */
-	private static String MODELS_PATH = new File("models").getAbsolutePath();
     /**
      * Consumer used to send info about the download to other threads
      */
@@ -308,17 +300,15 @@ public class DownloadableModel {
 	/**
 	 * Download a model downloading one by one all the files that should be inside
 	 * the model folder into a created folder inside the models repo
-	 * @param asWhole
+	 * @param modelFolder
 	 * 	whether the model download is notifies file by file or as a whole
 	 * @throws IOException if there is any error creating the folder or downloading the files
 	 * @throws InterruptedException if the thread was stopped by the user
 	 */
-	public void downloadModel() throws IOException, InterruptedException {
-		modelFolder = MODELS_PATH + File.separator + addTimeStampToFileName(descriptor.getName());
+	public void downloadModel(String modelFolder) throws IOException, InterruptedException {
 		File folder = new File(modelFolder);
-		boolean created = folder.mkdirs();
-		if (!created)
-			throw new IOException("Unable to create model folder ->" + modelFolder);
+		if (!folder.isDirectory())
+			throw new IOException("The provided directory where the model is to be downloaded does not exist ->" + modelFolder);
 		for (int i = 0; i < getListOfLinks().size(); i ++) {
         	if (Thread.interrupted())
                 throw new InterruptedException("Interrupted before downloading the remaining files: "
@@ -416,13 +406,5 @@ public class DownloadableModel {
 			System.out.println(msg);
 			return 1;
 		}
-	}
-	
-	/**
-	 * MEthod that returns the directory that corresponds to the model downloaded
-	 * @return the directory corresponding to the model downloaded
-	 */
-	public String getModelFolder(){
-		return this.modelFolder;
 	}
 }
