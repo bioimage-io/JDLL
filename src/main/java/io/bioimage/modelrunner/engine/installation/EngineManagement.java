@@ -19,6 +19,7 @@ import java.util.Map;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
+import io.bioimage.modelrunner.bioimageio.BioimageioRepo;
 import io.bioimage.modelrunner.bioimageio.description.ModelDescriptor;
 import io.bioimage.modelrunner.bioimageio.description.weights.WeightFormatInterface;
 import io.bioimage.modelrunner.engine.EngineInfo;
@@ -456,36 +457,83 @@ public class EngineManagement {
 		return false;
 	}
 	
-	public static boolean installEnginesForModel(ModelDescriptor descriptor) {
-		return installEnginesForModel(descriptor, null);
+	public static boolean installEnginesForModel(ModelDescriptor descriptor) throws IOException {
+		return installEnginesForModelInDir(descriptor, InstalledEngines.getEnginesDir());
 	}
 	
-	public static boolean installEnginesForModel(ModelDescriptor descriptor, Consumer<String> consumer) {
-		return true;
+	public static boolean installEnginesForModel(ModelDescriptor descriptor, Consumer<String> consumer) throws IOException {
+		return installEnginesForModelInDir(descriptor, InstalledEngines.getEnginesDir(), consumer);
 	}
 	
-	public static boolean installEnginesForModelByID(String modelID) {
-		return installEnginesForModelByID(modelID, null);
+	public static boolean installEnginesForModelInDir(ModelDescriptor descriptor, String enginesDir) throws IOException {
+		return installEnginesForModelInDir(descriptor, enginesDir, null);
 	}
 	
-	public static boolean installEnginesForModelByID(String modelID, Consumer<String> consumer) {
-		return true;
+	public static boolean installEnginesForModelInDir(ModelDescriptor descriptor, String enginesDir, Consumer<String> consumer) throws IOException {
+		boolean installed = false;
+		for (WeightFormatInterface ww : descriptor.getWeights().getSupportedWeights()) {
+			if (installEngineForWeightsInDir(ww, enginesDir, consumer))
+				installed = true;
+		}
+		return installed;
 	}
 	
-	public static boolean installEnginesForModelByName(String modelName) {
-		return installEnginesForModelByName(modelName, null);
+	public static boolean installEnginesForModelByID(String modelID) throws IOException {
+		return installEnginesForModelByIDInDir(modelID, InstalledEngines.getEnginesDir(), null);
 	}
 	
-	public static boolean installEnginesForModelByName(String modelName, Consumer<String> consumer) {
-		return true;
+	public static boolean installEnginesForModelByID(String modelID, Consumer<String> consumer) throws IOException {
+		return installEnginesForModelByIDInDir(modelID, InstalledEngines.getEnginesDir(), consumer);
 	}
 	
-	public static boolean installEnginesForModelInFolder(String modelFolder) {
-		return installEnginesForModelInFolder(modelFolder, null);
+	public static boolean installEnginesForModelByIDInDir(String modelID, String enginesDir) throws IOException {
+		return installEnginesForModelByIDInDir(modelID, enginesDir, null);
 	}
 	
-	public static boolean installEnginesForModelInFolder(String modelFolder, Consumer<String> consumer) {
-		return true;
+	public static boolean installEnginesForModelByIDInDir(String modelID, String enginesDir, Consumer<String> consumer) throws IOException {
+		ModelDescriptor descriptor = BioimageioRepo.connect().selectByID(modelID);
+		if (descriptor == null)
+			return false;
+		return installEnginesForModelInDir(descriptor, enginesDir, consumer);
+	}
+	
+	public static boolean installEnginesForModelByName(String modelName) throws IOException {
+		return installEnginesForModelByNameinDir(modelName, InstalledEngines.getEnginesDir(), null);
+	}
+	
+	public static boolean installEnginesForModelByName(String modelName, Consumer<String> consumer) throws IOException {
+		return installEnginesForModelByNameinDir(modelName, InstalledEngines.getEnginesDir(), consumer);
+	}
+	
+	public static boolean installEnginesForModelByNameinDir(String modelName, String enginesDir) throws IOException {
+		return installEnginesForModelByNameinDir(modelName, enginesDir, null);
+	}
+	
+	public static boolean installEnginesForModelByNameinDir(String modelName, String enginesDir, Consumer<String> consumer) throws IOException {
+		ModelDescriptor descriptor = BioimageioRepo.connect().selectByName(modelName);
+		if (descriptor == null)
+			return false;
+		return installEnginesForModelInDir(descriptor, enginesDir, consumer);
+	}
+	
+	public static boolean installEnginesForModelInFolder(String modelFolder) throws Exception {
+		return installEnginesinDirForModelInFolder(modelFolder, InstalledEngines.getEnginesDir(), null);
+	}
+	
+	public static boolean installEnginesForModelInFolder(String modelFolder, Consumer<String> consumer) throws Exception {
+		return installEnginesinDirForModelInFolder(modelFolder, InstalledEngines.getEnginesDir(), consumer);
+	}
+	
+	public static boolean installEnginesinDirForModelInFolder(String modelFolder, String enginesDir) throws Exception {
+		return installEnginesinDirForModelInFolder(modelFolder, enginesDir, null);
+	}
+	
+	public static boolean installEnginesinDirForModelInFolder(String modelFolder, String enginesDir, Consumer<String> consumer) throws Exception {
+		if (new File(modelFolder, "rdf.yaml").isFile() == false)
+			throw new IOException("A Bioimage.io model folder should contain its corresponding rdf.yaml file.");
+		ModelDescriptor descriptor = 
+				ModelDescriptor.loadFromLocalFile(modelFolder + File.separator + "rdf.yaml");
+		return installEnginesForModelInDir(descriptor, enginesDir, consumer);
 	}
 	
 	/**
