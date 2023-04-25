@@ -26,6 +26,7 @@ import io.bioimage.modelrunner.system.PlatformDetection;
 import io.bioimage.modelrunner.utils.Log;
 import io.bioimage.modelrunner.versionmanagement.AvailableEngines;
 import io.bioimage.modelrunner.versionmanagement.DeepLearningVersion;
+import io.bioimage.modelrunner.versionmanagement.InstalledEngines;
 
 /**
  * Class that manages the dl-modelrunner engines.
@@ -420,12 +421,39 @@ public class EngineManagement {
 		}
 	}
 	
-	public static boolean installEngineForWeights(WeightFormatInterface ww) {
-		return installEngineForWeights(ww, null);
+	public static boolean installEngineForWeights(WeightFormatInterface ww) throws IOException {
+		return installEngineForWeightsInDir(ww, InstalledEngines.getEnginesDir(), null);
 	}
 	
-	public static boolean installEngineForWeights(WeightFormatInterface ww, Consumer<String> consumer) {
-		return true;
+	public static boolean installEngineForWeights(WeightFormatInterface ww, Consumer<String> consumer) throws IOException {
+		return installEngineForWeightsInDir(ww, InstalledEngines.getEnginesDir(), consumer);
+	}
+	
+	public static boolean installEngineForWeightsInDir(WeightFormatInterface ww, String enginesDir) throws IOException {
+		return installEngineForWeightsInDir(ww, enginesDir, null);
+	}
+	
+	public static boolean installEngineForWeightsInDir(WeightFormatInterface ww, String enginesDir, Consumer<String> consumer) throws IOException {
+		InstalledEngines manager = InstalledEngines.buildEnginesFinder(enginesDir);
+		String engine = ww.getWeightsFormat();
+		String version = ww.getTrainingVersion();
+		List<DeepLearningVersion> vs = manager.getDownloadedCompatibleForVersionedEngine(engine, version);
+		if (vs.size() != 0)
+			return true;
+		if (AvailableEngines.isEngineSupported(engine, version, true, true)) {
+			DeepLearningVersion dlv = 
+					AvailableEngines.getEngineForOsByParams(engine, version, true, true);
+			return installEngineInDir(dlv, enginesDir, consumer);
+		} else if (AvailableEngines.isEngineSupported(engine, version, true, false)) {
+			DeepLearningVersion dlv = 
+					AvailableEngines.getEngineForOsByParams(engine, version, true, false);
+			return installEngineInDir(dlv, enginesDir, consumer);
+		} else if (AvailableEngines.isEngineSupported(engine, version, false, true)) {
+			DeepLearningVersion dlv = 
+					AvailableEngines.getEngineForOsByParams(engine, version, false, true);
+			return installEngineInDir(dlv, enginesDir, consumer);
+		}
+		return false;
 	}
 	
 	public static boolean installEnginesForModel(ModelDescriptor descriptor) {
@@ -479,6 +507,18 @@ public class EngineManagement {
 	 * @return true if the installation was successful and false otherwise
 	 */
 	public static boolean installEngine(DeepLearningVersion engine, Consumer<String> consumer) {
+		return installEngineInDir(engine, ENGINES_DIR, consumer);
+	}
+	
+	/**
+	 * Install the engine specified by the {@link DeepLearningVersion} object
+	 * @param engine
+	 * 	the {@link DeepLearningVersion} object specifying the wanted engine
+	 * @param consumer
+	 * 	consumer used to communicate the progress made donwloading files
+	 * @return true if the installation was successful and false otherwise
+	 */
+	public static boolean installEngineInDir(DeepLearningVersion engine, String engineDir, Consumer<String> consumer) {
 		Log.addProgress(consumer, PROGRESS_ENGINE_KEYWORD + engine.folderName());
 		Date now = new Date();
 		Log.addProgress(consumer, PROGRESS_ENGINE_TIME_KEYWORD + new SimpleDateFormat("HH:mm:ss").format(now));
@@ -491,7 +531,7 @@ public class EngineManagement {
 				rbc = Channels.newChannel(website.openStream());
 				// Create the new model file as a zip
 				Path filePath = Paths.get(website.getPath()).getFileName();
-				String engineDir = ENGINES_DIR + File.separator + engine.folderName();
+				engineDir = engineDir + File.separator + engine.folderName();
 				fos = new FileOutputStream(new File(engineDir, filePath.toString()));
 				Log.addProgress(consumer, PROGRESS_JAR_KEYWORD + engineDir + File.separator
 						+ filePath.toString());

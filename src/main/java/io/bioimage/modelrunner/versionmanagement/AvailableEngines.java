@@ -256,6 +256,32 @@ public class AvailableEngines
     }
     
     /**
+     * Retreive an available Deep Learning engine for the current OS using the
+     * parameters that define an engine
+     * @param framework
+     * 	Deep Learning framework (tensorflow, pytorch, onnx...)
+     * @param version
+     * 	the version of the DL framework
+     * @param cpu
+     * 	whether the engine supports cpu or not
+     * @param gpu
+     * 	whether the engine supports GPU or not
+     * @return a {@link DeepLearningVersion} object with the info for the defined engine
+     * 	if it exists or false otherwise
+     */
+    public static DeepLearningVersion getEngineForOsByParams(String framework, String version, boolean cpu, boolean gpu) {
+    	String searchEngine = AvailableEngines.getSupportedVersionsEngineTag(framework);
+    	if (searchEngine == null)
+    		return null;
+    	DeepLearningVersion engine = AvailableEngines.getAvailableVersionsForEngine(searchEngine).getVersions()
+				.stream().filter(v -> v.getPythonVersion().equals(version) 
+						&& v.getOs().equals(new PlatformDetection().toString())
+						&& v.getCPU() == cpu
+						&& v.getGPU() == gpu).findFirst().orElse(null);
+		return engine;
+    }
+    
+    /**
      * MEthod to get the correct engine tag to parse the engine files.
      * If it receives the engine name given by the BioImage.io (torchscript, tensorflow_saved_model...)
      * it produces the names specified in the resources files (pytorch, tensorflow...).
