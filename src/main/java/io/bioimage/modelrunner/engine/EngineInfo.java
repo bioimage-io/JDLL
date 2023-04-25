@@ -30,6 +30,8 @@ import java.util.List;
 import java.util.Objects;
 
 import io.bioimage.modelrunner.bioimageio.description.ModelDescriptor;
+import io.bioimage.modelrunner.bioimageio.description.weights.ModelWeight;
+import io.bioimage.modelrunner.bioimageio.description.weights.WeightFormatInterface;
 import io.bioimage.modelrunner.system.PlatformDetection;
 import io.bioimage.modelrunner.versionmanagement.AvailableEngines;
 import io.bioimage.modelrunner.versionmanagement.DeepLearningVersion;
@@ -404,24 +406,38 @@ public class EngineInfo
 		return engineInfo;
 	}
 	
-	public static EngineInfo defineDLEngineWithRdfYaml(ModelDescriptor descriptor) throws IOException {
-		String folder = descriptor.getModelPath();
-		List<String> modelWeights = descriptor.getWeights().getEnginesListWithVersions();
+	/**
+	 * Create an {@link EngineInfo} object from an specific weigth definition of the rdf.yaml file
+	 * This method assumes that the directory where the engine folders are downloaded to is 
+	 * a directory called "engines" inside the application folder of the main program.
+	 * @param weight
+	 * 	the weights of a model for a specific single engine (DL framework)
+	 * @return the {@link EngineInfo} object if there are compatible installed engines or null
+	 * 	if they do not exist
+	 * @throws IOException if the engines directory does not exist
+	 */
+	public static EngineInfo defineDLEngineWithRdfYamlWeights(WeightFormatInterface weight) throws IOException {
+		return defineDLEngineWithRdfYamlWeights(weight, InstalledEngines.getEnginesDir());
+	}
+	
+	/**
+	 * Create an {@link EngineInfo} object from an specific weigth definition of the rdf.yaml file
+	 * @param weight
+	 * 	the weights of a model for a specific single engine (DL framework)
+	 * @param enginesDir
+	 * 	directory where all the engine folders are downloaded
+	 * @return the {@link EngineInfo} object if there are compatible installed engines or null
+	 * 	if they do not exist
+	 * @throws IOException if the engines directory does not exist
+	 */
+	public static EngineInfo defineDLEngineWithRdfYamlWeights(WeightFormatInterface weight, String enginesDir) throws IOException {
 		String compatibleVersion = null;
-		String engine = null;
-		InstalledEngines manager = InstalledEngines.buildEnginesFinder();
-		String modelSource = null;
-		for (String ww : modelWeights) {
-			String source = descriptor.getWeights().getWeightsByIdentifier(ww).getSource();
-			if (!(new File(folder, source.substring(source.lastIndexOf("/")) )).isFile())
-					break;
-			int ind = ww.indexOf("_v");
-			engine = ww.substring(0, ind);
-			compatibleVersion = manager.getMostCompatibleVersionForEngine(engine, ww.substring(ind + 2));
-			if (compatibleVersion != null)
-				break;
-			modelSource = new File(folder, source.substring(source.lastIndexOf("/"))).getAbsolutePath();
-		}
+		String engine = weight.getWeightsFormat();
+		String version = weight.getTrainingVersion();
+		InstalledEngines manager = InstalledEngines.buildEnginesFinder(enginesDir);
+		compatibleVersion = manager.getMostCompatibleVersionForEngine(engine, version);
+		if (compatibleVersion == null)
+			return null;
 		List<DeepLearningVersion> vv = manager.getDownloadedCompatibleForVersionedEngine(engine, compatibleVersion);
 		boolean gpu = vv.stream().filter(v -> v.getGPU()).findFirst().orElse(null) != null;
 		return EngineInfo.defineDLEngine(engine, compatibleVersion, true, gpu);

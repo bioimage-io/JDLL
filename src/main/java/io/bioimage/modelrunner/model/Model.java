@@ -32,6 +32,7 @@ import java.io.IOException;
 import java.util.List;
 
 import io.bioimage.modelrunner.bioimageio.description.ModelDescriptor;
+import io.bioimage.modelrunner.bioimageio.description.weights.WeightFormatInterface;
 import io.bioimage.modelrunner.engine.DeepLearningEngineInterface;
 import io.bioimage.modelrunner.engine.EngineInfo;
 import io.bioimage.modelrunner.engine.EngineLoader;
@@ -134,29 +135,48 @@ public class Model
 	 * Load a model from the bioimage.io directly. Just providing the path to the
 	 * folder where the rdf.yaml is, no extra info is needed as it is read from the
 	 * rdf.yaml file
-	 * @param folder
+	 * @param bmzModelFolder
 	 * 	folder where the bioimage.io model is located (parent folder of the rdf.yaml file)
 	 * @return a model ready to be loaded
 	 * @throws Exception if there is any error creating the model (no rdf.yaml file, no weights,
 	 * 	or the engines required for this model are not installed).
 	 */
-	public static Model createBioimageioModel(String folder) throws Exception {
-		if (new File(folder, "rdf.yaml").isFile() == false)
+	public static Model createBioimageioModel(String bmzModelFolder) throws Exception {
+		return createBioimageioModel(bmzModelFolder, InstalledEngines.getEnginesDir());
+	}
+	
+	/**
+	 * Load a model from the bioimage.io directly. Just providing the path to the
+	 * folder where the rdf.yaml is, no extra info is needed as it is read from the
+	 * rdf.yaml file
+	 * @param bmzModelFolder
+	 * 	folder where the bioimage.io model is located (parent folder of the rdf.yaml file)
+	 * @param enginesFolder
+	 * 	directory where all the engine (DL framework) folders are downloaded
+	 * @return a model ready to be loaded
+	 * @throws Exception if there is any error creating the model (no rdf.yaml file, no weights,
+	 * 	or the engines required for this model are not installed).
+	 */
+	public static Model createBioimageioModel(String bmzModelFolder, String enginesFolder) throws Exception {
+		if (new File(bmzModelFolder, "rdf.yaml").isFile() == false)
 			throw new IOException("A Bioimage.io model folder should contain its corresponding rdf.yaml file.");
-		ModelDescriptor descriptor = ModelDescriptor.loadFromLocalFile(folder + File.separator + "rdf.yaml");
+		ModelDescriptor descriptor = 
+				ModelDescriptor.loadFromLocalFile(bmzModelFolder + File.separator + "rdf.yaml");
 		String modelSource = null;
-		for (String ww : modelWeights) {
-			String source = descriptor.getWeights().getWeightsByIdentifier(ww).getSource();
-			if (!(new File(folder, source.substring(source.lastIndexOf("/")) )).isFile())
-					break;
-			int ind = ww.indexOf("_v");
-			engine = ww.substring(0, ind);
-			compatibleVersion = manager.getMostCompatibleVersionForEngine(engine, ww.substring(ind + 2));
-			if (compatibleVersion != null)
+		List<WeightFormatInterface> modelWeights = descriptor.getWeights().getSupportedWeights();
+		EngineInfo info = null;
+		for (WeightFormatInterface ww : modelWeights) {
+			String source = ww.getSource();
+			if (!(new File(bmzModelFolder, source.substring(source.lastIndexOf("/")) )).isFile())
+					continue;
+			info = EngineInfo.defineDLEngineWithRdfYamlWeights(ww, enginesFolder);
+			if (info != null) {
+				modelSource = new File(bmzModelFolder, 
+						source.substring(source.lastIndexOf("/"))).getAbsolutePath();
 				break;
-			modelSource = new File(folder, source.substring(source.lastIndexOf("/"))).getAbsolutePath();
+			}
 		}
-		return Model.createDeepLearningModel(folder, modelSource, info);
+		return Model.createDeepLearningModel(bmzModelFolder, modelSource, info);
 	}
 
 	/**

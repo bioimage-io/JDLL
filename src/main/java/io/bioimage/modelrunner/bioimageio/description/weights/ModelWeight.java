@@ -166,6 +166,14 @@ public class ModelWeight
     }
     
     /**
+     * REturn a list of the supported weigths by the model as {@link WeightFormatInterface}
+     * @return list of supported weigths as {@link WeightFormatInterface}
+     */
+    public List<WeightFormatInterface> getSupportedWeights(){
+    	return weightsDic.values().stream().collect(Collectors.toList());
+    }
+    
+    /**
      * Return a list containing all the frameworks (engines) where the model has weights
      * @return list of supported Deep Learning frameworks with the corresponding version
      */
