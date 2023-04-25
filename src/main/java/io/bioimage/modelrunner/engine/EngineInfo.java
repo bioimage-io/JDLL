@@ -410,18 +410,26 @@ public class EngineInfo
 	 * Create an {@link EngineInfo} object from an specific weigth definition of the rdf.yaml file
 	 * This method assumes that the directory where the engine folders are downloaded to is 
 	 * a directory called "engines" inside the application folder of the main program.
+	 * 
+	 * The version of the weights does not need to match exactly the version of the
+	 * engine installed to enable loading Pytorch 1.11.0 models with Pytorch 1.13.1
+	 * 
 	 * @param weight
 	 * 	the weights of a model for a specific single engine (DL framework)
 	 * @return the {@link EngineInfo} object if there are compatible installed engines or null
 	 * 	if they do not exist
 	 * @throws IOException if the engines directory does not exist
 	 */
-	public static EngineInfo defineDLEngineWithRdfYamlWeights(WeightFormatInterface weight) throws IOException {
-		return defineDLEngineWithRdfYamlWeights(weight, InstalledEngines.getEnginesDir());
+	public static EngineInfo defineCompatibleDLEngineWithRdfYamlWeights(WeightFormatInterface weight) throws IOException {
+		return defineCompatibleDLEngineWithRdfYamlWeights(weight, InstalledEngines.getEnginesDir());
 	}
 	
 	/**
 	 * Create an {@link EngineInfo} object from an specific weigth definition of the rdf.yaml file
+	 * 
+	 * The version of the weights does not need to match exactly the version of the
+	 * engine installed to enable loading Pytorch 1.11.0 models with Pytorch 1.13.1
+	 * 
 	 * @param weight
 	 * 	the weights of a model for a specific single engine (DL framework)
 	 * @param enginesDir
@@ -430,7 +438,7 @@ public class EngineInfo
 	 * 	if they do not exist
 	 * @throws IOException if the engines directory does not exist
 	 */
-	public static EngineInfo defineDLEngineWithRdfYamlWeights(WeightFormatInterface weight, String enginesDir) throws IOException {
+	public static EngineInfo defineCompatibleDLEngineWithRdfYamlWeights(WeightFormatInterface weight, String enginesDir) throws IOException {
 		String compatibleVersion = null;
 		String engine = weight.getWeightsFormat();
 		String version = weight.getTrainingVersion();
@@ -441,6 +449,51 @@ public class EngineInfo
 		List<DeepLearningVersion> vv = manager.getDownloadedCompatibleForVersionedEngine(engine, compatibleVersion);
 		boolean gpu = vv.stream().filter(v -> v.getGPU()).findFirst().orElse(null) != null;
 		return EngineInfo.defineDLEngine(engine, compatibleVersion, true, gpu);
+	}
+	
+	/**
+	 * Create an {@link EngineInfo} object from an specific weigth definition of the rdf.yaml file
+	 * This method assumes that the directory where the engine folders are downloaded to is 
+	 * a directory called "engines" inside the application folder of the main program.
+	 * 
+	 * The version of the weights needs to match exactly the version of the
+	 * engine installed. The major and minor versions need to match.
+	 * Only Pytorch 1.11 can be used to load Pytorch 1.11
+	 * 
+	 * @param weight
+	 * 	the weights of a model for a specific single engine (DL framework)
+	 * @return the {@link EngineInfo} object if there are compatible installed engines or null
+	 * 	if they do not exist
+	 * @throws IOException if the engines directory does not exist
+	 */
+	public static EngineInfo defineExactDLEngineWithRdfYamlWeights(WeightFormatInterface weight) throws IOException {
+		return defineExactDLEngineWithRdfYamlWeights(weight, InstalledEngines.getEnginesDir());
+	}
+	
+	/**
+	 * Create an {@link EngineInfo} object from an specific weigth definition of the rdf.yaml file
+	 * 
+	 * The version of the weights needs to match exactly the version of the
+	 * engine installed. The major and minor versions need to match.
+	 * Only Pytorch 1.11 can be used to load Pytorch 1.11
+	 * 
+	 * @param weight
+	 * 	the weights of a model for a specific single engine (DL framework)
+	 * @param enginesDir
+	 * 	directory where all the engine folders are downloaded
+	 * @return the {@link EngineInfo} object if there are compatible installed engines or null
+	 * 	if they do not exist
+	 * @throws IOException if the engines directory does not exist
+	 */
+	public static EngineInfo defineExactDLEngineWithRdfYamlWeights(WeightFormatInterface weight, String enginesDir) throws IOException {
+		String engine = weight.getWeightsFormat();
+		String version = weight.getTrainingVersion();
+		InstalledEngines manager = InstalledEngines.buildEnginesFinder(enginesDir);
+		if (version == null)
+			return null;
+		List<DeepLearningVersion> vv = manager.getDownloadedCompatibleForVersionedEngine(engine, version);
+		boolean gpu = vv.stream().filter(v -> v.getGPU()).findFirst().orElse(null) != null;
+		return EngineInfo.defineDLEngine(engine, version, true, gpu);
 	}
 
 	/**

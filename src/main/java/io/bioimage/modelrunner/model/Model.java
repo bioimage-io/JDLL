@@ -40,7 +40,6 @@ import io.bioimage.modelrunner.exceptions.LoadEngineException;
 import io.bioimage.modelrunner.exceptions.LoadModelException;
 import io.bioimage.modelrunner.exceptions.RunModelException;
 import io.bioimage.modelrunner.tensor.Tensor;
-import io.bioimage.modelrunner.versionmanagement.DeepLearningVersion;
 import io.bioimage.modelrunner.versionmanagement.InstalledEngines;
 import net.imglib2.type.numeric.real.FloatType;
 
@@ -135,6 +134,10 @@ public class Model
 	 * Load a model from the bioimage.io directly. Just providing the path to the
 	 * folder where the rdf.yaml is, no extra info is needed as it is read from the
 	 * rdf.yaml file
+	 * To successfully create a Bioiamge.io model, it is required that there is installed
+	 * at least one of the engines needed to load at least one of the weight formats
+	 * supported by the model. Only the major version needs to be the same (Tensorflow 1 != Tensorflow 2).
+	 * 
 	 * @param bmzModelFolder
 	 * 	folder where the bioimage.io model is located (parent folder of the rdf.yaml file)
 	 * @return a model ready to be loaded
@@ -148,7 +151,11 @@ public class Model
 	/**
 	 * Load a model from the bioimage.io directly. Just providing the path to the
 	 * folder where the rdf.yaml is, no extra info is needed as it is read from the
-	 * rdf.yaml file
+	 * rdf.yaml file.
+	 * To successfully create a Bioiamge.io model, it is required that there is installed
+	 * at least one of the engines needed to load at least one of the weight formats
+	 * supported by the model. Only the major version needs to be the same (Tensorflow 1 != Tensorflow 2).
+	 * 
 	 * @param bmzModelFolder
 	 * 	folder where the bioimage.io model is located (parent folder of the rdf.yaml file)
 	 * @param enginesFolder
@@ -169,13 +176,60 @@ public class Model
 			String source = ww.getSource();
 			if (!(new File(bmzModelFolder, source.substring(source.lastIndexOf("/")) )).isFile())
 					continue;
-			info = EngineInfo.defineDLEngineWithRdfYamlWeights(ww, enginesFolder);
+			info = EngineInfo.defineCompatibleDLEngineWithRdfYamlWeights(ww, enginesFolder);
 			if (info != null) {
 				modelSource = new File(bmzModelFolder, 
 						source.substring(source.lastIndexOf("/"))).getAbsolutePath();
 				break;
 			}
 		}
+		if (info == null)
+			throw new IOException("Please install a compatible engine with the model weights. "
+					+ "To be compatible the engine has to be of the same framework and the major version needs to be the same. "
+					+ "The model weights are: " + descriptor.getWeights().getEnginesListWithVersions());
+		return Model.createDeepLearningModel(bmzModelFolder, modelSource, info);
+	}
+	
+	/**
+	 * Load a model from the bioimage.io directly. Just providing the path to the
+	 * folder where the rdf.yaml is, no extra info is needed as it is read from the
+	 * rdf.yaml file
+	 * To successfully create a Bioiamge.io model, it is required that there is installed
+	 * at least one of the exact engines needed to load at least one of the weight formats
+	 * in the exact version supported by the model. 
+	 * Major and minor versions need to be the same (Tensorflow 2.7 != Tensorflow 2.4).
+	 * 
+	 * @param bmzModelFolder
+	 * 	folder where the bioimage.io model is located (parent folder of the rdf.yaml file)
+	 * @param enginesFolder
+	 * 	directory where all the engine (DL framework) folders are downloaded
+	 * @return a model ready to be loaded
+	 * @throws Exception if there is any error creating the model (no rdf.yaml file, no weights,
+	 * 	or the engines required for this model are not installed).
+	 */
+	public static Model createBioimageioModelWithExactWeigths(String bmzModelFolder, String enginesFolder) throws Exception {
+		if (new File(bmzModelFolder, "rdf.yaml").isFile() == false)
+			throw new IOException("A Bioimage.io model folder should contain its corresponding rdf.yaml file.");
+		ModelDescriptor descriptor = 
+				ModelDescriptor.loadFromLocalFile(bmzModelFolder + File.separator + "rdf.yaml");
+		String modelSource = null;
+		List<WeightFormatInterface> modelWeights = descriptor.getWeights().getSupportedWeights();
+		EngineInfo info = null;
+		for (WeightFormatInterface ww : modelWeights) {
+			String source = ww.getSource();
+			if (!(new File(bmzModelFolder, source.substring(source.lastIndexOf("/")) )).isFile())
+					continue;
+			info = EngineInfo.defineExactDLEngineWithRdfYamlWeights(ww, enginesFolder);
+			if (info != null) {
+				modelSource = new File(bmzModelFolder, 
+						source.substring(source.lastIndexOf("/"))).getAbsolutePath();
+				break;
+			}
+		}
+		if (info == null)
+			throw new IOException("Please install a compatible engine with the model weights. "
+					+ "Both the major and minor versions of the engine need to be the same as the weigths. "
+					+ "The model weights are: " + descriptor.getWeights().getEnginesListWithVersions());
 		return Model.createDeepLearningModel(bmzModelFolder, modelSource, info);
 	}
 
