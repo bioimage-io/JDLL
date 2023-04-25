@@ -19,6 +19,8 @@ import java.util.Map;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
+import io.bioimage.modelrunner.bioimageio.description.ModelDescriptor;
+import io.bioimage.modelrunner.bioimageio.description.weights.WeightFormatInterface;
 import io.bioimage.modelrunner.engine.EngineInfo;
 import io.bioimage.modelrunner.system.PlatformDetection;
 import io.bioimage.modelrunner.utils.Log;
@@ -418,6 +420,46 @@ public class EngineManagement {
 		}
 	}
 	
+	public static boolean installEngineForWeights(WeightFormatInterface ww) {
+		return installEngineForWeights(ww, null);
+	}
+	
+	public static boolean installEngineForWeights(WeightFormatInterface ww, Consumer<String> consumer) {
+		return true;
+	}
+	
+	public static boolean installEnginesForModel(ModelDescriptor descriptor) {
+		return installEnginesForModel(descriptor, null);
+	}
+	
+	public static boolean installEnginesForModel(ModelDescriptor descriptor, Consumer<String> consumer) {
+		return true;
+	}
+	
+	public static boolean installEnginesForModelByID(String modelID) {
+		return installEnginesForModelByID(modelID, null);
+	}
+	
+	public static boolean installEnginesForModelByID(String modelID, Consumer<String> consumer) {
+		return true;
+	}
+	
+	public static boolean installEnginesForModelByName(String modelName) {
+		return installEnginesForModelByName(modelName, null);
+	}
+	
+	public static boolean installEnginesForModelByName(String modelName, Consumer<String> consumer) {
+		return true;
+	}
+	
+	public static boolean installEnginesForModelInFolder(String modelFolder) {
+		return installEnginesForModelInFolder(modelFolder, null);
+	}
+	
+	public static boolean installEnginesForModelInFolder(String modelFolder, Consumer<String> consumer) {
+		return true;
+	}
+	
 	/**
 	 * Install the engine specified by the {@link DeepLearningVersion} object
 	 * @param engine
@@ -488,8 +530,8 @@ public class EngineManagement {
 	 * 	whether the engine supports gpu or not
 	 * @return true if the installation was successful and false otherwise
 	 */
-	public static  boolean installEngineForSystemOs(String framework, String version, boolean cpu, boolean gpu) {
-		return installEngineForSystemOs(framework, version, cpu, gpu, null);
+	public static  boolean installEngineWithArgs(String framework, String version, boolean cpu, boolean gpu) {
+		return installEngineWithArgs(framework, version, cpu, gpu, null);
 	}
 	
 	/**
@@ -506,7 +548,7 @@ public class EngineManagement {
 	 * 	consumer used to communicate the progress made donwloading files
 	 * @return true if the installation was successful and false otherwise
 	 */
-	public static  boolean installEngineForSystemOs(String framework, String version, 
+	public static  boolean installEngineWithArgs(String framework, String version, 
 			boolean cpu, boolean gpu, Consumer<String> consumer) {
 		if (AvailableEngines.bioimageioToModelRunnerKeysMap().get(framework) != null)
 			framework = AvailableEngines.bioimageioToModelRunnerKeysMap().get(framework);
