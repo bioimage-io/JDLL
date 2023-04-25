@@ -39,7 +39,8 @@ import io.bioimage.modelrunner.exceptions.LoadEngineException;
 import io.bioimage.modelrunner.exceptions.LoadModelException;
 import io.bioimage.modelrunner.exceptions.RunModelException;
 import io.bioimage.modelrunner.tensor.Tensor;
-
+import io.bioimage.modelrunner.versionmanagement.DeepLearningVersion;
+import io.bioimage.modelrunner.versionmanagement.InstalledEngines;
 import net.imglib2.type.numeric.real.FloatType;
 
 /**
@@ -129,11 +130,33 @@ public class Model
 		return new Model( engineInfo, modelFolder, modelSource, null );
 	}
 	
-	public static Model createBioimageioModel(String bioimageioModelFolder) throws Exception {
-		if (new File(bioimageioModelFolder, "rdf.yaml").isFile() == false)
+	/**
+	 * Load a model from the bioimage.io directly. Just providing the path to the
+	 * folder where the rdf.yaml is, no extra info is needed as it is read from the
+	 * rdf.yaml file
+	 * @param folder
+	 * 	folder where the bioimage.io model is located (parent folder of the rdf.yaml file)
+	 * @return a model ready to be loaded
+	 * @throws Exception if there is any error creating the model (no rdf.yaml file, no weights,
+	 * 	or the engines required for this model are not installed).
+	 */
+	public static Model createBioimageioModel(String folder) throws Exception {
+		if (new File(folder, "rdf.yaml").isFile() == false)
 			throw new IOException("A Bioimage.io model folder should contain its corresponding rdf.yaml file.");
-		ModelDescriptor descriptor = ModelDescriptor.loadFromLocalFile(bioimageioModelFolder + File.separator + "rdf.yaml");
-		descriptor.getWeights().getEnginesListWithVersions();
+		ModelDescriptor descriptor = ModelDescriptor.loadFromLocalFile(folder + File.separator + "rdf.yaml");
+		String modelSource = null;
+		for (String ww : modelWeights) {
+			String source = descriptor.getWeights().getWeightsByIdentifier(ww).getSource();
+			if (!(new File(folder, source.substring(source.lastIndexOf("/")) )).isFile())
+					break;
+			int ind = ww.indexOf("_v");
+			engine = ww.substring(0, ind);
+			compatibleVersion = manager.getMostCompatibleVersionForEngine(engine, ww.substring(ind + 2));
+			if (compatibleVersion != null)
+				break;
+			modelSource = new File(folder, source.substring(source.lastIndexOf("/"))).getAbsolutePath();
+		}
+		return Model.createDeepLearningModel(folder, modelSource, info);
 	}
 
 	/**

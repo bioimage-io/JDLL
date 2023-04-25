@@ -165,6 +165,28 @@ public class InstalledEngines {
     
     /**
      * Creates a list containing only downloaded Deep Learning versions compatible with
+     * the current system, corresponding to the engine of interest and corresponding version
+     * 
+     * @param engine
+     * 	name of the engine as defined with the engine tag at:
+     * 	https://raw.githubusercontent.com/bioimage-io/model-runner-java/main/src/main/resources/availableDLVersions.json
+     * 	for example tensorflow, pytorch, onnx
+     * @param version
+     * 	version of interest of the engine
+     * @return The available versions instance.
+     */
+    public List<DeepLearningVersion> getDownloadedCompatibleForVersionedEngine(String engine, String version) {
+    	String searchEngine = AvailableEngines.getSupportedVersionsEngineTag(engine);
+    	if (searchEngine == null)
+    		return new ArrayList<DeepLearningVersion>();
+        return loadDownloadedCompatible().stream()
+	        .filter(v -> searchEngine.contains(v.getEngine().toLowerCase())
+	        		&& v.getPythonVersion().equals(version))
+			.collect(Collectors.toList());
+    }	
+    
+    /**
+     * Creates a list containing only downloaded Deep Learning versions compatible with
      * the current system and corresponding to the engine of interest
      * 
      * @param enginesPath

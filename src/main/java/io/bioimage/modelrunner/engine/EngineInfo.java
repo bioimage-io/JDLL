@@ -26,8 +26,10 @@ package io.bioimage.modelrunner.engine;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.List;
 import java.util.Objects;
 
+import io.bioimage.modelrunner.bioimageio.description.ModelDescriptor;
 import io.bioimage.modelrunner.system.PlatformDetection;
 import io.bioimage.modelrunner.versionmanagement.AvailableEngines;
 import io.bioimage.modelrunner.versionmanagement.DeepLearningVersion;
@@ -400,6 +402,29 @@ public class EngineInfo
 		engineInfo.supportCPU( cpu );
 		engineInfo.supportGPU( gpu );
 		return engineInfo;
+	}
+	
+	public static EngineInfo defineDLEngineWithRdfYaml(ModelDescriptor descriptor) throws IOException {
+		String folder = descriptor.getModelPath();
+		List<String> modelWeights = descriptor.getWeights().getEnginesListWithVersions();
+		String compatibleVersion = null;
+		String engine = null;
+		InstalledEngines manager = InstalledEngines.buildEnginesFinder();
+		String modelSource = null;
+		for (String ww : modelWeights) {
+			String source = descriptor.getWeights().getWeightsByIdentifier(ww).getSource();
+			if (!(new File(folder, source.substring(source.lastIndexOf("/")) )).isFile())
+					break;
+			int ind = ww.indexOf("_v");
+			engine = ww.substring(0, ind);
+			compatibleVersion = manager.getMostCompatibleVersionForEngine(engine, ww.substring(ind + 2));
+			if (compatibleVersion != null)
+				break;
+			modelSource = new File(folder, source.substring(source.lastIndexOf("/"))).getAbsolutePath();
+		}
+		List<DeepLearningVersion> vv = manager.getDownloadedCompatibleForVersionedEngine(engine, compatibleVersion);
+		boolean gpu = vv.stream().filter(v -> v.getGPU()).findFirst().orElse(null) != null;
+		return EngineInfo.defineDLEngine(engine, compatibleVersion, true, gpu);
 	}
 
 	/**
