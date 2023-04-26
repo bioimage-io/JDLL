@@ -369,7 +369,7 @@ public class BioimageioRepo {
             e.printStackTrace();
         }
 		for (String link : dm.getListOfLinks()) {
-			fileName = dm.ge
+			fileName = DownloadModel.getFileNameFromURLString(link);
 		}
 	}
 	

@@ -16,6 +16,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
+import java.util.regex.Pattern;
 import java.util.stream.IntStream;
 
 import io.bioimage.modelrunner.bioimageio.description.ModelDescriptor;
@@ -113,13 +114,36 @@ public class DownloadModel {
 	 * @param descriptor
 	 * 	information about the model from the rdf.yaml
 	 */
-	private DownloadModel(ModelDescriptor descriptor, String modelFolder) {
+	private DownloadModel(ModelDescriptor descriptor, String modelsDir) {
 		this.descriptor = descriptor;
-		this.modelsDir = modelFolder;
+		String fname = addTimeStampToFileName(modelsDir + File.separator + descriptor.getName());
+		this.modelsDir = getValidFileName(fname);
 		this.consumer = (String b) -> {
     		progressString += b;
     		};
 		retriveDownloadModelLinks();
+	}
+	
+	/**
+	 * If the Sting contains any forbidden character, this method substitutes them 
+	 * by "_"
+	 * @param fileName
+	 * 	filename to be validated
+	 * @return a valid filename, if the input does not contain any forbidden character 
+	 * 	it will be the same, if it does contain them, they will be replaced by "_"
+	 */
+	public static String getValidFileName(String fileName) {
+        Pattern pattern = Pattern.compile("[\\\\/:*?\"<>|]");
+        String validFileName = pattern.matcher(fileName).replaceAll("_");
+        return validFileName;
+	}
+	
+	/**
+	 * REtrieve the model folder that contains the bmz model files
+	 * @return folder containing the BMZ model files
+	 */
+	public String getModelFolder() {
+		return this.modelsDir;
 	}
 
 	/**
@@ -127,8 +151,17 @@ public class DownloadModel {
 	 * @param descriptor
 	 * 	information about the model from the rdf.yaml
 	 */
-	public static DownloadModel build(ModelDescriptor descriptor, String modelFolder) {
-		return new DownloadModel(descriptor, modelFolder);
+	public static DownloadModel build(ModelDescriptor descriptor, String modelsDir) {
+		return new DownloadModel(descriptor, modelsDir);
+	}
+
+	/**
+	 * Build a constructor that contains all the info and is able to download a BioImage.io model
+	 * @param descriptor
+	 * 	information about the model from the rdf.yaml
+	 */
+	public static DownloadModel build(ModelDescriptor descriptor) {
+		return new DownloadModel(descriptor, new File("models").getAbsolutePath());
 	}
 	
 	/**

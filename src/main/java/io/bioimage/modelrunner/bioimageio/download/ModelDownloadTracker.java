@@ -7,8 +7,6 @@ import java.net.URL;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.UUID;
-import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 
@@ -62,13 +60,6 @@ public class ModelDownloadTracker {
 		this.downloadThread = thread;
 	}
 	
-	/**
-	 * Create a unique identifier for this download
-	 */
-	private String createID() {
-		return UUID.randomUUID().toString();
-	}
-	
 	public void trackBMZModelDownload() throws IOException {
 		if (dm == null) {
 			trackDownloadofFilesFromFileSystem();
@@ -114,7 +105,7 @@ public class ModelDownloadTracker {
 		}
 	}
 	
-	public void trackDownloadofFilesFromFileSystem() {
+	public void trackDownloadofFilesFromFileSystem() throws IOException {
 		HashMap<String, Long> infoMap = new HashMap<String, Long>();
 		int nTimesWoChange = 0;
 		long downloadSize = 0;
@@ -138,9 +129,11 @@ public class ModelDownloadTracker {
 				nTimesWoChange += 1;
 			}
 			if (nTimesWoChange > 30 && !checkInternet(ZENODO_URL)) {
+				this.downloadThread.interrupt();
 				throw new IOException("The download seems to have stopped. There has been no "
 						+ "progress during more than 10 seconds. The internet connection seems unstable.");
 			} else if (nTimesWoChange > 60) {
+				this.downloadThread.interrupt();
 				throw new IOException("The download seems to have stopped. There has been no "
 						+ "progress during more than 20 seconds, please review your internet connection or computer permissions");
 			}
