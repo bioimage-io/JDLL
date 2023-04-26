@@ -14,7 +14,7 @@ import java.util.Set;
  * @author Carlos Garcia Lopez de Haro
  *
  */
-public class OnnxWeights implements WeightFormatInterface {
+public class OnnxWeights implements WeightFormat {
 
 	/**
 	 * Crate an object that specifies ONNX weights

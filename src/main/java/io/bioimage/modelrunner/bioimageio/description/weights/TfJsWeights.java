@@ -14,7 +14,7 @@ import java.util.Set;
  * @author Carlos Garcia Lopez de Haro
  *
  */
-public class TfJsWeights implements WeightFormatInterface{
+public class TfJsWeights implements WeightFormat{
 
 	/**
 	 * Crate an object that specifies Tensorflow Javascript weights

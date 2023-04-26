@@ -31,7 +31,7 @@ import java.util.Objects;
 
 import io.bioimage.modelrunner.bioimageio.description.ModelDescriptor;
 import io.bioimage.modelrunner.bioimageio.description.weights.ModelWeight;
-import io.bioimage.modelrunner.bioimageio.description.weights.WeightFormatInterface;
+import io.bioimage.modelrunner.bioimageio.description.weights.WeightFormat;
 import io.bioimage.modelrunner.system.PlatformDetection;
 import io.bioimage.modelrunner.versionmanagement.AvailableEngines;
 import io.bioimage.modelrunner.versionmanagement.DeepLearningVersion;
@@ -420,7 +420,7 @@ public class EngineInfo
 	 * 	if they do not exist
 	 * @throws IOException if the engines directory does not exist
 	 */
-	public static EngineInfo defineCompatibleDLEngineWithRdfYamlWeights(WeightFormatInterface weight) throws IOException {
+	public static EngineInfo defineCompatibleDLEngineWithRdfYamlWeights(WeightFormat weight) throws IOException {
 		return defineCompatibleDLEngineWithRdfYamlWeights(weight, InstalledEngines.getEnginesDir());
 	}
 	
@@ -438,7 +438,7 @@ public class EngineInfo
 	 * 	if they do not exist
 	 * @throws IOException if the engines directory does not exist
 	 */
-	public static EngineInfo defineCompatibleDLEngineWithRdfYamlWeights(WeightFormatInterface weight, String enginesDir) throws IOException {
+	public static EngineInfo defineCompatibleDLEngineWithRdfYamlWeights(WeightFormat weight, String enginesDir) throws IOException {
 		String compatibleVersion = null;
 		String engine = weight.getWeightsFormat();
 		String version = weight.getTrainingVersion();
@@ -466,7 +466,7 @@ public class EngineInfo
 	 * 	if they do not exist
 	 * @throws IOException if the engines directory does not exist
 	 */
-	public static EngineInfo defineExactDLEngineWithRdfYamlWeights(WeightFormatInterface weight) throws IOException {
+	public static EngineInfo defineExactDLEngineWithRdfYamlWeights(WeightFormat weight) throws IOException {
 		return defineExactDLEngineWithRdfYamlWeights(weight, InstalledEngines.getEnginesDir());
 	}
 	
@@ -485,7 +485,7 @@ public class EngineInfo
 	 * 	if they do not exist
 	 * @throws IOException if the engines directory does not exist
 	 */
-	public static EngineInfo defineExactDLEngineWithRdfYamlWeights(WeightFormatInterface weight, String enginesDir) throws IOException {
+	public static EngineInfo defineExactDLEngineWithRdfYamlWeights(WeightFormat weight, String enginesDir) throws IOException {
 		String engine = weight.getWeightsFormat();
 		String version = weight.getTrainingVersion();
 		InstalledEngines manager = InstalledEngines.buildEnginesFinder(enginesDir);

@@ -21,7 +21,7 @@ import java.util.stream.IntStream;
 import io.bioimage.modelrunner.bioimageio.description.ModelDescriptor;
 import io.bioimage.modelrunner.bioimageio.description.SampleImage;
 import io.bioimage.modelrunner.bioimageio.description.weights.ModelWeight;
-import io.bioimage.modelrunner.bioimageio.description.weights.WeightFormatInterface;
+import io.bioimage.modelrunner.bioimageio.description.weights.WeightFormat;
 import io.bioimage.modelrunner.engine.installation.FileDownloader;
 
 /**
@@ -169,7 +169,7 @@ public class DownloadableModel {
 		int c = 0;
 		for (String ww : weights.getEnginesListWithVersions()) {
 			try {
-				WeightFormatInterface w = weights.getWeightsByIdentifier(ww);
+				WeightFormat w = weights.getWeightsByIdentifier(ww);
 				if (w.getSource() != null && checkURL(w.getSource())) {
 					downloadableLinks.put(WEIGHTS_KEY + "_" + c ++, w.getSource());
 				}

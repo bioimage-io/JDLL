@@ -16,7 +16,7 @@ import java.util.Set;
  * @author Carlos Garcia Lopez de Haro
  *
  */
-public class BioEngineWeights implements WeightFormatInterface{
+public class BioEngineWeights implements WeightFormat{
 
 	/**
 	 * Crate an object that specifies BioEngine weights

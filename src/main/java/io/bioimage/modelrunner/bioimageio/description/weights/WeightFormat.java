@@ -11,7 +11,7 @@ import java.util.Map;
  * 
  * @author Carlos Garcia Lopez de Haro
  */
-public interface WeightFormatInterface {
+public interface WeightFormat {
 	
 	/**
 	 * Retrieve the version of the framework used to train the

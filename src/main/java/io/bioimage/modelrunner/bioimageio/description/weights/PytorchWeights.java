@@ -14,7 +14,7 @@ import java.util.Set;
  * @author Carlos Garcia Lopez de Haro
  *
  */
-public class PytorchWeights implements WeightFormatInterface{
+public class PytorchWeights implements WeightFormat{
 
 	/**
 	 * Crate an object that specifies Pytorch state dic weights

@@ -14,7 +14,7 @@ import java.util.Set;
  * @author Carlos Garcia Lopez de Haro
  *
  */
-public class KerasWeights implements WeightFormatInterface {
+public class KerasWeights implements WeightFormat {
 
 	/**
 	 * Crate an object that specifies Keras weights

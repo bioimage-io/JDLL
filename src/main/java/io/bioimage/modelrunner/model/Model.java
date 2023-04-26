@@ -32,7 +32,7 @@ import java.io.IOException;
 import java.util.List;
 
 import io.bioimage.modelrunner.bioimageio.description.ModelDescriptor;
-import io.bioimage.modelrunner.bioimageio.description.weights.WeightFormatInterface;
+import io.bioimage.modelrunner.bioimageio.description.weights.WeightFormat;
 import io.bioimage.modelrunner.engine.DeepLearningEngineInterface;
 import io.bioimage.modelrunner.engine.EngineInfo;
 import io.bioimage.modelrunner.engine.EngineLoader;
@@ -170,9 +170,9 @@ public class Model
 		ModelDescriptor descriptor = 
 				ModelDescriptor.loadFromLocalFile(bmzModelFolder + File.separator + "rdf.yaml");
 		String modelSource = null;
-		List<WeightFormatInterface> modelWeights = descriptor.getWeights().getSupportedWeights();
+		List<WeightFormat> modelWeights = descriptor.getWeights().getSupportedWeights();
 		EngineInfo info = null;
-		for (WeightFormatInterface ww : modelWeights) {
+		for (WeightFormat ww : modelWeights) {
 			String source = ww.getSource();
 			if (!(new File(bmzModelFolder, source.substring(source.lastIndexOf("/")) )).isFile())
 					continue;
@@ -213,9 +213,9 @@ public class Model
 		ModelDescriptor descriptor = 
 				ModelDescriptor.loadFromLocalFile(bmzModelFolder + File.separator + "rdf.yaml");
 		String modelSource = null;
-		List<WeightFormatInterface> modelWeights = descriptor.getWeights().getSupportedWeights();
+		List<WeightFormat> modelWeights = descriptor.getWeights().getSupportedWeights();
 		EngineInfo info = null;
-		for (WeightFormatInterface ww : modelWeights) {
+		for (WeightFormat ww : modelWeights) {
 			String source = ww.getSource();
 			if (!(new File(bmzModelFolder, source.substring(source.lastIndexOf("/")) )).isFile())
 					continue;

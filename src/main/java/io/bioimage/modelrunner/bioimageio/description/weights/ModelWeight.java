@@ -33,15 +33,15 @@ public class ModelWeight
 	/**
 	 * Object containing the information about the weights selected
 	 */
-    private WeightFormatInterface selectedWeights;
+    private WeightFormat selectedWeights;
 	/**
 	 * Object containing the information about the weights loaded
 	 */
-    private static Map<String, WeightFormatInterface> loadedWeights = new HashMap<String, WeightFormatInterface>();
+    private static Map<String, WeightFormat> loadedWeights = new HashMap<String, WeightFormat>();
 	/**
 	 * Map with all the engines defined in the rdf.yaml
 	 */
-    private HashMap<String, WeightFormatInterface> weightsDic; 
+    private HashMap<String, WeightFormat> weightsDic; 
     private static String kerasIdentifier = "keras_hdf5";
     private static String onnxIdentifier = "onnx";
     private static String torchIdentifier = "pytorch_state_dict";
@@ -84,7 +84,7 @@ public class ModelWeight
         ModelWeight model = new ModelWeight();
         Set<String> weightsFormats = yamlFieldElements.keySet();
         // Reset the list with the inlcuded frameworks
-        model.weightsDic = new HashMap<String, WeightFormatInterface>();
+        model.weightsDic = new HashMap<String, WeightFormat>();
         for (String ww : weightsFormats) {
         	Map<String, Object> weights = (Map<String, Object>) yamlFieldElements.get(ww);
 	        if (ww.contentEquals(kerasIdentifier)) {
@@ -127,7 +127,7 @@ public class ModelWeight
      * canot run Tf 1 weights
      */
     public void findBioEngineWeights() {
-    	for (Entry<String, WeightFormatInterface> entry : weightsDic.entrySet()) {
+    	for (Entry<String, WeightFormat> entry : weightsDic.entrySet()) {
     		if (entry.getValue().getWeightsFormat().equals(kerasIdentifier)) {
     			bioEngineWeightsKey = kerasIdentifier;
     			return;
@@ -154,9 +154,9 @@ public class ModelWeight
      * @return the corresponding weight format.
      * @throws Exception if the set of wanted weights is not present
      */
-    public WeightFormatInterface getWeightsByIdentifier(String weightsFormat) throws IOException
+    public WeightFormat getWeightsByIdentifier(String weightsFormat) throws IOException
     {
-    	WeightFormatInterface ww = weightsDic.get(weightsFormat);
+    	WeightFormat ww = weightsDic.get(weightsFormat);
     	
     	if (ww == null) {
     		throw new IOException("The selected model does not contain "
@@ -166,10 +166,10 @@ public class ModelWeight
     }
     
     /**
-     * REturn a list of the supported weigths by the model as {@link WeightFormatInterface}
-     * @return list of supported weigths as {@link WeightFormatInterface}
+     * REturn a list of the supported weigths by the model as {@link WeightFormat}
+     * @return list of supported weigths as {@link WeightFormat}
      */
-    public List<WeightFormatInterface> getSupportedWeights(){
+    public List<WeightFormat> getSupportedWeights(){
     	return weightsDic.values().stream().collect(Collectors.toList());
     }
     
@@ -309,7 +309,7 @@ public class ModelWeight
 	 * Return the object containing the information about the selected weights
 	 * @return the yaml information about the selected weights
 	 */
-	public WeightFormatInterface getSelectedWeights() {
+	public WeightFormat getSelectedWeights() {
 		return this.selectedWeights;
 	}
 

@@ -14,7 +14,7 @@ import java.util.Set;
  * @author Carlos Garcia Lopez de Haro
  *
  */
-public class TorchscriptWeights implements WeightFormatInterface{
+public class TorchscriptWeights implements WeightFormat{
 
 	/**
 	 * Crate an object that specifies Torchscript weights

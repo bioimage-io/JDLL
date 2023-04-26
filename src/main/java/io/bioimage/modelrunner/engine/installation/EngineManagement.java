@@ -21,7 +21,7 @@ import java.util.stream.Collectors;
 
 import io.bioimage.modelrunner.bioimageio.BioimageioRepo;
 import io.bioimage.modelrunner.bioimageio.description.ModelDescriptor;
-import io.bioimage.modelrunner.bioimageio.description.weights.WeightFormatInterface;
+import io.bioimage.modelrunner.bioimageio.description.weights.WeightFormat;
 import io.bioimage.modelrunner.engine.EngineInfo;
 import io.bioimage.modelrunner.system.PlatformDetection;
 import io.bioimage.modelrunner.utils.Log;
@@ -429,11 +429,11 @@ public class EngineManagement {
 	 * inside the application folder.
 	 * 
 	 * @param ww
-	 * 	{@link WeightFormatInterface} object containing the weights as in the yaml file
+	 * 	{@link WeightFormat} object containing the weights as in the yaml file
 	 * @return true if the DL engine was installed or false otherwise
 	 * @throws IOException if there is any error creating the folder for the engine
 	 */
-	public static boolean installEngineForWeights(WeightFormatInterface ww) throws IOException {
+	public static boolean installEngineForWeights(WeightFormat ww) throws IOException {
 		return installEngineForWeightsInDir(ww, InstalledEngines.getEnginesDir(), null);
 	}
 	
@@ -444,13 +444,13 @@ public class EngineManagement {
 	 * inside the application folder.
 	 * 
 	 * @param ww
-	 * 	{@link WeightFormatInterface} object containing the weights as in the yaml file
+	 * 	{@link WeightFormat} object containing the weights as in the yaml file
 	 * @param consumer
 	 * 	consumer used to keep track of the process of download of the weights
 	 * @return true if the DL engine was installed or false otherwise
 	 * @throws IOException if there is any error creating the folder for the engine
 	 */
-	public static boolean installEngineForWeights(WeightFormatInterface ww, Consumer<String> consumer) throws IOException {
+	public static boolean installEngineForWeights(WeightFormat ww, Consumer<String> consumer) throws IOException {
 		return installEngineForWeightsInDir(ww, InstalledEngines.getEnginesDir(), consumer);
 	}
 
@@ -460,13 +460,13 @@ public class EngineManagement {
 	 * The DL engine is downloaded automatically into a directory provided.
 	 * 
 	 * @param ww
-	 * 	{@link WeightFormatInterface} object containing the weights as in the yaml file
+	 * 	{@link WeightFormat} object containing the weights as in the yaml file
 	 * @param enginesDir
 	 * 	directory where the engine is installed
 	 * @return true if the DL engine was installed or false otherwise
 	 * @throws IOException if there is any error creating the folder for the engine
 	 */
-	public static boolean installEngineForWeightsInDir(WeightFormatInterface ww, String enginesDir) throws IOException {
+	public static boolean installEngineForWeightsInDir(WeightFormat ww, String enginesDir) throws IOException {
 		return installEngineForWeightsInDir(ww, enginesDir, null);
 	}
 
@@ -477,7 +477,7 @@ public class EngineManagement {
 	 * The DL engine is downloaded automatically into a directory provided.
 	 * 
 	 * @param ww
-	 * 	{@link WeightFormatInterface} object containing the weights as in the yaml file
+	 * 	{@link WeightFormat} object containing the weights as in the yaml file
 	 * @param enginesDir
 	 * 	directory where the engine is installed
 	 * @param consumer
@@ -485,7 +485,7 @@ public class EngineManagement {
 	 * @return true if the DL engine was installed or false otherwise
 	 * @throws IOException if there is any error creating the folder for the engine
 	 */
-	public static boolean installEngineForWeightsInDir(WeightFormatInterface ww, String enginesDir, Consumer<String> consumer) throws IOException {
+	public static boolean installEngineForWeightsInDir(WeightFormat ww, String enginesDir, Consumer<String> consumer) throws IOException {
 		InstalledEngines manager = InstalledEngines.buildEnginesFinder(enginesDir);
 		String engine = ww.getWeightsFormat();
 		String version = ww.getTrainingVersion();
@@ -583,7 +583,7 @@ public class EngineManagement {
 	 */
 	public static boolean installEnginesForModelInDir(ModelDescriptor descriptor, String enginesDir, Consumer<String> consumer) throws IOException {
 		boolean installed = false;
-		for (WeightFormatInterface ww : descriptor.getWeights().getSupportedWeights()) {
+		for (WeightFormat ww : descriptor.getWeights().getSupportedWeights()) {
 			if (installEngineForWeightsInDir(ww, enginesDir, consumer))
 				installed = true;
 		}
