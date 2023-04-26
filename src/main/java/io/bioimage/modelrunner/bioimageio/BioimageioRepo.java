@@ -44,7 +44,7 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 
 import io.bioimage.modelrunner.bioimageio.description.ModelDescriptor;
-import io.bioimage.modelrunner.bioimageio.download.DownloadableModel;
+import io.bioimage.modelrunner.bioimageio.download.DownloadModel;
 import io.bioimage.modelrunner.utils.Log;
 
 /**
@@ -342,7 +342,7 @@ public class BioimageioRepo {
 	}
 	
 	public void downloadModel(ModelDescriptor descriptor, String modelsDirectory) {
-		DownloadableModel downloadModel = DownloadableModel.build(descriptor, modelsDirectory);
+		DownloadModel downloadModel = DownloadModel.build(descriptor, modelsDirectory);
 		Consumer<String> filesConsumer = downloadModel.getConsumer();
 		HashMap<String, Long> fileSizes = downloadModel.getModelSizeFileByFile();
 		downloadModel.downloadModel();

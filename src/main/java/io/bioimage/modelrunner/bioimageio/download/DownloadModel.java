@@ -29,7 +29,7 @@ import io.bioimage.modelrunner.engine.installation.FileDownloader;
  * @author Carlos Garcia Lopez de Haro
  *
  */
-public class DownloadableModel {
+public class DownloadModel {
 	/**
 	 * Map that contain all the links needed to download a BioImage.io model
 	 */
@@ -66,7 +66,15 @@ public class DownloadableModel {
      * String that announces that certain file is just begining to be downloaded
      */
     public static final String FILE_SIZE_STR = " ** FILE_SIZE **";
+    /**
+     * String to communicate that there has been a download error
+     * with a given file
+     */
     public static final String DOWNLOAD_ERROR_STR = " --**ERROR**-- ";
+    /**
+     * String that communcates that the whole String was finished downloading
+     */
+    public static final String FINISH_STR = " --**END MODEL DOWNLOAD**-- ";
 	/**
 	 * Key for the map that contains the download URL of the model 
 	 */
@@ -105,7 +113,7 @@ public class DownloadableModel {
 	 * @param descriptor
 	 * 	information about the model from the rdf.yaml
 	 */
-	private DownloadableModel(ModelDescriptor descriptor, String modelFolder) {
+	private DownloadModel(ModelDescriptor descriptor, String modelFolder) {
 		this.descriptor = descriptor;
 		this.modelFolder = modelFolder;
 		this.consumer = (String b) -> {
@@ -119,8 +127,8 @@ public class DownloadableModel {
 	 * @param descriptor
 	 * 	information about the model from the rdf.yaml
 	 */
-	public static DownloadableModel build(ModelDescriptor descriptor, String modelFolder) {
-		return new DownloadableModel(descriptor, modelFolder);
+	public static DownloadModel build(ModelDescriptor descriptor, String modelFolder) {
+		return new DownloadModel(descriptor, modelFolder);
 	}
 	
 	/**
@@ -337,7 +345,7 @@ public class DownloadableModel {
 			String fileName = getFileNameFromURLString(item);
 			downloadFileFromInternet(item, new File(modelFolder, fileName));
 		}
-		
+		consumer.accept(FINISH_STR);
 	}
 	
 	/**

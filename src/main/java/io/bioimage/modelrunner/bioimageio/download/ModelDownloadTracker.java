@@ -31,7 +31,11 @@ public class ModelDownloadTracker {
 	/**
 	 * Class that downloads the files that compose the model
 	 */
-	private DownloadableModel dm;
+	private DownloadModel dm;
+	/**
+	 * String that tracks the model downoad progress String
+	 */
+	private String trackString = "";
 	
 	/**
 	 * URL to check if the access to zenodo is fine
@@ -50,7 +54,7 @@ public class ModelDownloadTracker {
 		this.downloadThread = thread;
 	}
 	
-	public ModelDownloadTracker(Consumer<HashMap<String, Long>> consumer, DownloadableModel dm, Thread thread) {
+	public ModelDownloadTracker(Consumer<HashMap<String, Long>> consumer, DownloadModel dm, Thread thread) {
 		this.consumer = consumer;
 		this.dm = dm;
 		this.remainingFiles = sizeFiles.keySet().stream().map(i -> new File(i)).collect(Collectors.toList());
@@ -73,7 +77,11 @@ public class ModelDownloadTracker {
 	}
 	
 	private void trackBMZModelDownloadWithDm() {
-		dm.getProgress();
+		while (!trackString.contains(DownloadModel.FINISH_STR) && this.downloadThread.isAlive()) {
+			String progressStr = dm.getProgress();
+			String fileInd = "";
+			trackString = progressStr;
+		}
 	}
 	
 	public void trackDownloadofFilesFromFileSystem() throws IOException {
