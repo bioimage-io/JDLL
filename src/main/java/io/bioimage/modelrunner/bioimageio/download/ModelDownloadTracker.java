@@ -29,14 +29,15 @@ public class ModelDownloadTracker {
 	 */
 	private Thread downloadThread;
 	/**
-	 * Unique identifier associated to the download
+	 * Class that downloads the files that compose the model
 	 */
-	private final String uniqueIdentifier;
+	private DownloadableModel dm;
 	
 	/**
 	 * URL to check if the access to zenodo is fine
 	 */
 	public static final String ZENODO_URL = "https://zenodo.org/record/6559475/files/README.md?download=1";
+	
 	/**
 	 * 
 	 * @param consumer
@@ -46,7 +47,13 @@ public class ModelDownloadTracker {
 		this.consumer = consumer;
 		this.sizeFiles = sizeFiles;
 		this.remainingFiles = sizeFiles.keySet().stream().map(i -> new File(i)).collect(Collectors.toList());
-		this.uniqueIdentifier = createID();
+		this.downloadThread = thread;
+	}
+	
+	public ModelDownloadTracker(Consumer<HashMap<String, Long>> consumer, DownloadableModel dm, Thread thread) {
+		this.consumer = consumer;
+		this.dm = dm;
+		this.remainingFiles = sizeFiles.keySet().stream().map(i -> new File(i)).collect(Collectors.toList());
 		this.downloadThread = thread;
 	}
 	
@@ -57,13 +64,16 @@ public class ModelDownloadTracker {
 		return UUID.randomUUID().toString();
 	}
 	
-	/**
-	 * REturn the unique identifier associated to the download.
-	 * The identifier is used to identify the download in the text passed to the consumer
-	 * @return
-	 */
-	public String getID() {
-		return this.uniqueIdentifier;
+	public void trackBMZModelDownload() throws IOException {
+		if (dm == null) {
+			trackDownloadofFilesFromFileSystem();
+		} else {
+			trackBMZModelDownloadWithDm();
+		}
+	}
+	
+	private void trackBMZModelDownloadWithDm() {
+		dm.getProgress();
 	}
 	
 	public void trackDownloadofFilesFromFileSystem() throws IOException {

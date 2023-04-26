@@ -57,15 +57,16 @@ public class DownloadableModel {
     /**
      * String that announces that certain file is just begining to be downloaded
      */
-    private static final String START_DWNLD_STR = "START: ";
+    public static final String START_DWNLD_STR = "START: ";
     /**
      * String that announces that certain file is just begining to be downloaded
      */
-    private static final String END_DWNLD_STR = " -- END" + System.lineSeparator();
+    public static final String END_DWNLD_STR = " -- END" + System.lineSeparator();
     /**
      * String that announces that certain file is just begining to be downloaded
      */
-    private static final String FILE_SIZE_STR = " ** FILE_SIZE **";
+    public static final String FILE_SIZE_STR = " ** FILE_SIZE **";
+    public static final String DOWNLOAD_ERROR_STR = " --**ERROR**-- ";
 	/**
 	 * Key for the map that contains the download URL of the model 
 	 */
@@ -367,13 +368,15 @@ public class DownloadableModel {
 			fos = new FileOutputStream(targetFile);
 			// Send the correct parameters to the progress screen
 			FileDownloader downloader = new FileDownloader(rbc, fos);
-			consumer.accept(START_DWNLD_STR + targetFile + FILE_SIZE_STR +"" );
+			consumer.accept(START_DWNLD_STR + targetFile + FILE_SIZE_STR + map.get(downloadURL));
 			downloader.call();
+			consumer.accept(END_DWNLD_STR);
 		} catch (IOException e) {
+			consumer.accept(DOWNLOAD_ERROR_STR);
 			String msg = "The link for the file: " + targetFile.getName() + " is broken." + System.lineSeparator() 
 						+ "JDLL will continue with the download but the model might be "
 						+ "downloaded incorrectly.";
-			e.printStackTrace();
+			new IOException(msg, e).printStackTrace();
 		} finally {
 			try {
 				if (fos != null)
@@ -424,5 +427,15 @@ public class DownloadableModel {
 			System.out.println(msg);
 			return 1;
 		}
+	}
+	
+	/**
+	 * REtrieve a formated string containing each of the files that have been
+	 * downloaded
+	 * @return string containing each of the files that have been
+	 * downloaded
+	 */
+	public String getProgress() {
+		return progressString;
 	}
 }
