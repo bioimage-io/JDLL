@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.UUID;
 import java.util.function.Consumer;
@@ -15,7 +16,7 @@ public class ModelDownloadTracker {
 	/**
 	 * Consumer used to report the download progress to the main thread
 	 */
-	Consumer<HashMap<String, Long>> consumer;
+	TwoParameterConsumer<String, Double> consumer;
 	/**
 	 * Map containing the size of each of the files to be downloaded
 	 */
@@ -47,14 +48,14 @@ public class ModelDownloadTracker {
 	 * @param consumer
 	 * @param sizeFiles
 	 */
-	public ModelDownloadTracker(Consumer<HashMap<String, Long>> consumer, HashMap<String, Long> sizeFiles, Thread thread) {
+	public ModelDownloadTracker(TwoParameterConsumer<String, Double> consumer, HashMap<String, Long> sizeFiles, Thread thread) {
 		this.consumer = consumer;
 		this.sizeFiles = sizeFiles;
 		this.remainingFiles = sizeFiles.keySet().stream().map(i -> new File(i)).collect(Collectors.toList());
 		this.downloadThread = thread;
 	}
 	
-	public ModelDownloadTracker(Consumer<HashMap<String, Long>> consumer, DownloadModel dm, Thread thread) {
+	public ModelDownloadTracker(TwoParameterConsumer<String, Double> consumer, DownloadModel dm, Thread thread) {
 		this.consumer = consumer;
 		this.dm = dm;
 		this.remainingFiles = sizeFiles.keySet().stream().map(i -> new File(i)).collect(Collectors.toList());
@@ -79,8 +80,27 @@ public class ModelDownloadTracker {
 	private void trackBMZModelDownloadWithDm() {
 		while (!trackString.contains(DownloadModel.FINISH_STR) && this.downloadThread.isAlive()) {
 			String progressStr = dm.getProgress();
-			String fileInd = "";
-			trackString = progressStr;
+			String infoStr = progressStr.substring(trackString.length());
+			int startInd = infoStr.indexOf(DownloadModel.START_DWNLD_STR);
+			int endInd = infoStr.indexOf(DownloadModel.END_DWNLD_STR);
+			int finishInd = infoStr.indexOf(DownloadModel.FINISH_STR);
+			if (endInd == -1 && startInd == -1 && finishInd == -1)
+				continue;
+			else if (startInd == -1 && endInd == -1) {
+				trackString = progressStr;
+				continue;
+			} 
+			int fileSizeInd = infoStr.indexOf(DownloadModel.FILE_SIZE_STR);
+			String file = infoStr.substring(startInd + DownloadModel.START_DWNLD_STR.length(), 
+					fileSizeInd).trim();
+			String fileSizeStr = infoStr.substring(fileSizeInd + DownloadModel.FILE_SIZE_STR.length(),
+					endInd).trim();
+			long fileSize = Long.parseLong(fileSizeStr);
+			double progress = (new File(file).length()) / fileSize;
+			if (consumer != null)
+				consumer.accept(file, progress);
+			if (endInd != -1)
+				trackString += infoStr.substring(0, endInd + DownloadModel.END_DWNLD_STR.length());
 		}
 	}
 	
@@ -131,5 +151,63 @@ public class ModelDownloadTracker {
         }
         return true;
     }
+	
+	/**
+	 * Functional interface to create a consumer that accepts two args and
+	 * can be used to retrieve an underlying map
+	 * @author Carlos Garcia Lopez de Haro
+	 *
+	 * @param <T>
+	 * 	key 
+	 * @param <U>
+	 * 	value
+	 */
+	public static class TwoParameterConsumer<T, U> {
+		/**
+		 * Map where the values are stored
+		 */
+		private LinkedHashMap<T, U> map = new LinkedHashMap<T, U>();
+		
+		/**
+		 * Add the key value pair
+		 * @param t
+		 * 	key
+		 * @param u
+		 * 	value
+		 */
+	    public void accept(T t, U u) {
+	        map.put(t, u);
+	    }
+	    
+	    /**
+	     * Retrieve the map
+	     * @return the map
+	     */
+	    public LinkedHashMap<T, U> get() {
+	    	return map;
+	    }
+	}
+	
+	/**
+	 * Create consumer used to be used with the {@link ModelDownloadTracker}.
+	 * This consumer will be where the info about the files downloaded is written.
+	 * The key will be the name of the file and the value the size in bytes already
+	 * downloaded
+	 * @return a consumer to track downloaded files
+	 */
+	public static TwoParameterConsumer<String, Long> createConsumerTotalBytes() {
+		return new TwoParameterConsumer<String, Long>();
+	}
+	
+	/**
+	 * Create consumer used to be used with the {@link ModelDownloadTracker}.
+	 * This consumer will be where the info about the files downloaded is written.
+	 * The key will be the name of the file and the value the porcentage of
+	 * the file already downloaded.
+	 * @return a consumer to track downloaded files
+	 */
+	public static TwoParameterConsumer<String, Double> createConsumerProgress() {
+		return new TwoParameterConsumer<String, Double>();
+	}
 
 }
