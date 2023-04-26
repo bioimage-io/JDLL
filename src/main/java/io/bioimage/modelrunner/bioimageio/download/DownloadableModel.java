@@ -23,7 +23,6 @@ import io.bioimage.modelrunner.bioimageio.description.SampleImage;
 import io.bioimage.modelrunner.bioimageio.description.weights.ModelWeight;
 import io.bioimage.modelrunner.bioimageio.description.weights.WeightFormatInterface;
 import io.bioimage.modelrunner.engine.installation.FileDownloader;
-import io.bioimage.modelrunner.utils.Log;
 
 /**
  * Class to manage the downloading of models from the BioImage.io
@@ -44,41 +43,61 @@ public class DownloadableModel {
 	 */
 	private String modelFolder;
 	/**
-	 * Key for the map that contains the download URL of the model 
+	 * Map containing the size of each of the files defined by the links
 	 */
-	private static String downloadURLKey = "download_url";
-	/**
-	 * Key for the map that contains the attachments of the model 
-	 */
-	private static String attachmentsKey = "attachments";
-	/**
-	 * Key for the map that contains the weights of the model 
-	 */
-	private static String weightsKey = "weights";
-	/**
-	 * Key for the map that contains the rdf URL of the model 
-	 */
-	private static String rdfKey = "rdf_source";
-	/**
-	 * Key for the map that contains the sample inputs of the model 
-	 */
-	private static String sampleInputsKey = "sample_input";
-	/**
-	 * Key for the map that contains the sample outputs of the model 
-	 */
-	private static String sampleOutputsKey = "sample_output";
-	/**
-	 * Key for the map that contains the test inputsof the model 
-	 */
-	private static String testInputsKey = "test_input";
-	/**
-	 * Key for the map that contains the test outputs of the model 
-	 */
-	private static String testOutputsKey = "test_output";
+	private HashMap<String, Long> map;
     /**
      * Consumer used to send info about the download to other threads
      */
     private Consumer<String> consumer;
+    /**
+     * String that logs the file that it is being downloaded at the current moment
+     */
+    private String progressString = "";
+    /**
+     * String that announces that certain file is just begining to be downloaded
+     */
+    private static final String START_DWNLD_STR = "START: ";
+    /**
+     * String that announces that certain file is just begining to be downloaded
+     */
+    private static final String END_DWNLD_STR = " -- END" + System.lineSeparator();
+    /**
+     * String that announces that certain file is just begining to be downloaded
+     */
+    private static final String FILE_SIZE_STR = " ** FILE_SIZE **";
+	/**
+	 * Key for the map that contains the download URL of the model 
+	 */
+	private static String DWNLD_URL_KEY = "download_url";
+	/**
+	 * Key for the map that contains the attachments of the model 
+	 */
+	private static String ATTACH_KEY = "attachments";
+	/**
+	 * Key for the map that contains the weights of the model 
+	 */
+	private static String WEIGHTS_KEY = "weights";
+	/**
+	 * Key for the map that contains the rdf URL of the model 
+	 */
+	private static String RDF_KEY = "rdf_source";
+	/**
+	 * Key for the map that contains the sample inputs of the model 
+	 */
+	private static String SAMPLE_INPUTS_KEY = "sample_input";
+	/**
+	 * Key for the map that contains the sample outputs of the model 
+	 */
+	private static String SAMPLE_OUTPUTS_KEY = "sample_output";
+	/**
+	 * Key for the map that contains the test inputsof the model 
+	 */
+	private static String TEST_INPUTS_KEY = "test_input";
+	/**
+	 * Key for the map that contains the test outputs of the model 
+	 */
+	private static String TEST_OUTPUTS_KEY = "test_output";
 	
 	/**
 	 * Constructor that contains all the info and is able to download a BioImage.io model
@@ -88,6 +107,9 @@ public class DownloadableModel {
 	private DownloadableModel(ModelDescriptor descriptor, String modelFolder) {
 		this.descriptor = descriptor;
 		this.modelFolder = modelFolder;
+		this.consumer = (String b) -> {
+    		progressString += b;
+    		};
 		retriveDownloadModelLinks();
 	}
 
@@ -101,15 +123,6 @@ public class DownloadableModel {
 	}
 	
 	/**
-	 * Set a consumer to provide info about the download to other threads
-	 * @param consumer
-	 * 	consumer where info will be sent
-	 */
-	public void setConsumer(Consumer<String> consumer) {
-		this.consumer = consumer;
-	}
-	
-	/**
 	 * Retrieve the list of strings (URLs) that need to be donloaded to create the 
 	 * BioImage.io model specified in the rdf.yaml
 	 */
@@ -117,7 +130,7 @@ public class DownloadableModel {
 		downloadableLinks = new HashMap<String, String>();
 		String downloadURL = descriptor.getDownloadUrl();
 		if (downloadURL != null && checkURL(downloadURL)) {
-			downloadableLinks.put(downloadURLKey, downloadURL);
+			downloadableLinks.put(DWNLD_URL_KEY, downloadURL);
 			return;
 		}
 		addAttachments();
@@ -158,7 +171,7 @@ public class DownloadableModel {
 			try {
 				WeightFormatInterface w = weights.getWeightsByIdentifier(ww);
 				if (w.getSource() != null && checkURL(w.getSource())) {
-					downloadableLinks.put(weightsKey + "_" + c ++, w.getSource());
+					downloadableLinks.put(WEIGHTS_KEY + "_" + c ++, w.getSource());
 				}
 			} catch (Exception ex) {
 				// The exception is thrown whenever the weight format is not present.
@@ -177,7 +190,7 @@ public class DownloadableModel {
 		int c = 0;
 		for (String ss : sampleInps) {
 			if (ss != null && checkURL(ss)) {
-				downloadableLinks.put(testInputsKey + "_" + c ++, ss);
+				downloadableLinks.put(TEST_INPUTS_KEY + "_" + c ++, ss);
 			}
 		}
 	}
@@ -192,7 +205,7 @@ public class DownloadableModel {
 		int c = 0;
 		for (String ss : sampleOuts) {
 			if (ss != null && checkURL(ss)) {
-				downloadableLinks.put(testOutputsKey + "_" + c ++, ss);
+				downloadableLinks.put(TEST_OUTPUTS_KEY + "_" + c ++, ss);
 			}
 		}
 	}
@@ -207,7 +220,7 @@ public class DownloadableModel {
 		int c = 0;
 		for (SampleImage ss : sampleInps) {
 			if (ss != null && ss.getUrl() != null) {
-				downloadableLinks.put(sampleInputsKey + "_" + c ++, ss.getString());
+				downloadableLinks.put(SAMPLE_INPUTS_KEY + "_" + c ++, ss.getString());
 			}
 		}
 	}
@@ -222,7 +235,7 @@ public class DownloadableModel {
 		int c = 0;
 		for (SampleImage ss : sampleOuts) {
 			if (ss != null && ss.getUrl() != null) {
-				downloadableLinks.put(sampleOutputsKey + "_" + c ++, ss.getString());
+				downloadableLinks.put(SAMPLE_OUTPUTS_KEY + "_" + c ++, ss.getString());
 			}
 		}
 	}
@@ -233,7 +246,7 @@ public class DownloadableModel {
 	private void addRDF() {
 		String rdf = descriptor.getRDFSource();
 		if (rdf != null && checkURL(rdf)) {
-			downloadableLinks.put(rdfKey, rdf);
+			downloadableLinks.put(RDF_KEY, rdf);
 		}
 	}
 	
@@ -247,9 +260,9 @@ public class DownloadableModel {
 		int c = 0;
 		for (String kk : attachments.keySet()) {
 			if (attachments.get(kk) instanceof String && checkURL((String) attachments.get(kk))) {
-				downloadableLinks.put(attachmentsKey + "_" + c ++, (String) attachments.get(kk));
+				downloadableLinks.put(ATTACH_KEY + "_" + c ++, (String) attachments.get(kk));
 			} else if (attachments.get(kk) instanceof URL) {
-				downloadableLinks.put(attachmentsKey + "_" + c ++, ((URL) attachments.get(kk)).toString());
+				downloadableLinks.put(ATTACH_KEY + "_" + c ++, ((URL) attachments.get(kk)).toString());
 			}
 		}
 	}
@@ -354,7 +367,7 @@ public class DownloadableModel {
 			fos = new FileOutputStream(targetFile);
 			// Send the correct parameters to the progress screen
 			FileDownloader downloader = new FileDownloader(rbc, fos);
-			Log.addProgress(consumer, "Downloading " + targetFile.getName(), true);
+			consumer.accept(START_DWNLD_STR + targetFile + FILE_SIZE_STR +"" );
 			downloader.call();
 		} catch (IOException e) {
 			String msg = "The link for the file: " + targetFile.getName() + " is broken." + System.lineSeparator() 
@@ -385,7 +398,7 @@ public class DownloadableModel {
 	 * @throws MalformedURLException 
 	 */
 	public HashMap<String, Long> getModelSizeFileByFile() throws MalformedURLException {
-		HashMap<String, Long> map = new HashMap<String, Long>();
+		map = new HashMap<String, Long>();
 		for (String link : getListOfLinks()) {
 			map.put(link, getFileSize(new URL(link)));
 		}
