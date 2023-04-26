@@ -422,18 +422,69 @@ public class EngineManagement {
 		}
 	}
 	
+	/**
+	 * Install the DL engine corresponding to the weights provided.
+	 * 
+	 * The DL engine is downloaded automatically into a directory called "models"
+	 * inside the application folder.
+	 * 
+	 * @param ww
+	 * 	{@link WeightFormatInterface} object containing the weights as in the yaml file
+	 * @return true if the DL engine was installed or false otherwise
+	 * @throws IOException if there is any error creating the folder for the engine
+	 */
 	public static boolean installEngineForWeights(WeightFormatInterface ww) throws IOException {
 		return installEngineForWeightsInDir(ww, InstalledEngines.getEnginesDir(), null);
 	}
 	
+	/**
+	 * Install the DL engine corresponding to the weights provided.
+	 * 
+	 * The DL engine is downloaded automatically into a directory called "models"
+	 * inside the application folder.
+	 * 
+	 * @param ww
+	 * 	{@link WeightFormatInterface} object containing the weights as in the yaml file
+	 * @param consumer
+	 * 	consumer used to keep track of the process of download of the weights
+	 * @return true if the DL engine was installed or false otherwise
+	 * @throws IOException if there is any error creating the folder for the engine
+	 */
 	public static boolean installEngineForWeights(WeightFormatInterface ww, Consumer<String> consumer) throws IOException {
 		return installEngineForWeightsInDir(ww, InstalledEngines.getEnginesDir(), consumer);
 	}
-	
+
+	/**
+	 * Install the DL engine corresponding to the weights provided.
+	 * 
+	 * The DL engine is downloaded automatically into a directory provided.
+	 * 
+	 * @param ww
+	 * 	{@link WeightFormatInterface} object containing the weights as in the yaml file
+	 * @param enginesDir
+	 * 	directory where the engine is installed
+	 * @return true if the DL engine was installed or false otherwise
+	 * @throws IOException if there is any error creating the folder for the engine
+	 */
 	public static boolean installEngineForWeightsInDir(WeightFormatInterface ww, String enginesDir) throws IOException {
 		return installEngineForWeightsInDir(ww, enginesDir, null);
 	}
-	
+
+
+	/**
+	 * Install the DL engine corresponding to the weights provided.
+	 * 
+	 * The DL engine is downloaded automatically into a directory provided.
+	 * 
+	 * @param ww
+	 * 	{@link WeightFormatInterface} object containing the weights as in the yaml file
+	 * @param enginesDir
+	 * 	directory where the engine is installed
+	 * @param consumer
+	 * 	consumer used to keep track of the process of download of the weights
+	 * @return true if the DL engine was installed or false otherwise
+	 * @throws IOException if there is any error creating the folder for the engine
+	 */
 	public static boolean installEngineForWeightsInDir(WeightFormatInterface ww, String enginesDir, Consumer<String> consumer) throws IOException {
 		InstalledEngines manager = InstalledEngines.buildEnginesFinder(enginesDir);
 		String engine = ww.getWeightsFormat();
@@ -456,19 +507,80 @@ public class EngineManagement {
 		}
 		return false;
 	}
-	
+
+	/**
+	 * Install all the engines specified by all the weights specified in the
+	 * model rdf.yaml
+	 * 
+	 * The DL engine is downloaded automatically into a directory called "models"
+	 * inside the application folder.
+	 * 
+	 * @param descriptor
+	 * 	{@link ModelDescriptor} object containing the information from the rdf.yaml
+	 * @return true if at least one DL engine of the model weights defined in the rdf.yaml is
+	 * 	successfully installed
+	 * @throws IOException if there is any error creating the folder for the engine
+	 */
 	public static boolean installEnginesForModel(ModelDescriptor descriptor) throws IOException {
 		return installEnginesForModelInDir(descriptor, InstalledEngines.getEnginesDir());
 	}
 	
+	/**
+	 * Install all the engines specified by all the weights specified in the
+	 * model rdf.yaml
+	 * 
+	 * The DL engine is downloaded automatically into a directory called "models"
+	 * inside the application folder.
+	 * 
+	 * @param descriptor
+	 * 	{@link ModelDescriptor} object containing the information from the rdf.yaml
+	 * 	successfully installed
+	 * @param consumer
+	 * 	consumer used to keep track of the process of download of the weights
+	 * @return true if at least one DL engine of the model weights defined in the rdf.yaml is
+	 * 	successfully installed
+	 * @throws IOException if there is any error creating the folder for the engine
+	 */
 	public static boolean installEnginesForModel(ModelDescriptor descriptor, Consumer<String> consumer) throws IOException {
 		return installEnginesForModelInDir(descriptor, InstalledEngines.getEnginesDir(), consumer);
 	}
 	
+	/**
+	 * Install all the engines specified by all the weights specified in the
+	 * model rdf.yaml
+	 * 
+	 * The DL engine is downloaded automatically into a directory provided.
+	 * 
+	 * @param descriptor
+	 * 	{@link ModelDescriptor} object containing the information from the rdf.yaml
+	 * 	successfully installed
+	 * @param enginesDir
+	 * 	directory where the engine is installed
+	 * @return true if at least one DL engine of the model weights defined in the rdf.yaml is
+	 * 	successfully installed
+	 * @throws IOException if there is any error creating the folder for the engine
+	 */
 	public static boolean installEnginesForModelInDir(ModelDescriptor descriptor, String enginesDir) throws IOException {
 		return installEnginesForModelInDir(descriptor, enginesDir, null);
 	}
 	
+	/**
+	 * Install all the engines specified by all the weights specified in the
+	 * model rdf.yaml
+	 * 
+	 * The DL engine is downloaded automatically into a directory provided.
+	 * 
+	 * @param descriptor
+	 * 	{@link ModelDescriptor} object containing the information from the rdf.yaml
+	 * 	successfully installed
+	 * @param enginesDir
+	 * 	directory where the engine is installed
+	 * @param consumer
+	 * 	consumer used to keep track of the process of download of the weights
+	 * @return true if at least one DL engine of the model weights defined in the rdf.yaml is
+	 * 	successfully installed
+	 * @throws IOException if there is any error creating the folder for the engine
+	 */
 	public static boolean installEnginesForModelInDir(ModelDescriptor descriptor, String enginesDir, Consumer<String> consumer) throws IOException {
 		boolean installed = false;
 		for (WeightFormatInterface ww : descriptor.getWeights().getSupportedWeights()) {
@@ -478,18 +590,80 @@ public class EngineManagement {
 		return installed;
 	}
 	
+	/**
+	 * Install the DL engines corresponding to the weights defined in the yaml.rdf
+	 * file corresponding to the modelID provided. The modelId is the field 'id' in
+	 * the rdf.yaml
+	 * 
+	 * The DL engine is downloaded automatically into a directory called "models"
+	 * inside the application folder.
+	 * 
+	 * @param modelID
+	 * 	ID of the model as defined in the rdf.yaml file
+	 * @return true if at least one DL engine of the model weights defined in the rdf.yaml is
+	 * 	successfully installed
+	 * @throws IOException if there is any error creating the folder for the engine
+	 */
 	public static boolean installEnginesForModelByID(String modelID) throws IOException {
 		return installEnginesForModelByIDInDir(modelID, InstalledEngines.getEnginesDir(), null);
 	}
 	
+	/**
+	 * Install the DL engines corresponding to the weights defined in the yaml.rdf
+	 * file corresponding to the modelID provided. The modelId is the field 'id' in
+	 * the rdf.yaml
+	 * 
+	 * The DL engine is downloaded automatically into a directory called "models"
+	 * inside the application folder.
+	 * 
+	 * @param modelID
+	 * 	ID of the model as defined in the rdf.yaml file
+	 * @param consumer
+	 * 	consumer used to keep track of the process of download of the weights
+	 * @return true if at least one DL engine of the model weights defined in the rdf.yaml is
+	 * 	successfully installed
+	 * @throws IOException if there is any error creating the folder for the engine
+	 */
 	public static boolean installEnginesForModelByID(String modelID, Consumer<String> consumer) throws IOException {
 		return installEnginesForModelByIDInDir(modelID, InstalledEngines.getEnginesDir(), consumer);
 	}
 	
+	/**
+	 * Install the DL engines corresponding to the weights defined in the yaml.rdf
+	 * file corresponding to the modelID provided. The modelId is the field 'id' in
+	 * the rdf.yaml
+	 * 
+	 * The DL engine is downloaded automatically into a directory provided.
+	 * 
+	 * @param modelID
+	 * 	ID of the model as defined in the rdf.yaml file
+	 * @param enginesDir
+	 *  directory where the engines are installed
+	 * @return true if at least one DL engine of the model weights defined in the rdf.yaml is
+	 * 	successfully installed
+	 * @throws IOException if there is any error creating the folder for the engine
+	 */
 	public static boolean installEnginesForModelByIDInDir(String modelID, String enginesDir) throws IOException {
 		return installEnginesForModelByIDInDir(modelID, enginesDir, null);
 	}
 	
+	/**
+	 * Install the DL engines corresponding to the weights defined in the yaml.rdf
+	 * file corresponding to the modelID provided. The modelId is the field 'id' in
+	 * the rdf.yaml
+	 * 
+	 * The DL engine is downloaded automatically into a directory provided.
+	 * 
+	 * @param modelID
+	 * 	ID of the model as defined in the rdf.yaml file
+	 * @param enginesDir
+	 *  directory where the engines are installed
+	 * @param consumer
+	 * 	consumer used to keep track of the process of download of the weights
+	 * @return true if at least one DL engine of the model weights defined in the rdf.yaml is
+	 * 	successfully installed
+	 * @throws IOException if there is any error creating the folder for the engine
+	 */
 	public static boolean installEnginesForModelByIDInDir(String modelID, String enginesDir, Consumer<String> consumer) throws IOException {
 		ModelDescriptor descriptor = BioimageioRepo.connect().selectByID(modelID);
 		if (descriptor == null)
@@ -497,18 +671,80 @@ public class EngineManagement {
 		return installEnginesForModelInDir(descriptor, enginesDir, consumer);
 	}
 	
+	/**
+	 * Install the DL engines corresponding to the weights defined in the yaml.rdf
+	 * file corresponding to the model name provided. The model name is the field 
+	 * 'name' in the rdf.yaml
+	 * 
+	 * The DL engine is downloaded automatically into a directory called "models"
+	 * inside the application folder.
+	 * 
+	 * @param modelName
+	 * 	model name as defined in the rdf.yaml file
+	 * @return true if at least one DL engine of the model weights defined in the rdf.yaml is
+	 * 	successfully installed
+	 * @throws IOException if there is any error creating the folder for the engine
+	 */
 	public static boolean installEnginesForModelByName(String modelName) throws IOException {
 		return installEnginesForModelByNameinDir(modelName, InstalledEngines.getEnginesDir(), null);
 	}
 	
+	/**
+	 * Install the DL engines corresponding to the weights defined in the yaml.rdf
+	 * file corresponding to the model name provided. The model name is the field 
+	 * 'name' in the rdf.yaml
+	 * 
+	 * The DL engine is downloaded automatically into a directory called "models"
+	 * inside the application folder.
+	 * 
+	 * @param modelName
+	 * 	model name as defined in the rdf.yaml file
+	 * @param consumer
+	 * 	consumer used to keep track of the process of download of the weights
+	 * @return true if at least one DL engine of the model weights defined in the rdf.yaml is
+	 * 	successfully installed
+	 * @throws IOException if there is any error creating the folder for the engine
+	 */
 	public static boolean installEnginesForModelByName(String modelName, Consumer<String> consumer) throws IOException {
 		return installEnginesForModelByNameinDir(modelName, InstalledEngines.getEnginesDir(), consumer);
 	}
-	
+
+	/**
+	 * Install the DL engines corresponding to the weights defined in the yaml.rdf
+	 * file corresponding to the model name provided. The model name is the field 
+	 * 'name' in the rdf.yaml
+	 * 
+	 * The DL engine is downloaded automatically into a directory provided.
+	 * 
+	 * @param modelName
+	 * 	model name as defined in the rdf.yaml file
+	 * @param enginesDir
+	 * 	dir where the engines will be installed
+	 * @return true if at least one DL engine of the model weights defined in the rdf.yaml is
+	 * 	successfully installed
+	 * @throws IOException if there is any error creating the folder for the engine
+	 */
 	public static boolean installEnginesForModelByNameinDir(String modelName, String enginesDir) throws IOException {
 		return installEnginesForModelByNameinDir(modelName, enginesDir, null);
 	}
-	
+
+	/**
+	 * Install the DL engines corresponding to the weights defined in the yaml.rdf
+	 * file corresponding to the model name provided. The model name is the field 
+	 * 'name' in the rdf.yaml
+	 * 
+	 * The DL engine is downloaded automatically into a directory provided.
+	 * 
+	 * @param modelName
+	 * 	model name as defined in the rdf.yaml file
+	 * @param enginesDir
+	 * 	dir where the engines will be installed
+	 * @param consumer
+	 * 	consumer used to keep track of the process of download of the weights
+	 * @return true if at least one DL engine of the model weights defined in the rdf.yaml is
+	 * 	successfully installed
+	 * @throws IOException if there is any error creating the folder for the engine
+	 */
 	public static boolean installEnginesForModelByNameinDir(String modelName, String enginesDir, Consumer<String> consumer) throws IOException {
 		ModelDescriptor descriptor = BioimageioRepo.connect().selectByName(modelName);
 		if (descriptor == null)
@@ -516,18 +752,80 @@ public class EngineManagement {
 		return installEnginesForModelInDir(descriptor, enginesDir, consumer);
 	}
 	
+	/**
+	 * Install the DL engine corresponding to the weights of the Bioimage.io
+	 * model contained in the provided folder. The engines are read from the 
+	 * model rdf.yaml file
+	 * 
+	 * The DL engine is downloaded automatically into a directory called "models"
+	 * inside the application folder.
+	 * 
+	 * @param modelFolder
+	 * 	folder containing a Bioimage.io model with a valid rdf.yaml
+	 * @return true if at least one DL engine of the model weights defined in the rdf.yaml is
+	 * 	successfully installed
+	 * @throws IOException if there is any error creating the folder for the engine
+	 */
 	public static boolean installEnginesForModelInFolder(String modelFolder) throws Exception {
 		return installEnginesinDirForModelInFolder(modelFolder, InstalledEngines.getEnginesDir(), null);
 	}
 	
+	/**
+	 * Install the DL engine corresponding to the weights of the Bioimage.io
+	 * model contained in the provided folder. The engines are read from the 
+	 * model rdf.yaml file
+	 * 
+	 * The DL engine is downloaded automatically into a directory called "models"
+	 * inside the application folder.
+	 * 
+	 * @param modelFolder
+	 * 	folder containing a Bioimage.io model with a valid rdf.yaml
+	 * @param consumer
+	 * 	consumer used to keep track of the process of download of the weights
+	 * @return true if at least one DL engine of the model weights defined in the rdf.yaml is
+	 * 	successfully installed
+	 * @throws IOException if there is any error creating the folder for the engine
+	 */
 	public static boolean installEnginesForModelInFolder(String modelFolder, Consumer<String> consumer) throws Exception {
 		return installEnginesinDirForModelInFolder(modelFolder, InstalledEngines.getEnginesDir(), consumer);
 	}
 	
+	/**
+	 * Install the DL engine corresponding to the weights of the Bioimage.io
+	 * model contained in the provided folder. The engines are read from the 
+	 * model rdf.yaml file
+	 * 
+	 * The DL engine is downloaded automatically into a directory provided.
+	 * 
+	 * @param modelFolder
+	 * 	folder containing a Bioimage.io model with a valid rdf.yaml
+	 * @param enginesDir
+	 * 	directory where the engines will be installed
+	 * @return true if at least one DL engine of the model weights defined in the rdf.yaml is
+	 * 	successfully installed
+	 * @throws IOException if there is any error creating the folder for the engine
+	 */
 	public static boolean installEnginesinDirForModelInFolder(String modelFolder, String enginesDir) throws Exception {
 		return installEnginesinDirForModelInFolder(modelFolder, enginesDir, null);
 	}
 	
+	/**
+	 * Install the DL engine corresponding to the weights of the Bioimage.io
+	 * model contained in the provided folder. The engines are read from the 
+	 * model rdf.yaml file
+	 * 
+	 * The DL engine is downloaded automatically into a directory provided.
+	 * 
+	 * @param modelFolder
+	 * 	folder containing a Bioimage.io model with a valid rdf.yaml
+	 * @param enginesDir
+	 * 	directory where the engines will be installed
+	 * @param consumer
+	 * 	consumer used to keep track of the process of download of the weights
+	 * @return true if at least one DL engine of the model weights defined in the rdf.yaml is
+	 * 	successfully installed
+	 * @throws IOException if there is any error creating the folder for the engine
+	 */
 	public static boolean installEnginesinDirForModelInFolder(String modelFolder, String enginesDir, Consumer<String> consumer) throws Exception {
 		if (new File(modelFolder, "rdf.yaml").isFile() == false)
 			throw new IOException("A Bioimage.io model folder should contain its corresponding rdf.yaml file.");
