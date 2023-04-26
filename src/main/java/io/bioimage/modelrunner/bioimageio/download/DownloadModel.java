@@ -41,7 +41,7 @@ public class DownloadModel {
 	/**
 	 * Folder where the model is going to be downloaded
 	 */
-	private String modelFolder;
+	private String modelsDir;
 	/**
 	 * Map containing the size of each of the files defined by the links
 	 */
@@ -115,7 +115,7 @@ public class DownloadModel {
 	 */
 	private DownloadModel(ModelDescriptor descriptor, String modelFolder) {
 		this.descriptor = descriptor;
-		this.modelFolder = modelFolder;
+		this.modelsDir = modelFolder;
 		this.consumer = (String b) -> {
     		progressString += b;
     		};
@@ -156,10 +156,29 @@ public class DownloadModel {
 	 * Method that checks whether the model was downloaded or not. In order
 	 * for the model to be considered as downlaoded, it has to include the rdf.yaml
 	 * and the weight supported by DeepIcy that are specified in the rdf.yaml
+	 * @throws IOException if the web file cannot be accessed or if the downloaded file's size
+	 * 	is different to the file in the website
 	 * @throws Exception if the model is not correctly downloaded
 	 */
-	public void checkModelWasDownloaded() throws Exception {
-		// TODO
+	public void checkModelWasDownloaded() throws IOException {
+		boolean good = true;
+		long websize = -1;
+		for (String link : getListOfLinks()) {
+			String fileName;
+			try {
+				fileName = getFileNameFromURLString(link);
+				websize = getFileSize(new URL(link));
+			} catch (MalformedURLException e) {
+				good = false;
+				throw new MalformedURLException("URL: '" + link + "' specified in the "
+						+ "model rdf.yaml does not exist");
+			}
+			String name = modelsDir + File.separator + fileName;
+			long localSize = new File(name).length();
+			if (localSize != websize)
+				throw new IOException("Downloaded file: '" + name + "' is not the same size as "
+						+ "the file at: '" + link + "'.");
+		}
 	}
 	
 	/**
@@ -327,15 +346,15 @@ public class DownloadModel {
 	/**
 	 * Download a model downloading one by one all the files that should be inside
 	 * the model folder into a created folder inside the models repo
-	 * @param modelFolder
+	 * @param modelsDir
 	 * 	whether the model download is notifies file by file or as a whole
 	 * @throws IOException if there is any error creating the folder or downloading the files
 	 * @throws InterruptedException if the thread was stopped by the user
 	 */
 	public void downloadModel() throws IOException, InterruptedException {
-		File folder = new File(modelFolder);
+		File folder = new File(modelsDir);
 		if (!folder.isDirectory())
-			throw new IOException("The provided directory where the model is to be downloaded does not exist ->" + modelFolder);
+			throw new IOException("The provided directory where the model is to be downloaded does not exist ->" + modelsDir);
 		for (int i = 0; i < getListOfLinks().size(); i ++) {
         	if (Thread.interrupted())
                 throw new InterruptedException("Interrupted before downloading the remaining files: "
@@ -343,7 +362,7 @@ public class DownloadModel {
             									.mapToObj(j -> getListOfLinks().get(j)).toArray()));
 			String item = getListOfLinks().get(i);
 			String fileName = getFileNameFromURLString(item);
-			downloadFileFromInternet(item, new File(modelFolder, fileName));
+			downloadFileFromInternet(item, new File(modelsDir, fileName));
 		}
 		consumer.accept(FINISH_STR);
 	}

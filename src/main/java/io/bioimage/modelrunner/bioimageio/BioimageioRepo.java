@@ -45,6 +45,7 @@ import com.google.gson.JsonParser;
 
 import io.bioimage.modelrunner.bioimageio.description.ModelDescriptor;
 import io.bioimage.modelrunner.bioimageio.download.DownloadModel;
+import io.bioimage.modelrunner.bioimageio.download.ModelDownloadTracker;
 import io.bioimage.modelrunner.utils.Log;
 
 /**
@@ -341,17 +342,34 @@ public class BioimageioRepo {
 		return null;
 	}
 	
-	public void downloadModel(ModelDescriptor descriptor, String modelsDirectory) {
-		DownloadModel downloadModel = DownloadModel.build(descriptor, modelsDirectory);
-		Consumer<String> filesConsumer = downloadModel.getConsumer();
-		HashMap<String, Long> fileSizes = downloadModel.getModelSizeFileByFile();
-		downloadModel.downloadModel();
-		for (String file : files) {
-			new FileDownloader(file);
-			if (consumer) {
-				new DownloaderInfo(modelPath, modelSize, consumer, Thread.currentThread());
-				Thread.start()
+	public void downloadModel(ModelDescriptor descriptor, String modelsDirectory, 
+			ModelDownloadTracker.TwoParameterConsumer<String, Double> consumer) {
+		DownloadModel dm = DownloadModel.build(descriptor, modelsDirectory);
+		Thread downloadThread = new Thread(() -> {
+			try {
+				dm.downloadModel();
+			} catch (IOException | InterruptedException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
 			}
+        });
+		ModelDownloadTracker mdt = new ModelDownloadTracker(consumer, dm, downloadThread);
+		Thread trackerThread = new Thread(() -> {
+            try {
+				mdt.trackBMZModelDownload();
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+        });
+		downloadThread.start();
+		trackerThread.start();
+		try {
+			downloadThread.join();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+		for (String link : dm.getListOfLinks()) {
+			fileName = dm.ge
 		}
 	}
 	
@@ -359,20 +377,44 @@ public class BioimageioRepo {
 		ModelDescriptor model = selectByID(id);
 		if (model == null)
 			throw new IllegalArgumentException("");
-		downloadModel(model, modelsDirectory);
+		downloadModel(model, modelsDirectory, null);
+	}
+	
+	public void downloadModelByID(String id, String modelsDirectory, 
+			ModelDownloadTracker.TwoParameterConsumer<String, Double> consumer) {
+		ModelDescriptor model = selectByID(id);
+		if (model == null)
+			throw new IllegalArgumentException("");
+		downloadModel(model, modelsDirectory, consumer);
 	}
 	
 	public void downloadByName(String name, String modelsDirectory) {
 		ModelDescriptor model = selectByName(name);
 		if (model == null)
 			throw new IllegalArgumentException("");
-		downloadModel(model, modelsDirectory);
+		downloadModel(model, modelsDirectory, null);
+	}
+	
+	public void downloadByName(String name, String modelsDirectory, 
+			ModelDownloadTracker.TwoParameterConsumer<String, Double> consumer) {
+		ModelDescriptor model = selectByName(name);
+		if (model == null)
+			throw new IllegalArgumentException("");
+		downloadModel(model, modelsDirectory, consumer);
 	}
 	
 	public void downloadByRdfSource(String rdfUrl, String modelsDirectory) {
 		ModelDescriptor model = selectByRdfSource(rdfUrl);
 		if (model == null)
 			throw new IllegalArgumentException("");
-		downloadModel(model, modelsDirectory);
+		downloadModel(model, modelsDirectory, null);
+	}
+	
+	public void downloadByRdfSource(String rdfUrl, String modelsDirectory, 
+			ModelDownloadTracker.TwoParameterConsumer<String, Double> consumer) {
+		ModelDescriptor model = selectByRdfSource(rdfUrl);
+		if (model == null)
+			throw new IllegalArgumentException("");
+		downloadModel(model, modelsDirectory, consumer);
 	}
 }

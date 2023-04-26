@@ -77,6 +77,10 @@ public class ModelDownloadTracker {
 		}
 	}
 	
+	/**
+	 * Method that tracks the download of BMZ model files, if the {@link TwoParameterConsumer}
+	 * {@link #consumer} retrieves the progress that is being made in the download of the model
+	 */
 	private void trackBMZModelDownloadWithDm() {
 		while (!trackString.contains(DownloadModel.FINISH_STR) && this.downloadThread.isAlive()) {
 			String progressStr = dm.getProgress();
@@ -84,6 +88,7 @@ public class ModelDownloadTracker {
 			int startInd = infoStr.indexOf(DownloadModel.START_DWNLD_STR);
 			int endInd = infoStr.indexOf(DownloadModel.END_DWNLD_STR);
 			int finishInd = infoStr.indexOf(DownloadModel.FINISH_STR);
+			int errInd = infoStr.indexOf(DownloadModel.DOWNLOAD_ERROR_STR);
 			if (endInd == -1 && startInd == -1 && finishInd == -1)
 				continue;
 			else if (startInd == -1 && endInd == -1) {
@@ -97,14 +102,19 @@ public class ModelDownloadTracker {
 					endInd).trim();
 			long fileSize = Long.parseLong(fileSizeStr);
 			double progress = (new File(file).length()) / fileSize;
-			if (consumer != null)
+			if (consumer != null && errInd == -1)
 				consumer.accept(file, progress);
-			if (endInd != -1)
-				trackString += infoStr.substring(0, endInd + DownloadModel.END_DWNLD_STR.length());
+			else if (consumer != null && (errInd != -1 && (endInd == -1 || errInd < endInd))) {
+				consumer.accept(file, 0.0);
+				trackString += infoStr.substring(0, endInd + DownloadModel.DOWNLOAD_ERROR_STR.length());
+				continue;
+			}
+			if (endInd != -1 && (errInd == -1 || errInd > endInd))
+				trackString += infoStr.substring(0, endInd + DownloadModel.END_DWNLD_STR.length());			
 		}
 	}
 	
-	public void trackDownloadofFilesFromFileSystem() throws IOException {
+	public void trackDownloadofFilesFromFileSystem() {
 		HashMap<String, Long> infoMap = new HashMap<String, Long>();
 		int nTimesWoChange = 0;
 		long downloadSize = 0;
