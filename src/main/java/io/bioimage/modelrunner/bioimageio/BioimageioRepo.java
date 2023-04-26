@@ -28,6 +28,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -36,6 +37,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.function.Consumer;
+import java.util.stream.Collectors;
 
 import javax.net.ssl.HttpsURLConnection;
 
@@ -343,13 +345,12 @@ public class BioimageioRepo {
 	}
 	
 	public void downloadModel(ModelDescriptor descriptor, String modelsDirectory, 
-			ModelDownloadTracker.TwoParameterConsumer<String, Double> consumer) {
+			ModelDownloadTracker.TwoParameterConsumer<String, Double> consumer) throws IOException, InterruptedException {
 		DownloadModel dm = DownloadModel.build(descriptor, modelsDirectory);
 		Thread downloadThread = new Thread(() -> {
 			try {
 				dm.downloadModel();
 			} catch (IOException | InterruptedException e) {
-				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
         });
@@ -363,17 +364,21 @@ public class BioimageioRepo {
         });
 		downloadThread.start();
 		trackerThread.start();
-		try {
-			downloadThread.join();
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
-		for (String link : dm.getListOfLinks()) {
-			fileName = DownloadModel.getFileNameFromURLString(link);
-		}
+		downloadThread.join();
+		
+		List<String> badDownloads = dm.getListOfLinks().stream().filter(i -> {
+			String name = i.substring(i.lastIndexOf("/") + 1);
+			if (consumer.get().get(dm.getModelFolder() + File.separator + name) == 1)
+				return false;
+			return true;
+		}).collect(Collectors.toList());
+		
+		if (badDownloads.size() > 0)
+			throw new IOException("The following files of model '" + descriptor.getName()
+			+ "' where downloaded incorrectly: " + badDownloads.toString());
 	}
 	
-	public void downloadModelByID(String id, String modelsDirectory) {
+	public void downloadModelByID(String id, String modelsDirectory) throws IOException, InterruptedException {
 		ModelDescriptor model = selectByID(id);
 		if (model == null)
 			throw new IllegalArgumentException("");
@@ -381,14 +386,14 @@ public class BioimageioRepo {
 	}
 	
 	public void downloadModelByID(String id, String modelsDirectory, 
-			ModelDownloadTracker.TwoParameterConsumer<String, Double> consumer) {
+			ModelDownloadTracker.TwoParameterConsumer<String, Double> consumer) throws IOException, InterruptedException {
 		ModelDescriptor model = selectByID(id);
 		if (model == null)
 			throw new IllegalArgumentException("");
 		downloadModel(model, modelsDirectory, consumer);
 	}
 	
-	public void downloadByName(String name, String modelsDirectory) {
+	public void downloadByName(String name, String modelsDirectory) throws IOException, InterruptedException {
 		ModelDescriptor model = selectByName(name);
 		if (model == null)
 			throw new IllegalArgumentException("");
@@ -396,14 +401,14 @@ public class BioimageioRepo {
 	}
 	
 	public void downloadByName(String name, String modelsDirectory, 
-			ModelDownloadTracker.TwoParameterConsumer<String, Double> consumer) {
+			ModelDownloadTracker.TwoParameterConsumer<String, Double> consumer) throws IOException, InterruptedException {
 		ModelDescriptor model = selectByName(name);
 		if (model == null)
 			throw new IllegalArgumentException("");
 		downloadModel(model, modelsDirectory, consumer);
 	}
 	
-	public void downloadByRdfSource(String rdfUrl, String modelsDirectory) {
+	public void downloadByRdfSource(String rdfUrl, String modelsDirectory) throws IOException, InterruptedException {
 		ModelDescriptor model = selectByRdfSource(rdfUrl);
 		if (model == null)
 			throw new IllegalArgumentException("");
@@ -411,7 +416,7 @@ public class BioimageioRepo {
 	}
 	
 	public void downloadByRdfSource(String rdfUrl, String modelsDirectory, 
-			ModelDownloadTracker.TwoParameterConsumer<String, Double> consumer) {
+			ModelDownloadTracker.TwoParameterConsumer<String, Double> consumer) throws IOException, InterruptedException {
 		ModelDescriptor model = selectByRdfSource(rdfUrl);
 		if (model == null)
 			throw new IllegalArgumentException("");
