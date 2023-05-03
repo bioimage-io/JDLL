@@ -354,10 +354,10 @@ public class BioimageioRepo {
 				e.printStackTrace();
 			}
         });
-		DownloadTracker mdt = new DownloadTracker(consumer, dm, downloadThread);
+		DownloadTracker mdt = DownloadTracker.getBMZModelDownloadTracker(consumer, dm, downloadThread);
 		Thread trackerThread = new Thread(() -> {
             try {
-				mdt.trackBMZModelDownload();
+				mdt.track();
 			} catch (IOException e) {
 				e.printStackTrace();
 			}

@@ -194,7 +194,6 @@ public class DownloadModel {
 	 * @throws Exception if the model is not correctly downloaded
 	 */
 	public void checkModelWasDownloaded() throws IOException {
-		boolean good = true;
 		long websize = -1;
 		for (String link : getListOfLinks()) {
 			String fileName;
@@ -202,7 +201,6 @@ public class DownloadModel {
 				fileName = getFileNameFromURLString(link);
 				websize = getFileSize(new URL(link));
 			} catch (MalformedURLException e) {
-				good = false;
 				throw new MalformedURLException("URL: '" + link + "' specified in the "
 						+ "model rdf.yaml does not exist");
 			}

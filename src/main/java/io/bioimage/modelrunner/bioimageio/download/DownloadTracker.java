@@ -3,6 +3,7 @@ package io.bioimage.modelrunner.bioimageio.download;
 import java.io.File;
 import java.io.IOException;
 import java.net.HttpURLConnection;
+import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -73,15 +74,23 @@ public class DownloadTracker {
 	 * 
 	 * @param consumer
 	 * @param sizeFiles
+	 * @throws IOException 
 	 */
-	private DownloadTracker(String folder, TwoParameterConsumer<String, Double> consumer, List<String> links, Thread thread) {
+	private DownloadTracker(String folder, TwoParameterConsumer<String, Double> consumer, List<String> links, Thread thread) throws IOException {
 		Objects.requireNonNull(folder, "Please provide teh folder where the files are going to be "
 				+ "downloaded.");
 		Objects.requireNonNull(consumer);
 		Objects.requireNonNull(links, "Please provide the links to the files that are going to be downloaded.");
 		Objects.requireNonNull(thread);
+		for (String link : links) {
+			try {
+				sizeFiles.put(folder + File.separator + DownloadModel.getFileNameFromURLString(link), 
+						DownloadModel.getFileSize(new URL(link)));
+			} catch (MalformedURLException e) {
+				throw new IOException("The URL '" + link + "' cannot be found.");
+			}
+		}
 		this.consumer = consumer;
-		this.sizeFiles = sizeFiles;
 		this.remainingFiles = sizeFiles.keySet().stream().map(i -> new File(i)).collect(Collectors.toList());
 		this.downloadThread = thread;
 	}
@@ -100,7 +109,8 @@ public class DownloadTracker {
 		return new DownloadTracker(consumer, dm, thread);
 	}
 	
-	public static DownloadTracker getFilesDownloadTracker(String folder, TwoParameterConsumer<String, Double> consumer, List<String> links, Thread thread) {
+	public static DownloadTracker getFilesDownloadTracker(String folder, TwoParameterConsumer<String, Double> consumer, 
+			List<String> links, Thread thread) throws IOException {
 		return new DownloadTracker(folder, consumer, links, thread);
 	}
 	
