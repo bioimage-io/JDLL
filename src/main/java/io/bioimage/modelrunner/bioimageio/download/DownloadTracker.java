@@ -9,8 +9,15 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.stream.Collectors;
 
-
-public class ModelDownloadTracker {
+/**
+ * Class that contains the methods to track the progress downloading files.
+ * It can be used to track teh download of any file or pack of files. In addition
+ * there is a special constructor to track more easily the dowload of Bioimage.io models.
+ * 
+ * @author Carlos Garcia Lopez de Haro
+ *
+ */
+public class DownloadTracker {
 	/**
 	 * Consumer used to report the download progress to the main thread
 	 */
@@ -46,14 +53,14 @@ public class ModelDownloadTracker {
 	 * @param consumer
 	 * @param sizeFiles
 	 */
-	public ModelDownloadTracker(TwoParameterConsumer<String, Double> consumer, HashMap<String, Long> sizeFiles, Thread thread) {
+	public DownloadTracker(TwoParameterConsumer<String, Double> consumer, HashMap<String, Long> sizeFiles, Thread thread) {
 		this.consumer = consumer;
 		this.sizeFiles = sizeFiles;
 		this.remainingFiles = sizeFiles.keySet().stream().map(i -> new File(i)).collect(Collectors.toList());
 		this.downloadThread = thread;
 	}
 	
-	public ModelDownloadTracker(TwoParameterConsumer<String, Double> consumer, DownloadModel dm, Thread thread) {
+	public DownloadTracker(TwoParameterConsumer<String, Double> consumer, DownloadModel dm, Thread thread) {
 		this.consumer = consumer;
 		this.dm = dm;
 		this.remainingFiles = sizeFiles.keySet().stream().map(i -> new File(i)).collect(Collectors.toList());
@@ -192,7 +199,7 @@ public class ModelDownloadTracker {
 	}
 	
 	/**
-	 * Create consumer used to be used with the {@link ModelDownloadTracker}.
+	 * Create consumer used to be used with the {@link DownloadTracker}.
 	 * This consumer will be where the info about the files downloaded is written.
 	 * The key will be the name of the file and the value the size in bytes already
 	 * downloaded
@@ -203,7 +210,7 @@ public class ModelDownloadTracker {
 	}
 	
 	/**
-	 * Create consumer used to be used with the {@link ModelDownloadTracker}.
+	 * Create consumer used to be used with the {@link DownloadTracker}.
 	 * This consumer will be where the info about the files downloaded is written.
 	 * The key will be the name of the file and the value the porcentage of
 	 * the file already downloaded.

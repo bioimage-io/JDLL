@@ -47,7 +47,7 @@ import com.google.gson.JsonParser;
 
 import io.bioimage.modelrunner.bioimageio.description.ModelDescriptor;
 import io.bioimage.modelrunner.bioimageio.download.DownloadModel;
-import io.bioimage.modelrunner.bioimageio.download.ModelDownloadTracker;
+import io.bioimage.modelrunner.bioimageio.download.DownloadTracker;
 import io.bioimage.modelrunner.utils.Log;
 
 /**
@@ -345,7 +345,7 @@ public class BioimageioRepo {
 	}
 	
 	public void downloadModel(ModelDescriptor descriptor, String modelsDirectory, 
-			ModelDownloadTracker.TwoParameterConsumer<String, Double> consumer) throws IOException, InterruptedException {
+			DownloadTracker.TwoParameterConsumer<String, Double> consumer) throws IOException, InterruptedException {
 		DownloadModel dm = DownloadModel.build(descriptor, modelsDirectory);
 		Thread downloadThread = new Thread(() -> {
 			try {
@@ -354,7 +354,7 @@ public class BioimageioRepo {
 				e.printStackTrace();
 			}
         });
-		ModelDownloadTracker mdt = new ModelDownloadTracker(consumer, dm, downloadThread);
+		DownloadTracker mdt = new DownloadTracker(consumer, dm, downloadThread);
 		Thread trackerThread = new Thread(() -> {
             try {
 				mdt.trackBMZModelDownload();
@@ -386,7 +386,7 @@ public class BioimageioRepo {
 	}
 	
 	public void downloadModelByID(String id, String modelsDirectory, 
-			ModelDownloadTracker.TwoParameterConsumer<String, Double> consumer) throws IOException, InterruptedException {
+			DownloadTracker.TwoParameterConsumer<String, Double> consumer) throws IOException, InterruptedException {
 		ModelDescriptor model = selectByID(id);
 		if (model == null)
 			throw new IllegalArgumentException("");
@@ -401,7 +401,7 @@ public class BioimageioRepo {
 	}
 	
 	public void downloadByName(String name, String modelsDirectory, 
-			ModelDownloadTracker.TwoParameterConsumer<String, Double> consumer) throws IOException, InterruptedException {
+			DownloadTracker.TwoParameterConsumer<String, Double> consumer) throws IOException, InterruptedException {
 		ModelDescriptor model = selectByName(name);
 		if (model == null)
 			throw new IllegalArgumentException("");
@@ -416,7 +416,7 @@ public class BioimageioRepo {
 	}
 	
 	public void downloadByRdfSource(String rdfUrl, String modelsDirectory, 
-			ModelDownloadTracker.TwoParameterConsumer<String, Double> consumer) throws IOException, InterruptedException {
+			DownloadTracker.TwoParameterConsumer<String, Double> consumer) throws IOException, InterruptedException {
 		ModelDescriptor model = selectByRdfSource(rdfUrl);
 		if (model == null)
 			throw new IllegalArgumentException("");
