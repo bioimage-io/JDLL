@@ -7,11 +7,12 @@ import java.net.URL;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 /**
  * Class that contains the methods to track the progress downloading files.
- * It can be used to track teh download of any file or pack of files. In addition
+ * It can be used to track the download of any file or list of files. In addition
  * there is a special constructor to track more easily the dowload of Bioimage.io models.
  * 
  * @author Carlos Garcia Lopez de Haro
@@ -42,34 +43,70 @@ public class DownloadTracker {
 	 * String that tracks the model downoad progress String
 	 */
 	private String trackString = "";
-	
+	/**
+	 * Total size of the files to download
+	 */
+	private long totalSize;
+	/**
+	 * Number of times in a row that the download has been checked without 
+	 * change. The progress is checked every {@link #TIME_INTERVAL_MILLIS}
+	 */
+	private int nTimesNoChange = 0;
+	/**
+	 * Aux variable used to keep track of the model download
+	 */
+	private double downloadSize = 0;
 	/**
 	 * URL to check if the access to zenodo is fine
 	 */
 	public static final String ZENODO_URL = "https://zenodo.org/record/6559475/files/README.md?download=1";
+	/**
+	 * Key for the consumer map that has the total progress of the download
+	 */
+	public static final String TOTAL_PROGRESS_KEY = "total";
+	/**
+	 * Millisecond time interval that passes between checks of the download.
+	 */
+	private static final double TIME_INTERVAL_MILLIS = 300;
 	
 	/**
 	 * 
 	 * @param consumer
 	 * @param sizeFiles
 	 */
-	public DownloadTracker(TwoParameterConsumer<String, Double> consumer, HashMap<String, Long> sizeFiles, Thread thread) {
+	private DownloadTracker(String folder, TwoParameterConsumer<String, Double> consumer, List<String> links, Thread thread) {
+		Objects.requireNonNull(folder, "Please provide teh folder where the files are going to be "
+				+ "downloaded.");
+		Objects.requireNonNull(consumer);
+		Objects.requireNonNull(links, "Please provide the links to the files that are going to be downloaded.");
+		Objects.requireNonNull(thread);
 		this.consumer = consumer;
 		this.sizeFiles = sizeFiles;
 		this.remainingFiles = sizeFiles.keySet().stream().map(i -> new File(i)).collect(Collectors.toList());
 		this.downloadThread = thread;
 	}
 	
-	public DownloadTracker(TwoParameterConsumer<String, Double> consumer, DownloadModel dm, Thread thread) {
+	private DownloadTracker(TwoParameterConsumer<String, Double> consumer, DownloadModel dm, Thread thread) {
+		Objects.requireNonNull(consumer);
+		Objects.requireNonNull(dm);
+		Objects.requireNonNull(thread);
 		this.consumer = consumer;
 		this.dm = dm;
 		this.remainingFiles = sizeFiles.keySet().stream().map(i -> new File(i)).collect(Collectors.toList());
 		this.downloadThread = thread;
 	}
 	
-	public void trackBMZModelDownload() throws IOException {
+	public static DownloadTracker getBMZModelDownloadTracker(TwoParameterConsumer<String, Double> consumer, DownloadModel dm, Thread thread) {
+		return new DownloadTracker(consumer, dm, thread);
+	}
+	
+	public static DownloadTracker getFilesDownloadTracker(String folder, TwoParameterConsumer<String, Double> consumer, List<String> links, Thread thread) {
+		return new DownloadTracker(folder, consumer, links, thread);
+	}
+	
+	public void track() throws IOException {
 		if (dm == null) {
-			trackDownloadofFilesFromFileSystem();
+			trackDownloadOfFilesFromFileSystem();
 		} else {
 			trackBMZModelDownloadWithDm();
 		}
@@ -78,9 +115,15 @@ public class DownloadTracker {
 	/**
 	 * Method that tracks the download of BMZ model files, if the {@link TwoParameterConsumer}
 	 * {@link #consumer} retrieves the progress that is being made in the download of the model
+	 * @throws IOException if the download stopped
 	 */
-	private void trackBMZModelDownloadWithDm() {
+	private void trackBMZModelDownloadWithDm() throws IOException {
+		nTimesNoChange = 0;
+		HashMap<String, Long> infoMap = new HashMap<String, Long>();
 		while (!trackString.contains(DownloadModel.FINISH_STR) && this.downloadThread.isAlive()) {
+			consumer.accept(TOTAL_PROGRESS_KEY, 
+					(double) (infoMap.values().stream().mapToLong(Long::longValue).sum() / this.totalSize));
+			didDownloadStop();
 			String progressStr = dm.getProgress();
 			String infoStr = progressStr.substring(trackString.length());
 			int startInd = infoStr.indexOf(DownloadModel.START_DWNLD_STR);
@@ -100,9 +143,10 @@ public class DownloadTracker {
 					endInd).trim();
 			long fileSize = Long.parseLong(fileSizeStr);
 			double progress = (new File(file).length()) / fileSize;
-			if (consumer != null && errInd == -1)
+			if (consumer != null && errInd == -1) {
+				infoMap.put(file, new File(file).length());
 				consumer.accept(file, progress);
-			else if (consumer != null && (errInd != -1 && (endInd == -1 || errInd < endInd))) {
+			} else if (consumer != null && (errInd != -1 && (endInd == -1 || errInd < endInd))) {
 				consumer.accept(file, 0.0);
 				trackString += infoStr.substring(0, endInd + DownloadModel.DOWNLOAD_ERROR_STR.length());
 				continue;
@@ -110,40 +154,50 @@ public class DownloadTracker {
 			if (endInd != -1 && (errInd == -1 || errInd > endInd))
 				trackString += infoStr.substring(0, endInd + DownloadModel.END_DWNLD_STR.length());			
 		}
+		consumer.accept(TOTAL_PROGRESS_KEY, 
+				(double) (infoMap.values().stream().mapToLong(Long::longValue).sum() / this.totalSize));
+		
 	}
 	
-	public void trackDownloadofFilesFromFileSystem() throws IOException {
-		HashMap<String, Long> infoMap = new HashMap<String, Long>();
-		int nTimesWoChange = 0;
-		long downloadSize = 0;
+	public void trackDownloadOfFilesFromFileSystem() throws IOException {
+		nTimesNoChange = 0;
+		downloadSize = 0;
+		long totalDownloadSize = 0;
 		while (this.downloadThread.isAlive() && remainingFiles.size() > 0) {
 			for (int i = 0; i < this.remainingFiles.size(); i ++) {
 				File ff = remainingFiles.get(i);
 				if (ff.isFile() && ff.length() != this.sizeFiles.get(ff.getAbsolutePath())){
-					infoMap.put(ff.getAbsolutePath(), ff.length());
+					consumer.accept(ff.getAbsolutePath(), (double) (ff.length() / this.sizeFiles.get(ff.getAbsolutePath())));
+					consumer.accept(TOTAL_PROGRESS_KEY, (double) ((totalDownloadSize + ff.length()) / totalSize));
 					break;
 				} else if (remainingFiles.get(i).isFile()) {
-					infoMap.put(ff.getAbsolutePath(), ff.length());
+					consumer.accept(ff.getAbsolutePath(), 1.0);
+					totalDownloadSize += ff.length();
+					consumer.accept(TOTAL_PROGRESS_KEY, (double) (totalDownloadSize / totalSize));
 					remainingFiles.remove(i);
 					break;
 				}
 			}
-			long totDownload = infoMap.values().stream().mapToLong(Long::longValue).sum();
-			if (downloadSize != totDownload) {
-				downloadSize = totDownload;
-				nTimesWoChange = 0;
-			} else {
-				nTimesWoChange += 1;
-			}
-			if (nTimesWoChange > 30 && !checkInternet(ZENODO_URL)) {
-				this.downloadThread.interrupt();
-				throw new IOException("The download seems to have stopped. There has been no "
-						+ "progress during more than 10 seconds. The internet connection seems unstable.");
-			} else if (nTimesWoChange > 60) {
-				this.downloadThread.interrupt();
-				throw new IOException("The download seems to have stopped. There has been no "
-						+ "progress during more than 20 seconds, please review your internet connection or computer permissions");
-			}
+			didDownloadStop();
+		}
+	}
+	
+	private void didDownloadStop() throws IOException {
+		double totDownload = consumer.get().get(TOTAL_PROGRESS_KEY);
+		if (downloadSize != totDownload) {
+			downloadSize = totDownload;
+			nTimesNoChange = 0;
+		} else {
+			nTimesNoChange += 1;
+		}
+		if (nTimesNoChange > 30 && !checkInternet(ZENODO_URL)) {
+			this.downloadThread.interrupt();
+			throw new IOException("The download seems to have stopped. There has been no "
+					+ "progress during more than 10 seconds. The internet connection seems unstable.");
+		} else if (nTimesNoChange > 60) {
+			this.downloadThread.interrupt();
+			throw new IOException("The download seems to have stopped. There has been no "
+					+ "progress during more than 20 seconds, please review your internet connection or computer permissions");
 		}
 	}
 	
