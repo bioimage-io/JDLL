@@ -384,7 +384,7 @@ public class BioimageioRepo {
 	 * @param modelsDirectory
 	 * 	the folder where the model is going to be downloaded. Regard that the model
 	 * 	is a folder too. So if the argument provided is "C:\\users\\carlos\\models",
-	 * 	the model path will then be: "C:\\users\\carlos\\models\\<model_name>_<date string>"
+	 * 	the model path will then be: "C:\\users\\carlos\\models\\model_name_date string""
 	 * @throws IOException	if there is any error downloading the files from the URLs provided
 	 * @throws InterruptedException	if the download or tracking threads are interrupted abruptly
 	 */
@@ -407,7 +407,7 @@ public class BioimageioRepo {
 	 * @param modelsDirectory
 	 * 	the folder where the model is going to be downloaded. Regard that the model
 	 * 	is a folder too. So if the argument provided is "C:\\users\\carlos\\models",
-	 * 	the model path will then be: "C:\\users\\carlos\\models\\<model_name>_<date string>"
+	 * 	the model path will then be: "C:\\users\\carlos\\models\\model_name_date string""
 	 * @param consumer
 	 * 	a {@link DownloadTracker.TwoParameterConsumer} consumer that ccan be used to track the
 	 * 	download of the individual files that compose the model.
@@ -511,7 +511,7 @@ public class BioimageioRepo {
 	 * @param modelsDirectory
 	 * 	the folder where the model is going to be downloaded. Regard that the model
 	 * 	is a folder too. So if the argument provided is "C:\\users\\carlos\\models",
-	 * 	the model path will then be: "C:\\users\\carlos\\models\\<model_name>_<date string>"
+	 * 	the model path will then be: "C:\\users\\carlos\\models\\model_name_date string""
 	 * @throws IOException	if there is any error downloading the files from the URLs provided
 	 * @throws InterruptedException	if the download or tracking threads are interrupted abruptly
 	 */
@@ -536,7 +536,7 @@ public class BioimageioRepo {
 	 * @param modelsDirectory
 	 * 	the folder where the model is going to be downloaded. Regard that the model
 	 * 	is a folder too. So if the argument provided is "C:\\users\\carlos\\models",
-	 * 	the model path will then be: "C:\\users\\carlos\\models\\<model_name>_<date string>"
+	 * 	the model path will then be: "C:\\users\\carlos\\models\\model_name_date string""
 	 * @param consumer
 	 * 	a {@link DownloadTracker.TwoParameterConsumer} consumer that ccan be used to track the
 	 * 	download of the individual files that compose the model.
@@ -565,7 +565,7 @@ public class BioimageioRepo {
 	 * @param modelsDirectory
 	 * 	the folder where the model is going to be downloaded. Regard that the model
 	 * 	is a folder too. So if the argument provided is "C:\\users\\carlos\\models",
-	 * 	the model path will then be: "C:\\users\\carlos\\models\\<model_name>_<date string>"
+	 * 	the model path will then be: "C:\\users\\carlos\\models\\model_name_date string""
 	 * @throws IOException	if there is any error downloading the files from the URLs provided
 	 * @throws InterruptedException	if the download or tracking threads are interrupted abruptly
 	 */
@@ -590,7 +590,7 @@ public class BioimageioRepo {
 	 * @param modelsDirectory
 	 * 	the folder where the model is going to be downloaded. Regard that the model
 	 * 	is a folder too. So if the argument provided is "C:\\users\\carlos\\models",
-	 * 	the model path will then be: "C:\\users\\carlos\\models\\<model_name>_<date string>"
+	 * 	the model path will then be: "C:\\users\\carlos\\models\\model_name_date string""
 	 * @param consumer
 	 * 	a {@link DownloadTracker.TwoParameterConsumer} consumer that ccan be used to track the
 	 * 	download of the individual files that compose the model.
@@ -619,7 +619,7 @@ public class BioimageioRepo {
 	 * @param modelsDirectory
 	 * 	the folder where the model is going to be downloaded. Regard that the model
 	 * 	is a folder too. So if the argument provided is "C:\\users\\carlos\\models",
-	 * 	the model path will then be: "C:\\users\\carlos\\models\\<model_name>_<date string>"
+	 * 	the model path will then be: "C:\\users\\carlos\\models\\model_name_date string""
 	 * @throws IOException	if there is any error downloading the files from the URLs provided
 	 * @throws InterruptedException	if the download or tracking threads are interrupted abruptly
 	 */
@@ -644,7 +644,7 @@ public class BioimageioRepo {
 	 * @param modelsDirectory
 	 * 	the folder where the model is going to be downloaded. Regard that the model
 	 * 	is a folder too. So if the argument provided is "C:\\users\\carlos\\models",
-	 * 	the model path will then be: "C:\\users\\carlos\\models\\<model_name>_<date string>"
+	 * 	the model path will then be: "C:\\users\\carlos\\models\\model_name_date string"
 	 * @param consumer
 	 * 	a {@link DownloadTracker.TwoParameterConsumer} consumer that ccan be used to track the
 	 * 	download of the individual files that compose the model.
