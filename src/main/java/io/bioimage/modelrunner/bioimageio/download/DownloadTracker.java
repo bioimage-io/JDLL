@@ -190,7 +190,14 @@ public class DownloadTracker {
 	private void trackBMZModelDownloadWithDm() throws IOException, InterruptedException {
 		nTimesNoChange = 0;
 		HashMap<String, Long> infoMap = new HashMap<String, Long>();
-		while (!trackString.contains(DownloadModel.FINISH_STR) && this.downloadThread.isAlive()) {
+		boolean alive = true;
+		boolean keep = true;
+		while (!trackString.contains(DownloadModel.FINISH_STR) && alive) {
+			if (!keep)
+				alive = false;
+			if (!this.downloadThread.isAlive())
+				keep = false;			
+			Thread.sleep(TIME_INTERVAL_MILLIS);
 			consumer.accept(TOTAL_PROGRESS_KEY, 
 					(double) (infoMap.values().stream().mapToLong(Long::longValue).sum()) / (double) this.totalSize);
 			didDownloadStop();
@@ -222,8 +229,7 @@ public class DownloadTracker {
 				continue;
 			}
 			if (endInd != -1 && (errInd == -1 || errInd > endInd))
-				trackString += infoStr.substring(0, endInd + DownloadModel.END_DWNLD_STR.length());			
-			Thread.sleep(TIME_INTERVAL_MILLIS);
+				trackString += infoStr.substring(0, endInd + DownloadModel.END_DWNLD_STR.length());
 		}
 		consumer.accept(TOTAL_PROGRESS_KEY, 
 				(double) (infoMap.values().stream().mapToLong(Long::longValue).sum()) / (double) this.totalSize);
@@ -238,7 +244,9 @@ public class DownloadTracker {
 		nTimesNoChange = 0;
 		downloadSize = 0;
 		long totalDownloadSize = 0;
-		while (this.downloadThread.isAlive() && remainingFiles.size() > 0) {
+		boolean keep = true;
+		boolean alive = true;
+		while (alive && remainingFiles.size() > 0) {
 			Thread.sleep(TIME_INTERVAL_MILLIS);
 			for (int i = 0; i < this.remainingFiles.size(); i ++) {
 				File ff = remainingFiles.get(i);
@@ -255,6 +263,10 @@ public class DownloadTracker {
 				}
 			}
 			didDownloadStop();
+			if (!keep)
+				alive = false;
+			if (!this.downloadThread.isAlive())
+				keep = false;
 		}
 	}
 	
