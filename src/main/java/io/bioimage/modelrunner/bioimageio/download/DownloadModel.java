@@ -77,10 +77,6 @@ public class DownloadModel {
      */
     public static final String FINISH_STR = " --**END MODEL DOWNLOAD**-- ";
 	/**
-	 * Key for the map that contains the download URL of the model 
-	 */
-	private static String DWNLD_URL_KEY = "download_url";
-	/**
 	 * Key for the map that contains the attachments of the model 
 	 */
 	private static String ATTACH_KEY = "attachments";
