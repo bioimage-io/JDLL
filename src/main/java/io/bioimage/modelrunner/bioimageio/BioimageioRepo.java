@@ -360,6 +360,7 @@ public class BioimageioRepo {
 		if (consumer == null)
 			consumer = new DownloadTracker.TwoParameterConsumer<String, Double>();
 		DownloadTracker mdt = DownloadTracker.getBMZModelDownloadTracker(consumer, dm, downloadThread);
+		downloadThread.start();
 		Thread trackerThread = new Thread(() -> {
             try {
 				mdt.track();
@@ -367,18 +368,14 @@ public class BioimageioRepo {
 				e.printStackTrace();
 			}
         });
-		downloadThread.start();
 		trackerThread.start();
-		while (downloadThread.isAlive()) {
-			printProgress(downloadThread, consumer);
+		printProgress(downloadThread, consumer);
+		List<String> badDownloads = new ArrayList<String>();
+		for (String link : dm.getListOfLinks()) {
+			String name = link.substring(link.lastIndexOf("/") + 1);
+			if (consumer.get().get(dm.getModelFolder() + File.separator + name) == 1.0)
+				badDownloads.add(link);
 		}
-		LinkedHashMap<String, Double> downloadsMap = consumer.get();
-		List<String> badDownloads = dm.getListOfLinks().stream().filter(i -> {
-			String name = i.substring(i.lastIndexOf("/") + 1);
-			if (downloadsMap.get(dm.getModelFolder() + File.separator + name) == 1)
-				return false;
-			return true;
-		}).collect(Collectors.toList());
 		
 		if (badDownloads.size() > 0)
 			throw new IOException("The following files of model '" + descriptor.getName()
@@ -410,7 +407,7 @@ public class BioimageioRepo {
 		}
 		List<String> already = new ArrayList<String>();
 		while (downloadThread.isAlive()) {
-			Thread.sleep(DownloadTracker.TIME_INTERVAL_MILLIS);
+			Thread.sleep(DownloadTracker.TIME_INTERVAL_MILLIS * 10);
 			String select = null;
 			for (String key : consumer.get().keySet()) {
 				if (!already.contains(key) && !key.equals(DownloadTracker.TOTAL_PROGRESS_KEY)) {
@@ -418,6 +415,8 @@ public class BioimageioRepo {
 					break;
 				}
 			}
+			if (select == null)
+				continue;
 			for (String kk : new String[] {select, DownloadTracker.TOTAL_PROGRESS_KEY}) {
 				int nProgressBar = (int) (consumer.get().get(kk) * n);
 				String progressStr = new File(kk).getName() + ": [" 

@@ -136,9 +136,8 @@ public class DownloadTracker {
 		nTimesNoChange = 0;
 		HashMap<String, Long> infoMap = new HashMap<String, Long>();
 		while (!trackString.contains(DownloadModel.FINISH_STR) && this.downloadThread.isAlive()) {
-			Thread.sleep(TIME_INTERVAL_MILLIS);
 			consumer.accept(TOTAL_PROGRESS_KEY, 
-					(double) (infoMap.values().stream().mapToLong(Long::longValue).sum() / this.totalSize));
+					(double) (infoMap.values().stream().mapToLong(Long::longValue).sum()) / (double) this.totalSize);
 			didDownloadStop();
 			String progressStr = dm.getProgress();
 			String infoStr = progressStr.substring(trackString.length());
@@ -156,9 +155,9 @@ public class DownloadTracker {
 			String file = infoStr.substring(startInd + DownloadModel.START_DWNLD_STR.length(), 
 					fileSizeInd).trim();
 			String fileSizeStr = infoStr.substring(fileSizeInd + DownloadModel.FILE_SIZE_STR.length(),
-					endInd).trim();
+					endInd != -1 ? endInd : infoStr.length()).trim();
 			long fileSize = Long.parseLong(fileSizeStr);
-			double progress = (new File(file).length()) / fileSize;
+			double progress = (new File(file).length()) / (double) fileSize;
 			if (consumer != null && errInd == -1) {
 				infoMap.put(file, new File(file).length());
 				consumer.accept(file, progress);
@@ -169,10 +168,10 @@ public class DownloadTracker {
 			}
 			if (endInd != -1 && (errInd == -1 || errInd > endInd))
 				trackString += infoStr.substring(0, endInd + DownloadModel.END_DWNLD_STR.length());			
+			Thread.sleep(TIME_INTERVAL_MILLIS);
 		}
 		consumer.accept(TOTAL_PROGRESS_KEY, 
-				(double) (infoMap.values().stream().mapToLong(Long::longValue).sum() / this.totalSize));
-		
+				(double) (infoMap.values().stream().mapToLong(Long::longValue).sum()) / (double) this.totalSize);
 	}
 	
 	public void trackDownloadOfFilesFromFileSystem() throws IOException, InterruptedException {
@@ -184,13 +183,13 @@ public class DownloadTracker {
 			for (int i = 0; i < this.remainingFiles.size(); i ++) {
 				File ff = remainingFiles.get(i);
 				if (ff.isFile() && ff.length() != this.sizeFiles.get(ff.getAbsolutePath())){
-					consumer.accept(ff.getAbsolutePath(), (double) (ff.length() / this.sizeFiles.get(ff.getAbsolutePath())));
-					consumer.accept(TOTAL_PROGRESS_KEY, (double) ((totalDownloadSize + ff.length()) / totalSize));
+					consumer.accept(ff.getAbsolutePath(), (double) (ff.length()) / (double) this.sizeFiles.get(ff.getAbsolutePath()));
+					consumer.accept(TOTAL_PROGRESS_KEY, (double) (totalDownloadSize + ff.length()) / (double) totalSize);
 					break;
 				} else if (remainingFiles.get(i).isFile()) {
 					consumer.accept(ff.getAbsolutePath(), 1.0);
 					totalDownloadSize += ff.length();
-					consumer.accept(TOTAL_PROGRESS_KEY, (double) (totalDownloadSize / totalSize));
+					consumer.accept(TOTAL_PROGRESS_KEY, (double) (totalDownloadSize) / (double) totalSize);
 					remainingFiles.remove(i);
 					break;
 				}
