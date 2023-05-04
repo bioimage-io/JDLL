@@ -28,17 +28,14 @@ import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.function.Consumer;
-import java.util.stream.Collectors;
 
 import javax.net.ssl.HttpsURLConnection;
 
@@ -84,15 +81,20 @@ public class BioimageioRepo {
 	private Consumer<String> consumer;
 	
 	/**
-	 * 
+	 * Constructor for the object that retrieves information about the 
+	 * models in teh Bioimage.io repo. It also handles the download of said models.
 	 */
 	private BioimageioRepo() {
 		setCollectionsRepo();
 	}
 	
 	/**
-	 * 
+	 * Constructor for the object that retrieves information about the 
+	 * models in teh Bioimage.io repo. It also handles the download of said models.
+	 * The provided consumer passes the info about the models retrieved to the main program
 	 * @param consumer
+	 * 	String consumer that will contain the info about the models accessed (time accessed, 
+	 * 	name, ...)
 	 */
 	private BioimageioRepo(Consumer<String> consumer) {
 		this.consumer = consumer;
@@ -100,8 +102,8 @@ public class BioimageioRepo {
 	}
 	
 	/**
-	 * Create an instance of the models stored in the Bioimage.io repository reading the 
-	 * collections rdf.yaml.
+	 * Create an instance of {@link BioimageioRepo}. This instance can be used to retrieve 
+	 * information about the models i the Bioimage.io repository and handle their download.
 	 * @return an instance of the {@link BioimageioRepo}
 	 */
 	public static BioimageioRepo connect() {
@@ -109,8 +111,11 @@ public class BioimageioRepo {
 	}
 	
 	/**
-	 * Create an instance of the models stored in the Bioimage.io repository reading the 
-	 * collections rdf.yaml.
+	 * Create an instance of {@link BioimageioRepo}. This instance can be used to retrieve 
+	 * information about the models i the Bioimage.io repository and handle their download.
+	 * @param consumer
+	 * 	a String consumer that will record all the info about the access to the models in the
+	 * 	bioimage.io
 	 * @return an instance of the {@link BioimageioRepo}
 	 */
 	public static BioimageioRepo connect(Consumer<String> consumer) {
@@ -118,7 +123,7 @@ public class BioimageioRepo {
 	}
 	
 	/**
-	 * 
+	 * Test method to check teh download of models
 	 * @param args
 	 * @throws IOException
 	 * @throws InterruptedException
@@ -131,7 +136,8 @@ public class BioimageioRepo {
 	/**
 	 * Method that connects to the BioImage.io API and retrieves the models available
 	 * at the Bioimage.io model repository
-	 * @return an object containing the zip location of the model as key and the {@link ModelDescriptor}
+	 * The models are specified at: {@link #location}
+	 * @return an object containing the URL location of the model as key and the {@link ModelDescriptor}
 	 * 	with the yaml file information in the value
 	 */
 	public Map<Path, ModelDescriptor> listAllModels() {
@@ -140,8 +146,12 @@ public class BioimageioRepo {
 	
 	/**
 	 * Method that connects to the BioImage.io API and retrieves the models available
-	 * at the Bioimage.io model repository
-	 * @return an object containing the zip location of the model as key and the {@link ModelDescriptor}
+	 * at the Bioimage.io model repository.
+	 * The models are specified at: {@link #location}
+	 * @param verbose
+	 * 	whether to print in the terminal and send that printed information in the consumer (if it 
+	 * 	exists) or not
+	 * @return an object containing the URL location of the model as key and the {@link ModelDescriptor}
 	 * 	with the yaml file information in the value
 	 */
 	public Map<Path, ModelDescriptor> listAllModels(boolean verbose) {
@@ -182,7 +192,10 @@ public class BioimageioRepo {
 	}
 	
 	/**
-	 * Method that stores all the model IDs for the models available in the BIoImage.io repo
+	 * MEthod that reads the yaml file that contains all teh information about the bioimage.io.
+	 * Including the models available.
+	 * This method also stores the model IDs of the available models.
+	 * The file is at: {@link #location}
 	 */
 	private void setCollectionsRepo() {
 		modelIDs = new ArrayList<String>();
@@ -317,7 +330,6 @@ public class BioimageioRepo {
 					if (id.length() - id.replace("/", "").length() == 2) {
 						id = id.substring(0, id.lastIndexOf("/"));
 					}
-					String reqId = modelID;
 					if (modelID.length() - modelID.replace("/", "").length() == 2) {
 						return modelID.substring(0, modelID.lastIndexOf("/")).equals(id);
 					}
@@ -360,12 +372,47 @@ public class BioimageioRepo {
 	}
 	
 	/**
+	 * Download the model in the Bioimage.io defined by the {@link ModelDescriptor}
+	 * provided as a parameter.
+	 * This method launches one thread for the download of the files of the model and 
+	 * another thread to track the progress download. The thread where this method has
+	 * been launched is just used to print the information about the progress using
+	 * {@link #printProgress(Thread, io.bioimage.modelrunner.bioimageio.download.DownloadTracker.TwoParameterConsumer)}
 	 * 
 	 * @param descriptor
+	 * 	the {@link ModelDescriptor} of the model that wants to be downloaded
 	 * @param modelsDirectory
+	 * 	the folder where the model is going to be downloaded. Regard that the model
+	 * 	is a folder too. So if the argument provided is "C:\\users\\carlos\\models",
+	 * 	the model path will then be: "C:\\users\\carlos\\models\\<model_name>_<date string>"
+	 * @throws IOException	if there is any error downloading the files from the URLs provided
+	 * @throws InterruptedException	if the download or tracking threads are interrupted abruptly
+	 */
+	public void downloadModel(ModelDescriptor descriptor, String modelsDirectory) 
+			throws IOException, InterruptedException {
+		downloadModel(descriptor, modelsDirectory, null);
+			
+		}
+	
+	/**
+	 * Download the model in the Bioimage.io defined by the {@link ModelDescriptor}
+	 * provided as a parameter.
+	 * This method launches one thread for the download of the files of the model and 
+	 * another thread to track the progress download. The thread where this method has
+	 * been launched is just used to print the information about the progress using
+	 * {@link #printProgress(Thread, io.bioimage.modelrunner.bioimageio.download.DownloadTracker.TwoParameterConsumer)}
+	 * 
+	 * @param descriptor
+	 * 	the {@link ModelDescriptor} of the model that wants to be downloaded
+	 * @param modelsDirectory
+	 * 	the folder where the model is going to be downloaded. Regard that the model
+	 * 	is a folder too. So if the argument provided is "C:\\users\\carlos\\models",
+	 * 	the model path will then be: "C:\\users\\carlos\\models\\<model_name>_<date string>"
 	 * @param consumer
-	 * @throws IOException
-	 * @throws InterruptedException
+	 * 	a {@link DownloadTracker.TwoParameterConsumer} consumer that ccan be used to track the
+	 * 	download of the individual files that compose the model.
+	 * @throws IOException	if there is any error downloading the files from the URLs provided
+	 * @throws InterruptedException	if the download or tracking threads are interrupted abruptly
 	 */
 	public void downloadModel(ModelDescriptor descriptor, String modelsDirectory, 
 			DownloadTracker.TwoParameterConsumer<String, Double> consumer) throws IOException, InterruptedException {
@@ -449,12 +496,24 @@ public class BioimageioRepo {
 				already.add(select);
 		}
 	}
+	
 	/**
+	 * Download the model in the Bioimage.io whose id (field ''id' in the
+	 * rdf.yaml file) corresponds to the forst parameter given
+	 * 
+	 * This method launches one thread for the download of the files of the model and 
+	 * another thread to track the progress download. The thread where this method has
+	 * been launched is just used to print the information about the progress using
+	 * {@link #printProgress(Thread, io.bioimage.modelrunner.bioimageio.download.DownloadTracker.TwoParameterConsumer)}
 	 * 
 	 * @param id
+	 * 	the id of the model of interest. This is the field 'id' of the model descriptor
 	 * @param modelsDirectory
-	 * @throws IOException
-	 * @throws InterruptedException
+	 * 	the folder where the model is going to be downloaded. Regard that the model
+	 * 	is a folder too. So if the argument provided is "C:\\users\\carlos\\models",
+	 * 	the model path will then be: "C:\\users\\carlos\\models\\<model_name>_<date string>"
+	 * @throws IOException	if there is any error downloading the files from the URLs provided
+	 * @throws InterruptedException	if the download or tracking threads are interrupted abruptly
 	 */
 	public void downloadModelByID(String id, String modelsDirectory) throws IOException, InterruptedException {
 		ModelDescriptor model = selectByID(id);
@@ -464,12 +523,25 @@ public class BioimageioRepo {
 	}
 	
 	/**
+	 * Download the model in the Bioimage.io whose id (field ''id' in the
+	 * rdf.yaml file) corresponds to the forst parameter given
+	 * 
+	 * This method launches one thread for the download of the files of the model and 
+	 * another thread to track the progress download. The thread where this method has
+	 * been launched is just used to print the information about the progress using
+	 * {@link #printProgress(Thread, io.bioimage.modelrunner.bioimageio.download.DownloadTracker.TwoParameterConsumer)}
 	 * 
 	 * @param id
+	 * 	the id of the model of interest. This is the field 'id' of the model descriptor
 	 * @param modelsDirectory
+	 * 	the folder where the model is going to be downloaded. Regard that the model
+	 * 	is a folder too. So if the argument provided is "C:\\users\\carlos\\models",
+	 * 	the model path will then be: "C:\\users\\carlos\\models\\<model_name>_<date string>"
 	 * @param consumer
-	 * @throws IOException
-	 * @throws InterruptedException
+	 * 	a {@link DownloadTracker.TwoParameterConsumer} consumer that ccan be used to track the
+	 * 	download of the individual files that compose the model.
+	 * @throws IOException	if there is any error downloading the files from the URLs provided
+	 * @throws InterruptedException	if the download or tracking threads are interrupted abruptly
 	 */
 	public void downloadModelByID(String id, String modelsDirectory, 
 			DownloadTracker.TwoParameterConsumer<String, Double> consumer) throws IOException, InterruptedException {
@@ -480,11 +552,22 @@ public class BioimageioRepo {
 	}
 	
 	/**
+	 * Download the model in the Bioimage.io whose name (field ''name' in the
+	 * rdf.yaml file) corresponds to the forst parameter given
+	 * 
+	 * This method launches one thread for the download of the files of the model and 
+	 * another thread to track the progress download. The thread where this method has
+	 * been launched is just used to print the information about the progress using
+	 * {@link #printProgress(Thread, io.bioimage.modelrunner.bioimageio.download.DownloadTracker.TwoParameterConsumer)}
 	 * 
 	 * @param name
+	 * 	the name of the model of interest. This is the field 'name' of the model descriptor
 	 * @param modelsDirectory
-	 * @throws IOException
-	 * @throws InterruptedException
+	 * 	the folder where the model is going to be downloaded. Regard that the model
+	 * 	is a folder too. So if the argument provided is "C:\\users\\carlos\\models",
+	 * 	the model path will then be: "C:\\users\\carlos\\models\\<model_name>_<date string>"
+	 * @throws IOException	if there is any error downloading the files from the URLs provided
+	 * @throws InterruptedException	if the download or tracking threads are interrupted abruptly
 	 */
 	public void downloadByName(String name, String modelsDirectory) throws IOException, InterruptedException {
 		ModelDescriptor model = selectByName(name);
@@ -494,12 +577,25 @@ public class BioimageioRepo {
 	}
 	
 	/**
+	 * Download the model in the Bioimage.io whose name (field ''name' in the
+	 * rdf.yaml file) corresponds to the forst parameter given
+	 * 
+	 * This method launches one thread for the download of the files of the model and 
+	 * another thread to track the progress download. The thread where this method has
+	 * been launched is just used to print the information about the progress using
+	 * {@link #printProgress(Thread, io.bioimage.modelrunner.bioimageio.download.DownloadTracker.TwoParameterConsumer)}
 	 * 
 	 * @param name
+	 * 	the name of the model of interest. This is the field 'name' of the model descriptor
 	 * @param modelsDirectory
+	 * 	the folder where the model is going to be downloaded. Regard that the model
+	 * 	is a folder too. So if the argument provided is "C:\\users\\carlos\\models",
+	 * 	the model path will then be: "C:\\users\\carlos\\models\\<model_name>_<date string>"
 	 * @param consumer
-	 * @throws IOException
-	 * @throws InterruptedException
+	 * 	a {@link DownloadTracker.TwoParameterConsumer} consumer that ccan be used to track the
+	 * 	download of the individual files that compose the model.
+	 * @throws IOException	if there is any error downloading the files from the URLs provided
+	 * @throws InterruptedException	if the download or tracking threads are interrupted abruptly
 	 */
 	public void downloadByName(String name, String modelsDirectory, 
 			DownloadTracker.TwoParameterConsumer<String, Double> consumer) throws IOException, InterruptedException {
@@ -510,11 +606,22 @@ public class BioimageioRepo {
 	}
 	
 	/**
+	 * Download the model in the Bioimage.io whose rdf source (field ''rdf_source' in the
+	 * rdf.yaml file) corresponds to the forst parameter given
+	 * 
+	 * This method launches one thread for the download of the files of the model and 
+	 * another thread to track the progress download. The thread where this method has
+	 * been launched is just used to print the information about the progress using
+	 * {@link #printProgress(Thread, io.bioimage.modelrunner.bioimageio.download.DownloadTracker.TwoParameterConsumer)}
 	 * 
 	 * @param rdfUrl
+	 * 	the url to the rdf file of the model of interest. This is the field 'rdf_source' of the model descriptor
 	 * @param modelsDirectory
-	 * @throws IOException
-	 * @throws InterruptedException
+	 * 	the folder where the model is going to be downloaded. Regard that the model
+	 * 	is a folder too. So if the argument provided is "C:\\users\\carlos\\models",
+	 * 	the model path will then be: "C:\\users\\carlos\\models\\<model_name>_<date string>"
+	 * @throws IOException	if there is any error downloading the files from the URLs provided
+	 * @throws InterruptedException	if the download or tracking threads are interrupted abruptly
 	 */
 	public void downloadByRdfSource(String rdfUrl, String modelsDirectory) throws IOException, InterruptedException {
 		ModelDescriptor model = selectByRdfSource(rdfUrl);
@@ -524,12 +631,25 @@ public class BioimageioRepo {
 	}
 	
 	/**
+	 * Download the model in the Bioimage.io whose rdf source (field ''rdf_source' in the
+	 * rdf.yaml file) corresponds to the forst parameter given
+	 * 
+	 * This method launches one thread for the download of the files of the model and 
+	 * another thread to track the progress download. The thread where this method has
+	 * been launched is just used to print the information about the progress using
+	 * {@link #printProgress(Thread, io.bioimage.modelrunner.bioimageio.download.DownloadTracker.TwoParameterConsumer)}
 	 * 
 	 * @param rdfUrl
+	 * 	the url to the rdf file of the model of interest. This is the field 'rdf_source' of the model descriptor
 	 * @param modelsDirectory
+	 * 	the folder where the model is going to be downloaded. Regard that the model
+	 * 	is a folder too. So if the argument provided is "C:\\users\\carlos\\models",
+	 * 	the model path will then be: "C:\\users\\carlos\\models\\<model_name>_<date string>"
 	 * @param consumer
-	 * @throws IOException
-	 * @throws InterruptedException
+	 * 	a {@link DownloadTracker.TwoParameterConsumer} consumer that ccan be used to track the
+	 * 	download of the individual files that compose the model.
+	 * @throws IOException	if there is any error downloading the files from the URLs provided
+	 * @throws InterruptedException	if the download or tracking threads are interrupted abruptly
 	 */
 	public void downloadByRdfSource(String rdfUrl, String modelsDirectory, 
 			DownloadTracker.TwoParameterConsumer<String, Double> consumer) throws IOException, InterruptedException {
