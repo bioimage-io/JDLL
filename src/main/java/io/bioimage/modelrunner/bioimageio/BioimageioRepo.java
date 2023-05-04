@@ -373,7 +373,8 @@ public class BioimageioRepo {
 		List<String> badDownloads = new ArrayList<String>();
 		for (String link : dm.getListOfLinks()) {
 			String name = link.substring(link.lastIndexOf("/") + 1);
-			if (consumer.get().get(dm.getModelFolder() + File.separator + name) != 1.0)
+			if (consumer.get().get(dm.getModelFolder() + File.separator + name) == null
+					|| consumer.get().get(dm.getModelFolder() + File.separator + name) != 1.0)
 				badDownloads.add(link);
 		}
 		
