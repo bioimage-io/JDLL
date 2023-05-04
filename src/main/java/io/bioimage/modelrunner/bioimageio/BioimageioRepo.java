@@ -373,7 +373,7 @@ public class BioimageioRepo {
 		List<String> badDownloads = new ArrayList<String>();
 		for (String link : dm.getListOfLinks()) {
 			String name = link.substring(link.lastIndexOf("/") + 1);
-			if (consumer.get().get(dm.getModelFolder() + File.separator + name) == 1.0)
+			if (consumer.get().get(dm.getModelFolder() + File.separator + name) != 1.0)
 				badDownloads.add(link);
 		}
 		
@@ -407,7 +407,7 @@ public class BioimageioRepo {
 		}
 		List<String> already = new ArrayList<String>();
 		while (downloadThread.isAlive()) {
-			Thread.sleep(DownloadTracker.TIME_INTERVAL_MILLIS * 10);
+			Thread.sleep(3000);
 			String select = null;
 			for (String key : consumer.get().keySet()) {
 				if (!already.contains(key) && !key.equals(DownloadTracker.TOTAL_PROGRESS_KEY)) {

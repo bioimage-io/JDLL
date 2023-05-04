@@ -71,10 +71,17 @@ public class DownloadTracker {
 	public static final long TIME_INTERVAL_MILLIS = 300;
 	
 	/**
+	 * Create a download tracker taht can be used to get info about how a download is progressing
 	 * 
+	 * @param folder
+	 * 	fodler where teh files specifies in the urls are going to be downloaded to
 	 * @param consumer
-	 * @param sizeFiles
-	 * @throws IOException 
+	 * 	consumer that provides info bout the download
+	 * @param links
+	 * 	string links that correspond to the urls of the files that are going to be downloaded
+	 * @param thread
+	 * 	thread where the download is happening
+	 * @throws IOException if there i any error related to the download
 	 */
 	private DownloadTracker(String folder, TwoParameterConsumer<String, Double> consumer, List<String> links, Thread thread) throws IOException {
 		Objects.requireNonNull(folder, "Please provide teh folder where the files are going to be "
@@ -94,7 +101,20 @@ public class DownloadTracker {
 		this.remainingFiles = sizeFiles.keySet().stream().map(i -> new File(i)).collect(Collectors.toList());
 		this.downloadThread = thread;
 	}
+
 	
+	/**
+	 * Create an object that tracks the download of the files cresponding to a Bioimage.io
+	 * model
+	 * 
+	 * @param consumer
+	 * 	consumer used to communicate the progress of the download
+	 * @param dm
+	 * 	object that manages the download of a Bioimage.io model
+	 * @param thread
+	 * 	thread where the download is happening
+	 * @throws MalformedURLException if any of the URL links is invalid
+	 */
 	private DownloadTracker(TwoParameterConsumer<String, Double> consumer, DownloadModel dm, Thread thread) throws MalformedURLException {
 		Objects.requireNonNull(consumer);
 		Objects.requireNonNull(dm);
@@ -109,15 +129,50 @@ public class DownloadTracker {
 		this.downloadThread = thread;
 	}
 	
+	/**
+	 * Create an object that tracks the download of the files cresponding to a Bioimage.io
+	 * model
+	 * 
+	 * @param consumer
+	 * 	consumer used to communicate the progress of the download
+	 * @param dm
+	 * 	object that manages the download of a Bioimage.io model
+	 * @param thread
+	 * 	thread where the download is happening
+	 * @return the object used to track teh download. I order to track, execute in another
+	 * 	thread tracker.track()
+	 * @throws MalformedURLException if any of the URL links is invalid
+	 */
 	public static DownloadTracker getBMZModelDownloadTracker(TwoParameterConsumer<String, Double> consumer, DownloadModel dm, Thread thread) throws MalformedURLException {
 		return new DownloadTracker(consumer, dm, thread);
 	}
-	
+
+	/**
+	 * Create a download tracker taht can be used to get info about how a download is progressing
+	 * 
+	 * @param folder
+	 * 	fodler where teh files specifies in the urls are going to be downloaded to
+	 * @param consumer
+	 * 	consumer that provides info bout the download
+	 * @param links
+	 * 	string links that correspond to the urls of the files that are going to be downloaded
+	 * @param thread
+	 * 	thread where the download is happening
+	 * @return the object used to track teh download. I order to track, execute in another
+	 * 	thread tracker.track()
+	 * @throws IOException if there i any error related to the download
+	 */
 	public static DownloadTracker getFilesDownloadTracker(String folder, TwoParameterConsumer<String, Double> consumer, 
 			List<String> links, Thread thread) throws IOException {
 		return new DownloadTracker(folder, consumer, links, thread);
 	}
 	
+	/**
+	 * Method used to start tracking the progress made by a download. In order to use it 
+	 * efectively, it should be launch in a separate thread
+	 * @throws IOException if there is any error in the download
+	 * @throws InterruptedException if the thread is interrupted abruptly
+	 */
 	public void track() throws IOException, InterruptedException {
 		if (dm == null) {
 			trackDownloadOfFilesFromFileSystem();
@@ -139,7 +194,7 @@ public class DownloadTracker {
 			consumer.accept(TOTAL_PROGRESS_KEY, 
 					(double) (infoMap.values().stream().mapToLong(Long::longValue).sum()) / (double) this.totalSize);
 			didDownloadStop();
-			String progressStr = dm.getProgress();
+			String progressStr = "" + dm.getProgress();
 			String infoStr = progressStr.substring(trackString.length());
 			int startInd = infoStr.indexOf(DownloadModel.START_DWNLD_STR);
 			int endInd = infoStr.indexOf(DownloadModel.END_DWNLD_STR);
@@ -174,7 +229,12 @@ public class DownloadTracker {
 				(double) (infoMap.values().stream().mapToLong(Long::longValue).sum()) / (double) this.totalSize);
 	}
 	
-	public void trackDownloadOfFilesFromFileSystem() throws IOException, InterruptedException {
+	/**
+	 * Method to track the dowload of any file or list of files in a specific folder
+	 * @throws IOException if there is any error with the download
+	 * @throws InterruptedException if the thread is stopped abruptly
+	 */
+	private void trackDownloadOfFilesFromFileSystem() throws IOException, InterruptedException {
 		nTimesNoChange = 0;
 		downloadSize = 0;
 		long totalDownloadSize = 0;
@@ -198,6 +258,11 @@ public class DownloadTracker {
 		}
 	}
 	
+	/**
+	 * Check whether the download is stalled or not.
+	 * If it has stopped, it also stops the thread of the download
+	 * @throws IOException if the download has stopped without any notice
+	 */
 	private void didDownloadStop() throws IOException {
 		double totDownload = consumer.get().get(TOTAL_PROGRESS_KEY);
 		if (downloadSize != totDownload) {
@@ -217,6 +282,12 @@ public class DownloadTracker {
 		}
 	}
 	
+	/**
+	 * Check whether a specific url is accessible or not
+	 * @param urlStr
+	 * 	the url of interest
+	 * @return true if accessible or false otherwise
+	 */
 	public static boolean checkInternet(String urlStr) {
         try {
 			URL url = new URL(urlStr);
