@@ -68,7 +68,7 @@ public class DownloadTracker {
 	/**
 	 * Millisecond time interval that passes between checks of the download.
 	 */
-	private static final long TIME_INTERVAL_MILLIS = 300;
+	public static final long TIME_INTERVAL_MILLIS = 300;
 	
 	/**
 	 * 

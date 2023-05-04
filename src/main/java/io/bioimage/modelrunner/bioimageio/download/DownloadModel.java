@@ -170,11 +170,6 @@ public class DownloadModel {
 	 */
 	private void retriveDownloadModelLinks() {
 		downloadableLinks = new HashMap<String, String>();
-		String downloadURL = descriptor.getDownloadUrl();
-		if (downloadURL != null && checkURL(downloadURL)) {
-			downloadableLinks.put(DWNLD_URL_KEY, downloadURL);
-			return;
-		}
 		addAttachments();
 		addRDF();
 		addSampleInputs();
@@ -365,7 +360,7 @@ public class DownloadModel {
 		SimpleDateFormat sdf = new SimpleDateFormat("ddMMYYYY_HHmmss");
 		String dateString = sdf.format(cal.getTime());
 		File ff = new File(str);
-		String fileName = ff.getName();
+		String fileName = ff.getAbsolutePath();
 		int extensionPos = fileName.lastIndexOf(".");
 		if (extensionPos == -1)
 			return fileName + "_" + dateString;

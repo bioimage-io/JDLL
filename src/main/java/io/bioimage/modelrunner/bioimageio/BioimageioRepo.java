@@ -82,10 +82,6 @@ public class BioimageioRepo {
 	
 	private Consumer<String> consumer;
 	
-	public static void main(String[] args) {
-		connect().listAllModels();
-	}
-	
 	public BioimageioRepo() {
 		setCollectionsRepo();
 	}
@@ -296,7 +292,7 @@ public class BioimageioRepo {
 	 * @return the {@link ModelDescriptor} of the model
 	 */
 	public ModelDescriptor selectByID(String modelID) {
-		Entry<Path, ModelDescriptor> modelEntry = this.listAllModels().entrySet().stream()
+		Entry<Path, ModelDescriptor> modelEntry = this.listAllModels(false).entrySet().stream()
 				.filter(ee -> {
 					String id = ee.getValue().getModelID();
 					if (id.length() - id.replace("/", "").length() == 2) {
@@ -344,6 +340,12 @@ public class BioimageioRepo {
 		return null;
 	}
 	
+	public static void main(String[] args) throws IOException, InterruptedException {
+		BioimageioRepo br = new BioimageioRepo();
+		br.connect();
+		br.downloadModelByID("10.5281/zenodo.5874741", "C:\\Users\\angel\\OneDrive\\Documentos\\pasteur\\git\\deep-icy\\models");
+	}
+	
 	public void downloadModel(ModelDescriptor descriptor, String modelsDirectory, 
 			DownloadTracker.TwoParameterConsumer<String, Double> consumer) throws IOException, InterruptedException {
 		DownloadModel dm = DownloadModel.build(descriptor, modelsDirectory);
@@ -358,14 +360,14 @@ public class BioimageioRepo {
 		Thread trackerThread = new Thread(() -> {
             try {
 				mdt.track();
-			} catch (IOException e) {
+			} catch (IOException | InterruptedException e) {
 				e.printStackTrace();
 			}
         });
 		downloadThread.start();
 		trackerThread.start();
 		while (downloadThread.isAlive()) {
-			
+			printProgress(downloadThread, consumer);
 		}
 		
 		List<String> badDownloads = dm.getListOfLinks().stream().filter(i -> {
@@ -392,9 +394,10 @@ public class BioimageioRepo {
 	 *  too
 	 * @param consumer
 	 * 	consumer that provides the info about the download
+	 * @throws InterruptedException if the thread is stopped by other thread while it is sleeping
 	 */
 	public static void printProgress(Thread downloadThread,
-			DownloadTracker.TwoParameterConsumer<String, Double> consumer) {
+			DownloadTracker.TwoParameterConsumer<String, Double> consumer) throws InterruptedException {
 		int n = 30;
 		String ogProgressStr = "";
 		String ogRemainingStr = "";
@@ -404,6 +407,7 @@ public class BioimageioRepo {
 		}
 		List<String> already = new ArrayList<String>();
 		while (downloadThread.isAlive()) {
+			Thread.sleep(DownloadTracker.TIME_INTERVAL_MILLIS);
 			String select = null;
 			for (String key : consumer.get().keySet()) {
 				if (!already.contains(key) && !key.equals(DownloadTracker.TOTAL_PROGRESS_KEY)) {
