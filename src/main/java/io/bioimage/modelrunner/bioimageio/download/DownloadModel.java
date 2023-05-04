@@ -112,8 +112,8 @@ public class DownloadModel {
 	 */
 	private DownloadModel(ModelDescriptor descriptor, String modelsDir) {
 		this.descriptor = descriptor;
-		String fname = addTimeStampToFileName(modelsDir + File.separator + descriptor.getName());
-		this.modelsDir = getValidFileName(fname);
+		String fname = addTimeStampToFileName(descriptor.getName());
+		this.modelsDir = modelsDir + File.separator + getValidFileName(fname);
 		this.consumer = (String b) -> {
     		progressString += b;
     		};
@@ -130,7 +130,9 @@ public class DownloadModel {
 	 */
 	public static String getValidFileName(String fileName) {
         Pattern pattern = Pattern.compile("[\\\\/:*?\"<>|]");
-        String validFileName = pattern.matcher(fileName).replaceAll("_");
+        String name = new File(fileName).getName();
+        String validFileName = pattern.matcher(name).replaceAll("_");
+        validFileName = fileName.substring(0, fileName.lastIndexOf(name)) + validFileName;
         return validFileName;
 	}
 	
@@ -355,13 +357,15 @@ public class DownloadModel {
         Calendar cal = Calendar.getInstance();
 		SimpleDateFormat sdf = new SimpleDateFormat("ddMMYYYY_HHmmss");
 		String dateString = sdf.format(cal.getTime());
-		File ff = new File(str);
-		String fileName = ff.getAbsolutePath();
+		int ind = str.lastIndexOf(File.separator);
+		String fileName = str;
+		if (ind != -1)
+			fileName = str.substring(ind + 1);
 		int extensionPos = fileName.lastIndexOf(".");
 		if (extensionPos == -1)
-			return fileName + "_" + dateString;
-		String nameNoExtension = fileName.substring(0, extensionPos);
-		String extension = fileName.substring(extensionPos);
+			return str + "_" + dateString;
+		String nameNoExtension = str.substring(0, extensionPos);
+		String extension = str.substring(extensionPos);
 		return nameNoExtension + "_" + dateString + extension;
 	}
 	
@@ -375,8 +379,9 @@ public class DownloadModel {
 	 */
 	public void downloadModel() throws IOException, InterruptedException {
 		File folder = new File(modelsDir);
-		if (!folder.isDirectory())
-			throw new IOException("The provided directory where the model is to be downloaded does not exist ->" + modelsDir);
+		if (!folder.isDirectory() && !folder.mkdirs())
+			throw new IOException("The provided directory where the model is going to "
+					+ "be downloaded does not exist and cannot be created ->" + modelsDir);
 		for (int i = 0; i < getListOfLinks().size(); i ++) {
         	if (Thread.interrupted())
                 throw new InterruptedException("Interrupted before downloading the remaining files: "
