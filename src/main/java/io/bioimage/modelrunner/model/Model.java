@@ -168,7 +168,7 @@ public class Model
 		if (new File(bmzModelFolder, "rdf.yaml").isFile() == false)
 			throw new IOException("A Bioimage.io model folder should contain its corresponding rdf.yaml file.");
 		ModelDescriptor descriptor = 
-				ModelDescriptor.loadFromLocalFile(bmzModelFolder + File.separator + "rdf.yaml");
+				ModelDescriptor.readFromLocalFile(bmzModelFolder + File.separator + "rdf.yaml");
 		String modelSource = null;
 		List<WeightFormat> modelWeights = descriptor.getWeights().getSupportedWeights();
 		EngineInfo info = null;
@@ -211,7 +211,7 @@ public class Model
 		if (new File(bmzModelFolder, "rdf.yaml").isFile() == false)
 			throw new IOException("A Bioimage.io model folder should contain its corresponding rdf.yaml file.");
 		ModelDescriptor descriptor = 
-				ModelDescriptor.loadFromLocalFile(bmzModelFolder + File.separator + "rdf.yaml");
+				ModelDescriptor.readFromLocalFile(bmzModelFolder + File.separator + "rdf.yaml");
 		String modelSource = null;
 		List<WeightFormat> modelWeights = descriptor.getWeights().getSupportedWeights();
 		EngineInfo info = null;

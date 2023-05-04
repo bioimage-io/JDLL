@@ -83,11 +83,18 @@ public class BioimageioRepo {
 	
 	private Consumer<String> consumer;
 	
-	public BioimageioRepo() {
+	/**
+	 * 
+	 */
+	private BioimageioRepo() {
 		setCollectionsRepo();
 	}
 	
-	public BioimageioRepo(Consumer<String> consumer) {
+	/**
+	 * 
+	 * @param consumer
+	 */
+	private BioimageioRepo(Consumer<String> consumer) {
 		this.consumer = consumer;
 		setCollectionsRepo();
 	}
@@ -108,6 +115,17 @@ public class BioimageioRepo {
 	 */
 	public static BioimageioRepo connect(Consumer<String> consumer) {
 		return new BioimageioRepo(consumer);
+	}
+	
+	/**
+	 * 
+	 * @param args
+	 * @throws IOException
+	 * @throws InterruptedException
+	 */
+	public static void main(String[] args) throws IOException, InterruptedException {
+		BioimageioRepo br = new BioimageioRepo();
+		br.downloadModelByID("10.5281/zenodo.5874741", "C:\\Users\\angel\\OneDrive\\Documentos\\pasteur\\git\\deep-icy\\models");
 	}
 	
 	/**
@@ -147,7 +165,7 @@ public class BioimageioRepo {
 					continue;
 				String stringRDF = getJSONFromUrl(jsonResource.get("rdf_source").getAsString());
 				modelPath = createPathFromURLString(jsonResource.get("rdf_source").getAsString());
-				ModelDescriptor descriptor = ModelDescriptor.loadFromYamlTextString(stringRDF);
+				ModelDescriptor descriptor = ModelDescriptor.readFromYamlTextString(stringRDF, verbose);
 				models.put(modelPath, descriptor);
 			} catch (Exception ex) {
 				// TODO Maybe add some error message? This should be responsibility of the BioImage.io user
@@ -318,7 +336,7 @@ public class BioimageioRepo {
 	 * @return the {@link ModelDescriptor} of the model
 	 */
 	public ModelDescriptor selectByName(String name) {
-		Entry<Path, ModelDescriptor> modelEntry = this.listAllModels().entrySet().stream()
+		Entry<Path, ModelDescriptor> modelEntry = this.listAllModels(false).entrySet().stream()
 				.filter(ee -> ee.getValue().getName().equals(name)).findFirst().orElse(null);
 		if (modelEntry != null)
 			return modelEntry.getValue();
@@ -334,19 +352,21 @@ public class BioimageioRepo {
 	 * @return the {@link ModelDescriptor} of the model
 	 */
 	public ModelDescriptor selectByRdfSource(String rdfURL) {
-		Entry<Path, ModelDescriptor> modelEntry = this.listAllModels().entrySet().stream()
+		Entry<Path, ModelDescriptor> modelEntry = this.listAllModels(false).entrySet().stream()
 				.filter(ee -> ee.getValue().getRDFSource().equals(rdfURL)).findFirst().orElse(null);
 		if (modelEntry != null)
 			return modelEntry.getValue();
 		return null;
 	}
 	
-	public static void main(String[] args) throws IOException, InterruptedException {
-		BioimageioRepo br = new BioimageioRepo();
-		br.connect();
-		br.downloadModelByID("10.5281/zenodo.5874741", "C:\\Users\\angel\\OneDrive\\Documentos\\pasteur\\git\\deep-icy\\models");
-	}
-	
+	/**
+	 * 
+	 * @param descriptor
+	 * @param modelsDirectory
+	 * @param consumer
+	 * @throws IOException
+	 * @throws InterruptedException
+	 */
 	public void downloadModel(ModelDescriptor descriptor, String modelsDirectory, 
 			DownloadTracker.TwoParameterConsumer<String, Double> consumer) throws IOException, InterruptedException {
 		DownloadModel dm = DownloadModel.build(descriptor, modelsDirectory);
@@ -429,7 +449,13 @@ public class BioimageioRepo {
 				already.add(select);
 		}
 	}
-	
+	/**
+	 * 
+	 * @param id
+	 * @param modelsDirectory
+	 * @throws IOException
+	 * @throws InterruptedException
+	 */
 	public void downloadModelByID(String id, String modelsDirectory) throws IOException, InterruptedException {
 		ModelDescriptor model = selectByID(id);
 		if (model == null)
@@ -437,6 +463,14 @@ public class BioimageioRepo {
 		downloadModel(model, modelsDirectory, null);
 	}
 	
+	/**
+	 * 
+	 * @param id
+	 * @param modelsDirectory
+	 * @param consumer
+	 * @throws IOException
+	 * @throws InterruptedException
+	 */
 	public void downloadModelByID(String id, String modelsDirectory, 
 			DownloadTracker.TwoParameterConsumer<String, Double> consumer) throws IOException, InterruptedException {
 		ModelDescriptor model = selectByID(id);
@@ -445,6 +479,13 @@ public class BioimageioRepo {
 		downloadModel(model, modelsDirectory, consumer);
 	}
 	
+	/**
+	 * 
+	 * @param name
+	 * @param modelsDirectory
+	 * @throws IOException
+	 * @throws InterruptedException
+	 */
 	public void downloadByName(String name, String modelsDirectory) throws IOException, InterruptedException {
 		ModelDescriptor model = selectByName(name);
 		if (model == null)
@@ -452,6 +493,14 @@ public class BioimageioRepo {
 		downloadModel(model, modelsDirectory, null);
 	}
 	
+	/**
+	 * 
+	 * @param name
+	 * @param modelsDirectory
+	 * @param consumer
+	 * @throws IOException
+	 * @throws InterruptedException
+	 */
 	public void downloadByName(String name, String modelsDirectory, 
 			DownloadTracker.TwoParameterConsumer<String, Double> consumer) throws IOException, InterruptedException {
 		ModelDescriptor model = selectByName(name);
@@ -460,6 +509,13 @@ public class BioimageioRepo {
 		downloadModel(model, modelsDirectory, consumer);
 	}
 	
+	/**
+	 * 
+	 * @param rdfUrl
+	 * @param modelsDirectory
+	 * @throws IOException
+	 * @throws InterruptedException
+	 */
 	public void downloadByRdfSource(String rdfUrl, String modelsDirectory) throws IOException, InterruptedException {
 		ModelDescriptor model = selectByRdfSource(rdfUrl);
 		if (model == null)
@@ -467,6 +523,14 @@ public class BioimageioRepo {
 		downloadModel(model, modelsDirectory, null);
 	}
 	
+	/**
+	 * 
+	 * @param rdfUrl
+	 * @param modelsDirectory
+	 * @param consumer
+	 * @throws IOException
+	 * @throws InterruptedException
+	 */
 	public void downloadByRdfSource(String rdfUrl, String modelsDirectory, 
 			DownloadTracker.TwoParameterConsumer<String, Double> consumer) throws IOException, InterruptedException {
 		ModelDescriptor model = selectByRdfSource(rdfUrl);

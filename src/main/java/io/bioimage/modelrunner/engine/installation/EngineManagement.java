@@ -830,7 +830,7 @@ public class EngineManagement {
 		if (new File(modelFolder, "rdf.yaml").isFile() == false)
 			throw new IOException("A Bioimage.io model folder should contain its corresponding rdf.yaml file.");
 		ModelDescriptor descriptor = 
-				ModelDescriptor.loadFromLocalFile(modelFolder + File.separator + "rdf.yaml");
+				ModelDescriptor.readFromLocalFile(modelFolder + File.separator + "rdf.yaml");
 		return installEnginesForModelInDir(descriptor, enginesDir, consumer);
 	}
 	

@@ -74,82 +74,69 @@ public class ModelDescriptor
     private ModelDescriptor()
     {
     }
+    
     /**
-     * <p>
      * Opens the provided file and builds an instance of {@link ModelDescriptor} from it.
-     * </p>
-     * <p>
-     * <b>Note:</b>
-     * This method does neither download nor load the TensorFlow model associated in the descriptor file. This can be achieved using the
-     * {@link DeepLearningModel} class.
-     * </p>
      * 
      * @param modelFile
      *        Model descriptor file.
      * @return The instance of the model descriptor.
      * @throws Exception if some parameter is not well defined
      */
-    public static ModelDescriptor loadFromLocalFile(String modelFile) throws Exception
+    public static ModelDescriptor readFromLocalFile(String modelFile) throws Exception
+    {
+    	return readFromLocalFile(modelFile, true);
+    }
+    
+    /**
+     * Opens the provided file and builds an instance of {@link ModelDescriptor} from it.
+     * 
+     * @param modelFile
+     *        Model descriptor file.
+     * @return The instance of the model descriptor.
+     * @throws Exception if some parameter is not well defined
+     */
+    public static ModelDescriptor readFromLocalFile(String modelFile, boolean verbose) throws Exception
     {
     	// Get the date to be able to log with the time
-    	System.out.println(Log.gct() + " -- LOCAL: Searching model at " + new File(modelFile).getParent());
+    	if (verbose)
+    		System.out.println(Log.gct() + " -- LOCAL: Searching model at " + new File(modelFile).getParent());
         Map<String, Object> yamlElements = YAMLUtils.load(modelFile);
         yamlElements.put(fromLocalKey, true);
         yamlElements.put(modelPathKey, new File(modelFile).getParent());
         return buildModelDescription(yamlElements);
     }
+    
     /**
-     * <p>
-     * Reads a yaml text String and builds an instance of {@link ModelDescriptor} from it.
-     * </p>
-     * <p>
-     * <b>Note:</b>
-     * This method does neither download nor load the TensorFlow model associated in the descriptor file. This can be achieved using the
-     * {@link DeepLearningModel} class.
-     * </p>
+     * Reads a yaml text String and builds an instance of {@link ModelDescriptor} from it
      * 
      * @param modelFile
      *        Model descriptor file.
      * @return The instance of the model descriptor.
      * @throws Exception if some parameter is not well defined
      */
-    public static ModelDescriptor loadFromYamlTextString(String yamlText) throws Exception
+    public static ModelDescriptor readFromYamlTextString(String yamlText) throws Exception
+    {
+    	return readFromYamlTextString(yamlText, true);
+    }
+    
+    /**
+     * Reads a yaml text String and builds an instance of {@link ModelDescriptor} from it.
+     * 
+     * @param modelFile
+     *        Model descriptor file.
+     * @return The instance of the model descriptor.
+     * @throws Exception if some parameter is not well defined
+     */
+    public static ModelDescriptor readFromYamlTextString(String yamlText, boolean verbose) throws Exception
     {
     	// Convert the String of text that contains the yaml file into Map
     	Map<String,Object> yamlElements = YAMLUtils.loadFromString(yamlText);
     	// Let the user know the model the plugin is trying to load
-    	if (yamlElements.get("name") != null) {
+    	if (yamlElements.get("name") != null && verbose) {
         	System.out.println(Log.gct() + " -- Bioimage.io: Inspecting model: " + (String) yamlElements.get("name"));
-    	} else {
-        	System.out.println(Log.gct() + " -- Bioimage.io: Inspecting defined by: " + yamlText);
-    	}
-        yamlElements.put(fromLocalKey, false);
-        return buildModelDescription(yamlElements);
-    }
-    /**
-     * <p>
-     * Reads a JSon text String and builds an instance of {@link ModelDescriptor} from it.
-     * </p>
-     * <p>
-     * <b>Note:</b>
-     * This method does neither download nor load the TensorFlow model associated in the descriptor file. This can be achieved using the
-     * {@link DeepLearningModel} class.
-     * </p>
-     * 
-     * @param yamlText
-     *        String containing the yaml file
-     * @return The instance of the model descriptor.
-     * @throws Exception if some parameter is not well defined
-     */
-    public static ModelDescriptor loadFromJsonTextString(String yamlText) throws Exception
-    {
-    	// Convert the String of text that contains the yaml file into Map
-    	Map<String,Object> yamlElements = new Gson().fromJson(yamlText, new TypeToken<Map<String, Object>>(){}.getType());
-    	// Let the user know the model the plugin is trying to load
-    	if (yamlElements.get("name") != null) {
-        	System.out.println(Log.gct() + " -- Bioimage.io: Inspecting model: " + (String) yamlElements.get("name"));
-    	} else {
-        	System.out.println(Log.gct() + " -- Bioimage.io: Inspecting defined by: " + yamlText);
+    	} else if (verbose) {
+        	System.out.println(Log.gct() + " -- Bioimage.io: Inspecting model defined by: " + yamlText);
     	}
         yamlElements.put(fromLocalKey, false);
         return buildModelDescription(yamlElements);
