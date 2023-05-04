@@ -95,17 +95,21 @@ public class DownloadTracker {
 		this.downloadThread = thread;
 	}
 	
-	private DownloadTracker(TwoParameterConsumer<String, Double> consumer, DownloadModel dm, Thread thread) {
+	private DownloadTracker(TwoParameterConsumer<String, Double> consumer, DownloadModel dm, Thread thread) throws MalformedURLException {
 		Objects.requireNonNull(consumer);
 		Objects.requireNonNull(dm);
 		Objects.requireNonNull(thread);
 		this.consumer = consumer;
 		this.dm = dm;
-		this.remainingFiles = sizeFiles.keySet().stream().map(i -> new File(i)).collect(Collectors.toList());
+		this.totalSize = dm.getModelSizeFileByFile(false).values().stream()
+				.mapToLong(Long::longValue).sum();
+		if (this.totalSize < 1)
+			this.totalSize = dm.getModelSizeFileByFile(true).values().stream()
+			.mapToLong(Long::longValue).sum();
 		this.downloadThread = thread;
 	}
 	
-	public static DownloadTracker getBMZModelDownloadTracker(TwoParameterConsumer<String, Double> consumer, DownloadModel dm, Thread thread) {
+	public static DownloadTracker getBMZModelDownloadTracker(TwoParameterConsumer<String, Double> consumer, DownloadModel dm, Thread thread) throws MalformedURLException {
 		return new DownloadTracker(consumer, dm, thread);
 	}
 	

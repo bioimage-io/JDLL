@@ -446,10 +446,15 @@ public class DownloadModel {
 	/**
 	 * Get the final size of the downloadable model by getting the size of 
 	 * all the links that are going to be downloaded
+	 * @param recalculate
+	 * 	whether to recalculate the file size or not
 	 * @return the total size to be downloaded in bytes
 	 * @throws MalformedURLException 
 	 */
-	public HashMap<String, Long> getModelSizeFileByFile() throws MalformedURLException {
+	public HashMap<String, Long> getModelSizeFileByFile(boolean recalculate) throws MalformedURLException {
+		if (map != null && !recalculate) {
+			return map;
+		}
 		map = new HashMap<String, Long>();
 		for (String link : getListOfLinks()) {
 			map.put(link, getFileSize(new URL(link)));

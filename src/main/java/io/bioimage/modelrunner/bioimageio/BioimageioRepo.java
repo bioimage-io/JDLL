@@ -33,6 +33,7 @@ import java.net.URL;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -356,6 +357,8 @@ public class BioimageioRepo {
 				e.printStackTrace();
 			}
         });
+		if (consumer == null)
+			consumer = new DownloadTracker.TwoParameterConsumer<String, Double>();
 		DownloadTracker mdt = DownloadTracker.getBMZModelDownloadTracker(consumer, dm, downloadThread);
 		Thread trackerThread = new Thread(() -> {
             try {
@@ -369,10 +372,10 @@ public class BioimageioRepo {
 		while (downloadThread.isAlive()) {
 			printProgress(downloadThread, consumer);
 		}
-		
+		LinkedHashMap<String, Double> downloadsMap = consumer.get();
 		List<String> badDownloads = dm.getListOfLinks().stream().filter(i -> {
 			String name = i.substring(i.lastIndexOf("/") + 1);
-			if (consumer.get().get(dm.getModelFolder() + File.separator + name) == 1)
+			if (downloadsMap.get(dm.getModelFolder() + File.separator + name) == 1)
 				return false;
 			return true;
 		}).collect(Collectors.toList());
