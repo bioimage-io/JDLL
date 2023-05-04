@@ -364,7 +364,9 @@ public class BioimageioRepo {
         });
 		downloadThread.start();
 		trackerThread.start();
-		downloadThread.join();
+		while (downloadThread.isAlive()) {
+			
+		}
 		
 		List<String> badDownloads = dm.getListOfLinks().stream().filter(i -> {
 			String name = i.substring(i.lastIndexOf("/") + 1);
@@ -376,6 +378,49 @@ public class BioimageioRepo {
 		if (badDownloads.size() > 0)
 			throw new IOException("The following files of model '" + descriptor.getName()
 			+ "' where downloaded incorrectly: " + badDownloads.toString());
+	}
+	
+	/**
+	 * Method that tracks the progress of a download happening in the 
+	 * thread used as the first parameter and being tracked by the consumer
+	 * used as the second parameter.
+	 * The teminal output should look like the following for every file:
+	 * 	file1.txt: [#######...................] 10%
+	 * 
+	 * @param downloadThread
+	 * 	thread where the download is happening, when it stops the tracking stops
+	 *  too
+	 * @param consumer
+	 * 	consumer that provides the info about the download
+	 */
+	public static void printProgress(Thread downloadThread,
+			DownloadTracker.TwoParameterConsumer<String, Double> consumer) {
+		int n = 30;
+		String ogProgressStr = "";
+		String ogRemainingStr = "";
+		for (int i = 0; i < n; i ++) {
+			ogProgressStr += "#";
+			ogRemainingStr += ".";
+		}
+		List<String> already = new ArrayList<String>();
+		while (downloadThread.isAlive()) {
+			String select = null;
+			for (String key : consumer.get().keySet()) {
+				if (!already.contains(key) && !key.equals(DownloadTracker.TOTAL_PROGRESS_KEY)) {
+					select = key;
+					break;
+				}
+			}
+			for (String kk : new String[] {select, DownloadTracker.TOTAL_PROGRESS_KEY}) {
+				int nProgressBar = (int) (consumer.get().get(kk) * n);
+				String progressStr = new File(kk).getName() + ": [" 
+					+ ogProgressStr.substring(0, nProgressBar) + ogRemainingStr.substring(nProgressBar)
+					+ "] " + Math.round(consumer.get().get(kk) * 100) + "%";
+				System.out.println(progressStr);
+			}
+			if (consumer.get().get(select) == 1 || consumer.get().get(select) < 0)
+				already.add(select);
+		}
 	}
 	
 	public void downloadModelByID(String id, String modelsDirectory) throws IOException, InterruptedException {

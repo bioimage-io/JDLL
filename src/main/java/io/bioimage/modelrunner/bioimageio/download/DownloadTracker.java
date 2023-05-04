@@ -68,7 +68,7 @@ public class DownloadTracker {
 	/**
 	 * Millisecond time interval that passes between checks of the download.
 	 */
-	private static final double TIME_INTERVAL_MILLIS = 300;
+	private static final long TIME_INTERVAL_MILLIS = 300;
 	
 	/**
 	 * 
@@ -114,7 +114,7 @@ public class DownloadTracker {
 		return new DownloadTracker(folder, consumer, links, thread);
 	}
 	
-	public void track() throws IOException {
+	public void track() throws IOException, InterruptedException {
 		if (dm == null) {
 			trackDownloadOfFilesFromFileSystem();
 		} else {
@@ -126,11 +126,13 @@ public class DownloadTracker {
 	 * Method that tracks the download of BMZ model files, if the {@link TwoParameterConsumer}
 	 * {@link #consumer} retrieves the progress that is being made in the download of the model
 	 * @throws IOException if the download stopped
+	 * @throws InterruptedException if the current thread is stopped by other threads
 	 */
-	private void trackBMZModelDownloadWithDm() throws IOException {
+	private void trackBMZModelDownloadWithDm() throws IOException, InterruptedException {
 		nTimesNoChange = 0;
 		HashMap<String, Long> infoMap = new HashMap<String, Long>();
 		while (!trackString.contains(DownloadModel.FINISH_STR) && this.downloadThread.isAlive()) {
+			Thread.sleep(TIME_INTERVAL_MILLIS);
 			consumer.accept(TOTAL_PROGRESS_KEY, 
 					(double) (infoMap.values().stream().mapToLong(Long::longValue).sum() / this.totalSize));
 			didDownloadStop();
@@ -169,11 +171,12 @@ public class DownloadTracker {
 		
 	}
 	
-	public void trackDownloadOfFilesFromFileSystem() throws IOException {
+	public void trackDownloadOfFilesFromFileSystem() throws IOException, InterruptedException {
 		nTimesNoChange = 0;
 		downloadSize = 0;
 		long totalDownloadSize = 0;
 		while (this.downloadThread.isAlive() && remainingFiles.size() > 0) {
+			Thread.sleep(TIME_INTERVAL_MILLIS);
 			for (int i = 0; i < this.remainingFiles.size(); i ++) {
 				File ff = remainingFiles.get(i);
 				if (ff.isFile() && ff.length() != this.sizeFiles.get(ff.getAbsolutePath())){
