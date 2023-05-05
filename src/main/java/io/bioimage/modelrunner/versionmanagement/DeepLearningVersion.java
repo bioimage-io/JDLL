@@ -29,6 +29,8 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import io.bioimage.modelrunner.utils.Constants;
+
 
 /**
  * An available tensor flow version with its properties and needed artifact URLs.
@@ -94,18 +96,25 @@ public class DeepLearningVersion
     				+ "<engine_python_version>-<engine_java_version>-<os>-<cpu_if_supported>-"
     				+ "<gpu_if_supported>.");
     	}
-    		
-    	dlVersion.checkSupportedAndSetJars();
+    	List<DeepLearningVersion> candidateVersions = dlVersion.getCandidates();
+    	// If the resources file "availableDLVersions.json" is correct, there will only be
+        // one coincidence in the list
+        if (candidateVersions.size() != 1)
+        	throw new Exception("There should only one engine in the resources engine specs file '"
+        			+ Constants.ENGINES_LINK + "' that corresponds to the engine defined by: " 
+        			+ dlVersion.engineName);
+    	dlVersion.rosetta = candidateVersions.get(0).rosetta;
+    	dlVersion.setJars(candidateVersions.get(0).getJars()); 
     	return dlVersion;
     }
     
     /**
-     * Check is the Deep Learning version folder represents a supported
-     * Deep Learning engine, present at the "availableDLVersions.json" file.
-     * This method also sets the JAR file list that should be downloaded
-     * @throws Exception if the version does not coincide with any of the supported versions
+     * Get list of versions specified in the resources file containg all the versions
+     * that can refer to the version defined by the current instance. Theoretically, if
+     * the version is well defined tehre should only be one.
+     * @return the number of candidates that can define the wanted version, there should only be one
      */
-    public void checkSupportedAndSetJars() throws Exception {
+    private List<DeepLearningVersion> getCandidates() {
     	AvailableEngines availableVersions = AvailableEngines.load();
         // To find the wanted version compare everything but the JAR files
     	List<DeepLearningVersion> versionsOfInterest = availableVersions.getVersions().stream()
@@ -116,13 +125,7 @@ public class DeepLearningVersion
         			&& v.getCPU() == getCPU() && v.getGPU() == getGPU()
         			)
         	.collect(Collectors.toList());
-        // If the resources file "availableDLVersions.json" is correct, there will only be
-        // one coincidence in the list
-        if (versionsOfInterest.size() == 0)
-        	throw new Exception("The following Deep Learning version:\n"
-        						+ toString() + "is not supported.");
-        // Assume that there should only be one coincidence, thus select the first index
-        setJars(versionsOfInterest.get(0).getJars()); 
+    	return versionsOfInterest;
     }
     
     /**
