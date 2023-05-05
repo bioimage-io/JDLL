@@ -425,7 +425,7 @@ public class BioimageioRepo {
 			}
         });
 		if (consumer == null)
-			consumer = new DownloadTracker.TwoParameterConsumer<String, Double>();
+			consumer = DownloadTracker.createConsumerProgress();
 		DownloadTracker mdt = DownloadTracker.getBMZModelDownloadTracker(consumer, dm, downloadThread);
 		downloadThread.start();
 		Thread trackerThread = new Thread(() -> {

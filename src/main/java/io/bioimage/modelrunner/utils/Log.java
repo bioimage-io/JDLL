@@ -24,7 +24,8 @@ public class Log {
 	 * Write the wanted string to a Consumer to communicate with the main interface.
 	 * It also prints the message on the terminal
 	 * @param consumer
-	 * 	consumer to communicate with the main code
+	 * 	consumer to communicate with the main code. This parameter can be null and 
+	 * 	then the log will only be displayed on the terminal.
 	 * @param str
 	 * 	String to communicate
 	 */
@@ -36,20 +37,20 @@ public class Log {
 	 * Write the wanted string to a Consumer to communicate with the main interface.
 	 * It also prints the message on the terminal
 	 * @param consumer
-	 * 	consumer to communicate with the main code
+	 * 	consumer to communicate with the main code. This parameter can be null and 
+	 * 	then the log will only be displayed on the terminal.
 	 * @param str
 	 * 	String to communicate
 	 * @param addTime
 	 * 	whether to specify the time along with the message or not
 	 */
 	public static void addProgressAndShowInTerminal(Consumer<String> consumer, String str, boolean addTime) {
-		if (consumer == null)
-			return;
 		if (addTime)
 			str = Log.gct() + " -- " + str + System.lineSeparator();
 		else
 			str += System.lineSeparator();
-		consumer.accept(str);
+		if (consumer != null)
+			consumer.accept(str);
 		System.out.println(str);
 	}
 	

@@ -412,7 +412,7 @@ public class DownloadModel {
 	 * copies it and unzips it into the models folder
 	 * @throws InterruptedException 
 	 */
-	public void downloadFileFromInternet(String downloadURL, File targetFile) throws InterruptedException {
+	public void downloadFileFromInternet(String downloadURL, File targetFile) {
 		FileOutputStream fos = null;
 		ReadableByteChannel rbc = null;
 		try {
@@ -441,11 +441,6 @@ public class DownloadModel {
 				e.printStackTrace();
 			}
 		}
-
-        if (Thread.interrupted()) {
-            throw new InterruptedException(
-                    "Interrupted while downloading: " + targetFile.getName());
-        }
 	}
 	
 	/**

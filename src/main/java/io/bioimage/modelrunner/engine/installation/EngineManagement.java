@@ -22,6 +22,7 @@ import java.util.stream.Collectors;
 import io.bioimage.modelrunner.bioimageio.BioimageioRepo;
 import io.bioimage.modelrunner.bioimageio.description.ModelDescriptor;
 import io.bioimage.modelrunner.bioimageio.description.weights.WeightFormat;
+import io.bioimage.modelrunner.bioimageio.download.DownloadTracker;
 import io.bioimage.modelrunner.engine.EngineInfo;
 import io.bioimage.modelrunner.system.PlatformDetection;
 import io.bioimage.modelrunner.utils.Log;
@@ -409,7 +410,8 @@ public class EngineManagement {
 	 * 	consumer used to communicate the progress made donwloading files. It can be null
 	 * @return true if the installation was successful and false otherwise
 	 */
-	public static boolean installEngineByCompleteName(String engineDir, Consumer<String> consumer) {
+	public static boolean installEngineByCompleteName(String engineDir,
+			DownloadTracker.TwoParameterConsumer<String, Double> consumer) {
 		File engineFileDir = new File(engineDir);
 		if (!engineFileDir.isDirectory() && engineFileDir.mkdirs() == false)
 			return false;
@@ -485,7 +487,8 @@ public class EngineManagement {
 	 * @return true if the DL engine was installed or false otherwise
 	 * @throws IOException if there is any error creating the folder for the engine
 	 */
-	public static boolean installEngineForWeightsInDir(WeightFormat ww, String enginesDir, Consumer<String> consumer) throws IOException {
+	public static boolean installEngineForWeightsInDir(WeightFormat ww, String enginesDir, 
+			DownloadTracker.TwoParameterConsumer<String, Double> consumer) throws IOException {
 		InstalledEngines manager = InstalledEngines.buildEnginesFinder(enginesDir);
 		String engine = ww.getWeightsFormat();
 		String version = ww.getTrainingVersion();
@@ -581,7 +584,8 @@ public class EngineManagement {
 	 * 	successfully installed
 	 * @throws IOException if there is any error creating the folder for the engine
 	 */
-	public static boolean installEnginesForModelInDir(ModelDescriptor descriptor, String enginesDir, Consumer<String> consumer) throws IOException {
+	public static boolean installEnginesForModelInDir(ModelDescriptor descriptor, String enginesDir,
+			DownloadTracker.TwoParameterConsumer<String, Double> consumer) throws IOException {
 		boolean installed = false;
 		for (WeightFormat ww : descriptor.getWeights().getSupportedWeights()) {
 			if (installEngineForWeightsInDir(ww, enginesDir, consumer))
@@ -664,7 +668,8 @@ public class EngineManagement {
 	 * 	successfully installed
 	 * @throws IOException if there is any error creating the folder for the engine
 	 */
-	public static boolean installEnginesForModelByIDInDir(String modelID, String enginesDir, Consumer<String> consumer) throws IOException {
+	public static boolean installEnginesForModelByIDInDir(String modelID, String enginesDir, 
+			DownloadTracker.TwoParameterConsumer<String, Double> consumer) throws IOException {
 		ModelDescriptor descriptor = BioimageioRepo.connect().selectByID(modelID);
 		if (descriptor == null)
 			return false;
@@ -745,7 +750,8 @@ public class EngineManagement {
 	 * 	successfully installed
 	 * @throws IOException if there is any error creating the folder for the engine
 	 */
-	public static boolean installEnginesForModelByNameinDir(String modelName, String enginesDir, Consumer<String> consumer) throws IOException {
+	public static boolean installEnginesForModelByNameinDir(String modelName, String enginesDir, 
+			DownloadTracker.TwoParameterConsumer<String, Double> consumer) throws IOException {
 		ModelDescriptor descriptor = BioimageioRepo.connect().selectByName(modelName);
 		if (descriptor == null)
 			return false;
@@ -852,7 +858,7 @@ public class EngineManagement {
 	 * 	consumer used to communicate the progress made donwloading files
 	 * @return true if the installation was successful and false otherwise
 	 */
-	public static boolean installEngine(DeepLearningVersion engine, Consumer<String> consumer) {
+	public static boolean installEngine(DeepLearningVersion engine, DownloadTracker.TwoParameterConsumer<String, Double> consumer) {
 		return installEngineInDir(engine, ENGINES_DIR, consumer);
 	}
 	
@@ -864,44 +870,44 @@ public class EngineManagement {
 	 * 	consumer used to communicate the progress made donwloading files
 	 * @return true if the installation was successful and false otherwise
 	 */
-	public static boolean installEngineInDir(DeepLearningVersion engine, String engineDir, Consumer<String> consumer) {
-		Log.addProgress(consumer, PROGRESS_ENGINE_KEYWORD + engine.folderName());
-		Date now = new Date();
-		Log.addProgress(consumer, PROGRESS_ENGINE_TIME_KEYWORD + new SimpleDateFormat("HH:mm:ss").format(now));
-		ReadableByteChannel rbc = null;
-		FileOutputStream fos = null;
-		try {
-			for (String jar : engine.getJars()) {
-				URL website = new URL(jar);
-				long size = getFileSize(website);
-				rbc = Channels.newChannel(website.openStream());
-				// Create the new model file as a zip
-				Path filePath = Paths.get(website.getPath()).getFileName();
-				engineDir = engineDir + File.separator + engine.folderName();
-				fos = new FileOutputStream(new File(engineDir, filePath.toString()));
-				Log.addProgress(consumer, PROGRESS_JAR_KEYWORD + engineDir + File.separator
-						+ filePath.toString());
-				Log.addProgress(consumer, PROGRESS_SIZE_KEYWORD + size);
-				Log.addProgress(consumer, PROGRESS_JAR_TIME_KEYWORD + new SimpleDateFormat("HH:mm:ss").format(now));
-				FileDownloader downloader = new FileDownloader(rbc, fos);
-				downloader.call();
-				rbc.close();
-				fos.close();
-			}
-		} catch (IOException ex) {
+	public static boolean installEngineInDir(DeepLearningVersion engine, String engineDir, 
+			DownloadTracker.TwoParameterConsumer<String, Double> consumer) {
+		Log.addProgressAndShowInTerminal(null, PROGRESS_ENGINE_KEYWORD + engine.folderName(), true);
+		if (consumer == null)
+			consumer = DownloadTracker.createConsumerProgress();
+		engineDir = engineDir + File.separator + engine.folderName();
+		
+		Thread downloadThread = new Thread(() -> {
 			try {
-				if (rbc != null)
-					rbc.close();
-			} catch (IOException e) {
+				downloadEngineFiles(engine, engineDir, consumer);
+			} catch (IOException | InterruptedException e) {
+				e.printStackTrace();
 			}
-			try {
-				if (fos != null)
-					fos.close();
-			} catch (IOException e) {
-			}
-			return false;
-		}
+        });
+		
+		DownloadTracker track = 
+				DownloadTracker.getFilesDownloadTracker(engineDir, consumer, engine.getJars(), null);
+		
 		return true;
+	}
+	
+	private static void downloadEngineFiles(DeepLearningVersion engine, String engineDir, 
+			DownloadTracker.TwoParameterConsumer<String, Double> consumer) {
+		for (String jar : engine.getJars()) {
+			URL website = new URL(jar);
+			Path filePath = Paths.get(website.getPath()).getFileName();
+			try (ReadableByteChannel rbc = Channels.newChannel(website.openStream());
+					FileOutputStream fos = new FileOutputStream(new File(engineDir, filePath.toString()))){
+					FileDownloader downloader = new FileDownloader(rbc, fos);
+					downloader.call();
+			} catch (IOException e) {
+				consumer.accept("", 1.0);
+				String msg = "The link for the file: " + filePath.getFileName() + " is broken." + System.lineSeparator() 
+							+ "JDLL will continue with the download but the model might be "
+							+ "downloaded incorrectly. The link is '" + jar + "'.";
+				new IOException(msg, e).printStackTrace();
+			}
+		}
 	}
 	
 	/**
@@ -935,7 +941,7 @@ public class EngineManagement {
 	 * @return true if the installation was successful and false otherwise
 	 */
 	public static  boolean installEngineWithArgs(String framework, String version, 
-			boolean cpu, boolean gpu, Consumer<String> consumer) {
+			boolean cpu, boolean gpu, DownloadTracker.TwoParameterConsumer<String, Double> consumer) {
 		if (AvailableEngines.bioimageioToModelRunnerKeysMap().get(framework) != null)
 			framework = AvailableEngines.bioimageioToModelRunnerKeysMap().get(framework);
 		DeepLearningVersion engine = AvailableEngines.getAvailableVersionsForEngine(framework).getVersions()
