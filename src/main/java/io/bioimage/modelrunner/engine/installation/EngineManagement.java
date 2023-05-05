@@ -594,10 +594,14 @@ public class EngineManagement {
 	 */
 	public static boolean installEnginesForModelInDir(ModelDescriptor descriptor, String enginesDir,
 			DownloadTracker.TwoParameterConsumer<String, Double> consumer) throws IOException {
-		boolean installed = false;
+		boolean installed = true;
 		for (WeightFormat ww : descriptor.getWeights().getSupportedWeights()) {
-			if (installEngineForWeightsInDir(ww, enginesDir, consumer))
-				installed = true;
+			try {
+				installEngineForWeightsInDir(ww, enginesDir, consumer);
+			} catch (IOException | InterruptedException e) {
+				e.printStackTrace();
+				installed = false;
+			}
 		}
 		return installed;
 	}
@@ -857,8 +861,8 @@ public class EngineManagement {
 	 * @param engine
 	 * 	the {@link DeepLearningVersion} object specifying the wanted engine
 	 * @return true if the installation was successful and false otherwise
-	 * @throws InterruptedException 
-	 * @throws IOException 
+	 * @throws IOException if tehre is any error downloading the engine
+	 * @throws InterruptedException if the main thread is interrumped abruptly while downloading
 	 */
 	public static boolean installEngine(DeepLearningVersion engine) throws IOException, InterruptedException {
 		return installEngine(engine, null);
@@ -871,8 +875,8 @@ public class EngineManagement {
 	 * @param consumer
 	 * 	consumer used to communicate the progress made donwloading files
 	 * @return true if the installation was successful and false otherwise
-	 * @throws InterruptedException 
-	 * @throws IOException 
+	 * @throws IOException if tehre is any error downloading the engine
+	 * @throws InterruptedException if the main thread is interrumped abruptly while downloading
 	 */
 	public static boolean installEngine(DeepLearningVersion engine, 
 			DownloadTracker.TwoParameterConsumer<String, Double> consumer) throws IOException, InterruptedException {
@@ -886,8 +890,8 @@ public class EngineManagement {
 	 * @param consumer
 	 * 	consumer used to communicate the progress made donwloading files
 	 * @return true if the installation was successful and false otherwise
-	 * @throws IOException 
-	 * @throws InterruptedException 
+	 * @throws IOException if tehre is any error downloading the engine
+	 * @throws InterruptedException if the main thread is interrumped abruptly while downloading
 	 */
 	public static boolean installEngineInDir(DeepLearningVersion engine, String engineDir, 
 			DownloadTracker.TwoParameterConsumer<String, Double> consumer) throws IOException, InterruptedException {
@@ -919,6 +923,14 @@ public class EngineManagement {
 		return true;
 	}
 	
+	/**
+	 * Method that just downloads all the files that form a given engine into the
+	 * directory provided
+	 * @param engine
+	 * 	engine to be downloaded
+	 * @param engineDir
+	 * 	directory where the files will be downloaded
+	 */
 	private static void downloadEngineFiles(DeepLearningVersion engine, String engineDir) {
 		for (String jar : engine.getJars()) {
 			try {
@@ -951,8 +963,8 @@ public class EngineManagement {
 	 * @param gpu
 	 * 	whether the engine supports gpu or not
 	 * @return true if the installation was successful and false otherwise
-	 * @throws InterruptedException 
-	 * @throws IOException 
+	 * @throws IOException if tehre is any error downloading the engine
+	 * @throws InterruptedException if the main thread is interrumped abruptly while downloading
 	 */
 	public static  boolean installEngineWithArgs(String framework, String version, boolean cpu, boolean gpu) throws IOException, InterruptedException {
 		return installEngineWithArgs(framework, version, cpu, gpu, null);
@@ -971,8 +983,8 @@ public class EngineManagement {
 	 * @param consumer
 	 * 	consumer used to communicate the progress made donwloading files
 	 * @return true if the installation was successful and false otherwise
-	 * @throws InterruptedException 
-	 * @throws IOException 
+	 * @throws IOException if tehre is any error downloading the engine
+	 * @throws InterruptedException if the main thread is interrumped abruptly while downloading
 	 */
 	public static  boolean installEngineWithArgs(String framework, String version, 
 			boolean cpu, boolean gpu, DownloadTracker.TwoParameterConsumer<String, Double> consumer) throws IOException, InterruptedException {
@@ -984,14 +996,6 @@ public class EngineManagement {
 					&& (v.getGPU() == gpu)).findFirst().orElse(null);
 		return installEngine(engine, consumer);
 	}
-    
-    private Consumer<String> getInstallationProgressConsumer() {
-    	progressString = "";
-    	Consumer<String> progressConsumer = (String b) -> {
-    		progressString += b;
-    		};
-		return progressConsumer;
-    }
     
     /**
      * Retrieve the progress String
