@@ -12,6 +12,7 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -122,6 +123,10 @@ public class EngineManagement {
 	 * Flag to communicate if the management of engines is already finished
 	 */
 	private boolean isManagementFinished = false;
+	/**
+	 * Consumer to keep track of the downloads of the engines
+	 */
+	private TwoParameterConsumer<String, Double> consumer;
 	
 	/**
 	 * Constructor that checks whether the minimum engines are installed
@@ -173,7 +178,7 @@ public class EngineManagement {
 	 * 
 	 * Regard, that for certain engines, downloading all the OS depending engines
 	 * is necessary, as the dependencies vary from one system to another. 
-	 * @return
+	 * @return a manager to handle the installation of basic engines
 	 */
 	public static EngineManagement createManager() {
 		return new EngineManagement();
@@ -182,6 +187,78 @@ public class EngineManagement {
 	/**
 	 * Checks if the minimal required engines to execute the majority of models
 	 * are installed, if not it manages the installation of the missing ones.
+	 *  
+	 * In order to reduce repetition and to reduce the number of deps downloaded
+	 * by the user when deepImageJ is installed, a selection of engines is created.
+	 * There are some of the engines that are the same for every operating system,
+	 * for example TF1 and Pytorch.
+	 * To reduce the number of deps donwloaded, the TF1 and Pytorch engines are
+	 * installed as for example:
+	 *  - "tensorflow-1.15.0-1.15.0" + {@link #GENERAL_KEYWORD}
+	 * Just one of the above folder is downloaded for all the OS.
+	 * If it was not done like this, as the Fiji update site does not recognise the
+	 * OS of the user, the three following engines would be required:
+	 *  - "tensorflow-1.15.0-1.15.0-windows-x86_64-cpu-gpu"
+	 *  - "tensorflow-1.15.0-1.15.0-linux-x86_64-cpu-gpu"
+	 *  - "tensorflow-1.15.0-1.15.0-macos-x86_64-cpu"
+	 * however, the 3 engines would contain exactly the same deps.
+	 * This is the reason why we make the workaround to download a single
+	 * engine for certain engines and then rename it follwoing the corresponding
+	 * convention
+	 * 
+	 * Regard, that for certain engines, downloading all the OS depending engines
+	 * is necessary, as the dependencies vary from one system to another.  
+	 * 
+	 * @param consumer
+	 * 	consumer to get the information about which engines are being downloaded and their
+	 * 	progress
+	 */
+	public void checkAndSetMinimalEngineInstallation() {
+		checkAndSetMinimalEngineInstallation(null);
+	}
+	
+	/**
+	 * Checks if the minimal required engines to execute the majority of models
+	 * are installed, if not it manages the installation of the missing ones.
+	 *  
+	 * In order to reduce repetition and to reduce the number of deps downloaded
+	 * by the user when deepImageJ is installed, a selection of engines is created.
+	 * There are some of the engines that are the same for every operating system,
+	 * for example TF1 and Pytorch.
+	 * To reduce the number of deps donwloaded, the TF1 and Pytorch engines are
+	 * installed as for example:
+	 *  - "tensorflow-1.15.0-1.15.0" + {@link #GENERAL_KEYWORD}
+	 * Just one of the above folder is downloaded for all the OS.
+	 * If it was not done like this, as the Fiji update site does not recognise the
+	 * OS of the user, the three following engines would be required:
+	 *  - "tensorflow-1.15.0-1.15.0-windows-x86_64-cpu-gpu"
+	 *  - "tensorflow-1.15.0-1.15.0-linux-x86_64-cpu-gpu"
+	 *  - "tensorflow-1.15.0-1.15.0-macos-x86_64-cpu"
+	 * however, the 3 engines would contain exactly the same deps.
+	 * This is the reason why we make the workaround to download a single
+	 * engine for certain engines and then rename it follwoing the corresponding
+	 * convention
+	 * 
+	 * Regard, that for certain engines, downloading all the OS depending engines
+	 * is necessary, as the dependencies vary from one system to another.  
+	 * 
+	 * @param consumer
+	 * 	consumer to get the information about which engines are being downloaded and their
+	 * 	progress
+	 */
+	public void checkAndSetMinimalEngineInstallation(TwoParameterConsumer<String, Double> consumer) {
+		this.consumer = consumer;
+		isManagementFinished = false;
+		readEnginesJSON();
+		checkEnginesInstalled();
+		if (!this.everythingInstalled)
+			manageMissingEngines();
+		isManagementFinished = true;
+	}
+	
+	/**
+	 * Checks if the minimal required engines to execute the majority of models
+	 * are installed.
 	 *  
 	 * In order to reduce repetition and to reduce the number of deps downloaded
 	 * by the user when deepImageJ is installed, a selection of engines is created.
@@ -211,6 +288,81 @@ public class EngineManagement {
 		if (!this.everythingInstalled)
 			manageMissingEngines();
 		isManagementFinished = true;
+	}
+	
+	/**
+	 * Manages the installation of the minimal required engines to execute the majority of models.
+	 *  
+	 * In order to reduce repetition and to reduce the number of deps downloaded
+	 * by the user when deepImageJ is installed, a selection of engines is created.
+	 * There are some of the engines that are the same for every operating system,
+	 * for example TF1 and Pytorch.
+	 * To reduce the number of deps donwloaded, the TF1 and Pytorch engines are
+	 * installed as for example:
+	 *  - "tensorflow-1.15.0-1.15.0" + {@link #GENERAL_KEYWORD}
+	 * Just one of the above folder is downloaded for all the OS.
+	 * If it was not done like this, as the Fiji update site does not recognise the
+	 * OS of the user, the three following engines would be required:
+	 *  - "tensorflow-1.15.0-1.15.0-windows-x86_64-cpu-gpu"
+	 *  - "tensorflow-1.15.0-1.15.0-linux-x86_64-cpu-gpu"
+	 *  - "tensorflow-1.15.0-1.15.0-macos-x86_64-cpu"
+	 * however, the 3 engines would contain exactly the same deps.
+	 * This is the reason why we make the workaround to download a single
+	 * engine for certain engines and then rename it follwoing the corresponding
+	 * convention
+	 * 
+	 * Regard, that for certain engines, downloading all the OS depending engines
+	 * is necessary, as the dependencies vary from one system to another. 
+	 */
+	public void setMinimalEngineInstallation() {
+		setMinimalEngineInstallation(null);
+	}
+	
+	/**
+	 * Manages the installation of the minimal required engines to execute the majority of models.
+	 *  
+	 * In order to reduce repetition and to reduce the number of deps downloaded
+	 * by the user when deepImageJ is installed, a selection of engines is created.
+	 * There are some of the engines that are the same for every operating system,
+	 * for example TF1 and Pytorch.
+	 * To reduce the number of deps donwloaded, the TF1 and Pytorch engines are
+	 * installed as for example:
+	 *  - "tensorflow-1.15.0-1.15.0" + {@link #GENERAL_KEYWORD}
+	 * Just one of the above folder is downloaded for all the OS.
+	 * If it was not done like this, as the Fiji update site does not recognise the
+	 * OS of the user, the three following engines would be required:
+	 *  - "tensorflow-1.15.0-1.15.0-windows-x86_64-cpu-gpu"
+	 *  - "tensorflow-1.15.0-1.15.0-linux-x86_64-cpu-gpu"
+	 *  - "tensorflow-1.15.0-1.15.0-macos-x86_64-cpu"
+	 * however, the 3 engines would contain exactly the same deps.
+	 * This is the reason why we make the workaround to download a single
+	 * engine for certain engines and then rename it follwoing the corresponding
+	 * convention
+	 * 
+	 * Regard, that for certain engines, downloading all the OS depending engines
+	 * is necessary, as the dependencies vary from one system to another. 
+	 * 
+	 * @param consumer
+	 * 	consumer to get the information about which engines are being downloaded and their
+	 * 	progress
+	 */
+	public void setMinimalEngineInstallation(TwoParameterConsumer<String, Double> consumer) {
+		this.consumer = consumer;
+		if (!this.everythingInstalled)
+			manageMissingEngines();
+		isManagementFinished = true;
+	}
+	
+	/**
+	 * Returns a map containing which of the main engines, those that
+	 * together can run the majority of the models (one for pytorch 1, one for
+	 * tf1, one for tf2 and one for onnx) are not installed
+	 * @return map containing which of the main engines have not been installed
+	 */
+	public Map<String, String> getNotInstalledMainEngines(){
+		if (missingEngineFolders == null)
+			checkEnginesInstalled();
+		return missingEngineFolders;
 	}
 	
 	/**
@@ -309,7 +461,7 @@ public class EngineManagement {
 					} catch (Exception ex) {
 						return "";
 					}
-					}));
+					},(u, v) -> u, LinkedHashMap::new));
 
 		missingEngineFolders = engineFolders.entrySet().stream()
 				.filter( dir -> {
@@ -319,7 +471,8 @@ public class EngineManagement {
 					} catch (Exception e) {
 						return true;
 					}
-				} ).collect(Collectors.toMap(dir -> dir.getKey(), dir -> dir.getValue()));
+				} ).collect(Collectors.toMap(dir -> dir.getKey(), dir -> dir.getValue(),
+						(u, v) -> u, LinkedHashMap::new));
 		
 		if (missingEngineFolders.entrySet().size() == 0)
 			everythingInstalled = true;
@@ -380,7 +533,6 @@ public class EngineManagement {
 			checkEnginesInstalled();
 		if (missingEngineFolders.entrySet().size() == 0)
 			return;
-		TwoParameterConsumer<String, Double> consumer = DownloadTracker.createConsumerProgress();
 		missingEngineFolders = missingEngineFolders.entrySet().stream()
 				.filter(v -> !installEngineByCompleteName(v.getValue(), consumer))
 				.collect(Collectors.toMap(v -> v.getKey(), v -> v.getValue()));
