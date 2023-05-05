@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -371,6 +372,53 @@ public class DownloadTracker {
 	 */
 	public static TwoParameterConsumer<String, Double> createConsumerProgress() {
 		return new TwoParameterConsumer<String, Double>();
+	}
+	
+	/**
+	 * Method that tracks the progress of a download happening in the 
+	 * thread used as the first parameter and being tracked by the consumer
+	 * used as the second parameter.
+	 * The teminal output should look like the following for every file:
+	 * 	file1.txt: [#######...................] 10%
+	 * 
+	 * @param downloadThread
+	 * 	thread where the download is happening, when it stops the tracking stops
+	 *  too
+	 * @param consumer
+	 * 	consumer that provides the info about the download
+	 * @throws InterruptedException if the thread is stopped by other thread while it is sleeping
+	 */
+	public static void printProgress(Thread downloadThread,
+			DownloadTracker.TwoParameterConsumer<String, Double> consumer) throws InterruptedException {
+		int n = 30;
+		String ogProgressStr = "";
+		String ogRemainingStr = "";
+		for (int i = 0; i < n; i ++) {
+			ogProgressStr += "#";
+			ogRemainingStr += ".";
+		}
+		List<String> already = new ArrayList<String>();
+		while (downloadThread.isAlive()) {
+			Thread.sleep(3000);
+			String select = null;
+			for (String key : consumer.get().keySet()) {
+				if (!already.contains(key) && !key.equals(DownloadTracker.TOTAL_PROGRESS_KEY)) {
+					select = key;
+					break;
+				}
+			}
+			if (select == null)
+				continue;
+			for (String kk : new String[] {select, DownloadTracker.TOTAL_PROGRESS_KEY}) {
+				int nProgressBar = (int) (consumer.get().get(kk) * n);
+				String progressStr = new File(kk).getName() + ": [" 
+					+ ogProgressStr.substring(0, nProgressBar) + ogRemainingStr.substring(nProgressBar)
+					+ "] " + Math.round(consumer.get().get(kk) * 100) + "%";
+				System.out.println(progressStr);
+			}
+			if (consumer.get().get(select) == 1 || consumer.get().get(select) < 0)
+				already.add(select);
+		}
 	}
 
 }

@@ -878,15 +878,21 @@ public class EngineManagement {
 		engineDir = engineDir + File.separator + engine.folderName();
 		
 		Thread downloadThread = new Thread(() -> {
-			try {
-				downloadEngineFiles(engine, engineDir, consumer);
+			downloadEngineFiles(engine, engineDir, consumer);
+        });
+		
+		DownloadTracker track = DownloadTracker.getFilesDownloadTracker(engineDir,
+				consumer, engine.getJars(), downloadThread);
+		downloadThread.start();
+		Thread trackerThread = new Thread(() -> {
+            try {
+            	track.track();
 			} catch (IOException | InterruptedException e) {
 				e.printStackTrace();
 			}
         });
-		
-		DownloadTracker track = 
-				DownloadTracker.getFilesDownloadTracker(engineDir, consumer, engine.getJars(), null);
+		trackerThread.start();
+		DownloadTracker.printProgress(downloadThread, consumer);
 		
 		return true;
 	}
