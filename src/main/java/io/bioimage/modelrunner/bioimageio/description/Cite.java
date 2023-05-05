@@ -21,8 +21,6 @@ public class Cite
      * @param url
      *        url useful for the citation. It can be null.
      * @return The creates instance.
-     * @throws MalformedURLException
-     *         If the DOI is not a valid URL.
      */
     public static Cite build(String text, String doi, String url)
     {

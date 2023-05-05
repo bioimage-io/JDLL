@@ -73,8 +73,8 @@ public class Author
     /**
      * Sets the email of the author
      * 
-     * @param doi
-     *        DOI url.
+     * @param email
+     *        email of the author.
      */
     public void setDoi(String email)
     {

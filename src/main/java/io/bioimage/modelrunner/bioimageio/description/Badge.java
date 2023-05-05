@@ -20,13 +20,10 @@ public class Badge
      * @param url
      * 	e.g. 'https://colab.research.google.com/github/HenriquesLab/ZeroCostDL4Mic/blob/master/Colab_notebooks/U-net_2D_ZeroCostDL4Mic.ipynb' 
      * @return The creates instance.
-     * @throws Exception 
      */
-    public static Badge build(String label, String icon, String url) throws Exception
+    public static Badge build(String label, String icon, String url)
     {
         Badge badge = new Badge();
-        if (label == null)
-        	throw new Exception("A badge should have a valid icon field.");
         badge.label = label;
         badge.icon = icon;
         badge.url = url;

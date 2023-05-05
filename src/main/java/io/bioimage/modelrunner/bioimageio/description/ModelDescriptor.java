@@ -110,8 +110,8 @@ public class ModelDescriptor
     /**
      * Reads a yaml text String and builds an instance of {@link ModelDescriptor} from it
      * 
-     * @param modelFile
-     *        Model descriptor file.
+     * @param yamlText
+     *        text read from a yaml file that contains an rdf.yaml file
      * @return The instance of the model descriptor.
      * @throws Exception if some parameter is not well defined
      */
@@ -123,8 +123,10 @@ public class ModelDescriptor
     /**
      * Reads a yaml text String and builds an instance of {@link ModelDescriptor} from it.
      * 
-     * @param modelFile
-     *        Model descriptor file.
+     * @param yamlText
+     * 	text read from a yaml file that contains an rdf.yaml file
+     * @param verbose
+     * 	whether to print info about the rdf.yaml that is being read or not
      * @return The instance of the model descriptor.
      * @throws Exception if some parameter is not well defined
      */
@@ -143,6 +145,14 @@ public class ModelDescriptor
     }
 
     @SuppressWarnings("unchecked")
+    /**
+     * Build a {@link ModelDescriptor} object from a map containing the elements read from
+     * a rdf.yaml file
+     * @param yamlElements
+     * 	map with the information read from a yaml file
+     * @return a {@link ModelDescriptor} with the info of a Bioimage.io model
+     * @throws Exception if there is any error processing the info
+     */
     private static ModelDescriptor buildModelDescription(Map<String, Object> yamlElements) throws Exception
     {
         ModelDescriptor modelDescription = new ModelDescriptor();
@@ -310,6 +320,7 @@ public class ModelDescriptor
      * TODO ADD BIOENGINE SOON
      * Method that retrieves the sample BioEngine models that Icy provides as an example
      * to test the BioEngine
+     * @return a list with sample biengine models
      */
     public static ArrayList<Entry<Path, ModelDescriptor>> addSampleBioEngineModels() {
     	ArrayList<Entry<Path, ModelDescriptor>> sampleModels = new ArrayList<Entry<Path, ModelDescriptor>>();
@@ -353,7 +364,13 @@ public class ModelDescriptor
     	}
     	return out;
     }
-
+    
+    /**
+     * Create a list with the authors of teh model as read from the rdf.yaml file
+     * @param authElements
+     * 	a raw list with the info about the authors
+     * @return a list with the info about the authors packaged in the {@link Author} object
+     */
     private static List<Author> buildAuthorElements(List<?> authElements)
     {
         List<Author> authors = new ArrayList<>();
@@ -367,7 +384,13 @@ public class ModelDescriptor
         }
         return authors;
     }
-
+    
+    /**
+     * Create a list with the citations of the model as read from the rdf.yaml file
+     * @param citeElements
+     * 	a raw list with the info about the citations
+     * @return a list with the info about the citations packaged in the {@link Cite} object
+     */
     private static List<Cite> buildCiteElements(List<?> citeElements) throws MalformedURLException
     {
     	if (!(citeElements instanceof List<?>))
