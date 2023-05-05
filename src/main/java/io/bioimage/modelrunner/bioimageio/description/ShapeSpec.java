@@ -28,7 +28,7 @@ public class ShapeSpec
 
     /**
      * Creates an instance of the shape specification included in the provided shape element.
-     * It can be a List<Integer> (fixed size) or a Map<String, Object> (adjusted size).
+     * It can be a {@link List<Integer>} (fixed size) or a Map<String, Object> (adjusted size).
      * 
      * @param shapeElem
      *        The shape element object

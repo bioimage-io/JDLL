@@ -67,7 +67,7 @@ public class SampleImage {
     
     /**
      * Get the extension of the file containing the sample image
-     * @return
+     * @return the extension of teh sample image file
      */
     public String getFileExtension() {
     	if (string == null)
@@ -114,8 +114,8 @@ public class SampleImage {
     }
     
     /**
-     * Return the String of the sample image
-     * @return
+     * Return the String URL of the sample image
+     * @return the string URL of the sample image
      */
     public String getString() {
     	return string;
@@ -123,15 +123,15 @@ public class SampleImage {
     
     /**
      * Return the url of the sample image
-     * @return
+     * @return the url corresponding where the sample image is in the cloud
      */
     public URL getUrl() {
     	return url;
     }
     
     /**
-     * Return the url of the sample url
-     * @return
+     * Return the local path to the sample image
+     * @return the local path to the sample image
      */
     public Path getPath() {
     	return path;
