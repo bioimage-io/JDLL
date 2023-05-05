@@ -420,5 +420,17 @@ public class DownloadTracker {
 				already.add(select);
 		}
 	}
+	
+	public static List<String> findMissingDownloads(List<String> links, String folder,
+			DownloadTracker.TwoParameterConsumer<String, Double> consumer) {
+		List<String> badDownloads = new ArrayList<String>();
+		for (String link : links) {
+			String name = link.substring(link.lastIndexOf("/") + 1);
+			if (consumer.get().get(folder + File.separator + name) == null
+					|| consumer.get().get(folder + File.separator + name) != 1.0)
+				badDownloads.add(link);
+		}
+		return badDownloads;
+	}
 
 }

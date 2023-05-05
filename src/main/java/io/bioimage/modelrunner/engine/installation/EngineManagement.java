@@ -870,7 +870,7 @@ public class EngineManagement {
 	 * 	consumer used to communicate the progress made donwloading files
 	 * @return true if the installation was successful and false otherwise
 	 */
-	public static boolean installEngineInDir(DeepLearningVersion engine, String engineDir, 
+	public static void installEngineInDir(DeepLearningVersion engine, String engineDir, 
 			DownloadTracker.TwoParameterConsumer<String, Double> consumer) {
 		Log.addProgressAndShowInTerminal(null, PROGRESS_ENGINE_KEYWORD + engine.folderName(), true);
 		if (consumer == null)
@@ -894,7 +894,12 @@ public class EngineManagement {
 		trackerThread.start();
 		DownloadTracker.printProgress(downloadThread, consumer);
 		
-		return true;
+		List<String> badDownloads = 
+				DownloadTracker.findMissingDownloads(engine.getJars(), engineDir, consumer);
+		
+		if (badDownloads.size() > 0)
+			throw new IOException("The following files of engine '" + engine.folderName()
+			+ "' where downloaded incorrectly: " + badDownloads.toString());
 	}
 	
 	private static void downloadEngineFiles(DeepLearningVersion engine, String engineDir, 
