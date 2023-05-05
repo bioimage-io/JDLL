@@ -881,12 +881,12 @@ public class EngineManagement {
 			downloadEngineFiles(engine, engineDir, consumer);
         });
 		
-		DownloadTracker track = DownloadTracker.getFilesDownloadTracker(engineDir,
+		DownloadTracker tracker = DownloadTracker.getFilesDownloadTracker(engineDir,
 				consumer, engine.getJars(), downloadThread);
 		downloadThread.start();
 		Thread trackerThread = new Thread(() -> {
             try {
-            	track.track();
+            	tracker.track();
 			} catch (IOException | InterruptedException e) {
 				e.printStackTrace();
 			}
@@ -894,8 +894,7 @@ public class EngineManagement {
 		trackerThread.start();
 		DownloadTracker.printProgress(downloadThread, consumer);
 		
-		List<String> badDownloads = 
-				DownloadTracker.findMissingDownloads(engine.getJars(), engineDir, consumer);
+		List<String> badDownloads = tracker.findMissingDownloads();
 		
 		if (badDownloads.size() > 0)
 			throw new IOException("The following files of engine '" + engine.folderName()

@@ -437,13 +437,7 @@ public class BioimageioRepo {
         });
 		trackerThread.start();
 		DownloadTracker.printProgress(downloadThread, consumer);
-		List<String> badDownloads = new ArrayList<String>();
-		for (String link : dm.getListOfLinks()) {
-			String name = link.substring(link.lastIndexOf("/") + 1);
-			if (consumer.get().get(dm.getModelFolder() + File.separator + name) == null
-					|| consumer.get().get(dm.getModelFolder() + File.separator + name) != 1.0)
-				badDownloads.add(link);
-		}
+		List<String> badDownloads = mdt.findMissingDownloads();
 		
 		if (badDownloads.size() > 0)
 			throw new IOException("The following files of model '" + descriptor.getName()

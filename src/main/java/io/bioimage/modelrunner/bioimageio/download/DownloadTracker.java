@@ -13,7 +13,8 @@ import java.util.Objects;
 import java.util.stream.Collectors;
 
 /**
- * Class that contains the methods to track the progress downloading files.
+ * Class that contains the methods to track the progress downloading files. 
+ * The files have to be downloaded to the same folder.
  * It can be used to track the download of any file or list of files. In addition
  * there is a special constructor to track more easily the dowload of Bioimage.io models.
  * 
@@ -59,6 +60,14 @@ public class DownloadTracker {
 	 */
 	private double downloadSize = 0;
 	/**
+	 * List of all the links that are going to be downloaded
+	 */
+	private List<String> links;
+	/**
+	 * Folder where the files are going to be downloaded
+	 */
+	private String folder;
+	/**
 	 * URL to check if the access to zenodo is fine
 	 */
 	public static final String ZENODO_URL = "https://zenodo.org/record/6559475/files/README.md?download=1";
@@ -75,7 +84,9 @@ public class DownloadTracker {
 	 * Create a download tracker taht can be used to get info about how a download is progressing
 	 * 
 	 * @param folder
-	 * 	fodler where teh files specifies in the urls are going to be downloaded to
+	 * 	folder where the files specifies in the urls are going to be downloaded to.
+	 * 	All the files need to be directly downloaded inside this folder. In order for the
+	 * 	tracking to work, they cannot be downloaded to subfolders inside this folder
 	 * @param consumer
 	 * 	consumer that provides info bout the download
 	 * @param links
@@ -90,6 +101,7 @@ public class DownloadTracker {
 		Objects.requireNonNull(consumer);
 		Objects.requireNonNull(links, "Please provide the links to the files that are going to be downloaded.");
 		Objects.requireNonNull(thread);
+		this.folder = folder;
 		for (String link : links) {
 			try {
 				sizeFiles.put(folder + File.separator + DownloadModel.getFileNameFromURLString(link), 
@@ -98,6 +110,7 @@ public class DownloadTracker {
 				throw new IOException("The URL '" + link + "' cannot be found.");
 			}
 		}
+		this.links = links;
 		this.consumer = consumer;
 		this.remainingFiles = sizeFiles.keySet().stream().map(i -> new File(i)).collect(Collectors.toList());
 		this.downloadThread = thread;
@@ -122,6 +135,8 @@ public class DownloadTracker {
 		Objects.requireNonNull(thread);
 		this.consumer = consumer;
 		this.dm = dm;
+		this.links = dm.getListOfLinks();
+		this.folder = dm.getModelFolder();
 		this.totalSize = dm.getModelSizeFileByFile(false).values().stream()
 				.mapToLong(Long::longValue).sum();
 		if (this.totalSize < 1)
@@ -152,7 +167,9 @@ public class DownloadTracker {
 	 * Create a download tracker taht can be used to get info about how a download is progressing
 	 * 
 	 * @param folder
-	 * 	fodler where teh files specifies in the urls are going to be downloaded to
+	 * 	folder where the files specifies in the urls are going to be downloaded to.
+	 * 	All the files need to be directly downloaded inside this folder. In order for the
+	 * 	tracking to work, they cannot be downloaded to subfolders inside this folder
 	 * @param consumer
 	 * 	consumer that provides info bout the download
 	 * @param links
@@ -296,6 +313,26 @@ public class DownloadTracker {
 	}
 	
 	/**
+	 * Method that is useful to run after the download has completed to check if all
+	 * the intended files have been correctly downloaded
+	 * @return a list of the links that have not been downloaded correctly
+	 */
+	public List<String> findMissingDownloads() {
+		List<String> badDownloads = new ArrayList<String>();
+		if (links == null)
+			return badDownloads;
+		else if (this.sizeFiles == null || this.sizeFiles.keySet().size() == 0)
+			return links;
+		for (String link : links) {
+			String name = link.substring(link.lastIndexOf("/") + 1);
+			if (consumer.get().get(this.folder + File.separator + name) == null
+					|| consumer.get().get(folder + File.separator + name) != 1.0)
+				badDownloads.add(link);
+		}
+		return badDownloads;
+	}
+	
+	/**
 	 * Check whether a specific url is accessible or not
 	 * @param urlStr
 	 * 	the url of interest
@@ -419,18 +456,6 @@ public class DownloadTracker {
 			if (consumer.get().get(select) == 1 || consumer.get().get(select) < 0)
 				already.add(select);
 		}
-	}
-	
-	public static List<String> findMissingDownloads(List<String> links, String folder,
-			DownloadTracker.TwoParameterConsumer<String, Double> consumer) {
-		List<String> badDownloads = new ArrayList<String>();
-		for (String link : links) {
-			String name = link.substring(link.lastIndexOf("/") + 1);
-			if (consumer.get().get(folder + File.separator + name) == null
-					|| consumer.get().get(folder + File.separator + name) != 1.0)
-				badDownloads.add(link);
-		}
-		return badDownloads;
 	}
 
 }
