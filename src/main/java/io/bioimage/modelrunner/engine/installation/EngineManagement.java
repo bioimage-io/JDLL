@@ -209,9 +209,6 @@ public class EngineManagement {
 	 * Regard, that for certain engines, downloading all the OS depending engines
 	 * is necessary, as the dependencies vary from one system to another.  
 	 * 
-	 * @param consumer
-	 * 	consumer to get the information about which engines are being downloaded and their
-	 * 	progress
 	 */
 	public void checkAndSetMinimalEngineInstallation() {
 		checkAndSetMinimalEngineInstallation(null);
@@ -584,7 +581,7 @@ public class EngineManagement {
 	 * 	{@link WeightFormat} object containing the weights as in the yaml file
 	 * @return true if the DL engine was installed or false otherwise
 	 * @throws IOException if there is any error creating the folder for the engine
-	 * @throws InterruptedException 
+	 * @throws InterruptedException if the thread of the download is interrumpted abruptly
 	 */
 	public static boolean installEngineForWeights(WeightFormat ww) throws IOException, InterruptedException {
 		return installEngineForWeightsInDir(ww, InstalledEngines.getEnginesDir(), null);
@@ -602,7 +599,7 @@ public class EngineManagement {
 	 * 	consumer used to keep track of the process of download of the weights
 	 * @return true if the DL engine was installed or false otherwise
 	 * @throws IOException if there is any error creating the folder for the engine
-	 * @throws InterruptedException 
+	 * @throws InterruptedException if the thread of the download is interrumpted abruptly
 	 */
 	public static boolean installEngineForWeights(WeightFormat ww, 
 			DownloadTracker.TwoParameterConsumer<String, Double> consumer) throws IOException, InterruptedException {
@@ -620,7 +617,7 @@ public class EngineManagement {
 	 * 	directory where the engine is installed
 	 * @return true if the DL engine was installed or false otherwise
 	 * @throws IOException if there is any error creating the folder for the engine
-	 * @throws InterruptedException 
+	 * @throws InterruptedException if the thread of the download is interrumpted abruptly
 	 */
 	public static boolean installEngineForWeightsInDir(WeightFormat ww, String enginesDir) throws IOException, InterruptedException {
 		return installEngineForWeightsInDir(ww, enginesDir, null);
@@ -640,7 +637,7 @@ public class EngineManagement {
 	 * 	consumer used to keep track of the process of download of the weights
 	 * @return true if the DL engine was installed or false otherwise
 	 * @throws IOException if there is any error creating the folder for the engine
-	 * @throws InterruptedException 
+	 * @throws InterruptedException if the thread of the download is interrumpted abruptly
 	 */
 	public static boolean installEngineForWeightsInDir(WeightFormat ww, String enginesDir, 
 			DownloadTracker.TwoParameterConsumer<String, Double> consumer) throws IOException, InterruptedException {
@@ -1035,6 +1032,10 @@ public class EngineManagement {
 	 * Install the engine specified by the {@link DeepLearningVersion} object
 	 * @param engine
 	 * 	the {@link DeepLearningVersion} object specifying the wanted engine
+	 * @param engineDir
+	 * 	directory where the engines are downloaded. Inside the dir specififed the 
+	 * 	corresponding folder for the engine will be created, which will contain the 
+	 * 	files needed to run the engine
 	 * @param consumer
 	 * 	consumer used to communicate the progress made donwloading files
 	 * @return true if the installation was successful and false otherwise
@@ -1221,8 +1222,6 @@ public class EngineManagement {
 	 * 	whether the engine supports cpu or not
 	 * @param gpu
 	 * 	whether the engine supports gpu or not
-	 * @param consumer
-	 * 	consumer used to communicate the progress made donwloading files
      * @return true if the engine exists and false otherwise
      */
     public static boolean isEngineSupported(String framework, String version, boolean cpu, boolean gpu) {
@@ -1242,7 +1241,7 @@ public class EngineManagement {
 	
     /**
      * Get file size of the file located in the given url
-     * @param strUrl
+     * @param url
      * 		url of interest
      * @return the size of the file at the url or -1 if there is any error
      */
