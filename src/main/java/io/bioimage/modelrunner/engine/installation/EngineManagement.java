@@ -9,15 +9,11 @@ import java.nio.channels.Channels;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Comparator;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
-import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 import io.bioimage.modelrunner.bioimageio.BioimageioRepo;
@@ -1084,7 +1080,9 @@ public class EngineManagement {
 				.stream().filter(v -> v.getPythonVersion().equals(version) 
 						&& v.getOs().equals(new PlatformDetection().toString())
 						&& v.getCPU() == cpu
-						&& v.getGPU() == gpu).findFirst().orElse(null);
+						&& v.getGPU() == gpu
+						&& (!(new PlatformDetection().isUsingRosseta()) || v.getRosetta()))
+				.findFirst().orElse(null);
 		if (engine == null) 
 			return false;
 		return true;

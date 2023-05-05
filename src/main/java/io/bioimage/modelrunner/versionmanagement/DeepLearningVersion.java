@@ -43,6 +43,7 @@ public class DeepLearningVersion
     private String os;
     private boolean cpu;
     private boolean gpu;
+    private boolean rosetta;
     private List<String> jars;
     private String allEnginesDir;
     private String engineName;
@@ -283,6 +284,14 @@ public class DeepLearningVersion
     public void setCPU(boolean cpu)
     {
         this.cpu = cpu;
+    }
+    
+    /**
+     * Whether the engine is supported in Rosetta or not
+     * @return whether the engine is supported in Rosetta or not
+     */
+    public boolean getRosetta() {
+    	return this.rosetta;
     }
 
     /**

@@ -102,7 +102,9 @@ public class AvailableEngines
         AvailableEngines availableVersions = load();
         String currentPlatform = new PlatformDetection().toString();
         availableVersions.setVersions(availableVersions.getVersions().stream()
-                .filter(v -> v.getOs().equals(currentPlatform)).collect(Collectors.toList()));
+                .filter(v -> v.getOs().equals(currentPlatform)
+						&& (!(new PlatformDetection().isUsingRosseta()) || v.getRosetta()))
+                .collect(Collectors.toList()));
         availableVersions.getVersions().stream().forEach(x -> x.setEnginesDir());
         return availableVersions;
     }
@@ -139,7 +141,8 @@ public class AvailableEngines
         AvailableEngines availableVersions = load();
         String currentPlatform = new PlatformDetection().toString();
         List<String> availablePythonVersions = availableVersions.getVersions().stream()
-				                .filter(v -> v.getOs().equals(currentPlatform))
+				                .filter(v -> v.getOs().equals(currentPlatform)
+										&& (!(new PlatformDetection().isUsingRosseta()) || v.getRosetta()))
 				                .map(DeepLearningVersion::getPythonVersion)
 				                .collect(Collectors.toList());
         return availablePythonVersions;
@@ -165,6 +168,7 @@ public class AvailableEngines
         String currentPlatform = new PlatformDetection().toString();
         availableVersions.setVersions(availableVersions.getVersions().stream()
                 .filter(v -> v.getOs().equals(currentPlatform) 
+						&& (!(new PlatformDetection().isUsingRosseta()) || v.getRosetta())
                 		&& searchEngine.equals(v.getEngine())
                 		)
                 .collect(Collectors.toList()));
@@ -186,7 +190,9 @@ public class AvailableEngines
     	AvailableEngines availableVersions = load();
         String currentPlatform = new PlatformDetection().toString();
         List<String> availablePythonVersions = availableVersions.getVersions().stream()
-                .filter(v -> v.getOs().equals(currentPlatform) && searchEngine.equals(v.getEngine()))
+                .filter(v -> v.getOs().equals(currentPlatform)
+						&& (!(new PlatformDetection().isUsingRosseta()) || v.getRosetta())
+						&& searchEngine.equals(v.getEngine()))
                 .map(DeepLearningVersion::getPythonVersion)
                 .collect(Collectors.toList());
         return availablePythonVersions;
@@ -248,6 +254,7 @@ public class AvailableEngines
     	DeepLearningVersion engine = AvailableEngines.getAvailableVersionsForEngine(searchEngine).getVersions()
 				.stream().filter(v -> v.getPythonVersion().equals(version) 
 						&& v.getOs().equals(new PlatformDetection().toString())
+						&& (!(new PlatformDetection().isUsingRosseta()) || v.getRosetta())
 						&& v.getCPU() == cpu
 						&& v.getGPU() == gpu).findFirst().orElse(null);
 		if (engine == null) 
@@ -276,6 +283,7 @@ public class AvailableEngines
     	DeepLearningVersion engine = AvailableEngines.getAvailableVersionsForEngine(searchEngine).getVersions()
 				.stream().filter(v -> v.getPythonVersion().equals(version) 
 						&& v.getOs().equals(new PlatformDetection().toString())
+						&& (!(new PlatformDetection().isUsingRosseta()) || v.getRosetta())
 						&& v.getCPU() == cpu
 						&& v.getGPU() == gpu).findFirst().orElse(null);
 		return engine;
