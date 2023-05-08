@@ -405,8 +405,7 @@ public class DownloadModel {
 	 */
 	public static String getFileNameFromURLString(String str) throws MalformedURLException {
 		URL url = new URL(str);
-		int ind = str.lastIndexOf("/");
-		return str.substring(ind + 1);
+		return new File(url.getPath()).getName();
 	}
 	
 	/**

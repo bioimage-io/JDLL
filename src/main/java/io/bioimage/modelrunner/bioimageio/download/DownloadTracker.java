@@ -111,6 +111,7 @@ public class DownloadTracker {
 				throw new IOException("The URL '" + link + "' cannot be found.");
 			}
 		}
+		this.totalSize = sizeFiles.values().stream().mapToLong(Long::longValue).sum();
 		this.links = links;
 		this.consumer = consumer;
 		this.remainingFiles = sizeFiles.keySet().stream().map(i -> new File(i)).collect(Collectors.toList());
@@ -265,9 +266,10 @@ public class DownloadTracker {
 		downloadSize = 0;
 		long totalDownloadSize = 0;
 		boolean keep = true;
-		boolean alive = true;
-		while (alive && remainingFiles.size() > 0) {
-			Thread.sleep(TIME_INTERVAL_MILLIS);
+		
+		while ((this.downloadThread.isAlive() && remainingFiles.size() > 0) || keep) {
+			Thread.sleep(keep == false ? TIME_INTERVAL_MILLIS: 1);
+			keep = false;
 			for (int i = 0; i < this.remainingFiles.size(); i ++) {
 				File ff = remainingFiles.get(i);
 				if (ff.isFile() && ff.length() != this.sizeFiles.get(ff.getAbsolutePath())){
@@ -279,14 +281,11 @@ public class DownloadTracker {
 					totalDownloadSize += ff.length();
 					consumer.accept(TOTAL_PROGRESS_KEY, (double) (totalDownloadSize) / (double) totalSize);
 					remainingFiles.remove(i);
+					keep = true;
 					break;
 				}
 			}
 			didDownloadStop();
-			if (!keep)
-				alive = false;
-			if (!this.downloadThread.isAlive())
-				keep = false;
 		}
 	}
 	
@@ -296,9 +295,8 @@ public class DownloadTracker {
 	 * @throws IOException if the download has stopped without any notice
 	 */
 	private void didDownloadStop() throws IOException {
-		double totDownload = consumer.get().get(TOTAL_PROGRESS_KEY);
-		if (downloadSize != totDownload) {
-			downloadSize = totDownload;
+		if (consumer.get().get(TOTAL_PROGRESS_KEY) != null && downloadSize != consumer.get().get(TOTAL_PROGRESS_KEY)) {
+			downloadSize = consumer.get().get(TOTAL_PROGRESS_KEY);
 			nTimesNoChange = 0;
 		} else {
 			nTimesNoChange += 1;
@@ -437,8 +435,10 @@ public class DownloadTracker {
 			ogRemainingStr += ".";
 		}
 		List<String> already = new ArrayList<String>();
-		while (downloadThread.isAlive()) {
-			Thread.sleep(3000);
+		boolean keep = true;
+		while (downloadThread.isAlive() || keep) {
+			Thread.sleep(keep == true ? 10 : 3000);
+			keep = false;
 			String select = null;
 			for (String key : consumer.get().keySet()) {
 				if (!already.contains(key) && !key.equals(DownloadTracker.TOTAL_PROGRESS_KEY)) {
@@ -455,8 +455,10 @@ public class DownloadTracker {
 					+ "] " + Math.round(consumer.get().get(kk) * 100) + "%";
 				System.out.println(progressStr);
 			}
-			if (consumer.get().get(select) == 1 || consumer.get().get(select) < 0)
+			if (consumer.get().get(select) == 1 || consumer.get().get(select) < 0) {
 				already.add(select);
+				keep = true;
+			}
 		}
 	}
 

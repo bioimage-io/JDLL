@@ -1048,6 +1048,9 @@ public class EngineManagement {
 		if (consumer == null)
 			consumer = DownloadTracker.createConsumerProgress();
 		String folder = engineDir + File.separator + engine.folderName();
+		if (!new File(folder).isDirectory() && !new File(folder).mkdir())
+			throw new IOException("Unable to create the folder where the engine "
+					+ "will be installed: " + folder);
 		
 		Thread downloadThread = new Thread(() -> {
 			downloadEngineFiles(engine, folder);
@@ -1055,7 +1058,6 @@ public class EngineManagement {
 		
 		DownloadTracker tracker = DownloadTracker.getFilesDownloadTracker(folder,
 				consumer, engine.getJars(), downloadThread);
-		downloadThread.start();
 		Thread trackerThread = new Thread(() -> {
             try {
             	tracker.track();
@@ -1064,6 +1066,7 @@ public class EngineManagement {
 			}
         });
 		trackerThread.start();
+		downloadThread.start();
 		DownloadTracker.printProgress(downloadThread, consumer);
 		List<String> badDownloads = tracker.findMissingDownloads();
 		if (badDownloads.size() > 0)
