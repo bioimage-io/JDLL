@@ -1008,8 +1008,8 @@ public class EngineManagement {
 	 * @param engine
 	 * 	the {@link DeepLearningVersion} object specifying the wanted engine
 	 * @return true if the installation was successful and false otherwise
-	 * @throws IOException if tehre is any error downloading the engine
-	 * @throws InterruptedException if the main thread is interrumped abruptly while downloading
+	 * @throws IOException if there is any error downloading the engine
+	 * @throws InterruptedException if the main thread is interrumpted abruptly while downloading
 	 */
 	public static boolean installEngine(DeepLearningVersion engine) throws IOException, InterruptedException {
 		return installEngine(engine, null);
@@ -1022,8 +1022,8 @@ public class EngineManagement {
 	 * @param consumer
 	 * 	consumer used to communicate the progress made donwloading files
 	 * @return true if the installation was successful and false otherwise
-	 * @throws IOException if tehre is any error downloading the engine
-	 * @throws InterruptedException if the main thread is interrumped abruptly while downloading
+	 * @throws IOException if there is any error downloading the engine
+	 * @throws InterruptedException if the main thread is interrumpted abruptly while downloading
 	 */
 	public static boolean installEngine(DeepLearningVersion engine, 
 			DownloadTracker.TwoParameterConsumer<String, Double> consumer) throws IOException, InterruptedException {
@@ -1041,7 +1041,7 @@ public class EngineManagement {
 	 * @param consumer
 	 * 	consumer used to communicate the progress made donwloading files
 	 * @return true if the installation was successful and false otherwise
-	 * @throws IOException if tehre is any error downloading the engine
+	 * @throws IOException if there is any error downloading the engine
 	 * @throws InterruptedException if the main thread is interrumped abruptly while downloading
 	 */
 	public static boolean installEngineInDir(DeepLearningVersion engine, String engineDir, 
@@ -1108,6 +1108,8 @@ public class EngineManagement {
 	
 	/**
 	 * Install the engine specified by the arguments of the method
+	 * The engine will be installed in the default engines directory, which is the
+	 * folder named 'engines' inside the application directory
 	 * @param framework
 	 * 	DL framework as specified by the Bioimage.io model zoo ()https://github.com/bioimage-io/spec-bioimage-io/blob/gh-pages/weight_formats_spec_0_4.md)
 	 * @param version
@@ -1121,11 +1123,36 @@ public class EngineManagement {
 	 * @throws InterruptedException if the main thread is interrumped abruptly while downloading
 	 */
 	public static  boolean installEngineWithArgs(String framework, String version, boolean cpu, boolean gpu) throws IOException, InterruptedException {
-		return installEngineWithArgs(framework, version, cpu, gpu, null);
+		return installEngineWithArgsInDir(framework, version, cpu, gpu, ENGINES_DIR, null);
 	}
 	
 	/**
 	 * Install the engine specified by the arguments of the method
+	 * The engine will be installed in the provided directory
+	 * folder named 'engines' inside the application directory
+	 * @param framework
+	 * 	DL framework as specified by the Bioimage.io model zoo ()https://github.com/bioimage-io/spec-bioimage-io/blob/gh-pages/weight_formats_spec_0_4.md)
+	 * @param version
+	 * 	the version of the framework
+	 * @param cpu
+	 * 	whether the engine supports cpu or not
+	 * @param gpu
+	 * 	whether the engine supports gpu or not
+	 * @param dir
+	 * 	directory where the engine will be installed
+	 * @return true if the installation was successful and false otherwise
+	 * @throws IOException if tehre is any error downloading the engine
+	 * @throws InterruptedException if the main thread is interrumped abruptly while downloading
+	 */
+	public static  boolean installEngineWithArgsInDir(String framework, String version, 
+			boolean cpu, boolean gpu, String dir) throws IOException, InterruptedException {
+		return installEngineWithArgsInDir(framework, version, cpu, gpu, dir, null);
+	}
+	
+	/**
+	 * Install the engine specified by the arguments of the method.
+	 * The engine will be installed in the default engines directory, which is the
+	 * folder named 'engines' inside the application directory
 	 * @param framework
 	 * 	DL framework as specified by the Bioimage.io model zoo ()https://github.com/bioimage-io/spec-bioimage-io/blob/gh-pages/weight_formats_spec_0_4.md)
 	 * @param version
@@ -1142,13 +1169,37 @@ public class EngineManagement {
 	 */
 	public static  boolean installEngineWithArgs(String framework, String version, 
 			boolean cpu, boolean gpu, DownloadTracker.TwoParameterConsumer<String, Double> consumer) throws IOException, InterruptedException {
+		return installEngineWithArgsInDir(framework, version, cpu, gpu, ENGINES_DIR, consumer);
+	}
+	
+	/**
+	 * Install the engine specified by the arguments of the method in the wanted folder
+	 * @param framework
+	 * 	DL framework as specified by the Bioimage.io model zoo ()https://github.com/bioimage-io/spec-bioimage-io/blob/gh-pages/weight_formats_spec_0_4.md)
+	 * @param version
+	 * 	the version of the framework
+	 * @param cpu
+	 * 	whether the engine supports cpu or not
+	 * @param gpu
+	 * 	whether the engine supports gpu or not
+	 * @param dir
+	 * 	folder where the engine will be installed
+	 * @param consumer
+	 * 	consumer used to communicate the progress made donwloading files
+	 * @return true if the installation was successful and false otherwise
+	 * @throws IOException if tehre is any error downloading the engine
+	 * @throws InterruptedException if the main thread is interrumped abruptly while downloading
+	 */
+	public static  boolean installEngineWithArgsInDir(String framework, String version, 
+			boolean cpu, boolean gpu, String dir,
+			DownloadTracker.TwoParameterConsumer<String, Double> consumer) throws IOException, InterruptedException {
 		if (AvailableEngines.bioimageioToModelRunnerKeysMap().get(framework) != null)
 			framework = AvailableEngines.bioimageioToModelRunnerKeysMap().get(framework);
 		DeepLearningVersion engine = AvailableEngines.getAvailableVersionsForEngine(framework).getVersions()
 				.stream().filter(v -> (v.getPythonVersion() == version)
 					&& (v.getCPU() == cpu)
 					&& (v.getGPU() == gpu)).findFirst().orElse(null);
-		return installEngine(engine, consumer);
+		return installEngineInDir(engine, dir, consumer);
 	}
     
     /**

@@ -35,7 +35,6 @@ public class ExampleDownloadModel {
 	 */
 	private static final String MODELS_DIR = new File(CWD, "models").getAbsolutePath();
 	
-	AVOID generating snapshots
 	
 	/**
 	 * Test method to check the download of models
