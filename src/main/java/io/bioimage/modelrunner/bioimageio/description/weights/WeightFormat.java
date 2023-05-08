@@ -79,11 +79,13 @@ public interface WeightFormat {
 	public String getParent();
 
 	/**
+	 * <p>
 	 * Source code of the model architecture that either points to a local 
 	 * implementation: <relative path to file>:<identifier of implementation 
 	 * within the file> or the implementation in an available dependency: 
 	 * <root-dependency>.<sub-dependency>.<identifier>. For example: 
 	 * my_function.py:MyImplementation or bioimageio.core.some_module.some_class_or_function.
+	 * </p>
 	 * 
 	 * @return the archiecture used to train the weights
 	 */

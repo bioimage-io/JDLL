@@ -152,7 +152,7 @@ public class SampleImage {
 	
 	/**
 	 * Return list of allowed extensions
-	 * @return
+	 * @return the allowed extensions for sample images
 	 */
 	public static List<String> getAllowedExtensions(){
 		return allowedExtensions;

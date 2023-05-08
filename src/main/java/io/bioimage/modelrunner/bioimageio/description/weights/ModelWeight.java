@@ -1,7 +1,6 @@
 package io.bioimage.modelrunner.bioimageio.description.weights;
 
 import java.io.IOException;
-import java.net.MalformedURLException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -108,18 +107,6 @@ public class ModelWeight
 	    	}
         }
         return model;
-    }
-    
-    /**
-     * Method to add the possibility to run a model in the BioEngine
-     * @param server
-     * 	server where the model is going to be run
-     * @throws MalformedURLException if the server String does not correspond to an existing URL
-     */
-    public void addBioEngine(String server) throws MalformedURLException {
-    	findBioEngineWeights();
-    	BioEngineWeights weightsObject = new BioEngineWeights(server);
-    	weightsDic.put(bioEngineName(server), weightsObject);
     }
     
     /**

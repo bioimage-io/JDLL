@@ -288,15 +288,15 @@ public class ModelDescriptor
     private void addBioEngine() throws MalformedURLException {
 		// TODO decide what to do with servers. Probably need permissions / Implement authentication
     	if (getName().equals("cellpose-python")) {
-			weights.addBioEngine("https://ai.imjoy.io");
+    		// TODO weights.addBioEngine("https://ai.imjoy.io");
 			// TODO weights.addBioEngine("https://hypha.imjoy.io");
 			return;
 	    } else if (getName().equals("bestfitting-inceptionv3-single-cell")) {
-			weights.addBioEngine("https://ai.imjoy.io");
+	    	// TODO weights.addBioEngine("https://ai.imjoy.io");
 			// TODO weights.addBioEngine("https://hypha.imjoy.io");
 			return;
 	    } else if (getName().equals("stardist")) {
-			weights.addBioEngine("https://ai.imjoy.io");
+	    	// TODO weights.addBioEngine("https://ai.imjoy.io");
 			// TODO weights.addBioEngine("https://hypha.imjoy.io");
 			return;
 	    }
@@ -308,7 +308,7 @@ public class ModelDescriptor
     	for (String id : modelIDs) {
     		String auxID = id + "/";
     		if (id.equals(modelID) || modelID.startsWith(auxID)) {
-    			weights.addBioEngine("https://ai.imjoy.io");
+    			// TODO weights.addBioEngine("https://ai.imjoy.io");
     			//weights.addBioEngine("https://hypha.pasteur.cloud/");
     			// TODO weights.addBioEngine("https://hypha.imjoy.io");
     			return;

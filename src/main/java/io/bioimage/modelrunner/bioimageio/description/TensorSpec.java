@@ -139,7 +139,7 @@ public class TensorSpec {
     
     /**
      * REturn the axes order in a readable format for humans
-     * Example: byxc -> Y,X,C; xbyc -> X,Y,C
+     * Example: byxc converts into Y,X,C; xbyc converts into X,Y,C
      * @return the axes order in a readable format
      */
     public String getDisplayableAxesOrder() {
@@ -152,7 +152,9 @@ public class TensorSpec {
     
     /**
      * REturn an array of sizes separated by commas and without the batch size
-     * Example: byxc and [1,256,256,3] -> 256,256,3
+     * Example: if byxc and [1,256,256,3], then 256,256,3
+     * @param arr
+     * 	arra contianing the whole size of a tensor
      * @return the patch size in displayable format
      */
     public int[] getDisplayableSizes(int[] arr) {
@@ -168,7 +170,9 @@ public class TensorSpec {
     
     /**
      * REturn a String of an array of sizes separated by commas and without the batch size
-     * Example: byxc and [1,256,256,3] -> 256,256,3
+     * Example: if byxc and [1,256,256,3], then 256,256,3
+     * @param arr
+     * 	arra contianing the whole size of a tensor
      * @return the patch size in a String displayable (without b dimension) format
      */
     public String getDisplayableSizesString(int[] arr) {
@@ -311,7 +315,7 @@ public class TensorSpec {
      * If it is valid, it sets the value as the {@link #processingPatch}
      * @param patch
      * 	the patch array to validate
-     * @throws Exception 
+     * @throws Exception if the patch does not comply with the constraints specified
      */
     public void validate(int[] patch) throws Exception {
     	// VAlidate that the minimum size and step constraints are fulfilled
@@ -480,8 +484,8 @@ public class TensorSpec {
     /**
      * Sets the total halo for the inputs defined by the outputs.
      * REgard that the input halo follows the tensor axes order
-     * @param halo
-     * 	total halo
+     * @param totalHalo
+     * 	total halo, amount of pixels that have to be removed from the sides of each dim
      */
     public void setTotalHalo(float[] totalHalo){
     	this.halo = new float[axes.length()];
