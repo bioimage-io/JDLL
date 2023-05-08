@@ -401,7 +401,7 @@ public class BioimageioRepo {
 	 * This method launches one thread for the download of the files of the model and 
 	 * another thread to track the progress download. The thread where this method has
 	 * been launched is just used to print the information about the progress using
-	 * {@link #printProgress(Thread, io.bioimage.modelrunner.bioimageio.download.DownloadTracker.TwoParameterConsumer)}
+	 * {@link DownloadTracker#printProgress(Thread, DownloadTracker.TwoParameterConsumer)}
 	 * 
 	 * @param descriptor
 	 * 	the {@link ModelDescriptor} of the model that wants to be downloaded
@@ -477,7 +477,7 @@ public class BioimageioRepo {
 	 * This method launches one thread for the download of the files of the model and 
 	 * another thread to track the progress download. The thread where this method has
 	 * been launched is just used to print the information about the progress using
-	 * {@link #printProgress(Thread, io.bioimage.modelrunner.bioimageio.download.DownloadTracker.TwoParameterConsumer)}
+	 * {@linkDownloadTracker#printProgress(Thread, io.bioimage.modelrunner.bioimageio.download.DownloadTracker.TwoParameterConsumer)}
 	 * 
 	 * @param id
 	 * 	the id of the model of interest. This is the field 'id' of the model descriptor
@@ -560,7 +560,7 @@ public class BioimageioRepo {
 	 * This method launches one thread for the download of the files of the model and 
 	 * another thread to track the progress download. The thread where this method has
 	 * been launched is just used to print the information about the progress using
-	 * {@link #printProgress(Thread, io.bioimage.modelrunner.bioimageio.download.DownloadTracker.TwoParameterConsumer)}
+	 * {@link DownloadTracker#printProgress(Thread, DownloadTracker.TwoParameterConsumer)}
 	 * 
 	 * @param rdfUrl
 	 * 	the url to the rdf file of the model of interest. This is the field 'rdf_source' of the model descriptor
@@ -585,7 +585,7 @@ public class BioimageioRepo {
 	 * This method launches one thread for the download of the files of the model and 
 	 * another thread to track the progress download. The thread where this method has
 	 * been launched is just used to print the information about the progress using
-	 * {@link #printProgress(Thread, io.bioimage.modelrunner.bioimageio.download.DownloadTracker.TwoParameterConsumer)}
+	 * {@link DownloadTracker#printProgress(Thread, DownloadTracker.TwoParameterConsumer)}
 	 * 
 	 * @param rdfUrl
 	 * 	the url to the rdf file of the model of interest. This is the field 'rdf_source' of the model descriptor
