@@ -1219,56 +1219,6 @@ public class EngineManagement {
     }
     
     /**
-     * Get the download information provided by {@link #progressString} 
-     * @return a meaningful String containing info about the installation
-     */
-    public String manageProgress() {
-    	String str = "" + this.progressString;
-    	if (this.isManagementFinished)
-    		return "";
-    	int caret = 0;
-    	String infoStr = "";
-    	while (str.substring(caret).indexOf(PROGRESS_ENGINE_KEYWORD) != -1) {
-    		int engineStart = str.substring(caret).indexOf(PROGRESS_ENGINE_KEYWORD) + PROGRESS_ENGINE_KEYWORD.length();
-    		int engineEnd = str.substring(caret + engineStart).indexOf(System.lineSeparator());
-    		String engine = str.substring(caret + engineStart, caret + engineStart + engineEnd).trim();
-    		caret += engineStart + engineEnd;
-    		int engineTimeStart = str.substring(caret).indexOf(PROGRESS_ENGINE_TIME_KEYWORD) + PROGRESS_ENGINE_TIME_KEYWORD.length();
-    		int engineTimeEnd = str.substring(caret + engineTimeStart).indexOf(System.lineSeparator());
-    		String time = str.substring(caret + engineTimeStart, caret + engineTimeStart + engineTimeEnd).trim();
-    		caret += engineTimeStart + engineTimeEnd;
-    		infoStr += " - " + time + " -- Installing: " + engine + System.lineSeparator();
-    		while (str.substring(caret).indexOf(PROGRESS_JAR_KEYWORD) != -1) {
-    			if (str.substring(caret).indexOf(PROGRESS_ENGINE_KEYWORD) != -1
-        				&& str.substring(caret).indexOf(PROGRESS_ENGINE_KEYWORD) < 
-						str.substring(caret).indexOf(PROGRESS_JAR_KEYWORD)) {
-    				break;
-    			}
-	    		int jarStart = str.substring(caret).indexOf(PROGRESS_JAR_KEYWORD) + PROGRESS_JAR_KEYWORD.length();
-	    		int jarEnd = str.substring(caret + jarStart).indexOf(System.lineSeparator());
-	    		String jar = str.substring(caret + jarStart, caret + jarStart + jarEnd).trim();
-	    		caret += jarStart + jarEnd;
-	    		int sizeStart = str.substring(caret).indexOf(PROGRESS_SIZE_KEYWORD) + PROGRESS_SIZE_KEYWORD.length();
-	    		int sizeEnd = str.substring(caret + sizeStart).indexOf(System.lineSeparator());
-	    		String sizeStr = str.substring(caret + sizeStart, caret + sizeStart + sizeEnd).trim();
-	    		caret += sizeStart + sizeEnd;
-	    		int jarTimeStart = str.substring(caret).indexOf(PROGRESS_JAR_TIME_KEYWORD) + PROGRESS_JAR_TIME_KEYWORD.length();
-	    		int jarTimeEnd = str.substring(caret + jarTimeStart).indexOf(System.lineSeparator());
-	    		String jarTime = str.substring(caret + jarTimeStart, caret + jarTimeStart + jarTimeEnd).trim();
-	    		caret += jarTimeStart + jarTimeEnd;
-	    		long size = Long.parseLong(sizeStr);
-	    		File jarFile = new File(jar);
-	    		jar = jarFile.getName();
-	    		if (jarFile.isFile())
-	    			infoStr += " - " + jarTime + " -- " + jar + ":   " + (100 * jarFile.length() / size) + "%" + System.lineSeparator();
-	    		else
-	    			infoStr += " - " + jarTime + " -- " + jar + ":   " + "unknown%" + System.lineSeparator();
-    		}
-    	}
-    	return infoStr;
-    }
-    
-    /**
      * Check if an engine is supported by the dl-modelrunner or not
      * @param framework
 	 * 	DL framework as specified by the Bioimage.io model zoo ()https://github.com/bioimage-io/spec-bioimage-io/blob/gh-pages/weight_formats_spec_0_4.md)
