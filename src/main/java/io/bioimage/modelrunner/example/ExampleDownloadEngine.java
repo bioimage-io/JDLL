@@ -7,6 +7,8 @@ import io.bioimage.modelrunner.bioimageio.BioimageioRepo;
 import io.bioimage.modelrunner.bioimageio.download.DownloadTracker;
 import io.bioimage.modelrunner.bioimageio.download.DownloadTracker.TwoParameterConsumer;
 import io.bioimage.modelrunner.engine.installation.EngineManagement;
+import io.bioimage.modelrunner.versionmanagement.AvailableEngines;
+import io.bioimage.modelrunner.versionmanagement.DeepLearningVersion;
 
 /**
  * Class that provides an example on how to download a Deep Learning framework (engine)
@@ -66,8 +68,10 @@ public class ExampleDownloadEngine {
 		// and wait for it to end while tracking the progress using the consumer
 		Thread downloadThread = new Thread(() -> {
 			try {
-				EngineManagement.installEnginesForModelByIDInDir(MODEL_ID, ENGINES_DIR, consumer);
-			} catch (IOException e) {
+				DeepLearningVersion dlv = 
+						AvailableEngines.getEngineForOsByParams("pytorch", "1.11.0", true, true);
+				EngineManagement.installEngineInDir(dlv, ENGINES_DIR, consumer);
+			} catch (IOException | InterruptedException e) {
 				// If one of the files to be downloaded is corrupted or the download thread 
 				// is stopped abruptly
 				e.printStackTrace();

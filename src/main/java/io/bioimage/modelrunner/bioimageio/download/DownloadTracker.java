@@ -7,9 +7,11 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
@@ -434,7 +436,7 @@ public class DownloadTracker {
 			ogProgressStr += "#";
 			ogRemainingStr += ".";
 		}
-		List<String> already = new ArrayList<String>();
+		Set<String> already = new HashSet<String>();
 		boolean keep = true;
 		while (downloadThread.isAlive() || keep) {
 			Thread.sleep(keep == true ? 10 : 3000);
@@ -446,8 +448,12 @@ public class DownloadTracker {
 					break;
 				}
 			}
-			if (select == null)
+			if (select == null && consumer.get().get(TOTAL_PROGRESS_KEY) == 1.0 && downloadThread.isAlive()) {
+				keep = true;
 				continue;
+			} else if (select == null) {
+				continue;
+			}
 			for (String kk : new String[] {select, DownloadTracker.TOTAL_PROGRESS_KEY}) {
 				int nProgressBar = (int) (consumer.get().get(kk) * n);
 				String progressStr = new File(kk).getName() + ": [" 
@@ -455,7 +461,8 @@ public class DownloadTracker {
 					+ "] " + Math.round(consumer.get().get(kk) * 100) + "%";
 				System.out.println(progressStr);
 			}
-			if (consumer.get().get(select) == 1 || consumer.get().get(select) < 0) {
+			if (consumer.get().get(select) == 1 || consumer.get().get(select) < 0
+					|| consumer.get().get(TOTAL_PROGRESS_KEY) == 1.0) {
 				already.add(select);
 				keep = true;
 			}

@@ -742,7 +742,9 @@ public class EngineManagement {
 		boolean installed = true;
 		for (WeightFormat ww : descriptor.getWeights().getSupportedWeights()) {
 			try {
-				installEngineForWeightsInDir(ww, enginesDir, consumer);
+				boolean status = installEngineForWeightsInDir(ww, enginesDir, consumer);
+				if (!status)
+					System.out.println("DL engine not supported by JDLL: " + ww.getWeightsFormat());
 			} catch (IOException | InterruptedException e) {
 				e.printStackTrace();
 				installed = false;
