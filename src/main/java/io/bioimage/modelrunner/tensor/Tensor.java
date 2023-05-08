@@ -302,6 +302,7 @@ public final class Tensor< T extends RealType< T > & NativeType< T > >
 	 *            tensor where the copy is created from
 	 * @param type
 	 *            data type of the wanted tensor
+	 * @return a copy of the input tensor in the wanted datatype 
 	 */
 	public static < T extends RealType< T > & NativeType< T >, R extends RealType< R > & NativeType< R > > Tensor< R > createCopyOfTensorInWantedDataType( final Tensor< T > tt, final R type )
 	{
@@ -327,6 +328,7 @@ public final class Tensor< T extends RealType< T > & NativeType< T > >
 	 *            tensor where the copy is created from
 	 * @param type
 	 *            data type of the wanted tensor
+	 * @return a copy of the input {@link RandomAccessibleInterval} in the wanted datatype 
 	 */
 	public static < T extends RealType< T > & NativeType< T >, R extends RealType< R > & NativeType< R > > RandomAccessibleInterval< R > createCopyOfRaiInWantedDataType( final RandomAccessibleInterval< T > input, final R type )
 	{

@@ -148,6 +148,9 @@ public class DownloadModel {
 	 * Build a constructor that contains all the info and is able to download a BioImage.io model
 	 * @param descriptor
 	 * 	information about the model from the rdf.yaml
+	 * @param modelsDir
+	 * 	directory where the model will be downloaded
+	 * @return object that can be handles the download of all the files needed for a model
 	 */
 	public static DownloadModel build(ModelDescriptor descriptor, String modelsDir) {
 		return new DownloadModel(descriptor, modelsDir);
@@ -157,6 +160,7 @@ public class DownloadModel {
 	 * Build a constructor that contains all the info and is able to download a BioImage.io model
 	 * @param descriptor
 	 * 	information about the model from the rdf.yaml
+	 * @return object that can be handles the download of all the files needed for a model
 	 */
 	public static DownloadModel build(ModelDescriptor descriptor) {
 		return new DownloadModel(descriptor, new File("models").getAbsolutePath());
@@ -184,7 +188,6 @@ public class DownloadModel {
 	 * and the weight supported by DeepIcy that are specified in the rdf.yaml
 	 * @throws IOException if the web file cannot be accessed or if the downloaded file's size
 	 * 	is different to the file in the website
-	 * @throws Exception if the model is not correctly downloaded
 	 */
 	public void checkModelWasDownloaded() throws IOException {
 		long websize = -1;
@@ -372,8 +375,6 @@ public class DownloadModel {
 	/**
 	 * Download a model downloading one by one all the files that should be inside
 	 * the model folder into a created folder inside the models repo
-	 * @param modelsDir
-	 * 	whether the model download is notifies file by file or as a whole
 	 * @throws IOException if there is any error creating the folder or downloading the files
 	 * @throws InterruptedException if the thread was stopped by the user
 	 */
@@ -410,7 +411,10 @@ public class DownloadModel {
 	/**
 	 * Method that downloads the model selected from the internet,
 	 * copies it and unzips it into the models folder
-	 * @throws InterruptedException 
+	 * @param downloadURL
+	 * 	url of the file to be downloaded
+	 * @param targetFile
+	 * 	file where the file from the url will be downloaded too
 	 */
 	public void downloadFileFromInternet(String downloadURL, File targetFile) {
 		FileOutputStream fos = null;
@@ -449,7 +453,7 @@ public class DownloadModel {
 	 * @param recalculate
 	 * 	whether to recalculate the file size or not
 	 * @return the total size to be downloaded in bytes
-	 * @throws MalformedURLException 
+	 * @throws MalformedURLException if any of the urls for the files in the rdf.yaml is not correct
 	 */
 	public HashMap<String, Long> getModelSizeFileByFile(boolean recalculate) throws MalformedURLException {
 		if (map != null && !recalculate) {
