@@ -282,9 +282,6 @@ public class EngineManagement {
 		isManagementFinished = false;
 		readEnginesJSON();
 		checkEnginesInstalled();
-		if (!this.everythingInstalled)
-			manageMissingEngines();
-		isManagementFinished = true;
 	}
 	
 	/**
