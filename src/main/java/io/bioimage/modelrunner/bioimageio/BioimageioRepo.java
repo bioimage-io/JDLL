@@ -477,7 +477,7 @@ public class BioimageioRepo {
 	 * This method launches one thread for the download of the files of the model and 
 	 * another thread to track the progress download. The thread where this method has
 	 * been launched is just used to print the information about the progress using
-	 * {@linkDownloadTracker#printProgress(Thread, io.bioimage.modelrunner.bioimageio.download.DownloadTracker.TwoParameterConsumer)}
+	 * {@link DownloadTracker#printProgress(Thread, io.bioimage.modelrunner.bioimageio.download.DownloadTracker.TwoParameterConsumer)}
 	 * 
 	 * @param id
 	 * 	the id of the model of interest. This is the field 'id' of the model descriptor
