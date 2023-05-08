@@ -13,6 +13,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
@@ -46,7 +47,7 @@ public class DownloadModel {
 	/**
 	 * Map containing the size of each of the files defined by the links
 	 */
-	private HashMap<String, Long> map;
+	private LinkedHashMap<String, Long> map;
     /**
      * Consumer used to send info about the download to other threads
      */
@@ -455,11 +456,11 @@ public class DownloadModel {
 	 * @return the total size to be downloaded in bytes
 	 * @throws MalformedURLException if any of the urls for the files in the rdf.yaml is not correct
 	 */
-	public HashMap<String, Long> getModelSizeFileByFile(boolean recalculate) throws MalformedURLException {
+	public LinkedHashMap<String, Long> getModelSizeFileByFile(boolean recalculate) throws MalformedURLException {
 		if (map != null && !recalculate) {
 			return map;
 		}
-		map = new HashMap<String, Long>();
+		map = new LinkedHashMap<String, Long>();
 		for (String link : getListOfLinks()) {
 			map.put(link, getFileSize(new URL(link)));
 		}

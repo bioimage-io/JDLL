@@ -29,7 +29,7 @@ public class DownloadTracker {
 	/**
 	 * Map containing the size of each of the files to be downloaded
 	 */
-	HashMap<String, Long> sizeFiles;
+	LinkedHashMap<String, Long> sizeFiles;
 	/**
 	 * Files that have not been downloaded yet
 	 */
@@ -102,6 +102,7 @@ public class DownloadTracker {
 		Objects.requireNonNull(links, "Please provide the links to the files that are going to be downloaded.");
 		Objects.requireNonNull(thread);
 		this.folder = folder;
+		sizeFiles = new LinkedHashMap<String, Long>();
 		for (String link : links) {
 			try {
 				sizeFiles.put(folder + File.separator + DownloadModel.getFileNameFromURLString(link), 

@@ -6,13 +6,15 @@ import java.io.IOException;
 import io.bioimage.modelrunner.bioimageio.BioimageioRepo;
 import io.bioimage.modelrunner.bioimageio.download.DownloadTracker;
 import io.bioimage.modelrunner.bioimageio.download.DownloadTracker.TwoParameterConsumer;
+import io.bioimage.modelrunner.engine.installation.EngineManagement;
 
 /**
- * Class that provides an example on how to download a model using JDLL.
+ * Class that provides an example on how to download a Deep Learning framework (engine)
+ * using JDLL
  * @author Carlos Javier Garcia Lopez de Haro
  *
  */
-public class ExampleDownloadModel {
+public class ExampleDownloadEngine {
 	/**
 	 * Field 'id' in the rdf.yaml file.
 	 * Used in this example to identify the model we want to download.
@@ -33,9 +35,7 @@ public class ExampleDownloadModel {
 	 * Directory where the model will be downloaded, if you want to download it
 	 * into another folder, please change it.
 	 */
-	private static final String MODELS_DIR = new File(CWD, "models").getAbsolutePath();
-	
-	AVOID generating snapshots
+	private static final String ENGINES_DIR = new File(CWD, "engines").getAbsolutePath();
 	
 	/**
 	 * Test method to check the download of models
@@ -61,13 +61,13 @@ public class ExampleDownloadModel {
 		// using its gieven name, the model descriptor or the url to its rdf.yaml file.
 		// The download of the model prints some information about the download in the terminal.
 		// The download of the model stops the thread until the download is finished.
-		br.downloadModelByID(MODEL_ID, MODELS_DIR, consumer);
+		EngineManagement.installEnginesForModelByIDInDir(MODEL_ID, ENGINES_DIR, consumer);
 		// Another option is to launch the download in a separate thread 
 		// and wait for it to end while tracking the progress using the consumer
 		Thread downloadThread = new Thread(() -> {
 			try {
-				br.downloadModelByID(MODEL_ID, MODELS_DIR, consumer);
-			} catch (IOException | InterruptedException e) {
+				EngineManagement.installEnginesForModelByIDInDir(MODEL_ID, ENGINES_DIR, consumer);
+			} catch (IOException e) {
 				// If one of the files to be downloaded is corrupted or the download thread 
 				// is stopped abruptly
 				e.printStackTrace();
