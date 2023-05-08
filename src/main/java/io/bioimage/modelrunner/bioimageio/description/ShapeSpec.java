@@ -28,7 +28,10 @@ public class ShapeSpec
 
     /**
      * Creates an instance of the shape specification included in the provided shape element.
-     * It can be a {@link List<Integer>} (fixed size) or a Map<String, Object> (adjusted size).
+     * It can be a {@link List} of {@link Integer} (fixed size) or a{@link Map} where the keys
+     * are Strings and the values Objects (adjusted size).
+     * The list of intergers contains the fixed size for the input. The map contains the minimum
+     * size it can have and the step per dimension, giving instructions to build the input.
      * 
      * @param shapeElem
      *        The shape element object

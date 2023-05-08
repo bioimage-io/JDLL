@@ -92,7 +92,9 @@ public class ModelDescriptor
      * Opens the provided file and builds an instance of {@link ModelDescriptor} from it.
      * 
      * @param modelFile
-     *        Model descriptor file.
+     * 	Model descriptor file.
+     * @param verbose
+     * 	whether to print the path to the file and the time to the console or not
      * @return The instance of the model descriptor.
      * @throws Exception if some parameter is not well defined
      */
