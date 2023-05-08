@@ -228,7 +228,8 @@ public class TorchscriptWeights implements WeightFormat{
 	boolean gpu = false;
 	/**
 	 * Method to set whether the engine used for this weights supports GPU or not
-	 * @return
+	 * @param support
+	 * 	whether the engine for the weights supports GPu or not
 	 */
 	@Override
 	public void supportGPU(boolean support) {
@@ -237,7 +238,7 @@ public class TorchscriptWeights implements WeightFormat{
 	
 	/**
 	 * Method to know whether the engine used for this weights supports GPU or not
-	 * @return
+	 * @return whether the engine for the weigths supports GPU or not
 	 */
 	@Override
 	public boolean isSupportGPU() {

@@ -138,8 +138,10 @@ public class ModelWeight
 
 	/**
      * Return the corresponding weight format
-     * @return the corresponding weight format.
-     * @throws Exception if the set of wanted weights is not present
+     * @param weightsFormat
+     * 	the tag corresponding to a particular engine
+     * @return a {@link WeightFormat} object that contains the info of some weights
+     * @throws IOException if the set of wanted weights is not present
      */
     public WeightFormat getWeightsByIdentifier(String weightsFormat) throws IOException
     {
@@ -171,7 +173,8 @@ public class ModelWeight
     /**
      * Get list with the supported Deep Learning frameworks. Does not the same framework
      * several times if it is repeated.
-     * @return
+     * @return the list of supported engines (DL frameworks) among the ones where the model
+     * 	has weights for
      */
     public List<String> getSupportedDLFrameworks() {
     	return weightsDic.entrySet().stream().
@@ -183,7 +186,7 @@ public class ModelWeight
      * Return a map where the keys are engine version names plus a tag that indicates
      * whether that engine is found in the local repo and the value is the actual
      * engine version name
-     * @return the map with the engines and infomration about whether it is downloaded or not
+     * @return the map with the engines and information about whether it is downloaded or not
      */
     public Map<String, String> getDownloadedEnginesMap(){
 		// Find the suffixes for each of the needed engines
@@ -306,7 +309,8 @@ public class ModelWeight
 	 * For models that contain several sets of weights
 	 * from different frameworks in the
 	 * 
-	 * @param selectedWeights the format (framework) of the weights 
+	 * @param selectedWeights
+	 *  the format (framework) of the weights 
 	 * @throws IOException if the weights are not found in the avaiable ones
 	 */
 	public void setSelectedWeightsFormat(String selectedWeights) throws IOException {
@@ -368,6 +372,8 @@ public class ModelWeight
     /** TODO finish when the BioEngine is better defined in the BioImage.io
      * Create the name for the BioEngine weights. The name contains the name of the BioEngine
      * 
+     * @param server
+     * 	the server with an instance of the bioengine where we want to connect
      * @return the complete weights name
      */
     private String bioEngineName(String server) {
@@ -384,7 +390,7 @@ public class ModelWeight
      * Create the name of a pair of torchscript names. The name contains the name of the weights and
      * version number. If no version is provided, "Unknown" is used as version identifier
      * @param ww
-     * 	weights object
+     * 	weights object for torchscript
      * @return the complete weights name
      */
     private String torchscriptEngineName(TorchscriptWeights ww) {
@@ -409,7 +415,7 @@ public class ModelWeight
      * Create the name of a pair of torchscript names. The name contains the name of the weights and
      * version number. If no version is provided, "Unknown" is used as version identifier
      * @param ww
-     * 	weights object
+     * 	weights object for tensorflow javascript
      * @return the complete weights name
      */
 	private String tfJsEngineName(TfJsWeights ww) {
@@ -434,7 +440,7 @@ public class ModelWeight
      * Create the name of a pair of torchscript names. The name contains the name of the weights and
      * version number. If no version is provided, "Unknown" is used as version identifier
      * @param ww
-     * 	weights object
+     * 	weights object for onnx
      * @return the complete weights name
      */
 	private String onnxEngineName(OnnxWeights ww) {
@@ -459,7 +465,7 @@ public class ModelWeight
      * Create the name of a pair of torchscript names. The name contains the name of the weights and
      * version number. If no version is provided, "Unknown" is used as version identifier
      * @param ww
-     * 	weights object
+     * 	weights object for tensorflow
      * @return the complete weights name
      */
 	private String tfEngineName(TfWeights ww) {
@@ -484,7 +490,7 @@ public class ModelWeight
      * Create the name of a pair of torchscript names. The name contains the name of the weights and
      * version number. If no version is provided, "Unknown" is used as version identifier
      * @param ww
-     * 	weights object
+     * 	weights object for pytorch
      * @return the complete weights name
      */
 	private String torchEngineName(PytorchWeights ww) {
@@ -509,7 +515,7 @@ public class ModelWeight
      * Create the name of a pair of torchscript names. The name contains the name of the weights and
      * version number. If no version is provided, "Unknown" is used as version identifier
      * @param ww
-     * 	weights object
+     * 	weights object for keras
      * @return the complete weights name
      */
 	private String kerasEngineName(KerasWeights ww) {
@@ -533,7 +539,7 @@ public class ModelWeight
 	/**
 	 * REturn the tag used to identify Deep Learning engines that are not present
 	 * in the local engines repo
-	 * @return 
+	 * @return missing tag used to identify non installed engines
 	 */
 	public static String getMissingEngineTag() {
 		return missingVersion;
@@ -541,7 +547,7 @@ public class ModelWeight
 	
 	/**
 	 * REturn the tag used to identify Deep Learning engines that are not supported by DeepIcy
-	 * @return 
+	 * @return tag used to identify which are the engines not supported by the library
 	 */
 	public static String getNotSupportedEngineTag() {
 		return notSupported;
@@ -550,7 +556,7 @@ public class ModelWeight
 	/**
 	 * REturn the tag used to identify Deep Learning engines where another
 	 * version oof the engine has been loaded
-	 * @return 
+	 * @return whether the DL framework has already been loaded or not
 	 */
 	public static String getAlreadyLoadedEngineTag() {
 		return alreadyLoaded;
@@ -558,7 +564,7 @@ public class ModelWeight
 	
 	/**
 	 * REturn the tag used to identify Deep Learning engines that support GPU
-	 * @return 
+	 * @return te suffix used to identify if a engine uses GPU or not
 	 */
 	public static String getGPUSuffix() {
 		return gpuSuffix;

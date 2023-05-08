@@ -224,7 +224,6 @@ public class KerasWeights implements WeightFormat {
 	boolean gpu = false;
 	/**
 	 * Method to set whether the engine used for this weights supports GPU or not
-	 * @return
 	 */
 	@Override
 	public void supportGPU(boolean support) {
@@ -233,7 +232,7 @@ public class KerasWeights implements WeightFormat {
 	
 	/**
 	 * Method to know whether the engine used for this weights supports GPU or not
-	 * @return
+	 * @return whether the weights support gpu or not
 	 */
 	@Override
 	public boolean isSupportGPU() {

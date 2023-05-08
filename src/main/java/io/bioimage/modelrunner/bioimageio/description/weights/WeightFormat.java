@@ -81,9 +81,9 @@ public interface WeightFormat {
 	/**
 	 * <p>
 	 * Source code of the model architecture that either points to a local 
-	 * implementation: <relative path to file>:<identifier of implementation 
-	 * within the file> or the implementation in an available dependency: 
-	 * <root-dependency>.<sub-dependency>.<identifier>. For example: 
+	 * implementation: &lt;relative path to file&gt;:&lt;identifier of implementation 
+	 * within the file&gt; or the implementation in an available dependency: 
+	 * &lt;root-dependency&gt;.&lt;sub-dependency&gt;.&lt;identifier&gt;. For example: 
 	 * my_function.py:MyImplementation or bioimageio.core.some_module.some_class_or_function.
 	 * </p>
 	 * 
@@ -99,13 +99,14 @@ public interface WeightFormat {
 	
 	/**
 	 * Method to set whether the engine used for this weights supports GPU or not
-	 * @return
+	 * @param support
+	 * 	whether the engine support GPU or not
 	 */
 	public void supportGPU(boolean support);
 	
 	/**
 	 * Method to know whether the engine used for this weights supports GPU or not
-	 * @return
+	 * @return whether the weights support gpu or not
 	 */
 	public boolean isSupportGPU();
 }
