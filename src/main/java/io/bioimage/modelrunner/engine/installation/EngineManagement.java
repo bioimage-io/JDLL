@@ -308,8 +308,8 @@ public class EngineManagement {
 	 * Regard, that for certain engines, downloading all the OS depending engines
 	 * is necessary, as the dependencies vary from one system to another. 
 	 */
-	public void setBasicEngineInstallation() {
-		setBasicEngineInstallation(null);
+	public void basicEngineInstallation() {
+		basicEngineInstallation(null);
 	}
 	
 	/**
@@ -340,7 +340,7 @@ public class EngineManagement {
 	 * 	consumer to get the information about which engines are being downloaded and their
 	 * 	progress
 	 */
-	public void setBasicEngineInstallation(TwoParameterConsumer<String, Double> consumer) {
+	public void basicEngineInstallation(TwoParameterConsumer<String, Double> consumer) {
 		this.consumer = consumer;
 		if (!this.everythingInstalled)
 			manageMissingEngines();
@@ -501,7 +501,7 @@ public class EngineManagement {
 	 * is necessary, as the dependencies vary from one system to another. 
 	 * 
 	 */
-	public void manageMissingEngines() {
+	private void manageMissingEngines() {
 		if (missingEngineFolders == null)
 			checkEnginesInstalled();
 		if (missingEngineFolders.entrySet().size() == 0)
@@ -522,7 +522,7 @@ public class EngineManagement {
 	/**
 	 * Install the missing engines from scratch
 	 */
-	public void installMissingBasicEngines() {
+	private void installMissingBasicEngines() {
 		if (missingEngineFolders == null)
 			checkEnginesInstalled();
 		if (missingEngineFolders.entrySet().size() == 0)
