@@ -210,8 +210,8 @@ public class EngineManagement {
 	 * is necessary, as the dependencies vary from one system to another.  
 	 * 
 	 */
-	public void checkAndSetMinimalEngineInstallation() {
-		checkAndSetMinimalEngineInstallation(null);
+	public void checkAndSetBasicEngineInstallation() {
+		checkAndSetBasicEngineInstallation(null);
 	}
 	
 	/**
@@ -243,7 +243,7 @@ public class EngineManagement {
 	 * 	consumer to get the information about which engines are being downloaded and their
 	 * 	progress
 	 */
-	public void checkAndSetMinimalEngineInstallation(TwoParameterConsumer<String, Double> consumer) {
+	public void checkAndSetBasicEngineInstallation(TwoParameterConsumer<String, Double> consumer) {
 		this.consumer = consumer;
 		isManagementFinished = false;
 		readEnginesJSON();
@@ -278,7 +278,7 @@ public class EngineManagement {
 	 * Regard, that for certain engines, downloading all the OS depending engines
 	 * is necessary, as the dependencies vary from one system to another. 
 	 */
-	public void checkMinimalEngineInstallation() {
+	public void checkBasicEngineInstallation() {
 		isManagementFinished = false;
 		readEnginesJSON();
 		checkEnginesInstalled();
@@ -308,8 +308,8 @@ public class EngineManagement {
 	 * Regard, that for certain engines, downloading all the OS depending engines
 	 * is necessary, as the dependencies vary from one system to another. 
 	 */
-	public void setMinimalEngineInstallation() {
-		setMinimalEngineInstallation(null);
+	public void setBasicEngineInstallation() {
+		setBasicEngineInstallation(null);
 	}
 	
 	/**
@@ -340,7 +340,7 @@ public class EngineManagement {
 	 * 	consumer to get the information about which engines are being downloaded and their
 	 * 	progress
 	 */
-	public void setMinimalEngineInstallation(TwoParameterConsumer<String, Double> consumer) {
+	public void setBasicEngineInstallation(TwoParameterConsumer<String, Double> consumer) {
 		this.consumer = consumer;
 		if (!this.everythingInstalled)
 			manageMissingEngines();
@@ -516,13 +516,13 @@ public class EngineManagement {
 					return false;
 				return true;
 			}).collect(Collectors.toMap(v -> v.getKey(), v -> v.getValue()));
-		installMissingEngines();
+		installMissingBasicEngines();
 	}
 	
 	/**
 	 * Install the missing engines from scratch
 	 */
-	public void installMissingEngines() {
+	public void installMissingBasicEngines() {
 		if (missingEngineFolders == null)
 			checkEnginesInstalled();
 		if (missingEngineFolders.entrySet().size() == 0)
