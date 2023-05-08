@@ -4,6 +4,8 @@ import java.io.File;
 import java.io.IOException;
 
 import io.bioimage.modelrunner.bioimageio.BioimageioRepo;
+import io.bioimage.modelrunner.bioimageio.download.DownloadTracker;
+import io.bioimage.modelrunner.bioimageio.download.DownloadTracker.TwoParameterConsumer;
 
 /**
  * Class that provides an example on how to download a model using JDLL.
@@ -48,10 +50,35 @@ public class ExampleDownloadModel {
 		// Use verbose = false as we don' watn to print any info about the models in the terminal
 		boolean verbose = false;
 		br.listAllModels(verbose);
+		// Create a consumer that gets live information about the download.
+		// This consumer contains a LinkedHashMap that where the keys
+		// correspond to the file being downloaded and the value corresponds
+		// to the fraction of file that has already been downloaded.
+		TwoParameterConsumer<String, Double> consumer = DownloadTracker.createConsumerProgress();
 		// Download the model using the ID, regard that we can also download the model
 		// using its gieven name, the model descriptor or the url to its rdf.yaml file.
 		// The download of the model prints some information about the download in the terminal.
 		// The download of the model stops the thread until the download is finished.
-		br.downloadModelByID(MODEL_ID, MODELS_DIR);
+		br.downloadModelByID(MODEL_ID, MODELS_DIR, consumer);
+		// Another option is to launch the download in a separate thread 
+		// and wait for it to end while tracking the progress using the consumer
+		Thread downloadThread = new Thread(() -> {
+			try {
+				br.downloadModelByID(MODEL_ID, MODELS_DIR, consumer);
+			} catch (IOException | InterruptedException e) {
+				// If one of the files to be downloaded is corrupted or the download thread 
+				// is stopped abruptly
+				e.printStackTrace();
+			}
+        });
+		downloadThread.start();
+		
+		// Track the model download
+		while (downloadThread.isAlive()) {
+			Thread.sleep(1000);
+			// GEt the total progress of the download
+			Double totalProgress = consumer.get().get(DownloadTracker.TOTAL_PROGRESS_KEY);
+			System.out.println("TOTAL PROGRESS OF THE DOWNLOAD: " + totalProgress);
+		}
 	}
 }

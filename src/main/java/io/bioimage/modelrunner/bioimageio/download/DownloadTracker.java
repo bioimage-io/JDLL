@@ -142,6 +142,7 @@ public class DownloadTracker {
 		if (this.totalSize < 1)
 			this.totalSize = dm.getModelSizeFileByFile(true).values().stream()
 			.mapToLong(Long::longValue).sum();
+		this.sizeFiles = dm.getModelSizeFileByFile(false);
 		this.downloadThread = thread;
 	}
 	
