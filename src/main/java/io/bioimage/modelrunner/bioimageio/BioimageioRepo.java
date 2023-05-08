@@ -123,18 +123,6 @@ public class BioimageioRepo {
 	}
 	
 	/**
-	 * Test method to check the download of models
-	 * @param args
-	 * 	arguments of main method
-	 * @throws IOException if there is any error
-	 * @throws InterruptedException if there is any error
-	 */
-	public static void main(String[] args) throws IOException, InterruptedException {
-		BioimageioRepo br = new BioimageioRepo();
-		br.downloadModelByID("10.5281/zenodo.5874741", "C:\\Users\\angel\\OneDrive\\Documentos\\pasteur\\git\\deep-icy\\models");
-	}
-	
-	/**
 	 * Method that connects to the BioImage.io API and retrieves the models available
 	 * at the Bioimage.io model repository
 	 * The models are specified at: {@link #location}
