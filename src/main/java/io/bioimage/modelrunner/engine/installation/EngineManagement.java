@@ -1,3 +1,27 @@
+/*-
+ * #%L
+ * Use deep learning frameworks from Java in an agnostic and isolated way.
+ * %%
+ * Copyright (C) 2022 - 2023 Institut Pasteur and BioImage.IO developers.
+ * %%
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ * #L%
+ */
 package io.bioimage.modelrunner.engine.installation;
 
 import java.io.File;
@@ -277,8 +301,12 @@ public class EngineManagement {
 	}
 	
 	/**
-	 * Retrieve 
-	 * @return
+	 * Retrieve a map that contains a {@link TwoParameterConsumer} for each of the 
+	 * engines installed. 
+	 * The engines will be download in order of the keys in the map.
+	 * @return a map where each key corresponds to each of the basic engines
+	 *  ({@link #ENGINES_VERSIONS}) missing and its value will be the consumer 
+	 *  used to track the progress of its download
 	 */
 	public Map<String, TwoParameterConsumer<String, Double>> getBasicEnginesProgress() {
 		if (consumersMap != null)
@@ -461,7 +489,12 @@ public class EngineManagement {
 		if (missingEngineFolders.entrySet().size() == 0)
 			return;
 		missingEngineFolders = missingEngineFolders.entrySet().stream()
-				.filter(v -> !installEngineByCompleteName(v.getValue(), consumer))
+				.filter(v -> {
+					TwoParameterConsumer<String, Double> consumer = DownloadTracker.createConsumerProgress();
+					if (this.consumersMap != null && this.consumersMap.get(v) != null)
+						consumer = this.consumersMap.get(v);
+					return!installEngineByCompleteName(v.getValue(), consumer);
+				})
 				.collect(Collectors.toMap(v -> v.getKey(), v -> v.getValue()));
 	}
 	
