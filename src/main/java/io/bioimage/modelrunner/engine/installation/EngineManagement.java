@@ -35,7 +35,6 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Comparator;
-import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -112,6 +111,10 @@ public class EngineManagement {
 	 * is necessary, as the dependencies vary from one system to another. 
 	 */
 	private static final String GENERAL_KEYWORD = "-general";
+	/**
+	 * Keyword used to identify the engine being installed
+	 */
+	public static final String PROGRESS_ENGINE_KEYWORD = "Engine: ";
 	/**
 	 * Whether the minimum required engines are installed or not
 	 */
