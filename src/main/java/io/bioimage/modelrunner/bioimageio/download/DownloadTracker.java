@@ -309,6 +309,11 @@ public class DownloadTracker {
 					remainingFiles.remove(i);
 					keep = true;
 					break;
+				} else if (this.sizeFiles.get(ff.getAbsolutePath()) == -1) {
+					consumer.accept(ff.getAbsolutePath(), -0.01);
+					remainingFiles.remove(i);
+					keep = true;
+					break;
 				}
 			}
 			didDownloadStop();
@@ -463,7 +468,9 @@ public class DownloadTracker {
 		Set<String> already = new HashSet<String>();
 		boolean keep = true;
 		while (downloadThread.isAlive() || keep) {
-			Thread.sleep(keep == true ? 10 : 3000);
+			boolean end = consumer.get().keySet().contains(TOTAL_PROGRESS_KEY)
+					&& consumer.get().get(TOTAL_PROGRESS_KEY) == 1.0;
+			Thread.sleep(keep == true || end ? 10 : 3000);
 			keep = false;
 			String select = null;
 			for (String key : consumer.get().keySet()) {
@@ -472,10 +479,7 @@ public class DownloadTracker {
 					break;
 				}
 			}
-			if (select == null && consumer.get().get(TOTAL_PROGRESS_KEY) == 1.0 && downloadThread.isAlive()) {
-				keep = true;
-				continue;
-			} else if (select == null) {
+			if (select == null) {
 				continue;
 			}
 			for (String kk : new String[] {select, DownloadTracker.TOTAL_PROGRESS_KEY}) {

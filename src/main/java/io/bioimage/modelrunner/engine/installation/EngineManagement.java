@@ -495,8 +495,8 @@ public class EngineManagement {
 		missingEngineFolders = missingEngineFolders.entrySet().stream()
 				.filter(v -> {
 					TwoParameterConsumer<String, Double> consumer = DownloadTracker.createConsumerProgress();
-					if (this.consumersMap != null && this.consumersMap.get(v) != null)
-						consumer = this.consumersMap.get(v);
+					if (this.consumersMap != null && this.consumersMap.get(v.getValue()) != null)
+						consumer = this.consumersMap.get(v.getValue());
 					return!installEngineByCompleteName(v.getValue(), consumer);
 				})
 				.collect(Collectors.toMap(v -> v.getKey(), v -> v.getValue(),
@@ -1025,6 +1025,7 @@ public class EngineManagement {
 		Thread downloadThread = new Thread(() -> {
 			downloadEngineFiles(engine, folder);
         });
+		downloadThread.start();
 		
 		DownloadTracker tracker = DownloadTracker.getFilesDownloadTracker(folder,
 				consumer, engine.getJars(), downloadThread);
@@ -1036,7 +1037,6 @@ public class EngineManagement {
 			}
         });
 		trackerThread.start();
-		downloadThread.start();
 		DownloadTracker.printProgress(downloadThread, consumer);
 		List<String> badDownloads = tracker.findMissingDownloads();
 		if (badDownloads.size() > 0)
