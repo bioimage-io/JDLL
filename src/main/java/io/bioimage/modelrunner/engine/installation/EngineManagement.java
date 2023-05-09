@@ -122,7 +122,7 @@ public class EngineManagement {
 	/**
 	 * Which of the required engines are not installed
 	 */
-	private Map<String, String> missingEngineFolders;
+	private LinkedHashMap<String, String> missingEngineFolders;
 	/**
 	 * String that communicates the progress made downloading engines
 	 */
@@ -312,12 +312,12 @@ public class EngineManagement {
 	 *  used to track the progress of its download
 	 */
 	public Map<String, TwoParameterConsumer<String, Double>> getBasicEnginesProgress() {
-		if (consumersMap != null)
+		if (consumersMap != null && consumersMap.size() != 0)
 			return consumersMap;
 		if (missingEngineFolders == null)
 			checkEnginesInstalled();
 		consumersMap = new LinkedHashMap<String, TwoParameterConsumer<String, Double>>();
-		for (String missing : missingEngineFolders.keySet()) {
+		for (String missing : missingEngineFolders.values()) {
 			this.consumersMap.put(missing, DownloadTracker.createConsumerProgress());
 		}
 		return consumersMap;
@@ -479,7 +479,8 @@ public class EngineManagement {
 				if (generalFile.isDirectory() && generalFile.renameTo(new File(v.getValue())))
 					return false;
 				return true;
-			}).collect(Collectors.toMap(v -> v.getKey(), v -> v.getValue()));
+			}).collect(Collectors.toMap(v -> v.getKey(), v -> v.getValue(),
+					(u, v) -> u, LinkedHashMap::new));
 		installMissingBasicEngines();
 	}
 	
@@ -498,7 +499,8 @@ public class EngineManagement {
 						consumer = this.consumersMap.get(v);
 					return!installEngineByCompleteName(v.getValue(), consumer);
 				})
-				.collect(Collectors.toMap(v -> v.getKey(), v -> v.getValue()));
+				.collect(Collectors.toMap(v -> v.getKey(), v -> v.getValue(),
+						(u, v) -> u, LinkedHashMap::new));
 	}
 	
 	/**
