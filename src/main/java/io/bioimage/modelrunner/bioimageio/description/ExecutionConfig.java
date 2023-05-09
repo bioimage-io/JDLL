@@ -26,7 +26,7 @@ package io.bioimage.modelrunner.bioimageio.description;
 
 import java.util.Map;
 
-import io.bioimage.modelrunner.bioimageio.description.execution.DeepImageJExecutionConfig;
+import io.bioimage.modelrunner.bioimageio.description.deepimagej.DeepImageJExecutionConfig;
 
 /**
  * Execution configuration element. Comes from the config section in the yaml file.

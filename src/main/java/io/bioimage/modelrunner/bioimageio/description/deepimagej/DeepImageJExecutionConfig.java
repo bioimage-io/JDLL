@@ -22,7 +22,7 @@
  * under the License.
  * #L%
  */
-package io.bioimage.modelrunner.bioimageio.description.execution;
+package io.bioimage.modelrunner.bioimageio.description.deepimagej;
 
 import java.util.Collections;
 import java.util.HashMap;

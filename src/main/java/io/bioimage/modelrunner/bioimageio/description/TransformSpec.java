@@ -28,7 +28,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
-import io.bioimage.modelrunner.bioimageio.description.execution.DeepImageJProcessing;
+import io.bioimage.modelrunner.bioimageio.description.deepimagej.DeepImageJProcessing;
 
 /**
  * A pre or post processing transformation descriptor applied on a tensor.
