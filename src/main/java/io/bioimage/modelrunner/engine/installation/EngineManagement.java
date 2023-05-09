@@ -44,29 +44,9 @@ public class EngineManagement {
 	 */
 	private static final String ENGINES_DIR = new File("engines").getAbsolutePath();
 	/**
-	 * Keyword used to identify the engine being installed
-	 */
-	public static final String PROGRESS_ENGINE_KEYWORD = "Engine: ";
-	/**
-	 * Keyword used to identify the JAR file being downloaded
-	 */
-	public static final String PROGRESS_JAR_KEYWORD = "JAR: ";
-	/**
-	 * Keyword used to identify the size of the JAR file being downloaded
-	 */
-	public static final String PROGRESS_SIZE_KEYWORD = "Size: ";
-	/**
-	 * Keyword used to identify the time at whihc the engine started being downloaded
-	 */
-	public static final String PROGRESS_ENGINE_TIME_KEYWORD = "Engine time start: ";
-	/**
-	 * Keyword used to identify the time at whihc the engine started being downloaded
-	 */
-	public static final String PROGRESS_JAR_TIME_KEYWORD = "JAR time start: ";
-	/**
 	 * Map containing which version should always be installed per framework
 	 */
-	public static HashMap<String, String> ENGINES_VERSIONS = new HashMap<String, String>();
+	public static LinkedHashMap<String, String> ENGINES_VERSIONS = new LinkedHashMap<String, String>();
 	
 	static {
 		ENGINES_VERSIONS.put(EngineInfo.getTensorflowKey() + "_2", "2.7.0");
@@ -74,6 +54,7 @@ public class EngineManagement {
 		ENGINES_VERSIONS.put(EngineInfo.getOnnxKey() + "_17", "17");
 		ENGINES_VERSIONS.put(EngineInfo.getPytorchKey() + "_1", "1.13.1");
 	}
+	
 	/**
 	 * Map containing the reference from bioimage.io key to the engine key used
 	 * to name the engine folder
@@ -124,9 +105,11 @@ public class EngineManagement {
 	 */
 	private boolean isManagementFinished = false;
 	/**
-	 * Consumer to keep track of the downloads of the engines
+	 * For the automatic installation of basic engines, consumer that contains 
+	 * a consumer for each of the engines that is going to be installed.
+	 * Key is the engine installed, the value is the consumer for that engine
 	 */
-	private TwoParameterConsumer<String, Double> consumer;
+	private Map<String, TwoParameterConsumer<String, Double>> consumersMap;
 	
 	/**
 	 * Constructor that checks whether the minimum engines are installed
@@ -211,40 +194,6 @@ public class EngineManagement {
 	 * 
 	 */
 	public void checkAndSetBasicEngineInstallation() {
-		checkAndSetBasicEngineInstallation(null);
-	}
-	
-	/**
-	 * Checks if the minimal required engines to execute the majority of models
-	 * are installed, if not it manages the installation of the missing ones.
-	 *  
-	 * In order to reduce repetition and to reduce the number of deps downloaded
-	 * by the user when deepImageJ is installed, a selection of engines is created.
-	 * There are some of the engines that are the same for every operating system,
-	 * for example TF1 and Pytorch.
-	 * To reduce the number of deps donwloaded, the TF1 and Pytorch engines are
-	 * installed as for example:
-	 *  - "tensorflow-1.15.0-1.15.0" + {@link #GENERAL_KEYWORD}
-	 * Just one of the above folder is downloaded for all the OS.
-	 * If it was not done like this, as the Fiji update site does not recognise the
-	 * OS of the user, the three following engines would be required:
-	 *  - "tensorflow-1.15.0-1.15.0-windows-x86_64-cpu-gpu"
-	 *  - "tensorflow-1.15.0-1.15.0-linux-x86_64-cpu-gpu"
-	 *  - "tensorflow-1.15.0-1.15.0-macos-x86_64-cpu"
-	 * however, the 3 engines would contain exactly the same deps.
-	 * This is the reason why we make the workaround to download a single
-	 * engine for certain engines and then rename it follwoing the corresponding
-	 * convention
-	 * 
-	 * Regard, that for certain engines, downloading all the OS depending engines
-	 * is necessary, as the dependencies vary from one system to another.  
-	 * 
-	 * @param consumer
-	 * 	consumer to get the information about which engines are being downloaded and their
-	 * 	progress
-	 */
-	public void checkAndSetBasicEngineInstallation(TwoParameterConsumer<String, Double> consumer) {
-		this.consumer = consumer;
 		isManagementFinished = false;
 		readEnginesJSON();
 		checkEnginesInstalled();
@@ -307,41 +256,9 @@ public class EngineManagement {
 	 * 
 	 * Regard, that for certain engines, downloading all the OS depending engines
 	 * is necessary, as the dependencies vary from one system to another. 
+	 * 
 	 */
 	public void basicEngineInstallation() {
-		basicEngineInstallation(null);
-	}
-	
-	/**
-	 * Manages the installation of the minimal required engines to execute the majority of models.
-	 *  
-	 * In order to reduce repetition and to reduce the number of deps downloaded
-	 * by the user when deepImageJ is installed, a selection of engines is created.
-	 * There are some of the engines that are the same for every operating system,
-	 * for example TF1 and Pytorch.
-	 * To reduce the number of deps donwloaded, the TF1 and Pytorch engines are
-	 * installed as for example:
-	 *  - "tensorflow-1.15.0-1.15.0" + {@link #GENERAL_KEYWORD}
-	 * Just one of the above folder is downloaded for all the OS.
-	 * If it was not done like this, as the Fiji update site does not recognise the
-	 * OS of the user, the three following engines would be required:
-	 *  - "tensorflow-1.15.0-1.15.0-windows-x86_64-cpu-gpu"
-	 *  - "tensorflow-1.15.0-1.15.0-linux-x86_64-cpu-gpu"
-	 *  - "tensorflow-1.15.0-1.15.0-macos-x86_64-cpu"
-	 * however, the 3 engines would contain exactly the same deps.
-	 * This is the reason why we make the workaround to download a single
-	 * engine for certain engines and then rename it follwoing the corresponding
-	 * convention
-	 * 
-	 * Regard, that for certain engines, downloading all the OS depending engines
-	 * is necessary, as the dependencies vary from one system to another. 
-	 * 
-	 * @param consumer
-	 * 	consumer to get the information about which engines are being downloaded and their
-	 * 	progress
-	 */
-	public void basicEngineInstallation(TwoParameterConsumer<String, Double> consumer) {
-		this.consumer = consumer;
 		if (!this.everythingInstalled)
 			manageMissingEngines();
 		isManagementFinished = true;
@@ -357,6 +274,22 @@ public class EngineManagement {
 		if (missingEngineFolders == null)
 			checkEnginesInstalled();
 		return missingEngineFolders;
+	}
+	
+	/**
+	 * Retrieve 
+	 * @return
+	 */
+	public Map<String, TwoParameterConsumer<String, Double>> getBasicEnginesProgress() {
+		if (consumersMap != null)
+			return consumersMap;
+		if (missingEngineFolders == null)
+			checkEnginesInstalled();
+		consumersMap = new LinkedHashMap<String, TwoParameterConsumer<String, Double>>();
+		for (String missing : missingEngineFolders.keySet()) {
+			this.consumersMap.put(missing, DownloadTracker.createConsumerProgress());
+		}
+		return consumersMap;
 	}
 	
 	/**
