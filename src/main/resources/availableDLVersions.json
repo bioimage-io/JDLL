@@ -899,10 +899,10 @@
 				"https://sandbox.zenodo.org/record/1200435/files/pytorch-1.13.0-1.5.9-SNAPSHOT.jar?download=1",
 				"https://sandbox.zenodo.org/record/1200435/files/pytorch-1.13.0-1.5.9-20221221.015404-51-macosx-x86_64.jar?download=1",
 				"https://sandbox.zenodo.org/record/1200435/files/javacpp-platform-1.5.9-SNAPSHOT.jar?download=1",
-				"https://oss.sonatype.org/content/repositories/snapshots/org/bytedeco/javacpp/1.5.8/javacpp-1.5.8.jar",
+				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.8/javacpp-1.5.8.jar",
 				"https://sandbox.zenodo.org/record/1200435/files/javacpp-1.5.9-SNAPSHOT-macosx-x86_64.jar?download=1",
 				"https://sandbox.zenodo.org/record/1200435/files/openblas-platform-0.3.21-1.5.9-SNAPSHOT.jar?download=1",
-				"https://oss.sonatype.org/content/repositories/snapshots/org/bytedeco/openblas/0.3.21-1.5.8/openblas-0.3.21-1.5.8.jar",
+				"https://repo1.maven.org/maven2/org/bytedeco/openblas/0.3.21-1.5.8/openblas-0.3.21-1.5.8.jar",
 				"https://sandbox.zenodo.org/record/1200435/files/openblas-0.3.21-1.5.9-SNAPSHOT-macosx-x86_64.jar?download=1"	
 			]
 		},
