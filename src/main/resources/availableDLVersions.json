@@ -790,6 +790,99 @@
 		},
 		{
 			"engine": "pytorch",
+			"version": "2.0.0",
+			"pythonVersion": "2.0.0",
+			"os": "macosx-x86_64",
+			"gpu": false,
+			"cpu": true,
+			"rosetta": true,
+			"jars": [
+				"https://sandbox.zenodo.org/record/1182168/files/dl-modelrunner-pytorch-javacpp-0.2.1-SNAPSHOT.jar?download=1",
+				"https://sandbox.zenodo.org/record/1200598/files/pytorch-platform-1.13.1-1.5.9-SNAPSHOT.jar?download=1",
+				"https://sandbox.zenodo.org/record/1200598/files/pytorch-1.13.1-1.5.9-SNAPSHOT.jar?download=1",
+				"https://sandbox.zenodo.org/record/1200598/files/pytorch-1.13.1-1.5.9-SNAPSHOT-macosx-x86_64.jar?download=1",
+				"https://sandbox.zenodo.org/record/1200598/files/javacpp-platform-1.5.9-SNAPSHOT.jar?download=1",
+				"https://sandbox.zenodo.org/record/1200598/files/javacpp-1.5.9-SNAPSHOT.jar?download=1",
+				"https://sandbox.zenodo.org/record/1200598/files/javacpp-1.5.9-SNAPSHOT-macosx-x86_64.jar?download=1",
+				"https://sandbox.zenodo.org/record/1200598/files/openblas-platform-0.3.23-1.5.9-SNAPSHOT.jar?download=1",
+				"https://sandbox.zenodo.org/record/1200598/files/openblas-0.3.23-1.5.9-SNAPSHOT.jar?download=1",
+				"https://sandbox.zenodo.org/record/1200598/files/openblas-0.3.23-1.5.9-SNAPSHOT-macosx-x86_64.jar?download=1"		
+			]
+		},
+		{
+			"engine": "pytorch",
+			"version": "2.0.0",
+			"pythonVersion": "2.0.0",
+			"os": "macosx-arm64",
+			"gpu": true,
+			"cpu": true,
+			"rosetta": false,
+			"jars": [
+				"https://repo1.maven.org/maven2/ai/djl/pytorch/pytorch-jni/2.0.0-0.22.1/pytorch-jni-2.0.0-0.22.1.jar",
+				"https://repo1.maven.org/maven2/ai/djl/pytorch/pytorch-engine/0.22.1/pytorch-engine-0.22.1.jar",
+				"https://repo1.maven.org/maven2/ai/djl/api/0.22.1/api-0.22.1.jar",,
+				"https://maven.scijava.org/content/repositories/releases/io/bioimage/dl-modelrunner-pytorch/0.2.0/dl-modelrunner-pytorch-0.2.0.jar",
+				"https://repo1.maven.org/maven2/net/java/dev/jna/jna/5.13.0/jna-5.13.0.jar",
+				"https://repo1.maven.org/maven2/org/apache/commons/commons-compress/1.22/commons-compress-1.22.jar",
+				"https://repo1.maven.org/maven2/org/slf4j/slf4j-api/2.0.6/slf4j-api-2.0.6.jar"	
+			]
+		},
+		{
+			"engine": "pytorch",
+			"version": "2.0.0",
+			"pythonVersion": "2.0.0",
+			"os": "linux-x86_64",
+			"gpu": true,
+			"cpu": true,
+			"rosetta": true,
+			"jars": [
+				"https://repo1.maven.org/maven2/ai/djl/pytorch/pytorch-jni/2.0.0-0.22.1/pytorch-jni-2.0.0-0.22.1.jar",
+				"https://repo1.maven.org/maven2/ai/djl/pytorch/pytorch-engine/0.22.1/pytorch-engine-0.22.1.jar",
+				"https://repo1.maven.org/maven2/ai/djl/api/0.22.1/api-0.22.1.jar",,
+				"https://maven.scijava.org/content/repositories/releases/io/bioimage/dl-modelrunner-pytorch/0.2.0/dl-modelrunner-pytorch-0.2.0.jar",
+				"https://repo1.maven.org/maven2/net/java/dev/jna/jna/5.13.0/jna-5.13.0.jar",
+				"https://repo1.maven.org/maven2/org/apache/commons/commons-compress/1.22/commons-compress-1.22.jar",
+				"https://repo1.maven.org/maven2/org/slf4j/slf4j-api/2.0.6/slf4j-api-2.0.6.jar"	
+			]
+		},
+		{
+			"engine": "pytorch",
+			"version": "2.0.0",
+			"pythonVersion": "2.0.0",
+			"os": "linux-arm64",
+			"gpu": true,
+			"cpu": true,
+			"rosetta": false,
+			"jars": [
+				"https://repo1.maven.org/maven2/ai/djl/pytorch/pytorch-jni/2.0.0-0.22.1/pytorch-jni-2.0.0-0.22.1.jar",
+				"https://repo1.maven.org/maven2/ai/djl/pytorch/pytorch-engine/0.22.1/pytorch-engine-0.22.1.jar",
+				"https://repo1.maven.org/maven2/ai/djl/api/0.22.1/api-0.22.1.jar",,
+				"https://maven.scijava.org/content/repositories/releases/io/bioimage/dl-modelrunner-pytorch/0.2.0/dl-modelrunner-pytorch-0.2.0.jar",
+				"https://repo1.maven.org/maven2/net/java/dev/jna/jna/5.13.0/jna-5.13.0.jar",
+				"https://repo1.maven.org/maven2/org/apache/commons/commons-compress/1.22/commons-compress-1.22.jar",
+				"https://repo1.maven.org/maven2/org/slf4j/slf4j-api/2.0.6/slf4j-api-2.0.6.jar"	
+			]
+		},
+		{
+			"engine": "pytorch",
+			"version": "2.0.0",
+			"pythonVersion": "1.13.1",
+			"os": "windows-x86_64",
+			"gpu": true,
+			"cpu": true,
+			"rosetta": false,
+			"jars": [
+				"https://repo1.maven.org/maven2/ai/djl/pytorch/pytorch-jni/2.0.0-0.22.1/pytorch-jni-2.0.0-0.22.1.jar",
+				"https://repo1.maven.org/maven2/ai/djl/pytorch/pytorch-engine/0.22.1/pytorch-engine-0.22.1.jar",
+				"https://repo1.maven.org/maven2/ai/djl/api/0.22.1/api-0.22.1.jar",,
+				"https://maven.scijava.org/content/repositories/releases/io/bioimage/dl-modelrunner-pytorch/0.2.0/dl-modelrunner-pytorch-0.2.0.jar",
+				"https://repo1.maven.org/maven2/net/java/dev/jna/jna/5.13.0/jna-5.13.0.jar",
+				"https://repo1.maven.org/maven2/org/apache/commons/commons-compress/1.22/commons-compress-1.22.jar",
+				"https://repo1.maven.org/maven2/org/slf4j/slf4j-api/2.0.6/slf4j-api-2.0.6.jar"	
+			]
+		},		
+		{
+			"engine": "pytorch",
 			"version": "1.13.1",
 			"pythonVersion": "1.13.1",
 			"os": "macosx-x86_64",
@@ -884,7 +977,7 @@
 				"https://repo1.maven.org/maven2/org/apache/commons/commons-compress/1.21/commons-compress-1.21.jar",
 				"https://repo1.maven.org/maven2/org/slf4j/slf4j-api/2.0.6/slf4j-api-2.0.6.jar"	
 			]
-		},		
+		},
 		{
 			"engine": "pytorch",
 			"version": "1.13.0",
