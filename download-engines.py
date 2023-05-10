@@ -66,3 +66,4 @@ for entry in data["versions"]:
         except:
             print(f"[ERROR] Failed to download {jar_url}")
             traceback.print_exc()
+            sys.exit(1)
