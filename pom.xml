@@ -15,7 +15,7 @@
 
 	<name>Deep learning model runner</name>
 	<description>Use deep learning frameworks from Java in an agnostic and isolated way.</description>
-	<url>https://github.com/bioimage-io/model-runner-java</url>
+	<url>https://github.com/bioimage-io/JDLL</url>
 	<inceptionYear>2022</inceptionYear>
 	<organization>
 		<name>BioImage.io</name>
@@ -88,18 +88,18 @@
 	</mailingLists>
 
 	<scm>
-		<connection>scm:git:https://github.com/bioimage-io/model-runner-java</connection>
-		<developerConnection>scm:git:git@github.com:bioimage-io/model-runner-java</developerConnection>
+		<connection>scm:git:https://github.com/bioimage-io/JDLL</connection>
+		<developerConnection>scm:git:git@github.com:bioimage-io/JDLL</developerConnection>
 		<tag>HEAD</tag>
-		<url>https://github.com/bioimage-io/model-runner-java</url>
+		<url>https://github.com/bioimage-io/JDLL</url>
 	</scm>
 	<issueManagement>
 		<system>GitHub Issues</system>
-		<url>https://github.com/bioimage-io/model-runner-java/issues</url>
+		<url>https://github.com/bioimage-io/JDLL/issues</url>
 	</issueManagement>
 	<ciManagement>
 		<system>GitHub Actions</system>
-		<url>https://github.com/bioimage-io/model-runner-java/actions</url>
+		<url>https://github.com/bioimage-io/JDLL/actions</url>
 	</ciManagement>
 
 	<properties>
