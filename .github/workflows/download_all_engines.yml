@@ -2,7 +2,7 @@ name: Download all engines
 on:
   push:
     paths:
-      - src/resources/availableDLVersions.json
+      - bioimage-io/JDLL/src/main/resources/availableDLVersions.json
   pull_request:
     branches: [ main ]
 jobs:
