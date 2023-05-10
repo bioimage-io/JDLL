@@ -599,7 +599,7 @@
 			"cpu": true,
 			"rosetta": false,
 			"jars": [
-				"https://sandbox.zenodo.org/record/1154165/files/tensorflow-core-api-0.4.0-SNAPSHOT-macosx-arm64.jar?download=1",
+				"https://sandbx.zenodo.org/record/1154165/files/tensorflow-core-api-0.4.0-SNAPSHOT-macosx-arm64.jar?download=1",
 				"https://repo1.maven.org/maven2/com/google/protobuf/protobuf-java/3.22.0/protobuf-java-3.22.0.jar",
 				"https://repo1.maven.org/maven2/org/tensorflow/ndarray/0.3.3/ndarray-0.3.3.jar",
 				"https://sandbox.zenodo.org/record/1154165/files/tensorflow-core-api-0.4.0-SNAPSHOT.jar?download=1",

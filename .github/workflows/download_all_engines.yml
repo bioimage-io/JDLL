@@ -20,7 +20,4 @@ jobs:
         python-version: 3.9
     - name: Download all engines
       run: |
-        ls
-        python download_engines.py
-        cd engines
-        ls
+        python download-engines.py
