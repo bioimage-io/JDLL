@@ -826,7 +826,7 @@
 				"https://repo1.maven.org/maven2/ai/djl/pytorch/pytorch-jni/2.0.0-0.22.1/pytorch-jni-2.0.0-0.22.1.jar",
 				"https://repo1.maven.org/maven2/ai/djl/pytorch/pytorch-engine/0.22.1/pytorch-engine-0.22.1.jar",
 				"https://repo1.maven.org/maven2/ai/djl/api/0.22.1/api-0.22.1.jar",
-				"https://maven.scijava.org/content/repositories/releases/io/bioimage/dl-modelrunner-pytorch/0.2.0/dl-modelrunner-pytorch-0.2.0.jar",
+				"https://maven.scijava.org/content/repositories/releases/io/bioimage/dl-modelrunner-pytorch/0.3.0/dl-modelrunner-pytorch-0.3.0.jar",
 				"https://repo1.maven.org/maven2/net/java/dev/jna/jna/5.13.0/jna-5.13.0.jar",
 				"https://repo1.maven.org/maven2/org/apache/commons/commons-compress/1.22/commons-compress-1.22.jar",
 				"https://repo1.maven.org/maven2/org/slf4j/slf4j-api/2.0.6/slf4j-api-2.0.6.jar"	
@@ -844,7 +844,7 @@
 				"https://repo1.maven.org/maven2/ai/djl/pytorch/pytorch-jni/2.0.0-0.22.1/pytorch-jni-2.0.0-0.22.1.jar",
 				"https://repo1.maven.org/maven2/ai/djl/pytorch/pytorch-engine/0.22.1/pytorch-engine-0.22.1.jar",
 				"https://repo1.maven.org/maven2/ai/djl/api/0.22.1/api-0.22.1.jar",
-				"https://maven.scijava.org/content/repositories/releases/io/bioimage/dl-modelrunner-pytorch/0.2.0/dl-modelrunner-pytorch-0.2.0.jar",
+				"https://maven.scijava.org/content/repositories/releases/io/bioimage/dl-modelrunner-pytorch/0.3.0/dl-modelrunner-pytorch-0.3.0.jar",
 				"https://repo1.maven.org/maven2/net/java/dev/jna/jna/5.13.0/jna-5.13.0.jar",
 				"https://repo1.maven.org/maven2/org/apache/commons/commons-compress/1.22/commons-compress-1.22.jar",
 				"https://repo1.maven.org/maven2/org/slf4j/slf4j-api/2.0.6/slf4j-api-2.0.6.jar"	
@@ -862,7 +862,7 @@
 				"https://repo1.maven.org/maven2/ai/djl/pytorch/pytorch-jni/2.0.0-0.22.1/pytorch-jni-2.0.0-0.22.1.jar",
 				"https://repo1.maven.org/maven2/ai/djl/pytorch/pytorch-engine/0.22.1/pytorch-engine-0.22.1.jar",
 				"https://repo1.maven.org/maven2/ai/djl/api/0.22.1/api-0.22.1.jar",
-				"https://maven.scijava.org/content/repositories/releases/io/bioimage/dl-modelrunner-pytorch/0.2.0/dl-modelrunner-pytorch-0.2.0.jar",
+				"https://maven.scijava.org/content/repositories/releases/io/bioimage/dl-modelrunner-pytorch/0.3.0/dl-modelrunner-pytorch-0.3.0.jar",
 				"https://repo1.maven.org/maven2/net/java/dev/jna/jna/5.13.0/jna-5.13.0.jar",
 				"https://repo1.maven.org/maven2/org/apache/commons/commons-compress/1.22/commons-compress-1.22.jar",
 				"https://repo1.maven.org/maven2/org/slf4j/slf4j-api/2.0.6/slf4j-api-2.0.6.jar"	
@@ -880,7 +880,7 @@
 				"https://repo1.maven.org/maven2/ai/djl/pytorch/pytorch-jni/2.0.0-0.22.1/pytorch-jni-2.0.0-0.22.1.jar",
 				"https://repo1.maven.org/maven2/ai/djl/pytorch/pytorch-engine/0.22.1/pytorch-engine-0.22.1.jar",
 				"https://repo1.maven.org/maven2/ai/djl/api/0.22.1/api-0.22.1.jar",
-				"https://maven.scijava.org/content/repositories/releases/io/bioimage/dl-modelrunner-pytorch/0.2.0/dl-modelrunner-pytorch-0.2.0.jar",
+				"https://maven.scijava.org/content/repositories/releases/io/bioimage/dl-modelrunner-pytorch/0.3.0/dl-modelrunner-pytorch-0.3.0.jar",
 				"https://repo1.maven.org/maven2/net/java/dev/jna/jna/5.13.0/jna-5.13.0.jar",
 				"https://repo1.maven.org/maven2/org/apache/commons/commons-compress/1.22/commons-compress-1.22.jar",
 				"https://repo1.maven.org/maven2/org/slf4j/slf4j-api/2.0.6/slf4j-api-2.0.6.jar"
@@ -919,8 +919,8 @@
 				"https://repo1.maven.org/maven2/ai/djl/pytorch/pytorch-jni/1.13.1-0.21.0/pytorch-jni-1.13.1-0.21.0.jar",
 				"https://repo1.maven.org/maven2/ai/djl/pytorch/pytorch-engine/0.21.0/pytorch-engine-0.21.0.jar",
 				"https://repo1.maven.org/maven2/ai/djl/api/0.21.0/api-0.21.0.jar",
-				"https://repo1.maven.org/maven2/org/slf4j/slf4j-simple/1.7.25/slf4j-simple-1.7.25.jar"	,
-				"https://maven.scijava.org/content/repositories/releases/io/bioimage/dl-modelrunner-pytorch/0.2.0/dl-modelrunner-pytorch-0.2.0.jar",
+				"https://repo1.maven.org/maven2/org/slf4j/slf4j-simple/1.7.25/slf4j-simple-1.7.25.jar",
+				"https://maven.scijava.org/content/repositories/releases/io/bioimage/dl-modelrunner-pytorch/0.3.0/dl-modelrunner-pytorch-0.3.0.jar",
 				"https://repo1.maven.org/maven2/net/java/dev/jna/jna/5.13.0/jna-5.13.0.jar",
 				"https://repo1.maven.org/maven2/org/apache/commons/commons-compress/1.21/commons-compress-1.21.jar",
 				"https://repo1.maven.org/maven2/org/slf4j/slf4j-api/2.0.6/slf4j-api-2.0.6.jar"		
@@ -938,8 +938,8 @@
 				"https://repo1.maven.org/maven2/ai/djl/pytorch/pytorch-jni/1.13.1-0.21.0/pytorch-jni-1.13.1-0.21.0.jar",
 				"https://repo1.maven.org/maven2/ai/djl/pytorch/pytorch-engine/0.21.0/pytorch-engine-0.21.0.jar",
 				"https://repo1.maven.org/maven2/ai/djl/api/0.21.0/api-0.21.0.jar",
-				"https://repo1.maven.org/maven2/org/slf4j/slf4j-simple/1.7.25/slf4j-simple-1.7.25.jar"	,
-				"https://maven.scijava.org/content/repositories/releases/io/bioimage/dl-modelrunner-pytorch/0.2.0/dl-modelrunner-pytorch-0.2.0.jar",
+				"https://repo1.maven.org/maven2/org/slf4j/slf4j-simple/1.7.25/slf4j-simple-1.7.25.jar",
+				"https://maven.scijava.org/content/repositories/releases/io/bioimage/dl-modelrunner-pytorch/0.3.0/dl-modelrunner-pytorch-0.3.0.jar",
 				"https://repo1.maven.org/maven2/net/java/dev/jna/jna/5.13.0/jna-5.13.0.jar",
 				"https://repo1.maven.org/maven2/org/apache/commons/commons-compress/1.21/commons-compress-1.21.jar",
 				"https://repo1.maven.org/maven2/org/slf4j/slf4j-api/2.0.6/slf4j-api-2.0.6.jar"	
@@ -957,8 +957,8 @@
 				"https://repo1.maven.org/maven2/ai/djl/pytorch/pytorch-jni/1.13.1-0.21.0/pytorch-jni-1.13.1-0.21.0.jar",
 				"https://repo1.maven.org/maven2/ai/djl/pytorch/pytorch-engine/0.21.0/pytorch-engine-0.21.0.jar",
 				"https://repo1.maven.org/maven2/ai/djl/api/0.21.0/api-0.21.0.jar",
-				"https://repo1.maven.org/maven2/org/slf4j/slf4j-simple/1.7.25/slf4j-simple-1.7.25.jar"	,
-				"https://maven.scijava.org/content/repositories/releases/io/bioimage/dl-modelrunner-pytorch/0.2.0/dl-modelrunner-pytorch-0.2.0.jar",
+				"https://repo1.maven.org/maven2/org/slf4j/slf4j-simple/1.7.25/slf4j-simple-1.7.25.jar",
+				"https://maven.scijava.org/content/repositories/releases/io/bioimage/dl-modelrunner-pytorch/0.3.0/dl-modelrunner-pytorch-0.3.0.jar",
 				"https://repo1.maven.org/maven2/net/java/dev/jna/jna/5.13.0/jna-5.13.0.jar",
 				"https://repo1.maven.org/maven2/org/apache/commons/commons-compress/1.21/commons-compress-1.21.jar",
 				"https://repo1.maven.org/maven2/org/slf4j/slf4j-api/2.0.6/slf4j-api-2.0.6.jar"		
@@ -976,8 +976,8 @@
 				"https://repo1.maven.org/maven2/ai/djl/pytorch/pytorch-jni/1.13.1-0.21.0/pytorch-jni-1.13.1-0.21.0.jar",
 				"https://repo1.maven.org/maven2/ai/djl/pytorch/pytorch-engine/0.21.0/pytorch-engine-0.21.0.jar",
 				"https://repo1.maven.org/maven2/ai/djl/api/0.21.0/api-0.21.0.jar",
-				"https://repo1.maven.org/maven2/org/slf4j/slf4j-simple/1.7.25/slf4j-simple-1.7.25.jar"	,
-				"https://maven.scijava.org/content/repositories/releases/io/bioimage/dl-modelrunner-pytorch/0.2.0/dl-modelrunner-pytorch-0.2.0.jar",
+				"https://repo1.maven.org/maven2/org/slf4j/slf4j-simple/1.7.25/slf4j-simple-1.7.25.jar",
+				"https://maven.scijava.org/content/repositories/releases/io/bioimage/dl-modelrunner-pytorch/0.3.0/dl-modelrunner-pytorch-0.3.0.jar",
 				"https://repo1.maven.org/maven2/net/java/dev/jna/jna/5.13.0/jna-5.13.0.jar",
 				"https://repo1.maven.org/maven2/org/apache/commons/commons-compress/1.21/commons-compress-1.21.jar",
 				"https://repo1.maven.org/maven2/org/slf4j/slf4j-api/2.0.6/slf4j-api-2.0.6.jar"	
@@ -1016,8 +1016,8 @@
 				"https://repo1.maven.org/maven2/ai/djl/pytorch/pytorch-jni/1.13.0-0.20.0/pytorch-jni-1.13.0-0.20.0.jar",
 				"https://repo1.maven.org/maven2/ai/djl/pytorch/pytorch-engine/0.20.0/pytorch-engine-0.20.0.jar",
 				"https://repo1.maven.org/maven2/ai/djl/api/0.20.0/api-0.20.0.jar",
-				"https://repo1.maven.org/maven2/org/slf4j/slf4j-simple/1.7.25/slf4j-simple-1.7.25.jar"	,
-				"https://maven.scijava.org/content/repositories/releases/io/bioimage/dl-modelrunner-pytorch/0.2.0/dl-modelrunner-pytorch-0.2.0.jar",
+				"https://repo1.maven.org/maven2/org/slf4j/slf4j-simple/1.7.25/slf4j-simple-1.7.25.jar",
+				"https://maven.scijava.org/content/repositories/releases/io/bioimage/dl-modelrunner-pytorch/0.3.0/dl-modelrunner-pytorch-0.3.0.jar",
 				"https://repo1.maven.org/maven2/net/java/dev/jna/jna/5.13.0/jna-5.13.0.jar",
 				"https://repo1.maven.org/maven2/org/apache/commons/commons-compress/1.21/commons-compress-1.21.jar",
 				"https://repo1.maven.org/maven2/org/slf4j/slf4j-api/2.0.6/slf4j-api-2.0.6.jar"		
@@ -1035,8 +1035,8 @@
 				"https://repo1.maven.org/maven2/ai/djl/pytorch/pytorch-jni/1.13.1-0.21.0/pytorch-jni-1.13.1-0.21.0.jar",
 				"https://repo1.maven.org/maven2/ai/djl/pytorch/pytorch-engine/0.21.0/pytorch-engine-0.21.0.jar",
 				"https://repo1.maven.org/maven2/ai/djl/api/0.21.0/api-0.21.0.jar",
-				"https://repo1.maven.org/maven2/org/slf4j/slf4j-simple/1.7.25/slf4j-simple-1.7.25.jar"	,
-				"https://maven.scijava.org/content/repositories/releases/io/bioimage/dl-modelrunner-pytorch/0.2.0/dl-modelrunner-pytorch-0.2.0.jar",
+				"https://repo1.maven.org/maven2/org/slf4j/slf4j-simple/1.7.25/slf4j-simple-1.7.25.jar",
+				"https://maven.scijava.org/content/repositories/releases/io/bioimage/dl-modelrunner-pytorch/0.3.0/dl-modelrunner-pytorch-0.3.0.jar",
 				"https://repo1.maven.org/maven2/net/java/dev/jna/jna/5.13.0/jna-5.13.0.jar",
 				"https://repo1.maven.org/maven2/org/apache/commons/commons-compress/1.21/commons-compress-1.21.jar",
 				"https://repo1.maven.org/maven2/org/slf4j/slf4j-api/2.0.6/slf4j-api-2.0.6.jar"	
@@ -1054,8 +1054,8 @@
 				"https://repo1.maven.org/maven2/ai/djl/pytorch/pytorch-jni/1.13.0-0.20.0/pytorch-jni-1.13.0-0.20.0.jar",
 				"https://repo1.maven.org/maven2/ai/djl/pytorch/pytorch-engine/0.20.0/pytorch-engine-0.20.0.jar",
 				"https://repo1.maven.org/maven2/ai/djl/api/0.20.0/api-0.20.0.jar",
-				"https://repo1.maven.org/maven2/org/slf4j/slf4j-simple/1.7.25/slf4j-simple-1.7.25.jar"	,
-				"https://maven.scijava.org/content/repositories/releases/io/bioimage/dl-modelrunner-pytorch/0.2.0/dl-modelrunner-pytorch-0.2.0.jar",
+				"https://repo1.maven.org/maven2/org/slf4j/slf4j-simple/1.7.25/slf4j-simple-1.7.25.jar",
+				"https://maven.scijava.org/content/repositories/releases/io/bioimage/dl-modelrunner-pytorch/0.3.0/dl-modelrunner-pytorch-0.3.0.jar",
 				"https://repo1.maven.org/maven2/net/java/dev/jna/jna/5.13.0/jna-5.13.0.jar",
 				"https://repo1.maven.org/maven2/org/apache/commons/commons-compress/1.21/commons-compress-1.21.jar",
 				"https://repo1.maven.org/maven2/org/slf4j/slf4j-api/2.0.6/slf4j-api-2.0.6.jar"		
@@ -1073,8 +1073,8 @@
 				"https://repo1.maven.org/maven2/ai/djl/pytorch/pytorch-jni/1.13.1-0.21.0/pytorch-jni-1.13.1-0.21.0.jar",
 				"https://repo1.maven.org/maven2/ai/djl/pytorch/pytorch-engine/0.21.0/pytorch-engine-0.21.0.jar",
 				"https://repo1.maven.org/maven2/ai/djl/api/0.21.0/api-0.21.0.jar",
-				"https://repo1.maven.org/maven2/org/slf4j/slf4j-simple/1.7.25/slf4j-simple-1.7.25.jar"	,
-				"https://maven.scijava.org/content/repositories/releases/io/bioimage/dl-modelrunner-pytorch/0.2.0/dl-modelrunner-pytorch-0.2.0.jar",
+				"https://repo1.maven.org/maven2/org/slf4j/slf4j-simple/1.7.25/slf4j-simple-1.7.25.jar",
+				"https://maven.scijava.org/content/repositories/releases/io/bioimage/dl-modelrunner-pytorch/0.3.0/dl-modelrunner-pytorch-0.3.0.jar",
 				"https://repo1.maven.org/maven2/net/java/dev/jna/jna/5.13.0/jna-5.13.0.jar",
 				"https://repo1.maven.org/maven2/org/apache/commons/commons-compress/1.21/commons-compress-1.21.jar",
 				"https://repo1.maven.org/maven2/org/slf4j/slf4j-api/2.0.6/slf4j-api-2.0.6.jar"	
@@ -1112,8 +1112,8 @@
 				"https://repo1.maven.org/maven2/ai/djl/pytorch/pytorch-jni/1.12.1-0.19.0/pytorch-jni-1.12.1-0.19.0.jar",
 				"https://repo1.maven.org/maven2/ai/djl/pytorch/pytorch-engine/0.19.0/pytorch-engine-0.19.0.jar",
 				"https://repo1.maven.org/maven2/ai/djl/api/0.19.0/api-0.19.0.jar",
-				"https://repo1.maven.org/maven2/org/slf4j/slf4j-simple/1.7.25/slf4j-simple-1.7.25.jar"	,
-				"https://maven.scijava.org/content/repositories/releases/io/bioimage/dl-modelrunner-pytorch/0.2.0/dl-modelrunner-pytorch-0.2.0.jar",
+				"https://repo1.maven.org/maven2/org/slf4j/slf4j-simple/1.7.25/slf4j-simple-1.7.25.jar",
+				"https://maven.scijava.org/content/repositories/releases/io/bioimage/dl-modelrunner-pytorch/0.3.0/dl-modelrunner-pytorch-0.3.0.jar",
 				"https://repo1.maven.org/maven2/net/java/dev/jna/jna/5.13.0/jna-5.13.0.jar",
 				"https://repo1.maven.org/maven2/org/apache/commons/commons-compress/1.21/commons-compress-1.21.jar",
 				"https://repo1.maven.org/maven2/org/slf4j/slf4j-api/2.0.6/slf4j-api-2.0.6.jar"			
@@ -1131,8 +1131,8 @@
 				"https://repo1.maven.org/maven2/ai/djl/pytorch/pytorch-jni/1.12.1-0.19.0/pytorch-jni-1.12.1-0.19.0.jar",
 				"https://repo1.maven.org/maven2/ai/djl/pytorch/pytorch-engine/0.19.0/pytorch-engine-0.19.0.jar",
 				"https://repo1.maven.org/maven2/ai/djl/api/0.19.0/api-0.19.0.jar",
-				"https://repo1.maven.org/maven2/org/slf4j/slf4j-simple/1.7.25/slf4j-simple-1.7.25.jar"	,
-				"https://maven.scijava.org/content/repositories/releases/io/bioimage/dl-modelrunner-pytorch/0.2.0/dl-modelrunner-pytorch-0.2.0.jar",
+				"https://repo1.maven.org/maven2/org/slf4j/slf4j-simple/1.7.25/slf4j-simple-1.7.25.jar",
+				"https://maven.scijava.org/content/repositories/releases/io/bioimage/dl-modelrunner-pytorch/0.3.0/dl-modelrunner-pytorch-0.3.0.jar",
 				"https://repo1.maven.org/maven2/net/java/dev/jna/jna/5.13.0/jna-5.13.0.jar",
 				"https://repo1.maven.org/maven2/org/apache/commons/commons-compress/1.21/commons-compress-1.21.jar",
 				"https://repo1.maven.org/maven2/org/slf4j/slf4j-api/2.0.6/slf4j-api-2.0.6.jar"		
@@ -1150,8 +1150,8 @@
 				"https://repo1.maven.org/maven2/ai/djl/pytorch/pytorch-jni/1.12.1-0.19.0/pytorch-jni-1.12.1-0.19.0.jar",
 				"https://repo1.maven.org/maven2/ai/djl/pytorch/pytorch-engine/0.19.0/pytorch-engine-0.19.0.jar",
 				"https://repo1.maven.org/maven2/ai/djl/api/0.19.0/api-0.19.0.jar",
-				"https://repo1.maven.org/maven2/org/slf4j/slf4j-simple/1.7.25/slf4j-simple-1.7.25.jar"	,
-				"https://maven.scijava.org/content/repositories/releases/io/bioimage/dl-modelrunner-pytorch/0.2.0/dl-modelrunner-pytorch-0.2.0.jar",
+				"https://repo1.maven.org/maven2/org/slf4j/slf4j-simple/1.7.25/slf4j-simple-1.7.25.jar",
+				"https://maven.scijava.org/content/repositories/releases/io/bioimage/dl-modelrunner-pytorch/0.3.0/dl-modelrunner-pytorch-0.3.0.jar",
 				"https://repo1.maven.org/maven2/net/java/dev/jna/jna/5.13.0/jna-5.13.0.jar",
 				"https://repo1.maven.org/maven2/org/apache/commons/commons-compress/1.21/commons-compress-1.21.jar",
 				"https://repo1.maven.org/maven2/org/slf4j/slf4j-api/2.0.6/slf4j-api-2.0.6.jar"		
@@ -1170,7 +1170,7 @@
 				"https://repo1.maven.org/maven2/ai/djl/pytorch/pytorch-engine/0.19.0/pytorch-engine-0.19.0.jar",
 				"https://repo1.maven.org/maven2/ai/djl/api/0.19.0/api-0.19.0.jar",
 				"https://repo1.maven.org/maven2/org/slf4j/slf4j-simple/1.7.25/slf4j-simple-1.7.25.jar",
-				"https://maven.scijava.org/content/repositories/releases/io/bioimage/dl-modelrunner-pytorch/0.2.0/dl-modelrunner-pytorch-0.2.0.jar",
+				"https://maven.scijava.org/content/repositories/releases/io/bioimage/dl-modelrunner-pytorch/0.3.0/dl-modelrunner-pytorch-0.3.0.jar",
 				"https://repo1.maven.org/maven2/net/java/dev/jna/jna/5.13.0/jna-5.13.0.jar",
 				"https://repo1.maven.org/maven2/org/apache/commons/commons-compress/1.21/commons-compress-1.21.jar",
 				"https://repo1.maven.org/maven2/org/slf4j/slf4j-api/2.0.6/slf4j-api-2.0.6.jar"		
@@ -1188,8 +1188,8 @@
 				"https://repo1.maven.org/maven2/ai/djl/pytorch/pytorch-jni/1.11.0-0.19.0/pytorch-jni-1.11.0-0.19.0.jar",
 				"https://repo1.maven.org/maven2/ai/djl/pytorch/pytorch-engine/0.19.0/pytorch-engine-0.19.0.jar",
 				"https://repo1.maven.org/maven2/ai/djl/api/0.19.0/api-0.19.0.jar",
-				"https://repo1.maven.org/maven2/org/slf4j/slf4j-simple/1.7.25/slf4j-simple-1.7.25.jar"	,
-				"https://maven.scijava.org/content/repositories/releases/io/bioimage/dl-modelrunner-pytorch/0.2.0/dl-modelrunner-pytorch-0.2.0.jar",
+				"https://repo1.maven.org/maven2/org/slf4j/slf4j-simple/1.7.25/slf4j-simple-1.7.25.jar",
+				"https://maven.scijava.org/content/repositories/releases/io/bioimage/dl-modelrunner-pytorch/0.3.0/dl-modelrunner-pytorch-0.3.0.jar",
 				"https://repo1.maven.org/maven2/net/java/dev/jna/jna/5.13.0/jna-5.13.0.jar",
 				"https://repo1.maven.org/maven2/org/apache/commons/commons-compress/1.21/commons-compress-1.21.jar",
 				"https://repo1.maven.org/maven2/org/slf4j/slf4j-api/2.0.6/slf4j-api-2.0.6.jar"			
@@ -1207,8 +1207,8 @@
 				"https://repo1.maven.org/maven2/ai/djl/pytorch/pytorch-jni/1.11.0-0.19.0/pytorch-jni-1.11.0-0.19.0.jar",
 				"https://repo1.maven.org/maven2/ai/djl/pytorch/pytorch-engine/0.19.0/pytorch-engine-0.19.0.jar",
 				"https://repo1.maven.org/maven2/ai/djl/api/0.19.0/api-0.19.0.jar",
-				"https://repo1.maven.org/maven2/org/slf4j/slf4j-simple/1.7.25/slf4j-simple-1.7.25.jar"	,
-				"https://maven.scijava.org/content/repositories/releases/io/bioimage/dl-modelrunner-pytorch/0.2.0/dl-modelrunner-pytorch-0.2.0.jar",
+				"https://repo1.maven.org/maven2/org/slf4j/slf4j-simple/1.7.25/slf4j-simple-1.7.25.jar",
+				"https://maven.scijava.org/content/repositories/releases/io/bioimage/dl-modelrunner-pytorch/0.3.0/dl-modelrunner-pytorch-0.3.0.jar",
 				"https://repo1.maven.org/maven2/net/java/dev/jna/jna/5.13.0/jna-5.13.0.jar",
 				"https://repo1.maven.org/maven2/org/apache/commons/commons-compress/1.21/commons-compress-1.21.jar",
 				"https://repo1.maven.org/maven2/org/slf4j/slf4j-api/2.0.6/slf4j-api-2.0.6.jar"			
@@ -1226,8 +1226,8 @@
 				"https://repo1.maven.org/maven2/ai/djl/pytorch/pytorch-jni/1.11.0-0.19.0/pytorch-jni-1.11.0-0.19.0.jar",
 				"https://repo1.maven.org/maven2/ai/djl/pytorch/pytorch-engine/0.19.0/pytorch-engine-0.19.0.jar",
 				"https://repo1.maven.org/maven2/ai/djl/api/0.19.0/api-0.19.0.jar",
-				"https://repo1.maven.org/maven2/org/slf4j/slf4j-simple/1.7.25/slf4j-simple-1.7.25.jar"	,
-				"https://maven.scijava.org/content/repositories/releases/io/bioimage/dl-modelrunner-pytorch/0.2.0/dl-modelrunner-pytorch-0.2.0.jar",
+				"https://repo1.maven.org/maven2/org/slf4j/slf4j-simple/1.7.25/slf4j-simple-1.7.25.jar",
+				"https://maven.scijava.org/content/repositories/releases/io/bioimage/dl-modelrunner-pytorch/0.3.0/dl-modelrunner-pytorch-0.3.0.jar",
 				"https://repo1.maven.org/maven2/net/java/dev/jna/jna/5.13.0/jna-5.13.0.jar",
 				"https://repo1.maven.org/maven2/org/apache/commons/commons-compress/1.21/commons-compress-1.21.jar",
 				"https://repo1.maven.org/maven2/org/slf4j/slf4j-api/2.0.6/slf4j-api-2.0.6.jar"		
@@ -1245,8 +1245,8 @@
 				"https://repo1.maven.org/maven2/ai/djl/pytorch/pytorch-jni/1.11.0-0.19.0/pytorch-jni-1.11.0-0.19.0.jar",
 				"https://repo1.maven.org/maven2/ai/djl/pytorch/pytorch-engine/0.19.0/pytorch-engine-0.19.0.jar",
 				"https://repo1.maven.org/maven2/ai/djl/api/0.19.0/api-0.19.0.jar",
-				"https://repo1.maven.org/maven2/org/slf4j/slf4j-simple/1.7.25/slf4j-simple-1.7.25.jar"	,
-				"https://maven.scijava.org/content/repositories/releases/io/bioimage/dl-modelrunner-pytorch/0.2.0/dl-modelrunner-pytorch-0.2.0.jar",
+				"https://repo1.maven.org/maven2/org/slf4j/slf4j-simple/1.7.25/slf4j-simple-1.7.25.jar",
+				"https://maven.scijava.org/content/repositories/releases/io/bioimage/dl-modelrunner-pytorch/0.3.0/dl-modelrunner-pytorch-0.3.0.jar",
 				"https://repo1.maven.org/maven2/net/java/dev/jna/jna/5.13.0/jna-5.13.0.jar",
 				"https://repo1.maven.org/maven2/org/apache/commons/commons-compress/1.21/commons-compress-1.21.jar",
 				"https://repo1.maven.org/maven2/org/slf4j/slf4j-api/2.0.6/slf4j-api-2.0.6.jar"		
@@ -1265,7 +1265,7 @@
 				"https://repo1.maven.org/maven2/ai/djl/pytorch/pytorch-engine/0.19.0/pytorch-engine-0.19.0.jar",
 				"https://repo1.maven.org/maven2/ai/djl/api/0.19.0/api-0.19.0.jar",
 				"https://repo1.maven.org/maven2/org/slf4j/slf4j-simple/1.7.25/slf4j-simple-1.7.25.jar",
-				"https://maven.scijava.org/content/repositories/releases/io/bioimage/dl-modelrunner-pytorch/0.2.0/dl-modelrunner-pytorch-0.2.0.jar",
+				"https://maven.scijava.org/content/repositories/releases/io/bioimage/dl-modelrunner-pytorch/0.3.0/dl-modelrunner-pytorch-0.3.0.jar",
 				"https://repo1.maven.org/maven2/net/java/dev/jna/jna/5.13.0/jna-5.13.0.jar",
 				"https://repo1.maven.org/maven2/org/apache/commons/commons-compress/1.21/commons-compress-1.21.jar",
 				"https://repo1.maven.org/maven2/org/slf4j/slf4j-api/2.0.6/slf4j-api-2.0.6.jar"		
@@ -1283,8 +1283,8 @@
 				"https://repo1.maven.org/maven2/ai/djl/pytorch/pytorch-jni/1.10.0-0.19.0/pytorch-jni-1.10.0-0.19.0.jar",
 				"https://repo1.maven.org/maven2/ai/djl/pytorch/pytorch-engine/0.19.0/pytorch-engine-0.19.0.jar",
 				"https://repo1.maven.org/maven2/ai/djl/api/0.19.0/api-0.19.0.jar",
-				"https://repo1.maven.org/maven2/org/slf4j/slf4j-simple/1.7.25/slf4j-simple-1.7.25.jar"	,
-				"https://maven.scijava.org/content/repositories/releases/io/bioimage/dl-modelrunner-pytorch/0.2.0/dl-modelrunner-pytorch-0.2.0.jar",
+				"https://repo1.maven.org/maven2/org/slf4j/slf4j-simple/1.7.25/slf4j-simple-1.7.25.jar",
+				"https://maven.scijava.org/content/repositories/releases/io/bioimage/dl-modelrunner-pytorch/0.3.0/dl-modelrunner-pytorch-0.3.0.jar",
 				"https://repo1.maven.org/maven2/net/java/dev/jna/jna/5.12.1/jna-5.12.1.jar",
 				"https://repo1.maven.org/maven2/org/apache/commons/commons-compress/1.21/commons-compress-1.21.jar",
 				"https://repo1.maven.org/maven2/org/slf4j/slf4j-api/2.0.6/slf4j-api-2.0.6.jar"			
@@ -1302,8 +1302,8 @@
 				"https://repo1.maven.org/maven2/ai/djl/pytorch/pytorch-jni/1.10.0-0.19.0/pytorch-jni-1.10.0-0.19.0.jar",
 				"https://repo1.maven.org/maven2/ai/djl/pytorch/pytorch-engine/0.19.0/pytorch-engine-0.19.0.jar",
 				"https://repo1.maven.org/maven2/ai/djl/api/0.19.0/api-0.19.0.jar",
-				"https://repo1.maven.org/maven2/org/slf4j/slf4j-simple/1.7.25/slf4j-simple-1.7.25.jar"	,
-				"https://maven.scijava.org/content/repositories/releases/io/bioimage/dl-modelrunner-pytorch/0.2.0/dl-modelrunner-pytorch-0.2.0.jar",
+				"https://repo1.maven.org/maven2/org/slf4j/slf4j-simple/1.7.25/slf4j-simple-1.7.25.jar",
+				"https://maven.scijava.org/content/repositories/releases/io/bioimage/dl-modelrunner-pytorch/0.3.0/dl-modelrunner-pytorch-0.3.0.jar",
 				"https://repo1.maven.org/maven2/net/java/dev/jna/jna/5.12.1/jna-5.12.1.jar",
 				"https://repo1.maven.org/maven2/org/apache/commons/commons-compress/1.21/commons-compress-1.21.jar",
 				"https://repo1.maven.org/maven2/org/slf4j/slf4j-api/2.0.6/slf4j-api-2.0.6.jar"		
@@ -1322,7 +1322,7 @@
 				"https://repo1.maven.org/maven2/ai/djl/pytorch/pytorch-engine/0.19.0/pytorch-engine-0.19.0.jar",
 				"https://repo1.maven.org/maven2/ai/djl/api/0.19.0/api-0.19.0.jar",
 				"https://repo1.maven.org/maven2/org/slf4j/slf4j-simple/1.7.25/slf4j-simple-1.7.25.jar",
-				"https://maven.scijava.org/content/repositories/releases/io/bioimage/dl-modelrunner-pytorch/0.2.0/dl-modelrunner-pytorch-0.2.0.jar",
+				"https://maven.scijava.org/content/repositories/releases/io/bioimage/dl-modelrunner-pytorch/0.3.0/dl-modelrunner-pytorch-0.3.0.jar",
 				"https://repo1.maven.org/maven2/net/java/dev/jna/jna/5.12.1/jna-5.12.1.jar",
 				"https://repo1.maven.org/maven2/org/apache/commons/commons-compress/1.21/commons-compress-1.21.jar",
 				"https://repo1.maven.org/maven2/org/slf4j/slf4j-api/2.0.6/slf4j-api-2.0.6.jar"		
@@ -1340,8 +1340,8 @@
 				"https://repo1.maven.org/maven2/ai/djl/pytorch/pytorch-native-auto/1.9.1/pytorch-native-auto-1.9.1.jar",
 				"https://repo1.maven.org/maven2/ai/djl/pytorch/pytorch-engine/0.14.0/pytorch-engine-0.14.0.jar",
 				"https://repo1.maven.org/maven2/ai/djl/api/0.14.0/api-0.14.0.jar",
-				"https://repo1.maven.org/maven2/org/slf4j/slf4j-simple/1.7.25/slf4j-simple-1.7.25.jar"	,
-				"https://maven.scijava.org/content/repositories/releases/io/bioimage/dl-modelrunner-pytorch/0.2.0/dl-modelrunner-pytorch-0.2.0.jar",
+				"https://repo1.maven.org/maven2/org/slf4j/slf4j-simple/1.7.25/slf4j-simple-1.7.25.jar",
+				"https://maven.scijava.org/content/repositories/releases/io/bioimage/dl-modelrunner-pytorch/0.3.0/dl-modelrunner-pytorch-0.3.0.jar",
 				"https://repo1.maven.org/maven2/net/java/dev/jna/jna/5.12.1/jna-5.12.1.jar",
 				"https://repo1.maven.org/maven2/org/apache/commons/commons-compress/1.21/commons-compress-1.21.jar",
 				"https://repo1.maven.org/maven2/org/slf4j/slf4j-api/2.0.6/slf4j-api-2.0.6.jar"			
@@ -1359,8 +1359,8 @@
 				"https://repo1.maven.org/maven2/ai/djl/pytorch/pytorch-native-auto/1.9.1/pytorch-native-auto-1.9.1.jar",
 				"https://repo1.maven.org/maven2/ai/djl/pytorch/pytorch-engine/0.14.0/pytorch-engine-0.14.0.jar",
 				"https://repo1.maven.org/maven2/ai/djl/api/0.14.0/api-0.14.0.jar",
-				"https://repo1.maven.org/maven2/org/slf4j/slf4j-simple/1.7.25/slf4j-simple-1.7.25.jar"	,
-				"https://maven.scijava.org/content/repositories/releases/io/bioimage/dl-modelrunner-pytorch/0.2.0/dl-modelrunner-pytorch-0.2.0.jar",
+				"https://repo1.maven.org/maven2/org/slf4j/slf4j-simple/1.7.25/slf4j-simple-1.7.25.jar",
+				"https://maven.scijava.org/content/repositories/releases/io/bioimage/dl-modelrunner-pytorch/0.3.0/dl-modelrunner-pytorch-0.3.0.jar",
 				"https://repo1.maven.org/maven2/net/java/dev/jna/jna/5.12.1/jna-5.12.1.jar",
 				"https://repo1.maven.org/maven2/org/apache/commons/commons-compress/1.21/commons-compress-1.21.jar",
 				"https://repo1.maven.org/maven2/org/slf4j/slf4j-api/2.0.6/slf4j-api-2.0.6.jar"		
@@ -1379,7 +1379,7 @@
 				"https://repo1.maven.org/maven2/ai/djl/pytorch/pytorch-engine/0.14.0/pytorch-engine-0.14.0.jar",
 				"https://repo1.maven.org/maven2/ai/djl/api/0.14.0/api-0.14.0.jar",
 				"https://repo1.maven.org/maven2/org/slf4j/slf4j-simple/1.7.25/slf4j-simple-1.7.25.jar",
-				"https://maven.scijava.org/content/repositories/releases/io/bioimage/dl-modelrunner-pytorch/0.2.0/dl-modelrunner-pytorch-0.2.0.jar",
+				"https://maven.scijava.org/content/repositories/releases/io/bioimage/dl-modelrunner-pytorch/0.3.0/dl-modelrunner-pytorch-0.3.0.jar",
 				"https://repo1.maven.org/maven2/net/java/dev/jna/jna/5.12.1/jna-5.12.1.jar",
 				"https://repo1.maven.org/maven2/org/apache/commons/commons-compress/1.21/commons-compress-1.21.jar",
 				"https://repo1.maven.org/maven2/org/slf4j/slf4j-api/2.0.6/slf4j-api-2.0.6.jar"		
@@ -1398,7 +1398,7 @@
 				"https://repo1.maven.org/maven2/ai/djl/pytorch/pytorch-engine/0.13.0/pytorch-engine-0.13.0.jar",
 				"https://repo1.maven.org/maven2/ai/djl/api/0.13.0/api-0.13.0.jar",
 				"https://repo1.maven.org/maven2/org/slf4j/slf4j-simple/1.7.25/slf4j-simple-1.7.25.jar",
-				"https://maven.scijava.org/content/repositories/releases/io/bioimage/dl-modelrunner-pytorch/0.2.0/dl-modelrunner-pytorch-0.2.0.jar",
+				"https://maven.scijava.org/content/repositories/releases/io/bioimage/dl-modelrunner-pytorch/0.3.0/dl-modelrunner-pytorch-0.3.0.jar",
 				"https://repo1.maven.org/maven2/net/java/dev/jna/jna/5.12.1/jna-5.12.1.jar",
 				"https://repo1.maven.org/maven2/org/apache/commons/commons-compress/1.21/commons-compress-1.21.jar",
 				"https://repo1.maven.org/maven2/org/slf4j/slf4j-api/2.0.6/slf4j-api-2.0.6.jar"			
@@ -1417,7 +1417,7 @@
 				"https://repo1.maven.org/maven2/ai/djl/pytorch/pytorch-engine/0.13.0/pytorch-engine-0.13.0.jar",
 				"https://repo1.maven.org/maven2/ai/djl/api/0.13.0/api-0.13.0.jar",
 				"https://repo1.maven.org/maven2/org/slf4j/slf4j-simple/1.7.25/slf4j-simple-1.7.25.jar",
-				"https://maven.scijava.org/content/repositories/releases/io/bioimage/dl-modelrunner-pytorch/0.2.0/dl-modelrunner-pytorch-0.2.0.jar",
+				"https://maven.scijava.org/content/repositories/releases/io/bioimage/dl-modelrunner-pytorch/0.3.0/dl-modelrunner-pytorch-0.3.0.jar",
 				"https://repo1.maven.org/maven2/net/java/dev/jna/jna/5.12.1/jna-5.12.1.jar",
 				"https://repo1.maven.org/maven2/org/apache/commons/commons-compress/1.21/commons-compress-1.21.jar",
 				"https://repo1.maven.org/maven2/org/slf4j/slf4j-api/2.0.6/slf4j-api-2.0.6.jar"			
@@ -1436,7 +1436,7 @@
 				"https://repo1.maven.org/maven2/ai/djl/pytorch/pytorch-engine/0.13.0/pytorch-engine-0.13.0.jar",
 				"https://repo1.maven.org/maven2/ai/djl/api/0.13.0/api-0.13.0.jar",
 				"https://repo1.maven.org/maven2/org/slf4j/slf4j-simple/1.7.25/slf4j-simple-1.7.25.jar",
-				"https://maven.scijava.org/content/repositories/releases/io/bioimage/dl-modelrunner-pytorch/0.2.0/dl-modelrunner-pytorch-0.2.0.jar",
+				"https://maven.scijava.org/content/repositories/releases/io/bioimage/dl-modelrunner-pytorch/0.3.0/dl-modelrunner-pytorch-0.3.0.jar",
 				"https://repo1.maven.org/maven2/net/java/dev/jna/jna/5.12.1/jna-5.12.1.jar",
 				"https://repo1.maven.org/maven2/org/apache/commons/commons-compress/1.21/commons-compress-1.21.jar",
 				"https://repo1.maven.org/maven2/org/slf4j/slf4j-api/2.0.6/slf4j-api-2.0.6.jar"				
@@ -1455,7 +1455,7 @@
 				"https://repo1.maven.org/maven2/ai/djl/pytorch/pytorch-engine/0.15.0/pytorch-engine-0.15.0.jar",
 				"https://repo1.maven.org/maven2/ai/djl/api/0.12.0/api-0.12.0.jar",
 				"https://repo1.maven.org/maven2/org/slf4j/slf4j-simple/1.7.25/slf4j-simple-1.7.25.jar",
-				"https://maven.scijava.org/content/repositories/releases/io/bioimage/dl-modelrunner-pytorch/0.2.0/dl-modelrunner-pytorch-0.2.0.jar",
+				"https://maven.scijava.org/content/repositories/releases/io/bioimage/dl-modelrunner-pytorch/0.3.0/dl-modelrunner-pytorch-0.3.0.jar",
 				"https://repo1.maven.org/maven2/net/java/dev/jna/jna/5.12.1/jna-5.12.1.jar",
 				"https://repo1.maven.org/maven2/org/apache/commons/commons-compress/1.21/commons-compress-1.21.jar",
 				"https://repo1.maven.org/maven2/org/slf4j/slf4j-api/2.0.6/slf4j-api-2.0.6.jar"			
@@ -1474,7 +1474,7 @@
 				"https://repo1.maven.org/maven2/ai/djl/pytorch/pytorch-engine/0.15.0/pytorch-engine-0.15.0.jar",
 				"https://repo1.maven.org/maven2/ai/djl/api/0.12.0/api-0.12.0.jar",
 				"https://repo1.maven.org/maven2/org/slf4j/slf4j-simple/1.7.25/slf4j-simple-1.7.25.jar",
-				"https://maven.scijava.org/content/repositories/releases/io/bioimage/dl-modelrunner-pytorch/0.2.0/dl-modelrunner-pytorch-0.2.0.jar",
+				"https://maven.scijava.org/content/repositories/releases/io/bioimage/dl-modelrunner-pytorch/0.3.0/dl-modelrunner-pytorch-0.3.0.jar",
 				"https://repo1.maven.org/maven2/net/java/dev/jna/jna/5.12.1/jna-5.12.1.jar",
 				"https://repo1.maven.org/maven2/org/apache/commons/commons-compress/1.21/commons-compress-1.21.jar",
 				"https://repo1.maven.org/maven2/org/slf4j/slf4j-api/2.0.6/slf4j-api-2.0.6.jar"			
@@ -1493,7 +1493,7 @@
 				"https://repo1.maven.org/maven2/ai/djl/pytorch/pytorch-engine/0.15.0/pytorch-engine-0.15.0.jar",
 				"https://repo1.maven.org/maven2/ai/djl/api/0.12.0/api-0.12.0.jar",
 				"https://repo1.maven.org/maven2/org/slf4j/slf4j-simple/1.7.25/slf4j-simple-1.7.25.jar",
-				"https://maven.scijava.org/content/repositories/releases/io/bioimage/dl-modelrunner-pytorch/0.2.0/dl-modelrunner-pytorch-0.2.0.jar",
+				"https://maven.scijava.org/content/repositories/releases/io/bioimage/dl-modelrunner-pytorch/0.3.0/dl-modelrunner-pytorch-0.3.0.jar",
 				"https://repo1.maven.org/maven2/net/java/dev/jna/jna/5.12.1/jna-5.12.1.jar",
 				"https://repo1.maven.org/maven2/org/apache/commons/commons-compress/1.21/commons-compress-1.21.jar",
 				"https://repo1.maven.org/maven2/org/slf4j/slf4j-api/2.0.6/slf4j-api-2.0.6.jar"			
@@ -1512,7 +1512,7 @@
 				"https://repo1.maven.org/maven2/ai/djl/pytorch/pytorch-engine/0.10.0/pytorch-engine-0.10.0.jar",
 				"https://repo1.maven.org/maven2/ai/djl/api/0.10.0/api-0.10.0.jar",
 				"https://repo1.maven.org/maven2/org/slf4j/slf4j-simple/1.7.25/slf4j-simple-1.7.25.jar",
-				"https://maven.scijava.org/content/repositories/releases/io/bioimage/dl-modelrunner-pytorch/0.2.0/dl-modelrunner-pytorch-0.2.0.jar",
+				"https://maven.scijava.org/content/repositories/releases/io/bioimage/dl-modelrunner-pytorch/0.3.0/dl-modelrunner-pytorch-0.3.0.jar",
 				"https://repo1.maven.org/maven2/net/java/dev/jna/jna/5.12.1/jna-5.12.1.jar",
 				"https://repo1.maven.org/maven2/org/apache/commons/commons-compress/1.21/commons-compress-1.21.jar",
 				"https://repo1.maven.org/maven2/org/slf4j/slf4j-api/2.0.6/slf4j-api-2.0.6.jar"				
@@ -1531,7 +1531,7 @@
 				"https://repo1.maven.org/maven2/ai/djl/pytorch/pytorch-engine/0.10.0/pytorch-engine-0.10.0.jar",
 				"https://repo1.maven.org/maven2/ai/djl/api/0.10.0/api-0.10.0.jar",
 				"https://repo1.maven.org/maven2/org/slf4j/slf4j-simple/1.7.25/slf4j-simple-1.7.25.jar"	,
-				"https://maven.scijava.org/content/repositories/releases/io/bioimage/dl-modelrunner-pytorch/0.2.0/dl-modelrunner-pytorch-0.2.0.jar",
+				"https://maven.scijava.org/content/repositories/releases/io/bioimage/dl-modelrunner-pytorch/0.3.0/dl-modelrunner-pytorch-0.3.0.jar",
 				"https://repo1.maven.org/maven2/net/java/dev/jna/jna/5.12.1/jna-5.12.1.jar",
 				"https://repo1.maven.org/maven2/org/apache/commons/commons-compress/1.21/commons-compress-1.21.jar",
 				"https://repo1.maven.org/maven2/org/slf4j/slf4j-api/2.0.6/slf4j-api-2.0.6.jar"				
@@ -1550,7 +1550,7 @@
 				"https://repo1.maven.org/maven2/ai/djl/pytorch/pytorch-engine/0.10.0/pytorch-engine-0.10.0.jar",
 				"https://repo1.maven.org/maven2/ai/djl/api/0.10.0/api-0.10.0.jar",
 				"https://repo1.maven.org/maven2/org/slf4j/slf4j-simple/1.7.25/slf4j-simple-1.7.25.jar",
-				"https://maven.scijava.org/content/repositories/releases/io/bioimage/dl-modelrunner-pytorch/0.2.0/dl-modelrunner-pytorch-0.2.0.jar",
+				"https://maven.scijava.org/content/repositories/releases/io/bioimage/dl-modelrunner-pytorch/0.3.0/dl-modelrunner-pytorch-0.3.0.jar",
 				"https://repo1.maven.org/maven2/net/java/dev/jna/jna/5.12.1/jna-5.12.1.jar",
 				"https://repo1.maven.org/maven2/org/apache/commons/commons-compress/1.21/commons-compress-1.21.jar",
 				"https://repo1.maven.org/maven2/org/slf4j/slf4j-api/2.0.6/slf4j-api-2.0.6.jar"			
