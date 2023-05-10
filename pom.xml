@@ -127,12 +127,4 @@
 			<artifactId>imglib2</artifactId>
 		</dependency>
 	</dependencies>
-
-	<repositories>
-		<!-- NB: for SciJava dependencies -->
-		<repository>
-			<id>scijava.public</id>
-			<url>https://maven.scijava.org/content/groups/public</url>
-		</repository>
-	</repositories>
 </project>
