@@ -1,0 +1,25 @@
+name: Download all engines
+on:
+  push:
+    paths:
+      - src/resources/availableDLVersions.json
+  pull_request:
+    branches: [ main ]
+jobs:
+  build-and-run:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [macos-10.15, macos-latest, ubuntu-latest, windows-latest]
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v2
+    - name: Set up Python 3.9
+      uses: actions/setup-python@v4
+      with:
+        python-version: 3.9
+    - name: Download all engines
+      run: |
+        python download_engines.py
+        cd engines
+        ls
