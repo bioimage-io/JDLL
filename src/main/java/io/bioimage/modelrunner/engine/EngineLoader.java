@@ -330,4 +330,13 @@ public class EngineLoader extends ClassLoader
 		setBaseClassLoader();
 		System.out.println( "Exited engine ClassLoader" );
 	}
+	
+	/**
+	 * 
+	 * @return a map where the keys are the engines that have been loaded and
+	 * 	the values the classloaders used to load them
+	 */
+	public static HashMap<String, ClassLoader> getLoadedEngines() {
+		return loadedEngines;
+	}
 }
