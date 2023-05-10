@@ -923,7 +923,7 @@
 				"https://maven.scijava.org/content/repositories/releases/io/bioimage/dl-modelrunner-pytorch/0.3.0/dl-modelrunner-pytorch-0.3.0.jar",
 				"https://repo1.maven.org/maven2/net/java/dev/jna/jna/5.13.0/jna-5.13.0.jar",
 				"https://repo1.maven.org/maven2/org/apache/commons/commons-compress/1.21/commons-compress-1.21.jar",
-				"https://repo1.maven.org/maven2/org/slf4j/slf4j-api/2.0.6/slf4j-api-2.0.6.jar"		
+				"https://repo1.maven.org/maven2/org/slf4j/slf4j-api/2.0.6/slf4j-api-2.0.6.jar"
 			]
 		},
 		{
