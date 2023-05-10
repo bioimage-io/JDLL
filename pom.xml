@@ -104,7 +104,7 @@
 
 	<properties>
 		<package-name>io.bioimage.modelrunner</package-name>
-		<license.licenseName>apache_2</license.licenseName>
+		<license.licenseName>apache_v2</license.licenseName>
 		<license.copyrightOwners>Institut Pasteur and BioImage.IO developers.</license.copyrightOwners>
 		<license.excludes>**/*.json</license.excludes>
 
