@@ -2,7 +2,7 @@ name: Download all engines
 on:
   push:
     paths:
-      - bioimage-io/JDLL/src/main/resources/availableDLVersions.json
+      - src/main/resources/availableDLVersions.json
   pull_request:
     branches: [ main ]
 jobs:
@@ -20,6 +20,4 @@ jobs:
         python-version: 3.9
     - name: Download all engines
       run: |
-        python download_engines.py
-        cd engines
-        ls
+        python download-engines.py
