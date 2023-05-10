@@ -798,15 +798,20 @@
 			"rosetta": true,
 			"jars": [
 				"https://sandbox.zenodo.org/record/1182168/files/dl-modelrunner-pytorch-javacpp-0.2.1-SNAPSHOT.jar?download=1",
-				"https://sandbox.zenodo.org/record/1200598/files/pytorch-platform-1.13.1-1.5.9-SNAPSHOT.jar?download=1",
-				"https://sandbox.zenodo.org/record/1200598/files/pytorch-1.13.1-1.5.9-SNAPSHOT.jar?download=1",
-				"https://sandbox.zenodo.org/record/1200598/files/pytorch-1.13.1-1.5.9-SNAPSHOT-macosx-x86_64.jar?download=1",
-				"https://sandbox.zenodo.org/record/1200598/files/javacpp-platform-1.5.9-SNAPSHOT.jar?download=1",
-				"https://sandbox.zenodo.org/record/1200598/files/javacpp-1.5.9-SNAPSHOT.jar?download=1",
-				"https://sandbox.zenodo.org/record/1200598/files/javacpp-1.5.9-SNAPSHOT-macosx-x86_64.jar?download=1",
-				"https://sandbox.zenodo.org/record/1200598/files/openblas-platform-0.3.23-1.5.9-SNAPSHOT.jar?download=1",
-				"https://sandbox.zenodo.org/record/1200598/files/openblas-0.3.23-1.5.9-SNAPSHOT.jar?download=1",
-				"https://sandbox.zenodo.org/record/1200598/files/openblas-0.3.23-1.5.9-SNAPSHOT-macosx-x86_64.jar?download=1"		
+				"https://sandbox.zenodo.org/record/1200628/files/javacpp-1.5.9-SNAPSHOT-macosx-x86_64.jar?download=1",
+				"https://sandbox.zenodo.org/record/1200628/files/javacpp-platform-1.5.9-SNAPSHOT.jar?download=1",
+				"https://sandbox.zenodo.org/record/1200628/files/mkl-2023.1-1.5.9-SNAPSHOT-macosx-x86_64-redist.jar?download=1",
+				"https://sandbox.zenodo.org/record/1200628/files/mkl-2023.1-1.5.9-SNAPSHOT-macosx-x86_64.jar?download=1",
+				"https://sandbox.zenodo.org/record/1200628/files/mkl-2023.1-1.5.9-SNAPSHOT.jar?download=1",
+				"https://sandbox.zenodo.org/record/1200628/files/mkl-platform-2023.1-1.5.9-SNAPSHOT.jar?download=1",
+				"https://sandbox.zenodo.org/record/1200628/files/mkl-platform-redist-2023.1-1.5.9-SNAPSHOT.jar?download=1",
+				"https://sandbox.zenodo.org/record/1200628/files/openblas-0.3.23-1.5.9-SNAPSHOT-macosx-x86_64.jar?download=1",
+				"https://sandbox.zenodo.org/record/1200628/files/openblas-platform-0.3.23-1.5.9-SNAPSHOT.jar?download=1",
+				"https://sandbox.zenodo.org/record/1200628/files/pytorch-2.0.0-1.5.9-SNAPSHOT-macosx-x86_64.jar?download=1",
+				"https://sandbox.zenodo.org/record/1200628/files/pytorch-2.0.0-1.5.9-SNAPSHOT.jar?download=1",
+				"https://sandbox.zenodo.org/record/1200628/files/pytorch-platform-2.0.0-1.5.9-SNAPSHOT.jar?download=1",
+				"https://repo1.maven.org/maven2/org/bytedeco/openblas/0.3.21-1.5.8/openblas-0.3.21-1.5.8.jar",
+				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.8/javacpp-1.5.8.jar"
 			]
 		},
 		{
