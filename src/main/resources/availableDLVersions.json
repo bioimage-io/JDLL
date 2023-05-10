@@ -9,7 +9,7 @@
 			"cpu": true,
 			"rosetta": false,
 			"jars": [
-				"https://repo.maven.org/maven2/org/tensorflow/libtensorflow/1.12.0/libtensorflow-1.12.0.jar",
+				"https://repo1.maven.org/maven2/org/tensorflow/libtensorflow/1.12.0/libtensorflow-1.12.0.jar",
 				"https://repo1.maven.org/maven2/org/tensorflow/libtensorflow_jni/1.12.0/libtensorflow_jni-1.12.0.jar",
 				"https://repo1.maven.org/maven2/com/google/protobuf/protobuf-java/3.5.1/protobuf-java-3.5.1.jar",
 				"https://repo1.maven.org/maven2/org/tensorflow/proto/1.15.0/proto-1.15.0.jar",
