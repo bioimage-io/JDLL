@@ -69,8 +69,8 @@ public class ExampleDownloadEngine {
 		Thread downloadThread = new Thread(() -> {
 			try {
 				// In this case, the engine downloaded is defined independently from any model
-				String engine = "pytorch";
-				String version = "1.11.0";
+				String engine = "tensorflow";
+				String version = "2.7.0";
 				boolean gpu = true;
 				boolean cpu = true;
 				DeepLearningVersion dlv = 
