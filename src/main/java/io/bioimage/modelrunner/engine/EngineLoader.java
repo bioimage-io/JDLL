@@ -98,6 +98,15 @@ public class EngineLoader extends ClassLoader
 	private static HashMap< String, ClassLoader > loadedEngines = new HashMap< String, ClassLoader >();
 
 	/**
+	 * HashMap containing all the already loaded engine versions. 
+	 * The key corresponds to the framework + the major version and the value
+	 * corresponds to the precise string version that was loaded.
+	 * This variable is informative to know which framework native libraries
+	 * have been loaded.
+	 */
+	private static HashMap< String, String > loadedVersions = new HashMap< String, String >();
+
+	/**
 	 * Create a ClassLaoder that contains the classes of the parent ClassLoader
 	 * given as an input and the classes found in the String path given
 	 * 
@@ -168,8 +177,9 @@ public class EngineLoader extends ClassLoader
 			SecurityException, IllegalAccessException, IllegalArgumentException, InvocationTargetException,
 			Exception
 	{
-		// If the ClassLoader was already created, use it
-		if ( loadedEngines.get( versionedEngine ) != null )
+		// If the ClassLoader was already created, use it.
+		// As tf2 is loaded in a separate process, as many versions as we want can be loaded
+		if ( loadedEngines.get( versionedEngine ) != null && !versionedEngine.equals("tensorflow2"))
 		{
 			this.engineClassloader = loadedEngines.get( versionedEngine );
 			return;
@@ -192,6 +202,7 @@ public class EngineLoader extends ClassLoader
 		this.engineClassloader = new ParentLastURLClassLoader( urls, baseClassloader );
 		
 		loadedEngines.put( this.versionedEngine, this.engineClassloader );
+		loadedVersions.put(this.versionedEngine, dlv.getPythonVersion());
 	}
 
 	/**
@@ -340,10 +351,10 @@ public class EngineLoader extends ClassLoader
 	/**
 	 * 
 	 * @return a map where the keys are the engines that have been loaded and
-	 * 	the values the classloaders used to load them
+	 * 	the values the specific versions
 	 */
-	public HashMap<String, ClassLoader> getLoadedEngines() {
-		return loadedEngines;
+	public static HashMap<String, String> getLoadedVersions() {
+		return loadedVersions;
 	}
 	
 	/**

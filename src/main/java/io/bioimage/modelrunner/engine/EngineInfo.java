@@ -202,11 +202,25 @@ public class EngineInfo
 		Objects.requireNonNull( jarsDirectory, "The Jars directory should not be null." );
 		setEngine( engine );
 		this.version = version;
+		checkEngineAreadyLoaded();
 		this.jarsDirectory = jarsDirectory;
 		this.os = new PlatformDetection().toString();
 		setSupportedVersions();
 		this.versionJava = findCorrespondingJavaVersion();
 
+	}
+	
+	/**
+	 * Check if the engine has already been loaded or not.
+	 * If it is not possible to load the wanted version because another has already been
+	 * loaded, an exception is thrown
+	 * @throws Exception if an incompatible engine has already been loaded
+	 */
+	private void checkEngineAreadyLoaded() throws Exception {
+		String versionedEngine = this.engine + this.getMajorVersion();
+		if (EngineLoader.getLoadedVersions().get(versionedEngine) != null
+				&& !EngineLoader.getLoadedVersions().get(versionedEngine).equals(version))
+			throw new Exception();
 	}
 
 	/**
