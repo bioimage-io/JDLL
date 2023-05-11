@@ -357,11 +357,11 @@ public class EngineLoader extends ClassLoader
 			return;
 		boolean match = jna.matches("jna-5\\.[A-Za-z0-9]+\\.[A-Za-z0-9]+\\.jar");
 		if (!match)
-			throw new IOException("Cannot load the engine. The selected engine is only compatible"
-					+ " with the JNA JAR version 5, but other JNA versions have been loaded. "
-					+ "The found version is incompatible with the selected engine,"
-					+ " please update your JNA JAR to version 5 in order to be able to load the wanted engine. "
-					+ "Here is the url for a compatible JNA version: "
+			throw new IOException("Cannot load the engine. The selected engine is only compatible" + System.lineSeparator()
+					+ "with the JNA JAR version 5, but other JNA versions have been loaded. " + System.lineSeparator()
+					+ "The found version is incompatible with the selected engine," + System.lineSeparator()
+					+ "please update your JNA JAR to version 5 in order to be able to load the wanted engine." + System.lineSeparator()
+					+ "Here is the url for a compatible JNA version: " + System.lineSeparator()
 					+ "https://repo1.maven.org/maven2/net/java/dev/jna/jna/5.13.0/jna-5.13.0.jar");
 	}
 	
