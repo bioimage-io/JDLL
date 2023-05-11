@@ -194,7 +194,7 @@ public class EngineLoader extends ClassLoader
 	 */
 	public void setEngineClassLoader()
 	{
-		Thread.currentThread().setContextClassLoader( this.engineClassloader );
+		Thread.currentThread().setContextClassLoader( engineClassloader );
 	}
 
 	/**

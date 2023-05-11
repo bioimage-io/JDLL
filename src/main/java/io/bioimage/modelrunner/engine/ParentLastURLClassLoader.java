@@ -22,8 +22,10 @@
  */
 package io.bioimage.modelrunner.engine;
 
+import java.io.IOException;
 import java.net.URL;
 import java.net.URLClassLoader;
+import java.util.Enumeration;
 
 /**
  * Custom classloader that acts as an URL classloader that tries to load first the classes in
@@ -40,6 +42,8 @@ import java.net.URLClassLoader;
  *
  */
 public class ParentLastURLClassLoader extends URLClassLoader {
+	
+	private URLClassLoader helper;
 
     /**
      * Create a child-first/parent-last URLClassLoader
@@ -50,6 +54,7 @@ public class ParentLastURLClassLoader extends URLClassLoader {
      */
     public ParentLastURLClassLoader(URL[] urls, ClassLoader parent) {
         super(urls, parent);
+        helper = new URLClassLoader(urls, null);
     }
 
     @Override
@@ -64,6 +69,8 @@ public class ParentLastURLClassLoader extends URLClassLoader {
         // First, check if the class is already loaded
         Class<?> loadedClass = findLoadedClass(name);
         if (loadedClass != null) {
+        	if (name.startsWith("ai.djl"))
+        		System.out.println(name);
             return loadedClass;
         }
 
@@ -78,5 +85,13 @@ public class ParentLastURLClassLoader extends URLClassLoader {
             // Class not found in this classloader, delegate to parent classloader
             return super.loadClass(name, resolve);
         }
+    }
+    
+    @Override
+    public Enumeration<URL> getResources(String name) throws IOException {
+        if (helper.getResources(name) != null && helper.getResources(name).hasMoreElements()) {
+        	return helper.getResources(name);
+        }
+        return super.getResources(name);
     }
 }
