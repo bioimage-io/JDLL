@@ -214,13 +214,22 @@ public class EngineInfo
 	 * Check if the engine has already been loaded or not.
 	 * If it is not possible to load the wanted version because another has already been
 	 * loaded, an exception is thrown
-	 * @throws Exception if an incompatible engine has already been loaded
+	 * @throws IllegalArgumentException if an incompatible engine has already been loaded
 	 */
-	private void checkEngineAreadyLoaded() throws Exception {
+	private void checkEngineAreadyLoaded() throws IllegalArgumentException {
 		String versionedEngine = this.engine + this.getMajorVersion();
-		if (EngineLoader.getLoadedVersions().get(versionedEngine) != null
+		if (!engine.equals(TENSORFLOW_ENGINE_NAME)  
+				&& EngineLoader.getLoadedVersions().get(versionedEngine) != null
 				&& !EngineLoader.getLoadedVersions().get(versionedEngine).equals(version))
-			throw new Exception();
+			throw new IllegalArgumentException("The program will not be able to load "
+					+ "'" + engine + " " + version + "' because another version (" 
+					+ EngineLoader.getLoadedVersions().get(versionedEngine).equals(version) + ") "
+					+ "of the same framework has already been loaded." + System.lineSeparator()
+					+ "If loading the wanted version (" + version + ") is strictly necessary "
+					+ "please restart the JVM, however, if the previously loaded version "
+					+ "(" + EngineLoader.getLoadedVersions().get(versionedEngine).equals(version)
+					+ ") can be used please call EngineInfo.defineCompatibleDLEngine(...) "
+					+ "to avoid restarting.");
 	}
 
 	/**
@@ -255,7 +264,12 @@ public class EngineInfo
 					+ "and whether it can use GPU or not. Default values only exist for " + PYTORCH_JAVA_BIOIMAGEIO_TAG
 					+ " engines." );
 		}
-		return defineDLEngine( engine, version, jarsDirectory, cpu, gpu );
+		try {
+			return defineDLEngine( engine, version, jarsDirectory, cpu, gpu );
+		} catch (IllegalArgumentException ex) {
+			ex.printStackTrace();
+			return null;
+		}
 	}
 
 	/**
@@ -295,7 +309,12 @@ public class EngineInfo
 					+ "and whether it can use GPU or not. Default values only exist for " + TENSORFLOW_JAVA_BIOIMAGEIO_TAG
 					+ " and " + PYTORCH_JAVA_BIOIMAGEIO_TAG + " engines." );
 		}
-		return defineDLEngine( engine, version, jarsDirectory, cpu, gpu );
+		try {
+			return defineDLEngine( engine, version, jarsDirectory, cpu, gpu );
+		} catch (IllegalArgumentException ex) {
+			ex.printStackTrace();
+			return null;
+		}
 	}
 
 	/**
@@ -322,10 +341,15 @@ public class EngineInfo
 	{
 		if (AvailableEngines.modelRunnerToBioimageioKeysMap().keySet().contains(engine))
 			engine = AvailableEngines.modelRunnerToBioimageioKeysMap().get(engine);
-		EngineInfo engineInfo = new EngineInfo( engine, version, jarsDirectory );
-		engineInfo.supportCPU( cpu );
-		engineInfo.supportGPU( gpu );
-		return engineInfo;
+		try {
+			EngineInfo engineInfo = new EngineInfo( engine, version, jarsDirectory );
+			engineInfo.supportCPU( cpu );
+			engineInfo.supportGPU( gpu );
+			return engineInfo;
+		} catch (IllegalArgumentException ex) {
+			ex.printStackTrace();
+			return null;
+		}
 	}
 
 	/**
@@ -345,7 +369,12 @@ public class EngineInfo
 		if (AvailableEngines.modelRunnerToBioimageioKeysMap().keySet().contains(engine))
 			engine = AvailableEngines.modelRunnerToBioimageioKeysMap().get(engine);
 		Objects.requireNonNull( STATIC_JARS_DIRECTORY, "The Jars directory should not be null." );
-		return defineDLEngine( engine, version, STATIC_JARS_DIRECTORY );
+		try {
+			return defineDLEngine( engine, version, STATIC_JARS_DIRECTORY );
+		} catch (IllegalArgumentException ex) {
+			ex.printStackTrace();
+			return null;
+		}
 	}
 
 	/**
@@ -383,7 +412,12 @@ public class EngineInfo
 					+ "and whether it can use GPU or not. Default values only exist for " + TENSORFLOW_JAVA_BIOIMAGEIO_TAG
 					+ " and " + PYTORCH_JAVA_BIOIMAGEIO_TAG + " engines." );
 		}
-		return defineDLEngine( engine, version, STATIC_JARS_DIRECTORY, cpu, gpu );
+		try {
+			return defineDLEngine( engine, version, STATIC_JARS_DIRECTORY, cpu, gpu );
+		} catch (IllegalArgumentException ex) {
+			ex.printStackTrace();
+			return null;
+		}
 	}
 
 	/**
@@ -407,10 +441,43 @@ public class EngineInfo
 		if (AvailableEngines.modelRunnerToBioimageioKeysMap().keySet().contains(engine))
 			engine = AvailableEngines.modelRunnerToBioimageioKeysMap().get(engine);
 		Objects.requireNonNull( STATIC_JARS_DIRECTORY, "The Jars directory should not be null." );
-		EngineInfo engineInfo = new EngineInfo( engine, version, STATIC_JARS_DIRECTORY );
-		engineInfo.supportCPU( cpu );
-		engineInfo.supportGPU( gpu );
-		return engineInfo;
+		try {
+			EngineInfo engineInfo = new EngineInfo( engine, version, STATIC_JARS_DIRECTORY );
+			engineInfo.supportCPU( cpu );
+			engineInfo.supportGPU( gpu );
+			return engineInfo;
+		} catch (IllegalArgumentException ex) {
+			ex.printStackTrace();
+			return null;
+		}
+	}
+
+	/**
+	 * Set the parameters to launch the wanted Deep Learning framework (engine)
+	 * in the program.
+	 * The version defined is orientative to some extent. If the version provided as
+	 * the argument is not installed, and there is another installed version of the
+	 * same framework which has the same major version (for example pytorch 1.13 and pytorch 1.9),
+	 * the version installed will be loaded directly instead of requiring the installation
+	 * of the original version.
+	 * Also, for Pytorch if there is already another engine of the same framework, 
+	 * same major version (same as before) but different overall version, 
+	 * the previously loaded version will be used. This is because loading different versions
+	 * of the Pytorch native libraries produce conflicts. 
+	 * 
+	 * @param engine
+	 *            name of the Deep Learning framework (engine). For example:
+	 *            Pytorch, Tensorflow....
+	 * @param version
+	 *            version of the training Deep Learning framework (engine)
+	 * @param jarsDirectory
+	 *            directory where the folder containing the JARs needed to
+	 *            launch the corresponding engine are located
+	 * @return an object containing all the information needed to launch a Deep
+	 *         learning framework
+	 */
+	public static EngineInfo defineCompatibleDLEngine( String engine, String version, String jarsDirectory )
+	{	
 	}
 	
 	/**
@@ -500,7 +567,11 @@ public class EngineInfo
 			return null;
 		List<DeepLearningVersion> vv = manager.getDownloadedCompatibleForVersionedEngine(engine, version);
 		boolean gpu = vv.stream().filter(v -> v.getGPU()).findFirst().orElse(null) != null;
-		return EngineInfo.defineDLEngine(engine, version, true, gpu);
+		try {
+			return EngineInfo.defineDLEngine(engine, version, true, gpu);
+		} catch (IllegalArgumentException ex) {
+			return null;
+		}
 	}
 
 	/**
