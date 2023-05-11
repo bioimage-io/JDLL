@@ -43,6 +43,10 @@ import java.util.Enumeration;
  */
 public class ParentLastURLClassLoader extends URLClassLoader {
 	
+	/**
+	 * Auxiliary URLClassLoader that only contains the classes that
+	 * can be read from the URLs provided in the constructor
+	 */
 	private URLClassLoader helper;
 
     /**
@@ -87,6 +91,12 @@ public class ParentLastURLClassLoader extends URLClassLoader {
         }
     }
     
+    /**
+     * {@inheritDoc}
+     * 
+     * This custom classloader checks first if the resources can be found in any of the
+     * urls provided in the constructor
+     */
     @Override
     public Enumeration<URL> getResources(String name) throws IOException {
         if (helper.getResources(name) != null && helper.getResources(name).hasMoreElements()) {
