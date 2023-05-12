@@ -33,6 +33,37 @@ The [Java model runner](<https://github.com/bioimage-io/model-runner-java/tree/m
 
 2. Prepare the environment
 
+   2a. Programatically
+   
+   The different DL frameworks (engines) need to be installed first in order to be used. The installation can be done manually or with the same JDLL code.
+   
+   There are several ways to install an engine with code:
+   * If we know the different parameters of the engine we want to install we can call:
+      ```
+      String framework = "tensorflow";
+      String version = "2.7.0";
+      boolean cpu = true;
+      boolean gpu = true;
+      String dir = "/path/to/wanted/engines/dir";
+      EngineManagement.installEngineWithArgsInDir(framework, version, cpu, gpu, dir);
+      ```
+      
+   * If we have a certain [Bioimage.io](https://bioimage.io/#/) model and we want to install the engines compatible with it:
+      ```
+      String modelName = "Neuron Segmentation in EM (Membrane Prediction)";
+      String dir = "/path/to/wanted/engines/dir";
+      EngineManagement.installEnginesForModelByNameinDir(modelName, dir);
+      ```
+      we can also use the model ID:
+      ```
+      String modelID = "10.5281/zenodo.5874741/5874742";
+      String dir = "/path/to/wanted/engines/dir";
+      EngineManagement.installEnginesForModelByNameinDir(modelID, dir);
+      ```
+      In both previous cases, the engines installed will be specified by the weights in the rdf.yaml files of the selected models. HOwever regard that only the engines supported by JDLL will be installed. These are torchscript (pytorch), tensorflow_saved_model_bundled (tensorflow) and onnx.
+
+   2b. Manually
+
    Certain pairs of DL frameworks cannot be loaded in the same classloader due to incompatible classes with the same names. For example, the Java APIs of Tensorflow 1 and Tensorflow 2 are incompatible, which has slowed the adoption of newer versions of Tensorflow in Java softwares, disrupting the connection with the latest deep learning developments.
 
    To address this issue, the library is designed in a modular way that creates a separate classloader for each DL framework once it is called, avoiding conflicts between the frameworks.
