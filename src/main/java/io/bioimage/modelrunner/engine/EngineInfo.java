@@ -455,7 +455,8 @@ public class EngineInfo
 	/**
 	 * Set the parameters to launch the wanted Deep Learning framework (engine)
 	 * in the program.
-	 * The version defined is orientative to some extent. If the version provided as
+	 * In this method, the version defined is orientative to some extent. 
+	 * If the version provided as
 	 * the argument is not installed, and there is another installed version of the
 	 * same framework which has the same major version (for example pytorch 1.13 and pytorch 1.9),
 	 * the version installed will be loaded directly instead of requiring the installation
@@ -520,7 +521,7 @@ public class EngineInfo
 		compatibleVersion = manager.getMostCompatibleVersionForEngine(engine, version);
 		if (compatibleVersion == null)
 			return null;
-		List<DeepLearningVersion> vv = manager.getDownloadedCompatibleForVersionedEngine(engine, compatibleVersion);
+		List<DeepLearningVersion> vv = manager.getDownloadedForVersionedEngine(engine, compatibleVersion);
 		boolean gpu = vv.stream().filter(v -> v.getGPU()).findFirst().orElse(null) != null;
 		return EngineInfo.defineDLEngine(engine, compatibleVersion, true, gpu);
 	}
@@ -565,7 +566,7 @@ public class EngineInfo
 		InstalledEngines manager = InstalledEngines.buildEnginesFinder(enginesDir);
 		if (version == null)
 			return null;
-		List<DeepLearningVersion> vv = manager.getDownloadedCompatibleForVersionedEngine(engine, version);
+		List<DeepLearningVersion> vv = manager.getDownloadedForVersionedEngine(engine, version);
 		boolean gpu = vv.stream().filter(v -> v.getGPU()).findFirst().orElse(null) != null;
 		try {
 			return EngineInfo.defineDLEngine(engine, version, true, gpu);

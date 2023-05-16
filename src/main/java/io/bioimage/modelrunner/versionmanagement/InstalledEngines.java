@@ -107,7 +107,7 @@ public class InstalledEngines {
      * 
      * @return list with the downloaded DeepLearningVersion
      */
-    public List<DeepLearningVersion> loadDownloaded()
+    public List<DeepLearningVersion> loadAllDownloaded()
     {
     	if (this.getEnginePathsAsStrings().length == 0)
     		return new ArrayList<DeepLearningVersion>();
@@ -133,7 +133,7 @@ public class InstalledEngines {
     public static List<DeepLearningVersion> loadDownloaded(String enginesPath)
     {
     	try{
-    		return buildEnginesFinder(enginesPath).loadDownloaded();
+    		return buildEnginesFinder(enginesPath).loadAllDownloaded();
     	} catch (IOException ex) {
     		return new ArrayList<DeepLearningVersion>();
     	}
@@ -149,11 +149,11 @@ public class InstalledEngines {
      * 	for example tensorflow, pytorch, onnx
      * @return The available versions instance.
      */
-    public List<DeepLearningVersion> getDownloadedCompatibleEnginesForEngine(String engine) {
+    public List<DeepLearningVersion> getDownloadedForEngine(String engine) {
     	String searchEngine = AvailableEngines.getSupportedVersionsEngineTag(engine);
     	if (searchEngine == null)
     		return new ArrayList<DeepLearningVersion>();
-        return loadDownloadedCompatible().stream()
+        return loadDownloadedForOS().stream()
 	        .filter(v -> searchEngine.contains(v.getEngine().toLowerCase()))
 			.collect(Collectors.toList());
     }	
@@ -170,11 +170,11 @@ public class InstalledEngines {
      * 	version of interest of the engine
      * @return The available versions instance.
      */
-    public List<DeepLearningVersion> getDownloadedCompatibleForVersionedEngine(String engine, String version) {
+    public List<DeepLearningVersion> getDownloadedForVersionedEngine(String engine, String version) {
     	String searchEngine = AvailableEngines.getSupportedVersionsEngineTag(engine);
     	if (searchEngine == null)
     		return new ArrayList<DeepLearningVersion>();
-        return loadDownloadedCompatible().stream()
+        return loadDownloadedForOS().stream()
 	        .filter(v -> searchEngine.contains(v.getEngine().toLowerCase())
 	        		&& v.getPythonVersion().equals(version))
 			.collect(Collectors.toList());
@@ -192,9 +192,9 @@ public class InstalledEngines {
      * 	for example tensorflow, pytorch, onnx
      * @return The available versions instance.
      */
-    public static List<DeepLearningVersion> getDownloadedCompatibleEnginesForEngine(String enginesPath, String engine) {
+    public static List<DeepLearningVersion> getDownloadedForEngine(String enginesPath, String engine) {
     	try{
-    		return buildEnginesFinder(enginesPath).getDownloadedCompatibleEnginesForEngine(engine);
+    		return buildEnginesFinder(enginesPath).getDownloadedForEngine(engine);
     	} catch (IOException ex) {
     		return new ArrayList<DeepLearningVersion>();
     	}
@@ -205,10 +205,10 @@ public class InstalledEngines {
      * that are compatible with the operating system
      * @return list with the downloaded DeepLearningVersion
      */
-    public List<DeepLearningVersion> loadDownloadedCompatible()
+    public List<DeepLearningVersion> loadDownloadedForOS()
     {
         String currentPlatform = new PlatformDetection().toString();
-    	List<DeepLearningVersion> versions = loadDownloaded();
+    	List<DeepLearningVersion> versions = loadAllDownloaded();
     	versions.stream().filter(v -> v.getOs().equals(currentPlatform)
 				&& (!(new PlatformDetection().isUsingRosseta()) || v.getRosetta()))
     	.collect(Collectors.toList());
@@ -222,9 +222,9 @@ public class InstalledEngines {
      * 	path to where the engines are stored
      * @return List of available engines engines compatible with the OS.
      */
-    public static List<DeepLearningVersion> loadDownloadedCompatible(String enginesPath) {
+    public static List<DeepLearningVersion> loadDownloadedForOS(String enginesPath) {
     	try{
-    		return buildEnginesFinder(enginesPath).loadDownloadedCompatible();
+    		return buildEnginesFinder(enginesPath).loadDownloadedForOS();
     	} catch (IOException ex) {
     		return new ArrayList<DeepLearningVersion>();
     	}
@@ -238,8 +238,8 @@ public class InstalledEngines {
      * 	the engine of interest
      * @return the list of deep learning versions for the given engine
      */
-    public List<String> getDownloadedCompatiblePythonVersionsForEngine(String engine) {
-    	return getDownloadedCompatibleEnginesForEngine(engine).stream()
+    public List<String> getDownloadedPythonVersionsForEngine(String engine) {
+    	return getDownloadedForEngine(engine).stream()
     			.map(DeepLearningVersion::getPythonVersion).collect(Collectors.toList());
     }
     
@@ -253,9 +253,9 @@ public class InstalledEngines {
      * 	the engine of interest
      * @return the list of deep learning versions for the given engine
      */
-    public static List<String> getDownloadedCompatiblePythonVersionsForEngine(String enginesPath, String engine) {
+    public static List<String> getDownloadedPythonVersionsForEngine(String enginesPath, String engine) {
     	try{
-    		return buildEnginesFinder(enginesPath).getDownloadedCompatiblePythonVersionsForEngine(engine);
+    		return buildEnginesFinder(enginesPath).getDownloadedPythonVersionsForEngine(engine);
     	} catch (IOException ex) {
     		return new ArrayList<String>();
     	}
@@ -295,7 +295,7 @@ public class InstalledEngines {
 	 * @return the closest version to the version provided for the engine provided
 	 */
     public String getMostCompatibleVersionForEngine(String engine, String version) {
-		List<String> downloadedVersions = getDownloadedCompatiblePythonVersionsForEngine(engine);
+		List<String> downloadedVersions = getDownloadedPythonVersionsForEngine(engine);
 		return  VersionStringUtils.getMostCompatibleEngineVersion(version, downloadedVersions, engine);
     }
 
@@ -316,10 +316,44 @@ public class InstalledEngines {
     public static String getMostCompatibleVersionForEngine(String engine, String version, String enginesDir) {
 		try {
 			InstalledEngines installed = InstalledEngines.buildEnginesFinder(enginesDir);
-			List<String> downloadedVersions = installed.getDownloadedCompatiblePythonVersionsForEngine(engine);
+			List<String> downloadedVersions = installed.getDownloadedPythonVersionsForEngine(engine);
 			return  VersionStringUtils.getMostCompatibleEngineVersion(version, downloadedVersions, engine);
 		} catch (IOException e) {
 			return null;
+		}
+    }
+    
+    /**
+     * Check whether the engine version of interest is installed or not
+     * @param engine
+     * 	DL framework of interest
+     * @param version
+     * 	version of the DL framework
+     * @return true if it is installed and false otherwise
+     */
+    public boolean checkEngineVersionInstalled(String engine, String version) {
+		List<String> downloadedVersions = getDownloadedPythonVersionsForEngine(engine);
+		String v = downloadedVersions.stream()
+				.filter(vv -> vv.equals(version)).findFirst().orElse(null);
+		return v != null;
+    }
+    
+    /**
+     * Check whether the engine version of interest is installed or not
+     * @param engine
+     * 	DL framework of interest
+     * @param version
+     * 	version of the DL framework
+     * @param enginesDir
+     * 	directory where all the engines are located
+     * @return true if it is installed and false otherwise
+     */
+    public static boolean checkEngineVersionInstalled(String engine, String version, String enginesDir) {
+    	try {
+			InstalledEngines installed = InstalledEngines.buildEnginesFinder(enginesDir);
+			return installed.checkEngineVersionInstalled(engine, version);
+		} catch (IOException e) {
+			return false;
 		}
     }
 }
