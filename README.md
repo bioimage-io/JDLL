@@ -1,12 +1,13 @@
 [![Build Status](https://github.com/bioimage-io/model-runner-java/actions/workflows/build.yml/badge.svg)](https://github.com/bioimage-io/model-runner-java/actions/workflows/build.yml)
 
-# Java Library for Deep Learning
+# JDLL (Java Deep Learning Library)
 
-This project provides a Java library for running Deep Learning (DL) models agnostically, enabling communication between Java software and various Deep Learning frameworks. It also allows the use of multiple DL frameworks in the same session.
+This project provides a Java library for running Deep Learning (DL) models agnostically, enabling communication between Java software and various Deep Learning frameworks (engines). It also allows the use of multiple DL frameworks in the same session, manages the different DL frameworks and brings the models from the 
+[Bioimage.io](https://bioimage.io/#/) repository to Java.
 
 This library is intended for developers and was originally built by the DeepIcy team as the backend of the DeepIcy plugin.
 
-The [Java model runner](<https://github.com/bioimage-io/model-runner-java/tree/main>) is able to load models, create tensors and make inference. The library is designed in a modular way, allowing the main software to avoid dealing with the various objects and structures required by different DL frameworks. Instead the Java model runner provides interfaces for models and tensors that handle internally their creation and inference in the differnet Java DL framworks. The main software only needs to interact with the Java model runner and does not need to worry whether the model is in PyTorch or in Tensorflow
+[JDLL](<https://github.com/bioimage-io/model-runner-java/tree/main>) is able to load models and make inference, create tensors, download Bioiamge.io models and manage the supported DL frameworks. The library is designed in a modular way, allowing the main software to avoid dealing with the various objects and structures required by different DL frameworks. Instead the Java model runner provides interfaces for models and tensors that handle internally their creation and inference in the differnet Java engines. The main software only needs to interact with the Java model runner and does not need to worry whether the model is in PyTorch, Tensorflow or other framework.
 
 ## Setting Up the Model Runner
 
@@ -31,48 +32,7 @@ The [Java model runner](<https://github.com/bioimage-io/model-runner-java/tree/m
    </repository>
    ```
 
-2. Prepare the environment
-
-   2a. Programatically
-   
-   The different DL frameworks (engines) need to be installed first in order to be used. The installation can be done manually or with the same JDLL code.
-   
-   There are several ways to install an engine with code:
-   * If we know the different parameters of the engine we want to install we can call:
-      ```
-      String framework = "tensorflow";
-      String version = "2.7.0";
-      boolean cpu = true;
-      boolean gpu = true;
-      String dir = "/path/to/wanted/engines/dir";
-      EngineManagement.installEngineWithArgsInDir(framework, version, cpu, gpu, dir);
-      ```
-      
-   * If we have a certain [Bioimage.io](https://bioimage.io/#/) model and we want to install the engines compatible with it:
-      ```
-      String modelName = "Neuron Segmentation in EM (Membrane Prediction)";
-      String dir = "/path/to/wanted/engines/dir";
-      EngineManagement.installEnginesForModelByNameinDir(modelName, dir);
-      ```
-      we can also use the model ID:
-      ```
-      String modelID = "10.5281/zenodo.5874741/5874742";
-      String dir = "/path/to/wanted/engines/dir";
-      EngineManagement.installEnginesForModelByNameinDir(modelID, dir);
-      ```
-      
-      or directly provide the model folder and install the engines required for that model:
-      ```
-      String modelFolder = "/path/to/model/folder";
-      String dir = "/path/to/wanted/engines/dir";
-      EngineManagement.installEnginesinDirForModelInFolder(modelFolder, dir);
-      ```
-      
-      In the explained examples, the engines installed will be specified by the weights in the rdf.yaml files of the selected models. However regard that only the [engines supported by JDLL](https://github.com/bioimage-io/JDLL/blob/main/README.md#supported-engines) will be installed. These are torchscript (pytorch), tensorflow_saved_model_bundled (tensorflow) and onnx.
-      
-      For more information, please read the wiki page about [engine management and installation](TODO add link)
-
-   2b. Manually
+## Manage the DL engines
 
    Certain pairs of DL frameworks cannot be loaded in the same classloader due to incompatible classes with the same names. For example, the Java APIs of Tensorflow 1 and Tensorflow 2 are incompatible, which has slowed the adoption of newer versions of Tensorflow in Java softwares, disrupting the connection with the latest deep learning developments.
 
@@ -103,6 +63,45 @@ The [Java model runner](<https://github.com/bioimage-io/model-runner-java/tree/m
    ```
 
    Running the script with no arguments downloads all available engines for your platform.
+   
+   ### Manage the engines with JDLL
+   
+   The installation of the engines for JDLL to work can be done manually. before starting the software. But to enhance usability JDLL provides the methods to install the required engines at runtime. In addition, once an engine is installed it can be used directly, without needing to re-start the JVM.
+   
+   There are several ways to install an engine with code:
+   * If we know the different parameters of the engine we want to install we can call:
+      ```
+      String framework = "tensorflow";
+      String version = "2.7.0";
+      boolean cpu = true;
+      boolean gpu = true;
+      String dir = "/path/to/wanted/engines/dir";
+      EngineManagement.installEngineWithArgsInDir(framework, version, cpu, gpu, dir);
+      ```
+      
+   * If we have a certain [Bioimage.io](https://bioimage.io/#/) model and we want to install the engines compatible with it:
+      ```
+      String modelName = "Neuron Segmentation in EM (Membrane Prediction)";
+      String dir = "/path/to/wanted/engines/dir";
+      EngineManagement.installEnginesForModelByNameinDir(modelName, dir);
+      ```
+      we can also use the model ID:
+      ```
+      String modelID = "10.5281/zenodo.5874741/5874742";
+      String dir = "/path/to/wanted/engines/dir";
+      EngineManagement.installEnginesForModelByNameinDir(modelID, dir);
+      ```
+      
+      or directly provide the model folder and install the engines required for that model. Note that this only works for [Bioimage.io](https://bioimage.io/#/) models that contain the [rdf.yaml specs file](https://github.com/bioimage-io/spec-bioimage-io/blob/gh-pages/model_spec_latest.md) in the folder:
+      ```
+      String modelFolder = "/path/to/model/folder";
+      String dir = "/path/to/wanted/engines/dir";
+      EngineManagement.installEnginesinDirForModelInFolder(modelFolder, dir);
+      ```
+      
+      In the explained examples, the engines installed will be specified by the weights in the rdf.yaml files of the selected models. However regard that only the [engines supported by JDLL](https://github.com/bioimage-io/JDLL/blob/main/README.md#supported-engines) will be installed. These are torchscript (pytorch), tensorflow_saved_model_bundled (tensorflow) and onnx.
+      
+      For more information, please read the wiki page about [engine management and installation](TODO add link)
 
 ## Supported engines
 
@@ -120,7 +119,7 @@ The information about the engines supported currently by the model runner, for w
 
 Note that the model runner will be in **constant development** and that it is open to community collaboration, so **pull requests** to the official repository of the model runner to improve functionality or to add new engines are **very welcomed**.
 
-## Implementing the Java model runner
+## Loading and running a model with JDLL
 
 The Java model runner was developed with the objective of being as easy as possible to implement in already existing Java softwares.
 There are three key points: loading a model, creating the tensors, and making inference with the model on the tensors.
