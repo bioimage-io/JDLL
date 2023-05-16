@@ -43,13 +43,13 @@ public class VersionStringUtils {
 	
 	public static void main(String[] args) {
 		List<String> list = new ArrayList<String>();
-		list.add("15");
-		list.add("17");
-		list.add("28");
+		list.add("20.3");
+		list.add("20.1");
+		list.add("20.9");
 		list.add("31");
 		list.add("22");
-		List<String> aa = getCompatibleEngineVersionsInOrder("20", list, "onnx");
-		System.out.print(false);
+		List<String> aa = getCompatibleEngineVersionsInOrder("20.2", list, "tensorflow");
+		System.out.print(aa);
 	}
 
 	/** TODO clean a little bit the code

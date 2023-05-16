@@ -31,6 +31,7 @@ import io.bioimage.modelrunner.versionmanagement.AvailableEngines;
 import io.bioimage.modelrunner.versionmanagement.DeepLearningVersion;
 import io.bioimage.modelrunner.versionmanagement.InstalledEngines;
 import io.bioimage.modelrunner.versionmanagement.SupportedVersions;
+import io.bioimage.modelrunner.versionmanagement.VersionStringUtils;
 
 /**
  * Class to create an object that contains all the information about a Deep
@@ -522,7 +523,60 @@ public class EngineInfo
 			return null;
 		List<DeepLearningVersion> vv = manager.getDownloadedForVersionedEngine(engine, compatibleVersion);
 		boolean gpu = vv.stream().filter(v -> v.getGPU()).findFirst().orElse(null) != null;
-		return EngineInfo.defineDLEngine(engine, compatibleVersion, true, gpu);
+		return EngineInfo.defineDLEngine(engine, compatibleVersion, jarsDirectory, true, gpu);
+	}
+
+	/**
+	 * Set the parameters to launch the wanted Deep Learning framework (engine) compatible with GPU
+	 * in the program.
+	 * 
+	 * In this method, the version defined is orientative to some extent. 
+	 * If the version provided in the arguments is not installed, and there is another installed version of the
+	 * same framework which has the same major version (for example pytorch 1.13 and pytorch 1.9),
+	 * the version installed will be loaded directly instead of requiring the installation
+	 * of the original version.
+	 * 
+	 * Also, for Pytorch if there is already another engine of the same framework, 
+	 * same major version (same as before) but different overall version, 
+	 * the previously loaded version will be used. This is because loading different versions
+	 * of the Pytorch native libraries produce conflicts.
+	 * 
+	 *  Regard, that this method looks for engines comptaible with GPU specifically,
+	 *  thus CPU support is not guaranteed.
+	 *  
+	 *  To know if the EngineInfo object has support for CPU, call {@link #isCPU()}
+	 *  and if it returns false, and you want CPU support 
+	 *  install the engine with CPU support if available.
+	 * 
+	 * @param engine
+	 *            name of the Deep Learning framework (engine). For example:
+	 *            Pytorch, Tensorflow....
+	 * @param version
+	 *            version of the training Deep Learning framework (engine)
+	 * @param jarsDirectory
+	 *            directory where the folder containing the JARs needed to
+	 *            launch the corresponding engine are located
+	 * @return an object containing all the information needed to launch a Deep
+	 *         learning framework or null if the engine of interest is not installed
+	 * @throws IOException if the engines directory does not exist
+	 */
+	public static EngineInfo defineCompatibleDLEngineGPU( String engine, String version, 
+			String jarsDirectory ) throws IOException 
+	{
+		boolean rosetta = new PlatformDetection().isUsingRosseta();
+		List<DeepLearningVersion> possibles = 
+				InstalledEngines.checkEngineWithArgsInstalled(engine, null, null, true, rosetta, jarsDirectory);
+		if (possibles.size() == 0)
+			return null;
+		List<String> possibleStrs = 
+				possibles.stream().map(DeepLearningVersion::getPythonVersion).collect(Collectors.toList());
+		List<String> compatibleVersion = 
+				VersionStringUtils.getCompatibleEngineVersionsInOrder(version, possibleStrs, engine);
+		if (compatibleVersion == null || compatibleVersion.size() == 0)
+			return null;
+		boolean cpu = InstalledEngines.checkEngineWithArgsInstalled(engine, 
+				compatibleVersion.get(0), true, true, rosetta, jarsDirectory).size() > 0;
+		return EngineInfo.defineDLEngine(engine, compatibleVersion.get(0), jarsDirectory, cpu, true);
 	}
 	
 	/**
@@ -567,7 +621,7 @@ public class EngineInfo
 			return null;
 		List<DeepLearningVersion> vv = manager.getDownloadedForVersionedEngine(engine, compatibleVersion);
 		boolean gpu = vv.stream().filter(v -> v.getGPU()).findFirst().orElse(null) != null;
-		return EngineInfo.defineDLEngine(engine, compatibleVersion, true, gpu);
+		return EngineInfo.defineDLEngine(engine, compatibleVersion, enginesDir, true, gpu);
 	}
 	
 	/**
@@ -615,7 +669,7 @@ public class EngineInfo
 			return null;
 		boolean gpu = vv.stream().filter(v -> v.getGPU()).findFirst().orElse(null) != null;
 		try {
-			return EngineInfo.defineDLEngine(engine, version, true, gpu);
+			return EngineInfo.defineDLEngine(engine, version, enginesDir, true, gpu);
 		} catch (IllegalArgumentException ex) {
 			return null;
 		}
