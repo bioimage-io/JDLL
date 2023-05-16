@@ -236,7 +236,8 @@ public class EngineInfo
 
 	/**
 	 * Set the parameters to launch the wanted Deep Learning framework (engine)
-	 * in the program.
+	 * and load DL models.
+	 * 
 	 * In this case neither CPU, nor GPU compatibility are not defined. The method will try to 
 	 * find an engine compatible with CPU and GPU, but they are not required.
 	 * 
@@ -286,7 +287,8 @@ public class EngineInfo
 
 	/**
 	 * Set the parameters to launch the wanted Deep Learning framework (engine)
-	 * in the program.
+	 * and load DL models.
+	 * 
 	 * In this case CPU compatibility is not defined. The method will try to 
 	 * find an engine compatible with CPU but it is not required.
 	 * 
@@ -330,7 +332,7 @@ public class EngineInfo
 
 	/**
 	 * Set the parameters to launch the wanted Deep Learning framework (engine)
-	 * in the program. 
+	 * and load DL models.
 	 * 
 	 * If the engine specified is not installed, the method will return null.
 	 * The engine of interest needs to be installed first.
@@ -375,7 +377,8 @@ public class EngineInfo
 
 	/**
 	 * Set the parameters to launch the wanted Deep Learning framework (engine)
-	 * in the program.
+	 * and load models.
+	 * 
 	 * In this case neither CPU, nor GPU compatibility are not defined. The method will try to 
 	 * find an engine compatible with CPU and GPU, but they are not required.
 	 * 
@@ -407,7 +410,8 @@ public class EngineInfo
 
 	/**
 	 * Set the parameters to launch the wanted Deep Learning framework (engine)
-	 * in the program.
+	 * and load DL models.
+	 * 
 	 * In this case CPU compatibility is not defined. The method will try to 
 	 * find an engine compatible with CPU but it is not required.
 	 * 
@@ -449,7 +453,7 @@ public class EngineInfo
 
 	/**
 	 * Set the parameters to launch the wanted Deep Learning framework (engine)
-	 * in the program
+	 * and load models
 	 * 
 	 * If the engine specified is not installed, the method will return null.
 	 * The engine of interest needs to be installed first.
@@ -483,24 +487,28 @@ public class EngineInfo
 
 	/**
 	 * Set the parameters to launch the wanted Deep Learning framework (engine)
-	 * in the program.
+	 * and load DL models.
+	 * 
 	 * In this method, the version defined is orientative to some extent. 
-	 * If the version provided as
-	 * the argument is not installed, and there is another installed version of the
-	 * same framework which has the same major version (for example pytorch 1.13 and pytorch 1.9),
-	 * the version installed will be loaded directly instead of requiring the installation
-	 * of the original version.
+	 * If the version provided in the arguments is not installed, and there is another
+	 * installed version of the same framework which has the same major version 
+	 * (for example pytorch 1.13 and pytorch 1.9), the version installed will be loaded 
+	 * directly instead of requiring the installation of the original version.
+	 * 
 	 * Also, for Pytorch if there is already another engine of the same framework, 
 	 * same major version (same as before) but different overall version, 
 	 * the previously loaded version will be used. This is because loading different versions
 	 * of the Pytorch native libraries produce conflicts.
 	 * 
-	 *  Regard, that the arguments of this method do not specify GPU or not.
-	 *  It will always try first to load an engine version with GPU, but if it is not
-	 *  available for the most compatible engine version it will simply use the 
-	 *  one with CPU only.
-	 *  To know if the EngineInfo object has been created for GPU, call {@link #isGPU()}
-	 *  and if it returns false, install the engine for GPU if available.
+	 *  Regard, that this method looks for engines compatible with CPU at least,
+	 *  thus GPU support is not guaranteed.
+	 *  
+	 *  The method {@link #defineCompatibleDLEngineGPU(String, String, String)} does
+	 *  the same but requiring GPU support.
+	 *  
+	 *  To know if the EngineInfo object has support for GPU, call {@link #isGPU()}
+	 *  and if it returns false, and you want GPU support 
+	 *  install the engine with GPU support if available.
 	 * 
 	 * @param engine
 	 *            name of the Deep Learning framework (engine). For example:
@@ -528,20 +536,21 @@ public class EngineInfo
 
 	/**
 	 * Set the parameters to launch the wanted Deep Learning framework (engine) compatible with GPU
+	 * and load DL models.
 	 * in the program.
 	 * 
 	 * In this method, the version defined is orientative to some extent. 
-	 * If the version provided in the arguments is not installed, and there is another installed version of the
-	 * same framework which has the same major version (for example pytorch 1.13 and pytorch 1.9),
-	 * the version installed will be loaded directly instead of requiring the installation
-	 * of the original version.
+	 * If the version provided in the arguments is not installed, and there is another
+	 * installed version of the same framework which has the same major version 
+	 * (for example pytorch 1.13 and pytorch 1.9), the version installed will be loaded 
+	 * directly instead of requiring the installation of the original version.
 	 * 
 	 * Also, for Pytorch if there is already another engine of the same framework, 
 	 * same major version (same as before) but different overall version, 
 	 * the previously loaded version will be used. This is because loading different versions
 	 * of the Pytorch native libraries produce conflicts.
 	 * 
-	 *  Regard, that this method looks for engines comptaible with GPU specifically,
+	 *  Regard, that this method looks for engines compatible with GPU specifically,
 	 *  thus CPU support is not guaranteed.
 	 *  
 	 *  To know if the EngineInfo object has support for CPU, call {@link #isCPU()}
