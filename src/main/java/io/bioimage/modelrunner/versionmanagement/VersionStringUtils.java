@@ -96,7 +96,7 @@ public class VersionStringUtils {
 		List<String> negList = new ArrayList<String>();
 		for (int i = 0; i < absDists.size(); i ++) {
 			if (!engine.toLowerCase().equals(EngineInfo.getOnnxKey())  
-					&& version.split("\\.")[0].equals(versionList.get(absArgSort[i]).split("\\.")[0]))
+					&& !version.split("\\.")[0].equals(versionList.get(absArgSort[i]).split("\\.")[0]))
 				continue;
 			else if ( versionDists.get(absArgSort[i]) >= 0) {
 				posList.add(versionList.get(absArgSort[i]));
