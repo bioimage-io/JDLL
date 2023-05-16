@@ -68,7 +68,7 @@ The [Java model runner](<https://github.com/bioimage-io/model-runner-java/tree/m
       EngineManagement.installEnginesinDirForModelInFolder(modelFolder, dir);
       ```
       
-      In the explained examples, the engines installed will be specified by the weights in the rdf.yaml files of the selected models. However regard that only the engines supported by JDLL will be installed. These are torchscript (pytorch), tensorflow_saved_model_bundled (tensorflow) and onnx.
+      In the explained examples, the engines installed will be specified by the weights in the rdf.yaml files of the selected models. However regard that only the [engines supported by JDLL](https://github.com/bioimage-io/JDLL/blob/main/README.md#supported-engines) will be installed. These are torchscript (pytorch), tensorflow_saved_model_bundled (tensorflow) and onnx.
       
       For more information, please read the wiki page about [engine management and installation](TODO add link)
 
