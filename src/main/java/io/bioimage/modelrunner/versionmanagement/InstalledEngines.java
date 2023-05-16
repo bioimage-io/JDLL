@@ -383,8 +383,15 @@ public class InstalledEngines {
      */
     public List<DeepLearningVersion> checkEngineWithArgsInstalled(String engine, 
     		String version, Boolean cpu, Boolean gpu, Boolean rosetta) {
+    	String searchEngine;
+    	if (engine != null)
+    		searchEngine = AvailableEngines.getSupportedVersionsEngineTag(engine);
+    	else
+    		searchEngine = null;
+    	if (searchEngine == null && engine != null)
+    		return new ArrayList<DeepLearningVersion>();
 		List<DeepLearningVersion> filtered = loadDownloadedForOS().stream().filter(vv ->{
-			if (engine != null && !vv.getEngine().toLowerCase().equals(engine))
+			if (searchEngine != null && !vv.getEngine().toLowerCase().equals(searchEngine))
 				return false;
 			else if (version != null && !vv.getPythonVersion().toLowerCase().equals(version.toLowerCase()))
 				return false;
