@@ -139,6 +139,15 @@ EngineInfo engineInfo = EngineInfo.defineDLEngine("pytorch", "1.9.1", "C:\Users\
 
 The `engineInfo` object is needed to know which of the engines has to be loaded. **Note that `EngineInfo.defineDLEngine(...)` will only try to load the exact same engine that is specified.** If it is not installed the method will fail when trying to load the engine.
 
+In order to check if a engine version is installed:
+
+```
+String engine = "tensorflow";
+String version = "1.13.1";
+String enginesDir = "/path/to/engines";
+boolean installed = InstalledEnginescheckEngineVersionInstalled(engine, version, enginesDir);
+```
+
 It is also possible to **load an engine version compatible with the wanted one**. Compatible engine versions are those from teh same DL frameworks that share the same major version number. For example Pytorch 1.13.1 and 1.11.0 are compatible but Tensorflow 1.15.0 and Tensorflow 2.7.0 are NOT compatible.
 
 The following method can be used to try to load a compatible engine version if the particular version does not exist:
