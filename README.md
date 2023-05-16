@@ -266,6 +266,37 @@ model.runModel(inputTensors, outputTensors);
    Model bioiamgeioModel = Model.createBioimageioModel(modelPath, enginesDir);
    ```
    
+   Regard that `Model.createBioimageioModel(modelPath, enginesDir)` loads the model only if there is a compatible engine installed in the computer.
+   Compatible means that the Deep Learning framework has to be the same and that the major version is the same (for example Pytorch 1.13.1 and 1.11.0 are compatible but Tensorflow 1.15.0 and Tensorflow 2.7.0 are NOT compatible).
+   
+   I not compatible engine is found, an exception will be thrown asking to install a compatible engine.
+   
+   In order to find if a compatible engine exists:
+   
+   ```
+   String enginesDir = "/path/to/engines/dir";
+   String engine = "tensorflow";
+   String version = "2.7.0";
+   InstalledEngines manager = InstalledEngines.buildEnginesFinder(enginesDir);
+   String compatibleVersion = manager.getMostCompatibleVersionForEngine(engine, version);
+   ```
+   
+   where `compatibleVersion` will be the most compatible version installed of that engine. If the same engine wanted is installed, `version`and `compatibleVersion` will be the same. However, if no comptible version is found, `compatibleVersion` will be `null`.
+   
+   If we want to load the model using the exact versions of the engines specified in the rdf.yaml file:
+   
+   ```
+   String modelPath = "/path/to/model";
+   // Note that this is not the path to the actual engine that we want to use, but the
+   // path to the directory where all the engine folders are located.
+   // Using the example from section [Manage DL engines](https://github.com/bioimage-io/JDLL/edit/main/README.md#manage-the-dl-engines)
+   // enginesDir would be C:\Users\carlos\icy\engines
+   String enginesDir = "/path/to/engines";
+   Model bioiamgeioModel = Model.createBioimageioModelWithExactWeigths(modelPath, enginesDir);
+   ```
+   
+   If the exact engine version is not installed, the method will throw an exception asking to install it.
+   
    Once the model is loaded we can continue the steps explained above [here](https://github.com/bioimage-io/JDLL#2-creating-agnostic-tensors) and [here](https://github.com/bioimage-io/JDLL#3-making-inference).
 
 ## Examples
