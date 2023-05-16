@@ -26,6 +26,7 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 import io.bioimage.modelrunner.system.PlatformDetection;
@@ -356,4 +357,83 @@ public class InstalledEngines {
 			return false;
 		}
     }
+    
+    /**
+     * Returns a list of the installed Deep Learning versions (engines) that satisfy the filters
+     * specified by the arguments of the method.
+     * 
+     * If one of the parameter is not relevant for the search, setting it to null will deactivate
+     * it for the search.
+     * If we do not care whether the engine supports GPu or not, we can set 'gpu = null', and
+     * the resulting list of engines will contain both engines that support and do not support GPU.
+     * 
+     * 
+     * @param engine
+     * 	the name of the DL framework. Can be null.
+     * @param version
+     * 	the version of the DL framework in Python. Can be null.
+     * @param cpu
+     * 	whether it supports running on CPU or not. Can be null.
+     * @param gpu
+     * 	whether it supports running on GPU or not. Can be null.
+     * @param rosetta
+     * 	only relevant for MAC M1 and M2. Whether the framework can run as x86_64 in 
+     * 	arm64 based MACOS. Can be null.
+     * @return a list containing a list of installed engiens satisfying the constraints
+     */
+    public List<DeepLearningVersion> checkEngineWithArgsInstalled(String engine, 
+    		String version, Boolean cpu, Boolean gpu, Boolean rosetta) {
+		List<DeepLearningVersion> filtered = loadDownloadedForOS().stream().filter(vv ->{
+			if (engine != null && !vv.getEngine().toLowerCase().equals(engine))
+				return false;
+			else if (version != null && !vv.getPythonVersion().toLowerCase().equals(version.toLowerCase()))
+				return false;
+			else if (cpu != null && vv.getCPU() != cpu)
+				return false;
+			else if (gpu != null && vv.getGPU() != gpu)
+				return false;
+			else if (rosetta != null && vv.getRosetta() != rosetta)
+				return false;
+			return true;
+		}).collect(Collectors.toList());
+		return filtered;
+    }
+    
+    /**
+     * Returns a list of the installed Deep Learning versions (engines) that satisfy the filters
+     * specified by the arguments of the method.
+     * 
+     * If one of the parameter is not relevant for the search, setting it to null will deactivate
+     * it for the search.
+     * If we do not care whether the engine supports GPu or not, we can set 'gpu = null', and
+     * the resulting list of engines will contain both engines that support and do not support GPU.
+     * 
+     * The ONLY PARAMETER THAT CANNOT BE NULL IS: enginesDir
+     * 
+     * @param engine
+     * 	the name of the DL framework. Can be null.
+     * @param version
+     * 	the version of the DL framework in Python. Can be null.
+     * @param cpu
+     * 	whether it supports running on CPU or not. Can be null.
+     * @param gpu
+     * 	whether it supports running on GPU or not. Can be null.
+     * @param rosetta
+     * 	only relevant for MAC M1 and M2. Whether the framework can run as x86_64 in 
+     * 	arm64 based MACOS. Can be null.
+     * @param enginesDir
+     * 	the directory where all the engines are stored. CANNOT BE NULL.
+     * @return a list containing a list of installed engiens satisfying the constraints
+     */
+    public static List<DeepLearningVersion> checkEngineWithArgsInstalled(String engine, 
+    		String version, Boolean cpu, Boolean gpu, Boolean rosetta, String enginesDir) {
+    	Objects.requireNonNull(enginesDir);
+    	try {
+			InstalledEngines installed = InstalledEngines.buildEnginesFinder(enginesDir);
+			return installed.checkEngineWithArgsInstalled(enginesDir, version, cpu, gpu, rosetta);
+		} catch (IOException e) {
+			return new ArrayList<DeepLearningVersion>();
+		}
+    }
+    
 }

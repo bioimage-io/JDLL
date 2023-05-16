@@ -236,6 +236,11 @@ public class EngineInfo
 	 * Set the parameters to launch the wanted Deep Learning framework (engine)
 	 * in the program
 	 * 
+	 * If the engine specified is not installed, the method will return null.
+	 * The engine of interest needs to be installed first.
+	 * A good way to check whether the engine of interest exists or not
+	 * is: {@link InstalledEngines#checkEngineWithArgsInstalled(String, String, Boolean, Boolean, Boolean, String)}
+	 * 
 	 * @param engine
 	 *            name of the Deep Learning framework (engine). For example:
 	 *            Pytorch, Tensorflow....
@@ -245,7 +250,7 @@ public class EngineInfo
 	 *            directory where the folder containing the JARs needed to
 	 *            launch the corresponding engine are located
 	 * @return an object containing all the information needed to launch a Deep
-	 *         learning framework
+	 *         learning framework or null if the wanted version engine is not installed
 	 */
 	public static EngineInfo defineDLEngine( String engine, String version, String jarsDirectory )
 	{	
@@ -276,6 +281,11 @@ public class EngineInfo
 	 * Set the parameters to launch the wanted Deep Learning framework (engine)
 	 * in the program
 	 * 
+	 * If the engine specified is not installed, the method will return null.
+	 * The engine of interest needs to be installed first.
+	 * A good way to check whether the engine of interest exists or not
+	 * is: {@link InstalledEngines#checkEngineWithArgsInstalled(String, String, Boolean, Boolean, Boolean, String)}
+	 * 
 	 * @param engine
 	 *            name of the Deep Learning framework (engine). For example:
 	 *            Pytorch, Tensorflow....
@@ -287,7 +297,7 @@ public class EngineInfo
 	 * @param gpu
 	 *            whether the engine can use GPU or not
 	 * @return an object containing all the information needed to launch a Deep
-	 *         learning framework
+	 *         learning framework or null if the wanted version engine is not installed
 	 */
 	public static EngineInfo defineDLEngine( String engine, String version, String jarsDirectory, boolean gpu )
 	{
@@ -319,7 +329,12 @@ public class EngineInfo
 
 	/**
 	 * Set the parameters to launch the wanted Deep Learning framework (engine)
-	 * in the program
+	 * in the program.
+	 * 
+	 * If the engine specified is not installed, the method will return null.
+	 * The engine of interest needs to be installed first.
+	 * A good way to check whether the engine of interest exists or not
+	 * is: {@link InstalledEngines#checkEngineWithArgsInstalled(String, String, Boolean, Boolean, Boolean, String)}
 	 * 
 	 * @param engine
 	 *            name of the Deep Learning framework (engine). For example:
@@ -334,17 +349,22 @@ public class EngineInfo
 	 * @param gpu
 	 *            whether the engine can use GPU or not
 	 * @return an object containing all the information needed to launch a Deep
-	 *         learning framework
+	 *         learning framework or null if the wanted version engine is not installed
 	 */
 	public static EngineInfo defineDLEngine( String engine, String version, String jarsDirectory, boolean cpu,
 			boolean gpu )
 	{
 		if (AvailableEngines.modelRunnerToBioimageioKeysMap().keySet().contains(engine))
 			engine = AvailableEngines.modelRunnerToBioimageioKeysMap().get(engine);
+		boolean rosetta = new PlatformDetection().isUsingRosseta();
+		List<DeepLearningVersion> vvs =
+				InstalledEngines.checkEngineWithArgsInstalled(engine, version, cpu, gpu, rosetta, jarsDirectory);
+		if (vvs.size() == 0)
+			return null;
 		try {
-			EngineInfo engineInfo = new EngineInfo( engine, version, jarsDirectory );
-			engineInfo.supportCPU( cpu );
-			engineInfo.supportGPU( gpu );
+			EngineInfo engineInfo = new EngineInfo(engine, version, jarsDirectory);
+			engineInfo.cpu = cpu;
+			engineInfo.gpu = gpu;
 			return engineInfo;
 		} catch (IllegalArgumentException ex) {
 			ex.printStackTrace();
@@ -356,13 +376,18 @@ public class EngineInfo
 	 * Set the parameters to launch the wanted Deep Learning framework (engine)
 	 * in the program
 	 * 
+	 * If the engine specified is not installed, the method will return null.
+	 * The engine of interest needs to be installed first.
+	 * A good way to check whether the engine of interest exists or not
+	 * is: {@link InstalledEngines#checkEngineWithArgsInstalled(String, String, Boolean, Boolean, Boolean, String)}
+	 * 
 	 * @param engine
 	 *            name of the Deep Learning framework (engine). For example:
 	 *            Pytorch, Tensorflow....
 	 * @param version
 	 *            version of the training Deep Learning framework (engine)
 	 * @return an object containing all the information needed to launch a Deep
-	 *         learning framework
+	 *         learning framework or null if the wanted version engine is not installed
 	 */
 	public static EngineInfo defineDLEngine( String engine, String version )
 	{
@@ -381,6 +406,11 @@ public class EngineInfo
 	 * Set the parameters to launch the wanted Deep Learning framework (engine)
 	 * in the program
 	 * 
+	 * If the engine specified is not installed, the method will return null.
+	 * The engine of interest needs to be installed first.
+	 * A good way to check whether the engine of interest exists or not
+	 * is: {@link InstalledEngines#checkEngineWithArgsInstalled(String, String, Boolean, Boolean, Boolean, String)}
+	 * 
 	 * @param engine
 	 *            name of the Deep Learning framework (engine). For example:
 	 *            Pytorch, Tensorflow....
@@ -389,7 +419,7 @@ public class EngineInfo
 	 * @param gpu
 	 *            whether the engine can use GPU or not
 	 * @return an object containing all the information needed to launch a Deep
-	 *         learning framework
+	 *         learning framework or null if the wanted version engine is not installed
 	 */
 	public static EngineInfo defineDLEngine( String engine, String version, boolean gpu )
 	{
@@ -424,6 +454,11 @@ public class EngineInfo
 	 * Set the parameters to launch the wanted Deep Learning framework (engine)
 	 * in the program
 	 * 
+	 * If the engine specified is not installed, the method will return null.
+	 * The engine of interest needs to be installed first.
+	 * A good way to check whether the engine of interest exists or not
+	 * is: {@link InstalledEngines#checkEngineWithArgsInstalled(String, String, Boolean, Boolean, Boolean, String)}
+	 * 
 	 * @param engine
 	 *            name of the Deep Learning framework (engine). For example:
 	 *            Pytorch, Tensorflow....
@@ -434,7 +469,7 @@ public class EngineInfo
 	 * @param gpu
 	 *            whether the engine can use GPU or not
 	 * @return an object containing all the information needed to launch a Deep
-	 *         learning framework
+	 *         learning framework or null if the wanted version engine is not installed
 	 */
 	public static EngineInfo defineDLEngine( String engine, String version, boolean cpu, boolean gpu )
 	{
@@ -442,10 +477,7 @@ public class EngineInfo
 			engine = AvailableEngines.modelRunnerToBioimageioKeysMap().get(engine);
 		Objects.requireNonNull( STATIC_JARS_DIRECTORY, "The Jars directory should not be null." );
 		try {
-			EngineInfo engineInfo = new EngineInfo( engine, version, STATIC_JARS_DIRECTORY );
-			engineInfo.supportCPU( cpu );
-			engineInfo.supportGPU( gpu );
-			return engineInfo;
+			return defineDLEngine( engine, version, STATIC_JARS_DIRECTORY, cpu, gpu );
 		} catch (IllegalArgumentException ex) {
 			ex.printStackTrace();
 			return null;
@@ -464,7 +496,14 @@ public class EngineInfo
 	 * Also, for Pytorch if there is already another engine of the same framework, 
 	 * same major version (same as before) but different overall version, 
 	 * the previously loaded version will be used. This is because loading different versions
-	 * of the Pytorch native libraries produce conflicts. 
+	 * of the Pytorch native libraries produce conflicts.
+	 * 
+	 *  Regard, that the arguments of this method do not specify GPU or not.
+	 *  It will always try first to load an engine version with GPU, but if it is not
+	 *  available for the most compatible engine version it will simply use the 
+	 *  one with CPU only.
+	 *  To know if the EngineInfo object has been created for GPU, call {@link #isGPU()}
+	 *  and if it returns false, install the engine for GPU if available.
 	 * 
 	 * @param engine
 	 *            name of the Deep Learning framework (engine). For example:
@@ -475,10 +514,19 @@ public class EngineInfo
 	 *            directory where the folder containing the JARs needed to
 	 *            launch the corresponding engine are located
 	 * @return an object containing all the information needed to launch a Deep
-	 *         learning framework
+	 *         learning framework or null if the engine of interest is not installed
+	 * @throws IOException if the engines directory does not exist
 	 */
-	public static EngineInfo defineCompatibleDLEngine( String engine, String version, String jarsDirectory )
-	{	
+	public static EngineInfo defineCompatibleDLEngine( String engine, String version, 
+			String jarsDirectory ) throws IOException 
+	{
+		InstalledEngines manager = InstalledEngines.buildEnginesFinder(jarsDirectory);
+		String compatibleVersion = manager.getMostCompatibleVersionForEngine(engine, version);
+		if (compatibleVersion == null)
+			return null;
+		List<DeepLearningVersion> vv = manager.getDownloadedForVersionedEngine(engine, compatibleVersion);
+		boolean gpu = vv.stream().filter(v -> v.getGPU()).findFirst().orElse(null) != null;
+		return EngineInfo.defineDLEngine(engine, compatibleVersion, true, gpu);
 	}
 	
 	/**
@@ -567,6 +615,8 @@ public class EngineInfo
 		if (version == null)
 			return null;
 		List<DeepLearningVersion> vv = manager.getDownloadedForVersionedEngine(engine, version);
+		if (vv.size() == 0)
+			return null;
 		boolean gpu = vv.stream().filter(v -> v.getGPU()).findFirst().orElse(null) != null;
 		try {
 			return EngineInfo.defineDLEngine(engine, version, true, gpu);
