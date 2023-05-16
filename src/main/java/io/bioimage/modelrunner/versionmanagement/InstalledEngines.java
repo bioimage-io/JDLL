@@ -303,17 +303,17 @@ public class InstalledEngines {
 	 * For a specific Deep Learning framework, specified by the parameter
 	 * engine, and a specific version of interest, return the closest existing
 	 * version among the installed ones for the DL framework
-     * @param enginesDir
-     * 	path to where the engines are stored
      * @param engine
      * 	the engine of interest
 	 * 	Deep Learning framework (tensorflow, pytorch, onnx...) as defined with the engine tag 
 	 * at https://raw.githubusercontent.com/bioimage-io/model-runner-java/main/src/main/resources/availableDLVersions.json
 	 * @param version
 	 * 	the version of interest
+     * @param enginesDir
+     * 	path to where the engines are stored
 	 * @return the closest version to the version provided for the engine provided
 	 */
-    public static String getMostCompatibleVersionForEngine(String enginesDir, String engine, String version) {
+    public static String getMostCompatibleVersionForEngine(String engine, String version, String enginesDir) {
 		try {
 			InstalledEngines installed = InstalledEngines.buildEnginesFinder(enginesDir);
 			List<String> downloadedVersions = installed.getDownloadedCompatiblePythonVersionsForEngine(engine);
