@@ -19,6 +19,10 @@
  */
 package io.bioimage.modelrunner.utils;
 
+import java.util.Arrays;
+import java.util.Comparator;
+import java.util.List;
+
 /**
  * Class that converts flat indexes into multidimensional indexes
  * 
@@ -71,5 +75,21 @@ public class IndexingUtils
 		}
 		return flat;
 	}
+	
+    /**
+     * Argsort method
+     *
+     * @param list list of integers
+     * @return the order of the list of integers
+     */
+    public static Integer[] argsort(List<Integer> list) {
+        Integer[] indices = new Integer[list.size()];
+        for (int i = 0; i < list.size(); i++) {
+            indices[i] = i;
+        }
+        indices = indices.clone(); // Clone the array since Arrays.sort modifies it
+        Arrays.sort(indices, Comparator.comparingInt(list::get));
+        return indices;
+    }
 
 }

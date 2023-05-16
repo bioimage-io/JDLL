@@ -26,6 +26,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import io.bioimage.modelrunner.engine.EngineInfo;
+import io.bioimage.modelrunner.utils.IndexingUtils;
 
 /**
  * Class that contains methods to manipulate and compare the version Strings.
@@ -44,8 +45,67 @@ public class VersionStringUtils {
 		List<String> list = new ArrayList<String>();
 		list.add("15");
 		list.add("17");
-		String aa = getMostCompatibleEngineVersion("20", list, "onnx");
+		list.add("28");
+		list.add("31");
+		list.add("22");
+		List<String> aa = getCompatibleEngineVersionsInOrder("20", list, "onnx");
 		System.out.print(false);
+	}
+
+	/** TODO clean a little bit the code
+	 * Return an ordered list of the most compatible engine versions to the engine version of interest.
+	 * We define compatible engines as those of the same DL framework whose major version is the same.
+	 * Pytorch 1.13.1 and 1.9.0 are compatible but Tensorflow 1.15.0 and Tensorflow 2.3.0 are not.
+	 * 
+	 * The criteria to order the list is first being a bigger version (1.15 is more compatible with 1.25 than 
+	 * with 1.13) and then distance (1.15 is more compatible with 1.16 than with 1.25).
+	 * 
+	 * @param version
+	 * 	the version of interest
+	 * @param versionList
+	 * 	list of all the versions that are installed
+	 * @param engine
+	 * 	Deep Learning framework (tensorflow, pytorch, onnx...) as defined with the engine tag 
+	 * at https://raw.githubusercontent.com/bioimage-io/model-runner-java/main/src/main/resources/availableDLVersions.json
+	 * @return a list ordered from more compatible to less compatible
+	 */
+	public static List<String> getCompatibleEngineVersionsInOrder(String version, List<String> versionList, String engine) {
+		List<String> vs = new ArrayList<String>();
+		if (version == null || versionList == null || versionList.size() == 0) {
+			String miss = missingArgument(version, versionList, engine);
+			if (miss != null)
+				vs.add(miss);
+			return vs;
+		}
+		int nPoints = getNumberOfPoints(Arrays.asList(new String[]{version}));
+		nPoints = nPoints > getNumberOfPoints(versionList) ? nPoints : getNumberOfPoints(versionList);
+		versionList = uniformVersionList(versionList, nPoints);
+		version = uniformVersionList(Arrays.asList(new String[]{version}), nPoints).get(0);
+		List<Integer> intVersionList = listOfStringVersionsIntoListOfIntVersions(versionList);
+		// If there are no downloaded versions return null
+		if (intVersionList.size() == 0)
+			return vs;
+		int intVersion = convertVersionIntoIntegerOrGetFromList(version, intVersionList);
+		// Substract the version of interest to the version list to find the closest higher version
+		List<Integer> versionDists = intVersionList.stream()
+												.map(v -> v = v - intVersion)
+												.collect(Collectors.toList());
+		List<Integer> absDists = versionDists.stream().map(i -> Math.abs(i)).collect(Collectors.toList());
+		Integer[] absArgSort = IndexingUtils.argsort(absDists);
+		List<String> posList = new ArrayList<String>();
+		List<String> negList = new ArrayList<String>();
+		for (int i = 0; i < absDists.size(); i ++) {
+			if (!engine.toLowerCase().equals(EngineInfo.getOnnxKey())  
+					&& version.split("\\.")[0].equals(versionList.get(absArgSort[i]).split("\\.")[0]))
+				continue;
+			else if ( versionDists.get(absArgSort[i]) >= 0) {
+				posList.add(versionList.get(absArgSort[i]));
+			} else if ( versionDists.get(absArgSort[i]) < 0) {
+				negList.add(versionList.get(absArgSort[i]));
+			}
+		}
+		posList.addAll(negList);
+		return posList;
 	}
 
 	/** TODO clean a little bit the code
