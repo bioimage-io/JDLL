@@ -137,6 +137,21 @@ With this information an example code snippet would be:
 EngineInfo engineInfo = EngineInfo.defineDLEngine("pytorch", "1.9.1", "C:\Users\carlos\icy\engines");
 ```
 
+The `engineInfo` object is needed to know which of the engines has to be loaded. **Note that `EngineInfo.defineDLEngine(...)` will only try to load the exact same engine that is specified.** If it is not installed the method will fail when trying to load the engine.
+
+It is also possible to **load an engine version compatible with the wanted one**. Compatible engine versions are those from teh same DL frameworks that share the same major version number. For example Pytorch 1.13.1 and 1.11.0 are compatible but Tensorflow 1.15.0 and Tensorflow 2.7.0 are NOT compatible.
+
+The following method can be used to try to load a compatible engine version if the particular version does not exist:
+
+```java
+EngineInfo engineInfo = EngineInfo.defineCompatibleDLEngine("pytorch", "1.9.1", "C:\Users\carlos\icy\engines");
+```
+
+In this case, if Pytorch 1.9.1 is not installed but Pytorch 1.13.1 is, loading the model will load using Pytorch 1.13.1 instead of failing.
+
+**NOTE THAT THIS MIGHT BE A SOURCE OF ERRORS AS NOT EVERY ENGINE JDLL DEFINES AS COMPATIBLE IS ACTUALLY COMPATIBLE.** If Pytorch 1.12.0 includes a new functionality that was not included in Pytorch 1.9.1 and we try to load a Pytorch 1.12.0 model that uses that functionality with the Pytorch 1.9.1 engine,
+**WE WILL GET AN ERROR IN THE MODEL INFERENCE STEP.**
+
 This engine info must be used to load the corresponding model. Model loading requires 3 parameters, the model folder (directory where all the files for a model are stored), the model source (path to the file that is specified in the weights&rarr;source field in the `rdf.yaml` file) and the `EngineInfo` object previously created.
 
 An example code to load a model would be:
