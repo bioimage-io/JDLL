@@ -156,7 +156,10 @@ The following method can be used to try to load a compatible engine version if t
 EngineInfo engineInfo = EngineInfo.defineCompatibleDLEngine("pytorch", "1.9.1", "C:\Users\carlos\icy\engines");
 ```
 
-In this case, if Pytorch 1.9.1 is not installed but Pytorch 1.13.1 is, loading the model will load using Pytorch 1.13.1 instead of failing.
+In this case, if Pytorch 1.9.1 is not installed but Pytorch 1.13.1 is, loading the model will load using Pytorch 1.13.1 instead of failing. In order to know which version has been loaded:
+```
+System.out.println(engineInfo.getVersion());
+```
 
 **NOTE THAT THIS MIGHT BE A SOURCE OF ERRORS AS NOT EVERY ENGINE JDLL DEFINES AS COMPATIBLE IS ACTUALLY COMPATIBLE.** If Pytorch 1.12.0 includes a new functionality that was not included in Pytorch 1.9.1 and we try to load a Pytorch 1.12.0 model that uses that functionality with the Pytorch 1.9.1 engine,
 **WE WILL GET AN ERROR IN THE MODEL INFERENCE STEP.**
