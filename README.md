@@ -103,7 +103,7 @@ This library is intended for developers and was originally built by the DeepIcy 
       
       For more information, please read the wiki page about [engine management and installation](TODO add link)
 
-## Supported engines
+### Supported engines
 
 Currently, the following `engine_name-interface` engines exist:
 
@@ -208,6 +208,47 @@ outputTensors.add(outputTensor);
 model.runModel(inputTensors, outputTensors);
 // The results of applying inference will be // stored in the Tensors of the list ‘outputTensors’ variable
 ```
+
+## Downloading and running Bioimage.io models
+
+   JDLL also facilitates the use of [Bioimage.io](https://bioimage.io/#/) models. It integrates methods to download the models and to load them directly using the information from the rdf.yaml file.
+   
+   ### 1. Download
+   JDLL can connect to the web repository of the Bioimage.io and retreive information about every model that exists there.
+   
+      // Create an instance of the BioimageRepo object
+		BioimageioRepo br = BioimageioRepo.connect();
+      boolean verbose = false;
+      // Retrieve a map where the key corresponds to the online URL to the rdf.yaml 
+      // specs file of a model and the value corresponds to the information contained in the file
+		Map<Path, ModelDescriptor> models = br.listAllModels(verbose);
+   
+   The rdf.yaml file contains some cualitative data such as a short descrption of the model, its name, the model ID or a couple of references and citations, but also contains technical information that enables loading the model.
+   
+   Once a model has been selected, it can be downloaded by its name with:
+   
+      String name = "Neuron Segmentation in EM (Membrane Prediction)";
+      String modelsDirectory = "/path/to/models/dir";
+      br.downloadByName(name, modelsDirectory);
+   
+   It also can be downloaded by its ID:
+   
+      String modelID = "10.5281/zenodo.5874741/5874742";
+      String modelsDirectory = "/path/to/models/dir";
+      br.downloadModelByID(modelID, modelsDirectory);
+      
+   By the URL of its rdf.yaml specs file (the key of the `models` map:
+   
+      String rdfSource = "https://bioimage-io.github.io/collection-bioimage-io/rdfs/10.5281/zenodo.5874741/5874742/rdf.yaml";
+      String modelsDirectory = "/path/to/models/dir";
+      br.downloadByRdfSource(rdfSource, modelsDirectory);
+      
+   Or by the JDLL Java object `ModelDescriptor`, which contains the info of the model. This object is the value in the `models` map:
+   
+      String rdfSource = "https://bioimage-io.github.io/collection-bioimage-io/rdfs/10.5281/zenodo.5874741/5874742/rdf.yaml";
+      ModelDescriptor descriptor = models.get(rdfSource);
+      String modelsDirectory = "/path/to/models/dir";
+      br.downloadModel(descriptor, modelsDirectory);
 
 ## Examples
 
