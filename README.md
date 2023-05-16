@@ -60,7 +60,17 @@ The [Java model runner](<https://github.com/bioimage-io/model-runner-java/tree/m
       String dir = "/path/to/wanted/engines/dir";
       EngineManagement.installEnginesForModelByNameinDir(modelID, dir);
       ```
-      In both previous cases, the engines installed will be specified by the weights in the rdf.yaml files of the selected models. HOwever regard that only the engines supported by JDLL will be installed. These are torchscript (pytorch), tensorflow_saved_model_bundled (tensorflow) and onnx.
+      
+      or directly provide the model folder and install the engines required for that model:
+      ```
+      String modelFolder = "/path/to/model/folder";
+      String dir = "/path/to/wanted/engines/dir";
+      EngineManagement.installEnginesinDirForModelInFolder(modelFolder, dir);
+      ```
+      
+      In the explained examples, the engines installed will be specified by the weights in the rdf.yaml files of the selected models. However regard that only the engines supported by JDLL will be installed. These are torchscript (pytorch), tensorflow_saved_model_bundled (tensorflow) and onnx.
+      
+      For more information, please read the wiki page about [engine management and installation](TODO add link)
 
    2b. Manually
 
