@@ -23,6 +23,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.List;
 import java.util.Objects;
+import java.util.stream.Collectors;
 
 import io.bioimage.modelrunner.bioimageio.description.weights.WeightFormat;
 import io.bioimage.modelrunner.system.PlatformDetection;
@@ -234,7 +235,9 @@ public class EngineInfo
 
 	/**
 	 * Set the parameters to launch the wanted Deep Learning framework (engine)
-	 * in the program
+	 * in the program.
+	 * In this case neither CPU, nor GPU compatibility are not defined. The method will try to 
+	 * find an engine compatible with CPU and GPU, but they are not required.
 	 * 
 	 * If the engine specified is not installed, the method will return null.
 	 * The engine of interest needs to be installed first.
@@ -256,19 +259,22 @@ public class EngineInfo
 	{	
 		if (AvailableEngines.modelRunnerToBioimageioKeysMap().keySet().contains(engine))
 			engine = AvailableEngines.modelRunnerToBioimageioKeysMap().get(engine);
-		boolean cpu = true;
+		boolean rosetta = new PlatformDetection().isUsingRosseta();
+		List<DeepLearningVersion> vs = 
+				InstalledEngines.checkEngineWithArgsInstalled(engine, version, null, null, rosetta, jarsDirectory);
+		if (vs.size() == 0)
+			return null;
+		boolean cpu = false;
 		boolean gpu = false;
-		if ( engine.equals( PYTORCH_JAVA_BIOIMAGEIO_TAG ) )
-		{
+		if (vs.stream().filter(v -> v.getCPU() && v.getGPU()).collect(Collectors.toList()).size() > 0) {
 			cpu = true;
 			gpu = true;
+		} else if (vs.stream().filter(v -> v.getCPU()).collect(Collectors.toList()).size() > 0) {
+			cpu = true;
+		} else {
+			gpu = true;
 		}
-		else
-		{
-			throw new IllegalArgumentException( "Please specify whether the engine can be CPU or not "
-					+ "and whether it can use GPU or not. Default values only exist for " + PYTORCH_JAVA_BIOIMAGEIO_TAG
-					+ " engines." );
-		}
+		
 		try {
 			return defineDLEngine( engine, version, jarsDirectory, cpu, gpu );
 		} catch (IllegalArgumentException ex) {
@@ -279,7 +285,9 @@ public class EngineInfo
 
 	/**
 	 * Set the parameters to launch the wanted Deep Learning framework (engine)
-	 * in the program
+	 * in the program.
+	 * In this case CPU compatibility is not defined. The method will try to 
+	 * find an engine compatible with CPU but it is not required.
 	 * 
 	 * If the engine specified is not installed, the method will return null.
 	 * The engine of interest needs to be installed first.
@@ -303,22 +311,14 @@ public class EngineInfo
 	{
 		if (AvailableEngines.modelRunnerToBioimageioKeysMap().keySet().contains(engine))
 			engine = AvailableEngines.modelRunnerToBioimageioKeysMap().get(engine);
-		boolean cpu = true;
-		if ( engine.equals( TENSORFLOW_JAVA_BIOIMAGEIO_TAG )
-				|| engine.equals( ONNX_JAVA_BIOIMAGEIO_TAG ))
-		{
+		boolean rosetta = new PlatformDetection().isUsingRosseta();
+		List<DeepLearningVersion> vs = 
+				InstalledEngines.checkEngineWithArgsInstalled(engine, version, null, gpu, rosetta, jarsDirectory);
+		if (vs.size() == 0)
+			return null;
+		boolean cpu = false;
+		if (vs.stream().filter(v -> v.getCPU()).collect(Collectors.toList()).size() > 0) 
 			cpu = true;
-		}
-		else if ( engine.equals( PYTORCH_JAVA_BIOIMAGEIO_TAG ) )
-		{
-			cpu = true;
-		}
-		else
-		{
-			throw new IllegalArgumentException( "Please spedicify whether the engine can CPU or not "
-					+ "and whether it can use GPU or not. Default values only exist for " + TENSORFLOW_JAVA_BIOIMAGEIO_TAG
-					+ " and " + PYTORCH_JAVA_BIOIMAGEIO_TAG + " engines." );
-		}
 		try {
 			return defineDLEngine( engine, version, jarsDirectory, cpu, gpu );
 		} catch (IllegalArgumentException ex) {
@@ -329,7 +329,7 @@ public class EngineInfo
 
 	/**
 	 * Set the parameters to launch the wanted Deep Learning framework (engine)
-	 * in the program.
+	 * in the program. 
 	 * 
 	 * If the engine specified is not installed, the method will return null.
 	 * The engine of interest needs to be installed first.
@@ -374,7 +374,9 @@ public class EngineInfo
 
 	/**
 	 * Set the parameters to launch the wanted Deep Learning framework (engine)
-	 * in the program
+	 * in the program.
+	 * In this case neither CPU, nor GPU compatibility are not defined. The method will try to 
+	 * find an engine compatible with CPU and GPU, but they are not required.
 	 * 
 	 * If the engine specified is not installed, the method will return null.
 	 * The engine of interest needs to be installed first.
@@ -404,7 +406,9 @@ public class EngineInfo
 
 	/**
 	 * Set the parameters to launch the wanted Deep Learning framework (engine)
-	 * in the program
+	 * in the program.
+	 * In this case CPU compatibility is not defined. The method will try to 
+	 * find an engine compatible with CPU but it is not required.
 	 * 
 	 * If the engine specified is not installed, the method will return null.
 	 * The engine of interest needs to be installed first.
@@ -426,22 +430,14 @@ public class EngineInfo
 		if (AvailableEngines.modelRunnerToBioimageioKeysMap().keySet().contains(engine))
 			engine = AvailableEngines.modelRunnerToBioimageioKeysMap().get(engine);
 		Objects.requireNonNull( STATIC_JARS_DIRECTORY, "The Jars directory should not be null." );
-		boolean cpu = true;
-		if ( engine.equals( TENSORFLOW_JAVA_BIOIMAGEIO_TAG )
-				|| engine.equals( ONNX_JAVA_BIOIMAGEIO_TAG ))
-		{
+		boolean rosetta = new PlatformDetection().isUsingRosseta();
+		List<DeepLearningVersion> vs = 
+				InstalledEngines.checkEngineWithArgsInstalled(engine, version, null, gpu, rosetta, STATIC_JARS_DIRECTORY);
+		if (vs.size() == 0)
+			return null;
+		boolean cpu = false;
+		if (vs.stream().filter(v -> v.getCPU()).collect(Collectors.toList()).size() > 0) 
 			cpu = true;
-		}
-		else if ( engine.equals( PYTORCH_JAVA_BIOIMAGEIO_TAG ) )
-		{
-			cpu = true;
-		}
-		else
-		{
-			throw new IllegalArgumentException( "Please spedicify whether the engine can CPU or not "
-					+ "and whether it can use GPU or not. Default values only exist for " + TENSORFLOW_JAVA_BIOIMAGEIO_TAG
-					+ " and " + PYTORCH_JAVA_BIOIMAGEIO_TAG + " engines." );
-		}
 		try {
 			return defineDLEngine( engine, version, STATIC_JARS_DIRECTORY, cpu, gpu );
 		} catch (IllegalArgumentException ex) {

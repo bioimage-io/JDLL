@@ -39,6 +39,14 @@ public class VersionStringUtils {
 	 * Version number given if there is no version known
 	 */
 	private static final int WRONG_VERSION = -10000000;
+	
+	public static void main(String[] args) {
+		List<String> list = new ArrayList<String>();
+		list.add("15");
+		list.add("17");
+		String aa = getMostCompatibleEngineVersion("20", list, "onnx");
+		System.out.print(false);
+	}
 
 	/** TODO clean a little bit the code
 	 * Return the most convenient engine version to load the model trained with
@@ -75,21 +83,21 @@ public class VersionStringUtils {
 		int closestBiggerInd = indexOfBiggerClosestVersion(versionDists);
 		if (closestBiggerInd != -1 ) {
 			String possibleVersion = versionList.get(closestBiggerInd);
-			// Make sure that for Tensorflow, there is no interference between Tf1 and Tf2
-			if (engine.toLowerCase().contains(EngineInfo.getTensorflowKey().toLowerCase()) 
+			// Make sure that for every engine, there is no interference between major versions
+			if (!engine.toLowerCase().equals(EngineInfo.getOnnxKey())  
 					&& version.split("\\.")[0].equals(possibleVersion.split("\\.")[0]))
 				return possibleVersion;
-			else if (!engine.equals(EngineInfo.getTensorflowKey()))
+			else if (engine.toLowerCase().equals(EngineInfo.getOnnxKey()))
 				return possibleVersion;
 		}
 		int closestSmallerInd = indexOfSmallerClosestVersion(versionDists);
 		if (closestSmallerInd != -1 ) {
 			String possibleVersion = versionList.get(closestSmallerInd);
-			// Make sure that for Tensorflow, there is no interference between Tf1 and Tf2
-			if (engine.toLowerCase().contains(EngineInfo.getTensorflowKey().toLowerCase())  
+			// Make sure that for every engine, there is no interference between major versions
+			if (!engine.toLowerCase().equals(EngineInfo.getOnnxKey()) 
 					&& version.split("\\.")[0].equals(possibleVersion.split("\\.")[0]))
 				return possibleVersion;
-			else if (!engine.equals(EngineInfo.getTensorflowKey()))
+			else if (engine.toLowerCase().equals(EngineInfo.getOnnxKey()))
 				return possibleVersion;
 		}
 		return null;
