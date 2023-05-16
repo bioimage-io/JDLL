@@ -249,6 +249,24 @@ model.runModel(inputTensors, outputTensors);
       ModelDescriptor descriptor = models.get(rdfSource);
       String modelsDirectory = "/path/to/models/dir";
       br.downloadModel(descriptor, modelsDirectory);
+      
+   ### 2. Load and run Bioimage.io models
+   
+   JDLL facilitates the use of Bioimage.io models making easier to use them. This is possible due to the [rdf.yaml specs file](https://github.com/bioimage-io/spec-bioimage-io/blob/gh-pages/model_spec_latest.md), as it contains all the technical info needed to load a model.
+   
+   Loading a Bioimage.io model is very easy.
+   
+   ```
+   String modelPath = "/path/to/model";
+   // Note that this is not the path to the actual engine that we want to use, but the
+   // path to the directory where all the engine folders are located.
+   // Using the example from section [Manage DL engines](https://github.com/bioimage-io/JDLL/edit/main/README.md#manage-the-dl-engines)
+   // enginesDir would be C:\Users\carlos\icy\engines
+   String enginesDir = "/path/to/engines";
+   Model bioiamgeioModel = Model.createBioimageioModel(modelPath, enginesDir);
+   ```
+   
+   Once the model is loaded we can continue the steps explained above [here](https://github.com/bioimage-io/JDLL#2-creating-agnostic-tensors) and [here](https://github.com/bioimage-io/JDLL#3-making-inference).
 
 ## Examples
 
