@@ -369,7 +369,7 @@ public class EngineManagement {
 	 */
 	public static Map<String, String> getListOfSingleVersionsPerFrameworkNotInRequired() {
 		List<DeepLearningVersion> vList = AvailableEngines
-				.loadCompatibleOnly().getVersions().stream()
+				.getForCurrentOS().getVersions().stream()
 				.filter( v -> !v.getEngine().startsWith(EngineInfo.getOnnxKey())
 						&& !ENGINES_VERSIONS.keySet().contains( v.getEngine() 
 						+ "_" + v.getPythonVersion().substring(0, v.getPythonVersion().indexOf(".")) ) 
@@ -1174,7 +1174,7 @@ public class EngineManagement {
 			DownloadTracker.TwoParameterConsumer<String, Double> consumer) throws IOException, InterruptedException {
 		if (AvailableEngines.bioimageioToModelRunnerKeysMap().get(framework) != null)
 			framework = AvailableEngines.bioimageioToModelRunnerKeysMap().get(framework);
-		DeepLearningVersion engine = AvailableEngines.getAvailableVersionsForEngine(framework).getVersions()
+		DeepLearningVersion engine = AvailableEngines.filterByEngineForOS(framework).getVersions()
 				.stream().filter(v -> (v.getPythonVersion() == version)
 					&& (v.getCPU() == cpu)
 					&& (v.getGPU() == gpu)).findFirst().orElse(null);
@@ -1212,7 +1212,7 @@ public class EngineManagement {
     public static boolean isEngineSupported(String framework, String version, boolean cpu, boolean gpu) {
     	if (ENGINES_MAP.get(framework) != null)
 			framework = AvailableEngines.bioimageioToModelRunnerKeysMap().get(framework);
-    	DeepLearningVersion engine = AvailableEngines.getAvailableVersionsForEngine(framework).getVersions()
+    	DeepLearningVersion engine = AvailableEngines.filterByEngineForOS(framework).getVersions()
 				.stream().filter(v -> v.getPythonVersion().equals(version) 
 						&& v.getOs().equals(new PlatformDetection().toString())
 						&& v.getCPU() == cpu
