@@ -1001,6 +1001,22 @@ public class EngineManagement {
 	 * 	directory where the engines are downloaded. Inside the dir specififed the 
 	 * 	corresponding folder for the engine will be created, which will contain the 
 	 * 	files needed to run the engine
+	 * @return true if the installation was successful and false otherwise
+	 * @throws IOException if there is any error downloading the engine
+	 * @throws InterruptedException if the main thread is interrumped abruptly while downloading
+	 */
+	public static boolean installEngineInDir(DeepLearningVersion engine, String engineDir) throws IOException, InterruptedException {
+		return installEngineInDir(engine, engineDir, null);
+	}
+	
+	/**
+	 * Install the engine specified by the {@link DeepLearningVersion} object
+	 * @param engine
+	 * 	the {@link DeepLearningVersion} object specifying the wanted engine
+	 * @param engineDir
+	 * 	directory where the engines are downloaded. Inside the dir specififed the 
+	 * 	corresponding folder for the engine will be created, which will contain the 
+	 * 	files needed to run the engine
 	 * @param consumer
 	 * 	consumer used to communicate the progress made donwloading files
 	 * @return true if the installation was successful and false otherwise
