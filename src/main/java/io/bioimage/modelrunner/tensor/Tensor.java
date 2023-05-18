@@ -170,8 +170,6 @@ public final class Tensor< T extends RealType< T > & NativeType< T > >
 	 *
 	 * @param <T>
 	 * 			  the possible ImgLib2 datatypes that the input backend ImgLib2 img can have
-	 * @param <R>
-	 * 			  the possible ImgLib2 datatypes that the output backend ImgLib2 img can have
 	 * @param tensorName
 	 *            name of the tensor as defined by the model
 	 * @param axes
@@ -183,14 +181,14 @@ public final class Tensor< T extends RealType< T > & NativeType< T > >
 	 * 			  data type of the tensor
 	 * @return the tensor
 	 */
-	public static < T extends RealType< T > & NativeType< T > , R extends RealType< R > & NativeType< R > > 
-				Tensor< R > buildEmptyTensorAndAllocateMemory( final String tensorName, 
-																final String axes, final long[] shape,
-																final R dtype)
+	public static  < T extends RealType< T > & NativeType< T > > 
+								Tensor< T > buildEmptyTensorAndAllocateMemory( final String tensorName, 
+										final String axes, final long[] shape,
+										final T dtype)
 	{
-		final ArrayImgFactory< R > imgFactory = new ArrayImgFactory<>( dtype );
-		final Img<R> backendData = imgFactory.create(shape);
-		return new Tensor<>( tensorName, axes, backendData );
+		final ArrayImgFactory< T > imgFactory = new ArrayImgFactory<T>( dtype );
+		final Img<T> backendData = imgFactory.create(shape);
+		return new Tensor<T>( tensorName, axes, backendData );
 	}
 
 	/**
