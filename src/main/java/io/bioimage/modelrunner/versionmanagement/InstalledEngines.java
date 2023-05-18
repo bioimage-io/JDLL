@@ -325,6 +325,24 @@ public class InstalledEngines {
     }
     
     /**
+     * Returns a list of all the installed engine versions that are compatible
+     * with the versioned engine provided in the input parameters.
+     * 
+     * @param engine
+     * 	name of the DL framework of interest
+     * @param version
+     * 	original version we are looking for compatibles
+     * @param enginesDir
+     * 	directory where all the engines are installed
+     * @return a list of all the string versions compatible
+     *  with the provided versioned engine
+     */
+    public static List<String> getOrderedListOfCompatibleVesionsForEngine(String engine, 
+    		String version, String enginesDir) {
+    	
+    }
+    
+    /**
      * Check whether the engine version of interest is installed or not
      * @param engine
      * 	DL framework of interest
