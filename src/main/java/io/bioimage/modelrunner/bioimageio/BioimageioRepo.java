@@ -26,7 +26,7 @@ import java.io.InputStream;
 import java.net.URL;
 import java.nio.file.Path;
 import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -143,7 +143,7 @@ public class BioimageioRepo {
 			return models;
 		if (verbose)
 			Log.addProgressAndShowInTerminal(consumer, "BioImage.io: Accessing the BioImage.io API to retrieve available models", true);
-		models = new HashMap<Path, ModelDescriptor>();
+		models = new LinkedHashMap<Path, ModelDescriptor>();
 		if (collections == null) {
 			if (verbose)
 				Log.addProgressAndShowInTerminal(consumer, MODELS_NOT_FOUND_MSG, true);
@@ -372,7 +372,7 @@ public class BioimageioRepo {
 	 * @throws IOException	if there is any error downloading the files from the URLs provided
 	 * @throws InterruptedException	if the download or tracking threads are interrupted abruptly
 	 */
-	public void downloadModel(ModelDescriptor descriptor, String modelsDirectory) 
+	public static void downloadModel(ModelDescriptor descriptor, String modelsDirectory) 
 			throws IOException, InterruptedException {
 		downloadModel(descriptor, modelsDirectory, null);
 			
@@ -398,7 +398,7 @@ public class BioimageioRepo {
 	 * @throws IOException	if there is any error downloading the files from the URLs provided
 	 * @throws InterruptedException	if the download or tracking threads are interrupted abruptly
 	 */
-	public void downloadModel(ModelDescriptor descriptor, String modelsDirectory, 
+	public static void downloadModel(ModelDescriptor descriptor, String modelsDirectory, 
 			DownloadTracker.TwoParameterConsumer<String, Double> consumer) throws IOException, InterruptedException {
 		DownloadModel dm = DownloadModel.build(descriptor, modelsDirectory);
 		Thread downloadThread = new Thread(() -> {
