@@ -232,7 +232,7 @@ public class AvailableEngines
     public static boolean isEngineSupported(String framework, String version, 
     		Boolean cpu, Boolean gpu) {
     	String searchEngine = AvailableEngines.getSupportedVersionsEngineTag(framework);
-    	if (searchEngine == null)
+    	if (searchEngine == null && framework != null)
     		return false;
     	DeepLearningVersion engine = AvailableEngines.filterByEngineForOS(searchEngine).getVersions()
 				.stream().filter(v -> {
@@ -292,6 +292,8 @@ public class AvailableEngines
      * @return the correct engine tag format to parse the files at resources
      */
     public static String getSupportedVersionsEngineTag(String engine) {
+    	if (engine == null)
+    		return null;
     	boolean engineExists = AvailableEngines.bioimageioToModelRunnerKeysMap().keySet().stream().anyMatch(i -> i.equals(engine));
     	boolean engineExists2 = AvailableEngines.bioimageioToModelRunnerKeysMap().entrySet()
     			.stream().anyMatch(i -> i.getValue().equals(engine));
