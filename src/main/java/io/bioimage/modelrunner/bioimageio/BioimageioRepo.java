@@ -213,6 +213,33 @@ public class BioimageioRepo {
 			modelIDs.add(modelID);
 		}
 	}
+	
+	/**
+	 * Retrieve the {@link ModelDescriptor} for the rdf.yaml whose URL
+	 * has been provided.
+	 * If the URL does not exist, or does not point to a valid rdf.yaml file,
+	 * the method will return null. 
+	 * Regard that the only URLs that will be valid are the ones defined in the
+	 * field 'rdf_source' of the rdf.yaml file and that the URLs have to point
+	 * to the *raw* github file.
+	 * @param rdfSource
+	 * 	URL pointing to the rdf.yaml file of interest
+	 * @return the {@link ModelDescriptor} from the rdf.yaml of interest or null
+	 * if the URL does not point to a valid URL
+	 */
+	public static ModelDescriptor retreiveDescriptorFromURL(String rdfSource) {
+		ModelDescriptor descriptor = null;
+		String stringRDF = getJSONFromUrl(rdfSource);
+		if (stringRDF == null)
+			return descriptor;
+		try {
+			descriptor = ModelDescriptor.readFromYamlTextString(stringRDF, false);
+		} catch (Exception ex) {
+			ex.printStackTrace();
+			return descriptor;
+		}
+		return descriptor;
+	}
 
 	/**
 	 * Method used to read a yaml or json file from a server as a raw string
