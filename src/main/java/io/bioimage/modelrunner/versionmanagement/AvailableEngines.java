@@ -215,7 +215,10 @@ public class AvailableEngines
     }
     
     /**
-     * Check if an engine is supported by the dl-modelrunner or not
+     * Check if an engine is supported by JDLL or not.
+     * If any of the arguments is set to null, it will be ignored in the filtering.
+     * For example, if gpu = null, the method will return true if the engine exists
+     * even if it only exists for gpu, only for cpu or it exists for both.
      * @param framework
 	 * 	DL framework as specified by the Bioimage.io model zoo ()https://github.com/bioimage-io/spec-bioimage-io/blob/gh-pages/weight_formats_spec_0_4.md)
 	 * @param version
@@ -226,16 +229,27 @@ public class AvailableEngines
 	 * 	whether the engine supports gpu or not
      * @return true if the engine exists and false otherwise
      */
-    public static boolean isEngineSupported(String framework, String version, boolean cpu, boolean gpu) {
+    public static boolean isEngineSupported(String framework, String version, 
+    		Boolean cpu, Boolean gpu) {
     	String searchEngine = AvailableEngines.getSupportedVersionsEngineTag(framework);
     	if (searchEngine == null)
     		return false;
     	DeepLearningVersion engine = AvailableEngines.filterByEngineForOS(searchEngine).getVersions()
-				.stream().filter(v -> v.getPythonVersion().equals(version) 
-						&& v.getOs().equals(new PlatformDetection().toString())
-						&& (!(new PlatformDetection().isUsingRosseta()) || v.getRosetta())
-						&& v.getCPU() == cpu
-						&& v.getGPU() == gpu).findFirst().orElse(null);
+				.stream().filter(v -> {
+					if (searchEngine != null && !v.getEngine().equals(searchEngine))
+						return false;
+					else if (version != null && !v.getPythonVersion().equals(version))
+							return false;
+					else if (!v.getOs().equals(new PlatformDetection().toString()))
+							return false;
+					else if ((!(new PlatformDetection().isUsingRosseta()) || v.getRosetta()))
+						return false;
+					else if (cpu != null && v.getCPU() != cpu)
+						return false;
+					else if (gpu != null && v.getGPU() != gpu)
+						return false;
+					return true;
+				}).findFirst().orElse(null);
 		if (engine == null) 
 			return false;
 		return true;
