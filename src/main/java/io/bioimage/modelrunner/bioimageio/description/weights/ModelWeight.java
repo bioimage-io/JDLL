@@ -132,7 +132,7 @@ public class ModelWeight
      * Identifies the weights that are compatible with the Bioengine. The BioEngine
      * canot run Tf 1 weights
      */
-    public void findBioEngineWeights() {
+    private void findBioEngineWeights() {
     	for (Entry<String, WeightFormat> entry : weightsDic.entrySet()) {
     		if (entry.getValue().getWeightsFormat().equals(kerasIdentifier)) {
     			bioEngineWeightsKey = kerasIdentifier;
@@ -151,7 +151,7 @@ public class ModelWeight
      * Return the key for the Bioengine weights that are going to be used
      * @return the key for the bioengine weights
      */
-    public String getBioEngineWeightsKey() {
+    private String getBioEngineWeightsKey() {
     	return this.bioEngineWeightsKey;
     }
 
