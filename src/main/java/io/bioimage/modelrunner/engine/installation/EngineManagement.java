@@ -351,7 +351,7 @@ public class EngineManagement {
 		if (consumersMap != null && consumersMap.size() != 0)
 			return consumersMap;
 		if (missingEngineFolders == null)
-			checkEnginesInstalled();
+			checkBasicEngineInstallation();
 		consumersMap = new LinkedHashMap<String, TwoParameterConsumer<String, Double>>();
 		for (String missing : missingEngineFolders.values()) {
 			this.consumersMap.put(missing, DownloadTracker.createConsumerProgress());
@@ -396,7 +396,9 @@ public class EngineManagement {
 			 String selectedVersion = versionsNotInRequired.entrySet().stream()
 					 .filter( v -> v.getKey().startsWith(f + "_"))
 					 .map(v -> v.getValue()).max(versionComparator).orElse(null);
-			 ENGINES_VERSIONS.put(f + "_" + selectedVersion.indexOf("."), selectedVersion);
+			 ENGINES_VERSIONS.put(f + "_" + 
+					 selectedVersion.substring(0, selectedVersion.indexOf(".")),
+					 selectedVersion);
 		 }
 		 
 		
@@ -428,7 +430,7 @@ public class EngineManagement {
 			        uniquePythonVersions.addAll(guVersions);
 			        return uniquePythonVersions.stream();
 			    })
-			    .collect(Collectors.toList());
+			    .distinct().collect(Collectors.toList());
 
 		Map<String, String> versionsNotInRequired = vList.stream().collect(Collectors.toMap(
 							v -> v.getEngine() + "_" + v.getPythonVersion(), v -> v.getPythonVersion()));;
