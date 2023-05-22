@@ -211,7 +211,7 @@ public class InstalledEngines {
         String currentPlatform = new PlatformDetection().toString();
     	List<DeepLearningVersion> versions = getAll();
     	versions.stream().filter(v -> v.getOs().equals(currentPlatform)
-				&& (!(new PlatformDetection().isUsingRosseta()) || v.getRosetta()))
+				&& (new PlatformDetection().isUsingRosseta() && !v.getRosetta()))
     	.collect(Collectors.toList());
         return versions;
     }
