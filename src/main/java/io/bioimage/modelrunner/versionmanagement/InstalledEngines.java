@@ -108,7 +108,7 @@ public class InstalledEngines {
      * 
      * @return list with the downloaded DeepLearningVersion
      */
-    public List<DeepLearningVersion> loadAllDownloaded()
+    public List<DeepLearningVersion> getAll()
     {
     	if (this.getEnginePathsAsStrings().length == 0)
     		return new ArrayList<DeepLearningVersion>();
@@ -131,10 +131,10 @@ public class InstalledEngines {
      * 	path to where the engines are stored
      * @return list with the downloaded DeepLearningVersion
      */
-    public static List<DeepLearningVersion> loadDownloaded(String enginesPath)
+    public static List<DeepLearningVersion> getAll(String enginesPath)
     {
     	try{
-    		return buildEnginesFinder(enginesPath).loadAllDownloaded();
+    		return buildEnginesFinder(enginesPath).getAll();
     	} catch (IOException ex) {
     		return new ArrayList<DeepLearningVersion>();
     	}
@@ -209,7 +209,7 @@ public class InstalledEngines {
     public List<DeepLearningVersion> loadDownloadedForOS()
     {
         String currentPlatform = new PlatformDetection().toString();
-    	List<DeepLearningVersion> versions = loadAllDownloaded();
+    	List<DeepLearningVersion> versions = getAll();
     	versions.stream().filter(v -> v.getOs().equals(currentPlatform)
 				&& (!(new PlatformDetection().isUsingRosseta()) || v.getRosetta()))
     	.collect(Collectors.toList());
@@ -223,7 +223,7 @@ public class InstalledEngines {
      * 	path to where the engines are stored
      * @return List of available engines engines compatible with the OS.
      */
-    public static List<DeepLearningVersion> loadDownloadedForOS(String enginesPath) {
+    public static List<DeepLearningVersion> getDownloadedForOS(String enginesPath) {
     	try{
     		return buildEnginesFinder(enginesPath).loadDownloadedForOS();
     	} catch (IOException ex) {
