@@ -1560,26 +1560,13 @@
 		{
 			"engine": "onnx",
 			"version": "1.13.1",
-			"pythonVersion": "17",
+			"pythonVersion": "18",
 			"os": "macosx-x86_64",
 			"gpu": false,
 			"cpu": true,
 			"rosetta": true,
 			"jars": [
 				"https://repo1.maven.org/maven2/com/microsoft/onnxruntime/onnxruntime/1.13.1/onnxruntime-1.13.1.jar",
-				"https://maven.scijava.org/content/repositories/releases/io/bioimage/dl-modelrunner-onnx/0.3.0/dl-modelrunner-onnx-0.3.0.jar"
-			]
-		},
-		{
-			"engine": "onnx",
-			"version": "1.12.1",
-			"pythonVersion": "17",
-			"os": "macosx-x86_64",
-			"gpu": false,
-			"cpu": true,
-			"rosetta": true,
-			"jars": [
-				"https://repo1.maven.org/maven2/com/microsoft/onnxruntime/onnxruntime/1.12.1/onnxruntime-1.12.1.jar",
 				"https://maven.scijava.org/content/repositories/releases/io/bioimage/dl-modelrunner-onnx/0.3.0/dl-modelrunner-onnx-0.3.0.jar"
 			]
 		},
@@ -1742,7 +1729,7 @@
 		{
 			"engine": "onnx",
 			"version": "1.13.1",
-			"pythonVersion": "17",
+			"pythonVersion": "18",
 			"os": "macosx-arm64",
 			"gpu": false,
 			"cpu": true,
@@ -1768,7 +1755,7 @@
 		{
 			"engine": "onnx",
 			"version": "1.13.1",
-			"pythonVersion": "17",
+			"pythonVersion": "18",
 			"os": "linux-x86_64",
 			"gpu": false,
 			"cpu": true,
@@ -1937,7 +1924,7 @@
 		{
 			"engine": "onnx",
 			"version": "1.13.1",
-			"pythonVersion": "17",
+			"pythonVersion": "18",
 			"os": "linux-arm64",
 			"gpu": false,
 			"cpu": true,
@@ -1963,7 +1950,7 @@
 		{
 			"engine": "onnx",
 			"version": "1.13.1",
-			"pythonVersion": "17",
+			"pythonVersion": "18",
 			"os": "windows-x86_64",
 			"gpu": false,
 			"cpu": true,
@@ -2132,7 +2119,7 @@
 		{
 			"engine": "onnx",
 			"version": "1.13.1",
-			"pythonVersion": "17",
+			"pythonVersion": "18",
 			"os": "linux-x86_64",
 			"gpu": true,
 			"cpu": true,
@@ -2301,7 +2288,7 @@
 		{
 			"engine": "onnx",
 			"version": "1.13.1",
-			"pythonVersion": "17",
+			"pythonVersion": "18",
 			"os": "windows-x86_64",
 			"gpu": true,
 			"cpu": true,

@@ -281,7 +281,6 @@ public class AvailableEngines
     		return new ArrayList<DeepLearningVersion>();
     	List<DeepLearningVersion> engine = AvailableEngines.filterByEngineForOS(searchEngine).getVersions()
 				.stream().filter(v -> {
-					System.out.print(false);
 					if (searchEngine != null && !v.getEngine().equals(searchEngine))
 						return false;
 					else if (version != null && !v.getPythonVersion().equals(version))
