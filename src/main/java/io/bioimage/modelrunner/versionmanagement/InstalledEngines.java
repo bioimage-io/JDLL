@@ -339,7 +339,13 @@ public class InstalledEngines {
      */
     public static List<String> getOrderedListOfCompatibleVesionsForEngine(String engine, 
     		String version, String enginesDir) {
-    	
+    	try {
+			InstalledEngines installed = InstalledEngines.buildEnginesFinder(enginesDir);
+			List<String> downloadedVersions = installed.getDownloadedPythonVersionsForEngine(engine);
+			return  VersionStringUtils.getCompatibleEngineVersionsInOrder(version, downloadedVersions, engine);
+		} catch (IOException e) {
+			return null;
+		}
     }
     
     /**
