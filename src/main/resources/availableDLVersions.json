@@ -871,7 +871,7 @@
 		{
 			"engine": "pytorch",
 			"version": "2.0.0",
-			"pythonVersion": "1.13.1",
+			"pythonVersion": "2.0.0",
 			"os": "windows-x86_64",
 			"gpu": true,
 			"cpu": true,

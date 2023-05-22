@@ -143,14 +143,14 @@ public class AvailableEngines
     		availableVersions.setVersions(new ArrayList<DeepLearningVersion>());
     		return availableVersions;
     	}
-        availableVersions = getAll();
         String currentPlatform = new PlatformDetection().toString();
-        availableVersions.setVersions(availableVersions.getVersions().stream()
+        List<DeepLearningVersion> filtered = getAll().getVersions().stream()
                 .filter(v -> v.getOs().equals(currentPlatform) 
 						&& (!new PlatformDetection().isUsingRosseta() || !v.getRosetta())
                 		&& searchEngine.equals(v.getEngine())
                 		)
-                .collect(Collectors.toList()));
+                .collect(Collectors.toList());
+        availableVersions.setVersions(filtered);
         return availableVersions;
     }
     
