@@ -132,6 +132,10 @@ public class EngineManagement {
 	 * Key is the engine installed, the value is the consumer for that engine
 	 */
 	private Map<String, TwoParameterConsumer<String, Double>> consumersMap;
+	/**
+	 * Directory where the manager will install the basic installation
+	 */
+	private String managersDir;
 	
 	/**
 	 * Constructor that checks whether the minimum engines are installed
@@ -186,7 +190,44 @@ public class EngineManagement {
 	 * @return a manager to handle the installation of basic engines
 	 */
 	public static EngineManagement createManager() {
-		return new EngineManagement();
+		EngineManagement manager =  new EngineManagement();
+		manager.managersDir = ENGINES_DIR;
+		return manager;
+	}
+	
+	/**
+	 * Creates an {@link EngineManagement} object to check if the required engines are installed.
+	 * 
+	 * In order to reduce repetition and to reduce the number of deps downloaded
+	 * by the user when deepImageJ is installed, a selection of engines is created.
+	 * There are some of the engines that are the same for every operating system,
+	 * for example TF1 and Pytorch.
+	 * To reduce the number of deps donwloaded, the TF1 and Pytorch engines are
+	 * installed as for example:
+	 *  - "tensorflow-1.15.0-1.15.0" + {@link #GENERAL_KEYWORD}
+	 * Just one of the above folder is downloaded for all the OS.
+	 * If it was not done like this, as the Fiji update site does not recognise the
+	 * OS of the user, the three following engines would be required:
+	 *  - "tensorflow-1.15.0-1.15.0-windows-x86_64-cpu-gpu"
+	 *  - "tensorflow-1.15.0-1.15.0-linux-x86_64-cpu-gpu"
+	 *  - "tensorflow-1.15.0-1.15.0-macos-x86_64-cpu"
+	 * however, the 3 engines would contain exactly the same deps.
+	 * This is the reason why we make the workaround to download a single
+	 * engine for certain engines and then rename it follwoing the corresponding
+	 * convention
+	 * 
+	 * Regard, that for certain engines, downloading all the OS depending engines
+	 * is necessary, as the dependencies vary from one system to another. 
+	 * 
+	 * @param dir
+	 * 	directory where the basic engines will be checked and installed if missing
+	 * 
+	 * @return a manager to handle the installation of basic engines
+	 */
+	public static EngineManagement createManager(String dir) {
+		EngineManagement manager =  new EngineManagement();
+		manager.managersDir = dir;
+		return manager;
 	}
 	
 	/**
@@ -406,11 +447,15 @@ public class EngineManagement {
 					String pythonVersion = v.getValue();
 					try {
 						boolean gpu = true;
-						if (!isEngineSupported(framework, pythonVersion, true, gpu))
-							gpu = false;
-						EngineInfo engineInfo = 
-							EngineInfo.defineDLEngine(framework, pythonVersion, ENGINES_DIR, true, gpu);
-						return engineInfo.getDeepLearningVersionJarsDirectory();
+						boolean cpu = true;
+						List<DeepLearningVersion> supported = 
+								AvailableEngines.getEnginesForOsByParams(framework, pythonVersion, cpu, gpu);
+						if (supported.size() == 0)
+							supported = 
+							AvailableEngines.getEnginesForOsByParams(framework, pythonVersion, cpu, null);
+						if (supported.size() == 0)
+							return "";
+						return this.managersDir + File.separator + supported.get(0).folderName();
 					} catch (Exception ex) {
 						return "";
 					}
@@ -612,15 +657,15 @@ public class EngineManagement {
 			return true;
 		if (AvailableEngines.isEngineSupported(engine, version, true, true)) {
 			DeepLearningVersion dlv = 
-					AvailableEngines.getEngineForOsByParams(engine, version, true, true);
+					AvailableEngines.getEnginesForOsByParams(engine, version, true, true).get(0);
 			return installEngineInDir(dlv, enginesDir, consumer);
 		} else if (AvailableEngines.isEngineSupported(engine, version, true, false)) {
 			DeepLearningVersion dlv = 
-					AvailableEngines.getEngineForOsByParams(engine, version, true, false);
+					AvailableEngines.getEnginesForOsByParams(engine, version, true, false).get(0);
 			return installEngineInDir(dlv, enginesDir, consumer);
 		} else if (AvailableEngines.isEngineSupported(engine, version, false, true)) {
 			DeepLearningVersion dlv = 
-					AvailableEngines.getEngineForOsByParams(engine, version, false, true);
+					AvailableEngines.getEnginesForOsByParams(engine, version, false, true).get(0);
 			return installEngineInDir(dlv, enginesDir, consumer);
 		}
 		return false;
