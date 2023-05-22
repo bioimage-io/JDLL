@@ -256,8 +256,13 @@ public class AvailableEngines
     }
     
     /**
-     * Retreive an available Deep Learning engine for the current OS using the
-     * parameters that define an engine
+     * Retreive the available Deep Learning engines for the current OS using the
+     * parameters that define an engine.
+     * The null input arguments are ignored during the filtering. For example
+     * if the version argument is null, all the versions compatible wiht the 
+     * rest of arguments will be retrieved
+     * 
+     * 
      * @param framework
      * 	Deep Learning framework (tensorflow, pytorch, onnx...)
      * @param version
@@ -266,19 +271,30 @@ public class AvailableEngines
      * 	whether the engine supports cpu or not
      * @param gpu
      * 	whether the engine supports GPU or not
-     * @return a {@link DeepLearningVersion} object with the info for the defined engine
-     * 	if it exists or false otherwise
+     * @return a list of {@link DeepLearningVersion} objects that satisfy the
+     * 	specified params
      */
-    public static DeepLearningVersion getEngineForOsByParams(String framework, String version, boolean cpu, boolean gpu) {
+    public static List<DeepLearningVersion> getEnginesForOsByParams(String framework, 
+    		String version, Boolean cpu, Boolean gpu) {
     	String searchEngine = AvailableEngines.getSupportedVersionsEngineTag(framework);
     	if (searchEngine == null)
-    		return null;
-    	DeepLearningVersion engine = AvailableEngines.filterByEngineForOS(searchEngine).getVersions()
-				.stream().filter(v -> v.getPythonVersion().equals(version) 
-						&& v.getOs().equals(new PlatformDetection().toString())
-						&& (!(new PlatformDetection().isUsingRosseta()) || v.getRosetta())
-						&& v.getCPU() == cpu
-						&& v.getGPU() == gpu).findFirst().orElse(null);
+    		return new ArrayList<DeepLearningVersion>();
+    	List<DeepLearningVersion> engine = AvailableEngines.filterByEngineForOS(searchEngine).getVersions()
+				.stream().filter(v -> {
+					if (searchEngine != null && !v.getEngine().equals(searchEngine))
+						return false;
+					else if (version != null && !v.getPythonVersion().equals(version))
+							return false;
+					else if (!v.getOs().equals(new PlatformDetection().toString()))
+							return false;
+					else if ((!(new PlatformDetection().isUsingRosseta()) || v.getRosetta()))
+						return false;
+					else if (cpu != null && v.getCPU() != cpu)
+						return false;
+					else if (gpu != null && v.getGPU() != gpu)
+						return false;
+					return true;
+				}).collect(Collectors.toList());
 		return engine;
     }
     

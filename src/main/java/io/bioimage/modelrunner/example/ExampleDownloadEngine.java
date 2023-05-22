@@ -21,6 +21,7 @@ package io.bioimage.modelrunner.example;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.List;
 
 import io.bioimage.modelrunner.bioimageio.download.DownloadTracker;
 import io.bioimage.modelrunner.bioimageio.download.DownloadTracker.TwoParameterConsumer;
@@ -92,9 +93,11 @@ public class ExampleDownloadEngine {
 				String version = "2.7.0";
 				boolean gpu = true;
 				boolean cpu = true;
-				DeepLearningVersion dlv = 
-						AvailableEngines.getEngineForOsByParams(engine, version, cpu, gpu);
-				EngineManagement.installEngineInDir(dlv, ENGINES_DIR, consumer);
+				List<DeepLearningVersion> dlv = 
+						AvailableEngines.getEnginesForOsByParams(engine, version, cpu, gpu);
+				if (dlv.size() == 0)
+					throw new IOException("Engine defined is not supported by JDLL.");
+				EngineManagement.installEngineInDir(dlv.get(0), ENGINES_DIR, consumer);
 			} catch (IOException | InterruptedException e) {
 				// If one of the files to be downloaded is corrupted or the download thread 
 				// is stopped abruptly
