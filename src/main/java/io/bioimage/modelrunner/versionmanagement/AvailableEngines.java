@@ -98,7 +98,7 @@ public class AvailableEngines
         String currentPlatform = new PlatformDetection().toString();
         availableVersions.setVersions(availableVersions.getVersions().stream()
                 .filter(v -> v.getOs().equals(currentPlatform)
-						&& (new PlatformDetection().isUsingRosseta() && !v.getRosetta()))
+						&& (!new PlatformDetection().isUsingRosseta() || !v.getRosetta()))
                 .collect(Collectors.toList()));
         availableVersions.getVersions().stream().forEach(x -> x.setEnginesDir());
         return availableVersions;
@@ -147,7 +147,7 @@ public class AvailableEngines
         String currentPlatform = new PlatformDetection().toString();
         availableVersions.setVersions(availableVersions.getVersions().stream()
                 .filter(v -> v.getOs().equals(currentPlatform) 
-						&& (new PlatformDetection().isUsingRosseta() && !v.getRosetta())
+						&& (!new PlatformDetection().isUsingRosseta() || !v.getRosetta())
                 		&& searchEngine.equals(v.getEngine())
                 		)
                 .collect(Collectors.toList()));
@@ -170,7 +170,7 @@ public class AvailableEngines
         String currentPlatform = new PlatformDetection().toString();
         List<String> availablePythonVersions = availableVersions.getVersions().stream()
                 .filter(v -> v.getOs().equals(currentPlatform)
-						&& (new PlatformDetection().isUsingRosseta() && !v.getRosetta())
+						&& (!new PlatformDetection().isUsingRosseta() || !v.getRosetta())
 						&& searchEngine.equals(v.getEngine()))
                 .map(DeepLearningVersion::getPythonVersion)
                 .collect(Collectors.toList());
@@ -281,6 +281,7 @@ public class AvailableEngines
     		return new ArrayList<DeepLearningVersion>();
     	List<DeepLearningVersion> engine = AvailableEngines.filterByEngineForOS(searchEngine).getVersions()
 				.stream().filter(v -> {
+					System.out.print(false);
 					if (searchEngine != null && !v.getEngine().equals(searchEngine))
 						return false;
 					else if (version != null && !v.getPythonVersion().equals(version))
