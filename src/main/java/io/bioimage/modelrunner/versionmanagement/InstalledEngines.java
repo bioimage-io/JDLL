@@ -461,7 +461,7 @@ public class InstalledEngines {
     	Objects.requireNonNull(enginesDir);
     	try {
 			InstalledEngines installed = InstalledEngines.buildEnginesFinder(enginesDir);
-			return installed.checkEngineWithArgsInstalled(enginesDir, version, cpu, gpu, rosetta);
+			return installed.checkEngineWithArgsInstalled(engine, version, cpu, gpu, rosetta);
 		} catch (IOException e) {
 			return new ArrayList<DeepLearningVersion>();
 		}
