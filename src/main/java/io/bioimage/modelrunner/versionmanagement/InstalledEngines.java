@@ -154,7 +154,7 @@ public class InstalledEngines {
     	String searchEngine = AvailableEngines.getSupportedVersionsEngineTag(engine);
     	if (searchEngine == null)
     		return new ArrayList<DeepLearningVersion>();
-        return loadDownloadedForOS().stream()
+        return getDownloadedForOS().stream()
 	        .filter(v -> searchEngine.contains(v.getEngine().toLowerCase()))
 			.collect(Collectors.toList());
     }	
@@ -175,7 +175,7 @@ public class InstalledEngines {
     	String searchEngine = AvailableEngines.getSupportedVersionsEngineTag(engine);
     	if (searchEngine == null)
     		return new ArrayList<DeepLearningVersion>();
-        return loadDownloadedForOS().stream()
+        return getDownloadedForOS().stream()
 	        .filter(v -> searchEngine.contains(v.getEngine().toLowerCase())
 	        		&& v.getPythonVersion().equals(version))
 			.collect(Collectors.toList());
@@ -206,7 +206,7 @@ public class InstalledEngines {
      * that are compatible with the operating system
      * @return list with the downloaded DeepLearningVersion
      */
-    public List<DeepLearningVersion> loadDownloadedForOS()
+    public List<DeepLearningVersion> getDownloadedForOS()
     {
         String currentPlatform = new PlatformDetection().toString();
     	List<DeepLearningVersion> versions = getAll();
@@ -225,7 +225,7 @@ public class InstalledEngines {
      */
     public static List<DeepLearningVersion> getDownloadedForOS(String enginesPath) {
     	try{
-    		return buildEnginesFinder(enginesPath).loadDownloadedForOS();
+    		return buildEnginesFinder(enginesPath).getDownloadedForOS();
     	} catch (IOException ex) {
     		return new ArrayList<DeepLearningVersion>();
     	}
@@ -414,7 +414,7 @@ public class InstalledEngines {
     		searchEngine = null;
     	if (searchEngine == null && engine != null)
     		return new ArrayList<DeepLearningVersion>();
-		List<DeepLearningVersion> filtered = loadDownloadedForOS().stream().filter(vv ->{
+		List<DeepLearningVersion> filtered = getDownloadedForOS().stream().filter(vv ->{
 			if (searchEngine != null && !vv.getEngine().toLowerCase().equals(searchEngine))
 				return false;
 			else if (version != null && !vv.getPythonVersion().toLowerCase().equals(version.toLowerCase()))
