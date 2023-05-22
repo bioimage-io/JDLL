@@ -134,7 +134,7 @@ public class ExampleLoadAndRunModel {
 	 */
 	public static EngineInfo createEngineInfo(String engine, String engineVersion, 
 			String enginesDir, boolean cpu, boolean gpu) {
-		return EngineInfo.defineDLEngine(engine, engineVersion, enginesDir, cpu, gpu);
+		return EngineInfo.defineDLEngine(engine, engineVersion, cpu, gpu, enginesDir);
 	}
 	
 	/**

@@ -278,7 +278,7 @@ public class EngineInfo
 		}
 		
 		try {
-			return defineDLEngine( engine, version, jarsDirectory, cpu, gpu );
+			return defineDLEngine( engine, version, cpu, gpu, jarsDirectory );
 		} catch (IllegalArgumentException ex) {
 			ex.printStackTrace();
 			return null;
@@ -302,15 +302,15 @@ public class EngineInfo
 	 *            Pytorch, Tensorflow....
 	 * @param version
 	 *            version of the training Deep Learning framework (engine)
+	 * @param gpu
+	 *            whether the engine can use GPU or not
 	 * @param jarsDirectory
 	 *            directory where the folder containing the JARs needed to
 	 *            launch the corresponding engine are located
-	 * @param gpu
-	 *            whether the engine can use GPU or not
 	 * @return an object containing all the information needed to launch a Deep
 	 *         learning framework or null if the wanted version engine is not installed
 	 */
-	public static EngineInfo defineDLEngine( String engine, String version, String jarsDirectory, boolean gpu )
+	public static EngineInfo defineDLEngine( String engine, String version, boolean gpu, String jarsDirectory )
 	{
 		if (AvailableEngines.modelRunnerToBioimageioKeysMap().keySet().contains(engine))
 			engine = AvailableEngines.modelRunnerToBioimageioKeysMap().get(engine);
@@ -323,7 +323,7 @@ public class EngineInfo
 		if (vs.stream().filter(v -> v.getCPU()).collect(Collectors.toList()).size() > 0) 
 			cpu = true;
 		try {
-			return defineDLEngine( engine, version, jarsDirectory, cpu, gpu );
+			return defineDLEngine( engine, version, cpu, gpu, jarsDirectory );
 		} catch (IllegalArgumentException ex) {
 			ex.printStackTrace();
 			return null;
@@ -344,18 +344,18 @@ public class EngineInfo
 	 *            Pytorch, Tensorflow....
 	 * @param version
 	 *            version of the training Deep Learning framework (engine)
-	 * @param jarsDirectory
-	 *            directory where the folder containing the JARs needed to
-	 *            launch the corresponding engine are located
 	 * @param cpu
 	 *            whether the engine can use CPU or not
 	 * @param gpu
 	 *            whether the engine can use GPU or not
+	 * @param jarsDirectory
+	 *            directory where the folder containing the JARs needed to
+	 *            launch the corresponding engine are located
 	 * @return an object containing all the information needed to launch a Deep
 	 *         learning framework or null if the wanted version engine is not installed
 	 */
-	public static EngineInfo defineDLEngine( String engine, String version, String jarsDirectory, boolean cpu,
-			boolean gpu )
+	public static EngineInfo defineDLEngine( String engine, String version, boolean cpu,
+			boolean gpu, String jarsDirectory )
 	{
 		if (AvailableEngines.modelRunnerToBioimageioKeysMap().keySet().contains(engine))
 			engine = AvailableEngines.modelRunnerToBioimageioKeysMap().get(engine);
@@ -444,7 +444,7 @@ public class EngineInfo
 		if (vs.stream().filter(v -> v.getCPU()).collect(Collectors.toList()).size() > 0) 
 			cpu = true;
 		try {
-			return defineDLEngine( engine, version, STATIC_JARS_DIRECTORY, cpu, gpu );
+			return defineDLEngine( engine, version, cpu, gpu, STATIC_JARS_DIRECTORY );
 		} catch (IllegalArgumentException ex) {
 			ex.printStackTrace();
 			return null;
@@ -478,7 +478,7 @@ public class EngineInfo
 			engine = AvailableEngines.modelRunnerToBioimageioKeysMap().get(engine);
 		Objects.requireNonNull( STATIC_JARS_DIRECTORY, "The Jars directory should not be null." );
 		try {
-			return defineDLEngine( engine, version, STATIC_JARS_DIRECTORY, cpu, gpu );
+			return defineDLEngine( engine, version, cpu, gpu, STATIC_JARS_DIRECTORY );
 		} catch (IllegalArgumentException ex) {
 			ex.printStackTrace();
 			return null;
@@ -531,7 +531,60 @@ public class EngineInfo
 			return null;
 		List<DeepLearningVersion> vv = manager.getDownloadedForVersionedEngine(engine, compatibleVersion);
 		boolean gpu = vv.stream().filter(v -> v.getGPU()).findFirst().orElse(null) != null;
-		return EngineInfo.defineDLEngine(engine, compatibleVersion, jarsDirectory, true, gpu);
+		return EngineInfo.defineDLEngine(engine, compatibleVersion, true, gpu, jarsDirectory);
+	}
+
+	/**
+	 * Set the parameters to launch the wanted Deep Learning framework (engine) compatible with GPU
+	 * and load DL models.
+	 * in the program.
+	 * 
+	 * In this method, the version defined is orientative to some extent. 
+	 * If the version provided in the arguments is not installed, and there is another
+	 * installed version of the same framework which has the same major version 
+	 * (for example pytorch 1.13 and pytorch 1.9), the version installed will be loaded 
+	 * directly instead of requiring the installation of the original version.
+	 * 
+	 * TODO if the engine already loaded supports GPU and we are askig for 
+	 * TODO GPU support off, this should fail. Same thing for method that requires GPU
+	 * TODO below
+	 * 
+	 * Also, for Pytorch if there is already another engine of the same framework, 
+	 * same major version (same as before) but different overall version, 
+	 * the previously loaded version will be used. This is because loading different versions
+	 * of the Pytorch native libraries produce conflicts.
+	 * 
+	 * @param engine
+	 *            name of the Deep Learning framework (engine). For example:
+	 *            Pytorch, Tensorflow....
+	 * @param version
+	 *            version of the training Deep Learning framework (engine)
+	 * @param cpu
+	 * 			  whether the engine has to support cpu or not
+	 * @param gpu
+	 * 			  whether the engine has to support gpu or not
+	 * @param jarsDirectory
+	 *            directory where the folder containing the JARs needed to
+	 *            launch the corresponding engine are located
+	 * @return an object containing all the information needed to launch a Deep
+	 *         learning framework or null if the engine of interest is not installed
+	 * @throws IOException if the engines directory does not exist
+	 */
+	public static EngineInfo defineCompatibleDLEngine( String engine, String version,
+			boolean cpu, boolean gpu, String jarsDirectory ) throws IOException 
+	{
+		boolean rosetta = new PlatformDetection().isUsingRosseta();
+		List<DeepLearningVersion> possibles = 
+				InstalledEngines.checkEngineWithArgsInstalled(engine, null, cpu, gpu, rosetta, jarsDirectory);
+		if (possibles.size() == 0)
+			return null;
+		List<String> possibleStrs = 
+				possibles.stream().map(DeepLearningVersion::getPythonVersion).collect(Collectors.toList());
+		List<String> compatibleVersion = 
+				VersionStringUtils.getCompatibleEngineVersionsInOrder(version, possibleStrs, engine);
+		if (compatibleVersion == null || compatibleVersion.size() == 0)
+			return null;
+		return EngineInfo.defineDLEngine(engine, compatibleVersion.get(0), cpu, true, jarsDirectory);
 	}
 
 	/**
@@ -585,7 +638,7 @@ public class EngineInfo
 			return null;
 		boolean cpu = InstalledEngines.checkEngineWithArgsInstalled(engine, 
 				compatibleVersion.get(0), true, true, rosetta, jarsDirectory).size() > 0;
-		return EngineInfo.defineDLEngine(engine, compatibleVersion.get(0), jarsDirectory, cpu, true);
+		return EngineInfo.defineDLEngine(engine, compatibleVersion.get(0), cpu, true, jarsDirectory);
 	}
 	
 	/**
@@ -630,7 +683,7 @@ public class EngineInfo
 			return null;
 		List<DeepLearningVersion> vv = manager.getDownloadedForVersionedEngine(engine, compatibleVersion);
 		boolean gpu = vv.stream().filter(v -> v.getGPU()).findFirst().orElse(null) != null;
-		return EngineInfo.defineDLEngine(engine, compatibleVersion, enginesDir, true, gpu);
+		return EngineInfo.defineDLEngine(engine, compatibleVersion, true, gpu, enginesDir);
 	}
 	
 	/**
@@ -678,7 +731,7 @@ public class EngineInfo
 			return null;
 		boolean gpu = vv.stream().filter(v -> v.getGPU()).findFirst().orElse(null) != null;
 		try {
-			return EngineInfo.defineDLEngine(engine, version, enginesDir, true, gpu);
+			return EngineInfo.defineDLEngine(engine, version, true, gpu, enginesDir);
 		} catch (IllegalArgumentException ex) {
 			return null;
 		}
@@ -1007,7 +1060,7 @@ public class EngineInfo
 		String msg = "There are no installed engines of the DL framework: "  + engine + version.split("\\.")[0];
 		if (newV == null)
 			throw new IOException(msg);
-		EngineInfo newInfo = EngineInfo.defineDLEngine(engine, newV, jarsDirectory, this.isCPU(), this.isGPU());
+		EngineInfo newInfo = EngineInfo.defineDLEngine(engine, newV, this.isCPU(), this.isGPU(), jarsDirectory);
 		if (!newInfo.isEngineInstalled())
 			newInfo.gpu = !this.gpu;
 		if (!newInfo.isEngineInstalled())
