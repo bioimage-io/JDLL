@@ -96,9 +96,10 @@ public class AvailableEngines
     {
         AvailableEngines availableVersions = getAll();
         String currentPlatform = new PlatformDetection().toString();
+        boolean rosetta = new PlatformDetection().isUsingRosseta();
         availableVersions.setVersions(availableVersions.getVersions().stream()
                 .filter(v -> v.getOs().equals(currentPlatform)
-						&& (!new PlatformDetection().isUsingRosseta() || !v.getRosetta()))
+						&& (!rosetta || (rosetta && v.getRosetta())))
                 .collect(Collectors.toList()));
         availableVersions.getVersions().stream().forEach(x -> x.setEnginesDir());
         return availableVersions;
@@ -144,9 +145,10 @@ public class AvailableEngines
     		return availableVersions;
     	}
         String currentPlatform = new PlatformDetection().toString();
+        boolean rosetta = new PlatformDetection().isUsingRosseta();
         List<DeepLearningVersion> filtered = getAll().getVersions().stream()
                 .filter(v -> v.getOs().equals(currentPlatform) 
-						&& (!new PlatformDetection().isUsingRosseta() || !v.getRosetta())
+						&& (!rosetta || (rosetta && v.getRosetta()))
                 		&& searchEngine.equals(v.getEngine())
                 		)
                 .collect(Collectors.toList());
@@ -168,9 +170,10 @@ public class AvailableEngines
     		return new ArrayList<String>();
     	AvailableEngines availableVersions = getAll();
         String currentPlatform = new PlatformDetection().toString();
+        boolean rosetta = new PlatformDetection().isUsingRosseta();
         List<String> availablePythonVersions = availableVersions.getVersions().stream()
                 .filter(v -> v.getOs().equals(currentPlatform)
-						&& (!new PlatformDetection().isUsingRosseta() || !v.getRosetta())
+						&& (!rosetta || (rosetta && v.getRosetta()))
 						&& searchEngine.equals(v.getEngine()))
                 .map(DeepLearningVersion::getPythonVersion)
                 .collect(Collectors.toList());
