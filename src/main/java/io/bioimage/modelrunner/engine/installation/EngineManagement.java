@@ -466,6 +466,8 @@ public class EngineManagement {
 		missingEngineFolders = engineFolders.entrySet().stream()
 				.filter( dir -> {
 					try {
+						if (dir.getValue().equals(""))
+							return true;
 						File dirFile = new File(dir.getValue());
 						return !dirFile.isDirectory() || DeepLearningVersion.fromFile(dirFile).checkMissingJars().size() != 0;
 					} catch (Exception e) {
