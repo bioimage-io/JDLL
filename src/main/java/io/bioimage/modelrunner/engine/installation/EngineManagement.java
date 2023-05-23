@@ -467,7 +467,7 @@ public class EngineManagement {
 				.filter( dir -> {
 					try {
 						if (dir.getValue().equals(""))
-							return true;
+							return false;
 						File dirFile = new File(dir.getValue());
 						return !dirFile.isDirectory() || DeepLearningVersion.fromFile(dirFile).checkMissingJars().size() != 0;
 					} catch (Exception e) {
