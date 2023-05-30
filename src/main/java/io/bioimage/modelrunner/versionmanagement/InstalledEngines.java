@@ -424,7 +424,7 @@ public class InstalledEngines {
 				return false;
 			else if (gpu != null && vv.getGPU() != gpu)
 				return false;
-			else if (rosetta != null && vv.getRosetta() != rosetta)
+			else if (rosetta != null && rosetta == true && vv.getRosetta() != rosetta)
 				return false;
 			return true;
 		}).collect(Collectors.toList());
