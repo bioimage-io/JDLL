@@ -21,7 +21,7 @@ This library is intended for developers and was originally built by the DeepIcy 
    <dependency>
      <groupId>io.bioimage</groupId>
      <artifactId>dl-modelrunner</artifactId>
-     <version>0.3.8</version>
+     <version>0.3.7</version>
    </dependency>
    ```
 
