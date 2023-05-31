@@ -119,10 +119,6 @@ public class EngineManagement {
 	 */
 	private LinkedHashMap<String, String> missingEngineFolders;
 	/**
-	 * String that communicates the progress made downloading engines
-	 */
-	private String progressString;
-	/**
 	 * Flag to communicate if the management of engines is already finished
 	 */
 	private boolean isManagementFinished = false;
@@ -136,6 +132,10 @@ public class EngineManagement {
 	 * Directory where the manager will install the basic installation
 	 */
 	private String managersDir;
+	/**
+	 * Whether the Json containing the versions has been read or not.
+	 */
+	private boolean readJSon = false;
 	
 	/**
 	 * Constructor that checks whether the minimum engines are installed
@@ -256,7 +256,7 @@ public class EngineManagement {
 	 * is necessary, as the dependencies vary from one system to another.  
 	 * 
 	 */
-	public void checkAndSetBasicEngineInstallation() {
+	private void checkAndSetBasicEngineInstallation() {
 		isManagementFinished = false;
 		readEnginesJSON();
 		checkEnginesInstalled();
@@ -400,8 +400,7 @@ public class EngineManagement {
 					 selectedVersion.substring(0, selectedVersion.indexOf(".")),
 					 selectedVersion);
 		 }
-		 
-		
+        readJSon = true;
 	}
 	
 	/**
@@ -440,7 +439,9 @@ public class EngineManagement {
 	/**
 	 * Checks which of the required engines are not installed.
 	 */
-	public void checkEnginesInstalled() {
+	private void checkEnginesInstalled() {
+		if (!this.readJSon)
+			readEnginesJSON();
 		Map<String, String> engineFolders = ENGINES_VERSIONS.entrySet().stream()
 				.collect(Collectors.toMap( v -> v.getKey(), v -> {
 					String framework = v.getKey().substring(0, v.getKey().lastIndexOf("_"));
@@ -1229,14 +1230,6 @@ public class EngineManagement {
 					&& (v.getGPU() == gpu)).findFirst().orElse(null);
 		return installEngineInDir(engine, dir, consumer);
 	}
-    
-    /**
-     * Retrieve the progress String
-     * @return progress String that updates the progress about installing engines
-     */
-    public String getProgressString() {
-    	return progressString;
-    }
     
     /**
      * Check whether the management of the engines is finished or not
