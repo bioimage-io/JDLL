@@ -2,7 +2,7 @@ package io.bioimage.modelrunner.bioimageio.bioengine;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Objects;
 
@@ -38,7 +38,7 @@ public class BioEngineOutput {
 	 *  - A map for each of the individual outputs, which can be ndarrays or 
 	 *    parameters
 	 */
-	public HashMap<String, Object> deserializedOutput = new HashMap<String, Object>();
+	public LinkedHashMap<String, Object> deserializedOutput = new LinkedHashMap<String, Object>();
 	/**
 	 * Key for the entry in the outputs HashMap that contains information
 	 * about the other outputs of the BioEngine. This information covers
@@ -55,7 +55,7 @@ public class BioEngineOutput {
 	 * each of the outputs. This information corresponds to the name of the 
 	 * output, the datatype, the shape and the size
 	 */
-	private List<HashMap<String, Object>> outputsInfo;
+	private List<LinkedHashMap<String, Object>> outputsInfo;
 	/**
 	 * Key in the __info__ HashMap that contains the name of each
 	 * of teh outputs of the model
@@ -171,8 +171,8 @@ public class BioEngineOutput {
 	 * @throws Exception if the BioEngine sends an error message after execution
 	 */
 	private void lookForErrors() throws Exception {
-		HashMap<String, Object> results = 
-				(HashMap<String, Object>) this.deserializedOutput.get("result");
+		LinkedHashMap<String, Object> results = 
+				(LinkedHashMap<String, Object>) this.deserializedOutput.get("result");
 		// Special models such as cell pose do not have the same keys as the Bioimage.io models
 		if (results == null ||results.get("success") == null)
 			return;
@@ -191,7 +191,7 @@ public class BioEngineOutput {
 	 */
 	private void createOutputsFromInfo() throws Exception {
 		if (this.outputsInfo != null && this.outputsInfo.size() != 0)
-			for (HashMap<String, Object> output : this.outputsInfo) {
+			for (LinkedHashMap<String, Object> output : this.outputsInfo) {
 				createOutput((String) output.get(outputInfoNameKey));
 		} else if (this.deserializedOutput != null && this.deserializedOutput.size() != 0) {
 			for (String outputName : this.deserializedOutput.keySet())
@@ -212,11 +212,11 @@ public class BioEngineOutput {
 	 * @param output
 	 * 	the map containing the info of interest
 	 */
-	private void createOutputBioImageIo(String outputName, HashMap<String, Object> output) {
+	private void createOutputBioImageIo(String outputName, LinkedHashMap<String, Object> output) {
 		Objects.requireNonNull(output);
 		if (output.get(successKey) == null || !((boolean) output.get(successKey)))
 			return;
-		List<HashMap<String, Object>> outputList = (List<HashMap<String, Object>>) output.get(bioimageioResultKey);
+		List<LinkedHashMap<String, Object>> outputList = (List<LinkedHashMap<String, Object>>) output.get(bioimageioResultKey);
 		Objects.requireNonNull(outputList);
 		createOutputsFromList(outputName, outputList);
 	}
@@ -229,7 +229,7 @@ public class BioEngineOutput {
 	 * @param output
 	 * 	the map containing the info of interest
 	 */
-	private void createOutputFromMap(String outputName, HashMap<String, Object> output) {
+	private void createOutputFromMap(String outputName, LinkedHashMap<String, Object> output) {
 		if (output.get(outputRTypeKey) != null && output.get(outputRTypeKey).equals(imageArrayValue)) {
 			addOutputToList(outputName, output);
 		}
@@ -242,7 +242,7 @@ public class BioEngineOutput {
 	 * @param output
 	 * 	output Map
 	 */
-	private void addOutputToList(String outputName, HashMap<String, Object> output) {
+	private void addOutputToList(String outputName, LinkedHashMap<String, Object> output) {
 		try {
 			this.list.add(BioEngineOutputArray.buildOutput(outputName, output));
 		} catch (IllegalArgumentException ex) {
@@ -261,9 +261,9 @@ public class BioEngineOutput {
 	 * @param outputList
 	 * 	the list containing the info of interest
 	 */
-	private void createOutputsFromList(String name, List<HashMap<String, Object>> outputList) {
+	private void createOutputsFromList(String name, List<LinkedHashMap<String, Object>> outputList) {
 		for (int i = 0; i < outputList.size(); i ++) {
-			HashMap<String, Object> output = outputList.get(i);
+			LinkedHashMap<String, Object> output = outputList.get(i);
 			String outputName = name + "_" + i;
 			createOutputFromMap(outputName, output);
 		}
@@ -277,10 +277,10 @@ public class BioEngineOutput {
 	 */
 	private void createOutput(String outputName) {
 		Object outObject = deserializedOutput.get(outputName);
-		if (!bioimageio && outObject instanceof HashMap<?, ?>) {
-			createOutputFromMap(outputName, (HashMap<String, Object>) outObject);
-		} else if (bioimageio && outObject instanceof HashMap<?, ?>) {
-			createOutputBioImageIo(outputName, (HashMap<String, Object>) outObject);
+		if (!bioimageio && outObject instanceof LinkedHashMap<?, ?>) {
+			createOutputFromMap(outputName, (LinkedHashMap<String, Object>) outObject);
+		} else if (bioimageio && outObject instanceof LinkedHashMap<?, ?>) {
+			createOutputBioImageIo(outputName, (LinkedHashMap<String, Object>) outObject);
 		} else if (this.deserializedOutput.get(outputName) instanceof List<?>) {
 			// TODO what to do with other types of output
 		}
@@ -293,8 +293,8 @@ public class BioEngineOutput {
 	public void setOutputsInfo() {
     	throwExceptionIfClosed();
 		if (this.outputsInfo == null) {
-			HashMap<String, Object> __info__ = (HashMap<String, Object>) this.deserializedOutput.get(outputInfoKey);
-			this.outputsInfo = (List<HashMap<String, Object>>) __info__.get(outputInfoListKey );
+			LinkedHashMap<String, Object> __info__ = (LinkedHashMap<String, Object>) this.deserializedOutput.get(outputInfoKey);
+			this.outputsInfo = (List<LinkedHashMap<String, Object>>) __info__.get(outputInfoListKey );
 			bioimageio = BioEngineServer.isBioImageIoKey((String) __info__.get(modelNameKey));
 		}
 	}
@@ -314,7 +314,7 @@ public class BioEngineOutput {
 															IOException {
 		ObjectMapper objectMapper = new ObjectMapper(new MessagePackFactory());
 		try {
-			HashMap<String, Object> deserialized = objectMapper.readValue(rawOutput, new TypeReference<HashMap<String, Object>>() {});
+			LinkedHashMap<String, Object> deserialized = objectMapper.readValue(rawOutput, new TypeReference<LinkedHashMap<String, Object>>() {});
 			this.deserializedOutput = deserialized;
 		} catch (MismatchedInputException ex) {
 			throw new IOException("Error: 500 Internal Server Error. "
@@ -326,7 +326,7 @@ public class BioEngineOutput {
 	 * REturns the output of the BioEngine server after deserialization.
 	 * @return the output of the BioEngine
 	 */
-	public HashMap<String, Object> getDeserializedOutput(){
+	public LinkedHashMap<String, Object> getDeserializedOutput(){
     	throwExceptionIfClosed();
 		return this.deserializedOutput;
 	}
