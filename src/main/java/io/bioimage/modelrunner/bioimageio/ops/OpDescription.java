@@ -19,4 +19,8 @@ public class OpDescription {
 	public String appliedOnWhichModel() {
 		return "";
 	}
+	
+	public Object[] getOutputs() {
+		return null;
+	}
 }
