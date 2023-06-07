@@ -1,15 +1,19 @@
 package io.bioimage.modelrunner.bioimageio.bioengine;
 
-import java.nio.Buffer;
-import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
-import java.nio.DoubleBuffer;
 import java.nio.FloatBuffer;
-import java.nio.IntBuffer;
-import java.nio.ShortBuffer;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+import io.bioimage.modelrunner.numpy.DecodeImgLib2;
+import io.bioimage.modelrunner.tensor.Tensor;
+import net.imglib2.type.NativeType;
+import net.imglib2.type.numeric.RealType;
+import net.imglib2.type.numeric.integer.ByteType;
+import net.imglib2.type.numeric.integer.IntType;
+import net.imglib2.type.numeric.integer.ShortType;
+import net.imglib2.type.numeric.real.DoubleType;
+import net.imglib2.type.numeric.real.FloatType;
 /**
  * Class to create the map that encodes the array inputs that need to be
  * passed to the BioEngine.
@@ -76,10 +80,6 @@ public class BioEngineInputTensor {
 	 */
 	private String dtypeVal;
 	/**
-	 * Buffer representation of the array input of interest
-	 */
-	private Buffer buff;
-	/**
 	 * String used as tag for the int32 np dtype
 	 */
 	private static String int32Str = "int32";
@@ -108,12 +108,11 @@ public class BioEngineInputTensor {
 	 * 	shape of the array of interest
 	 * @throws Exception if the data type of the buffer is not within the allowed ones 
 	 */
-	private BioEngineInputTensor(Buffer buff, int[] shape) throws Exception {
+	private BioEngineInputTensor(Tensor<?> tensor) throws Exception {
 		this.inputs.put(typeKey, ndarrayVal);
-		this.inputs.put(shapeKey, shape);
-		this.buff = buff;
-		setDType();
-		this.inputs.put(valKey, bufferInputToByteArray());
+		this.inputs.put(shapeKey, tensor.getShape());
+		setDType(tensor);
+		this.inputs.put(valKey, DecodeImgLib2.tensorDataToByteArray(tensor));
 	}
 
 	private BioEngineInputTensor(Map<String, Object> params) throws Exception {
@@ -123,8 +122,8 @@ public class BioEngineInputTensor {
 		this.inputs.put(valKey, params);
 	}
 	
-	public static Map<String, Object> buildParamInput(Map<String, Object> params) throws Exception {
-		return new BioEngineInputTensor(params).getInputsMap();
+	public static BioEngineInputTensor buildParamInput(Map<String, Object> params) throws Exception {
+		return new BioEngineInputTensor(params);
 	}
 	
 	/**
@@ -137,43 +136,9 @@ public class BioEngineInputTensor {
 	 * 	class. The map is actually what is used as an input in the BioEngine
 	 * @throws Exception if the data type of the buffer is not within the allowed ones 
 	 */
-	public static Map<String, Object> build(Buffer buff, int[] shape) throws Exception {
-		return new BioEngineInputTensor(buff, shape).getInputsMap();
-	}
-	
-	/**
-	 * Transforms the FloatBuffer of interest into a byteArray to
-	 * be able to send it to the BioEngine server
-	 * @return the byte array
-	 * @throws Exception if the data type of the buffer is not within the allowed ones 
-	 */
-	private byte[] bufferInputToByteArray() throws Exception {
-		// Set the number of bytes used by the byte buffer depending on its type
-		int nBytes = dtypeVal.contains("16") ? 2 : 
-						(dtypeVal.contains("32") ? 4 : 
-							(dtypeVal.contains("64") ? 8 : 1));
-		// Important that the ByteOrder is LittleEndian, as numpy.tobytes() uses that order by default
-		// and it is what is used in the BioEngine
-		ByteBuffer byteBuffer = ByteBuffer.allocate(buff.capacity() * nBytes).order(ByteOrder.LITTLE_ENDIAN);
-		// Fill the buffer from data coming from each of the buffers
-		if (this.buff instanceof IntBuffer) {
-			byteBuffer.asIntBuffer().put((IntBuffer) buff);
-		} else if (this.buff instanceof ByteBuffer) {
-			byteBuffer.put((ByteBuffer) buff);
-		} else if (this.buff instanceof FloatBuffer) {
-			byteBuffer.asFloatBuffer().put(((FloatBuffer) buff).array());
-		} else if (this.buff instanceof DoubleBuffer) {
-			byteBuffer.asDoubleBuffer().put((DoubleBuffer) buff);
-		} else if (this.buff instanceof ShortBuffer) {
-			byteBuffer.asShortBuffer().put((ShortBuffer) buff);
-		} else {
-			throw new Exception("The type of the image is not within the allowd types.\n"
-					+ "Allowed types are: " + int32Str + ", " 
-					+ float32Str + ", " + float64Str + ", " + byteStr + ", " + int16Str + ".");
-		}
-		byte[] bytearray = byteBuffer.array();
-		
-		return bytearray;
+	public static < T extends RealType< T > & NativeType< T > >
+		BioEngineInputTensor build(Tensor<T> tensor) throws Exception {
+		return new BioEngineInputTensor(tensor);
 	}
 	
 	/**
@@ -194,16 +159,17 @@ public class BioEngineInputTensor {
 	 * Set the input dType as the dtype of the data
 	 * @throws Exception if the data type of the buffer is not within the allowed ones 
 	 */
-	public void setDType() throws Exception {
-		if (this.buff instanceof IntBuffer) {
+	public < T extends RealType< T > & NativeType< T > >
+		void setDType(Tensor<?> tensor) throws Exception {
+		if (tensor.getDataType() instanceof IntType) {
 			dtypeVal = int32Str;
-		} else if (this.buff instanceof ByteBuffer) {
+		} else if (tensor.getDataType() instanceof ByteType) {
 			dtypeVal = byteStr;
-		} else if (this.buff instanceof FloatBuffer) {
+		} else if (tensor.getDataType() instanceof FloatType) {
 			dtypeVal = float32Str;
-		} else if (this.buff instanceof DoubleBuffer) {
+		} else if (tensor.getDataType() instanceof DoubleType) {
 			dtypeVal = float64Str;
-		} else if (this.buff instanceof ShortBuffer) {
+		} else if (tensor.getDataType() instanceof ShortType) {
 			dtypeVal = int16Str;
 		} else {
 			throw new Exception("The type of the image is not within the allowd types.\n"
@@ -231,6 +197,7 @@ public class BioEngineInputTensor {
 	}
 	
 	public int[] getShape() {
+		@SuppressWarnings("unchecked")
 		List<Integer> list = (List<Integer>) this.inputs.get(shapeKey);
 		int[] array = new int[list.size()];
 		for (int i = 0; i < list.size(); i ++)
@@ -245,8 +212,18 @@ public class BioEngineInputTensor {
 	public void addParams(Map<String, Object> nParams) {
 		if (!this.inputs.get(typeKey).equals(paramVal))
 			throw new IllegalArgumentException();
-		Map<String, Object> nMap = (Map<String, Object>) getData();
-		nMap.putAll(nParams);
-		this.inputs.put(valKey, nMap);
+		if (this.getData() instanceof Map) {
+			@SuppressWarnings("unchecked")
+			Map<String, Object> nMap = (Map<String, Object>) getData();
+			nMap.putAll(nParams);
+			this.inputs.put(valKey, nMap);
+		} else if (this.getData() instanceof byte[]) {
+			Map<String, Object> nMap = new HashMap<String, Object>();
+			nMap.put(valKey, this.getData());
+			nMap.putAll(nParams);
+			this.inputs.put(valKey, nMap);
+		} else {
+			throw new IllegalArgumentException("BioEngine tensor is built incorrectly.");
+		}
 	}
 }
