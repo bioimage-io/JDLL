@@ -18,13 +18,12 @@
  * limitations under the License.
  * #L%
  */
-package io.bioimage.modelrunner;
+package io.bioimage.modelrunner.tensor;
 
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 
-import io.bioimage.modelrunner.tensor.Tensor;
 import net.imglib2.Cursor;
 import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.img.Img;
@@ -49,12 +48,6 @@ import net.imglib2.view.IntervalView;
  */
 public final class ImgLib2ToArray
 {
-	/**
-	 * Header used to identify files for interprocessing communication
-	 */
-	final public static byte[] MODEL_RUNNER_HEADER = 
-		{(byte) 0x93, 'M', 'O', 'D', 'E', 'L', '-', 'R', 'U', 'N', 'N', 'E', 'R'};
-
     /**
      * Not used (Utility class).
      */
@@ -75,12 +68,11 @@ public final class ImgLib2ToArray
      * @throws IllegalArgumentException
      *         If the {@link Tensor} ImgLib2 type is not supported.
      */
-    public static < T extends RealType< T > & NativeType< T > > void build(Tensor<T> tensor, ByteBuffer byteBuffer)
+    public static < T extends RealType< T > & NativeType< T > > Object build(Tensor<T> tensor)
     {
-		byteBuffer.put(ImgLib2ToArray.createFileHeader(tensor));
 		if (tensor.isEmpty())
-			return;
-    	build(tensor.getData(), byteBuffer);
+			return new byte[0];
+    	return build(tensor.getData());
     }
 
     /**
@@ -95,16 +87,16 @@ public final class ImgLib2ToArray
      * 	target bytebuffer
      * @throws IllegalArgumentException If the {@link RandomAccessibleInterval} type is not supported.
      */
-    private static <T extends Type<T>> void build(RandomAccessibleInterval<T> rai, ByteBuffer byteBuffer)
+    public static <T extends Type<T>> Object build(RandomAccessibleInterval<T> rai)
     {
     	if (Util.getTypeFromInterval(rai) instanceof ByteType) {
-    		buildByte((RandomAccessibleInterval<ByteType>) rai, byteBuffer);
+    		return buildByte((RandomAccessibleInterval<ByteType>) rai);
     	} else if (Util.getTypeFromInterval(rai) instanceof IntType) {
-    		buildInt((RandomAccessibleInterval<IntType>) rai, byteBuffer);
+    		return buildInt((RandomAccessibleInterval<IntType>) rai);
     	} else if (Util.getTypeFromInterval(rai) instanceof FloatType) {
-    		//buildFloat((RandomAccessibleInterval<FloatType>) rai, byteBuffer);
+    		return buildFloat((RandomAccessibleInterval<FloatType>) rai);
     	} else if (Util.getTypeFromInterval(rai) instanceof DoubleType) {
-    		buildDouble((RandomAccessibleInterval<DoubleType>) rai, byteBuffer);
+    		return buildDouble((RandomAccessibleInterval<DoubleType>) rai);
     	} else {
             throw new IllegalArgumentException("The image has an unsupported type: " + Util.getTypeFromInterval(rai).getClass().toString());
     	}
@@ -119,7 +111,7 @@ public final class ImgLib2ToArray
      * @param byteBuffer 
      * 	target bytebuffer
      */
-    private static void buildByte(RandomAccessibleInterval<ByteType> imgTensor, ByteBuffer byteBuffer)
+    private static byte[] buildByte(RandomAccessibleInterval<ByteType> imgTensor)
     {
     	Cursor<ByteType> tensorCursor;
 		if (imgTensor instanceof IntervalView)
@@ -129,10 +121,15 @@ public final class ImgLib2ToArray
 		else
 			throw new IllegalArgumentException("The data of the " + Tensor.class + " has "
 					+ "to be an instance of " + Img.class + " or " + IntervalView.class);
+		long flatSize = 1;
+		for (long ss : imgTensor.dimensionsAsLongArray()) {flatSize *= ss;}
+		byte[] byteArr = new byte[(int) flatSize];
+		int cc =  0;
 		while (tensorCursor.hasNext()) {
 			tensorCursor.fwd();
-			byteBuffer.put(tensorCursor.get().getByte());
+			byteArr[cc ++] = tensorCursor.get().getByte();
 		}
+		return byteArr;
     }
 
     /**
@@ -144,7 +141,7 @@ public final class ImgLib2ToArray
      * @param byteBuffer 
      * 	target bytebuffer
      */
-    private static void buildInt(RandomAccessibleInterval<IntType> imgTensor, ByteBuffer byteBuffer)
+    private static int[] buildInt(RandomAccessibleInterval<IntType> imgTensor)
     {
     	Cursor<IntType> tensorCursor;
 		if (imgTensor instanceof IntervalView)
@@ -154,10 +151,15 @@ public final class ImgLib2ToArray
 		else
 			throw new IllegalArgumentException("The data of the " + Tensor.class + " has "
 					+ "to be an instance of " + Img.class + " or " + IntervalView.class);
+		long flatSize = 1;
+		for (long ss : imgTensor.dimensionsAsLongArray()) {flatSize *= ss;}
+		int[] byteArr = new int[(int) flatSize];
+		int cc =  0;
 		while (tensorCursor.hasNext()) {
 			tensorCursor.fwd();
-			byteBuffer.putInt(tensorCursor.get().getInt());
+			byteArr[cc ++] = tensorCursor.get().getInt();
 		}
+		return byteArr;
     }
 
     /**
@@ -169,7 +171,7 @@ public final class ImgLib2ToArray
      * @param byteBuffer 
      * 	target bytebuffer
      */
-    public static float[] buildFloat(RandomAccessibleInterval<FloatType> imgTensor)
+    private static float[] buildFloat(RandomAccessibleInterval<FloatType> imgTensor)
     {
     	Cursor<FloatType> tensorCursor;
 		if (imgTensor instanceof IntervalView)
@@ -179,15 +181,15 @@ public final class ImgLib2ToArray
 		else
 			throw new IllegalArgumentException("The data of the " + Tensor.class + " has "
 					+ "to be an instance of " + Img.class + " or " + IntervalView.class);
-		int size = 1; 
-		for (long i : imgTensor.dimensionsAsLongArray()) {size *= i;}
-		float[] floatArr = new float[size];
-		int c = 0;
+		long flatSize = 1;
+		for (long ss : imgTensor.dimensionsAsLongArray()) {flatSize *= ss;}
+		float[] byteArr = new float[(int) flatSize];
+		int cc =  0;
 		while (tensorCursor.hasNext()) {
 			tensorCursor.fwd();
-			floatArr[c ++] = tensorCursor.get().getRealFloat();
+			byteArr[cc ++] = tensorCursor.get().getRealFloat();
 		}
-		return floatArr;
+		return byteArr;
     }
 
     /**
@@ -199,7 +201,7 @@ public final class ImgLib2ToArray
      * @param byteBuffer 
      * 	target bytebuffer
      */
-    private static void buildDouble(RandomAccessibleInterval<DoubleType> imgTensor, ByteBuffer byteBuffer)
+    private static double[] buildDouble(RandomAccessibleInterval<DoubleType> imgTensor)
     {
     	Cursor<DoubleType> tensorCursor;
 		if (imgTensor instanceof IntervalView)
@@ -209,113 +211,14 @@ public final class ImgLib2ToArray
 		else
 			throw new IllegalArgumentException("The data of the " + Tensor.class + " has "
 					+ "to be an instance of " + Img.class + " or " + IntervalView.class);
+		long flatSize = 1;
+		for (long ss : imgTensor.dimensionsAsLongArray()) {flatSize *= ss;}
+		double[] byteArr = new double[(int) flatSize];
+		int cc =  0;
 		while (tensorCursor.hasNext()) {
 			tensorCursor.fwd();
-        	byteBuffer.putDouble(tensorCursor.get().getRealDouble());
+			byteArr[cc ++] = tensorCursor.get().getRealDouble();
 		}
-    }
-    
-    /**
-     * Create header for the temp file that is used for interprocess communication.
-     * The header should contain the first key word as an array of bytes (MODEl-RUNNER)
-     * @param <T> 
-     * 	type of the tensor
-     * @param tensor
-     * 	tensor whose info is recorded
-     * @return byte array containing the header info for the file
-     */
-    public static < T extends RealType< T > & NativeType< T > > byte[] 
-    		createFileHeader(io.bioimage.modelrunner.tensor.Tensor<T> tensor) {
-    	String dimsStr = 
-    			!tensor.isEmpty() ? Arrays.toString(tensor.getData().dimensionsAsLongArray()) : "[]";
-    	T dtype = !tensor.isEmpty() ? Util.getTypeFromInterval(tensor.getData()): (T) new FloatType();
-    	String descriptionStr = "{'dtype':'" 
-    			+ getDataTypeString(dtype) + "','axes':'" 
-    			+ tensor.getAxesOrderString() + "','name':'" + tensor.getName() +  "','shape':'" 
-    			+ dimsStr + "'}";
-    	
-    	byte[] descriptionBytes = descriptionStr.getBytes(StandardCharsets.UTF_8);
-    	int lenDescriptionBytes = descriptionBytes.length;
-    	byte[] intAsBytes = ByteBuffer.allocate(4).putInt(lenDescriptionBytes).array();
-    	int totalHeaderLen = MODEL_RUNNER_HEADER.length + intAsBytes.length + lenDescriptionBytes;
-    	byte[] byteHeader = new byte[totalHeaderLen];
-    	for (int i = 0; i < MODEL_RUNNER_HEADER.length; i ++)
-    		byteHeader[i] = MODEL_RUNNER_HEADER[i];
-    	for (int i = MODEL_RUNNER_HEADER.length; i < MODEL_RUNNER_HEADER.length + intAsBytes.length; i ++)
-    		byteHeader[i] = intAsBytes[i - MODEL_RUNNER_HEADER.length];
-    	for (int i = MODEL_RUNNER_HEADER.length + intAsBytes.length; i < totalHeaderLen; i ++)
-    		byteHeader[i] = descriptionBytes[i - MODEL_RUNNER_HEADER.length - intAsBytes.length];
-    	
-    	return byteHeader;
-    }
-    
-    /**
-     * Method that returns a Sting representing the datatype of T
-     * @param <T>
-     * 	type of the tensor
-     * @param type
-     * 	pixel of an imglib2 object to get the info of teh data type
-     * @return String representation of the datatype
-     */
-    public static< T extends RealType< T > & NativeType< T > > String getDataTypeString(T type) {
-    	if (type instanceof ByteType) {
-    		return "byte";
-    	} else if (type instanceof IntType) {
-    		return "int32";
-    	} else if (type instanceof FloatType) {
-    		return "float32";
-    	} else if (type instanceof DoubleType) {
-    		return "float64";
-    	} else if (type instanceof LongType) {
-    		return "int64";
-    	} else if (type instanceof UnsignedByteType) {
-    		return "ubyte";
-    	} else {
-            throw new IllegalArgumentException("Unsupported data type. At the moment the only "
-            		+ "supported dtypes are: " + IntType.class + ", " + FloatType.class + ", "
-            		 + DoubleType.class + ", " + LongType.class + " and " + UnsignedByteType.class);
-    	}
-    }
-
-    /**
-     * Get the total byte size of the temp file that is going to be created to be
-     * able to reconstruct a {@link Tensor} to in the separate process in MacOS Intel
-     * systems
-     * 
-     * @param <T>
-     * 	type of the imglib2 object
-     * @param tensor
-     * 	tensor of interest
-     * @return number of bytes needed to create a file with the info of the tensor
-     */
-    public static  < T extends RealType< T > & NativeType< T > > long 
-    		findTotalLengthFile(io.bioimage.modelrunner.tensor.Tensor<T> tensor) {
-    	long startLen = createFileHeader(tensor).length;
-    	long[] dimsArr = !tensor.isEmpty() ? tensor.getData().dimensionsAsLongArray() : null;
-    	if (dimsArr == null)
-    		return startLen;
-    	long totSizeFlat = 1;
-    	for (long i : dimsArr) {totSizeFlat *= i;}
-    	long nBytesDt = 1;
-    	Type<T> dtype = !tensor.isEmpty() ? 
-    			Util.getTypeFromInterval(tensor.getData()) : (Type<T>) new FloatType();
-    	if (dtype instanceof IntType) {
-    		nBytesDt = 4;
-    	} else if (dtype instanceof ByteType) {
-    		nBytesDt = 1;
-        } else if (dtype instanceof FloatType) {
-        	nBytesDt = 4;
-        } else if (dtype instanceof DoubleType) {
-        	nBytesDt = 8;
-        } else {
-            throw new IllegalArgumentException("Unsupported tensor type: " + dtype);
-        }
-    	return startLen + nBytesDt * totSizeFlat;
-    }
-    
-    public T[] createArray(int length) {
-        @SuppressWarnings("unchecked")
-        T[] array = (T[]) Array.newInstance(Number.class, length);
-        return array;
+		return byteArr;
     }
 }

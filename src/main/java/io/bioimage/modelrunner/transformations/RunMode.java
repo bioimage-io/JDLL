@@ -1,28 +1,24 @@
-package io.bioimage.modelrunner;
+package io.bioimage.modelrunner.transformations;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
 
 import org.apposed.appose.Appose;
 import org.apposed.appose.Environment;
 import org.apposed.appose.Service;
 import org.apposed.appose.Service.Task;
-import org.apposed.appose.Types;
 
-import io.bioimage.modelrunner.model.Model;
+import io.bioimage.modelrunner.bioimageio.ops.OpDescription;
 import io.bioimage.modelrunner.tensor.ImgLib2ToArray;
 import io.bioimage.modelrunner.tensor.Tensor;
-import net.imglib2.img.Img;
-import net.imglib2.img.ImgFactory;
-import net.imglib2.img.cell.CellImgFactory;
+import net.imglib2.type.NativeType;
+import net.imglib2.type.numeric.RealType;
 import net.imglib2.type.numeric.real.FloatType;
 
-public class PythonConnection {
+public class RunMode {
 	
 	private static final String NAME_KEY = "name";
 	
@@ -30,43 +26,58 @@ public class PythonConnection {
 	
 	private static final String DATA_KEY = "data";
 	
-	private static final String CODE = 
-			"task.update('before imports')" + System.lineSeparator()
-			+ "import torch" + System.lineSeparator()
-			+ "import numpy as np" + System.lineSeparator()
-			+ "task.update('starting')" + System.lineSeparator()
-			// + "listArr = list(tensor)" + System.lineSeparator()
-			+ "img = np.array(tensor)" + System.lineSeparator()
-			+ "task.update('array created')" + System.lineSeparator()
-			+ "torch_sum = torch.from_numpy(img).sum()" + System.lineSeparator()
-			+ "torch_sum_val = torch_sum.to(torch.int32).sum().item()" + System.lineSeparator()
-			+ "task.outputs['value'] = torch_sum_val" + System.lineSeparator();
+	private static final String BMZ_CORE_IMPORTS = 
+			"from bioimageio.core import load_resource_description" + System.lineSeparator()
+			+ "from bioimageio.core.resource_io.nodes import Model" + System.lineSeparator();
+	private static final String OP_PACKAGE = "bioimageio.workflows";
 	
+	private static final String[] RUN_MODES = 
+			new String[] {"stardist", "cellpose", "mrcnn"};
 	
-	public static void main(String[] args) {
-		final ImgFactory< FloatType > imgFactory = new CellImgFactory<>( new FloatType(), 5 );
-		final Img< FloatType > img1 = imgFactory.create( 1, 1, 512, 512 );
-		// Create the input tensor with the nameand axes given by the rdf.yaml file
-		// and add it to the list of input tensors
-		Tensor<FloatType> inpTensor = Tensor.build("input0", "bcyx", img1);
-		List<Tensor<FloatType>> inputs = new ArrayList<Tensor<FloatType>>();
-		inputs.add(inpTensor);
-		
-		runModelInPython(inputs, null);
+	private Environment env;
+	private String envFileName;
+	private String opCode;
+	
+	private RunMode(OpDescription op) {
+		envFileName = op.getCondaEnv();
 	}
 	
-	public static void runModelInPython(List<Tensor<FloatType>> inputTensors, 
-			List<Tensor<FloatType>> outputTensors) {
+	public static RunMode createRunMode(OpDescription op) {
+		return new RunMode(op);
+	}
+	
+	public void envCreation() {
+		if (checkRequiredEnvExists()) {
+			env = Appose.base(new File(envFileName)).build();
+			return;
+		}
+		env = Appose.conda(new File(envFileName)).build();
+	}
+	
+	public boolean checkRequiredEnvExists() {
+		return false;
+	}
+	
+	private void createPythonScriptForOp() {
+		opCode = "";
+		addImports();
+	}
+	
+	private void addImports() {
+		opCode += "import " +  + System.lineSeparator();
+	}
+	
+	public < T extends RealType< T > & NativeType< T > >
+		void run(List<Tensor<T>> inputTensors, List<Tensor<T>> outputTensors) {
 		LinkedHashMap<String, Object> inputMap = new LinkedHashMap<>();
-		for (Tensor<FloatType> input : inputTensors) {
+		for (Tensor<T> input : inputTensors) {
 			HashMap<String, Object> tensorMap = new HashMap<String, Object>();
-			//tensorMap.put(AXES_KEY, input.getAxesOrderString());
-			//tensorMap.put(DATA_KEY, ImgLib2ToArray.buildFloat(input.getData()));
-			// inputMap.put(NAME_KEY, tensorMap);
+			tensorMap.put(AXES_KEY, input.getAxesOrderString());
+			tensorMap.put(DATA_KEY, ImgLib2ToArray.build(input.getData()));
+			inputMap.put(NAME_KEY, tensorMap);
 			inputMap.put("tensor", ImgLib2ToArray.buildFloat(input.getData()));
 		}
         
-        Environment env = Appose.base(new File("C:\\Users\\angel\\git\\jep\\miniconda\\envs\\testAppose")).build();
         try (Service python = env.python()) {
         	python.debug(line -> {
         		System.err.println(line);

@@ -26,7 +26,7 @@ public class DecodeImgLib2 {
 	}
 
 	
-	public static  < T extends RealType< T > & NativeType< T > >
+	public static < T extends RealType< T > & NativeType< T > >
 				byte[] imglib2ToByteArray(RandomAccessibleInterval<T> rai) {
     	if (Util.getTypeFromInterval(rai) instanceof ByteType) {
     		return buildByte((RandomAccessibleInterval<ByteType>) rai);
