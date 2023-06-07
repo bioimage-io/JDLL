@@ -17,6 +17,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import io.bioimage.modelrunner.bioimageio.description.weights.ModelWeight;
 import io.bioimage.modelrunner.tensor.Tensor;
+import net.imglib2.type.NativeType;
+import net.imglib2.type.numeric.RealType;
 
 /**
  * Class to create inputs that can be sent to the BioEngine server.
@@ -214,36 +216,6 @@ public class BioEngineInput {
 	}
 	
 	/**
-	 * Adds the sequence as an input to the model. Call {@link #setAllInputs()}
-	 * when there are no more inputs to define.
-	 * @param seq
-	 * 	the sequence we want as an input
-	 * @param axesOrder
-	 * 	the shape of the array of interest
-	 * @throws Exception if the data type of the sequence is not within the allowed ones 
-	 */
-	public void addArrayInput(Sequence seq, String axesOrder) throws Exception {
-    	throwExceptionIfClosed();
-		int[] arrAxesOrder = Tensor.convertToTensorDimOrder(axesOrder);
-		int[] seqSize = SequenceUtils.getSequenceSizeArray(seq);
-		int [] shapeAxesOrder = PatchGridCalculator.arrayToWantedAxesOrderAddOnes(seqSize, "xyczb", axesOrder);
-		addArrayInput(sequence2buffer(seq, arrAxesOrder), shapeAxesOrder);
-	}
-	
-	/**
-	 * Adds the buffer as an input to the model
-	 * @param buff
-	 * 	the buffer we want as an input
-	 * @param axesOrder
-	 * 	the shape of the array of interest
-	 * @throws Exception if the data type of the buffer is not within the allowed ones 
-	 */
-	public void addArrayInput(Buffer buff, int[] axesOrder) throws Exception {
-    	throwExceptionIfClosed();
-		inputs.add(BioEngineInputTensor.build(buff, axesOrder));
-	}
-	
-	/**
 	 * MEthod to set the weight format selected in the bioengine run
 	 * @param ww
 	 * 	seleced weight format, has to be one of the allowed weight formats
@@ -262,10 +234,6 @@ public class BioEngineInput {
 		}
 	}
 	
-	public static Buffer sequence2buffer(Sequence seq, int[] shape) {
-		return TensorBuilder.build(seq, shape);
-	}
-	
 	/**
 	 * Adds the Object as a parameter input to the model.
 	 * In this case there is no need to encode it.
@@ -282,6 +250,20 @@ public class BioEngineInput {
 		Map<String, Object> pp = new HashMap<String, Object>();
 		pp.put(paramKey, param);
 		inputs.add(pp);
+	}
+	
+	/**
+	 * Adds the buffer as an input to the model
+	 * @param buff
+	 * 	the buffer we want as an input
+	 * @param axesOrder
+	 * 	the shape of the array of interest
+	 * @throws Exception if the data type of the buffer is not within the allowed ones 
+	 */
+	public < T extends RealType< T > & NativeType< T > >
+		void addTensorInput(Tensor<T> tensor) throws Exception {
+    	throwExceptionIfClosed();
+		inputs.add(BioEngineInputTensor.build(tensor).getInputsMap());
 	}
 	
 	/**
