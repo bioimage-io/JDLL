@@ -113,6 +113,8 @@ public class RunMode {
 			addRecreationOfTensor(input);
 		}
 		
+		inputMap.putAll(kwargs);
+		
 		addCodeBody(inputTensors, outputTensors);
         
         try (Service python = env.python()) {
