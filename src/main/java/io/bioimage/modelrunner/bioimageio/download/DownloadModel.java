@@ -495,6 +495,8 @@ public class DownloadModel {
 		HttpURLConnection conn = null;
 		try {
 			conn = (HttpURLConnection) url.openConnection();
+			if (conn.getResponseCode() != 200)
+				throw new Exception();
 			return conn.getContentLengthLong();
 		} catch (IOException e) {
 			throw new RuntimeException(e);
