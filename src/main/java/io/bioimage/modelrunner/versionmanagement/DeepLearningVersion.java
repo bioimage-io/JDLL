@@ -308,7 +308,7 @@ public class DeepLearningVersion
      * @return list of strings representing the names of the JARs
      */
     public List<String> getJarsFileNames(){
-    	return jars.stream().filter(jar -> !jar.contains("zenodo")).map(jar -> jar.substring(jar.lastIndexOf("/") + 1)).collect(Collectors.toList());
+    	return jars.stream().filter(jar -> jar != null && !jar.contains("zenodo")).map(jar -> jar.substring(jar.lastIndexOf("/") + 1)).collect(Collectors.toList());
     }
 
     /**
@@ -317,7 +317,9 @@ public class DeepLearningVersion
      */
     public void setJars(List<String> jars)
     {
-        this.jars = jars;
+        this.jars = 
+        		jars.stream().filter(jar -> jar != null)
+        		.collect(Collectors.toList());
     }
     
     /**
