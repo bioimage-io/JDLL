@@ -220,9 +220,12 @@ public class EngineInfo
 	 */
 	private void checkEngineAreadyLoaded() throws IllegalArgumentException {
 		String versionedEngine = this.engine + this.getMajorVersion();
-		if (!engine.equals(TENSORFLOW_ENGINE_NAME)  
+		boolean onnxLoaded = EngineLoader.getLoadedVersions().keySet().stream()
+				.filter(en -> en.startsWith(ONNX_ENGINE_NAME))
+				.findFirst().orElse(null) != null;
+		if (onnxLoaded || (!engine.equals(TENSORFLOW_ENGINE_NAME)  
 				&& EngineLoader.getLoadedVersions().get(versionedEngine) != null
-				&& !EngineLoader.getLoadedVersions().get(versionedEngine).equals(version))
+				&& !EngineLoader.getLoadedVersions().get(versionedEngine).equals(version)))
 			throw new IllegalArgumentException("The program will not be able to load "
 					+ "'" + engine + " " + version + "' because another version (" 
 					+ EngineLoader.getLoadedVersions().get(versionedEngine).equals(version) + ") "
