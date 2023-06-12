@@ -223,7 +223,10 @@ public class EngineInfo
 		boolean onnxLoaded = EngineLoader.getLoadedVersions().keySet().stream()
 				.filter(en -> en.startsWith(ONNX_ENGINE_NAME))
 				.findFirst().orElse(null) != null;
-		if (onnxLoaded || (!engine.equals(TENSORFLOW_ENGINE_NAME)  
+		boolean ptLoaded = EngineLoader.getLoadedVersions().keySet().stream()
+				.filter(en -> en.startsWith(PYTORCH_ENGINE_NAME))
+				.findFirst().orElse(null) != null;
+		if (onnxLoaded || ptLoaded || (!engine.equals(TENSORFLOW_ENGINE_NAME)  
 				&& EngineLoader.getLoadedVersions().get(versionedEngine) != null
 				&& !EngineLoader.getLoadedVersions().get(versionedEngine).equals(version)))
 			throw new IllegalArgumentException("The program will not be able to load "
