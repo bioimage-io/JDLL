@@ -976,13 +976,18 @@
 				"https://sandbox.zenodo.org/record/1182168/files/dl-modelrunner-pytorch-javacpp-0.3.0.jar?download=1",
 				"https://sandbox.zenodo.org/record/1200598/files/pytorch-platform-1.13.1-1.5.9-SNAPSHOT.jar?download=1",
 				"https://sandbox.zenodo.org/record/1200598/files/pytorch-1.13.1-1.5.9-SNAPSHOT.jar?download=1",
-				"https://sandbox.zenodo.org/record/1200598/files/pytorch-1.13.1-1.5.9-SNAPSHOT-macosx-x86_64.jar?download=1",
-				"https://sandbox.zenodo.org/record/1200598/files/javacpp-platform-1.5.9-SNAPSHOT.jar?download=1",
-				"https://sandbox.zenodo.org/record/1200598/files/javacpp-1.5.9-SNAPSHOT.jar?download=1",
-				"https://sandbox.zenodo.org/record/1200598/files/javacpp-1.5.9-SNAPSHOT-macosx-x86_64.jar?download=1",
-				"https://sandbox.zenodo.org/record/1200598/files/openblas-platform-0.3.23-1.5.9-SNAPSHOT.jar?download=1",
-				"https://sandbox.zenodo.org/record/1200598/files/openblas-0.3.23-1.5.9-SNAPSHOT.jar?download=1",
-				"https://sandbox.zenodo.org/record/1200598/files/openblas-0.3.23-1.5.9-SNAPSHOT-macosx-x86_64.jar?download=1"		
+				"https://sandbox.zenodo.org/record/1200598/files/pytorch-1.13.1-1.5.9-SNAPSHOT-macosx-x86_64.jar?download=1",		
+				"https://repo1.maven.org/maven2/org/bytedeco/javacpp-platform/1.5.9/javacpp-platform-1.5.9.jar",
+				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.9/javacpp-1.5.9-macosx-x86_64.jar",
+				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.8/javacpp-1.5.8.jar",
+				"https://repo1.maven.org/maven2/org/bytedeco/openblas-platform/0.3.23-1.5.9/openblas-platform-0.3.23-1.5.9.jar",
+				"https://repo1.maven.org/maven2/org/bytedeco/openblas/0.3.21-1.5.8/openblas-0.3.21-1.5.8.jar",
+				"https://repo1.maven.org/maven2/org/bytedeco/openblas/0.3.23-1.5.9/openblas-0.3.23-1.5.9-macosx-x86_64.jar",
+				"https://repo1.maven.org/maven2/org/bytedeco/mkl/2023.1-1.5.9/mkl-2023.1-1.5.9-macosx-x86_64-redist.jar",
+				"https://repo1.maven.org/maven2/org/bytedeco/mkl/2023.1-1.5.9/mkl-2023.1-1.5.9-macosx-x86_64.jar",
+				"https://repo1.maven.org/maven2/org/bytedeco/mkl/2023.1-1.5.9/mkl-2023.1-1.5.9.jar",
+				"https://repo1.maven.org/maven2/org/bytedeco/mkl-platform/2023.1-1.5.9/mkl-platform-2023.1-1.5.9.jar",
+				"https://repo1.maven.org/maven2/org/bytedeco/mkl-platform-redist/2023.1-1.5.9/mkl-platform-redist-2023.1-1.5.9.jar"
 			]
 		},
 		{
@@ -1074,12 +1079,17 @@
 				"https://sandbox.zenodo.org/record/1200598/files/pytorch-platform-1.13.0-1.5.9-SNAPSHOT.jar?download=1",
 				"https://sandbox.zenodo.org/record/1200598/files/pytorch-1.13.0-1.5.9-SNAPSHOT.jar?download=1",
 				"https://sandbox.zenodo.org/record/1200598/files/pytorch-1.13.0-1.5.9-SNAPSHOT-macosx-x86_64.jar?download=1",
-				"https://sandbox.zenodo.org/record/1200598/files/javacpp-platform-1.5.9-SNAPSHOT.jar?download=1",
+				"https://repo1.maven.org/maven2/org/bytedeco/javacpp-platform/1.5.9/javacpp-platform-1.5.9.jar",
+				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.9/javacpp-1.5.9-macosx-x86_64.jar",
 				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.8/javacpp-1.5.8.jar",
-				"https://sandbox.zenodo.org/record/1200598/files/javacpp-1.5.9-SNAPSHOT-macosx-x86_64.jar?download=1",
-				"https://sandbox.zenodo.org/record/1200598/files/openblas-platform-0.3.21-1.5.9-SNAPSHOT.jar?download=1",
+				"https://repo1.maven.org/maven2/org/bytedeco/openblas-platform/0.3.23-1.5.9/openblas-platform-0.3.23-1.5.9.jar",
 				"https://repo1.maven.org/maven2/org/bytedeco/openblas/0.3.21-1.5.8/openblas-0.3.21-1.5.8.jar",
-				"https://sandbox.zenodo.org/record/1200598/files/openblas-0.3.21-1.5.9-SNAPSHOT-macosx-x86_64.jar?download=1"	
+				"https://repo1.maven.org/maven2/org/bytedeco/openblas/0.3.23-1.5.9/openblas-0.3.23-1.5.9-macosx-x86_64.jar",
+				"https://repo1.maven.org/maven2/org/bytedeco/mkl/2023.1-1.5.9/mkl-2023.1-1.5.9-macosx-x86_64-redist.jar",
+				"https://repo1.maven.org/maven2/org/bytedeco/mkl/2023.1-1.5.9/mkl-2023.1-1.5.9-macosx-x86_64.jar",
+				"https://repo1.maven.org/maven2/org/bytedeco/mkl/2023.1-1.5.9/mkl-2023.1-1.5.9.jar",
+				"https://repo1.maven.org/maven2/org/bytedeco/mkl-platform/2023.1-1.5.9/mkl-platform-2023.1-1.5.9.jar",
+				"https://repo1.maven.org/maven2/org/bytedeco/mkl-platform-redist/2023.1-1.5.9/mkl-platform-redist-2023.1-1.5.9.jar"
 			]
 		},
 		{
