@@ -226,9 +226,10 @@ public class EngineInfo
 		boolean ptLoaded = EngineLoader.getLoadedVersions().keySet().stream()
 				.filter(en -> en.startsWith(PYTORCH_ENGINE_NAME))
 				.findFirst().orElse(null) != null;
-		if (onnxLoaded || ptLoaded || (!engine.equals(TENSORFLOW_ENGINE_NAME)  
-				&& EngineLoader.getLoadedVersions().get(versionedEngine) != null
-				&& !EngineLoader.getLoadedVersions().get(versionedEngine).equals(version)))
+		if (onnxLoaded || (ptLoaded && new PlatformDetection().getArch().equals(PlatformDetection.ARCH_ARM64))
+				|| (!engine.equals(TENSORFLOW_ENGINE_NAME)  
+					&& EngineLoader.getLoadedVersions().get(versionedEngine) != null
+					&& !EngineLoader.getLoadedVersions().get(versionedEngine).equals(version)))
 			throw new IllegalArgumentException("The program will not be able to load "
 					+ "'" + engine + " " + version + "' because another version (" 
 					+ EngineLoader.getLoadedVersions().get(versionedEngine).equals(version) + ") "
