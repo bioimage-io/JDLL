@@ -810,7 +810,7 @@
 				"https://repo1.maven.org/maven2/org/bytedeco/mkl/2023.1-1.5.9/mkl-2023.1-1.5.9-macosx-x86_64.jar",
 				"https://repo1.maven.org/maven2/org/bytedeco/mkl/2023.1-1.5.9/mkl-2023.1-1.5.9-macosx-x86_64-redist.jar",
 				"https://repo1.maven.org/maven2/org/bytedeco/mkl-platform/2023.1-1.5.9/mkl-platform-2023.1-1.5.9.jar",
-				"https://repo1.maven.org/maven2/org/bytedeco/mkl-platform-redist/2023.1-1.5.9/mkl-platform-redist-2023.1-1.5.9.jar",
+				"https://repo1.maven.org/maven2/org/bytedeco/mkl-platform-redist/2023.1-1.5.9/mkl-platform-redist-2023.1-1.5.9.jar"
 			]
 		},
 		{
@@ -842,8 +842,7 @@
 				"https://repo1.maven.org/maven2/org/bytedeco/cuda/11.8-8.6-1.5.8/cuda-11.8-8.6-1.5.8-linux-x86_64.jar",
 				"https://repo1.maven.org/maven2/org/bytedeco/cuda/11.8-8.6-1.5.8/cuda-11.8-8.6-1.5.8.jar",
 				"https://repo1.maven.org/maven2/org/bytedeco/cuda-platform/11.8-8.6-1.5.8/cuda-platform-11.8-8.6-1.5.8.jar",
-				"https://repo1.maven.org/maven2/org/bytedeco/cuda-platform-redist/11.8-8.6-1.5.8/cuda-platform-redist-11.8-8.6-1.5.8.jar",
-				"",
+				"https://repo1.maven.org/maven2/org/bytedeco/cuda-platform-redist/11.8-8.6-1.5.8/cuda-platform-redist-11.8-8.6-1.5.8.jar"
 			]
 		},
 		{
@@ -868,7 +867,7 @@
 				"https://repo1.maven.org/maven2/org/bytedeco/mkl/2023.1-1.5.9/mkl-2023.1-1.5.9-linux-x86_64-redist.jar",
 				"https://repo1.maven.org/maven2/org/bytedeco/mkl/2023.1-1.5.9/mkl-2023.1-1.5.9-linux-x86_64.jar",
 				"https://repo1.maven.org/maven2/org/bytedeco/mkl-platform/2023.1-1.5.9/mkl-platform-2023.1-1.5.9.jar",
-				"https://repo1.maven.org/maven2/org/bytedeco/mkl-platform-redist/2023.1-1.5.9/mkl-platform-redist-2023.1-1.5.9.jar",
+				"https://repo1.maven.org/maven2/org/bytedeco/mkl-platform-redist/2023.1-1.5.9/mkl-platform-redist-2023.1-1.5.9.jar"
 			]
 		},
 		{
@@ -900,7 +899,7 @@
 				"https://repo1.maven.org/maven2/org/bytedeco/cuda/11.8-8.6-1.5.8/cuda-11.8-8.6-1.5.8-windows-x86_64-redist.jar",
 				"https://repo1.maven.org/maven2/org/bytedeco/cuda/11.8-8.6-1.5.8/cuda-11.8-8.6-1.5.8-windows-x86_64.jar",
 				"https://repo1.maven.org/maven2/org/bytedeco/cuda-platform/11.8-8.6-1.5.8/cuda-platform-11.8-8.6-1.5.8.jar",
-				"https://repo1.maven.org/maven2/org/bytedeco/cuda-platform-redist/11.8-8.6-1.5.8/cuda-platform-redist-11.8-8.6-1.5.8.jar",
+				"https://repo1.maven.org/maven2/org/bytedeco/cuda-platform-redist/11.8-8.6-1.5.8/cuda-platform-redist-11.8-8.6-1.5.8.jar"
 			]
 		},
 		{
@@ -912,6 +911,7 @@
 			"cpu": true,
 			"rosetta": false,
 			"jars": [
+				"https://repo1.maven.org/maven2/dl-modelrunner-pytorch-javacpp-0.2.1-SNAPSHOT.jar",
 				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.9/javacpp-1.5.9-windows-x86.jar",
 				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.8/javacpp-1.5.8.jar",
 				"https://repo1.maven.org/maven2/org/bytedeco/pytorch-platform/2.0.1-1.5.9/pytorch-platform-2.0.1-1.5.9.jar",
@@ -925,7 +925,7 @@
 				"https://repo1.maven.org/maven2/org/bytedeco/mkl/2023.1-1.5.9/mkl-2023.1-1.5.9-windows-x86_64.jar",
 				"https://repo1.maven.org/maven2/org/bytedeco/mkl/2023.1-1.5.9/mkl-2023.1-1.5.9.jar",
 				"https://repo1.maven.org/maven2/org/bytedeco/mkl-platform/2023.1-1.5.9/mkl-platform-2023.1-1.5.9.jar",
-				"https://repo1.maven.org/maven2/org/bytedeco/mkl-platform-redist/2023.1-1.5.9/mkl-platform-redist-2023.1-1.5.9.jar",
+				"https://repo1.maven.org/maven2/org/bytedeco/mkl-platform-redist/2023.1-1.5.9/mkl-platform-redist-2023.1-1.5.9.jar"
 			]
 		},
 		{
