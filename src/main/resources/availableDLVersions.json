@@ -599,7 +599,7 @@
 			"cpu": true,
 			"rosetta": false,
 			"jars": [
-				"https://sandbx.zenodo.org/record/1154165/files/tensorflow-core-api-0.4.0-SNAPSHOT-macosx-arm64.jar?download=1",
+				"https://sandbox.zenodo.org/record/1154165/files/tensorflow-core-api-0.4.0-SNAPSHOT-macosx-arm64.jar?download=1",
 				"https://repo1.maven.org/maven2/com/google/protobuf/protobuf-java/3.22.0/protobuf-java-3.22.0.jar",
 				"https://repo1.maven.org/maven2/org/tensorflow/ndarray/0.3.3/ndarray-0.3.3.jar",
 				"https://sandbox.zenodo.org/record/1154165/files/tensorflow-core-api-0.4.0-SNAPSHOT.jar?download=1",
@@ -797,6 +797,7 @@
 			"cpu": true,
 			"rosetta": true,
 			"jars": [
+				"https://maven.scijava.org/content/repositories/releases/io/bioimage/dl-modelrunner-pytorch-javacpp/0.3.0/dl-modelrunner-pytorch-javacpp-0.3.0.jar",
 				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.9/javacpp-1.5.9-macosx-x86_64.jar",
 				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.8/javacpp-1.5.8.jar",
 				"https://repo1.maven.org/maven2/org/bytedeco/pytorch-platform/2.0.1-1.5.9/pytorch-platform-2.0.1-1.5.9.jar",
@@ -822,6 +823,7 @@
 			"cpu": true,
 			"rosetta": true,
 			"jars": [
+				"https://maven.scijava.org/content/repositories/releases/io/bioimage/dl-modelrunner-pytorch-javacpp/0.3.0/dl-modelrunner-pytorch-javacpp-0.3.0.jar",
 				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.9/javacpp-1.5.9-linux-x86_64.jar",
 				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.8/javacpp-1.5.8.jar",
 				"https://repo1.maven.org/maven2/org/bytedeco/pytorch-platform/2.0.1-1.5.9/pytorch-platform-2.0.1-1.5.9.jar",
@@ -854,6 +856,7 @@
 			"cpu": true,
 			"rosetta": true,
 			"jars": [
+				"https://maven.scijava.org/content/repositories/releases/io/bioimage/dl-modelrunner-pytorch-javacpp/0.3.0/dl-modelrunner-pytorch-javacpp-0.3.0.jar",
 				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.9/javacpp-1.5.9-linux-x86_64.jar",
 				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.8/javacpp-1.5.8.jar",
 				"https://repo1.maven.org/maven2/org/bytedeco/pytorch-platform/2.0.1-1.5.9/pytorch-platform-2.0.1-1.5.9.jar",
@@ -879,6 +882,7 @@
 			"cpu": true,
 			"rosetta": false,
 			"jars": [
+				"https://maven.scijava.org/content/repositories/releases/io/bioimage/dl-modelrunner-pytorch-javacpp/0.3.0/dl-modelrunner-pytorch-javacpp-0.3.0.jar",
 				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.9/javacpp-1.5.9-windows-x86_64.jar",
 				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.8/javacpp-1.5.8.jar",
 				"https://repo1.maven.org/maven2/org/bytedeco/pytorch-platform/2.0.1-1.5.9/pytorch-platform-2.0.1-1.5.9.jar",
@@ -911,7 +915,7 @@
 			"cpu": true,
 			"rosetta": false,
 			"jars": [
-				"https://repo1.maven.org/maven2/dl-modelrunner-pytorch-javacpp-0.2.1-SNAPSHOT.jar",
+				"https://maven.scijava.org/content/repositories/releases/io/bioimage/dl-modelrunner-pytorch-javacpp/0.3.0/dl-modelrunner-pytorch-javacpp-0.3.0.jar",
 				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.9/javacpp-1.5.9-windows-x86_64.jar",
 				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.8/javacpp-1.5.8.jar",
 				"https://repo1.maven.org/maven2/org/bytedeco/pytorch-platform/2.0.1-1.5.9/pytorch-platform-2.0.1-1.5.9.jar",
@@ -973,7 +977,7 @@
 			"cpu": true,
 			"rosetta": true,
 			"jars": [
-				"https://sandbox.zenodo.org/record/1182168/files/dl-modelrunner-pytorch-javacpp-0.3.0.jar?download=1",
+				"https://maven.scijava.org/content/repositories/releases/io/bioimage/dl-modelrunner-pytorch-javacpp/0.3.0/dl-modelrunner-pytorch-javacpp-0.3.0.jar",
 				"https://sandbox.zenodo.org/record/1200598/files/pytorch-platform-1.13.1-1.5.9-SNAPSHOT.jar?download=1",
 				"https://sandbox.zenodo.org/record/1200598/files/pytorch-1.13.1-1.5.9-SNAPSHOT.jar?download=1",
 				"https://sandbox.zenodo.org/record/1200598/files/pytorch-1.13.1-1.5.9-SNAPSHOT-macosx-x86_64.jar?download=1",		
@@ -1075,7 +1079,7 @@
 			"cpu": true,
 			"rosetta": true,
 			"jars": [
-				"https://sandbox.zenodo.org/record/1182168/files/dl-modelrunner-pytorch-javacpp-0.3.0.jar?download=1",
+				"https://maven.scijava.org/content/repositories/releases/io/bioimage/dl-modelrunner-pytorch-javacpp/0.3.0/dl-modelrunner-pytorch-javacpp-0.3.0.jar",
 				"https://sandbox.zenodo.org/record/1200598/files/pytorch-platform-1.13.0-1.5.9-SNAPSHOT.jar?download=1",
 				"https://sandbox.zenodo.org/record/1200598/files/pytorch-1.13.0-1.5.9-SNAPSHOT.jar?download=1",
 				"https://sandbox.zenodo.org/record/1200598/files/pytorch-1.13.0-1.5.9-SNAPSHOT-macosx-x86_64.jar?download=1",
@@ -1177,7 +1181,7 @@
 			"cpu": true,
 			"rosetta": true,
 			"jars": [
-				"https://sandbox.zenodo.org/record/1182168/files/dl-modelrunner-pytorch-javacpp-0.3.0.jar?download=1",
+				"https://maven.scijava.org/content/repositories/releases/io/bioimage/dl-modelrunner-pytorch-javacpp/0.3.0/dl-modelrunner-pytorch-javacpp-0.3.0.jar",
 				"https://repo1.maven.org/maven2/org/bytedeco/pytorch/1.12.1-1.5.8/pytorch-1.12.1-1.5.8.jar",
 				"https://repo1.maven.org/maven2/org/bytedeco/pytorch/1.12.1-1.5.8/pytorch-1.12.1-1.5.8-macosx-x86_64.jar",
 				"https://repo1.maven.org/maven2/org/bytedeco/pytorch-platform/1.12.1-1.5.8/pytorch-platform-1.12.1-1.5.8.jar",
