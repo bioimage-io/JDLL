@@ -806,12 +806,7 @@
 				"https://repo1.maven.org/maven2/org/bytedeco/openblas/0.3.21-1.5.8/openblas-0.3.21-1.5.8.jar",
 				"https://repo1.maven.org/maven2/org/bytedeco/openblas/0.3.23-1.5.9/openblas-0.3.23-1.5.9-macosx-x86_64.jar",
 				"https://repo1.maven.org/maven2/org/bytedeco/pytorch/2.0.1-1.5.9/pytorch-2.0.1-1.5.9.jar",
-				"https://repo1.maven.org/maven2/org/bytedeco/pytorch/2.0.1-1.5.9/pytorch-2.0.1-1.5.9-macosx-x86_64.jar",
-				"https://repo1.maven.org/maven2/org/bytedeco/mkl/2023.1-1.5.9/mkl-2023.1-1.5.9.jar",
-				"https://repo1.maven.org/maven2/org/bytedeco/mkl/2023.1-1.5.9/mkl-2023.1-1.5.9-macosx-x86_64.jar",
-				"https://repo1.maven.org/maven2/org/bytedeco/mkl/2023.1-1.5.9/mkl-2023.1-1.5.9-macosx-x86_64-redist.jar",
-				"https://repo1.maven.org/maven2/org/bytedeco/mkl-platform/2023.1-1.5.9/mkl-platform-2023.1-1.5.9.jar",
-				"https://repo1.maven.org/maven2/org/bytedeco/mkl-platform-redist/2023.1-1.5.9/mkl-platform-redist-2023.1-1.5.9.jar"
+				"https://repo1.maven.org/maven2/org/bytedeco/pytorch/2.0.1-1.5.9/pytorch-2.0.1-1.5.9-macosx-x86_64.jar"
 			]
 		},
 		{
@@ -823,54 +818,13 @@
 			"cpu": true,
 			"rosetta": true,
 			"jars": [
-				"https://maven.scijava.org/content/repositories/releases/io/bioimage/dl-modelrunner-pytorch-javacpp/0.3.0/dl-modelrunner-pytorch-javacpp-0.3.0.jar",
-				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.9/javacpp-1.5.9-linux-x86_64.jar",
-				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.8/javacpp-1.5.8.jar",
-				"https://repo1.maven.org/maven2/org/bytedeco/pytorch-platform/2.0.1-1.5.9/pytorch-platform-2.0.1-1.5.9.jar",
-				"https://repo1.maven.org/maven2/org/bytedeco/javacpp-platform/1.5.9/javacpp-platform-1.5.9.jar",
-				"https://repo1.maven.org/maven2/org/bytedeco/openblas-platform/0.3.23-1.5.9/openblas-platform-0.3.23-1.5.9.jar",
-				"https://repo1.maven.org/maven2/org/bytedeco/openblas/0.3.21-1.5.8/openblas-0.3.21-1.5.8.jar",
-				"https://repo1.maven.org/maven2/org/bytedeco/openblas/0.3.23-1.5.9/openblas-0.3.23-1.5.9-linux-x86_64.jar",
-				"https://repo1.maven.org/maven2/org/bytedeco/pytorch/2.0.1-1.5.9/pytorch-2.0.1-1.5.9.jar",
-				"https://repo1.maven.org/maven2/org/bytedeco/pytorch/2.0.1-1.5.9/pytorch-2.0.1-1.5.9-linux-x86_64.jar",
-				"https://repo1.maven.org/maven2/org/bytedeco/mkl/2023.1-1.5.9/mkl-2023.1-1.5.9.jar",
-				"https://repo1.maven.org/maven2/org/bytedeco/mkl/2023.1-1.5.9/mkl-2023.1-1.5.9-linux-x86_64-redist.jar",
-				"https://repo1.maven.org/maven2/org/bytedeco/mkl/2023.1-1.5.9/mkl-2023.1-1.5.9-linux-x86_64.jar",
-				"https://repo1.maven.org/maven2/org/bytedeco/mkl-platform/2023.1-1.5.9/mkl-platform-2023.1-1.5.9.jar",
-				"https://repo1.maven.org/maven2/org/bytedeco/mkl-platform-redist/2023.1-1.5.9/mkl-platform-redist-2023.1-1.5.9.jar",
-				"https://repo1.maven.org/maven2/org/bytedeco/pytorch/2.0.1-1.5.9/pytorch-2.0.1-1.5.9-linux-x86_64-gpu.jar",
-				"https://repo1.maven.org/maven2/org/bytedeco/pytorch-platform-gpu/2.0.1-1.5.9/pytorch-platform-gpu-2.0.1-1.5.9.jar",
-				"https://repo1.maven.org/maven2/org/bytedeco/cuda/11.8-8.6-1.5.8/cuda-11.8-8.6-1.5.8-linux-x86_64-redist.jar",
-				"https://repo1.maven.org/maven2/org/bytedeco/cuda/11.8-8.6-1.5.8/cuda-11.8-8.6-1.5.8-linux-x86_64.jar",
-				"https://repo1.maven.org/maven2/org/bytedeco/cuda/11.8-8.6-1.5.8/cuda-11.8-8.6-1.5.8.jar",
-				"https://repo1.maven.org/maven2/org/bytedeco/cuda-platform/11.8-8.6-1.5.8/cuda-platform-11.8-8.6-1.5.8.jar",
-				"https://repo1.maven.org/maven2/org/bytedeco/cuda-platform-redist/11.8-8.6-1.5.8/cuda-platform-redist-11.8-8.6-1.5.8.jar"
-			]
-		},
-		{
-			"engine": "pytorch",
-			"version": "2.0.0",
-			"pythonVersion": "2.0.0",
-			"os": "linux-x86_64",
-			"gpu": false,
-			"cpu": true,
-			"rosetta": true,
-			"jars": [
-				"https://maven.scijava.org/content/repositories/releases/io/bioimage/dl-modelrunner-pytorch-javacpp/0.3.0/dl-modelrunner-pytorch-javacpp-0.3.0.jar",
-				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.9/javacpp-1.5.9-linux-x86_64.jar",
-				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.8/javacpp-1.5.8.jar",
-				"https://repo1.maven.org/maven2/org/bytedeco/pytorch-platform/2.0.1-1.5.9/pytorch-platform-2.0.1-1.5.9.jar",
-				"https://repo1.maven.org/maven2/org/bytedeco/javacpp-platform/1.5.9/javacpp-platform-1.5.9.jar",
-				"https://repo1.maven.org/maven2/org/bytedeco/openblas-platform/0.3.23-1.5.9/openblas-platform-0.3.23-1.5.9.jar",
-				"https://repo1.maven.org/maven2/org/bytedeco/openblas/0.3.21-1.5.8/openblas-0.3.21-1.5.8.jar",
-				"https://repo1.maven.org/maven2/org/bytedeco/openblas/0.3.23-1.5.9/openblas-0.3.23-1.5.9-linux-x86_64.jar",
-				"https://repo1.maven.org/maven2/org/bytedeco/pytorch/2.0.1-1.5.9/pytorch-2.0.1-1.5.9.jar",
-				"https://repo1.maven.org/maven2/org/bytedeco/pytorch/2.0.1-1.5.9/pytorch-2.0.1-1.5.9-linux-x86_64.jar",
-				"https://repo1.maven.org/maven2/org/bytedeco/mkl/2023.1-1.5.9/mkl-2023.1-1.5.9.jar",
-				"https://repo1.maven.org/maven2/org/bytedeco/mkl/2023.1-1.5.9/mkl-2023.1-1.5.9-linux-x86_64-redist.jar",
-				"https://repo1.maven.org/maven2/org/bytedeco/mkl/2023.1-1.5.9/mkl-2023.1-1.5.9-linux-x86_64.jar",
-				"https://repo1.maven.org/maven2/org/bytedeco/mkl-platform/2023.1-1.5.9/mkl-platform-2023.1-1.5.9.jar",
-				"https://repo1.maven.org/maven2/org/bytedeco/mkl-platform-redist/2023.1-1.5.9/mkl-platform-redist-2023.1-1.5.9.jar"
+				"https://repo1.maven.org/maven2/ai/djl/pytorch/pytorch-jni/2.0.0-0.22.1/pytorch-jni-2.0.0-0.22.1.jar",
+				"https://repo1.maven.org/maven2/ai/djl/pytorch/pytorch-engine/0.22.1/pytorch-engine-0.22.1.jar",
+				"https://repo1.maven.org/maven2/ai/djl/api/0.22.1/api-0.22.1.jar",
+				"https://maven.scijava.org/content/repositories/releases/io/bioimage/dl-modelrunner-pytorch/0.3.0/dl-modelrunner-pytorch-0.3.0.jar",
+				"https://repo1.maven.org/maven2/net/java/dev/jna/jna/5.13.0/jna-5.13.0.jar",
+				"https://repo1.maven.org/maven2/org/apache/commons/commons-compress/1.22/commons-compress-1.22.jar",
+				"https://repo1.maven.org/maven2/org/slf4j/slf4j-api/2.0.6/slf4j-api-2.0.6.jar"	
 			]
 		},
 		{
@@ -882,54 +836,13 @@
 			"cpu": true,
 			"rosetta": false,
 			"jars": [
-				"https://maven.scijava.org/content/repositories/releases/io/bioimage/dl-modelrunner-pytorch-javacpp/0.3.0/dl-modelrunner-pytorch-javacpp-0.3.0.jar",
-				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.9/javacpp-1.5.9-windows-x86_64.jar",
-				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.8/javacpp-1.5.8.jar",
-				"https://repo1.maven.org/maven2/org/bytedeco/pytorch-platform/2.0.1-1.5.9/pytorch-platform-2.0.1-1.5.9.jar",
-				"https://repo1.maven.org/maven2/org/bytedeco/javacpp-platform/1.5.9/javacpp-platform-1.5.9.jar",
-				"https://repo1.maven.org/maven2/org/bytedeco/openblas-platform/0.3.23-1.5.9/openblas-platform-0.3.23-1.5.9.jar",
-				"https://repo1.maven.org/maven2/org/bytedeco/openblas/0.3.21-1.5.8/openblas-0.3.21-1.5.8.jar",
-				"https://repo1.maven.org/maven2/org/bytedeco/openblas/0.3.23-1.5.9/openblas-0.3.23-1.5.9-windows-x86_64.jar",
-				"https://repo1.maven.org/maven2/org/bytedeco/pytorch/2.0.1-1.5.9/pytorch-2.0.1-1.5.9.jar",
-				"https://repo1.maven.org/maven2/org/bytedeco/pytorch/2.0.1-1.5.9/pytorch-2.0.1-1.5.9-windows-x86_64.jar",
-				"https://repo1.maven.org/maven2/org/bytedeco/mkl/2023.1-1.5.9/mkl-2023.1-1.5.9-windows-x86_64-redist.jar",
-				"https://repo1.maven.org/maven2/org/bytedeco/mkl/2023.1-1.5.9/mkl-2023.1-1.5.9-windows-x86_64.jar",
-				"https://repo1.maven.org/maven2/org/bytedeco/mkl/2023.1-1.5.9/mkl-2023.1-1.5.9.jar",
-				"https://repo1.maven.org/maven2/org/bytedeco/mkl-platform/2023.1-1.5.9/mkl-platform-2023.1-1.5.9.jar",
-				"https://repo1.maven.org/maven2/org/bytedeco/mkl-platform-redist/2023.1-1.5.9/mkl-platform-redist-2023.1-1.5.9.jar",
-				"https://repo1.maven.org/maven2/org/bytedeco/pytorch/2.0.1-1.5.9/pytorch-2.0.1-1.5.9-windows-x86_64-gpu.jar",
-				"https://repo1.maven.org/maven2/org/bytedeco/pytorch-platform-gpu/2.0.1-1.5.9/pytorch-platform-gpu-2.0.1-1.5.9.jar",
-				"https://repo1.maven.org/maven2/org/bytedeco/cuda/11.8-8.6-1.5.8/cuda-11.8-8.6-1.5.8.jar",
-				"https://repo1.maven.org/maven2/org/bytedeco/cuda/11.8-8.6-1.5.8/cuda-11.8-8.6-1.5.8-windows-x86_64-redist.jar",
-				"https://repo1.maven.org/maven2/org/bytedeco/cuda/11.8-8.6-1.5.8/cuda-11.8-8.6-1.5.8-windows-x86_64.jar",
-				"https://repo1.maven.org/maven2/org/bytedeco/cuda-platform/11.8-8.6-1.5.8/cuda-platform-11.8-8.6-1.5.8.jar",
-				"https://repo1.maven.org/maven2/org/bytedeco/cuda-platform-redist/11.8-8.6-1.5.8/cuda-platform-redist-11.8-8.6-1.5.8.jar"
-			]
-		},
-		{
-			"engine": "pytorch",
-			"version": "2.0.0",
-			"pythonVersion": "2.0.0",
-			"os": "windows-x86_64",
-			"gpu": false,
-			"cpu": true,
-			"rosetta": false,
-			"jars": [
-				"https://maven.scijava.org/content/repositories/releases/io/bioimage/dl-modelrunner-pytorch-javacpp/0.3.0/dl-modelrunner-pytorch-javacpp-0.3.0.jar",
-				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.9/javacpp-1.5.9-windows-x86_64.jar",
-				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.8/javacpp-1.5.8.jar",
-				"https://repo1.maven.org/maven2/org/bytedeco/pytorch-platform/2.0.1-1.5.9/pytorch-platform-2.0.1-1.5.9.jar",
-				"https://repo1.maven.org/maven2/org/bytedeco/javacpp-platform/1.5.9/javacpp-platform-1.5.9.jar",
-				"https://repo1.maven.org/maven2/org/bytedeco/openblas-platform/0.3.23-1.5.9/openblas-platform-0.3.23-1.5.9.jar",
-				"https://repo1.maven.org/maven2/org/bytedeco/openblas/0.3.21-1.5.8/openblas-0.3.21-1.5.8.jar",
-				"https://repo1.maven.org/maven2/org/bytedeco/openblas/0.3.23-1.5.9/openblas-0.3.23-1.5.9-windows-x86_64.jar",
-				"https://repo1.maven.org/maven2/org/bytedeco/pytorch/2.0.1-1.5.9/pytorch-2.0.1-1.5.9.jar",
-				"https://repo1.maven.org/maven2/org/bytedeco/pytorch/2.0.1-1.5.9/pytorch-2.0.1-1.5.9-windows-x86_64.jar",
-				"https://repo1.maven.org/maven2/org/bytedeco/mkl/2023.1-1.5.9/mkl-2023.1-1.5.9-windows-x86_64-redist.jar",
-				"https://repo1.maven.org/maven2/org/bytedeco/mkl/2023.1-1.5.9/mkl-2023.1-1.5.9-windows-x86_64.jar",
-				"https://repo1.maven.org/maven2/org/bytedeco/mkl/2023.1-1.5.9/mkl-2023.1-1.5.9.jar",
-				"https://repo1.maven.org/maven2/org/bytedeco/mkl-platform/2023.1-1.5.9/mkl-platform-2023.1-1.5.9.jar",
-				"https://repo1.maven.org/maven2/org/bytedeco/mkl-platform-redist/2023.1-1.5.9/mkl-platform-redist-2023.1-1.5.9.jar"
+				"https://repo1.maven.org/maven2/ai/djl/pytorch/pytorch-jni/2.0.0-0.22.1/pytorch-jni-2.0.0-0.22.1.jar",
+				"https://repo1.maven.org/maven2/ai/djl/pytorch/pytorch-engine/0.22.1/pytorch-engine-0.22.1.jar",
+				"https://repo1.maven.org/maven2/ai/djl/api/0.22.1/api-0.22.1.jar",
+				"https://maven.scijava.org/content/repositories/releases/io/bioimage/dl-modelrunner-pytorch/0.3.0/dl-modelrunner-pytorch-0.3.0.jar",
+				"https://repo1.maven.org/maven2/net/java/dev/jna/jna/5.13.0/jna-5.13.0.jar",
+				"https://repo1.maven.org/maven2/org/apache/commons/commons-compress/1.22/commons-compress-1.22.jar",
+				"https://repo1.maven.org/maven2/org/slf4j/slf4j-api/2.0.6/slf4j-api-2.0.6.jar"	
 			]
 		},
 		{
@@ -986,12 +899,7 @@
 				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.8/javacpp-1.5.8.jar",
 				"https://repo1.maven.org/maven2/org/bytedeco/openblas-platform/0.3.23-1.5.9/openblas-platform-0.3.23-1.5.9.jar",
 				"https://repo1.maven.org/maven2/org/bytedeco/openblas/0.3.21-1.5.8/openblas-0.3.21-1.5.8.jar",
-				"https://repo1.maven.org/maven2/org/bytedeco/openblas/0.3.23-1.5.9/openblas-0.3.23-1.5.9-macosx-x86_64.jar",
-				"https://repo1.maven.org/maven2/org/bytedeco/mkl/2023.1-1.5.9/mkl-2023.1-1.5.9-macosx-x86_64-redist.jar",
-				"https://repo1.maven.org/maven2/org/bytedeco/mkl/2023.1-1.5.9/mkl-2023.1-1.5.9-macosx-x86_64.jar",
-				"https://repo1.maven.org/maven2/org/bytedeco/mkl/2023.1-1.5.9/mkl-2023.1-1.5.9.jar",
-				"https://repo1.maven.org/maven2/org/bytedeco/mkl-platform/2023.1-1.5.9/mkl-platform-2023.1-1.5.9.jar",
-				"https://repo1.maven.org/maven2/org/bytedeco/mkl-platform-redist/2023.1-1.5.9/mkl-platform-redist-2023.1-1.5.9.jar"
+				"https://repo1.maven.org/maven2/org/bytedeco/openblas/0.3.23-1.5.9/openblas-0.3.23-1.5.9-macosx-x86_64.jar"
 			]
 		},
 		{
@@ -1088,12 +996,7 @@
 				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.8/javacpp-1.5.8.jar",
 				"https://repo1.maven.org/maven2/org/bytedeco/openblas-platform/0.3.23-1.5.9/openblas-platform-0.3.23-1.5.9.jar",
 				"https://repo1.maven.org/maven2/org/bytedeco/openblas/0.3.21-1.5.8/openblas-0.3.21-1.5.8.jar",
-				"https://repo1.maven.org/maven2/org/bytedeco/openblas/0.3.23-1.5.9/openblas-0.3.23-1.5.9-macosx-x86_64.jar",
-				"https://repo1.maven.org/maven2/org/bytedeco/mkl/2023.1-1.5.9/mkl-2023.1-1.5.9-macosx-x86_64-redist.jar",
-				"https://repo1.maven.org/maven2/org/bytedeco/mkl/2023.1-1.5.9/mkl-2023.1-1.5.9-macosx-x86_64.jar",
-				"https://repo1.maven.org/maven2/org/bytedeco/mkl/2023.1-1.5.9/mkl-2023.1-1.5.9.jar",
-				"https://repo1.maven.org/maven2/org/bytedeco/mkl-platform/2023.1-1.5.9/mkl-platform-2023.1-1.5.9.jar",
-				"https://repo1.maven.org/maven2/org/bytedeco/mkl-platform-redist/2023.1-1.5.9/mkl-platform-redist-2023.1-1.5.9.jar"
+				"https://repo1.maven.org/maven2/org/bytedeco/openblas/0.3.23-1.5.9/openblas-0.3.23-1.5.9-macosx-x86_64.jar"
 			]
 		},
 		{
@@ -2301,84 +2204,6 @@
 		},
 		{
 			"engine": "onnx",
-			"version": "1.7.0",
-			"pythonVersion": "12",
-			"os": "linux-x86_64",
-			"gpu": true,
-			"cpu": true,
-			"rosetta": true,
-			"jars": [
-				"https://repo1.maven.org/maven2/com/microsoft/onnxruntime/onnxruntime_gpu/1.7.0/onnxruntime_gpu-1.7.0.jar",
-				"https://maven.scijava.org/content/repositories/releases/io/bioimage/dl-modelrunner-onnx/0.3.1/dl-modelrunner-onnx-0.3.1.jar"
-			]
-		},
-		{
-			"engine": "onnx",
-			"version": "1.6.0",
-			"pythonVersion": "11",
-			"os": "linux-x86_64",
-			"gpu": true,
-			"cpu": true,
-			"rosetta": true,
-			"jars": [
-				"https://repo1.maven.org/maven2/com/microsoft/onnxruntime/onnxruntime_gpu/1.6.0/onnxruntime_gpu-1.6.0.jar",
-				"https://maven.scijava.org/content/repositories/releases/io/bioimage/dl-modelrunner-onnx/0.3.1/dl-modelrunner-onnx-0.3.1.jar"
-			]
-		},
-		{
-			"engine": "onnx",
-			"version": "1.5.2",
-			"pythonVersion": "10",
-			"os": "linux-x86_64",
-			"gpu": true,
-			"cpu": true,
-			"rosetta": true,
-			"jars": [
-				"https://repo1.maven.org/maven2/com/microsoft/onnxruntime/onnxruntime_gpu/1.5.2/onnxruntime_gpu-1.5.2.jar",
-				"https://maven.scijava.org/content/repositories/releases/io/bioimage/dl-modelrunner-onnx/0.3.1/dl-modelrunner-onnx-0.3.1.jar"
-			]
-		},
-		{
-			"engine": "onnx",
-			"version": "1.5.1",
-			"pythonVersion": "10",
-			"os": "linux-x86_64",
-			"gpu": true,
-			"cpu": true,
-			"rosetta": true,
-			"jars": [
-				"https://repo1.maven.org/maven2/com/microsoft/onnxruntime/onnxruntime_gpu/1.5.1/onnxruntime_gpu-1.5.1.jar",
-				"https://maven.scijava.org/content/repositories/releases/io/bioimage/dl-modelrunner-onnx/0.3.1/dl-modelrunner-onnx-0.3.1.jar"
-			]
-		},
-		{
-			"engine": "onnx",
-			"version": "1.4.0",
-			"pythonVersion": "9",
-			"os": "linux-x86_64",
-			"gpu": true,
-			"cpu": true,
-			"rosetta": true,
-			"jars": [
-				"https://repo1.maven.org/maven2/com/microsoft/onnxruntime/onnxruntime_gpu/1.4.0/onnxruntime_gpu-1.4.0.jar",
-				"https://maven.scijava.org/content/repositories/releases/io/bioimage/dl-modelrunner-onnx/0.3.1/dl-modelrunner-onnx-0.3.1.jar"
-			]
-		},
-		{
-			"engine": "onnx",
-			"version": "1.3.1",
-			"pythonVersion": "8",
-			"os": "linux-x86_64",
-			"gpu": true,
-			"cpu": true,
-			"rosetta": true,
-			"jars": [
-				"https://repo1.maven.org/maven2/com/microsoft/onnxruntime/onnxruntime_gpu/1.3.1/onnxruntime_gpu-1.3.1.jar",
-				"https://maven.scijava.org/content/repositories/releases/io/bioimage/dl-modelrunner-onnx/0.3.1/dl-modelrunner-onnx-0.3.1.jar"
-			]
-		},
-		{
-			"engine": "onnx",
 			"version": "1.13.1",
 			"pythonVersion": "18",
 			"os": "windows-x86_64",
@@ -2465,84 +2290,6 @@
 			"rosetta": false,
 			"jars": [
 				"https://repo1.maven.org/maven2/com/microsoft/onnxruntime/onnxruntime_gpu/1.8.0/onnxruntime_gpu-1.8.0.jar",
-				"https://maven.scijava.org/content/repositories/releases/io/bioimage/dl-modelrunner-onnx/0.3.1/dl-modelrunner-onnx-0.3.1.jar"
-			]
-		},
-		{
-			"engine": "onnx",
-			"version": "1.7.0",
-			"pythonVersion": "12",
-			"os": "windows-x86_64",
-			"gpu": true,
-			"cpu": true,
-			"rosetta": false,
-			"jars": [
-				"https://repo1.maven.org/maven2/com/microsoft/onnxruntime/onnxruntime_gpu/1.7.0/onnxruntime_gpu-1.7.0.jar",
-				"https://maven.scijava.org/content/repositories/releases/io/bioimage/dl-modelrunner-onnx/0.3.1/dl-modelrunner-onnx-0.3.1.jar"
-			]
-		},
-		{
-			"engine": "onnx",
-			"version": "1.6.0",
-			"pythonVersion": "11",
-			"os": "windows-x86_64",
-			"gpu": true,
-			"cpu": true,
-			"rosetta": false,
-			"jars": [
-				"https://repo1.maven.org/maven2/com/microsoft/onnxruntime/onnxruntime_gpu/1.6.0/onnxruntime_gpu-1.6.0.jar",
-				"https://maven.scijava.org/content/repositories/releases/io/bioimage/dl-modelrunner-onnx/0.3.1/dl-modelrunner-onnx-0.3.1.jar"
-			]
-		},
-		{
-			"engine": "onnx",
-			"version": "1.5.2",
-			"pythonVersion": "10",
-			"os": "windows-x86_64",
-			"gpu": true,
-			"cpu": true,
-			"rosetta": false,
-			"jars": [
-				"https://repo1.maven.org/maven2/com/microsoft/onnxruntime/onnxruntime_gpu/1.5.2/onnxruntime_gpu-1.5.2.jar",
-				"https://maven.scijava.org/content/repositories/releases/io/bioimage/dl-modelrunner-onnx/0.3.1/dl-modelrunner-onnx-0.3.1.jar"
-			]
-		},
-		{
-			"engine": "onnx",
-			"version": "1.5.1",
-			"pythonVersion": "10",
-			"os": "windows-x86_64",
-			"gpu": true,
-			"cpu": true,
-			"rosetta": false,
-			"jars": [
-				"https://repo1.maven.org/maven2/com/microsoft/onnxruntime/onnxruntime_gpu/1.5.1/onnxruntime_gpu-1.5.1.jar",
-				"https://maven.scijava.org/content/repositories/releases/io/bioimage/dl-modelrunner-onnx/0.3.1/dl-modelrunner-onnx-0.3.1.jar"
-			]
-		},
-		{
-			"engine": "onnx",
-			"version": "1.4.0",
-			"pythonVersion": "9",
-			"os": "windows-x86_64",
-			"gpu": true,
-			"cpu": true,
-			"rosetta": false,
-			"jars": [
-				"https://repo1.maven.org/maven2/com/microsoft/onnxruntime/onnxruntime_gpu/1.4.0/onnxruntime_gpu-1.4.0.jar",
-				"https://maven.scijava.org/content/repositories/releases/io/bioimage/dl-modelrunner-onnx/0.3.1/dl-modelrunner-onnx-0.3.1.jar"
-			]
-		},
-		{
-			"engine": "onnx",
-			"version": "1.3.1",
-			"pythonVersion": "8",
-			"os": "windows-x86_64",
-			"gpu": true,
-			"cpu": true,
-			"rosetta": false,
-			"jars": [
-				"https://repo1.maven.org/maven2/com/microsoft/onnxruntime/onnxruntime_gpu/1.3.1/onnxruntime_gpu-1.3.1.jar",
 				"https://maven.scijava.org/content/repositories/releases/io/bioimage/dl-modelrunner-onnx/0.3.1/dl-modelrunner-onnx-0.3.1.jar"
 			]
 		}
