@@ -100,6 +100,17 @@ public class EngineInfo
 	 * </pre>
 	 */
 	private String jarsDirectory;
+	
+	/**
+	 * Error message that will be thrown if the user tries to load an engine that cannot
+	 * be loaded together with the engines that are already loaded
+	 */
+	 private static final String ENGINE_ERR = "The program will not be able to load '%s %s' because another "
+	 		+ "version (%s) of the same framework has already been loaded." + System.lineSeparator()
+            + "If loading the wanted version (%s) is strictly necessary, please "
+            + "restart the JVM. However, if the previously loaded version (%s) "
+            + "can be used, " + System.lineSeparator()
+            + "please call EngineInfo.defineCompatibleDLEngine(...) to avoid restarting.";
 
 	/**
 	 * If the JARs directory is not going to change during the execution of the
@@ -226,19 +237,25 @@ public class EngineInfo
 		boolean ptLoaded = EngineLoader.getLoadedVersions().keySet().stream()
 				.filter(en -> en.startsWith(PYTORCH_ENGINE_NAME) && !en.equals(versionedEngine))
 				.findFirst().orElse(null) != null;
-		if (onnxLoaded || ptLoaded
-				|| (!engine.equals(TENSORFLOW_ENGINE_NAME)  
+		if (onnxLoaded) {
+			String confV = EngineLoader.getLoadedVersions().keySet().stream()
+					.filter(en -> en.startsWith(ONNX_ENGINE_NAME) && !en.equals(versionedEngine))
+					.findFirst().get();
+			throw new IllegalArgumentException(
+					String.format(ENGINE_ERR, engine, version, confV, version, confV));
+		} else if (ptLoaded) {
+			String confV = EngineLoader.getLoadedVersions().keySet().stream()
+					.filter(en -> en.startsWith(ONNX_ENGINE_NAME) && !en.equals(versionedEngine))
+					.findFirst().get();
+			throw new IllegalArgumentException(
+					String.format(ENGINE_ERR, engine, version, confV, version, confV));
+		} else if (!engine.equals(TENSORFLOW_ENGINE_NAME)  
 					&& EngineLoader.getLoadedVersions().get(versionedEngine) != null
-					&& !EngineLoader.getLoadedVersions().get(versionedEngine).equals(version)))
-			throw new IllegalArgumentException("The program will not be able to load "
-					+ "'" + engine + " " + version + "' because another version (" 
-					+ EngineLoader.getLoadedVersions().get(versionedEngine).equals(version) + ") "
-					+ "of the same framework has already been loaded." + System.lineSeparator()
-					+ "If loading the wanted version (" + version + ") is strictly necessary "
-					+ "please restart the JVM, however, if the previously loaded version "
-					+ "(" + EngineLoader.getLoadedVersions().get(versionedEngine).equals(version)
-					+ ") can be used please call EngineInfo.defineCompatibleDLEngine(...) "
-					+ "to avoid restarting.");
+					&& !EngineLoader.getLoadedVersions().get(versionedEngine).equals(version)) {
+			throw new IllegalArgumentException(String.format(ENGINE_ERR, engine, version, 
+					EngineLoader.getLoadedVersions().get(versionedEngine), version, 
+					EngineLoader.getLoadedVersions().get(versionedEngine)));
+		}
 	}
 
 	/**
@@ -263,8 +280,10 @@ public class EngineInfo
 	 *            launch the corresponding engine are located
 	 * @return an object containing all the information needed to launch a Deep
 	 *         learning framework or null if the wanted version engine is not installed
+	 * @throws IllegalArgumentException if an engine that cannot be loaded together with the wanted engine
+	 * 	has already been loaded
 	 */
-	public static EngineInfo defineDLEngine( String engine, String version, String jarsDirectory )
+	public static EngineInfo defineDLEngine( String engine, String version, String jarsDirectory ) throws IllegalArgumentException
 	{	
 		if (AvailableEngines.modelRunnerToBioimageioKeysMap().keySet().contains(engine))
 			engine = AvailableEngines.modelRunnerToBioimageioKeysMap().get(engine);
@@ -316,8 +335,11 @@ public class EngineInfo
 	 *            launch the corresponding engine are located
 	 * @return an object containing all the information needed to launch a Deep
 	 *         learning framework or null if the wanted version engine is not installed
+	 * @throws IllegalArgumentException if an engine that cannot be loaded together with the wanted engine
+	 * 	has already been loaded
 	 */
 	public static EngineInfo defineDLEngine( String engine, String version, boolean gpu, String jarsDirectory )
+												throws IllegalArgumentException
 	{
 		if (AvailableEngines.modelRunnerToBioimageioKeysMap().keySet().contains(engine))
 			engine = AvailableEngines.modelRunnerToBioimageioKeysMap().get(engine);
@@ -329,12 +351,7 @@ public class EngineInfo
 		boolean cpu = false;
 		if (vs.stream().filter(v -> v.getCPU()).collect(Collectors.toList()).size() > 0) 
 			cpu = true;
-		try {
-			return defineDLEngine( engine, version, cpu, gpu, jarsDirectory );
-		} catch (IllegalArgumentException ex) {
-			ex.printStackTrace();
-			return null;
-		}
+		return defineDLEngine( engine, version, cpu, gpu, jarsDirectory );
 	}
 
 	/**
@@ -360,9 +377,11 @@ public class EngineInfo
 	 *            launch the corresponding engine are located
 	 * @return an object containing all the information needed to launch a Deep
 	 *         learning framework or null if the wanted version engine is not installed
+	 * @throws IllegalArgumentException if an engine that cannot be loaded together with the wanted engine
+	 * 	has already been loaded
 	 */
 	public static EngineInfo defineDLEngine( String engine, String version, boolean cpu,
-			boolean gpu, String jarsDirectory )
+			boolean gpu, String jarsDirectory ) throws IllegalArgumentException
 	{
 		if (AvailableEngines.modelRunnerToBioimageioKeysMap().keySet().contains(engine))
 			engine = AvailableEngines.modelRunnerToBioimageioKeysMap().get(engine);
@@ -371,15 +390,10 @@ public class EngineInfo
 				InstalledEngines.checkEngineWithArgsInstalled(engine, version, cpu, gpu, rosetta, jarsDirectory);
 		if (vvs.size() == 0)
 			return null;
-		try {
-			EngineInfo engineInfo = new EngineInfo(engine, version, jarsDirectory);
-			engineInfo.cpu = cpu;
-			engineInfo.gpu = gpu;
-			return engineInfo;
-		} catch (IllegalArgumentException ex) {
-			ex.printStackTrace();
-			return null;
-		}
+		EngineInfo engineInfo = new EngineInfo(engine, version, jarsDirectory);
+		engineInfo.cpu = cpu;
+		engineInfo.gpu = gpu;
+		return engineInfo;
 	}
 
 	/**
@@ -401,18 +415,15 @@ public class EngineInfo
 	 *            version of the training Deep Learning framework (engine)
 	 * @return an object containing all the information needed to launch a Deep
 	 *         learning framework or null if the wanted version engine is not installed
+	 * @throws IllegalArgumentException if an engine that cannot be loaded together with the wanted engine
+	 * 	has already been loaded
 	 */
-	public static EngineInfo defineDLEngine( String engine, String version )
+	public static EngineInfo defineDLEngine( String engine, String version ) throws IllegalArgumentException
 	{
 		if (AvailableEngines.modelRunnerToBioimageioKeysMap().keySet().contains(engine))
 			engine = AvailableEngines.modelRunnerToBioimageioKeysMap().get(engine);
 		Objects.requireNonNull( STATIC_JARS_DIRECTORY, "The Jars directory should not be null." );
-		try {
-			return defineDLEngine( engine, version, STATIC_JARS_DIRECTORY );
-		} catch (IllegalArgumentException ex) {
-			ex.printStackTrace();
-			return null;
-		}
+		return defineDLEngine( engine, version, STATIC_JARS_DIRECTORY );
 	}
 
 	/**
@@ -436,8 +447,10 @@ public class EngineInfo
 	 *            whether the engine can use GPU or not
 	 * @return an object containing all the information needed to launch a Deep
 	 *         learning framework or null if the wanted version engine is not installed
+	 * @throws IllegalArgumentException if an engine that cannot be loaded together with the wanted engine
+	 * 	has already been loaded
 	 */
-	public static EngineInfo defineDLEngine( String engine, String version, boolean gpu )
+	public static EngineInfo defineDLEngine( String engine, String version, boolean gpu ) throws IllegalArgumentException
 	{
 		if (AvailableEngines.modelRunnerToBioimageioKeysMap().keySet().contains(engine))
 			engine = AvailableEngines.modelRunnerToBioimageioKeysMap().get(engine);
@@ -450,12 +463,7 @@ public class EngineInfo
 		boolean cpu = false;
 		if (vs.stream().filter(v -> v.getCPU()).collect(Collectors.toList()).size() > 0) 
 			cpu = true;
-		try {
-			return defineDLEngine( engine, version, cpu, gpu, STATIC_JARS_DIRECTORY );
-		} catch (IllegalArgumentException ex) {
-			ex.printStackTrace();
-			return null;
-		}
+		return defineDLEngine( engine, version, cpu, gpu, STATIC_JARS_DIRECTORY );
 	}
 
 	/**
@@ -478,18 +486,16 @@ public class EngineInfo
 	 *            whether the engine can use GPU or not
 	 * @return an object containing all the information needed to launch a Deep
 	 *         learning framework or null if the wanted version engine is not installed
+	 * @throws IllegalArgumentException if an engine that cannot be loaded together with the wanted engine
+	 * 	has already been loaded
 	 */
-	public static EngineInfo defineDLEngine( String engine, String version, boolean cpu, boolean gpu )
+	public static EngineInfo defineDLEngine( String engine, String version, 
+			boolean cpu, boolean gpu ) throws IllegalArgumentException
 	{
 		if (AvailableEngines.modelRunnerToBioimageioKeysMap().keySet().contains(engine))
 			engine = AvailableEngines.modelRunnerToBioimageioKeysMap().get(engine);
 		Objects.requireNonNull( STATIC_JARS_DIRECTORY, "The Jars directory should not be null." );
-		try {
-			return defineDLEngine( engine, version, cpu, gpu, STATIC_JARS_DIRECTORY );
-		} catch (IllegalArgumentException ex) {
-			ex.printStackTrace();
-			return null;
-		}
+		return defineDLEngine( engine, version, cpu, gpu, STATIC_JARS_DIRECTORY );
 	}
 
 	/**
@@ -528,9 +534,11 @@ public class EngineInfo
 	 * @return an object containing all the information needed to launch a Deep
 	 *         learning framework or null if the engine of interest is not installed
 	 * @throws IOException if the engines directory does not exist
+	 * @throws IllegalArgumentException if an engine that cannot be loaded together with the wanted engine
+	 * 	has already been loaded
 	 */
 	public static EngineInfo defineCompatibleDLEngine( String engine, String version, 
-			String jarsDirectory ) throws IOException 
+			String jarsDirectory ) throws IOException, IllegalArgumentException 
 	{
 		InstalledEngines manager = InstalledEngines.buildEnginesFinder(jarsDirectory);
 		String compatibleVersion = manager.getMostCompatibleVersionForEngine(engine, version);
@@ -576,9 +584,11 @@ public class EngineInfo
 	 * @return an object containing all the information needed to launch a Deep
 	 *         learning framework or null if the engine of interest is not installed
 	 * @throws IOException if the engines directory does not exist
+	 * @throws IllegalArgumentException if an engine that cannot be loaded together with the wanted engine
+	 * 	has already been loaded
 	 */
 	public static EngineInfo defineCompatibleDLEngine( String engine, String version,
-			boolean cpu, boolean gpu, String jarsDirectory ) throws IOException 
+			boolean cpu, boolean gpu, String jarsDirectory ) throws IOException, IllegalArgumentException
 	{
 		boolean rosetta = new PlatformDetection().isUsingRosseta();
 		List<DeepLearningVersion> possibles = 
@@ -628,9 +638,11 @@ public class EngineInfo
 	 * @return an object containing all the information needed to launch a Deep
 	 *         learning framework or null if the engine of interest is not installed
 	 * @throws IOException if the engines directory does not exist
+	 * @throws IllegalArgumentException if an engine that cannot be loaded together with the wanted engine
+	 * 	has already been loaded
 	 */
 	public static EngineInfo defineCompatibleDLEngineGPU( String engine, String version, 
-			String jarsDirectory ) throws IOException 
+			String jarsDirectory ) throws IOException, IllegalArgumentException
 	{
 		boolean rosetta = new PlatformDetection().isUsingRosseta();
 		List<DeepLearningVersion> possibles = 
@@ -661,8 +673,11 @@ public class EngineInfo
 	 * @return the {@link EngineInfo} object if there are compatible installed engines or null
 	 * 	if they do not exist
 	 * @throws IOException if the engines directory does not exist
+	 * @throws IllegalArgumentException if an engine that cannot be loaded together with the wanted engine
+	 * 	has already been loaded
 	 */
-	public static EngineInfo defineCompatibleDLEngineWithRdfYamlWeights(WeightFormat weight) throws IOException {
+	public static EngineInfo defineCompatibleDLEngineWithRdfYamlWeights(WeightFormat weight) 
+			throws IOException, IllegalArgumentException {
 		return defineCompatibleDLEngineWithRdfYamlWeights(weight, InstalledEngines.getEnginesDir());
 	}
 	
@@ -679,8 +694,11 @@ public class EngineInfo
 	 * @return the {@link EngineInfo} object if there are compatible installed engines or null
 	 * 	if they do not exist
 	 * @throws IOException if the engines directory does not exist
+	 * @throws IllegalArgumentException if an engine that cannot be loaded together with the wanted engine
+	 * 	has already been loaded
 	 */
-	public static EngineInfo defineCompatibleDLEngineWithRdfYamlWeights(WeightFormat weight, String enginesDir) throws IOException {
+	public static EngineInfo defineCompatibleDLEngineWithRdfYamlWeights(WeightFormat weight, 
+			String enginesDir) throws IOException, IllegalArgumentException {
 		String compatibleVersion = null;
 		String engine = weight.getWeightsFormat();
 		String version = weight.getTrainingVersion();
@@ -707,8 +725,11 @@ public class EngineInfo
 	 * @return the {@link EngineInfo} object if there are compatible installed engines or null
 	 * 	if they do not exist
 	 * @throws IOException if the engines directory does not exist
+	 * @throws IllegalArgumentException if an engine that cannot be loaded together with the wanted engine
+	 * 	has already been loaded
 	 */
-	public static EngineInfo defineExactDLEngineWithRdfYamlWeights(WeightFormat weight) throws IOException {
+	public static EngineInfo defineExactDLEngineWithRdfYamlWeights(WeightFormat weight)
+			throws IOException, IllegalArgumentException {
 		return defineExactDLEngineWithRdfYamlWeights(weight, InstalledEngines.getEnginesDir());
 	}
 	
@@ -726,8 +747,11 @@ public class EngineInfo
 	 * @return the {@link EngineInfo} object if there are compatible installed engines or null
 	 * 	if they do not exist
 	 * @throws IOException if the engines directory does not exist
+	 * @throws IllegalArgumentException if an engine that cannot be loaded together with the wanted engine
+	 * 	has already been loaded
 	 */
-	public static EngineInfo defineExactDLEngineWithRdfYamlWeights(WeightFormat weight, String enginesDir) throws IOException {
+	public static EngineInfo defineExactDLEngineWithRdfYamlWeights(WeightFormat weight,
+			String enginesDir) throws IOException, IllegalArgumentException {
 		String engine = weight.getWeightsFormat();
 		String version = weight.getTrainingVersion();
 		InstalledEngines manager = InstalledEngines.buildEnginesFinder(enginesDir);
@@ -737,11 +761,7 @@ public class EngineInfo
 		if (vv.size() == 0)
 			return null;
 		boolean gpu = vv.stream().filter(v -> v.getGPU()).findFirst().orElse(null) != null;
-		try {
-			return EngineInfo.defineDLEngine(engine, version, true, gpu, enginesDir);
-		} catch (IllegalArgumentException ex) {
-			return null;
-		}
+		return EngineInfo.defineDLEngine(engine, version, true, gpu, enginesDir);
 	}
 
 	/**
