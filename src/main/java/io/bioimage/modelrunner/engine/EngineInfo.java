@@ -221,10 +221,10 @@ public class EngineInfo
 	private void checkEngineAreadyLoaded() throws IllegalArgumentException {
 		String versionedEngine = this.engine + this.getMajorVersion();
 		boolean onnxLoaded = EngineLoader.getLoadedVersions().keySet().stream()
-				.filter(en -> en.startsWith(ONNX_ENGINE_NAME))
+				.filter(en -> en.startsWith(ONNX_ENGINE_NAME) && !en.equals(versionedEngine))
 				.findFirst().orElse(null) != null;
 		boolean ptLoaded = EngineLoader.getLoadedVersions().keySet().stream()
-				.filter(en -> en.startsWith(PYTORCH_ENGINE_NAME))
+				.filter(en -> en.startsWith(PYTORCH_ENGINE_NAME) && !en.equals(versionedEngine))
 				.findFirst().orElse(null) != null;
 		if (onnxLoaded || ptLoaded
 				|| (!engine.equals(TENSORFLOW_ENGINE_NAME)  
