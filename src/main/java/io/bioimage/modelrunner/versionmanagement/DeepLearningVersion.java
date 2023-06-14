@@ -20,10 +20,12 @@
 package io.bioimage.modelrunner.versionmanagement;
 
 import java.io.File;
+import java.net.MalformedURLException;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import io.bioimage.modelrunner.bioimageio.download.DownloadModel;
 import io.bioimage.modelrunner.utils.Constants;
 
 
@@ -307,8 +309,14 @@ public class DeepLearningVersion
      * GEt the list of JArs but only containing the string corresponding to the file name
      * @return list of strings representing the names of the JARs
      */
-    public List<String> getJarsFileNames(){
-    	return jars.stream().filter(jar -> jar != null && !jar.contains("zenodo")).map(jar -> jar.substring(jar.lastIndexOf("/") + 1)).collect(Collectors.toList());
+    public List<String> getJarsFileNames() {
+    	return jars.stream().map(jar -> {
+			try {
+				return DownloadModel.getFileNameFromURLString(jar);
+			} catch (MalformedURLException e) {
+				return jar;
+			}
+		}).collect(Collectors.toList());
     }
 
     /**
