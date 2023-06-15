@@ -238,19 +238,18 @@ public class EngineInfo
 				.filter(en -> en.startsWith(PYTORCH_ENGINE_NAME) && !en.equals(versionedEngine))
 				.findFirst().orElse(null) != null;
 		if (onnxLoaded) {
-			String confV = EngineLoader.getLoadedVersions().keySet().stream()
-					.filter(en -> en.startsWith(ONNX_ENGINE_NAME) && !en.equals(versionedEngine))
-					.findFirst().get();
+			String confV = EngineLoader.getLoadedVersions().entrySet().stream()
+					.filter(en -> en.getKey().startsWith(ONNX_ENGINE_NAME) && !en.getKey().equals(versionedEngine))
+					.map(en -> en.getValue()).findFirst().get();
 			throw new IllegalArgumentException(
 					String.format(ENGINE_ERR, engine, version, confV, version, confV));
 		} else if (ptLoaded) {
-			String confV = EngineLoader.getLoadedVersions().keySet().stream()
-					.filter(en -> en.startsWith(ONNX_ENGINE_NAME) && !en.equals(versionedEngine))
-					.findFirst().get();
+			String confV = EngineLoader.getLoadedVersions().entrySet().stream()
+					.filter(en -> en.getKey().startsWith(PYTORCH_ENGINE_NAME) && !en.getKey().equals(versionedEngine))
+					.map(en -> en.getValue()).findFirst().get();
 			throw new IllegalArgumentException(
 					String.format(ENGINE_ERR, engine, version, confV, version, confV));
-		} else if (!engine.equals(TENSORFLOW_ENGINE_NAME)  
-					&& EngineLoader.getLoadedVersions().get(versionedEngine) != null
+		} else if (EngineLoader.getLoadedVersions().get(versionedEngine) != null
 					&& !EngineLoader.getLoadedVersions().get(versionedEngine).equals(version)) {
 			throw new IllegalArgumentException(String.format(ENGINE_ERR, engine, version, 
 					EngineLoader.getLoadedVersions().get(versionedEngine), version, 
