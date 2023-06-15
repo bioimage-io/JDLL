@@ -11,7 +11,7 @@
 
 	<groupId>io.bioimage</groupId>
 	<artifactId>dl-modelrunner</artifactId>
-	<version>0.3.10-SNAPSHOT</version>
+	<version>0.3.11-SNAPSHOT</version>
 
 	<name>Deep learning model runner</name>
 	<description>Use deep learning frameworks from Java in an agnostic and isolated way.</description>
