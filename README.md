@@ -341,3 +341,17 @@ model.runModel(inputTensors, outputTensors);
 This library was initially developed by the Icy team following the development of the DeepImageJ project. 
 We acknowledge the financial support of France-Bioimaging.
 We also acknowledge the AI for Life consortium that supported a hackathon in Milan (February 2023) during which we received feedback and advices from an excellent community.
+
+## References
+* If you used one of the material provided within JDLL, please consider citing their authors' work. 
+* [C. García-López-de-Haro, S. Dallongeville, T. Musset, E. Gomez de Mariscal, D. Sage, W. Ouyang, A. Munoz-Barrutia, J. Tinevez, J. Olivo-Marin,
+*JDLL: A library to run Deep Learning models on Java bioimage informatics platforms*, arXiv preprint arXiv:2306.04796 (2023).](https://arxiv.org/abs/2306.04796)
+
+```bibtex
+@article{de2023jdll,
+  title={JDLL: A library to run Deep Learning models on Java bioimage informatics platforms},
+  author={de Haro, Carlos Garcia Lopez and Dallongeville, Stephane and Musset, Thomas and de Mariscal, Estibaliz Gomez and Sage, Daniel and Ouyang, Wei and Munoz-Barrutia, Arrate and Tinevez, Jean-Yves and Olivo-Marin, Jean-Christophe},
+  journal={arXiv preprint arXiv:2306.04796},
+  year={2023}
+}
+```
