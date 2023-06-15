@@ -11,7 +11,7 @@
 
 	<groupId>io.bioimage</groupId>
 	<artifactId>dl-modelrunner</artifactId>
-	<version>0.3.10-SNAPSHOT</version>
+	<version>0.3.10</version>
 
 	<name>Deep learning model runner</name>
 	<description>Use deep learning frameworks from Java in an agnostic and isolated way.</description>
@@ -90,7 +90,7 @@
 	<scm>
 		<connection>scm:git:https://github.com/bioimage-io/JDLL</connection>
 		<developerConnection>scm:git:git@github.com:bioimage-io/JDLL</developerConnection>
-		<tag>HEAD</tag>
+		<tag>dl-modelrunner-0.3.10</tag>
 		<url>https://github.com/bioimage-io/JDLL</url>
 	</scm>
 	<issueManagement>
