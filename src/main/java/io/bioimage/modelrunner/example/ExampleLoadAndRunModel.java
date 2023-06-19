@@ -64,7 +64,7 @@ public class ExampleLoadAndRunModel {
 		// Tag for the DL framework (engine) that wants to be used
 		String engine = "torchscript";
 		// Version of the engine
-		String engineVersion = "1.11.0";
+		String engineVersion = "1.13.1";
 		// Directory where all the engines are stored
 		String enginesDir = ENGINES_DIR;
 		// Path to the model folder
@@ -75,7 +75,7 @@ public class ExampleLoadAndRunModel {
 		// Whether the engine is supported by CPu or not
 		boolean cpu = true;
 		// Whether the engine is supported by GPU or not
-		boolean gpu = false;
+		boolean gpu = true;
 		// Create the EngineInfo object. It is needed to load the wanted DL framework
 		// among all the installed ones. The EngineInfo loads the corresponding engine by looking
 		// at the enginesDir at searching for the folder that is named satisfying the characteristics specified.
