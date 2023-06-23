@@ -192,8 +192,6 @@ public class EngineLoader extends ClassLoader
 		{
 			if (!ff.getName().endsWith(".jar") || !dlv.doesJarBelongToEngine(ff.getAbsolutePath()))
 					continue;
-			if (ff.getName().matches("jna-5\\.[A-Za-z0-9]+\\.[A-Za-z0-9]+\\.jar"))
-				checkJNA();
 				
 			urlList.add(ff.toURI().toURL());
 		}
@@ -321,7 +319,7 @@ public class EngineLoader extends ClassLoader
 			}
 		}
 		catch (Exception ex) {
-			errMsg = ex.getCause().toString();
+			errMsg = ex.toString();
 		}
 		// As no interface has been found create an exception
 		throw new LoadEngineException( new File( this.enginePath ), errMsg );
