@@ -60,8 +60,8 @@ public class ParentLastURLClassLoader extends URLClassLoader {
      * @param parent
      * 	parent classloader
      */
-		public ParentLastURLClassLoader(URL[] classpath, ClassLoader parent) {
-			super(classpath, null);
+		public ParentLastURLClassLoader(URL[] urls, ClassLoader parent) {
+			super(urls, null);
 			helper = parent;
 		}
 
@@ -201,7 +201,9 @@ public class ParentLastURLClassLoader extends URLClassLoader {
 	    /**
 	     * REturn the resource specified by the name.
 	     * The child resource has a bigger priority
-	     * 
+	     * @param name
+	     * 	name of the resource
+	     * @return input stream containing teh resource
 	     */
 		public InputStream getResourceAsStream(String name) {
 			URL url = getResource(name);
