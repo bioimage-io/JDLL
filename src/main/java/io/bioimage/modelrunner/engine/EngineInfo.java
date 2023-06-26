@@ -289,8 +289,12 @@ public class EngineInfo
 		boolean rosetta = new PlatformDetection().isUsingRosseta();
 		List<DeepLearningVersion> vs = 
 				InstalledEngines.checkEngineWithArgsInstalled(engine, version, null, null, rosetta, jarsDirectory);
-		if (vs.size() == 0)
-			return null;
+		if (vs.size() == 0) {
+			String jV = SupportedVersions.getJavaVersionForPythonVersion(engine, version);
+			if (jV == null)
+				return null;
+			return defineDLEngineWithJavaVersion(engine, jV, null, null, jarsDirectory);
+		}
 		boolean cpu = false;
 		boolean gpu = false;
 		if (vs.stream().filter(v -> v.getCPU() && v.getGPU()).collect(Collectors.toList()).size() > 0) {
@@ -345,8 +349,12 @@ public class EngineInfo
 		boolean rosetta = new PlatformDetection().isUsingRosseta();
 		List<DeepLearningVersion> vs = 
 				InstalledEngines.checkEngineWithArgsInstalled(engine, version, null, gpu, rosetta, jarsDirectory);
-		if (vs.size() == 0)
-			return null;
+		if (vs.size() == 0) {
+			String jV = SupportedVersions.getJavaVersionForPythonVersion(engine, version);
+			if (jV == null)
+				return null;
+			return defineDLEngineWithJavaVersion(engine, jV, null, gpu, jarsDirectory);
+		}
 		boolean cpu = false;
 		if (vs.stream().filter(v -> v.getCPU()).collect(Collectors.toList()).size() > 0) 
 			cpu = true;
@@ -387,17 +395,13 @@ public class EngineInfo
 		boolean rosetta = new PlatformDetection().isUsingRosseta();
 		List<DeepLearningVersion> vvs =
 				InstalledEngines.checkEngineWithArgsInstalled(engine, version, cpu, gpu, rosetta, jarsDirectory);
-		if (vvs.size() == 0)
-			vvs = InstalledEngines.checkEngineWithArgsInstalled(
-					engine, null, cpu, gpu, rosetta, jarsDirectory);
-		if (vvs.size() == 0)
-			return null;
-		List<String> compVersions = 
-				VersionStringUtils.getCompatibleEngineVersionsInOrder(version, 
-						vvs.stream().map(v -> v.getPythonVersion()).collect(Collectors.toList()), engine);
-		if (compVersions.size() == 0)
-			return null;
-		EngineInfo engineInfo = new EngineInfo(engine, compVersions.get(0), jarsDirectory);
+		if (vvs.size() == 0) {
+			String jV = SupportedVersions.getJavaVersionForPythonVersion(engine, version);
+			if (jV == null)
+				return null;
+			return defineDLEngineWithJavaVersion(engine, jV, cpu, gpu, jarsDirectory);
+		}
+		EngineInfo engineInfo = new EngineInfo(engine, version, jarsDirectory);
 		engineInfo.cpu = cpu;
 		engineInfo.gpu = gpu;
 		return engineInfo;
@@ -465,8 +469,12 @@ public class EngineInfo
 		boolean rosetta = new PlatformDetection().isUsingRosseta();
 		List<DeepLearningVersion> vs = 
 				InstalledEngines.checkEngineWithArgsInstalled(engine, version, null, gpu, rosetta, STATIC_JARS_DIRECTORY);
-		if (vs.size() == 0)
-			return null;
+		if (vs.size() == 0) {
+			String jV = SupportedVersions.getJavaVersionForPythonVersion(engine, version);
+			if (jV == null)
+				return null;
+			return defineDLEngineWithJavaVersion(engine, jV, null, gpu, STATIC_JARS_DIRECTORY);
+		}
 		boolean cpu = false;
 		if (vs.stream().filter(v -> v.getCPU()).collect(Collectors.toList()).size() > 0) 
 			cpu = true;
@@ -503,6 +511,66 @@ public class EngineInfo
 			engine = AvailableEngines.modelRunnerToBioimageioKeysMap().get(engine);
 		Objects.requireNonNull( STATIC_JARS_DIRECTORY, "The Jars directory should not be null." );
 		return defineDLEngine( engine, version, cpu, gpu, STATIC_JARS_DIRECTORY );
+	}
+	
+	/**
+	 * Method that finds an engine among the installed ones using the version of the
+	 * engine in Java instead of the version of the engine in Python.
+	 * 
+	 * This method allows cpu = null and gpu = null. If any of those fields is null,
+	 * the method will try to find the engines for which the field is tru, however, 
+	 * if it does not find it it will continue with the field being false.
+	 * 
+	 * @param engine
+	 * 	the Deep Learning framework of interest, cannot be null
+	 * @param javaVersion
+	 * 	version of the Java Deep Learning framework. It is equivalent to a set of 
+	 * 	Python versions, cannot be null
+	 * @param cpu
+	 * 	whether the engine supports cpu or not, can be null
+	 * @param gpu
+	 * 	whether the engine supports gpu or not, can be null
+	 * @param jarsDirectory
+	 * 	Directory where the engines are located, cannot be null
+	 * @return the engine info for the correspinding Java version, null if it is not
+	 * 	installed for theat version.
+	 */
+	private static EngineInfo defineDLEngineWithJavaVersion(String engine, String javaVersion,
+			Boolean cpu, Boolean gpu, String jarsDirectory) {
+		Objects.requireNonNull(engine);
+		Objects.requireNonNull(javaVersion);
+		Objects.requireNonNull(jarsDirectory);
+		boolean rosetta = new PlatformDetection().isUsingRosseta();
+		List<DeepLearningVersion> vvs = InstalledEngines.checkEngineWithArgsInstalled(
+				engine, null, cpu, gpu, rosetta, jarsDirectory);
+		if (vvs.size() == 0)
+			return null;
+		List<DeepLearningVersion> compVersions = vvs.stream()
+				.filter(vv -> vv.getVersion().equals(javaVersion)).collect(Collectors.toList());
+		if (compVersions.size() == 0)
+			return null;
+		List<DeepLearningVersion> cpuComp = compVersions.stream()
+				.filter(v -> v.getCPU() && (gpu == null || v.getGPU() == gpu))
+				.collect(Collectors.toList());
+		boolean ncpu;
+		if (cpu == null && cpuComp.size() > 0)
+			ncpu = true;
+		else if (cpu == null)
+			ncpu = false;
+		else
+			ncpu = cpu;
+		List<DeepLearningVersion> gpuComp = compVersions.stream()
+				.filter(v -> v.getCPU() == ncpu && v.getGPU()).collect(Collectors.toList());
+		boolean ngpu;
+		if (gpu == null && gpuComp.size() != 0)
+			ngpu = true;
+		else if (gpu == null)
+			ngpu = false;
+		else
+			ngpu = gpu;
+		String version = compVersions.stream()
+				.filter(v -> v.getCPU() == ncpu && v.getGPU() == ngpu).findFirst().orElse(null).getPythonVersion();
+		return defineDLEngine(engine, version, ncpu, ngpu, jarsDirectory);
 	}
 
 	/**

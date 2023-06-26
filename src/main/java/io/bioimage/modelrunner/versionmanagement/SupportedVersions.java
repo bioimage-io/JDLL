@@ -213,4 +213,21 @@ public class SupportedVersions
 	{
 		return this.versionSet;
 	}
+	
+	/**
+	 * Find the Java engine version that is compatible with the Python engine version provided
+	 * @param engine
+	 * 	the engine of interest
+	 * @param version
+	 * 	the python version of interest
+	 * @return the python version of interest or null if it does not exist
+	 */
+	public static String getJavaVersionForPythonVersion(String engine, String version) {
+		SupportedVersions sv = new SupportedVersions(engine);
+		try {
+			return sv.getCorrespondingJavaVersion(version);
+		} catch (Exception ex) {
+			return null;
+		}
+	}
 }
