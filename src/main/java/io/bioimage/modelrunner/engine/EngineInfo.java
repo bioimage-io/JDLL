@@ -388,8 +388,16 @@ public class EngineInfo
 		List<DeepLearningVersion> vvs =
 				InstalledEngines.checkEngineWithArgsInstalled(engine, version, cpu, gpu, rosetta, jarsDirectory);
 		if (vvs.size() == 0)
+			vvs = InstalledEngines.checkEngineWithArgsInstalled(
+					engine, null, cpu, gpu, rosetta, jarsDirectory);
+		if (vvs.size() == 0)
 			return null;
-		EngineInfo engineInfo = new EngineInfo(engine, version, jarsDirectory);
+		List<String> compVersions = 
+				VersionStringUtils.getCompatibleEngineVersionsInOrder(version, 
+						vvs.stream().map(v -> v.getPythonVersion()).collect(Collectors.toList()), engine);
+		if (compVersions.size() == 0)
+			return null;
+		EngineInfo engineInfo = new EngineInfo(engine, compVersions.get(0), jarsDirectory);
 		engineInfo.cpu = cpu;
 		engineInfo.gpu = gpu;
 		return engineInfo;
