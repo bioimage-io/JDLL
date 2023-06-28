@@ -116,7 +116,9 @@ public class AvailableEngines
     	List<DeepLearningVersion> nVersions = new ArrayList<DeepLearningVersion>();
     	for (DeepLearningVersion vv : versions) {
     		List<DeepLearningVersion> coinc = nVersions.stream()
-    				.filter(v -> vv.getPythonVersion().equals(v.getPythonVersion()) 
+    				.filter(v -> vv.getEngine().equals(v.getEngine()) 
+    						&& vv.getOs().equals(v.getOs())
+    						&& vv.getPythonVersion().equals(v.getPythonVersion()) 
     						&& vv.getCPU() == v.getCPU() && vv.getGPU() == v.getGPU())
     				.collect(Collectors.toList());
     		if (coinc.size() != 0 && coinc.get(0).isJavaVersionBigger(vv))
