@@ -46,6 +46,7 @@ public class DeepLearningVersion
     private List<String> jars;
     private String allEnginesDir;
     private String engineName;
+    private int minJavaVersion = 8;;
     public static String cpuKey = "cpu";
     public static String gpuKey = "gpu";
     
@@ -101,6 +102,7 @@ public class DeepLearningVersion
         			+ Constants.ENGINES_LINK + "' that corresponds to the engine defined by: " 
         			+ dlVersion.engineName);
     	dlVersion.rosetta = candidateVersions.get(0).rosetta;
+    	dlVersion.minJavaVersion = candidateVersions.get(0).minJavaVersion;
     	dlVersion.setJars(candidateVersions.get(0).getJars()); 
     	return dlVersion;
     }
@@ -293,6 +295,14 @@ public class DeepLearningVersion
     public boolean getRosetta() {
     	return this.rosetta;
     }
+    
+    /**
+     * 
+     * @return the minimum Java version needed to run the DL engine version
+     */
+    public int getMinJavaVersion() {
+    	return minJavaVersion;
+    }
 
     /**
      * @return The list of associated artifacts for this version.
@@ -302,10 +312,7 @@ public class DeepLearningVersion
         return jars;
     }
     
-    /** TODO remove zenodo thing
-     *  TODO
-     *  TODO
-     *  TODO
+    /** 
      * GEt the list of JArs but only containing the string corresponding to the file name
      * @return list of strings representing the names of the JARs
      */
@@ -403,7 +410,8 @@ public class DeepLearningVersion
     public String toString()
     {
         return engine + " [version=" + version + ", pythonVersion=" + pythonVersion + ", os=" + os
-                + ", cpu=" + cpu + ", gpu=" + gpu + ", jars=" + jars + "]";
+                + ", cpu=" + cpu + ", gpu=" + gpu + ", jars=" + jars
+                + ", rosetta=" + rosetta+ ", minJavaVersion=" + minJavaVersion + "]";
     }
 
     @Override
@@ -416,6 +424,8 @@ public class DeepLearningVersion
         result = prime * result + ((os == null) ? 0 : os.hashCode());
         result = prime * result + ((version == null) ? 0 : version.hashCode());
         result = prime * result + (gpu ? 0 : "gpu".hashCode());
+        result = prime * result + (rosetta ? 0 : "rosetta".hashCode());
+        result = prime * result + minJavaVersion;
         return result;
     }
 
