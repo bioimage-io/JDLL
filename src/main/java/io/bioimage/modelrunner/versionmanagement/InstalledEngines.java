@@ -210,8 +210,10 @@ public class InstalledEngines {
     {
         String currentPlatform = new PlatformDetection().toString();
         boolean rosetta = new PlatformDetection().isUsingRosseta();
+        int javaVersion = PlatformDetection.getJavaVersion();
     	List<DeepLearningVersion> versions = getAll();
     	versions = versions.stream().filter(v -> v.getOs().equals(currentPlatform)
+    			&& javaVersion >= v.getMinJavaVersion()
 				&& (!rosetta || (rosetta && v.getRosetta())))
     	.collect(Collectors.toList());
         return versions;
@@ -404,10 +406,12 @@ public class InstalledEngines {
      * @param rosetta
      * 	only relevant for MAC M1 and M2. Whether the framework can run as x86_64 in 
      * 	arm64 based MACOS. Can be null.
+     * @minJavaVersion
+     * 	minimum Java version that the engine needs to work 
      * @return a list containing a list of installed engiens satisfying the constraints
      */
     public List<DeepLearningVersion> checkEngineWithArgsInstalled(String engine, 
-    		String version, Boolean cpu, Boolean gpu, Boolean rosetta) {
+    		String version, Boolean cpu, Boolean gpu, Boolean rosetta, Integer minJavaVersion) {
     	String searchEngine;
     	if (engine != null)
     		searchEngine = AvailableEngines.getSupportedVersionsEngineTag(engine);
@@ -423,6 +427,8 @@ public class InstalledEngines {
 			else if (cpu != null && vv.getCPU() != cpu)
 				return false;
 			else if (gpu != null && vv.getGPU() != gpu)
+				return false;
+			else if (minJavaVersion != null && vv.getMinJavaVersion() > minJavaVersion)
 				return false;
 			else if (rosetta != null && rosetta == true && vv.getRosetta() != rosetta)
 				return false;
