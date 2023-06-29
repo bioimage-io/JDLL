@@ -228,7 +228,8 @@ public class AvailableEngines
     }
     
     /**
-     * Check if an engine is supported by JDLL or not.
+     * Check if an engine is supported in the current OS and on the current Java version
+     * by JDLL or not.
      * If any of the arguments is set to null, it will be ignored in the filtering.
      * For example, if gpu = null, the method will return true if the engine exists
      * even if it only exists for gpu, only for cpu or it exists for both.
@@ -242,7 +243,7 @@ public class AvailableEngines
 	 * 	whether the engine supports gpu or not
      * @return true if the engine exists and false otherwise
      */
-    public static boolean isEngineSupported(String framework, String version, 
+    public static boolean isEngineSupportedInOS(String framework, String version, 
     		Boolean cpu, Boolean gpu) {
     	String searchEngine = AvailableEngines.getSupportedVersionsEngineTag(framework);
     	if (searchEngine == null && framework != null)

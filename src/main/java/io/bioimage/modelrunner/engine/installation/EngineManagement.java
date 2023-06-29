@@ -660,15 +660,15 @@ public class EngineManagement {
 		List<DeepLearningVersion> vs = manager.getDownloadedForVersionedEngine(engine, version);
 		if (vs.size() != 0)
 			return true;
-		if (AvailableEngines.isEngineSupported(engine, version, true, true)) {
+		if (AvailableEngines.isEngineSupportedInOS(engine, version, true, true)) {
 			DeepLearningVersion dlv = 
 					AvailableEngines.getEnginesForOsByParams(engine, version, true, true).get(0);
 			return installEngineInDir(dlv, enginesDir, consumer);
-		} else if (AvailableEngines.isEngineSupported(engine, version, true, false)) {
+		} else if (AvailableEngines.isEngineSupportedInOS(engine, version, true, false)) {
 			DeepLearningVersion dlv = 
 					AvailableEngines.getEnginesForOsByParams(engine, version, true, false).get(0);
 			return installEngineInDir(dlv, enginesDir, consumer);
-		} else if (AvailableEngines.isEngineSupported(engine, version, false, true)) {
+		} else if (AvailableEngines.isEngineSupportedInOS(engine, version, false, true)) {
 			DeepLearningVersion dlv = 
 					AvailableEngines.getEnginesForOsByParams(engine, version, false, true).get(0);
 			return installEngineInDir(dlv, enginesDir, consumer);
