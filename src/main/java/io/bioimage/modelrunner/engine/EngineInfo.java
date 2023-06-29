@@ -267,7 +267,7 @@ public class EngineInfo
 	 * If the engine specified is not installed, the method will return null.
 	 * The engine of interest needs to be installed first.
 	 * A good way to check whether the engine of interest exists or not
-	 * is: {@link InstalledEngines#checkEngineWithArgsInstalled(String, String, Boolean, Boolean, Boolean, String)}
+	 * is: {@link InstalledEngines#checkEngineWithArgsInstalledForOS(String, String, Boolean, Boolean, String)}
 	 * 
 	 * @param engine
 	 *            name of the Deep Learning framework (engine). For example:
@@ -286,10 +286,9 @@ public class EngineInfo
 	{	
 		if (AvailableEngines.modelRunnerToBioimageioKeysMap().keySet().contains(engine))
 			engine = AvailableEngines.modelRunnerToBioimageioKeysMap().get(engine);
-		boolean rosetta = new PlatformDetection().isUsingRosseta();
 		List<DeepLearningVersion> vs = 
-				InstalledEngines.checkEngineWithArgsInstalled(engine, version, 
-						null, null, rosetta, PlatformDetection.getJavaVersion(), jarsDirectory);
+				InstalledEngines.checkEngineWithArgsInstalledForOS(engine, version, 
+						null, null, jarsDirectory);
 		if (vs.size() == 0) {
 			String jV = SupportedVersions.getJavaVersionForPythonVersion(engine, version);
 			if (jV == null)
@@ -325,7 +324,7 @@ public class EngineInfo
 	 * If the engine specified is not installed, the method will return null.
 	 * The engine of interest needs to be installed first.
 	 * A good way to check whether the engine of interest exists or not
-	 * is: {@link InstalledEngines#checkEngineWithArgsInstalled(String, String, Boolean, Boolean, Boolean, String)}
+	 * is: {@link InstalledEngines#checkEngineWithArgsInstalledForOS(String, String, Boolean, Boolean, String)}
 	 * 
 	 * @param engine
 	 *            name of the Deep Learning framework (engine). For example:
@@ -347,10 +346,9 @@ public class EngineInfo
 	{
 		if (AvailableEngines.modelRunnerToBioimageioKeysMap().keySet().contains(engine))
 			engine = AvailableEngines.modelRunnerToBioimageioKeysMap().get(engine);
-		boolean rosetta = new PlatformDetection().isUsingRosseta();
 		List<DeepLearningVersion> vs = 
-				InstalledEngines.checkEngineWithArgsInstalled(engine, version, null, 
-						gpu, rosetta, PlatformDetection.getJavaVersion(), jarsDirectory);
+				InstalledEngines.checkEngineWithArgsInstalledForOS(engine, version, null, 
+						gpu, jarsDirectory);
 		if (vs.size() == 0) {
 			String jV = SupportedVersions.getJavaVersionForPythonVersion(engine, version);
 			if (jV == null)
@@ -370,7 +368,7 @@ public class EngineInfo
 	 * If the engine specified is not installed, the method will return null.
 	 * The engine of interest needs to be installed first.
 	 * A good way to check whether the engine of interest exists or not
-	 * is: {@link InstalledEngines#checkEngineWithArgsInstalled(String, String, Boolean, Boolean, Boolean, String)}
+	 * is: {@link InstalledEngines#checkEngineWithArgsInstalledForOS(String, String, Boolean, Boolean, String)}
 	 * 
 	 * @param engine
 	 *            name of the Deep Learning framework (engine). For example:
@@ -394,10 +392,9 @@ public class EngineInfo
 	{
 		if (AvailableEngines.modelRunnerToBioimageioKeysMap().keySet().contains(engine))
 			engine = AvailableEngines.modelRunnerToBioimageioKeysMap().get(engine);
-		boolean rosetta = new PlatformDetection().isUsingRosseta();
 		List<DeepLearningVersion> vvs =
-				InstalledEngines.checkEngineWithArgsInstalled(engine, version, cpu, 
-						gpu, rosetta, PlatformDetection.getJavaVersion(), jarsDirectory);
+				InstalledEngines.checkEngineWithArgsInstalledForOS(engine, version, cpu, 
+						gpu, jarsDirectory);
 		if (vvs.size() == 0) {
 			String jV = SupportedVersions.getJavaVersionForPythonVersion(engine, version);
 			if (jV == null)
@@ -420,7 +417,7 @@ public class EngineInfo
 	 * If the engine specified is not installed, the method will return null.
 	 * The engine of interest needs to be installed first.
 	 * A good way to check whether the engine of interest exists or not
-	 * is: {@link InstalledEngines#checkEngineWithArgsInstalled(String, String, Boolean, Boolean, Boolean, String)}
+	 * is: {@link InstalledEngines#checkEngineWithArgsInstalledForOS(String, String, Boolean, Boolean, String)}
 	 * 
 	 * @param engine
 	 *            name of the Deep Learning framework (engine). For example:
@@ -450,7 +447,7 @@ public class EngineInfo
 	 * If the engine specified is not installed, the method will return null.
 	 * The engine of interest needs to be installed first.
 	 * A good way to check whether the engine of interest exists or not
-	 * is: {@link InstalledEngines#checkEngineWithArgsInstalled(String, String, Boolean, Boolean, Boolean, String)}
+	 * is: {@link InstalledEngines#checkEngineWithArgsInstalledForOS(String, String, Boolean, Boolean, String)}
 	 * 
 	 * @param engine
 	 *            name of the Deep Learning framework (engine). For example:
@@ -469,10 +466,9 @@ public class EngineInfo
 		if (AvailableEngines.modelRunnerToBioimageioKeysMap().keySet().contains(engine))
 			engine = AvailableEngines.modelRunnerToBioimageioKeysMap().get(engine);
 		Objects.requireNonNull( STATIC_JARS_DIRECTORY, "The Jars directory should not be null." );
-		boolean rosetta = new PlatformDetection().isUsingRosseta();
 		List<DeepLearningVersion> vs = 
-				InstalledEngines.checkEngineWithArgsInstalled(engine, version, null, 
-						gpu, rosetta, PlatformDetection.getJavaVersion(), STATIC_JARS_DIRECTORY);
+				InstalledEngines.checkEngineWithArgsInstalledForOS(engine, version, null, 
+						gpu, STATIC_JARS_DIRECTORY);
 		if (vs.size() == 0) {
 			String jV = SupportedVersions.getJavaVersionForPythonVersion(engine, version);
 			if (jV == null)
@@ -492,7 +488,7 @@ public class EngineInfo
 	 * If the engine specified is not installed, the method will return null.
 	 * The engine of interest needs to be installed first.
 	 * A good way to check whether the engine of interest exists or not
-	 * is: {@link InstalledEngines#checkEngineWithArgsInstalled(String, String, Boolean, Boolean, Boolean, String)}
+	 * is: {@link InstalledEngines#checkEngineWithArgsInstalledForOS(String, String, Boolean, Boolean, String)}
 	 * 
 	 * @param engine
 	 *            name of the Deep Learning framework (engine). For example:
@@ -544,9 +540,8 @@ public class EngineInfo
 		Objects.requireNonNull(engine);
 		Objects.requireNonNull(javaVersion);
 		Objects.requireNonNull(jarsDirectory);
-		boolean rosetta = new PlatformDetection().isUsingRosseta();
-		List<DeepLearningVersion> vvs = InstalledEngines.checkEngineWithArgsInstalled(
-				engine, null, cpu, gpu, rosetta, PlatformDetection.getJavaVersion(), jarsDirectory);
+		List<DeepLearningVersion> vvs = InstalledEngines.checkEngineWithArgsInstalledForOS(
+				engine, null, cpu, gpu, jarsDirectory);
 		if (vvs.size() == 0)
 			return null;
 		List<DeepLearningVersion> compVersions = vvs.stream()
@@ -669,10 +664,9 @@ public class EngineInfo
 	public static EngineInfo defineCompatibleDLEngine( String engine, String version,
 			boolean cpu, boolean gpu, String jarsDirectory ) throws IOException, IllegalArgumentException
 	{
-		boolean rosetta = new PlatformDetection().isUsingRosseta();
 		List<DeepLearningVersion> possibles = 
-				InstalledEngines.checkEngineWithArgsInstalled(engine, null, cpu, gpu, 
-						rosetta, PlatformDetection.getJavaVersion(), jarsDirectory);
+				InstalledEngines.checkEngineWithArgsInstalledForOS(engine, null, cpu, gpu, 
+						jarsDirectory);
 		if (possibles.size() == 0)
 			return null;
 		List<String> possibleStrs = 
@@ -724,11 +718,9 @@ public class EngineInfo
 	public static EngineInfo defineCompatibleDLEngineGPU( String engine, String version, 
 			String jarsDirectory ) throws IOException, IllegalArgumentException
 	{
-		boolean rosetta = new PlatformDetection().isUsingRosseta();
-		int javaVersion = PlatformDetection.getJavaVersion();
 		List<DeepLearningVersion> possibles = 
-				InstalledEngines.checkEngineWithArgsInstalled(engine, null, null, true,
-						rosetta, javaVersion, jarsDirectory);
+				InstalledEngines.checkEngineWithArgsInstalledForOS(engine, null, null, true,
+						jarsDirectory);
 		if (possibles.size() == 0)
 			return null;
 		List<String> possibleStrs = 
@@ -737,8 +729,8 @@ public class EngineInfo
 				VersionStringUtils.getCompatibleEngineVersionsInOrder(version, possibleStrs, engine);
 		if (compatibleVersion == null || compatibleVersion.size() == 0)
 			return null;
-		boolean cpu = InstalledEngines.checkEngineWithArgsInstalled(engine, compatibleVersion.get(0), 
-				true, true, rosetta, javaVersion, jarsDirectory).size() > 0;
+		boolean cpu = InstalledEngines.checkEngineWithArgsInstalledForOS(engine, compatibleVersion.get(0), 
+				true, true, jarsDirectory).size() > 0;
 		return EngineInfo.defineDLEngine(engine, compatibleVersion.get(0), cpu, true, jarsDirectory);
 	}
 	

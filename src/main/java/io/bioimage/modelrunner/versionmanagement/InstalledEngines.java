@@ -478,4 +478,71 @@ public class InstalledEngines {
 		}
     }
     
+    /**
+     * Returns a list of the installed Deep Learning versions (engines) that 
+     * satisfy the filters specified by the arguments of the method.
+     * The method filter the engines not compatible with the current operating system
+     * and Java version automatically.
+     * 
+     * If one of the parameter is not relevant for the search, setting it to null will deactivate
+     * it for the search.
+     * If we do not care whether the engine supports GPu or not, we can set 'gpu = null', and
+     * the resulting list of engines will contain both engines that support and do not support GPU.
+     * 
+     * 
+     * @param engine
+     * 	the name of the DL framework. Can be null.
+     * @param version
+     * 	the version of the DL framework in Python. Can be null.
+     * @param cpu
+     * 	whether it supports running on CPU or not. Can be null.
+     * @param gpu
+     * 	whether it supports running on GPU or not. Can be null.
+     * @return a list containing a list of installed engiens satisfying the constraints
+     */
+    public List<DeepLearningVersion> checkEngineWithArgsInstalledForOS(String engine, 
+    		String version, Boolean cpu, Boolean gpu) {
+    	int javaVersion = PlatformDetection.getJavaVersion();
+    	boolean rosetta = new PlatformDetection().isUsingRosseta();
+    	return checkEngineWithArgsInstalled(engine, version, cpu, gpu, 
+    			rosetta, javaVersion);
+    }
+    
+    /**
+     * Returns a list of the installed Deep Learning versions (engines) that satisfy the filters
+     * specified by the arguments of the method.
+     * The method filter the engines not compatible with the current operating system
+     * and Java version automatically.
+     * 
+     * If one of the parameter is not relevant for the search, setting it to null will deactivate
+     * it for the search.
+     * If we do not care whether the engine supports GPu or not, we can set 'gpu = null', and
+     * the resulting list of engines will contain both engines that support and do not support GPU.
+     * 
+     * The ONLY PARAMETER THAT CANNOT BE NULL IS: enginesDir
+     * 
+     * @param engine
+     * 	the name of the DL framework. Can be null.
+     * @param version
+     * 	the version of the DL framework in Python. Can be null.
+     * @param cpu
+     * 	whether it supports running on CPU or not. Can be null.
+     * @param gpu
+     * 	whether it supports running on GPU or not. Can be null.
+     * @param enginesDir
+     * 	the directory where all the engines are stored. CANNOT BE NULL.
+     * @return a list containing a list of installed engiens satisfying the constraints
+     */
+    public static List<DeepLearningVersion> checkEngineWithArgsInstalledForOS(String engine, 
+    		String version, Boolean cpu, Boolean gpu,  String enginesDir) {
+    	Objects.requireNonNull(enginesDir);
+    	try {
+			InstalledEngines installed = InstalledEngines.buildEnginesFinder(enginesDir);
+			return installed.checkEngineWithArgsInstalledForOS(engine, version, 
+					cpu, gpu);
+		} catch (IOException e) {
+			return new ArrayList<DeepLearningVersion>();
+		}
+    }
+    
 }
