@@ -407,7 +407,7 @@ public class InstalledEngines {
      * 	only relevant for MAC M1 and M2. Whether the framework can run as x86_64 in 
      * 	arm64 based MACOS. Can be null.
      * @minJavaVersion
-     * 	minimum Java version that the engine needs to work 
+     * 	minimum Java version that the engine needs to work. Can be null.
      * @return a list containing a list of installed engiens satisfying the constraints
      */
     public List<DeepLearningVersion> checkEngineWithArgsInstalled(String engine, 
@@ -459,16 +459,20 @@ public class InstalledEngines {
      * @param rosetta
      * 	only relevant for MAC M1 and M2. Whether the framework can run as x86_64 in 
      * 	arm64 based MACOS. Can be null.
+     * @minJavaVersion
+     * 	minimum Java version that the engine needs to work. Can be null
      * @param enginesDir
      * 	the directory where all the engines are stored. CANNOT BE NULL.
      * @return a list containing a list of installed engiens satisfying the constraints
      */
     public static List<DeepLearningVersion> checkEngineWithArgsInstalled(String engine, 
-    		String version, Boolean cpu, Boolean gpu, Boolean rosetta, String enginesDir) {
+    		String version, Boolean cpu, Boolean gpu, Boolean rosetta, 
+    		Integer minJavaVersion, String enginesDir) {
     	Objects.requireNonNull(enginesDir);
     	try {
 			InstalledEngines installed = InstalledEngines.buildEnginesFinder(enginesDir);
-			return installed.checkEngineWithArgsInstalled(engine, version, cpu, gpu, rosetta);
+			return installed.checkEngineWithArgsInstalled(engine, version, 
+					cpu, gpu, rosetta, minJavaVersion);
 		} catch (IOException e) {
 			return new ArrayList<DeepLearningVersion>();
 		}

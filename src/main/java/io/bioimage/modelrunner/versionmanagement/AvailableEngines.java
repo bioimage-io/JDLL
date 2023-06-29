@@ -33,7 +33,8 @@ import com.google.gson.Gson;
 
 /**
  * TODO remove unused methods
- * Holds the list of available TensorFlow versions read from the JSON file.
+ * Methods to manage and filter the list of all the existing Deep Learning
+ * framework versions for different OS, Java versions and GPU/CPU compatibilites
  * 
  * @author Daniel Felipe Gonzalez Obando and Carlos Garcia Lopez de Haro
  */
@@ -88,7 +89,8 @@ public class AvailableEngines
 	}
 	
     /**
-     * Creates an instance containing only Deep Learning versions compatible with the current system.
+     * Creates an instance containing only Deep Learning versions 
+     * compatible with the current system and current Java version.
      * 
      * @return The available versions instance.
      */
@@ -134,7 +136,7 @@ public class AvailableEngines
     
     /**
      * Creates an instance containing only Deep Learning versions compatible with
-     * the current system and corresponding to the version of interest
+     * the current system and current Java version for the engine of interest
      * 
      * @param engine
      * 	engine name as specified by the bioimage.io, defined at
@@ -163,8 +165,8 @@ public class AvailableEngines
     }
     
     /**
-     * Return a list of all the Python versions of the corresponding engine
-     * are installed in the local machine
+     * Return a list of all the Python framework versions of the corresponding engine
+     * that can be installed in the current OS and Java version
      * 
      * @param engine
      * 	the engine of interest
@@ -269,8 +271,8 @@ public class AvailableEngines
     }
     
     /**
-     * Retreive the available Deep Learning engines for the current OS using the
-     * parameters that define an engine.
+     * Retreive the available Deep Learning engines for the current OS and Java version 
+     * using the parameters that define an engine.
      * The null input arguments are ignored during the filtering. For example
      * if the version argument is null, all the versions compatible wiht the 
      * rest of arguments will be retrieved

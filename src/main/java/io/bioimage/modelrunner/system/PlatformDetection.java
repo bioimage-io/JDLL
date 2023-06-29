@@ -72,6 +72,7 @@ public class PlatformDetection
     private String os;
     private String arch;
     private boolean rosetta = false;
+    private static Integer javaVersion;
 
     /**
      * Creates a platform detection using the local platform.
@@ -208,5 +209,23 @@ public class PlatformDetection
 	    	text += line + System.lineSeparator();
 	    }
 	    return text;
+	}
+	
+	/**
+	 * Get the major Java version the program is currently running on
+	 * @return the major Java version the program is running on
+	 */
+	public static int getJavaVersion() {
+		if (javaVersion != null)
+			return javaVersion;
+		String version = System.getProperty("java.version");
+	    if(version.startsWith("1.")) {
+	        version = version.substring(2, 3);
+	    } else {
+	        int dot = version.indexOf(".");
+	        if(dot != -1) { version = version.substring(0, dot); }
+	    } 
+	    javaVersion = Integer.parseInt(version);
+	    return javaVersion;
 	}
 }

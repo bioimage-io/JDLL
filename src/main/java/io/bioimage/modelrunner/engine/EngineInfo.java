@@ -288,7 +288,8 @@ public class EngineInfo
 			engine = AvailableEngines.modelRunnerToBioimageioKeysMap().get(engine);
 		boolean rosetta = new PlatformDetection().isUsingRosseta();
 		List<DeepLearningVersion> vs = 
-				InstalledEngines.checkEngineWithArgsInstalled(engine, version, null, null, rosetta, jarsDirectory);
+				InstalledEngines.checkEngineWithArgsInstalled(engine, version, 
+						null, null, rosetta, PlatformDetection.getJavaVersion(), jarsDirectory);
 		if (vs.size() == 0) {
 			String jV = SupportedVersions.getJavaVersionForPythonVersion(engine, version);
 			if (jV == null)
@@ -348,7 +349,8 @@ public class EngineInfo
 			engine = AvailableEngines.modelRunnerToBioimageioKeysMap().get(engine);
 		boolean rosetta = new PlatformDetection().isUsingRosseta();
 		List<DeepLearningVersion> vs = 
-				InstalledEngines.checkEngineWithArgsInstalled(engine, version, null, gpu, rosetta, jarsDirectory);
+				InstalledEngines.checkEngineWithArgsInstalled(engine, version, null, 
+						gpu, rosetta, PlatformDetection.getJavaVersion(), jarsDirectory);
 		if (vs.size() == 0) {
 			String jV = SupportedVersions.getJavaVersionForPythonVersion(engine, version);
 			if (jV == null)
@@ -394,7 +396,8 @@ public class EngineInfo
 			engine = AvailableEngines.modelRunnerToBioimageioKeysMap().get(engine);
 		boolean rosetta = new PlatformDetection().isUsingRosseta();
 		List<DeepLearningVersion> vvs =
-				InstalledEngines.checkEngineWithArgsInstalled(engine, version, cpu, gpu, rosetta, jarsDirectory);
+				InstalledEngines.checkEngineWithArgsInstalled(engine, version, cpu, 
+						gpu, rosetta, PlatformDetection.getJavaVersion(), jarsDirectory);
 		if (vvs.size() == 0) {
 			String jV = SupportedVersions.getJavaVersionForPythonVersion(engine, version);
 			if (jV == null)
@@ -468,7 +471,8 @@ public class EngineInfo
 		Objects.requireNonNull( STATIC_JARS_DIRECTORY, "The Jars directory should not be null." );
 		boolean rosetta = new PlatformDetection().isUsingRosseta();
 		List<DeepLearningVersion> vs = 
-				InstalledEngines.checkEngineWithArgsInstalled(engine, version, null, gpu, rosetta, STATIC_JARS_DIRECTORY);
+				InstalledEngines.checkEngineWithArgsInstalled(engine, version, null, 
+						gpu, rosetta, PlatformDetection.getJavaVersion(), STATIC_JARS_DIRECTORY);
 		if (vs.size() == 0) {
 			String jV = SupportedVersions.getJavaVersionForPythonVersion(engine, version);
 			if (jV == null)
@@ -542,7 +546,7 @@ public class EngineInfo
 		Objects.requireNonNull(jarsDirectory);
 		boolean rosetta = new PlatformDetection().isUsingRosseta();
 		List<DeepLearningVersion> vvs = InstalledEngines.checkEngineWithArgsInstalled(
-				engine, null, cpu, gpu, rosetta, jarsDirectory);
+				engine, null, cpu, gpu, rosetta, PlatformDetection.getJavaVersion(), jarsDirectory);
 		if (vvs.size() == 0)
 			return null;
 		List<DeepLearningVersion> compVersions = vvs.stream()
@@ -667,7 +671,8 @@ public class EngineInfo
 	{
 		boolean rosetta = new PlatformDetection().isUsingRosseta();
 		List<DeepLearningVersion> possibles = 
-				InstalledEngines.checkEngineWithArgsInstalled(engine, null, cpu, gpu, rosetta, jarsDirectory);
+				InstalledEngines.checkEngineWithArgsInstalled(engine, null, cpu, gpu, 
+						rosetta, PlatformDetection.getJavaVersion(), jarsDirectory);
 		if (possibles.size() == 0)
 			return null;
 		List<String> possibleStrs = 
@@ -720,8 +725,10 @@ public class EngineInfo
 			String jarsDirectory ) throws IOException, IllegalArgumentException
 	{
 		boolean rosetta = new PlatformDetection().isUsingRosseta();
+		int javaVersion = PlatformDetection.getJavaVersion();
 		List<DeepLearningVersion> possibles = 
-				InstalledEngines.checkEngineWithArgsInstalled(engine, null, null, true, rosetta, jarsDirectory);
+				InstalledEngines.checkEngineWithArgsInstalled(engine, null, null, true,
+						rosetta, javaVersion, jarsDirectory);
 		if (possibles.size() == 0)
 			return null;
 		List<String> possibleStrs = 
@@ -730,8 +737,8 @@ public class EngineInfo
 				VersionStringUtils.getCompatibleEngineVersionsInOrder(version, possibleStrs, engine);
 		if (compatibleVersion == null || compatibleVersion.size() == 0)
 			return null;
-		boolean cpu = InstalledEngines.checkEngineWithArgsInstalled(engine, 
-				compatibleVersion.get(0), true, true, rosetta, jarsDirectory).size() > 0;
+		boolean cpu = InstalledEngines.checkEngineWithArgsInstalled(engine, compatibleVersion.get(0), 
+				true, true, rosetta, javaVersion, jarsDirectory).size() > 0;
 		return EngineInfo.defineDLEngine(engine, compatibleVersion.get(0), cpu, true, jarsDirectory);
 	}
 	
