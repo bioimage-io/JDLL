@@ -406,7 +406,7 @@ public class InstalledEngines {
      * @param rosetta
      * 	only relevant for MAC M1 and M2. Whether the framework can run as x86_64 in 
      * 	arm64 based MACOS. Can be null.
-     * @minJavaVersion
+     * @param minJavaVersion
      * 	minimum Java version that the engine needs to work. Can be null.
      * @return a list containing a list of installed engiens satisfying the constraints
      */
@@ -459,7 +459,7 @@ public class InstalledEngines {
      * @param rosetta
      * 	only relevant for MAC M1 and M2. Whether the framework can run as x86_64 in 
      * 	arm64 based MACOS. Can be null.
-     * @minJavaVersion
+     * @param minJavaVersion
      * 	minimum Java version that the engine needs to work. Can be null
      * @param enginesDir
      * 	the directory where all the engines are stored. CANNOT BE NULL.
