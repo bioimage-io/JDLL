@@ -1,6 +1,10 @@
 {
 	"tensorflow": 
 		{
+			"2.11.0":
+				{
+					"javaVersion": "0.5.0"
+				},
 			"2.10.1":
 				{
 					"javaVersion": "0.5.0"
@@ -359,25 +363,33 @@
 		},
 	"onnx":
 		{
+			"6":
+				{
+					"javaVersion": "1.8.1"
+				},
+			"7":
+				{
+					"javaVersion": "1.8.1"
+				},
 			"8":
 				{
-					"javaVersion": "1.3.1"
+					"javaVersion": "1.8.1"
 				},
 			"9":
 				{
-					"javaVersion": "1.4.0"
+					"javaVersion": "1.8.1"
 				},
 			"10":
 				{
-					"javaVersion": "1.5.2"
+					"javaVersion": "1.8.1"
 				},
 			"11":
 				{
-					"javaVersion": "1.6.0"
+					"javaVersion": "1.8.1"
 				},
 			"12":
 				{
-					"javaVersion": "1.7.0"
+					"javaVersion": "1.8.1"
 				},
 			"13":
 				{
