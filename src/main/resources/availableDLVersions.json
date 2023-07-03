@@ -850,7 +850,7 @@
 				"https://repo1.maven.org/maven2/org/tensorflow/tensorflow-core-api/0.5.0/tensorflow-core-api-0.5.0-windows-x86_64.jar",
 				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.8/javacpp-1.5.8.jar",
 				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.8/javacpp-1.5.8-windows-x86_64.jar",
-				"https://maven.scijava.org/content/repositories/releases/io/bioimage/dl-modelrunner-tensorflow-2b/0.3.0/dl-modelrunner-tensorflow-2b-0.3.0.jar"
+				"https://maven.scijava.org/content/repositories/releases/io/bioimage/dl-modelrunner-tensorflow-2c/0.3.3/dl-modelrunner-tensorflow-2c-0.3.3.jar"
 			]
 		},
 		{
@@ -869,7 +869,7 @@
 				"https://repo1.maven.org/maven2/org/tensorflow/tensorflow-core-api/0.5.0/tensorflow-core-api-0.5.0-windows-x86_64-gpu.jar",
 				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.8/javacpp-1.5.8.jar",
 				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.8/javacpp-1.5.8-windows-x86_64.jar",
-				"https://maven.scijava.org/content/repositories/releases/io/bioimage/dl-modelrunner-tensorflow-2b/0.3.0/dl-modelrunner-tensorflow-2b-0.3.0.jar"
+				"https://maven.scijava.org/content/repositories/releases/io/bioimage/dl-modelrunner-tensorflow-2c/0.3.3/dl-modelrunner-tensorflow-2c-0.3.3.jar"
 			]
 		},
 		{
@@ -888,7 +888,7 @@
 				"https://repo1.maven.org/maven2/org/tensorflow/tensorflow-core-api/0.5.0/tensorflow-core-api-0.5.0-linux-x86_64.jar",
 				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.8/javacpp-1.5.8.jar",
 				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.8/javacpp-1.5.8-linux-x86_64.jar",
-				"https://maven.scijava.org/content/repositories/releases/io/bioimage/dl-modelrunner-tensorflow-2b/0.3.0/dl-modelrunner-tensorflow-2b-0.3.0.jar"
+				"https://maven.scijava.org/content/repositories/releases/io/bioimage/dl-modelrunner-tensorflow-2c/0.3.3/dl-modelrunner-tensorflow-2c-0.3.3.jar"
 			]
 		},
 		{
@@ -907,7 +907,7 @@
 				"https://repo1.maven.org/maven2/org/tensorflow/tensorflow-core-api/0.5.0/tensorflow-core-api-0.5.0-linux-x86_64-gpu.jar",
 				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.8/javacpp-1.5.8.jar",
 				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.8/javacpp-1.5.8-linux-x86_64.jar",
-				"https://maven.scijava.org/content/repositories/releases/io/bioimage/dl-modelrunner-tensorflow-2b/0.3.0/dl-modelrunner-tensorflow-2b-0.3.0.jar"
+				"https://maven.scijava.org/content/repositories/releases/io/bioimage/dl-modelrunner-tensorflow-2c/0.3.3/dl-modelrunner-tensorflow-2c-0.3.3.jar"
 			]
 		},
 		{
@@ -926,7 +926,7 @@
 				"https://repo1.maven.org/maven2/org/tensorflow/tensorflow-core-api/0.5.0/tensorflow-core-api-0.5.0-macosx-x86_64.jar",
 				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.8/javacpp-1.5.8.jar",
 				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.8/javacpp-1.5.8-macosx-x86_64.jar",
-				"https://maven.scijava.org/content/repositories/releases/io/bioimage/dl-modelrunner-tensorflow-2b/0.3.0/dl-modelrunner-tensorflow-2b-0.3.0.jar"
+				"https://maven.scijava.org/content/repositories/releases/io/bioimage/dl-modelrunner-tensorflow-2c/0.3.3/dl-modelrunner-tensorflow-2c-0.3.3.jar"
 			]
 		},
 		{
