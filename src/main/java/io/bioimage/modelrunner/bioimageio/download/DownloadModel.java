@@ -24,6 +24,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.channels.Channels;
 import java.nio.channels.ReadableByteChannel;
@@ -495,10 +496,10 @@ public class DownloadModel {
 		HttpURLConnection conn = null;
 		try {
 			conn = (HttpURLConnection) url.openConnection();
-			if (conn.getResponseCode() == 302)
-				return getFileSize(new URL(conn.getHeaderField("Location")));
+			if (conn.getResponseCode() > 300 && conn.getResponseCode() < 304)
+				return getFileSize(redirectedURL(url, conn));
 			if (conn.getResponseCode() != 200)
-				throw new Exception();
+				throw new Exception("Unable to connect to: " + url.toString());
 			return conn.getContentLengthLong();
 		} catch (IOException e) {
 			throw new RuntimeException(e);
@@ -507,6 +508,47 @@ public class DownloadModel {
 			String msg = "Unable to connect to " + url.toString();
 			System.out.println(msg);
 			return 1;
+		}
+	}
+	
+	/**
+	 * This method shuold be used when we get the following response codes from 
+	 * a {@link HttpURLConnection}:
+	 * - {@link HttpURLConnection#HTTP_MOVED_TEMP}
+	 * - {@link HttpURLConnection#HTTP_MOVED_PERM}
+	 * - {@link HttpURLConnection#HTTP_SEE_OTHER}
+	 * 
+	 * If that is not the response code or the connection does not work, the url
+	 * returned will be the same as the provided.
+	 * If the method is used corretly, it will return the URL to which the original URL
+	 * has been redirected
+	 * @param url
+	 * 	original url. Connecting to that url must give a 301, 302 or 303 response code
+	 * @param conn
+	 * 	connection to the url
+	 * @return the redirected url
+	 */
+	public static URL redirectedURL(URL url, HttpURLConnection conn) {
+		int statusCode;
+		try {
+			statusCode = conn.getResponseCode();
+		} catch (IOException ex) {
+			return url;
+		}
+		if (statusCode != HttpURLConnection.HTTP_MOVED_TEMP
+            && statusCode != HttpURLConnection.HTTP_MOVED_PERM
+            && statusCode != HttpURLConnection.HTTP_SEE_OTHER)
+			return url;
+		String newURL = conn.getHeaderField("Location");
+		try {
+			return new URL(newURL);
+		} catch (MalformedURLException ex) {
+		}
+        try {
+			String mainDomain = url.toURI().getHost();
+			return new URL(mainDomain + newURL);
+		} catch (URISyntaxException | MalformedURLException e) {
+			return null;
 		}
 	}
 	
