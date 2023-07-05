@@ -24,6 +24,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
+import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.channels.Channels;
@@ -545,7 +546,10 @@ public class DownloadModel {
 		} catch (MalformedURLException ex) {
 		}
         try {
-			String mainDomain = url.toURI().getHost();
+        	URI uri = url.toURI();
+            String scheme = uri.getScheme();
+            String host = uri.getHost();
+            String mainDomain = scheme + "://" + host;
 			return new URL(mainDomain + newURL);
 		} catch (URISyntaxException | MalformedURLException e) {
 			return null;
