@@ -40,6 +40,11 @@ import java.lang.reflect.Type;
  */
 public class SupportedVersions
 {
+	/**
+	 * Map containing all the versions supported by each framework and their 
+	 * correspondence between Java and Python
+	 */
+	private static HashMap< String, Object > ALL_VERSIONS;
 
 	/**
 	 * Key for the Java equivalent version in the JSON file
@@ -130,8 +135,9 @@ public class SupportedVersions
 	 */
 	public static LinkedTreeMap< String, Object > getSpecificEngineVersionsJson( String specificEngine )
 	{
-		HashMap< String, Object > allVersions = readVersionsJson();
-		LinkedTreeMap< String, Object > engineVersions = ( LinkedTreeMap< String, Object > ) allVersions.get( specificEngine );
+		if (ALL_VERSIONS == null)
+			ALL_VERSIONS = readVersionsJson();
+		LinkedTreeMap< String, Object > engineVersions = ( LinkedTreeMap< String, Object > ) ALL_VERSIONS.get( specificEngine );
 		return engineVersions;
 	}
 

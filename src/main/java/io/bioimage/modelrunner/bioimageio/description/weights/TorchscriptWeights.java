@@ -25,6 +25,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import io.bioimage.modelrunner.versionmanagement.SupportedVersions;
+
 /**
  * Class that contains the information for Torchscript weights.
  * For more information about the parameters go to:
@@ -75,10 +77,9 @@ public class TorchscriptWeights implements WeightFormat{
 	                break;
 	        }
 		}
-		// TODO add fixed version if it is not shown because many models are missing
-		// the Pytorch version. Remove when they start appearing
 		if (trainingVersion == null)
 			trainingVersion = "1.13.1";
+		setCompatibleVersion();
 	}
 
 	private String weightsFormat;
@@ -312,5 +313,14 @@ public class TorchscriptWeights implements WeightFormat{
 	 */
 	public String getJDLLCompatibleToTrainingVersion() {
 		return compatibleVersion;
+	}
+	
+	/**
+	 * Select a version supported by JDLL that is compatible with the training version
+	 */
+	private void setCompatibleVersion() {
+		if (this.trainingVersion == null)
+			this.compatibleVersion = null;
+		compatibleVersion = SupportedVersions.getJavaVersionForPythonVersion("tensorflow", trainingVersion);
 	}
 }

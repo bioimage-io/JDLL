@@ -75,6 +75,7 @@ public class PytorchWeights implements WeightFormat{
 	                break;
 	        }
 		}
+		setCompatibleVersion();
 	}
 
 	private String weightsFormat;
@@ -308,5 +309,12 @@ public class PytorchWeights implements WeightFormat{
 	 */
 	public String getJDLLCompatibleToTrainingVersion() {
 		return compatibleVersion;
+	}
+	
+	/**
+	 * Select a version supported by JDLL that is compatible with the training version
+	 */
+	private void setCompatibleVersion() {
+		this.compatibleVersion = trainingVersion;
 	}
 }
