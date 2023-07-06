@@ -79,12 +79,18 @@ public class KerasWeights implements WeightFormat {
 
 	private String weightsFormat;
 	@Override
+	/**
+	 * {@inheritDoc}
+	 */
 	public String getWeightsFormat() {
 		return weightsFormat;
 	}
 
 	private String trainingVersion;
 	@Override
+	/**
+	 * {@inheritDoc}
+	 */
 	public String getTrainingVersion() {
 		return trainingVersion;
 	}
@@ -119,6 +125,9 @@ public class KerasWeights implements WeightFormat {
 
 	private String sha256;
 	@Override
+	/**
+	 * {@inheritDoc}
+	 */
 	public String getSha256() {
 		return sha256;
 	}
@@ -137,6 +146,9 @@ public class KerasWeights implements WeightFormat {
 
 	private String source;
 	@Override
+	/**
+	 * {@inheritDoc}
+	 */
 	public String getSource() {
 		return source;
 	}
@@ -156,6 +168,9 @@ public class KerasWeights implements WeightFormat {
 
 	private List<String> authors;
 	@Override
+	/**
+	 * {@inheritDoc}
+	 */
 	public List<String> getAuthors() {
 		return authors;
 	}
@@ -178,6 +193,9 @@ public class KerasWeights implements WeightFormat {
 
 	private Map<String, Object> attachments;
 	@Override
+	/**
+	 * {@inheritDoc}
+	 */
 	public Map<String, Object> getAttachments() {
 		return attachments;
 	}
@@ -195,6 +213,9 @@ public class KerasWeights implements WeightFormat {
 
 	private String parent;
 	@Override
+	/**
+	 * {@inheritDoc}
+	 */
 	public String getParent() {
 		return parent;
 	}
@@ -211,6 +232,9 @@ public class KerasWeights implements WeightFormat {
 
 	private String architecture;
 	@Override
+	/**
+	 * {@inheritDoc}
+	 */
 	public String getArchitecture() {
 		return architecture;
 	}
@@ -227,6 +251,9 @@ public class KerasWeights implements WeightFormat {
 
 	private String architectureSha256;
 	@Override
+	/**
+	 * {@inheritDoc}
+	 */
 	public String getArchitectureSha256() {
 		return architectureSha256;
 	}
@@ -242,6 +269,9 @@ public class KerasWeights implements WeightFormat {
 	}
 
 	@Override
+	/**
+	 * {@inheritDoc}
+	 */
 	public String getSourceFileName() {
 		if (source == null)
 			return source;
@@ -250,6 +280,7 @@ public class KerasWeights implements WeightFormat {
 	
 	boolean gpu = false;
 	/**
+	 * {@inheritDoc}
 	 * Method to set whether the engine used for this weights supports GPU or not
 	 */
 	@Override
@@ -258,6 +289,7 @@ public class KerasWeights implements WeightFormat {
 	}
 	
 	/**
+	 * {@inheritDoc}
 	 * Method to know whether the engine used for this weights supports GPU or not
 	 * @return whether the weights support gpu or not
 	 */
@@ -269,6 +301,9 @@ public class KerasWeights implements WeightFormat {
 
 	private String compatibleVersion;
 	@Override
+	/**
+	 * {@inheritDoc}
+	 */
 	public String getJDLLCompatibleToTrainingVersion() {
 		return compatibleVersion;
 	}
