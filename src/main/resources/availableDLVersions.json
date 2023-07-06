@@ -356,7 +356,7 @@
 				"https://repo1.maven.org/maven2/org/tensorflow/tensorflow-core-api/0.2.0/tensorflow-core-api-0.2.0-windows-x86_64.jar",
 				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.8/javacpp-1.5.8.jar",
 				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.4/javacpp-1.5.4-windows-x86_64.jar",
-				"https://maven.scijava.org/content/repositories/releases/io/bioimage/dl-modelrunner-tensorflow-2a/0.3.0/dl-modelrunner-tensorflow-2a-0.3.0.jar"
+				"https://maven.scijava.org/content/repositories/releases/io/bioimage/dl-modelrunner-tensorflow-2a/0.3.1/dl-modelrunner-tensorflow-2a-0.3.1.jar"
 			]
 		},
 		{
@@ -375,7 +375,7 @@
 				"https://repo1.maven.org/maven2/org/tensorflow/tensorflow-core-api/0.2.0/tensorflow-core-api-0.2.0-windows-x86_64-gpu.jar",
 				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.8/javacpp-1.5.8.jar",
 				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.4/javacpp-1.5.4-windows-x86_64.jar",
-				"https://maven.scijava.org/content/repositories/releases/io/bioimage/dl-modelrunner-tensorflow-2a/0.3.0/dl-modelrunner-tensorflow-2a-0.3.0.jar"
+				"https://maven.scijava.org/content/repositories/releases/io/bioimage/dl-modelrunner-tensorflow-2a/0.3.1/dl-modelrunner-tensorflow-2a-0.3.1.jar"
 			]
 		},
 		{
@@ -394,7 +394,7 @@
 				"https://repo1.maven.org/maven2/org/tensorflow/tensorflow-core-api/0.2.0/tensorflow-core-api-0.2.0-linux-x86_64.jar",
 				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.8/javacpp-1.5.8.jar",
 				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.4/javacpp-1.5.4-linux-x86_64.jar",
-				"https://maven.scijava.org/content/repositories/releases/io/bioimage/dl-modelrunner-tensorflow-2a/0.3.0/dl-modelrunner-tensorflow-2a-0.3.0.jar"
+				"https://maven.scijava.org/content/repositories/releases/io/bioimage/dl-modelrunner-tensorflow-2a/0.3.1/dl-modelrunner-tensorflow-2a-0.3.1.jar"
 			]
 		},
 		{
@@ -413,7 +413,7 @@
 				"https://repo1.maven.org/maven2/org/tensorflow/tensorflow-core-api/0.2.0/tensorflow-core-api-0.2.0-linux-x86_64-gpu.jar",
 				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.8/javacpp-1.5.8.jar",
 				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.4/javacpp-1.5.4-linux-x86_64.jar",
-				"https://maven.scijava.org/content/repositories/releases/io/bioimage/dl-modelrunner-tensorflow-2a/0.3.0/dl-modelrunner-tensorflow-2a-0.3.0.jar"
+				"https://maven.scijava.org/content/repositories/releases/io/bioimage/dl-modelrunner-tensorflow-2a/0.3.1/dl-modelrunner-tensorflow-2a-0.3.1.jar"
 			]
 		},
 		{
@@ -432,7 +432,7 @@
 				"https://repo1.maven.org/maven2/org/tensorflow/tensorflow-core-api/0.2.0/tensorflow-core-api-0.2.0-macosx-x86_64.jar",
 				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.8/javacpp-1.5.8.jar",
 				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.4/javacpp-1.5.4-macosx-x86_64.jar",
-				"https://maven.scijava.org/content/repositories/releases/io/bioimage/dl-modelrunner-tensorflow-2a/0.3.0/dl-modelrunner-tensorflow-2a-0.3.0.jar"
+				"https://maven.scijava.org/content/repositories/releases/io/bioimage/dl-modelrunner-tensorflow-2a/0.3.1/dl-modelrunner-tensorflow-2a-0.3.1.jar"
 			]
 		},
 		{
@@ -451,7 +451,7 @@
 				"https://repo1.maven.org/maven2/org/tensorflow/tensorflow-core-api/0.3.3/tensorflow-core-api-0.3.3-windows-x86_64.jar",
 				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.8/javacpp-1.5.8.jar",
 				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.4/javacpp-1.5.4-windows-x86_64.jar",
-				"https://maven.scijava.org/content/repositories/releases/io/bioimage/dl-modelrunner-tensorflow-2b/0.3.0/dl-modelrunner-tensorflow-2b-0.3.0.jar"
+				"https://maven.scijava.org/content/repositories/releases/io/bioimage/dl-modelrunner-tensorflow-2b/0.3.1/dl-modelrunner-tensorflow-2b-0.3.1.jar"
 			]
 		},
 		{
@@ -470,7 +470,7 @@
 				"https://repo1.maven.org/maven2/org/tensorflow/tensorflow-core-api/0.3.3/tensorflow-core-api-0.3.3-windows-x86_64-gpu.jar",
 				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.8/javacpp-1.5.8.jar",
 				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.4/javacpp-1.5.4-windows-x86_64.jar",
-				"https://maven.scijava.org/content/repositories/releases/io/bioimage/dl-modelrunner-tensorflow-2b/0.3.0/dl-modelrunner-tensorflow-2b-0.3.0.jar"
+				"https://maven.scijava.org/content/repositories/releases/io/bioimage/dl-modelrunner-tensorflow-2b/0.3.1/dl-modelrunner-tensorflow-2b-0.3.1.jar"
 			]
 		},
 		{
@@ -489,7 +489,7 @@
 				"https://repo1.maven.org/maven2/org/tensorflow/tensorflow-core-api/0.3.3/tensorflow-core-api-0.3.3-linux-x86_64.jar",
 				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.8/javacpp-1.5.8.jar",
 				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.4/javacpp-1.5.4-linux-x86_64.jar",
-				"https://maven.scijava.org/content/repositories/releases/io/bioimage/dl-modelrunner-tensorflow-2b/0.3.0/dl-modelrunner-tensorflow-2b-0.3.0.jar"
+				"https://maven.scijava.org/content/repositories/releases/io/bioimage/dl-modelrunner-tensorflow-2b/0.3.1/dl-modelrunner-tensorflow-2b-0.3.1.jar"
 			]
 		},
 		{
@@ -508,7 +508,7 @@
 				"https://repo1.maven.org/maven2/org/tensorflow/tensorflow-core-api/0.3.3/tensorflow-core-api-0.3.3-linux-x86_64-gpu.jar",
 				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.8/javacpp-1.5.8.jar",
 				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.4/javacpp-1.5.4-linux-x86_64.jar",
-				"https://maven.scijava.org/content/repositories/releases/io/bioimage/dl-modelrunner-tensorflow-2b/0.3.0/dl-modelrunner-tensorflow-2b-0.3.0.jar"
+				"https://maven.scijava.org/content/repositories/releases/io/bioimage/dl-modelrunner-tensorflow-2b/0.3.1/dl-modelrunner-tensorflow-2b-0.3.1.jar"
 			]
 		},
 		{
@@ -527,7 +527,7 @@
 				"https://repo1.maven.org/maven2/org/tensorflow/tensorflow-core-api/0.3.3/tensorflow-core-api-0.3.3-macosx-x86_64.jar",
 				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.8/javacpp-1.5.8.jar",
 				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.4/javacpp-1.5.4-macosx-x86_64.jar",
-				"https://maven.scijava.org/content/repositories/releases/io/bioimage/dl-modelrunner-tensorflow-2b/0.3.0/dl-modelrunner-tensorflow-2b-0.3.0.jar"
+				"https://maven.scijava.org/content/repositories/releases/io/bioimage/dl-modelrunner-tensorflow-2b/0.3.1/dl-modelrunner-tensorflow-2b-0.3.1.jar"
 			]
 		},
 		{
@@ -546,7 +546,7 @@
 				"https://repo1.maven.org/maven2/org/tensorflow/tensorflow-core-api/0.4.0/tensorflow-core-api-0.4.0-windows-x86_64.jar",
 				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.8/javacpp-1.5.8.jar",
 				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.6/javacpp-1.5.6-windows-x86_64.jar",
-				"https://maven.scijava.org/content/repositories/releases/io/bioimage/dl-modelrunner-tensorflow-2b/0.3.0/dl-modelrunner-tensorflow-2b-0.3.0.jar"
+				"https://maven.scijava.org/content/repositories/releases/io/bioimage/dl-modelrunner-tensorflow-2b/0.3.1/dl-modelrunner-tensorflow-2b-0.3.1.jar"
 			]
 		},
 		{
@@ -565,7 +565,7 @@
 				"https://repo1.maven.org/maven2/org/tensorflow/tensorflow-core-api/0.4.0/tensorflow-core-api-0.4.0-windows-x86_64-gpu.jar",
 				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.8/javacpp-1.5.8.jar",
 				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.6/javacpp-1.5.6-windows-x86_64.jar",
-				"https://maven.scijava.org/content/repositories/releases/io/bioimage/dl-modelrunner-tensorflow-2b/0.3.0/dl-modelrunner-tensorflow-2b-0.3.0.jar"
+				"https://maven.scijava.org/content/repositories/releases/io/bioimage/dl-modelrunner-tensorflow-2b/0.3.1/dl-modelrunner-tensorflow-2b-0.3.1.jar"
 			]
 		},
 		{
@@ -584,7 +584,7 @@
 				"https://repo1.maven.org/maven2/org/tensorflow/tensorflow-core-api/0.4.0/tensorflow-core-api-0.4.0-linux-x86_64.jar",
 				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.8/javacpp-1.5.8.jar",
 				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.6/javacpp-1.5.6-linux-x86_64.jar",
-				"https://maven.scijava.org/content/repositories/releases/io/bioimage/dl-modelrunner-tensorflow-2b/0.3.0/dl-modelrunner-tensorflow-2b-0.3.0.jar"
+				"https://maven.scijava.org/content/repositories/releases/io/bioimage/dl-modelrunner-tensorflow-2b/0.3.1/dl-modelrunner-tensorflow-2b-0.3.1.jar"
 			]
 		},
 		{
@@ -603,7 +603,7 @@
 				"https://repo1.maven.org/maven2/org/tensorflow/tensorflow-core-api/0.4.0/tensorflow-core-api-0.4.0-linux-x86_64-gpu.jar",
 				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.8/javacpp-1.5.8.jar",
 				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.6/javacpp-1.5.6-linux-x86_64.jar",
-				"https://maven.scijava.org/content/repositories/releases/io/bioimage/dl-modelrunner-tensorflow-2b/0.3.0/dl-modelrunner-tensorflow-2b-0.3.0.jar"
+				"https://maven.scijava.org/content/repositories/releases/io/bioimage/dl-modelrunner-tensorflow-2b/0.3.1/dl-modelrunner-tensorflow-2b-0.3.1.jar"
 			]
 		},
 		{
@@ -622,7 +622,7 @@
 				"https://repo1.maven.org/maven2/org/tensorflow/tensorflow-core-api/0.4.0/tensorflow-core-api-0.4.0-macosx-x86_64.jar",
 				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.8/javacpp-1.5.8.jar",
 				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.6/javacpp-1.5.6-macosx-x86_64.jar",
-				"https://maven.scijava.org/content/repositories/releases/io/bioimage/dl-modelrunner-tensorflow-2b/0.3.0/dl-modelrunner-tensorflow-2b-0.3.0.jar"
+				"https://maven.scijava.org/content/repositories/releases/io/bioimage/dl-modelrunner-tensorflow-2b/0.3.1/dl-modelrunner-tensorflow-2b-0.3.1.jar"
 			]
 		},
 		{
@@ -641,7 +641,7 @@
 				"https://www.dropbox.com/s/0ptmnsjnoddthyu/tensorflow-core-api-0.4.0-SNAPSHOT.jar?dl=1",
 				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.8/javacpp-1.5.8.jar",
 				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.8/javacpp-1.5.6-macosx-arm64.jar",
-				"https://maven.scijava.org/content/repositories/releases/io/bioimage/dl-modelrunner-tensorflow-2b/0.3.0/dl-modelrunner-tensorflow-2b-0.3.0.jar"
+				"https://maven.scijava.org/content/repositories/releases/io/bioimage/dl-modelrunner-tensorflow-2b/0.3.1/dl-modelrunner-tensorflow-2b-0.3.1.jar"
 			]
 		},
 		{
@@ -660,7 +660,7 @@
 				"https://repo1.maven.org/maven2/org/tensorflow/tensorflow-core-api/0.4.1/tensorflow-core-api-0.4.1-windows-x86_64.jar",
 				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.8/javacpp-1.5.8.jar",
 				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.6/javacpp-1.5.6-windows-x86_64.jar",
-				"https://maven.scijava.org/content/repositories/releases/io/bioimage/dl-modelrunner-tensorflow-2b/0.3.0/dl-modelrunner-tensorflow-2b-0.3.0.jar"
+				"https://maven.scijava.org/content/repositories/releases/io/bioimage/dl-modelrunner-tensorflow-2b/0.3.1/dl-modelrunner-tensorflow-2b-0.3.1.jar"
 			]
 		},
 		{
@@ -679,7 +679,7 @@
 				"https://repo1.maven.org/maven2/org/tensorflow/tensorflow-core-api/0.4.1/tensorflow-core-api-0.4.1-windows-x86_64-gpu.jar",
 				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.8/javacpp-1.5.8.jar",
 				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.6/javacpp-1.5.6-windows-x86_64.jar",
-				"https://maven.scijava.org/content/repositories/releases/io/bioimage/dl-modelrunner-tensorflow-2b/0.3.0/dl-modelrunner-tensorflow-2b-0.3.0.jar"
+				"https://maven.scijava.org/content/repositories/releases/io/bioimage/dl-modelrunner-tensorflow-2b/0.3.1/dl-modelrunner-tensorflow-2b-0.3.1.jar"
 			]
 		},
 		{
@@ -698,7 +698,7 @@
 				"https://repo1.maven.org/maven2/org/tensorflow/tensorflow-core-api/0.4.1/tensorflow-core-api-0.4.1-linux-x86_64.jar",
 				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.8/javacpp-1.5.8.jar",
 				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.6/javacpp-1.5.6-linux-x86_64.jar",
-				"https://maven.scijava.org/content/repositories/releases/io/bioimage/dl-modelrunner-tensorflow-2b/0.3.0/dl-modelrunner-tensorflow-2b-0.3.0.jar"
+				"https://maven.scijava.org/content/repositories/releases/io/bioimage/dl-modelrunner-tensorflow-2b/0.3.1/dl-modelrunner-tensorflow-2b-0.3.1.jar"
 			]
 		},
 		{
@@ -717,7 +717,7 @@
 				"https://repo1.maven.org/maven2/org/tensorflow/tensorflow-core-api/0.4.1/tensorflow-core-api-0.4.1-linux-x86_64-gpu.jar",
 				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.8/javacpp-1.5.8.jar",
 				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.6/javacpp-1.5.6-linux-x86_64.jar",
-				"https://maven.scijava.org/content/repositories/releases/io/bioimage/dl-modelrunner-tensorflow-2b/0.3.0/dl-modelrunner-tensorflow-2b-0.3.0.jar"
+				"https://maven.scijava.org/content/repositories/releases/io/bioimage/dl-modelrunner-tensorflow-2b/0.3.1/dl-modelrunner-tensorflow-2b-0.3.1.jar"
 			]
 		},
 		{
@@ -736,7 +736,7 @@
 				"https://repo1.maven.org/maven2/org/tensorflow/tensorflow-core-api/0.4.1/tensorflow-core-api-0.4.1-macosx-x86_64.jar",
 				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.8/javacpp-1.5.8.jar",
 				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.6/javacpp-1.5.6-macosx-x86_64.jar",
-				"https://maven.scijava.org/content/repositories/releases/io/bioimage/dl-modelrunner-tensorflow-2b/0.3.0/dl-modelrunner-tensorflow-2b-0.3.0.jar"
+				"https://maven.scijava.org/content/repositories/releases/io/bioimage/dl-modelrunner-tensorflow-2b/0.3.1/dl-modelrunner-tensorflow-2b-0.3.1.jar"
 			]
 		},
 		{
@@ -755,7 +755,7 @@
 				"https://repo1.maven.org/maven2/org/tensorflow/tensorflow-core-api/0.4.2/tensorflow-core-api-0.4.2-windows-x86_64.jar",
 				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.8/javacpp-1.5.8.jar",
 				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.6/javacpp-1.5.6-windows-x86_64.jar",
-				"https://maven.scijava.org/content/repositories/releases/io/bioimage/dl-modelrunner-tensorflow-2b/0.3.0/dl-modelrunner-tensorflow-2b-0.3.0.jar"
+				"https://maven.scijava.org/content/repositories/releases/io/bioimage/dl-modelrunner-tensorflow-2b/0.3.1/dl-modelrunner-tensorflow-2b-0.3.1.jar"
 			]
 		},
 		{
@@ -774,7 +774,7 @@
 				"https://repo1.maven.org/maven2/org/tensorflow/tensorflow-core-api/0.4.2/tensorflow-core-api-0.4.2-windows-x86_64-gpu.jar",
 				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.8/javacpp-1.5.8.jar",
 				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.6/javacpp-1.5.6-windows-x86_64.jar",
-				"https://maven.scijava.org/content/repositories/releases/io/bioimage/dl-modelrunner-tensorflow-2b/0.3.0/dl-modelrunner-tensorflow-2b-0.3.0.jar"
+				"https://maven.scijava.org/content/repositories/releases/io/bioimage/dl-modelrunner-tensorflow-2b/0.3.1/dl-modelrunner-tensorflow-2b-0.3.1.jar"
 			]
 		},
 		{
@@ -793,7 +793,7 @@
 				"https://repo1.maven.org/maven2/org/tensorflow/tensorflow-core-api/0.4.2/tensorflow-core-api-0.4.2-linux-x86_64.jar",
 				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.8/javacpp-1.5.8.jar",
 				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.6/javacpp-1.5.6-linux-x86_64.jar",
-				"https://maven.scijava.org/content/repositories/releases/io/bioimage/dl-modelrunner-tensorflow-2b/0.3.0/dl-modelrunner-tensorflow-2b-0.3.0.jar"
+				"https://maven.scijava.org/content/repositories/releases/io/bioimage/dl-modelrunner-tensorflow-2b/0.3.1/dl-modelrunner-tensorflow-2b-0.3.1.jar"
 			]
 		},
 		{
@@ -812,7 +812,7 @@
 				"https://repo1.maven.org/maven2/org/tensorflow/tensorflow-core-api/0.4.2/tensorflow-core-api-0.4.2-linux-x86_64-gpu.jar",
 				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.8/javacpp-1.5.8.jar",
 				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.6/javacpp-1.5.6-linux-x86_64.jar",
-				"https://maven.scijava.org/content/repositories/releases/io/bioimage/dl-modelrunner-tensorflow-2b/0.3.0/dl-modelrunner-tensorflow-2b-0.3.0.jar"
+				"https://maven.scijava.org/content/repositories/releases/io/bioimage/dl-modelrunner-tensorflow-2b/0.3.1/dl-modelrunner-tensorflow-2b-0.3.1.jar"
 			]
 		},
 		{
@@ -831,7 +831,7 @@
 				"https://repo1.maven.org/maven2/org/tensorflow/tensorflow-core-api/0.4.2/tensorflow-core-api-0.4.2-macosx-x86_64.jar",
 				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.8/javacpp-1.5.8.jar",
 				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.6/javacpp-1.5.6-macosx-x86_64.jar",
-				"https://maven.scijava.org/content/repositories/releases/io/bioimage/dl-modelrunner-tensorflow-2b/0.3.0/dl-modelrunner-tensorflow-2b-0.3.0.jar"
+				"https://maven.scijava.org/content/repositories/releases/io/bioimage/dl-modelrunner-tensorflow-2b/0.3.1/dl-modelrunner-tensorflow-2b-0.3.1.jar"
 			]
 		},
 		{
@@ -1744,7 +1744,7 @@
 			"java": 8,
 			"jars": [
 				"https://repo1.maven.org/maven2/com/microsoft/onnxruntime/onnxruntime/1.13.1/onnxruntime-1.13.1.jar",
-				"https://maven.scijava.org/content/repositories/releases/io/bioimage/dl-modelrunner-onnx/0.3.1/dl-modelrunner-onnx-0.3.1.jar"
+				"https://maven.scijava.org/content/repositories/releases/io/bioimage/dl-modelrunner-onnx/0.3.2/dl-modelrunner-onnx-0.3.2.jar"
 			]
 		},
 		{
@@ -1758,7 +1758,7 @@
 			"java": 8,
 			"jars": [
 				"https://repo1.maven.org/maven2/com/microsoft/onnxruntime/onnxruntime/1.12.1/onnxruntime-1.12.1.jar",
-				"https://maven.scijava.org/content/repositories/releases/io/bioimage/dl-modelrunner-onnx/0.3.1/dl-modelrunner-onnx-0.3.1.jar"
+				"https://maven.scijava.org/content/repositories/releases/io/bioimage/dl-modelrunner-onnx/0.3.2/dl-modelrunner-onnx-0.3.2.jar"
 			]
 		},
 		{
@@ -1772,7 +1772,7 @@
 			"java": 8,
 			"jars": [
 				"https://repo1.maven.org/maven2/com/microsoft/onnxruntime/onnxruntime/1.11.0/onnxruntime-1.11.0.jar",
-				"https://maven.scijava.org/content/repositories/releases/io/bioimage/dl-modelrunner-onnx/0.3.1/dl-modelrunner-onnx-0.3.1.jar"
+				"https://maven.scijava.org/content/repositories/releases/io/bioimage/dl-modelrunner-onnx/0.3.2/dl-modelrunner-onnx-0.3.2.jar"
 			]
 		},
 		{
@@ -1786,7 +1786,7 @@
 			"java": 8,
 			"jars": [
 				"https://repo1.maven.org/maven2/com/microsoft/onnxruntime/onnxruntime/1.10.0/onnxruntime-1.10.0.jar",
-				"https://maven.scijava.org/content/repositories/releases/io/bioimage/dl-modelrunner-onnx/0.3.1/dl-modelrunner-onnx-0.3.1.jar"
+				"https://maven.scijava.org/content/repositories/releases/io/bioimage/dl-modelrunner-onnx/0.3.2/dl-modelrunner-onnx-0.3.2.jar"
 			]
 		},
 		{
@@ -1800,7 +1800,7 @@
 			"java": 8,
 			"jars": [
 				"https://repo1.maven.org/maven2/com/microsoft/onnxruntime/onnxruntime/1.9.0/onnxruntime-1.9.0.jar",
-				"https://maven.scijava.org/content/repositories/releases/io/bioimage/dl-modelrunner-onnx/0.3.1/dl-modelrunner-onnx-0.3.1.jar"
+				"https://maven.scijava.org/content/repositories/releases/io/bioimage/dl-modelrunner-onnx/0.3.2/dl-modelrunner-onnx-0.3.2.jar"
 			]
 		},
 		{
@@ -1814,7 +1814,7 @@
 			"java": 8,
 			"jars": [
 				"https://repo1.maven.org/maven2/com/microsoft/onnxruntime/onnxruntime/1.8.1/onnxruntime-1.8.1.jar",
-				"https://maven.scijava.org/content/repositories/releases/io/bioimage/dl-modelrunner-onnx/0.3.1/dl-modelrunner-onnx-0.3.1.jar"
+				"https://maven.scijava.org/content/repositories/releases/io/bioimage/dl-modelrunner-onnx/0.3.2/dl-modelrunner-onnx-0.3.2.jar"
 			]
 		},
 		{
@@ -1828,7 +1828,7 @@
 			"java": 8,
 			"jars": [
 				"https://repo1.maven.org/maven2/com/microsoft/onnxruntime/onnxruntime/1.8.0/onnxruntime-1.8.0.jar",
-				"https://maven.scijava.org/content/repositories/releases/io/bioimage/dl-modelrunner-onnx/0.3.1/dl-modelrunner-onnx-0.3.1.jar"
+				"https://maven.scijava.org/content/repositories/releases/io/bioimage/dl-modelrunner-onnx/0.3.2/dl-modelrunner-onnx-0.3.2.jar"
 			]
 		},
 		{
@@ -1842,7 +1842,7 @@
 			"java": 8,
 			"jars": [
 				"https://repo1.maven.org/maven2/com/microsoft/onnxruntime/onnxruntime/1.7.0/onnxruntime-1.7.0.jar",
-				"https://maven.scijava.org/content/repositories/releases/io/bioimage/dl-modelrunner-onnx/0.3.1/dl-modelrunner-onnx-0.3.1.jar"
+				"https://maven.scijava.org/content/repositories/releases/io/bioimage/dl-modelrunner-onnx/0.3.2/dl-modelrunner-onnx-0.3.2.jar"
 			]
 		},
 		{
@@ -1856,7 +1856,7 @@
 			"java": 8,
 			"jars": [
 				"https://repo1.maven.org/maven2/com/microsoft/onnxruntime/onnxruntime/1.6.0/onnxruntime-1.6.0.jar",
-				"https://maven.scijava.org/content/repositories/releases/io/bioimage/dl-modelrunner-onnx/0.3.1/dl-modelrunner-onnx-0.3.1.jar"
+				"https://maven.scijava.org/content/repositories/releases/io/bioimage/dl-modelrunner-onnx/0.3.2/dl-modelrunner-onnx-0.3.2.jar"
 			]
 		},
 		{
@@ -1870,7 +1870,7 @@
 			"java": 8,
 			"jars": [
 				"https://repo1.maven.org/maven2/com/microsoft/onnxruntime/onnxruntime/1.5.2/onnxruntime-1.5.2.jar",
-				"https://maven.scijava.org/content/repositories/releases/io/bioimage/dl-modelrunner-onnx/0.3.1/dl-modelrunner-onnx-0.3.1.jar"
+				"https://maven.scijava.org/content/repositories/releases/io/bioimage/dl-modelrunner-onnx/0.3.2/dl-modelrunner-onnx-0.3.2.jar"
 			]
 		},
 		{
@@ -1884,7 +1884,7 @@
 			"java": 8,
 			"jars": [
 				"https://repo1.maven.org/maven2/com/microsoft/onnxruntime/onnxruntime/1.5.1/onnxruntime-1.5.1.jar",
-				"https://maven.scijava.org/content/repositories/releases/io/bioimage/dl-modelrunner-onnx/0.3.1/dl-modelrunner-onnx-0.3.1.jar"
+				"https://maven.scijava.org/content/repositories/releases/io/bioimage/dl-modelrunner-onnx/0.3.2/dl-modelrunner-onnx-0.3.2.jar"
 			]
 		},
 		{
@@ -1898,7 +1898,7 @@
 			"java": 8,
 			"jars": [
 				"https://repo1.maven.org/maven2/com/microsoft/onnxruntime/onnxruntime/1.4.0/onnxruntime-1.4.0.jar",
-				"https://maven.scijava.org/content/repositories/releases/io/bioimage/dl-modelrunner-onnx/0.3.1/dl-modelrunner-onnx-0.3.1.jar"
+				"https://maven.scijava.org/content/repositories/releases/io/bioimage/dl-modelrunner-onnx/0.3.2/dl-modelrunner-onnx-0.3.2.jar"
 			]
 		},
 		{
@@ -1912,7 +1912,7 @@
 			"java": 8,
 			"jars": [
 				"https://repo1.maven.org/maven2/com/microsoft/onnxruntime/onnxruntime/1.3.1/onnxruntime-1.3.1.jar",
-				"https://maven.scijava.org/content/repositories/releases/io/bioimage/dl-modelrunner-onnx/0.3.1/dl-modelrunner-onnx-0.3.1.jar"
+				"https://maven.scijava.org/content/repositories/releases/io/bioimage/dl-modelrunner-onnx/0.3.2/dl-modelrunner-onnx-0.3.2.jar"
 			]
 		},
 		{
@@ -1926,7 +1926,7 @@
 			"java": 8,
 			"jars": [
 				"https://repo1.maven.org/maven2/com/microsoft/onnxruntime/onnxruntime/1.13.1/onnxruntime-1.13.1.jar",
-				"https://maven.scijava.org/content/repositories/releases/io/bioimage/dl-modelrunner-onnx/0.3.1/dl-modelrunner-onnx-0.3.1.jar"
+				"https://maven.scijava.org/content/repositories/releases/io/bioimage/dl-modelrunner-onnx/0.3.2/dl-modelrunner-onnx-0.3.2.jar"
 			]
 		},
 		{
@@ -1940,7 +1940,7 @@
 			"java": 8,
 			"jars": [
 				"https://repo1.maven.org/maven2/com/microsoft/onnxruntime/onnxruntime/1.12.1/onnxruntime-1.12.1.jar",
-				"https://maven.scijava.org/content/repositories/releases/io/bioimage/dl-modelrunner-onnx/0.3.1/dl-modelrunner-onnx-0.3.1.jar"
+				"https://maven.scijava.org/content/repositories/releases/io/bioimage/dl-modelrunner-onnx/0.3.2/dl-modelrunner-onnx-0.3.2.jar"
 			]
 		},
 		{
@@ -1954,7 +1954,7 @@
 			"java": 8,
 			"jars": [
 				"https://repo1.maven.org/maven2/com/microsoft/onnxruntime/onnxruntime/1.13.1/onnxruntime-1.13.1.jar",
-				"https://maven.scijava.org/content/repositories/releases/io/bioimage/dl-modelrunner-onnx/0.3.1/dl-modelrunner-onnx-0.3.1.jar"
+				"https://maven.scijava.org/content/repositories/releases/io/bioimage/dl-modelrunner-onnx/0.3.2/dl-modelrunner-onnx-0.3.2.jar"
 			]
 		},
 		{
@@ -1968,7 +1968,7 @@
 			"java": 8,
 			"jars": [
 				"https://repo1.maven.org/maven2/com/microsoft/onnxruntime/onnxruntime/1.12.1/onnxruntime-1.12.1.jar",
-				"https://maven.scijava.org/content/repositories/releases/io/bioimage/dl-modelrunner-onnx/0.3.1/dl-modelrunner-onnx-0.3.1.jar"
+				"https://maven.scijava.org/content/repositories/releases/io/bioimage/dl-modelrunner-onnx/0.3.2/dl-modelrunner-onnx-0.3.2.jar"
 			]
 		},
 		{
@@ -1982,7 +1982,7 @@
 			"java": 8,
 			"jars": [
 				"https://repo1.maven.org/maven2/com/microsoft/onnxruntime/onnxruntime/1.11.0/onnxruntime-1.11.0.jar",
-				"https://maven.scijava.org/content/repositories/releases/io/bioimage/dl-modelrunner-onnx/0.3.1/dl-modelrunner-onnx-0.3.1.jar"
+				"https://maven.scijava.org/content/repositories/releases/io/bioimage/dl-modelrunner-onnx/0.3.2/dl-modelrunner-onnx-0.3.2.jar"
 			]
 		},
 		{
@@ -1996,7 +1996,7 @@
 			"java": 8,
 			"jars": [
 				"https://repo1.maven.org/maven2/com/microsoft/onnxruntime/onnxruntime/1.10.0/onnxruntime-1.10.0.jar",
-				"https://maven.scijava.org/content/repositories/releases/io/bioimage/dl-modelrunner-onnx/0.3.1/dl-modelrunner-onnx-0.3.1.jar"
+				"https://maven.scijava.org/content/repositories/releases/io/bioimage/dl-modelrunner-onnx/0.3.2/dl-modelrunner-onnx-0.3.2.jar"
 			]
 		},
 		{
@@ -2010,7 +2010,7 @@
 			"java": 8,
 			"jars": [
 				"https://repo1.maven.org/maven2/com/microsoft/onnxruntime/onnxruntime/1.9.0/onnxruntime-1.9.0.jar",
-				"https://maven.scijava.org/content/repositories/releases/io/bioimage/dl-modelrunner-onnx/0.3.1/dl-modelrunner-onnx-0.3.1.jar"
+				"https://maven.scijava.org/content/repositories/releases/io/bioimage/dl-modelrunner-onnx/0.3.2/dl-modelrunner-onnx-0.3.2.jar"
 			]
 		},
 		{
@@ -2024,7 +2024,7 @@
 			"java": 8,
 			"jars": [
 				"https://repo1.maven.org/maven2/com/microsoft/onnxruntime/onnxruntime/1.8.1/onnxruntime-1.8.1.jar",
-				"https://maven.scijava.org/content/repositories/releases/io/bioimage/dl-modelrunner-onnx/0.3.1/dl-modelrunner-onnx-0.3.1.jar"
+				"https://maven.scijava.org/content/repositories/releases/io/bioimage/dl-modelrunner-onnx/0.3.2/dl-modelrunner-onnx-0.3.2.jar"
 			]
 		},
 		{
@@ -2038,7 +2038,7 @@
 			"java": 8,
 			"jars": [
 				"https://repo1.maven.org/maven2/com/microsoft/onnxruntime/onnxruntime/1.8.0/onnxruntime-1.8.0.jar",
-				"https://maven.scijava.org/content/repositories/releases/io/bioimage/dl-modelrunner-onnx/0.3.1/dl-modelrunner-onnx-0.3.1.jar"
+				"https://maven.scijava.org/content/repositories/releases/io/bioimage/dl-modelrunner-onnx/0.3.2/dl-modelrunner-onnx-0.3.2.jar"
 			]
 		},
 		{
@@ -2052,7 +2052,7 @@
 			"java": 8,
 			"jars": [
 				"https://repo1.maven.org/maven2/com/microsoft/onnxruntime/onnxruntime/1.7.0/onnxruntime-1.7.0.jar",
-				"https://maven.scijava.org/content/repositories/releases/io/bioimage/dl-modelrunner-onnx/0.3.1/dl-modelrunner-onnx-0.3.1.jar"
+				"https://maven.scijava.org/content/repositories/releases/io/bioimage/dl-modelrunner-onnx/0.3.2/dl-modelrunner-onnx-0.3.2.jar"
 			]
 		},
 		{
@@ -2066,7 +2066,7 @@
 			"java": 8,
 			"jars": [
 				"https://repo1.maven.org/maven2/com/microsoft/onnxruntime/onnxruntime/1.6.0/onnxruntime-1.6.0.jar",
-				"https://maven.scijava.org/content/repositories/releases/io/bioimage/dl-modelrunner-onnx/0.3.1/dl-modelrunner-onnx-0.3.1.jar"
+				"https://maven.scijava.org/content/repositories/releases/io/bioimage/dl-modelrunner-onnx/0.3.2/dl-modelrunner-onnx-0.3.2.jar"
 			]
 		},
 		{
@@ -2080,7 +2080,7 @@
 			"java": 8,
 			"jars": [
 				"https://repo1.maven.org/maven2/com/microsoft/onnxruntime/onnxruntime/1.5.2/onnxruntime-1.5.2.jar",
-				"https://maven.scijava.org/content/repositories/releases/io/bioimage/dl-modelrunner-onnx/0.3.1/dl-modelrunner-onnx-0.3.1.jar"
+				"https://maven.scijava.org/content/repositories/releases/io/bioimage/dl-modelrunner-onnx/0.3.2/dl-modelrunner-onnx-0.3.2.jar"
 			]
 		},
 		{
@@ -2094,7 +2094,7 @@
 			"java": 8,
 			"jars": [
 				"https://repo1.maven.org/maven2/com/microsoft/onnxruntime/onnxruntime/1.5.1/onnxruntime-1.5.1.jar",
-				"https://maven.scijava.org/content/repositories/releases/io/bioimage/dl-modelrunner-onnx/0.3.1/dl-modelrunner-onnx-0.3.1.jar"
+				"https://maven.scijava.org/content/repositories/releases/io/bioimage/dl-modelrunner-onnx/0.3.2/dl-modelrunner-onnx-0.3.2.jar"
 			]
 		},
 		{
@@ -2108,7 +2108,7 @@
 			"java": 8,
 			"jars": [
 				"https://repo1.maven.org/maven2/com/microsoft/onnxruntime/onnxruntime/1.4.0/onnxruntime-1.4.0.jar",
-				"https://maven.scijava.org/content/repositories/releases/io/bioimage/dl-modelrunner-onnx/0.3.1/dl-modelrunner-onnx-0.3.1.jar"
+				"https://maven.scijava.org/content/repositories/releases/io/bioimage/dl-modelrunner-onnx/0.3.2/dl-modelrunner-onnx-0.3.2.jar"
 			]
 		},
 		{
@@ -2122,7 +2122,7 @@
 			"java": 8,
 			"jars": [
 				"https://repo1.maven.org/maven2/com/microsoft/onnxruntime/onnxruntime/1.3.1/onnxruntime-1.3.1.jar",
-				"https://maven.scijava.org/content/repositories/releases/io/bioimage/dl-modelrunner-onnx/0.3.1/dl-modelrunner-onnx-0.3.1.jar"
+				"https://maven.scijava.org/content/repositories/releases/io/bioimage/dl-modelrunner-onnx/0.3.2/dl-modelrunner-onnx-0.3.2.jar"
 			]
 		},
 		{
@@ -2136,7 +2136,7 @@
 			"java": 8,
 			"jars": [
 				"https://repo1.maven.org/maven2/com/microsoft/onnxruntime/onnxruntime/1.13.1/onnxruntime-1.13.1.jar",
-				"https://maven.scijava.org/content/repositories/releases/io/bioimage/dl-modelrunner-onnx/0.3.1/dl-modelrunner-onnx-0.3.1.jar"
+				"https://maven.scijava.org/content/repositories/releases/io/bioimage/dl-modelrunner-onnx/0.3.2/dl-modelrunner-onnx-0.3.2.jar"
 			]
 		},
 		{
@@ -2150,7 +2150,7 @@
 			"java": 8,
 			"jars": [
 				"https://repo1.maven.org/maven2/com/microsoft/onnxruntime/onnxruntime/1.12.1/onnxruntime-1.12.1.jar",
-				"https://maven.scijava.org/content/repositories/releases/io/bioimage/dl-modelrunner-onnx/0.3.1/dl-modelrunner-onnx-0.3.1.jar"
+				"https://maven.scijava.org/content/repositories/releases/io/bioimage/dl-modelrunner-onnx/0.3.2/dl-modelrunner-onnx-0.3.2.jar"
 			]
 		},
 		{
@@ -2164,7 +2164,7 @@
 			"java": 8,
 			"jars": [
 				"https://repo1.maven.org/maven2/com/microsoft/onnxruntime/onnxruntime/1.13.1/onnxruntime-1.13.1.jar",
-				"https://maven.scijava.org/content/repositories/releases/io/bioimage/dl-modelrunner-onnx/0.3.1/dl-modelrunner-onnx-0.3.1.jar"
+				"https://maven.scijava.org/content/repositories/releases/io/bioimage/dl-modelrunner-onnx/0.3.2/dl-modelrunner-onnx-0.3.2.jar"
 			]
 		},
 		{
@@ -2178,7 +2178,7 @@
 			"java": 8,
 			"jars": [
 				"https://repo1.maven.org/maven2/com/microsoft/onnxruntime/onnxruntime/1.12.1/onnxruntime-1.12.1.jar",
-				"https://maven.scijava.org/content/repositories/releases/io/bioimage/dl-modelrunner-onnx/0.3.1/dl-modelrunner-onnx-0.3.1.jar"
+				"https://maven.scijava.org/content/repositories/releases/io/bioimage/dl-modelrunner-onnx/0.3.2/dl-modelrunner-onnx-0.3.2.jar"
 			]
 		},
 		{
@@ -2192,7 +2192,7 @@
 			"java": 8,
 			"jars": [
 				"https://repo1.maven.org/maven2/com/microsoft/onnxruntime/onnxruntime/1.11.0/onnxruntime-1.11.0.jar",
-				"https://maven.scijava.org/content/repositories/releases/io/bioimage/dl-modelrunner-onnx/0.3.1/dl-modelrunner-onnx-0.3.1.jar"
+				"https://maven.scijava.org/content/repositories/releases/io/bioimage/dl-modelrunner-onnx/0.3.2/dl-modelrunner-onnx-0.3.2.jar"
 			]
 		},
 		{
@@ -2206,7 +2206,7 @@
 			"java": 8,
 			"jars": [
 				"https://repo1.maven.org/maven2/com/microsoft/onnxruntime/onnxruntime/1.10.0/onnxruntime-1.10.0.jar",
-				"https://maven.scijava.org/content/repositories/releases/io/bioimage/dl-modelrunner-onnx/0.3.1/dl-modelrunner-onnx-0.3.1.jar"
+				"https://maven.scijava.org/content/repositories/releases/io/bioimage/dl-modelrunner-onnx/0.3.2/dl-modelrunner-onnx-0.3.2.jar"
 			]
 		},
 		{
@@ -2220,7 +2220,7 @@
 			"java": 8,
 			"jars": [
 				"https://repo1.maven.org/maven2/com/microsoft/onnxruntime/onnxruntime/1.9.0/onnxruntime-1.9.0.jar",
-				"https://maven.scijava.org/content/repositories/releases/io/bioimage/dl-modelrunner-onnx/0.3.1/dl-modelrunner-onnx-0.3.1.jar"
+				"https://maven.scijava.org/content/repositories/releases/io/bioimage/dl-modelrunner-onnx/0.3.2/dl-modelrunner-onnx-0.3.2.jar"
 			]
 		},
 		{
@@ -2234,7 +2234,7 @@
 			"java": 8,
 			"jars": [
 				"https://repo1.maven.org/maven2/com/microsoft/onnxruntime/onnxruntime/1.8.1/onnxruntime-1.8.1.jar",
-				"https://maven.scijava.org/content/repositories/releases/io/bioimage/dl-modelrunner-onnx/0.3.1/dl-modelrunner-onnx-0.3.1.jar"
+				"https://maven.scijava.org/content/repositories/releases/io/bioimage/dl-modelrunner-onnx/0.3.2/dl-modelrunner-onnx-0.3.2.jar"
 			]
 		},
 		{
@@ -2248,7 +2248,7 @@
 			"java": 8,
 			"jars": [
 				"https://repo1.maven.org/maven2/com/microsoft/onnxruntime/onnxruntime/1.8.0/onnxruntime-1.8.0.jar",
-				"https://maven.scijava.org/content/repositories/releases/io/bioimage/dl-modelrunner-onnx/0.3.1/dl-modelrunner-onnx-0.3.1.jar"
+				"https://maven.scijava.org/content/repositories/releases/io/bioimage/dl-modelrunner-onnx/0.3.2/dl-modelrunner-onnx-0.3.2.jar"
 			]
 		},
 		{
@@ -2262,7 +2262,7 @@
 			"java": 8,
 			"jars": [
 				"https://repo1.maven.org/maven2/com/microsoft/onnxruntime/onnxruntime/1.7.0/onnxruntime-1.7.0.jar",
-				"https://maven.scijava.org/content/repositories/releases/io/bioimage/dl-modelrunner-onnx/0.3.1/dl-modelrunner-onnx-0.3.1.jar"
+				"https://maven.scijava.org/content/repositories/releases/io/bioimage/dl-modelrunner-onnx/0.3.2/dl-modelrunner-onnx-0.3.2.jar"
 			]
 		},
 		{
@@ -2276,7 +2276,7 @@
 			"java": 8,
 			"jars": [
 				"https://repo1.maven.org/maven2/com/microsoft/onnxruntime/onnxruntime/1.6.0/onnxruntime-1.6.0.jar",
-				"https://maven.scijava.org/content/repositories/releases/io/bioimage/dl-modelrunner-onnx/0.3.1/dl-modelrunner-onnx-0.3.1.jar"
+				"https://maven.scijava.org/content/repositories/releases/io/bioimage/dl-modelrunner-onnx/0.3.2/dl-modelrunner-onnx-0.3.2.jar"
 			]
 		},
 		{
@@ -2290,7 +2290,7 @@
 			"java": 8,
 			"jars": [
 				"https://repo1.maven.org/maven2/com/microsoft/onnxruntime/onnxruntime/1.5.2/onnxruntime-1.5.2.jar",
-				"https://maven.scijava.org/content/repositories/releases/io/bioimage/dl-modelrunner-onnx/0.3.1/dl-modelrunner-onnx-0.3.1.jar"
+				"https://maven.scijava.org/content/repositories/releases/io/bioimage/dl-modelrunner-onnx/0.3.2/dl-modelrunner-onnx-0.3.2.jar"
 			]
 		},
 		{
@@ -2304,7 +2304,7 @@
 			"java": 8,
 			"jars": [
 				"https://repo1.maven.org/maven2/com/microsoft/onnxruntime/onnxruntime/1.5.1/onnxruntime-1.5.1.jar",
-				"https://maven.scijava.org/content/repositories/releases/io/bioimage/dl-modelrunner-onnx/0.3.1/dl-modelrunner-onnx-0.3.1.jar"
+				"https://maven.scijava.org/content/repositories/releases/io/bioimage/dl-modelrunner-onnx/0.3.2/dl-modelrunner-onnx-0.3.2.jar"
 			]
 		},
 		{
@@ -2318,7 +2318,7 @@
 			"java": 8,
 			"jars": [
 				"https://repo1.maven.org/maven2/com/microsoft/onnxruntime/onnxruntime/1.4.0/onnxruntime-1.4.0.jar",
-				"https://maven.scijava.org/content/repositories/releases/io/bioimage/dl-modelrunner-onnx/0.3.1/dl-modelrunner-onnx-0.3.1.jar"
+				"https://maven.scijava.org/content/repositories/releases/io/bioimage/dl-modelrunner-onnx/0.3.2/dl-modelrunner-onnx-0.3.2.jar"
 			]
 		},
 		{
@@ -2332,7 +2332,7 @@
 			"java": 8,
 			"jars": [
 				"https://repo1.maven.org/maven2/com/microsoft/onnxruntime/onnxruntime/1.3.1/onnxruntime-1.3.1.jar",
-				"https://maven.scijava.org/content/repositories/releases/io/bioimage/dl-modelrunner-onnx/0.3.1/dl-modelrunner-onnx-0.3.1.jar"
+				"https://maven.scijava.org/content/repositories/releases/io/bioimage/dl-modelrunner-onnx/0.3.2/dl-modelrunner-onnx-0.3.2.jar"
 			]
 		},
 		{
@@ -2346,7 +2346,7 @@
 			"java": 8,
 			"jars": [
 				"https://repo1.maven.org/maven2/com/microsoft/onnxruntime/onnxruntime_gpu/1.13.1/onnxruntime_gpu-1.13.1.jar",
-				"https://maven.scijava.org/content/repositories/releases/io/bioimage/dl-modelrunner-onnx/0.3.1/dl-modelrunner-onnx-0.3.1.jar"
+				"https://maven.scijava.org/content/repositories/releases/io/bioimage/dl-modelrunner-onnx/0.3.2/dl-modelrunner-onnx-0.3.2.jar"
 			]
 		},
 		{
@@ -2360,7 +2360,7 @@
 			"java": 8,
 			"jars": [
 				"https://repo1.maven.org/maven2/com/microsoft/onnxruntime/onnxruntime_gpu/1.12.1/onnxruntime_gpu-1.12.1.jar",
-				"https://maven.scijava.org/content/repositories/releases/io/bioimage/dl-modelrunner-onnx/0.3.1/dl-modelrunner-onnx-0.3.1.jar"
+				"https://maven.scijava.org/content/repositories/releases/io/bioimage/dl-modelrunner-onnx/0.3.2/dl-modelrunner-onnx-0.3.2.jar"
 			]
 		},
 		{
@@ -2374,7 +2374,7 @@
 			"java": 8,
 			"jars": [
 				"https://repo1.maven.org/maven2/com/microsoft/onnxruntime/onnxruntime_gpu/1.11.0/onnxruntime_gpu-1.11.0.jar",
-				"https://maven.scijava.org/content/repositories/releases/io/bioimage/dl-modelrunner-onnx/0.3.1/dl-modelrunner-onnx-0.3.1.jar"
+				"https://maven.scijava.org/content/repositories/releases/io/bioimage/dl-modelrunner-onnx/0.3.2/dl-modelrunner-onnx-0.3.2.jar"
 			]
 		},
 		{
@@ -2388,7 +2388,7 @@
 			"java": 8,
 			"jars": [
 				"https://repo1.maven.org/maven2/com/microsoft/onnxruntime/onnxruntime_gpu/1.10.0/onnxruntime_gpu-1.10.0.jar",
-				"https://maven.scijava.org/content/repositories/releases/io/bioimage/dl-modelrunner-onnx/0.3.1/dl-modelrunner-onnx-0.3.1.jar"
+				"https://maven.scijava.org/content/repositories/releases/io/bioimage/dl-modelrunner-onnx/0.3.2/dl-modelrunner-onnx-0.3.2.jar"
 			]
 		},
 		{
@@ -2402,7 +2402,7 @@
 			"java": 8,
 			"jars": [
 				"https://repo1.maven.org/maven2/com/microsoft/onnxruntime/onnxruntime_gpu/1.9.0/onnxruntime_gpu-1.9.0.jar",
-				"https://maven.scijava.org/content/repositories/releases/io/bioimage/dl-modelrunner-onnx/0.3.1/dl-modelrunner-onnx-0.3.1.jar"
+				"https://maven.scijava.org/content/repositories/releases/io/bioimage/dl-modelrunner-onnx/0.3.2/dl-modelrunner-onnx-0.3.2.jar"
 			]
 		},
 		{
@@ -2416,7 +2416,7 @@
 			"java": 8,
 			"jars": [
 				"https://repo1.maven.org/maven2/com/microsoft/onnxruntime/onnxruntime_gpu/1.8.1/onnxruntime_gpu-1.8.1.jar",
-				"https://maven.scijava.org/content/repositories/releases/io/bioimage/dl-modelrunner-onnx/0.3.1/dl-modelrunner-onnx-0.3.1.jar"
+				"https://maven.scijava.org/content/repositories/releases/io/bioimage/dl-modelrunner-onnx/0.3.2/dl-modelrunner-onnx-0.3.2.jar"
 			]
 		},
 		{
@@ -2430,7 +2430,7 @@
 			"java": 8,
 			"jars": [
 				"https://repo1.maven.org/maven2/com/microsoft/onnxruntime/onnxruntime_gpu/1.8.0/onnxruntime_gpu-1.8.0.jar",
-				"https://maven.scijava.org/content/repositories/releases/io/bioimage/dl-modelrunner-onnx/0.3.1/dl-modelrunner-onnx-0.3.1.jar"
+				"https://maven.scijava.org/content/repositories/releases/io/bioimage/dl-modelrunner-onnx/0.3.2/dl-modelrunner-onnx-0.3.2.jar"
 			]
 		},
 		{
@@ -2444,7 +2444,7 @@
 			"java": 8,
 			"jars": [
 				"https://repo1.maven.org/maven2/com/microsoft/onnxruntime/onnxruntime_gpu/1.13.1/onnxruntime_gpu-1.13.1.jar",
-				"https://maven.scijava.org/content/repositories/releases/io/bioimage/dl-modelrunner-onnx/0.3.1/dl-modelrunner-onnx-0.3.1.jar"
+				"https://maven.scijava.org/content/repositories/releases/io/bioimage/dl-modelrunner-onnx/0.3.2/dl-modelrunner-onnx-0.3.2.jar"
 			]
 		},
 		{
@@ -2458,7 +2458,7 @@
 			"java": 8,
 			"jars": [
 				"https://repo1.maven.org/maven2/com/microsoft/onnxruntime/onnxruntime_gpu/1.12.1/onnxruntime_gpu-1.12.1.jar",
-				"https://maven.scijava.org/content/repositories/releases/io/bioimage/dl-modelrunner-onnx/0.3.1/dl-modelrunner-onnx-0.3.1.jar"
+				"https://maven.scijava.org/content/repositories/releases/io/bioimage/dl-modelrunner-onnx/0.3.2/dl-modelrunner-onnx-0.3.2.jar"
 			]
 		},
 		{
@@ -2472,7 +2472,7 @@
 			"java": 8,
 			"jars": [
 				"https://repo1.maven.org/maven2/com/microsoft/onnxruntime/onnxruntime_gpu/1.11.0/onnxruntime_gpu-1.11.0.jar",
-				"https://maven.scijava.org/content/repositories/releases/io/bioimage/dl-modelrunner-onnx/0.3.1/dl-modelrunner-onnx-0.3.1.jar"
+				"https://maven.scijava.org/content/repositories/releases/io/bioimage/dl-modelrunner-onnx/0.3.2/dl-modelrunner-onnx-0.3.2.jar"
 			]
 		},
 		{
@@ -2486,7 +2486,7 @@
 			"java": 8,
 			"jars": [
 				"https://repo1.maven.org/maven2/com/microsoft/onnxruntime/onnxruntime_gpu/1.10.0/onnxruntime_gpu-1.10.0.jar",
-				"https://maven.scijava.org/content/repositories/releases/io/bioimage/dl-modelrunner-onnx/0.3.1/dl-modelrunner-onnx-0.3.1.jar"
+				"https://maven.scijava.org/content/repositories/releases/io/bioimage/dl-modelrunner-onnx/0.3.2/dl-modelrunner-onnx-0.3.2.jar"
 			]
 		},
 		{
@@ -2500,7 +2500,7 @@
 			"java": 8,
 			"jars": [
 				"https://repo1.maven.org/maven2/com/microsoft/onnxruntime/onnxruntime_gpu/1.9.0/onnxruntime_gpu-1.9.0.jar",
-				"https://maven.scijava.org/content/repositories/releases/io/bioimage/dl-modelrunner-onnx/0.3.1/dl-modelrunner-onnx-0.3.1.jar"
+				"https://maven.scijava.org/content/repositories/releases/io/bioimage/dl-modelrunner-onnx/0.3.2/dl-modelrunner-onnx-0.3.2.jar"
 			]
 		},
 		{
@@ -2514,7 +2514,7 @@
 			"java": 8,
 			"jars": [
 				"https://repo1.maven.org/maven2/com/microsoft/onnxruntime/onnxruntime_gpu/1.8.1/onnxruntime_gpu-1.8.1.jar",
-				"https://maven.scijava.org/content/repositories/releases/io/bioimage/dl-modelrunner-onnx/0.3.1/dl-modelrunner-onnx-0.3.1.jar"
+				"https://maven.scijava.org/content/repositories/releases/io/bioimage/dl-modelrunner-onnx/0.3.2/dl-modelrunner-onnx-0.3.2.jar"
 			]
 		},
 		{
@@ -2528,7 +2528,7 @@
 			"java": 8,
 			"jars": [
 				"https://repo1.maven.org/maven2/com/microsoft/onnxruntime/onnxruntime_gpu/1.8.0/onnxruntime_gpu-1.8.0.jar",
-				"https://maven.scijava.org/content/repositories/releases/io/bioimage/dl-modelrunner-onnx/0.3.1/dl-modelrunner-onnx-0.3.1.jar"
+				"https://maven.scijava.org/content/repositories/releases/io/bioimage/dl-modelrunner-onnx/0.3.2/dl-modelrunner-onnx-0.3.2.jar"
 			]
 		}
 	]
