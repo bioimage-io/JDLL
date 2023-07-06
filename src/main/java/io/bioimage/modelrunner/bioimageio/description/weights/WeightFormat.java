@@ -41,6 +41,14 @@ public interface WeightFormat {
 	public String getTrainingVersion();
 	
 	/**
+	 * Return the version supported by JDLL that it is compatible with
+	 * the training version of the weights
+	 * @return the version supported by JDLL that it is compatible with
+	 * the training version of the weights
+	 */
+	public String getJDLLCompatibleToTrainingVersion();
+	
+	/**
 	 * Format of the weights of the model. The supported weights by the Bioimage.io are:
 	 * keras_hdf5, onnx, pytorch_state_dict, tensorflow_js, tensorflow_saved_model_bundle
 	 * and torchscript

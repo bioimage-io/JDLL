@@ -83,12 +83,18 @@ public class TorchscriptWeights implements WeightFormat{
 
 	private String weightsFormat;
 	@Override
+	/**
+	 * {@inheritDoc}
+	 */
 	public String getWeightsFormat() {
 		return weightsFormat;
 	}
 
 	private String trainingVersion;
 	@Override
+	/**
+	 * {@inheritDoc}
+	 */
 	public String getTrainingVersion() {
 		return trainingVersion;
 	}
@@ -123,6 +129,9 @@ public class TorchscriptWeights implements WeightFormat{
 
 	private String sha256;
 	@Override
+	/**
+	 * {@inheritDoc}
+	 */
 	public String getSha256() {
 		return sha256;
 	}
@@ -141,6 +150,9 @@ public class TorchscriptWeights implements WeightFormat{
 
 	private String source;
 	@Override
+	/**
+	 * {@inheritDoc}
+	 */
 	public String getSource() {
 		return source;
 	}
@@ -160,6 +172,9 @@ public class TorchscriptWeights implements WeightFormat{
 
 	private List<String> authors;
 	@Override
+	/**
+	 * {@inheritDoc}
+	 */
 	public List<String> getAuthors() {
 		return authors;
 	}
@@ -182,6 +197,9 @@ public class TorchscriptWeights implements WeightFormat{
 
 	private Map<String, Object> attachments;
 	@Override
+	/**
+	 * {@inheritDoc}
+	 */
 	public Map<String, Object> getAttachments() {
 		return attachments;
 	}
@@ -199,6 +217,9 @@ public class TorchscriptWeights implements WeightFormat{
 
 	private String parent;
 	@Override
+	/**
+	 * {@inheritDoc}
+	 */
 	public String getParent() {
 		return parent;
 	}
@@ -215,6 +236,9 @@ public class TorchscriptWeights implements WeightFormat{
 
 	private String architecture;
 	@Override
+	/**
+	 * {@inheritDoc}
+	 */
 	public String getArchitecture() {
 		return architecture;
 	}
@@ -231,6 +255,9 @@ public class TorchscriptWeights implements WeightFormat{
 
 	private String architectureSha256;
 	@Override
+	/**
+	 * {@inheritDoc}
+	 */
 	public String getArchitectureSha256() {
 		return architectureSha256;
 	}
@@ -246,6 +273,9 @@ public class TorchscriptWeights implements WeightFormat{
 	}
 
 	@Override
+	/**
+	 * {@inheritDoc}
+	 */
 	public String getSourceFileName() {
 		if (source == null)
 			return source;
@@ -254,6 +284,7 @@ public class TorchscriptWeights implements WeightFormat{
 	
 	boolean gpu = false;
 	/**
+	 * {@inheritDoc}
 	 * Method to set whether the engine used for this weights supports GPU or not
 	 * @param support
 	 * 	whether the engine for the weights supports GPu or not
@@ -264,11 +295,22 @@ public class TorchscriptWeights implements WeightFormat{
 	}
 	
 	/**
+	 * {@inheritDoc}
 	 * Method to know whether the engine used for this weights supports GPU or not
 	 * @return whether the engine for the weigths supports GPU or not
 	 */
 	@Override
 	public boolean isSupportGPU() {
 		return gpu;
+	}
+
+
+	private String compatibleVersion;
+	@Override
+	/**
+	 * {@inheritDoc}
+	 */
+	public String getJDLLCompatibleToTrainingVersion() {
+		return compatibleVersion;
 	}
 }

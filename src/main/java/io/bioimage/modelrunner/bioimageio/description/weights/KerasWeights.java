@@ -265,4 +265,11 @@ public class KerasWeights implements WeightFormat {
 	public boolean isSupportGPU() {
 		return gpu;
 	}
+
+
+	private String compatibleVersion;
+	@Override
+	public String getJDLLCompatibleToTrainingVersion() {
+		return compatibleVersion;
+	}
 }
