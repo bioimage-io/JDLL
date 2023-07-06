@@ -321,6 +321,6 @@ public class OnnxWeights implements WeightFormat {
 	private void setCompatibleVersion() {
 		if (this.trainingVersion == null)
 			this.compatibleVersion = null;
-		compatibleVersion = SupportedVersions.getJavaVersionForPythonVersion("tensorflow", trainingVersion);
+		compatibleVersion = SupportedVersions.getJavaVersionForPythonVersion("onnx", trainingVersion);
 	}
 }
