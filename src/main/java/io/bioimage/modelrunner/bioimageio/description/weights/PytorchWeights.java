@@ -307,7 +307,7 @@ public class PytorchWeights implements WeightFormat{
 	/**
 	 * {@inheritDoc}
 	 */
-	public String getJDLLCompatibleToTrainingVersion() {
+	public String getJavaTrainingVersion() {
 		return compatibleVersion;
 	}
 	

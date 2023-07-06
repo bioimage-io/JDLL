@@ -305,7 +305,7 @@ public class KerasWeights implements WeightFormat {
 	/**
 	 * {@inheritDoc}
 	 */
-	public String getJDLLCompatibleToTrainingVersion() {
+	public String getJavaTrainingVersion() {
 		return compatibleVersion;
 	}
 	
