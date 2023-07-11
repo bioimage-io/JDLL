@@ -21,6 +21,7 @@ package io.bioimage.modelrunner.versionmanagement;
 
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Set;
@@ -73,7 +74,11 @@ public class SupportedVersions
 	 */
 	public SupportedVersions( String engine )
 	{
-		this.versionsDic = getSpecificEngineVersionsJson( engine );
+		engine = AvailableEngines.getSupportedVersionsEngineTag(engine);
+    	if (engine == null) 
+    		this.versionsDic = new LinkedTreeMap<String, Object>();
+    	else
+    		this.versionsDic = getSpecificEngineVersionsJson( engine );
 		this.versionSet = this.versionsDic.keySet();
 	}
 
@@ -128,16 +133,17 @@ public class SupportedVersions
 	 * Get the supported versions for an specific Deep Learning framework
 	 * (engine)
 	 * 
-	 * @param specificEngine
+	 * @param engine
 	 *            the Deep Learning framework we want
 	 * @return a HashMap containing all the supported versions for a Deep
 	 *         Learning framework
 	 */
-	public static LinkedTreeMap< String, Object > getSpecificEngineVersionsJson( String specificEngine )
+	public static LinkedTreeMap< String, Object > getSpecificEngineVersionsJson( String engine )
 	{
 		if (ALL_VERSIONS == null)
 			ALL_VERSIONS = readVersionsJson();
-		LinkedTreeMap< String, Object > engineVersions = ( LinkedTreeMap< String, Object > ) ALL_VERSIONS.get( specificEngine );
+		engine = AvailableEngines.getSupportedVersionsEngineTag(engine);
+		LinkedTreeMap< String, Object > engineVersions = ( LinkedTreeMap< String, Object > ) ALL_VERSIONS.get( engine );
 		return engineVersions;
 	}
 
