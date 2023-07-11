@@ -63,6 +63,24 @@ public class SupportedVersions
 	 * framework version
 	 */
 	private Set< String > versionSet;
+	
+	/**
+	 * Method to test which are the versions that should ver returned in every 
+	 * case
+	 * @param args
+	 * 	not used
+	 */
+	public static void main(String[] args) {
+		String vv = getClosestSupportedPythonVersion("tensorflow", "2.13.0");
+		String v1 = getClosestSupportedPythonVersion("tensorflow", "2");
+		String v2 = getClosestSupportedPythonVersion("tensorflow", "2.8");
+		String v3 = getClosestSupportedPythonVersion("tensorflow", "2.1");
+		String v4 = getClosestSupportedPythonVersion("tensorflow", "2.1.70");
+		String v5 = getClosestSupportedPythonVersion("tensorflow", "3");
+		String v7 = getClosestSupportedPythonVersion("onnx", "20");
+		String v8 = getClosestSupportedPythonVersion("onnx", "13");
+		System.out.print(false);
+	}
 
 	/**
 	 * Class to find the version of Deep Learning framework (engine) equivalent
@@ -177,8 +195,8 @@ public class SupportedVersions
 			return version;
 		if ( version.indexOf( "." ) != -1 && version.indexOf( "." ) != version.lastIndexOf( "." ) )
 		{
-			int secondDotPos = version.substring( version.indexOf( "." ) ).indexOf( "." );
-			version = version.substring( 0, version.indexOf( "." ) + secondDotPos );
+			int secondDotPos = version.substring( version.indexOf( "." ) + 1).indexOf( "." );
+			version = version.substring( 0, version.indexOf( "." ) + 1 + secondDotPos );
 		}
 		List< String > auxVersionList = versionSet.stream().map( s -> {
 			if (s.indexOf(".") == -1 || s.indexOf(".") == s.lastIndexOf("."))
