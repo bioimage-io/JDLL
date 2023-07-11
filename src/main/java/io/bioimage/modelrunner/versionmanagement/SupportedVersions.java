@@ -78,8 +78,20 @@ public class SupportedVersions
     	if (engine == null) 
     		this.versionsDic = new LinkedTreeMap<String, Object>();
     	else
-    		this.versionsDic = getSpecificEngineVersionsJson( engine );
+    		this.versionsDic = getSupportedVersionsForEngine( engine );
 		this.versionSet = this.versionsDic.keySet();
+	}
+	
+	/**
+	 * Finds the closest supported version by JDLL for the wanted
+	 * Deep Learning framework version wanted
+	 * @param version
+	 * 	version in Python of the Deep Learning framework selected
+	 * @return the version in Python closest to the provided one for 
+	 * 	the Deep LEarning framework selected
+	 */
+	public String getClosestSupportedPythonVersion(String version) {
+		return findVersionInJSON( version, versionSet );
 	}
 
 	/**
@@ -96,17 +108,10 @@ public class SupportedVersions
 	 */
 	public String getCorrespondingJavaVersion( String version )
 	{
-		if ( this.versionSet.contains( version ) )
-		{
-			return getJavaVersionFromVersionJSON( version, this.versionsDic );
-		}
-		else
-		{
-			version = findVersionInJSON( version, versionSet );
-			// TODO warn that the version used is not the exact same one as the
-			// one created
-			return getJavaVersionFromVersionJSON( version, this.versionsDic );
-		}
+		version = findVersionInJSON( version, versionSet );
+		// TODO warn that the version used is not the exact same one as the
+		// one created
+		return getJavaVersionFromVersionJSON( version, this.versionsDic );
 	}
 
 	/**
@@ -127,8 +132,6 @@ public class SupportedVersions
 		return supportedVersions;
 	}
 
-	// TODO add exception for not supported engine, engine that is not
-	// in the JSON file
 	/**
 	 * Get the supported versions for an specific Deep Learning framework
 	 * (engine)
@@ -138,7 +141,7 @@ public class SupportedVersions
 	 * @return a HashMap containing all the supported versions for a Deep
 	 *         Learning framework
 	 */
-	public static LinkedTreeMap< String, Object > getSpecificEngineVersionsJson( String engine )
+	public static LinkedTreeMap< String, Object > getSupportedVersionsForEngine( String engine )
 	{
 		if (ALL_VERSIONS == null)
 			ALL_VERSIONS = readVersionsJson();
@@ -163,7 +166,7 @@ public class SupportedVersions
 	 * @return the closest version to the available one, return
 	 *  null if there is no compatible version
 	 */
-	public static String findVersionInJSON( String version, Set< String > versionSet )
+	private static String findVersionInJSON( String version, Set< String > versionSet )
 	{
 		// Get the version with only major and minor version numbers, no
 		// revision number
@@ -204,13 +207,12 @@ public class SupportedVersions
 	 * 
 	 * @param version
 	 *            version of the Deep Learning framework as it is written in the
-	 *            JSON file. It is the same as the original one but it might
-	 *            contain only
+	 *            JSON file. 
 	 * @param allVersions
 	 *            list of all supported versions
 	 * @return get the Java version for a specific Pyrhon version
 	 */
-	public static String getJavaVersionFromVersionJSON( String version, LinkedTreeMap< String, Object > allVersions )
+	private static String getJavaVersionFromVersionJSON( String version, LinkedTreeMap< String, Object > allVersions )
 	{
 		if (version == null)
 			return null;
@@ -240,5 +242,20 @@ public class SupportedVersions
 	public static String getJavaVersionForPythonVersion(String engine, String version) {
 		SupportedVersions sv = new SupportedVersions(engine);
 		return sv.getCorrespondingJavaVersion(version);
+	}
+	
+	/**
+	 * Finds the closest supported version by JDLL for the wanted
+	 * Deep Learning framework version wanted
+	 * @param engine
+	 * 	Deep LEarning frameework of interest
+	 * @param version
+	 * 	version in Python of the Deep Learning framework selected
+	 * @return the version in Python closest to the provided one for 
+	 * 	the Deep LEarning framework selected
+	 */
+	public static String getClosestSupportedPythonVersion(String engine, String version) {
+		SupportedVersions sv = new SupportedVersions(engine);
+		return sv.getClosestSupportedPythonVersion(version);
 	}
 }
