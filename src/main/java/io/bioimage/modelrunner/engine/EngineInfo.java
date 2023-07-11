@@ -250,7 +250,7 @@ public class EngineInfo
 					.map(en -> en.getValue()).findFirst().get();
 			throw new IllegalArgumentException(
 					String.format(ENGINE_ERR, engine, version, confV, version, confV));
-		} else if (EngineLoader.getLoadedVersions().get(versionedEngine) != null
+		} else if (!versionedEngine.equals("tensorflow2") && EngineLoader.getLoadedVersions().get(versionedEngine) != null
 					&& !EngineLoader.getLoadedVersions().get(versionedEngine).equals(version)) {
 			throw new IllegalArgumentException(String.format(ENGINE_ERR, engine, version, 
 					EngineLoader.getLoadedVersions().get(versionedEngine), version, 
