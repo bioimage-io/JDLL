@@ -89,7 +89,7 @@ public class SupportedVersions
 	 *             throw exception in the case the version wanted is not
 	 *             supported
 	 */
-	public String getCorrespondingJavaVersion( String version ) throws Exception
+	public String getCorrespondingJavaVersion( String version )
 	{
 		if ( this.versionSet.contains( version ) )
 		{
@@ -154,41 +154,42 @@ public class SupportedVersions
 	 *            The wanted version of the Deep Learning framework
 	 * @param versionSet
 	 *            Set of all the versions supported by the program
-	 * @return the closest version to the available one
-	 * @throws Exception
-	 *             if the version is totally incompatible with the wanted one
+	 * @return the closest version to the available one, return
+	 *  null if there is no compatible version
 	 */
-	public static String findVersionInJSON( String version, Set< String > versionSet ) throws Exception
+	public static String findVersionInJSON( String version, Set< String > versionSet )
 	{
 		// Get the version with only major and minor version numbers, no
 		// revision number
 		// For example 2.8.1 -> 2.8. If the version already has not the revision
 		// number
 		// leave it as it is.
+		if (versionSet.contains(version))
+			return version;
 		if ( version.indexOf( "." ) != -1 && version.indexOf( "." ) != version.lastIndexOf( "." ) )
 		{
 			int secondDotPos = version.substring( version.indexOf( "." ) ).indexOf( "." );
 			version = version.substring( 0, version.indexOf( "." ) + secondDotPos );
 		}
-		List< String > auxVersionList = versionSet.stream().map( s -> s.substring( 0, s.lastIndexOf( "." ) ) )
-				.collect( Collectors.toList() );
+		List< String > auxVersionList = versionSet.stream().map( s -> {
+			if (s.indexOf(".") == -1 || s.indexOf(".") == s.lastIndexOf("."))
+				return s;
+			return s.substring( 0, s.lastIndexOf( "." ));
+			}).collect( Collectors.toList() );
 		if ( auxVersionList.contains( version ) )
-		{ return ( String ) versionSet.toArray()[ auxVersionList.indexOf( version ) ]; }
+			return ( String ) versionSet.toArray()[ auxVersionList.indexOf( version ) ];
 		// If there is still no coincidence, just look for the major version.
 		// For example, in 2.3.4 just look for the most recent 2 version
 		if ( version.indexOf( "." ) != -1 )
 			version = version.substring( 0, version.indexOf( "." ) );
-		auxVersionList = auxVersionList.stream().map( s -> s.substring( 0, s.lastIndexOf( "." ) ) )
-				.collect( Collectors.toList() );
+		auxVersionList = auxVersionList.stream().map( s -> {
+			if (s.indexOf(".") == -1)
+				return s;
+			return s.substring( 0, s.indexOf( "." ));
+			}).collect( Collectors.toList() );
 		if ( auxVersionList.contains( version ) )
-		{
 			return ( String ) versionSet.toArray()[ auxVersionList.indexOf( version ) ];
-		}
-		else
-		{
-			// TODO create exception
-			throw new Exception();
-		}
+		return null;
 	}
 
 	/**
@@ -205,6 +206,8 @@ public class SupportedVersions
 	 */
 	public static String getJavaVersionFromVersionJSON( String version, LinkedTreeMap< String, Object > allVersions )
 	{
+		if (version == null)
+			return null;
 		LinkedTreeMap< String, String > versionJSON = ( LinkedTreeMap< String, String > ) allVersions.get( version );
 		return versionJSON.get( javaVersionsKey );
 	}
@@ -230,10 +233,6 @@ public class SupportedVersions
 	 */
 	public static String getJavaVersionForPythonVersion(String engine, String version) {
 		SupportedVersions sv = new SupportedVersions(engine);
-		try {
-			return sv.getCorrespondingJavaVersion(version);
-		} catch (Exception ex) {
-			return null;
-		}
+		return sv.getCorrespondingJavaVersion(version);
 	}
 }

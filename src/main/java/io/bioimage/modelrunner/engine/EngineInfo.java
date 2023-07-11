@@ -220,7 +220,8 @@ public class EngineInfo
 		this.os = new PlatformDetection().toString();
 		setSupportedVersions();
 		this.versionJava = findCorrespondingJavaVersion();
-
+		if (this.versionJava == null)
+			throw new IllegalArgumentException("The DL framework version chosen is not supported.");
 	}
 	
 	/**
@@ -885,16 +886,7 @@ public class EngineInfo
 	 */
 	public String findCorrespondingJavaVersion()
 	{
-		try
-		{
-			return this.supportedVersions.getCorrespondingJavaVersion( this.version );
-		}
-		catch ( Exception e )
-		{
-			// TODO Refine exception
-			e.printStackTrace();
-			return "";
-		}
+		return this.supportedVersions.getCorrespondingJavaVersion( this.version );
 	}
 
 	/**
