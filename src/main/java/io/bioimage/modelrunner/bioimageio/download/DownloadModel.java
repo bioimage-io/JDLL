@@ -43,6 +43,7 @@ import java.util.stream.IntStream;
 
 import io.bioimage.modelrunner.bioimageio.description.ModelDescriptor;
 import io.bioimage.modelrunner.bioimageio.description.SampleImage;
+import io.bioimage.modelrunner.bioimageio.description.TestArtifact;
 import io.bioimage.modelrunner.bioimageio.description.weights.ModelWeight;
 import io.bioimage.modelrunner.bioimageio.description.weights.WeightFormat;
 import io.bioimage.modelrunner.engine.installation.FileDownloader;
@@ -261,13 +262,13 @@ public class DownloadModel {
 	 * Add the test inputs to the downloadable links
 	 */
 	private void addTestInputs() {
-		List<String> sampleInps = descriptor.getTestInputs();
+		List<TestArtifact> sampleInps = descriptor.getTestInputs();
 		if (sampleInps == null)
 			return;
 		int c = 0;
-		for (String ss : sampleInps) {
-			if (ss != null && checkURL(ss)) {
-				downloadableLinks.put(TEST_INPUTS_KEY + "_" + c ++, ss);
+		for (TestArtifact ss : sampleInps) {
+			if (ss != null && ss.getUrl() != null) {
+				downloadableLinks.put(TEST_INPUTS_KEY + "_" + c ++, ss.getString());
 			}
 		}
 	}
@@ -276,13 +277,13 @@ public class DownloadModel {
 	 * Add the test outputs to the dowloadable links
 	 */
 	private void addTestOutputs() {
-		List<String> sampleOuts = descriptor.getTestOutputs();
+		List<TestArtifact> sampleOuts = descriptor.getTestOutputs();
 		if (sampleOuts == null)
 			return;
 		int c = 0;
-		for (String ss : sampleOuts) {
-			if (ss != null && checkURL(ss)) {
-				downloadableLinks.put(TEST_OUTPUTS_KEY + "_" + c ++, ss);
+		for (TestArtifact ss : sampleOuts) {
+			if (ss != null && ss.getUrl() != null) {
+				downloadableLinks.put(TEST_OUTPUTS_KEY + "_" + c ++, ss.getString());
 			}
 		}
 	}
