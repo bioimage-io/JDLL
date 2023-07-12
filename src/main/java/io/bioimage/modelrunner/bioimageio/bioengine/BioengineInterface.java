@@ -19,6 +19,31 @@
  */
 package io.bioimage.modelrunner.bioimageio.bioengine;
 
-public class BioengineInterface {
+import java.util.List;
+
+import io.bioimage.modelrunner.engine.DeepLearningEngineInterface;
+import io.bioimage.modelrunner.exceptions.LoadModelException;
+import io.bioimage.modelrunner.exceptions.RunModelException;
+import io.bioimage.modelrunner.tensor.Tensor;
+
+public class BioengineInterface implements DeepLearningEngineInterface {
+
+	@Override
+	public void run(List<Tensor<?>> inputTensors, List<Tensor<?>> outputTensors) throws RunModelException {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public void loadModel(String modelFolder, String modelSource) throws LoadModelException {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public void closeModel() {
+		// TODO Auto-generated method stub
+		
+	}
 
 }
