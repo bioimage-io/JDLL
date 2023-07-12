@@ -21,11 +21,13 @@ package io.bioimage.modelrunner.engine;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
 import io.bioimage.modelrunner.bioimageio.description.weights.WeightFormat;
+import io.bioimage.modelrunner.bioimageio.download.DownloadModel;
 import io.bioimage.modelrunner.system.PlatformDetection;
 import io.bioimage.modelrunner.versionmanagement.AvailableEngines;
 import io.bioimage.modelrunner.versionmanagement.DeepLearningVersion;
@@ -156,6 +158,11 @@ public class EngineInfo
 	private static final String PYTORCH_JAVA_BIOIMAGEIO_TAG = "torchscript";
 
 	/**
+	 * Variable containing the name used to refer to the Pytorch that works with state dictionaries
+	 */
+	private static final String PYTORCH_STATE_DICT_BIOIMAGEIO_TAG = "pytorch_state_dict";
+
+	/**
 	 * Variable containing the name used to refer to Pytorch in the program
 	 */
 	private static final String ONNX_JAVA_BIOIMAGEIO_TAG = "onnx";
@@ -164,6 +171,18 @@ public class EngineInfo
 	 * Variable containing the name used to refer to Keras in the program
 	 */
 	private static final String KERAS_JAVA_BIOIMAGEIO_TAG = "keras_hdf5";
+	/**
+	 * List that contains all the supported weight tags by the bioengine
+	 */
+	private static final ArrayList<String> SUPPORTED_BIOENGINE_WEIGHTS;
+	static {
+		SUPPORTED_BIOENGINE_WEIGHTS = new ArrayList<String>();
+		SUPPORTED_BIOENGINE_WEIGHTS.add(KERAS_JAVA_BIOIMAGEIO_TAG);
+		SUPPORTED_BIOENGINE_WEIGHTS.add(ONNX_JAVA_BIOIMAGEIO_TAG);
+		SUPPORTED_BIOENGINE_WEIGHTS.add(PYTORCH_JAVA_BIOIMAGEIO_TAG);
+		SUPPORTED_BIOENGINE_WEIGHTS.add(TENSORFLOW_JAVA_BIOIMAGEIO_TAG);
+		SUPPORTED_BIOENGINE_WEIGHTS.add(PYTORCH_STATE_DICT_BIOIMAGEIO_TAG);
+	}
 
 	/**
 	 * Variable that stores which version of Tensorflow 1 has been already
@@ -205,8 +224,6 @@ public class EngineInfo
 	 * @param jarsDirectory
 	 *            directory where the folder containing the JARs needed to
 	 *            launch the corresponding engine are located
-	 * @return an object containing all the information needed to launch a Deep
-	 *         learning framework
 	 */
 	private EngineInfo( String engine, String version, String jarsDirectory )
 	{
@@ -222,6 +239,22 @@ public class EngineInfo
 		this.versionJava = findCorrespondingJavaVersion();
 		if (this.versionJava == null)
 			throw new IllegalArgumentException("The DL framework version chosen is not supported.");
+	}
+
+	/**
+	 * Information needed to know how to launch the Bioengine
+	 * 
+	 * @param engine
+	 * 	weights to be run on the Bioengine
+	 * @param serverURL
+	 * 	url where the Bioengine is hosted
+	 */
+	private EngineInfo( String engine, String serverURL)
+	{
+		Objects.requireNonNull( engine, "The Deep Learning engine should not be null." );
+		Objects.requireNonNull( serverURL, "The Deep Learning engine version should not be null." );
+		this.engine = engine;
+		this.jarsDirectory = serverURL;
 	}
 	
 	/**
@@ -256,6 +289,27 @@ public class EngineInfo
 					EngineLoader.getLoadedVersions().get(versionedEngine), version, 
 					EngineLoader.getLoadedVersions().get(versionedEngine)));
 		}
+	}
+
+	/**
+	 * Set the parameters to launch the wanted Bioengine instance.
+	 * 
+	 * @param engine
+	 * 	DL framework we want to use in the Bioengine
+	 * @param serverURL
+	 * 	server where the instance of the Bioengine we want to connect to is hosted
+	 * @return an object containing all the information needed to launch a Deep
+	 * 	learning framework in the bioengine
+	 * @throws IllegalArgumentException if an engine that cannot be loaded together with the wanted engine
+	 * 	has already been loaded
+	 */
+	public static EngineInfo defineBioengine( String engine, String serverURL ) throws IllegalArgumentException
+	{	
+		if (!SUPPORTED_BIOENGINE_WEIGHTS.contains(engine))
+			throw new IllegalArgumentException("The only supported engine keys are: " + SUPPORTED_BIOENGINE_WEIGHTS);
+		if (!DownloadModel.checkURL(serverURL))
+			throw new IllegalArgumentException("The provided url does not exist: " + serverURL);
+		return new EngineInfo(engine, serverURL);
 	}
 
 	/**

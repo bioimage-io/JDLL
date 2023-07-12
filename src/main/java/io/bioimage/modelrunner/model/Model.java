@@ -186,6 +186,45 @@ public class Model
 	}
 	
 	/**
+	 * Load a model from the bioimage.io directly on the Bioengine. 
+	 * Only the path to the model folder that contains the rdf.yaml is needed.
+	 * To load a model on the bioengine we need to specify the server where our instance
+	 * of the Bioengine is hosted.
+	 * @param bmzModelFolder
+	 * 	folder where the bioimage.io model is located (parent folder of the rdf.yaml file)
+	 * @param serverURL
+	 * 	url where the wanted insance of the bioengine is hosted
+	 * @return a model ready to be loaded
+	 * @throws Exception if there is any error creating the model (no rdf.yaml file,
+	 *  or the url does not exist).
+	 */
+	public static Model createBioimageioModelForBioengine(String bmzModelFolder, String serverURL) throws Exception {
+		if (new File(bmzModelFolder, "rdf.yaml").isFile() == false)
+			throw new IOException("A Bioimage.io model folder should contain its corresponding rdf.yaml file.");
+		ModelDescriptor descriptor = 
+				ModelDescriptor.readFromLocalFile(bmzModelFolder + File.separator + "rdf.yaml", false);
+		String modelSource = null;
+		List<WeightFormat> modelWeights = descriptor.getWeights().getSupportedWeights();
+		EngineInfo info = null;
+		for (WeightFormat ww : modelWeights) {
+			String source = ww.getSource();
+			if (!(new File(bmzModelFolder, source.substring(source.lastIndexOf("/")) )).isFile())
+					continue;
+			info = EngineInfo.defineCompatibleDLEngineWithRdfYamlWeights(ww, enginesFolder);
+			if (info != null) {
+				modelSource = new File(bmzModelFolder, 
+						source.substring(source.lastIndexOf("/"))).getAbsolutePath();
+				break;
+			}
+		}
+		if (info == null)
+			throw new IOException("Please install a compatible engine with the model weights. "
+					+ "To be compatible the engine has to be of the same framework and the major version needs to be the same. "
+					+ "The model weights are: " + descriptor.getWeights().getEnginesListWithVersions());
+		return Model.createDeepLearningModel(bmzModelFolder, modelSource, info);
+	}
+	
+	/**
 	 * Load a model from the bioimage.io directly. Just providing the path to the
 	 * folder where the rdf.yaml is, no extra info is needed as it is read from the
 	 * rdf.yaml file
