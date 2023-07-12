@@ -21,12 +21,15 @@ package io.bioimage.modelrunner.bioimageio.bioengine;
 
 import java.util.List;
 
+import io.bioimage.modelrunner.bioimageio.description.ModelDescriptor;
 import io.bioimage.modelrunner.engine.DeepLearningEngineInterface;
 import io.bioimage.modelrunner.exceptions.LoadModelException;
 import io.bioimage.modelrunner.exceptions.RunModelException;
 import io.bioimage.modelrunner.tensor.Tensor;
 
 public class BioengineInterface implements DeepLearningEngineInterface {
+	
+	private ModelDescriptor rdf;
 
 	@Override
 	public void run(List<Tensor<?>> inputTensors, List<Tensor<?>> outputTensors) throws RunModelException {
@@ -44,6 +47,10 @@ public class BioengineInterface implements DeepLearningEngineInterface {
 	public void closeModel() {
 		// TODO Auto-generated method stub
 		
+	}
+	
+	public void addModelDescriptor(ModelDescriptor rdf) {
+		this.rdf = rdf;
 	}
 
 }

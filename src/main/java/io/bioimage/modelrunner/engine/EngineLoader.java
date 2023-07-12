@@ -72,6 +72,10 @@ public class EngineLoader extends ClassLoader
 	 * Key for the cache of loaded engines.
 	 */
 	private String versionedEngine;
+	/**
+	 * Whether the model is going to be run in the bioengine or not
+	 */
+	private boolean bioengine;
 
 	/**
 	 * Instance of the class from the wanted Deep Learning engine that is used
@@ -122,6 +126,7 @@ public class EngineLoader extends ClassLoader
 		super();
 		this.baseClassloader = classloader;
 		this.engine = engineInfo.getEngine();
+		this.bioengine = engineInfo.isBioengine();
 		if (engineInfo.isBioengine()) {
 			this.engineInstance = new BioengineInterface();
 			return;
@@ -212,9 +217,7 @@ public class EngineLoader extends ClassLoader
 	 */
 	public void setEngineClassLoader()
 	{
-		// If {@link #enginePath}, it means that the model is going to be loaded on the bioengine,
-		// so this is not necessary
-		if (enginePath == null)
+		if (bioengine)
 			return;
 		Thread.currentThread().setContextClassLoader( engineClassloader );
 	}
@@ -225,9 +228,7 @@ public class EngineLoader extends ClassLoader
 	 */
 	public void setBaseClassLoader()
 	{
-		// If {@link #enginePath}, it means that the model is going to be loaded on the bioengine,
-		// so this is not necessary
-		if (enginePath == null)
+		if (bioengine)
 			return;
 		Thread.currentThread().setContextClassLoader( this.baseClassloader );
 	}
@@ -346,6 +347,14 @@ public class EngineLoader extends ClassLoader
 	public DeepLearningEngineInterface getEngineInstance()
 	{
 		return this.engineInstance;
+	}
+	
+	/**
+	 * 
+	 * @return whether the engine of choice is the bioengine (a remotely hosted service)
+	 */
+	public boolean isBioengine() {
+		return bioengine;
 	}
 
 	/**
