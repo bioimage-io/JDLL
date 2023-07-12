@@ -102,6 +102,10 @@ public class EngineInfo
 	 * </pre>
 	 */
 	private String jarsDirectory;
+	/**
+	 * URL where the wanted Bioengine is hosted
+	 */
+	private String serverURL;
 	
 	/**
 	 * Error message that will be thrown if the user tries to load an engine that cannot
@@ -254,7 +258,7 @@ public class EngineInfo
 		Objects.requireNonNull( engine, "The Deep Learning engine should not be null." );
 		Objects.requireNonNull( serverURL, "The Deep Learning engine version should not be null." );
 		this.engine = engine;
-		this.jarsDirectory = serverURL;
+		this.serverURL = serverURL;
 	}
 	
 	/**
