@@ -1218,6 +1218,15 @@ public class EngineInfo
 			throw new IOException(msg);
 		return newInfo;
 	}
+	
+	/**
+	 * Return whether the {@link EngineInfo} object is designed to load a model 
+	 * remotely on the Bioengine or not
+	 * @return true if loading on the Bioengine is the objective or false otherwise
+	 */
+	public boolean isBioengine() {
+		return this.serverURL != null;
+	}
 
 	/**
 	 * Set in a static manner the {@link #STATIC_JARS_DIRECTORY} if it is not
