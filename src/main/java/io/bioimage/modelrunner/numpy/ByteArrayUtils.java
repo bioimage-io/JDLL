@@ -157,7 +157,7 @@ public class ByteArrayUtils {
 			intArr[3] = arr[i * 4 + 3];
 			int number = ByteBuffer.wrap(intArr).order(byteOrder).getInt();
 			if (number < 0)
-				uint32[i] = 2^32 + number;
+				uint32[i] = (long) (Math.pow(2, 32) + number);
 			else
 				uint32[i] = number;
 		}
@@ -198,7 +198,7 @@ public class ByteArrayUtils {
 			intArr[1] = arr[i * 4 + 1];
 			short number = ByteBuffer.wrap(intArr).order(byteOrder).getShort();
 			if (number < 0)
-				int16[i] = 2^16 + number;
+				int16[i] = (int) (Math.pow(2, 16) + number);
 			else
 				int16[i] = number;
 		}
