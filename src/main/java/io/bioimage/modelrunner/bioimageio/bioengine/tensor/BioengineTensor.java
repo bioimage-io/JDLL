@@ -41,7 +41,7 @@ import net.imglib2.type.numeric.real.FloatType;
 import net.imglib2.util.Util;
 import net.imglib2.view.IntervalView;
 
-public class TensorBuilder {
+public class BioengineTensor {
 	
 	/**
 	 * Map containing the instances needed to provide an input to the 
@@ -126,7 +126,12 @@ public class TensorBuilder {
 	/**
 	 * Utility class.
 	 */
-	private TensorBuilder() {}
+	private BioengineTensor() {}
+	
+	public static < T extends RealType< T > & NativeType< T > > 
+				BioengineTensor build(Tensor<T> tensor) {
+		
+	}
 
 	
 	public static  < T extends RealType< T > & NativeType< T > >
