@@ -76,13 +76,10 @@ public class TensorBuilder {
 	}
 
     /**
-     * Adds the ByteType {@link RandomAccessibleInterval} data to the {@link ByteBuffer} provided.
-     * The position of the ByteBuffer is kept in the same place as it was received.
+     * Creates a byte array from a {@link ByteType} {@link RandomAccessibleInterval}.
      * 
      * @param imgTensor 
      * 	{@link RandomAccessibleInterval} to be mapped into byte buffer
-     * @param byteBuffer 
-     * 	target bytebuffer
      */
     private static byte[] buildByte(RandomAccessibleInterval<ByteType> imgTensor)
     {
@@ -136,6 +133,71 @@ public class TensorBuilder {
     }
 
     /**
+     * Creates a byte array from a {@link ShortType} {@link RandomAccessibleInterval}.
+     * 
+     * @param imgTensor 
+     * 	{@link RandomAccessibleInterval} to be mapped into byte buffer
+     */
+    private static byte[] buildShort(RandomAccessibleInterval<ShortType> imgTensor)
+    {
+    	Cursor<ShortType> tensorCursor;
+		if (imgTensor instanceof IntervalView)
+			tensorCursor = ((IntervalView<ShortType>) imgTensor).cursor();
+		else if (imgTensor instanceof Img)
+			tensorCursor = ((Img<ShortType>) imgTensor).cursor();
+		else
+			throw new IllegalArgumentException("The data of the " + Tensor.class + " has "
+					+ "to be an instance of " + Img.class + " or " + IntervalView.class);
+		long flatSize = 1;
+		for (long ss : imgTensor.dimensionsAsLongArray()) {flatSize *= ss;}
+		byte[] byteArr = new byte[(int) flatSize];
+		int cc =  0;
+		while (tensorCursor.hasNext()) {
+			tensorCursor.fwd();
+			short val = tensorCursor.get().get();
+			byte[] arr = ByteBuffer.allocate(4).putShort(val).array();
+			System.arraycopy(arr, 0, byteArr, cc * 4, 4);
+			cc ++;
+		}
+		return byteArr;
+    }
+
+    /**
+     * Creates a byte array from a {@link UnsignedShortType} {@link RandomAccessibleInterval}.
+     * 
+     * @param imgTensor 
+     * 	{@link RandomAccessibleInterval} to be mapped into byte buffer
+     */
+    private static byte[] buildUShort(RandomAccessibleInterval<UnsignedShortType> imgTensor)
+    {
+    	Cursor<UnsignedShortType> tensorCursor;
+		if (imgTensor instanceof IntervalView)
+			tensorCursor = ((IntervalView<UnsignedShortType>) imgTensor).cursor();
+		else if (imgTensor instanceof Img)
+			tensorCursor = ((Img<UnsignedShortType>) imgTensor).cursor();
+		else
+			throw new IllegalArgumentException("The data of the " + Tensor.class + " has "
+					+ "to be an instance of " + Img.class + " or " + IntervalView.class);
+		long flatSize = 1;
+		for (long ss : imgTensor.dimensionsAsLongArray()) {flatSize *= ss;}
+		byte[] byteArr = new byte[(int) flatSize];
+		int cc =  0;
+		while (tensorCursor.hasNext()) {
+			tensorCursor.fwd();
+			int val = tensorCursor.get().get();
+			short shortval;
+			if (val >= Math.pow(2, 15))
+				shortval = (short) (val - Math.pow(2, 16));
+			else 
+				shortval = (short) val;
+			byte[] arr = ByteBuffer.allocate(4).putShort(shortval).array();
+			System.arraycopy(arr, 0, byteArr, cc * 4, 4);
+			cc ++;
+		}
+		return byteArr;
+    }
+
+    /**
      * Creates a byte array from a {@link IntType} {@link RandomAccessibleInterval}.
      * 
      * @param imgTensor 
@@ -159,6 +221,41 @@ public class TensorBuilder {
 			tensorCursor.fwd();
 			int val = tensorCursor.get().getInt();
 			byte[] arr = ByteBuffer.allocate(4).putInt(val).array();
+			System.arraycopy(arr, 0, byteArr, cc * 4, 4);
+			cc ++;
+		}
+		return byteArr;
+    }
+
+    /**
+     * Creates a byte array from a {@link UnsignedIntType} {@link RandomAccessibleInterval}.
+     * 
+     * @param imgTensor 
+     * 	{@link RandomAccessibleInterval} to be mapped into byte buffer
+     */
+    private static byte[] buildUInt(RandomAccessibleInterval<UnsignedIntType> imgTensor)
+    {
+    	Cursor<UnsignedIntType> tensorCursor;
+		if (imgTensor instanceof IntervalView)
+			tensorCursor = ((IntervalView<UnsignedIntType>) imgTensor).cursor();
+		else if (imgTensor instanceof Img)
+			tensorCursor = ((Img<UnsignedIntType>) imgTensor).cursor();
+		else
+			throw new IllegalArgumentException("The data of the " + Tensor.class + " has "
+					+ "to be an instance of " + Img.class + " or " + IntervalView.class);
+		long flatSize = 4;
+		for (long ss : imgTensor.dimensionsAsLongArray()) {flatSize *= ss;}
+		byte[] byteArr = new byte[(int) flatSize];
+		int cc =  0;
+		while (tensorCursor.hasNext()) {
+			tensorCursor.fwd();
+			long val = tensorCursor.get().get();
+			int intval;
+			if (val >= Math.pow(2, 31))
+				intval = (int) (val - Math.pow(2, 32));
+			else 
+				intval = (int) val;
+			byte[] arr = ByteBuffer.allocate(4).putInt(intval).array();
 			System.arraycopy(arr, 0, byteArr, cc * 4, 4);
 			cc ++;
 		}
