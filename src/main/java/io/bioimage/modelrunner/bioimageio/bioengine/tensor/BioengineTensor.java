@@ -128,6 +128,23 @@ public class BioengineTensor {
 	 * Utility class.
 	 */
 	private BioengineTensor() {}
+
+	/**
+	 * Create an object that can be sent and understood by the bioengine.
+	 * This method creates the needed object for a parameter in the bioengine
+	 * 
+	 * @param params
+	 * 	the parameters that the model needs
+	 * @return an object readable by the bioengine for parameters
+	 */
+	public static BioengineTensor build(Map<String, Object> params) {
+		BioengineTensor bt = new BioengineTensor();
+		bt.inputs.put(OBJECT_KEY, PARAMETER_VALUE);
+		bt.inputs.put(SHAPE_KEY, new int[] {1});
+		bt.inputs.put(DTYPE_KEY, "BYTES");
+		bt.inputs.put(VALUE_KEY, params);
+		return bt;
+	}
 	
 	@SuppressWarnings("unchecked")
 	/**
