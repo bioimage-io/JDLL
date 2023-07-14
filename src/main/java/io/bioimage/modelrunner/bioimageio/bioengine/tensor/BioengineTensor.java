@@ -19,7 +19,6 @@
  */
 package io.bioimage.modelrunner.bioimageio.bioengine.tensor;
 
-import java.nio.Buffer;
 import java.nio.ByteBuffer;
 import java.util.HashMap;
 import java.util.Map;
@@ -42,6 +41,12 @@ import net.imglib2.type.numeric.real.FloatType;
 import net.imglib2.util.Util;
 import net.imglib2.view.IntervalView;
 
+/**
+ * Class that converts {@link RandomAccessibleInterval}-based JDLL tensors into
+ * byte based maps that can be sent to the Bioengine for processing
+ * @author Carlos Garcia Lopez de Haro
+ *
+ */
 public class BioengineTensor {
 	
 	/**
@@ -82,11 +87,6 @@ public class BioengineTensor {
 	 * {@link #inputs} map
 	 */
 	private static final String DTYPE_KEY = "_rdtype";
-	/**
-	 * String corresponding to the dtype of the array in the
-	 * {@link #inputs} map
-	 */
-	private String dtypeVal;
 	/**
 	 * String used as tag for the float32 np dtype
 	 */
@@ -129,6 +129,18 @@ public class BioengineTensor {
 	 */
 	private BioengineTensor() {}
 	
+	@SuppressWarnings("unchecked")
+	/**
+	 * From a JDLL tensors, this method creates an object that contains 
+	 * a map that can be sent to the bioengine.
+	 * This method creates the needed object for an Image or ndarray
+	 * 
+	 * @param <T>
+	 * 	ImgLib2 datatype that the tensor can have
+	 * @param tensor
+	 * 	the tensor containing all the needed data
+	 * @return an object contianing the map that can be sent to the bioengine
+	 */
 	public static < T extends RealType< T > & NativeType< T > > 
 				BioengineTensor build(Tensor<T> tensor) {
 		BioengineTensor bt = new BioengineTensor();
@@ -168,14 +180,41 @@ public class BioengineTensor {
     	}
 		return bt;
 	}
-
 	
+	/**
+	 * 
+	 * @return the map that is actually serialized and sent to the bioengine
+	 */
+	public Map<String, Object> getAsMap() {
+		return this.inputs;
+	}
+
+	/**
+	 * Create byte array from the backend {@link RandomAccessibleInterval} of a JDLL tensor
+	 * @param <T>
+	 * 	ImgLib2 datatype that the tensor can have
+	 * @param tensor
+	 * 	the tensor containing all the needed data
+	 * @return the backend {@link RandomAccessibleInterval} of a JDLL tensor as a byte array,
+	 *  does not contain information about dimensions or data type
+	 */
 	public static  < T extends RealType< T > & NativeType< T > >
 				byte[] createByteArray(Tensor<T> tensor) {
 		return imglib2ToByteArray(tensor.getData());
 	}
 
 	
+	@SuppressWarnings("unchecked")
+	/**
+	 * 
+	 * Create byte array from a {@link RandomAccessibleInterval} 
+	 * @param <T>
+	 * 	ImgLib2 datatype that the image can have
+	 * @param rai
+	 * 	the image containing all the needed data
+	 * @return the {@link RandomAccessibleInterval} as a byte array, does not contain information
+	 * 	about dimensions or data type
+	 */
 	public static < T extends RealType< T > & NativeType< T > >
 				byte[] imglib2ToByteArray(RandomAccessibleInterval<T> rai) {
     	if (Util.getTypeFromInterval(rai) instanceof ByteType) {
