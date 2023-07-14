@@ -29,6 +29,10 @@ import net.imglib2.type.NativeType;
 import net.imglib2.type.numeric.RealType;
 import net.imglib2.type.numeric.integer.ByteType;
 import net.imglib2.type.numeric.integer.IntType;
+import net.imglib2.type.numeric.integer.ShortType;
+import net.imglib2.type.numeric.integer.UnsignedByteType;
+import net.imglib2.type.numeric.integer.UnsignedIntType;
+import net.imglib2.type.numeric.integer.UnsignedShortType;
 import net.imglib2.type.numeric.real.DoubleType;
 import net.imglib2.type.numeric.real.FloatType;
 import net.imglib2.util.Util;
@@ -52,8 +56,16 @@ public class TensorBuilder {
 				byte[] imglib2ToByteArray(RandomAccessibleInterval<T> rai) {
     	if (Util.getTypeFromInterval(rai) instanceof ByteType) {
     		return buildByte((RandomAccessibleInterval<ByteType>) rai);
+    	} else if (Util.getTypeFromInterval(rai) instanceof UnsignedByteType) {
+    		return buildUByte((RandomAccessibleInterval<UnsignedByteType>) rai);
+    	} else if (Util.getTypeFromInterval(rai) instanceof ShortType) {
+    		return buildShort((RandomAccessibleInterval<ShortType>) rai);
+    	} else if (Util.getTypeFromInterval(rai) instanceof UnsignedShortType) {
+    		return buildUShort((RandomAccessibleInterval<UnsignedShortType>) rai);
     	} else if (Util.getTypeFromInterval(rai) instanceof IntType) {
     		return buildInt((RandomAccessibleInterval<IntType>) rai);
+    	} else if (Util.getTypeFromInterval(rai) instanceof UnsignedIntType) {
+    		return buildUInt((RandomAccessibleInterval<UnsignedIntType>) rai);
     	} else if (Util.getTypeFromInterval(rai) instanceof FloatType) {
     		return buildFloat((RandomAccessibleInterval<FloatType>) rai);
     	} else if (Util.getTypeFromInterval(rai) instanceof DoubleType) {
@@ -94,13 +106,40 @@ public class TensorBuilder {
     }
 
     /**
-     * Adds the IntType {@link RandomAccessibleInterval} data to the {@link ByteBuffer} provided.
-     * The position of the ByteBuffer is kept in the same place as it was received.
+     * Creates a byte array from a {@link UnsignedByteType} {@link RandomAccessibleInterval}.
      * 
      * @param imgTensor 
      * 	{@link RandomAccessibleInterval} to be mapped into byte buffer
-     * @param byteBuffer 
-     * 	target bytebuffer
+     */
+    private static byte[] buildUByte(RandomAccessibleInterval<UnsignedByteType> imgTensor)
+    {
+    	Cursor<UnsignedByteType> tensorCursor;
+		if (imgTensor instanceof IntervalView)
+			tensorCursor = ((IntervalView<UnsignedByteType>) imgTensor).cursor();
+		else if (imgTensor instanceof Img)
+			tensorCursor = ((Img<UnsignedByteType>) imgTensor).cursor();
+		else
+			throw new IllegalArgumentException("The data of the " + Tensor.class + " has "
+					+ "to be an instance of " + Img.class + " or " + IntervalView.class);
+		long flatSize = 1;
+		for (long ss : imgTensor.dimensionsAsLongArray()) {flatSize *= ss;}
+		byte[] byteArr = new byte[(int) flatSize];
+		int cc =  0;
+		while (tensorCursor.hasNext()) {
+			tensorCursor.fwd();
+			int val = tensorCursor.get().get();
+			if (val > 127)
+				val = val - 256;
+			byteArr[cc ++] = (byte) val;
+		}
+		return byteArr;
+    }
+
+    /**
+     * Creates a byte array from a {@link IntType} {@link RandomAccessibleInterval}.
+     * 
+     * @param imgTensor 
+     * 	{@link RandomAccessibleInterval} to be mapped into byte buffer
      */
     private static byte[] buildInt(RandomAccessibleInterval<IntType> imgTensor)
     {
@@ -127,13 +166,10 @@ public class TensorBuilder {
     }
 
     /**
-     * Adds the FloatType {@link RandomAccessibleInterval} data to the {@link ByteBuffer} provided.
-     * The position of the ByteBuffer is kept in the same place as it was received.
+     * Creates a byte array from a {@link FloatType} {@link RandomAccessibleInterval}.
      * 
      * @param imgTensor 
      * 	{@link RandomAccessibleInterval} to be mapped into byte buffer
-     * @param byteBuffer 
-     * 	target bytebuffer
      */
     private static byte[] buildFloat(RandomAccessibleInterval<FloatType> imgTensor)
     {
@@ -160,13 +196,10 @@ public class TensorBuilder {
     }
 
     /**
-     * Adds the DoubleType {@link RandomAccessibleInterval} data to the {@link ByteBuffer} provided.
-     * The position of the ByteBuffer is kept in the same place as it was received.
+     * Creates a byte array from a {@link DoubleType} {@link RandomAccessibleInterval}.
      * 
      * @param imgTensor 
      * 	{@link RandomAccessibleInterval} to be mapped into byte buffer
-     * @param byteBuffer 
-     * 	target bytebuffer
      */
     private static byte[] buildDouble(RandomAccessibleInterval<DoubleType> imgTensor)
     {
