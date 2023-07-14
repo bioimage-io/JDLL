@@ -19,6 +19,7 @@
  */
 package io.bioimage.modelrunner.bioimageio.bioengine;
 
+import java.io.File;
 import java.util.List;
 
 import io.bioimage.modelrunner.bioimageio.description.ModelDescriptor;
@@ -26,6 +27,7 @@ import io.bioimage.modelrunner.engine.DeepLearningEngineInterface;
 import io.bioimage.modelrunner.exceptions.LoadModelException;
 import io.bioimage.modelrunner.exceptions.RunModelException;
 import io.bioimage.modelrunner.tensor.Tensor;
+import io.bioimage.modelrunner.utils.Constants;
 
 public class BioengineInterface implements DeepLearningEngineInterface {
 	
@@ -40,7 +42,13 @@ public class BioengineInterface implements DeepLearningEngineInterface {
 	}
 
 	@Override
-	public void loadModel(String modelFolder, String modelSource) throws LoadModelException {		
+	public void loadModel(String modelFolder, String modelSource) throws LoadModelException {
+		try {
+			rdf = ModelDescriptor.readFromLocalFile(modelFolder + File.separator + Constants.RDF_FNAME, false);
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 	}
 
 	@Override
@@ -49,8 +57,7 @@ public class BioengineInterface implements DeepLearningEngineInterface {
 		
 	}
 	
-	public void addModelDescriptor(ModelDescriptor rdf, String server) {
-		this.rdf = rdf;
+	public void addServer(String server) {
 		this.server = server;
 	}
 

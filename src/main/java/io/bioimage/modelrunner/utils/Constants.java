@@ -31,4 +31,8 @@ public class Constants {
 	final public static String WIKI_LINK = "https://github.com/bioimage-io/model-runner-java/issues";
 	final public static String ENGINES_LINK = "https://raw.githubusercontent.com/bioimage-io/JDLL/main/src/main/resources/availableDLVersions.yml";
 
+	/**
+	 * File name of the resource description file inside the model folder
+	 */
+	public static final String RDF_FNAME = "rdf.yaml";
 }
