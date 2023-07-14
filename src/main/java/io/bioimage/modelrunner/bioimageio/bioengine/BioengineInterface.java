@@ -20,9 +20,11 @@
 package io.bioimage.modelrunner.bioimageio.bioengine;
 
 import java.io.File;
+import java.util.LinkedHashMap;
 import java.util.List;
 
 import io.bioimage.modelrunner.bioimageio.description.ModelDescriptor;
+import io.bioimage.modelrunner.bioimageio.description.TensorSpec;
 import io.bioimage.modelrunner.engine.DeepLearningEngineInterface;
 import io.bioimage.modelrunner.exceptions.LoadModelException;
 import io.bioimage.modelrunner.exceptions.RunModelException;
@@ -34,10 +36,17 @@ public class BioengineInterface implements DeepLearningEngineInterface {
 	private String server;
 	
 	private ModelDescriptor rdf;
+	
+	private static final String MODEL_NAME_KEY = "";
 
 	@Override
 	public void run(List<Tensor<?>> inputTensors, List<Tensor<?>> outputTensors) throws RunModelException {
-		// TODO Auto-generated method stub
+		LinkedHashMap<String, Object> kwargs = new LinkedHashMap<String, Object>();
+		if (rdf.getName().equals("cellpose-python"))
+			kwargs.put(MODEL_NAME_KEY, "cellpose-python");
+		for (TensorSpec tt : rdf.getInputTensors()) {
+			
+		}
 		
 	}
 
@@ -46,8 +55,8 @@ public class BioengineInterface implements DeepLearningEngineInterface {
 		try {
 			rdf = ModelDescriptor.readFromLocalFile(modelFolder + File.separator + Constants.RDF_FNAME, false);
 		} catch (Exception e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			throw new LoadModelException("The rdf.yaml file for "
+					+ "model at '" + modelFolder + "' cannot be read.");
 		}
 	}
 
