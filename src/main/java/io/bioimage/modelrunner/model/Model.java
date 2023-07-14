@@ -26,6 +26,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.List;
 
+import io.bioimage.modelrunner.bioimageio.bioengine.BioengineInterface;
 import io.bioimage.modelrunner.bioimageio.description.ModelDescriptor;
 import io.bioimage.modelrunner.bioimageio.description.weights.WeightFormat;
 import io.bioimage.modelrunner.engine.DeepLearningEngineInterface;
@@ -71,6 +72,14 @@ public class Model
 	 * Model name as defined in the yaml file. For identification purposes
 	 */
 	private String modelName;
+	/**
+	 * Whether the model is created for the bioengine or not
+	 */
+	private boolean bioengine = false;
+	/**
+	 * File name of the resource description file inside the model folder
+	 */
+	private static final String RDF_FNAME = "rdf.yaml";
 
 	/**
 	 * Construct the object model with all the needed information to load a
@@ -160,10 +169,10 @@ public class Model
 	 * 	or the engines required for this model are not installed).
 	 */
 	public static Model createBioimageioModel(String bmzModelFolder, String enginesFolder) throws Exception {
-		if (new File(bmzModelFolder, "rdf.yaml").isFile() == false)
+		if (new File(bmzModelFolder, RDF_FNAME).isFile() == false)
 			throw new IOException("A Bioimage.io model folder should contain its corresponding rdf.yaml file.");
 		ModelDescriptor descriptor = 
-				ModelDescriptor.readFromLocalFile(bmzModelFolder + File.separator + "rdf.yaml", false);
+				ModelDescriptor.readFromLocalFile(bmzModelFolder + File.separator + RDF_FNAME, false);
 		String modelSource = null;
 		List<WeightFormat> modelWeights = descriptor.getWeights().getSupportedWeights();
 		EngineInfo info = null;
@@ -199,16 +208,18 @@ public class Model
 	 *  or the url does not exist).
 	 */
 	public static Model createBioimageioModelForBioengine(String bmzModelFolder, String serverURL) throws Exception {
-		if (new File(bmzModelFolder, "rdf.yaml").isFile() == false)
+		if (new File(bmzModelFolder, RDF_FNAME).isFile() == false)
 			throw new IOException("A Bioimage.io model folder should contain its corresponding rdf.yaml file.");
 		ModelDescriptor descriptor = 
-				ModelDescriptor.readFromLocalFile(bmzModelFolder + File.separator + "rdf.yaml", false);
+				ModelDescriptor.readFromLocalFile(bmzModelFolder + File.separator + RDF_FNAME, false);
 		List<WeightFormat> modelWeights = descriptor.getWeights().getSupportedWeights();
 		String engine = null;
 		for (WeightFormat ww : modelWeights) {
 		}
 		EngineInfo info = EngineInfo.defineBioengine(engine, serverURL);
-		return Model.createDeepLearningModel(bmzModelFolder, null, info);
+		Model model =  Model.createDeepLearningModel(bmzModelFolder, null, info);
+		model.bioengine = true;
+		return model;
 	}
 	
 	/**
@@ -229,10 +240,10 @@ public class Model
 	 * 	or the engines required for this model are not installed).
 	 */
 	public static Model createBioimageioModelWithExactWeigths(String bmzModelFolder, String enginesFolder) throws Exception {
-		if (new File(bmzModelFolder, "rdf.yaml").isFile() == false)
+		if (new File(bmzModelFolder, RDF_FNAME).isFile() == false)
 			throw new IOException("A Bioimage.io model folder should contain its corresponding rdf.yaml file.");
 		ModelDescriptor descriptor = 
-				ModelDescriptor.readFromLocalFile(bmzModelFolder + File.separator + "rdf.yaml", false);
+				ModelDescriptor.readFromLocalFile(bmzModelFolder + File.separator + RDF_FNAME, false);
 		String modelSource = null;
 		List<WeightFormat> modelWeights = descriptor.getWeights().getSupportedWeights();
 		EngineInfo info = null;
@@ -311,6 +322,9 @@ public class Model
 		DeepLearningEngineInterface engineInstance = engineClassLoader.getEngineInstance();
 		engineClassLoader.setEngineClassLoader();
 		engineInstance.loadModel( modelFolder, modelSource );
+		if (engineClassLoader.isBioengine()) 
+			((BioengineInterface) engineInstance)
+			.addModelDescriptor(this.modelFolder + File.separator + RDF_FNAME, engineInfo.getServer());
 		engineClassLoader.setBaseClassLoader();
 	}
 
@@ -403,5 +417,13 @@ public class Model
 	public String getModelName()
 	{
 		return this.modelName;
+	}
+	
+	/**
+	 * 
+	 * @return whether the model is designed for the bioengine or not
+	 */
+	public boolean isBioengine() {
+		return bioengine;
 	}
 }

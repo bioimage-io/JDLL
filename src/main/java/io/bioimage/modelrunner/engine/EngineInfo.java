@@ -1227,6 +1227,19 @@ public class EngineInfo
 	public boolean isBioengine() {
 		return this.serverURL != null;
 	}
+	
+	/**
+	 * 
+	 * @return the server url where the bioengine is hosted.
+	 * @throws IllegalArgumentException if the method is called when the {@link EngineInfo}
+	 * 	object has not been created for the Bioengine, with the method {@link #defineBioengine(String, String)}
+	 */
+	public String getServer() {
+		if (!isBioengine())
+			throw new IllegalArgumentException("The Bioengine server can only be retrieved if the "
+					+ "method EngineInfo.defineBioengine(String, String) has been used to create the object.");
+		return this.serverURL;
+	}
 
 	/**
 	 * Set in a static manner the {@link #STATIC_JARS_DIRECTORY} if it is not

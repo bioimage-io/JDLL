@@ -29,6 +29,8 @@ import io.bioimage.modelrunner.tensor.Tensor;
 
 public class BioengineInterface implements DeepLearningEngineInterface {
 	
+	private String server;
+	
 	private ModelDescriptor rdf;
 
 	@Override
@@ -38,9 +40,7 @@ public class BioengineInterface implements DeepLearningEngineInterface {
 	}
 
 	@Override
-	public void loadModel(String modelFolder, String modelSource) throws LoadModelException {
-		// TODO Auto-generated method stub
-		
+	public void loadModel(String modelFolder, String modelSource) throws LoadModelException {		
 	}
 
 	@Override
@@ -49,8 +49,9 @@ public class BioengineInterface implements DeepLearningEngineInterface {
 		
 	}
 	
-	public void addModelDescriptor(ModelDescriptor rdf) {
+	public void addModelDescriptor(ModelDescriptor rdf, String server) {
 		this.rdf = rdf;
+		this.server = server;
 	}
 
 }
