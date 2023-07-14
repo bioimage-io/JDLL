@@ -19,7 +19,10 @@
  */
 package io.bioimage.modelrunner.bioimageio.bioengine.tensor;
 
+import java.nio.Buffer;
 import java.nio.ByteBuffer;
+import java.util.HashMap;
+import java.util.Map;
 
 import io.bioimage.modelrunner.tensor.Tensor;
 import net.imglib2.Cursor;
@@ -39,6 +42,86 @@ import net.imglib2.util.Util;
 import net.imglib2.view.IntervalView;
 
 public class TensorBuilder {
+	
+	/**
+	 * Map containing the instances needed to provide an input to the 
+	 * server.
+	 * The input needs to have:
+	 *  -An entry called "inputs", whose value is another Map that contains
+	 *   the info about the input tensors
+	 *  -An entry called model_name with the name of the model
+	 *  -A fixed entry called decoe_json that equals to true
+	 */
+	private Map<String, Object> inputs = new HashMap<String, Object>();
+	/**
+	 * String key corresponding to the type of object being specified
+	 */
+	private final static String OBJECT_KEY = "_rtype";
+	/**
+	 * Value corresponding to the type of the array in the
+	 * {@link #inputs} map
+	 */
+	private static final String NDARRAY_VALUE = "ndarray";
+	/**
+	 * Value corresponding to a parameter
+	 */
+	private static final String PARAMETER_VALUE = "parameter";
+	/**
+	 * String key corresponding to the value of the array in the
+	 * {@link #inputs} map
+	 */
+	private static final String VALUE_KEY = "_rvalue";
+	/**
+	 * String key corresponding to the shape of the array in the
+	 * {@link #inputs} map
+	 */
+	private static final String SHAPE_KEY = "_rshape";
+	/**
+	 * String key corresponding to the dtype of the array in the
+	 * {@link #inputs} map
+	 */
+	private static final String DTYPE_KEY = "_rdtype";
+	/**
+	 * String corresponding to the dtype of the array in the
+	 * {@link #inputs} map
+	 */
+	private String dtypeVal;
+	/**
+	 * String used as tag for the float32 np dtype
+	 */
+	private static final String FLOAT32_STR = "float32";
+	/**
+	 * String used as tag for the float64 np dtype
+	 */
+	private static final String FLOAT64_STR = "float64";
+	/**
+	 * String used as tag for the byte or int8 np dtype
+	 */
+	private static final String BYTE_STR = "int8";
+	/**
+	 * String used as tag for the byte or int16 np dtype
+	 */
+	private static final String INT16_STR = "int16";
+	/**
+	 * String used as tag for the int32 np dtype
+	 */
+	private static final String INT32_STR = "int32";
+	/**
+	 * String used as tag for the int64 np dtype
+	 */
+	private static final String INT64_STR = "int64";
+	/**
+	 * String used as tag for the ubyte or uint8 np dtype
+	 */
+	private static final String UBYTE_STR = "uint8";
+	/**
+	 * String used as tag for the uint16 np dtype
+	 */
+	private static final String UINT16_STR = "uint16";
+	/**
+	 * String used as tag for the uint32 np dtype
+	 */
+	private static final String UINT32_STR = "uint32";
 
 	/**
 	 * Utility class.
@@ -47,7 +130,7 @@ public class TensorBuilder {
 
 	
 	public static  < T extends RealType< T > & NativeType< T > >
-				byte[] build(Tensor<T> tensor) {
+				byte[] createByteArray(Tensor<T> tensor) {
 		return imglib2ToByteArray(tensor.getData());
 	}
 
