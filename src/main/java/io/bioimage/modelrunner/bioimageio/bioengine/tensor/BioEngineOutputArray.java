@@ -29,6 +29,22 @@ import java.util.ArrayList;
 import java.util.HashMap;
 
 import io.bioimage.modelrunner.numpy.ByteArrayUtils;
+import net.imglib2.img.Img;
+import net.imglib2.img.array.ArrayImgs;
+import net.imglib2.img.basictypeaccess.ByteAccess;
+import net.imglib2.img.basictypeaccess.DoubleAccess;
+import net.imglib2.img.basictypeaccess.FloatAccess;
+import net.imglib2.img.basictypeaccess.IntAccess;
+import net.imglib2.img.basictypeaccess.LongAccess;
+import net.imglib2.img.basictypeaccess.ShortAccess;
+import net.imglib2.img.basictypeaccess.nio.ByteBufferAccess;
+import net.imglib2.img.basictypeaccess.nio.DoubleBufferAccess;
+import net.imglib2.img.basictypeaccess.nio.FloatBufferAccess;
+import net.imglib2.img.basictypeaccess.nio.IntBufferAccess;
+import net.imglib2.img.basictypeaccess.nio.LongBufferAccess;
+import net.imglib2.img.basictypeaccess.nio.ShortBufferAccess;
+import net.imglib2.type.NativeType;
+import net.imglib2.type.numeric.RealType;
 
 /**
  * Class that converts each of the particular output arrays produced by the BioEngine
@@ -45,16 +61,12 @@ public class BioEngineOutputArray {
 	/**
 	 * Array containing the shape of the output array
 	 */
-	private int[] shape;
+	private long[] shape;
 	/**
 	 * String containing the data type of the array.
 	 * Look at TODO to see data types supported
 	 */
 	private String dtype;
-	/**
-	 * Key for the boolean data type
-	 */
-	private static String boolKey = "bool";
 	/**
 	 * Buffer containing the data of the output array of the BioEngine
 	 */
@@ -94,7 +106,7 @@ public class BioEngineOutputArray {
 		setName(name);
 		setShape(shape);
 		setDType(dataType);
-		setArray(buffer);
+		setTensor(buffer);
 	}
 
 	/**
@@ -104,7 +116,8 @@ public class BioEngineOutputArray {
 	 * 	the  byte array that contains the array data
 	 * @throws IllegalArgumentException if the data type of the array is not supported
 	 */
-	private void setArray(Object byteArrayObject) throws IllegalArgumentException {
+	private < T extends RealType< T > & NativeType< T > > 
+		Img<T> setTensor(Object byteArrayObject) throws IllegalArgumentException {
 		byte[] byteArray = null;;
 		try {
 			byteArray = getByteArray(byteArrayObject);
@@ -112,23 +125,34 @@ public class BioEngineOutputArray {
 			throw new IllegalArgumentException("Error retrieving information from the BioEngine output '" + this.name + "'.\n"
 					+ "The array data is not correctly defined and cannot be read, it should be either a byte array or List of bytes.");
 		}
-		
+		ByteBuffer buf = ByteBuffer.wrap(byteArray);
 		if (this.dtype.toLowerCase().equals(BioengineTensor.FLOAT64_STR)) {
-			this.dataBuffer = convertIntoSignedFloat64(byteArray);
+    		DoubleAccess access = new DoubleBufferAccess(buf, true);
+    		return (Img<T>) ArrayImgs.doubles( access, shape );
+		} else if (this.dtype.toLowerCase().equals(BioengineTensor.INT64_STR)) {
+    		LongAccess access = new LongBufferAccess(buf, true);
+    		return (Img<T>) ArrayImgs.longs( access, shape );
 		} else if (this.dtype.toLowerCase().equals(BioengineTensor.FLOAT32_STR)) {
-			this.dataBuffer = convertIntoSignedFloat32(byteArray);
+    		FloatAccess access = new FloatBufferAccess(buf, true);
+    		return (Img<T>) ArrayImgs.floats( access, shape );
 		} else if (this.dtype.toLowerCase().equals(BioengineTensor.INT32_STR)) {
-			this.dataBuffer = convertIntoSignedInt32(byteArray);
+    		IntAccess access = new IntBufferAccess(buf, true);
+    		return (Img<T>) ArrayImgs.ints( access, shape );
+		} else if (this.dtype.toLowerCase().equals(BioengineTensor.UINT32_STR)) {
+    		IntAccess access = new IntBufferAccess(buf, true);
+    		return (Img<T>) ArrayImgs.unsignedInts( access, shape );
 		} else if (this.dtype.toLowerCase().equals(BioengineTensor.INT16_STR)) {
-			this.dataBuffer = convertIntoSignedInt16(byteArray);
+    		ShortAccess access = new ShortBufferAccess(buf, true);
+    		return (Img<T>) ArrayImgs.shorts( access, shape );
 		} else if (this.dtype.toLowerCase().equals(BioengineTensor.UINT16_STR)) {
-			this.dataBuffer = convertIntoUnsignedInt16(byteArray);
+    		ShortAccess access = new ShortBufferAccess(buf, true);
+    		return (Img<T>) ArrayImgs.unsignedShorts( access, shape );
 		} else if (this.dtype.toLowerCase().equals(BioengineTensor.BYTE_STR)) {
-			this.dataBuffer = convertIntoSignedInt8(byteArray);
+    		ByteAccess access = new ByteBufferAccess(buf, true);
+    		return (Img<T>) ArrayImgs.bytes( access, shape );
 		} else if (this.dtype.toLowerCase().equals(BioengineTensor.UBYTE_STR)) {
-			this.dataBuffer = convertIntoUnignedInt8(byteArray);
-		} else if (this.dtype.toLowerCase().equals(boolKey)) {
-			this.dataBuffer = convertIntoBoolean(byteArray);
+    		ByteAccess access = new ByteBufferAccess(buf, true);
+    		return (Img<T>) ArrayImgs.unsignedBytes( access, shape );
 		} else {
 			throw new IllegalArgumentException("Output array '" + this.name +"' could not be retrieved.\n"
 					+ "Its corresponding data type '" + this.dtype + "' is not supported yet.");
@@ -306,7 +330,7 @@ public class BioEngineOutputArray {
 	 */
 	private void setShape(Object shape) throws IllegalArgumentException{
 		try {
-			this.shape = getIntArray(shape);
+			this.shape = getLongArray(shape);
 		} catch (Exception ex) {
 			throw new IllegalArgumentException("Error retrieving information from the BioEngine output '" + this.name + "'.\n"
 					+ "The shape is not correctly defined, it should be either an int array or ArrayList<Integer>.");
@@ -317,7 +341,7 @@ public class BioEngineOutputArray {
 	 * Gets the shape of the array
 	 * @return the shape of the array
 	 */
-	public int[] getShape() {
+	public long[] getShape() {
 		return this.shape;
 	}
 	
@@ -339,24 +363,24 @@ public class BioEngineOutputArray {
 	}
 	
 	/**
-	 * Casts an int array in an object that contains an int array
+	 * Casts an long array in an object that contains an long array
 	 * @param shape
-	 * 	the object containing teh int array
-	 * @return teh int array
+	 * 	the object containing the long array
+	 * @return the long array
 	 * @throws Exception if it was impossible to cast the array from the object
 	 */
-	public int[] getIntArray(Object shape) throws Exception {
-		int[] shapeArr = null;
+	public long[] getLongArray(Object shape) throws Exception {
+		long[] shapeArr = null;
 		if (shape != null && shape instanceof ArrayList<?>) {
 			ArrayList<?> ll = (ArrayList<?>) shape;
-			shapeArr = new int [ll.size()];
+			shapeArr = new long [ll.size()];
 			for (int c = 0; c < ll.size(); c ++)
-				shapeArr[c] = castUnknownToInt(ll.get(c));			
+				shapeArr[c] = castUnknownToLong(ll.get(c));			
 		} else if (shape != null&& shape instanceof int[]){
-			shapeArr = (int[]) shape;
+			shapeArr = (long[]) shape;
 		} else if (shape != null&& shape instanceof double[]){
 			double[] shapeArrDouble = (double[]) shape;
-			shapeArr = new int[shapeArrDouble.length];
+			shapeArr = new long[shapeArrDouble.length];
 			for (int i = 0; i < shapeArrDouble.length; i ++) {
 				shapeArr[i] = (int) shapeArrDouble[i];
 			}
@@ -387,6 +411,33 @@ public class BioEngineOutputArray {
 			return ((Long) unknownNumber).intValue();
 		} else if (unknownNumber instanceof Number){
 			return ((Number) unknownNumber).intValue();
+		} else {
+			throw new IllegalArgumentException("Shape of the output '" + this.name
+								+ "' is not defined with allowed Java types.");
+		}
+	}
+	
+	/**
+	 * Cast unknown number to long
+	 * @param unknownNumber
+	 * 	the unknown number
+	 * @return the long
+	 */
+	private long castUnknownToLong(Object unknownNumber) {
+		if (unknownNumber instanceof Integer){
+			return (int) unknownNumber;
+		} else if (unknownNumber instanceof Double){
+			return ((Double) unknownNumber).longValue();
+		} else if (unknownNumber instanceof Float){
+			return ((Float) unknownNumber).longValue();
+		} else if (unknownNumber instanceof Short){
+			return ((Short) unknownNumber).longValue();
+		} else if (unknownNumber instanceof Byte){
+			return ((Byte) unknownNumber).longValue();
+		} else if (unknownNumber instanceof Long){
+			return ((Long) unknownNumber).longValue();
+		} else if (unknownNumber instanceof Number){
+			return ((Number) unknownNumber).longValue();
 		} else {
 			throw new IllegalArgumentException("Shape of the output '" + this.name
 								+ "' is not defined with allowed Java types.");

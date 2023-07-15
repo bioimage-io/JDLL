@@ -281,13 +281,16 @@ public class BioengineInterface implements DeepLearningEngineInterface {
 																IOException {
 		HttpURLConnection conn = createConnection(data);
 		
-		byte[] respon;
-		try {
-			respon = IOUtils.toByteArray(conn.getInputStream());
-		} catch (Exception ex) {
-			InputStream aa = conn.getErrorStream();
-			respon = IOUtils.toByteArray(aa);
-		}
+		byte[] respon;		
+		try (InputStream inputStream = conn.getInputStream();) {
+            respon = readInputStream(inputStream);
+        } catch (IOException ex) {
+            InputStream errorStream = conn.getErrorStream();
+            respon = readInputStream(errorStream);
+            errorStream.close();
+        }
+		conn.disconnect();
+		
 		return respon;
 	}
 	
@@ -319,6 +322,19 @@ public class BioengineInterface implements DeepLearningEngineInterface {
 		}
 		return conn;		
 	}
+	
+	private static byte[] readInputStream(InputStream inputStream) throws IOException {
+        byte[] bytes;
+		try (ByteArrayOutputStream byteOut = new ByteArrayOutputStream()) {
+            byte[] buffer = new byte[1024];
+            int bytesRead;
+            while ((bytesRead = inputStream.read(buffer)) != -1) {
+                byteOut.write(buffer, 0, bytesRead);
+            }
+            bytes = byteOut.toByteArray();
+        }
+		return bytes;
+    }
 	
 	/**
 	 * Get the URL of to send the data to be run in the BioEngine
