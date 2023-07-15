@@ -50,6 +50,24 @@ import io.bioimage.modelrunner.utils.Constants;
  * This class sends the corresponding inputs to the wanted model available
  * on the Bioengine, retrieves the corresponding results and converts them into 
  * JDLL tensors
+ * 
+ * 
+ * Class to create inputs that can be sent to the BioEngine server.
+ * The input tensors should be defined as an array of inputs, where
+ * each of the inputs can be either a String, int or any other type,
+ * but in case the input is an array, it should be encoded as a 
+ * {@link HashMap}. It needs to have the key "_rtype" with the
+ * corresponding value "ndarray", the key "_rvalue" with an array of
+ * bytes corresponding to the data wanted to be encoded, a key "_rshape"
+ * which should contain the shape of the array and finally the "_rdtype"
+ * corresponding to the array datatype.
+ * The array of inputs should be then included in another hashmap under
+ * the key "inputs", together with the key "model_name" and the name of
+ * the model and "decode_json" true.
+ * There is an example defined in Python at: 
+ * https://gist.github.com/oeway/b6a6b810f94c91bb902e80a2f788b9e2#file-access_triton_service_hyhpa-py-L22
+ * 
+ * 
  * @author Carlos Garcia Lopez de Haro
  *
  */
@@ -63,7 +81,12 @@ public class BioengineInterface implements DeepLearningEngineInterface {
 	 */
 	private ModelDescriptor rdf;
 	/**
-	 * Input for the Bioengine, contains all the required info that needs to be sent
+	 * Input for the Bioengine, contains all the required info that needs to be 
+	 * The input needs to have:
+	 *  -An entry called "inputs", whose value is another Map that contains
+	 *   the info about the input tensors
+	 *  -An entry called model_name with the name of the model
+	 *  -A fixed entry called decoe_json that equals to true
 	 */
 	Map<String, Object> kwargs = new HashMap<String, Object>();
 	/**
@@ -82,7 +105,14 @@ public class BioengineInterface implements DeepLearningEngineInterface {
 	 */
 	private static final String MODEL_NAME_KEY = "model_name";
 	/**
-	 * In the input Bioengine map, key for the input tensors
+	 * In the input Bioengine map, key for the input tensors.
+	 * THe inputs value should always be a list of objects, which
+	 * corresponds to encoded tensors and/or parameters for the
+	 * Bioengine to use..
+	 * The entries of this list can be either:
+	 *  -A @see java.util.LinkedHashMap generated containing the name, shape,
+	 *  	dtype and data of a tensor
+	 *  -A @see java.util.LinkedHashMap for non dimensional parameters
 	 */
 	private static final String INPUTS_KEY = "inputs";
 	/**

@@ -39,7 +39,7 @@ import io.bioimage.modelrunner.bioimageio.bioengine.BioengineInterface;
  * There is an example defined in Python at: 
  * https://gist.github.com/oeway/b6a6b810f94c91bb902e80a2f788b9e2#file-access_triton_service_hyhpa-py-L22
  * 
- * @author Carlos Javier García López de Haro
+ * @author Carlos Javier Garcia Lopez de Haro
  */
 public class BioEngineOutput {
 
