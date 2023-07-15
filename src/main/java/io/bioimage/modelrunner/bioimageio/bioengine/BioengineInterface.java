@@ -19,13 +19,11 @@
  */
 package io.bioimage.modelrunner.bioimageio.bioengine;
 
-import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
@@ -33,7 +31,6 @@ import java.net.ProtocolException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.zip.GZIPOutputStream;
@@ -64,13 +61,13 @@ public class BioengineInterface implements DeepLearningEngineInterface {
 	
 	private String modelID;
 	
-	private static final String MODEL_NAME_KEY = "";
+	private static final String MODEL_NAME_KEY = "model_name";
 	
-	private static final String INPUTS_KEY = "";
+	private static final String INPUTS_KEY = "inputs";
 	
-	private static final String RDF_KEY = "";
+	private static final String RDF_KEY = "return_rdf";
 	
-	private static final String ID_KEY = "";
+	private static final String ID_KEY = "model_id";
 	/**
 	 * Name of the default model used to run a model coming from the BioImage.io repo
 	 */
@@ -132,14 +129,34 @@ public class BioengineInterface implements DeepLearningEngineInterface {
 			throw new RunModelException("Error retrieving the Bioengine results." + System.lineSeparator()
 										+ e.toString());
 		}
-    	int outCounter = 0;
-        for (BioEngineOutputArray outArr : bioengineOutputs.getArrayOutputs()) {
-        	outArr.
-        }
-		
+		fillOutputTensors(outputTensors, bioengineOutputs.getArrayOutputs());
+	}
+
+	/**
+	 * Fill the expected output tensors with the data from teh Bioengine outputs
+	 * @param outputTensors
+	 * 	tensors expeted as defined by the rdf.yaml file
+	 * @param arrayOutputs
+	 * 	results from the Bioengine
+	 * @throws RunModelException if the number of tensors expected is not the same as
+	 * 	the number of tensors returned by the Bioengine
+	 */
+	private void fillOutputTensors(List<Tensor<?>> outputTensors, List<BioEngineOutputArray> arrayOutputs) throws RunModelException {
+		if (outputTensors.size() != arrayOutputs.size()) {
+			throw new RunModelException("The rdf.yaml file specifies '" + outputTensors.size()
+				+ "' tensors, but the Bioengine has "
+				+ "produced '" + arrayOutputs.size() + "' output tensors.");
+		}
+		int c = 0;
+		for (Tensor<?> tt : outputTensors) {
+			tt.setData(arrayOutputs.get(c ++).getImg());
+		}
 	}
 
 	@Override
+	/**
+	 * {@inheritDoc}
+	 */
 	public void loadModel(String modelFolder, String modelSource) throws LoadModelException {
 		try {
 			rdf = ModelDescriptor.readFromLocalFile(modelFolder + File.separator + Constants.RDF_FNAME, false);
@@ -161,9 +178,15 @@ public class BioengineInterface implements DeepLearningEngineInterface {
 	}
 
 	@Override
+	/**
+	 * {@inheritDoc}
+	 */
 	public void closeModel() {
-		// TODO Auto-generated method stub
-		
+		this.bioimageioKwargs = null;
+		this.kwargs = null;
+		this.modelID = null;
+		this.rdf = null;
+		this.server = null;
 	}
 	
 	public void addServer(String server) {
@@ -323,6 +346,13 @@ public class BioengineInterface implements DeepLearningEngineInterface {
 		return conn;		
 	}
 	
+	/**
+	 * Convert an input stream into a byte array
+	 * @param inputStream
+	 * 	input stream to be converted
+	 * @return byte array that contains the same info as the {@link InputStream}
+	 * @throws IOException if there is any error accessing the {@link InputStream}
+	 */
 	private static byte[] readInputStream(InputStream inputStream) throws IOException {
         byte[] bytes;
 		try (ByteArrayOutputStream byteOut = new ByteArrayOutputStream()) {
