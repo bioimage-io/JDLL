@@ -19,11 +19,13 @@
  */
 package io.bioimage.modelrunner.bioimageio.bioengine;
 
+import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
@@ -31,6 +33,7 @@ import java.net.ProtocolException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.zip.GZIPOutputStream;
@@ -69,7 +72,7 @@ public class BioengineInterface implements DeepLearningEngineInterface {
 	/**
 	 * Name of the default model used to run a model coming from the BioImage.io repo
 	 */
-	private static final String DEFAULT_BMZ_MODEL_NAME = "bioengine-model-runner";
+	public static final String DEFAULT_BMZ_MODEL_NAME = "bioengine-model-runner";
 	/**
 	 * String key corresponding to the decode Json parameter in the 
 	 * {@link #kwargs} map
@@ -114,9 +117,9 @@ public class BioengineInterface implements DeepLearningEngineInterface {
 		} else {
 			kwargs.put(INPUTS_KEY, inputs);
 		}
-		
+		byte[] byteResult;
 		try {
-			byte[] byteResult = executeModelOnBioEngine(compress(serialize(kwargs)));
+			byteResult = executeModelOnBioEngine(compress(serialize(kwargs)));
 		} catch (IOException e) {
 			throw new RunModelException(e.toString());
 		}
@@ -200,11 +203,13 @@ public class BioengineInterface implements DeepLearningEngineInterface {
      * @throws IOException if there is any error in the serialization
      */
     private static byte[] serialize(Map<String, Object> kwargs) throws IOException {
+    	byte[] arr;
     	try (ByteArrayOutputStream byteOut = new ByteArrayOutputStream();
     			ObjectOutputStream out = new ObjectOutputStream(byteOut);){
             out.writeObject(kwargs);
-            return byteOut.toByteArray();
+            arr = byteOut.toByteArray();
         }
+    	return arr;
     }
     
     /**
@@ -248,7 +253,7 @@ public class BioengineInterface implements DeepLearningEngineInterface {
 	}
 	
 	/**
-	 * Creates a connectio, sends information and receives a response
+	 * Creates a connection, sends information and receives a response
 	 * @param data
 	 * 	byte array we want to send to the server
 	 * @return a byte array response from the server
