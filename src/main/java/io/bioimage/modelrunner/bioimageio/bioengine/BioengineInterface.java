@@ -38,6 +38,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.zip.GZIPOutputStream;
 
+import io.bioimage.modelrunner.bioimageio.bioengine.tensor.BioEngineOutput;
+import io.bioimage.modelrunner.bioimageio.bioengine.tensor.BioEngineOutputArray;
 import io.bioimage.modelrunner.bioimageio.bioengine.tensor.BioengineTensor;
 import io.bioimage.modelrunner.bioimageio.description.ModelDescriptor;
 import io.bioimage.modelrunner.bioimageio.description.weights.ModelWeight;
@@ -123,6 +125,17 @@ public class BioengineInterface implements DeepLearningEngineInterface {
 		} catch (IOException e) {
 			throw new RunModelException(e.toString());
 		}
+		BioEngineOutput bioengineOutputs;
+		try {
+			bioengineOutputs = BioEngineOutput.build(byteResult);
+		} catch (Exception e) {
+			throw new RunModelException("Error retrieving the Bioengine results." + System.lineSeparator()
+										+ e.toString());
+		}
+    	int outCounter = 0;
+        for (BioEngineOutputArray outArr : bioengineOutputs.getArrayOutputs()) {
+        	outArr.
+        }
 		
 	}
 

@@ -19,6 +19,46 @@
  */
 package io.bioimage.modelrunner.bioimageio.bioengine.tensor;
 
+import org.tensorflow.Tensor;
+import org.tensorflow.types.UInt8;
+
+import net.imglib2.img.Img;
+import net.imglib2.type.Type;
+
 public class ImgLib2Builder {
+
+	/**
+	 * Not used (Utility class).
+	 */
+	private ImgLib2Builder() {}
+
+	/**
+	 * Creates a {@link Img} from a given {@link BioEngineOutputArray}
+	 * 
+	 * @param <T>
+	 *  the type of the image
+	 * @param tensor
+	 *  The bioengine tensor data is read from.
+	 * @return The Img built from the tensor.
+	 * @throws IllegalArgumentException If the tensor type is not supported.
+	 */
+	@SuppressWarnings("unchecked")
+	public static <T extends Type<T>> Img<T> build(BioEngineOutputArray tensor)
+		throws IllegalArgumentException
+	{
+		// Create an Img of the same type of the tensor
+		switch (tensor.getDType()) {
+			case UINT8:
+				return (Img<T>) buildFromTensorUByte(tensor);
+			case INT32:
+				return (Img<T>) buildFromTensorInt(tensor);
+			case FLOAT:
+				return (Img<T>) buildFromTensorFloat(tensor);
+			case DOUBLE:
+				return (Img<T>) buildFromTensorDouble(tensor);
+			default:
+				throw new IllegalArgumentException("Unsupported tensor type: " + tensor.getDType());
+		}
+	}
 
 }
