@@ -19,16 +19,25 @@
  */
 package io.bioimage.modelrunner.bioimageio.bioengine;
 
+import java.io.ByteArrayOutputStream;
+import java.io.DataOutputStream;
 import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.ObjectOutputStream;
+import java.net.HttpURLConnection;
+import java.net.MalformedURLException;
+import java.net.ProtocolException;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
+import java.util.zip.GZIPOutputStream;
 
 import io.bioimage.modelrunner.bioimageio.bioengine.tensor.BioengineTensor;
 import io.bioimage.modelrunner.bioimageio.description.ModelDescriptor;
-import io.bioimage.modelrunner.bioimageio.description.weights.WeightFormat;
+import io.bioimage.modelrunner.bioimageio.description.weights.ModelWeight;
 import io.bioimage.modelrunner.engine.DeepLearningEngineInterface;
 import io.bioimage.modelrunner.exceptions.LoadModelException;
 import io.bioimage.modelrunner.exceptions.RunModelException;
@@ -50,17 +59,13 @@ public class BioengineInterface implements DeepLearningEngineInterface {
 	
 	private String modelID;
 	
-	private String modelWeights;
-	
 	private static final String MODEL_NAME_KEY = "";
 	
 	private static final String INPUTS_KEY = "";
 	
-	private static final String ID_KEY = "";
-	
 	private static final String RDF_KEY = "";
 	
-	private static final String WW_KEY = "";
+	private static final String ID_KEY = "";
 	/**
 	 * Name of the default model used to run a model coming from the BioImage.io repo
 	 */
@@ -102,17 +107,18 @@ public class BioengineInterface implements DeepLearningEngineInterface {
     		inputs.add(pp);
 		}
 		if (modelID != null) {
-			Map<String, Object> auxMap = new HashMap<String, Object>();
-			auxMap.put(INPUTS_KEY, inputs);
-			auxMap.put(ID_KEY, modelID);
-			auxMap.put(RDF_KEY, true);
-			if (modelWeights != null)
-				auxMap.put(WW_KEY, modelWeights);
+			bioimageioKwargs.put(INPUTS_KEY, inputs);
 			ArrayList<Object> auxList = new ArrayList<Object>();
-			auxList.add(auxMap);
+			auxList.add(bioimageioKwargs);
 			kwargs.put(INPUTS_KEY, auxList);
 		} else {
 			kwargs.put(INPUTS_KEY, inputs);
+		}
+		
+		try {
+			byte[] byteResult = executeModelOnBioEngine(compress(serialize(kwargs)));
+		} catch (IOException e) {
+			throw new RunModelException(e.toString());
 		}
 		
 	}
@@ -130,9 +136,11 @@ public class BioengineInterface implements DeepLearningEngineInterface {
 			kwargs.put(MODEL_NAME_KEY, "cellpose-python");
 			kwargs.put(DECODE_JSON_KEY, DECODE_JSON_VAL);
 		} else {
-			workaroundModelID();
 			kwargs.put(MODEL_NAME_KEY, DEFAULT_BMZ_MODEL_NAME);
 			kwargs.put(SERIALIZATION_KEY, SERIALIZATION_VAL);
+			bioimageioKwargs.put(RDF_KEY, false);
+			workaroundModelID();
+			findBioEngineWeightsIfPossible();
 		}
 	}
 
@@ -161,6 +169,7 @@ public class BioengineInterface implements DeepLearningEngineInterface {
 		if (nSubversions == 2) {
 			modelID = modelID.substring(0, modelID.lastIndexOf("/"));
 		}
+		bioimageioKwargs.put(ID_KEY, modelID);
 	}
     
     /**
@@ -169,17 +178,135 @@ public class BioengineInterface implements DeepLearningEngineInterface {
      */
     private void findBioEngineWeightsIfPossible() {
     	for (String entry : rdf.getWeights().getSupportedDLFrameworks()) {
-    		if (entry.equals(kerasIdentifier)) {
-    			bioimageioKwargs.put(MODEL_WEIGHTS_KEY, modelWeights);
+    		if (entry.equals(ModelWeight.getKerasID())) {
+    			bioimageioKwargs.put(MODEL_WEIGHTS_KEY, ModelWeight.getKerasID());
     			return;
-    		} else if (entry.equals(onnxIdentifier)) {
-    			bioimageioKwargs.put(MODEL_WEIGHTS_KEY, modelWeights);
+    		} else if (entry.equals(ModelWeight.getOnnxID())) {
+    			bioimageioKwargs.put(MODEL_WEIGHTS_KEY, ModelWeight.getOnnxID());
     			return;
-    		} else if (entry.equals(torchscriptIdentifier)) {
-    			bioimageioKwargs.put(MODEL_WEIGHTS_KEY, modelWeights);
+    		} else if (entry.equals(ModelWeight.getTorchscriptID())) {
+    			bioimageioKwargs.put(MODEL_WEIGHTS_KEY, ModelWeight.getTorchscriptID());
     			return;
     		}
     	}
     }
-
+    
+    /**
+     * Serilize the input map to bytes
+     * @param kwargs
+     * 	map contianing the info we want to serialize
+     * @return an array of bytes that contians the info that we want to send to 
+     * 	the Bioengine
+     * @throws IOException if there is any error in the serialization
+     */
+    private static byte[] serialize(Map<String, Object> kwargs) throws IOException {
+    	try (ByteArrayOutputStream byteOut = new ByteArrayOutputStream();
+    			ObjectOutputStream out = new ObjectOutputStream(byteOut);){
+            out.writeObject(kwargs);
+            return byteOut.toByteArray();
+        }
+    }
+    
+    /**
+     * Compress an array of bytes
+     * @param arr
+     * 	the array of bytes we want to compresss
+     * @return the compressed array of bytes
+     * @throws IOException if there is any error during the compression
+     */
+    private static byte[] compress(byte[] arr) throws IOException {
+		byte[] result = new byte[]{};
+        try (ByteArrayOutputStream bos = new ByteArrayOutputStream(arr.length);
+             GZIPOutputStream gzipOS = new GZIPOutputStream(bos)) {
+            gzipOS.write(arr);
+            // You need to close it before using bos
+            gzipOS.close();
+            result = bos.toByteArray();
+        }
+        return result;
+    }
+	
+	/**
+	 * Sends a byte array to a model in the BioEngine server, where inference
+	 * is performed and it fetches the output array of bytes produced by the server
+	 * @param data
+	 * 	the data corresponding to the input to the model
+	 * @return the output of the server
+	 * @throws ProtocolExceptionif the connection with the server cannot be opened 
+	 * 	or the server is not found
+	 * @throws MalformedURLException if the url is not correct
+	 * @throws IOException if the connection with the server cannot be opened 
+	 * 	or the server is not found
+	 */
+	public byte[] executeModelOnBioEngine(byte[] data) throws ProtocolException, 
+																		MalformedURLException, 
+																		IOException {
+		byte[] result =  sendDataToServerAndReceiveResponse(data);
+		// Set received data bytes to null to save memory
+		data = null;
+		return result;
+	}
+	
+	/**
+	 * Creates a connectio, sends information and receives a response
+	 * @param data
+	 * 	byte array we want to send to the server
+	 * @return a byte array response from the server
+	 * @throws ProtocolExceptionif the connection with the server cannot be opened 
+	 * 	or the server is not found
+	 * @throws MalformedURLException if the url is not correct
+	 * @throws IOException if the connection with the server cannot be opened 
+	 * 	or the server is not found
+	 */
+	private byte[] sendDataToServerAndReceiveResponse(byte[] data) throws ProtocolException, 
+																MalformedURLException, 
+																IOException {
+		HttpURLConnection conn = createConnection(data);
+		
+		byte[] respon;
+		try {
+			respon = IOUtils.toByteArray(conn.getInputStream());
+		} catch (Exception ex) {
+			InputStream aa = conn.getErrorStream();
+			respon = IOUtils.toByteArray(aa);
+		}
+		return respon;
+	}
+	
+	/**
+	 * Create a post connection with the BioEngine server
+	 * @param data
+	 * 	byte array we want to send to the server
+	 * @return the connection
+	 * @throws ProtocolExceptionif the connection with the server cannot be opened 
+	 * 	or the server is not found
+	 * @throws MalformedURLException if the url is not correct
+	 * @throws IOException if the connection with the server cannot be opened 
+	 * 	or the server is not found
+	 */
+	private HttpURLConnection createConnection(byte[] data) throws ProtocolException,
+																	MalformedURLException,
+																	IOException{
+		URL url = new URL(getExecutionURL());
+		HttpURLConnection conn= (HttpURLConnection) url.openConnection();           
+		conn.setDoOutput( true );
+		conn.setDoInput(true);
+		conn.setRequestMethod( "POST" );
+		conn.setRequestProperty( "Content-Type", "application/msgpack"); 
+		conn.setRequestProperty( "Content-Encoding", "gzip"); 
+		conn.setRequestProperty( "Content-Length", Integer.toString(data.length));
+		try( DataOutputStream wr = new DataOutputStream( conn.getOutputStream())) {
+			  wr.write(data);
+			  wr.flush();
+		}
+		return conn;		
+	}
+	
+	/**
+	 * Get the URL of to send the data to be run in the BioEngine
+	 * @return the post BioEngine URL
+	 */
+	private String getExecutionURL() {
+		return server + "/public/services/triton-client/execute";
+	}
 }
