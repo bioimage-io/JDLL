@@ -46,27 +46,53 @@ import io.bioimage.modelrunner.exceptions.RunModelException;
 import io.bioimage.modelrunner.tensor.Tensor;
 import io.bioimage.modelrunner.utils.Constants;
 
+/**
+ * This class sends the corresponding inputs to the wanted model available
+ * on the Bioengine, retrieves the corresponding results and converts them into 
+ * JDLL tensors
+ * @author Carlos Garcia Lopez de Haro
+ *
+ */
 public class BioengineInterface implements DeepLearningEngineInterface {
-	
+	/**
+	 * Server where the Bioengine is hosted
+	 */
 	private String server;
-	
+	/**
+	 * Object that contains all the info described in the rdf.yaml file of the model
+	 */
 	private ModelDescriptor rdf;
-	
+	/**
+	 * Input for the Bioengine, contains all the required info that needs to be sent
+	 */
 	Map<String, Object> kwargs = new HashMap<String, Object>();
 	/**
-	 * Map containing the instances needed to provide an input to the 
+	 * Map containing the information needed to provide an input to the 
 	 * server for models that are defined in the bioimage.io repo.
+	 * Model that are not in the bioimage.io repo do not need this map
+	 * This map is sent inside the {@link #kwargs} map
 	 */
 	private HashMap<String, Object> bioimageioKwargs = new HashMap<String, Object>();
-	
+	/**
+	 * Bioimage.io model ID of the model of interest
+	 */
 	private String modelID;
-	
+	/**
+	 * In the input Bioengine map, key for the model name
+	 */
 	private static final String MODEL_NAME_KEY = "model_name";
-	
+	/**
+	 * In the input Bioengine map, key for the input tensors
+	 */
 	private static final String INPUTS_KEY = "inputs";
-	
+	/**
+	 * In the input Bioengine map, key for whether to 
+	 * return the rdf.yaml of the model or not
+	 */
 	private static final String RDF_KEY = "return_rdf";
-	
+	/**
+	 * In the input Bioengine map, key for the Bioimage.io model id
+	 */
 	private static final String ID_KEY = "model_id";
 	/**
 	 * Name of the default model used to run a model coming from the BioImage.io repo
@@ -97,6 +123,9 @@ public class BioengineInterface implements DeepLearningEngineInterface {
 	private static String MODEL_WEIGHTS_KEY = "weight_format";
 
 	@Override
+	/**
+	 * {@inheritDoc}
+	 */
 	public void run(List<Tensor<?>> inputTensors, List<Tensor<?>> outputTensors) throws RunModelException {
 		
 		List<Object> inputs = new ArrayList<Object>();
@@ -119,6 +148,7 @@ public class BioengineInterface implements DeepLearningEngineInterface {
 		byte[] byteResult;
 		try {
 			byteResult = executeModelOnBioEngine(compress(serialize(kwargs)));
+			bioimageioKwargs.put(INPUTS_KEY, null);
 		} catch (IOException e) {
 			throw new RunModelException(e.toString());
 		}
