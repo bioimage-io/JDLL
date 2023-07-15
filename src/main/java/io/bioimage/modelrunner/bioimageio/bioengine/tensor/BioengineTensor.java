@@ -62,12 +62,12 @@ public class BioengineTensor {
 	/**
 	 * String key corresponding to the type of object being specified
 	 */
-	private final static String OBJECT_KEY = "_rtype";
+	protected final static String OBJECT_KEY = "_rtype";
 	/**
 	 * Value corresponding to the type of the array in the
 	 * {@link #inputs} map
 	 */
-	private static final String NDARRAY_VALUE = "ndarray";
+	protected static final String NDARRAY_VALUE = "ndarray";
 	/**
 	 * Value corresponding to a parameter
 	 */
@@ -76,53 +76,53 @@ public class BioengineTensor {
 	 * String key corresponding to the value of the array in the
 	 * {@link #inputs} map
 	 */
-	private static final String VALUE_KEY = "_rvalue";
+	protected static final String VALUE_KEY = "_rvalue";
 	/**
 	 * String key corresponding to the shape of the array in the
 	 * {@link #inputs} map
 	 */
-	private static final String SHAPE_KEY = "_rshape";
+	protected static final String SHAPE_KEY = "_rshape";
 	/**
 	 * String key corresponding to the dtype of the array in the
 	 * {@link #inputs} map
 	 */
-	private static final String DTYPE_KEY = "_rdtype";
+	protected static final String DTYPE_KEY = "_rdtype";
 	/**
 	 * String used as tag for the float32 np dtype
 	 */
-	private static final String FLOAT32_STR = "float32";
+	protected static final String FLOAT32_STR = "float32";
 	/**
 	 * String used as tag for the float64 np dtype
 	 */
-	private static final String FLOAT64_STR = "float64";
+	protected static final String FLOAT64_STR = "float64";
 	/**
 	 * String used as tag for the byte or int8 np dtype
 	 */
-	private static final String BYTE_STR = "int8";
+	protected static final String BYTE_STR = "int8";
 	/**
 	 * String used as tag for the byte or int16 np dtype
 	 */
-	private static final String INT16_STR = "int16";
+	protected static final String INT16_STR = "int16";
 	/**
 	 * String used as tag for the int32 np dtype
 	 */
-	private static final String INT32_STR = "int32";
+	protected static final String INT32_STR = "int32";
 	/**
 	 * String used as tag for the int64 np dtype
 	 */
-	private static final String INT64_STR = "int64";
+	protected static final String INT64_STR = "int64";
 	/**
 	 * String used as tag for the ubyte or uint8 np dtype
 	 */
-	private static final String UBYTE_STR = "uint8";
+	protected static final String UBYTE_STR = "uint8";
 	/**
 	 * String used as tag for the uint16 np dtype
 	 */
-	private static final String UINT16_STR = "uint16";
+	protected static final String UINT16_STR = "uint16";
 	/**
 	 * String used as tag for the uint32 np dtype
 	 */
-	private static final String UINT32_STR = "uint32";
+	protected static final String UINT32_STR = "uint32";
 
 	/**
 	 * Utility class.

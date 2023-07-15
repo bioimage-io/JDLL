@@ -33,47 +33,6 @@ public class BioEngineOutputArray {
 	 */
 	private String dtype;
 	/**
-	 * Key in the output Map corresponding to the array information.
-	 * This array information is provided as an array of bytes.
-	 */
-	private static String dataKey = "_rvalue";
-	/**
-	 * Key in the output Map corresponding to the array shape.
-	 */
-	private static String shapeKey = "_rshape";
-	/**
-	 * Key in the output Map corresponding to the array data type.
-	 */
-	private static String dTypeKey = "_rdtype";
-	/**
-	 * Key for the float32 data type
-	 */
-	private static String float32Key = "float32";
-	/**
-	 * Key for the int32 data type
-	 */
-	private static String int32Key = "int32";
-	/**
-	 * Key for the float64 data type
-	 */
-	private static String floa64Key = "float64";
-	/**
-	 * Key for the uint16 data type
-	 */
-	private static String uint16Key = "uint16";
-	/**
-	 * Key for the int16 data type
-	 */
-	private static String int16Key = "int16";
-	/**
-	 * Key for the uint8 data type
-	 */
-	private static String uint8Key = "uint8";
-	/**
-	 * Key for the int8 data type
-	 */
-	private static String int8Key = "int8";
-	/**
 	 * Key for the boolean data type
 	 */
 	private static String boolKey = "bool";
@@ -94,9 +53,9 @@ public class BioEngineOutputArray {
 	 */
 	private BioEngineOutputArray(String name, HashMap<String, Object> outputMap) throws IllegalArgumentException {
 		setName(name);
-		setShape(outputMap.get(shapeKey));
-		setDType((String) outputMap.get(dTypeKey));
-		setArray(outputMap.get(dataKey));
+		setShape(outputMap.get(BioengineTensor.SHAPE_KEY));
+		setDType((String) outputMap.get(BioengineTensor.DTYPE_KEY));
+		setArray(outputMap.get(BioengineTensor.VALUE_KEY));
 	}
 	
 	/**
@@ -135,19 +94,19 @@ public class BioEngineOutputArray {
 					+ "The array data is not correctly defined and cannot be read, it should be either a byte array or List of bytes.");
 		}
 		
-		if (this.dtype.toLowerCase().equals(floa64Key)) {
+		if (this.dtype.toLowerCase().equals(BioengineTensor.FLOAT64_STR)) {
 			this.dataBuffer = convertIntoSignedFloat64(byteArray);
-		} else if (this.dtype.toLowerCase().equals(float32Key)) {
+		} else if (this.dtype.toLowerCase().equals(BioengineTensor.FLOAT32_STR)) {
 			this.dataBuffer = convertIntoSignedFloat32(byteArray);
-		} else if (this.dtype.toLowerCase().equals(int32Key)) {
+		} else if (this.dtype.toLowerCase().equals(BioengineTensor.INT32_STR)) {
 			this.dataBuffer = convertIntoSignedInt32(byteArray);
-		} else if (this.dtype.toLowerCase().equals(int16Key)) {
+		} else if (this.dtype.toLowerCase().equals(BioengineTensor.INT16_STR)) {
 			this.dataBuffer = convertIntoSignedInt16(byteArray);
-		} else if (this.dtype.toLowerCase().equals(uint16Key)) {
+		} else if (this.dtype.toLowerCase().equals(BioengineTensor.UINT16_STR)) {
 			this.dataBuffer = convertIntoUnsignedInt16(byteArray);
-		} else if (this.dtype.toLowerCase().equals(int8Key)) {
+		} else if (this.dtype.toLowerCase().equals(BioengineTensor.BYTE_STR)) {
 			this.dataBuffer = convertIntoSignedInt8(byteArray);
-		} else if (this.dtype.toLowerCase().equals(uint8Key)) {
+		} else if (this.dtype.toLowerCase().equals(BioengineTensor.UBYTE_STR)) {
 			this.dataBuffer = convertIntoUnignedInt8(byteArray);
 		} else if (this.dtype.toLowerCase().equals(boolKey)) {
 			this.dataBuffer = convertIntoBoolean(byteArray);

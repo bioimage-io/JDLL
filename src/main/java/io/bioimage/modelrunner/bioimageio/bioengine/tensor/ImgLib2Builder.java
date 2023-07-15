@@ -19,11 +19,16 @@
  */
 package io.bioimage.modelrunner.bioimageio.bioengine.tensor;
 
-import org.tensorflow.Tensor;
-import org.tensorflow.types.UInt8;
-
 import net.imglib2.img.Img;
 import net.imglib2.type.Type;
+import net.imglib2.type.numeric.integer.ByteType;
+import net.imglib2.type.numeric.integer.IntType;
+import net.imglib2.type.numeric.integer.LongType;
+import net.imglib2.type.numeric.integer.ShortType;
+import net.imglib2.type.numeric.integer.UnsignedIntType;
+import net.imglib2.type.numeric.integer.UnsignedShortType;
+import net.imglib2.type.numeric.real.DoubleType;
+import net.imglib2.type.numeric.real.FloatType;
 
 public class ImgLib2Builder {
 
@@ -48,17 +53,67 @@ public class ImgLib2Builder {
 	{
 		// Create an Img of the same type of the tensor
 		switch (tensor.getDType()) {
-			case UINT8:
+			case BioengineTensor.UBYTE_STR:
 				return (Img<T>) buildFromTensorUByte(tensor);
-			case INT32:
-				return (Img<T>) buildFromTensorInt(tensor);
-			case FLOAT:
-				return (Img<T>) buildFromTensorFloat(tensor);
-			case DOUBLE:
-				return (Img<T>) buildFromTensorDouble(tensor);
+			case BioengineTensor.BYTE_STR:
+				return (Img<T>) buildFromTensorUByte(tensor);
+			case BioengineTensor.INT16_STR:
+				return (Img<T>) buildFromTensorInt16(tensor);
+			case BioengineTensor.UINT16_STR:
+				return (Img<T>) buildFromTensorUInt16(tensor);
+			case BioengineTensor.INT32_STR:
+				return (Img<T>) buildFromTensorInt32(tensor);
+			case BioengineTensor.UINT32_STR:
+				return (Img<T>) buildFromTensorUInt32(tensor);
+			case BioengineTensor.INT64_STR:
+				return (Img<T>) buildFromTensorInt64(tensor);
+			case BioengineTensor.FLOAT32_STR:
+				return (Img<T>) buildFromTensorFloat32(tensor);
+			case BioengineTensor.FLOAT64_STR:
+				return (Img<T>) buildFromTensorFloat64(tensor);
 			default:
 				throw new IllegalArgumentException("Unsupported tensor type: " + tensor.getDType());
 		}
+	}
+
+	private static Img<LongType> buildFromTensorInt64(BioEngineOutputArray tensor) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	private static Img<DoubleType> buildFromTensorFloat64(BioEngineOutputArray tensor) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	private static Img<FloatType> buildFromTensorFloat32(BioEngineOutputArray tensor) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	private static Img<UnsignedIntType> buildFromTensorUInt32(BioEngineOutputArray tensor) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	private static Img<IntType> buildFromTensorInt32(BioEngineOutputArray tensor) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	private static Img<UnsignedShortType> buildFromTensorUInt16(BioEngineOutputArray tensor) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	private static Img<ShortType> buildFromTensorInt16(BioEngineOutputArray tensor) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	private static Img<ByteType> buildFromTensorUByte(BioEngineOutputArray tensor) {
+		// TODO Auto-generated method stub
+		return null;
 	}
 
 }
