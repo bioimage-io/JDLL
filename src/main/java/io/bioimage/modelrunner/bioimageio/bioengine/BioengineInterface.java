@@ -25,7 +25,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.bioimageanalysis.icy.deepicy.model.bioimageio.BioEngineServer;
 
 import io.bioimage.modelrunner.bioimageio.bioengine.tensor.BioengineTensor;
 import io.bioimage.modelrunner.bioimageio.description.ModelDescriptor;
@@ -59,7 +58,25 @@ public class BioengineInterface implements DeepLearningEngineInterface {
 	/**
 	 * Name of the default model used to run a model coming from the BioImage.io repo
 	 */
-	private static String DEFAULT_BMZ_MODEL_NAME = "bioengine-model-runner";
+	private static final String DEFAULT_BMZ_MODEL_NAME = "bioengine-model-runner";
+	/**
+	 * String key corresponding to the decode Json parameter in the 
+	 * {@link #kwargs} map
+	 */
+	private static final String DECODE_JSON_KEY = "decode_json";
+	/**
+	 * Value corresponding to the decode Json parameter in the 
+	 * {@link #kwargs} map. It is fixed.
+	 */
+	private static final boolean DECODE_JSON_VAL = true;
+	/**
+	 * Key for the input of the BioEngine corresponding to the type of serialization
+	 */
+	private static final String SERIALIZATION_KEY = "serialization";
+	/**
+	 * Value for the BioEngine serialization
+	 */
+	private static final String SERIALIZATION_VAL = "imjoy";
 
 	@Override
 	public void run(List<Tensor<?>> inputTensors, List<Tensor<?>> outputTensors) throws RunModelException {
@@ -94,19 +111,16 @@ public class BioengineInterface implements DeepLearningEngineInterface {
 		try {
 			rdf = ModelDescriptor.readFromLocalFile(modelFolder + File.separator + Constants.RDF_FNAME, false);
 
-			if (rdf.getName().equals("cellpose-python"))
+			if (rdf.getName().equals("cellpose-python")) {
 				kwargs.put(MODEL_NAME_KEY, "cellpose-python");
-			else {
+				kwargs.put(DECODE_JSON_KEY, DECODE_JSON_VAL);
+			} else {
 
 				workaroundModelID();
 				kwargs.put(MODEL_NAME_KEY, rdf.getName());
-				if (BioEngineServer.isBioImageIoKey(modelName)) {
-					kwargs.put(serializationKey, serializationVal);
-				} else {
-					kwargs.put(decodeJsonKey, decodeJsonVal);
-				}
+				kwargs.put(SERIALIZATION_KEY, SERIALIZATION_VAL);
 			}
-			if () {
+			if (true) {
 				
 			} else {
 				
@@ -138,6 +152,19 @@ public class BioengineInterface implements DeepLearningEngineInterface {
 		if (nSubversions == 2) {
 			modelID = modelID.substring(0, modelID.lastIndexOf("/"));
 		}
+	}
+	
+	/**
+	 * Whether the name of the model corresponds to the key used to run BioImage.io models
+	 * @param name
+	 * 	name of a model
+	 * @return true if the model name correpsonds to the Bioimage.io runner and false otherwise
+	 */
+	private static boolean isBioImageIoKey(String name) {
+		if (name != null && name.equals(DEFAULT_BMZ_MODEL_NAME))
+			return true;
+		else
+			return false;
 	}
 
 }
