@@ -24,10 +24,11 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
+import java.util.Map.Entry;
 
 import io.bioimage.modelrunner.bioimageio.bioengine.tensor.BioengineTensor;
 import io.bioimage.modelrunner.bioimageio.description.ModelDescriptor;
+import io.bioimage.modelrunner.bioimageio.description.weights.WeightFormat;
 import io.bioimage.modelrunner.engine.DeepLearningEngineInterface;
 import io.bioimage.modelrunner.exceptions.LoadModelException;
 import io.bioimage.modelrunner.exceptions.RunModelException;
@@ -41,6 +42,11 @@ public class BioengineInterface implements DeepLearningEngineInterface {
 	private ModelDescriptor rdf;
 	
 	Map<String, Object> kwargs = new HashMap<String, Object>();
+	/**
+	 * Map containing the instances needed to provide an input to the 
+	 * server for models that are defined in the bioimage.io repo.
+	 */
+	private HashMap<String, Object> bioimageioKwargs = new HashMap<String, Object>();
 	
 	private String modelID;
 	
@@ -77,6 +83,11 @@ public class BioengineInterface implements DeepLearningEngineInterface {
 	 * Value for the BioEngine serialization
 	 */
 	private static final String SERIALIZATION_VAL = "imjoy";
+	/**
+	 * Optional key to run a Bioimage.io model to specify in which weights
+	 * the model is going to run
+	 */
+	private static String MODEL_WEIGHTS_KEY = "weight_format";
 
 	@Override
 	public void run(List<Tensor<?>> inputTensors, List<Tensor<?>> outputTensors) throws RunModelException {
@@ -110,24 +121,18 @@ public class BioengineInterface implements DeepLearningEngineInterface {
 	public void loadModel(String modelFolder, String modelSource) throws LoadModelException {
 		try {
 			rdf = ModelDescriptor.readFromLocalFile(modelFolder + File.separator + Constants.RDF_FNAME, false);
-
-			if (rdf.getName().equals("cellpose-python")) {
-				kwargs.put(MODEL_NAME_KEY, "cellpose-python");
-				kwargs.put(DECODE_JSON_KEY, DECODE_JSON_VAL);
-			} else {
-
-				workaroundModelID();
-				kwargs.put(MODEL_NAME_KEY, rdf.getName());
-				kwargs.put(SERIALIZATION_KEY, SERIALIZATION_VAL);
-			}
-			if (true) {
-				
-			} else {
-				
-			}
 		} catch (Exception e) {
 			throw new LoadModelException("The rdf.yaml file for "
 					+ "model at '" + modelFolder + "' cannot be read.");
+		}
+
+		if (rdf.getName().equals("cellpose-python")) {
+			kwargs.put(MODEL_NAME_KEY, "cellpose-python");
+			kwargs.put(DECODE_JSON_KEY, DECODE_JSON_VAL);
+		} else {
+			workaroundModelID();
+			kwargs.put(MODEL_NAME_KEY, DEFAULT_BMZ_MODEL_NAME);
+			kwargs.put(SERIALIZATION_KEY, SERIALIZATION_VAL);
 		}
 	}
 
@@ -144,27 +149,37 @@ public class BioengineInterface implements DeepLearningEngineInterface {
 	/** TODO 
 	 * Workaround for BioImage.io model runner. It does not work with the full version, it
 	 * only works with: major_version_/second_version
+	 * @throws LoadModelException if not model ID is not found. Without a model ID, the model
+	 * 	 cannot run on the Bioengine
 	 */
-	private void workaroundModelID() {
+	private void workaroundModelID() throws LoadModelException {
+		modelID = rdf.getModelID();
 		if (modelID == null)
-			return;
+			throw new LoadModelException("The selected model does not have a model ID, "
+					+ "thus it is not sppported to run on the Bioengine.");
 		int nSubversions = modelID.length() - modelID.replace("/", "").length();
 		if (nSubversions == 2) {
 			modelID = modelID.substring(0, modelID.lastIndexOf("/"));
 		}
 	}
-	
-	/**
-	 * Whether the name of the model corresponds to the key used to run BioImage.io models
-	 * @param name
-	 * 	name of a model
-	 * @return true if the model name correpsonds to the Bioimage.io runner and false otherwise
-	 */
-	private static boolean isBioImageIoKey(String name) {
-		if (name != null && name.equals(DEFAULT_BMZ_MODEL_NAME))
-			return true;
-		else
-			return false;
-	}
+    
+    /**
+     * Identifies the weights that are compatible with the Bioengine. The BioEngine
+     * canot run Tf 1 weights
+     */
+    private void findBioEngineWeightsIfPossible() {
+    	for (String entry : rdf.getWeights().getSupportedDLFrameworks()) {
+    		if (entry.equals(kerasIdentifier)) {
+    			bioimageioKwargs.put(MODEL_WEIGHTS_KEY, modelWeights);
+    			return;
+    		} else if (entry.equals(onnxIdentifier)) {
+    			bioimageioKwargs.put(MODEL_WEIGHTS_KEY, modelWeights);
+    			return;
+    		} else if (entry.equals(torchscriptIdentifier)) {
+    			bioimageioKwargs.put(MODEL_WEIGHTS_KEY, modelWeights);
+    			return;
+    		}
+    	}
+    }
 
 }
