@@ -43,7 +43,7 @@ public class PytorchWeights implements WeightFormat{
 	 * 	information refering to the Pytorch weights
 	 */
 	public PytorchWeights(Map<String, Object> weights) {
-		weightsFormat = "pytorch_state_dict";
+		weightsFormat = ModelWeight.getPytorchID();
 		Set<String> keys = weights.keySet();
 		for (String k : keys) {
 			Object fieldElement = weights.get(k);

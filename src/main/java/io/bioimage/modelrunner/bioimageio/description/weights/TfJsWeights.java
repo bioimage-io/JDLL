@@ -45,7 +45,7 @@ public class TfJsWeights implements WeightFormat{
 	 * 	information referring to the Keras weights
 	 */
 	public TfJsWeights(Map<String, Object> weights) {
-		weightsFormat = "tensorflow_js";
+		weightsFormat = ModelWeight.getTensorflowJsID();
 		Set<String> keys = weights.keySet();
 		for (String k : keys) {
 			Object fieldElement = weights.get(k);

@@ -45,7 +45,7 @@ public class OnnxWeights implements WeightFormat {
 	 * 	information referring to the ONNX weights
 	 */
 	public OnnxWeights(Map<String, Object> weights) {
-		weightsFormat = "onnx";
+		weightsFormat = ModelWeight.getOnnxID();
 		Set<String> keys = weights.keySet();
 		for (String k : keys) {
 			Object fieldElement = weights.get(k);

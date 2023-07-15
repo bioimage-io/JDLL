@@ -43,7 +43,7 @@ public class KerasWeights implements WeightFormat {
 	 * 	information referring to the Keras weights
 	 */
 	public KerasWeights(Map<String, Object> weights) {
-		weightsFormat = "keras_hdf5";
+		weightsFormat = ModelWeight.getKerasID();
 		Set<String> keys = weights.keySet();
 		for (String k : keys) {
 			Object fieldElement = weights.get(k);

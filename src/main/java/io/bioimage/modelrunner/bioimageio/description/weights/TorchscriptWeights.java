@@ -45,7 +45,7 @@ public class TorchscriptWeights implements WeightFormat{
 	 * 	information refering to the Torchscript weights
 	 */
 	public TorchscriptWeights(Map<String, Object> weights) {
-		weightsFormat = "torchscript";
+		weightsFormat = ModelWeight.getTorchscriptID();
 		Set<String> keys = weights.keySet();
 		for (String k : keys) {
 			Object fieldElement = weights.get(k);

@@ -45,7 +45,7 @@ public class TfWeights implements WeightFormat{
 	 * 	information referring to the Tensorflow weights
 	 */
 	public TfWeights(Map<String, Object> weights) {
-		weightsFormat = "tensorflow_saved_model_bundle";
+		weightsFormat = ModelWeight.getTensorflowID();
 		Set<String> keys = weights.keySet();
 		for (String k : keys) {
 			Object fieldElement = weights.get(k);
