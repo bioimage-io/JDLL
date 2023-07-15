@@ -19,7 +19,6 @@
  */
 package io.bioimage.modelrunner.bioimageio.bioengine.tensor;
 
-import java.nio.Buffer;
 import java.nio.ByteBuffer;
 import java.nio.DoubleBuffer;
 import java.nio.FloatBuffer;
@@ -27,6 +26,7 @@ import java.nio.IntBuffer;
 import java.nio.ShortBuffer;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Objects;
 
 import io.bioimage.modelrunner.numpy.ByteArrayUtils;
 import net.imglib2.img.Img;
@@ -68,9 +68,9 @@ public class BioEngineOutputArray {
 	 */
 	private String dtype;
 	/**
-	 * Buffer containing the data of the output array of the BioEngine
+	 * byte array containing the data of the array
 	 */
-	private Buffer dataBuffer;
+	private byte[] arr;
 	
 	/** TODO add possibility of having parameters
 	 * TODO we need the shape of the array too
@@ -86,7 +86,7 @@ public class BioEngineOutputArray {
 		setName(name);
 		setShape(outputMap.get(BioengineTensor.SHAPE_KEY));
 		setDType((String) outputMap.get(BioengineTensor.DTYPE_KEY));
-		setArray(outputMap.get(BioengineTensor.VALUE_KEY));
+		setData(outputMap.get(BioengineTensor.VALUE_KEY));
 	}
 	
 	/**
@@ -106,26 +106,36 @@ public class BioEngineOutputArray {
 		setName(name);
 		setShape(shape);
 		setDType(dataType);
-		setTensor(buffer);
+		setData(buffer);
 	}
 
 	/**
-	 * Create an array from the bytes received by the BioEngine and using the corresponding shape
-	 * and data types
+	 * REtrieve the byte array that contains the data of the tensor
 	 * @param byteArray
 	 * 	the  byte array that contains the array data
 	 * @throws IllegalArgumentException if the data type of the array is not supported
 	 */
-	private < T extends RealType< T > & NativeType< T > > 
-		Img<T> setTensor(Object byteArrayObject) throws IllegalArgumentException {
-		byte[] byteArray = null;;
+	private void setData(Object byteArrayObject) throws IllegalArgumentException {
 		try {
-			byteArray = getByteArray(byteArrayObject);
+			arr = getByteArray(byteArrayObject);
 		} catch (Exception ex) {
 			throw new IllegalArgumentException("Error retrieving information from the BioEngine output '" + this.name + "'.\n"
 					+ "The array data is not correctly defined and cannot be read, it should be either a byte array or List of bytes.");
 		}
-		ByteBuffer buf = ByteBuffer.wrap(byteArray);
+	}
+
+
+	/**
+	 * Create an array from the bytes received by the BioEngine and using the corresponding shape
+	 * and data types
+	 * @return an ImgLib2 {@link Img} containing the data of one of the outputs of the bioengine
+	 * @throws IllegalArgumentException if the data type of the array is not supported
+	 */
+	@SuppressWarnings("unchecked")
+	public < T extends RealType< T > & NativeType< T > >  Img<T> getImg()
+			throws IllegalArgumentException {
+		Objects.requireNonNull(arr);
+		ByteBuffer buf = ByteBuffer.wrap(arr);
 		if (this.dtype.toLowerCase().equals(BioengineTensor.FLOAT64_STR)) {
     		DoubleAccess access = new DoubleBufferAccess(buf, true);
     		return (Img<T>) ArrayImgs.doubles( access, shape );
@@ -160,12 +170,11 @@ public class BioEngineOutputArray {
 	}
 	
 	/**
-	 * Retrieve the buffer containing the data of the output array produced
-	 * by the BioEngine
-	 * @return the buffer with the output array
+	 * Retrieve the byte array containing the data of the tensor
+	 * @return the byte array with the data of the tensor
 	 */
-	public Buffer getArray() {
-		return this.dataBuffer;
+	public byte[] getArray() {
+		return this.arr;
 	}
 	
 	/**
