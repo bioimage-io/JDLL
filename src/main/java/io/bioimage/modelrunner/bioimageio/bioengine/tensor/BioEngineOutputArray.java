@@ -142,7 +142,7 @@ public class BioEngineOutputArray {
 		} else if (this.dtype.toLowerCase().equals(int32Key)) {
 			this.dataBuffer = convertIntoSignedInt32(byteArray);
 		} else if (this.dtype.toLowerCase().equals(int16Key)) {
-			this.dataBuffer = convertIntoSignedShort16(byteArray);
+			this.dataBuffer = convertIntoSignedInt16(byteArray);
 		} else if (this.dtype.toLowerCase().equals(uint16Key)) {
 			this.dataBuffer = convertIntoUnsignedInt16(byteArray);
 		} else if (this.dtype.toLowerCase().equals(int8Key)) {
@@ -173,7 +173,7 @@ public class BioEngineOutputArray {
 	 * 	the byte array
 	 * @return a integer 16 buffer containing the wanted data
 	 */
-	public static ShortBuffer convertIntoSignedShort16(byte[] arr) {
+	public static ShortBuffer convertIntoSignedInt16(byte[] arr) {
 		return ShortBuffer.wrap(ByteArrayUtils.convertIntoSignedShort16(arr));
 	}
 	

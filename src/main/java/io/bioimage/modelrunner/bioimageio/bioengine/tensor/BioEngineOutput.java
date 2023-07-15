@@ -204,8 +204,9 @@ public class BioEngineOutput {
 	 * 	the name of the output of interest
 	 * @param output
 	 * 	the map containing the info of interest
+	 * @throws Exception 
 	 */
-	private void createOutputBioImageIo(String outputName, LinkedHashMap<String, Object> output) {
+	private void createOutputBioImageIo(String outputName, LinkedHashMap<String, Object> output) throws Exception {
 		Objects.requireNonNull(output);
 		if (output.get(successKey) == null || !((boolean) output.get(successKey)))
 			return;
@@ -221,8 +222,9 @@ public class BioEngineOutput {
 	 * 	the name of the output of interest
 	 * @param output
 	 * 	the map containing the info of interest
+	 * @throws Exception 
 	 */
-	private void createOutputFromMap(String outputName, LinkedHashMap<String, Object> output) {
+	private void createOutputFromMap(String outputName, LinkedHashMap<String, Object> output) throws Exception {
 		if (output.get(outputRTypeKey) != null && output.get(outputRTypeKey).equals(imageArrayValue)) {
 			addOutputToList(outputName, output);
 		}
@@ -234,14 +236,15 @@ public class BioEngineOutput {
 	 * 	name of the output
 	 * @param output
 	 * 	output Map
+	 * @throws Exception 
 	 */
-	private void addOutputToList(String outputName, LinkedHashMap<String, Object> output) {
+	private void addOutputToList(String outputName, LinkedHashMap<String, Object> output) throws Exception {
 		try {
 			this.list.add(BioEngineOutputArray.buildOutput(outputName, output));
 		} catch (IllegalArgumentException ex) {
 			throw new IllegalArgumentException("Invalid output" + System.lineSeparator() + ex.toString());
 		} catch (Exception ex) {
-			throw new Exception("Invalid output", "Error retrieving output '" + outputName + "'." 
+			throw new Exception("Error retrieving output '" + outputName + "'." 
 								+ System.lineSeparator() + ex.toString());
 		}
 	}
@@ -251,8 +254,9 @@ public class BioEngineOutput {
 	 * by the BioEngine
 	 * @param outputList
 	 * 	the list containing the info of interest
+	 * @throws Exception 
 	 */
-	private void createOutputsFromList(String name, List<LinkedHashMap<String, Object>> outputList) {
+	private void createOutputsFromList(String name, List<LinkedHashMap<String, Object>> outputList) throws Exception {
 		for (int i = 0; i < outputList.size(); i ++) {
 			LinkedHashMap<String, Object> output = outputList.get(i);
 			String outputName = name + "_" + i;
@@ -265,8 +269,9 @@ public class BioEngineOutput {
 	 * by the BioEngine
 	 * @param outputName
 	 * 	the name of the output of interest
+	 * @throws Exception 
 	 */
-	private void createOutput(String outputName) {
+	private void createOutput(String outputName) throws Exception {
 		Object outObject = deserializedOutput.get(outputName);
 		if (!bioimageio && outObject instanceof LinkedHashMap<?, ?>) {
 			createOutputFromMap(outputName, (LinkedHashMap<String, Object>) outObject);
