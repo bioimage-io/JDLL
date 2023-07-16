@@ -206,4 +206,8 @@ public class BioEngineAvailableModels {
 	public String getDescription() {
 		return this.description;
 	}
+	
+	public static String getBioengineJson() {
+		return BIOENGINE_COMPATIBLE_JSON;
+	}
 }

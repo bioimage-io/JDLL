@@ -38,6 +38,7 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 
+import io.bioimage.modelrunner.bioimageio.bioengine.BioEngineAvailableModels;
 import io.bioimage.modelrunner.bioimageio.description.ModelDescriptor;
 import io.bioimage.modelrunner.bioimageio.download.DownloadModel;
 import io.bioimage.modelrunner.bioimageio.download.DownloadTracker;
@@ -332,13 +333,11 @@ public class BioimageioRepo {
 	 * @param id
 	 * 	id of the model of interest
 	 * @return true if it is available or false otherwise
+	 * @throws IOException if there is no connection to the internet or the
+	 * 	JSOn with the information cannot be accessed: https://raw.githubusercontent.com/bioimage-io/bioengine-model-runner/gh-pages/manifest.bioengine.json
 	 */
-	public static boolean isModelOnTheBioengine(String id) {
-		if (modelIDs == null || modelIDs.size() == 0)
-			new BioimageioRepo();
-		if (modelIDs == null || !modelIDs.contains(id))
-			return false;
-		return true;
+	public static boolean isModelOnTheBioengine(String id) throws IOException {
+		return BioEngineAvailableModels.isModelSupportedInBioengine(id);
 	}
 	
 	/**

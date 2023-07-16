@@ -27,6 +27,7 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Objects;
 
+import io.bioimage.modelrunner.bioimageio.bioengine.BioEngineAvailableModels;
 import io.bioimage.modelrunner.bioimageio.bioengine.BioengineInterface;
 import io.bioimage.modelrunner.bioimageio.description.ModelDescriptor;
 import io.bioimage.modelrunner.bioimageio.description.weights.WeightFormat;
@@ -212,11 +213,18 @@ public class Model
 	 * 	url where the wanted insance of the bioengine is hosted
 	 * @return a model ready to be loaded
 	 * @throws Exception if there is any error creating the model (no rdf.yaml file,
-	 *  or the url does not exist).
+	 *  or the url does not exist) or if the model is not supported on the Bioengine.
+	 *  To check the models supported on the Bioengine, visit: https://raw.githubusercontent.com/bioimage-io/bioengine-model-runner/gh-pages/manifest.bioengine.yaml
 	 */
 	public static Model createBioimageioModelForBioengine(String bmzModelFolder, String serverURL) throws Exception {
 		if (new File(bmzModelFolder, Constants.RDF_FNAME).isFile() == false)
 			throw new IOException("A Bioimage.io model folder should contain its corresponding rdf.yaml file.");
+		ModelDescriptor descriptor = 
+				ModelDescriptor.readFromLocalFile(bmzModelFolder + File.separator + Constants.RDF_FNAME, false);
+		boolean valid = BioEngineAvailableModels.isModelSupportedInBioengine(descriptor.getConfig().getID());
+		if (!valid)
+			throw new IllegalArgumentException("The selected model is currently not supported by the Bioegine. "
+					+ "To check the list of supported models please visit: " + BioEngineAvailableModels.getBioengineJson());
 		EngineInfo info = EngineInfo.defineBioengine(serverURL);
 		Model model =  Model.createDeepLearningModel(bmzModelFolder, null, info);
 		model.bioengine = true;
