@@ -19,6 +19,7 @@
  */
 package io.bioimage.modelrunner.tiling;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -30,7 +31,7 @@ import java.util.stream.IntStream;
 import io.bioimage.modelrunner.bioimageio.description.ModelDescriptor;
 import io.bioimage.modelrunner.bioimageio.description.TensorSpec;
 import io.bioimage.modelrunner.tensor.Tensor;
-
+import io.bioimage.modelrunner.utils.Constants;
 import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.type.Type;
 
@@ -61,14 +62,19 @@ public class PatchGridCalculator implements Callable<List<PatchSpec>>
     
     /**
      * Create the patch specifications for the provided model
-     * @param model
-     * 	model that needs patching specs
+     * @param modelFolder
+     * 	path to the foler of a bioimage.io model. This is the folder where the rdf.yaml
+     * 	of the model is located
      * @param inputValuesMap
      * 	mapt containing the input images associated to their input tensors
      * @return the object that creates a list of patch specs for each tensor
+     * @throws Exception if it is not possible to read the rdf.yaml file of the model or it
+     * 	does not exist
      */
-    public static PatchGridCalculator build(DeepLearningModel model, Map<String, Object> inputValuesMap) {
-    	 return new PatchGridCalculator(model.getDescriptor(), inputValuesMap);
+    public static PatchGridCalculator build(String modelFolder, Map<String, Object> inputValuesMap) throws Exception {
+    	ModelDescriptor descriptor = 
+    			ModelDescriptor.readFromLocalFile(modelFolder + File.separator + Constants.RDF_FNAME, false);
+    	return new PatchGridCalculator(descriptor, inputValuesMap);
      }
     
     /**
