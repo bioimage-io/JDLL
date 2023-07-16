@@ -151,6 +151,16 @@ public class BioengineInterface implements DeepLearningEngineInterface {
 	 * the model is going to run
 	 */
 	private static String MODEL_WEIGHTS_KEY = "weight_format";
+	/**
+	 * List that contains all the supported weight tags by the bioengine
+	 */
+	private static final ArrayList<String> SUPPORTED_BIOENGINE_WEIGHTS;
+	static {
+		SUPPORTED_BIOENGINE_WEIGHTS = new ArrayList<String>();
+		SUPPORTED_BIOENGINE_WEIGHTS.add(ModelWeight.getKerasID());
+		SUPPORTED_BIOENGINE_WEIGHTS.add(ModelWeight.getOnnxID());
+		SUPPORTED_BIOENGINE_WEIGHTS.add(ModelWeight.getTorchscriptID());
+	}
 
 	@Override
 	/**
@@ -272,10 +282,12 @@ public class BioengineInterface implements DeepLearningEngineInterface {
 	}
     
     /**
-     * Identifies the weights that are compatible with the Bioengine. The BioEngine
-     * canot run Tf 1 weights
+     * Identifies if the model has weights that are compatible with the Bioengine.
+     * @throws LoadModelException if the model does not have a pair of weights
+     * 	compatible with the bioengine. The Bioengine only supports
+     *  keras, torchscript and onnx
      */
-    private void findBioEngineWeightsIfPossible() {
+    private void findBioEngineWeightsIfPossible() throws LoadModelException {
     	for (String entry : rdf.getWeights().getSupportedDLFrameworks()) {
     		if (entry.equals(ModelWeight.getKerasID())) {
     			bioimageioKwargs.put(MODEL_WEIGHTS_KEY, ModelWeight.getKerasID());
@@ -288,6 +300,16 @@ public class BioengineInterface implements DeepLearningEngineInterface {
     			return;
     		}
     	}
+    	throw new LoadModelException("The Bioengine does not support the DL framework "
+    			+ "compatible with the model selected. The bioengine supports the following"
+    			+ " frameworks: " + SUPPORTED_BIOENGINE_WEIGHTS + " whereas the model is "
+    			+ "only compatible with: " + rdf.getWeights().getSupportedDLFrameworks());
+    	/**
+    	 * TODO talk with Wei to see whihc are the weights currently supported by the
+    	 * Bioengine
+    	if (!rdf.getWeights().getSupportedDLFrameworks().contains(ModelWeight.getTensorflowID()))
+    		throw new LoadModelException("");
+    	 */
     }
     
     /**

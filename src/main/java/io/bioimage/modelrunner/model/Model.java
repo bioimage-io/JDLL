@@ -25,6 +25,7 @@ package io.bioimage.modelrunner.model;
 import java.io.File;
 import java.io.IOException;
 import java.util.List;
+import java.util.Objects;
 
 import io.bioimage.modelrunner.bioimageio.bioengine.BioengineInterface;
 import io.bioimage.modelrunner.bioimageio.description.ModelDescriptor;
@@ -99,6 +100,8 @@ public class Model
 	private Model( EngineInfo engineInfo, String modelFolder, String modelSource, ClassLoader classLoader )
 			throws LoadEngineException, Exception
 	{
+		if (!engineInfo.isBioengine())
+			Objects.requireNonNull(modelSource);
 		this.engineInfo = engineInfo;
 		this.modelFolder = modelFolder;
 		this.modelSource = modelSource;
@@ -128,6 +131,10 @@ public class Model
 	public static Model createDeepLearningModel( String modelFolder, String modelSource, EngineInfo engineInfo )
 			throws LoadEngineException, Exception
 	{
+		Objects.requireNonNull(modelFolder);
+		Objects.requireNonNull(engineInfo);
+		if (!engineInfo.isBioengine())
+			Objects.requireNonNull(modelSource);
 		return new Model( engineInfo, modelFolder, modelSource, null );
 	}
 	
@@ -165,7 +172,10 @@ public class Model
 	 * @throws Exception if there is any error creating the model (no rdf.yaml file, no weights,
 	 * 	or the engines required for this model are not installed).
 	 */
-	public static Model createBioimageioModel(String bmzModelFolder, String enginesFolder) throws Exception {
+	public static Model createBioimageioModel(String bmzModelFolder, String enginesFolder) 
+			throws Exception {
+		Objects.requireNonNull(bmzModelFolder);
+		Objects.requireNonNull(enginesFolder);
 		if (new File(bmzModelFolder, Constants.RDF_FNAME).isFile() == false)
 			throw new IOException("A Bioimage.io model folder should contain its corresponding rdf.yaml file.");
 		ModelDescriptor descriptor = 
@@ -207,13 +217,7 @@ public class Model
 	public static Model createBioimageioModelForBioengine(String bmzModelFolder, String serverURL) throws Exception {
 		if (new File(bmzModelFolder, Constants.RDF_FNAME).isFile() == false)
 			throw new IOException("A Bioimage.io model folder should contain its corresponding rdf.yaml file.");
-		ModelDescriptor descriptor = 
-			ModelDescriptor.readFromLocalFile(bmzModelFolder + File.separator + Constants.RDF_FNAME, false);
-		List<WeightFormat> modelWeights = descriptor.getWeights().getSupportedWeights();
-		String engine = null;
-		for (WeightFormat ww : modelWeights) {
-		}
-		EngineInfo info = EngineInfo.defineBioengine(engine, serverURL);
+		EngineInfo info = EngineInfo.defineBioengine(serverURL);
 		Model model =  Model.createDeepLearningModel(bmzModelFolder, null, info);
 		model.bioengine = true;
 		return model;
@@ -236,7 +240,10 @@ public class Model
 	 * @throws Exception if there is any error creating the model (no rdf.yaml file, no weights,
 	 * 	or the engines required for this model are not installed).
 	 */
-	public static Model createBioimageioModelWithExactWeigths(String bmzModelFolder, String enginesFolder) throws Exception {
+	public static Model createBioimageioModelWithExactWeigths(String bmzModelFolder, String enginesFolder) 
+			throws Exception {
+		Objects.requireNonNull(bmzModelFolder);
+		Objects.requireNonNull(enginesFolder);
 		if (new File(bmzModelFolder, Constants.RDF_FNAME).isFile() == false)
 			throw new IOException("A Bioimage.io model folder should contain its corresponding rdf.yaml file.");
 		ModelDescriptor descriptor = 
@@ -287,6 +294,10 @@ public class Model
 	public static Model createDeepLearningModel( String modelFolder, String modelSource, EngineInfo engineInfo,
 			ClassLoader classLoader ) throws LoadEngineException, Exception
 	{
+		Objects.requireNonNull(modelFolder);
+		Objects.requireNonNull(engineInfo);
+		if (!engineInfo.isBioengine())
+			Objects.requireNonNull(modelSource);
 		return new Model( engineInfo, modelFolder, modelSource, classLoader );
 	}
 

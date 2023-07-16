@@ -176,7 +176,7 @@ public class BioimageioRepo {
 	}
 	
 	/**
-	 * MEthod that reads the yaml file that contains all teh information about the bioimage.io.
+	 * MEthod that reads the yaml file that contains all the information about the bioimage.io.
 	 * Including the models available.
 	 * This method also stores the model IDs of the available models.
 	 * The file is at: {@link #location}
@@ -325,6 +325,20 @@ public class BioimageioRepo {
 	 */
 	public static List<String> getModelIDs(){
 		return modelIDs;
+	}
+	
+	/**
+	 * Check whether a model is available on the Bioengine or not
+	 * @param id
+	 * 	id of the model of interest
+	 * @return true if it is available or false otherwise
+	 */
+	public static boolean isModelOnTheBioengine(String id) {
+		if (modelIDs == null || modelIDs.size() == 0)
+			new BioimageioRepo();
+		if (modelIDs == null || !modelIDs.contains(id))
+			return false;
+		return true;
 	}
 	
 	/**
