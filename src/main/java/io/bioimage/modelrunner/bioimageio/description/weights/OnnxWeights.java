@@ -37,6 +37,30 @@ import io.bioimage.modelrunner.versionmanagement.SupportedVersions;
  */
 public class OnnxWeights implements WeightFormat {
 
+	private String compatiblePythonVersion;
+
+	private String weightsFormat;
+
+	private String trainingVersion;
+
+	private String sha256;
+
+	private String source;
+
+	private List<String> authors;
+
+	private Map<String, Object> attachments;
+
+	private String parent;
+
+	private String architecture;
+
+	private String architectureSha256;
+	
+	boolean gpu = false;
+
+	private String compatibleVersion;
+
 	/**
 	 * Crate an object that specifies ONNX weights
 	 * 
@@ -82,7 +106,6 @@ public class OnnxWeights implements WeightFormat {
 		setCompatibleVersion();
 	}
 
-	private String weightsFormat;
 	@Override
 	/**
 	 * {@inheritDoc}
@@ -91,7 +114,6 @@ public class OnnxWeights implements WeightFormat {
 		return weightsFormat;
 	}
 
-	private String trainingVersion;
 	@Override
 	/**
 	 * {@inheritDoc}
@@ -128,7 +150,6 @@ public class OnnxWeights implements WeightFormat {
 			this.trainingVersion = "" + v;
 	}
 
-	private String sha256;
 	@Override
 	/**
 	 * {@inheritDoc}
@@ -149,7 +170,6 @@ public class OnnxWeights implements WeightFormat {
 		
 	}
 
-	private String source;
 	@Override
 	/**
 	 * {@inheritDoc}
@@ -171,7 +191,6 @@ public class OnnxWeights implements WeightFormat {
 		
 	}
 
-	private List<String> authors;
 	@Override
 	/**
 	 * {@inheritDoc}
@@ -196,7 +215,6 @@ public class OnnxWeights implements WeightFormat {
 		
 	}
 
-	private Map<String, Object> attachments;
 	@Override
 	/**
 	 * {@inheritDoc}
@@ -216,7 +234,6 @@ public class OnnxWeights implements WeightFormat {
 		
 	}
 
-	private String parent;
 	@Override
 	/**
 	 * {@inheritDoc}
@@ -235,7 +252,6 @@ public class OnnxWeights implements WeightFormat {
 			this.parent = (String) parent;
 	}
 
-	private String architecture;
 	@Override
 	/**
 	 * {@inheritDoc}
@@ -254,7 +270,6 @@ public class OnnxWeights implements WeightFormat {
 			this.architecture = (String) architecture;
 	}
 
-	private String architectureSha256;
 	@Override
 	/**
 	 * {@inheritDoc}
@@ -283,7 +298,6 @@ public class OnnxWeights implements WeightFormat {
 		return new File(source).getName();
 	}
 	
-	boolean gpu = false;
 	/**
 	 * {@inheritDoc}
 	 * Method to set whether the engine used for this weights supports GPU or not
@@ -306,7 +320,6 @@ public class OnnxWeights implements WeightFormat {
 	}
 
 
-	private String compatibleVersion;
 	@Override
 	/**
 	 * {@inheritDoc}
@@ -322,5 +335,17 @@ public class OnnxWeights implements WeightFormat {
 		if (this.trainingVersion == null)
 			this.compatibleVersion = null;
 		compatibleVersion = SupportedVersions.getJavaVersionForPythonVersion("onnx", trainingVersion);
+	}
+
+	@Override
+	/**
+	 * {@inheritDoc}
+	 */
+	public String getClosestSupportedPythonVersion() {
+		if (this.trainingVersion == null)
+			return null;
+		if (compatiblePythonVersion == null)
+			compatiblePythonVersion = SupportedVersions.getClosestSupportedPythonVersion("onnx", trainingVersion);
+		return compatiblePythonVersion;
 	}
 }

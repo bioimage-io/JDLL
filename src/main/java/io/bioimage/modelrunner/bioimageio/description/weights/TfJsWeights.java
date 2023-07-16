@@ -25,8 +25,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import io.bioimage.modelrunner.versionmanagement.SupportedVersions;
-
 /**
  * Class that contains the information for Tensorflow Javascript weights.
  * For more information about the parameters go to:
@@ -318,5 +316,13 @@ public class TfJsWeights implements WeightFormat{
 	 */
 	private void setCompatibleVersion() {
 		this.compatibleVersion = trainingVersion;
+	}
+
+	@Override
+	/**
+	 * {@inheritDoc}
+	 */
+	public String getClosestSupportedPythonVersion() {
+		return compatibleVersion;
 	}
 }

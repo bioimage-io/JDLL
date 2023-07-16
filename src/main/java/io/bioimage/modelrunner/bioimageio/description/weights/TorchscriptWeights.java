@@ -37,6 +37,30 @@ import io.bioimage.modelrunner.versionmanagement.SupportedVersions;
  */
 public class TorchscriptWeights implements WeightFormat{
 
+	private String compatiblePythonVersion;
+
+	private String weightsFormat;
+
+	private String trainingVersion;
+
+	private String sha256;
+
+	private String source;
+
+	private List<String> authors;
+
+	private Map<String, Object> attachments;
+
+	private String parent;
+
+	private String architecture;
+
+	private String architectureSha256;
+	
+	boolean gpu = false;
+
+	private String compatibleVersion;
+
 	/**
 	 * Crate an object that specifies Torchscript weights
 	 * 
@@ -81,8 +105,7 @@ public class TorchscriptWeights implements WeightFormat{
 			trainingVersion = "1.13.1";
 		setCompatibleVersion();
 	}
-
-	private String weightsFormat;
+	
 	@Override
 	/**
 	 * {@inheritDoc}
@@ -91,7 +114,6 @@ public class TorchscriptWeights implements WeightFormat{
 		return weightsFormat;
 	}
 
-	private String trainingVersion;
 	@Override
 	/**
 	 * {@inheritDoc}
@@ -129,8 +151,7 @@ public class TorchscriptWeights implements WeightFormat{
 		
 		
 	}
-
-	private String sha256;
+	
 	@Override
 	/**
 	 * {@inheritDoc}
@@ -150,8 +171,7 @@ public class TorchscriptWeights implements WeightFormat{
 			sha256 = (String) s;
 		
 	}
-
-	private String source;
+	
 	@Override
 	/**
 	 * {@inheritDoc}
@@ -172,8 +192,7 @@ public class TorchscriptWeights implements WeightFormat{
 			this.source = (String) s;
 		
 	}
-
-	private List<String> authors;
+	
 	@Override
 	/**
 	 * {@inheritDoc}
@@ -197,8 +216,7 @@ public class TorchscriptWeights implements WeightFormat{
 		}
 		
 	}
-
-	private Map<String, Object> attachments;
+	
 	@Override
 	/**
 	 * {@inheritDoc}
@@ -217,8 +235,7 @@ public class TorchscriptWeights implements WeightFormat{
 			this.attachments = (Map<String, Object>) attachments;
 		
 	}
-
-	private String parent;
+	
 	@Override
 	/**
 	 * {@inheritDoc}
@@ -236,8 +253,7 @@ public class TorchscriptWeights implements WeightFormat{
 		if (parent instanceof String)
 			this.parent = (String) parent;
 	}
-
-	private String architecture;
+	
 	@Override
 	/**
 	 * {@inheritDoc}
@@ -255,8 +271,7 @@ public class TorchscriptWeights implements WeightFormat{
 		if (architecture instanceof String)
 			this.architecture = (String) architecture;
 	}
-
-	private String architectureSha256;
+	
 	@Override
 	/**
 	 * {@inheritDoc}
@@ -285,7 +300,6 @@ public class TorchscriptWeights implements WeightFormat{
 		return new File(source).getName();
 	}
 	
-	boolean gpu = false;
 	/**
 	 * {@inheritDoc}
 	 * Method to set whether the engine used for this weights supports GPU or not
@@ -307,8 +321,6 @@ public class TorchscriptWeights implements WeightFormat{
 		return gpu;
 	}
 
-
-	private String compatibleVersion;
 	@Override
 	/**
 	 * {@inheritDoc}
@@ -324,5 +336,17 @@ public class TorchscriptWeights implements WeightFormat{
 		if (this.trainingVersion == null)
 			this.compatibleVersion = null;
 		compatibleVersion = SupportedVersions.getJavaVersionForPythonVersion("pytorch", trainingVersion);
+	}
+	
+	@Override
+	/**
+	 * {@inheritDoc}
+	 */
+	public String getClosestSupportedPythonVersion() {
+		if (this.trainingVersion == null)
+			return null;
+		if (compatiblePythonVersion == null)
+			compatiblePythonVersion = SupportedVersions.getClosestSupportedPythonVersion("pytorch", trainingVersion);
+		return compatiblePythonVersion;
 	}
 }

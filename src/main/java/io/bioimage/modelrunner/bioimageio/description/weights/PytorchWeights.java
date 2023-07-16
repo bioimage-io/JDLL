@@ -317,4 +317,12 @@ public class PytorchWeights implements WeightFormat{
 	private void setCompatibleVersion() {
 		this.compatibleVersion = trainingVersion;
 	}
+
+	@Override
+	/**
+	 * {@inheritDoc}
+	 */
+	public String getClosestSupportedPythonVersion() {
+		return compatibleVersion;
+	}
 }
