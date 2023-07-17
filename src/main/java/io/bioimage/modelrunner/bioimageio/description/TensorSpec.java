@@ -25,6 +25,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.IntStream;
 
+import io.bioimage.modelrunner.tiling.PatchGridCalculator;
 import io.bioimage.modelrunner.utils.YAMLUtils;
 
 
@@ -516,6 +517,44 @@ public class TensorSpec {
     	}
     }
     
+    /**
+     * Return a String containing the dimensions of the optimal
+     * patch for the selected image
+     * @param imSize
+     * 	size of the image. The order is Width, Height, Channel, Slices, time
+     * @return the String containing a patch in the format 256,256,3
+     */
+    public String getDisplayableOptimalPatch(int[] imSize) {
+    	// Remove the B axes from the optimal patch size and get the String representation
+    	String patchStr = getDisplayableSizesString(getOptimalPatch(imSize));
+    	return patchStr;
+    }
+    
+    /**
+     * Validates the selected patch array fulfills the conditions specified in the yaml file
+     * with respect to the tensor size before introducing it into the model
+     * If it is valid, it sets the value as the {@link #processingPatch}
+     * @param seqSize
+     * 	size of the tensor before inference (after pre-processing)
+     * @param axesOrder
+     * 	axes order of the tensor
+     * @throws Exception 
+     */
+    public void validateTensorSize(int[] seqSize, String axesOrder) throws Exception {
+    	// Convert the Icy sequence array dims into the tensor axes order
+    	seqSize = PatchGridCalculator.arrayToWantedAxesOrderAddOnes(seqSize, axesOrder, axes);
+    	// If tiling is not allowed, the patch array needs to be equal to the
+    	// optimal patch
+    	if (!tiling) {
+    		validateNoTiling(processingPatch, seqSize);
+    	}
+    	// VAlidate that the minimum size and step constraints are fulfilled
+    	validateStepMin(processingPatch);
+    	// Finally validate that the sequence size complies with the patch size selected
+    	validatePatchVsImage(processingPatch, seqSize);
+    }
+
+
     /**
      * REturn the patch for this tensor introduced by the user for processing
      * @return the processing patch
