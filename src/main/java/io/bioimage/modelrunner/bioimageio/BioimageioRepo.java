@@ -72,7 +72,7 @@ public class BioimageioRepo {
 	 */
 	private static List<String> modelIDs;
 	
-	private Map<Path, ModelDescriptor> models;
+	private LinkedHashMap<Path, ModelDescriptor> models;
 	
 	private Consumer<String> consumer;
 	
