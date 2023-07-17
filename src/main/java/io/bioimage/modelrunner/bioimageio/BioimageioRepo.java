@@ -325,6 +325,10 @@ public class BioimageioRepo {
 	 * @return list with the ids for each of the models in the repo
 	 */
 	public static List<String> getModelIDs(){
+		if (modelIDs == null || modelIDs.size() == 0)
+			BioimageioRepo.connect();
+		if (modelIDs == null)
+			return new ArrayList<String>();
 		return modelIDs;
 	}
 	
