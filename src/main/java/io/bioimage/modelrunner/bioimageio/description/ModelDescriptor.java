@@ -89,6 +89,7 @@ public class ModelDescriptor
     private static List<String> sampleBioengineModels = Arrays.asList(new String[] {"cell_pose"});//, "inception", "stardist"});
     private String modelID;
     private String localModelPath;
+    private boolean supportBioengine = false;
 
     private ModelDescriptor()
     {
@@ -307,32 +308,19 @@ public class ModelDescriptor
     private void addBioEngine() throws MalformedURLException {
 		// TODO decide what to do with servers. Probably need permissions / Implement authentication
     	if (getName().equals("cellpose-python")) {
-    		// TODO weights.addBioEngine("https://ai.imjoy.io");
-			// TODO weights.addBioEngine("https://hypha.imjoy.io");
+    		supportBioengine = true;
 			return;
 	    } else if (getName().equals("bestfitting-inceptionv3-single-cell")) {
-	    	// TODO weights.addBioEngine("https://ai.imjoy.io");
-			// TODO weights.addBioEngine("https://hypha.imjoy.io");
 			return;
 	    } else if (getName().equals("stardist")) {
-	    	// TODO weights.addBioEngine("https://ai.imjoy.io");
-			// TODO weights.addBioEngine("https://hypha.imjoy.io");
+    		supportBioengine = true;
 			return;
 	    }
-    	List<String> modelIDs = BioimageioRepo.getModelIDs();
-    	if (modelID == null)
-    		modelID = getConfig().getID();
-    	if (modelID == null)
-    		return;
-    	for (String id : modelIDs) {
-    		String auxID = id + "/";
-    		if (id.equals(modelID) || modelID.startsWith(auxID)) {
-    			// TODO weights.addBioEngine("https://ai.imjoy.io");
-    			//weights.addBioEngine("https://hypha.pasteur.cloud/");
-    			// TODO weights.addBioEngine("https://hypha.imjoy.io");
-    			return;
-    		}
-    	}
+    	try {
+			supportBioengine = BioimageioRepo.isModelOnTheBioengine(modelID);
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
     }
     
     /**
@@ -1103,5 +1091,13 @@ public class ModelDescriptor
 			return false;
 		else 
 			return this.getConfig().getDeepImageJ().isPyramidalModel();
+	}
+	
+	/**
+	 * 
+	 * @return whether the model can be run on the bioengino or not
+	 */
+	public boolean canRunOnBioengine() {
+		return this.supportBioengine;
 	}
 }
