@@ -344,6 +344,32 @@ public class TensorSpec {
     }
     
     /**
+     * Validates if a given patch array fulfills the conditions specified in the yaml file.
+     * If it is valid, it sets the value as the {@link #processingPatch}
+     * @param patch
+     * 	the patch array to validate
+     * @param seqSize
+     * 	array containing the dimensions of the sequence that is going to be processed
+     * 	seqSize is defined following the Icy axes order (xyztc)
+     * @throws Exception 
+     */
+    public void validate(int[] patch, int[] seqSize) throws Exception {
+    	// Convert the Icy sequence array dims into the tensor axes order
+    	seqSize = PatchGridCalculator.icySeqAxesOrderToWantedOrder(seqSize, axes);
+    	// If tiling is not allowed, the patch array needs to be equal to the
+    	// optimal patch
+    	if (!tiling) {
+    		validateNoTiling(patch, seqSize);
+    	}
+    	// VAlidate that the minimum size and step constraints are fulfilled
+    	validateStepMin(patch);
+    	// Finally validate that the sequence size complies with the patch size selected
+    	validatePatchVsImage(patch, seqSize);
+    	this.processingPatch = patch;
+    }
+
+    
+    /**
      * VAlidate that the patch selected, is compatible with the image size.
      * The patch cannot be 3 times bigger than the image size because mirroring
      * would not work, cannot be smaller than total halo * 2, and patching cannot
