@@ -170,8 +170,13 @@ public class BioEngineAvailableModels {
 	 * 	there is no internet
 	 */
 	public static boolean isModelSupportedInBioengine(String modelID) throws IOException {
-		if (BAM == null)
-			BAM =  BioEngineAvailableModels.load();
+		if (BAM == null) {
+			try {
+				BAM =  BioEngineAvailableModels.load();
+			} catch (IOException ex) {
+				BAM = createEmptyObject();
+			}
+		}
 		return BAM.isModelSupportedByBioengine(modelID);
 	}
 	
