@@ -69,10 +69,6 @@ public class ModelWeight
     private static String bioengineIdentifier = "bioengine";
     private static String gpuSuffix = " (supports gpu)";
     /**
-     * The key for the weights that are going to be used in the BioEngine
-     */
-    private String bioEngineWeightsKey;
-    /**
      * List of all the not supported Deep Learning frameworks by DeepIcy
      */
     private static ArrayList<String> supported = 
@@ -127,33 +123,6 @@ public class ModelWeight
 	    	}
         }
         return model;
-    }
-    
-    /**
-     * Identifies the weights that are compatible with the Bioengine. The BioEngine
-     * canot run Tf 1 weights
-     */
-    private void findBioEngineWeights() {
-    	for (Entry<String, WeightFormat> entry : weightsDic.entrySet()) {
-    		if (entry.getValue().getWeightsFormat().equals(kerasIdentifier)) {
-    			bioEngineWeightsKey = kerasIdentifier;
-    			return;
-    		} else if (entry.getValue().getWeightsFormat().equals(onnxIdentifier)) {
-    			bioEngineWeightsKey = onnxIdentifier;
-    			return;
-    		} else if (entry.getValue().getWeightsFormat().equals(torchscriptIdentifier)) {
-    			bioEngineWeightsKey = torchscriptIdentifier;
-    			return;
-    		}
-    	}
-    }
-    
-    /**
-     * Return the key for the Bioengine weights that are going to be used
-     * @return the key for the bioengine weights
-     */
-    private String getBioEngineWeightsKey() {
-    	return this.bioEngineWeightsKey;
     }
 
 	/**
@@ -366,8 +335,7 @@ public class ModelWeight
 			return;
 		}
 		String preffix = this.selectedEngine + "_v";
-		this.selectedVersion = selectedWeights.substring(preffix.length());
-		
+		this.selectedVersion = selectedWeights.substring(preffix.length());		
 	}
 	
 	/**
@@ -387,23 +355,6 @@ public class ModelWeight
 	 */
 	public void setWeightsAsLoaded() {
 		loadedWeights.put(selectedWeights.getWeightsFormat(), selectedWeights);
-	}
-
-    /** TODO finish when the BioEngine is better defined in the BioImage.io
-     * Create the name for the BioEngine weights. The name contains the name of the BioEngine
-     * 
-     * @param server
-     * 	the server with an instance of the bioengine where we want to connect
-     * @return the complete weights name
-     */
-    private String bioEngineName(String server) {
-    	if (server.startsWith("https://"))
-    		server = server.substring("https://".length());
-    	else if (server.startsWith("http://"))
-    		server = server.substring("http://".length());
-    	
-    	String name = bioengineIdentifier + " (" + server + ")";
-		return name;
 	}
 
     /**
