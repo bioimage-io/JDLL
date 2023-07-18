@@ -300,9 +300,6 @@ public class DecodeNumpy {
     @SuppressWarnings("unchecked")
     public static <T extends NativeType<T>> Img<T> build(ByteBuffer buf, ByteOrder byteOrder, String dtype, long[] shape) throws IllegalArgumentException
     {
-        // Create an Img of the same type of the tensor
-    	byte[] data = new byte[buf.remaining()];
-    	buf.get(data);
     	buf.order(byteOrder);
     	if (dtype.equals("byte")) {
     		ByteAccess access = new ByteBufferAccess(buf, true);
