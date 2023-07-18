@@ -90,6 +90,17 @@ public class TensorSpec {
      * Patch array selected by the user and used to process the image
      */
     private int[] processingPatch;
+    /**
+     * String representing the object tensor type image
+     */
+    public static final String IMAGE = "image";
+    /**
+     * String representing the object tensor type list (a matrix of 1 or 2 dimensions).
+     * In order for the object to be a list, the shape has to contain either only 1 dimension ("c"),
+     * contain 2, one of them being the batch_size ("bc"), or contain the letter "i", ("bic").
+     * "I" comes from instance
+     */
+    public static final String LIST = "list";
 
     /**
      * Builds the tensor specification instance from the tensor map and an input flag.
@@ -118,12 +129,12 @@ public class TensorSpec {
             ? null
             : (haloList == null ? new float[tensor.axes.length()] : YAMLUtils.castListToFloatArray(haloList)));
         tensor.shape = ShapeSpec.build(tensorSpecMap.get("shape"), input);
-        tensor.type = "image";
+        tensor.type = IMAGE;
         if ((tensor.axes == null) ||
             (tensor.axes.length() <= 2 && tensor.axes.toUpperCase().matches(".*[B|I].*"))
-            || tensor.axes.toUpperCase().contains("I"))
+            || tensor.axes.toUpperCase().contains("I")|| tensor.axes.length() == 1)
         {
-            tensor.type = "list";
+            tensor.type = LIST;
         }
 
         List<?> preprocessingTensors = (List<?>) tensorSpecMap.get("preprocessing");
@@ -590,6 +601,14 @@ public class TensorSpec {
     }
 
     /**
+     * Return whether the tensor represents an image or not.
+     * Currently only the types {@link #IMAGE} and {@link #LIST}
+     * are supported. 
+     * In order for the object to be a list, the shape has to contain either only 1 dimension ("c"),
+     * contain 2, one of them being the batch_size ("bc"), or contain the letter "i", ("bic").
+     * "I" comes from instance
+     * An image is everythin else.
+     * 
      * @return The type of tensor. As of now it can hold "image" or "list" values.
      */
     public String getType()
@@ -697,6 +716,21 @@ public class TensorSpec {
         return "TensorSpec {input=" + input + ", name=" + name + ", axes=" + axes + ", dataType=" + dataType + ", halo="
                 + halo + ", shape=" + shape + ", type=" + type + ", preprocessing=" + preprocessing
                 + ", postprocessing=" + postprocessing + "}";
+    }
+    
+    /**
+     * Return whether the tensor represents an image or not.
+     * Currently only the types {@link #IMAGE} and {@link #LIST}
+     * are supported. 
+     * In order for the object to be a list, the shape has to contain either only 1 dimension ("c"),
+     * contain 2, one of them being the batch_size ("bc"), or contain the letter "i", ("bic").
+     * "I" comes from instance
+     * An image is everythin else.
+     * 
+     * @return whether the tensor represents an image or not
+     */
+    public boolean isImage() {
+    	return this.type.equals(IMAGE);
     }
 
 }

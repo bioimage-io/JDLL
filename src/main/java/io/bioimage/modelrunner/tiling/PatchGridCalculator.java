@@ -155,7 +155,7 @@ public class PatchGridCalculator implements Callable<List<PatchSpec>>
      */
     private List<TensorSpec> findInputImageTensorSpec()
     {
-        return this.descriptor.getInputTensors().stream().filter(tr -> tr.getType() == "image")
+        return this.descriptor.getInputTensors().stream().filter(tr -> tr.isImage())
                 .collect(Collectors.toList());
     }
 
