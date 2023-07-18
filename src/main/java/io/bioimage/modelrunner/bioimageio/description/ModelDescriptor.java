@@ -41,8 +41,6 @@ import io.bioimage.modelrunner.bioimageio.description.weights.ModelWeight;
 import io.bioimage.modelrunner.utils.Log;
 import io.bioimage.modelrunner.utils.YAMLUtils;
 
-import com.google.gson.Gson;
-import com.google.gson.reflect.TypeToken;
 
 /**
  * A data structure holding a single Bioimage.io pretrained model description. This instances are created by opening a {@code model.yaml} file.
@@ -296,6 +294,8 @@ public class ModelDescriptor
         }
         
         modelDescription.addBioEngine();
+        if (modelDescription.localModelPath != null)
+        	modelDescription.addModelPath(new File(modelDescription.localModelPath).toPath());
         return modelDescription;
     }
     
@@ -1057,6 +1057,10 @@ public class ModelDescriptor
 			sample_inputs.stream().forEach(i -> i.addLocalModelPath(modelBasePath));
 		if (sample_outputs != null)
 			sample_outputs.stream().forEach(i -> i.addLocalModelPath(modelBasePath));
+		if (test_inputs != null)
+			test_inputs.stream().forEach(i -> i.addLocalModelPath(modelBasePath));
+		if (test_outputs != null)
+			test_outputs.stream().forEach(i -> i.addLocalModelPath(modelBasePath));
 	}
 	
 	/**

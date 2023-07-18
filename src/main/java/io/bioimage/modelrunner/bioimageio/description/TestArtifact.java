@@ -110,9 +110,9 @@ public class TestArtifact {
      */
     private void createSampleInputPath() {
     	try {
-    	path = Paths.get(string);
-    	if (!path.toFile().exists())
-    		path = null;
+	    	path = Paths.get(string);
+	    	if (!path.toFile().exists())
+	    		path = null;
     	} catch (Exception ex) {
     	}
     }
@@ -151,7 +151,7 @@ public class TestArtifact {
      * Return the local path to the sample image
      * @return the local path to the sample image
      */
-    public Path getPath() {
+    public Path getLocalPath() {
     	return path;
     }
 

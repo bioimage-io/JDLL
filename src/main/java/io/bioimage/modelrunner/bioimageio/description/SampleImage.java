@@ -68,7 +68,6 @@ public class SampleImage {
         	return null;
         sampleInput.createSampleInputURL();
         sampleInput.createSampleInputPath();
-        sampleInput.createSampleInputPath();
         return sampleInput;        
     }
     
@@ -111,9 +110,9 @@ public class SampleImage {
      */
     private void createSampleInputPath() {
     	try {
-    	path = Paths.get(string);
-    	if (!path.toFile().exists())
-    		path = null;
+	    	path = Paths.get(string);
+	    	if (!path.toFile().exists())
+	    		path = null;
     	} catch (Exception ex) {
     	}
     }
@@ -152,7 +151,7 @@ public class SampleImage {
      * Return the local path to the sample image
      * @return the local path to the sample image
      */
-    public Path getPath() {
+    public Path getLocalPath() {
     	return path;
     }
 
