@@ -159,7 +159,7 @@ public class SampleImage {
 	@Override
     public String toString()
     {
-		String str = "SampleInput {";
+		String str = "SampleFile {";
 		str += " string=" + string;
 		if (url != null)
 			str += " url=" + url.toString();

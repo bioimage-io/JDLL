@@ -158,7 +158,7 @@ public class TestArtifact {
 	@Override
     public String toString()
     {
-		String str = "SampleInput {";
+		String str = "TestNpy {";
 		str += " string=" + string;
 		if (url != null)
 			str += " url=" + url.toString();
