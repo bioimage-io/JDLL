@@ -134,6 +134,8 @@ public class ModelWeight
      */
     public WeightFormat getWeightsByIdentifier(String weightsFormat) throws IOException
     {
+    	if (weightsFormat.equals(getBioengineID()))
+    		return null;
     	WeightFormat ww = weightsDic.get(weightsFormat);
     	
     	if (ww == null) {
