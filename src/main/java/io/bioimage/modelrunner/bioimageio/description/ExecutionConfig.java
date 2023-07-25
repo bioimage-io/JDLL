@@ -84,7 +84,7 @@ public class ExecutionConfig
     /**
      * Key for the model id in the ocnfig field
      */
-    private static String idKey = "_id";
+    private static String idKey = "id";
     
     /**
      * Get the model ID specified inside the config field. This is the same as the ID that appears
