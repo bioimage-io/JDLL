@@ -441,4 +441,12 @@ public class Model
 	public boolean isBioengine() {
 		return bioengine;
 	}
+	
+	/**
+	 * Add method to get the {@link EngineInfo} used to create the model
+	 * @return the {@link EngineInfo} used to create the model
+	 */
+	public EngineInfo getEngineInfo() {
+		return engineInfo;
+	}
 }
