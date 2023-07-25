@@ -88,6 +88,10 @@ public class BioEngineAvailableModels {
 	final private static String ID_KEY = "id";
 	
 	private static BioEngineAvailableModels BAM;
+	/**
+	 * Address of the first public server that hosts a bioengine instance
+	 */
+	public static final String PUBLIC_BIOENGINE_SERVER = "https://ai.imjoy.io";
 	
 	/**
 	 * Method that parses the json file that contains all the supported models by the BioEngine
