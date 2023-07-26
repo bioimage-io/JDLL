@@ -20,6 +20,7 @@
 package io.bioimage.modelrunner.bioimageio.bioengine.tensor;
 
 import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -497,7 +498,7 @@ public class BioengineTensor {
 		while (tensorCursor.hasNext()) {
 			tensorCursor.fwd();
 			float val = tensorCursor.get().getRealFloat();
-			byte[] arr = ByteBuffer.allocate(4).putFloat(val).array();;
+			byte[] arr = ByteBuffer.allocate(4).order(ByteOrder.LITTLE_ENDIAN).putFloat(val).array();;
 			System.arraycopy(arr, 0, byteArr, cc * 4, 4);
 			cc ++;
 		}

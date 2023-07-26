@@ -449,7 +449,7 @@ public class BioengineInterface implements DeepLearningEngineInterface {
 			  wr.write(data);
 			  wr.flush();
 		}
-		return conn;		
+		return conn;
 	}
 	
 	/**

@@ -20,6 +20,7 @@
 package io.bioimage.modelrunner.bioimageio.bioengine.tensor;
 
 import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 import java.nio.DoubleBuffer;
 import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
@@ -132,10 +133,10 @@ public class BioEngineOutputArray {
 	 * @throws IllegalArgumentException if the data type of the array is not supported
 	 */
 	@SuppressWarnings("unchecked")
-	public < T extends RealType< T > & NativeType< T > >  Img<T> getImg()
+	public < T extends RealType< T > & NativeType< T > >  Img<T> getImg(ByteOrder byteOrder)
 			throws IllegalArgumentException {
 		Objects.requireNonNull(arr);
-		ByteBuffer buf = ByteBuffer.wrap(arr);
+		ByteBuffer buf = ByteBuffer.wrap(arr).order(byteOrder);
 		if (this.dtype.toLowerCase().equals(BioengineTensor.FLOAT64_STR)) {
     		DoubleAccess access = new DoubleBufferAccess(buf, true);
     		return (Img<T>) ArrayImgs.doubles( access, shape );
