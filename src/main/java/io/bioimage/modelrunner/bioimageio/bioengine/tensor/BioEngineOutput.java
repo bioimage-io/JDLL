@@ -137,7 +137,7 @@ public class BioEngineOutput {
 	 * @throws Exception if the BioEngine sends an error message after execution
 	 */
 	private BioEngineOutput(byte[] rawOutput) throws IOException, Exception {
-		deserialize(rawOutput);
+		this.deserializedOutput = deserialize(rawOutput);
 		// Remove the bytes from memory
 		rawOutput = null;
 		processOutputs();
@@ -382,7 +382,7 @@ public class BioEngineOutput {
      * @throws IOException if something goes wrong in the deserialization
      * @throws ClassNotFoundException if the deserialized object is not a Map<Sring,Object>
      */
-    private static Map<String, Object> deserialize(byte[] arr) throws IOException, ClassNotFoundException{
+    private static LinkedHashMap<String, Object> deserialize(byte[] arr) throws IOException, ClassNotFoundException{
     	ObjectMapper objectMapper = new ObjectMapper(new MessagePackFactory());
     	LinkedHashMap<String, Object> map = objectMapper.readValue(arr, new TypeReference<LinkedHashMap<String, Object>>() {});
 		return map;
