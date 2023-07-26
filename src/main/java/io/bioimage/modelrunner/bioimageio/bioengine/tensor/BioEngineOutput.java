@@ -28,6 +28,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
+import org.msgpack.jackson.dataformat.MessagePackFactory;
+
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
 import io.bioimage.modelrunner.bioimageio.bioengine.BioengineInterface;
 
 
@@ -378,12 +383,9 @@ public class BioEngineOutput {
      * @throws ClassNotFoundException if the deserialized object is not a Map<Sring,Object>
      */
     private static Map<String, Object> deserialize(byte[] arr) throws IOException, ClassNotFoundException{
-    	Map<String, Object> map;
-    	try (ByteArrayInputStream byteIn = new ByteArrayInputStream(arr);
-    			ObjectInputStream in = new ObjectInputStream(byteIn);){
-            map = (Map<String, Object>) in.readObject();
-        }
-    	return map;
+    	ObjectMapper objectMapper = new ObjectMapper(new MessagePackFactory());
+    	LinkedHashMap<String, Object> map = objectMapper.readValue(arr, new TypeReference<LinkedHashMap<String, Object>>() {});
+		return map;
     }
 	
 	/**

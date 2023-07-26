@@ -24,7 +24,6 @@ import java.io.DataOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.ObjectOutputStream;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.ProtocolException;
@@ -34,6 +33,10 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.zip.GZIPOutputStream;
+
+import org.msgpack.jackson.dataformat.MessagePackFactory;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 import io.bioimage.modelrunner.bioimageio.bioengine.tensor.BioEngineOutput;
 import io.bioimage.modelrunner.bioimageio.bioengine.tensor.BioEngineOutputArray;
@@ -45,6 +48,10 @@ import io.bioimage.modelrunner.exceptions.LoadModelException;
 import io.bioimage.modelrunner.exceptions.RunModelException;
 import io.bioimage.modelrunner.tensor.Tensor;
 import io.bioimage.modelrunner.utils.Constants;
+import net.imglib2.img.Img;
+import net.imglib2.img.ImgFactory;
+import net.imglib2.img.array.ArrayImgFactory;
+import net.imglib2.type.numeric.real.FloatType;
 
 /**
  * This class sends the corresponding inputs to the wanted model available
@@ -160,6 +167,26 @@ public class BioengineInterface implements DeepLearningEngineInterface {
 		SUPPORTED_BIOENGINE_WEIGHTS.add(ModelWeight.getKerasID());
 		SUPPORTED_BIOENGINE_WEIGHTS.add(ModelWeight.getOnnxID());
 		SUPPORTED_BIOENGINE_WEIGHTS.add(ModelWeight.getTorchscriptID());
+	}
+	
+	public static void main(String[] args) throws LoadModelException, RunModelException {
+		BioengineInterface bi = new BioengineInterface();
+		String path = "C:\\Users\\angel\\OneDrive\\Documentos\\"
+				+ "pasteur\\git\\deep-icy\\models\\2D UNet Arabidopsis Ap"
+				+ "ical Stem Cells_27062023_125425";
+		bi.loadModel(path, path);
+		bi.addServer(BioEngineAvailableModels.PUBLIC_BIOENGINE_SERVER);
+		final ImgFactory< FloatType > imgFactory = new ArrayImgFactory<>( new FloatType() );
+		final Img< FloatType > img1 = imgFactory.create( 1, 1, 512, 512 );
+		Tensor<FloatType> inpTensor = Tensor.build("input0", "bcyx", img1);
+		List<Tensor<?>> inputs = new ArrayList<Tensor<?>>();
+		inputs.add(inpTensor);
+		final Img< FloatType > img2 = imgFactory.create( 1, 2, 512, 512 );
+		Tensor<FloatType> outTensor = Tensor.build("output0", "bcyx", img2);
+		List<Tensor<?>> outputs = new ArrayList<Tensor<?>>();
+		outputs.add(outTensor);
+		bi.run(inputs, outputs);
+		System.out.print(DECODE_JSON_VAL);
 	}
 
 	@Override
@@ -321,13 +348,10 @@ public class BioengineInterface implements DeepLearningEngineInterface {
      * @throws IOException if there is any error in the serialization
      */
     private static byte[] serialize(Map<String, Object> kwargs) throws IOException {
-    	byte[] arr;
-    	try (ByteArrayOutputStream byteOut = new ByteArrayOutputStream();
-    			ObjectOutputStream out = new ObjectOutputStream(byteOut);){
-            out.writeObject(kwargs);
-            arr = byteOut.toByteArray();
-        }
-    	return arr;
+    	ObjectMapper objectMapper = new ObjectMapper(new MessagePackFactory());
+
+		byte[] bytes = objectMapper.writeValueAsBytes(kwargs);
+    	return bytes;
     }
     
     /**
