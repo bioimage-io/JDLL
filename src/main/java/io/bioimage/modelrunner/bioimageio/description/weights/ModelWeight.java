@@ -356,7 +356,8 @@ public class ModelWeight
 	 * that same engine can be loaded
 	 */
 	public void setWeightsAsLoaded() {
-		loadedWeights.put(selectedWeights.getWeightsFormat(), selectedWeights);
+		if (selectedWeights != null)
+			loadedWeights.put(selectedWeights.getWeightsFormat(), selectedWeights);
 	}
 
     /**

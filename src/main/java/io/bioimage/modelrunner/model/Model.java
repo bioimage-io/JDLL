@@ -221,7 +221,7 @@ public class Model
 			throw new IOException("A Bioimage.io model folder should contain its corresponding rdf.yaml file.");
 		ModelDescriptor descriptor = 
 				ModelDescriptor.readFromLocalFile(bmzModelFolder + File.separator + Constants.RDF_FNAME, false);
-		boolean valid = BioEngineAvailableModels.isModelSupportedInBioengine(descriptor.getConfig().getID());
+		boolean valid = BioEngineAvailableModels.isModelSupportedInBioengine(descriptor.getModelID());
 		if (!valid)
 			throw new IllegalArgumentException("The selected model is currently not supported by the Bioegine. "
 					+ "To check the list of supported models please visit: " + BioEngineAvailableModels.getBioengineJson());

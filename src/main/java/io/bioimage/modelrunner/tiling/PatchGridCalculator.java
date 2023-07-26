@@ -223,7 +223,7 @@ public class PatchGridCalculator implements Callable<List<PatchSpec>>
     		return computePatchSpecs(inputTensorSpec, ((Tensor) inputObject).getData());
     	} else {
     		throw new IllegalArgumentException("Input tensor '" + inputTensorSpec.getName()
-    		+ "' is not represented with a Java type (" + inputObject.getClass().toString()
+    		+ "' is not from a supported a Java class (" + inputObject.getClass().toString()
     		+ ") that JDLL can pass to a model. JDLL can only handle inputs to the model as:" + System.lineSeparator()
     				+ "- " + RandomAccessibleInterval.class.toString() + System.lineSeparator()
     				+ "- " + Tensor.class.toString() + System.lineSeparator());
