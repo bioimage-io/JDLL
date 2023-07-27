@@ -133,6 +133,21 @@ public class BioEngineOutputArray {
 	 * @throws IllegalArgumentException if the data type of the array is not supported
 	 */
 	@SuppressWarnings("unchecked")
+	public < T extends RealType< T > & NativeType< T > >  Img<T> getImg()
+			throws IllegalArgumentException {
+		return getImg(ByteOrder.LITTLE_ENDIAN);
+	}
+
+
+	/**
+	 * Create an array from the bytes received by the BioEngine and using the corresponding shape
+	 * and data types
+	 * @param byteOrder
+	 * 	order of the bytes
+	 * @return an ImgLib2 {@link Img} containing the data of one of the outputs of the bioengine
+	 * @throws IllegalArgumentException if the data type of the array is not supported
+	 */
+	@SuppressWarnings("unchecked")
 	public < T extends RealType< T > & NativeType< T > >  Img<T> getImg(ByteOrder byteOrder)
 			throws IllegalArgumentException {
 		Objects.requireNonNull(arr);

@@ -161,6 +161,25 @@ public class BioengineTensor {
 	 */
 	public static < T extends RealType< T > & NativeType< T > > 
 				BioengineTensor build(Tensor<T> tensor) {
+		return build(tensor, ByteOrder.LITTLE_ENDIAN);
+	}
+	
+	@SuppressWarnings("unchecked")
+	/**
+	 * From a JDLL tensors, this method creates an object that contains 
+	 * a map that can be sent to the bioengine.
+	 * This method creates the needed object for an Image or ndarray
+	 * 
+	 * @param <T>
+	 * 	ImgLib2 datatype that the tensor can have
+	 * @param tensor
+	 * 	the tensor containing all the needed data
+	 * @param order
+	 * 	order of the bytes
+	 * @return an object contianing the map that can be sent to the bioengine
+	 */
+	public static < T extends RealType< T > & NativeType< T > > 
+				BioengineTensor build(Tensor<T> tensor, ByteOrder order) {
 		BioengineTensor bt = new BioengineTensor();
 		bt.inputs.put(OBJECT_KEY, NDARRAY_VALUE);
 		bt.inputs.put(SHAPE_KEY, tensor.getShape());
@@ -173,25 +192,25 @@ public class BioengineTensor {
     		bt.inputs.put(VALUE_KEY, buildUByte((RandomAccessibleInterval<UnsignedByteType>) rai));
     		bt.inputs.put(DTYPE_KEY, UBYTE_STR);
     	} else if (Util.getTypeFromInterval(rai) instanceof ShortType) {
-    		bt.inputs.put(VALUE_KEY, buildShort((RandomAccessibleInterval<ShortType>) rai));
+    		bt.inputs.put(VALUE_KEY, buildShort((RandomAccessibleInterval<ShortType>) rai, order));
     		bt.inputs.put(DTYPE_KEY, INT16_STR);
     	} else if (Util.getTypeFromInterval(rai) instanceof UnsignedShortType) {
-    		bt.inputs.put(VALUE_KEY, buildUShort((RandomAccessibleInterval<UnsignedShortType>) rai));
+    		bt.inputs.put(VALUE_KEY, buildUShort((RandomAccessibleInterval<UnsignedShortType>) rai, order));
     		bt.inputs.put(DTYPE_KEY, UINT16_STR);
     	} else if (Util.getTypeFromInterval(rai) instanceof IntType) {
-    		bt.inputs.put(VALUE_KEY, buildInt((RandomAccessibleInterval<IntType>) rai));
+    		bt.inputs.put(VALUE_KEY, buildInt((RandomAccessibleInterval<IntType>) rai, order));
     		bt.inputs.put(DTYPE_KEY, INT32_STR);
     	} else if (Util.getTypeFromInterval(rai) instanceof UnsignedIntType) {
-    		bt.inputs.put(VALUE_KEY, buildUInt((RandomAccessibleInterval<UnsignedIntType>) rai));
+    		bt.inputs.put(VALUE_KEY, buildUInt((RandomAccessibleInterval<UnsignedIntType>) rai, order));
     		bt.inputs.put(DTYPE_KEY, UINT32_STR);
     	} else if (Util.getTypeFromInterval(rai) instanceof FloatType) {
-    		bt.inputs.put(VALUE_KEY, buildFloat((RandomAccessibleInterval<FloatType>) rai));
+    		bt.inputs.put(VALUE_KEY, buildFloat((RandomAccessibleInterval<FloatType>) rai, order));
     		bt.inputs.put(DTYPE_KEY, FLOAT32_STR);
     	} else if (Util.getTypeFromInterval(rai) instanceof DoubleType) {
-    		bt.inputs.put(VALUE_KEY, buildDouble((RandomAccessibleInterval<DoubleType>) rai));
+    		bt.inputs.put(VALUE_KEY, buildDouble((RandomAccessibleInterval<DoubleType>) rai, order));
     		bt.inputs.put(DTYPE_KEY, FLOAT64_STR);
     	} else if (Util.getTypeFromInterval(rai) instanceof LongType) {
-    		bt.inputs.put(VALUE_KEY, buildLong((RandomAccessibleInterval<LongType>) rai));
+    		bt.inputs.put(VALUE_KEY, buildLong((RandomAccessibleInterval<LongType>) rai, order));
     		bt.inputs.put(DTYPE_KEY, INT64_STR);
     	} else {
             throw new IllegalArgumentException("The image has an unsupported type: " + Util.getTypeFromInterval(rai).getClass().toString());
@@ -221,6 +240,22 @@ public class BioengineTensor {
 		return imglib2ToByteArray(tensor.getData());
 	}
 
+	/**
+	 * Create byte array from the backend {@link RandomAccessibleInterval} of a JDLL tensor
+	 * @param <T>
+	 * 	ImgLib2 datatype that the tensor can have
+	 * @param tensor
+	 * 	the tensor containing all the needed data
+	 * @param order
+	 * 	order of the bytes
+	 * @return the backend {@link RandomAccessibleInterval} of a JDLL tensor as a byte array,
+	 *  does not contain information about dimensions or data type
+	 */
+	public static  < T extends RealType< T > & NativeType< T > >
+				byte[] createByteArray(Tensor<T> tensor, ByteOrder order) {
+		return imglib2ToByteArray(tensor.getData(), order);
+	}
+
 	
 	@SuppressWarnings("unchecked")
 	/**
@@ -235,24 +270,43 @@ public class BioengineTensor {
 	 */
 	public static < T extends RealType< T > & NativeType< T > >
 				byte[] imglib2ToByteArray(RandomAccessibleInterval<T> rai) {
+		return imglib2ToByteArray(rai, ByteOrder.LITTLE_ENDIAN);
+	}
+
+	
+	@SuppressWarnings("unchecked")
+	/**
+	 * 
+	 * Create byte array from a {@link RandomAccessibleInterval} 
+	 * @param <T>
+	 * 	ImgLib2 datatype that the image can have
+	 * @param rai
+	 * 	the image containing all the needed data
+     * @param order
+     * 	order of the bytes
+	 * @return the {@link RandomAccessibleInterval} as a byte array, does not contain information
+	 * 	about dimensions or data type
+	 */
+	public static < T extends RealType< T > & NativeType< T > >
+				byte[] imglib2ToByteArray(RandomAccessibleInterval<T> rai, ByteOrder order) {
     	if (Util.getTypeFromInterval(rai) instanceof ByteType) {
     		return buildByte((RandomAccessibleInterval<ByteType>) rai);
     	} else if (Util.getTypeFromInterval(rai) instanceof UnsignedByteType) {
     		return buildUByte((RandomAccessibleInterval<UnsignedByteType>) rai);
     	} else if (Util.getTypeFromInterval(rai) instanceof ShortType) {
-    		return buildShort((RandomAccessibleInterval<ShortType>) rai);
+    		return buildShort((RandomAccessibleInterval<ShortType>) rai, order);
     	} else if (Util.getTypeFromInterval(rai) instanceof UnsignedShortType) {
-    		return buildUShort((RandomAccessibleInterval<UnsignedShortType>) rai);
+    		return buildUShort((RandomAccessibleInterval<UnsignedShortType>) rai, order);
     	} else if (Util.getTypeFromInterval(rai) instanceof IntType) {
-    		return buildInt((RandomAccessibleInterval<IntType>) rai);
+    		return buildInt((RandomAccessibleInterval<IntType>) rai, order);
     	} else if (Util.getTypeFromInterval(rai) instanceof UnsignedIntType) {
-    		return buildUInt((RandomAccessibleInterval<UnsignedIntType>) rai);
+    		return buildUInt((RandomAccessibleInterval<UnsignedIntType>) rai, order);
     	} else if (Util.getTypeFromInterval(rai) instanceof FloatType) {
-    		return buildFloat((RandomAccessibleInterval<FloatType>) rai);
+    		return buildFloat((RandomAccessibleInterval<FloatType>) rai, order);
     	} else if (Util.getTypeFromInterval(rai) instanceof DoubleType) {
-    		return buildDouble((RandomAccessibleInterval<DoubleType>) rai);
+    		return buildDouble((RandomAccessibleInterval<DoubleType>) rai, order);
     	} else if (Util.getTypeFromInterval(rai) instanceof LongType) {
-    		return buildLong((RandomAccessibleInterval<LongType>) rai);
+    		return buildLong((RandomAccessibleInterval<LongType>) rai, order);
     	} else {
             throw new IllegalArgumentException("The image has an unsupported type: " + Util.getTypeFromInterval(rai).getClass().toString());
     	}
@@ -263,6 +317,9 @@ public class BioengineTensor {
      * 
      * @param imgTensor 
      * 	{@link RandomAccessibleInterval} to be mapped into byte buffer
+     * @param order
+     * 	order of the bytes
+     * @return byte array containing the data of the image as a flat byte array
      */
     private static byte[] buildByte(RandomAccessibleInterval<ByteType> imgTensor)
     {
@@ -290,6 +347,9 @@ public class BioengineTensor {
      * 
      * @param imgTensor 
      * 	{@link RandomAccessibleInterval} to be mapped into byte buffer
+     * @param order
+     * 	order of the bytes
+     * @return byte array containing the data of the image as a flat byte array
      */
     private static byte[] buildUByte(RandomAccessibleInterval<UnsignedByteType> imgTensor)
     {
@@ -320,8 +380,11 @@ public class BioengineTensor {
      * 
      * @param imgTensor 
      * 	{@link RandomAccessibleInterval} to be mapped into byte buffer
+     * @param order
+     * 	order of the bytes
+     * @return byte array containing the data of the image as a flat byte array
      */
-    private static byte[] buildShort(RandomAccessibleInterval<ShortType> imgTensor)
+    private static byte[] buildShort(RandomAccessibleInterval<ShortType> imgTensor, ByteOrder order)
     {
     	Cursor<ShortType> tensorCursor;
 		if (imgTensor instanceof IntervalView)
@@ -338,7 +401,7 @@ public class BioengineTensor {
 		while (tensorCursor.hasNext()) {
 			tensorCursor.fwd();
 			short val = tensorCursor.get().get();
-			byte[] arr = ByteBuffer.allocate(2).putShort(val).array();
+			byte[] arr = ByteBuffer.allocate(2).order(order).putShort(val).array();
 			System.arraycopy(arr, 0, byteArr, cc * 2, 2);
 			cc ++;
 		}
@@ -350,8 +413,11 @@ public class BioengineTensor {
      * 
      * @param imgTensor 
      * 	{@link RandomAccessibleInterval} to be mapped into byte buffer
+     * @param order
+     * 	order of the bytes
+     * @return byte array containing the data of the image as a flat byte array
      */
-    private static byte[] buildUShort(RandomAccessibleInterval<UnsignedShortType> imgTensor)
+    private static byte[] buildUShort(RandomAccessibleInterval<UnsignedShortType> imgTensor, ByteOrder order)
     {
     	Cursor<UnsignedShortType> tensorCursor;
 		if (imgTensor instanceof IntervalView)
@@ -373,7 +439,7 @@ public class BioengineTensor {
 				shortval = (short) (val - Math.pow(2, 16));
 			else 
 				shortval = (short) val;
-			byte[] arr = ByteBuffer.allocate(2).putShort(shortval).array();
+			byte[] arr = ByteBuffer.allocate(2).order(order).putShort(shortval).array();
 			System.arraycopy(arr, 0, byteArr, cc * 2, 2);
 			cc ++;
 		}
@@ -385,8 +451,11 @@ public class BioengineTensor {
      * 
      * @param imgTensor 
      * 	{@link RandomAccessibleInterval} to be mapped into byte buffer
+     * @param order
+     * 	order of the bytes
+     * @return byte array containing the data of the image as a flat byte array
      */
-    private static byte[] buildInt(RandomAccessibleInterval<IntType> imgTensor)
+    private static byte[] buildInt(RandomAccessibleInterval<IntType> imgTensor, ByteOrder order)
     {
     	Cursor<IntType> tensorCursor;
 		if (imgTensor instanceof IntervalView)
@@ -403,7 +472,7 @@ public class BioengineTensor {
 		while (tensorCursor.hasNext()) {
 			tensorCursor.fwd();
 			int val = tensorCursor.get().getInt();
-			byte[] arr = ByteBuffer.allocate(4).putInt(val).array();
+			byte[] arr = ByteBuffer.allocate(4).order(order).putInt(val).array();
 			System.arraycopy(arr, 0, byteArr, cc * 4, 4);
 			cc ++;
 		}
@@ -415,8 +484,11 @@ public class BioengineTensor {
      * 
      * @param imgTensor 
      * 	{@link RandomAccessibleInterval} to be mapped into byte buffer
+     * @param order
+     * 	order of the bytes
+     * @return byte array containing the data of the image as a flat byte array
      */
-    private static byte[] buildUInt(RandomAccessibleInterval<UnsignedIntType> imgTensor)
+    private static byte[] buildUInt(RandomAccessibleInterval<UnsignedIntType> imgTensor, ByteOrder order)
     {
     	Cursor<UnsignedIntType> tensorCursor;
 		if (imgTensor instanceof IntervalView)
@@ -438,7 +510,7 @@ public class BioengineTensor {
 				intval = (int) (val - Math.pow(2, 32));
 			else 
 				intval = (int) val;
-			byte[] arr = ByteBuffer.allocate(4).putInt(intval).array();
+			byte[] arr = ByteBuffer.allocate(4).order(order).putInt(intval).array();
 			System.arraycopy(arr, 0, byteArr, cc * 4, 4);
 			cc ++;
 		}
@@ -450,8 +522,11 @@ public class BioengineTensor {
      * 
      * @param imgTensor 
      * 	{@link RandomAccessibleInterval} to be mapped into byte buffer
+     * @param order
+     * 	order of the bytes
+     * @return byte array containing the data of the image as a flat byte array
      */
-    private static byte[] buildLong(RandomAccessibleInterval<LongType> imgTensor)
+    private static byte[] buildLong(RandomAccessibleInterval<LongType> imgTensor, ByteOrder order)
     {
     	Cursor<LongType> tensorCursor;
 		if (imgTensor instanceof IntervalView)
@@ -468,7 +543,7 @@ public class BioengineTensor {
 		while (tensorCursor.hasNext()) {
 			tensorCursor.fwd();
 			long val = tensorCursor.get().get();
-			byte[] arr = ByteBuffer.allocate(4).putLong(val).array();;
+			byte[] arr = ByteBuffer.allocate(4).order(order).putLong(val).array();;
 			System.arraycopy(arr, 0, byteArr, cc * 8, 8);
 			cc ++;
 		}
@@ -480,8 +555,11 @@ public class BioengineTensor {
      * 
      * @param imgTensor 
      * 	{@link RandomAccessibleInterval} to be mapped into byte buffer
+     * @param order
+     * 	order of the bytes
+     * @return byte array containing the data of the image as a flat byte array
      */
-    private static byte[] buildFloat(RandomAccessibleInterval<FloatType> imgTensor)
+    private static byte[] buildFloat(RandomAccessibleInterval<FloatType> imgTensor, ByteOrder order)
     {
     	Cursor<FloatType> tensorCursor;
 		if (imgTensor instanceof IntervalView)
@@ -498,7 +576,7 @@ public class BioengineTensor {
 		while (tensorCursor.hasNext()) {
 			tensorCursor.fwd();
 			float val = tensorCursor.get().getRealFloat();
-			byte[] arr = ByteBuffer.allocate(4).order(ByteOrder.LITTLE_ENDIAN).putFloat(val).array();;
+			byte[] arr = ByteBuffer.allocate(4).order(order).putFloat(val).array();;
 			System.arraycopy(arr, 0, byteArr, cc * 4, 4);
 			cc ++;
 		}
@@ -510,8 +588,11 @@ public class BioengineTensor {
      * 
      * @param imgTensor 
      * 	{@link RandomAccessibleInterval} to be mapped into byte buffer
+     * @param order
+     * 	order of the bytes
+     * @return byte array containing the data of the image as a flat byte array
      */
-    private static byte[] buildDouble(RandomAccessibleInterval<DoubleType> imgTensor)
+    private static byte[] buildDouble(RandomAccessibleInterval<DoubleType> imgTensor, ByteOrder order)
     {
     	Cursor<DoubleType> tensorCursor;
 		if (imgTensor instanceof IntervalView)
@@ -528,7 +609,7 @@ public class BioengineTensor {
 		while (tensorCursor.hasNext()) {
 			tensorCursor.fwd();
 			double val = tensorCursor.get().getRealDouble();
-			byte[] arr = ByteBuffer.allocate(4).putDouble(val).array();;
+			byte[] arr = ByteBuffer.allocate(4).order(order).putDouble(val).array();;
 			System.arraycopy(arr, 0, byteArr, cc * 8, 8);
 			cc ++;
 		}
