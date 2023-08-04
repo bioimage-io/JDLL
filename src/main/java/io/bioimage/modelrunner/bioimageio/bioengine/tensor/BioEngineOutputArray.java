@@ -46,6 +46,7 @@ import net.imglib2.img.basictypeaccess.nio.LongBufferAccess;
 import net.imglib2.img.basictypeaccess.nio.ShortBufferAccess;
 import net.imglib2.type.NativeType;
 import net.imglib2.type.numeric.RealType;
+import net.imglib2.util.Cast;
 
 /**
  * Class that converts each of the particular output arrays produced by the BioEngine
@@ -154,31 +155,31 @@ public class BioEngineOutputArray {
 		ByteBuffer buf = ByteBuffer.wrap(arr).order(byteOrder);
 		if (this.dtype.toLowerCase().equals(BioengineTensor.FLOAT64_STR)) {
     		DoubleAccess access = new DoubleBufferAccess(buf, true);
-    		return (Img<T>) ArrayImgs.doubles( access, shape );
+			return Cast.unchecked( ArrayImgs.doubles( access, shape ) );
 		} else if (this.dtype.toLowerCase().equals(BioengineTensor.INT64_STR)) {
     		LongAccess access = new LongBufferAccess(buf, true);
-    		return (Img<T>) ArrayImgs.longs( access, shape );
+			return Cast.unchecked( ArrayImgs.longs( access, shape ) );
 		} else if (this.dtype.toLowerCase().equals(BioengineTensor.FLOAT32_STR)) {
     		FloatAccess access = new FloatBufferAccess(buf, true);
-    		return (Img<T>) ArrayImgs.floats( access, shape );
+			return Cast.unchecked( ArrayImgs.floats( access, shape ) );
 		} else if (this.dtype.toLowerCase().equals(BioengineTensor.INT32_STR)) {
     		IntAccess access = new IntBufferAccess(buf, true);
-    		return (Img<T>) ArrayImgs.ints( access, shape );
+			return Cast.unchecked( ArrayImgs.ints( access, shape ) );
 		} else if (this.dtype.toLowerCase().equals(BioengineTensor.UINT32_STR)) {
     		IntAccess access = new IntBufferAccess(buf, true);
-    		return (Img<T>) ArrayImgs.unsignedInts( access, shape );
+			return Cast.unchecked( ArrayImgs.unsignedInts( access, shape ) );
 		} else if (this.dtype.toLowerCase().equals(BioengineTensor.INT16_STR)) {
     		ShortAccess access = new ShortBufferAccess(buf, true);
-    		return (Img<T>) ArrayImgs.shorts( access, shape );
+			return Cast.unchecked( ArrayImgs.shorts( access, shape ) );
 		} else if (this.dtype.toLowerCase().equals(BioengineTensor.UINT16_STR)) {
     		ShortAccess access = new ShortBufferAccess(buf, true);
-    		return (Img<T>) ArrayImgs.unsignedShorts( access, shape );
+			return Cast.unchecked( ArrayImgs.unsignedShorts( access, shape ) );
 		} else if (this.dtype.toLowerCase().equals(BioengineTensor.BYTE_STR)) {
     		ByteAccess access = new ByteBufferAccess(buf, true);
-    		return (Img<T>) ArrayImgs.bytes( access, shape );
+			return Cast.unchecked( ArrayImgs.bytes( access, shape ) );
 		} else if (this.dtype.toLowerCase().equals(BioengineTensor.UBYTE_STR)) {
     		ByteAccess access = new ByteBufferAccess(buf, true);
-    		return (Img<T>) ArrayImgs.unsignedBytes( access, shape );
+			return Cast.unchecked( ArrayImgs.unsignedBytes( access, shape ) );
 		} else {
 			throw new IllegalArgumentException("Output array '" + this.name +"' could not be retrieved.\n"
 					+ "Its corresponding data type '" + this.dtype + "' is not supported yet.");
