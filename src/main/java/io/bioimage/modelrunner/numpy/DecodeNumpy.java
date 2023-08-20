@@ -223,10 +223,6 @@ public class DecodeNumpy {
      * @throws IllegalArgumentException if the String provided is not a numpy datatype
      */
     public static String getDataType(String npDtype) throws IllegalArgumentException {
-    	if (npDtype.startsWith(">") || npDtype.startsWith("<"))
-    		npDtype = npDtype.substring(1);
-    	if (npDtype.startsWith("|"))
-    		npDtype = npDtype.substring(1);
     	if (npDtype.equals("i1") || npDtype.equals("b") || npDtype.equals("c"))
     		return "byte";
     	else if (npDtype.equals("i2") || npDtype.equals("h"))
