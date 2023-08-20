@@ -184,7 +184,21 @@ public class DecodeNumpy {
             String[] tokens = shapeStr.split(", ?");
             shape = Arrays.stream(tokens).mapToLong(Long::parseLong).toArray();
         }
-        String dtype = getDataType(typeStr);
+        char order = typeStr.charAt(0);
+        ByteOrder byteOrder = null;
+        if (order == '>') {
+        	byteOrder = ByteOrder.BIG_ENDIAN;
+        } else if (order == '<') {
+        	byteOrder = ByteOrder.LITTLE_ENDIAN;
+        } else if (order == '|') {
+        	byteOrder = ByteOrder.LITTLE_ENDIAN;
+        	new IOException("Numpy .npy file did not specify the byte order of the array."
+        			+ " It was automatically opened as little endian but this does not guarantee"
+        			+ " the that the file is open correctly. Caution is advised.").printStackTrace();
+    	} else {
+        	new IllegalArgumentException("Not supported ByteOrder for the provided .npy array.");
+        }
+        String dtype = getDataType(typeStr.substring(1));
         long numBytes = DATA_TYPES_MAP.get(dtype);
     	long count;
     	if (shape.length == 0)
@@ -194,15 +208,6 @@ public class DecodeNumpy {
         //len = Math.toIntExact(shape.length * numBytes);
         len = Math.toIntExact(count * numBytes);
         ByteBuffer data = ByteBuffer.allocate(len);
-        char order = typeStr.charAt(0);
-        ByteOrder byteOrder = null;
-        if (order == '>') {
-        	byteOrder = ByteOrder.BIG_ENDIAN;
-        } else if (order == '<') {
-        	byteOrder = ByteOrder.LITTLE_ENDIAN;
-        } else {
-        	new IllegalArgumentException("Not supported ByteOrder for the provided .npy array.");
-        }
         data.order(byteOrder);
         readData(dis, data, len);
 
@@ -219,6 +224,8 @@ public class DecodeNumpy {
      */
     public static String getDataType(String npDtype) throws IllegalArgumentException {
     	if (npDtype.startsWith(">") || npDtype.startsWith("<"))
+    		npDtype = npDtype.substring(1);
+    	if (npDtype.startsWith("|"))
     		npDtype = npDtype.substring(1);
     	if (npDtype.equals("i1") || npDtype.equals("b") || npDtype.equals("c"))
     		return "byte";
