@@ -80,7 +80,7 @@ public class DecodeNumpy {
     static
     {
         DATA_TYPES_MAP.put("boolean", 1);
-        DATA_TYPES_MAP.put("byte", 1);
+        DATA_TYPES_MAP.put("int8", 1);
         DATA_TYPES_MAP.put("uint8", 1);
         DATA_TYPES_MAP.put("int16", 2);
         DATA_TYPES_MAP.put("uint16", 1);
@@ -224,7 +224,7 @@ public class DecodeNumpy {
      */
     public static String getDataType(String npDtype) throws IllegalArgumentException {
     	if (npDtype.equals("i1") || npDtype.equals("b") || npDtype.equals("c"))
-    		return "byte";
+    		return "int8";
     	else if (npDtype.equals("i2") || npDtype.equals("h"))
     		return "int16";
     	else if (npDtype.equals("i4") || npDtype.equals("i"))
@@ -304,10 +304,10 @@ public class DecodeNumpy {
     public static <T extends NativeType<T>> Img<T> build(ByteBuffer buf, ByteOrder byteOrder, String dtype, long[] shape) throws IllegalArgumentException
     {
     	buf.order(byteOrder);
-    	if (dtype.equals("byte")) {
+    	if (dtype.equals("int8")) {
     		ByteAccess access = new ByteBufferAccess(buf, true);
     		return (Img<T>) ArrayImgs.bytes( access, shape );
-    	} else if (dtype.equals("ubyte")) {
+    	} else if (dtype.equals("uint8")) {
     		ByteAccess access = new ByteBufferAccess(buf, true);
     		return (Img<T>) ArrayImgs.unsignedBytes( access, shape );
     	} else if (dtype.equals("int16")) {
