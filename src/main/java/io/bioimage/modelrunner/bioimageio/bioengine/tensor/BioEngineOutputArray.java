@@ -32,7 +32,6 @@ import java.util.Objects;
 import io.bioimage.modelrunner.numpy.ByteArrayUtils;
 import net.imglib2.img.Img;
 import net.imglib2.img.array.ArrayImgs;
-import net.imglib2.img.basictypeaccess.BooleanAccess;
 import net.imglib2.img.basictypeaccess.ByteAccess;
 import net.imglib2.img.basictypeaccess.DoubleAccess;
 import net.imglib2.img.basictypeaccess.FloatAccess;
@@ -180,9 +179,8 @@ public class BioEngineOutputArray {
 		} else if (this.dtype.toLowerCase().equals(BioengineTensor.UBYTE_STR)) {
     		ByteAccess access = new ByteBufferAccess(buf, true);
     		return (Img<T>) ArrayImgs.unsignedBytes( access, shape );
-		} else if (this.dtype.toLowerCase().equals("bool")) {//BioengineTensor.BOOL_STR)) {
-    		BooleanAccess access = new BooleanAccess(buf, true);
-    		return (Img<T>) ArrayImgs.booleans( access, shape );
+		} else if (this.dtype.toLowerCase().equals(BioengineTensor.BOOL_STR)) {
+    		return (Img<T>) ArrayImgs.booleans(ByteArrayUtils.convertIntoBoolean(arr), shape );
 		} else {
 			throw new IllegalArgumentException("Output array '" + this.name +"' could not be retrieved.\n"
 					+ "Its corresponding data type '" + this.dtype + "' is not supported yet.");

@@ -311,4 +311,30 @@ public class ByteArrayUtils {
 		}
 		return dd;
 	}
+	
+	/**
+	 * Converts byte array into a boolean array
+	 * @param arr
+	 * 	the byte array
+	 * @param byteOrder
+	 * 	the order of the bytes in the array, LittleEndian or BigEndian
+	 * @return a long boolean containing the wanted data
+	 */
+	public static boolean[] convertIntoBoolean(byte[] arr, ByteOrder byteOrder) {
+		return convertIntoBoolean(arr);
+	}
+	
+	/**
+	 * Converts byte array into a boolean array
+	 * @param arr
+	 * 	the byte array
+	 * @return a long boolean containing the wanted data
+	 */
+	public static boolean[] convertIntoBoolean(byte[] arr) {
+		boolean[] dd = new boolean[arr.length];
+		for ( int i = 0; i < arr.length; i ++) {
+			dd[i] = arr[i] != 0;
+		}
+		return dd;
+	}
 }
