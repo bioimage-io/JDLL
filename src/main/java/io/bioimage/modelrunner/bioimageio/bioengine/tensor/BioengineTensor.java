@@ -124,6 +124,10 @@ public class BioengineTensor {
 	 * String used as tag for the uint32 np dtype
 	 */
 	protected static final String UINT32_STR = "uint32";
+	/**
+	 * String used as tag for the boolean np dtype
+	 */
+	protected static final String BOOL_STR = "bool";
 
 	/**
 	 * Utility class.
