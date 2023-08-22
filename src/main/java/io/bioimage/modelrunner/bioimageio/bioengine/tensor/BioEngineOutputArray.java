@@ -30,7 +30,10 @@ import java.util.HashMap;
 import java.util.Objects;
 
 import io.bioimage.modelrunner.numpy.ByteArrayUtils;
+import io.bioimage.modelrunner.utils.IndexingUtils;
+import net.imglib2.Cursor;
 import net.imglib2.img.Img;
+import net.imglib2.img.array.ArrayImgFactory;
 import net.imglib2.img.array.ArrayImgs;
 import net.imglib2.img.basictypeaccess.ByteAccess;
 import net.imglib2.img.basictypeaccess.DoubleAccess;
@@ -46,6 +49,7 @@ import net.imglib2.img.basictypeaccess.nio.LongBufferAccess;
 import net.imglib2.img.basictypeaccess.nio.ShortBufferAccess;
 import net.imglib2.type.NativeType;
 import net.imglib2.type.numeric.RealType;
+import net.imglib2.type.numeric.real.FloatType;
 
 /**
  * Class that converts each of the particular output arrays produced by the BioEngine
@@ -159,8 +163,29 @@ public class BioEngineOutputArray {
     		LongAccess access = new LongBufferAccess(buf, true);
     		return (Img<T>) ArrayImgs.longs( access, shape );
 		} else if (this.dtype.toLowerCase().equals(BioengineTensor.FLOAT32_STR)) {
-    		FloatAccess access = new FloatBufferAccess(buf, true);
-    		return (Img<T>) ArrayImgs.floats( access, shape );
+			
+			
+			final ArrayImgFactory< FloatType > factory = new ArrayImgFactory<>( new FloatType() );
+	        final Img< FloatType > outputImg = (Img<FloatType>) factory.create(shape);
+	    	Cursor<FloatType> tensorCursor= outputImg.cursor();
+	    	long flatSize = 1;
+	    	for (long l : shape) {flatSize *= l;}
+	    	float[] flatArr = ByteArrayUtils.convertIntoSignedFloat32(arr);
+			while (tensorCursor.hasNext()) {
+				tensorCursor.fwd();
+				long[] cursorPos = tensorCursor.positionAsLongArray();
+	        	int flatPos = IndexingUtils.multidimensionalIntoFlatIndex(cursorPos, shape);
+	        	float val = flatArr[flatPos];
+	        	tensorCursor.get().set(val);
+			}
+		 	return (Img<T>) outputImg;
+			
+			
+			
+			
+			
+    		//FloatAccess access = new FloatBufferAccess(buf, true);
+    		//return (Img<T>) ArrayImgs.floats( access, shape );
 		} else if (this.dtype.toLowerCase().equals(BioengineTensor.INT32_STR)) {
     		IntAccess access = new IntBufferAccess(buf, true);
     		return (Img<T>) ArrayImgs.ints( access, shape );
