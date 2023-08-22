@@ -579,7 +579,7 @@ public class BioengineTensor {
 		int cc =  0;
 		while (tensorCursor.hasNext()) {
 			tensorCursor.fwd();
-			float val = tensorCursor.get().getRealFloat();
+			float val = tensorCursor.get().get();
 			byte[] arr = ByteBuffer.allocate(4).order(order).putFloat(val).array();;
 			System.arraycopy(arr, 0, byteArr, cc * 4, 4);
 			cc ++;
