@@ -303,9 +303,9 @@ public class DecodeNumpy {
     public static <T extends NativeType<T>> Img<T> build(ByteBuffer buf, ByteOrder byteOrder, String dtype, long[] shape) throws IllegalArgumentException
     {
     	if (dtype.equals("int8")) {
-    		return (Img<T>) buildByte(buf, byteOrder, shape);
+    		return (Img<T>) buildInt8(buf, byteOrder, shape);
     	} else if (dtype.equals("uint8")) {
-    		return (Img<T>) buildUByte(buf, byteOrder, shape);
+    		return (Img<T>) buildUInt8(buf, byteOrder, shape);
     	} else if (dtype.equals("int16")) {
     		return (Img<T>) buildInt16(buf, byteOrder, shape);
     	} else if (dtype.equals("uint16")) {
@@ -327,7 +327,7 @@ public class DecodeNumpy {
     	}
     }
     
-    private static Img<ByteType> buildByte(ByteBuffer buf, ByteOrder byteOrder, long[] shape) {
+    private static Img<ByteType> buildInt8(ByteBuffer buf, ByteOrder byteOrder, long[] shape) {
     	buf.order(byteOrder);
 		final ArrayImgFactory< ByteType > factory = new ArrayImgFactory<>( new ByteType() );
         final Img< ByteType > outputImg = (Img<ByteType>) factory.create(shape);
@@ -341,12 +341,12 @@ public class DecodeNumpy {
 	 	return outputImg;
     }
     
-    private static Img<UnsignedByteType> buildUByte(ByteBuffer buf, ByteOrder byteOrder, long[] shape) {
+    private static Img<UnsignedByteType> buildUInt8(ByteBuffer buf, ByteOrder byteOrder, long[] shape) {
     	buf.order(byteOrder);
 		final ArrayImgFactory< UnsignedByteType > factory = new ArrayImgFactory<>( new UnsignedByteType() );
         final Img< UnsignedByteType > outputImg = (Img<UnsignedByteType>) factory.create(shape);
     	Cursor<UnsignedByteType> tensorCursor= outputImg.cursor();
-    	int[] flatArr = ByteArrayUtils.convertIntoUInt8(buf.array(), byteOrder);
+    	int[] flatArr = ByteArrayUtils.toUInt8(buf.array(), byteOrder);
 		while (tensorCursor.hasNext()) {
 			tensorCursor.fwd();
 			long[] cursorPos = tensorCursor.positionAsLongArray();
@@ -361,7 +361,7 @@ public class DecodeNumpy {
 		final ArrayImgFactory< ShortType > factory = new ArrayImgFactory<>( new ShortType() );
         final Img< ShortType > outputImg = (Img<ShortType>) factory.create(shape);
     	Cursor<ShortType> tensorCursor= outputImg.cursor();
-    	short[] flatArr = ByteArrayUtils.convertIntoSignedShort16(buf.array(), byteOrder);
+    	short[] flatArr = ByteArrayUtils.toInt16(buf.array(), byteOrder);
 		while (tensorCursor.hasNext()) {
 			tensorCursor.fwd();
 			long[] cursorPos = tensorCursor.positionAsLongArray();
@@ -377,7 +377,7 @@ public class DecodeNumpy {
 		final ArrayImgFactory< UnsignedShortType > factory = new ArrayImgFactory<>( new UnsignedShortType() );
         final Img< UnsignedShortType > outputImg = (Img<UnsignedShortType>) factory.create(shape);
     	Cursor<UnsignedShortType> tensorCursor= outputImg.cursor();
-    	int[] flatArr = ByteArrayUtils.convertIntoUnsignedInt16(buf.array(), byteOrder);
+    	int[] flatArr = ByteArrayUtils.toUInt16(buf.array(), byteOrder);
 		while (tensorCursor.hasNext()) {
 			tensorCursor.fwd();
 			long[] cursorPos = tensorCursor.positionAsLongArray();
@@ -392,7 +392,7 @@ public class DecodeNumpy {
 		final ArrayImgFactory< IntType > factory = new ArrayImgFactory<>( new IntType() );
         final Img< IntType > outputImg = (Img<IntType>) factory.create(shape);
     	Cursor<IntType> tensorCursor= outputImg.cursor();
-    	int[] flatArr = ByteArrayUtils.convertIntoSignedInt32(buf.array(), byteOrder);
+    	int[] flatArr = ByteArrayUtils.toInt32(buf.array(), byteOrder);
 		while (tensorCursor.hasNext()) {
 			tensorCursor.fwd();
 			long[] cursorPos = tensorCursor.positionAsLongArray();
@@ -407,7 +407,7 @@ public class DecodeNumpy {
 		final ArrayImgFactory< UnsignedIntType > factory = new ArrayImgFactory<>( new UnsignedIntType() );
         final Img< UnsignedIntType > outputImg = (Img<UnsignedIntType>) factory.create(shape);
     	Cursor<UnsignedIntType> tensorCursor= outputImg.cursor();
-    	long[] flatArr = ByteArrayUtils.convertIntoUnsignedInt32(buf.array(), byteOrder);
+    	long[] flatArr = ByteArrayUtils.toUInt32(buf.array(), byteOrder);
 		while (tensorCursor.hasNext()) {
 			tensorCursor.fwd();
 			long[] cursorPos = tensorCursor.positionAsLongArray();
@@ -422,7 +422,7 @@ public class DecodeNumpy {
 		final ArrayImgFactory< LongType > factory = new ArrayImgFactory<>( new LongType() );
         final Img< LongType > outputImg = (Img<LongType>) factory.create(shape);
     	Cursor<LongType> tensorCursor= outputImg.cursor();
-    	long[] flatArr = ByteArrayUtils.convertIntoSignedInt64(buf.array(), byteOrder);
+    	long[] flatArr = ByteArrayUtils.toInt64(buf.array(), byteOrder);
 		while (tensorCursor.hasNext()) {
 			tensorCursor.fwd();
 			long[] cursorPos = tensorCursor.positionAsLongArray();
@@ -437,7 +437,7 @@ public class DecodeNumpy {
 		final ArrayImgFactory< FloatType > factory = new ArrayImgFactory<>( new FloatType() );
         final Img< FloatType > outputImg = (Img<FloatType>) factory.create(shape);
     	Cursor<FloatType> tensorCursor= outputImg.cursor();
-    	float[] flatArr = ByteArrayUtils.convertIntoSignedFloat32(buf.array(), byteOrder);
+    	float[] flatArr = ByteArrayUtils.toFloat32(buf.array(), byteOrder);
 		while (tensorCursor.hasNext()) {
 			tensorCursor.fwd();
 			long[] cursorPos = tensorCursor.positionAsLongArray();
@@ -453,7 +453,7 @@ public class DecodeNumpy {
 		final ArrayImgFactory< DoubleType > factory = new ArrayImgFactory<>( new DoubleType() );
         final Img< DoubleType > outputImg = (Img<DoubleType>) factory.create(shape);
     	Cursor<DoubleType> tensorCursor= outputImg.cursor();
-    	double[] flatArr = ByteArrayUtils.convertIntoSignedFloat64(buf.array(), byteOrder);
+    	double[] flatArr = ByteArrayUtils.toFloat64(buf.array(), byteOrder);
 		while (tensorCursor.hasNext()) {
 			tensorCursor.fwd();
 			long[] cursorPos = tensorCursor.positionAsLongArray();
@@ -468,7 +468,7 @@ public class DecodeNumpy {
 		final ArrayImgFactory< ByteType > factory = new ArrayImgFactory<>( new ByteType() );
         final Img< ByteType > outputImg = (Img<ByteType>) factory.create(shape);
     	Cursor<ByteType> tensorCursor= outputImg.cursor();
-    	boolean[] flatArr = ByteArrayUtils.convertIntoBoolean(buf.array(), byteOrder);
+    	boolean[] flatArr = ByteArrayUtils.toBoolean(buf.array(), byteOrder);
 		while (tensorCursor.hasNext()) {
 			tensorCursor.fwd();
 			long[] cursorPos = tensorCursor.positionAsLongArray();

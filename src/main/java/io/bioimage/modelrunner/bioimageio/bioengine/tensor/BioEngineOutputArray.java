@@ -170,7 +170,7 @@ public class BioEngineOutputArray {
 	    	Cursor<FloatType> tensorCursor= outputImg.cursor();
 	    	long flatSize = 1;
 	    	for (long l : shape) {flatSize *= l;}
-	    	float[] flatArr = ByteArrayUtils.convertIntoSignedFloat32(arr);
+	    	float[] flatArr = ByteArrayUtils.toFloat32(arr);
 			while (tensorCursor.hasNext()) {
 				tensorCursor.fwd();
 				long[] cursorPos = tensorCursor.positionAsLongArray();
@@ -205,7 +205,7 @@ public class BioEngineOutputArray {
     		ByteAccess access = new ByteBufferAccess(buf, true);
     		return (Img<T>) ArrayImgs.unsignedBytes( access, shape );
 		} else if (this.dtype.toLowerCase().equals(BioengineTensor.BOOL_STR)) {
-    		return (Img<T>) ArrayImgs.booleans(ByteArrayUtils.convertIntoBoolean(arr), shape );
+    		return (Img<T>) ArrayImgs.booleans(ByteArrayUtils.toBoolean(arr), shape );
 		} else {
 			throw new IllegalArgumentException("Output array '" + this.name +"' could not be retrieved.\n"
 					+ "Its corresponding data type '" + this.dtype + "' is not supported yet.");
@@ -228,7 +228,7 @@ public class BioEngineOutputArray {
 	 * @return a integer 16 buffer containing the wanted data
 	 */
 	public static ShortBuffer convertIntoSignedInt16(byte[] arr) {
-		return ShortBuffer.wrap(ByteArrayUtils.convertIntoSignedShort16(arr));
+		return ShortBuffer.wrap(ByteArrayUtils.toInt16(arr));
 	}
 	
 	/**
@@ -239,7 +239,7 @@ public class BioEngineOutputArray {
 	 * @return a int buffer containing the wanted data
 	 */
 	public static IntBuffer convertIntoSignedInt32(byte[] arr) {
-		return IntBuffer.wrap(ByteArrayUtils.convertIntoSignedInt32(arr));
+		return IntBuffer.wrap(ByteArrayUtils.toInt32(arr));
 	}
 	
 	/**
@@ -268,7 +268,7 @@ public class BioEngineOutputArray {
 	 * @return an int buffer containing the wanted data
 	 */
 	public static IntBuffer convertIntoUnsignedInt16(byte[] arr) {
-		return IntBuffer.wrap(ByteArrayUtils.convertIntoUnsignedInt16(arr));
+		return IntBuffer.wrap(ByteArrayUtils.toUInt16(arr));
 	}
 	
 	/**
@@ -312,7 +312,7 @@ public class BioEngineOutputArray {
 	 * @return a float buffer containing the wanted data
 	 */
 	public static FloatBuffer convertIntoSignedFloat32(byte[] arr) {
-		return FloatBuffer.wrap(ByteArrayUtils.convertIntoSignedFloat32(arr));
+		return FloatBuffer.wrap(ByteArrayUtils.toFloat32(arr));
 	}
 	
 	/**
@@ -323,7 +323,7 @@ public class BioEngineOutputArray {
 	 * @return a double buffer containing the wanted data
 	 */
 	public static DoubleBuffer convertIntoSignedFloat64(byte[] arr) {
-		return DoubleBuffer.wrap(ByteArrayUtils.convertIntoSignedFloat64(arr));
+		return DoubleBuffer.wrap(ByteArrayUtils.toFloat64(arr));
 	}
 	
 	/**
