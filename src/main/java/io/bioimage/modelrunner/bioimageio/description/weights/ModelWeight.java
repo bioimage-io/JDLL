@@ -320,7 +320,7 @@ public class ModelWeight
 		} else if (selectedWeights.startsWith(bioengineIdentifier)) {
 			this.selectedEngine = bioengineIdentifier;
 		} else {
-			throw new IllegalArgumentException("Unsupported Deep Learning framework in DeepIcy.");
+			throw new IllegalArgumentException("Unsupported Deep Learning framework for JDLL.");
 		}
 		setSelectedVersion(selectedWeights);
 		setSelectedWeights(selectedWeights);

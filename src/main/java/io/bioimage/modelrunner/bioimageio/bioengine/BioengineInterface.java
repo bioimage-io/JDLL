@@ -42,7 +42,6 @@ import io.bioimage.modelrunner.bioimageio.bioengine.tensor.BioEngineOutput;
 import io.bioimage.modelrunner.bioimageio.bioengine.tensor.BioEngineOutputArray;
 import io.bioimage.modelrunner.bioimageio.bioengine.tensor.BioengineTensor;
 import io.bioimage.modelrunner.bioimageio.description.ModelDescriptor;
-import io.bioimage.modelrunner.bioimageio.description.weights.ModelWeight;
 import io.bioimage.modelrunner.engine.DeepLearningEngineInterface;
 import io.bioimage.modelrunner.exceptions.LoadModelException;
 import io.bioimage.modelrunner.exceptions.RunModelException;
@@ -153,21 +152,6 @@ public class BioengineInterface implements DeepLearningEngineInterface {
 	 * Value for the BioEngine serialization
 	 */
 	private static final String SERIALIZATION_VAL = "imjoy";
-	/**
-	 * Optional key to run a Bioimage.io model to specify in which weights
-	 * the model is going to run
-	 */
-	private static String MODEL_WEIGHTS_KEY = "weight_format";
-	/**
-	 * List that contains all the supported weight tags by the bioengine
-	 */
-	private static final ArrayList<String> SUPPORTED_BIOENGINE_WEIGHTS;
-	static {
-		SUPPORTED_BIOENGINE_WEIGHTS = new ArrayList<String>();
-		SUPPORTED_BIOENGINE_WEIGHTS.add(ModelWeight.getKerasID());
-		SUPPORTED_BIOENGINE_WEIGHTS.add(ModelWeight.getOnnxID());
-		SUPPORTED_BIOENGINE_WEIGHTS.add(ModelWeight.getTorchscriptID());
-	}
 	
 	public static void main(String[] args) throws LoadModelException, RunModelException {
 		BioengineInterface bi = new BioengineInterface();
@@ -315,6 +299,17 @@ public class BioengineInterface implements DeepLearningEngineInterface {
      *  keras, torchscript and onnx
      */
     private void findBioEngineWeightsIfPossible() throws LoadModelException {
+		if (BioEngineAvailableModels.isModelSupportedInBioengine(modelID))
+			return;
+    	throw new LoadModelException("For some reason, the selected model ('" + modelID
+    			+ "') is not supported by the Bioengine. The possible reasons range from"
+    			+ " needing inputs or/and outputs in a certain format not supported to "
+    			+ "requiring a certain DL framework not supported (too old or too specific)."
+    			+ " See the list of the models currently available: " 
+    			+ BioEngineAvailableModels.getBioengineJson());
+    	/**
+    	 * TODO talk with Wei to see whihc are the weights currently supported by the
+    	 * Bioengine
     	for (String entry : rdf.getWeights().getSupportedDLFrameworks()) {
     		if (entry.equals(ModelWeight.getKerasID())) {
     			bioimageioKwargs.put(MODEL_WEIGHTS_KEY, ModelWeight.getKerasID());
@@ -327,15 +322,12 @@ public class BioengineInterface implements DeepLearningEngineInterface {
     			return;
     		}
     	}
+    	if (!rdf.getWeights().getSupportedDLFrameworks().contains(ModelWeight.getTensorflowID()))
+    		throw new LoadModelException("");
     	throw new LoadModelException("The Bioengine does not support the DL framework "
     			+ "compatible with the model selected. The bioengine supports the following"
     			+ " frameworks: " + SUPPORTED_BIOENGINE_WEIGHTS + " whereas the model is "
     			+ "only compatible with: " + rdf.getWeights().getSupportedDLFrameworks());
-    	/**
-    	 * TODO talk with Wei to see whihc are the weights currently supported by the
-    	 * Bioengine
-    	if (!rdf.getWeights().getSupportedDLFrameworks().contains(ModelWeight.getTensorflowID()))
-    		throw new LoadModelException("");
     	 */
     }
     

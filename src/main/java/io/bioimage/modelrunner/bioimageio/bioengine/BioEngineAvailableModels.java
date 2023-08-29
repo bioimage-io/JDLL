@@ -170,10 +170,8 @@ public class BioEngineAvailableModels {
 	 * @param modelID
 	 * 	ID of the model of interest
 	 * @return true if supported, false otherwise
-	 * @throws IOException if the json with the Bioengine information is not found, or 
-	 * 	there is no internet
 	 */
-	public static boolean isModelSupportedInBioengine(String modelID) throws IOException {
+	public static boolean isModelSupportedInBioengine(String modelID) {
 		if (BAM == null) {
 			try {
 				BAM =  BioEngineAvailableModels.load();
