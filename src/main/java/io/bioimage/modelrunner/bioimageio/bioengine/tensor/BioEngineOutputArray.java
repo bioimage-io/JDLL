@@ -30,6 +30,7 @@ import java.util.HashMap;
 import java.util.Objects;
 
 import io.bioimage.modelrunner.numpy.ByteArrayUtils;
+import io.bioimage.modelrunner.numpy.DecodeNumpy;
 import io.bioimage.modelrunner.utils.IndexingUtils;
 import net.imglib2.Cursor;
 import net.imglib2.img.Img;
@@ -156,60 +157,7 @@ public class BioEngineOutputArray {
 			throws IllegalArgumentException {
 		Objects.requireNonNull(arr);
 		ByteBuffer buf = ByteBuffer.wrap(arr).order(byteOrder);
-		if (this.dtype.toLowerCase().equals(BioengineTensor.FLOAT64_STR)) {
-    		DoubleAccess access = new DoubleBufferAccess(buf, true);
-    		return (Img<T>) ArrayImgs.doubles( access, shape );
-		} else if (this.dtype.toLowerCase().equals(BioengineTensor.INT64_STR)) {
-    		LongAccess access = new LongBufferAccess(buf, true);
-    		return (Img<T>) ArrayImgs.longs( access, shape );
-		} else if (this.dtype.toLowerCase().equals(BioengineTensor.FLOAT32_STR)) {
-			
-			
-			final ArrayImgFactory< FloatType > factory = new ArrayImgFactory<>( new FloatType() );
-	        final Img< FloatType > outputImg = (Img<FloatType>) factory.create(shape);
-	    	Cursor<FloatType> tensorCursor= outputImg.cursor();
-	    	long flatSize = 1;
-	    	for (long l : shape) {flatSize *= l;}
-	    	float[] flatArr = ByteArrayUtils.toFloat32(arr);
-			while (tensorCursor.hasNext()) {
-				tensorCursor.fwd();
-				long[] cursorPos = tensorCursor.positionAsLongArray();
-	        	int flatPos = IndexingUtils.multidimensionalIntoFlatIndex(cursorPos, shape);
-	        	float val = flatArr[flatPos];
-	        	tensorCursor.get().set(val);
-			}
-		 	return (Img<T>) outputImg;
-			
-			
-			
-			
-			
-    		//FloatAccess access = new FloatBufferAccess(buf, true);
-    		//return (Img<T>) ArrayImgs.floats( access, shape );
-		} else if (this.dtype.toLowerCase().equals(BioengineTensor.INT32_STR)) {
-    		IntAccess access = new IntBufferAccess(buf, true);
-    		return (Img<T>) ArrayImgs.ints( access, shape );
-		} else if (this.dtype.toLowerCase().equals(BioengineTensor.UINT32_STR)) {
-    		IntAccess access = new IntBufferAccess(buf, true);
-    		return (Img<T>) ArrayImgs.unsignedInts( access, shape );
-		} else if (this.dtype.toLowerCase().equals(BioengineTensor.INT16_STR)) {
-    		ShortAccess access = new ShortBufferAccess(buf, true);
-    		return (Img<T>) ArrayImgs.shorts( access, shape );
-		} else if (this.dtype.toLowerCase().equals(BioengineTensor.UINT16_STR)) {
-    		ShortAccess access = new ShortBufferAccess(buf, true);
-    		return (Img<T>) ArrayImgs.unsignedShorts( access, shape );
-		} else if (this.dtype.toLowerCase().equals(BioengineTensor.BYTE_STR)) {
-    		ByteAccess access = new ByteBufferAccess(buf, true);
-    		return (Img<T>) ArrayImgs.bytes( access, shape );
-		} else if (this.dtype.toLowerCase().equals(BioengineTensor.UBYTE_STR)) {
-    		ByteAccess access = new ByteBufferAccess(buf, true);
-    		return (Img<T>) ArrayImgs.unsignedBytes( access, shape );
-		} else if (this.dtype.toLowerCase().equals(BioengineTensor.BOOL_STR)) {
-    		return (Img<T>) ArrayImgs.booleans(ByteArrayUtils.toBoolean(arr), shape );
-		} else {
-			throw new IllegalArgumentException("Output array '" + this.name +"' could not be retrieved.\n"
-					+ "Its corresponding data type '" + this.dtype + "' is not supported yet.");
-		}
+		return DecodeNumpy.build(buf, byteOrder, dtype, shape);
 	}
 	
 	/**

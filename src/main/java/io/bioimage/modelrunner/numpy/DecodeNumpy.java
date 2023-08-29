@@ -323,7 +323,7 @@ public class DecodeNumpy {
     	} else if (dtype.equals("bool")) {
     		return (Img<T>) buildBoolean(buf, byteOrder, shape);
     	} else {
-            throw new IllegalArgumentException("Unsupported tensor type: " + dtype);
+            throw new IllegalArgumentException("Unsupported data type of numpy array: " + dtype);
     	}
     }
     
