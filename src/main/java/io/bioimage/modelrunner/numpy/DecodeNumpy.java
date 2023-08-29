@@ -34,8 +34,12 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import io.bioimage.modelrunner.utils.IndexingUtils;
+import net.imglib2.Cursor;
+import net.imglib2.RandomAccess;
 import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.img.Img;
+import net.imglib2.img.array.ArrayImgFactory;
 import net.imglib2.img.array.ArrayImgs;
 import net.imglib2.img.basictypeaccess.ByteAccess;
 import net.imglib2.img.basictypeaccess.DoubleAccess;
@@ -51,6 +55,7 @@ import net.imglib2.img.basictypeaccess.nio.LongBufferAccess;
 import net.imglib2.img.basictypeaccess.nio.ShortBufferAccess;
 import net.imglib2.type.NativeType;
 import net.imglib2.type.numeric.RealType;
+import net.imglib2.type.numeric.real.FloatType;
 
 /**
  * Class to convert numpy arrays stored in npy files into ImgLib2 images
@@ -326,8 +331,20 @@ public class DecodeNumpy {
     		LongAccess access = new LongBufferAccess(buf, true);
     		return (Img<T>) ArrayImgs.longs( access, shape );
     	} else if (dtype.equals("float32")) {
-    		FloatAccess access = new FloatBufferAccess(buf, true);
-    		return (Img<T>) ArrayImgs.floats( access, shape );
+    		final ArrayImgFactory< FloatType > factory = new ArrayImgFactory<>( new FloatType() );
+	        final Img< FloatType > outputImg = (Img<FloatType>) factory.create(shape);
+	    	Cursor<FloatType> tensorCursor= outputImg.cursor();
+	    	RandomAccess<FloatType> ra = outputImg.randomAccess();
+	    	long start = System.currentTimeMillis();
+	    	float[] flatArr = ByteArrayUtils.convertIntoSignedFloat32(buf.array());
+			while (tensorCursor.hasNext()) {
+				tensorCursor.fwd();
+				long[] cursorPos = tensorCursor.positionAsLongArray();
+	        	int flatPos = IndexingUtils.multidimensionalIntoFlatIndex(cursorPos, shape);
+	        	float val = flatArr[flatPos];
+	        	tensorCursor.get().set(val);
+			}
+		 	return (Img<T>) outputImg;
     	} else if (dtype.equals("float64")) {
     		DoubleAccess access = new DoubleBufferAccess(buf, true);
     		return (Img<T>) ArrayImgs.doubles( access, shape );
