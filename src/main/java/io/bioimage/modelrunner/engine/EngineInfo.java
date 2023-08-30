@@ -1114,32 +1114,6 @@ public class EngineInfo
 	}
 	
 	/**
-	 * Find the installed engine that has a version closes to the one defined for this instance.
-	 * If this instance has version 1.4 and the only installed engine for the same DL framework
-	 * is 1.8, the result will be an engine info object with the same characteristics and different
-	 * engine version.
-	 * If the original engine was cpu gpu and there are cpu installed but not gpu, a cpu will be returned.
-	 * 
-	 * If there is an installed engine for the original EngineInfo instance, the same EngineInfo will
-	 * be returned
-	 * 
-	 * @return the most compatible engine with the one defined, if it exists
-	 * @throws IOException if no engine of the same DL framework is found
-	 */
-	public EngineInfo getEngineInfoOfTheClosestInstalledEngineVersion() throws IOException {
-		String newV = InstalledEngines.getMostCompatibleVersionForEngine(jarsDirectory, engine, version);
-		String msg = "There are no installed engines of the DL framework: "  + engine + version.split("\\.")[0];
-		if (newV == null)
-			throw new IOException(msg);
-		EngineInfo newInfo = EngineInfo.defineDLEngine(engine, newV, this.isCPU(), this.isGPU(), jarsDirectory);
-		if (!newInfo.isEngineInstalled())
-			newInfo.gpu = !this.gpu;
-		if (!newInfo.isEngineInstalled())
-			throw new IOException(msg);
-		return newInfo;
-	}
-	
-	/**
 	 * Return whether the {@link EngineInfo} object is designed to load a model 
 	 * remotely on the Bioengine or not
 	 * @return true if loading on the Bioengine is the objective or false otherwise
