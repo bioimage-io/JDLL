@@ -625,7 +625,7 @@ public class EngineInfo
 	 * @throws IllegalArgumentException if an engine that cannot be loaded together with the wanted engine
 	 * 	has already been loaded
 	 */
-	public static EngineInfo defineCompatibleDLEngine( String engine, String version, 
+	public static EngineInfo defineCompatibleDLEngineCPU( String engine, String version, 
 			String jarsDirectory ) throws IOException, IllegalArgumentException 
 	{
 		InstalledEngines manager = InstalledEngines.buildEnginesFinder(jarsDirectory);
