@@ -125,7 +125,7 @@ public class EngineLoader extends ClassLoader
 	{
 		super();
 		this.baseClassloader = classloader;
-		this.engine = engineInfo.getEngine();
+		this.engine = engineInfo.getFramework();
 		this.bioengine = engineInfo.isBioengine();
 		if (engineInfo.isBioengine()) {
 			this.engineInstance = new BioengineInterface();
