@@ -868,29 +868,6 @@ public class EngineInfo
 	}
 
 	/**
-	 * Set whether the engine supports GPU or not. Does not support GPU by
-	 * default.
-	 * 
-	 * @param support
-	 *            true if it supports GPU and false otherwise
-	 */
-	public void supportGPU( boolean support )
-	{
-		gpu = support;
-	}
-
-	/**
-	 * Set whether the engine supports CPU or not. By default supports CPU
-	 * 
-	 * @param support
-	 *            true if it supports CPU and false otherwise
-	 */
-	public void supportCPU( boolean support )
-	{
-		cpu = support;
-	}
-
-	/**
 	 * Finds the version of Deep Learning framework (engine) equivalent or
 	 * compatible with the one used to train the model. This is done because
 	 * sometimes APIs for different languages are named differently
@@ -927,7 +904,7 @@ public class EngineInfo
 	 * @param engine
 	 *            Deep Learning framework used for the model
 	 */
-	public void setEngine( String engine )
+	private void setEngine( String engine )
 	{
 		if ( engine.contentEquals( ModelWeight.getTensorflowID() ) )
 			this.engine = TENSORFLOW_ENGINE_NAME;
@@ -935,18 +912,6 @@ public class EngineInfo
 			this.engine = PYTORCH_ENGINE_NAME;
 		else if ( engine.contentEquals( ModelWeight.getOnnxID() ) )
 			this.engine = ONNX_ENGINE_NAME;
-	}
-
-	/**
-	 * Set the directory where the program will look for the Deep Learning
-	 * framework jars See {@link #jarsDirectory} for more explanation
-	 * 
-	 * @param jarsDirectory
-	 *            directory where all the folders containing the JARs are stored
-	 */
-	public void setJarsDirectory( String jarsDirectory )
-	{
-		this.jarsDirectory = jarsDirectory;
 	}
 
 	/**
@@ -1136,7 +1101,7 @@ public class EngineInfo
 	 * object is 
 	 * @return true if the engine is installed and false otherwise
 	 */
-	public boolean isEngineInstalled() {
+	private boolean isEngineInstalled() {
 		File file = new File(this.getDeepLearningVersionJarsDirectory());
 		try {
 			boolean missingJars = (DeepLearningVersion.fromFile(file).checkMissingJars().size() == 0);
