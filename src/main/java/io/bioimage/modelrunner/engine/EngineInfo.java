@@ -874,7 +874,7 @@ public class EngineInfo
 	 * 
 	 * @return corresponding compatible version of the DL framework Java version
 	 */
-	public String findCorrespondingJavaVersion()
+	private String findCorrespondingJavaVersion()
 	{
 		return this.supportedVersions.getCorrespondingJavaVersion( this.version );
 	}
@@ -1048,7 +1048,7 @@ public class EngineInfo
 	 * REturns which versions have been already been loaded to avoid errors of
 	 * overlapping versions
 	 * 
-	 * @param engine
+	 * @param framework
 	 *            the Deep Learning framework of interest
 	 * @param version
 	 *            the Deep LEarning version of interest
@@ -1057,27 +1057,27 @@ public class EngineInfo
 	 * @throws IllegalArgumentException
 	 *             if the engine is not supported yet
 	 */
-	public static String getLoadedVersions( String engine, String version ) throws IllegalArgumentException
+	public static String getLoadedVersions( String framework, String version ) throws IllegalArgumentException
 	{
-		if ( engine.equals( ModelWeight.getTensorflowID() ) && version.startsWith( "1" ) )
+		if ( framework.equals( ModelWeight.getTensorflowID() ) && version.startsWith( "1" ) )
 		{
 			return loadedTf1Version;
 		}
-		else if ( engine.equals( ModelWeight.getTensorflowID() ) && version.startsWith( "2" ) )
+		else if ( framework.equals( ModelWeight.getTensorflowID() ) && version.startsWith( "2" ) )
 		{
 			return loadedTf2Version;
 		}
-		else if ( engine.equals( ModelWeight.getTorchscriptID() ) )
+		else if ( framework.equals( ModelWeight.getTorchscriptID() ) )
 		{
 			return loadedPytorchVersion;
 		}
-		else if ( engine.equals( ModelWeight.getOnnxID() ) )
+		else if ( framework.equals( ModelWeight.getOnnxID() ) )
 		{
 			return loadedOnnxVersion;
 		}
 		else
 		{
-			throw new IllegalArgumentException( "The selected engine '" + engine + "' is not supported yet." );
+			throw new IllegalArgumentException( "The selected engine '" + framework + "' is not supported yet." );
 		}
 	}
 
