@@ -1020,31 +1020,6 @@ public class EngineInfo
 	}
 
 	/**
-	 * Sets which versions have already been loaed to avoid errors trying to
-	 * load another version from the same engine, which always crashes the
-	 * application
-	 */
-	public void setLoadedVersion()
-	{
-		if ( this.engine.equals( TENSORFLOW_ENGINE_NAME ) && this.version.startsWith( "1" ) )
-		{
-			loadedTf1Version = this.version;
-		}
-		else if ( this.engine.equals( TENSORFLOW_ENGINE_NAME ) && this.version.startsWith( "2" ) )
-		{
-			loadedTf2Version = this.version;
-		}
-		else if ( this.engine.equals( PYTORCH_ENGINE_NAME ) )
-		{
-			loadedPytorchVersion = this.version;
-		}
-		else if ( this.engine.equals( ONNX_ENGINE_NAME ) )
-		{
-			loadedOnnxVersion = this.version;
-		}
-	}
-
-	/**
 	 * REturns which versions have been already been loaded to avoid errors of
 	 * overlapping versions
 	 * 
