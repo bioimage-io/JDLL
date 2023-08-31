@@ -36,7 +36,7 @@ import io.bioimage.modelrunner.utils.Constants;
  */
 public class DeepLearningVersion
 {
-	private String engine;
+	private String framework;
     private String version;
     private String pythonVersion;
     private String os;
@@ -71,7 +71,7 @@ public class DeepLearningVersion
     	dlVersion.engineName = engineDir.getName();
     	dlVersion.allEnginesDir = engineDir.getParentFile().getAbsolutePath();
     	String[] fields = dlVersion.engineName.split("-");
-    	dlVersion.setEngine(fields[0]);
+    	dlVersion.setFramework(fields[0]);
     	dlVersion.setPythonVersion(fields[1]);
     	dlVersion.setVersion(fields[2]);
     	dlVersion.setOs(fields[3] + "-" + fields[4]);
@@ -117,7 +117,7 @@ public class DeepLearningVersion
     	AvailableEngines availableVersions = AvailableEngines.getAll();
         // To find the wanted version compare everything but the JAR files
     	List<DeepLearningVersion> versionsOfInterest = availableVersions.getVersions().stream()
-        	.filter(v -> v.getEngine().toLowerCase().equals(getEngine().toLowerCase()) 
+        	.filter(v -> v.getFramework().toLowerCase().equals(getFramework().toLowerCase()) 
         			&& v.getPythonVersion().toLowerCase().equals(getPythonVersion().toLowerCase())
         			&& v.getVersion().toLowerCase().equals(getVersion().toLowerCase())
         			&& v.getOs().toLowerCase().equals(getOs().toLowerCase())
@@ -167,7 +167,7 @@ public class DeepLearningVersion
      */
     public String folderName() {
     	if (this.engineName == null)
-    		engineName = getEngine() + "-" + getPythonVersion() + "-" + getVersion() + "-" + getOs()
+    		engineName = getFramework() + "-" + getPythonVersion() + "-" + getVersion() + "-" + getOs()
                 + (getCPU() ? "-cpu" : "") + (getGPU() ? "-gpu" : "");
     	return engineName;
     }
@@ -191,18 +191,18 @@ public class DeepLearningVersion
     /**
      * @return The API engine.
      */
-    public String getEngine()
+    public String getFramework()
     {
-        return engine;
+        return framework;
     }
 
     /**
-     * @param engine
+     * @param framework
      *        The API engine
      */
-    public void setEngine(String engine)
+    public void setFramework(String framework)
     {
-        this.engine = engine;
+        this.framework = framework;
     }
 
     /**
@@ -409,7 +409,7 @@ public class DeepLearningVersion
     @Override
     public String toString()
     {
-        return engine + " [version=" + version + ", pythonVersion=" + pythonVersion + ", os=" + os
+        return framework + " [version=" + version + ", pythonVersion=" + pythonVersion + ", os=" + os
                 + ", cpu=" + cpu + ", gpu=" + gpu + ", jars=" + jars
                 + ", rosetta=" + rosetta+ ", minJavaVersion=" + minJavaVersion + "]";
     }
@@ -419,7 +419,7 @@ public class DeepLearningVersion
     {
         final int prime = 31;
         int result = 1;
-        result = prime * result + ((engine == null) ? 0 : engine.hashCode());
+        result = prime * result + ((framework == null) ? 0 : framework.hashCode());
         result = prime * result + (cpu ? 0 : "cpu".hashCode());
         result = prime * result + ((os == null) ? 0 : os.hashCode());
         result = prime * result + ((version == null) ? 0 : version.hashCode());
@@ -439,12 +439,12 @@ public class DeepLearningVersion
         if (getClass() != obj.getClass())
             return false;
         DeepLearningVersion other = (DeepLearningVersion) obj;
-        if (engine == null)
+        if (framework == null)
         {
-            if (other.engine != null)
+            if (other.framework != null)
                 return false;
         }
-        else if (!engine.equals(other.engine))
+        else if (!framework.equals(other.framework))
             return false;
         if (cpu != other.cpu)
             return false;

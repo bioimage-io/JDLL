@@ -120,7 +120,7 @@ public class AvailableEngines
     	List<DeepLearningVersion> nVersions = new ArrayList<DeepLearningVersion>();
     	for (DeepLearningVersion vv : versions) {
     		List<DeepLearningVersion> coinc = nVersions.stream()
-    				.filter(v -> vv.getEngine().equals(v.getEngine()) 
+    				.filter(v -> vv.getFramework().equals(v.getFramework()) 
     						&& vv.getOs().equals(v.getOs())
     						&& vv.getPythonVersion().equals(v.getPythonVersion()) 
     						&& vv.getCPU() == v.getCPU() && vv.getGPU() == v.getGPU())
@@ -157,7 +157,7 @@ public class AvailableEngines
                 .filter(v -> v.getOs().equals(currentPlatform) 
                 		&& javaVersion >= v.getMinJavaVersion()
 						&& (!rosetta || (rosetta && v.getRosetta()))
-                		&& searchEngine.equals(v.getEngine())
+                		&& searchEngine.equals(v.getFramework())
                 		)
                 .collect(Collectors.toList());
         availableVersions.setVersions(filtered);
@@ -184,7 +184,7 @@ public class AvailableEngines
                 .filter(v -> v.getOs().equals(currentPlatform)
                 		&& javaVersion >= v.getMinJavaVersion()
 						&& (!rosetta || (rosetta && v.getRosetta()))
-						&& searchEngine.equals(v.getEngine()))
+						&& searchEngine.equals(v.getFramework()))
                 .map(DeepLearningVersion::getPythonVersion)
                 .collect(Collectors.toList());
         return availablePythonVersions;
@@ -250,7 +250,7 @@ public class AvailableEngines
     		return false;
     	DeepLearningVersion engine = AvailableEngines.filterByEngineForOS(searchEngine).getVersions()
 				.stream().filter(v -> {
-					if (searchEngine != null && !v.getEngine().equals(searchEngine))
+					if (searchEngine != null && !v.getFramework().equals(searchEngine))
 						return false;
 					else if (version != null && !v.getPythonVersion().equals(version))
 							return false;
@@ -297,7 +297,7 @@ public class AvailableEngines
     		return new ArrayList<DeepLearningVersion>();
     	List<DeepLearningVersion> engine = AvailableEngines.filterByEngineForOS(searchEngine).getVersions()
 				.stream().filter(v -> {
-					if (searchEngine != null && !v.getEngine().equals(searchEngine))
+					if (searchEngine != null && !v.getFramework().equals(searchEngine))
 						return false;
 					else if (version != null && !v.getPythonVersion().equals(version))
 							return false;

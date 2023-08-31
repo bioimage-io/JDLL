@@ -155,7 +155,7 @@ public class InstalledEngines {
     	if (searchEngine == null)
     		return new ArrayList<DeepLearningVersion>();
         return getDownloadedForOS().stream()
-	        .filter(v -> searchEngine.contains(v.getEngine().toLowerCase()))
+	        .filter(v -> searchEngine.contains(v.getFramework().toLowerCase()))
 			.collect(Collectors.toList());
     }	
     
@@ -176,7 +176,7 @@ public class InstalledEngines {
     	if (searchEngine == null)
     		return new ArrayList<DeepLearningVersion>();
         return getDownloadedForOS().stream()
-	        .filter(v -> searchEngine.contains(v.getEngine().toLowerCase())
+	        .filter(v -> searchEngine.contains(v.getFramework().toLowerCase())
 	        		&& v.getPythonVersion().equals(version))
 			.collect(Collectors.toList());
     }	
@@ -420,7 +420,7 @@ public class InstalledEngines {
     	if (searchEngine == null && engine != null)
     		return new ArrayList<DeepLearningVersion>();
 		List<DeepLearningVersion> filtered = getDownloadedForOS().stream().filter(vv ->{
-			if (searchEngine != null && !vv.getEngine().toLowerCase().equals(searchEngine))
+			if (searchEngine != null && !vv.getFramework().toLowerCase().equals(searchEngine))
 				return false;
 			else if (version != null && !vv.getPythonVersion().toLowerCase().equals(version.toLowerCase()))
 				return false;

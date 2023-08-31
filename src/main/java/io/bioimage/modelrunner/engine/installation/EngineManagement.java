@@ -412,8 +412,8 @@ public class EngineManagement {
 	public static Map<String, String> getListOfSingleVersionsPerFrameworkNotInRequired() {
 		List<DeepLearningVersion> vList = AvailableEngines
 				.getForCurrentOS().getVersions().stream()
-				.filter( v -> !v.getEngine().startsWith(EngineInfo.getOnnxKey())
-						&& !ENGINES_VERSIONS.keySet().contains( v.getEngine() 
+				.filter( v -> !v.getFramework().startsWith(EngineInfo.getOnnxKey())
+						&& !ENGINES_VERSIONS.keySet().contains( v.getFramework() 
 						+ "_" + v.getPythonVersion().substring(0, v.getPythonVersion().indexOf(".")) ) 
 						&& v.getOs().equals(new PlatformDetection().toString()))
 				.collect(Collectors.groupingBy(DeepLearningVersion::getPythonVersion)).values().stream()
@@ -432,7 +432,7 @@ public class EngineManagement {
 			    .distinct().collect(Collectors.toList());
 
 		Map<String, String> versionsNotInRequired = vList.stream().collect(Collectors.toMap(
-							v -> v.getEngine() + "_" + v.getPythonVersion(), v -> v.getPythonVersion()));;
+							v -> v.getFramework() + "_" + v.getPythonVersion(), v -> v.getPythonVersion()));;
 		return versionsNotInRequired;
 	}
 	
