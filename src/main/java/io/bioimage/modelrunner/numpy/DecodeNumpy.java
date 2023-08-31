@@ -52,6 +52,11 @@ import net.imglib2.type.numeric.real.DoubleType;
 import net.imglib2.type.numeric.real.FloatType;
 
 /**
+ * TODO
+ * TODO
+ * TODO ADD imglib2 to numpy file
+ * 
+ * 
  * Class to convert numpy arrays stored in npy files into ImgLib2 images
  * @author Carlos Garcia Lopez de Haro
  *
