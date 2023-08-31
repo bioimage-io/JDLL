@@ -138,14 +138,14 @@ public class AvailableEngines
      * Creates an instance containing only Deep Learning versions compatible with
      * the current system and current Java version for the engine of interest
      * 
-     * @param engine
+     * @param framework
      * 	engine name as specified by the bioimage.io, defined at
      * 	https://github.com/bioimage-io/spec-bioimage-io/blob/gh-pages/weight_formats_spec_0_4.md
      * @return The available versions instance.
      */
-    public static AvailableEngines filterByEngineForOS(String engine) {
+    public static AvailableEngines filterByFrameworkForOS(String framework) {
     	AvailableEngines availableVersions = new AvailableEngines();
-    	String searchEngine = AvailableEngines.getSupportedVersionsEngineTag(engine);
+    	String searchEngine = AvailableEngines.getSupportedFrameworkTag(framework);
     	if (searchEngine == null) {
     		availableVersions.setVersions(new ArrayList<DeepLearningVersion>());
     		return availableVersions;
@@ -168,12 +168,12 @@ public class AvailableEngines
      * Return a list of all the Python framework versions of the corresponding engine
      * that can be installed in the current OS and Java version
      * 
-     * @param engine
+     * @param framework
      * 	the engine of interest
      * @return the list of deep learning versions for the given engine
      */
-    public static List<String> getEnginePythonVersionsForOs(String engine) {
-    	String searchEngine = AvailableEngines.getSupportedVersionsEngineTag(engine);
+    public static List<String> getFrameworkPythonVersionsForOs(String framework) {
+    	String searchEngine = AvailableEngines.getSupportedFrameworkTag(framework);
     	if (searchEngine == null)
     		return new ArrayList<String>();
     	AvailableEngines availableVersions = getAll();
@@ -245,10 +245,10 @@ public class AvailableEngines
      */
     public static boolean isEngineSupportedInOS(String framework, String version, 
     		Boolean cpu, Boolean gpu) {
-    	String searchEngine = AvailableEngines.getSupportedVersionsEngineTag(framework);
+    	String searchEngine = AvailableEngines.getSupportedFrameworkTag(framework);
     	if (searchEngine == null && framework != null)
     		return false;
-    	DeepLearningVersion engine = AvailableEngines.filterByEngineForOS(searchEngine).getVersions()
+    	DeepLearningVersion engine = AvailableEngines.filterByFrameworkForOS(searchEngine).getVersions()
 				.stream().filter(v -> {
 					if (searchEngine != null && !v.getFramework().equals(searchEngine))
 						return false;
@@ -292,10 +292,10 @@ public class AvailableEngines
      */
     public static List<DeepLearningVersion> getEnginesForOsByParams(String framework, 
     		String version, Boolean cpu, Boolean gpu) {
-    	String searchEngine = AvailableEngines.getSupportedVersionsEngineTag(framework);
+    	String searchEngine = AvailableEngines.getSupportedFrameworkTag(framework);
     	if (searchEngine == null)
     		return new ArrayList<DeepLearningVersion>();
-    	List<DeepLearningVersion> engine = AvailableEngines.filterByEngineForOS(searchEngine).getVersions()
+    	List<DeepLearningVersion> engine = AvailableEngines.filterByFrameworkForOS(searchEngine).getVersions()
 				.stream().filter(v -> {
 					if (searchEngine != null && !v.getFramework().equals(searchEngine))
 						return false;
@@ -321,23 +321,23 @@ public class AvailableEngines
      * If it receives the engine name given by the BioImage.io (torchscript, tensorflow_saved_model...)
      * it produces the names specified in the resources files (pytorch, tensorflow...).
      * If it receives the later it does nothing 
-     * @param engine
+     * @param framework
      * 	an engine tag
      * @return the correct engine tag format to parse the files at resources
      */
-    public static String getSupportedVersionsEngineTag(String engine) {
-    	if (engine == null)
+    public static String getSupportedFrameworkTag(String framework) {
+    	if (framework == null)
     		return null;
-    	boolean engineExists = AvailableEngines.bioimageioToModelRunnerKeysMap().keySet().stream().anyMatch(i -> i.equals(engine));
+    	boolean engineExists = AvailableEngines.bioimageioToModelRunnerKeysMap().keySet().stream().anyMatch(i -> i.equals(framework));
     	boolean engineExists2 = AvailableEngines.bioimageioToModelRunnerKeysMap().entrySet()
-    			.stream().anyMatch(i -> i.getValue().equals(engine));
+    			.stream().anyMatch(i -> i.getValue().equals(framework));
     	final String searchEngine;
     	if (!engineExists && !engineExists2) 
     		return null;
     	else if (!engineExists2)
-    		searchEngine = AvailableEngines.bioimageioToModelRunnerKeysMap().get(engine).toLowerCase();
+    		searchEngine = AvailableEngines.bioimageioToModelRunnerKeysMap().get(framework).toLowerCase();
     	else 
-    		searchEngine = engine;
+    		searchEngine = framework;
     	return searchEngine;
     }
 

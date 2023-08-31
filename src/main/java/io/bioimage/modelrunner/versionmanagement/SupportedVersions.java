@@ -92,7 +92,7 @@ public class SupportedVersions
 	 */
 	public SupportedVersions( String engine )
 	{
-		engine = AvailableEngines.getSupportedVersionsEngineTag(engine);
+		engine = AvailableEngines.getSupportedFrameworkTag(engine);
     	if (engine == null) 
     		this.versionsDic = new LinkedTreeMap<String, Object>();
     	else
@@ -163,7 +163,7 @@ public class SupportedVersions
 	{
 		if (ALL_VERSIONS == null)
 			ALL_VERSIONS = readVersionsJson();
-		engine = AvailableEngines.getSupportedVersionsEngineTag(engine);
+		engine = AvailableEngines.getSupportedFrameworkTag(engine);
 		LinkedTreeMap< String, Object > engineVersions = ( LinkedTreeMap< String, Object > ) ALL_VERSIONS.get( engine );
 		return engineVersions;
 	}

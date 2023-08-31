@@ -151,7 +151,7 @@ public class InstalledEngines {
      * @return The available versions instance.
      */
     public List<DeepLearningVersion> getDownloadedForFramework(String framework) {
-    	String searchEngine = AvailableEngines.getSupportedVersionsEngineTag(framework);
+    	String searchEngine = AvailableEngines.getSupportedFrameworkTag(framework);
     	if (searchEngine == null)
     		return new ArrayList<DeepLearningVersion>();
         return getDownloadedForOS().stream()
@@ -172,7 +172,7 @@ public class InstalledEngines {
      * @return The available versions instance.
      */
     public List<DeepLearningVersion> getDownloadedForVersionedFramework(String framework, String version) {
-    	String searchEngine = AvailableEngines.getSupportedVersionsEngineTag(framework);
+    	String searchEngine = AvailableEngines.getSupportedFrameworkTag(framework);
     	if (searchEngine == null)
     		return new ArrayList<DeepLearningVersion>();
         return getDownloadedForOS().stream()
@@ -414,7 +414,7 @@ public class InstalledEngines {
     		String version, Boolean cpu, Boolean gpu, Boolean rosetta, Integer minJavaVersion) {
     	String searchEngine;
     	if (framework != null)
-    		searchEngine = AvailableEngines.getSupportedVersionsEngineTag(framework);
+    		searchEngine = AvailableEngines.getSupportedFrameworkTag(framework);
     	else
     		searchEngine = null;
     	if (searchEngine == null && framework != null)
