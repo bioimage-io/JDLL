@@ -271,8 +271,7 @@ public class Model
 			}
 		}
 		if (info == null)
-			throw new IOException("Please install a compatible engine with the model weights. "
-					+ "Both the major and minor versions of the engine need to be the same as the weigths. "
+			throw new IOException("Please install the engines defined by the model weights. "
 					+ "The model weights are: " + descriptor.getWeights().getEnginesListWithVersions());
 		return Model.createDeepLearningModel(bmzModelFolder, modelSource, info);
 	}
