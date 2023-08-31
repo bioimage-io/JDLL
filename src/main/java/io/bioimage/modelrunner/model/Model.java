@@ -320,7 +320,7 @@ public class Model
 	 * @throws Exception
 	 *             if the directory is not found
 	 */
-	public void setEngineClassLoader( ClassLoader classLoader ) throws LoadEngineException, Exception
+	private void setEngineClassLoader( ClassLoader classLoader ) throws LoadEngineException, Exception
 	{
 		this.engineClassLoader = EngineLoader.createEngine(
 				( classLoader == null ) ? Thread.currentThread().getContextClassLoader() : classLoader, engineInfo );
@@ -411,17 +411,6 @@ public class Model
 	public String getModelSource()
 	{
 		return this.modelSource;
-	}
-
-	/**
-	 * Sets the model name
-	 * 
-	 * @param modelName
-	 *            the name of the model
-	 */
-	public void setModelName( String modelName )
-	{
-		this.modelName = modelName;
 	}
 
 	/**
