@@ -657,7 +657,7 @@ public class EngineManagement {
 		InstalledEngines manager = InstalledEngines.buildEnginesFinder(enginesDir);
 		String engine = ww.getWeightsFormat();
 		String version = ww.getTrainingVersion();
-		List<DeepLearningVersion> vs = manager.getDownloadedForVersionedEngine(engine, version);
+		List<DeepLearningVersion> vs = manager.getDownloadedForVersionedFramework(engine, version);
 		if (vs.size() != 0)
 			return true;
 		if (AvailableEngines.isEngineSupportedInOS(engine, version, true, true)) {

@@ -209,9 +209,9 @@ public class ModelWeight
     		List<DeepLearningVersion> copiesOfVersion = new ArrayList<DeepLearningVersion>();
 			try {
 				InstalledEngines installed = InstalledEngines.buildEnginesFinder();
-				List<String> downloadedVersions = installed.getDownloadedPythonVersionsForEngine(engine);
+				List<String> downloadedVersions = installed.getDownloadedPythonVersionsForFramework(engine);
 	    		String executionVersion = VersionStringUtils.getMostCompatibleEngineVersion(trainingVersion, downloadedVersions, engine);
-	    		copiesOfVersion = installed.getDownloadedForEngine(engine)
+	    		copiesOfVersion = installed.getDownloadedForFramework(engine)
 	    		.stream().filter(v -> v.getPythonVersion().equals(executionVersion)).collect(Collectors.toList());
     		} catch (IOException e) {
 				e.printStackTrace();
@@ -247,7 +247,7 @@ public class ModelWeight
     	List<String> downloadedVersions = new ArrayList<String>();
 		try {
 			InstalledEngines installed = InstalledEngines.buildEnginesFinder();
-	    	downloadedVersions = installed.getDownloadedPythonVersionsForEngine(engine);
+	    	downloadedVersions = installed.getDownloadedPythonVersionsForFramework(engine);
 		} catch (IOException e) {
 			e.printStackTrace();
 		}

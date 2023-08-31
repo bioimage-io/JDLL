@@ -629,10 +629,10 @@ public class EngineInfo
 			String jarsDirectory ) throws IOException, IllegalArgumentException 
 	{
 		InstalledEngines manager = InstalledEngines.buildEnginesFinder(jarsDirectory);
-		String compatibleVersion = manager.getMostCompatibleVersionForEngine(framework, version);
+		String compatibleVersion = manager.getMostCompatibleVersionForFramework(framework, version);
 		if (compatibleVersion == null)
 			return null;
-		List<DeepLearningVersion> vv = manager.getDownloadedForVersionedEngine(framework, compatibleVersion);
+		List<DeepLearningVersion> vv = manager.getDownloadedForVersionedFramework(framework, compatibleVersion);
 		boolean gpu = vv.stream().filter(v -> v.getGPU()).findFirst().orElse(null) != null;
 		return EngineInfo.defineDLEngine(framework, compatibleVersion, true, gpu, jarsDirectory);
 	}
@@ -791,10 +791,10 @@ public class EngineInfo
 		String engine = weight.getWeightsFormat();
 		String version = weight.getTrainingVersion();
 		InstalledEngines manager = InstalledEngines.buildEnginesFinder(enginesDir);
-		compatibleVersion = manager.getMostCompatibleVersionForEngine(engine, version);
+		compatibleVersion = manager.getMostCompatibleVersionForFramework(engine, version);
 		if (compatibleVersion == null)
 			return null;
-		List<DeepLearningVersion> vv = manager.getDownloadedForVersionedEngine(engine, compatibleVersion);
+		List<DeepLearningVersion> vv = manager.getDownloadedForVersionedFramework(engine, compatibleVersion);
 		boolean gpu = vv.stream().filter(v -> v.getGPU()).findFirst().orElse(null) != null;
 		return EngineInfo.defineDLEngine(engine, compatibleVersion, true, gpu, enginesDir);
 	}
@@ -845,7 +845,7 @@ public class EngineInfo
 		InstalledEngines manager = InstalledEngines.buildEnginesFinder(enginesDir);
 		if (version == null)
 			return null;
-		List<DeepLearningVersion> vv = manager.getDownloadedForVersionedEngine(engine, version);
+		List<DeepLearningVersion> vv = manager.getDownloadedForVersionedFramework(engine, version);
 		if (vv.size() == 0)
 			return null;
 		boolean gpu = vv.stream().filter(v -> v.getGPU()).findFirst().orElse(null) != null;
