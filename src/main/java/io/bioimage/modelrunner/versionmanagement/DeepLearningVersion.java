@@ -114,9 +114,9 @@ public class DeepLearningVersion
      * @return the number of candidates that can define the wanted version, there should only be one
      */
     private List<DeepLearningVersion> getCandidates() {
-    	AvailableEngines availableVersions = AvailableEngines.getAll();
+    	List<DeepLearningVersion> availableVersions = AvailableEngines.getAll();
         // To find the wanted version compare everything but the JAR files
-    	List<DeepLearningVersion> versionsOfInterest = availableVersions.getVersions().stream()
+    	List<DeepLearningVersion> versionsOfInterest = availableVersions.stream()
         	.filter(v -> v.getFramework().toLowerCase().equals(getFramework().toLowerCase()) 
         			&& v.getPythonVersion().toLowerCase().equals(getPythonVersion().toLowerCase())
         			&& v.getVersion().toLowerCase().equals(getVersion().toLowerCase())

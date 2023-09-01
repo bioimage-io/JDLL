@@ -94,19 +94,18 @@ public class AvailableEngines
      * 
      * @return The available versions instance.
      */
-    public static AvailableEngines getForCurrentOS()
+    public static List<DeepLearningVersion> getForCurrentOS()
     {
-        AvailableEngines availableVersions = getAll();
         String currentPlatform = new PlatformDetection().toString();
         boolean rosetta = new PlatformDetection().isUsingRosseta();
         int javaVersion = PlatformDetection.getJavaVersion();
-        availableVersions.setVersions(availableVersions.getVersions().stream()
+        List<DeepLearningVersion> list = getAll().stream()
                 .filter(v -> v.getOs().equals(currentPlatform)
                 		&& javaVersion >= v.getMinJavaVersion()
 						&& (!rosetta || (rosetta && v.getRosetta())))
-                .collect(Collectors.toList()));
-        availableVersions.getVersions().stream().forEach(x -> x.setEnginesDir());
-        return availableVersions;
+                .collect(Collectors.toList());
+        list.stream().forEach(x -> x.setEnginesDir());
+        return list;
     }
     
     /**
@@ -143,17 +142,17 @@ public class AvailableEngines
      * 	https://github.com/bioimage-io/spec-bioimage-io/blob/gh-pages/weight_formats_spec_0_4.md
      * @return The available versions instance.
      */
-    public static AvailableEngines filterByFrameworkForOS(String framework) {
+    public static List<DeepLearningVersion> filterByFrameworkForOS(String framework) {
     	AvailableEngines availableVersions = new AvailableEngines();
     	String searchEngine = AvailableEngines.getSupportedFrameworkTag(framework);
     	if (searchEngine == null) {
     		availableVersions.setVersions(new ArrayList<DeepLearningVersion>());
-    		return availableVersions;
+    		return new ArrayList<DeepLearningVersion>();
     	}
         String currentPlatform = new PlatformDetection().toString();
         int javaVersion = PlatformDetection.getJavaVersion();
         boolean rosetta = new PlatformDetection().isUsingRosseta();
-        List<DeepLearningVersion> filtered = getAll().getVersions().stream()
+        List<DeepLearningVersion> filtered = getAll().stream()
                 .filter(v -> v.getOs().equals(currentPlatform) 
                 		&& javaVersion >= v.getMinJavaVersion()
 						&& (!rosetta || (rosetta && v.getRosetta()))
@@ -161,7 +160,7 @@ public class AvailableEngines
                 		)
                 .collect(Collectors.toList());
         availableVersions.setVersions(filtered);
-        return availableVersions;
+        return availableVersions.getVersions();
     }
     
     /**
@@ -176,11 +175,10 @@ public class AvailableEngines
     	String searchEngine = AvailableEngines.getSupportedFrameworkTag(framework);
     	if (searchEngine == null)
     		return new ArrayList<String>();
-    	AvailableEngines availableVersions = getAll();
         String currentPlatform = new PlatformDetection().toString();
         boolean rosetta = new PlatformDetection().isUsingRosseta();
         int javaVersion = PlatformDetection.getJavaVersion();
-        List<String> availablePythonVersions = availableVersions.getVersions().stream()
+        List<String> availablePythonVersions = getAll().stream()
                 .filter(v -> v.getOs().equals(currentPlatform)
                 		&& javaVersion >= v.getMinJavaVersion()
 						&& (!rosetta || (rosetta && v.getRosetta()))
@@ -193,15 +191,15 @@ public class AvailableEngines
     /**
      * Loads all available versions from {@code availableTFVersion.json} file.
      * 
-     * @return The instance of all available versions.
+     * @return a list with all the versions supported.
      */
-    public static AvailableEngines getAll()
+    public static List<DeepLearningVersion> getAll()
     {
         BufferedReader br = new BufferedReader(new InputStreamReader(
                 AvailableEngines.class.getClassLoader().getResourceAsStream("availableDLVersions.json")));
         Gson g = new Gson();
         AvailableEngines availableVersions = g.fromJson(br, AvailableEngines.class);
-        return availableVersions;
+        return availableVersions.getVersions();
     }
 
     private List<DeepLearningVersion> versions;
@@ -248,7 +246,7 @@ public class AvailableEngines
     	String searchEngine = AvailableEngines.getSupportedFrameworkTag(framework);
     	if (searchEngine == null && framework != null)
     		return false;
-    	DeepLearningVersion engine = AvailableEngines.filterByFrameworkForOS(searchEngine).getVersions()
+    	DeepLearningVersion engine = AvailableEngines.filterByFrameworkForOS(searchEngine)
 				.stream().filter(v -> {
 					if (searchEngine != null && !v.getFramework().equals(searchEngine))
 						return false;
@@ -295,7 +293,7 @@ public class AvailableEngines
     	String searchEngine = AvailableEngines.getSupportedFrameworkTag(framework);
     	if (searchEngine == null)
     		return new ArrayList<DeepLearningVersion>();
-    	List<DeepLearningVersion> engine = AvailableEngines.filterByFrameworkForOS(searchEngine).getVersions()
+    	List<DeepLearningVersion> engine = AvailableEngines.filterByFrameworkForOS(searchEngine)
 				.stream().filter(v -> {
 					if (searchEngine != null && !v.getFramework().equals(searchEngine))
 						return false;
