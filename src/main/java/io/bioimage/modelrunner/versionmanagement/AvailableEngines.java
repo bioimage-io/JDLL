@@ -92,7 +92,7 @@ public class AvailableEngines
      * Creates an instance containing only Deep Learning versions 
      * compatible with the current system and current Java version.
      * 
-     * @return The available versions instance.
+     * @return a list of available versions for the current OS.
      */
     public static List<DeepLearningVersion> getForCurrentOS()
     {
@@ -140,13 +140,11 @@ public class AvailableEngines
      * @param framework
      * 	engine name as specified by the bioimage.io, defined at
      * 	https://github.com/bioimage-io/spec-bioimage-io/blob/gh-pages/weight_formats_spec_0_4.md
-     * @return The available versions instance.
+     * @return a list of available versions for the current OS and the framework wanted.
      */
     public static List<DeepLearningVersion> filterByFrameworkForOS(String framework) {
-    	AvailableEngines availableVersions = new AvailableEngines();
     	String searchEngine = AvailableEngines.getSupportedFrameworkTag(framework);
     	if (searchEngine == null) {
-    		availableVersions.setVersions(new ArrayList<DeepLearningVersion>());
     		return new ArrayList<DeepLearningVersion>();
     	}
         String currentPlatform = new PlatformDetection().toString();
@@ -159,8 +157,7 @@ public class AvailableEngines
                 		&& searchEngine.equals(v.getFramework())
                 		)
                 .collect(Collectors.toList());
-        availableVersions.setVersions(filtered);
-        return availableVersions.getVersions();
+        return filtered;
     }
     
     /**
