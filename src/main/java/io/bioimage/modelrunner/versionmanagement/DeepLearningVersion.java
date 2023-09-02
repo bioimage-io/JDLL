@@ -183,7 +183,7 @@ public class DeepLearningVersion
     /**
      * @param gpu whether GPU is supported by the version or not
      */
-    public void setGPU(boolean gpu)
+    private void setGPU(boolean gpu)
     {
         this.gpu = gpu;
     }
@@ -200,7 +200,7 @@ public class DeepLearningVersion
      * @param framework
      *        The API engine
      */
-    public void setFramework(String framework)
+    private void setFramework(String framework)
     {
         this.framework = framework;
     }
@@ -217,7 +217,7 @@ public class DeepLearningVersion
      * @param version
      *        The API version
      */
-    public void setVersion(String version)
+    private void setVersion(String version)
     {
         this.version = version;
     }
@@ -234,7 +234,7 @@ public class DeepLearningVersion
      * @param pythonVersion
      *        The Python library version.
      */
-    public void setPythonVersion(String pythonVersion)
+    private void setPythonVersion(String pythonVersion)
     {
         this.pythonVersion = pythonVersion;
     }
@@ -266,7 +266,7 @@ public class DeepLearningVersion
      * @param os
      *        The target operating system.
      */
-    public void setOs(String os)
+    private void setOs(String os)
     {
         this.os = os;
     }
@@ -283,7 +283,7 @@ public class DeepLearningVersion
      * @param cpu
      *        whether CPU is supported by the version or not
      */
-    public void setCPU(boolean cpu)
+    private void setCPU(boolean cpu)
     {
         this.cpu = cpu;
     }
@@ -330,7 +330,7 @@ public class DeepLearningVersion
      * @param jars
      *        The list of associated artifacts for this version.
      */
-    public void setJars(List<String> jars)
+    private void setJars(List<String> jars)
     {
         this.jars = 
         		jars.stream().filter(jar -> jar != null)
