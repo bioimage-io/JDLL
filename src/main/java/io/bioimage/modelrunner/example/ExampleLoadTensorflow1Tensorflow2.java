@@ -30,6 +30,7 @@ import io.bioimage.modelrunner.tensor.Tensor;
 
 import net.imglib2.img.Img;
 import net.imglib2.img.ImgFactory;
+import net.imglib2.img.array.ArrayImgFactory;
 import net.imglib2.img.cell.CellImgFactory;
 import net.imglib2.type.NativeType;
 import net.imglib2.type.numeric.RealType;
@@ -84,7 +85,7 @@ public class ExampleLoadTensorflow1Tensorflow2 {
 		// Load the corresponding model
 		Model model = loadModel(modelFolder, modelSource, engineInfo);
 		// Create an image that will be the backend of the Input Tensor
-		final ImgFactory< FloatType > imgFactory = new CellImgFactory<>( new FloatType(), 5 );
+		final ImgFactory< FloatType > imgFactory = new ArrayImgFactory<>( new FloatType() );
 		final Img< FloatType > img1 = imgFactory.create( 1, 512, 512, 1 );
 		// Create the input tensor with the nameand axes given by the rdf.yaml file
 		// and add it to the list of input tensors
