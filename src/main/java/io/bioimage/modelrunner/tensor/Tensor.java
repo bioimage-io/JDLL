@@ -182,7 +182,7 @@ public final class Tensor< T extends RealType< T > & NativeType< T > >
 	 * @return the tensor
 	 */
 	public static  < T extends RealType< T > & NativeType< T > > 
-								Tensor< T > buildEmptyTensorAndAllocateMemory( final String tensorName, 
+								Tensor< T > buildBlankTensor( final String tensorName, 
 										final String axes, final long[] shape,
 										final T dtype)
 	{
