@@ -11,11 +11,28 @@ It is intended for developers and was originally built by the DeepIcy team as th
 
 **FOR A MORE COMPREHENSIVE AND COMPLETE EXPLANATION OF JDLL, PLEASE VISIT THE [WIKI](https://github.com/bioimage-io/JDLL/wiki).**
 
+# Supported engines
+
+Currently, the following frameworks are supported:
+
+| Framework                          | Source code                                                    |
+|---------------------------------|----------------------------------------------------------------|
+| PyTorch                         | https://github.com/bioimage-io/pytorch-java-interface          |
+| Tensorflow 1                    | https://github.com/bioimage-io/tensorflow-1-java-interface     |
+| Tensorflow 2 API 0.2.0          | https://github.com/bioimage-io/tensorflow-2-java-interface-0.2 |
+| Tensorflow 2 all APIs but 0.2.0 | https://github.com/bioimage-io/tensorflow-2-java-interface     |
+| Onnx                            | https://github.com/bioimage-io/onnx-java-interface             |
+
+The information about the engines supported currently by the model runner, for which OS and architectures and which JAR files are required for each of the engines is stored in [this json file](https://github.com/bioimage-io/model-runner-java/blob/main/src/main/resources/availableDLVersions.json) and can be found [here](https://github.com/bioimage-io/JDLL/wiki/List-of-supported-engines).
+
+Note that the model runner will be in **constant development** and that it is open to community collaboration, so **pull requests** to the official repository of the model runner to improve functionality or to add new engines are **very welcomed**.
+
+
 # Quickstart
 
 ## Setting Up the Model Runner
 
-1. Download the dependency and include it in your project
+Download the dependency and include it in your project
 
    In order to benefit from the library, include the dependency in your code. The dependency can be added manually or using a dependency manager such as Maven. If you are using Maven, add the following dependency to the project pom file:
 
@@ -36,23 +53,34 @@ It is intended for developers and was originally built by the DeepIcy team as th
    </repository>
    ```
 ## Getting a model
+If a model from the supported by JDLL is already available you can skip this step. Note that for Tensorflow the models need to be saved in the [`SavdModel`](https://www.tensorflow.org/guide/saved_model) format.
+
+If no model is available, a good starting point is downloading any of the models of the [Bioimage.io respository](https://bioimage.io/#/). The download can be done manually or using JDLL. Bioimag.io is seamlessly integrated into JDLL, offering multiple methods to effortlessly mange and use its models.
+
+Here is an emaple of how JDLL can be used to download any Bioimage.io model, in this case the `B. Sutilist bacteria segmentation - Widefield microscopy - 2D UNet`(https://bioimage.io/#/?tags=placid-llama&id=10.5281%2Fzenodo.7261974) model.
+```java
+// Name of the model of interest, note that each model is unique. The names are case sensitive.
+String modelName = "B. Sutilist bacteria segmentation - Widefield microscopy - 2D UNet";
+// Directory where the model folder will be downloaded
+String modelsDir = "/path/to/wanted/model/directory";
+
+// First create an instance of the Bioimage.io repository
+BioimageioRepo br = BioimageioRepo.connect();
+try {
+	br.downloadByName(modelName, modelsDir);
+        System.out.println("Great success!");
+} catch (IOException | InterruptedException e) {
+	// If the download is interrumpted or any of the model files cannot be downloaded
+	// and exception will be thrown
+	e.printStackTrace();
+        System.out.println("Error downloading the model :(");
+}
+```
+Output:
+```
+Great success!
+```
 ## Installing the engine
-### Supported engines
-
-Currently, the following frameworks are supported:
-
-| Framework                          | Source code                                                    |
-|---------------------------------|----------------------------------------------------------------|
-| PyTorch                         | https://github.com/bioimage-io/pytorch-java-interface          |
-| Tensorflow 1                    | https://github.com/bioimage-io/tensorflow-1-java-interface     |
-| Tensorflow 2 API 0.2.0          | https://github.com/bioimage-io/tensorflow-2-java-interface-0.2 |
-| Tensorflow 2 all APIs but 0.2.0 | https://github.com/bioimage-io/tensorflow-2-java-interface     |
-| Onnx                            | https://github.com/bioimage-io/onnx-java-interface             |
-
-The information about the engines supported currently by the model runner, for which OS and architectures and which JAR files are required for each of the engines is stored in [this json file](https://github.com/bioimage-io/model-runner-java/blob/main/src/main/resources/availableDLVersions.json) and can be found [here](https://github.com/bioimage-io/JDLL/wiki/List-of-supported-engines).
-
-Note that the model runner will be in **constant development** and that it is open to community collaboration, so **pull requests** to the official repository of the model runner to improve functionality or to add new engines are **very welcomed**.
-
 ## Creating the tensors
 
 ## Loading the model
