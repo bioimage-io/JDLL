@@ -159,11 +159,11 @@ public class PlatformDetection
     	return getOs().equals(PlatformDetection.OS_OSX);
     }
     
-    public static String getPythonArchDetectionCommand() {
+    private static String getPythonArchDetectionCommand() {
     	return PYTHON_ARCH_DETECTION_COMMAND;
     }
     
-    public static String executeUnameM() {
+    private static String executeUnameM() {
     	if (UNAME_M != null)
     		return UNAME_M;
     	Process proc;
@@ -177,7 +177,7 @@ public class PlatformDetection
 		return UNAME_M;
     }
 	
-	public static String waitProcessExecutionAndGetOutputText(Process proc) throws IOException {
+    private static String waitProcessExecutionAndGetOutputText(Process proc) throws IOException {
 		BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(proc.getInputStream()));
 		String inputStreamTxt = "";
 		boolean first = true;
@@ -195,7 +195,7 @@ public class PlatformDetection
 		return inputStreamTxt;
 	}
 	
-	public static String readBufferedReaderIntoStringIntoString(BufferedReader input) throws IOException {
+	private static String readBufferedReaderIntoStringIntoString(BufferedReader input) throws IOException {
 		String text = "";
 		String line;
 	    while ((line = input.readLine()) != null) {
