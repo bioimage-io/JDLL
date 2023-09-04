@@ -80,7 +80,7 @@ Output:
 ```
 Great success!
 ```
-More information on how to download  Bioimage.io models can be found [here]().
+More information on how to download  Bioimage.io models can be found [here](https://github.com/bioimage-io/JDLL/wiki/Engine-Installation-(EngineManagement)).
 
 
 
@@ -88,6 +88,42 @@ More information on how to download  Bioimage.io models can be found [here]().
 JDLL is installed empty. Several models might require different Deep Learning framework versions, each of them consuming considerable amounts of disk space. In order to make JDLL setup light and fast JDLL is installed without default DL engines. The user can then get the Dl engines that they want depending on their needs.
 
 JDLL provides the needed methods to install the wanted engines in an easy manner. Following the above example, find below some code that can be used to install a DL engine. As it can be observed the model that was downloaded [supports Tensorflow 2 and Keras weights](https://github.com/bioimage-io/collection-bioimage-io/blob/19ea59e662410c3ee49b7da184730919336d7568/rdfs/10.5281/zenodo.7261974/7782776/rdf.yaml#L146). Keras is not supported so in order to load and run the model, Tensorflow weights need to be installed.
+
+```
+String framework = "tensorflow";
+String version = "2.11.0";
+boolean cpu = true;
+boolean gpu = true;
+
+String enginesDir = "/path/to/wanted/engines/dir";
+boolean installed = EngineManagement.installEngineWithArgsInDir(framework, version, cpu, gpu, enginesDir);
+if (installed)
+	System.out.println("Great success!");
+else
+	System.out.println("Error installing");
+```
+Output:
+```
+Great success!
+```
+
+As previously mentioned, JDLL integrates deeply with Bioimage.io models. An easier way to install the engines needed for Bioimage.io models is shown in the code below.
+
+In the example it is shown how simply providing the name of the model of interest, JDLL will know which engines to install.
+```java
+String modelName = "B. Sutilist bacteria segmentation - Widefield microscopy - 2D UNet";
+String enginesDir = "/path/to/wanted/engines/dir";
+boolean installed =  installEnginesForModelByNameinDir(modelName, enginesDir)
+if (installed)
+	System.out.println("Great success!");
+else
+	System.out.println("Error installing");
+```
+Output:
+```
+Great success!
+```
+The Wiki convers extensively engine installation ([here](https://github.com/bioimage-io/JDLL/wiki/Understanding-engine-installation) and [here](https://github.com/bioimage-io/JDLL/wiki/Engine-Installation-(EngineManagement))). In addtion JDLL also includes methods to manage the engines and know: [the information about each engine](https://github.com/bioimage-io/JDLL/wiki/Engine-Management-I-(DeepLearningVersion)), [which engines are supported](https://github.com/bioimage-io/JDLL/wiki/Engine-Management-II-(AvailableEngines)) and [which engines have already been installed](https://github.com/bioimage-io/JDLL/wiki/Engine-Management-III-(InstalledEngines))
 
 
 
