@@ -259,97 +259,9 @@ outputTensors.add(outputTensor);
 model.runModel(inputTensors, outputTensors);
 // The results of applying inference will be // stored in the Tensors of the list ‘outputTensors’ variable
 ```
-
-## Downloading and running Bioimage.io models
-
-   JDLL also facilitates the use of [Bioimage.io](https://bioimage.io/#/) models. It integrates methods to download the models and to load them directly using the information from the rdf.yaml file.
    
-   ### 1. Download
-   JDLL can connect to the web repository of the Bioimage.io and retreive information about every model that exists there.
-   
-      // Create an instance of the BioimageRepo object
-		BioimageioRepo br = BioimageioRepo.connect();
-      boolean verbose = false;
-      // Retrieve a map where the key corresponds to the online URL to the rdf.yaml 
-      // specs file of a model and the value corresponds to the information contained in the file
-		Map<Path, ModelDescriptor> models = br.listAllModels(verbose);
-   
-   The rdf.yaml file contains some cualitative data such as a short descrption of the model, its name, the model ID or a couple of references and citations, but also contains technical information that enables loading the model.
-   
-   Once a model has been selected, it can be downloaded by its name with:
-   
-      String name = "Neuron Segmentation in EM (Membrane Prediction)";
-      String modelsDirectory = "/path/to/models/dir";
-      br.downloadByName(name, modelsDirectory);
-   
-   It also can be downloaded by its ID:
-   
-      String modelID = "10.5281/zenodo.5874741/5874742";
-      String modelsDirectory = "/path/to/models/dir";
-      br.downloadModelByID(modelID, modelsDirectory);
       
-   By the URL of its rdf.yaml specs file (the key of the `models` map:
    
-      String rdfSource = "https://bioimage-io.github.io/collection-bioimage-io/rdfs/10.5281/zenodo.5874741/5874742/rdf.yaml";
-      String modelsDirectory = "/path/to/models/dir";
-      br.downloadByRdfSource(rdfSource, modelsDirectory);
-      
-   Or by the JDLL Java object `ModelDescriptor`, which contains the info of the model. This object is the value in the `models` map:
-   
-      String rdfSource = "https://bioimage-io.github.io/collection-bioimage-io/rdfs/10.5281/zenodo.5874741/5874742/rdf.yaml";
-      ModelDescriptor descriptor = models.get(rdfSource);
-      String modelsDirectory = "/path/to/models/dir";
-      br.downloadModel(descriptor, modelsDirectory);
-      
-   ### 2. Load and run Bioimage.io models
-   
-   JDLL facilitates the use of Bioimage.io models making easier to use them. This is possible due to the [rdf.yaml specs file](https://github.com/bioimage-io/spec-bioimage-io/blob/gh-pages/model_spec_latest.md), as it contains all the technical info needed to load a model.
-   
-   Loading a Bioimage.io model is very easy.
-   
-   ```
-   String modelPath = "/path/to/model";
-   // Note that this is not the path to the actual engine that we want to use, but the
-   // path to the directory where all the engine folders are located.
-   // Using the example from section [Manage DL engines](https://github.com/bioimage-io/JDLL/edit/main/README.md#manage-the-dl-engines)
-   // enginesDir would be C:\Users\carlos\icy\engines
-   String enginesDir = "/path/to/engines";
-   Model bioiamgeioModel = Model.createBioimageioModel(modelPath, enginesDir);
-   ```
-   
-   Regard that `Model.createBioimageioModel(modelPath, enginesDir)` loads the model only if there is a compatible engine installed in the computer.
-   Compatible means that the Deep Learning framework has to be the same and that the major version is the same (for example Pytorch 1.13.1 and 1.11.0 are compatible but Tensorflow 1.15.0 and Tensorflow 2.7.0 are NOT compatible).
-   
-   I not compatible engine is found, an exception will be thrown asking to install a compatible engine.
-   
-   In order to find if a compatible engine exists:
-   
-   ```
-   String enginesDir = "/path/to/engines/dir";
-   String engine = "tensorflow";
-   String version = "2.7.0";
-   InstalledEngines manager = InstalledEngines.buildEnginesFinder(enginesDir);
-   String compatibleVersion = manager.getMostCompatibleVersionForEngine(engine, version);
-   ```
-   
-   where `compatibleVersion` will be the most compatible version installed of that engine. If the same engine wanted is installed, `version`and `compatibleVersion` will be the same. However, if no comptible version is found, `compatibleVersion` will be `null`.
-   
-   If we want to load the model using the exact versions of the engines specified in the rdf.yaml file:
-   
-   ```
-   String modelPath = "/path/to/model";
-   // Note that this is not the path to the actual engine that we want to use, but the
-   // path to the directory where all the engine folders are located.
-   // Using the example from section [Manage DL engines](https://github.com/bioimage-io/JDLL/edit/main/README.md#manage-the-dl-engines)
-   // enginesDir would be C:\Users\carlos\icy\engines
-   String enginesDir = "/path/to/engines";
-   Model bioiamgeioModel = Model.createBioimageioModelWithExactWeigths(modelPath, enginesDir);
-   ```
-   
-   If the exact engine version is not installed, the method will throw an exception asking to install it.
-   
-   Once the model is loaded we can continue the steps explained above [here](https://github.com/bioimage-io/JDLL#2-creating-agnostic-tensors) and [here](https://github.com/bioimage-io/JDLL#3-making-inference).
-
 ## Examples
 
 * [ExampleLoadAndRunModel](https://github.com/bioimage-io/model-runner-java/blob/main/src/main/java/io/bioimage/modelrunner/example/ExampleLoadAndRunModel.java) (PyTorch)
