@@ -161,7 +161,23 @@ More information about tensors can be found in the [JDLL wiki](https://github.co
 
 
 ## 5. Running the model
+Once the model has been loaded and the input and output tensors have been created. Running the model is simple. The input tensors should be added to a `List<?>` in the same order the model expects. Same for the ouptuts in another `List<?>`.
+```
+List<Tensor<?>> inputList = new ArrayList<List<Tensor<?>>>();
+List<Tensor<?>> outputputList = new ArrayList<List<Tensor<?>>>();
 
+inputList.add(inputTensor);
+outputputList.add(outputEmptyTensor);
+System.out.println("Ouptut tensor is empty: " + outputEmptyTensor.isEmpty());
+
+model.runModel(inputList, outputputList);
+System.out.println("Ouptut tensor after inference is empty: " + outputEmptyTensor.isEmpty());
+```
+Output:
+```
+Ouptut tensor is empty: true
+Ouptut tensor after inference is empty: false
+```
 
 
 ## 6. Closing the model and the tensors
