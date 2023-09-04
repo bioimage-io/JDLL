@@ -157,6 +157,79 @@ More information about tensors can be found in the [JDLL wiki](https://github.co
 
 
 ## 4. Loading the model
+Before making inference with a model, it needs to be loaded. Similar to [tensor creation](https://github.com/bioimage-io/JDLL#3-creating-the-tensors) JDLL provides an unified way to load models from any DL framework.
+
+Loading a model implies first defining which engine is going to be used for the model and then loading the model. The engine is defined as an instance of the class `io.bioimage.modelrunner.engine.EngineInfo`. The engine used to load a model can be either the exact same version wanted, or a [compatible](https://github.com/bioimage-io/JDLL/wiki/Potential-errors#compatible-versions) one. Using the exact same version guarantees that the model loading and inference are going to be smooth but implies that many more engines will have to be installed.
+
+An example of defining the `EngineInfo` instance needed to load a model is shown below. The engine required in this code is required to be the exact engine wanted.
+
+Note that `String enginesDir` is the directory where the wanted engines have been installed. [Click here and look at the example in the redirected section](https://github.com/bioimage-io/JDLL#2-installing-dl-engines).
+```java
+String framework = "tensorflow";
+String version = "2.11.0";
+boolean cpu = true;
+boolean gpu = true;
+String enginesDir = "/path/to/wanted/engines/dir";
+
+EngineInfo enigneInfoExact = EngineInfo.defineDLEngine(framework, version, cpu, gpu, enginesDir);
+```
+
+In order to require a compatible engine, not the exact one:
+
+```java
+String framework = "tensorflow";
+String version = "2.11.0";
+boolean cpu = true;
+boolean gpu = true;
+String enginesDir = "/path/to/wanted/engines/dir";
+
+EngineInfo enigneInfoCompat = EngineInfo.defineCompatibleDLEngine(framework, version, cpu, gpu, enginesDir);
+```
+
+The developer acknowledges that the class `io.bioimage.modelrunner.engine.EngineInfo` can be difficult to understand. This is why the [wiki contains a detailed sections trying to explain it in an understandable manner with several examples](https://github.com/bioimage-io/JDLL/wiki/Load-and-run-models-I-(EngineInfo)).
+
+Once the `EngineInfo` instance has been created, loading the model is easy. The only parameters needed now are the path to the `model folder` and the path to the `source file`.
+The model folder is the folder that contains the `.pb` file in Tensorflow, the `.pt` file in Pytorch and the `.onnx` file in Onnx. The source file is not needed for Tensorflow, is the path to the `.pt` file in Pytorch and the path to the `.onnx` file in Onnx.
+
+Then with the arguments `String modelFolder`, `String modelSource` and the previously created `EngineInfo enigneInfoExact` or `EngineInfo enigneInfoCompat` an instance of `io.bioimage.modelrunner.model.Model` can be created. Tha object then can be loaded and run inference.
+
+
+```
+//Path to the example model folder
+String modelFolder = "path/to/models/dir/B. Sutilist bacteria segmentation - Widefield microscopy - 2D UNet";
+String modelSource = null; // Not needed in Tensorflow
+
+Model model = Model.create(modelFolder, modelSource, enigneInfoCompat);
+model.loadModel();
+
+System.out.println("Great sucess!");
+```
+
+Output:
+```
+Great sucess!
+```
+
+JDLL tight integration with Bioimage.io models makes loading them easier. To load a Bioimage.io model it is not necessary to create the `EngineInfo` object.
+
+For Bioimage.io models, loading is reduced to the next example:
+```
+// Path to the Bioimage.io model folder
+String modelFolder = "path/to/models/dir/B. Sutilist bacteria segmentation - Widefield microscopy - 2D UNet";
+String enginesDir = "/path/to/wanted/engines/dir";
+
+Model bioimageioModel = Model.createBioimageioModel(modelFolder, enginesDir);
+bioimageioModel.load();
+
+System.out.println("Great sucess!");
+```
+
+Output:
+```
+Great sucess!
+```
+
+More information about loading models and models in general can be found in [this Wiki page](https://github.com/bioimage-io/JDLL/wiki/Load-and-run-models-II-(Model)).
 
 
 
