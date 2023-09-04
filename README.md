@@ -29,7 +29,14 @@ Note that JDLL will be in **constant development** and that it is open to commun
 
 
 # Quickstart
-This section will cover the 
+This section will give the basic notions on how to use JDLL:
+- [0. Setting Up JDLL](https://github.com/bioimage-io/JDLL#0-setting-up-jdll)
+- [1. Downloading a model (optional)](https://github.com/bioimage-io/JDLL#1-getting-a-model-optional)
+- [2. Installing DL engines](https://github.com/bioimage-io/JDLL#2-installing-dl-engines)
+- [3. Creating the tensors](https://github.com/bioimage-io/JDLL#3-creating-the-tensors)
+- [4. Loading the model](https://github.com/bioimage-io/JDLL#4-loading-the-model)
+- [5. Running the model](https://github.com/bioimage-io/JDLL#5-running-the-model)
+- [6. Closing the model and the tensors](https://github.com/bioimage-io/JDLL#6-closing-the-model-and-the-tensors)
 
 ## 0. Setting Up JDLL
 
@@ -53,7 +60,7 @@ Download the dependency and include it in your project
      <url>https://maven.scijava.org/content/groups/public</url>
    </repository>
    ```
-## 1. Getting a model (optional)
+## 1. Downloading a model (optional)
 If a model from the supported by JDLL is already available you can skip this step. Note that for Tensorflow the models need to be saved in the [`SavdModel`](https://www.tensorflow.org/guide/saved_model) format.
 
 If no model is available, a good starting point is downloading any of the models of the [Bioimage.io respository](https://bioimage.io/#/). The download can be done manually or using JDLL. Bioimag.io is seamlessly integrated into JDLL, offering multiple methods to effortlessly mange and use its models.
