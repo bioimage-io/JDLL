@@ -35,7 +35,8 @@ It is intended for developers and was originally built by the DeepIcy team as th
      <url>https://maven.scijava.org/content/groups/public</url>
    </repository>
    ```
-
+## Getting a model
+## Installing the engine
 ### Supported engines
 
 Currently, the following frameworks are supported:
@@ -48,10 +49,16 @@ Currently, the following frameworks are supported:
 | Tensorflow 2 all APIs but 0.2.0 | https://github.com/bioimage-io/tensorflow-2-java-interface     |
 | Onnx                            | https://github.com/bioimage-io/onnx-java-interface             |
 
-The information about the engines supported currently by the model runner, for which OS and architectures and which JAR files are required for each of the engines is stored in [this json file](https://github.com/bioimage-io/model-runner-java/blob/main/src/main/resources/availableDLVersions.json).
+The information about the engines supported currently by the model runner, for which OS and architectures and which JAR files are required for each of the engines is stored in [this json file](https://github.com/bioimage-io/model-runner-java/blob/main/src/main/resources/availableDLVersions.json) and can be found [here](https://github.com/bioimage-io/JDLL/wiki/List-of-supported-engines).
 
 Note that the model runner will be in **constant development** and that it is open to community collaboration, so **pull requests** to the official repository of the model runner to improve functionality or to add new engines are **very welcomed**.
 
+## Creating the tensors
+
+## Loading the model
+##Running the model
+
+## Closing the model and the tensors
 ## Loading and running a model with JDLL
 
 The Java model runner was developed with the objective of being as easy as possible to implement in already existing Java softwares.
