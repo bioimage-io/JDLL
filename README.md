@@ -30,7 +30,7 @@ Note that the model runner will be in **constant development** and that it is op
 
 # Quickstart
 
-## Setting Up the Model Runner
+## 0. Setting Up the Model Runner
 
 Download the dependency and include it in your project
 
@@ -52,12 +52,12 @@ Download the dependency and include it in your project
      <url>https://maven.scijava.org/content/groups/public</url>
    </repository>
    ```
-## Getting a model
+## 1. Getting a model (optional)
 If a model from the supported by JDLL is already available you can skip this step. Note that for Tensorflow the models need to be saved in the [`SavdModel`](https://www.tensorflow.org/guide/saved_model) format.
 
 If no model is available, a good starting point is downloading any of the models of the [Bioimage.io respository](https://bioimage.io/#/). The download can be done manually or using JDLL. Bioimag.io is seamlessly integrated into JDLL, offering multiple methods to effortlessly mange and use its models.
 
-Here is an emaple of how JDLL can be used to download any Bioimage.io model, in this case the `B. Sutilist bacteria segmentation - Widefield microscopy - 2D UNet`(https://bioimage.io/#/?tags=placid-llama&id=10.5281%2Fzenodo.7261974) model.
+Here is an emaple of how JDLL can be used to download any Bioimage.io model, in this case the [`B. Sutilist bacteria segmentation - Widefield microscopy - 2D UNet`](https://bioimage.io/#/?tags=placid-llama&id=10.5281%2Fzenodo.7261974) model.
 ```java
 // Name of the model of interest, note that each model is unique. The names are case sensitive.
 String modelName = "B. Sutilist bacteria segmentation - Widefield microscopy - 2D UNet";
@@ -80,13 +80,33 @@ Output:
 ```
 Great success!
 ```
-## Installing the engine
+More information on how to download  Bioimage.io models can be found [here]().
+
+
+
+## Installing DL engines
+JDLL is installed empty. Several models might require different Deep Learning framework versions, each of them consuming considerable amounts of disk space. In order to make JDLL setup light and fast JDLL is installed without default DL engines. The user can then get the Dl engines that they want depending on their needs.
+
+JDLL provides the needed methods to install the wanted engines in an easy manner. Following the above example, find below some code that can be used to install a DL engine. As it can be observed the model that was downloaded [supports Tensorflow 2 and Keras weights](https://github.com/bioimage-io/collection-bioimage-io/blob/19ea59e662410c3ee49b7da184730919336d7568/rdfs/10.5281/zenodo.7261974/7782776/rdf.yaml#L146). Keras is not supported so in order to load and run the model, Tensorflow weights need to be installed.
+
+
+
 ## Creating the tensors
 
+
+
 ## Loading the model
-##Running the model
+
+
+
+## Running the model
+
+
 
 ## Closing the model and the tensors
+
+
+
 ## Loading and running a model with JDLL
 
 The Java model runner was developed with the objective of being as easy as possible to implement in already existing Java softwares.
