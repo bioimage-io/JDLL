@@ -120,17 +120,6 @@ public class BioimageioRepo {
 	
 	/**
 	 * Method that connects to the BioImage.io API and retrieves the models available
-	 * at the Bioimage.io model repository
-	 * The models are specified at: {@link #location}
-	 * @return an object containing the URL location of the model as key and the {@link ModelDescriptor}
-	 * 	with the yaml file information in the value
-	 */
-	public Map<Path, ModelDescriptor> listAllModels() {
-		return listAllModels(true);
-	}
-	
-	/**
-	 * Method that connects to the BioImage.io API and retrieves the models available
 	 * at the Bioimage.io model repository.
 	 * The models are specified at: {@link #location}
 	 * @param verbose

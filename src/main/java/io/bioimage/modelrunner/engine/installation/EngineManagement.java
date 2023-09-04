@@ -542,7 +542,11 @@ public class EngineManagement {
 					TwoParameterConsumer<String, Double> consumer = DownloadTracker.createConsumerProgress();
 					if (this.consumersMap != null && this.consumersMap.get(v.getValue()) != null)
 						consumer = this.consumersMap.get(v.getValue());
-					return!installEngineByCompleteName(v.getValue(), consumer);
+					try {
+						return!installEngineByCompleteName(v.getValue(), consumer);
+					} catch (IOException | InterruptedException e) {
+						return true;
+					}
 				})
 				.collect(Collectors.toMap(v -> v.getKey(), v -> v.getValue(),
 						(u, v) -> u, LinkedHashMap::new));
@@ -555,8 +559,10 @@ public class EngineManagement {
 	 * 	is the whole path to the folder, and that the folder name should follow the 
 	 * 	dl-modelrunner naming convention (https://github.com/bioimage-io/model-runner-java#readme)
 	 * @return true if the installation was successful and false otherwise
+	 * @throws InterruptedException if the engine defined does not exist or any of the files is downloaded incorrectly
+	 * @throws IOException if the download is interrupted
 	 */
-	public static boolean installEngineByCompleteName(String engineDir) {
+	public static boolean installEngineByCompleteName(String engineDir) throws IOException, InterruptedException {
 		return installEngineByCompleteName(engineDir, null);
 	}
 	
@@ -569,19 +575,24 @@ public class EngineManagement {
 	 * @param consumer
 	 * 	consumer used to communicate the progress made donwloading files. It can be null
 	 * @return true if the installation was successful and false otherwise
+	 * @throws IOException if the engine does not exist or the download of any of the files fails
+	 * @throws InterruptedException if the download is interrupted
 	 */
 	public static boolean installEngineByCompleteName(String engineDir,
-			DownloadTracker.TwoParameterConsumer<String, Double> consumer) {
+			DownloadTracker.TwoParameterConsumer<String, Double> consumer) throws IOException, InterruptedException {
 		File engineFileDir = new File(engineDir);
 		if (!engineFileDir.isDirectory() && engineFileDir.mkdirs() == false)
 			return false;
 		DeepLearningVersion dlVersion;
 		try {
 			dlVersion = DeepLearningVersion.fromFile(engineFileDir);
-			return installEngine(dlVersion, consumer);
 		} catch (Exception e) {
 			return false;
 		}
+		if (dlVersion == null)
+			throw new IOException("JDLL does not support any engine compatible with the provided engine directory: "
+					+ engineDir);
+		return installEngine(dlVersion, consumer);
 	}
 	
 	/**
@@ -660,20 +671,20 @@ public class EngineManagement {
 		List<DeepLearningVersion> vs = manager.getDownloadedForVersionedFramework(engine, version);
 		if (vs.size() != 0)
 			return true;
+		DeepLearningVersion dlv;
 		if (AvailableEngines.isEngineSupportedInOS(engine, version, true, true)) {
-			DeepLearningVersion dlv = 
-					AvailableEngines.getEnginesForOsByParams(engine, version, true, true).get(0);
-			return installEngineInDir(dlv, enginesDir, consumer);
+			dlv = AvailableEngines.getEnginesForOsByParams(engine, version, true, true).get(0);
 		} else if (AvailableEngines.isEngineSupportedInOS(engine, version, true, false)) {
-			DeepLearningVersion dlv = 
-					AvailableEngines.getEnginesForOsByParams(engine, version, true, false).get(0);
-			return installEngineInDir(dlv, enginesDir, consumer);
+			dlv = AvailableEngines.getEnginesForOsByParams(engine, version, true, false).get(0);
 		} else if (AvailableEngines.isEngineSupportedInOS(engine, version, false, true)) {
-			DeepLearningVersion dlv = 
-					AvailableEngines.getEnginesForOsByParams(engine, version, false, true).get(0);
-			return installEngineInDir(dlv, enginesDir, consumer);
+			dlv = AvailableEngines.getEnginesForOsByParams(engine, version, false, true).get(0);
+		} else {
+			return false;
 		}
-		return false;
+		if (dlv == null)
+			throw new IOException("JDLL does not support any engine compatible with the provided WeightFormat: "
+					+ ww.getWeightsFormat() + " " + ww.getTrainingVersion());
+		return installEngineInDir(dlv, enginesDir, consumer);
 	}
 
 	/**
@@ -1228,6 +1239,13 @@ public class EngineManagement {
 				.stream().filter(v -> (v.getPythonVersion() == version)
 					&& (v.getCPU() == cpu)
 					&& (v.getGPU() == gpu)).findFirst().orElse(null);
+
+		if (engine == null)
+			throw new IOException("JDLL does not support any engine compatible with the provided arguments: "
+					+ "framework=" + framework + " " 
+					+ "version=" + version + " " 
+					+ "cpu=" + cpu + " " 
+					+ "gpu=" + gpu);
 		return installEngineInDir(engine, dir, consumer);
 	}
     
