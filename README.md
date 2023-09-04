@@ -128,7 +128,32 @@ The Wiki convers extensively engine installation ([here](https://github.com/bioi
 
 
 ## Creating the tensors
+Once the model and the engine are already installed it is the moment to start the process of running the model on the tensors. In this section, creation of the tensors will be explained.
 
+JDLL tensors are agnostic to the DL framework to be used, they are always creted in the same way. JDLL manages internally the conversion of the agnostif tensor into the framework specific tensor once the mdoel is going to be run. The unified method of creating tensors facilitates the integration of every supported DL framework into any software.
+
+JDLL tensors use ImgLib2 to store the tensor information. In practice, JDLL tensors are just wrappers of ImgLib2 `RandomAccessibleIntervals` that contain all the data needed to convert them back and forth into the framework specific tensors.
+
+The example below will show how to create the input and output tensors required to run the [example model](https://bioimage.io/#/?tags=placid-llama&id=10.5281%2Fzenodo.7261974). As per its [rdf.yaml file](https://github.com/bioimage-io/collection-bioimage-io/blob/19ea59e662410c3ee49b7da184730919336d7568/rdfs/10.5281/zenodo.7261974/7782776/rdf.yaml), the model has one input named `input_1`, with `bxyc` axes ([explanation here](https://github.com/bioimage-io/spec-bioimage-io/blob/gh-pages/model_spec_latest.md)) and a required shape of[1, 512, 512, 1]. The ouptut of the model is named `conv2d_19` with with `bxyc` axes and fixed shape [1, 512, 512, 3].
+```
+final ImgFactory< FloatType > imgFactory = new ArrayImgFactory<>( new FloatType() );
+final Img< FloatType > img1 = imgFactory.create( 1, 512, 512, 1 );
+// Create the input tensor with the nameand axes given by the rdf.yaml file
+// and add it to the list of input tensors
+Tensor<FloatType> inpTensor = Tensor.build("input_1", "bxyc", img1);
+
+// Ouput tensors can be created empty, if the output shape is not known.
+// Note that this method does not preallocate memory for the output tensor
+Tensor<T> ouptutEmptyTensor = Tensor.buildEmptyTensor("conv2d_19", "bxyc");
+
+// Or ouptut tensors can also be built blank, to pre-allocate memory
+// if the shape and data type are known.
+Tensor<FloatType> ouptutBlankTensor = Tensor.buildBlankTensor("conv2d_19",
+			"bxyc", new long[] {1, 512, 512, 3}, new FloatType());
+
+```
+
+More information about tensors can be found in the [JDLL wiki](https://github.com/bioimage-io/JDLL/wiki/JDLL-tensors-I-(Tensor)).
 
 
 ## Loading the model
