@@ -15,12 +15,13 @@ It is intended for developers and was originally built by the DeepIcy team as th
 
 Currently, the following frameworks are supported:
 
-| Framework                       | Source code                                                    | Tag used in JDLL for the framework             |
+| Framework                       | Source code                                                    | Tag used in JDLL to refer to the framework     |
 |---------------------------------|----------------------------------------------------------------|------------------------------------------------|
 | PyTorch                         | https://github.com/bioimage-io/pytorch-java-interface          | `pytorch` \ `torchscript`                      |
 | Tensorflow 1                    | https://github.com/bioimage-io/tensorflow-1-java-interface     | `tensorflow` \ `tensorflow_saved_model_bundle` |
-| Tensorflow 2 API 0.2.0          | https://github.com/bioimage-io/tensorflow-2-java-interface-0.2 | `tensorflow` \ `tensorflow_saved_model_bundle` |
-| Tensorflow 2 all APIs but 0.2.0 | https://github.com/bioimage-io/tensorflow-2-java-interface     | `tensorflow` \ `tensorflow_saved_model_bundle` |
+| Tensorflow 2 API 0.2.0          | https://github.com/bioimage-io/tensorflow-2-java-interface-0.2.0 | `tensorflow` \ `tensorflow_saved_model_bundle` |
+| Tensorflow 2 API 0.3-0.4 | https://github.com/bioimage-io/tensorflow-2-java-interface     | `tensorflow` \ `tensorflow_saved_model_bundle` |
+| Tensorflow 2 API 0.5.0 | https://github.com/bioimage-io/tensorflow-2-java-interface-0.5.0 | `tensorflow` \ `tensorflow_saved_model_bundle` |
 | Onnx                            | https://github.com/bioimage-io/onnx-java-interface             | `onnx`                                         |
 
 The information about the engines supported currently by JDLL, for which OS and architectures and which JAR files are required for each of the engines is stored in [this json file](https://github.com/bioimage-io/model-runner-java/blob/main/src/main/resources/availableDLVersions.json) and can be found [here](https://github.com/bioimage-io/JDLL/wiki/List-of-supported-engines).
