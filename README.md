@@ -84,7 +84,7 @@ More information on how to download  Bioimage.io models can be found [here](http
 
 
 
-## Installing DL engines
+## 2. Installing DL engines
 JDLL is installed empty. Several models might require different Deep Learning framework versions, each of them consuming considerable amounts of disk space. In order to make JDLL setup light and fast JDLL is installed without default DL engines. The user can then get the Dl engines that they want depending on their needs.
 
 JDLL provides the needed methods to install the wanted engines in an easy manner. Following the above example, find below some code that can be used to install a DL engine. As it can be observed the model that was downloaded [supports Tensorflow 2 and Keras weights](https://github.com/bioimage-io/collection-bioimage-io/blob/19ea59e662410c3ee49b7da184730919336d7568/rdfs/10.5281/zenodo.7261974/7782776/rdf.yaml#L146). Keras is not supported so in order to load and run the model, Tensorflow weights need to be installed.
@@ -127,7 +127,7 @@ The Wiki convers extensively engine installation ([here](https://github.com/bioi
 
 
 
-## Creating the tensors
+## 3. Creating the tensors
 Once the model and the engine are already installed it is the moment to start the process of running the model on the tensors. In this section, creation of the tensors will be explained.
 
 JDLL tensors are agnostic to the DL framework to be used, they are always creted in the same way. JDLL manages internally the conversion of the agnostif tensor into the framework specific tensor once the mdoel is going to be run. The unified method of creating tensors facilitates the integration of every supported DL framework into any software.
@@ -156,15 +156,22 @@ Tensor<FloatType> ouptutBlankTensor = Tensor.buildBlankTensor("conv2d_19",
 More information about tensors can be found in the [JDLL wiki](https://github.com/bioimage-io/JDLL/wiki/JDLL-tensors-I-(Tensor)).
 
 
-## Loading the model
+## 4. Loading the model
 
 
 
-## Running the model
+## 5. Running the model
 
 
 
-## Closing the model and the tensors
+## 6. Closing the model and the tensors
+Models and tensors need to be closed to be released and free the memory that they were using
+```
+model.close();
+inputTensor.close;
+ouptutBlankTensor.close();
+ouptutEmptyTensor.close();
+```
 
 
 
