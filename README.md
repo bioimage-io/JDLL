@@ -36,82 +36,11 @@ It is intended for developers and was originally built by the DeepIcy team as th
    </repository>
    ```
 
-## Manage the DL engines
-
-   Certain pairs of DL frameworks cannot be loaded in the same classloader due to incompatible classes with the same names. For example, the Java APIs of Tensorflow 1 and Tensorflow 2 are incompatible, which has slowed the adoption of newer versions of Tensorflow in Java softwares, disrupting the connection with the latest deep learning developments.
-
-   To address this issue, the library is designed in a modular way that creates a separate classloader for each DL framework once it is called, avoiding conflicts between the frameworks.
-
-   To load frameworks in separate classloaders, the library requires that the executable JAR files be stored in identifiable folders, with all DL frameworks stored in the same directory. An example of this is shown in the images below:
-
-   ![alt text](https://raw.githubusercontent.com/bioimage-io/model-runner-java/main/wiki/engines_folders.png)
-
-   All engines should be stored in the same directory (in the example, `C:\Users\carlos\icy\engines`), with each engine following the naming convention:
-
-   ```
-   <DL_framework_name>-<python_version>-<java_api_version>-<os>-<architecture>-<cpu_if_it_runs_in_cpu>-<gpu_if_it_runs_in_gpu>
-   ```
-
-   For example, the folder `Pytorch-1.11.0-1.11.0-windows-x86_64-cpu-gpu` contains a PyTorch engine, Python version 1.11.0, same as the Java version, for Windows operating system, architecture x86_64 (64 bits), that runs in CPU and GPU.
-
-   Another example: the folder `Tensorflow-1.12.0-1.12.0-windows-x86_64-cpu` contains a Tensorflow engine, Python version 1.12.0, same as the Java version, for Windows operating system, architecture x86_64 (64 bits), that runs only in CPU.
-
-   The script `download-engines.py` can be used to download desired engines for your platform (OS and architecture):
-   ```
-   python download-engines.py <engine-filter> <version-filter>
-   ```
-
-   For example:
-   ```
-   python download-engines.py pytorch 1.13.1
-   ```
-
-   Running the script with no arguments downloads all available engines for your platform.
-   
-   ### Manage the engines with JDLL
-   
-   The installation of the engines for JDLL to work can be done manually. before starting the software. But to enhance usability JDLL provides the methods to install the required engines at runtime. In addition, once an engine is installed it can be used directly, without needing to re-start the JVM.
-   
-   There are several ways to install an engine with code:
-   * If we know the different parameters of the engine we want to install we can call:
-      ```
-      String framework = "tensorflow";
-      String version = "2.7.0";
-      boolean cpu = true;
-      boolean gpu = true;
-      String dir = "/path/to/wanted/engines/dir";
-      EngineManagement.installEngineWithArgsInDir(framework, version, cpu, gpu, dir);
-      ```
-      
-   * If we have a certain [Bioimage.io](https://bioimage.io/#/) model and we want to install the engines compatible with it:
-      ```
-      String modelName = "Neuron Segmentation in EM (Membrane Prediction)";
-      String dir = "/path/to/wanted/engines/dir";
-      EngineManagement.installEnginesForModelByNameinDir(modelName, dir);
-      ```
-      we can also use the model ID:
-      ```
-      String modelID = "10.5281/zenodo.5874741/5874742";
-      String dir = "/path/to/wanted/engines/dir";
-      EngineManagement.installEnginesForModelByNameinDir(modelID, dir);
-      ```
-      
-      or directly provide the model folder and install the engines required for that model. Note that this only works for [Bioimage.io](https://bioimage.io/#/) models that contain the [rdf.yaml specs file](https://github.com/bioimage-io/spec-bioimage-io/blob/gh-pages/model_spec_latest.md) in the folder:
-      ```
-      String modelFolder = "/path/to/model/folder";
-      String dir = "/path/to/wanted/engines/dir";
-      EngineManagement.installEnginesinDirForModelInFolder(modelFolder, dir);
-      ```
-      
-      In the explained examples, the engines installed will be specified by the weights in the rdf.yaml files of the selected models. However regard that only the [engines supported by JDLL](https://github.com/bioimage-io/JDLL/blob/main/README.md#supported-engines) will be installed. These are torchscript (pytorch), tensorflow_saved_model_bundled (tensorflow) and onnx.
-      
-      For more information, please read the wiki page about [engine management and installation](TODO add link)
-
 ### Supported engines
 
-Currently, the following `engine_name-interface` engines exist:
+Currently, the following frameworks are supported:
 
-| Engine                          | Source code                                                    |
+| Framework                          | Source code                                                    |
 |---------------------------------|----------------------------------------------------------------|
 | PyTorch                         | https://github.com/bioimage-io/pytorch-java-interface          |
 | Tensorflow 1                    | https://github.com/bioimage-io/tensorflow-1-java-interface     |
