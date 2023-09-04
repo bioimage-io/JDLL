@@ -29,7 +29,7 @@ Note that JDLL will be in **constant development** and that it is open to commun
 
 
 # Quickstart
-The next section provides essential instructions for using JDLL divided in the following subsections:
+The next section (~10 min read) provides essential instructions for using JDLL divided in the following subsections:
 - [0. Setting Up JDLL](https://github.com/bioimage-io/JDLL#0-setting-up-jdll)
 - [1. Downloading a model (optional)](https://github.com/bioimage-io/JDLL#1-getting-a-model-optional)
 - [2. Installing DL engines](https://github.com/bioimage-io/JDLL#2-installing-dl-engines)
