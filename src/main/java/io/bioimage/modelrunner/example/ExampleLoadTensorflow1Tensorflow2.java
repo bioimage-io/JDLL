@@ -44,8 +44,8 @@ import net.imglib2.util.Util;
  * 
  * The models used for this example are:
  * <ul>
- * <li><a href="https://bioimage.io/#/?tags=Drosophila%20epithelia%20cell%20boundary%20segmentation%20of%202D%20projections&id=10.5281%2Fzenodo.7380171">Drosophila epithelia cell boundary segmentation of 2D projections (TF2)</a></li>
- * <li><a href="https://bioimage.io/#/?tags=StarDist%20H%26E%20Nuclei%20Segmentation&id=10.5281%2Fzenodo.6338614">StarDist H&E Nuclei Segmentation (TF1)</a></li>
+ * <li><a href="https://bioimage.io/#/?tags=Drosophila%20epithelia%20cell%20boundary%20segmentation%20of%202D%20projections&amp;id=10.5281%2Fzenodo.7380171">Drosophila epithelia cell boundary segmentation of 2D projections (TF2)</a></li>
+ * <li><a href="https://bioimage.io/#/?tags=StarDist%20H%26E%20Nuclei%20Segmentation&amp;id=10.5281%2Fzenodo.6338614">StarDist H&amp;E Nuclei Segmentation (TF1)</a></li>
  * </ul>
  * 
  * It also requires the installation of a TF2 and a TF1 engine.
