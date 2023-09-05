@@ -40,6 +40,7 @@ import net.imglib2.type.numeric.integer.UnsignedIntType;
 import net.imglib2.type.numeric.integer.UnsignedShortType;
 import net.imglib2.type.numeric.real.DoubleType;
 import net.imglib2.type.numeric.real.FloatType;
+import net.imglib2.util.Cast;
 import net.imglib2.util.Util;
 import net.imglib2.view.IntervalView;
 
@@ -191,31 +192,31 @@ public class BioengineTensor {
 		bt.inputs.put(VALUE_KEY, tensor.getShape());
 		RandomAccessibleInterval<T> rai = tensor.getData();
     	if (Util.getTypeFromInterval(rai) instanceof ByteType) {
-    		bt.inputs.put(VALUE_KEY, buildByte((RandomAccessibleInterval<ByteType>) rai));
+			bt.inputs.put( VALUE_KEY, buildByte( Cast.unchecked( rai ) ) );
     		bt.inputs.put(DTYPE_KEY, BYTE_STR);
     	} else if (Util.getTypeFromInterval(rai) instanceof UnsignedByteType) {
-    		bt.inputs.put(VALUE_KEY, buildUByte((RandomAccessibleInterval<UnsignedByteType>) rai));
+			bt.inputs.put( VALUE_KEY, buildUByte( ( Cast.unchecked( rai ) ) ) );
     		bt.inputs.put(DTYPE_KEY, UBYTE_STR);
     	} else if (Util.getTypeFromInterval(rai) instanceof ShortType) {
-    		bt.inputs.put(VALUE_KEY, buildShort((RandomAccessibleInterval<ShortType>) rai, order));
+			bt.inputs.put( VALUE_KEY, buildShort( Cast.unchecked( rai ), order ) );
     		bt.inputs.put(DTYPE_KEY, INT16_STR);
     	} else if (Util.getTypeFromInterval(rai) instanceof UnsignedShortType) {
-    		bt.inputs.put(VALUE_KEY, buildUShort((RandomAccessibleInterval<UnsignedShortType>) rai, order));
+			bt.inputs.put( VALUE_KEY, buildUShort( Cast.unchecked( rai ), order ) );
     		bt.inputs.put(DTYPE_KEY, UINT16_STR);
     	} else if (Util.getTypeFromInterval(rai) instanceof IntType) {
-    		bt.inputs.put(VALUE_KEY, buildInt((RandomAccessibleInterval<IntType>) rai, order));
+			bt.inputs.put( VALUE_KEY, buildInt( Cast.unchecked( rai ), order ) );
     		bt.inputs.put(DTYPE_KEY, INT32_STR);
     	} else if (Util.getTypeFromInterval(rai) instanceof UnsignedIntType) {
-    		bt.inputs.put(VALUE_KEY, buildUInt((RandomAccessibleInterval<UnsignedIntType>) rai, order));
+			bt.inputs.put( VALUE_KEY, buildUInt( Cast.unchecked( rai ), order ) );
     		bt.inputs.put(DTYPE_KEY, UINT32_STR);
     	} else if (Util.getTypeFromInterval(rai) instanceof FloatType) {
-    		bt.inputs.put(VALUE_KEY, buildFloat((RandomAccessibleInterval<FloatType>) rai, order));
+			bt.inputs.put( VALUE_KEY, buildFloat( Cast.unchecked( rai ), order ) );
     		bt.inputs.put(DTYPE_KEY, FLOAT32_STR);
     	} else if (Util.getTypeFromInterval(rai) instanceof DoubleType) {
-    		bt.inputs.put(VALUE_KEY, buildDouble((RandomAccessibleInterval<DoubleType>) rai, order));
+			bt.inputs.put( VALUE_KEY, buildDouble( Cast.unchecked( rai ), order ) );
     		bt.inputs.put(DTYPE_KEY, FLOAT64_STR);
     	} else if (Util.getTypeFromInterval(rai) instanceof LongType) {
-    		bt.inputs.put(VALUE_KEY, buildLong((RandomAccessibleInterval<LongType>) rai, order));
+			bt.inputs.put( VALUE_KEY, buildLong( Cast.unchecked( rai ), order ) );
     		bt.inputs.put(DTYPE_KEY, INT64_STR);
     	} else {
             throw new IllegalArgumentException("The image has an unsupported type: " + Util.getTypeFromInterval(rai).getClass().toString());
@@ -295,23 +296,23 @@ public class BioengineTensor {
 	public static < T extends RealType< T > & NativeType< T > >
 				byte[] imglib2ToByteArray(RandomAccessibleInterval<T> rai, ByteOrder order) {
     	if (Util.getTypeFromInterval(rai) instanceof ByteType) {
-    		return buildByte((RandomAccessibleInterval<ByteType>) rai);
+			return buildByte( Cast.unchecked( rai ) );
     	} else if (Util.getTypeFromInterval(rai) instanceof UnsignedByteType) {
-    		return buildUByte((RandomAccessibleInterval<UnsignedByteType>) rai);
+			return buildUByte( Cast.unchecked( rai ) );
     	} else if (Util.getTypeFromInterval(rai) instanceof ShortType) {
-    		return buildShort((RandomAccessibleInterval<ShortType>) rai, order);
+			return buildShort( Cast.unchecked( rai ), order );
     	} else if (Util.getTypeFromInterval(rai) instanceof UnsignedShortType) {
-    		return buildUShort((RandomAccessibleInterval<UnsignedShortType>) rai, order);
+			return buildUShort( Cast.unchecked( rai ), order );
     	} else if (Util.getTypeFromInterval(rai) instanceof IntType) {
-    		return buildInt((RandomAccessibleInterval<IntType>) rai, order);
+			return buildInt( Cast.unchecked( rai ), order );
     	} else if (Util.getTypeFromInterval(rai) instanceof UnsignedIntType) {
-    		return buildUInt((RandomAccessibleInterval<UnsignedIntType>) rai, order);
+			return buildUInt( Cast.unchecked( rai ), order );
     	} else if (Util.getTypeFromInterval(rai) instanceof FloatType) {
-    		return buildFloat((RandomAccessibleInterval<FloatType>) rai, order);
+			return buildFloat( Cast.unchecked( rai ), order );
     	} else if (Util.getTypeFromInterval(rai) instanceof DoubleType) {
-    		return buildDouble((RandomAccessibleInterval<DoubleType>) rai, order);
+			return buildDouble( Cast.unchecked( rai ), order );
     	} else if (Util.getTypeFromInterval(rai) instanceof LongType) {
-    		return buildLong((RandomAccessibleInterval<LongType>) rai, order);
+			return buildLong( Cast.unchecked( rai ), order );
     	} else {
             throw new IllegalArgumentException("The image has an unsupported type: " + Util.getTypeFromInterval(rai).getClass().toString());
     	}
