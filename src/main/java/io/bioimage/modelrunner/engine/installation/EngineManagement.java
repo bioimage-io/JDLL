@@ -1225,7 +1225,7 @@ public class EngineManagement {
 		if (AvailableEngines.bioimageioToModelRunnerKeysMap().get(framework) != null)
 			framework = AvailableEngines.bioimageioToModelRunnerKeysMap().get(framework);
 		DeepLearningVersion engine = AvailableEngines.filterByEngineForOS(framework).getVersions()
-				.stream().filter(v -> (v.getPythonVersion == version)
+				.stream().filter(v -> (v.getPythonVersion().equals(version))
 					&& (v.getCPU() == cpu)
 					&& (v.getGPU() == gpu)).findFirst().orElse(null);
 		return installEngineInDir(engine, dir, consumer);
