@@ -37,7 +37,6 @@ import java.util.List;
 import net.imglib2.img.Img;
 import net.imglib2.img.ImgFactory;
 import net.imglib2.img.array.ArrayImgFactory;
-import net.imglib2.img.cell.CellImgFactory;
 import net.imglib2.type.NativeType;
 import net.imglib2.type.numeric.RealType;
 import net.imglib2.type.numeric.real.FloatType;
@@ -65,12 +64,13 @@ public class ExampleLoadAndRunModel {
 
 	/**
 	 * 
-	 * @param <T>
 	 * @param args
-	 * @throws LoadEngineException
-	 * @throws Exception
+	 * 	main args, in this case nothing is needed
+	 * @throws LoadEngineException if the engine fails to load the model
+	 * @throws Exception if there is any error downloading the engines or the models
+	 * 	or running the model
 	 */
-	public static < T extends RealType< T > & NativeType< T > > void main(String[] args) throws LoadEngineException, Exception {
+	public static void main(String[] args) throws LoadEngineException, Exception {
 
 		// Tag for the DL framework (engine) that wants to be used
 		String framework = "torchscript";

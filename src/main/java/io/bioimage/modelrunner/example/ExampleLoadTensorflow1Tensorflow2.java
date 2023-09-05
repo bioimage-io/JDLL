@@ -36,9 +36,6 @@ import io.bioimage.modelrunner.versionmanagement.InstalledEngines;
 import net.imglib2.img.Img;
 import net.imglib2.img.ImgFactory;
 import net.imglib2.img.array.ArrayImgFactory;
-import net.imglib2.img.cell.CellImgFactory;
-import net.imglib2.type.NativeType;
-import net.imglib2.type.numeric.RealType;
 import net.imglib2.type.numeric.real.FloatType;
 import net.imglib2.util.Util;
 
@@ -47,11 +44,8 @@ import net.imglib2.util.Util;
  * 
  * The models used for this example are:
 *  <ul>
-*  <li><a href="https://bioimage.io/#/?tags=Drosophila%20epithelia%20cell%20boundary
-*  %20segmentation%20of%202D%20projections&id=10.5281%2Fzenodo.7380171">Drosophila epith
-*  elia cell boundary segmentation of 2D projections (TF2)</a></li>
-*  <li><a href="https://bioimage.io/#/?tags=StarDist%20H%26E%20Nuclei%2
-*  0Segmentation&id=10.5281%2Fzenodo.6338614">StarDist H&E Nuclei Segmentation (TF1)</a></li>
+*  <li><a href="https://bioimage.io/#/?tags=Drosophila%20epithelia%20cell%20boundary%20segmentation%20of%202D%20projections&id=10.5281%2Fzenodo.7380171">Drosophila epithelia cell boundary segmentation of 2D projections (TF2)</a></li>
+*  <li><a href="https://bioimage.io/#/?tags=StarDist%20H%26E%20Nuclei%20Segmentation&id=10.5281%2Fzenodo.6338614">StarDist H&E Nuclei Segmentation (TF1)</a></li>
 *  </ul>
  * 
  * It also requires the installation of a TF2 and a TF1 engine.
@@ -69,14 +63,12 @@ public class ExampleLoadTensorflow1Tensorflow2 {
 	
 	/**
 	 * Run the test
-	 * @param <T>
-	 * 	type of the tensors
 	 * @param args
 	 * 	arguments of the main method
 	 * @throws LoadEngineException if there is any exception loading the engine
 	 * @throws Exception if there is any exception in the tests
 	 */
-	public static < T extends RealType< T > & NativeType< T > > void main(String[] args) throws LoadEngineException, Exception {
+	public static void main(String[] args) throws LoadEngineException, Exception {
 		loadAndRunTf1();
 		loadAndRunTf2();
 		System.out.println("Great success!");

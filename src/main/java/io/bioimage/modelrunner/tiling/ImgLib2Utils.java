@@ -227,8 +227,10 @@ public final class ImgLib2Utils
      * Creates an array containing the size of the given {@link RandomAccessibleInterval}.
      * It is the same as teh shape
      * 
+	 * @param <T>
+	 * 	Possible input ImgLib2 data types 
      * @param s
-     *        Target NDArray
+     * 	Target NDArray
      * @return int array with the shape of the NDArray
      */
     public static < T extends RealType< T > & NativeType< T > > int[] getRaiSizeArray(RandomAccessibleInterval<T> s)
