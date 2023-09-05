@@ -1237,7 +1237,7 @@ public class EngineInstall {
 		if (AvailableEngines.bioimageioToModelRunnerKeysMap().get(framework) != null)
 			framework = AvailableEngines.bioimageioToModelRunnerKeysMap().get(framework);
 		DeepLearningVersion engine = AvailableEngines.filterByFrameworkForOS(framework)
-				.stream().filter(v -> (v.getPythonVersion() == version)
+				.stream().filter(v -> (v.getPythonVersion().equals(version))
 					&& (v.getCPU() == cpu)
 					&& (v.getGPU() == gpu)).findFirst().orElse(null);
 
@@ -1278,7 +1278,7 @@ public class EngineInstall {
 						&& v.getOs().equals(new PlatformDetection().toString())
 						&& v.getCPU() == cpu
 						&& v.getGPU() == gpu
-						&& (!(new PlatformDetection().isUsingRosseta()) || v.getRosetta()))
+						&& (!(PlatformDetection.isUsingRosseta()) || v.getRosetta()))
 				.findFirst().orElse(null);
 		if (engine == null) 
 			return false;
