@@ -51,12 +51,12 @@ import io.bioimage.modelrunner.versionmanagement.InstalledEngines;
  * Class that manages the dl-modelrunner engines.
  * This class checks that the required engines are installed and installs them if they are not.
  * There is one required engine per DL framework. It can be either the latest one or the one specified
- * in the variable {@link EngineManagement#ENGINES_VERSIONS}.
+ * in the variable {@link EngineInstall#ENGINES_VERSIONS}.
  * This class also contains the methods to install engines on demand.
  * @author Carlos Garcia Lopez de Haro, Ivan Estevez Albuja and Caterina Fuster Barcelo
  *
  */
-public class EngineManagement {
+public class EngineInstall {
 	/**
 	 * Directory where the engines shold be installed
 	 */
@@ -161,11 +161,11 @@ public class EngineManagement {
 	 * Regard, that for certain engines, downloading all the OS depending engines
 	 * is necessary, as the dependencies vary from one system to another. 
 	 */
-	private EngineManagement() {
+	private EngineInstall() {
 	}
 	
 	/**
-	 * Creates an {@link EngineManagement} object to check if the required engines are installed.
+	 * Creates an {@link EngineInstall} object to check if the required engines are installed.
 	 * 
 	 * In order to reduce repetition and to reduce the number of deps downloaded
 	 * by the user when deepImageJ is installed, a selection of engines is created.
@@ -189,14 +189,14 @@ public class EngineManagement {
 	 * is necessary, as the dependencies vary from one system to another. 
 	 * @return a manager to handle the installation of basic engines
 	 */
-	public static EngineManagement createManager() {
-		EngineManagement manager =  new EngineManagement();
+	public static EngineInstall createInstaller() {
+		EngineInstall manager =  new EngineInstall();
 		manager.managersDir = ENGINES_DIR;
 		return manager;
 	}
 	
 	/**
-	 * Creates an {@link EngineManagement} object to check if the required engines are installed.
+	 * Creates an {@link EngineInstall} object to check if the required engines are installed.
 	 * 
 	 * In order to reduce repetition and to reduce the number of deps downloaded
 	 * by the user when deepImageJ is installed, a selection of engines is created.
@@ -224,8 +224,8 @@ public class EngineManagement {
 	 * 
 	 * @return a manager to handle the installation of basic engines
 	 */
-	public static EngineManagement createManager(String dir) {
-		EngineManagement manager =  new EngineManagement();
+	public static EngineInstall createInstaller(String dir) {
+		EngineInstall manager =  new EngineInstall();
 		manager.managersDir = dir;
 		return manager;
 	}
@@ -291,6 +291,7 @@ public class EngineManagement {
 	 * is necessary, as the dependencies vary from one system to another. 
 	 */
 	public void checkBasicEngineInstallation() {
+		everythingInstalled = false;
 		isManagementFinished = false;
 		readEnginesJSON();
 		checkEnginesInstalled();
@@ -1250,10 +1251,10 @@ public class EngineManagement {
 	}
     
     /**
-     * Check whether the management of the engines is finished or not
+     * Check whether the installation of the engines is finished or not
      * @return true if it is finished or false otherwise
      */
-    public boolean isManagementDone() {
+    public boolean isInstallationFinished() {
     	return isManagementFinished;
     }
     
