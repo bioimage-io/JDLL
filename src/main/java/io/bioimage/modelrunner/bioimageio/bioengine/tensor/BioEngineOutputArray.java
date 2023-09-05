@@ -30,23 +30,10 @@ import java.util.HashMap;
 import java.util.Objects;
 
 import io.bioimage.modelrunner.numpy.ByteArrayUtils;
+import io.bioimage.modelrunner.numpy.DecodeNumpy;
 import net.imglib2.img.Img;
-import net.imglib2.img.array.ArrayImgs;
-import net.imglib2.img.basictypeaccess.ByteAccess;
-import net.imglib2.img.basictypeaccess.DoubleAccess;
-import net.imglib2.img.basictypeaccess.FloatAccess;
-import net.imglib2.img.basictypeaccess.IntAccess;
-import net.imglib2.img.basictypeaccess.LongAccess;
-import net.imglib2.img.basictypeaccess.ShortAccess;
-import net.imglib2.img.basictypeaccess.nio.ByteBufferAccess;
-import net.imglib2.img.basictypeaccess.nio.DoubleBufferAccess;
-import net.imglib2.img.basictypeaccess.nio.FloatBufferAccess;
-import net.imglib2.img.basictypeaccess.nio.IntBufferAccess;
-import net.imglib2.img.basictypeaccess.nio.LongBufferAccess;
-import net.imglib2.img.basictypeaccess.nio.ShortBufferAccess;
 import net.imglib2.type.NativeType;
 import net.imglib2.type.numeric.RealType;
-import net.imglib2.util.Cast;
 
 /**
  * Class that converts each of the particular output arrays produced by the BioEngine
@@ -153,37 +140,7 @@ public class BioEngineOutputArray {
 			throws IllegalArgumentException {
 		Objects.requireNonNull(arr);
 		ByteBuffer buf = ByteBuffer.wrap(arr).order(byteOrder);
-		if (this.dtype.toLowerCase().equals(BioengineTensor.FLOAT64_STR)) {
-    		DoubleAccess access = new DoubleBufferAccess(buf, true);
-			return Cast.unchecked( ArrayImgs.doubles( access, shape ) );
-		} else if (this.dtype.toLowerCase().equals(BioengineTensor.INT64_STR)) {
-    		LongAccess access = new LongBufferAccess(buf, true);
-			return Cast.unchecked( ArrayImgs.longs( access, shape ) );
-		} else if (this.dtype.toLowerCase().equals(BioengineTensor.FLOAT32_STR)) {
-    		FloatAccess access = new FloatBufferAccess(buf, true);
-			return Cast.unchecked( ArrayImgs.floats( access, shape ) );
-		} else if (this.dtype.toLowerCase().equals(BioengineTensor.INT32_STR)) {
-    		IntAccess access = new IntBufferAccess(buf, true);
-			return Cast.unchecked( ArrayImgs.ints( access, shape ) );
-		} else if (this.dtype.toLowerCase().equals(BioengineTensor.UINT32_STR)) {
-    		IntAccess access = new IntBufferAccess(buf, true);
-			return Cast.unchecked( ArrayImgs.unsignedInts( access, shape ) );
-		} else if (this.dtype.toLowerCase().equals(BioengineTensor.INT16_STR)) {
-    		ShortAccess access = new ShortBufferAccess(buf, true);
-			return Cast.unchecked( ArrayImgs.shorts( access, shape ) );
-		} else if (this.dtype.toLowerCase().equals(BioengineTensor.UINT16_STR)) {
-    		ShortAccess access = new ShortBufferAccess(buf, true);
-			return Cast.unchecked( ArrayImgs.unsignedShorts( access, shape ) );
-		} else if (this.dtype.toLowerCase().equals(BioengineTensor.BYTE_STR)) {
-    		ByteAccess access = new ByteBufferAccess(buf, true);
-			return Cast.unchecked( ArrayImgs.bytes( access, shape ) );
-		} else if (this.dtype.toLowerCase().equals(BioengineTensor.UBYTE_STR)) {
-    		ByteAccess access = new ByteBufferAccess(buf, true);
-			return Cast.unchecked( ArrayImgs.unsignedBytes( access, shape ) );
-		} else {
-			throw new IllegalArgumentException("Output array '" + this.name +"' could not be retrieved.\n"
-					+ "Its corresponding data type '" + this.dtype + "' is not supported yet.");
-		}
+		return DecodeNumpy.build(buf, byteOrder, dtype, shape);
 	}
 	
 	/**
@@ -202,7 +159,7 @@ public class BioEngineOutputArray {
 	 * @return a integer 16 buffer containing the wanted data
 	 */
 	public static ShortBuffer convertIntoSignedInt16(byte[] arr) {
-		return ShortBuffer.wrap(ByteArrayUtils.convertIntoSignedShort16(arr));
+		return ShortBuffer.wrap(ByteArrayUtils.toInt16(arr));
 	}
 	
 	/**
@@ -213,7 +170,7 @@ public class BioEngineOutputArray {
 	 * @return a int buffer containing the wanted data
 	 */
 	public static IntBuffer convertIntoSignedInt32(byte[] arr) {
-		return IntBuffer.wrap(ByteArrayUtils.convertIntoSignedInt32(arr));
+		return IntBuffer.wrap(ByteArrayUtils.toInt32(arr));
 	}
 	
 	/**
@@ -242,7 +199,7 @@ public class BioEngineOutputArray {
 	 * @return an int buffer containing the wanted data
 	 */
 	public static IntBuffer convertIntoUnsignedInt16(byte[] arr) {
-		return IntBuffer.wrap(ByteArrayUtils.convertIntoUnsignedInt16(arr));
+		return IntBuffer.wrap(ByteArrayUtils.toUInt16(arr));
 	}
 	
 	/**
@@ -286,7 +243,7 @@ public class BioEngineOutputArray {
 	 * @return a float buffer containing the wanted data
 	 */
 	public static FloatBuffer convertIntoSignedFloat32(byte[] arr) {
-		return FloatBuffer.wrap(ByteArrayUtils.convertIntoSignedFloat32(arr));
+		return FloatBuffer.wrap(ByteArrayUtils.toFloat32(arr));
 	}
 	
 	/**
@@ -297,7 +254,7 @@ public class BioEngineOutputArray {
 	 * @return a double buffer containing the wanted data
 	 */
 	public static DoubleBuffer convertIntoSignedFloat64(byte[] arr) {
-		return DoubleBuffer.wrap(ByteArrayUtils.convertIntoSignedFloat64(arr));
+		return DoubleBuffer.wrap(ByteArrayUtils.toFloat64(arr));
 	}
 	
 	/**
