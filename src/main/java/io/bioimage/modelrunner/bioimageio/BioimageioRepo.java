@@ -402,13 +402,13 @@ public class BioimageioRepo {
 	 * 	the folder where the model is going to be downloaded. Regard that the model
 	 * 	is a folder too. So if the argument provided is "C:\\users\\carlos\\models",
 	 * 	the model path will then be: "C:\\users\\carlos\\models\\model_name_date string""
+	 * @return the path to the model that was just installed. 
 	 * @throws IOException	if there is any error downloading the files from the URLs provided
 	 * @throws InterruptedException	if the download or tracking threads are interrupted abruptly
 	 */
-	public static void downloadModel(ModelDescriptor descriptor, String modelsDirectory) 
+	public static String downloadModel(ModelDescriptor descriptor, String modelsDirectory) 
 			throws IOException, InterruptedException {
-		downloadModel(descriptor, modelsDirectory, null);
-			
+		return downloadModel(descriptor, modelsDirectory, null);
 		}
 	
 	/**
@@ -428,10 +428,11 @@ public class BioimageioRepo {
 	 * @param consumer
 	 * 	a {@link DownloadTracker.TwoParameterConsumer} consumer that ccan be used to track the
 	 * 	download of the individual files that compose the model.
+	 * @return the path to the model that was just installed. 
 	 * @throws IOException	if there is any error downloading the files from the URLs provided
 	 * @throws InterruptedException	if the download or tracking threads are interrupted abruptly
 	 */
-	public static void downloadModel(ModelDescriptor descriptor, String modelsDirectory, 
+	public static String downloadModel(ModelDescriptor descriptor, String modelsDirectory, 
 			DownloadTracker.TwoParameterConsumer<String, Double> consumer) throws IOException, InterruptedException {
 		DownloadModel dm = DownloadModel.build(descriptor, modelsDirectory);
 		Thread downloadThread = new Thread(() -> {
@@ -459,6 +460,7 @@ public class BioimageioRepo {
 		if (badDownloads.size() > 0)
 			throw new IOException("The following files of model '" + descriptor.getName()
 			+ "' where downloaded incorrectly: " + badDownloads.toString());
+		return dm.getModelFolder();
 	}
 	
 	/**
@@ -476,14 +478,15 @@ public class BioimageioRepo {
 	 * 	the folder where the model is going to be downloaded. Regard that the model
 	 * 	is a folder too. So if the argument provided is "C:\\users\\carlos\\models",
 	 * 	the model path will then be: "C:\\users\\carlos\\models\\model_name_date string""
+	 * @return the path to the model that was just installed. 
 	 * @throws IOException	if there is any error downloading the files from the URLs provided
 	 * @throws InterruptedException	if the download or tracking threads are interrupted abruptly
 	 */
-	public void downloadModelByID(String id, String modelsDirectory) throws IOException, InterruptedException {
+	public String  downloadModelByID(String id, String modelsDirectory) throws IOException, InterruptedException {
 		ModelDescriptor model = selectByID(id);
 		if (model == null)
 			throw new IllegalArgumentException("");
-		downloadModel(model, modelsDirectory, null);
+		return downloadModel(model, modelsDirectory, null);
 	}
 	
 	/**
@@ -504,15 +507,16 @@ public class BioimageioRepo {
 	 * @param consumer
 	 * 	a {@link DownloadTracker.TwoParameterConsumer} consumer that ccan be used to track the
 	 * 	download of the individual files that compose the model.
+	 * @return the path to the model that was just installed. 
 	 * @throws IOException	if there is any error downloading the files from the URLs provided
 	 * @throws InterruptedException	if the download or tracking threads are interrupted abruptly
 	 */
-	public void downloadModelByID(String id, String modelsDirectory, 
+	public String downloadModelByID(String id, String modelsDirectory, 
 			DownloadTracker.TwoParameterConsumer<String, Double> consumer) throws IOException, InterruptedException {
 		ModelDescriptor model = selectByID(id);
 		if (model == null)
 			throw new IllegalArgumentException("");
-		downloadModel(model, modelsDirectory, consumer);
+		return downloadModel(model, modelsDirectory, consumer);
 	}
 	
 	/**
@@ -530,14 +534,15 @@ public class BioimageioRepo {
 	 * 	the folder where the model is going to be downloaded. Regard that the model
 	 * 	is a folder too. So if the argument provided is "C:\\users\\carlos\\models",
 	 * 	the model path will then be: "C:\\users\\carlos\\models\\model_name_date string""
+	 * @return the path to the model that was just installed. 
 	 * @throws IOException	if there is any error downloading the files from the URLs provided
 	 * @throws InterruptedException	if the download or tracking threads are interrupted abruptly
 	 */
-	public void downloadByName(String name, String modelsDirectory) throws IOException, InterruptedException {
+	public String downloadByName(String name, String modelsDirectory) throws IOException, InterruptedException {
 		ModelDescriptor model = selectByName(name);
 		if (model == null)
 			throw new IllegalArgumentException("");
-		downloadModel(model, modelsDirectory, null);
+		return downloadModel(model, modelsDirectory, null);
 	}
 	
 	/**
@@ -558,15 +563,16 @@ public class BioimageioRepo {
 	 * @param consumer
 	 * 	a {@link DownloadTracker.TwoParameterConsumer} consumer that ccan be used to track the
 	 * 	download of the individual files that compose the model.
+	 * @return the path to the model that was just installed. 
 	 * @throws IOException	if there is any error downloading the files from the URLs provided
 	 * @throws InterruptedException	if the download or tracking threads are interrupted abruptly
 	 */
-	public void downloadByName(String name, String modelsDirectory, 
+	public String downloadByName(String name, String modelsDirectory, 
 			DownloadTracker.TwoParameterConsumer<String, Double> consumer) throws IOException, InterruptedException {
 		ModelDescriptor model = selectByName(name);
 		if (model == null)
 			throw new IllegalArgumentException("");
-		downloadModel(model, modelsDirectory, consumer);
+		return downloadModel(model, modelsDirectory, consumer);
 	}
 	
 	/**
@@ -584,14 +590,15 @@ public class BioimageioRepo {
 	 * 	the folder where the model is going to be downloaded. Regard that the model
 	 * 	is a folder too. So if the argument provided is "C:\\users\\carlos\\models",
 	 * 	the model path will then be: "C:\\users\\carlos\\models\\model_name_date string""
+	 * @return the path to the model that was just installed. 
 	 * @throws IOException	if there is any error downloading the files from the URLs provided
 	 * @throws InterruptedException	if the download or tracking threads are interrupted abruptly
 	 */
-	public void downloadByRdfSource(String rdfUrl, String modelsDirectory) throws IOException, InterruptedException {
+	public String downloadByRdfSource(String rdfUrl, String modelsDirectory) throws IOException, InterruptedException {
 		ModelDescriptor model = selectByRdfSource(rdfUrl);
 		if (model == null)
 			throw new IllegalArgumentException("");
-		downloadModel(model, modelsDirectory, null);
+		return downloadModel(model, modelsDirectory, null);
 	}
 	
 	/**
@@ -612,14 +619,15 @@ public class BioimageioRepo {
 	 * @param consumer
 	 * 	a {@link DownloadTracker.TwoParameterConsumer} consumer that ccan be used to track the
 	 * 	download of the individual files that compose the model.
+	 * @return the path to the model that was just installed. 
 	 * @throws IOException	if there is any error downloading the files from the URLs provided
 	 * @throws InterruptedException	if the download or tracking threads are interrupted abruptly
 	 */
-	public void downloadByRdfSource(String rdfUrl, String modelsDirectory, 
+	public String downloadByRdfSource(String rdfUrl, String modelsDirectory, 
 			DownloadTracker.TwoParameterConsumer<String, Double> consumer) throws IOException, InterruptedException {
 		ModelDescriptor model = selectByRdfSource(rdfUrl);
 		if (model == null)
 			throw new IllegalArgumentException("");
-		downloadModel(model, modelsDirectory, consumer);
+		return downloadModel(model, modelsDirectory, consumer);
 	}
 }
