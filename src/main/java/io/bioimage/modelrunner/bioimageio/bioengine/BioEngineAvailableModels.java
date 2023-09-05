@@ -137,7 +137,7 @@ public class BioEngineAvailableModels {
 	/**
 	 * Method that returns a list of the IDs corresponding to the models that are supported by 
 	 * the bioengine
-	 * @return
+	 * @return a list of the IDs supported by the bioengine
 	 */
 	public List<String> getListOfSupportedIDs() {
 		return collection.stream().map(x -> x.get(ID_KEY)).collect(Collectors.toList());

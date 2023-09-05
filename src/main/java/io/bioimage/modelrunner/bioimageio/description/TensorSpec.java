@@ -362,7 +362,8 @@ public class TensorSpec {
      * @param seqSize
      * 	array containing the dimensions of the sequence that is going to be processed
      * 	seqSize is defined following the Icy axes order (xyztc)
-     * @throws Exception 
+     * @throws Exception if the patch size is not able to 
+     * 	fulfill the requirements of the tensor
      */
     public void validate(int[] patch, int[] seqSize) throws Exception {
     	// Convert the Icy sequence array dims into the tensor axes order
@@ -575,7 +576,7 @@ public class TensorSpec {
      * 	size of the tensor before inference (after pre-processing)
      * @param axesOrder
      * 	axes order of the tensor
-     * @throws Exception 
+     * @throws Exception  if the seqsize is not compatible with the the tensor constraints
      */
     public void validateTensorSize(int[] seqSize, String axesOrder) throws Exception {
     	// Convert the Icy sequence array dims into the tensor axes order

@@ -83,16 +83,11 @@ public final class ImgLib2Utils
         LoopBuilder.setImages( sourceTile, targetTile )
 				.multiThreaded()
 				.forEachPixel( (i, j) -> j.set( i ) );
-        /*
-        Sequence seq = ImgLib2ToSequence.build(targetNDArray, "yxc");
-        seq.setName("no_mirror_path");
-        Icy.getMainInterface().addSequence(seq);
-        */
     }
 
     /**
      * Takes the {@code INDArray} and adds a mirror on the areas out of the patch (specified by patchStart and patchSize). Boundaries are checked with both
-     * the input and the patch sequences. The result is added to the {@code patchSequence}.</br>
+     * the input and the patch sequences. The result is added to the {@code patchSequence}.
      * 
      * @param <T>
      * 	ImgLib2 data types the image might have
@@ -131,7 +126,7 @@ public final class ImgLib2Utils
 
     /**
      * Uses the {@code patchSequence} to fill the {@code resultSequence} at the {@code resultOffset} position. The copied interval in the patch is given by the
-     * {@code patchOffset} and the {@code patchSize}.</br>
+     * {@code patchOffset} and the {@code patchSize}.
      * 
      * @param <T>
      * 	possible ImgLib2 data types the {@link RandomAccessibleInterval} might have

@@ -116,6 +116,8 @@ public class BioEngineOutputArray {
 	/**
 	 * Create an array from the bytes received by the BioEngine and using the corresponding shape
 	 * and data types
+	 * @param <T>
+	 * 	possible ImgLib2 data types of the image that will be returned
 	 * @return an ImgLib2 {@link Img} containing the data of one of the outputs of the bioengine
 	 * @throws IllegalArgumentException if the data type of the array is not supported
 	 */
@@ -129,6 +131,8 @@ public class BioEngineOutputArray {
 	/**
 	 * Create an array from the bytes received by the BioEngine and using the corresponding shape
 	 * and data types
+	 * @param <T>
+	 * 	possible ImgLib2 data types of the image that will be returned
 	 * @param byteOrder
 	 * 	order of the bytes
 	 * @return an ImgLib2 {@link Img} containing the data of one of the outputs of the bioengine
@@ -208,7 +212,6 @@ public class BioEngineOutputArray {
 	 * in an int32 array containing the values that would correspond to
 	 * an int8 array
 	 * @param arr
-	 * @param arr
 	 * 	the byte array
 	 * @return an int buffer containing the wanted data
 	 */
@@ -221,7 +224,6 @@ public class BioEngineOutputArray {
 	 * a buffer. However, as this data type does not exist in Java, the values are stored
 	 * in an int32 array containing the values that would correspond to
 	 * an uint8 array
-	 * @param arr
 	 * @param arr
 	 * 	the byte array
 	 * @return an int buffer containing the wanted data
