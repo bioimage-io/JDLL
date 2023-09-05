@@ -89,7 +89,7 @@ Output:
 ```
 Great success!
 ```
-More information on how to download  Bioimage.io models can be found [here](https://github.com/bioimage-io/JDLL/wiki/Engine-Installation-(EngineManagement)).
+More information on how to download  Bioimage.io models can be found [here](https://github.com/bioimage-io/JDLL/wiki/Engine-Installation-(EngineInstall)).
 
 
 
@@ -105,7 +105,7 @@ boolean cpu = true;
 boolean gpu = true;
 
 String enginesDir = "/path/to/wanted/engines/dir";
-boolean installed = EngineManagement.installEngineWithArgsInDir(framework, version, cpu, gpu, enginesDir);
+boolean installed = EngineInstall.installEngineWithArgsInDir(framework, version, cpu, gpu, enginesDir);
 if (installed)
 	System.out.println("Great success!");
 else
@@ -132,7 +132,7 @@ Output:
 ```
 Great success!
 ```
-The Wiki convers extensively engine installation ([here](https://github.com/bioimage-io/JDLL/wiki/Understanding-engine-installation) and [here](https://github.com/bioimage-io/JDLL/wiki/Engine-Installation-(EngineManagement))). In addtion JDLL also includes methods to manage the engines and know: [the information about each engine](https://github.com/bioimage-io/JDLL/wiki/Engine-Management-I-(DeepLearningVersion)), [which engines are supported](https://github.com/bioimage-io/JDLL/wiki/Engine-Management-II-(AvailableEngines)) and [which engines have already been installed](https://github.com/bioimage-io/JDLL/wiki/Engine-Management-III-(InstalledEngines))
+The Wiki convers extensively engine installation ([here](https://github.com/bioimage-io/JDLL/wiki/Understanding-engine-installation) and [here](https://github.com/bioimage-io/JDLL/wiki/Engine-Installation-(EngineInstall))). In addtion JDLL also includes methods to manage the engines and know: [the information about each engine](https://github.com/bioimage-io/JDLL/wiki/Engine-Management-I-(DeepLearningVersion)), [which engines are supported](https://github.com/bioimage-io/JDLL/wiki/Engine-Management-II-(AvailableEngines)) and [which engines have already been installed](https://github.com/bioimage-io/JDLL/wiki/Engine-Management-III-(InstalledEngines))
 
 
 
