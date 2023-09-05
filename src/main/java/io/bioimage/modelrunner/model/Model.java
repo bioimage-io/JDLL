@@ -134,7 +134,9 @@ public class Model
 	{
 		Objects.requireNonNull(modelFolder);
 		Objects.requireNonNull(engineInfo);
-		if (!engineInfo.isBioengine())
+		if ( !engineInfo.isBioengine() 
+				&& !engineInfo.getFramework().equals(EngineInfo.getTensorflowKey())
+				&& !engineInfo.getFramework().equals(EngineInfo.getBioimageioTfKey()) )
 			Objects.requireNonNull(modelSource);
 		return new Model( engineInfo, modelFolder, modelSource, null );
 	}
@@ -376,7 +378,9 @@ public class Model
 	{
 		Objects.requireNonNull(modelFolder);
 		Objects.requireNonNull(engineInfo);
-		if (!engineInfo.isBioengine())
+		if ( !engineInfo.isBioengine()
+				&& !engineInfo.getFramework().equals(EngineInfo.getTensorflowKey())
+				&& !engineInfo.getFramework().equals(EngineInfo.getBioimageioTfKey()))
 			Objects.requireNonNull(modelSource);
 		return new Model( engineInfo, modelFolder, modelSource, classLoader );
 	}
