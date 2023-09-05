@@ -34,25 +34,29 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import io.bioimage.modelrunner.utils.IndexingUtils;
+import net.imglib2.Cursor;
 import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.img.Img;
-import net.imglib2.img.array.ArrayImgs;
-import net.imglib2.img.basictypeaccess.ByteAccess;
-import net.imglib2.img.basictypeaccess.DoubleAccess;
-import net.imglib2.img.basictypeaccess.FloatAccess;
-import net.imglib2.img.basictypeaccess.IntAccess;
-import net.imglib2.img.basictypeaccess.LongAccess;
-import net.imglib2.img.basictypeaccess.ShortAccess;
-import net.imglib2.img.basictypeaccess.nio.ByteBufferAccess;
-import net.imglib2.img.basictypeaccess.nio.DoubleBufferAccess;
-import net.imglib2.img.basictypeaccess.nio.FloatBufferAccess;
-import net.imglib2.img.basictypeaccess.nio.IntBufferAccess;
-import net.imglib2.img.basictypeaccess.nio.LongBufferAccess;
-import net.imglib2.img.basictypeaccess.nio.ShortBufferAccess;
+import net.imglib2.img.array.ArrayImgFactory;
 import net.imglib2.type.NativeType;
 import net.imglib2.type.numeric.RealType;
+import net.imglib2.type.numeric.integer.ByteType;
+import net.imglib2.type.numeric.integer.IntType;
+import net.imglib2.type.numeric.integer.LongType;
+import net.imglib2.type.numeric.integer.ShortType;
+import net.imglib2.type.numeric.integer.UnsignedByteType;
+import net.imglib2.type.numeric.integer.UnsignedIntType;
+import net.imglib2.type.numeric.integer.UnsignedShortType;
+import net.imglib2.type.numeric.real.DoubleType;
+import net.imglib2.type.numeric.real.FloatType;
 
 /**
+ * TODO
+ * TODO
+ * TODO ADD imglib2 to numpy file
+ * 
+ * 
  * Class to convert numpy arrays stored in npy files into ImgLib2 images
  * @author Carlos Garcia Lopez de Haro
  *
@@ -80,7 +84,7 @@ public class DecodeNumpy {
     static
     {
         DATA_TYPES_MAP.put("boolean", 1);
-        DATA_TYPES_MAP.put("byte", 1);
+        DATA_TYPES_MAP.put("int8", 1);
         DATA_TYPES_MAP.put("uint8", 1);
         DATA_TYPES_MAP.put("int16", 2);
         DATA_TYPES_MAP.put("uint16", 1);
@@ -184,7 +188,21 @@ public class DecodeNumpy {
             String[] tokens = shapeStr.split(", ?");
             shape = Arrays.stream(tokens).mapToLong(Long::parseLong).toArray();
         }
-        String dtype = getDataType(typeStr);
+        char order = typeStr.charAt(0);
+        ByteOrder byteOrder = null;
+        if (order == '>') {
+        	byteOrder = ByteOrder.BIG_ENDIAN;
+        } else if (order == '<') {
+        	byteOrder = ByteOrder.LITTLE_ENDIAN;
+        } else if (order == '|') {
+        	byteOrder = ByteOrder.LITTLE_ENDIAN;
+        	new IOException("Numpy .npy file did not specify the byte order of the array."
+        			+ " It was automatically opened as little endian but this does not guarantee"
+        			+ " the that the file is open correctly. Caution is advised.").printStackTrace();
+    	} else {
+        	new IllegalArgumentException("Not supported ByteOrder for the provided .npy array.");
+        }
+        String dtype = getDataType(typeStr.substring(1));
         long numBytes = DATA_TYPES_MAP.get(dtype);
     	long count;
     	if (shape.length == 0)
@@ -194,15 +212,6 @@ public class DecodeNumpy {
         //len = Math.toIntExact(shape.length * numBytes);
         len = Math.toIntExact(count * numBytes);
         ByteBuffer data = ByteBuffer.allocate(len);
-        char order = typeStr.charAt(0);
-        ByteOrder byteOrder = null;
-        if (order == '>') {
-        	byteOrder = ByteOrder.BIG_ENDIAN;
-        } else if (order == '<') {
-        	byteOrder = ByteOrder.LITTLE_ENDIAN;
-        } else {
-        	new IllegalArgumentException("Not supported ByteOrder for the provided .npy array.");
-        }
         data.order(byteOrder);
         readData(dis, data, len);
 
@@ -218,10 +227,8 @@ public class DecodeNumpy {
      * @throws IllegalArgumentException if the String provided is not a numpy datatype
      */
     public static String getDataType(String npDtype) throws IllegalArgumentException {
-    	if (npDtype.startsWith(">") || npDtype.startsWith("<"))
-    		npDtype = npDtype.substring(1);
     	if (npDtype.equals("i1") || npDtype.equals("b") || npDtype.equals("c"))
-    		return "byte";
+    		return "int8";
     	else if (npDtype.equals("i2") || npDtype.equals("h"))
     		return "int16";
     	else if (npDtype.equals("i4") || npDtype.equals("i"))
@@ -300,36 +307,179 @@ public class DecodeNumpy {
     @SuppressWarnings("unchecked")
     public static <T extends NativeType<T>> Img<T> build(ByteBuffer buf, ByteOrder byteOrder, String dtype, long[] shape) throws IllegalArgumentException
     {
-    	buf.order(byteOrder);
-    	if (dtype.equals("byte")) {
-    		ByteAccess access = new ByteBufferAccess(buf, true);
-    		return (Img<T>) ArrayImgs.bytes( access, shape );
-    	} else if (dtype.equals("ubyte")) {
-    		ByteAccess access = new ByteBufferAccess(buf, true);
-    		return (Img<T>) ArrayImgs.unsignedBytes( access, shape );
+    	if (dtype.equals("int8")) {
+    		return (Img<T>) buildInt8(buf, byteOrder, shape);
+    	} else if (dtype.equals("uint8")) {
+    		return (Img<T>) buildUInt8(buf, byteOrder, shape);
     	} else if (dtype.equals("int16")) {
-    		ShortAccess access = new ShortBufferAccess(buf, true);
-    		return (Img<T>) ArrayImgs.shorts( access, shape );
+    		return (Img<T>) buildInt16(buf, byteOrder, shape);
     	} else if (dtype.equals("uint16")) {
-    		ShortAccess access = new ShortBufferAccess(buf, true);
-    		return (Img<T>) ArrayImgs.unsignedShorts( access, shape );
+    		return (Img<T>) buildUInt16(buf, byteOrder, shape);
     	} else if (dtype.equals("int32")) {
-    		IntAccess access = new IntBufferAccess(buf, true);
-    		return (Img<T>) ArrayImgs.ints( access, shape );
+    		return (Img<T>) buildInt32(buf, byteOrder, shape);
     	} else if (dtype.equals("uint32")) {
-    		IntAccess access = new IntBufferAccess(buf, true);
-    		return (Img<T>) ArrayImgs.unsignedInts( access, shape );
+    		return (Img<T>) buildUInt32(buf, byteOrder, shape);
     	} else if (dtype.equals("int64")) {
-    		LongAccess access = new LongBufferAccess(buf, true);
-    		return (Img<T>) ArrayImgs.longs( access, shape );
+    		return (Img<T>) buildInt64(buf, byteOrder, shape);
     	} else if (dtype.equals("float32")) {
-    		FloatAccess access = new FloatBufferAccess(buf, true);
-    		return (Img<T>) ArrayImgs.floats( access, shape );
+    		return (Img<T>) buildFloat32(buf, byteOrder, shape);
     	} else if (dtype.equals("float64")) {
-    		DoubleAccess access = new DoubleBufferAccess(buf, true);
-    		return (Img<T>) ArrayImgs.doubles( access, shape );
+    		return (Img<T>) buildFloat64(buf, byteOrder, shape);
+    	} else if (dtype.equals("bool")) {
+    		return (Img<T>) buildBoolean(buf, byteOrder, shape);
     	} else {
-            throw new IllegalArgumentException("Unsupported tensor type: " + dtype);
+            throw new IllegalArgumentException("Unsupported data type of numpy array: " + dtype);
     	}
+    }
+    
+    private static Img<ByteType> buildInt8(ByteBuffer buf, ByteOrder byteOrder, long[] shape) {
+    	buf.order(byteOrder);
+		final ArrayImgFactory< ByteType > factory = new ArrayImgFactory<>( new ByteType() );
+        final Img< ByteType > outputImg = (Img<ByteType>) factory.create(shape);
+    	Cursor<ByteType> tensorCursor= outputImg.cursor();
+		while (tensorCursor.hasNext()) {
+			tensorCursor.fwd();
+			long[] cursorPos = tensorCursor.positionAsLongArray();
+        	int flatPos = IndexingUtils.multidimensionalIntoFlatIndex(cursorPos, shape);
+        	tensorCursor.get().set(buf.array()[flatPos]);
+		}
+	 	return outputImg;
+    }
+    
+    private static Img<UnsignedByteType> buildUInt8(ByteBuffer buf, ByteOrder byteOrder, long[] shape) {
+    	buf.order(byteOrder);
+		final ArrayImgFactory< UnsignedByteType > factory = new ArrayImgFactory<>( new UnsignedByteType() );
+        final Img< UnsignedByteType > outputImg = (Img<UnsignedByteType>) factory.create(shape);
+    	Cursor<UnsignedByteType> tensorCursor= outputImg.cursor();
+    	int[] flatArr = ByteArrayUtils.toUInt8(buf.array(), byteOrder);
+		while (tensorCursor.hasNext()) {
+			tensorCursor.fwd();
+			long[] cursorPos = tensorCursor.positionAsLongArray();
+        	int flatPos = IndexingUtils.multidimensionalIntoFlatIndex(cursorPos, shape);
+        	tensorCursor.get().set(flatArr[flatPos]);
+		}
+	 	return outputImg;
+    }
+    
+    private static Img<ShortType> buildInt16(ByteBuffer buf, ByteOrder byteOrder, long[] shape) {
+    	buf.order(byteOrder);
+		final ArrayImgFactory< ShortType > factory = new ArrayImgFactory<>( new ShortType() );
+        final Img< ShortType > outputImg = (Img<ShortType>) factory.create(shape);
+    	Cursor<ShortType> tensorCursor= outputImg.cursor();
+    	short[] flatArr = ByteArrayUtils.toInt16(buf.array(), byteOrder);
+		while (tensorCursor.hasNext()) {
+			tensorCursor.fwd();
+			long[] cursorPos = tensorCursor.positionAsLongArray();
+        	int flatPos = IndexingUtils.multidimensionalIntoFlatIndex(cursorPos, shape);
+        	tensorCursor.get().set(flatArr[flatPos]);
+		}
+	 	return outputImg;
+    	
+    }
+    
+    private static Img<UnsignedShortType> buildUInt16(ByteBuffer buf, ByteOrder byteOrder, long[] shape) {
+    	buf.order(byteOrder);
+		final ArrayImgFactory< UnsignedShortType > factory = new ArrayImgFactory<>( new UnsignedShortType() );
+        final Img< UnsignedShortType > outputImg = (Img<UnsignedShortType>) factory.create(shape);
+    	Cursor<UnsignedShortType> tensorCursor= outputImg.cursor();
+    	int[] flatArr = ByteArrayUtils.toUInt16(buf.array(), byteOrder);
+		while (tensorCursor.hasNext()) {
+			tensorCursor.fwd();
+			long[] cursorPos = tensorCursor.positionAsLongArray();
+        	int flatPos = IndexingUtils.multidimensionalIntoFlatIndex(cursorPos, shape);
+        	tensorCursor.get().set(flatArr[flatPos]);
+		}
+	 	return outputImg;
+    }
+    
+    private static Img<IntType> buildInt32(ByteBuffer buf, ByteOrder byteOrder, long[] shape) {
+    	buf.order(byteOrder);
+		final ArrayImgFactory< IntType > factory = new ArrayImgFactory<>( new IntType() );
+        final Img< IntType > outputImg = (Img<IntType>) factory.create(shape);
+    	Cursor<IntType> tensorCursor= outputImg.cursor();
+    	int[] flatArr = ByteArrayUtils.toInt32(buf.array(), byteOrder);
+		while (tensorCursor.hasNext()) {
+			tensorCursor.fwd();
+			long[] cursorPos = tensorCursor.positionAsLongArray();
+        	int flatPos = IndexingUtils.multidimensionalIntoFlatIndex(cursorPos, shape);
+        	tensorCursor.get().set(flatArr[flatPos]);
+		}
+	 	return outputImg;
+    }
+    
+    private static Img<UnsignedIntType> buildUInt32(ByteBuffer buf, ByteOrder byteOrder, long[] shape) {
+    	buf.order(byteOrder);
+		final ArrayImgFactory< UnsignedIntType > factory = new ArrayImgFactory<>( new UnsignedIntType() );
+        final Img< UnsignedIntType > outputImg = (Img<UnsignedIntType>) factory.create(shape);
+    	Cursor<UnsignedIntType> tensorCursor= outputImg.cursor();
+    	long[] flatArr = ByteArrayUtils.toUInt32(buf.array(), byteOrder);
+		while (tensorCursor.hasNext()) {
+			tensorCursor.fwd();
+			long[] cursorPos = tensorCursor.positionAsLongArray();
+        	int flatPos = IndexingUtils.multidimensionalIntoFlatIndex(cursorPos, shape);
+        	tensorCursor.get().set(flatArr[flatPos]);
+		}
+	 	return outputImg;
+    }
+    
+    private static Img<LongType> buildInt64(ByteBuffer buf, ByteOrder byteOrder, long[] shape) {
+    	buf.order(byteOrder);
+		final ArrayImgFactory< LongType > factory = new ArrayImgFactory<>( new LongType() );
+        final Img< LongType > outputImg = (Img<LongType>) factory.create(shape);
+    	Cursor<LongType> tensorCursor= outputImg.cursor();
+    	long[] flatArr = ByteArrayUtils.toInt64(buf.array(), byteOrder);
+		while (tensorCursor.hasNext()) {
+			tensorCursor.fwd();
+			long[] cursorPos = tensorCursor.positionAsLongArray();
+        	int flatPos = IndexingUtils.multidimensionalIntoFlatIndex(cursorPos, shape);
+        	tensorCursor.get().set(flatArr[flatPos]);
+		}
+	 	return outputImg;
+    }
+    
+    private static Img<FloatType> buildFloat32(ByteBuffer buf, ByteOrder byteOrder, long[] shape) {
+    	buf.order(byteOrder);
+		final ArrayImgFactory< FloatType > factory = new ArrayImgFactory<>( new FloatType() );
+        final Img< FloatType > outputImg = (Img<FloatType>) factory.create(shape);
+    	Cursor<FloatType> tensorCursor= outputImg.cursor();
+    	float[] flatArr = ByteArrayUtils.toFloat32(buf.array(), byteOrder);
+		while (tensorCursor.hasNext()) {
+			tensorCursor.fwd();
+			long[] cursorPos = tensorCursor.positionAsLongArray();
+        	int flatPos = IndexingUtils.multidimensionalIntoFlatIndex(cursorPos, shape);
+        	float val = flatArr[flatPos];
+        	tensorCursor.get().set(val);
+		}
+	 	return outputImg;
+    }
+    
+    private static Img<DoubleType> buildFloat64(ByteBuffer buf, ByteOrder byteOrder, long[] shape) {
+    	buf.order(byteOrder);
+		final ArrayImgFactory< DoubleType > factory = new ArrayImgFactory<>( new DoubleType() );
+        final Img< DoubleType > outputImg = (Img<DoubleType>) factory.create(shape);
+    	Cursor<DoubleType> tensorCursor= outputImg.cursor();
+    	double[] flatArr = ByteArrayUtils.toFloat64(buf.array(), byteOrder);
+		while (tensorCursor.hasNext()) {
+			tensorCursor.fwd();
+			long[] cursorPos = tensorCursor.positionAsLongArray();
+        	int flatPos = IndexingUtils.multidimensionalIntoFlatIndex(cursorPos, shape);
+        	tensorCursor.get().set(flatArr[flatPos]);
+		}
+	 	return outputImg;
+    }
+    
+    private static Img<ByteType> buildBoolean(ByteBuffer buf, ByteOrder byteOrder, long[] shape) {
+    	buf.order(byteOrder);
+		final ArrayImgFactory< ByteType > factory = new ArrayImgFactory<>( new ByteType() );
+        final Img< ByteType > outputImg = (Img<ByteType>) factory.create(shape);
+    	Cursor<ByteType> tensorCursor= outputImg.cursor();
+    	boolean[] flatArr = ByteArrayUtils.toBoolean(buf.array(), byteOrder);
+		while (tensorCursor.hasNext()) {
+			tensorCursor.fwd();
+			long[] cursorPos = tensorCursor.positionAsLongArray();
+        	int flatPos = IndexingUtils.multidimensionalIntoFlatIndex(cursorPos, shape);
+        	tensorCursor.get().set((byte)(flatArr[flatPos]?1:0));
+		}
+	 	return outputImg;
     }
 }

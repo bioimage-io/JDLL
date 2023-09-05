@@ -20,16 +20,22 @@
 package io.bioimage.modelrunner.example;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
+import io.bioimage.modelrunner.bioimageio.BioimageioRepo;
 import io.bioimage.modelrunner.engine.EngineInfo;
+import io.bioimage.modelrunner.engine.installation.EngineInstall;
 import io.bioimage.modelrunner.exceptions.LoadEngineException;
 import io.bioimage.modelrunner.model.Model;
 import io.bioimage.modelrunner.tensor.Tensor;
-
+import io.bioimage.modelrunner.versionmanagement.AvailableEngines;
+import io.bioimage.modelrunner.versionmanagement.DeepLearningVersion;
+import io.bioimage.modelrunner.versionmanagement.InstalledEngines;
 import net.imglib2.img.Img;
 import net.imglib2.img.ImgFactory;
+import net.imglib2.img.array.ArrayImgFactory;
 import net.imglib2.img.cell.CellImgFactory;
 import net.imglib2.type.NativeType;
 import net.imglib2.type.numeric.RealType;
@@ -37,15 +43,21 @@ import net.imglib2.type.numeric.real.FloatType;
 import net.imglib2.util.Util;
 
 /**
- * This is an example where a Tensorflow 2.4.1 and Tensorflow 1.15.0 are loaded on the same run.
+ * This is an example where a Tensorflow 2.10.1 and Tensorflow 1.15.0 are loaded on the same run.
  * 
  * The models used for this example are:
 *  <ul>
-*  <li><a href="https://bioimage.io/#/?tags=Neuron%20Segmentation%20in%202D%20EM%20%28Membrane%29&id=10.5281%2Fzenodo.5817052">Tf1</a></li>
-*  <li><a href="https://github.com/stardist/stardist-icy/raw/main/src/main/resources/models/2D/dsb2018_paper.zip">Tf2</a></li>
+*  <li><a href="https://bioimage.io/#/?tags=Drosophila%20epithelia%20cell%20boundary
+*  %20segmentation%20of%202D%20projections&id=10.5281%2Fzenodo.7380171">Drosophila epith
+*  elia cell boundary segmentation of 2D projections (TF2)</a></li>
+*  <li><a href="https://bioimage.io/#/?tags=StarDist%20H%26E%20Nuclei%2
+*  0Segmentation&id=10.5281%2Fzenodo.6338614">StarDist H&E Nuclei Segmentation (TF1)</a></li>
 *  </ul>
  * 
- * It also requires the installation of a TF1 and a TF2 engine
+ * It also requires the installation of a TF2 and a TF1 engine.
+ * 
+ * The example code downloads all the needed artifacts, thus executing the whole
+ * example might take some time.
  * 
  * @author Carlos Garcia Lopez de Haro
  */
@@ -56,39 +68,62 @@ public class ExampleLoadTensorflow1Tensorflow2 {
 	private static final String MODELS_DIR = new File(CWD, "models").getAbsolutePath();
 	
 	/**
+	 * Run the test
+	 * @param <T>
+	 * 	type of the tensors
+	 * @param args
+	 * 	arguments of the main method
+	 * @throws LoadEngineException if there is any exception loading the engine
+	 * @throws Exception if there is any exception in the tests
+	 */
+	public static < T extends RealType< T > & NativeType< T > > void main(String[] args) throws LoadEngineException, Exception {
+		loadAndRunTf1();
+		loadAndRunTf2();
+		System.out.println("Great success!");
+	}
+	
+	/**
 	 * Loads a TF2 model and runs it
 	 * @throws LoadEngineException if there is any error loading an engine
 	 * @throws Exception if there is any exception running the model
 	 */
 	public static void loadAndRunTf2() throws LoadEngineException, Exception {
 		// Tag for the DL framework (engine) that wants to be used
-		String engine = "tensorflow_saved_model_bundle";
+		String framework = "tensorflow_saved_model_bundle";
 		// Version of the engine
-		String engineVersion = "2.4.1";
+		String engineVersion = "2.10.1";
 		// Directory where all the engines are stored
 		String enginesDir = ENGINES_DIR;
-		// Path to the model folder
-		String modelFolder = new File(MODELS_DIR, "dsb2018_paper").getAbsolutePath();
-		// Path to the model source. The model source locally is the path to the source file defined in the 
-		// yaml inside the model folder
-		String modelSource = new File(MODELS_DIR, "dsb2018_paper").getAbsolutePath();
+		// Download an engine that is ompatible with the model of interest
+		downloadCPUEngine(framework, engineVersion, enginesDir);
+		
+		// Name of the model of interest from the Bioimage.io model repository
+		String bmzModelName = "Drosophila epithelia cell boundary segmentation of 2D projections";
+		// Download the model of interest using its name
+		String modelFolder = downloadBMZModel(bmzModelName, MODELS_DIR);
+		
 		// Whether the engine is supported by CPu or not
 		boolean cpu = true;
-		// Whether the engine is supported by GPU or not
-		boolean gpu = false;
+		// Check that the engine of interest is installed
+		List<DeepLearningVersion> installedList = 
+				InstalledEngines.checkEngineWithArgsInstalledForOS(framework, engineVersion, 
+						cpu, null, enginesDir);
+		// Get the first engine that fulfills the requirements and get whether
+		// it supports GPU or not
+		boolean gpu = installedList.get(0).getGPU();
 		// Create the EngineInfo object. It is needed to load the wanted DL framework
 		// among all the installed ones. The EngineInfo loads the corresponding engine by looking
 		// at the enginesDir at searching for the folder that is named satisfying the characteristics specified.
 		// REGARD THAT the engine folders need to follow a naming convention
-		EngineInfo engineInfo = createEngineInfo(engine, engineVersion, enginesDir, cpu, gpu);
-		// Load the corresponding model
-		Model model = loadModel(modelFolder, modelSource, engineInfo);
+		EngineInfo engineInfo = createEngineInfo(framework, engineVersion, enginesDir, cpu, gpu);
+		// Load the corresponding model, for Tensorflow model_source arg is not needed
+		Model model = loadModel(modelFolder, null, engineInfo);
 		// Create an image that will be the backend of the Input Tensor
-		final ImgFactory< FloatType > imgFactory = new CellImgFactory<>( new FloatType(), 5 );
-		final Img< FloatType > img1 = imgFactory.create( 1, 512, 512, 1 );
+		final ImgFactory< FloatType > imgFactory = new ArrayImgFactory<>( new FloatType() );
+		final Img< FloatType > img1 = imgFactory.create( 1, 1, 3, 64, 64 );
 		// Create the input tensor with the nameand axes given by the rdf.yaml file
 		// and add it to the list of input tensors
-		Tensor<FloatType> inpTensor = Tensor.build("input", "bcyx", img1);
+		Tensor<FloatType> inpTensor = Tensor.build("input0", "bczyx", img1);
 		List<Tensor<?>> inputs = new ArrayList<Tensor<?>>();
 		inputs.add(inpTensor);
 		
@@ -97,10 +132,13 @@ public class ExampleLoadTensorflow1Tensorflow2 {
 		/// Regard that output tensors can be built empty without allocating memory
 		// or allocating memory by creating the tensor with a sample empty image, or by
 		// defining the dimensions and data type
-		final Img< FloatType > img2 = imgFactory.create( 1, 512, 512, 33 );
-		Tensor<FloatType> outTensor = Tensor.build("output", "bcyx", img2);
+		Tensor<FloatType> outTensor0 = Tensor.buildBlankTensor(
+				"output0", "bczyx", new long[] {1, 1, 3, 64, 64}, new FloatType());
+		final Img< FloatType > img2 = imgFactory.create( 1, 2, 3, 64, 64 );
+		Tensor<FloatType> outTensor1 = Tensor.build("output1", "bczyx", img2);
 		List<Tensor<?>> outputs = new ArrayList<Tensor<?>>();
-		outputs.add(outTensor);
+		outputs.add(outTensor0);
+		outputs.add(outTensor1);
 		
 		// Run the model on the input tensors. THe output tensors 
 		// will be rewritten with the result of the execution
@@ -121,33 +159,41 @@ public class ExampleLoadTensorflow1Tensorflow2 {
 	 */
 	public static void loadAndRunTf1() throws LoadEngineException, Exception {
 		// Tag for the DL framework (engine) that wants to be used
-		String engine = "tensorflow_saved_model_bundle";
+		String framework = "tensorflow_saved_model_bundle";
 		// Version of the engine
 		String engineVersion = "1.15.0";
 		// Directory where all the engines are stored
 		String enginesDir = ENGINES_DIR;
-		// Path to the model folder
-		String modelFolder = new File(MODELS_DIR, "Neuron Segmentation in 2D EM (Membrane)_02022023_175546").getAbsolutePath();
-		// Path to the model source. The model source locally is the path to the source file defined in the 
-		// yaml inside the model folder
-		String modelSource = modelFolder;
+		// Download an engine that is ompatible with the model of interest
+		downloadCPUEngine(framework, engineVersion, enginesDir);
+		
+		// Name of the model of interest from the Bioimage.io model repository
+		String bmzModelName = "StarDist H&E Nuclei Segmentation";
+		// Download the model of interest using its name
+		String modelFolder = downloadBMZModel(bmzModelName, MODELS_DIR);
+		
 		// Whether the engine is supported by CPu or not
 		boolean cpu = true;
-		// Whether the engine is supported by GPU or not
-		boolean gpu = false;
+		// Check that the engine of interest is installed
+		List<DeepLearningVersion> installedList = 
+				InstalledEngines.checkEngineWithArgsInstalledForOS(framework, engineVersion, 
+						cpu, null, enginesDir);
+		// Get the first engine that fulfills the requirements and get whether
+		// it supports GPU or not
+		boolean gpu = installedList.get(0).getGPU();
 		// Create the EngineInfo object. It is needed to load the wanted DL framework
 		// among all the installed ones. The EngineInfo loads the corresponding engine by looking
 		// at the enginesDir at searching for the folder that is named satisfying the characteristics specified.
 		// REGARD THAT the engine folders need to follow a naming convention
-		EngineInfo engineInfo = createEngineInfo(engine, engineVersion, enginesDir, cpu, gpu);
-		// Load the corresponding model
-		Model model = loadModel(modelFolder, modelSource, engineInfo);
+		EngineInfo engineInfo = createEngineInfo(framework, engineVersion, enginesDir, cpu, gpu);
+		// Load the corresponding model, for Tensorflow the arg model_source is not needed
+		Model model = loadModel(modelFolder, null, engineInfo);
 		// Create an image that will be the backend of the Input Tensor
-		final ImgFactory< FloatType > imgFactory = new CellImgFactory<>( new FloatType(), 5 );
-		final Img< FloatType > img1 = imgFactory.create( 1, 512, 512, 1 );
+		final ImgFactory< FloatType > imgFactory = new ArrayImgFactory<>( new FloatType() );
+		final Img< FloatType > img1 = imgFactory.create( 1, 512, 512, 3 );
 		// Create the input tensor with the nameand axes given by the rdf.yaml file
 		// and add it to the list of input tensors
-		Tensor<FloatType> inpTensor = Tensor.build("input0", "bcyx", img1);
+		Tensor<FloatType> inpTensor = Tensor.build("input0", "byxc", img1);
 		List<Tensor<?>> inputs = new ArrayList<Tensor<?>>();
 		inputs.add(inpTensor);
 		
@@ -156,8 +202,8 @@ public class ExampleLoadTensorflow1Tensorflow2 {
 		/// Regard that output tensors can be built empty without allocating memory
 		// or allocating memory by creating the tensor with a sample empty image, or by
 		// defining the dimensions and data type
-		final Img< FloatType > img2 = imgFactory.create( 1, 512, 512, 1 );
-		Tensor<FloatType> outTensor = Tensor.build("output0", "bcyx", img2);
+		final Img< FloatType > img2 = imgFactory.create( 1, 512, 512, 33 );
+		Tensor<FloatType> outTensor = Tensor.build("output0", "byxc", img2);
 		List<Tensor<?>> outputs = new ArrayList<Tensor<?>>();
 		outputs.add(outTensor);
 		
@@ -171,20 +217,6 @@ public class ExampleLoadTensorflow1Tensorflow2 {
 		inputs.stream().forEach(t -> t.close());
 		outputs.stream().forEach(t -> t.close());
 		System.out.print("Success running Tensorflow 1!!");
-	}
-	
-	/**
-	 * Run the test
-	 * @param <T>
-	 * 	type of the tensors
-	 * @param args
-	 * 	arguments of the main method
-	 * @throws LoadEngineException if there is any exception loading the engine
-	 * @throws Exception if there is any exception in the tests
-	 */
-	public static < T extends RealType< T > & NativeType< T > > void main(String[] args) throws LoadEngineException, Exception {
-		loadAndRunTf1();
-		loadAndRunTf2();
 	}
 	
 	/**
@@ -224,5 +256,52 @@ public class ExampleLoadTensorflow1Tensorflow2 {
 		Model model = Model.createDeepLearningModel(modelFolder, modelSource, engineInfo);
 		model.loadModel();
 		return model;
+	}
+	
+	/**
+	 * Downloads the engine defined by the framework and engineVersion
+	 * arguments that is supported on the CPU
+	 * @param framework
+	 * 	DL framework of interest
+	 * @param engineVersion
+	 * 	version of the DL framework of interest
+	 * @param enginesDir
+	 * 	directory where the engine is going to be installed
+	 * @throws IOException if the engine is not installed correctly or no
+	 * 	engine with the criteria is found
+	 * @throws InterruptedException if the engine download is interrupted
+	 */
+	public static void downloadCPUEngine(String framework, String engineVersion,
+			String enginesDir) throws IOException, InterruptedException {
+		// Check if there is any engine supported by JDLL that fulfils the
+		// framework and version requirements that also runs on CPU
+		List<DeepLearningVersion> possibleEngines = 
+				AvailableEngines.getEnginesForOsByParams(framework, engineVersion, true, null);
+		// Try to install the first match that fits the requirements, any other 
+		// match could have been used too.
+		boolean success = EngineInstall.installEngineInDir(possibleEngines.get(0), enginesDir);
+		
+		if (!success)
+			throw new IOException("The wanted DL engine was not downloaed correctly: "
+								+ possibleEngines.get(0).folderName());
+	}
+	
+	/**
+	 * Download a model from the Bioimage.io repository selecting it by its full
+	 * name. The model is downloaded into the wanted directory.
+	 * 
+	 * @param bmzModelName
+	 * 	name of the model of interest
+	 * @param modelsDir
+	 * 	directory where the model is downloaded
+	 * @return the path to the model downloaded. The path its model folder.
+	 * @throws IOException if there is any error downloading the model or
+	 * 	it does not exist
+	 * @throws InterruptedException if the download is interrupted
+	 */
+	public static String downloadBMZModel(String bmzModelName, String modelsDir) throws IOException, InterruptedException {
+		// Create an instance of the BioimageRepo object
+		BioimageioRepo br = BioimageioRepo.connect();
+		return br.downloadByName(bmzModelName, modelsDir);
 	}
 }

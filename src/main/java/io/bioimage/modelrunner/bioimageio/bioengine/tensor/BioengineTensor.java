@@ -25,6 +25,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import io.bioimage.modelrunner.tensor.Tensor;
+import io.bioimage.modelrunner.utils.IndexingUtils;
 import net.imglib2.Cursor;
 import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.img.Img;
@@ -124,6 +125,10 @@ public class BioengineTensor {
 	 * String used as tag for the uint32 np dtype
 	 */
 	protected static final String UINT32_STR = "uint32";
+	/**
+	 * String used as tag for the boolean np dtype
+	 */
+	protected static final String BOOL_STR = "bool";
 
 	/**
 	 * Utility class.
@@ -572,13 +577,13 @@ public class BioengineTensor {
 		long flatSize = 4;
 		for (long ss : imgTensor.dimensionsAsLongArray()) {flatSize *= ss;}
 		byte[] byteArr = new byte[(int) flatSize];
-		int cc =  0;
+		long[] shape = imgTensor.dimensionsAsLongArray();
 		while (tensorCursor.hasNext()) {
 			tensorCursor.fwd();
-			float val = tensorCursor.get().getRealFloat();
+			int flatPos = IndexingUtils.multidimensionalIntoFlatIndex( tensorCursor.positionAsLongArray(), shape);
+			float val = tensorCursor.get().get();
 			byte[] arr = ByteBuffer.allocate(4).order(order).putFloat(val).array();;
-			System.arraycopy(arr, 0, byteArr, cc * 4, 4);
-			cc ++;
+			System.arraycopy(arr, 0, byteArr, flatPos * 4, 4);
 		}
 		return byteArr;
     }

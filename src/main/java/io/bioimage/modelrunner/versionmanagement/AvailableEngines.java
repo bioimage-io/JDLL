@@ -92,21 +92,20 @@ public class AvailableEngines
      * Creates an instance containing only Deep Learning versions 
      * compatible with the current system and current Java version.
      * 
-     * @return The available versions instance.
+     * @return a list of available versions for the current OS.
      */
-    public static AvailableEngines getForCurrentOS()
+    public static List<DeepLearningVersion> getForCurrentOS()
     {
-        AvailableEngines availableVersions = getAll();
         String currentPlatform = new PlatformDetection().toString();
-        boolean rosetta = new PlatformDetection().isUsingRosseta();
+        boolean rosetta = PlatformDetection.isUsingRosseta();
         int javaVersion = PlatformDetection.getJavaVersion();
-        availableVersions.setVersions(availableVersions.getVersions().stream()
+        List<DeepLearningVersion> list = getAll().stream()
                 .filter(v -> v.getOs().equals(currentPlatform)
                 		&& javaVersion >= v.getMinJavaVersion()
 						&& (!rosetta || (rosetta && v.getRosetta())))
-                .collect(Collectors.toList()));
-        availableVersions.getVersions().stream().forEach(x -> x.setEnginesDir());
-        return availableVersions;
+                .collect(Collectors.toList());
+        list.stream().forEach(x -> x.setEnginesDir());
+        return list;
     }
     
     /**
@@ -120,7 +119,7 @@ public class AvailableEngines
     	List<DeepLearningVersion> nVersions = new ArrayList<DeepLearningVersion>();
     	for (DeepLearningVersion vv : versions) {
     		List<DeepLearningVersion> coinc = nVersions.stream()
-    				.filter(v -> vv.getEngine().equals(v.getEngine()) 
+    				.filter(v -> vv.getFramework().equals(v.getFramework()) 
     						&& vv.getOs().equals(v.getOs())
     						&& vv.getPythonVersion().equals(v.getPythonVersion()) 
     						&& vv.getCPU() == v.getCPU() && vv.getGPU() == v.getGPU())
@@ -138,53 +137,49 @@ public class AvailableEngines
      * Creates an instance containing only Deep Learning versions compatible with
      * the current system and current Java version for the engine of interest
      * 
-     * @param engine
+     * @param framework
      * 	engine name as specified by the bioimage.io, defined at
      * 	https://github.com/bioimage-io/spec-bioimage-io/blob/gh-pages/weight_formats_spec_0_4.md
-     * @return The available versions instance.
+     * @return a list of available versions for the current OS and the framework wanted.
      */
-    public static AvailableEngines filterByEngineForOS(String engine) {
-    	AvailableEngines availableVersions = new AvailableEngines();
-    	String searchEngine = AvailableEngines.getSupportedVersionsEngineTag(engine);
+    public static List<DeepLearningVersion> filterByFrameworkForOS(String framework) {
+    	String searchEngine = AvailableEngines.getSupportedFrameworkTag(framework);
     	if (searchEngine == null) {
-    		availableVersions.setVersions(new ArrayList<DeepLearningVersion>());
-    		return availableVersions;
+    		return new ArrayList<DeepLearningVersion>();
     	}
         String currentPlatform = new PlatformDetection().toString();
         int javaVersion = PlatformDetection.getJavaVersion();
-        boolean rosetta = new PlatformDetection().isUsingRosseta();
-        List<DeepLearningVersion> filtered = getAll().getVersions().stream()
+        boolean rosetta = PlatformDetection.isUsingRosseta();
+        List<DeepLearningVersion> filtered = getAll().stream()
                 .filter(v -> v.getOs().equals(currentPlatform) 
                 		&& javaVersion >= v.getMinJavaVersion()
 						&& (!rosetta || (rosetta && v.getRosetta()))
-                		&& searchEngine.equals(v.getEngine())
+                		&& searchEngine.equals(v.getFramework())
                 		)
                 .collect(Collectors.toList());
-        availableVersions.setVersions(filtered);
-        return availableVersions;
+        return filtered;
     }
     
     /**
      * Return a list of all the Python framework versions of the corresponding engine
      * that can be installed in the current OS and Java version
      * 
-     * @param engine
+     * @param framework
      * 	the engine of interest
      * @return the list of deep learning versions for the given engine
      */
-    public static List<String> getEnginePythonVersionsForOs(String engine) {
-    	String searchEngine = AvailableEngines.getSupportedVersionsEngineTag(engine);
+    public static List<String> getFrameworkPythonVersionsForOs(String framework) {
+    	String searchEngine = AvailableEngines.getSupportedFrameworkTag(framework);
     	if (searchEngine == null)
     		return new ArrayList<String>();
-    	AvailableEngines availableVersions = getAll();
         String currentPlatform = new PlatformDetection().toString();
-        boolean rosetta = new PlatformDetection().isUsingRosseta();
+        boolean rosetta = PlatformDetection.isUsingRosseta();
         int javaVersion = PlatformDetection.getJavaVersion();
-        List<String> availablePythonVersions = availableVersions.getVersions().stream()
+        List<String> availablePythonVersions = getAll().stream()
                 .filter(v -> v.getOs().equals(currentPlatform)
                 		&& javaVersion >= v.getMinJavaVersion()
 						&& (!rosetta || (rosetta && v.getRosetta()))
-						&& searchEngine.equals(v.getEngine()))
+						&& searchEngine.equals(v.getFramework()))
                 .map(DeepLearningVersion::getPythonVersion)
                 .collect(Collectors.toList());
         return availablePythonVersions;
@@ -193,15 +188,15 @@ public class AvailableEngines
     /**
      * Loads all available versions from {@code availableTFVersion.json} file.
      * 
-     * @return The instance of all available versions.
+     * @return a list with all the versions supported.
      */
-    public static AvailableEngines getAll()
+    public static List<DeepLearningVersion> getAll()
     {
         BufferedReader br = new BufferedReader(new InputStreamReader(
                 AvailableEngines.class.getClassLoader().getResourceAsStream("availableDLVersions.json")));
         Gson g = new Gson();
         AvailableEngines availableVersions = g.fromJson(br, AvailableEngines.class);
-        return availableVersions;
+        return availableVersions.getVersions();
     }
 
     private List<DeepLearningVersion> versions;
@@ -245,12 +240,12 @@ public class AvailableEngines
      */
     public static boolean isEngineSupportedInOS(String framework, String version, 
     		Boolean cpu, Boolean gpu) {
-    	String searchEngine = AvailableEngines.getSupportedVersionsEngineTag(framework);
+    	String searchEngine = AvailableEngines.getSupportedFrameworkTag(framework);
     	if (searchEngine == null && framework != null)
     		return false;
-    	DeepLearningVersion engine = AvailableEngines.filterByEngineForOS(searchEngine).getVersions()
+    	DeepLearningVersion engine = AvailableEngines.filterByFrameworkForOS(searchEngine)
 				.stream().filter(v -> {
-					if (searchEngine != null && !v.getEngine().equals(searchEngine))
+					if (searchEngine != null && !v.getFramework().equals(searchEngine))
 						return false;
 					else if (version != null && !v.getPythonVersion().equals(version))
 							return false;
@@ -258,7 +253,7 @@ public class AvailableEngines
 							return false;
 					else if (PlatformDetection.getJavaVersion() < v.getMinJavaVersion())
 						return false;
-					else if (new PlatformDetection().isUsingRosseta() && !v.getRosetta())
+					else if (PlatformDetection.isUsingRosseta() && !v.getRosetta())
 						return false;
 					else if (cpu != null && v.getCPU() != cpu)
 						return false;
@@ -292,12 +287,12 @@ public class AvailableEngines
      */
     public static List<DeepLearningVersion> getEnginesForOsByParams(String framework, 
     		String version, Boolean cpu, Boolean gpu) {
-    	String searchEngine = AvailableEngines.getSupportedVersionsEngineTag(framework);
+    	String searchEngine = AvailableEngines.getSupportedFrameworkTag(framework);
     	if (searchEngine == null)
     		return new ArrayList<DeepLearningVersion>();
-    	List<DeepLearningVersion> engine = AvailableEngines.filterByEngineForOS(searchEngine).getVersions()
+    	List<DeepLearningVersion> engine = AvailableEngines.filterByFrameworkForOS(searchEngine)
 				.stream().filter(v -> {
-					if (searchEngine != null && !v.getEngine().equals(searchEngine))
+					if (searchEngine != null && !v.getFramework().equals(searchEngine))
 						return false;
 					else if (version != null && !v.getPythonVersion().equals(version))
 							return false;
@@ -305,7 +300,7 @@ public class AvailableEngines
 							return false;
 					else if (PlatformDetection.getJavaVersion() < v.getMinJavaVersion())
 						return false;
-					else if (new PlatformDetection().isUsingRosseta() && !v.getRosetta())
+					else if (PlatformDetection.isUsingRosseta() && !v.getRosetta())
 						return false;
 					else if (cpu != null && v.getCPU() != cpu)
 						return false;
@@ -321,23 +316,23 @@ public class AvailableEngines
      * If it receives the engine name given by the BioImage.io (torchscript, tensorflow_saved_model...)
      * it produces the names specified in the resources files (pytorch, tensorflow...).
      * If it receives the later it does nothing 
-     * @param engine
+     * @param framework
      * 	an engine tag
      * @return the correct engine tag format to parse the files at resources
      */
-    public static String getSupportedVersionsEngineTag(String engine) {
-    	if (engine == null)
+    public static String getSupportedFrameworkTag(String framework) {
+    	if (framework == null)
     		return null;
-    	boolean engineExists = AvailableEngines.bioimageioToModelRunnerKeysMap().keySet().stream().anyMatch(i -> i.equals(engine));
+    	boolean engineExists = AvailableEngines.bioimageioToModelRunnerKeysMap().keySet().stream().anyMatch(i -> i.equals(framework));
     	boolean engineExists2 = AvailableEngines.bioimageioToModelRunnerKeysMap().entrySet()
-    			.stream().anyMatch(i -> i.getValue().equals(engine));
+    			.stream().anyMatch(i -> i.getValue().equals(framework));
     	final String searchEngine;
     	if (!engineExists && !engineExists2) 
     		return null;
     	else if (!engineExists2)
-    		searchEngine = AvailableEngines.bioimageioToModelRunnerKeysMap().get(engine).toLowerCase();
+    		searchEngine = AvailableEngines.bioimageioToModelRunnerKeysMap().get(framework).toLowerCase();
     	else 
-    		searchEngine = engine;
+    		searchEngine = framework;
     	return searchEngine;
     }
 

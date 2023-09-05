@@ -91,7 +91,7 @@ public class Model
 	 * @param modelSource
 	 *            name of the actual model file (.pt for torchscript)
 	 * @param classLoader
-	 *            parent ClassLoader (can be null)
+	 *            parent ClassLoader of the engine (can be null)
 	 * @throws LoadEngineException
 	 *             if there is an error finding the Deep LEarningn interface
 	 *             that connects with the DL libraries
@@ -101,7 +101,9 @@ public class Model
 	private Model( EngineInfo engineInfo, String modelFolder, String modelSource, ClassLoader classLoader )
 			throws LoadEngineException, Exception
 	{
-		if (!engineInfo.isBioengine())
+		if ( !engineInfo.isBioengine()
+				&& !engineInfo.getFramework().equals(EngineInfo.getTensorflowKey())
+				&& !engineInfo.getFramework().equals(EngineInfo.getBioimageioTfKey()) )
 			Objects.requireNonNull(modelSource);
 		this.engineInfo = engineInfo;
 		this.modelFolder = modelFolder;
@@ -134,9 +136,41 @@ public class Model
 	{
 		Objects.requireNonNull(modelFolder);
 		Objects.requireNonNull(engineInfo);
-		if (!engineInfo.isBioengine())
+		if ( !engineInfo.isBioengine() 
+				&& !engineInfo.getFramework().equals(EngineInfo.getTensorflowKey())
+				&& !engineInfo.getFramework().equals(EngineInfo.getBioimageioTfKey()) )
 			Objects.requireNonNull(modelSource);
 		return new Model( engineInfo, modelFolder, modelSource, null );
+	}
+	
+	/**
+	 * Load a model from the bioimage.io directly. Just providing the path to the
+	 * folder where the rdf.yaml is, no extra info is needed as it is read from the
+	 * rdf.yaml file
+	 * To successfully create a Bioiamge.io model, it is required that there is installed
+	 * at least one of the engines needed to load at least one of the weight formats
+	 * supported by the model. Only the major version needs to be the same (Tensorflow 1 != Tensorflow 2).
+	 * 
+	 * @param bmzModelFolder
+	 * 	folder where the bioimage.io model is located (parent folder of the rdf.yaml file)
+	 * @param classloader
+	 * 	Parent ClassLoader of the engine (can be null). Almost the same method as 
+	 *  Model.createBioimageioModel( String bmzModelFolder, String enginesFolder ). 
+	 *  The only difference is that this method can choose the parent ClassLoader for the engine. 
+	 *  JDLL creates a separate ChildFirst-ParentLast CustomClassLoader for each of the 
+	 *  engines loaded to avoid conflicts between them. In order to have access to the 
+	 *  classes of the main ClassLoader the ChildFirst-ParentLast CustomClassLoader needs a parent. 
+	 *  If no classloader argument is provided the parent ClassLoader will be the Thread's 
+	 *  context ClassLoader (Thread.currentThread().getContextClassLoader()).
+	 *  
+	 *  The classloader argument is usually not needed, but for some softwares 
+	 *  such as Icy, that have a custom management of ClassLoaders it is necessary.
+	 * @return a model ready to be loaded
+	 * @throws Exception if there is any error creating the model (no rdf.yaml file, no weights,
+	 * 	or the engines required for this model are not installed).
+	 */
+	public static Model createBioimageioModel(String bmzModelFolder, ClassLoader classloader) throws Exception {
+		return createBioimageioModel(bmzModelFolder, InstalledEngines.getEnginesDir(), classloader);
 	}
 	
 	/**
@@ -174,6 +208,39 @@ public class Model
 	 * 	or the engines required for this model are not installed).
 	 */
 	public static Model createBioimageioModel(String bmzModelFolder, String enginesFolder) 
+			throws Exception {
+		return createBioimageioModel(bmzModelFolder, enginesFolder, null);
+	}
+	
+	/**
+	 * Load a model from the bioimage.io directly. Just providing the path to the
+	 * folder where the rdf.yaml is, no extra info is needed as it is read from the
+	 * rdf.yaml file.
+	 * To successfully create a Bioiamge.io model, it is required that there is installed
+	 * at least one of the engines needed to load at least one of the weight formats
+	 * supported by the model. Only the major version needs to be the same (Tensorflow 1 != Tensorflow 2).
+	 * 
+	 * @param bmzModelFolder
+	 * 	folder where the bioimage.io model is located (parent folder of the rdf.yaml file)
+	 * @param enginesFolder
+	 * 	directory where all the engine (DL framework) folders are downloaded
+	 * @param classloader
+	 * 	Parent ClassLoader of the engine (can be null). Almost the same method as 
+	 *  Model.createBioimageioModel( String bmzModelFolder, String enginesFolder ). 
+	 *  The only difference is that this method can choose the parent ClassLoader for the engine. 
+	 *  JDLL creates a separate ChildFirst-ParentLast CustomClassLoader for each of the 
+	 *  engines loaded to avoid conflicts between them. In order to have access to the 
+	 *  classes of the main ClassLoader the ChildFirst-ParentLast CustomClassLoader needs a parent. 
+	 *  If no classloader argument is provided the parent ClassLoader will be the Thread's 
+	 *  context ClassLoader (Thread.currentThread().getContextClassLoader()).
+	 *  
+	 *  The classloader argument is usually not needed, but for some softwares 
+	 *  such as Icy, that have a custom management of ClassLoaders it is necessary.
+	 * @return a model ready to be loaded
+	 * @throws Exception if there is any error creating the model (no rdf.yaml file, no weights,
+	 * 	or the engines required for this model are not installed).
+	 */
+	public static Model createBioimageioModel(String bmzModelFolder, String enginesFolder, ClassLoader classloader) 
 			throws Exception {
 		Objects.requireNonNull(bmzModelFolder);
 		Objects.requireNonNull(enginesFolder);
@@ -271,8 +338,7 @@ public class Model
 			}
 		}
 		if (info == null)
-			throw new IOException("Please install a compatible engine with the model weights. "
-					+ "Both the major and minor versions of the engine need to be the same as the weigths. "
+			throw new IOException("Please install the engines defined by the model weights. "
 					+ "The model weights are: " + descriptor.getWeights().getEnginesListWithVersions());
 		return Model.createDeepLearningModel(bmzModelFolder, modelSource, info);
 	}
@@ -291,7 +357,17 @@ public class Model
 	 *            all the information needed to load the classes of a Deep
 	 *            Learning framework (engine)
 	 * @param classLoader
-	 *            parent ClassLoader (can be null)
+	 * 	Parent ClassLoader of the engine(can be null). Almost the same method as 
+	 *  Model.createDeepLearningModel( String modelFolder, String modelSource, EngineInfo engineInfo). 
+	 *  The only difference is that this method can choose the parent ClassLoader for the engine. 
+	 *  JDLL creates a separate ChildFirst-ParentLast CustomClassLoader for each of the 
+	 *  engines loaded to avoid conflicts between them. In order to have access to the 
+	 *  classes of the main ClassLoader the ChildFirst-ParentLast CustomClassLoader needs a parent. 
+	 *  If no classloader argument is provided the parent ClassLoader will be the Thread's 
+	 *  context ClassLoader (Thread.currentThread().getContextClassLoader()).
+	 *  
+	 *  The classloader argument is usually not needed, but for some softwares 
+	 *  such as Icy, that have a custom management of ClassLoaders it is necessary.
 	 * @return the Model that is going to be used to make inference
 	 * @throws LoadEngineException
 	 *             if there is an error finding the Deep LEarningn interface
@@ -304,7 +380,9 @@ public class Model
 	{
 		Objects.requireNonNull(modelFolder);
 		Objects.requireNonNull(engineInfo);
-		if (!engineInfo.isBioengine())
+		if ( !engineInfo.isBioengine()
+				&& !engineInfo.getFramework().equals(EngineInfo.getTensorflowKey())
+				&& !engineInfo.getFramework().equals(EngineInfo.getBioimageioTfKey()))
 			Objects.requireNonNull(modelSource);
 		return new Model( engineInfo, modelFolder, modelSource, classLoader );
 	}
@@ -313,14 +391,14 @@ public class Model
 	 * Sets the classloader containing the Deep Learning engine
 	 * 
 	 * @param classLoader
-	 *            parent ClassLoader (can be null)
+	 *            parent ClassLoader of the engine (can be null)
 	 * @throws LoadEngineException
 	 *             if there is an error finding the Deep LEarningn interface
 	 *             that connects with the DL libraries
 	 * @throws Exception
 	 *             if the directory is not found
 	 */
-	public void setEngineClassLoader( ClassLoader classLoader ) throws LoadEngineException, Exception
+	private void setEngineClassLoader( ClassLoader classLoader ) throws LoadEngineException, Exception
 	{
 		this.engineClassLoader = EngineLoader.createEngine(
 				( classLoader == null ) ? Thread.currentThread().getContextClassLoader() : classLoader, engineInfo );
@@ -411,17 +489,6 @@ public class Model
 	public String getModelSource()
 	{
 		return this.modelSource;
-	}
-
-	/**
-	 * Sets the model name
-	 * 
-	 * @param modelName
-	 *            the name of the model
-	 */
-	public void setModelName( String modelName )
-	{
-		this.modelName = modelName;
 	}
 
 	/**
