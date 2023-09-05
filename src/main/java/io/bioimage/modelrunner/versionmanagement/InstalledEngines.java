@@ -209,7 +209,7 @@ public class InstalledEngines {
     public List<DeepLearningVersion> getDownloadedForOS()
     {
         String currentPlatform = new PlatformDetection().toString();
-        boolean rosetta = new PlatformDetection().isUsingRosseta();
+        boolean rosetta = PlatformDetection.isUsingRosseta();
         int javaVersion = PlatformDetection.getJavaVersion();
     	List<DeepLearningVersion> versions = getAll();
     	versions = versions.stream().filter(v -> v.getOs().equals(currentPlatform)
@@ -503,7 +503,7 @@ public class InstalledEngines {
     public List<DeepLearningVersion> checkEngineWithArgsInstalledForOS(String framework, 
     		String version, Boolean cpu, Boolean gpu) {
     	int javaVersion = PlatformDetection.getJavaVersion();
-    	boolean rosetta = new PlatformDetection().isUsingRosseta();
+    	boolean rosetta = PlatformDetection.isUsingRosseta();
     	return checkEngineWithArgsInstalled(framework, version, cpu, gpu, 
     			rosetta, javaVersion);
     }

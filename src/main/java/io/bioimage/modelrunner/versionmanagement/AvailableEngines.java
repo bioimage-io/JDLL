@@ -97,7 +97,7 @@ public class AvailableEngines
     public static List<DeepLearningVersion> getForCurrentOS()
     {
         String currentPlatform = new PlatformDetection().toString();
-        boolean rosetta = new PlatformDetection().isUsingRosseta();
+        boolean rosetta = PlatformDetection.isUsingRosseta();
         int javaVersion = PlatformDetection.getJavaVersion();
         List<DeepLearningVersion> list = getAll().stream()
                 .filter(v -> v.getOs().equals(currentPlatform)
@@ -149,7 +149,7 @@ public class AvailableEngines
     	}
         String currentPlatform = new PlatformDetection().toString();
         int javaVersion = PlatformDetection.getJavaVersion();
-        boolean rosetta = new PlatformDetection().isUsingRosseta();
+        boolean rosetta = PlatformDetection.isUsingRosseta();
         List<DeepLearningVersion> filtered = getAll().stream()
                 .filter(v -> v.getOs().equals(currentPlatform) 
                 		&& javaVersion >= v.getMinJavaVersion()
@@ -173,7 +173,7 @@ public class AvailableEngines
     	if (searchEngine == null)
     		return new ArrayList<String>();
         String currentPlatform = new PlatformDetection().toString();
-        boolean rosetta = new PlatformDetection().isUsingRosseta();
+        boolean rosetta = PlatformDetection.isUsingRosseta();
         int javaVersion = PlatformDetection.getJavaVersion();
         List<String> availablePythonVersions = getAll().stream()
                 .filter(v -> v.getOs().equals(currentPlatform)
@@ -253,7 +253,7 @@ public class AvailableEngines
 							return false;
 					else if (PlatformDetection.getJavaVersion() < v.getMinJavaVersion())
 						return false;
-					else if (new PlatformDetection().isUsingRosseta() && !v.getRosetta())
+					else if (PlatformDetection.isUsingRosseta() && !v.getRosetta())
 						return false;
 					else if (cpu != null && v.getCPU() != cpu)
 						return false;
@@ -300,7 +300,7 @@ public class AvailableEngines
 							return false;
 					else if (PlatformDetection.getJavaVersion() < v.getMinJavaVersion())
 						return false;
-					else if (new PlatformDetection().isUsingRosseta() && !v.getRosetta())
+					else if (PlatformDetection.isUsingRosseta() && !v.getRosetta())
 						return false;
 					else if (cpu != null && v.getCPU() != cpu)
 						return false;
