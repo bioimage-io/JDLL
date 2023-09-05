@@ -101,7 +101,9 @@ public class Model
 	private Model( EngineInfo engineInfo, String modelFolder, String modelSource, ClassLoader classLoader )
 			throws LoadEngineException, Exception
 	{
-		if (!engineInfo.isBioengine())
+		if ( !engineInfo.isBioengine()
+				&& !engineInfo.getFramework().equals(EngineInfo.getTensorflowKey())
+				&& !engineInfo.getFramework().equals(EngineInfo.getBioimageioTfKey()) )
 			Objects.requireNonNull(modelSource);
 		this.engineInfo = engineInfo;
 		this.modelFolder = modelFolder;
