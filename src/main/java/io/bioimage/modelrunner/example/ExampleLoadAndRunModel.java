@@ -45,10 +45,13 @@ import net.imglib2.util.Util;
 
 /**
  * This is an example of the library that runs a Deep Learning model on a
- * supported engine locally on your computer. Regard that in order to this
+ * supported engine locally on your computer. Regard that in order to get this
  * example to work, a Deep Learning model needs to be downloaded from the
- * Bioimage.io repo and a Java Deep Learning framework needs to be installed
- * too, in your user directory. This example uses the torchscript/DeepImageJ
+ * Bioimage.io repo and a Java Deep Learning framework needs to be installed. 
+ * 
+ * The example code downloads both artifacts, thus it might take some time to complete
+ * as the downloaded files are not light.
+ * This example uses the torchscript/DeepImageJ
  * model <a href=
  * "https://bioimage.io/#/?tags=10.5281%2Fzenodo.6406756&id=10.5281%2Fzenodo.6406756">here</a>.
  * 
@@ -75,20 +78,25 @@ public class ExampleLoadAndRunModel {
 		String engineVersion = "1.13.1";
 		// Directory where all the engines are stored
 		String enginesDir = ENGINES_DIR;
-		downloadTorchscriptEngine(framework, engineVersion, enginesDir);
+		// Download an engine that is ompatible with the model of interest
+		downloadCPUEngine(framework, engineVersion, enginesDir);
 		
+		// Name of the model of interest from the Bioimage.io model repository
 		String bmzModelName = "EnhancerMitochondriaEM2D";
+		// Download the model of interest using its name
 		String modelFolder = downloadBMZModel(bmzModelName, MODELS_DIR);
 		
 		// Path to the model source. The model source locally is the path to the source file defined in the 
 		// yaml inside the model folder
 		String modelSource = new File(modelFolder, "weights-torchscript.pt").getAbsolutePath();
-		// Whether the engine is supported by CPu or not
+		// Whether the engine is supported by CPU or not
 		boolean cpu = true;
+		// Check that the engine of interest is installed
 		List<DeepLearningVersion> installedList = 
 				InstalledEngines.checkEngineWithArgsInstalledForOS(framework, engineVersion, 
 						cpu, null, enginesDir);
-		// Whether the engine is supported by GPU or not
+		// Get the first engine that fulfills the requirements and get whether
+		// it supports GPU or not
 		boolean gpu = installedList.get(0).getGPU();
 		// Create the EngineInfo object. It is needed to load the wanted DL framework
 		// among all the installed ones. The EngineInfo loads the corresponding engine by looking
@@ -132,10 +140,27 @@ public class ExampleLoadAndRunModel {
 		System.out.print("Success!!");
 	}
 	
-	public static void downloadTorchscriptEngine(String framework, String engineVersion,
+	/**
+	 * Downloads the engine defined by the framework and engineVersion
+	 * arguments that is supported on the CPU
+	 * @param framework
+	 * 	DL framework of interest
+	 * @param engineVersion
+	 * 	version of the DL framework of interest
+	 * @param enginesDir
+	 * 	directory where the engine is going to be installed
+	 * @throws IOException if the engine is not installed correctly or no
+	 * 	engine with the criteria is found
+	 * @throws InterruptedException if the engine download is interrupted
+	 */
+	public static void downloadCPUEngine(String framework, String engineVersion,
 			String enginesDir) throws IOException, InterruptedException {
+		// Check if there is any engine supported by JDLL that fulfils the
+		// framework and version requirements that also runs on CPU
 		List<DeepLearningVersion> possibleEngines = 
 				AvailableEngines.getEnginesForOsByParams(framework, engineVersion, true, null);
+		// Try to install the first match that fits the requirements, any other 
+		// match could have been used too.
 		boolean success = EngineInstall.installEngineInDir(possibleEngines.get(0), enginesDir);
 		
 		if (!success)
@@ -143,7 +168,19 @@ public class ExampleLoadAndRunModel {
 								+ possibleEngines.get(0).folderName());
 	}
 	
-	
+	/**
+	 * Download a model from the Bioimage.io repository selecting it by its full
+	 * name. The model is downloaded into the wanted directory.
+	 * 
+	 * @param bmzModelName
+	 * 	name of the model of interest
+	 * @param modelsDir
+	 * 	directory where the model is downloaded
+	 * @return the path to the model downloaded. The path its model folder.
+	 * @throws IOException if there is any error downloading the model or
+	 * 	it does not exist
+	 * @throws InterruptedException if the download is interrupted
+	 */
 	public static String downloadBMZModel(String bmzModelName, String modelsDir) throws IOException, InterruptedException {
 		// Create an instance of the BioimageRepo object
 		BioimageioRepo br = BioimageioRepo.connect();
