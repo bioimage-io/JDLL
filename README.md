@@ -49,7 +49,7 @@ Download the dependency and include it in your project
    <dependency>
      <groupId>io.bioimage</groupId>
      <artifactId>dl-runner</artifactId>
-     <version>0.3.12</version>
+     <version>0.3.11</version>
    </dependency>
    ```
 
