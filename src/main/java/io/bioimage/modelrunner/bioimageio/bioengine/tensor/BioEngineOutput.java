@@ -151,8 +151,6 @@ public class BioEngineOutput {
 	 * @return an object that can be used to provide
 	 * 	inputs to the BioEngine
 	 * @throws IOException  if there is any error deserializing the raw output bytes
-	 * @throws JsonMappingException  if there is any error deserializing the raw output bytes
-	 * @throws JsonParseException  if there is any error deserializing the raw output bytes
 	 * @throws Exception if the BioEngine sends an error message after execution
 	 */
 	public static BioEngineOutput build(byte[] rawOutput) throws IOException,

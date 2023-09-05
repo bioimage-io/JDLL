@@ -30,8 +30,7 @@ import net.imglib2.view.Views;
 import net.imglib2.loops.LoopBuilder;
 
 /**
- * Class to handle {@link ImgLib2} operations, as mirroring or tiling
- * Utility class for {@link ImgLib2} objects.
+ * Class to handle {@link RandomAccessibleInterval} operations, as mirroring or tiling
  * 
  * @author Carlos Garcia Lopez de Haro and Daniel Felipe Gonzalez Obando 
  * 
@@ -48,11 +47,13 @@ public final class ImgLib2Utils
      * Copies values from source to target NDArrays starting at the source offset position as the origin in target NDArrays and taking the given size. This
      * method assumes the target NDArray is already initialized with all the needed space.
      * 
+     * @param <T>
+     * 	possible data types the ImgLib2 object might have
      * @param sourceNDArray
      *        Source data INDArray.
      * @param targetNDArray
      *        Target INDArray.
-     * @param newSourceOffset
+     * @param sourceOffset
      *        Position in source sequence to start the copy from. Must be of length 5.
      * @param paddingBottomRight
      *        the size of the padding at the bottom or right sides for the special case
@@ -93,6 +94,8 @@ public final class ImgLib2Utils
      * Takes the {@code INDArray} and adds a mirror on the areas out of the patch (specified by patchStart and patchSize). Boundaries are checked with both
      * the input and the patch sequences. The result is added to the {@code patchSequence}.</br>
      * 
+     * @param <T>
+     * 	ImgLib2 data types the image might have
      * @param inputNDArr
      *        The INDArray the patch was taken from.
      * @param patchNDArr
@@ -100,8 +103,8 @@ public final class ImgLib2Utils
      * @param newPatchStart
      *        The patch position in the input INDArray. First array start of the 
      *        front padding and second array, start of the back.
-     * @param patchSize
-     *        The patch size without any padding (the output patch size).
+     * @param padding
+     *        the padding of the image
      */
     public static < T extends RealType< T > & NativeType< T > > void addMirrorToPatchRai(RandomAccessibleInterval<T> inputNDArr, RandomAccessibleInterval<T> patchNDArr,
             int[] newPatchStart, int[][] padding) {
@@ -130,20 +133,23 @@ public final class ImgLib2Utils
      * Uses the {@code patchSequence} to fill the {@code resultSequence} at the {@code resultOffset} position. The copied interval in the patch is given by the
      * {@code patchOffset} and the {@code patchSize}.</br>
      * 
+     * @param <T>
+     * 	possible ImgLib2 data types the {@link RandomAccessibleInterval} might have
      * @param resultNDArray
      *        The sequence where the data is pasted at.
      * @param patchNDArray
      *        The sequence where the data is copied from.
-     * @param newResultOffset
+     * @param resultOffset
      *        The position in the result sequence where the data is pasted.
-     * @param patchOffset5D
+     * @param paddingFront
      *        The position in the patch sequence where the copy starts.
-     * @param areaOfInterestSize5D
+     * @param areaOfInterestSize
      *        The length on each axis to be copied from the patch sequence.
      *        This size only corresponds to the area of interest, the pixels
      *        corresponding to padding are left out
      */
-    public static < T extends RealType< T > & NativeType< T > > void fillRaiAt(RandomAccessibleInterval<T> resultNDArray, RandomAccessibleInterval<T> patchNDArray, int[] resultOffset,
+    public static < T extends RealType< T > & NativeType< T > > void fillRaiAt(RandomAccessibleInterval<T> resultNDArray, 
+    		RandomAccessibleInterval<T> patchNDArray, int[] resultOffset,
             int[] paddingFront, int[] areaOfInterestSize)
     {
         long[] finalSize = resultNDArray.dimensionsAsLongArray();
@@ -223,7 +229,7 @@ public final class ImgLib2Utils
 	}
 
     /**
-     * Creates an array containing the size of the given {@link NDArray}.
+     * Creates an array containing the size of the given {@link RandomAccessibleInterval}.
      * It is the same as teh shape
      * 
      * @param s

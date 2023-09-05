@@ -120,9 +120,6 @@ public class SupportedVersions
 	 *            version of the Deep Learning framework (engine) used to create
 	 *            the model
 	 * @return the corresponding Java version
-	 * @throws Exception
-	 *             throw exception in the case the version wanted is not
-	 *             supported
 	 */
 	public String getCorrespondingJavaVersion( String version )
 	{

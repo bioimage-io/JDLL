@@ -371,7 +371,7 @@ public class BioengineInterface implements DeepLearningEngineInterface {
 	 * @param data
 	 * 	the data corresponding to the input to the model
 	 * @return the output of the server
-	 * @throws ProtocolExceptionif the connection with the server cannot be opened 
+	 * @throws ProtocolException if the connection with the server cannot be opened 
 	 * 	or the server is not found
 	 * @throws MalformedURLException if the url is not correct
 	 * @throws IOException if the connection with the server cannot be opened 

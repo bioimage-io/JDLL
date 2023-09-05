@@ -88,7 +88,6 @@ public class BioEngineOutputArray {
 	 * 	shape of the tensor
 	 * @param buffer
 	 * 	data of the tensor as a byte array
-	 * @return an understandable tensor
 	 * @throws IllegalArgumentException if the data type of the array is not supported
 	 */
 	public BioEngineOutputArray(String name, String dataType, Object shape, byte[] buffer) {
