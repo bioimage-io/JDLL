@@ -11,6 +11,7 @@ jobs:
     strategy:
       matrix:
         os: [macos-latest, ubuntu-latest, windows-latest] # macos-10.15,
+      fail-fast: false
     steps:
     - name: Checkout repository
       uses: actions/checkout@v2
@@ -24,9 +25,4 @@ jobs:
     - name: Run ExampleLoadTensorflow1Tensorflow2.java file
       shell: bash
       run: |
-        #if [[ "$OSTYPE" == "win"* ]]; then
-        #  java -cp  target\\classes io.bioimage.modelrunner.example.ExampleLoadAndRunModel
-        #else
-        #  java -cp  target/classes io.bioimage.modelrunner.example.ExampleLoadAndRunModel
-        #fi 
         mvn exec:java -Dexec.mainClass=io.bioimage.modelrunner.example.ExampleLoadTensorflow1Tensorflow2
