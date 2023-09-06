@@ -185,7 +185,7 @@ public class ExampleLoadTensorflow1Tensorflow2 {
 		final Img< FloatType > img1 = imgFactory.create( 1, 512, 512, 3 );
 		// Create the input tensor with the nameand axes given by the rdf.yaml file
 		// and add it to the list of input tensors
-		Tensor<FloatType> inpTensor = Tensor.build("input0", "byxc", img1);
+		Tensor<FloatType> inpTensor = Tensor.build("input", "byxc", img1);
 		List<Tensor<?>> inputs = new ArrayList<Tensor<?>>();
 		inputs.add(inpTensor);
 		
@@ -195,7 +195,7 @@ public class ExampleLoadTensorflow1Tensorflow2 {
 		// or allocating memory by creating the tensor with a sample empty image, or by
 		// defining the dimensions and data type
 		final Img< FloatType > img2 = imgFactory.create( 1, 512, 512, 33 );
-		Tensor<FloatType> outTensor = Tensor.build("output0", "byxc", img2);
+		Tensor<FloatType> outTensor = Tensor.build("output", "byxc", img2);
 		List<Tensor<?>> outputs = new ArrayList<Tensor<?>>();
 		outputs.add(outTensor);
 		
