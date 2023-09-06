@@ -1,4 +1,4 @@
-name: Run Pytorch model
+name: Run Tensorflow 1 and Tensorflow 2 models
 on:
   push:
     branches:
@@ -22,7 +22,7 @@ jobs:
         java-version: '11'
     - name: Build with Maven
       run: mvn install
-    - name: Run ExampleLoadAndRunModel.java file
+    - name: Run ExampleLoadTensorflow1Tensorflow2.java file
       shell: bash
       run: |
-        mvn exec:java -Dexec.mainClass=io.bioimage.modelrunner.example.ExampleLoadAndRunModel
+        mvn exec:java -Dexec.mainClass=io.bioimage.modelrunner.example.ExampleLoadTensorflow1Tensorflow2
