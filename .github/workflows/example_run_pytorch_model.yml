@@ -24,8 +24,9 @@ jobs:
     - name: Run ExampleLoadAndRunModel.java file
       shell: bash
       run: |
-        if [[ "$OSTYPE" == "win"* ]]; then
-          java -cp  target\\classes io.bioimage.modelrunner.example.ExampleLoadAndRunModel
-        else
-          java -cp  target/classes io.bioimage.modelrunner.example.ExampleLoadAndRunModel
-        fi
+        #if [[ "$OSTYPE" == "win"* ]]; then
+        #  java -cp  target\\classes io.bioimage.modelrunner.example.ExampleLoadAndRunModel
+        #else
+        #  java -cp  target/classes io.bioimage.modelrunner.example.ExampleLoadAndRunModel
+        #fi 
+        mvn exec:java -Dexec.mainClass=io.bioimage.modelrunner.example.ExampleLoadAndRunModel
