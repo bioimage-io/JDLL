@@ -43,7 +43,9 @@ if len(sys.argv) == 3:
 	bmzModelName = sys.argv[1]
 	full_path = sys.argv[2]
 
-
+if not os.path.exists(full_path) or not os.path.isdir(full_path):
+    os.makedirs(full_path)
+    
 print("Connecting to the Bioimage.io repository")
 br = BioimageioRepo.connect()
 print("Downloading the Bioimage.io model: " + bmzModelName)
