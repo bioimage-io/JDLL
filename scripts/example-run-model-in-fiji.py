@@ -62,8 +62,7 @@ success = EngineInstall.installEngineWithArgsInDir("tensorflow",
 if (success):
 	print("Engine correctly installed at: " + engine_path)
 else:
-	print("Error with the engine installation.")
-	return
+	raise Error("Error with the engine installation.")
 
 imp = IJ.openImage(os.path.join(model_fn, "sample_input_0.tif"))
 imp.show()

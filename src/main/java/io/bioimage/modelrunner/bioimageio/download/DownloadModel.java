@@ -135,7 +135,7 @@ public class DownloadModel {
 	 */
 	private DownloadModel(ModelDescriptor descriptor, String modelsDir) {
 		this.descriptor = descriptor;
-		String fname = addTimeStampToFileName(descriptor.getName());
+		String fname = addTimeStampToFileName(descriptor.getName(), true);
 		this.modelsDir = modelsDir + File.separator + getValidFileName(fname);
 		this.consumer = (String b) -> {
     		progressString += b;
@@ -369,6 +369,34 @@ public class DownloadModel {
 		for (String kk : downloadableLinks.keySet())
 			links.add(downloadableLinks.get(kk));
 		return links;
+	}
+	
+	/**
+	 * Add the timestamp to the String given
+	 * @param str
+	 * 	String to add the time stamp
+	 * @param isDir
+	 * 	whether the file name represents a directory or not
+	 * @return string with the timestamp
+	 */
+	public static String addTimeStampToFileName(String str, boolean isDir) {
+		// Add timestamp to the model name. 
+		// The format consists on: modelName + date as ddmmyyyy + time as hhmmss
+        Calendar cal = Calendar.getInstance();
+		SimpleDateFormat sdf = new SimpleDateFormat("ddMMYYYY_HHmmss");
+		String dateString = sdf.format(cal.getTime());
+		if (isDir)
+			return str + "_" + dateString;
+		int ind = str.lastIndexOf(File.separator);
+		String fileName = str;
+		if (ind != -1)
+			fileName = str.substring(ind + 1);
+		int extensionPos = fileName.lastIndexOf(".");
+		if (extensionPos == -1)
+			return str + "_" + dateString;
+		String nameNoExtension = str.substring(0, extensionPos);
+		String extension = str.substring(extensionPos);
+		return nameNoExtension + "_" + dateString + extension;
 	}
 	
 	/**
