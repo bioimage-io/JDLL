@@ -50,7 +50,7 @@ print("Downloading the Bioimage.io model: " + bmzModelName)
 model_fn = br.downloadByName(bmzModelName, models_path)
 
 print("Model downloaded at: " + model_fn)
-"""
+
 print("Download the engine required for the model")
 if not os.path.exists(engine_path) or not os.path.isdir(engine_path):
     os.makedirs(engine_path)
@@ -63,7 +63,7 @@ if (success):
 else:
 	print("Error with the engine installation.")
 	return
-"""
+
 imp = IJ.openImage(os.path.join(model_fn, "sample_input_0.tif"))
 imp.show()
 
@@ -82,9 +82,9 @@ print("Loading model")
 model.loadModel()
 print("Running model")
 model.runModel([inputTensor], [outputTensor])
+ImageJFunctions.show( Views.dropSingletonDimensions(outputTensor.getData()) )
 print("Display output")
 model.closeModel()
-ImageJFunctions.show( outputTensor.getData() )
 
 inputTensor.close()
 outputTensor.close()
