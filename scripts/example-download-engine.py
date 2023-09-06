@@ -79,6 +79,9 @@ supp_engines = AvailableEngines.getEnginesForOsByParams(framework, version, cpu,
 if len(supp_engines) == 0:
 	raise Error("JDLL does not support a engine with the introduced arguments")
 
+if not os.path.exists(full_path) or not os.path.isdir(full_path):
+    os.makedirs(full_path)
+
 print("Installing JDLL engine")
 success = EngineInstall.installEngineWithArgsInDir(framework, 
 						version, cpu, gpu, full_path)
