@@ -28,6 +28,8 @@ import sys
 import os
 from io.bioimage.modelrunner.engine.installation import EngineInstall
 from ij import IJ
+from net.imglib2.img.display.imagej import ImageJFunctions
+from net.imglib2.view import Views
 
 
 models_path = os.path.join(os. getcwd(), "models")
@@ -61,7 +63,10 @@ imp = IJ.openImage(os.path.join(model_fn, "sample_input_0.tif"))
 imp.show()
 
 wrapImg = ImageJFunctions.wrapReal(imp)
-
+wrapImg = Views.permute(wrapImg, 0, len(wrapImg.dimensionsAsLongArray()) - 1)
+wrapImg = Views.addDimension(wrapImg).getSource()
+wrapImg = Views.permute(wrapImg, 0, len(wrapImg.dimensionsAsLongArray()) - 1)
+wrapImg = Views.addDimension(wrapImg).getSource()
 print(wrapImg.dimensionsAsLongArray())
 
 
