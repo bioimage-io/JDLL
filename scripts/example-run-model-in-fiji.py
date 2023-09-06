@@ -27,6 +27,7 @@ from io.bioimage.modelrunner.engine.installation import EngineInstall
 from io.bioimage.modelrunner.bioimageio import BioimageioRepo
 from io.bioimage.modelrunner.model import Model
 from io.bioimage.modelrunner.tensor import Tensor
+from io.bioimage.modelrunner.transformations import ScaleRangeTransformation
 
 import sys
 import os
@@ -74,6 +75,13 @@ wrapImg = Views.permute(wrapImg, 0, 2)
 wrapImg = Views.addDimension(wrapImg, 0, 0)
 
 inputTensor = Tensor.build("input_1", "bxyc", wrapImg)
+print("Pre-process input tensor")
+transform = ScaleRangeTransformation()
+transform.setMinPercentile(1)
+transform.setMaxPercentile(99.8)
+transform.setMode("per_sample")
+transform.setAxes("xyc")
+transform.applyInPlace(inputTensor)
 outputTensor = Tensor.buildEmptyTensor("conv2d_19", "bxyc")
 
 
@@ -81,6 +89,7 @@ model = Model.createBioimageioModel(model_fn, engine_path)
 print("Loading model")
 model.loadModel()
 print("Running model")
+
 model.runModel([inputTensor], [outputTensor])
 ImageJFunctions.show( Views.dropSingletonDimensions(outputTensor.getData()) )
 print("Display output")
