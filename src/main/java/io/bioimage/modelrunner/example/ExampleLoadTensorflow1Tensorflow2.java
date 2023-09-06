@@ -44,7 +44,7 @@ import net.imglib2.util.Util;
  * 
  * The models used for this example are:
  * <ul>
- * <li><a href="https://bioimage.io/#/?tags=Drosophila%20epithelia%20cell%20boundary%20segmentation%20of%202D%20projections&amp;id=10.5281%2Fzenodo.7380171">Drosophila epithelia cell boundary segmentation of 2D projections (TF2)</a></li>
+ * <li><a href="https://bioimage.io/#/?id=10.5281%2Fzenodo.7261974&type=model&tags=B.%20Sutilist%20bacteria%20segmentation%20-%20Widefield%20microscopy%20-%202D%20UNet">B. Sutilist bacteria segmentation - Widefield microscopy - 2D UNet (TF2)</a></li>
  * <li><a href="https://bioimage.io/#/?tags=StarDist%20H%26E%20Nuclei%20Segmentation&amp;id=10.5281%2Fzenodo.6338614">StarDist H&amp;E Nuclei Segmentation (TF1)</a></li>
  * </ul>
  * 
@@ -69,8 +69,8 @@ public class ExampleLoadTensorflow1Tensorflow2 {
 	 * @throws Exception if there is any exception in the tests
 	 */
 	public static void main(String[] args) throws LoadEngineException, Exception {
-		loadAndRunTf1();
 		loadAndRunTf2();
+		loadAndRunTf1();
 		System.out.println("Great success!");
 	}
 	
@@ -83,14 +83,14 @@ public class ExampleLoadTensorflow1Tensorflow2 {
 		// Tag for the DL framework (engine) that wants to be used
 		String framework = "tensorflow_saved_model_bundle";
 		// Version of the engine
-		String engineVersion = "2.10.1";
+		String engineVersion = "2.7.4";
 		// Directory where all the engines are stored
 		String enginesDir = ENGINES_DIR;
 		// Download an engine that is ompatible with the model of interest
 		downloadCPUEngine(framework, engineVersion, enginesDir);
 		
 		// Name of the model of interest from the Bioimage.io model repository
-		String bmzModelName = "Drosophila epithelia cell boundary segmentation of 2D projections";
+		String bmzModelName = "B. Sutilist bacteria segmentation - Widefield microscopy - 2D UNet";
 		// Download the model of interest using its name
 		String modelFolder = downloadBMZModel(bmzModelName, MODELS_DIR);
 		
@@ -112,10 +112,10 @@ public class ExampleLoadTensorflow1Tensorflow2 {
 		Model model = loadModel(modelFolder, null, engineInfo);
 		// Create an image that will be the backend of the Input Tensor
 		final ImgFactory< FloatType > imgFactory = new ArrayImgFactory<>( new FloatType() );
-		final Img< FloatType > img1 = imgFactory.create( 1, 1, 3, 64, 64 );
+		final Img< FloatType > img1 = imgFactory.create( 1, 512, 512, 1 );
 		// Create the input tensor with the nameand axes given by the rdf.yaml file
 		// and add it to the list of input tensors
-		Tensor<FloatType> inpTensor = Tensor.build("input0", "bczyx", img1);
+		Tensor<FloatType> inpTensor = Tensor.build("input_1", "bxyc", img1);
 		List<Tensor<?>> inputs = new ArrayList<Tensor<?>>();
 		inputs.add(inpTensor);
 		
@@ -125,12 +125,9 @@ public class ExampleLoadTensorflow1Tensorflow2 {
 		// or allocating memory by creating the tensor with a sample empty image, or by
 		// defining the dimensions and data type
 		Tensor<FloatType> outTensor0 = Tensor.buildBlankTensor(
-				"output0", "bczyx", new long[] {1, 1, 3, 64, 64}, new FloatType());
-		final Img< FloatType > img2 = imgFactory.create( 1, 2, 3, 64, 64 );
-		Tensor<FloatType> outTensor1 = Tensor.build("output1", "bczyx", img2);
+				"conv2d_19", "bxyc", new long[] {1, 512, 512, 3}, new FloatType());
 		List<Tensor<?>> outputs = new ArrayList<Tensor<?>>();
 		outputs.add(outTensor0);
-		outputs.add(outTensor1);
 		
 		// Run the model on the input tensors. THe output tensors 
 		// will be rewritten with the result of the execution
@@ -141,7 +138,7 @@ public class ExampleLoadTensorflow1Tensorflow2 {
 		model.closeModel();
 		inputs.stream().forEach(t -> t.close());
 		outputs.stream().forEach(t -> t.close());
-		System.out.print("Success running Tensorflow 2!!");
+		System.out.println("Success running Tensorflow 2!!");
 	}
 
 	/**
@@ -227,7 +224,7 @@ public class ExampleLoadTensorflow1Tensorflow2 {
 	 */
 	public static EngineInfo createEngineInfo(String engine, String engineVersion, 
 			String enginesDir, boolean cpu, boolean gpu) {
-		return EngineInfo.defineDLEngine(engine, engineVersion, cpu, gpu, enginesDir);
+		return EngineInfo.defineCompatibleDLEngine(engine, engineVersion, cpu, gpu, enginesDir);
 	}
 	
 	/**

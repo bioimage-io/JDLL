@@ -671,12 +671,11 @@ public class EngineInfo
 	 *            launch the corresponding engine are located
 	 * @return an object containing all the information needed to launch a Deep
 	 *         learning framework or null if the engine of interest is not installed
-	 * @throws IOException if the engines directory does not exist
 	 * @throws IllegalArgumentException if an engine that cannot be loaded together with the wanted engine
 	 * 	has already been loaded
 	 */
 	public static EngineInfo defineCompatibleDLEngine( String framework, String version,
-			boolean cpu, boolean gpu, String jarsDirectory ) throws IOException, IllegalArgumentException
+			boolean cpu, boolean gpu, String jarsDirectory ) throws IllegalArgumentException
 	{
 		List<DeepLearningVersion> possibles = 
 				InstalledEngines.checkEngineWithArgsInstalledForOS(framework, null, cpu, gpu, 
@@ -689,7 +688,7 @@ public class EngineInfo
 				VersionStringUtils.getCompatibleEngineVersionsInOrder(version, possibleStrs, framework);
 		if (compatibleVersion == null || compatibleVersion.size() == 0)
 			return null;
-		return EngineInfo.defineDLEngine(framework, compatibleVersion.get(0), cpu, true, jarsDirectory);
+		return EngineInfo.defineDLEngine(framework, compatibleVersion.get(0), cpu, gpu, jarsDirectory);
 	}
 
 	/**
@@ -725,12 +724,11 @@ public class EngineInfo
 	 *            launch the corresponding engine are located
 	 * @return an object containing all the information needed to launch a Deep
 	 *         learning framework or null if the engine of interest is not installed
-	 * @throws IOException if the engines directory does not exist
 	 * @throws IllegalArgumentException if an engine that cannot be loaded together with the wanted engine
 	 * 	has already been loaded
 	 */
 	public static EngineInfo defineCompatibleDLEngineGPU( String framework, String version, 
-			String jarsDirectory ) throws IOException, IllegalArgumentException
+			String jarsDirectory ) throws IllegalArgumentException
 	{
 		List<DeepLearningVersion> possibles = 
 				InstalledEngines.checkEngineWithArgsInstalledForOS(framework, null, null, true,
