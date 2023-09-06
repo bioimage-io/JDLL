@@ -40,7 +40,8 @@ following parameters:
 	python example-download-engine.py tensorflow 2.7.0 True True models
 """
 
-from io.bioimage.modelrunner.bioimageio import BioimageioRepo
+from io.bioimage.modelrunner.engine.installation import EngineInstall
+from io.bioimage.modelrunner.versionmanagement import AvailableEngines
 import sys
 import os
 
@@ -48,7 +49,7 @@ import os
 					"torchscript", "pytorch", "onnx"]
 full_path = os.path.join(os. getcwd(), "engines")
 framework = "tensorflow"
-version = 2.7.0
+version = "2.7.0"
 cpu = True
 gpu = True
 
@@ -59,8 +60,10 @@ if len(sys.argv) != 1 and len(sys.argv) == 6:
 if len(sys.argv) == 6 and type(sys.argv[3]) == bool:
 	expected_types = [str, str, bool, bool, str]
 	for i, arg in enumerate(sys.argv, start=1):
-        if not isinstance(arg, expected_types[i]):
-            raise TypeError(f"Argument {i} is not of the correct data type ({expected_types[i]}).")
+		if not isinstance(arg, expected_types[i]):
+			err_str = "Argument " + str(i) + " is not of the correct data type " \
+						+ str(expected_types[i])
+			raise TypeError(err_str)
 elif len(sys.argv) == 6 and sys.argv[1] not in framework_list:
 	raise TypeError("First argument for the script should be among the supported" \
 	 					+ " DL frameworks: " + str(framework_list))
@@ -71,10 +74,15 @@ elif len(sys.argv) == 6:
 	gpu = sys.argv[4]
 	full_path = sys.argv[5]
 
+## Get the engines compatible with the params introduced
+supp_engines = AvailableEngines.getEnginesForOsByParams(framework, version, cpu, gpu)
+if len(supp_engines) == 0:
+	raise Error("JDLL does not support a engine with the introduced arguments")
 
-print("Connecting to the Bioimage.io repository")
-br = BioimageioRepo.connect()
-print("Downloading the Bioimage.io model: " + bmzModelName)
-modelDir = br.downloadByName(bmzModelName, full_path)
-
-print("Model downloaded at: " + modelDir)
+print("Installing JDLL engine")
+success = EngineInstall.installEngineWithArgsInDir(framework, 
+						version, cpu, gpu, full_path)
+if (success):
+	print("Engine correctly installed at: " + full_path)
+else:
+	print("Error with the engine installation.")
