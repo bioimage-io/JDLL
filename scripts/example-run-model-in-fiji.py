@@ -23,11 +23,16 @@ To run this script with the default parameters:
 	python example-run-model-in-fiji.py
 
 """
+from io.bioimage.modelrunner.engine.installation import EngineInstall
 from io.bioimage.modelrunner.bioimageio import BioimageioRepo
+from io.bioimage.modelrunner.model import Model
+from io.bioimage.modelrunner.tensor import Tensor
+
 import sys
 import os
-from io.bioimage.modelrunner.engine.installation import EngineInstall
+
 from ij import IJ
+
 from net.imglib2.img.display.imagej import ImageJFunctions
 from net.imglib2.view import Views
 
@@ -62,20 +67,23 @@ else:
 imp = IJ.openImage(os.path.join(model_fn, "sample_input_0.tif"))
 imp.show()
 
-wrapImg = ImageJFunctions.wrapReal(imp)
+wrapImg = ImageJFunctions.convertFloat(imp)
 wrapImg = Views.permute(wrapImg, 0, 1)
 wrapImg = Views.addDimension(wrapImg, 0, 0)
 wrapImg = Views.permute(wrapImg, 0, 2)
 wrapImg = Views.addDimension(wrapImg, 0, 0)
 
-inputTensor = Tensor.build("", "byxc", wrapImg)
-outputTensor = Tensor.buildEmptyTensor("", "byxc")
+inputTensor = Tensor.build("input_1", "bxyc", wrapImg)
+outputTensor = Tensor.buildEmptyTensor("conv2d_19", "bxyc")
 
 
-model = Model.createBioiamgeioModel()
-model.load()
-model.run([inputTensor], [outputTensor])
-model.close()
+model = Model.createBioimageioModel(model_fn, engine_path)
+print("Loading model")
+model.loadModel()
+print("Running model")
+model.runModel([inputTensor], [outputTensor])
+print("Display output")
+model.closeModel()
 ImageJFunctions.show( outputTensor.getData() )
 
 inputTensor.close()
