@@ -1091,7 +1091,7 @@ public class EngineInstall {
 		if (consumer == null)
 			consumer = DownloadTracker.createConsumerProgress();
 		String folder = engineDir + File.separator + engine.folderName();
-		if (!new File(folder).isDirectory() && !new File(folder).mkdir())
+		if (!new File(folder).isDirectory() && !new File(folder).mkdirs())
 			throw new IOException("Unable to create the folder where the engine "
 					+ "will be installed: " + folder);
 		

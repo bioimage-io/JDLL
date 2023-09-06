@@ -208,7 +208,7 @@ public class ExampleLoadTensorflow1Tensorflow2 {
 		model.closeModel();
 		inputs.stream().forEach(t -> t.close());
 		outputs.stream().forEach(t -> t.close());
-		System.out.print("Success running Tensorflow 1!!");
+		System.out.println("Success running Tensorflow 1!!");
 	}
 	
 	/**
