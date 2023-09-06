@@ -466,7 +466,10 @@ public class BioimageioRepo {
 		if (descriptor.getWeights().getSupportedDLFrameworks()
 				.contains(EngineInfo.getBioimageioTfKey())
 				&& !(new File(dm.getModelFolder(), "variables").isDirectory())) {
-			String source = descriptor.getWeights().getWeightsByIdentifier(EngineInfo.getBioimageioTfKey()).getSource();
+			String source = descriptor.getWeights().getSupportedWeights().stream()
+					.filter(ww -> ww.getWeightsFormat().equals(EngineInfo.getBioimageioTfKey()))
+					.findFirst().get().getSource();
+			source = DownloadModel.getFileNameFromURLString(source);
 			System.out.println("Unzipping model...");
 			ZipUtils.unzipFolder(dm.getModelFolder() + File.separator + source, dm.getModelFolder());
 		}
