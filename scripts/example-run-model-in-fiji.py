@@ -63,10 +63,22 @@ imp = IJ.openImage(os.path.join(model_fn, "sample_input_0.tif"))
 imp.show()
 
 wrapImg = ImageJFunctions.wrapReal(imp)
-wrapImg = Views.permute(wrapImg, 0, len(wrapImg.dimensionsAsLongArray()) - 1)
-wrapImg = Views.addDimension(wrapImg).getSource()
-wrapImg = Views.permute(wrapImg, 0, len(wrapImg.dimensionsAsLongArray()) - 1)
-wrapImg = Views.addDimension(wrapImg).getSource()
-print(wrapImg.dimensionsAsLongArray())
+wrapImg = Views.permute(wrapImg, 0, 1)
+wrapImg = Views.addDimension(wrapImg, 0, 0)
+wrapImg = Views.permute(wrapImg, 0, 2)
+wrapImg = Views.addDimension(wrapImg, 0, 0)
+
+inputTensor = Tensor.build("", "byxc", wrapImg)
+outputTensor = Tensor.buildEmptyTensor("", "byxc")
+
+
+model = Model.createBioiamgeioModel()
+model.load()
+model.run([inputTensor], [outputTensor])
+model.close()
+ImageJFunctions.show( outputTensor.getData() )
+
+inputTensor.close()
+outputTensor.close()
 
 
