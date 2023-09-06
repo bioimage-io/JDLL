@@ -27,6 +27,7 @@ from io.bioimage.modelrunner.bioimageio import BioimageioRepo
 import sys
 import os
 from io.bioimage.modelrunner.engine.installation import EngineInstall
+from ij import IJ
 
 
 models_path = os.path.join(os. getcwd(), "models")
@@ -39,10 +40,10 @@ if not os.path.exists(models_path) or not os.path.isdir(models_path):
 print("Connecting to the Bioimage.io repository")
 br = BioimageioRepo.connect()
 print("Downloading the Bioimage.io model: " + bmzModelName)
-modelDir = br.downloadByName(bmzModelName, models_path)
+model_fn = br.downloadByName(bmzModelName, models_path)
 
-print("Model downloaded at: " + modelDir)
-
+print("Model downloaded at: " + model_fn)
+"""
 print("Download the engine required for the model")
 if not os.path.exists(engine_path) or not os.path.isdir(engine_path):
     os.makedirs(engine_path)
@@ -55,7 +56,12 @@ if (success):
 else:
 	print("Error with the engine installation.")
 	return
+"""
+imp = IJ.openImage(os.path.join(model_fn, "sample_input_0.tif"))
+imp.show()
 
+wrapImg = ImageJFunctions.wrapReal(imp)
 
+print(wrapImg.dimensionsAsLongArray())
 
 
