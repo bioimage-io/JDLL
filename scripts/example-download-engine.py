@@ -17,29 +17,59 @@
 The default example engine downloaded is:
  - Tensorflow 2.7.0 for CPU and GPU
 
+
 To download and install the default example engine, run the script with no parameters:
+	
 	python example-download-engine.py
 
-In order to download the wanted model in the wanted directory,
-please provide *two* parameters:
-	python name_of_the_wanted_model /path/to/the/wanted/model
+In order to download the wanted engine in the wanted directory,
+please provide *five* parameters:. The first one should be the framework
+name, the second one the frmaework version, the third one True or False whether
+CPU is supported or not, the fourth one True or False whether GPU is supported
+or not, and the fifth should be the directory where the engine is installed:
+	
+	python example-download-engine.py framework_name version true_or_false true_or_false
 
+
+A list of the supported DL frameworks and versions can be found at:
+https://github.com/bioimage-io/JDLL/wiki/List-of-supported-engines
+
+Executing the script without parameters is equal to executing it with the
+following parameters:
+
+	python example-download-engine.py tensorflow 2.7.0 True True models
 """
 
 from io.bioimage.modelrunner.bioimageio import BioimageioRepo
 import sys
 import os
 
+framework_list = ["tensorflow", "tensorflow_saved_model_bundle",
+					"torchscript", "pytorch", "onnx"]
+full_path = os.path.join(os. getcwd(), "engines")
+framework = "tensorflow"
+version = 2.7.0
+cpu = True
+gpu = True
 
-full_path = os.path.join(os. getcwd(), "models")
-bmzModelName = "B. Sutilist bacteria segmentation - Widefield microscopy - 2D UNet"
-
-if len(sys.argv) != 1 and len(sys.argv) == 3:
+if len(sys.argv) != 1 and len(sys.argv) == 6:
 	raise TypeError("Script only works either when no arguments are provided or "\
-					+ "when 2 String arguments are provided.")
-if len(sys.argv) == 3:
-	bmzModelName = sys.argv[1]
-	full_path = sys.argv[2]
+					+ "when 6 arguments are provided.")
+
+if len(sys.argv) == 6 and type(sys.argv[3]) == bool:
+	expected_types = [str, str, bool, bool, str]
+	for i, arg in enumerate(sys.argv, start=1):
+        if not isinstance(arg, expected_types[i]):
+            raise TypeError(f"Argument {i} is not of the correct data type ({expected_types[i]}).")
+elif len(sys.argv) == 6 and sys.argv[1] not in framework_list:
+	raise TypeError("First argument for the script should be among the supported" \
+	 					+ " DL frameworks: " + str(framework_list))
+elif len(sys.argv) == 6:
+	framework = sys.argv[1]
+	version = sys.argv[2]
+	cpu = sys.argv[3]
+	gpu = sys.argv[4]
+	full_path = sys.argv[5]
 
 
 print("Connecting to the Bioimage.io repository")

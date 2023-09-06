@@ -24,7 +24,7 @@ To run this script with the default parameters:
 
 In order to download the wanted model in the wanted directory,
 please provide *two* parameters:
-	python name_of_the_wanted_model /path/to/the/wanted/model
+	python example-download-bmz-model.py name_of_the_wanted_model /path/to/the/wanted/model
 
 """
 
