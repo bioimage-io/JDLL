@@ -42,7 +42,9 @@ import io.bioimage.modelrunner.bioimageio.bioengine.BioEngineAvailableModels;
 import io.bioimage.modelrunner.bioimageio.description.ModelDescriptor;
 import io.bioimage.modelrunner.bioimageio.download.DownloadModel;
 import io.bioimage.modelrunner.bioimageio.download.DownloadTracker;
+import io.bioimage.modelrunner.engine.EngineInfo;
 import io.bioimage.modelrunner.utils.Log;
+import io.bioimage.modelrunner.utils.ZipUtils;
 
 /**
  * Class to interact with the Bioimage.io API. Used to get information
@@ -460,6 +462,14 @@ public class BioimageioRepo {
 		if (badDownloads.size() > 0)
 			throw new IOException("The following files of model '" + descriptor.getName()
 			+ "' where downloaded incorrectly: " + badDownloads.toString());
+		// TODO put the code below in a separated method and add a progress bar
+		if (descriptor.getWeights().getSupportedDLFrameworks()
+				.contains(EngineInfo.getBioimageioTfKey())
+				&& !(new File(dm.getModelFolder(), "variables").isDirectory())) {
+			String source = descriptor.getWeights().getWeightsByIdentifier(EngineInfo.getBioimageioTfKey()).getSource();
+			System.out.println("Unzipping model...");
+			ZipUtils.unzipFolder(dm.getModelFolder() + File.separator + source, dm.getModelFolder());
+		}
 		return dm.getModelFolder();
 	}
 	
