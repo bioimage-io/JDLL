@@ -26,7 +26,7 @@ if my_os == "windows" and machine.endswith('64'):
 my_os = f"{my_os}-{machine}"
 
 for entry in data["versions"]:
-    engine = entry["engine"]
+    engine = entry["framework"]
     version = entry["version"]
     pythonVersion = entry["pythonVersion"]
 
