@@ -351,7 +351,7 @@ public class DownloadTracker {
 			return links;
 		for (String link : links) {
 			try {
-				String fName = DownloadModel.getFileNameFromURLString(link);
+				String fName = folder + File.separator + DownloadModel.getFileNameFromURLString(link);
 				if (!(new File(fName).isFile())) {
 					badDownloads.add(link);
 					continue;
