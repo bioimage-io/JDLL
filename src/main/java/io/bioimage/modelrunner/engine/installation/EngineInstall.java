@@ -1114,7 +1114,7 @@ public class EngineInstall {
 		List<String> badDownloads = tracker.findMissingDownloads();
 		if (badDownloads.size() > 0)
 			throw new IOException("The following files of engine '" + engine.folderName()
-			+ "' where downloaded incorrectly: " + badDownloads.toString());
+			+ "' were downloaded incorrectly: " + badDownloads.toString());
 		return true;
 	}
 	
