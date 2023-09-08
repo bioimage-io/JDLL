@@ -351,10 +351,24 @@ public class DownloadTracker {
 			return links;
 		for (String link : links) {
 			try {
-				String name = DownloadModel.getFileNameFromURLString(link);
+				String fName = DownloadModel.getFileNameFromURLString(link);
+				if (!(new File(fName).isFile())) {
+					badDownloads.add(link);
+					continue;
+				}
+				String key = this.sizeFiles.get(fName) != null ? fName : link;
+				Long val = this.sizeFiles.get(key);
+				long fSize = new File(fName).length();
+				if (val != null && 
+						((val > 1 && val == fSize) || (val == 1 && val <= fSize)) ) {
+					continue;
+				}
+				badDownloads.add(link);
+				/* TODO
 				if (consumer.get().get(this.folder + File.separator + name) == null
 						|| consumer.get().get(folder + File.separator + name) != 1.0)
 					badDownloads.add(link);
+				 */
 			} catch (MalformedURLException e) {
 				badDownloads.add(link);
 			}
