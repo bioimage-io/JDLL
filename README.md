@@ -29,7 +29,7 @@ The information about the engines supported currently by JDLL, for which OS and 
 Note that JDLL will be in **constant development** and that it is open to community collaboration, so **pull requests** to the official repository of JDLL to improve functionality or to add new engines are **very welcomed**.
 
 
-# Quickstart
+# Quickstart for developers
 The next section (~10 min read) provides essential instructions for using JDLL divided in the following subsections:
 - [0. Setting Up JDLL](https://github.com/bioimage-io/JDLL#0-setting-up-jdll)
 - [1. Downloading a model (optional)](https://github.com/bioimage-io/JDLL#1-getting-a-model-optional)
