@@ -436,6 +436,8 @@ Great success!
 ```
 The Wiki covers extensively engine installation ([here](https://github.com/bioimage-io/JDLL/wiki/Understanding-engine-installation) and [here](https://github.com/bioimage-io/JDLL/wiki/Engine-Installation-(EngineInstall))). In addtion JDLL also includes methods to manage the engines and know: [the information about each engine](https://github.com/bioimage-io/JDLL/wiki/Engine-Management-I-(DeepLearningVersion)), [which engines are supported](https://github.com/bioimage-io/JDLL/wiki/Engine-Management-II-(AvailableEngines)) and [which engines have already been installed](https://github.com/bioimage-io/JDLL/wiki/Engine-Management-III-(InstalledEngines)) Again, not that the methods explained in the Wiki can easily be used in Jython scripts.
 
+In addition, a more detailed Jython script with an example on how to install an engine can be found [here](https://github.com/bioimage-io/JDLL/blob/main/scripts/example-download-engine.py).
+
 
 
 ## 3. Creating the tensors
@@ -576,7 +578,7 @@ Ouptut tensor after inference is empty: false
 Models and tensors need to be closed to be released and free the memory that they were using
 ```python
 model.close()
-inputTensor.close
+inputTensor.close()
 ouptutBlankTensor.close()
 ouptutEmptyTensor.close()
 ```
