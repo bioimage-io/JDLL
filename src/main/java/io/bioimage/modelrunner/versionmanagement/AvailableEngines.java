@@ -32,7 +32,6 @@ import io.bioimage.modelrunner.system.PlatformDetection;
 import com.google.gson.Gson;
 
 /**
- * TODO remove unused methods
  * Methods to manage and filter the list of all the existing Deep Learning
  * framework versions for different OS, Java versions and GPU/CPU compatibilites
  * 
