@@ -35,7 +35,7 @@ But after a couple of stable releases, the JDLL team noticed that because of its
 
 Due to the dual possibilities of JDLL, there are 2 Quickstarts available depending on the interests of the user:
 - [Quickstart for developers](https://github.com/bioimage-io/JDLL#quickstart-for-developers) if the user is interested in the integration of JDLL into their application.
-- [Quickstart for analysits/scripting]() if the user is interested in creating scripts in Jython that can run DL models easily to improve their processing routines. Not much experience with Python/Jython is required.
+- [Quickstart for analysts/scripting]() if the user is interested in creating scripts in Jython that can run DL models easily to improve their processing routines. Not much experience with Python/Jython is required.
 
 
 
@@ -281,12 +281,12 @@ ouptutBlankTensor.close();
 ouptutEmptyTensor.close();
 ```
 
-# Quickstart for developers
+# Quickstart for analysts/scripting
 This section explains how to use JDLL in a Jython script. Jython is an implementation of Python in Java, thus it allows calling Java methods and classes in a Pythonic way. With Jython, Java methods and classes can be called in a script as Python methods. 
 
 Scripting is powerfull and usefull because it allows creating processing routines in a simple manner that otherwise would require a full software for them. This is the reason why many software applications such as Icy, Fiji or Napari have a script editor. Scripts can perform complex tasks reducing the need of developing specific plugins in each platform. Scripts are also mostly compatible with every software application that supports the language they are writen in.
 
-The examples for JDLL use Jython because it supports Java and uses Python syntax. Python is one of the mostwidely used programming languages and also one of the easiers to learn. Python has a big community and many Open Source libraries that can be used in Jython too. However, note that Jython at the moment only supports Python2. The support for [Python 3 is still in development](https://github.com/jython/jython/tree/main).
+The examples for JDLL use Jython because it supports Java and uses Python syntax. Python is one of the mostwidely used programming languages and also one of the easiers to learn. Python has a big community and many Open Source libraries that can be used in Jython too. However, note that Jython at the moment only supports Python2. The support for [Python 3 is still in development](https://github.com/jython/jython/tree/main). A good tutorial on how to create Jython scripts can be found [here](https://imagej.net/scripting/jython/).
 
 In addition, Jython scripts can be then used in softwares such as Icy or Fiji to create Image Processing tasks together with the tools they have available.
 
