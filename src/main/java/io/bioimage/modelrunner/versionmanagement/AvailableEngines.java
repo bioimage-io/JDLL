@@ -243,11 +243,16 @@ public class AvailableEngines
     	String searchEngine = AvailableEngines.getSupportedFrameworkTag(framework);
     	if (searchEngine == null && framework != null)
     		return false;
+    	String javaVersion;
+    	if (version != null)
+    		javaVersion = SupportedVersions.getJavaVersionForPythonVersion(searchEngine, version);
+    	else
+    		javaVersion = null;
     	DeepLearningVersion engine = AvailableEngines.filterByFrameworkForOS(searchEngine)
 				.stream().filter(v -> {
 					if (searchEngine != null && !v.getFramework().equals(searchEngine))
 						return false;
-					else if (version != null && !v.getPythonVersion().equals(version))
+					else if (javaVersion != null && !v.getVersion().equals(javaVersion))
 							return false;
 					else if (!v.getOs().equals(new PlatformDetection().toString()))
 							return false;
@@ -290,11 +295,16 @@ public class AvailableEngines
     	String searchEngine = AvailableEngines.getSupportedFrameworkTag(framework);
     	if (searchEngine == null)
     		return new ArrayList<DeepLearningVersion>();
+    	String javaVersion;
+    	if (version != null)
+    		javaVersion = SupportedVersions.getJavaVersionForPythonVersion(searchEngine, version);
+    	else
+    		javaVersion = null;
     	List<DeepLearningVersion> engine = AvailableEngines.filterByFrameworkForOS(searchEngine)
 				.stream().filter(v -> {
 					if (searchEngine != null && !v.getFramework().equals(searchEngine))
 						return false;
-					else if (version != null && !v.getPythonVersion().equals(version))
+					else if (javaVersion != null && !v.getVersion().equals(javaVersion))
 							return false;
 					else if (!v.getOs().equals(new PlatformDetection().toString()))
 							return false;
