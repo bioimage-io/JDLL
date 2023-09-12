@@ -283,6 +283,20 @@ public class EngineInfo
 	 * A good way to check whether the engine of interest exists or not
 	 * is: {@link InstalledEngines#checkEngineWithArgsInstalledForOS(String, String, Boolean, Boolean, String)}
 	 * 
+     * 
+     * Note that this method looks at the framework versions specified at:
+     * https://github.com/bioimage-io/JDLL/blob/main/src/main/resources/supportedVersions.json
+     * 
+     * This file contains all the versions for each framework supported by JDLL.
+     * Note that several of the Python versions point to a single Java API version. This
+     * happens because not every Python version has an exact Java APi made for it. HOwever,
+     * the Java API is made with enough flexibility so that is compatible with the previous
+     * Python versions that do not have an API. 
+     * BEcause of this, when setting, for example, version Tensorflow 2.8, any version that uses the same
+     * Java API and that is installed will be allowed to be used. Thus for Tensorflow 2.8, 
+     * Tensorflow 2.10.1 will be used as both are completely compatible.
+     * 
+	 * 
 	 * @param framework
 	 *            name of the Deep Learning framework (engine). For example:
 	 *            Pytorch, Tensorflow....
@@ -340,6 +354,20 @@ public class EngineInfo
 	 * A good way to check whether the engine of interest exists or not
 	 * is: {@link InstalledEngines#checkEngineWithArgsInstalledForOS(String, String, Boolean, Boolean, String)}
 	 * 
+     * 
+     * Note that this method looks at the framework versions specified at:
+     * https://github.com/bioimage-io/JDLL/blob/main/src/main/resources/supportedVersions.json
+     * 
+     * This file contains all the versions for each framework supported by JDLL.
+     * Note that several of the Python versions point to a single Java API version. This
+     * happens because not every Python version has an exact Java APi made for it. HOwever,
+     * the Java API is made with enough flexibility so that is compatible with the previous
+     * Python versions that do not have an API. 
+     * BEcause of this, when setting, for example, version Tensorflow 2.8, any version that uses the same
+     * Java API and that is installed will be allowed to be used. Thus for Tensorflow 2.8, 
+     * Tensorflow 2.10.1 will be used as both are completely compatible.
+     * 
+	 * 
 	 * @param framework
 	 *            name of the Deep Learning framework (engine). For example:
 	 *            Pytorch, Tensorflow....
@@ -383,6 +411,20 @@ public class EngineInfo
 	 * The engine of interest needs to be installed first.
 	 * A good way to check whether the engine of interest exists or not
 	 * is: {@link InstalledEngines#checkEngineWithArgsInstalledForOS(String, String, Boolean, Boolean, String)}
+	 * 
+     * 
+     * Note that this method looks at the framework versions specified at:
+     * https://github.com/bioimage-io/JDLL/blob/main/src/main/resources/supportedVersions.json
+     * 
+     * This file contains all the versions for each framework supported by JDLL.
+     * Note that several of the Python versions point to a single Java API version. This
+     * happens because not every Python version has an exact Java APi made for it. HOwever,
+     * the Java API is made with enough flexibility so that is compatible with the previous
+     * Python versions that do not have an API. 
+     * BEcause of this, when setting, for example, version Tensorflow 2.8, any version that uses the same
+     * Java API and that is installed will be allowed to be used. Thus for Tensorflow 2.8, 
+     * Tensorflow 2.10.1 will be used as both are completely compatible.
+     * 
 	 * 
 	 * @param framework
 	 *            name of the Deep Learning framework (engine). For example:
@@ -462,6 +504,20 @@ public class EngineInfo
 	 * The engine of interest needs to be installed first.
 	 * A good way to check whether the engine of interest exists or not
 	 * is: {@link InstalledEngines#checkEngineWithArgsInstalledForOS(String, String, Boolean, Boolean, String)}
+	 * 
+     * 
+     * Note that this method looks at the framework versions specified at:
+     * https://github.com/bioimage-io/JDLL/blob/main/src/main/resources/supportedVersions.json
+     * 
+     * This file contains all the versions for each framework supported by JDLL.
+     * Note that several of the Python versions point to a single Java API version. This
+     * happens because not every Python version has an exact Java APi made for it. HOwever,
+     * the Java API is made with enough flexibility so that is compatible with the previous
+     * Python versions that do not have an API. 
+     * BEcause of this, when setting, for example, version Tensorflow 2.8, any version that uses the same
+     * Java API and that is installed will be allowed to be used. Thus for Tensorflow 2.8, 
+     * Tensorflow 2.10.1 will be used as both are completely compatible.
+     * 
 	 * 
 	 * @param framework
 	 *            name of the Deep Learning framework (engine). For example:
@@ -826,6 +882,20 @@ public class EngineInfo
 	 * engine installed. The major and minor versions need to match.
 	 * Only Pytorch 1.11 can be used to load Pytorch 1.11
 	 * 
+     * 
+     * Note that this method looks at the framework versions specified at:
+     * https://github.com/bioimage-io/JDLL/blob/main/src/main/resources/supportedVersions.json
+     * 
+     * This file contains all the versions for each framework supported by JDLL.
+     * Note that several of the Python versions point to a single Java API version. This
+     * happens because not every Python version has an exact Java APi made for it. HOwever,
+     * the Java API is made with enough flexibility so that is compatible with the previous
+     * Python versions that do not have an API. 
+     * BEcause of this, when setting, for example, version Tensorflow 2.8, any version that uses the same
+     * Java API and that is installed will be allowed to be used. Thus for Tensorflow 2.8, 
+     * Tensorflow 2.10.1 will be used as both are completely compatible.
+     * 
+     * 
 	 * @param weight
 	 * 	the weights of a model for a specific single engine (DL framework)
 	 * @param enginesDir

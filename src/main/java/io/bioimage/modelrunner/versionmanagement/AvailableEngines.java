@@ -227,6 +227,22 @@ public class AvailableEngines
      * If any of the arguments is set to null, it will be ignored in the filtering.
      * For example, if gpu = null, the method will return true if the engine exists
      * even if it only exists for gpu, only for cpu or it exists for both.
+     * 
+     * 
+     * 
+     * Note that this method looks at the framework versions specified at:
+     * https://github.com/bioimage-io/JDLL/blob/main/src/main/resources/supportedVersions.json
+     * 
+     * This file contains all the versions for each framework supported by JDLL.
+     * Note that several of the python versions point to a single Java API version. This
+     * happens because not every Python version has an exact Java APi made for it. HOwever,
+     * the Java API is made with enough flexibility so that is compatible with the previous
+     * Python versions that do not have an API. 
+     * BEcause of this, for some versions such as Tensorflow 2.8, the version that will be
+     * retrieved by this method will be Tensorflow 2.10.1. The API created for Tensorflow 2.10.1
+     * is completely capable of running Tensorflow 2.8.
+     * 
+     * 
      * @param framework
 	 * 	DL framework as specified by the Bioimage.io model zoo ()https://github.com/bioimage-io/spec-bioimage-io/blob/gh-pages/weight_formats_spec_0_4.md)
 	 * @param version
@@ -271,11 +287,23 @@ public class AvailableEngines
     }
     
     /**
-     * Retreive the available Deep Learning engines for the current OS and Java version 
+     * Retrieve the available Deep Learning engines for the current OS and Java version 
      * using the parameters that define an engine.
      * The null input arguments are ignored during the filtering. For example
      * if the version argument is null, all the versions compatible wiht the 
-     * rest of arguments will be retrieved
+     * rest of arguments will be retrieved.
+     * 
+     * Note that this method looks at the framework versions specified at:
+     * https://github.com/bioimage-io/JDLL/blob/main/src/main/resources/supportedVersions.json
+     * 
+     * This file contains all the versions for each framework supported by JDLL.
+     * Note that several of the python versions point to a single Java API version. This
+     * happens because not every Python version has an exact Java APi made for it. HOwever,
+     * the Java API is made with enough flexibility so that is compatible with the previous
+     * Python versions that do not have an API. 
+     * BEcause of this, for some versions such as Tensorflow 2.8, the version that will be
+     * retrieved by this method will be Tensorflow 2.10.1. The API created for Tensorflow 2.10.1
+     * is completely capable of running Tensorflow 2.8.
      * 
      * 
      * @param framework
