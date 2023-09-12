@@ -51,26 +51,10 @@ The next section (~10 min read) provides essential instructions for using JDLL d
 
 ## 0. Setting Up JDLL
 
-Download the dependency and include it in your project
+Download the dependency and include it in your project. Depending on the application, dependencies are installed differently. For example, in Icy, go to 
 
-   In order to benefit from the library, include the dependency in your code. The dependency can be added manually or using a dependency manager such as Maven. If you are using Maven, add the following dependency to the project pom file:
+In Fiji, the JDLL library and its dependencies are shipped with the DeepImageJ update site. In order to install JDLL in Fiji, [add the deepImageJ update site to the Fiji updater](https://imagej.net/list-of-update-sites/) and update. The URL for the deepImageJ update site is
 
-   ```xml
-   <dependency>
-     <groupId>io.bioimage</groupId>
-     <artifactId>dl-runner</artifactId>
-     <version>0.3.13-SNAPSHOT</version>
-   </dependency>
-   ```
-
-   and add to `<repositories>` the following:
-
-   ```xml
-   <repository>
-     <id>scijava.public</id>
-     <url>https://maven.scijava.org/content/groups/public</url>
-   </repository>
-   ```
 ## 1. Downloading a model (optional)
 If a model from the supported by JDLL is already available you can skip this step. Note that for Tensorflow the models need to be saved in the [`SavdModel`](https://www.tensorflow.org/guide/saved_model) format.
 
@@ -298,6 +282,26 @@ The following subsections (~1 min read) provides essential instructions to use J
 - [4. Loading the model](https://github.com/bioimage-io/JDLL#4-loading-the-model)
 - [5. Running the model](https://github.com/bioimage-io/JDLL#5-running-the-model)
 - [6. Closing the model and the tensors](https://github.com/bioimage-io/JDLL#6-closing-the-model-and-the-tensors)
+
+## Setting up JDLL
+
+Download the dependency and include it in your project. Depending on the application, dependencies are installed differently. For example, in Icy, go to 
+
+In Fiji, the JDLL library and its dependencies are shipped with the DeepImageJ update site. In order to install JDLL in Fiji, [add the deepImageJ update site to the Fiji updater](https://imagej.net/list-of-update-sites/) and update. The URL for the deepImageJ update site is: https://sites.imagej.net/DeepImageJ/
+
+Once installed, JDLL should be ready to be used. 
+
+If the software application JDLL wants to be used in does not support automatic installation of libraries, download JDLL and its dependencies and locate them in the corresponding directory.
+The download links are:
+- [JDLL](https://maven.scijava.org/service/local/repositories/snapshots/content/io/bioimage/dl-modelrunner/0.3.13-SNAPSHOT/dl-modelrunner-0.3.13-20230912.171007-43.jar)
+- [GSON](https://repo1.maven.org/maven2/com/google/code/gson/gson/2.10.1/gson-2.10.1.jar)
+- [ImgLib2](https://repo1.maven.org/maven2/net/imglib2/imglib2/6.1.0/imglib2-6.1.0.jar)
+- [SnakeYAML](https://repo1.maven.org/maven2/org/yaml/snakeyaml/2.0/snakeyaml-2.0.jar)
+- [jackson-dataformat-msgpack](https://repo1.maven.org/maven2/org/msgpack/jackson-dataformat-msgpack/0.9.5/jackson-dataformat-msgpack-0.9.5.jar)
+- [msgpack-core](https://repo1.maven.org/maven2/org/msgpack/msgpack-core/0.9.5/msgpack-core-0.9.5.jar)
+- [jackson-databind](https://repo1.maven.org/maven2/com/fasterxml/jackson/core/jackson-databind/2.14.2/jackson-databind-2.14.2.jar)
+- [jackson-core](https://repo1.maven.org/maven2/com/fasterxml/jackson/core/jackson-core/2.14.2/jackson-core-2.14.2.jar)
+- [jackson-annotations](https://repo1.maven.org/maven2/com/fasterxml/jackson/core/jackson-annotations/2.14.2/jackson-annotations-2.14.2.jar)
 
    
       
