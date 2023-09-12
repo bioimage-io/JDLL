@@ -31,7 +31,11 @@ Note that JDLL will be in **constant development** and that it is open to commun
 # Quickstart
 As mentioned above, JDLL was originally developed for the purpose of seamlessly integrating Deep Learning capabilities into other software applications. Its main objective was to empower these software applications to effectively execute Deep Learning models. For that use case, JDLL was mainly oriented for application developers that wanted to incorporate DL methods in their softwares.
 
-But after a couple of stable releases, the JDLL team noticed that because of its user-friendly interface, the library could be accessible not just to software developers but also to everyday users with basic scripting knowledge in languages like Python or Matlab. This makes it suitable for anyone interested in crafting processing routines that require Deep Learning models.
+But after a couple of stable releases, the JDLL team noticed that because of its user-friendly interface, the library could be accessible not just to software developers but also to everyday users with basic scripting knowledge in languages like Python or Matlab. This makes it suitable for anyone interested in crafting processing routines that require Deep Learning models. Using a Java based or Java compatible scripting laguage such as Jython, one can easily use JDLL to run DL models.
+
+Due to the dual possibilities of JDLL, there are 2 Quickstarts available depending on the interests of the user:
+- [Quickstart for developers](https://github.com/bioimage-io/JDLL#quickstart-for-developers) if the user is interested in the integration of JDLL into their application.
+- [Quickstart for analysits/scripting]() if the user is interested in creating scripts in Jython that can run DL models easily to improve their processing routines. Not much experience with Python/Jython is required.
 
 
 
