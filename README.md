@@ -72,7 +72,7 @@ Download the dependency and include it in your project
    </repository>
    ```
 ## 1. Downloading a model (optional)
-If a model from the supported by JDLL is already available you can skip this step. Note that for Tensorflow the models need to be saved in the [`SavdModel`](https://www.tensorflow.org/guide/saved_model) format.
+If a model from the supported by JDLL is already available you can skip this step. Note that for Tensorflow the models need to be saved in the [`SavedModel`](https://www.tensorflow.org/guide/saved_model) format.
 
 If no model is available, a good starting point is downloading any of the models of the [Bioimage.io respository](https://bioimage.io/#/). The download can be done manually or using JDLL. Bioimag.io is seamlessly integrated into JDLL, offering multiple methods to effortlessly mange and use its models.
 
@@ -132,7 +132,7 @@ In the example it is shown how simply providing the name of the model of interes
 ```java
 String modelName = "B. Sutilist bacteria segmentation - Widefield microscopy - 2D UNet";
 String enginesDir = "/path/to/wanted/engines/dir";
-boolean installed =  installEnginesForModelByNameinDir(modelName, enginesDir)
+boolean installed =  EngineInstall.installEnginesForModelByNameinDir(modelName, enginesDir)
 if (installed)
 	System.out.println("Great success!");
 else
@@ -142,7 +142,7 @@ Output:
 ```
 Great success!
 ```
-The Wiki convers extensively engine installation ([here](https://github.com/bioimage-io/JDLL/wiki/Understanding-engine-installation) and [here](https://github.com/bioimage-io/JDLL/wiki/Engine-Installation-(EngineInstall))). In addtion JDLL also includes methods to manage the engines and know: [the information about each engine](https://github.com/bioimage-io/JDLL/wiki/Engine-Management-I-(DeepLearningVersion)), [which engines are supported](https://github.com/bioimage-io/JDLL/wiki/Engine-Management-II-(AvailableEngines)) and [which engines have already been installed](https://github.com/bioimage-io/JDLL/wiki/Engine-Management-III-(InstalledEngines))
+The Wiki covers extensively engine installation ([here](https://github.com/bioimage-io/JDLL/wiki/Understanding-engine-installation) and [here](https://github.com/bioimage-io/JDLL/wiki/Engine-Installation-(EngineInstall))). In addtion JDLL also includes methods to manage the engines and know: [the information about each engine](https://github.com/bioimage-io/JDLL/wiki/Engine-Management-I-(DeepLearningVersion)), [which engines are supported](https://github.com/bioimage-io/JDLL/wiki/Engine-Management-II-(AvailableEngines)) and [which engines have already been installed](https://github.com/bioimage-io/JDLL/wiki/Engine-Management-III-(InstalledEngines))
 
 
 
@@ -338,7 +338,7 @@ The following subsections (~1 min read) provides essential instructions to use J
 - [5. Running the model](https://github.com/bioimage-io/JDLL#5-running-the-model)
 - [6. Closing the model and the tensors](https://github.com/bioimage-io/JDLL#6-closing-the-model-and-the-tensors)
 
-## Setting up JDLL
+## 0. Setting up JDLL
 
 Download the dependency and include it in your project. Depending on the application, dependencies are installed differently. For example, in Icy, go to 
 
@@ -360,34 +360,34 @@ The download links are:
 
    
 ## 1. Downloading a model (optional)
-If a model from the supported by JDLL is already available you can skip this step. Note that for Tensorflow the models need to be saved in the [`SavdModel`](https://www.tensorflow.org/guide/saved_model) format.
+If a model from the supported by JDLL is already available you can skip this step. Note that for Tensorflow the models need to be saved in the [`SavedModel`](https://www.tensorflow.org/guide/saved_model) format.
 
-If no model is available, a good starting point is downloading any of the models of the [Bioimage.io respository](https://bioimage.io/#/). The download can be done manually or using JDLL. Bioimag.io is seamlessly integrated into JDLL, offering multiple methods to effortlessly mange and use its models.
+If no model is available, a good starting point is downloading any of the models of the [Bioimage.io respository](https://bioimage.io/#/). The download can be done manually or using JDLL. Bioimag.io is seamlessly integrated into JDLL, offering multiple methods to effortlessly mange and use its models. An example Jython script to download a Bioimage.io model can be found [here](https://github.com/bioimage-io/JDLL/blob/main/scripts/example-download-bmz-model.py).
 
 Here is an emaple of how JDLL can be used to download any Bioimage.io model, in this case the [`B. Sutilist bacteria segmentation - Widefield microscopy - 2D UNet`](https://bioimage.io/#/?tags=placid-llama&id=10.5281%2Fzenodo.7261974) model.
-```java
-// Name of the model of interest, note that each model is unique. The names are case sensitive.
-String modelName = "B. Sutilist bacteria segmentation - Widefield microscopy - 2D UNet";
-// Directory where the model folder will be downloaded
-String modelsDir = "/path/to/wanted/model/directory";
+```python
+from io.bioimage.modelrunner.bioimageio import BioimageioRepo
 
-// First create an instance of the Bioimage.io repository
-BioimageioRepo br = BioimageioRepo.connect();
-try {
-	br.downloadByName(modelName, modelsDir);
-        System.out.println("Great success!");
-} catch (IOException | InterruptedException e) {
-	// If the download is interrumpted or any of the model files cannot be downloaded
-	// and exception will be thrown
-	e.printStackTrace();
-        System.out.println("Error downloading the model :(");
-}
+# Name of the model of interest, note that each model is unique. The names are case sensitive.
+modelName = "B. Sutilist bacteria segmentation - Widefield microscopy - 2D UNet"
+# Directory where the model folder will be downloaded
+modelsDir = "/path/to/wanted/model/directory"
+
+# First create an instance of the Bioimage.io repository
+br = BioimageioRepo.connect()
+try:
+	br.downloadByName(modelName, modelsDir)
+	print("Great success!")
+except Exception as e:
+	# If the download is interrumpted or any of the model files cannot be downloaded
+	# and exception will be thrown
+	print("Error downloading the model: ", str(e))
 ```
 Output:
 ```
 Great success!
 ```
-More information on how to download  Bioimage.io models can be found [here](https://github.com/bioimage-io/JDLL/wiki/Engine-Installation-(EngineInstall)).
+More information on how to download  Bioimage.io models can be found [here](https://github.com/bioimage-io/JDLL/wiki/Engine-Installation-(EngineInstall)). Note that all the methods decribed in JAva can be used in a pythonic way with Jytho. The static ones do not need the instantiation of a class and the non-static ones do require it.
 
 
 
@@ -396,18 +396,20 @@ JDLL is installed empty. Several models might require different Deep Learning fr
 
 JDLL provides the needed methods to install the wanted engines in an easy manner. Following the above example, find below some code that can be used to install a DL engine. As it can be observed the model that was downloaded [supports Tensorflow 2 and Keras weights](https://github.com/bioimage-io/collection-bioimage-io/blob/19ea59e662410c3ee49b7da184730919336d7568/rdfs/10.5281/zenodo.7261974/7782776/rdf.yaml#L146). Keras is not supported so in order to load and run the model, Tensorflow weights need to be installed.
 
-```
-String framework = "tensorflow";
-String version = "2.11.0";
-boolean cpu = true;
-boolean gpu = true;
+```python
+from io.bioimage.modelrunner.engine.installation import EngineInstall
 
-String enginesDir = "/path/to/wanted/engines/dir";
-boolean installed = EngineInstall.installEngineWithArgsInDir(framework, version, cpu, gpu, enginesDir);
-if (installed)
-	System.out.println("Great success!");
-else
-	System.out.println("Error installing");
+framework = "tensorflow"
+version = "2.11.0"
+cpu = True
+gpu = True
+
+enginesDir = "/path/to/wanted/engines/dir"
+installed = EngineInstall.installEngineWithArgsInDir(framework, version, cpu, gpu, enginesDir)
+if (installed):
+	print("Great success!")
+else:
+	print("Error installing")
 ```
 Output:
 ```
@@ -417,20 +419,22 @@ Great success!
 As previously mentioned, JDLL integrates deeply with Bioimage.io models. An easier way to install the engines needed for Bioimage.io models is shown in the code below.
 
 In the example it is shown how simply providing the name of the model of interest, JDLL will know which engines to install.
-```java
-String modelName = "B. Sutilist bacteria segmentation - Widefield microscopy - 2D UNet";
-String enginesDir = "/path/to/wanted/engines/dir";
-boolean installed =  installEnginesForModelByNameinDir(modelName, enginesDir)
-if (installed)
-	System.out.println("Great success!");
-else
-	System.out.println("Error installing");
+```python
+from io.bioimage.modelrunner.engine.installation import EngineInstall
+
+modelName = "B. Sutilist bacteria segmentation - Widefield microscopy - 2D UNet"
+enginesDir = "/path/to/wanted/engines/dir"
+installed =  EngineInstall.installEnginesForModelByNameinDir(modelName, enginesDir)
+if (installed):
+	print("Great success!")
+else:
+	print("Error installing")
 ```
 Output:
 ```
 Great success!
 ```
-The Wiki convers extensively engine installation ([here](https://github.com/bioimage-io/JDLL/wiki/Understanding-engine-installation) and [here](https://github.com/bioimage-io/JDLL/wiki/Engine-Installation-(EngineInstall))). In addtion JDLL also includes methods to manage the engines and know: [the information about each engine](https://github.com/bioimage-io/JDLL/wiki/Engine-Management-I-(DeepLearningVersion)), [which engines are supported](https://github.com/bioimage-io/JDLL/wiki/Engine-Management-II-(AvailableEngines)) and [which engines have already been installed](https://github.com/bioimage-io/JDLL/wiki/Engine-Management-III-(InstalledEngines))
+The Wiki covers extensively engine installation ([here](https://github.com/bioimage-io/JDLL/wiki/Understanding-engine-installation) and [here](https://github.com/bioimage-io/JDLL/wiki/Engine-Installation-(EngineInstall))). In addtion JDLL also includes methods to manage the engines and know: [the information about each engine](https://github.com/bioimage-io/JDLL/wiki/Engine-Management-I-(DeepLearningVersion)), [which engines are supported](https://github.com/bioimage-io/JDLL/wiki/Engine-Management-II-(AvailableEngines)) and [which engines have already been installed](https://github.com/bioimage-io/JDLL/wiki/Engine-Management-III-(InstalledEngines)) Again, not that the methods explained in the Wiki can easily be used in Jython scripts.
 
 
 
