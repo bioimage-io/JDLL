@@ -51,10 +51,26 @@ The next section (~10 min read) provides essential instructions for using JDLL d
 
 ## 0. Setting Up JDLL
 
-Download the dependency and include it in your project. Depending on the application, dependencies are installed differently. For example, in Icy, go to 
+Download the dependency and include it in your project
 
-In Fiji, the JDLL library and its dependencies are shipped with the DeepImageJ update site. In order to install JDLL in Fiji, [add the deepImageJ update site to the Fiji updater](https://imagej.net/list-of-update-sites/) and update. The URL for the deepImageJ update site is
+   In order to benefit from the library, include the dependency in your code. The dependency can be added manually or using a dependency manager such as Maven. If you are using Maven, add the following dependency to the project pom file:
 
+   ```xml
+   <dependency>
+     <groupId>io.bioimage</groupId>
+     <artifactId>dl-runner</artifactId>
+     <version>0.3.13-SNAPSHOT</version>
+   </dependency>
+   ```
+
+   and add to `<repositories>` the following:
+
+   ```xml
+   <repository>
+     <id>scijava.public</id>
+     <url>https://maven.scijava.org/content/groups/public</url>
+   </repository>
+   ```
 ## 1. Downloading a model (optional)
 If a model from the supported by JDLL is already available you can skip this step. Note that for Tensorflow the models need to be saved in the [`SavdModel`](https://www.tensorflow.org/guide/saved_model) format.
 
