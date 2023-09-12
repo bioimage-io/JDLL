@@ -311,7 +311,9 @@ public class EngineInfo
 	 * 	has already been loaded
 	 */
 	public static EngineInfo defineDLEngine( String framework, String version, String jarsDirectory ) throws IllegalArgumentException
-	{	
+	{
+		Objects.requireNonNull(framework, "DL framework cannot be null.");
+		Objects.requireNonNull(version, "DL framework version cannot be null.");
 		if (AvailableEngines.modelRunnerToBioimageioKeysMap().keySet().contains(framework))
 			framework = AvailableEngines.modelRunnerToBioimageioKeysMap().get(framework);
 		List<DeepLearningVersion> vs = 
@@ -386,6 +388,8 @@ public class EngineInfo
 	public static EngineInfo defineDLEngine( String framework, String version, boolean gpu, String jarsDirectory )
 												throws IllegalArgumentException
 	{
+		Objects.requireNonNull(framework, "DL framework cannot be null.");
+		Objects.requireNonNull(version, "DL framework version cannot be null.");
 		if (AvailableEngines.modelRunnerToBioimageioKeysMap().keySet().contains(framework))
 			framework = AvailableEngines.modelRunnerToBioimageioKeysMap().get(framework);
 		List<DeepLearningVersion> vs = 
@@ -446,6 +450,8 @@ public class EngineInfo
 	public static EngineInfo defineDLEngine( String framework, String version, boolean cpu,
 			boolean gpu, String jarsDirectory ) throws IllegalArgumentException
 	{
+		Objects.requireNonNull(framework, "DL framework cannot be null.");
+		Objects.requireNonNull(version, "DL framework version cannot be null.");
 		if (AvailableEngines.modelRunnerToBioimageioKeysMap().keySet().contains(framework))
 			framework = AvailableEngines.modelRunnerToBioimageioKeysMap().get(framework);
 		List<DeepLearningVersion> vvs =
@@ -487,8 +493,6 @@ public class EngineInfo
 	 */
 	public static EngineInfo defineDLEngine( String framework, String version ) throws IllegalArgumentException
 	{
-		if (AvailableEngines.modelRunnerToBioimageioKeysMap().keySet().contains(framework))
-			framework = AvailableEngines.modelRunnerToBioimageioKeysMap().get(framework);
 		Objects.requireNonNull( STATIC_JARS_DIRECTORY, "The Jars directory should not be null." );
 		return defineDLEngine( framework, version, STATIC_JARS_DIRECTORY );
 	}
@@ -533,6 +537,8 @@ public class EngineInfo
 	 */
 	public static EngineInfo defineDLEngine( String framework, String version, boolean gpu ) throws IllegalArgumentException
 	{
+		Objects.requireNonNull(framework, "DL framework cannot be null.");
+		Objects.requireNonNull(version, "DL framework version cannot be null.");
 		if (AvailableEngines.modelRunnerToBioimageioKeysMap().keySet().contains(framework))
 			framework = AvailableEngines.modelRunnerToBioimageioKeysMap().get(framework);
 		Objects.requireNonNull( STATIC_JARS_DIRECTORY, "The Jars directory should not be null." );
@@ -577,8 +583,6 @@ public class EngineInfo
 	public static EngineInfo defineDLEngine( String framework, String version, 
 			boolean cpu, boolean gpu ) throws IllegalArgumentException
 	{
-		if (AvailableEngines.modelRunnerToBioimageioKeysMap().keySet().contains(framework))
-			framework = AvailableEngines.modelRunnerToBioimageioKeysMap().get(framework);
 		Objects.requireNonNull( STATIC_JARS_DIRECTORY, "The Jars directory should not be null." );
 		return defineDLEngine( framework, version, cpu, gpu, STATIC_JARS_DIRECTORY );
 	}
@@ -684,6 +688,9 @@ public class EngineInfo
 	public static EngineInfo defineCompatibleDLEngineCPU( String framework, String version, 
 			String jarsDirectory ) throws IOException, IllegalArgumentException 
 	{
+		Objects.requireNonNull(framework, "DL framework cannot be null.");
+		Objects.requireNonNull(version, "DL framework version cannot be null.");
+		Objects.requireNonNull(jarsDirectory, "The engine JARs directory cannot be null.");
 		InstalledEngines manager = InstalledEngines.buildEnginesFinder(jarsDirectory);
 		String compatibleVersion = manager.getMostCompatibleVersionForFramework(framework, version);
 		if (compatibleVersion == null)
@@ -733,6 +740,9 @@ public class EngineInfo
 	public static EngineInfo defineCompatibleDLEngine( String framework, String version,
 			boolean cpu, boolean gpu, String jarsDirectory ) throws IllegalArgumentException
 	{
+		Objects.requireNonNull(framework, "DL framework cannot be null.");
+		Objects.requireNonNull(version, "DL framework version cannot be null.");
+		Objects.requireNonNull(jarsDirectory, "The engine JARs directory cannot be null.");
 		List<DeepLearningVersion> possibles = 
 				InstalledEngines.checkEngineWithArgsInstalledForOS(framework, null, cpu, gpu, 
 						jarsDirectory);
@@ -786,6 +796,9 @@ public class EngineInfo
 	public static EngineInfo defineCompatibleDLEngineGPU( String framework, String version, 
 			String jarsDirectory ) throws IllegalArgumentException
 	{
+		Objects.requireNonNull(framework, "DL framework cannot be null.");
+		Objects.requireNonNull(version, "DL framework version cannot be null.");
+		Objects.requireNonNull(jarsDirectory, "The engine JARs directory cannot be null.");
 		List<DeepLearningVersion> possibles = 
 				InstalledEngines.checkEngineWithArgsInstalledForOS(framework, null, null, true,
 						jarsDirectory);
@@ -841,6 +854,8 @@ public class EngineInfo
 	 */
 	public static EngineInfo defineCompatibleDLEngineWithRdfYamlWeights(WeightFormat weight, 
 			String enginesDir) throws IOException, IllegalArgumentException {
+		Objects.requireNonNull(weight, "DL weigths cannot be null.");
+		Objects.requireNonNull(enginesDir, "The engine JARs directory cannot be null.");
 		String compatibleVersion = null;
 		String engine = weight.getWeightsFormat();
 		String version = weight.getTrainingVersion();
@@ -908,6 +923,8 @@ public class EngineInfo
 	 */
 	public static EngineInfo defineExactDLEngineWithRdfYamlWeights(WeightFormat weight,
 			String enginesDir) throws IOException, IllegalArgumentException {
+		Objects.requireNonNull(weight, "DL weigths cannot be null.");
+		Objects.requireNonNull(enginesDir, "The engine JARs directory cannot be null.");
 		String engine = weight.getWeightsFormat();
 		String version = weight.getTrainingVersion();
 		InstalledEngines manager = InstalledEngines.buildEnginesFinder(enginesDir);
