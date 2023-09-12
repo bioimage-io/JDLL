@@ -5,7 +5,7 @@
 This project provides a Java library for running Deep Learning (DL) models agnostically, enabling communication between Java software and various Deep Learning frameworks (engines). It also allows the use of multiple DL frameworks in the same session, manages the different DL frameworks and brings the models from the 
 [Bioimage.io](https://bioimage.io/#/) repository to Java.
 
-It was first intended for developers and was originally built by the DeepIcy team as the backend of the DeepIcy plugin. However, end-users such as Bioimage analysts with some Python background can also benefit from it using JDLL for [scripting with Jyton](https://imagej.net/scripting/jython/).
+It was first intended for developers and was originally built by the DeepIcy team as the backend of the DeepIcy plugin. However, end-users such as Bioimage analysts with some Python background can also benefit from it using JDLL for [scripting with Jython](https://imagej.net/scripting/jython/). Some example scripts can be found [here](https://github.com/bioimage-io/JDLL/tree/main/scripts). Also have a look at the section [*Quickstart for end-users*]() to get more information about how to use JDLL for scripting.
 
 [JDLL](<https://github.com/bioimage-io/model-runner-java/tree/main>) is able to load models and make inference, create tensors, download Bioimage.io models and manage the supported DL frameworks. The library is designed in a modular way, allowing the main software to avoid dealing with the various objects and structures required by different DL frameworks. Instead the Java model runner provides interfaces for models and tensors that handle internally their creation and inference in the differnet Java engines. The main software only needs to interact with the Java model runner and does not need to worry whether the model is in PyTorch, Tensorflow or other framework.
 
@@ -27,6 +27,12 @@ Currently, the following frameworks are supported:
 The information about the engines supported currently by JDLL, for which OS and architectures and which JAR files are required for each of the engines is stored in [this json file](https://github.com/bioimage-io/model-runner-java/blob/main/src/main/resources/availableDLVersions.json) and can be found [here](https://github.com/bioimage-io/JDLL/wiki/List-of-supported-engines).
 
 Note that JDLL will be in **constant development** and that it is open to community collaboration, so **pull requests** to the official repository of JDLL to improve functionality or to add new engines are **very welcomed**.
+
+# Quickstart
+As mentioned above, JDLL was originally developed for the purpose of seamlessly integrating Deep Learning capabilities into other software applications. Its main objective was to empower these software applications to effectively execute Deep Learning models. For that use case, JDLL was mainly oriented for application developers that wanted to incorporate DL methods in their softwares.
+
+But after a couple of stable releases, the JDLL team noticed that because of its user-friendly interface, the library could be accessible not just to software developers but also to everyday users with basic scripting knowledge in languages like Python or Matlab. This makes it suitable for anyone interested in crafting processing routines that require Deep Learning models.
+
 
 
 # Quickstart for developers
