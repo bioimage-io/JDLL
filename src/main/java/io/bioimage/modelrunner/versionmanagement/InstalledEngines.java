@@ -419,10 +419,15 @@ public class InstalledEngines {
     		searchEngine = null;
     	if (searchEngine == null && framework != null)
     		return new ArrayList<DeepLearningVersion>();
+    	String javaVersion;
+    	if (version != null)
+    		javaVersion = SupportedVersions.getJavaVersionForPythonVersion(searchEngine, version);
+    	else
+    		javaVersion = null;
 		List<DeepLearningVersion> filtered = getDownloadedForOS().stream().filter(vv ->{
 			if (searchEngine != null && !vv.getFramework().toLowerCase().equals(searchEngine))
 				return false;
-			else if (version != null && !vv.getPythonVersion().toLowerCase().equals(version.toLowerCase()))
+			else if (javaVersion != null && !vv.getVersion().toLowerCase().equals(javaVersion.toLowerCase()))
 				return false;
 			else if (cpu != null && vv.getCPU() != cpu)
 				return false;
