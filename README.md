@@ -281,6 +281,8 @@ ouptutBlankTensor.close();
 ouptutEmptyTensor.close();
 ```
 
+# Quickstart for developers
+This section explains how to use JDLL in a Jython script.
    
       
    
@@ -290,6 +292,12 @@ ouptutEmptyTensor.close();
 * [ExampleLoadTensorflow1Tensorflow2](https://github.com/bioimage-io/model-runner-java/blob/main/src/main/java/io/bioimage/modelrunner/example/ExampleLoadTensorflow1Tensorflow2.java)
 * [ExampleDownloadEngine](https://github.com/bioimage-io/JDLL/blob/main/src/main/java/io/bioimage/modelrunner/example/ExampleDownloadEngine.java)
 * [ExampleDownloadModel](https://github.com/bioimage-io/JDLL/blob/main/src/main/java/io/bioimage/modelrunner/example/ExampleDownloadModel.java)
+   
+## Scripting examples
+
+* [example-run-model-in-fiji](https://github.com/bioimage-io/JDLL/blob/main/scripts/example-run-model-in-fiji.py) (Requires to be executed from Fiji, as it uses the application to display the result image)
+* [example-download-bmz-model](https://github.com/bioimage-io/JDLL/blob/main/scripts/example-download-bmz-model.py)
+* [example-download-engine](https://github.com/bioimage-io/JDLL/blob/main/scripts/example-download-engine.py)
 
 
 ## Acknowledgements.
