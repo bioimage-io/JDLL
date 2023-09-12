@@ -474,27 +474,31 @@ Loading a model implies first defining which engine is going to be used for the 
 
 An example of defining the `EngineInfo` instance needed to load a model is shown below. The engine required in this code is required to be the exact engine wanted.
 
-Note that `String enginesDir` is the directory where the wanted engines have been installed. [Click here and look at the example in the redirected section](https://github.com/bioimage-io/JDLL#2-installing-dl-engines).
-```java
-String framework = "tensorflow";
-String version = "2.11.0";
-boolean cpu = true;
-boolean gpu = true;
-String enginesDir = "/path/to/wanted/engines/dir";
+Note that `enginesDir` is the directory where the wanted engines have been installed. [Click here and look at the example in the redirected section](https://github.com/bioimage-io/JDLL#2-installing-dl-engines).
+```python
+from io.bioimage.modelrunner.engine import EngineInfo
 
-EngineInfo enigneInfoExact = EngineInfo.defineDLEngine(framework, version, cpu, gpu, enginesDir);
+framework = "tensorflow"
+version = "2.11.0"
+cpu = True
+gpu = True
+enginesDir = "/path/to/wanted/engines/dir"
+
+enigneInfoExact = EngineInfo.defineDLEngine(framework, version, cpu, gpu, enginesDir)
 ```
 
 In order to require a compatible engine, not the exact one:
 
-```java
-String framework = "tensorflow";
-String version = "2.11.0";
-boolean cpu = true;
-boolean gpu = true;
-String enginesDir = "/path/to/wanted/engines/dir";
+```python
+from io.bioimage.modelrunner.engine import EngineInfo
 
-EngineInfo enigneInfoCompat = EngineInfo.defineCompatibleDLEngine(framework, version, cpu, gpu, enginesDir);
+framework = "tensorflow"
+version = "2.11.0"
+cpu = True
+gpu = True
+enginesDir = "/path/to/wanted/engines/dir"
+
+enigneInfoCompat = EngineInfo.defineCompatibleDLEngine(framework, version, cpu, gpu, enginesDir)
 ```
 
 The developer acknowledges that the class `io.bioimage.modelrunner.engine.EngineInfo` can be difficult to understand. This is why the [wiki contains a detailed sections trying to explain it in an understandable manner with several examples](https://github.com/bioimage-io/JDLL/wiki/Load-and-run-models-I-(EngineInfo)).
@@ -502,18 +506,20 @@ The developer acknowledges that the class `io.bioimage.modelrunner.engine.Engine
 Once the `EngineInfo` instance has been created, loading the model is easy. The only parameters needed now are the path to the `model folder` and the path to the `source file`.
 The model folder is the folder that contains the `.pb` file in Tensorflow, the `.pt` file in Pytorch and the `.onnx` file in Onnx. The source file is not needed for Tensorflow, is the path to the `.pt` file in Pytorch and the path to the `.onnx` file in Onnx.
 
-Then with the arguments `String modelFolder`, `String modelSource` and the previously created `EngineInfo enigneInfoExact` or `EngineInfo enigneInfoCompat` an instance of `io.bioimage.modelrunner.model.Model` can be created. Tha object then can be loaded and run inference.
+Then with the arguments `modelFolder`, `modelSource` and the previously created `enigneInfoExact` or `enigneInfoCompat` an instance of `io.bioimage.modelrunner.model.Model` can be created. Tha object then can be loaded and run inference.
 
 
-```
-//Path to the example model folder
-String modelFolder = "path/to/models/dir/B. Sutilist bacteria segmentation - Widefield microscopy - 2D UNet";
-String modelSource = null; // Not needed in Tensorflow
+```python
+from io.bioimage.modelrunner.model import Model
 
-Model model = Model.create(modelFolder, modelSource, enigneInfoCompat);
-model.loadModel();
+# Path to the example model folder
+modelFolder = "path/to/models/dir/B. Sutilist bacteria segmentation - Widefield microscopy - 2D UNet"
+modelSource = None # Not needed in Tensorflow
 
-System.out.println("Great sucess!");
+model = Model.create(modelFolder, modelSource, enigneInfoCompat)
+model.loadModel()
+
+print("Great sucess!")
 ```
 
 Output:
@@ -524,15 +530,17 @@ Great sucess!
 JDLL tight integration with Bioimage.io models makes loading them easier. To load a Bioimage.io model it is not necessary to create the `EngineInfo` object.
 
 For Bioimage.io models, loading is reduced to the next example:
-```
-// Path to the Bioimage.io model folder
-String modelFolder = "path/to/models/dir/B. Sutilist bacteria segmentation - Widefield microscopy - 2D UNet";
-String enginesDir = "/path/to/wanted/engines/dir";
+```python
+from io.bioimage.modelrunner.model import Model
 
-Model bioimageioModel = Model.createBioimageioModel(modelFolder, enginesDir);
-bioimageioModel.load();
+# Path to the Bioimage.io model folder
+modelFolder = "path/to/models/dir/B. Sutilist bacteria segmentation - Widefield microscopy - 2D UNet"
+enginesDir = "/path/to/wanted/engines/dir"
 
-System.out.println("Great sucess!");
+bioimageioModel = Model.createBioimageioModel(modelFolder, enginesDir)
+bioimageioModel.load()
+
+print("Great sucess!")
 ```
 
 Output:
@@ -545,17 +553,17 @@ More information about loading models and models in general can be found in [thi
 
 
 ## 5. Running the model
-Once the model has been loaded and the input and output tensors have been created. Running the model is simple. The input tensors should be added to a `List<?>` in the same order the model expects. Same for the ouptuts in another `List<?>`.
-```
-List<Tensor<?>> inputList = new ArrayList<List<Tensor<?>>>();
-List<Tensor<?>> outputputList = new ArrayList<List<Tensor<?>>>();
+Once the model has been loaded and the input and output tensors have been created. Running the model is simple. The input tensors should be added to a `List<?>` in the same order the model expects. Same for the ouptuts in another `List`.
+```python
+inputList = []
+outputputList = []
 
-inputList.add(inputTensor);
-outputputList.add(outputEmptyTensor);
-System.out.println("Ouptut tensor is empty: " + outputEmptyTensor.isEmpty());
+inputList.append(inputTensor)
+outputputList.append(outputEmptyTensor)
+print("Ouptut tensor is empty: ",  outputEmptyTensor.isEmpty())
 
-model.runModel(inputList, outputputList);
-System.out.println("Ouptut tensor after inference is empty: " + outputEmptyTensor.isEmpty());
+model.runModel(inputList, outputputList)
+print("Ouptut tensor after inference is empty: ", outputEmptyTensor.isEmpty())
 ```
 Output:
 ```
@@ -566,11 +574,11 @@ Ouptut tensor after inference is empty: false
 
 ## 6. Closing the model and the tensors
 Models and tensors need to be closed to be released and free the memory that they were using
-```
-model.close();
-inputTensor.close;
-ouptutBlankTensor.close();
-ouptutEmptyTensor.close();
+```python
+model.close()
+inputTensor.close
+ouptutBlankTensor.close()
+ouptutEmptyTensor.close()
 ```
       
    
