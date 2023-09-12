@@ -321,7 +321,7 @@ public class EngineInfo
 		}
 		
 		try {
-			return defineDLEngine( framework, version, cpu, gpu, jarsDirectory );
+			return defineDLEngine( framework, vs.get(0).getPythonVersion(), cpu, gpu, jarsDirectory );
 		} catch (IllegalArgumentException ex) {
 			ex.printStackTrace();
 			return null;
@@ -372,7 +372,7 @@ public class EngineInfo
 		boolean cpu = false;
 		if (vs.stream().filter(v -> v.getCPU()).collect(Collectors.toList()).size() > 0) 
 			cpu = true;
-		return defineDLEngine( framework, version, cpu, gpu, jarsDirectory );
+		return defineDLEngine( framework, vs.get(0).getPythonVersion(), cpu, gpu, jarsDirectory );
 	}
 
 	/**
@@ -415,7 +415,7 @@ public class EngineInfo
 				return null;
 			return defineDLEngineWithJavaVersion(framework, jV, cpu, gpu, jarsDirectory);
 		}
-		EngineInfo engineInfo = new EngineInfo(framework, version, jarsDirectory);
+		EngineInfo engineInfo = new EngineInfo(framework, vvs.get(0).getPythonVersion(), jarsDirectory);
 		engineInfo.cpu = cpu;
 		engineInfo.gpu = gpu;
 		return engineInfo;
@@ -492,7 +492,7 @@ public class EngineInfo
 		boolean cpu = false;
 		if (vs.stream().filter(v -> v.getCPU()).collect(Collectors.toList()).size() > 0) 
 			cpu = true;
-		return defineDLEngine( framework, version, cpu, gpu, STATIC_JARS_DIRECTORY );
+		return defineDLEngine( framework, vs.get(0).getPythonVersion(), cpu, gpu, STATIC_JARS_DIRECTORY );
 	}
 
 	/**
@@ -847,7 +847,7 @@ public class EngineInfo
 		if (vv.size() == 0)
 			return null;
 		boolean gpu = vv.stream().filter(v -> v.getGPU()).findFirst().orElse(null) != null;
-		return EngineInfo.defineDLEngine(engine, version, true, gpu, enginesDir);
+		return EngineInfo.defineDLEngine(engine, vv.get(0).getPythonVersion(), true, gpu, enginesDir);
 	}
 
 	/**
