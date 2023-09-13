@@ -5,7 +5,7 @@
 This project provides a Java library for running Deep Learning (DL) models agnostically, enabling communication between Java software and various Deep Learning frameworks (engines). It also allows the use of multiple DL frameworks in the same session, manages the different DL frameworks and brings the models from the 
 [Bioimage.io](https://bioimage.io/#/) repository to Java.
 
-It was first intended for developers and was originally built by the DeepIcy team as the backend of the DeepIcy plugin. However, end-users such as Bioimage analysts with some Python background can also benefit from it using JDLL for [scripting with Jython](https://imagej.net/scripting/jython/). Some example scripts can be found [here](https://github.com/bioimage-io/JDLL/tree/main/scripts). Also have a look at the section [*Quickstart for end-users*]() to get more information about how to use JDLL for scripting.
+It was first intended for developers and was originally built by the DeepIcy team as the backend of the DeepIcy plugin. However, end-users such as Bioimage analysts with some Python background can also benefit from it using JDLL for [scripting with Jython](https://imagej.net/scripting/jython/). Some example scripts can be found [here](https://github.com/bioimage-io/JDLL/tree/main/scripts). Also have a look at the section [*Quickstart for end-users*](https://github.com/bioimage-io/JDLL#quickstart-for-analystsscripting) to get more information about how to use JDLL for scripting.
 
 [JDLL](<https://github.com/bioimage-io/model-runner-java/tree/main>) is able to load models and make inference, create tensors, download Bioimage.io models and manage the supported DL frameworks. The library is designed in a modular way, allowing the main software to avoid dealing with the various objects and structures required by different DL frameworks. Instead the Java model runner provides interfaces for models and tensors that handle internally their creation and inference in the differnet Java engines. The main software only needs to interact with the Java model runner and does not need to worry whether the model is in PyTorch, Tensorflow or other framework.
 
@@ -35,7 +35,7 @@ But after a couple of stable releases, the JDLL team noticed that because of its
 
 Due to the dual possibilities of JDLL, there are 2 Quickstarts available depending on the interests of the user:
 - [Quickstart for developers](https://github.com/bioimage-io/JDLL#quickstart-for-developers) if the user is interested in the integration of JDLL into their application.
-- [Quickstart for analysts/scripting]() if the user is interested in creating scripts in Jython that can run DL models easily to improve their processing routines. Not much experience with Python/Jython is required.
+- [Quickstart for analysts/scripting](https://github.com/bioimage-io/JDLL#quickstart-for-analystsscripting) if the user is interested in creating scripts in Jython that can run DL models easily to improve their processing routines. Not much experience with Python/Jython is required.
 
 
 
@@ -330,13 +330,13 @@ The examples for JDLL use Jython because it supports Java and uses Python syntax
 In addition, Jython scripts can be then used in softwares such as Icy or Fiji to create Image Processing tasks together with the tools they have available.
 
 The following subsections provide essential instructions to use JDLL in Jyhton scripts:
-- [0. Setting Up JDLL](https://github.com/bioimage-io/JDLL#0-setting-up-jdll)
-- [1. Downloading a model (optional)](https://github.com/bioimage-io/JDLL#1-getting-a-model-optional)
-- [2. Installing DL engines](https://github.com/bioimage-io/JDLL#2-installing-dl-engines)
-- [3. Creating the tensors](https://github.com/bioimage-io/JDLL#3-creating-the-tensors)
-- [4. Loading the model](https://github.com/bioimage-io/JDLL#4-loading-the-model)
-- [5. Running the model](https://github.com/bioimage-io/JDLL#5-running-the-model)
-- [6. Closing the model and the tensors](https://github.com/bioimage-io/JDLL#6-closing-the-model-and-the-tensors)
+- [0. Setting Up JDLL](https://github.com/bioimage-io/JDLL#0-setting-up-jdll-1)
+- [1. Downloading a model (optional)](https://github.com/bioimage-io/JDLL#1-getting-a-model-optional-1)
+- [2. Installing DL engines](https://github.com/bioimage-io/JDLL#2-installing-dl-engines-1)
+- [3. Creating the tensors](https://github.com/bioimage-io/JDLL#3-creating-the-tensors-1)
+- [4. Loading the model](https://github.com/bioimage-io/JDLL#4-loading-the-model-1)
+- [5. Running the model](https://github.com/bioimage-io/JDLL#5-running-the-model-1)
+- [6. Closing the model and the tensors](https://github.com/bioimage-io/JDLL#6-closing-the-model-and-the-tensors-1)
 
 Note that the [JDLL Wiki](https://github.com/bioimage-io/JDLL/wiki) contains an extensive documentation of the JDLL API. The API methods can be used with Jython. Consider going over the API to get a more in-depth idea of the scripting possibilities of JDLL.
 
