@@ -10,6 +10,16 @@ JDLL was originally developed by the Icy team as the foundational component for 
 [JDLL](<https://github.com/bioimage-io/model-runner-java/tree/main>) is able to load models and make inference, create tensors, download Bioimage.io models and manage the supported DL frameworks. The library is designed in a modular way, allowing the main software to avoid dealing with the various objects and structures required by different DL frameworks. Instead the Java model runner provides interfaces for models and tensors that handle internally their creation and inference in the differnet Java engines. The main software only needs to interact with the Java model runner and does not need to worry whether the model is in PyTorch, Tensorflow or other framework.
 
 **FOR A MORE COMPREHENSIVE AND COMPLETE EXPLANATION OF JDLL, PLEASE VISIT THE [WIKI](https://github.com/bioimage-io/JDLL/wiki).**
+## Table of Contents
+
+1. [Supported engines]([#introduction](https://github.com/bioimage-io/JDLL#supported-engines))
+2. [Quickstart](https://github.com/bioimage-io/JDLL#quickstart)
+3. [Quickstart for developers](https://github.com/bioimage-io/JDLL#quickstart-for-developers)
+4. [Quickstart for analysts/scripting](https://github.com/bioimage-io/JDLL#quickstart-for-analystsscripting)
+5. [Examples for developers](https://github.com/bioimage-io/JDLL#examples)
+6. [Scripting examples](https://github.com/bioimage-io/JDLL#scripting-examples)
+7. [Acknowledgements](https://github.com/bioimage-io/JDLL#acknowledgements)
+8. [References](https://github.com/bioimage-io/JDLL#references)
 
 # Supported engines
 
@@ -321,7 +331,7 @@ outputEmptyTensor.close();
 
 
 # Quickstart for analysts/scripting
-This section (~15 min read) explains how to use JDLL in a Jython script. Jython is an implementation of Python in Java, thus it allows calling Java methods and classes in a Pythonic way. With Jython, Java methods and classes can be called in a script as Python methods. 
+This section (~15 min read) explains how to use JDLL in a [Jython](https://www.jython.org/) script. Jython is an implementation of Python in Java, thus it allows calling Java methods and classes in a Pythonic way. With Jython, Java methods and classes can be called in a script as Python methods. 
 
 Scripting is powerfull and usefull because it allows creating processing routines in a simple manner that otherwise would require a full software for them. This is the reason why many software applications such as Icy, Fiji or Napari have a script editor. Scripts can perform complex tasks reducing the need of developing specific plugins in each platform. Scripts are also mostly compatible with every software application that supports the language they are writen in.
 
@@ -639,27 +649,27 @@ outputEmptyTensor.close()
 ```
       
    
-## Examples
+# Examples
 
 * [ExampleLoadAndRunModel](https://github.com/bioimage-io/model-runner-java/blob/main/src/main/java/io/bioimage/modelrunner/example/ExampleLoadAndRunModel.java) (PyTorch)
 * [ExampleLoadTensorflow1Tensorflow2](https://github.com/bioimage-io/model-runner-java/blob/main/src/main/java/io/bioimage/modelrunner/example/ExampleLoadTensorflow1Tensorflow2.java)
 * [ExampleDownloadEngine](https://github.com/bioimage-io/JDLL/blob/main/src/main/java/io/bioimage/modelrunner/example/ExampleDownloadEngine.java)
 * [ExampleDownloadModel](https://github.com/bioimage-io/JDLL/blob/main/src/main/java/io/bioimage/modelrunner/example/ExampleDownloadModel.java)
    
-## Scripting examples
+# Scripting examples
 
 * [example-run-model-in-fiji](https://github.com/bioimage-io/JDLL/blob/main/scripts/example-run-model-in-fiji.py) (Requires to be executed from Fiji, as it uses the application to display the result image)
 * [example-download-bmz-model](https://github.com/bioimage-io/JDLL/blob/main/scripts/example-download-bmz-model.py)
 * [example-download-engine](https://github.com/bioimage-io/JDLL/blob/main/scripts/example-download-engine.py)
 
 
-## Acknowledgements.
+# Acknowledgements.
 
 This library was initially developed by the Icy team following the development of the DeepImageJ project. 
 We acknowledge the financial support of France-Bioimaging.
 We also acknowledge the AI for Life consortium that supported a hackathon in Milan (February 2023) during which we received feedback and advices from an excellent community.
 
-## References
+# References
 * If you used one of the material provided within JDLL, please consider citing their authors' work. 
 * [C. García-López-de-Haro, S. Dallongeville, T. Musset, E. Gomez de Mariscal, D. Sage, W. Ouyang, A. Munoz-Barrutia, J. Tinevez, J. Olivo-Marin,
 *JDLL: A library to run Deep Learning models on Java bioimage informatics platforms*, arXiv preprint arXiv:2306.04796 (2023).](https://arxiv.org/abs/2306.04796)
