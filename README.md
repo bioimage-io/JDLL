@@ -92,7 +92,7 @@ try {
 	// If the download is interrumpted or any of the model files cannot be downloaded
 	// and exception will be thrown
 	e.printStackTrace();
-        System.out.println("Error downloading the model :(");
+        System.out.println("Error downloading the model");
 }
 ```
 Output:
@@ -149,25 +149,25 @@ The Wiki covers extensively engine installation ([here](https://github.com/bioim
 ## 3. Creating the tensors
 Once the model and the engine are already installed it is the moment to start the process of running the model on the tensors. In this section, creation of the tensors will be explained.
 
-JDLL tensors are agnostic to the DL framework to be used, they are always creted in the same way. JDLL manages internally the conversion of the agnostif tensor into the framework specific tensor once the mdoel is going to be run. The unified method of creating tensors facilitates the integration of every supported DL framework into any software.
+JDLL tensors are agnostic to the DL framework to be used, they are always creted in the same way. JDLL manages internally the conversion of the agnostic tensor into the framework specific tensor once the model is going to be run. The unified method of creating tensors facilitates the integration of every supported DL framework into any software.
 
 JDLL tensors use ImgLib2 to store the tensor information. In practice, JDLL tensors are just wrappers of ImgLib2 `RandomAccessibleIntervals` that contain all the data needed to convert them back and forth into the framework specific tensors.
 
 The example below will show how to create the input and output tensors required to run the [example model](https://bioimage.io/#/?tags=placid-llama&id=10.5281%2Fzenodo.7261974). As per its [rdf.yaml file](https://github.com/bioimage-io/collection-bioimage-io/blob/19ea59e662410c3ee49b7da184730919336d7568/rdfs/10.5281/zenodo.7261974/7782776/rdf.yaml), the model has one input named `input_1`, with `bxyc` axes ([explanation here](https://github.com/bioimage-io/spec-bioimage-io/blob/gh-pages/model_spec_latest.md)) and a required shape of[1, 512, 512, 1]. The ouptut of the model is named `conv2d_19` with with `bxyc` axes and fixed shape [1, 512, 512, 3].
-```
+```java
 final ImgFactory< FloatType > imgFactory = new ArrayImgFactory<>( new FloatType() );
-final Img< FloatType > img1 = imgFactory.create( 1, 512, 512, 1 );
+final Img< FloatType > img1 = imgFactory.create( new long[] {1, 512, 512, 1} );
 // Create the input tensor with the nameand axes given by the rdf.yaml file
 // and add it to the list of input tensors
 Tensor<FloatType> inpTensor = Tensor.build("input_1", "bxyc", img1);
 
 // Ouput tensors can be created empty, if the output shape is not known.
 // Note that this method does not preallocate memory for the output tensor
-Tensor<T> ouptutEmptyTensor = Tensor.buildEmptyTensor("conv2d_19", "bxyc");
+Tensor<T> outputEmptyTensor = Tensor.buildEmptyTensor("conv2d_19", "bxyc");
 
 // Or ouptut tensors can also be built blank, to pre-allocate memory
 // if the shape and data type are known.
-Tensor<FloatType> ouptutBlankTensor = Tensor.buildBlankTensor("conv2d_19",
+Tensor<FloatType> outputBlankTensor = Tensor.buildBlankTensor("conv2d_19",
 			"bxyc", new long[] {1, 512, 512, 3}, new FloatType());
 
 ```
@@ -277,8 +277,8 @@ Models and tensors need to be closed to be released and free the memory that the
 ```
 model.close();
 inputTensor.close;
-ouptutBlankTensor.close();
-ouptutEmptyTensor.close();
+outputBlankTensor.close();
+outputEmptyTensor.close();
 ```
 
 
@@ -423,8 +423,8 @@ In the example it is shown how simply providing the name of the model of interes
 from io.bioimage.modelrunner.engine.installation import EngineInstall
 
 modelName = "B. Sutilist bacteria segmentation - Widefield microscopy - 2D UNet"
-enginesDir = "/path/to/wanted/engines/dir"
-installed =  EngineInstall.installEnginesForModelByNameinDir(modelName, enginesDir)
+modelsDir = "/path/to/wanted/models/dir"
+installed =  EngineInstall.installEnginesForModelByNameinDir(modelName, modelsDir)
 if (installed):
 	print("Great success!")
 else:
@@ -443,30 +443,79 @@ In addition, a more detailed Jython script with an example on how to install an 
 ## 3. Creating the tensors
 Once the model and the engine are already installed it is the moment to start the process of running the model on the tensors. In this section, creation of the tensors will be explained.
 
-JDLL tensors are agnostic to the DL framework to be used, they are always creted in the same way. JDLL manages internally the conversion of the agnostif tensor into the framework specific tensor once the mdoel is going to be run. The unified method of creating tensors facilitates the integration of every supported DL framework into any software.
+JDLL tensors are agnostic to the DL framework to be used, they are always creted in the same way. JDLL manages internally the conversion of the agnostic tensor into the framework specific tensor once the model is going to be run. The unified method of creating tensors facilitates the integration of every supported DL framework into any software.
 
 JDLL tensors use ImgLib2 to store the tensor information. In practice, JDLL tensors are just wrappers of ImgLib2 `RandomAccessibleIntervals` that contain all the data needed to convert them back and forth into the framework specific tensors.
 
 The example below will show how to create the input and output tensors required to run the [example model](https://bioimage.io/#/?tags=placid-llama&id=10.5281%2Fzenodo.7261974). As per its [rdf.yaml file](https://github.com/bioimage-io/collection-bioimage-io/blob/19ea59e662410c3ee49b7da184730919336d7568/rdfs/10.5281/zenodo.7261974/7782776/rdf.yaml), the model has one input named `input_1`, with `bxyc` axes ([explanation here](https://github.com/bioimage-io/spec-bioimage-io/blob/gh-pages/model_spec_latest.md)) and a required shape of[1, 512, 512, 1]. The ouptut of the model is named `conv2d_19` with with `bxyc` axes and fixed shape [1, 512, 512, 3].
-```
-final ImgFactory< FloatType > imgFactory = new ArrayImgFactory<>( new FloatType() );
-final Img< FloatType > img1 = imgFactory.create( 1, 512, 512, 1 );
-// Create the input tensor with the nameand axes given by the rdf.yaml file
-// and add it to the list of input tensors
-Tensor<FloatType> inpTensor = Tensor.build("input_1", "bxyc", img1);
+```python
+from io.bioimage.modelrunner.tensor import Tensor
 
-// Ouput tensors can be created empty, if the output shape is not known.
-// Note that this method does not preallocate memory for the output tensor
-Tensor<T> ouptutEmptyTensor = Tensor.buildEmptyTensor("conv2d_19", "bxyc");
+from net.imglib2.img.array import ArrayImgFactory
+from net.imglib2.type.numeric.real import FloatType
 
-// Or ouptut tensors can also be built blank, to pre-allocate memory
-// if the shape and data type are known.
-Tensor<FloatType> ouptutBlankTensor = Tensor.buildBlankTensor("conv2d_19",
-			"bxyc", new long[] {1, 512, 512, 3}, new FloatType());
+imgFactory = ArrayImgFactory( FloatType() )
+img1 = imgFactory.create( [1, 512, 512, 1] )
+# Create the input tensor with the nameand axes given by the rdf.yaml file
+# and add it to the list of input tensors
+inpTensor = Tensor.build("input_1", "bxyc", img1)
+
+# Ouput tensors can be created empty, if the output shape is not known.
+# Note that this method does not preallocate memory for the output tensor
+outputEmptyTensor = Tensor.buildEmptyTensor("conv2d_19", "bxyc")
+
+# Or ouptut tensors can also be built blank, to pre-allocate memory
+# if the shape and data type are known.
+outputBlankTensor = Tensor.buildBlankTensor("conv2d_19",
+			"bxyc", [1, 512, 512, 3], FloatType())
 
 ```
 
 More information about tensors can be found in the [JDLL wiki](https://github.com/bioimage-io/JDLL/wiki/JDLL-tensors-I-(Tensor)).
+
+Another option is to create the tensors directly from images are open on the software. The next example shows how an `ImagePlus` opened by Fiji can be converted into a tensor.
+```python
+import os
+from io.bioimage.modelrunner.tensor import Tensor
+from ij import IJ
+from net.imglib2.img.display.imagej import ImageJFunctions
+from net.imglib2.view import Views
+
+# Path to the model whose sample image is going to be displayed
+model_name = "B. Sutilist bacteria segmentation - Widefield microscopy - 2D UNet"
+models_dir = "/path/to/wanted/models/dir"
+model_of_interest_path = os.path.join(models_dir, model_name)
+
+#Open the image and show it
+imp = IJ.openImage(os.path.join(model_of_interest_path, "sample_input_0.tif"))
+imp.show()
+
+# Convert the image into a float32 ImgLib2 image.
+# Note that as a 2D image the dimensions are just "xy"
+wrapImg = ImageJFunctions.convertFloat(imp)
+# Convert to the required axes order "bxyc"
+# Permute from "xy" to "yx"
+wrapImg = Views.permute(wrapImg, 0, 1)
+# Add one dimension to "yxb", from (512, 512) to (512, 512, 1)
+wrapImg = Views.addDimension(wrapImg, 0, 0
+# Permute from "yxb" and (512, 512, 1) to "bxy" and (1, 512, 512)
+wrapImg = Views.permute(wrapImg, 0, 2)
+# Add one dimension to get "bxyc", from (1, 512, 512) to (1, 512, 512, 1)
+wrapImg = Views.addDimension(wrapImg, 0, 0)
+
+# Build the corresponding tensor
+inputTensor = Tensor.build("input_1", "bxyc", wrapImg)
+```
+
+In order to get the orginal image back from the tensor after all the permutations and dimensions added:
+```python
+from net.imglib2.img.display.imagej import ImageJFunctions
+from net.imglib2.view import Views
+
+# Convert from "bxyc" (1, 512, 512, 1) into "xy" (512, 512)
+wrapImg = Views.dropSingletonDimensions(wrapImg)
+ImageJFunctions.show(wrapImg)
+```
 
 
 ## 4. Loading the model
@@ -579,8 +628,8 @@ Models and tensors need to be closed to be released and free the memory that the
 ```python
 model.close()
 inputTensor.close()
-ouptutBlankTensor.close()
-ouptutEmptyTensor.close()
+outputBlankTensor.close()
+outputEmptyTensor.close()
 ```
       
    
