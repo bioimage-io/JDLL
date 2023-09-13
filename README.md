@@ -342,9 +342,9 @@ Note that the [JDLL Wiki](https://github.com/bioimage-io/JDLL/wiki) contains an 
 
 ## 0. Setting up JDLL
 
-Download the dependency and include it in your project. Depending on the application, dependencies are installed differently. For example, in Icy, go to 
+Download the dependency and include it in your project. Depending on the application, dependencies are installed differently. For example, in Icy, click on the `Plugins` tab, then `Setup>Online plugin`. In the window that opens look for the name `JDLL` within the plugin list, click on it and then click on `Install` on the middle right of the window.
 
-In Fiji, the JDLL library and its dependencies are shipped with the DeepImageJ update site. In order to install JDLL in Fiji, [add the deepImageJ update site to the Fiji updater](https://imagej.net/list-of-update-sites/) and update. The URL for the deepImageJ update site is: https://sites.imagej.net/DeepImageJ/
+In Fiji, the JDLL library and its dependencies are shipped from the deepImageJ update site. In order to install JDLL in Fiji, [add the deepImageJ update site to the Fiji updater](https://imagej.net/list-of-update-sites/) and update. The URL for the deepImageJ update site is: https://sites.imagej.net/DeepImageJ/
 
 Once installed, JDLL should be ready to be used. 
 
