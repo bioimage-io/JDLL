@@ -12,7 +12,7 @@ JDLL was originally developed by the Icy team as the foundational component for 
 **FOR A MORE COMPREHENSIVE AND COMPLETE EXPLANATION OF JDLL, PLEASE VISIT THE [WIKI](https://github.com/bioimage-io/JDLL/wiki).**
 ## Table of Contents
 
-1. [Supported engines]([#introduction](https://github.com/bioimage-io/JDLL#supported-engines))
+1. [Supported engines](https://github.com/bioimage-io/JDLL#supported-engines)
 2. [Quickstart](https://github.com/bioimage-io/JDLL#quickstart)
 3. [Quickstart for developers](https://github.com/bioimage-io/JDLL#quickstart-for-developers)
 4. [Quickstart for analysts/scripting](https://github.com/bioimage-io/JDLL#quickstart-for-analystsscripting)
