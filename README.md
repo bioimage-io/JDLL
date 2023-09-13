@@ -321,7 +321,7 @@ outputEmptyTensor.close();
 
 
 # Quickstart for analysts/scripting
-This section explains how to use JDLL in a Jython script. Jython is an implementation of Python in Java, thus it allows calling Java methods and classes in a Pythonic way. With Jython, Java methods and classes can be called in a script as Python methods. 
+This section (~15 min read) explains how to use JDLL in a Jython script. Jython is an implementation of Python in Java, thus it allows calling Java methods and classes in a Pythonic way. With Jython, Java methods and classes can be called in a script as Python methods. 
 
 Scripting is powerfull and usefull because it allows creating processing routines in a simple manner that otherwise would require a full software for them. This is the reason why many software applications such as Icy, Fiji or Napari have a script editor. Scripts can perform complex tasks reducing the need of developing specific plugins in each platform. Scripts are also mostly compatible with every software application that supports the language they are writen in.
 
@@ -329,7 +329,7 @@ The examples for JDLL use Jython because it supports Java and uses Python syntax
 
 In addition, Jython scripts can be then used in softwares such as Icy or Fiji to create Image Processing tasks together with the tools they have available.
 
-The following subsections (~1 min read) provides essential instructions to use JDLL in Jyhton scripts:
+The following subsections provide essential instructions to use JDLL in Jyhton scripts:
 - [0. Setting Up JDLL](https://github.com/bioimage-io/JDLL#0-setting-up-jdll)
 - [1. Downloading a model (optional)](https://github.com/bioimage-io/JDLL#1-getting-a-model-optional)
 - [2. Installing DL engines](https://github.com/bioimage-io/JDLL#2-installing-dl-engines)
@@ -337,6 +337,8 @@ The following subsections (~1 min read) provides essential instructions to use J
 - [4. Loading the model](https://github.com/bioimage-io/JDLL#4-loading-the-model)
 - [5. Running the model](https://github.com/bioimage-io/JDLL#5-running-the-model)
 - [6. Closing the model and the tensors](https://github.com/bioimage-io/JDLL#6-closing-the-model-and-the-tensors)
+
+Note that the [JDLL Wiki](https://github.com/bioimage-io/JDLL/wiki) contains an extensive documentation of the JDLL API. The API methods can be used with Jython. Consider going over the API to get a more in-depth idea of the scripting possibilities of JDLL.
 
 ## 0. Setting up JDLL
 
@@ -517,6 +519,8 @@ wrapImg = Views.dropSingletonDimensions(wrapImg)
 ImageJFunctions.show(wrapImg)
 ```
 
+A complete example that contains tensor creation from Fiji ImagePlus images can be found [here](https://github.com/bioimage-io/JDLL/blob/c037809a3695632487cc024bcefe93b529cc89fe/scripts/example-run-model-in-fiji.py#L67).
+
 
 ## 4. Loading the model
 Before making inference with a model, it needs to be loaded. Similar to [tensor creation](https://github.com/bioimage-io/JDLL#3-creating-the-tensors) JDLL provides an unified way to load models from any DL framework.
@@ -600,6 +604,8 @@ Great sucess!
 ```
 
 More information about loading models and models in general can be found in [this Wiki page](https://github.com/bioimage-io/JDLL/wiki/Load-and-run-models-II-(Model)).
+
+In addition, a complete example showing how to load a Bioimage.io model can be found [here](https://github.com/bioimage-io/JDLL/blob/c037809a3695632487cc024bcefe93b529cc89fe/scripts/example-run-model-in-fiji.py#L87).
 
 
 
