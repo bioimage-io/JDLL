@@ -20,6 +20,8 @@
 package io.bioimage.modelrunner.example;
 
 import io.bioimage.modelrunner.bioimageio.BioimageioRepo;
+import io.bioimage.modelrunner.bioimageio.description.ModelDescriptor;
+import io.bioimage.modelrunner.bioimageio.description.TensorSpec;
 import io.bioimage.modelrunner.engine.EngineInfo;
 import io.bioimage.modelrunner.engine.installation.EngineInstall;
 import io.bioimage.modelrunner.exceptions.LoadEngineException;
@@ -31,8 +33,11 @@ import io.bioimage.modelrunner.versionmanagement.InstalledEngines;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
 
 import net.imglib2.img.Img;
 import net.imglib2.img.ImgFactory;
@@ -41,16 +46,7 @@ import net.imglib2.type.numeric.real.FloatType;
 import net.imglib2.util.Util;
 
 /**
- * This is an example of the library that runs a Deep Learning model on a
- * supported engine locally on your computer. Regard that in order to get this
- * example to work, a Deep Learning model needs to be downloaded from the
- * Bioimage.io repo and a Java Deep Learning framework needs to be installed. 
- * 
- * The example code downloads both artifacts, thus it might take some time to complete
- * as the downloaded files are not light.
- * This example uses the torchscript/DeepImageJ
- * model <a href=
- * "https://bioimage.io/#/?tags=10.5281%2Fzenodo.6406756&id=10.5281%2Fzenodo.6406756">here</a>.
+ * This class tries to run every Bioimage.io model available
  * 
  * @author Carlos Garcia Lopez de Haro
  */
@@ -59,6 +55,16 @@ public class ExampleLoadAndRunAllBmzModels {
 	private static final String CWD = System.getProperty("user.dir");
 	private static final String ENGINES_DIR = new File(CWD, "engines").getAbsolutePath();
 	private static final String MODELS_DIR = new File(CWD, "models").getAbsolutePath();
+	
+	/**
+	 * Method that installs one engine compatible with the OS and Java version
+	 * per DL framework and major version, this is installing Tf1, Tf2, Pytorch 1,
+	 * Pytorch 2 and Onnx 17
+	 */
+	private static void installAllValidEngines() {
+		EngineInstall installer = EngineInstall.createInstaller(ENGINES_DIR);
+		installer.basicEngineInstallation();
+	}
 
 	/**
 	 * 
@@ -69,6 +75,20 @@ public class ExampleLoadAndRunAllBmzModels {
 	 * 	or running the model
 	 */
 	public static void main(String[] args) throws LoadEngineException, Exception {
+		
+		installAllValidEngines();
+		
+		BioimageioRepo br = BioimageioRepo.connect();
+		
+		Map<Path, ModelDescriptor> bmzModelList = br.listAllModels(false);
+		
+		for (Entry<Path, ModelDescriptor> modelEntry : bmzModelList.entrySet()) {
+			if (modelEntry.getValue().getWeights() == null)
+				continue;
+			String modelFolder = br.downloadByName(modelEntry.getValue().getName(), MODELS_DIR);
+			Model model = Model.createBioimageioModel(modelFolder, ENGINES_DIR);
+			model.loadModel();
+		}
 
 		// Tag for the DL framework (engine) that wants to be used
 		String framework = "torchscript";
@@ -104,12 +124,26 @@ public class ExampleLoadAndRunAllBmzModels {
 		// Load the corresponding model
 		Model model = loadModel(modelFolder, modelSource, engineInfo);
 		// Create an image that will be the backend of the Input Tensor
+	
+	}
+	
+	public static void loadAndRunModel(String modelFolder, ModelDescriptor descriptor) throws Exception {
+		Model model = Model.createBioimageioModel(modelFolder, ENGINES_DIR);
+		model.loadModel();
+		List<Tensor<?>> inputs = new ArrayList<Tensor<?>>();
+		List<Tensor<?>> outputs = new ArrayList<Tensor<?>>();
 		final ImgFactory< FloatType > imgFactory = new ArrayImgFactory<>( new FloatType() );
+		
+		for ( TensorSpec it : descriptor.getInputTensors()) {
+			String axesStr = it.getAxesOrder();
+			String name = it.getName();
+			it.getShape().getPatchMinimumSize()
+		}
+		
 		final Img< FloatType > img1 = imgFactory.create( 1, 1, 512, 512 );
 		// Create the input tensor with the nameand axes given by the rdf.yaml file
 		// and add it to the list of input tensors
 		Tensor<FloatType> inpTensor = Tensor.build("input0", "bcyx", img1);
-		List<Tensor<?>> inputs = new ArrayList<Tensor<?>>();
 		inputs.add(inpTensor);
 		
 		// Create the output tensors defined in the rdf.yaml file with their corresponding 
@@ -123,7 +157,6 @@ public class ExampleLoadAndRunAllBmzModels {
 				new FloatType());*/
 		final Img< FloatType > img2 = imgFactory.create( 1, 2, 512, 512 );
 		Tensor<FloatType> outTensor = Tensor.build("output0", "bcyx", img2);
-		List<Tensor<?>> outputs = new ArrayList<Tensor<?>>();
 		outputs.add(outTensor);
 		
 		// Run the model on the input tensors. THe output tensors 
@@ -136,91 +169,5 @@ public class ExampleLoadAndRunAllBmzModels {
 		inputs.stream().forEach(t -> t.close());
 		outputs.stream().forEach(t -> t.close());
 		System.out.print("Success!!");
-	}
-	
-	/**
-	 * Downloads the engine defined by the framework and engineVersion
-	 * arguments that is supported on the CPU
-	 * @param framework
-	 * 	DL framework of interest
-	 * @param engineVersion
-	 * 	version of the DL framework of interest
-	 * @param enginesDir
-	 * 	directory where the engine is going to be installed
-	 * @throws IOException if the engine is not installed correctly or no
-	 * 	engine with the criteria is found
-	 * @throws InterruptedException if the engine download is interrupted
-	 */
-	public static void downloadCPUEngine(String framework, String engineVersion,
-			String enginesDir) throws IOException, InterruptedException {
-		// Check if there is any engine supported by JDLL that fulfils the
-		// framework and version requirements that also runs on CPU
-		List<DeepLearningVersion> possibleEngines = 
-				AvailableEngines.getEnginesForOsByParams(framework, engineVersion, true, null);
-		// Try to install the first match that fits the requirements, any other 
-		// match could have been used too.
-		boolean success = EngineInstall.installEngineInDir(possibleEngines.get(0), enginesDir);
-		
-		if (!success)
-			throw new IOException("The wanted DL engine was not downloaed correctly: "
-								+ possibleEngines.get(0).folderName());
-	}
-	
-	/**
-	 * Download a model from the Bioimage.io repository selecting it by its full
-	 * name. The model is downloaded into the wanted directory.
-	 * 
-	 * @param bmzModelName
-	 * 	name of the model of interest
-	 * @param modelsDir
-	 * 	directory where the model is downloaded
-	 * @return the path to the model downloaded. The path its model folder.
-	 * @throws IOException if there is any error downloading the model or
-	 * 	it does not exist
-	 * @throws InterruptedException if the download is interrupted
-	 */
-	public static String downloadBMZModel(String bmzModelName, String modelsDir) throws IOException, InterruptedException {
-		// Create an instance of the BioimageRepo object
-		BioimageioRepo br = BioimageioRepo.connect();
-		return br.downloadByName(bmzModelName, modelsDir);
-	}
-	
-	/**
-	 * Method that creates the {@link EngineInfo} object.
-	 * @param engine
-	 * 	tag of the Deep Learning framework as definde in the bioimage.io
-	 * @param engineVersion
-	 * 	version of the Deep LEarning framework
-	 * @param enginesDir
-	 * 	directory where all the Deep Learning frameworks are installed
-	 * @param cpu
-	 * 	whether the engine is supported by CPU or not
-	 * @param gpu
-	 * 	whether the engine is supported by GPU or not
-	 * @return an {@link EngineInfo} object to load a DL model
-	 */
-	public static EngineInfo createEngineInfo(String engine, String engineVersion, 
-			String enginesDir, boolean cpu, boolean gpu) {
-		return EngineInfo.defineDLEngine(engine, engineVersion, cpu, gpu, enginesDir);
-	}
-	
-	/**
-	 * Load the wanted model
-	 * @param modelFolder
-	 * 	path to the model folder downloaded
-	 * @param modelSource
-	 * 	local path to the source file of the model
-	 * @param engineInfo
-	 * 	Object containing the needed info about the Deep Learning 
-	 * 	framework compatible with the wanted model
-	 * @return a loaded DL model
-	 * @throws LoadEngineException if there is any error loading the model
-	 * @throws Exception if anything fails loading the model
-	 */
-	public static Model loadModel(String modelFolder, String modelSource, EngineInfo engineInfo) throws LoadEngineException, Exception {
-		
-		Model model = Model.createDeepLearningModel(modelFolder, modelSource, engineInfo);
-		model.loadModel();
-		return model;
 	}
 }
