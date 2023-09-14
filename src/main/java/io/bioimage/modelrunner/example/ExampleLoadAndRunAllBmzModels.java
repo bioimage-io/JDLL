@@ -43,6 +43,12 @@ import net.imglib2.type.numeric.real.FloatType;
 
 /**
  * This class tries to run every Bioimage.io model available.
+ * It should be successful running every Tensorflow, Onnx and Pytorch 1 model
+ * in Windows, Ubuntu and Mac Intel. 
+ * Pytorch 2 models cannot be run in this example as they have conflicts with
+ * Python 1. 
+ * Macs based on Apple Silicon have a reduced number of models to work with. 
+ * They cannot run Tensorflow 1 and need at least Java 11 for Tensorflow 2.
  * 
  * @author Carlos Garcia Lopez de Haro
  */
@@ -51,7 +57,9 @@ public class ExampleLoadAndRunAllBmzModels {
 	private static final String CWD = System.getProperty("user.dir");
 	private static final String ENGINES_DIR = new File(CWD, "engines").getAbsolutePath();
 	private static final String MODELS_DIR = new File(CWD, "models").getAbsolutePath();
-	
+	/**
+	 * Supported DL frameworks by their Bioimage.io names
+	 */
 	private static final List<String> SUPPORTED_FRAMEWORKS;
 	static {
 		SUPPORTED_FRAMEWORKS = new ArrayList<String>();
@@ -102,7 +110,14 @@ public class ExampleLoadAndRunAllBmzModels {
 		System.out.println("Models run without any issue: " 
 				+ successModelCount + "/" + bmzModelList.size());
 	}
-	
+	/**
+	 * Load and run any model provided
+	 * @param modelFolder
+	 * 	the paht to the model folder
+	 * @param descriptor
+	 * 	descriptor containing the rdf.yaml information
+	 * @throws Exception if any error occurs
+	 */
 	public static void loadAndRunModel(String modelFolder, ModelDescriptor descriptor) throws Exception {
 		Model model = Model.createBioimageioModel(modelFolder, ENGINES_DIR);
 		model.loadModel();
@@ -119,6 +134,13 @@ public class ExampleLoadAndRunAllBmzModels {
 		outputs.stream().forEach(t -> t.close());
 	}
 	
+	/**
+	 * Create the Tensor inputs needed for the model from the information
+	 * in the rdf.yaml file stored in the ModelDescriptor
+	 * @param descriptor
+	 * 	file containing the information
+	 * @return the input Tensor list
+	 */
 	private static List<Tensor<?>> createInputs(ModelDescriptor descriptor) {
 		List<Tensor<?>> inputs = new ArrayList<Tensor<?>>();
 		final ImgFactory< FloatType > imgFactory = new ArrayImgFactory<>( new FloatType() );
@@ -136,6 +158,13 @@ public class ExampleLoadAndRunAllBmzModels {
 		return inputs;
 	}
 	
+	/**
+	 * Create the Tensor outputs needed for the model from the information
+	 * in the rdf.yaml file stored in the ModelDescriptor
+	 * @param descriptor
+	 * 	file containing the information
+	 * @return the output Tensor list
+	 */
 	private static List<Tensor<?>> createOutputs(ModelDescriptor descriptor) {
 		List<Tensor<?>> outputs = new ArrayList<Tensor<?>>();
 		
@@ -148,6 +177,11 @@ public class ExampleLoadAndRunAllBmzModels {
 		return outputs;
 	}
 	
+	/**
+	 * Check whether the model can be loaded during the example run
+	 * @param descriptor
+	 * 	information of the model
+	 */
 	private static void checkModelCompatibleWithEngines(ModelDescriptor descriptor) {
 		List<WeightFormat> wws = descriptor.getWeights().getSupportedWeights();
 		boolean supported = false;
