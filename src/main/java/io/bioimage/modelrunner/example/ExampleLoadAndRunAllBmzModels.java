@@ -25,7 +25,6 @@ import io.bioimage.modelrunner.bioimageio.description.TensorSpec;
 import io.bioimage.modelrunner.bioimageio.description.weights.ModelWeight;
 import io.bioimage.modelrunner.bioimageio.description.weights.WeightFormat;
 import io.bioimage.modelrunner.engine.installation.EngineInstall;
-import io.bioimage.modelrunner.exceptions.LoadEngineException;
 import io.bioimage.modelrunner.model.Model;
 import io.bioimage.modelrunner.tensor.Tensor;
 
@@ -81,12 +80,14 @@ public class ExampleLoadAndRunAllBmzModels {
 		
 		BioimageioRepo br = BioimageioRepo.connect();
 		Map<Path, ModelDescriptor> bmzModelList = br.listAllModels(false);
+		int successModelCount = 0;
 		
 		for (Entry<Path, ModelDescriptor> modelEntry : bmzModelList.entrySet()) {
 			try {
 				checkModelCompatibleWithEngines(modelEntry.getValue());
 				String modelFolder = br.downloadByName(modelEntry.getValue().getName(), MODELS_DIR);
 				loadAndRunModel(modelFolder, modelEntry.getValue());
+				successModelCount ++;
 			} catch (IllegalArgumentException ex) {
 				continue;
 			} catch (IOException | InterruptedException e) {
@@ -96,7 +97,10 @@ public class ExampleLoadAndRunAllBmzModels {
 				System.out.println(modelEntry.getValue().getName() 
 						+ ": Error loading/running model." + e.toString());
 			}
-		}	
+		}
+		
+		System.out.println("Models run without any issue: " 
+				+ successModelCount + "/" + bmzModelList.size());
 	}
 	
 	public static void loadAndRunModel(String modelFolder, ModelDescriptor descriptor) throws Exception {
