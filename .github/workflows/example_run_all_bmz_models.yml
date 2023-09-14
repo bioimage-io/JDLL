@@ -1,10 +1,11 @@
 name: Run all Bioimage.io models
 on:
-  push:
-    branches:
-      - main
-  pull_request:
-    branches: [ main ]
+  schedule:
+    - cron: '30 2 * * *'
+  workflow_dispatch:
+  release:
+    types:
+      - published
 jobs:
   build-and-run:
     runs-on: ${{ matrix.os }}
