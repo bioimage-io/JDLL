@@ -169,7 +169,7 @@ public class ModelWeight
      */
     public List<String> getSupportedDLFrameworks() {
     	return weightsDic.entrySet().stream().
-    			map(i -> i.getValue().getWeightsFormat()).
+    			map(i -> i.getValue().getFramework()).
     			distinct().collect(Collectors.toList());
     }
     
@@ -204,7 +204,7 @@ public class ModelWeight
     			nSuffixes.put(entry.getKey(), entry.getValue());
     			continue;
     		}
-    		String engine = weightsDic.get(entry.getKey()).getWeightsFormat();
+    		String engine = weightsDic.get(entry.getKey()).getFramework();
     		String trainingVersion = weightsDic.get(entry.getKey()).getTrainingVersion();
     		List<DeepLearningVersion> copiesOfVersion = new ArrayList<DeepLearningVersion>();
 			try {
@@ -238,7 +238,7 @@ public class ModelWeight
      * @return the corresponding String depending on the presence of the engine or not
      */
     private String findLocalEngine(String version, String trainingVersion) {
-    	String engine = weightsDic.get(version).getWeightsFormat();
+    	String engine = weightsDic.get(version).getFramework();
     	if (engine.startsWith(bioengineIdentifier)) {
     		return "";
     	} else if (!supported.contains(engine)) {
@@ -357,7 +357,7 @@ public class ModelWeight
 	 */
 	public void setWeightsAsLoaded() {
 		if (selectedWeights != null)
-			loadedWeights.put(selectedWeights.getWeightsFormat(), selectedWeights);
+			loadedWeights.put(selectedWeights.getFramework(), selectedWeights);
 	}
 
     /**

@@ -110,7 +110,7 @@ public class TorchscriptWeights implements WeightFormat{
 	/**
 	 * {@inheritDoc}
 	 */
-	public String getWeightsFormat() {
+	public String getFramework() {
 		return weightsFormat;
 	}
 

@@ -667,7 +667,7 @@ public class EngineInstall {
 	public static boolean installEngineForWeightsInDir(WeightFormat ww, String enginesDir, 
 			DownloadTracker.TwoParameterConsumer<String, Double> consumer) throws IOException, InterruptedException {
 		InstalledEngines manager = InstalledEngines.buildEnginesFinder(enginesDir);
-		String engine = ww.getWeightsFormat();
+		String engine = ww.getFramework();
 		String version = ww.getTrainingVersion();
 		List<DeepLearningVersion> vs = manager.getDownloadedForVersionedFramework(engine, version);
 		if (vs.size() != 0)
@@ -684,7 +684,7 @@ public class EngineInstall {
 		}
 		if (dlv == null)
 			throw new IOException("JDLL does not support any engine compatible with the provided WeightFormat: "
-					+ ww.getWeightsFormat() + " " + ww.getTrainingVersion());
+					+ ww.getFramework() + " " + ww.getTrainingVersion());
 		return installEngineInDir(dlv, enginesDir, consumer);
 	}
 
@@ -769,7 +769,7 @@ public class EngineInstall {
 			try {
 				boolean status = installEngineForWeightsInDir(ww, enginesDir, consumer);
 				if (!status)
-					System.out.println("DL engine not supported by JDLL: " + ww.getWeightsFormat());
+					System.out.println("DL engine not supported by JDLL: " + ww.getFramework());
 			} catch (IOException | InterruptedException e) {
 				e.printStackTrace();
 				installed = false;

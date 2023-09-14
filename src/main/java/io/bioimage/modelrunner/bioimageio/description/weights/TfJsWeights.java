@@ -83,7 +83,7 @@ public class TfJsWeights implements WeightFormat{
 	/**
 	 * {@inheritDoc}
 	 */
-	public String getWeightsFormat() {
+	public String getFramework() {
 		return weightsFormat;
 	}
 

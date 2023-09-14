@@ -467,7 +467,7 @@ public class BioimageioRepo {
 				.contains(EngineInfo.getBioimageioTfKey())
 				&& !(new File(dm.getModelFolder(), "variables").isDirectory())) {
 			String source = descriptor.getWeights().getSupportedWeights().stream()
-					.filter(ww -> ww.getWeightsFormat().equals(EngineInfo.getBioimageioTfKey()))
+					.filter(ww -> ww.getFramework().equals(EngineInfo.getBioimageioTfKey()))
 					.findFirst().get().getSource();
 			source = DownloadModel.getFileNameFromURLString(source);
 			System.out.println("Unzipping model...");

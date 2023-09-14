@@ -857,7 +857,7 @@ public class EngineInfo
 		Objects.requireNonNull(weight, "DL weigths cannot be null.");
 		Objects.requireNonNull(enginesDir, "The engine JARs directory cannot be null.");
 		String compatibleVersion = null;
-		String engine = weight.getWeightsFormat();
+		String engine = weight.getFramework();
 		String version = weight.getTrainingVersion();
 		InstalledEngines manager = InstalledEngines.buildEnginesFinder(enginesDir);
 		compatibleVersion = manager.getMostCompatibleVersionForFramework(engine, version);
@@ -925,7 +925,7 @@ public class EngineInfo
 			String enginesDir) throws IOException, IllegalArgumentException {
 		Objects.requireNonNull(weight, "DL weigths cannot be null.");
 		Objects.requireNonNull(enginesDir, "The engine JARs directory cannot be null.");
-		String engine = weight.getWeightsFormat();
+		String engine = weight.getFramework();
 		String version = weight.getTrainingVersion();
 		InstalledEngines manager = InstalledEngines.buildEnginesFinder(enginesDir);
 		if (version == null)

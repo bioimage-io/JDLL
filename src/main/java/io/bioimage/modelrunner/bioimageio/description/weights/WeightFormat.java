@@ -65,7 +65,7 @@ public interface WeightFormat {
 	 * 
 	 * @return the Deep Learning framework of the model
 	 */
-	public String getWeightsFormat();
+	public String getFramework();
 	
 	/**
 	 * SHA256 checksum of the source file
