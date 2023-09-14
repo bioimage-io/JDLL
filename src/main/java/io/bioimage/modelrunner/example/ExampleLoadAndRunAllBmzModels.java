@@ -22,14 +22,12 @@ package io.bioimage.modelrunner.example;
 import io.bioimage.modelrunner.bioimageio.BioimageioRepo;
 import io.bioimage.modelrunner.bioimageio.description.ModelDescriptor;
 import io.bioimage.modelrunner.bioimageio.description.TensorSpec;
-import io.bioimage.modelrunner.engine.EngineInfo;
+import io.bioimage.modelrunner.bioimageio.description.weights.ModelWeight;
+import io.bioimage.modelrunner.bioimageio.description.weights.WeightFormat;
 import io.bioimage.modelrunner.engine.installation.EngineInstall;
 import io.bioimage.modelrunner.exceptions.LoadEngineException;
 import io.bioimage.modelrunner.model.Model;
 import io.bioimage.modelrunner.tensor.Tensor;
-import io.bioimage.modelrunner.versionmanagement.AvailableEngines;
-import io.bioimage.modelrunner.versionmanagement.DeepLearningVersion;
-import io.bioimage.modelrunner.versionmanagement.InstalledEngines;
 
 import java.io.File;
 import java.io.IOException;
@@ -38,15 +36,14 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.stream.LongStream;
 
-import net.imglib2.img.Img;
 import net.imglib2.img.ImgFactory;
 import net.imglib2.img.array.ArrayImgFactory;
 import net.imglib2.type.numeric.real.FloatType;
-import net.imglib2.util.Util;
 
 /**
- * This class tries to run every Bioimage.io model available
+ * This class tries to run every Bioimage.io model available.
  * 
  * @author Carlos Garcia Lopez de Haro
  */
@@ -55,6 +52,14 @@ public class ExampleLoadAndRunAllBmzModels {
 	private static final String CWD = System.getProperty("user.dir");
 	private static final String ENGINES_DIR = new File(CWD, "engines").getAbsolutePath();
 	private static final String MODELS_DIR = new File(CWD, "models").getAbsolutePath();
+	
+	private static final List<String> SUPPORTED_FRAMEWORKS;
+	static {
+		SUPPORTED_FRAMEWORKS = new ArrayList<String>();
+		SUPPORTED_FRAMEWORKS.add(ModelWeight.getTensorflowID());
+		SUPPORTED_FRAMEWORKS.add(ModelWeight.getOnnxID());
+		SUPPORTED_FRAMEWORKS.add(ModelWeight.getTorchscriptID());
+	}
 	
 	/**
 	 * Method that installs one engine compatible with the OS and Java version
@@ -70,104 +75,95 @@ public class ExampleLoadAndRunAllBmzModels {
 	 * 
 	 * @param args
 	 * 	main args, in this case nothing is needed
-	 * @throws LoadEngineException if the engine fails to load the model
-	 * @throws Exception if there is any error downloading the engines or the models
-	 * 	or running the model
 	 */
-	public static void main(String[] args) throws LoadEngineException, Exception {
-		
+	public static void main(String[] args) {
 		installAllValidEngines();
 		
 		BioimageioRepo br = BioimageioRepo.connect();
-		
 		Map<Path, ModelDescriptor> bmzModelList = br.listAllModels(false);
 		
 		for (Entry<Path, ModelDescriptor> modelEntry : bmzModelList.entrySet()) {
-			if (modelEntry.getValue().getWeights() == null)
+			try {
+				checkModelCompatibleWithEngines(modelEntry.getValue());
+				String modelFolder = br.downloadByName(modelEntry.getValue().getName(), MODELS_DIR);
+				loadAndRunModel(modelFolder, modelEntry.getValue());
+			} catch (IllegalArgumentException ex) {
 				continue;
-			String modelFolder = br.downloadByName(modelEntry.getValue().getName(), MODELS_DIR);
-			Model model = Model.createBioimageioModel(modelFolder, ENGINES_DIR);
-			model.loadModel();
-		}
-
-		// Tag for the DL framework (engine) that wants to be used
-		String framework = "torchscript";
-		// Version of the engine
-		String engineVersion = "1.13.1";
-		// Directory where all the engines are stored
-		String enginesDir = ENGINES_DIR;
-		// Download an engine that is ompatible with the model of interest
-		downloadCPUEngine(framework, engineVersion, enginesDir);
-		
-		// Name of the model of interest from the Bioimage.io model repository
-		String bmzModelName = "EnhancerMitochondriaEM2D";
-		// Download the model of interest using its name
-		String modelFolder = downloadBMZModel(bmzModelName, MODELS_DIR);
-		
-		// Path to the model source. The model source locally is the path to the source file defined in the 
-		// yaml inside the model folder
-		String modelSource = new File(modelFolder, "weights-torchscript.pt").getAbsolutePath();
-		// Whether the engine is supported by CPU or not
-		boolean cpu = true;
-		// Check that the engine of interest is installed
-		List<DeepLearningVersion> installedList = 
-				InstalledEngines.checkEngineWithArgsInstalledForOS(framework, engineVersion, 
-						cpu, null, enginesDir);
-		// Get the first engine that fulfills the requirements and get whether
-		// it supports GPU or not
-		boolean gpu = installedList.get(0).getGPU();
-		// Create the EngineInfo object. It is needed to load the wanted DL framework
-		// among all the installed ones. The EngineInfo loads the corresponding engine by looking
-		// at the enginesDir at searching for the folder that is named satisfying the characteristics specified.
-		// REGARD THAT the engine folders need to follow a naming convention
-		EngineInfo engineInfo = createEngineInfo(framework, engineVersion, enginesDir, cpu, gpu);
-		// Load the corresponding model
-		Model model = loadModel(modelFolder, modelSource, engineInfo);
-		// Create an image that will be the backend of the Input Tensor
-	
+			} catch (IOException | InterruptedException e) {
+				System.out.println(modelEntry.getValue().getName() 
+						+ ": Error downloading model." + e.toString());
+			} catch (Exception e) {
+				System.out.println(modelEntry.getValue().getName() 
+						+ ": Error loading/running model." + e.toString());
+			}
+		}	
 	}
 	
 	public static void loadAndRunModel(String modelFolder, ModelDescriptor descriptor) throws Exception {
 		Model model = Model.createBioimageioModel(modelFolder, ENGINES_DIR);
 		model.loadModel();
+		List<Tensor<?>> inputs = createInputs(descriptor);
+		List<Tensor<?>> outputs = createOutputs(descriptor);
+		model.runModel(inputs, outputs);
+		for (Tensor<?> tt : outputs) {
+			if (tt.isEmpty())
+				throw new Exception(descriptor.getName() + ": Output tensor is empty");
+		}
+		
+		model.closeModel();
+		inputs.stream().forEach(t -> t.close());
+		outputs.stream().forEach(t -> t.close());
+	}
+	
+	private static List<Tensor<?>> createInputs(ModelDescriptor descriptor) {
 		List<Tensor<?>> inputs = new ArrayList<Tensor<?>>();
-		List<Tensor<?>> outputs = new ArrayList<Tensor<?>>();
 		final ImgFactory< FloatType > imgFactory = new ArrayImgFactory<>( new FloatType() );
 		
 		for ( TensorSpec it : descriptor.getInputTensors()) {
 			String axesStr = it.getAxesOrder();
 			String name = it.getName();
-			it.getShape().getPatchMinimumSize()
+			int[] min = it.getShape().getPatchMinimumSize();
+			int[] step = it.getShape().getPatchPositionStep();
+			long[] imSize = LongStream.range(0, step.length)
+					.map(i -> min[(int) i] + step[(int) i]).toArray();
+			Tensor<FloatType> tt = Tensor.build(name, axesStr, imgFactory.create(imSize));
+			inputs.add(tt);
+		}
+		return inputs;
+	}
+	
+	private static List<Tensor<?>> createOutputs(ModelDescriptor descriptor) {
+		List<Tensor<?>> outputs = new ArrayList<Tensor<?>>();
+		
+		for ( TensorSpec ot : descriptor.getOutputTensors()) {
+			String axesStr = ot.getAxesOrder();
+			String name = ot.getName();
+			Tensor<?> tt = Tensor.buildEmptyTensor(name, axesStr);
+			outputs.add(tt);
+		}
+		return outputs;
+	}
+	
+	private static void checkModelCompatibleWithEngines(ModelDescriptor descriptor) {
+		List<WeightFormat> wws = descriptor.getWeights().getSupportedWeights();
+		boolean supported = false;
+		boolean pytorch2 = false;
+		for (WeightFormat ww : wws) {
+			if (!SUPPORTED_FRAMEWORKS.contains(ww.getFramework()))
+				continue;
+			if (ww.getFramework().equals(ModelWeight.getTorchscriptID()) 
+					&& ww.getTrainingVersion().startsWith("2")) {
+				pytorch2 = true;
+				continue;
+			}
+			supported = true;
 		}
 		
-		final Img< FloatType > img1 = imgFactory.create( 1, 1, 512, 512 );
-		// Create the input tensor with the nameand axes given by the rdf.yaml file
-		// and add it to the list of input tensors
-		Tensor<FloatType> inpTensor = Tensor.build("input0", "bcyx", img1);
-		inputs.add(inpTensor);
-		
-		// Create the output tensors defined in the rdf.yaml file with their corresponding 
-		// name and axes and add them to the output list of tensors.
-		/// Regard that output tensors can be built empty without allocating memory
-		// or allocating memory by creating the tensor with a sample empty image, or by
-		// defining the dimensions and data type
-		/*Tensor<FloatType> outTensor = Tensor.buildEmptyTensorAndAllocateMemory("output0", 
-				"bcyx", 
-				new long[] {1, 2, 512, 512}, 
-				new FloatType());*/
-		final Img< FloatType > img2 = imgFactory.create( 1, 2, 512, 512 );
-		Tensor<FloatType> outTensor = Tensor.build("output0", "bcyx", img2);
-		outputs.add(outTensor);
-		
-		// Run the model on the input tensors. THe output tensors 
-		// will be rewritten with the result of the execution
-		System.out.println(Util.average(Util.asDoubleArray(outputs.get(0).getData())));
-		model.runModel(inputs, outputs);
-		System.out.println(Util.average(Util.asDoubleArray(outputs.get(0).getData())));
-		// The result is stored in the list of tensors "outputs"
-		model.closeModel();
-		inputs.stream().forEach(t -> t.close());
-		outputs.stream().forEach(t -> t.close());
-		System.out.print("Success!!");
+		if (!supported && pytorch2)
+			throw new IllegalArgumentException(descriptor.getName() 
+					+ ": pytorch 2 models cannot run on this test");
+		if (!supported)
+			throw new IllegalArgumentException(descriptor.getName() 
+					+ ": weights not supported");
 	}
 }
