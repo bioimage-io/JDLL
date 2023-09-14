@@ -24,6 +24,9 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.util.function.Consumer;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipException;
 import java.util.zip.ZipInputStream;
@@ -38,20 +41,28 @@ import java.util.zip.ZipInputStream;
 public class ZipUtils
 {
 	
+	private static final int BUFFER_SIZE = 8192;
+	
 	/**
 	 * Unzip a zip file into the wanted path
 	 * @param sourcePath
 	 * 	path to the zip file
 	 * @param targetPath
 	 * 	path to the file where everything will be extracted
+	 * @param consumer
+	 * 	track the unzipping of the files
 	 * @throws IOException if there is any error extracting the files
 	 */
-    public static void unzipFolder(String sourcePath, String targetPath) throws IOException {
+    public static void unzipFolder(String sourcePath, String targetPath, Consumer<Double> consumer) throws IOException {
  	    
     	FileInputStream fis = new FileInputStream(new File(sourcePath));
     	ZipInputStream zis = new ZipInputStream(fis);
 
         ZipEntry entry = zis.getNextEntry();
+
+        // Calculate the total size
+        long totalSize = Files.size(Paths.get(sourcePath));
+        long extractedSize = 0;
 
         while (entry != null) {
 
@@ -70,12 +81,12 @@ public class ZipUtils
 
                 try (BufferedOutputStream bos = new BufferedOutputStream(new FileOutputStream(file))) {
 
-                    int bufferSize = Math.toIntExact(entry.getSize());
-                    byte[] buffer = new byte[bufferSize > 0 ? bufferSize : 4096];
+                    byte[] buffer = new byte[BUFFER_SIZE];
                     int location;
                     
                     while ((location = zis.read(buffer)) != -1 && !Thread.interrupted()) {
                         bos.write(buffer, 0, location);
+           	          	extractedSize += location;
                     }
      	           bos.close();
                 } catch (ZipException e) {
