@@ -24,7 +24,7 @@ package io.bioimage.modelrunner.runmode;
  * @author Carlos Garcia Lopez de Haro
  *
  */
-public abstract class AbstractRunMode implements RunMode
+public abstract class AbstractRunMode implements RunMode2
 {
 
 	private final String name;
