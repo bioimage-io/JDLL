@@ -476,6 +476,10 @@ public class BioimageioRepo {
 		return dm.getModelFolder();
 	}
 	
+	private void unzipTfWeights(DownloadModel dm, ModelDescriptor descriptor) {
+		dm.
+	}
+	
 	/**
 	 * Download the model in the Bioimage.io whose id (field ''id' in the
 	 * rdf.yaml file) corresponds to the forst parameter given

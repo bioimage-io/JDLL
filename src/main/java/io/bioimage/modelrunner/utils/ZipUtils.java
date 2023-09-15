@@ -44,7 +44,28 @@ public class ZipUtils
 	private static final int BUFFER_SIZE = 8192;
 	
 	/**
-	 * Unzip a zip file into the wanted path
+	 * Unzip a zip file into the wanted path. This method does not track progress.
+	 * In order to track progress, please use a consumer 
+	 * with {@link #unzipFolder(String, String, Consumer)}
+	 * @param sourcePath
+	 * 	path to the zip file
+	 * @param targetPath
+	 * 	path to the file where everything will be extracted
+	 * @throws IOException if there is any error extracting the files
+	 */
+    public static void unzipFolder(String sourcePath, String targetPath) throws IOException {
+    	// Create empty consumer to work with unzipping method method
+    	Consumer<Double> progressConsumer = new Consumer<Double>() {
+    		@Override
+            public void accept(Double d) {
+            }
+        };
+    	unzipFolder(sourcePath, targetPath, progressConsumer);
+    }
+	
+	/**
+	 * Unzip a zip file into the wanted path. TRack the progress being made using 
+	 * a {@link Consumer}
 	 * @param sourcePath
 	 * 	path to the zip file
 	 * @param targetPath
@@ -65,28 +86,23 @@ public class ZipUtils
         long extractedSize = 0;
 
         while (entry != null) {
-
             File file = new File(targetPath, entry.getName());
-            
-
             // Check if entry is directory (if the entry name ends with '\' or '/'
             if (entry.isDirectory()) {
                 file.mkdirs();
             } else {
                 File parent = file.getParentFile();
-
-                if (!parent.exists()) {
+                if (!parent.exists()) 
                     parent.mkdirs();
-                }
 
                 try (BufferedOutputStream bos = new BufferedOutputStream(new FileOutputStream(file))) {
-
                     byte[] buffer = new byte[BUFFER_SIZE];
                     int location;
-                    
                     while ((location = zis.read(buffer)) != -1 && !Thread.interrupted()) {
                         bos.write(buffer, 0, location);
            	          	extractedSize += location;
+           	          	System.out.println(((double) extractedSize / totalSize));
+           	          	consumer.accept(((double) extractedSize / totalSize));
                     }
      	           bos.close();
                 } catch (ZipException e) {
