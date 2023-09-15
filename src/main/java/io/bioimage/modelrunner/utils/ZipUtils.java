@@ -101,8 +101,7 @@ public class ZipUtils
                     while ((location = zis.read(buffer)) != -1 && !Thread.interrupted()) {
                         bos.write(buffer, 0, location);
            	          	extractedSize += location;
-           	          	System.out.println(((double) extractedSize / totalSize));
-           	          	consumer.accept(((double) extractedSize / totalSize));
+           	          	consumer.accept(((double) extractedSize) / ((double) totalSize));
                     }
      	           bos.close();
                 } catch (ZipException e) {

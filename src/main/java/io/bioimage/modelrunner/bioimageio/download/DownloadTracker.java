@@ -243,7 +243,7 @@ public class DownloadTracker {
 			if (!keep)
 				alive = false;
 			if (!this.downloadThread.isAlive())
-				keep = false;			
+				keep = false;
 			Thread.sleep(TIME_INTERVAL_MILLIS);
 			consumer.accept(TOTAL_PROGRESS_KEY, 
 					(double) (infoMap.values().stream().mapToLong(Long::longValue).sum()) / (double) this.totalSize);
@@ -280,8 +280,10 @@ public class DownloadTracker {
 		}
 		consumer.accept(TOTAL_PROGRESS_KEY, 
 				(double) (infoMap.values().stream().mapToLong(Long::longValue).sum()) / (double) this.totalSize);
-		while (dm.needsUnzipping())
+		while (dm.needsUnzipping()) {
+			Thread.sleep(TIME_INTERVAL_MILLIS);
 			consumer.accept(UNZIPPING_PROGRESS_KEY, dm.getUnzippingProgress());
+		}
 		consumer.accept(UNZIPPING_PROGRESS_KEY, 1.);
 	}
 	
