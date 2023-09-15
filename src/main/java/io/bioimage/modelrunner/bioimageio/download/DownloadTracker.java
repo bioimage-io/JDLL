@@ -97,6 +97,11 @@ public class DownloadTracker {
 	 */
 	public static final String TOTAL_PROGRESS_KEY = "total";
 	/**
+	 * Key in the consumer map that specifies the progress unzipping a file,
+	 * if there is any file to unzip
+	 */
+	public static final String UNZIPPING_PROGRESS_KEY = "unzipping progress";
+	/**
 	 * Millisecond time interval that passes between checks of the download.
 	 */
 	public static final long TIME_INTERVAL_MILLIS = 300;
@@ -275,6 +280,9 @@ public class DownloadTracker {
 		}
 		consumer.accept(TOTAL_PROGRESS_KEY, 
 				(double) (infoMap.values().stream().mapToLong(Long::longValue).sum()) / (double) this.totalSize);
+		while (dm.needsUnzipping())
+			consumer.accept(UNZIPPING_PROGRESS_KEY, dm.getUnzippingConsumer().get());
+		consumer.accept(UNZIPPING_PROGRESS_KEY, 1.);
 	}
 	
 	/**

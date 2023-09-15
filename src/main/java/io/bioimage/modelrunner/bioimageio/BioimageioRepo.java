@@ -23,6 +23,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -462,22 +463,7 @@ public class BioimageioRepo {
 		if (badDownloads.size() > 0)
 			throw new IOException("The following files of model '" + descriptor.getName()
 			+ "' were downloaded incorrectly: " + badDownloads.toString());
-		// TODO put the code below in a separated method and add a progress bar
-		if (descriptor.getWeights().getSupportedDLFrameworks()
-				.contains(EngineInfo.getBioimageioTfKey())
-				&& !(new File(dm.getModelFolder(), "variables").isDirectory())) {
-			String source = descriptor.getWeights().getSupportedWeights().stream()
-					.filter(ww -> ww.getFramework().equals(EngineInfo.getBioimageioTfKey()))
-					.findFirst().get().getSource();
-			source = DownloadModel.getFileNameFromURLString(source);
-			System.out.println("Unzipping model...");
-			ZipUtils.unzipFolder(dm.getModelFolder() + File.separator + source, dm.getModelFolder());
-		}
 		return dm.getModelFolder();
-	}
-	
-	private void unzipTfWeights(DownloadModel dm, ModelDescriptor descriptor) {
-		dm.
 	}
 	
 	/**

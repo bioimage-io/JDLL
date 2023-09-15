@@ -46,7 +46,9 @@ import io.bioimage.modelrunner.bioimageio.description.SampleImage;
 import io.bioimage.modelrunner.bioimageio.description.TestArtifact;
 import io.bioimage.modelrunner.bioimageio.description.weights.ModelWeight;
 import io.bioimage.modelrunner.bioimageio.description.weights.WeightFormat;
+import io.bioimage.modelrunner.engine.EngineInfo;
 import io.bioimage.modelrunner.engine.installation.FileDownloader;
+import io.bioimage.modelrunner.utils.ZipUtils;
 
 /**
  * Class to manage the downloading of models from the BioImage.io
@@ -78,6 +80,15 @@ public class DownloadModel {
      * String that logs the file that it is being downloaded at the current moment
      */
     private String progressString = "";
+    /**
+     * Whether a file has to be unzipped or not
+     */
+    private boolean unzip = false;
+    /**
+     * Consumer used to tackthe progress of unzipping the model weights
+     * if they are stored in a zip
+     */
+    private Consumer<Double> unzippingConsumer;
     /**
      * String that announces that certain file is just begining to be downloaded
      */
@@ -140,6 +151,16 @@ public class DownloadModel {
 		this.consumer = (String b) -> {
     		progressString += b;
     		};
+    	this.unzippingConsumer = new Consumer<Double>() {
+    		double progress;
+    		@Override
+            public void accept(Double d) {
+    			progress = d;
+            }
+    		public double get() {
+    			return progress;
+    		}
+        };
 		retriveDownloadModelLinks();
 	}
 	
@@ -232,14 +253,6 @@ public class DownloadModel {
 	}
 	
 	/**
-	 * Method that deletes the folder where the model has been downloaded with all
-	 * its contents
-	 */
-	public void deleteModel() {
-		// TODO
-	}
-	
-	/**
 	 * Add weight links to the downloadable links
 	 */
 	private void addWeights() {
@@ -251,6 +264,8 @@ public class DownloadModel {
 				if (w.getSource() != null && checkURL(w.getSource())) {
 					downloadableLinks.put(WEIGHTS_KEY + "_" + c ++, w.getSource());
 				}
+				if (downloadableLinks.get(WEIGHTS_KEY + "_" + (c - 1)).endsWith(".zip"))
+					unzip = true;
 			} catch (Exception ex) {
 				// The exception is thrown whenever the weight format is not present.
 				// This exception will not be thrown here because the weight formats are retrieved from the same object
@@ -443,7 +458,31 @@ public class DownloadModel {
 			String fileName = getFileNameFromURLString(item);
 			downloadFileFromInternet(item, new File(modelsDir, fileName));
 		}
+		
+		if (unzip)
+			unzipTfWeights();
 		consumer.accept(FINISH_STR);
+	}
+	
+	/**
+	 * Method that unzips the tensorflow model zip into the variables
+	 * folder and .pb file, if they are saved in a zip
+	 * @throws IOException if there is any error unzipping
+	 */
+	private void unzipTfWeights() throws IOException {
+		if (descriptor.getWeights().getSupportedDLFrameworks()
+				.contains(EngineInfo.getBioimageioTfKey())
+				&& !(new File(this.modelsDir, "variables").isDirectory())) {
+			String source = descriptor.getWeights().getSupportedWeights().stream()
+					.filter(ww -> ww.getFramework().equals(EngineInfo.getBioimageioTfKey()))
+					.findFirst().get().getSource();
+			source = DownloadModel.getFileNameFromURLString(source);
+			System.out.println("Unzipping model...");
+			unzippingConsumer.accept(0.);
+			ZipUtils.unzipFolder(this.modelsDir + File.separator + source, this.modelsDir,
+					this.unzippingConsumer);
+		}
+		unzip = false;
 	}
 	
 	/**
@@ -593,5 +632,24 @@ public class DownloadModel {
 	 */
 	public String getProgress() {
 		return progressString;
+	}
+
+	/**
+	 * 
+	 * @return a consumer that tracks the progress of unzipping the
+	 * model weights if they are stored in a zip file. It returns the 
+	 * fraction of the file that has been unzipped
+	 */
+	public Consumer<Double> getUnzippingConsumer() {
+		return unzippingConsumer;
+	}
+	
+	/**
+	 * 
+	 * @return whether the model needs unzipping to be done or not, 
+	 * 	or it has already been done
+	 */
+	public boolean needsUnzipping() {
+		return unzip;
 	}
 }
