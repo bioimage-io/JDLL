@@ -66,7 +66,6 @@ public abstract class AbstractTensorTransformation implements TensorTransformati
 	{
 		final ImgFactory< FloatType > factory = Util.getArrayOrCellImgFactory( input.getData(), new FloatType() );
 		final Img< FloatType > outputImg = factory.create( input.getData() );
-		// TODO improve, do not copy here. Do it directly in the method to avoid looping twice over the images
 		RealTypeConverters.copyFromTo(input.getData(), outputImg);
 		final Tensor< FloatType > output = Tensor.build( getName() + '_' + input.getName(), input.getAxesOrderString(), outputImg );
 		return output;

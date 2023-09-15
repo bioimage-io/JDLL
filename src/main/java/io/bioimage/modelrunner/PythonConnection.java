@@ -63,7 +63,7 @@ public class PythonConnection {
 			//tensorMap.put(AXES_KEY, input.getAxesOrderString());
 			//tensorMap.put(DATA_KEY, ImgLib2ToArray.buildFloat(input.getData()));
 			// inputMap.put(NAME_KEY, tensorMap);
-			inputMap.put("tensor", ImgLib2ToArray.buildFloat(input.getData()));
+			inputMap.put("tensor", ImgLib2ToArray.build(input.getData()));
 		}
         
         Environment env = Appose.base(new File("C:\\Users\\angel\\git\\jep\\miniconda\\envs\\testAppose")).build();
