@@ -43,7 +43,7 @@ public class KerasWeights implements WeightFormat {
 	 * 	information referring to the Keras weights
 	 */
 	public KerasWeights(Map<String, Object> weights) {
-		weightsFormat = "keras_hdf5";
+		weightsFormat = ModelWeight.getKerasID();
 		Set<String> keys = weights.keySet();
 		for (String k : keys) {
 			Object fieldElement = weights.get(k);
@@ -75,16 +75,23 @@ public class KerasWeights implements WeightFormat {
 	                break;
 	        }
 		}
+		setCompatibleVersion();
 	}
 
 	private String weightsFormat;
 	@Override
-	public String getWeightsFormat() {
+	/**
+	 * {@inheritDoc}
+	 */
+	public String getFramework() {
 		return weightsFormat;
 	}
 
 	private String trainingVersion;
 	@Override
+	/**
+	 * {@inheritDoc}
+	 */
 	public String getTrainingVersion() {
 		return trainingVersion;
 	}
@@ -119,6 +126,9 @@ public class KerasWeights implements WeightFormat {
 
 	private String sha256;
 	@Override
+	/**
+	 * {@inheritDoc}
+	 */
 	public String getSha256() {
 		return sha256;
 	}
@@ -137,6 +147,9 @@ public class KerasWeights implements WeightFormat {
 
 	private String source;
 	@Override
+	/**
+	 * {@inheritDoc}
+	 */
 	public String getSource() {
 		return source;
 	}
@@ -156,6 +169,9 @@ public class KerasWeights implements WeightFormat {
 
 	private List<String> authors;
 	@Override
+	/**
+	 * {@inheritDoc}
+	 */
 	public List<String> getAuthors() {
 		return authors;
 	}
@@ -178,6 +194,9 @@ public class KerasWeights implements WeightFormat {
 
 	private Map<String, Object> attachments;
 	@Override
+	/**
+	 * {@inheritDoc}
+	 */
 	public Map<String, Object> getAttachments() {
 		return attachments;
 	}
@@ -195,6 +214,9 @@ public class KerasWeights implements WeightFormat {
 
 	private String parent;
 	@Override
+	/**
+	 * {@inheritDoc}
+	 */
 	public String getParent() {
 		return parent;
 	}
@@ -211,6 +233,9 @@ public class KerasWeights implements WeightFormat {
 
 	private String architecture;
 	@Override
+	/**
+	 * {@inheritDoc}
+	 */
 	public String getArchitecture() {
 		return architecture;
 	}
@@ -227,6 +252,9 @@ public class KerasWeights implements WeightFormat {
 
 	private String architectureSha256;
 	@Override
+	/**
+	 * {@inheritDoc}
+	 */
 	public String getArchitectureSha256() {
 		return architectureSha256;
 	}
@@ -242,6 +270,9 @@ public class KerasWeights implements WeightFormat {
 	}
 
 	@Override
+	/**
+	 * {@inheritDoc}
+	 */
 	public String getSourceFileName() {
 		if (source == null)
 			return source;
@@ -250,6 +281,7 @@ public class KerasWeights implements WeightFormat {
 	
 	boolean gpu = false;
 	/**
+	 * {@inheritDoc}
 	 * Method to set whether the engine used for this weights supports GPU or not
 	 */
 	@Override
@@ -258,11 +290,37 @@ public class KerasWeights implements WeightFormat {
 	}
 	
 	/**
+	 * {@inheritDoc}
 	 * Method to know whether the engine used for this weights supports GPU or not
 	 * @return whether the weights support gpu or not
 	 */
 	@Override
 	public boolean isSupportGPU() {
 		return gpu;
+	}
+
+
+	private String compatibleVersion;
+	@Override
+	/**
+	 * {@inheritDoc}
+	 */
+	public String getJavaTrainingVersion() {
+		return compatibleVersion;
+	}
+	
+	/**
+	 * Select a version supported by JDLL that is compatible with the training version
+	 */
+	private void setCompatibleVersion() {
+		this.compatibleVersion = trainingVersion;
+	}
+
+	@Override
+	/**
+	 * {@inheritDoc}
+	 */
+	public String getClosestSupportedPythonVersion() {
+		return compatibleVersion;
 	}
 }

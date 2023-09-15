@@ -25,6 +25,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import io.bioimage.modelrunner.versionmanagement.SupportedVersions;
+
 /**
  * Class that contains the information for ONNX weights.
  * For more information about the parameters go to:
@@ -35,6 +37,30 @@ import java.util.Set;
  */
 public class OnnxWeights implements WeightFormat {
 
+	private String compatiblePythonVersion;
+
+	private String weightsFormat;
+
+	private String trainingVersion;
+
+	private String sha256;
+
+	private String source;
+
+	private List<String> authors;
+
+	private Map<String, Object> attachments;
+
+	private String parent;
+
+	private String architecture;
+
+	private String architectureSha256;
+	
+	boolean gpu = false;
+
+	private String compatibleVersion;
+
 	/**
 	 * Crate an object that specifies ONNX weights
 	 * 
@@ -43,7 +69,7 @@ public class OnnxWeights implements WeightFormat {
 	 * 	information referring to the ONNX weights
 	 */
 	public OnnxWeights(Map<String, Object> weights) {
-		weightsFormat = "onnx";
+		weightsFormat = ModelWeight.getOnnxID();
 		Set<String> keys = weights.keySet();
 		for (String k : keys) {
 			Object fieldElement = weights.get(k);
@@ -75,20 +101,23 @@ public class OnnxWeights implements WeightFormat {
 	                break;
 	        }
 		}
-		// TODO add fixed version if it is not shown because many models are missing
-		// the Pytorch version. Remove when they start appearing
 		if (trainingVersion == null)
 			trainingVersion = "17";
+		setCompatibleVersion();
 	}
 
-	private String weightsFormat;
 	@Override
-	public String getWeightsFormat() {
+	/**
+	 * {@inheritDoc}
+	 */
+	public String getFramework() {
 		return weightsFormat;
 	}
 
-	private String trainingVersion;
 	@Override
+	/**
+	 * {@inheritDoc}
+	 */
 	public String getTrainingVersion() {
 		return trainingVersion;
 	}
@@ -121,8 +150,10 @@ public class OnnxWeights implements WeightFormat {
 			this.trainingVersion = "" + v;
 	}
 
-	private String sha256;
 	@Override
+	/**
+	 * {@inheritDoc}
+	 */
 	public String getSha256() {
 		return sha256;
 	}
@@ -139,8 +170,10 @@ public class OnnxWeights implements WeightFormat {
 		
 	}
 
-	private String source;
 	@Override
+	/**
+	 * {@inheritDoc}
+	 */
 	public String getSource() {
 		return source;
 	}
@@ -158,8 +191,10 @@ public class OnnxWeights implements WeightFormat {
 		
 	}
 
-	private List<String> authors;
 	@Override
+	/**
+	 * {@inheritDoc}
+	 */
 	public List<String> getAuthors() {
 		return authors;
 	}
@@ -180,8 +215,10 @@ public class OnnxWeights implements WeightFormat {
 		
 	}
 
-	private Map<String, Object> attachments;
 	@Override
+	/**
+	 * {@inheritDoc}
+	 */
 	public Map<String, Object> getAttachments() {
 		return attachments;
 	}
@@ -197,8 +234,10 @@ public class OnnxWeights implements WeightFormat {
 		
 	}
 
-	private String parent;
 	@Override
+	/**
+	 * {@inheritDoc}
+	 */
 	public String getParent() {
 		return parent;
 	}
@@ -213,8 +252,10 @@ public class OnnxWeights implements WeightFormat {
 			this.parent = (String) parent;
 	}
 
-	private String architecture;
 	@Override
+	/**
+	 * {@inheritDoc}
+	 */
 	public String getArchitecture() {
 		return architecture;
 	}
@@ -229,8 +270,10 @@ public class OnnxWeights implements WeightFormat {
 			this.architecture = (String) architecture;
 	}
 
-	private String architectureSha256;
 	@Override
+	/**
+	 * {@inheritDoc}
+	 */
 	public String getArchitectureSha256() {
 		return architectureSha256;
 	}
@@ -246,14 +289,17 @@ public class OnnxWeights implements WeightFormat {
 	}
 
 	@Override
+	/**
+	 * {@inheritDoc}
+	 */
 	public String getSourceFileName() {
 		if (source == null)
 			return source;
 		return new File(source).getName();
 	}
 	
-	boolean gpu = false;
 	/**
+	 * {@inheritDoc}
 	 * Method to set whether the engine used for this weights supports GPU or not
 	 * @param support
 	 * 	whether the engine for the weights supports GPu or not
@@ -264,11 +310,42 @@ public class OnnxWeights implements WeightFormat {
 	}
 	
 	/**
+	 * {@inheritDoc}
 	 * Method to know whether the engine used for this weights supports GPU or not
 	 * @return whether the engine for the weigths supports GPU or not
 	 */
 	@Override
 	public boolean isSupportGPU() {
 		return gpu;
+	}
+
+
+	@Override
+	/**
+	 * {@inheritDoc}
+	 */
+	public String getJavaTrainingVersion() {
+		return compatibleVersion;
+	}
+	
+	/**
+	 * Select a version supported by JDLL that is compatible with the training version
+	 */
+	private void setCompatibleVersion() {
+		if (this.trainingVersion == null)
+			this.compatibleVersion = null;
+		compatibleVersion = SupportedVersions.getJavaVersionForPythonVersion("onnx", trainingVersion);
+	}
+
+	@Override
+	/**
+	 * {@inheritDoc}
+	 */
+	public String getClosestSupportedPythonVersion() {
+		if (this.trainingVersion == null)
+			return null;
+		if (compatiblePythonVersion == null)
+			compatiblePythonVersion = SupportedVersions.getClosestSupportedPythonVersion("onnx", trainingVersion);
+		return compatiblePythonVersion;
 	}
 }

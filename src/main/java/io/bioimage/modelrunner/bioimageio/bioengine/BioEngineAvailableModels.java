@@ -1,3 +1,22 @@
+/*-
+ * #%L
+ * Use deep learning frameworks from Java in an agnostic and isolated way.
+ * %%
+ * Copyright (C) 2022 - 2023 Institut Pasteur and BioImage.IO developers.
+ * %%
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ * 
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ * 
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ * #L%
+ */
 package io.bioimage.modelrunner.bioimageio.bioengine;
 
 import java.io.BufferedReader;
@@ -68,6 +87,12 @@ public class BioEngineAvailableModels {
 	 */
 	final private static String ID_KEY = "id";
 	
+	private static BioEngineAvailableModels BAM;
+	/**
+	 * Address of the first public server that hosts a bioengine instance
+	 */
+	public static final String PUBLIC_BIOENGINE_SERVER = "https://ai.imjoy.io";
+	
 	/**
 	 * Method that parses the json file that contains all the supported models by the BioEngine
 	 * @return obejct containing the spported models by the bioengine
@@ -102,7 +127,7 @@ public class BioEngineAvailableModels {
 	 * Created to avoid errors caused by {@link NullPointerException}
 	 * @return
 	 */
-	public static BioEngineAvailableModels createEmptyObject() {
+	private static BioEngineAvailableModels createEmptyObject() {
 		BioEngineAvailableModels availableModels = new BioEngineAvailableModels();
 		availableModels.collection = new ArrayList<LinkedTreeMap<String, String>>();
 		availableModels.conversion_logs = new ArrayList<String>();
@@ -112,7 +137,7 @@ public class BioEngineAvailableModels {
 	/**
 	 * Method that returns a list of the IDs corresponding to the models that are supported by 
 	 * the bioengine
-	 * @return
+	 * @return a list of the IDs supported by the bioengine
 	 */
 	public List<String> getListOfSupportedIDs() {
 		return collection.stream().map(x -> x.get(ID_KEY)).collect(Collectors.toList());
@@ -131,6 +156,30 @@ public class BioEngineAvailableModels {
 		if (isFound == null)
 			return false;
 		return true;
+	}
+	
+	/**
+	 * Static method that finds whether a model is supported by the Bioengine by looking if its
+	 * model ID is spedified in the JSON file that contains all valid models.
+	 * This method only recovers the file that contains the information of the models
+	 * supported by the Bioengine the first time. In order to retrieve the file each
+	 * time, do the following:
+	 * 	BioEngineAvailableModels bam =  BioEngineAvailableModels.load();
+	 * 	String id = "model/ID":
+	 * 	boolean supported = bam.isModelSupportedByBioengine(id);
+	 * @param modelID
+	 * 	ID of the model of interest
+	 * @return true if supported, false otherwise
+	 */
+	public static boolean isModelSupportedInBioengine(String modelID) {
+		if (BAM == null) {
+			try {
+				BAM =  BioEngineAvailableModels.load();
+			} catch (IOException ex) {
+				BAM = createEmptyObject();
+			}
+		}
+		return BAM.isModelSupportedByBioengine(modelID);
 	}
 	
 	public ArrayList<LinkedTreeMap<String, String>> getCollection() {
@@ -163,5 +212,9 @@ public class BioEngineAvailableModels {
 	
 	public String getDescription() {
 		return this.description;
+	}
+	
+	public static String getBioengineJson() {
+		return BIOENGINE_COMPATIBLE_JSON;
 	}
 }

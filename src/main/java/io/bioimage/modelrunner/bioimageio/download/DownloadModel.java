@@ -24,6 +24,8 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.channels.Channels;
 import java.nio.channels.ReadableByteChannel;
@@ -41,9 +43,12 @@ import java.util.stream.IntStream;
 
 import io.bioimage.modelrunner.bioimageio.description.ModelDescriptor;
 import io.bioimage.modelrunner.bioimageio.description.SampleImage;
+import io.bioimage.modelrunner.bioimageio.description.TestArtifact;
 import io.bioimage.modelrunner.bioimageio.description.weights.ModelWeight;
 import io.bioimage.modelrunner.bioimageio.description.weights.WeightFormat;
+import io.bioimage.modelrunner.engine.EngineInfo;
 import io.bioimage.modelrunner.engine.installation.FileDownloader;
+import io.bioimage.modelrunner.utils.ZipUtils;
 
 /**
  * Class to manage the downloading of models from the BioImage.io
@@ -75,6 +80,19 @@ public class DownloadModel {
      * String that logs the file that it is being downloaded at the current moment
      */
     private String progressString = "";
+    /**
+     * Whether a file has to be unzipped or not
+     */
+    private boolean unzip = false;
+    /**
+     * Progress unzipping the tensorflow model zip
+     */
+    private double unzippingProgress = 0.0;
+    /**
+     * Consumer used to tackthe progress of unzipping the model weights
+     * if they are stored in a zip
+     */
+    private Consumer<Double> unzippingConsumer;
     /**
      * String that announces that certain file is just begining to be downloaded
      */
@@ -132,11 +150,17 @@ public class DownloadModel {
 	 */
 	private DownloadModel(ModelDescriptor descriptor, String modelsDir) {
 		this.descriptor = descriptor;
-		String fname = addTimeStampToFileName(descriptor.getName());
+		String fname = addTimeStampToFileName(descriptor.getName(), true);
 		this.modelsDir = modelsDir + File.separator + getValidFileName(fname);
 		this.consumer = (String b) -> {
     		progressString += b;
     		};
+    	this.unzippingConsumer = new Consumer<Double>() {
+    		@Override
+            public void accept(Double d) {
+        		unzippingProgress = d;
+            }
+        };
 		retriveDownloadModelLinks();
 	}
 	
@@ -229,14 +253,6 @@ public class DownloadModel {
 	}
 	
 	/**
-	 * Method that deletes the folder where the model has been downloaded with all
-	 * its contents
-	 */
-	public void deleteModel() {
-		// TODO
-	}
-	
-	/**
 	 * Add weight links to the downloadable links
 	 */
 	private void addWeights() {
@@ -248,6 +264,8 @@ public class DownloadModel {
 				if (w.getSource() != null && checkURL(w.getSource())) {
 					downloadableLinks.put(WEIGHTS_KEY + "_" + c ++, w.getSource());
 				}
+				if (downloadableLinks.get(WEIGHTS_KEY + "_" + (c - 1)).endsWith(".zip"))
+					unzip = true;
 			} catch (Exception ex) {
 				// The exception is thrown whenever the weight format is not present.
 				// This exception will not be thrown here because the weight formats are retrieved from the same object
@@ -259,13 +277,13 @@ public class DownloadModel {
 	 * Add the test inputs to the downloadable links
 	 */
 	private void addTestInputs() {
-		List<String> sampleInps = descriptor.getTestInputs();
+		List<TestArtifact> sampleInps = descriptor.getTestInputs();
 		if (sampleInps == null)
 			return;
 		int c = 0;
-		for (String ss : sampleInps) {
-			if (ss != null && checkURL(ss)) {
-				downloadableLinks.put(TEST_INPUTS_KEY + "_" + c ++, ss);
+		for (TestArtifact ss : sampleInps) {
+			if (ss != null && ss.getUrl() != null) {
+				downloadableLinks.put(TEST_INPUTS_KEY + "_" + c ++, ss.getString());
 			}
 		}
 	}
@@ -274,13 +292,13 @@ public class DownloadModel {
 	 * Add the test outputs to the dowloadable links
 	 */
 	private void addTestOutputs() {
-		List<String> sampleOuts = descriptor.getTestOutputs();
+		List<TestArtifact> sampleOuts = descriptor.getTestOutputs();
 		if (sampleOuts == null)
 			return;
 		int c = 0;
-		for (String ss : sampleOuts) {
-			if (ss != null && checkURL(ss)) {
-				downloadableLinks.put(TEST_OUTPUTS_KEY + "_" + c ++, ss);
+		for (TestArtifact ss : sampleOuts) {
+			if (ss != null && ss.getUrl() != null) {
+				downloadableLinks.put(TEST_OUTPUTS_KEY + "_" + c ++, ss.getString());
 			}
 		}
 	}
@@ -372,6 +390,34 @@ public class DownloadModel {
 	 * Add the timestamp to the String given
 	 * @param str
 	 * 	String to add the time stamp
+	 * @param isDir
+	 * 	whether the file name represents a directory or not
+	 * @return string with the timestamp
+	 */
+	public static String addTimeStampToFileName(String str, boolean isDir) {
+		// Add timestamp to the model name. 
+		// The format consists on: modelName + date as ddmmyyyy + time as hhmmss
+        Calendar cal = Calendar.getInstance();
+		SimpleDateFormat sdf = new SimpleDateFormat("ddMMYYYY_HHmmss");
+		String dateString = sdf.format(cal.getTime());
+		if (isDir)
+			return str + "_" + dateString;
+		int ind = str.lastIndexOf(File.separator);
+		String fileName = str;
+		if (ind != -1)
+			fileName = str.substring(ind + 1);
+		int extensionPos = fileName.lastIndexOf(".");
+		if (extensionPos == -1)
+			return str + "_" + dateString;
+		String nameNoExtension = str.substring(0, extensionPos);
+		String extension = str.substring(extensionPos);
+		return nameNoExtension + "_" + dateString + extension;
+	}
+	
+	/**
+	 * Add the timestamp to the String given
+	 * @param str
+	 * 	String to add the time stamp
 	 * @return string with the timestamp
 	 */
 	public static String addTimeStampToFileName(String str) {
@@ -412,7 +458,31 @@ public class DownloadModel {
 			String fileName = getFileNameFromURLString(item);
 			downloadFileFromInternet(item, new File(modelsDir, fileName));
 		}
+		
+		if (unzip)
+			unzipTfWeights();
 		consumer.accept(FINISH_STR);
+	}
+	
+	/**
+	 * Method that unzips the tensorflow model zip into the variables
+	 * folder and .pb file, if they are saved in a zip
+	 * @throws IOException if there is any error unzipping
+	 */
+	private void unzipTfWeights() throws IOException {
+		if (descriptor.getWeights().getSupportedDLFrameworks()
+				.contains(EngineInfo.getBioimageioTfKey())
+				&& !(new File(this.modelsDir, "variables").isDirectory())) {
+			String source = descriptor.getWeights().getSupportedWeights().stream()
+					.filter(ww -> ww.getFramework().equals(EngineInfo.getBioimageioTfKey()))
+					.findFirst().get().getSource();
+			source = DownloadModel.getFileNameFromURLString(source);
+			System.out.println("Unzipping model...");
+			unzippingConsumer.accept(0.);
+			ZipUtils.unzipFolder(this.modelsDir + File.separator + source, this.modelsDir,
+					this.unzippingConsumer);
+		}
+		unzip = false;
 	}
 	
 	/**
@@ -495,6 +565,10 @@ public class DownloadModel {
 		HttpURLConnection conn = null;
 		try {
 			conn = (HttpURLConnection) url.openConnection();
+			if (conn.getResponseCode() > 300 && conn.getResponseCode() < 304)
+				return getFileSize(redirectedURL(url, conn));
+			if (conn.getResponseCode() != 200)
+				throw new Exception("Unable to connect to: " + url.toString());
 			return conn.getContentLengthLong();
 		} catch (IOException e) {
 			throw new RuntimeException(e);
@@ -507,6 +581,50 @@ public class DownloadModel {
 	}
 	
 	/**
+	 * This method shuold be used when we get the following response codes from 
+	 * a {@link HttpURLConnection}:
+	 * - {@link HttpURLConnection#HTTP_MOVED_TEMP}
+	 * - {@link HttpURLConnection#HTTP_MOVED_PERM}
+	 * - {@link HttpURLConnection#HTTP_SEE_OTHER}
+	 * 
+	 * If that is not the response code or the connection does not work, the url
+	 * returned will be the same as the provided.
+	 * If the method is used corretly, it will return the URL to which the original URL
+	 * has been redirected
+	 * @param url
+	 * 	original url. Connecting to that url must give a 301, 302 or 303 response code
+	 * @param conn
+	 * 	connection to the url
+	 * @return the redirected url
+	 */
+	public static URL redirectedURL(URL url, HttpURLConnection conn) {
+		int statusCode;
+		try {
+			statusCode = conn.getResponseCode();
+		} catch (IOException ex) {
+			return url;
+		}
+		if (statusCode != HttpURLConnection.HTTP_MOVED_TEMP
+            && statusCode != HttpURLConnection.HTTP_MOVED_PERM
+            && statusCode != HttpURLConnection.HTTP_SEE_OTHER)
+			return url;
+		String newURL = conn.getHeaderField("Location");
+		try {
+			return new URL(newURL);
+		} catch (MalformedURLException ex) {
+		}
+        try {
+        	URI uri = url.toURI();
+            String scheme = uri.getScheme();
+            String host = uri.getHost();
+            String mainDomain = scheme + "://" + host;
+			return new URL(mainDomain + newURL);
+		} catch (URISyntaxException | MalformedURLException e) {
+			return null;
+		}
+	}
+	
+	/**
 	 * REtrieve a formated string containing each of the files that have been
 	 * downloaded
 	 * @return string containing each of the files that have been
@@ -514,5 +632,33 @@ public class DownloadModel {
 	 */
 	public String getProgress() {
 		return progressString;
+	}
+
+	/**
+	 * 
+	 * @return a consumer that tracks the progress of unzipping the
+	 * model weights if they are stored in a zip file. It returns the 
+	 * fraction of the file that has been unzipped
+	 */
+	public Consumer<Double> getUnzippingConsumer() {
+		return unzippingConsumer;
+	}
+	
+	/**
+	 * 
+	 * @return whether the model needs unzipping to be done or not, 
+	 * 	or it has already been done
+	 */
+	public boolean needsUnzipping() {
+		return unzip;
+	}
+	
+	/**
+	 * 
+	 * @return the progress unzipping the tensorflow model .zip file 
+	 * if it exists, as a fraction of what has already been unziiped over the total
+	 */
+	public double getUnzippingProgress() {
+		return unzippingProgress;
 	}
 }

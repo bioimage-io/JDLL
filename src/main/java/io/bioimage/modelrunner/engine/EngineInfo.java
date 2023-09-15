@@ -25,7 +25,9 @@ import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
+import io.bioimage.modelrunner.bioimageio.description.weights.ModelWeight;
 import io.bioimage.modelrunner.bioimageio.description.weights.WeightFormat;
+import io.bioimage.modelrunner.bioimageio.download.DownloadModel;
 import io.bioimage.modelrunner.system.PlatformDetection;
 import io.bioimage.modelrunner.versionmanagement.AvailableEngines;
 import io.bioimage.modelrunner.versionmanagement.DeepLearningVersion;
@@ -100,6 +102,21 @@ public class EngineInfo
 	 * </pre>
 	 */
 	private String jarsDirectory;
+	/**
+	 * URL where the wanted Bioengine is hosted
+	 */
+	private String serverURL;
+	
+	/**
+	 * Error message that will be thrown if the user tries to load an engine that cannot
+	 * be loaded together with the engines that are already loaded
+	 */
+	 private static final String ENGINE_ERR = "The program will not be able to load '%s %s' because another "
+	 		+ "version (%s) of the same framework has already been loaded." + System.lineSeparator()
+            + "If loading the wanted version (%s) is strictly necessary, please "
+            + "restart the JVM. However, if the previously loaded version (%s) "
+            + "can be used, " + System.lineSeparator()
+            + "please call EngineInfo.defineCompatibleDLEngine(...) to avoid restarting.";
 
 	/**
 	 * If the JARs directory is not going to change during the execution of the
@@ -133,26 +150,6 @@ public class EngineInfo
 	 * Variable containing the name used to refer to Keras in the program
 	 */
 	private static final String KERAS_ENGINE_NAME = "keras";
-
-	/**
-	 * Variable containing the name used to refer to Tensorflow in the program
-	 */
-	private static final String TENSORFLOW_JAVA_BIOIMAGEIO_TAG = "tensorflow_saved_model_bundle";
-
-	/**
-	 * Variable containing the name used to refer to Pytorch in the program
-	 */
-	private static final String PYTORCH_JAVA_BIOIMAGEIO_TAG = "torchscript";
-
-	/**
-	 * Variable containing the name used to refer to Pytorch in the program
-	 */
-	private static final String ONNX_JAVA_BIOIMAGEIO_TAG = "onnx";
-
-	/**
-	 * Variable containing the name used to refer to Keras in the program
-	 */
-	private static final String KERAS_JAVA_BIOIMAGEIO_TAG = "keras_hdf5";
 
 	/**
 	 * Variable that stores which version of Tensorflow 1 has been already
@@ -194,22 +191,33 @@ public class EngineInfo
 	 * @param jarsDirectory
 	 *            directory where the folder containing the JARs needed to
 	 *            launch the corresponding engine are located
-	 * @return an object containing all the information needed to launch a Deep
-	 *         learning framework
 	 */
 	private EngineInfo( String engine, String version, String jarsDirectory )
 	{
 		Objects.requireNonNull( engine, "The Deep Learning engine should not be null." );
 		Objects.requireNonNull( version, "The Deep Learning engine version should not be null." );
 		Objects.requireNonNull( jarsDirectory, "The Jars directory should not be null." );
-		setEngine( engine );
+		setFramework( engine );
 		this.version = version;
 		checkEngineAreadyLoaded();
 		this.jarsDirectory = jarsDirectory;
 		this.os = new PlatformDetection().toString();
 		setSupportedVersions();
 		this.versionJava = findCorrespondingJavaVersion();
+		if (this.versionJava == null)
+			throw new IllegalArgumentException("The DL framework version chosen is not supported.");
+	}
 
+	/**
+	 * Information needed to know how to launch the Bioengine
+	 * 
+	 * @param serverURL
+	 * 	url where the Bioengine is hosted
+	 */
+	private EngineInfo(String serverURL)
+	{
+		Objects.requireNonNull( serverURL, "The Deep Learning engine version should not be null." );
+		this.serverURL = serverURL;
 	}
 	
 	/**
@@ -220,18 +228,47 @@ public class EngineInfo
 	 */
 	private void checkEngineAreadyLoaded() throws IllegalArgumentException {
 		String versionedEngine = this.engine + this.getMajorVersion();
-		if (!engine.equals(TENSORFLOW_ENGINE_NAME)  
-				&& EngineLoader.getLoadedVersions().get(versionedEngine) != null
-				&& !EngineLoader.getLoadedVersions().get(versionedEngine).equals(version))
-			throw new IllegalArgumentException("The program will not be able to load "
-					+ "'" + engine + " " + version + "' because another version (" 
-					+ EngineLoader.getLoadedVersions().get(versionedEngine).equals(version) + ") "
-					+ "of the same framework has already been loaded." + System.lineSeparator()
-					+ "If loading the wanted version (" + version + ") is strictly necessary "
-					+ "please restart the JVM, however, if the previously loaded version "
-					+ "(" + EngineLoader.getLoadedVersions().get(versionedEngine).equals(version)
-					+ ") can be used please call EngineInfo.defineCompatibleDLEngine(...) "
-					+ "to avoid restarting.");
+		boolean onnxLoaded = EngineLoader.getLoadedVersions().keySet().stream()
+				.filter(en -> en.startsWith(ONNX_ENGINE_NAME) && !en.equals(versionedEngine))
+				.findFirst().orElse(null) != null;
+		boolean ptLoaded = EngineLoader.getLoadedVersions().keySet().stream()
+				.filter(en -> en.startsWith(PYTORCH_ENGINE_NAME) && !en.equals(versionedEngine))
+				.findFirst().orElse(null) != null;
+		if (engine.equals(ONNX_ENGINE_NAME) && onnxLoaded) {
+			String confV = EngineLoader.getLoadedVersions().entrySet().stream()
+					.filter(en -> en.getKey().startsWith(ONNX_ENGINE_NAME) && !en.getKey().equals(versionedEngine))
+					.map(en -> en.getValue()).findFirst().get();
+			throw new IllegalArgumentException(
+					String.format(ENGINE_ERR, engine, version, confV, version, confV));
+		} else if (engine.equals(PYTORCH_ENGINE_NAME) && ptLoaded) {
+			String confV = EngineLoader.getLoadedVersions().entrySet().stream()
+					.filter(en -> en.getKey().startsWith(PYTORCH_ENGINE_NAME) && !en.getKey().equals(versionedEngine))
+					.map(en -> en.getValue()).findFirst().get();
+			throw new IllegalArgumentException(
+					String.format(ENGINE_ERR, engine, version, confV, version, confV));
+		} else if (!versionedEngine.equals("tensorflow2") && EngineLoader.getLoadedVersions().get(versionedEngine) != null
+					&& !EngineLoader.getLoadedVersions().get(versionedEngine).equals(version)) {
+			throw new IllegalArgumentException(String.format(ENGINE_ERR, engine, version, 
+					EngineLoader.getLoadedVersions().get(versionedEngine), version, 
+					EngineLoader.getLoadedVersions().get(versionedEngine)));
+		}
+	}
+
+	/**
+	 * Set the parameters to launch the wanted Bioengine instance.
+	 * 
+	 * @param serverURL
+	 * 	server where the instance of the Bioengine we want to connect to is hosted
+	 * @return an object containing all the information needed to launch a Deep
+	 * 	learning framework in the bioengine
+	 * @throws IllegalArgumentException if an engine that cannot be loaded together with the wanted engine
+	 * 	has already been loaded
+	 */
+	public static EngineInfo defineBioengine(String serverURL ) throws IllegalArgumentException
+	{	
+		if (!DownloadModel.checkURL(serverURL))
+			throw new IllegalArgumentException("The provided url does not exist: " + serverURL);
+		return new EngineInfo(serverURL);
 	}
 
 	/**
@@ -244,9 +281,23 @@ public class EngineInfo
 	 * If the engine specified is not installed, the method will return null.
 	 * The engine of interest needs to be installed first.
 	 * A good way to check whether the engine of interest exists or not
-	 * is: {@link InstalledEngines#checkEngineWithArgsInstalled(String, String, Boolean, Boolean, Boolean, String)}
+	 * is: {@link InstalledEngines#checkEngineWithArgsInstalledForOS(String, String, Boolean, Boolean, String)}
 	 * 
-	 * @param engine
+     * 
+     * Note that this method looks at the framework versions specified at:
+     * https://github.com/bioimage-io/JDLL/blob/main/src/main/resources/supportedVersions.json
+     * 
+     * This file contains all the versions for each framework supported by JDLL.
+     * Note that several of the Python versions point to a single Java API version. This
+     * happens because not every Python version has an exact Java APi made for it. HOwever,
+     * the Java API is made with enough flexibility so that is compatible with the previous
+     * Python versions that do not have an API. 
+     * BEcause of this, when setting, for example, version Tensorflow 2.8, any version that uses the same
+     * Java API and that is installed will be allowed to be used. Thus for Tensorflow 2.8, 
+     * Tensorflow 2.10.1 will be used as both are completely compatible.
+     * 
+	 * 
+	 * @param framework
 	 *            name of the Deep Learning framework (engine). For example:
 	 *            Pytorch, Tensorflow....
 	 * @param version
@@ -256,16 +307,24 @@ public class EngineInfo
 	 *            launch the corresponding engine are located
 	 * @return an object containing all the information needed to launch a Deep
 	 *         learning framework or null if the wanted version engine is not installed
+	 * @throws IllegalArgumentException if an engine that cannot be loaded together with the wanted engine
+	 * 	has already been loaded
 	 */
-	public static EngineInfo defineDLEngine( String engine, String version, String jarsDirectory )
-	{	
-		if (AvailableEngines.modelRunnerToBioimageioKeysMap().keySet().contains(engine))
-			engine = AvailableEngines.modelRunnerToBioimageioKeysMap().get(engine);
-		boolean rosetta = new PlatformDetection().isUsingRosseta();
+	public static EngineInfo defineDLEngine( String framework, String version, String jarsDirectory ) throws IllegalArgumentException
+	{
+		Objects.requireNonNull(framework, "DL framework cannot be null.");
+		Objects.requireNonNull(version, "DL framework version cannot be null.");
+		if (AvailableEngines.modelRunnerToBioimageioKeysMap().keySet().contains(framework))
+			framework = AvailableEngines.modelRunnerToBioimageioKeysMap().get(framework);
 		List<DeepLearningVersion> vs = 
-				InstalledEngines.checkEngineWithArgsInstalled(engine, version, null, null, rosetta, jarsDirectory);
-		if (vs.size() == 0)
-			return null;
+				InstalledEngines.checkEngineWithArgsInstalledForOS(framework, version, 
+						null, null, jarsDirectory);
+		if (vs.size() == 0) {
+			String jV = SupportedVersions.getJavaVersionForPythonVersion(framework, version);
+			if (jV == null)
+				return null;
+			return defineDLEngineWithJavaVersion(framework, jV, null, null, jarsDirectory);
+		}
 		boolean cpu = false;
 		boolean gpu = false;
 		if (vs.stream().filter(v -> v.getCPU() && v.getGPU()).collect(Collectors.toList()).size() > 0) {
@@ -278,7 +337,7 @@ public class EngineInfo
 		}
 		
 		try {
-			return defineDLEngine( engine, version, cpu, gpu, jarsDirectory );
+			return defineDLEngine( framework, vs.get(0).getPythonVersion(), cpu, gpu, jarsDirectory );
 		} catch (IllegalArgumentException ex) {
 			ex.printStackTrace();
 			return null;
@@ -295,9 +354,23 @@ public class EngineInfo
 	 * If the engine specified is not installed, the method will return null.
 	 * The engine of interest needs to be installed first.
 	 * A good way to check whether the engine of interest exists or not
-	 * is: {@link InstalledEngines#checkEngineWithArgsInstalled(String, String, Boolean, Boolean, Boolean, String)}
+	 * is: {@link InstalledEngines#checkEngineWithArgsInstalledForOS(String, String, Boolean, Boolean, String)}
 	 * 
-	 * @param engine
+     * 
+     * Note that this method looks at the framework versions specified at:
+     * https://github.com/bioimage-io/JDLL/blob/main/src/main/resources/supportedVersions.json
+     * 
+     * This file contains all the versions for each framework supported by JDLL.
+     * Note that several of the Python versions point to a single Java API version. This
+     * happens because not every Python version has an exact Java APi made for it. HOwever,
+     * the Java API is made with enough flexibility so that is compatible with the previous
+     * Python versions that do not have an API. 
+     * BEcause of this, when setting, for example, version Tensorflow 2.8, any version that uses the same
+     * Java API and that is installed will be allowed to be used. Thus for Tensorflow 2.8, 
+     * Tensorflow 2.10.1 will be used as both are completely compatible.
+     * 
+	 * 
+	 * @param framework
 	 *            name of the Deep Learning framework (engine). For example:
 	 *            Pytorch, Tensorflow....
 	 * @param version
@@ -309,25 +382,29 @@ public class EngineInfo
 	 *            launch the corresponding engine are located
 	 * @return an object containing all the information needed to launch a Deep
 	 *         learning framework or null if the wanted version engine is not installed
+	 * @throws IllegalArgumentException if an engine that cannot be loaded together with the wanted engine
+	 * 	has already been loaded
 	 */
-	public static EngineInfo defineDLEngine( String engine, String version, boolean gpu, String jarsDirectory )
+	public static EngineInfo defineDLEngine( String framework, String version, boolean gpu, String jarsDirectory )
+												throws IllegalArgumentException
 	{
-		if (AvailableEngines.modelRunnerToBioimageioKeysMap().keySet().contains(engine))
-			engine = AvailableEngines.modelRunnerToBioimageioKeysMap().get(engine);
-		boolean rosetta = new PlatformDetection().isUsingRosseta();
+		Objects.requireNonNull(framework, "DL framework cannot be null.");
+		Objects.requireNonNull(version, "DL framework version cannot be null.");
+		if (AvailableEngines.modelRunnerToBioimageioKeysMap().keySet().contains(framework))
+			framework = AvailableEngines.modelRunnerToBioimageioKeysMap().get(framework);
 		List<DeepLearningVersion> vs = 
-				InstalledEngines.checkEngineWithArgsInstalled(engine, version, null, gpu, rosetta, jarsDirectory);
-		if (vs.size() == 0)
-			return null;
+				InstalledEngines.checkEngineWithArgsInstalledForOS(framework, version, null, 
+						gpu, jarsDirectory);
+		if (vs.size() == 0) {
+			String jV = SupportedVersions.getJavaVersionForPythonVersion(framework, version);
+			if (jV == null)
+				return null;
+			return defineDLEngineWithJavaVersion(framework, jV, null, gpu, jarsDirectory);
+		}
 		boolean cpu = false;
 		if (vs.stream().filter(v -> v.getCPU()).collect(Collectors.toList()).size() > 0) 
 			cpu = true;
-		try {
-			return defineDLEngine( engine, version, cpu, gpu, jarsDirectory );
-		} catch (IllegalArgumentException ex) {
-			ex.printStackTrace();
-			return null;
-		}
+		return defineDLEngine( framework, vs.get(0).getPythonVersion(), cpu, gpu, jarsDirectory );
 	}
 
 	/**
@@ -337,9 +414,23 @@ public class EngineInfo
 	 * If the engine specified is not installed, the method will return null.
 	 * The engine of interest needs to be installed first.
 	 * A good way to check whether the engine of interest exists or not
-	 * is: {@link InstalledEngines#checkEngineWithArgsInstalled(String, String, Boolean, Boolean, Boolean, String)}
+	 * is: {@link InstalledEngines#checkEngineWithArgsInstalledForOS(String, String, Boolean, Boolean, String)}
 	 * 
-	 * @param engine
+     * 
+     * Note that this method looks at the framework versions specified at:
+     * https://github.com/bioimage-io/JDLL/blob/main/src/main/resources/supportedVersions.json
+     * 
+     * This file contains all the versions for each framework supported by JDLL.
+     * Note that several of the Python versions point to a single Java API version. This
+     * happens because not every Python version has an exact Java APi made for it. HOwever,
+     * the Java API is made with enough flexibility so that is compatible with the previous
+     * Python versions that do not have an API. 
+     * BEcause of this, when setting, for example, version Tensorflow 2.8, any version that uses the same
+     * Java API and that is installed will be allowed to be used. Thus for Tensorflow 2.8, 
+     * Tensorflow 2.10.1 will be used as both are completely compatible.
+     * 
+	 * 
+	 * @param framework
 	 *            name of the Deep Learning framework (engine). For example:
 	 *            Pytorch, Tensorflow....
 	 * @param version
@@ -353,26 +444,29 @@ public class EngineInfo
 	 *            launch the corresponding engine are located
 	 * @return an object containing all the information needed to launch a Deep
 	 *         learning framework or null if the wanted version engine is not installed
+	 * @throws IllegalArgumentException if an engine that cannot be loaded together with the wanted engine
+	 * 	has already been loaded
 	 */
-	public static EngineInfo defineDLEngine( String engine, String version, boolean cpu,
-			boolean gpu, String jarsDirectory )
+	public static EngineInfo defineDLEngine( String framework, String version, boolean cpu,
+			boolean gpu, String jarsDirectory ) throws IllegalArgumentException
 	{
-		if (AvailableEngines.modelRunnerToBioimageioKeysMap().keySet().contains(engine))
-			engine = AvailableEngines.modelRunnerToBioimageioKeysMap().get(engine);
-		boolean rosetta = new PlatformDetection().isUsingRosseta();
+		Objects.requireNonNull(framework, "DL framework cannot be null.");
+		Objects.requireNonNull(version, "DL framework version cannot be null.");
+		if (AvailableEngines.modelRunnerToBioimageioKeysMap().keySet().contains(framework))
+			framework = AvailableEngines.modelRunnerToBioimageioKeysMap().get(framework);
 		List<DeepLearningVersion> vvs =
-				InstalledEngines.checkEngineWithArgsInstalled(engine, version, cpu, gpu, rosetta, jarsDirectory);
-		if (vvs.size() == 0)
-			return null;
-		try {
-			EngineInfo engineInfo = new EngineInfo(engine, version, jarsDirectory);
-			engineInfo.cpu = cpu;
-			engineInfo.gpu = gpu;
-			return engineInfo;
-		} catch (IllegalArgumentException ex) {
-			ex.printStackTrace();
-			return null;
+				InstalledEngines.checkEngineWithArgsInstalledForOS(framework, version, cpu, 
+						gpu, jarsDirectory);
+		if (vvs.size() == 0) {
+			String jV = SupportedVersions.getJavaVersionForPythonVersion(framework, version);
+			if (jV == null)
+				return null;
+			return defineDLEngineWithJavaVersion(framework, jV, cpu, gpu, jarsDirectory);
 		}
+		EngineInfo engineInfo = new EngineInfo(framework, vvs.get(0).getPythonVersion(), jarsDirectory);
+		engineInfo.cpu = cpu;
+		engineInfo.gpu = gpu;
+		return engineInfo;
 	}
 
 	/**
@@ -385,27 +479,22 @@ public class EngineInfo
 	 * If the engine specified is not installed, the method will return null.
 	 * The engine of interest needs to be installed first.
 	 * A good way to check whether the engine of interest exists or not
-	 * is: {@link InstalledEngines#checkEngineWithArgsInstalled(String, String, Boolean, Boolean, Boolean, String)}
+	 * is: {@link InstalledEngines#checkEngineWithArgsInstalledForOS(String, String, Boolean, Boolean, String)}
 	 * 
-	 * @param engine
+	 * @param framework
 	 *            name of the Deep Learning framework (engine). For example:
 	 *            Pytorch, Tensorflow....
 	 * @param version
 	 *            version of the training Deep Learning framework (engine)
 	 * @return an object containing all the information needed to launch a Deep
 	 *         learning framework or null if the wanted version engine is not installed
+	 * @throws IllegalArgumentException if an engine that cannot be loaded together with the wanted engine
+	 * 	has already been loaded
 	 */
-	public static EngineInfo defineDLEngine( String engine, String version )
+	public static EngineInfo defineDLEngine( String framework, String version ) throws IllegalArgumentException
 	{
-		if (AvailableEngines.modelRunnerToBioimageioKeysMap().keySet().contains(engine))
-			engine = AvailableEngines.modelRunnerToBioimageioKeysMap().get(engine);
 		Objects.requireNonNull( STATIC_JARS_DIRECTORY, "The Jars directory should not be null." );
-		try {
-			return defineDLEngine( engine, version, STATIC_JARS_DIRECTORY );
-		} catch (IllegalArgumentException ex) {
-			ex.printStackTrace();
-			return null;
-		}
+		return defineDLEngine( framework, version, STATIC_JARS_DIRECTORY );
 	}
 
 	/**
@@ -418,9 +507,23 @@ public class EngineInfo
 	 * If the engine specified is not installed, the method will return null.
 	 * The engine of interest needs to be installed first.
 	 * A good way to check whether the engine of interest exists or not
-	 * is: {@link InstalledEngines#checkEngineWithArgsInstalled(String, String, Boolean, Boolean, Boolean, String)}
+	 * is: {@link InstalledEngines#checkEngineWithArgsInstalledForOS(String, String, Boolean, Boolean, String)}
 	 * 
-	 * @param engine
+     * 
+     * Note that this method looks at the framework versions specified at:
+     * https://github.com/bioimage-io/JDLL/blob/main/src/main/resources/supportedVersions.json
+     * 
+     * This file contains all the versions for each framework supported by JDLL.
+     * Note that several of the Python versions point to a single Java API version. This
+     * happens because not every Python version has an exact Java APi made for it. HOwever,
+     * the Java API is made with enough flexibility so that is compatible with the previous
+     * Python versions that do not have an API. 
+     * BEcause of this, when setting, for example, version Tensorflow 2.8, any version that uses the same
+     * Java API and that is installed will be allowed to be used. Thus for Tensorflow 2.8, 
+     * Tensorflow 2.10.1 will be used as both are completely compatible.
+     * 
+	 * 
+	 * @param framework
 	 *            name of the Deep Learning framework (engine). For example:
 	 *            Pytorch, Tensorflow....
 	 * @param version
@@ -429,26 +532,29 @@ public class EngineInfo
 	 *            whether the engine can use GPU or not
 	 * @return an object containing all the information needed to launch a Deep
 	 *         learning framework or null if the wanted version engine is not installed
+	 * @throws IllegalArgumentException if an engine that cannot be loaded together with the wanted engine
+	 * 	has already been loaded
 	 */
-	public static EngineInfo defineDLEngine( String engine, String version, boolean gpu )
+	public static EngineInfo defineDLEngine( String framework, String version, boolean gpu ) throws IllegalArgumentException
 	{
-		if (AvailableEngines.modelRunnerToBioimageioKeysMap().keySet().contains(engine))
-			engine = AvailableEngines.modelRunnerToBioimageioKeysMap().get(engine);
+		Objects.requireNonNull(framework, "DL framework cannot be null.");
+		Objects.requireNonNull(version, "DL framework version cannot be null.");
+		if (AvailableEngines.modelRunnerToBioimageioKeysMap().keySet().contains(framework))
+			framework = AvailableEngines.modelRunnerToBioimageioKeysMap().get(framework);
 		Objects.requireNonNull( STATIC_JARS_DIRECTORY, "The Jars directory should not be null." );
-		boolean rosetta = new PlatformDetection().isUsingRosseta();
 		List<DeepLearningVersion> vs = 
-				InstalledEngines.checkEngineWithArgsInstalled(engine, version, null, gpu, rosetta, STATIC_JARS_DIRECTORY);
-		if (vs.size() == 0)
-			return null;
+				InstalledEngines.checkEngineWithArgsInstalledForOS(framework, version, null, 
+						gpu, STATIC_JARS_DIRECTORY);
+		if (vs.size() == 0) {
+			String jV = SupportedVersions.getJavaVersionForPythonVersion(framework, version);
+			if (jV == null)
+				return null;
+			return defineDLEngineWithJavaVersion(framework, jV, null, gpu, STATIC_JARS_DIRECTORY);
+		}
 		boolean cpu = false;
 		if (vs.stream().filter(v -> v.getCPU()).collect(Collectors.toList()).size() > 0) 
 			cpu = true;
-		try {
-			return defineDLEngine( engine, version, cpu, gpu, STATIC_JARS_DIRECTORY );
-		} catch (IllegalArgumentException ex) {
-			ex.printStackTrace();
-			return null;
-		}
+		return defineDLEngine( framework, vs.get(0).getPythonVersion(), cpu, gpu, STATIC_JARS_DIRECTORY );
 	}
 
 	/**
@@ -458,9 +564,9 @@ public class EngineInfo
 	 * If the engine specified is not installed, the method will return null.
 	 * The engine of interest needs to be installed first.
 	 * A good way to check whether the engine of interest exists or not
-	 * is: {@link InstalledEngines#checkEngineWithArgsInstalled(String, String, Boolean, Boolean, Boolean, String)}
+	 * is: {@link InstalledEngines#checkEngineWithArgsInstalledForOS(String, String, Boolean, Boolean, String)}
 	 * 
-	 * @param engine
+	 * @param framework
 	 *            name of the Deep Learning framework (engine). For example:
 	 *            Pytorch, Tensorflow....
 	 * @param version
@@ -471,18 +577,73 @@ public class EngineInfo
 	 *            whether the engine can use GPU or not
 	 * @return an object containing all the information needed to launch a Deep
 	 *         learning framework or null if the wanted version engine is not installed
+	 * @throws IllegalArgumentException if an engine that cannot be loaded together with the wanted engine
+	 * 	has already been loaded
 	 */
-	public static EngineInfo defineDLEngine( String engine, String version, boolean cpu, boolean gpu )
+	public static EngineInfo defineDLEngine( String framework, String version, 
+			boolean cpu, boolean gpu ) throws IllegalArgumentException
 	{
-		if (AvailableEngines.modelRunnerToBioimageioKeysMap().keySet().contains(engine))
-			engine = AvailableEngines.modelRunnerToBioimageioKeysMap().get(engine);
 		Objects.requireNonNull( STATIC_JARS_DIRECTORY, "The Jars directory should not be null." );
-		try {
-			return defineDLEngine( engine, version, cpu, gpu, STATIC_JARS_DIRECTORY );
-		} catch (IllegalArgumentException ex) {
-			ex.printStackTrace();
+		return defineDLEngine( framework, version, cpu, gpu, STATIC_JARS_DIRECTORY );
+	}
+	
+	/**
+	 * Method that finds an engine among the installed ones using the version of the
+	 * engine in Java instead of the version of the engine in Python.
+	 * 
+	 * This method allows cpu = null and gpu = null. If any of those fields is null,
+	 * the method will try to find the engines for which the field is tru, however, 
+	 * if it does not find it it will continue with the field being false.
+	 * 
+	 * @param framework
+	 * 	the Deep Learning framework of interest, cannot be null
+	 * @param javaVersion
+	 * 	version of the Java Deep Learning framework. It is equivalent to a set of 
+	 * 	Python versions, cannot be null
+	 * @param cpu
+	 * 	whether the engine supports cpu or not, can be null
+	 * @param gpu
+	 * 	whether the engine supports gpu or not, can be null
+	 * @param jarsDirectory
+	 * 	Directory where the engines are located, cannot be null
+	 * @return the engine info for the correspinding Java version, null if it is not
+	 * 	installed for theat version.
+	 */
+	private static EngineInfo defineDLEngineWithJavaVersion(String framework, String javaVersion,
+			Boolean cpu, Boolean gpu, String jarsDirectory) {
+		Objects.requireNonNull(framework);
+		Objects.requireNonNull(javaVersion);
+		Objects.requireNonNull(jarsDirectory);
+		List<DeepLearningVersion> vvs = InstalledEngines.checkEngineWithArgsInstalledForOS(
+				framework, null, cpu, gpu, jarsDirectory);
+		if (vvs.size() == 0)
 			return null;
-		}
+		List<DeepLearningVersion> compVersions = vvs.stream()
+				.filter(vv -> vv.getVersion().equals(javaVersion)).collect(Collectors.toList());
+		if (compVersions.size() == 0)
+			return null;
+		List<DeepLearningVersion> cpuComp = compVersions.stream()
+				.filter(v -> v.getCPU() && (gpu == null || v.getGPU() == gpu))
+				.collect(Collectors.toList());
+		boolean ncpu;
+		if (cpu == null && cpuComp.size() > 0)
+			ncpu = true;
+		else if (cpu == null)
+			ncpu = false;
+		else
+			ncpu = cpu;
+		List<DeepLearningVersion> gpuComp = compVersions.stream()
+				.filter(v -> v.getCPU() == ncpu && v.getGPU()).collect(Collectors.toList());
+		boolean ngpu;
+		if (gpu == null && gpuComp.size() != 0)
+			ngpu = true;
+		else if (gpu == null)
+			ngpu = false;
+		else
+			ngpu = gpu;
+		String version = compVersions.stream()
+				.filter(v -> v.getCPU() == ncpu && v.getGPU() == ngpu).findFirst().orElse(null).getPythonVersion();
+		return defineDLEngine(framework, version, ncpu, ngpu, jarsDirectory);
 	}
 
 	/**
@@ -510,7 +671,7 @@ public class EngineInfo
 	 *  and if it returns false, and you want GPU support 
 	 *  install the engine with GPU support if available.
 	 * 
-	 * @param engine
+	 * @param framework
 	 *            name of the Deep Learning framework (engine). For example:
 	 *            Pytorch, Tensorflow....
 	 * @param version
@@ -521,17 +682,22 @@ public class EngineInfo
 	 * @return an object containing all the information needed to launch a Deep
 	 *         learning framework or null if the engine of interest is not installed
 	 * @throws IOException if the engines directory does not exist
+	 * @throws IllegalArgumentException if an engine that cannot be loaded together with the wanted engine
+	 * 	has already been loaded
 	 */
-	public static EngineInfo defineCompatibleDLEngine( String engine, String version, 
-			String jarsDirectory ) throws IOException 
+	public static EngineInfo defineCompatibleDLEngineCPU( String framework, String version, 
+			String jarsDirectory ) throws IOException, IllegalArgumentException 
 	{
+		Objects.requireNonNull(framework, "DL framework cannot be null.");
+		Objects.requireNonNull(version, "DL framework version cannot be null.");
+		Objects.requireNonNull(jarsDirectory, "The engine JARs directory cannot be null.");
 		InstalledEngines manager = InstalledEngines.buildEnginesFinder(jarsDirectory);
-		String compatibleVersion = manager.getMostCompatibleVersionForEngine(engine, version);
+		String compatibleVersion = manager.getMostCompatibleVersionForFramework(framework, version);
 		if (compatibleVersion == null)
 			return null;
-		List<DeepLearningVersion> vv = manager.getDownloadedForVersionedEngine(engine, compatibleVersion);
+		List<DeepLearningVersion> vv = manager.getDownloadedForVersionedFramework(framework, compatibleVersion);
 		boolean gpu = vv.stream().filter(v -> v.getGPU()).findFirst().orElse(null) != null;
-		return EngineInfo.defineDLEngine(engine, compatibleVersion, true, gpu, jarsDirectory);
+		return EngineInfo.defineDLEngine(framework, compatibleVersion, true, gpu, jarsDirectory);
 	}
 
 	/**
@@ -554,7 +720,7 @@ public class EngineInfo
 	 * the previously loaded version will be used. This is because loading different versions
 	 * of the Pytorch native libraries produce conflicts.
 	 * 
-	 * @param engine
+	 * @param framework
 	 *            name of the Deep Learning framework (engine). For example:
 	 *            Pytorch, Tensorflow....
 	 * @param version
@@ -568,23 +734,27 @@ public class EngineInfo
 	 *            launch the corresponding engine are located
 	 * @return an object containing all the information needed to launch a Deep
 	 *         learning framework or null if the engine of interest is not installed
-	 * @throws IOException if the engines directory does not exist
+	 * @throws IllegalArgumentException if an engine that cannot be loaded together with the wanted engine
+	 * 	has already been loaded
 	 */
-	public static EngineInfo defineCompatibleDLEngine( String engine, String version,
-			boolean cpu, boolean gpu, String jarsDirectory ) throws IOException 
+	public static EngineInfo defineCompatibleDLEngine( String framework, String version,
+			boolean cpu, boolean gpu, String jarsDirectory ) throws IllegalArgumentException
 	{
-		boolean rosetta = new PlatformDetection().isUsingRosseta();
+		Objects.requireNonNull(framework, "DL framework cannot be null.");
+		Objects.requireNonNull(version, "DL framework version cannot be null.");
+		Objects.requireNonNull(jarsDirectory, "The engine JARs directory cannot be null.");
 		List<DeepLearningVersion> possibles = 
-				InstalledEngines.checkEngineWithArgsInstalled(engine, null, cpu, gpu, rosetta, jarsDirectory);
+				InstalledEngines.checkEngineWithArgsInstalledForOS(framework, null, cpu, gpu, 
+						jarsDirectory);
 		if (possibles.size() == 0)
 			return null;
 		List<String> possibleStrs = 
 				possibles.stream().map(DeepLearningVersion::getPythonVersion).collect(Collectors.toList());
 		List<String> compatibleVersion = 
-				VersionStringUtils.getCompatibleEngineVersionsInOrder(version, possibleStrs, engine);
+				VersionStringUtils.getCompatibleEngineVersionsInOrder(version, possibleStrs, framework);
 		if (compatibleVersion == null || compatibleVersion.size() == 0)
 			return null;
-		return EngineInfo.defineDLEngine(engine, compatibleVersion.get(0), cpu, true, jarsDirectory);
+		return EngineInfo.defineDLEngine(framework, compatibleVersion.get(0), cpu, gpu, jarsDirectory);
 	}
 
 	/**
@@ -610,7 +780,7 @@ public class EngineInfo
 	 *  and if it returns false, and you want CPU support 
 	 *  install the engine with CPU support if available.
 	 * 
-	 * @param engine
+	 * @param framework
 	 *            name of the Deep Learning framework (engine). For example:
 	 *            Pytorch, Tensorflow....
 	 * @param version
@@ -620,25 +790,29 @@ public class EngineInfo
 	 *            launch the corresponding engine are located
 	 * @return an object containing all the information needed to launch a Deep
 	 *         learning framework or null if the engine of interest is not installed
-	 * @throws IOException if the engines directory does not exist
+	 * @throws IllegalArgumentException if an engine that cannot be loaded together with the wanted engine
+	 * 	has already been loaded
 	 */
-	public static EngineInfo defineCompatibleDLEngineGPU( String engine, String version, 
-			String jarsDirectory ) throws IOException 
+	public static EngineInfo defineCompatibleDLEngineGPU( String framework, String version, 
+			String jarsDirectory ) throws IllegalArgumentException
 	{
-		boolean rosetta = new PlatformDetection().isUsingRosseta();
+		Objects.requireNonNull(framework, "DL framework cannot be null.");
+		Objects.requireNonNull(version, "DL framework version cannot be null.");
+		Objects.requireNonNull(jarsDirectory, "The engine JARs directory cannot be null.");
 		List<DeepLearningVersion> possibles = 
-				InstalledEngines.checkEngineWithArgsInstalled(engine, null, null, true, rosetta, jarsDirectory);
+				InstalledEngines.checkEngineWithArgsInstalledForOS(framework, null, null, true,
+						jarsDirectory);
 		if (possibles.size() == 0)
 			return null;
 		List<String> possibleStrs = 
 				possibles.stream().map(DeepLearningVersion::getPythonVersion).collect(Collectors.toList());
 		List<String> compatibleVersion = 
-				VersionStringUtils.getCompatibleEngineVersionsInOrder(version, possibleStrs, engine);
+				VersionStringUtils.getCompatibleEngineVersionsInOrder(version, possibleStrs, framework);
 		if (compatibleVersion == null || compatibleVersion.size() == 0)
 			return null;
-		boolean cpu = InstalledEngines.checkEngineWithArgsInstalled(engine, 
-				compatibleVersion.get(0), true, true, rosetta, jarsDirectory).size() > 0;
-		return EngineInfo.defineDLEngine(engine, compatibleVersion.get(0), cpu, true, jarsDirectory);
+		boolean cpu = InstalledEngines.checkEngineWithArgsInstalledForOS(framework, compatibleVersion.get(0), 
+				true, true, jarsDirectory).size() > 0;
+		return EngineInfo.defineDLEngine(framework, compatibleVersion.get(0), cpu, true, jarsDirectory);
 	}
 	
 	/**
@@ -654,8 +828,11 @@ public class EngineInfo
 	 * @return the {@link EngineInfo} object if there are compatible installed engines or null
 	 * 	if they do not exist
 	 * @throws IOException if the engines directory does not exist
+	 * @throws IllegalArgumentException if an engine that cannot be loaded together with the wanted engine
+	 * 	has already been loaded
 	 */
-	public static EngineInfo defineCompatibleDLEngineWithRdfYamlWeights(WeightFormat weight) throws IOException {
+	public static EngineInfo defineCompatibleDLEngineWithRdfYamlWeights(WeightFormat weight) 
+			throws IOException, IllegalArgumentException {
 		return defineCompatibleDLEngineWithRdfYamlWeights(weight, InstalledEngines.getEnginesDir());
 	}
 	
@@ -672,16 +849,21 @@ public class EngineInfo
 	 * @return the {@link EngineInfo} object if there are compatible installed engines or null
 	 * 	if they do not exist
 	 * @throws IOException if the engines directory does not exist
+	 * @throws IllegalArgumentException if an engine that cannot be loaded together with the wanted engine
+	 * 	has already been loaded
 	 */
-	public static EngineInfo defineCompatibleDLEngineWithRdfYamlWeights(WeightFormat weight, String enginesDir) throws IOException {
+	public static EngineInfo defineCompatibleDLEngineWithRdfYamlWeights(WeightFormat weight, 
+			String enginesDir) throws IOException, IllegalArgumentException {
+		Objects.requireNonNull(weight, "DL weigths cannot be null.");
+		Objects.requireNonNull(enginesDir, "The engine JARs directory cannot be null.");
 		String compatibleVersion = null;
-		String engine = weight.getWeightsFormat();
+		String engine = weight.getFramework();
 		String version = weight.getTrainingVersion();
 		InstalledEngines manager = InstalledEngines.buildEnginesFinder(enginesDir);
-		compatibleVersion = manager.getMostCompatibleVersionForEngine(engine, version);
+		compatibleVersion = manager.getMostCompatibleVersionForFramework(engine, version);
 		if (compatibleVersion == null)
 			return null;
-		List<DeepLearningVersion> vv = manager.getDownloadedForVersionedEngine(engine, compatibleVersion);
+		List<DeepLearningVersion> vv = manager.getDownloadedForVersionedFramework(engine, compatibleVersion);
 		boolean gpu = vv.stream().filter(v -> v.getGPU()).findFirst().orElse(null) != null;
 		return EngineInfo.defineDLEngine(engine, compatibleVersion, true, gpu, enginesDir);
 	}
@@ -700,8 +882,11 @@ public class EngineInfo
 	 * @return the {@link EngineInfo} object if there are compatible installed engines or null
 	 * 	if they do not exist
 	 * @throws IOException if the engines directory does not exist
+	 * @throws IllegalArgumentException if an engine that cannot be loaded together with the wanted engine
+	 * 	has already been loaded
 	 */
-	public static EngineInfo defineExactDLEngineWithRdfYamlWeights(WeightFormat weight) throws IOException {
+	public static EngineInfo defineExactDLEngineWithRdfYamlWeights(WeightFormat weight)
+			throws IOException, IllegalArgumentException {
 		return defineExactDLEngineWithRdfYamlWeights(weight, InstalledEngines.getEnginesDir());
 	}
 	
@@ -712,6 +897,20 @@ public class EngineInfo
 	 * engine installed. The major and minor versions need to match.
 	 * Only Pytorch 1.11 can be used to load Pytorch 1.11
 	 * 
+     * 
+     * Note that this method looks at the framework versions specified at:
+     * https://github.com/bioimage-io/JDLL/blob/main/src/main/resources/supportedVersions.json
+     * 
+     * This file contains all the versions for each framework supported by JDLL.
+     * Note that several of the Python versions point to a single Java API version. This
+     * happens because not every Python version has an exact Java APi made for it. HOwever,
+     * the Java API is made with enough flexibility so that is compatible with the previous
+     * Python versions that do not have an API. 
+     * BEcause of this, when setting, for example, version Tensorflow 2.8, any version that uses the same
+     * Java API and that is installed will be allowed to be used. Thus for Tensorflow 2.8, 
+     * Tensorflow 2.10.1 will be used as both are completely compatible.
+     * 
+     * 
 	 * @param weight
 	 * 	the weights of a model for a specific single engine (DL framework)
 	 * @param enginesDir
@@ -719,22 +918,23 @@ public class EngineInfo
 	 * @return the {@link EngineInfo} object if there are compatible installed engines or null
 	 * 	if they do not exist
 	 * @throws IOException if the engines directory does not exist
+	 * @throws IllegalArgumentException if an engine that cannot be loaded together with the wanted engine
+	 * 	has already been loaded
 	 */
-	public static EngineInfo defineExactDLEngineWithRdfYamlWeights(WeightFormat weight, String enginesDir) throws IOException {
-		String engine = weight.getWeightsFormat();
+	public static EngineInfo defineExactDLEngineWithRdfYamlWeights(WeightFormat weight,
+			String enginesDir) throws IOException, IllegalArgumentException {
+		Objects.requireNonNull(weight, "DL weigths cannot be null.");
+		Objects.requireNonNull(enginesDir, "The engine JARs directory cannot be null.");
+		String engine = weight.getFramework();
 		String version = weight.getTrainingVersion();
 		InstalledEngines manager = InstalledEngines.buildEnginesFinder(enginesDir);
 		if (version == null)
 			return null;
-		List<DeepLearningVersion> vv = manager.getDownloadedForVersionedEngine(engine, version);
+		List<DeepLearningVersion> vv = manager.getDownloadedForVersionedFramework(engine, version);
 		if (vv.size() == 0)
 			return null;
 		boolean gpu = vv.stream().filter(v -> v.getGPU()).findFirst().orElse(null) != null;
-		try {
-			return EngineInfo.defineDLEngine(engine, version, true, gpu, enginesDir);
-		} catch (IllegalArgumentException ex) {
-			return null;
-		}
+		return EngineInfo.defineDLEngine(engine, vv.get(0).getPythonVersion(), true, gpu, enginesDir);
 	}
 
 	/**
@@ -753,47 +953,15 @@ public class EngineInfo
 	}
 
 	/**
-	 * Set whether the engine supports GPU or not. Does not support GPU by
-	 * default.
-	 * 
-	 * @param support
-	 *            true if it supports GPU and false otherwise
-	 */
-	public void supportGPU( boolean support )
-	{
-		gpu = support;
-	}
-
-	/**
-	 * Set whether the engine supports CPU or not. By default supports CPU
-	 * 
-	 * @param support
-	 *            true if it supports CPU and false otherwise
-	 */
-	public void supportCPU( boolean support )
-	{
-		cpu = support;
-	}
-
-	/**
 	 * Finds the version of Deep Learning framework (engine) equivalent or
 	 * compatible with the one used to train the model. This is done because
 	 * sometimes APIs for different languages are named differently
 	 * 
 	 * @return corresponding compatible version of the DL framework Java version
 	 */
-	public String findCorrespondingJavaVersion()
+	private String findCorrespondingJavaVersion()
 	{
-		try
-		{
-			return this.supportedVersions.getCorrespondingJavaVersion( this.version );
-		}
-		catch ( Exception e )
-		{
-			// TODO Refine exception
-			e.printStackTrace();
-			return "";
-		}
+		return this.supportedVersions.getCorrespondingJavaVersion( this.version );
 	}
 
 	/**
@@ -810,7 +978,7 @@ public class EngineInfo
 	 * 
 	 * @return the name of the Deep Learning framework
 	 */
-	public String getEngine()
+	public String getFramework()
 	{
 		return engine;
 	}
@@ -821,26 +989,14 @@ public class EngineInfo
 	 * @param engine
 	 *            Deep Learning framework used for the model
 	 */
-	public void setEngine( String engine )
+	private void setFramework( String engine )
 	{
-		if ( engine.contentEquals( TENSORFLOW_JAVA_BIOIMAGEIO_TAG ) )
+		if ( engine.contentEquals( ModelWeight.getTensorflowID() ) )
 			this.engine = TENSORFLOW_ENGINE_NAME;
-		else if ( engine.contentEquals( PYTORCH_JAVA_BIOIMAGEIO_TAG ) )
+		else if ( engine.contentEquals( ModelWeight.getTorchscriptID() ) )
 			this.engine = PYTORCH_ENGINE_NAME;
-		else if ( engine.contentEquals( ONNX_JAVA_BIOIMAGEIO_TAG ) )
+		else if ( engine.contentEquals( ModelWeight.getOnnxID() ) )
 			this.engine = ONNX_ENGINE_NAME;
-	}
-
-	/**
-	 * Set the directory where the program will look for the Deep Learning
-	 * framework jars See {@link #jarsDirectory} for more explanation
-	 * 
-	 * @param jarsDirectory
-	 *            directory where all the folders containing the JARs are stored
-	 */
-	public void setJarsDirectory( String jarsDirectory )
-	{
-		this.jarsDirectory = jarsDirectory;
 	}
 
 	/**
@@ -949,35 +1105,10 @@ public class EngineInfo
 	}
 
 	/**
-	 * Sets which versions have already been loaed to avoid errors trying to
-	 * load another version from the same engine, which always crashes the
-	 * application
-	 */
-	public void setLoadedVersion()
-	{
-		if ( this.engine.equals( TENSORFLOW_ENGINE_NAME ) && this.version.startsWith( "1" ) )
-		{
-			loadedTf1Version = this.version;
-		}
-		else if ( this.engine.equals( TENSORFLOW_ENGINE_NAME ) && this.version.startsWith( "2" ) )
-		{
-			loadedTf2Version = this.version;
-		}
-		else if ( this.engine.equals( PYTORCH_ENGINE_NAME ) )
-		{
-			loadedPytorchVersion = this.version;
-		}
-		else if ( this.engine.equals( ONNX_ENGINE_NAME ) )
-		{
-			loadedOnnxVersion = this.version;
-		}
-	}
-
-	/**
 	 * REturns which versions have been already been loaded to avoid errors of
 	 * overlapping versions
 	 * 
-	 * @param engine
+	 * @param framework
 	 *            the Deep Learning framework of interest
 	 * @param version
 	 *            the Deep LEarning version of interest
@@ -986,27 +1117,27 @@ public class EngineInfo
 	 * @throws IllegalArgumentException
 	 *             if the engine is not supported yet
 	 */
-	public static String getLoadedVersions( String engine, String version ) throws IllegalArgumentException
+	public static String getLoadedVersions( String framework, String version ) throws IllegalArgumentException
 	{
-		if ( engine.equals( TENSORFLOW_JAVA_BIOIMAGEIO_TAG ) && version.startsWith( "1" ) )
+		if ( framework.equals( ModelWeight.getTensorflowID() ) && version.startsWith( "1" ) )
 		{
 			return loadedTf1Version;
 		}
-		else if ( engine.equals( TENSORFLOW_JAVA_BIOIMAGEIO_TAG ) && version.startsWith( "2" ) )
+		else if ( framework.equals( ModelWeight.getTensorflowID() ) && version.startsWith( "2" ) )
 		{
 			return loadedTf2Version;
 		}
-		else if ( engine.equals( PYTORCH_JAVA_BIOIMAGEIO_TAG ) )
+		else if ( framework.equals( ModelWeight.getTorchscriptID() ) )
 		{
 			return loadedPytorchVersion;
 		}
-		else if ( engine.equals( ONNX_JAVA_BIOIMAGEIO_TAG ) )
+		else if ( framework.equals( ModelWeight.getOnnxID() ) )
 		{
 			return loadedOnnxVersion;
 		}
 		else
 		{
-			throw new IllegalArgumentException( "The selected engine '" + engine + "' is not supported yet." );
+			throw new IllegalArgumentException( "The selected engine '" + framework + "' is not supported yet." );
 		}
 	}
 
@@ -1030,7 +1161,7 @@ public class EngineInfo
 	 * object is 
 	 * @return true if the engine is installed and false otherwise
 	 */
-	public boolean isEngineInstalled() {
+	private boolean isEngineInstalled() {
 		File file = new File(this.getDeepLearningVersionJarsDirectory());
 		try {
 			boolean missingJars = (DeepLearningVersion.fromFile(file).checkMissingJars().size() == 0);
@@ -1043,29 +1174,25 @@ public class EngineInfo
 	}
 	
 	/**
-	 * Find the installed engine that has a version closes to the one defined for this instance.
-	 * If this instance has version 1.4 and the only installed engine for the same DL framework
-	 * is 1.8, the result will be an engine info object with the same characteristics and different
-	 * engine version.
-	 * If the original engine was cpu gpu and there are cpu installed but not gpu, a cpu will be returned.
-	 * 
-	 * If there is an installed engine for the original EngineInfo instance, the same EngineInfo will
-	 * be returned
-	 * 
-	 * @return the most compatible engine with the one defined, if it exists
-	 * @throws IOException if no engine of the same DL framework is found
+	 * Return whether the {@link EngineInfo} object is designed to load a model 
+	 * remotely on the Bioengine or not
+	 * @return true if loading on the Bioengine is the objective or false otherwise
 	 */
-	public EngineInfo getEngineInfoOfTheClosestInstalledEngineVersion() throws IOException {
-		String newV = InstalledEngines.getMostCompatibleVersionForEngine(jarsDirectory, engine, version);
-		String msg = "There are no installed engines of the DL framework: "  + engine + version.split("\\.")[0];
-		if (newV == null)
-			throw new IOException(msg);
-		EngineInfo newInfo = EngineInfo.defineDLEngine(engine, newV, this.isCPU(), this.isGPU(), jarsDirectory);
-		if (!newInfo.isEngineInstalled())
-			newInfo.gpu = !this.gpu;
-		if (!newInfo.isEngineInstalled())
-			throw new IOException(msg);
-		return newInfo;
+	public boolean isBioengine() {
+		return this.serverURL != null;
+	}
+	
+	/**
+	 * 
+	 * @return the server url where the bioengine is hosted.
+	 * @throws IllegalArgumentException if the method is called when the {@link EngineInfo}
+	 * 	object has not been created for the Bioengine, with the method {@link #defineBioengine(String)}
+	 */
+	public String getServer() {
+		if (!isBioengine())
+			throw new IllegalArgumentException("The Bioengine server can only be retrieved if the "
+					+ "method EngineInfo.defineBioengine(String) has been used to create the object.");
+		return this.serverURL;
 	}
 
 	/**
@@ -1129,7 +1256,7 @@ public class EngineInfo
 	 */
 	public static String getBioimageioTfKey()
 	{
-		return TENSORFLOW_JAVA_BIOIMAGEIO_TAG;
+		return ModelWeight.getTensorflowID();
 	}
 
 	/**
@@ -1140,7 +1267,7 @@ public class EngineInfo
 	 */
 	public static String getBioimageioPytorchKey()
 	{
-		return PYTORCH_JAVA_BIOIMAGEIO_TAG;
+		return ModelWeight.getTorchscriptID();
 	}
 
 	/**
@@ -1151,7 +1278,7 @@ public class EngineInfo
 	 */
 	public static String getBioimageioOnnxKey()
 	{
-		return ONNX_JAVA_BIOIMAGEIO_TAG;
+		return ModelWeight.getOnnxID();
 	}
 
 	/**
@@ -1162,6 +1289,6 @@ public class EngineInfo
 	 */
 	public static String getBioimageioKerasKey()
 	{
-		return KERAS_JAVA_BIOIMAGEIO_TAG;
+		return ModelWeight.getKerasID();
 	}
 }

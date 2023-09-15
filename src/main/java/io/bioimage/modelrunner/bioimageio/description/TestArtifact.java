@@ -28,11 +28,11 @@ import java.util.Arrays;
 import java.util.List;
 
 /**
- * Define each of the sample inputs spedified in the yaml file
+ * Define each of the test inputs and outputs defined in the rdf.yaml file
  * @author Carlos Garcia Lopez de Haro
  *
  */
-public class SampleImage {
+public class TestArtifact {
 	/**
 	 * String to the sample image
 	 */
@@ -48,25 +48,25 @@ public class SampleImage {
 	/**
 	 * List of allowed extensions for the sample images
 	 */
-	private static List<String> allowedExtensions = Arrays.asList(new String[] {".tiff", ".tif",
-			".png", ".jpg", ".jpeg", ".gif"});
+	private static List<String> allowedExtensions = Arrays.asList(new String[] {".npy"});
 	
     /**
-     * Creates a {@link SampleImage} instance.
+     * Creates a {@link TestArtifact} instance.
      * 
      * @param sampleInputUrl
      * 	String specified in the yaml file as a sample input or output
      * @return The creates instance.
      */
-    public static SampleImage build(String sampleInputUrl)
+    public static TestArtifact build(String sampleInputUrl)
     {
-    	SampleImage sampleInput = new SampleImage();
+    	TestArtifact sampleInput = new TestArtifact();
         if (sampleInputUrl == null)
         	return null;
         sampleInput.string = sampleInputUrl;
         if (!sampleInput.isExtensionAllowed())
         	return null;
         sampleInput.createSampleInputURL();
+        sampleInput.createSampleInputPath();
         sampleInput.createSampleInputPath();
         return sampleInput;        
     }
@@ -158,7 +158,7 @@ public class SampleImage {
 	@Override
     public String toString()
     {
-		String str = "SampleFile {";
+		String str = "TestNpy {";
 		str += " string=" + string;
 		if (url != null)
 			str += " url=" + url.toString();

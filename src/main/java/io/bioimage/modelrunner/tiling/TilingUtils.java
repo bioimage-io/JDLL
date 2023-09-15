@@ -17,22 +17,8 @@
  * limitations under the License.
  * #L%
  */
-package io.bioimage.modelrunner.utils;
+package io.bioimage.modelrunner.tiling;
 
-/**
- * Class that contains important constants for the software
- * @author Carlos Garcia Lopez de Haro
- *
- */
-public class Constants {
-	
-	final public static String ISSUES_LINK = "https://github.com/bioimage-io/model-runner-java/issues";
-	// TODO update wiki link
-	final public static String WIKI_LINK = "https://github.com/bioimage-io/model-runner-java/issues";
-	final public static String ENGINES_LINK = "https://raw.githubusercontent.com/bioimage-io/JDLL/main/src/main/resources/availableDLVersions.yml";
+public class TilingUtils {
 
-	/**
-	 * File name of the resource description file inside the model folder
-	 */
-	public static final String RDF_FNAME = "rdf.yaml";
 }

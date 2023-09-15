@@ -23,21 +23,18 @@
 package io.bioimage.modelrunner.engine;
 
 import java.io.File;
-import java.io.IOException;
-import java.io.UnsupportedEncodingException;
 import java.lang.reflect.InvocationTargetException;
 import java.net.MalformedURLException;
 import java.net.URISyntaxException;
 import java.net.URL;
-import java.net.URLDecoder;
 import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
+import io.bioimage.modelrunner.bioimageio.bioengine.BioengineInterface;
 import io.bioimage.modelrunner.exceptions.LoadEngineException;
-import io.bioimage.modelrunner.system.PlatformDetection;
 import io.bioimage.modelrunner.versionmanagement.DeepLearningVersion;
 
 /**
@@ -75,6 +72,10 @@ public class EngineLoader extends ClassLoader
 	 * Key for the cache of loaded engines.
 	 */
 	private String versionedEngine;
+	/**
+	 * Whether the model is going to be run in the bioengine or not
+	 */
+	private boolean bioengine;
 
 	/**
 	 * Instance of the class from the wanted Deep Learning engine that is used
@@ -124,8 +125,13 @@ public class EngineLoader extends ClassLoader
 	{
 		super();
 		this.baseClassloader = classloader;
+		this.engine = engineInfo.getFramework();
+		this.bioengine = engineInfo.isBioengine();
+		if (engineInfo.isBioengine()) {
+			this.engineInstance = new BioengineInterface();
+			return;
+		}
 		this.enginePath = engineInfo.getDeepLearningVersionJarsDirectory();
-		this.engine = engineInfo.getEngine();
 		this.versionedEngine = this.engine + engineInfo.getMajorVersion();
 		loadClasses();
 		setEngineClassLoader();
@@ -192,8 +198,6 @@ public class EngineLoader extends ClassLoader
 		{
 			if (!ff.getName().endsWith(".jar") || !dlv.doesJarBelongToEngine(ff.getAbsolutePath()))
 					continue;
-			if (ff.getName().matches("jna-5\\.[A-Za-z0-9]+\\.[A-Za-z0-9]+\\.jar"))
-				checkJNA();
 				
 			urlList.add(ff.toURI().toURL());
 		}
@@ -207,18 +211,25 @@ public class EngineLoader extends ClassLoader
 
 	/**
 	 * Set the ClassLoader containing the engines classes as the Thread
-	 * classloader
+	 * classloader.
+	 * If the model is to be loaded on the bioengine, nothing happens
+	 * 
 	 */
 	public void setEngineClassLoader()
 	{
+		if (bioengine)
+			return;
 		Thread.currentThread().setContextClassLoader( engineClassloader );
 	}
 
 	/**
 	 * Set the parent ClassLoader as the Thread classloader
+	 * If the model is to be loaded on the bioengine, nothing happens
 	 */
 	public void setBaseClassLoader()
 	{
+		if (bioengine)
+			return;
 		Thread.currentThread().setContextClassLoader( this.baseClassloader );
 	}
 
@@ -257,7 +268,7 @@ public class EngineLoader extends ClassLoader
 					{
 						// Assume that DeepLearningInterface has no arguments
 						// for the constructor
-						return ( DeepLearningEngineInterface ) c.newInstance();
+						return ( DeepLearningEngineInterface ) c.getDeclaredConstructor().newInstance();
 					}
 				}
 				// REmove references
@@ -278,7 +289,7 @@ public class EngineLoader extends ClassLoader
 	 *            JAR file
 	 * @return the Class name as seen by the ClassLoader
 	 */
-	public static String getClassNameInJAR( String entryName )
+	private static String getClassNameInJAR( String entryName )
 	{
 		String className = entryName.substring( 0, entryName.indexOf( "." ) );
 		className = className.replace( "/", "." );
@@ -321,20 +332,29 @@ public class EngineLoader extends ClassLoader
 			}
 		}
 		catch (Exception ex) {
-			errMsg = ex.getCause().toString();
+			errMsg = ex.toString();
 		}
 		// As no interface has been found create an exception
 		throw new LoadEngineException( new File( this.enginePath ), errMsg );
 	}
 
 	/**
-	 * Return the engine instance from where to call the corresponging engine
+	 * Return the engine instance from where to call the corresponging engine.
+	 * 
 	 * 
 	 * @return engine instance
 	 */
 	public DeepLearningEngineInterface getEngineInstance()
 	{
 		return this.engineInstance;
+	}
+	
+	/**
+	 * 
+	 * @return whether the engine of choice is the bioengine (a remotely hosted service)
+	 */
+	public boolean isBioengine() {
+		return bioengine;
 	}
 
 	/**
@@ -345,7 +365,6 @@ public class EngineLoader extends ClassLoader
 	{
 		engineInstance.closeModel();
 		setBaseClassLoader();
-		System.out.println( "Exited engine ClassLoader" );
 	}
 	
 	/**
@@ -355,93 +374,5 @@ public class EngineLoader extends ClassLoader
 	 */
 	public static HashMap<String, String> getLoadedVersions() {
 		return loadedVersions;
-	}
-	
-	/**
-	 * Check if the software that calls the JDLL uses an incompatible version of the JNA
-	 * library. If it does, an exception is thrown.
-	 * @throws IOException if a JNA version different to 5 is detected
-	 */
-	private void checkJNA() throws IOException {
-		String jna = getJNAJar();
-		if (jna == null)
-			return;
-		boolean match = jna.matches("jna-5\\.[A-Za-z0-9]+\\.[A-Za-z0-9]+\\.jar");
-		if (!match)
-			throw new IOException("Cannot load the engine. The selected engine is only compatible" + System.lineSeparator()
-					+ "with the JNA JAR version 5, but other JNA versions have been loaded. " + System.lineSeparator()
-					+ "The found version is incompatible with the selected engine," + System.lineSeparator()
-					+ "please update your JNA JAR to version 5 in order to be able to load the wanted engine." + System.lineSeparator()
-					+ "Here is the url for a compatible JNA version: " + System.lineSeparator()
-					+ "https://repo1.maven.org/maven2/net/java/dev/jna/jna/5.13.0/jna-5.13.0.jar");
-	}
-	
-	/**
-	 * GEt the jar of the JNA library if it exists
-	 * @return jna library jar
-	 */
-	private String getJNAJar() {
-		Class<?> cls = null;
-		try {
-			cls = baseClassloader.loadClass("com.sun.jna.Native");
-		} catch (ClassNotFoundException e1) {
-		}
-		if (cls == null)
-			return null;
-		String dir;
-		try {
-			dir = getPathFromClass(cls);
-		} catch (UnsupportedEncodingException e) {
-			String classResource = cls.getName().replace('.', '/') + ".class";
-		    URL resourceUrl = cls.getClassLoader().getResource(classResource);
-		    if (resourceUrl == null) {
-		        return null;
-		    }
-		    String urlString = resourceUrl.toString();
-		    if (urlString.startsWith("jar:")) {
-		        urlString = urlString.substring(4);
-		    }
-		    if (urlString.startsWith("file:/") && PlatformDetection.isWindows()) {
-		        urlString = urlString.substring(6);
-		    } else if (urlString.startsWith("file:/") && !PlatformDetection.isWindows()) {
-		        urlString = urlString.substring(5);
-		    }
-		    File file = new File(urlString);
-		    String path = file.getAbsolutePath();
-		    if (path.lastIndexOf(".jar!") != -1)
-		    	path = path.substring(0, path.lastIndexOf(".jar!")) + ".jar";
-		    dir = path;
-		}
-		return new File(dir).getName();
-	}
-	
-	/**
-	 * Method that gets the path to the JAR from where a specific class is being loaded
-	 * @param clazz
-	 * 	class of interest
-	 * @return the path to the JAR that contains the class
-	 * @throws UnsupportedEncodingException if the url of the JAR is not encoded in UTF-8
-	 */
-	private static String getPathFromClass(Class<?> clazz) throws UnsupportedEncodingException {
-	    String classResource = clazz.getName().replace('.', '/') + ".class";
-	    URL resourceUrl = clazz.getClassLoader().getResource(classResource);
-	    if (resourceUrl == null) {
-	        return null;
-	    }
-	    String urlString = resourceUrl.toString();
-	    if (urlString.startsWith("jar:")) {
-	        urlString = urlString.substring(4);
-	    }
-	    if (urlString.startsWith("file:/") && PlatformDetection.isWindows()) {
-	        urlString = urlString.substring(6);
-	    } else if (urlString.startsWith("file:/") && !PlatformDetection.isWindows()) {
-	        urlString = urlString.substring(5);
-	    }
-	    urlString = URLDecoder.decode(urlString, "UTF-8");
-	    File file = new File(urlString);
-	    String path = file.getAbsolutePath();
-	    if (path.lastIndexOf(".jar!") != -1)
-	    	path = path.substring(0, path.lastIndexOf(".jar!")) + ".jar";
-	    return path;
 	}
 }

@@ -25,7 +25,7 @@ import java.util.List;
 
 import io.bioimage.modelrunner.bioimageio.download.DownloadTracker;
 import io.bioimage.modelrunner.bioimageio.download.DownloadTracker.TwoParameterConsumer;
-import io.bioimage.modelrunner.engine.installation.EngineManagement;
+import io.bioimage.modelrunner.engine.installation.EngineInstall;
 import io.bioimage.modelrunner.versionmanagement.AvailableEngines;
 import io.bioimage.modelrunner.versionmanagement.DeepLearningVersion;
 
@@ -43,14 +43,14 @@ public class ExampleDownloadEngine {
 	 * again for a model, but providing either the name, the 'rdf_source' field
 	 * of the rdf.yaml file or a {@link ModelDescriptor} object generated from an rdf.yaml file.
 	 * 
-	 * For more details, explore the methods: {@link EngineManagement#installEnginesForModelByNameinDir(String, String)},
-	 * {@link EngineManagement#installEnginesForModelInDir(io.bioimage.modelrunner.bioimageio.description.ModelDescriptor, String)},
-	 * {@link EngineManagement#installEnginesForModelByNameinDir(String, String, TwoParameterConsumer)},
+	 * For more details, explore the methods: {@link EngineInstall#installEnginesForModelByNameinDir(String, String)},
+	 * {@link EngineInstall#installEnginesForModelInDir(io.bioimage.modelrunner.bioimageio.description.ModelDescriptor, String)},
+	 * {@link EngineInstall#installEnginesForModelByNameinDir(String, String, TwoParameterConsumer)},
 	 * or to install the engine without associating it to a model:
-	 * {@link EngineManagement#installEngineWithArgs(String, String, boolean, boolean)}, 
-	 * {@link EngineManagement#installEngine(DeepLearningVersion)},
-	 * {@link EngineManagement#installEngineByCompleteName(String)},
-	 * {@link EngineManagement#installEngineForWeightsInDir(io.bioimage.modelrunner.bioimageio.description.weights.WeightFormat, String)}
+	 * {@link EngineInstall#installEngineWithArgs(String, String, boolean, boolean)}, 
+	 * {@link EngineInstall#installEngine(DeepLearningVersion)},
+	 * {@link EngineInstall#installEngineByCompleteName(String)},
+	 * {@link EngineInstall#installEngineForWeightsInDir(io.bioimage.modelrunner.bioimageio.description.weights.WeightFormat, String)}
 	 */
 	private static final String MODEL_ID = "10.5281/zenodo.5874741";
 	/**
@@ -83,7 +83,7 @@ public class ExampleDownloadEngine {
 		// defined by the model ID.
 		// This method prints information about the total progress of the download and of the 
 		// particular files being downloaded on the terminal.
-		EngineManagement.installEnginesForModelByIDInDir(MODEL_ID, ENGINES_DIR, consumer);
+		EngineInstall.installEnginesForModelByIDInDir(MODEL_ID, ENGINES_DIR, consumer);
 		// Another option is to launch the download in a separate thread 
 		// and wait for it to end while tracking the progress using the consumer
 		Thread downloadThread = new Thread(() -> {
@@ -97,7 +97,7 @@ public class ExampleDownloadEngine {
 						AvailableEngines.getEnginesForOsByParams(engine, version, cpu, gpu);
 				if (dlv.size() == 0)
 					throw new IOException("Engine defined is not supported by JDLL.");
-				EngineManagement.installEngineInDir(dlv.get(0), ENGINES_DIR, consumer);
+				EngineInstall.installEngineInDir(dlv.get(0), ENGINES_DIR, consumer);
 			} catch (IOException | InterruptedException e) {
 				// If one of the files to be downloaded is corrupted or the download thread 
 				// is stopped abruptly

@@ -25,6 +25,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import io.bioimage.modelrunner.versionmanagement.SupportedVersions;
+
 /**
  * Class that contains the information for Torchscript weights.
  * For more information about the parameters go to:
@@ -35,6 +37,30 @@ import java.util.Set;
  */
 public class TorchscriptWeights implements WeightFormat{
 
+	private String compatiblePythonVersion;
+
+	private String weightsFormat;
+
+	private String trainingVersion;
+
+	private String sha256;
+
+	private String source;
+
+	private List<String> authors;
+
+	private Map<String, Object> attachments;
+
+	private String parent;
+
+	private String architecture;
+
+	private String architectureSha256;
+	
+	boolean gpu = false;
+
+	private String compatibleVersion;
+
 	/**
 	 * Crate an object that specifies Torchscript weights
 	 * 
@@ -43,7 +69,7 @@ public class TorchscriptWeights implements WeightFormat{
 	 * 	information refering to the Torchscript weights
 	 */
 	public TorchscriptWeights(Map<String, Object> weights) {
-		weightsFormat = "torchscript";
+		weightsFormat = ModelWeight.getTorchscriptID();
 		Set<String> keys = weights.keySet();
 		for (String k : keys) {
 			Object fieldElement = weights.get(k);
@@ -75,20 +101,23 @@ public class TorchscriptWeights implements WeightFormat{
 	                break;
 	        }
 		}
-		// TODO add fixed version if it is not shown because many models are missing
-		// the Pytorch version. Remove when they start appearing
 		if (trainingVersion == null)
-			trainingVersion = "1.11.0";
+			trainingVersion = "1.13.1";
+		setCompatibleVersion();
 	}
-
-	private String weightsFormat;
+	
 	@Override
-	public String getWeightsFormat() {
+	/**
+	 * {@inheritDoc}
+	 */
+	public String getFramework() {
 		return weightsFormat;
 	}
 
-	private String trainingVersion;
 	@Override
+	/**
+	 * {@inheritDoc}
+	 */
 	public String getTrainingVersion() {
 		return trainingVersion;
 	}
@@ -119,10 +148,14 @@ public class TorchscriptWeights implements WeightFormat{
 			this.trainingVersion = "" + v;
 		else if (v instanceof Integer)
 			this.trainingVersion = "" + v;
+		
+		
 	}
-
-	private String sha256;
+	
 	@Override
+	/**
+	 * {@inheritDoc}
+	 */
 	public String getSha256() {
 		return sha256;
 	}
@@ -138,9 +171,11 @@ public class TorchscriptWeights implements WeightFormat{
 			sha256 = (String) s;
 		
 	}
-
-	private String source;
+	
 	@Override
+	/**
+	 * {@inheritDoc}
+	 */
 	public String getSource() {
 		return source;
 	}
@@ -157,9 +192,11 @@ public class TorchscriptWeights implements WeightFormat{
 			this.source = (String) s;
 		
 	}
-
-	private List<String> authors;
+	
 	@Override
+	/**
+	 * {@inheritDoc}
+	 */
 	public List<String> getAuthors() {
 		return authors;
 	}
@@ -179,9 +216,11 @@ public class TorchscriptWeights implements WeightFormat{
 		}
 		
 	}
-
-	private Map<String, Object> attachments;
+	
 	@Override
+	/**
+	 * {@inheritDoc}
+	 */
 	public Map<String, Object> getAttachments() {
 		return attachments;
 	}
@@ -196,9 +235,11 @@ public class TorchscriptWeights implements WeightFormat{
 			this.attachments = (Map<String, Object>) attachments;
 		
 	}
-
-	private String parent;
+	
 	@Override
+	/**
+	 * {@inheritDoc}
+	 */
 	public String getParent() {
 		return parent;
 	}
@@ -212,9 +253,11 @@ public class TorchscriptWeights implements WeightFormat{
 		if (parent instanceof String)
 			this.parent = (String) parent;
 	}
-
-	private String architecture;
+	
 	@Override
+	/**
+	 * {@inheritDoc}
+	 */
 	public String getArchitecture() {
 		return architecture;
 	}
@@ -228,9 +271,11 @@ public class TorchscriptWeights implements WeightFormat{
 		if (architecture instanceof String)
 			this.architecture = (String) architecture;
 	}
-
-	private String architectureSha256;
+	
 	@Override
+	/**
+	 * {@inheritDoc}
+	 */
 	public String getArchitectureSha256() {
 		return architectureSha256;
 	}
@@ -246,14 +291,17 @@ public class TorchscriptWeights implements WeightFormat{
 	}
 
 	@Override
+	/**
+	 * {@inheritDoc}
+	 */
 	public String getSourceFileName() {
 		if (source == null)
 			return source;
 		return new File(source).getName();
 	}
 	
-	boolean gpu = false;
 	/**
+	 * {@inheritDoc}
 	 * Method to set whether the engine used for this weights supports GPU or not
 	 * @param support
 	 * 	whether the engine for the weights supports GPu or not
@@ -264,11 +312,41 @@ public class TorchscriptWeights implements WeightFormat{
 	}
 	
 	/**
+	 * {@inheritDoc}
 	 * Method to know whether the engine used for this weights supports GPU or not
 	 * @return whether the engine for the weigths supports GPU or not
 	 */
 	@Override
 	public boolean isSupportGPU() {
 		return gpu;
+	}
+
+	@Override
+	/**
+	 * {@inheritDoc}
+	 */
+	public String getJavaTrainingVersion() {
+		return compatibleVersion;
+	}
+	
+	/**
+	 * Select a version supported by JDLL that is compatible with the training version
+	 */
+	private void setCompatibleVersion() {
+		if (this.trainingVersion == null)
+			this.compatibleVersion = null;
+		compatibleVersion = SupportedVersions.getJavaVersionForPythonVersion("pytorch", trainingVersion);
+	}
+	
+	@Override
+	/**
+	 * {@inheritDoc}
+	 */
+	public String getClosestSupportedPythonVersion() {
+		if (this.trainingVersion == null)
+			return null;
+		if (compatiblePythonVersion == null)
+			compatiblePythonVersion = SupportedVersions.getClosestSupportedPythonVersion("pytorch", trainingVersion);
+		return compatiblePythonVersion;
 	}
 }

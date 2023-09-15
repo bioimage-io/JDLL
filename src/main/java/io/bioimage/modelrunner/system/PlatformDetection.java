@@ -69,107 +69,101 @@ public class PlatformDetection
     
     private static String UNAME_M;
 
-    private String os;
-    private String arch;
-    private boolean rosetta = false;
-
-    /**
-     * Creates a platform detection using the local platform.
-     */
-    public PlatformDetection()
-    {
-    }
+    private static String OS;
+    private static String ARCH;
+    private static boolean ROSETTA = false;
+    private static Integer JAVA_VERSION;
 
     /**
      * @return The operating system of the platform. e.g. windows, linux, macosx, etc.
      */
-    public String getOs()
+    public static String getOs()
     {
-    	if (os != null)
-    		return os;
+    	if (OS != null)
+    		return OS;
         // resolve OS
         if (System.getProperty("os.name").toLowerCase().contains("win"))
         {
-            os = OS_WINDOWS;
+            OS = OS_WINDOWS;
         }
         else if (System.getProperty("os.name").toLowerCase().replace(" ", "").contains("macosx"))
         {
-            os = OS_OSX;
+            OS = OS_OSX;
         }
         else if (System.getProperty("os.name").toLowerCase().contains("linux") 
         		|| System.getProperty("os.name").toLowerCase().endsWith("ix"))
         {
-            os = OS_LINUX;
+            OS = OS_LINUX;
         }
         else
         {
             throw new IllegalArgumentException("Operating system not supported by Miniconda: " + System.getProperty("os.name")
 								+ ". Only supported OS are: " + OS_WINDOWS + ", " + OS_OSX + " and " + OS_LINUX);
         }
-        return os;
+        return OS;
     }
 
     /**
      * @return The system architecture. e.g. x86, x86_64, amd64, etc.
      */
-    public String getArch()
+    public static String getArch()
     {
-    	if (arch != null)
-    		return arch;
+    	if (ARCH != null)
+    		return ARCH;
         // resolve architecture
-        arch = archMap.get(System.getProperty("os.arch"));
-        if (this.arch == null)
+        ARCH = archMap.get(System.getProperty("os.arch"));
+        if (ARCH == null)
         {
             throw new IllegalArgumentException("Unknown architecture " + System.getProperty("os.arch"));
         }
-        if (this.arch.equals(ARCH_X86_64) && !getOs().equals(PlatformDetection.OS_WINDOWS)) {
+        if (ARCH.equals(ARCH_X86_64) && !getOs().equals(PlatformDetection.OS_WINDOWS)) {
 			try {
 				Process proc = Runtime.getRuntime().exec(
 						new String[] {"bash", "-c", DETECT_CHIP_TERMINAL_COMMAND});
 				String txt = waitProcessExecutionAndGetOutputText(proc);
 	    		if (txt.toLowerCase().contains("apple m"))
-	    			rosetta = true;
+	    			ROSETTA = true;
 			} catch (IOException e) {
 				e.printStackTrace();
 				System.out.println("Error checking the chip architecture with bash");
 			}
         }
-        return arch;
+        return ARCH;
     }
     
-    public boolean isUsingRosseta() {
-    	if (arch == null)
+    public static boolean isUsingRosseta() {
+    	if (ARCH == null)
     		getArch();
-    	return this.rosetta;
+    	return ROSETTA;
     }
 
     @Override
     public String toString()
     {
-    	if (os == null)
+    	if (OS == null)
     		getOs();
-    	if (arch == null)
+    	if (ARCH == null)
     		getArch();
-        return os + "-" + arch;
+        return OS + "-" + ARCH;
     }
     
     public static boolean isWindows() {
-    	return new PlatformDetection().getOs().equals(PlatformDetection.OS_WINDOWS);
+    	return getOs().equals(PlatformDetection.OS_WINDOWS);
     }
     
     public static boolean isLinux() {
-    	return new PlatformDetection().getOs().equals(PlatformDetection.OS_LINUX);
+    	return getOs().equals(PlatformDetection.OS_LINUX);
     }
     
     public static boolean isMacOS() {
-    	return new PlatformDetection().getOs().equals(PlatformDetection.OS_OSX);
+    	return getOs().equals(PlatformDetection.OS_OSX);
     }
     
-    public static String getPythonArchDetectionCommand() {
+    private static String getPythonArchDetectionCommand() {
     	return PYTHON_ARCH_DETECTION_COMMAND;
     }
     
-    public static String executeUnameM() {
+    private static String executeUnameM() {
     	if (UNAME_M != null)
     		return UNAME_M;
     	Process proc;
@@ -183,7 +177,7 @@ public class PlatformDetection
 		return UNAME_M;
     }
 	
-	public static String waitProcessExecutionAndGetOutputText(Process proc) throws IOException {
+    private static String waitProcessExecutionAndGetOutputText(Process proc) throws IOException {
 		BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(proc.getInputStream()));
 		String inputStreamTxt = "";
 		boolean first = true;
@@ -201,12 +195,30 @@ public class PlatformDetection
 		return inputStreamTxt;
 	}
 	
-	public static String readBufferedReaderIntoStringIntoString(BufferedReader input) throws IOException {
+	private static String readBufferedReaderIntoStringIntoString(BufferedReader input) throws IOException {
 		String text = "";
 		String line;
 	    while ((line = input.readLine()) != null) {
 	    	text += line + System.lineSeparator();
 	    }
 	    return text;
+	}
+	
+	/**
+	 * Get the major Java version the program is currently running on
+	 * @return the major Java version the program is running on
+	 */
+	public static int getJavaVersion() {
+		if (JAVA_VERSION != null)
+			return JAVA_VERSION;
+		String version = System.getProperty("java.version");
+	    if(version.startsWith("1.")) {
+	        version = version.substring(2, 3);
+	    } else {
+	        int dot = version.indexOf(".");
+	        if(dot != -1) { version = version.substring(0, dot); }
+	    } 
+	    JAVA_VERSION = Integer.parseInt(version);
+	    return JAVA_VERSION;
 	}
 }

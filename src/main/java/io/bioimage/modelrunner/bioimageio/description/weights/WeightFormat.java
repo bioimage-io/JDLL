@@ -41,13 +41,31 @@ public interface WeightFormat {
 	public String getTrainingVersion();
 	
 	/**
+	 * Get the closest framework version between the ones supported by JDLL.
+	 * It might not be the same exact version as the one specified in the rdf.yaml
+	 * file, but in the majority of the cases it will be compatible with it.
+	 * @return a DL framework version within the supported ones (specified at 
+	 * 	https://raw.githubusercontent.com/bioimage-io/JDLL/main/src/main/resources/availableDLVersions.json)
+	 * 	that is compatible with the training version that is specified in the yaml file.
+	 */
+	public String getClosestSupportedPythonVersion();
+	
+	/**
+	 * Return the Java version of the framework supported by JDLL that it is compatible with
+	 * the training version of the weights
+	 * @return the Java version of the framework supported by JDLL that it is compatible with
+	 * the training version of the weights
+	 */
+	public String getJavaTrainingVersion();
+	
+	/**
 	 * Format of the weights of the model. The supported weights by the Bioimage.io are:
 	 * keras_hdf5, onnx, pytorch_state_dict, tensorflow_js, tensorflow_saved_model_bundle
 	 * and torchscript
 	 * 
 	 * @return the Deep Learning framework of the model
 	 */
-	public String getWeightsFormat();
+	public String getFramework();
 	
 	/**
 	 * SHA256 checksum of the source file

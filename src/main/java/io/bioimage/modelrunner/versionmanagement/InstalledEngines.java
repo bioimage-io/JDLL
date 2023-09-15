@@ -144,18 +144,18 @@ public class InstalledEngines {
      * Creates a list containing only downloaded Deep Learning versions compatible with
      * the current system and corresponding to the engine of interest
      * 
-     * @param engine
+     * @param framework
      * 	name of the engine as defined with the engine tag at:
      * 	https://raw.githubusercontent.com/bioimage-io/model-runner-java/main/src/main/resources/availableDLVersions.json
      * 	for example tensorflow, pytorch, onnx
      * @return The available versions instance.
      */
-    public List<DeepLearningVersion> getDownloadedForEngine(String engine) {
-    	String searchEngine = AvailableEngines.getSupportedVersionsEngineTag(engine);
+    public List<DeepLearningVersion> getDownloadedForFramework(String framework) {
+    	String searchEngine = AvailableEngines.getSupportedFrameworkTag(framework);
     	if (searchEngine == null)
     		return new ArrayList<DeepLearningVersion>();
         return getDownloadedForOS().stream()
-	        .filter(v -> searchEngine.contains(v.getEngine().toLowerCase()))
+	        .filter(v -> searchEngine.contains(v.getFramework().toLowerCase()))
 			.collect(Collectors.toList());
     }	
     
@@ -163,7 +163,20 @@ public class InstalledEngines {
      * Creates a list containing only downloaded Deep Learning versions compatible with
      * the current system, corresponding to the engine of interest and corresponding version
      * 
-     * @param engine
+     * 
+     * Note that this method looks at the framework versions specified at:
+     * https://github.com/bioimage-io/JDLL/blob/main/src/main/resources/supportedVersions.json
+     * 
+     * This file contains all the versions for each framework supported by JDLL.
+     * Note that several of the python versions point to a single Java API version. This
+     * happens because not every Python version has an exact Java APi made for it. HOwever,
+     * the Java API is made with enough flexibility so that is compatible with the previous
+     * Python versions that do not have an API. 
+     * BEcause of this, for some versions such as Tensorflow 2.8, the version that will be
+     * retrieved by this method will be Tensorflow 2.10.1. The API created for Tensorflow 2.10.1
+     * is completely capable of running Tensorflow 2.8.
+     * 
+     * @param framework
      * 	name of the engine as defined with the engine tag at:
      * 	https://raw.githubusercontent.com/bioimage-io/model-runner-java/main/src/main/resources/availableDLVersions.json
      * 	for example tensorflow, pytorch, onnx
@@ -171,14 +184,12 @@ public class InstalledEngines {
      * 	version of interest of the engine
      * @return The available versions instance.
      */
-    public List<DeepLearningVersion> getDownloadedForVersionedEngine(String engine, String version) {
-    	String searchEngine = AvailableEngines.getSupportedVersionsEngineTag(engine);
+    public List<DeepLearningVersion> getDownloadedForVersionedFramework(String framework, String version) {
+    	String searchEngine = AvailableEngines.getSupportedFrameworkTag(framework);
     	if (searchEngine == null)
     		return new ArrayList<DeepLearningVersion>();
-        return getDownloadedForOS().stream()
-	        .filter(v -> searchEngine.contains(v.getEngine().toLowerCase())
-	        		&& v.getPythonVersion().equals(version))
-			.collect(Collectors.toList());
+        return checkEngineWithArgsInstalledForOS(framework, 
+        		version, null, null);
     }	
     
     /**
@@ -187,15 +198,15 @@ public class InstalledEngines {
      * 
      * @param enginesPath
      * 	path to where the engines are stored
-     * @param engine
+     * @param framework
      * 	name of the engine as defined with the engine tag at:
      * 	https://raw.githubusercontent.com/bioimage-io/model-runner-java/main/src/main/resources/availableDLVersions.json
      * 	for example tensorflow, pytorch, onnx
      * @return The available versions instance.
      */
-    public static List<DeepLearningVersion> getDownloadedForEngine(String enginesPath, String engine) {
+    public static List<DeepLearningVersion> getDownloadedForFramework(String enginesPath, String framework) {
     	try{
-    		return buildEnginesFinder(enginesPath).getDownloadedForEngine(engine);
+    		return buildEnginesFinder(enginesPath).getDownloadedForFramework(framework);
     	} catch (IOException ex) {
     		return new ArrayList<DeepLearningVersion>();
     	}
@@ -209,9 +220,11 @@ public class InstalledEngines {
     public List<DeepLearningVersion> getDownloadedForOS()
     {
         String currentPlatform = new PlatformDetection().toString();
-        boolean rosetta = new PlatformDetection().isUsingRosseta();
+        boolean rosetta = PlatformDetection.isUsingRosseta();
+        int javaVersion = PlatformDetection.getJavaVersion();
     	List<DeepLearningVersion> versions = getAll();
-    	versions.stream().filter(v -> v.getOs().equals(currentPlatform)
+    	versions = versions.stream().filter(v -> v.getOs().equals(currentPlatform)
+    			&& javaVersion >= v.getMinJavaVersion()
 				&& (!rosetta || (rosetta && v.getRosetta())))
     	.collect(Collectors.toList());
         return versions;
@@ -236,12 +249,12 @@ public class InstalledEngines {
      * Return a list of all the downloaded Python versions of the corresponding engine
      * are installed in the local machine
      * 
-     * @param engine
+     * @param framework
      * 	the engine of interest
      * @return the list of deep learning versions for the given engine
      */
-    public List<String> getDownloadedPythonVersionsForEngine(String engine) {
-    	return getDownloadedForEngine(engine).stream()
+    public List<String> getDownloadedPythonVersionsForFramework(String framework) {
+    	return getDownloadedForFramework(framework).stream()
     			.map(DeepLearningVersion::getPythonVersion).collect(Collectors.toList());
     }
     
@@ -251,13 +264,13 @@ public class InstalledEngines {
      * 
      * @param enginesPath
      * 	path to where the engines are stored
-     * @param engine
+     * @param framework
      * 	the engine of interest
      * @return the list of deep learning versions for the given engine
      */
-    public static List<String> getDownloadedPythonVersionsForEngine(String enginesPath, String engine) {
+    public static List<String> getDownloadedPythonVersionsForFramework(String enginesPath, String framework) {
     	try{
-    		return buildEnginesFinder(enginesPath).getDownloadedPythonVersionsForEngine(engine);
+    		return buildEnginesFinder(enginesPath).getDownloadedPythonVersionsForFramework(framework);
     	} catch (IOException ex) {
     		return new ArrayList<String>();
     	}
@@ -288,7 +301,7 @@ public class InstalledEngines {
 	 * For a specific Deep Learning framework, specified by the parameter
 	 * engine, and a specific version of interest, return the closest existing
 	 * version among the installed ones for the DL framework
-     * @param engine
+     * @param framework
      * 	the engine of interest
 	 * 	Deep Learning framework (tensorflow, pytorch, onnx...) as defined with the engine tag 
 	 * at https://raw.githubusercontent.com/bioimage-io/model-runner-java/main/src/main/resources/availableDLVersions.json
@@ -296,16 +309,16 @@ public class InstalledEngines {
 	 * 	the version of interest
 	 * @return the closest version to the version provided for the engine provided
 	 */
-    public String getMostCompatibleVersionForEngine(String engine, String version) {
-		List<String> downloadedVersions = getDownloadedPythonVersionsForEngine(engine);
-		return  VersionStringUtils.getMostCompatibleEngineVersion(version, downloadedVersions, engine);
+    public String getMostCompatibleVersionForFramework(String framework, String version) {
+		List<String> downloadedVersions = getDownloadedPythonVersionsForFramework(framework);
+		return  VersionStringUtils.getMostCompatibleEngineVersion(version, downloadedVersions, framework);
     }
 
 	/**
 	 * For a specific Deep Learning framework, specified by the parameter
 	 * engine, and a specific version of interest, return the closest existing
 	 * version among the installed ones for the DL framework
-     * @param engine
+     * @param framework
      * 	the engine of interest
 	 * 	Deep Learning framework (tensorflow, pytorch, onnx...) as defined with the engine tag 
 	 * at https://raw.githubusercontent.com/bioimage-io/model-runner-java/main/src/main/resources/availableDLVersions.json
@@ -315,11 +328,11 @@ public class InstalledEngines {
      * 	path to where the engines are stored
 	 * @return the closest version to the version provided for the engine provided
 	 */
-    public static String getMostCompatibleVersionForEngine(String engine, String version, String enginesDir) {
+    public static String getMostCompatibleVersionForFramework(String framework, String version, String enginesDir) {
 		try {
 			InstalledEngines installed = InstalledEngines.buildEnginesFinder(enginesDir);
-			List<String> downloadedVersions = installed.getDownloadedPythonVersionsForEngine(engine);
-			return  VersionStringUtils.getMostCompatibleEngineVersion(version, downloadedVersions, engine);
+			List<String> downloadedVersions = installed.getDownloadedPythonVersionsForFramework(framework);
+			return  VersionStringUtils.getMostCompatibleEngineVersion(version, downloadedVersions, framework);
 		} catch (IOException e) {
 			return null;
 		}
@@ -329,7 +342,20 @@ public class InstalledEngines {
      * Returns a list of all the installed engine versions that are compatible
      * with the versioned engine provided in the input parameters.
      * 
-     * @param engine
+     * 
+     * Note that this method looks at the framework versions specified at:
+     * https://github.com/bioimage-io/JDLL/blob/main/src/main/resources/supportedVersions.json
+     * 
+     * This file contains all the versions for each framework supported by JDLL.
+     * Note that several of the python versions point to a single Java API version. This
+     * happens because not every Python version has an exact Java APi made for it. HOwever,
+     * the Java API is made with enough flexibility so that is compatible with the previous
+     * Python versions that do not have an API. 
+     * BEcause of this, for some versions such as Tensorflow 2.8, the version that will be
+     * retrieved by this method will be Tensorflow 2.10.1. The API created for Tensorflow 2.10.1
+     * is completely capable of running Tensorflow 2.8.
+     * 
+     * @param framework
      * 	name of the DL framework of interest
      * @param version
      * 	original version we are looking for compatibles
@@ -338,12 +364,12 @@ public class InstalledEngines {
      * @return a list of all the string versions compatible
      *  with the provided versioned engine
      */
-    public static List<String> getOrderedListOfCompatibleVesionsForEngine(String engine, 
+    public static List<String> getOrderedListOfCompatibleVesionsForFramework(String framework, 
     		String version, String enginesDir) {
     	try {
 			InstalledEngines installed = InstalledEngines.buildEnginesFinder(enginesDir);
-			List<String> downloadedVersions = installed.getDownloadedPythonVersionsForEngine(engine);
-			return  VersionStringUtils.getCompatibleEngineVersionsInOrder(version, downloadedVersions, engine);
+			List<String> downloadedVersions = installed.getDownloadedPythonVersionsForFramework(framework);
+			return  VersionStringUtils.getCompatibleEngineVersionsInOrder(version, downloadedVersions, framework);
 		} catch (IOException e) {
 			return null;
 		}
@@ -351,14 +377,28 @@ public class InstalledEngines {
     
     /**
      * Check whether the engine version of interest is installed or not
-     * @param engine
+     * 
+     * 
+     * Note that this method looks at the framework versions specified at:
+     * https://github.com/bioimage-io/JDLL/blob/main/src/main/resources/supportedVersions.json
+     * 
+     * This file contains all the versions for each framework supported by JDLL.
+     * Note that several of the python versions point to a single Java API version. This
+     * happens because not every Python version has an exact Java APi made for it. HOwever,
+     * the Java API is made with enough flexibility so that is compatible with the previous
+     * Python versions that do not have an API. 
+     * BEcause of this, for some versions such as Tensorflow 2.8, the version that will be
+     * retrieved by this method will be Tensorflow 2.10.1. The API created for Tensorflow 2.10.1
+     * is completely capable of running Tensorflow 2.8.
+     * 
+     * @param framework
      * 	DL framework of interest
      * @param version
      * 	version of the DL framework
      * @return true if it is installed and false otherwise
      */
-    public boolean checkEngineVersionInstalled(String engine, String version) {
-		List<String> downloadedVersions = getDownloadedPythonVersionsForEngine(engine);
+    public boolean checkFrameworkVersionInstalled(String framework, String version) {
+		List<String> downloadedVersions = getDownloadedPythonVersionsForFramework(framework);
 		String v = downloadedVersions.stream()
 				.filter(vv -> vv.equals(version)).findFirst().orElse(null);
 		return v != null;
@@ -366,7 +406,21 @@ public class InstalledEngines {
     
     /**
      * Check whether the engine version of interest is installed or not
-     * @param engine
+     * 
+     * 
+     * Note that this method looks at the framework versions specified at:
+     * https://github.com/bioimage-io/JDLL/blob/main/src/main/resources/supportedVersions.json
+     * 
+     * This file contains all the versions for each framework supported by JDLL.
+     * Note that several of the python versions point to a single Java API version. This
+     * happens because not every Python version has an exact Java APi made for it. HOwever,
+     * the Java API is made with enough flexibility so that is compatible with the previous
+     * Python versions that do not have an API. 
+     * BEcause of this, for some versions such as Tensorflow 2.8, the version that will be
+     * retrieved by this method will be Tensorflow 2.10.1. The API created for Tensorflow 2.10.1
+     * is completely capable of running Tensorflow 2.8.
+     * 
+     * @param framework
      * 	DL framework of interest
      * @param version
      * 	version of the DL framework
@@ -374,10 +428,10 @@ public class InstalledEngines {
      * 	directory where all the engines are located
      * @return true if it is installed and false otherwise
      */
-    public static boolean checkEngineVersionInstalled(String engine, String version, String enginesDir) {
+    public static boolean checkFrameworkVersionInstalled(String framework, String version, String enginesDir) {
     	try {
 			InstalledEngines installed = InstalledEngines.buildEnginesFinder(enginesDir);
-			return installed.checkEngineVersionInstalled(engine, version);
+			return installed.checkFrameworkVersionInstalled(framework, version);
 		} catch (IOException e) {
 			return false;
 		}
@@ -393,7 +447,19 @@ public class InstalledEngines {
      * the resulting list of engines will contain both engines that support and do not support GPU.
      * 
      * 
-     * @param engine
+     * Note that this method looks at the framework versions specified at:
+     * https://github.com/bioimage-io/JDLL/blob/main/src/main/resources/supportedVersions.json
+     * 
+     * This file contains all the versions for each framework supported by JDLL.
+     * Note that several of the python versions point to a single Java API version. This
+     * happens because not every Python version has an exact Java APi made for it. HOwever,
+     * the Java API is made with enough flexibility so that is compatible with the previous
+     * Python versions that do not have an API. 
+     * BEcause of this, for some versions such as Tensorflow 2.8, the version that will be
+     * retrieved by this method will be Tensorflow 2.10.1. The API created for Tensorflow 2.10.1
+     * is completely capable of running Tensorflow 2.8.
+     * 
+     * @param framework
      * 	the name of the DL framework. Can be null.
      * @param version
      * 	the version of the DL framework in Python. Can be null.
@@ -404,25 +470,34 @@ public class InstalledEngines {
      * @param rosetta
      * 	only relevant for MAC M1 and M2. Whether the framework can run as x86_64 in 
      * 	arm64 based MACOS. Can be null.
+     * @param minJavaVersion
+     * 	minimum Java version that the engine needs to work. Can be null.
      * @return a list containing a list of installed engiens satisfying the constraints
      */
-    public List<DeepLearningVersion> checkEngineWithArgsInstalled(String engine, 
-    		String version, Boolean cpu, Boolean gpu, Boolean rosetta) {
+    public List<DeepLearningVersion> checkEngineWithArgsInstalled(String framework, 
+    		String version, Boolean cpu, Boolean gpu, Boolean rosetta, Integer minJavaVersion) {
     	String searchEngine;
-    	if (engine != null)
-    		searchEngine = AvailableEngines.getSupportedVersionsEngineTag(engine);
+    	if (framework != null)
+    		searchEngine = AvailableEngines.getSupportedFrameworkTag(framework);
     	else
     		searchEngine = null;
-    	if (searchEngine == null && engine != null)
+    	if (searchEngine == null && framework != null)
     		return new ArrayList<DeepLearningVersion>();
+    	String javaVersion;
+    	if (version != null)
+    		javaVersion = SupportedVersions.getJavaVersionForPythonVersion(searchEngine, version);
+    	else
+    		javaVersion = null;
 		List<DeepLearningVersion> filtered = getDownloadedForOS().stream().filter(vv ->{
-			if (searchEngine != null && !vv.getEngine().toLowerCase().equals(searchEngine))
+			if (searchEngine != null && !vv.getFramework().toLowerCase().equals(searchEngine))
 				return false;
-			else if (version != null && !vv.getPythonVersion().toLowerCase().equals(version.toLowerCase()))
+			else if (javaVersion != null && !vv.getVersion().toLowerCase().equals(javaVersion.toLowerCase()))
 				return false;
 			else if (cpu != null && vv.getCPU() != cpu)
 				return false;
 			else if (gpu != null && vv.getGPU() != gpu)
+				return false;
+			else if (minJavaVersion != null && vv.getMinJavaVersion() > minJavaVersion)
 				return false;
 			else if (rosetta != null && rosetta == true && vv.getRosetta() != rosetta)
 				return false;
@@ -442,7 +517,21 @@ public class InstalledEngines {
      * 
      * The ONLY PARAMETER THAT CANNOT BE NULL IS: enginesDir
      * 
-     * @param engine
+     * 
+     * 
+     * Note that this method looks at the framework versions specified at:
+     * https://github.com/bioimage-io/JDLL/blob/main/src/main/resources/supportedVersions.json
+     * 
+     * This file contains all the versions for each framework supported by JDLL.
+     * Note that several of the python versions point to a single Java API version. This
+     * happens because not every Python version has an exact Java APi made for it. HOwever,
+     * the Java API is made with enough flexibility so that is compatible with the previous
+     * Python versions that do not have an API. 
+     * BEcause of this, for some versions such as Tensorflow 2.8, the version that will be
+     * retrieved by this method will be Tensorflow 2.10.1. The API created for Tensorflow 2.10.1
+     * is completely capable of running Tensorflow 2.8.
+     * 
+     * @param framework
      * 	the name of the DL framework. Can be null.
      * @param version
      * 	the version of the DL framework in Python. Can be null.
@@ -453,16 +542,99 @@ public class InstalledEngines {
      * @param rosetta
      * 	only relevant for MAC M1 and M2. Whether the framework can run as x86_64 in 
      * 	arm64 based MACOS. Can be null.
+     * @param minJavaVersion
+     * 	minimum Java version that the engine needs to work. Can be null
      * @param enginesDir
      * 	the directory where all the engines are stored. CANNOT BE NULL.
      * @return a list containing a list of installed engiens satisfying the constraints
      */
-    public static List<DeepLearningVersion> checkEngineWithArgsInstalled(String engine, 
-    		String version, Boolean cpu, Boolean gpu, Boolean rosetta, String enginesDir) {
+    public static List<DeepLearningVersion> checkEngineWithArgsInstalled(String framework, 
+    		String version, Boolean cpu, Boolean gpu, Boolean rosetta, 
+    		Integer minJavaVersion, String enginesDir) {
     	Objects.requireNonNull(enginesDir);
     	try {
 			InstalledEngines installed = InstalledEngines.buildEnginesFinder(enginesDir);
-			return installed.checkEngineWithArgsInstalled(engine, version, cpu, gpu, rosetta);
+			return installed.checkEngineWithArgsInstalled(framework, version, 
+					cpu, gpu, rosetta, minJavaVersion);
+		} catch (IOException e) {
+			return new ArrayList<DeepLearningVersion>();
+		}
+    }
+    
+    /**
+     * Returns a list of the installed Deep Learning versions (engines) that 
+     * satisfy the filters specified by the arguments of the method.
+     * The method filter the engines not compatible with the current operating system
+     * and Java version automatically.
+     * 
+     * If one of the parameter is not relevant for the search, setting it to null will deactivate
+     * it for the search.
+     * If we do not care whether the engine supports GPu or not, we can set 'gpu = null', and
+     * the resulting list of engines will contain both engines that support and do not support GPU.
+     * 
+     * 
+     * Note that this method looks at the framework versions specified at:
+     * https://github.com/bioimage-io/JDLL/blob/main/src/main/resources/supportedVersions.json
+     * 
+     * This file contains all the versions for each framework supported by JDLL.
+     * Note that several of the python versions point to a single Java API version. This
+     * happens because not every Python version has an exact Java APi made for it. HOwever,
+     * the Java API is made with enough flexibility so that is compatible with the previous
+     * Python versions that do not have an API. 
+     * BEcause of this, for some versions such as Tensorflow 2.8, the version that will be
+     * retrieved by this method will be Tensorflow 2.10.1. The API created for Tensorflow 2.10.1
+     * is completely capable of running Tensorflow 2.8.
+     * 
+     * @param framework
+     * 	the name of the DL framework. Can be null.
+     * @param version
+     * 	the version of the DL framework in Python. Can be null.
+     * @param cpu
+     * 	whether it supports running on CPU or not. Can be null.
+     * @param gpu
+     * 	whether it supports running on GPU or not. Can be null.
+     * @return a list containing a list of installed engiens satisfying the constraints
+     */
+    public List<DeepLearningVersion> checkEngineWithArgsInstalledForOS(String framework, 
+    		String version, Boolean cpu, Boolean gpu) {
+    	int javaVersion = PlatformDetection.getJavaVersion();
+    	boolean rosetta = PlatformDetection.isUsingRosseta();
+    	return checkEngineWithArgsInstalled(framework, version, cpu, gpu, 
+    			rosetta, javaVersion);
+    }
+    
+    /**
+     * Returns a list of the installed Deep Learning versions (engines) that satisfy the filters
+     * specified by the arguments of the method.
+     * The method filter the engines not compatible with the current operating system
+     * and Java version automatically.
+     * 
+     * If one of the parameter is not relevant for the search, setting it to null will deactivate
+     * it for the search.
+     * If we do not care whether the engine supports GPu or not, we can set 'gpu = null', and
+     * the resulting list of engines will contain both engines that support and do not support GPU.
+     * 
+     * The ONLY PARAMETER THAT CANNOT BE NULL IS: enginesDir
+     * 
+     * @param framework
+     * 	the name of the DL framework. Can be null.
+     * @param version
+     * 	the version of the DL framework in Python. Can be null.
+     * @param cpu
+     * 	whether it supports running on CPU or not. Can be null.
+     * @param gpu
+     * 	whether it supports running on GPU or not. Can be null.
+     * @param enginesDir
+     * 	the directory where all the engines are stored. CANNOT BE NULL.
+     * @return a list containing a list of installed engiens satisfying the constraints
+     */
+    public static List<DeepLearningVersion> checkEngineWithArgsInstalledForOS(String framework, 
+    		String version, Boolean cpu, Boolean gpu,  String enginesDir) {
+    	Objects.requireNonNull(enginesDir);
+    	try {
+			InstalledEngines installed = InstalledEngines.buildEnginesFinder(enginesDir);
+			return installed.checkEngineWithArgsInstalledForOS(framework, version, 
+					cpu, gpu);
 		} catch (IOException e) {
 			return new ArrayList<DeepLearningVersion>();
 		}

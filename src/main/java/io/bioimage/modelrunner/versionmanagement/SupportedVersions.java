@@ -21,6 +21,7 @@ package io.bioimage.modelrunner.versionmanagement;
 
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Set;
@@ -40,6 +41,11 @@ import java.lang.reflect.Type;
  */
 public class SupportedVersions
 {
+	/**
+	 * Map containing all the versions supported by each framework and their 
+	 * correspondence between Java and Python
+	 */
+	private static HashMap< String, Object > ALL_VERSIONS;
 
 	/**
 	 * Key for the Java equivalent version in the JSON file
@@ -57,6 +63,24 @@ public class SupportedVersions
 	 * framework version
 	 */
 	private Set< String > versionSet;
+	
+	/**
+	 * Method to test which are the versions that should ver returned in every 
+	 * case
+	 * @param args
+	 * 	not used
+	 */
+	public static void main(String[] args) {
+		String vv = getClosestSupportedPythonVersion("tensorflow", "2.13.0");
+		String v1 = getClosestSupportedPythonVersion("tensorflow", "2");
+		String v2 = getClosestSupportedPythonVersion("tensorflow", "2.8");
+		String v3 = getClosestSupportedPythonVersion("tensorflow", "2.1");
+		String v4 = getClosestSupportedPythonVersion("tensorflow", "2.1.70");
+		String v5 = getClosestSupportedPythonVersion("tensorflow", "3");
+		String v7 = getClosestSupportedPythonVersion("onnx", "20");
+		String v8 = getClosestSupportedPythonVersion("onnx", "13");
+		System.out.print(false);
+	}
 
 	/**
 	 * Class to find the version of Deep Learning framework (engine) equivalent
@@ -68,8 +92,24 @@ public class SupportedVersions
 	 */
 	public SupportedVersions( String engine )
 	{
-		this.versionsDic = getSpecificEngineVersionsJson( engine );
+		engine = AvailableEngines.getSupportedFrameworkTag(engine);
+    	if (engine == null) 
+    		this.versionsDic = new LinkedTreeMap<String, Object>();
+    	else
+    		this.versionsDic = getSupportedVersionsForEngine( engine );
 		this.versionSet = this.versionsDic.keySet();
+	}
+	
+	/**
+	 * Finds the closest supported version by JDLL for the wanted
+	 * Deep Learning framework version wanted
+	 * @param version
+	 * 	version in Python of the Deep Learning framework selected
+	 * @return the version in Python closest to the provided one for 
+	 * 	the Deep LEarning framework selected
+	 */
+	public String getClosestSupportedPythonVersion(String version) {
+		return findVersionInJSON( version, versionSet );
 	}
 
 	/**
@@ -80,23 +120,13 @@ public class SupportedVersions
 	 *            version of the Deep Learning framework (engine) used to create
 	 *            the model
 	 * @return the corresponding Java version
-	 * @throws Exception
-	 *             throw exception in the case the version wanted is not
-	 *             supported
 	 */
-	public String getCorrespondingJavaVersion( String version ) throws Exception
+	public String getCorrespondingJavaVersion( String version )
 	{
-		if ( this.versionSet.contains( version ) )
-		{
-			return getJavaVersionFromVersionJSON( version, this.versionsDic );
-		}
-		else
-		{
-			version = findVersionInJSON( version, versionSet );
-			// TODO warn that the version used is not the exact same one as the
-			// one created
-			return getJavaVersionFromVersionJSON( version, this.versionsDic );
-		}
+		version = findVersionInJSON( version, versionSet );
+		// TODO warn that the version used is not the exact same one as the
+		// one created
+		return getJavaVersionFromVersionJSON( version, this.versionsDic );
 	}
 
 	/**
@@ -117,21 +147,21 @@ public class SupportedVersions
 		return supportedVersions;
 	}
 
-	// TODO add exception for not supported engine, engine that is not
-	// in the JSON file
 	/**
 	 * Get the supported versions for an specific Deep Learning framework
 	 * (engine)
 	 * 
-	 * @param specificEngine
+	 * @param engine
 	 *            the Deep Learning framework we want
 	 * @return a HashMap containing all the supported versions for a Deep
 	 *         Learning framework
 	 */
-	public static LinkedTreeMap< String, Object > getSpecificEngineVersionsJson( String specificEngine )
+	public static LinkedTreeMap< String, Object > getSupportedVersionsForEngine( String engine )
 	{
-		HashMap< String, Object > allVersions = readVersionsJson();
-		LinkedTreeMap< String, Object > engineVersions = ( LinkedTreeMap< String, Object > ) allVersions.get( specificEngine );
+		if (ALL_VERSIONS == null)
+			ALL_VERSIONS = readVersionsJson();
+		engine = AvailableEngines.getSupportedFrameworkTag(engine);
+		LinkedTreeMap< String, Object > engineVersions = ( LinkedTreeMap< String, Object > ) ALL_VERSIONS.get( engine );
 		return engineVersions;
 	}
 
@@ -148,41 +178,42 @@ public class SupportedVersions
 	 *            The wanted version of the Deep Learning framework
 	 * @param versionSet
 	 *            Set of all the versions supported by the program
-	 * @return the closest version to the available one
-	 * @throws Exception
-	 *             if the version is totally incompatible with the wanted one
+	 * @return the closest version to the available one, return
+	 *  null if there is no compatible version
 	 */
-	public static String findVersionInJSON( String version, Set< String > versionSet ) throws Exception
+	private static String findVersionInJSON( String version, Set< String > versionSet )
 	{
 		// Get the version with only major and minor version numbers, no
 		// revision number
 		// For example 2.8.1 -> 2.8. If the version already has not the revision
 		// number
 		// leave it as it is.
+		if (versionSet.contains(version))
+			return version;
 		if ( version.indexOf( "." ) != -1 && version.indexOf( "." ) != version.lastIndexOf( "." ) )
 		{
-			int secondDotPos = version.substring( version.indexOf( "." ) ).indexOf( "." );
-			version = version.substring( 0, version.indexOf( "." ) + secondDotPos );
+			int secondDotPos = version.substring( version.indexOf( "." ) + 1).indexOf( "." );
+			version = version.substring( 0, version.indexOf( "." ) + 1 + secondDotPos );
 		}
-		List< String > auxVersionList = versionSet.stream().map( s -> s.substring( 0, s.lastIndexOf( "." ) ) )
-				.collect( Collectors.toList() );
+		List< String > auxVersionList = versionSet.stream().map( s -> {
+			if (s.indexOf(".") == -1 || s.indexOf(".") == s.lastIndexOf("."))
+				return s;
+			return s.substring( 0, s.lastIndexOf( "." ));
+			}).collect( Collectors.toList() );
 		if ( auxVersionList.contains( version ) )
-		{ return ( String ) versionSet.toArray()[ auxVersionList.indexOf( version ) ]; }
+			return ( String ) versionSet.toArray()[ auxVersionList.indexOf( version ) ];
 		// If there is still no coincidence, just look for the major version.
 		// For example, in 2.3.4 just look for the most recent 2 version
 		if ( version.indexOf( "." ) != -1 )
 			version = version.substring( 0, version.indexOf( "." ) );
-		auxVersionList = auxVersionList.stream().map( s -> s.substring( 0, s.lastIndexOf( "." ) ) )
-				.collect( Collectors.toList() );
+		auxVersionList = auxVersionList.stream().map( s -> {
+			if (s.indexOf(".") == -1)
+				return s;
+			return s.substring( 0, s.indexOf( "." ));
+			}).collect( Collectors.toList() );
 		if ( auxVersionList.contains( version ) )
-		{
 			return ( String ) versionSet.toArray()[ auxVersionList.indexOf( version ) ];
-		}
-		else
-		{
-			// TODO create exception
-			throw new Exception();
-		}
+		return null;
 	}
 
 	/**
@@ -191,14 +222,15 @@ public class SupportedVersions
 	 * 
 	 * @param version
 	 *            version of the Deep Learning framework as it is written in the
-	 *            JSON file. It is the same as the original one but it might
-	 *            contain only
+	 *            JSON file. 
 	 * @param allVersions
 	 *            list of all supported versions
 	 * @return get the Java version for a specific Pyrhon version
 	 */
-	public static String getJavaVersionFromVersionJSON( String version, LinkedTreeMap< String, Object > allVersions )
+	private static String getJavaVersionFromVersionJSON( String version, LinkedTreeMap< String, Object > allVersions )
 	{
+		if (version == null)
+			return null;
 		LinkedTreeMap< String, String > versionJSON = ( LinkedTreeMap< String, String > ) allVersions.get( version );
 		return versionJSON.get( javaVersionsKey );
 	}
@@ -212,5 +244,33 @@ public class SupportedVersions
 	public Set< String > getSupportedVersions()
 	{
 		return this.versionSet;
+	}
+	
+	/**
+	 * Find the Java engine version that is compatible with the Python engine version provided
+	 * @param engine
+	 * 	the engine of interest
+	 * @param version
+	 * 	the python version of interest
+	 * @return the python version of interest or null if it does not exist
+	 */
+	public static String getJavaVersionForPythonVersion(String engine, String version) {
+		SupportedVersions sv = new SupportedVersions(engine);
+		return sv.getCorrespondingJavaVersion(version);
+	}
+	
+	/**
+	 * Finds the closest supported version by JDLL for the wanted
+	 * Deep Learning framework version wanted
+	 * @param engine
+	 * 	Deep LEarning frameework of interest
+	 * @param version
+	 * 	version in Python of the Deep Learning framework selected
+	 * @return the version in Python closest to the provided one for 
+	 * 	the Deep LEarning framework selected
+	 */
+	public static String getClosestSupportedPythonVersion(String engine, String version) {
+		SupportedVersions sv = new SupportedVersions(engine);
+		return sv.getClosestSupportedPythonVersion(version);
 	}
 }

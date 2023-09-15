@@ -69,10 +69,6 @@ public class ModelWeight
     private static String bioengineIdentifier = "bioengine";
     private static String gpuSuffix = " (supports gpu)";
     /**
-     * The key for the weights that are going to be used in the BioEngine
-     */
-    private String bioEngineWeightsKey;
-    /**
      * List of all the not supported Deep Learning frameworks by DeepIcy
      */
     private static ArrayList<String> supported = 
@@ -128,33 +124,6 @@ public class ModelWeight
         }
         return model;
     }
-    
-    /**
-     * Identifies the weights that are compatible with the Bioengine. The BioEngine
-     * canot run Tf 1 weights
-     */
-    private void findBioEngineWeights() {
-    	for (Entry<String, WeightFormat> entry : weightsDic.entrySet()) {
-    		if (entry.getValue().getWeightsFormat().equals(kerasIdentifier)) {
-    			bioEngineWeightsKey = kerasIdentifier;
-    			return;
-    		} else if (entry.getValue().getWeightsFormat().equals(onnxIdentifier)) {
-    			bioEngineWeightsKey = onnxIdentifier;
-    			return;
-    		} else if (entry.getValue().getWeightsFormat().equals(torchscriptIdentifier)) {
-    			bioEngineWeightsKey = torchscriptIdentifier;
-    			return;
-    		}
-    	}
-    }
-    
-    /**
-     * Return the key for the Bioengine weights that are going to be used
-     * @return the key for the bioengine weights
-     */
-    private String getBioEngineWeightsKey() {
-    	return this.bioEngineWeightsKey;
-    }
 
 	/**
      * Return the corresponding weight format
@@ -165,6 +134,8 @@ public class ModelWeight
      */
     public WeightFormat getWeightsByIdentifier(String weightsFormat) throws IOException
     {
+    	if (weightsFormat.equals(getBioengineID()))
+    		return null;
     	WeightFormat ww = weightsDic.get(weightsFormat);
     	
     	if (ww == null) {
@@ -198,7 +169,7 @@ public class ModelWeight
      */
     public List<String> getSupportedDLFrameworks() {
     	return weightsDic.entrySet().stream().
-    			map(i -> i.getValue().getWeightsFormat()).
+    			map(i -> i.getValue().getFramework()).
     			distinct().collect(Collectors.toList());
     }
     
@@ -233,14 +204,14 @@ public class ModelWeight
     			nSuffixes.put(entry.getKey(), entry.getValue());
     			continue;
     		}
-    		String engine = weightsDic.get(entry.getKey()).getWeightsFormat();
+    		String engine = weightsDic.get(entry.getKey()).getFramework();
     		String trainingVersion = weightsDic.get(entry.getKey()).getTrainingVersion();
     		List<DeepLearningVersion> copiesOfVersion = new ArrayList<DeepLearningVersion>();
 			try {
 				InstalledEngines installed = InstalledEngines.buildEnginesFinder();
-				List<String> downloadedVersions = installed.getDownloadedPythonVersionsForEngine(engine);
+				List<String> downloadedVersions = installed.getDownloadedPythonVersionsForFramework(engine);
 	    		String executionVersion = VersionStringUtils.getMostCompatibleEngineVersion(trainingVersion, downloadedVersions, engine);
-	    		copiesOfVersion = installed.getDownloadedForEngine(engine)
+	    		copiesOfVersion = installed.getDownloadedForFramework(engine)
 	    		.stream().filter(v -> v.getPythonVersion().equals(executionVersion)).collect(Collectors.toList());
     		} catch (IOException e) {
 				e.printStackTrace();
@@ -267,7 +238,7 @@ public class ModelWeight
      * @return the corresponding String depending on the presence of the engine or not
      */
     private String findLocalEngine(String version, String trainingVersion) {
-    	String engine = weightsDic.get(version).getWeightsFormat();
+    	String engine = weightsDic.get(version).getFramework();
     	if (engine.startsWith(bioengineIdentifier)) {
     		return "";
     	} else if (!supported.contains(engine)) {
@@ -276,7 +247,7 @@ public class ModelWeight
     	List<String> downloadedVersions = new ArrayList<String>();
 		try {
 			InstalledEngines installed = InstalledEngines.buildEnginesFinder();
-	    	downloadedVersions = installed.getDownloadedPythonVersionsForEngine(engine);
+	    	downloadedVersions = installed.getDownloadedPythonVersionsForFramework(engine);
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
@@ -349,7 +320,7 @@ public class ModelWeight
 		} else if (selectedWeights.startsWith(bioengineIdentifier)) {
 			this.selectedEngine = bioengineIdentifier;
 		} else {
-			throw new IllegalArgumentException("Unsupported Deep Learning framework in DeepIcy.");
+			throw new IllegalArgumentException("Unsupported Deep Learning framework for JDLL.");
 		}
 		setSelectedVersion(selectedWeights);
 		setSelectedWeights(selectedWeights);
@@ -366,8 +337,7 @@ public class ModelWeight
 			return;
 		}
 		String preffix = this.selectedEngine + "_v";
-		this.selectedVersion = selectedWeights.substring(preffix.length());
-		
+		this.selectedVersion = selectedWeights.substring(preffix.length());		
 	}
 	
 	/**
@@ -386,24 +356,8 @@ public class ModelWeight
 	 * that same engine can be loaded
 	 */
 	public void setWeightsAsLoaded() {
-		loadedWeights.put(selectedWeights.getWeightsFormat(), selectedWeights);
-	}
-
-    /** TODO finish when the BioEngine is better defined in the BioImage.io
-     * Create the name for the BioEngine weights. The name contains the name of the BioEngine
-     * 
-     * @param server
-     * 	the server with an instance of the bioengine where we want to connect
-     * @return the complete weights name
-     */
-    private String bioEngineName(String server) {
-    	if (server.startsWith("https://"))
-    		server = server.substring("https://".length());
-    	else if (server.startsWith("http://"))
-    		server = server.substring("http://".length());
-    	
-    	String name = bioengineIdentifier + " (" + server + ")";
-		return name;
+		if (selectedWeights != null)
+			loadedWeights.put(selectedWeights.getFramework(), selectedWeights);
 	}
 
     /**

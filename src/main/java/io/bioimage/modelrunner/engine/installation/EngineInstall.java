@@ -51,12 +51,12 @@ import io.bioimage.modelrunner.versionmanagement.InstalledEngines;
  * Class that manages the dl-modelrunner engines.
  * This class checks that the required engines are installed and installs them if they are not.
  * There is one required engine per DL framework. It can be either the latest one or the one specified
- * in the variable {@link EngineManagement#ENGINES_VERSIONS}.
+ * in the variable {@link EngineInstall#ENGINES_VERSIONS}.
  * This class also contains the methods to install engines on demand.
  * @author Carlos Garcia Lopez de Haro, Ivan Estevez Albuja and Caterina Fuster Barcelo
  *
  */
-public class EngineManagement {
+public class EngineInstall {
 	/**
 	 * Directory where the engines shold be installed
 	 */
@@ -161,11 +161,11 @@ public class EngineManagement {
 	 * Regard, that for certain engines, downloading all the OS depending engines
 	 * is necessary, as the dependencies vary from one system to another. 
 	 */
-	private EngineManagement() {
+	private EngineInstall() {
 	}
 	
 	/**
-	 * Creates an {@link EngineManagement} object to check if the required engines are installed.
+	 * Creates an {@link EngineInstall} object to check if the required engines are installed.
 	 * 
 	 * In order to reduce repetition and to reduce the number of deps downloaded
 	 * by the user when deepImageJ is installed, a selection of engines is created.
@@ -189,14 +189,14 @@ public class EngineManagement {
 	 * is necessary, as the dependencies vary from one system to another. 
 	 * @return a manager to handle the installation of basic engines
 	 */
-	public static EngineManagement createManager() {
-		EngineManagement manager =  new EngineManagement();
+	public static EngineInstall createInstaller() {
+		EngineInstall manager =  new EngineInstall();
 		manager.managersDir = ENGINES_DIR;
 		return manager;
 	}
 	
 	/**
-	 * Creates an {@link EngineManagement} object to check if the required engines are installed.
+	 * Creates an {@link EngineInstall} object to check if the required engines are installed.
 	 * 
 	 * In order to reduce repetition and to reduce the number of deps downloaded
 	 * by the user when deepImageJ is installed, a selection of engines is created.
@@ -224,8 +224,8 @@ public class EngineManagement {
 	 * 
 	 * @return a manager to handle the installation of basic engines
 	 */
-	public static EngineManagement createManager(String dir) {
-		EngineManagement manager =  new EngineManagement();
+	public static EngineInstall createInstaller(String dir) {
+		EngineInstall manager =  new EngineInstall();
 		manager.managersDir = dir;
 		return manager;
 	}
@@ -291,6 +291,7 @@ public class EngineManagement {
 	 * is necessary, as the dependencies vary from one system to another. 
 	 */
 	public void checkBasicEngineInstallation() {
+		everythingInstalled = false;
 		isManagementFinished = false;
 		readEnginesJSON();
 		checkEnginesInstalled();
@@ -411,9 +412,9 @@ public class EngineManagement {
 	 */
 	public static Map<String, String> getListOfSingleVersionsPerFrameworkNotInRequired() {
 		List<DeepLearningVersion> vList = AvailableEngines
-				.getForCurrentOS().getVersions().stream()
-				.filter( v -> !v.getEngine().startsWith(EngineInfo.getOnnxKey())
-						&& !ENGINES_VERSIONS.keySet().contains( v.getEngine() 
+				.getForCurrentOS().stream()
+				.filter( v -> !v.getFramework().startsWith(EngineInfo.getOnnxKey())
+						&& !ENGINES_VERSIONS.keySet().contains( v.getFramework() 
 						+ "_" + v.getPythonVersion().substring(0, v.getPythonVersion().indexOf(".")) ) 
 						&& v.getOs().equals(new PlatformDetection().toString()))
 				.collect(Collectors.groupingBy(DeepLearningVersion::getPythonVersion)).values().stream()
@@ -432,7 +433,7 @@ public class EngineManagement {
 			    .distinct().collect(Collectors.toList());
 
 		Map<String, String> versionsNotInRequired = vList.stream().collect(Collectors.toMap(
-							v -> v.getEngine() + "_" + v.getPythonVersion(), v -> v.getPythonVersion()));;
+							v -> v.getFramework() + "_" + v.getPythonVersion(), v -> v.getPythonVersion()));;
 		return versionsNotInRequired;
 	}
 	
@@ -542,7 +543,11 @@ public class EngineManagement {
 					TwoParameterConsumer<String, Double> consumer = DownloadTracker.createConsumerProgress();
 					if (this.consumersMap != null && this.consumersMap.get(v.getValue()) != null)
 						consumer = this.consumersMap.get(v.getValue());
-					return!installEngineByCompleteName(v.getValue(), consumer);
+					try {
+						return!installEngineByCompleteName(v.getValue(), consumer);
+					} catch (IOException | InterruptedException e) {
+						return true;
+					}
 				})
 				.collect(Collectors.toMap(v -> v.getKey(), v -> v.getValue(),
 						(u, v) -> u, LinkedHashMap::new));
@@ -555,8 +560,10 @@ public class EngineManagement {
 	 * 	is the whole path to the folder, and that the folder name should follow the 
 	 * 	dl-modelrunner naming convention (https://github.com/bioimage-io/model-runner-java#readme)
 	 * @return true if the installation was successful and false otherwise
+	 * @throws InterruptedException if the engine defined does not exist or any of the files is downloaded incorrectly
+	 * @throws IOException if the download is interrupted
 	 */
-	public static boolean installEngineByCompleteName(String engineDir) {
+	public static boolean installEngineByCompleteName(String engineDir) throws IOException, InterruptedException {
 		return installEngineByCompleteName(engineDir, null);
 	}
 	
@@ -569,19 +576,24 @@ public class EngineManagement {
 	 * @param consumer
 	 * 	consumer used to communicate the progress made donwloading files. It can be null
 	 * @return true if the installation was successful and false otherwise
+	 * @throws IOException if the engine does not exist or the download of any of the files fails
+	 * @throws InterruptedException if the download is interrupted
 	 */
 	public static boolean installEngineByCompleteName(String engineDir,
-			DownloadTracker.TwoParameterConsumer<String, Double> consumer) {
+			DownloadTracker.TwoParameterConsumer<String, Double> consumer) throws IOException, InterruptedException {
 		File engineFileDir = new File(engineDir);
 		if (!engineFileDir.isDirectory() && engineFileDir.mkdirs() == false)
 			return false;
 		DeepLearningVersion dlVersion;
 		try {
 			dlVersion = DeepLearningVersion.fromFile(engineFileDir);
-			return installEngine(dlVersion, consumer);
 		} catch (Exception e) {
 			return false;
 		}
+		if (dlVersion == null)
+			throw new IOException("JDLL does not support any engine compatible with the provided engine directory: "
+					+ engineDir);
+		return installEngine(dlVersion, consumer);
 	}
 	
 	/**
@@ -655,25 +667,25 @@ public class EngineManagement {
 	public static boolean installEngineForWeightsInDir(WeightFormat ww, String enginesDir, 
 			DownloadTracker.TwoParameterConsumer<String, Double> consumer) throws IOException, InterruptedException {
 		InstalledEngines manager = InstalledEngines.buildEnginesFinder(enginesDir);
-		String engine = ww.getWeightsFormat();
+		String engine = ww.getFramework();
 		String version = ww.getTrainingVersion();
-		List<DeepLearningVersion> vs = manager.getDownloadedForVersionedEngine(engine, version);
+		List<DeepLearningVersion> vs = manager.getDownloadedForVersionedFramework(engine, version);
 		if (vs.size() != 0)
 			return true;
-		if (AvailableEngines.isEngineSupported(engine, version, true, true)) {
-			DeepLearningVersion dlv = 
-					AvailableEngines.getEnginesForOsByParams(engine, version, true, true).get(0);
-			return installEngineInDir(dlv, enginesDir, consumer);
-		} else if (AvailableEngines.isEngineSupported(engine, version, true, false)) {
-			DeepLearningVersion dlv = 
-					AvailableEngines.getEnginesForOsByParams(engine, version, true, false).get(0);
-			return installEngineInDir(dlv, enginesDir, consumer);
-		} else if (AvailableEngines.isEngineSupported(engine, version, false, true)) {
-			DeepLearningVersion dlv = 
-					AvailableEngines.getEnginesForOsByParams(engine, version, false, true).get(0);
-			return installEngineInDir(dlv, enginesDir, consumer);
+		DeepLearningVersion dlv;
+		if (AvailableEngines.isEngineSupportedInOS(engine, version, true, true)) {
+			dlv = AvailableEngines.getEnginesForOsByParams(engine, version, true, true).get(0);
+		} else if (AvailableEngines.isEngineSupportedInOS(engine, version, true, false)) {
+			dlv = AvailableEngines.getEnginesForOsByParams(engine, version, true, false).get(0);
+		} else if (AvailableEngines.isEngineSupportedInOS(engine, version, false, true)) {
+			dlv = AvailableEngines.getEnginesForOsByParams(engine, version, false, true).get(0);
+		} else {
+			return false;
 		}
-		return false;
+		if (dlv == null)
+			throw new IOException("JDLL does not support any engine compatible with the provided WeightFormat: "
+					+ ww.getFramework() + " " + ww.getTrainingVersion());
+		return installEngineInDir(dlv, enginesDir, consumer);
 	}
 
 	/**
@@ -757,7 +769,7 @@ public class EngineManagement {
 			try {
 				boolean status = installEngineForWeightsInDir(ww, enginesDir, consumer);
 				if (!status)
-					System.out.println("DL engine not supported by JDLL: " + ww.getWeightsFormat());
+					System.out.println("DL engine not supported by JDLL: " + ww.getFramework());
 			} catch (IOException | InterruptedException e) {
 				e.printStackTrace();
 				installed = false;
@@ -1079,7 +1091,7 @@ public class EngineManagement {
 		if (consumer == null)
 			consumer = DownloadTracker.createConsumerProgress();
 		String folder = engineDir + File.separator + engine.folderName();
-		if (!new File(folder).isDirectory() && !new File(folder).mkdir())
+		if (!new File(folder).isDirectory() && !new File(folder).mkdirs())
 			throw new IOException("Unable to create the folder where the engine "
 					+ "will be installed: " + folder);
 		
@@ -1102,7 +1114,7 @@ public class EngineManagement {
 		List<String> badDownloads = tracker.findMissingDownloads();
 		if (badDownloads.size() > 0)
 			throw new IOException("The following files of engine '" + engine.folderName()
-			+ "' where downloaded incorrectly: " + badDownloads.toString());
+			+ "' were downloaded incorrectly: " + badDownloads.toString());
 		return true;
 	}
 	
@@ -1224,18 +1236,25 @@ public class EngineManagement {
 			DownloadTracker.TwoParameterConsumer<String, Double> consumer) throws IOException, InterruptedException {
 		if (AvailableEngines.bioimageioToModelRunnerKeysMap().get(framework) != null)
 			framework = AvailableEngines.bioimageioToModelRunnerKeysMap().get(framework);
-		DeepLearningVersion engine = AvailableEngines.filterByEngineForOS(framework).getVersions()
-				.stream().filter(v -> (v.getPythonVersion() == version)
+		DeepLearningVersion engine = AvailableEngines.filterByFrameworkForOS(framework)
+				.stream().filter(v -> (v.getPythonVersion().equals(version))
 					&& (v.getCPU() == cpu)
 					&& (v.getGPU() == gpu)).findFirst().orElse(null);
+
+		if (engine == null)
+			throw new IOException("JDLL does not support any engine compatible with the provided arguments: "
+					+ "framework=" + framework + " " 
+					+ "version=" + version + " " 
+					+ "cpu=" + cpu + " " 
+					+ "gpu=" + gpu);
 		return installEngineInDir(engine, dir, consumer);
 	}
     
     /**
-     * Check whether the management of the engines is finished or not
+     * Check whether the installation of the engines is finished or not
      * @return true if it is finished or false otherwise
      */
-    public boolean isManagementDone() {
+    public boolean isInstallationFinished() {
     	return isManagementFinished;
     }
     
@@ -1254,12 +1273,12 @@ public class EngineManagement {
     public static boolean isEngineSupported(String framework, String version, boolean cpu, boolean gpu) {
     	if (ENGINES_MAP.get(framework) != null)
 			framework = AvailableEngines.bioimageioToModelRunnerKeysMap().get(framework);
-    	DeepLearningVersion engine = AvailableEngines.filterByEngineForOS(framework).getVersions()
+    	DeepLearningVersion engine = AvailableEngines.filterByFrameworkForOS(framework)
 				.stream().filter(v -> v.getPythonVersion().equals(version) 
 						&& v.getOs().equals(new PlatformDetection().toString())
 						&& v.getCPU() == cpu
 						&& v.getGPU() == gpu
-						&& (!(new PlatformDetection().isUsingRosseta()) || v.getRosetta()))
+						&& (!(PlatformDetection.isUsingRosseta()) || v.getRosetta()))
 				.findFirst().orElse(null);
 		if (engine == null) 
 			return false;

@@ -32,8 +32,8 @@ public class ByteArrayUtils {
 	 * 	the byte array
 	 * @return a integer 16 buffer containing the wanted data
 	 */
-	public static short[] convertIntoSignedShort16(byte[] arr) {
-		return convertIntoSignedShort16(arr, ByteOrder.LITTLE_ENDIAN);
+	public static short[] toInt16(byte[] arr) {
+		return toInt16(arr, ByteOrder.LITTLE_ENDIAN);
 	}
 
 		
@@ -46,7 +46,7 @@ public class ByteArrayUtils {
 	 * 	the order of the bytes in the array, LittleEndian or BigEndian
 	 * @return a integer 16 buffer containing the wanted data
 	 */
-	public static short[] convertIntoSignedShort16(byte[] arr, ByteOrder byteOrder) {
+	public static short[] toInt16(byte[] arr, ByteOrder byteOrder) {
 		short[] int16 = new short[arr.length / 2];
 		for ( int i = 0; i < arr.length / 4; i ++) {
 			byte[] intArr = new byte[2];
@@ -64,8 +64,8 @@ public class ByteArrayUtils {
 	 * 	the byte array
 	 * @return a int array containing the wanted data
 	 */
-	public static int[] convertIntoUInt8(byte[] arr) {
-		return convertIntoUInt8(arr, ByteOrder.LITTLE_ENDIAN);
+	public static int[] toUInt8(byte[] arr) {
+		return toUInt8(arr, ByteOrder.LITTLE_ENDIAN);
 	}
 			
 	/**
@@ -77,7 +77,7 @@ public class ByteArrayUtils {
 	 * 	the order of the bytes in the array, LittleEndian or BigEndian
 	 * @return a int array containing the wanted data
 	 */
-	public static int[] convertIntoUInt8(byte[] arr, ByteOrder byteOrder) {
+	public static int[] toUInt8(byte[] arr, ByteOrder byteOrder) {
 		int[] int32 = new int[arr.length];
 		for ( int i = 0; i < arr.length; i ++) {
 			if (arr[i] < 0)
@@ -95,8 +95,8 @@ public class ByteArrayUtils {
 	* 	the byte array
 	* @return a int array containing the wanted data
 	*/
-	public static int[] convertIntoSignedInt32(byte[] arr) {
-		return convertIntoSignedInt32(arr, ByteOrder.LITTLE_ENDIAN);
+	public static int[] toInt32(byte[] arr) {
+		return toInt32(arr, ByteOrder.LITTLE_ENDIAN);
 	}
 		
 	/**
@@ -108,7 +108,7 @@ public class ByteArrayUtils {
 	 * 	the order of the bytes in the array, LittleEndian or BigEndian
 	* @return a int array containing the wanted data
 	*/
-	public static int[] convertIntoSignedInt32(byte[] arr, ByteOrder byteOrder) {
+	public static int[] toInt32(byte[] arr, ByteOrder byteOrder) {
 		int[] int32 = new int[arr.length / 4];
 		for ( int i = 0; i < arr.length / 4; i ++) {
 			byte[] intArr = new byte[4];
@@ -131,8 +131,8 @@ public class ByteArrayUtils {
 	 * 	the byte array
 	 * @return an long array containing the wanted data
 	 */
-	public static long[] convertIntoUnsignedInt32(byte[] arr) {
-		return convertIntoUnsignedInt32(arr, ByteOrder.LITTLE_ENDIAN);
+	public static long[] toUInt32(byte[] arr) {
+		return toUInt32(arr, ByteOrder.LITTLE_ENDIAN);
 	}
 	
 	/**
@@ -147,7 +147,7 @@ public class ByteArrayUtils {
 	 * 	the order of the bytes in the array, LittleEndian or BigEndian
 	 * @return an long array containing the wanted data
 	 */
-	public static long[] convertIntoUnsignedInt32(byte[] arr, ByteOrder byteOrder) {
+	public static long[] toUInt32(byte[] arr, ByteOrder byteOrder) {
 		long[] uint32 = new long[arr.length / 4];
 		for ( int i = 0; i < arr.length / 4; i ++) {
 			byte[] intArr = new byte[4];
@@ -157,7 +157,7 @@ public class ByteArrayUtils {
 			intArr[3] = arr[i * 4 + 3];
 			int number = ByteBuffer.wrap(intArr).order(byteOrder).getInt();
 			if (number < 0)
-				uint32[i] = 2^32 + number;
+				uint32[i] = (long) (Math.pow(2, 32) + number);
 			else
 				uint32[i] = number;
 		}
@@ -174,8 +174,8 @@ public class ByteArrayUtils {
 	 * 	the byte array
 	 * @return an int array containing the wanted data
 	 */
-	public static int[] convertIntoUnsignedInt16(byte[] arr) {
-		return convertIntoUnsignedInt16(arr, ByteOrder.LITTLE_ENDIAN);
+	public static int[] toUInt16(byte[] arr) {
+		return toUInt16(arr, ByteOrder.LITTLE_ENDIAN);
 	}
 	
 	/**
@@ -190,7 +190,7 @@ public class ByteArrayUtils {
 	 * 	the order of the bytes in the array, LittleEndian or BigEndian
 	 * @return an int array containing the wanted data
 	 */
-	public static int[] convertIntoUnsignedInt16(byte[] arr, ByteOrder byteOrder) {
+	public static int[] toUInt16(byte[] arr, ByteOrder byteOrder) {
 		int[] int16 = new int[arr.length / 2];
 		for ( int i = 0; i < arr.length / 4; i ++) {
 			byte[] intArr = new byte[2];
@@ -198,7 +198,7 @@ public class ByteArrayUtils {
 			intArr[1] = arr[i * 4 + 1];
 			short number = ByteBuffer.wrap(intArr).order(byteOrder).getShort();
 			if (number < 0)
-				int16[i] = 2^16 + number;
+				int16[i] = (int) (Math.pow(2, 16) + number);
 			else
 				int16[i] = number;
 		}
@@ -212,8 +212,8 @@ public class ByteArrayUtils {
 	 * 	the byte array
 	 * @return a float arr containing the wanted data
 	 */
-	public static float[] convertIntoSignedFloat32(byte[] arr) {
-		return convertIntoSignedFloat32(arr, ByteOrder.LITTLE_ENDIAN);
+	public static float[] toFloat32(byte[] arr) {
+		return toFloat32(arr, ByteOrder.LITTLE_ENDIAN);
 	}
 	
 	/**
@@ -225,7 +225,7 @@ public class ByteArrayUtils {
 	 * 	the order of the bytes in the array, LittleEndian or BigEndian
 	 * @return a float arr containing the wanted data
 	 */
-	public static float[] convertIntoSignedFloat32(byte[] arr, ByteOrder byteOrder) {
+	public static float[] toFloat32(byte[] arr, ByteOrder byteOrder) {
 		float[] float32 = new float[arr.length / 4];
 		for ( int i = 0; i < arr.length / 4; i ++) {
 			byte[] floatArr = new byte[4];
@@ -245,8 +245,8 @@ public class ByteArrayUtils {
 	 * 	the byte array
 	 * @return a double arr containing the wanted data
 	 */
-	public static double[] convertIntoSignedFloat64(byte[] arr) {
-		return convertIntoSignedFloat64(arr, ByteOrder.LITTLE_ENDIAN);
+	public static double[] toFloat64(byte[] arr) {
+		return toFloat64(arr, ByteOrder.LITTLE_ENDIAN);
 	}
 	
 	/**
@@ -258,7 +258,7 @@ public class ByteArrayUtils {
 	 * 	the order of the bytes in the array, LittleEndian or BigEndian
 	 * @return a double arr containing the wanted data
 	 */
-	public static double[] convertIntoSignedFloat64(byte[] arr, ByteOrder byteOrder) {
+	public static double[] toFloat64(byte[] arr, ByteOrder byteOrder) {
 		double[] dd = new double[arr.length / 8];
 		for ( int i = 0; i < arr.length / 8; i ++) {
 			byte[] doubleArr = new byte[8];
@@ -282,8 +282,8 @@ public class ByteArrayUtils {
 	 * 	the byte array
 	 * @return a long arr containing the wanted data
 	 */
-	public static long[] convertIntoSignedInt64(byte[] arr) {
-		return convertIntoSignedInt64(arr, ByteOrder.LITTLE_ENDIAN);
+	public static long[] toInt64(byte[] arr) {
+		return toInt64(arr, ByteOrder.LITTLE_ENDIAN);
 	}
 	
 	/**
@@ -295,7 +295,7 @@ public class ByteArrayUtils {
 	 * 	the order of the bytes in the array, LittleEndian or BigEndian
 	 * @return a long arr containing the wanted data
 	 */
-	public static long[] convertIntoSignedInt64(byte[] arr, ByteOrder byteOrder) {
+	public static long[] toInt64(byte[] arr, ByteOrder byteOrder) {
 		long[] dd = new long[arr.length / 8];
 		for ( int i = 0; i < arr.length / 8; i ++) {
 			byte[] doubleArr = new byte[8];
@@ -308,6 +308,32 @@ public class ByteArrayUtils {
 			doubleArr[6] = arr[i * 8 + 6];
 			doubleArr[7] = arr[i * 8 + 7];
 			dd[i] = ByteBuffer.wrap(doubleArr).order(byteOrder).getLong();
+		}
+		return dd;
+	}
+	
+	/**
+	 * Converts byte array into a boolean array
+	 * @param arr
+	 * 	the byte array
+	 * @param byteOrder
+	 * 	the order of the bytes in the array, LittleEndian or BigEndian
+	 * @return a long boolean containing the wanted data
+	 */
+	public static boolean[] toBoolean(byte[] arr, ByteOrder byteOrder) {
+		return toBoolean(arr);
+	}
+	
+	/**
+	 * Converts byte array into a boolean array
+	 * @param arr
+	 * 	the byte array
+	 * @return a long boolean containing the wanted data
+	 */
+	public static boolean[] toBoolean(byte[] arr) {
+		boolean[] dd = new boolean[arr.length];
+		for ( int i = 0; i < arr.length; i ++) {
+			dd[i] = arr[i] != 0;
 		}
 		return dd;
 	}

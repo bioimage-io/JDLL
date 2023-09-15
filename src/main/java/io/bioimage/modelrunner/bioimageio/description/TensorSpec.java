@@ -25,6 +25,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.IntStream;
 
+import io.bioimage.modelrunner.tiling.PatchGridCalculator;
 import io.bioimage.modelrunner.utils.YAMLUtils;
 
 
@@ -89,6 +90,17 @@ public class TensorSpec {
      * Patch array selected by the user and used to process the image
      */
     private int[] processingPatch;
+    /**
+     * String representing the object tensor type image
+     */
+    public static final String IMAGE = "image";
+    /**
+     * String representing the object tensor type list (a matrix of 1 or 2 dimensions).
+     * In order for the object to be a list, the shape has to contain either only 1 dimension ("c"),
+     * contain 2, one of them being the batch_size ("bc"), or contain the letter "i", ("bic").
+     * "I" comes from instance
+     */
+    public static final String LIST = "list";
 
     /**
      * Builds the tensor specification instance from the tensor map and an input flag.
@@ -117,12 +129,12 @@ public class TensorSpec {
             ? null
             : (haloList == null ? new float[tensor.axes.length()] : YAMLUtils.castListToFloatArray(haloList)));
         tensor.shape = ShapeSpec.build(tensorSpecMap.get("shape"), input);
-        tensor.type = "image";
+        tensor.type = IMAGE;
         if ((tensor.axes == null) ||
             (tensor.axes.length() <= 2 && tensor.axes.toUpperCase().matches(".*[B|I].*"))
-            || tensor.axes.toUpperCase().contains("I"))
+            || tensor.axes.toUpperCase().contains("I")|| tensor.axes.length() == 1)
         {
-            tensor.type = "list";
+            tensor.type = LIST;
         }
 
         List<?> preprocessingTensors = (List<?>) tensorSpecMap.get("preprocessing");
@@ -343,6 +355,33 @@ public class TensorSpec {
     }
     
     /**
+     * Validates if a given patch array fulfills the conditions specified in the yaml file.
+     * If it is valid, it sets the value as the {@link #processingPatch}
+     * @param patch
+     * 	the patch array to validate
+     * @param seqSize
+     * 	array containing the dimensions of the sequence that is going to be processed
+     * 	seqSize is defined following the Icy axes order (xyztc)
+     * @throws Exception if the patch size is not able to 
+     * 	fulfill the requirements of the tensor
+     */
+    public void validate(int[] patch, int[] seqSize) throws Exception {
+    	// Convert the Icy sequence array dims into the tensor axes order
+    	seqSize = PatchGridCalculator.icySeqAxesOrderToWantedOrder(seqSize, axes);
+    	// If tiling is not allowed, the patch array needs to be equal to the
+    	// optimal patch
+    	if (!tiling) {
+    		validateNoTiling(patch, seqSize);
+    	}
+    	// VAlidate that the minimum size and step constraints are fulfilled
+    	validateStepMin(patch);
+    	// Finally validate that the sequence size complies with the patch size selected
+    	validatePatchVsImage(patch, seqSize);
+    	this.processingPatch = patch;
+    }
+
+    
+    /**
      * VAlidate that the patch selected, is compatible with the image size.
      * The patch cannot be 3 times bigger than the image size because mirroring
      * would not work, cannot be smaller than total halo * 2, and patching cannot
@@ -517,6 +556,44 @@ public class TensorSpec {
     }
     
     /**
+     * Return a String containing the dimensions of the optimal
+     * patch for the selected image
+     * @param imSize
+     * 	size of the image. The order is Width, Height, Channel, Slices, time
+     * @return the String containing a patch in the format 256,256,3
+     */
+    public String getDisplayableOptimalPatch(int[] imSize) {
+    	// Remove the B axes from the optimal patch size and get the String representation
+    	String patchStr = getDisplayableSizesString(getOptimalPatch(imSize));
+    	return patchStr;
+    }
+    
+    /**
+     * Validates the selected patch array fulfills the conditions specified in the yaml file
+     * with respect to the tensor size before introducing it into the model
+     * If it is valid, it sets the value as the {@link #processingPatch}
+     * @param seqSize
+     * 	size of the tensor before inference (after pre-processing)
+     * @param axesOrder
+     * 	axes order of the tensor
+     * @throws Exception  if the seqsize is not compatible with the the tensor constraints
+     */
+    public void validateTensorSize(int[] seqSize, String axesOrder) throws Exception {
+    	// Convert the Icy sequence array dims into the tensor axes order
+    	seqSize = PatchGridCalculator.arrayToWantedAxesOrderAddOnes(seqSize, axesOrder, axes);
+    	// If tiling is not allowed, the patch array needs to be equal to the
+    	// optimal patch
+    	if (!tiling) {
+    		validateNoTiling(processingPatch, seqSize);
+    	}
+    	// VAlidate that the minimum size and step constraints are fulfilled
+    	validateStepMin(processingPatch);
+    	// Finally validate that the sequence size complies with the patch size selected
+    	validatePatchVsImage(processingPatch, seqSize);
+    }
+
+
+    /**
      * REturn the patch for this tensor introduced by the user for processing
      * @return the processing patch
      */
@@ -525,6 +602,14 @@ public class TensorSpec {
     }
 
     /**
+     * Return whether the tensor represents an image or not.
+     * Currently only the types {@link #IMAGE} and {@link #LIST}
+     * are supported. 
+     * In order for the object to be a list, the shape has to contain either only 1 dimension ("c"),
+     * contain 2, one of them being the batch_size ("bc"), or contain the letter "i", ("bic").
+     * "I" comes from instance
+     * An image is everythin else.
+     * 
      * @return The type of tensor. As of now it can hold "image" or "list" values.
      */
     public String getType()
@@ -632,6 +717,21 @@ public class TensorSpec {
         return "TensorSpec {input=" + input + ", name=" + name + ", axes=" + axes + ", dataType=" + dataType + ", halo="
                 + halo + ", shape=" + shape + ", type=" + type + ", preprocessing=" + preprocessing
                 + ", postprocessing=" + postprocessing + "}";
+    }
+    
+    /**
+     * Return whether the tensor represents an image or not.
+     * Currently only the types {@link #IMAGE} and {@link #LIST}
+     * are supported. 
+     * In order for the object to be a list, the shape has to contain either only 1 dimension ("c"),
+     * contain 2, one of them being the batch_size ("bc"), or contain the letter "i", ("bic").
+     * "I" comes from instance
+     * An image is everythin else.
+     * 
+     * @return whether the tensor represents an image or not
+     */
+    public boolean isImage() {
+    	return this.type.equals(IMAGE);
     }
 
 }

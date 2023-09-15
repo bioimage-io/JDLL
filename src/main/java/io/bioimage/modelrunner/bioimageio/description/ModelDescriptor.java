@@ -41,8 +41,6 @@ import io.bioimage.modelrunner.bioimageio.description.weights.ModelWeight;
 import io.bioimage.modelrunner.utils.Log;
 import io.bioimage.modelrunner.utils.YAMLUtils;
 
-import com.google.gson.Gson;
-import com.google.gson.reflect.TypeToken;
 
 /**
  * A data structure holding a single Bioimage.io pretrained model description. This instances are created by opening a {@code model.yaml} file.
@@ -71,8 +69,8 @@ public class ModelDescriptor
     private List<String> covers;
     private List<SampleImage> sample_inputs;
     private List<SampleImage> sample_outputs;
-    private List<String> test_inputs;
-    private List<String> test_outputs;
+    private List<TestArtifact> test_inputs;
+    private List<TestArtifact> test_outputs;
     private List<TensorSpec> input_tensors;
     private List<TensorSpec> output_tensors;
     private ExecutionConfig config;
@@ -89,6 +87,7 @@ public class ModelDescriptor
     private static List<String> sampleBioengineModels = Arrays.asList(new String[] {"cell_pose"});//, "inception", "stardist"});
     private String modelID;
     private String localModelPath;
+    private boolean supportBioengine = false;
 
     private ModelDescriptor()
     {
@@ -234,10 +233,10 @@ public class ModelDescriptor
                         modelDescription.documentation = (String) fieldElement;
                         break;
                     case "test_inputs":
-                        modelDescription.test_inputs = buildUrlElements((List<?>) fieldElement);
+                        modelDescription.test_inputs = buildTestArtifacts((List<?>) fieldElement);
                         break;
                     case "test_outputs":
-                        modelDescription.test_outputs = buildUrlElements((List<?>) fieldElement);
+                        modelDescription.test_outputs = buildTestArtifacts((List<?>) fieldElement);
                         break;
                     case "sample_inputs":
                         modelDescription.sample_inputs = buildSampleImages((List<?>) fieldElement);
@@ -295,6 +294,8 @@ public class ModelDescriptor
         }
         
         modelDescription.addBioEngine();
+        if (modelDescription.localModelPath != null)
+        	modelDescription.addModelPath(new File(modelDescription.localModelPath).toPath());
         return modelDescription;
     }
     
@@ -307,32 +308,19 @@ public class ModelDescriptor
     private void addBioEngine() throws MalformedURLException {
 		// TODO decide what to do with servers. Probably need permissions / Implement authentication
     	if (getName().equals("cellpose-python")) {
-    		// TODO weights.addBioEngine("https://ai.imjoy.io");
-			// TODO weights.addBioEngine("https://hypha.imjoy.io");
+    		supportBioengine = true;
 			return;
 	    } else if (getName().equals("bestfitting-inceptionv3-single-cell")) {
-	    	// TODO weights.addBioEngine("https://ai.imjoy.io");
-			// TODO weights.addBioEngine("https://hypha.imjoy.io");
 			return;
 	    } else if (getName().equals("stardist")) {
-	    	// TODO weights.addBioEngine("https://ai.imjoy.io");
-			// TODO weights.addBioEngine("https://hypha.imjoy.io");
+    		supportBioengine = true;
 			return;
 	    }
-    	List<String> modelIDs = BioimageioRepo.getModelIDs();
-    	if (modelID == null)
-    		modelID = getConfig().getID();
-    	if (modelID == null)
-    		return;
-    	for (String id : modelIDs) {
-    		String auxID = id + "/";
-    		if (id.equals(modelID) || modelID.startsWith(auxID)) {
-    			// TODO weights.addBioEngine("https://ai.imjoy.io");
-    			//weights.addBioEngine("https://hypha.pasteur.cloud/");
-    			// TODO weights.addBioEngine("https://hypha.imjoy.io");
-    			return;
-    		}
-    	}
+    	try {
+			supportBioengine = BioimageioRepo.isModelOnTheBioengine(modelID);
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
     }
     
     /**
@@ -475,6 +463,30 @@ public class ModelDescriptor
 	        }
     	} else if ((coverElements instanceof String)) {
             covers.add(SampleImage.build((String) coverElements));
+    	}   	
+        return covers.stream().filter(i -> i != null).collect(Collectors.toList());
+    }
+
+    /**
+     * REturns a List<TestArtifact> of the npy artifacts that are packed in the model
+     * folder as input and output test objects
+     * @param coverElements
+     * 	data from the yaml
+     * @return the List<TestArtifact> with the sample images data
+     */
+    private static List<TestArtifact> buildTestArtifacts(Object coverElements)
+    {
+        List<TestArtifact> covers = new ArrayList<>();
+    	if ((coverElements instanceof List<?>)) {
+    		List<?> elems = (List<?>) coverElements;
+	        for (Object elem : elems)
+	        {
+	        	if (!(elem instanceof String))
+	        		continue;
+	        	covers.add(TestArtifact.build((String) elem));
+	        }
+    	} else if ((coverElements instanceof String)) {
+            covers.add(TestArtifact.build((String) coverElements));
     	}   	
         return covers.stream().filter(i -> i != null).collect(Collectors.toList());
     }
@@ -948,16 +960,18 @@ public class ModelDescriptor
 	/**
 	 * @return the test_inputs
 	 */
-	public List<String> getTestInputs() {
+	public List<TestArtifact> getTestInputs() {
 		if (test_inputs == null) 
-			test_inputs = new ArrayList<String>();
+			test_inputs = new ArrayList<TestArtifact>();
 		return test_inputs;
 	}
 
 	/**
 	 * @return the test_outputs
 	 */
-	public List<String> getTestOutputs() {
+	public List<TestArtifact> getTestOutputs() {
+		if (test_outputs == null) 
+			test_outputs = new ArrayList<TestArtifact>();
 		return test_outputs;
 	}
 
@@ -1043,6 +1057,10 @@ public class ModelDescriptor
 			sample_inputs.stream().forEach(i -> i.addLocalModelPath(modelBasePath));
 		if (sample_outputs != null)
 			sample_outputs.stream().forEach(i -> i.addLocalModelPath(modelBasePath));
+		if (test_inputs != null)
+			test_inputs.stream().forEach(i -> i.addLocalModelPath(modelBasePath));
+		if (test_outputs != null)
+			test_outputs.stream().forEach(i -> i.addLocalModelPath(modelBasePath));
 	}
 	
 	/**
@@ -1077,5 +1095,13 @@ public class ModelDescriptor
 			return false;
 		else 
 			return this.getConfig().getDeepImageJ().isPyramidalModel();
+	}
+	
+	/**
+	 * 
+	 * @return whether the model can be run on the bioengino or not
+	 */
+	public boolean canRunOnBioengine() {
+		return this.supportBioengine;
 	}
 }

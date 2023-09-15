@@ -97,6 +97,11 @@ public class DownloadTracker {
 	 */
 	public static final String TOTAL_PROGRESS_KEY = "total";
 	/**
+	 * Key in the consumer map that specifies the progress unzipping a file,
+	 * if there is any file to unzip
+	 */
+	public static final String UNZIPPING_PROGRESS_KEY = "unzipping progress";
+	/**
 	 * Millisecond time interval that passes between checks of the download.
 	 */
 	public static final long TIME_INTERVAL_MILLIS = 300;
@@ -238,7 +243,7 @@ public class DownloadTracker {
 			if (!keep)
 				alive = false;
 			if (!this.downloadThread.isAlive())
-				keep = false;			
+				keep = false;
 			Thread.sleep(TIME_INTERVAL_MILLIS);
 			consumer.accept(TOTAL_PROGRESS_KEY, 
 					(double) (infoMap.values().stream().mapToLong(Long::longValue).sum()) / (double) this.totalSize);
@@ -275,6 +280,11 @@ public class DownloadTracker {
 		}
 		consumer.accept(TOTAL_PROGRESS_KEY, 
 				(double) (infoMap.values().stream().mapToLong(Long::longValue).sum()) / (double) this.totalSize);
+		while (dm.needsUnzipping()) {
+			Thread.sleep(TIME_INTERVAL_MILLIS);
+			consumer.accept(UNZIPPING_PROGRESS_KEY, dm.getUnzippingProgress());
+		}
+		consumer.accept(UNZIPPING_PROGRESS_KEY, 1.);
 	}
 	
 	/**
@@ -293,13 +303,13 @@ public class DownloadTracker {
 			keep = false;
 			for (int i = 0; i < this.remainingFiles.size(); i ++) {
 				File ff = remainingFiles.get(i);
-				if (ff.isFile() && ff.length() != this.sizeFiles.get(ff.getAbsolutePath())){
-					consumer.accept(ff.getAbsolutePath(), (double) (ff.length()) / (double) this.sizeFiles.get(ff.getAbsolutePath()));
+				if (ff.isFile() && ff.length() < this.sizeFiles.get(ff.getAbsolutePath())){
+					consumer.accept(ff.getAbsolutePath(), Math.min(1, (double) (ff.length()) / (double) this.sizeFiles.get(ff.getAbsolutePath())));
 					consumer.accept(TOTAL_PROGRESS_KEY, (double) (totalDownloadSize + ff.length()) / (double) totalSize);
 					break;
 				} else if (remainingFiles.get(i).isFile()) {
 					consumer.accept(ff.getAbsolutePath(), 1.0);
-					totalDownloadSize += ff.length();
+					totalDownloadSize += (double) this.sizeFiles.get(ff.getAbsolutePath());
 					consumer.accept(TOTAL_PROGRESS_KEY, (double) (totalDownloadSize) / (double) totalSize);
 					remainingFiles.remove(i);
 					keep = true;
@@ -350,10 +360,28 @@ public class DownloadTracker {
 		else if (this.sizeFiles == null || this.sizeFiles.keySet().size() == 0)
 			return links;
 		for (String link : links) {
-			String name = link.substring(link.lastIndexOf("/") + 1);
-			if (consumer.get().get(this.folder + File.separator + name) == null
-					|| consumer.get().get(folder + File.separator + name) != 1.0)
+			try {
+				String fName = folder + File.separator + DownloadModel.getFileNameFromURLString(link);
+				if (!(new File(fName).isFile())) {
+					badDownloads.add(link);
+					continue;
+				}
+				String key = this.sizeFiles.get(fName) != null ? fName : link;
+				Long val = this.sizeFiles.get(key);
+				long fSize = new File(fName).length();
+				if (val != null && 
+						((val > 1 && val == fSize) || (val == 1 && val <= fSize)) ) {
+					continue;
+				}
 				badDownloads.add(link);
+				/* TODO
+				if (consumer.get().get(this.folder + File.separator + name) == null
+						|| consumer.get().get(folder + File.separator + name) != 1.0)
+					badDownloads.add(link);
+				 */
+			} catch (MalformedURLException e) {
+				badDownloads.add(link);
+			}
 		}
 		return badDownloads;
 	}
