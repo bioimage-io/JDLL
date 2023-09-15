@@ -281,7 +281,7 @@ public class DownloadTracker {
 		consumer.accept(TOTAL_PROGRESS_KEY, 
 				(double) (infoMap.values().stream().mapToLong(Long::longValue).sum()) / (double) this.totalSize);
 		while (dm.needsUnzipping())
-			consumer.accept(UNZIPPING_PROGRESS_KEY, dm.getUnzippingConsumer().get());
+			consumer.accept(UNZIPPING_PROGRESS_KEY, dm.getUnzippingProgress());
 		consumer.accept(UNZIPPING_PROGRESS_KEY, 1.);
 	}
 	

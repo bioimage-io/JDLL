@@ -85,6 +85,10 @@ public class DownloadModel {
      */
     private boolean unzip = false;
     /**
+     * Progress unzipping the tensorflow model zip
+     */
+    private double unzippingProgress = 0.0;
+    /**
      * Consumer used to tackthe progress of unzipping the model weights
      * if they are stored in a zip
      */
@@ -152,14 +156,10 @@ public class DownloadModel {
     		progressString += b;
     		};
     	this.unzippingConsumer = new Consumer<Double>() {
-    		double progress;
     		@Override
             public void accept(Double d) {
-    			progress = d;
+        		unzippingProgress = d;
             }
-    		public double get() {
-    			return progress;
-    		}
         };
 		retriveDownloadModelLinks();
 	}
@@ -651,5 +651,14 @@ public class DownloadModel {
 	 */
 	public boolean needsUnzipping() {
 		return unzip;
+	}
+	
+	/**
+	 * 
+	 * @return the progress unzipping the tensorflow model .zip file 
+	 * if it exists, as a fraction of what has already been unziiped over the total
+	 */
+	public double getUnzippingProgress() {
+		return unzippingProgress;
 	}
 }
