@@ -19,25 +19,6 @@
  */
 package io.bioimage.modelrunner.runmode;
 
-import java.util.List;
-
-import io.bioimage.modelrunner.tensor.Tensor;
-
-/**
- * 
- * @author Carlos Garcia Lopez de Haro
- *
- */
-public class CellposeTrain extends AbstractRunMode {
-
-	protected CellposeTrain(String name) {
-		super(name);
-	}
-
-	@Override
-	public List<Tensor<?>> apply(Tensor<?>... inputs) {
-		// TODO Auto-generated method stub
-		return null;
-	}
+public class StardistFineTuneJdllOp {
 
 }
