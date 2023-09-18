@@ -26,9 +26,19 @@ public class OpDescription {
 	
 	private boolean isDefault = false;
 	
+	private String opDir;
+	
 	private static final List<String> defaultOps = null;
 	
 	public static OpDescription setupOP(String projectRepo, String opFileName, String opMethodName) {
+		
+	}
+	
+	public void defineCondaEnv() {
+		
+	}
+	
+	protected void installOp() {
 		
 	}
 	
@@ -52,11 +62,11 @@ public class OpDescription {
 		return null;
 	}
 	
-	public String appliedOnWhichModel() {
-		return "";
-	}
-	
 	public Object[] getOutputs() {
 		return null;
+	}
+	
+	public String getOpDir() {
+		return opDir;
 	}
 }
