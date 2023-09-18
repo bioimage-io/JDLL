@@ -17,7 +17,7 @@
  * limitations under the License.
  * #L%
  */
-package io.bioimage.modelrunner.bioimageio.ops;
+package io.bioimage.modelrunner.runmode.ops;
 
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -26,10 +26,7 @@ public class OpDescription {
 	
 	private boolean isDefault = false;
 	
-	private static final List<String> defaultOps;
-	static {
-		defaultOps
-	}
+	private static final List<String> defaultOps = null;
 	
 	public static OpDescription setupOP(String projectRepo, String opFileName, String opMethodName) {
 		

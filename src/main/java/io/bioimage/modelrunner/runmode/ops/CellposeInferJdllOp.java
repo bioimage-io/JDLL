@@ -17,7 +17,7 @@
  * limitations under the License.
  * #L%
  */
-package io.bioimage.modelrunner.runmode;
+package io.bioimage.modelrunner.runmode.ops;
 
 public class CellposeInferJdllOp {
 
