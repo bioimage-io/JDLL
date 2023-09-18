@@ -26,7 +26,7 @@ jobs:
       shell: bash
       run: |
         if [[ "$OSTYPE" == "win"* ]]; then
-          java -cp  target\\dl-modelrunner-0.3.13-SNAPSHOT.jar io.bioimage.modelrunner.example.ExampleLoadTensorflow1Tensorflow2
+          java -cp  target\\dl-modelrunner-0.3.14-SNAPSHOT.jar io.bioimage.modelrunner.example.ExampleLoadTensorflow1Tensorflow2
         else
-          java -cp  target/dl-modelrunner-0.3.13-SNAPSHOT.jar io.bioimage.modelrunner.example.ExampleLoadTensorflow1Tensorflow2
+          java -cp  target/dl-modelrunner-0.3.14-SNAPSHOT.jar io.bioimage.modelrunner.example.ExampleLoadTensorflow1Tensorflow2
         fi
