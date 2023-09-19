@@ -29,7 +29,9 @@ jobs:
     - name: Generate Classpath (Windows)
       if: runner.os == 'Windows'
       shell: powershell
-      run: mvn -q exec:exec -Dexec.executable=echo -Dexec.args='%classpath'
+      run: |
+        $classpath = mvn -q exec:exec "-Dexec.executable=echo" "-Dexec.args='%classpath'"
+        echo "CLASSPATH=$classpath" | Out-File -FilePath $env:GITHUB_ENV -Append
 
     - name: Run Specific Class (Unix)
       if: runner.os != 'Windows'
@@ -37,5 +39,5 @@ jobs:
 
     - name: Run Specific Class (Windows)
       if: runner.os == 'Windows'
-      shell: powershell
-      run: java -cp $env:CLASSPATH;target/classes io.bioimage.modelrunner.example.ExampleLoadTensorflow1Tensorflow2
+       shell: powershell
+      run: java -cp "$env:CLASSPATH;target/classes" io.bioimage.modelrunner.example.ExampleLoadTensorflow1Tensorflow2
