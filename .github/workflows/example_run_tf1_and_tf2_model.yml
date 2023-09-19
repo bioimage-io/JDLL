@@ -29,7 +29,7 @@ jobs:
     - name: Generate Classpath (Windows)
       if: runner.os == 'Windows'
       shell: powershell
-      run: echo "CLASSPATH=$(mvn -q exec:exec -Dexec.executable=echo -Dexec.args='%classpath')" | Out-File -FilePath $env:GITHUB_ENV -Append
+      run: mvn -q exec:exec -Dexec.executable=echo -Dexec.args='%classpath'
 
     - name: Run Specific Class (Unix)
       if: runner.os != 'Windows'
