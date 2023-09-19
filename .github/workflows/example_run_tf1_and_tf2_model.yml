@@ -25,4 +25,4 @@ jobs:
     - name: Run ExampleLoadTensorflow1Tensorflow2.java file
       shell: bash
       run: |
-        mvn exec:java -Dexec.mainClass=io.bioimage.modelrunner.example.ExampleLoadAndRunAllBmzModels
+        mvn exec:java -Dexec.mainClass=io.bioimage.modelrunner.example.ExampleLoadTensorflow1Tensorflow2
