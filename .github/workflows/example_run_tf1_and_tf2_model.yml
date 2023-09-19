@@ -39,5 +39,5 @@ jobs:
 
     - name: Run Specific Class (Windows)
       if: runner.os == 'Windows'
-       shell: powershell
+      shell: powershell
       run: java -cp "$env:CLASSPATH;target/classes" io.bioimage.modelrunner.example.ExampleLoadTensorflow1Tensorflow2
