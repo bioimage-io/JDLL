@@ -69,7 +69,7 @@ Download the dependency and include it in your project
    <dependency>
      <groupId>io.bioimage</groupId>
      <artifactId>dl-runner</artifactId>
-     <version>0.3.13</version>
+     <version>0.4.0</version>
    </dependency>
    ```
 
@@ -360,7 +360,7 @@ Once installed, JDLL should be ready to be used.
 
 If the software application JDLL wants to be used in does not support automatic installation of libraries, download JDLL and its dependencies and locate them in the corresponding directory.
 The download links are:
-- [JDLL](https://maven.scijava.org/service/local/repositories/releases/content/io/bioimage/dl-modelrunner/0.3.13/dl-modelrunner-0.3.13.jar)
+- [JDLL](https://maven.scijava.org/service/local/repositories/releases/content/io/bioimage/dl-modelrunner/0.4.0/dl-modelrunner-0.4.0.jar)
 - [GSON](https://repo1.maven.org/maven2/com/google/code/gson/gson/2.10.1/gson-2.10.1.jar)
 - [ImgLib2](https://repo1.maven.org/maven2/net/imglib2/imglib2/6.1.0/imglib2-6.1.0.jar)
 - [SnakeYAML](https://repo1.maven.org/maven2/org/yaml/snakeyaml/2.0/snakeyaml-2.0.jar)
