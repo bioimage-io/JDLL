@@ -53,4 +53,6 @@ public interface RunMode2
 	 * @return the name of this run mode.
 	 */
 	public String getName();
+	
+	
 }

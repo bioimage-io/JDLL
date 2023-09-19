@@ -25,13 +25,14 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map.Entry;
 
 import org.apposed.appose.Appose;
 import org.apposed.appose.Environment;
 import org.apposed.appose.Service;
 import org.apposed.appose.Service.Task;
 
-import io.bioimage.modelrunner.bioimageio.ops.OpDescription;
+import io.bioimage.modelrunner.runmode.ops.OpDescription;
 import io.bioimage.modelrunner.tensor.ImgLib2ToArray;
 import io.bioimage.modelrunner.tensor.Tensor;
 import net.imglib2.img.Img;
@@ -65,6 +66,7 @@ public class RunMode {
 	private LinkedHashMap<String, Object> kwargs;
 	
 	private RunMode(OpDescription op) {
+		
 		/*
 		envFileName = op.getCondaEnv();
 		referencedModel = op.appliedOnWhichModel();
@@ -152,6 +154,19 @@ public class RunMode {
 		
 		rm.run(inputs, outputs);
 		
+	}
+	
+	private void convertInputMap() {
+		LinkedHashMap<String, Object> apposeInputMap = new LinkedHashMap<>();
+		for (Entry<String, Object> entry : this.kwargs.entrySet()) {
+			if (entry.getValue() instanceof String) {
+				apposeInputMap.put(entry.getKey(), entry.getValue());
+			} else if (entry.getValue() instanceof Tensor) {
+				
+			} else if (entry.getValue() instanceof Number) {
+				
+			}
+		}
 	}
 	
 	public < T extends RealType< T > & NativeType< T > >
