@@ -19,6 +19,50 @@
  */
 package io.bioimage.modelrunner.runmode.ops;
 
-public class StardistInferJdllOp {
+import java.util.List;
+
+public class StardistInferJdllOp implements OpInterface {
+
+	@Override
+	public String getOpImport() {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public int getNumberOfOutputs() {
+		// TODO Auto-generated method stub
+		return 0;
+	}
+
+	@Override
+	public void installOp() {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public void setInputsInOrder(List<Object> orderedInputList) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public String getCondaEnv() {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public String getMethodName() {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public String getOpDir() {
+		// TODO Auto-generated method stub
+		return null;
+	}
 
 }
