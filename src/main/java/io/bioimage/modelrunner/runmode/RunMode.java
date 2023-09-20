@@ -35,6 +35,7 @@ import org.apposed.appose.Service.Task;
 import io.bioimage.modelrunner.runmode.ops.OpDescription;
 import io.bioimage.modelrunner.tensor.ImgLib2ToArray;
 import io.bioimage.modelrunner.tensor.Tensor;
+import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.img.Img;
 import net.imglib2.img.ImgFactory;
 import net.imglib2.img.cell.CellImgFactory;
@@ -43,6 +44,8 @@ import net.imglib2.type.numeric.RealType;
 import net.imglib2.type.numeric.real.FloatType;
 
 public class RunMode {
+	
+	private static final String VAR_SUFFIX = "_map"; 
 	
 	private static final String AXES_KEY = "axes";
 	
@@ -64,6 +67,8 @@ public class RunMode {
 	private String opName;
 	private String referencedModel;
 	private LinkedHashMap<String, Object> kwargs;
+	private LinkedHashMap<String, Object> apposeInputMap;
+	private String tensorRecreationCode = "";
 	
 	private RunMode(OpDescription op) {
 		
@@ -161,13 +166,16 @@ public class RunMode {
 	}
 	
 	private < T extends RealType< T > & NativeType< T > > void convertInputMap() {
-		LinkedHashMap<String, Object> apposeInputMap = new LinkedHashMap<>();
+		apposeInputMap = new LinkedHashMap<>();
 		for (Entry<String, Object> entry : this.kwargs.entrySet()) {
 			if (entry.getValue() instanceof String) {
 				apposeInputMap.put(entry.getKey(), entry.getValue());
 			} else if (entry.getValue() instanceof Tensor) {
-				Tensor<T> tt = (Tensor<T>) entry.getValue();
-				apposeInputMap.put(tt.getName(), tensorToMap(tt));
+				// TODO map of tensor is not really necessary
+				apposeInputMap.put(entry.getKey() + VAR_SUFFIX, tensorToMap((Tensor<T>) entry.getValue()));
+			} else if (entry.getValue() instanceof RandomAccessibleInterval) {
+				// TODO map of ImgLib2 is not really necessary
+				apposeInputMap.put(entry.getKey() + VAR_SUFFIX, imglib2ToMap((RandomAccessibleInterval<T>) entry.getValue()));
 			} else if (!entry.getValue().getClass().isArray() 
 					&& isTypeDirectlySupported(entry.getValue().getClass())) {
 				apposeInputMap.put(entry.getKey(), entry.getValue());
@@ -179,13 +187,13 @@ public class RunMode {
 				apposeInputMap.put(entry.getKey(), new Object[0]);
 			} else if (entry.getValue() instanceof List 
 					&& isTypeDirectlySupported(((List) entry.getValue()).get(0).getClass())) {
-				apposeInputMap.put(entry.getKey(), entry.getValue());
+				apposeInputMap.put(entry.getKey(), ((List) entry.getValue()).toArray());
+			} else {
+				throw new IllegalArgumentException("The type of the input argument: '"
+						+ entry.getKey() + "' is not supported ("
+						+ entry.getValue().getClass());
 			}
 		}
-	}
-	
-	private static Object[] convertListToArray() {
-		
 	}
 	
 	private static boolean isTypeDirectlySupported(Class<?> cl) {
@@ -202,6 +210,23 @@ public class RunMode {
 		tensorMap.put(AXES_KEY, tt.getAxesOrderString());
 		tensorMap.put(DATA_KEY, ImgLib2ToArray.build(tt.getData()));
 		tensorMap.put(SHAPE_KEY, tt.getShape());
+		return tensorMap;
+	}
+	
+	private <T extends RealType<T> & NativeType<T>>
+				void addCodeToRecreateTensor(String ogName, String givenName, Tensor<T> tensor) {
+		// This line wants to recreate the original numpy array. Shouldlook like:
+		// input0 = np.array(input0_map['data']).reshape([1, 1, 512, 512])
+		this.tensorRecreationCode += ogName " = np.array(" 
+				+ givenName + "['" + DATA_KEY + "']" + ").reshape(";
+		
+	}
+	
+	private <T extends RealType<T> & NativeType<T>> 
+				HashMap<String, Object> imglib2ToMap(RandomAccessibleInterval<T> rai) {
+		HashMap<String, Object> tensorMap = new HashMap<String, Object>();
+		tensorMap.put(DATA_KEY, ImgLib2ToArray.build(rai));
+		tensorMap.put(SHAPE_KEY, rai.dimensionsAsLongArray());
 		return tensorMap;
 	}
 	
