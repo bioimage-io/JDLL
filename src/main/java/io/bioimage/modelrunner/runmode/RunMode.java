@@ -45,7 +45,9 @@ import net.imglib2.type.numeric.real.FloatType;
 
 public class RunMode {
 	
-	private static final String VAR_SUFFIX = "_map"; 
+	private static final String IMPORT_XARRAY = "import xarray as xr" + System.lineSeparator(); 
+	
+	private static final String IMPORT_NUMPY = "import numpy as np" + System.lineSeparator(); 
 	
 	private static final String AXES_KEY = "axes";
 	
@@ -54,9 +56,7 @@ public class RunMode {
 	private static final String DATA_KEY = "data";
 	
 	private static final String BMZ_CORE_IMPORTS = 
-			"import numpy as np" + System.lineSeparator()
-			+ "import xarray as xr" + System.lineSeparator()
-			+ "from bioimageio.core import load_resource_description" + System.lineSeparator()
+			"from bioimageio.core import load_resource_description" + System.lineSeparator()
 			+ "from bioimageio.core.resource_io.nodes import Model" + System.lineSeparator();
 	private static final String OP_PACKAGE = "bioimageio.workflows";
 	
@@ -69,6 +69,7 @@ public class RunMode {
 	private LinkedHashMap<String, Object> kwargs;
 	private LinkedHashMap<String, Object> apposeInputMap;
 	private String tensorRecreationCode = "";
+	private String importsCode = "";
 	
 	private RunMode(OpDescription op) {
 		
@@ -171,11 +172,13 @@ public class RunMode {
 			if (entry.getValue() instanceof String) {
 				apposeInputMap.put(entry.getKey(), entry.getValue());
 			} else if (entry.getValue() instanceof Tensor) {
-				// TODO map of tensor is not really necessary
-				apposeInputMap.put(entry.getKey() + VAR_SUFFIX, tensorToMap((Tensor<T>) entry.getValue()));
+				Object tensorArr = ImgLib2ToArray.build(((Tensor<T>) entry.getValue()).getData());
+				apposeInputMap.put(entry.getKey(), tensorArr);
+				addCodeToRecreateTensor(entry.getKey(), (Tensor<T>) entry.getValue());
 			} else if (entry.getValue() instanceof RandomAccessibleInterval) {
-				// TODO map of ImgLib2 is not really necessary
-				apposeInputMap.put(entry.getKey() + VAR_SUFFIX, imglib2ToMap((RandomAccessibleInterval<T>) entry.getValue()));
+				Object imgArr = ImgLib2ToArray.build(((RandomAccessibleInterval<T>) entry.getValue()));
+				apposeInputMap.put(entry.getKey(), imgArr);
+				addCodeToRecreateNumpyArray(entry.getKey(), (RandomAccessibleInterval<T>) entry.getValue());
 			} else if (!entry.getValue().getClass().isArray() 
 					&& isTypeDirectlySupported(entry.getValue().getClass())) {
 				apposeInputMap.put(entry.getKey(), entry.getValue());
@@ -214,12 +217,39 @@ public class RunMode {
 	}
 	
 	private <T extends RealType<T> & NativeType<T>>
-				void addCodeToRecreateTensor(String ogName, String givenName, Tensor<T> tensor) {
-		// This line wants to recreate the original numpy array. Shouldlook like:
-		// input0 = np.array(input0_map['data']).reshape([1, 1, 512, 512])
-		this.tensorRecreationCode += ogName " = np.array(" 
-				+ givenName + "['" + DATA_KEY + "']" + ").reshape(";
-		
+				void addCodeToRecreateTensor(String ogName, Tensor<T> tensor) {
+		if (!importsCode.contains(IMPORT_XARRAY))
+			importsCode += IMPORT_XARRAY;
+		if (!importsCode.contains(IMPORT_NUMPY))
+			importsCode += IMPORT_NUMPY;
+		// This line wants to recreate the original numpy array. Should look like:
+		// input0 = xr.DataArray(np.array(input0).reshape([1, 1, 512, 512]), dims=["b", "c", "y", "x"], name="input0")
+		this.tensorRecreationCode += ogName + " = xr.DataArray(np.array(" + ogName + ").reshape([";
+		for (int ll : tensor.getShape())
+			tensorRecreationCode += ll + ", ";
+		tensorRecreationCode = 
+				tensorRecreationCode.substring(0, tensorRecreationCode.length() - 2);
+		tensorRecreationCode += "]), dims=[";
+		for (String ss : tensor.getAxesOrderString().split(""))
+			tensorRecreationCode += "\"" + ss + "\", ";
+		tensorRecreationCode = 
+				tensorRecreationCode.substring(0, tensorRecreationCode.length() - 2);
+		tensorRecreationCode += "], name=" + tensor.getName() + "])";
+		tensorRecreationCode += System.lineSeparator();
+	}
+	
+	private <T extends RealType<T> & NativeType<T>>
+				void addCodeToRecreateNumpyArray(String ogName, RandomAccessibleInterval<T> rai) {
+		if (!importsCode.contains(IMPORT_NUMPY))
+			importsCode += IMPORT_NUMPY;
+		// This line wants to recreate the original numpy array. Should look like:
+		// np_arr = np.array(np_arr).reshape([1, 1, 512, 512])
+		tensorRecreationCode += ogName + " = np.array(" + ogName + ").reshape([";
+		for (long ll : rai.dimensionsAsLongArray())
+			tensorRecreationCode += ll + ", ";
+		tensorRecreationCode = 
+				tensorRecreationCode.substring(0, tensorRecreationCode.length() - 2);
+		tensorRecreationCode += System.lineSeparator();
 	}
 	
 	private <T extends RealType<T> & NativeType<T>> 
