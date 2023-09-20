@@ -82,19 +82,16 @@ public class RunMode {
 			+ "\t" + System.lineSeparator()
 			+ "else:" + System.lineSeparator()
 			+ "\ttypes_list.append(" + STANDARD_KEY + ")" + System.lineSeparator()
-			+ "\t" + System.lineSeparator();
+			+ "task.outputs['%s'] = %s" + System.lineSeparator();
 	
 	private static final String BMZ_CORE_IMPORTS = 
 			"from bioimageio.core import load_resource_description" + System.lineSeparator()
 			+ "from bioimageio.core.resource_io.nodes import Model" + System.lineSeparator();
-	private static final String OP_PACKAGE = "bioimageio.workflows";
 	
 	
 	private Environment env;
 	private String envFileName;
 	private String opCode;
-	private String opName;
-	private String referencedModel;
 	private OpDescription op;
 	private LinkedHashMap<String, Object> kwargs;
 	private LinkedHashMap<String, Object> apposeInputMap;
@@ -143,46 +140,14 @@ public class RunMode {
 	}
 	
 	private void retrieveResultsCode() {
-		retrieveResultsCode = "task.update('Preparing outputs')" + System.lineSeparator();
+		retrieveResultsCode = "task.update('Preparing outputs')" + System.lineSeparator()
+							+ "types_list = []" + System.lineSeparator() ;
 		
 		for (String outN : this.outputNames) {
-			retrieveResultsCode += "if isinstance(" + outN + ", np.ndarray):" + System.lineSeparator()
-								+ "\t"
-								+ "elif isinstance(" + outN + ", np.ndarray):" + System.lineSeparator()
-								+ "\t"
-								+ ;
+			String code = String.format(OUTPUT_REFORMATING, outN, outN, outN, outN, outN, outN,
+					outN, outN, outN, outN, outN, outN, outN, outN);
+			retrieveResultsCode += code;
 		}
-
-		+ "\r\n"
-		+ "if len(labels.shape) == 2:  # batch dim got squeezed\r\n"
-		+ "    labels = labels[None]\r\n"
-		+ "\r\n"
-		+ "output_axes_wo_channels = tuple(a for a in model.outputs[0].axes if a != \"c\")\r\n"
-		//+ "labels = labels.flatten().tolist()\r\n"
-		+ "task.update('AAAAAAAAAAA')\r\n"
-		+ "task.update(str(type(labels)))\r\n"
-		+ "task.outputs['output0'] = labels\r\n";
-
-	}
-	
-	private < T extends RealType< T > & NativeType< T > >
-		void addCodeBody(List<Tensor<T>> inputTensors, List<Tensor<T>> outputTensors) {
-		opCode += "\t" + "task.update('Start running workflow')" + System.lineSeparator();
-		for (Tensor<T> output : outputTensors) 
-			opCode += "\t" + output.getName() + ",";
-		opCode = opCode.substring(0, opCode.length() - 1);
-		opCode += " = await " + this.opName + "(" + referencedModel
-			   + ",";
-		for (Tensor<T> input : inputTensors) 
-			opCode += input.getName() + ",";
-		for (String key : kwargs.keySet())
-			opCode += key + "=" + key + ",";
-		opCode = opCode.substring(0, opCode.length() - 1);
-		opCode += ")" + System.lineSeparator(); 
-		opCode += "\t" + "task.update('Finished running workflow')" + System.lineSeparator();
-		for (Tensor<T> output : outputTensors) 
-			opCode += "\t" + "tasks['" + output.getName() + "'] = " + output.getName() + System.lineSeparator();
-		opCode += "asyncio.run(run_workflow())" + System.lineSeparator();
 	}
 	
 	public static void main(String[] args) {
@@ -256,15 +221,6 @@ public class RunMode {
 			return true;
 		}
 		return false;
-	}
-	
-	private <T extends RealType<T> & NativeType<T>> 
-				HashMap<String, Object> tensorToMap(Tensor<T> tt) {
-		HashMap<String, Object> tensorMap = new HashMap<String, Object>();
-		tensorMap.put(AXES_KEY, tt.getAxesOrderString());
-		tensorMap.put(DATA_KEY, ImgLib2ToArray.build(tt.getData()));
-		tensorMap.put(SHAPE_KEY, tt.getShape());
-		return tensorMap;
 	}
 	
 	private <T extends RealType<T> & NativeType<T>>
