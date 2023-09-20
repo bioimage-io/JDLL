@@ -129,6 +129,10 @@ public class RunMode {
 	}
 	
 	public static void main(String[] args) {
+		Integer[] arr = new Integer[3];
+		arr[0] = 0;
+		Object obj = (int) 2;
+		boolean aa = isTypeDirectlySupported(obj.getClass());
 		RunMode rm = new RunMode(null);
 
 		rm.envFileName = "C:\\Users\\angel\\git\\jep\\miniconda\\envs\\stardist";
@@ -156,17 +160,49 @@ public class RunMode {
 		
 	}
 	
-	private void convertInputMap() {
+	private < T extends RealType< T > & NativeType< T > > void convertInputMap() {
 		LinkedHashMap<String, Object> apposeInputMap = new LinkedHashMap<>();
 		for (Entry<String, Object> entry : this.kwargs.entrySet()) {
 			if (entry.getValue() instanceof String) {
 				apposeInputMap.put(entry.getKey(), entry.getValue());
 			} else if (entry.getValue() instanceof Tensor) {
-				
-			} else if (entry.getValue() instanceof Number) {
-				
+				Tensor<T> tt = (Tensor<T>) entry.getValue();
+				apposeInputMap.put(tt.getName(), tensorToMap(tt));
+			} else if (!entry.getValue().getClass().isArray() 
+					&& isTypeDirectlySupported(entry.getValue().getClass())) {
+				apposeInputMap.put(entry.getKey(), entry.getValue());
+			} else if (entry.getValue().getClass().isArray() 
+					&& isTypeDirectlySupported(entry.getValue().getClass().getComponentType())) {
+				apposeInputMap.put(entry.getKey(), entry.getValue());
+			} else if (entry.getValue() instanceof List 
+					&& ((List) entry.getValue()).size() == 0) {
+				apposeInputMap.put(entry.getKey(), new Object[0]);
+			} else if (entry.getValue() instanceof List 
+					&& isTypeDirectlySupported(((List) entry.getValue()).get(0).getClass())) {
+				apposeInputMap.put(entry.getKey(), entry.getValue());
 			}
 		}
+	}
+	
+	private static Object[] convertListToArray() {
+		
+	}
+	
+	private static boolean isTypeDirectlySupported(Class<?> cl) {
+		if (Number.class.isAssignableFrom(cl) 
+				|| cl.isPrimitive() || String.class.isAssignableFrom(cl) ) {
+			return true;
+		}
+		return false;
+	}
+	
+	private <T extends RealType<T> & NativeType<T>> 
+				HashMap<String, Object> tensorToMap(Tensor<T> tt) {
+		HashMap<String, Object> tensorMap = new HashMap<String, Object>();
+		tensorMap.put(AXES_KEY, tt.getAxesOrderString());
+		tensorMap.put(DATA_KEY, ImgLib2ToArray.build(tt.getData()));
+		tensorMap.put(SHAPE_KEY, tt.getShape());
+		return tensorMap;
 	}
 	
 	public < T extends RealType< T > & NativeType< T > >
