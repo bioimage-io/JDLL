@@ -34,6 +34,14 @@ public class OpDescription {
 		
 	}
 	
+	public String getOpImport() {
+		return "";
+	}
+	
+	public int getNumberOfOutputs() {
+		return 0;
+	}
+	
 	public void defineCondaEnv() {
 		
 	}

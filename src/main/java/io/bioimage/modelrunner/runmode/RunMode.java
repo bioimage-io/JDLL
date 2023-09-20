@@ -26,6 +26,7 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map.Entry;
+import java.util.stream.IntStream;
 
 import org.apposed.appose.Appose;
 import org.apposed.appose.Environment;
@@ -55,6 +56,19 @@ public class RunMode {
 	
 	private static final String DATA_KEY = "data";
 	
+	private static final String TENSOR_KEY = "tensor";
+	
+	private static final String NP_ARR_KEY = "np_arr";
+	
+	private static final String STANDARD_KEY = "standard";
+	
+	private static final String OUTPUT_REFORMATING = 
+			"if isinstance(%s, np.ndarray):" + System.lineSeparator()
+			+ "\t"
+			+ "elif isinstance(%s, np.ndarray):" + System.lineSeparator()
+			+ "\t"
+			+ ;;
+	
 	private static final String BMZ_CORE_IMPORTS = 
 			"from bioimageio.core import load_resource_description" + System.lineSeparator()
 			+ "from bioimageio.core.resource_io.nodes import Model" + System.lineSeparator();
@@ -66,13 +80,18 @@ public class RunMode {
 	private String opCode;
 	private String opName;
 	private String referencedModel;
+	private OpDescription op;
 	private LinkedHashMap<String, Object> kwargs;
 	private LinkedHashMap<String, Object> apposeInputMap;
 	private String tensorRecreationCode = "";
 	private String importsCode = "";
+	private String opMethodCode = "";
+	private String retrieveResultsCode = "";
+	List<String> outputNames = new ArrayList<String>();
 	
 	private RunMode(OpDescription op) {
-		
+		this.op = op;
+		IntStream.range(0, op.getNumberOfOutputs()).forEach(i -> outputNames.add("output" + i));
 		/*
 		envFileName = op.getCondaEnv();
 		referencedModel = op.appliedOnWhichModel();
@@ -98,20 +117,37 @@ public class RunMode {
 	}
 	
 	private void addImports() {
-		opCode += BMZ_CORE_IMPORTS;
-		opCode += "from " + OP_PACKAGE + " import " + opName + System.lineSeparator();
-		opCode += "async def run_workflow():" + System.lineSeparator();
+		opCode += BMZ_CORE_IMPORTS + op.getOpImport() + System.lineSeparator();
 	}
 	
-	public < T extends RealType< T > & NativeType< T > >
-		void addRecreationOfTensor(Tensor<T> tensor) {
-		opCode += "\t" + tensor.getName() + "_data = " + tensor.getName() + "['" + DATA_KEY + "']" + System.lineSeparator()
-				+ "\t" + tensor.getName() + " = np.array(" + tensor.getName() + "_data).reshape(";
-		for (int i : tensor.getShape()) {
-			opCode += i + ",";
+	private void opExecutionCode() {
+		opMethodCode += op.getMethodName() + "(";
+		for (String key : this.apposeInputMap.keySet())
+			opMethodCode += key + ",";
+		opMethodCode += ")" + System.lineSeparator();
+	}
+	
+	private void retrieveResultsCode() {
+		retrieveResultsCode = "task.update('Preparing outputs')" + System.lineSeparator();
+		
+		for (String outN : this.outputNames) {
+			retrieveResultsCode += "if isinstance(" + outN + ", np.ndarray):" + System.lineSeparator()
+								+ "\t"
+								+ "elif isinstance(" + outN + ", np.ndarray):" + System.lineSeparator()
+								+ "\t"
+								+ ;
 		}
-		opCode = opCode.substring(0, opCode.length() - 1);
-		opCode += ")" + System.lineSeparator();
+
+		+ "\r\n"
+		+ "if len(labels.shape) == 2:  # batch dim got squeezed\r\n"
+		+ "    labels = labels[None]\r\n"
+		+ "\r\n"
+		+ "output_axes_wo_channels = tuple(a for a in model.outputs[0].axes if a != \"c\")\r\n"
+		//+ "labels = labels.flatten().tolist()\r\n"
+		+ "task.update('AAAAAAAAAAA')\r\n"
+		+ "task.update(str(type(labels)))\r\n"
+		+ "task.outputs['output0'] = labels\r\n";
+
 	}
 	
 	private < T extends RealType< T > & NativeType< T > >
@@ -250,14 +286,6 @@ public class RunMode {
 		tensorRecreationCode = 
 				tensorRecreationCode.substring(0, tensorRecreationCode.length() - 2);
 		tensorRecreationCode += System.lineSeparator();
-	}
-	
-	private <T extends RealType<T> & NativeType<T>> 
-				HashMap<String, Object> imglib2ToMap(RandomAccessibleInterval<T> rai) {
-		HashMap<String, Object> tensorMap = new HashMap<String, Object>();
-		tensorMap.put(DATA_KEY, ImgLib2ToArray.build(rai));
-		tensorMap.put(SHAPE_KEY, rai.dimensionsAsLongArray());
-		return tensorMap;
 	}
 	
 	public < T extends RealType< T > & NativeType< T > >
