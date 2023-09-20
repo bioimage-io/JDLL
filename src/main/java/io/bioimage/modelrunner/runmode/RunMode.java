@@ -56,18 +56,33 @@ public class RunMode {
 	
 	private static final String DATA_KEY = "data";
 	
+	private static final String NAME_KEY = "data";
+	
 	private static final String TENSOR_KEY = "tensor";
 	
 	private static final String NP_ARR_KEY = "np_arr";
 	
 	private static final String STANDARD_KEY = "standard";
 	
+	// TODO add support for list of objects
 	private static final String OUTPUT_REFORMATING = 
-			"if isinstance(%s, np.ndarray):" + System.lineSeparator()
-			+ "\t"
+			"if isinstance(%s, xr.DataArray):" + System.lineSeparator()
+			+ "\ttypes_list.append(" + TENSOR_KEY + ")" + System.lineSeparator()
+			+ "\t%s = {\"" + DATA_KEY + "\": %s.values.flatten().tolist(), \""
+				+ SHAPE_KEY + "\": %s.shape, \"" + AXES_KEY + "\": %s.dims,"
+				+ "\"" + NAME_KEY + "\": %s.name}" + System.lineSeparator()
 			+ "elif isinstance(%s, np.ndarray):" + System.lineSeparator()
-			+ "\t"
-			+ ;;
+			+ "\ttypes_list.append(" + NP_ARR_KEY + ")" + System.lineSeparator()
+			+ "\t%s = {\"" + DATA_KEY + "\": %s.flatten().tolist(), \""
+			+ SHAPE_KEY + "\": %s.shape}" + System.lineSeparator()
+			+ "elif isinstance(%s, list) and len(%s) == 0:" + System.lineSeparator()
+			+ "\ttypes_list.append(" + STANDARD_KEY + ")" + System.lineSeparator()
+			+ "elif isinstance(%s, list) and isinstance(%s[0], list):" + System.lineSeparator()
+			+ "\ttypes_list.append(" + TENSOR_KEY + ")" + System.lineSeparator()
+			+ "\t" + System.lineSeparator()
+			+ "else:" + System.lineSeparator()
+			+ "\ttypes_list.append(" + STANDARD_KEY + ")" + System.lineSeparator()
+			+ "\t" + System.lineSeparator();
 	
 	private static final String BMZ_CORE_IMPORTS = 
 			"from bioimageio.core import load_resource_description" + System.lineSeparator()
