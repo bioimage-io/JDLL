@@ -6,6 +6,7 @@ from os import path
 from pathlib import Path
 from typing import Dict, IO, List, Optional, Tuple, Union
 from csbdeep.utils import axes_check_and_normalize, normalize, _raise
+from bioimageio.spec import load_raw_resource_description
 
 import xarray as xr
 from stardist import import_bioimageio as stardist_import_bioimageio
@@ -13,6 +14,7 @@ from stardist import import_bioimageio as stardist_import_bioimageio
 from bioimageio.core import export_resource_package, load_resource_description
 from bioimageio.core.prediction_pipeline._combined_processing import CombinedProcessing
 from bioimageio.core.prediction_pipeline._measure_groups import compute_measures
+from bioimageio.core.resource_io.utils import resolve_raw_node, resolve_source
 from bioimageio.core.resource_io.nodes import Model
 from bioimageio.spec.model import raw_nodes
 from bioimageio.spec.shared.raw_nodes import ResourceDescription as RawResourceDescription
@@ -36,7 +38,7 @@ def stardist_prediction_2d_mine(
         import shutil
         from csbdeep.utils import save_json
         from stardist.models import StarDist2D, StarDist3D
-        biomodel = load_resource_description(model_rdf)
+        biomodel = load_raw_resource_description(model_rdf, update_to_format="latest")
 
         # read the stardist specific content
         if 'stardist' not in biomodel.config:
@@ -47,15 +49,20 @@ def stardist_prediction_2d_mine(
 
         # make sure that the keras weights are in the attachments
         weights_file = None
+        fs = biomodel.attachments.files
+        resolve_source(str(fs[2]), Path(model_rdf), Path(
+            r'C:\Users\angel\OneDrive\Documentos\pasteur\git\model-runner-java\models\StarDist H&E Nuclei Segmentation_06092023_020924\stardist_op\weights_bioimageio.h5'))
         for f in biomodel.attachments.files:
             if f.name == weights and f.exists():
                 weights_file = f
                 break
         weights_file is not None or _raise(FileNotFoundError(f"couldn't find weights file '{weights}'"))
 
+
         # save the config and threshold to json, and weights to hdf5 to enable loading as stardist model
         # copy bioimageio files to separate sub-folder
         outpath = Path(Path(path.dirname(model_rdf)) / STARDIST_OP_NAME)
+        resolve_source(weights_file, biomodel.root_path, str(outpath / "weights_bioimageio.h5"))
 
         outpath.mkdir(parents=True)
         save_json(config, str(outpath / 'config.json'))
@@ -226,5 +233,6 @@ def stardist_prediction_2d(
 
 arr = np.zeros((1, 208, 208, 3))
 xarr = xr.DataArray(arr, dims=["b", "y", "x", "c"], name="input")
+model_path = "chatty-frog"
 model_path = r'C:\Users\angel\OneDrive\Documentos\pasteur\git\model-runner-java\models\StarDist H&E Nuclei Segmentation_06092023_020924\rdf.yaml'
 stardist_prediction_2d_mine(model_path, xarr)
