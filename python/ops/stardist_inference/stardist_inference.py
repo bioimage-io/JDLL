@@ -49,11 +49,8 @@ def stardist_prediction_2d_mine(
 
         # make sure that the keras weights are in the attachments
         weights_file = None
-        fs = biomodel.attachments.files
-        resolve_source(str(fs[2]), Path(model_rdf), Path(
-            r'C:\Users\angel\OneDrive\Documentos\pasteur\git\model-runner-java\models\StarDist H&E Nuclei Segmentation_06092023_020924\stardist_op\weights_bioimageio.h5'))
         for f in biomodel.attachments.files:
-            if f.name == weights and f.exists():
+            if str(f).endswith("/" + weights):
                 weights_file = f
                 break
         weights_file is not None or _raise(FileNotFoundError(f"couldn't find weights file '{weights}'"))
@@ -62,18 +59,20 @@ def stardist_prediction_2d_mine(
         # save the config and threshold to json, and weights to hdf5 to enable loading as stardist model
         # copy bioimageio files to separate sub-folder
         outpath = Path(Path(path.dirname(model_rdf)) / STARDIST_OP_NAME)
-        resolve_source(weights_file, biomodel.root_path, str(outpath / "weights_bioimageio.h5"))
 
-        outpath.mkdir(parents=True)
+        outpath.mkdir(parents=True, exist_ok=True)
         save_json(config, str(outpath / 'config.json'))
         save_json(thresholds, str(outpath / 'thresholds.json'))
-        shutil.copy(str(weights_file), str(outpath / "weights_bioimageio.h5"))
+        if path.exists(Path(path.dirname(model_rdf)) / weights):
+            shutil.copy(str(weights_file), str(outpath / "weights_bioimageio.h5"))
+        else:
+            resolve_source(weights_file, Path(model_rdf), Path(str(outpath / "weights_bioimageio.h5")))
 
         model_class = (StarDist2D if config['n_dim'] == 2 else StarDist3D)
         imported_stardist_model = model_class(None, outpath.name, basedir=str(outpath.parent))
 
-    assert isinstance(biomodel, Model)
-    if len(model.inputs) != 1:
+    #assert isinstance(biomodel, Model)
+    if len(biomodel.inputs) != 1:
         raise NotImplementedError("Multiple inputs for stardist models not yet implemented")
 
     if len(model.outputs) != 1:
@@ -81,7 +80,7 @@ def stardist_prediction_2d_mine(
 
     # rename tensor axes to single letters to match model RDF
     #map_axes = {k: v for k, v in AXIS_NAME_TO_LETTER.items() if k in input_tensor.dims}
-    map_axes = "byxc"
+    map_axes = None
     if map_axes:
         input_tensor = input_tensor.rename(map_axes)
 
@@ -93,7 +92,7 @@ def stardist_prediction_2d_mine(
 
     preprocessed_input = sample[ipt_name]
     #map_axes_back = {k: v for k, v in AXIS_LETTER_TO_NAME.items() if k in preprocessed_input.dims}
-    map_axes_back = "byxc"
+    map_axes_back = None
     if map_axes_back:
         preprocessed_input = preprocessed_input.rename(map_axes_back)
 
