@@ -14,12 +14,15 @@ from stardist import import_bioimageio as stardist_import_bioimageio
 from bioimageio.core import export_resource_package, load_resource_description
 from bioimageio.core.prediction_pipeline._combined_processing import CombinedProcessing
 from bioimageio.core.prediction_pipeline._measure_groups import compute_measures
-from bioimageio.core.resource_io.utils import resolve_raw_node, resolve_source
+from bioimageio.core.resource_io.utils import SourceNodeTransformer, resolve_source, RawNodeTypeTransformer
 from bioimageio.core.resource_io.nodes import Model
+from bioimageio.core.resource_io.io_ import nodes
 from bioimageio.spec.model import raw_nodes
 from bioimageio.spec.shared.raw_nodes import ResourceDescription as RawResourceDescription
 
 import numpy as np
+
+from bioimageio.spec.shared.node_transformer import UriNodeTransformer
 
 RDF_YAML_SUFF = 'rdf.yaml'
 RDF_YAML_SUFF_DEPR = 'model.yaml'
@@ -39,7 +42,19 @@ def stardist_prediction_2d_mine(
         from csbdeep.utils import save_json
         from stardist.models import StarDist2D, StarDist3D
         biomodel = load_raw_resource_description(model_rdf, update_to_format="latest")
-
+        """
+        rd = UriNodeTransformer(root_path=biomodel.root_path, uri_only_if_in_package=True).transform(
+            biomodel)
+        rd2 = UriNodeTransformer(root_path=biomodel.root_path, uri_only_if_in_package=False).transform(
+            biomodel)
+        aa = isinstance(rd, Model)
+        rd = SourceNodeTransformer().transform(rd)
+        cc = isinstance(rd, Model)
+        rd = RawNodeTypeTransformer(nodes).transform(rd)
+        cc = isinstance(rd, Model)
+        model = load_resource_description(model_rdf)
+        """
+        biomodel = RawNodeTypeTransformer(nodes).transform(biomodel)
         # read the stardist specific content
         if 'stardist' not in biomodel.config:
             raise(RuntimeError("bioimage.io model not compatible"))
@@ -75,7 +90,7 @@ def stardist_prediction_2d_mine(
     if len(biomodel.inputs) != 1:
         raise NotImplementedError("Multiple inputs for stardist models not yet implemented")
 
-    if len(model.outputs) != 1:
+    if len(biomodel.outputs) != 1:
         raise NotImplementedError("Multiple outputs for stardist models not yet implemented")
 
     # rename tensor axes to single letters to match model RDF
@@ -84,8 +99,8 @@ def stardist_prediction_2d_mine(
     if map_axes:
         input_tensor = input_tensor.rename(map_axes)
 
-    prep = CombinedProcessing.from_tensor_specs(model.inputs)
-    ipt_name = model.inputs[0].name
+    prep = CombinedProcessing.from_tensor_specs(biomodel.inputs)
+    ipt_name = biomodel.inputs[0].name
     sample = {ipt_name: input_tensor}
     computed_measures = compute_measures(prep.required_measures, sample=sample)
     prep.apply(sample, computed_measures)
@@ -112,14 +127,14 @@ def stardist_prediction_2d_mine(
     img = preprocessed_input.transpose(*input_axis_order).to_numpy()
     labels, polys = imported_stardist_model.predict_instances(
         img,
-        axes="".join([{"b": "S"}.get(a[0], a[0].capitalize()) for a in model.inputs[0].axes]),
+        axes="".join([{"b": "S"}.get(a[0], a[0].capitalize()) for a in biomodel.inputs[0].axes]),
         n_tiles=n_tiles,
     )
 
     if len(labels.shape) == 2:  # batch dim got squeezed
         labels = labels[None]
 
-    output_axes_wo_channels = tuple(a for a in model.outputs[0].axes if a != "c")
+    output_axes_wo_channels = tuple(a for a in biomodel.outputs[0].axes if a != "c")
     assert output_axes_wo_channels == tuple("byx")
     return xr.DataArray(labels, dims=output_axes_wo_channels), polys
 
