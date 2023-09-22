@@ -25,7 +25,10 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Objects;
 
+import io.bioimage.modelrunner.bioimageio.BioimageioRepo;
+import io.bioimage.modelrunner.bioimageio.description.ModelDescriptor;
 import io.bioimage.modelrunner.tensor.Tensor;
+import io.bioimage.modelrunner.utils.Constants;
 import net.imglib2.type.NativeType;
 import net.imglib2.type.numeric.RealType;
 
@@ -39,7 +42,7 @@ public class StardistInferJdllOp implements OpInterface {
 	
 	private String modelName;
 	
-	private Tensor inputTensor;
+	private Tensor<?> inputTensor;
 	
 	private LinkedHashMap<String, Object> inputsMap;
 	
@@ -50,6 +53,8 @@ public class StardistInferJdllOp implements OpInterface {
 	private final static String INPUT_TENSOR_KEY = "input_tensor";
 	
 	private static final String OP_METHOD_NAME = "stardist_prediction_2d_mine";
+	
+	private static final String STARDIST_FIELD_KEY = "stardist";
 	
 	private static final int N_STARDIST_OUTPUTS = 2;
 	
@@ -87,6 +92,9 @@ public class StardistInferJdllOp implements OpInterface {
 
 	@Override
 	public LinkedHashMap<String, Object> getOpInputs() {
+		Objects.requireNonNull(modelName, "The model of interest needs to be defined first.");
+		Objects.requireNonNull(inputTensor, "The input tensor has not been defined. Please, define"
+				+ " it with the method 'setInputTensor(Tensor<T> tensor)'");
 		inputsMap = new LinkedHashMap<String, Object>();
 		inputsMap.put(MODEL_KEY, modelName);
 		inputsMap.put(INPUT_TENSOR_KEY, inputTensor);
@@ -143,7 +151,14 @@ public class StardistInferJdllOp implements OpInterface {
 	 * @return true if the rdf.yaml represents a stardist model and false otherwise
 	 */
 	public static boolean isModelFileStardist(String modelFile) {
-		return true;
+		if (new File(modelFile).getName().equals(Constants.RDF_FNAME) == false)
+			return false;
+		try {
+			ModelDescriptor descriptor = ModelDescriptor.readFromLocalFile(modelFile);
+			 return descriptor.getConfig().getSpecMap().keySet().contains(STARDIST_FIELD_KEY);
+		} catch (Exception e) {
+			return false;
+		}
 	}
 	
 	/**
@@ -155,6 +170,8 @@ public class StardistInferJdllOp implements OpInterface {
 	 * @return true if it actually corresponds to astardist model or false otherwise
 	 */
 	public static boolean isModelNameStardist(String modelName) {
+		BioimageioRepo br = BioimageioRepo.connect();
+		ModelDescriptor model = br.selectByName(modelName);
 		return true;
 	}
 	
