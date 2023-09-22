@@ -85,16 +85,14 @@ public class RunMode {
 			+ "\ttypes_list.append(" + STANDARD_KEY + ")" + System.lineSeparator()
 			+ "task.outputs['%s'] = %s" + System.lineSeparator();
 	
-	private static final String BMZ_CORE_IMPORTS = 
-			"from bioimageio.core import load_resource_description" + System.lineSeparator()
-			+ "from bioimageio.core.resource_io.nodes import Model" + System.lineSeparator();
+	private static final String DEFAULT_IMPORT = 
+			"import sys" + System.lineSeparator();
 	
 	
 	private Environment env;
 	private String envFileName;
 	private String opCode;
 	private OpInterface op;
-	private LinkedHashMap<String, Object> kwargs;
 	private LinkedHashMap<String, Object> apposeInputMap;
 	private String tensorRecreationCode = "";
 	private String importsCode = "";
@@ -105,6 +103,18 @@ public class RunMode {
 	private RunMode(OpInterface op) {
 		this.op = op;
 		IntStream.range(0, op.getNumberOfOutputs()).forEach(i -> outputNames.add("output" + i));
+		addImports();
+		convertInputMap();
+		opExecutionCode();
+		retrieveResultsCode();
+		
+		opCode = importsCode + System.lineSeparator() + tensorRecreationCode
+				+ System.lineSeparator() + opMethodCode + System.lineSeparator()
+				+ retrieveResultsCode;
+		System.out.println(opCode);
+		
+		
+		
 		/*
 		envFileName = op.getCondaEnv();
 		referencedModel = op.appliedOnWhichModel();
@@ -115,6 +125,47 @@ public class RunMode {
 	
 	public static RunMode createRunMode(OpInterface op) {
 		return new RunMode(op);
+	}
+	
+	public void testRunModel() {
+		env = Appose.base(new File(this.op.getCondaEnv())).build();
+		try (Service python = env.python()) {
+        	python.debug(line -> {
+        		System.err.println(line);
+        	});
+            Task task = python.task(opCode, apposeInputMap);
+            System.out.println("here");
+            task.listen(event -> {
+                switch (event.responseType) {
+	                case UPDATE:
+	                    System.out.println("Progress: " + task.message);
+	                    break;
+	                case COMPLETION:
+	                    Object numer =  task.outputs.get("output0");
+	                    System.out.println("Task complete. Result: " + numer);
+	                    break;
+	                case CANCELATION:
+	                    System.out.println("Task canceled");
+	                    break;
+	                case FAILURE:
+	                    System.out.println("Task failed: " + task.error);
+	                    break;
+                }
+            });
+            task.waitFor();
+            System.out.println("here2");
+            Object result = task.outputs.get("output0");
+            Object polys = task.outputs.get("output1");
+            System.out.println("here3");
+            if (result instanceof Integer)
+            	System.out.print(result);
+        } catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (InterruptedException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 	}
 	
 	public void envCreation() {
@@ -130,60 +181,14 @@ public class RunMode {
 	}
 	
 	private void addImports() {
-		opCode += BMZ_CORE_IMPORTS + op.getOpImport() + System.lineSeparator();
-	}
-	
-	private void opExecutionCode() {
-		opMethodCode += op.getMethodName() + "(";
-		for (String key : this.apposeInputMap.keySet())
-			opMethodCode += key + ",";
-		opMethodCode += ")" + System.lineSeparator();
-	}
-	
-	private void retrieveResultsCode() {
-		retrieveResultsCode = "task.update('Preparing outputs')" + System.lineSeparator()
-							+ "types_list = []" + System.lineSeparator() ;
-		
-		for (String outN : this.outputNames) {
-			String code = String.format(OUTPUT_REFORMATING, outN, outN, outN, outN, outN, outN,
-					outN, outN, outN, outN, outN, outN, outN, outN);
-			retrieveResultsCode += code;
-		}
-	}
-	
-	public static void main(String[] args) {
-		Integer[] arr = new Integer[3];
-		arr[0] = 0;
-		Object obj = (int) 2;
-		boolean aa = isTypeDirectlySupported(obj.getClass());
-		RunMode rm = new RunMode(null);
-
-		rm.envFileName = "C:\\Users\\angel\\git\\jep\\miniconda\\envs\\stardist";
-		rm.env = Appose.base(new File(rm.envFileName)).build();
-		rm.kwargs = new LinkedHashMap<String, Object>();
-		
-		final ImgFactory< FloatType > imgFactory = new CellImgFactory<>( new FloatType(), 5 );
-		final Img< FloatType > img1 = imgFactory.create( 1, 512, 512, 3 );
-		// Create the input tensor with the nameand axes given by the rdf.yaml file
-		// and add it to the list of input tensors
-		Tensor<FloatType> inpTensor = Tensor.build("input0", "byxc", img1);
-		List<Tensor<FloatType>> inputs = new ArrayList<Tensor<FloatType>>();
-		inputs.add(inpTensor);
-		
-		final Img< FloatType > img2 = imgFactory.create( 1, 512, 512, 1 );
-		// Create the input tensor with the nameand axes given by the rdf.yaml file
-		// and add it to the list of input tensors
-		Tensor<FloatType> outTensor = Tensor.build("ouput0", "byxc", img2);
-		List<Tensor<FloatType>> outputs = new ArrayList<Tensor<FloatType>>();
-		outputs.add(outTensor);
-		
-		rm.run(inputs, outputs);
-		
+		importsCode = DEFAULT_IMPORT
+				+ "sys.path.append('" + op.getOpDir() + "')" + System.lineSeparator()
+				+ op.getOpImport() + System.lineSeparator();
 	}
 	
 	private < T extends RealType< T > & NativeType< T > > void convertInputMap() {
 		apposeInputMap = new LinkedHashMap<>();
-		for (Entry<String, Object> entry : this.kwargs.entrySet()) {
+		for (Entry<String, Object> entry : this.op.getOpInputs().entrySet()) {
 			if (entry.getValue() instanceof String) {
 				apposeInputMap.put(entry.getKey(), entry.getValue());
 			} else if (entry.getValue() instanceof Tensor) {
@@ -258,6 +263,60 @@ public class RunMode {
 		tensorRecreationCode += System.lineSeparator();
 	}
 	
+	private void opExecutionCode() {
+		opMethodCode = "";
+		for (String outN : this.outputNames) {
+			opMethodCode += outN + ", ";
+		}
+		opMethodCode = 
+				opMethodCode.substring(0, opMethodCode.length() - 2);
+		opMethodCode += " = ";
+		opMethodCode += op.getMethodName() + "(";
+		for (String key : this.apposeInputMap.keySet())
+			opMethodCode += key + ",";
+		opMethodCode += ")" + System.lineSeparator();
+	}
+	
+	private void retrieveResultsCode() {
+		retrieveResultsCode = "task.update('Preparing outputs')" + System.lineSeparator()
+							+ "types_list = []" + System.lineSeparator() ;
+		
+		for (String outN : this.outputNames) {
+			String code = String.format(OUTPUT_REFORMATING, outN, outN, outN, outN, outN, outN,
+					outN, outN, outN, outN, outN, outN, outN, outN, outN, outN);
+			retrieveResultsCode += code;
+		}
+	}
+	
+	public static void main(String[] args) {
+		Integer[] arr = new Integer[3];
+		arr[0] = 0;
+		Object obj = (int) 2;
+		boolean aa = isTypeDirectlySupported(obj.getClass());
+		RunMode rm = new RunMode(null);
+
+		rm.envFileName = "C:\\Users\\angel\\git\\jep\\miniconda\\envs\\stardist";
+		rm.env = Appose.base(new File(rm.envFileName)).build();
+		
+		final ImgFactory< FloatType > imgFactory = new CellImgFactory<>( new FloatType(), 5 );
+		final Img< FloatType > img1 = imgFactory.create( 1, 512, 512, 3 );
+		// Create the input tensor with the nameand axes given by the rdf.yaml file
+		// and add it to the list of input tensors
+		Tensor<FloatType> inpTensor = Tensor.build("input0", "byxc", img1);
+		List<Tensor<FloatType>> inputs = new ArrayList<Tensor<FloatType>>();
+		inputs.add(inpTensor);
+		
+		final Img< FloatType > img2 = imgFactory.create( 1, 512, 512, 1 );
+		// Create the input tensor with the nameand axes given by the rdf.yaml file
+		// and add it to the list of input tensors
+		Tensor<FloatType> outTensor = Tensor.build("ouput0", "byxc", img2);
+		List<Tensor<FloatType>> outputs = new ArrayList<Tensor<FloatType>>();
+		outputs.add(outTensor);
+		
+		rm.run(inputs, outputs);
+		
+	}
+	
 	public < T extends RealType< T > & NativeType< T > >
 		void run(List<Tensor<T>> inputTensors, List<Tensor<T>> outputTensors) {
 		
@@ -274,7 +333,7 @@ public class RunMode {
 			
 		}
 		
-		inputMap.putAll(kwargs);
+		inputMap.putAll(null);
 		
 		opCode = "import numpy as np\r\n"
 				+ "import asyncio\r\n"

@@ -27,10 +27,15 @@ import java.util.stream.Collectors;
 
 import io.bioimage.modelrunner.bioimageio.BioimageioRepo;
 import io.bioimage.modelrunner.bioimageio.description.ModelDescriptor;
+import io.bioimage.modelrunner.runmode.RunMode;
 import io.bioimage.modelrunner.tensor.Tensor;
 import io.bioimage.modelrunner.utils.Constants;
+import net.imglib2.img.Img;
+import net.imglib2.img.ImgFactory;
+import net.imglib2.img.array.ArrayImgFactory;
 import net.imglib2.type.NativeType;
 import net.imglib2.type.numeric.RealType;
+import net.imglib2.type.numeric.real.FloatType;
 
 /**
  * Code for the JDLL OP that allows running the whole stardist model (pre-processing + model executio
@@ -62,6 +67,18 @@ public class StardistInferJdllOp implements OpInterface {
 	
 	private static final String STARDIST_OP_FNAME = "stardist_inference.py";
 	
+	
+	public static void main(String[] args) {
+		final ImgFactory< FloatType > imgFactory = new ArrayImgFactory<>( new FloatType() );
+		final Img< FloatType > img1 = imgFactory.create( 1, 512, 512, 3 );
+		Tensor<FloatType> inpTensor = Tensor.build("input0", "byxc", img1);
+		String modelName = "C:\\Users\\angel\\OneDrive\\Documentos\\pasteur\\git\\model-runner-java\\models\\StarDist H&E Nuclei Segmentation_06092023_020924\\rdf.yaml";
+		StardistInferJdllOp op = create(modelName, inpTensor);
+		RunMode rm = RunMode.createRunMode(op);
+		rm.testRunModel();
+		System.out.print(false);
+	}
+	
 	/**
 	 * Create a StarDist inference OP to execute the whole stardist model in Python
 	 * with its pre- and post-processing
@@ -87,7 +104,7 @@ public class StardistInferJdllOp implements OpInterface {
 		if (new File(modelName).isFile() && !isModelFileStardist(modelName))
 			throw new IllegalArgumentException("The file selected does not correspond to "
 					+ "the rdf.yaml file of a Bioiamge.io Stardist model.");
-		else if (!isModelNameStardist(modelName))
+		else if (!(new File(modelName).isFile()) && !isModelNameStardist(modelName))
 			throw new IllegalArgumentException("The model name provided does not correspond to a valid"
 					+ " Stardist model present in the Bioimage.io online reposritory.");
 		this.modelName = modelName;
@@ -114,7 +131,7 @@ public class StardistInferJdllOp implements OpInterface {
 		opFilePath = "C:\\Users\\angel\\OneDrive\\Documentos\\pasteur\\git\\model-runner-java\\python\\ops\\stardist_inference";
 		// TODO check if the env has also been created
 		// TODO if not create it (where??)
-		envPath  = "";
+		envPath  = "C:\\Users\\angel\\git\\jep\\miniconda\\envs\\my_new_project";
 	}
 
 	@Override
@@ -179,7 +196,7 @@ public class StardistInferJdllOp implements OpInterface {
 		if (new File(modelFile).getName().equals(Constants.RDF_FNAME) == false)
 			return false;
 		try {
-			ModelDescriptor descriptor = ModelDescriptor.readFromLocalFile(modelFile);
+			ModelDescriptor descriptor = ModelDescriptor.readFromLocalFile(modelFile, false);
 			 return descriptor.getConfig().getSpecMap().keySet().contains(STARDIST_FIELD_KEY);
 		} catch (Exception e) {
 			return false;
