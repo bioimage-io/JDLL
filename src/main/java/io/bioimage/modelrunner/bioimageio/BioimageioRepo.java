@@ -207,7 +207,8 @@ public class BioimageioRepo {
 				continue;
 			String modelID = jsonResource.get("id").getAsString();
 			modelIDs.add(modelID);
-			modelIDs.add(jsonResource.get("nickname").getAsString());
+			if (jsonResource.get("nickname") != null)
+				modelNicknames.add(jsonResource.get("nickname").getAsString());
 		}
 	}
 	
