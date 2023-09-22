@@ -1,6 +1,8 @@
 name: Run all Bioimage.io models
 on:
   push:
+    branches:
+      - main
     paths:
       - src/main/java/io/bioimage/modelrunner/example/ExampleLoadAndRunAllBmzModels.java
       - .github/workflows/example_run_all_bmz_models.yml
