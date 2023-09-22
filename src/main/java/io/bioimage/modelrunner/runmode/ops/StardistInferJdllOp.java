@@ -20,7 +20,6 @@
 package io.bioimage.modelrunner.runmode.ops;
 
 import java.io.File;
-import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Objects;
@@ -45,9 +44,11 @@ public class StardistInferJdllOp implements OpInterface {
 	
 	private Tensor<?> inputTensor;
 	
-	private LinkedHashMap<String, Object> inputsMap;
+	private String opFilePath;
 	
-	private final String CONDA_ENV_YAML_FILE = "";
+	private String envPath;
+	
+	private LinkedHashMap<String, Object> inputsMap;
 	
 	private final static String MODEL_KEY = "model";
 	
@@ -58,6 +59,28 @@ public class StardistInferJdllOp implements OpInterface {
 	private static final String STARDIST_FIELD_KEY = "stardist";
 	
 	private static final int N_STARDIST_OUTPUTS = 2;
+	
+	private static final String STARDIST_OP_FNAME = "stardist_inference.py";
+	
+	/**
+	 * Create a StarDist inference OP to execute the whole stardist model in Python
+	 * with its pre- and post-processing
+	 * @param <T>
+	 * 	ImgLib2 data types accepted by the OP
+	 * @param modelName
+	 * 	name of the model
+	 * @param tensor
+	 * 	input tensor for stardist
+	 * @return the OP can be run to use stardist
+	 */
+	public static < T extends RealType< T > & NativeType< T > > 
+			StardistInferJdllOp create(String modelName, Tensor<T> tensor) {
+		StardistInferJdllOp op = new StardistInferJdllOp();
+		op.setModel(modelName);
+		op.setInputTensor(tensor);
+		op.installOp();
+		return op;
+	}
 	
 	public void setModel(String modelName) throws IllegalArgumentException {
 		Objects.requireNonNull(modelName, "The modelName input argument cannot be null.");
@@ -76,8 +99,7 @@ public class StardistInferJdllOp implements OpInterface {
 
 	@Override
 	public String getOpImport() {
-		// TODO Auto-generated method stub
-		return null;
+		return "import " + STARDIST_OP_FNAME.substring(0, STARDIST_OP_FNAME.indexOf(".py"));
 	}
 
 	@Override
@@ -87,8 +109,12 @@ public class StardistInferJdllOp implements OpInterface {
 
 	@Override
 	public void installOp() {
-		// TODO Auto-generated method stub
-		
+		// TODO this method checks if the OP file is at its correponding folder.
+		// TODO if not unpack the python file and located (where??)
+		opFilePath = "C:\\Users\\angel\\OneDrive\\Documentos\\pasteur\\git\\model-runner-java\\python\\ops\\stardist_inference";
+		// TODO check if the env has also been created
+		// TODO if not create it (where??)
+		envPath  = "";
 	}
 
 	@Override
@@ -104,8 +130,7 @@ public class StardistInferJdllOp implements OpInterface {
 
 	@Override
 	public String getCondaEnv() {
-		// TODO Auto-generated method stub
-		return null;
+		return envPath;
 	}
 
 	@Override
@@ -115,13 +140,12 @@ public class StardistInferJdllOp implements OpInterface {
 
 	@Override
 	public String getOpDir() {
-		// TODO Auto-generated method stub
-		return null;
+		return opFilePath;
 	}
 
 	@Override
 	public boolean isOpInstalled() {
-		// TODO Auto-generated method stub
+		// TODO maybe remove this method? Make the check at installOp?
 		return false;
 	}
 	
