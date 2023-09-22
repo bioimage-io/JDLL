@@ -19,7 +19,7 @@
  */
 package io.bioimage.modelrunner.runmode.ops;
 
-import java.util.List;
+import java.util.LinkedHashMap;
 
 /**
  * Interface that every OP needs to implement to be able to be run as a RunMode
@@ -38,14 +38,21 @@ public interface OpInterface {
 	 * @return number of ouptuts that the OP method will produce
 	 */
 	public int getNumberOfOutputs();
-	
+	/**
+	 * Check whether the OP is installed or not
+	 * @return true if the OP is installed ot false otherwise
+	 */
+	public boolean isOpInstalled();
+	/**
+	 * Method that installs the OP to be ready to be used
+	 */
 	public void installOp();
 	/**
-	 * Set the inputs to the OP in order
-	 * @param orderedInputList
-	 * 	the inputs we want to provide to the OP in the same order as they are defined in the OP
+	 * Get a LinkedHashMap contianing the inputs defined for the OP
+	 * @return an ordered map with the inputs to the OP, where the key
+	 * is the variable name and the object is the variable
 	 */
-	public void setInputsInOrder(List<Object> orderedInputList);
+	public LinkedHashMap<String, Object> getOpInputs();
 	/**
 	 * Get the Conda env needed to run the OP
 	 * 

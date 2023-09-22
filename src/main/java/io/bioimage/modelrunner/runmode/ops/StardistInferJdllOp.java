@@ -19,9 +19,43 @@
  */
 package io.bioimage.modelrunner.runmode.ops;
 
-import java.util.List;
+import java.util.LinkedHashMap;
 
+import io.bioimage.modelrunner.tensor.Tensor;
+import net.imglib2.type.NativeType;
+import net.imglib2.type.numeric.RealType;
+
+/**
+ * Code for the JDLL OP that allows running the whole stardist model (pre-processing + model executio
+ * + post-processing and tiling) in Python using Appose
+ * @author Carlos Javier Garcia Lopez de Haro
+ *
+ */
 public class StardistInferJdllOp implements OpInterface {
+	
+	private String modelName;
+	
+	private Tensor inputTensor;
+	
+	private LinkedHashMap<String, Object> inputsMap;
+	
+	private final String CONDA_ENV_YAML_FILE = "";
+	
+	private final static String MODEL_KEY = "model";
+	
+	private final static String INPUT_TENSOR_KEY = "input_tensor";
+	
+	private static final String OP_METHOD_NAME = "stardist_prediction_2d_mine";
+	
+	private static final int N_STARDIST_OUTPUTS = 2;
+	
+	public void setModel(String modelName) {
+		this.modelName = modelName;
+	}
+	
+	public < T extends RealType< T > & NativeType< T > > void setInputTensor(Tensor<T> tensor) {
+		inputTensor = tensor;
+	}
 
 	@Override
 	public String getOpImport() {
@@ -31,8 +65,7 @@ public class StardistInferJdllOp implements OpInterface {
 
 	@Override
 	public int getNumberOfOutputs() {
-		// TODO Auto-generated method stub
-		return 0;
+		return N_STARDIST_OUTPUTS;
 	}
 
 	@Override
@@ -42,9 +75,11 @@ public class StardistInferJdllOp implements OpInterface {
 	}
 
 	@Override
-	public void setInputsInOrder(List<Object> orderedInputList) {
-		// TODO Auto-generated method stub
-		
+	public LinkedHashMap<String, Object> getOpInputs() {
+		inputsMap = new LinkedHashMap<String, Object>();
+		inputsMap.put(MODEL_KEY, modelName);
+		inputsMap.put(INPUT_TENSOR_KEY, inputTensor);
+		return this.inputsMap;
 	}
 
 	@Override
@@ -55,14 +90,23 @@ public class StardistInferJdllOp implements OpInterface {
 
 	@Override
 	public String getMethodName() {
-		// TODO Auto-generated method stub
-		return null;
+		return OP_METHOD_NAME;
 	}
 
 	@Override
 	public String getOpDir() {
 		// TODO Auto-generated method stub
 		return null;
+	}
+
+	@Override
+	public boolean isOpInstalled() {
+		// TODO Auto-generated method stub
+		return false;
+	}
+	
+	public static boolean isModelCompatible() {
+		
 	}
 
 }
