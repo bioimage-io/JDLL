@@ -1,6 +1,8 @@
 name: Download all engines
 on:
   push:
+    branches:
+      - main
     paths:
       - src/main/resources/availableDLVersions.json
       - download-engines.py
