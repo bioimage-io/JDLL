@@ -23,7 +23,6 @@ import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -77,7 +76,7 @@ public class BioimageioRepo {
 	 */
 	private static List<String> modelNicknames;
 	
-	private LinkedHashMap<Path, ModelDescriptor> models;
+	private static LinkedHashMap<Path, ModelDescriptor> models;
 	
 	private Consumer<String> consumer;
 	
@@ -124,9 +123,23 @@ public class BioimageioRepo {
 	}
 	
 	/**
+	 * Refresh the list of models fetched from the Bioimage.io.
+	 * Connects to the Bioimage.io website and retrieves all the models available
+	 */
+	public void refresh() {
+		models = null;
+		listAllModels(false);
+	}
+	
+	/**
 	 * Method that connects to the BioImage.io API and retrieves the models available
 	 * at the Bioimage.io model repository.
-	 * The models are specified at: {@link #location}
+	 * The models are specified at: {@link #location}.
+	 * Once the method has been called, the list of models is not refreshed (that means
+	 * the method does not check the list of Bioimage.io models and returns what 
+	 * was obtained with the first call) unless the method {@link #refresh()}
+	 * is used, {@link #refresh()} actually calls again this method to retrieve the list from zero,
+	 * if not the same list as the one retrieved for the first time calling the method is used..
 	 * @param verbose
 	 * 	whether to print in the terminal and send that printed information in the consumer (if it 
 	 * 	exists) or not
