@@ -34,6 +34,7 @@ import org.apposed.appose.Service;
 import org.apposed.appose.Service.Task;
 
 import io.bioimage.modelrunner.runmode.ops.OpDescription;
+import io.bioimage.modelrunner.runmode.ops.OpInterface;
 import io.bioimage.modelrunner.tensor.ImgLib2ToArray;
 import io.bioimage.modelrunner.tensor.Tensor;
 import net.imglib2.RandomAccessibleInterval;
@@ -92,7 +93,7 @@ public class RunMode {
 	private Environment env;
 	private String envFileName;
 	private String opCode;
-	private OpDescription op;
+	private OpInterface op;
 	private LinkedHashMap<String, Object> kwargs;
 	private LinkedHashMap<String, Object> apposeInputMap;
 	private String tensorRecreationCode = "";
@@ -101,7 +102,7 @@ public class RunMode {
 	private String retrieveResultsCode = "";
 	List<String> outputNames = new ArrayList<String>();
 	
-	private RunMode(OpDescription op) {
+	private RunMode(OpInterface op) {
 		this.op = op;
 		IntStream.range(0, op.getNumberOfOutputs()).forEach(i -> outputNames.add("output" + i));
 		/*
@@ -112,7 +113,7 @@ public class RunMode {
 		*/
 	}
 	
-	public static RunMode createRunMode(OpDescription op) {
+	public static RunMode createRunMode(OpInterface op) {
 		return new RunMode(op);
 	}
 	
@@ -159,8 +160,6 @@ public class RunMode {
 
 		rm.envFileName = "C:\\Users\\angel\\git\\jep\\miniconda\\envs\\stardist";
 		rm.env = Appose.base(new File(rm.envFileName)).build();
-		rm.referencedModel = "chatty-frog";
-		rm.opName = "stardist_prediction_2d";
 		rm.kwargs = new LinkedHashMap<String, Object>();
 		
 		final ImgFactory< FloatType > imgFactory = new CellImgFactory<>( new FloatType(), 5 );
@@ -273,12 +272,10 @@ public class RunMode {
 			tensorMap.put(SHAPE_KEY, input.getShape());
 			inputMap.put(input.getName(), tensorMap);
 			
-			addRecreationOfTensor(input);
 		}
 		
 		inputMap.putAll(kwargs);
 		
-		addCodeBody(inputTensors, outputTensors);
 		opCode = "import numpy as np\r\n"
 				+ "import asyncio\r\n"
 				+ "import numpy as np\r\n"
