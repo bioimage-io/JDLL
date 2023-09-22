@@ -84,6 +84,7 @@ public class ExampleLoadAndRunAllBmzModels {
 	 * 	main args, in this case nothing is needed
 	 */
 	public static void main(String[] args) {
+		List<String> modelsWithErrors = new ArrayList<String>();
 		installAllValidEngines();
 		
 		BioimageioRepo br = BioimageioRepo.connect();
@@ -97,18 +98,22 @@ public class ExampleLoadAndRunAllBmzModels {
 				loadAndRunModel(modelFolder, modelEntry.getValue());
 				successModelCount ++;
 			} catch (IllegalArgumentException ex) {
+				modelsWithErrors.add(modelEntry.getValue().getName());
 				continue;
 			} catch (IOException | InterruptedException e) {
 				System.out.println(modelEntry.getValue().getName() 
 						+ ": Error downloading model." + e.toString());
+				modelsWithErrors.add(modelEntry.getValue().getName());
 			} catch (Exception e) {
 				System.out.println(modelEntry.getValue().getName() 
 						+ ": Error loading/running model." + e.toString());
+				modelsWithErrors.add(modelEntry.getValue().getName());
 			}
 		}
 		
 		System.out.println("Models run without any issue: " 
 				+ successModelCount + "/" + bmzModelList.size());
+		System.out.println(modelsWithErrors);
 	}
 	/**
 	 * Load and run any model provided

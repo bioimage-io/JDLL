@@ -10,7 +10,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [macos-latest, ubuntu-latest, windows-latest] # macos-10.15,
+        os: [macos-latest, ubuntu-latest, windows-latest, macos-11]
       fail-fast: false
     steps:
     - name: Checkout repository
@@ -21,12 +21,23 @@ jobs:
         distribution: 'zulu' # See 'Supported distributions' for available options
         java-version: '11'
     - name: Build with Maven
-      run: mvn package shade:shade
-    - name: Run ExampleLoadTensorflow1Tensorflow2.java file
-      shell: bash
+      run: mvn clean install
+    - name: Generate Classpath (Unix)
+      if: runner.os != 'Windows'
+      run: echo "CLASSPATH=$(mvn -q exec:exec -Dexec.executable=echo -Dexec.args='%classpath')" >> $GITHUB_ENV
+
+    - name: Generate Classpath (Windows)
+      if: runner.os == 'Windows'
+      shell: powershell
       run: |
-        if [[ "$OSTYPE" == "win"* ]]; then
-          java -cp  target\\dl-modelrunner-0.3.13-SNAPSHOT.jar io.bioimage.modelrunner.example.ExampleLoadTensorflow1Tensorflow2
-        else
-          java -cp  target/dl-modelrunner-0.3.13-SNAPSHOT.jar io.bioimage.modelrunner.example.ExampleLoadTensorflow1Tensorflow2
-        fi
+        $classpath = mvn -q exec:exec "-Dexec.executable=echo" "-Dexec.args='%classpath'"
+        echo "CLASSPATH=$classpath" | Out-File -FilePath $env:GITHUB_ENV -Append
+
+    - name: Run Specific Class (Unix)
+      if: runner.os != 'Windows'
+      run: java -cp $CLASSPATH:target/classes io.bioimage.modelrunner.example.ExampleLoadTensorflow1Tensorflow2
+
+    - name: Run Specific Class (Windows)
+      if: runner.os == 'Windows'
+      shell: powershell
+      run: java -cp "$env:CLASSPATH;target/classes" io.bioimage.modelrunner.example.ExampleLoadTensorflow1Tensorflow2

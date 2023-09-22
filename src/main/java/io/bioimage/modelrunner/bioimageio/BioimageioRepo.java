@@ -43,9 +43,7 @@ import io.bioimage.modelrunner.bioimageio.bioengine.BioEngineAvailableModels;
 import io.bioimage.modelrunner.bioimageio.description.ModelDescriptor;
 import io.bioimage.modelrunner.bioimageio.download.DownloadModel;
 import io.bioimage.modelrunner.bioimageio.download.DownloadTracker;
-import io.bioimage.modelrunner.engine.EngineInfo;
 import io.bioimage.modelrunner.utils.Log;
-import io.bioimage.modelrunner.utils.ZipUtils;
 
 /**
  * Class to interact with the Bioimage.io API. Used to get information
@@ -71,9 +69,13 @@ public class BioimageioRepo {
 	 */
 	private JsonArray collections;
 	/**
-	 * List of all the model IDs of the models existing in the BioImage.io
+	 * List of all the IDs of the models existing in the BioImage.io
 	 */
 	private static List<String> modelIDs;
+	/**
+	 * List of all the unique nicknames of the models existing in the BioImage.io
+	 */
+	private static List<String> modelNicknames;
 	
 	private LinkedHashMap<Path, ModelDescriptor> models;
 	
@@ -176,6 +178,7 @@ public class BioimageioRepo {
 	 */
 	private void setCollectionsRepo() {
 		modelIDs = new ArrayList<String>();
+		modelNicknames = new ArrayList<String>();
 		String text = getJSONFromUrl(location);
 		if (text == null) {
 			Log.addProgressAndShowInTerminal(consumer, MODELS_NOT_FOUND_MSG, true);
@@ -204,6 +207,8 @@ public class BioimageioRepo {
 				continue;
 			String modelID = jsonResource.get("id").getAsString();
 			modelIDs.add(modelID);
+			if (jsonResource.get("nickname") != null)
+				modelNicknames.add(jsonResource.get("nickname").getAsString());
 		}
 	}
 	
@@ -325,14 +330,26 @@ public class BioimageioRepo {
 	}
 	
 	/**
-	 * Check whether a model is available on the Bioengine or not
+	 * Return a list with all the model unique nicknames for the models existing in the Bioimage.io repo
+	 * @return list with the unique nicknames for each of the models in the repo
+	 */
+	public static List<String> getModelNicknames(){
+		if (modelNicknames == null || modelNicknames.size() == 0)
+			BioimageioRepo.connect();
+		if (modelNicknames == null)
+			return new ArrayList<String>();
+		return modelNicknames;
+	}
+	
+	/**
+	 * Check whether a model is available on the Bioengine or not by providing its id
 	 * @param id
 	 * 	id of the model of interest
 	 * @return true if it is available or false otherwise
 	 * @throws IOException if there is no connection to the internet or the
 	 * 	JSOn with the information cannot be accessed: https://raw.githubusercontent.com/bioimage-io/bioengine-model-runner/gh-pages/manifest.bioengine.json
 	 */
-	public static boolean isModelOnTheBioengine(String id) throws IOException {
+	public static boolean isModelOnTheBioengineById(String id) throws IOException {
 		return BioEngineAvailableModels.isModelSupportedInBioengine(id);
 	}
 	
@@ -355,6 +372,21 @@ public class BioimageioRepo {
 					}
 					return modelID.equals(id);
 				}).findFirst().orElse(null);
+		if (modelEntry != null)
+			return modelEntry.getValue();
+		return null;
+	}
+	
+	/**
+	 * Return the {@link ModelDescriptor} for the model defined by the nickname
+	 * (field 'nickname' in the rdf.yaml) introduced as a parameter.
+	 * @param nickname
+	 * 	unique nickname for each Bioimage.io model
+	 * @return the {@link ModelDescriptor} of the model
+	 */
+	public ModelDescriptor selectByNickname(String nickname) {
+		Entry<Path, ModelDescriptor> modelEntry = this.listAllModels(false).entrySet().stream()
+				.filter(ee -> ee.getValue().getNickname().equals(nickname)).findFirst().orElse(null);
 		if (modelEntry != null)
 			return modelEntry.getValue();
 		return null;
@@ -467,8 +499,8 @@ public class BioimageioRepo {
 	}
 	
 	/**
-	 * Download the model in the Bioimage.io whose id (field ''id' in the
-	 * rdf.yaml file) corresponds to the forst parameter given
+	 * Download the model in the Bioimage.io whose id (field 'id' in the
+	 * rdf.yaml file) corresponds to the first parameter given
 	 * 
 	 * This method launches one thread for the download of the files of the model and 
 	 * another thread to track the progress download. The thread where this method has
@@ -488,13 +520,14 @@ public class BioimageioRepo {
 	public String  downloadModelByID(String id, String modelsDirectory) throws IOException, InterruptedException {
 		ModelDescriptor model = selectByID(id);
 		if (model == null)
-			throw new IllegalArgumentException("");
+			throw new IllegalArgumentException("The provided id does not correspond "
+					+ "to an existing Bioiamge.io online repository model.");
 		return downloadModel(model, modelsDirectory, null);
 	}
 	
 	/**
-	 * Download the model in the Bioimage.io whose id (field ''id' in the
-	 * rdf.yaml file) corresponds to the forst parameter given
+	 * Download the model in the Bioimage.io whose id (field 'id' in the
+	 * rdf.yaml file) corresponds to the first parameter given
 	 * 
 	 * This method launches one thread for the download of the files of the model and 
 	 * another thread to track the progress download. The thread where this method has
@@ -518,13 +551,14 @@ public class BioimageioRepo {
 			DownloadTracker.TwoParameterConsumer<String, Double> consumer) throws IOException, InterruptedException {
 		ModelDescriptor model = selectByID(id);
 		if (model == null)
-			throw new IllegalArgumentException("");
+			throw new IllegalArgumentException("The provided id does not correspond "
+					+ "to an existing Bioiamge.io online repository model.");
 		return downloadModel(model, modelsDirectory, consumer);
 	}
 	
 	/**
-	 * Download the model in the Bioimage.io whose name (field ''name' in the
-	 * rdf.yaml file) corresponds to the forst parameter given
+	 * Download the model in the Bioimage.io whose name (field 'name' in the
+	 * rdf.yaml file) corresponds to the first parameter given
 	 * 
 	 * This method launches one thread for the download of the files of the model and 
 	 * another thread to track the progress download. The thread where this method has
@@ -544,13 +578,14 @@ public class BioimageioRepo {
 	public String downloadByName(String name, String modelsDirectory) throws IOException, InterruptedException {
 		ModelDescriptor model = selectByName(name);
 		if (model == null)
-			throw new IllegalArgumentException("");
+			throw new IllegalArgumentException("The provided name does not correspond "
+					+ "to an existing Bioiamge.io online repository model.");
 		return downloadModel(model, modelsDirectory, null);
 	}
 	
 	/**
-	 * Download the model in the Bioimage.io whose name (field ''name' in the
-	 * rdf.yaml file) corresponds to the forst parameter given
+	 * Download the model in the Bioimage.io whose name (field 'name' in the
+	 * rdf.yaml file) corresponds to the first parameter given
 	 * 
 	 * This method launches one thread for the download of the files of the model and 
 	 * another thread to track the progress download. The thread where this method has
@@ -574,13 +609,72 @@ public class BioimageioRepo {
 			DownloadTracker.TwoParameterConsumer<String, Double> consumer) throws IOException, InterruptedException {
 		ModelDescriptor model = selectByName(name);
 		if (model == null)
-			throw new IllegalArgumentException("");
+			throw new IllegalArgumentException("The provided name does not correspond "
+					+ "to an existing Bioiamge.io online repository model.");
 		return downloadModel(model, modelsDirectory, consumer);
 	}
 	
 	/**
-	 * Download the model in the Bioimage.io whose rdf source (field ''rdf_source' in the
-	 * rdf.yaml file) corresponds to the forst parameter given
+	 * Download the model in the Bioimage.io whose name (field 'nickname' in the
+	 * rdf.yaml file) corresponds to the first parameter given
+	 * 
+	 * This method launches one thread for the download of the files of the model and 
+	 * another thread to track the progress download. The thread where this method has
+	 * been launched is just used to print the information about the progress using
+	 * {@link DownloadTracker#printProgress(Thread, io.bioimage.modelrunner.bioimageio.download.DownloadTracker.TwoParameterConsumer)}
+	 * 
+	 * @param nickname
+	 * 	the nickname of the model of interest. This is the field 'name' of the model descriptor
+	 * @param modelsDirectory
+	 * 	the folder where the model is going to be downloaded. Regard that the model
+	 * 	is a folder too. So if the argument provided is "C:\\users\\carlos\\models",
+	 * 	the model path will then be: "C:\\users\\carlos\\models\\model_name_date string""
+	 * @return the path to the model that was just installed. 
+	 * @throws IOException	if there is any error downloading the files from the URLs provided
+	 * @throws InterruptedException	if the download or tracking threads are interrupted abruptly
+	 */
+	public String downloadByNickame(String nickname, String modelsDirectory) throws IOException, InterruptedException {
+		ModelDescriptor model = selectByNickname(nickname);
+		if (model == null)
+			throw new IllegalArgumentException("The provided nickname does not correspond "
+					+ "to an existing Bioiamge.io online repository model.");
+		return downloadModel(model, modelsDirectory, null);
+	}
+	
+	/**
+	 * Download the model in the Bioimage.io whose nickname (field 'nickname' in the
+	 * rdf.yaml file) corresponds to the first parameter given
+	 * 
+	 * This method launches one thread for the download of the files of the model and 
+	 * another thread to track the progress download. The thread where this method has
+	 * been launched is just used to print the information about the progress using
+	 * {@link DownloadTracker#printProgress(Thread, io.bioimage.modelrunner.bioimageio.download.DownloadTracker.TwoParameterConsumer)}
+	 * 
+	 * @param nickname
+	 * 	the nickname of the model of interest. This is the field 'nickname' of the model descriptor
+	 * @param modelsDirectory
+	 * 	the folder where the model is going to be downloaded. Regard that the model
+	 * 	is a folder too. So if the argument provided is "C:\\users\\carlos\\models",
+	 * 	the model path will then be: "C:\\users\\carlos\\models\\model_name_date string""
+	 * @param consumer
+	 * 	a {@link DownloadTracker.TwoParameterConsumer} consumer that ccan be used to track the
+	 * 	download of the individual files that compose the model.
+	 * @return the path to the model that was just installed. 
+	 * @throws IOException	if there is any error downloading the files from the URLs provided
+	 * @throws InterruptedException	if the download or tracking threads are interrupted abruptly
+	 */
+	public String downloadByNickame(String nickname, String modelsDirectory, 
+			DownloadTracker.TwoParameterConsumer<String, Double> consumer) throws IOException, InterruptedException {
+		ModelDescriptor model = selectByNickname(nickname);
+		if (model == null)
+			throw new IllegalArgumentException("The provided nickname does not correspond "
+					+ "to an existing Bioiamge.io online repository model.");
+		return downloadModel(model, modelsDirectory, consumer);
+	}
+	
+	/**
+	 * Download the model in the Bioimage.io whose rdf source (field 'rdf_source' in the
+	 * rdf.yaml file) corresponds to the first parameter given
 	 * 
 	 * This method launches one thread for the download of the files of the model and 
 	 * another thread to track the progress download. The thread where this method has
@@ -600,13 +694,14 @@ public class BioimageioRepo {
 	public String downloadByRdfSource(String rdfUrl, String modelsDirectory) throws IOException, InterruptedException {
 		ModelDescriptor model = selectByRdfSource(rdfUrl);
 		if (model == null)
-			throw new IllegalArgumentException("");
+			throw new IllegalArgumentException("The provided rdf_url does not correspond "
+					+ "to an existing Bioiamge.io online repository model.");
 		return downloadModel(model, modelsDirectory, null);
 	}
 	
 	/**
-	 * Download the model in the Bioimage.io whose rdf source (field ''rdf_source' in the
-	 * rdf.yaml file) corresponds to the forst parameter given
+	 * Download the model in the Bioimage.io whose rdf source (field 'rdf_source' in the
+	 * rdf.yaml file) corresponds to the first parameter given
 	 * 
 	 * This method launches one thread for the download of the files of the model and 
 	 * another thread to track the progress download. The thread where this method has
@@ -630,7 +725,8 @@ public class BioimageioRepo {
 			DownloadTracker.TwoParameterConsumer<String, Double> consumer) throws IOException, InterruptedException {
 		ModelDescriptor model = selectByRdfSource(rdfUrl);
 		if (model == null)
-			throw new IllegalArgumentException("");
+			throw new IllegalArgumentException("The provided rdf_url does not correspond "
+					+ "to an existing Bioiamge.io online repository model.");
 		return downloadModel(model, modelsDirectory, consumer);
 	}
 }

@@ -1,5 +1,9 @@
 name: Run all Bioimage.io models
 on:
+  push:
+    paths:
+      - src/main/java/io/bioimage/modelrunner/example/ExampleLoadAndRunAllBmzModels.java
+      - .github/workflows/example_run_all_bmz_models.yml
   schedule:
     - cron: '30 2 * * *'
   workflow_dispatch:
@@ -11,7 +15,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [macos-latest, ubuntu-latest, windows-latest,  macos-10.15]
+        os: [macos-latest, ubuntu-latest, windows-latest, macos-11]
       fail-fast: false
     steps:
     - name: Checkout repository
@@ -22,8 +26,24 @@ jobs:
         distribution: 'zulu' # See 'Supported distributions' for available options
         java-version: '11'
     - name: Build with Maven
-      run: mvn install
-    - name: Run ExampleLoadAndRunAllBmzModels.java file
-      shell: bash
+      run: mvn clean install
+      
+    - name: Generate Classpath (Unix)
+      if: runner.os != 'Windows'
+      run: echo "CLASSPATH=$(mvn -q exec:exec -Dexec.executable=echo -Dexec.args='%classpath')" >> $GITHUB_ENV
+
+    - name: Generate Classpath (Windows)
+      if: runner.os == 'Windows'
+      shell: powershell
       run: |
-        mvn exec:java -Dexec.mainClass=io.bioimage.modelrunner.example.ExampleLoadAndRunAllBmzModels
+        $classpath = mvn -q exec:exec "-Dexec.executable=echo" "-Dexec.args='%classpath'"
+        echo "CLASSPATH=$classpath" | Out-File -FilePath $env:GITHUB_ENV -Append
+
+    - name: Run ExampleLoadAndRunAllBmzModels.java (Unix)
+      if: runner.os != 'Windows'
+      run: java -cp $CLASSPATH:target/classes io.bioimage.modelrunner.example.ExampleLoadAndRunAllBmzModels
+
+    - name: Run ExampleLoadAndRunAllBmzModels.java (Windows)
+      if: runner.os == 'Windows'
+      shell: powershell
+      run: java -cp "$env:CLASSPATH;target/classes" io.bioimage.modelrunner.example.ExampleLoadAndRunAllBmzModels

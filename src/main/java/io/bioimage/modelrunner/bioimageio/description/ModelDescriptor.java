@@ -53,6 +53,7 @@ public class ModelDescriptor
 {
     private String format_version;
     private String name;
+    private String nickname;
     private String timestamp;
     private String description;
     private String type;
@@ -193,6 +194,9 @@ public class ModelDescriptor
                     case "name":
                         modelDescription.name = (String) fieldElement;
                         break;
+                    case "nickname":
+                        modelDescription.nickname = (String) fieldElement;
+                        break;
                     case "timestamp":
                         modelDescription.timestamp = fieldElement.toString();
                         break;
@@ -317,7 +321,7 @@ public class ModelDescriptor
 			return;
 	    }
     	try {
-			supportBioengine = BioimageioRepo.isModelOnTheBioengine(modelID);
+			supportBioengine = BioimageioRepo.isModelOnTheBioengineById(modelID);
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
@@ -724,6 +728,14 @@ public class ModelDescriptor
     public String getName()
     {
         return name;
+    }
+
+    /**
+     * @return The nickname of this model.
+     */
+    public String getNickname()
+    {
+        return nickname;
     }
 
     /**
