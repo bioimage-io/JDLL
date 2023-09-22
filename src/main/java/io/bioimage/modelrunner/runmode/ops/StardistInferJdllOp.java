@@ -24,6 +24,7 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Objects;
+import java.util.stream.Collectors;
 
 import io.bioimage.modelrunner.bioimageio.BioimageioRepo;
 import io.bioimage.modelrunner.bioimageio.description.ModelDescriptor;
@@ -171,8 +172,14 @@ public class StardistInferJdllOp implements OpInterface {
 	 */
 	public static boolean isModelNameStardist(String modelName) {
 		BioimageioRepo br = BioimageioRepo.connect();
-		ModelDescriptor model = br.selectByName(modelName);
-		return true;
+		if (br.selectByName(modelName) != null) {
+			return br.selectByName(modelName).getConfig().getSpecMap().keySet().contains(STARDIST_FIELD_KEY);
+		} else if (br.selectByID(modelName) != null) {
+			return br.selectByID(modelName).getConfig().getSpecMap().keySet().contains(STARDIST_FIELD_KEY);
+		} else if (br.selectByNickname(modelName) != null) {
+			return br.selectByNickname(modelName).getConfig().getSpecMap().keySet().contains(STARDIST_FIELD_KEY);
+		}
+		return false;
 	}
 	
 	/**
@@ -180,8 +187,38 @@ public class StardistInferJdllOp implements OpInterface {
 	 * StarDist models existing in the Bioimage.io online repository.
 	 * @return list of StarDist model names from the Bioimage.io repository
 	 */
-	public static List<String> fetchStarDistModelNamesFromBioImage(){
-		return new ArrayList<String>();
+	public static List<String> fetchStarDistModelNamesFromBioImage() {
+		BioimageioRepo br = BioimageioRepo.connect();
+		List<String> stardistModels = br.listAllModels(false).values().stream()
+				.filter(md -> md.getConfig().getSpecMap().keySet().contains(STARDIST_FIELD_KEY))
+				.map(md -> md.getName()).collect(Collectors.toList());
+		return stardistModels;
+	}
+	
+	/**
+	 * Returns a list containing all the model nicknames that corresponds to 
+	 * StarDist models existing in the Bioimage.io online repository.
+	 * @return list of StarDist model nicknames from the Bioimage.io repository
+	 */
+	public static List<String> fetchStarDistModelNicknamesFromBioImage() {
+		BioimageioRepo br = BioimageioRepo.connect();
+		List<String> stardistModels = br.listAllModels(false).values().stream()
+				.filter(md -> md.getConfig().getSpecMap().keySet().contains(STARDIST_FIELD_KEY))
+				.map(md -> md.getNickname()).collect(Collectors.toList());
+		return stardistModels;
+	}
+	
+	/**
+	 * Returns a list containing all the model IDs that corresponds to 
+	 * StarDist models existing in the Bioimage.io online repository.
+	 * @return list of StarDist model IDs from the Bioimage.io repository
+	 */
+	public static List<String> fetchStarDistModelIdsFromBioImage() {
+		BioimageioRepo br = BioimageioRepo.connect();
+		List<String> stardistModels = br.listAllModels(false).values().stream()
+				.filter(md -> md.getConfig().getSpecMap().keySet().contains(STARDIST_FIELD_KEY))
+				.map(md -> md.getModelID()).collect(Collectors.toList());
+		return stardistModels;
 	}
 
 }
