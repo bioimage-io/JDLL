@@ -71,9 +71,13 @@ public class BioimageioRepo {
 	 */
 	private JsonArray collections;
 	/**
-	 * List of all the model IDs of the models existing in the BioImage.io
+	 * List of all the IDs of the models existing in the BioImage.io
 	 */
 	private static List<String> modelIDs;
+	/**
+	 * List of all the unique nicknames of the models existing in the BioImage.io
+	 */
+	private static List<String> modelNicknames;
 	
 	private LinkedHashMap<Path, ModelDescriptor> models;
 	
@@ -176,6 +180,7 @@ public class BioimageioRepo {
 	 */
 	private void setCollectionsRepo() {
 		modelIDs = new ArrayList<String>();
+		modelNicknames = new ArrayList<String>();
 		String text = getJSONFromUrl(location);
 		if (text == null) {
 			Log.addProgressAndShowInTerminal(consumer, MODELS_NOT_FOUND_MSG, true);
@@ -204,6 +209,7 @@ public class BioimageioRepo {
 				continue;
 			String modelID = jsonResource.get("id").getAsString();
 			modelIDs.add(modelID);
+			modelIDs.add(jsonResource.get("nickname").getAsString());
 		}
 	}
 	
@@ -325,6 +331,18 @@ public class BioimageioRepo {
 	}
 	
 	/**
+	 * Return a list with all the model unique nicknames for the models existing in the Bioimage.io repo
+	 * @return list with the unique nicknames for each of the models in the repo
+	 */
+	public static List<String> getModelNicknames(){
+		if (modelNicknames == null || modelNicknames.size() == 0)
+			BioimageioRepo.connect();
+		if (modelNicknames == null)
+			return new ArrayList<String>();
+		return modelNicknames;
+	}
+	
+	/**
 	 * Check whether a model is available on the Bioengine or not
 	 * @param id
 	 * 	id of the model of interest
@@ -332,7 +350,19 @@ public class BioimageioRepo {
 	 * @throws IOException if there is no connection to the internet or the
 	 * 	JSOn with the information cannot be accessed: https://raw.githubusercontent.com/bioimage-io/bioengine-model-runner/gh-pages/manifest.bioengine.json
 	 */
-	public static boolean isModelOnTheBioengine(String id) throws IOException {
+	public static boolean isModelOnTheBioengineById(String id) throws IOException {
+		return BioEngineAvailableModels.isModelSupportedInBioengine(id);
+	}
+	
+	/**
+	 * Check whether a model is available on the Bioengine or not
+	 * @param id
+	 * 	id of the model of interest
+	 * @return true if it is available or false otherwise
+	 * @throws IOException if there is no connection to the internet or the
+	 * 	JSOn with the information cannot be accessed: https://raw.githubusercontent.com/bioimage-io/bioengine-model-runner/gh-pages/manifest.bioengine.json
+	 */
+	public static boolean isModelOnTheBioengineByNickname(String id) throws IOException {
 		return BioEngineAvailableModels.isModelSupportedInBioengine(id);
 	}
 	
