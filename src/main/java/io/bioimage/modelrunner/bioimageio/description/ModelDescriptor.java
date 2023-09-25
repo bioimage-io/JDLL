@@ -321,8 +321,8 @@ public class ModelDescriptor
 			return;
 	    }
     	try {
-			supportBioengine = BioimageioRepo.isModelOnTheBioengineById(modelID);
-		} catch (IOException e) {
+			supportBioengine = false;// BioimageioRepo.isModelOnTheBioengineById(modelID);
+		} catch (Exception e) {
 			e.printStackTrace();
 		}
     }

@@ -33,7 +33,6 @@ import java.util.HashMap;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
-import io.bioimage.modelrunner.bioimageio.bioengine.BioengineInterface;
 import io.bioimage.modelrunner.exceptions.LoadEngineException;
 import io.bioimage.modelrunner.versionmanagement.DeepLearningVersion;
 
@@ -128,7 +127,6 @@ public class EngineLoader extends ClassLoader
 		this.engine = engineInfo.getFramework();
 		this.bioengine = engineInfo.isBioengine();
 		if (engineInfo.isBioengine()) {
-			this.engineInstance = new BioengineInterface();
 			return;
 		}
 		this.enginePath = engineInfo.getDeepLearningVersionJarsDirectory();
