@@ -245,8 +245,8 @@ def stardist_prediction_2d(
     assert output_axes_wo_channels == tuple("byx")
     return xr.DataArray(labels, dims=output_axes_wo_channels), polys
 
-arr = np.zeros((1, 208, 208, 3))
-xarr = xr.DataArray(arr, dims=["b", "y", "x", "c"], name="input")
-model_path = "chatty-frog"
-model_path = r'C:\Users\angel\OneDrive\Documentos\pasteur\git\model-runner-java\models\StarDist H&E Nuclei Segmentation_06092023_020924\rdf.yaml'
-stardist_prediction_2d_mine(model_path, xarr)
+#arr = np.zeros((1, 208, 208, 3))
+#xarr = xr.DataArray(arr, dims=["b", "y", "x", "c"], name="input")
+#model_path = "chatty-frog"
+#model_path = r'C:\Users\angel\OneDrive\Documentos\pasteur\git\model-runner-java\models\StarDist H&E Nuclei Segmentation_06092023_020924\rdf.yaml'
+#stardist_prediction_2d_mine(model_path, xarr)
