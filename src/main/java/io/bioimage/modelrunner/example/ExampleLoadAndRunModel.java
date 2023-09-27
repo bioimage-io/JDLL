@@ -117,7 +117,7 @@ public class ExampleLoadAndRunModel {
 		/// Regard that output tensors can be built empty without allocating memory
 		// or allocating memory by creating the tensor with a sample empty image, or by
 		// defining the dimensions and data type
-		/*Tensor<FloatType> outTensor = Tensor.buildEmptyTensorAndAllocateMemory("output0", 
+		/*Tensor<FloatType> outTensor = Tensor.buildBlankTensor("output0", 
 				"bcyx", 
 				new long[] {1, 2, 512, 512}, 
 				new FloatType());*/
