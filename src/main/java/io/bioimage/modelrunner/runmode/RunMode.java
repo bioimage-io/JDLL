@@ -57,7 +57,7 @@ public class RunMode {
 	
 	private static final String DATA_KEY = "data";
 	
-	private static final String NAME_KEY = "data";
+	private static final String NAME_KEY = "name";
 	
 	private static final String TENSOR_KEY = "tensor";
 	
@@ -134,7 +134,6 @@ public class RunMode {
         		System.err.println(line);
         	});
             Task task = python.task(opCode, apposeInputMap);
-            System.out.println("here");
             task.listen(event -> {
                 switch (event.responseType) {
 	                case UPDATE:
@@ -182,8 +181,9 @@ public class RunMode {
 	
 	private void addImports() {
 		importsCode = DEFAULT_IMPORT
-				+ "sys.path.append('" + op.getOpDir() + "')" + System.lineSeparator()
-				+ op.getOpImport() + System.lineSeparator();
+				+ "sys.path.append(r'" + op.getOpDir() + "')" + System.lineSeparator()
+				+ op.getOpImport() + System.lineSeparator()
+				+ "task.update('Imports')" + System.lineSeparator();
 	}
 	
 	private < T extends RealType< T > & NativeType< T > > void convertInputMap() {
@@ -233,6 +233,8 @@ public class RunMode {
 			importsCode += IMPORT_XARRAY;
 		if (!importsCode.contains(IMPORT_NUMPY))
 			importsCode += IMPORT_NUMPY;
+		tensorRecreationCode = "";
+		tensorRecreationCode += "task.update('input conv')" + System.lineSeparator();
 		// This line wants to recreate the original numpy array. Should look like:
 		// input0 = xr.DataArray(np.array(input0).reshape([1, 1, 512, 512]), dims=["b", "c", "y", "x"], name="input0")
 		this.tensorRecreationCode += ogName + " = xr.DataArray(np.array(" + ogName + ").reshape([";
@@ -245,7 +247,7 @@ public class RunMode {
 			tensorRecreationCode += "\"" + ss + "\", ";
 		tensorRecreationCode = 
 				tensorRecreationCode.substring(0, tensorRecreationCode.length() - 2);
-		tensorRecreationCode += "], name=" + tensor.getName() + "])";
+		tensorRecreationCode += "], name=\"" + tensor.getName() + "\")";
 		tensorRecreationCode += System.lineSeparator();
 	}
 	
@@ -260,11 +262,12 @@ public class RunMode {
 			tensorRecreationCode += ll + ", ";
 		tensorRecreationCode = 
 				tensorRecreationCode.substring(0, tensorRecreationCode.length() - 2);
-		tensorRecreationCode += System.lineSeparator();
+		tensorRecreationCode += "])" + System.lineSeparator();
 	}
 	
 	private void opExecutionCode() {
 		opMethodCode = "";
+		opMethodCode += "task.update('method')" + System.lineSeparator();
 		for (String outN : this.outputNames) {
 			opMethodCode += outN + ", ";
 		}
