@@ -68,10 +68,10 @@ imp = IJ.openImage(os.path.join(model_fn, "sample_input_0.tif"))
 imp.show()
 
 wrapImg = ImageJFunctions.convertFloat(imp)
-wrapImg = Views.permute(wrapImg, 0, 1)
 wrapImg = Views.addDimension(wrapImg, 0, 0)
 wrapImg = Views.addDimension(wrapImg, 0, 0)
-wrapImg = Views.permute(wrapImg, 0, 3)
+wrapImg = Views.permute(wrapImg, 0, 2)
+wrapImg = Views.permute(wrapImg, 1, 3)
 
 inputTensor = Tensor.build("input", "bcxy", wrapImg)
 outputTensor = Tensor.buildEmptyTensor("output", "bcxy")
