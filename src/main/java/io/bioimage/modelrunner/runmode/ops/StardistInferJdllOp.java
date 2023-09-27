@@ -115,8 +115,8 @@ public class StardistInferJdllOp implements OpInterface {
 	}
 
 	@Override
-	public String getOpImport() {
-		return "import " + STARDIST_OP_FNAME.substring(0, STARDIST_OP_FNAME.indexOf(".py"));
+	public String getOpPythonFilename() {
+		return STARDIST_OP_FNAME;
 	}
 
 	@Override
@@ -131,7 +131,7 @@ public class StardistInferJdllOp implements OpInterface {
 		opFilePath = "C:\\Users\\angel\\OneDrive\\Documentos\\pasteur\\git\\model-runner-java\\python\\ops\\stardist_inference";
 		// TODO check if the env has also been created
 		// TODO if not create it (where??)
-		envPath  = "C:\\Users\\angel\\git\\jep\\miniconda\\envs\\my_new_project";
+		envPath  = "C:\\Users\\angel\\git\\jep\\miniconda\\envs\\stardist";
 	}
 
 	@Override

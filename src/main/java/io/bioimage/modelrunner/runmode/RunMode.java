@@ -98,10 +98,12 @@ public class RunMode {
 	private String importsCode = "";
 	private String opMethodCode = "";
 	private String retrieveResultsCode = "";
+	private String moduleName;
 	List<String> outputNames = new ArrayList<String>();
 	
 	private RunMode(OpInterface op) {
 		this.op = op;
+		this.moduleName = op.getOpPythonFilename().substring(0, op.getOpPythonFilename().length() - 3);
 		IntStream.range(0, op.getNumberOfOutputs()).forEach(i -> outputNames.add("output" + i));
 		addImports();
 		convertInputMap();
@@ -182,7 +184,7 @@ public class RunMode {
 	private void addImports() {
 		importsCode = DEFAULT_IMPORT
 				+ "sys.path.append(r'" + op.getOpDir() + "')" + System.lineSeparator()
-				+ op.getOpImport() + System.lineSeparator()
+				+ "import " + moduleName + System.lineSeparator()
 				+ "task.update('Imports')" + System.lineSeparator();
 	}
 	
@@ -274,7 +276,7 @@ public class RunMode {
 		opMethodCode = 
 				opMethodCode.substring(0, opMethodCode.length() - 2);
 		opMethodCode += " = ";
-		opMethodCode += op.getMethodName() + "(";
+		opMethodCode += moduleName + "." + op.getMethodName() + "(";
 		for (String key : this.apposeInputMap.keySet())
 			opMethodCode += key + ",";
 		opMethodCode += ")" + System.lineSeparator();

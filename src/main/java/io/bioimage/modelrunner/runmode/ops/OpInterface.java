@@ -32,7 +32,7 @@ public interface OpInterface {
 	 * @return a String containing a Python snippet with the imports needed to use the
 	 * OP
 	 */
-	public String getOpImport();
+	public String getOpPythonFilename();
 	/**
 	 * Number of outputs that the OP method will produce
 	 * @return number of ouptuts that the OP method will produce
