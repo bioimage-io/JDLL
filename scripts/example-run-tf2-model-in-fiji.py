@@ -42,6 +42,7 @@ from net.imglib2.view import Views
 
 if PlatformDetection.isUsingRosseta():
       IJ.error("This script does not work on computers using ARM64 chips.")
+      sys.exit()
 
 
 models_path = os.path.join(os. getcwd(), "models")
