@@ -20,7 +20,7 @@ The example model downloaded is:
 and can be found at: https://bioimage.io/#/?tags=B.%20Sutilist%20bacteria%20segmentation%20-%20Widefield%20microscopy%20-%202D%20UNet&id=10.5281%2Fzenodo.7261974
 
 To run this script with the default parameters:
-	python example-run-model-in-fiji.py
+	python example-run-tf2-model-in-fiji.py
 
 Note that this example will not work on Apple Silicon machines or any computer with ARM64 chips.
 
