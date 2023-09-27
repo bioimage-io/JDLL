@@ -16,7 +16,7 @@
 """Jython script that downloads the wanted Pytorch model from the Bioimage.io repository,
 downloads the engine and executes it on the sample image.
 The example model downloaded is:
- - B. Sutilist bacteria segmentation - Widefield microscopy - 2D UNet
+ - Mitochondria resolution enhancement Wasserstein GAN
 and can be found at: https://bioimage.io/#/?type=all&tags=Mitochondria%20resolution%20enhancement%20Wasserstein%20GAN&id=10.5281%2Fzenodo.7786492
 
 To run this script with the default parameters:
