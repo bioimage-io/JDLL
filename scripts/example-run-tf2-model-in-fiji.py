@@ -40,7 +40,7 @@ from ij import IJ
 from net.imglib2.img.display.imagej import ImageJFunctions
 from net.imglib2.view import Views
 
-if PlatformDetection.getArch() == PlatformDetection.ARCH_ARM64:
+if PlatformDetection.isUsingRosseta():
       IJ.error("This script does not work on computers using ARM64 chips.")
 
 
