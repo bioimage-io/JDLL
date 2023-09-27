@@ -30,6 +30,7 @@ from io.bioimage.modelrunner.bioimageio import BioimageioRepo
 from io.bioimage.modelrunner.model import Model
 from io.bioimage.modelrunner.tensor import Tensor
 from io.bioimage.modelrunner.transformations import ScaleRangeTransformation
+from io.bioimage.modelrunner.system import PlatformDetection
 
 import sys
 import os
@@ -38,6 +39,9 @@ from ij import IJ
 
 from net.imglib2.img.display.imagej import ImageJFunctions
 from net.imglib2.view import Views
+
+if PlatformDetection.getArch() == PlatformDetection.ARCH_ARM64:
+      IJ.error("This script does not work on computers using ARM64 chips.")
 
 
 models_path = os.path.join(os. getcwd(), "models")
