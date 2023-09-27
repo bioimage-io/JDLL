@@ -28,6 +28,7 @@ from io.bioimage.modelrunner.engine.installation import EngineInstall
 from io.bioimage.modelrunner.bioimageio import BioimageioRepo
 from io.bioimage.modelrunner.model import Model
 from io.bioimage.modelrunner.tensor import Tensor
+from io.bioimage.modelrunner.versionmanagement import AvailableEngines
 
 import sys
 import os
@@ -57,8 +58,10 @@ if not os.path.exists(engine_path) or not os.path.isdir(engine_path):
     os.makedirs(engine_path)
 
 print("Installing JDLL engine")
+supportedList = AvailableEngines.getEnginesForOsByParams("pytorch", "1.13.1", True, None)
+gpu = supportedList[0].getGPU()
 success = EngineInstall.installEngineWithArgsInDir("pytorch", 
-						"1.13.1", True, True, engine_path)
+						"1.13.1", True, gpu, engine_path)
 if (success):
 	print("Engine correctly installed at: " + engine_path)
 else:
