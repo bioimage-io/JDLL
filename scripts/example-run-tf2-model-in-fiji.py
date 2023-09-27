@@ -13,7 +13,7 @@
 # limitations under the License.
 # ============================================================================
 
-"""Jython script that downloads the wanted model from the Bioimage.io repository,
+"""Jython script that downloads the wanted Tensorflow 2 model from the Bioimage.io repository,
 downloads the engine and executes it on the sample image.
 The example model downloaded is:
  - B. Sutilist bacteria segmentation - Widefield microscopy - 2D UNet
@@ -21,6 +21,8 @@ and can be found at: https://bioimage.io/#/?tags=B.%20Sutilist%20bacteria%20segm
 
 To run this script with the default parameters:
 	python example-run-model-in-fiji.py
+
+Note that this example will not work on Apple Silicon machines or any computer with ARM64 chips.
 
 """
 from io.bioimage.modelrunner.engine.installation import EngineInstall
