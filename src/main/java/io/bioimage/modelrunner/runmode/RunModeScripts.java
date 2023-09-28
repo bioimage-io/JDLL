@@ -46,7 +46,7 @@ public class RunModeScripts {
 			+ "" + System.lineSeparator()
 			+ "def " + DICT_METHOD + "(dic):" + System.lineSeparator()
 			+ "  n_dic = {}" + System.lineSeparator()
-			+ "  for key, value in d.items():" + System.lineSeparator()
+			+ "  for key, value in dic.items():" + System.lineSeparator()
 			+ "    if isinstance(value, xr.DataArray):" + System.lineSeparator()
 			+ "      n_dic[key] = " + XR_METHOD + "(value)" + System.lineSeparator()
 			+ "    elif isinstance(value, np.ndarray):" + System.lineSeparator()
