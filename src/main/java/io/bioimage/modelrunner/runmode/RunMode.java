@@ -51,14 +51,6 @@ public class RunMode {
 	
 	private static final String IMPORT_NUMPY = "import numpy as np" + System.lineSeparator(); 
 	
-	private static final String AXES_KEY = "axes";
-	
-	private static final String SHAPE_KEY = "shape";
-	
-	private static final String DATA_KEY = "data";
-	
-	private static final String NAME_KEY = "name";
-	
 	private static final String TENSOR_KEY = "tensor";
 	
 	private static final String NP_ARR_KEY = "np_arr";
@@ -68,22 +60,26 @@ public class RunMode {
 	// TODO add support for list of objects
 	private static final String OUTPUT_REFORMATING = 
 			"if isinstance(%s, xr.DataArray):" + System.lineSeparator()
-			+ "\ttypes_list.append(\"" + TENSOR_KEY + "\")" + System.lineSeparator()
-			+ "\t%s = {\"" + DATA_KEY + "\": %s.values.flatten().tolist(), \""
-				+ SHAPE_KEY + "\": %s.shape, \"" + AXES_KEY + "\": %s.dims,"
-				+ "\"" + NAME_KEY + "\": %s.name}" + System.lineSeparator()
+			+ "  task.update('is data array')" + System.lineSeparator()
+			+ "  types_list.append(\"" + TENSOR_KEY + "\")" + System.lineSeparator()
+			+ "  %s = " + RunModeScripts.XR_METHOD + "(%s)" + System.lineSeparator()
 			+ "elif isinstance(%s, np.ndarray):" + System.lineSeparator()
-			+ "\ttypes_list.append(\"" + NP_ARR_KEY + "\")" + System.lineSeparator()
-			+ "\t%s = {\"" + DATA_KEY + "\": %s.flatten().tolist(), \""
-			+ SHAPE_KEY + "\": %s.shape}" + System.lineSeparator()
-			+ "elif isinstance(%s, list) and len(%s) == 0:" + System.lineSeparator()
-			+ "\ttypes_list.append(\"" + STANDARD_KEY + "\")" + System.lineSeparator()
-			+ "elif isinstance(%s, list) and isinstance(%s[0], list):" + System.lineSeparator()
-			+ "\ttypes_list.append(\"" + TENSOR_KEY + "\")" + System.lineSeparator()
-			+ "\t" + System.lineSeparator()
+			+ "  task.update('np array')" + System.lineSeparator()
+			+ "  types_list.append(\"" + NP_ARR_KEY + "\")" + System.lineSeparator()
+			+ "  %s = " + RunModeScripts.NP_METHOD + "(%s)" + System.lineSeparator()
+			+ "elif isinstance(%s, list):" + System.lineSeparator()
+			+ "  task.update('is list')" + System.lineSeparator()
+			+ "  types_list.append(\"" + TENSOR_KEY + "\")" + System.lineSeparator()
+			+ "  %s = " + RunModeScripts.LIST_METHOD + "(%s)" + System.lineSeparator()
+			+ "elif isinstance(%s, dict):" + System.lineSeparator()
+			+ "  task.update('is dict')" + System.lineSeparator()
+			+ "  task.update(str(output1))" + System.lineSeparator()
+			+ "  types_list.append(\"" + TENSOR_KEY + "\")" + System.lineSeparator()
+			+ "  %s = " + RunModeScripts.DICT_METHOD + "(%s)" + System.lineSeparator()
 			+ "else:" + System.lineSeparator()
-			+ "\ttypes_list.append(\"" + STANDARD_KEY + "\")" + System.lineSeparator()
-			+ "task.outputs['%s'] = %s" + System.lineSeparator();
+			+ "  task.update('standard')" + System.lineSeparator()
+			+ "  task.update(str(type(%s)))" + System.lineSeparator()
+			+ "  types_list.append(\"" + STANDARD_KEY + "\")" + System.lineSeparator();
 	
 	private static final String DEFAULT_IMPORT = 
 			"import sys" + System.lineSeparator();
@@ -98,6 +94,7 @@ public class RunMode {
 	private String importsCode = "";
 	private String opMethodCode = "";
 	private String retrieveResultsCode = "";
+	private String taskOutputCode = "";
 	private String moduleName;
 	List<String> outputNames = new ArrayList<String>();
 	
@@ -110,9 +107,15 @@ public class RunMode {
 		opExecutionCode();
 		retrieveResultsCode();
 		
-		opCode = importsCode + System.lineSeparator() + tensorRecreationCode
-				+ System.lineSeparator() + opMethodCode + System.lineSeparator()
-				+ retrieveResultsCode;
+		opCode = importsCode + System.lineSeparator()
+				+ RunModeScripts.TYPE_CONVERSION_METHODS_SCRIPT + System.lineSeparator()
+				+ tensorRecreationCode + System.lineSeparator()
+				+ opMethodCode + System.lineSeparator()
+				+ "globals()['convertNpIntoDic'] = convertNpIntoDic" + System.lineSeparator()
+				+ "task.update(str(globals().keys()))" + System.lineSeparator()
+				+ "task.update(str(locals().keys()))" + System.lineSeparator()
+				+ retrieveResultsCode + System.lineSeparator()
+				+ taskOutputCode;
 		System.out.println(opCode);
 		
 		
@@ -288,8 +291,10 @@ public class RunMode {
 		
 		for (String outN : this.outputNames) {
 			String code = String.format(OUTPUT_REFORMATING, outN, outN, outN, outN, outN, outN,
-					outN, outN, outN, outN, outN, outN, outN, outN, outN, outN);
+					outN, outN, outN, outN, outN, outN, outN);
 			retrieveResultsCode += code;
+			taskOutputCode += String.format("task.outputs['%s'] = %s", outN, outN)
+					+ System.lineSeparator();
 		}
 	}
 	
@@ -331,9 +336,9 @@ public class RunMode {
 		LinkedHashMap<String, Object> inputMap = new LinkedHashMap<>();
 		for (Tensor<T> input : inputTensors) {
 			HashMap<String, Object> tensorMap = new HashMap<String, Object>();
-			tensorMap.put(AXES_KEY, input.getAxesOrderString());
-			tensorMap.put(DATA_KEY, ImgLib2ToArray.build(input.getData()));
-			tensorMap.put(SHAPE_KEY, input.getShape());
+			tensorMap.put(RunModeScripts.AXES_KEY, input.getAxesOrderString());
+			tensorMap.put(RunModeScripts.DATA_KEY, ImgLib2ToArray.build(input.getData()));
+			tensorMap.put(RunModeScripts.SHAPE_KEY, input.getShape());
 			inputMap.put(input.getName(), tensorMap);
 			
 		}
