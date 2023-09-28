@@ -68,21 +68,21 @@ public class RunMode {
 	// TODO add support for list of objects
 	private static final String OUTPUT_REFORMATING = 
 			"if isinstance(%s, xr.DataArray):" + System.lineSeparator()
-			+ "\ttypes_list.append(" + TENSOR_KEY + ")" + System.lineSeparator()
+			+ "\ttypes_list.append(\"" + TENSOR_KEY + "\")" + System.lineSeparator()
 			+ "\t%s = {\"" + DATA_KEY + "\": %s.values.flatten().tolist(), \""
 				+ SHAPE_KEY + "\": %s.shape, \"" + AXES_KEY + "\": %s.dims,"
 				+ "\"" + NAME_KEY + "\": %s.name}" + System.lineSeparator()
 			+ "elif isinstance(%s, np.ndarray):" + System.lineSeparator()
-			+ "\ttypes_list.append(" + NP_ARR_KEY + ")" + System.lineSeparator()
+			+ "\ttypes_list.append(\"" + NP_ARR_KEY + "\")" + System.lineSeparator()
 			+ "\t%s = {\"" + DATA_KEY + "\": %s.flatten().tolist(), \""
 			+ SHAPE_KEY + "\": %s.shape}" + System.lineSeparator()
 			+ "elif isinstance(%s, list) and len(%s) == 0:" + System.lineSeparator()
-			+ "\ttypes_list.append(" + STANDARD_KEY + ")" + System.lineSeparator()
+			+ "\ttypes_list.append(\"" + STANDARD_KEY + "\")" + System.lineSeparator()
 			+ "elif isinstance(%s, list) and isinstance(%s[0], list):" + System.lineSeparator()
-			+ "\ttypes_list.append(" + TENSOR_KEY + ")" + System.lineSeparator()
+			+ "\ttypes_list.append(\"" + TENSOR_KEY + "\")" + System.lineSeparator()
 			+ "\t" + System.lineSeparator()
 			+ "else:" + System.lineSeparator()
-			+ "\ttypes_list.append(" + STANDARD_KEY + ")" + System.lineSeparator()
+			+ "\ttypes_list.append(\"" + STANDARD_KEY + "\")" + System.lineSeparator()
 			+ "task.outputs['%s'] = %s" + System.lineSeparator();
 	
 	private static final String DEFAULT_IMPORT = 
