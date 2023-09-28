@@ -1,4 +1,25 @@
+/*-
+ * #%L
+ * Use deep learning frameworks from Java in an agnostic and isolated way.
+ * %%
+ * Copyright (C) 2022 - 2023 Institut Pasteur and BioImage.IO developers.
+ * %%
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ * 
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ * 
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ * #L%
+ */
 package io.bioimage.modelrunner.runmode;
+
+import io.bioimage.modelrunner.bioimageio.download.DownloadModel;
 
 public class RunModeScripts {
 	
@@ -18,16 +39,26 @@ public class RunModeScripts {
 	
 	protected static final String DICT_METHOD = "convertDicIntoDic";
 	
+	protected static final String APPOSE_DT_KEY = DownloadModel.addTimeStampToFileName("appose_data_type_", true);
+	
+	protected static final String TENSOR_KEY = "tensor";
+	
+	protected static final String NP_ARR_KEY = "np_arr";
+	
 	/**
 	 * Script that contains all the methods neeed to convert python types 
 	 * into Appose supported types (primitive types and dics and lists of them)
 	 */
 	protected static final String TYPE_CONVERSION_METHODS_SCRIPT = ""
 			+ "def " + NP_METHOD + "(np_arr):" + System.lineSeparator()
-			+ "  return {\"" + DATA_KEY + "\": np_arr.flatten().tolist(), \"" + SHAPE_KEY + "\": np_arr.shape}" + System.lineSeparator()
+			+ "  return {\"" + DATA_KEY + "\": np_arr.flatten().tolist(), \"" + SHAPE_KEY 
+							+ "\": np_arr.shape, \"" + APPOSE_DT_KEY + "\": \"" 
+							+ NP_ARR_KEY + "\"}" + System.lineSeparator()
 			+ "" + System.lineSeparator()
 			+ "def " + XR_METHOD + "(xr_arr):" + System.lineSeparator()
-			+ "  return {\"" + DATA_KEY + "\": xr_arr.values.flatten().tolist(), \"" + SHAPE_KEY + "\": xr_arr.shape, \"" + AXES_KEY + "\": xr_arr.dims,\"" + NAME_KEY + "\": xr_arr.name}" + System.lineSeparator()
+			+ "  return {\"" + DATA_KEY + "\": xr_arr.values.flatten().tolist(), \"" + SHAPE_KEY 
+							+ "\": xr_arr.shape, \"" + AXES_KEY + "\": xr_arr.dims,\"" + NAME_KEY 
+							+ "\": xr_arr.name, \"" + APPOSE_DT_KEY + "\": \"" + TENSOR_KEY + "\"}" + System.lineSeparator()
 			+ "" + System.lineSeparator()
 			+ "def " + LIST_METHOD + "(list_ob):" + System.lineSeparator()
 			+ "  n_list = []" + System.lineSeparator()

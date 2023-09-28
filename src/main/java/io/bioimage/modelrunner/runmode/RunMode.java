@@ -22,9 +22,9 @@ package io.bioimage.modelrunner.runmode;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Map.Entry;
 import java.util.stream.IntStream;
 
@@ -33,53 +33,34 @@ import org.apposed.appose.Environment;
 import org.apposed.appose.Service;
 import org.apposed.appose.Service.Task;
 
-import io.bioimage.modelrunner.runmode.ops.OpDescription;
 import io.bioimage.modelrunner.runmode.ops.OpInterface;
 import io.bioimage.modelrunner.tensor.ImgLib2ToArray;
 import io.bioimage.modelrunner.tensor.Tensor;
 import net.imglib2.RandomAccessibleInterval;
-import net.imglib2.img.Img;
-import net.imglib2.img.ImgFactory;
-import net.imglib2.img.cell.CellImgFactory;
 import net.imglib2.type.NativeType;
 import net.imglib2.type.numeric.RealType;
-import net.imglib2.type.numeric.real.FloatType;
 
 public class RunMode {
 	
 	private static final String IMPORT_XARRAY = "import xarray as xr" + System.lineSeparator(); 
 	
-	private static final String IMPORT_NUMPY = "import numpy as np" + System.lineSeparator(); 
-	
-	private static final String TENSOR_KEY = "tensor";
-	
-	private static final String NP_ARR_KEY = "np_arr";
-	
-	private static final String STANDARD_KEY = "standard";
+	private static final String IMPORT_NUMPY = "import numpy as np" + System.lineSeparator();
 	
 	// TODO add support for list of objects
 	private static final String OUTPUT_REFORMATING = 
 			"if isinstance(%s, xr.DataArray):" + System.lineSeparator()
 			+ "  task.update('is data array')" + System.lineSeparator()
-			+ "  types_list.append(\"" + TENSOR_KEY + "\")" + System.lineSeparator()
 			+ "  %s = " + RunModeScripts.XR_METHOD + "(%s)" + System.lineSeparator()
 			+ "elif isinstance(%s, np.ndarray):" + System.lineSeparator()
 			+ "  task.update('np array')" + System.lineSeparator()
-			+ "  types_list.append(\"" + NP_ARR_KEY + "\")" + System.lineSeparator()
 			+ "  %s = " + RunModeScripts.NP_METHOD + "(%s)" + System.lineSeparator()
 			+ "elif isinstance(%s, list):" + System.lineSeparator()
 			+ "  task.update('is list')" + System.lineSeparator()
-			+ "  types_list.append(\"" + TENSOR_KEY + "\")" + System.lineSeparator()
 			+ "  %s = " + RunModeScripts.LIST_METHOD + "(%s)" + System.lineSeparator()
 			+ "elif isinstance(%s, dict):" + System.lineSeparator()
 			+ "  task.update('is dict')" + System.lineSeparator()
 			+ "  task.update(str(output1))" + System.lineSeparator()
-			+ "  types_list.append(\"" + TENSOR_KEY + "\")" + System.lineSeparator()
-			+ "  %s = " + RunModeScripts.DICT_METHOD + "(%s)" + System.lineSeparator()
-			+ "else:" + System.lineSeparator()
-			+ "  task.update('standard')" + System.lineSeparator()
-			+ "  task.update(str(type(%s)))" + System.lineSeparator()
-			+ "  types_list.append(\"" + STANDARD_KEY + "\")" + System.lineSeparator();
+			+ "  %s = " + RunModeScripts.DICT_METHOD + "(%s)" + System.lineSeparator();
 	
 	private static final String DEFAULT_IMPORT = 
 			"import sys" + System.lineSeparator();
@@ -111,21 +92,9 @@ public class RunMode {
 				+ RunModeScripts.TYPE_CONVERSION_METHODS_SCRIPT + System.lineSeparator()
 				+ tensorRecreationCode + System.lineSeparator()
 				+ opMethodCode + System.lineSeparator()
-				+ "globals()['convertNpIntoDic'] = convertNpIntoDic" + System.lineSeparator()
-				+ "task.update(str(globals().keys()))" + System.lineSeparator()
-				+ "task.update(str(locals().keys()))" + System.lineSeparator()
 				+ retrieveResultsCode + System.lineSeparator()
 				+ taskOutputCode;
 		System.out.println(opCode);
-		
-		
-		
-		/*
-		envFileName = op.getCondaEnv();
-		referencedModel = op.appliedOnWhichModel();
-		opName = op.getMethodName();
-		kwargs = op.getMethodExtraArgs();
-		*/
 	}
 	
 	public static RunMode createRunMode(OpInterface op) {
@@ -154,10 +123,16 @@ public class RunMode {
 	                case FAILURE:
 	                    System.out.println("Task failed: " + task.error);
 	                    break;
+					case LAUNCH:
+						System.out.println("LAunched code");
+						break;
+					default:
+						break;
                 }
             });
             task.waitFor();
             System.out.println("here2");
+            Map<String, Object> aa = task.outputs;
             Object result = task.outputs.get("output0");
             Object polys = task.outputs.get("output1");
             System.out.println("here3");
@@ -170,6 +145,25 @@ public class RunMode {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
+	}
+	
+	private Map<String, Object> recreateOutputObjects(Map<String, Object> apposeOuts) {
+		 LinkedHashMap<String, Object> jdllOuts = new LinkedHashMap<String, Object>();
+		 for (Entry<String, Object> entry : apposeOuts.entrySet()) {
+			 Object value = entry.getValue();
+			 
+			 if (value instanceof Map && ((Map) value).get(RunModeScripts.APPOSE_DT_KEY) != null
+					 && ((Map) value).get(RunModeScripts.APPOSE_DT_KEY).equals(RunModeScripts.TENSOR_KEY) ) {
+				 
+			 } else if (value instanceof Map && ((Map) value).get(RunModeScripts.APPOSE_DT_KEY) != null
+					 && ((Map) value).get(RunModeScripts.APPOSE_DT_KEY).equals(RunModeScripts.NP_ARR_KEY) ) {
+				 
+			 } else if (value instanceof Map) {
+				 
+			 } else if (value instanceof List) {
+				 
+			 }
+		 }
 	}
 	
 	public void envCreation() {
@@ -286,8 +280,7 @@ public class RunMode {
 	}
 	
 	private void retrieveResultsCode() {
-		retrieveResultsCode = "task.update('Preparing outputs')" + System.lineSeparator()
-							+ "types_list = []" + System.lineSeparator() ;
+		retrieveResultsCode = "task.update('Preparing outputs')" + System.lineSeparator();
 		
 		for (String outN : this.outputNames) {
 			String code = String.format(OUTPUT_REFORMATING, outN, outN, outN, outN, outN, outN,
@@ -295,137 +288,6 @@ public class RunMode {
 			retrieveResultsCode += code;
 			taskOutputCode += String.format("task.outputs['%s'] = %s", outN, outN)
 					+ System.lineSeparator();
-		}
-	}
-	
-	public static void main(String[] args) {
-		Integer[] arr = new Integer[3];
-		arr[0] = 0;
-		Object obj = (int) 2;
-		boolean aa = isTypeDirectlySupported(obj.getClass());
-		RunMode rm = new RunMode(null);
-
-		rm.envFileName = "C:\\Users\\angel\\git\\jep\\miniconda\\envs\\stardist";
-		rm.env = Appose.base(new File(rm.envFileName)).build();
-		
-		final ImgFactory< FloatType > imgFactory = new CellImgFactory<>( new FloatType(), 5 );
-		final Img< FloatType > img1 = imgFactory.create( 1, 512, 512, 3 );
-		// Create the input tensor with the nameand axes given by the rdf.yaml file
-		// and add it to the list of input tensors
-		Tensor<FloatType> inpTensor = Tensor.build("input0", "byxc", img1);
-		List<Tensor<FloatType>> inputs = new ArrayList<Tensor<FloatType>>();
-		inputs.add(inpTensor);
-		
-		final Img< FloatType > img2 = imgFactory.create( 1, 512, 512, 1 );
-		// Create the input tensor with the nameand axes given by the rdf.yaml file
-		// and add it to the list of input tensors
-		Tensor<FloatType> outTensor = Tensor.build("ouput0", "byxc", img2);
-		List<Tensor<FloatType>> outputs = new ArrayList<Tensor<FloatType>>();
-		outputs.add(outTensor);
-		
-		rm.run(inputs, outputs);
-		
-	}
-	
-	public < T extends RealType< T > & NativeType< T > >
-		void run(List<Tensor<T>> inputTensors, List<Tensor<T>> outputTensors) {
-		
-		opCode = "";
-		addImports();
-		
-		LinkedHashMap<String, Object> inputMap = new LinkedHashMap<>();
-		for (Tensor<T> input : inputTensors) {
-			HashMap<String, Object> tensorMap = new HashMap<String, Object>();
-			tensorMap.put(RunModeScripts.AXES_KEY, input.getAxesOrderString());
-			tensorMap.put(RunModeScripts.DATA_KEY, ImgLib2ToArray.build(input.getData()));
-			tensorMap.put(RunModeScripts.SHAPE_KEY, input.getShape());
-			inputMap.put(input.getName(), tensorMap);
-			
-		}
-		
-		inputMap.putAll(null);
-		
-		opCode = "import numpy as np\r\n"
-				+ "import asyncio\r\n"
-				+ "import numpy as np\r\n"
-				+ "import tempfile\r\n"
-				+ "import warnings\r\n"
-				+ "from math import ceil\r\n"
-				+ "from os import PathLike\r\n"
-				+ "from pathlib import Path\r\n"
-				+ "from typing import Dict, IO, List, Optional, Tuple, Union\r\n"
-				+ "\r\n"
-				+ "import xarray as xr\r\n"
-				+ "from stardist import import_bioimageio as stardist_import_bioimageio\r\n"
-				+ "\r\n"
-				+ "from bioimageio.core import export_resource_package, load_resource_description\r\n"
-				+ "from bioimageio.core.prediction_pipeline._combined_processing import CombinedProcessing\r\n"
-				+ "from bioimageio.core.prediction_pipeline._measure_groups import compute_measures\r\n"
-				+ "from bioimageio.core.resource_io.nodes import Model\r\n"
-				+ "from bioimageio.spec.model import raw_nodes\r\n"
-				+ "from bioimageio.spec.shared.raw_nodes import ResourceDescription as RawResourceDescription\r\n"
-				+ "from bioimageio.workflows import stardist_prediction_2d\r\n"
-				+ "input_tensor = input0['data']\r\n"
-				+ "input_tensor = np.array(input_tensor).reshape(1,512,512,3)\r\n"
-				+ "model_rdf = 'chatty-frog'\r\n"
-				+ "package_path = export_resource_package(model_rdf)\r\n"
-				+ "with tempfile.TemporaryDirectory() as tmp_dir:\r\n"
-				+ "    import_dir = Path(tmp_dir) / \"import_dir\"\r\n"
-				+ "    imported_stardist_model = stardist_import_bioimageio(package_path, import_dir)\r\n"
-				+ "\r\n"
-				+ "model = load_resource_description(package_path)\r\n"
-				+ "task.update('BBBBBBBBBBBB')\r\n"
-				+ "labels, polys = imported_stardist_model.predict_instances(\r\n"
-				+ "    input_tensor,\r\n"
-				+ "    axes=\"\".join([{\"b\": \"S\"}.get(a[0], a[0].capitalize()) for a in model.inputs[0].axes]),\r\n"
-				+ "    n_tiles=None,\r\n"
-				+ ")\r\n"
-				+ "\r\n"
-				+ "if len(labels.shape) == 2:  # batch dim got squeezed\r\n"
-				+ "    labels = labels[None]\r\n"
-				+ "\r\n"
-				+ "output_axes_wo_channels = tuple(a for a in model.outputs[0].axes if a != \"c\")\r\n"
-				//+ "labels = labels.flatten().tolist()\r\n"
-				+ "task.update('AAAAAAAAAAA')\r\n"
-				+ "task.update(str(type(labels)))\r\n"
-				+ "task.outputs['output0'] = labels\r\n";
-        
-        try (Service python = env.python()) {
-        	python.debug(line -> {
-        		System.err.println(line);
-        	});
-            Task task = python.task(opCode, inputMap);
-            System.out.println("here");
-            task.listen(event -> {
-                switch (event.responseType) {
-	                case UPDATE:
-	                    System.out.println("Progress: " + task.message);
-	                    break;
-	                case COMPLETION:
-	                    Object numer =  task.outputs.get("output0");
-	                    System.out.println("Task complete. Result: " + numer);
-	                    break;
-	                case CANCELATION:
-	                    System.out.println("Task canceled");
-	                    break;
-	                case FAILURE:
-	                    System.out.println("Task failed: " + task.error);
-	                    break;
-                }
-            });
-            task.waitFor();
-            System.out.println("here2");
-            Object result = task.outputs.get("output0");
-            Object polys = task.outputs.get("polys");
-            System.out.println("here3");
-            if (result instanceof Integer)
-            	System.out.print(result);
-        } catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (InterruptedException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
 		}
 	}
 }
