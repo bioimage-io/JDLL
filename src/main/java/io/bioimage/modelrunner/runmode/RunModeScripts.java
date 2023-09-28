@@ -14,7 +14,7 @@ public class RunModeScripts {
 	
 	protected static final String XR_METHOD = "convertXrIntoDic";
 	
-	protected static final String LIST_METHOD = "convertListIntoSupportedist";
+	protected static final String LIST_METHOD = "convertListIntoSupportedList";
 	
 	protected static final String DICT_METHOD = "convertDicIntoDic";
 	
@@ -57,6 +57,10 @@ public class RunModeScripts {
 			+ "      n_dic[key] = " + LIST_METHOD + "(value)" + System.lineSeparator()
 			+ "    else:" + System.lineSeparator()
 			+ "      n_dic[key] = value" + System.lineSeparator()
-			+ "  return n_dic";
+			+ "  return n_dic" + System.lineSeparator()
+			+ "globals()['" + XR_METHOD + "'] = " + XR_METHOD +  System.lineSeparator()
+			+ "globals()['" + NP_METHOD + "'] = " + NP_METHOD +  System.lineSeparator()
+			+ "globals()['" + DICT_METHOD + "'] = " + DICT_METHOD +  System.lineSeparator()
+			+ "globals()['" + LIST_METHOD + "'] = " + LIST_METHOD +  System.lineSeparator();
 
 }
