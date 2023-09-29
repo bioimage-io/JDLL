@@ -22,6 +22,7 @@ package io.bioimage.modelrunner.tensor;
 
 import java.math.BigDecimal;
 import java.nio.ByteBuffer;
+import java.util.List;
 import java.util.stream.IntStream;
 
 import io.bioimage.modelrunner.utils.IndexingUtils;
@@ -69,7 +70,7 @@ public final class ArrayToImgLib2 {
      */
     @SuppressWarnings("unchecked")
     public static < T extends RealType< T > & NativeType< T > > Tensor<T> 
-    		buildTensor(Object array, Integer[] shape, String axes, String dtype, String name) 
+    		buildTensor(Object array, List<Integer> shape, String axes, String dtype, String name) 
     				throws IllegalArgumentException
     {
 		return Tensor.build(name, axes, (RandomAccessibleInterval<T>) build(array, shape, dtype));
@@ -87,12 +88,12 @@ public final class ArrayToImgLib2 {
      * not supported
      */
     @SuppressWarnings("unchecked")
-    public static <T extends Type<T>> Img<T> build(Object array, Integer[] shape, String dtype) throws IllegalArgumentException
+    public static <T extends Type<T>> Img<T> build(Object array, List<Integer> shape, String dtype) throws IllegalArgumentException
     {
     	if (!array.getClass().isArray()) {
     		throw new IllegalArgumentException("");
     	}
-    	if (shape.length == 0)
+    	if (shape.size() == 0)
     		return null;
     	
         Img<T> data;
@@ -141,7 +142,7 @@ public final class ArrayToImgLib2 {
      * 	shape of the image to generate, it has been retrieved from the byte buffer 
      * @return image specified in the bytebuffer
      */
-    private static Img<ByteType> buildInt8(Object array, Integer[] tensorShape)
+    private static Img<ByteType> buildInt8(Object array, List<Integer> tensorShape)
     {
     	if (!array.getClass().getComponentType().equals(byte.class)
         		&& !Byte.class.isAssignableFrom(array.getClass().getComponentType())
@@ -170,10 +171,10 @@ public final class ArrayToImgLib2 {
      * 	shape of the image to generate, it has been retrieved from the byte buffer 
      * @return image specified in the bytebuffer
      */
-    private static Img<ByteType> buildInt8(Byte[] tensor, Integer[] tensorShape)
+    private static Img<ByteType> buildInt8(Byte[] tensor, List<Integer> tensorShape)
     {
     	final ArrayImgFactory< ByteType > factory = new ArrayImgFactory<>( new ByteType() );
-    	long[] shape = IntStream.range(0, tensorShape.length).mapToLong(i -> tensorShape[i]).toArray();
+    	long[] shape = IntStream.range(0, tensorShape.size()).mapToLong(i -> tensorShape.get(i)).toArray();
         final Img< ByteType > outputImg = (Img<ByteType>) factory.create(shape);
     	Cursor<ByteType> tensorCursor= outputImg.cursor();
 		while (tensorCursor.hasNext()) {
@@ -195,10 +196,10 @@ public final class ArrayToImgLib2 {
      * 	shape of the image to generate, it has been retrieved from the byte buffer 
      * @return image specified in the bytebuffer
      */
-    private static Img<ByteType> buildInt8(Integer[] tensor, Integer[] tensorShape)
+    private static Img<ByteType> buildInt8(Integer[] tensor, List<Integer> tensorShape)
     {
     	final ArrayImgFactory< ByteType > factory = new ArrayImgFactory<>( new ByteType() );
-    	long[] shape = IntStream.range(0, tensorShape.length).mapToLong(i -> tensorShape[i]).toArray();
+    	long[] shape = IntStream.range(0, tensorShape.size()).mapToLong(i -> tensorShape.get(i)).toArray();
         final Img< ByteType > outputImg = (Img<ByteType>) factory.create(shape);
     	Cursor<ByteType> tensorCursor= outputImg.cursor();
 		while (tensorCursor.hasNext()) {
@@ -220,10 +221,10 @@ public final class ArrayToImgLib2 {
      * 	shape of the image to generate, it has been retrieved from the byte buffer 
      * @return image specified in the bytebuffer
      */
-    private static Img<ByteType> buildInt8(byte[] tensor, Integer[] tensorShape)
+    private static Img<ByteType> buildInt8(byte[] tensor, List<Integer> tensorShape)
     {
     	final ArrayImgFactory< ByteType > factory = new ArrayImgFactory<>( new ByteType() );
-    	long[] shape = IntStream.range(0, tensorShape.length).mapToLong(i -> tensorShape[i]).toArray();
+    	long[] shape = IntStream.range(0, tensorShape.size()).mapToLong(i -> tensorShape.get(i)).toArray();
         final Img< ByteType > outputImg = (Img<ByteType>) factory.create(shape);
     	Cursor<ByteType> tensorCursor= outputImg.cursor();
 		while (tensorCursor.hasNext()) {
@@ -245,10 +246,10 @@ public final class ArrayToImgLib2 {
      * 	shape of the image to generate, it has been retrieved from the byte buffer 
      * @return image specified in the bytebuffer
      */
-    private static Img<ByteType> buildInt8(int[] tensor, Integer[] tensorShape)
+    private static Img<ByteType> buildInt8(int[] tensor, List<Integer> tensorShape)
     {
     	final ArrayImgFactory< ByteType > factory = new ArrayImgFactory<>( new ByteType() );
-    	long[] shape = IntStream.range(0, tensorShape.length).mapToLong(i -> tensorShape[i]).toArray();
+    	long[] shape = IntStream.range(0, tensorShape.size()).mapToLong(i -> tensorShape.get(i)).toArray();
         final Img< ByteType > outputImg = (Img<ByteType>) factory.create(shape);
     	Cursor<ByteType> tensorCursor= outputImg.cursor();
 		while (tensorCursor.hasNext()) {
@@ -270,7 +271,7 @@ public final class ArrayToImgLib2 {
      * 	shape of the image to generate, it has been retrieved from the byte buffer 
      * @return image specified in the bytebuffer
      */
-    private static Img<UnsignedByteType> buildUint8(Object array, Integer[] tensorShape)
+    private static Img<UnsignedByteType> buildUint8(Object array, List<Integer> tensorShape)
     {
     	if (!array.getClass().getComponentType().equals(byte.class)
         		&& !Byte.class.isAssignableFrom(array.getClass().getComponentType())
@@ -299,10 +300,10 @@ public final class ArrayToImgLib2 {
      * 	shape of the image to generate, it has been retrieved from the byte buffer 
      * @return image specified in the bytebuffer
      */
-    private static Img<UnsignedByteType> buildUint8(Byte[] tensor, Integer[] tensorShape)
+    private static Img<UnsignedByteType> buildUint8(Byte[] tensor, List<Integer> tensorShape)
     {
     	final ArrayImgFactory< UnsignedByteType > factory = new ArrayImgFactory<>( new UnsignedByteType() );
-    	long[] shape = IntStream.range(0, tensorShape.length).mapToLong(i -> tensorShape[i]).toArray();
+    	long[] shape = IntStream.range(0, tensorShape.size()).mapToLong(i -> tensorShape.get(i)).toArray();
         final Img< UnsignedByteType > outputImg = (Img<UnsignedByteType>) factory.create(shape);
     	Cursor<UnsignedByteType> tensorCursor= outputImg.cursor();
 		while (tensorCursor.hasNext()) {
@@ -324,10 +325,10 @@ public final class ArrayToImgLib2 {
      * 	shape of the image to generate, it has been retrieved from the byte buffer 
      * @return image specified in the bytebuffer
      */
-    private static Img<UnsignedByteType> buildUint8(Integer[] tensor, Integer[] tensorShape)
+    private static Img<UnsignedByteType> buildUint8(Integer[] tensor, List<Integer> tensorShape)
     {
     	final ArrayImgFactory< UnsignedByteType > factory = new ArrayImgFactory<>( new UnsignedByteType() );
-    	long[] shape = IntStream.range(0, tensorShape.length).mapToLong(i -> tensorShape[i]).toArray();
+    	long[] shape = IntStream.range(0, tensorShape.size()).mapToLong(i -> tensorShape.get(i)).toArray();
         final Img< UnsignedByteType > outputImg = (Img<UnsignedByteType>) factory.create(shape);
     	Cursor<UnsignedByteType> tensorCursor= outputImg.cursor();
 		while (tensorCursor.hasNext()) {
@@ -349,10 +350,10 @@ public final class ArrayToImgLib2 {
      * 	shape of the image to generate, it has been retrieved from the byte buffer 
      * @return image specified in the bytebuffer
      */
-    private static Img<UnsignedByteType> buildUint8(byte[] tensor, Integer[] tensorShape)
+    private static Img<UnsignedByteType> buildUint8(byte[] tensor, List<Integer> tensorShape)
     {
     	final ArrayImgFactory< UnsignedByteType > factory = new ArrayImgFactory<>( new UnsignedByteType() );
-    	long[] shape = IntStream.range(0, tensorShape.length).mapToLong(i -> tensorShape[i]).toArray();
+    	long[] shape = IntStream.range(0, tensorShape.size()).mapToLong(i -> tensorShape.get(i)).toArray();
         final Img< UnsignedByteType > outputImg = (Img<UnsignedByteType>) factory.create(shape);
     	Cursor<UnsignedByteType> tensorCursor= outputImg.cursor();
 		while (tensorCursor.hasNext()) {
@@ -374,10 +375,10 @@ public final class ArrayToImgLib2 {
      * 	shape of the image to generate, it has been retrieved from the byte buffer 
      * @return image specified in the bytebuffer
      */
-    private static Img<UnsignedByteType> buildUint8(int[] tensor, Integer[] tensorShape)
+    private static Img<UnsignedByteType> buildUint8(int[] tensor, List<Integer> tensorShape)
     {
     	final ArrayImgFactory< UnsignedByteType > factory = new ArrayImgFactory<>( new UnsignedByteType() );
-    	long[] shape = IntStream.range(0, tensorShape.length).mapToLong(i -> tensorShape[i]).toArray();
+    	long[] shape = IntStream.range(0, tensorShape.size()).mapToLong(i -> tensorShape.get(i)).toArray();
         final Img< UnsignedByteType > outputImg = (Img<UnsignedByteType>) factory.create(shape);
     	Cursor<UnsignedByteType> tensorCursor= outputImg.cursor();
 		while (tensorCursor.hasNext()) {
@@ -399,7 +400,7 @@ public final class ArrayToImgLib2 {
      * 	shape of the image to generate, it has been retrieved from the byte buffer 
      * @return image specified in the bytebuffer
      */
-    private static Img<ShortType> buildInt16(Object array, Integer[] tensorShape)
+    private static Img<ShortType> buildInt16(Object array, List<Integer> tensorShape)
     {
     	if (!array.getClass().getComponentType().equals(short.class)
         		&& !Short.class.isAssignableFrom(array.getClass().getComponentType())
@@ -428,10 +429,10 @@ public final class ArrayToImgLib2 {
      * 	shape of the image to generate, it has been retrieved from the byte buffer 
      * @return image specified in the bytebuffer
      */
-    private static Img<ShortType> buildInt16(Short[] tensor, Integer[] tensorShape)
+    private static Img<ShortType> buildInt16(Short[] tensor, List<Integer> tensorShape)
     {
     	final ArrayImgFactory< ShortType > factory = new ArrayImgFactory<>( new ShortType() );
-    	long[] shape = IntStream.range(0, tensorShape.length).mapToLong(i -> tensorShape[i]).toArray();
+    	long[] shape = IntStream.range(0, tensorShape.size()).mapToLong(i -> tensorShape.get(i)).toArray();
         final Img< ShortType > outputImg = (Img<ShortType>) factory.create(shape);
     	Cursor<ShortType> tensorCursor= outputImg.cursor();
 		while (tensorCursor.hasNext()) {
@@ -453,10 +454,10 @@ public final class ArrayToImgLib2 {
      * 	shape of the image to generate, it has been retrieved from the byte buffer 
      * @return image specified in the bytebuffer
      */
-    private static Img<ShortType> buildInt16(Integer[] tensor, Integer[] tensorShape)
+    private static Img<ShortType> buildInt16(Integer[] tensor, List<Integer> tensorShape)
     {
     	final ArrayImgFactory< ShortType > factory = new ArrayImgFactory<>( new ShortType() );
-    	long[] shape = IntStream.range(0, tensorShape.length).mapToLong(i -> tensorShape[i]).toArray();
+    	long[] shape = IntStream.range(0, tensorShape.size()).mapToLong(i -> tensorShape.get(i)).toArray();
         final Img< ShortType > outputImg = (Img<ShortType>) factory.create(shape);
     	Cursor<ShortType> tensorCursor= outputImg.cursor();
 		while (tensorCursor.hasNext()) {
@@ -478,10 +479,10 @@ public final class ArrayToImgLib2 {
      * 	shape of the image to generate, it has been retrieved from the byte buffer 
      * @return image specified in the bytebuffer
      */
-    private static Img<ShortType> buildInt16(short[] tensor, Integer[] tensorShape)
+    private static Img<ShortType> buildInt16(short[] tensor, List<Integer> tensorShape)
     {
     	final ArrayImgFactory< ShortType > factory = new ArrayImgFactory<>( new ShortType() );
-    	long[] shape = IntStream.range(0, tensorShape.length).mapToLong(i -> tensorShape[i]).toArray();
+    	long[] shape = IntStream.range(0, tensorShape.size()).mapToLong(i -> tensorShape.get(i)).toArray();
         final Img< ShortType > outputImg = (Img<ShortType>) factory.create(shape);
     	Cursor<ShortType> tensorCursor= outputImg.cursor();
 		while (tensorCursor.hasNext()) {
@@ -503,10 +504,10 @@ public final class ArrayToImgLib2 {
      * 	shape of the image to generate, it has been retrieved from the byte buffer 
      * @return image specified in the bytebuffer
      */
-    private static Img<ShortType> buildInt16(int[] tensor, Integer[] tensorShape)
+    private static Img<ShortType> buildInt16(int[] tensor, List<Integer> tensorShape)
     {
     	final ArrayImgFactory< ShortType > factory = new ArrayImgFactory<>( new ShortType() );
-    	long[] shape = IntStream.range(0, tensorShape.length).mapToLong(i -> tensorShape[i]).toArray();
+    	long[] shape = IntStream.range(0, tensorShape.size()).mapToLong(i -> tensorShape.get(i)).toArray();
         final Img< ShortType > outputImg = (Img<ShortType>) factory.create(shape);
     	Cursor<ShortType> tensorCursor= outputImg.cursor();
 		while (tensorCursor.hasNext()) {
@@ -528,7 +529,7 @@ public final class ArrayToImgLib2 {
      * 	shape of the image to generate, it has been retrieved from the byte buffer 
      * @return image specified in the bytebuffer
      */
-    private static Img<UnsignedShortType> buildUint16(Object array, Integer[] tensorShape)
+    private static Img<UnsignedShortType> buildUint16(Object array, List<Integer> tensorShape)
     {
     	if (!array.getClass().getComponentType().equals(short.class)
         		&& !Short.class.isAssignableFrom(array.getClass().getComponentType())
@@ -557,10 +558,10 @@ public final class ArrayToImgLib2 {
      * 	shape of the image to generate, it has been retrieved from the byte buffer 
      * @return image specified in the bytebuffer
      */
-    private static Img<UnsignedShortType> buildUint16(Short[] tensor, Integer[] tensorShape)
+    private static Img<UnsignedShortType> buildUint16(Short[] tensor, List<Integer> tensorShape)
     {
     	final ArrayImgFactory< UnsignedShortType > factory = new ArrayImgFactory<>( new UnsignedShortType() );
-    	long[] shape = IntStream.range(0, tensorShape.length).mapToLong(i -> tensorShape[i]).toArray();
+    	long[] shape = IntStream.range(0, tensorShape.size()).mapToLong(i -> tensorShape.get(i)).toArray();
         final Img< UnsignedShortType > outputImg = (Img<UnsignedShortType>) factory.create(shape);
     	Cursor<UnsignedShortType> tensorCursor= outputImg.cursor();
 		while (tensorCursor.hasNext()) {
@@ -582,10 +583,10 @@ public final class ArrayToImgLib2 {
      * 	shape of the image to generate, it has been retrieved from the byte buffer 
      * @return image specified in the bytebuffer
      */
-    private static Img<UnsignedShortType> buildUint16(Integer[] tensor, Integer[] tensorShape)
+    private static Img<UnsignedShortType> buildUint16(Integer[] tensor, List<Integer> tensorShape)
     {
     	final ArrayImgFactory< UnsignedShortType > factory = new ArrayImgFactory<>( new UnsignedShortType() );
-    	long[] shape = IntStream.range(0, tensorShape.length).mapToLong(i -> tensorShape[i]).toArray();
+    	long[] shape = IntStream.range(0, tensorShape.size()).mapToLong(i -> tensorShape.get(i)).toArray();
         final Img< UnsignedShortType > outputImg = (Img<UnsignedShortType>) factory.create(shape);
     	Cursor<UnsignedShortType> tensorCursor= outputImg.cursor();
 		while (tensorCursor.hasNext()) {
@@ -607,10 +608,10 @@ public final class ArrayToImgLib2 {
      * 	shape of the image to generate, it has been retrieved from the byte buffer 
      * @return image specified in the bytebuffer
      */
-    private static Img<UnsignedShortType> buildUint16(short[] tensor, Integer[] tensorShape)
+    private static Img<UnsignedShortType> buildUint16(short[] tensor, List<Integer> tensorShape)
     {
     	final ArrayImgFactory< UnsignedShortType > factory = new ArrayImgFactory<>( new UnsignedShortType() );
-    	long[] shape = IntStream.range(0, tensorShape.length).mapToLong(i -> tensorShape[i]).toArray();
+    	long[] shape = IntStream.range(0, tensorShape.size()).mapToLong(i -> tensorShape.get(i)).toArray();
         final Img< UnsignedShortType > outputImg = (Img<UnsignedShortType>) factory.create(shape);
     	Cursor<UnsignedShortType> tensorCursor= outputImg.cursor();
 		while (tensorCursor.hasNext()) {
@@ -632,10 +633,10 @@ public final class ArrayToImgLib2 {
      * 	shape of the image to generate, it has been retrieved from the byte buffer 
      * @return image specified in the bytebuffer
      */
-    private static Img<UnsignedShortType> buildUint16(int[] tensor, Integer[] tensorShape)
+    private static Img<UnsignedShortType> buildUint16(int[] tensor, List<Integer> tensorShape)
     {
     	final ArrayImgFactory< UnsignedShortType > factory = new ArrayImgFactory<>( new UnsignedShortType() );
-    	long[] shape = IntStream.range(0, tensorShape.length).mapToLong(i -> tensorShape[i]).toArray();
+    	long[] shape = IntStream.range(0, tensorShape.size()).mapToLong(i -> tensorShape.get(i)).toArray();
         final Img< UnsignedShortType > outputImg = (Img<UnsignedShortType>) factory.create(shape);
     	Cursor<UnsignedShortType> tensorCursor= outputImg.cursor();
 		while (tensorCursor.hasNext()) {
@@ -657,7 +658,7 @@ public final class ArrayToImgLib2 {
      * 	shape of the image to generate, it has been retrieved from the byte buffer 
      * @return image specified in the bytebuffer
      */
-    private static Img<IntType> buildInt32(Object array, Integer[] tensorShape)
+    private static Img<IntType> buildInt32(Object array, List<Integer> tensorShape)
     {
     	if (!array.getClass().getComponentType().equals(int.class)
         		&& !Integer.class.isAssignableFrom(array.getClass().getComponentType())) {
@@ -680,10 +681,10 @@ public final class ArrayToImgLib2 {
      * 	shape of the image to generate, it has been retrieved from the byte buffer 
      * @return image specified in the bytebuffer
      */
-    private static Img<IntType> buildInt32(Integer[] tensor, Integer[] tensorShape)
+    private static Img<IntType> buildInt32(Integer[] tensor, List<Integer> tensorShape)
     {
     	final ArrayImgFactory< IntType > factory = new ArrayImgFactory<>( new IntType() );
-    	long[] shape = IntStream.range(0, tensorShape.length).mapToLong(i -> tensorShape[i]).toArray();
+    	long[] shape = IntStream.range(0, tensorShape.size()).mapToLong(i -> tensorShape.get(i)).toArray();
         final Img< IntType > outputImg = (Img<IntType>) factory.create(shape);
     	Cursor<IntType> tensorCursor= outputImg.cursor();
 		while (tensorCursor.hasNext()) {
@@ -705,10 +706,10 @@ public final class ArrayToImgLib2 {
      * 	shape of the image to generate, it has been retrieved from the byte buffer 
      * @return image specified in the bytebuffer
      */
-    private static Img<IntType> buildInt32(int[] tensor, Integer[] tensorShape)
+    private static Img<IntType> buildInt32(int[] tensor, List<Integer> tensorShape)
     {
     	final ArrayImgFactory< IntType > factory = new ArrayImgFactory<>( new IntType() );
-    	long[] shape = IntStream.range(0, tensorShape.length).mapToLong(i -> tensorShape[i]).toArray();
+    	long[] shape = IntStream.range(0, tensorShape.size()).mapToLong(i -> tensorShape.get(i)).toArray();
         final Img< IntType > outputImg = (Img<IntType>) factory.create(shape);
     	Cursor<IntType> tensorCursor= outputImg.cursor();
 		while (tensorCursor.hasNext()) {
@@ -730,7 +731,7 @@ public final class ArrayToImgLib2 {
      * 	shape of the image to generate, it has been retrieved from the byte buffer 
      * @return image specified in the bytebuffer
      */
-    private static Img<UnsignedIntType> buildUint32(Object array, Integer[] tensorShape)
+    private static Img<UnsignedIntType> buildUint32(Object array, List<Integer> tensorShape)
     {
     	if (!array.getClass().getComponentType().equals(int.class)
         		&& !Integer.class.isAssignableFrom(array.getClass().getComponentType())
@@ -759,10 +760,10 @@ public final class ArrayToImgLib2 {
      * 	shape of the image to generate, it has been retrieved from the byte buffer 
      * @return image specified in the bytebuffer
      */
-    private static Img<UnsignedIntType> buildUint32(Integer[] tensor, Integer[] tensorShape)
+    private static Img<UnsignedIntType> buildUint32(Integer[] tensor, List<Integer> tensorShape)
     {
     	final ArrayImgFactory< UnsignedIntType > factory = new ArrayImgFactory<>( new UnsignedIntType() );
-    	long[] shape = IntStream.range(0, tensorShape.length).mapToLong(i -> tensorShape[i]).toArray();
+    	long[] shape = IntStream.range(0, tensorShape.size()).mapToLong(i -> tensorShape.get(i)).toArray();
         final Img< UnsignedIntType > outputImg = (Img<UnsignedIntType>) factory.create(shape);
     	Cursor<UnsignedIntType> tensorCursor= outputImg.cursor();
 		while (tensorCursor.hasNext()) {
@@ -784,10 +785,10 @@ public final class ArrayToImgLib2 {
      * 	shape of the image to generate, it has been retrieved from the byte buffer 
      * @return image specified in the bytebuffer
      */
-    private static Img<UnsignedIntType> buildUint32(int[] tensor, Integer[] tensorShape)
+    private static Img<UnsignedIntType> buildUint32(int[] tensor, List<Integer> tensorShape)
     {
     	final ArrayImgFactory< UnsignedIntType > factory = new ArrayImgFactory<>( new UnsignedIntType() );
-    	long[] shape = IntStream.range(0, tensorShape.length).mapToLong(i -> tensorShape[i]).toArray();
+    	long[] shape = IntStream.range(0, tensorShape.size()).mapToLong(i -> tensorShape.get(i)).toArray();
         final Img< UnsignedIntType > outputImg = (Img<UnsignedIntType>) factory.create(shape);
     	Cursor<UnsignedIntType> tensorCursor= outputImg.cursor();
 		while (tensorCursor.hasNext()) {
@@ -809,10 +810,10 @@ public final class ArrayToImgLib2 {
      * 	shape of the image to generate, it has been retrieved from the byte buffer 
      * @return image specified in the bytebuffer
      */
-    private static Img<UnsignedIntType> buildUint32(Long[] tensor, Integer[] tensorShape)
+    private static Img<UnsignedIntType> buildUint32(Long[] tensor, List<Integer> tensorShape)
     {
     	final ArrayImgFactory< UnsignedIntType > factory = new ArrayImgFactory<>( new UnsignedIntType() );
-    	long[] shape = IntStream.range(0, tensorShape.length).mapToLong(i -> tensorShape[i]).toArray();
+    	long[] shape = IntStream.range(0, tensorShape.size()).mapToLong(i -> tensorShape.get(i)).toArray();
         final Img< UnsignedIntType > outputImg = (Img<UnsignedIntType>) factory.create(shape);
     	Cursor<UnsignedIntType> tensorCursor= outputImg.cursor();
 		while (tensorCursor.hasNext()) {
@@ -834,10 +835,10 @@ public final class ArrayToImgLib2 {
      * 	shape of the image to generate, it has been retrieved from the byte buffer 
      * @return image specified in the bytebuffer
      */
-    private static Img<UnsignedIntType> buildUint32(long[] tensor, Integer[] tensorShape)
+    private static Img<UnsignedIntType> buildUint32(long[] tensor, List<Integer> tensorShape)
     {
     	final ArrayImgFactory< UnsignedIntType > factory = new ArrayImgFactory<>( new UnsignedIntType() );
-    	long[] shape = IntStream.range(0, tensorShape.length).mapToLong(i -> tensorShape[i]).toArray();
+    	long[] shape = IntStream.range(0, tensorShape.size()).mapToLong(i -> tensorShape.get(i)).toArray();
         final Img< UnsignedIntType > outputImg = (Img<UnsignedIntType>) factory.create(shape);
     	Cursor<UnsignedIntType> tensorCursor= outputImg.cursor();
 		while (tensorCursor.hasNext()) {
@@ -859,7 +860,7 @@ public final class ArrayToImgLib2 {
      * 	shape of the image to generate, it has been retrieved from the byte buffer 
      * @return image specified in the bytebuffer
      */
-    private static Img<LongType> buildInt64(Object array, Integer[] tensorShape)
+    private static Img<LongType> buildInt64(Object array, List<Integer> tensorShape)
     {
     	if (!array.getClass().getComponentType().equals(long.class)
         		&& !Long.class.isAssignableFrom(array.getClass().getComponentType())
@@ -885,10 +886,10 @@ public final class ArrayToImgLib2 {
      * 	shape of the image to generate, it has been retrieved from the byte buffer 
      * @return image specified in the bytebuffer
      */
-    private static Img<LongType> buildInt64(Long[] tensor, Integer[] tensorShape)
+    private static Img<LongType> buildInt64(Long[] tensor, List<Integer> tensorShape)
     {
     	final ArrayImgFactory< LongType > factory = new ArrayImgFactory<>( new LongType() );
-    	long[] shape = IntStream.range(0, tensorShape.length).mapToLong(i -> tensorShape[i]).toArray();
+    	long[] shape = IntStream.range(0, tensorShape.size()).mapToLong(i -> tensorShape.get(i)).toArray();
         final Img< LongType > outputImg = (Img<LongType>) factory.create(shape);
     	Cursor<LongType> tensorCursor= outputImg.cursor();
 		while (tensorCursor.hasNext()) {
@@ -910,10 +911,10 @@ public final class ArrayToImgLib2 {
      * 	shape of the image to generate, it has been retrieved from the byte buffer 
      * @return image specified in the bytebuffer
      */
-    private static Img<LongType> buildInt64(Integer[] tensor, Integer[] tensorShape)
+    private static Img<LongType> buildInt64(Integer[] tensor, List<Integer> tensorShape)
     {
     	final ArrayImgFactory< LongType > factory = new ArrayImgFactory<>( new LongType() );
-    	long[] shape = IntStream.range(0, tensorShape.length).mapToLong(i -> tensorShape[i]).toArray();
+    	long[] shape = IntStream.range(0, tensorShape.size()).mapToLong(i -> tensorShape.get(i)).toArray();
         final Img< LongType > outputImg = (Img<LongType>) factory.create(shape);
     	Cursor<LongType> tensorCursor= outputImg.cursor();
 		while (tensorCursor.hasNext()) {
@@ -935,10 +936,10 @@ public final class ArrayToImgLib2 {
      * 	shape of the image to generate, it has been retrieved from the byte buffer 
      * @return image specified in the bytebuffer
      */
-    private static Img<LongType> buildInt64(long[] tensor, Integer[] tensorShape)
+    private static Img<LongType> buildInt64(long[] tensor, List<Integer> tensorShape)
     {
     	final ArrayImgFactory< LongType > factory = new ArrayImgFactory<>( new LongType() );
-    	long[] shape = IntStream.range(0, tensorShape.length).mapToLong(i -> tensorShape[i]).toArray();
+    	long[] shape = IntStream.range(0, tensorShape.size()).mapToLong(i -> tensorShape.get(i)).toArray();
         final Img< LongType > outputImg = (Img<LongType>) factory.create(shape);
     	Cursor<LongType> tensorCursor= outputImg.cursor();
 		while (tensorCursor.hasNext()) {
@@ -960,7 +961,7 @@ public final class ArrayToImgLib2 {
      * 	shape of the image to generate, it has been retrieved from the byte buffer 
      * @return image specified in the bytebuffer
      */
-    private static Img<FloatType> buildFloat32(Object array, Integer[] tensorShape)
+    private static Img<FloatType> buildFloat32(Object array, List<Integer> tensorShape)
     {
     	if (!array.getClass().getComponentType().equals(float.class)
         		&& !Float.class.isAssignableFrom(array.getClass().getComponentType())
@@ -986,10 +987,10 @@ public final class ArrayToImgLib2 {
      * 	shape of the image to generate, it has been retrieved from the byte buffer 
      * @return image specified in the bytebuffer
      */
-    private static Img<FloatType> buildFloat32(Float[] tensor, Integer[] tensorShape)
+    private static Img<FloatType> buildFloat32(Float[] tensor, List<Integer> tensorShape)
     {
     	final ArrayImgFactory< FloatType > factory = new ArrayImgFactory<>( new FloatType() );
-    	long[] shape = IntStream.range(0, tensorShape.length).mapToLong(i -> tensorShape[i]).toArray();
+    	long[] shape = IntStream.range(0, tensorShape.size()).mapToLong(i -> tensorShape.get(i)).toArray();
         final Img< FloatType > outputImg = (Img<FloatType>) factory.create(shape);
     	Cursor<FloatType> tensorCursor= outputImg.cursor();
 		while (tensorCursor.hasNext()) {
@@ -1011,10 +1012,10 @@ public final class ArrayToImgLib2 {
      * 	shape of the image to generate, it has been retrieved from the byte buffer 
      * @return image specified in the bytebuffer
      */
-    private static Img<FloatType> buildFloat32(BigDecimal[] tensor, Integer[] tensorShape)
+    private static Img<FloatType> buildFloat32(BigDecimal[] tensor, List<Integer> tensorShape)
     {
     	final ArrayImgFactory< FloatType > factory = new ArrayImgFactory<>( new FloatType() );
-    	long[] shape = IntStream.range(0, tensorShape.length).mapToLong(i -> tensorShape[i]).toArray();
+    	long[] shape = IntStream.range(0, tensorShape.size()).mapToLong(i -> tensorShape.get(i)).toArray();
         final Img< FloatType > outputImg = (Img<FloatType>) factory.create(shape);
     	Cursor<FloatType> tensorCursor= outputImg.cursor();
 		while (tensorCursor.hasNext()) {
@@ -1036,10 +1037,10 @@ public final class ArrayToImgLib2 {
      * 	shape of the image to generate, it has been retrieved from the byte buffer 
      * @return image specified in the bytebuffer
      */
-    private static Img<FloatType> buildFloat32(float[] tensor, Integer[] tensorShape)
+    private static Img<FloatType> buildFloat32(float[] tensor, List<Integer> tensorShape)
     {
     	final ArrayImgFactory< FloatType > factory = new ArrayImgFactory<>( new FloatType() );
-    	long[] shape = IntStream.range(0, tensorShape.length).mapToLong(i -> tensorShape[i]).toArray();
+    	long[] shape = IntStream.range(0, tensorShape.size()).mapToLong(i -> tensorShape.get(i)).toArray();
         final Img< FloatType > outputImg = (Img<FloatType>) factory.create(shape);
     	Cursor<FloatType> tensorCursor= outputImg.cursor();
 		while (tensorCursor.hasNext()) {
@@ -1061,7 +1062,7 @@ public final class ArrayToImgLib2 {
      * 	shape of the image to generate, it has been retrieved from the byte buffer 
      * @return image specified in the bytebuffer
      */
-    private static Img<DoubleType> buildFloat64(Object array, Integer[] tensorShape)
+    private static Img<DoubleType> buildFloat64(Object array, List<Integer> tensorShape)
     {
     	if (!array.getClass().getComponentType().equals(double.class)
         		&& !Double.class.isAssignableFrom(array.getClass().getComponentType())
@@ -1087,10 +1088,10 @@ public final class ArrayToImgLib2 {
      * 	shape of the image to generate, it has been retrieved from the byte buffer 
      * @return image specified in the bytebuffer
      */
-    private static Img<DoubleType> buildFloat64(Double[] tensor, Integer[] tensorShape)
+    private static Img<DoubleType> buildFloat64(Double[] tensor, List<Integer> tensorShape)
     {
     	final ArrayImgFactory< DoubleType > factory = new ArrayImgFactory<>( new DoubleType() );
-    	long[] shape = IntStream.range(0, tensorShape.length).mapToLong(i -> tensorShape[i]).toArray();
+    	long[] shape = IntStream.range(0, tensorShape.size()).mapToLong(i -> tensorShape.get(i)).toArray();
         final Img< DoubleType > outputImg = (Img<DoubleType>) factory.create(shape);
     	Cursor<DoubleType> tensorCursor= outputImg.cursor();
 		while (tensorCursor.hasNext()) {
@@ -1112,10 +1113,10 @@ public final class ArrayToImgLib2 {
      * 	shape of the image to generate, it has been retrieved from the byte buffer 
      * @return image specified in the bytebuffer
      */
-    private static Img<DoubleType> buildFloat64(BigDecimal[] tensor, Integer[] tensorShape)
+    private static Img<DoubleType> buildFloat64(BigDecimal[] tensor, List<Integer> tensorShape)
     {
     	final ArrayImgFactory< DoubleType > factory = new ArrayImgFactory<>( new DoubleType() );
-    	long[] shape = IntStream.range(0, tensorShape.length).mapToLong(i -> tensorShape[i]).toArray();
+    	long[] shape = IntStream.range(0, tensorShape.size()).mapToLong(i -> tensorShape.get(i)).toArray();
         final Img< DoubleType > outputImg = (Img<DoubleType>) factory.create(shape);
     	Cursor<DoubleType> tensorCursor= outputImg.cursor();
 		while (tensorCursor.hasNext()) {
@@ -1137,10 +1138,10 @@ public final class ArrayToImgLib2 {
      * 	shape of the image to generate, it has been retrieved from the byte buffer 
      * @return image specified in the bytebuffer
      */
-    private static Img<DoubleType> buildFloat64(double[] tensor, Integer[] tensorShape)
+    private static Img<DoubleType> buildFloat64(double[] tensor, List<Integer> tensorShape)
     {
     	final ArrayImgFactory< DoubleType > factory = new ArrayImgFactory<>( new DoubleType() );
-    	long[] shape = IntStream.range(0, tensorShape.length).mapToLong(i -> tensorShape[i]).toArray();
+    	long[] shape = IntStream.range(0, tensorShape.size()).mapToLong(i -> tensorShape.get(i)).toArray();
         final Img< DoubleType > outputImg = (Img<DoubleType>) factory.create(shape);
     	Cursor<DoubleType> tensorCursor= outputImg.cursor();
 		while (tensorCursor.hasNext()) {
