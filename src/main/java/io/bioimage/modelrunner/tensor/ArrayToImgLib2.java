@@ -41,7 +41,9 @@ import net.imglib2.type.numeric.integer.ByteType;
 import net.imglib2.type.numeric.integer.IntType;
 import net.imglib2.type.numeric.integer.LongType;
 import net.imglib2.type.numeric.integer.ShortType;
+import net.imglib2.type.numeric.integer.UnsignedByteType;
 import net.imglib2.type.numeric.integer.UnsignedIntType;
+import net.imglib2.type.numeric.integer.UnsignedShortType;
 import net.imglib2.type.numeric.real.DoubleType;
 import net.imglib2.type.numeric.real.FloatType;
 
@@ -98,38 +100,38 @@ public final class ArrayToImgLib2 {
     	if (shape.length == 0)
     		return null;
     	
-        Img<?> data;
+        Img<T> data;
 		switch (dtype)
         {
 	    	case "int8":
-	            data = (Img<?>) buildInt8(array, shape);
+	            data = (Img<T>) buildInt8(array, shape);
 	            break;
 	    	case "uint8":
-	            data = (Img<?>) buildUint8(array, shape);
+	            data = (Img<T>) buildUint8(array, shape);
 	            break;
 	    	case "int16":
-	            data = (Img<?>) buildInt16(array, shape);
+	            data = (Img<T>) buildInt16(array, shape);
 	            break;
 	    	case "uint16":
-	            data = (Img<?>) buildUint16(array, shape);
+	            data = (Img<T>) buildUint16(array, shape);
 	            break;
             case "int32":
-            	data = (Img<?>) buildInt32(array, shape);
+            	data = (Img<T>) buildInt32(array, shape);
                 break;
             case "uint32":
-            	data = (Img<?>) buildUint32(array, shape);
+            	data = (Img<T>) buildUint32(array, shape);
                 break;
             case "int64":
-            	data = (Img<?>) buildInt64(array, shape);
+            	data = (Img<T>) buildInt64(array, shape);
                 break;
             case "float16":
-            	data = (Img<?>) buildFloat16(array, shape);
+            	data = (Img<T>) buildFloat16(array, shape);
                 break;
             case "float32":
-            	data = (Img<?>) buildFloat32(array, shape);
+            	data = (Img<T>) buildFloat32(array, shape);
                 break;
             case "float64":
-            	data = (Img<?>) buildFloat64(array, shape);
+            	data = (Img<T>) buildFloat64(array, shape);
                 break;
             default:
                 throw new IllegalArgumentException("Unsupported tensor type: " + dtype);
@@ -151,9 +153,12 @@ public final class ArrayToImgLib2 {
     {
     	if (!array.getClass().getComponentType().equals(byte.class)
         		&& !Byte.class.isAssignableFrom(array.getClass().getComponentType())
-        		&& !Integer.class.isAssignableFrom(array.getClass().getComponentType())) {
+        		&& !Integer.class.isAssignableFrom(array.getClass().getComponentType())
+        		&& !array.getClass().getComponentType().equals(int.class)) {
     		throw new IllegalArgumentException("Unable to build ImgLib2 array of data type "
     				+ "'int8' using Java array of class: " + array.getClass().getComponentType());
+    	} else if (array.getClass().getComponentType().equals(byte.class)) {
+    		return buildInt8((int[]) array, tensorShape);
     	} else if (array.getClass().getComponentType().equals(byte.class)) {
     		return buildInt8((byte[]) array, tensorShape);
     	} else if (Byte.class.isAssignableFrom(array.getClass().getComponentType())) {
@@ -239,6 +244,160 @@ public final class ArrayToImgLib2 {
 	}
 
     /**
+     * Builds a ByteType {@link Img} from the information stored in a byte buffer.
+     * The shape of the image that was previously retrieved from the buffer
+     * @param tensor
+     * 	byte buffer containing the information of the a tenosr, the position in the buffer
+     *  should not be at zero but right after the header.
+     * @param tensorShape
+     * 	shape of the image to generate, it has been retrieved from the byte buffer 
+     * @return image specified in the bytebuffer
+     */
+    private static Img<ByteType> buildInt8(int[] tensor, Integer[] tensorShape)
+    {
+    	final ArrayImgFactory< ByteType > factory = new ArrayImgFactory<>( new ByteType() );
+    	long[] shape = IntStream.range(0, tensorShape.length).mapToLong(i -> tensorShape[i]).toArray();
+        final Img< ByteType > outputImg = (Img<ByteType>) factory.create(shape);
+    	Cursor<ByteType> tensorCursor= outputImg.cursor();
+		while (tensorCursor.hasNext()) {
+			tensorCursor.fwd();
+			int i = IndexingUtils.multidimensionalIntoFlatIndex(tensorCursor.positionAsLongArray(),
+					shape);
+        	tensorCursor.get().set((byte) tensor[i]);
+		}
+	 	return outputImg;
+	}
+
+    /**
+     * Builds a ByteType {@link Img} from the information stored in a byte buffer.
+     * The shape of the image that was previously retrieved from the buffer
+     * @param tensor
+     * 	byte buffer containing the information of the a tenosr, the position in the buffer
+     *  should not be at zero but right after the header.
+     * @param tensorShape
+     * 	shape of the image to generate, it has been retrieved from the byte buffer 
+     * @return image specified in the bytebuffer
+     */
+    private static Img<UnsignedByteType> buildUint8(Object array, Integer[] tensorShape)
+    {
+    	if (!array.getClass().getComponentType().equals(byte.class)
+        		&& !Byte.class.isAssignableFrom(array.getClass().getComponentType())
+        		&& !Integer.class.isAssignableFrom(array.getClass().getComponentType())
+        		&& !array.getClass().getComponentType().equals(int.class)) {
+    		throw new IllegalArgumentException("Unable to build ImgLib2 array of data type "
+    				+ "'int8' using Java array of class: " + array.getClass().getComponentType());
+    	} else if (array.getClass().getComponentType().equals(byte.class)) {
+    		return buildUint8((int[]) array, tensorShape);
+    	} else if (array.getClass().getComponentType().equals(byte.class)) {
+    		return buildUint8((byte[]) array, tensorShape);
+    	} else if (Byte.class.isAssignableFrom(array.getClass().getComponentType())) {
+    		return buildUint8((Byte[]) array, tensorShape);
+    	} else {
+    		return buildUint8((Integer[]) array, tensorShape);
+    	}
+	}
+
+    /**
+     * Builds a ByteType {@link Img} from the information stored in a byte buffer.
+     * The shape of the image that was previously retrieved from the buffer
+     * @param tensor
+     * 	byte buffer containing the information of the a tenosr, the position in the buffer
+     *  should not be at zero but right after the header.
+     * @param tensorShape
+     * 	shape of the image to generate, it has been retrieved from the byte buffer 
+     * @return image specified in the bytebuffer
+     */
+    private static Img<UnsignedByteType> buildUint8(Byte[] tensor, Integer[] tensorShape)
+    {
+    	final ArrayImgFactory< UnsignedByteType > factory = new ArrayImgFactory<>( new UnsignedByteType() );
+    	long[] shape = IntStream.range(0, tensorShape.length).mapToLong(i -> tensorShape[i]).toArray();
+        final Img< UnsignedByteType > outputImg = (Img<UnsignedByteType>) factory.create(shape);
+    	Cursor<UnsignedByteType> tensorCursor= outputImg.cursor();
+		while (tensorCursor.hasNext()) {
+			tensorCursor.fwd();
+			int i = IndexingUtils.multidimensionalIntoFlatIndex(tensorCursor.positionAsLongArray(),
+					shape);
+        	tensorCursor.get().set(tensor[i]);
+		}
+	 	return outputImg;
+	}
+
+    /**
+     * Builds a ByteType {@link Img} from the information stored in a byte buffer.
+     * The shape of the image that was previously retrieved from the buffer
+     * @param tensor
+     * 	byte buffer containing the information of the a tenosr, the position in the buffer
+     *  should not be at zero but right after the header.
+     * @param tensorShape
+     * 	shape of the image to generate, it has been retrieved from the byte buffer 
+     * @return image specified in the bytebuffer
+     */
+    private static Img<UnsignedByteType> buildUint8(Integer[] tensor, Integer[] tensorShape)
+    {
+    	final ArrayImgFactory< UnsignedByteType > factory = new ArrayImgFactory<>( new UnsignedByteType() );
+    	long[] shape = IntStream.range(0, tensorShape.length).mapToLong(i -> tensorShape[i]).toArray();
+        final Img< UnsignedByteType > outputImg = (Img<UnsignedByteType>) factory.create(shape);
+    	Cursor<UnsignedByteType> tensorCursor= outputImg.cursor();
+		while (tensorCursor.hasNext()) {
+			tensorCursor.fwd();
+			int i = IndexingUtils.multidimensionalIntoFlatIndex(tensorCursor.positionAsLongArray(),
+					shape);
+        	tensorCursor.get().set(tensor[i].byteValue());
+		}
+	 	return outputImg;
+	}
+
+    /**
+     * Builds a ByteType {@link Img} from the information stored in a byte buffer.
+     * The shape of the image that was previously retrieved from the buffer
+     * @param tensor
+     * 	byte buffer containing the information of the a tenosr, the position in the buffer
+     *  should not be at zero but right after the header.
+     * @param tensorShape
+     * 	shape of the image to generate, it has been retrieved from the byte buffer 
+     * @return image specified in the bytebuffer
+     */
+    private static Img<UnsignedByteType> buildUint8(byte[] tensor, Integer[] tensorShape)
+    {
+    	final ArrayImgFactory< UnsignedByteType > factory = new ArrayImgFactory<>( new UnsignedByteType() );
+    	long[] shape = IntStream.range(0, tensorShape.length).mapToLong(i -> tensorShape[i]).toArray();
+        final Img< UnsignedByteType > outputImg = (Img<UnsignedByteType>) factory.create(shape);
+    	Cursor<UnsignedByteType> tensorCursor= outputImg.cursor();
+		while (tensorCursor.hasNext()) {
+			tensorCursor.fwd();
+			int i = IndexingUtils.multidimensionalIntoFlatIndex(tensorCursor.positionAsLongArray(),
+					shape);
+        	tensorCursor.get().set(tensor[i]);
+		}
+	 	return outputImg;
+	}
+
+    /**
+     * Builds a ByteType {@link Img} from the information stored in a byte buffer.
+     * The shape of the image that was previously retrieved from the buffer
+     * @param tensor
+     * 	byte buffer containing the information of the a tenosr, the position in the buffer
+     *  should not be at zero but right after the header.
+     * @param tensorShape
+     * 	shape of the image to generate, it has been retrieved from the byte buffer 
+     * @return image specified in the bytebuffer
+     */
+    private static Img<UnsignedByteType> buildUint8(int[] tensor, Integer[] tensorShape)
+    {
+    	final ArrayImgFactory< UnsignedByteType > factory = new ArrayImgFactory<>( new UnsignedByteType() );
+    	long[] shape = IntStream.range(0, tensorShape.length).mapToLong(i -> tensorShape[i]).toArray();
+        final Img< UnsignedByteType > outputImg = (Img<UnsignedByteType>) factory.create(shape);
+    	Cursor<UnsignedByteType> tensorCursor= outputImg.cursor();
+		while (tensorCursor.hasNext()) {
+			tensorCursor.fwd();
+			int i = IndexingUtils.multidimensionalIntoFlatIndex(tensorCursor.positionAsLongArray(),
+					shape);
+        	tensorCursor.get().set((byte) tensor[i]);
+		}
+	 	return outputImg;
+	}
+
+    /**
      * Builds a ShortType {@link Img} from the information stored in a byte buffer.
      * The shape of the image that was previously retrieved from the buffer
      * @param tensor
@@ -252,11 +411,14 @@ public final class ArrayToImgLib2 {
     {
     	if (!array.getClass().getComponentType().equals(short.class)
         		&& !Short.class.isAssignableFrom(array.getClass().getComponentType())
-        		&& !Integer.class.isAssignableFrom(array.getClass().getComponentType())) {
+        		&& !Integer.class.isAssignableFrom(array.getClass().getComponentType())
+        		&& !array.getClass().getComponentType().equals(int.class)) {
     		throw new IllegalArgumentException("Unable to build ImgLib2 array of data type "
     				+ "'int16' using Java array of class: " + array.getClass().getComponentType());
     	} else if (array.getClass().getComponentType().equals(short.class)) {
     		return buildInt16((short[]) array, tensorShape);
+    	} else if (array.getClass().getComponentType().equals(int.class)) {
+    		return buildInt16((int[]) array, tensorShape);
     	} else if (Short.class.isAssignableFrom(array.getClass().getComponentType())) {
     		return buildInt16((Short[]) array, tensorShape);
     	} else {
@@ -330,6 +492,160 @@ public final class ArrayToImgLib2 {
     	long[] shape = IntStream.range(0, tensorShape.length).mapToLong(i -> tensorShape[i]).toArray();
         final Img< ShortType > outputImg = (Img<ShortType>) factory.create(shape);
     	Cursor<ShortType> tensorCursor= outputImg.cursor();
+		while (tensorCursor.hasNext()) {
+			tensorCursor.fwd();
+			int i = IndexingUtils.multidimensionalIntoFlatIndex(tensorCursor.positionAsLongArray(),
+					shape);
+        	tensorCursor.get().set(tensor[i]);
+		}
+	 	return outputImg;
+	}
+
+    /**
+     * Builds a IntType {@link Img} from the information stored in a byte buffer.
+     * The shape of the image that was previously retrieved from the buffer
+     * @param tensor
+     * 	byte buffer containing the information of the a tenosr, the position in the buffer
+     *  should not be at zero but right after the header.
+     * @param tensorShape
+     * 	shape of the image to generate, it has been retrieved from the byte buffer 
+     * @return image specified in the bytebuffer
+     */
+    private static Img<ShortType> buildInt16(int[] tensor, Integer[] tensorShape)
+    {
+    	final ArrayImgFactory< ShortType > factory = new ArrayImgFactory<>( new ShortType() );
+    	long[] shape = IntStream.range(0, tensorShape.length).mapToLong(i -> tensorShape[i]).toArray();
+        final Img< ShortType > outputImg = (Img<ShortType>) factory.create(shape);
+    	Cursor<ShortType> tensorCursor= outputImg.cursor();
+		while (tensorCursor.hasNext()) {
+			tensorCursor.fwd();
+			int i = IndexingUtils.multidimensionalIntoFlatIndex(tensorCursor.positionAsLongArray(),
+					shape);
+        	tensorCursor.get().set((short) tensor[i]);
+		}
+	 	return outputImg;
+	}
+
+    /**
+     * Builds a ShortType {@link Img} from the information stored in a byte buffer.
+     * The shape of the image that was previously retrieved from the buffer
+     * @param tensor
+     * 	byte buffer containing the information of the a tenosr, the position in the buffer
+     *  should not be at zero but right after the header.
+     * @param tensorShape
+     * 	shape of the image to generate, it has been retrieved from the byte buffer 
+     * @return image specified in the bytebuffer
+     */
+    private static Img<UnsignedShortType> buildUint16(Object array, Integer[] tensorShape)
+    {
+    	if (!array.getClass().getComponentType().equals(short.class)
+        		&& !Short.class.isAssignableFrom(array.getClass().getComponentType())
+        		&& !Integer.class.isAssignableFrom(array.getClass().getComponentType())
+        		&& !array.getClass().getComponentType().equals(short.class)) {
+    		throw new IllegalArgumentException("Unable to build ImgLib2 array of data type "
+    				+ "'int16' using Java array of class: " + array.getClass().getComponentType());
+    	} else if (array.getClass().getComponentType().equals(short.class)) {
+    		return buildUint16((short[]) array, tensorShape);
+    	} else if (array.getClass().getComponentType().equals(int.class)) {
+    		return buildUint16((int[]) array, tensorShape);
+    	} else if (Short.class.isAssignableFrom(array.getClass().getComponentType())) {
+    		return buildUint16((Short[]) array, tensorShape);
+    	} else {
+    		return buildUint16((Integer[]) array, tensorShape);
+    	}
+	}
+
+    /**
+     * Builds a IntType {@link Img} from the information stored in a byte buffer.
+     * The shape of the image that was previously retrieved from the buffer
+     * @param tensor
+     * 	byte buffer containing the information of the a tenosr, the position in the buffer
+     *  should not be at zero but right after the header.
+     * @param tensorShape
+     * 	shape of the image to generate, it has been retrieved from the byte buffer 
+     * @return image specified in the bytebuffer
+     */
+    private static Img<UnsignedShortType> buildUint16(Short[] tensor, Integer[] tensorShape)
+    {
+    	final ArrayImgFactory< UnsignedShortType > factory = new ArrayImgFactory<>( new UnsignedShortType() );
+    	long[] shape = IntStream.range(0, tensorShape.length).mapToLong(i -> tensorShape[i]).toArray();
+        final Img< UnsignedShortType > outputImg = (Img<UnsignedShortType>) factory.create(shape);
+    	Cursor<UnsignedShortType> tensorCursor= outputImg.cursor();
+		while (tensorCursor.hasNext()) {
+			tensorCursor.fwd();
+			int i = IndexingUtils.multidimensionalIntoFlatIndex(tensorCursor.positionAsLongArray(),
+					shape);
+        	tensorCursor.get().set(tensor[i]);
+		}
+	 	return outputImg;
+	}
+
+    /**
+     * Builds a IntType {@link Img} from the information stored in a byte buffer.
+     * The shape of the image that was previously retrieved from the buffer
+     * @param tensor
+     * 	byte buffer containing the information of the a tenosr, the position in the buffer
+     *  should not be at zero but right after the header.
+     * @param tensorShape
+     * 	shape of the image to generate, it has been retrieved from the byte buffer 
+     * @return image specified in the bytebuffer
+     */
+    private static Img<UnsignedShortType> buildUint16(Integer[] tensor, Integer[] tensorShape)
+    {
+    	final ArrayImgFactory< UnsignedShortType > factory = new ArrayImgFactory<>( new UnsignedShortType() );
+    	long[] shape = IntStream.range(0, tensorShape.length).mapToLong(i -> tensorShape[i]).toArray();
+        final Img< UnsignedShortType > outputImg = (Img<UnsignedShortType>) factory.create(shape);
+    	Cursor<UnsignedShortType> tensorCursor= outputImg.cursor();
+		while (tensorCursor.hasNext()) {
+			tensorCursor.fwd();
+			int i = IndexingUtils.multidimensionalIntoFlatIndex(tensorCursor.positionAsLongArray(),
+					shape);
+        	tensorCursor.get().set(tensor[i].shortValue());
+		}
+	 	return outputImg;
+	}
+
+    /**
+     * Builds a IntType {@link Img} from the information stored in a byte buffer.
+     * The shape of the image that was previously retrieved from the buffer
+     * @param tensor
+     * 	byte buffer containing the information of the a tenosr, the position in the buffer
+     *  should not be at zero but right after the header.
+     * @param tensorShape
+     * 	shape of the image to generate, it has been retrieved from the byte buffer 
+     * @return image specified in the bytebuffer
+     */
+    private static Img<UnsignedShortType> buildUint16(short[] tensor, Integer[] tensorShape)
+    {
+    	final ArrayImgFactory< UnsignedShortType > factory = new ArrayImgFactory<>( new UnsignedShortType() );
+    	long[] shape = IntStream.range(0, tensorShape.length).mapToLong(i -> tensorShape[i]).toArray();
+        final Img< UnsignedShortType > outputImg = (Img<UnsignedShortType>) factory.create(shape);
+    	Cursor<UnsignedShortType> tensorCursor= outputImg.cursor();
+		while (tensorCursor.hasNext()) {
+			tensorCursor.fwd();
+			int i = IndexingUtils.multidimensionalIntoFlatIndex(tensorCursor.positionAsLongArray(),
+					shape);
+        	tensorCursor.get().set(tensor[i]);
+		}
+	 	return outputImg;
+	}
+
+    /**
+     * Builds a IntType {@link Img} from the information stored in a byte buffer.
+     * The shape of the image that was previously retrieved from the buffer
+     * @param tensor
+     * 	byte buffer containing the information of the a tenosr, the position in the buffer
+     *  should not be at zero but right after the header.
+     * @param tensorShape
+     * 	shape of the image to generate, it has been retrieved from the byte buffer 
+     * @return image specified in the bytebuffer
+     */
+    private static Img<UnsignedShortType> buildUint16(int[] tensor, Integer[] tensorShape)
+    {
+    	final ArrayImgFactory< UnsignedShortType > factory = new ArrayImgFactory<>( new UnsignedShortType() );
+    	long[] shape = IntStream.range(0, tensorShape.length).mapToLong(i -> tensorShape[i]).toArray();
+        final Img< UnsignedShortType > outputImg = (Img<UnsignedShortType>) factory.create(shape);
+    	Cursor<UnsignedShortType> tensorCursor= outputImg.cursor();
 		while (tensorCursor.hasNext()) {
 			tensorCursor.fwd();
 			int i = IndexingUtils.multidimensionalIntoFlatIndex(tensorCursor.positionAsLongArray(),
