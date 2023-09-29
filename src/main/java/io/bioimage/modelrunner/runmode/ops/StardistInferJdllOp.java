@@ -22,6 +22,7 @@ package io.bioimage.modelrunner.runmode.ops;
 import java.io.File;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
@@ -75,7 +76,7 @@ public class StardistInferJdllOp implements OpInterface {
 		String modelName = "C:\\Users\\angel\\OneDrive\\Documentos\\pasteur\\git\\model-runner-java\\models\\StarDist H&E Nuclei Segmentation_06092023_020924\\rdf.yaml";
 		StardistInferJdllOp op = create(modelName, inpTensor);
 		RunMode rm = RunMode.createRunMode(op);
-		rm.testRunModel();
+		Map<String, Object> aa = rm.runOP();
 		System.out.print(false);
 	}
 	

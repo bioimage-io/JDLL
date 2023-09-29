@@ -102,7 +102,7 @@ public class RunMode {
 		return new RunMode(op);
 	}
 	
-	public Map<String, Object> testRunModel() {
+	public Map<String, Object> runOP() {
 		env = Appose.base(new File(this.op.getCondaEnv())).build();
 		Map<String, Object> outputs = null;
 		try (Service python = env.python()) {
