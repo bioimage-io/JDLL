@@ -31,6 +31,8 @@ public class RunModeScripts {
 	
 	protected static final String NAME_KEY = "name";
 	
+	protected static final String DTYPE_KEY = "dtype";
+	
 	protected static final String NP_METHOD = "convertNpIntoDic";
 	
 	protected static final String XR_METHOD = "convertXrIntoDic";
@@ -53,12 +55,14 @@ public class RunModeScripts {
 			+ "def " + NP_METHOD + "(np_arr):" + System.lineSeparator()
 			+ "  return {\"" + DATA_KEY + "\": np_arr.flatten().tolist(), \"" + SHAPE_KEY 
 							+ "\": np_arr.shape, \"" + APPOSE_DT_KEY + "\": \"" 
-							+ NP_ARR_KEY + "\"}" + System.lineSeparator()
+							+ NP_ARR_KEY + "\", \"" + DTYPE_KEY + "\": np_arr.dtype.str}" + System.lineSeparator()
 			+ "" + System.lineSeparator()
 			+ "def " + XR_METHOD + "(xr_arr):" + System.lineSeparator()
 			+ "  return {\"" + DATA_KEY + "\": xr_arr.values.flatten().tolist(), \"" + SHAPE_KEY 
 							+ "\": xr_arr.shape, \"" + AXES_KEY + "\": xr_arr.dims,\"" + NAME_KEY 
-							+ "\": xr_arr.name, \"" + APPOSE_DT_KEY + "\": \"" + TENSOR_KEY + "\"}" + System.lineSeparator()
+							+ "\": xr_arr.name, \"" + APPOSE_DT_KEY + "\": \"" + TENSOR_KEY + "\", "
+							+ "\"" + DTYPE_KEY + "\": xr_arr.values.dtype.str}" 
+							+ System.lineSeparator()
 			+ "" + System.lineSeparator()
 			+ "def " + LIST_METHOD + "(list_ob):" + System.lineSeparator()
 			+ "  n_list = []" + System.lineSeparator()
