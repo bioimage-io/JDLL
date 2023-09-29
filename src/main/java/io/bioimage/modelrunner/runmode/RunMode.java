@@ -37,6 +37,7 @@ import io.bioimage.modelrunner.runmode.ops.OpInterface;
 import io.bioimage.modelrunner.tensor.ImgLib2ToArray;
 import io.bioimage.modelrunner.tensor.Tensor;
 import net.imglib2.RandomAccessibleInterval;
+import net.imglib2.img.array.ArrayImgFactory;
 import net.imglib2.type.NativeType;
 import net.imglib2.type.numeric.RealType;
 
@@ -147,7 +148,7 @@ public class RunMode {
 		}
 	}
 	
-	private Map<String, Object> recreateOutputObjects(Map<String, Object> apposeOuts) {
+	private static Map<String, Object> recreateOutputObjects(Map<String, Object> apposeOuts) {
 		 LinkedHashMap<String, Object> jdllOuts = new LinkedHashMap<String, Object>();
 		 for (Entry<String, Object> entry : apposeOuts.entrySet()) {
 			 Object value = entry.getValue();
@@ -159,9 +160,14 @@ public class RunMode {
 					 && ((Map) value).get(RunModeScripts.APPOSE_DT_KEY).equals(RunModeScripts.NP_ARR_KEY) ) {
 				 
 			 } else if (value instanceof Map) {
-				 
+				 jdllOuts.put(entry.getKey(), recreateOutputObjects((Map<String, Object>) value));
 			 } else if (value instanceof List) {
-				 
+				 jdllOuts.put(entry.getKey(), createListFromApposeOutput((List<Object>) value));
+			 } else if (isTypeDirectlySupported(value.getClass())) {
+				 jdllOuts.put(entry.getKey(), value);
+			 } else {
+				 throw new IllegalArgumentException("Type of output named: '" + entry.getKey()
+				 							+ "' not supported (" + value.getClass() + ").");
 			 }
 		 }
 	}
@@ -289,5 +295,41 @@ public class RunMode {
 			taskOutputCode += String.format("task.outputs['%s'] = %s", outN, outN)
 					+ System.lineSeparator();
 		}
+	}
+	
+	private static < T extends RealType< T > & NativeType< T > > 
+		Tensor<T> createTensorFromApposeOutput(Map<String, Object> apposeTensor) {
+		ArrayImgFactory<T> factory = new ArrayImgFactory<T>(new T());
+		return null;
+	}
+	
+	private static < T extends RealType< T > & NativeType< T > > 
+		RandomAccessibleInterval<T> createImgLib2ArrFromApposeOutput(Map<String, Object> apposeTensor) {
+		ArrayImgFactory<T> factory = new ArrayImgFactory<T>();
+		return null;
+	}
+	
+	private static List<Object> createListFromApposeOutput(List<Object> list) {
+		List<Object> nList = new ArrayList<Object>();
+		for (Object value : list) {
+			 
+			 if (value instanceof Map && ((Map) value).get(RunModeScripts.APPOSE_DT_KEY) != null
+					 && ((Map) value).get(RunModeScripts.APPOSE_DT_KEY).equals(RunModeScripts.TENSOR_KEY) ) {
+				 
+			 } else if (value instanceof Map && ((Map) value).get(RunModeScripts.APPOSE_DT_KEY) != null
+					 && ((Map) value).get(RunModeScripts.APPOSE_DT_KEY).equals(RunModeScripts.NP_ARR_KEY) ) {
+				 
+			 } else if (value instanceof Map) {
+				 nList.add(recreateOutputObjects((Map<String, Object>) value));
+			 } else if (value instanceof List) {
+				 nList.add(createListFromApposeOutput((List<Object>) value));
+			 } else if (isTypeDirectlySupported(value.getClass())) {
+				 nList.add(value);
+			 } else {
+				 throw new IllegalArgumentException("Type of output"
+				 							+ " not supported (" + value.getClass() + ").");
+			 }
+		 }
+		return nList;
 	}
 }
