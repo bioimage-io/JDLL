@@ -34,10 +34,10 @@ import org.apposed.appose.Service;
 import org.apposed.appose.Service.Task;
 
 import io.bioimage.modelrunner.runmode.ops.OpInterface;
+import io.bioimage.modelrunner.tensor.ListToImgLib2;
 import io.bioimage.modelrunner.tensor.ImgLib2ToArray;
 import io.bioimage.modelrunner.tensor.Tensor;
 import net.imglib2.RandomAccessibleInterval;
-import net.imglib2.img.array.ArrayImgFactory;
 import net.imglib2.type.NativeType;
 import net.imglib2.type.numeric.RealType;
 
@@ -102,8 +102,9 @@ public class RunMode {
 		return new RunMode(op);
 	}
 	
-	public void testRunModel() {
+	public Map<String, Object> testRunModel() {
 		env = Appose.base(new File(this.op.getCondaEnv())).build();
+		Map<String, Object> outputs = null;
 		try (Service python = env.python()) {
         	python.debug(line -> {
         		System.err.println(line);
@@ -133,12 +134,7 @@ public class RunMode {
             });
             task.waitFor();
             System.out.println("here2");
-            Map<String, Object> aa = task.outputs;
-            Object result = task.outputs.get("output0");
-            Object polys = task.outputs.get("output1");
-            System.out.println("here3");
-            if (result instanceof Integer)
-            	System.out.print(result);
+            outputs = recreateOutputObjects(task.outputs);
         } catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -146,19 +142,23 @@ public class RunMode {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
+		return outputs;
 	}
 	
+	@SuppressWarnings("unchecked")
 	private static Map<String, Object> recreateOutputObjects(Map<String, Object> apposeOuts) {
 		 LinkedHashMap<String, Object> jdllOuts = new LinkedHashMap<String, Object>();
 		 for (Entry<String, Object> entry : apposeOuts.entrySet()) {
 			 Object value = entry.getValue();
 			 
 			 if (value instanceof Map && ((Map) value).get(RunModeScripts.APPOSE_DT_KEY) != null
-					 && ((Map) value).get(RunModeScripts.APPOSE_DT_KEY).equals(RunModeScripts.TENSOR_KEY) ) {
-				 
+					 && ((Map<String, Object>) value).get(RunModeScripts.APPOSE_DT_KEY).equals(RunModeScripts.TENSOR_KEY) ) {
+				 if (((Map<String, Object>) value).get(RunModeScripts.NAME_KEY) == null)
+					 ((Map<String, Object>) value).put(RunModeScripts.NAME_KEY, entry.getKey());
+				 jdllOuts.put(entry.getKey(), createTensorFromApposeOutput((Map<String, Object>) value));
 			 } else if (value instanceof Map && ((Map) value).get(RunModeScripts.APPOSE_DT_KEY) != null
-					 && ((Map) value).get(RunModeScripts.APPOSE_DT_KEY).equals(RunModeScripts.NP_ARR_KEY) ) {
-				 
+					 && ((Map<String, Object>) value).get(RunModeScripts.APPOSE_DT_KEY).equals(RunModeScripts.NP_ARR_KEY) ) {
+				 jdllOuts.put(entry.getKey(), createImgLib2ArrFromApposeOutput((Map<String, Object>) value));
 			 } else if (value instanceof Map) {
 				 jdllOuts.put(entry.getKey(), recreateOutputObjects((Map<String, Object>) value));
 			 } else if (value instanceof List) {
@@ -170,6 +170,7 @@ public class RunMode {
 				 							+ "' not supported (" + value.getClass() + ").");
 			 }
 		 }
+		 return jdllOuts;
 	}
 	
 	public void envCreation() {
@@ -299,14 +300,18 @@ public class RunMode {
 	
 	private static < T extends RealType< T > & NativeType< T > > 
 		Tensor<T> createTensorFromApposeOutput(Map<String, Object> apposeTensor) {
-		ArrayImgFactory<T> factory = new ArrayImgFactory<T>(new T());
-		return null;
+		return ListToImgLib2.buildTensor((List) apposeTensor.get(RunModeScripts.DATA_KEY), 
+				(List<Integer>) apposeTensor.get(RunModeScripts.SHAPE_KEY), 
+				(String) apposeTensor.get(RunModeScripts.AXES_KEY),
+				(String) apposeTensor.get(RunModeScripts.DTYPE_KEY),
+				(String) apposeTensor.get(RunModeScripts.NAME_KEY));
 	}
 	
 	private static < T extends RealType< T > & NativeType< T > > 
 		RandomAccessibleInterval<T> createImgLib2ArrFromApposeOutput(Map<String, Object> apposeTensor) {
-		ArrayImgFactory<T> factory = new ArrayImgFactory<T>();
-		return null;
+		return ListToImgLib2.build((List) apposeTensor.get(RunModeScripts.DATA_KEY), 
+				(List<Integer>) apposeTensor.get(RunModeScripts.SHAPE_KEY), 
+				(String) apposeTensor.get(RunModeScripts.DTYPE_KEY));
 	}
 	
 	private static List<Object> createListFromApposeOutput(List<Object> list) {

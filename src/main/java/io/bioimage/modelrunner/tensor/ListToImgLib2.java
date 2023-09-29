@@ -557,7 +557,7 @@ public final class ListToImgLib2 {
         		&& !(array.get(0) instanceof Integer)) {
     		throw new IllegalArgumentException("Unable to build ImgLib2 array of data type "
     				+ "'int64' using Java array of class: " + array.get(0).getClass());
-    	} else if (array.getClass().getComponentType().equals(long.class)) {
+    	} else if (array.get(0) instanceof Long) {
     		return buildInt64FromLong((List<Long>) array, tensorShape);
     	} else {
     		return buildInt64FromInteger((List<Integer>) array, tensorShape);
@@ -630,7 +630,7 @@ public final class ListToImgLib2 {
     			&& !(array.get(0) instanceof BigDecimal)) {
     		throw new IllegalArgumentException("Unable to build ImgLib2 array of data type "
     				+ "'float32' using Java array of class: " + array.get(0).getClass());
-    	} else if (array.getClass().getComponentType().equals(float.class)) {
+    	} else if (array.get(0) instanceof Float) {
     		return buildFloat32FromFloat((List<Float>) array, tensorShape);
     	} else {
     		return buildFloat32FromBigDecimal((List<BigDecimal>) array, tensorShape);
