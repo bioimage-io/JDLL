@@ -88,11 +88,9 @@ public final class ListToImgLib2 {
      * not supported
      */
     @SuppressWarnings("unchecked")
-    public static <T extends Type<T>> Img<T> build(List array, List<Integer> shape, String dtype) throws IllegalArgumentException
+    public static < T extends RealType< T > & NativeType< T > > Img<T> build(List array, List<Integer> shape, String dtype) throws IllegalArgumentException
     {
-    	if (array.size() == 0)
-    		return null;
-    	if (shape.size() == 0)
+    	if (shape.size() == 0 || array.size() == 0)
     		return null;
     	
         Img<T> data;
@@ -124,6 +122,56 @@ public final class ListToImgLib2 {
                 break;
             case "float64":
             	data = (Img<T>) buildFloat64(array, shape);
+                break;
+            default:
+                throw new IllegalArgumentException("Unsupported tensor type: " + dtype);
+        }
+		return data;
+    }
+    
+    @SuppressWarnings("unchecked")
+	private static < T extends RealType< T > & NativeType< T > > Img<T> createEmptyArray(List<Integer> tensorShape, String dtype) {
+    	long[] shape = IntStream.range(0, tensorShape.size()).mapToLong(i -> tensorShape.get(i)).toArray();
+
+        final Img<T> data;
+        final ArrayImgFactory<?> factory;
+		switch (dtype)
+        {
+	    	case "int8":
+	        	factory = new ArrayImgFactory<>( new ByteType() );
+	        	data = (Img<T>) factory.create(shape);
+	        	break;
+	    	case "uint8":
+	        	factory = new ArrayImgFactory<>( new UnsignedByteType() );
+	        	data = (Img<T>) factory.create(shape);
+	            break;
+	    	case "int16":
+	        	factory = new ArrayImgFactory<>( new ShortType() );
+	        	data = (Img<T>) factory.create(shape);
+	            break;
+	    	case "uint16":
+	        	factory = new ArrayImgFactory<>( new UnsignedShortType() );
+	        	data = (Img<T>) factory.create(shape);
+	            break;
+            case "int32":
+	        	factory = new ArrayImgFactory<>( new IntType() );
+	        	data = (Img<T>) factory.create(shape);
+                break;
+            case "uint32":
+	        	factory = new ArrayImgFactory<>( new UnsignedIntType() );
+	        	data = (Img<T>) factory.create(shape);
+                break;
+            case "int64":
+	        	factory = new ArrayImgFactory<>( new LongType() );
+	        	data = (Img<T>) factory.create(shape);
+                break;
+            case "float32":
+	        	factory = new ArrayImgFactory<>( new FloatType() );
+	        	data = (Img<T>) factory.create(shape);
+                break;
+            case "float64":
+	        	factory = new ArrayImgFactory<>( new DoubleType() );
+	        	data = (Img<T>) factory.create(shape);
                 break;
             default:
                 throw new IllegalArgumentException("Unsupported tensor type: " + dtype);
