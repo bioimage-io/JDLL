@@ -20,19 +20,43 @@
 package io.bioimage.modelrunner.runmode.ops;
 
 import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.nio.channels.Channels;
+import java.nio.channels.ReadableByteChannel;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Objects;
 
+import io.bioimage.modelrunner.bioimageio.BioimageioRepo;
 import io.bioimage.modelrunner.bioimageio.description.ModelDescriptor;
+import io.bioimage.modelrunner.bioimageio.download.DownloadModel;
+import io.bioimage.modelrunner.engine.installation.FileDownloader;
 import io.bioimage.modelrunner.tensor.Tensor;
+import io.bioimage.modelrunner.utils.Constants;
 import net.imglib2.type.NativeType;
 import net.imglib2.type.numeric.RealType;
 import net.imglib2.type.numeric.integer.UnsignedShortType;
 import net.imglib2.type.numeric.real.FloatType;
 import net.imglib2.util.Util;
 
+/**
+ * TODO
+ * TODO
+ * TODO
+ * TODO
+ * TODO add support for stardist 3D
+ * 
+ * 
+ * 
+ * Class that defines the methods needed to fine tune a StarDist pre-trained model
+ * using JDLL and Python with Appose.
+ * @author Carlos Javier Garcia Lopez de Haro
+ *
+ */
 public class StardistFineTuneJdllOp implements OpInterface {
 	
 	private String model;
@@ -86,6 +110,8 @@ public class StardistFineTuneJdllOp implements OpInterface {
 	
 	private final static String EPOCHS_KEY = "learning_rate";
 	
+	private static final String STARDIST_WEIGHTS_FILE = "stardist_weights.h5";
+	
 	private final static String DOWNLOAD_STARDIST_KEY = "download_pretrained_stardist";
 	
 	private static final String OP_METHOD_NAME = "stardist_prediction_2d_mine";
@@ -116,8 +142,8 @@ public class StardistFineTuneJdllOp implements OpInterface {
 	 */
 	public StardistFineTuneJdllOp create(String modelToFineTune, String newModelDir) {
 		StardistFineTuneJdllOp op = new StardistFineTuneJdllOp();
-		op.setModel(modelToFineTune);
 		op.nModelPath = newModelDir;
+		op.setModel(modelToFineTune);
 		try {
 			op.findNChannels();
 		} catch (Exception e) {
@@ -222,8 +248,48 @@ public class StardistFineTuneJdllOp implements OpInterface {
 		this.model = modelName;
 	}
 	
-	private void setUpStardistModelFromBioimageio() {
+	private void setUpStardistModelFromBioimageio() throws IOException, InterruptedException {
+		BioimageioRepo br = BioimageioRepo.connect();
+		if (br.selectByName(model) != null) {
+			model = br.downloadByName(model, nModelPath);
+		} else if (br.selectByID(model) != null) {
+			model = br.downloadModelByID(model, nModelPath);
+		} else if (br.selectByNickname(model) != null) {
+			model = br.downloadByNickame(model, nModelPath);
+		}
+		File folder = new File(model);
+		String fineTuned = folder.getParent() + File.separator + "finetuned_" + folder.getName();
+        File renamedFolder = new File(fineTuned);
+        if (folder.renameTo(renamedFolder))
+        	model = fineTuned;
+        downloadBioimageioStardistWeights();
+	}
+	
+	private void downloadBioimageioStardistWeights() throws IOException, Exception {
+		File stardistSubfolder = new File(this.model, "stardist");
+		String rdfYamlFN = this.model + File.separator + Constants.RDF_FNAME;
+		ModelDescriptor descriptor = ModelDescriptor.readFromLocalFile(rdfYamlFN);
+		downloadFileFromInternet(getKerasWeigthsLink(descriptor), 
+				new File(stardistSubfolder, STARDIST_WEIGHTS_FILE));
 		
+		
+	}
+	
+	private static String getKerasWeigthsLink(ModelDescriptor descriptor) throws IOException {
+		Object yamlFiles = descriptor.getAttachments().get("files");
+		if (yamlFiles == null || !(yamlFiles instanceof List))
+			throw new IllegalArgumentException("");
+		for (String url : (List<String>) yamlFiles) {
+			try {
+				if (DownloadModel.getFileNameFromURLString(url).equals(STARDIST_WEIGHTS_FILE))
+					return url;
+			} catch (MalformedURLException e) {
+			}
+		}
+		throw new IOException("Stardist rdf.yaml file at : " + descriptor.getModelPath()
+				+ " is invalid, as it does not contain the URL to StarDist Keras weights in "
+				+ "the attachements field. Look for a StarDist model on the Bioimage.io "
+				+ "repository for an example of a correct version.");
 	}
 	
 	private void setUpStardistModelFromLocal() {
@@ -263,5 +329,39 @@ public class StardistFineTuneJdllOp implements OpInterface {
 		ModelDescriptor descriptor = ModelDescriptor.readFromLocalFile(model, false);
 		int cInd = descriptor.getInputTensors().get(0).getAxesOrder().indexOf("c");
 		nChannelsModel = descriptor.getInputTensors().get(0).getShape().getPatchMinimumSize()[cInd];
+	}
+	
+	/**
+	 * Method that downloads the model selected from the internet,
+	 * copies it and unzips it into the models folder
+	 * @param downloadURL
+	 * 	url of the file to be downloaded
+	 * @param targetFile
+	 * 	file where the file from the url will be downloaded too
+	 */
+	public static void downloadFileFromInternet(String downloadURL, File targetFile) {
+		FileOutputStream fos = null;
+		ReadableByteChannel rbc = null;
+		try {
+			URL website = new URL(downloadURL);
+			rbc = Channels.newChannel(website.openStream());
+			// Create the new model file as a zip
+			fos = new FileOutputStream(targetFile);
+			// Send the correct parameters to the progress screen
+			FileDownloader downloader = new FileDownloader(rbc, fos);
+			downloader.call();
+		} catch (IOException e) {
+			String msg = "The link for the file: " + targetFile.getName() + " is broken.";
+			new IOException(msg, e).printStackTrace();
+		} finally {
+			try {
+				if (fos != null)
+						fos.close();
+				if (rbc != null)
+					rbc.close();
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+		}
 	}
 }
