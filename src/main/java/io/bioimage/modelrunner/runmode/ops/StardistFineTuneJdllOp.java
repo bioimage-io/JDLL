@@ -27,6 +27,8 @@ import java.util.Objects;
 import io.bioimage.modelrunner.tensor.Tensor;
 import net.imglib2.type.NativeType;
 import net.imglib2.type.numeric.RealType;
+import net.imglib2.type.numeric.integer.UnsignedShortType;
+import net.imglib2.type.numeric.real.FloatType;
 
 public class StardistFineTuneJdllOp implements OpInterface {
 	
@@ -38,7 +40,9 @@ public class StardistFineTuneJdllOp implements OpInterface {
 	
 	private int batchSize = 16;
 	
-	private Tensor<?> inputTensor;
+	private Tensor<FloatType> trainingSamples;
+	
+	private Tensor<UnsignedShortType> groundTruth;
 	
 	private String opFilePath;
 	
@@ -48,11 +52,17 @@ public class StardistFineTuneJdllOp implements OpInterface {
 	
 	private final static String MODEL_KEY = "model";
 	
-	private final static String INPUT_TENSOR_KEY = "input_tensor";
+	private final static String NEW_MODEL_DIR_KEY = "n_model_dir";
+	
+	private final static String TRAIN_SAMPLES_KEY = "train_samples";
+	
+	private final static String GROUND_TRUTH_KEY = "ground_truth";
+	
+	private final static String BATCH_SIZE_KEY = "batch_size";
+	
+	private final static String LR_KEY = "learning_rate";
 	
 	private static final String OP_METHOD_NAME = "stardist_prediction_2d_mine";
-	
-	private static final String STARDIST_FIELD_KEY = "stardist";
 	
 	private static final int N_STARDIST_OUTPUTS = 1;
 	
@@ -100,8 +110,7 @@ public class StardistFineTuneJdllOp implements OpInterface {
 
 	@Override
 	public String getOpPythonFilename() {
-		// TODO Auto-generated method stub
-		return null;
+		return STARDIST_OP_FNAME;
 	}
 
 	@Override
@@ -112,37 +121,44 @@ public class StardistFineTuneJdllOp implements OpInterface {
 	@Override
 	public boolean isOpInstalled() {
 		// TODO Auto-generated method stub
-		return false;
+		return true;
 	}
 
 	@Override
 	public void installOp() {
-		// TODO Auto-generated method stub
-		
+		// TODO this method checks if the OP file is at its correponding folder.
+		// TODO if not unpack the python file and located (where??)
+		opFilePath = "C:\\Users\\angel\\OneDrive\\Documentos\\pasteur\\git\\model-runner-java\\python\\ops\\stardist_inference";
+		// TODO check if the env has also been created
+		// TODO if not create it (where??)
+		envPath  = "C:\\Users\\angel\\git\\jep\\miniconda\\envs\\stardist";
 	}
 
 	@Override
 	public LinkedHashMap<String, Object> getOpInputs() {
-		// TODO Auto-generated method stub
-		return null;
+		inputsMap = new LinkedHashMap<String, Object>();
+		inputsMap.put(MODEL_KEY, this.model);
+		inputsMap.put(NEW_MODEL_DIR_KEY, this.nModelPath);
+		inputsMap.put(TRAIN_SAMPLES_KEY, this.trainingSamples);
+		inputsMap.put(GROUND_TRUTH_KEY, this.groundTruth);
+		inputsMap.put(BATCH_SIZE_KEY, this.batchSize);
+		inputsMap.put(LR_KEY, this.lr);
+		return inputsMap;
 	}
 
 	@Override
 	public String getCondaEnv() {
-		// TODO Auto-generated method stub
-		return null;
+		return envPath;
 	}
 
 	@Override
 	public String getMethodName() {
-		// TODO Auto-generated method stub
-		return null;
+		return OP_METHOD_NAME;
 	}
 
 	@Override
 	public String getOpDir() {
-		// TODO Auto-generated method stub
-		return null;
+		return opFilePath;
 	}
 	
 	public void setModel(String modelName) throws IllegalArgumentException {
