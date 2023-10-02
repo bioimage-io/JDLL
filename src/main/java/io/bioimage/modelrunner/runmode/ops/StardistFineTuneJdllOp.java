@@ -119,11 +119,13 @@ public class StardistFineTuneJdllOp implements OpInterface {
 	
 	private final static String GROUND_TRUTH_KEY = "ground_truth";
 	
-	private final static String BATCH_SIZE_KEY = "batch_size";
+	private final static String PATCH_SIZE_KEY = "train_patch_size";
 	
-	private final static String LR_KEY = "learning_rate";
+	private final static String BATCH_SIZE_KEY = "train_batch_size";
 	
-	private final static String EPOCHS_KEY = "learning_rate";
+	private final static String LR_KEY = "train_learning_rate";
+	
+	private final static String EPOCHS_KEY = "train_epochs";
 	
 	private static final String STARDIST_WEIGHTS_FILE = "stardist_weights.h5";
 	
@@ -178,6 +180,7 @@ public class StardistFineTuneJdllOp implements OpInterface {
 		checkTrainAndGroundTruthDimensions(trainingSamples, groundTruth);
 		setTrainingSamples(trainingSamples);
 		setGroundTruth(groundTruth);
+		setUpConfigs();
 	}
 	
 	public void setBatchSize(int batchSize) {
@@ -288,13 +291,31 @@ public class StardistFineTuneJdllOp implements OpInterface {
             	throw new IOException("Unable to create folder named 'stardist' at: " + this.model);
             }
         }
-		String rdfYamlFN = this.model + File.separator + Constants.RDF_FNAME;
-		ModelDescriptor descriptor = ModelDescriptor.readFromLocalFile(rdfYamlFN);
-		setUpKerasWeights(descriptor);
-		setUpConfigs(descriptor);
+		setUpKerasWeights();
 	}
 	
-	private void setUpConfigs(ModelDescriptor descriptor) throws IOException {
+	private void setUpConfigs() throws IOException, Exception {
+		if (new File(model + File.separator + Constants.RDF_FNAME).exists()) {
+			setUpConfigsBioimageio();
+		} else if (!(new File(model + File.separator + CONFIG_JSON).exists())) {
+			throw new IOException("Missing necessary file for StarDist: " + CONFIG_JSON);
+		} else if (!(new File(model + File.separator + THRES_JSON).exists())) {
+			throw new IOException("Missing necessary file for StarDist: " + THRES_JSON);
+		} else {
+			Map<String, Object> config = YAMLUtils.load(model + File.separator + CONFIG_JSON);
+			Map<String, Object> thres = YAMLUtils.load(model + File.separator + THRES_JSON);
+			int w = trainingSamples.getShape()[trainingSamples.getAxesOrderString().indexOf("x")];
+			int h = trainingSamples.getShape()[trainingSamples.getAxesOrderString().indexOf("y")];
+			config.put(PATCH_SIZE_KEY, new int[] {w, h});
+			config.put(BATCH_SIZE_KEY, this.batchSize);
+			config.put(LR_KEY, this.lr);
+			config.put(EPOCHS_KEY, this.epochs);
+			YAMLUtils.writeYamlFile(model + File.separator + CONFIG_JSON, (Map<String, Object>) config);
+		}
+	}
+	
+	private void setUpConfigsBioimageio() throws IOException, Exception {
+		ModelDescriptor descriptor = ModelDescriptor.readFromLocalFile(this.model + File.separator + Constants.RDF_FNAME);
 		Object stardistInfo = descriptor.getConfig().getSpecMap().get(StardistInferJdllOp.STARDIST_FIELD_KEY);
 		
 		if (stardistInfo == null || !(stardistInfo instanceof Map)) {
@@ -315,11 +336,19 @@ public class StardistFineTuneJdllOp implements OpInterface {
 					+ " Look for StarDist models in the Bioimage.io repo to see how the rdf.yaml should look like.");
 		}
 		String subfolder = this.model + File.separator + StardistInferJdllOp.STARDIST_FIELD_KEY;
+		int w = trainingSamples.getShape()[trainingSamples.getAxesOrderString().indexOf("x")];
+		int h = trainingSamples.getShape()[trainingSamples.getAxesOrderString().indexOf("y")];
+		((Map<String, Object>) config).put(PATCH_SIZE_KEY, new int[] {w, h});
+		((Map<String, Object>) config).put(BATCH_SIZE_KEY, this.batchSize);
+		((Map<String, Object>) config).put(LR_KEY, this.lr);
+		((Map<String, Object>) config).put(EPOCHS_KEY, this.epochs);
 		YAMLUtils.writeYamlFile(subfolder + File.separator + CONFIG_JSON, (Map<String, Object>) config);
 		YAMLUtils.writeYamlFile(opFilePath + File.separator + THRES_JSON, (Map<String, Object>) thres);
 	}
 	
-	private void setUpKerasWeights(ModelDescriptor descriptor) throws IOException {
+	private void setUpKerasWeights() throws IOException, Exception {
+		String rdfYamlFN = this.model + File.separator + Constants.RDF_FNAME;
+		ModelDescriptor descriptor = ModelDescriptor.readFromLocalFile(rdfYamlFN);
 		String stardistWeights = this.model + File.separator +  StardistInferJdllOp.STARDIST_FIELD_KEY;
 		stardistWeights += File.separator + STARDIST_WEIGHTS_FILE;
 		if (new File(stardistWeights).exists())
