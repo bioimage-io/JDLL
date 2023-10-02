@@ -20,10 +20,12 @@
 package io.bioimage.modelrunner.runmode.ops;
 
 import java.io.File;
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Objects;
 
+import io.bioimage.modelrunner.bioimageio.description.ModelDescriptor;
 import io.bioimage.modelrunner.tensor.Tensor;
 import net.imglib2.type.NativeType;
 import net.imglib2.type.numeric.RealType;
@@ -37,9 +39,15 @@ public class StardistFineTuneJdllOp implements OpInterface {
 	
 	private String nModelPath;
 	
+	private int nChannelsModel;
+	
 	private float lr = (float) 1e-5;
 	
 	private int batchSize = 16;
+	
+	private int epochs = 1;
+	
+	private boolean downloadStardistPretrained = false;
 	
 	private Tensor<FloatType> trainingSamples;
 	
@@ -50,6 +58,19 @@ public class StardistFineTuneJdllOp implements OpInterface {
 	private String envPath;
 	
 	private LinkedHashMap<String, Object> inputsMap;
+	
+	private static final List<String> PRETRAINED_3C_STARDIST_MODELS;
+	static {
+		PRETRAINED_3C_STARDIST_MODELS = new ArrayList<String>();
+		PRETRAINED_3C_STARDIST_MODELS.add("2D_versatile_fluo");
+		PRETRAINED_3C_STARDIST_MODELS.add("2D_paper_dsb2018");
+	}
+	
+	private static final List<String> PRETRAINED_1C_STARDIST_MODELS;
+	static {
+		PRETRAINED_1C_STARDIST_MODELS = new ArrayList<String>();
+		PRETRAINED_1C_STARDIST_MODELS.add("2D_versatile_he");
+	}
 	
 	private final static String MODEL_KEY = "model";
 	
@@ -63,11 +84,19 @@ public class StardistFineTuneJdllOp implements OpInterface {
 	
 	private final static String LR_KEY = "learning_rate";
 	
+	private final static String EPOCHS_KEY = "learning_rate";
+	
+	private final static String DOWNLOAD_STARDIST_KEY = "download_pretrained_stardist";
+	
 	private static final String OP_METHOD_NAME = "stardist_prediction_2d_mine";
 	
 	private static final int N_STARDIST_OUTPUTS = 1;
 	
 	private static final String STARDIST_OP_FNAME = "stardist_inference.py";
+	
+	private static final String STARDIST_2D_AXES = "bxyc";
+	
+	private static final String STARDIST_3D_AXES = "bxyzc";
 	
 	/**
 	 * Create a JDLL OP to fine tune a stardist model with the wanted data.
@@ -75,6 +104,7 @@ public class StardistFineTuneJdllOp implements OpInterface {
 	 * or {@link #setFineTuningData(Tensor, Tensor)}. The batch size and learning rates
 	 * can also be modified by with {@link #setBatchSize(int)} and {@link #setLearingRate(float)}.
 	 * By default the batch size is 16 and the learning rate 1e-5.
+	 * To set the number of epochs: {@link #setEpochs(int)}, default is 1.
 	 * @param modelToFineTune
 	 * 	Pre-trained model that is going to be fine tuned on the user's data, it
 	 *  can be either a model existing in the users machine or a model existing in the model
@@ -88,6 +118,12 @@ public class StardistFineTuneJdllOp implements OpInterface {
 		StardistFineTuneJdllOp op = new StardistFineTuneJdllOp();
 		op.setModel(modelToFineTune);
 		op.nModelPath = newModelDir;
+		try {
+			op.findNChannels();
+		} catch (Exception e) {
+			throw new IllegalArgumentException("Unable to correctly read the rdf.yaml file "
+					+ "of Bioimage.io StarDist model at :" + this.model, e);
+		}
 		return op;
 	}
 	
@@ -109,6 +145,10 @@ public class StardistFineTuneJdllOp implements OpInterface {
 	
 	public void setLearingRate(float learningRate) {
 		this.lr = learningRate;
+	}
+	
+	public void setEpochs(int epochs) {
+		this.epochs = epochs;
 	}
 
 	@Override
@@ -146,6 +186,8 @@ public class StardistFineTuneJdllOp implements OpInterface {
 		inputsMap.put(GROUND_TRUTH_KEY, this.groundTruth);
 		inputsMap.put(BATCH_SIZE_KEY, this.batchSize);
 		inputsMap.put(LR_KEY, this.lr);
+		inputsMap.put(EPOCHS_KEY, this.epochs);
+		inputsMap.put(DOWNLOAD_STARDIST_KEY, this.downloadStardistPretrained);
 		return inputsMap;
 	}
 
@@ -166,6 +208,11 @@ public class StardistFineTuneJdllOp implements OpInterface {
 	
 	public void setModel(String modelName) throws IllegalArgumentException {
 		Objects.requireNonNull(modelName, "The modelName input argument cannot be null.");
+		if (PRETRAINED_1C_STARDIST_MODELS.contains(modelName) || PRETRAINED_3C_STARDIST_MODELS.contains(modelName)) {
+			this.model = modelName;
+			this.downloadStardistPretrained = true;
+			return;
+		}
 		if (new File(modelName).isFile() && !StardistInferJdllOp.isModelFileStardist(modelName))
 			throw new IllegalArgumentException("The file selected does not correspond to "
 					+ "the rdf.yaml file of a Bioiamge.io Stardist model.");
@@ -175,8 +222,17 @@ public class StardistFineTuneJdllOp implements OpInterface {
 		this.model = modelName;
 	}
 	
+	private void setUpStardistModelFromBioimageio() {
+		
+	}
+	
+	private void setUpStardistModelFromLocal() {
+		
+	}
+	
 	private < T extends RealType< T > & NativeType< T > > 
 	 void checkTrainAndGroundTruthDimensions(Tensor<T> trainingSamples, Tensor<T> groundTruth) {
+		if (trainingSamples.getAxesOrderString().toLowerCase().equals(STARDIST_2D_AXES))
 		
 	}
 	
@@ -197,5 +253,15 @@ public class StardistFineTuneJdllOp implements OpInterface {
     		this.groundTruth = (Tensor<UnsignedShortType>) groundTruth;
     	}
 	}
-
+	
+	private void findNChannels() throws Exception {
+		if (this.downloadStardistPretrained && PRETRAINED_1C_STARDIST_MODELS.contains(this.model)) {
+			this.nChannelsModel = 1;
+		} else if (this.downloadStardistPretrained && PRETRAINED_3C_STARDIST_MODELS.contains(this.model)) {
+			this.nChannelsModel = 3;
+		}
+		ModelDescriptor descriptor = ModelDescriptor.readFromLocalFile(model, false);
+		int cInd = descriptor.getInputTensors().get(0).getAxesOrder().indexOf("c");
+		nChannelsModel = descriptor.getInputTensors().get(0).getShape().getPatchMinimumSize()[cInd];
+	}
 }
