@@ -29,6 +29,7 @@ import net.imglib2.type.NativeType;
 import net.imglib2.type.numeric.RealType;
 import net.imglib2.type.numeric.integer.UnsignedShortType;
 import net.imglib2.type.numeric.real.FloatType;
+import net.imglib2.util.Util;
 
 public class StardistFineTuneJdllOp implements OpInterface {
 	
@@ -97,7 +98,9 @@ public class StardistFineTuneJdllOp implements OpInterface {
 	
 	public < T extends RealType< T > & NativeType< T > > 
 		void setFineTuningData(Tensor<T> trainingSamples, Tensor<T> groundTruth) {
-		
+		checkTrainAndGroundTruthDimensions(trainingSamples, groundTruth);
+		setTrainingSamples(trainingSamples);
+		setGroundTruth(groundTruth);
 	}
 	
 	public void setBatchSize(int batchSize) {
@@ -170,6 +173,29 @@ public class StardistFineTuneJdllOp implements OpInterface {
 			throw new IllegalArgumentException("The model name provided does not correspond to a valid"
 					+ " Stardist model present in the Bioimage.io online reposritory.");
 		this.model = modelName;
+	}
+	
+	private < T extends RealType< T > & NativeType< T > > 
+	 void checkTrainAndGroundTruthDimensions(Tensor<T> trainingSamples, Tensor<T> groundTruth) {
+		
+	}
+	
+	private < T extends RealType< T > & NativeType< T > > 
+	 void setTrainingSamples(Tensor<T> trainingSamples) {
+    	if (!(Util.getTypeFromInterval(trainingSamples.getData()) instanceof FloatType)) {
+    		this.trainingSamples = Tensor.createCopyOfTensorInWantedDataType(trainingSamples, new FloatType());
+    	} else {
+    		this.trainingSamples = (Tensor<FloatType>) trainingSamples;
+    	}
+	}
+	
+	private < T extends RealType< T > & NativeType< T > > 
+	 void setGroundTruth(Tensor<T> groundTruth) {
+    	if (!(Util.getTypeFromInterval(groundTruth.getData()) instanceof UnsignedShortType)) {
+    		this.groundTruth = Tensor.createCopyOfTensorInWantedDataType(groundTruth, new UnsignedShortType());
+    	} else {
+    		this.groundTruth = (Tensor<UnsignedShortType>) groundTruth;
+    	}
 	}
 
 }
