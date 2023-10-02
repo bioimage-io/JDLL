@@ -49,6 +49,8 @@ import net.imglib2.type.numeric.RealType;
 import net.imglib2.type.numeric.integer.UnsignedShortType;
 import net.imglib2.type.numeric.real.FloatType;
 import net.imglib2.util.Util;
+import net.imglib2.view.IntervalView;
+import net.imglib2.view.Views;
 
 /**
  * TODO
@@ -387,7 +389,26 @@ public class StardistFineTuneJdllOp implements OpInterface {
 	
 	private < T extends RealType< T > & NativeType< T > > 
 	 void checkTrainAndGroundTruthDimensions(Tensor<T> trainingSamples, Tensor<T> groundTruth) {
-		if (trainingSamples.getAxesOrderString().toLowerCase().equals(STARDIST_2D_AXES))
+		String axes = trainingSamples.getAxesOrderString();
+		if (axes.length() != STARDIST_2D_AXES.length())
+			throw new IllegalArgumentException("Training sample tensors should have for dimensions ("
+					+ STARDIST_2D_AXES + "), but it has " + axes.length() + " (" + axes + ").");
+		for (int c = 0; c < STARDIST_2D_AXES.length(); c ++) {
+			int trueInd = STARDIST_2D_AXES.indexOf(STARDIST_2D_AXES.split("")[c]);
+			if (trueInd == -1)
+				throw new IllegalArgumentException("The training samples provided should have dimension '"
+						+ STARDIST_2D_AXES.split("")[c] + "' in the axes order, but it does not (" + axes + ").");
+			else if (trueInd == c) {
+				c ++;
+				continue;
+			}
+			IntervalView<T> wrapImg = Views.permute(trainingSamples.getData(), trueInd, c);
+			trainingSamples = Tensor.build(trainingSamples.getName(), axes, wrapImg);
+			c = 0;
+		}
+		
+		// TODO check that train and ground truth have the same
+		if 
 		
 	}
 	
