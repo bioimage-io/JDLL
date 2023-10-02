@@ -62,7 +62,7 @@ public class StardistInferJdllOp implements OpInterface {
 	
 	private static final String OP_METHOD_NAME = "stardist_prediction_2d_mine";
 	
-	private static final String STARDIST_FIELD_KEY = "stardist";
+	protected static final String STARDIST_FIELD_KEY = "stardist";
 	
 	private static final int N_STARDIST_OUTPUTS = 2;
 	

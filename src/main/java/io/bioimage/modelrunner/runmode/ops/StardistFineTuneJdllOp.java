@@ -26,10 +26,16 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.channels.Channels;
 import java.nio.channels.ReadableByteChannel;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
+
+import org.yaml.snakeyaml.Yaml;
 
 import io.bioimage.modelrunner.bioimageio.BioimageioRepo;
 import io.bioimage.modelrunner.bioimageio.description.ModelDescriptor;
@@ -37,6 +43,7 @@ import io.bioimage.modelrunner.bioimageio.download.DownloadModel;
 import io.bioimage.modelrunner.engine.installation.FileDownloader;
 import io.bioimage.modelrunner.tensor.Tensor;
 import io.bioimage.modelrunner.utils.Constants;
+import io.bioimage.modelrunner.utils.YAMLUtils;
 import net.imglib2.type.NativeType;
 import net.imglib2.type.numeric.RealType;
 import net.imglib2.type.numeric.integer.UnsignedShortType;
@@ -95,6 +102,14 @@ public class StardistFineTuneJdllOp implements OpInterface {
 		PRETRAINED_1C_STARDIST_MODELS = new ArrayList<String>();
 		PRETRAINED_1C_STARDIST_MODELS.add("2D_versatile_he");
 	}
+	
+	private final static String STARDIST_CONFIG_KEY = "config";
+	
+	private final static String CONFIG_JSON = "config.json";
+	
+	private final static String STARDIST_THRES_KEY = "thresholds";
+	
+	private final static String THRES_JSON = "thresholds.json";
 	
 	private final static String MODEL_KEY = "model";
 	
@@ -265,14 +280,59 @@ public class StardistFineTuneJdllOp implements OpInterface {
         downloadBioimageioStardistWeights();
 	}
 	
-	private void downloadBioimageioStardistWeights() throws IOException, Exception {
-		File stardistSubfolder = new File(this.model, "stardist");
+	private void downloadBioimageioStardistWeights() throws IllegalArgumentException,
+															IOException, Exception {
+		File stardistSubfolder = new File(this.model, StardistInferJdllOp.STARDIST_FIELD_KEY);
+        if (!stardistSubfolder.exists()) {
+            if (!stardistSubfolder.mkdirs()) {
+            	throw new IOException("Unable to create folder named 'stardist' at: " + this.model);
+            }
+        }
 		String rdfYamlFN = this.model + File.separator + Constants.RDF_FNAME;
 		ModelDescriptor descriptor = ModelDescriptor.readFromLocalFile(rdfYamlFN);
-		downloadFileFromInternet(getKerasWeigthsLink(descriptor), 
-				new File(stardistSubfolder, STARDIST_WEIGHTS_FILE));
+		setUpKerasWeights(descriptor);
+		setUpConfigs(descriptor);
+	}
+	
+	private void setUpConfigs(ModelDescriptor descriptor) throws IOException {
+		Object stardistInfo = descriptor.getConfig().getSpecMap().get(StardistInferJdllOp.STARDIST_FIELD_KEY);
 		
-		
+		if (stardistInfo == null || !(stardistInfo instanceof Map)) {
+			throw new IllegalArgumentException("The rdf.yaml file of the Bioimage.io StarDist "
+					+ "model at: " + this.model + " is invalid. The field config>stardist is missing."
+					+ " Look for StarDist models in the Bioimage.io repo to see how the rdf.yaml should look like.");
+		}
+		Object config = ((Map<String, Object>) stardistInfo).get(STARDIST_CONFIG_KEY);
+		if (config == null || !(config instanceof Map)) {
+			throw new IllegalArgumentException("The rdf.yaml file of the Bioimage.io StarDist "
+					+ "model at: " + this.model + " is invalid. The field config>stardist>" + STARDIST_CONFIG_KEY + " is missing."
+					+ " Look for StarDist models in the Bioimage.io repo to see how the rdf.yaml should look like.");
+		}
+		Object thres = ((Map<String, Object>) stardistInfo).get(STARDIST_THRES_KEY);
+		if (thres == null || !(thres instanceof Map)) {
+			throw new IllegalArgumentException("The rdf.yaml file of the Bioimage.io StarDist "
+					+ "model at: " + this.model + " is invalid. The field config>stardist>" + STARDIST_THRES_KEY + " is missing."
+					+ " Look for StarDist models in the Bioimage.io repo to see how the rdf.yaml should look like.");
+		}
+		String subfolder = this.model + File.separator + StardistInferJdllOp.STARDIST_FIELD_KEY;
+		YAMLUtils.writeYamlFile(subfolder + File.separator + CONFIG_JSON, (Map<String, Object>) config);
+		YAMLUtils.writeYamlFile(opFilePath + File.separator + THRES_JSON, (Map<String, Object>) thres);
+	}
+	
+	private void setUpKerasWeights(ModelDescriptor descriptor) throws IOException {
+		String stardistWeights = this.model + File.separator +  StardistInferJdllOp.STARDIST_FIELD_KEY;
+		stardistWeights += File.separator + STARDIST_WEIGHTS_FILE;
+		if (new File(stardistWeights).exists())
+			return;
+		String stardistWeightsParent = this.model + File.separator + STARDIST_WEIGHTS_FILE;
+		if (new File(stardistWeights).exists()) {
+			try {
+	            Files.copy(Paths.get(stardistWeightsParent), Paths.get(stardistWeights), StandardCopyOption.REPLACE_EXISTING);
+				return;
+	        } catch (IOException e) {
+	        }
+		}
+		downloadFileFromInternet(getKerasWeigthsLink(descriptor), new File(stardistWeights));
 	}
 	
 	private static String getKerasWeigthsLink(ModelDescriptor descriptor) throws IOException {
