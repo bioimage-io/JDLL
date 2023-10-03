@@ -50,17 +50,12 @@ public class RunMode {
 	// TODO add support for list of objects
 	private static final String OUTPUT_REFORMATING = 
 			"if isinstance(%s, xr.DataArray):" + System.lineSeparator()
-			+ "  task.update('is data array')" + System.lineSeparator()
 			+ "  %s = " + RunModeScripts.XR_METHOD + "(%s)" + System.lineSeparator()
 			+ "elif isinstance(%s, np.ndarray):" + System.lineSeparator()
-			+ "  task.update('np array')" + System.lineSeparator()
 			+ "  %s = " + RunModeScripts.NP_METHOD + "(%s)" + System.lineSeparator()
 			+ "elif isinstance(%s, list):" + System.lineSeparator()
-			+ "  task.update('is list')" + System.lineSeparator()
 			+ "  %s = " + RunModeScripts.LIST_METHOD + "(%s)" + System.lineSeparator()
 			+ "elif isinstance(%s, dict):" + System.lineSeparator()
-			+ "  task.update('is dict')" + System.lineSeparator()
-			+ "  task.update(str(output1))" + System.lineSeparator()
 			+ "  %s = " + RunModeScripts.DICT_METHOD + "(%s)" + System.lineSeparator();
 	
 	private static final String DEFAULT_IMPORT = 
@@ -296,7 +291,7 @@ public class RunMode {
 		
 		for (String outN : this.outputNames) {
 			String code = String.format(OUTPUT_REFORMATING, outN, outN, outN, outN, outN, outN,
-					outN, outN, outN, outN, outN, outN, outN);
+					outN, outN, outN, outN, outN, outN);
 			retrieveResultsCode += code;
 			taskOutputCode += String.format("task.outputs['%s'] = %s", outN, outN)
 					+ System.lineSeparator();

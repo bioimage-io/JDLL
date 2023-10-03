@@ -49,10 +49,10 @@ def finetune_stardist(model, images, ground_truth, new_model_dir):
   model = StarDist2D(None, model)
 
   # finetune on new data
-  history = model.train(X,Y, validation_data=(X,Y))
+  history = model.train(images, ground_truth, validation_data=(images, ground_truth))
 
   Path(new_model_dir).mkdir(parents=True, exist_ok=True)
-  model.keras_model.save(new_model_dir)
-  model.export_TF(os.path.join(os.path.dirname(new_model_dir), "tf_weights.zip"))
+  model.keras_model.save(os.path.join(new_model_dir, "stardist_weights.h5"))
+  model.export_TF(os.path.join(os.path.dirname(new_model_dir), "TF_SavedModel.zip"))
 
-  return history.loss, history.loss
+  return history.history

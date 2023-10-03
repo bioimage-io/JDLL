@@ -53,14 +53,11 @@ public class RunModeScripts {
 	 */
 	protected static final String TYPE_CONVERSION_METHODS_SCRIPT = ""
 			+ "def " + NP_METHOD + "(np_arr):" + System.lineSeparator()
-			+ "  np_arr = np_arr.astype(\"uint8\")" + System.lineSeparator()
 			+ "  return {\"" + DATA_KEY + "\": np_arr.flatten().tolist(), \"" + SHAPE_KEY 
 							+ "\": np_arr.shape, \"" + APPOSE_DT_KEY + "\": \"" 
 							+ NP_ARR_KEY + "\", \"" + DTYPE_KEY + "\": str(np_arr.dtype)}" + System.lineSeparator()
 			+ "" + System.lineSeparator()
 			+ "def " + XR_METHOD + "(xr_arr):" + System.lineSeparator()
-			+ "  xr_arr = xr_arr.astype(\"int64\")" + System.lineSeparator()
-			+ "  xr_arr[0] = 1" + System.lineSeparator()
 			+ "  return {\"" + DATA_KEY + "\": xr_arr.values.flatten().tolist(), \"" + SHAPE_KEY 
 							+ "\": xr_arr.shape, \"" + AXES_KEY + "\": \"\".join(xr_arr.dims),\"" + NAME_KEY 
 							+ "\": xr_arr.name, \"" + APPOSE_DT_KEY + "\": \"" + TENSOR_KEY + "\", "
