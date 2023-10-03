@@ -29,13 +29,11 @@ import java.nio.channels.ReadableByteChannel;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
-import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-
-import org.yaml.snakeyaml.Yaml;
 
 import io.bioimage.modelrunner.bioimageio.BioimageioRepo;
 import io.bioimage.modelrunner.bioimageio.description.ModelDescriptor;
@@ -70,6 +68,8 @@ public class StardistFineTuneJdllOp implements OpInterface {
 	
 	private String model;
 	
+	private String nModelParentPath;
+	
 	private String nModelPath;
 	
 	private int nChannelsModel;
@@ -92,17 +92,17 @@ public class StardistFineTuneJdllOp implements OpInterface {
 	
 	private LinkedHashMap<String, Object> inputsMap;
 	
-	private static final List<String> PRETRAINED_3C_STARDIST_MODELS;
+	private static final Map<String, String> PRETRAINED_3C_STARDIST_MODELS;
 	static {
-		PRETRAINED_3C_STARDIST_MODELS = new ArrayList<String>();
-		PRETRAINED_3C_STARDIST_MODELS.add("2D_versatile_fluo");
-		PRETRAINED_3C_STARDIST_MODELS.add("2D_paper_dsb2018");
+		PRETRAINED_3C_STARDIST_MODELS = new HashMap<String, String>();
+		PRETRAINED_3C_STARDIST_MODELS.put("2D_versatile_fluo", "fearless-crab");
+		PRETRAINED_3C_STARDIST_MODELS.put("2D_paper_dsb2018", null);
 	}
 	
-	private static final List<String> PRETRAINED_1C_STARDIST_MODELS;
+	private static final Map<String, String> PRETRAINED_1C_STARDIST_MODELS;
 	static {
-		PRETRAINED_1C_STARDIST_MODELS = new ArrayList<String>();
-		PRETRAINED_1C_STARDIST_MODELS.add("2D_versatile_he");
+		PRETRAINED_1C_STARDIST_MODELS = new HashMap<String, String>();
+		PRETRAINED_1C_STARDIST_MODELS.put("2D_versatile_he", "chatty-frog");
 	}
 	
 	private final static String STARDIST_CONFIG_KEY = "config";
@@ -131,9 +131,11 @@ public class StardistFineTuneJdllOp implements OpInterface {
 	
 	private static final String STARDIST_WEIGHTS_FILE = "stardist_weights.h5";
 	
+	private static final String KERAS_SUFFIX_FILE = ".h5";
+	
 	private final static String DOWNLOAD_STARDIST_KEY = "download_pretrained_stardist";
 	
-	private static final String OP_METHOD_NAME = "stardist_prediction_2d_mine";
+	private static final String OP_METHOD_NAME = "finetune_stardist";
 	
 	private static final int N_STARDIST_OUTPUTS = 1;
 	
@@ -155,15 +157,51 @@ public class StardistFineTuneJdllOp implements OpInterface {
 	 * @param modelToFineTune
 	 * 	Pre-trained model that is going to be fine tuned on the user's data, it
 	 *  can be either a model existing in the users machine or a model existing in the model
-	 *  zoo. If it is a model existing in th emodel zoo, it will have to be downloaded first.
+	 *  zoo. If it is a model existing in the model zoo, it will have to be downloaded first.
 	 * @param newModelDir
-	 * 	directory where the new model will be saved
+	 * 	directory where the new finetuned model folder will be saved.
 	 * @return a JDLL OP that can be used together with {@link RunMode} to fine tune a StarDist
 	 * 	model on the user's data
+	 * @throws InterruptedException 
+	 * @throws IOException 
+	 * @throws Exception 
 	 */
-	public StardistFineTuneJdllOp create(String modelToFineTune, String newModelDir) {
+	public StardistFineTuneJdllOp finetuneAndCreateNew(String modelToFineTune, String newModelDir) throws IOException, InterruptedException, Exception {
+		Objects.requireNonNull(modelToFineTune, "");
+		Objects.requireNonNull(modelToFineTune, "");
 		StardistFineTuneJdllOp op = new StardistFineTuneJdllOp();
-		op.nModelPath = newModelDir;
+		op.nModelParentPath = newModelDir;
+		op.setModel(modelToFineTune);
+		try {
+			op.findNChannels();
+		} catch (Exception e) {
+			throw new IllegalArgumentException("Unable to correctly read the rdf.yaml file "
+					+ "of Bioimage.io StarDist model at :" + this.model, e);
+		}
+		return op;
+	}
+	
+	/**
+	 * Create a JDLL OP to fine tune a stardist model with the wanted data.
+	 * In order to set the data we want to fine tune the model on, use {@link #setFineTuningData(List, List)}
+	 * or {@link #setFineTuningData(Tensor, Tensor)}. The batch size and learning rates
+	 * can also be modified by with {@link #setBatchSize(int)} and {@link #setLearingRate(float)}.
+	 * By default the batch size is 16 and the learning rate 1e-5.
+	 * To set the number of epochs: {@link #setEpochs(int)}, default is 1.
+	 * @param modelToFineTune
+	 * 	Pre-trained model that is going to be fine tuned on the user's data, it
+	 *  can be either a model existing in the users machine or a model existing in the model
+	 *  zoo. If it is a model existing in the model zoo, it will have to be downloaded first.
+	 * @return a JDLL OP that can be used together with {@link RunMode} to fine tune a StarDist
+	 * 	model on the user's data
+	 * @throws InterruptedException 
+	 * @throws IOException 
+	 * @throws Exception 
+	 */
+	public StardistFineTuneJdllOp finetuneInPlace(String modelToFineTune) throws IOException, InterruptedException, Exception {
+		Objects.requireNonNull(modelToFineTune, "");
+		StardistFineTuneJdllOp op = new StardistFineTuneJdllOp();
+		op.nModelParentPath = newModelDir;
 		op.setModel(modelToFineTune);
 		try {
 			op.findNChannels();
@@ -180,7 +218,7 @@ public class StardistFineTuneJdllOp implements OpInterface {
 	}
 	
 	public < T extends RealType< T > & NativeType< T > > 
-		void setFineTuningData(Tensor<T> trainingSamples, Tensor<T> groundTruth) {
+		void setFineTuningData(Tensor<T> trainingSamples, Tensor<T> groundTruth) throws IOException, Exception {
 		checkTrainAndGroundTruthDimensions(trainingSamples, groundTruth);
 		setTrainingSamples(trainingSamples);
 		setGroundTruth(groundTruth);
@@ -232,9 +270,6 @@ public class StardistFineTuneJdllOp implements OpInterface {
 		inputsMap.put(NEW_MODEL_DIR_KEY, this.nModelPath);
 		inputsMap.put(TRAIN_SAMPLES_KEY, this.trainingSamples);
 		inputsMap.put(GROUND_TRUTH_KEY, this.groundTruth);
-		inputsMap.put(BATCH_SIZE_KEY, this.batchSize);
-		inputsMap.put(LR_KEY, this.lr);
-		inputsMap.put(EPOCHS_KEY, this.epochs);
 		inputsMap.put(DOWNLOAD_STARDIST_KEY, this.downloadStardistPretrained);
 		return inputsMap;
 	}
@@ -254,11 +289,13 @@ public class StardistFineTuneJdllOp implements OpInterface {
 		return opFilePath;
 	}
 	
-	public void setModel(String modelName) throws IllegalArgumentException {
+	public void setModel(String modelName) throws IOException, InterruptedException, Exception {
 		Objects.requireNonNull(modelName, "The modelName input argument cannot be null.");
-		if (PRETRAINED_1C_STARDIST_MODELS.contains(modelName) || PRETRAINED_3C_STARDIST_MODELS.contains(modelName)) {
+		if (PRETRAINED_1C_STARDIST_MODELS.keySet().contains(modelName) 
+				|| PRETRAINED_3C_STARDIST_MODELS.keySet().contains(modelName)) {
 			this.model = modelName;
 			this.downloadStardistPretrained = true;
+			setUpStardistModelFromStardistRepo();
 			return;
 		}
 		if (new File(modelName).isFile() && !StardistInferJdllOp.isModelFileStardist(modelName))
@@ -267,17 +304,36 @@ public class StardistFineTuneJdllOp implements OpInterface {
 		else if (!(new File(modelName).isFile()) && !StardistInferJdllOp.isModelNameStardist(modelName))
 			throw new IllegalArgumentException("The model name provided does not correspond to a valid"
 					+ " Stardist model present in the Bioimage.io online reposritory.");
+		else if (!(new File(modelName).isFile()))
+			setUpStardistModelFromBioimageio();
 		this.model = modelName;
 	}
 	
-	private void setUpStardistModelFromBioimageio() throws IOException, InterruptedException {
+	private void setUpStardistModelFromStardistRepo() throws IOException, InterruptedException, Exception {
+		if (PRETRAINED_1C_STARDIST_MODELS.get(model) != null) {
+			model = PRETRAINED_1C_STARDIST_MODELS.get(model);
+			setUpStardistModelFromBioimageio();
+		} else if (PRETRAINED_3C_STARDIST_MODELS.get(model) != null) {
+			model = PRETRAINED_3C_STARDIST_MODELS.get(model);
+			setUpStardistModelFromBioimageio();
+		} else {
+			// TODO what to do with 2D_paper_dsb2018 and DEMO model (they dont have model card)
+			// TODO what to do with 2D_paper_dsb2018 and DEMO model (they dont have model card)
+			// TODO what to do with 2D_paper_dsb2018 and DEMO model (they dont have model card)
+			// TODO what to do with 2D_paper_dsb2018 and DEMO model (they dont have model card)
+			// TODO what to do with 2D_paper_dsb2018 and DEMO model (they dont have model card)
+			// TODO what to do with 2D_paper_dsb2018 and DEMO model (they dont have model card)
+		}
+	}
+	
+	private void setUpStardistModelFromBioimageio() throws IOException, InterruptedException, Exception {
 		BioimageioRepo br = BioimageioRepo.connect();
 		if (br.selectByName(model) != null) {
-			model = br.downloadByName(model, nModelPath);
+			model = br.downloadByName(model, nModelParentPath);
 		} else if (br.selectByID(model) != null) {
-			model = br.downloadModelByID(model, nModelPath);
+			model = br.downloadModelByID(model, nModelParentPath);
 		} else if (br.selectByNickname(model) != null) {
-			model = br.downloadByNickame(model, nModelPath);
+			model = br.downloadByNickame(model, nModelParentPath);
 		}
 		File folder = new File(model);
 		String fineTuned = folder.getParent() + File.separator + "finetuned_" + folder.getName();
@@ -307,7 +363,6 @@ public class StardistFineTuneJdllOp implements OpInterface {
 			throw new IOException("Missing necessary file for StarDist: " + THRES_JSON);
 		} else {
 			Map<String, Object> config = YAMLUtils.load(model + File.separator + CONFIG_JSON);
-			Map<String, Object> thres = YAMLUtils.load(model + File.separator + THRES_JSON);
 			int w = trainingSamples.getShape()[trainingSamples.getAxesOrderString().indexOf("x")];
 			int h = trainingSamples.getShape()[trainingSamples.getAxesOrderString().indexOf("y")];
 			config.put(PATCH_SIZE_KEY, new int[] {w, h});
@@ -318,6 +373,7 @@ public class StardistFineTuneJdllOp implements OpInterface {
 		}
 	}
 	
+	@SuppressWarnings("unchecked")
 	private void setUpConfigsBioimageio() throws IOException, Exception {
 		ModelDescriptor descriptor = ModelDescriptor.readFromLocalFile(this.model + File.separator + Constants.RDF_FNAME);
 		Object stardistInfo = descriptor.getConfig().getSpecMap().get(StardistInferJdllOp.STARDIST_FIELD_KEY);
@@ -368,6 +424,7 @@ public class StardistFineTuneJdllOp implements OpInterface {
 		downloadFileFromInternet(getKerasWeigthsLink(descriptor), new File(stardistWeights));
 	}
 	
+	@SuppressWarnings("unchecked")
 	private static String getKerasWeigthsLink(ModelDescriptor descriptor) throws IOException {
 		Object yamlFiles = descriptor.getAttachments().get("files");
 		if (yamlFiles == null || !(yamlFiles instanceof List))
@@ -391,31 +448,31 @@ public class StardistFineTuneJdllOp implements OpInterface {
 	
 	private < T extends RealType< T > & NativeType< T > > 
 	 void checkTrainAndGroundTruthDimensions(Tensor<T> trainingSamples, Tensor<T> groundTruth) {
-		String axes = trainingSamples.getAxesOrderString();
-		if (axes.length() != STARDIST_2D_AXES.length())
-			throw new IllegalArgumentException("Training sample tensors should have for dimensions ("
-					+ STARDIST_2D_AXES + "), but it has " + axes.length() + " (" + axes + ").");
-		for (int c = 0; c < STARDIST_2D_AXES.length(); c ++) {
-			int trueInd = STARDIST_2D_AXES.indexOf(STARDIST_2D_AXES.split("")[c]);
-			if (trueInd == -1)
-				throw new IllegalArgumentException("The training samples provided should have dimension '"
-						+ STARDIST_2D_AXES.split("")[c] + "' in the axes order, but it does not (" + axes + ").");
-			else if (trueInd == c) {
-				c ++;
-				continue;
-			}
-			IntervalView<T> wrapImg = Views.permute(trainingSamples.getData(), trueInd, c);
-			trainingSamples = Tensor.build(trainingSamples.getName(), axes, wrapImg);
-			c = 0;
-		}
-		
-		// TODO check that train and ground truth have the same
-		if 
+		checkTrainingSamplesTensorDimsForStardist(trainingSamples);
+		checkGroundTruthTensorDimsForStardist(groundTruth);
+
+		int trW = trainingSamples.getShape()[trainingSamples.getAxesOrderString().indexOf("x")];
+		int trH = trainingSamples.getShape()[trainingSamples.getAxesOrderString().indexOf("y")];
+		int trB = trainingSamples.getShape()[trainingSamples.getAxesOrderString().indexOf("b")];
+		int gtW = groundTruth.getShape()[groundTruth.getAxesOrderString().indexOf("x")];
+		int gtH = groundTruth.getShape()[groundTruth.getAxesOrderString().indexOf("y")];
+		int gtB = groundTruth.getShape()[groundTruth.getAxesOrderString().indexOf("b")];
+
+		if (gtW != trW)
+			throw new IllegalArgumentException("Training samples (" + trW + ") and ground truth ("
+					+ gtW + ") width (x-axis) must be the same.");
+		if (trH != gtH)
+			throw new IllegalArgumentException("Training samples (" + trH + ") and ground truth (" 
+					+ gtH + ") height (y-axis) must be the same.");
+		if (trB != gtB)
+			throw new IllegalArgumentException("Training samples (" + trB + ") and ground truth (" 
+					+ gtB + ") batch size (b-axis) must be the same.");
+		 
 		
 	}
 	
 	private static < T extends RealType< T > & NativeType< T > > 
-	 void checkTrainingSamplesTensorDimsForStardist(Tensor<T> trainingSamples) {
+	void checkTrainingSamplesTensorDimsForStardist(Tensor<T> trainingSamples) {
 		String axes = trainingSamples.getAxesOrderString();
 		String stardistAxes = STARDIST_2D_AXES;
 		if (axes.length() == 5)
@@ -428,7 +485,7 @@ public class StardistFineTuneJdllOp implements OpInterface {
 	}
 	
 	private static < T extends RealType< T > & NativeType< T > > 
-	 void checkGroundTruthTensorDimsForStardist(Tensor<T> gt) {
+	void checkGroundTruthTensorDimsForStardist(Tensor<T> gt) {
 		String axes = gt.getAxesOrderString();
 		String stardistAxes = GROUNDTRUTH_AXES;
 		if (axes.length() != GROUNDTRUTH_AXES.length())
@@ -439,7 +496,7 @@ public class StardistFineTuneJdllOp implements OpInterface {
 	}
 	
 	private static < T extends RealType< T > & NativeType< T > > 
-	 void checkDimOrderAndTranspose(Tensor<T> tensor, String stardistAxes, String errMsgObject) {
+	void checkDimOrderAndTranspose(Tensor<T> tensor, String stardistAxes, String errMsgObject) {
 		for (int c = 0; c < stardistAxes.length(); c ++) {
 			String axes = tensor.getAxesOrderString();
 			int trueInd = axes.indexOf(stardistAxes.split("")[c]);
@@ -459,15 +516,22 @@ public class StardistFineTuneJdllOp implements OpInterface {
 		}
 	}
 	
+	@SuppressWarnings("unchecked")
 	private < T extends RealType< T > & NativeType< T > > 
 	 void setTrainingSamples(Tensor<T> trainingSamples) {
-    	if (!(Util.getTypeFromInterval(trainingSamples.getData()) instanceof FloatType)) {
+		int tensorChannels = trainingSamples.getShape()[trainingSamples.getAxesOrderString().indexOf("c")];
+		if (nChannelsModel != tensorChannels)
+			throw new IllegalArgumentException("The pre-trained selected model only supports " 
+					+ nChannelsModel + "-channel inputs whereas the provided training input tensor "
+							+ "has " + tensorChannels + " channels.");
+		if (!(Util.getTypeFromInterval(trainingSamples.getData()) instanceof FloatType)) {
     		this.trainingSamples = Tensor.createCopyOfTensorInWantedDataType(trainingSamples, new FloatType());
     	} else {
     		this.trainingSamples = (Tensor<FloatType>) trainingSamples;
     	}
 	}
 	
+	@SuppressWarnings("unchecked")
 	private < T extends RealType< T > & NativeType< T > > 
 	 void setGroundTruth(Tensor<T> groundTruth) {
     	if (!(Util.getTypeFromInterval(groundTruth.getData()) instanceof UnsignedShortType)) {
@@ -478,9 +542,9 @@ public class StardistFineTuneJdllOp implements OpInterface {
 	}
 	
 	private void findNChannels() throws Exception {
-		if (this.downloadStardistPretrained && PRETRAINED_1C_STARDIST_MODELS.contains(this.model)) {
+		if (this.downloadStardistPretrained && PRETRAINED_1C_STARDIST_MODELS.keySet().contains(this.model)) {
 			this.nChannelsModel = 1;
-		} else if (this.downloadStardistPretrained && PRETRAINED_3C_STARDIST_MODELS.contains(this.model)) {
+		} else if (this.downloadStardistPretrained && PRETRAINED_3C_STARDIST_MODELS.keySet().contains(this.model)) {
 			this.nChannelsModel = 3;
 		}
 		ModelDescriptor descriptor = ModelDescriptor.readFromLocalFile(model, false);
