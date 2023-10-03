@@ -80,12 +80,16 @@ public class RunMode {
 	private String moduleName;
 	List<String> outputNames = new ArrayList<String>();
 	
-	private RunMode(OpInterface op) {
+	private RunMode(OpInterface op) throws Exception {
 		this.op = op;
 		this.moduleName = op.getOpPythonFilename().substring(0, op.getOpPythonFilename().length() - 3);
 		IntStream.range(0, op.getNumberOfOutputs()).forEach(i -> outputNames.add("output" + i));
 		addImports();
-		convertInputMap();
+		try {
+			convertInputMap();
+		} catch (Exception e) {
+			throw new Exception("Error unpacking the Java inputs into the Python Appose process.", e);
+		}
 		opExecutionCode();
 		retrieveResultsCode();
 		
@@ -98,7 +102,7 @@ public class RunMode {
 		System.out.println(opCode);
 	}
 	
-	public static RunMode createRunMode(OpInterface op) {
+	public static RunMode createRunMode(OpInterface op) throws Exception {
 		return new RunMode(op);
 	}
 	
@@ -192,8 +196,10 @@ public class RunMode {
 				+ "task.update('Imports')" + System.lineSeparator();
 	}
 	
-	private < T extends RealType< T > & NativeType< T > > void convertInputMap() {
+	private < T extends RealType< T > & NativeType< T > > void convertInputMap() throws Exception {
 		apposeInputMap = new LinkedHashMap<>();
+		if (op.getOpInputs() == null)
+			return;
 		for (Entry<String, Object> entry : this.op.getOpInputs().entrySet()) {
 			if (entry.getValue() instanceof String) {
 				apposeInputMap.put(entry.getKey(), entry.getValue());
