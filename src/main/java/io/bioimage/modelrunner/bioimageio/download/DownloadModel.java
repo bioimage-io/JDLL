@@ -119,6 +119,10 @@ public class DownloadModel {
 	 */
 	private static String ATTACH_KEY = "attachments";
 	/**
+	 * Key for the map that contains the attachment files of the model. This is a subfile of "attachments".
+	 */
+	private static String ATTACH_FILES_KEY = "files";
+	/**
 	 * Key for the map that contains the weights of the model 
 	 */
 	private static String WEIGHTS_KEY = "weights";
