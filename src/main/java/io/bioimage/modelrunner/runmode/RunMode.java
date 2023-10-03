@@ -245,7 +245,6 @@ public class RunMode {
 			importsCode += IMPORT_XARRAY;
 		if (!importsCode.contains(IMPORT_NUMPY))
 			importsCode += IMPORT_NUMPY;
-		tensorRecreationCode = "";
 		tensorRecreationCode += "task.update('input conv')" + System.lineSeparator();
 		// This line wants to recreate the original numpy array. Should look like:
 		// input0 = xr.DataArray(np.array(input0).reshape([1, 1, 512, 512]), dims=["b", "c", "y", "x"], name="input0")
