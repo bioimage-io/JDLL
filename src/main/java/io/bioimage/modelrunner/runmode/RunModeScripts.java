@@ -84,9 +84,9 @@ public class RunModeScripts {
 					+ " or str(type(value)) == \"<class 'numpy.int32'>\" or str(type(value)) == \"<class 'numpy.uint32'>\"" 
 					+ " or str(type(value)) == \"<class 'numpy.int64'>\":" + System.lineSeparator()
 			+ "      n_list.append(int(value))" + System.lineSeparator()
-			+ "    elif str(type(value)) == \"<class 'numpy.str_'>\"" + System.lineSeparator()
+			+ "    elif str(type(value)) == \"<class 'numpy.str_'>\":" + System.lineSeparator()
 			+ "      n_list.append(str(value))" + System.lineSeparator()
-			+ "    elif str(type(value)) == \"<class 'numpy.bool_'>\"" + System.lineSeparator()
+			+ "    elif str(type(value)) == \"<class 'numpy.bool_'>\":" + System.lineSeparator()
 			+ "      n_list.append(bool(value))" + System.lineSeparator()
 			+ "    else:" + System.lineSeparator()
 			+ "      n_list.append(value)" + System.lineSeparator()
@@ -112,9 +112,9 @@ public class RunModeScripts {
 					+ " or str(type(value)) == \"<class 'numpy.int32'>\" or str(type(value)) == \"<class 'numpy.uint32'>\"" 
 					+ " or str(type(value)) == \"<class 'numpy.int64'>\":" + System.lineSeparator()
 			+ "      n_dic[key] = int(value)" + System.lineSeparator()
-			+ "    elif str(type(value)) == \"<class 'numpy.str_'>\"" + System.lineSeparator()
+			+ "    elif str(type(value)) == \"<class 'numpy.str_'>\":" + System.lineSeparator()
 			+ "      n_dic[key] = str(value)" + System.lineSeparator()
-			+ "    elif str(type(value)) == \"<class 'numpy.bool_'>\"" + System.lineSeparator()
+			+ "    elif str(type(value)) == \"<class 'numpy.bool_'>\":" + System.lineSeparator()
 			+ "      n_dic[key] = bool(value)" + System.lineSeparator()
 			+ "    else:" + System.lineSeparator()
 			+ "      n_dic[key] = value" + System.lineSeparator()
