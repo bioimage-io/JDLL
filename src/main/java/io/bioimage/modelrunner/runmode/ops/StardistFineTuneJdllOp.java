@@ -164,7 +164,7 @@ public class StardistFineTuneJdllOp implements OpInterface {
 		StardistFineTuneJdllOp op = finetuneAndCreateNew("chatty-frog", modelName);
 		op.installOp();
 		op.setBatchSize(2);
-		op.setEpochs(2);
+		op.setEpochs(1);
 		op.setFineTuningData(inpTensor, gtTensor);
 		op.setLearingRate((float) 1e-5);
 		RunMode rm = RunMode.createRunMode(op);
