@@ -194,9 +194,6 @@ public class ModelDescriptor
                     case "name":
                         modelDescription.name = (String) fieldElement;
                         break;
-                    case "nickname":
-                        modelDescription.nickname = (String) fieldElement;
-                        break;
                     case "timestamp":
                         modelDescription.timestamp = fieldElement.toString();
                         break;
@@ -296,7 +293,9 @@ public class ModelDescriptor
                 throw new IOException("Invalid model element: " + field + "->" + e.getMessage());
             }
         }
-        
+        Object bio = modelDescription.config.getSpecMap().get("bioimageio");
+        if ((bio != null) && (bio instanceof Map))
+        	modelDescription.nickname = (String) (((Map<String, Object>) bio).get("nickname"));
         modelDescription.addBioEngine();
         if (modelDescription.localModelPath != null)
         	modelDescription.addModelPath(new File(modelDescription.localModelPath).toPath());
