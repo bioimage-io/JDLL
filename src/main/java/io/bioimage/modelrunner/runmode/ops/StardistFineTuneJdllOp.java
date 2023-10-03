@@ -143,6 +143,8 @@ public class StardistFineTuneJdllOp implements OpInterface {
 	
 	private static final String STARDIST_3D_AXES = "bxyzc";
 	
+	private static final String GROUNDTRUTH_AXES = "bxy";
+	
 	/**
 	 * Create a JDLL OP to fine tune a stardist model with the wanted data.
 	 * In order to set the data we want to fine tune the model on, use {@link #setFineTuningData(List, List)}
@@ -410,6 +412,51 @@ public class StardistFineTuneJdllOp implements OpInterface {
 		// TODO check that train and ground truth have the same
 		if 
 		
+	}
+	
+	private static < T extends RealType< T > & NativeType< T > > 
+	 void checkTrainingSamplesTensorDimsForStardist(Tensor<T> trainingSamples) {
+		String axes = trainingSamples.getAxesOrderString();
+		String stardistAxes = STARDIST_2D_AXES;
+		if (axes.length() == 5)
+			stardistAxes = STARDIST_3D_AXES;
+		else if (axes.length() < 5)
+			throw new IllegalArgumentException("Training input tensors should have 4 dimensions ("
+					+ STARDIST_2D_AXES + ") or 5 (" + STARDIST_3D_AXES + "), but it has " + axes.length() + " (" + axes + ").");
+		
+		checkDimOrderAndTranspose(trainingSamples, stardistAxes, "training input");
+	}
+	
+	private static < T extends RealType< T > & NativeType< T > > 
+	 void checkGroundTruthTensorDimsForStardist(Tensor<T> gt) {
+		String axes = gt.getAxesOrderString();
+		String stardistAxes = GROUNDTRUTH_AXES;
+		if (axes.length() != GROUNDTRUTH_AXES.length())
+			throw new IllegalArgumentException("Ground truth tensors should have 3 dimensions ("
+					+ GROUNDTRUTH_AXES + "), but it has " + axes.length() + " (" + axes + ").");
+		
+		checkDimOrderAndTranspose(gt, stardistAxes, "ground truth");
+	}
+	
+	private static < T extends RealType< T > & NativeType< T > > 
+	 void checkDimOrderAndTranspose(Tensor<T> tensor, String stardistAxes, String errMsgObject) {
+		for (int c = 0; c < stardistAxes.length(); c ++) {
+			String axes = tensor.getAxesOrderString();
+			int trueInd = axes.indexOf(stardistAxes.split("")[c]);
+			if (trueInd == -1)
+				throw new IllegalArgumentException("The " + errMsgObject + " tensors provided should have dimension '"
+						+ stardistAxes.split("")[c] + "' in the axes order, but it does not (" + axes + ").");
+			else if (trueInd == c) {
+				c ++;
+				continue;
+			}
+			IntervalView<T> wrapImg = Views.permute(tensor.getData(), trueInd, c);
+			StringBuilder nAxes = new StringBuilder(axes);
+			nAxes.setCharAt(c, stardistAxes.charAt(c));
+			nAxes.setCharAt(trueInd, axes.charAt(c));
+			tensor = Tensor.build(tensor.getName(), nAxes.toString(), wrapImg);
+			c = 0;
+		}
 	}
 	
 	private < T extends RealType< T > & NativeType< T > > 
