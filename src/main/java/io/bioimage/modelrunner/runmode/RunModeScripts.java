@@ -76,13 +76,13 @@ public class RunModeScripts {
 			+ "    elif isinstance(value, list):" + System.lineSeparator()
 			+ "      n_list.append(" + LIST_METHOD + "(value))" + System.lineSeparator()
 			+ "    elif str(type(value)) == \"<class 'numpy.float32'>\""
-					+ " || str(type(value)) == \"<class 'numpy.float16'>\""
-					+ " || str(type(value)) == \"<class 'numpy.float64'>\":" + System.lineSeparator()
+					+ " or str(type(value)) == \"<class 'numpy.float16'>\""
+					+ " or str(type(value)) == \"<class 'numpy.float64'>\":" + System.lineSeparator()
 			+ "      n_list.append(float(value))" + System.lineSeparator()
-			+ "    elif str(type(value)) == \"<class 'numpy.int8'>\" || str(type(value)) == \"<class 'numpy.uint8'>\""
-					+ " || str(type(value)) == \"<class 'numpy.int16'>\" || str(type(value)) == \"<class 'numpy.uint16'>\""
-					+ " || str(type(value)) == \"<class 'numpy.int32'>\" || str(type(value)) == \"<class 'numpy.uint32'>\"" 
-					+ " || str(type(value)) == \"<class 'numpy.int64'>\":" + System.lineSeparator()
+			+ "    elif str(type(value)) == \"<class 'numpy.int8'>\" or str(type(value)) == \"<class 'numpy.uint8'>\""
+					+ " or str(type(value)) == \"<class 'numpy.int16'>\" or str(type(value)) == \"<class 'numpy.uint16'>\""
+					+ " or str(type(value)) == \"<class 'numpy.int32'>\" or str(type(value)) == \"<class 'numpy.uint32'>\"" 
+					+ " or str(type(value)) == \"<class 'numpy.int64'>\":" + System.lineSeparator()
 			+ "      n_list.append(int(value))" + System.lineSeparator()
 			+ "    elif str(type(value)) == \"<class 'numpy.str_'>\"" + System.lineSeparator()
 			+ "      n_list.append(str(value))" + System.lineSeparator()
@@ -104,13 +104,13 @@ public class RunModeScripts {
 			+ "    elif isinstance(value, list):" + System.lineSeparator()
 			+ "      n_dic[key] = " + LIST_METHOD + "(value)" + System.lineSeparator()
 			+ "    elif str(type(value)) == \"<class 'numpy.float32'>\""
-					+ " || str(type(value)) == \"<class 'numpy.float16'>\""
-					+ " || str(type(value)) == \"<class 'numpy.float64'>\":" + System.lineSeparator()
+					+ " or str(type(value)) == \"<class 'numpy.float16'>\""
+					+ " or str(type(value)) == \"<class 'numpy.float64'>\":" + System.lineSeparator()
 			+ "      n_dic[key] = float(value)" + System.lineSeparator()
-			+ "    elif str(type(value)) == \"<class 'numpy.int8'>\" || str(type(value)) == \"<class 'numpy.uint8'>\""
-					+ " || str(type(value)) == \"<class 'numpy.int16'>\" || str(type(value)) == \"<class 'numpy.uint16'>\""
-					+ " || str(type(value)) == \"<class 'numpy.int32'>\" || str(type(value)) == \"<class 'numpy.uint32'>\"" 
-					+ " || str(type(value)) == \"<class 'numpy.int64'>\":" + System.lineSeparator()
+			+ "    elif str(type(value)) == \"<class 'numpy.int8'>\" or str(type(value)) == \"<class 'numpy.uint8'>\""
+					+ " or str(type(value)) == \"<class 'numpy.int16'>\" or str(type(value)) == \"<class 'numpy.uint16'>\""
+					+ " or str(type(value)) == \"<class 'numpy.int32'>\" or str(type(value)) == \"<class 'numpy.uint32'>\"" 
+					+ " or str(type(value)) == \"<class 'numpy.int64'>\":" + System.lineSeparator()
 			+ "      n_dic[key] = int(value)" + System.lineSeparator()
 			+ "    elif str(type(value)) == \"<class 'numpy.str_'>\"" + System.lineSeparator()
 			+ "      n_dic[key] = str(value)" + System.lineSeparator()
