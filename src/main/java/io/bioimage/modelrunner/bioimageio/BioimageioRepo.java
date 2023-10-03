@@ -29,6 +29,7 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Map.Entry;
 import java.util.function.Consumer;
 
@@ -374,6 +375,7 @@ public class BioimageioRepo {
 	 * @return the {@link ModelDescriptor} of the model
 	 */
 	public ModelDescriptor selectByID(String modelID) {
+		Objects.requireNonNull(modelID, "Argument 'modelID' cannot be null.");
 		Entry<Path, ModelDescriptor> modelEntry = this.listAllModels(false).entrySet().stream()
 				.filter(ee -> {
 					String id = ee.getValue().getModelID();
@@ -398,6 +400,7 @@ public class BioimageioRepo {
 	 * @return the {@link ModelDescriptor} of the model
 	 */
 	public ModelDescriptor selectByNickname(String nickname) {
+		Objects.requireNonNull(nickname, "Argument 'nickname' cannot be null.");
 		Entry<Path, ModelDescriptor> modelEntry = this.listAllModels(false).entrySet().stream()
 				.filter(ee -> ee.getValue().getNickname() != null
 							&& ee.getValue().getNickname().equals(nickname))
@@ -415,6 +418,7 @@ public class BioimageioRepo {
 	 * @return the {@link ModelDescriptor} of the model
 	 */
 	public ModelDescriptor selectByName(String name) {
+		Objects.requireNonNull(name, "Argument 'name' cannot be null.");
 		Entry<Path, ModelDescriptor> modelEntry = this.listAllModels(false).entrySet().stream()
 				.filter(ee -> ee.getValue().getName().equals(name)).findFirst().orElse(null);
 		if (modelEntry != null)
@@ -431,6 +435,7 @@ public class BioimageioRepo {
 	 * @return the {@link ModelDescriptor} of the model
 	 */
 	public ModelDescriptor selectByRdfSource(String rdfURL) {
+		Objects.requireNonNull(rdfURL, "Argument 'rdfURL' cannot be null.");
 		Entry<Path, ModelDescriptor> modelEntry = this.listAllModels(false).entrySet().stream()
 				.filter(ee -> ee.getValue().getRDFSource().equals(rdfURL)).findFirst().orElse(null);
 		if (modelEntry != null)
