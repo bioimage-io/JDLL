@@ -139,7 +139,7 @@ public class StardistFineTuneJdllOp implements OpInterface {
 	
 	private static final int N_STARDIST_OUTPUTS = 1;
 	
-	private static final String STARDIST_OP_FNAME = "stardist_inference.py";
+	private static final String STARDIST_OP_FNAME = "stardist_fine_tune.py";
 	
 	private static final String STARDIST_2D_AXES = "bxyc";
 	
@@ -167,8 +167,10 @@ public class StardistFineTuneJdllOp implements OpInterface {
 	 * @throws Exception 
 	 */
 	public StardistFineTuneJdllOp finetuneAndCreateNew(String modelToFineTune, String newModelDir) throws IOException, InterruptedException, Exception {
-		Objects.requireNonNull(modelToFineTune, "");
-		Objects.requireNonNull(modelToFineTune, "");
+		Objects.requireNonNull(modelToFineTune, "modelToFineTune' cannot be null. It should correspond to either a Bioimage.io "
+				+ "folder containing a StarDist model, the nickname of a StarDist model in the Bioimage.io (example: chatty-frog) "
+				+ "or to one if the StarDist pre-trained available weigths (example: )");
+		Objects.requireNonNull(newModelDir, "");
 		StardistFineTuneJdllOp op = new StardistFineTuneJdllOp();
 		op.nModelParentPath = newModelDir;
 		op.setModel(modelToFineTune);
@@ -182,7 +184,8 @@ public class StardistFineTuneJdllOp implements OpInterface {
 	}
 	
 	/**
-	 * Create a JDLL OP to fine tune a stardist model with the wanted data.
+	 * Create a JDLL OP to fine tune a stardist model with the wanted data inplace.
+	 * The model created overwrites the weights of the pre-trained model used for finetuning.
 	 * In order to set the data we want to fine tune the model on, use {@link #setFineTuningData(List, List)}
 	 * or {@link #setFineTuningData(Tensor, Tensor)}. The batch size and learning rates
 	 * can also be modified by with {@link #setBatchSize(int)} and {@link #setLearingRate(float)}.
@@ -201,7 +204,6 @@ public class StardistFineTuneJdllOp implements OpInterface {
 	public StardistFineTuneJdllOp finetuneInPlace(String modelToFineTune) throws IOException, InterruptedException, Exception {
 		Objects.requireNonNull(modelToFineTune, "");
 		StardistFineTuneJdllOp op = new StardistFineTuneJdllOp();
-		op.nModelParentPath = newModelDir;
 		op.setModel(modelToFineTune);
 		try {
 			op.findNChannels();
@@ -257,7 +259,7 @@ public class StardistFineTuneJdllOp implements OpInterface {
 	public void installOp() {
 		// TODO this method checks if the OP file is at its correponding folder.
 		// TODO if not unpack the python file and located (where??)
-		opFilePath = "C:\\Users\\angel\\OneDrive\\Documentos\\pasteur\\git\\model-runner-java\\python\\ops\\stardist_inference";
+		opFilePath = "C:\\Users\\angel\\OneDrive\\Documentos\\pasteur\\git\\model-runner-java\\python\\ops\\\\stardist_fine_tune";
 		// TODO check if the env has also been created
 		// TODO if not create it (where??)
 		envPath  = "C:\\Users\\angel\\git\\jep\\miniconda\\envs\\stardist";
@@ -267,10 +269,10 @@ public class StardistFineTuneJdllOp implements OpInterface {
 	public LinkedHashMap<String, Object> getOpInputs() {
 		inputsMap = new LinkedHashMap<String, Object>();
 		inputsMap.put(MODEL_KEY, this.model);
-		inputsMap.put(NEW_MODEL_DIR_KEY, this.nModelPath);
 		inputsMap.put(TRAIN_SAMPLES_KEY, this.trainingSamples);
 		inputsMap.put(GROUND_TRUTH_KEY, this.groundTruth);
-		inputsMap.put(DOWNLOAD_STARDIST_KEY, this.downloadStardistPretrained);
+		inputsMap.put(NEW_MODEL_DIR_KEY, this.nModelPath);
+		// TODO remove inputsMap.put(DOWNLOAD_STARDIST_KEY, this.downloadStardistPretrained);
 		return inputsMap;
 	}
 
@@ -340,11 +342,13 @@ public class StardistFineTuneJdllOp implements OpInterface {
         File renamedFolder = new File(fineTuned);
         if (folder.renameTo(renamedFolder))
         	model = fineTuned;
+        this.nModelPath = model + File.separator + StardistInferJdllOp.STARDIST_FIELD_KEY;
         downloadBioimageioStardistWeights();
 	}
 	
 	private void downloadBioimageioStardistWeights() throws IllegalArgumentException,
 															IOException, Exception {
+		
 		File stardistSubfolder = new File(this.model, StardistInferJdllOp.STARDIST_FIELD_KEY);
         if (!stardistSubfolder.exists()) {
             if (!stardistSubfolder.mkdirs()) {
@@ -395,15 +399,14 @@ public class StardistFineTuneJdllOp implements OpInterface {
 					+ "model at: " + this.model + " is invalid. The field config>stardist>" + STARDIST_THRES_KEY + " is missing."
 					+ " Look for StarDist models in the Bioimage.io repo to see how the rdf.yaml should look like.");
 		}
-		String subfolder = this.model + File.separator + StardistInferJdllOp.STARDIST_FIELD_KEY;
 		int w = trainingSamples.getShape()[trainingSamples.getAxesOrderString().indexOf("x")];
 		int h = trainingSamples.getShape()[trainingSamples.getAxesOrderString().indexOf("y")];
 		((Map<String, Object>) config).put(PATCH_SIZE_KEY, new int[] {w, h});
 		((Map<String, Object>) config).put(BATCH_SIZE_KEY, this.batchSize);
 		((Map<String, Object>) config).put(LR_KEY, this.lr);
 		((Map<String, Object>) config).put(EPOCHS_KEY, this.epochs);
-		YAMLUtils.writeYamlFile(subfolder + File.separator + CONFIG_JSON, (Map<String, Object>) config);
-		YAMLUtils.writeYamlFile(opFilePath + File.separator + THRES_JSON, (Map<String, Object>) thres);
+		YAMLUtils.writeYamlFile(model + File.separator + CONFIG_JSON, (Map<String, Object>) config);
+		YAMLUtils.writeYamlFile(model + File.separator + THRES_JSON, (Map<String, Object>) thres);
 	}
 	
 	private void setUpKerasWeights() throws IOException, Exception {
@@ -411,9 +414,10 @@ public class StardistFineTuneJdllOp implements OpInterface {
 		ModelDescriptor descriptor = ModelDescriptor.readFromLocalFile(rdfYamlFN);
 		String stardistWeights = this.model + File.separator +  StardistInferJdllOp.STARDIST_FIELD_KEY;
 		stardistWeights += File.separator + STARDIST_WEIGHTS_FILE;
-		if (new File(stardistWeights).exists())
-			return;
 		String stardistWeightsParent = this.model + File.separator + STARDIST_WEIGHTS_FILE;
+		model = model + File.separator +  StardistInferJdllOp.STARDIST_FIELD_KEY;
+		if (new File(stardistWeights).exists()) 
+			return;
 		if (new File(stardistWeights).exists()) {
 			try {
 	            Files.copy(Paths.get(stardistWeightsParent), Paths.get(stardistWeights), StandardCopyOption.REPLACE_EXISTING);
@@ -547,7 +551,8 @@ public class StardistFineTuneJdllOp implements OpInterface {
 		} else if (this.downloadStardistPretrained && PRETRAINED_3C_STARDIST_MODELS.keySet().contains(this.model)) {
 			this.nChannelsModel = 3;
 		}
-		ModelDescriptor descriptor = ModelDescriptor.readFromLocalFile(model, false);
+		String rdfFileName = new File(model).getParentFile() + File.separator + Constants.RDF_FNAME;
+		ModelDescriptor descriptor = ModelDescriptor.readFromLocalFile(rdfFileName, false);
 		int cInd = descriptor.getInputTensors().get(0).getAxesOrder().indexOf("c");
 		nChannelsModel = descriptor.getInputTensors().get(0).getShape().getPatchMinimumSize()[cInd];
 	}

@@ -4,6 +4,7 @@ from stardist.models import StarDist2D
 import os
 import shutil
 import os
+from pathlib import Path
 
 
 def assertions(model, images, ground_truth, new_model_dir):
@@ -50,7 +51,8 @@ def finetune_stardist(model, images, ground_truth, new_model_dir):
   # finetune on new data
   history = model.train(X,Y, validation_data=(X,Y))
 
-  model.keras_model.save("test.h5")
-  model.export_TF()
+  Path(new_model_dir).mkdir(parents=True, exist_ok=True)
+  model.keras_model.save(new_model_dir)
+  model.export_TF(os.path.join(os.path.dirname(new_model_dir), "tf_weights.zip"))
 
   return history.loss, history.rest_losses
