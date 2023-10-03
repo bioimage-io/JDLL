@@ -21,8 +21,6 @@
 package io.bioimage.modelrunner.tensor;
 
 import java.nio.ByteBuffer;
-import java.nio.charset.StandardCharsets;
-import java.util.Arrays;
 
 import net.imglib2.Cursor;
 import net.imglib2.RandomAccessibleInterval;
@@ -33,7 +31,10 @@ import net.imglib2.type.numeric.RealType;
 import net.imglib2.type.numeric.integer.ByteType;
 import net.imglib2.type.numeric.integer.IntType;
 import net.imglib2.type.numeric.integer.LongType;
+import net.imglib2.type.numeric.integer.ShortType;
 import net.imglib2.type.numeric.integer.UnsignedByteType;
+import net.imglib2.type.numeric.integer.UnsignedIntType;
+import net.imglib2.type.numeric.integer.UnsignedShortType;
 import net.imglib2.type.numeric.real.DoubleType;
 import net.imglib2.type.numeric.real.FloatType;
 import net.imglib2.util.Util;
@@ -90,13 +91,23 @@ public final class ImgLib2ToArray
     public static <T extends Type<T>> Object build(RandomAccessibleInterval<T> rai)
     {
     	if (Util.getTypeFromInterval(rai) instanceof ByteType) {
-    		return buildByte((RandomAccessibleInterval<ByteType>) rai);
+    		return buildInt8((RandomAccessibleInterval<ByteType>) rai);
+    	} else if (Util.getTypeFromInterval(rai) instanceof UnsignedByteType) {
+    		return buildUint8((RandomAccessibleInterval<UnsignedByteType>) rai);
+    	} else if (Util.getTypeFromInterval(rai) instanceof ShortType) {
+    		return buildInt16((RandomAccessibleInterval<ShortType>) rai);
+    	} else if (Util.getTypeFromInterval(rai) instanceof UnsignedShortType) {
+    		return buildUint16((RandomAccessibleInterval<UnsignedShortType>) rai);
     	} else if (Util.getTypeFromInterval(rai) instanceof IntType) {
-    		return buildInt((RandomAccessibleInterval<IntType>) rai);
+    		return buildInt32((RandomAccessibleInterval<IntType>) rai);
+    	} else if (Util.getTypeFromInterval(rai) instanceof UnsignedIntType) {
+    		return buildUint32((RandomAccessibleInterval<UnsignedIntType>) rai);
+    	} else if (Util.getTypeFromInterval(rai) instanceof LongType) {
+    		return buildInt64((RandomAccessibleInterval<LongType>) rai);
     	} else if (Util.getTypeFromInterval(rai) instanceof FloatType) {
-    		return buildFloat((RandomAccessibleInterval<FloatType>) rai);
+    		return buildFloat32((RandomAccessibleInterval<FloatType>) rai);
     	} else if (Util.getTypeFromInterval(rai) instanceof DoubleType) {
-    		return buildDouble((RandomAccessibleInterval<DoubleType>) rai);
+    		return buildFloat64((RandomAccessibleInterval<DoubleType>) rai);
     	} else {
             throw new IllegalArgumentException("The image has an unsupported type: " + Util.getTypeFromInterval(rai).getClass().toString());
     	}
@@ -111,7 +122,7 @@ public final class ImgLib2ToArray
      * @param byteBuffer 
      * 	target bytebuffer
      */
-    private static byte[] buildByte(RandomAccessibleInterval<ByteType> imgTensor)
+    private static byte[] buildInt8(RandomAccessibleInterval<ByteType> imgTensor)
     {
     	Cursor<ByteType> tensorCursor;
 		if (imgTensor instanceof IntervalView)
@@ -133,6 +144,96 @@ public final class ImgLib2ToArray
     }
 
     /**
+     * Adds the ByteType {@link RandomAccessibleInterval} data to the {@link ByteBuffer} provided.
+     * The position of the ByteBuffer is kept in the same place as it was received.
+     * 
+     * @param imgTensor 
+     * 	{@link RandomAccessibleInterval} to be mapped into byte buffer
+     * @param byteBuffer 
+     * 	target bytebuffer
+     */
+    private static short[] buildUint8(RandomAccessibleInterval<UnsignedByteType> imgTensor)
+    {
+    	Cursor<UnsignedByteType> tensorCursor;
+		if (imgTensor instanceof IntervalView)
+			tensorCursor = ((IntervalView<UnsignedByteType>) imgTensor).cursor();
+		else if (imgTensor instanceof Img)
+			tensorCursor = ((Img<UnsignedByteType>) imgTensor).cursor();
+		else
+			throw new IllegalArgumentException("The data of the " + Tensor.class + " has "
+					+ "to be an instance of " + Img.class + " or " + IntervalView.class);
+		long flatSize = 1;
+		for (long ss : imgTensor.dimensionsAsLongArray()) {flatSize *= ss;}
+		short[] byteArr = new short[(int) flatSize];
+		int cc =  0;
+		while (tensorCursor.hasNext()) {
+			tensorCursor.fwd();
+			byteArr[cc ++] = tensorCursor.get().getByte();
+		}
+		return byteArr;
+    }
+
+    /**
+     * Adds the ByteType {@link RandomAccessibleInterval} data to the {@link ByteBuffer} provided.
+     * The position of the ByteBuffer is kept in the same place as it was received.
+     * 
+     * @param imgTensor 
+     * 	{@link RandomAccessibleInterval} to be mapped into byte buffer
+     * @param byteBuffer 
+     * 	target bytebuffer
+     */
+    private static short[] buildInt16(RandomAccessibleInterval<ShortType> imgTensor)
+    {
+    	Cursor<ShortType> tensorCursor;
+		if (imgTensor instanceof IntervalView)
+			tensorCursor = ((IntervalView<ShortType>) imgTensor).cursor();
+		else if (imgTensor instanceof Img)
+			tensorCursor = ((Img<ShortType>) imgTensor).cursor();
+		else
+			throw new IllegalArgumentException("The data of the " + Tensor.class + " has "
+					+ "to be an instance of " + Img.class + " or " + IntervalView.class);
+		long flatSize = 1;
+		for (long ss : imgTensor.dimensionsAsLongArray()) {flatSize *= ss;}
+		short[] byteArr = new short[(int) flatSize];
+		int cc =  0;
+		while (tensorCursor.hasNext()) {
+			tensorCursor.fwd();
+			byteArr[cc ++] = tensorCursor.get().get();
+		}
+		return byteArr;
+    }
+
+    /**
+     * Adds the ByteType {@link RandomAccessibleInterval} data to the {@link ByteBuffer} provided.
+     * The position of the ByteBuffer is kept in the same place as it was received.
+     * 
+     * @param imgTensor 
+     * 	{@link RandomAccessibleInterval} to be mapped into byte buffer
+     * @param byteBuffer 
+     * 	target bytebuffer
+     */
+    private static int[] buildUint16(RandomAccessibleInterval<UnsignedShortType> imgTensor)
+    {
+    	Cursor<UnsignedShortType> tensorCursor;
+		if (imgTensor instanceof IntervalView)
+			tensorCursor = ((IntervalView<UnsignedShortType>) imgTensor).cursor();
+		else if (imgTensor instanceof Img)
+			tensorCursor = ((Img<UnsignedShortType>) imgTensor).cursor();
+		else
+			throw new IllegalArgumentException("The data of the " + Tensor.class + " has "
+					+ "to be an instance of " + Img.class + " or " + IntervalView.class);
+		long flatSize = 1;
+		for (long ss : imgTensor.dimensionsAsLongArray()) {flatSize *= ss;}
+		int[] byteArr = new int[(int) flatSize];
+		int cc =  0;
+		while (tensorCursor.hasNext()) {
+			tensorCursor.fwd();
+			byteArr[cc ++] = tensorCursor.get().get();
+		}
+		return byteArr;
+    }
+
+    /**
      * Adds the IntType {@link RandomAccessibleInterval} data to the {@link ByteBuffer} provided.
      * The position of the ByteBuffer is kept in the same place as it was received.
      * 
@@ -141,7 +242,7 @@ public final class ImgLib2ToArray
      * @param byteBuffer 
      * 	target bytebuffer
      */
-    private static int[] buildInt(RandomAccessibleInterval<IntType> imgTensor)
+    private static int[] buildInt32(RandomAccessibleInterval<IntType> imgTensor)
     {
     	Cursor<IntType> tensorCursor;
 		if (imgTensor instanceof IntervalView)
@@ -163,6 +264,66 @@ public final class ImgLib2ToArray
     }
 
     /**
+     * Adds the IntType {@link RandomAccessibleInterval} data to the {@link ByteBuffer} provided.
+     * The position of the ByteBuffer is kept in the same place as it was received.
+     * 
+     * @param imgTensor 
+     * 	{@link RandomAccessibleInterval} to be mapped into byte buffer
+     * @param byteBuffer 
+     * 	target bytebuffer
+     */
+    private static long[] buildUint32(RandomAccessibleInterval<UnsignedIntType> imgTensor)
+    {
+    	Cursor<UnsignedIntType> tensorCursor;
+		if (imgTensor instanceof IntervalView)
+			tensorCursor = ((IntervalView<UnsignedIntType>) imgTensor).cursor();
+		else if (imgTensor instanceof Img)
+			tensorCursor = ((Img<UnsignedIntType>) imgTensor).cursor();
+		else
+			throw new IllegalArgumentException("The data of the " + Tensor.class + " has "
+					+ "to be an instance of " + Img.class + " or " + IntervalView.class);
+		long flatSize = 1;
+		for (long ss : imgTensor.dimensionsAsLongArray()) {flatSize *= ss;}
+		long[] byteArr = new long[(int) flatSize];
+		int cc =  0;
+		while (tensorCursor.hasNext()) {
+			tensorCursor.fwd();
+			byteArr[cc ++] = tensorCursor.get().get();
+		}
+		return byteArr;
+    }
+
+    /**
+     * Adds the IntType {@link RandomAccessibleInterval} data to the {@link ByteBuffer} provided.
+     * The position of the ByteBuffer is kept in the same place as it was received.
+     * 
+     * @param imgTensor 
+     * 	{@link RandomAccessibleInterval} to be mapped into byte buffer
+     * @param byteBuffer 
+     * 	target bytebuffer
+     */
+    private static long[] buildInt64(RandomAccessibleInterval<LongType> imgTensor)
+    {
+    	Cursor<LongType> tensorCursor;
+		if (imgTensor instanceof IntervalView)
+			tensorCursor = ((IntervalView<LongType>) imgTensor).cursor();
+		else if (imgTensor instanceof Img)
+			tensorCursor = ((Img<LongType>) imgTensor).cursor();
+		else
+			throw new IllegalArgumentException("The data of the " + Tensor.class + " has "
+					+ "to be an instance of " + Img.class + " or " + IntervalView.class);
+		long flatSize = 1;
+		for (long ss : imgTensor.dimensionsAsLongArray()) {flatSize *= ss;}
+		long[] byteArr = new long[(int) flatSize];
+		int cc =  0;
+		while (tensorCursor.hasNext()) {
+			tensorCursor.fwd();
+			byteArr[cc ++] = tensorCursor.get().get();
+		}
+		return byteArr;
+    }
+
+    /**
      * Adds the FloatType {@link RandomAccessibleInterval} data to the {@link ByteBuffer} provided.
      * The position of the ByteBuffer is kept in the same place as it was received.
      * 
@@ -171,7 +332,7 @@ public final class ImgLib2ToArray
      * @param byteBuffer 
      * 	target bytebuffer
      */
-    private static float[] buildFloat(RandomAccessibleInterval<FloatType> imgTensor)
+    private static float[] buildFloat32(RandomAccessibleInterval<FloatType> imgTensor)
     {
     	Cursor<FloatType> tensorCursor;
 		if (imgTensor instanceof IntervalView)
@@ -201,7 +362,7 @@ public final class ImgLib2ToArray
      * @param byteBuffer 
      * 	target bytebuffer
      */
-    private static double[] buildDouble(RandomAccessibleInterval<DoubleType> imgTensor)
+    private static double[] buildFloat64(RandomAccessibleInterval<DoubleType> imgTensor)
     {
     	Cursor<DoubleType> tensorCursor;
 		if (imgTensor instanceof IntervalView)
