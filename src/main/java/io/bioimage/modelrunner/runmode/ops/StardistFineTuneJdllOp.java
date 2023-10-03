@@ -39,9 +39,13 @@ import io.bioimage.modelrunner.bioimageio.BioimageioRepo;
 import io.bioimage.modelrunner.bioimageio.description.ModelDescriptor;
 import io.bioimage.modelrunner.bioimageio.download.DownloadModel;
 import io.bioimage.modelrunner.engine.installation.FileDownloader;
+import io.bioimage.modelrunner.runmode.RunMode;
 import io.bioimage.modelrunner.tensor.Tensor;
 import io.bioimage.modelrunner.utils.Constants;
 import io.bioimage.modelrunner.utils.YAMLUtils;
+import net.imglib2.img.Img;
+import net.imglib2.img.ImgFactory;
+import net.imglib2.img.array.ArrayImgFactory;
 import net.imglib2.type.NativeType;
 import net.imglib2.type.numeric.RealType;
 import net.imglib2.type.numeric.integer.UnsignedShortType;
@@ -141,11 +145,25 @@ public class StardistFineTuneJdllOp implements OpInterface {
 	
 	private static final String STARDIST_OP_FNAME = "stardist_fine_tune.py";
 	
-	private static final String STARDIST_2D_AXES = "bxyc";
+	private static final String STARDIST_2D_AXES = "byxc";
 	
-	private static final String STARDIST_3D_AXES = "bxyzc";
+	private static final String STARDIST_3D_AXES = "bzyxc";
 	
-	private static final String GROUNDTRUTH_AXES = "bxy";
+	private static final String GROUNDTRUTH_AXES = "byx";
+	
+
+	public static void main(String[] args) throws IOException, InterruptedException, Exception {
+		final ImgFactory< FloatType > imgFactory = new ArrayImgFactory<>( new FloatType() );
+		final Img< FloatType > img1 = imgFactory.create( 2, 64, 64, 3 );
+		final ImgFactory< FloatType > gtFactory = new ArrayImgFactory<>( new FloatType() );
+		final Img< FloatType > gt = gtFactory.create( 2, 64, 64 );
+		Tensor<FloatType> inpTensor = Tensor.build("input0", "bxy", img1);
+		String modelName = "C:\\Users\\angel\\OneDrive\\Documentos\\pasteur\\git\\model-runner-java\\models";
+		StardistFineTuneJdllOp op = finetuneAndCreateNew("chatty-frog", modelName);
+		RunMode rm = RunMode.createRunMode(op);
+		Map<String, Object> aa = rm.runOP();
+		System.out.print(false);
+	}
 	
 	/**
 	 * Create a JDLL OP to fine tune a stardist model with the wanted data.
@@ -166,7 +184,7 @@ public class StardistFineTuneJdllOp implements OpInterface {
 	 * @throws IOException 
 	 * @throws Exception 
 	 */
-	public StardistFineTuneJdllOp finetuneAndCreateNew(String modelToFineTune, String newModelDir) throws IOException, InterruptedException, Exception {
+	public static StardistFineTuneJdllOp finetuneAndCreateNew(String modelToFineTune, String newModelDir) throws IOException, InterruptedException, Exception {
 		Objects.requireNonNull(modelToFineTune, "modelToFineTune' cannot be null. It should correspond to either a Bioimage.io "
 				+ "folder containing a StarDist model, the nickname of a StarDist model in the Bioimage.io (example: chatty-frog) "
 				+ "or to one if the StarDist pre-trained available weigths (example: )");
@@ -178,7 +196,7 @@ public class StardistFineTuneJdllOp implements OpInterface {
 			op.findNChannels();
 		} catch (Exception e) {
 			throw new IllegalArgumentException("Unable to correctly read the rdf.yaml file "
-					+ "of Bioimage.io StarDist model at :" + this.model, e);
+					+ "of Bioimage.io StarDist model at :" + new File(op.model).getParent(), e);
 		}
 		return op;
 	}
@@ -201,7 +219,7 @@ public class StardistFineTuneJdllOp implements OpInterface {
 	 * @throws IOException 
 	 * @throws Exception 
 	 */
-	public StardistFineTuneJdllOp finetuneInPlace(String modelToFineTune) throws IOException, InterruptedException, Exception {
+	public static StardistFineTuneJdllOp finetuneInPlace(String modelToFineTune) throws IOException, InterruptedException, Exception {
 		Objects.requireNonNull(modelToFineTune, "");
 		StardistFineTuneJdllOp op = new StardistFineTuneJdllOp();
 		op.setModel(modelToFineTune);
@@ -209,7 +227,7 @@ public class StardistFineTuneJdllOp implements OpInterface {
 			op.findNChannels();
 		} catch (Exception e) {
 			throw new IllegalArgumentException("Unable to correctly read the rdf.yaml file "
-					+ "of Bioimage.io StarDist model at :" + this.model, e);
+					+ "of Bioimage.io StarDist model at :" + new File(op.model).getParent(), e);
 		}
 		return op;
 	}
