@@ -155,11 +155,16 @@ public class StardistFineTuneJdllOp implements OpInterface {
 	public static void main(String[] args) throws IOException, InterruptedException, Exception {
 		final ImgFactory< FloatType > imgFactory = new ArrayImgFactory<>( new FloatType() );
 		final Img< FloatType > img1 = imgFactory.create( 2, 64, 64, 3 );
+		Tensor<FloatType> inpTensor = Tensor.build("input0", "byxc", img1);
 		final ImgFactory< FloatType > gtFactory = new ArrayImgFactory<>( new FloatType() );
 		final Img< FloatType > gt = gtFactory.create( 2, 64, 64 );
-		Tensor<FloatType> inpTensor = Tensor.build("input0", "bxy", img1);
+		Tensor<FloatType> gtTensor = Tensor.build("gt", "byx", gt);
 		String modelName = "C:\\Users\\angel\\OneDrive\\Documentos\\pasteur\\git\\model-runner-java\\models";
 		StardistFineTuneJdllOp op = finetuneAndCreateNew("chatty-frog", modelName);
+		op.setBatchSize(2);
+		op.setEpochs(2);
+		op.setFineTuningData(inpTensor, gtTensor);
+		op.setLearingRate((float) 1e-5);
 		RunMode rm = RunMode.createRunMode(op);
 		Map<String, Object> aa = rm.runOP();
 		System.out.print(false);
@@ -242,7 +247,6 @@ public class StardistFineTuneJdllOp implements OpInterface {
 		checkTrainAndGroundTruthDimensions(trainingSamples, groundTruth);
 		setTrainingSamples(trainingSamples);
 		setGroundTruth(groundTruth);
-		setUpConfigs();
 	}
 	
 	public void setBatchSize(int batchSize) {
@@ -284,13 +288,14 @@ public class StardistFineTuneJdllOp implements OpInterface {
 	}
 
 	@Override
-	public LinkedHashMap<String, Object> getOpInputs() {
+	public LinkedHashMap<String, Object> getOpInputs() throws IOException, Exception {
 		inputsMap = new LinkedHashMap<String, Object>();
 		inputsMap.put(MODEL_KEY, this.model);
 		inputsMap.put(TRAIN_SAMPLES_KEY, this.trainingSamples);
 		inputsMap.put(GROUND_TRUTH_KEY, this.groundTruth);
 		inputsMap.put(NEW_MODEL_DIR_KEY, this.nModelPath);
 		// TODO remove inputsMap.put(DOWNLOAD_STARDIST_KEY, this.downloadStardistPretrained);
+		setUpConfigs();
 		return inputsMap;
 	}
 

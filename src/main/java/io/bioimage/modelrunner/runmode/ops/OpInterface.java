@@ -19,6 +19,7 @@
  */
 package io.bioimage.modelrunner.runmode.ops;
 
+import java.io.IOException;
 import java.util.LinkedHashMap;
 
 /**
@@ -51,8 +52,9 @@ public interface OpInterface {
 	 * Get a LinkedHashMap contianing the inputs defined for the OP
 	 * @return an ordered map with the inputs to the OP, where the key
 	 * is the variable name and the object is the variable
+	 * @throws Exception if there is any error handling the inputs to the Python OP
 	 */
-	public LinkedHashMap<String, Object> getOpInputs();
+	public LinkedHashMap<String, Object> getOpInputs() throws Exception ;
 	/**
 	 * Get the Conda env needed to run the OP
 	 * 
