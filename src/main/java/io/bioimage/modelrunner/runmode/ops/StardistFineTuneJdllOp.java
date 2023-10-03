@@ -42,6 +42,7 @@ import io.bioimage.modelrunner.engine.installation.FileDownloader;
 import io.bioimage.modelrunner.runmode.RunMode;
 import io.bioimage.modelrunner.tensor.Tensor;
 import io.bioimage.modelrunner.utils.Constants;
+import io.bioimage.modelrunner.utils.JSONUtils;
 import io.bioimage.modelrunner.utils.YAMLUtils;
 import net.imglib2.img.Img;
 import net.imglib2.img.ImgFactory;
@@ -161,6 +162,7 @@ public class StardistFineTuneJdllOp implements OpInterface {
 		Tensor<FloatType> gtTensor = Tensor.build("gt", "byx", gt);
 		String modelName = "C:\\Users\\angel\\OneDrive\\Documentos\\pasteur\\git\\model-runner-java\\models";
 		StardistFineTuneJdllOp op = finetuneAndCreateNew("chatty-frog", modelName);
+		op.installOp();
 		op.setBatchSize(2);
 		op.setEpochs(2);
 		op.setFineTuningData(inpTensor, gtTensor);
@@ -402,14 +404,14 @@ public class StardistFineTuneJdllOp implements OpInterface {
 		} else if (!(new File(model + File.separator + THRES_JSON).exists())) {
 			throw new IOException("Missing necessary file for StarDist: " + THRES_JSON);
 		} else {
-			Map<String, Object> config = YAMLUtils.load(model + File.separator + CONFIG_JSON);
+			Map<String, Object> config = JSONUtils.load(model + File.separator + CONFIG_JSON);
 			int w = trainingSamples.getShape()[trainingSamples.getAxesOrderString().indexOf("x")];
 			int h = trainingSamples.getShape()[trainingSamples.getAxesOrderString().indexOf("y")];
 			config.put(PATCH_SIZE_KEY, new int[] {w, h});
 			config.put(BATCH_SIZE_KEY, this.batchSize);
 			config.put(LR_KEY, this.lr);
 			config.put(EPOCHS_KEY, this.epochs);
-			YAMLUtils.writeYamlFile(model + File.separator + CONFIG_JSON, (Map<String, Object>) config);
+			JSONUtils.writeJSONFile(model + File.separator + CONFIG_JSON, (Map<String, Object>) config);
 		}
 	}
 	
@@ -442,8 +444,8 @@ public class StardistFineTuneJdllOp implements OpInterface {
 		((Map<String, Object>) config).put(BATCH_SIZE_KEY, this.batchSize);
 		((Map<String, Object>) config).put(LR_KEY, this.lr);
 		((Map<String, Object>) config).put(EPOCHS_KEY, this.epochs);
-		YAMLUtils.writeYamlFile(model + File.separator + CONFIG_JSON, (Map<String, Object>) config);
-		YAMLUtils.writeYamlFile(model + File.separator + THRES_JSON, (Map<String, Object>) thres);
+		JSONUtils.writeJSONFile(model + File.separator + CONFIG_JSON, (Map<String, Object>) config);
+		JSONUtils.writeJSONFile(model + File.separator + THRES_JSON, (Map<String, Object>) thres);
 	}
 	
 	private void setUpKerasWeights() throws IOException, Exception {

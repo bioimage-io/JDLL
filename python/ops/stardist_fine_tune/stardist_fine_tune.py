@@ -19,17 +19,17 @@ def assertions(model, images, ground_truth, new_model_dir):
   assert isinstance(ground_truth, xr.DataArray), "the ground thruth should be a xr.DataArray"
 
   assert  images.ndim == 4, "the training samples array must have 4 dimensions"
-  assert  ground_truth.ndim == 4, "the training samples array must have 4 dimensions"
+  assert  ground_truth.ndim == 3, "the training samples array must have 3 dimensions"
 
-  assert "".join(images.dims) == "bxyc", "the training samples axes order should be 'bxyc', not '" + "".join(images.dims) +  "' as provided."
-  assert "".join(ground_truth.dims) == "bxy", "the ground truth samples axes order should be 'bxy', not '" + "".join(ground_truth.dims) +  "' as provided."
+  assert "".join(images.dims) == "byxc", "the training samples axes order should be 'byxc', not '" + "".join(images.dims) +  "' as provided."
+  assert "".join(ground_truth.dims) == "byx", "the ground truth samples axes order should be 'byx', not '" + "".join(ground_truth.dims) +  "' as provided."
 
   axes_dict = {"batch size": 0, "width": 1, "height": 2}
 
   for ks, vs in axes_dict.items():
     assert images.shape[vs] == ground_truth.shape[vs], "The training samples " \
-    + "and the ground truth need to have the same " + ks + " : "
-    + images.shape[vs] + " vs " + ground_truth.shape[vs]
+    + "and the ground truth need to have the same " + ks + " : " \
+    + str(images.shape[vs]) + " vs " + str(ground_truth.shape[vs])
 
 
 def finetune_stardist(model, images, ground_truth, new_model_dir):
@@ -55,4 +55,4 @@ def finetune_stardist(model, images, ground_truth, new_model_dir):
   model.keras_model.save(new_model_dir)
   model.export_TF(os.path.join(os.path.dirname(new_model_dir), "tf_weights.zip"))
 
-  return history.loss, history.rest_losses
+  return history.loss, history.loss
