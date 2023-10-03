@@ -394,7 +394,8 @@ public class StardistFineTuneJdllOp implements OpInterface {
 	}
 	
 	private void setUpConfigs() throws IOException, Exception {
-		if (new File(model + File.separator + Constants.RDF_FNAME).exists()) {
+		String rdfDir = new File(model).getParent();
+		if (new File(rdfDir + File.separator + Constants.RDF_FNAME).exists()) {
 			setUpConfigsBioimageio();
 		} else if (!(new File(model + File.separator + CONFIG_JSON).exists())) {
 			throw new IOException("Missing necessary file for StarDist: " + CONFIG_JSON);
@@ -414,7 +415,8 @@ public class StardistFineTuneJdllOp implements OpInterface {
 	
 	@SuppressWarnings("unchecked")
 	private void setUpConfigsBioimageio() throws IOException, Exception {
-		ModelDescriptor descriptor = ModelDescriptor.readFromLocalFile(this.model + File.separator + Constants.RDF_FNAME);
+		String rdfDir = new File(model).getParent();
+		ModelDescriptor descriptor = ModelDescriptor.readFromLocalFile(rdfDir + File.separator + Constants.RDF_FNAME);
 		Object stardistInfo = descriptor.getConfig().getSpecMap().get(StardistInferJdllOp.STARDIST_FIELD_KEY);
 		
 		if (stardistInfo == null || !(stardistInfo instanceof Map)) {
@@ -516,7 +518,7 @@ public class StardistFineTuneJdllOp implements OpInterface {
 		String stardistAxes = STARDIST_2D_AXES;
 		if (axes.length() == 5)
 			stardistAxes = STARDIST_3D_AXES;
-		else if (axes.length() < 5)
+		else if (axes.length() != 5 && axes.length() != 4)
 			throw new IllegalArgumentException("Training input tensors should have 4 dimensions ("
 					+ STARDIST_2D_AXES + ") or 5 (" + STARDIST_3D_AXES + "), but it has " + axes.length() + " (" + axes + ").");
 		
@@ -542,10 +544,8 @@ public class StardistFineTuneJdllOp implements OpInterface {
 			if (trueInd == -1)
 				throw new IllegalArgumentException("The " + errMsgObject + " tensors provided should have dimension '"
 						+ stardistAxes.split("")[c] + "' in the axes order, but it does not (" + axes + ").");
-			else if (trueInd == c) {
-				c ++;
+			else if (trueInd == c)
 				continue;
-			}
 			IntervalView<T> wrapImg = Views.permute(tensor.getData(), trueInd, c);
 			StringBuilder nAxes = new StringBuilder(axes);
 			nAxes.setCharAt(c, stardistAxes.charAt(c));
