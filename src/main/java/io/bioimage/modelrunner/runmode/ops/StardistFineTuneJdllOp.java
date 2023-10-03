@@ -416,7 +416,7 @@ public class StardistFineTuneJdllOp implements OpInterface {
 	@SuppressWarnings("unchecked")
 	private void setUpConfigsBioimageio() throws IOException, Exception {
 		String rdfDir = new File(model).getParent();
-		ModelDescriptor descriptor = ModelDescriptor.readFromLocalFile(rdfDir + File.separator + Constants.RDF_FNAME);
+		ModelDescriptor descriptor = ModelDescriptor.readFromLocalFile(rdfDir + File.separator + Constants.RDF_FNAME, false);
 		Object stardistInfo = descriptor.getConfig().getSpecMap().get(StardistInferJdllOp.STARDIST_FIELD_KEY);
 		
 		if (stardistInfo == null || !(stardistInfo instanceof Map)) {
@@ -448,7 +448,7 @@ public class StardistFineTuneJdllOp implements OpInterface {
 	
 	private void setUpKerasWeights() throws IOException, Exception {
 		String rdfYamlFN = this.model + File.separator + Constants.RDF_FNAME;
-		ModelDescriptor descriptor = ModelDescriptor.readFromLocalFile(rdfYamlFN);
+		ModelDescriptor descriptor = ModelDescriptor.readFromLocalFile(rdfYamlFN, false);
 		String stardistWeights = this.model + File.separator +  StardistInferJdllOp.STARDIST_FIELD_KEY;
 		stardistWeights += File.separator + STARDIST_WEIGHTS_FILE;
 		String stardistWeightsParent = this.model + File.separator + STARDIST_WEIGHTS_FILE;
