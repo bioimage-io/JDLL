@@ -288,9 +288,15 @@ public class StardistFineTuneJdllOp implements OpInterface {
 	}
 
 	@Override
-	public LinkedHashMap<String, Object> getOpInputs() throws IOException, Exception {
+	public LinkedHashMap<String, Object> getOpInputs() throws Exception {
 		inputsMap = new LinkedHashMap<String, Object>();
+		Objects.requireNonNull(trainingSamples, "Please make sure that the training samples have "
+				+ "been provided and that they are not null.Use the method: "
+				+ "setFineTuningData(Tensor<T> trainingSamples, Tensor<T> groundTruth)");
 		inputsMap.put(MODEL_KEY, this.model);
+		Objects.requireNonNull(groundTruth, "Please make sure that the ground truth has "
+				+ "been provided and that it is not null.Use the method: "
+				+ "setFineTuningData(Tensor<T> trainingSamples, Tensor<T> groundTruth)");
 		inputsMap.put(TRAIN_SAMPLES_KEY, this.trainingSamples);
 		inputsMap.put(GROUND_TRUTH_KEY, this.groundTruth);
 		inputsMap.put(NEW_MODEL_DIR_KEY, this.nModelPath);

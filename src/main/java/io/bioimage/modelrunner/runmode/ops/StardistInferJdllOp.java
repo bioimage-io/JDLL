@@ -69,7 +69,7 @@ public class StardistInferJdllOp implements OpInterface {
 	private static final String STARDIST_OP_FNAME = "stardist_inference.py";
 	
 	
-	public static void main(String[] args) {
+	public static void main(String[] args) throws Exception {
 		final ImgFactory< FloatType > imgFactory = new ArrayImgFactory<>( new FloatType() );
 		final Img< FloatType > img1 = imgFactory.create( 1, 512, 512, 3 );
 		Tensor<FloatType> inpTensor = Tensor.build("input0", "byxc", img1);
