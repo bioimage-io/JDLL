@@ -75,6 +75,19 @@ public class RunModeScripts {
 			+ "      n_list.append(" + DICT_METHOD + "(value))" + System.lineSeparator()
 			+ "    elif isinstance(value, list):" + System.lineSeparator()
 			+ "      n_list.append(" + LIST_METHOD + "(value))" + System.lineSeparator()
+			+ "    elif str(type(value)) == \"<class 'numpy.float32'>\""
+					+ " || str(type(value)) == \"<class 'numpy.float16'>\""
+					+ " || str(type(value)) == \"<class 'numpy.float64'>\":" + System.lineSeparator()
+			+ "      n_list.append(float(value))" + System.lineSeparator()
+			+ "    elif str(type(value)) == \"<class 'numpy.int8'>\" || str(type(value)) == \"<class 'numpy.uint8'>\""
+					+ " || str(type(value)) == \"<class 'numpy.int16'>\" || str(type(value)) == \"<class 'numpy.uint16'>\""
+					+ " || str(type(value)) == \"<class 'numpy.int32'>\" || str(type(value)) == \"<class 'numpy.uint32'>\"" 
+					+ " || str(type(value)) == \"<class 'numpy.int64'>\":" + System.lineSeparator()
+			+ "      n_list.append(int(value))" + System.lineSeparator()
+			+ "    elif str(type(value)) == \"<class 'numpy.str_'>\"" + System.lineSeparator()
+			+ "      n_list.append(str(value))" + System.lineSeparator()
+			+ "    elif str(type(value)) == \"<class 'numpy.bool_'>\"" + System.lineSeparator()
+			+ "      n_list.append(bool(value))" + System.lineSeparator()
 			+ "    else:" + System.lineSeparator()
 			+ "      n_list.append(value)" + System.lineSeparator()
 			+ "  return n_list" + System.lineSeparator()
@@ -90,6 +103,19 @@ public class RunModeScripts {
 			+ "      n_dic[key] = " + DICT_METHOD + "(value)" + System.lineSeparator()
 			+ "    elif isinstance(value, list):" + System.lineSeparator()
 			+ "      n_dic[key] = " + LIST_METHOD + "(value)" + System.lineSeparator()
+			+ "    elif str(type(value)) == \"<class 'numpy.float32'>\""
+					+ " || str(type(value)) == \"<class 'numpy.float16'>\""
+					+ " || str(type(value)) == \"<class 'numpy.float64'>\":" + System.lineSeparator()
+			+ "      n_dic[key] = float(value)" + System.lineSeparator()
+			+ "    elif str(type(value)) == \"<class 'numpy.int8'>\" || str(type(value)) == \"<class 'numpy.uint8'>\""
+					+ " || str(type(value)) == \"<class 'numpy.int16'>\" || str(type(value)) == \"<class 'numpy.uint16'>\""
+					+ " || str(type(value)) == \"<class 'numpy.int32'>\" || str(type(value)) == \"<class 'numpy.uint32'>\"" 
+					+ " || str(type(value)) == \"<class 'numpy.int64'>\":" + System.lineSeparator()
+			+ "      n_dic[key] = int(value)" + System.lineSeparator()
+			+ "    elif str(type(value)) == \"<class 'numpy.str_'>\"" + System.lineSeparator()
+			+ "      n_dic[key] = str(value)" + System.lineSeparator()
+			+ "    elif str(type(value)) == \"<class 'numpy.bool_'>\"" + System.lineSeparator()
+			+ "      n_dic[key] = bool(value)" + System.lineSeparator()
 			+ "    else:" + System.lineSeparator()
 			+ "      n_dic[key] = value" + System.lineSeparator()
 			+ "  return n_dic" + System.lineSeparator()
