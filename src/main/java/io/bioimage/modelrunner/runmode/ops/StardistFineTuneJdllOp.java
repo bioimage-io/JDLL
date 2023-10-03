@@ -192,11 +192,13 @@ public class StardistFineTuneJdllOp implements OpInterface {
 	public static StardistFineTuneJdllOp finetuneAndCreateNew(String modelToFineTune, String newModelDir) throws IOException, InterruptedException, Exception {
 		Objects.requireNonNull(modelToFineTune, "modelToFineTune' cannot be null. It should correspond to either a Bioimage.io "
 				+ "folder containing a StarDist model, the nickname of a StarDist model in the Bioimage.io (example: chatty-frog) "
-				+ "or to one if the StarDist pre-trained available weigths (example: )");
-		Objects.requireNonNull(newModelDir, "");
+				+ "or to one if the StarDist pre-trained available weigths (example: 2D_versatile_fluo)");
+		Objects.requireNonNull(newModelDir,  "newModelDir' cannot be null. It should be a path to the directory where"
+				+ "	the we want the fine tuned model to be saved.");
 		StardistFineTuneJdllOp op = new StardistFineTuneJdllOp();
 		op.nModelParentPath = newModelDir;
-		op.setModel(modelToFineTune);
+		op.model = modelToFineTune;
+		op.setModel();
 		try {
 			op.findNChannels();
 		} catch (Exception e) {
@@ -227,7 +229,8 @@ public class StardistFineTuneJdllOp implements OpInterface {
 	public static StardistFineTuneJdllOp finetuneInPlace(String modelToFineTune) throws IOException, InterruptedException, Exception {
 		Objects.requireNonNull(modelToFineTune, "");
 		StardistFineTuneJdllOp op = new StardistFineTuneJdllOp();
-		op.setModel(modelToFineTune);
+		op.model = modelToFineTune;
+		op.setModel();
 		try {
 			op.findNChannels();
 		} catch (Exception e) {
@@ -320,24 +323,27 @@ public class StardistFineTuneJdllOp implements OpInterface {
 		return opFilePath;
 	}
 	
-	public void setModel(String modelName) throws IOException, InterruptedException, Exception {
-		Objects.requireNonNull(modelName, "The modelName input argument cannot be null.");
-		if (PRETRAINED_1C_STARDIST_MODELS.keySet().contains(modelName) 
-				|| PRETRAINED_3C_STARDIST_MODELS.keySet().contains(modelName)) {
-			this.model = modelName;
+	public void setModel() throws IOException, InterruptedException, Exception {
+		Objects.requireNonNull(model, "The modelName input argument cannot be null.");
+		if (PRETRAINED_1C_STARDIST_MODELS.keySet().contains(model) 
+				|| PRETRAINED_3C_STARDIST_MODELS.keySet().contains(model)) {
 			this.downloadStardistPretrained = true;
 			setUpStardistModelFromStardistRepo();
 			return;
 		}
-		if (new File(modelName).isFile() && !StardistInferJdllOp.isModelFileStardist(modelName))
+		if (new File(model).isFile() && !StardistInferJdllOp.isModelFileStardist(model))
 			throw new IllegalArgumentException("The file selected does not correspond to "
 					+ "the rdf.yaml file of a Bioiamge.io Stardist model.");
-		else if (!(new File(modelName).isFile()) && !StardistInferJdllOp.isModelNameStardist(modelName))
+		else if (!(new File(model).isFile()) && !StardistInferJdllOp.isModelNameStardist(model))
 			throw new IllegalArgumentException("The model name provided does not correspond to a valid"
 					+ " Stardist model present in the Bioimage.io online reposritory.");
-		else if (!(new File(modelName).isFile()))
+		else if (!(new File(model).isFile()))
 			setUpStardistModelFromBioimageio();
-		this.model = modelName;
+		else
+			throw new IllegalArgumentException("Cannot recognise the model provided as a StarDist model. "
+					+ "You can provide either the name of a StarDist model in the Bioimage.io, the path"
+					+ " to a Bioimage.io StarDist model (parent dir of the rdf.yaml file) or the name of"
+					+ " a pre-trained StarDist model.");
 	}
 	
 	private void setUpStardistModelFromStardistRepo() throws IOException, InterruptedException, Exception {

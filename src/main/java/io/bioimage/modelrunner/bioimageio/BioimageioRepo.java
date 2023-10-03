@@ -399,7 +399,9 @@ public class BioimageioRepo {
 	 */
 	public ModelDescriptor selectByNickname(String nickname) {
 		Entry<Path, ModelDescriptor> modelEntry = this.listAllModels(false).entrySet().stream()
-				.filter(ee -> ee.getValue().getNickname().equals(nickname)).findFirst().orElse(null);
+				.filter(ee -> ee.getValue().getNickname() != null
+							&& ee.getValue().getNickname().equals(nickname))
+				.findFirst().orElse(null);
 		if (modelEntry != null)
 			return modelEntry.getValue();
 		return null;
