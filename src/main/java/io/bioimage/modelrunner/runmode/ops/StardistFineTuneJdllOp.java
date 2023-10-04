@@ -164,7 +164,8 @@ public class StardistFineTuneJdllOp implements OpInterface {
 		final Img< FloatType > gt = gtFactory.create( 2, 64, 64 );
 		Tensor<FloatType> gtTensor = Tensor.build("gt", "byx", gt);
 		String modelName = "C:\\Users\\angel\\OneDrive\\Documentos\\pasteur\\git\\model-runner-java\\models";
-		StardistFineTuneJdllOp op = finetuneAndCreateNew("chatty-frog", modelName);
+		String p = "C:\\Users\\angel\\OneDrive\\Documentos\\pasteur\\git\\model-runner-java\\models\\finetuned_StarDist H&E Nuclei Segmentation_04102023_123644";
+		StardistFineTuneJdllOp op = finetuneAndCreateNew(p, modelName);
 		op.installOp();
 		op.setBatchSize(2);
 		op.setEpochs(1);
@@ -204,6 +205,8 @@ public class StardistFineTuneJdllOp implements OpInterface {
 	 * If there is only one weights file available, it is not necessary to 
 	 * use {@link #setWeightsToFineTune(String)}. 
 	 * 
+	 * NOTE THAT weights_best.h5 AND weights_last.h5 WILL ALWAYS BE REWRITTEN AFTER EACH FINE TUNE ITERATION
+	 * 
 	 * @param modelToFineTune
 	 * 	Pre-trained model that is going to be fine tuned on the user's data, it
 	 *  can be either a model existing in the users machine or a model existing in the model
@@ -222,6 +225,9 @@ public class StardistFineTuneJdllOp implements OpInterface {
 				+ "or to one if the StarDist pre-trained available weigths (example: 2D_versatile_fluo)");
 		Objects.requireNonNull(newModelDir,  "newModelDir' cannot be null. It should be a path to the directory where"
 				+ "	the we want the fine tuned model to be saved.");
+		if (new File(newModelDir).isDirectory() == false)
+			throw new IllegalArgumentException("Argument 'newModelDir' should be an existing directory. In that "
+					+ "directory the fine tuned StarDist model is going to be created.");
 		StardistFineTuneJdllOp op = new StardistFineTuneJdllOp();
 		op.nModelParentPath = newModelDir;
 		op.model = modelToFineTune;
@@ -264,6 +270,8 @@ public class StardistFineTuneJdllOp implements OpInterface {
 	 * 
 	 * If there is only one weights file available, it is not necessary to 
 	 * use {@link #setWeightsToFineTune(String)}. 
+	 * 
+	 * NOTE THAT weights_best.h5 AND weights_last.h5 WILL ALWAYS BE REWRITTEN AFTER EACH FINE TUNE ITERATION
 	 * 
 	 * @param modelToFineTune
 	 * 	Pre-trained model that is going to be fine tuned on the user's data, it
@@ -309,6 +317,8 @@ public class StardistFineTuneJdllOp implements OpInterface {
 	 * 
 	 * If there is no weights file containing the substring 'best', the system will automatically select and 
 	 * load the file that comes first in alphabetical order from the available options. 
+	 * 
+	 * NOTE THAT weights_best.h5 AND weights_last.h5 WILL ALWAYS BE REWRITTEN AFTER EACH FINE TUNE ITERATION
 	 * 
 	 * If there is only one weights file available, it is not necessary to 
 	 * use {@link #setWeightsToFineTune(String)}. 
@@ -425,13 +435,18 @@ public class StardistFineTuneJdllOp implements OpInterface {
 			setUpStardistModelFromStardistRepo();
 			return;
 		}
-		if (new File(model).isFile() && !StardistInferJdllOp.isModelFileStardist(model))
-			throw new IllegalArgumentException("The file selected does not correspond to "
-					+ "the rdf.yaml file of a Bioiamge.io Stardist model.");
-		else if (!(new File(model).isFile()) && !StardistInferJdllOp.isModelNameStardist(model))
+		if (new File(model).isDirectory() && !(new File(model, Constants.RDF_FNAME).isFile()))
+			throw new IllegalArgumentException("The directory selected does not correspond to "
+					+ "a valid Bioimage.io model, it does not contain the required specs file: " + Constants.RDF_FNAME);
+		else if (new File(model).isDirectory()&& !StardistInferJdllOp.isModelFileStardist(model + File.separator + Constants.RDF_FNAME))
+			throw new IllegalArgumentException("The directory selected does not correspond to "
+					+ "a Bioimage.io StarDist model, as per its specs file: " + Constants.RDF_FNAME);
+		else if (new File(model).isDirectory())
+			setUpStardistModelFromLocal();
+		else if (!(new File(model).isDirectory()) && !StardistInferJdllOp.isModelNameStardist(model + File.separator + Constants.RDF_FNAME))
 			throw new IllegalArgumentException("The model name provided does not correspond to a valid"
 					+ " Stardist model present in the Bioimage.io online reposritory.");
-		else if (!(new File(model).isFile()))
+		else if (!(new File(model).isDirectory()))
 			setUpStardistModelFromBioimageio();
 		else
 			throw new IllegalArgumentException("Cannot recognise the model provided as a StarDist model. "
@@ -577,8 +592,19 @@ public class StardistFineTuneJdllOp implements OpInterface {
 				+ "repository for an example of a correct version.");
 	}
 	
-	private void setUpStardistModelFromLocal() {
-		
+	private void setUpStardistModelFromLocal() throws IllegalArgumentException, IOException, Exception {
+		if (this.nModelParentPath == null) {
+			File folder = new File(model);
+			String fineTuned = folder.getParent() + File.separator + "finetuned_" + folder.getName();
+	        File renamedFolder = new File(fineTuned);
+	        if (folder.renameTo(renamedFolder))
+	        	model = fineTuned;
+	        this.nModelPath = model + File.separator + StardistInferJdllOp.STARDIST_FIELD_KEY;
+		} else 
+			File folder = new File(model);
+			String fineTuned = nModelParentPath + File.separator + "finetuned_" + folder.getName();
+		}
+        downloadBioimageioStardistWeights();
 	}
 	
 	private < T extends RealType< T > & NativeType< T > > 
