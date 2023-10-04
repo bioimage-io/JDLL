@@ -42,6 +42,7 @@ import io.bioimage.modelrunner.engine.installation.FileDownloader;
 import io.bioimage.modelrunner.runmode.RunMode;
 import io.bioimage.modelrunner.tensor.Tensor;
 import io.bioimage.modelrunner.utils.Constants;
+import io.bioimage.modelrunner.utils.FileUtils;
 import io.bioimage.modelrunner.utils.JSONUtils;
 import net.imglib2.img.Img;
 import net.imglib2.img.ImgFactory;
@@ -600,9 +601,18 @@ public class StardistFineTuneJdllOp implements OpInterface {
 	        if (folder.renameTo(renamedFolder))
 	        	model = fineTuned;
 	        this.nModelPath = model + File.separator + StardistInferJdllOp.STARDIST_FIELD_KEY;
-		} else 
+		} else {
 			File folder = new File(model);
 			String fineTuned = nModelParentPath + File.separator + "finetuned_" + folder.getName();
+			if (!new File(fineTuned).mkdirs())
+				throw new IOException("Unable to create directory for fine tuned model at: " + fineTuned); 
+            Files.copy(Paths.get(model + Constants.RDF_FNAME), Paths.get(fineTuned + Constants.RDF_FNAME), StandardCopyOption.REPLACE_EXISTING);
+            if (new File(model + File.separator + StardistInferJdllOp.STARDIST_FIELD_KEY).isDirectory()) {
+				try {
+					FileUtils.copyFolder(Paths.get(model, StardistInferJdllOp.STARDIST_FIELD_KEY), Paths.get(fineTuned, StardistInferJdllOp.STARDIST_FIELD_KEY));
+		        } catch (IOException e) {
+		        }
+			} 
 		}
         downloadBioimageioStardistWeights();
 	}
