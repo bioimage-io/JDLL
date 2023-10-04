@@ -385,8 +385,21 @@ public class StardistFineTuneJdllOp implements OpInterface {
 		// TODO remove inputsMap.put(DOWNLOAD_STARDIST_KEY, this.downloadStardistPretrained);
 		setUpConfigs();
 		if (this.weightsToFineTune != null)
-			inputsMap.put(WEIGHTS_TO_FINE_TUNE_KEY, this.weightsToFineTune);
+			setWeigthsFile();
 		return inputsMap;
+	}
+	
+	private void setWeigthsFile() {
+		if (!weightsToFineTune.endsWith(KERAS_SUFFIX_FILE))
+			throw new IllegalArgumentException("StarDist weigths files must always end with '" 
+						+ KERAS_SUFFIX_FILE + "' and the provided file does not: " + this.weightsToFineTune);
+		if (new File(weightsToFineTune).isFile() && !(new File(weightsToFineTune).getParent().equals(model)))
+			throw new IllegalArgumentException("StarDist weigths files that can be fine tuned with this model"
+					+ "should be in the folder: " + this.model);
+		if (!(new File(weightsToFineTune).isFile()) && new File(model, weightsToFineTune).isFile())
+			throw new IllegalArgumentException("The StarDist weigths file provided (" + this.weightsToFineTune
+					+ ") cannot be found in the StarDist model folder : " + this.model);
+		inputsMap.put(WEIGHTS_TO_FINE_TUNE_KEY, this.weightsToFineTune);
 	}
 
 	@Override
