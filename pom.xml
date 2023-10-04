@@ -136,11 +136,11 @@
 			<artifactId>appose</artifactId>
 			<version>0.1.0</version>
 		</dependency>
-		<dependency>
+		<!--<dependency>
             <groupId>org.msgpack</groupId>
             <artifactId>jackson-dataformat-msgpack</artifactId>
             <version>0.9.0</version>
-    </dependency>
+    	</dependency> -->
 		<dependency>
 			<groupId>net.java.dev.jna</groupId>
 			<artifactId>jna</artifactId>
