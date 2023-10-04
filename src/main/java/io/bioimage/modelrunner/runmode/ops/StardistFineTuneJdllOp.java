@@ -75,8 +75,6 @@ public class StardistFineTuneJdllOp implements OpInterface {
 	
 	private String nModelParentPath;
 	
-	private String nModelPath;
-	
 	private String weightsToFineTune;
 	
 	private int nChannelsModel;
@@ -399,7 +397,6 @@ public class StardistFineTuneJdllOp implements OpInterface {
 				+ "setFineTuningData(Tensor<T> trainingSamples, Tensor<T> groundTruth)");
 		inputsMap.put(TRAIN_SAMPLES_KEY, this.trainingSamples);
 		inputsMap.put(GROUND_TRUTH_KEY, this.groundTruth);
-		inputsMap.put(NEW_MODEL_DIR_KEY, this.nModelPath);
 		// TODO remove inputsMap.put(DOWNLOAD_STARDIST_KEY, this.downloadStardistPretrained);
 		setUpConfigs();
 		if (this.weightsToFineTune != null)
@@ -494,7 +491,6 @@ public class StardistFineTuneJdllOp implements OpInterface {
         File renamedFolder = new File(fineTuned);
         if (folder.renameTo(renamedFolder))
         	model = fineTuned;
-        this.nModelPath = model + File.separator + StardistInferJdllOp.STARDIST_FIELD_KEY;
         downloadBioimageioStardistWeights();
 	}
 	
@@ -610,7 +606,6 @@ public class StardistFineTuneJdllOp implements OpInterface {
 				fineTuned = fineTunedAux + "-" + (c++);
 	        if (folder.renameTo(new File(fineTuned)))
 	        	model = fineTuned;
-	        this.nModelPath = model + File.separator + StardistInferJdllOp.STARDIST_FIELD_KEY;
 		} else {
 			File folder = new File(model);
 			String fineTuned = nModelParentPath + File.separator + "finetuned_" + folder.getName();
@@ -628,7 +623,6 @@ public class StardistFineTuneJdllOp implements OpInterface {
 		        }
 			}
             model = fineTuned;
-	        this.nModelPath = model + File.separator + StardistInferJdllOp.STARDIST_FIELD_KEY;
 		}
         downloadBioimageioStardistWeights();
 	}
