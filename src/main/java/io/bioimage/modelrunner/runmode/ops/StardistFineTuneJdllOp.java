@@ -166,7 +166,9 @@ public class StardistFineTuneJdllOp implements OpInterface {
 		Tensor<FloatType> gtTensor = Tensor.build("gt", "byx", gt);
 		String modelName = "C:\\Users\\angel\\OneDrive\\Documentos\\pasteur\\git\\model-runner-java\\models";
 		String p = "C:\\Users\\angel\\OneDrive\\Documentos\\pasteur\\git\\model-runner-java\\models\\finetuned_StarDist H&E Nuclei Segmentation_04102023_123644";
-		StardistFineTuneJdllOp op = finetuneAndCreateNew(p, modelName);
+		//p = "chatty-frog";
+		//StardistFineTuneJdllOp op = finetuneAndCreateNew(p, modelName);
+		StardistFineTuneJdllOp op = finetuneInPlace(p);
 		op.installOp();
 		op.setBatchSize(2);
 		op.setEpochs(1);
@@ -220,7 +222,7 @@ public class StardistFineTuneJdllOp implements OpInterface {
 	 * @throws IOException 
 	 * @throws Exception 
 	 */
-	public static StardistFineTuneJdllOp finetuneAndCreateNew(String modelToFineTune, String newModelDir) throws IOException, InterruptedException, Exception {
+	public static StardistFineTuneJdllOp finetuneInPlace(String modelToFineTune, String newModelDir) throws IOException, InterruptedException, Exception {
 		Objects.requireNonNull(modelToFineTune, "modelToFineTune' cannot be null. It should correspond to either a Bioimage.io "
 				+ "folder containing a StarDist model, the nickname of a StarDist model in the Bioimage.io (example: chatty-frog) "
 				+ "or to one if the StarDist pre-trained available weigths (example: 2D_versatile_fluo)");
@@ -285,7 +287,12 @@ public class StardistFineTuneJdllOp implements OpInterface {
 	 * @throws Exception 
 	 */
 	public static StardistFineTuneJdllOp finetuneInPlace(String modelToFineTune) throws IOException, InterruptedException, Exception {
-		Objects.requireNonNull(modelToFineTune, "");
+		Objects.requireNonNull(modelToFineTune, "modelToFineTune' cannot be null. It should correspond to either a Bioimage.io "
+				+ "folder containing a StarDist model, the nickname of a StarDist model in the Bioimage.io (example: chatty-frog) "
+				+ "or to one if the StarDist pre-trained available weigths (example: 2D_versatile_fluo)");
+		if (new File(modelToFineTune).isDirectory() == false)
+			throw new IllegalArgumentException("Argument 'modelToFineTune' should be an existing directory. "
+					+ "That directory should contain the model that wants to be fine-tuned and overwritten.");
 		StardistFineTuneJdllOp op = new StardistFineTuneJdllOp();
 		op.model = modelToFineTune;
 		op.setModel();
@@ -444,7 +451,7 @@ public class StardistFineTuneJdllOp implements OpInterface {
 					+ "a Bioimage.io StarDist model, as per its specs file: " + Constants.RDF_FNAME);
 		else if (new File(model).isDirectory())
 			setUpStardistModelFromLocal();
-		else if (!(new File(model).isDirectory()) && !StardistInferJdllOp.isModelNameStardist(model + File.separator + Constants.RDF_FNAME))
+		else if (!(new File(model).isDirectory()) && !StardistInferJdllOp.isModelNameStardist(model))
 			throw new IllegalArgumentException("The model name provided does not correspond to a valid"
 					+ " Stardist model present in the Bioimage.io online reposritory.");
 		else if (!(new File(model).isDirectory()))
@@ -597,22 +604,31 @@ public class StardistFineTuneJdllOp implements OpInterface {
 		if (this.nModelParentPath == null) {
 			File folder = new File(model);
 			String fineTuned = folder.getParent() + File.separator + "finetuned_" + folder.getName();
-	        File renamedFolder = new File(fineTuned);
-	        if (folder.renameTo(renamedFolder))
+			String fineTunedAux = "" + fineTuned;
+			int c = 1;
+			while (new File(fineTuned).exists())
+				fineTuned = fineTunedAux + "-" + (c++);
+	        if (folder.renameTo(new File(fineTuned)))
 	        	model = fineTuned;
 	        this.nModelPath = model + File.separator + StardistInferJdllOp.STARDIST_FIELD_KEY;
 		} else {
 			File folder = new File(model);
 			String fineTuned = nModelParentPath + File.separator + "finetuned_" + folder.getName();
+			String fineTunedAux = "" + fineTuned;
+			int c = 1;
+			while (new File(fineTuned).exists())
+				fineTuned = fineTunedAux + "-" + (c++);
 			if (!new File(fineTuned).mkdirs())
 				throw new IOException("Unable to create directory for fine tuned model at: " + fineTuned); 
-            Files.copy(Paths.get(model + Constants.RDF_FNAME), Paths.get(fineTuned + Constants.RDF_FNAME), StandardCopyOption.REPLACE_EXISTING);
+            Files.copy(Paths.get(model, Constants.RDF_FNAME), Paths.get(fineTuned, Constants.RDF_FNAME), StandardCopyOption.REPLACE_EXISTING);
             if (new File(model + File.separator + StardistInferJdllOp.STARDIST_FIELD_KEY).isDirectory()) {
 				try {
 					FileUtils.copyFolder(Paths.get(model, StardistInferJdllOp.STARDIST_FIELD_KEY), Paths.get(fineTuned, StardistInferJdllOp.STARDIST_FIELD_KEY));
 		        } catch (IOException e) {
 		        }
-			} 
+			}
+            model = fineTuned;
+	        this.nModelPath = model + File.separator + StardistInferJdllOp.STARDIST_FIELD_KEY;
 		}
         downloadBioimageioStardistWeights();
 	}
