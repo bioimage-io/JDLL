@@ -7,9 +7,9 @@ import os
 from pathlib import Path
 
 
-def assertions(model, images, ground_truth, new_model_dir):
+def assertions(model_path, images, ground_truth, new_model_dir):
 
-  assert isinstance(model, str), "The input argument 'model' must be a string, either the name" \
+  assert isinstance(model_path, str), "The input argument 'model_path' must be a string, either the name" \
   + " of one of the default pre-trained Stardist models or the directory to a pre-trained Stardist model"
 
   assert isinstance(new_model_dir, str), "The input argument 'new_model_dir' must be a string. It is the path" \
@@ -32,9 +32,9 @@ def assertions(model, images, ground_truth, new_model_dir):
     + str(images.shape[vs]) + " vs " + str(ground_truth.shape[vs])
 
 
-def finetune_stardist(model, images, ground_truth, new_model_dir):
+def finetune_stardist(model_path, images, ground_truth, new_model_dir, weights_file=None):
   """
-  model: String, path to pretrained model or pretrained model from the stardsit available
+  model_path: String, path to pretrained model or pretrained model from the stardsit available
   images: list of tensors or single tensor? If a list of tensors, it would need to be ensured taht they all have same dims,
           or reconstruct to have same dims. Check the number of channels and check if the channels of the images coincide
           Also for a path, check that it has the needed files fo a stardist model
@@ -44,9 +44,11 @@ def finetune_stardist(model, images, ground_truth, new_model_dir):
 
   epochs and batch_size might have a warning for CPu if selected too large
   """
-  assertions(model, images, ground_truth, new_model_dir)
+  assertions(model_path, images, ground_truth, new_model_dir)
 
-  model = StarDist2D(None, model)
+  model = StarDist2D(None, model_path)
+  if weights_file is not None:
+    model.load_weights("weights_last.h5")
 
   # finetune on new data
   history = model.train(images, ground_truth, validation_data=(images, ground_truth))
