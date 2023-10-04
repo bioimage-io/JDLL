@@ -43,7 +43,6 @@ import io.bioimage.modelrunner.runmode.RunMode;
 import io.bioimage.modelrunner.tensor.Tensor;
 import io.bioimage.modelrunner.utils.Constants;
 import io.bioimage.modelrunner.utils.JSONUtils;
-import io.bioimage.modelrunner.utils.YAMLUtils;
 import net.imglib2.img.Img;
 import net.imglib2.img.ImgFactory;
 import net.imglib2.img.array.ArrayImgFactory;
@@ -76,6 +75,8 @@ public class StardistFineTuneJdllOp implements OpInterface {
 	private String nModelParentPath;
 	
 	private String nModelPath;
+	
+	private String weightsToFineTune;
 	
 	private int nChannelsModel;
 	
@@ -125,6 +126,8 @@ public class StardistFineTuneJdllOp implements OpInterface {
 	private final static String TRAIN_SAMPLES_KEY = "train_samples";
 	
 	private final static String GROUND_TRUTH_KEY = "ground_truth";
+	
+	private final static String WEIGHTS_TO_FINE_TUNE_KEY = "weights_file";
 	
 	private final static String PATCH_SIZE_KEY = "train_patch_size";
 	
@@ -179,6 +182,28 @@ public class StardistFineTuneJdllOp implements OpInterface {
 	 * can also be modified by with {@link #setBatchSize(int)} and {@link #setLearingRate(float)}.
 	 * By default the batch size is 16 and the learning rate 1e-5.
 	 * To set the number of epochs: {@link #setEpochs(int)}, default is 1.
+	 * 
+	 * Finally in some cases, if we want to fine tune a local model, the model might have 
+	 * several weight files:
+	 * - stardist
+	 * 	- config.json
+	 * 	- thresholds.json
+	 * 	- stardist_weights.h5
+	 * 	- weights_best.h5
+	 * 	- weights_last.h5
+	 * 
+	 * If we are interested in fine tuning a stardist model starting from a certain weights file among
+	 * the available ones, use the {@link #setWeightsToFineTune(String)} to provide the name of the
+	 * file of interest. 
+	 * If no specific weight file is designated through the {@link #setWeightsToFineTune(String)} method, 
+	 * the system will automatically select and load a weights file containing the substring 'best', if available.
+	 * 
+	 * If there is no weights file containing the substring 'best', the system will automatically select and 
+	 * load the file that comes first in alphabetical order from the available options. 
+	 * 
+	 * If there is only one weights file available, it is not necessary to 
+	 * use {@link #setWeightsToFineTune(String)}. 
+	 * 
 	 * @param modelToFineTune
 	 * 	Pre-trained model that is going to be fine tuned on the user's data, it
 	 *  can be either a model existing in the users machine or a model existing in the model
@@ -218,6 +243,28 @@ public class StardistFineTuneJdllOp implements OpInterface {
 	 * can also be modified by with {@link #setBatchSize(int)} and {@link #setLearingRate(float)}.
 	 * By default the batch size is 16 and the learning rate 1e-5.
 	 * To set the number of epochs: {@link #setEpochs(int)}, default is 1.
+	 * 
+	 * Finally in some cases, if we want to fine tune a local model, the model might have 
+	 * several weight files:
+	 * - stardist
+	 * 	- config.json
+	 * 	- thresholds.json
+	 * 	- stardist_weights.h5
+	 * 	- weights_best.h5
+	 * 	- weights_last.h5
+	 * 
+	 * If we are interested in fine tuning a stardist model starting from a certain weights file among
+	 * the available ones, use the {@link #setWeightsToFineTune(String)} to provide the name of the
+	 * file of interest. 
+	 * If no specific weight file is designated through the {@link #setWeightsToFineTune(String)} method, 
+	 * the system will automatically select and load a weights file containing the substring 'best', if available.
+	 * 
+	 * If there is no weights file containing the substring 'best', the system will automatically select and 
+	 * load the file that comes first in alphabetical order from the available options. 
+	 * 
+	 * If there is only one weights file available, it is not necessary to 
+	 * use {@link #setWeightsToFineTune(String)}. 
+	 * 
 	 * @param modelToFineTune
 	 * 	Pre-trained model that is going to be fine tuned on the user's data, it
 	 *  can be either a model existing in the users machine or a model existing in the model
@@ -240,6 +287,36 @@ public class StardistFineTuneJdllOp implements OpInterface {
 					+ "of Bioimage.io StarDist model at :" + new File(op.model).getParent(), e);
 		}
 		return op;
+	}
+	
+	/**
+	 * This method should only be used when we try to fine tune models from local directories.
+	 * 
+	 * In some cases, if we want to fine tune a local model, the model might have 
+	 * several weight files:
+	 * - stardist
+	 * 	- config.json
+	 * 	- thresholds.json
+	 * 	- stardist_weights.h5
+	 * 	- weights_best.h5
+	 * 	- weights_last.h5
+	 * 
+	 * If we are interested in fine tuning a stardist model starting from a certain weights file among
+	 * the available ones, use the {@link #setWeightsToFineTune(String)} to provide the name of the
+	 * file of interest. 
+	 * If no specific weight file is designated through the {@link #setWeightsToFineTune(String)} method, 
+	 * the system will automatically select and load a weights file containing the substring 'best', if available.
+	 * 
+	 * If there is no weights file containing the substring 'best', the system will automatically select and 
+	 * load the file that comes first in alphabetical order from the available options. 
+	 * 
+	 * If there is only one weights file available, it is not necessary to 
+	 * use {@link #setWeightsToFineTune(String)}. 
+	 * @param weigthsToFineTune
+	 * 	name of the weights file we want to load. It must end in .h5 and be available in the stardist model folder
+	 */
+	public void setWeightsToFineTune(String weigthsToFineTune) {
+		this.weightsToFineTune = weigthsToFineTune;
 	}
 	
 	public < T extends RealType< T > & NativeType< T > > 
@@ -307,6 +384,8 @@ public class StardistFineTuneJdllOp implements OpInterface {
 		inputsMap.put(NEW_MODEL_DIR_KEY, this.nModelPath);
 		// TODO remove inputsMap.put(DOWNLOAD_STARDIST_KEY, this.downloadStardistPretrained);
 		setUpConfigs();
+		if (this.weightsToFineTune != null)
+			inputsMap.put(WEIGHTS_TO_FINE_TUNE_KEY, this.weightsToFineTune);
 		return inputsMap;
 	}
 
