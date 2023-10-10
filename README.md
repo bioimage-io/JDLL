@@ -68,7 +68,7 @@ Download the dependency and include it in your project
    ```xml
    <dependency>
      <groupId>io.bioimage</groupId>
-     <artifactId>dl-runner</artifactId>
+     <artifactId>dl-modelrunner</artifactId>
      <version>0.4.0</version>
    </dependency>
    ```
