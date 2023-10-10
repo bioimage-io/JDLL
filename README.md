@@ -142,7 +142,7 @@ In the example it is shown how simply providing the name of the model of interes
 ```java
 String modelName = "B. Sutilist bacteria segmentation - Widefield microscopy - 2D UNet";
 String enginesDir = "/path/to/wanted/engines/dir";
-boolean installed =  EngineInstall.installEnginesForModelByNameinDir(modelName, enginesDir)
+boolean installed =  EngineInstall.installEnginesForModelByNameinDir(modelName, enginesDir);
 if (installed)
 	System.out.println("Great success!");
 else
