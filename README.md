@@ -68,7 +68,7 @@ Download the dependency and include it in your project
    ```xml
    <dependency>
      <groupId>io.bioimage</groupId>
-     <artifactId>dl-runner</artifactId>
+     <artifactId>dl-modelrunner</artifactId>
      <version>0.4.0</version>
    </dependency>
    ```
@@ -120,7 +120,7 @@ JDLL provides the needed methods to install the wanted engines in an easy manner
 
 ```
 String framework = "tensorflow";
-String version = "2.11.0";
+String version = "2.10.1";
 boolean cpu = true;
 boolean gpu = true;
 
@@ -142,7 +142,7 @@ In the example it is shown how simply providing the name of the model of interes
 ```java
 String modelName = "B. Sutilist bacteria segmentation - Widefield microscopy - 2D UNet";
 String enginesDir = "/path/to/wanted/engines/dir";
-boolean installed =  EngineInstall.installEnginesForModelByNameinDir(modelName, enginesDir)
+boolean installed =  EngineInstall.installEnginesForModelByNameinDir(modelName, enginesDir);
 if (installed)
 	System.out.println("Great success!");
 else
@@ -165,20 +165,20 @@ JDLL tensors use ImgLib2 to store the tensor information. In practice, JDLL tens
 
 The example below will show how to create the input and output tensors required to run the [example model](https://bioimage.io/#/?tags=placid-llama&id=10.5281%2Fzenodo.7261974). As per its [rdf.yaml file](https://github.com/bioimage-io/collection-bioimage-io/blob/19ea59e662410c3ee49b7da184730919336d7568/rdfs/10.5281/zenodo.7261974/7782776/rdf.yaml), the model has one input named `input_1`, with `bxyc` axes ([explanation here](https://github.com/bioimage-io/spec-bioimage-io/blob/gh-pages/model_spec_latest.md)) and a required shape of[1, 512, 512, 1]. The ouptut of the model is named `conv2d_19` with with `bxyc` axes and fixed shape [1, 512, 512, 3].
 ```java
-final ImgFactory< FloatType > imgFactory = new ArrayImgFactory<>( new FloatType() );
-final Img< FloatType > img1 = imgFactory.create( new long[] {1, 512, 512, 1} );
+final ImgFactory<FloatType> imgFactory = new ArrayImgFactory<>(new FloatType());
+final Img<FloatType> img1 = imgFactory.create(new long[]{1, 512, 512, 1});
 // Create the input tensor with the nameand axes given by the rdf.yaml file
 // and add it to the list of input tensors
 Tensor<FloatType> inpTensor = Tensor.build("input_1", "bxyc", img1);
 
 // Ouput tensors can be created empty, if the output shape is not known.
 // Note that this method does not preallocate memory for the output tensor
-Tensor<T> outputEmptyTensor = Tensor.buildEmptyTensor("conv2d_19", "bxyc");
+Tensor<FloatType> outputEmptyTensor = Tensor.buildEmptyTensor("conv2d_19", "bxyc");
 
 // Or ouptut tensors can also be built blank, to pre-allocate memory
 // if the shape and data type are known.
 Tensor<FloatType> outputBlankTensor = Tensor.buildBlankTensor("conv2d_19",
-			"bxyc", new long[] {1, 512, 512, 3}, new FloatType());
+                "bxyc", new long[]{1, 512, 512, 3}, new FloatType());
 
 ```
 
@@ -195,7 +195,7 @@ An example of defining the `EngineInfo` instance needed to load a model is shown
 Note that `String enginesDir` is the directory where the wanted engines have been installed. [Click here and look at the example in the redirected section](https://github.com/bioimage-io/JDLL#2-installing-dl-engines).
 ```java
 String framework = "tensorflow";
-String version = "2.11.0";
+String version = "2.10.1";
 boolean cpu = true;
 boolean gpu = true;
 String enginesDir = "/path/to/wanted/engines/dir";
@@ -228,7 +228,7 @@ Then with the arguments `String modelFolder`, `String modelSource` and the previ
 String modelFolder = "path/to/models/dir/B. Sutilist bacteria segmentation - Widefield microscopy - 2D UNet";
 String modelSource = null; // Not needed in Tensorflow
 
-Model model = Model.create(modelFolder, modelSource, enigneInfoCompat);
+Model model = Model.createDeepLearningModel(modelFolder, modelSource, enigneInfoCompat);
 model.loadModel();
 
 System.out.println("Great sucess!");
@@ -265,8 +265,8 @@ More information about loading models and models in general can be found in [thi
 ## 5. Running the model
 Once the model has been loaded and the input and output tensors have been created. Running the model is simple. The input tensors should be added to a `List<?>` in the same order the model expects. Same for the ouptuts in another `List<?>`.
 ```
-List<Tensor<?>> inputList = new ArrayList<List<Tensor<?>>>();
-List<Tensor<?>> outputputList = new ArrayList<List<Tensor<?>>>();
+List<Tensor<?>> inputList = new ArrayList<Tensor<?>>();
+List<Tensor<?>> outputputList = new ArrayList<Tensor<?>>();
 
 inputList.add(inputTensor);
 outputputList.add(outputEmptyTensor);
