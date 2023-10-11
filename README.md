@@ -120,7 +120,7 @@ JDLL provides the needed methods to install the wanted engines in an easy manner
 
 ```
 String framework = "tensorflow";
-String version = "2.11.0";
+String version = "2.10.1";
 boolean cpu = true;
 boolean gpu = true;
 
