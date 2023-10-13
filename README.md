@@ -14,10 +14,10 @@ JDLL was originally developed by the Icy team as the foundational component for 
 
 1. [Supported engines](https://github.com/bioimage-io/JDLL#supported-engines)
 2. [Quickstart](https://github.com/bioimage-io/JDLL#quickstart)
-3. [Quickstart for developers](https://github.com/bioimage-io/JDLL#quickstart-for-developers)
-4. [Quickstart for analysts/scripting](https://github.com/bioimage-io/JDLL#quickstart-for-analystsscripting)
-5. [Examples for developers](https://github.com/bioimage-io/JDLL#examples)
-6. [Scripting examples](https://github.com/bioimage-io/JDLL#scripting-examples)
+3. [Examples for developers](https://github.com/bioimage-io/JDLL#examples)
+4. [Scripting examples](https://github.com/bioimage-io/JDLL#scripting-examples)
+5. [Quickstart for developers](https://github.com/bioimage-io/JDLL#quickstart-for-developers)
+6. [Quickstart for analysts/scripting](https://github.com/bioimage-io/JDLL#quickstart-for-analystsscripting)
 7. [Acknowledgements](https://github.com/bioimage-io/JDLL#acknowledgements)
 8. [References](https://github.com/bioimage-io/JDLL#references)
 
@@ -47,6 +47,20 @@ Due to the dual possibilities of JDLL, there are 2 Quickstarts available dependi
 - [Quickstart for developers](https://github.com/bioimage-io/JDLL#quickstart-for-developers) if the user is interested in the integration of JDLL into their application.
 - [Quickstart for analysts/scripting](https://github.com/bioimage-io/JDLL#quickstart-for-analystsscripting) if the user is interested in creating scripts in Jython that can run DL models easily to improve their processing routines. Not much experience with Python/Jython is required.
 
+      
+   
+# Examples
+
+* [ExampleLoadAndRunModel](https://github.com/bioimage-io/model-runner-java/blob/main/src/main/java/io/bioimage/modelrunner/example/ExampleLoadAndRunModel.java) (PyTorch)
+* [ExampleLoadTensorflow1Tensorflow2](https://github.com/bioimage-io/model-runner-java/blob/main/src/main/java/io/bioimage/modelrunner/example/ExampleLoadTensorflow1Tensorflow2.java)
+* [ExampleDownloadEngine](https://github.com/bioimage-io/JDLL/blob/main/src/main/java/io/bioimage/modelrunner/example/ExampleDownloadEngine.java)
+* [ExampleDownloadModel](https://github.com/bioimage-io/JDLL/blob/main/src/main/java/io/bioimage/modelrunner/example/ExampleDownloadModel.java)
+   
+# Scripting examples
+
+* [example-run-model-in-fiji](https://github.com/bioimage-io/JDLL/blob/main/scripts/example-run-model-in-fiji.py) (Requires to be executed from Fiji, as it uses the application to display the result image)
+* [example-download-bmz-model](https://github.com/bioimage-io/JDLL/blob/main/scripts/example-download-bmz-model.py)
+* [example-download-engine](https://github.com/bioimage-io/JDLL/blob/main/scripts/example-download-engine.py)
 
 
 # Quickstart for developers
@@ -647,20 +661,6 @@ inputTensor.close()
 outputBlankTensor.close()
 outputEmptyTensor.close()
 ```
-      
-   
-# Examples
-
-* [ExampleLoadAndRunModel](https://github.com/bioimage-io/model-runner-java/blob/main/src/main/java/io/bioimage/modelrunner/example/ExampleLoadAndRunModel.java) (PyTorch)
-* [ExampleLoadTensorflow1Tensorflow2](https://github.com/bioimage-io/model-runner-java/blob/main/src/main/java/io/bioimage/modelrunner/example/ExampleLoadTensorflow1Tensorflow2.java)
-* [ExampleDownloadEngine](https://github.com/bioimage-io/JDLL/blob/main/src/main/java/io/bioimage/modelrunner/example/ExampleDownloadEngine.java)
-* [ExampleDownloadModel](https://github.com/bioimage-io/JDLL/blob/main/src/main/java/io/bioimage/modelrunner/example/ExampleDownloadModel.java)
-   
-# Scripting examples
-
-* [example-run-model-in-fiji](https://github.com/bioimage-io/JDLL/blob/main/scripts/example-run-model-in-fiji.py) (Requires to be executed from Fiji, as it uses the application to display the result image)
-* [example-download-bmz-model](https://github.com/bioimage-io/JDLL/blob/main/scripts/example-download-bmz-model.py)
-* [example-download-engine](https://github.com/bioimage-io/JDLL/blob/main/scripts/example-download-engine.py)
 
 
 # Acknowledgements.
