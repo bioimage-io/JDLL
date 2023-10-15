@@ -39,6 +39,8 @@ import io.bioimage.modelrunner.exceptions.LoadEngineException;
 import io.bioimage.modelrunner.exceptions.LoadModelException;
 import io.bioimage.modelrunner.exceptions.RunModelException;
 import io.bioimage.modelrunner.tensor.Tensor;
+import io.bioimage.modelrunner.tiling.PatchGridCalculator;
+import io.bioimage.modelrunner.tiling.PatchSpec;
 import io.bioimage.modelrunner.utils.Constants;
 import io.bioimage.modelrunner.versionmanagement.InstalledEngines;
 import net.imglib2.RandomAccessibleInterval;
@@ -453,16 +455,19 @@ public class Model
 	 * @param <R>
 	 * @param inputImgs
 	 * @return
+	 * @throws ValidationException 
 	 * @throws Exception 
 	 */
 	public <T extends RealType<T> & NativeType<T>, R extends RealType<R> & NativeType<R>> 
-	List<Img<T>> runBioimageioModelOnImgLib2WithTiling(List<RandomAccessibleInterval<R>> inputImgs) throws Exception {
-		if (descriptor == null && modelFolder == null) {
+	List<Img<T>> runBioimageioModelOnImgLib2WithTiling(List<RandomAccessibleInterval<R>> inputImgs) throws ValidationException {
+		if (descriptor == null && modelFolder == null)
 			throw new IllegalArgumentException("");
-		} else if (descriptor == null && !(new File(modelFolder, Constants.RDF_FNAME).isFile())) {
+		else if (descriptor == null && !(new File(modelFolder, Constants.RDF_FNAME).isFile()))
 			throw new IllegalArgumentException("");
-		} else if (descriptor == null)
+		else if (descriptor == null)
 			descriptor = ModelDescriptor.readFromLocalFile(modelFolder + File.separator + Constants.RDF_FNAME);
+		PatchGridCalculator tileGrid = PatchGridCalculator.build(descriptor, inputImgs);
+		List<PatchSpec> specs = tileGrid.call();
 		return null;
 	}
 
