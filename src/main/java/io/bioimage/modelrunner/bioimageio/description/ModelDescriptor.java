@@ -100,10 +100,9 @@ public class ModelDescriptor
      * @param modelFile
      *        Model descriptor file.
      * @return The instance of the model descriptor.
-     * @throws IOException if there is any error processing the info of the rdf.yml
      * @throws ValidationException if any of the parameters in the rdf.yaml file does not make fit the constraints
      */
-    public static ModelDescriptor readFromLocalFile(String modelFile) throws ValidationException, IOException
+    public static ModelDescriptor readFromLocalFile(String modelFile) throws ValidationException
     {
     	return readFromLocalFile(modelFile, true);
     }
@@ -116,15 +115,19 @@ public class ModelDescriptor
      * @param verbose
      * 	whether to print the path to the file and the time to the console or not
      * @return The instance of the model descriptor.
-     * @throws IOException if there is any error processing the info of the rdf.yml
-     * @throws ValidationException if any of the parameters in the rdf.yaml file does not make fit the constraints
+     * @throws ValidationException if any of the parameters in the rdf.yaml file does not make fit the constraints,
      */
-    public static ModelDescriptor readFromLocalFile(String modelFile, boolean verbose) throws ValidationException, IOException
+    public static ModelDescriptor readFromLocalFile(String modelFile, boolean verbose) throws ValidationException
     {
     	// Get the date to be able to log with the time
     	if (verbose)
     		System.out.println(Log.gct() + " -- LOCAL: Searching model at " + new File(modelFile).getParent());
-        Map<String, Object> yamlElements = YAMLUtils.load(modelFile);
+    	Map<String, Object> yamlElements;
+    	try {
+        	yamlElements = YAMLUtils.load(modelFile);
+        } catch (IOException ex) {
+        	throw new ValidationException("", ex);
+        }
         yamlElements.put(fromLocalKey, true);
         yamlElements.put(modelPathKey, new File(modelFile).getParent());
         return buildModelDescription(yamlElements);
@@ -136,10 +139,9 @@ public class ModelDescriptor
      * @param yamlText
      *        text read from a yaml file that contains an rdf.yaml file
      * @return The instance of the model descriptor.
-     * @throws IOException if there is any error processing the info of the rdf.yml
      * @throws ValidationException if any of the parameters in the rdf.yaml file does not make fit the constraints
      */
-    public static ModelDescriptor readFromYamlTextString(String yamlText) throws ValidationException, IOException
+    public static ModelDescriptor readFromYamlTextString(String yamlText) throws ValidationException
     {
     	return readFromYamlTextString(yamlText, true);
     }
@@ -152,10 +154,9 @@ public class ModelDescriptor
      * @param verbose
      * 	whether to print info about the rdf.yaml that is being read or not
      * @return The instance of the model descriptor.
-     * @throws IOException if there is any error processing the info of the rdf.yml
      * @throws ValidationException if any of the parameters in the rdf.yaml file does not make fit the constraints
      */
-    public static ModelDescriptor readFromYamlTextString(String yamlText, boolean verbose) throws ValidationException, IOException
+    public static ModelDescriptor readFromYamlTextString(String yamlText, boolean verbose) throws ValidationException
     {
     	// Convert the String of text that contains the yaml file into Map
     	Map<String,Object> yamlElements = YAMLUtils.loadFromString(yamlText);
@@ -176,10 +177,9 @@ public class ModelDescriptor
      * @param yamlElements
      * 	map with the information read from a yaml file
      * @return a {@link ModelDescriptor} with the info of a Bioimage.io model
-     * @throws IOException if there is any error processing the info of the rdf.yml
      * @throws ValidationException if any of the parameters in the rdf.yaml file does not make fit the constraints
      */
-    private static ModelDescriptor buildModelDescription(Map<String, Object> yamlElements) throws IOException, ValidationException
+    private static ModelDescriptor buildModelDescription(Map<String, Object> yamlElements) throws ValidationException
     {
         ModelDescriptor modelDescription = new ModelDescriptor();
 
@@ -298,7 +298,7 @@ public class ModelDescriptor
             }
             catch (IOException e)
             {
-                throw new IOException("Invalid model element: " + field + "->" + e.getMessage());
+                throw new ValidationException("Invalid model element: " + field + "->" + e.getMessage());
             }
         }
         
@@ -312,9 +312,9 @@ public class ModelDescriptor
      * Every model in the bioimage.io can be run in the BioEngine as long as it is in the
      * collections repo: 
      * https://github.com/bioimage-io/collection-bioimage-io/blob/e77fec7fa4d92d90c25e11331a7d19f14b9dc2cf/rdfs/10.5281/zenodo.6200999/6224243/rdf.yaml
-     * @throws MalformedURLException if the server does not correspond to an existing URL
+     * @throws MalformedURLException servers do not correspond to an actual url
      */
-    private void addBioEngine() throws MalformedURLException {
+    private void addBioEngine() throws ValidationException {
 		// TODO decide what to do with servers. Probably need permissions / Implement authentication
     	if (getName().equals("cellpose-python")) {
     		supportBioengine = true;

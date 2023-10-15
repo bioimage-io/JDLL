@@ -20,6 +20,7 @@
 package io.bioimage.modelrunner.tiling;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -68,14 +69,19 @@ public class PatchGridCalculator implements Callable<List<PatchSpec>>
      * @param inputValuesMap
      * 	mapt containing the input images associated to their input tensors
      * @return the object that creates a list of patch specs for each tensor
-     * @throws Exception if it is not possible to read the rdf.yaml file of the model or it
+     * @throws IOException if it is not possible to read the rdf.yaml file of the model or it
      * 	does not exist
      */
-    public static PatchGridCalculator build(String modelFolder, Map<String, Object> inputValuesMap) throws Exception {
-    	ModelDescriptor descriptor = 
-    			ModelDescriptor.readFromLocalFile(modelFolder + File.separator + Constants.RDF_FNAME, false);
+    public static PatchGridCalculator build(String modelFolder, Map<String, Object> inputValuesMap) throws IOException {
+    	ModelDescriptor descriptor;
+    	try {
+	    	descriptor = 
+	    			ModelDescriptor.readFromLocalFile(modelFolder + File.separator + Constants.RDF_FNAME, false);
+    	} catch (Exception ex) {
+    		throw new IOException("Unable to process the rf.yaml specifications file.", ex);
+    	}
     	return new PatchGridCalculator(descriptor, inputValuesMap);
-     }
+    }
     
     /**
      * Create the patch specifications for the model spces
