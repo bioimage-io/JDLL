@@ -27,6 +27,8 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Objects;
 
+import javax.xml.bind.ValidationException;
+
 import io.bioimage.modelrunner.bioimageio.description.ModelDescriptor;
 import io.bioimage.modelrunner.bioimageio.description.weights.WeightFormat;
 import io.bioimage.modelrunner.engine.DeepLearningEngineInterface;
@@ -38,6 +40,11 @@ import io.bioimage.modelrunner.exceptions.RunModelException;
 import io.bioimage.modelrunner.tensor.Tensor;
 import io.bioimage.modelrunner.utils.Constants;
 import io.bioimage.modelrunner.versionmanagement.InstalledEngines;
+import net.imglib2.RandomAccessibleInterval;
+import net.imglib2.img.Img;
+import net.imglib2.type.NativeType;
+import net.imglib2.type.numeric.NumericType;
+import net.imglib2.type.numeric.RealType;
 import net.imglib2.type.numeric.real.FloatType;
 
 /**
@@ -77,6 +84,10 @@ public class Model
 	 * Whether the model is created for the bioengine or not
 	 */
 	private boolean bioengine = false;
+	/**
+	 * Object containing the information of the rdf.yaml file of a Bioimage.io model
+	 */
+	private ModelDescriptor descriptor;
 
 	/**
 	 * Construct the object model with all the needed information to load a
@@ -130,7 +141,7 @@ public class Model
 	 *             if the directory is not found
 	 */
 	public static Model createDeepLearningModel( String modelFolder, String modelSource, EngineInfo engineInfo )
-			throws LoadEngineException, Exception
+			throws LoadEngineException
 	{
 		Objects.requireNonNull(modelFolder);
 		Objects.requireNonNull(engineInfo);
@@ -235,11 +246,12 @@ public class Model
 	 *  The classloader argument is usually not needed, but for some softwares 
 	 *  such as Icy, that have a custom management of ClassLoaders it is necessary.
 	 * @return a model ready to be loaded
+	 * @throws LoadEngineException 
 	 * @throws Exception if there is any error creating the model (no rdf.yaml file, no weights,
 	 * 	or the engines required for this model are not installed).
 	 */
 	public static Model createBioimageioModel(String bmzModelFolder, String enginesFolder, ClassLoader classloader) 
-			throws Exception {
+			throws LoadEngineException, Exception {
 		Objects.requireNonNull(bmzModelFolder);
 		Objects.requireNonNull(enginesFolder);
 		if (new File(bmzModelFolder, Constants.RDF_FNAME).isFile() == false)
@@ -424,6 +436,26 @@ public class Model
 		inTensors.stream().forEach( tt -> tt = Tensor.createCopyOfTensorInWantedDataType( tt, new FloatType() ) );
 		engineInstance.run( inTensors, outTensors );
 		engineClassLoader.setBaseClassLoader();
+	}
+	
+	/**
+	 * 
+	 * @param <T>
+	 * 	ImgLib2 data type of the output images
+	 * @param <R>
+	 * @param inputImgs
+	 * @return
+	 * @throws Exception 
+	 */
+	public <T extends RealType<T> & NativeType<T>, R extends RealType<R> & NativeType<R>> 
+	List<Img<T>> runBioimageioModelOnImgLib2WithTiling(List<RandomAccessibleInterval<R>> inputImgs) throws Exception {
+		if (descriptor == null && modelFolder == null) {
+			throw new IllegalArgumentException("");
+		} else if (descriptor == null && !(new File(modelFolder, Constants.RDF_FNAME).isFile())) {
+			throw new IllegalArgumentException("");
+		} else if (descriptor == null)
+			descriptor = ModelDescriptor.readFromLocalFile(modelFolder + File.separator + Constants.RDF_FNAME);
+		return null;
 	}
 
 	/**

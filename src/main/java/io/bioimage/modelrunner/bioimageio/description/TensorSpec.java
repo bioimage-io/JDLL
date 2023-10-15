@@ -25,6 +25,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.IntStream;
 
+import javax.xml.bind.ValidationException;
+
 import io.bioimage.modelrunner.tiling.PatchGridCalculator;
 import io.bioimage.modelrunner.utils.YAMLUtils;
 
@@ -110,10 +112,10 @@ public class TensorSpec {
      * @param input
      *        Whether it is an input (true) or an output (false) tensor.
      * @return The tensor specification instance.
-     * @throws Exception if any of the fields does not fulfill the requirements
+     * @throws ValidationException if any of the fields does not fulfill the requirements
      */
     @SuppressWarnings("unchecked")
-    public static TensorSpec build(Map<String, Object> tensorSpecMap, boolean input) throws Exception
+    public static TensorSpec build(Map<String, Object> tensorSpecMap, boolean input) throws ValidationException
     {
         TensorSpec tensor = new TensorSpec();
         tensor.name = (String) tensorSpecMap.get("name");
