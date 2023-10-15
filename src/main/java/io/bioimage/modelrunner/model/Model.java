@@ -24,6 +24,7 @@ package io.bioimage.modelrunner.model;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.MalformedURLException;
 import java.util.List;
 import java.util.Objects;
 
@@ -43,7 +44,6 @@ import io.bioimage.modelrunner.versionmanagement.InstalledEngines;
 import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.img.Img;
 import net.imglib2.type.NativeType;
-import net.imglib2.type.numeric.NumericType;
 import net.imglib2.type.numeric.RealType;
 import net.imglib2.type.numeric.real.FloatType;
 
@@ -104,11 +104,12 @@ public class Model
 	 * @throws LoadEngineException
 	 *             if there is an error finding the Deep LEarningn interface
 	 *             that connects with the DL libraries
-	 * @throws Exception
-	 *             if the directory is not found
+	 * @throws MalformedURLException if the JAR files are not well defined in the .json file
+	 * @throws IOException if there is any error finding the engines in the system
+	 * @throws IllegalStateException if any of the engines has been incorrectly modified
 	 */
 	private Model( EngineInfo engineInfo, String modelFolder, String modelSource, ClassLoader classLoader )
-			throws LoadEngineException, Exception
+			throws LoadEngineException, MalformedURLException, IllegalStateException, IOException
 	{
 		if ( !engineInfo.isBioengine()
 				&& !engineInfo.getFramework().equals(EngineInfo.getTensorflowKey())
@@ -137,11 +138,13 @@ public class Model
 	 * @throws LoadEngineException
 	 *             if there is an error finding the Deep LEarningn interface
 	 *             that connects with the DL libraries
-	 * @throws Exception
-	 *             if the directory is not found
+	 * @throws MalformedURLException if the JAR files are not well defined in the .json file
+	 * @throws IOException if there is any error finding the engines in the system
+	 * @throws IllegalStateException if any of the engines has been incorrectly modified
+	 * @throws LoadEngineException if there is any error loading the engines
 	 */
 	public static Model createDeepLearningModel( String modelFolder, String modelSource, EngineInfo engineInfo )
-			throws LoadEngineException
+			throws LoadEngineException, MalformedURLException, IllegalStateException, IOException
 	{
 		Objects.requireNonNull(modelFolder);
 		Objects.requireNonNull(engineInfo);
@@ -175,10 +178,12 @@ public class Model
 	 *  The classloader argument is usually not needed, but for some softwares 
 	 *  such as Icy, that have a custom management of ClassLoaders it is necessary.
 	 * @return a model ready to be loaded
-	 * @throws Exception if there is any error creating the model (no rdf.yaml file, no weights,
-	 * 	or the engines required for this model are not installed).
+	 * @throws LoadEngineException if there is any error loading the DL framework
+	 * @throws IOException if there is any error finding the engines in the system
+	 * @throws ValidationException if the rdf.yaml file has some at least a field which does not comply with the Bioiamge.io constraints
 	 */
-	public static Model createBioimageioModel(String bmzModelFolder, ClassLoader classloader) throws Exception {
+	public static Model createBioimageioModel(String bmzModelFolder, ClassLoader classloader)
+			throws LoadEngineException, ValidationException, IOException {
 		return createBioimageioModel(bmzModelFolder, InstalledEngines.getEnginesDir(), classloader);
 	}
 	
@@ -193,10 +198,12 @@ public class Model
 	 * @param bmzModelFolder
 	 * 	folder where the bioimage.io model is located (parent folder of the rdf.yaml file)
 	 * @return a model ready to be loaded
-	 * @throws Exception if there is any error creating the model (no rdf.yaml file, no weights,
-	 * 	or the engines required for this model are not installed).
+	 * @throws LoadEngineException if there is any error loading the DL framework
+	 * @throws IOException if there is any error finding the engines in the system
+	 * @throws ValidationException if the rdf.yaml file has some at least a field which does not comply with the Bioiamge.io constraints
 	 */
-	public static Model createBioimageioModel(String bmzModelFolder) throws Exception {
+	public static Model createBioimageioModel(String bmzModelFolder)
+			throws ValidationException, LoadEngineException, IOException {
 		return createBioimageioModel(bmzModelFolder, InstalledEngines.getEnginesDir());
 	}
 	
@@ -213,11 +220,12 @@ public class Model
 	 * @param enginesFolder
 	 * 	directory where all the engine (DL framework) folders are downloaded
 	 * @return a model ready to be loaded
-	 * @throws Exception if there is any error creating the model (no rdf.yaml file, no weights,
-	 * 	or the engines required for this model are not installed).
+	 * @throws LoadEngineException if there is any error loading the DL framework
+	 * @throws IOException if there is any error finding the engines in the system
+	 * @throws ValidationException if the rdf.yaml file has some at least a field which does not comply with the Bioiamge.io constraints
 	 */
 	public static Model createBioimageioModel(String bmzModelFolder, String enginesFolder) 
-			throws Exception {
+			throws ValidationException, LoadEngineException, IOException {
 		return createBioimageioModel(bmzModelFolder, enginesFolder, null);
 	}
 	
@@ -246,12 +254,12 @@ public class Model
 	 *  The classloader argument is usually not needed, but for some softwares 
 	 *  such as Icy, that have a custom management of ClassLoaders it is necessary.
 	 * @return a model ready to be loaded
-	 * @throws LoadEngineException 
-	 * @throws Exception if there is any error creating the model (no rdf.yaml file, no weights,
-	 * 	or the engines required for this model are not installed).
+	 * @throws LoadEngineException if there is any error loading the DL framework
+	 * @throws IOException if there is any error finding the engines in the system
+	 * @throws ValidationException if the rdf.yaml file has some at least a field which does not comply with the Bioiamge.io constraints
 	 */
 	public static Model createBioimageioModel(String bmzModelFolder, String enginesFolder, ClassLoader classloader) 
-			throws LoadEngineException, Exception {
+			throws LoadEngineException, IOException, ValidationException {
 		Objects.requireNonNull(bmzModelFolder);
 		Objects.requireNonNull(enginesFolder);
 		if (new File(bmzModelFolder, Constants.RDF_FNAME).isFile() == false)
@@ -293,11 +301,13 @@ public class Model
 	 * @param enginesFolder
 	 * 	directory where all the engine (DL framework) folders are downloaded
 	 * @return a model ready to be loaded
-	 * @throws Exception if there is any error creating the model (no rdf.yaml file, no weights,
-	 * 	or the engines required for this model are not installed).
+	 * @throws LoadEngineException if there is any error loading the DL framework
+	 * @throws IOException if there is any error finding the engines in the system
+	 * @throws ValidationException if the rdf.yaml file has some at least a field which does not comply with the Bioiamge.io constraints
+	 * @throws IllegalStateException if any of the installed DL engines have been manipulated incorrectly
 	 */
-	public static Model createBioimageioModelWithExactWeigths(String bmzModelFolder, String enginesFolder) 
-			throws Exception {
+	public static Model createBioimageioModelWithExactWeigths(String bmzModelFolder, String enginesFolder)
+			throws IOException, ValidationException, IllegalStateException, LoadEngineException {
 		Objects.requireNonNull(bmzModelFolder);
 		Objects.requireNonNull(enginesFolder);
 		if (new File(bmzModelFolder, Constants.RDF_FNAME).isFile() == false)
@@ -350,14 +360,13 @@ public class Model
 	 *  The classloader argument is usually not needed, but for some softwares 
 	 *  such as Icy, that have a custom management of ClassLoaders it is necessary.
 	 * @return the Model that is going to be used to make inference
-	 * @throws LoadEngineException
-	 *             if there is an error finding the Deep LEarningn interface
-	 *             that connects with the DL libraries
-	 * @throws Exception
-	 *             if the directory is not found
+	 * @throws LoadEngineException if there is any error loading the DL framework
+	 * @throws IOException if there is any error finding the engines in the system
+	 * @throws ValidationException if the rdf.yaml file has some at least a field which does not comply with the Bioiamge.io constraints
+	 * @throws IllegalStateException if any of the installed DL engines have been manipulated incorrectly
 	 */
 	public static Model createDeepLearningModel( String modelFolder, String modelSource, EngineInfo engineInfo,
-			ClassLoader classLoader ) throws LoadEngineException, Exception
+			ClassLoader classLoader ) throws LoadEngineException, MalformedURLException, IllegalStateException, IOException
 	{
 		Objects.requireNonNull(modelFolder);
 		Objects.requireNonNull(engineInfo);
@@ -376,10 +385,11 @@ public class Model
 	 * @throws LoadEngineException
 	 *             if there is an error finding the Deep LEarningn interface
 	 *             that connects with the DL libraries
-	 * @throws Exception
-	 *             if the directory is not found
+	 * @throws MalformedURLException if the JAR files are not well defined in the .json file
+	 * @throws IOException if there is any error finding the engines in the system
+	 * @throws IllegalStateException if any of the engines has been incorrectly modified
 	 */
-	private void setEngineClassLoader( ClassLoader classLoader ) throws LoadEngineException, Exception
+	private void setEngineClassLoader( ClassLoader classLoader ) throws LoadEngineException, MalformedURLException, IllegalStateException, IOException
 	{
 		this.engineClassLoader = EngineLoader.createEngine(
 				( classLoader == null ) ? Thread.currentThread().getContextClassLoader() : classLoader, engineInfo );
@@ -426,10 +436,8 @@ public class Model
 	 *            expected output tensors. Their backend data will be rewritten with the result of the inference
 	 * @throws RunModelException
 	 *             if the is any problem running the model
-	 * @throws RunModelException
-	 *             if there is any problem closing the tensors
 	 */
-	public void runModel( List< Tensor < ? > > inTensors, List< Tensor < ? > > outTensors ) throws RunModelException, Exception
+	public void runModel( List< Tensor < ? > > inTensors, List< Tensor < ? > > outTensors ) throws RunModelException
 	{
 		DeepLearningEngineInterface engineInstance = engineClassLoader.getEngineInstance();
 		engineClassLoader.setEngineClassLoader();
