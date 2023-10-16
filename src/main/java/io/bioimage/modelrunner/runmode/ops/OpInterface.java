@@ -19,12 +19,11 @@
  */
 package io.bioimage.modelrunner.runmode.ops;
 
-import java.io.IOException;
 import java.util.LinkedHashMap;
 
 /**
  * Interface that every OP needs to implement to be able to be run as a RunMode
- * @author Carlos Garcia Lopez de Haro
+ * @author Carlos Javier Garcia Lopez de Haro
  *
  */
 public interface OpInterface {
