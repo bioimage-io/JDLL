@@ -131,6 +131,7 @@ public class RunMode {
 						break;
                 }
             });
+            task.start();
             task.waitFor();
             System.out.println("here2");
             outputs = recreateOutputObjects(task.outputs);
