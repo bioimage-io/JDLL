@@ -21,10 +21,10 @@ package io.bioimage.modelrunner.tiling;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -49,6 +49,10 @@ public class PatchGridCalculator
 
     private ModelDescriptor descriptor;
     private Map<String, Object> inputValuesMap;
+    /**
+     * MAp containing the {@link PatchSpec} for each of the tensors defined in the rdf.yaml specs file
+     */
+    private LinkedHashMap<String, PatchSpec> psMap;
 
     /**
      * Class to calculate the patch specifications given a series of inputs
@@ -146,43 +150,48 @@ public class PatchGridCalculator
     /**
      * Computes the patch size adapted for the input sequence using the model tensor specification.
      * 
-     * @return The patch specifications to use for this model and the input sequence.
+     * @return the LinkedHashMap where the key corresponds to the name of the tensor and the value is its
+     *  patch specifications
      * @throws IllegalArgumentException if one tensor that allows tiling needs more patches
      * 	in any given axis than the others
      */
-    public List<PatchSpec> call() throws IllegalArgumentException
+    public LinkedHashMap<String, PatchSpec> get() throws IllegalArgumentException
     {
+    	if (psMap != null)
+    		return psMap;
     	List<TensorSpec> inputTensors = findInputImageTensorSpec();
         List<Object> inputImages = inputTensors.stream()
         		.map(k -> this.inputValuesMap.get(k)).collect(Collectors.toList());
-        List<PatchSpec> listPatchSpecs = computePatchSpecsForEveryTensor(inputTensors, inputImages);
+        LinkedHashMap<String, PatchSpec> specsMap = computePatchSpecsForEveryTensor(inputTensors, inputImages);
         // Check that the obtained patch specs are not going to cause errors
-        checkPatchSpecs(listPatchSpecs);
-        return listPatchSpecs;
+        checkPatchSpecs(specsMap);
+        psMap = specsMap;
+        return psMap;
     }
     
     /**
      * Check that the relationship between tensor and image is the same for all the tensors
      * that allow tiling
-     * @param listPatchSpecs
-     * 	specs for each of the tensors
+     * @param patchSpecs
+     * 	LinkedHashMap where the key corresponds to the name of the tensor and the value is its
+     *  patch specifications
      * @throws IllegalArgumentException if one tensor that allows tiling needs more patches
      * 	in any given axis than the others
      */
-    public void checkPatchSpecs(List<PatchSpec> listPatchSpecs) throws IllegalArgumentException {
+    public void checkPatchSpecs(LinkedHashMap<String, PatchSpec> patchSpecs) throws IllegalArgumentException {
     	int[] grid = null;
     	String firstName = null;
-    	for (PatchSpec spec : listPatchSpecs) {
-    		int[] nGrid = spec.getPatchGridSize();
-    		TensorSpec tt = this.descriptor.findInputTensor(spec.getTensorName());
+    	for (Entry<String, PatchSpec> spec : patchSpecs.entrySet()) {
+    		int[] nGrid = spec.getValue().getPatchGridSize();
+    		TensorSpec tt = this.descriptor.findInputTensor(spec.getKey());
     		if (grid == null && tt.getTiling()) {
     			grid = nGrid;
-    			firstName = spec.getTensorName();
+    			firstName = spec.getKey();
     		}
     		if (tt.getTiling() && !compareTwoArrays(nGrid, grid)){
     			throw new IllegalArgumentException("All the input images must be processed with the same number of patches.\n"
 						+ "The relationship between the patch size and image size should be the same for every input that allows patching/tiling.\n"
-						+ "Tensors '" + firstName + "' and '" + spec.getTensorName() + "' need different number of patches to "
+						+ "Tensors '" + firstName + "' and '" + spec.getKey() + "' need different number of patches to "
 						+ "process their images and that is not supported at the moment.");
     		}
     	}
@@ -220,12 +229,13 @@ public class PatchGridCalculator
      * 	the tensor information
      * @param images
      * 	the images corresponding to each tensor
-     * @return the list of patch specifications for each tensor
+     * @return the LinkedHashMap where the key corresponds to the name of the tensor and the value is its
+     *  patch specifications
      */
-    private List<PatchSpec> computePatchSpecsForEveryTensor(List<TensorSpec> tensors, List<Object> images){
-    	List<PatchSpec> patchInfoList = new ArrayList<PatchSpec>();
+    private LinkedHashMap<String, PatchSpec> computePatchSpecsForEveryTensor(List<TensorSpec> tensors, List<Object> images){
+    	LinkedHashMap<String, PatchSpec> patchInfoList = new LinkedHashMap<String, PatchSpec>();
     	for (int i = 0; i < tensors.size(); i ++)
-    		patchInfoList.add(computePatchSpecs(tensors.get(i), images.get(i)));
+    		patchInfoList.put(tensors.get(i).getName(), computePatchSpecs(tensors.get(i), images.get(i)));
     	return patchInfoList;
     }
 
