@@ -23,7 +23,6 @@ import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -39,6 +38,7 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 
+import io.bioimage.modelrunner.bioimageio.bioengine.BioEngineAvailableModels;
 import io.bioimage.modelrunner.bioimageio.description.ModelDescriptor;
 import io.bioimage.modelrunner.bioimageio.download.DownloadModel;
 import io.bioimage.modelrunner.bioimageio.download.DownloadTracker;
@@ -338,6 +338,18 @@ public class BioimageioRepo {
 		if (modelNicknames == null)
 			return new ArrayList<String>();
 		return modelNicknames;
+	}
+	
+	/**
+	 * Check whether a model is available on the Bioengine or not by providing its id
+	 * @param id
+	 * 	id of the model of interest
+	 * @return true if it is available or false otherwise
+	 * @throws IOException if there is no connection to the internet or the
+	 * 	JSOn with the information cannot be accessed: https://raw.githubusercontent.com/bioimage-io/bioengine-model-runner/gh-pages/manifest.bioengine.json
+	 */
+	public static boolean isModelOnTheBioengineById(String id) throws IOException {
+		return BioEngineAvailableModels.isModelSupportedInBioengine(id);
 	}
 	
 	/**

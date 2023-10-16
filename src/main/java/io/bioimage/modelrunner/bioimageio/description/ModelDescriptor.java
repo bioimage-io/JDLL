@@ -37,6 +37,7 @@ import java.util.stream.Collectors;
 
 import javax.xml.bind.ValidationException;
 
+import io.bioimage.modelrunner.bioimageio.BioimageioRepo;
 import io.bioimage.modelrunner.bioimageio.description.weights.ModelWeight;
 import io.bioimage.modelrunner.utils.Log;
 import io.bioimage.modelrunner.utils.YAMLUtils;
@@ -326,7 +327,7 @@ public class ModelDescriptor
 			return;
 	    }
     	try {
-			supportBioengine = false;// BioimageioRepo.isModelOnTheBioengineById(modelID);
+			supportBioengine =  BioimageioRepo.isModelOnTheBioengineById(modelID);
 		} catch (Exception e) {
 			e.printStackTrace();
 		}

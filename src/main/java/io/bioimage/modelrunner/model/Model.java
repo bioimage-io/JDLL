@@ -32,6 +32,8 @@ import java.util.Objects;
 
 import javax.xml.bind.ValidationException;
 
+import io.bioimage.modelrunner.bioimageio.bioengine.BioEngineAvailableModels;
+import io.bioimage.modelrunner.bioimageio.bioengine.BioengineInterface;
 import io.bioimage.modelrunner.bioimageio.description.ModelDescriptor;
 import io.bioimage.modelrunner.bioimageio.description.weights.WeightFormat;
 import io.bioimage.modelrunner.engine.DeepLearningEngineInterface;
@@ -382,6 +384,35 @@ public class Model
 	}
 
 	/**
+	 * Load a model from the bioimage.io directly on the Bioengine. 
+	 * Only the path to the model folder that contains the rdf.yaml is needed.
+	 * To load a model on the bioengine we need to specify the server where our instance
+	 * of the Bioengine is hosted.
+	 * @param bmzModelFolder
+	 * 	folder where the bioimage.io model is located (parent folder of the rdf.yaml file)
+	 * @param serverURL
+	 * 	url where the wanted insance of the bioengine is hosted
+	 * @return a model ready to be loaded
+	 * @throws Exception if there is any error creating the model (no rdf.yaml file,
+	 *  or the url does not exist) or if the model is not supported on the Bioengine.
+	 *  To check the models supported on the Bioengine, visit: https://raw.githubusercontent.com/bioimage-io/bioengine-model-runner/gh-pages/manifest.bioengine.yaml
+	 */
+	public static Model createBioimageioModelForBioengine(String bmzModelFolder, String serverURL) throws Exception {
+		if (new File(bmzModelFolder, Constants.RDF_FNAME).isFile() == false)
+			throw new IOException("A Bioimage.io model folder should contain its corresponding rdf.yaml file.");
+		ModelDescriptor descriptor = 
+				ModelDescriptor.readFromLocalFile(bmzModelFolder + File.separator + Constants.RDF_FNAME, false);
+		boolean valid = BioEngineAvailableModels.isModelSupportedInBioengine(descriptor.getModelID());
+		if (!valid)
+			throw new IllegalArgumentException("The selected model is currently not supported by the Bioegine. "
+					+ "To check the list of supported models please visit: " + BioEngineAvailableModels.getBioengineJson());
+		EngineInfo info = EngineInfo.defineBioengine(serverURL);
+		Model model =  Model.createDeepLearningModel(bmzModelFolder, null, info);
+		model.bioengine = true;
+		return model;
+	}
+
+	/**
 	 * Sets the classloader containing the Deep Learning engine
 	 * 
 	 * @param classLoader
@@ -411,6 +442,8 @@ public class Model
 		DeepLearningEngineInterface engineInstance = engineClassLoader.getEngineInstance();
 		engineClassLoader.setEngineClassLoader();
 		engineInstance.loadModel( modelFolder, modelSource );
+		if (engineClassLoader.isBioengine())
+			((BioengineInterface) engineInstance).addServer(engineInfo.getServer());
 		engineClassLoader.setBaseClassLoader();
 	}
 
