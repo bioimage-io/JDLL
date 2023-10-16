@@ -25,7 +25,9 @@ package io.bioimage.modelrunner.model;
 import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 
 import javax.xml.bind.ValidationException;
@@ -467,7 +469,8 @@ public class Model
 		else if (descriptor == null)
 			descriptor = ModelDescriptor.readFromLocalFile(modelFolder + File.separator + Constants.RDF_FNAME);
 		PatchGridCalculator tileGrid = PatchGridCalculator.build(descriptor, inputImgs);
-		List<PatchSpec> specs = tileGrid.call();
+		Map<String, PatchSpec> specs = tileGrid.get();
+		specs.get("").getPatchInputSize()
 		return null;
 	}
 

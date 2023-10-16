@@ -53,6 +53,19 @@ public class IndexingUtils
 		}
 		return flat;
 	}
+	
+	public static void main(String[] args) {
+		int[] size = new int[] {3, 3, 2};
+		int[] pos0 = new int[] {0, 0, 0};
+		int[] pos1 = new int[] {0, 0, 1};
+		int[] pos2 = new int[] {0, 0, 2};
+		int[] pos3 = new int[] {1, 0, 0};
+		System.out.println(multidimensionalIntoFlatIndex(pos0, size));
+		System.out.println(multidimensionalIntoFlatIndex(pos1, size));
+		System.out.println(multidimensionalIntoFlatIndex(pos2, size));
+		System.out.println(multidimensionalIntoFlatIndex(pos3, size));
+		System.out.println(multidimensionalIntoFlatIndex(pos0, size));
+	}
 
 	/**
 	 * Obtain a flat index position from a multidimensional index position
