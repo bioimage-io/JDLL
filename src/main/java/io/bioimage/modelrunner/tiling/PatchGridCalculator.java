@@ -32,11 +32,8 @@ import io.bioimage.modelrunner.bioimageio.description.ModelDescriptor;
 import io.bioimage.modelrunner.bioimageio.description.TensorSpec;
 import io.bioimage.modelrunner.tensor.Tensor;
 import io.bioimage.modelrunner.utils.Constants;
-import net.imglib2.IterableInterval;
 import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.type.NativeType;
-import net.imglib2.type.Type;
-import net.imglib2.type.numeric.NumericType;
 import net.imglib2.type.numeric.RealType;
 
 /**
@@ -45,7 +42,7 @@ import net.imglib2.type.numeric.RealType;
  * 
  * @author Carlos Garcia Lopez de Haro and Daniel Felipe Gonzalez Obando 
  */
-public class PatchGridCalculator<T extends RealType<T> & NativeType<T>> 
+public class PatchGridCalculator <T extends RealType<T> & NativeType<T>> 
 {
 
     private ModelDescriptor descriptor;
@@ -133,9 +130,9 @@ public class PatchGridCalculator<T extends RealType<T> & NativeType<T>>
      * 	to the first input, second image to second output and so on.
      * @return the object that creates a list of patch specs for each tensor
      */
-    public static <T extends NumericType<T> & RealType<T>> 
+    public static <T extends NativeType<T> & RealType<T>> 
     PatchGridCalculator<T> build(ModelDescriptor model, List<Tensor<T>> inputImagesList) {
-    	LinkedHashMap<String, Object> map = new LinkedHashMap<String, Object>();
+    	LinkedHashMap<String, Tensor<T>> map = new LinkedHashMap<String, Tensor<T>>();
     	if (inputImagesList.size() != model.getInputTensors().size())
     		throw new IllegalArgumentException("The size of the list containing the model input RandomAccessibleIntervals"
     						+ " was not the same size (" + inputImagesList.size() + ") as the number of "
@@ -159,7 +156,7 @@ public class PatchGridCalculator<T extends RealType<T> & NativeType<T>>
     	if (psMap != null)
     		return psMap;
     	List<TensorSpec> inputTensors = findInputImageTensorSpec();
-        List<Object> inputImages = inputTensors.stream()
+        List<Tensor<T>> inputImages = inputTensors.stream()
         		.filter(k -> this.inputValuesMap.get(k.getName()) != null)
         		.map(k -> this.inputValuesMap.get(k.getName())).collect(Collectors.toList());
         if (inputImages.size() == 0)
@@ -235,7 +232,7 @@ public class PatchGridCalculator<T extends RealType<T> & NativeType<T>>
      * @return the LinkedHashMap where the key corresponds to the name of the tensor and the value is its
      *  patch specifications
      */
-    private LinkedHashMap<String, PatchSpec> computePatchSpecsForEveryTensor(List<TensorSpec> tensors, List<Object> images){
+    private LinkedHashMap<String, PatchSpec> computePatchSpecsForEveryTensor(List<TensorSpec> tensors, List<Tensor<T>> images){
     	LinkedHashMap<String, PatchSpec> patchInfoList = new LinkedHashMap<String, PatchSpec>();
     	for (int i = 0; i < tensors.size(); i ++)
     		patchInfoList.put(tensors.get(i).getName(), computePatchSpecs(tensors.get(i), images.get(i)));
@@ -254,19 +251,9 @@ public class PatchGridCalculator<T extends RealType<T> & NativeType<T>>
      * @throws IllegalArgumentException if the JAva type of the input object is not among the 
      * 	allowed ones ({@link Sequence}, {@link NDArray} or {@link Tensor})
      */
-    private <T extends Type<T>> PatchSpec computePatchSpecs(TensorSpec inputTensorSpec, Object inputObject)
+    private <T extends NativeType<T> & RealType<T>> PatchSpec computePatchSpecs(TensorSpec inputTensorSpec, Tensor<T> inputObject)
     		throws IllegalArgumentException {
-    	if (inputObject instanceof RandomAccessibleInterval) {
-    		return computePatchSpecs(inputTensorSpec, (RandomAccessibleInterval<T>) inputObject);
-    	} else if(inputObject instanceof Tensor ) {
-    		return computePatchSpecs(inputTensorSpec, ((Tensor) inputObject).getData());
-    	} else {
-    		throw new IllegalArgumentException("Input tensor '" + inputTensorSpec.getName()
-    		+ "' is not from a supported a Java class (" + inputObject.getClass().toString()
-    		+ ") that JDLL can pass to a model. JDLL can only handle inputs to the model as:" + System.lineSeparator()
-    				+ "- " + RandomAccessibleInterval.class.toString() + System.lineSeparator()
-    				+ "- " + Tensor.class.toString() + System.lineSeparator());
-    	}
+    	return computePatchSpecs(inputTensorSpec, inputObject.getData());
     }
 
     /**
@@ -283,9 +270,9 @@ public class PatchGridCalculator<T extends RealType<T> & NativeType<T>>
      * 	input patch to the model
      * @return an object containing the specs needed to perform patching for the particular tensor
      */
-    private <T extends NumericType<T> & RealType<T>> PatchSpec computePatchSpecs(TensorSpec inputTensorSpec, RandomAccessibleInterval<T> inputSequence)
+    private PatchSpec computePatchSpecs(TensorSpec inputTensorSpec, RandomAccessibleInterval<T> inputSequence)
     {
-    	String processingAxesOrder = "xyczb";
+    	String processingAxesOrder = inputTensorSpec.getAxesOrder();
         int[] inputPatchSize = arrayToWantedAxesOrderAddOnes(inputTensorSpec.getProcessingPatch(),
 				        										inputTensorSpec.getAxesOrder(), 
 				        										processingAxesOrder);
