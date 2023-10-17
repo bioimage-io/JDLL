@@ -34,11 +34,25 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import io.bioimage.modelrunner.tensor.Utils;
 import io.bioimage.modelrunner.utils.IndexingUtils;
 import net.imglib2.Cursor;
 import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.img.Img;
 import net.imglib2.img.array.ArrayImgFactory;
+import net.imglib2.img.array.ArrayImgs;
+import net.imglib2.img.basictypeaccess.ByteAccess;
+import net.imglib2.img.basictypeaccess.DoubleAccess;
+import net.imglib2.img.basictypeaccess.FloatAccess;
+import net.imglib2.img.basictypeaccess.IntAccess;
+import net.imglib2.img.basictypeaccess.LongAccess;
+import net.imglib2.img.basictypeaccess.ShortAccess;
+import net.imglib2.img.basictypeaccess.nio.ByteBufferAccess;
+import net.imglib2.img.basictypeaccess.nio.DoubleBufferAccess;
+import net.imglib2.img.basictypeaccess.nio.FloatBufferAccess;
+import net.imglib2.img.basictypeaccess.nio.IntBufferAccess;
+import net.imglib2.img.basictypeaccess.nio.LongBufferAccess;
+import net.imglib2.img.basictypeaccess.nio.ShortBufferAccess;
 import net.imglib2.type.NativeType;
 import net.imglib2.type.numeric.RealType;
 import net.imglib2.type.numeric.integer.ByteType;
@@ -305,28 +319,49 @@ public class DecodeNumpy {
      *         If the tensor type is not supported.
      */
     @SuppressWarnings("unchecked")
-    public static <T extends NativeType<T>> Img<T> build(ByteBuffer buf, ByteOrder byteOrder, String dtype, long[] shape) throws IllegalArgumentException
+    public static <T extends NativeType<T>> RandomAccessibleInterval<T> build(ByteBuffer buf, ByteOrder byteOrder, String dtype, long[] shape) throws IllegalArgumentException
     {
+    	long[] transposedShape = new long[shape.length];
+    	for (int i = 0; i < shape.length; i ++)
+    		transposedShape[i] = shape[shape.length - i - 1];
     	if (dtype.equals("int8")) {
-    		return (Img<T>) buildInt8(buf, byteOrder, shape);
+    		ByteAccess access = new ByteBufferAccess(buf, true);
+    		return (RandomAccessibleInterval<T>) Utils.transpose(ArrayImgs.bytes( access, shape ));
+    		//return (Img<T>) buildInt8(buf, byteOrder, shape);
     	} else if (dtype.equals("uint8")) {
-    		return (Img<T>) buildUInt8(buf, byteOrder, shape);
+    		ByteAccess access = new ByteBufferAccess(buf, true);
+    		return (RandomAccessibleInterval<T>) Utils.transpose(ArrayImgs.unsignedBytes( access, shape ));
+    		//return (Img<T>) buildUInt8(buf, byteOrder, shape);
     	} else if (dtype.equals("int16")) {
-    		return (Img<T>) buildInt16(buf, byteOrder, shape);
+    		ShortAccess access = new ShortBufferAccess(buf, true);
+    		return (RandomAccessibleInterval<T>) Utils.transpose(ArrayImgs.shorts( access, shape ));
+    		//return (Img<T>) buildInt16(buf, byteOrder, shape);
     	} else if (dtype.equals("uint16")) {
-    		return (Img<T>) buildUInt16(buf, byteOrder, shape);
+    		ShortAccess access = new ShortBufferAccess(buf, true);
+    		return (RandomAccessibleInterval<T>) Utils.transpose(ArrayImgs.unsignedShorts( access, shape ));
+    		//return (Img<T>) buildUInt16(buf, byteOrder, shape);
     	} else if (dtype.equals("int32")) {
-    		return (Img<T>) buildInt32(buf, byteOrder, shape);
+    		IntAccess access = new IntBufferAccess(buf, true);
+    		return (RandomAccessibleInterval<T>) Utils.transpose(ArrayImgs.ints( access, shape ));
+    		//return (Img<T>) buildInt32(buf, byteOrder, shape);
     	} else if (dtype.equals("uint32")) {
-    		return (Img<T>) buildUInt32(buf, byteOrder, shape);
+    		IntAccess access = new IntBufferAccess(buf, true);
+    		return (RandomAccessibleInterval<T>) Utils.transpose(ArrayImgs.unsignedInts( access, shape ));
+    		//return (Img<T>) buildUInt32(buf, byteOrder, shape);
     	} else if (dtype.equals("int64")) {
-    		return (Img<T>) buildInt64(buf, byteOrder, shape);
+    		LongAccess access = new LongBufferAccess(buf, true);
+    		return (RandomAccessibleInterval<T>) Utils.transpose(ArrayImgs.longs( access, shape ));
+    		//return (Img<T>) buildInt64(buf, byteOrder, shape);
     	} else if (dtype.equals("float32")) {
-    		return (Img<T>) buildFloat32(buf, byteOrder, shape);
+    		FloatAccess access = new FloatBufferAccess(buf, true);
+    		return (RandomAccessibleInterval<T>) Utils.transpose(ArrayImgs.floats( access, shape ));
+    		//return (Img<T>) buildFloat32(buf, byteOrder, shape);
     	} else if (dtype.equals("float64")) {
-    		return (Img<T>) buildFloat64(buf, byteOrder, shape);
+    		DoubleAccess access = new DoubleBufferAccess(buf, true);
+    		return (RandomAccessibleInterval<T>) Utils.transpose(ArrayImgs.doubles( access, shape ));
+    		//return (Img<T>) buildFloat64(buf, byteOrder, shape);
     	} else if (dtype.equals("bool")) {
-    		return (Img<T>) buildBoolean(buf, byteOrder, shape);
+    		return (RandomAccessibleInterval<T>) Utils.transpose(buildBoolean(buf, byteOrder, shape));
     	} else {
             throw new IllegalArgumentException("Unsupported data type of numpy array: " + dtype);
     	}
