@@ -57,27 +57,27 @@ public class PatchGridCalculator <T extends RealType<T> & NativeType<T>>
      * and their specifications
      * @param descriptor
      * 	the specifications of each input
-     * @param inputValuesMap
+     * @param tensorList
      * 	map containing the input images associated to their input tensors
      * @throws IllegalArgumentException if the {@link #inputValuesMap}
      */
-    private PatchGridCalculator(ModelDescriptor descriptor, Map<String, Tensor<T>> inputValuesMap)
+    private PatchGridCalculator(ModelDescriptor descriptor, List<Tensor<T>> tensorList)
     		throws IllegalArgumentException
     {
     	for (TensorSpec tt : descriptor.getInputTensors()) {
-    		if (tt.isImage() && inputValuesMap.get(tt.getName()) == null)
+    		if (tt.isImage() && Tensor.getTensorByNameFromList(tensorList, tt.getName()) != null)
     			throw new IllegalArgumentException("Model input tensor '" + tt.getName() + "' is specified in the rdf.yaml specs file "
     					+ "but cannot be found in the model inputs map provided.");
     		// TODO change isImage() by isTensor()
-    		if (tt.isImage() && !(inputValuesMap.get(tt.getName()) instanceof Tensor))
+    		if (tt.isImage() && !(Tensor.getTensorByNameFromList(tensorList, tt.getName()) instanceof Tensor))
     			throw new IllegalArgumentException("Model input tensor '" + tt.getName() + "' is specified in the rdf.yaml specs file "
     					+ "as a tensor but. JDLL needs tensor to be specified either as JDLL tensors (io.bioimage.tensor.Tensor) "
     					+ "or ImgLib2 Imgs (net.imglib2.img.Img), ImgLib2 RandomAccessibleIntervals (net.imglib2.RandomAccessibleInterval) "
     					+ "or ImgLib2 IterableIntervals (net.imglib2.IterableInterval). However, input "
-    					+ "'" + tt.getName() + "' is defined as: " + inputValuesMap.get(tt.getName()).getClass());
+    					+ "'" + tt.getName() + "' is defined as: " + Tensor.getTensorByNameFromList(tensorList, tt.getName()).getClass());
     	}
     	this.descriptor = descriptor;
-    	this.inputValuesMap = inputValuesMap;
+    	this.inputValuesMap = tensorList.stream().collect(Collectors.toMap(t -> t.getName(), t -> t));
     }
     
     /**
@@ -85,13 +85,13 @@ public class PatchGridCalculator <T extends RealType<T> & NativeType<T>>
      * @param modelFolder
      * 	path to the foler of a bioimage.io model. This is the folder where the rdf.yaml
      * 	of the model is located
-     * @param inputValuesMap
-     * 	mapt containing the input images associated to their input tensors
+     * @param inputTensors
+     * 	list containing the input tensors
      * @return the object that creates a list of patch specs for each tensor
      * @throws IOException if it is not possible to read the rdf.yaml file of the model or it
      * 	does not exist
      */
-    public static <T extends RealType<T> & NativeType<T>> PatchGridCalculator<T> build(String modelFolder, Map<String, Tensor<T>> inputValuesMap) throws IOException {
+    public static <T extends RealType<T> & NativeType<T>> PatchGridCalculator<T> build(String modelFolder, List<Tensor<T>> inputTensors) throws IOException {
     	ModelDescriptor descriptor;
     	try {
 	    	descriptor = 
@@ -99,24 +99,8 @@ public class PatchGridCalculator <T extends RealType<T> & NativeType<T>>
     	} catch (Exception ex) {
     		throw new IOException("Unable to process the rf.yaml specifications file.", ex);
     	}
-    	return new PatchGridCalculator<T>(descriptor, inputValuesMap);
+    	return new PatchGridCalculator<T>(descriptor, inputTensors);
     }
-    
-    /**
-     * Create the patch specifications for the model spces
-     * @param model
-     * 	model specs
-     * @param inputValuesMap
-     * 	map containing the input images associated to their input tensors
-     * @return the object that creates a list of patch specs for each tensor
-     * @throws IllegalArgumentException if the inputs provided in the input values map does not correspond
-     * 	to the inputs defined in the inputs field of the rdf.yaml specs file.
-     */
-    public static <T extends RealType<T> & NativeType<T>> 
-    PatchGridCalculator<T> build(ModelDescriptor model, LinkedHashMap<String, Tensor<T>> inputValuesMap) 
-    		throws IllegalArgumentException {
-    	return new PatchGridCalculator<T>(model, inputValuesMap);
-     }
     
     /**
      * Create the patch specifications for the model specs
@@ -132,15 +116,11 @@ public class PatchGridCalculator <T extends RealType<T> & NativeType<T>>
      */
     public static <T extends NativeType<T> & RealType<T>> 
     PatchGridCalculator<T> build(ModelDescriptor model, List<Tensor<T>> inputImagesList) {
-    	LinkedHashMap<String, Tensor<T>> map = new LinkedHashMap<String, Tensor<T>>();
     	if (inputImagesList.size() != model.getInputTensors().size())
     		throw new IllegalArgumentException("The size of the list containing the model input RandomAccessibleIntervals"
     						+ " was not the same size (" + inputImagesList.size() + ") as the number of "
     						+ "inputs to the model as defined in the rdf.yaml file(" + model.getInputTensors().size() + ").");
-    	int c = 0;
-    	for (TensorSpec tt : model.getInputTensors())
-    		map.put(tt.getName(), inputImagesList.get(c ++));
-    	 return new PatchGridCalculator<T>(model, map);
+    	return new PatchGridCalculator<T>(model, inputImagesList);
      }
 
     /**
@@ -251,7 +231,7 @@ public class PatchGridCalculator <T extends RealType<T> & NativeType<T>>
      * @throws IllegalArgumentException if the JAva type of the input object is not among the 
      * 	allowed ones ({@link Sequence}, {@link NDArray} or {@link Tensor})
      */
-    private <T extends NativeType<T> & RealType<T>> PatchSpec computePatchSpecs(TensorSpec inputTensorSpec, Tensor<T> inputObject)
+    private PatchSpec computePatchSpecs(TensorSpec inputTensorSpec, Tensor<T> inputObject)
     		throws IllegalArgumentException {
     	return computePatchSpecs(inputTensorSpec, inputObject.getData());
     }
@@ -260,40 +240,57 @@ public class PatchGridCalculator <T extends RealType<T> & NativeType<T>>
      * Compute the patch details needed to perform the tiling strategy. The calculations
      * obtain the input patch, the padding needed at each side and the number of patches
      * needed for every tensor.
-     * To make it standard for all axes order and patches, the calculations are always done
-     * using the "xyczb" axes order
-     * @param inputTensorSpec
+     * 
+     * @param spec
      * 	specs of the tensor
-     * @param inputSequence
-     * 	sequence that is going to be patched
-     * @param inputPatch
-     * 	input patch to the model
+     * @param rai
+     * 	ImgLib2 rai, backend of a tensor, thta is going to be tiled
+     * 
      * @return an object containing the specs needed to perform patching for the particular tensor
      */
-    private PatchSpec computePatchSpecs(TensorSpec inputTensorSpec, RandomAccessibleInterval<T> inputSequence)
+    private PatchSpec computePatchSpecs(TensorSpec spec, RandomAccessibleInterval<T> rai)
     {
-    	String processingAxesOrder = inputTensorSpec.getAxesOrder();
-        int[] inputPatchSize = arrayToWantedAxesOrderAddOnes(inputTensorSpec.getProcessingPatch(),
-				        										inputTensorSpec.getAxesOrder(), 
+    	String processingAxesOrder = spec.getAxesOrder();
+    	int[] intShape = new int[rai.dimensionsAsLongArray().length];
+    	for (int i = 0; i < intShape.length; i ++) intShape[i] = (int) rai.dimensionsAsLongArray()[i];
+    	return computePatchSpecs(spec, rai, spec.getOptimalPatch(intShape, processingAxesOrder));
+    }
+
+    /**
+     * Compute the patch details needed to perform the tiling strategy. The calculations
+     * obtain the input patch, the padding needed at each side and the number of patches
+     * needed for every tensor.
+     * 
+     * @param spec
+     * 	specs of the tensor
+     * @param rai
+     * 	ImgLib2 rai, backend of a tensor, thta is going to be tiled
+     * 
+     * @return an object containing the specs needed to perform patching for the particular tensor
+     */
+    private PatchSpec computePatchSpecs(TensorSpec spec, RandomAccessibleInterval<T> rai, int[] tileSize)
+    {
+    	String processingAxesOrder = spec.getAxesOrder();
+        int[] inputPatchSize = arrayToWantedAxesOrderAddOnes(tileSize, spec.getAxesOrder(), 
 				        										processingAxesOrder);
         int[][] paddingSize = new int[2][5];
         // REgard that the input halo represents the output halo + offset 
         // and must be divisible by 0.5. 
-        float[] halo = arrayToWantedAxesOrderAddZeros(inputTensorSpec.getHalo(),
-												        		inputTensorSpec.getAxesOrder(), 
+        float[] halo = arrayToWantedAxesOrderAddZeros(spec.getHalo(),
+												        		spec.getAxesOrder(), 
 																processingAxesOrder);
-        if (!descriptor.isPyramidal() && inputTensorSpec.getTiling()) {
+        if (!descriptor.isPyramidal() && spec.getTiling()) {
         	// In the case that padding is asymmetrical, the left upper padding has the extra pixel
             for (int i = 0; i < halo.length; i ++) {paddingSize[0][i] = (int) Math.ceil(halo[i]);}
             // In the case that padding is asymmetrical, the right bottom padding has one pixel less
             for (int i = 0; i < halo.length; i ++) {paddingSize[1][i] = (int) Math.floor(halo[i]);}
             
         }
-        long[] shapeLong = inputSequence.dimensionsAsLongArray();
+        long[] shapeLong = rai.dimensionsAsLongArray();
         int[] shapeInt = new int[shapeLong.length];
         for (int i = 0; i < shapeInt.length; i ++) {shapeInt[i] = (int) shapeLong[i];}
         int[] inputSequenceSize = arrayToWantedAxesOrderAddOnes(shapeInt,
-				inputTensorSpec.getAxesOrder(), 
+				spec.getAxesOrder(), 
 				processingAxesOrder);
         int[] patchGridSize = new int[] {1, 1, 1, 1, 1};
         if (descriptor.isTilingAllowed()) {
@@ -312,21 +309,7 @@ public class PatchGridCalculator <T extends RealType<T> & NativeType<T>>
             .map(i -> (int) Math.max( paddingSize[1][i], 
             		inputPatchSize[i] - inputSequenceSize[i] - paddingSize[0][i])).toArray();
 
-        return PatchSpec.create(inputTensorSpec.getName(), inputPatchSize, patchGridSize, paddingSize);
-    }
-    
-    /**
-     * Convert the Icy Sequence int[] into another int[] which follows the axes order
-     * of a tensor of interest
-     * @param seqSize
-     * 	icy sequence size array
-     * @param axes
-     * 	axes order of the tensor of interest
-     * @return a size array in the order of the tensor of interest
-     */
-    public static int[] icySeqAxesOrderToWantedOrder(int[] seqSize, String axes) {
-    	String icyAxesOrder = "xyzbc".toUpperCase();
-    	return arrayToWantedAxesOrderAddOnes(seqSize, icyAxesOrder, axes);
+        return PatchSpec.create(spec.getName(), inputPatchSize, patchGridSize, paddingSize);
     }
     
     /**
