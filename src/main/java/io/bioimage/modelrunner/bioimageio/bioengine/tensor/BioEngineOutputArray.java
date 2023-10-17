@@ -31,6 +31,7 @@ import java.util.Objects;
 
 import io.bioimage.modelrunner.numpy.ByteArrayUtils;
 import io.bioimage.modelrunner.numpy.DecodeNumpy;
+import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.img.Img;
 import net.imglib2.type.NativeType;
 import net.imglib2.type.numeric.RealType;
@@ -122,7 +123,7 @@ public class BioEngineOutputArray {
 	 * @throws IllegalArgumentException if the data type of the array is not supported
 	 */
 	@SuppressWarnings("unchecked")
-	public < T extends RealType< T > & NativeType< T > >  Img<T> getImg()
+	public < T extends RealType< T > & NativeType< T > >  RandomAccessibleInterval<T> getImg()
 			throws IllegalArgumentException {
 		return getImg(ByteOrder.LITTLE_ENDIAN);
 	}
@@ -139,7 +140,8 @@ public class BioEngineOutputArray {
 	 * @throws IllegalArgumentException if the data type of the array is not supported
 	 */
 	@SuppressWarnings("unchecked")
-	public < T extends RealType< T > & NativeType< T > >  Img<T> getImg(ByteOrder byteOrder)
+	public < T extends RealType< T > & NativeType< T > >  
+	RandomAccessibleInterval<T> getImg(ByteOrder byteOrder)
 			throws IllegalArgumentException {
 		Objects.requireNonNull(arr);
 		ByteBuffer buf = ByteBuffer.wrap(arr).order(byteOrder);
