@@ -34,6 +34,7 @@ import io.bioimage.modelrunner.tensor.Tensor;
 import io.bioimage.modelrunner.utils.Constants;
 import net.imglib2.IterableInterval;
 import net.imglib2.RandomAccessibleInterval;
+import net.imglib2.type.NativeType;
 import net.imglib2.type.Type;
 import net.imglib2.type.numeric.NumericType;
 import net.imglib2.type.numeric.RealType;
@@ -44,11 +45,11 @@ import net.imglib2.type.numeric.RealType;
  * 
  * @author Carlos Garcia Lopez de Haro and Daniel Felipe Gonzalez Obando 
  */
-public class PatchGridCalculator
+public class PatchGridCalculator<T extends RealType<T> & NativeType<T>> 
 {
 
     private ModelDescriptor descriptor;
-    private Map<String, Object> inputValuesMap;
+    private Map<String, Tensor<T>> inputValuesMap;
     /**
      * MAp containing the {@link PatchSpec} for each of the tensors defined in the rdf.yaml specs file
      */
@@ -63,7 +64,7 @@ public class PatchGridCalculator
      * 	map containing the input images associated to their input tensors
      * @throws IllegalArgumentException if the {@link #inputValuesMap}
      */
-    private PatchGridCalculator(ModelDescriptor descriptor, Map<String, Object> inputValuesMap)
+    private PatchGridCalculator(ModelDescriptor descriptor, Map<String, Tensor<T>> inputValuesMap)
     		throws IllegalArgumentException
     {
     	for (TensorSpec tt : descriptor.getInputTensors()) {
@@ -71,10 +72,7 @@ public class PatchGridCalculator
     			throw new IllegalArgumentException("Model input tensor '" + tt.getName() + "' is specified in the rdf.yaml specs file "
     					+ "but cannot be found in the model inputs map provided.");
     		// TODO change isImage() by isTensor()
-    		if (tt.isImage() 
-    				&& !(inputValuesMap.get(tt.getName()) instanceof RandomAccessibleInterval)
-    				&& !(inputValuesMap.get(tt.getName()) instanceof IterableInterval)
-    				&& !(inputValuesMap.get(tt.getName()) instanceof Tensor))
+    		if (tt.isImage() && !(inputValuesMap.get(tt.getName()) instanceof Tensor))
     			throw new IllegalArgumentException("Model input tensor '" + tt.getName() + "' is specified in the rdf.yaml specs file "
     					+ "as a tensor but. JDLL needs tensor to be specified either as JDLL tensors (io.bioimage.tensor.Tensor) "
     					+ "or ImgLib2 Imgs (net.imglib2.img.Img), ImgLib2 RandomAccessibleIntervals (net.imglib2.RandomAccessibleInterval) "
@@ -96,7 +94,7 @@ public class PatchGridCalculator
      * @throws IOException if it is not possible to read the rdf.yaml file of the model or it
      * 	does not exist
      */
-    public static PatchGridCalculator build(String modelFolder, Map<String, Object> inputValuesMap) throws IOException {
+    public static <T extends RealType<T> & NativeType<T>> PatchGridCalculator<T> build(String modelFolder, Map<String, Tensor<T>> inputValuesMap) throws IOException {
     	ModelDescriptor descriptor;
     	try {
 	    	descriptor = 
@@ -104,7 +102,7 @@ public class PatchGridCalculator
     	} catch (Exception ex) {
     		throw new IOException("Unable to process the rf.yaml specifications file.", ex);
     	}
-    	return new PatchGridCalculator(descriptor, inputValuesMap);
+    	return new PatchGridCalculator<T>(descriptor, inputValuesMap);
     }
     
     /**
@@ -117,9 +115,10 @@ public class PatchGridCalculator
      * @throws IllegalArgumentException if the inputs provided in the input values map does not correspond
      * 	to the inputs defined in the inputs field of the rdf.yaml specs file.
      */
-    public static PatchGridCalculator build(ModelDescriptor model, LinkedHashMap<String, Object> inputValuesMap) 
+    public static <T extends RealType<T> & NativeType<T>> 
+    PatchGridCalculator<T> build(ModelDescriptor model, LinkedHashMap<String, Tensor<T>> inputValuesMap) 
     		throws IllegalArgumentException {
-    	return new PatchGridCalculator(model, inputValuesMap);
+    	return new PatchGridCalculator<T>(model, inputValuesMap);
      }
     
     /**
@@ -135,7 +134,7 @@ public class PatchGridCalculator
      * @return the object that creates a list of patch specs for each tensor
      */
     public static <T extends NumericType<T> & RealType<T>> 
-    PatchGridCalculator build(ModelDescriptor model, List<RandomAccessibleInterval<T>> inputImagesList) {
+    PatchGridCalculator<T> build(ModelDescriptor model, List<Tensor<T>> inputImagesList) {
     	LinkedHashMap<String, Object> map = new LinkedHashMap<String, Object>();
     	if (inputImagesList.size() != model.getInputTensors().size())
     		throw new IllegalArgumentException("The size of the list containing the model input RandomAccessibleIntervals"
@@ -144,7 +143,7 @@ public class PatchGridCalculator
     	int c = 0;
     	for (TensorSpec tt : model.getInputTensors())
     		map.put(tt.getName(), inputImagesList.get(c ++));
-    	 return new PatchGridCalculator(model, map);
+    	 return new PatchGridCalculator<T>(model, map);
      }
 
     /**
@@ -161,7 +160,11 @@ public class PatchGridCalculator
     		return psMap;
     	List<TensorSpec> inputTensors = findInputImageTensorSpec();
         List<Object> inputImages = inputTensors.stream()
-        		.map(k -> this.inputValuesMap.get(k)).collect(Collectors.toList());
+        		.filter(k -> this.inputValuesMap.get(k.getName()) != null)
+        		.map(k -> this.inputValuesMap.get(k.getName())).collect(Collectors.toList());
+        if (inputImages.size() == 0)
+        	throw new IllegalArgumentException("No inputs have been provided that match the "
+        			+ "specified input tensors specified in the rdf.yaml file.");
         LinkedHashMap<String, PatchSpec> specsMap = computePatchSpecsForEveryTensor(inputTensors, inputImages);
         // Check that the obtained patch specs are not going to cause errors
         checkPatchSpecs(specsMap);
@@ -280,7 +283,7 @@ public class PatchGridCalculator
      * 	input patch to the model
      * @return an object containing the specs needed to perform patching for the particular tensor
      */
-    private <T extends Type<T>> PatchSpec computePatchSpecs(TensorSpec inputTensorSpec, RandomAccessibleInterval<T> inputSequence)
+    private <T extends NumericType<T> & RealType<T>> PatchSpec computePatchSpecs(TensorSpec inputTensorSpec, RandomAccessibleInterval<T> inputSequence)
     {
     	String processingAxesOrder = "xyczb";
         int[] inputPatchSize = arrayToWantedAxesOrderAddOnes(inputTensorSpec.getProcessingPatch(),

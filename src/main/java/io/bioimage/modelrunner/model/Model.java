@@ -25,6 +25,8 @@ package io.bioimage.modelrunner.model;
 import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -49,6 +51,9 @@ import io.bioimage.modelrunner.utils.Constants;
 import io.bioimage.modelrunner.versionmanagement.InstalledEngines;
 import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.img.Img;
+import net.imglib2.img.array.ArrayImg;
+import net.imglib2.img.array.ArrayImgs;
+import net.imglib2.img.basictypeaccess.array.FloatArray;
 import net.imglib2.type.NativeType;
 import net.imglib2.type.numeric.RealType;
 import net.imglib2.type.numeric.real.FloatType;
@@ -503,8 +508,18 @@ public class Model
 			descriptor = ModelDescriptor.readFromLocalFile(modelFolder + File.separator + Constants.RDF_FNAME);
 		PatchGridCalculator tileGrid = PatchGridCalculator.build(descriptor, inputImgs);
 		Map<String, PatchSpec> specs = tileGrid.get();
-		specs.get("").getPatchInputSize()
+		//specs.get("").getPatchInputSize()
 		return null;
+	}
+	
+	public static void main(String[] args) throws IOException {
+		String mm = "C:\\Users\\angel\\OneDrive\\Documentos\\pasteur\\git\\model-runner-java\\models\\StarDist H&E Nuclei Segmentation_06092023_020924\\";
+		Img<FloatType> im = ArrayImgs.floats(new long[] {1, 512, 512, 1});
+		Map<String, Object> l = new HashMap<String, Object>();
+		l.put("input", im);
+		PatchGridCalculator tileGrid = PatchGridCalculator.build(mm, l);
+		tileGrid.get();
+		System.out.println(false);
 	}
 
 	/**
