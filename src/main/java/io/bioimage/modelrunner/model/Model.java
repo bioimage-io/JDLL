@@ -499,26 +499,26 @@ public class Model
 	 * @throws Exception 
 	 */
 	public <T extends RealType<T> & NativeType<T>, R extends RealType<R> & NativeType<R>> 
-	List<Img<T>> runBioimageioModelOnImgLib2WithTiling(List<RandomAccessibleInterval<R>> inputImgs) throws ValidationException {
+	List<Img<T>> runBioimageioModelOnImgLib2WithTiling(List<Tensor<R>> inputImgs) throws ValidationException {
 		if (descriptor == null && modelFolder == null)
 			throw new IllegalArgumentException("");
 		else if (descriptor == null && !(new File(modelFolder, Constants.RDF_FNAME).isFile()))
 			throw new IllegalArgumentException("");
 		else if (descriptor == null)
 			descriptor = ModelDescriptor.readFromLocalFile(modelFolder + File.separator + Constants.RDF_FNAME);
-		PatchGridCalculator tileGrid = PatchGridCalculator.build(descriptor, inputImgs);
+		PatchGridCalculator<R> tileGrid = PatchGridCalculator.build(descriptor, inputImgs);
 		Map<String, PatchSpec> specs = tileGrid.get();
 		//specs.get("").getPatchInputSize()
 		return null;
 	}
 	
-	public static void main(String[] args) throws IOException {
+	public static <T extends NativeType<T> & RealType<T>> void main(String[] args) throws IOException {
 		String mm = "C:\\Users\\angel\\OneDrive\\Documentos\\pasteur\\git\\model-runner-java\\models\\StarDist H&E Nuclei Segmentation_06092023_020924\\";
-		Img<FloatType> im = ArrayImgs.floats(new long[] {1, 512, 512, 1});
-		Map<String, Object> l = new HashMap<String, Object>();
-		l.put("input", im);
-		PatchGridCalculator tileGrid = PatchGridCalculator.build(mm, l);
-		tileGrid.get();
+		Img<FloatType> im = ArrayImgs.floats(new long[] {1, 512, 512, 4});
+		Map<String, Tensor<T>> l = new HashMap<String, Tensor<T>>();
+		l.put("input", (Tensor<T>) Tensor.build("input", "bxyc", im));
+		PatchGridCalculator<T> tileGrid = PatchGridCalculator.build(mm, l);
+		LinkedHashMap<String, PatchSpec> tileSpecs = tileGrid.get();
 		System.out.println(false);
 	}
 
