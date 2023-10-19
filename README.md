@@ -34,7 +34,7 @@ Currently, the following frameworks are supported:
 | Tensorflow 2 API 0.5.0 | https://github.com/bioimage-io/tensorflow-2-java-interface-0.5.0 | `tensorflow` or `tensorflow_saved_model_bundle` |
 | Onnx                            | https://github.com/bioimage-io/onnx-java-interface             | `onnx`                                         |
 
-The information about the engines supported currently by JDLL, for which OS and architectures and which JAR files are required for each of the engines is stored in [this json file](https://github.com/bioimage-io/model-runner-java/blob/main/src/main/resources/availableDLVersions.json) and can be found [here](https://github.com/bioimage-io/JDLL/wiki/List-of-supported-engines).
+The information about the engines supported currently by JDLL, for which OS and architectures, their minimum required Java version and which JAR files are required for each of the engines is stored in [this json file](https://github.com/bioimage-io/model-runner-java/blob/main/src/main/resources/availableDLVersions.json) and can be found [here](https://github.com/bioimage-io/JDLL/wiki/List-of-supported-engines).
 
 Note that JDLL will be in **constant development** and that it is open to community collaboration, so **pull requests** to the official repository of JDLL to improve functionality or to add new engines are **very welcomed**.
 
@@ -132,6 +132,8 @@ More information on how to download  Bioimage.io models can be found [here](http
 JDLL is installed empty. Several models might require different Deep Learning framework versions, each of them consuming considerable amounts of disk space. In order to make JDLL setup light and fast JDLL is installed without default DL engines. The user can then get the Dl engines that they want depending on their needs.
 
 JDLL provides the needed methods to install the wanted engines in an easy manner. Following the above example, find below some code that can be used to install a DL engine. As it can be observed the model that was downloaded [supports Tensorflow 2 and Keras weights](https://github.com/bioimage-io/collection-bioimage-io/blob/19ea59e662410c3ee49b7da184730919336d7568/rdfs/10.5281/zenodo.7261974/7782776/rdf.yaml#L146). Keras is not supported so in order to load and run the model, Tensorflow weights need to be installed.
+
+**Important: Note that not every engine is compatible with every OS and Java version. For example Tensorflow 2.10 is only compatible with Java 11 or higher and Apple Silicon (ARMS64 chips) are only compatible with one version of Tensorflow (Tensorflow 2.7.4) used with Java 11 or newer.**
 
 ```
 String framework = "tensorflow";
@@ -422,6 +424,8 @@ More information on how to download  Bioimage.io models can be found [here](http
 JDLL is installed empty. Several models might require different Deep Learning framework versions, each of them consuming considerable amounts of disk space. In order to make JDLL setup light and fast JDLL is installed without default DL engines. The user can then get the Dl engines that they want depending on their needs.
 
 JDLL provides the needed methods to install the wanted engines in an easy manner. Following the above example, find below some code that can be used to install a DL engine. As it can be observed the model that was downloaded [supports Tensorflow 2 and Keras weights](https://github.com/bioimage-io/collection-bioimage-io/blob/19ea59e662410c3ee49b7da184730919336d7568/rdfs/10.5281/zenodo.7261974/7782776/rdf.yaml#L146). Keras is not supported so in order to load and run the model, Tensorflow weights need to be installed.
+
+**Important: Note that not every engine is compatible with every OS and Java version. For example Tensorflow 2.10 is only compatible with Java 11 or higher and Apple Silicon (ARMS64 chips) are only compatible with one version of Tensorflow (Tensorflow 2.7.4) used with Java 11 or newer. This means that TENSORFLOW CANNOT BE USED IN FIJI IN APPLE SILICON.**
 
 ```python
 from io.bioimage.modelrunner.engine.installation import EngineInstall
