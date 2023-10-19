@@ -559,7 +559,7 @@ Note that `enginesDir` is the directory where the wanted engines have been insta
 from io.bioimage.modelrunner.engine import EngineInfo
 
 framework = "tensorflow"
-version = "2.11.0"
+version = "2.7.0"
 cpu = True
 gpu = True
 enginesDir = "/path/to/wanted/engines/dir"
@@ -573,7 +573,7 @@ In order to require a compatible engine, not the exact one:
 from io.bioimage.modelrunner.engine import EngineInfo
 
 framework = "tensorflow"
-version = "2.11.0"
+version = "2.10.0"
 cpu = True
 gpu = True
 enginesDir = "/path/to/wanted/engines/dir"
@@ -596,7 +596,7 @@ from io.bioimage.modelrunner.model import Model
 modelFolder = "path/to/models/dir/B. Sutilist bacteria segmentation - Widefield microscopy - 2D UNet"
 modelSource = None # Not needed in Tensorflow
 
-model = Model.create(modelFolder, modelSource, enigneInfoCompat)
+model = Model.createDeepLearningModel(modelFolder, modelSource, enigneInfoCompat)
 model.loadModel()
 
 print("Great sucess!")
@@ -657,7 +657,7 @@ Ouptut tensor after inference is empty: false
 ## 6. Closing the model and the tensors
 Models and tensors need to be closed to be released and free the memory that they were using
 ```python
-model.close()
+model.closeModel()
 inputTensor.close()
 outputBlankTensor.close()
 outputEmptyTensor.close()
