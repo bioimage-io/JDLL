@@ -135,7 +135,7 @@ JDLL provides the needed methods to install the wanted engines in an easy manner
 
 ```
 String framework = "tensorflow";
-String version = "2.10.1";
+String version = "2.7.0";
 boolean cpu = true;
 boolean gpu = true;
 
@@ -210,7 +210,7 @@ An example of defining the `EngineInfo` instance needed to load a model is shown
 Note that `String enginesDir` is the directory where the wanted engines have been installed. [Click here and look at the example in the redirected section](https://github.com/bioimage-io/JDLL#2-installing-dl-engines).
 ```java
 String framework = "tensorflow";
-String version = "2.10.1";
+String version = "2.7.0";
 boolean cpu = true;
 boolean gpu = true;
 String enginesDir = "/path/to/wanted/engines/dir";
