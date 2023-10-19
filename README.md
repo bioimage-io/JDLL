@@ -58,7 +58,8 @@ Due to the dual possibilities of JDLL, there are 2 Quickstarts available dependi
    
 # Scripting examples
 
-* [example-run-model-in-fiji](https://github.com/bioimage-io/JDLL/blob/main/scripts/example-run-model-in-fiji.py) (Requires to be executed from Fiji, as it uses the application to display the result image)
+* [example-run-model-in-fiji](https://github.com/bioimage-io/JDLL/blob/main/scripts/example-run-model-in-fiji.py) (Requires to be executed from Fiji, as it uses the application to display the result image, cannot be executed on Apple Silicon computers)
+* [example-run-pytorch-model-in-fiji.py](https://github.com/bioimage-io/JDLL/blob/main/scripts/example-run-pytorch-model-in-fiji.py) (Requires to be executed from Fiji, as it uses the application to display the result image)
 * [example-download-bmz-model](https://github.com/bioimage-io/JDLL/blob/main/scripts/example-download-bmz-model.py)
 * [example-download-engine](https://github.com/bioimage-io/JDLL/blob/main/scripts/example-download-engine.py)
 
@@ -426,7 +427,7 @@ JDLL provides the needed methods to install the wanted engines in an easy manner
 from io.bioimage.modelrunner.engine.installation import EngineInstall
 
 framework = "tensorflow"
-version = "2.11.0"
+version = "2.7.0"
 cpu = True
 gpu = True
 
@@ -523,7 +524,7 @@ wrapImg = ImageJFunctions.convertFloat(imp)
 # Permute from "xy" to "yx"
 wrapImg = Views.permute(wrapImg, 0, 1)
 # Add one dimension to "yxb", from (512, 512) to (512, 512, 1)
-wrapImg = Views.addDimension(wrapImg, 0, 0
+wrapImg = Views.addDimension(wrapImg, 0, 0)
 # Permute from "yxb" and (512, 512, 1) to "bxy" and (1, 512, 512)
 wrapImg = Views.permute(wrapImg, 0, 2)
 # Add one dimension to get "bxyc", from (1, 512, 512) to (1, 512, 512, 1)
