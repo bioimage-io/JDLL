@@ -101,7 +101,6 @@ public class PatchGridCalculator <T extends RealType<T> & NativeType<T>>
     	try {
 	    	descriptor = 
 	    			ModelDescriptor.readFromLocalFile(modelFolder + File.separator + Constants.RDF_FNAME, false);
-	    	descriptor.getInputTensors().get(0).setTileSizeForTensorAndImageSize(new int[]{1, 256, 256, 3}, new int[]{1, 512, 512, 3});
     	} catch (Exception ex) {
     		throw new IOException("Unable to process the rf.yaml specifications file.", ex);
     	}
