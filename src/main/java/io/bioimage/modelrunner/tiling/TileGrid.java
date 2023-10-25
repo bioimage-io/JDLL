@@ -62,9 +62,11 @@ public class TileGrid
     
     /**
      */
-    public static TileGrid create(PatchSpec tileSpecs, long[] imageDims)
+    public static TileGrid create(PatchSpec tileSpecs)
     {
         TileGrid ps = new TileGrid();
+        ps.tensorName = tileSpecs.getTensorName();
+        long[] imageDims = tileSpecs.getTensorDims();
         int[] gridSize = tileSpecs.getPatchGridSize();
         ps.tileSize = tileSpecs.getPatchInputSize();
         int tileCount = Arrays.stream(gridSize).reduce(1, (a, b) -> a * b);
@@ -86,6 +88,30 @@ public class TileGrid
         	ps.tilePostionsInImage.add(patchStart);
         }
         return ps;
+    }
+    
+    public String getTensorName() {
+    	return tensorName;
+    }
+    
+    public int[] getTileSize() {
+    	return this.tileSize;
+    }
+    
+    public int[] getRoiSize() {
+    	return this.roiSize;
+    }
+    
+    public List<long[]> getTilePostionsInImage() {
+    	return this.tilePostionsInImage;
+    }
+    
+    public List<long[]> getRoiPositionsInTile() {
+    	return this.roiPositionsInTile;
+    }
+    
+    public List<long[]> getRoiPostionsInImage() {
+    	return this.roiPositionsInImage;
     }
 
     @Override
