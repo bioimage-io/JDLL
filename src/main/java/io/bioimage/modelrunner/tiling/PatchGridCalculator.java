@@ -65,7 +65,7 @@ public class PatchGridCalculator <T extends RealType<T> & NativeType<T>>
     		throws IllegalArgumentException
     {
     	for (TensorSpec tt : descriptor.getInputTensors()) {
-    		if (tt.isImage() && Tensor.getTensorByNameFromList(tensorList, tt.getName()) != null)
+    		if (tt.isImage() && Tensor.getTensorByNameFromList(tensorList, tt.getName()) == null)
     			throw new IllegalArgumentException("Model input tensor '" + tt.getName() + "' is specified in the rdf.yaml specs file "
     					+ "but cannot be found in the model inputs map provided.");
     		// TODO change isImage() by isTensor()
@@ -136,6 +136,7 @@ public class PatchGridCalculator <T extends RealType<T> & NativeType<T>>
     	if (psMap != null)
     		return psMap;
     	List<TensorSpec> inputTensors = findInputImageTensorSpec();
+    	List<TensorSpec> outputTensors = findOutputImageTensorSpec();
         List<Tensor<T>> inputImages = inputTensors.stream()
         		.filter(k -> this.inputValuesMap.get(k.getName()) != null)
         		.map(k -> this.inputValuesMap.get(k.getName())).collect(Collectors.toList());
@@ -143,6 +144,7 @@ public class PatchGridCalculator <T extends RealType<T> & NativeType<T>>
         	throw new IllegalArgumentException("No inputs have been provided that match the "
         			+ "specified input tensors specified in the rdf.yaml file.");
         LinkedHashMap<String, PatchSpec> specsMap = computePatchSpecsForEveryTensor(inputTensors, inputImages);
+        LinkedHashMap<String, PatchSpec> outSpecsMap = computePatchSpecsForEveryOutputTensor(outputTensors, specsMap);
         // Check that the obtained patch specs are not going to cause errors
         checkPatchSpecs(specsMap);
         psMap = specsMap;
@@ -201,6 +203,16 @@ public class PatchGridCalculator <T extends RealType<T> & NativeType<T>>
         return this.descriptor.getInputTensors().stream().filter(tr -> tr.isImage())
                 .collect(Collectors.toList());
     }
+
+    /**
+     * Get the output tensors that correspond to images
+     * @return list of tensor specs corresponding to each of the output image tensors
+     */
+    private List<TensorSpec> findOutputImageTensorSpec()
+    {
+        return this.descriptor.getOutputTensors().stream().filter(tr -> tr.isImage())
+                .collect(Collectors.toList());
+    }
     
     /**
      * Create list of patch specifications for every tensor aking into account the
@@ -216,6 +228,27 @@ public class PatchGridCalculator <T extends RealType<T> & NativeType<T>>
     	LinkedHashMap<String, PatchSpec> patchInfoList = new LinkedHashMap<String, PatchSpec>();
     	for (int i = 0; i < tensors.size(); i ++)
     		patchInfoList.put(tensors.get(i).getName(), computePatchSpecs(tensors.get(i), images.get(i)));
+    	return patchInfoList;
+    }
+    
+    /**
+     * Create list of patch specifications for every tensor aking into account the
+     * corresponding image
+     * @param tensors
+     * 	the tensor information
+     * @param images
+     * 	the images corresponding to each tensor
+     * @return the LinkedHashMap where the key corresponds to the name of the tensor and the value is its
+     *  patch specifications
+     */
+    private LinkedHashMap<String, PatchSpec> computePatchSpecsForEveryOutputTensor(List<TensorSpec> outTensors, 
+    		Map<String, PatchSpec> inSpecs){
+    	LinkedHashMap<String, PatchSpec> patchInfoList = new LinkedHashMap<String, PatchSpec>();
+		for (int i = 0; i < outTensors.size(); i ++) {
+    		String refTensor = outTensors.get(i).getShape().getReferenceInput();
+    		PatchSpec refSpec = refTensor == null ? inSpecs.values().stream().findFirst().get() : inSpecs.get(refTensor);
+    		patchInfoList.put(outTensors.get(i).getName(), computePatchSpecsForOutputTensor(outTensors.get(i), refSpec));
+		}
     	return patchInfoList;
     }
 
@@ -309,7 +342,51 @@ public class PatchGridCalculator <T extends RealType<T> & NativeType<T>>
             .map(i -> (int) Math.max( paddingSize[1][i], 
             		inputPatchSize[i] - inputSequenceSize[i] - paddingSize[0][i])).toArray();
 
-        return PatchSpec.create(spec.getName(), inputPatchSize, patchGridSize, paddingSize);
+        return PatchSpec.create(spec.getName(), inputPatchSize, patchGridSize, paddingSize, rai.dimensionsAsLongArray());
+    }
+    
+    private PatchSpec computePatchSpecsForOutputTensor(TensorSpec spec, PatchSpec refSpec)
+    {
+    	String processingAxesOrder = spec.getAxesOrder();
+        int[] inputPatchSize = arrayToWantedAxesOrderAddOnes(tileSize, spec.getAxesOrder(), 
+				        										processingAxesOrder);
+        int[][] paddingSize = new int[2][5];
+        // REgard that the input halo represents the output halo + offset 
+        // and must be divisible by 0.5. 
+        float[] halo = arrayToWantedAxesOrderAddZeros(spec.getHalo(),
+												        		spec.getAxesOrder(), 
+																processingAxesOrder);
+        if (!descriptor.isPyramidal() && spec.getTiling()) {
+        	// In the case that padding is asymmetrical, the left upper padding has the extra pixel
+            for (int i = 0; i < halo.length; i ++) {paddingSize[0][i] = (int) Math.ceil(halo[i]);}
+            // In the case that padding is asymmetrical, the right bottom padding has one pixel less
+            for (int i = 0; i < halo.length; i ++) {paddingSize[1][i] = (int) Math.floor(halo[i]);}
+            
+        }
+        long[] shapeLong = rai.dimensionsAsLongArray();
+        int[] shapeInt = new int[shapeLong.length];
+        for (int i = 0; i < shapeInt.length; i ++) {shapeInt[i] = (int) shapeLong[i];}
+        int[] inputSequenceSize = arrayToWantedAxesOrderAddOnes(shapeInt,
+				spec.getAxesOrder(), 
+				processingAxesOrder);
+        int[] patchGridSize = new int[] {1, 1, 1, 1, 1};
+        if (descriptor.isTilingAllowed()) {
+            patchGridSize = IntStream.range(0, inputPatchSize.length)
+                    .map(i -> (int) Math.ceil((double) inputSequenceSize[i] / ((double) inputPatchSize[i] - halo[i] * 2)))
+                    .toArray();
+        }
+        // For the cases when the patch is bigger than the  image size, share the
+        // padding between both sides of the image
+        paddingSize[0] = IntStream.range(0, inputPatchSize.length)
+                .map(i -> 
+                	(int) Math.max(paddingSize[0][i],
+                			Math.ceil( (double) (inputPatchSize[i] - inputSequenceSize[i]) / 2))
+                ).toArray();
+        paddingSize[1] = IntStream.range(0, inputPatchSize.length)
+            .map(i -> (int) Math.max( paddingSize[1][i], 
+            		inputPatchSize[i] - inputSequenceSize[i] - paddingSize[0][i])).toArray();
+
+        return PatchSpec.create(spec.getName(), inputPatchSize, patchGridSize, paddingSize, rai.dimensionsAsLongArray());
     }
     
     /**
