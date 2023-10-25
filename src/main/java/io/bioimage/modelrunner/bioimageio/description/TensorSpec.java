@@ -345,41 +345,43 @@ public class TensorSpec {
     
     /**
      * Validates if a given patch array fulfills the conditions specified in the yaml file.
-     * If it is valid, it sets the value as the {@link #processingPatch}
-     * @param patch
-     * 	the patch array to validate
+     * To check whether the tile size works also for a given image, 
+     * please use {@link #setTileSizeForTensorAndImageSize(int[], int[])}
+     * @param tileSize
+     * 	the patch array size to validate
      * @throws Exception if the patch does not comply with the constraints specified
      */
-    public void validate(int[] patch) throws Exception {
+    public void validate(int[] tileSize) throws Exception {
     	// VAlidate that the minimum size and step constraints are fulfilled
-    	validateStepMin(patch);
-    	this.processingPatch = patch;
+    	validateStepMin(tileSize);
     }
     
     /**
-     * Validates if a given patch array fulfills the conditions specified in the yaml file.
-     * If it is valid, it sets the value as the {@link #processingPatch}
-     * @param patch
-     * 	the patch array to validate
-     * @param seqSize
-     * 	array containing the dimensions of the sequence that is going to be processed
-     * 	seqSize is defined following the Icy axes order (xyztc)
+     * Sets the tile size to process the given tensor regarding that the tensor
+     * has the dimensions specified by the second argument.
+     * If also validates if the tile size selected fufils the requirements
+     * specified in the bioimage.io rdf.yaml file.
+     * Both arguments must follow the same axis order of this tensor.
+     * TODO maybe allow the possibility of changing the tensor axes order
+     * If everything is correct, sets {@link #processingPatch} to the first argument.
+     * @param tileSize
+     * 	the size of the tile/patch in which the main tensor is going to be divided
+     * @param tensorImageSize
+     * 	size of the image that is used for the tensor.
      * @throws Exception if the patch size is not able to 
      * 	fulfill the requirements of the tensor
      */
-    public void validate(int[] patch, int[] seqSize) throws Exception {
-    	// Convert the Icy sequence array dims into the tensor axes order
-    	seqSize = PatchGridCalculator.icySeqAxesOrderToWantedOrder(seqSize, axes);
+    public void setTileSizeForTensorAndImageSize(int[] tileSize, int[] tensorImageSize) throws Exception {
     	// If tiling is not allowed, the patch array needs to be equal to the
     	// optimal patch
     	if (!tiling) {
-    		validateNoTiling(patch, seqSize);
+    		validateNoTiling(tileSize, tensorImageSize);
     	}
     	// VAlidate that the minimum size and step constraints are fulfilled
-    	validateStepMin(patch);
+    	validateStepMin(tileSize);
     	// Finally validate that the sequence size complies with the patch size selected
-    	validatePatchVsImage(patch, seqSize);
-    	this.processingPatch = patch;
+    	validatePatchVsImage(tileSize, tensorImageSize);
+    	this.processingPatch = tileSize;
     }
 
     

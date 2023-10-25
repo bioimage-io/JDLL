@@ -101,6 +101,7 @@ public class PatchGridCalculator <T extends RealType<T> & NativeType<T>>
     	try {
 	    	descriptor = 
 	    			ModelDescriptor.readFromLocalFile(modelFolder + File.separator + Constants.RDF_FNAME, false);
+	    	descriptor.getInputTensors().get(0).setTileSizeForTensorAndImageSize(new int[]{1, 256, 256, 3}, new int[]{1, 512, 512, 3});
     	} catch (Exception ex) {
     		throw new IOException("Unable to process the rf.yaml specifications file.", ex);
     	}
@@ -267,25 +268,21 @@ public class PatchGridCalculator <T extends RealType<T> & NativeType<T>>
     		throws IllegalArgumentException {
     	return computePatchSpecs(inputTensorSpec, inputObject.getData());
     }
-
-    /**
-     * Compute the patch details needed to perform the tiling strategy. The calculations
-     * obtain the input patch, the padding needed at each side and the number of patches
-     * needed for every tensor.
-     * 
-     * @param spec
-     * 	specs of the tensor
-     * @param rai
-     * 	ImgLib2 rai, backend of a tensor, thta is going to be tiled
-     * 
-     * @return an object containing the specs needed to perform patching for the particular tensor
-     */
-    private PatchSpec computePatchSpecs(TensorSpec spec, RandomAccessibleInterval<T> rai)
+    
+    private PatchSpec computePatchSpecs(TensorSpec spec, RandomAccessibleInterval<T> rai) throws IllegalArgumentException
     {
-    	String processingAxesOrder = spec.getAxesOrder();
     	int[] intShape = new int[rai.dimensionsAsLongArray().length];
     	for (int i = 0; i < intShape.length; i ++) intShape[i] = (int) rai.dimensionsAsLongArray()[i];
-    	return computePatchSpecs(spec, rai, spec.getOptimalPatch(intShape, processingAxesOrder));
+    	if (spec.getProcessingPatch() == null) {
+			try {
+				spec.setTileSizeForTensorAndImageSize(spec.getOptimalPatch(intShape), intShape);
+			} catch (Exception e) {
+				throw new IllegalArgumentException("Tensor dimensions of tensor named '" + spec.getName() + "' "
+						+ "are not compatible with the requirements set by the"
+						+ " rdf.yaml file for tensor '" + spec.getName() + "': " + e.getMessage());
+			}
+    	}
+    	return computePatchSpecs(spec, rai, spec.getProcessingPatch());
     }
 
     /**
