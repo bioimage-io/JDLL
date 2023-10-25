@@ -58,13 +58,20 @@ public class IndexingUtils
 		int[] size = new int[] {3, 3, 2};
 		int[] pos0 = new int[] {0, 0, 0};
 		int[] pos1 = new int[] {0, 0, 1};
-		int[] pos2 = new int[] {0, 0, 2};
+		int[] pos2 = new int[] {0, 2, 1};
 		int[] pos3 = new int[] {1, 0, 0};
+		int[] posn = new int[] {1, 100, 7};
+		int[] sizen = new int[] {3, 256, 15};
 		System.out.println(multidimensionalIntoFlatIndex(pos0, size));
 		System.out.println(multidimensionalIntoFlatIndex(pos1, size));
 		System.out.println(multidimensionalIntoFlatIndex(pos2, size));
 		System.out.println(multidimensionalIntoFlatIndex(pos3, size));
-		System.out.println(multidimensionalIntoFlatIndex(pos0, size));
+		System.out.println(multidimensionalIntoFlatIndex(posn, sizen));
+		System.out.println(Arrays.toString(flatIntoMultidimensionalIndex(multidimensionalIntoFlatIndex(pos0, size), size)));
+		System.out.println(Arrays.toString(flatIntoMultidimensionalIndex(multidimensionalIntoFlatIndex(pos1, size), size)));
+		System.out.println(Arrays.toString(flatIntoMultidimensionalIndex(multidimensionalIntoFlatIndex(pos2, size), size)));
+		System.out.println(Arrays.toString(flatIntoMultidimensionalIndex(multidimensionalIntoFlatIndex(pos3, size), size)));
+		System.out.println(Arrays.toString(flatIntoMultidimensionalIndex(multidimensionalIntoFlatIndex(posn, sizen), sizen)));
 	}
 
 	/**
@@ -87,6 +94,54 @@ public class IndexingUtils
 			flat += inter;
 		}
 		return flat;
+	}
+
+	/**
+	 * Obtain a flat index position from a multidimensional index position
+	 * 
+	 * @param ind
+	 * 			  the index of the position as if it was a flat array
+	 * @param size
+	 *            size of the tensor
+	 * @return the multidimensional indexes
+	 */
+	public static long[] flatIntoMultidimensionalIndex( long flat, long[] size )
+	{
+		long[] ind = new long[size.length];
+		long rem = 0 + flat;
+		for ( int i = 0; i < ind.length; i++ )
+		{
+			int inter = 1;
+			for ( int j = i + 1; j < size.length; j++ )
+				inter *= size[ j ];
+			ind[i] = rem / inter;
+			rem = rem % inter;
+		}
+		return ind;
+	}
+
+	/**
+	 * Obtain a flat index position from a multidimensional index position
+	 * 
+	 * @param ind
+	 * 			  the index of the position as if it was a flat array
+	 * @param size
+	 *            size of the tensor
+	 * @return the multidimensional indexes
+	 */
+	public static int[] flatIntoMultidimensionalIndex( int flat, int[] size )
+	{
+		int[] ind = new int[size.length];
+		int rem = 0 + flat;
+		for ( int i = 0; i < ind.length; i++ )
+		{
+			int inter = 1;
+			for ( int j = i + 1; j < size.length; j++ )
+				inter *= size[ j ];
+			ind[i] = rem / inter;
+			rem = rem % inter;
+		}
+		return ind;
 	}
 	
     /**
