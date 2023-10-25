@@ -26,6 +26,7 @@ import java.util.stream.IntStream;
 
 import org.bioimageanalysis.icy.deepicy.tools.ImgLib2Utils;
 
+import io.bioimage.modelrunner.utils.IndexingUtils;
 import net.imglib2.img.Img;
 import net.imglib2.img.array.ArrayImgFactory;
 import net.imglib2.type.NativeType;
@@ -56,24 +57,30 @@ public class TileGrid
 
     /**
      */
-    public static TileGrid create(PatchSpec tileSpecs, long[] imSize)
+    public static TileGrid create(PatchSpec tileSpecs, long[] imSize, int[] gridSize)
     {
         TileGrid ps = new TileGrid();
-        tileSpecs.
-        ps.patchInputSize = patchInputSize;
-        ps.patchGridSize = patchGridSize;
-        ps.patchPaddingSize = patchPaddingSize;
-        ps.tensorName = tensorName;
+        int tileCount = Arrays.stream(gridSize).reduce(1, (a, b) -> a * b);
+
+        for (int j = 0; j < tileCount; j ++) {
+        	int[] patchIndex = IndexingUtils.flatIntoMultidimensionalIndex(j, gridSize);
+        	int[] patchSize = tileSpecs.getPatchInputSize();
+        	int[][] padSize = tileSpecs.getPatchPaddingSize();
+        	int[][] padSizeSeparated = new int[padSize.length][padSize[0].length];
+        	int[] roiSize = IntStream.range(0, patchIndex.length)
+                    .map(i -> patchSize[i] - padSizeSeparated[0][i] - padSizeSeparated[1][i]).toArray();
+        	int[] patchStart = IntStream.range(0, patchIndex.length)
+                    .map(i -> roiSize[i] * patchIndex[i] - padSizeSeparated[0][i]).toArray();
+        }
         
         
         
         
-        PatchSpec grid = tileSpecs;
         String patchAxesOrder = "xyczb";
-        int[] patchSize = grid.getPatchInputSize();
+        int[] patchSize = tileSpecs.getPatchInputSize();
         int[] patchSizeTensorAxes = PatchGridCalculator.arrayToWantedAxesOrderAddOnes(patchSize, patchAxesOrder, tensor.getAxesOrder());
         int[] patchIndexTensorAxes = PatchGridCalculator.arrayToWantedAxesOrderAddOnes(patchIndex, patchAxesOrder, tensor.getAxesOrder());
-        int[][] padSize = grid.getPatchPaddingSize();
+        int[][] padSize = tileSpecs.getPatchPaddingSize();
         int[][] padSizeAxesTensorAxes = new int[padSize.length][padSize[0].length];
         padSizeAxesTensorAxes[0] = PatchGridCalculator.arrayToWantedAxesOrderAddOnes(padSize[0], patchAxesOrder, tensor.getAxesOrder());
         padSizeAxesTensorAxes[1] = PatchGridCalculator.arrayToWantedAxesOrderAddOnes(padSize[1], patchAxesOrder, tensor.getAxesOrder());
