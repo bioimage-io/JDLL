@@ -303,15 +303,10 @@ public class PatchGridCalculator <T extends RealType<T> & NativeType<T>>
      */
     private PatchSpec computePatchSpecs(TensorSpec spec, RandomAccessibleInterval<T> rai, int[] tileSize)
     {
-    	String processingAxesOrder = spec.getAxesOrder();
-        int[] inputPatchSize = arrayToWantedAxesOrderAddOnes(tileSize, spec.getAxesOrder(), 
-				        										processingAxesOrder);
-        int[][] paddingSize = new int[2][5];
+        int[][] paddingSize = new int[2][tileSize.length];
         // REgard that the input halo represents the output halo + offset 
         // and must be divisible by 0.5. 
-        float[] halo = arrayToWantedAxesOrderAddZeros(spec.getHalo(),
-												        		spec.getAxesOrder(), 
-																processingAxesOrder);
+        float[] halo = spec.getHalo();
         if (!descriptor.isPyramidal() && spec.getTiling()) {
         	// In the case that padding is asymmetrical, the left upper padding has the extra pixel
             for (int i = 0; i < halo.length; i ++) {paddingSize[0][i] = (int) Math.ceil(halo[i]);}
@@ -322,27 +317,25 @@ public class PatchGridCalculator <T extends RealType<T> & NativeType<T>>
         long[] shapeLong = rai.dimensionsAsLongArray();
         int[] shapeInt = new int[shapeLong.length];
         for (int i = 0; i < shapeInt.length; i ++) {shapeInt[i] = (int) shapeLong[i];}
-        int[] inputSequenceSize = arrayToWantedAxesOrderAddOnes(shapeInt,
-				spec.getAxesOrder(), 
-				processingAxesOrder);
-        int[] patchGridSize = new int[] {1, 1, 1, 1, 1};
+        int[] patchGridSize = new int[shapeLong.length];
+        for (int i = 0; i < patchGridSize.length; i ++) patchGridSize[i] = 1;
         if (descriptor.isTilingAllowed()) {
-            patchGridSize = IntStream.range(0, inputPatchSize.length)
-                    .map(i -> (int) Math.ceil((double) inputSequenceSize[i] / ((double) inputPatchSize[i] - halo[i] * 2)))
+            patchGridSize = IntStream.range(0, tileSize.length)
+                    .map(i -> (int) Math.ceil((double) shapeInt[i] / ((double) tileSize[i] - halo[i] * 2)))
                     .toArray();
         }
         // For the cases when the patch is bigger than the  image size, share the
         // padding between both sides of the image
-        paddingSize[0] = IntStream.range(0, inputPatchSize.length)
+        paddingSize[0] = IntStream.range(0, tileSize.length)
                 .map(i -> 
                 	(int) Math.max(paddingSize[0][i],
-                			Math.ceil( (double) (inputPatchSize[i] - inputSequenceSize[i]) / 2))
+                			Math.ceil( (double) (tileSize[i] - shapeInt[i]) / 2))
                 ).toArray();
-        paddingSize[1] = IntStream.range(0, inputPatchSize.length)
+        paddingSize[1] = IntStream.range(0, tileSize.length)
             .map(i -> (int) Math.max( paddingSize[1][i], 
-            		inputPatchSize[i] - inputSequenceSize[i] - paddingSize[0][i])).toArray();
+            		tileSize[i] - shapeInt[i] - paddingSize[0][i])).toArray();
 
-        return PatchSpec.create(spec.getName(), inputPatchSize, patchGridSize, paddingSize, rai.dimensionsAsLongArray());
+        return PatchSpec.create(spec.getName(), tileSize, patchGridSize, paddingSize, rai.dimensionsAsLongArray());
     }
     
     private PatchSpec computePatchSpecsForOutputTensor(TensorSpec spec, PatchSpec refSpec)
