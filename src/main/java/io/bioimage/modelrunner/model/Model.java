@@ -33,6 +33,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 import javax.xml.bind.ValidationException;
 
@@ -61,6 +62,9 @@ import net.imglib2.img.basictypeaccess.array.FloatArray;
 import net.imglib2.type.NativeType;
 import net.imglib2.type.numeric.RealType;
 import net.imglib2.type.numeric.real.FloatType;
+import net.imglib2.util.Intervals;
+import net.imglib2.view.IntervalView;
+import net.imglib2.view.Views;
 
 /**
  * Class that manages a Deep Learning model to load it and run it.
@@ -545,8 +549,22 @@ public class Model
 		int nTiles = 1;
 		for (int i : tilesPerAxis) nTiles *= i;
 		
-		for (int i = 0; i < nTiles; i ++) {
-			
+		for (int j = 0; j < nTiles; j ++) {
+			int tileCount = j + 0;
+			IntStream.range(0, inputTensors.size()).mapToObj(i -> {
+				if (!inputTensors.get(i).isImage())
+					return inputTensors.get(i);
+				RandomAccessibleInterval<R> tileRai = Views.interval(
+						Views.extendBorder(inputTensors.get(i).getData()), 
+						inTileGrids.get(inputTensors.get(i).getName()).getTilePostionsInImage().get(tileCount),
+						(long[]) inTileGrids.get(inputTensors.get(i).getName()).getTileSize());
+				/*
+				RandomAccessibleInterval<R> tileRai = Views.interval(
+						Views.extendBorder(inputTensors.get(i).getData()),
+						Intervals.expand(inputTensors.get(i).getData(), 50));
+						*/
+				return Tensor.build(inputTensors.get(i).getName(), inputTensors.get(i).getAxesOrderString(), tileRai);
+			});
 		}
 		
 	}

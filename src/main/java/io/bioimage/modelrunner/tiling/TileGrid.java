@@ -38,7 +38,7 @@ public class TileGrid
 	/**
 	 * Size of the input patch. Following the tensor axes order
 	 */
-    private int[] tileSize;
+    private long[] tileSize;
     /**
      * Size of roi of each tile, following the tensor axes order
      */
@@ -73,10 +73,10 @@ public class TileGrid
 
         for (int j = 0; j < tileCount; j ++) {
         	int[] patchIndex = IndexingUtils.flatIntoMultidimensionalIndex(j, gridSize);
-        	int[] patchSize = tileSpecs.getPatchInputSize();
+        	long[] patchSize = tileSpecs.getPatchInputSize();
         	int[][] padSize = tileSpecs.getPatchPaddingSize();
         	int[] roiSize = IntStream.range(0, patchIndex.length)
-                    .map(i -> patchSize[i] - padSize[0][i] - padSize[1][i]).toArray();
+                    .map(i -> (int) patchSize[i] - padSize[0][i] - padSize[1][i]).toArray();
 			ps.roiSize = roiSize;
 			ps.roiPositionsInTile.add(IntStream.range(0, padSize[0].length).mapToLong(i -> (long) padSize[0][i]).toArray());
         	long[] roiStart = LongStream.range(0, patchIndex.length)
@@ -94,7 +94,7 @@ public class TileGrid
     	return tensorName;
     }
     
-    public int[] getTileSize() {
+    public long[] getTileSize() {
     	return this.tileSize;
     }
     

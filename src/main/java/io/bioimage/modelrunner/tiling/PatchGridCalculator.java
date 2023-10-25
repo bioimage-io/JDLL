@@ -21,6 +21,7 @@ package io.bioimage.modelrunner.tiling;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -281,7 +282,8 @@ public class PatchGridCalculator <T extends RealType<T> & NativeType<T>>
 						+ " rdf.yaml file for tensor '" + spec.getName() + "': " + e.getMessage());
 			}
     	}
-    	return computePatchSpecs(spec, rai, spec.getProcessingPatch());
+    	long[] tileSize = Arrays.stream(spec.getProcessingPatch()).mapToLong(i -> i).toArray();
+    	return computePatchSpecs(spec, rai, tileSize);
     }
 
     /**
@@ -296,7 +298,7 @@ public class PatchGridCalculator <T extends RealType<T> & NativeType<T>>
      * 
      * @return an object containing the specs needed to perform patching for the particular tensor
      */
-    private PatchSpec computePatchSpecs(TensorSpec spec, RandomAccessibleInterval<T> rai, int[] tileSize)
+    private PatchSpec computePatchSpecs(TensorSpec spec, RandomAccessibleInterval<T> rai, long[] tileSize)
     {
         int[][] paddingSize = new int[2][tileSize.length];
         // REgard that the input halo represents the output halo + offset 
@@ -337,17 +339,17 @@ public class PatchGridCalculator <T extends RealType<T> & NativeType<T>>
         // REgard that the input halo represents the output halo + offset 
         // and must be divisible by 0.5. 
         int[][] paddingSize = refTilesSpec.getPatchPaddingSize();
-        int[] tileSize;
+        long[] tileSize;
         long[] shapeLong;
         if (tensorSpec.getShape().getReferenceInput() == null) {
-        	tileSize = tensorSpec.getShape().getPatchRecomendedSize();
+        	tileSize = Arrays.stream(tensorSpec.getShape().getPatchRecomendedSize()).mapToLong(i -> i).toArray();
         	shapeLong = LongStream.range(0, tensorSpec.getAxesOrder().length())
         			.map(i -> (tileSize[(int) i] - paddingSize[0][(int) i] - paddingSize[0][(int) i]) * inputTileGrid[(int) i])
         			.toArray();
         } else {
         	tileSize = IntStream.range(0, tensorSpec.getAxesOrder().length())
             		.map(i -> (int) (refTilesSpec.getPatchInputSize()[i] * tensorSpec.getShape().getScale()[i] + 2 * tensorSpec.getShape().getOffset()[i]))
-            		.toArray();
+            		.mapToLong(i -> i).toArray();
         	shapeLong = LongStream.range(0, tensorSpec.getAxesOrder().length())
             		.map(i -> (int) (refTilesSpec.getTensorDims()[(int) i] * tensorSpec.getShape().getScale()[(int) i] 
             				+ 2 * tensorSpec.getShape().getOffset()[(int) i])).toArray();

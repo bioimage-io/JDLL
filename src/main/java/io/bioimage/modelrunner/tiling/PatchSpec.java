@@ -37,7 +37,7 @@ public class PatchSpec
 	/**
 	 * Size of the input patch. Following "xyczb" axes order
 	 */
-    private int[] patchInputSize;
+    private long[] patchInputSize;
     /**
      * Size of the number of patches per axis. Following "xyczb" axes order
      */
@@ -67,7 +67,7 @@ public class PatchSpec
      *        The padding size used on each patch.
     * @return The create patch specification.
      */
-    public static PatchSpec create(String tensorName, int[] patchInputSize, int[] patchGridSize, 
+    public static PatchSpec create(String tensorName, long[] patchInputSize, int[] patchGridSize, 
     		int[][] patchPaddingSize, long[] tensorDims)
     {
         PatchSpec ps = new PatchSpec();
@@ -170,7 +170,7 @@ public class PatchSpec
     /**
      * @return Input patch size. The patch taken from the input sequence including the halo.
      */
-    public int[] getPatchInputSize()
+    public long[] getPatchInputSize()
     {
         return patchInputSize;
     }
