@@ -379,6 +379,7 @@ public class Model
 	 * @throws LoadEngineException if there is any error loading the DL framework
 	 * @throws IOException if there is any error finding the engines in the system
 	 * @throws IllegalStateException if any of the installed DL engines have been manipulated incorrectly
+	 * @throws MalformedURLException if the JAR files are not well defined in the .json file
 	 */
 	public static Model createDeepLearningModel( String modelFolder, String modelSource, EngineInfo engineInfo,
 			ClassLoader classLoader ) throws LoadEngineException, MalformedURLException, IllegalStateException, IOException

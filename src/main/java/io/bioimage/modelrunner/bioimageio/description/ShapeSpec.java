@@ -173,7 +173,7 @@ public class ShapeSpec
      * always be divisible by 0.5
      * @param offset
      * 	the output offset
-     * @throws ParseException if the offset is not divisible by 0.5
+     * @throws ModelSpecsException if the offset is not divisible by 0.5
      */
     public void setOffset(float[] offset) throws ModelSpecsException  {
     	for (float ff : offset) {
