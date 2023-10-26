@@ -26,8 +26,6 @@ import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -38,8 +36,6 @@ import java.util.stream.LongStream;
 
 import javax.xml.bind.ValidationException;
 
-import ij.IJ;
-import ij.ImagePlus;
 import io.bioimage.modelrunner.bioimageio.bioengine.BioEngineAvailableModels;
 import io.bioimage.modelrunner.bioimageio.bioengine.BioengineInterface;
 import io.bioimage.modelrunner.bioimageio.description.ModelDescriptor;
@@ -59,16 +55,9 @@ import io.bioimage.modelrunner.utils.Constants;
 import io.bioimage.modelrunner.versionmanagement.InstalledEngines;
 import net.imglib2.FinalInterval;
 import net.imglib2.RandomAccessibleInterval;
-import net.imglib2.img.Img;
-import net.imglib2.img.array.ArrayImg;
-import net.imglib2.img.array.ArrayImgs;
-import net.imglib2.img.basictypeaccess.array.FloatArray;
-import net.imglib2.img.display.imagej.ImageJFunctions;
 import net.imglib2.type.NativeType;
 import net.imglib2.type.numeric.RealType;
 import net.imglib2.type.numeric.real.FloatType;
-import net.imglib2.util.Intervals;
-import net.imglib2.view.IntervalView;
 import net.imglib2.view.Views;
 
 /**
@@ -576,7 +565,7 @@ public class Model
 				return Tensor.build(inputTensors.get(i).getName(), inputTensors.get(i).getAxesOrderString(), tileRai);
 			}).collect(Collectors.toList());
 			RandomAccessibleInterval<R> rai = (RandomAccessibleInterval<R>) Views.dropSingletonDimensions(inputTileList.get(j).getData());
-			ImageJFunctions.show(rai);
+			//ImageJFunctions.show(rai);
 
 			List<Tensor<?>> outputTileList = IntStream.range(0, outputTensors.size()).mapToObj(i -> {
 				if (!outputTensors.get(i).isImage())
@@ -589,13 +578,14 @@ public class Model
 				return Tensor.build(outputTensors.get(i).getName(), outputTensors.get(i).getAxesOrderString(), tileRai);
 			}).collect(Collectors.toList());
 			RandomAccessibleInterval<T> rai2 = (RandomAccessibleInterval<T>) Views.dropSingletonDimensions(outputTileList.get(j).getData());
-			ImageJFunctions.show(rai2);
+			//ImageJFunctions.show(rai2);
 			
 			this.runModel(inputTileList, outputTileList);
 		}
 	}
 	
 	public static <T extends NativeType<T> & RealType<T>> void main(String[] args) throws IOException, ValidationException, LoadEngineException, RunModelException, LoadModelException {
+		/*
 		String mm = "C:\\Users\\angel\\OneDrive\\Documentos\\pasteur\\git\\model-runner-java\\models\\StarDist H&E Nuclei Segmentation_06092023_020924\\";
 		Img<FloatType> im = ArrayImgs.floats(new long[] {1, 511, 512, 3});
 		ImagePlus imp = IJ.openImage(mm + File.separator + "sample_input_0.tif");
@@ -612,6 +602,7 @@ public class Model
 		List<Tensor<T>> out = model.runBioimageioModelOnImgLib2WithTiling(l);
 		ImageJFunctions.show(Views.dropSingletonDimensions(out.get(0).getData()));
 		System.out.println(false);
+		*/
 	}
 
 	/**
