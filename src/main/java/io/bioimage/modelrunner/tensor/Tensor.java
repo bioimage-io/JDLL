@@ -374,6 +374,8 @@ public final class Tensor< T extends RealType< T > & NativeType< T > >
 	/**
 	 * Retrieve tensor with the wanted name from a list of tensors
 	 *
+	 * @param <T>
+	 * 			  the possible ImgLib2 datatypes that the ImgLib2 img that correspond to each tensor can have
 	 * @param lTensors
 	 *            list of tensors
 	 * @param name

@@ -497,15 +497,21 @@ public class Model
 	}
 	
 	/**
+	 * Run a Bioimage.io model and execute the tiling strategy in one go.
+	 * The model needs to have been previously loaded with {@link #loadModel()}.
+	 * This method does not execute pre- or post-processing, they
+	 * need to be executed independently before or after
 	 * 
 	 * @param <T>
 	 * 	ImgLib2 data type of the output images
 	 * @param <R>
 	 * @param inputTensors
-	 * @return
-	 * @throws ValidationException 
-	 * @throws RunModelException 
-	 * @throws Exception 
+	 * 	list of the input tensors that are going to be inputed to the model
+	 * @return the resulting tensors 
+	 * @throws ValidationException if the parameteres of the rdf.yaml file are not correct
+	 * @throws RunModelException if the model has not been previously loaded
+	 * @throws IllegalArgumentException if the model is not a Bioimage.io model or if lacks a Bioimage.io
+	 *  rdf.yaml specs file in the model folder. 
 	 */
 	public <T extends RealType<T> & NativeType<T>, R extends RealType<R> & NativeType<R>> 
 	List<Tensor<T>> runBioimageioModelOnImgLib2WithTiling(List<Tensor<R>> inputTensors) throws ValidationException, RunModelException {
