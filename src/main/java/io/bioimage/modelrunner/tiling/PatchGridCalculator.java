@@ -46,8 +46,14 @@ import net.imglib2.type.numeric.RealType;
  */
 public class PatchGridCalculator <T extends RealType<T> & NativeType<T>> 
 {
-
+	/**
+	 * Instance of {@link ModelDescriptor} containing all the info stored in the specs of an rdf.yaml file
+	 */
     private ModelDescriptor descriptor;
+    /**
+     * MAp containing all the inputs provided to patch, they might be images or not, and might 
+     * correspond to the model of interest or not. This class will organize them
+     */
     private Map<String, Tensor<T>> inputValuesMap;
     /**
      * MAp containing the {@link PatchSpec} for each of the tensors defined in the rdf.yaml specs file
@@ -60,7 +66,8 @@ public class PatchGridCalculator <T extends RealType<T> & NativeType<T>>
 
     /**
      * Class to calculate the patch specifications given a series of inputs
-     * and their specifications
+     * and their specifications. The tiling/patching specs are calculated
+     * for both inputs and outputs
      * @param descriptor
      * 	the specifications of each input
      * @param tensorList
@@ -87,7 +94,12 @@ public class PatchGridCalculator <T extends RealType<T> & NativeType<T>>
     }
     
     /**
-     * Create the patch specifications for the provided model
+     * Create an instance of {@link PatchGridCalculator} that can be used to calculate
+     * how can the inputs to a model be tiled/patched according to the specs in the rdf.yaml file
+     *  (only for Bioimage.io models or models that have a Bioimage.io rdf.yaml associated).
+     *  
+     * @param <T>
+     * 	generic type of the possible ImgLibb2 datatypes that input images can have
      * @param modelFolder
      * 	path to the foler of a bioimage.io model. This is the folder where the rdf.yaml
      * 	of the model is located
@@ -109,7 +121,10 @@ public class PatchGridCalculator <T extends RealType<T> & NativeType<T>>
     }
     
     /**
-     * Create the patch specifications for the model specs
+     * Create an instance of {@link PatchGridCalculator} that can be used to calculate
+     * how can the inputs to a model be tiled/patched according to the specs in the rdf.yaml file
+     *  (only for Bioimage.io models or models that have a Bioimage.io rdf.yaml associated).
+     *  
      * @param <T>
      * 	generic type of the possible ImgLibb2 datatypes that input images can have
      * @param model
@@ -235,6 +250,16 @@ public class PatchGridCalculator <T extends RealType<T> & NativeType<T>>
     	return patchInfoList;
     }
     
+    /**
+     * This method can only be executed if {@link #getInputTensorsTileSpecs()} has already been called,
+     * if not it will throw an {@link IllegalArgumentException}.
+     * It returns a Map containing instances of {@link PatchSpec} per each of the input image tensors
+     * containing the information about the tiles/patches required to process each of the input image tensors.
+     * 
+     * @return a Map containing instances of {@link PatchSpec} per each of the input image tensors
+     * containing the information about the tiles/patches required to process each of the input image tensors.
+     * @throws IllegalArgumentException if the input patch specs have not been already calculated
+     */
     public LinkedHashMap<String, PatchSpec> getOutputTensorsTileSpecs() throws IllegalArgumentException {
     	if (this.inputTilesSpecs == null)
     		throw new IllegalArgumentException("Please first calculate the tile specs for the input tensors. Call: "
@@ -294,7 +319,9 @@ public class PatchGridCalculator <T extends RealType<T> & NativeType<T>>
      * @param spec
      * 	specs of the tensor
      * @param rai
-     * 	ImgLib2 rai, backend of a tensor, thta is going to be tiled
+     * 	ImgLib2 rai, backend of a tensor, that is going to be tiled
+     * @param tileSize
+     * 	the size of the tile selected to process the image
      * 
      * @return an object containing the specs needed to perform patching for the particular tensor
      */
