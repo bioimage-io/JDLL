@@ -36,7 +36,7 @@ import io.bioimage.modelrunner.utils.IndexingUtils;
 public class TileGrid
 {
 	/**
-	 * Size of the input patch. Following the tensor axes order
+	 * Size of the tile for a tensor. Following the tensor axes order
 	 */
     private long[] tileSize;
     /**
@@ -49,10 +49,22 @@ public class TileGrid
      */
     private String tensorName;
     
+    /**
+     * The position of the closest corner to the center for each of the tiles  with 
+     * respect to the original image of the tensor.
+     * The positions might be negative as the image that is going to be processed might have padding on the edges
+     */
     private List<long[]> tilePostionsInImage = new ArrayList<long[]>();
     
+    /**
+     * The positions of the roi in each of the tiles that are going to be used
+     */
     private List<long[]> roiPositionsInTile = new ArrayList<long[]>();
     
+    /**
+     * The positions of the roi of each of the tiles in the original image. Where the ROIs are
+     * inserted on the original image.
+     */
     private List<long[]> roiPositionsInImage = new ArrayList<long[]>();
 
 
@@ -61,6 +73,13 @@ public class TileGrid
     }
     
     /**
+     * Calculate the positions of each of the tiles that are going to be used to process the whole image.
+     * 
+     * @param tileSpecs
+     * 	instance of {@link PatchSpec} that contains the info about the size of the original image, and the 
+     * 	size of the tiles that are going to be used
+     * @return an instance of {@link TileGrid} that contains the information about where the tiles need to be 
+     * 	positioned with respect to the original image
      */
     public static TileGrid create(PatchSpec tileSpecs)
     {
@@ -90,26 +109,53 @@ public class TileGrid
         return ps;
     }
     
+    /**
+     * 
+     * @return name of the tensor that is going to be processed
+     */
     public String getTensorName() {
     	return tensorName;
     }
     
+    /**
+     * 
+     * @return size of the tile that is going to be used to process the image
+     */
     public long[] getTileSize() {
     	return this.tileSize;
     }
     
+    /**
+     * 
+     * @return size of the roi of each of the tiles that is going to be used to process the image
+     */
     public int[] getRoiSize() {
     	return this.roiSize;
     }
     
+    /**
+     * 
+     * @return the position of the closest corner to the center for each of the tiles  with 
+     * respect to the original image of the tensor.
+     * The positions might be negative as the image that is going to be processed might have padding on the edges
+     */
     public List<long[]> getTilePostionsInImage() {
     	return this.tilePostionsInImage;
     }
     
+    /**
+     * 
+     * @return the positions of the roi in each of the tiles that are going to be used
+     */
     public List<long[]> getRoiPositionsInTile() {
     	return this.roiPositionsInTile;
     }
     
+    /**
+     * 
+     * @return the positions of the roi of each of the tiles in the original image. Where the ROIs are
+     * inserted on the original image.
+     */
     public List<long[]> getRoiPostionsInImage() {
     	return this.roiPositionsInImage;
     }
