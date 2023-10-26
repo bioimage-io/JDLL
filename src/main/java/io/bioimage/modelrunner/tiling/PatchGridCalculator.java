@@ -129,7 +129,7 @@ public class PatchGridCalculator <T extends RealType<T> & NativeType<T>>
      * 	generic type of the possible ImgLibb2 datatypes that input images can have
      * @param model
      * 	model specs as defined in the rdf.yaml file
-     * @param inputValuesMap
+     * @param inputImagesList
      * 	list of images that correspond to the model inputs specified in the rdf.yaml file.
      * 	The images should be in the same order as the inputs in the rdf.yaml file. First image corresponds
      * 	to the first input, second image to second output and so on.

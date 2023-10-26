@@ -379,7 +379,6 @@ public class Model
 	 * @return the Model that is going to be used to make inference
 	 * @throws LoadEngineException if there is any error loading the DL framework
 	 * @throws IOException if there is any error finding the engines in the system
-	 * @throws ValidationException if the rdf.yaml file has some at least a field which does not comply with the Bioiamge.io constraints
 	 * @throws IllegalStateException if any of the installed DL engines have been manipulated incorrectly
 	 */
 	public static Model createDeepLearningModel( String modelFolder, String modelSource, EngineInfo engineInfo,
@@ -505,6 +504,7 @@ public class Model
 	 * @param <T>
 	 * 	ImgLib2 data type of the output images
 	 * @param <R>
+	 * 	ImgLib2 data type of the input images
 	 * @param inputTensors
 	 * 	list of the input tensors that are going to be inputed to the model
 	 * @return the resulting tensors 
@@ -671,7 +671,7 @@ public class Model
 	
 	/**
 	 * Whether the model is loaded or not
-	 * @return
+	 * @return whether the model is loaded or not
 	 */
 	public boolean isLoaded() {
 		return loaded;
