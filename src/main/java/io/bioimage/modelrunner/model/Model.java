@@ -534,7 +534,7 @@ public class Model
 				outputTensors.add((Tensor<T>) Tensor.buildBlankTensor(tt.getName(), 
 																	tt.getAxesOrder(), 
 																	outTileSpecs.get(tt.getName()).getTensorDims(), 
-																	new FloatType()));
+																	(T) new FloatType()));
 		}
 		doTiling(inputTensors, outputTensors, tileGrid);
 		return outputTensors;
