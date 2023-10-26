@@ -238,20 +238,8 @@ public class TensorSpec {
     	return minStr + "    " + stepStr;
     }
     
-    /**
-     * REturn an array containing the optimal patch for the given sequence.
-     * An optimal patch has the arbitrary requirement of not being bigger than
-     * 10^6 pixels
-     * @param seqSize
-     * 	array containing the size of the sequence with the axes order "xyczb"
-     * @return the array with the pathc of interest
-     */
-    public int[] getOptimalPatch(int[] seqSize) {
-    	String seqSizeAxes = "XYCZB";
-    	return getOptimalPatch(seqSize, seqSizeAxes);
-    }
-    
-    /**
+    /** TODO this method does not realy required to be non-static because the instance already
+     * contains the axes order, maybe separate two methods
      * REturn an array containing the optimal patch for the given sequence.
      * @param seqSize
      * 	array containing the size of the sequence with the axes order defined
@@ -564,11 +552,13 @@ public class TensorSpec {
      * patch for the selected image
      * @param imSize
      * 	size of the image. The order is Width, Height, Channel, Slices, time
+     * @param axesOrder
+     * 	the axes order of the imSize parameter
      * @return the String containing a patch in the format 256,256,3
      */
-    public String getDisplayableOptimalPatch(int[] imSize) {
+    public String getDisplayableOptimalPatch(int[] imSize, String axesOrder) {
     	// Remove the B axes from the optimal patch size and get the String representation
-    	String patchStr = getDisplayableSizesString(getOptimalPatch(imSize));
+    	String patchStr = getDisplayableSizesString(getOptimalPatch(imSize, axesOrder));
     	return patchStr;
     }
     

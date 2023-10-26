@@ -275,7 +275,7 @@ public class PatchGridCalculator <T extends RealType<T> & NativeType<T>>
     	for (int i = 0; i < intShape.length; i ++) intShape[i] = (int) rai.dimensionsAsLongArray()[i];
     	if (spec.getProcessingPatch() == null) {
 			try {
-				spec.setTileSizeForTensorAndImageSize(spec.getOptimalPatch(intShape), intShape);
+				spec.setTileSizeForTensorAndImageSize(spec.getOptimalPatch(intShape, spec.getAxesOrder()), intShape);
 			} catch (Exception e) {
 				throw new IllegalArgumentException("Tensor dimensions of tensor named '" + spec.getName() + "' "
 						+ "are not compatible with the requirements set by the"

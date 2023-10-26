@@ -525,7 +525,7 @@ public class Model
 		else if (descriptor == null && !(new File(modelFolder, Constants.RDF_FNAME).isFile()))
 			throw new IllegalArgumentException("");
 		else if (descriptor == null)
-			descriptor = ModelDescriptor.readFromLocalFile(modelFolder + File.separator + Constants.RDF_FNAME);
+			descriptor = ModelDescriptor.readFromLocalFile(modelFolder + File.separator + Constants.RDF_FNAME, false);
 		PatchGridCalculator<R> tileGrid = PatchGridCalculator.build(descriptor, inputTensors);
 		return runTiling(inputTensors, tileGrid);
 	}
@@ -592,7 +592,7 @@ public class Model
 		}
 	}
 	
-	public static <T extends NativeType<T> & RealType<T>> void main(String[] args) throws IOException, ValidationException, LoadEngineException, RunModelException {
+	public static <T extends NativeType<T> & RealType<T>> void main(String[] args) throws IOException, ValidationException, LoadEngineException, RunModelException, LoadModelException {
 		String mm = "C:\\Users\\angel\\OneDrive\\Documentos\\pasteur\\git\\model-runner-java\\models\\StarDist H&E Nuclei Segmentation_06092023_020924\\";
 		Img<FloatType> im = ArrayImgs.floats(new long[] {1, 511, 512, 3});
 		ImagePlus imp = IJ.openImage(mm + File.separator + "sample_input_0.tif");
