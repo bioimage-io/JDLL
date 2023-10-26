@@ -34,6 +34,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+import java.util.stream.LongStream;
 
 import javax.xml.bind.ValidationException;
 
@@ -56,6 +57,7 @@ import io.bioimage.modelrunner.tiling.PatchSpec;
 import io.bioimage.modelrunner.tiling.TileGrid;
 import io.bioimage.modelrunner.utils.Constants;
 import io.bioimage.modelrunner.versionmanagement.InstalledEngines;
+import net.imglib2.FinalInterval;
 import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.img.Img;
 import net.imglib2.img.array.ArrayImg;
@@ -566,27 +568,28 @@ public class Model
 			List<Tensor<?>> inputTileList = IntStream.range(0, inputTensors.size()).mapToObj(i -> {
 				if (!inputTensors.get(i).isImage())
 					return inputTensors.get(i);
+				long[] minLim = inTileGrids.get(inputTensors.get(i).getName()).getTilePostionsInImage().get(tileCount);
+				long[] tileSize = inTileGrids.get(inputTensors.get(i).getName()).getTileSize();
+				long[] maxLim = LongStream.range(0, tileSize.length).map(c -> tileSize[(int) c] - 1 + minLim[(int) c]).toArray();
 				RandomAccessibleInterval<R> tileRai = Views.interval(
-						Views.extendBorder(inputTensors.get(i).getData()), 
-						inTileGrids.get(inputTensors.get(i).getName()).getTilePostionsInImage().get(tileCount),
-						(long[]) inTileGrids.get(inputTensors.get(i).getName()).getTileSize());
-				/*
-				RandomAccessibleInterval<R> tileRai = Views.interval(
-						Views.extendBorder(inputTensors.get(i).getData()),
-						Intervals.expand(inputTensors.get(i).getData(), 50));
-						*/
+						Views.extendMirrorDouble(inputTensors.get(i).getData()), new FinalInterval( minLim, maxLim ));
 				return Tensor.build(inputTensors.get(i).getName(), inputTensors.get(i).getAxesOrderString(), tileRai);
 			}).collect(Collectors.toList());
+			RandomAccessibleInterval<R> rai = (RandomAccessibleInterval<R>) Views.dropSingletonDimensions(inputTileList.get(j).getData());
+			ImageJFunctions.show(rai);
 
 			List<Tensor<?>> outputTileList = IntStream.range(0, outputTensors.size()).mapToObj(i -> {
 				if (!outputTensors.get(i).isImage())
 					return outputTensors.get(i);
+				long[] minLim = outTileGrids.get(outputTensors.get(i).getName()).getTilePostionsInImage().get(tileCount);
+				long[] tileSize = outTileGrids.get(outputTensors.get(i).getName()).getTileSize();
+				long[] maxLim = LongStream.range(0, tileSize.length).map(c -> tileSize[(int) c] - 1 + minLim[(int) c]).toArray();
 				RandomAccessibleInterval<T> tileRai = Views.interval(
-						Views.extendBorder(outputTensors.get(i).getData()), 
-						outTileGrids.get(outputTensors.get(i).getName()).getTilePostionsInImage().get(tileCount),
-						(long[]) outTileGrids.get(outputTensors.get(i).getName()).getTileSize());
+						Views.extendMirrorDouble(outputTensors.get(i).getData()),  new FinalInterval( minLim, maxLim ));
 				return Tensor.build(outputTensors.get(i).getName(), outputTensors.get(i).getAxesOrderString(), tileRai);
 			}).collect(Collectors.toList());
+			RandomAccessibleInterval<T> rai2 = (RandomAccessibleInterval<T>) Views.dropSingletonDimensions(outputTileList.get(j).getData());
+			ImageJFunctions.show(rai2);
 			
 			this.runModel(inputTileList, outputTileList);
 		}
