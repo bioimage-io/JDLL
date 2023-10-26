@@ -36,10 +36,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-import javax.xml.bind.ValidationException;
-
 import io.bioimage.modelrunner.bioimageio.BioimageioRepo;
 import io.bioimage.modelrunner.bioimageio.description.ModelDescriptor;
+import io.bioimage.modelrunner.bioimageio.description.exceptions.ModelSpecsException;
 import io.bioimage.modelrunner.bioimageio.description.weights.WeightFormat;
 import io.bioimage.modelrunner.bioimageio.download.DownloadTracker;
 import io.bioimage.modelrunner.bioimageio.download.DownloadTracker.TwoParameterConsumer;
@@ -960,10 +959,10 @@ public class EngineInstall {
 	 * @return true if at least one DL engine of the model weights defined in the rdf.yaml is
 	 * 	successfully installed
 	 * @throws FileNotFoundException if the rdf.yaml specs file does not exist
-	 * @throws ValidationException if there is any error with the rdf.yaml file
+	 * @throws ModelSpecsException if there is any error with the rdf.yaml file
 	 * @throws IOException if there is any error creating the folder for the engine or downloading the jar files
 	 */
-	public static boolean installEnginesForModelInFolder(String modelFolder) throws FileNotFoundException, ValidationException, IOException {
+	public static boolean installEnginesForModelInFolder(String modelFolder) throws FileNotFoundException, ModelSpecsException, IOException {
 		return installEnginesinDirForModelInFolder(modelFolder, InstalledEngines.getEnginesDir(), null);
 	}
 	
@@ -982,11 +981,11 @@ public class EngineInstall {
 	 * @return true if at least one DL engine of the model weights defined in the rdf.yaml is
 	 * 	successfully installed
 	 * @throws FileNotFoundException if the rdf.yaml specs file does not exist
-	 * @throws ValidationException if there is any error with the rdf.yaml file
+	 * @throws ModelSpecsException if there is any error with the rdf.yaml file
 	 * @throws IOException if there is any error creating the folder for the engine or downloading the jar files
 	 */
 	public static boolean installEnginesForModelInFolder(String modelFolder, 
-			DownloadTracker.TwoParameterConsumer<String, Double> consumer) throws FileNotFoundException, ValidationException, IOException {
+			DownloadTracker.TwoParameterConsumer<String, Double> consumer) throws FileNotFoundException, ModelSpecsException, IOException {
 		return installEnginesinDirForModelInFolder(modelFolder, InstalledEngines.getEnginesDir(), consumer);
 	}
 	
@@ -1004,10 +1003,10 @@ public class EngineInstall {
 	 * @return true if at least one DL engine of the model weights defined in the rdf.yaml is
 	 * 	successfully installed
 	 * @throws FileNotFoundException if the rdf.yaml specs file does not exist
-	 * @throws ValidationException if there is any error with the rdf.yaml file
+	 * @throws ModelSpecsException if there is any error with the rdf.yaml file
 	 * @throws IOException if there is any error creating the folder for the engine or downloading the jar files
 	 */
-	public static boolean installEnginesinDirForModelInFolder(String modelFolder, String enginesDir) throws FileNotFoundException, ValidationException, IOException {
+	public static boolean installEnginesinDirForModelInFolder(String modelFolder, String enginesDir) throws FileNotFoundException, ModelSpecsException, IOException {
 		return installEnginesinDirForModelInFolder(modelFolder, enginesDir, null);
 	}
 	
@@ -1027,12 +1026,12 @@ public class EngineInstall {
 	 * @return true if at least one DL engine of the model weights defined in the rdf.yaml is
 	 * 	successfully installed
 	 * @throws FileNotFoundException if the rdf.yaml specs file does not exist
-	 * @throws ValidationException if there is any error with the rdf.yaml file
+	 * @throws ModelSpecsException if there is any error with the rdf.yaml file
 	 * @throws IOException if there is any error creating the folder for the engine or downloading the jar files
 	 */
 	public static boolean installEnginesinDirForModelInFolder(String modelFolder, String enginesDir, 
 			DownloadTracker.TwoParameterConsumer<String, Double> consumer) 
-					throws FileNotFoundException, ValidationException, IOException {
+					throws FileNotFoundException, ModelSpecsException, IOException {
 		if (new File(modelFolder, "rdf.yaml").isFile() == false)
 			throw new FileNotFoundException("A Bioimage.io model folder should contain its corresponding rdf.yaml file.");
 		ModelDescriptor descriptor = 

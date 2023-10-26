@@ -34,12 +34,11 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.LongStream;
 
-import javax.xml.bind.ValidationException;
-
 import io.bioimage.modelrunner.bioimageio.bioengine.BioEngineAvailableModels;
 import io.bioimage.modelrunner.bioimageio.bioengine.BioengineInterface;
 import io.bioimage.modelrunner.bioimageio.description.ModelDescriptor;
 import io.bioimage.modelrunner.bioimageio.description.TensorSpec;
+import io.bioimage.modelrunner.bioimageio.description.exceptions.ModelSpecsException;
 import io.bioimage.modelrunner.bioimageio.description.weights.WeightFormat;
 import io.bioimage.modelrunner.engine.DeepLearningEngineInterface;
 import io.bioimage.modelrunner.engine.EngineInfo;
@@ -197,10 +196,10 @@ public class Model
 	 * @return a model ready to be loaded
 	 * @throws LoadEngineException if there is any error loading the DL framework
 	 * @throws IOException if there is any error finding the engines in the system
-	 * @throws ValidationException if the rdf.yaml file has some at least a field which does not comply with the Bioiamge.io constraints
+	 * @throws ModelSpecsException if the rdf.yaml file has some at least a field which does not comply with the Bioiamge.io constraints
 	 */
 	public static Model createBioimageioModel(String bmzModelFolder, ClassLoader classloader)
-			throws LoadEngineException, ValidationException, IOException {
+			throws LoadEngineException, ModelSpecsException, IOException {
 		return createBioimageioModel(bmzModelFolder, InstalledEngines.getEnginesDir(), classloader);
 	}
 	
@@ -217,10 +216,10 @@ public class Model
 	 * @return a model ready to be loaded
 	 * @throws LoadEngineException if there is any error loading the DL framework
 	 * @throws IOException if there is any error finding the engines in the system
-	 * @throws ValidationException if the rdf.yaml file has some at least a field which does not comply with the Bioiamge.io constraints
+	 * @throws ModelSpecsException if the rdf.yaml file has some at least a field which does not comply with the Bioiamge.io constraints
 	 */
 	public static Model createBioimageioModel(String bmzModelFolder)
-			throws ValidationException, LoadEngineException, IOException {
+			throws ModelSpecsException, LoadEngineException, IOException {
 		return createBioimageioModel(bmzModelFolder, InstalledEngines.getEnginesDir());
 	}
 	
@@ -239,10 +238,10 @@ public class Model
 	 * @return a model ready to be loaded
 	 * @throws LoadEngineException if there is any error loading the DL framework
 	 * @throws IOException if there is any error finding the engines in the system
-	 * @throws ValidationException if the rdf.yaml file has some at least a field which does not comply with the Bioiamge.io constraints
+	 * @throws ModelSpecsException if the rdf.yaml file has some at least a field which does not comply with the Bioiamge.io constraints
 	 */
 	public static Model createBioimageioModel(String bmzModelFolder, String enginesFolder) 
-			throws ValidationException, LoadEngineException, IOException {
+			throws ModelSpecsException, LoadEngineException, IOException {
 		return createBioimageioModel(bmzModelFolder, enginesFolder, null);
 	}
 	
@@ -273,10 +272,10 @@ public class Model
 	 * @return a model ready to be loaded
 	 * @throws LoadEngineException if there is any error loading the DL framework
 	 * @throws IOException if there is any error finding the engines in the system
-	 * @throws ValidationException if the rdf.yaml file has some at least a field which does not comply with the Bioiamge.io constraints
+	 * @throws ModelSpecsException if the rdf.yaml file has some at least a field which does not comply with the Bioiamge.io constraints
 	 */
 	public static Model createBioimageioModel(String bmzModelFolder, String enginesFolder, ClassLoader classloader) 
-			throws LoadEngineException, IOException, ValidationException {
+			throws LoadEngineException, IOException, ModelSpecsException {
 		Objects.requireNonNull(bmzModelFolder);
 		Objects.requireNonNull(enginesFolder);
 		if (new File(bmzModelFolder, Constants.RDF_FNAME).isFile() == false)
@@ -320,11 +319,11 @@ public class Model
 	 * @return a model ready to be loaded
 	 * @throws LoadEngineException if there is any error loading the DL framework
 	 * @throws IOException if there is any error finding the engines in the system
-	 * @throws ValidationException if the rdf.yaml file has some at least a field which does not comply with the Bioiamge.io constraints
+	 * @throws ModelSpecsException if the rdf.yaml file has some at least a field which does not comply with the Bioiamge.io constraints
 	 * @throws IllegalStateException if any of the installed DL engines have been manipulated incorrectly
 	 */
 	public static Model createBioimageioModelWithExactWeigths(String bmzModelFolder, String enginesFolder)
-			throws IOException, ValidationException, IllegalStateException, LoadEngineException {
+			throws IOException, ModelSpecsException, IllegalStateException, LoadEngineException {
 		Objects.requireNonNull(bmzModelFolder);
 		Objects.requireNonNull(enginesFolder);
 		if (new File(bmzModelFolder, Constants.RDF_FNAME).isFile() == false)
@@ -508,13 +507,13 @@ public class Model
 	 * @param inputTensors
 	 * 	list of the input tensors that are going to be inputed to the model
 	 * @return the resulting tensors 
-	 * @throws ValidationException if the parameteres of the rdf.yaml file are not correct
+	 * @throws ModelSpecsException if the parameters of the rdf.yaml file are not correct
 	 * @throws RunModelException if the model has not been previously loaded
 	 * @throws IllegalArgumentException if the model is not a Bioimage.io model or if lacks a Bioimage.io
 	 *  rdf.yaml specs file in the model folder. 
 	 */
 	public <T extends RealType<T> & NativeType<T>, R extends RealType<R> & NativeType<R>> 
-	List<Tensor<T>> runBioimageioModelOnImgLib2WithTiling(List<Tensor<R>> inputTensors) throws ValidationException, RunModelException {
+	List<Tensor<T>> runBioimageioModelOnImgLib2WithTiling(List<Tensor<R>> inputTensors) throws ModelSpecsException, RunModelException {
 		if (!this.isLoaded())
 			throw new RunModelException("Please first load the model.");
 		if (descriptor == null && modelFolder == null)
@@ -590,7 +589,7 @@ public class Model
 		}
 	}
 	
-	public static <T extends NativeType<T> & RealType<T>> void main(String[] args) throws IOException, ValidationException, LoadEngineException, RunModelException, LoadModelException {
+	public static <T extends NativeType<T> & RealType<T>> void main(String[] args) throws IOException, ModelSpecsException, LoadEngineException, RunModelException, LoadModelException {
 		/*
 		String mm = "C:\\Users\\angel\\OneDrive\\Documentos\\pasteur\\git\\model-runner-java\\models\\StarDist H&E Nuclei Segmentation_06092023_020924\\";
 		Img<FloatType> im = ArrayImgs.floats(new long[] {1, 511, 512, 3});
