@@ -33,7 +33,7 @@ public class IndexingUtils
 {
 
 	/**
-	 * Obtain a flat index position from a multidimensional index position
+	 * Obtain a flat index position from a multidimensional index position, assumes row major (C-order)
 	 * 
 	 * @param ind
 	 *            the multidimensional indexes
@@ -75,7 +75,7 @@ public class IndexingUtils
 	}
 
 	/**
-	 * Obtain a flat index position from a multidimensional index position
+	 * Obtain a flat index position from a multidimensional index position, assumes row major (C-order)
 	 * 
 	 * @param ind
 	 *            the multidimensional indexes
@@ -97,10 +97,10 @@ public class IndexingUtils
 	}
 
 	/**
-	 * Obtain a flat index position from a multidimensional index position
+	 * Obtain the multidimensional position corresponding to a flat position in an nd array
 	 * 
-	 * @param ind
-	 * 			  the index of the position as if it was a flat array
+	 * @param flat
+	 * 			  flat position in an nd-array, assumes row major (C-order)
 	 * @param size
 	 *            size of the tensor
 	 * @return the multidimensional indexes
@@ -121,10 +121,10 @@ public class IndexingUtils
 	}
 
 	/**
-	 * Obtain a flat index position from a multidimensional index position
+	 * Obtain the multidimensional position corresponding to a flat position in an nd array
 	 * 
-	 * @param ind
-	 * 			  the index of the position as if it was a flat array
+	 * @param flat
+	 * 			  flat position in an nd-array, assumes row major (C-order)
 	 * @param size
 	 *            size of the tensor
 	 * @return the multidimensional indexes

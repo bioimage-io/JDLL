@@ -65,7 +65,9 @@ public class PatchSpec
      *        sequence sizes.
      * @param patchPaddingSize
      *        The padding size used on each patch.
-    * @return The create patch specification.
+     * @param tensorDims
+     * 		  The original size of the image/tensor that is going to be tiled
+     * @return The create patch specification.
      */
     public static PatchSpec create(String tensorName, long[] patchInputSize, int[] patchGridSize, 
     		int[][] patchPaddingSize, long[] tensorDims)
