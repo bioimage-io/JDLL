@@ -19,7 +19,9 @@
  */
 package io.bioimage.modelrunner.tensor;
 
+import net.imglib2.Point;
 import net.imglib2.RandomAccessibleInterval;
+import net.imglib2.img.display.imagej.ImageJFunctions;
 import net.imglib2.transform.integer.MixedTransform;
 import net.imglib2.type.numeric.NumericType;
 import net.imglib2.type.numeric.RealType;
@@ -46,13 +48,18 @@ public final class Utils
 	 */
 	public static <T extends NumericType<T> & RealType<T>> 
 	RandomAccessibleInterval<T> transpose(RandomAccessibleInterval<T> rai){
+		long[] max = rai.maxAsPoint().positionAsLongArray();
+		long[] min = rai.minAsPoint().positionAsLongArray();
 		long[] tensorShape = rai.dimensionsAsLongArray();
 		MixedTransform t = new MixedTransform( tensorShape.length, tensorShape.length );
 		int[] transposeAxesOrderChange = new int[tensorShape.length];
 		for (int i = 0; i < tensorShape.length; i ++) transposeAxesOrderChange[i] = tensorShape.length - 1 - i;
 		t.setComponentMapping(transposeAxesOrderChange);
 		long[] minMax = new long[tensorShape.length * 2];
-		for (int i = 0; i < tensorShape.length; i ++) minMax[i + tensorShape.length] = tensorShape[tensorShape.length - i - 1] - 1;
+		for (int i = 0; i < tensorShape.length; i ++) {
+			minMax[i] = min[tensorShape.length - i - 1] - 1;
+			minMax[i + tensorShape.length] = max[tensorShape.length - i - 1] - 1;
+		}
 		return Views.interval(new MixedTransformView<T>( rai, t ), 
 				Intervals.createMinMax(minMax));
 	}
