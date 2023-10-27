@@ -34,6 +34,8 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.LongStream;
 
+import ij.IJ;
+import ij.ImagePlus;
 import io.bioimage.modelrunner.bioimageio.bioengine.BioEngineAvailableModels;
 import io.bioimage.modelrunner.bioimageio.bioengine.BioengineInterface;
 import io.bioimage.modelrunner.bioimageio.description.ModelDescriptor;
@@ -54,6 +56,9 @@ import io.bioimage.modelrunner.utils.Constants;
 import io.bioimage.modelrunner.versionmanagement.InstalledEngines;
 import net.imglib2.FinalInterval;
 import net.imglib2.RandomAccessibleInterval;
+import net.imglib2.img.Img;
+import net.imglib2.img.array.ArrayImgs;
+import net.imglib2.img.display.imagej.ImageJFunctions;
 import net.imglib2.type.NativeType;
 import net.imglib2.type.numeric.RealType;
 import net.imglib2.type.numeric.real.FloatType;
@@ -527,6 +532,57 @@ public class Model
 		return runTiling(inputTensors, tileGrid);
 	}
 	
+	/**
+	 * Run a Bioimage.io model and execute the tiling strategy in one go.
+	 * The model needs to have been previously loaded with {@link #loadModel()}.
+	 * This method does not execute pre- or post-processing, they
+	 * need to be executed independently before or after
+	 * 
+	 * @param <T>
+	 * 	ImgLib2 data type of the output images
+	 * @param <R>
+	 * 	ImgLib2 data type of the input images
+	 * @param inputTensors
+	 * 	list of the input tensors that are going to be inputed to the model
+	 * @param tileMap
+	 * 	Map containing the tiles for all the image tensors with their corresponding names each
+	 * @return the resulting tensors 
+	 * @throws ModelSpecsException if the parameters of the rdf.yaml file are not correct
+	 * @throws RunModelException if the model has not been previously loaded
+	 * @throws IllegalArgumentException if the model is not a Bioimage.io model or if lacks a Bioimage.io
+	 *  rdf.yaml specs file in the model folder. 
+	 */
+	public <T extends RealType<T> & NativeType<T>, R extends RealType<R> & NativeType<R>> 
+	List<Tensor<T>> runBioimageioModelOnImgLib2WithTiling(List<Tensor<R>> inputTensors, 
+			Map<String, int[]> tileMap) throws ModelSpecsException, RunModelException {
+		
+		if (!this.isLoaded())
+			throw new RunModelException("Please first load the model.");
+		if (descriptor == null && modelFolder == null)
+			throw new IllegalArgumentException("");
+		else if (descriptor == null && !(new File(modelFolder, Constants.RDF_FNAME).isFile()))
+			throw new IllegalArgumentException("");
+		else if (descriptor == null)
+			descriptor = ModelDescriptor.readFromLocalFile(modelFolder + File.separator + Constants.RDF_FNAME, false);
+		for (TensorSpec t : descriptor.getInputTensors()) {
+			if (!t.isImage())
+				continue;
+			if (tileMap.get(t.getName()) == null)
+				throw new RunModelException("Either provide the wanted tile size for every image tensor (" 
+						+ "in this case tenso '" + t.getName() + "' is missing) or let JDLL compute all "
+						+ "tile sizes automatically using runBioimageioModelOnImgLib2WithTiling(List<Tensor<R>> inputTensors).");
+			if (Tensor.getTensorByNameFromList(inputTensors, t.getName()) == null)
+				throw new RunModelException("Required tensor named '" + t.getName() + "' is missing from the list of input tensors");
+			try {
+				t.setTileSizeForTensorAndImageSize(tileMap.get(t.getName()), Tensor.getTensorByNameFromList(inputTensors, t.getName()).getShape());
+			} catch (Exception e) {
+				throw new RunModelException(e.getMessage());
+			}
+		}
+		PatchGridCalculator<R> tileGrid = PatchGridCalculator.build(descriptor, inputTensors);
+		return runTiling(inputTensors, tileGrid);
+	}
+	
 	@SuppressWarnings("unchecked")
 	private <T extends RealType<T> & NativeType<T>, R extends RealType<R> & NativeType<R>> 
 	List<Tensor<T>> runTiling(List<Tensor<R>> inputTensors, PatchGridCalculator<R> tileGrid) throws RunModelException {
@@ -570,9 +626,7 @@ public class Model
 						Views.extendMirrorDouble(inputTensors.get(i).getData()), new FinalInterval( minLim, maxLim ));
 				return Tensor.build(inputTensors.get(i).getName(), inputTensors.get(i).getAxesOrderString(), tileRai);
 			}).collect(Collectors.toList());
-			RandomAccessibleInterval<R> rai = (RandomAccessibleInterval<R>) Views.dropSingletonDimensions(inputTileList.get(j).getData());
-			//ImageJFunctions.show(rai);
-
+			
 			List<Tensor<?>> outputTileList = IntStream.range(0, outputTensors.size()).mapToObj(i -> {
 				if (!outputTensors.get(i).isImage())
 					return outputTensors.get(i);
@@ -583,32 +637,36 @@ public class Model
 						Views.extendMirrorDouble(outputTensors.get(i).getData()),  new FinalInterval( minLim, maxLim ));
 				return Tensor.build(outputTensors.get(i).getName(), outputTensors.get(i).getAxesOrderString(), tileRai);
 			}).collect(Collectors.toList());
-			RandomAccessibleInterval<T> rai2 = (RandomAccessibleInterval<T>) Views.dropSingletonDimensions(outputTileList.get(j).getData());
-			//ImageJFunctions.show(rai2);
 			
 			this.runModel(inputTileList, outputTileList);
 		}
 	}
 	
 	public static <T extends NativeType<T> & RealType<T>> void main(String[] args) throws IOException, ModelSpecsException, LoadEngineException, RunModelException, LoadModelException {
-		/*
-		String mm = "C:\\Users\\angel\\OneDrive\\Documentos\\pasteur\\git\\model-runner-java\\models\\StarDist H&E Nuclei Segmentation_06092023_020924\\";
-		Img<FloatType> im = ArrayImgs.floats(new long[] {1, 511, 512, 3});
+		String mm = "C:\\Users\\angel\\OneDrive\\Documentos\\pasteur\\git\\model-runner-java\\models\\\\EnhancerMitochondriaEM2D_22092023_133921\\";
+		Img<FloatType> im = ArrayImgs.floats(new long[] {1, 1, 512, 512});
 		ImagePlus imp = IJ.openImage(mm + File.separator + "sample_input_0.tif");
 		imp.show();
 		RandomAccessibleInterval<FloatType> wrapImg = ImageJFunctions.convertFloat(imp);
 		wrapImg = (RandomAccessibleInterval<FloatType>) Views.addDimension(wrapImg, 0, 0);
+		wrapImg = (RandomAccessibleInterval<FloatType>) Views.addDimension(wrapImg, 0, 0);
 		wrapImg = (RandomAccessibleInterval<FloatType>) Views.permute(wrapImg, 2, 3);
 		wrapImg = (RandomAccessibleInterval<FloatType>) Views.permute(wrapImg, 1, 2);
 		wrapImg = (RandomAccessibleInterval<FloatType>) Views.permute(wrapImg, 0, 1);
+		wrapImg = (RandomAccessibleInterval<FloatType>) Views.permute(wrapImg, 2, 3);
+		wrapImg = (RandomAccessibleInterval<FloatType>) Views.permute(wrapImg, 1, 2);
 		List<Tensor<T>> l = new ArrayList<Tensor<T>>();
-		l.add((Tensor<T>) Tensor.build("input", "bxyc", wrapImg));
+		l.add((Tensor<T>) Tensor.build("input0", "bcyx", wrapImg));
 		Model model = createBioimageioModel(mm);
 		model.loadModel();
-		List<Tensor<T>> out = model.runBioimageioModelOnImgLib2WithTiling(l);
-		ImageJFunctions.show(Views.dropSingletonDimensions(out.get(0).getData()));
+		Map<String, int[]> tilingList = new LinkedHashMap<String, int[]>();
+		tilingList.put("input0", new int[] {1, 1, 256, 256});
+		List<Tensor<T>> out = model.runBioimageioModelOnImgLib2WithTiling(l, tilingList);
+		wrapImg = (RandomAccessibleInterval<FloatType>) Views.dropSingletonDimensions(out.get(0).getData());
+		wrapImg = (RandomAccessibleInterval<FloatType>) Views.permute(wrapImg, 0, 2);
+		wrapImg = (RandomAccessibleInterval<FloatType>) Views.permute(wrapImg, 0, 1);
+		ImageJFunctions.show(wrapImg);
 		System.out.println(false);
-		*/
 	}
 
 	/**
