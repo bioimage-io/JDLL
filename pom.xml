@@ -111,14 +111,7 @@
 		<!-- NB: Deploy releases to the SciJava Maven repository. -->
 		<releaseProfiles>sign,deploy-to-scijava</releaseProfiles>
 	</properties>
-	<!--
-	<repositories>
-		<repository>
-			<id>scijava.public</id>
-			<url>https://maven.scijava.org/content/groups/public</url>
-		</repository>
-	</repositories>
-	-->
+	
 	<dependencies>
 		<dependency>
 			<groupId>com.google.code.gson</groupId>
@@ -138,15 +131,5 @@
 			<artifactId>jackson-dataformat-msgpack</artifactId>
 			<version>0.9.5</version>
 		</dependency>
-		<!--
-		<dependency>
-			<groupId>net.imglib2</groupId>
-			<artifactId>imglib2-ij</artifactId>
-		</dependency>
-		<dependency>
-			<groupId>net.imagej</groupId>
-			<artifactId>imagej</artifactId>
-		</dependency>
-		-->
 	</dependencies>
 </project>

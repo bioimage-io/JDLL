@@ -21,7 +21,6 @@ package io.bioimage.modelrunner.tensor;
 
 import net.imglib2.Point;
 import net.imglib2.RandomAccessibleInterval;
-import net.imglib2.img.display.imagej.ImageJFunctions;
 import net.imglib2.transform.integer.MixedTransform;
 import net.imglib2.type.numeric.NumericType;
 import net.imglib2.type.numeric.RealType;

@@ -34,8 +34,6 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.LongStream;
 
-import ij.IJ;
-import ij.ImagePlus;
 import io.bioimage.modelrunner.bioimageio.bioengine.BioEngineAvailableModels;
 import io.bioimage.modelrunner.bioimageio.bioengine.BioengineInterface;
 import io.bioimage.modelrunner.bioimageio.description.ModelDescriptor;
@@ -58,7 +56,6 @@ import net.imglib2.FinalInterval;
 import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.img.Img;
 import net.imglib2.img.array.ArrayImgs;
-import net.imglib2.img.display.imagej.ImageJFunctions;
 import net.imglib2.type.NativeType;
 import net.imglib2.type.numeric.RealType;
 import net.imglib2.type.numeric.real.FloatType;
@@ -645,27 +642,13 @@ public class Model
 	public static <T extends NativeType<T> & RealType<T>> void main(String[] args) throws IOException, ModelSpecsException, LoadEngineException, RunModelException, LoadModelException {
 		String mm = "C:\\Users\\angel\\OneDrive\\Documentos\\pasteur\\git\\model-runner-java\\models\\\\EnhancerMitochondriaEM2D_22092023_133921\\";
 		Img<FloatType> im = ArrayImgs.floats(new long[] {1, 1, 512, 512});
-		ImagePlus imp = IJ.openImage(mm + File.separator + "sample_input_0.tif");
-		imp.show();
-		RandomAccessibleInterval<FloatType> wrapImg = ImageJFunctions.convertFloat(imp);
-		wrapImg = (RandomAccessibleInterval<FloatType>) Views.addDimension(wrapImg, 0, 0);
-		wrapImg = (RandomAccessibleInterval<FloatType>) Views.addDimension(wrapImg, 0, 0);
-		wrapImg = (RandomAccessibleInterval<FloatType>) Views.permute(wrapImg, 2, 3);
-		wrapImg = (RandomAccessibleInterval<FloatType>) Views.permute(wrapImg, 1, 2);
-		wrapImg = (RandomAccessibleInterval<FloatType>) Views.permute(wrapImg, 0, 1);
-		wrapImg = (RandomAccessibleInterval<FloatType>) Views.permute(wrapImg, 2, 3);
-		wrapImg = (RandomAccessibleInterval<FloatType>) Views.permute(wrapImg, 1, 2);
 		List<Tensor<T>> l = new ArrayList<Tensor<T>>();
-		l.add((Tensor<T>) Tensor.build("input0", "bcyx", wrapImg));
+		l.add((Tensor<T>) Tensor.build("input0", "bcyx", im));
 		Model model = createBioimageioModel(mm);
 		model.loadModel();
 		Map<String, int[]> tilingList = new LinkedHashMap<String, int[]>();
 		tilingList.put("input0", new int[] {1, 1, 256, 256});
 		List<Tensor<T>> out = model.runBioimageioModelOnImgLib2WithTiling(l, tilingList);
-		wrapImg = (RandomAccessibleInterval<FloatType>) Views.dropSingletonDimensions(out.get(0).getData());
-		wrapImg = (RandomAccessibleInterval<FloatType>) Views.permute(wrapImg, 0, 2);
-		wrapImg = (RandomAccessibleInterval<FloatType>) Views.permute(wrapImg, 0, 1);
-		ImageJFunctions.show(wrapImg);
 		System.out.println(false);
 	}
 
