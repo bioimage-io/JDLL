@@ -57,8 +57,8 @@ public final class Utils
 		t.setComponentMapping(transposeAxesOrderChange);
 		long[] minMax = new long[tensorShape.length * 2];
 		for (int i = 0; i < tensorShape.length; i ++) {
-			minMax[i] = min[tensorShape.length - i - 1] - 1;
-			minMax[i + tensorShape.length] = max[tensorShape.length - i - 1] - 1;
+			minMax[i] = min[tensorShape.length - i - 1];
+			minMax[i + tensorShape.length] = max[tensorShape.length - i - 1];
 		}
 		return Views.interval(new MixedTransformView<T>( rai, t ), 
 				Intervals.createMinMax(minMax));
