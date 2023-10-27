@@ -641,9 +641,9 @@ public class Model
 	
 	public static <T extends NativeType<T> & RealType<T>> void main(String[] args) throws IOException, ModelSpecsException, LoadEngineException, RunModelException, LoadModelException {
 		String mm = "C:\\Users\\angel\\OneDrive\\Documentos\\pasteur\\git\\model-runner-java\\models\\\\EnhancerMitochondriaEM2D_22092023_133921\\";
-		Img<FloatType> im = ArrayImgs.floats(new long[] {1, 1, 512, 512});
+		Img<T> im = (Img<T>) ArrayImgs.floats(new long[] {1, 1, 512, 512});
 		List<Tensor<T>> l = new ArrayList<Tensor<T>>();
-		l.add((Tensor<T>) Tensor.build("input0", "bcyx", (Img<T>) im));
+		l.add((Tensor<T>) Tensor.build("input0", "bcyx", im));
 		Model model = createBioimageioModel(mm);
 		model.loadModel();
 		Map<String, int[]> tilingList = new LinkedHashMap<String, int[]>();
