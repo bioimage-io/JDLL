@@ -30,6 +30,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.LongStream;
@@ -517,6 +518,31 @@ public class Model
 	 */
 	public <T extends RealType<T> & NativeType<T>, R extends RealType<R> & NativeType<R>> 
 	List<Tensor<T>> runBioimageioModelOnImgLib2WithTiling(List<Tensor<R>> inputTensors) throws ModelSpecsException, RunModelException {
+		return runBioimageioModelOnImgLib2WithTiling(inputTensors, new TileCountConsumer());
+	}
+	
+	/**
+	 * Run a Bioimage.io model and execute the tiling strategy in one go.
+	 * The model needs to have been previously loaded with {@link #loadModel()}.
+	 * This method does not execute pre- or post-processing, they
+	 * need to be executed independently before or after
+	 * 
+	 * @param <T>
+	 * 	ImgLib2 data type of the output images
+	 * @param <R>
+	 * 	ImgLib2 data type of the input images
+	 * @param inputTensors
+	 * 	list of the input tensors that are going to be inputed to the model
+	 * @param tileCounter
+	 * 	consumer that counts the number of tiles processed out of the total, if null, nothing is counted
+	 * @return the resulting tensors 
+	 * @throws ModelSpecsException if the parameters of the rdf.yaml file are not correct
+	 * @throws RunModelException if the model has not been previously loaded
+	 * @throws IllegalArgumentException if the model is not a Bioimage.io model or if lacks a Bioimage.io
+	 *  rdf.yaml specs file in the model folder. 
+	 */
+	public <T extends RealType<T> & NativeType<T>, R extends RealType<R> & NativeType<R>> 
+	List<Tensor<T>> runBioimageioModelOnImgLib2WithTiling(List<Tensor<R>> inputTensors, Consumer<String> tileCounter) throws ModelSpecsException, RunModelException {
 		if (!this.isLoaded())
 			throw new RunModelException("Please first load the model.");
 		if (descriptor == null && modelFolder == null)
@@ -552,6 +578,34 @@ public class Model
 	public <T extends RealType<T> & NativeType<T>, R extends RealType<R> & NativeType<R>> 
 	List<Tensor<T>> runBioimageioModelOnImgLib2WithTiling(List<Tensor<R>> inputTensors, 
 			Map<String, int[]> tileMap) throws ModelSpecsException, RunModelException {
+		return runBioimageioModelOnImgLib2WithTiling(inputTensors, tileMap, null);
+	}
+	
+	/**
+	 * Run a Bioimage.io model and execute the tiling strategy in one go.
+	 * The model needs to have been previously loaded with {@link #loadModel()}.
+	 * This method does not execute pre- or post-processing, they
+	 * need to be executed independently before or after
+	 * 
+	 * @param <T>
+	 * 	ImgLib2 data type of the output images
+	 * @param <R>
+	 * 	ImgLib2 data type of the input images
+	 * @param inputTensors
+	 * 	list of the input tensors that are going to be inputed to the model
+	 * @param tileMap
+	 * 	Map containing the tiles for all the image tensors with their corresponding names each
+	 * @param tileCounter
+	 * 	consumer that counts the number of tiles processed out of the total, if null, nothing is counted
+	 * @return the resulting tensors 
+	 * @throws ModelSpecsException if the parameters of the rdf.yaml file are not correct
+	 * @throws RunModelException if the model has not been previously loaded
+	 * @throws IllegalArgumentException if the model is not a Bioimage.io model or if lacks a Bioimage.io
+	 *  rdf.yaml specs file in the model folder. 
+	 */
+	public <T extends RealType<T> & NativeType<T>, R extends RealType<R> & NativeType<R>> 
+	List<Tensor<T>> runBioimageioModelOnImgLib2WithTiling(List<Tensor<R>> inputTensors, 
+			Map<String, int[]> tileMap, Consumer<String> tileCounter) throws ModelSpecsException, RunModelException {
 		
 		if (!this.isLoaded())
 			throw new RunModelException("Please first load the model.");
