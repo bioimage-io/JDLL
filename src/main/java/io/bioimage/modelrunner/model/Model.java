@@ -41,6 +41,8 @@ import io.bioimage.modelrunner.bioimageio.description.ModelDescriptor;
 import io.bioimage.modelrunner.bioimageio.description.TensorSpec;
 import io.bioimage.modelrunner.bioimageio.description.exceptions.ModelSpecsException;
 import io.bioimage.modelrunner.bioimageio.description.weights.WeightFormat;
+import io.bioimage.modelrunner.bioimageio.download.DownloadTracker;
+import io.bioimage.modelrunner.bioimageio.download.DownloadTracker.TwoParameterConsumer;
 import io.bioimage.modelrunner.engine.DeepLearningEngineInterface;
 import io.bioimage.modelrunner.engine.EngineInfo;
 import io.bioimage.modelrunner.engine.EngineLoader;
@@ -498,6 +500,8 @@ public class Model
 		engineClassLoader.setBaseClassLoader();
 	}
 	
+	public static void
+	
 	/**
 	 * Run a Bioimage.io model and execute the tiling strategy in one go.
 	 * The model needs to have been previously loaded with {@link #loadModel()}.
@@ -772,5 +776,65 @@ public class Model
 	 */
 	public boolean isLoaded() {
 		return loaded;
+	}
+	
+	/**
+	 * Create consumer used to be used with {@link Model} for the methods {@link #runBioimageioModelOnImgLib2WithTiling(List, Consumer)}
+	 * or {@link #runBioimageioModelOnImgLib2WithTiling(List, Map, Consumer)}.
+	 * The coonsumer helps to track the number if tiles that have already been processed.
+	 * @return a consumer to track the tiling process
+	 */
+	public static TilingConsumer createTilingConsumer() {
+		return new TilingConsumer();
+	}
+	
+	/**
+	 * Functional interface to create a consumer that is able to keep track of how many 
+	 * tiles have been processed out if the total needed
+	 * @author Carlos Garcia Lopez de Haro
+	 */
+	public static class TilingConsumer {
+		/**
+		 * Total tiles needed to process
+		 */
+		private Long totalTiles;
+		/**
+		 * Already processed tiles
+		 */
+		private Long tilesProcessed;
+		
+		/**
+		 * Set the total numer of tiles that need to be processed
+		 * @param totalTiles
+		 * 	Total tiles that need to be processed
+		 */
+	    public void acceptTotal(Long totalTiles) {
+	        this.totalTiles = totalTiles;
+	    }
+	    
+	    /**
+	     * Set the current number of tiles that have already been processed
+	     * @param tilesProcessed
+	     * 	The current number of tiles that have already been processed
+	     */
+	    public void acceptProgress(Long tilesProcessed) {
+	        this.tilesProcessed = tilesProcessed;
+	    }
+	    
+	    /**
+	     * Get the total number of tiles that need to be processed
+	     * @return the total number of tiles that need to be processed
+	     */
+	    public Long getTotalTiles() {
+	    	return totalTiles;
+	    }
+	    
+	    /**
+	     * Get the number of tiles that have already been processed
+	     * @return the number of tiles that have already been processed
+	     */
+	    public Long getTilesProcessed() {
+	    	return tilesProcessed;
+	    }
 	}
 }
