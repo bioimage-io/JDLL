@@ -778,8 +778,8 @@ public class Model
 	}
 	
 	/**
-	 * Create consumer used to be used with {@link Model} for the methods {@link #runBioimageioModelOnImgLib2WithTiling(List, Consumer)}
-	 * or {@link #runBioimageioModelOnImgLib2WithTiling(List, Map, Consumer)}.
+	 * Create consumer used to be used with {@link Model} for the methods {@link #runBioimageioModelOnImgLib2WithTiling(List, TilingConsumer)}
+	 * or {@link #runBioimageioModelOnImgLib2WithTiling(List, Map, TilingConsumer)}.
 	 * The coonsumer helps to track the number if tiles that have already been processed.
 	 * @return a consumer to track the tiling process
 	 */
