@@ -41,8 +41,6 @@ import io.bioimage.modelrunner.bioimageio.description.ModelDescriptor;
 import io.bioimage.modelrunner.bioimageio.description.TensorSpec;
 import io.bioimage.modelrunner.bioimageio.description.exceptions.ModelSpecsException;
 import io.bioimage.modelrunner.bioimageio.description.weights.WeightFormat;
-import io.bioimage.modelrunner.bioimageio.download.DownloadTracker;
-import io.bioimage.modelrunner.bioimageio.download.DownloadTracker.TwoParameterConsumer;
 import io.bioimage.modelrunner.engine.DeepLearningEngineInterface;
 import io.bioimage.modelrunner.engine.EngineInfo;
 import io.bioimage.modelrunner.engine.EngineLoader;
@@ -500,8 +498,6 @@ public class Model
 		engineClassLoader.setBaseClassLoader();
 	}
 	
-	public static void
-	
 	/**
 	 * Run a Bioimage.io model and execute the tiling strategy in one go.
 	 * The model needs to have been previously loaded with {@link #loadModel()}.
@@ -522,7 +518,7 @@ public class Model
 	 */
 	public <T extends RealType<T> & NativeType<T>, R extends RealType<R> & NativeType<R>> 
 	List<Tensor<T>> runBioimageioModelOnImgLib2WithTiling(List<Tensor<R>> inputTensors) throws ModelSpecsException, RunModelException {
-		return runBioimageioModelOnImgLib2WithTiling(inputTensors, new TileCountConsumer());
+		return runBioimageioModelOnImgLib2WithTiling(inputTensors, new TilingConsumer());
 	}
 	
 	/**
@@ -546,7 +542,7 @@ public class Model
 	 *  rdf.yaml specs file in the model folder. 
 	 */
 	public <T extends RealType<T> & NativeType<T>, R extends RealType<R> & NativeType<R>> 
-	List<Tensor<T>> runBioimageioModelOnImgLib2WithTiling(List<Tensor<R>> inputTensors, Consumer<String> tileCounter) throws ModelSpecsException, RunModelException {
+	List<Tensor<T>> runBioimageioModelOnImgLib2WithTiling(List<Tensor<R>> inputTensors, TilingConsumer tileCounter) throws ModelSpecsException, RunModelException {
 		if (!this.isLoaded())
 			throw new RunModelException("Please first load the model.");
 		if (descriptor == null && modelFolder == null)
@@ -556,7 +552,7 @@ public class Model
 		else if (descriptor == null)
 			descriptor = ModelDescriptor.readFromLocalFile(modelFolder + File.separator + Constants.RDF_FNAME, false);
 		PatchGridCalculator<R> tileGrid = PatchGridCalculator.build(descriptor, inputTensors);
-		return runTiling(inputTensors, tileGrid);
+		return runTiling(inputTensors, tileGrid, tileCounter);
 	}
 	
 	/**
@@ -609,7 +605,7 @@ public class Model
 	 */
 	public <T extends RealType<T> & NativeType<T>, R extends RealType<R> & NativeType<R>> 
 	List<Tensor<T>> runBioimageioModelOnImgLib2WithTiling(List<Tensor<R>> inputTensors, 
-			Map<String, int[]> tileMap, Consumer<String> tileCounter) throws ModelSpecsException, RunModelException {
+			Map<String, int[]> tileMap, TilingConsumer tileCounter) throws ModelSpecsException, RunModelException {
 		
 		if (!this.isLoaded())
 			throw new RunModelException("Please first load the model.");
@@ -635,12 +631,13 @@ public class Model
 			}
 		}
 		PatchGridCalculator<R> tileGrid = PatchGridCalculator.build(descriptor, inputTensors);
-		return runTiling(inputTensors, tileGrid);
+		return runTiling(inputTensors, tileGrid, tileCounter);
 	}
 	
 	@SuppressWarnings("unchecked")
 	private <T extends RealType<T> & NativeType<T>, R extends RealType<R> & NativeType<R>> 
-	List<Tensor<T>> runTiling(List<Tensor<R>> inputTensors, PatchGridCalculator<R> tileGrid) throws RunModelException {
+	List<Tensor<T>> runTiling(List<Tensor<R>> inputTensors, 
+			PatchGridCalculator<R> tileGrid, TilingConsumer tileCounter) throws RunModelException {
 		LinkedHashMap<String, PatchSpec> inTileSpecs = tileGrid.getInputTensorsTileSpecs();
 		LinkedHashMap<String, PatchSpec> outTileSpecs = tileGrid.getOutputTensorsTileSpecs();
 		List<Tensor<T>> outputTensors = new ArrayList<Tensor<T>>();
@@ -653,12 +650,13 @@ public class Model
 																	outTileSpecs.get(tt.getName()).getTensorDims(), 
 																	(T) new FloatType()));
 		}
-		doTiling(inputTensors, outputTensors, tileGrid);
+		doTiling(inputTensors, outputTensors, tileGrid, tileCounter);
 		return outputTensors;
 	}
 	
 	private <T extends RealType<T> & NativeType<T>, R extends RealType<R> & NativeType<R>> 
-	void doTiling(List<Tensor<R>> inputTensors, List<Tensor<T>> outputTensors, PatchGridCalculator<R> tileGrid) throws RunModelException {
+	void doTiling(List<Tensor<R>> inputTensors, List<Tensor<T>> outputTensors, 
+			PatchGridCalculator<R> tileGrid, TilingConsumer tileCounter) throws RunModelException {
 		LinkedHashMap<String, PatchSpec> inTileSpecs = tileGrid.getInputTensorsTileSpecs();
 		LinkedHashMap<String, PatchSpec> outTileSpecs = tileGrid.getOutputTensorsTileSpecs();
 		Map<Object, TileGrid> inTileGrids = inTileSpecs.entrySet().stream()
@@ -668,8 +666,9 @@ public class Model
 		int[] tilesPerAxis = inTileSpecs.values().stream().findFirst().get().getPatchGridSize();
 		int nTiles = 1;
 		for (int i : tilesPerAxis) nTiles *= i;
-		
+		tileCounter.acceptTotal(new Long(nTiles));
 		for (int j = 0; j < nTiles; j ++) {
+			tileCounter.acceptProgress(new Long(j));
 			int tileCount = j + 0;
 			List<Tensor<?>> inputTileList = IntStream.range(0, inputTensors.size()).mapToObj(i -> {
 				if (!inputTensors.get(i).isImage())
