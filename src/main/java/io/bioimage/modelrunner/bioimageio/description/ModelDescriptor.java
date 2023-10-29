@@ -324,6 +324,9 @@ public class ModelDescriptor
 	    } else if (getName().equals("stardist")) {
     		supportBioengine = true;
 			return;
+	    } else if (modelID == null) {
+    		supportBioengine = false;
+	    	return;
 	    }
     	try {
 			supportBioengine =  BioimageioRepo.isModelOnTheBioengineById(modelID);
