@@ -94,6 +94,10 @@ public class DownloadModel {
      */
     private Consumer<Double> unzippingConsumer;
     /**
+     * The thread that has called the download method
+     */
+    private Thread parentThread;
+    /**
      * String that announces that certain file is just begining to be downloaded
      */
     public static final String START_DWNLD_STR = "START: ";
@@ -148,8 +152,9 @@ public class DownloadModel {
 	 * @param descriptor
 	 * 	information about the model from the rdf.yaml
 	 */
-	private DownloadModel(ModelDescriptor descriptor, String modelsDir) {
+	private DownloadModel(ModelDescriptor descriptor, String modelsDir, Thread parentThread) {
 		this.descriptor = descriptor;
+		this.parentThread = parentThread;
 		String fname = addTimeStampToFileName(descriptor.getName(), true);
 		this.modelsDir = modelsDir + File.separator + getValidFileName(fname);
 		this.consumer = (String b) -> {
@@ -197,7 +202,7 @@ public class DownloadModel {
 	 * @return object that can be handles the download of all the files needed for a model
 	 */
 	public static DownloadModel build(ModelDescriptor descriptor, String modelsDir) {
-		return new DownloadModel(descriptor, modelsDir);
+		return new DownloadModel(descriptor, modelsDir, Thread.currentThread());
 	}
 
 	/**
@@ -207,7 +212,7 @@ public class DownloadModel {
 	 * @return object that can be handles the download of all the files needed for a model
 	 */
 	public static DownloadModel build(ModelDescriptor descriptor) {
-		return new DownloadModel(descriptor, new File("models").getAbsolutePath());
+		return new DownloadModel(descriptor, new File("models").getAbsolutePath(), Thread.currentThread());
 	}
 	
 	/**
@@ -456,10 +461,12 @@ public class DownloadModel {
 			throw new IOException("The provided directory where the model is going to "
 					+ "be downloaded does not exist and cannot be created ->" + modelsDir);
 		for (int i = 0; i < getListOfLinks().size(); i ++) {
-        	if (Thread.interrupted())
-                throw new InterruptedException("Interrupted before downloading the remaining files: "
+        	if (Thread.interrupted() || this.parentThread.isInterrupted()) {
+                new InterruptedException("Interrupted before downloading the remaining files: "
             		+ Arrays.toString(IntStream.range(i, getListOfLinks().size())
-            									.mapToObj(j -> getListOfLinks().get(j)).toArray()));
+            									.mapToObj(j -> getListOfLinks().get(j)).toArray())).printStackTrace();;
+                Thread.currentThread().interrupt();
+        	}
 			String item = getListOfLinks().get(i);
 			String fileName = getFileNameFromURLString(item);
 			downloadFileFromInternet(item, new File(modelsDir, fileName));
