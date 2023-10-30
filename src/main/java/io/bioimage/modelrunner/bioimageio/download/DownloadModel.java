@@ -468,11 +468,10 @@ public class DownloadModel {
 			throw new IOException("The provided directory where the model is going to "
 					+ "be downloaded does not exist and cannot be created ->" + modelsDir);
 		for (int i = 0; i < getListOfLinks().size(); i ++) {
-        	if (Thread.interrupted() || this.parentThread.isInterrupted()) {
-                new InterruptedException("Interrupted before downloading the remaining files: "
+        	if (Thread.currentThread().isInterrupted() || this.parentThread.isInterrupted()) {
+                throw new InterruptedException("Interrupted before downloading the remaining files: "
             		+ Arrays.toString(IntStream.range(i, getListOfLinks().size())
-            									.mapToObj(j -> getListOfLinks().get(j)).toArray())).printStackTrace();;
-                Thread.currentThread().interrupt();
+            									.mapToObj(j -> getListOfLinks().get(j)).toArray()));
         	}
 			String item = getListOfLinks().get(i);
 			String fileName = getFileNameFromURLString(item);
