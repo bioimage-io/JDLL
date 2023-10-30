@@ -114,7 +114,7 @@ public class DecodeNumpy {
      * PAttern that matches the metadata description of a numpy file
      */
     private static final Pattern HEADER_PATTERN =
-            Pattern.compile("\\{'descr': '(.+)', 'fortran_order': False, 'shape': \\((.*)\\),");
+            Pattern.compile("\\{'descr': '(.+)', 'fortran_order': (True|False), 'shape': \\((.*)\\),");
 	
     /**
      * Main method to test the ImgLib2 creation
@@ -124,7 +124,7 @@ public class DecodeNumpy {
      * @throws IOException if there is any error opening the files
      */
     public static void main(String[] args) throws FileNotFoundException, IOException {
-    	String npy = "C:\\Users\\angel\\OneDrive\\Documentos\\pasteur\\git\\deep-icy\\models\\HPA Bestfitting InceptionV3_13102022_173532\\test_input.npy";
+    	String npy = "C:\\Users\\angel\\OneDrive\\Documentos\\pasteur\\git\\deep-icy\\models\\Arabidopsis Leaf Segmentation_30102023_193340\\test_input.npy";
     	RandomAccessibleInterval<?> aa = retrieveImgLib2FromNpy(npy);
     }
     
@@ -196,7 +196,8 @@ public class DecodeNumpy {
             throw new IllegalArgumentException("Invalid numpy header: " + header);
         }
         String typeStr = m.group(1);
-        String shapeStr = m.group(2);
+        String fortranOrder = m.group(2).trim();
+        String shapeStr = m.group(3);
         long[] shape = new long[0];
         if (!shapeStr.isEmpty()) {
             String[] tokens = shapeStr.split(", ?");
@@ -229,7 +230,7 @@ public class DecodeNumpy {
         data.order(byteOrder);
         readData(dis, data, len);
 
-        return build(data, byteOrder, dtype, shape);
+        return build(data, byteOrder, dtype, shape, fortranOrder.equals("True"));
     }
     
     /**
@@ -314,54 +315,94 @@ public class DecodeNumpy {
 	 *        NumPy dtype of the data.
 	 * @param shape
 	 *        NumPy shape of the data.
+	 * @param fortranOrder
+	 * 		  whether the numpy array was saved in fortran order or not (C-order)
      * @return The Img built from the tensor.
      * @throws IllegalArgumentException
      *         If the tensor type is not supported.
      */
     @SuppressWarnings("unchecked")
-    public static <T extends NativeType<T>> RandomAccessibleInterval<T> build(ByteBuffer buf, ByteOrder byteOrder, String dtype, long[] shape) throws IllegalArgumentException
+    public static <T extends NativeType<T>> RandomAccessibleInterval<T> build(ByteBuffer buf, ByteOrder byteOrder, String dtype, long[] shape, boolean fortranOrder) throws IllegalArgumentException
     {
     	long[] transposedShape = new long[shape.length];
     	for (int i = 0; i < shape.length; i ++)
     		transposedShape[i] = shape[shape.length - i - 1];
-    	if (dtype.equals("int8")) {
+    	if (dtype.equals("int8") && !fortranOrder) {
     		ByteAccess access = new ByteBufferAccess(buf, true);
     		return (RandomAccessibleInterval<T>) Utils.transpose(ArrayImgs.bytes( access, transposedShape ));
     		//return (Img<T>) buildInt8(buf, byteOrder, shape);
-    	} else if (dtype.equals("uint8")) {
+    	} else if (dtype.equals("int8")) {
+    		ByteAccess access = new ByteBufferAccess(buf, true);
+    		return (RandomAccessibleInterval<T>) ArrayImgs.bytes( access, shape );
+    		//return (Img<T>) buildInt8(buf, byteOrder, shape);
+    	} else if (dtype.equals("uint8") && !fortranOrder) {
     		ByteAccess access = new ByteBufferAccess(buf, true);
     		return (RandomAccessibleInterval<T>) Utils.transpose(ArrayImgs.unsignedBytes( access, transposedShape ));
     		//return (Img<T>) buildUInt8(buf, byteOrder, shape);
-    	} else if (dtype.equals("int16")) {
+    	} else if (dtype.equals("uint8")) {
+    		ByteAccess access = new ByteBufferAccess(buf, true);
+    		return (RandomAccessibleInterval<T>) ArrayImgs.unsignedBytes( access, shape );
+    		//return (Img<T>) buildUInt8(buf, byteOrder, shape);
+    	} else if (dtype.equals("int16") && !fortranOrder) {
     		ShortAccess access = new ShortBufferAccess(buf, true);
     		return (RandomAccessibleInterval<T>) Utils.transpose(ArrayImgs.shorts( access, transposedShape ));
     		//return (Img<T>) buildInt16(buf, byteOrder, shape);
-    	} else if (dtype.equals("uint16")) {
+    	} else if (dtype.equals("int16")) {
+    		ShortAccess access = new ShortBufferAccess(buf, true);
+    		return (RandomAccessibleInterval<T>) ArrayImgs.shorts( access, shape );
+    		//return (Img<T>) buildInt16(buf, byteOrder, shape);
+    	} else if (dtype.equals("uint16") && !fortranOrder) {
     		ShortAccess access = new ShortBufferAccess(buf, true);
     		return (RandomAccessibleInterval<T>) Utils.transpose(ArrayImgs.unsignedShorts( access, transposedShape ));
     		//return (Img<T>) buildUInt16(buf, byteOrder, shape);
-    	} else if (dtype.equals("int32")) {
+    	} else if (dtype.equals("uint16")) {
+    		ShortAccess access = new ShortBufferAccess(buf, true);
+    		return (RandomAccessibleInterval<T>) ArrayImgs.unsignedShorts( access, shape );
+    		//return (Img<T>) buildUInt16(buf, byteOrder, shape);
+    	} else if (dtype.equals("int32") && !fortranOrder) {
     		IntAccess access = new IntBufferAccess(buf, true);
     		return (RandomAccessibleInterval<T>) Utils.transpose(ArrayImgs.ints( access, transposedShape ));
     		//return (Img<T>) buildInt32(buf, byteOrder, shape);
-    	} else if (dtype.equals("uint32")) {
+    	} else if (dtype.equals("int32")) {
+    		IntAccess access = new IntBufferAccess(buf, true);
+    		return (RandomAccessibleInterval<T>) ArrayImgs.ints( access, shape );
+    		//return (Img<T>) buildInt32(buf, byteOrder, shape);
+    	} else if (dtype.equals("uint32") && !fortranOrder) {
     		IntAccess access = new IntBufferAccess(buf, true);
     		return (RandomAccessibleInterval<T>) Utils.transpose(ArrayImgs.unsignedInts( access, transposedShape ));
     		//return (Img<T>) buildUInt32(buf, byteOrder, shape);
-    	} else if (dtype.equals("int64")) {
+    	} else if (dtype.equals("uint32")) {
+    		IntAccess access = new IntBufferAccess(buf, true);
+    		return (RandomAccessibleInterval<T>) ArrayImgs.unsignedInts( access, shape );
+    		//return (Img<T>) buildUInt32(buf, byteOrder, shape);
+    	} else if (dtype.equals("int64") && !fortranOrder) {
     		LongAccess access = new LongBufferAccess(buf, true);
     		return (RandomAccessibleInterval<T>) Utils.transpose(ArrayImgs.longs( access, transposedShape ));
     		//return (Img<T>) buildInt64(buf, byteOrder, shape);
-    	} else if (dtype.equals("float32")) {
+    	} else if (dtype.equals("int64")) {
+    		LongAccess access = new LongBufferAccess(buf, true);
+    		return (RandomAccessibleInterval<T>) ArrayImgs.longs( access, shape );
+    		//return (Img<T>) buildInt64(buf, byteOrder, shape);
+    	} else if (dtype.equals("float32") && !fortranOrder) {
     		FloatAccess access = new FloatBufferAccess(buf, true);
     		return (RandomAccessibleInterval<T>) Utils.transpose(ArrayImgs.floats( access, transposedShape ));
     		//return (Img<T>) buildFloat32(buf, byteOrder, shape);
-    	} else if (dtype.equals("float64")) {
+    	} else if (dtype.equals("float32")) {
+    		FloatAccess access = new FloatBufferAccess(buf, true);
+    		return (RandomAccessibleInterval<T>) ArrayImgs.floats( access, shape );
+    		//return (Img<T>) buildFloat32(buf, byteOrder, shape);
+    	} else if (dtype.equals("float64") && !fortranOrder) {
     		DoubleAccess access = new DoubleBufferAccess(buf, true);
     		return (RandomAccessibleInterval<T>) Utils.transpose(ArrayImgs.doubles( access, transposedShape ));
     		//return (Img<T>) buildFloat64(buf, byteOrder, shape);
-    	} else if (dtype.equals("bool")) {
+    	} else if (dtype.equals("float64")) {
+    		DoubleAccess access = new DoubleBufferAccess(buf, true);
+    		return (RandomAccessibleInterval<T>) ArrayImgs.doubles( access, shape );
+    		//return (Img<T>) buildFloat64(buf, byteOrder, shape);
+    	} else if (dtype.equals("bool") && !fortranOrder) {
     		return (RandomAccessibleInterval<T>) Utils.transpose(buildBoolean(buf, byteOrder, transposedShape));
+    	} else if (dtype.equals("bool")) {
+    		return (RandomAccessibleInterval<T>) buildBoolean(buf, byteOrder, shape);
     	} else {
             throw new IllegalArgumentException("Unsupported data type of numpy array: " + dtype);
     	}
