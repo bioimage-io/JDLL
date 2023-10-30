@@ -367,6 +367,12 @@ public class DownloadModel {
 					if (nFilesMap.get(jj) instanceof String && checkURL((String) nFilesMap.get(jj)))
 						downloadableLinks.put(ATTACH_KEY + "_" + c ++, (nFilesMap.get(jj)).toString());
 				}
+			} else if (attachments.get(kk) instanceof List) {
+				List <Object> nFilesList = (List<Object>) attachments.get(kk);
+				for (Object jj : nFilesList) {
+					if (jj instanceof String && checkURL((String) jj))
+						downloadableLinks.put(ATTACH_KEY + "_" + c ++, jj.toString());
+				}
 			}
 		}
 	}
