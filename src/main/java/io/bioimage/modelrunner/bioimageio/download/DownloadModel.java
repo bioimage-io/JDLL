@@ -48,6 +48,7 @@ import io.bioimage.modelrunner.bioimageio.description.weights.ModelWeight;
 import io.bioimage.modelrunner.bioimageio.description.weights.WeightFormat;
 import io.bioimage.modelrunner.engine.EngineInfo;
 import io.bioimage.modelrunner.engine.installation.FileDownloader;
+import io.bioimage.modelrunner.utils.Constants;
 import io.bioimage.modelrunner.utils.ZipUtils;
 
 /**
@@ -512,8 +513,8 @@ public class DownloadModel {
 	 * @throws MalformedURLException if the String does not correspond to an URL
 	 */
 	public static String getFileNameFromURLString(String str) throws MalformedURLException {
-		if (str.startsWith("https://zenodo.org/"))
-			str = str.substring(0, str.length() - "/content".length());
+		if (str.startsWith(Constants.ZENODO_DOMAIN))
+			str = str.substring(0, str.length() - Constants.ZENODO_ANNOYING_SUFFIX.length());
 		URL url = new URL(str);
 		return new File(url.getPath()).getName();
 	}

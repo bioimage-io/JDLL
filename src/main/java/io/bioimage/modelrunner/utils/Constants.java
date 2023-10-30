@@ -35,4 +35,12 @@ public class Constants {
 	 * File name of the resource description file inside the model folder
 	 */
 	public static final String RDF_FNAME = "rdf.yaml";
+	/**
+	 * Last part of files stored in zenodo
+	 */
+	public static final String ZENODO_ANNOYING_SUFFIX = "/content";
+	/**
+	 * Zenodo domain
+	 */
+	public static final String ZENODO_DOMAIN = "https://zenodo.org/";
 }

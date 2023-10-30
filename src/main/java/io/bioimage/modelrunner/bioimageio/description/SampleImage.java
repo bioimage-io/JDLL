@@ -27,6 +27,8 @@ import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.List;
 
+import io.bioimage.modelrunner.utils.Constants;
+
 /**
  * Define each of the sample inputs spedified in the yaml file
  * @author Carlos Garcia Lopez de Haro
@@ -92,6 +94,8 @@ public class SampleImage {
     		return null;
     	if (string.lastIndexOf(".") == -1)
     		return null;
+    	if (string.startsWith(Constants.ZENODO_DOMAIN) && string.endsWith(Constants.ZENODO_ANNOYING_SUFFIX))
+    		return string.substring(string.lastIndexOf("."), string.length() - Constants.ZENODO_ANNOYING_SUFFIX.length());
     	return string.substring(string.lastIndexOf("."));
     }
     
