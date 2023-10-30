@@ -34,11 +34,23 @@ public class FileDownloader {
 	}
 	
 	/**
+	 * Download a file without the possibility of interrupting the download
+	 * @throws IOException if there is any error downloading the file from the url
+	 */
 	public void call() throws IOException  {
 		fos.getChannel().transferFrom(rbc, 0, Long.MAX_VALUE);
 	}
-	*/
-	public void call(Thread parentThread) throws IOException {
+	
+	/**
+	 * Download a file with the possibility of interrupting the download if the parentThread is
+	 * interrupted
+	 * 
+	 * @param parentThread
+	 * 	thread from where the download was launched, it is the reference used to stop the download
+	 * @throws IOException if there is any error downloading the file from the url
+	 * @throws InterruptedException if the download is interrupted because the parentThread is interrupted
+	 */
+	public void call(Thread parentThread) throws IOException, InterruptedException {
         long position = 0;
         while (true) {
             long transferred = fos.getChannel().transferFrom(rbc, position, CHUNK_SIZE);
@@ -47,21 +59,16 @@ public class FileDownloader {
             }
 
             position += transferred;
-
-            if (parentThread.isInterrupted()) {
+            if (!parentThread.isAlive()) {
                 // Close resources if needed and exit
                 closeResources();
-                throw new IOException("File download was interrupted");
+                throw new InterruptedException("File download was interrupted.");
             }
         }
     }
 
-    private void closeResources() {
-        try {
-            if (rbc != null) rbc.close();
-            if (fos != null) fos.close();
-        } catch (IOException e) {
-            // Handle exception during close
-        }
+    private void closeResources() throws IOException {
+        if (rbc != null) rbc.close();
+        if (fos != null) fos.close();
     }
 }
