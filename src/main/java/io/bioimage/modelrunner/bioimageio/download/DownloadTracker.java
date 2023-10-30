@@ -484,10 +484,9 @@ public class DownloadTracker {
 	 *  too
 	 * @param consumer
 	 * 	consumer that provides the info about the download
-	 * @throws InterruptedException if the thread is stopped by other thread while it is sleeping
 	 */
 	public static void printProgress(Thread downloadThread,
-			DownloadTracker.TwoParameterConsumer<String, Double> consumer) throws InterruptedException {
+			DownloadTracker.TwoParameterConsumer<String, Double> consumer) {
 		int n = 30;
 		String ogProgressStr = "";
 		String ogRemainingStr = "";
@@ -500,7 +499,7 @@ public class DownloadTracker {
 		while (Thread.currentThread().isAlive() && (downloadThread.isAlive() || keep)) {
 			boolean end = consumer.get().keySet().contains(TOTAL_PROGRESS_KEY)
 					&& consumer.get().get(TOTAL_PROGRESS_KEY) == 1.0;
-			Thread.sleep(keep == true || end ? 10 : 3000);
+			try {Thread.sleep(keep == true || end ? 10 : 3000);} catch (InterruptedException ex) {}
 			keep = false;
 			String select = null;
 			for (String key : consumer.get().keySet()) {

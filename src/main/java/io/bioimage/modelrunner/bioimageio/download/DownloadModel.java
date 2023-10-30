@@ -152,9 +152,9 @@ public class DownloadModel {
 	 * @param descriptor
 	 * 	information about the model from the rdf.yaml
 	 */
-	private DownloadModel(ModelDescriptor descriptor, String modelsDir, Thread parentThread) {
+	private DownloadModel(ModelDescriptor descriptor, String modelsDir) {
 		this.descriptor = descriptor;
-		this.parentThread = parentThread;
+		this.parentThread = Thread.currentThread();
 		String fname = addTimeStampToFileName(descriptor.getName(), true);
 		this.modelsDir = modelsDir + File.separator + getValidFileName(fname);
 		this.consumer = (String b) -> {
@@ -202,7 +202,7 @@ public class DownloadModel {
 	 * @return object that can be handles the download of all the files needed for a model
 	 */
 	public static DownloadModel build(ModelDescriptor descriptor, String modelsDir) {
-		return new DownloadModel(descriptor, modelsDir, Thread.currentThread());
+		return new DownloadModel(descriptor, modelsDir);
 	}
 
 	/**
@@ -212,7 +212,7 @@ public class DownloadModel {
 	 * @return object that can be handles the download of all the files needed for a model
 	 */
 	public static DownloadModel build(ModelDescriptor descriptor) {
-		return new DownloadModel(descriptor, new File("models").getAbsolutePath(), Thread.currentThread());
+		return new DownloadModel(descriptor, new File("models").getAbsolutePath());
 	}
 	
 	/**
