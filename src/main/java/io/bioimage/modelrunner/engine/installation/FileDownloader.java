@@ -26,14 +26,42 @@ import java.nio.channels.ReadableByteChannel;
 public class FileDownloader {
 	private ReadableByteChannel rbc;
 	private FileOutputStream fos;
+	private static final long CHUNK_SIZE = 1024 * 1024 * 5;
 	
 	public FileDownloader(ReadableByteChannel rbc, FileOutputStream fos) {
 		this.rbc = rbc;
 		this.fos = fos;
 	}
-
+	
+	/**
 	public void call() throws IOException  {
 		fos.getChannel().transferFrom(rbc, 0, Long.MAX_VALUE);
 	}
+	*/
+	public void call(Thread parentThread) throws IOException {
+        long position = 0;
+        while (true) {
+            long transferred = fos.getChannel().transferFrom(rbc, position, CHUNK_SIZE);
+            if (transferred == 0) {
+                break;
+            }
 
+            position += transferred;
+
+            if (parentThread.isInterrupted()) {
+                // Close resources if needed and exit
+                closeResources();
+                throw new IOException("File download was interrupted");
+            }
+        }
+    }
+
+    private void closeResources() {
+        try {
+            if (rbc != null) rbc.close();
+            if (fos != null) fos.close();
+        } catch (IOException e) {
+            // Handle exception during close
+        }
+    }
 }

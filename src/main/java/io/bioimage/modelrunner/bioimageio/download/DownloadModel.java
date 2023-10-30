@@ -538,7 +538,7 @@ public class DownloadModel {
 			// Send the correct parameters to the progress screen
 			FileDownloader downloader = new FileDownloader(rbc, fos);
 			consumer.accept(START_DWNLD_STR + targetFile + FILE_SIZE_STR + map.get(downloadURL));
-			downloader.call();
+			downloader.call(this.parentThread);
 			consumer.accept(END_DWNLD_STR);
 		} catch (IOException e) {
 			consumer.accept(DOWNLOAD_ERROR_STR);
