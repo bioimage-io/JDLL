@@ -499,7 +499,7 @@ public class DownloadTracker {
 		while (Thread.currentThread().isAlive() && (downloadThread.isAlive() || keep)) {
 			boolean end = consumer.get().keySet().contains(TOTAL_PROGRESS_KEY)
 					&& consumer.get().get(TOTAL_PROGRESS_KEY) == 1.0;
-			try {Thread.sleep(keep == true || end ? 10 : 3000);} catch (InterruptedException ex) {}
+			try {Thread.sleep(keep == true || end ? 10 : 3000);} catch (InterruptedException ex) {Thread.currentThread().interrupt();}
 			keep = false;
 			String select = null;
 			for (String key : consumer.get().keySet()) {
