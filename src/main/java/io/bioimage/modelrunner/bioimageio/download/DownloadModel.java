@@ -468,7 +468,7 @@ public class DownloadModel {
 			throw new IOException("The provided directory where the model is going to "
 					+ "be downloaded does not exist and cannot be created ->" + modelsDir);
 		for (int i = 0; i < getListOfLinks().size(); i ++) {
-        	if (Thread.currentThread().isInterrupted() || this.parentThread.isInterrupted()) {
+        	if (Thread.currentThread().isInterrupted() || !this.parentThread.isAlive()) {
                 throw new InterruptedException("Interrupted before downloading the remaining files: "
             		+ Arrays.toString(IntStream.range(i, getListOfLinks().size())
             									.mapToObj(j -> getListOfLinks().get(j)).toArray()));
@@ -545,6 +545,9 @@ public class DownloadModel {
 						+ "JDLL will continue with the download but the model might be "
 						+ "downloaded incorrectly.";
 			new IOException(msg, e).printStackTrace();
+		} catch (InterruptedException e) {
+			consumer.accept(DOWNLOAD_ERROR_STR);
+			System.out.println("Download interrupted: " + downloadURL);
 		} finally {
 			try {
 				if (fos != null)
