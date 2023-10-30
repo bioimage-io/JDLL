@@ -499,8 +499,9 @@ public class DownloadTracker {
 		while (Thread.currentThread().isAlive() && (downloadThread.isAlive() || keep)) {
 			boolean end = consumer.get().keySet().contains(TOTAL_PROGRESS_KEY)
 					&& consumer.get().get(TOTAL_PROGRESS_KEY) == 1.0;
-			try {Thread.sleep(keep == true || end ? 10 : 3000);} catch (InterruptedException ex) {Thread.currentThread().interrupt();}
+			int millis = keep == true || end ? 10 : 3000;
 			keep = false;
+			try {Thread.sleep(millis);} catch (InterruptedException ex) {Thread.currentThread().interrupt();}
 			String select = null;
 			for (String key : consumer.get().keySet()) {
 				if (!already.contains(key) && !key.equals(DownloadTracker.TOTAL_PROGRESS_KEY)) {
