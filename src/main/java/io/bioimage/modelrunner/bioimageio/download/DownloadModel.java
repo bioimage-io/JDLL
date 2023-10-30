@@ -547,7 +547,7 @@ public class DownloadModel {
 			new IOException(msg, e).printStackTrace();
 		} catch (InterruptedException e) {
 			consumer.accept(DOWNLOAD_ERROR_STR);
-			System.out.println("Download interrupted: " + downloadURL);
+			System.out.println("Download interrupted at file: " + downloadURL);
 		} finally {
 			try {
 				if (fos != null)

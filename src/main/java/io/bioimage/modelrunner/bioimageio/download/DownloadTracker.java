@@ -484,9 +484,10 @@ public class DownloadTracker {
 	 *  too
 	 * @param consumer
 	 * 	consumer that provides the info about the download
+	 * @throws InterruptedException if the download is interrupted
 	 */
 	public static void printProgress(Thread downloadThread,
-			DownloadTracker.TwoParameterConsumer<String, Double> consumer) {
+			DownloadTracker.TwoParameterConsumer<String, Double> consumer) throws InterruptedException {
 		int n = 30;
 		String ogProgressStr = "";
 		String ogRemainingStr = "";
@@ -501,7 +502,8 @@ public class DownloadTracker {
 					&& consumer.get().get(TOTAL_PROGRESS_KEY) == 1.0;
 			int millis = keep == true || end ? 10 : 3000;
 			keep = false;
-			try {Thread.sleep(millis);} catch (InterruptedException ex) {System.out.println("Stopping..."); break;}
+			//try {Thread.sleep(millis);} catch (InterruptedException ex) {System.out.println("Stopping..."); break;}
+			Thread.sleep(millis);
 			String select = null;
 			for (String key : consumer.get().keySet()) {
 				if (!already.contains(key) && !key.equals(DownloadTracker.TOTAL_PROGRESS_KEY)) {
