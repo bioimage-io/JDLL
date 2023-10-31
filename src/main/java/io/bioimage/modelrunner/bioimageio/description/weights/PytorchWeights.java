@@ -20,10 +20,14 @@
 package io.bioimage.modelrunner.bioimageio.description.weights;
 
 import java.io.File;
+import java.net.MalformedURLException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+
+import io.bioimage.modelrunner.utils.CommonUtils;
+import io.bioimage.modelrunner.utils.Constants;
 
 /**
  * Class that contains the information for Pytorch state dic weights.
@@ -151,7 +155,13 @@ public class PytorchWeights implements WeightFormat{
 	 * {@inheritDoc}
 	 */
 	public String getSource() {
-		return source;
+		if (source != null && 
+				source.startsWith(Constants.ZENODO_DOMAIN) 
+				&& source.endsWith(Constants.ZENODO_ANNOYING_SUFFIX))
+			return source.substring(0, 
+					source.length() - Constants.ZENODO_ANNOYING_SUFFIX.length());
+		else
+			return source;
 	}
 	
 	/**
@@ -276,7 +286,15 @@ public class PytorchWeights implements WeightFormat{
 	public String getSourceFileName() {
 		if (source == null)
 			return source;
-		return new File(source).getName();
+		try {
+			return CommonUtils.getFileNameFromURLString(source);
+		} catch (MalformedURLException e) {
+			if (source.startsWith(Constants.ZENODO_DOMAIN) && source.endsWith(Constants.ZENODO_ANNOYING_SUFFIX))
+				return new File(source.substring(0, 
+						source.length() - Constants.ZENODO_ANNOYING_SUFFIX.length())).getName();
+			else
+				return new File(source).getName();
+		}
 	}
 	
 	boolean gpu = false;

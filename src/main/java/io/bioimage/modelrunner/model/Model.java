@@ -677,9 +677,9 @@ public class Model
 		int[] tilesPerAxis = inTileSpecs.values().stream().findFirst().get().getPatchGridSize();
 		int nTiles = 1;
 		for (int i : tilesPerAxis) nTiles *= i;
-		tileCounter.acceptTotal(new Long(nTiles));
+		tileCounter.acceptTotal(Long.valueOf(nTiles));
 		for (int j = 0; j < nTiles; j ++) {
-			tileCounter.acceptProgress(new Long(j));
+			tileCounter.acceptProgress(Long.valueOf(j));
 			int tileCount = j + 0;
 			List<Tensor<?>> inputTileList = IntStream.range(0, inputTensors.size()).mapToObj(i -> {
 				if (!inputTensors.get(i).isImage())
