@@ -101,7 +101,7 @@ public class DecodeNumpy {
         DATA_TYPES_MAP.put("int8", 1);
         DATA_TYPES_MAP.put("uint8", 1);
         DATA_TYPES_MAP.put("int16", 2);
-        DATA_TYPES_MAP.put("uint16", 1);
+        DATA_TYPES_MAP.put("uint16", 2);
         DATA_TYPES_MAP.put("int32", 4);
         DATA_TYPES_MAP.put("uint32", 4);
         DATA_TYPES_MAP.put("int64", 8);
