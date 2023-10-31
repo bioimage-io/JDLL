@@ -25,10 +25,9 @@ import java.util.HashMap;
 import java.util.Map;
 
 import io.bioimage.modelrunner.tensor.Tensor;
-import io.bioimage.modelrunner.utils.IndexingUtils;
-import net.imglib2.Cursor;
+import io.bioimage.modelrunner.tensor.Utils;
 import net.imglib2.RandomAccessibleInterval;
-import net.imglib2.img.Img;
+import net.imglib2.blocks.PrimitiveBlocks;
 import net.imglib2.type.NativeType;
 import net.imglib2.type.numeric.RealType;
 import net.imglib2.type.numeric.integer.ByteType;
@@ -42,7 +41,6 @@ import net.imglib2.type.numeric.real.DoubleType;
 import net.imglib2.type.numeric.real.FloatType;
 import net.imglib2.util.Cast;
 import net.imglib2.util.Util;
-import net.imglib2.view.IntervalView;
 
 /**
  * Class that converts {@link RandomAccessibleInterval}-based JDLL tensors into
@@ -153,7 +151,6 @@ public class BioengineTensor {
 		return bt;
 	}
 	
-	@SuppressWarnings("unchecked")
 	/**
 	 * From a JDLL tensors, this method creates an object that contains 
 	 * a map that can be sent to the bioengine.
@@ -170,7 +167,6 @@ public class BioengineTensor {
 		return build(tensor, ByteOrder.LITTLE_ENDIAN);
 	}
 	
-	@SuppressWarnings("unchecked")
 	/**
 	 * From a JDLL tensors, this method creates an object that contains 
 	 * a map that can be sent to the bioengine.
@@ -263,7 +259,6 @@ public class BioengineTensor {
 	}
 
 	
-	@SuppressWarnings("unchecked")
 	/**
 	 * 
 	 * Create byte array from a {@link RandomAccessibleInterval} 
@@ -280,7 +275,6 @@ public class BioengineTensor {
 	}
 
 	
-	@SuppressWarnings("unchecked")
 	/**
 	 * 
 	 * Create byte array from a {@link RandomAccessibleInterval} 
@@ -329,23 +323,17 @@ public class BioengineTensor {
      */
     private static byte[] buildByte(RandomAccessibleInterval<ByteType> imgTensor)
     {
-    	Cursor<ByteType> tensorCursor;
-		if (imgTensor instanceof IntervalView)
-			tensorCursor = ((IntervalView<ByteType>) imgTensor).cursor();
-		else if (imgTensor instanceof Img)
-			tensorCursor = ((Img<ByteType>) imgTensor).cursor();
-		else
-			throw new IllegalArgumentException("The data of the " + Tensor.class + " has "
-					+ "to be an instance of " + Img.class + " or " + IntervalView.class);
-		long flatSize = 1;
-		for (long ss : imgTensor.dimensionsAsLongArray()) {flatSize *= ss;}
-		byte[] byteArr = new byte[(int) flatSize];
-		int cc =  0;
-		while (tensorCursor.hasNext()) {
-			tensorCursor.fwd();
-			byteArr[cc ++] = tensorCursor.get().getByte();
-		}
-		return byteArr;
+		imgTensor = Utils.transpose(imgTensor);
+		PrimitiveBlocks< ByteType > blocks = PrimitiveBlocks.of( imgTensor );
+		long[] tensorShape = imgTensor.dimensionsAsLongArray();
+		int size = 1;
+		for (long ll : tensorShape) size *= ll;
+		final byte[] flatArr = new byte[size];
+		int[] sArr = new int[tensorShape.length];
+		for (int i = 0; i < sArr.length; i ++)
+			sArr[i] = (int) tensorShape[i];
+		blocks.copy( imgTensor.minAsLongArray(), flatArr, sArr );
+		return flatArr;
     }
 
     /**
@@ -359,26 +347,17 @@ public class BioengineTensor {
      */
     private static byte[] buildUByte(RandomAccessibleInterval<UnsignedByteType> imgTensor)
     {
-    	Cursor<UnsignedByteType> tensorCursor;
-		if (imgTensor instanceof IntervalView)
-			tensorCursor = ((IntervalView<UnsignedByteType>) imgTensor).cursor();
-		else if (imgTensor instanceof Img)
-			tensorCursor = ((Img<UnsignedByteType>) imgTensor).cursor();
-		else
-			throw new IllegalArgumentException("The data of the " + Tensor.class + " has "
-					+ "to be an instance of " + Img.class + " or " + IntervalView.class);
-		long flatSize = 1;
-		for (long ss : imgTensor.dimensionsAsLongArray()) {flatSize *= ss;}
-		byte[] byteArr = new byte[(int) flatSize];
-		int cc =  0;
-		while (tensorCursor.hasNext()) {
-			tensorCursor.fwd();
-			int val = tensorCursor.get().get();
-			if (val > 127)
-				val = val - 256;
-			byteArr[cc ++] = (byte) val;
-		}
-		return byteArr;
+		imgTensor = Utils.transpose(imgTensor);
+		PrimitiveBlocks< UnsignedByteType > blocks = PrimitiveBlocks.of( imgTensor );
+		long[] tensorShape = imgTensor.dimensionsAsLongArray();
+		int size = 1;
+		for (long ll : tensorShape) size *= ll;
+		final byte[] flatArr = new byte[size];
+		int[] sArr = new int[tensorShape.length];
+		for (int i = 0; i < sArr.length; i ++)
+			sArr[i] = (int) tensorShape[i];
+		blocks.copy( imgTensor.minAsLongArray(), flatArr, sArr );
+		return flatArr;
     }
 
     /**
@@ -392,26 +371,21 @@ public class BioengineTensor {
      */
     private static byte[] buildShort(RandomAccessibleInterval<ShortType> imgTensor, ByteOrder order)
     {
-    	Cursor<ShortType> tensorCursor;
-		if (imgTensor instanceof IntervalView)
-			tensorCursor = ((IntervalView<ShortType>) imgTensor).cursor();
-		else if (imgTensor instanceof Img)
-			tensorCursor = ((Img<ShortType>) imgTensor).cursor();
-		else
-			throw new IllegalArgumentException("The data of the " + Tensor.class + " has "
-					+ "to be an instance of " + Img.class + " or " + IntervalView.class);
-		long flatSize = 2;
-		for (long ss : imgTensor.dimensionsAsLongArray()) {flatSize *= ss;}
-		byte[] byteArr = new byte[(int) flatSize];
-		int cc =  0;
-		while (tensorCursor.hasNext()) {
-			tensorCursor.fwd();
-			short val = tensorCursor.get().get();
-			byte[] arr = ByteBuffer.allocate(2).order(order).putShort(val).array();
-			System.arraycopy(arr, 0, byteArr, cc * 2, 2);
-			cc ++;
-		}
-		return byteArr;
+		imgTensor = Utils.transpose(imgTensor);
+		PrimitiveBlocks< ShortType > blocks = PrimitiveBlocks.of( imgTensor );
+		long[] tensorShape = imgTensor.dimensionsAsLongArray();
+		int size = 1;
+		for (long ll : tensorShape) size *= ll;
+		final short[] flatArr = new short[size];
+		int[] sArr = new int[tensorShape.length];
+		for (int i = 0; i < sArr.length; i ++)
+			sArr[i] = (int) tensorShape[i];
+		blocks.copy( imgTensor.minAsLongArray(), flatArr, sArr );
+		ByteBuffer buffer = ByteBuffer.allocate(flatArr.length * 2);
+        for (short d : flatArr) {
+            buffer.putShort(d);
+        }
+		return buffer.array();
     }
 
     /**
@@ -425,31 +399,21 @@ public class BioengineTensor {
      */
     private static byte[] buildUShort(RandomAccessibleInterval<UnsignedShortType> imgTensor, ByteOrder order)
     {
-    	Cursor<UnsignedShortType> tensorCursor;
-		if (imgTensor instanceof IntervalView)
-			tensorCursor = ((IntervalView<UnsignedShortType>) imgTensor).cursor();
-		else if (imgTensor instanceof Img)
-			tensorCursor = ((Img<UnsignedShortType>) imgTensor).cursor();
-		else
-			throw new IllegalArgumentException("The data of the " + Tensor.class + " has "
-					+ "to be an instance of " + Img.class + " or " + IntervalView.class);
-		long flatSize = 2;
-		for (long ss : imgTensor.dimensionsAsLongArray()) {flatSize *= ss;}
-		byte[] byteArr = new byte[(int) flatSize];
-		int cc =  0;
-		while (tensorCursor.hasNext()) {
-			tensorCursor.fwd();
-			int val = tensorCursor.get().get();
-			short shortval;
-			if (val >= Math.pow(2, 15))
-				shortval = (short) (val - Math.pow(2, 16));
-			else 
-				shortval = (short) val;
-			byte[] arr = ByteBuffer.allocate(2).order(order).putShort(shortval).array();
-			System.arraycopy(arr, 0, byteArr, cc * 2, 2);
-			cc ++;
-		}
-		return byteArr;
+		imgTensor = Utils.transpose(imgTensor);
+		PrimitiveBlocks< UnsignedShortType > blocks = PrimitiveBlocks.of( imgTensor );
+		long[] tensorShape = imgTensor.dimensionsAsLongArray();
+		int size = 1;
+		for (long ll : tensorShape) size *= ll;
+		final short[] flatArr = new short[size];
+		int[] sArr = new int[tensorShape.length];
+		for (int i = 0; i < sArr.length; i ++)
+			sArr[i] = (int) tensorShape[i];
+		blocks.copy( imgTensor.minAsLongArray(), flatArr, sArr );
+		ByteBuffer buffer = ByteBuffer.allocate(flatArr.length * 2);
+        for (short d : flatArr) {
+            buffer.putShort(d);
+        }
+		return buffer.array();
     }
 
     /**
@@ -463,26 +427,21 @@ public class BioengineTensor {
      */
     private static byte[] buildInt(RandomAccessibleInterval<IntType> imgTensor, ByteOrder order)
     {
-    	Cursor<IntType> tensorCursor;
-		if (imgTensor instanceof IntervalView)
-			tensorCursor = ((IntervalView<IntType>) imgTensor).cursor();
-		else if (imgTensor instanceof Img)
-			tensorCursor = ((Img<IntType>) imgTensor).cursor();
-		else
-			throw new IllegalArgumentException("The data of the " + Tensor.class + " has "
-					+ "to be an instance of " + Img.class + " or " + IntervalView.class);
-		long flatSize = 4;
-		for (long ss : imgTensor.dimensionsAsLongArray()) {flatSize *= ss;}
-		byte[] byteArr = new byte[(int) flatSize];
-		int cc =  0;
-		while (tensorCursor.hasNext()) {
-			tensorCursor.fwd();
-			int val = tensorCursor.get().getInt();
-			byte[] arr = ByteBuffer.allocate(4).order(order).putInt(val).array();
-			System.arraycopy(arr, 0, byteArr, cc * 4, 4);
-			cc ++;
-		}
-		return byteArr;
+		imgTensor = Utils.transpose(imgTensor);
+		PrimitiveBlocks< IntType > blocks = PrimitiveBlocks.of( imgTensor );
+		long[] tensorShape = imgTensor.dimensionsAsLongArray();
+		int size = 1;
+		for (long ll : tensorShape) size *= ll;
+		final int[] flatArr = new int[size];
+		int[] sArr = new int[tensorShape.length];
+		for (int i = 0; i < sArr.length; i ++)
+			sArr[i] = (int) tensorShape[i];
+		blocks.copy( imgTensor.minAsLongArray(), flatArr, sArr );
+		ByteBuffer buffer = ByteBuffer.allocate(flatArr.length * 4);
+        for (int d : flatArr) {
+            buffer.putInt(d);
+        }
+		return buffer.array();
     }
 
     /**
@@ -496,31 +455,21 @@ public class BioengineTensor {
      */
     private static byte[] buildUInt(RandomAccessibleInterval<UnsignedIntType> imgTensor, ByteOrder order)
     {
-    	Cursor<UnsignedIntType> tensorCursor;
-		if (imgTensor instanceof IntervalView)
-			tensorCursor = ((IntervalView<UnsignedIntType>) imgTensor).cursor();
-		else if (imgTensor instanceof Img)
-			tensorCursor = ((Img<UnsignedIntType>) imgTensor).cursor();
-		else
-			throw new IllegalArgumentException("The data of the " + Tensor.class + " has "
-					+ "to be an instance of " + Img.class + " or " + IntervalView.class);
-		long flatSize = 4;
-		for (long ss : imgTensor.dimensionsAsLongArray()) {flatSize *= ss;}
-		byte[] byteArr = new byte[(int) flatSize];
-		int cc =  0;
-		while (tensorCursor.hasNext()) {
-			tensorCursor.fwd();
-			long val = tensorCursor.get().get();
-			int intval;
-			if (val >= Math.pow(2, 31))
-				intval = (int) (val - Math.pow(2, 32));
-			else 
-				intval = (int) val;
-			byte[] arr = ByteBuffer.allocate(4).order(order).putInt(intval).array();
-			System.arraycopy(arr, 0, byteArr, cc * 4, 4);
-			cc ++;
-		}
-		return byteArr;
+		imgTensor = Utils.transpose(imgTensor);
+		PrimitiveBlocks< UnsignedIntType > blocks = PrimitiveBlocks.of( imgTensor );
+		long[] tensorShape = imgTensor.dimensionsAsLongArray();
+		int size = 1;
+		for (long ll : tensorShape) size *= ll;
+		final int[] flatArr = new int[size];
+		int[] sArr = new int[tensorShape.length];
+		for (int i = 0; i < sArr.length; i ++)
+			sArr[i] = (int) tensorShape[i];
+		blocks.copy( imgTensor.minAsLongArray(), flatArr, sArr );
+		ByteBuffer buffer = ByteBuffer.allocate(flatArr.length * 4);
+        for (int d : flatArr) {
+            buffer.putInt(d);
+        }
+		return buffer.array();
     }
 
     /**
@@ -534,26 +483,21 @@ public class BioengineTensor {
      */
     private static byte[] buildLong(RandomAccessibleInterval<LongType> imgTensor, ByteOrder order)
     {
-    	Cursor<LongType> tensorCursor;
-		if (imgTensor instanceof IntervalView)
-			tensorCursor = ((IntervalView<LongType>) imgTensor).cursor();
-		else if (imgTensor instanceof Img)
-			tensorCursor = ((Img<LongType>) imgTensor).cursor();
-		else
-			throw new IllegalArgumentException("The data of the " + Tensor.class + " has "
-					+ "to be an instance of " + Img.class + " or " + IntervalView.class);
-		long flatSize = 8;
-		for (long ss : imgTensor.dimensionsAsLongArray()) {flatSize *= ss;}
-		byte[] byteArr = new byte[(int) flatSize];
-		int cc =  0;
-		while (tensorCursor.hasNext()) {
-			tensorCursor.fwd();
-			long val = tensorCursor.get().get();
-			byte[] arr = ByteBuffer.allocate(4).order(order).putLong(val).array();;
-			System.arraycopy(arr, 0, byteArr, cc * 8, 8);
-			cc ++;
-		}
-		return byteArr;
+		imgTensor = Utils.transpose(imgTensor);
+		PrimitiveBlocks< LongType > blocks = PrimitiveBlocks.of( imgTensor );
+		long[] tensorShape = imgTensor.dimensionsAsLongArray();
+		int size = 1;
+		for (long ll : tensorShape) size *= ll;
+		final long[] flatArr = new long[size];
+		int[] sArr = new int[tensorShape.length];
+		for (int i = 0; i < sArr.length; i ++)
+			sArr[i] = (int) tensorShape[i];
+		blocks.copy( imgTensor.minAsLongArray(), flatArr, sArr );
+		ByteBuffer buffer = ByteBuffer.allocate(flatArr.length * 8);
+        for (long d : flatArr) {
+            buffer.putLong(d);
+        }
+		return buffer.array();
     }
 
     /**
@@ -567,26 +511,21 @@ public class BioengineTensor {
      */
     private static byte[] buildFloat(RandomAccessibleInterval<FloatType> imgTensor, ByteOrder order)
     {
-    	Cursor<FloatType> tensorCursor;
-		if (imgTensor instanceof IntervalView)
-			tensorCursor = ((IntervalView<FloatType>) imgTensor).cursor();
-		else if (imgTensor instanceof Img)
-			tensorCursor = ((Img<FloatType>) imgTensor).cursor();
-		else
-			throw new IllegalArgumentException("The data of the " + Tensor.class + " has "
-					+ "to be an instance of " + Img.class + " or " + IntervalView.class);
-		long flatSize = 4;
-		for (long ss : imgTensor.dimensionsAsLongArray()) {flatSize *= ss;}
-		byte[] byteArr = new byte[(int) flatSize];
-		long[] shape = imgTensor.dimensionsAsLongArray();
-		while (tensorCursor.hasNext()) {
-			tensorCursor.fwd();
-			int flatPos = IndexingUtils.multidimensionalIntoFlatIndex( tensorCursor.positionAsLongArray(), shape);
-			float val = tensorCursor.get().get();
-			byte[] arr = ByteBuffer.allocate(4).order(order).putFloat(val).array();;
-			System.arraycopy(arr, 0, byteArr, flatPos * 4, 4);
-		}
-		return byteArr;
+		imgTensor = Utils.transpose(imgTensor);
+		PrimitiveBlocks< FloatType > blocks = PrimitiveBlocks.of( imgTensor );
+		long[] tensorShape = imgTensor.dimensionsAsLongArray();
+		int size = 1;
+		for (long ll : tensorShape) size *= ll;
+		final float[] flatArr = new float[size];
+		int[] sArr = new int[tensorShape.length];
+		for (int i = 0; i < sArr.length; i ++)
+			sArr[i] = (int) tensorShape[i];
+		blocks.copy( imgTensor.minAsLongArray(), flatArr, sArr );
+		ByteBuffer buffer = ByteBuffer.allocate(flatArr.length * 4);
+        for (float d : flatArr) {
+            buffer.putFloat(d);
+        }
+		return buffer.array();
     }
 
     /**
@@ -600,25 +539,20 @@ public class BioengineTensor {
      */
     private static byte[] buildDouble(RandomAccessibleInterval<DoubleType> imgTensor, ByteOrder order)
     {
-    	Cursor<DoubleType> tensorCursor;
-		if (imgTensor instanceof IntervalView)
-			tensorCursor = ((IntervalView<DoubleType>) imgTensor).cursor();
-		else if (imgTensor instanceof Img)
-			tensorCursor = ((Img<DoubleType>) imgTensor).cursor();
-		else
-			throw new IllegalArgumentException("The data of the " + Tensor.class + " has "
-					+ "to be an instance of " + Img.class + " or " + IntervalView.class);
-		long flatSize = 8;
-		for (long ss : imgTensor.dimensionsAsLongArray()) {flatSize *= ss;}
-		byte[] byteArr = new byte[(int) flatSize];
-		int cc =  0;
-		while (tensorCursor.hasNext()) {
-			tensorCursor.fwd();
-			double val = tensorCursor.get().getRealDouble();
-			byte[] arr = ByteBuffer.allocate(4).order(order).putDouble(val).array();;
-			System.arraycopy(arr, 0, byteArr, cc * 8, 8);
-			cc ++;
-		}
-		return byteArr;
+		imgTensor = Utils.transpose(imgTensor);
+		PrimitiveBlocks< DoubleType > blocks = PrimitiveBlocks.of( imgTensor );
+		long[] tensorShape = imgTensor.dimensionsAsLongArray();
+		int size = 8;
+		for (long ll : tensorShape) size *= ll;
+		final double[] flatArr = new double[size];
+		int[] sArr = new int[tensorShape.length];
+		for (int i = 0; i < sArr.length; i ++)
+			sArr[i] = (int) tensorShape[i];
+		blocks.copy( imgTensor.minAsLongArray(), flatArr, sArr );
+		ByteBuffer buffer = ByteBuffer.allocate(flatArr.length * 8);
+        for (double d : flatArr) {
+            buffer.putDouble(d);
+        }
+		return buffer.array();
     }
 }

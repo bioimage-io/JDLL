@@ -300,7 +300,7 @@ public class Model
 			throw new IOException("Please install a compatible engine with the model weights. "
 					+ "To be compatible the engine has to be of the same framework and the major version needs to be the same. "
 					+ "The model weights are: " + descriptor.getWeights().getEnginesListWithVersions());
-		Model model = Model.createDeepLearningModel(bmzModelFolder, modelSource, info);
+		Model model = Model.createDeepLearningModel(bmzModelFolder, modelSource, info, classloader);
 		model.descriptor = descriptor;
 		return model;
 	}
@@ -318,13 +318,26 @@ public class Model
 	 * 	folder where the bioimage.io model is located (parent folder of the rdf.yaml file)
 	 * @param enginesFolder
 	 * 	directory where all the engine (DL framework) folders are downloaded
+	 * @param classloader
+	 * 	Parent ClassLoader of the engine (can be null). Almost the same method as 
+	 *  Model.createBioimageioModel( String bmzModelFolder, String enginesFolder ). 
+	 *  The only difference is that this method can choose the parent ClassLoader for the engine. 
+	 *  JDLL creates a separate ChildFirst-ParentLast CustomClassLoader for each of the 
+	 *  engines loaded to avoid conflicts between them. In order to have access to the 
+	 *  classes of the main ClassLoader the ChildFirst-ParentLast CustomClassLoader needs a parent. 
+	 *  If no classloader argument is provided the parent ClassLoader will be the Thread's 
+	 *  context ClassLoader (Thread.currentThread().getContextClassLoader()).
+	 *  The classloader argument can be null.
+	 *  The classloader argument is usually not needed, but for some softwares 
+	 *  such as Icy, that have a custom management of ClassLoaders it is necessary.
 	 * @return a model ready to be loaded
 	 * @throws LoadEngineException if there is any error loading the DL framework
 	 * @throws IOException if there is any error finding the engines in the system
 	 * @throws ModelSpecsException if the rdf.yaml file has some at least a field which does not comply with the Bioiamge.io constraints
 	 * @throws IllegalStateException if any of the installed DL engines have been manipulated incorrectly
 	 */
-	public static Model createBioimageioModelWithExactWeigths(String bmzModelFolder, String enginesFolder)
+	public static Model createBioimageioModelWithExactWeigths(String bmzModelFolder, 
+			String enginesFolder, ClassLoader classloader)
 			throws IOException, ModelSpecsException, IllegalStateException, LoadEngineException {
 		Objects.requireNonNull(bmzModelFolder);
 		Objects.requireNonNull(enginesFolder);
@@ -349,7 +362,7 @@ public class Model
 		if (info == null)
 			throw new IOException("Please install the engines defined by the model weights. "
 					+ "The model weights are: " + descriptor.getWeights().getEnginesListWithVersions());
-		Model model = Model.createDeepLearningModel(bmzModelFolder, modelSource, info);
+		Model model = Model.createDeepLearningModel(bmzModelFolder, modelSource, info, classloader);
 		model.descriptor = descriptor;
 		return model;
 	}
