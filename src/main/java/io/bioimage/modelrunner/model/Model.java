@@ -30,7 +30,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.LongStream;
@@ -55,8 +54,6 @@ import io.bioimage.modelrunner.utils.Constants;
 import io.bioimage.modelrunner.versionmanagement.InstalledEngines;
 import net.imglib2.FinalInterval;
 import net.imglib2.RandomAccessibleInterval;
-import net.imglib2.img.Img;
-import net.imglib2.img.array.ArrayImgs;
 import net.imglib2.type.NativeType;
 import net.imglib2.type.numeric.RealType;
 import net.imglib2.type.numeric.real.FloatType;
@@ -303,7 +300,9 @@ public class Model
 			throw new IOException("Please install a compatible engine with the model weights. "
 					+ "To be compatible the engine has to be of the same framework and the major version needs to be the same. "
 					+ "The model weights are: " + descriptor.getWeights().getEnginesListWithVersions());
-		return Model.createDeepLearningModel(bmzModelFolder, modelSource, info);
+		Model model = Model.createDeepLearningModel(bmzModelFolder, modelSource, info);
+		model.descriptor = descriptor;
+		return model;
 	}
 	
 	/**
@@ -350,7 +349,9 @@ public class Model
 		if (info == null)
 			throw new IOException("Please install the engines defined by the model weights. "
 					+ "The model weights are: " + descriptor.getWeights().getEnginesListWithVersions());
-		return Model.createDeepLearningModel(bmzModelFolder, modelSource, info);
+		Model model = Model.createDeepLearningModel(bmzModelFolder, modelSource, info);
+		model.descriptor = descriptor;
+		return model;
 	}
 
 	/**
@@ -422,6 +423,7 @@ public class Model
 		EngineInfo info = EngineInfo.defineBioengine(serverURL);
 		Model model =  Model.createDeepLearningModel(bmzModelFolder, null, info);
 		model.bioengine = true;
+		model.descriptor = descriptor;
 		return model;
 	}
 
@@ -609,10 +611,8 @@ public class Model
 		
 		if (!this.isLoaded())
 			throw new RunModelException("Please first load the model.");
-		if (descriptor == null && modelFolder == null)
-			throw new IllegalArgumentException("");
-		else if (descriptor == null && !(new File(modelFolder, Constants.RDF_FNAME).isFile()))
-			throw new IllegalArgumentException("");
+		if (descriptor == null && !(new File(modelFolder, Constants.RDF_FNAME).isFile()))
+			throw new IllegalArgumentException("Automatic tiling can only be done if the model contains a Bioiamge.io rdf.yaml specs file.");
 		else if (descriptor == null)
 			descriptor = ModelDescriptor.readFromLocalFile(modelFolder + File.separator + Constants.RDF_FNAME, false);
 		for (TensorSpec t : descriptor.getInputTensors()) {
@@ -775,6 +775,24 @@ public class Model
 	 */
 	public boolean isLoaded() {
 		return loaded;
+	}
+	
+	/**
+	 * Get the {@link ModelDescriptor} instance that contains the specs defined in the 
+	 * Bioimage.io rdf.yaml specs file.
+	 * If the model does not contain a specs file, the methods returns null
+	 * @return the {@link ModelDescriptor} instance that contains the specs defined in the 
+	 * 	Bioimage.io rdf.yaml specs file.
+	 */
+	public ModelDescriptor getBioimageioSpecs() {
+		if (descriptor == null && new File(modelFolder + File.separator + Constants.RDF_FNAME).isFile()) {
+			try {
+				descriptor = ModelDescriptor.readFromLocalFile(modelFolder + File.separator + Constants.RDF_FNAME, false);
+			} catch (ModelSpecsException e) {
+				e.printStackTrace();
+			}
+		}
+		return this.descriptor;
 	}
 	
 	/**
