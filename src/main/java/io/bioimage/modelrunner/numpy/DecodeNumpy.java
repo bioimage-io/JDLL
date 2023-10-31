@@ -330,75 +330,57 @@ public class DecodeNumpy {
     	if (dtype.equals("int8") && !fortranOrder) {
     		ByteAccess access = new ByteBufferAccess(buf, true);
     		return (RandomAccessibleInterval<T>) Utils.transpose(ArrayImgs.bytes( access, transposedShape ));
-    		//return (Img<T>) buildInt8(buf, byteOrder, shape);
     	} else if (dtype.equals("int8")) {
     		ByteAccess access = new ByteBufferAccess(buf, true);
     		return (RandomAccessibleInterval<T>) ArrayImgs.bytes( access, shape );
-    		//return (Img<T>) buildInt8(buf, byteOrder, shape);
     	} else if (dtype.equals("uint8") && !fortranOrder) {
     		ByteAccess access = new ByteBufferAccess(buf, true);
     		return (RandomAccessibleInterval<T>) Utils.transpose(ArrayImgs.unsignedBytes( access, transposedShape ));
-    		//return (Img<T>) buildUInt8(buf, byteOrder, shape);
     	} else if (dtype.equals("uint8")) {
     		ByteAccess access = new ByteBufferAccess(buf, true);
     		return (RandomAccessibleInterval<T>) ArrayImgs.unsignedBytes( access, shape );
-    		//return (Img<T>) buildUInt8(buf, byteOrder, shape);
     	} else if (dtype.equals("int16") && !fortranOrder) {
     		ShortAccess access = new ShortBufferAccess(buf, true);
     		return (RandomAccessibleInterval<T>) Utils.transpose(ArrayImgs.shorts( access, transposedShape ));
-    		//return (Img<T>) buildInt16(buf, byteOrder, shape);
     	} else if (dtype.equals("int16")) {
     		ShortAccess access = new ShortBufferAccess(buf, true);
     		return (RandomAccessibleInterval<T>) ArrayImgs.shorts( access, shape );
-    		//return (Img<T>) buildInt16(buf, byteOrder, shape);
     	} else if (dtype.equals("uint16") && !fortranOrder) {
     		ShortAccess access = new ShortBufferAccess(buf, true);
     		return (RandomAccessibleInterval<T>) Utils.transpose(ArrayImgs.unsignedShorts( access, transposedShape ));
-    		//return (Img<T>) buildUInt16(buf, byteOrder, shape);
     	} else if (dtype.equals("uint16")) {
     		ShortAccess access = new ShortBufferAccess(buf, true);
     		return (RandomAccessibleInterval<T>) ArrayImgs.unsignedShorts( access, shape );
-    		//return (Img<T>) buildUInt16(buf, byteOrder, shape);
     	} else if (dtype.equals("int32") && !fortranOrder) {
     		IntAccess access = new IntBufferAccess(buf, true);
     		return (RandomAccessibleInterval<T>) Utils.transpose(ArrayImgs.ints( access, transposedShape ));
-    		//return (Img<T>) buildInt32(buf, byteOrder, shape);
     	} else if (dtype.equals("int32")) {
     		IntAccess access = new IntBufferAccess(buf, true);
     		return (RandomAccessibleInterval<T>) ArrayImgs.ints( access, shape );
-    		//return (Img<T>) buildInt32(buf, byteOrder, shape);
     	} else if (dtype.equals("uint32") && !fortranOrder) {
     		IntAccess access = new IntBufferAccess(buf, true);
     		return (RandomAccessibleInterval<T>) Utils.transpose(ArrayImgs.unsignedInts( access, transposedShape ));
-    		//return (Img<T>) buildUInt32(buf, byteOrder, shape);
     	} else if (dtype.equals("uint32")) {
     		IntAccess access = new IntBufferAccess(buf, true);
     		return (RandomAccessibleInterval<T>) ArrayImgs.unsignedInts( access, shape );
-    		//return (Img<T>) buildUInt32(buf, byteOrder, shape);
     	} else if (dtype.equals("int64") && !fortranOrder) {
     		LongAccess access = new LongBufferAccess(buf, true);
     		return (RandomAccessibleInterval<T>) Utils.transpose(ArrayImgs.longs( access, transposedShape ));
-    		//return (Img<T>) buildInt64(buf, byteOrder, shape);
     	} else if (dtype.equals("int64")) {
     		LongAccess access = new LongBufferAccess(buf, true);
     		return (RandomAccessibleInterval<T>) ArrayImgs.longs( access, shape );
-    		//return (Img<T>) buildInt64(buf, byteOrder, shape);
     	} else if (dtype.equals("float32") && !fortranOrder) {
     		FloatAccess access = new FloatBufferAccess(buf, true);
     		return (RandomAccessibleInterval<T>) Utils.transpose(ArrayImgs.floats( access, transposedShape ));
-    		//return (Img<T>) buildFloat32(buf, byteOrder, shape);
     	} else if (dtype.equals("float32")) {
     		FloatAccess access = new FloatBufferAccess(buf, true);
     		return (RandomAccessibleInterval<T>) ArrayImgs.floats( access, shape );
-    		//return (Img<T>) buildFloat32(buf, byteOrder, shape);
     	} else if (dtype.equals("float64") && !fortranOrder) {
     		DoubleAccess access = new DoubleBufferAccess(buf, true);
     		return (RandomAccessibleInterval<T>) Utils.transpose(ArrayImgs.doubles( access, transposedShape ));
-    		//return (Img<T>) buildFloat64(buf, byteOrder, shape);
     	} else if (dtype.equals("float64")) {
     		DoubleAccess access = new DoubleBufferAccess(buf, true);
     		return (RandomAccessibleInterval<T>) ArrayImgs.doubles( access, shape );
-    		//return (Img<T>) buildFloat64(buf, byteOrder, shape);
     	} else if (dtype.equals("bool") && !fortranOrder) {
     		return (RandomAccessibleInterval<T>) Utils.transpose(buildBoolean(buf, byteOrder, transposedShape));
     	} else if (dtype.equals("bool")) {
