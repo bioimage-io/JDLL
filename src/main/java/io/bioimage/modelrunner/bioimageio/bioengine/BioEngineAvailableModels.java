@@ -154,7 +154,8 @@ public class BioEngineAvailableModels {
 	public boolean isModelSupportedByBioengine(String modelID) {
 		Objects.requireNonNull(modelID, "The argument 'modelID cannot be null.");
 		LinkedTreeMap<String, String> isFound = collection.stream()
-				.filter(x -> modelID.startsWith(x.get(ID_KEY)+ "/")).findFirst().orElse(null);
+				.filter(x -> modelID.startsWith(x.get(ID_KEY) + "/") 
+						|| modelID.equals(x.get(ID_KEY))).findFirst().orElse(null);
 		if (isFound == null)
 			return false;
 		return true;
