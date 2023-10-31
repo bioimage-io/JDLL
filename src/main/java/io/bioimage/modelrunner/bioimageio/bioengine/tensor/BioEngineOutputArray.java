@@ -61,6 +61,11 @@ public class BioEngineOutputArray {
 	 * byte array containing the data of the array
 	 */
 	private byte[] arr;
+	/**
+	 * Whether the numpy array received from the Bioengine follows Fortran order
+	 * or C-order. By default the Bioengine received arrays are always C-order
+	 */
+	private final static boolean IS_FORTRAN_ORDER = false;
 	
 	/** TODO add possibility of having parameters
 	 * TODO we need the shape of the array too
@@ -117,17 +122,38 @@ public class BioEngineOutputArray {
 	/**
 	 * Create an array from the bytes received by the BioEngine and using the corresponding shape
 	 * and data types
+	 * Assumes that the Byte order is Little endian.
+	 * Assumes that the array received from the Bioengine follows C-order instead of
+	 * Fortran order. Numpy arrays by default have C-order.
 	 * @param <T>
 	 * 	possible ImgLib2 data types of the image that will be returned
 	 * @return an ImgLib2 {@link Img} containing the data of one of the outputs of the bioengine
 	 * @throws IllegalArgumentException if the data type of the array is not supported
 	 */
-	@SuppressWarnings("unchecked")
 	public < T extends RealType< T > & NativeType< T > >  RandomAccessibleInterval<T> getImg()
 			throws IllegalArgumentException {
 		return getImg(ByteOrder.LITTLE_ENDIAN);
 	}
 
+	/**
+	 * Create an array from the bytes received by the BioEngine and using the corresponding shape
+	 * and data types.
+	 * Assumes that the array received from the Bioengine follows C-order instead of
+	 * Fortran order. Numpy arrays by default have C-order.
+	 * @param <T>
+	 * 	possible ImgLib2 data types of the image that will be returned
+	 * @param byteOrder
+	 * 	order of the bytes
+	 * @return an ImgLib2 {@link Img} containing the data of one of the outputs of the bioengine
+	 * @throws IllegalArgumentException if the data type of the array is not supported
+	 */
+	public < T extends RealType< T > & NativeType< T > >  
+	RandomAccessibleInterval<T> getImg(ByteOrder byteOrder)
+			throws IllegalArgumentException {
+		Objects.requireNonNull(arr);
+		ByteBuffer buf = ByteBuffer.wrap(arr).order(byteOrder);
+		return DecodeNumpy.build(buf, byteOrder, dtype, shape, IS_FORTRAN_ORDER);
+	}
 
 	/**
 	 * Create an array from the bytes received by the BioEngine and using the corresponding shape
@@ -136,16 +162,19 @@ public class BioEngineOutputArray {
 	 * 	possible ImgLib2 data types of the image that will be returned
 	 * @param byteOrder
 	 * 	order of the bytes
+	 * @param isFortranOrder
+	 * 	whether the numpy array received from the Bioengine is in Fortran order or C-order.
+	 * 	By default, numpy arrays usually follow C-order, thus in the majority of the
+	 * 	cases, the parameter should be false.
 	 * @return an ImgLib2 {@link Img} containing the data of one of the outputs of the bioengine
 	 * @throws IllegalArgumentException if the data type of the array is not supported
 	 */
-	@SuppressWarnings("unchecked")
 	public < T extends RealType< T > & NativeType< T > >  
-	RandomAccessibleInterval<T> getImg(ByteOrder byteOrder)
+	RandomAccessibleInterval<T> getImg(ByteOrder byteOrder, boolean isFortranOrder)
 			throws IllegalArgumentException {
 		Objects.requireNonNull(arr);
 		ByteBuffer buf = ByteBuffer.wrap(arr).order(byteOrder);
-		return DecodeNumpy.build(buf, byteOrder, dtype, shape);
+		return DecodeNumpy.build(buf, byteOrder, dtype, shape, isFortranOrder);
 	}
 	
 	/**
