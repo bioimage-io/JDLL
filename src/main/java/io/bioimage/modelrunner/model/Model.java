@@ -547,10 +547,8 @@ public class Model
 	List<Tensor<T>> runBioimageioModelOnImgLib2WithTiling(List<Tensor<R>> inputTensors, TilingConsumer tileCounter) throws ModelSpecsException, RunModelException {
 		if (!this.isLoaded())
 			throw new RunModelException("Please first load the model.");
-		if (descriptor == null && modelFolder == null)
-			throw new IllegalArgumentException("");
-		else if (descriptor == null && !(new File(modelFolder, Constants.RDF_FNAME).isFile()))
-			throw new IllegalArgumentException("");
+		if (descriptor == null && !(new File(modelFolder, Constants.RDF_FNAME).isFile()))
+			throw new IllegalArgumentException("Automatic tiling can only be done if the model contains a Bioiamge.io rdf.yaml specs file.");
 		else if (descriptor == null)
 			descriptor = ModelDescriptor.readFromLocalFile(modelFolder + File.separator + Constants.RDF_FNAME, false);
 		PatchGridCalculator<R> tileGrid = PatchGridCalculator.build(descriptor, inputTensors);
