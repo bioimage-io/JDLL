@@ -381,7 +381,7 @@ public class BioengineTensor {
 		for (int i = 0; i < sArr.length; i ++)
 			sArr[i] = (int) tensorShape[i];
 		blocks.copy( imgTensor.minAsLongArray(), flatArr, sArr );
-		ByteBuffer buffer = ByteBuffer.allocate(flatArr.length * 2);
+		ByteBuffer buffer = ByteBuffer.allocate(flatArr.length * 2).order(order);
         for (short d : flatArr) {
             buffer.putShort(d);
         }
@@ -409,7 +409,7 @@ public class BioengineTensor {
 		for (int i = 0; i < sArr.length; i ++)
 			sArr[i] = (int) tensorShape[i];
 		blocks.copy( imgTensor.minAsLongArray(), flatArr, sArr );
-		ByteBuffer buffer = ByteBuffer.allocate(flatArr.length * 2);
+		ByteBuffer buffer = ByteBuffer.allocate(flatArr.length * 2).order(order);
         for (short d : flatArr) {
             buffer.putShort(d);
         }
@@ -437,7 +437,7 @@ public class BioengineTensor {
 		for (int i = 0; i < sArr.length; i ++)
 			sArr[i] = (int) tensorShape[i];
 		blocks.copy( imgTensor.minAsLongArray(), flatArr, sArr );
-		ByteBuffer buffer = ByteBuffer.allocate(flatArr.length * 4);
+		ByteBuffer buffer = ByteBuffer.allocate(flatArr.length * 4).order(order);
         for (int d : flatArr) {
             buffer.putInt(d);
         }
@@ -465,7 +465,7 @@ public class BioengineTensor {
 		for (int i = 0; i < sArr.length; i ++)
 			sArr[i] = (int) tensorShape[i];
 		blocks.copy( imgTensor.minAsLongArray(), flatArr, sArr );
-		ByteBuffer buffer = ByteBuffer.allocate(flatArr.length * 4);
+		ByteBuffer buffer = ByteBuffer.allocate(flatArr.length * 4).order(order);
         for (int d : flatArr) {
             buffer.putInt(d);
         }
@@ -493,7 +493,7 @@ public class BioengineTensor {
 		for (int i = 0; i < sArr.length; i ++)
 			sArr[i] = (int) tensorShape[i];
 		blocks.copy( imgTensor.minAsLongArray(), flatArr, sArr );
-		ByteBuffer buffer = ByteBuffer.allocate(flatArr.length * 8);
+		ByteBuffer buffer = ByteBuffer.allocate(flatArr.length * 8).order(order);
         for (long d : flatArr) {
             buffer.putLong(d);
         }
@@ -521,7 +521,7 @@ public class BioengineTensor {
 		for (int i = 0; i < sArr.length; i ++)
 			sArr[i] = (int) tensorShape[i];
 		blocks.copy( imgTensor.minAsLongArray(), flatArr, sArr );
-		ByteBuffer buffer = ByteBuffer.allocate(flatArr.length * 4);
+		ByteBuffer buffer = ByteBuffer.allocate(flatArr.length * 4).order(order);
         for (float d : flatArr) {
             buffer.putFloat(d);
         }
@@ -549,7 +549,7 @@ public class BioengineTensor {
 		for (int i = 0; i < sArr.length; i ++)
 			sArr[i] = (int) tensorShape[i];
 		blocks.copy( imgTensor.minAsLongArray(), flatArr, sArr );
-		ByteBuffer buffer = ByteBuffer.allocate(flatArr.length * 8);
+		ByteBuffer buffer = ByteBuffer.allocate(flatArr.length * 8).order(order);
         for (double d : flatArr) {
             buffer.putDouble(d);
         }
