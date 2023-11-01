@@ -25,6 +25,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import io.bioimage.modelrunner.utils.Constants;
 import io.bioimage.modelrunner.versionmanagement.SupportedVersions;
 
 /**
@@ -173,7 +174,13 @@ public class TfWeights implements WeightFormat{
 	 * {@inheritDoc}
 	 */
 	public String getSource() {
-		return source;
+		if (source != null && 
+				source.startsWith(Constants.ZENODO_DOMAIN) 
+				&& source.endsWith(Constants.ZENODO_ANNOYING_SUFFIX))
+			return source.substring(0, 
+					source.length() - Constants.ZENODO_ANNOYING_SUFFIX.length());
+		else
+			return source;
 	}
 	
 	/**

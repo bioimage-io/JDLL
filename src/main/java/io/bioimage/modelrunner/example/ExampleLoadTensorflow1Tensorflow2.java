@@ -29,6 +29,7 @@ import io.bioimage.modelrunner.engine.EngineInfo;
 import io.bioimage.modelrunner.engine.installation.EngineInstall;
 import io.bioimage.modelrunner.exceptions.LoadEngineException;
 import io.bioimage.modelrunner.model.Model;
+import io.bioimage.modelrunner.system.PlatformDetection;
 import io.bioimage.modelrunner.tensor.Tensor;
 import io.bioimage.modelrunner.versionmanagement.AvailableEngines;
 import io.bioimage.modelrunner.versionmanagement.DeepLearningVersion;
@@ -69,6 +70,19 @@ public class ExampleLoadTensorflow1Tensorflow2 {
 	 * @throws Exception if there is any exception in the tests
 	 */
 	public static void main(String[] args) throws LoadEngineException, Exception {
+		if (PlatformDetection.isUsingRosseta()) {
+			System.out.println("Tensorflow 1 cannot run on ARM64 chips (Apple Silicon) and Tensorflow 2 cannot "
+					+ "run on ARM64 chips using Rosetta. In order to be able to run Tensorflow 2, please"
+					+ " update the Java version to one compatible with ARM64 chips that does not require rosetta."
+					+ " Tensorflow 1 is not available for ARM64 based computers.");
+			return;
+		} else if (PlatformDetection.getArch().equals(PlatformDetection.ARCH_ARM64) && !PlatformDetection.isUsingRosseta()) {
+			System.out.println("Tensorflow 1 cannot run on ARM64 chips (Apple Silicon). Only Tensorflow 2.7.0 is currently compatible with "
+					+ "ARM64 chips, the execution of a Tensorflow 1 model wil be skipped.");
+			loadAndRunTf2();
+			System.out.println("Great success!");
+			return;
+		}
 		loadAndRunTf2();
 		loadAndRunTf1();
 		System.out.println("Great success!");
@@ -83,7 +97,7 @@ public class ExampleLoadTensorflow1Tensorflow2 {
 		// Tag for the DL framework (engine) that wants to be used
 		String framework = "tensorflow_saved_model_bundle";
 		// Version of the engine
-		String engineVersion = "2.7.4";
+		String engineVersion = "2.7.0";
 		// Directory where all the engines are stored
 		String enginesDir = ENGINES_DIR;
 		// Download an engine that is ompatible with the model of interest

@@ -24,7 +24,6 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.MalformedURLException;
-import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -37,6 +36,7 @@ import java.util.Map.Entry;
 import java.util.stream.Collectors;
 
 import io.bioimage.modelrunner.bioimageio.BioimageioRepo;
+import io.bioimage.modelrunner.bioimageio.description.exceptions.ModelSpecsException;
 import io.bioimage.modelrunner.bioimageio.description.weights.ModelWeight;
 import io.bioimage.modelrunner.utils.Log;
 import io.bioimage.modelrunner.utils.YAMLUtils;
@@ -100,9 +100,9 @@ public class ModelDescriptor
      * @param modelFile
      *        Model descriptor file.
      * @return The instance of the model descriptor.
-     * @throws Exception if some parameter is not well defined
+     * @throws ModelSpecsException if any of the parameters in the rdf.yaml file does not make fit the constraints
      */
-    public static ModelDescriptor readFromLocalFile(String modelFile) throws Exception
+    public static ModelDescriptor readFromLocalFile(String modelFile) throws ModelSpecsException
     {
     	return readFromLocalFile(modelFile, true);
     }
@@ -115,14 +115,19 @@ public class ModelDescriptor
      * @param verbose
      * 	whether to print the path to the file and the time to the console or not
      * @return The instance of the model descriptor.
-     * @throws Exception if some parameter is not well defined
+     * @throws ModelSpecsException if any of the parameters in the rdf.yaml file does not make fit the constraints,
      */
-    public static ModelDescriptor readFromLocalFile(String modelFile, boolean verbose) throws Exception
+    public static ModelDescriptor readFromLocalFile(String modelFile, boolean verbose) throws ModelSpecsException
     {
     	// Get the date to be able to log with the time
     	if (verbose)
     		System.out.println(Log.gct() + " -- LOCAL: Searching model at " + new File(modelFile).getParent());
-        Map<String, Object> yamlElements = YAMLUtils.load(modelFile);
+    	Map<String, Object> yamlElements;
+    	try {
+        	yamlElements = YAMLUtils.load(modelFile);
+        } catch (IOException ex) {
+        	throw new IllegalStateException("", ex);
+        }
         yamlElements.put(fromLocalKey, true);
         yamlElements.put(modelPathKey, new File(modelFile).getParent());
         return buildModelDescription(yamlElements);
@@ -134,9 +139,9 @@ public class ModelDescriptor
      * @param yamlText
      *        text read from a yaml file that contains an rdf.yaml file
      * @return The instance of the model descriptor.
-     * @throws Exception if some parameter is not well defined
+     * @throws ModelSpecsException if any of the parameters in the rdf.yaml file does not make fit the constraints
      */
-    public static ModelDescriptor readFromYamlTextString(String yamlText) throws Exception
+    public static ModelDescriptor readFromYamlTextString(String yamlText) throws ModelSpecsException
     {
     	return readFromYamlTextString(yamlText, true);
     }
@@ -149,9 +154,9 @@ public class ModelDescriptor
      * @param verbose
      * 	whether to print info about the rdf.yaml that is being read or not
      * @return The instance of the model descriptor.
-     * @throws Exception if some parameter is not well defined
+     * @throws ModelSpecsException if any of the parameters in the rdf.yaml file does not make fit the constraints
      */
-    public static ModelDescriptor readFromYamlTextString(String yamlText, boolean verbose) throws Exception
+    public static ModelDescriptor readFromYamlTextString(String yamlText, boolean verbose) throws ModelSpecsException
     {
     	// Convert the String of text that contains the yaml file into Map
     	Map<String,Object> yamlElements = YAMLUtils.loadFromString(yamlText);
@@ -172,9 +177,9 @@ public class ModelDescriptor
      * @param yamlElements
      * 	map with the information read from a yaml file
      * @return a {@link ModelDescriptor} with the info of a Bioimage.io model
-     * @throws Exception if there is any error processing the info
+     * @throws ModelSpecsException if any of the parameters in the rdf.yaml file does not make fit the constraints
      */
-    private static ModelDescriptor buildModelDescription(Map<String, Object> yamlElements) throws Exception
+    private static ModelDescriptor buildModelDescription(Map<String, Object> yamlElements) throws ModelSpecsException
     {
         ModelDescriptor modelDescription = new ModelDescriptor();
 
@@ -288,9 +293,9 @@ public class ModelDescriptor
                         break;
                 }
             }
-            catch (IOException | URISyntaxException e)
+            catch (IOException e)
             {
-                throw new IOException("Invalid model element: " + field + "->" + e.getMessage());
+                throw new ModelSpecsException("Invalid model element: " + field + "->" + e.getMessage());
             }
         }
         Object bio = modelDescription.config.getSpecMap().get("bioimageio");
@@ -306,9 +311,9 @@ public class ModelDescriptor
      * Every model in the bioimage.io can be run in the BioEngine as long as it is in the
      * collections repo: 
      * https://github.com/bioimage-io/collection-bioimage-io/blob/e77fec7fa4d92d90c25e11331a7d19f14b9dc2cf/rdfs/10.5281/zenodo.6200999/6224243/rdf.yaml
-     * @throws MalformedURLException if the server does not correspond to an existing URL
+     * @throws ModelSpecsException servers do not correspond to an actual url
      */
-    private void addBioEngine() throws MalformedURLException {
+    private void addBioEngine() throws ModelSpecsException {
 		// TODO decide what to do with servers. Probably need permissions / Implement authentication
     	if (getName().equals("cellpose-python")) {
     		supportBioengine = true;
@@ -318,10 +323,13 @@ public class ModelDescriptor
 	    } else if (getName().equals("stardist")) {
     		supportBioengine = true;
 			return;
+	    } else if (modelID == null) {
+    		supportBioengine = false;
+	    	return;
 	    }
     	try {
-			supportBioengine = BioimageioRepo.isModelOnTheBioengineById(modelID);
-		} catch (IOException e) {
+			supportBioengine =  BioimageioRepo.isModelOnTheBioengineById(modelID);
+		} catch (Exception e) {
 			e.printStackTrace();
 		}
     }
@@ -494,7 +502,7 @@ public class ModelDescriptor
         return covers.stream().filter(i -> i != null).collect(Collectors.toList());
     }
 
-    private static List<Badge> buildBadgeElements(List<?> coverElements) throws Exception
+    private static List<Badge> buildBadgeElements(List<?> coverElements)
     {
     	if (!(coverElements instanceof List<?>))
     		return null;
@@ -510,7 +518,7 @@ public class ModelDescriptor
     }
 
     @SuppressWarnings("unchecked")
-    private static List<TensorSpec> buildInputTensors(List<?> list) throws Exception
+    private static List<TensorSpec> buildInputTensors(List<?> list) throws ModelSpecsException
     {
     	if (!(list instanceof List<?>))
     		return null;
@@ -538,7 +546,7 @@ public class ModelDescriptor
     }
 
     @SuppressWarnings("unchecked")
-    private static List<TensorSpec> buildOutputTensors(List<?> list) throws Exception
+    private static List<TensorSpec> buildOutputTensors(List<?> list) throws ModelSpecsException
     {
     	if (!(list instanceof List<?>))
     		return null;

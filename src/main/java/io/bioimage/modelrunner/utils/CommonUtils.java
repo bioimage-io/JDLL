@@ -19,28 +19,28 @@
  */
 package io.bioimage.modelrunner.utils;
 
+import java.io.File;
+import java.net.MalformedURLException;
+import java.net.URL;
+
 /**
- * Class that contains important constants for the software
+ * Class that contains common useful static methods that can be used anywhere in the software
  * @author Carlos Garcia Lopez de Haro
  *
  */
-public class Constants {
+public class CommonUtils {
 	
-	final public static String ISSUES_LINK = "https://github.com/bioimage-io/model-runner-java/issues";
-	// TODO update wiki link
-	final public static String WIKI_LINK = "https://github.com/bioimage-io/model-runner-java/issues";
-	final public static String ENGINES_LINK = "https://raw.githubusercontent.com/bioimage-io/JDLL/main/src/main/resources/availableDLVersions.yml";
-
 	/**
-	 * File name of the resource description file inside the model folder
+	 * Gets the filename of the file in an URL from the url String
+	 * @param str
+	 * 	the URL string
+	 * @return the file name of the file in the URL
+	 * @throws MalformedURLException if the String does not correspond to an URL
 	 */
-	public static final String RDF_FNAME = "rdf.yaml";
-	/**
-	 * Last part of files stored in zenodo
-	 */
-	public static final String ZENODO_ANNOYING_SUFFIX = "/content";
-	/**
-	 * Zenodo domain
-	 */
-	public static final String ZENODO_DOMAIN = "https://zenodo.org/";
+	public static String getFileNameFromURLString(String str) throws MalformedURLException {
+		if (str.startsWith(Constants.ZENODO_DOMAIN))
+			str = str.substring(0, str.length() - Constants.ZENODO_ANNOYING_SUFFIX.length());
+		URL url = new URL(str);
+		return new File(url.getPath()).getName();
+	}
 }

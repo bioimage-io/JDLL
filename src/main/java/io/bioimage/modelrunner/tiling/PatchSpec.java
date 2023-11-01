@@ -21,6 +21,7 @@ package io.bioimage.modelrunner.tiling;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Patch specification providing information about the patch size and patch grid size.
@@ -30,9 +31,13 @@ import java.util.List;
 public class PatchSpec
 {
 	/**
+	 * Size of the tensor that is going to be tiled
+	 */
+    private long[] tensorDims;
+	/**
 	 * Size of the input patch. Following "xyczb" axes order
 	 */
-    private int[] patchInputSize;
+    private long[] patchInputSize;
     /**
      * Size of the number of patches per axis. Following "xyczb" axes order
      */
@@ -60,16 +65,19 @@ public class PatchSpec
      *        sequence sizes.
      * @param patchPaddingSize
      *        The padding size used on each patch.
-    * @return The create patch specification.
+     * @param tensorDims
+     * 		  The original size of the image/tensor that is going to be tiled
+     * @return The create patch specification.
      */
-    public static PatchSpec create(String tensorName, int[] patchInputSize, int[] patchGridSize, 
-    		int[][] patchPaddingSize)
+    public static PatchSpec create(String tensorName, long[] patchInputSize, int[] patchGridSize, 
+    		int[][] patchPaddingSize, long[] tensorDims)
     {
         PatchSpec ps = new PatchSpec();
         ps.patchInputSize = patchInputSize;
         ps.patchGridSize = patchGridSize;
         ps.patchPaddingSize = patchPaddingSize;
         ps.tensorName = tensorName;
+        ps.tensorDims = tensorDims;
         return ps;
     }
 
@@ -78,6 +86,10 @@ public class PatchSpec
     }
     
     /**
+     * TODO this method should be per image, not in total??
+     * TODO this method should be per image, not in total??
+     * TODO this method should be per image, not in total??
+     * TODO this method should be per image, not in total??
      * Obtain the number of patches in each axes for a list of input patch specs.
      * When tiling is allowed, only one patch grid is permitted. If among the tensors
      * there are one or more that do not allow tiling, then two patch sizes are allowed,
@@ -95,6 +107,34 @@ public class PatchSpec
     	int[] grid = new int[]{1, 1, 1, 1, 1};
     	// If there is any different grid, that will be the absolute one
     	for (PatchSpec pp : patches) {
+    		if (!PatchGridCalculator.compareTwoArrays(grid, pp.getPatchGridSize()))
+    			return pp.getPatchGridSize();
+    	}
+    	return grid;
+    }
+    
+    /**
+     * TODO this method should be per image, not in total??
+     * TODO this method should be per image, not in total??
+     * TODO this method should be per image, not in total??
+     * TODO this method should be per image, not in total??
+     * Obtain the number of patches in each axes for a list of input patch specs.
+     * When tiling is allowed, only one patch grid is permitted. If among the tensors
+     * there are one or more that do not allow tiling, then two patch sizes are allowed,
+     * the one for the tensors that allow tiling and the one for the ones that not (that will
+     * just be 1s in every axes).
+     * In the case there exist tensors that allow tiling, the grid size for those will be the
+     * one returned
+     * @param patches
+     * 	map containing tiling specs per tensor
+     * @return the number of patches in each axes
+     */
+    public static int[] getGridSize(Map<String, PatchSpec> patches) {
+    	// The minimum possible grid is just one patch in every direction. This is the
+    	// grid if no tiling is allowed
+    	int[] grid = new int[]{1, 1, 1, 1, 1};
+    	// If there is any different grid, that will be the absolute one
+    	for (PatchSpec pp : patches.values()) {
     		if (!PatchGridCalculator.compareTwoArrays(grid, pp.getPatchGridSize()))
     			return pp.getPatchGridSize();
     	}
@@ -120,11 +160,19 @@ public class PatchSpec
     public String getTensorName() {
     	return tensorName;
     }
+    
+    /**
+     * The dimensions of the tensor
+     * @return the dimensions of the tensor that is going to be tiled
+     */
+    public long[] getTensorDims() {
+    	return tensorDims;
+    }
 
     /**
      * @return Input patch size. The patch taken from the input sequence including the halo.
      */
-    public int[] getPatchInputSize()
+    public long[] getPatchInputSize()
     {
         return patchInputSize;
     }

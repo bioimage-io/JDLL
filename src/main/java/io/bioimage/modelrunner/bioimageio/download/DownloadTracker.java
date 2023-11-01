@@ -60,6 +60,10 @@ public class DownloadTracker {
 	 */
 	private Thread downloadThread;
 	/**
+	 * Thread that called the whole model download method
+	 */
+	private Thread parentThread;
+	/**
 	 * Class that downloads the files that compose the model
 	 */
 	private DownloadModel dm;
@@ -127,6 +131,7 @@ public class DownloadTracker {
 		Objects.requireNonNull(consumer);
 		Objects.requireNonNull(links, "Please provide the links to the files that are going to be downloaded.");
 		Objects.requireNonNull(thread);
+		this.parentThread = Thread.currentThread();
 		this.folder = folder;
 		sizeFiles = new LinkedHashMap<String, Long>();
 		for (String link : links) {
@@ -161,6 +166,7 @@ public class DownloadTracker {
 		Objects.requireNonNull(consumer);
 		Objects.requireNonNull(dm);
 		Objects.requireNonNull(thread);
+		this.parentThread = Thread.currentThread();
 		this.consumer = consumer;
 		this.dm = dm;
 		this.links = dm.getListOfLinks();
@@ -239,7 +245,7 @@ public class DownloadTracker {
 		HashMap<String, Long> infoMap = new HashMap<String, Long>();
 		boolean alive = true;
 		boolean keep = true;
-		while (!trackString.contains(DownloadModel.FINISH_STR) && alive) {
+		while (this.parentThread.isAlive() && (!trackString.contains(DownloadModel.FINISH_STR) && alive)) {
 			if (!keep)
 				alive = false;
 			if (!this.downloadThread.isAlive())
@@ -298,7 +304,8 @@ public class DownloadTracker {
 		long totalDownloadSize = 0;
 		boolean keep = true;
 		
-		while ((this.downloadThread.isAlive() && remainingFiles.size() > 0) || keep) {
+		while (this.parentThread.isAlive() && 
+				((this.downloadThread.isAlive() && remainingFiles.size() > 0) || keep)) {
 			Thread.sleep(keep == false ? TIME_INTERVAL_MILLIS: 1);
 			keep = false;
 			for (int i = 0; i < this.remainingFiles.size(); i ++) {
@@ -477,7 +484,7 @@ public class DownloadTracker {
 	 *  too
 	 * @param consumer
 	 * 	consumer that provides the info about the download
-	 * @throws InterruptedException if the thread is stopped by other thread while it is sleeping
+	 * @throws InterruptedException if the download is interrupted
 	 */
 	public static void printProgress(Thread downloadThread,
 			DownloadTracker.TwoParameterConsumer<String, Double> consumer) throws InterruptedException {
@@ -490,11 +497,13 @@ public class DownloadTracker {
 		}
 		Set<String> already = new HashSet<String>();
 		boolean keep = true;
-		while (downloadThread.isAlive() || keep) {
+		while (Thread.currentThread().isAlive() && (downloadThread.isAlive() || keep)) {
 			boolean end = consumer.get().keySet().contains(TOTAL_PROGRESS_KEY)
 					&& consumer.get().get(TOTAL_PROGRESS_KEY) == 1.0;
-			Thread.sleep(keep == true || end ? 10 : 3000);
+			int millis = keep == true || end ? 10 : 3000;
 			keep = false;
+			//try {Thread.sleep(millis);} catch (InterruptedException ex) {System.out.println("Stopping..."); break;}
+			Thread.sleep(millis);
 			String select = null;
 			for (String key : consumer.get().keySet()) {
 				if (!already.contains(key) && !key.equals(DownloadTracker.TOTAL_PROGRESS_KEY)) {

@@ -509,10 +509,12 @@ public class BioimageioRepo {
 			}
         });
 		trackerThread.start();
-		DownloadTracker.printProgress(downloadThread, consumer);
+		try { DownloadTracker.printProgress(downloadThread, consumer); } 
+		catch (InterruptedException ex) { throw new InterruptedException("Model download interrupted."); }
+		
 		List<String> badDownloads = mdt.findMissingDownloads();
 		
-		if (badDownloads.size() > 0)
+		if (badDownloads.size() > 0 && Thread.currentThread().isAlive())
 			throw new IOException("The following files of model '" + descriptor.getName()
 			+ "' were downloaded incorrectly: " + badDownloads.toString());
 		return dm.getModelFolder();

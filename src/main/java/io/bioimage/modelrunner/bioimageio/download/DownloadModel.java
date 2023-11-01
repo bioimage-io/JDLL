@@ -48,6 +48,7 @@ import io.bioimage.modelrunner.bioimageio.description.weights.ModelWeight;
 import io.bioimage.modelrunner.bioimageio.description.weights.WeightFormat;
 import io.bioimage.modelrunner.engine.EngineInfo;
 import io.bioimage.modelrunner.engine.installation.FileDownloader;
+import io.bioimage.modelrunner.utils.Constants;
 import io.bioimage.modelrunner.utils.ZipUtils;
 
 /**
@@ -93,6 +94,10 @@ public class DownloadModel {
      * if they are stored in a zip
      */
     private Consumer<Double> unzippingConsumer;
+    /**
+     * The thread that has called the download method
+     */
+    private Thread parentThread;
     /**
      * String that announces that certain file is just begining to be downloaded
      */
@@ -154,6 +159,7 @@ public class DownloadModel {
 	 */
 	private DownloadModel(ModelDescriptor descriptor, String modelsDir) {
 		this.descriptor = descriptor;
+		this.parentThread = Thread.currentThread();
 		String fname = addTimeStampToFileName(descriptor.getName(), true);
 		this.modelsDir = modelsDir + File.separator + getValidFileName(fname);
 		this.consumer = (String b) -> {
@@ -360,6 +366,18 @@ public class DownloadModel {
 				downloadableLinks.put(ATTACH_KEY + "_" + c ++, (String) attachments.get(kk));
 			} else if (attachments.get(kk) instanceof URL) {
 				downloadableLinks.put(ATTACH_KEY + "_" + c ++, ((URL) attachments.get(kk)).toString());
+			} else if (attachments.get(kk) instanceof Map) {
+				Map <String, Object> nFilesMap = (Map<String, Object>) attachments.get(kk);
+				for (String jj : nFilesMap.keySet()) {
+					if (nFilesMap.get(jj) instanceof String && checkURL((String) nFilesMap.get(jj)))
+						downloadableLinks.put(ATTACH_KEY + "_" + c ++, (nFilesMap.get(jj)).toString());
+				}
+			} else if (attachments.get(kk) instanceof List) {
+				List <Object> nFilesList = (List<Object>) attachments.get(kk);
+				for (Object jj : nFilesList) {
+					if (jj instanceof String && checkURL((String) jj))
+						downloadableLinks.put(ATTACH_KEY + "_" + c ++, jj.toString());
+				}
 			}
 		}
 	}
@@ -454,10 +472,11 @@ public class DownloadModel {
 			throw new IOException("The provided directory where the model is going to "
 					+ "be downloaded does not exist and cannot be created ->" + modelsDir);
 		for (int i = 0; i < getListOfLinks().size(); i ++) {
-        	if (Thread.interrupted())
+        	if (Thread.currentThread().isInterrupted() || !this.parentThread.isAlive()) {
                 throw new InterruptedException("Interrupted before downloading the remaining files: "
             		+ Arrays.toString(IntStream.range(i, getListOfLinks().size())
             									.mapToObj(j -> getListOfLinks().get(j)).toArray()));
+        	}
 			String item = getListOfLinks().get(i);
 			String fileName = getFileNameFromURLString(item);
 			downloadFileFromInternet(item, new File(modelsDir, fileName));
@@ -497,6 +516,8 @@ public class DownloadModel {
 	 * @throws MalformedURLException if the String does not correspond to an URL
 	 */
 	public static String getFileNameFromURLString(String str) throws MalformedURLException {
+		if (str.startsWith(Constants.ZENODO_DOMAIN))
+			str = str.substring(0, str.length() - Constants.ZENODO_ANNOYING_SUFFIX.length());
 		URL url = new URL(str);
 		return new File(url.getPath()).getName();
 	}
@@ -520,7 +541,7 @@ public class DownloadModel {
 			// Send the correct parameters to the progress screen
 			FileDownloader downloader = new FileDownloader(rbc, fos);
 			consumer.accept(START_DWNLD_STR + targetFile + FILE_SIZE_STR + map.get(downloadURL));
-			downloader.call();
+			downloader.call(this.parentThread);
 			consumer.accept(END_DWNLD_STR);
 		} catch (IOException e) {
 			consumer.accept(DOWNLOAD_ERROR_STR);
@@ -528,6 +549,9 @@ public class DownloadModel {
 						+ "JDLL will continue with the download but the model might be "
 						+ "downloaded incorrectly.";
 			new IOException(msg, e).printStackTrace();
+		} catch (InterruptedException e) {
+			consumer.accept(DOWNLOAD_ERROR_STR);
+			System.out.println("Download interrupted at file: " + downloadURL);
 		} finally {
 			try {
 				if (fos != null)

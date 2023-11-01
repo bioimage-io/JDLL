@@ -13,21 +13,22 @@
 # limitations under the License.
 # ============================================================================
 
-"""Jython script that downloads the wanted model from the Bioimage.io repository,
+"""Jython script that downloads the wanted Pytorch model from the Bioimage.io repository,
 downloads the engine and executes it on the sample image.
 The example model downloaded is:
- - B. Sutilist bacteria segmentation - Widefield microscopy - 2D UNet
-and can be found at: https://bioimage.io/#/?tags=B.%20Sutilist%20bacteria%20segmentation%20-%20Widefield%20microscopy%20-%202D%20UNet&id=10.5281%2Fzenodo.7261974
+ - Mitochondria resolution enhancement Wasserstein GAN
+and can be found at: https://bioimage.io/#/?type=all&tags=Mitochondria%20resolution%20enhancement%20Wasserstein%20GAN&id=10.5281%2Fzenodo.7786492
 
 To run this script with the default parameters:
-	python example-run-model-in-fiji.py
+	python example-run-pytorch-model-in-fiji.py
+
 
 """
 from io.bioimage.modelrunner.engine.installation import EngineInstall
 from io.bioimage.modelrunner.bioimageio import BioimageioRepo
 from io.bioimage.modelrunner.model import Model
 from io.bioimage.modelrunner.tensor import Tensor
-from io.bioimage.modelrunner.transformations import ScaleRangeTransformation
+from io.bioimage.modelrunner.versionmanagement import AvailableEngines
 
 import sys
 import os
@@ -40,7 +41,7 @@ from net.imglib2.view import Views
 
 models_path = os.path.join(os. getcwd(), "models")
 engine_path = os.path.join(os. getcwd(), "engines")
-bmzModelName = "B. Sutilist bacteria segmentation - Widefield microscopy - 2D UNet"
+bmzModelName = "Mitochondria resolution enhancement Wasserstein GAN"
 
 if not os.path.exists(models_path) or not os.path.isdir(models_path):
     os.makedirs(models_path)
@@ -57,8 +58,10 @@ if not os.path.exists(engine_path) or not os.path.isdir(engine_path):
     os.makedirs(engine_path)
 
 print("Installing JDLL engine")
-success = EngineInstall.installEngineWithArgsInDir("tensorflow", 
-						"2.7.0", True, False, engine_path)
+supportedList = AvailableEngines.getEnginesForOsByParams("pytorch", "1.13.1", True, None)
+gpu = supportedList[0].getGPU()
+success = EngineInstall.installEngineWithArgsInDir("pytorch", 
+						"1.13.1", True, gpu, engine_path)
 if (success):
 	print("Engine correctly installed at: " + engine_path)
 else:
@@ -68,20 +71,13 @@ imp = IJ.openImage(os.path.join(model_fn, "sample_input_0.tif"))
 imp.show()
 
 wrapImg = ImageJFunctions.convertFloat(imp)
-wrapImg = Views.permute(wrapImg, 0, 1)
+wrapImg = Views.addDimension(wrapImg, 0, 0)
 wrapImg = Views.addDimension(wrapImg, 0, 0)
 wrapImg = Views.permute(wrapImg, 0, 2)
-wrapImg = Views.addDimension(wrapImg, 0, 0)
+wrapImg = Views.permute(wrapImg, 1, 3)
 
-inputTensor = Tensor.build("input_1", "bxyc", wrapImg)
-print("Pre-process input tensor")
-transform = ScaleRangeTransformation()
-transform.setMinPercentile(1)
-transform.setMaxPercentile(99.8)
-transform.setMode("per_sample")
-transform.setAxes("xyc")
-transform.applyInPlace(inputTensor)
-outputTensor = Tensor.buildEmptyTensor("conv2d_19", "bxyc")
+inputTensor = Tensor.build("input", "bcxy", wrapImg)
+outputTensor = Tensor.buildEmptyTensor("output", "bcxy")
 
 
 model = Model.createBioimageioModel(model_fn, engine_path)
@@ -96,5 +92,3 @@ model.closeModel()
 
 inputTensor.close()
 outputTensor.close()
-
-

@@ -23,9 +23,9 @@
 package io.bioimage.modelrunner.engine;
 
 import java.io.File;
+import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.net.MalformedURLException;
-import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Enumeration;
@@ -116,12 +116,12 @@ public class EngineLoader extends ClassLoader
 	 * @param engineInfo
 	 *            object containing all the needed info to load a Deep LEarning
 	 *            framework
-	 * @throws LoadEngineException
-	 *             if there are errors loading the DL framework
-	 * @throws Exception
-	 *             if the DL engine does not contain all the needed libraries
+	 * @throws MalformedURLException if the JAR files are not well defined in the .json file
+	 * @throws IOException if there is any error finding the engines in the system
+	 * @throws IllegalStateException if any of the engines has been incorrectly modified
+	 * @throws LoadEngineException if there is any error loading the DL framework
 	 */
-	private EngineLoader( ClassLoader classloader, EngineInfo engineInfo ) throws LoadEngineException, Exception
+	private EngineLoader( ClassLoader classloader, EngineInfo engineInfo ) throws LoadEngineException, MalformedURLException, IllegalStateException, IOException
 	{
 		super();
 		this.baseClassloader = classloader;
@@ -149,13 +149,12 @@ public class EngineLoader extends ClassLoader
 	 *            the path to the directory where all the JARs needed to load
 	 *            the corresponding Deep Learning framework (engine) are stored
 	 * @return the ClassLoader corresponding to the wanted Deep Learning version
-	 * @throws LoadEngineException
-	 *             if there are errors loading the DL framework
-	 * @throws Exception
-	 *             if the DL engine does not contain all the needed libraries
+	 * @throws MalformedURLException if the JAR files are not well defined in the .json file
+	 * @throws IOException if there is any error finding the engines in the system
+	 * @throws IllegalStateException if any of the engines has been incorrectly modified
+	 * @throws LoadEngineException if there is any error loading the engines
 	 */
-	public static EngineLoader createEngine( ClassLoader classloader, EngineInfo engineInfo )
-			throws LoadEngineException, Exception
+	public static EngineLoader createEngine( ClassLoader classloader, EngineInfo engineInfo ) throws MalformedURLException, IllegalStateException, LoadEngineException, IOException
 	{
 		return new EngineLoader( classloader, engineInfo );
 	}
@@ -164,24 +163,11 @@ public class EngineLoader extends ClassLoader
 	 * Load the needed JAR files into a child ClassLoader of the
 	 * ContextClassLoader.The JAR files needed are the JARs that contain the
 	 * engine and the JAR containing this class
-	 * 
-	 * @throws URISyntaxException
-	 *             if there is an error creating an URL
-	 * @throws MalformedURLException
-	 *             if theURL is incorrect
-	 * @throws InvocationTargetException if there is 
-	 * 	any error creating the instance of the engine with reflect
-	 * @throws IllegalArgumentException if there is any error in any argument
-	 * @throws IllegalAccessException if the class to load cannot be accessed
-	 * @throws SecurityException if there is any security exception loading the class with reflect
-	 * @throws NoSuchMethodException if the wanted method to load is not found
-	 * @throws ClassNotFoundException if the class that wants to be loaded is not found
-	 * @throws Exception if there is any other possible exception, this one should not happen
+	 * @throws MalformedURLException if the JAR files are not well defined in the .json file
+	 * @throws IOException if there is any error finding the engines in the system
+	 * @throws IllegalStateException if any of the engines has been incorrectly modified
 	 */
-	private void loadClasses()
-			throws URISyntaxException, MalformedURLException, ClassNotFoundException, NoSuchMethodException,
-			SecurityException, IllegalAccessException, IllegalArgumentException, InvocationTargetException,
-			Exception
+	private void loadClasses() throws MalformedURLException, IllegalStateException, IOException
 	{
 		// If the ClassLoader was already created, use it.
 		// As tf2 is loaded in a separate process, as many versions as we want can be loaded

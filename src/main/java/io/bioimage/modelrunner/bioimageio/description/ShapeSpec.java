@@ -24,6 +24,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import io.bioimage.modelrunner.bioimageio.description.exceptions.ModelSpecsException;
 import io.bioimage.modelrunner.utils.YAMLUtils;
 
 /**
@@ -57,10 +58,10 @@ public class ShapeSpec
      * @param input
      *        True if it is an input shape. False if it's an output shape descriptor.
      * @return The shape specification instance.
-     * @throws Exception if any of the rdf.yaml does not comply the requirements
+     * @throws ModelSpecsException if any of the rdf.yaml does not comply the requirements
      */
     @SuppressWarnings("unchecked")
-    public static ShapeSpec build(Object shapeElem, boolean input) throws Exception
+    public static ShapeSpec build(Object shapeElem, boolean input) throws ModelSpecsException
     {
         ShapeSpec shape = new ShapeSpec();
         shape.input = input;
@@ -172,12 +173,12 @@ public class ShapeSpec
      * always be divisible by 0.5
      * @param offset
      * 	the output offset
-     * @throws Exception if the offset is not divisible by 0.5
+     * @throws ModelSpecsException if the offset is not divisible by 0.5
      */
-    public void setOffset(float[] offset) throws Exception {
+    public void setOffset(float[] offset) throws ModelSpecsException  {
     	for (float ff : offset) {
     		if (ff % 0.5 != 0) {
-    			throw new Exception("Invalid output specifications. "
+    			throw new ModelSpecsException("Invalid output specifications. "
     					+ "Every output offset should be divisible by 0.5");
     		}
     	}

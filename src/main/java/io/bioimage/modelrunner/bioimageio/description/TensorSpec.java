@@ -25,6 +25,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.IntStream;
 
+import io.bioimage.modelrunner.bioimageio.description.exceptions.ModelSpecsException;
 import io.bioimage.modelrunner.tiling.PatchGridCalculator;
 import io.bioimage.modelrunner.utils.YAMLUtils;
 
@@ -110,10 +111,10 @@ public class TensorSpec {
      * @param input
      *        Whether it is an input (true) or an output (false) tensor.
      * @return The tensor specification instance.
-     * @throws Exception if any of the fields does not fulfill the requirements
+     * @throws ModelSpecsException if any of the fields does not fulfill the requirements
      */
     @SuppressWarnings("unchecked")
-    public static TensorSpec build(Map<String, Object> tensorSpecMap, boolean input) throws Exception
+    public static TensorSpec build(Map<String, Object> tensorSpecMap, boolean input) throws ModelSpecsException
     {
         TensorSpec tensor = new TensorSpec();
         tensor.name = (String) tensorSpecMap.get("name");
@@ -236,20 +237,8 @@ public class TensorSpec {
     	return minStr + "    " + stepStr;
     }
     
-    /**
-     * REturn an array containing the optimal patch for the given sequence.
-     * An optimal patch has the arbitrary requirement of not being bigger than
-     * 10^6 pixels
-     * @param seqSize
-     * 	array containing the size of the sequence with the axes order "xyczb"
-     * @return the array with the pathc of interest
-     */
-    public int[] getOptimalPatch(int[] seqSize) {
-    	String seqSizeAxes = "XYCZB";
-    	return getOptimalPatch(seqSize, seqSizeAxes);
-    }
-    
-    /**
+    /** TODO this method does not realy required to be non-static because the instance already
+     * contains the axes order, maybe separate two methods
      * REturn an array containing the optimal patch for the given sequence.
      * @param seqSize
      * 	array containing the size of the sequence with the axes order defined
@@ -343,41 +332,96 @@ public class TensorSpec {
     
     /**
      * Validates if a given patch array fulfills the conditions specified in the yaml file.
-     * If it is valid, it sets the value as the {@link #processingPatch}
-     * @param patch
-     * 	the patch array to validate
+     * To check whether the tile size works also for a given image, 
+     * please use {@link #setTileSizeForTensorAndImageSize(int[], int[])}
+     * @param tileSize
+     * 	the patch array size to validate, it has to be in the axes order of the tensor
      * @throws Exception if the patch does not comply with the constraints specified
      */
-    public void validate(int[] patch) throws Exception {
+    public void validate(int[] tileSize) throws Exception {
     	// VAlidate that the minimum size and step constraints are fulfilled
-    	validateStepMin(patch);
-    	this.processingPatch = patch;
+    	validateStepMin(tileSize);
     }
     
     /**
      * Validates if a given patch array fulfills the conditions specified in the yaml file.
-     * If it is valid, it sets the value as the {@link #processingPatch}
-     * @param patch
-     * 	the patch array to validate
-     * @param seqSize
-     * 	array containing the dimensions of the sequence that is going to be processed
-     * 	seqSize is defined following the Icy axes order (xyztc)
+     * To check whether the tile size works also for a given image, 
+     * please use {@link #setTileSizeForTensorAndImageSize(int[], int[])}
+     * @param tileSize
+     * 	the patch array size to validate, it has to be in the axes order of the tensor
+     * @throws Exception if the patch does not comply with the constraints specified
+     */
+    public void validate(int[] tileSize, String tileAxesOrder) throws Exception {
+    	tileSize = PatchGridCalculator.arrayToWantedAxesOrderAddOnes(tileSize, tileAxesOrder, this.axes);
+    	// VAlidate that the minimum size and step constraints are fulfilled
+    	validateStepMin(tileSize);
+    }
+    
+    /**
+     * Sets the tile size to process the given tensor regarding that the tensor
+     * has the dimensions specified by the second argument.
+     * If also validates if the tile size selected fufils the requirements
+     * specified in the bioimage.io rdf.yaml file.
+     * Both arguments must follow the same axis order of this tensor.
+     * If everything is correct, sets {@link #processingPatch} to the first argument.
+     * @param tileSize
+     * 	the size of the tile/patch in which the main tensor is going to be divided.
+     * 	It should follow the tensor axes order as defined in the Bioimage.io rdf.yaml file
+     * @param tensorImageSize
+     * 	size of the image that is used for the tensor.
+     * 	It should follow the tensor axes order as defined in the Bioimage.io rdf.yaml file
      * @throws Exception if the patch size is not able to 
      * 	fulfill the requirements of the tensor
      */
-    public void validate(int[] patch, int[] seqSize) throws Exception {
-    	// Convert the Icy sequence array dims into the tensor axes order
-    	seqSize = PatchGridCalculator.icySeqAxesOrderToWantedOrder(seqSize, axes);
+    public void setTileSizeForTensorAndImageSize(int[] tileSize, int[] tensorImageSize) throws Exception {
+    	if (tileSize.length != tensorImageSize.length)
+    		throw new Exception("tileSize and tensorImageSize need to have the same number of dimensions.");
     	// If tiling is not allowed, the patch array needs to be equal to the
     	// optimal patch
     	if (!tiling) {
-    		validateNoTiling(patch, seqSize);
+    		validateNoTiling(tileSize, tensorImageSize);
     	}
     	// VAlidate that the minimum size and step constraints are fulfilled
-    	validateStepMin(patch);
+    	validateStepMin(tileSize);
     	// Finally validate that the sequence size complies with the patch size selected
-    	validatePatchVsImage(patch, seqSize);
-    	this.processingPatch = patch;
+    	validatePatchVsImage(tileSize, tensorImageSize);
+    	this.processingPatch = tileSize;
+    }
+    
+    /**
+     * Sets the tile size to process the given tensor regarding that the tensor
+     * has the dimensions specified by the second argument.
+     * If also validates if the tile size selected fufils the requirements
+     * specified in the bioimage.io rdf.yaml file.
+     * Both arguments must follow the same axis order of this tensor.
+     * If everything is correct, sets {@link #processingPatch} to the first argument.
+     * @param tileSize
+     * 	the size of the tile/patch in which the main tensor is going to be divided
+     * @param tileAxesOrder
+     * 	axes order of the tile provided
+     * @param tensorImageSize
+     * 	size of the image that is used for the tensor.
+     * @throws Exception if the patch size is not able to 
+     * 	fulfill the requirements of the tensor
+     */
+    public void setTileSizeForTensorAndImageSize(int[] tileSize, String tileAxesOrder,
+    		int[] tensorImageSize, String imageAxesOrder) throws Exception {
+    	if (tileSize.length != tileAxesOrder.length())
+    		throw new Exception("tileSize and tileAxesOrder should have the same length.");
+    	if (tensorImageSize.length != imageAxesOrder.length())
+    		throw new Exception("tensorImageSize and imageAxesOrder should have the same length.");
+    	tileSize = PatchGridCalculator.arrayToWantedAxesOrderAddOnes(tileSize, tileAxesOrder, this.axes);
+    	tensorImageSize = PatchGridCalculator.arrayToWantedAxesOrderAddOnes(tensorImageSize, imageAxesOrder, this.axes);
+    	// If tiling is not allowed, the patch array needs to be equal to the
+    	// optimal patch
+    	if (!tiling) {
+    		validateNoTiling(tileSize, tensorImageSize);
+    	}
+    	// VAlidate that the minimum size and step constraints are fulfilled
+    	validateStepMin(tileSize);
+    	// Finally validate that the sequence size complies with the patch size selected
+    	validatePatchVsImage(tileSize, tensorImageSize);
+    	this.processingPatch = tileSize;
     }
 
     
@@ -560,11 +604,13 @@ public class TensorSpec {
      * patch for the selected image
      * @param imSize
      * 	size of the image. The order is Width, Height, Channel, Slices, time
+     * @param axesOrder
+     * 	the axes order of the imSize parameter
      * @return the String containing a patch in the format 256,256,3
      */
-    public String getDisplayableOptimalPatch(int[] imSize) {
+    public String getDisplayableOptimalPatch(int[] imSize, String axesOrder) {
     	// Remove the B axes from the optimal patch size and get the String representation
-    	String patchStr = getDisplayableSizesString(getOptimalPatch(imSize));
+    	String patchStr = getDisplayableSizesString(getOptimalPatch(imSize, axesOrder));
     	return patchStr;
     }
     

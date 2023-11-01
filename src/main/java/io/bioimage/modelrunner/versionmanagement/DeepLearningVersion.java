@@ -20,6 +20,7 @@
 package io.bioimage.modelrunner.versionmanagement;
 
 import java.io.File;
+import java.io.IOException;
 import java.net.MalformedURLException;
 import java.util.Arrays;
 import java.util.List;
@@ -61,11 +62,13 @@ public class DeepLearningVersion
      * @param engineDir
      * 	the engine folder 
      * @return a {@link #DeepLearningVersion()}
-     * @throws Exception if no supported Deep Learning version coincides with the folder provided
+     * @throws IOException if the engine name does not follow the naming convention or the file does not exist
+     * @throws IllegalStateException if there are two engine names sharing the same properties. This should be impossible,
+     * 	and implies that the user has manipulated wrongly the engines
      */
-    public static DeepLearningVersion fromFile(File engineDir) throws Exception {
+    public static DeepLearningVersion fromFile(File engineDir) throws IOException, IllegalStateException {
     	if (!engineDir.isDirectory())
-    		throw new IllegalArgumentException("The file '" + engineDir.getAbsolutePath() + "' does not correspond "
+    		throw new IOException("The file '" + engineDir.getAbsolutePath() + "' does not correspond "
     				+ "to an existing directory.");
     	DeepLearningVersion dlVersion =  new DeepLearningVersion();
     	dlVersion.engineName = engineDir.getName();
@@ -89,16 +92,16 @@ public class DeepLearningVersion
     		dlVersion.setCPU(true);
     		dlVersion.setGPU(true);
     	} else {
-    		throw new IllegalArgumentException("The name of the engine does not follow "
-    				+ "the engine name convention followed by DeepIcy: <name_of_the_engine>-"
+    		throw new IOException("The name of the engine does not follow "
+    				+ "the engine name convention followed by JDLL: <name_of_the_engine>-"
     				+ "<engine_python_version>-<engine_java_version>-<os>-<cpu_if_supported>-"
-    				+ "<gpu_if_supported>.");
+    				+ "<gpu_if_supported>: " + engineDir.getName());
     	}
     	List<DeepLearningVersion> candidateVersions = dlVersion.getCandidates();
     	// If the resources file "availableDLVersions.json" is correct, there will only be
         // one coincidence in the list
         if (candidateVersions.size() != 1)
-        	throw new Exception("There should only one engine in the resources engine specs file '"
+        	throw new IllegalStateException("There should only one engine in the resources engine specs file '"
         			+ Constants.ENGINES_LINK + "' that corresponds to the engine defined by: " 
         			+ dlVersion.engineName);
     	dlVersion.rosetta = candidateVersions.get(0).rosetta;

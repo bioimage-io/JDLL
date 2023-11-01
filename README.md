@@ -14,10 +14,10 @@ JDLL was originally developed by the Icy team as the foundational component for 
 
 1. [Supported engines](https://github.com/bioimage-io/JDLL#supported-engines)
 2. [Quickstart](https://github.com/bioimage-io/JDLL#quickstart)
-3. [Quickstart for developers](https://github.com/bioimage-io/JDLL#quickstart-for-developers)
-4. [Quickstart for analysts/scripting](https://github.com/bioimage-io/JDLL#quickstart-for-analystsscripting)
-5. [Examples for developers](https://github.com/bioimage-io/JDLL#examples)
-6. [Scripting examples](https://github.com/bioimage-io/JDLL#scripting-examples)
+3. [Examples for developers](https://github.com/bioimage-io/JDLL#examples)
+4. [Scripting examples](https://github.com/bioimage-io/JDLL#scripting-examples)
+5. [Quickstart for developers](https://github.com/bioimage-io/JDLL#quickstart-for-developers)
+6. [Quickstart for analysts/scripting](https://github.com/bioimage-io/JDLL#quickstart-for-analystsscripting)
 7. [Acknowledgements](https://github.com/bioimage-io/JDLL#acknowledgements)
 8. [References](https://github.com/bioimage-io/JDLL#references)
 
@@ -34,7 +34,7 @@ Currently, the following frameworks are supported:
 | Tensorflow 2 API 0.5.0 | https://github.com/bioimage-io/tensorflow-2-java-interface-0.5.0 | `tensorflow` or `tensorflow_saved_model_bundle` |
 | Onnx                            | https://github.com/bioimage-io/onnx-java-interface             | `onnx`                                         |
 
-The information about the engines supported currently by JDLL, for which OS and architectures and which JAR files are required for each of the engines is stored in [this json file](https://github.com/bioimage-io/model-runner-java/blob/main/src/main/resources/availableDLVersions.json) and can be found [here](https://github.com/bioimage-io/JDLL/wiki/List-of-supported-engines).
+The information about the engines supported currently by JDLL, for which OS and architectures, their minimum required Java version and which JAR files are required for each of the engines is stored in [this json file](https://github.com/bioimage-io/model-runner-java/blob/main/src/main/resources/availableDLVersions.json) and can be found [here](https://github.com/bioimage-io/JDLL/wiki/List-of-supported-engines).
 
 Note that JDLL will be in **constant development** and that it is open to community collaboration, so **pull requests** to the official repository of JDLL to improve functionality or to add new engines are **very welcomed**.
 
@@ -47,6 +47,21 @@ Due to the dual possibilities of JDLL, there are 2 Quickstarts available dependi
 - [Quickstart for developers](https://github.com/bioimage-io/JDLL#quickstart-for-developers) if the user is interested in the integration of JDLL into their application.
 - [Quickstart for analysts/scripting](https://github.com/bioimage-io/JDLL#quickstart-for-analystsscripting) if the user is interested in creating scripts in Jython that can run DL models easily to improve their processing routines. Not much experience with Python/Jython is required.
 
+      
+   
+# Examples
+
+* [ExampleLoadAndRunModel](https://github.com/bioimage-io/model-runner-java/blob/main/src/main/java/io/bioimage/modelrunner/example/ExampleLoadAndRunModel.java) (PyTorch)
+* [ExampleLoadTensorflow1Tensorflow2](https://github.com/bioimage-io/model-runner-java/blob/main/src/main/java/io/bioimage/modelrunner/example/ExampleLoadTensorflow1Tensorflow2.java)
+* [ExampleDownloadEngine](https://github.com/bioimage-io/JDLL/blob/main/src/main/java/io/bioimage/modelrunner/example/ExampleDownloadEngine.java)
+* [ExampleDownloadModel](https://github.com/bioimage-io/JDLL/blob/main/src/main/java/io/bioimage/modelrunner/example/ExampleDownloadModel.java)
+   
+# Scripting examples
+
+* [example-run-model-in-fiji](https://github.com/bioimage-io/JDLL/blob/main/scripts/example-run-model-in-fiji.py) (Requires to be executed from Fiji, as it uses the application to display the result image, cannot be executed on Apple Silicon computers)
+* [example-run-pytorch-model-in-fiji.py](https://github.com/bioimage-io/JDLL/blob/main/scripts/example-run-pytorch-model-in-fiji.py) (Requires to be executed from Fiji, as it uses the application to display the result image)
+* [example-download-bmz-model](https://github.com/bioimage-io/JDLL/blob/main/scripts/example-download-bmz-model.py)
+* [example-download-engine](https://github.com/bioimage-io/JDLL/blob/main/scripts/example-download-engine.py)
 
 
 # Quickstart for developers
@@ -68,7 +83,7 @@ Download the dependency and include it in your project
    ```xml
    <dependency>
      <groupId>io.bioimage</groupId>
-     <artifactId>dl-runner</artifactId>
+     <artifactId>dl-modelrunner</artifactId>
      <version>0.4.0</version>
    </dependency>
    ```
@@ -118,9 +133,11 @@ JDLL is installed empty. Several models might require different Deep Learning fr
 
 JDLL provides the needed methods to install the wanted engines in an easy manner. Following the above example, find below some code that can be used to install a DL engine. As it can be observed the model that was downloaded [supports Tensorflow 2 and Keras weights](https://github.com/bioimage-io/collection-bioimage-io/blob/19ea59e662410c3ee49b7da184730919336d7568/rdfs/10.5281/zenodo.7261974/7782776/rdf.yaml#L146). Keras is not supported so in order to load and run the model, Tensorflow weights need to be installed.
 
+**Important: Note that not every engine is compatible with every OS and Java version. For example Tensorflow 2.10 is only compatible with Java 11 or higher and Apple Silicon (ARMS64 chips) are only compatible with one version of Tensorflow (Tensorflow 2.7.4) used with Java 11 or newer.**
+
 ```
 String framework = "tensorflow";
-String version = "2.11.0";
+String version = "2.7.0";
 boolean cpu = true;
 boolean gpu = true;
 
@@ -142,7 +159,7 @@ In the example it is shown how simply providing the name of the model of interes
 ```java
 String modelName = "B. Sutilist bacteria segmentation - Widefield microscopy - 2D UNet";
 String enginesDir = "/path/to/wanted/engines/dir";
-boolean installed =  EngineInstall.installEnginesForModelByNameinDir(modelName, enginesDir)
+boolean installed =  EngineInstall.installEnginesForModelByNameinDir(modelName, enginesDir);
 if (installed)
 	System.out.println("Great success!");
 else
@@ -165,20 +182,20 @@ JDLL tensors use ImgLib2 to store the tensor information. In practice, JDLL tens
 
 The example below will show how to create the input and output tensors required to run the [example model](https://bioimage.io/#/?tags=placid-llama&id=10.5281%2Fzenodo.7261974). As per its [rdf.yaml file](https://github.com/bioimage-io/collection-bioimage-io/blob/19ea59e662410c3ee49b7da184730919336d7568/rdfs/10.5281/zenodo.7261974/7782776/rdf.yaml), the model has one input named `input_1`, with `bxyc` axes ([explanation here](https://github.com/bioimage-io/spec-bioimage-io/blob/gh-pages/model_spec_latest.md)) and a required shape of[1, 512, 512, 1]. The ouptut of the model is named `conv2d_19` with with `bxyc` axes and fixed shape [1, 512, 512, 3].
 ```java
-final ImgFactory< FloatType > imgFactory = new ArrayImgFactory<>( new FloatType() );
-final Img< FloatType > img1 = imgFactory.create( new long[] {1, 512, 512, 1} );
+final ImgFactory<FloatType> imgFactory = new ArrayImgFactory<>(new FloatType());
+final Img<FloatType> img1 = imgFactory.create(new long[]{1, 512, 512, 1});
 // Create the input tensor with the nameand axes given by the rdf.yaml file
 // and add it to the list of input tensors
 Tensor<FloatType> inpTensor = Tensor.build("input_1", "bxyc", img1);
 
 // Ouput tensors can be created empty, if the output shape is not known.
 // Note that this method does not preallocate memory for the output tensor
-Tensor<T> outputEmptyTensor = Tensor.buildEmptyTensor("conv2d_19", "bxyc");
+Tensor<FloatType> outputEmptyTensor = Tensor.buildEmptyTensor("conv2d_19", "bxyc");
 
 // Or ouptut tensors can also be built blank, to pre-allocate memory
 // if the shape and data type are known.
 Tensor<FloatType> outputBlankTensor = Tensor.buildBlankTensor("conv2d_19",
-			"bxyc", new long[] {1, 512, 512, 3}, new FloatType());
+                "bxyc", new long[]{1, 512, 512, 3}, new FloatType());
 
 ```
 
@@ -195,7 +212,7 @@ An example of defining the `EngineInfo` instance needed to load a model is shown
 Note that `String enginesDir` is the directory where the wanted engines have been installed. [Click here and look at the example in the redirected section](https://github.com/bioimage-io/JDLL#2-installing-dl-engines).
 ```java
 String framework = "tensorflow";
-String version = "2.11.0";
+String version = "2.7.0";
 boolean cpu = true;
 boolean gpu = true;
 String enginesDir = "/path/to/wanted/engines/dir";
@@ -228,7 +245,7 @@ Then with the arguments `String modelFolder`, `String modelSource` and the previ
 String modelFolder = "path/to/models/dir/B. Sutilist bacteria segmentation - Widefield microscopy - 2D UNet";
 String modelSource = null; // Not needed in Tensorflow
 
-Model model = Model.create(modelFolder, modelSource, enigneInfoCompat);
+Model model = Model.createDeepLearningModel(modelFolder, modelSource, enigneInfoCompat);
 model.loadModel();
 
 System.out.println("Great sucess!");
@@ -265,8 +282,8 @@ More information about loading models and models in general can be found in [thi
 ## 5. Running the model
 Once the model has been loaded and the input and output tensors have been created. Running the model is simple. The input tensors should be added to a `List<?>` in the same order the model expects. Same for the ouptuts in another `List<?>`.
 ```
-List<Tensor<?>> inputList = new ArrayList<List<Tensor<?>>>();
-List<Tensor<?>> outputputList = new ArrayList<List<Tensor<?>>>();
+List<Tensor<?>> inputList = new ArrayList<Tensor<?>>();
+List<Tensor<?>> outputputList = new ArrayList<Tensor<?>>();
 
 inputList.add(inputTensor);
 outputputList.add(outputEmptyTensor);
@@ -408,11 +425,13 @@ JDLL is installed empty. Several models might require different Deep Learning fr
 
 JDLL provides the needed methods to install the wanted engines in an easy manner. Following the above example, find below some code that can be used to install a DL engine. As it can be observed the model that was downloaded [supports Tensorflow 2 and Keras weights](https://github.com/bioimage-io/collection-bioimage-io/blob/19ea59e662410c3ee49b7da184730919336d7568/rdfs/10.5281/zenodo.7261974/7782776/rdf.yaml#L146). Keras is not supported so in order to load and run the model, Tensorflow weights need to be installed.
 
+**Important: Note that not every engine is compatible with every OS and Java version. For example Tensorflow 2.10 is only compatible with Java 11 or higher and Apple Silicon (ARMS64 chips) are only compatible with one version of Tensorflow (Tensorflow 2.7.4) used with Java 11 or newer. This means that TENSORFLOW CANNOT BE USED IN FIJI IN APPLE SILICON.**
+
 ```python
 from io.bioimage.modelrunner.engine.installation import EngineInstall
 
 framework = "tensorflow"
-version = "2.11.0"
+version = "2.7.0"
 cpu = True
 gpu = True
 
@@ -509,7 +528,7 @@ wrapImg = ImageJFunctions.convertFloat(imp)
 # Permute from "xy" to "yx"
 wrapImg = Views.permute(wrapImg, 0, 1)
 # Add one dimension to "yxb", from (512, 512) to (512, 512, 1)
-wrapImg = Views.addDimension(wrapImg, 0, 0
+wrapImg = Views.addDimension(wrapImg, 0, 0)
 # Permute from "yxb" and (512, 512, 1) to "bxy" and (1, 512, 512)
 wrapImg = Views.permute(wrapImg, 0, 2)
 # Add one dimension to get "bxyc", from (1, 512, 512) to (1, 512, 512, 1)
@@ -544,7 +563,7 @@ Note that `enginesDir` is the directory where the wanted engines have been insta
 from io.bioimage.modelrunner.engine import EngineInfo
 
 framework = "tensorflow"
-version = "2.11.0"
+version = "2.7.0"
 cpu = True
 gpu = True
 enginesDir = "/path/to/wanted/engines/dir"
@@ -558,7 +577,7 @@ In order to require a compatible engine, not the exact one:
 from io.bioimage.modelrunner.engine import EngineInfo
 
 framework = "tensorflow"
-version = "2.11.0"
+version = "2.10.0"
 cpu = True
 gpu = True
 enginesDir = "/path/to/wanted/engines/dir"
@@ -581,7 +600,7 @@ from io.bioimage.modelrunner.model import Model
 modelFolder = "path/to/models/dir/B. Sutilist bacteria segmentation - Widefield microscopy - 2D UNet"
 modelSource = None # Not needed in Tensorflow
 
-model = Model.create(modelFolder, modelSource, enigneInfoCompat)
+model = Model.createDeepLearningModel(modelFolder, modelSource, enigneInfoCompat)
 model.loadModel()
 
 print("Great sucess!")
@@ -642,25 +661,11 @@ Ouptut tensor after inference is empty: false
 ## 6. Closing the model and the tensors
 Models and tensors need to be closed to be released and free the memory that they were using
 ```python
-model.close()
+model.closeModel()
 inputTensor.close()
 outputBlankTensor.close()
 outputEmptyTensor.close()
 ```
-      
-   
-# Examples
-
-* [ExampleLoadAndRunModel](https://github.com/bioimage-io/model-runner-java/blob/main/src/main/java/io/bioimage/modelrunner/example/ExampleLoadAndRunModel.java) (PyTorch)
-* [ExampleLoadTensorflow1Tensorflow2](https://github.com/bioimage-io/model-runner-java/blob/main/src/main/java/io/bioimage/modelrunner/example/ExampleLoadTensorflow1Tensorflow2.java)
-* [ExampleDownloadEngine](https://github.com/bioimage-io/JDLL/blob/main/src/main/java/io/bioimage/modelrunner/example/ExampleDownloadEngine.java)
-* [ExampleDownloadModel](https://github.com/bioimage-io/JDLL/blob/main/src/main/java/io/bioimage/modelrunner/example/ExampleDownloadModel.java)
-   
-# Scripting examples
-
-* [example-run-model-in-fiji](https://github.com/bioimage-io/JDLL/blob/main/scripts/example-run-model-in-fiji.py) (Requires to be executed from Fiji, as it uses the application to display the result image)
-* [example-download-bmz-model](https://github.com/bioimage-io/JDLL/blob/main/scripts/example-download-bmz-model.py)
-* [example-download-engine](https://github.com/bioimage-io/JDLL/blob/main/scripts/example-download-engine.py)
 
 
 # Acknowledgements.

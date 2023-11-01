@@ -27,6 +27,9 @@ import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.List;
 
+import io.bioimage.modelrunner.utils.CommonUtils;
+import io.bioimage.modelrunner.utils.Constants;
+
 /**
  * Define each of the sample inputs spedified in the yaml file
  * @author Carlos Garcia Lopez de Haro
@@ -45,6 +48,10 @@ public class SampleImage {
 	 * Path to the sample image in the local machine
 	 */
 	private Path path;
+	/**
+	 * Name of the test artifact file
+	 */
+	private String filename;
 	/**
 	 * List of allowed extensions for the sample images
 	 */
@@ -68,7 +75,16 @@ public class SampleImage {
         	return null;
         sampleInput.createSampleInputURL();
         sampleInput.createSampleInputPath();
+        sampleInput.createName();
         return sampleInput;        
+    }
+    
+    private void createName() {
+		try {
+			filename = CommonUtils.getFileNameFromURLString(string);
+		} catch (MalformedURLException e) {
+			filename = new File(string).getName();
+		}
     }
     
     /**
@@ -92,6 +108,8 @@ public class SampleImage {
     		return null;
     	if (string.lastIndexOf(".") == -1)
     		return null;
+    	if (string.startsWith(Constants.ZENODO_DOMAIN) && string.endsWith(Constants.ZENODO_ANNOYING_SUFFIX))
+    		return string.substring(string.lastIndexOf("."), string.length() - Constants.ZENODO_ANNOYING_SUFFIX.length());
     	return string.substring(string.lastIndexOf("."));
     }
     
@@ -125,8 +143,7 @@ public class SampleImage {
     public void addLocalModelPath(Path p) {
     	if (!p.toFile().exists())
     		return;
-    	String name = new File(string).getName();
-    	Path nPath = p.resolve(name);
+    	Path nPath = p.resolve(filename);
     	if (nPath.toFile().exists())
     		path = nPath;
     }

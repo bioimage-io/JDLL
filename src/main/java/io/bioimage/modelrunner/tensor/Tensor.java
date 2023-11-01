@@ -374,13 +374,16 @@ public final class Tensor< T extends RealType< T > & NativeType< T > >
 	/**
 	 * Retrieve tensor with the wanted name from a list of tensors
 	 *
+	 * @param <T>
+	 * 			  the possible ImgLib2 datatypes that the ImgLib2 img that correspond to each tensor can have
 	 * @param lTensors
 	 *            list of tensors
 	 * @param name
 	 *            name of the tensor of interest
 	 * @return the tensor of interest
 	 */
-	public static Tensor< ? > getTensorByNameFromList( final List< Tensor< ? > > lTensors, final String name )
+	public static <T extends NativeType<T> & RealType<T>> 
+	Tensor<T> getTensorByNameFromList( final List<Tensor<T>> lTensors, final String name )
 	{
 		return lTensors.stream().filter( pp -> !pp.isClosed() && pp.getName() != null && pp.getName().equals( name ) )
 				.findAny().orElse( null );

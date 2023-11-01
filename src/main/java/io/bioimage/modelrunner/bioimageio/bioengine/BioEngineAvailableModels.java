@@ -26,6 +26,7 @@ import java.io.InputStreamReader;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 import javax.net.ssl.HttpsURLConnection;
@@ -151,8 +152,10 @@ public class BioEngineAvailableModels {
 	 * @return true if supported, false otherwise
 	 */
 	public boolean isModelSupportedByBioengine(String modelID) {
+		Objects.requireNonNull(modelID, "The argument 'modelID cannot be null.");
 		LinkedTreeMap<String, String> isFound = collection.stream()
-				.filter(x -> modelID.startsWith(x.get(ID_KEY)+ "/")).findFirst().orElse(null);
+				.filter(x -> modelID.startsWith(x.get(ID_KEY) + "/") 
+						|| modelID.equals(x.get(ID_KEY))).findFirst().orElse(null);
 		if (isFound == null)
 			return false;
 		return true;
