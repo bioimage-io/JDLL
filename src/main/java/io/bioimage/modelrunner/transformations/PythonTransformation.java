@@ -20,12 +20,18 @@
 package io.bioimage.modelrunner.transformations;
 
 import java.io.File;
+import java.io.IOException;
 import java.nio.file.Paths;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Calendar;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+
+import org.apposed.appose.Conda;
 
 import io.bioimage.modelrunner.runmode.RunMode;
 import io.bioimage.modelrunner.runmode.ops.GenericOp;
@@ -110,7 +116,17 @@ public class PythonTransformation extends AbstractTensorTransformation
 		String minicondaBase = Paths.get(System.getProperty("user.home"), ".local", "share", "appose", "miniconda").toString();
 		String envPath = minicondaBase + File.separator + "envs" + File.separator + envName;
 		if (!(new File(envPath).isDirectory())) {
-				// TODO install env
+				try {
+					Conda conda = new Conda(minicondaBase);
+					final List< String > cmd = 
+							new ArrayList<>( Arrays.asList( "env", "create", "--prefix",
+									minicondaBase + File.separator + "envs", "--force", 
+									"-n", envName, "--file", envYaml, "-y" ) );
+					conda.runConda( cmd.stream().toArray( String[]::new ) );
+				} catch (IOException | InterruptedException e1) {
+					e1.printStackTrace();
+					return (Tensor<FloatType>) input;
+				}
 		}
 		
 		GenericOp op = GenericOp.create(envPath, this.script, this.method, this.nOutputs);
