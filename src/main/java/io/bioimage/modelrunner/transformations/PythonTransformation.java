@@ -40,6 +40,7 @@ import io.bioimage.modelrunner.utils.YAMLUtils;
 import net.imglib2.type.NativeType;
 import net.imglib2.type.numeric.RealType;
 import net.imglib2.type.numeric.real.FloatType;
+import net.imglib2.util.Cast;
 
 public class PythonTransformation extends AbstractTensorTransformation
 {
@@ -125,7 +126,7 @@ public class PythonTransformation extends AbstractTensorTransformation
 					conda.runConda( cmd.stream().toArray( String[]::new ) );
 				} catch (IOException | InterruptedException e1) {
 					e1.printStackTrace();
-					return (Tensor<FloatType>) input;
+					return Cast.unchecked(input);
 				}
 		}
 		
@@ -143,7 +144,7 @@ public class PythonTransformation extends AbstractTensorTransformation
 			rm = RunMode.createRunMode(op);
 		} catch (Exception e1) {
 			e1.printStackTrace();
-			return (Tensor<FloatType>) input;
+			return Cast.unchecked(input);
 		}
 		Map<String, Object> resMap = rm.runOP();
 		return (Tensor<FloatType>) resMap.entrySet().stream()

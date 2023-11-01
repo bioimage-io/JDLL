@@ -51,6 +51,7 @@ import net.imglib2.type.NativeType;
 import net.imglib2.type.numeric.RealType;
 import net.imglib2.type.numeric.integer.UnsignedShortType;
 import net.imglib2.type.numeric.real.FloatType;
+import net.imglib2.util.Cast;
 import net.imglib2.util.Util;
 import net.imglib2.view.IntervalView;
 import net.imglib2.view.Views;
@@ -706,7 +707,7 @@ public class StardistFineTuneJdllOp implements OpInterface {
 		if (!(Util.getTypeFromInterval(trainingSamples.getData()) instanceof FloatType)) {
     		this.trainingSamples = Tensor.createCopyOfTensorInWantedDataType(trainingSamples, new FloatType());
     	} else {
-    		this.trainingSamples = (Tensor<FloatType>) trainingSamples;
+    		this.trainingSamples = Cast.unchecked(trainingSamples);
     	}
 	}
 	
@@ -716,7 +717,7 @@ public class StardistFineTuneJdllOp implements OpInterface {
     	if (!(Util.getTypeFromInterval(groundTruth.getData()) instanceof UnsignedShortType)) {
     		this.groundTruth = Tensor.createCopyOfTensorInWantedDataType(groundTruth, new UnsignedShortType());
     	} else {
-    		this.groundTruth = (Tensor<UnsignedShortType>) groundTruth;
+    		this.groundTruth = Cast.unchecked(groundTruth);
     	}
 	}
 	

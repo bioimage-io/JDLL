@@ -14,6 +14,7 @@ import net.imglib2.type.numeric.integer.ByteType;
 import net.imglib2.type.numeric.integer.IntType;
 import net.imglib2.type.numeric.real.DoubleType;
 import net.imglib2.type.numeric.real.FloatType;
+import net.imglib2.util.Cast;
 import net.imglib2.util.Util;
 import net.imglib2.view.IntervalView;
 
@@ -29,13 +30,13 @@ public class DecodeImgLib2 {
 	public static < T extends RealType< T > & NativeType< T > >
 				byte[] imglib2ToByteArray(RandomAccessibleInterval<T> rai) {
     	if (Util.getTypeFromInterval(rai) instanceof ByteType) {
-    		return buildByte((RandomAccessibleInterval<ByteType>) rai);
+    		return Cast.unchecked(buildByte(Cast.unchecked(rai)));
     	} else if (Util.getTypeFromInterval(rai) instanceof IntType) {
-    		return buildInt((RandomAccessibleInterval<IntType>) rai);
+    		return Cast.unchecked(buildInt(Cast.unchecked(rai)));
     	} else if (Util.getTypeFromInterval(rai) instanceof FloatType) {
-    		return buildFloat((RandomAccessibleInterval<FloatType>) rai);
+    		return Cast.unchecked(buildFloat(Cast.unchecked(rai)));
     	} else if (Util.getTypeFromInterval(rai) instanceof DoubleType) {
-    		return buildDouble((RandomAccessibleInterval<DoubleType>) rai);
+    		return Cast.unchecked(buildDouble(Cast.unchecked(rai)));
     	} else {
             throw new IllegalArgumentException("The image has an unsupported type: " + Util.getTypeFromInterval(rai).getClass().toString());
     	}

@@ -42,6 +42,7 @@ import net.imglib2.type.numeric.integer.UnsignedIntType;
 import net.imglib2.type.numeric.integer.UnsignedShortType;
 import net.imglib2.type.numeric.real.DoubleType;
 import net.imglib2.type.numeric.real.FloatType;
+import net.imglib2.util.Cast;
 
 /**
  * A {@link Img} builder from {@link ByteBuffer} objects
@@ -97,31 +98,31 @@ public final class ListToImgLib2 {
 		switch (dtype)
         {
 	    	case "int8":
-	            data = (Img<T>) buildInt8(array, shape);
+	            data = Cast.unchecked(buildInt8(array, shape));
 	            break;
 	    	case "uint8":
-	            data = (Img<T>) buildUint8(array, shape);
+	            data = Cast.unchecked(buildUint8(array, shape));
 	            break;
 	    	case "int16":
-	            data = (Img<T>) buildInt16(array, shape);
+	            data = Cast.unchecked(buildInt16(array, shape));
 	            break;
 	    	case "uint16":
-	            data = (Img<T>) buildUint16(array, shape);
+	            data = Cast.unchecked(buildUint16(array, shape));
 	            break;
             case "int32":
-            	data = (Img<T>) buildInt32(array, shape);
+            	data = Cast.unchecked(buildInt32(array, shape));
                 break;
             case "uint32":
-            	data = (Img<T>) buildUint32(array, shape);
+            	data = Cast.unchecked(buildUint32(array, shape));
                 break;
             case "int64":
-            	data = (Img<T>) buildInt64(array, shape);
+            	data = Cast.unchecked(buildInt64(array, shape));
                 break;
             case "float32":
-            	data = (Img<T>) buildFloat32(array, shape);
+            	data = Cast.unchecked(buildFloat32(array, shape));
                 break;
             case "float64":
-            	data = (Img<T>) buildFloat64(array, shape);
+            	data = Cast.unchecked(buildFloat64(array, shape));
                 break;
             default:
                 throw new IllegalArgumentException("Unsupported tensor type: " + dtype);

@@ -23,6 +23,7 @@ import net.imglib2.img.cell.CellImgFactory;
 import net.imglib2.type.numeric.real.FloatType;
 
 public class NativeMemoryMapping {
+	/*
 	public interface CLibrary extends com.sun.jna.Library {
         CLibrary INSTANCE = (CLibrary)
         		com.sun.jna.Native.load("Kernel32", CLibrary.class);
@@ -36,4 +37,5 @@ public class NativeMemoryMapping {
             CLibrary.INSTANCE.printf("Argument %d: %s\n", i, args[i]);
         }
     }
+    */
 }
