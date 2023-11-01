@@ -19,7 +19,7 @@
  */
 package io.bioimage.modelrunner.runmode.ops;
 
-import java.util.Map;
+import java.util.LinkedHashMap;
 
 /**
  * A generic OP that allows running Python code from JDLL if it is formatted correctly
@@ -36,7 +36,7 @@ public class GenericOp implements OpInterface {
 	
 	private int nOutputs;
 	
-	private Map<String, Object> inputsMap;
+	private LinkedHashMap<String, Object> inputsMap;
 	
 	
 	public static void main(String[] args) {
@@ -51,7 +51,7 @@ public class GenericOp implements OpInterface {
 		return op;
 	}
 	
-	public void setInputs(Map<String, Object> kwargs) {
+	public void setInputs(LinkedHashMap<String, Object> kwargs) {
 		this.inputsMap = kwargs;
 	}
 
@@ -71,7 +71,7 @@ public class GenericOp implements OpInterface {
 	}
 
 	@Override
-	public Map<String, Object> getOpInputs() {
+	public LinkedHashMap<String, Object> getOpInputs() {
 		return this.inputsMap;
 	}
 
