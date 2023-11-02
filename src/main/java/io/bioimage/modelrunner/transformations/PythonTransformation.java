@@ -44,7 +44,8 @@ import net.imglib2.util.Cast;
 
 public class PythonTransformation extends AbstractTensorTransformation
 {
-	private static String name = "python";
+	public static final String NAME = "python_transformation";
+	public static final String ENV_YAML_KEY = "env_yaml";
 	
 	private String envYaml;
 	
@@ -58,7 +59,7 @@ public class PythonTransformation extends AbstractTensorTransformation
 
 	public PythonTransformation()
 	{
-		super(name);
+		super(NAME);
 	}
 	
 	public void setEnvYaml(Object envYaml) {
