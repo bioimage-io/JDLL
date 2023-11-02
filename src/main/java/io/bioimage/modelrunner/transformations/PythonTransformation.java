@@ -103,6 +103,10 @@ public class PythonTransformation extends AbstractTensorTransformation
 	}
 	
 	public void setKwargs(Object kwargs) {
+		if (kwargs == null) {
+			this.kwargs = new LinkedHashMap<String, Object>();
+			return;
+		}
 		if (kwargs instanceof LinkedHashMap) {
 			this.kwargs = (LinkedHashMap<String, Object>) kwargs;
 		} else {
