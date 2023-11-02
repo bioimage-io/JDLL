@@ -512,7 +512,7 @@ public class DownloadModel {
 	 * @throws MalformedURLException if the String does not correspond to an URL
 	 */
 	public static String getFileNameFromURLString(String str) throws MalformedURLException {
-		if (str.startsWith(Constants.ZENODO_DOMAIN))
+		if (str.startsWith(Constants.ZENODO_DOMAIN) && str.endsWith(Constants.ZENODO_ANNOYING_SUFFIX))
 			str = str.substring(0, str.length() - Constants.ZENODO_ANNOYING_SUFFIX.length());
 		URL url = new URL(str);
 		return new File(url.getPath()).getName();

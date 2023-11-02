@@ -180,13 +180,7 @@ public class TorchscriptWeights implements WeightFormat{
 	 * {@inheritDoc}
 	 */
 	public String getSource() {
-		if (source != null && 
-				source.startsWith(Constants.ZENODO_DOMAIN) 
-				&& source.endsWith(Constants.ZENODO_ANNOYING_SUFFIX))
-			return source.substring(0, 
-					source.length() - Constants.ZENODO_ANNOYING_SUFFIX.length());
-		else
-			return source;
+		return source;
 	}
 	
 	/**

@@ -75,8 +75,8 @@ public interface WeightFormat {
 	public String getSha256();
 	
 	/**
-	 * REturn URL to the weights in the local machine
-	 * @return URL to the weights in the local machine
+	 * REturn the String defined in the Bioimage.io rdf.yaml file as the weigths source
+	 * @return the String defined in the Bioimage.io rdf.yaml file as the weigths source
 	 */
 	public String getSource();
 	
