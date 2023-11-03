@@ -21,6 +21,7 @@ package io.bioimage.modelrunner.transformations;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.URISyntaxException;
 import java.nio.file.Paths;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -31,6 +32,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import org.apache.commons.compress.archivers.ArchiveException;
 import org.apposed.appose.Conda;
 
 import io.bioimage.modelrunner.runmode.RunMode;
@@ -118,7 +120,13 @@ public class PythonTransformation extends AbstractTensorTransformation
 
 	public < R extends RealType< R > & NativeType< R > > Tensor<FloatType> apply( final Tensor< R > input )
 	{
-		String envName = (String) YAMLUtils.loadFromString(envYaml).get("name");
+		String envName = null;
+		try {
+			envName = (String) YAMLUtils.load(envYaml).get("name");
+		} catch (IOException e2) {
+			e2.printStackTrace();
+			return Cast.unchecked(input);
+		}
 		String minicondaBase = Paths.get(System.getProperty("user.home"), ".local", "share", "appose", "miniconda").toString();
 		String envPath = minicondaBase + File.separator + "envs" + File.separator + envName;
 		if (!(new File(envPath).isDirectory())) {
@@ -129,7 +137,7 @@ public class PythonTransformation extends AbstractTensorTransformation
 									minicondaBase + File.separator + "envs", "--force", 
 									"-n", envName, "--file", envYaml, "-y" ) );
 					conda.runConda( cmd.stream().toArray( String[]::new ) );
-				} catch (IOException | InterruptedException e1) {
+				} catch (IOException | InterruptedException | ArchiveException | URISyntaxException e1) {
 					e1.printStackTrace();
 					return Cast.unchecked(input);
 				}
