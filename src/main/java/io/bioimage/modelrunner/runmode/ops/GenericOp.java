@@ -19,6 +19,7 @@
  */
 package io.bioimage.modelrunner.runmode.ops;
 
+import java.io.File;
 import java.util.LinkedHashMap;
 
 /**
@@ -57,7 +58,7 @@ public class GenericOp implements OpInterface {
 
 	@Override
 	public String getOpPythonFilename() {
-		return this.opFilePath;
+		return new File(this.opFilePath).getName();
 	}
 
 	@Override
@@ -87,7 +88,7 @@ public class GenericOp implements OpInterface {
 
 	@Override
 	public String getOpDir() {
-		return opFilePath;
+		return new File(opFilePath).getParent();
 	}
 
 	@Override
