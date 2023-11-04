@@ -24,6 +24,7 @@ import java.nio.ByteBuffer;
 
 import net.imglib2.Cursor;
 import net.imglib2.RandomAccessibleInterval;
+import net.imglib2.blocks.PrimitiveBlocks;
 import net.imglib2.img.Img;
 import net.imglib2.type.NativeType;
 import net.imglib2.type.Type;
@@ -122,25 +123,19 @@ public final class ImgLib2ToArray
      * @param byteBuffer 
      * 	target bytebuffer
      */
-    private static byte[] buildInt8(RandomAccessibleInterval<ByteType> imgTensor)
+    private static byte[] buildInt8(RandomAccessibleInterval<ByteType> tensor)
     {
-    	Cursor<ByteType> tensorCursor;
-		if (imgTensor instanceof IntervalView)
-			tensorCursor = ((IntervalView<ByteType>) imgTensor).cursor();
-		else if (imgTensor instanceof Img)
-			tensorCursor = ((Img<ByteType>) imgTensor).cursor();
-		else
-			throw new IllegalArgumentException("The data of the " + Tensor.class + " has "
-					+ "to be an instance of " + Img.class + " or " + IntervalView.class);
-		long flatSize = 1;
-		for (long ss : imgTensor.dimensionsAsLongArray()) {flatSize *= ss;}
-		byte[] byteArr = new byte[(int) flatSize];
-		int cc =  0;
-		while (tensorCursor.hasNext()) {
-			tensorCursor.fwd();
-			byteArr[cc ++] = tensorCursor.get().getByte();
-		}
-		return byteArr;
+		tensor = Utils.transpose(tensor);
+		PrimitiveBlocks< ByteType > blocks = PrimitiveBlocks.of( tensor );
+		long[] tensorShape = tensor.dimensionsAsLongArray();
+		int size = 1;
+		for (long ll : tensorShape) size *= ll;
+		final byte[] flatArr = new byte[size];
+		int[] sArr = new int[tensorShape.length];
+		for (int i = 0; i < sArr.length; i ++)
+			sArr[i] = (int) tensorShape[i];
+		blocks.copy( tensor.minAsLongArray(), flatArr, sArr );
+		return flatArr;
     }
 
     /**
@@ -152,25 +147,19 @@ public final class ImgLib2ToArray
      * @param byteBuffer 
      * 	target bytebuffer
      */
-    private static short[] buildUint8(RandomAccessibleInterval<UnsignedByteType> imgTensor)
+    private static byte[] buildUint8(RandomAccessibleInterval<UnsignedByteType> tensor)
     {
-    	Cursor<UnsignedByteType> tensorCursor;
-		if (imgTensor instanceof IntervalView)
-			tensorCursor = ((IntervalView<UnsignedByteType>) imgTensor).cursor();
-		else if (imgTensor instanceof Img)
-			tensorCursor = ((Img<UnsignedByteType>) imgTensor).cursor();
-		else
-			throw new IllegalArgumentException("The data of the " + Tensor.class + " has "
-					+ "to be an instance of " + Img.class + " or " + IntervalView.class);
-		long flatSize = 1;
-		for (long ss : imgTensor.dimensionsAsLongArray()) {flatSize *= ss;}
-		short[] byteArr = new short[(int) flatSize];
-		int cc =  0;
-		while (tensorCursor.hasNext()) {
-			tensorCursor.fwd();
-			byteArr[cc ++] = tensorCursor.get().getByte();
-		}
-		return byteArr;
+		tensor = Utils.transpose(tensor);
+		PrimitiveBlocks< UnsignedByteType > blocks = PrimitiveBlocks.of( tensor );
+		long[] tensorShape = tensor.dimensionsAsLongArray();
+		int size = 1;
+		for (long ll : tensorShape) size *= ll;
+		final byte[] flatArr = new byte[size];
+		int[] sArr = new int[tensorShape.length];
+		for (int i = 0; i < sArr.length; i ++)
+			sArr[i] = (int) tensorShape[i];
+		blocks.copy( tensor.minAsLongArray(), flatArr, sArr );
+		return flatArr;
     }
 
     /**
@@ -182,25 +171,20 @@ public final class ImgLib2ToArray
      * @param byteBuffer 
      * 	target bytebuffer
      */
-    private static short[] buildInt16(RandomAccessibleInterval<ShortType> imgTensor)
+    private static short[] buildInt16(RandomAccessibleInterval<ShortType> tensor)
     {
-    	Cursor<ShortType> tensorCursor;
-		if (imgTensor instanceof IntervalView)
-			tensorCursor = ((IntervalView<ShortType>) imgTensor).cursor();
-		else if (imgTensor instanceof Img)
-			tensorCursor = ((Img<ShortType>) imgTensor).cursor();
-		else
-			throw new IllegalArgumentException("The data of the " + Tensor.class + " has "
-					+ "to be an instance of " + Img.class + " or " + IntervalView.class);
-		long flatSize = 1;
-		for (long ss : imgTensor.dimensionsAsLongArray()) {flatSize *= ss;}
-		short[] byteArr = new short[(int) flatSize];
-		int cc =  0;
-		while (tensorCursor.hasNext()) {
-			tensorCursor.fwd();
-			byteArr[cc ++] = tensorCursor.get().get();
-		}
-		return byteArr;
+		tensor = Utils.transpose(tensor);
+		PrimitiveBlocks< ShortType > blocks = PrimitiveBlocks.of( tensor );
+		long[] tensorShape = tensor.dimensionsAsLongArray();
+		int size = 1;
+		for (long ll : tensorShape) size *= ll;
+		final short[] flatArr = new short[size];
+		int[] sArr = new int[tensorShape.length];
+		for (int i = 0; i < sArr.length; i ++)
+			sArr[i] = (int) tensorShape[i];
+		blocks.copy( tensor.minAsLongArray(), flatArr, sArr );
+		return flatArr;
+		
     }
 
     /**
@@ -212,25 +196,19 @@ public final class ImgLib2ToArray
      * @param byteBuffer 
      * 	target bytebuffer
      */
-    private static int[] buildUint16(RandomAccessibleInterval<UnsignedShortType> imgTensor)
+    private static short[] buildUint16(RandomAccessibleInterval<UnsignedShortType> tensor)
     {
-    	Cursor<UnsignedShortType> tensorCursor;
-		if (imgTensor instanceof IntervalView)
-			tensorCursor = ((IntervalView<UnsignedShortType>) imgTensor).cursor();
-		else if (imgTensor instanceof Img)
-			tensorCursor = ((Img<UnsignedShortType>) imgTensor).cursor();
-		else
-			throw new IllegalArgumentException("The data of the " + Tensor.class + " has "
-					+ "to be an instance of " + Img.class + " or " + IntervalView.class);
-		long flatSize = 1;
-		for (long ss : imgTensor.dimensionsAsLongArray()) {flatSize *= ss;}
-		int[] byteArr = new int[(int) flatSize];
-		int cc =  0;
-		while (tensorCursor.hasNext()) {
-			tensorCursor.fwd();
-			byteArr[cc ++] = tensorCursor.get().get();
-		}
-		return byteArr;
+		tensor = Utils.transpose(tensor);
+		PrimitiveBlocks< UnsignedShortType > blocks = PrimitiveBlocks.of( tensor );
+		long[] tensorShape = tensor.dimensionsAsLongArray();
+		int size = 1;
+		for (long ll : tensorShape) size *= ll;
+		final short[] flatArr = new short[size];
+		int[] sArr = new int[tensorShape.length];
+		for (int i = 0; i < sArr.length; i ++)
+			sArr[i] = (int) tensorShape[i];
+		blocks.copy( tensor.minAsLongArray(), flatArr, sArr );
+		return flatArr;
     }
 
     /**
@@ -242,25 +220,19 @@ public final class ImgLib2ToArray
      * @param byteBuffer 
      * 	target bytebuffer
      */
-    private static int[] buildInt32(RandomAccessibleInterval<IntType> imgTensor)
+    private static int[] buildInt32(RandomAccessibleInterval<IntType> tensor)
     {
-    	Cursor<IntType> tensorCursor;
-		if (imgTensor instanceof IntervalView)
-			tensorCursor = ((IntervalView<IntType>) imgTensor).cursor();
-		else if (imgTensor instanceof Img)
-			tensorCursor = ((Img<IntType>) imgTensor).cursor();
-		else
-			throw new IllegalArgumentException("The data of the " + Tensor.class + " has "
-					+ "to be an instance of " + Img.class + " or " + IntervalView.class);
-		long flatSize = 1;
-		for (long ss : imgTensor.dimensionsAsLongArray()) {flatSize *= ss;}
-		int[] byteArr = new int[(int) flatSize];
-		int cc =  0;
-		while (tensorCursor.hasNext()) {
-			tensorCursor.fwd();
-			byteArr[cc ++] = tensorCursor.get().getInt();
-		}
-		return byteArr;
+		tensor = Utils.transpose(tensor);
+		PrimitiveBlocks< IntType > blocks = PrimitiveBlocks.of( tensor );
+		long[] tensorShape = tensor.dimensionsAsLongArray();
+		int size = 1;
+		for (long ll : tensorShape) size *= ll;
+		final int[] flatArr = new int[size];
+		int[] sArr = new int[tensorShape.length];
+		for (int i = 0; i < sArr.length; i ++)
+			sArr[i] = (int) tensorShape[i];
+		blocks.copy( tensor.minAsLongArray(), flatArr, sArr );
+		return flatArr;
     }
 
     /**
@@ -272,25 +244,19 @@ public final class ImgLib2ToArray
      * @param byteBuffer 
      * 	target bytebuffer
      */
-    private static long[] buildUint32(RandomAccessibleInterval<UnsignedIntType> imgTensor)
+    private static int[] buildUint32(RandomAccessibleInterval<UnsignedIntType> tensor)
     {
-    	Cursor<UnsignedIntType> tensorCursor;
-		if (imgTensor instanceof IntervalView)
-			tensorCursor = ((IntervalView<UnsignedIntType>) imgTensor).cursor();
-		else if (imgTensor instanceof Img)
-			tensorCursor = ((Img<UnsignedIntType>) imgTensor).cursor();
-		else
-			throw new IllegalArgumentException("The data of the " + Tensor.class + " has "
-					+ "to be an instance of " + Img.class + " or " + IntervalView.class);
-		long flatSize = 1;
-		for (long ss : imgTensor.dimensionsAsLongArray()) {flatSize *= ss;}
-		long[] byteArr = new long[(int) flatSize];
-		int cc =  0;
-		while (tensorCursor.hasNext()) {
-			tensorCursor.fwd();
-			byteArr[cc ++] = tensorCursor.get().get();
-		}
-		return byteArr;
+		tensor = Utils.transpose(tensor);
+		PrimitiveBlocks< UnsignedIntType > blocks = PrimitiveBlocks.of( tensor );
+		long[] tensorShape = tensor.dimensionsAsLongArray();
+		int size = 1;
+		for (long ll : tensorShape) size *= ll;
+		final int[] flatArr = new int[size];
+		int[] sArr = new int[tensorShape.length];
+		for (int i = 0; i < sArr.length; i ++)
+			sArr[i] = (int) tensorShape[i];
+		blocks.copy( tensor.minAsLongArray(), flatArr, sArr );
+		return flatArr;
     }
 
     /**
@@ -302,25 +268,19 @@ public final class ImgLib2ToArray
      * @param byteBuffer 
      * 	target bytebuffer
      */
-    private static long[] buildInt64(RandomAccessibleInterval<LongType> imgTensor)
+    private static long[] buildInt64(RandomAccessibleInterval<LongType> tensor)
     {
-    	Cursor<LongType> tensorCursor;
-		if (imgTensor instanceof IntervalView)
-			tensorCursor = ((IntervalView<LongType>) imgTensor).cursor();
-		else if (imgTensor instanceof Img)
-			tensorCursor = ((Img<LongType>) imgTensor).cursor();
-		else
-			throw new IllegalArgumentException("The data of the " + Tensor.class + " has "
-					+ "to be an instance of " + Img.class + " or " + IntervalView.class);
-		long flatSize = 1;
-		for (long ss : imgTensor.dimensionsAsLongArray()) {flatSize *= ss;}
-		long[] byteArr = new long[(int) flatSize];
-		int cc =  0;
-		while (tensorCursor.hasNext()) {
-			tensorCursor.fwd();
-			byteArr[cc ++] = tensorCursor.get().get();
-		}
-		return byteArr;
+		tensor = Utils.transpose(tensor);
+		PrimitiveBlocks< LongType > blocks = PrimitiveBlocks.of( tensor );
+		long[] tensorShape = tensor.dimensionsAsLongArray();
+		int size = 1;
+		for (long ll : tensorShape) size *= ll;
+		final long[] flatArr = new long[size];
+		int[] sArr = new int[tensorShape.length];
+		for (int i = 0; i < sArr.length; i ++)
+			sArr[i] = (int) tensorShape[i];
+		blocks.copy( tensor.minAsLongArray(), flatArr, sArr );
+		return flatArr;
     }
 
     /**
@@ -332,25 +292,19 @@ public final class ImgLib2ToArray
      * @param byteBuffer 
      * 	target bytebuffer
      */
-    private static float[] buildFloat32(RandomAccessibleInterval<FloatType> imgTensor)
+    private static float[] buildFloat32(RandomAccessibleInterval<FloatType> tensor)
     {
-    	Cursor<FloatType> tensorCursor;
-		if (imgTensor instanceof IntervalView)
-			tensorCursor = ((IntervalView<FloatType>) imgTensor).cursor();
-		else if (imgTensor instanceof Img)
-			tensorCursor = ((Img<FloatType>) imgTensor).cursor();
-		else
-			throw new IllegalArgumentException("The data of the " + Tensor.class + " has "
-					+ "to be an instance of " + Img.class + " or " + IntervalView.class);
-		long flatSize = 1;
-		for (long ss : imgTensor.dimensionsAsLongArray()) {flatSize *= ss;}
-		float[] byteArr = new float[(int) flatSize];
-		int cc =  0;
-		while (tensorCursor.hasNext()) {
-			tensorCursor.fwd();
-			byteArr[cc ++] = tensorCursor.get().getRealFloat();
-		}
-		return byteArr;
+		tensor = Utils.transpose(tensor);
+		PrimitiveBlocks< FloatType > blocks = PrimitiveBlocks.of( tensor );
+		long[] tensorShape = tensor.dimensionsAsLongArray();
+		int size = 1;
+		for (long ll : tensorShape) size *= ll;
+		final float[] flatArr = new float[size];
+		int[] sArr = new int[tensorShape.length];
+		for (int i = 0; i < sArr.length; i ++)
+			sArr[i] = (int) tensorShape[i];
+		blocks.copy( tensor.minAsLongArray(), flatArr, sArr );
+		return flatArr;
     }
 
     /**
@@ -362,24 +316,18 @@ public final class ImgLib2ToArray
      * @param byteBuffer 
      * 	target bytebuffer
      */
-    private static double[] buildFloat64(RandomAccessibleInterval<DoubleType> imgTensor)
+    private static double[] buildFloat64(RandomAccessibleInterval<DoubleType> tensor)
     {
-    	Cursor<DoubleType> tensorCursor;
-		if (imgTensor instanceof IntervalView)
-			tensorCursor = ((IntervalView<DoubleType>) imgTensor).cursor();
-		else if (imgTensor instanceof Img)
-			tensorCursor = ((Img<DoubleType>) imgTensor).cursor();
-		else
-			throw new IllegalArgumentException("The data of the " + Tensor.class + " has "
-					+ "to be an instance of " + Img.class + " or " + IntervalView.class);
-		long flatSize = 1;
-		for (long ss : imgTensor.dimensionsAsLongArray()) {flatSize *= ss;}
-		double[] byteArr = new double[(int) flatSize];
-		int cc =  0;
-		while (tensorCursor.hasNext()) {
-			tensorCursor.fwd();
-			byteArr[cc ++] = tensorCursor.get().getRealDouble();
-		}
-		return byteArr;
+		tensor = Utils.transpose(tensor);
+		PrimitiveBlocks< DoubleType > blocks = PrimitiveBlocks.of( tensor );
+		long[] tensorShape = tensor.dimensionsAsLongArray();
+		int size = 1;
+		for (long ll : tensorShape) size *= ll;
+		final double[] flatArr = new double[size];
+		int[] sArr = new int[tensorShape.length];
+		for (int i = 0; i < sArr.length; i ++)
+			sArr[i] = (int) tensorShape[i];
+		blocks.copy( tensor.minAsLongArray(), flatArr, sArr );
+		return flatArr;
     }
 }
