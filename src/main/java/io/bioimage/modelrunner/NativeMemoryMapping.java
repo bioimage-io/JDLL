@@ -22,20 +22,63 @@ import net.imglib2.img.ImgFactory;
 import net.imglib2.img.cell.CellImgFactory;
 import net.imglib2.type.numeric.real.FloatType;
 
+import com.sun.jna.Memory;
+import com.sun.jna.Pointer;
+import com.sun.jna.platform.win32.Kernel32;
+import com.sun.jna.platform.win32.WinNT;
+import com.sun.jna.platform.win32.WinBase;
+
 public class NativeMemoryMapping {
-	/*
-	public interface CLibrary extends com.sun.jna.Library {
-        CLibrary INSTANCE = (CLibrary)
-        		com.sun.jna.Native.load("Kernel32", CLibrary.class);
 
-        public int CreateFileMapping(int arg1, int arg2, int arg3, int arg4, int arg5, String arg6);
-    }
-
-    public static void main(String[] args) {
-        CLibrary.INSTANCE.CreateFileMapping("Hello, World\n");
-        for (int i=0;i < args.length;i++) {
-            CLibrary.INSTANCE.printf("Argument %d: %s\n", i, args[i]);
+	public static void main(String[] args) {
+        final String sharedMemoryName = "Local\\MySharedMemory";
+        final int size = 1024; // Size of the shared memory block
+        
+        // Create a file mapping for shared memory
+        WinNT.HANDLE hMapFile = Kernel32.INSTANCE.CreateFileMapping(
+                WinBase.INVALID_HANDLE_VALUE,
+                null,
+                WinNT.PAGE_READWRITE,
+                0,
+                size,
+                sharedMemoryName
+        );
+        
+        if (hMapFile == null) {
+            throw new RuntimeException("CreateFileMapping failed");
         }
+        
+        // Map the shared memory
+        Pointer pSharedMemory = Kernel32.INSTANCE.MapViewOfFile(
+                hMapFile,
+                WinNT.FILE_MAP_WRITE,
+                0,
+                0,
+                size
+        );
+        
+        if (pSharedMemory == null) {
+            Kernel32.INSTANCE.CloseHandle(hMapFile);
+            throw new RuntimeException("MapViewOfFile failed");
+        }
+        
+        // Use the Memory class from JNA to create a view of the memory as a long[]
+        Memory sharedMemory = new Memory(size);
+        sharedMemory.share(0, size);
+        
+        // Now you can write to the shared memory as if it were an array of longs
+        for (int i = 0; i < size / Long.BYTES; i++) {
+        	pSharedMemory.setLong((long) i * Long.BYTES, i);
+        }
+        
+        // Read from shared memory
+        for (int i = 0; i < size / Long.BYTES; i++) {
+            long value = pSharedMemory.getLong((long) i * Long.BYTES);
+            System.out.println("Value at index " + i + ": " + value);
+        }
+        
+        // Unmap and close the shared memory (in a real application, do this in a finally block)
+        Kernel32.INSTANCE.UnmapViewOfFile(pSharedMemory);
+        Kernel32.INSTANCE.CloseHandle(hMapFile);
     }
-    */
 }
