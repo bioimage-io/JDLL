@@ -33,9 +33,8 @@ import com.sun.jna.platform.win32.WinNT.HANDLE;
 
 import net.imglib2.Cursor;
 import net.imglib2.RandomAccessibleInterval;
-import net.imglib2.blocks.PrimitiveBlocks;
+import net.imglib2.img.array.ArrayImgs;
 import net.imglib2.type.NativeType;
-import net.imglib2.type.Type;
 import net.imglib2.type.numeric.RealType;
 import net.imglib2.type.numeric.integer.ByteType;
 import net.imglib2.type.numeric.integer.IntType;
@@ -46,6 +45,7 @@ import net.imglib2.type.numeric.integer.UnsignedIntType;
 import net.imglib2.type.numeric.integer.UnsignedShortType;
 import net.imglib2.type.numeric.real.DoubleType;
 import net.imglib2.type.numeric.real.FloatType;
+import net.imglib2.util.Cast;
 import net.imglib2.util.Util;
 import net.imglib2.view.Views;
 
@@ -59,18 +59,23 @@ public final class SharedMemoryArray implements Closeable
 	/**
 	 * file mapping for shared memory
 	 */
-	private final WinNT.HANDLE hMapFile;
+	private WinNT.HANDLE hMapFile;
 	/**
 	 * 
 	 */
-	private final Pointer pSharedMemory;
+	private Pointer pSharedMemory;
 	/**
-	 * 
+	 * Name defining the location of the shared memory block
 	 */
 	private final String memoryName = "Local\\" + UUID.randomUUID().toString();;
+	/**
+	 * Size of the shared memory block
+	 */
+	private int size;
 	
     private SharedMemoryArray(int size)
     {
+    	this.size = size;
         hMapFile = Kernel32.INSTANCE.CreateFileMapping(
                 WinBase.INVALID_HANDLE_VALUE,
                 null,
@@ -81,7 +86,8 @@ public final class SharedMemoryArray implements Closeable
         );
         
         if (hMapFile == null) {
-            throw new RuntimeException("Error creating shared memory array. CreateFileMapping failed");
+            throw new RuntimeException("Error creating shared memory array. CreateFileMapping failed: "
+            		+ "" + Kernel32.INSTANCE.GetLastError());
         }
         
         // Map the shared memory
@@ -95,7 +101,8 @@ public final class SharedMemoryArray implements Closeable
         
         if (pSharedMemory == null) {
             Kernel32.INSTANCE.CloseHandle(hMapFile);
-            throw new RuntimeException("Error creating shared memory array. MapViewOfFile failed");
+            throw new RuntimeException("Error creating shared memory array. MapViewOfFile failed: "
+            		+ "" + Kernel32.INSTANCE.GetLastError());
         }
     }
     
@@ -109,6 +116,10 @@ public final class SharedMemoryArray implements Closeable
     
     public HANDLE getSharedMemoryBlock() {
     	return this.hMapFile;
+    }
+    
+    public int getSize() {
+    	return this.size;
     }
 
     /**
@@ -126,33 +137,59 @@ public final class SharedMemoryArray implements Closeable
      * 	name of the memory location
      * @throws IllegalArgumentException If the {@link RandomAccessibleInterval} type is not supported.
      */
-    public static <T extends RealType<T> & NativeType<T>> SharedMemoryArray build(RandomAccessibleInterval<T> rai)
+    @SuppressWarnings("unchecked")
+	public static <T extends RealType<T> & NativeType<T>> SharedMemoryArray build(RandomAccessibleInterval<T> rai)
     {
-    	int size = 1;
-    	for (long i : rai.dimensionsAsLongArray()) {size *= i;}
-    	SharedMemoryArray shma = new SharedMemoryArray(size);
+    	SharedMemoryArray shma = null;
     	if (Util.getTypeFromInterval(rai) instanceof ByteType) {
-    		shma.buildInt8((RandomAccessibleInterval<ByteType>) rai);
+        	int size = 1;
+        	for (long i : rai.dimensionsAsLongArray()) {size *= i;}
+        	shma = new SharedMemoryArray(size);
+        	shma.buildInt8((RandomAccessibleInterval<ByteType>) rai);
     	} else if (Util.getTypeFromInterval(rai) instanceof UnsignedByteType) {
-    		shma.buildUint8((RandomAccessibleInterval<UnsignedByteType>) rai);
+        	int size = 1;
+        	for (long i : rai.dimensionsAsLongArray()) {size *= i;}
+        	shma = new SharedMemoryArray(size);
+        	shma.buildUint8((RandomAccessibleInterval<UnsignedByteType>) rai);
     	} else if (Util.getTypeFromInterval(rai) instanceof ShortType) {
-    		shma.buildInt16((RandomAccessibleInterval<ShortType>) rai);
+        	int size = 2;
+        	for (long i : rai.dimensionsAsLongArray()) {size *= i;}
+        	shma = new SharedMemoryArray(size);
+        	shma.buildInt16((RandomAccessibleInterval<ShortType>) rai);
     	} else if (Util.getTypeFromInterval(rai) instanceof UnsignedShortType) {
-    		shma.buildUint16((RandomAccessibleInterval<UnsignedShortType>) rai);
+        	int size = 2;
+        	for (long i : rai.dimensionsAsLongArray()) {size *= i;}
+        	shma = new SharedMemoryArray(size);
+        	shma.buildUint16((RandomAccessibleInterval<UnsignedShortType>) rai);
     	} else if (Util.getTypeFromInterval(rai) instanceof IntType) {
-    		shma.buildInt32((RandomAccessibleInterval<IntType>) rai);
+        	int size = 4;
+        	for (long i : rai.dimensionsAsLongArray()) {size *= i;}
+        	shma = new SharedMemoryArray(size);
+        	shma.buildInt32((RandomAccessibleInterval<IntType>) rai);
     	} else if (Util.getTypeFromInterval(rai) instanceof UnsignedIntType) {
-    		shma.buildUint32((RandomAccessibleInterval<UnsignedIntType>) rai);
+        	int size = 4;
+        	for (long i : rai.dimensionsAsLongArray()) {size *= i;}
+        	shma = new SharedMemoryArray(size);
+        	shma.buildUint32((RandomAccessibleInterval<UnsignedIntType>) rai);
     	} else if (Util.getTypeFromInterval(rai) instanceof LongType) {
-    		shma.buildInt64((RandomAccessibleInterval<LongType>) rai);
+        	int size = 8;
+        	for (long i : rai.dimensionsAsLongArray()) {size *= i;}
+        	shma = new SharedMemoryArray(size);
+        	shma.buildInt64((RandomAccessibleInterval<LongType>) rai);
     	} else if (Util.getTypeFromInterval(rai) instanceof FloatType) {
-    		shma.buildFloat32((RandomAccessibleInterval<FloatType>) rai);
+        	int size = 4;
+        	for (long i : rai.dimensionsAsLongArray()) {size *= i;}
+        	shma = new SharedMemoryArray(size);
+        	shma.buildFloat32((RandomAccessibleInterval<FloatType>) rai);
     	} else if (Util.getTypeFromInterval(rai) instanceof DoubleType) {
-    		shma.buildFloat64((RandomAccessibleInterval<DoubleType>) rai);
+        	int size = 8;
+        	for (long i : rai.dimensionsAsLongArray()) {size *= i;}
+        	shma = new SharedMemoryArray(size);
+        	shma.buildFloat64((RandomAccessibleInterval<DoubleType>) rai);
     	} else {
             throw new IllegalArgumentException("The image has an unsupported type: " + Util.getTypeFromInterval(rai).getClass().toString());
     	}
-    	return shma;
+		return shma;
     }
 
     /**
@@ -167,18 +204,10 @@ public final class SharedMemoryArray implements Closeable
     private void buildInt8(RandomAccessibleInterval<ByteType> tensor)
     {
 		tensor = Utils.transpose(tensor);
-		PrimitiveBlocks< ByteType > blocks = PrimitiveBlocks.of( tensor );
 		Cursor<ByteType> cursor = Views.flatIterable(tensor).cursor();
+		long i = 0;
 		while (cursor.hasNext())
-			cursor.get().get();
-		long[] tensorShape = tensor.dimensionsAsLongArray();
-		int size = 1;
-		for (long ll : tensorShape) size *= ll;
-		final byte[] flatArr = new byte[size];
-		int[] sArr = new int[tensorShape.length];
-		for (int i = 0; i < sArr.length; i ++)
-			sArr[i] = (int) tensorShape[i];
-		blocks.copy( tensor.minAsLongArray(), flatArr, sArr );
+			this.pSharedMemory.setByte(i ++, cursor.get().get());
     }
 
     /**
@@ -193,15 +222,10 @@ public final class SharedMemoryArray implements Closeable
     private void buildUint8(RandomAccessibleInterval<UnsignedByteType> tensor)
     {
 		tensor = Utils.transpose(tensor);
-		PrimitiveBlocks< UnsignedByteType > blocks = PrimitiveBlocks.of( tensor );
-		long[] tensorShape = tensor.dimensionsAsLongArray();
-		int size = 1;
-		for (long ll : tensorShape) size *= ll;
-		final byte[] flatArr = new byte[size];
-		int[] sArr = new int[tensorShape.length];
-		for (int i = 0; i < sArr.length; i ++)
-			sArr[i] = (int) tensorShape[i];
-		blocks.copy( tensor.minAsLongArray(), flatArr, sArr );
+		Cursor<UnsignedByteType> cursor = Views.flatIterable(tensor).cursor();
+		long i = 0;
+		while (cursor.hasNext())
+			this.pSharedMemory.setByte(i ++, cursor.get().getByte());
     }
 
     /**
@@ -216,16 +240,12 @@ public final class SharedMemoryArray implements Closeable
     private void buildInt16(RandomAccessibleInterval<ShortType> tensor)
     {
 		tensor = Utils.transpose(tensor);
-		PrimitiveBlocks< ShortType > blocks = PrimitiveBlocks.of( tensor );
-		long[] tensorShape = tensor.dimensionsAsLongArray();
-		int size = 1;
-		for (long ll : tensorShape) size *= ll;
-		final short[] flatArr = new short[size];
-		int[] sArr = new int[tensorShape.length];
-		for (int i = 0; i < sArr.length; i ++)
-			sArr[i] = (int) tensorShape[i];
-		blocks.copy( tensor.minAsLongArray(), flatArr, sArr );
-		
+		Cursor<ShortType> cursor = Views.flatIterable(tensor).cursor();
+		long i = 0;
+		while (cursor.hasNext()) {
+			this.pSharedMemory.setShort((i * Short.BYTES), cursor.get().get());
+			i ++;
+		}
     }
 
     /**
@@ -240,15 +260,12 @@ public final class SharedMemoryArray implements Closeable
     private void buildUint16(RandomAccessibleInterval<UnsignedShortType> tensor)
     {
 		tensor = Utils.transpose(tensor);
-		PrimitiveBlocks< UnsignedShortType > blocks = PrimitiveBlocks.of( tensor );
-		long[] tensorShape = tensor.dimensionsAsLongArray();
-		int size = 1;
-		for (long ll : tensorShape) size *= ll;
-		final short[] flatArr = new short[size];
-		int[] sArr = new int[tensorShape.length];
-		for (int i = 0; i < sArr.length; i ++)
-			sArr[i] = (int) tensorShape[i];
-		blocks.copy( tensor.minAsLongArray(), flatArr, sArr );
+		Cursor<UnsignedShortType> cursor = Views.flatIterable(tensor).cursor();
+		long i = 0;
+		while (cursor.hasNext()) {
+			this.pSharedMemory.setShort((i * Short.BYTES), cursor.get().getShort());
+			i ++;
+		}
     }
 
     /**
@@ -263,15 +280,12 @@ public final class SharedMemoryArray implements Closeable
     private void buildInt32(RandomAccessibleInterval<IntType> tensor)
     {
 		tensor = Utils.transpose(tensor);
-		PrimitiveBlocks< IntType > blocks = PrimitiveBlocks.of( tensor );
-		long[] tensorShape = tensor.dimensionsAsLongArray();
-		int size = 1;
-		for (long ll : tensorShape) size *= ll;
-		final int[] flatArr = new int[size];
-		int[] sArr = new int[tensorShape.length];
-		for (int i = 0; i < sArr.length; i ++)
-			sArr[i] = (int) tensorShape[i];
-		blocks.copy( tensor.minAsLongArray(), flatArr, sArr );
+		Cursor<IntType> cursor = Views.flatIterable(tensor).cursor();
+		long i = 0;
+		while (cursor.hasNext()) {
+			this.pSharedMemory.setInt((i * Integer.BYTES), cursor.get().get());
+			i ++;
+		}
     }
 
     /**
@@ -286,15 +300,12 @@ public final class SharedMemoryArray implements Closeable
     private void buildUint32(RandomAccessibleInterval<UnsignedIntType> tensor)
     {
 		tensor = Utils.transpose(tensor);
-		PrimitiveBlocks< UnsignedIntType > blocks = PrimitiveBlocks.of( tensor );
-		long[] tensorShape = tensor.dimensionsAsLongArray();
-		int size = 1;
-		for (long ll : tensorShape) size *= ll;
-		final int[] flatArr = new int[size];
-		int[] sArr = new int[tensorShape.length];
-		for (int i = 0; i < sArr.length; i ++)
-			sArr[i] = (int) tensorShape[i];
-		blocks.copy( tensor.minAsLongArray(), flatArr, sArr );
+		Cursor<UnsignedIntType> cursor = Views.flatIterable(tensor).cursor();
+		long i = 0;
+		while (cursor.hasNext()) {
+			this.pSharedMemory.setInt((i * Integer.BYTES), cursor.get().getInt());
+			i ++;
+		}
     }
 
     /**
@@ -309,15 +320,12 @@ public final class SharedMemoryArray implements Closeable
     private void buildInt64(RandomAccessibleInterval<LongType> tensor)
     {
 		tensor = Utils.transpose(tensor);
-		PrimitiveBlocks< LongType > blocks = PrimitiveBlocks.of( tensor );
-		long[] tensorShape = tensor.dimensionsAsLongArray();
-		int size = 1;
-		for (long ll : tensorShape) size *= ll;
-		final long[] flatArr = new long[size];
-		int[] sArr = new int[tensorShape.length];
-		for (int i = 0; i < sArr.length; i ++)
-			sArr[i] = (int) tensorShape[i];
-		blocks.copy( tensor.minAsLongArray(), flatArr, sArr );
+		Cursor<LongType> cursor = Views.flatIterable(tensor).cursor();
+		long i = 0;
+		while (cursor.hasNext()) {
+			this.pSharedMemory.setLong((i * Long.BYTES), cursor.get().get());
+			i ++;
+		}
     }
 
     /**
@@ -332,15 +340,12 @@ public final class SharedMemoryArray implements Closeable
     private void buildFloat32(RandomAccessibleInterval<FloatType> tensor)
     {
 		tensor = Utils.transpose(tensor);
-		PrimitiveBlocks< FloatType > blocks = PrimitiveBlocks.of( tensor );
-		long[] tensorShape = tensor.dimensionsAsLongArray();
-		int size = 1;
-		for (long ll : tensorShape) size *= ll;
-		final float[] flatArr = new float[size];
-		int[] sArr = new int[tensorShape.length];
-		for (int i = 0; i < sArr.length; i ++)
-			sArr[i] = (int) tensorShape[i];
-		blocks.copy( tensor.minAsLongArray(), flatArr, sArr );
+		Cursor<FloatType> cursor = Views.flatIterable(tensor).cursor();
+		long i = 0;
+		while (cursor.hasNext()) {
+			this.pSharedMemory.setFloat((i * Float.BYTES), cursor.get().get());
+			i ++;
+		}
     }
 
     /**
@@ -355,15 +360,12 @@ public final class SharedMemoryArray implements Closeable
     private void buildFloat64(RandomAccessibleInterval<DoubleType> tensor)
     {
 		tensor = Utils.transpose(tensor);
-		PrimitiveBlocks< DoubleType > blocks = PrimitiveBlocks.of( tensor );
-		long[] tensorShape = tensor.dimensionsAsLongArray();
-		int size = 1;
-		for (long ll : tensorShape) size *= ll;
-		final double[] flatArr = new double[size];
-		int[] sArr = new int[tensorShape.length];
-		for (int i = 0; i < sArr.length; i ++)
-			sArr[i] = (int) tensorShape[i];
-		blocks.copy( tensor.minAsLongArray(), flatArr, sArr );
+		Cursor<DoubleType> cursor = Views.flatIterable(tensor).cursor();
+		long i = 0;
+		while (cursor.hasNext()) {
+			this.pSharedMemory.setDouble((i * Double.BYTES), cursor.get().get());
+			i ++;
+		}
     }
 
 	@Override
@@ -373,5 +375,127 @@ public final class SharedMemoryArray implements Closeable
 	public void close() throws IOException {
         Kernel32.INSTANCE.UnmapViewOfFile(pSharedMemory);
         Kernel32.INSTANCE.CloseHandle(hMapFile);
+	}
+	
+	public static <T extends RealType<T> & NativeType<T>>
+	RandomAccessibleInterval<T> createImgLib2RaiFromSharedMemoryBlock(String memoryName, long[] shape, T dataType) {
+		int size = getArrayByteSize(shape, dataType);
+		WinNT.HANDLE hMapFile = Kernel32.INSTANCE.OpenFileMapping(
+                WinNT.FILE_MAP_READ | WinNT.FILE_MAP_WRITE,
+                false,
+                memoryName
+        );
+        if (hMapFile == null) {
+            throw new RuntimeException("OpenFileMapping failed with error: " + Kernel32.INSTANCE.GetLastError());
+        }
+
+        // Map the shared memory object into the current process's address space
+        Pointer pSharedMemory = Kernel32.INSTANCE.MapViewOfFile(
+                hMapFile,
+                WinNT.FILE_MAP_READ | WinNT.FILE_MAP_WRITE,
+                0,
+                0,
+                size
+        );
+        if (pSharedMemory == null) {
+        	Kernel32.INSTANCE.CloseHandle(hMapFile);
+            throw new RuntimeException("MapViewOfFile failed with error: " + Kernel32.INSTANCE.GetLastError());
+        }
+        try {
+        	RandomAccessibleInterval<T> rai = buildFromSharedMemoryBlock(pSharedMemory, shape, dataType);
+            return rai;
+        } catch (Exception ex) {
+            Kernel32.INSTANCE.UnmapViewOfFile(pSharedMemory);
+            Kernel32.INSTANCE.CloseHandle(hMapFile);
+        	throw ex;
+        }
+	}
+	
+	private static <T extends RealType<T> & NativeType<T>>
+	RandomAccessibleInterval<T> buildFromSharedMemoryBlock(Pointer pSharedMemory, long[] shape, T dataType) {
+		if (dataType instanceof ByteType) {
+			int arrSize = 1;
+			for (long l : shape) {arrSize *= l;}
+			byte[] flat = new byte[arrSize]; 
+			for (int i = 0; i < arrSize; i++)
+				flat[i] = pSharedMemory.getByte((long) i);
+			return Cast.unchecked(ArrayImgs.bytes(flat, shape));
+		} else if (dataType instanceof UnsignedByteType) {
+			int arrSize = 1;
+			for (long l : shape) {arrSize *= l;}
+			byte[] flat = new byte[arrSize]; 
+			for (int i = 0; i < arrSize; i++)
+				flat[i] = pSharedMemory.getByte((long) i);
+			return Cast.unchecked(ArrayImgs.unsignedBytes(flat, shape));
+		} else if (dataType instanceof ShortType) {
+			int arrSize = 1;
+			for (long l : shape) {arrSize *= l;}
+			short[] flat = new short[arrSize]; 
+			for (int i = 0; i < arrSize; i++)
+				flat[i] = pSharedMemory.getShort((long) i * Short.BYTES);
+			return Cast.unchecked(ArrayImgs.shorts(flat, shape));
+		} else if (dataType instanceof UnsignedShortType) {
+			int arrSize = 1;
+			for (long l : shape) {arrSize *= l;}
+			short[] flat = new short[arrSize]; 
+			for (int i = 0; i < arrSize; i++)
+				flat[i] = pSharedMemory.getShort((long) i * Short.BYTES);
+			return Cast.unchecked(ArrayImgs.unsignedShorts(flat, shape));
+			
+		} else if (dataType instanceof IntType) {
+			int arrSize = 1;
+			for (long l : shape) {arrSize *= l;}
+			int[] flat = new int[arrSize]; 
+			for (int i = 0; i < arrSize; i++)
+				flat[i] = pSharedMemory.getInt((long) i * Integer.BYTES);
+			return Cast.unchecked(ArrayImgs.ints(flat, shape));
+		} else if (dataType instanceof UnsignedIntType) {
+			int arrSize = 1;
+			for (long l : shape) {arrSize *= l;}
+			int[] flat = new int[arrSize]; 
+			for (int i = 0; i < arrSize; i++)
+				flat[i] = pSharedMemory.getInt((long) i * Integer.BYTES);
+			return Cast.unchecked(ArrayImgs.unsignedInts(flat, shape));
+		} else if (dataType instanceof LongType) {
+			int arrSize = 1;
+			for (long l : shape) {arrSize *= l;}
+			long[] flat = new long[arrSize]; 
+			for (int i = 0; i < arrSize; i++)
+				flat[i] = pSharedMemory.getLong((long) i * Long.BYTES);
+			return Cast.unchecked(ArrayImgs.longs(flat, shape));
+		} else if (dataType instanceof FloatType) {
+			int arrSize = 1;
+			for (long l : shape) {arrSize *= l;}
+			float[] flat = new float[arrSize]; 
+			for (int i = 0; i < arrSize; i++)
+				flat[i] = pSharedMemory.getFloat((long) i * Float.BYTES);
+			return Cast.unchecked(ArrayImgs.floats(flat, shape));
+		} else if (dataType instanceof DoubleType) {
+			int arrSize = 1;
+			for (long l : shape) {arrSize *= l;}
+			double[] flat = new double[arrSize]; 
+			for (int i = 0; i < arrSize; i++)
+				flat[i] = pSharedMemory.getDouble((long) i * Double.BYTES);
+			return Cast.unchecked(ArrayImgs.doubles(flat, shape));
+		} else {
+    		throw new IllegalArgumentException("Type not supported: " + dataType.getClass().toString());
+		}
+	}
+        
+    public static <T extends RealType<T> & NativeType<T>> int getArrayByteSize(long[] shape, T type) {
+    	int noByteSize = 1;
+    	for (long l : shape) {noByteSize *= l;}
+    	if (type instanceof ByteType || type instanceof UnsignedByteType) {
+    		return noByteSize * 1;
+    	} else if (type instanceof ShortType || type instanceof UnsignedShortType) {
+    		return noByteSize * 2;
+    	} else if (type instanceof IntType || type instanceof UnsignedIntType
+    			|| type instanceof FloatType) {
+    		return noByteSize * 4;
+    	} else if (type instanceof LongType || type instanceof DoubleType) {
+    		return noByteSize * 8;
+    	} else {
+    		throw new IllegalArgumentException("Type not supported: " + type.getClass().toString());
+    	}
 	}
 }
