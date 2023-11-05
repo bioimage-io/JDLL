@@ -118,7 +118,7 @@ public final class ImgLib2ToArray
      * Adds the ByteType {@link RandomAccessibleInterval} data to the {@link ByteBuffer} provided.
      * The position of the ByteBuffer is kept in the same place as it was received.
      * 
-     * @param imgTensor 
+     * @param tensor 
      * 	{@link RandomAccessibleInterval} to be mapped into byte buffer
      * @param byteBuffer 
      * 	target bytebuffer
@@ -142,7 +142,7 @@ public final class ImgLib2ToArray
      * Adds the ByteType {@link RandomAccessibleInterval} data to the {@link ByteBuffer} provided.
      * The position of the ByteBuffer is kept in the same place as it was received.
      * 
-     * @param imgTensor 
+     * @param tensor 
      * 	{@link RandomAccessibleInterval} to be mapped into byte buffer
      * @param byteBuffer 
      * 	target bytebuffer
@@ -166,7 +166,7 @@ public final class ImgLib2ToArray
      * Adds the ByteType {@link RandomAccessibleInterval} data to the {@link ByteBuffer} provided.
      * The position of the ByteBuffer is kept in the same place as it was received.
      * 
-     * @param imgTensor 
+     * @param tensor 
      * 	{@link RandomAccessibleInterval} to be mapped into byte buffer
      * @param byteBuffer 
      * 	target bytebuffer
@@ -191,7 +191,7 @@ public final class ImgLib2ToArray
      * Adds the ByteType {@link RandomAccessibleInterval} data to the {@link ByteBuffer} provided.
      * The position of the ByteBuffer is kept in the same place as it was received.
      * 
-     * @param imgTensor 
+     * @param tensor 
      * 	{@link RandomAccessibleInterval} to be mapped into byte buffer
      * @param byteBuffer 
      * 	target bytebuffer
@@ -215,7 +215,7 @@ public final class ImgLib2ToArray
      * Adds the IntType {@link RandomAccessibleInterval} data to the {@link ByteBuffer} provided.
      * The position of the ByteBuffer is kept in the same place as it was received.
      * 
-     * @param imgTensor 
+     * @param tensor 
      * 	{@link RandomAccessibleInterval} to be mapped into byte buffer
      * @param byteBuffer 
      * 	target bytebuffer
@@ -239,7 +239,7 @@ public final class ImgLib2ToArray
      * Adds the IntType {@link RandomAccessibleInterval} data to the {@link ByteBuffer} provided.
      * The position of the ByteBuffer is kept in the same place as it was received.
      * 
-     * @param imgTensor 
+     * @param tensor 
      * 	{@link RandomAccessibleInterval} to be mapped into byte buffer
      * @param byteBuffer 
      * 	target bytebuffer
@@ -263,7 +263,7 @@ public final class ImgLib2ToArray
      * Adds the IntType {@link RandomAccessibleInterval} data to the {@link ByteBuffer} provided.
      * The position of the ByteBuffer is kept in the same place as it was received.
      * 
-     * @param imgTensor 
+     * @param tensor 
      * 	{@link RandomAccessibleInterval} to be mapped into byte buffer
      * @param byteBuffer 
      * 	target bytebuffer
@@ -287,7 +287,7 @@ public final class ImgLib2ToArray
      * Adds the FloatType {@link RandomAccessibleInterval} data to the {@link ByteBuffer} provided.
      * The position of the ByteBuffer is kept in the same place as it was received.
      * 
-     * @param imgTensor 
+     * @param tensor 
      * 	{@link RandomAccessibleInterval} to be mapped into byte buffer
      * @param byteBuffer 
      * 	target bytebuffer
@@ -311,7 +311,7 @@ public final class ImgLib2ToArray
      * Adds the DoubleType {@link RandomAccessibleInterval} data to the {@link ByteBuffer} provided.
      * The position of the ByteBuffer is kept in the same place as it was received.
      * 
-     * @param imgTensor 
+     * @param tensor 
      * 	{@link RandomAccessibleInterval} to be mapped into byte buffer
      * @param byteBuffer 
      * 	target bytebuffer
