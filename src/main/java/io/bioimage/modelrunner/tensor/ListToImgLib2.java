@@ -20,18 +20,17 @@
  */
 package io.bioimage.modelrunner.tensor;
 
+import java.io.ByteArrayOutputStream;
 import java.math.BigDecimal;
 import java.nio.ByteBuffer;
 import java.util.List;
 import java.util.stream.IntStream;
 
-import io.bioimage.modelrunner.utils.IndexingUtils;
-import net.imglib2.Cursor;
 import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.img.Img;
 import net.imglib2.img.array.ArrayImgFactory;
+import net.imglib2.img.array.ArrayImgs;
 import net.imglib2.type.NativeType;
-import net.imglib2.type.Type;
 import net.imglib2.type.numeric.RealType;
 import net.imglib2.type.numeric.integer.ByteType;
 import net.imglib2.type.numeric.integer.IntType;
@@ -181,16 +180,16 @@ public final class ListToImgLib2 {
     }
 
     /**
-     * Builds a ByteType {@link Img} from the information stored in a byte buffer.
+     * Builds a ByteType {@link RandomAccessibleInterval} from the information stored in a byte buffer.
      * The shape of the image that was previously retrieved from the buffer
      * @param tensor
      * 	byte buffer containing the information of the a tenosr, the position in the buffer
      *  should not be at zero but right after the header.
      * @param tensorShape
      * 	shape of the image to generate, it has been retrieved from the byte buffer 
-     * @return image specified in the bytebuffer
+     * @return RandomAccessibleInterval specified in the bytebuffer
      */
-    private static Img<ByteType> buildInt8(List array, List<Integer> tensorShape)
+    private static RandomAccessibleInterval<ByteType> buildInt8(List array, List<Integer> tensorShape)
     {
     	if (!(array.get(0) instanceof Byte)
         		&& !(array.get(0) instanceof Integer)) {
@@ -204,66 +203,59 @@ public final class ListToImgLib2 {
 	}
 
     /**
-     * Builds a ByteType {@link Img} from the information stored in a byte buffer.
+     * Builds a ByteType {@link RandomAccessibleInterval} from the information stored in a byte buffer.
      * The shape of the image that was previously retrieved from the buffer
      * @param tensor
      * 	byte buffer containing the information of the a tenosr, the position in the buffer
      *  should not be at zero but right after the header.
      * @param tensorShape
      * 	shape of the image to generate, it has been retrieved from the byte buffer 
-     * @return image specified in the bytebuffer
+     * @return RandomAccessibleInterval specified in the bytebuffer
      */
-    private static Img<ByteType> buildInt8FromByte(List<Byte> tensor, List<Integer> tensorShape)
+    private static RandomAccessibleInterval<ByteType> buildInt8FromByte(List<Byte> tensor, List<Integer> tensorShape)
     {
-    	final ArrayImgFactory< ByteType > factory = new ArrayImgFactory<>( new ByteType() );
-    	long[] shape = IntStream.range(0, tensorShape.size()).mapToLong(i -> tensorShape.get(i)).toArray();
-        final Img< ByteType > outputImg = (Img<ByteType>) factory.create(shape);
-    	Cursor<ByteType> tensorCursor= outputImg.cursor();
-		while (tensorCursor.hasNext()) {
-			tensorCursor.fwd();
-			int i = IndexingUtils.multidimensionalIntoFlatIndex(tensorCursor.positionAsLongArray(),
-					shape);
-        	tensorCursor.get().set(tensor.get(i));
-		}
-	 	return outputImg;
+    	ByteArrayOutputStream baos = new ByteArrayOutputStream(tensor.size());
+    	tensor.forEach(baos::write);
+    	long[] shape = new long[tensorShape.size()];
+    	RandomAccessibleInterval<ByteType> rai = ArrayImgs.bytes(baos.toByteArray(), shape);
+		return Utils.transpose(rai);
 	}
 
     /**
-     * Builds a ByteType {@link Img} from the information stored in a byte buffer.
+     * Builds a ByteType {@link RandomAccessibleInterval} from the information stored in a byte buffer.
      * The shape of the image that was previously retrieved from the buffer
      * @param tensor
      * 	byte buffer containing the information of the a tenosr, the position in the buffer
      *  should not be at zero but right after the header.
      * @param tensorShape
      * 	shape of the image to generate, it has been retrieved from the byte buffer 
-     * @return image specified in the bytebuffer
+     * @return RandomAccessibleInterval specified in the bytebuffer
      */
-    private static Img<ByteType> buildInt8FromInteger(List<Integer> tensor, List<Integer> tensorShape)
+    private static RandomAccessibleInterval<ByteType> buildInt8FromInteger(List<Integer> tensor, List<Integer> tensorShape)
     {
-    	final ArrayImgFactory< ByteType > factory = new ArrayImgFactory<>( new ByteType() );
-    	long[] shape = IntStream.range(0, tensorShape.size()).mapToLong(i -> tensorShape.get(i)).toArray();
-        final Img< ByteType > outputImg = (Img<ByteType>) factory.create(shape);
-    	Cursor<ByteType> tensorCursor= outputImg.cursor();
-		while (tensorCursor.hasNext()) {
-			tensorCursor.fwd();
-			int i = IndexingUtils.multidimensionalIntoFlatIndex(tensorCursor.positionAsLongArray(),
-					shape);
-        	tensorCursor.get().set(tensor.get(i).byteValue());
-		}
-	 	return outputImg;
+    	byte[] bytes = new byte[tensor.size()];
+    	int c = 0;
+    	for (Integer it : tensor)
+    		bytes[c ++] = it.byteValue();
+    	long[] shape = new long[tensorShape.size()];
+    	c = 0;
+    	for (Integer it : tensorShape)
+    		shape[c ++] = it.longValue();
+    	RandomAccessibleInterval<ByteType> rai = ArrayImgs.bytes(bytes, shape);
+		return Utils.transpose(rai);
 	}
 
     /**
-     * Builds a ByteType {@link Img} from the information stored in a byte buffer.
+     * Builds a ByteType {@link RandomAccessibleInterval} from the information stored in a byte buffer.
      * The shape of the image that was previously retrieved from the buffer
      * @param tensor
      * 	byte buffer containing the information of the a tenosr, the position in the buffer
      *  should not be at zero but right after the header.
      * @param tensorShape
      * 	shape of the image to generate, it has been retrieved from the byte buffer 
-     * @return image specified in the bytebuffer
+     * @return RandomAccessibleInterval specified in the bytebuffer
      */
-    private static Img<UnsignedByteType> buildUint8(List array, List<Integer> tensorShape)
+    private static RandomAccessibleInterval<UnsignedByteType> buildUint8(List array, List<Integer> tensorShape)
     {
     	if (!(array.get(0) instanceof Byte)
         		&& !(array.get(0) instanceof Integer)) {
@@ -277,66 +269,64 @@ public final class ListToImgLib2 {
 	}
 
     /**
-     * Builds a ByteType {@link Img} from the information stored in a byte buffer.
+     * Builds a ByteType {@link RandomAccessibleInterval} from the information stored in a byte buffer.
      * The shape of the image that was previously retrieved from the buffer
      * @param tensor
      * 	byte buffer containing the information of the a tenosr, the position in the buffer
      *  should not be at zero but right after the header.
      * @param tensorShape
      * 	shape of the image to generate, it has been retrieved from the byte buffer 
-     * @return image specified in the bytebuffer
+     * @return RandomAccessibleInterval specified in the bytebuffer
      */
-    private static Img<UnsignedByteType> buildUint8FromByte(List<Byte> tensor, List<Integer> tensorShape)
+    private static RandomAccessibleInterval<UnsignedByteType> buildUint8FromByte(List<Byte> tensor, List<Integer> tensorShape)
     {
-    	final ArrayImgFactory< UnsignedByteType > factory = new ArrayImgFactory<>( new UnsignedByteType() );
-    	long[] shape = IntStream.range(0, tensorShape.size()).mapToLong(i -> tensorShape.get(i)).toArray();
-        final Img< UnsignedByteType > outputImg = (Img<UnsignedByteType>) factory.create(shape);
-    	Cursor<UnsignedByteType> tensorCursor= outputImg.cursor();
-		while (tensorCursor.hasNext()) {
-			tensorCursor.fwd();
-			int i = IndexingUtils.multidimensionalIntoFlatIndex(tensorCursor.positionAsLongArray(),
-					shape);
-        	tensorCursor.get().set(tensor.get(i));
-		}
-	 	return outputImg;
+    	byte[] bytes = new byte[tensor.size()];
+    	int c = 0;
+    	for (Byte it : tensor)
+    		bytes[c ++] = it.byteValue();
+    	long[] shape = new long[tensorShape.size()];
+    	c = 0;
+    	for (Integer it : tensorShape)
+    		shape[c ++] = it.longValue();
+    	RandomAccessibleInterval<UnsignedByteType> rai = ArrayImgs.unsignedBytes(bytes, shape);
+		return Utils.transpose(rai);
 	}
 
     /**
-     * Builds a ByteType {@link Img} from the information stored in a byte buffer.
+     * Builds a ByteType {@link RandomAccessibleInterval} from the information stored in a byte buffer.
      * The shape of the image that was previously retrieved from the buffer
      * @param tensor
      * 	byte buffer containing the information of the a tenosr, the position in the buffer
      *  should not be at zero but right after the header.
      * @param tensorShape
      * 	shape of the image to generate, it has been retrieved from the byte buffer 
-     * @return image specified in the bytebuffer
+     * @return RandomAccessibleInterval specified in the bytebuffer
      */
-    private static Img<UnsignedByteType> buildUint8FromInteger(List<Integer> tensor, List<Integer> tensorShape)
+    private static RandomAccessibleInterval<UnsignedByteType> buildUint8FromInteger(List<Integer> tensor, List<Integer> tensorShape)
     {
-    	final ArrayImgFactory< UnsignedByteType > factory = new ArrayImgFactory<>( new UnsignedByteType() );
-    	long[] shape = IntStream.range(0, tensorShape.size()).mapToLong(i -> tensorShape.get(i)).toArray();
-        final Img< UnsignedByteType > outputImg = (Img<UnsignedByteType>) factory.create(shape);
-    	Cursor<UnsignedByteType> tensorCursor= outputImg.cursor();
-		while (tensorCursor.hasNext()) {
-			tensorCursor.fwd();
-			int i = IndexingUtils.multidimensionalIntoFlatIndex(tensorCursor.positionAsLongArray(),
-					shape);
-        	tensorCursor.get().set(tensor.get(i).byteValue());
-		}
-	 	return outputImg;
+    	byte[] bytes = new byte[tensor.size()];
+    	int c = 0;
+    	for (Integer it : tensor)
+    		bytes[c ++] = it.byteValue();
+    	long[] shape = new long[tensorShape.size()];
+    	c = 0;
+    	for (Integer it : tensorShape)
+    		shape[c ++] = it.longValue();
+    	RandomAccessibleInterval<UnsignedByteType> rai = ArrayImgs.unsignedBytes(bytes, shape);
+		return Utils.transpose(rai);
 	}
 
     /**
-     * Builds a ShortType {@link Img} from the information stored in a byte buffer.
+     * Builds a ShortType {@link RandomAccessibleInterval} from the information stored in a byte buffer.
      * The shape of the image that was previously retrieved from the buffer
      * @param tensor
      * 	byte buffer containing the information of the a tenosr, the position in the buffer
      *  should not be at zero but right after the header.
      * @param tensorShape
      * 	shape of the image to generate, it has been retrieved from the byte buffer 
-     * @return image specified in the bytebuffer
+     * @return RandomAccessibleInterval specified in the bytebuffer
      */
-    private static Img<ShortType> buildInt16(List array, List<Integer> tensorShape)
+    private static RandomAccessibleInterval<ShortType> buildInt16(List array, List<Integer> tensorShape)
     {
     	if (!(array.get(0) instanceof Short)
         		&& !(array.get(0) instanceof Integer)) {
@@ -350,66 +340,64 @@ public final class ListToImgLib2 {
 	}
 
     /**
-     * Builds a IntType {@link Img} from the information stored in a byte buffer.
+     * Builds a IntType {@link RandomAccessibleInterval} from the information stored in a byte buffer.
      * The shape of the image that was previously retrieved from the buffer
      * @param tensor
      * 	byte buffer containing the information of the a tenosr, the position in the buffer
      *  should not be at zero but right after the header.
      * @param tensorShape
      * 	shape of the image to generate, it has been retrieved from the byte buffer 
-     * @return image specified in the bytebuffer
+     * @return RandomAccessibleInterval specified in the bytebuffer
      */
-    private static Img<ShortType> buildInt16FromShort(List<Short> tensor, List<Integer> tensorShape)
+    private static RandomAccessibleInterval<ShortType> buildInt16FromShort(List<Short> tensor, List<Integer> tensorShape)
     {
-    	final ArrayImgFactory< ShortType > factory = new ArrayImgFactory<>( new ShortType() );
-    	long[] shape = IntStream.range(0, tensorShape.size()).mapToLong(i -> tensorShape.get(i)).toArray();
-        final Img< ShortType > outputImg = (Img<ShortType>) factory.create(shape);
-    	Cursor<ShortType> tensorCursor= outputImg.cursor();
-		while (tensorCursor.hasNext()) {
-			tensorCursor.fwd();
-			int i = IndexingUtils.multidimensionalIntoFlatIndex(tensorCursor.positionAsLongArray(),
-					shape);
-        	tensorCursor.get().set(tensor.get(i));
-		}
-	 	return outputImg;
+    	short[] shorts = new short[tensor.size()];
+    	int c = 0;
+    	for (Short it : tensor)
+    		shorts[c ++] = it.shortValue();
+    	long[] shape = new long[tensorShape.size()];
+    	c = 0;
+    	for (Integer it : tensorShape)
+    		shape[c ++] = it.longValue();
+    	RandomAccessibleInterval<ShortType> rai = ArrayImgs.shorts(shorts, shape);
+		return Utils.transpose(rai);
 	}
 
     /**
-     * Builds a IntType {@link Img} from the information stored in a byte buffer.
+     * Builds a IntType {@link RandomAccessibleInterval} from the information stored in a byte buffer.
      * The shape of the image that was previously retrieved from the buffer
      * @param tensor
      * 	byte buffer containing the information of the a tenosr, the position in the buffer
      *  should not be at zero but right after the header.
      * @param tensorShape
      * 	shape of the image to generate, it has been retrieved from the byte buffer 
-     * @return image specified in the bytebuffer
+     * @return RandomAccessibleInterval specified in the bytebuffer
      */
-    private static Img<ShortType> buildInt16FromInteger(List<Integer> tensor, List<Integer> tensorShape)
+    private static RandomAccessibleInterval<ShortType> buildInt16FromInteger(List<Integer> tensor, List<Integer> tensorShape)
     {
-    	final ArrayImgFactory< ShortType > factory = new ArrayImgFactory<>( new ShortType() );
-    	long[] shape = IntStream.range(0, tensorShape.size()).mapToLong(i -> tensorShape.get(i)).toArray();
-        final Img< ShortType > outputImg = (Img<ShortType>) factory.create(shape);
-    	Cursor<ShortType> tensorCursor= outputImg.cursor();
-		while (tensorCursor.hasNext()) {
-			tensorCursor.fwd();
-			int i = IndexingUtils.multidimensionalIntoFlatIndex(tensorCursor.positionAsLongArray(),
-					shape);
-        	tensorCursor.get().set(tensor.get(i).shortValue());
-		}
-	 	return outputImg;
+    	short[] shorts = new short[tensor.size()];
+    	int c = 0;
+    	for (Integer it : tensor)
+    		shorts[c ++] = it.shortValue();
+    	long[] shape = new long[tensorShape.size()];
+    	c = 0;
+    	for (Integer it : tensorShape)
+    		shape[c ++] = it.longValue();
+    	RandomAccessibleInterval<ShortType> rai = ArrayImgs.shorts(shorts, shape);
+		return Utils.transpose(rai);
 	}
 
     /**
-     * Builds a ShortType {@link Img} from the information stored in a byte buffer.
+     * Builds a ShortType {@link RandomAccessibleInterval} from the information stored in a byte buffer.
      * The shape of the image that was previously retrieved from the buffer
      * @param tensor
      * 	byte buffer containing the information of the a tenosr, the position in the buffer
      *  should not be at zero but right after the header.
      * @param tensorShape
      * 	shape of the image to generate, it has been retrieved from the byte buffer 
-     * @return image specified in the bytebuffer
+     * @return RandomAccessibleInterval specified in the bytebuffer
      */
-    private static Img<UnsignedShortType> buildUint16(List array, List<Integer> tensorShape)
+    private static RandomAccessibleInterval<UnsignedShortType> buildUint16(List array, List<Integer> tensorShape)
     {
     	if (!(array.get(0) instanceof Short)
         		&& !(array.get(0) instanceof Integer)) {
@@ -423,66 +411,64 @@ public final class ListToImgLib2 {
 	}
 
     /**
-     * Builds a IntType {@link Img} from the information stored in a byte buffer.
+     * Builds a IntType {@link RandomAccessibleInterval} from the information stored in a byte buffer.
      * The shape of the image that was previously retrieved from the buffer
      * @param tensor
      * 	byte buffer containing the information of the a tenosr, the position in the buffer
      *  should not be at zero but right after the header.
      * @param tensorShape
      * 	shape of the image to generate, it has been retrieved from the byte buffer 
-     * @return image specified in the bytebuffer
+     * @return RandomAccessibleInterval specified in the bytebuffer
      */
-    private static Img<UnsignedShortType> buildUint16FromShort(List<Short> tensor, List<Integer> tensorShape)
+    private static RandomAccessibleInterval<UnsignedShortType> buildUint16FromShort(List<Short> tensor, List<Integer> tensorShape)
     {
-    	final ArrayImgFactory< UnsignedShortType > factory = new ArrayImgFactory<>( new UnsignedShortType() );
-    	long[] shape = IntStream.range(0, tensorShape.size()).mapToLong(i -> tensorShape.get(i)).toArray();
-        final Img< UnsignedShortType > outputImg = (Img<UnsignedShortType>) factory.create(shape);
-    	Cursor<UnsignedShortType> tensorCursor= outputImg.cursor();
-		while (tensorCursor.hasNext()) {
-			tensorCursor.fwd();
-			int i = IndexingUtils.multidimensionalIntoFlatIndex(tensorCursor.positionAsLongArray(),
-					shape);
-        	tensorCursor.get().set(tensor.get(i));
-		}
-	 	return outputImg;
+    	short[] shorts = new short[tensor.size()];
+    	int c = 0;
+    	for (Short it : tensor)
+    		shorts[c ++] = it.shortValue();
+    	long[] shape = new long[tensorShape.size()];
+    	c = 0;
+    	for (Integer it : tensorShape)
+    		shape[c ++] = it.longValue();
+    	RandomAccessibleInterval<UnsignedShortType> rai = ArrayImgs.unsignedShorts(shorts, shape);
+		return Utils.transpose(rai);
 	}
 
     /**
-     * Builds a IntType {@link Img} from the information stored in a byte buffer.
+     * Builds a IntType {@link RandomAccessibleInterval} from the information stored in a byte buffer.
      * The shape of the image that was previously retrieved from the buffer
      * @param tensor
      * 	byte buffer containing the information of the a tenosr, the position in the buffer
      *  should not be at zero but right after the header.
      * @param tensorShape
      * 	shape of the image to generate, it has been retrieved from the byte buffer 
-     * @return image specified in the bytebuffer
+     * @return RandomAccessibleInterval specified in the bytebuffer
      */
-    private static Img<UnsignedShortType> buildUint16FromInteger(List<Integer> tensor, List<Integer> tensorShape)
+    private static RandomAccessibleInterval<UnsignedShortType> buildUint16FromInteger(List<Integer> tensor, List<Integer> tensorShape)
     {
-    	final ArrayImgFactory< UnsignedShortType > factory = new ArrayImgFactory<>( new UnsignedShortType() );
-    	long[] shape = IntStream.range(0, tensorShape.size()).mapToLong(i -> tensorShape.get(i)).toArray();
-        final Img< UnsignedShortType > outputImg = (Img<UnsignedShortType>) factory.create(shape);
-    	Cursor<UnsignedShortType> tensorCursor= outputImg.cursor();
-		while (tensorCursor.hasNext()) {
-			tensorCursor.fwd();
-			int i = IndexingUtils.multidimensionalIntoFlatIndex(tensorCursor.positionAsLongArray(),
-					shape);
-        	tensorCursor.get().set(tensor.get(i));
-		}
-	 	return outputImg;
+    	short[] shorts = new short[tensor.size()];
+    	int c = 0;
+    	for (Integer it : tensor)
+    		shorts[c ++] = it.shortValue();
+    	long[] shape = new long[tensorShape.size()];
+    	c = 0;
+    	for (Integer it : tensorShape)
+    		shape[c ++] = it.longValue();
+    	RandomAccessibleInterval<UnsignedShortType> rai = ArrayImgs.unsignedShorts(shorts, shape);
+		return Utils.transpose(rai);
 	}
 
     /**
-     * Builds a ByteType {@link Img} from the information stored in a byte buffer.
+     * Builds a ByteType {@link RandomAccessibleInterval} from the information stored in a byte buffer.
      * The shape of the image that was previously retrieved from the buffer
      * @param tensor
      * 	byte buffer containing the information of the a tenosr, the position in the buffer
      *  should not be at zero but right after the header.
      * @param tensorShape
      * 	shape of the image to generate, it has been retrieved from the byte buffer 
-     * @return image specified in the bytebuffer
+     * @return RandomAccessibleInterval specified in the bytebuffer
      */
-    private static Img<IntType> buildInt32(List array, List<Integer> tensorShape)
+    private static RandomAccessibleInterval<IntType> buildInt32(List array, List<Integer> tensorShape)
     {
     	if (!(array.get(0) instanceof Integer)) {
     		throw new IllegalArgumentException("Unable to build ImgLib2 array of data type "
@@ -493,41 +479,40 @@ public final class ListToImgLib2 {
 	}
 
     /**
-     * Builds a IntType {@link Img} from the information stored in a byte buffer.
+     * Builds a IntType {@link RandomAccessibleInterval} from the information stored in a byte buffer.
      * The shape of the image that was previously retrieved from the buffer
      * @param tensor
      * 	byte buffer containing the information of the a tenosr, the position in the buffer
      *  should not be at zero but right after the header.
      * @param tensorShape
      * 	shape of the image to generate, it has been retrieved from the byte buffer 
-     * @return image specified in the bytebuffer
+     * @return RandomAccessibleInterval specified in the bytebuffer
      */
-    private static Img<IntType> buildInt32FromInteger(List<Integer> tensor, List<Integer> tensorShape)
+    private static RandomAccessibleInterval<IntType> buildInt32FromInteger(List<Integer> tensor, List<Integer> tensorShape)
     {
-    	final ArrayImgFactory< IntType > factory = new ArrayImgFactory<>( new IntType() );
-    	long[] shape = IntStream.range(0, tensorShape.size()).mapToLong(i -> tensorShape.get(i)).toArray();
-        final Img< IntType > outputImg = (Img<IntType>) factory.create(shape);
-    	Cursor<IntType> tensorCursor= outputImg.cursor();
-		while (tensorCursor.hasNext()) {
-			tensorCursor.fwd();
-			int i = IndexingUtils.multidimensionalIntoFlatIndex(tensorCursor.positionAsLongArray(),
-					shape);
-        	tensorCursor.get().set(tensor.get(i));
-		}
-	 	return outputImg;
+    	int[] ints = new int[tensor.size()];
+    	int c = 0;
+    	for (Integer it : tensor)
+    		ints[c ++] = it.intValue();
+    	long[] shape = new long[tensorShape.size()];
+    	c = 0;
+    	for (Integer it : tensorShape)
+    		shape[c ++] = it.longValue();
+    	RandomAccessibleInterval<IntType> rai = ArrayImgs.ints(ints, shape);
+		return Utils.transpose(rai);
 	}
 
     /**
-     * Builds a ByteType {@link Img} from the information stored in a byte buffer.
+     * Builds a ByteType {@link RandomAccessibleInterval} from the information stored in a byte buffer.
      * The shape of the image that was previously retrieved from the buffer
      * @param tensor
      * 	byte buffer containing the information of the a tenosr, the position in the buffer
      *  should not be at zero but right after the header.
      * @param tensorShape
      * 	shape of the image to generate, it has been retrieved from the byte buffer 
-     * @return image specified in the bytebuffer
+     * @return RandomAccessibleInterval specified in the bytebuffer
      */
-    private static Img<UnsignedIntType> buildUint32(List array, List<Integer> tensorShape)
+    private static RandomAccessibleInterval<UnsignedIntType> buildUint32(List array, List<Integer> tensorShape)
     {
     	if (!(array.get(0) instanceof Long)
         		&& !(array.get(0) instanceof Integer)) {
@@ -541,66 +526,64 @@ public final class ListToImgLib2 {
 	}
 
     /**
-     * Builds a IntType {@link Img} from the information stored in a byte buffer.
+     * Builds a IntType {@link RandomAccessibleInterval} from the information stored in a byte buffer.
      * The shape of the image that was previously retrieved from the buffer
      * @param tensor
      * 	byte buffer containing the information of the a tenosr, the position in the buffer
      *  should not be at zero but right after the header.
      * @param tensorShape
      * 	shape of the image to generate, it has been retrieved from the byte buffer 
-     * @return image specified in the bytebuffer
+     * @return RandomAccessibleInterval specified in the bytebuffer
      */
-    private static Img<UnsignedIntType> buildUint32FromInteger(List<Integer> tensor, List<Integer> tensorShape)
+    private static RandomAccessibleInterval<UnsignedIntType> buildUint32FromInteger(List<Integer> tensor, List<Integer> tensorShape)
     {
-    	final ArrayImgFactory< UnsignedIntType > factory = new ArrayImgFactory<>( new UnsignedIntType() );
-    	long[] shape = IntStream.range(0, tensorShape.size()).mapToLong(i -> tensorShape.get(i)).toArray();
-        final Img< UnsignedIntType > outputImg = (Img<UnsignedIntType>) factory.create(shape);
-    	Cursor<UnsignedIntType> tensorCursor= outputImg.cursor();
-		while (tensorCursor.hasNext()) {
-			tensorCursor.fwd();
-			int i = IndexingUtils.multidimensionalIntoFlatIndex(tensorCursor.positionAsLongArray(),
-					shape);
-        	tensorCursor.get().set(tensor.get(i));
-		}
-	 	return outputImg;
+    	int[] ints = new int[tensor.size()];
+    	int c = 0;
+    	for (Integer it : tensor)
+    		ints[c ++] = it.intValue();
+    	long[] shape = new long[tensorShape.size()];
+    	c = 0;
+    	for (Integer it : tensorShape)
+    		shape[c ++] = it.longValue();
+    	RandomAccessibleInterval<UnsignedIntType> rai = ArrayImgs.unsignedInts(ints, shape);
+		return Utils.transpose(rai);
 	}
 
     /**
-     * Builds a IntType {@link Img} from the information stored in a byte buffer.
+     * Builds a IntType {@link RandomAccessibleInterval} from the information stored in a byte buffer.
      * The shape of the image that was previously retrieved from the buffer
      * @param tensor
      * 	byte buffer containing the information of the a tenosr, the position in the buffer
      *  should not be at zero but right after the header.
      * @param tensorShape
      * 	shape of the image to generate, it has been retrieved from the byte buffer 
-     * @return image specified in the bytebuffer
+     * @return RandomAccessibleInterval specified in the bytebuffer
      */
-    private static Img<UnsignedIntType> buildUint32FromLong(List<Long> tensor, List<Integer> tensorShape)
+    private static RandomAccessibleInterval<UnsignedIntType> buildUint32FromLong(List<Long> tensor, List<Integer> tensorShape)
     {
-    	final ArrayImgFactory< UnsignedIntType > factory = new ArrayImgFactory<>( new UnsignedIntType() );
-    	long[] shape = IntStream.range(0, tensorShape.size()).mapToLong(i -> tensorShape.get(i)).toArray();
-        final Img< UnsignedIntType > outputImg = (Img<UnsignedIntType>) factory.create(shape);
-    	Cursor<UnsignedIntType> tensorCursor= outputImg.cursor();
-		while (tensorCursor.hasNext()) {
-			tensorCursor.fwd();
-			int i = IndexingUtils.multidimensionalIntoFlatIndex(tensorCursor.positionAsLongArray(),
-					shape);
-        	tensorCursor.get().set(tensor.get(i));
-		}
-	 	return outputImg;
+    	int[] ints = new int[tensor.size()];
+    	int c = 0;
+    	for (Long it : tensor)
+    		ints[c ++] = it.intValue();
+    	long[] shape = new long[tensorShape.size()];
+    	c = 0;
+    	for (Integer it : tensorShape)
+    		shape[c ++] = it.longValue();
+    	RandomAccessibleInterval<UnsignedIntType> rai = ArrayImgs.unsignedInts(ints, shape);
+		return Utils.transpose(rai);
 	}
 
     /**
-     * Builds a LongType {@link Img} from the information stored in a byte buffer.
+     * Builds a LongType {@link RandomAccessibleInterval} from the information stored in a byte buffer.
      * The shape of the image that was previously retrieved from the buffer
      * @param tensor
      * 	byte buffer containing the information of the a tenosr, the position in the buffer
      *  should not be at zero but right after the header.
      * @param tensorShape
      * 	shape of the image to generate, it has been retrieved from the byte buffer 
-     * @return image specified in the bytebuffer
+     * @return RandomAccessibleInterval specified in the bytebuffer
      */
-    private static Img<LongType> buildInt64(List array, List<Integer> tensorShape)
+    private static RandomAccessibleInterval<LongType> buildInt64(List array, List<Integer> tensorShape)
     {
     	if (!(array.get(0) instanceof Long)
         		&& !(array.get(0) instanceof Integer)) {
@@ -614,66 +597,64 @@ public final class ListToImgLib2 {
 	}
 
     /**
-     * Builds a LongType {@link Img} from the information stored in a byte buffer.
+     * Builds a LongType {@link RandomAccessibleInterval} from the information stored in a byte buffer.
      * The shape of the image that was previously retrieved from the buffer
      * @param tensor
      * 	byte buffer containing the information of the a tenosr, the position in the buffer
      *  should not be at zero but right after the header.
      * @param tensorShape
      * 	shape of the image to generate, it has been retrieved from the byte buffer 
-     * @return image specified in the bytebuffer
+     * @return RandomAccessibleInterval specified in the bytebuffer
      */
-    private static Img<LongType> buildInt64FromLong(List<Long> tensor, List<Integer> tensorShape)
+    private static RandomAccessibleInterval<LongType> buildInt64FromLong(List<Long> tensor, List<Integer> tensorShape)
     {
-    	final ArrayImgFactory< LongType > factory = new ArrayImgFactory<>( new LongType() );
-    	long[] shape = IntStream.range(0, tensorShape.size()).mapToLong(i -> tensorShape.get(i)).toArray();
-        final Img< LongType > outputImg = (Img<LongType>) factory.create(shape);
-    	Cursor<LongType> tensorCursor= outputImg.cursor();
-		while (tensorCursor.hasNext()) {
-			tensorCursor.fwd();
-			int i = IndexingUtils.multidimensionalIntoFlatIndex(tensorCursor.positionAsLongArray(),
-					shape);
-        	tensorCursor.get().set(tensor.get(i));
-		}
-	 	return outputImg;
+    	long[] longs = new long[tensor.size()];
+    	int c = 0;
+    	for (Long it : tensor)
+    		longs[c ++] = it.longValue();
+    	long[] shape = new long[tensorShape.size()];
+    	c = 0;
+    	for (Integer it : tensorShape)
+    		shape[c ++] = it.longValue();
+    	RandomAccessibleInterval<LongType> rai = ArrayImgs.longs(longs, shape);
+		return Utils.transpose(rai);
 	}
 
     /**
-     * Builds a LongType {@link Img} from the information stored in a byte buffer.
+     * Builds a LongType {@link RandomAccessibleInterval} from the information stored in a byte buffer.
      * The shape of the image that was previously retrieved from the buffer
      * @param tensor
      * 	byte buffer containing the information of the a tenosr, the position in the buffer
      *  should not be at zero but right after the header.
      * @param tensorShape
      * 	shape of the image to generate, it has been retrieved from the byte buffer 
-     * @return image specified in the bytebuffer
+     * @return RandomAccessibleInterval specified in the bytebuffer
      */
-    private static Img<LongType> buildInt64FromInteger(List<Integer> tensor, List<Integer> tensorShape)
+    private static RandomAccessibleInterval<LongType> buildInt64FromInteger(List<Integer> tensor, List<Integer> tensorShape)
     {
-    	final ArrayImgFactory< LongType > factory = new ArrayImgFactory<>( new LongType() );
-    	long[] shape = IntStream.range(0, tensorShape.size()).mapToLong(i -> tensorShape.get(i)).toArray();
-        final Img< LongType > outputImg = (Img<LongType>) factory.create(shape);
-    	Cursor<LongType> tensorCursor= outputImg.cursor();
-		while (tensorCursor.hasNext()) {
-			tensorCursor.fwd();
-			int i = IndexingUtils.multidimensionalIntoFlatIndex(tensorCursor.positionAsLongArray(),
-					shape);
-        	tensorCursor.get().set(tensor.get(i));
-		}
-	 	return outputImg;
+    	long[] longs = new long[tensor.size()];
+    	int c = 0;
+    	for (Integer it : tensor)
+    		longs[c ++] = it.longValue();
+    	long[] shape = new long[tensorShape.size()];
+    	c = 0;
+    	for (Integer it : tensorShape)
+    		shape[c ++] = it.longValue();
+    	RandomAccessibleInterval<LongType> rai = ArrayImgs.longs(longs, shape);
+		return Utils.transpose(rai);
 	}
 
     /**
-     * Builds a FloatType {@link Img} from the information stored in a byte buffer.
+     * Builds a FloatType {@link RandomAccessibleInterval} from the information stored in a byte buffer.
      * The shape of the image that was previously retrieved from the buffer
      * @param tensor
      * 	byte buffer containing the information of the a tenosr, the position in the buffer
      *  should not be at zero but right after the header.
      * @param tensorShape
      * 	shape of the image to generate, it has been retrieved from the byte buffer 
-     * @return image specified in the bytebuffer
+     * @return RandomAccessibleInterval specified in the bytebuffer
      */
-    private static Img<FloatType> buildFloat32(List array, List<Integer> tensorShape)
+    private static RandomAccessibleInterval<FloatType> buildFloat32(List array, List<Integer> tensorShape)
     {
     	if (!(array.get(0) instanceof Float)
     			&& !(array.get(0) instanceof BigDecimal)) {
@@ -687,66 +668,64 @@ public final class ListToImgLib2 {
 	}
 
     /**
-     * Builds a FloatType {@link Img} from the information stored in a byte buffer.
+     * Builds a FloatType {@link RandomAccessibleInterval} from the information stored in a byte buffer.
      * The shape of the image that was previously retrieved from the buffer
      * @param tensor
      * 	byte buffer containing the information of the a tenosr, the position in the buffer
      *  should not be at zero but right after the header.
      * @param tensorShape
      * 	shape of the image to generate, it has been retrieved from the byte buffer 
-     * @return image specified in the bytebuffer
+     * @return RandomAccessibleInterval specified in the bytebuffer
      */
-    private static Img<FloatType> buildFloat32FromFloat(List<Float> tensor, List<Integer> tensorShape)
+    private static RandomAccessibleInterval<FloatType> buildFloat32FromFloat(List<Float> tensor, List<Integer> tensorShape)
     {
-    	final ArrayImgFactory< FloatType > factory = new ArrayImgFactory<>( new FloatType() );
-    	long[] shape = IntStream.range(0, tensorShape.size()).mapToLong(i -> tensorShape.get(i)).toArray();
-        final Img< FloatType > outputImg = (Img<FloatType>) factory.create(shape);
-    	Cursor<FloatType> tensorCursor= outputImg.cursor();
-		while (tensorCursor.hasNext()) {
-			tensorCursor.fwd();
-			int i = IndexingUtils.multidimensionalIntoFlatIndex(tensorCursor.positionAsLongArray(),
-					shape);
-        	tensorCursor.get().set(tensor.get(i));
-		}
-	 	return outputImg;
+    	float[] floats = new float[tensor.size()];
+    	int c = 0;
+    	for (Float it : tensor)
+    		floats[c ++] = it.floatValue();
+    	long[] shape = new long[tensorShape.size()];
+    	c = 0;
+    	for (Integer it : tensorShape)
+    		shape[c ++] = it.longValue();
+    	RandomAccessibleInterval<FloatType> rai = ArrayImgs.floats(floats, shape);
+		return Utils.transpose(rai);
 	}
 
     /**
-     * Builds a FloatType {@link Img} from the information stored in a byte buffer.
+     * Builds a FloatType {@link RandomAccessibleInterval} from the information stored in a byte buffer.
      * The shape of the image that was previously retrieved from the buffer
      * @param tensor
      * 	byte buffer containing the information of the a tenosr, the position in the buffer
      *  should not be at zero but right after the header.
      * @param tensorShape
      * 	shape of the image to generate, it has been retrieved from the byte buffer 
-     * @return image specified in the bytebuffer
+     * @return RandomAccessibleInterval specified in the bytebuffer
      */
-    private static Img<FloatType> buildFloat32FromBigDecimal(List<BigDecimal> tensor, List<Integer> tensorShape)
+    private static RandomAccessibleInterval<FloatType> buildFloat32FromBigDecimal(List<BigDecimal> tensor, List<Integer> tensorShape)
     {
-    	final ArrayImgFactory< FloatType > factory = new ArrayImgFactory<>( new FloatType() );
-    	long[] shape = IntStream.range(0, tensorShape.size()).mapToLong(i -> tensorShape.get(i)).toArray();
-        final Img< FloatType > outputImg = (Img<FloatType>) factory.create(shape);
-    	Cursor<FloatType> tensorCursor= outputImg.cursor();
-		while (tensorCursor.hasNext()) {
-			tensorCursor.fwd();
-			int i = IndexingUtils.multidimensionalIntoFlatIndex(tensorCursor.positionAsLongArray(),
-					shape);
-        	tensorCursor.get().set(tensor.get(i).floatValue());
-		}
-	 	return outputImg;
+    	float[] floats = new float[tensor.size()];
+    	int c = 0;
+    	for (BigDecimal it : tensor)
+    		floats[c ++] = it.floatValue();
+    	long[] shape = new long[tensorShape.size()];
+    	c = 0;
+    	for (Integer it : tensorShape)
+    		shape[c ++] = it.longValue();
+    	RandomAccessibleInterval<FloatType> rai = ArrayImgs.floats(floats, shape);
+		return Utils.transpose(rai);
 	}
 
     /**
-     * Builds a DoubleType {@link Img} from the information stored in a byte buffer.
+     * Builds a DoubleType {@link RandomAccessibleInterval} from the information stored in a byte buffer.
      * The shape of the image that was previously retrieved from the buffer
      * @param tensor
      * 	byte buffer containing the information of the a tenosr, the position in the buffer
      *  should not be at zero but right after the header.
      * @param tensorShape
      * 	shape of the image to generate, it has been retrieved from the byte buffer 
-     * @return image specified in the bytebuffer
+     * @return RandomAccessibleInterval specified in the bytebuffer
      */
-    private static Img<DoubleType> buildFloat64(List array, List<Integer> tensorShape)
+    private static RandomAccessibleInterval<DoubleType> buildFloat64(List array, List<Integer> tensorShape)
     {
     	if (!(array.get(0) instanceof Float)
         		&& !(array.get(0) instanceof Double)
@@ -763,77 +742,74 @@ public final class ListToImgLib2 {
 	}
 
     /**
-     * Builds a DoubleType {@link Img} from the information stored in a byte buffer.
+     * Builds a DoubleType {@link RandomAccessibleInterval} from the information stored in a byte buffer.
      * The shape of the image that was previously retrieved from the buffer
      * @param tensor
      * 	byte buffer containing the information of the a tenosr, the position in the buffer
      *  should not be at zero but right after the header.
      * @param tensorShape
      * 	shape of the image to generate, it has been retrieved from the byte buffer 
-     * @return image specified in the bytebuffer
+     * @return RandomAccessibleInterval specified in the bytebuffer
      */
-    private static Img<DoubleType> buildFloat64FromDouble(List<Double> tensor, List<Integer> tensorShape)
+    private static RandomAccessibleInterval<DoubleType> buildFloat64FromDouble(List<Double> tensor, List<Integer> tensorShape)
     {
-    	final ArrayImgFactory< DoubleType > factory = new ArrayImgFactory<>( new DoubleType() );
-    	long[] shape = IntStream.range(0, tensorShape.size()).mapToLong(i -> tensorShape.get(i)).toArray();
-        final Img< DoubleType > outputImg = (Img<DoubleType>) factory.create(shape);
-    	Cursor<DoubleType> tensorCursor= outputImg.cursor();
-		while (tensorCursor.hasNext()) {
-			tensorCursor.fwd();
-			int i = IndexingUtils.multidimensionalIntoFlatIndex(tensorCursor.positionAsLongArray(),
-					shape);
-        	tensorCursor.get().set(tensor.get(i));
-		}
-	 	return outputImg;
+    	double[] doubles = new double[tensor.size()];
+    	int c = 0;
+    	for (Double it : tensor)
+    		doubles[c ++] = it.byteValue();
+    	long[] shape = new long[tensorShape.size()];
+    	c = 0;
+    	for (Integer it : tensorShape)
+    		shape[c ++] = it.longValue();
+    	RandomAccessibleInterval<DoubleType> rai = ArrayImgs.doubles(doubles, shape);
+		return Utils.transpose(rai);
 	}
 
     /**
-     * Builds a DoubleType {@link Img} from the information stored in a byte buffer.
+     * Builds a DoubleType {@link RandomAccessibleInterval} from the information stored in a byte buffer.
      * The shape of the image that was previously retrieved from the buffer
      * @param tensor
      * 	byte buffer containing the information of the a tenosr, the position in the buffer
      *  should not be at zero but right after the header.
      * @param tensorShape
      * 	shape of the image to generate, it has been retrieved from the byte buffer 
-     * @return image specified in the bytebuffer
+     * @return RandomAccessibleInterval specified in the bytebuffer
      */
-    private static Img<DoubleType> buildFloat64FromFloat(List<Float> tensor, List<Integer> tensorShape)
+    private static RandomAccessibleInterval<DoubleType> buildFloat64FromFloat(List<Float> tensor, List<Integer> tensorShape)
     {
-    	final ArrayImgFactory< DoubleType > factory = new ArrayImgFactory<>( new DoubleType() );
-    	long[] shape = IntStream.range(0, tensorShape.size()).mapToLong(i -> tensorShape.get(i)).toArray();
-        final Img< DoubleType > outputImg = (Img<DoubleType>) factory.create(shape);
-    	Cursor<DoubleType> tensorCursor= outputImg.cursor();
-		while (tensorCursor.hasNext()) {
-			tensorCursor.fwd();
-			int i = IndexingUtils.multidimensionalIntoFlatIndex(tensorCursor.positionAsLongArray(),
-					shape);
-        	tensorCursor.get().set(tensor.get(i));
-		}
-	 	return outputImg;
+    	double[] doubles = new double[tensor.size()];
+    	int c = 0;
+    	for (Float it : tensor)
+    		doubles[c ++] = it.doubleValue();
+    	long[] shape = new long[tensorShape.size()];
+    	c = 0;
+    	for (Integer it : tensorShape)
+    		shape[c ++] = it.longValue();
+    	RandomAccessibleInterval<DoubleType> rai = ArrayImgs.doubles(doubles, shape);
+		return Utils.transpose(rai);
 	}
 
     /**
-     * Builds a DoubleType {@link Img} from the information stored in a byte buffer.
+     * Builds a DoubleType {@link RandomAccessibleInterval} from the information stored in a byte buffer.
      * The shape of the image that was previously retrieved from the buffer
      * @param tensor
      * 	byte buffer containing the information of the a tenosr, the position in the buffer
      *  should not be at zero but right after the header.
      * @param tensorShape
      * 	shape of the image to generate, it has been retrieved from the byte buffer 
-     * @return image specified in the bytebuffer
+     * @return RandomAccessibleInterval specified in the bytebuffer
      */
-    private static Img<DoubleType> buildFloat64FromBigDecimal(List<BigDecimal> tensor, List<Integer> tensorShape)
+    private static RandomAccessibleInterval<DoubleType> buildFloat64FromBigDecimal(List<BigDecimal> tensor, List<Integer> tensorShape)
     {
-    	final ArrayImgFactory< DoubleType > factory = new ArrayImgFactory<>( new DoubleType() );
-    	long[] shape = IntStream.range(0, tensorShape.size()).mapToLong(i -> tensorShape.get(i)).toArray();
-        final Img< DoubleType > outputImg = (Img<DoubleType>) factory.create(shape);
-    	Cursor<DoubleType> tensorCursor= outputImg.cursor();
-		while (tensorCursor.hasNext()) {
-			tensorCursor.fwd();
-			int i = IndexingUtils.multidimensionalIntoFlatIndex(tensorCursor.positionAsLongArray(),
-					shape);
-        	tensorCursor.get().set(tensor.get(i).doubleValue());
-		}
-	 	return outputImg;
+    	double[] doubles = new double[tensor.size()];
+    	int c = 0;
+    	for (BigDecimal it : tensor)
+    		doubles[c ++] = it.byteValue();
+    	long[] shape = new long[tensorShape.size()];
+    	c = 0;
+    	for (Integer it : tensorShape)
+    		shape[c ++] = it.longValue();
+    	RandomAccessibleInterval<DoubleType> rai = ArrayImgs.doubles(doubles, shape);
+		return Utils.transpose(rai);
 	}
 }
