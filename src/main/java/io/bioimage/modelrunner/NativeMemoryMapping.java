@@ -62,10 +62,6 @@ public class NativeMemoryMapping {
             throw new RuntimeException("MapViewOfFile failed");
         }
         
-        // Use the Memory class from JNA to create a view of the memory as a long[]
-        Memory sharedMemory = new Memory(size);
-        sharedMemory.share(0, size);
-        
         // Now you can write to the shared memory as if it were an array of longs
         for (int i = 0; i < size / Long.BYTES; i++) {
         	pSharedMemory.setLong((long) i * Long.BYTES, i);
