@@ -23,6 +23,19 @@ import java.io.File;
 import java.net.MalformedURLException;
 import java.net.URL;
 
+import net.imglib2.RandomAccessibleInterval;
+import net.imglib2.type.NativeType;
+import net.imglib2.type.numeric.RealType;
+import net.imglib2.type.numeric.integer.ByteType;
+import net.imglib2.type.numeric.integer.IntType;
+import net.imglib2.type.numeric.integer.LongType;
+import net.imglib2.type.numeric.integer.ShortType;
+import net.imglib2.type.numeric.integer.UnsignedByteType;
+import net.imglib2.type.numeric.integer.UnsignedIntType;
+import net.imglib2.type.numeric.integer.UnsignedShortType;
+import net.imglib2.type.numeric.real.DoubleType;
+import net.imglib2.type.numeric.real.FloatType;
+
 /**
  * Class that contains common useful static methods that can be used anywhere in the software
  * @author Carlos Garcia Lopez de Haro
@@ -42,5 +55,31 @@ public class CommonUtils {
 			str = str.substring(0, str.length() - Constants.ZENODO_ANNOYING_SUFFIX.length());
 		URL url = new URL(str);
 		return new File(url.getPath()).getName();
+	}
+	
+	public static <T extends RealType<T> & NativeType<T>>
+	String getDataType(RandomAccessibleInterval<T> rai) {
+		if (rai.getAt(rai.minAsLongArray()) instanceof ByteType) {
+			return "int8";
+		} else if (rai.getAt(rai.minAsLongArray()) instanceof UnsignedByteType) {
+			return "uint8";
+		} else if (rai.getAt(rai.minAsLongArray()) instanceof ShortType) {
+			return "int16";
+		} else if (rai.getAt(rai.minAsLongArray()) instanceof UnsignedShortType) {
+			return "uint16";
+		} else if (rai.getAt(rai.minAsLongArray()) instanceof IntType) {
+			return "int32";
+		} else if (rai.getAt(rai.minAsLongArray()) instanceof UnsignedIntType) {
+			return "unit32";
+		} else if (rai.getAt(rai.minAsLongArray()) instanceof LongType) {
+			return "int64";
+		} else if (rai.getAt(rai.minAsLongArray()) instanceof FloatType) {
+			return "float32";
+		} else if (rai.getAt(rai.minAsLongArray()) instanceof DoubleType) {
+			return "float64";
+		} else {
+			throw new IllegalArgumentException("Data type not supported: " 
+					+ rai.getAt(rai.minAsLongArray()).getClass());
+		}
 	}
 }
