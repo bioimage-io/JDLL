@@ -22,6 +22,8 @@ package io.bioimage.modelrunner.utils;
 import java.io.File;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.text.SimpleDateFormat;
+import java.util.Calendar;
 
 import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.img.array.ArrayImgs;
@@ -43,6 +45,8 @@ import net.imglib2.type.numeric.real.FloatType;
  *
  */
 public class CommonUtils {
+	
+	public static Calendar cal;
 	
 	/**
 	 * Gets the filename of the file in an URL from the url String
@@ -84,7 +88,15 @@ public class CommonUtils {
 		}
 	}
 	
+	public static String getTime() {
+		if (cal == null)
+			cal = Calendar.getInstance();
+		SimpleDateFormat sdf = new SimpleDateFormat("HH:mm:ss");
+		String dateString = sdf.format(cal.getTime());
+		return dateString;
+	}
+	
 	public static void main(String[] args) {
-		System.out.println(ArrayImgs.doubles(new long[] {5}).getAt(0).getClass());
+		System.out.println(getTime());
 	}
 }
