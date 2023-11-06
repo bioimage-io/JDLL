@@ -24,6 +24,7 @@ import java.net.MalformedURLException;
 import java.net.URL;
 
 import net.imglib2.RandomAccessibleInterval;
+import net.imglib2.img.array.ArrayImgs;
 import net.imglib2.type.NativeType;
 import net.imglib2.type.numeric.RealType;
 import net.imglib2.type.numeric.integer.ByteType;
@@ -81,5 +82,9 @@ public class CommonUtils {
 			throw new IllegalArgumentException("Data type not supported: " 
 					+ rai.getAt(rai.minAsLongArray()).getClass());
 		}
+	}
+	
+	public static void main(String[] args) {
+		System.out.println(ArrayImgs.doubles(new long[] {5}).getAt(0).getClass());
 	}
 }

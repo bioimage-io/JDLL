@@ -138,6 +138,7 @@ public class RunModeScripts {
 			+ "globals()['" + NP_METHOD + "'] = " + NP_METHOD +  System.lineSeparator()
 			+ "globals()['" + DICT_METHOD + "'] = " + DICT_METHOD +  System.lineSeparator()
 			+ "globals()['" + LIST_METHOD + "'] = " + LIST_METHOD +  System.lineSeparator()
+			+ "globals()['shm_out_list'] = shm_out_list" +  System.lineSeparator()
 			+ "globals()['" + NP_PACKAGE_NAME + "'] = " + NP_PACKAGE_NAME +  System.lineSeparator()
 			+ "globals()['" + SHARED_MEM_PACKAGE_NAME + "'] = " + SHARED_MEM_PACKAGE_NAME +  System.lineSeparator();
 	

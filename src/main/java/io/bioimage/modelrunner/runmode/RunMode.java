@@ -22,7 +22,6 @@ package io.bioimage.modelrunner.runmode;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -36,9 +35,7 @@ import org.apposed.appose.Service;
 import org.apposed.appose.Service.Task;
 
 import io.bioimage.modelrunner.runmode.ops.OpInterface;
-import io.bioimage.modelrunner.tensor.ListToImgLib2;
 import io.bioimage.modelrunner.tensor.SharedMemoryArray;
-import io.bioimage.modelrunner.tensor.ImgLib2ToArray;
 import io.bioimage.modelrunner.tensor.Tensor;
 import io.bioimage.modelrunner.utils.CommonUtils;
 import net.imglib2.RandomAccessibleInterval;
@@ -53,7 +50,7 @@ public class RunMode {
 	
 	private static final String IMPORT_SHM = "from multiprocessing import shared_memory" + System.lineSeparator();
 	
-	protected static final String APPOSE_SHM_KEY = "_shm_" + UUID.randomUUID().toString();
+	protected static final String APPOSE_SHM_KEY = ("_shm_" + UUID.randomUUID().toString()).replace("-", "_");
 	
 	// TODO add support for list of objects
 	private static final String OUTPUT_REFORMATING = 
@@ -67,7 +64,8 @@ public class RunMode {
 			+ "  %s = " + RunModeScripts.DICT_METHOD + "(%s)" + System.lineSeparator();
 	
 	private static final String DEFAULT_IMPORT = 
-			"import sys" + System.lineSeparator();
+			"import sys" + System.lineSeparator()
+			+ IMPORT_NUMPY;
 	
 	
 	private Environment env;
@@ -80,10 +78,15 @@ public class RunMode {
 	private String opMethodCode = "";
 	private String retrieveResultsCode = "";
 	private String taskOutputCode = "";
-	private String shmInstancesCode = "";
+	private String shmInstancesCode = "shm_in_list = []" + System.lineSeparator();
+	private String closeShmCode = "";
 	private String moduleName;
-	Map<String, SharedMemoryArray> shmaMap = new HashMap<String, SharedMemoryArray>();
-	List<String> outputNames = new ArrayList<String>();
+	private List<SharedMemoryArray> shmaList = new ArrayList<SharedMemoryArray>();
+	private List<String> outputNames = new ArrayList<String>();
+	
+	private static String CLOSE_IN_SHMA = "for shm in shm_in_list:" + System.lineSeparator()
+										+ "  shm.close()" + System.lineSeparator()
+										+ "  shm.unlink()" + System.lineSeparator();
 	
 	private RunMode(OpInterface op) throws Exception {
 		this.op = op;
@@ -149,7 +152,7 @@ public class RunMode {
             System.out.println("here2");
             outputs = recreateOutputObjects(task.outputs);
             Task closeShmTask = python.task(closeShmCode, null);
-            task.waitFor();
+            closeShmTask.waitFor();
         } catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -157,7 +160,7 @@ public class RunMode {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-		this.shmaMap.entrySet().forEach(entry ->entry.getValue().close());
+		this.shmaList.stream().forEach(entry ->entry.close());
 		return outputs;
 	}
 	
@@ -217,11 +220,13 @@ public class RunMode {
 				apposeInputMap.put(entry.getKey(), entry.getValue());
 			} else if (entry.getValue() instanceof Tensor) {
 				SharedMemoryArray shma = SharedMemoryArray.build(((Tensor<T>) entry.getValue()).getData());
-				apposeInputMap.put(entry.getKey(), shma.getMemoryLocationPythonName());
+				shmaList.add(shma);
+				apposeInputMap.put(entry.getKey(), null);
 				addCodeToRecreateTensor(entry.getKey(), shma, (Tensor<T>) entry.getValue());
 			} else if (entry.getValue() instanceof RandomAccessibleInterval) {
 				SharedMemoryArray shma = SharedMemoryArray.build((RandomAccessibleInterval<T>) entry.getValue());
-				apposeInputMap.put(entry.getKey(), shma.getMemoryLocationPythonName());
+				shmaList.add(shma);
+				apposeInputMap.put(entry.getKey(), null);
 				addCodeToRecreateNumpyArray(entry.getKey(), shma, (RandomAccessibleInterval<T>) entry.getValue());
 			} else if (!entry.getValue().getClass().isArray() 
 					&& isTypeDirectlySupported(entry.getValue().getClass())) {
@@ -291,19 +296,21 @@ public class RunMode {
 				void addCodeToRecreateTensor(String ogName, SharedMemoryArray shma, Tensor<T> tensor) {
 		if (!importsCode.contains(IMPORT_XARRAY))
 			importsCode += IMPORT_XARRAY;
-		if (!importsCode.contains(IMPORT_SHM))
-			importsCode += IMPORT_SHM;
+		if (!shmInstancesCode.contains(IMPORT_SHM))
+			shmInstancesCode += IMPORT_SHM;
 		// This line wants to recreate the original tensor array. Should look like:
 		// input0_appose_shm = shared_memory.SharedMemory(name=input0)
 		// input0 = xr.DataArray(np.ndarray(size, dtype="float64", 
 		// 									buffer=input0_appose_shm.buf).reshape([64, 64]), 
 		// 									dims=["b", "c", "y", "x"], name="input0")
-		shmInstancesCode += ogName + APPOSE_SHM_KEY + " = shared_memory.SharedMemory(name=" + ogName + ")" + System.lineSeparator();
+		shmInstancesCode += ogName + APPOSE_SHM_KEY + " = shared_memory.SharedMemory(name='" 
+						+ shma.getMemoryLocationPythonName() + "', size=" + shma.getSize() + ")" + System.lineSeparator();
+		shmInstancesCode += "shm_in_list.append(" + ogName + APPOSE_SHM_KEY + ")" + System.lineSeparator();
 		int size = 1;
 		long[] dims = tensor.getData().dimensionsAsLongArray();
 		for (long l : dims) {size *= l;}
-		tensorRecreationCode += ogName + " = xr.DataArray(np.ndarray(" + size + ", dtype=" 
-				+ CommonUtils.getDataType(tensor.getData()) + ", buffer=" 
+		tensorRecreationCode += ogName + " = xr.DataArray(np.ndarray(" + size + ", dtype='" 
+				+ CommonUtils.getDataType(tensor.getData()) + "', buffer=" 
 				+ ogName + APPOSE_SHM_KEY + ".buf).reshape([";
 		for (long ll : dims)
 			tensorRecreationCode += ll + ", ";
@@ -322,17 +329,19 @@ public class RunMode {
 				void addCodeToRecreateNumpyArray(String ogName, SharedMemoryArray shma, RandomAccessibleInterval<T> rai) {
 		if (!importsCode.contains(IMPORT_NUMPY))
 			importsCode += IMPORT_NUMPY;
-		if (!importsCode.contains(IMPORT_SHM))
-			importsCode += IMPORT_SHM;
+		if (!shmInstancesCode.contains(IMPORT_SHM))
+			shmInstancesCode += IMPORT_SHM;
 		// This line wants to recreate the original numpy array. Should look like:
 		// input0_appose_shm = shared_memory.SharedMemory(name=input0)
 		// input0 = np.ndarray(size, dtype="float64", buffer=input0_appose_shm.buf).reshape([64, 64])
-		shmInstancesCode += ogName + APPOSE_SHM_KEY + " = shared_memory.SharedMemory(name=" + ogName + ")" + System.lineSeparator();
+		shmInstancesCode += ogName + APPOSE_SHM_KEY + " = shared_memory.SharedMemory(name='" 
+							+ shma.getMemoryLocationPythonName() + "', size=" + shma.getSize() + ")" + System.lineSeparator();
+		shmInstancesCode += "shm_in_list.append(" + ogName + APPOSE_SHM_KEY + ")" + System.lineSeparator();
 		int size = 1;
 		long[] dims = rai.dimensionsAsLongArray();
 		for (long l : dims) {size *= l;}
-		tensorRecreationCode += ogName + " = np.ndarray(" + size + ", dtype=" 
-				+ CommonUtils.getDataType(rai) + ", buffer=" 
+		tensorRecreationCode += ogName + " = np.ndarray(" + size + ", dtype='" 
+				+ CommonUtils.getDataType(rai) + "', buffer=" 
 				+ ogName + APPOSE_SHM_KEY + ".buf).reshape([";
 		for (long ll : dims)
 			tensorRecreationCode += ll + ", ";
@@ -370,18 +379,26 @@ public class RunMode {
 	
 	private static < T extends RealType< T > & NativeType< T > > 
 		Tensor<T> createTensorFromApposeOutput(Map<String, Object> apposeTensor) {
-		return ListToImgLib2.buildTensor((List) apposeTensor.get(RunModeScripts.DATA_KEY), 
-				(List<Integer>) apposeTensor.get(RunModeScripts.SHAPE_KEY), 
-				(String) apposeTensor.get(RunModeScripts.AXES_KEY),
-				(String) apposeTensor.get(RunModeScripts.DTYPE_KEY),
-				(String) apposeTensor.get(RunModeScripts.NAME_KEY));
+		String shmName = (String) apposeTensor.get(RunModeScripts.DATA_KEY);
+		List<Integer> shape = (List<Integer>) apposeTensor.get(RunModeScripts.SHAPE_KEY);
+		long[] longShape = new long[shape.size()];
+		for (int i = 0; i < shape.size(); i ++) {longShape[i] = shape.get(i);}
+		String dtype = (String) apposeTensor.get(RunModeScripts.DTYPE_KEY);
+		String tensorname = (String) apposeTensor.get(RunModeScripts.NAME_KEY);
+		String axes = (String) apposeTensor.get(RunModeScripts.AXES_KEY);
+		RandomAccessibleInterval<T> rai = SharedMemoryArray.createImgLib2RaiFromSharedMemoryBlock(shmName, longShape, dtype);
+		return Tensor.build(tensorname, axes, rai);
 	}
 	
 	private static < T extends RealType< T > & NativeType< T > > 
 		RandomAccessibleInterval<T> createImgLib2ArrFromApposeOutput(Map<String, Object> apposeTensor) {
-		return ListToImgLib2.build((List) apposeTensor.get(RunModeScripts.DATA_KEY), 
-				(List<Integer>) apposeTensor.get(RunModeScripts.SHAPE_KEY), 
-				(String) apposeTensor.get(RunModeScripts.DTYPE_KEY));
+		String shmName = (String) apposeTensor.get(RunModeScripts.DATA_KEY);
+		List<Integer> shape = (List<Integer>) apposeTensor.get(RunModeScripts.SHAPE_KEY);
+		long[] longShape = new long[shape.size()];
+		for (int i = 0; i < shape.size(); i ++) {longShape[i] = shape.get(i);}
+		String dtype = (String) apposeTensor.get(RunModeScripts.DTYPE_KEY);
+		RandomAccessibleInterval<T> rai = SharedMemoryArray.createImgLib2RaiFromSharedMemoryBlock(shmName, longShape, dtype);
+		return rai;
 	}
 	
 	private static List<Object> createListFromApposeOutput(List<Object> list) {

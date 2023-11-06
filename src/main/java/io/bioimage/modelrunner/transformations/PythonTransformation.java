@@ -20,6 +20,7 @@
 package io.bioimage.modelrunner.transformations;
 
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.nio.file.Paths;
@@ -35,10 +36,15 @@ import java.util.stream.Collectors;
 import org.apache.commons.compress.archivers.ArchiveException;
 import org.apposed.appose.Conda;
 
+import io.bioimage.modelrunner.numpy.DecodeNumpy;
 import io.bioimage.modelrunner.runmode.RunMode;
 import io.bioimage.modelrunner.runmode.ops.GenericOp;
 import io.bioimage.modelrunner.tensor.Tensor;
 import io.bioimage.modelrunner.utils.YAMLUtils;
+import net.imglib2.RandomAccessibleInterval;
+import net.imglib2.img.array.ArrayImg;
+import net.imglib2.img.array.ArrayImgs;
+import net.imglib2.img.basictypeaccess.array.FloatArray;
 import net.imglib2.type.NativeType;
 import net.imglib2.type.numeric.RealType;
 import net.imglib2.type.numeric.real.FloatType;
@@ -46,18 +52,22 @@ import net.imglib2.util.Cast;
 
 public class PythonTransformation extends AbstractTensorTransformation
 {
-	public static final String NAME = "python_transformation";
+	public static final String NAME = "python";
 	public static final String ENV_YAML_KEY = "env_yaml";
 	
-	private String envYaml;
+	private String envYaml = "C:\\Users\\angel\\OneDrive\\Documentos\\pasteur\\git\\deep-icy\\stardist.yaml";
 	
-	private String script;
+	private String script = "C:\\Users\\angel\\OneDrive\\Documentos\\pasteur\\git\\deep-icy\\stardist_postprocessing.py";
 	
-	private String method;
+	private String method = "stardist_postprocessing";
 	
-	private int nOutputs;
+	private int nOutputs = 1;
 	
-	private LinkedHashMap<String, Object> kwargs;
+	private LinkedHashMap<String, Object> kwargs = new LinkedHashMap<String, Object>();
+	{
+		kwargs.put("prob_thresh", 0.6924782541382084);
+		kwargs.put("nms_thresh", 0.3);
+	}
 
 	public PythonTransformation()
 	{
@@ -127,7 +137,7 @@ public class PythonTransformation extends AbstractTensorTransformation
 			e2.printStackTrace();
 			return Cast.unchecked(input);
 		}
-		String minicondaBase = Paths.get(System.getProperty("user.home"), ".local", "share", "appose", "miniconda").toString();
+		String minicondaBase = Conda.BASE_PATH;
 		String envPath = minicondaBase + File.separator + "envs" + File.separator + envName;
 		if (!(new File(envPath).isDirectory())) {
 				try {
@@ -166,5 +176,15 @@ public class PythonTransformation extends AbstractTensorTransformation
 
 	public void applyInPlace( final Tensor< FloatType > input )
 	{
+	}
+	
+	public static void main(String[] args) throws FileNotFoundException, IOException {
+		PythonTransformation pt = new PythonTransformation();
+		RandomAccessibleInterval<FloatType> img = ArrayImgs.floats(new long[] {1, 1024, 1024, 33});
+		String fname = "C:\\Users\\angel\\OneDrive\\Documentos\\pasteur\\git\\model-runner-java\\models\\finetuned_finetuned_StarDist H&E Nuclei Segmentation_04102023_123644-2-1\\test_input.npy";
+		img = DecodeNumpy.retrieveImgLib2FromNpy(fname);
+		Tensor<FloatType> tt = Tensor.build("output", "bcyx", img);
+		Tensor<FloatType> out = pt.apply(tt);
+		System.out.println();
 	}
 }

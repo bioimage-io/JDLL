@@ -21,7 +21,6 @@
 package io.bioimage.modelrunner.tensor;
 
 import java.io.Closeable;
-import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.UUID;
 
@@ -387,9 +386,37 @@ public final class SharedMemoryArray implements Closeable
 	/**
 	 * Unmap and close the shared memory. Necessary to eliminate the shared memory block
 	 */
-	public void close() throws IOException {
+	public void close() {
         Kernel32.INSTANCE.UnmapViewOfFile(pSharedMemory);
         Kernel32.INSTANCE.CloseHandle(hMapFile);
+	}
+	
+	// TODO support boolean
+	public static <T extends RealType<T> & NativeType<T>>
+	RandomAccessibleInterval<T> createImgLib2RaiFromSharedMemoryBlock(String memoryName, long[] shape, String dataType) {
+		T type;
+		if (dataType.equals("int8")) {
+			type = Cast.unchecked(new ByteType());
+		} else if (dataType.equals("uint8")) {
+			type = Cast.unchecked(new UnsignedByteType());
+		} else if (dataType.equals("int16")) {
+			type = Cast.unchecked(new ShortType());
+		} else if (dataType.equals("uint16")) {
+			type = Cast.unchecked(new UnsignedShortType());
+		} else if (dataType.equals("int32")) {
+			type = Cast.unchecked(new IntType());
+		} else if (dataType.equals("uint32")) {
+			type = Cast.unchecked(new UnsignedIntType());
+		} else if (dataType.equals("int64")) {
+			type = Cast.unchecked(new LongType());
+		} else if (dataType.equals("float32")) {
+			type = Cast.unchecked(new FloatType());
+		} else if (dataType.equals("float64")) {
+			type = Cast.unchecked(new DoubleType());
+		} else {
+			throw new IllegalArgumentException("Unsupported data type: " + dataType);
+		}
+		return createImgLib2RaiFromSharedMemoryBlock(memoryName, shape, type);
 	}
 	
 	public static <T extends RealType<T> & NativeType<T>>
@@ -418,7 +445,9 @@ public final class SharedMemoryArray implements Closeable
         }
         try {
         	RandomAccessibleInterval<T> rai = buildFromSharedMemoryBlock(pSharedMemory, shape, dataType);
-            return rai;
+        	Kernel32.INSTANCE.UnmapViewOfFile(pSharedMemory);
+            Kernel32.INSTANCE.CloseHandle(hMapFile);
+        	return rai;
         } catch (Exception ex) {
             Kernel32.INSTANCE.UnmapViewOfFile(pSharedMemory);
             Kernel32.INSTANCE.CloseHandle(hMapFile);
