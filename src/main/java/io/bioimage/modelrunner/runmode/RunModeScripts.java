@@ -44,6 +44,8 @@ public class RunModeScripts {
 	protected static final String APPOSE_DT_KEY = DownloadModel.addTimeStampToFileName("appose_data_type_", true);
 	
 	protected static final String TENSOR_KEY = "tensor";
+
+	protected static final String IS_FORTRAN_KEY = "is_fortran";
 	
 	protected static final String NP_ARR_KEY = "np_arr";
 	
@@ -65,7 +67,9 @@ public class RunModeScripts {
 			+ "  shm.unlink()" + System.lineSeparator()
 			+ "  return {\"" + DATA_KEY + "\": shm.name, \"" + SHAPE_KEY 
 							+ "\": np_arr.shape, \"" + APPOSE_DT_KEY + "\": \"" 
-							+ NP_ARR_KEY + "\", \"" + DTYPE_KEY + "\": str(np_arr.dtype)}" + System.lineSeparator()
+							+ NP_ARR_KEY + "\", "
+							+ "\"" + IS_FORTRAN_KEY + "\": np.isfortran(np_arr), "
+							+ "\"" + DTYPE_KEY + "\": str(np_arr.dtype)}" + System.lineSeparator()
 			+ "" + System.lineSeparator()
 			+ "def " + XR_METHOD + "(xr_arr):" + System.lineSeparator()
 			+ "  shm = shared_memory.SharedMemory(create=True, size=xr_arr.values.nbytes)" + System.lineSeparator()
@@ -76,6 +80,7 @@ public class RunModeScripts {
 			+ "  return {\"" + DATA_KEY + "\": shm.name, \"" + SHAPE_KEY 
 							+ "\": xr_arr.shape, \"" + AXES_KEY + "\": \"\".join(xr_arr.dims),\"" + NAME_KEY 
 							+ "\": xr_arr.name, \"" + APPOSE_DT_KEY + "\": \"" + TENSOR_KEY + "\", "
+							+ "\"" + IS_FORTRAN_KEY + "\": np.isfortran(xr_arr.values), "
 							+ "\"" + DTYPE_KEY + "\": str(xr_arr.values.dtype)}" 
 							+ System.lineSeparator()
 			+ "" + System.lineSeparator()

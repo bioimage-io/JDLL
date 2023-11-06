@@ -386,7 +386,8 @@ public class RunMode {
 		String dtype = (String) apposeTensor.get(RunModeScripts.DTYPE_KEY);
 		String tensorname = (String) apposeTensor.get(RunModeScripts.NAME_KEY);
 		String axes = (String) apposeTensor.get(RunModeScripts.AXES_KEY);
-		RandomAccessibleInterval<T> rai = SharedMemoryArray.createImgLib2RaiFromSharedMemoryBlock(shmName, longShape, dtype);
+		boolean isFortran = (boolean) apposeTensor.get(RunModeScripts.IS_FORTRAN_KEY);
+		RandomAccessibleInterval<T> rai = SharedMemoryArray.createImgLib2RaiFromSharedMemoryBlock(shmName, longShape, isFortran, dtype);
 		return Tensor.build(tensorname, axes, rai);
 	}
 	
@@ -397,7 +398,8 @@ public class RunMode {
 		long[] longShape = new long[shape.size()];
 		for (int i = 0; i < shape.size(); i ++) {longShape[i] = shape.get(i);}
 		String dtype = (String) apposeTensor.get(RunModeScripts.DTYPE_KEY);
-		RandomAccessibleInterval<T> rai = SharedMemoryArray.createImgLib2RaiFromSharedMemoryBlock(shmName, longShape, dtype);
+		boolean isFortran = (boolean) apposeTensor.get(RunModeScripts.IS_FORTRAN_KEY);
+		RandomAccessibleInterval<T> rai = SharedMemoryArray.createImgLib2RaiFromSharedMemoryBlock(shmName, longShape, isFortran, dtype);
 		return rai;
 	}
 	
