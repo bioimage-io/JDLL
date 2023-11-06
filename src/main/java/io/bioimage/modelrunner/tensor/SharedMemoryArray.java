@@ -110,6 +110,10 @@ public final class SharedMemoryArray implements Closeable
     	return this.memoryName;
     }
     
+    public String getMemoryLocationPythonName() {
+    	return this.memoryName.substring("Local\\".length());
+    }
+    
     public Pointer getPointer() {
     	return this.pSharedMemory;
     }
@@ -206,8 +210,10 @@ public final class SharedMemoryArray implements Closeable
 		tensor = Utils.transpose(tensor);
 		Cursor<ByteType> cursor = Views.flatIterable(tensor).cursor();
 		long i = 0;
-		while (cursor.hasNext())
+		while (cursor.hasNext()) {
+			cursor.fwd();
 			this.pSharedMemory.setByte(i ++, cursor.get().get());
+		}
     }
 
     /**
@@ -224,8 +230,10 @@ public final class SharedMemoryArray implements Closeable
 		tensor = Utils.transpose(tensor);
 		Cursor<UnsignedByteType> cursor = Views.flatIterable(tensor).cursor();
 		long i = 0;
-		while (cursor.hasNext())
+		while (cursor.hasNext()) {
+			cursor.fwd();
 			this.pSharedMemory.setByte(i ++, cursor.get().getByte());
+		}
     }
 
     /**
@@ -243,6 +251,7 @@ public final class SharedMemoryArray implements Closeable
 		Cursor<ShortType> cursor = Views.flatIterable(tensor).cursor();
 		long i = 0;
 		while (cursor.hasNext()) {
+			cursor.fwd();
 			this.pSharedMemory.setShort((i * Short.BYTES), cursor.get().get());
 			i ++;
 		}
@@ -263,6 +272,7 @@ public final class SharedMemoryArray implements Closeable
 		Cursor<UnsignedShortType> cursor = Views.flatIterable(tensor).cursor();
 		long i = 0;
 		while (cursor.hasNext()) {
+			cursor.fwd();
 			this.pSharedMemory.setShort((i * Short.BYTES), cursor.get().getShort());
 			i ++;
 		}
@@ -283,6 +293,7 @@ public final class SharedMemoryArray implements Closeable
 		Cursor<IntType> cursor = Views.flatIterable(tensor).cursor();
 		long i = 0;
 		while (cursor.hasNext()) {
+			cursor.fwd();
 			this.pSharedMemory.setInt((i * Integer.BYTES), cursor.get().get());
 			i ++;
 		}
@@ -303,6 +314,7 @@ public final class SharedMemoryArray implements Closeable
 		Cursor<UnsignedIntType> cursor = Views.flatIterable(tensor).cursor();
 		long i = 0;
 		while (cursor.hasNext()) {
+			cursor.fwd();
 			this.pSharedMemory.setInt((i * Integer.BYTES), cursor.get().getInt());
 			i ++;
 		}
@@ -323,6 +335,7 @@ public final class SharedMemoryArray implements Closeable
 		Cursor<LongType> cursor = Views.flatIterable(tensor).cursor();
 		long i = 0;
 		while (cursor.hasNext()) {
+			cursor.fwd();
 			this.pSharedMemory.setLong((i * Long.BYTES), cursor.get().get());
 			i ++;
 		}
@@ -340,9 +353,10 @@ public final class SharedMemoryArray implements Closeable
     private void buildFloat32(RandomAccessibleInterval<FloatType> tensor)
     {
 		tensor = Utils.transpose(tensor);
-		Cursor<FloatType> cursor = Views.flatIterable(tensor).cursor();
+		Cursor<FloatType> cursor = Views.iterable(tensor).cursor();
 		long i = 0;
 		while (cursor.hasNext()) {
+			cursor.fwd();
 			this.pSharedMemory.setFloat((i * Float.BYTES), cursor.get().get());
 			i ++;
 		}
@@ -363,6 +377,7 @@ public final class SharedMemoryArray implements Closeable
 		Cursor<DoubleType> cursor = Views.flatIterable(tensor).cursor();
 		long i = 0;
 		while (cursor.hasNext()) {
+			cursor.fwd();
 			this.pSharedMemory.setDouble((i * Double.BYTES), cursor.get().get());
 			i ++;
 		}
