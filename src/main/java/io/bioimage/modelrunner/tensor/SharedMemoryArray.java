@@ -352,7 +352,7 @@ public final class SharedMemoryArray implements Closeable
     private void buildFloat32(RandomAccessibleInterval<FloatType> tensor)
     {
 		tensor = Utils.transpose(tensor);
-		Cursor<FloatType> cursor = Views.iterable(tensor).cursor();
+		Cursor<FloatType> cursor = Views.flatIterable(tensor).cursor();
 		long i = 0;
 		while (cursor.hasNext()) {
 			cursor.fwd();
