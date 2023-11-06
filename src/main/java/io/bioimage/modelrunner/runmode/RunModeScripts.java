@@ -47,19 +47,23 @@ public class RunModeScripts {
 	
 	protected static final String NP_ARR_KEY = "np_arr";
 	
+	protected static final String SHARED_MEM_PACKAGE_NAME = "shared_memory";
+	
+	protected static final String NP_PACKAGE_NAME = "np";
+	
 	/**
 	 * Script that contains all the methods neeed to convert python types 
 	 * into Appose supported types (primitive types and dics and lists of them)
 	 */
 	protected static final String TYPE_CONVERSION_METHODS_SCRIPT = ""
-			+ "shm_list = []" + System.lineSeparator()
+			+ "shm_out_list = []" + System.lineSeparator()
 			+ "def " + NP_METHOD + "(np_arr):" + System.lineSeparator()
 			+ "  shm = shared_memory.SharedMemory(create=True, size=np_arr.nbytes)" + System.lineSeparator()
 			+ "  aux_np_arr = np.ndarray((np_arr.size), dtype=np_arr.dtype, buffer=shm.buf)" + System.lineSeparator()
 			+ "  aux_np_arr[:] = np_arr.flatten()" + System.lineSeparator()
-			+ "  shm_list.append(shm)" + System.lineSeparator()
+			+ "  shm_out_list.append(shm)" + System.lineSeparator()
 			+ "  shm.unlink()" + System.lineSeparator()
-			+ "  return {\"" + DATA_KEY + "\": shm.name(), \"" + SHAPE_KEY 
+			+ "  return {\"" + DATA_KEY + "\": shm.name, \"" + SHAPE_KEY 
 							+ "\": np_arr.shape, \"" + APPOSE_DT_KEY + "\": \"" 
 							+ NP_ARR_KEY + "\", \"" + DTYPE_KEY + "\": str(np_arr.dtype)}" + System.lineSeparator()
 			+ "" + System.lineSeparator()
@@ -67,7 +71,7 @@ public class RunModeScripts {
 			+ "  shm = shared_memory.SharedMemory(create=True, size=xr_arr.values.nbytes)" + System.lineSeparator()
 			+ "  aux_np_arr = np.ndarray((xr_arr.values.size), dtype=xr_arr.values.dtype, buffer=shm.buf)" + System.lineSeparator()
 			+ "  aux_np_arr[:] = xr_arr.values.flatten()" + System.lineSeparator()
-			+ "  shm_list.append(shm)" + System.lineSeparator()
+			+ "  shm_out_list.append(shm)" + System.lineSeparator()
 			+ "  shm.unlink()" + System.lineSeparator()
 			+ "  return {\"" + DATA_KEY + "\": shm.name, \"" + SHAPE_KEY 
 							+ "\": xr_arr.shape, \"" + AXES_KEY + "\": \"\".join(xr_arr.dims),\"" + NAME_KEY 
@@ -133,7 +137,9 @@ public class RunModeScripts {
 			+ "globals()['" + XR_METHOD + "'] = " + XR_METHOD +  System.lineSeparator()
 			+ "globals()['" + NP_METHOD + "'] = " + NP_METHOD +  System.lineSeparator()
 			+ "globals()['" + DICT_METHOD + "'] = " + DICT_METHOD +  System.lineSeparator()
-			+ "globals()['" + LIST_METHOD + "'] = " + LIST_METHOD +  System.lineSeparator();
+			+ "globals()['" + LIST_METHOD + "'] = " + LIST_METHOD +  System.lineSeparator()
+			+ "globals()['" + NP_PACKAGE_NAME + "'] = " + NP_PACKAGE_NAME +  System.lineSeparator()
+			+ "globals()['" + SHARED_MEM_PACKAGE_NAME + "'] = " + SHARED_MEM_PACKAGE_NAME +  System.lineSeparator();
 	
 	/**
 	 * Script that contains all the methods neeed to convert python types 
