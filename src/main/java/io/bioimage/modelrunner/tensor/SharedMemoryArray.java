@@ -53,7 +53,7 @@ import net.imglib2.view.Views;
  * 
  * @author Carlos Garcia Lopez de Haro
  */
-public final class SharedMemoryArrayWin implements Closeable
+public final class SharedMemoryArray implements Closeable
 {
 	/**
 	 * file mapping for shared memory
@@ -72,7 +72,7 @@ public final class SharedMemoryArrayWin implements Closeable
 	 */
 	private int size;
 	
-    private SharedMemoryArrayWin(int size)
+    private SharedMemoryArray(int size)
     {
     	this.size = size;
         hMapFile = Kernel32.INSTANCE.CreateFileMapping(
@@ -135,59 +135,59 @@ public final class SharedMemoryArrayWin implements Closeable
      * 	{@link RandomAccessibleInterval} to be mapped into byte buffer
      * @param byteBuffer 
      * 	target bytebuffer
-     * @return an instance of {@link SharedMemoryArrayWin} containing the pointer to the 
+     * @return an instance of {@link SharedMemoryArray} containing the pointer to the 
      * 	shared memory where the array is, the hMapFile, the size of the object in bytes, and 
      * 	name of the memory location
      * @throws IllegalArgumentException If the {@link RandomAccessibleInterval} type is not supported.
      */
     @SuppressWarnings("unchecked")
-	public static <T extends RealType<T> & NativeType<T>> SharedMemoryArrayWin build(RandomAccessibleInterval<T> rai)
+	public static <T extends RealType<T> & NativeType<T>> SharedMemoryArray build(RandomAccessibleInterval<T> rai)
     {
-    	SharedMemoryArrayWin shma = null;
+    	SharedMemoryArray shma = null;
     	if (Util.getTypeFromInterval(rai) instanceof ByteType) {
         	int size = 1;
         	for (long i : rai.dimensionsAsLongArray()) {size *= i;}
-        	shma = new SharedMemoryArrayWin(size);
+        	shma = new SharedMemoryArray(size);
         	shma.buildInt8(Cast.unchecked(rai));
     	} else if (Util.getTypeFromInterval(rai) instanceof UnsignedByteType) {
         	int size = 1;
         	for (long i : rai.dimensionsAsLongArray()) {size *= i;}
-        	shma = new SharedMemoryArrayWin(size);
+        	shma = new SharedMemoryArray(size);
         	shma.buildUint8(Cast.unchecked(rai));
     	} else if (Util.getTypeFromInterval(rai) instanceof ShortType) {
         	int size = 2;
         	for (long i : rai.dimensionsAsLongArray()) {size *= i;}
-        	shma = new SharedMemoryArrayWin(size);
+        	shma = new SharedMemoryArray(size);
         	shma.buildInt16(Cast.unchecked(rai));
     	} else if (Util.getTypeFromInterval(rai) instanceof UnsignedShortType) {
         	int size = 2;
         	for (long i : rai.dimensionsAsLongArray()) {size *= i;}
-        	shma = new SharedMemoryArrayWin(size);
+        	shma = new SharedMemoryArray(size);
         	shma.buildUint16(Cast.unchecked(rai));
     	} else if (Util.getTypeFromInterval(rai) instanceof IntType) {
         	int size = 4;
         	for (long i : rai.dimensionsAsLongArray()) {size *= i;}
-        	shma = new SharedMemoryArrayWin(size);
+        	shma = new SharedMemoryArray(size);
         	shma.buildInt32(Cast.unchecked(rai));
     	} else if (Util.getTypeFromInterval(rai) instanceof UnsignedIntType) {
         	int size = 4;
         	for (long i : rai.dimensionsAsLongArray()) {size *= i;}
-        	shma = new SharedMemoryArrayWin(size);
+        	shma = new SharedMemoryArray(size);
         	shma.buildUint32(Cast.unchecked(rai));
     	} else if (Util.getTypeFromInterval(rai) instanceof LongType) {
         	int size = 8;
         	for (long i : rai.dimensionsAsLongArray()) {size *= i;}
-        	shma = new SharedMemoryArrayWin(size);
+        	shma = new SharedMemoryArray(size);
         	shma.buildInt64(Cast.unchecked(rai));
     	} else if (Util.getTypeFromInterval(rai) instanceof FloatType) {
         	int size = 4;
         	for (long i : rai.dimensionsAsLongArray()) {size *= i;}
-        	shma = new SharedMemoryArrayWin(size);
+        	shma = new SharedMemoryArray(size);
         	shma.buildFloat32(Cast.unchecked(rai));
     	} else if (Util.getTypeFromInterval(rai) instanceof DoubleType) {
         	int size = 8;
         	for (long i : rai.dimensionsAsLongArray()) {size *= i;}
-        	shma = new SharedMemoryArrayWin(size);
+        	shma = new SharedMemoryArray(size);
         	shma.buildFloat64(Cast.unchecked(rai));
     	} else {
             throw new IllegalArgumentException("The image has an unsupported type: " + Util.getTypeFromInterval(rai).getClass().toString());

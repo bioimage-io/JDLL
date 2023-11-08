@@ -20,6 +20,7 @@
 package io.bioimage.modelrunner.runmode;
 
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -35,12 +36,16 @@ import org.apposed.appose.Service;
 import org.apposed.appose.Service.Task;
 
 import io.bioimage.modelrunner.runmode.ops.OpInterface;
+import io.bioimage.modelrunner.system.PlatformDetection;
 import io.bioimage.modelrunner.tensor.SharedMemoryArray;
+import io.bioimage.modelrunner.tensor.SharedMemoryFile;
 import io.bioimage.modelrunner.tensor.Tensor;
 import io.bioimage.modelrunner.utils.CommonUtils;
 import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.type.NativeType;
 import net.imglib2.type.numeric.RealType;
+
+import java.util.UUID;
 
 public class RunMode {
 	
@@ -53,8 +58,10 @@ public class RunMode {
 	protected static final String APPOSE_SHM_KEY = ("_shm_" + UUID.randomUUID().toString()).replace("-", "_");
 	
 	// TODO add support for list of objects
-	private static final String OUTPUT_REFORMATING = 
-			"if isinstance(%s, xr.DataArray):" + System.lineSeparator()
+	private static final String OUTPUT_REFORMATING = ""
+			+ "if isinstance(%s, xr.DataArray) and True:" + System.lineSeparator()
+			+ "  %s = " + RunModeScripts.XR_METHOD + "_file(%s)" + System.lineSeparator()
+			+ "elif isinstance(%s, xr.DataArray):" + System.lineSeparator()
 			+ "  %s = " + RunModeScripts.XR_METHOD + "(%s)" + System.lineSeparator()
 			+ "elif isinstance(%s, np.ndarray):" + System.lineSeparator()
 			+ "  %s = " + RunModeScripts.NP_METHOD + "(%s)" + System.lineSeparator()
@@ -83,6 +90,7 @@ public class RunMode {
 	private String moduleName;
 	private List<SharedMemoryArray> shmaList = new ArrayList<SharedMemoryArray>();
 	private List<String> outputNames = new ArrayList<String>();
+	private List<String> filesToDestroy = new ArrayList<String>();
 	
 	private static String CLOSE_IN_SHMA = "for shm in shm_in_list:" + System.lineSeparator()
 										+ "  shm.close()" + System.lineSeparator()
@@ -165,7 +173,7 @@ public class RunMode {
 	}
 	
 	@SuppressWarnings("unchecked")
-	private static Map<String, Object> recreateOutputObjects(Map<String, Object> apposeOuts) {
+	private static Map<String, Object> recreateOutputObjects(Map<String, Object> apposeOuts) throws FileNotFoundException, IOException {
 		 LinkedHashMap<String, Object> jdllOuts = new LinkedHashMap<String, Object>();
 		 for (Entry<String, Object> entry : apposeOuts.entrySet()) {
 			 Object value = entry.getValue();
@@ -175,6 +183,11 @@ public class RunMode {
 				 if (((Map<String, Object>) value).get(RunModeScripts.NAME_KEY) == null)
 					 ((Map<String, Object>) value).put(RunModeScripts.NAME_KEY, entry.getKey());
 				 jdllOuts.put(entry.getKey(), createTensorFromApposeOutput((Map<String, Object>) value));
+			 } else if (value instanceof Map && ((Map) value).get(RunModeScripts.APPOSE_DT_KEY) != null
+					 && ((Map<String, Object>) value).get(RunModeScripts.APPOSE_DT_KEY).equals("tensor_file") ) {
+				 if (((Map<String, Object>) value).get(RunModeScripts.NAME_KEY) == null)
+					 ((Map<String, Object>) value).put(RunModeScripts.NAME_KEY, entry.getKey());
+				 jdllOuts.put(entry.getKey(), createTensorFromApposeOutputFile((Map<String, Object>) value));
 			 } else if (value instanceof Map && ((Map) value).get(RunModeScripts.APPOSE_DT_KEY) != null
 					 && ((Map<String, Object>) value).get(RunModeScripts.APPOSE_DT_KEY).equals(RunModeScripts.NP_ARR_KEY) ) {
 				 jdllOuts.put(entry.getKey(), createImgLib2ArrFromApposeOutput((Map<String, Object>) value));
@@ -218,6 +231,12 @@ public class RunMode {
 		for (Entry<String, Object> entry : this.op.getOpInputs().entrySet()) {
 			if (entry.getValue() instanceof String) {
 				apposeInputMap.put(entry.getKey(), entry.getValue());
+			} else if (entry.getValue() instanceof Tensor && true) {
+				String fileName = new File(UUID.randomUUID().toString() + ".npy").getAbsolutePath();
+				SharedMemoryFile.buildFileFromRai(fileName, ((Tensor<T>) entry.getValue()).getData());
+				filesToDestroy.add(fileName);
+				apposeInputMap.put(entry.getKey(), null);
+				addCodeToRecreateTensorFile(entry.getKey(), (Tensor<T>) entry.getValue(), fileName);
 			} else if (entry.getValue() instanceof Tensor) {
 				SharedMemoryArray shma = SharedMemoryArray.build(((Tensor<T>) entry.getValue()).getData());
 				shmaList.add(shma);
@@ -254,6 +273,23 @@ public class RunMode {
 			return true;
 		}
 		return false;
+	}
+	
+	private <T extends RealType<T> & NativeType<T>>
+				void addCodeToRecreateTensorFile(String ogName, Tensor<T> tensor, String filename) {
+		if (!importsCode.contains(IMPORT_XARRAY))
+			importsCode += IMPORT_XARRAY;
+		if (!importsCode.contains(IMPORT_NUMPY))
+			importsCode += IMPORT_NUMPY;
+		// This line wants to recreate the original numpy array. Should look like:
+		// input0 = xr.DataArray(np.array(input0).reshape([1, 1, 512, 512]), dims=["b", "c", "y", "x"], name="input0")
+		this.tensorRecreationCode += ogName + " = xr.DataArray(np.load(" + filename + "), dims=[";
+		for (String ss : tensor.getAxesOrderString().split(""))
+			tensorRecreationCode += "\"" + ss + "\", ";
+		tensorRecreationCode = 
+				tensorRecreationCode.substring(0, tensorRecreationCode.length() - 2);
+		tensorRecreationCode += "], name=\"" + tensor.getName() + "\")";
+		tensorRecreationCode += System.lineSeparator();
 	}
 	
 	private <T extends RealType<T> & NativeType<T>>
@@ -369,7 +405,7 @@ public class RunMode {
 		retrieveResultsCode = "task.update('Preparing outputs')" + System.lineSeparator();
 		
 		for (String outN : this.outputNames) {
-			String code = String.format(OUTPUT_REFORMATING, outN, outN, outN, outN, outN, outN,
+			String code = String.format(OUTPUT_REFORMATING, outN, outN, outN, outN, outN, outN, outN, outN, outN,
 					outN, outN, outN, outN, outN, outN);
 			retrieveResultsCode += code;
 			taskOutputCode += String.format("task.outputs['%s'] = %s", outN, outN)
@@ -392,6 +428,15 @@ public class RunMode {
 	}
 	
 	private static < T extends RealType< T > & NativeType< T > > 
+		Tensor<T> createTensorFromApposeOutputFile(Map<String, Object> apposeTensor) throws FileNotFoundException, IOException {
+		String tensorname = (String) apposeTensor.get(RunModeScripts.NAME_KEY);
+		String axes = (String) apposeTensor.get(RunModeScripts.AXES_KEY);
+		String fileName = (String) apposeTensor.get("file_path");
+		RandomAccessibleInterval<T> rai = SharedMemoryFile.buildRaiFromFile(fileName);
+		return Tensor.build(tensorname, axes, rai);
+	}
+	
+	private static < T extends RealType< T > & NativeType< T > > 
 		RandomAccessibleInterval<T> createImgLib2ArrFromApposeOutput(Map<String, Object> apposeTensor) {
 		String shmName = (String) apposeTensor.get(RunModeScripts.DATA_KEY);
 		List<Integer> shape = (List<Integer>) apposeTensor.get(RunModeScripts.SHAPE_KEY);
@@ -403,7 +448,7 @@ public class RunMode {
 		return rai;
 	}
 	
-	private static List<Object> createListFromApposeOutput(List<Object> list) {
+	private static List<Object> createListFromApposeOutput(List<Object> list) throws FileNotFoundException, IOException {
 		List<Object> nList = new ArrayList<Object>();
 		for (Object value : list) {
 			 

@@ -84,6 +84,16 @@ public class RunModeScripts {
 							+ "\"" + DTYPE_KEY + "\": str(xr_arr.values.dtype)}" 
 							+ System.lineSeparator()
 			+ "" + System.lineSeparator()
+			+ "def " + XR_METHOD + "_file(xr_arr):" + System.lineSeparator()
+			+ "  import os" + System.lineSeparator()
+			+ "  import uuid" + System.lineSeparator()
+			+ "  file_name = str(uuid.uuid4()) + \".npy\"" + System.lineSeparator()
+			+ "  np.save(os.path.join(current_dir, file_name), xr_arr.values)" + System.lineSeparator()
+			+ "  return {\"" + AXES_KEY + "\": \"\".join(xr_arr.dims),\"" + NAME_KEY 
+							+ "\": xr_arr.name, \"" + APPOSE_DT_KEY + "\": \"tensor_file\", "
+							+ "\"file_path\": os.path.join(current_dir, file_name)}" 
+							+ System.lineSeparator()
+			+ "" + System.lineSeparator()
 			+ "def " + LIST_METHOD + "(list_ob):" + System.lineSeparator()
 			+ "  n_list = []" + System.lineSeparator()
 			+ "  for value in list_ob:" + System.lineSeparator()
