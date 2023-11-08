@@ -23,10 +23,16 @@ import java.io.DataInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
+import java.nio.DoubleBuffer;
+import java.nio.FloatBuffer;
+import java.nio.IntBuffer;
+import java.nio.LongBuffer;
+import java.nio.ShortBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -34,6 +40,7 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import io.bioimage.modelrunner.tensor.ImgLib2ToArray;
 import io.bioimage.modelrunner.tensor.Utils;
 import io.bioimage.modelrunner.utils.IndexingUtils;
 import net.imglib2.Cursor;
@@ -64,6 +71,7 @@ import net.imglib2.type.numeric.integer.UnsignedIntType;
 import net.imglib2.type.numeric.integer.UnsignedShortType;
 import net.imglib2.type.numeric.real.DoubleType;
 import net.imglib2.type.numeric.real.FloatType;
+import net.imglib2.util.Util;
 
 /**
  * TODO
@@ -190,7 +198,7 @@ public class DecodeNumpy {
         }
         buf = new byte[len];
         dis.readFully(buf);
-        String header = new String(buf, StandardCharsets.UTF_8).trim();
+        String header = new String(buf, StandardCharsets.UTF_8);
         Matcher m = HEADER_PATTERN.matcher(header);
         if (!m.find()) {
             throw new IllegalArgumentException("Invalid numpy header: " + header);
@@ -274,6 +282,39 @@ public class DecodeNumpy {
     				+ "supported at the moment.");
     	else
     		throw new IllegalArgumentException("Numpy dtype '" + npDtype + "' is not "
+    				+ "supported at the moment.");
+    }
+    
+    /**
+     * Get a String representing a datatype explicitly from the String that numpy uses to
+     * name datatypes
+     * @param npDtype
+     * 	datatype defined per Numpy
+     * @return a String defining the datatype in a explicit manner
+     * @throws IllegalArgumentException if the String provided is not a numpy datatype
+     */
+    public static  <T extends RealType<T> & NativeType<T>> 
+    String getDataType(T type) throws IllegalArgumentException {
+    	if (type instanceof ByteType)
+    		return "i1";
+    	else if (type instanceof ShortType)
+    		return "i2";
+    	else if (type instanceof IntType)
+    		return "i4";
+    	else if (type instanceof LongType)
+    		return "i8";
+    	else if (type instanceof UnsignedByteType)
+    		return "u1";
+    	else if (type instanceof UnsignedShortType)
+    		return "u2";
+    	else if (type instanceof UnsignedIntType)
+    		return "u4";
+    	else if (type instanceof FloatType)
+    		return "f4";
+    	else if (type instanceof DoubleType)
+    		return "f8";
+    	else
+    		throw new IllegalArgumentException("Numpy dtype '" + type.getClass() + "' is not "
     				+ "supported at the moment.");
     }
 
@@ -403,5 +444,94 @@ public class DecodeNumpy {
         	tensorCursor.get().set((byte)(flatArr[flatPos]?1:0));
 		}
 	 	return outputImg;
+    }
+    
+    public static < T extends RealType< T > & NativeType< T > > 
+    void writeRaiToNpyFile(String filePath, RandomAccessibleInterval<T> rai) throws FileNotFoundException, IOException {
+    	String strHeader = "{'descr': '<";
+    	strHeader += getDataType(rai.getAt(rai.minAsLongArray()));
+    	strHeader += "', 'fortran_order': False, 'shape': (";
+    	for (long ll : rai.dimensionsAsLongArray()) strHeader += ll + ", ";
+    	strHeader = strHeader.substring(0, strHeader.length() - 2);
+    	strHeader += "), }" + System.lineSeparator();
+    	byte[] bufInverse = strHeader.getBytes(StandardCharsets.UTF_8);
+    	byte[] major = {1};
+        byte[] minor = {0};
+        byte[] len = new byte[2];
+        len[0] = (byte) (strHeader.length() >> 8);
+        len[1] = (byte) (strHeader.length());
+        byte[] array;
+        if (Util.getTypeFromInterval(rai) instanceof ByteType) {
+        	byte[] data = (byte[]) ImgLib2ToArray.build(rai);
+        	ByteBuffer byteBuffer = ByteBuffer.allocate(data.length).order(ByteOrder.LITTLE_ENDIAN);
+            byteBuffer.put(data);
+            array = byteBuffer.array();
+        } else if (Util.getTypeFromInterval(rai) instanceof UnsignedByteType) {
+        	byte[] data = (byte[]) ImgLib2ToArray.build(rai);
+        	ByteBuffer byteBuffer = ByteBuffer.allocate(data.length).order(ByteOrder.LITTLE_ENDIAN);
+            byteBuffer.put(data);
+            array = byteBuffer.array();
+        } else if (Util.getTypeFromInterval(rai) instanceof ShortType) {
+        	short[] data = (short[]) ImgLib2ToArray.build(rai);
+        	ByteBuffer byteBuffer = ByteBuffer.allocate(data.length * 2).order(ByteOrder.LITTLE_ENDIAN);        
+            ShortBuffer intBuffer = byteBuffer.asShortBuffer();
+            intBuffer.put(data);
+            array = byteBuffer.array();
+        } else if (Util.getTypeFromInterval(rai) instanceof UnsignedShortType) {
+        	short[] data = (short[]) ImgLib2ToArray.build(rai);
+        	ByteBuffer byteBuffer = ByteBuffer.allocate(data.length * 2).order(ByteOrder.LITTLE_ENDIAN);        
+            ShortBuffer intBuffer = byteBuffer.asShortBuffer();
+            intBuffer.put(data);
+            array = byteBuffer.array();
+        } else if (Util.getTypeFromInterval(rai) instanceof IntType) {
+        	int[] data = (int[]) ImgLib2ToArray.build(rai);
+        	ByteBuffer byteBuffer = ByteBuffer.allocate(data.length * 4).order(ByteOrder.LITTLE_ENDIAN);       
+        	IntBuffer intBuffer = byteBuffer.asIntBuffer();
+            intBuffer.put(data);
+            array = byteBuffer.array();
+        } else if (Util.getTypeFromInterval(rai) instanceof UnsignedIntType) {
+        	int[] data = (int[]) ImgLib2ToArray.build(rai);
+        	ByteBuffer byteBuffer = ByteBuffer.allocate(data.length * 4).order(ByteOrder.LITTLE_ENDIAN);       
+            IntBuffer intBuffer = byteBuffer.asIntBuffer();
+            intBuffer.put(data);
+            array = byteBuffer.array();
+        } else if (Util.getTypeFromInterval(rai) instanceof LongType) {
+        	long[] data = (long[]) ImgLib2ToArray.build(rai);
+        	ByteBuffer byteBuffer = ByteBuffer.allocate(data.length * 8).order(ByteOrder.LITTLE_ENDIAN);       
+            LongBuffer intBuffer = byteBuffer.asLongBuffer();
+            intBuffer.put(data);
+            array = byteBuffer.array();
+        } else if (Util.getTypeFromInterval(rai) instanceof FloatType) {
+        	float[] data = (float[]) ImgLib2ToArray.build(rai);
+        	ByteBuffer byteBuffer = ByteBuffer.allocate(data.length * 4).order(ByteOrder.LITTLE_ENDIAN);       
+            FloatBuffer intBuffer = byteBuffer.asFloatBuffer();
+            intBuffer.put(data);
+            array = byteBuffer.array();
+        } else if (Util.getTypeFromInterval(rai) instanceof DoubleType) {
+        	double[] data = (double[]) ImgLib2ToArray.build(rai);
+        	ByteBuffer byteBuffer = ByteBuffer.allocate(data.length * 8).order(ByteOrder.LITTLE_ENDIAN);       
+            DoubleBuffer intBuffer = byteBuffer.asDoubleBuffer();
+            intBuffer.put(data);
+            array = byteBuffer.array();
+        } else {
+        	throw new IllegalArgumentException("Unsupported data type");
+        }
+        int totalLen = MAGIC_PREFIX.length + 2 + 2 + bufInverse.length + array.length;
+        byte[] total = new byte[totalLen];
+        int c = 0;
+        for (int i = 0; i < MAGIC_PREFIX.length; i ++)
+        	total[c ++] = MAGIC_PREFIX[i];
+        total[c ++] = major[0];
+        total[c ++] = minor[0];
+        total[c ++] = len[0];
+        total[c ++] = len[1];
+        for (int i = 0; i < bufInverse.length; i ++)
+        	total[c ++] = bufInverse[i];
+        for (int i = 0; i < array.length; i ++)
+        	total[c ++] = array[i];
+        
+        try (FileOutputStream fos = new FileOutputStream(filePath)) {
+            fos.write(total);
+        }
     }
 }
