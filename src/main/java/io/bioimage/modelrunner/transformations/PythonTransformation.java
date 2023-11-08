@@ -23,7 +23,6 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.URISyntaxException;
-import java.nio.file.Paths;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -42,9 +41,7 @@ import io.bioimage.modelrunner.runmode.ops.GenericOp;
 import io.bioimage.modelrunner.tensor.Tensor;
 import io.bioimage.modelrunner.utils.YAMLUtils;
 import net.imglib2.RandomAccessibleInterval;
-import net.imglib2.img.array.ArrayImg;
 import net.imglib2.img.array.ArrayImgs;
-import net.imglib2.img.basictypeaccess.array.FloatArray;
 import net.imglib2.type.NativeType;
 import net.imglib2.type.numeric.RealType;
 import net.imglib2.type.numeric.real.FloatType;
@@ -52,6 +49,9 @@ import net.imglib2.util.Cast;
 
 public class PythonTransformation extends AbstractTensorTransformation
 {
+	public static String FILES_PATH = "";
+	public static String CONDA_PATH = Conda.BASE_PATH;
+	
 	public static final String NAME = "python";
 	public static final String ENV_YAML_KEY = "env_yaml";
 	
@@ -76,7 +76,7 @@ public class PythonTransformation extends AbstractTensorTransformation
 	
 	public void setEnvYaml(Object envYaml) {
 		if (envYaml instanceof String) {
-			this.envYaml = String.valueOf(envYaml);
+			this.envYaml = FILES_PATH + File.separator + String.valueOf(envYaml);
 		} else {
 			throw new IllegalArgumentException("'envYaml' parameter has to be an instance of "
 					+ String.class
@@ -86,7 +86,7 @@ public class PythonTransformation extends AbstractTensorTransformation
 	
 	public void setScript(Object script) {
 		if (script instanceof String) {
-			this.script = String.valueOf(script);
+			this.script = FILES_PATH + File.separator + String.valueOf(script);
 		} else {
 			throw new IllegalArgumentException("'script' parameter has to be an instance of "
 					+ String.class
@@ -137,7 +137,7 @@ public class PythonTransformation extends AbstractTensorTransformation
 			e2.printStackTrace();
 			return Cast.unchecked(input);
 		}
-		String minicondaBase = Conda.BASE_PATH;
+		String minicondaBase = CONDA_PATH;
 		String envPath = minicondaBase + File.separator + "envs" + File.separator + envName;
 		if (!(new File(envPath).isDirectory())) {
 				try {
@@ -181,7 +181,7 @@ public class PythonTransformation extends AbstractTensorTransformation
 	public static void main(String[] args) throws FileNotFoundException, IOException {
 		PythonTransformation pt = new PythonTransformation();
 		RandomAccessibleInterval<FloatType> img = ArrayImgs.floats(new long[] {1, 1024, 1024, 33});
-		String fname = "C:\\Users\\angel\\OneDrive\\Documentos\\pasteur\\git\\model-runner-java\\models\\finetuned_finetuned_StarDist H&E Nuclei Segmentation_04102023_123644-2-1\\test_input.npy";
+		String fname = "C:\\Users\\angel\\OneDrive\\Documentos\\pasteur\\git\\model-runner-java\\models\\finetuned_finetuned_StarDist H&E Nuclei Segmentation_04102023_123644-2-1\\test_output.npy";
 		img = DecodeNumpy.retrieveImgLib2FromNpy(fname);
 		Tensor<FloatType> tt = Tensor.build("output", "bcyx", img);
 		Tensor<FloatType> out = pt.apply(tt);
