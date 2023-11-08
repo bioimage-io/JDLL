@@ -22,6 +22,7 @@ package io.bioimage.modelrunner.tensor;
 
 import java.nio.ByteBuffer;
 
+import net.imglib2.Cursor;
 import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.blocks.PrimitiveBlocks;
 import net.imglib2.type.NativeType;
@@ -37,6 +38,7 @@ import net.imglib2.type.numeric.integer.UnsignedShortType;
 import net.imglib2.type.numeric.real.DoubleType;
 import net.imglib2.type.numeric.real.FloatType;
 import net.imglib2.util.Util;
+import net.imglib2.view.Views;
 
 /**
  * Class that maps {@link Tensor} objects to {@link ByteBuffer} objects.
@@ -300,7 +302,13 @@ public final class ImgLib2ToArray
 		int[] sArr = new int[tensorShape.length];
 		for (int i = 0; i < sArr.length; i ++)
 			sArr[i] = (int) tensorShape[i];
-		blocks.copy( tensor.minAsLongArray(), flatArr, sArr );
+
+		Cursor<FloatType> cursor = Views.flatIterable(tensor).cursor();
+		int i = 0;
+		while (cursor.hasNext()) {
+			cursor.fwd();
+			flatArr[i ++] = cursor.get().get();
+		}
 		return flatArr;
     }
 

@@ -72,7 +72,8 @@ public class RunMode {
 	
 	private static final String DEFAULT_IMPORT = 
 			"import sys" + System.lineSeparator()
-			+ IMPORT_NUMPY;
+			+ IMPORT_NUMPY
+			+ IMPORT_SHM;
 	
 	
 	private Environment env;
@@ -283,7 +284,7 @@ public class RunMode {
 			importsCode += IMPORT_NUMPY;
 		// This line wants to recreate the original numpy array. Should look like:
 		// input0 = xr.DataArray(np.array(input0).reshape([1, 1, 512, 512]), dims=["b", "c", "y", "x"], name="input0")
-		this.tensorRecreationCode += ogName + " = xr.DataArray(np.load(" + filename + "), dims=[";
+		this.tensorRecreationCode += ogName + " = xr.DataArray(np.load(r'" + filename + "'), dims=[";
 		for (String ss : tensor.getAxesOrderString().split(""))
 			tensorRecreationCode += "\"" + ss + "\", ";
 		tensorRecreationCode = 
