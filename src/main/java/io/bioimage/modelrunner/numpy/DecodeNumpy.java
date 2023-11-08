@@ -71,6 +71,7 @@ import net.imglib2.type.numeric.integer.UnsignedIntType;
 import net.imglib2.type.numeric.integer.UnsignedShortType;
 import net.imglib2.type.numeric.real.DoubleType;
 import net.imglib2.type.numeric.real.FloatType;
+import net.imglib2.util.Cast;
 import net.imglib2.util.Util;
 
 /**
@@ -135,7 +136,7 @@ public class DecodeNumpy {
     	//String npy = "C:\\Users\\angel\\OneDrive\\Documentos\\pasteur\\git\\deep-icy\\models\\Arabidopsis Leaf Segmentation_30102023_193340\\test_input.npy";
     	//RandomAccessibleInterval<?> aa = retrieveImgLib2FromNpy(npy);
     	String npy = "C:\\Users\\angel\\OneDrive\\Documentos\\pasteur\\test_input.npy";
-    	RandomAccessibleInterval<T> rai = (RandomAccessibleInterval<T>) ArrayImgs.doubles(new long[] {1, 512, 512});
+    	RandomAccessibleInterval<T> rai = Cast.unchecked(ArrayImgs.doubles(new long[] {1, 512, 512}));
     	writeRaiToNpyFile(npy, rai);
     	RandomAccessibleInterval<?> bb = retrieveImgLib2FromNpy(npy);
     }
