@@ -59,7 +59,7 @@ public class RunMode {
 	
 	// TODO add support for list of objects
 	private static final String OUTPUT_REFORMATING = ""
-			+ "if isinstance(%s, xr.DataArray) and True:" + System.lineSeparator()
+			+ "if isinstance(%s, xr.DataArray) and os.name == 'nt':" + System.lineSeparator()
 			+ "  %s = " + RunModeScripts.XR_METHOD + "_file(%s)" + System.lineSeparator()
 			+ "elif isinstance(%s, xr.DataArray):" + System.lineSeparator()
 			+ "  %s = " + RunModeScripts.XR_METHOD + "(%s)" + System.lineSeparator()
@@ -70,8 +70,9 @@ public class RunMode {
 			+ "elif isinstance(%s, dict):" + System.lineSeparator()
 			+ "  %s = " + RunModeScripts.DICT_METHOD + "(%s)" + System.lineSeparator();
 	
-	private static final String DEFAULT_IMPORT = 
-			"import sys" + System.lineSeparator()
+	private static final String DEFAULT_IMPORT = ""
+			+ "import sys" + System.lineSeparator()
+			+ "import os" + System.lineSeparator()
 			+ IMPORT_NUMPY
 			+ IMPORT_SHM;
 	
@@ -232,7 +233,7 @@ public class RunMode {
 		for (Entry<String, Object> entry : this.op.getOpInputs().entrySet()) {
 			if (entry.getValue() instanceof String) {
 				apposeInputMap.put(entry.getKey(), entry.getValue());
-			} else if (entry.getValue() instanceof Tensor && true) {
+			} else if (entry.getValue() instanceof Tensor && !PlatformDetection.isWindows()) {
 				String fileName = new File(UUID.randomUUID().toString() + ".npy").getAbsolutePath();
 				SharedMemoryFile.buildFileFromRai(fileName, ((Tensor<T>) entry.getValue()).getData());
 				filesToDestroy.add(fileName);
