@@ -131,9 +131,13 @@ public class DecodeNumpy {
      * @throws FileNotFoundException if the numpy array file is not found
      * @throws IOException if there is any error opening the files
      */
-    public static void main(String[] args) throws FileNotFoundException, IOException {
-    	String npy = "C:\\Users\\angel\\OneDrive\\Documentos\\pasteur\\git\\deep-icy\\models\\Arabidopsis Leaf Segmentation_30102023_193340\\test_input.npy";
-    	RandomAccessibleInterval<?> aa = retrieveImgLib2FromNpy(npy);
+    public static < T extends RealType< T > & NativeType< T > > void main(String[] args) throws FileNotFoundException, IOException {
+    	//String npy = "C:\\Users\\angel\\OneDrive\\Documentos\\pasteur\\git\\deep-icy\\models\\Arabidopsis Leaf Segmentation_30102023_193340\\test_input.npy";
+    	//RandomAccessibleInterval<?> aa = retrieveImgLib2FromNpy(npy);
+    	String npy = "C:\\Users\\angel\\OneDrive\\Documentos\\pasteur\\test_input.npy";
+    	RandomAccessibleInterval<T> rai = (RandomAccessibleInterval<T>) ArrayImgs.doubles(new long[] {1, 512, 512});
+    	writeRaiToNpyFile(npy, rai);
+    	RandomAccessibleInterval<?> bb = retrieveImgLib2FromNpy(npy);
     }
     
     /**
@@ -458,8 +462,8 @@ public class DecodeNumpy {
     	byte[] major = {1};
         byte[] minor = {0};
         byte[] len = new byte[2];
-        len[0] = (byte) (strHeader.length() >> 8);
-        len[1] = (byte) (strHeader.length());
+        len[0] = (byte) (short) strHeader.length();
+        len[1] = (byte) (((short) strHeader.length()) >> 8);
         byte[] array;
         if (Util.getTypeFromInterval(rai) instanceof ByteType) {
         	byte[] data = (byte[]) ImgLib2ToArray.build(rai);
