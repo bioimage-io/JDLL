@@ -295,14 +295,20 @@ public class EngineLoader extends ClassLoader
 		// interface
 		ZipFile jarFile;
 		String jarPrefix = "dl-modelrunner-" + this.engine;
+		DeepLearningVersion dlv = null;
+		try {
+			dlv = DeepLearningVersion.fromFile(new File( this.enginePath ));
+		} catch (IllegalStateException | IOException e) {
+		}
 		String errMsg = "Missing " + jarPrefix + " jar file that implements the 'DeepLearningInterface";
 		try
 		{
 			for ( File ff : new File( this.enginePath ).listFiles() )
 			{
 				// Find the correct dl-modelrunner-<engine> JAR file.
-				if (!ff.getName().endsWith(".jar") ||
-						!ff.getName().startsWith(jarPrefix + "-"))
+				if (!ff.getName().endsWith(".jar")
+						|| !ff.getName().startsWith(jarPrefix + "-") 
+						|| !dlv.doesJarBelongToEngine(ff.getAbsolutePath()))
 				{
 					continue;
 				}
