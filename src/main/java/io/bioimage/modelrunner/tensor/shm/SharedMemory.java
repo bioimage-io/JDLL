@@ -1,4 +1,4 @@
-package io.bioimage.modelrunner;
+package io.bioimage.modelrunner.tensor.shm;
 
 import com.sun.jna.Memory;
 import com.sun.jna.Pointer;
