@@ -81,12 +81,15 @@ public final class SharedMemoryArrayPosix implements SharedMemoryArray
 	 */
 	private boolean unlinked = false;
 
-    public static final int O_RDWR = 0x0002;
     public static final int O_RDONLY = 0;
-    public static final int O_CREAT = 0x0200;
-    public static final int PROT_READ = 0x1;
-    public static final int PROT_WRITE = 0x2;
-    public static final int MAP_SHARED = 0x01;
+    private static final int O_RDWR = 2;    // Read-write mode
+    private static final int O_CREAT = 64;  // Create if it does not exist
+    private static final int S_IRWXU = 0700; // Owner can read, write, and execute
+    private static final int S_IRWXG = 0070; // Group can read, write, and execute
+    private static final int S_IRWXO = 0007; // Others can read, write, and execute
+    private static final int PROT_READ = 0x1;  // Page can be read
+    private static final int PROT_WRITE = 0x2; // Page can be written
+    private static final int MAP_SHARED = 0x01; // Share changes
     
     private SharedMemoryArrayPosix(int size)
     {
@@ -96,7 +99,7 @@ public final class SharedMemoryArrayPosix implements SharedMemoryArray
     		this.memoryName = this.auxMemoryName;
         this.size = size;
 
-        shmFd = INSTANCE.shm_open(this.memoryName, O_RDWR | O_CREAT, 0666);
+        shmFd = INSTANCE.shm_open(this.memoryName, O_RDWR | O_CREAT, S_IRWXU | S_IRWXG | S_IRWXO);
         if (shmFd < 0) {
             throw new RuntimeException("shm_open failed, errno: " + Native.getLastError());
         }
