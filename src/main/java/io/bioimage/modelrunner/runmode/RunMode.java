@@ -38,7 +38,7 @@ import org.apposed.appose.Service.Task;
 import io.bioimage.modelrunner.runmode.ops.OpInterface;
 import io.bioimage.modelrunner.system.PlatformDetection;
 import io.bioimage.modelrunner.tensor.shm.SharedMemoryArray;
-import io.bioimage.modelrunner.tensor.SharedMemoryFile;
+import io.bioimage.modelrunner.tensor.shm.SharedMemoryFile;
 import io.bioimage.modelrunner.tensor.Tensor;
 import io.bioimage.modelrunner.utils.CommonUtils;
 import net.imglib2.RandomAccessibleInterval;
