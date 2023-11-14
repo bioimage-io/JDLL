@@ -415,12 +415,16 @@ public final class SharedMemoryArrayWin implements SharedMemoryArray
 		} else {
 			throw new IllegalArgumentException("Unsupported data type: " + dataType);
 		}
+		if (!memoryName.startsWith("Local\\"))
+			memoryName = "Local\\" + memoryName;
 		return createImgLib2RaiFromSharedMemoryBlock(memoryName, shape, isFortran, type);
 	}
 	
-	public static <T extends RealType<T> & NativeType<T>>
+	protected static <T extends RealType<T> & NativeType<T>>
 	RandomAccessibleInterval<T> createImgLib2RaiFromSharedMemoryBlock(String memoryName, long[] shape, boolean isFortran, T dataType) {
 		int size = getArrayByteSize(shape, dataType);
+		if (!memoryName.startsWith("Local\\"))
+			memoryName = "Local\\" + memoryName;
 		WinNT.HANDLE hMapFile = Kernel32.INSTANCE.OpenFileMapping(
                 WinNT.FILE_MAP_READ | WinNT.FILE_MAP_WRITE,
                 false,

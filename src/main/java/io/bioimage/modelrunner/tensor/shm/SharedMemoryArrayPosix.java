@@ -446,12 +446,14 @@ public final class SharedMemoryArrayPosix implements SharedMemoryArray
 		} else {
 			throw new IllegalArgumentException("Unsupported data type: " + dataType);
 		}
+		if (!memoryName.startsWith("/")) memoryName = "/" + memoryName;
 		return createImgLib2RaiFromSharedMemoryBlock(memoryName, shape, isFortran, type);
 	}
 	
 	public static <T extends RealType<T> & NativeType<T>>
 	RandomAccessibleInterval<T> createImgLib2RaiFromSharedMemoryBlock(String memoryName, long[] shape, boolean isFortran, T dataType) {
 		int size = getArrayByteSize(shape, dataType);
+		if (!memoryName.startsWith("/")) memoryName = "/" + memoryName;
 		int shmFd = INSTANCE.shm_open(memoryName, O_RDONLY, 0);
         if (shmFd < 0) {
             throw new RuntimeException("Failed to open shared memory. Errno: " + Native.getLastError());
