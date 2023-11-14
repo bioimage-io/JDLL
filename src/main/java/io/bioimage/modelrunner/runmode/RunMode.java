@@ -57,7 +57,7 @@ public class RunMode {
 	
 	// TODO add support for list of objects
 	private static final String OUTPUT_REFORMATING = ""
-			+ "if isinstance(%s, xr.DataArray) and False':" + System.lineSeparator()
+			+ "if isinstance(%s, xr.DataArray) and False:" + System.lineSeparator()
 			+ "  %s = " + RunModeScripts.XR_METHOD + "_file(%s)" + System.lineSeparator()
 			+ "elif isinstance(%s, xr.DataArray):" + System.lineSeparator()
 			+ "  %s = " + RunModeScripts.XR_METHOD + "(%s)" + System.lineSeparator()
