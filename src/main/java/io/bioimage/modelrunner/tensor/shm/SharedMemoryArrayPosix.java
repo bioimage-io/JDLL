@@ -395,14 +395,6 @@ public final class SharedMemoryArrayPosix implements SharedMemoryArray
 	 */
 	public void close() {
 		if (this.unlinked) return;
-		
-        if (this.pSharedMemory != Pointer.NULL) {
-            INSTANCE.munmap(pSharedMemory, this.size);
-        }
-        if (shmFd >= 0) {
-        	INSTANCE.close(shmFd);
-        }
-        INSTANCE.shm_unlink(this.memoryName);
 
         // Unmap the shared memory
         if (this.pSharedMemory != Pointer.NULL && INSTANCE.munmap(this.pSharedMemory, size) == -1) {
