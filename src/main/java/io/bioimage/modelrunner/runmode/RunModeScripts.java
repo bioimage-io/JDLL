@@ -64,7 +64,7 @@ public class RunModeScripts {
 			+ "  aux_np_arr = np.ndarray((np_arr.size), dtype=np_arr.dtype, buffer=shm.buf)" + System.lineSeparator()
 			+ "  aux_np_arr[:] = np_arr.flatten()" + System.lineSeparator()
 			+ "  shm_out_list.append(shm)" + System.lineSeparator()
-			+ "  shm.unlink()" + System.lineSeparator()
+			//+ "  shm.unlink()" + System.lineSeparator()
 			+ "  return {\"" + DATA_KEY + "\": shm.name, \"" + SHAPE_KEY 
 							+ "\": np_arr.shape, \"" + APPOSE_DT_KEY + "\": \"" 
 							+ NP_ARR_KEY + "\", "
@@ -76,7 +76,7 @@ public class RunModeScripts {
 			+ "  aux_np_arr = np.ndarray((xr_arr.values.size), dtype=xr_arr.values.dtype, buffer=shm.buf)" + System.lineSeparator()
 			+ "  aux_np_arr[:] = xr_arr.values.flatten()" + System.lineSeparator()
 			+ "  shm_out_list.append(shm)" + System.lineSeparator()
-			+ "  shm.unlink()" + System.lineSeparator()
+			//+ "  shm.unlink()" + System.lineSeparator()
 			+ "  return {\"" + DATA_KEY + "\": shm.name, \"" + SHAPE_KEY 
 							+ "\": xr_arr.shape, \"" + AXES_KEY + "\": \"\".join(xr_arr.dims),\"" + NAME_KEY 
 							+ "\": xr_arr.name, \"" + APPOSE_DT_KEY + "\": \"" + TENSOR_KEY + "\", "
