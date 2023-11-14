@@ -25,6 +25,7 @@ import java.util.UUID;
 
 import com.sun.jna.Pointer;
 
+import io.bioimage.modelrunner.system.PlatformDetection;
 import io.bioimage.modelrunner.tensor.Utils;
 
 import com.sun.jna.Native;
@@ -66,13 +67,22 @@ public final class SharedMemoryArrayPosix implements SharedMemoryArrayInterface
 	/**
 	 * Name defining the location of the shared memory block
 	 */
-	private final String memoryName = "/shm-" + UUID.randomUUID();
+	private final String auxMemoryName = "/shm-" + UUID.randomUUID();
+	/**
+	 * Name defining the location of the shared memory block
+	 */
+	private final String memoryName;
 	/**
 	 * Size of the shared memory block
 	 */
 	private int size;
+	/**
+	 * Whether the memory block has been closed and unlinked
+	 */
+	private boolean unlinked = false;
 
     public static final int O_RDWR = 0x0002;
+    public static final int O_RDONLY = 0;
     public static final int O_CREAT = 0x0200;
     public static final int PROT_READ = 0x1;
     public static final int PROT_WRITE = 0x2;
@@ -80,6 +90,10 @@ public final class SharedMemoryArrayPosix implements SharedMemoryArrayInterface
     
     private SharedMemoryArrayPosix(int size)
     {
+    	if (PlatformDetection.isMacOS())
+    		this.memoryName = this.auxMemoryName.substring(0, 30);
+    	else
+    		this.memoryName = this.auxMemoryName;
         this.size = size;
 
         shmFd = INSTANCE.shm_open(this.memoryName, O_RDWR | O_CREAT, 0666);
@@ -87,7 +101,7 @@ public final class SharedMemoryArrayPosix implements SharedMemoryArrayInterface
             throw new RuntimeException("shm_open failed, errno: " + Native.getLastError());
         }
 
-        if (INSTANCE.ftruncate(shmFd, this.size) != 0) {
+        if (INSTANCE.ftruncate(shmFd, this.size) == -1) {
         	INSTANCE.close(shmFd);
             throw new RuntimeException("ftruncate failed, errno: " + Native.getLastError());
         }
@@ -380,6 +394,8 @@ public final class SharedMemoryArrayPosix implements SharedMemoryArrayInterface
 	 * Unmap and close the shared memory. Necessary to eliminate the shared memory block
 	 */
 	public void close() {
+		if (this.unlinked) return;
+		
         if (this.pSharedMemory != Pointer.NULL) {
             INSTANCE.munmap(pSharedMemory, this.size);
         }
@@ -387,6 +403,22 @@ public final class SharedMemoryArrayPosix implements SharedMemoryArrayInterface
         	INSTANCE.close(shmFd);
         }
         INSTANCE.shm_unlink(this.memoryName);
+
+        // Unmap the shared memory
+        if (this.pSharedMemory != Pointer.NULL && INSTANCE.munmap(this.pSharedMemory, size) == -1) {
+            throw new RuntimeException("munmap failed. Errno: " + Native.getLastError());
+        }
+
+        // Close the file descriptor
+        if (shmFd >= 0 && INSTANCE.close(this.shmFd) == -1) {
+            throw new RuntimeException("close failed. Errno: " + Native.getLastError());
+        }
+
+        // Unlink the shared memory object
+        if (shmFd >= 0 && INSTANCE.shm_unlink(this.memoryName) == -1) {
+            throw new RuntimeException("shm_unlink failed. Errno: " + Native.getLastError());
+        }
+        unlinked = true;
 	}
 	
 	// TODO support boolean
@@ -420,22 +452,18 @@ public final class SharedMemoryArrayPosix implements SharedMemoryArrayInterface
 	public static <T extends RealType<T> & NativeType<T>>
 	RandomAccessibleInterval<T> createImgLib2RaiFromSharedMemoryBlock(String memoryName, long[] shape, boolean isFortran, T dataType) {
 		int size = getArrayByteSize(shape, dataType);
-		int shmFd = INSTANCE.shm_open(memoryName, O_RDWR | O_CREAT, 0666);
+		int shmFd = INSTANCE.shm_open(memoryName, O_RDONLY, 0);
         if (shmFd < 0) {
-            throw new RuntimeException("shm_open failed, errno: " + Native.getLastError());
+            throw new RuntimeException("Failed to open shared memory. Errno: " + Native.getLastError());
         }
 
-        if (INSTANCE.ftruncate(shmFd, size) != 0) {
-        	INSTANCE.close(shmFd);
-            throw new RuntimeException("ftruncate failed, error: " + Native.getLastError());
-        }
-
-        Pointer pSharedMemory = INSTANCE.mmap(Pointer.NULL, size, PROT_READ | PROT_WRITE, MAP_SHARED, shmFd, 0);
+        // Map the shared memory into the process's address space
+        Pointer pSharedMemory = INSTANCE.mmap(null, size, PROT_READ, MAP_SHARED, shmFd, 0);
         if (pSharedMemory == Pointer.NULL) {
-        	INSTANCE.close(shmFd);
-            throw new RuntimeException("mmap failed, error: " + Native.getLastError());
+            CLibrary.INSTANCE.close(shmFd);
+            throw new RuntimeException("Failed to map shared memory. Errmo: " + Native.getLastError());
         }
-        try {
+		try {
         	RandomAccessibleInterval<T> rai = buildFromSharedMemoryBlock(pSharedMemory, shape, isFortran, dataType);
         	if (pSharedMemory != Pointer.NULL) {
                 INSTANCE.munmap(pSharedMemory, size);
