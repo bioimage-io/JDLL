@@ -422,9 +422,9 @@ public class RunMode {
 	private static < T extends RealType< T > & NativeType< T > > 
 		Tensor<T> createTensorFromApposeOutput(Map<String, Object> apposeTensor) {
 		String shmName = (String) apposeTensor.get(RunModeScripts.DATA_KEY);
-		List<Integer> shape = (List<Integer>) apposeTensor.get(RunModeScripts.SHAPE_KEY);
+		List<Number> shape = (List<Number>) apposeTensor.get(RunModeScripts.SHAPE_KEY);
 		long[] longShape = new long[shape.size()];
-		for (int i = 0; i < shape.size(); i ++) {longShape[i] = shape.get(i);}
+		for (int i = 0; i < shape.size(); i ++) {longShape[i] = shape.get(i).longValue();}
 		String dtype = (String) apposeTensor.get(RunModeScripts.DTYPE_KEY);
 		String tensorname = (String) apposeTensor.get(RunModeScripts.NAME_KEY);
 		String axes = (String) apposeTensor.get(RunModeScripts.AXES_KEY);
