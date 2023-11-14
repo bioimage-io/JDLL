@@ -118,7 +118,7 @@ public final class SharedMemoryArrayPosix implements SharedMemoryArray
     }
     
     public String getMemoryLocationPythonName() {
-    	return this.memoryName.substring("Local\\".length());
+    	return this.memoryName.substring("/".length());
     }
     
     public Pointer getPointer() {
