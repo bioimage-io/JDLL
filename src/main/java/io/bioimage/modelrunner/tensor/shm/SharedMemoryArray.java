@@ -21,33 +21,13 @@
 package io.bioimage.modelrunner.tensor.shm;
 
 import java.io.Closeable;
-import java.nio.ByteBuffer;
-import java.util.UUID;
 
 import com.sun.jna.Pointer;
-import com.sun.jna.platform.win32.Kernel32;
-import com.sun.jna.platform.win32.WinBase;
-import com.sun.jna.platform.win32.WinNT;
-import com.sun.jna.platform.win32.WinNT.HANDLE;
 
-import io.bioimage.modelrunner.tensor.Utils;
-import net.imglib2.Cursor;
+import io.bioimage.modelrunner.system.PlatformDetection;
 import net.imglib2.RandomAccessibleInterval;
-import net.imglib2.img.array.ArrayImgs;
 import net.imglib2.type.NativeType;
 import net.imglib2.type.numeric.RealType;
-import net.imglib2.type.numeric.integer.ByteType;
-import net.imglib2.type.numeric.integer.IntType;
-import net.imglib2.type.numeric.integer.LongType;
-import net.imglib2.type.numeric.integer.ShortType;
-import net.imglib2.type.numeric.integer.UnsignedByteType;
-import net.imglib2.type.numeric.integer.UnsignedIntType;
-import net.imglib2.type.numeric.integer.UnsignedShortType;
-import net.imglib2.type.numeric.real.DoubleType;
-import net.imglib2.type.numeric.real.FloatType;
-import net.imglib2.util.Cast;
-import net.imglib2.util.Util;
-import net.imglib2.view.Views;
 
 /**
  * Interface that contains the methods required to create or read Shared Memory Blocks for JDLL
@@ -55,6 +35,21 @@ import net.imglib2.view.Views;
  * @author Carlos Garcia Lopez de Haro
  */
 public interface SharedMemoryArray extends Closeable {
+	
+	static <T extends RealType<T> & NativeType<T>>
+	SharedMemoryArray buildSHMA(RandomAccessibleInterval<T> rai) {
+        if (PlatformDetection.isWindows()) return SharedMemoryArrayWin.build(rai);
+    	else return SharedMemoryArrayPosix.build(rai);
+    }
+	
+	static <T extends RealType<T> & NativeType<T>>
+	RandomAccessibleInterval<T> buildImgLib2FromSHMA(String memoryName, long[] shape, boolean isFortran, String dataType) {
+        if (PlatformDetection.isWindows()) 
+        	return SharedMemoryArrayWin.createImgLib2RaiFromSharedMemoryBlock(memoryName, shape, isFortran, dataType);
+    	else 
+    		return SharedMemoryArrayPosix.createImgLib2RaiFromSharedMemoryBlock(memoryName, shape, isFortran, dataType);
+
+	}
     
     public String getMemoryLocationName();
     

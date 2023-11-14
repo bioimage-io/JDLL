@@ -148,7 +148,7 @@ public final class SharedMemoryArrayPosix implements SharedMemoryArray
      * 	name of the memory location
      * @throws IllegalArgumentException If the {@link RandomAccessibleInterval} type is not supported.
      */
-	public static <T extends RealType<T> & NativeType<T>> SharedMemoryArrayPosix build(RandomAccessibleInterval<T> rai)
+    protected static <T extends RealType<T> & NativeType<T>> SharedMemoryArrayPosix build(RandomAccessibleInterval<T> rai)
     {
     	SharedMemoryArrayPosix shma = null;
     	if (Util.getTypeFromInterval(rai) instanceof ByteType) {
@@ -422,7 +422,7 @@ public final class SharedMemoryArrayPosix implements SharedMemoryArray
 	}
 	
 	// TODO support boolean
-	public static <T extends RealType<T> & NativeType<T>>
+	protected static <T extends RealType<T> & NativeType<T>>
 	RandomAccessibleInterval<T> createImgLib2RaiFromSharedMemoryBlock(String memoryName, long[] shape, boolean isFortran, String dataType) {
 		T type;
 		if (dataType.equals("int8")) {

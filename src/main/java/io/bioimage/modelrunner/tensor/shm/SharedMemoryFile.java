@@ -18,7 +18,7 @@
  * limitations under the License.
  * #L%
  */
-package io.bioimage.modelrunner.tensor;
+package io.bioimage.modelrunner.tensor.shm;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;

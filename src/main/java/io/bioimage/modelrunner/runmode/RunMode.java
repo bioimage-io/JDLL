@@ -37,15 +37,13 @@ import org.apposed.appose.Service.Task;
 
 import io.bioimage.modelrunner.runmode.ops.OpInterface;
 import io.bioimage.modelrunner.system.PlatformDetection;
-import io.bioimage.modelrunner.tensor.SharedMemoryArray;
+import io.bioimage.modelrunner.tensor.shm.SharedMemoryArray;
 import io.bioimage.modelrunner.tensor.SharedMemoryFile;
 import io.bioimage.modelrunner.tensor.Tensor;
 import io.bioimage.modelrunner.utils.CommonUtils;
 import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.type.NativeType;
 import net.imglib2.type.numeric.RealType;
-
-import java.util.UUID;
 
 public class RunMode {
 	
@@ -59,7 +57,7 @@ public class RunMode {
 	
 	// TODO add support for list of objects
 	private static final String OUTPUT_REFORMATING = ""
-			+ "if isinstance(%s, xr.DataArray) and os.name != 'nt':" + System.lineSeparator()
+			+ "if isinstance(%s, xr.DataArray) and False':" + System.lineSeparator()
 			+ "  %s = " + RunModeScripts.XR_METHOD + "_file(%s)" + System.lineSeparator()
 			+ "elif isinstance(%s, xr.DataArray):" + System.lineSeparator()
 			+ "  %s = " + RunModeScripts.XR_METHOD + "(%s)" + System.lineSeparator()
@@ -170,7 +168,13 @@ public class RunMode {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-		this.shmaList.stream().forEach(entry ->entry.close());
+		this.shmaList.stream().forEach(entry ->{
+			try {
+				entry.close();
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+		});
 		return outputs;
 	}
 	
@@ -233,19 +237,19 @@ public class RunMode {
 		for (Entry<String, Object> entry : this.op.getOpInputs().entrySet()) {
 			if (entry.getValue() instanceof String) {
 				apposeInputMap.put(entry.getKey(), entry.getValue());
-			} else if (entry.getValue() instanceof Tensor && !PlatformDetection.isWindows()) {
+			} else if (entry.getValue() instanceof Tensor && false) {
 				String fileName = new File(UUID.randomUUID().toString() + ".npy").getAbsolutePath();
 				SharedMemoryFile.buildFileFromRai(fileName, ((Tensor<T>) entry.getValue()).getData());
 				filesToDestroy.add(fileName);
 				apposeInputMap.put(entry.getKey(), null);
 				addCodeToRecreateTensorFile(entry.getKey(), (Tensor<T>) entry.getValue(), fileName);
 			} else if (entry.getValue() instanceof Tensor) {
-				SharedMemoryArray shma = SharedMemoryArray.build(((Tensor<T>) entry.getValue()).getData());
+				SharedMemoryArray shma = SharedMemoryArray.buildSHMA(((Tensor<T>) entry.getValue()).getData());
 				shmaList.add(shma);
 				apposeInputMap.put(entry.getKey(), null);
 				addCodeToRecreateTensor(entry.getKey(), shma, (Tensor<T>) entry.getValue());
 			} else if (entry.getValue() instanceof RandomAccessibleInterval) {
-				SharedMemoryArray shma = SharedMemoryArray.build((RandomAccessibleInterval<T>) entry.getValue());
+				SharedMemoryArray shma = SharedMemoryArray.buildSHMA((RandomAccessibleInterval<T>) entry.getValue());
 				shmaList.add(shma);
 				apposeInputMap.put(entry.getKey(), null);
 				addCodeToRecreateNumpyArray(entry.getKey(), shma, (RandomAccessibleInterval<T>) entry.getValue());
@@ -425,7 +429,7 @@ public class RunMode {
 		String tensorname = (String) apposeTensor.get(RunModeScripts.NAME_KEY);
 		String axes = (String) apposeTensor.get(RunModeScripts.AXES_KEY);
 		boolean isFortran = (boolean) apposeTensor.get(RunModeScripts.IS_FORTRAN_KEY);
-		RandomAccessibleInterval<T> rai = SharedMemoryArray.createImgLib2RaiFromSharedMemoryBlock(shmName, longShape, isFortran, dtype);
+		RandomAccessibleInterval<T> rai = SharedMemoryArray.buildImgLib2FromSHMA(shmName, longShape, isFortran, dtype);
 		return Tensor.build(tensorname, axes, rai);
 	}
 	
@@ -446,7 +450,7 @@ public class RunMode {
 		for (int i = 0; i < shape.size(); i ++) {longShape[i] = shape.get(i);}
 		String dtype = (String) apposeTensor.get(RunModeScripts.DTYPE_KEY);
 		boolean isFortran = (boolean) apposeTensor.get(RunModeScripts.IS_FORTRAN_KEY);
-		RandomAccessibleInterval<T> rai = SharedMemoryArray.createImgLib2RaiFromSharedMemoryBlock(shmName, longShape, isFortran, dtype);
+		RandomAccessibleInterval<T> rai = SharedMemoryArray.buildImgLib2FromSHMA(shmName, longShape, isFortran, dtype);
 		return rai;
 	}
 	
