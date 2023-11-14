@@ -3,7 +3,7 @@ package io.bioimage.modelrunner.tensor.shm;
 import com.sun.jna.Memory;
 import com.sun.jna.Pointer;
 
-public class SharedMemory {
+public class SharedMemoryExample {
     public static final int O_RDWR = 0x0002;
     public static final int O_CREAT = 0x0200;
     public static final int PROT_READ = 0x1;

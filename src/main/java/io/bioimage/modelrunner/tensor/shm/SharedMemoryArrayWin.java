@@ -24,12 +24,12 @@ import java.nio.ByteBuffer;
 import java.util.UUID;
 
 import com.sun.jna.Pointer;
+import com.sun.jna.platform.win32.Kernel32;
+import com.sun.jna.platform.win32.WinBase;
+import com.sun.jna.platform.win32.WinNT;
+import com.sun.jna.platform.win32.WinNT.HANDLE;
 
-import io.bioimage.modelrunner.system.PlatformDetection;
 import io.bioimage.modelrunner.tensor.Utils;
-
-import com.sun.jna.Native;
-
 import net.imglib2.Cursor;
 import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.img.array.ArrayImgs;
@@ -50,16 +50,15 @@ import net.imglib2.view.Views;
 
 /**
  * Class that maps {@link Tensor} objects to the shared memory for interprocessing communication
- * in POSIX based systems (LINUX, MACOS...)
+ * in Windows
  * @author Carlos Garcia Lopez de Haro
  */
-public final class SharedMemoryArrayPosix implements SharedMemoryArray
+public final class SharedMemoryArrayWin implements SharedMemoryArray
 {
-	private static final CLibrary INSTANCE = CLibrary.INSTANCE;
 	/**
-	 * Shared memory location
+	 * file mapping for shared memory
 	 */
-	private final int shmFd;
+	private WinNT.HANDLE hMapFile;
 	/**
 	 * 
 	 */
@@ -67,49 +66,42 @@ public final class SharedMemoryArrayPosix implements SharedMemoryArray
 	/**
 	 * Name defining the location of the shared memory block
 	 */
-	private final String auxMemoryName = "/shm-" + UUID.randomUUID();
-	/**
-	 * Name defining the location of the shared memory block
-	 */
-	private final String memoryName;
+	private final String memoryName = "Local\\" + UUID.randomUUID().toString();;
 	/**
 	 * Size of the shared memory block
 	 */
 	private int size;
-	/**
-	 * Whether the memory block has been closed and unlinked
-	 */
-	private boolean unlinked = false;
-
-    public static final int O_RDWR = 0x0002;
-    public static final int O_RDONLY = 0;
-    public static final int O_CREAT = 0x0200;
-    public static final int PROT_READ = 0x1;
-    public static final int PROT_WRITE = 0x2;
-    public static final int MAP_SHARED = 0x01;
-    
-    private SharedMemoryArrayPosix(int size)
+	
+    private SharedMemoryArrayWin(int size)
     {
-    	if (PlatformDetection.isMacOS())
-    		this.memoryName = this.auxMemoryName.substring(0, 30);
-    	else
-    		this.memoryName = this.auxMemoryName;
-        this.size = size;
-
-        shmFd = INSTANCE.shm_open(this.memoryName, O_RDWR | O_CREAT, 0666);
-        if (shmFd < 0) {
-            throw new RuntimeException("shm_open failed, errno: " + Native.getLastError());
+    	this.size = size;
+        hMapFile = Kernel32.INSTANCE.CreateFileMapping(
+                WinBase.INVALID_HANDLE_VALUE,
+                null,
+                WinNT.PAGE_READWRITE,
+                0,
+                size,
+                memoryName
+        );
+        
+        if (hMapFile == null) {
+            throw new RuntimeException("Error creating shared memory array. CreateFileMapping failed: "
+            		+ "" + Kernel32.INSTANCE.GetLastError());
         }
-
-        if (INSTANCE.ftruncate(shmFd, this.size) == -1) {
-        	INSTANCE.close(shmFd);
-            throw new RuntimeException("ftruncate failed, errno: " + Native.getLastError());
-        }
-
-        pSharedMemory = INSTANCE.mmap(Pointer.NULL, this.size, PROT_READ | PROT_WRITE, MAP_SHARED, shmFd, 0);
-        if (pSharedMemory == Pointer.NULL) {
-        	INSTANCE.close(shmFd);
-            throw new RuntimeException("mmap failed, errno: " + Native.getLastError());
+        
+        // Map the shared memory
+        pSharedMemory = Kernel32.INSTANCE.MapViewOfFile(
+                hMapFile,
+                WinNT.FILE_MAP_WRITE,
+                0,
+                0,
+                size
+        );
+        
+        if (pSharedMemory == null) {
+            Kernel32.INSTANCE.CloseHandle(hMapFile);
+            throw new RuntimeException("Error creating shared memory array. MapViewOfFile failed: "
+            		+ "" + Kernel32.INSTANCE.GetLastError());
         }
     }
     
@@ -125,8 +117,8 @@ public final class SharedMemoryArrayPosix implements SharedMemoryArray
     	return this.pSharedMemory;
     }
     
-    public int getSharedMemoryBlock() {
-    	return this.shmFd;
+    public HANDLE getSharedMemoryBlock() {
+    	return this.hMapFile;
     }
     
     public int getSize() {
@@ -143,58 +135,58 @@ public final class SharedMemoryArrayPosix implements SharedMemoryArray
      * 	{@link RandomAccessibleInterval} to be mapped into byte buffer
      * @param byteBuffer 
      * 	target bytebuffer
-     * @return an instance of {@link SharedMemoryArrayPosix} containing the pointer to the 
+     * @return an instance of {@link SharedMemoryArrayWin} containing the pointer to the 
      * 	shared memory where the array is, the hMapFile, the size of the object in bytes, and 
      * 	name of the memory location
      * @throws IllegalArgumentException If the {@link RandomAccessibleInterval} type is not supported.
      */
-	public static <T extends RealType<T> & NativeType<T>> SharedMemoryArrayPosix build(RandomAccessibleInterval<T> rai)
+	public static <T extends RealType<T> & NativeType<T>> SharedMemoryArrayWin build(RandomAccessibleInterval<T> rai)
     {
-    	SharedMemoryArrayPosix shma = null;
+		SharedMemoryArrayWin shma = null;
     	if (Util.getTypeFromInterval(rai) instanceof ByteType) {
         	int size = 1;
         	for (long i : rai.dimensionsAsLongArray()) {size *= i;}
-        	shma = new SharedMemoryArrayPosix(size);
+        	shma = new SharedMemoryArrayWin(size);
         	shma.buildInt8(Cast.unchecked(rai));
     	} else if (Util.getTypeFromInterval(rai) instanceof UnsignedByteType) {
         	int size = 1;
         	for (long i : rai.dimensionsAsLongArray()) {size *= i;}
-        	shma = new SharedMemoryArrayPosix(size);
+        	shma = new SharedMemoryArrayWin(size);
         	shma.buildUint8(Cast.unchecked(rai));
     	} else if (Util.getTypeFromInterval(rai) instanceof ShortType) {
         	int size = 2;
         	for (long i : rai.dimensionsAsLongArray()) {size *= i;}
-        	shma = new SharedMemoryArrayPosix(size);
+        	shma = new SharedMemoryArrayWin(size);
         	shma.buildInt16(Cast.unchecked(rai));
     	} else if (Util.getTypeFromInterval(rai) instanceof UnsignedShortType) {
         	int size = 2;
         	for (long i : rai.dimensionsAsLongArray()) {size *= i;}
-        	shma = new SharedMemoryArrayPosix(size);
+        	shma = new SharedMemoryArrayWin(size);
         	shma.buildUint16(Cast.unchecked(rai));
     	} else if (Util.getTypeFromInterval(rai) instanceof IntType) {
         	int size = 4;
         	for (long i : rai.dimensionsAsLongArray()) {size *= i;}
-        	shma = new SharedMemoryArrayPosix(size);
+        	shma = new SharedMemoryArrayWin(size);
         	shma.buildInt32(Cast.unchecked(rai));
     	} else if (Util.getTypeFromInterval(rai) instanceof UnsignedIntType) {
         	int size = 4;
         	for (long i : rai.dimensionsAsLongArray()) {size *= i;}
-        	shma = new SharedMemoryArrayPosix(size);
+        	shma = new SharedMemoryArrayWin(size);
         	shma.buildUint32(Cast.unchecked(rai));
     	} else if (Util.getTypeFromInterval(rai) instanceof LongType) {
         	int size = 8;
         	for (long i : rai.dimensionsAsLongArray()) {size *= i;}
-        	shma = new SharedMemoryArrayPosix(size);
+        	shma = new SharedMemoryArrayWin(size);
         	shma.buildInt64(Cast.unchecked(rai));
     	} else if (Util.getTypeFromInterval(rai) instanceof FloatType) {
         	int size = 4;
         	for (long i : rai.dimensionsAsLongArray()) {size *= i;}
-        	shma = new SharedMemoryArrayPosix(size);
+        	shma = new SharedMemoryArrayWin(size);
         	shma.buildFloat32(Cast.unchecked(rai));
     	} else if (Util.getTypeFromInterval(rai) instanceof DoubleType) {
         	int size = 8;
         	for (long i : rai.dimensionsAsLongArray()) {size *= i;}
-        	shma = new SharedMemoryArrayPosix(size);
+        	shma = new SharedMemoryArrayWin(size);
         	shma.buildFloat64(Cast.unchecked(rai));
     	} else {
             throw new IllegalArgumentException("The image has an unsupported type: " + Util.getTypeFromInterval(rai).getClass().toString());
@@ -394,31 +386,8 @@ public final class SharedMemoryArrayPosix implements SharedMemoryArray
 	 * Unmap and close the shared memory. Necessary to eliminate the shared memory block
 	 */
 	public void close() {
-		if (this.unlinked) return;
-		
-        if (this.pSharedMemory != Pointer.NULL) {
-            INSTANCE.munmap(pSharedMemory, this.size);
-        }
-        if (shmFd >= 0) {
-        	INSTANCE.close(shmFd);
-        }
-        INSTANCE.shm_unlink(this.memoryName);
-
-        // Unmap the shared memory
-        if (this.pSharedMemory != Pointer.NULL && INSTANCE.munmap(this.pSharedMemory, size) == -1) {
-            throw new RuntimeException("munmap failed. Errno: " + Native.getLastError());
-        }
-
-        // Close the file descriptor
-        if (shmFd >= 0 && INSTANCE.close(this.shmFd) == -1) {
-            throw new RuntimeException("close failed. Errno: " + Native.getLastError());
-        }
-
-        // Unlink the shared memory object
-        if (shmFd >= 0 && INSTANCE.shm_unlink(this.memoryName) == -1) {
-            throw new RuntimeException("shm_unlink failed. Errno: " + Native.getLastError());
-        }
-        unlinked = true;
+        Kernel32.INSTANCE.UnmapViewOfFile(pSharedMemory);
+        Kernel32.INSTANCE.CloseHandle(hMapFile);
 	}
 	
 	// TODO support boolean
@@ -452,35 +421,35 @@ public final class SharedMemoryArrayPosix implements SharedMemoryArray
 	public static <T extends RealType<T> & NativeType<T>>
 	RandomAccessibleInterval<T> createImgLib2RaiFromSharedMemoryBlock(String memoryName, long[] shape, boolean isFortran, T dataType) {
 		int size = getArrayByteSize(shape, dataType);
-		int shmFd = INSTANCE.shm_open(memoryName, O_RDONLY, 0);
-        if (shmFd < 0) {
-            throw new RuntimeException("Failed to open shared memory. Errno: " + Native.getLastError());
+		WinNT.HANDLE hMapFile = Kernel32.INSTANCE.OpenFileMapping(
+                WinNT.FILE_MAP_READ | WinNT.FILE_MAP_WRITE,
+                false,
+                memoryName
+        );
+        if (hMapFile == null) {
+            throw new RuntimeException("OpenFileMapping failed with error: " + Kernel32.INSTANCE.GetLastError());
         }
 
-        // Map the shared memory into the process's address space
-        Pointer pSharedMemory = INSTANCE.mmap(null, size, PROT_READ, MAP_SHARED, shmFd, 0);
-        if (pSharedMemory == Pointer.NULL) {
-            CLibrary.INSTANCE.close(shmFd);
-            throw new RuntimeException("Failed to map shared memory. Errmo: " + Native.getLastError());
+        // Map the shared memory object into the current process's address space
+        Pointer pSharedMemory = Kernel32.INSTANCE.MapViewOfFile(
+                hMapFile,
+                WinNT.FILE_MAP_READ | WinNT.FILE_MAP_WRITE,
+                0,
+                0,
+                size
+        );
+        if (pSharedMemory == null) {
+        	Kernel32.INSTANCE.CloseHandle(hMapFile);
+            throw new RuntimeException("MapViewOfFile failed with error: " + Kernel32.INSTANCE.GetLastError());
         }
-		try {
+        try {
         	RandomAccessibleInterval<T> rai = buildFromSharedMemoryBlock(pSharedMemory, shape, isFortran, dataType);
-        	if (pSharedMemory != Pointer.NULL) {
-                INSTANCE.munmap(pSharedMemory, size);
-            }
-            if (shmFd >= 0) {
-            	INSTANCE.close(shmFd);
-            }
-            INSTANCE.shm_unlink(memoryName);
+        	Kernel32.INSTANCE.UnmapViewOfFile(pSharedMemory);
+            Kernel32.INSTANCE.CloseHandle(hMapFile);
         	return rai;
         } catch (Exception ex) {
-            if (pSharedMemory != Pointer.NULL) {
-                INSTANCE.munmap(pSharedMemory, size);
-            }
-            if (shmFd >= 0) {
-            	INSTANCE.close(shmFd);
-            }
-            INSTANCE.shm_unlink(memoryName);
+            Kernel32.INSTANCE.UnmapViewOfFile(pSharedMemory);
+            Kernel32.INSTANCE.CloseHandle(hMapFile);
         	throw ex;
         }
 	}
