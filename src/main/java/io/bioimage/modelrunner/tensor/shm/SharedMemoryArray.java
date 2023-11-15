@@ -39,16 +39,18 @@ public interface SharedMemoryArray extends Closeable {
 	static <T extends RealType<T> & NativeType<T>>
 	SharedMemoryArray buildSHMA(RandomAccessibleInterval<T> rai) {
         if (PlatformDetection.isWindows()) return SharedMemoryArrayWin.build(rai);
-    	else return SharedMemoryArrayPosix.build(rai);
+    	else if (PlatformDetection.isLinux()) return SharedMemoryArrayLinux.build(rai);
+    	else return SharedMemoryArrayMacOS.build(rai);
     }
 	
 	static <T extends RealType<T> & NativeType<T>>
 	RandomAccessibleInterval<T> buildImgLib2FromSHMA(String memoryName, long[] shape, boolean isFortran, String dataType) {
         if (PlatformDetection.isWindows()) 
         	return SharedMemoryArrayWin.createImgLib2RaiFromSharedMemoryBlock(memoryName, shape, isFortran, dataType);
-    	else 
-    		return SharedMemoryArrayPosix.createImgLib2RaiFromSharedMemoryBlock(memoryName, shape, isFortran, dataType);
-
+        else if (PlatformDetection.isLinux())
+    		return SharedMemoryArrayLinux.createImgLib2RaiFromSharedMemoryBlock(memoryName, shape, isFortran, dataType);
+        else
+    		return SharedMemoryArrayMacOS.createImgLib2RaiFromSharedMemoryBlock(memoryName, shape, isFortran, dataType);
 	}
     
     public String getMemoryLocationName();

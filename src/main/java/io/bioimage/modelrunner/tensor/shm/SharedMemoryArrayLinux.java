@@ -56,10 +56,10 @@ import net.imglib2.view.Views;
 
 /**
  * Class that maps {@link Tensor} objects to the shared memory for interprocessing communication
- * in POSIX based systems (LINUX, MACOS...)
+ * in LINUX based systems
  * @author Carlos Garcia Lopez de Haro
  */
-public final class SharedMemoryArrayPosix implements SharedMemoryArray
+public final class SharedMemoryArrayLinux implements SharedMemoryArray
 {
 	private static final CLibrary INSTANCE = CLibrary.INSTANCE;
 	/**
@@ -99,7 +99,7 @@ public final class SharedMemoryArrayPosix implements SharedMemoryArray
     private static final int S_IRUSR = 0400; // Owner can read
     private static final int S_IWUSR = 0200; // Owner can write
     
-    private SharedMemoryArrayPosix(int size)
+    private SharedMemoryArrayLinux(int size)
     {
     	if (PlatformDetection.isMacOS())
     		this.memoryName = this.auxMemoryName.substring(0, 30);
@@ -154,58 +154,58 @@ public final class SharedMemoryArrayPosix implements SharedMemoryArray
      * 	{@link RandomAccessibleInterval} to be mapped into byte buffer
      * @param byteBuffer 
      * 	target bytebuffer
-     * @return an instance of {@link SharedMemoryArrayPosix} containing the pointer to the 
+     * @return an instance of {@link SharedMemoryArrayLinux} containing the pointer to the 
      * 	shared memory where the array is, the hMapFile, the size of the object in bytes, and 
      * 	name of the memory location
      * @throws IllegalArgumentException If the {@link RandomAccessibleInterval} type is not supported.
      */
-    protected static <T extends RealType<T> & NativeType<T>> SharedMemoryArrayPosix build(RandomAccessibleInterval<T> rai)
+    protected static <T extends RealType<T> & NativeType<T>> SharedMemoryArrayLinux build(RandomAccessibleInterval<T> rai)
     {
-    	SharedMemoryArrayPosix shma = null;
+    	SharedMemoryArrayLinux shma = null;
     	if (Util.getTypeFromInterval(rai) instanceof ByteType) {
         	int size = 1;
         	for (long i : rai.dimensionsAsLongArray()) {size *= i;}
-        	shma = new SharedMemoryArrayPosix(size);
+        	shma = new SharedMemoryArrayLinux(size);
         	shma.buildInt8(Cast.unchecked(rai));
     	} else if (Util.getTypeFromInterval(rai) instanceof UnsignedByteType) {
         	int size = 1;
         	for (long i : rai.dimensionsAsLongArray()) {size *= i;}
-        	shma = new SharedMemoryArrayPosix(size);
+        	shma = new SharedMemoryArrayLinux(size);
         	shma.buildUint8(Cast.unchecked(rai));
     	} else if (Util.getTypeFromInterval(rai) instanceof ShortType) {
         	int size = 2;
         	for (long i : rai.dimensionsAsLongArray()) {size *= i;}
-        	shma = new SharedMemoryArrayPosix(size);
+        	shma = new SharedMemoryArrayLinux(size);
         	shma.buildInt16(Cast.unchecked(rai));
     	} else if (Util.getTypeFromInterval(rai) instanceof UnsignedShortType) {
         	int size = 2;
         	for (long i : rai.dimensionsAsLongArray()) {size *= i;}
-        	shma = new SharedMemoryArrayPosix(size);
+        	shma = new SharedMemoryArrayLinux(size);
         	shma.buildUint16(Cast.unchecked(rai));
     	} else if (Util.getTypeFromInterval(rai) instanceof IntType) {
         	int size = 4;
         	for (long i : rai.dimensionsAsLongArray()) {size *= i;}
-        	shma = new SharedMemoryArrayPosix(size);
+        	shma = new SharedMemoryArrayLinux(size);
         	shma.buildInt32(Cast.unchecked(rai));
     	} else if (Util.getTypeFromInterval(rai) instanceof UnsignedIntType) {
         	int size = 4;
         	for (long i : rai.dimensionsAsLongArray()) {size *= i;}
-        	shma = new SharedMemoryArrayPosix(size);
+        	shma = new SharedMemoryArrayLinux(size);
         	shma.buildUint32(Cast.unchecked(rai));
     	} else if (Util.getTypeFromInterval(rai) instanceof LongType) {
         	int size = 8;
         	for (long i : rai.dimensionsAsLongArray()) {size *= i;}
-        	shma = new SharedMemoryArrayPosix(size);
+        	shma = new SharedMemoryArrayLinux(size);
         	shma.buildInt64(Cast.unchecked(rai));
     	} else if (Util.getTypeFromInterval(rai) instanceof FloatType) {
         	int size = 4;
         	for (long i : rai.dimensionsAsLongArray()) {size *= i;}
-        	shma = new SharedMemoryArrayPosix(size);
+        	shma = new SharedMemoryArrayLinux(size);
         	shma.buildFloat32(Cast.unchecked(rai));
     	} else if (Util.getTypeFromInterval(rai) instanceof DoubleType) {
         	int size = 8;
         	for (long i : rai.dimensionsAsLongArray()) {size *= i;}
-        	shma = new SharedMemoryArrayPosix(size);
+        	shma = new SharedMemoryArrayLinux(size);
         	shma.buildFloat64(Cast.unchecked(rai));
     	} else {
             throw new IllegalArgumentException("The image has an unsupported type: " + Util.getTypeFromInterval(rai).getClass().toString());
