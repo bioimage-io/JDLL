@@ -20,8 +20,14 @@
  */
 package io.bioimage.modelrunner.tensor.shm;
 
+import java.io.IOException;
+import java.net.URISyntaxException;
 import java.nio.ByteBuffer;
+import java.util.Map;
 import java.util.UUID;
+
+import org.apache.commons.compress.archivers.ArchiveException;
+import org.apposed.appose.Conda;
 
 import com.sun.jna.Pointer;
 
@@ -90,6 +96,8 @@ public final class SharedMemoryArrayPosix implements SharedMemoryArray
     private static final int PROT_READ = 0x1;  // Page can be read
     private static final int PROT_WRITE = 0x2; // Page can be written
     private static final int MAP_SHARED = 0x01; // Share changes
+    private static final int S_IRUSR = 0400; // Owner can read
+    private static final int S_IWUSR = 0200; // Owner can write
     
     private SharedMemoryArrayPosix(int size)
     {
@@ -99,7 +107,7 @@ public final class SharedMemoryArrayPosix implements SharedMemoryArray
     		this.memoryName = this.auxMemoryName;
         this.size = size;
 
-        shmFd = INSTANCE.shm_open(this.memoryName, O_RDWR | O_CREAT, S_IRWXU | S_IRWXG | S_IRWXO);
+        shmFd = INSTANCE.shm_open(this.memoryName, O_RDWR | O_CREAT, 0700);
         if (shmFd < 0) {
             throw new RuntimeException("shm_open failed, errno: " + Native.getLastError());
         }
@@ -635,4 +643,18 @@ public final class SharedMemoryArrayPosix implements SharedMemoryArray
     		throw new IllegalArgumentException("Type not supported: " + type.getClass().toString());
     	}
 	}
+    
+    public static void main(String[] args) throws IOException, InterruptedException, ArchiveException, URISyntaxException {
+    	//int a = CLibrary.INSTANCE.shm_open("/shrdrd", O_RDWR | O_CREAT, 0700);
+    	Map<String, String> env = System.getenv();
+    	for (String envName : env.keySet()) {
+    	    System.out.format("%s=%s%n", envName, env.get(envName));
+    	}
+    	Conda conda = new Conda("/Users/Cgarcia/git/deep-icy/appose_arm64");
+    	conda.runPythonIn("stardist", "-c", "import os;from multiprocessing "
+    			+ "import shared_memory;shm=shared_memory.SharedM"
+    			+ "emory(create=True,size=10,name='my_shared_memroy');"
+    			+ "print(shm.name);shm.close();shm.unlink();print('done');"
+    			+ "print(os.environ)");
+    }
 }
