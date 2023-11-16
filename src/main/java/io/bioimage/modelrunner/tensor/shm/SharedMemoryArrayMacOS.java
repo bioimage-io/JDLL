@@ -31,8 +31,8 @@ import org.apposed.appose.Conda;
 
 import com.sun.jna.Pointer;
 
-import io.bioimage.modelrunner.system.PlatformDetection;
 import io.bioimage.modelrunner.tensor.Utils;
+import io.bioimage.modelrunner.utils.CommonUtils;
 
 import com.sun.jna.Native;
 
@@ -84,6 +84,14 @@ public final class SharedMemoryArrayMacOS implements SharedMemoryArray
 	 */
 	private int size;
 	/**
+	 * Datatype of the shm array
+	 */
+	private final String originalDataType;
+	/**
+	 * Original dimensions of the shm array
+	 */
+	private final long[] originalDims;
+	/**
 	 * Whether the memory block has been closed and unlinked
 	 */
 	private boolean unlinked = false;
@@ -100,10 +108,12 @@ public final class SharedMemoryArrayMacOS implements SharedMemoryArray
     private static final int S_IRUSR = 0400; // Owner can read
     private static final int S_IWUSR = 0200; // Owner can write
     
-    private SharedMemoryArrayMacOS(int size)
+    private SharedMemoryArrayMacOS(int size, String dtype, long[] shape)
     {
+    	this.originalDataType = dtype;
+    	this.originalDims = shape;
+    	this.size = size;
     	this.memoryName = this.auxMemoryName.substring(0, 30);
-        this.size = size;
 
         int openFd = macosInstance.create_shared_memory(memoryName, size);
         if (openFd < 0) {
@@ -162,47 +172,47 @@ public final class SharedMemoryArrayMacOS implements SharedMemoryArray
     	if (Util.getTypeFromInterval(rai) instanceof ByteType) {
         	int size = 1;
         	for (long i : rai.dimensionsAsLongArray()) {size *= i;}
-        	shma = new SharedMemoryArrayMacOS(size);
+        	shma = new SharedMemoryArrayMacOS(size, CommonUtils.getDataType(rai), rai.dimensionsAsLongArray());
         	shma.buildInt8(Cast.unchecked(rai));
     	} else if (Util.getTypeFromInterval(rai) instanceof UnsignedByteType) {
         	int size = 1;
         	for (long i : rai.dimensionsAsLongArray()) {size *= i;}
-        	shma = new SharedMemoryArrayMacOS(size);
+        	shma = new SharedMemoryArrayMacOS(size, CommonUtils.getDataType(rai), rai.dimensionsAsLongArray());
         	shma.buildUint8(Cast.unchecked(rai));
     	} else if (Util.getTypeFromInterval(rai) instanceof ShortType) {
         	int size = 2;
         	for (long i : rai.dimensionsAsLongArray()) {size *= i;}
-        	shma = new SharedMemoryArrayMacOS(size);
+        	shma = new SharedMemoryArrayMacOS(size, CommonUtils.getDataType(rai), rai.dimensionsAsLongArray());
         	shma.buildInt16(Cast.unchecked(rai));
     	} else if (Util.getTypeFromInterval(rai) instanceof UnsignedShortType) {
         	int size = 2;
         	for (long i : rai.dimensionsAsLongArray()) {size *= i;}
-        	shma = new SharedMemoryArrayMacOS(size);
+        	shma = new SharedMemoryArrayMacOS(size, CommonUtils.getDataType(rai), rai.dimensionsAsLongArray());
         	shma.buildUint16(Cast.unchecked(rai));
     	} else if (Util.getTypeFromInterval(rai) instanceof IntType) {
         	int size = 4;
         	for (long i : rai.dimensionsAsLongArray()) {size *= i;}
-        	shma = new SharedMemoryArrayMacOS(size);
+        	shma = new SharedMemoryArrayMacOS(size, CommonUtils.getDataType(rai), rai.dimensionsAsLongArray());
         	shma.buildInt32(Cast.unchecked(rai));
     	} else if (Util.getTypeFromInterval(rai) instanceof UnsignedIntType) {
         	int size = 4;
         	for (long i : rai.dimensionsAsLongArray()) {size *= i;}
-        	shma = new SharedMemoryArrayMacOS(size);
+        	shma = new SharedMemoryArrayMacOS(size, CommonUtils.getDataType(rai), rai.dimensionsAsLongArray());
         	shma.buildUint32(Cast.unchecked(rai));
     	} else if (Util.getTypeFromInterval(rai) instanceof LongType) {
         	int size = 8;
         	for (long i : rai.dimensionsAsLongArray()) {size *= i;}
-        	shma = new SharedMemoryArrayMacOS(size);
+        	shma = new SharedMemoryArrayMacOS(size, CommonUtils.getDataType(rai), rai.dimensionsAsLongArray());
         	shma.buildInt64(Cast.unchecked(rai));
     	} else if (Util.getTypeFromInterval(rai) instanceof FloatType) {
         	int size = 4;
         	for (long i : rai.dimensionsAsLongArray()) {size *= i;}
-        	shma = new SharedMemoryArrayMacOS(size);
+        	shma = new SharedMemoryArrayMacOS(size, CommonUtils.getDataType(rai), rai.dimensionsAsLongArray());
         	shma.buildFloat32(Cast.unchecked(rai));
     	} else if (Util.getTypeFromInterval(rai) instanceof DoubleType) {
         	int size = 8;
         	for (long i : rai.dimensionsAsLongArray()) {size *= i;}
-        	shma = new SharedMemoryArrayMacOS(size);
+        	shma = new SharedMemoryArrayMacOS(size, CommonUtils.getDataType(rai), rai.dimensionsAsLongArray());
         	shma.buildFloat64(Cast.unchecked(rai));
     	} else {
             throw new IllegalArgumentException("The image has an unsupported type: " + Util.getTypeFromInterval(rai).getClass().toString());
@@ -422,37 +432,9 @@ public final class SharedMemoryArrayMacOS implements SharedMemoryArray
 	}
 	
 	// TODO support boolean
-	protected static <T extends RealType<T> & NativeType<T>>
-	RandomAccessibleInterval<T> createImgLib2RaiFromSharedMemoryBlock(String memoryName, long[] shape, boolean isFortran, String dataType) {
-		T type;
-		if (dataType.equals("int8")) {
-			type = Cast.unchecked(new ByteType());
-		} else if (dataType.equals("uint8")) {
-			type = Cast.unchecked(new UnsignedByteType());
-		} else if (dataType.equals("int16")) {
-			type = Cast.unchecked(new ShortType());
-		} else if (dataType.equals("uint16")) {
-			type = Cast.unchecked(new UnsignedShortType());
-		} else if (dataType.equals("int32")) {
-			type = Cast.unchecked(new IntType());
-		} else if (dataType.equals("uint32")) {
-			type = Cast.unchecked(new UnsignedIntType());
-		} else if (dataType.equals("int64")) {
-			type = Cast.unchecked(new LongType());
-		} else if (dataType.equals("float32")) {
-			type = Cast.unchecked(new FloatType());
-		} else if (dataType.equals("float64")) {
-			type = Cast.unchecked(new DoubleType());
-		} else {
-			throw new IllegalArgumentException("Unsupported data type: " + dataType);
-		}
-		if (!memoryName.startsWith("/")) memoryName = "/" + memoryName;
-		return createImgLib2RaiFromSharedMemoryBlock(memoryName, shape, isFortran, type);
-	}
-	
 	public static <T extends RealType<T> & NativeType<T>>
-	RandomAccessibleInterval<T> createImgLib2RaiFromSharedMemoryBlock(String memoryName, long[] shape, boolean isFortran, T dataType) {
-		int size = getArrayByteSize(shape, dataType);
+	RandomAccessibleInterval<T> createImgLib2RaiFromSharedMemoryBlock(String memoryName, long[] shape, boolean isFortran, String dataType) {
+		int size = getArrayByteSize(shape, Cast.unchecked(CommonUtils.getImgLib2DataType(dataType)));
 		if (!memoryName.startsWith("/")) memoryName = "/" + memoryName;
 		int shmFd = INSTANCE.shm_open(memoryName, O_RDONLY, 0);
         if (shmFd < 0) {
@@ -488,8 +470,9 @@ public final class SharedMemoryArrayMacOS implements SharedMemoryArray
 	}
 	
 	private static <T extends RealType<T> & NativeType<T>>
-	RandomAccessibleInterval<T> buildFromSharedMemoryBlock(Pointer pSharedMemory, long[] shape, boolean isFortran, T dataType) {
+	RandomAccessibleInterval<T> buildFromSharedMemoryBlock(Pointer pSharedMemory, long[] shape, boolean isFortran, String type) {
 		long[] transposedShape = new long[shape.length];
+		T dataType = CommonUtils.getImgLib2DataType(type);
 		for (int i = 0; i < shape.length; i ++) {transposedShape[i] = shape[shape.length - i - 1];}
 		if (dataType instanceof ByteType) {
 			int arrSize = 1;
@@ -654,4 +637,19 @@ public final class SharedMemoryArrayMacOS implements SharedMemoryArray
     			+ "print(shm.name);shm.close();shm.unlink();print('done');"
     			+ "print(os.environ)");
     }
+
+	@Override
+	public <T extends RealType<T> & NativeType<T>> RandomAccessibleInterval<T> getSharedRAI() {
+		return buildFromSharedMemoryBlock(pSharedMemory, this.originalDims, false, this.originalDataType);
+	}
+
+	@Override
+	public String getOriginalDataType() {
+		return this.originalDataType;
+	}
+
+	@Override
+	public long[] getOriginalShape() {
+		return this.originalDims;
+	}
 }
