@@ -50,14 +50,14 @@ import net.imglib2.util.Cast;
 public class PythonTransformation extends AbstractTensorTransformation
 {
 	public static String FILES_PATH = "";
-	public static String CONDA_PATH = Conda.BASE_PATH;
+	public static String CONDA_PATH = "C:\\Users\\angel\\OneDrive\\Documentos\\pasteur\\Icy_2.4.3_Windows\\Icy\\appose_x86_64";
 	
 	public static final String NAME = "python";
 	public static final String ENV_YAML_KEY = "env_yaml";
 	
-	private String envYaml = "C:\\Users\\angel\\OneDrive\\Documentos\\pasteur\\git\\deep-icy\\stardist.yaml";
+	private String envYaml = "C:\\Users\\angel\\OneDrive\\Documentos\\pasteur\\git\\deep-icy\\models\\stardist\\stardist.yaml";
 	
-	private String script = "C:\\Users\\angel\\OneDrive\\Documentos\\pasteur\\git\\deep-icy\\stardist_postprocessing.py";
+	private String script = "C:\\Users\\angel\\OneDrive\\Documentos\\pasteur\\git\\deep-icy\\models\\stardist\\stardist_postprocessing.py";
 	
 	private String method = "stardist_postprocessing";
 	
@@ -180,9 +180,9 @@ public class PythonTransformation extends AbstractTensorTransformation
 	
 	public static void main(String[] args) throws FileNotFoundException, IOException {
 		PythonTransformation pt = new PythonTransformation();
-		RandomAccessibleInterval<FloatType> img = ArrayImgs.floats(new long[] {1, 1024, 1024, 33});
-		String fname = "C:\\Users\\angel\\OneDrive\\Documentos\\pasteur\\git\\model-runner-java\\models\\finetuned_finetuned_StarDist H&E Nuclei Segmentation_04102023_123644-2-1\\test_output.npy";
-		img = DecodeNumpy.retrieveImgLib2FromNpy(fname);
+		//RandomAccessibleInterval<FloatType> img = ArrayImgs.floats(new long[] {1, 1024, 1024, 33});
+		String fname = "C:\\Users\\angel\\OneDrive\\Documentos\\pasteur\\git\\deep-icy\\models\\stardist\\test_output.npy";
+		RandomAccessibleInterval<FloatType> img = DecodeNumpy.retrieveImgLib2FromNpy(fname);
 		Tensor<FloatType> tt = Tensor.build("output", "bcyx", img);
 		Tensor<FloatType> out = pt.apply(tt);
 		System.out.println();

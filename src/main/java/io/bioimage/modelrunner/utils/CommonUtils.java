@@ -26,7 +26,6 @@ import java.text.SimpleDateFormat;
 import java.util.Calendar;
 
 import net.imglib2.RandomAccessibleInterval;
-import net.imglib2.img.array.ArrayImgs;
 import net.imglib2.type.NativeType;
 import net.imglib2.type.numeric.RealType;
 import net.imglib2.type.numeric.integer.ByteType;
@@ -38,6 +37,7 @@ import net.imglib2.type.numeric.integer.UnsignedIntType;
 import net.imglib2.type.numeric.integer.UnsignedShortType;
 import net.imglib2.type.numeric.real.DoubleType;
 import net.imglib2.type.numeric.real.FloatType;
+import net.imglib2.util.Cast;
 
 /**
  * Class that contains common useful static methods that can be used anywhere in the software
@@ -60,6 +60,32 @@ public class CommonUtils {
 			str = str.substring(0, str.length() - Constants.ZENODO_ANNOYING_SUFFIX.length());
 		URL url = new URL(str);
 		return new File(url.getPath()).getName();
+	}
+	
+	public static <T extends RealType<T> & NativeType<T>> T getImgLib2DataType(String dataType) {
+		T type;
+		if (dataType.equals("int8")) {
+			type = Cast.unchecked(new ByteType());
+		} else if (dataType.equals("uint8")) {
+			type = Cast.unchecked(new UnsignedByteType());
+		} else if (dataType.equals("int16")) {
+			type = Cast.unchecked(new ShortType());
+		} else if (dataType.equals("uint16")) {
+			type = Cast.unchecked(new UnsignedShortType());
+		} else if (dataType.equals("int32")) {
+			type = Cast.unchecked(new IntType());
+		} else if (dataType.equals("uint32")) {
+			type = Cast.unchecked(new UnsignedIntType());
+		} else if (dataType.equals("int64")) {
+			type = Cast.unchecked(new LongType());
+		} else if (dataType.equals("float32")) {
+			type = Cast.unchecked(new FloatType());
+		} else if (dataType.equals("float64")) {
+			type = Cast.unchecked(new DoubleType());
+		} else {
+			throw new IllegalArgumentException("Unsupported data type: " + dataType);
+		}
+		return type;
 	}
 	
 	public static <T extends RealType<T> & NativeType<T>>

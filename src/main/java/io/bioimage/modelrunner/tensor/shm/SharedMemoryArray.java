@@ -60,4 +60,10 @@ public interface SharedMemoryArray extends Closeable {
     public Pointer getPointer();
     
     public int getSize();
+    
+    public String getOriginalDataType();
+    
+    public long[] getOriginalShape();
+    
+    public <T extends RealType<T> & NativeType<T>> RandomAccessibleInterval<T> getSharedRAI();
 }
