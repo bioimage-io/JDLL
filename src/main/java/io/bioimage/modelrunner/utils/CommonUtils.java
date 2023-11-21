@@ -101,7 +101,7 @@ public class CommonUtils {
 		} else if (rai.getAt(rai.minAsLongArray()) instanceof IntType) {
 			return "int32";
 		} else if (rai.getAt(rai.minAsLongArray()) instanceof UnsignedIntType) {
-			return "unit32";
+			return "uint";
 		} else if (rai.getAt(rai.minAsLongArray()) instanceof LongType) {
 			return "int64";
 		} else if (rai.getAt(rai.minAsLongArray()) instanceof FloatType) {
