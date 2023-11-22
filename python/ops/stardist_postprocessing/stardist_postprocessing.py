@@ -28,7 +28,6 @@ print("impot math star NEW " + str(time() - t))
 
 def stardist_postprocessing(raw_output, prob_thresh, nms_thresh, n_classes=None,
                              grid=(1,1), b=2, channel=2, n_rays=32, n_dim=2, axes_net='YXC'):
-    raw_output = raw_output.values
     prob = raw_output[0, :, :, 0:1]
     dist = raw_output[0, :, :, 1:]
     prob, dist = _prep(prob, dist)
@@ -72,7 +71,7 @@ def stardist_postprocessing(raw_output, prob_thresh, nms_thresh, n_classes=None,
                                               return_labels=True,
                                               overlap_label=None,
                                               **nms_kwargs)
-    return xr.DataArray(res_instances[0].astype("float32"), dims=['y', 'x'], name='output')
+    return res_instances[0].astype("float32")
 
 
 def _prep(prob, dist, channel=2):
