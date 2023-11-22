@@ -57,6 +57,8 @@ public class PythonTransformation extends AbstractTensorTransformation
 			 File.separator + "Library" + File.separator + "bin" + File.separator + "micromamba.exe" 
 			: File.separator + "bin" + File.separator + "micromamba";
 	
+	private final static String PYTHON_COMMAND = PlatformDetection.isWindows() ? "python.exe" : "bin/python";
+	
 	/**
 	 * TODO adapt to conda to support conda
 	 */
@@ -199,7 +201,7 @@ public class PythonTransformation extends AbstractTensorTransformation
 		}
 	}
 	
-	private void checkArgs() {
+	private void checkArgs() throws IOException {
 		// Check that the environment yaml file is correct
 		if (!(new File(envYaml).isFile()) && !(new File(this.envYamlFilePath).isFile()))
 			throw new IllegalArgumentException();
@@ -224,26 +226,40 @@ public class PythonTransformation extends AbstractTensorTransformation
 				&& (new File(new File(this.scriptFilePath).getAbsolutePath(), new File(script).getName()).isFile()))
 			script = new File(new File(this.scriptFilePath).getAbsolutePath(), new File(script).getName()).getAbsolutePath();
 		 
-		// Check if the path to mamba is correct
-		if (!(new File(this.mambaDir + MAMBA_RELATIVE_PATH).exists()) && !install)
+		// Check environment directory provided contains Python, if the env has been provided
+		if (this.envDir != null && !(new File(this.envDir + File.separator + PYTHON_COMMAND)).isFile())
 			throw new IllegalArgumentException();
-		else if (!(new File(this.mambaDir + MAMBA_RELATIVE_PATH).exists()))
+		else if (this.envDir != null)
+			return;
+		// Check if the path to mamba is correct
+		if (this.mambaDir == null && !install)
+			throw new IllegalArgumentException();
+		else if (this.mambaDir != null && !!(new File(this.mambaDir + MAMBA_RELATIVE_PATH).exists()) && !install)
+			throw new IllegalArgumentException();
+		else if (this.mambaDir == null || !(new File(this.mambaDir + MAMBA_RELATIVE_PATH).exists()))
 			installMamba();
 
+		String envName = null;
+		try {
+			envName = (String) YAMLUtils.load(this.envYaml).get("name");
+		} catch (IOException e) {
+			throw new IOException("Unable read the environemnt name from the environment .yaml file." 
+						+ System.lineSeparator() + e.toString());
+		}
 		// Check if the env is installed
-		if (!(new File(this.mambaDir + File.separator + "envs" + ).exists()) && !install)
+		if (!(new File(this.mambaDir + File.separator + "envs" + File.separator + envName).exists()) && !install)
 			throw new IllegalArgumentException();
-		else if (!(new File(this.mambaDir + MAMBA_RELATIVE_PATH).exists()))
-			installMamba();
+		else if (!(new File(this.mambaDir + File.separator + "envs" + File.separator + envName).exists()))
+			installEnv();
+		this.envDir = this.mambaDir + File.separator + "envs" + File.separator + envName;
 	}
 
 	public < R extends RealType< R > & NativeType< R > > Tensor<FloatType> apply( final Tensor< R > input )
 	{
-		String envName = null;
 		try {
-			envName = (String) YAMLUtils.load(envYaml).get("name");
-		} catch (IOException e2) {
-			e2.printStackTrace();
+			checkArgs();
+		} catch (IOException e) {
+			e.printStackTrace();
 			return Cast.unchecked(input);
 		}
 		GenericOp op = GenericOp.create(envDir, this.script, this.method, this.nOutputs);
@@ -283,6 +299,23 @@ public class PythonTransformation extends AbstractTensorTransformation
 	}
 	
 	public void installMamba() {
+		String envDir = envPath + File.separator + "envs" + File.separator + envName;
+		if (!(new File(envDir).isDirectory())) {
+				try {
+					Conda conda = new Conda(envPath);
+					final List< String > cmd = 
+							new ArrayList<>( Arrays.asList( "env", "create", "--prefix",
+									envPath + File.separator + "envs", "--force", 
+									"-n", envName, "--file", envYaml, "-y" ) );
+					conda.runConda( cmd.stream().toArray( String[]::new ) );
+				} catch (IOException | InterruptedException | ArchiveException | URISyntaxException e1) {
+					e1.printStackTrace();
+					return Cast.unchecked(input);
+				}
+		}
+	}
+	
+	public void installEnv() {
 		String envDir = envPath + File.separator + "envs" + File.separator + envName;
 		if (!(new File(envDir).isDirectory())) {
 				try {
