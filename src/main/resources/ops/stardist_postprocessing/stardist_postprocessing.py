@@ -3,6 +3,12 @@ t = time()
 import numpy as np
 print("impot numpy star " + str(time() - t))
 t = time()
+from csbdeep.utils import axes_check_and_normalize, _raise
+print("impot csbd.utils star " + str(time() - t))
+t = time()
+import math
+print("impot math star NEW " + str(time() - t))
+t = time()
 import sys
 sys.path.append(r'C:\Users\angel\.local\share\appose\micromamba\envs\test\Lib\site-packages\stardist\lib')
 from stardist2d import c_non_max_suppression_inds
@@ -11,18 +17,6 @@ t = time()
 sys.path.append(r'C:\Users\angel\.local\share\appose\micromamba\envs\test\Lib\site-packages\skimage\draw')
 from skimage.draw import polygon
 print("impot geometry star " + str(time() - t))
-t = time()
-from csbdeep.data import Resizer
-print("impot csb.data star " + str(time() - t))
-t = time()
-from stardist.utils import _normalize_grid
-print("impot stardist.utils star " + str(time() - t))
-t = time()
-from csbdeep.utils import axes_check_and_normalize, _raise
-print("impot csbd.utils star " + str(time() - t))
-t = time()
-import math
-print("impot math star NEW " + str(time() - t))
 
 
 
@@ -315,7 +309,7 @@ def _ind_prob_thresh(prob, prob_thresh, b=2):
     return ind_thresh
 
 
-class StarDistPadAndCropResizer(Resizer):
+class StarDistPadAndCropResizer():
 
     # TODO: check correctness
     def __init__(self, grid, mode='reflect', pad=None, padded_shape=None, **kwargs):
@@ -465,4 +459,12 @@ def label_are_sequential(y):
     return (set(labels)-{0}) == set(range(1,1+labels.max()))
 
 
-
+def _normalize_grid(grid,n):
+    try:
+        grid = tuple(grid)
+        (len(grid) == n and
+         all(map(np.isscalar,grid)) and
+         all(map(_is_power_of_2,grid))) or _raise(TypeError())
+        return tuple(int(g) for g in grid)
+    except (TypeError, AssertionError):
+        raise ValueError("grid = {grid} must be a list/tuple of length {n} with values that are power of 2".format(grid=grid, n=n))
