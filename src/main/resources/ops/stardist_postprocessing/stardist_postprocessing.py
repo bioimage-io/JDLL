@@ -4,18 +4,21 @@ import numpy as np
 print("impot numpy star " + str(time() - t))
 t = time()
 import sys
-sys.path.append(r'C:\Users\angel\OneDrive\Documentos\pasteur\git\deep-icy\appose_x86_64\envs\stardist\Lib\site-packages\stardist\lib')
+sys.path.append(r'C:\Users\angel\.local\share\appose\micromamba\envs\test\Lib\site-packages\stardist\lib')
 from stardist2d import c_non_max_suppression_inds
 print("impot nms star " + str(time() - t))
 t = time()
-from stardist.geometry import dist_to_coord, polygons_to_label
+sys.path.append(r'C:\Users\angel\.local\share\appose\micromamba\envs\test\Lib\site-packages\skimage\draw')
+from skimage.draw import polygon
 print("impot geometry star " + str(time() - t))
 t = time()
 from csbdeep.data import Resizer
 print("impot csb.data star " + str(time() - t))
 t = time()
 from stardist.utils import _normalize_grid
-from csbdeep.utils import axes_check_and_normalize
+print("impot stardist.utils star " + str(time() - t))
+t = time()
+from csbdeep.utils import axes_check_and_normalize, _raise
 print("impot csbd.utils star " + str(time() - t))
 t = time()
 import math
@@ -363,3 +366,104 @@ class StarDistPadAndCropResizer(Resizer):
         bounds = np.array(tuple(self.padded_shape[a]-self.pad[a][1] for a in axes if a.lower() in ('z','y','x')))
         idx = np.where(np.all(points< bounds, 1))
         return idx
+
+
+def dist_to_coord(dist, points, scale_dist=(1,1)):
+    """convert from polar to cartesian coordinates for a list of distances and center points
+    dist.shape   = (n_polys, n_rays)
+    points.shape = (n_polys, 2)
+    len(scale_dist) = 2
+    return coord.shape = (n_polys,2,n_rays)
+    """
+    dist = np.asarray(dist)
+    points = np.asarray(points)
+    assert dist.ndim==2 and points.ndim==2 and len(dist)==len(points) \
+        and points.shape[1]==2 and len(scale_dist)==2
+    n_rays = dist.shape[1]
+    phis = ray_angles(n_rays)
+    coord = (dist[:,np.newaxis]*np.array([np.sin(phis),np.cos(phis)])).astype(np.float32)
+    coord *= np.asarray(scale_dist).reshape(1,2,1)    
+    coord += points[...,np.newaxis] 
+    return coord
+
+
+def ray_angles(n_rays=32):
+    return np.linspace(0,2*np.pi,n_rays,endpoint=False)
+
+
+def polygons_to_label(dist, points, shape, prob=None, thr=-np.inf, scale_dist=(1,1)):
+    """converts distances and center points to label image
+
+    dist.shape   = (n_polys, n_rays)
+    points.shape = (n_polys, 2)
+
+    label ids will be consecutive and adhere to the order given
+    """
+    dist = np.asarray(dist)
+    points = np.asarray(points)
+    prob = np.inf*np.ones(len(points)) if prob is None else np.asarray(prob)
+
+    assert dist.ndim==2 and points.ndim==2 and len(dist)==len(points)
+    assert len(points)==len(prob) and points.shape[1]==2 and prob.ndim==1
+
+    n_rays = dist.shape[1]
+
+    ind = prob>thr
+    points = points[ind]
+    dist = dist[ind]
+    prob = prob[ind]
+
+    ind = np.argsort(prob, kind='stable')
+    points = points[ind]
+    dist = dist[ind]
+
+    coord = dist_to_coord(dist, points, scale_dist=scale_dist)
+
+    return polygons_to_label_coord(coord, shape=shape, labels=ind)
+
+
+def polygons_to_label_coord(coord, shape, labels=None):
+    """renders polygons to image of given shape
+
+    coord.shape   = (n_polys, n_rays)
+    """
+    coord = np.asarray(coord)
+    if labels is None: labels = np.arange(len(coord))
+
+    _check_label_array(labels, "labels")
+    assert coord.ndim==3 and coord.shape[1]==2 and len(coord)==len(labels)
+
+    lbl = np.zeros(shape,np.int32)
+
+    for i,c in zip(labels,coord):
+        rr,cc = polygon(*c, shape)
+        lbl[rr,cc] = i+1
+
+    return lbl
+
+def _check_label_array(y, name=None, check_sequential=False):
+    err = ValueError("{label} must be an array of {integers}.".format(
+        label = 'labels' if name is None else name,
+        integers = ('sequential ' if check_sequential else '') + 'non-negative integers',
+    ))
+    is_array_of_integers(y) or _raise(err)
+    if len(y) == 0:
+        return True
+    if check_sequential:
+        label_are_sequential(y) or _raise(err)
+    else:
+        y.min() >= 0 or _raise(err)
+    return True
+
+
+def is_array_of_integers(y):
+    return isinstance(y,np.ndarray) and np.issubdtype(y.dtype, np.integer)
+
+
+def label_are_sequential(y):
+    """ returns true if y has only sequential labels from 1... """
+    labels = np.unique(y)
+    return (set(labels)-{0}) == set(range(1,1+labels.max()))
+
+
+
