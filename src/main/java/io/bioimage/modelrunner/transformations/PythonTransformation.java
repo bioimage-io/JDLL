@@ -49,8 +49,8 @@ import net.imglib2.util.Cast;
 
 public class PythonTransformation extends AbstractTensorTransformation
 {
-	public static String FILES_PATH = "";
-	public static String CONDA_PATH = "C:\\Users\\angel\\OneDrive\\Documentos\\pasteur\\Icy_2.4.3_Windows\\Icy\\appose_x86_64";
+	//public static String FILES_PATH = "";
+	//public static String CONDA_PATH = "C:\\Users\\angel\\OneDrive\\Documentos\\pasteur\\Icy_2.4.3_Windows\\Icy\\appose_x86_64";
 	
 	public static final String NAME = "python";
 	public static final String ENV_YAML_KEY = "env_yaml";
@@ -60,6 +60,10 @@ public class PythonTransformation extends AbstractTensorTransformation
 	private String script = "C:\\Users\\angel\\OneDrive\\Documentos\\pasteur\\git\\deep-icy\\models\\stardist\\stardist_postprocessing.py";
 	
 	private String method = "stardist_postprocessing";
+	
+	private String envPath;
+	
+	private String scriptPath;
 	
 	private int nOutputs = 1;
 	
@@ -74,9 +78,29 @@ public class PythonTransformation extends AbstractTensorTransformation
 		super(NAME);
 	}
 	
+	public void setEnvPath(Object envPath) {
+		if (envPath instanceof String) {
+			this.envPath = (String) envPath;
+		} else {
+			throw new IllegalArgumentException("'envYaml' parameter has to be an instance of "
+					+ String.class
+					+ ". The provided argument is an instance of: " + envYaml.getClass());
+		}
+	}
+	
+	public void setScriptPath(Object scriptPath) {
+		if (scriptPath instanceof String) {
+			this.scriptPath = (String) scriptPath;
+		} else {
+			throw new IllegalArgumentException("'envYaml' parameter has to be an instance of "
+					+ String.class
+					+ ". The provided argument is an instance of: " + envYaml.getClass());
+		}
+	}
+	
 	public void setEnvYaml(Object envYaml) {
 		if (envYaml instanceof String) {
-			this.envYaml = FILES_PATH + File.separator + new File(String.valueOf(envYaml)).getName();
+			this.envYaml = new File(String.valueOf(envYaml)).getName();
 		} else {
 			throw new IllegalArgumentException("'envYaml' parameter has to be an instance of "
 					+ String.class
@@ -86,7 +110,7 @@ public class PythonTransformation extends AbstractTensorTransformation
 	
 	public void setScript(Object script) {
 		if (script instanceof String) {
-			this.script = FILES_PATH + File.separator + new File(String.valueOf(script)).getName();
+			this.script = new File(String.valueOf(script)).getName();
 		} else {
 			throw new IllegalArgumentException("'script' parameter has to be an instance of "
 					+ String.class
