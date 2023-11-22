@@ -49,21 +49,20 @@ import net.imglib2.util.Cast;
 
 public class PythonTransformation extends AbstractTensorTransformation
 {
-	//public static String FILES_PATH = "";
-	//public static String CONDA_PATH = "C:\\Users\\angel\\OneDrive\\Documentos\\pasteur\\Icy_2.4.3_Windows\\Icy\\appose_x86_64";
-	
 	public static final String NAME = "python";
 	public static final String ENV_YAML_KEY = "env_yaml";
 	
-	private String envYaml = "C:\\Users\\angel\\OneDrive\\Documentos\\pasteur\\git\\deep-icy\\models\\stardist\\stardist.yaml";
+	private String envYaml = "stardist.yaml";
 	
-	private String script = "C:\\Users\\angel\\OneDrive\\Documentos\\pasteur\\git\\deep-icy\\models\\stardist\\stardist_postprocessing.py";
+	private String script = "stardist_postprocessing.py";
 	
 	private String method = "stardist_postprocessing";
 	
-	private String envPath;
+	private String envYamlFilePath;
 	
-	private String scriptPath;
+	private String scriptFilePath;
+	
+	private String mambaDir;
 	
 	private int nOutputs = 1;
 	
@@ -78,21 +77,31 @@ public class PythonTransformation extends AbstractTensorTransformation
 		super(NAME);
 	}
 	
-	public void setEnvPath(Object envPath) {
-		if (envPath instanceof String) {
-			this.envPath = (String) envPath;
+	public void setEnvYamlFilePath(Object envYamlFilePath) {
+		if (envYamlFilePath instanceof String) {
+			this.envYamlFilePath = (String) envYamlFilePath;
 		} else {
-			throw new IllegalArgumentException("'envYaml' parameter has to be an instance of "
+			throw new IllegalArgumentException("'envYamlFilePath' parameter has to be an instance of "
 					+ String.class
 					+ ". The provided argument is an instance of: " + envYaml.getClass());
 		}
 	}
 	
-	public void setScriptPath(Object scriptPath) {
-		if (scriptPath instanceof String) {
-			this.scriptPath = (String) scriptPath;
+	public void setMambaDir(Object mambaDir) {
+		if (mambaDir instanceof String) {
+			this.mambaDir = (String) mambaDir;
 		} else {
-			throw new IllegalArgumentException("'envYaml' parameter has to be an instance of "
+			throw new IllegalArgumentException("'mambaDir' parameter has to be an instance of "
+					+ String.class
+					+ ". The provided argument is an instance of: " + envYaml.getClass());
+		}
+	}
+	
+	public void setScriptFilePath(Object scriptFilePath) {
+		if (scriptFilePath instanceof String) {
+			this.scriptFilePath = (String) scriptFilePath;
+		} else {
+			throw new IllegalArgumentException("'scriptFilePath' parameter has to be an instance of "
 					+ String.class
 					+ ". The provided argument is an instance of: " + envYaml.getClass());
 		}
@@ -154,6 +163,7 @@ public class PythonTransformation extends AbstractTensorTransformation
 
 	public < R extends RealType< R > & NativeType< R > > Tensor<FloatType> apply( final Tensor< R > input )
 	{
+		envYaml = this.scriptPath + File.separator + envYaml;
 		String envName = null;
 		try {
 			envName = (String) YAMLUtils.load(envYaml).get("name");
@@ -161,23 +171,9 @@ public class PythonTransformation extends AbstractTensorTransformation
 			e2.printStackTrace();
 			return Cast.unchecked(input);
 		}
-		String minicondaBase = CONDA_PATH;
-		String envPath = minicondaBase + File.separator + "envs" + File.separator + envName;
-		if (!(new File(envPath).isDirectory())) {
-				try {
-					Conda conda = new Conda(minicondaBase);
-					final List< String > cmd = 
-							new ArrayList<>( Arrays.asList( "env", "create", "--prefix",
-									minicondaBase + File.separator + "envs", "--force", 
-									"-n", envName, "--file", envYaml, "-y" ) );
-					conda.runConda( cmd.stream().toArray( String[]::new ) );
-				} catch (IOException | InterruptedException | ArchiveException | URISyntaxException e1) {
-					e1.printStackTrace();
-					return Cast.unchecked(input);
-				}
-		}
-		
-		GenericOp op = GenericOp.create(envPath, this.script, this.method, this.nOutputs);
+		// TODO
+		istallEnv();
+		GenericOp op = GenericOp.create(envDir, this.script, this.method, this.nOutputs);
 		LinkedHashMap<String, Object> nMap = new LinkedHashMap<String, Object>();
 		Calendar cal = Calendar.getInstance();
 		SimpleDateFormat sdf = new SimpleDateFormat("ddMMYYYY_HHmmss");
@@ -211,5 +207,22 @@ public class PythonTransformation extends AbstractTensorTransformation
 		Tensor<FloatType> tt = Tensor.build("output", "bcyx", img);
 		Tensor<FloatType> out = pt.apply(tt);
 		System.out.println();
+	}
+	
+	public static void istallEnv() {
+		String envDir = envPath + File.separator + "envs" + File.separator + envName;
+		if (!(new File(envDir).isDirectory())) {
+				try {
+					Conda conda = new Conda(envPath);
+					final List< String > cmd = 
+							new ArrayList<>( Arrays.asList( "env", "create", "--prefix",
+									envPath + File.separator + "envs", "--force", 
+									"-n", envName, "--file", envYaml, "-y" ) );
+					conda.runConda( cmd.stream().toArray( String[]::new ) );
+				} catch (IOException | InterruptedException | ArchiveException | URISyntaxException e1) {
+					e1.printStackTrace();
+					return Cast.unchecked(input);
+				}
+		}
 	}
 }
