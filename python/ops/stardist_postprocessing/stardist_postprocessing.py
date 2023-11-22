@@ -10,11 +10,20 @@ import math
 print("impot math star NEW " + str(time() - t))
 t = time()
 import sys
-sys.path.append(r'C:\Users\angel\.local\share\appose\micromamba\envs\test\Lib\site-packages\stardist\lib')
+import re
+ENV_DIR = os.path.dirname(sys.executable if os.name == 'nt' else os.path.dirname(sys.executable))
+SITE_PACKAGES_DIR = os.path.join(ENV_DIR, "lib")
+if os.name != 'nt':
+	PATTERN = r"python3\.\d{1,2}$"
+	matching_files = [file for file in file_list if re.match(pattern, file)]
+	SITE_PACKAGES_DIR = os.path.join(SITE_PACKAGES_DIR, matching_files[0])
+STARDIST_DIR = os.path.join(SITE_PACKAGES_DIR, "site-packages", "stardist", "lib")
+sys.path.append(os.path.join(STARDIST_DIR)
 from stardist2d import c_non_max_suppression_inds
 print("impot nms star " + str(time() - t))
 t = time()
-sys.path.append(r'C:\Users\angel\.local\share\appose\micromamba\envs\test\Lib\site-packages\skimage\draw')
+POLYGON_DIR = os.path.join(SITE_PACKAGES_DIR, "site-packages", "skimage", "draw")
+sys.path.append(POLYGON_DIR)
 from skimage.draw import polygon
 print("impot geometry star " + str(time() - t))
 

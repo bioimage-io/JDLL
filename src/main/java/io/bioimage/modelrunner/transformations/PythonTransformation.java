@@ -226,8 +226,13 @@ public class PythonTransformation extends AbstractTensorTransformation
 				&& (new File(new File(this.scriptFilePath).getAbsolutePath(), new File(script).getName()).isFile()))
 			script = new File(new File(this.scriptFilePath).getAbsolutePath(), new File(script).getName()).getAbsolutePath();
 		 
+		/**
+		 * TODO think whether the envirornment shuold already be created or not
+		 */
 		// Check environment directory provided contains Python, if the env has been provided
 		if (this.envDir != null && !(new File(this.envDir + File.separator + PYTHON_COMMAND)).isFile())
+			throw new IllegalArgumentException();
+		else if (this.envDir == null)
 			throw new IllegalArgumentException();
 		else if (this.envDir != null)
 			return;
