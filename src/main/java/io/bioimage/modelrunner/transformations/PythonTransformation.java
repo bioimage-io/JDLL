@@ -201,7 +201,7 @@ public class PythonTransformation extends AbstractTensorTransformation
 		}
 	}
 	
-	private void checkArgs() throws IOException {
+	private void checkArgs() throws IOException, InterruptedException, ArchiveException, URISyntaxException {
 		// Check that the environment yaml file is correct
 		if (!(new File(envYaml).isFile()) && !(new File(this.envYamlFilePath).isFile()))
 			throw new IllegalArgumentException();
@@ -246,19 +246,19 @@ public class PythonTransformation extends AbstractTensorTransformation
 			throw new IOException("Unable read the environemnt name from the environment .yaml file." 
 						+ System.lineSeparator() + e.toString());
 		}
+		this.envDir = this.mambaDir + File.separator + "envs" + File.separator + envName;
 		// Check if the env is installed
 		if (!(new File(this.mambaDir + File.separator + "envs" + File.separator + envName).exists()) && !install)
 			throw new IllegalArgumentException();
 		else if (!(new File(this.mambaDir + File.separator + "envs" + File.separator + envName).exists()))
 			installEnv();
-		this.envDir = this.mambaDir + File.separator + "envs" + File.separator + envName;
 	}
 
 	public < R extends RealType< R > & NativeType< R > > Tensor<FloatType> apply( final Tensor< R > input )
 	{
 		try {
 			checkArgs();
-		} catch (IOException e) {
+		} catch (IOException | InterruptedException | ArchiveException | URISyntaxException e) {
 			e.printStackTrace();
 			return Cast.unchecked(input);
 		}
@@ -298,37 +298,23 @@ public class PythonTransformation extends AbstractTensorTransformation
 		System.out.println();
 	}
 	
-	public void installMamba() {
-		String envDir = envPath + File.separator + "envs" + File.separator + envName;
-		if (!(new File(envDir).isDirectory())) {
-				try {
-					Conda conda = new Conda(envPath);
-					final List< String > cmd = 
-							new ArrayList<>( Arrays.asList( "env", "create", "--prefix",
-									envPath + File.separator + "envs", "--force", 
-									"-n", envName, "--file", envYaml, "-y" ) );
-					conda.runConda( cmd.stream().toArray( String[]::new ) );
-				} catch (IOException | InterruptedException | ArchiveException | URISyntaxException e1) {
-					e1.printStackTrace();
-					return Cast.unchecked(input);
-				}
-		}
+	public void installMamba() throws IOException, InterruptedException, ArchiveException, URISyntaxException {
+		this.mambaDir = new File("appose_" + PlatformDetection.getArch()).getAbsolutePath();
+		new Conda(mambaDir);
 	}
 	
-	public void installEnv() {
-		String envDir = envPath + File.separator + "envs" + File.separator + envName;
-		if (!(new File(envDir).isDirectory())) {
-				try {
-					Conda conda = new Conda(envPath);
-					final List< String > cmd = 
-							new ArrayList<>( Arrays.asList( "env", "create", "--prefix",
-									envPath + File.separator + "envs", "--force", 
-									"-n", envName, "--file", envYaml, "-y" ) );
-					conda.runConda( cmd.stream().toArray( String[]::new ) );
-				} catch (IOException | InterruptedException | ArchiveException | URISyntaxException e1) {
-					e1.printStackTrace();
-					return Cast.unchecked(input);
-				}
-		}
+	public static void installMamba(String dir) throws IOException, InterruptedException, ArchiveException, URISyntaxException {
+		String mambaDir = new File(dir + File.separator + "appose_" + PlatformDetection.getArch()).getAbsolutePath();
+		new Conda(mambaDir);
+	}
+	
+	private void installEnv() throws RuntimeException, IOException, 
+									InterruptedException, ArchiveException, URISyntaxException {
+		Conda conda = new Conda(mambaDir);
+		final List< String > cmd = 
+				new ArrayList<>( Arrays.asList( "env", "create", "--prefix",
+						envDir + File.separator + "envs", "--force", 
+						"--file", envYaml, "-y" ) );
+		conda.runConda( cmd.stream().toArray( String[]::new ) );
 	}
 }
