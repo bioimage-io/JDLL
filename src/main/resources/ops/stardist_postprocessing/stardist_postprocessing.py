@@ -11,9 +11,6 @@ t = time()
 from stardist.geometry import dist_to_coord, polygons_to_label
 print("impot geometry star " + str(time() - t))
 t = time()
-from xarray import DataArray
-print("impot dataarray star " + str(time() - t))
-t = time()
 from csbdeep.data import Resizer
 print("impot csb.data star " + str(time() - t))
 t = time()
@@ -72,7 +69,7 @@ def stardist_postprocessing(raw_output, prob_thresh, nms_thresh, n_classes=None,
                                               return_labels=True,
                                               overlap_label=None,
                                               **nms_kwargs)
-    return DataArray(res_instances[0].astype("float32"), dims=['y', 'x'], name='output')
+    return xr.DataArray(res_instances[0].astype("float32"), dims=['y', 'x'], name='output')
 
 
 def _prep(prob, dist, channel=2):
