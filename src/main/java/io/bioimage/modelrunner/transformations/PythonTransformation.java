@@ -38,6 +38,7 @@ import org.apposed.appose.Conda;
 import io.bioimage.modelrunner.numpy.DecodeNumpy;
 import io.bioimage.modelrunner.runmode.RunMode;
 import io.bioimage.modelrunner.runmode.ops.GenericOp;
+import io.bioimage.modelrunner.system.PlatformDetection;
 import io.bioimage.modelrunner.tensor.Tensor;
 import io.bioimage.modelrunner.utils.YAMLUtils;
 import net.imglib2.RandomAccessibleInterval;
@@ -52,6 +53,17 @@ public class PythonTransformation extends AbstractTensorTransformation
 	public static final String NAME = "python";
 	public static final String ENV_YAML_KEY = "env_yaml";
 	
+	private final static String MAMBA_RELATIVE_PATH = PlatformDetection.isWindows() ? 
+			 File.separator + "Library" + File.separator + "bin" + File.separator + "micromamba.exe" 
+			: File.separator + "bin" + File.separator + "micromamba";
+	
+	/**
+	 * TODO adapt to conda to support conda
+	 */
+	private final static String CONDA_RELATIVE_PATH = PlatformDetection.isWindows() ? 
+			 File.separator + "Library" + File.separator + "bin" + File.separator + "micromamba.exe" 
+			: File.separator + "bin" + File.separator + "micromamba";
+	
 	private String envYaml = "stardist.yaml";
 	
 	private String script = "stardist_postprocessing.py";
@@ -64,7 +76,11 @@ public class PythonTransformation extends AbstractTensorTransformation
 	
 	private String mambaDir;
 	
+	private String envDir;
+	
 	private int nOutputs = 1;
+	
+	private boolean install = false;
 	
 	private LinkedHashMap<String, Object> kwargs = new LinkedHashMap<String, Object>();
 	{
@@ -77,13 +93,25 @@ public class PythonTransformation extends AbstractTensorTransformation
 		super(NAME);
 	}
 	
+	public void setInstall(Object install) {
+		if (install instanceof Boolean) {
+			this.install = ((Boolean) install).booleanValue();
+		} else if (install.getClass().equals(boolean.class)) {
+			this.install = (boolean) install;
+		} else {
+			throw new IllegalArgumentException("'install' parameter has to be an instance of "
+					+ Boolean.class
+					+ ". The provided argument is an instance of: " + install.getClass());
+		}
+	}
+	
 	public void setEnvYamlFilePath(Object envYamlFilePath) {
 		if (envYamlFilePath instanceof String) {
 			this.envYamlFilePath = (String) envYamlFilePath;
 		} else {
 			throw new IllegalArgumentException("'envYamlFilePath' parameter has to be an instance of "
 					+ String.class
-					+ ". The provided argument is an instance of: " + envYaml.getClass());
+					+ ". The provided argument is an instance of: " + envYamlFilePath.getClass());
 		}
 	}
 	
@@ -93,7 +121,17 @@ public class PythonTransformation extends AbstractTensorTransformation
 		} else {
 			throw new IllegalArgumentException("'mambaDir' parameter has to be an instance of "
 					+ String.class
-					+ ". The provided argument is an instance of: " + envYaml.getClass());
+					+ ". The provided argument is an instance of: " + mambaDir.getClass());
+		}
+	}
+	
+	public void setEnvDir(Object envDir) {
+		if (envDir instanceof String) {
+			this.envDir = (String) envDir;
+		} else {
+			throw new IllegalArgumentException("'envDir' parameter has to be an instance of "
+					+ String.class
+					+ ". The provided argument is an instance of: " + envDir.getClass());
 		}
 	}
 	
@@ -103,7 +141,7 @@ public class PythonTransformation extends AbstractTensorTransformation
 		} else {
 			throw new IllegalArgumentException("'scriptFilePath' parameter has to be an instance of "
 					+ String.class
-					+ ". The provided argument is an instance of: " + envYaml.getClass());
+					+ ". The provided argument is an instance of: " + scriptFilePath.getClass());
 		}
 	}
 	
@@ -160,10 +198,47 @@ public class PythonTransformation extends AbstractTensorTransformation
 					+ ". The provided argument is an instance of: " + method.getClass());
 		}
 	}
+	
+	private void checkArgs() {
+		// Check that the environment yaml file is correct
+		if (!(new File(envYaml).isFile()) && !(new File(this.envYamlFilePath).isFile()))
+			throw new IllegalArgumentException();
+		else if (!(new File(envYaml).isFile()) && new File(this.envYamlFilePath).isDirectory()
+				&& !(new File(new File(this.envYamlFilePath).getAbsolutePath(), new File(envYaml).getName()).isFile()))
+			throw new IllegalArgumentException();
+		else if (!(new File(envYaml).isFile()) && new File(this.envYamlFilePath).isFile())
+			envYaml = envYamlFilePath;
+		else if (!(new File(envYaml).isFile()) && new File(this.envYamlFilePath).isDirectory()
+				&& (new File(new File(this.envYamlFilePath).getAbsolutePath(), new File(envYaml).getName()).isFile()))
+			envYaml = new File(new File(this.envYamlFilePath).getAbsolutePath(), new File(envYaml).getName()).getAbsolutePath();
+		 
+		//Check that the path to the script of interest is correct
+		if (!(new File(script).isFile()) && !(new File(this.scriptFilePath).isFile()))
+			throw new IllegalArgumentException();
+		else if (!(new File(script).isFile()) && new File(this.scriptFilePath).isDirectory()
+				&& !(new File(new File(this.scriptFilePath).getAbsolutePath(), new File(script).getName()).isFile()))
+			throw new IllegalArgumentException();
+		else if (!(new File(script).isFile()) && new File(this.scriptFilePath).isFile())
+			script = scriptFilePath;
+		else if (!(new File(script).isFile()) && new File(this.scriptFilePath).isDirectory()
+				&& (new File(new File(this.scriptFilePath).getAbsolutePath(), new File(script).getName()).isFile()))
+			script = new File(new File(this.scriptFilePath).getAbsolutePath(), new File(script).getName()).getAbsolutePath();
+		 
+		// Check if the path to mamba is correct
+		if (!(new File(this.mambaDir + MAMBA_RELATIVE_PATH).exists()) && !install)
+			throw new IllegalArgumentException();
+		else if (!(new File(this.mambaDir + MAMBA_RELATIVE_PATH).exists()))
+			installMamba();
+
+		// Check if the env is installed
+		if (!(new File(this.mambaDir + File.separator + "envs" + ).exists()) && !install)
+			throw new IllegalArgumentException();
+		else if (!(new File(this.mambaDir + MAMBA_RELATIVE_PATH).exists()))
+			installMamba();
+	}
 
 	public < R extends RealType< R > & NativeType< R > > Tensor<FloatType> apply( final Tensor< R > input )
 	{
-		envYaml = this.scriptPath + File.separator + envYaml;
 		String envName = null;
 		try {
 			envName = (String) YAMLUtils.load(envYaml).get("name");
@@ -171,8 +246,6 @@ public class PythonTransformation extends AbstractTensorTransformation
 			e2.printStackTrace();
 			return Cast.unchecked(input);
 		}
-		// TODO
-		istallEnv();
 		GenericOp op = GenericOp.create(envDir, this.script, this.method, this.nOutputs);
 		LinkedHashMap<String, Object> nMap = new LinkedHashMap<String, Object>();
 		Calendar cal = Calendar.getInstance();
@@ -209,7 +282,7 @@ public class PythonTransformation extends AbstractTensorTransformation
 		System.out.println();
 	}
 	
-	public static void istallEnv() {
+	public void installMamba() {
 		String envDir = envPath + File.separator + "envs" + File.separator + envName;
 		if (!(new File(envDir).isDirectory())) {
 				try {
