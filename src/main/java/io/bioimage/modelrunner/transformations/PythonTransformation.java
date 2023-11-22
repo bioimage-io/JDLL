@@ -158,7 +158,7 @@ public class PythonTransformation extends AbstractTensorTransformation
 		Calendar cal = Calendar.getInstance();
 		SimpleDateFormat sdf = new SimpleDateFormat("ddMMYYYY_HHmmss");
 		String dateString = sdf.format(cal.getTime());
-		nMap.put("input_" + dateString, input);
+		nMap.put("input_" + dateString, input.getData());
 		nMap.putAll(kwargs);
 		op.setInputs(nMap);
 		
@@ -170,8 +170,9 @@ public class PythonTransformation extends AbstractTensorTransformation
 			return Cast.unchecked(input);
 		}
 		Map<String, Object> resMap = rm.runOP();
-		return (Tensor<FloatType>) resMap.entrySet().stream()
+		RandomAccessibleInterval<FloatType> outImg = (RandomAccessibleInterval<FloatType>) resMap.entrySet().stream()
 				.map(e -> e.getValue()).collect(Collectors.toList()).get(0);
+		return Tensor.build("output", "yx", outImg);
 	}
 
 	public void applyInPlace( final Tensor< FloatType > input )
