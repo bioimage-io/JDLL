@@ -465,4 +465,15 @@ def label_are_sequential(y):
     return (set(labels)-{0}) == set(range(1,1+labels.max()))
 
 
+def _normalize_grid(grid,n):
+    try:
+        grid = tuple(grid)
+        (len(grid) == n and
+         all(map(np.isscalar,grid)) and
+         all(map(_is_power_of_2,grid))) or _raise(TypeError())
+        return tuple(int(g) for g in grid)
+    except (TypeError, AssertionError):
+        raise ValueError("grid = {grid} must be a list/tuple of length {n} with values that are power of 2".format(grid=grid, n=n))
+
+
 
