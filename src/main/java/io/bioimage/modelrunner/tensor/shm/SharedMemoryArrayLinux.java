@@ -424,14 +424,12 @@ public final class SharedMemoryArrayLinux implements SharedMemoryArray
         }
 
         // Close the file descriptor
-        if (shmFd >= 0 && INSTANCE.close(this.shmFd) == -1) {
+        if (INSTANCE.close(this.shmFd) == -1) {
             throw new RuntimeException("close failed. Errno: " + Native.getLastError());
         }
 
         // Unlink the shared memory object
-        if (shmFd >= 0 && INSTANCE.shm_unlink(this.memoryName) == -1) {
-            throw new RuntimeException("shm_unlink failed. Errno: " + Native.getLastError());
-        }
+        INSTANCE.shm_unlink(this.memoryName);
         unlinked = true;
 	}
 	

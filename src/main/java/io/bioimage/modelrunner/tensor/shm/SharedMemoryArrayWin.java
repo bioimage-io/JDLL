@@ -80,6 +80,10 @@ public final class SharedMemoryArrayWin implements SharedMemoryArray
 	 * Original dimensions of the shm array
 	 */
 	private final long[] originalDims;
+	/**
+	 * Whether the shared memory segment has been already closed and unlinked or not
+	 */
+	private boolean unlinked = false;
 	
     private SharedMemoryArrayWin(int size, String dtype, long[] shape)
     {
@@ -397,8 +401,10 @@ public final class SharedMemoryArrayWin implements SharedMemoryArray
 	 * Unmap and close the shared memory. Necessary to eliminate the shared memory block
 	 */
 	public void close() {
+		if (unlinked) return;
         Kernel32.INSTANCE.UnmapViewOfFile(pSharedMemory);
         Kernel32.INSTANCE.CloseHandle(hMapFile);
+        unlinked = true;
 	}
 	
 	// TODO support boolean
