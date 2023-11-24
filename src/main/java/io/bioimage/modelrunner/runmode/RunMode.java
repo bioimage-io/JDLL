@@ -383,6 +383,7 @@ public class RunMode {
 		shmInstancesCode += ogName + APPOSE_SHM_KEY + " = shared_memory.SharedMemory(name='" 
 						+ shma.getMemoryLocationPythonName() + "', size=" + shma.getSize() + ")" + System.lineSeparator();
 		shmInstancesCode += "shm_in_list.append(" + ogName + APPOSE_SHM_KEY + ")" + System.lineSeparator();
+		shmInstancesCode += ogName + APPOSE_SHM_KEY + ".unlink()" + System.lineSeparator();
 		int size = 1;
 		long[] dims = tensor.getData().dimensionsAsLongArray();
 		for (long l : dims) {size *= l;}
@@ -414,6 +415,7 @@ public class RunMode {
 		shmInstancesCode += ogName + APPOSE_SHM_KEY + " = shared_memory.SharedMemory(name='" 
 							+ shma.getMemoryLocationPythonName() + "', size=" + shma.getSize() + ")" + System.lineSeparator();
 		shmInstancesCode += "shm_in_list.append(" + ogName + APPOSE_SHM_KEY + ")" + System.lineSeparator();
+		shmInstancesCode += ogName + APPOSE_SHM_KEY + ".unlink()" + System.lineSeparator();
 		int size = 1;
 		long[] dims = rai.dimensionsAsLongArray();
 		for (long l : dims) {size *= l;}
