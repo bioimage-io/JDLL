@@ -30,6 +30,8 @@ import io.bioimage.modelrunner.bioimageio.description.deepimagej.DeepImageJExecu
  */
 public class ExecutionConfig
 {
+    
+    protected static final String STARDIST_KEY = "stardist";
 
     /**
      * Creates an execution configuration instance with the config element map from the yaml file.

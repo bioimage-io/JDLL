@@ -38,6 +38,7 @@ import java.util.stream.Collectors;
 import io.bioimage.modelrunner.bioimageio.BioimageioRepo;
 import io.bioimage.modelrunner.bioimageio.description.exceptions.ModelSpecsException;
 import io.bioimage.modelrunner.bioimageio.description.weights.ModelWeight;
+import io.bioimage.modelrunner.transformations.PythonTransformation;
 import io.bioimage.modelrunner.utils.Log;
 import io.bioimage.modelrunner.utils.YAMLUtils;
 
@@ -302,9 +303,25 @@ public class ModelDescriptor
         if ((bio != null) && (bio instanceof Map))
         	modelDescription.nickname = (String) (((Map<String, Object>) bio).get("nickname"));
         modelDescription.addBioEngine();
-        if (modelDescription.localModelPath != null)
-        	modelDescription.addModelPath(new File(modelDescription.localModelPath).toPath());
-        return modelDescription;
+        if (modelDescription.localModelPath == null)
+        	return modelDescription;
+    	modelDescription.addModelPath(new File(modelDescription.localModelPath).toPath());
+    	if (!modelDescription.config.getSpecMap().containsKey(ExecutionConfig.STARDIST_KEY))
+        	return modelDescription;
+    	Map<String, Object> stardistThres = (Map<String, Object>) ((Map<String, Object>) ((Map<String, Object>) modelDescription.config.getSpecMap()
+    			.get(ExecutionConfig.STARDIST_KEY)).get("config")).get("thresholds");
+    	Map<String, Object> stardistPostProcessing = new HashMap<String, Object>();
+    	stardistPostProcessing.put(TransformSpec.getTransformationNameKey(), PythonTransformation.NAME);
+    	stardistPostProcessing.put(PythonTransformation.ENV_YAML_KEY, "stardist.yaml");
+    	stardistPostProcessing.put(PythonTransformation.SCRIPT_KEY, "stardist_postprocessing.py");
+    	stardistPostProcessing.put(PythonTransformation.N_OUTPUTS_KEY, 1);
+    	stardistPostProcessing.put(PythonTransformation.METHOD_KEY, "stardist_postprocessing");
+    	Map<String, Object> kwargs = new HashMap<String, Object>();
+    	kwargs.put("nms_thresh", stardistThres.get(kwargs));
+    	kwargs.put("prob_thresh", stardistThres.get(kwargs));
+    	stardistPostProcessing.put(PythonTransformation.KWARGS_KEY, kwargs);
+    	modelDescription.output_tensors.get(0).getPostprocessing().add(TransformSpec.build(stardistPostProcessing));
+    	return modelDescription;
     }
     
     /**

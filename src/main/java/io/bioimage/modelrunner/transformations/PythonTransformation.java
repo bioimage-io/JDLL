@@ -51,6 +51,10 @@ public class PythonTransformation extends AbstractTensorTransformation
 {
 	public static final String NAME = "python";
 	public static final String ENV_YAML_KEY = "env_yaml";
+	public static final String SCRIPT_KEY = "script";
+	public static final String N_OUTPUTS_KEY = "n_ouputs";
+	public static final String KWARGS_KEY = "kwargs";
+	public static final String METHOD_KEY = "kwargs";
 	
 	private final static String MAMBA_RELATIVE_PATH = PlatformDetection.isWindows() ? 
 			 File.separator + "Library" + File.separator + "bin" + File.separator + "micromamba.exe" 
