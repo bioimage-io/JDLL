@@ -71,15 +71,15 @@ public class SpecialModels
     	Map<String, Object> stardistThres = (Map<String, Object>) stardistMap.get("thresholds");
     	Map<String, Object> stardistPostProcessing = new HashMap<String, Object>();
     	stardistPostProcessing.put(TransformSpec.getTransformationNameKey(), PythonTransformation.NAME);
-    	stardistPostProcessing.put(PythonTransformation.ENV_YAML_KEY, "stardist.yaml");
-    	stardistPostProcessing.put(PythonTransformation.SCRIPT_KEY, "stardist_postprocessing.py");
+    	stardistPostProcessing.put(PythonTransformation.ENV_YAML_KEY, descriptor.getModelPath() + File.separator + "stardist.yaml");
+    	stardistPostProcessing.put(PythonTransformation.SCRIPT_KEY, descriptor.getModelPath() + File.separator + "stardist_postprocessing.py");
     	stardistPostProcessing.put(PythonTransformation.N_OUTPUTS_KEY, 1);
     	stardistPostProcessing.put(PythonTransformation.METHOD_KEY, "stardist_postprocessing");
     	Map<String, Object> kwargs = new HashMap<String, Object>();
     	kwargs.put("nms_thresh", stardistThres.get(kwargs));
     	kwargs.put("prob_thresh", stardistThres.get(kwargs));
     	stardistPostProcessing.put(PythonTransformation.KWARGS_KEY, kwargs);
-    	if (extractStardist(descriptor))
+    	if (extractStardist(descriptor) && descriptor.getOutputTensors().get(0).getPostprocessing().size() == 0)
         	descriptor.getOutputTensors().get(0).getPostprocessing().add(TransformSpec.build(stardistPostProcessing));
     }
     
