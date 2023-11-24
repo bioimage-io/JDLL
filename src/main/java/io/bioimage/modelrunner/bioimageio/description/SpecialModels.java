@@ -55,15 +55,20 @@ public class SpecialModels
      */
     public static void checkSpecialModels(ModelDescriptor descriptor)
     {
+    	try {
     	if (descriptor.getConfig().getSpecMap().containsKey(STARDIST_KEY))
     		completeStardist(descriptor);
     	else if (descriptor.getConfig().getSpecMap().containsKey(CELLPOSE_KEY))
     		completeCellpose(descriptor);
+    	} catch (Exception e) {
+    		e.printStackTrace();
+    	}
     }
     
     private static void completeStardist(ModelDescriptor descriptor) {
-    	Map<String, Object> stardistThres = (Map<String, Object>) ((Map<String, Object>) ((Map<String, Object>) descriptor.getConfig().getSpecMap()
-    			.get(STARDIST_KEY)).get("config")).get("thresholds");
+    	Map<String, Object> stardistMap = (Map<String, Object>) descriptor.getConfig().getSpecMap().get(STARDIST_KEY);
+    	Map<String, Object> configMap = (Map<String, Object>) stardistMap.get("config");
+    	Map<String, Object> stardistThres = (Map<String, Object>) stardistMap.get("thresholds");
     	Map<String, Object> stardistPostProcessing = new HashMap<String, Object>();
     	stardistPostProcessing.put(TransformSpec.getTransformationNameKey(), PythonTransformation.NAME);
     	stardistPostProcessing.put(PythonTransformation.ENV_YAML_KEY, "stardist.yaml");
