@@ -47,19 +47,28 @@ import net.imglib2.type.numeric.RealType;
 
 public class RunMode {
 	
-	private static final String IMPORT_XARRAY = "import xarray as xr" + System.lineSeparator(); 
+	private static final String IMPORT_XARRAY = ""
+			+ "t = time()" + System.lineSeparator()
+			+ "import xarray as xr" + System.lineSeparator()
+			+ "task.update('xr imported: ' + str(time() - t))" + System.lineSeparator(); 
 	
-	private static final String IMPORT_NUMPY = "import numpy as np" + System.lineSeparator();
+	private static final String IMPORT_NUMPY = ""
+			+ "t = time()" + System.lineSeparator()
+			+ "import numpy as np" + System.lineSeparator()
+			+ "task.update('numpy imported: ' + str(time() - t))" + System.lineSeparator();
 	
-	private static final String IMPORT_SHM = "from multiprocessing import shared_memory" + System.lineSeparator();
+	private static final String IMPORT_SHM = ""
+			+ "t = time()" + System.lineSeparator()
+			+ "from multiprocessing import shared_memory" + System.lineSeparator()
+			+ "task.update('multiproc imported: ' + str(time() - t))" + System.lineSeparator();
 	
 	protected static final String APPOSE_SHM_KEY = ("_shm_" + UUID.randomUUID().toString()).replace("-", "_");
 	
 	// TODO add support for list of objects
 	private static final String OUTPUT_REFORMATING = ""
-			+ "if isinstance(%s, xr.DataArray) and False:" + System.lineSeparator()
+			+ "if str(type(%s)) == \"<class 'xarray.core.dataarray.DataArray'>\" and False:" + System.lineSeparator()
 			+ "  %s = " + RunModeScripts.XR_METHOD + "_file(%s)" + System.lineSeparator()
-			+ "elif isinstance(%s, xr.DataArray):" + System.lineSeparator()
+			+ "elif str(type(%s)) == \"<class 'xarray.core.dataarray.DataArray'>\":" + System.lineSeparator()
 			+ "  %s = " + RunModeScripts.XR_METHOD + "(%s)" + System.lineSeparator()
 			+ "elif isinstance(%s, np.ndarray):" + System.lineSeparator()
 			+ "  %s = " + RunModeScripts.NP_METHOD + "(%s)" + System.lineSeparator()
@@ -69,10 +78,13 @@ public class RunMode {
 			+ "  %s = " + RunModeScripts.DICT_METHOD + "(%s)" + System.lineSeparator();
 	
 	private static final String DEFAULT_IMPORT = ""
+			+ "t = time()" + System.lineSeparator()
 			+ "import sys" + System.lineSeparator()
+			+ "task.update('sys imported: ' + str(time() - t))" + System.lineSeparator()
+			+ "t = time()" + System.lineSeparator()
 			+ "import os" + System.lineSeparator()
-			+ IMPORT_NUMPY
-			+ IMPORT_SHM;
+			+ "task.update('os imported: ' + str(time() - t))" + System.lineSeparator()
+			+ IMPORT_NUMPY;
 	
 	
 	private Environment env;
@@ -85,7 +97,11 @@ public class RunMode {
 	private String opMethodCode = "";
 	private String retrieveResultsCode = "";
 	private String taskOutputCode = "";
-	private String shmInstancesCode = "shm_in_list = []" + System.lineSeparator();
+	private String shmInstancesCode = ""
+			+ "task.update('just started')" + System.lineSeparator()
+			+ "from time import time" + System.lineSeparator()
+			+ "task.update('time imported')" + System.lineSeparator()
+			+ "shm_in_list = []" + System.lineSeparator();
 	private String closeShmCode = "";
 	private String moduleName;
 	private List<SharedMemoryArray> shmaList = new ArrayList<SharedMemoryArray>();
@@ -225,8 +241,27 @@ public class RunMode {
 	
 	private void addImports() {
 		importsCode = DEFAULT_IMPORT
+				+ "t = time()" + System.lineSeparator()
 				+ "sys.path.append(r'" + op.getOpDir() + "')" + System.lineSeparator()
+				+ "task.update('extra file imported: ' + str(time() - t))" + System.lineSeparator()
+				+ "t = time()" + System.lineSeparator()
+				+ "t2 = time()" + System.lineSeparator()
 				+ "import " + moduleName + System.lineSeparator()
+				/*
+				+ "import marshal" + System.lineSeparator()
+				+ "task.update('import marshal: ' + str(time() - t))" + System.lineSeparator()
+				+ "t2 = time()" + System.lineSeparator()
+				+ "s = open(r'C:\\Users\\angel\\OneDrive\\Documentos\\pasteur\\git\\deep-icy\\models\\stardist\\python\\__pycache__\\stardist_postprocessing.cpython-310.pyc', 'rb')" + System.lineSeparator()
+				+ "task.update('open pyc: ' + str(time() - t))" + System.lineSeparator()
+				+ "t2 = time()" + System.lineSeparator()
+				+ "s.seek(16)" + System.lineSeparator()
+				+ "code_obj = marshal.load(s)" + System.lineSeparator()
+				+ "task.update('load pyc: ' + str(time() - t))" + System.lineSeparator()
+				+ "t2 = time()" + System.lineSeparator()
+				+ "exec(code_obj)" + System.lineSeparator()
+				+ "task.update('exec pyc: ' + str(time() - t))" + System.lineSeparator()
+				*/
+				+ "task.update('extra module imported: ' + str(time() - t))" + System.lineSeparator()
 				+ "task.update('Imports')" + System.lineSeparator();
 	}
 	
