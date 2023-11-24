@@ -74,24 +74,35 @@ public class SpecialModels
     	kwargs.put("nms_thresh", stardistThres.get(kwargs));
     	kwargs.put("prob_thresh", stardistThres.get(kwargs));
     	stardistPostProcessing.put(PythonTransformation.KWARGS_KEY, kwargs);
-    	if (descriptor.getModelPath() == null) {
+    	if (extractStardist(descriptor))
         	descriptor.getOutputTensors().get(0).getPostprocessing().add(TransformSpec.build(stardistPostProcessing));
-    		return;
+    }
+    
+    private static boolean extractStardist(ModelDescriptor descriptor) {
+    	if (descriptor.getModelPath() == null) {
+    		return true;
     	}
-    	InputStream envStream = SpecialModels.class.getClassLoader()
-    			.getResourceAsStream("op_environments" + File.separator + "stardist.yaml");
-    	File envFile = new File(descriptor.getModelPath() + File.separator + "stardist.yaml");
-    	InputStream scriptStream = SpecialModels.class.getClassLoader()
-    			.getResourceAsStream("ops" + File.separator + "stardist_postprocessing" + File.separator + "stardist_postprocessing.py");
+        File envFile = new File(descriptor.getModelPath() + File.separator + "stardist.yaml");
     	File scriptFile = new File(descriptor.getModelPath() + File.separator + "stardist_postprocessing.py");
-    	try {
-			Files.copy(envStream, envFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
-			Files.copy(scriptStream, scriptFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
-		} catch (IOException e) {
-			e.printStackTrace();
-			return;
-		}
-    	descriptor.getOutputTensors().get(0).getPostprocessing().add(TransformSpec.build(stardistPostProcessing));
+    	if (!envFile.isFile()) {
+    		try (InputStream envStream = SpecialModels.class.getClassLoader()
+        			.getResourceAsStream("op_environments" + File.separator + "stardist.yaml")){
+    			Files.copy(envStream, envFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
+    		} catch (IOException e) {
+    			e.printStackTrace();
+    			return false;
+    		}
+    	}
+    	if (!scriptFile.isFile()) {
+    		try (InputStream scriptStream = SpecialModels.class.getClassLoader()
+        			.getResourceAsStream("ops" + File.separator + "stardist_postprocessing" + File.separator + "stardist_postprocessing.py")){
+    			Files.copy(scriptStream, scriptFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
+    		} catch (IOException e) {
+    			e.printStackTrace();
+    			return false;
+    		}
+    	}
+    	return true;
     }
     
     private static void completeCellpose(ModelDescriptor descriptor) {
