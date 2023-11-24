@@ -55,6 +55,14 @@ public class PythonTransformation extends AbstractTensorTransformation
 	public static final String N_OUTPUTS_KEY = "n_ouputs";
 	public static final String KWARGS_KEY = "kwargs";
 	public static final String METHOD_KEY = "kwargs";
+
+	/**
+	 * Path setting keys
+	 */
+	public static final String MAMBA_PATH_KEY = "mamba_path";
+	public static final String SCRIPT_FILE_PATH_KEY = "script_file_path";
+	public static final String ENV_YAML_FILE_PATH_KEY = "env_yaml_file_path";
+	public static final String ENV_PATH_KEY = "env_path";
 	
 	private final static String MAMBA_RELATIVE_PATH = PlatformDetection.isWindows() ? 
 			 File.separator + "Library" + File.separator + "bin" + File.separator + "micromamba.exe" 
@@ -79,9 +87,9 @@ public class PythonTransformation extends AbstractTensorTransformation
 	
 	private String scriptFilePath;
 	
-	private String mambaDir;
+	private String mambaPath;
 	
-	private String envDir;
+	private String envPath;
 	
 	private int nOutputs = 1;
 	
@@ -120,9 +128,9 @@ public class PythonTransformation extends AbstractTensorTransformation
 		}
 	}
 	
-	public void setMambaDir(Object mambaDir) {
+	public void setMambaPath(Object mambaDir) {
 		if (mambaDir instanceof String) {
-			this.mambaDir = (String) mambaDir;
+			this.mambaPath = (String) mambaDir;
 		} else {
 			throw new IllegalArgumentException("'mambaDir' parameter has to be an instance of "
 					+ String.class
@@ -130,9 +138,9 @@ public class PythonTransformation extends AbstractTensorTransformation
 		}
 	}
 	
-	public void setEnvDir(Object envDir) {
+	public void setEnvPath(Object envDir) {
 		if (envDir instanceof String) {
-			this.envDir = (String) envDir;
+			this.envPath = (String) envDir;
 		} else {
 			throw new IllegalArgumentException("'envDir' parameter has to be an instance of "
 					+ String.class
@@ -233,18 +241,18 @@ public class PythonTransformation extends AbstractTensorTransformation
 		 * TODO think whether the envirornment shuold already be created or not
 		 */
 		// Check environment directory provided contains Python, if the env has been provided
-		if (this.envDir != null && !(new File(this.envDir + File.separator + PYTHON_COMMAND)).isFile())
+		if (this.envPath != null && !(new File(this.envPath + File.separator + PYTHON_COMMAND)).isFile())
 			throw new IllegalArgumentException();
-		else if (this.envDir == null)
+		else if (this.envPath == null)
 			throw new IllegalArgumentException();
-		else if (this.envDir != null)
+		else if (this.envPath != null)
 			return;
 		// Check if the path to mamba is correct
-		if (this.mambaDir == null && !install)
+		if (this.mambaPath == null && !install)
 			throw new IllegalArgumentException();
-		else if (this.mambaDir != null && !!(new File(this.mambaDir + MAMBA_RELATIVE_PATH).exists()) && !install)
+		else if (this.mambaPath != null && !!(new File(this.mambaPath + MAMBA_RELATIVE_PATH).exists()) && !install)
 			throw new IllegalArgumentException();
-		else if (this.mambaDir == null || !(new File(this.mambaDir + MAMBA_RELATIVE_PATH).exists()))
+		else if (this.mambaPath == null || !(new File(this.mambaPath + MAMBA_RELATIVE_PATH).exists()))
 			installMamba();
 
 		String envName = null;
@@ -254,11 +262,11 @@ public class PythonTransformation extends AbstractTensorTransformation
 			throw new IOException("Unable read the environemnt name from the environment .yaml file." 
 						+ System.lineSeparator() + e.toString());
 		}
-		this.envDir = this.mambaDir + File.separator + "envs" + File.separator + envName;
+		this.envPath = this.mambaPath + File.separator + "envs" + File.separator + envName;
 		// Check if the env is installed
-		if (!(new File(this.mambaDir + File.separator + "envs" + File.separator + envName).exists()) && !install)
+		if (!(new File(this.mambaPath + File.separator + "envs" + File.separator + envName).exists()) && !install)
 			throw new IllegalArgumentException();
-		else if (!(new File(this.mambaDir + File.separator + "envs" + File.separator + envName).exists()))
+		else if (!(new File(this.mambaPath + File.separator + "envs" + File.separator + envName).exists()))
 			installEnv();
 	}
 
@@ -270,7 +278,7 @@ public class PythonTransformation extends AbstractTensorTransformation
 			e.printStackTrace();
 			return Cast.unchecked(input);
 		}
-		GenericOp op = GenericOp.create(envDir, this.script, this.method, this.nOutputs);
+		GenericOp op = GenericOp.create(envPath, this.script, this.method, this.nOutputs);
 		LinkedHashMap<String, Object> nMap = new LinkedHashMap<String, Object>();
 		Calendar cal = Calendar.getInstance();
 		SimpleDateFormat sdf = new SimpleDateFormat("ddMMYYYY_HHmmss");
@@ -307,8 +315,8 @@ public class PythonTransformation extends AbstractTensorTransformation
 	}
 	
 	public void installMamba() throws IOException, InterruptedException, ArchiveException, URISyntaxException {
-		this.mambaDir = new File("appose_" + PlatformDetection.getArch()).getAbsolutePath();
-		new Conda(mambaDir);
+		this.mambaPath = new File("appose_" + PlatformDetection.getArch()).getAbsolutePath();
+		new Conda(mambaPath);
 	}
 	
 	public static void installMamba(String dir) throws IOException, InterruptedException, ArchiveException, URISyntaxException {
@@ -318,10 +326,10 @@ public class PythonTransformation extends AbstractTensorTransformation
 	
 	private void installEnv() throws RuntimeException, IOException, 
 									InterruptedException, ArchiveException, URISyntaxException {
-		Conda conda = new Conda(mambaDir);
+		Conda conda = new Conda(mambaPath);
 		final List< String > cmd = 
 				new ArrayList<>( Arrays.asList( "env", "create", "--prefix",
-						envDir + File.separator + "envs", "--force", 
+						envPath + File.separator + "envs", "--force", 
 						"--file", envYaml, "-y" ) );
 		conda.runConda( cmd.stream().toArray( String[]::new ) );
 	}
