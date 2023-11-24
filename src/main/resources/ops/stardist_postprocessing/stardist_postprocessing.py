@@ -11,14 +11,15 @@ print("impot math star NEW " + str(time() - t))
 t = time()
 import sys
 import re
+import os
 ENV_DIR = os.path.dirname(sys.executable if os.name == 'nt' else os.path.dirname(sys.executable))
 SITE_PACKAGES_DIR = os.path.join(ENV_DIR, "lib")
 if os.name != 'nt':
 	PATTERN = r"python3\.\d{1,2}$"
-	matching_files = [file for file in file_list if re.match(pattern, file)]
+	matching_files = [file for file in os.listdir(SITE_PACKAGES_DIR) if re.match(PATTERN, file)]
 	SITE_PACKAGES_DIR = os.path.join(SITE_PACKAGES_DIR, matching_files[0])
 STARDIST_DIR = os.path.join(SITE_PACKAGES_DIR, "site-packages", "stardist", "lib")
-sys.path.append(os.path.join(STARDIST_DIR)
+sys.path.append(os.path.join(STARDIST_DIR))
 from stardist2d import c_non_max_suppression_inds
 print("impot nms star " + str(time() - t))
 t = time()

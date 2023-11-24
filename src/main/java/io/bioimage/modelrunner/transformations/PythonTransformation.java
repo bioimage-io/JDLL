@@ -83,13 +83,13 @@ public class PythonTransformation extends AbstractTensorTransformation
 	
 	private String method = "stardist_postprocessing";
 	
-	private String envYamlFilePath;
+	private String envYamlFilePath = "";
 	
-	private String scriptFilePath;
+	private String scriptFilePath = "";
 	
-	private String mambaPath;
+	private String mambaPath = "";
 	
-	private String envPath;
+	private String envPath = "";
 	
 	private int nOutputs = 1;
 	
@@ -212,28 +212,34 @@ public class PythonTransformation extends AbstractTensorTransformation
 		}
 	}
 	
+	/**
+	 * TODO fix the logic so when both envYaml and envYamlFilePath point to different valid files,
+	 * an error is thrown because of the contradiction
+	 * TODO same for script
+	 * TODO fix the logic so when both envYaml and envYamlFilePath point to different valid files,
+	 * an error is thrown because of the contradiction
+	 * TODO same for script
+	 * TODO fix the logic so when both envYaml and envYamlFilePath point to different valid files,
+	 * an error is thrown because of the contradiction
+	 * TODO same for script
+	 * TODO fix the logic so when both envYaml and envYamlFilePath point to different valid files,
+	 * an error is thrown because of the contradiction
+	 * TODO same for script
+	 * @throws IOException
+	 * @throws InterruptedException
+	 * @throws ArchiveException
+	 * @throws URISyntaxException
+	 */
 	private void checkArgs() throws IOException, InterruptedException, ArchiveException, URISyntaxException {
-		// Check that the environment yaml file is correct
-		if (!(new File(envYaml).isFile()) && !(new File(this.envYamlFilePath).isFile()))
-			throw new IllegalArgumentException();
-		else if (!(new File(envYaml).isFile()) && new File(this.envYamlFilePath).isDirectory()
-				&& !(new File(new File(this.envYamlFilePath).getAbsolutePath(), new File(envYaml).getName()).isFile()))
-			throw new IllegalArgumentException();
-		else if (!(new File(envYaml).isFile()) && new File(this.envYamlFilePath).isFile())
-			envYaml = envYamlFilePath;
-		else if (!(new File(envYaml).isFile()) && new File(this.envYamlFilePath).isDirectory()
-				&& (new File(new File(this.envYamlFilePath).getAbsolutePath(), new File(envYaml).getName()).isFile()))
-			envYaml = new File(new File(this.envYamlFilePath).getAbsolutePath(), new File(envYaml).getName()).getAbsolutePath();
-		 
 		//Check that the path to the script of interest is correct
-		if (!(new File(script).isFile()) && !(new File(this.scriptFilePath).isFile()))
+		if (!(new File(script).isFile()) && !(new File(this.scriptFilePath).exists()))
 			throw new IllegalArgumentException();
 		else if (!(new File(script).isFile()) && new File(this.scriptFilePath).isDirectory()
 				&& !(new File(new File(this.scriptFilePath).getAbsolutePath(), new File(script).getName()).isFile()))
 			throw new IllegalArgumentException();
-		else if (!(new File(script).isFile()) && new File(this.scriptFilePath).isFile())
+		else if (new File(this.scriptFilePath).isFile())
 			script = scriptFilePath;
-		else if (!(new File(script).isFile()) && new File(this.scriptFilePath).isDirectory()
+		else if (new File(this.scriptFilePath).isDirectory()
 				&& (new File(new File(this.scriptFilePath).getAbsolutePath(), new File(script).getName()).isFile()))
 			script = new File(new File(this.scriptFilePath).getAbsolutePath(), new File(script).getName()).getAbsolutePath();
 		 
@@ -247,6 +253,18 @@ public class PythonTransformation extends AbstractTensorTransformation
 			throw new IllegalArgumentException();
 		else if (this.envPath != null)
 			return;
+		// Check that the environment yaml file is correct
+		if (!(new File(envYaml).isFile()) && !(new File(this.envYamlFilePath).exists()))
+			throw new IllegalArgumentException();
+		else if (!(new File(envYaml).isFile()) && new File(this.envYamlFilePath).isDirectory()
+				&& !(new File(new File(this.envYamlFilePath).getAbsolutePath(), new File(envYaml).getName()).isFile()))
+			throw new IllegalArgumentException();
+		else if (new File(this.envYamlFilePath).isFile())
+			envYaml = envYamlFilePath;
+		else if (new File(this.envYamlFilePath).isDirectory()
+				&& (new File(new File(this.envYamlFilePath).getAbsolutePath(), new File(envYaml).getName()).isFile()))
+			envYaml = new File(new File(this.envYamlFilePath).getAbsolutePath(), new File(envYaml).getName()).getAbsolutePath();
+		 
 		// Check if the path to mamba is correct
 		if (this.mambaPath == null && !install)
 			throw new IllegalArgumentException();
@@ -278,7 +296,7 @@ public class PythonTransformation extends AbstractTensorTransformation
 			e.printStackTrace();
 			return Cast.unchecked(input);
 		}
-		GenericOp op = GenericOp.create(envPath, this.script, this.method, this.nOutputs);
+		GenericOp op = GenericOp.create(new File(envPath).getAbsolutePath(), new File(this.script).getAbsolutePath(), this.method, this.nOutputs);
 		LinkedHashMap<String, Object> nMap = new LinkedHashMap<String, Object>();
 		Calendar cal = Calendar.getInstance();
 		SimpleDateFormat sdf = new SimpleDateFormat("ddMMYYYY_HHmmss");
