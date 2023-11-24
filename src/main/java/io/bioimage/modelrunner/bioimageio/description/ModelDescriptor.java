@@ -306,21 +306,7 @@ public class ModelDescriptor
         if (modelDescription.localModelPath == null)
         	return modelDescription;
     	modelDescription.addModelPath(new File(modelDescription.localModelPath).toPath());
-    	if (!modelDescription.config.getSpecMap().containsKey(ExecutionConfig.STARDIST_KEY))
-        	return modelDescription;
-    	Map<String, Object> stardistThres = (Map<String, Object>) ((Map<String, Object>) ((Map<String, Object>) modelDescription.config.getSpecMap()
-    			.get(ExecutionConfig.STARDIST_KEY)).get("config")).get("thresholds");
-    	Map<String, Object> stardistPostProcessing = new HashMap<String, Object>();
-    	stardistPostProcessing.put(TransformSpec.getTransformationNameKey(), PythonTransformation.NAME);
-    	stardistPostProcessing.put(PythonTransformation.ENV_YAML_KEY, "stardist.yaml");
-    	stardistPostProcessing.put(PythonTransformation.SCRIPT_KEY, "stardist_postprocessing.py");
-    	stardistPostProcessing.put(PythonTransformation.N_OUTPUTS_KEY, 1);
-    	stardistPostProcessing.put(PythonTransformation.METHOD_KEY, "stardist_postprocessing");
-    	Map<String, Object> kwargs = new HashMap<String, Object>();
-    	kwargs.put("nms_thresh", stardistThres.get(kwargs));
-    	kwargs.put("prob_thresh", stardistThres.get(kwargs));
-    	stardistPostProcessing.put(PythonTransformation.KWARGS_KEY, kwargs);
-    	modelDescription.output_tensors.get(0).getPostprocessing().add(TransformSpec.build(stardistPostProcessing));
+    	SpecialModels.checkSpecialModels(modelDescription);
     	return modelDescription;
     }
     
