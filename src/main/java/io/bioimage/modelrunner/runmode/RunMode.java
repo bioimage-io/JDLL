@@ -100,17 +100,14 @@ public class RunMode {
 	private String shmInstancesCode = ""
 			+ "task.update('just started')" + System.lineSeparator()
 			+ "from time import time" + System.lineSeparator()
-			+ "task.update('time imported')" + System.lineSeparator()
-			+ "shm_in_list = []" + System.lineSeparator();
+			+ "shm_out_list = []" + System.lineSeparator()
+			+ "globals()['shm_out_list'] = shm_out_list" + System.lineSeparator()
+			+ "task.update('time imported')" + System.lineSeparator();
 	private String closeShmCode = "";
 	private String moduleName;
 	private List<SharedMemoryArray> shmaList = new ArrayList<SharedMemoryArray>();
 	private List<String> outputNames = new ArrayList<String>();
 	private List<String> filesToDestroy = new ArrayList<String>();
-	
-	private static String CLOSE_IN_SHMA = "for shm in shm_in_list:" + System.lineSeparator()
-										+ "  shm.close()" + System.lineSeparator()
-										+ "  shm.unlink()" + System.lineSeparator();
 	
 	private RunMode(OpInterface op) throws Exception {
 		this.op = op;
@@ -175,7 +172,7 @@ public class RunMode {
             task.waitFor();
             System.out.println("here2");
             outputs = recreateOutputObjects(task.outputs);
-            Task closeShmTask = python.task(closeShmCode, null);
+            Task closeShmTask = python.task(RunModeScripts.UNLINK_AND_CLOSE_SHM, null);
             closeShmTask.waitFor();
         } catch (IOException e) {
 			// TODO Auto-generated catch block
@@ -382,7 +379,7 @@ public class RunMode {
 		// 									dims=["b", "c", "y", "x"], name="input0")
 		shmInstancesCode += ogName + APPOSE_SHM_KEY + " = shared_memory.SharedMemory(name='" 
 						+ shma.getMemoryLocationPythonName() + "', size=" + shma.getSize() + ")" + System.lineSeparator();
-		shmInstancesCode += "shm_in_list.append(" + ogName + APPOSE_SHM_KEY + ")" + System.lineSeparator();
+		shmInstancesCode += "shm_out_list.append(" + ogName + APPOSE_SHM_KEY + ")" + System.lineSeparator();
 		shmInstancesCode += ogName + APPOSE_SHM_KEY + ".unlink()" + System.lineSeparator();
 		int size = 1;
 		long[] dims = tensor.getData().dimensionsAsLongArray();
@@ -414,7 +411,7 @@ public class RunMode {
 		// input0 = np.ndarray(size, dtype="float64", buffer=input0_appose_shm.buf).reshape([64, 64])
 		shmInstancesCode += ogName + APPOSE_SHM_KEY + " = shared_memory.SharedMemory(name='" 
 							+ shma.getMemoryLocationPythonName() + "', size=" + shma.getSize() + ")" + System.lineSeparator();
-		shmInstancesCode += "shm_in_list.append(" + ogName + APPOSE_SHM_KEY + ")" + System.lineSeparator();
+		shmInstancesCode += "shm_out_list.append(" + ogName + APPOSE_SHM_KEY + ")" + System.lineSeparator();
 		shmInstancesCode += ogName + APPOSE_SHM_KEY + ".unlink()" + System.lineSeparator();
 		int size = 1;
 		long[] dims = rai.dimensionsAsLongArray();

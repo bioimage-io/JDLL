@@ -53,12 +53,19 @@ public class RunModeScripts {
 	
 	protected static final String NP_PACKAGE_NAME = "np";
 	
+	protected static final String UNLINK_AND_CLOSE_SHM = ""
+			+ "for sh_mem in shm_out_list:" + System.lineSeparator()
+			+ "	try:" + System.lineSeparator()
+			+ "		sh_mem.close()" + System.lineSeparator()
+			+ "		sh_mem.unlink()" + System.lineSeparator()
+			+ "	except FileNotFoundError:" + System.lineSeparator()
+			+ "		pass" + System.lineSeparator();
+	
 	/**
 	 * Script that contains all the methods neeed to convert python types 
 	 * into Appose supported types (primitive types and dics and lists of them)
 	 */
 	protected static final String TYPE_CONVERSION_METHODS_SCRIPT = ""
-			+ "shm_out_list = []" + System.lineSeparator()
 			+ "def " + NP_METHOD + "(np_arr):" + System.lineSeparator()
 			+ "  shm = shared_memory.SharedMemory(create=True, size=np_arr.nbytes)" + System.lineSeparator()
 			+ "  aux_np_arr = np.ndarray((np_arr.size), dtype=np_arr.dtype, buffer=shm.buf)" + System.lineSeparator()
@@ -153,7 +160,6 @@ public class RunModeScripts {
 			+ "globals()['" + NP_METHOD + "'] = " + NP_METHOD +  System.lineSeparator()
 			+ "globals()['" + DICT_METHOD + "'] = " + DICT_METHOD +  System.lineSeparator()
 			+ "globals()['" + LIST_METHOD + "'] = " + LIST_METHOD +  System.lineSeparator()
-			+ "globals()['shm_out_list'] = shm_out_list" +  System.lineSeparator()
 			+ "globals()['" + NP_PACKAGE_NAME + "'] = " + NP_PACKAGE_NAME +  System.lineSeparator()
 			+ "globals()['" + SHARED_MEM_PACKAGE_NAME + "'] = " + SHARED_MEM_PACKAGE_NAME +  System.lineSeparator();
 }
