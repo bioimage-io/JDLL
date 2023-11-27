@@ -122,6 +122,42 @@ public class CommonUtils {
 		return dateString;
 	}
 	
+	public static boolean int32Overflows(int[] arr) {
+		double div = Integer.MAX_VALUE;
+		for (int a : arr)
+			div = div / (double) a;
+		if (div <  1)
+			return true;
+		return false;
+	}
+	
+	public static boolean int32Overflows(long[] arr) {
+		double div = Integer.MAX_VALUE;
+		for (long a : arr)
+			div = div / (double) a;
+		if (div <  1)
+			return true;
+		return false;
+	}
+	
+	public static boolean int64Overflows(int[] arr) {
+		double div = Long.MAX_VALUE;
+		for (int a : arr)
+			div = div / (double) a;
+		if (div <  1)
+			return true;
+		return false;
+	}
+	
+	public static boolean int64Overflows(long[] arr) {
+		double div = Long.MAX_VALUE;
+		for (long a : arr)
+			div = div / (double) a;
+		if (div <  1)
+			return true;
+		return false;
+	}
+	
 	public static void main(String[] args) {
 		System.out.println(getTime());
 	}
