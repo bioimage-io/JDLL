@@ -24,7 +24,6 @@ import java.nio.ByteBuffer;
 
 import net.imglib2.Cursor;
 import net.imglib2.RandomAccessibleInterval;
-import net.imglib2.blocks.PrimitiveBlocks;
 import net.imglib2.type.NativeType;
 import net.imglib2.type.Type;
 import net.imglib2.type.numeric.RealType;
@@ -125,7 +124,6 @@ public final class ImgLib2ToArray
     private static byte[] buildInt8(RandomAccessibleInterval<ByteType> tensor)
     {
 		tensor = Utils.transpose(tensor);
-		PrimitiveBlocks< ByteType > blocks = PrimitiveBlocks.of( tensor );
 		long[] tensorShape = tensor.dimensionsAsLongArray();
 		int size = 1;
 		for (long ll : tensorShape) size *= ll;
@@ -133,7 +131,13 @@ public final class ImgLib2ToArray
 		int[] sArr = new int[tensorShape.length];
 		for (int i = 0; i < sArr.length; i ++)
 			sArr[i] = (int) tensorShape[i];
-		blocks.copy( tensor.minAsLongArray(), flatArr, sArr );
+
+		Cursor<ByteType> cursor = Views.flatIterable(tensor).cursor();
+		int i = 0;
+		while (cursor.hasNext()) {
+			cursor.fwd();
+			flatArr[i ++] = cursor.get().getByte();
+		}
 		return flatArr;
     }
 
@@ -149,7 +153,6 @@ public final class ImgLib2ToArray
     private static byte[] buildUint8(RandomAccessibleInterval<UnsignedByteType> tensor)
     {
 		tensor = Utils.transpose(tensor);
-		PrimitiveBlocks< UnsignedByteType > blocks = PrimitiveBlocks.of( tensor );
 		long[] tensorShape = tensor.dimensionsAsLongArray();
 		int size = 1;
 		for (long ll : tensorShape) size *= ll;
@@ -157,7 +160,13 @@ public final class ImgLib2ToArray
 		int[] sArr = new int[tensorShape.length];
 		for (int i = 0; i < sArr.length; i ++)
 			sArr[i] = (int) tensorShape[i];
-		blocks.copy( tensor.minAsLongArray(), flatArr, sArr );
+
+		Cursor<UnsignedByteType> cursor = Views.flatIterable(tensor).cursor();
+		int i = 0;
+		while (cursor.hasNext()) {
+			cursor.fwd();
+			flatArr[i ++] = cursor.get().getByte();
+		}
 		return flatArr;
     }
 
@@ -173,7 +182,6 @@ public final class ImgLib2ToArray
     private static short[] buildInt16(RandomAccessibleInterval<ShortType> tensor)
     {
 		tensor = Utils.transpose(tensor);
-		PrimitiveBlocks< ShortType > blocks = PrimitiveBlocks.of( tensor );
 		long[] tensorShape = tensor.dimensionsAsLongArray();
 		int size = 1;
 		for (long ll : tensorShape) size *= ll;
@@ -181,9 +189,14 @@ public final class ImgLib2ToArray
 		int[] sArr = new int[tensorShape.length];
 		for (int i = 0; i < sArr.length; i ++)
 			sArr[i] = (int) tensorShape[i];
-		blocks.copy( tensor.minAsLongArray(), flatArr, sArr );
+
+		Cursor<ShortType> cursor = Views.flatIterable(tensor).cursor();
+		int i = 0;
+		while (cursor.hasNext()) {
+			cursor.fwd();
+			flatArr[i ++] = cursor.get().getShort();
+		}
 		return flatArr;
-		
     }
 
     /**
@@ -198,7 +211,6 @@ public final class ImgLib2ToArray
     private static short[] buildUint16(RandomAccessibleInterval<UnsignedShortType> tensor)
     {
 		tensor = Utils.transpose(tensor);
-		PrimitiveBlocks< UnsignedShortType > blocks = PrimitiveBlocks.of( tensor );
 		long[] tensorShape = tensor.dimensionsAsLongArray();
 		int size = 1;
 		for (long ll : tensorShape) size *= ll;
@@ -206,7 +218,13 @@ public final class ImgLib2ToArray
 		int[] sArr = new int[tensorShape.length];
 		for (int i = 0; i < sArr.length; i ++)
 			sArr[i] = (int) tensorShape[i];
-		blocks.copy( tensor.minAsLongArray(), flatArr, sArr );
+
+		Cursor<UnsignedShortType> cursor = Views.flatIterable(tensor).cursor();
+		int i = 0;
+		while (cursor.hasNext()) {
+			cursor.fwd();
+			flatArr[i ++] = cursor.get().getShort();
+		}
 		return flatArr;
     }
 
@@ -222,7 +240,6 @@ public final class ImgLib2ToArray
     private static int[] buildInt32(RandomAccessibleInterval<IntType> tensor)
     {
 		tensor = Utils.transpose(tensor);
-		PrimitiveBlocks< IntType > blocks = PrimitiveBlocks.of( tensor );
 		long[] tensorShape = tensor.dimensionsAsLongArray();
 		int size = 1;
 		for (long ll : tensorShape) size *= ll;
@@ -230,7 +247,13 @@ public final class ImgLib2ToArray
 		int[] sArr = new int[tensorShape.length];
 		for (int i = 0; i < sArr.length; i ++)
 			sArr[i] = (int) tensorShape[i];
-		blocks.copy( tensor.minAsLongArray(), flatArr, sArr );
+
+		Cursor<IntType> cursor = Views.flatIterable(tensor).cursor();
+		int i = 0;
+		while (cursor.hasNext()) {
+			cursor.fwd();
+			flatArr[i ++] = cursor.get().getInt();
+		}
 		return flatArr;
     }
 
@@ -246,7 +269,6 @@ public final class ImgLib2ToArray
     private static int[] buildUint32(RandomAccessibleInterval<UnsignedIntType> tensor)
     {
 		tensor = Utils.transpose(tensor);
-		PrimitiveBlocks< UnsignedIntType > blocks = PrimitiveBlocks.of( tensor );
 		long[] tensorShape = tensor.dimensionsAsLongArray();
 		int size = 1;
 		for (long ll : tensorShape) size *= ll;
@@ -254,7 +276,13 @@ public final class ImgLib2ToArray
 		int[] sArr = new int[tensorShape.length];
 		for (int i = 0; i < sArr.length; i ++)
 			sArr[i] = (int) tensorShape[i];
-		blocks.copy( tensor.minAsLongArray(), flatArr, sArr );
+
+		Cursor<UnsignedIntType> cursor = Views.flatIterable(tensor).cursor();
+		int i = 0;
+		while (cursor.hasNext()) {
+			cursor.fwd();
+			flatArr[i ++] = cursor.get().getInt();
+		}
 		return flatArr;
     }
 
@@ -270,7 +298,6 @@ public final class ImgLib2ToArray
     private static long[] buildInt64(RandomAccessibleInterval<LongType> tensor)
     {
 		tensor = Utils.transpose(tensor);
-		PrimitiveBlocks< LongType > blocks = PrimitiveBlocks.of( tensor );
 		long[] tensorShape = tensor.dimensionsAsLongArray();
 		int size = 1;
 		for (long ll : tensorShape) size *= ll;
@@ -278,7 +305,13 @@ public final class ImgLib2ToArray
 		int[] sArr = new int[tensorShape.length];
 		for (int i = 0; i < sArr.length; i ++)
 			sArr[i] = (int) tensorShape[i];
-		blocks.copy( tensor.minAsLongArray(), flatArr, sArr );
+
+		Cursor<LongType> cursor = Views.flatIterable(tensor).cursor();
+		int i = 0;
+		while (cursor.hasNext()) {
+			cursor.fwd();
+			flatArr[i ++] = cursor.get().get();
+		}
 		return flatArr;
     }
 
@@ -294,7 +327,6 @@ public final class ImgLib2ToArray
     private static float[] buildFloat32(RandomAccessibleInterval<FloatType> tensor)
     {
 		tensor = Utils.transpose(tensor);
-		PrimitiveBlocks< FloatType > blocks = PrimitiveBlocks.of( tensor );
 		long[] tensorShape = tensor.dimensionsAsLongArray();
 		int size = 1;
 		for (long ll : tensorShape) size *= ll;
@@ -324,7 +356,6 @@ public final class ImgLib2ToArray
     private static double[] buildFloat64(RandomAccessibleInterval<DoubleType> tensor)
     {
 		tensor = Utils.transpose(tensor);
-		PrimitiveBlocks< DoubleType > blocks = PrimitiveBlocks.of( tensor );
 		long[] tensorShape = tensor.dimensionsAsLongArray();
 		int size = 1;
 		for (long ll : tensorShape) size *= ll;
@@ -332,7 +363,13 @@ public final class ImgLib2ToArray
 		int[] sArr = new int[tensorShape.length];
 		for (int i = 0; i < sArr.length; i ++)
 			sArr[i] = (int) tensorShape[i];
-		blocks.copy( tensor.minAsLongArray(), flatArr, sArr );
+
+		Cursor<DoubleType> cursor = Views.flatIterable(tensor).cursor();
+		int i = 0;
+		while (cursor.hasNext()) {
+			cursor.fwd();
+			flatArr[i ++] = cursor.get().get();
+		}
 		return flatArr;
     }
 }
