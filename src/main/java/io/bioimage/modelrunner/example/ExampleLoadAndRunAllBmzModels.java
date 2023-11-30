@@ -188,7 +188,7 @@ public class ExampleLoadAndRunAllBmzModels {
 	 * 	information of the model
 	 */
 	private static void checkModelCompatibleWithEngines(ModelDescriptor descriptor) {
-		List<WeightFormat> wws = descriptor.getWeights().getSupportedWeights();
+		List<WeightFormat> wws = descriptor.getWeights().gettAllSupportedWeightObjects();
 		boolean supported = false;
 		boolean pytorch2 = false;
 		for (WeightFormat ww : wws) {

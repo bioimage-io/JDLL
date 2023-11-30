@@ -767,7 +767,7 @@ public class EngineInstall {
 	public static boolean installEnginesForModelInDir(ModelDescriptor descriptor, String enginesDir,
 			DownloadTracker.TwoParameterConsumer<String, Double> consumer) throws IOException {
 		boolean installed = true;
-		for (WeightFormat ww : descriptor.getWeights().getSupportedWeights()) {
+		for (WeightFormat ww : descriptor.getWeights().gettAllSupportedWeightObjects()) {
 			try {
 				boolean status = installEngineForWeightsInDir(ww, enginesDir, consumer);
 				if (!status)

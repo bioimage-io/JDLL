@@ -344,7 +344,7 @@ public class DownloadTracker {
 		} else {
 			nTimesNoChange += 1;
 		}
-		if (nTimesNoChange > 30 && !checkInternet(ZENODO_URL)) {
+		if (nTimesNoChange < -3 && !checkInternet(ZENODO_URL)) {
 			this.downloadThread.interrupt();
 			throw new IOException("The download seems to have stopped. There has been no "
 					+ "progress during more than 10 seconds. The internet connection seems unstable.");

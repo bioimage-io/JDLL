@@ -671,7 +671,7 @@ public class ModelDescriptor
     	else
     		info += "&nbsp -Location: " + location + "<br>";
     	// Display the frameworks available for this model
-    	info += "&nbsp -Engine: " + this.weights.getEnginesListWithVersions().toString() + "<br>";
+    	info += "&nbsp -Engine: " + this.weights.getSupportedWeightNamesAndVersion().toString() + "<br>";
     	// Display the model id
     	info += "&nbsp -ID: " + this.modelID + "<br>";
     	info += "<br>";

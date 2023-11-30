@@ -20,18 +20,11 @@
 package io.bioimage.modelrunner.bioimageio.description.weights;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Set;
 import java.util.stream.Collectors;
-
-import io.bioimage.modelrunner.versionmanagement.DeepLearningVersion;
-import io.bioimage.modelrunner.versionmanagement.InstalledEngines;
-import io.bioimage.modelrunner.versionmanagement.VersionStringUtils;
 
 /**
  * The model weights information for the current model.
@@ -68,11 +61,6 @@ public class ModelWeight
     private static String torchscriptIdentifier = "torchscript";
     private static String bioengineIdentifier = "bioengine";
     private static String gpuSuffix = " (supports gpu)";
-    /**
-     * List of all the not supported Deep Learning frameworks by DeepIcy
-     */
-    private static ArrayList<String> supported = 
-    		new ArrayList<String>(Arrays.asList(torchscriptIdentifier, tfIdentifier, onnxIdentifier));
     /**
      * Suffix added to the engine version when the engine version is not installed
      */
@@ -130,26 +118,28 @@ public class ModelWeight
      * @param weightsFormat
      * 	the tag corresponding to a particular engine
      * @return a {@link WeightFormat} object that contains the info of some weights
-     * @throws IOException if the set of wanted weights is not present
+     * @throws IllegalArgumentException if the set of wanted weights is not supported by JDLL
      */
-    public WeightFormat getWeightsByIdentifier(String weightsFormat) throws IOException
+    public WeightFormat getSupportedWeightObject(String weightsFormat) throws IllegalArgumentException
     {
     	if (weightsFormat.equals(getBioengineID()))
     		return null;
     	WeightFormat ww = weightsDic.get(weightsFormat);
     	
     	if (ww == null) {
-    		throw new IOException("The selected model does not contain "
-    				+ "a set of " + weightsFormat + " weights.");
+    		throw new IllegalArgumentException("JDLL does not support the provided weight format: "
+    				+ weightsFormat + " . Supported weight formats are: " + kerasIdentifier
+    				+ ", " + onnxIdentifier + ", " + torchIdentifier + ", " + tfIdentifier
+    				+ ", " + tfJsIdentifier + ", " + torchscriptIdentifier + ", " + bioengineIdentifier);
     	}
     	return ww;
     }
     
     /**
-     * REturn a list of the supported weigths by the model as {@link WeightFormat}
-     * @return list of supported weigths as {@link WeightFormat}
+     * REturn a list of the  weights supported by the model as {@link WeightFormat}
+     * @return list of supported weights as {@link WeightFormat}
      */
-    public List<WeightFormat> getSupportedWeights(){
+    public List<WeightFormat> gettAllSupportedWeightObjects(){
     	return weightsDic.values().stream().collect(Collectors.toList());
     }
     
@@ -157,7 +147,7 @@ public class ModelWeight
      * Return a list containing all the frameworks (engines) where the model has weights
      * @return list of supported Deep Learning frameworks with the corresponding version
      */
-    public List<String> getEnginesListWithVersions(){
+    public List<String> getSupportedWeightNamesAndVersion(){
     	return this.weightsDic.keySet().stream().collect(Collectors.toList());
     }
     
@@ -167,102 +157,10 @@ public class ModelWeight
      * @return the list of supported engines (DL frameworks) among the ones where the model
      * 	has weights for
      */
-    public List<String> getSupportedDLFrameworks() {
+    public List<String> getAllSuportedWeightNames() {
     	return weightsDic.entrySet().stream().
     			map(i -> i.getValue().getFramework()).
     			distinct().collect(Collectors.toList());
-    }
-    
-    /**
-     * Return a map where the keys are engine version names plus a tag that indicates
-     * whether that engine is found in the local repo and the value is the actual
-     * engine version name
-     * @return the map with the engines and information about whether it is downloaded or not
-     */
-    public Map<String, String> getDownloadedEnginesMap(){
-		// Find the suffixes for each of the needed engines
-    	Map<String, String> suffixes = weightsDic.keySet().stream()
-    			.collect(Collectors.toMap(i -> i + findLocalEngine(i, weightsDic.get(i).getTrainingVersion()), 
-    					i -> i));
-    	return addCpuOrGpu(suffixes);
-    }
-    
-    /**
-     * Method to include the possibility of running in either GPU or CPU
-     * if any of them is available
-     * @param suffixes
-     * 	map without the cpu or gpu possibility
-     * @return map with the cpu and gpu possibility
-     */
-    private Map<String, String> addCpuOrGpu(Map<String, String> suffixes){
-    	Map<String, String> nSuffixes = new HashMap<String, String>();
-    	for (Entry<String, String> entry : suffixes.entrySet()) {
-    		if (entry.getKey().toLowerCase().endsWith(missingVersion) 
-    				|| entry.getKey().endsWith(notSupported) 
-    				|| entry.getKey().endsWith(alreadyLoaded)
-    				|| entry.getKey().startsWith(bioengineIdentifier)) {
-    			nSuffixes.put(entry.getKey(), entry.getValue());
-    			continue;
-    		}
-    		String engine = weightsDic.get(entry.getKey()).getFramework();
-    		String trainingVersion = weightsDic.get(entry.getKey()).getTrainingVersion();
-    		List<DeepLearningVersion> copiesOfVersion = new ArrayList<DeepLearningVersion>();
-			try {
-				InstalledEngines installed = InstalledEngines.buildEnginesFinder();
-				List<String> downloadedVersions = installed.getDownloadedPythonVersionsForFramework(engine);
-	    		String executionVersion = VersionStringUtils.getMostCompatibleEngineVersion(trainingVersion, downloadedVersions, engine);
-	    		copiesOfVersion = installed.getDownloadedForFramework(engine)
-	    		.stream().filter(v -> v.getPythonVersion().equals(executionVersion)).collect(Collectors.toList());
-    		} catch (IOException e) {
-				e.printStackTrace();
-			}
-    		for (DeepLearningVersion vv : copiesOfVersion) {
-    			if (vv.getGPU() && !nSuffixes.keySet().contains(entry.getKey() + gpuSuffix))
-    				nSuffixes.put(entry.getKey() + gpuSuffix, entry.getValue());
-    			else if (vv.getCPU() && !nSuffixes.keySet().contains(entry.getKey()))
-        				nSuffixes.put(entry.getKey(), entry.getValue());
-    		}
-    	}
-    	return nSuffixes;
-    }
-    
-    /**
-     * REturn a String depending on if the engine is found in the local repo or not.
-     * Returns an empty String "" if the engine is found, " (another version available)"
-     * if the engine is found but using another version and " (missing)" if no version of
-     * the engine is found
-     * @param version
-     * 	the name of the version of the DL engine
-     * @param trainingVersion
-     * 	the training version number of the corresponding engine
-     * @return the corresponding String depending on the presence of the engine or not
-     */
-    private String findLocalEngine(String version, String trainingVersion) {
-    	String engine = weightsDic.get(version).getFramework();
-    	if (engine.startsWith(bioengineIdentifier)) {
-    		return "";
-    	} else if (!supported.contains(engine)) {
-    		return notSupported;
-    	}
-    	List<String> downloadedVersions = new ArrayList<String>();
-		try {
-			InstalledEngines installed = InstalledEngines.buildEnginesFinder();
-	    	downloadedVersions = installed.getDownloadedPythonVersionsForFramework(engine);
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
-		String executionVersion = VersionStringUtils.getMostCompatibleEngineVersion(trainingVersion, downloadedVersions, engine);
-		if (executionVersion == null)
-			return missingVersion;
-		// TODO consider if the version needs to be exactly the same or is it enough to share version and subversion (1.15.1 ~= 1.15.3)
-		// TODO else if (!VersionManagement.areTheyTheSameVersion(executionVersion, trainingVersion)) 
-		else if (!VersionStringUtils.areTheyTheSameVersionUntilPoint(executionVersion, trainingVersion, 2)) 
-			return missingVersion;
-		else if (loadedWeights.get(engine) != null && 
-			!VersionStringUtils.areTheyTheSameVersionUntilPoint(loadedWeights.get(engine).getTrainingVersion(), trainingVersion, 2))
-			return alreadyLoaded;
-		else
-			return "";
     }
 
 	/**
@@ -348,7 +246,7 @@ public class ModelWeight
 	 * @throws IOException if the weights are not found in the avaiable ones
 	 */
 	private void setSelectedWeights(String selectedWeights) throws IOException {
-		this.selectedWeights = getWeightsByIdentifier(selectedWeights);
+		this.selectedWeights = getSupportedWeightObject(selectedWeights);
 	}
 	
 	/**

@@ -268,9 +268,9 @@ public class DownloadModel {
 	private void addWeights() {
 		ModelWeight weights = descriptor.getWeights();
 		int c = 0;
-		for (String ww : weights.getEnginesListWithVersions()) {
+		for (String ww : weights.getSupportedWeightNamesAndVersion()) {
 			try {
-				WeightFormat w = weights.getWeightsByIdentifier(ww);
+				WeightFormat w = weights.getSupportedWeightObject(ww);
 				if (w.getSource() != null && checkURL(w.getSource())) {
 					downloadableLinks.put(WEIGHTS_KEY + "_" + c ++, w.getSource());
 					if (w.getSourceFileName().endsWith(".zip"))
@@ -493,10 +493,10 @@ public class DownloadModel {
 	 * @throws IOException if there is any error unzipping
 	 */
 	private void unzipTfWeights() throws IOException {
-		if (descriptor.getWeights().getSupportedDLFrameworks()
+		if (descriptor.getWeights().getAllSuportedWeightNames()
 				.contains(EngineInfo.getBioimageioTfKey())
 				&& !(new File(this.modelsDir, "variables").isDirectory())) {
-			String source = descriptor.getWeights().getSupportedWeights().stream()
+			String source = descriptor.getWeights().gettAllSupportedWeightObjects().stream()
 					.filter(ww -> ww.getFramework().equals(EngineInfo.getBioimageioTfKey()))
 					.findFirst().get().getSource();
 			source = DownloadModel.getFileNameFromURLString(source);
