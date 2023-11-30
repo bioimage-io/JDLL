@@ -26,6 +26,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import io.bioimage.modelrunner.versionmanagement.SupportedVersions;
+
 /**
  * The model weights information for the current model.
  * 
@@ -103,14 +105,20 @@ public class ModelWeight
      * Return the corresponding weight format
      * @param weightsFormat
      * 	the tag corresponding to a particular engine
+     * @param version
+     * 	the version of interest
      * @return a {@link WeightFormat} object that contains the info of some weights
      * @throws IllegalArgumentException if the set of wanted weights is not supported by JDLL
      */
-    public WeightFormat getSupportedWeightObject(String weightsFormat) throws IllegalArgumentException
+    public WeightFormat getSupportedWeightObject(String weightsFormat, String version) throws IllegalArgumentException
     {
     	if (weightsFormat.equals(getBioengineID()))
     		return null;
-    	WeightFormat ww = weightsDic.get(weightsFormat);
+    	WeightFormat ww = weightsDic.values().stream()
+    			.filter(w -> w.getFramework().equals(weightsFormat) 
+    					&&  w.getTrainingVersion()
+    					.equals(SupportedVersions.getClosestSupportedPythonVersion("pytorch", version)))
+    			.findFirst().orElse(null);
     	
     	if (ww == null) {
     		throw new IllegalArgumentException("JDLL does not support the provided weight format: "
@@ -184,54 +192,44 @@ public class ModelWeight
 	 * For models that contain several sets of weights
 	 * from different frameworks in the
 	 * 
-	 * @param selectedWeights
+	 * @param weightFormat
 	 *  the format (framework) of the weights 
-	 * @throws IOException if the weights are not found in the avaiable ones
+	 *  @param version
+	 *  the version of the weight format in Python
 	 */
-	public void setSelectedWeightsFormat(String selectedWeights) {
-		if (selectedWeights.startsWith(kerasIdentifier)) {
+	public void setSelectedWeightsFormat(String weightFormat, String version) {
+		if (weightFormat.startsWith(kerasIdentifier)) {
 			this.selectedEngine = kerasIdentifier;
-		} else if (selectedWeights.startsWith(onnxIdentifier)) {
+		} else if (weightFormat.startsWith(onnxIdentifier)) {
 			this.selectedEngine = onnxIdentifier;
-		} else if (selectedWeights.startsWith(torchIdentifier)) {
+		} else if (weightFormat.startsWith(torchIdentifier)) {
 			this.selectedEngine = torchIdentifier;
-		} else if (selectedWeights.startsWith(tfIdentifier)) {
+		} else if (weightFormat.startsWith(tfIdentifier)) {
 			this.selectedEngine = tfIdentifier;
-		} else if (selectedWeights.startsWith(tfJsIdentifier)) {
+		} else if (weightFormat.startsWith(tfJsIdentifier)) {
 			this.selectedEngine = tfJsIdentifier;
-		} else if (selectedWeights.startsWith(torchscriptIdentifier)) {
+		} else if (weightFormat.startsWith(torchscriptIdentifier)) {
 			this.selectedEngine = torchscriptIdentifier;
-		} else if (selectedWeights.startsWith(bioengineIdentifier)) {
+		} else if (weightFormat.startsWith(bioengineIdentifier)) {
 			this.selectedEngine = bioengineIdentifier;
 		} else {
 			throw new IllegalArgumentException("Unsupported Deep Learning framework for JDLL.");
 		}
-		setSelectedVersion(selectedWeights);
-		setSelectedWeights(selectedWeights);
-	}
-	
-	/**
-	 * Sets the Deep Learning engine version selected by the user
-	 * @param selectedWeights
-	 * 	the selected weights format and version by the user in the GUI
-	 */
-	private void setSelectedVersion(String selectedWeights) {
-		if (selectedWeights.equals(bioengineIdentifier)) {
-			this.selectedVersion =  "";
-			return;
-		}
-		String preffix = this.selectedEngine + "_v";
-		this.selectedVersion = selectedWeights.substring(preffix.length());		
+		this.selectedVersion = version;
+		setSelectedWeights(weightFormat, version);
 	}
 	
 	/**
 	 * Set the pair of weights selected by the user by saving the object that contains the info
 	 * about them
-	 * @param selectedWeights
-	 * 	the string selected by the user as weights
+	 * @param weightFormat
+	 * 	the string representing the weights selected. It should be the tag used in the Bioimage.io to
+	 * 	refer to the weights: https://github.com/bioimage-io/spec-bioimage-io/blob/gh-pages/weight_formats_spec_0_4.md
+	 * @param version
+	 * 	the python version of the weight format
 	 */
-	private void setSelectedWeights(String selectedWeights) {
-		this.selectedWeights = getSupportedWeightObject(selectedWeights);
+	private void setSelectedWeights(String weightFormat, String version) {
+		this.selectedWeights = getSupportedWeightObject(weightFormat, version);
 	}
 	
 	/**

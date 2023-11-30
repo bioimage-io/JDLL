@@ -268,9 +268,8 @@ public class DownloadModel {
 	private void addWeights() {
 		ModelWeight weights = descriptor.getWeights();
 		int c = 0;
-		for (String ww : weights.getSupportedWeightNamesAndVersion()) {
+		for (WeightFormat w : weights.gettAllSupportedWeightObjects()) {
 			try {
-				WeightFormat w = weights.getSupportedWeightObject(ww);
 				if (w.getSource() != null && checkURL(w.getSource())) {
 					downloadableLinks.put(WEIGHTS_KEY + "_" + c ++, w.getSource());
 					if (w.getSourceFileName().endsWith(".zip"))

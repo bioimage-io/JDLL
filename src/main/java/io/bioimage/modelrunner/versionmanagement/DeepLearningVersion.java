@@ -139,7 +139,7 @@ public class DeepLearningVersion
     	List<String> folderJars = Arrays.asList(jarsArr);
     	List<String> missingJars = getJarsFileNames().stream()
     			.filter(jar -> !folderJars.contains(jar) 
-    					|| new File(allEnginesDir + File.separator + folderName() + jar).length() <= 0)
+    					|| new File(allEnginesDir + File.separator + folderName() + File.separator + jar).length() <= 0)
     			.collect(Collectors.toList());
     	return missingJars;
     }
