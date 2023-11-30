@@ -188,7 +188,7 @@ public class ModelWeight
 	 *  the format (framework) of the weights 
 	 * @throws IOException if the weights are not found in the avaiable ones
 	 */
-	public void setSelectedWeightsFormat(String selectedWeights) throws IOException {
+	public void setSelectedWeightsFormat(String selectedWeights) {
 		if (selectedWeights.startsWith(kerasIdentifier)) {
 			this.selectedEngine = kerasIdentifier;
 		} else if (selectedWeights.startsWith(onnxIdentifier)) {
@@ -229,9 +229,8 @@ public class ModelWeight
 	 * about them
 	 * @param selectedWeights
 	 * 	the string selected by the user as weights
-	 * @throws IOException if the weights are not found in the avaiable ones
 	 */
-	private void setSelectedWeights(String selectedWeights) throws IOException {
+	private void setSelectedWeights(String selectedWeights) {
 		this.selectedWeights = getSupportedWeightObject(selectedWeights);
 	}
 	
