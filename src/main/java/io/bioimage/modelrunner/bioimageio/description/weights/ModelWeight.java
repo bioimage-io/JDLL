@@ -117,7 +117,7 @@ public class ModelWeight
     	WeightFormat ww = weightsDic.values().stream()
     			.filter(w -> w.getFramework().equals(weightsFormat) 
     					&&  w.getTrainingVersion()
-    					.equals(SupportedVersions.getClosestSupportedPythonVersion("pytorch", version)))
+    					.equals(SupportedVersions.getClosestSupportedPythonVersion(weightsFormat, version)))
     			.findFirst().orElse(null);
     	
     	if (ww == null) {
