@@ -60,20 +60,6 @@ public class ModelWeight
     private static String tfJsIdentifier = "tensorflow_js";
     private static String torchscriptIdentifier = "torchscript";
     private static String bioengineIdentifier = "bioengine";
-    private static String gpuSuffix = " (supports gpu)";
-    /**
-     * Suffix added to the engine version when the engine version is not installed
-     */
-    private static String missingVersion = " (please install)";
-    /**
-     * Suffix added to the engine version when the engine version is not installed
-     */
-    private static String notSupported = " (not supported)";
-    /**
-     * Suffix added to the engine version when another version of 
-     * the same engine has already been loaded
-     */
-    private static String alreadyLoaded = " (restart Icy)";
     /**
      * Builds a weight information element from the element map.
      * 
@@ -406,40 +392,6 @@ public class ModelWeight
     		}
     	}
 		return name + suffix;
-	}
-	
-	/**
-	 * REturn the tag used to identify Deep Learning engines that are not present
-	 * in the local engines repo
-	 * @return missing tag used to identify non installed engines
-	 */
-	public static String getMissingEngineTag() {
-		return missingVersion;
-	}
-	
-	/**
-	 * REturn the tag used to identify Deep Learning engines that are not supported by DeepIcy
-	 * @return tag used to identify which are the engines not supported by the library
-	 */
-	public static String getNotSupportedEngineTag() {
-		return notSupported;
-	}
-	
-	/**
-	 * REturn the tag used to identify Deep Learning engines where another
-	 * version oof the engine has been loaded
-	 * @return whether the DL framework has already been loaded or not
-	 */
-	public static String getAlreadyLoadedEngineTag() {
-		return alreadyLoaded;
-	}
-	
-	/**
-	 * REturn the tag used to identify Deep Learning engines that support GPU
-	 * @return te suffix used to identify if a engine uses GPU or not
-	 */
-	public static String getGPUSuffix() {
-		return gpuSuffix;
 	}
 
 	/**
