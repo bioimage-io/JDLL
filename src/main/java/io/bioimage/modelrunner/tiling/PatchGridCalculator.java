@@ -370,6 +370,10 @@ public class PatchGridCalculator <T extends RealType<T> & NativeType<T>>
         long[] shapeLong;
         if (tensorSpec.getShape().getReferenceInput() == null) {
         	tileSize = Arrays.stream(tensorSpec.getShape().getPatchRecomendedSize()).mapToLong(i -> i).toArray();
+        	if (there is tiling)
+        		use original tensor size
+    		else (no tiling)
+    			patch size defined in the rdf.yaml
         	shapeLong = LongStream.range(0, tensorSpec.getAxesOrder().length())
         			.map(i -> (tileSize[(int) i] - paddingSize[0][(int) i] - paddingSize[0][(int) i]) * inputTileGrid[(int) i])
         			.toArray();
