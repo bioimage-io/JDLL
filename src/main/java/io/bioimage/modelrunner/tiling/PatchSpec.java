@@ -33,7 +33,7 @@ public class PatchSpec
 	/**
 	 * Size of the tensor that is going to be tiled
 	 */
-    private long[] tensorDims;
+    private long[] nonTiledTensorDims;
 	/**
 	 * Size of the input patch. Following "xyczb" axes order
 	 */
@@ -65,19 +65,19 @@ public class PatchSpec
      *        sequence sizes.
      * @param patchPaddingSize
      *        The padding size used on each patch.
-     * @param tensorDims
+     * @param nonTiledTensorDims
      * 		  The original size of the image/tensor that is going to be tiled
      * @return The create patch specification.
      */
     public static PatchSpec create(String tensorName, long[] patchInputSize, int[] patchGridSize, 
-    		int[][] patchPaddingSize, long[] tensorDims)
+    		int[][] patchPaddingSize, long[] nonTiledTensorDims)
     {
         PatchSpec ps = new PatchSpec();
         ps.patchInputSize = patchInputSize;
         ps.patchGridSize = patchGridSize;
         ps.patchPaddingSize = patchPaddingSize;
         ps.tensorName = tensorName;
-        ps.tensorDims = tensorDims;
+        ps.nonTiledTensorDims = nonTiledTensorDims;
         return ps;
     }
 
@@ -166,7 +166,7 @@ public class PatchSpec
      * @return the dimensions of the tensor that is going to be tiled
      */
     public long[] getTensorDims() {
-    	return tensorDims;
+    	return nonTiledTensorDims;
     }
 
     /**
