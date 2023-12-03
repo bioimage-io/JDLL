@@ -674,7 +674,7 @@ public class Model
 				.collect(Collectors.toMap(entry -> entry.getKey(), entry -> TileGrid.create(entry.getValue())));
 		Map<Object, TileGrid> outTileGrids = outTileSpecs.entrySet().stream()
 				.collect(Collectors.toMap(entry -> entry.getKey(), entry -> TileGrid.create(entry.getValue())));
-		int[] tilesPerAxis = inTileSpecs.values().stream().findFirst().get().getPatchGridSize();
+		int[] tilesPerAxis = inTileSpecs.values().stream().findFirst().get().getTileGrid();
 		int nTiles = 1;
 		for (int i : tilesPerAxis) nTiles *= i;
 		tileCounter.acceptTotal(Long.valueOf(nTiles));

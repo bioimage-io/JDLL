@@ -107,8 +107,8 @@ public class PatchSpec
     	int[] grid = new int[]{1, 1, 1, 1, 1};
     	// If there is any different grid, that will be the absolute one
     	for (PatchSpec pp : patches) {
-    		if (!PatchGridCalculator.compareTwoArrays(grid, pp.getPatchGridSize()))
-    			return pp.getPatchGridSize();
+    		if (!PatchGridCalculator.compareTwoArrays(grid, pp.getTileGrid()))
+    			return pp.getTileGrid();
     	}
     	return grid;
     }
@@ -135,8 +135,8 @@ public class PatchSpec
     	int[] grid = new int[]{1, 1, 1, 1, 1};
     	// If there is any different grid, that will be the absolute one
     	for (PatchSpec pp : patches.values()) {
-    		if (!PatchGridCalculator.compareTwoArrays(grid, pp.getPatchGridSize()))
-    			return pp.getPatchGridSize();
+    		if (!PatchGridCalculator.compareTwoArrays(grid, pp.getTileGrid()))
+    			return pp.getTileGrid();
     	}
     	return grid;
     }
@@ -172,7 +172,7 @@ public class PatchSpec
     /**
      * @return Input patch size. The patch taken from the input sequence including the halo.
      */
-    public long[] getPatchInputSize()
+    public long[] getTileSize()
     {
         return patchInputSize;
     }
@@ -181,7 +181,7 @@ public class PatchSpec
      * @return The patch grid size. The number of patches in each axis used to cover the entire sequence. It should be computed from the output patch and input
      *         sequence sizes.
      */
-    public int[] getPatchGridSize()
+    public int[] getTileGrid()
     {
         return patchGridSize;
     }
@@ -189,7 +189,7 @@ public class PatchSpec
     /**
      * @return The padding size used on each patch.
      */
-    public int[][] getPatchPaddingSize()
+    public int[][] getPadding()
     {
         return patchPaddingSize;
     }

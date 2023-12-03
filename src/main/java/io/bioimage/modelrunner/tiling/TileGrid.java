@@ -86,14 +86,14 @@ public class TileGrid
         TileGrid ps = new TileGrid();
         ps.tensorName = tileSpecs.getTensorName();
         long[] imageDims = tileSpecs.getNonTiledTensorDims();
-        int[] gridSize = tileSpecs.getPatchGridSize();
-        ps.tileSize = tileSpecs.getPatchInputSize();
+        int[] gridSize = tileSpecs.getTileGrid();
+        ps.tileSize = tileSpecs.getTileSize();
         int tileCount = Arrays.stream(gridSize).reduce(1, (a, b) -> a * b);
 
         for (int j = 0; j < tileCount; j ++) {
         	int[] patchIndex = IndexingUtils.flatIntoMultidimensionalIndex(j, gridSize);
-        	long[] patchSize = tileSpecs.getPatchInputSize();
-        	int[][] padSize = tileSpecs.getPatchPaddingSize();
+        	long[] patchSize = tileSpecs.getTileSize();
+        	int[][] padSize = tileSpecs.getPadding();
         	int[] roiSize = IntStream.range(0, patchIndex.length)
                     .map(i -> (int) patchSize[i] - padSize[0][i] - padSize[1][i]).toArray();
 			ps.roiSize = roiSize;
