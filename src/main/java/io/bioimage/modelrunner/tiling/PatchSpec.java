@@ -165,7 +165,7 @@ public class PatchSpec
      * The dimensions of the tensor
      * @return the dimensions of the tensor that is going to be tiled
      */
-    public long[] getTensorDims() {
+    public long[] getNonTiledTensorDims() {
     	return nonTiledTensorDims;
     }
 

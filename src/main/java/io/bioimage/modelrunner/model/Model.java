@@ -658,7 +658,7 @@ public class Model
 			else
 				outputTensors.add((Tensor<T>) Tensor.buildBlankTensor(tt.getName(), 
 																	tt.getAxesOrder(), 
-																	outTileSpecs.get(tt.getName()).getTensorDims(), 
+																	outTileSpecs.get(tt.getName()).getNonTiledTensorDims(), 
 																	(T) new FloatType()));
 		}
 		doTiling(inputTensors, outputTensors, tileGrid, tileCounter);

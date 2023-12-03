@@ -85,7 +85,7 @@ public class TileGrid
     {
         TileGrid ps = new TileGrid();
         ps.tensorName = tileSpecs.getTensorName();
-        long[] imageDims = tileSpecs.getTensorDims();
+        long[] imageDims = tileSpecs.getNonTiledTensorDims();
         int[] gridSize = tileSpecs.getPatchGridSize();
         ps.tileSize = tileSpecs.getPatchInputSize();
         int tileCount = Arrays.stream(gridSize).reduce(1, (a, b) -> a * b);
