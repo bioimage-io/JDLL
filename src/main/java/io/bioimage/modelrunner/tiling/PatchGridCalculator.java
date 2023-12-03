@@ -372,9 +372,7 @@ public class PatchGridCalculator <T extends RealType<T> & NativeType<T>>
         	shapeLong = Arrays.stream(tensorSpec.getShape().getPatchRecomendedSize()).mapToLong(i -> i).toArray();
         	tileSize = shapeLong;
         } else if (tensorSpec.getShape().getReferenceInput() == null) {
-        	tileSize = LongStream.range(0, tensorSpec.getAxesOrder().length())
-        			.map(i -> (4 - paddingSize[0][(int) i] - paddingSize[0][(int) i]) * inputTileGrid[(int) i])
-        			.toArray();
+        	tileSize = Arrays.stream(tensorSpec.getShape().getPatchRecomendedSize()).mapToLong(i -> i).toArray();
         	double[] inputTileToTotal = IntStream.range(0, tensorSpec.getAxesOrder().length())
         			.mapToDouble(i -> ((double) refTilesSpec.getNonTiledTensorDims()[i]) / ((double) refTilesSpec.getTileSize()[i]))
         			.toArray();
