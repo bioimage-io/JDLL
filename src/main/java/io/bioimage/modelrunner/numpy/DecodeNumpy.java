@@ -451,8 +451,8 @@ public class DecodeNumpy {
 	 	return outputImg;
     }
     
-    public static < T extends RealType< T > & NativeType< T > > 
-    void writeRaiToNpyFile(String filePath, RandomAccessibleInterval<T> rai) throws FileNotFoundException, IOException {
+    public static < T extends RealType< T > & NativeType< T > >  byte[]
+    createNumpyStyleByteArray(RandomAccessibleInterval<T> rai) {
     	String strHeader = "{'descr': '<";
     	strHeader += getDataType(rai.getAt(rai.minAsLongArray()));
     	strHeader += "', 'fortran_order': False, 'shape': (";
@@ -534,7 +534,12 @@ public class DecodeNumpy {
         	total[c ++] = bufInverse[i];
         for (int i = 0; i < array.length; i ++)
         	total[c ++] = array[i];
-        
+        return total;
+    }
+    
+    public static < T extends RealType< T > & NativeType< T > > 
+    void writeRaiToNpyFile(String filePath, RandomAccessibleInterval<T> rai) throws FileNotFoundException, IOException {
+    	byte[] total = createNumpyStyleByteArray(rai);
         try (FileOutputStream fos = new FileOutputStream(filePath)) {
             fos.write(total);
         }

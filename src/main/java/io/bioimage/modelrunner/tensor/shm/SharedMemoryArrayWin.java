@@ -29,6 +29,7 @@ import com.sun.jna.platform.win32.WinBase;
 import com.sun.jna.platform.win32.WinNT;
 import com.sun.jna.platform.win32.WinNT.HANDLE;
 
+import io.bioimage.modelrunner.numpy.DecodeNumpy;
 import io.bioimage.modelrunner.tensor.Utils;
 import io.bioimage.modelrunner.utils.CommonUtils;
 import net.imglib2.Cursor;
@@ -84,6 +85,12 @@ public final class SharedMemoryArrayWin implements SharedMemoryArray
 	 * Whether the shared memory segment has been already closed and unlinked or not
 	 */
 	private boolean unlinked = false;
+	/**
+	 * Whether the shared memory segment has numpy format or not. Numpy format means that 
+	 * it comes with a header indicating shape, dtype and order. If false it is just hte array 
+	 * of bytes corresponding to the values of the array, no header
+	 */
+	private boolean isNumpyFormat = false;
 	
     private SharedMemoryArrayWin(int size, String dtype, long[] shape)
     {
@@ -175,7 +182,7 @@ public final class SharedMemoryArrayWin implements SharedMemoryArray
      * 	the type of the {@link RandomAccessibleInterval}
      * @param name
      * 	name of the memory location where the shm segment is going to be created, cannot contain any special character
-     * and should start by "Local\\" in windows. The shm name is generated automatically withe the method {@link #build(String, RandomAccessibleInterval)}
+     * and should start by "Local\\" in windows. The shm name is generated automatically with the the method {@link #build(String, RandomAccessibleInterval)}
      * @param rai 
      * 	{@link RandomAccessibleInterval} to be mapped into byte buffer
      * @param byteBuffer 
@@ -241,6 +248,72 @@ public final class SharedMemoryArrayWin implements SharedMemoryArray
             throw new IllegalArgumentException("The image has an unsupported type: " + Util.getTypeFromInterval(rai).getClass().toString());
     	}
 		return shma;
+    }
+
+    /**
+     * Creates a shared memory segment containing the information of the {@link RandomAccessibleInterval}.
+     * The shared memory segment is created with numpy format, which means that it will have a header of bytes indicating
+     * the data type, shape and byte ordering
+     * 
+     * @param <T> 
+     * 	the type of the {@link RandomAccessibleInterval}
+     * @param name
+     * 	name of the memory location where the shm segment is going to be created, cannot contain any special character
+     * and should should start by "Local\\" in windows. The shm name is generated automatically with the the method {@link #build(String, RandomAccessibleInterval)}
+     * @param rai 
+     * 	{@link RandomAccessibleInterval} to be mapped into byte buffer
+     * @return an instance of {@link SharedMemoryArrayLinux} containing the pointer to the 
+     * 	shared memory where the array is, the hMapFile, the size of the object in bytes, and 
+     * 	name of the memory location
+     * @throws IllegalArgumentException If the {@link RandomAccessibleInterval} type is not supported.
+     */
+    protected static <T extends RealType<T> & NativeType<T>> SharedMemoryArrayWin buildNumpyFormat(RandomAccessibleInterval<T> rai)
+    {
+    	return buildNumpyFormat("Local\\" + UUID.randomUUID().toString(), rai);
+    }
+
+    /**
+     * Creates a shared memory segment containing the information of the {@link RandomAccessibleInterval} in the 
+     * location specified by the 'name' argument. 
+     * The shared memory segment is created with numpy format, which means that it will have a header of bytes indicating
+     * the data type, shape and byte ordering
+     * 
+     * @param <T> 
+     * 	the type of the {@link RandomAccessibleInterval}
+     * @param name
+     * 	name of the memory location where the shm segment is going to be created, cannot contain any special character
+     *  and should start by "Local\\" in windows. The shm name is generated 
+     *  automatically with the the method {@link #build(String, RandomAccessibleInterval)}. In Macos, names should not be 
+     *  longer than 30 characters
+     * @param rai 
+     * 	{@link RandomAccessibleInterval} to be mapped into byte buffer
+     * @return an instance of {@link SharedMemoryArrayLinux} containing the pointer to the 
+     * 	shared memory where the array is, the hMapFile, the size of the object in bytes, and 
+     * 	name of the memory location
+     * @throws IllegalArgumentException If the {@link RandomAccessibleInterval} type is not supported.
+     */
+    protected static <T extends RealType<T> & NativeType<T>> SharedMemoryArrayWin buildNumpyFormat(String name, RandomAccessibleInterval<T> rai)
+    {
+    	SharedMemoryArray.checkMemorySegmentName(name);
+    	if (!name.startsWith("/"))
+    		name = "/" + name;
+    	SharedMemoryArrayWin shma = null;
+    	byte[] total = DecodeNumpy.createNumpyStyleByteArray(rai);
+    	shma = new SharedMemoryArrayWin(name, total.length, CommonUtils.getDataType(rai), rai.dimensionsAsLongArray());
+    	shma.addByteArray(total);
+    	shma.isNumpyFormat = true;
+		return shma;
+    }
+    
+    /**
+     * Add a byte array to the shm segment
+     * @param arr
+     * 	the byte array that is going to be added
+     */
+    private void addByteArray(byte[] arr) {
+    	for (int i = 0; i < arr.length; i ++) {
+    		this.pSharedMemory.setByte(i, arr[i]);
+    	}
     }
 
     /**
@@ -648,5 +721,10 @@ public final class SharedMemoryArrayWin implements SharedMemoryArray
 	@Override
 	public long[] getOriginalShape() {
 		return this.originalDims;
+	}
+	
+	@Override
+	public boolean isNumpyFormat() {
+		return this.isNumpyFormat;
 	}
 }

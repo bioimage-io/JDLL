@@ -66,25 +66,15 @@ public interface SharedMemoryArray extends Closeable {
 	SharedMemoryArray buildNumpyLikeSHMA(RandomAccessibleInterval<T> rai) {
         if (PlatformDetection.isWindows()) return SharedMemoryArrayWin.buildNumpyFormat(rai);
     	else if (PlatformDetection.isLinux()) return SharedMemoryArrayLinux.buildNumpyFormat(rai);
-    	else return SharedMemoryArrayMacOS.build(rai);
+    	else return SharedMemoryArrayMacOS.buildNumpyFormat(rai);
     }
 	
 	static <T extends RealType<T> & NativeType<T>>
 	SharedMemoryArray buildNumpyLikeSHMA(String name, RandomAccessibleInterval<T> rai) {
         if (PlatformDetection.isWindows()) return SharedMemoryArrayWin.buildNumpyFormat(name, rai);
     	else if (PlatformDetection.isLinux()) return SharedMemoryArrayLinux.buildNumpyFormat(name, rai);
-    	else return SharedMemoryArrayMacOS.build(name, ai);
+    	else return SharedMemoryArrayMacOS.buildNumpyFormat(name, rai);
     }
-	
-	static <T extends RealType<T> & NativeType<T>>
-	RandomAccessibleInterval<T> buildImgLib2FromNumpyLikeSHMA(String memoryName) {
-        if (PlatformDetection.isWindows()) 
-        	return SharedMemoryArrayWin.createImgLib2RaiFromNumpyLikeSharedMemoryBlock(memoryName);
-        else if (PlatformDetection.isLinux())
-    		return SharedMemoryArrayLinux.createImgLib2RaiFromNumpyLikeSharedMemoryBlock(memoryName);
-        else
-    		return SharedMemoryArrayMacOS.createImgLib2RaiFromNumpyLikeSharedMemoryBlock(memoryName);
-	}
 	
 	/**
 	 * Checks whether the String provided  can be used as the name given to a shared memory segment
@@ -123,4 +113,12 @@ public interface SharedMemoryArray extends Closeable {
     public long[] getOriginalShape();
     
     public <T extends RealType<T> & NativeType<T>> RandomAccessibleInterval<T> getSharedRAI();
+    
+    /**
+     * 
+     * @return whether the shared memory segment has numpy format or not. Numpy format means that 
+	 * it comes with a header indicating shape, dtype and order. If false it is just hte array 
+	 * of bytes corresponding to the values of the array, no header
+     */
+    public boolean isNumpyFormat();
 }
