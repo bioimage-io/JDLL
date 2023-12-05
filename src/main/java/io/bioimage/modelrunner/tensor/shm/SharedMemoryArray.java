@@ -88,14 +88,20 @@ public interface SharedMemoryArray extends Closeable {
 	
 	static void checkMemorySegmentName(String name) {
 		String auxName;
-		if (name.startsWith("Local\\"))
+		if (PlatformDetection.isWindows() && name.startsWith("Local\\"))
 			auxName = name.substring("Local\\".length());
+		else if (name.startsWith("/"))
+				auxName = name.substring(1);
 		else 
 			auxName = name;
 		for (String specialChar : SPECIAL_CHARS_LIST) {
 			if (auxName.contains(specialChar))
 				throw new IllegalArgumentException("Argument 'name' should not contain the special character '" + specialChar + "'.");
 		}
+		if (PlatformDetection.isMacOS() && auxName.length() > SharedMemoryArrayMacOS.MACOS_MAX_LENGTH - 1)
+			throw new IllegalArgumentException("Parameter 'name' cannot have more than " 
+									+ (SharedMemoryArrayMacOS.MACOS_MAX_LENGTH - 1) + " characters. Shared memory segments "
+									+ "cannot have names with more than " + (SharedMemoryArrayMacOS.MACOS_MAX_LENGTH - 1) + " characters.");
 	}
     
     public String getMemoryLocationName();

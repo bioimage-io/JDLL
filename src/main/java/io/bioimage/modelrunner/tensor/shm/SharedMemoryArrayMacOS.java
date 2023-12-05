@@ -74,10 +74,6 @@ public final class SharedMemoryArrayMacOS implements SharedMemoryArray
 	/**
 	 * Name defining the location of the shared memory block
 	 */
-	private final String auxMemoryName = "/shm-" + UUID.randomUUID();
-	/**
-	 * Name defining the location of the shared memory block
-	 */
 	private final String memoryName;
 	/**
 	 * Size of the shared memory block
@@ -98,22 +94,23 @@ public final class SharedMemoryArrayMacOS implements SharedMemoryArray
 
     public static final int O_RDONLY = 0;
     private static final int O_RDWR = 2;    // Read-write mode
-    private static final int O_CREAT = 64;  // Create if it does not exist
-    private static final int S_IRWXU = 0700; // Owner can read, write, and execute
-    private static final int S_IRWXG = 0070; // Group can read, write, and execute
-    private static final int S_IRWXO = 0007; // Others can read, write, and execute
     private static final int PROT_READ = 0x1;  // Page can be read
     private static final int PROT_WRITE = 0x2; // Page can be written
     private static final int MAP_SHARED = 0x01; // Share changes
-    private static final int S_IRUSR = 0400; // Owner can read
-    private static final int S_IWUSR = 0200; // Owner can write
+    
+    protected static final int MACOS_MAX_LENGTH = 30;
     
     private SharedMemoryArrayMacOS(int size, String dtype, long[] shape)
+    {
+    	this(("/shm-" + UUID.randomUUID()).substring(0, MACOS_MAX_LENGTH), size, dtype, shape);
+    }
+    
+    private SharedMemoryArrayMacOS(String name, int size, String dtype, long[] shape)
     {
     	this.originalDataType = dtype;
     	this.originalDims = shape;
     	this.size = size;
-    	this.memoryName = this.auxMemoryName.substring(0, 30);
+    	this.memoryName = name;
 
         int openFd = macosInstance.create_shared_memory(memoryName, size);
         if (openFd < 0) {
@@ -168,51 +165,78 @@ public final class SharedMemoryArrayMacOS implements SharedMemoryArray
      */
     protected static <T extends RealType<T> & NativeType<T>> SharedMemoryArrayMacOS build(RandomAccessibleInterval<T> rai)
     {
+    	return build(("/shm-" + UUID.randomUUID()).substring(0, MACOS_MAX_LENGTH), rai);
+    }
+
+    /**
+     * Adds the {@link RandomAccessibleInterval} data to the {@link ByteBuffer} provided.
+     * The position of the ByteBuffer is kept in the same place as it was received.
+     * 
+     * @param <T> 
+     * 	the type of the {@link RandomAccessibleInterval}
+     * 	name of the memory location where the shm segment is going to be created, cannot contain any special character
+     *  and should start by "/" in Unix based systems. The shm name is generated 
+     *  automatically with the the method {@link #build(String, RandomAccessibleInterval)}. In Macos, names should not be 
+     *  longer than 30 characters
+     * @param rai 
+     * 	{@link RandomAccessibleInterval} to be mapped into byte buffer
+     * @param byteBuffer 
+     * 	target bytebuffer
+     * @return an instance of {@link SharedMemoryArrayMacOS} containing the pointer to the 
+     * 	shared memory where the array is, the hMapFile, the size of the object in bytes, and 
+     * 	name of the memory location
+     * @throws IllegalArgumentException If the {@link RandomAccessibleInterval} type is not supported.
+     */
+    protected static <T extends RealType<T> & NativeType<T>> SharedMemoryArrayMacOS build(String name, RandomAccessibleInterval<T> rai)
+    {
+    	SharedMemoryArray.checkMemorySegmentName(name);
+    	if (!name.startsWith("/"))
+    		name = "/" + name;
     	SharedMemoryArrayMacOS shma = null;
     	if (Util.getTypeFromInterval(rai) instanceof ByteType) {
         	int size = 1;
         	for (long i : rai.dimensionsAsLongArray()) {size *= i;}
-        	shma = new SharedMemoryArrayMacOS(size, CommonUtils.getDataType(rai), rai.dimensionsAsLongArray());
+        	shma = new SharedMemoryArrayMacOS(name, size, CommonUtils.getDataType(rai), rai.dimensionsAsLongArray());
         	shma.buildInt8(Cast.unchecked(rai));
     	} else if (Util.getTypeFromInterval(rai) instanceof UnsignedByteType) {
         	int size = 1;
         	for (long i : rai.dimensionsAsLongArray()) {size *= i;}
-        	shma = new SharedMemoryArrayMacOS(size, CommonUtils.getDataType(rai), rai.dimensionsAsLongArray());
+        	shma = new SharedMemoryArrayMacOS(name, size, CommonUtils.getDataType(rai), rai.dimensionsAsLongArray());
         	shma.buildUint8(Cast.unchecked(rai));
     	} else if (Util.getTypeFromInterval(rai) instanceof ShortType) {
         	int size = 2;
         	for (long i : rai.dimensionsAsLongArray()) {size *= i;}
-        	shma = new SharedMemoryArrayMacOS(size, CommonUtils.getDataType(rai), rai.dimensionsAsLongArray());
+        	shma = new SharedMemoryArrayMacOS(name, size, CommonUtils.getDataType(rai), rai.dimensionsAsLongArray());
         	shma.buildInt16(Cast.unchecked(rai));
     	} else if (Util.getTypeFromInterval(rai) instanceof UnsignedShortType) {
         	int size = 2;
         	for (long i : rai.dimensionsAsLongArray()) {size *= i;}
-        	shma = new SharedMemoryArrayMacOS(size, CommonUtils.getDataType(rai), rai.dimensionsAsLongArray());
+        	shma = new SharedMemoryArrayMacOS(name, size, CommonUtils.getDataType(rai), rai.dimensionsAsLongArray());
         	shma.buildUint16(Cast.unchecked(rai));
     	} else if (Util.getTypeFromInterval(rai) instanceof IntType) {
         	int size = 4;
         	for (long i : rai.dimensionsAsLongArray()) {size *= i;}
-        	shma = new SharedMemoryArrayMacOS(size, CommonUtils.getDataType(rai), rai.dimensionsAsLongArray());
+        	shma = new SharedMemoryArrayMacOS(name, size, CommonUtils.getDataType(rai), rai.dimensionsAsLongArray());
         	shma.buildInt32(Cast.unchecked(rai));
     	} else if (Util.getTypeFromInterval(rai) instanceof UnsignedIntType) {
         	int size = 4;
         	for (long i : rai.dimensionsAsLongArray()) {size *= i;}
-        	shma = new SharedMemoryArrayMacOS(size, CommonUtils.getDataType(rai), rai.dimensionsAsLongArray());
+        	shma = new SharedMemoryArrayMacOS(name, size, CommonUtils.getDataType(rai), rai.dimensionsAsLongArray());
         	shma.buildUint32(Cast.unchecked(rai));
     	} else if (Util.getTypeFromInterval(rai) instanceof LongType) {
         	int size = 8;
         	for (long i : rai.dimensionsAsLongArray()) {size *= i;}
-        	shma = new SharedMemoryArrayMacOS(size, CommonUtils.getDataType(rai), rai.dimensionsAsLongArray());
+        	shma = new SharedMemoryArrayMacOS(name, size, CommonUtils.getDataType(rai), rai.dimensionsAsLongArray());
         	shma.buildInt64(Cast.unchecked(rai));
     	} else if (Util.getTypeFromInterval(rai) instanceof FloatType) {
         	int size = 4;
         	for (long i : rai.dimensionsAsLongArray()) {size *= i;}
-        	shma = new SharedMemoryArrayMacOS(size, CommonUtils.getDataType(rai), rai.dimensionsAsLongArray());
+        	shma = new SharedMemoryArrayMacOS(name, size, CommonUtils.getDataType(rai), rai.dimensionsAsLongArray());
         	shma.buildFloat32(Cast.unchecked(rai));
     	} else if (Util.getTypeFromInterval(rai) instanceof DoubleType) {
         	int size = 8;
         	for (long i : rai.dimensionsAsLongArray()) {size *= i;}
-        	shma = new SharedMemoryArrayMacOS(size, CommonUtils.getDataType(rai), rai.dimensionsAsLongArray());
+        	shma = new SharedMemoryArrayMacOS(name, size, CommonUtils.getDataType(rai), rai.dimensionsAsLongArray());
         	shma.buildFloat64(Cast.unchecked(rai));
     	} else {
             throw new IllegalArgumentException("The image has an unsupported type: " + Util.getTypeFromInterval(rai).getClass().toString());
