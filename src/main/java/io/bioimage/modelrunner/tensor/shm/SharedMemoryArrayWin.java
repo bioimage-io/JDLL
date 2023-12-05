@@ -28,6 +28,7 @@ import com.sun.jna.platform.win32.Kernel32;
 import com.sun.jna.platform.win32.WinBase;
 import com.sun.jna.platform.win32.WinNT;
 import com.sun.jna.platform.win32.WinNT.HANDLE;
+import com.sun.jna.platform.win32.BaseTSD;
 
 import io.bioimage.modelrunner.numpy.DecodeNumpy;
 import io.bioimage.modelrunner.tensor.Utils;
@@ -521,25 +522,25 @@ public final class SharedMemoryArrayWin implements SharedMemoryArray
 		if (!memoryName.startsWith("Local\\"))
 			memoryName = "Local\\" + memoryName;
 		WinNT.HANDLE hMapFile = Kernel32.INSTANCE.OpenFileMapping(
-                WinNT.FILE_MAP_READ | WinNT.FILE_MAP_WRITE,
-                false,
-                memoryName
+                WinNT.FILE_MAP_READ, false, memoryName
         );
         if (hMapFile == null) {
             throw new RuntimeException("OpenFileMapping failed with error: " + Kernel32.INSTANCE.GetLastError());
         }
-
         // Map the shared memory object into the current process's address space
         Pointer pSharedMemory = Kernel32.INSTANCE.MapViewOfFile(
-                hMapFile,
-                WinNT.FILE_MAP_READ | WinNT.FILE_MAP_WRITE,
-                0,
-                0,
-                size
+                hMapFile, WinNT.FILE_MAP_READ, 0, 0, 0
         );
         if (pSharedMemory == null) {
         	Kernel32.INSTANCE.CloseHandle(hMapFile);
             throw new RuntimeException("MapViewOfFile failed with error: " + Kernel32.INSTANCE.GetLastError());
+        }
+        Kernel32.MEMORY_BASIC_INFORMATION mbi = new Kernel32.MEMORY_BASIC_INFORMATION();
+        
+        if (Kernel32.INSTANCE.VirtualQueryEx(hMapFile, pSharedMemory, mbi, new BaseTSD.SIZE_T((long) mbi.size())).intValue() != 0) {
+            System.out.println("Shared Memory Size: " + mbi.size() + " bytes");
+        } else {
+            System.err.println("Unable to query memory region.");
         }
         try {
         	RandomAccessibleInterval<T> rai = buildFromSharedMemoryBlock(pSharedMemory, shape, isFortran, dataType);
