@@ -516,7 +516,7 @@ public final class SharedMemoryArrayWin implements SharedMemoryArray
 	}
 	
 	public static void main(String[] args) {
-	    String memoryName = "wnsm_4e698883";
+	    String memoryName = "Local\\wnsm_52f561c9";
 	    WinNT.HANDLE hMapFile = Kernel32.INSTANCE.OpenFileMapping(
 	            WinNT.FILE_MAP_READ, false, memoryName
 	    );
@@ -572,10 +572,9 @@ public final class SharedMemoryArrayWin implements SharedMemoryArray
             System.err.println("Unable to query memory region.");
         }
         try {
-        	RandomAccessibleInterval<T> rai = buildFromSharedMemoryBlock(pSharedMemory, shape, isFortran, dataType);
         	Kernel32.INSTANCE.UnmapViewOfFile(pSharedMemory);
             Kernel32.INSTANCE.CloseHandle(hMapFile);
-        	return rai;
+        	return null;
         } catch (Exception ex) {
             Kernel32.INSTANCE.UnmapViewOfFile(pSharedMemory);
             Kernel32.INSTANCE.CloseHandle(hMapFile);
