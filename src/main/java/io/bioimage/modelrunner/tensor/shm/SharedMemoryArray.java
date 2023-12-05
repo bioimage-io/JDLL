@@ -35,7 +35,7 @@ import net.imglib2.type.numeric.RealType;
  * @author Carlos Garcia Lopez de Haro
  */
 public interface SharedMemoryArray extends Closeable {
-	
+
 	static <T extends RealType<T> & NativeType<T>>
 	SharedMemoryArray buildSHMA(RandomAccessibleInterval<T> rai) {
         if (PlatformDetection.isWindows()) return SharedMemoryArrayWin.build(rai);
@@ -44,7 +44,38 @@ public interface SharedMemoryArray extends Closeable {
     }
 	
 	static <T extends RealType<T> & NativeType<T>>
+	SharedMemoryArray buildSHMA(String name, RandomAccessibleInterval<T> rai) {
+        if (PlatformDetection.isWindows()) return SharedMemoryArrayWin.build(rai);
+    	else if (PlatformDetection.isLinux()) return SharedMemoryArrayLinux.build(rai);
+    	else return SharedMemoryArrayMacOS.build(rai);
+    }
+	
+	static <T extends RealType<T> & NativeType<T>>
 	RandomAccessibleInterval<T> buildImgLib2FromSHMA(String memoryName, long[] shape, boolean isFortran, String dataType) {
+        if (PlatformDetection.isWindows()) 
+        	return SharedMemoryArrayWin.createImgLib2RaiFromSharedMemoryBlock(memoryName, shape, isFortran, dataType);
+        else if (PlatformDetection.isLinux())
+    		return SharedMemoryArrayLinux.createImgLib2RaiFromSharedMemoryBlock(memoryName, shape, isFortran, dataType);
+        else
+    		return SharedMemoryArrayMacOS.createImgLib2RaiFromSharedMemoryBlock(memoryName, shape, isFortran, dataType);
+	}
+	
+	static <T extends RealType<T> & NativeType<T>>
+	SharedMemoryArray buildNumpyLikeSHMA(RandomAccessibleInterval<T> rai) {
+        if (PlatformDetection.isWindows()) return SharedMemoryArrayWin.build(rai);
+    	else if (PlatformDetection.isLinux()) return SharedMemoryArrayLinux.build(rai);
+    	else return SharedMemoryArrayMacOS.build(rai);
+    }
+	
+	static <T extends RealType<T> & NativeType<T>>
+	SharedMemoryArray buildNumpyLikeSHMA(String name, RandomAccessibleInterval<T> rai) {
+        if (PlatformDetection.isWindows()) return SharedMemoryArrayWin.build(rai);
+    	else if (PlatformDetection.isLinux()) return SharedMemoryArrayLinux.build(rai);
+    	else return SharedMemoryArrayMacOS.build(rai);
+    }
+	
+	static <T extends RealType<T> & NativeType<T>>
+	RandomAccessibleInterval<T> buildImgLib2FromNumpyLikeSHMA(String memoryName) {
         if (PlatformDetection.isWindows()) 
         	return SharedMemoryArrayWin.createImgLib2RaiFromSharedMemoryBlock(memoryName, shape, isFortran, dataType);
         else if (PlatformDetection.isLinux())
