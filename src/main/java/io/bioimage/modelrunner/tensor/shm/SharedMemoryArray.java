@@ -86,7 +86,13 @@ public interface SharedMemoryArray extends Closeable {
     		return SharedMemoryArrayMacOS.createImgLib2RaiFromNumpyLikeSharedMemoryBlock(memoryName);
 	}
 	
-	static void checkMemorySegmentName(String name) {
+	/**
+	 * Checks whether the String provided  can be used as the name given to a shared memory segment
+	 * @param name
+	 * 	the string that wants to be used as a name to a shared memory segment
+	 * @throws IllegalArgumentException if the name does not fulfill the required conditions
+	 */
+	static void checkMemorySegmentName(String name) throws IllegalArgumentException {
 		String auxName;
 		if (PlatformDetection.isWindows() && name.startsWith("Local\\"))
 			auxName = name.substring("Local\\".length());
