@@ -72,6 +72,15 @@ public interface SharedMemoryArray extends Closeable {
     		return SharedMemoryArrayMacOS.buildImgLib2FromNumpyLikeSHMA(memoryName);
 	}
 	
+	static Map<String, Object> buildMapFromNumpyLikeSHMA(String memoryName) throws Exception {
+        if (PlatformDetection.isWindows()) 
+        	return SharedMemoryArrayWin.buildMapFromNumpyLikeSHMA(memoryName);
+        else if (PlatformDetection.isLinux())
+    		return SharedMemoryArrayLinux.buildMapFromNumpyLikeSHMA(memoryName);
+        else
+    		return SharedMemoryArrayMacOS.buildMapFromNumpyLikeSHMA(memoryName);
+	}
+	
 	static <T extends RealType<T> & NativeType<T>>
 	SharedMemoryArray buildNumpyLikeSHMA(RandomAccessibleInterval<T> rai) {
         if (PlatformDetection.isWindows()) return SharedMemoryArrayWin.buildNumpyFormat(rai);

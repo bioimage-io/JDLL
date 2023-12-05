@@ -102,7 +102,7 @@ public class DecodeNumpy {
      * Map containing the relation between the datatypes used by numpy and their 
      * explicit name
      */
-    private static final Map<String, Integer> DATA_TYPES_MAP = new HashMap<>();
+    public static final Map<String, Integer> DATA_TYPES_MAP = new HashMap<>();
 
     static
     {
@@ -122,7 +122,7 @@ public class DecodeNumpy {
     /**
      * PAttern that matches the metadata description of a numpy file
      */
-    private static final Pattern HEADER_PATTERN =
+    public static final Pattern HEADER_PATTERN =
             Pattern.compile("\\{'descr': '(.+)', 'fortran_order': (True|False), 'shape': \\((.*)\\),");
 	
     /**
@@ -161,6 +161,95 @@ public class DecodeNumpy {
     	try (InputStream targetStream = new FileInputStream(npyFile)) {
     		return decodeNumpyFromByteArrayStream(targetStream);
     	}
+    }
+    
+    /**
+     * MEthod to decode the bytes corresponding to a numpy array stored in the numpy file
+     * @param <T>
+     * 	possible data types that the ImgLib2 image can have
+     * @param is
+     * 	{@link InputStream} that results after reading the numpy file. Contains the byte info of the
+     * 	numpy array
+     * @return an ImgLib2 image with the same datatype, shape and data that the numpy array
+     * @throws IOException if there is any error reading the {@link InputStream}
+     */
+    public static HashMap<String, Object> decodeNumpyFromByteArrayStreamToRawMap(InputStream is) throws IOException {
+        DataInputStream dis;
+        if (is instanceof DataInputStream) {
+            dis = (DataInputStream) is;
+        } else {
+            dis = new DataInputStream(is);
+        }
+
+        byte[] buf = new byte[MAGIC_PREFIX.length];
+        dis.readFully(buf);
+        if (!Arrays.equals(buf, MAGIC_PREFIX)) {
+            throw new IllegalArgumentException("Malformed  or unsopported Numpy array");
+        }
+        byte major = dis.readByte();
+        byte minor = dis.readByte();
+        if (major < 1 || major > 3 || minor != 0) {
+            throw new IllegalArgumentException("Unknown numpy version: " + major + '.' + minor);
+        }
+        int len = major == 1 ? 2 : 4;
+        dis.readFully(buf, 0, len);
+        ByteBuffer bb = ByteBuffer.wrap(buf, 0, len);
+        bb.order(ByteOrder.LITTLE_ENDIAN);
+        if (major == 1) {
+            len = bb.getShort();
+        } else {
+            len = bb.getInt();
+        }
+        buf = new byte[len];
+        dis.readFully(buf);
+        String header = new String(buf, StandardCharsets.UTF_8);
+        Matcher m = HEADER_PATTERN.matcher(header);
+        if (!m.find()) {
+            throw new IllegalArgumentException("Invalid numpy header: " + header);
+        }
+        String typeStr = m.group(1);
+        String fortranOrder = m.group(2).trim();
+        String shapeStr = m.group(3);
+        long[] shape = new long[0];
+        if (!shapeStr.isEmpty()) {
+            String[] tokens = shapeStr.split(", ?");
+            shape = Arrays.stream(tokens).mapToLong(Long::parseLong).toArray();
+        }
+        char order = typeStr.charAt(0);
+        ByteOrder byteOrder = null;
+        if (order == '>') {
+        	byteOrder = ByteOrder.BIG_ENDIAN;
+        } else if (order == '<') {
+        	byteOrder = ByteOrder.LITTLE_ENDIAN;
+        } else if (order == '|') {
+        	byteOrder = ByteOrder.LITTLE_ENDIAN;
+        	new IOException("Numpy .npy file did not specify the byte order of the array."
+        			+ " It was automatically opened as little endian but this does not guarantee"
+        			+ " the that the file is open correctly. Caution is advised.").printStackTrace();
+    	} else {
+        	new IllegalArgumentException("Not supported ByteOrder for the provided .npy array.");
+        }
+        String dtype = getDataType(typeStr.substring(1));
+        long numBytes = DATA_TYPES_MAP.get(dtype);
+    	long count;
+    	if (shape.length == 0)
+    		count = 1;
+		else
+			count = Arrays.stream(shape).reduce(Math::multiplyExact).getAsLong();
+        //len = Math.toIntExact(shape.length * numBytes);
+        len = Math.toIntExact(count * numBytes);
+        ByteBuffer data = ByteBuffer.allocate(len);
+        data.order(byteOrder);
+        readData(dis, data, len);
+
+        HashMap<String, Object> map = new HashMap<String, Object>();
+        map.put("shape", shape);
+        map.put("byte_order", byteOrder);
+        map.put("dtype", dtype);
+        map.put("fortran_order", fortranOrder.equals("True"));
+        map.put("data", data);
+
+        return map;
     }
     
     /**
