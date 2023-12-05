@@ -35,6 +35,8 @@ import net.imglib2.type.numeric.RealType;
  * @author Carlos Garcia Lopez de Haro
  */
 public interface SharedMemoryArray extends Closeable {
+	
+	final static String[] SPECIAL_CHARS_LIST = new String[] {"/", "\\", "#", "·", "!", "¡", "¿", "?", "@", "|", "$", ">", "<", ";"};
 
 	static <T extends RealType<T> & NativeType<T>>
 	SharedMemoryArray buildSHMA(RandomAccessibleInterval<T> rai) {
@@ -45,9 +47,9 @@ public interface SharedMemoryArray extends Closeable {
 	
 	static <T extends RealType<T> & NativeType<T>>
 	SharedMemoryArray buildSHMA(String name, RandomAccessibleInterval<T> rai) {
-        if (PlatformDetection.isWindows()) return SharedMemoryArrayWin.build(rai);
-    	else if (PlatformDetection.isLinux()) return SharedMemoryArrayLinux.build(rai);
-    	else return SharedMemoryArrayMacOS.build(rai);
+        if (PlatformDetection.isWindows()) return SharedMemoryArrayWin.build(name, rai);
+    	else if (PlatformDetection.isLinux()) return SharedMemoryArrayLinux.build(name, rai);
+    	else return SharedMemoryArrayMacOS.build(name, rai);
     }
 	
 	static <T extends RealType<T> & NativeType<T>>
@@ -62,26 +64,38 @@ public interface SharedMemoryArray extends Closeable {
 	
 	static <T extends RealType<T> & NativeType<T>>
 	SharedMemoryArray buildNumpyLikeSHMA(RandomAccessibleInterval<T> rai) {
-        if (PlatformDetection.isWindows()) return SharedMemoryArrayWin.build(rai);
-    	else if (PlatformDetection.isLinux()) return SharedMemoryArrayLinux.build(rai);
+        if (PlatformDetection.isWindows()) return SharedMemoryArrayWin.buildNumpyFormat(rai);
+    	else if (PlatformDetection.isLinux()) return SharedMemoryArrayLinux.buildNumpyFormat(rai);
     	else return SharedMemoryArrayMacOS.build(rai);
     }
 	
 	static <T extends RealType<T> & NativeType<T>>
 	SharedMemoryArray buildNumpyLikeSHMA(String name, RandomAccessibleInterval<T> rai) {
-        if (PlatformDetection.isWindows()) return SharedMemoryArrayWin.build(rai);
-    	else if (PlatformDetection.isLinux()) return SharedMemoryArrayLinux.build(rai);
-    	else return SharedMemoryArrayMacOS.build(rai);
+        if (PlatformDetection.isWindows()) return SharedMemoryArrayWin.buildNumpyFormat(name, rai);
+    	else if (PlatformDetection.isLinux()) return SharedMemoryArrayLinux.buildNumpyFormat(name, rai);
+    	else return SharedMemoryArrayMacOS.build(name, ai);
     }
 	
 	static <T extends RealType<T> & NativeType<T>>
 	RandomAccessibleInterval<T> buildImgLib2FromNumpyLikeSHMA(String memoryName) {
         if (PlatformDetection.isWindows()) 
-        	return SharedMemoryArrayWin.createImgLib2RaiFromSharedMemoryBlock(memoryName, shape, isFortran, dataType);
+        	return SharedMemoryArrayWin.createImgLib2RaiFromNumpyLikeSharedMemoryBlock(memoryName);
         else if (PlatformDetection.isLinux())
-    		return SharedMemoryArrayLinux.createImgLib2RaiFromSharedMemoryBlock(memoryName, shape, isFortran, dataType);
+    		return SharedMemoryArrayLinux.createImgLib2RaiFromNumpyLikeSharedMemoryBlock(memoryName);
         else
-    		return SharedMemoryArrayMacOS.createImgLib2RaiFromSharedMemoryBlock(memoryName, shape, isFortran, dataType);
+    		return SharedMemoryArrayMacOS.createImgLib2RaiFromNumpyLikeSharedMemoryBlock(memoryName);
+	}
+	
+	static void checkMemorySegmentName(String name) {
+		String auxName;
+		if (name.startsWith("Local\\"))
+			auxName = name.substring("Local\\".length());
+		else 
+			auxName = name;
+		for (String specialChar : SPECIAL_CHARS_LIST) {
+			if (auxName.contains(specialChar))
+				throw new IllegalArgumentException("Argument 'name' should not contain the special character '" + specialChar + "'.");
+		}
 	}
     
     public String getMemoryLocationName();
