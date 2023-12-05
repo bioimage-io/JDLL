@@ -188,7 +188,7 @@ public final class SharedMemoryArrayWin implements SharedMemoryArray
      */
     protected static <T extends RealType<T> & NativeType<T>> SharedMemoryArrayWin build(String name, RandomAccessibleInterval<T> rai)
     {
-    	checkMemorySegmentName(name);
+    	SharedMemoryArray.checkMemorySegmentName(name);
     	if (!name.startsWith("Local\\"))
     		name = "Local\\" + name;
 		SharedMemoryArrayWin shma = null;
