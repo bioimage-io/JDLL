@@ -174,7 +174,7 @@ public final class SharedMemoryArrayWin implements SharedMemoryArray
      * @param <T> 
      * 	the type of the {@link RandomAccessibleInterval}
      * @param name
-     * 	name of the memory location where the shm segment us going to be created, cannot contain any special character
+     * 	name of the memory location where the shm segment is going to be created, cannot contain any special character
      * and should start by "Local\\" in windows. The shm name is generated automatically withe the method {@link #build(String, RandomAccessibleInterval)}
      * @param rai 
      * 	{@link RandomAccessibleInterval} to be mapped into byte buffer
