@@ -20,6 +20,8 @@
  */
 package io.bioimage.modelrunner.tensor.shm;
 
+import java.io.ByteArrayInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.nio.ByteBuffer;
@@ -522,7 +524,49 @@ public final class SharedMemoryArrayLinux implements SharedMemoryArray
 	
 	// TODO support boolean
 	public static <T extends RealType<T> & NativeType<T>>
-	RandomAccessibleInterval<T> createImgLib2RaiFromSharedMemoryBlock(String memoryName, long[] shape, boolean isFortran, String dataType) {
+	RandomAccessibleInterval<T> buildImgLib2FromNumpyLikeSHMA(String memoryName) throws Exception {
+		if (!memoryName.startsWith("/")) memoryName = "/" + memoryName;
+	    CLibrary.Stat statBuffer = new CLibrary.Stat();
+	    int shmFd = INSTANCE.shm_open(memoryName, O_RDONLY, 0700);
+        if (shmFd < 0 || INSTANCE.fstat(shmFd, statBuffer) == -1) 
+            throw new RuntimeException("Failed to open shared memory. Errno: " + Native.getLastError());
+	    
+	    long size = statBuffer.st_size.longValue();
+
+        // Map the shared memory into the process's address space
+        Pointer pSharedMemory = INSTANCE.mmap(null, (int) size, PROT_READ, MAP_SHARED, shmFd, 0);
+        if (pSharedMemory == Pointer.NULL) {
+            CLibrary.INSTANCE.close(shmFd);
+            throw new RuntimeException("Failed to map shared memory. Errmo: " + Native.getLastError());
+        }
+        byte[] flat = new byte[(int) size];
+		for (int i = 0; i < size; i++)
+			flat[i] = pSharedMemory.getByte((long) i);
+		try (ByteArrayInputStream bis = new ByteArrayInputStream(flat)){
+			RandomAccessibleInterval<T> rai = DecodeNumpy.decodeNumpyFromByteArrayStream(new ByteArrayInputStream(flat));
+        	if (pSharedMemory != Pointer.NULL) {
+                INSTANCE.munmap(pSharedMemory, (int) size);
+            }
+            if (shmFd >= 0) {
+            	INSTANCE.close(shmFd);
+            }
+            INSTANCE.shm_unlink(memoryName);
+        	return rai;
+        } catch (Exception ex) {
+            if (pSharedMemory != Pointer.NULL) {
+                INSTANCE.munmap(pSharedMemory, (int) size);
+            }
+            if (shmFd >= 0) {
+            	INSTANCE.close(shmFd);
+            }
+            INSTANCE.shm_unlink(memoryName);
+        	throw ex;
+        }
+	}
+	
+	// TODO support boolean
+	public static <T extends RealType<T> & NativeType<T>>
+	RandomAccessibleInterval<T> createImgLib2RaiFromSharedMemoryBlock(String memoryName, long[] shape, boolean isFortran, String dataType) throws Exception {
 		int size = getArrayByteSize(shape, Cast.unchecked(CommonUtils.getImgLib2DataType(dataType)));
 		if (!memoryName.startsWith("/")) memoryName = "/" + memoryName;
 		int shmFd = INSTANCE.shm_open(memoryName, O_RDONLY, 0);
@@ -715,16 +759,15 @@ public final class SharedMemoryArrayLinux implements SharedMemoryArray
     
     public static void main(String[] args) throws IOException, InterruptedException, ArchiveException, URISyntaxException {
     	//int a = CLibrary.INSTANCE.shm_open("/shrdrd", O_RDWR | O_CREAT, 0700);
-    	Map<String, String> env = System.getenv();
-    	for (String envName : env.keySet()) {
-    	    System.out.format("%s=%s%n", envName, env.get(envName));
-    	}
-    	Conda conda = new Conda("/Users/Cgarcia/git/deep-icy/appose_arm64");
-    	conda.runPythonIn("stardist", "-c", "import os;from multiprocessing "
-    			+ "import shared_memory;shm=shared_memory.SharedM"
-    			+ "emory(create=True,size=10,name='my_shared_memroy');"
-    			+ "print(shm.name);shm.close();shm.unlink();print('done');"
-    			+ "print(os.environ)");
+    	String shmPath = "/dev/shm/psm_fa11ac37"; // Replace with your shared memory object path
+        CLibrary.Stat statBuffer = new CLibrary.Stat();
+
+        int result = CLibrary.INSTANCE.shm_open("/psm_fa11ac37", O_RDWR | O_CREAT, 0700);
+        if (CLibrary.INSTANCE.fstat(result, statBuffer) != -1) {
+            System.out.println("Size: " + statBuffer.st_size.longValue());
+        }
+        System.out.println("Shared Memory Size: " + statBuffer.st_rdev + " bytes");
+        System.out.print(false);
     }
 
 	@Override

@@ -20,6 +20,7 @@
  */
 package io.bioimage.modelrunner.tensor.shm;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.nio.ByteBuffer;
@@ -524,6 +525,48 @@ public final class SharedMemoryArrayMacOS implements SharedMemoryArray
         // Unlink the shared memory object
         INSTANCE.shm_unlink(this.memoryName);
         unlinked = true;
+	}
+	
+	// TODO support boolean
+	public static <T extends RealType<T> & NativeType<T>>
+	RandomAccessibleInterval<T> buildImgLib2FromNumpyLikeSHMA(String memoryName) throws Exception {
+		if (!memoryName.startsWith("/")) memoryName = "/" + memoryName;
+	    CLibrary.Stat statBuffer = new CLibrary.Stat();
+	    int shmFd = INSTANCE.shm_open(memoryName, O_RDONLY, 0700);
+        if (shmFd < 0 || INSTANCE.fstat(shmFd, statBuffer) == -1) 
+            throw new RuntimeException("Failed to open shared memory. Errno: " + Native.getLastError());
+	    
+	    long size = statBuffer.st_size.longValue();
+
+        // Map the shared memory into the process's address space
+        Pointer pSharedMemory = INSTANCE.mmap(null, (int) size, PROT_READ, MAP_SHARED, shmFd, 0);
+        if (pSharedMemory == Pointer.NULL) {
+            CLibrary.INSTANCE.close(shmFd);
+            throw new RuntimeException("Failed to map shared memory. Errmo: " + Native.getLastError());
+        }
+        byte[] flat = new byte[(int) size];
+		for (int i = 0; i < size; i++)
+			flat[i] = pSharedMemory.getByte((long) i);
+		try (ByteArrayInputStream bis = new ByteArrayInputStream(flat)){
+			RandomAccessibleInterval<T> rai = DecodeNumpy.decodeNumpyFromByteArrayStream(new ByteArrayInputStream(flat));
+        	if (pSharedMemory != Pointer.NULL) {
+                INSTANCE.munmap(pSharedMemory, (int) size);
+            }
+            if (shmFd >= 0) {
+            	INSTANCE.close(shmFd);
+            }
+            INSTANCE.shm_unlink(memoryName);
+        	return rai;
+        } catch (Exception ex) {
+            if (pSharedMemory != Pointer.NULL) {
+                INSTANCE.munmap(pSharedMemory, (int) size);
+            }
+            if (shmFd >= 0) {
+            	INSTANCE.close(shmFd);
+            }
+            INSTANCE.shm_unlink(memoryName);
+        	throw ex;
+        }
 	}
 	
 	// TODO support boolean

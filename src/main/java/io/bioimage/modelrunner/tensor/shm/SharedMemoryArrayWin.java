@@ -516,6 +516,45 @@ public final class SharedMemoryArrayWin implements SharedMemoryArray
 	
 	// TODO support boolean
 	protected static <T extends RealType<T> & NativeType<T>>
+	RandomAccessibleInterval<T> createImgLib2RaiFromNumpyLikeSharedMemoryBlock(String memoryName, long[] shape, boolean isFortran, String dataType) {
+		int size = getArrayByteSize(shape, Cast.unchecked(CommonUtils.getImgLib2DataType(dataType)));
+		if (!memoryName.startsWith("Local\\"))
+			memoryName = "Local\\" + memoryName;
+		WinNT.HANDLE hMapFile = Kernel32.INSTANCE.OpenFileMapping(
+                WinNT.FILE_MAP_READ | WinNT.FILE_MAP_WRITE,
+                false,
+                memoryName
+        );
+        if (hMapFile == null) {
+            throw new RuntimeException("OpenFileMapping failed with error: " + Kernel32.INSTANCE.GetLastError());
+        }
+
+        // Map the shared memory object into the current process's address space
+        Pointer pSharedMemory = Kernel32.INSTANCE.MapViewOfFile(
+                hMapFile,
+                WinNT.FILE_MAP_READ | WinNT.FILE_MAP_WRITE,
+                0,
+                0,
+                size
+        );
+        if (pSharedMemory == null) {
+        	Kernel32.INSTANCE.CloseHandle(hMapFile);
+            throw new RuntimeException("MapViewOfFile failed with error: " + Kernel32.INSTANCE.GetLastError());
+        }
+        try {
+        	RandomAccessibleInterval<T> rai = buildFromSharedMemoryBlock(pSharedMemory, shape, isFortran, dataType);
+        	Kernel32.INSTANCE.UnmapViewOfFile(pSharedMemory);
+            Kernel32.INSTANCE.CloseHandle(hMapFile);
+        	return rai;
+        } catch (Exception ex) {
+            Kernel32.INSTANCE.UnmapViewOfFile(pSharedMemory);
+            Kernel32.INSTANCE.CloseHandle(hMapFile);
+        	throw ex;
+        }
+	}
+	
+	// TODO support boolean
+	protected static <T extends RealType<T> & NativeType<T>>
 	RandomAccessibleInterval<T> createImgLib2RaiFromSharedMemoryBlock(String memoryName, long[] shape, boolean isFortran, String dataType) {
 		int size = getArrayByteSize(shape, Cast.unchecked(CommonUtils.getImgLib2DataType(dataType)));
 		if (!memoryName.startsWith("Local\\"))

@@ -53,13 +53,23 @@ public interface SharedMemoryArray extends Closeable {
     }
 	
 	static <T extends RealType<T> & NativeType<T>>
-	RandomAccessibleInterval<T> buildImgLib2FromSHMA(String memoryName, long[] shape, boolean isFortran, String dataType) {
+	RandomAccessibleInterval<T> buildImgLib2FromSHMA(String memoryName, long[] shape, boolean isFortran, String dataType) throws Exception {
         if (PlatformDetection.isWindows()) 
         	return SharedMemoryArrayWin.createImgLib2RaiFromSharedMemoryBlock(memoryName, shape, isFortran, dataType);
         else if (PlatformDetection.isLinux())
     		return SharedMemoryArrayLinux.createImgLib2RaiFromSharedMemoryBlock(memoryName, shape, isFortran, dataType);
         else
     		return SharedMemoryArrayMacOS.createImgLib2RaiFromSharedMemoryBlock(memoryName, shape, isFortran, dataType);
+	}
+	
+	static <T extends RealType<T> & NativeType<T>>
+	RandomAccessibleInterval<T> buildImgLib2FromNumpyLikeSHMA(String memoryName) throws Exception {
+        if (PlatformDetection.isWindows()) 
+        	return SharedMemoryArrayWin.buildImgLib2FromNumpyLikeSHMA(memoryName);
+        else if (PlatformDetection.isLinux())
+    		return SharedMemoryArrayLinux.buildImgLib2FromNumpyLikeSHMA(memoryName);
+        else
+    		return SharedMemoryArrayMacOS.buildImgLib2FromNumpyLikeSHMA(memoryName);
 	}
 	
 	static <T extends RealType<T> & NativeType<T>>

@@ -159,7 +159,7 @@ public class DecodeNumpy {
     		throw new IllegalArgumentException("Path provided does not correspond to a Numpy file: " + path);
     	}
     	try (InputStream targetStream = new FileInputStream(npyFile)) {
-    		return decodeNumpy(targetStream);
+    		return decodeNumpyFromByteArrayStream(targetStream);
     	}
     }
     
@@ -173,8 +173,8 @@ public class DecodeNumpy {
      * @return an ImgLib2 image with the same datatype, shape and data that the numpy array
      * @throws IOException if there is any error reading the {@link InputStream}
      */
-    private static < T extends RealType< T > & NativeType< T > > 
-    				RandomAccessibleInterval<T> decodeNumpy(InputStream is) throws IOException {
+    public static < T extends RealType< T > & NativeType< T > > 
+    				RandomAccessibleInterval<T> decodeNumpyFromByteArrayStream(InputStream is) throws IOException {
         DataInputStream dis;
         if (is instanceof DataInputStream) {
             dis = (DataInputStream) is;
