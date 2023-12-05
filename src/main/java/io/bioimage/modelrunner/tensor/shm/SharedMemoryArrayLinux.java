@@ -31,7 +31,6 @@ import org.apposed.appose.Conda;
 
 import com.sun.jna.Pointer;
 
-import io.bioimage.modelrunner.system.PlatformDetection;
 import io.bioimage.modelrunner.tensor.Utils;
 import io.bioimage.modelrunner.utils.CommonUtils;
 
@@ -74,10 +73,6 @@ public final class SharedMemoryArrayLinux implements SharedMemoryArray
 	/**
 	 * Name defining the location of the shared memory block
 	 */
-	private final String auxMemoryName = "/shm-" + UUID.randomUUID();
-	/**
-	 * Name defining the location of the shared memory block
-	 */
 	private final String memoryName;
 	/**
 	 * Size of the shared memory block
@@ -99,24 +94,21 @@ public final class SharedMemoryArrayLinux implements SharedMemoryArray
     public static final int O_RDONLY = 0;
     private static final int O_RDWR = 2;    // Read-write mode
     private static final int O_CREAT = 64;  // Create if it does not exist
-    private static final int S_IRWXU = 0700; // Owner can read, write, and execute
-    private static final int S_IRWXG = 0070; // Group can read, write, and execute
-    private static final int S_IRWXO = 0007; // Others can read, write, and execute
     private static final int PROT_READ = 0x1;  // Page can be read
     private static final int PROT_WRITE = 0x2; // Page can be written
     private static final int MAP_SHARED = 0x01; // Share changes
-    private static final int S_IRUSR = 0400; // Owner can read
-    private static final int S_IWUSR = 0200; // Owner can write
     
     private SharedMemoryArrayLinux(int size, String dtype, long[] shape)
+    {
+    	this("/shm-" + UUID.randomUUID(), size, dtype, shape);
+    }
+    
+    private SharedMemoryArrayLinux(String name, int size, String dtype, long[] shape)
     {
     	this.originalDataType = dtype;
     	this.originalDims = shape;
     	this.size = size;
-    	if (PlatformDetection.isMacOS())
-    		this.memoryName = this.auxMemoryName.substring(0, 30);
-    	else
-    		this.memoryName = this.auxMemoryName;
+    	this.memoryName = name;
 
         shmFd = INSTANCE.shm_open(this.memoryName, O_RDWR | O_CREAT, 0700);
         if (shmFd < 0) {
@@ -172,51 +164,77 @@ public final class SharedMemoryArrayLinux implements SharedMemoryArray
      */
     protected static <T extends RealType<T> & NativeType<T>> SharedMemoryArrayLinux build(RandomAccessibleInterval<T> rai)
     {
+    	return build("/shm-" + UUID.randomUUID(), rai);
+    }
+
+    /**
+     * Adds the {@link RandomAccessibleInterval} data to the {@link ByteBuffer} provided.
+     * The position of the ByteBuffer is kept in the same place as it was received.
+     * 
+     * @param <T> 
+     * 	the type of the {@link RandomAccessibleInterval}
+     * @param name
+     * 	name of the memory location where the shm segment is going to be created, cannot contain any special character
+     * and should start by "/" in Unix based systems. The shm name is generated automatically with the the method {@link #build(String, RandomAccessibleInterval)}
+     * @param rai 
+     * 	{@link RandomAccessibleInterval} to be mapped into byte buffer
+     * @param byteBuffer 
+     * 	target bytebuffer
+     * @return an instance of {@link SharedMemoryArrayLinux} containing the pointer to the 
+     * 	shared memory where the array is, the hMapFile, the size of the object in bytes, and 
+     * 	name of the memory location
+     * @throws IllegalArgumentException If the {@link RandomAccessibleInterval} type is not supported.
+     */
+    protected static <T extends RealType<T> & NativeType<T>> SharedMemoryArrayLinux build(String name, RandomAccessibleInterval<T> rai)
+    {
+    	SharedMemoryArray.checkMemorySegmentName(name);
+    	if (!name.startsWith("/"))
+    		name = "/" + name;
     	SharedMemoryArrayLinux shma = null;
     	if (Util.getTypeFromInterval(rai) instanceof ByteType) {
         	int size = 1;
         	for (long i : rai.dimensionsAsLongArray()) {size *= i;}
-        	shma = new SharedMemoryArrayLinux(size, CommonUtils.getDataType(rai), rai.dimensionsAsLongArray());
+        	shma = new SharedMemoryArrayLinux(name, size, CommonUtils.getDataType(rai), rai.dimensionsAsLongArray());
         	shma.buildInt8(Cast.unchecked(rai));
     	} else if (Util.getTypeFromInterval(rai) instanceof UnsignedByteType) {
         	int size = 1;
         	for (long i : rai.dimensionsAsLongArray()) {size *= i;}
-        	shma = new SharedMemoryArrayLinux(size, CommonUtils.getDataType(rai), rai.dimensionsAsLongArray());
+        	shma = new SharedMemoryArrayLinux(name, size, CommonUtils.getDataType(rai), rai.dimensionsAsLongArray());
         	shma.buildUint8(Cast.unchecked(rai));
     	} else if (Util.getTypeFromInterval(rai) instanceof ShortType) {
         	int size = 2;
         	for (long i : rai.dimensionsAsLongArray()) {size *= i;}
-        	shma = new SharedMemoryArrayLinux(size, CommonUtils.getDataType(rai), rai.dimensionsAsLongArray());
+        	shma = new SharedMemoryArrayLinux(name, size, CommonUtils.getDataType(rai), rai.dimensionsAsLongArray());
         	shma.buildInt16(Cast.unchecked(rai));
     	} else if (Util.getTypeFromInterval(rai) instanceof UnsignedShortType) {
         	int size = 2;
         	for (long i : rai.dimensionsAsLongArray()) {size *= i;}
-        	shma = new SharedMemoryArrayLinux(size, CommonUtils.getDataType(rai), rai.dimensionsAsLongArray());
+        	shma = new SharedMemoryArrayLinux(name, size, CommonUtils.getDataType(rai), rai.dimensionsAsLongArray());
         	shma.buildUint16(Cast.unchecked(rai));
     	} else if (Util.getTypeFromInterval(rai) instanceof IntType) {
         	int size = 4;
         	for (long i : rai.dimensionsAsLongArray()) {size *= i;}
-        	shma = new SharedMemoryArrayLinux(size, CommonUtils.getDataType(rai), rai.dimensionsAsLongArray());
+        	shma = new SharedMemoryArrayLinux(name, size, CommonUtils.getDataType(rai), rai.dimensionsAsLongArray());
         	shma.buildInt32(Cast.unchecked(rai));
     	} else if (Util.getTypeFromInterval(rai) instanceof UnsignedIntType) {
         	int size = 4;
         	for (long i : rai.dimensionsAsLongArray()) {size *= i;}
-        	shma = new SharedMemoryArrayLinux(size, CommonUtils.getDataType(rai), rai.dimensionsAsLongArray());
+        	shma = new SharedMemoryArrayLinux(name, size, CommonUtils.getDataType(rai), rai.dimensionsAsLongArray());
         	shma.buildUint32(Cast.unchecked(rai));
     	} else if (Util.getTypeFromInterval(rai) instanceof LongType) {
         	int size = 8;
         	for (long i : rai.dimensionsAsLongArray()) {size *= i;}
-        	shma = new SharedMemoryArrayLinux(size, CommonUtils.getDataType(rai), rai.dimensionsAsLongArray());
+        	shma = new SharedMemoryArrayLinux(name, size, CommonUtils.getDataType(rai), rai.dimensionsAsLongArray());
         	shma.buildInt64(Cast.unchecked(rai));
     	} else if (Util.getTypeFromInterval(rai) instanceof FloatType) {
         	int size = 4;
         	for (long i : rai.dimensionsAsLongArray()) {size *= i;}
-        	shma = new SharedMemoryArrayLinux(size, CommonUtils.getDataType(rai), rai.dimensionsAsLongArray());
+        	shma = new SharedMemoryArrayLinux(name, size, CommonUtils.getDataType(rai), rai.dimensionsAsLongArray());
         	shma.buildFloat32(Cast.unchecked(rai));
     	} else if (Util.getTypeFromInterval(rai) instanceof DoubleType) {
         	int size = 8;
         	for (long i : rai.dimensionsAsLongArray()) {size *= i;}
-        	shma = new SharedMemoryArrayLinux(size, CommonUtils.getDataType(rai), rai.dimensionsAsLongArray());
+        	shma = new SharedMemoryArrayLinux(name, size, CommonUtils.getDataType(rai), rai.dimensionsAsLongArray());
         	shma.buildFloat64(Cast.unchecked(rai));
     	} else {
             throw new IllegalArgumentException("The image has an unsupported type: " + Util.getTypeFromInterval(rai).getClass().toString());
