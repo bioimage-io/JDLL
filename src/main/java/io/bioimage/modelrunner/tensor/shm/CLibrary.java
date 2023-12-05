@@ -20,9 +20,15 @@
  */
 package io.bioimage.modelrunner.tensor.shm;
 
+import java.util.Arrays;
+import java.util.List;
+
 import com.sun.jna.Library;
 import com.sun.jna.Native;
 import com.sun.jna.Pointer;
+import com.sun.jna.Structure;
+import com.sun.jna.NativeLong;
+
 
 public interface CLibrary extends Library {
     CLibrary INSTANCE = Native.load("c", CLibrary.class);
@@ -33,5 +39,22 @@ public interface CLibrary extends Library {
     int munmap(Pointer addr, int length);
     int close(int fd);
     int shm_unlink(String name);
-}
+    int fstat(int fd, Stat statbuf);
 
+    class Stat extends Structure {
+        public NativeLong st_dev;
+        public NativeLong st_ino;
+        public NativeLong st_nlink;
+        public int st_mode;
+        public int st_uid;
+        public int st_gid;
+        public int __pad0;
+        public NativeLong st_rdev;
+        public NativeLong st_size;
+
+        @Override
+        protected List<String> getFieldOrder() {
+            return Arrays.asList("st_dev", "st_ino", "st_nlink", "st_mode", "st_uid", "st_gid", "__pad0", "st_rdev", "st_size"); // add other fields as needed
+        }
+    }
+}
