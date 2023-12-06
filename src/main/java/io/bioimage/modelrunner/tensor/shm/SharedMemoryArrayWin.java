@@ -22,6 +22,7 @@ package io.bioimage.modelrunner.tensor.shm;
 
 import java.io.ByteArrayInputStream;
 import java.nio.ByteBuffer;
+import java.util.HashMap;
 import java.util.UUID;
 
 import com.sun.jna.Pointer;
@@ -547,6 +548,45 @@ public final class SharedMemoryArrayWin implements SharedMemoryArray
 
 	
 	// TODO support boolean
+	protected static HashMap<String, Object> buildMapFromNumpyLikeSHMA(String memoryName) throws Exception {
+		if (!memoryName.startsWith("Local\\"))
+			memoryName = "Local\\" + memoryName;
+		WinNT.HANDLE hMapFile = Kernel32.INSTANCE.OpenFileMapping( WinNT.FILE_MAP_READ, false, memoryName);
+        if (hMapFile == null) {
+            throw new RuntimeException("OpenFileMapping failed with error: " + Kernel32.INSTANCE.GetLastError());
+        }
+        // Map the shared memory object into the current process's address space
+        Pointer pSharedMemory = Kernel32.INSTANCE.MapViewOfFile(hMapFile, WinNT.FILE_MAP_READ, 0, 0, 0);
+        if (pSharedMemory == null) {
+        	Kernel32.INSTANCE.CloseHandle(hMapFile);
+            throw new RuntimeException("MapViewOfFile failed with error: " + Kernel32.INSTANCE.GetLastError());
+        }
+        Kernel32.MEMORY_BASIC_INFORMATION mbi = new Kernel32.MEMORY_BASIC_INFORMATION();
+        
+        if (Kernel32.INSTANCE.VirtualQueryEx(
+        		Kernel32.INSTANCE.GetCurrentProcess(), pSharedMemory, mbi, new BaseTSD.SIZE_T((long) mbi.size())
+        		).intValue() == 0) {
+            throw new RuntimeException("Unable to retrieve the size of the shm segment located at '" 
+        		+ memoryName + "'. Errno: " + Kernel32.INSTANCE.GetLastError());
+        }
+        int size = mbi.regionSize.intValue();
+        byte[] flat = new byte[(int) size];
+		for (int i = 0; i < size; i++)
+			flat[i] = pSharedMemory.getByte((long) i);
+        try (ByteArrayInputStream bis = new ByteArrayInputStream(flat)) {
+			HashMap<String, Object> map = DecodeNumpy.decodeNumpyFromByteArrayStreamToRawMap(bis);
+        	Kernel32.INSTANCE.UnmapViewOfFile(pSharedMemory);
+            Kernel32.INSTANCE.CloseHandle(hMapFile);
+        	return map;
+        } catch (Exception ex) {
+            Kernel32.INSTANCE.UnmapViewOfFile(pSharedMemory);
+            Kernel32.INSTANCE.CloseHandle(hMapFile);
+        	throw ex;
+        }
+	}
+
+	
+	// TODO support boolean
 	protected static <T extends RealType<T> & NativeType<T>>
 	RandomAccessibleInterval<T> buildImgLib2FromNumpyLikeSHMA(String memoryName) throws Exception {
 		if (!memoryName.startsWith("Local\\"))
@@ -577,7 +617,7 @@ public final class SharedMemoryArrayWin implements SharedMemoryArray
         	RandomAccessibleInterval<T> rai = DecodeNumpy.decodeNumpyFromByteArrayStream(bis);
         	Kernel32.INSTANCE.UnmapViewOfFile(pSharedMemory);
             Kernel32.INSTANCE.CloseHandle(hMapFile);
-        	return null;
+        	return rai;
         } catch (Exception ex) {
             Kernel32.INSTANCE.UnmapViewOfFile(pSharedMemory);
             Kernel32.INSTANCE.CloseHandle(hMapFile);

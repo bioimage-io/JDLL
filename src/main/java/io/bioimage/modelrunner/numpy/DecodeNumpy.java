@@ -119,6 +119,12 @@ public class DecodeNumpy {
         DATA_TYPES_MAP.put("float64", 8);
     }
 
+    public final static String DATA_KEY = "data";
+    public final static String SHAPE_KEY = "shape";
+    public final static String DTYPE_KEY = "dtype";
+    public final static String IS_FORTRAN_ORDER_KEY = "is_fortran_order";
+    public final static String BYTE_ORDER_KEY = "byte_order";
+
     /**
      * PAttern that matches the metadata description of a numpy file
      */
@@ -243,11 +249,11 @@ public class DecodeNumpy {
         readData(dis, data, len);
 
         HashMap<String, Object> map = new HashMap<String, Object>();
-        map.put("shape", shape);
-        map.put("byte_order", byteOrder);
-        map.put("dtype", dtype);
-        map.put("fortran_order", fortranOrder.equals("True"));
-        map.put("data", data);
+        map.put(SHAPE_KEY, shape);
+        map.put(BYTE_ORDER_KEY, byteOrder);
+        map.put(DTYPE_KEY, dtype);
+        map.put(IS_FORTRAN_ORDER_KEY, fortranOrder.equals("True"));
+        map.put(DATA_KEY, data);
 
         return map;
     }

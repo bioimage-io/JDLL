@@ -543,7 +543,7 @@ public final class SharedMemoryArrayLinux implements SharedMemoryArray
 		for (int i = 0; i < size; i++)
 			flat[i] = pSharedMemory.getByte((long) i);
 		try (ByteArrayInputStream bis = new ByteArrayInputStream(flat)){
-			HashMap<String, Object> map = DecodeNumpy.decodeNumpyFromByteArrayStreamToRawMap(new ByteArrayInputStream(flat));
+			HashMap<String, Object> map = DecodeNumpy.decodeNumpyFromByteArrayStreamToRawMap(bis);
         	if (pSharedMemory != Pointer.NULL) {
                 INSTANCE.munmap(pSharedMemory, (int) size);
             }
@@ -585,7 +585,7 @@ public final class SharedMemoryArrayLinux implements SharedMemoryArray
 		for (int i = 0; i < size; i++)
 			flat[i] = pSharedMemory.getByte((long) i);
 		try (ByteArrayInputStream bis = new ByteArrayInputStream(flat)){
-			RandomAccessibleInterval<T> rai = DecodeNumpy.decodeNumpyFromByteArrayStream(new ByteArrayInputStream(flat));
+			RandomAccessibleInterval<T> rai = DecodeNumpy.decodeNumpyFromByteArrayStream(bis);
         	if (pSharedMemory != Pointer.NULL) {
                 INSTANCE.munmap(pSharedMemory, (int) size);
             }

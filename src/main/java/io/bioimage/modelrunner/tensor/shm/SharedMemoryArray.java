@@ -21,6 +21,7 @@
 package io.bioimage.modelrunner.tensor.shm;
 
 import java.io.Closeable;
+import java.util.HashMap;
 
 import com.sun.jna.Pointer;
 
@@ -72,7 +73,7 @@ public interface SharedMemoryArray extends Closeable {
     		return SharedMemoryArrayMacOS.buildImgLib2FromNumpyLikeSHMA(memoryName);
 	}
 	
-	static Map<String, Object> buildMapFromNumpyLikeSHMA(String memoryName) throws Exception {
+	static HashMap<String, Object> buildMapFromNumpyLikeSHMA(String memoryName) throws Exception {
         if (PlatformDetection.isWindows()) 
         	return SharedMemoryArrayWin.buildMapFromNumpyLikeSHMA(memoryName);
         else if (PlatformDetection.isLinux())
