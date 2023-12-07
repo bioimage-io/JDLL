@@ -170,6 +170,18 @@ public class TensorSpec {
     }
     
     /**
+     * In order to handle tensors that might be too big, or to handle halo to remove border artifacts,
+     * the image tensors can be tiled, into smaller images and the passed to the corresponding Neural NEtwork.
+     * This method allows setting the size of the tile. Note that the tile size should fulfil the parameters
+     * specified in the bioimage.io rdf.yaml file, and if it does not, running the model will fail
+     * @param tileSize
+     * 	size of the tile the input is going to be divided in
+     */
+    public void setTileSize(int[] tileSize) {
+    	this.processingPatch = tileSize;
+    }
+    
+    /**
      * REturn the axes order in a readable format for humans
      * Example: byxc converts into Y,X,C; xbyc converts into X,Y,C
      * @return the axes order in a readable format
