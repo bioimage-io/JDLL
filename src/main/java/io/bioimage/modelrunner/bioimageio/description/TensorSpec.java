@@ -88,9 +88,9 @@ public class TensorSpec {
      */
     private boolean tiling  = true;
     /**
-     * Patch array selected by the user and used to process the image
+     * Tile/patch size selected by the user and used to process the image
      */
-    private int[] processingPatch;
+    private int[] processingTile;
     /**
      * String representing the object tensor type image
      */
@@ -137,6 +137,7 @@ public class TensorSpec {
         {
             tensor.type = LIST;
         }
+        tensor.processingTile = tensor.shape.getTileRecomendedSize();
 
         List<?> preprocessingTensors = (List<?>) tensorSpecMap.get("preprocessing");
         if (preprocessingTensors == null)
@@ -178,7 +179,7 @@ public class TensorSpec {
      * 	size of the tile the input is going to be divided in
      */
     public void setTileSize(int[] tileSize) {
-    	this.processingPatch = tileSize;
+    	this.processingTile = tileSize;
     }
     
     /**
@@ -199,7 +200,7 @@ public class TensorSpec {
      * Example: if byxc and [1,256,256,3], then 256,256,3
      * @param arr
      * 	arra contianing the whole size of a tensor
-     * @return the patch size in displayable format
+     * @return the tile/patch size in displayable format
      */
     public int[] getDisplayableSizes(int[] arr) {
     	int bInd = axes.toUpperCase().indexOf("B");
@@ -217,7 +218,7 @@ public class TensorSpec {
      * Example: if byxc and [1,256,256,3], then 256,256,3
      * @param arr
      * 	arra contianing the whole size of a tensor
-     * @return the patch size in a String displayable (without b dimension) format
+     * @return the tile/patch size in a String displayable (without b dimension) format
      */
     public String getDisplayableSizesString(int[] arr) {
     	int[] displayableArr = getDisplayableSizes(arr);
@@ -240,8 +241,8 @@ public class TensorSpec {
     	for (int i = 0; i < axesArr.length; i ++) {
     		if (axesArr[i].equals("B"))
     			continue;
-    		minStr += axesArr[i] + "=" + shape.getPatchMinimumSize()[i] + ", ";
-    		stepStr += axesArr[i] + "=" + shape.getPatchPositionStep()[i] + ", ";
+    		minStr += axesArr[i] + "=" + shape.getTileMinimumSize()[i] + ", ";
+    		stepStr += axesArr[i] + "=" + shape.getTileStep()[i] + ", ";
     	}
     	// Remove the final ", "
     	minStr = minStr.substring(0, minStr.length() - ", ".length());
@@ -258,8 +259,8 @@ public class TensorSpec {
      * 	axes order of the size array
      * @return the array with the patch of interest
      */
-    public int[] getOptimalPatch(int[] seqSize, String seqSizeAxes) {
-    	return getOptimalPatchConsiderTiling(seqSize, seqSizeAxes, tiling);
+    public int[] getOptimalTileSize(int[] seqSize, String seqSizeAxes) {
+    	return getOptimalTileSizeForTiling(seqSize, seqSizeAxes, tiling);
     }
     
     /**
@@ -274,14 +275,14 @@ public class TensorSpec {
      * 	whether tiling is considered or not.
      * @return the array with the patch of interest
      */
-    public int[] getOptimalPatchConsiderTiling(int[] seqSize, String seqSizeAxes, boolean applyTiling) {
+    public int[] getOptimalTileSizeForTiling(int[] seqSize, String seqSizeAxes, boolean applyTiling) {
     	int[] patch = new int[axes.length()];
     	String seqSizeAxesUpper = seqSizeAxes.toUpperCase();
     	String[] axesArr = axes.toUpperCase().split("");
 		for (int ii = 0; ii < axesArr.length; ii ++) {
 			float haloVal = halo[ii];
-			int min = shape.getPatchMinimumSize()[ii];
-			int step = shape.getPatchPositionStep()[ii];
+			int min = shape.getTileMinimumSize()[ii];
+			int step = shape.getTileStep()[ii];
 			int ind = seqSizeAxesUpper.indexOf(axesArr[ii]);
 			int size = seqSize[ind];
 			if (step != 0 && applyTiling) {
@@ -314,8 +315,8 @@ public class TensorSpec {
      * 	axes order of the size array
      * @return the array with the patch of interest
      */
-    public int[] getOptimalPatchNoTiling(int[] seqSize, String seqSizeAxes) {
-		return getOptimalPatchConsiderTiling(seqSize, seqSizeAxes, true);
+    public int[] getOptimalTileSizeNoTiling(int[] seqSize, String seqSizeAxes) {
+		return getOptimalTileSizeForTiling(seqSize, seqSizeAxes, true);
     }
     
     /**
@@ -326,7 +327,7 @@ public class TensorSpec {
      * 	the patch size as a String introduced by the user
      * @return the patch int array
      */
-    public int[] getPatchArrFromStr(String patchStr) {
+    public int[] getTileSizeFromStr(String patchStr) {
     	String[] axesArr = axes.toUpperCase().split("");
     	int[] patchArr = new int[axesArr.length];
     	String[] patchstrArr = patchStr.split(",");
@@ -375,7 +376,7 @@ public class TensorSpec {
      * If also validates if the tile size selected fufils the requirements
      * specified in the bioimage.io rdf.yaml file.
      * Both arguments must follow the same axis order of this tensor.
-     * If everything is correct, sets {@link #processingPatch} to the first argument.
+     * If everything is correct, sets {@link #processingTile} to the first argument.
      * @param tileSize
      * 	the size of the tile/patch in which the main tensor is going to be divided.
      * 	It should follow the tensor axes order as defined in the Bioimage.io rdf.yaml file
@@ -396,8 +397,8 @@ public class TensorSpec {
     	// VAlidate that the minimum size and step constraints are fulfilled
     	validateStepMin(tileSize);
     	// Finally validate that the sequence size complies with the patch size selected
-    	validatePatchVsImage(tileSize, tensorImageSize);
-    	this.processingPatch = tileSize;
+    	validateTileSizeVsImage(tileSize, tensorImageSize);
+    	this.processingTile = tileSize;
     }
     
     /**
@@ -406,7 +407,7 @@ public class TensorSpec {
      * If also validates if the tile size selected fufils the requirements
      * specified in the bioimage.io rdf.yaml file.
      * Both arguments must follow the same axis order of this tensor.
-     * If everything is correct, sets {@link #processingPatch} to the first argument.
+     * If everything is correct, sets {@link #processingTile} to the first argument.
      * @param tileSize
      * 	the size of the tile/patch in which the main tensor is going to be divided
      * @param tileAxesOrder
@@ -432,43 +433,43 @@ public class TensorSpec {
     	// VAlidate that the minimum size and step constraints are fulfilled
     	validateStepMin(tileSize);
     	// Finally validate that the sequence size complies with the patch size selected
-    	validatePatchVsImage(tileSize, tensorImageSize);
-    	this.processingPatch = tileSize;
+    	validateTileSizeVsImage(tileSize, tensorImageSize);
+    	this.processingTile = tileSize;
     }
 
     
     /**
-     * VAlidate that the patch selected, is compatible with the image size.
+     * VAlidate that the wanted tile size, is compatible with the image size.
      * The patch cannot be 3 times bigger than the image size because mirroring
      * would not work, cannot be smaller than total halo * 2, and patching cannot
      * exist along the channels dimension
-     * @param patch
-     * 	the proposed patch size
+     * @param tileSize
+     * 	the proposed tile/patch size
      * @param seqSize
      * 	the sequence size
      * @throws Exception if any of the constraints is not fulfilled
      */
-    private void validatePatchVsImage(int[] patch, int[] seqSize) throws Exception {
-    	validatePatchVsImageSize(patch, seqSize);
-    	validatePatchVsHalo(patch);
-    	validatePatchVsImageChannel(patch, seqSize);
+    private void validateTileSizeVsImage(int[] tileSize, int[] seqSize) throws Exception {
+    	validateTileVsImageSize(tileSize, seqSize);
+    	validateTileVsHalo(tileSize);
+    	validateTileVsImageChannel(tileSize, seqSize);
     }
     
     /**
-     * VAlidate that the patch selected, is compatible with the image size.
-     * The patch cannot be 3 times bigger than the image size because mirroring
+     * VAlidate that the tile/patch selected, is compatible with the image size.
+     * The tile/patch cannot be 3 times bigger than the image size because mirroring
      * would not work.
-     * @param patch
-     * 	the proposed patch size
+     * @param tileSize
+     * 	the proposed tile/patch size
      * @param seqSize
      * 	the sequence size
      * @throws Exception if any of the constraints is not fulfilled
      */
-    private void validatePatchVsImageSize(int[] patch, int[] seqSize) throws Exception {
-    	boolean tooBig = IntStream.range(0, patch.length).anyMatch(i -> patch[i] > seqSize[i] * 3);
+    private void validateTileVsImageSize(int[] tileSize, int[] seqSize) throws Exception {
+    	boolean tooBig = IntStream.range(0, tileSize.length).anyMatch(i -> tileSize[i] > seqSize[i] * 3);
     	if (tooBig) {
     		int[] maxPatch = new int[seqSize.length];
-    		IntStream.range(0, patch.length).forEach(i -> maxPatch[i] = seqSize[i] * 3);
+    		IntStream.range(0, tileSize.length).forEach(i -> maxPatch[i] = seqSize[i] * 3);
     		throw new Exception("Error in the axes size selected.\n"
     						+ "The axes size introduced in any of the dimensions cannot\n"
     						+ "be bigger than 3 times the Sequence size.\n"
@@ -477,21 +478,21 @@ public class TensorSpec {
 							+ " for axes " + getDisplayableAxesOrder() + ".\n"
 							+ "With those dimensions the biggest axes size \n"
 							+ "for each dimension should be: " + getDisplayableSizesString(maxPatch) + ".\n"
-							+ "However, the axes size introduced is: " + getDisplayableSizesString(patch) + ".");
+							+ "However, the axes size introduced is: " + getDisplayableSizesString(tileSize) + ".");
     	}
     }
     
     /**
-     * VAlidate that the patch selected, is compatible with the image size.
+     * VAlidate that the tile/patch selected, is compatible with the image size.
      * The patch cannot be smaller than total halo * 2.
-     * @param patch
+     * @param tile
      * 	the proposed patch size
      * @param seqSize
      * 	the sequence size
      * @throws Exception if any of the constraints is not fulfilled
      */
-    private void validatePatchVsHalo(int[] patch) throws Exception {
-    	boolean tooSmall = IntStream.range(0, patch.length).anyMatch(i -> patch[i] <= halo[i] * 2);
+    private void validateTileVsHalo(int[] tile) throws Exception {
+    	boolean tooSmall = IntStream.range(0, tile.length).anyMatch(i -> tile[i] <= halo[i] * 2);
     	if (tooSmall) {
     		int[] minPatch = new int[halo.length];
     		for (int i = 0; i < halo.length; i ++) {minPatch[i] = (int) (halo[i] * 2);}
@@ -501,7 +502,7 @@ public class TensorSpec {
     						+ "Regarding the total halo (max(offset + halo)) of"
     						+ "tensor '" + name + "' the minimum size for each \n"
 							+ "dimension should be: " + getDisplayableSizesString(minPatch) + ".\n"
-							+ "However, the axes size introduced is: " + getDisplayableSizesString(patch) 
+							+ "However, the axes size introduced is: " + getDisplayableSizesString(tile) 
 							+ " for axes " + getDisplayableAxesOrder() + ".");
     	}
     }
@@ -509,44 +510,44 @@ public class TensorSpec {
     /**
      * VAlidate that the patch selected, is compatible with the image size.
      * The patch cannot be different than the image size along the channel dimension
-     * @param patch
+     * @param tile
      * 	the proposed patch size
      * @param seqSize
      * 	the sequence size
      * @throws Exception if any of the constraints is not fulfilled
      */
-    private void validatePatchVsImageChannel(int[] patch, int[] seqSize) throws Exception {
+    private void validateTileVsImageChannel(int[] tile, int[] seqSize) throws Exception {
     	int channelInd = axes.toLowerCase().indexOf("c");
-    	if (channelInd != -1 && patch[channelInd] != seqSize[channelInd]) {
+    	if (channelInd != -1 && tile[channelInd] != seqSize[channelInd]) {
     		throw new Exception("Error in the axes size selected.\n"
 					+ "DeepIcy does not allow tiling along the channels dimension.\n"
 					+ "The axes size introduced for axis 'C' should be equal to\n"
 					+ "the number of channels in the image.\n"
 					+ "For input tensor '" + name + "', the sequence selected\n"
 					+ "has '" + seqSize[channelInd] + "' channels whereas the\n"
-					+ "axes size for 'C' is '" + patch[channelInd] + "'.");
+					+ "axes size for 'C' is '" + tile[channelInd] + "'.");
     	}
     }
     
     /**
      * Validate that the  patch size is a product of min_size + step * n where n can be any integer >= 0
-     * @param patch
-     * 	the patch introduced by the user
+     * @param tileSize
+     * 	the size of the tile/patch introduced by the user
      * @throws Exception if the patch does not fulfill the min and step conditions
      */
-    private void validateStepMin(int[] patch) throws Exception {
-    	boolean badSize = IntStream.range(0, patch.length)
+    private void validateStepMin(int[] tileSize) throws Exception {
+    	boolean badSize = IntStream.range(0, tileSize.length)
 				.anyMatch(i -> 
-				shape.getPatchPositionStep()[i] != 0 ?
-						(patch[i] - shape.getPatchMinimumSize()[i]) % shape.getPatchPositionStep()[i] != 0
-						: patch[i] != shape.getPatchMinimumSize()[i]
+				shape.getTileStep()[i] != 0 ?
+						(tileSize[i] - shape.getTileMinimumSize()[i]) % shape.getTileStep()[i] != 0
+						: tileSize[i] != shape.getTileMinimumSize()[i]
 				);
     	if (badSize) {
     		throw new Exception("Error in the axes size selected.\n"
     				+ "Tensor " + getName() + " with the following requirements:\n"
     				+ getDisplayableStepMinConstraints() + " are not compatible with\n"
-					+ "the introduced patch size (" + getDisplayableSizesString(patch) + ").\n"
-					+ "Regard that when step = 0, the patch size has to be equal\n"
+					+ "the introduced tile size (" + getDisplayableSizesString(tileSize) + ").\n"
+					+ "Regard that when step = 0, the tile size has to be equal\n"
 					+ "to the minimum size");
     	}
     }
@@ -554,24 +555,24 @@ public class TensorSpec {
     /**
      * Validate that the size of the patch is correct in the case that the tensor
      * does not allow tiling
-     * @param patch
+     * @param tile
      * 	size of the patch following the axes order
      * @param seqSize
      * 	size of the image following the tensor axes order
      * @throws Exception if there is any issue with the validation
      */
-    private void validateNoTiling(int[] patch, int[] seqSize) throws Exception {
-    	int[] optimalPatch = getOptimalPatch(seqSize, axes);
+    private void validateNoTiling(int[] tile, int[] seqSize) throws Exception {
+    	int[] optimalPatch = getOptimalTileSize(seqSize, axes);
     	boolean patchEqualsOptimal = true;
-    	for (int i = 0; i < patch.length; i ++) {
-    		if (optimalPatch[i] != patch[i]) {
+    	for (int i = 0; i < tile.length; i ++) {
+    		if (optimalPatch[i] != tile[i]) {
     			patchEqualsOptimal = false;
     			break;
     		}
     	}
     	boolean seqBiggerThanPatch = true;
-    	for (int i = 0; i < patch.length; i ++) {
-    		if (seqSize[i] > patch[i]) {
+    	for (int i = 0; i < tile.length; i ++) {
+    		if (seqSize[i] > tile[i]) {
     			seqBiggerThanPatch = false;
     			break;
     		}
@@ -582,17 +583,17 @@ public class TensorSpec {
 					+ "and image size (" + Arrays.toString(getDisplayableSizes(seqSize)) + ") the tile size can\n"
 					+ "only be (" + getDisplayableSizes(optimalPatch) + ") in order to process the\n"
 					+ "whole image at once. These dimensions do not coincide with the ones\n"
-					+ "introduced (" + Arrays.toString(getDisplayableSizes(patch)) + ").");
+					+ "introduced (" + Arrays.toString(getDisplayableSizes(tile)) + ").");
     	}
     	if (seqBiggerThanPatch){
     		throw new Exception("Error in the tiling size selected. "
     				+ "Tensor " + getName() + " does not allow tiling and the "
 					+ "image size (" + Arrays.toString(getDisplayableSizes(seqSize)) + ") is bigger than the"
-					+ " tile size (" + Arrays.toString(getDisplayableSizes(patch)) + ") selected. "
+					+ " tile size (" + Arrays.toString(getDisplayableSizes(tile)) + ") selected. "
 					+ "With this parameters it would be impossible to process the whole"
 					+ "image without tiling.");
     	}
-    	this.processingPatch = getOptimalPatchNoTiling(seqSize, axes);
+    	this.processingTile = getOptimalTileSizeNoTiling(seqSize, axes);
     }
     
     /**
@@ -613,23 +614,23 @@ public class TensorSpec {
     
     /**
      * Return a String containing the dimensions of the optimal
-     * patch for the selected image
+     * tile/patch for the selected image
      * @param imSize
      * 	size of the image. The order is Width, Height, Channel, Slices, time
      * @param axesOrder
      * 	the axes order of the imSize parameter
-     * @return the String containing a patch in the format 256,256,3
+     * @return the String containing a tile/patch in the format 256,256,3
      */
-    public String getDisplayableOptimalPatch(int[] imSize, String axesOrder) {
+    public String getDisplayableOptimalTile(int[] imSize, String axesOrder) {
     	// Remove the B axes from the optimal patch size and get the String representation
-    	String patchStr = getDisplayableSizesString(getOptimalPatch(imSize, axesOrder));
+    	String patchStr = getDisplayableSizesString(getOptimalTileSize(imSize, axesOrder));
     	return patchStr;
     }
     
     /**
-     * Validates the selected patch array fulfills the conditions specified in the yaml file
+     * Validates the selected tile/patch array fulfills the conditions specified in the yaml file
      * with respect to the tensor size before introducing it into the model
-     * If it is valid, it sets the value as the {@link #processingPatch}
+     * If it is valid, it sets the value as the {@link #processingTile}
      * @param seqSize
      * 	size of the tensor before inference (after pre-processing)
      * @param axesOrder
@@ -642,21 +643,21 @@ public class TensorSpec {
     	// If tiling is not allowed, the patch array needs to be equal to the
     	// optimal patch
     	if (!tiling) {
-    		validateNoTiling(processingPatch, seqSize);
+    		validateNoTiling(processingTile, seqSize);
     	}
     	// VAlidate that the minimum size and step constraints are fulfilled
-    	validateStepMin(processingPatch);
+    	validateStepMin(processingTile);
     	// Finally validate that the sequence size complies with the patch size selected
-    	validatePatchVsImage(processingPatch, seqSize);
+    	validateTileSizeVsImage(processingTile, seqSize);
     }
 
 
     /**
-     * REturn the patch for this tensor introduced by the user for processing
-     * @return the processing patch
+     * REturn the tile/patch size for this tensor introduced by the user for processing
+     * @return the tile size to process the tensor
      */
-    public int[] getProcessingPatch() {
-    	return this.processingPatch;
+    public int[] getTileSize() {
+    	return this.processingTile;
     }
 
     /**

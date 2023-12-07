@@ -298,16 +298,16 @@ public class PatchGridCalculator <T extends RealType<T> & NativeType<T>>
     {
     	int[] intShape = new int[rai.dimensionsAsLongArray().length];
     	for (int i = 0; i < intShape.length; i ++) intShape[i] = (int) rai.dimensionsAsLongArray()[i];
-    	if (spec.getProcessingPatch() == null) {
+    	if (spec.getTileSize() == null) {
 			try {
-				spec.setTileSizeForTensorAndImageSize(spec.getOptimalPatch(intShape, spec.getAxesOrder()), intShape);
+				spec.setTileSizeForTensorAndImageSize(spec.getOptimalTileSize(intShape, spec.getAxesOrder()), intShape);
 			} catch (Exception e) {
 				throw new IllegalArgumentException("Tensor dimensions of tensor named '" + spec.getName() + "' "
 						+ "are not compatible with the requirements set by the"
 						+ " rdf.yaml file for tensor '" + spec.getName() + "': " + e.getMessage());
 			}
     	}
-    	long[] tileSize = Arrays.stream(spec.getProcessingPatch()).mapToLong(i -> i).toArray();
+    	long[] tileSize = Arrays.stream(spec.getTileSize()).mapToLong(i -> i).toArray();
     	return computePatchSpecs(spec, rai, tileSize);
     }
 
@@ -369,10 +369,10 @@ public class PatchGridCalculator <T extends RealType<T> & NativeType<T>>
         long[] tileSize;
         long[] shapeLong;
         if (tensorSpec.getShape().getReferenceInput() == null && !tensorSpec.getTiling()) {
-        	shapeLong = Arrays.stream(tensorSpec.getShape().getPatchRecomendedSize()).mapToLong(i -> i).toArray();
+        	shapeLong = Arrays.stream(tensorSpec.getTileSize()).mapToLong(i -> i).toArray();
         	tileSize = shapeLong;
         } else if (tensorSpec.getShape().getReferenceInput() == null) {
-        	tileSize = Arrays.stream(tensorSpec.getShape().getPatchRecomendedSize()).mapToLong(i -> i).toArray();
+        	tileSize = Arrays.stream(tensorSpec.getTileSize()).mapToLong(i -> i).toArray();
         	double[] inputTileToTotal = IntStream.range(0, tensorSpec.getAxesOrder().length())
         			.mapToDouble(i -> ((double) refTilesSpec.getNonTiledTensorDims()[i]) / ((double) refTilesSpec.getTileSize()[i]))
         			.toArray();

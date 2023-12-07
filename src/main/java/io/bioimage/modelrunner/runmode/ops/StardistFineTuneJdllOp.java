@@ -730,7 +730,7 @@ public class StardistFineTuneJdllOp implements OpInterface {
 		String rdfFileName = new File(model).getParentFile() + File.separator + Constants.RDF_FNAME;
 		ModelDescriptor descriptor = ModelDescriptor.readFromLocalFile(rdfFileName, false);
 		int cInd = descriptor.getInputTensors().get(0).getAxesOrder().indexOf("c");
-		nChannelsModel = descriptor.getInputTensors().get(0).getShape().getPatchMinimumSize()[cInd];
+		nChannelsModel = descriptor.getInputTensors().get(0).getShape().getTileMinimumSize()[cInd];
 	}
 	
 	/**

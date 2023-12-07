@@ -130,7 +130,7 @@ public class ShapeSpec
     /**
      * @return The int array of the recommended tensor size.
      */
-    public int[] getPatchRecomendedSize()
+    protected int[] getTileRecomendedSize()
     {
         return patchRecomendedSize;
     }
@@ -138,7 +138,7 @@ public class ShapeSpec
     /**
      * @return The int array with the minimum valid tensor size.
      */
-    public int[] getPatchMinimumSize()
+    public int[] getTileMinimumSize()
     {
 
         return patchMinimumSize;
@@ -147,7 +147,7 @@ public class ShapeSpec
     /**
      * @return The int array with the valid tensor size step.
      */
-    public int[] getPatchPositionStep()
+    public int[] getTileStep()
     {
         return patchPositionStep;
     }
@@ -204,8 +204,8 @@ public class ShapeSpec
     @Override
     public String toString()
     {
-        return "ShapeSpec {input=" + input + ", patchRecommendedSize=" + Arrays.toString(patchRecomendedSize)
-                + ", patchMinSize=" + Arrays.toString(patchMinimumSize) + ", patchPositionStep="
+        return "ShapeSpec {input=" + input + ", tileRecommendedSize=" + Arrays.toString(patchRecomendedSize)
+                + ", tileMinSize=" + Arrays.toString(patchMinimumSize) + ", tileStep="
                 + Arrays.toString(patchPositionStep) + ", referenceInput=" + referenceInput + ", scale="
                 + Arrays.toString(scale) + ", offset=" + Arrays.toString(offset) + ", fixedSize=" + fixedSize + "}";
     }

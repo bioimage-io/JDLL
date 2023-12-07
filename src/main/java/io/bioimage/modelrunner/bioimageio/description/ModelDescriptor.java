@@ -698,8 +698,8 @@ public class ModelDescriptor
     		String minString = "&emsp -minimum size: ";
     		String stepString = "&emsp -step: ";
     		for (int i = 0; i < dims.length; i ++) {
-    			minString += dims[i] + ": " + inp.getShape().getPatchMinimumSize()[i] + ", ";
-    			stepString += dims[i] + ": " + inp.getShape().getPatchPositionStep()[i] + ", ";
+    			minString += dims[i] + ": " + inp.getShape().getTileMinimumSize()[i] + ", ";
+    			stepString += dims[i] + ": " + inp.getShape().getTileStep()[i] + ", ";
     		}
     		// Remove the "; " characters at the end and add "]"
     		minString = minString.substring(0, minString.length() - 2) + "<br>";

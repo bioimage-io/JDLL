@@ -153,8 +153,8 @@ public class ExampleLoadAndRunAllBmzModels {
 		for ( TensorSpec it : descriptor.getInputTensors()) {
 			String axesStr = it.getAxesOrder();
 			String name = it.getName();
-			int[] min = it.getShape().getPatchMinimumSize();
-			int[] step = it.getShape().getPatchPositionStep();
+			int[] min = it.getShape().getTileMinimumSize();
+			int[] step = it.getShape().getTileStep();
 			long[] imSize = LongStream.range(0, step.length)
 					.map(i -> min[(int) i] + step[(int) i]).toArray();
 			Tensor<FloatType> tt = Tensor.build(name, axesStr, imgFactory.create(imSize));
