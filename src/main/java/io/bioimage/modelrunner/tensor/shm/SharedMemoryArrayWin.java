@@ -548,7 +548,7 @@ public final class SharedMemoryArrayWin implements SharedMemoryArray
 
 	
 	// TODO support boolean
-	protected static HashMap<String, Object> buildMapFromNumpyLikeSHMA(String memoryName) throws Exception {
+	protected static HashMap<String, Object> buildMapFromNumpyLikeSHMA(String memoryName) {
 		if (!memoryName.startsWith("Local\\"))
 			memoryName = "Local\\" + memoryName;
 		WinNT.HANDLE hMapFile = Kernel32.INSTANCE.OpenFileMapping( WinNT.FILE_MAP_READ, false, memoryName);
@@ -581,14 +581,14 @@ public final class SharedMemoryArrayWin implements SharedMemoryArray
         } catch (Exception ex) {
             Kernel32.INSTANCE.UnmapViewOfFile(pSharedMemory);
             Kernel32.INSTANCE.CloseHandle(hMapFile);
-        	throw ex;
+        	throw new RuntimeException(ex);
         }
 	}
 
 	
 	// TODO support boolean
 	protected static <T extends RealType<T> & NativeType<T>>
-	RandomAccessibleInterval<T> buildImgLib2FromNumpyLikeSHMA(String memoryName) throws Exception {
+	RandomAccessibleInterval<T> buildImgLib2FromNumpyLikeSHMA(String memoryName) {
 		if (!memoryName.startsWith("Local\\"))
 			memoryName = "Local\\" + memoryName;
 		WinNT.HANDLE hMapFile = Kernel32.INSTANCE.OpenFileMapping( WinNT.FILE_MAP_READ, false, memoryName);
@@ -621,7 +621,7 @@ public final class SharedMemoryArrayWin implements SharedMemoryArray
         } catch (Exception ex) {
             Kernel32.INSTANCE.UnmapViewOfFile(pSharedMemory);
             Kernel32.INSTANCE.CloseHandle(hMapFile);
-        	throw ex;
+        	throw new RuntimeException(ex);
         }
 	}
 	
@@ -660,7 +660,7 @@ public final class SharedMemoryArrayWin implements SharedMemoryArray
         } catch (Exception ex) {
             Kernel32.INSTANCE.UnmapViewOfFile(pSharedMemory);
             Kernel32.INSTANCE.CloseHandle(hMapFile);
-        	throw ex;
+        	throw new RuntimeException(ex);
         }
 	}
 	

@@ -529,7 +529,7 @@ public final class SharedMemoryArrayMacOS implements SharedMemoryArray
 	}
 	
 	// TODO support boolean
-	public static HashMap<String, Object> buildMapFromNumpyLikeSHMA(String memoryName) throws Exception {
+	public static HashMap<String, Object> buildMapFromNumpyLikeSHMA(String memoryName) {
 		if (!memoryName.startsWith("/")) memoryName = "/" + memoryName;
 	    CLibrary.Stat statBuffer = new CLibrary.Stat();
 	    int shmFd = INSTANCE.shm_open(memoryName, O_RDONLY, 0700);
@@ -565,13 +565,13 @@ public final class SharedMemoryArrayMacOS implements SharedMemoryArray
             	INSTANCE.close(shmFd);
             }
             INSTANCE.shm_unlink(memoryName);
-        	throw ex;
+        	throw new RuntimeException(ex);
         }
 	}
 	
 	// TODO support boolean
 	public static <T extends RealType<T> & NativeType<T>>
-	RandomAccessibleInterval<T> buildImgLib2FromNumpyLikeSHMA(String memoryName) throws Exception {
+	RandomAccessibleInterval<T> buildImgLib2FromNumpyLikeSHMA(String memoryName) {
 		if (!memoryName.startsWith("/")) memoryName = "/" + memoryName;
 	    CLibrary.Stat statBuffer = new CLibrary.Stat();
 	    int shmFd = INSTANCE.shm_open(memoryName, O_RDONLY, 0700);
@@ -607,7 +607,7 @@ public final class SharedMemoryArrayMacOS implements SharedMemoryArray
             	INSTANCE.close(shmFd);
             }
             INSTANCE.shm_unlink(memoryName);
-        	throw ex;
+        	throw new RuntimeException(ex);
         }
 	}
 	
