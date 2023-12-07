@@ -160,7 +160,7 @@ public class PythonTransformation extends AbstractTensorTransformation
 	
 	public void setEnvYaml(Object envYaml) {
 		if (envYaml instanceof String) {
-			this.envYaml = new File(String.valueOf(envYaml)).getName();
+			this.envYaml = new File(String.valueOf(envYaml)).getAbsolutePath();
 		} else {
 			throw new IllegalArgumentException("'envYaml' parameter has to be an instance of "
 					+ String.class
@@ -170,7 +170,7 @@ public class PythonTransformation extends AbstractTensorTransformation
 	
 	public void setScript(Object script) {
 		if (script instanceof String) {
-			this.script = new File(String.valueOf(script)).getName();
+			this.script = new File(String.valueOf(script)).getAbsolutePath();
 		} else {
 			throw new IllegalArgumentException("'script' parameter has to be an instance of "
 					+ String.class
