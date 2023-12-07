@@ -60,7 +60,7 @@ public class TransformSpec
      */
     public Map<String, Object> getSpecMap()
     {
-        return specMap == null ? null : Collections.unmodifiableMap(specMap);
+        return specMap == null ? null : specMap;
     }
 
     /**

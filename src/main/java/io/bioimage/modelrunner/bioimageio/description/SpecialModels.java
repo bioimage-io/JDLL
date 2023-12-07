@@ -67,20 +67,30 @@ public class SpecialModels
     
     private static void completeStardist(ModelDescriptor descriptor) {
     	Map<String, Object> stardistMap = (Map<String, Object>) descriptor.getConfig().getSpecMap().get(STARDIST_KEY);
-    	Map<String, Object> configMap = (Map<String, Object>) stardistMap.get("config");
     	Map<String, Object> stardistThres = (Map<String, Object>) stardistMap.get("thresholds");
     	Map<String, Object> stardistPostProcessing = new HashMap<String, Object>();
+    	Map<String, Object> outerKwargs = new HashMap<String, Object>();
     	stardistPostProcessing.put(TransformSpec.getTransformationNameKey(), PythonTransformation.NAME);
-    	stardistPostProcessing.put(PythonTransformation.ENV_YAML_KEY, descriptor.getModelPath() + File.separator + "stardist.yaml");
-    	stardistPostProcessing.put(PythonTransformation.SCRIPT_KEY, descriptor.getModelPath() + File.separator + "stardist_postprocessing.py");
-    	stardistPostProcessing.put(PythonTransformation.N_OUTPUTS_KEY, 1);
-    	stardistPostProcessing.put(PythonTransformation.METHOD_KEY, "stardist_postprocessing");
+    	outerKwargs.put(PythonTransformation.ENV_YAML_KEY, descriptor.getModelPath() + File.separator + "stardist.yaml");
+    	outerKwargs.put(PythonTransformation.SCRIPT_KEY, descriptor.getModelPath() + File.separator + "stardist_postprocessing.py");
+    	outerKwargs.put(PythonTransformation.N_OUTPUTS_KEY, 1);
+    	outerKwargs.put(PythonTransformation.METHOD_KEY, "stardist_postprocessing");
     	Map<String, Object> kwargs = new HashMap<String, Object>();
-    	kwargs.put("nms_thresh", stardistThres.get(kwargs));
-    	kwargs.put("prob_thresh", stardistThres.get(kwargs));
-    	stardistPostProcessing.put(PythonTransformation.KWARGS_KEY, kwargs);
-    	if (extractStardist(descriptor) && descriptor.getOutputTensors().get(0).getPostprocessing().size() == 0)
+    	kwargs.put("nms_thresh", stardistThres.get("nms"));
+    	kwargs.put("prob_thresh", stardistThres.get("prob"));
+    	outerKwargs.put(PythonTransformation.KWARGS_KEY, kwargs);
+    	stardistPostProcessing.put(PythonTransformation.KWARGS_KEY, outerKwargs);
+    	if (extractStardist(descriptor) && descriptor.getOutputTensors().get(0).getPostprocessing().size() == 0) {
         	descriptor.getOutputTensors().get(0).getPostprocessing().add(TransformSpec.build(stardistPostProcessing));
+    	} else if (extractStardist(descriptor)) {
+    		TransformSpec post = descriptor.getOutputTensors().get(0).getPostprocessing().get(0);
+    		if (new File((String) post.getKwargs().get(PythonTransformation.ENV_YAML_KEY)).isFile() == false)
+    			post.getKwargs().put(PythonTransformation.ENV_YAML_KEY, 
+    					descriptor.getModelPath() + File.separator + (String) post.getKwargs().get(PythonTransformation.ENV_YAML_KEY));
+    		if (new File((String) post.getKwargs().get(PythonTransformation.SCRIPT_KEY)).isFile() == false)
+    			post.getKwargs().put(PythonTransformation.SCRIPT_KEY, 
+    					descriptor.getModelPath() + File.separator + (String) post.getKwargs().get(PythonTransformation.SCRIPT_KEY));
+    	}
     }
     
     private static boolean extractStardist(ModelDescriptor descriptor) {
