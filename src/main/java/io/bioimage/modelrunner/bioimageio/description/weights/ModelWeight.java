@@ -27,6 +27,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import io.bioimage.modelrunner.versionmanagement.SupportedVersions;
+import io.bioimage.modelrunner.versionmanagement.VersionStringUtils;
 
 /**
  * The model weights information for the current model.
@@ -115,10 +116,13 @@ public class ModelWeight
     	if (weightsFormat.equals(getBioengineID()))
     		return null;
     	WeightFormat ww = weightsDic.values().stream()
-    			.filter(w -> w.getFramework().equals(weightsFormat) 
-    					&&  w.getTrainingVersion()
-    					.equals(SupportedVersions.getClosestSupportedPythonVersion(weightsFormat, version)))
-    			.findFirst().orElse(null);
+    			.filter(w -> {
+    				if (!w.getFramework().equals(weightsFormat)) return false;
+    				if (w.getTrainingVersion().equals(
+    						SupportedVersions.getClosestSupportedPythonVersion(weightsFormat, version))) return true;
+					if (VersionStringUtils.areTheyTheSameVersionUntilPoint(w.getTrainingVersion(), version, 2)) return true;
+					return false;
+    			}).findFirst().orElse(null);
     	
     	if (ww == null) {
     		throw new IllegalArgumentException("JDLL does not support the provided weight format: "
