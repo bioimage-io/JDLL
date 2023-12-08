@@ -363,9 +363,13 @@ public class PatchGridCalculator <T extends RealType<T> & NativeType<T>>
     private PatchSpec computePatchSpecsForOutputTensor(TensorSpec tensorSpec, PatchSpec refTilesSpec)
     {
     	int[] inputTileGrid = refTilesSpec.getTileGrid();
+    	String ogAxes = ModelDescriptor.findTensorInList(refTilesSpec.getTensorName(), descriptor.getInputTensors()).getAxesOrder();
+    	inputTileGrid = arrayToWantedAxesOrderAddOnes(inputTileGrid, ogAxes, tensorSpec.getAxesOrder());
         // REgard that the input halo represents the output halo + offset 
         // and must be divisible by 0.5. 
         int[][] paddingSize = refTilesSpec.getPadding();
+        paddingSize[0] = arrayToWantedAxesOrderAddZeros(paddingSize[0], ogAxes, tensorSpec.getAxesOrder());
+        paddingSize[1] = arrayToWantedAxesOrderAddZeros(paddingSize[1], ogAxes, tensorSpec.getAxesOrder());
         long[] tileSize;
         long[] shapeLong;
         if (tensorSpec.getShape().getReferenceInput() == null && !tensorSpec.getTiling()) {
@@ -373,12 +377,11 @@ public class PatchGridCalculator <T extends RealType<T> & NativeType<T>>
         	tileSize = shapeLong;
         } else if (tensorSpec.getShape().getReferenceInput() == null) {
         	tileSize = Arrays.stream(tensorSpec.getTileSize()).mapToLong(i -> i).toArray();
-        	double[] inputTileToTotal = IntStream.range(0, tensorSpec.getAxesOrder().length())
+        	double[] inputTileToTotal = IntStream.range(0, refTilesSpec.getNonTiledTensorDims().length)
         			.mapToDouble(i -> ((double) refTilesSpec.getNonTiledTensorDims()[i]) / ((double) refTilesSpec.getTileSize()[i]))
         			.toArray();
         	float[] floatInputTileToTotal = new float[inputTileToTotal.length];
         	for (int ii = 0; ii < floatInputTileToTotal.length; ii ++) floatInputTileToTotal[ii] = (float) inputTileToTotal[ii];
-        	String ogAxes = ModelDescriptor.findTensorInList(refTilesSpec.getTensorName(), descriptor.getInputTensors()).getAxesOrder();
         	float[] outTileToTotal = arrayToWantedAxesOrderAddOnes(floatInputTileToTotal, ogAxes, tensorSpec.getAxesOrder());
         	shapeLong = IntStream.range(0, tensorSpec.getAxesOrder().length())
         			.mapToLong(i -> (long) Math.ceil(tileSize[i] * outTileToTotal[i])).toArray();
