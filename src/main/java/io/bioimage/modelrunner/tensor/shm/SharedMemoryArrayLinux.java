@@ -560,7 +560,7 @@ public final class SharedMemoryArrayLinux implements SharedMemoryArray
             	INSTANCE.close(shmFd);
             }
             INSTANCE.shm_unlink(memoryName);
-        	throw new RuntimeException(ex);
+        	throw new RuntimeException(ex.toString());
         }
 	}
 	
