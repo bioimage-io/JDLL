@@ -39,22 +39,28 @@ public interface CLibrary extends Library {
     int munmap(Pointer addr, int length);
     int close(int fd);
     int shm_unlink(String name);
-    int fstat(int fd, Stat statbuf);
+    
+    int SEEK_SET = 0;
+    int SEEK_CUR = 1;
+    int SEEK_END = 2;
+    long lseek(int fd, long offset, int whence);
 
+    /*
     class Stat extends Structure {
-        public NativeLong st_dev;
-        public NativeLong st_ino;
-        public NativeLong st_nlink;
+        public long st_dev;
+        public long st_ino;
+        public long st_nlink;
         public int st_mode;
         public int st_uid;
         public int st_gid;
         public int __pad0;
-        public NativeLong st_rdev;
-        public NativeLong st_size;
+        public long st_rdev;
+        public long st_size;
 
         @Override
         protected List<String> getFieldOrder() {
             return Arrays.asList("st_dev", "st_ino", "st_nlink", "st_mode", "st_uid", "st_gid", "__pad0", "st_rdev", "st_size"); // add other fields as needed
         }
     }
+    */
 }

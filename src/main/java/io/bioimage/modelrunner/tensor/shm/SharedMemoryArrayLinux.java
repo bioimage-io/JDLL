@@ -21,16 +21,13 @@
 package io.bioimage.modelrunner.tensor.shm;
 
 import java.io.ByteArrayInputStream;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.nio.ByteBuffer;
 import java.util.HashMap;
-import java.util.Map;
 import java.util.UUID;
 
 import org.apache.commons.compress.archivers.ArchiveException;
-import org.apposed.appose.Conda;
 
 import com.sun.jna.Pointer;
 
@@ -102,8 +99,8 @@ public final class SharedMemoryArrayLinux implements SharedMemoryArray
 	private boolean isNumpyFormat = false;
 
     public static final int O_RDONLY = 0;
-    private static final int O_RDWR = 2;    // Read-write mode
-    private static final int O_CREAT = 64;  // Create if it does not exist
+    static final int O_RDWR = 2;    // Read-write mode
+    static final int O_CREAT = 64;  // Create if it does not exist
     private static final int PROT_READ = 0x1;  // Page can be read
     private static final int PROT_WRITE = 0x2; // Page can be written
     private static final int MAP_SHARED = 0x01; // Share changes
@@ -507,6 +504,12 @@ public final class SharedMemoryArrayLinux implements SharedMemoryArray
 	 */
 	public void close() {
 		if (this.unlinked) return;
+		
+		int checkhmFd = INSTANCE.shm_open(this.memoryName, O_RDONLY, 0700);
+        if (checkhmFd < 0) {
+            unlinked = true;
+            return;
+        }
 
         // Unmap the shared memory
         if (this.pSharedMemory != Pointer.NULL && INSTANCE.munmap(this.pSharedMemory, size) == -1) {
@@ -526,19 +529,23 @@ public final class SharedMemoryArrayLinux implements SharedMemoryArray
 	// TODO support boolean
 	public static HashMap<String, Object> buildMapFromNumpyLikeSHMA(String memoryName) {
 		if (!memoryName.startsWith("/")) memoryName = "/" + memoryName;
-	    CLibrary.Stat statBuffer = new CLibrary.Stat();
+	    //CLibrary.Stat statBuffer = new CLibrary.Stat();
 	    int shmFd = INSTANCE.shm_open(memoryName, O_RDONLY, 0700);
-        if (shmFd < 0 || INSTANCE.fstat(shmFd, statBuffer) == -1) 
+        if (shmFd < 0 )//|| INSTANCE.fstat(shmFd, statBuffer) == -1) 
             throw new RuntimeException("Failed to open shared memory. Errno: " + Native.getLastError());
-	    
-	    long size = statBuffer.st_size.longValue();
+
+	    System.out.println("find size");
+	    long size = INSTANCE.lseek(shmFd, 0, CLibrary.SEEK_END);
+	    System.out.println("size: " + size);
 
         // Map the shared memory into the process's address space
         Pointer pSharedMemory = INSTANCE.mmap(null, (int) size, PROT_READ, MAP_SHARED, shmFd, 0);
+	    System.out.println("opened");
         if (pSharedMemory == Pointer.NULL) {
             CLibrary.INSTANCE.close(shmFd);
             throw new RuntimeException("Failed to map shared memory. Errmo: " + Native.getLastError());
         }
+	    System.out.println("find");
         byte[] flat = new byte[(int) size];
 		for (int i = 0; i < size; i++)
 			flat[i] = pSharedMemory.getByte((long) i);
@@ -568,22 +575,32 @@ public final class SharedMemoryArrayLinux implements SharedMemoryArray
 	public static <T extends RealType<T> & NativeType<T>>
 	RandomAccessibleInterval<T> buildImgLib2FromNumpyLikeSHMA(String memoryName) {
 		if (!memoryName.startsWith("/")) memoryName = "/" + memoryName;
-	    CLibrary.Stat statBuffer = new CLibrary.Stat();
+		System.out.println("a");
+	    //Stat statBuffer = new Stat();
+		System.out.println("dd");
 	    int shmFd = INSTANCE.shm_open(memoryName, O_RDONLY, 0700);
-        if (shmFd < 0 || INSTANCE.fstat(shmFd, statBuffer) == -1) 
+		System.out.println("ddddd");
+        if (shmFd < 0 )//|| INSTANCE.fstat(shmFd, statBuffer) == -1) 
             throw new RuntimeException("Failed to open shared memory. Errno: " + Native.getLastError());
+
+        long result = INSTANCE.lseek(shmFd, 0, CLibrary.SEEK_END);
+        System.gc();
+		System.out.println("FFFFFFFOOOOOOOOOOOOOOUNNNNNNNNNNNNNNNNNNNNNDDDDDDDDDD " + result);
 	    
-	    long size = statBuffer.st_size.longValue();
+	    long size = result; //statBuffer.st_size;
+		System.out.println("dddddddddddd");
 
         // Map the shared memory into the process's address space
         Pointer pSharedMemory = INSTANCE.mmap(null, (int) size, PROT_READ, MAP_SHARED, shmFd, 0);
+		System.out.println("11");
         if (pSharedMemory == Pointer.NULL) {
             CLibrary.INSTANCE.close(shmFd);
             throw new RuntimeException("Failed to map shared memory. Errmo: " + Native.getLastError());
         }
+		System.out.println("343");
         byte[] flat = new byte[(int) size];
-		for (int i = 0; i < size; i++)
-			flat[i] = pSharedMemory.getByte((long) i);
+        pSharedMemory.read(0, flat, 0, flat.length);
+		System.out.println("..");
 		try (ByteArrayInputStream bis = new ByteArrayInputStream(flat)){
 			RandomAccessibleInterval<T> rai = DecodeNumpy.decodeNumpyFromByteArrayStream(bis);
         	if (pSharedMemory != Pointer.NULL) {
@@ -802,14 +819,15 @@ public final class SharedMemoryArrayLinux implements SharedMemoryArray
     public static void main(String[] args) throws IOException, InterruptedException, ArchiveException, URISyntaxException {
     	//int a = CLibrary.INSTANCE.shm_open("/shrdrd", O_RDWR | O_CREAT, 0700);
     	String shmPath = "/dev/shm/psm_fa11ac37"; // Replace with your shared memory object path
-        CLibrary.Stat statBuffer = new CLibrary.Stat();
+        /*CLibrary.Stat statBuffer = new CLibrary.Stat();
 
         int result = CLibrary.INSTANCE.shm_open("/psm_fa11ac37", O_RDWR | O_CREAT, 0700);
         if (CLibrary.INSTANCE.fstat(result, statBuffer) != -1) {
-            System.out.println("Size: " + statBuffer.st_size.longValue());
+            System.out.println("Size: " + statBuffer.st_size);
         }
         System.out.println("Shared Memory Size: " + statBuffer.st_rdev + " bytes");
         System.out.print(false);
+        */
     }
 
 	@Override
