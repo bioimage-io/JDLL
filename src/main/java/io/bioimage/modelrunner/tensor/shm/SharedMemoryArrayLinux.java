@@ -529,26 +529,24 @@ public final class SharedMemoryArrayLinux implements SharedMemoryArray
 	// TODO support boolean
 	public static HashMap<String, Object> buildMapFromNumpyLikeSHMA(String memoryName) {
 		if (!memoryName.startsWith("/")) memoryName = "/" + memoryName;
-	    //CLibrary.Stat statBuffer = new CLibrary.Stat();
 	    int shmFd = INSTANCE.shm_open(memoryName, O_RDONLY, 0700);
-        if (shmFd < 0 )//|| INSTANCE.fstat(shmFd, statBuffer) == -1) 
+        if (shmFd < 0 )
             throw new RuntimeException("Failed to open shared memory. Errno: " + Native.getLastError());
 
-	    System.out.println("find size");
-	    long size = INSTANCE.lseek(shmFd, 0, CLibrary.SEEK_END);
-	    System.out.println("size: " + size);
+        long size = INSTANCE.lseek(shmFd, 0, CLibrary.SEEK_END);
+	    if (size == -1) {
+            CLibrary.INSTANCE.close(shmFd);
+	    	throw new RuntimeException("Failed to get shared memory segment size. Errno: " + Native.getLastError());
+	    }
 
         // Map the shared memory into the process's address space
         Pointer pSharedMemory = INSTANCE.mmap(null, (int) size, PROT_READ, MAP_SHARED, shmFd, 0);
-	    System.out.println("opened");
         if (pSharedMemory == Pointer.NULL) {
             CLibrary.INSTANCE.close(shmFd);
             throw new RuntimeException("Failed to map shared memory. Errmo: " + Native.getLastError());
         }
-	    System.out.println("find");
         byte[] flat = new byte[(int) size];
-		for (int i = 0; i < size; i++)
-			flat[i] = pSharedMemory.getByte((long) i);
+        pSharedMemory.read(0, flat, 0, flat.length);
 		try (ByteArrayInputStream bis = new ByteArrayInputStream(flat)){
 			HashMap<String, Object> map = DecodeNumpy.decodeNumpyFromByteArrayStreamToRawMap(bis);
         	if (pSharedMemory != Pointer.NULL) {
@@ -575,32 +573,23 @@ public final class SharedMemoryArrayLinux implements SharedMemoryArray
 	public static <T extends RealType<T> & NativeType<T>>
 	RandomAccessibleInterval<T> buildImgLib2FromNumpyLikeSHMA(String memoryName) {
 		if (!memoryName.startsWith("/")) memoryName = "/" + memoryName;
-		System.out.println("a");
-	    //Stat statBuffer = new Stat();
-		System.out.println("dd");
 	    int shmFd = INSTANCE.shm_open(memoryName, O_RDONLY, 0700);
-		System.out.println("ddddd");
-        if (shmFd < 0 )//|| INSTANCE.fstat(shmFd, statBuffer) == -1) 
-            throw new RuntimeException("Failed to open shared memory. Errno: " + Native.getLastError());
+        if (shmFd < 0) throw new RuntimeException("Failed to open shared memory. Errno: " + Native.getLastError());
 
-        long result = INSTANCE.lseek(shmFd, 0, CLibrary.SEEK_END);
-        System.gc();
-		System.out.println("FFFFFFFOOOOOOOOOOOOOOUNNNNNNNNNNNNNNNNNNNNNDDDDDDDDDD " + result);
-	    
-	    long size = result; //statBuffer.st_size;
-		System.out.println("dddddddddddd");
+        long size = INSTANCE.lseek(shmFd, 0, CLibrary.SEEK_END);
+	    if (size == -1) {
+            CLibrary.INSTANCE.close(shmFd);
+	    	throw new RuntimeException("Failed to get shared memory segment size. Errno: " + Native.getLastError());
+	    }
 
         // Map the shared memory into the process's address space
         Pointer pSharedMemory = INSTANCE.mmap(null, (int) size, PROT_READ, MAP_SHARED, shmFd, 0);
-		System.out.println("11");
         if (pSharedMemory == Pointer.NULL) {
             CLibrary.INSTANCE.close(shmFd);
             throw new RuntimeException("Failed to map shared memory. Errmo: " + Native.getLastError());
         }
-		System.out.println("343");
         byte[] flat = new byte[(int) size];
         pSharedMemory.read(0, flat, 0, flat.length);
-		System.out.println("..");
 		try (ByteArrayInputStream bis = new ByteArrayInputStream(flat)){
 			RandomAccessibleInterval<T> rai = DecodeNumpy.decodeNumpyFromByteArrayStream(bis);
         	if (pSharedMemory != Pointer.NULL) {

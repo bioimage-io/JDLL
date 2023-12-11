@@ -531,12 +531,15 @@ public final class SharedMemoryArrayMacOS implements SharedMemoryArray
 	// TODO support boolean
 	public static HashMap<String, Object> buildMapFromNumpyLikeSHMA(String memoryName) {
 		if (!memoryName.startsWith("/")) memoryName = "/" + memoryName;
-	    CLibrary.Stat statBuffer = new CLibrary.Stat();
 	    int shmFd = INSTANCE.shm_open(memoryName, O_RDONLY, 0700);
-        if (shmFd < 0 || INSTANCE.fstat(shmFd, statBuffer) == -1) 
+        if (shmFd < 0) 
             throw new RuntimeException("Failed to open shared memory. Errno: " + Native.getLastError());
-	    
-	    long size = statBuffer.st_size.longValue();
+
+        long size = INSTANCE.lseek(shmFd, 0, CLibrary.SEEK_END);
+	    if (size == -1) {
+            CLibrary.INSTANCE.close(shmFd);
+	    	throw new RuntimeException("Failed to get shared memory segment size. Errno: " + Native.getLastError());
+	    }	    
 
         // Map the shared memory into the process's address space
         Pointer pSharedMemory = INSTANCE.mmap(null, (int) size, PROT_READ, MAP_SHARED, shmFd, 0);
@@ -573,12 +576,15 @@ public final class SharedMemoryArrayMacOS implements SharedMemoryArray
 	public static <T extends RealType<T> & NativeType<T>>
 	RandomAccessibleInterval<T> buildImgLib2FromNumpyLikeSHMA(String memoryName) {
 		if (!memoryName.startsWith("/")) memoryName = "/" + memoryName;
-	    CLibrary.Stat statBuffer = new CLibrary.Stat();
 	    int shmFd = INSTANCE.shm_open(memoryName, O_RDONLY, 0700);
-        if (shmFd < 0 || INSTANCE.fstat(shmFd, statBuffer) == -1) 
+        if (shmFd < 0) 
             throw new RuntimeException("Failed to open shared memory. Errno: " + Native.getLastError());
-	    
-	    long size = statBuffer.st_size.longValue();
+
+        long size = INSTANCE.lseek(shmFd, 0, CLibrary.SEEK_END);
+	    if (size == -1) {
+            CLibrary.INSTANCE.close(shmFd);
+	    	throw new RuntimeException("Failed to get shared memory segment size. Errno: " + Native.getLastError());
+	    }	    
 
         // Map the shared memory into the process's address space
         Pointer pSharedMemory = INSTANCE.mmap(null, (int) size, PROT_READ, MAP_SHARED, shmFd, 0);
