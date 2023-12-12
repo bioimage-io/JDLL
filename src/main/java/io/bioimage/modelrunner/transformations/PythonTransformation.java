@@ -33,7 +33,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 import org.apache.commons.compress.archivers.ArchiveException;
-import org.apposed.appose.Conda;
+import io.bioimage.modelrunner.apposed.appose.Conda;
 
 import io.bioimage.modelrunner.numpy.DecodeNumpy;
 import io.bioimage.modelrunner.runmode.RunMode;

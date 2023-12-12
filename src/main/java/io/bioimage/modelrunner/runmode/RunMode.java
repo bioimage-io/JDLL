@@ -30,13 +30,12 @@ import java.util.Map.Entry;
 import java.util.UUID;
 import java.util.stream.IntStream;
 
-import org.apposed.appose.Appose;
-import org.apposed.appose.Environment;
-import org.apposed.appose.Service;
-import org.apposed.appose.Service.Task;
+import io.bioimage.modelrunner.apposed.appose.Appose;
+import io.bioimage.modelrunner.apposed.appose.Environment;
+import io.bioimage.modelrunner.apposed.appose.Service;
+import io.bioimage.modelrunner.apposed.appose.Service.Task;
 
 import io.bioimage.modelrunner.runmode.ops.OpInterface;
-import io.bioimage.modelrunner.system.PlatformDetection;
 import io.bioimage.modelrunner.tensor.shm.SharedMemoryArray;
 import io.bioimage.modelrunner.tensor.shm.SharedMemoryFile;
 import io.bioimage.modelrunner.tensor.Tensor;
