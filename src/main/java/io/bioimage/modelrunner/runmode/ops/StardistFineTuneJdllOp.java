@@ -37,6 +37,7 @@ import java.util.Objects;
 
 import io.bioimage.modelrunner.bioimageio.BioimageioRepo;
 import io.bioimage.modelrunner.bioimageio.description.ModelDescriptor;
+import io.bioimage.modelrunner.bioimageio.description.exceptions.ModelSpecsException;
 import io.bioimage.modelrunner.bioimageio.download.DownloadModel;
 import io.bioimage.modelrunner.engine.installation.FileDownloader;
 import io.bioimage.modelrunner.runmode.RunMode;
@@ -57,7 +58,7 @@ import net.imglib2.view.IntervalView;
 import net.imglib2.view.Views;
 
 /**
- * TODO
+ * TODO STILL UNDER DEVELOPMENT
  * TODO
  * TODO
  * TODO
@@ -121,8 +122,6 @@ public class StardistFineTuneJdllOp implements OpInterface {
 	
 	private final static String MODEL_KEY = "model";
 	
-	private final static String NEW_MODEL_DIR_KEY = "n_model_dir";
-	
 	private final static String TRAIN_SAMPLES_KEY = "train_samples";
 	
 	private final static String GROUND_TRUTH_KEY = "ground_truth";
@@ -156,6 +155,14 @@ public class StardistFineTuneJdllOp implements OpInterface {
 	private static final String GROUNDTRUTH_AXES = "byx";
 	
 
+	/**
+	 * MAin mehtod to run an example fine tune
+	 * @param args
+	 * 	no args required
+	 * @throws IOException if there is any file related error
+	 * @throws InterruptedException if there is any thread interruption
+	 * @throws Exception if there is any unexpected exception
+	 */
 	public static void main(String[] args) throws IOException, InterruptedException, Exception {
 		final ImgFactory< FloatType > imgFactory = new ArrayImgFactory<>( new FloatType() );
 		final Img< FloatType > img1 = imgFactory.create( 2, 64, 64, 3 );
@@ -217,11 +224,12 @@ public class StardistFineTuneJdllOp implements OpInterface {
 	 * 	directory where the new finetuned model folder will be saved.
 	 * @return a JDLL OP that can be used together with {@link RunMode} to fine tune a StarDist
 	 * 	model on the user's data
-	 * @throws InterruptedException 
-	 * @throws IOException 
-	 * @throws Exception 
+	 * @throws InterruptedException if the thread is unexpectedly stopped
+	 * @throws IOException if there is any error in the copy or read operations that are performed on the model files
+	 * @throws ModelSpecsException if the model rdf.yaml is not correct
+	 * @throws IllegalArgumentException if the model rdf.yaml is not correct
 	 */
-	public static StardistFineTuneJdllOp finetuneInPlace(String modelToFineTune, String newModelDir) throws IOException, InterruptedException, Exception {
+	public static StardistFineTuneJdllOp finetuneInPlace(String modelToFineTune, String newModelDir) throws IOException, InterruptedException, IllegalArgumentException, ModelSpecsException  {
 		Objects.requireNonNull(modelToFineTune, "modelToFineTune' cannot be null. It should correspond to either a Bioimage.io "
 				+ "folder containing a StarDist model, the nickname of a StarDist model in the Bioimage.io (example: chatty-frog) "
 				+ "or to one if the StarDist pre-trained available weigths (example: 2D_versatile_fluo)");
@@ -281,11 +289,12 @@ public class StardistFineTuneJdllOp implements OpInterface {
 	 *  zoo. If it is a model existing in the model zoo, it will have to be downloaded first.
 	 * @return a JDLL OP that can be used together with {@link RunMode} to fine tune a StarDist
 	 * 	model on the user's data
-	 * @throws InterruptedException 
-	 * @throws IOException 
-	 * @throws Exception 
+	 * @throws InterruptedException if the thread is unexpectedly stopped
+	 * @throws IOException if there is any error in the copy or read operations that are performed on the model files
+	 * @throws ModelSpecsException if the model rdf.yaml is not correct
+	 * @throws IllegalArgumentException if the model rdf.yaml is not correct
 	 */
-	public static StardistFineTuneJdllOp finetuneInPlace(String modelToFineTune) throws IOException, InterruptedException, Exception {
+	public static StardistFineTuneJdllOp finetuneInPlace(String modelToFineTune) throws IOException, InterruptedException, IllegalArgumentException, ModelSpecsException {
 		Objects.requireNonNull(modelToFineTune, "modelToFineTune' cannot be null. It should correspond to either a Bioimage.io "
 				+ "folder containing a StarDist model, the nickname of a StarDist model in the Bioimage.io (example: chatty-frog) "
 				+ "or to one if the StarDist pre-trained available weigths (example: 2D_versatile_fluo)");
@@ -336,11 +345,28 @@ public class StardistFineTuneJdllOp implements OpInterface {
 		this.weightsToFineTune = weigthsToFineTune;
 	}
 	
+	/**
+	 * Provide the data that will be used to fine tune the model
+	 * @param <T>
+	 * 	The data type of the tensors provided to fine tune the model
+	 * @param trainingSamples
+	 * 	list of sample that will be used to fine tune the model as inputs
+	 * @param groundTruth
+	 * 	list of the ground truth used to fine tune the model. Each gorun truth should correspond to a training sample
+	 */
 	public < T extends RealType< T > & NativeType< T > > 
 		void setFineTuningData(List<Tensor<T>> trainingSamples, List<Tensor<T>> groundTruth) {
 		
 	}
-	
+	/**
+	 * Provide the data that will be used to fine tune the model
+	 * @param <T>
+	 * 	The data type of the tensors provided to fine tune the model
+	 * @param trainingSamples
+	 * 	single tensor that will be used to fine tune the model. 
+	 * @param groundTruth
+	 * 	single tensor that corresponds to the groudn truth to fine tune the model
+	 */
 	public < T extends RealType< T > & NativeType< T > > 
 		void setFineTuningData(Tensor<T> trainingSamples, Tensor<T> groundTruth) throws IOException, Exception {
 		checkTrainAndGroundTruthDimensions(trainingSamples, groundTruth);
@@ -348,35 +374,62 @@ public class StardistFineTuneJdllOp implements OpInterface {
 		setGroundTruth(groundTruth);
 	}
 	
+	/**
+	 * Batch size used to fine tune the model, if not set, the default one will be used {@link #batchSize}
+	 * @param batchSize
+	 * 	Batch size used to fine tune the model, if not set, the default one will be used {@link #batchSize}
+	 */
 	public void setBatchSize(int batchSize) {
 		this.batchSize = batchSize;
 	}
 	
+	/**
+	 * Learning rate used to fine tune the model, if not set, the default one will be used {@link #learningRate}
+	 * @param learningRate
+	 * 	Learning rate used to fine tune the model, if not set, the default one will be used {@link #learningRate}
+	 */
 	public void setLearingRate(float learningRate) {
 		this.lr = learningRate;
 	}
 	
+	/**
+	 * Number of epochs used to fine tune the model, if not set, the default one will be used {@link #epochs}
+	 * @param epochs
+	 * Number of epochs used to fine tune the model, if not set, the default one will be used {@link #epochs}
+	 */
 	public void setEpochs(int epochs) {
 		this.epochs = epochs;
 	}
 
 	@Override
+	/**
+	 * {@inheritDoc}
+	 */
 	public String getOpPythonFilename() {
 		return STARDIST_OP_FNAME;
 	}
 
 	@Override
+	/**
+	 * {@inheritDoc}
+	 */
 	public int getNumberOfOutputs() {
 		return N_STARDIST_OUTPUTS;
 	}
 
 	@Override
+	/**
+	 * {@inheritDoc}
+	 */
 	public boolean isOpInstalled() {
 		// TODO Auto-generated method stub
 		return true;
 	}
 
 	@Override
+	/**
+	 * {@inheritDoc}
+	 */
 	public void installOp() {
 		// TODO this method checks if the OP file is at its correponding folder.
 		// TODO if not unpack the python file and located (where??)
@@ -387,6 +440,9 @@ public class StardistFineTuneJdllOp implements OpInterface {
 	}
 
 	@Override
+	/**
+	 * {@inheritDoc}
+	 */
 	public LinkedHashMap<String, Object> getOpInputs() throws Exception {
 		inputsMap = new LinkedHashMap<String, Object>();
 		Objects.requireNonNull(trainingSamples, "Please make sure that the training samples have "
@@ -433,7 +489,14 @@ public class StardistFineTuneJdllOp implements OpInterface {
 		return opFilePath;
 	}
 	
-	public void setModel() throws IOException, InterruptedException, Exception {
+	/**
+	 * Set the Stardist model to be finetuned.
+	 * @throws IOException
+	 * @throws InterruptedException
+	 * @throws IllegalArgumentException
+	 * @throws ModelSpecsException
+	 */
+	private void setModel() throws IOException, InterruptedException, IllegalArgumentException, ModelSpecsException {
 		Objects.requireNonNull(model, "The modelName input argument cannot be null.");
 		if (PRETRAINED_1C_STARDIST_MODELS.keySet().contains(model) 
 				|| PRETRAINED_3C_STARDIST_MODELS.keySet().contains(model)) {
@@ -461,7 +524,7 @@ public class StardistFineTuneJdllOp implements OpInterface {
 					+ " a pre-trained StarDist model.");
 	}
 	
-	private void setUpStardistModelFromStardistRepo() throws IOException, InterruptedException, Exception {
+	private void setUpStardistModelFromStardistRepo() throws IOException, InterruptedException, IllegalArgumentException, ModelSpecsException {
 		if (PRETRAINED_1C_STARDIST_MODELS.get(model) != null) {
 			model = PRETRAINED_1C_STARDIST_MODELS.get(model);
 			setUpStardistModelFromBioimageio();
@@ -478,7 +541,7 @@ public class StardistFineTuneJdllOp implements OpInterface {
 		}
 	}
 	
-	private void setUpStardistModelFromBioimageio() throws IOException, InterruptedException, Exception {
+	private void setUpStardistModelFromBioimageio() throws IOException, InterruptedException, IllegalArgumentException, ModelSpecsException {
 		BioimageioRepo br = BioimageioRepo.connect();
 		if (br.selectByName(model) != null) {
 			model = br.downloadByName(model, nModelParentPath);
@@ -496,7 +559,7 @@ public class StardistFineTuneJdllOp implements OpInterface {
 	}
 	
 	private void downloadBioimageioStardistWeights() throws IllegalArgumentException,
-															IOException, Exception {
+															IOException, ModelSpecsException {
 		
 		File stardistSubfolder = new File(this.model, StardistInferJdllOp.STARDIST_FIELD_KEY);
         if (!stardistSubfolder.exists()) {
@@ -560,7 +623,7 @@ public class StardistFineTuneJdllOp implements OpInterface {
 		JSONUtils.writeJSONFile(model + File.separator + THRES_JSON, (Map<String, Object>) thres);
 	}
 	
-	private void setUpKerasWeights() throws IOException, Exception {
+	private void setUpKerasWeights() throws IOException, ModelSpecsException {
 		String rdfYamlFN = this.model + File.separator + Constants.RDF_FNAME;
 		ModelDescriptor descriptor = ModelDescriptor.readFromLocalFile(rdfYamlFN, false);
 		String stardistWeights = this.model + File.separator +  StardistInferJdllOp.STARDIST_FIELD_KEY;
@@ -597,7 +660,7 @@ public class StardistFineTuneJdllOp implements OpInterface {
 				+ "repository for an example of a correct version.");
 	}
 	
-	private void setUpStardistModelFromLocal() throws IllegalArgumentException, IOException, Exception {
+	private void setUpStardistModelFromLocal() throws IllegalArgumentException, IOException, ModelSpecsException {
 		if (this.nModelParentPath == null) {
 			File folder = new File(model);
 			String fineTuned = folder.getParent() + File.separator + "finetuned_" + folder.getName();
