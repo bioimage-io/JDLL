@@ -40,7 +40,6 @@ import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.channels.Channels;
 import java.nio.channels.ReadableByteChannel;
-import java.nio.channels.Selector;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.text.SimpleDateFormat;
@@ -53,6 +52,11 @@ import java.util.UUID;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
+//TODO remove once appose project is released with the needed changes
+//TODO remove once appose project is released with the needed changes
+//TODO remove once appose project is released with the needed changes
+//TODO remove once appose project is released with the needed changes
+//TODO remove once appose project is released with the needed changes
 /**
  * Conda environment manager, implemented by delegating to micromamba.
  * 

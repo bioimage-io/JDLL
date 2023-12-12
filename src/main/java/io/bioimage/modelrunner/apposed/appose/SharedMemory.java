@@ -37,6 +37,11 @@ import com.sun.jna.platform.win32.WinBase;
 import com.sun.jna.platform.win32.WinError;
 import com.sun.jna.platform.win32.WinNT;
 
+//TODO remove once appose project is released with the needed changes
+//TODO remove once appose project is released with the needed changes
+//TODO remove once appose project is released with the needed changes
+//TODO remove once appose project is released with the needed changes
+//TODO remove once appose project is released with the needed changes
 /**
  * <strong>Unfinished</strong> port of Python's
  * {@code multiprocess.shared_memory.SharedMemory} class.

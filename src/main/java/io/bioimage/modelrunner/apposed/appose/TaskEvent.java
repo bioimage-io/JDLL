@@ -31,6 +31,11 @@ package io.bioimage.modelrunner.apposed.appose;
 
 import io.bioimage.modelrunner.apposed.appose.Service.ResponseType;
 
+//TODO remove once appose project is released with the needed changes
+//TODO remove once appose project is released with the needed changes
+//TODO remove once appose project is released with the needed changes
+//TODO remove once appose project is released with the needed changes
+//TODO remove once appose project is released with the needed changes
 public class TaskEvent {
 
 	public final Service.Task task;

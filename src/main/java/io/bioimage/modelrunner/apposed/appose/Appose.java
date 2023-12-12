@@ -31,6 +31,12 @@ package io.bioimage.modelrunner.apposed.appose;
 
 import java.io.File;
 
+//TODO remove once appose project is released with the needed changes
+//TODO remove once appose project is released with the needed changes
+//TODO remove once appose project is released with the needed changes
+//TODO remove once appose project is released with the needed changes
+//TODO remove once appose project is released with the needed changes
+
 /**
  * Appose is a library for interprocess cooperation with shared memory. The
  * guiding principles are <em>simplicity</em> and <em>efficiency</em>.

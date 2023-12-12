@@ -37,6 +37,11 @@ import java.util.Map;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 
+//TODO remove once appose project is released with the needed changes
+//TODO remove once appose project is released with the needed changes
+//TODO remove once appose project is released with the needed changes
+//TODO remove once appose project is released with the needed changes
+//TODO remove once appose project is released with the needed changes
 public final class Types {
 
 	private Types() {

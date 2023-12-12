@@ -43,8 +43,12 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
 
-import io.bioimage.modelrunner.apposed.appose.TaskEvent;
 
+//TODO remove once appose project is released with the needed changes
+//TODO remove once appose project is released with the needed changes
+//TODO remove once appose project is released with the needed changes
+//TODO remove once appose project is released with the needed changes
+//TODO remove once appose project is released with the needed changes
 /**
  * An Appose *service* provides access to a linked Appose *worker* running in a
  * different process. Using the service, programs create Appose {@link Task}s

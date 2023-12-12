@@ -32,10 +32,14 @@ package io.bioimage.modelrunner.apposed.appose;
 import java.io.File;
 import java.io.IOException;
 import java.net.URISyntaxException;
-import java.nio.file.Paths;
 
 import org.apache.commons.compress.archivers.ArchiveException;
 
+//TODO remove once appose project is released with the needed changes
+//TODO remove once appose project is released with the needed changes
+//TODO remove once appose project is released with the needed changes
+//TODO remove once appose project is released with the needed changes
+//TODO remove once appose project is released with the needed changes
 public class Builder {
 	
 

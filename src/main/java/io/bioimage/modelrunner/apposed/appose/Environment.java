@@ -38,6 +38,11 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 
+//TODO remove once appose project is released with the needed changes
+//TODO remove once appose project is released with the needed changes
+//TODO remove once appose project is released with the needed changes
+//TODO remove once appose project is released with the needed changes
+//TODO remove once appose project is released with the needed changes
 public interface Environment {
 
 	default String base() { return "."; }
