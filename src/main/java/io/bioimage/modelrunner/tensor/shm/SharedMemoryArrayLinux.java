@@ -21,13 +21,9 @@
 package io.bioimage.modelrunner.tensor.shm;
 
 import java.io.ByteArrayInputStream;
-import java.io.IOException;
-import java.net.URISyntaxException;
 import java.nio.ByteBuffer;
 import java.util.HashMap;
 import java.util.UUID;
-
-import org.apache.commons.compress.archivers.ArchiveException;
 
 import com.sun.jna.Pointer;
 
@@ -805,18 +801,7 @@ public final class SharedMemoryArrayLinux implements SharedMemoryArray
     	}
 	}
     
-    public static void main(String[] args) throws IOException, InterruptedException, ArchiveException, URISyntaxException {
-    	//int a = CLibrary.INSTANCE.shm_open("/shrdrd", O_RDWR | O_CREAT, 0700);
-    	String shmPath = "/dev/shm/psm_fa11ac37"; // Replace with your shared memory object path
-        /*CLibrary.Stat statBuffer = new CLibrary.Stat();
-
-        int result = CLibrary.INSTANCE.shm_open("/psm_fa11ac37", O_RDWR | O_CREAT, 0700);
-        if (CLibrary.INSTANCE.fstat(result, statBuffer) != -1) {
-            System.out.println("Size: " + statBuffer.st_size);
-        }
-        System.out.println("Shared Memory Size: " + statBuffer.st_rdev + " bytes");
-        System.out.print(false);
-        */
+    public static void main(String[] args) {
     }
 
 	@Override

@@ -21,15 +21,9 @@
 package io.bioimage.modelrunner.tensor.shm;
 
 import java.io.ByteArrayInputStream;
-import java.io.IOException;
-import java.net.URISyntaxException;
 import java.nio.ByteBuffer;
 import java.util.HashMap;
-import java.util.Map;
 import java.util.UUID;
-
-import org.apache.commons.compress.archivers.ArchiveException;
-import org.apposed.appose.Conda;
 
 import com.sun.jna.Pointer;
 
@@ -810,18 +804,7 @@ public final class SharedMemoryArrayMacOS implements SharedMemoryArray
     	}
 	}
     
-    public static void main(String[] args) throws IOException, InterruptedException, ArchiveException, URISyntaxException {
-    	//int a = CLibrary.INSTANCE.shm_open("/shrdrd", O_RDWR | O_CREAT, 0700);
-    	Map<String, String> env = System.getenv();
-    	for (String envName : env.keySet()) {
-    	    System.out.format("%s=%s%n", envName, env.get(envName));
-    	}
-    	Conda conda = new Conda("/Users/Cgarcia/git/deep-icy/appose_arm64");
-    	conda.runPythonIn("stardist", "-c", "import os;from multiprocessing "
-    			+ "import shared_memory;shm=shared_memory.SharedM"
-    			+ "emory(create=True,size=10,name='my_shared_memroy');"
-    			+ "print(shm.name);shm.close();shm.unlink();print('done');"
-    			+ "print(os.environ)");
+    public static void main(String[] args){
     }
 
 	@Override
