@@ -75,12 +75,9 @@ import net.imglib2.util.Cast;
 import net.imglib2.util.Util;
 
 /**
- * TODO
- * TODO
- * TODO ADD imglib2 to numpy file
  * 
  * 
- * Class to convert numpy arrays stored in npy files into ImgLib2 images
+ * Class to convert numpy arrays stored in npy files into ImgLib2 images and viceversa
  * @author Carlos Garcia Lopez de Haro
  *
  */
@@ -119,10 +116,25 @@ public class DecodeNumpy {
         DATA_TYPES_MAP.put("float64", 8);
     }
 
+    /**
+     * Key used to refer to the values of the array
+     */
     public final static String DATA_KEY = "data";
+    /**
+     * Key referred to the shape of the array (array dimensions)
+     */
     public final static String SHAPE_KEY = "shape";
+    /**
+     * Key referred to the shape of the array data type
+     */
     public final static String DTYPE_KEY = "dtype";
+    /**
+     * Key referred to the order when flattening the array, c-order or fortran-order
+     */
     public final static String IS_FORTRAN_ORDER_KEY = "is_fortran_order";
+    /**
+     * Key referred to the byte order in the array
+     */
     public final static String BYTE_ORDER_KEY = "byte_order";
 
     /**
@@ -133,6 +145,8 @@ public class DecodeNumpy {
 	
     /**
      * Main method to test the ImgLib2 creation
+     * @param T
+     * 	possible ImgLib2 data types of the provided {@link RandomAccessibleInterval}
      * @param args
      * 	no args are needed
      * @throws FileNotFoundException if the numpy array file is not found
@@ -260,6 +274,7 @@ public class DecodeNumpy {
     
     /**
      * MEthod to decode the bytes corresponding to a numpy array stored in the numpy file
+     * and convert them into a {@link RandomAccessibleInterval}
      * @param <T>
      * 	possible data types that the ImgLib2 image can have
      * @param is
@@ -388,8 +403,10 @@ public class DecodeNumpy {
     /**
      * Get a String representing a datatype explicitly from the String that numpy uses to
      * name datatypes
-     * @param npDtype
-     * 	datatype defined per Numpy
+	 * @param <T>
+     * 	possible ImgLib2 data types 
+     * @param type
+     * 	ImgLib2 possible data type
      * @return a String defining the datatype in a explicit manner
      * @throws IllegalArgumentException if the String provided is not a numpy datatype
      */
@@ -546,6 +563,18 @@ public class DecodeNumpy {
 	 	return outputImg;
     }
     
+    /**
+     * Method to convert a {@link RandomAccessibleInterval} into the byte array that is used by Numpy
+     * to create .npy files.
+     * The byte array created contains the flattened data of the {@link RandomAccessibleInterval} plus
+     * information of the shape, data type, fortran order and byte order
+     * @param <T>
+     * 	possible ImgLib2 data types of the provided {@link RandomAccessibleInterval}
+     * @param rai
+     * 	the {@link RandomAccessibleInterval} of interest (an n-dimensional array) that is going to be
+     * 	converted into the byte array
+     * @return a byte array containing all the info to recreate it. An array in the format of Numpy .npy
+     */
     public static < T extends RealType< T > & NativeType< T > >  byte[]
     createNumpyStyleByteArray(RandomAccessibleInterval<T> rai) {
     	String strHeader = "{'descr': '<";
@@ -632,6 +661,18 @@ public class DecodeNumpy {
         return total;
     }
     
+    /**
+     * Method that saves a {@link RandomAccessibleInterval} nd array to a .npy Numpy radable file
+     * @param <T>
+     * 	possible ImgLib2 data types of the provided {@link RandomAccessibleInterval}
+     * @param filePath
+     * 	path where the file will be saved
+     * @param rai
+     * 	the {@link RandomAccessibleInterval} of interest (an n-dimensional array) that is going to be
+     * 	converted into the byte array
+     * @throws FileNotFoundException if the file path provided is invalid
+     * @throws IOException if there is any error saving the file
+     */
     public static < T extends RealType< T > & NativeType< T > > 
     void writeRaiToNpyFile(String filePath, RandomAccessibleInterval<T> rai) throws FileNotFoundException, IOException {
     	byte[] total = createNumpyStyleByteArray(rai);
