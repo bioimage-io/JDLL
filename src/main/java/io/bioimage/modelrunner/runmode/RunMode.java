@@ -131,10 +131,24 @@ public class RunMode {
 		System.out.println(opCode);
 	}
 	
+	/**
+	 * Create a {@link RunMode} instance to be able to run Python code
+	 * @param op
+	 * 	the {@link OpInterface} instance containing the details to run custom Python code
+	 * @return a {@link RunMode} instance
+	 * @throws Exception if there is any error retrieving the inputs and creating
+	 *  the code to pass them to the Python process
+	 */
 	public static RunMode createRunMode(OpInterface op) throws Exception {
 		return new RunMode(op);
 	}
 	
+	/**
+	 * Run the Python code
+	 * @return a Map where the keys are the name of the Python variables in the Python scope
+	 * 	and the values are the actual variable values retrieved from the Python process as the 
+	 * 	outputs from the Python OP
+	 */
 	public Map<String, Object> runOP() {
 		env = new Environment() {
 			@Override public String base() { return op.getCondaEnv(); }
@@ -223,6 +237,10 @@ public class RunMode {
 		 return jdllOuts;
 	}
 	
+	/**
+	 * TODO see if this makes sense
+	 * Method that creates the env for the corresponding OP
+	 */
 	public void envCreation() {
 		if (checkRequiredEnvExists()) {
 			env = Appose.base(new File(envFileName)).build();
@@ -231,6 +249,10 @@ public class RunMode {
 		env = Appose.conda(new File(envFileName)).build();
 	}
 	
+	/**
+	 * TODO make sure this would be useful
+	 * @return true if the required env for the OP exists and false otherwise
+	 */
 	public boolean checkRequiredEnvExists() {
 		return false;
 	}
