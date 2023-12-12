@@ -31,6 +31,7 @@ import io.bioimage.modelrunner.bioimageio.description.ModelDescriptor;
 import io.bioimage.modelrunner.runmode.RunMode;
 import io.bioimage.modelrunner.tensor.Tensor;
 import io.bioimage.modelrunner.utils.Constants;
+import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.img.Img;
 import net.imglib2.img.ImgFactory;
 import net.imglib2.img.array.ArrayImgFactory;
@@ -39,6 +40,8 @@ import net.imglib2.type.numeric.RealType;
 import net.imglib2.type.numeric.real.FloatType;
 
 /**
+ * TODO still under development
+ * 
  * Code for the JDLL OP that allows running the whole stardist model (pre-processing + model executio
  * + post-processing and tiling) in Python using Appose
  * @author Carlos Javier Garcia Lopez de Haro
@@ -68,7 +71,12 @@ public class StardistInferJdllOp implements OpInterface {
 	
 	private static final String STARDIST_OP_FNAME = "stardist_inference.py";
 	
-	
+	/**
+	 * Example main method
+	 * @param args
+	 * 	no args needed
+	 * @throws Exception if there is any error
+	 */
 	public static void main(String[] args) throws Exception {
 		final ImgFactory< FloatType > imgFactory = new ArrayImgFactory<>( new FloatType() );
 		final Img< FloatType > img1 = imgFactory.create( 1, 512, 512, 3 );
@@ -100,6 +108,13 @@ public class StardistInferJdllOp implements OpInterface {
 		return op;
 	}
 	
+	/**
+	 * Set the stardist model that is going to be inferred
+	 * @param modelName
+	 * 	the model name. It can be either the path to a Bioimage.io model folder or the name of 
+	 * 	one of the pretrained models available in the stardist package
+	 * @throws IllegalArgumentException	if the model name is not valid
+	 */
 	public void setModel(String modelName) throws IllegalArgumentException {
 		Objects.requireNonNull(modelName, "The modelName input argument cannot be null.");
 		if (new File(modelName).isFile() && !isModelFileStardist(modelName))
@@ -111,21 +126,37 @@ public class StardistInferJdllOp implements OpInterface {
 		this.modelName = modelName;
 	}
 	
+	/**
+	 * Set the input on which the selected stardist mdoel is going to be run
+	 * @param <T>
+     * 	possible ImgLib2 data types of the provided {@link Tensor}
+	 * @param tensor
+	 * 	input on which the stardist model is going to be run
+	 */
 	public < T extends RealType< T > & NativeType< T > > void setInputTensor(Tensor<T> tensor) {
 		inputTensor = tensor;
 	}
 
 	@Override
+	/**
+	 * {@inheritDoc}
+	 */
 	public String getOpPythonFilename() {
 		return STARDIST_OP_FNAME;
 	}
 
 	@Override
+	/**
+	 * {@inheritDoc}
+	 */
 	public int getNumberOfOutputs() {
 		return N_STARDIST_OUTPUTS;
 	}
 
 	@Override
+	/**
+	 * {@inheritDoc}
+	 */
 	public void installOp() {
 		// TODO this method checks if the OP file is at its correponding folder.
 		// TODO if not unpack the python file and located (where??)
@@ -136,6 +167,9 @@ public class StardistInferJdllOp implements OpInterface {
 	}
 
 	@Override
+	/**
+	 * {@inheritDoc}
+	 */
 	public LinkedHashMap<String, Object> getOpInputs() {
 		Objects.requireNonNull(modelName, "The model of interest needs to be defined first.");
 		Objects.requireNonNull(inputTensor, "The input tensor has not been defined. Please, define"
@@ -147,21 +181,33 @@ public class StardistInferJdllOp implements OpInterface {
 	}
 
 	@Override
+	/**
+	 * {@inheritDoc}
+	 */
 	public String getCondaEnv() {
 		return envPath;
 	}
 
 	@Override
+	/**
+	 * {@inheritDoc}
+	 */
 	public String getMethodName() {
 		return OP_METHOD_NAME;
 	}
 
 	@Override
+	/**
+	 * {@inheritDoc}
+	 */
 	public String getOpDir() {
 		return opFilePath;
 	}
 
 	@Override
+	/**
+	 * {@inheritDoc}
+	 */
 	public boolean isOpInstalled() {
 		// TODO maybe remove this method? Make the check at installOp?
 		return false;
