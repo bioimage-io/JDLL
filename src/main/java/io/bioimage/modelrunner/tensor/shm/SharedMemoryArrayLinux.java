@@ -21,7 +21,6 @@
 package io.bioimage.modelrunner.tensor.shm;
 
 import java.io.ByteArrayInputStream;
-import java.nio.ByteBuffer;
 import java.util.HashMap;
 
 import com.sun.jna.Pointer;

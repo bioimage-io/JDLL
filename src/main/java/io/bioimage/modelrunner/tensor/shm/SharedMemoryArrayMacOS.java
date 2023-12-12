@@ -51,23 +51,32 @@ import net.imglib2.view.Views;
 
 /**
  * Class that maps {@link Tensor} objects to the shared memory for interprocessing communication
- * in POSIX based systems (LINUX, MACOS...)
+ * in MacOS based systems
  * @author Carlos Garcia Lopez de Haro
  */
 public class SharedMemoryArrayMacOS implements SharedMemoryArray
 {
+	/**
+	 * Instance of the CLibrary JNI containing the methods to interact with the Shared memory segments
+	 */
 	private static final CLibrary INSTANCE = CLibrary.INSTANCE;
+	/**
+	 * Instance of the  JNI containing the methods that help ineracting with shared memory segments
+	 * and are not contained in the {@link CLibrary} {@value #INSTANCE}
+	 */
 	private static final MacosHelpers macosInstance = MacosHelpers.INSTANCE;
 	/**
-	 * Shared memory location
+	 * File descriptor value of the shared memory segment
 	 */
 	private final int shmFd;
 	/**
-	 * 
+	 * Pointer referencing the shared memory byte array
 	 */
 	private Pointer pSharedMemory;
 	/**
-	 * Name defining the location of the shared memory block
+	 * Name of the file containing the shared memory segment. In Unix based systems consits of "/" + file_name.
+	 * In Linux the shared memory segments can be inspected at /dev/shm.
+	 * For MacOS the name can only have a certain length, {@value #MACOS_MAX_LENGTH}
 	 */
 	private final String memoryName;
 	/**
@@ -75,11 +84,13 @@ public class SharedMemoryArrayMacOS implements SharedMemoryArray
 	 */
 	private int size;
 	/**
-	 * Datatype of the shm array
+	 * Shared memory segments store bytes. This field represents the original data type of the array that was written
+	 * into the bytes of the shared memory segment. It is helful to retrieve the object later.
 	 */
 	private final String originalDataType;
 	/**
-	 * Original dimensions of the shm array
+	 * Shared memory segments are flat arrays, only one dimension. This field keeps the dimensions of the array before
+	 * flattening it and copying it to the shared memory.
 	 */
 	private final long[] originalDims;
 	/**
@@ -92,15 +103,43 @@ public class SharedMemoryArrayMacOS implements SharedMemoryArray
 	 * of bytes corresponding to the values of the array, no header
 	 */
 	private boolean isNumpyFormat = false;
-
-    
+	/**
+	 * Maximum length of the name that can be given to a shared memory region
+	 */
     protected static final int MACOS_MAX_LENGTH = 30;
-    
+
+	/**
+	 * Create a shared memory segment with the wanted size, where an object of a certain datatype and
+	 * share is going to be stored.
+	 * Unless the array of bytes that is going to be written into the shared memory segment has numpy format,
+	 * the size parameter should only depend on the shape and the data type.
+	 * The name of the file containing the shared memory segment is assigned automatically.
+	 * @param size
+	 * 	number of bytes that are going to be written into the shared memory
+	 * @param dtype
+	 * 	data type of the object that is going to be written into the shared memory
+	 * @param shape
+	 * 	shape (array dimensions) of the array that is going to be  flattened and written into the shared memory segment
+	 */
     private SharedMemoryArrayMacOS(int size, String dtype, long[] shape)
     {
     	this(SharedMemoryArray.createShmName(), size, dtype, shape);
     }
-    
+
+	/**
+	 * Create a shared memory segment with the wanted size, where an object of a certain datatype and
+	 * share is going to be stored. The shared memory name is created in the location of the name provided
+	 * Unless the array of bytes that is going to be written into the shared memory segment has numpy format,
+	 * the size parameter should only depend on the shape and the data type.
+	 * @param name
+	 * 	name of the file name that is going to be used to identify the shared memory segment
+	 * @param size
+	 * 	number of bytes that are going to be written into the shared memory
+	 * @param dtype
+	 * 	data type of the object that is going to be written into the shared memory
+	 * @param shape
+	 * 	shape (array dimensions) of the array that is going to be  flattened and written into the shared memory segment
+	 */
     private SharedMemoryArrayMacOS(String name, int size, String dtype, long[] shape)
     {
     	this.originalDataType = dtype;
