@@ -22,6 +22,8 @@ package io.bioimage.modelrunner.runmode.ops;
 import java.io.File;
 import java.util.LinkedHashMap;
 
+import io.bioimage.modelrunner.runmode.RunMode;
+
 /**
  * A generic OP that allows running Python code from JDLL if it is formatted correctly.
  * 
