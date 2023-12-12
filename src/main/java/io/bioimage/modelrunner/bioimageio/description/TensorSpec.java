@@ -362,6 +362,8 @@ public class TensorSpec {
      * please use {@link #setTileSizeForTensorAndImageSize(int[], int[])}
      * @param tileSize
      * 	the patch array size to validate, it has to be in the axes order of the tensor
+     * @param tileAxesOrder
+     * 	the axes order of the 'tileSize' argument
      * @throws Exception if the patch does not comply with the constraints specified
      */
     public void validate(int[] tileSize, String tileAxesOrder) throws Exception {
@@ -414,6 +416,8 @@ public class TensorSpec {
      * 	axes order of the tile provided
      * @param tensorImageSize
      * 	size of the image that is used for the tensor.
+     * @param imageAxesOrder
+     * 	the axes order of the image size provided
      * @throws Exception if the patch size is not able to 
      * 	fulfill the requirements of the tensor
      */

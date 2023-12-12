@@ -22,7 +22,6 @@ package io.bioimage.modelrunner.tensor;
 
 import java.io.ByteArrayOutputStream;
 import java.math.BigDecimal;
-import java.nio.ByteBuffer;
 import java.util.List;
 import java.util.stream.IntStream;
 
@@ -44,7 +43,11 @@ import net.imglib2.type.numeric.real.FloatType;
 import net.imglib2.util.Cast;
 
 /**
- * A {@link Img} builder from {@link ByteBuffer} objects
+ * A {@link RandomAccessibleInterval} and {@link Tensor} builder from {@link List} objects.
+ * This class was originally designed to be used with the Appose library to favor the inter-processing
+ * communication with the Python process using **pipes**.
+ * The arrays sent from java to Python where decoded into Java {@link List}s. This class is useful to convert
+ * those flat lists into {@link RandomAccessibleInterval}s or {@link Tensor}s given other details as the shape.
  * 
  * @author Carlos Garcia Lopez de Haro
  */
@@ -58,37 +61,59 @@ public final class ListToImgLib2 {
     }
 
     /**
-     * Creates a {@link Tensor} from the information stored in a {@link ByteBuffer}
+     * Creates a {@link Tensor} from the information stored in a {@link List} given the shape of the tensor,
+     * its axes, the data type and the name
      * 
      * @param <T>
      * 	the type of the generated tensor
-     * @param buff
-     * 	byte buffer to get the tensor info from
-     * @return the tensor generated from the bytebuffer
-     * @throws IllegalArgumentException if the data type of the tensor saved in the bytebuffer is
-     * not supported
+     * @param array
+     * 	{@link List} object containing the flat data of the tensor. The data type should be either the same as
+     * 	provided in the 'dtype' argument ({@link Byte}, {@link Short}, {@link Integer}, {@link Long},
+     * 	{@link Float}, {@link Double}). The List can also be of type {@link Byte} and the argument 'dtype' can be any type
+     * 	as longg as the bytes of the list encode the corresponding data type. For example if the dtype is 'int32' there should
+     * 	be 4 times more elements than what is required by the shape because each 4 bytes corresponds to one int32 value.
+     * @param shape
+     * 	{@link List} containing the shape of the tensor that wants to be created from the flat array
+     * @param axes
+     * 	String containing the axes order. Which dimension correspond to which axes
+     * @param dtype 
+     * 	data type of the tensor that is going to be reconstructed from the flat data array
+     * @param name
+     * 	name of the tensor
+     * @return the reconstructed tensor
+     * @throws IllegalArgumentException if the data type defined by the argument 'dtype' is not supported
+     * 	or if the data type of the components in the List of the  'array' argument is not valid
      */
     @SuppressWarnings("unchecked")
     public static < T extends RealType< T > & NativeType< T > > Tensor<T> 
-    		buildTensor(List array, List<Integer> shape, String axes, String dtype, String name) 
+    		buildTensor(List<?> array, List<Integer> shape, String axes, String dtype, String name) 
     				throws IllegalArgumentException
     {
 		return Tensor.build(name, axes, (RandomAccessibleInterval<T>) build(array, shape, dtype));
     }
 
     /**
-     * Creates a {@link Img} from the information stored in a {@link ByteBuffer}
+     * Creates a {@link RandomAccessibleInterval} from the information stored in a {@link List} given the shape of the RAI
+     * and the data type 
      * 
      * @param <T>
-     * 	data type of the image
-     * @param byteBuff
-     *        The bytebyuffer that contains info to create a tenosr or a {@link Img}
-     * @return The imglib2 image {@link Img} built from the bytebuffer info.
-     * @throws IllegalArgumentException if the data type of the tensor saved in the bytebuffer is
-     * not supported
+     * 	the type of the generated {@link RandomAccessibleInterval}
+     * @param array
+     * 	{@link List} object containing the flat data of the {@link RandomAccessibleInterval}. The data type should be either the same as
+     * 	provided in the 'dtype' argument ({@link Byte}, {@link Short}, {@link Integer}, {@link Long},
+     * 	{@link Float}, {@link Double}). The List can also be of type {@link Byte} and the argument 'dtype' can be any type
+     * 	as long as the bytes of the list encode the corresponding data type. For example if the dtype is 'int32' there should
+     * 	be 4 times more elements than what is required by the shape because each 4 bytes corresponds to one int32 value.
+     * @param shape
+     * 	{@link List} containing the shape of the {@link RandomAccessibleInterval} that wants to be created from the flat array
+     * @param dtype 
+     * 	data type of the tensor that is going to be reconstructed from the flat data array
+     * @return the reconstructed {@link RandomAccessibleInterval}
+     * @throws IllegalArgumentException if the data type defined by the argument 'dtype' is not supported
+     * 	or if the data type of the components in the List of the  'array' argument is not valid
      */
     @SuppressWarnings("unchecked")
-    public static < T extends RealType< T > & NativeType< T > > Img<T> build(List array, List<Integer> shape, String dtype) throws IllegalArgumentException
+    public static < T extends RealType< T > & NativeType< T > > RandomAccessibleInterval<T> build(List<?> array, List<Integer> shape, String dtype) throws IllegalArgumentException
     {
     	if (shape.size() == 0 || array.size() == 0)
     		return null;
@@ -128,66 +153,17 @@ public final class ListToImgLib2 {
         }
 		return data;
     }
-    
-    @SuppressWarnings("unchecked")
-	private static < T extends RealType< T > & NativeType< T > > Img<T> createEmptyArray(List<Integer> tensorShape, String dtype) {
-    	long[] shape = IntStream.range(0, tensorShape.size()).mapToLong(i -> tensorShape.get(i)).toArray();
-
-        final Img<T> data;
-        final ArrayImgFactory<?> factory;
-		switch (dtype)
-        {
-	    	case "int8":
-	        	factory = new ArrayImgFactory<>( new ByteType() );
-	        	data = (Img<T>) factory.create(shape);
-	        	break;
-	    	case "uint8":
-	        	factory = new ArrayImgFactory<>( new UnsignedByteType() );
-	        	data = (Img<T>) factory.create(shape);
-	            break;
-	    	case "int16":
-	        	factory = new ArrayImgFactory<>( new ShortType() );
-	        	data = (Img<T>) factory.create(shape);
-	            break;
-	    	case "uint16":
-	        	factory = new ArrayImgFactory<>( new UnsignedShortType() );
-	        	data = (Img<T>) factory.create(shape);
-	            break;
-            case "int32":
-	        	factory = new ArrayImgFactory<>( new IntType() );
-	        	data = (Img<T>) factory.create(shape);
-                break;
-            case "uint32":
-	        	factory = new ArrayImgFactory<>( new UnsignedIntType() );
-	        	data = (Img<T>) factory.create(shape);
-                break;
-            case "int64":
-	        	factory = new ArrayImgFactory<>( new LongType() );
-	        	data = (Img<T>) factory.create(shape);
-                break;
-            case "float32":
-	        	factory = new ArrayImgFactory<>( new FloatType() );
-	        	data = (Img<T>) factory.create(shape);
-                break;
-            case "float64":
-	        	factory = new ArrayImgFactory<>( new DoubleType() );
-	        	data = (Img<T>) factory.create(shape);
-                break;
-            default:
-                throw new IllegalArgumentException("Unsupported tensor type: " + dtype);
-        }
-		return data;
-    }
 
     /**
-     * Builds a ByteType {@link RandomAccessibleInterval} from the information stored in a byte buffer.
-     * The shape of the image that was previously retrieved from the buffer
-     * @param tensor
-     * 	byte buffer containing the information of the a tenosr, the position in the buffer
-     *  should not be at zero but right after the header.
-     * @param tensorShape
-     * 	shape of the image to generate, it has been retrieved from the byte buffer 
-     * @return RandomAccessibleInterval specified in the bytebuffer
+     * Creates a {@link ByteType} {@link RandomAccessibleInterval} from the information stored in a {@link List} given the shape of the RAI.
+     * 
+     * @param array
+     * 	{@link List} object containing the flat data of the {@link RandomAccessibleInterval}.
+     * 	The list should contain either {@link Byte} objects or {@link Integer} objects
+     * @param shape
+     * 	{@link List} containing the shape of the {@link RandomAccessibleInterval} that wants to be created from the flat array
+     * @return the reconstructed {@link RandomAccessibleInterval}
+     * @throws IllegalArgumentException if the input argument 'array' is not a {@link List} of {@link Byte}s or {@link Integer}s
      */
     private static RandomAccessibleInterval<ByteType> buildInt8(List array, List<Integer> tensorShape)
     {
@@ -203,14 +179,15 @@ public final class ListToImgLib2 {
 	}
 
     /**
-     * Builds a ByteType {@link RandomAccessibleInterval} from the information stored in a byte buffer.
-     * The shape of the image that was previously retrieved from the buffer
-     * @param tensor
-     * 	byte buffer containing the information of the a tenosr, the position in the buffer
-     *  should not be at zero but right after the header.
-     * @param tensorShape
-     * 	shape of the image to generate, it has been retrieved from the byte buffer 
-     * @return RandomAccessibleInterval specified in the bytebuffer
+     * Creates a {@link ByteType} {@link RandomAccessibleInterval} from the information stored in a {@link List} given the shape of the RAI.
+     * 
+     * @param array
+     * 	{@link List} object containing the flat data of the {@link RandomAccessibleInterval}.
+     * 	The list should contain either {@link Byte} objects or {@link Integer} objects
+     * @param shape
+     * 	{@link List} containing the shape of the {@link RandomAccessibleInterval} that wants to be created from the flat array
+     * @return the reconstructed {@link RandomAccessibleInterval}
+     * @throws IllegalArgumentException if the input argument 'array' is not a {@link List} of {@link Byte}s or {@link Integer}s
      */
     private static RandomAccessibleInterval<ByteType> buildInt8FromByte(List<Byte> tensor, List<Integer> tensorShape)
     {
@@ -222,14 +199,15 @@ public final class ListToImgLib2 {
 	}
 
     /**
-     * Builds a ByteType {@link RandomAccessibleInterval} from the information stored in a byte buffer.
-     * The shape of the image that was previously retrieved from the buffer
-     * @param tensor
-     * 	byte buffer containing the information of the a tenosr, the position in the buffer
-     *  should not be at zero but right after the header.
-     * @param tensorShape
-     * 	shape of the image to generate, it has been retrieved from the byte buffer 
-     * @return RandomAccessibleInterval specified in the bytebuffer
+     * Creates a {@link ByteType} {@link RandomAccessibleInterval} from the information stored in a {@link List} given the shape of the RAI.
+     * 
+     * @param array
+     * 	{@link List} object containing the flat data of the {@link RandomAccessibleInterval}.
+     * 	The list should contain either {@link Byte} objects or {@link Integer} objects
+     * @param shape
+     * 	{@link List} containing the shape of the {@link RandomAccessibleInterval} that wants to be created from the flat array
+     * @return the reconstructed {@link RandomAccessibleInterval}
+     * @throws IllegalArgumentException if the input argument 'array' is not a {@link List} of {@link Byte}s or {@link Integer}s
      */
     private static RandomAccessibleInterval<ByteType> buildInt8FromInteger(List<Integer> tensor, List<Integer> tensorShape)
     {
@@ -246,14 +224,15 @@ public final class ListToImgLib2 {
 	}
 
     /**
-     * Builds a ByteType {@link RandomAccessibleInterval} from the information stored in a byte buffer.
-     * The shape of the image that was previously retrieved from the buffer
-     * @param tensor
-     * 	byte buffer containing the information of the a tenosr, the position in the buffer
-     *  should not be at zero but right after the header.
-     * @param tensorShape
-     * 	shape of the image to generate, it has been retrieved from the byte buffer 
-     * @return RandomAccessibleInterval specified in the bytebuffer
+     * Creates a {@link ByteType} {@link RandomAccessibleInterval} from the information stored in a {@link List} given the shape of the RAI.
+     * 
+     * @param array
+     * 	{@link List} object containing the flat data of the {@link RandomAccessibleInterval}.
+     * 	The list should contain either {@link Byte} objects or {@link Integer} objects
+     * @param shape
+     * 	{@link List} containing the shape of the {@link RandomAccessibleInterval} that wants to be created from the flat array
+     * @return the reconstructed {@link RandomAccessibleInterval}
+     * @throws IllegalArgumentException if the input argument 'array' is not a {@link List} of {@link Byte}s or {@link Integer}s
      */
     private static RandomAccessibleInterval<UnsignedByteType> buildUint8(List array, List<Integer> tensorShape)
     {
@@ -269,14 +248,15 @@ public final class ListToImgLib2 {
 	}
 
     /**
-     * Builds a ByteType {@link RandomAccessibleInterval} from the information stored in a byte buffer.
-     * The shape of the image that was previously retrieved from the buffer
-     * @param tensor
-     * 	byte buffer containing the information of the a tenosr, the position in the buffer
-     *  should not be at zero but right after the header.
-     * @param tensorShape
-     * 	shape of the image to generate, it has been retrieved from the byte buffer 
-     * @return RandomAccessibleInterval specified in the bytebuffer
+     * Creates a {@link ByteType} {@link RandomAccessibleInterval} from the information stored in a {@link List} given the shape of the RAI.
+     * 
+     * @param array
+     * 	{@link List} object containing the flat data of the {@link RandomAccessibleInterval}.
+     * 	The list should contain either {@link Byte} objects or {@link Integer} objects
+     * @param shape
+     * 	{@link List} containing the shape of the {@link RandomAccessibleInterval} that wants to be created from the flat array
+     * @return the reconstructed {@link RandomAccessibleInterval}
+     * @throws IllegalArgumentException if the input argument 'array' is not a {@link List} of {@link Byte}s or {@link Integer}s
      */
     private static RandomAccessibleInterval<UnsignedByteType> buildUint8FromByte(List<Byte> tensor, List<Integer> tensorShape)
     {
@@ -293,14 +273,15 @@ public final class ListToImgLib2 {
 	}
 
     /**
-     * Builds a ByteType {@link RandomAccessibleInterval} from the information stored in a byte buffer.
-     * The shape of the image that was previously retrieved from the buffer
-     * @param tensor
-     * 	byte buffer containing the information of the a tenosr, the position in the buffer
-     *  should not be at zero but right after the header.
-     * @param tensorShape
-     * 	shape of the image to generate, it has been retrieved from the byte buffer 
-     * @return RandomAccessibleInterval specified in the bytebuffer
+     * Creates a {@link ByteType} {@link RandomAccessibleInterval} from the information stored in a {@link List} given the shape of the RAI.
+     * 
+     * @param array
+     * 	{@link List} object containing the flat data of the {@link RandomAccessibleInterval}.
+     * 	The list should contain either {@link Byte} objects or {@link Integer} objects
+     * @param shape
+     * 	{@link List} containing the shape of the {@link RandomAccessibleInterval} that wants to be created from the flat array
+     * @return the reconstructed {@link RandomAccessibleInterval}
+     * @throws IllegalArgumentException if the input argument 'array' is not a {@link List} of {@link Byte}s or {@link Integer}s
      */
     private static RandomAccessibleInterval<UnsignedByteType> buildUint8FromInteger(List<Integer> tensor, List<Integer> tensorShape)
     {
@@ -317,14 +298,15 @@ public final class ListToImgLib2 {
 	}
 
     /**
-     * Builds a ShortType {@link RandomAccessibleInterval} from the information stored in a byte buffer.
-     * The shape of the image that was previously retrieved from the buffer
-     * @param tensor
-     * 	byte buffer containing the information of the a tenosr, the position in the buffer
-     *  should not be at zero but right after the header.
-     * @param tensorShape
-     * 	shape of the image to generate, it has been retrieved from the byte buffer 
-     * @return RandomAccessibleInterval specified in the bytebuffer
+     * Creates a {@link ByteType} {@link RandomAccessibleInterval} from the information stored in a {@link List} given the shape of the RAI.
+     * 
+     * @param array
+     * 	{@link List} object containing the flat data of the {@link RandomAccessibleInterval}.
+     * 	The list should contain either {@link Byte} objects or {@link Integer} objects
+     * @param shape
+     * 	{@link List} containing the shape of the {@link RandomAccessibleInterval} that wants to be created from the flat array
+     * @return the reconstructed {@link RandomAccessibleInterval}
+     * @throws IllegalArgumentException if the input argument 'array' is not a {@link List} of {@link Byte}s or {@link Integer}s
      */
     private static RandomAccessibleInterval<ShortType> buildInt16(List array, List<Integer> tensorShape)
     {
@@ -340,14 +322,15 @@ public final class ListToImgLib2 {
 	}
 
     /**
-     * Builds a IntType {@link RandomAccessibleInterval} from the information stored in a byte buffer.
-     * The shape of the image that was previously retrieved from the buffer
-     * @param tensor
-     * 	byte buffer containing the information of the a tenosr, the position in the buffer
-     *  should not be at zero but right after the header.
-     * @param tensorShape
-     * 	shape of the image to generate, it has been retrieved from the byte buffer 
-     * @return RandomAccessibleInterval specified in the bytebuffer
+     * Creates a {@link ByteType} {@link RandomAccessibleInterval} from the information stored in a {@link List} given the shape of the RAI.
+     * 
+     * @param array
+     * 	{@link List} object containing the flat data of the {@link RandomAccessibleInterval}.
+     * 	The list should contain either {@link Byte} objects or {@link Integer} objects
+     * @param shape
+     * 	{@link List} containing the shape of the {@link RandomAccessibleInterval} that wants to be created from the flat array
+     * @return the reconstructed {@link RandomAccessibleInterval}
+     * @throws IllegalArgumentException if the input argument 'array' is not a {@link List} of {@link Byte}s or {@link Integer}s
      */
     private static RandomAccessibleInterval<ShortType> buildInt16FromShort(List<Short> tensor, List<Integer> tensorShape)
     {
@@ -364,14 +347,15 @@ public final class ListToImgLib2 {
 	}
 
     /**
-     * Builds a IntType {@link RandomAccessibleInterval} from the information stored in a byte buffer.
-     * The shape of the image that was previously retrieved from the buffer
-     * @param tensor
-     * 	byte buffer containing the information of the a tenosr, the position in the buffer
-     *  should not be at zero but right after the header.
-     * @param tensorShape
-     * 	shape of the image to generate, it has been retrieved from the byte buffer 
-     * @return RandomAccessibleInterval specified in the bytebuffer
+     * Creates a {@link ByteType} {@link RandomAccessibleInterval} from the information stored in a {@link List} given the shape of the RAI.
+     * 
+     * @param array
+     * 	{@link List} object containing the flat data of the {@link RandomAccessibleInterval}.
+     * 	The list should contain either {@link Byte} objects or {@link Integer} objects
+     * @param shape
+     * 	{@link List} containing the shape of the {@link RandomAccessibleInterval} that wants to be created from the flat array
+     * @return the reconstructed {@link RandomAccessibleInterval}
+     * @throws IllegalArgumentException if the input argument 'array' is not a {@link List} of {@link Byte}s or {@link Integer}s
      */
     private static RandomAccessibleInterval<ShortType> buildInt16FromInteger(List<Integer> tensor, List<Integer> tensorShape)
     {
@@ -388,14 +372,15 @@ public final class ListToImgLib2 {
 	}
 
     /**
-     * Builds a ShortType {@link RandomAccessibleInterval} from the information stored in a byte buffer.
-     * The shape of the image that was previously retrieved from the buffer
-     * @param tensor
-     * 	byte buffer containing the information of the a tenosr, the position in the buffer
-     *  should not be at zero but right after the header.
-     * @param tensorShape
-     * 	shape of the image to generate, it has been retrieved from the byte buffer 
-     * @return RandomAccessibleInterval specified in the bytebuffer
+     * Creates a {@link ByteType} {@link RandomAccessibleInterval} from the information stored in a {@link List} given the shape of the RAI.
+     * 
+     * @param array
+     * 	{@link List} object containing the flat data of the {@link RandomAccessibleInterval}.
+     * 	The list should contain either {@link Byte} objects or {@link Integer} objects
+     * @param shape
+     * 	{@link List} containing the shape of the {@link RandomAccessibleInterval} that wants to be created from the flat array
+     * @return the reconstructed {@link RandomAccessibleInterval}
+     * @throws IllegalArgumentException if the input argument 'array' is not a {@link List} of {@link Byte}s or {@link Integer}s
      */
     private static RandomAccessibleInterval<UnsignedShortType> buildUint16(List array, List<Integer> tensorShape)
     {
@@ -411,14 +396,15 @@ public final class ListToImgLib2 {
 	}
 
     /**
-     * Builds a IntType {@link RandomAccessibleInterval} from the information stored in a byte buffer.
-     * The shape of the image that was previously retrieved from the buffer
-     * @param tensor
-     * 	byte buffer containing the information of the a tenosr, the position in the buffer
-     *  should not be at zero but right after the header.
-     * @param tensorShape
-     * 	shape of the image to generate, it has been retrieved from the byte buffer 
-     * @return RandomAccessibleInterval specified in the bytebuffer
+     * Creates a {@link ByteType} {@link RandomAccessibleInterval} from the information stored in a {@link List} given the shape of the RAI.
+     * 
+     * @param array
+     * 	{@link List} object containing the flat data of the {@link RandomAccessibleInterval}.
+     * 	The list should contain either {@link Byte} objects or {@link Integer} objects
+     * @param shape
+     * 	{@link List} containing the shape of the {@link RandomAccessibleInterval} that wants to be created from the flat array
+     * @return the reconstructed {@link RandomAccessibleInterval}
+     * @throws IllegalArgumentException if the input argument 'array' is not a {@link List} of {@link Byte}s or {@link Integer}s
      */
     private static RandomAccessibleInterval<UnsignedShortType> buildUint16FromShort(List<Short> tensor, List<Integer> tensorShape)
     {
@@ -435,14 +421,15 @@ public final class ListToImgLib2 {
 	}
 
     /**
-     * Builds a IntType {@link RandomAccessibleInterval} from the information stored in a byte buffer.
-     * The shape of the image that was previously retrieved from the buffer
-     * @param tensor
-     * 	byte buffer containing the information of the a tenosr, the position in the buffer
-     *  should not be at zero but right after the header.
-     * @param tensorShape
-     * 	shape of the image to generate, it has been retrieved from the byte buffer 
-     * @return RandomAccessibleInterval specified in the bytebuffer
+     * Creates a {@link ByteType} {@link RandomAccessibleInterval} from the information stored in a {@link List} given the shape of the RAI.
+     * 
+     * @param array
+     * 	{@link List} object containing the flat data of the {@link RandomAccessibleInterval}.
+     * 	The list should contain either {@link Byte} objects or {@link Integer} objects
+     * @param shape
+     * 	{@link List} containing the shape of the {@link RandomAccessibleInterval} that wants to be created from the flat array
+     * @return the reconstructed {@link RandomAccessibleInterval}
+     * @throws IllegalArgumentException if the input argument 'array' is not a {@link List} of {@link Byte}s or {@link Integer}s
      */
     private static RandomAccessibleInterval<UnsignedShortType> buildUint16FromInteger(List<Integer> tensor, List<Integer> tensorShape)
     {
@@ -459,14 +446,15 @@ public final class ListToImgLib2 {
 	}
 
     /**
-     * Builds a ByteType {@link RandomAccessibleInterval} from the information stored in a byte buffer.
-     * The shape of the image that was previously retrieved from the buffer
-     * @param tensor
-     * 	byte buffer containing the information of the a tenosr, the position in the buffer
-     *  should not be at zero but right after the header.
-     * @param tensorShape
-     * 	shape of the image to generate, it has been retrieved from the byte buffer 
-     * @return RandomAccessibleInterval specified in the bytebuffer
+     * Creates a {@link ByteType} {@link RandomAccessibleInterval} from the information stored in a {@link List} given the shape of the RAI.
+     * 
+     * @param array
+     * 	{@link List} object containing the flat data of the {@link RandomAccessibleInterval}.
+     * 	The list should contain either {@link Byte} objects or {@link Integer} objects
+     * @param shape
+     * 	{@link List} containing the shape of the {@link RandomAccessibleInterval} that wants to be created from the flat array
+     * @return the reconstructed {@link RandomAccessibleInterval}
+     * @throws IllegalArgumentException if the input argument 'array' is not a {@link List} of {@link Byte}s or {@link Integer}s
      */
     private static RandomAccessibleInterval<IntType> buildInt32(List array, List<Integer> tensorShape)
     {
@@ -479,14 +467,15 @@ public final class ListToImgLib2 {
 	}
 
     /**
-     * Builds a IntType {@link RandomAccessibleInterval} from the information stored in a byte buffer.
-     * The shape of the image that was previously retrieved from the buffer
-     * @param tensor
-     * 	byte buffer containing the information of the a tenosr, the position in the buffer
-     *  should not be at zero but right after the header.
-     * @param tensorShape
-     * 	shape of the image to generate, it has been retrieved from the byte buffer 
-     * @return RandomAccessibleInterval specified in the bytebuffer
+     * Creates a {@link ByteType} {@link RandomAccessibleInterval} from the information stored in a {@link List} given the shape of the RAI.
+     * 
+     * @param array
+     * 	{@link List} object containing the flat data of the {@link RandomAccessibleInterval}.
+     * 	The list should contain either {@link Byte} objects or {@link Integer} objects
+     * @param shape
+     * 	{@link List} containing the shape of the {@link RandomAccessibleInterval} that wants to be created from the flat array
+     * @return the reconstructed {@link RandomAccessibleInterval}
+     * @throws IllegalArgumentException if the input argument 'array' is not a {@link List} of {@link Byte}s or {@link Integer}s
      */
     private static RandomAccessibleInterval<IntType> buildInt32FromInteger(List<Integer> tensor, List<Integer> tensorShape)
     {
@@ -503,14 +492,15 @@ public final class ListToImgLib2 {
 	}
 
     /**
-     * Builds a ByteType {@link RandomAccessibleInterval} from the information stored in a byte buffer.
-     * The shape of the image that was previously retrieved from the buffer
-     * @param tensor
-     * 	byte buffer containing the information of the a tenosr, the position in the buffer
-     *  should not be at zero but right after the header.
-     * @param tensorShape
-     * 	shape of the image to generate, it has been retrieved from the byte buffer 
-     * @return RandomAccessibleInterval specified in the bytebuffer
+     * Creates a {@link ByteType} {@link RandomAccessibleInterval} from the information stored in a {@link List} given the shape of the RAI.
+     * 
+     * @param array
+     * 	{@link List} object containing the flat data of the {@link RandomAccessibleInterval}.
+     * 	The list should contain either {@link Byte} objects or {@link Integer} objects
+     * @param shape
+     * 	{@link List} containing the shape of the {@link RandomAccessibleInterval} that wants to be created from the flat array
+     * @return the reconstructed {@link RandomAccessibleInterval}
+     * @throws IllegalArgumentException if the input argument 'array' is not a {@link List} of {@link Byte}s or {@link Integer}s
      */
     private static RandomAccessibleInterval<UnsignedIntType> buildUint32(List array, List<Integer> tensorShape)
     {
@@ -526,14 +516,15 @@ public final class ListToImgLib2 {
 	}
 
     /**
-     * Builds a IntType {@link RandomAccessibleInterval} from the information stored in a byte buffer.
-     * The shape of the image that was previously retrieved from the buffer
-     * @param tensor
-     * 	byte buffer containing the information of the a tenosr, the position in the buffer
-     *  should not be at zero but right after the header.
-     * @param tensorShape
-     * 	shape of the image to generate, it has been retrieved from the byte buffer 
-     * @return RandomAccessibleInterval specified in the bytebuffer
+     * Creates a {@link ByteType} {@link RandomAccessibleInterval} from the information stored in a {@link List} given the shape of the RAI.
+     * 
+     * @param array
+     * 	{@link List} object containing the flat data of the {@link RandomAccessibleInterval}.
+     * 	The list should contain either {@link Byte} objects or {@link Integer} objects
+     * @param shape
+     * 	{@link List} containing the shape of the {@link RandomAccessibleInterval} that wants to be created from the flat array
+     * @return the reconstructed {@link RandomAccessibleInterval}
+     * @throws IllegalArgumentException if the input argument 'array' is not a {@link List} of {@link Byte}s or {@link Integer}s
      */
     private static RandomAccessibleInterval<UnsignedIntType> buildUint32FromInteger(List<Integer> tensor, List<Integer> tensorShape)
     {
@@ -550,14 +541,15 @@ public final class ListToImgLib2 {
 	}
 
     /**
-     * Builds a IntType {@link RandomAccessibleInterval} from the information stored in a byte buffer.
-     * The shape of the image that was previously retrieved from the buffer
-     * @param tensor
-     * 	byte buffer containing the information of the a tenosr, the position in the buffer
-     *  should not be at zero but right after the header.
-     * @param tensorShape
-     * 	shape of the image to generate, it has been retrieved from the byte buffer 
-     * @return RandomAccessibleInterval specified in the bytebuffer
+     * Creates a {@link ByteType} {@link RandomAccessibleInterval} from the information stored in a {@link List} given the shape of the RAI.
+     * 
+     * @param array
+     * 	{@link List} object containing the flat data of the {@link RandomAccessibleInterval}.
+     * 	The list should contain either {@link Byte} objects or {@link Integer} objects
+     * @param shape
+     * 	{@link List} containing the shape of the {@link RandomAccessibleInterval} that wants to be created from the flat array
+     * @return the reconstructed {@link RandomAccessibleInterval}
+     * @throws IllegalArgumentException if the input argument 'array' is not a {@link List} of {@link Byte}s or {@link Integer}s
      */
     private static RandomAccessibleInterval<UnsignedIntType> buildUint32FromLong(List<Long> tensor, List<Integer> tensorShape)
     {
@@ -574,14 +566,15 @@ public final class ListToImgLib2 {
 	}
 
     /**
-     * Builds a LongType {@link RandomAccessibleInterval} from the information stored in a byte buffer.
-     * The shape of the image that was previously retrieved from the buffer
-     * @param tensor
-     * 	byte buffer containing the information of the a tenosr, the position in the buffer
-     *  should not be at zero but right after the header.
-     * @param tensorShape
-     * 	shape of the image to generate, it has been retrieved from the byte buffer 
-     * @return RandomAccessibleInterval specified in the bytebuffer
+     * Creates a {@link ByteType} {@link RandomAccessibleInterval} from the information stored in a {@link List} given the shape of the RAI.
+     * 
+     * @param array
+     * 	{@link List} object containing the flat data of the {@link RandomAccessibleInterval}.
+     * 	The list should contain either {@link Byte} objects or {@link Integer} objects
+     * @param shape
+     * 	{@link List} containing the shape of the {@link RandomAccessibleInterval} that wants to be created from the flat array
+     * @return the reconstructed {@link RandomAccessibleInterval}
+     * @throws IllegalArgumentException if the input argument 'array' is not a {@link List} of {@link Byte}s or {@link Integer}s
      */
     private static RandomAccessibleInterval<LongType> buildInt64(List array, List<Integer> tensorShape)
     {
@@ -597,14 +590,15 @@ public final class ListToImgLib2 {
 	}
 
     /**
-     * Builds a LongType {@link RandomAccessibleInterval} from the information stored in a byte buffer.
-     * The shape of the image that was previously retrieved from the buffer
-     * @param tensor
-     * 	byte buffer containing the information of the a tenosr, the position in the buffer
-     *  should not be at zero but right after the header.
-     * @param tensorShape
-     * 	shape of the image to generate, it has been retrieved from the byte buffer 
-     * @return RandomAccessibleInterval specified in the bytebuffer
+     * Creates a {@link ByteType} {@link RandomAccessibleInterval} from the information stored in a {@link List} given the shape of the RAI.
+     * 
+     * @param array
+     * 	{@link List} object containing the flat data of the {@link RandomAccessibleInterval}.
+     * 	The list should contain either {@link Byte} objects or {@link Integer} objects
+     * @param shape
+     * 	{@link List} containing the shape of the {@link RandomAccessibleInterval} that wants to be created from the flat array
+     * @return the reconstructed {@link RandomAccessibleInterval}
+     * @throws IllegalArgumentException if the input argument 'array' is not a {@link List} of {@link Byte}s or {@link Integer}s
      */
     private static RandomAccessibleInterval<LongType> buildInt64FromLong(List<Long> tensor, List<Integer> tensorShape)
     {
@@ -621,14 +615,15 @@ public final class ListToImgLib2 {
 	}
 
     /**
-     * Builds a LongType {@link RandomAccessibleInterval} from the information stored in a byte buffer.
-     * The shape of the image that was previously retrieved from the buffer
-     * @param tensor
-     * 	byte buffer containing the information of the a tenosr, the position in the buffer
-     *  should not be at zero but right after the header.
-     * @param tensorShape
-     * 	shape of the image to generate, it has been retrieved from the byte buffer 
-     * @return RandomAccessibleInterval specified in the bytebuffer
+     * Creates a {@link ByteType} {@link RandomAccessibleInterval} from the information stored in a {@link List} given the shape of the RAI.
+     * 
+     * @param array
+     * 	{@link List} object containing the flat data of the {@link RandomAccessibleInterval}.
+     * 	The list should contain either {@link Byte} objects or {@link Integer} objects
+     * @param shape
+     * 	{@link List} containing the shape of the {@link RandomAccessibleInterval} that wants to be created from the flat array
+     * @return the reconstructed {@link RandomAccessibleInterval}
+     * @throws IllegalArgumentException if the input argument 'array' is not a {@link List} of {@link Byte}s or {@link Integer}s
      */
     private static RandomAccessibleInterval<LongType> buildInt64FromInteger(List<Integer> tensor, List<Integer> tensorShape)
     {
@@ -645,14 +640,15 @@ public final class ListToImgLib2 {
 	}
 
     /**
-     * Builds a FloatType {@link RandomAccessibleInterval} from the information stored in a byte buffer.
-     * The shape of the image that was previously retrieved from the buffer
-     * @param tensor
-     * 	byte buffer containing the information of the a tenosr, the position in the buffer
-     *  should not be at zero but right after the header.
-     * @param tensorShape
-     * 	shape of the image to generate, it has been retrieved from the byte buffer 
-     * @return RandomAccessibleInterval specified in the bytebuffer
+     * Creates a {@link ByteType} {@link RandomAccessibleInterval} from the information stored in a {@link List} given the shape of the RAI.
+     * 
+     * @param array
+     * 	{@link List} object containing the flat data of the {@link RandomAccessibleInterval}.
+     * 	The list should contain either {@link Byte} objects or {@link Integer} objects
+     * @param shape
+     * 	{@link List} containing the shape of the {@link RandomAccessibleInterval} that wants to be created from the flat array
+     * @return the reconstructed {@link RandomAccessibleInterval}
+     * @throws IllegalArgumentException if the input argument 'array' is not a {@link List} of {@link Byte}s or {@link Integer}s
      */
     private static RandomAccessibleInterval<FloatType> buildFloat32(List array, List<Integer> tensorShape)
     {
@@ -668,14 +664,15 @@ public final class ListToImgLib2 {
 	}
 
     /**
-     * Builds a FloatType {@link RandomAccessibleInterval} from the information stored in a byte buffer.
-     * The shape of the image that was previously retrieved from the buffer
-     * @param tensor
-     * 	byte buffer containing the information of the a tenosr, the position in the buffer
-     *  should not be at zero but right after the header.
-     * @param tensorShape
-     * 	shape of the image to generate, it has been retrieved from the byte buffer 
-     * @return RandomAccessibleInterval specified in the bytebuffer
+     * Creates a {@link ByteType} {@link RandomAccessibleInterval} from the information stored in a {@link List} given the shape of the RAI.
+     * 
+     * @param array
+     * 	{@link List} object containing the flat data of the {@link RandomAccessibleInterval}.
+     * 	The list should contain either {@link Byte} objects or {@link Integer} objects
+     * @param shape
+     * 	{@link List} containing the shape of the {@link RandomAccessibleInterval} that wants to be created from the flat array
+     * @return the reconstructed {@link RandomAccessibleInterval}
+     * @throws IllegalArgumentException if the input argument 'array' is not a {@link List} of {@link Byte}s or {@link Integer}s
      */
     private static RandomAccessibleInterval<FloatType> buildFloat32FromFloat(List<Float> tensor, List<Integer> tensorShape)
     {
@@ -692,14 +689,15 @@ public final class ListToImgLib2 {
 	}
 
     /**
-     * Builds a FloatType {@link RandomAccessibleInterval} from the information stored in a byte buffer.
-     * The shape of the image that was previously retrieved from the buffer
-     * @param tensor
-     * 	byte buffer containing the information of the a tenosr, the position in the buffer
-     *  should not be at zero but right after the header.
-     * @param tensorShape
-     * 	shape of the image to generate, it has been retrieved from the byte buffer 
-     * @return RandomAccessibleInterval specified in the bytebuffer
+     * Creates a {@link ByteType} {@link RandomAccessibleInterval} from the information stored in a {@link List} given the shape of the RAI.
+     * 
+     * @param array
+     * 	{@link List} object containing the flat data of the {@link RandomAccessibleInterval}.
+     * 	The list should contain either {@link Byte} objects or {@link Integer} objects
+     * @param shape
+     * 	{@link List} containing the shape of the {@link RandomAccessibleInterval} that wants to be created from the flat array
+     * @return the reconstructed {@link RandomAccessibleInterval}
+     * @throws IllegalArgumentException if the input argument 'array' is not a {@link List} of {@link Byte}s or {@link Integer}s
      */
     private static RandomAccessibleInterval<FloatType> buildFloat32FromBigDecimal(List<BigDecimal> tensor, List<Integer> tensorShape)
     {
@@ -716,14 +714,15 @@ public final class ListToImgLib2 {
 	}
 
     /**
-     * Builds a DoubleType {@link RandomAccessibleInterval} from the information stored in a byte buffer.
-     * The shape of the image that was previously retrieved from the buffer
-     * @param tensor
-     * 	byte buffer containing the information of the a tenosr, the position in the buffer
-     *  should not be at zero but right after the header.
-     * @param tensorShape
-     * 	shape of the image to generate, it has been retrieved from the byte buffer 
-     * @return RandomAccessibleInterval specified in the bytebuffer
+     * Creates a {@link ByteType} {@link RandomAccessibleInterval} from the information stored in a {@link List} given the shape of the RAI.
+     * 
+     * @param array
+     * 	{@link List} object containing the flat data of the {@link RandomAccessibleInterval}.
+     * 	The list should contain either {@link Byte} objects or {@link Integer} objects
+     * @param shape
+     * 	{@link List} containing the shape of the {@link RandomAccessibleInterval} that wants to be created from the flat array
+     * @return the reconstructed {@link RandomAccessibleInterval}
+     * @throws IllegalArgumentException if the input argument 'array' is not a {@link List} of {@link Byte}s or {@link Integer}s
      */
     private static RandomAccessibleInterval<DoubleType> buildFloat64(List array, List<Integer> tensorShape)
     {
@@ -742,14 +741,15 @@ public final class ListToImgLib2 {
 	}
 
     /**
-     * Builds a DoubleType {@link RandomAccessibleInterval} from the information stored in a byte buffer.
-     * The shape of the image that was previously retrieved from the buffer
-     * @param tensor
-     * 	byte buffer containing the information of the a tenosr, the position in the buffer
-     *  should not be at zero but right after the header.
-     * @param tensorShape
-     * 	shape of the image to generate, it has been retrieved from the byte buffer 
-     * @return RandomAccessibleInterval specified in the bytebuffer
+     * Creates a {@link ByteType} {@link RandomAccessibleInterval} from the information stored in a {@link List} given the shape of the RAI.
+     * 
+     * @param array
+     * 	{@link List} object containing the flat data of the {@link RandomAccessibleInterval}.
+     * 	The list should contain either {@link Byte} objects or {@link Integer} objects
+     * @param shape
+     * 	{@link List} containing the shape of the {@link RandomAccessibleInterval} that wants to be created from the flat array
+     * @return the reconstructed {@link RandomAccessibleInterval}
+     * @throws IllegalArgumentException if the input argument 'array' is not a {@link List} of {@link Byte}s or {@link Integer}s
      */
     private static RandomAccessibleInterval<DoubleType> buildFloat64FromDouble(List<Double> tensor, List<Integer> tensorShape)
     {
@@ -766,14 +766,15 @@ public final class ListToImgLib2 {
 	}
 
     /**
-     * Builds a DoubleType {@link RandomAccessibleInterval} from the information stored in a byte buffer.
-     * The shape of the image that was previously retrieved from the buffer
-     * @param tensor
-     * 	byte buffer containing the information of the a tenosr, the position in the buffer
-     *  should not be at zero but right after the header.
-     * @param tensorShape
-     * 	shape of the image to generate, it has been retrieved from the byte buffer 
-     * @return RandomAccessibleInterval specified in the bytebuffer
+     * Creates a {@link ByteType} {@link RandomAccessibleInterval} from the information stored in a {@link List} given the shape of the RAI.
+     * 
+     * @param array
+     * 	{@link List} object containing the flat data of the {@link RandomAccessibleInterval}.
+     * 	The list should contain either {@link Byte} objects or {@link Integer} objects
+     * @param shape
+     * 	{@link List} containing the shape of the {@link RandomAccessibleInterval} that wants to be created from the flat array
+     * @return the reconstructed {@link RandomAccessibleInterval}
+     * @throws IllegalArgumentException if the input argument 'array' is not a {@link List} of {@link Byte}s or {@link Integer}s
      */
     private static RandomAccessibleInterval<DoubleType> buildFloat64FromFloat(List<Float> tensor, List<Integer> tensorShape)
     {
@@ -790,14 +791,15 @@ public final class ListToImgLib2 {
 	}
 
     /**
-     * Builds a DoubleType {@link RandomAccessibleInterval} from the information stored in a byte buffer.
-     * The shape of the image that was previously retrieved from the buffer
-     * @param tensor
-     * 	byte buffer containing the information of the a tenosr, the position in the buffer
-     *  should not be at zero but right after the header.
-     * @param tensorShape
-     * 	shape of the image to generate, it has been retrieved from the byte buffer 
-     * @return RandomAccessibleInterval specified in the bytebuffer
+     * Creates a {@link ByteType} {@link RandomAccessibleInterval} from the information stored in a {@link List} given the shape of the RAI.
+     * 
+     * @param array
+     * 	{@link List} object containing the flat data of the {@link RandomAccessibleInterval}.
+     * 	The list should contain either {@link Byte} objects or {@link Integer} objects
+     * @param shape
+     * 	{@link List} containing the shape of the {@link RandomAccessibleInterval} that wants to be created from the flat array
+     * @return the reconstructed {@link RandomAccessibleInterval}
+     * @throws IllegalArgumentException if the input argument 'array' is not a {@link List} of {@link Byte}s or {@link Integer}s
      */
     private static RandomAccessibleInterval<DoubleType> buildFloat64FromBigDecimal(List<BigDecimal> tensor, List<Integer> tensorShape)
     {

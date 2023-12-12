@@ -61,21 +61,6 @@ public class JSONUtils
     }
 
     /**
-     * Reads the provided json String and loads it into a map of string keys and object values.
-     * 
-     * @param jsonString
-     *        The String json file.
-     * @return The map loaded with the json elements.
-     */
-    public static Map<String, Object> loadFromString(String jsonString)
-    {
-    	Gson gson = new Gson();
-        Type mapType = new TypeToken<Map<String, Object>>() {}.getType();
-        Map<String, Object> dataMap = gson.fromJson(jsonString, mapType);
-        return dataMap;
-    }
-
-    /**
      * Converts a list of objects into an array of strings.
      * 
      * @param list
@@ -178,7 +163,7 @@ public class JSONUtils
     }
 
     /**
-     * Method that writes a Map<String, Object> into a JSON file in the path defined
+     * Method that writes a Map&lt;String, Object&gt; into a JSON file in the path defined
      * @param filePath
      * 	path to the json file that will be created
      * @param data

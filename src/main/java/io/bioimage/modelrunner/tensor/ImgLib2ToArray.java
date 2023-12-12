@@ -20,8 +20,6 @@
  */
 package io.bioimage.modelrunner.tensor;
 
-import java.nio.ByteBuffer;
-
 import net.imglib2.Cursor;
 import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.type.NativeType;
@@ -40,9 +38,7 @@ import net.imglib2.util.Util;
 import net.imglib2.view.Views;
 
 /**
- * Class that maps {@link Tensor} objects to {@link ByteBuffer} objects.
- * This is done to modify the files that are used to communicate between process
- * to avoid the TF2-TF1/Pytorch incompatibility that happens in these systems
+ * Class that maps {@link Tensor} objects to an array of the corresponding primitive type.
  * 
  * @author Carlos Garcia Lopez de Haro
  */
@@ -76,18 +72,18 @@ public final class ImgLib2ToArray
     }
 
     /**
-     * Adds the {@link RandomAccessibleInterval} data to the {@link ByteBuffer} provided.
-     * The position of the ByteBuffer is kept in the same place as it was received.
+     * Gets the {@link RandomAccessibleInterval} data into a Java flat array of the corresponding 
+     * primitive type with C-ordering
      * 
      * @param <T> 
      * 	the type of the {@link RandomAccessibleInterval}
      * @param rai 
-     * 	{@link RandomAccessibleInterval} to be mapped into byte buffer
-     * @param byteBuffer 
-     * 	target bytebuffer
+     * 	{@link RandomAccessibleInterval} to be flattened into a Java array
+     * @return a Java flat array of the corresponding primitive type that contains the data of the {@link RandomAccessibleInterval}
+     * 	in C-order
      * @throws IllegalArgumentException If the {@link RandomAccessibleInterval} type is not supported.
      */
-    public static <T extends Type<T>> Object build(RandomAccessibleInterval<T> rai)
+    public static < T extends RealType< T > & NativeType< T > > Object build(RandomAccessibleInterval<T> rai)
     {
     	if (Util.getTypeFromInterval(rai) instanceof ByteType) {
     		return buildInt8((RandomAccessibleInterval<ByteType>) rai);
@@ -113,13 +109,11 @@ public final class ImgLib2ToArray
     }
 
     /**
-     * Adds the ByteType {@link RandomAccessibleInterval} data to the {@link ByteBuffer} provided.
-     * The position of the ByteBuffer is kept in the same place as it was received.
+     * Gets the {@link ByteType} {@link RandomAccessibleInterval} data into a Java flat byte array with C-ordering
      * 
      * @param tensor 
-     * 	{@link RandomAccessibleInterval} to be mapped into byte buffer
-     * @param byteBuffer 
-     * 	target bytebuffer
+     * 	{@link RandomAccessibleInterval} to be flattened into a Java array
+     * @return a Java flat byte array that contains the data of the {@link RandomAccessibleInterval} in C-order
      */
     private static byte[] buildInt8(RandomAccessibleInterval<ByteType> tensor)
     {
@@ -142,13 +136,11 @@ public final class ImgLib2ToArray
     }
 
     /**
-     * Adds the ByteType {@link RandomAccessibleInterval} data to the {@link ByteBuffer} provided.
-     * The position of the ByteBuffer is kept in the same place as it was received.
+     * Gets the {@link UnsignedByteType} {@link RandomAccessibleInterval} data into a Java flat byte array with C-ordering
      * 
      * @param tensor 
-     * 	{@link RandomAccessibleInterval} to be mapped into byte buffer
-     * @param byteBuffer 
-     * 	target bytebuffer
+     * 	{@link RandomAccessibleInterval} to be flattened into a Java array
+     * @return a Java flat byte array that contains the data of the {@link RandomAccessibleInterval} in C-order
      */
     private static byte[] buildUint8(RandomAccessibleInterval<UnsignedByteType> tensor)
     {
@@ -171,13 +163,11 @@ public final class ImgLib2ToArray
     }
 
     /**
-     * Adds the ByteType {@link RandomAccessibleInterval} data to the {@link ByteBuffer} provided.
-     * The position of the ByteBuffer is kept in the same place as it was received.
+     * Gets the {@link ShortType} {@link RandomAccessibleInterval} data into a Java flat short array with C-ordering
      * 
      * @param tensor 
-     * 	{@link RandomAccessibleInterval} to be mapped into byte buffer
-     * @param byteBuffer 
-     * 	target bytebuffer
+     * 	{@link RandomAccessibleInterval} to be flattened into a Java array
+     * @return a Java flat short array that contains the data of the {@link RandomAccessibleInterval} in C-order
      */
     private static short[] buildInt16(RandomAccessibleInterval<ShortType> tensor)
     {
@@ -200,13 +190,11 @@ public final class ImgLib2ToArray
     }
 
     /**
-     * Adds the ByteType {@link RandomAccessibleInterval} data to the {@link ByteBuffer} provided.
-     * The position of the ByteBuffer is kept in the same place as it was received.
+     * Gets the {@link UnsignedShortType} {@link RandomAccessibleInterval} data into a Java flat short array with C-ordering
      * 
      * @param tensor 
-     * 	{@link RandomAccessibleInterval} to be mapped into byte buffer
-     * @param byteBuffer 
-     * 	target bytebuffer
+     * 	{@link RandomAccessibleInterval} to be flattened into a Java array
+     * @return a Java flat short array that contains the data of the {@link RandomAccessibleInterval} in C-order
      */
     private static short[] buildUint16(RandomAccessibleInterval<UnsignedShortType> tensor)
     {
@@ -229,13 +217,11 @@ public final class ImgLib2ToArray
     }
 
     /**
-     * Adds the IntType {@link RandomAccessibleInterval} data to the {@link ByteBuffer} provided.
-     * The position of the ByteBuffer is kept in the same place as it was received.
+     * Gets the {@link IntType} {@link RandomAccessibleInterval} data into a Java flat int array with C-ordering
      * 
      * @param tensor 
-     * 	{@link RandomAccessibleInterval} to be mapped into byte buffer
-     * @param byteBuffer 
-     * 	target bytebuffer
+     * 	{@link RandomAccessibleInterval} to be flattened into a Java array
+     * @return a Java flat int array that contains the data of the {@link RandomAccessibleInterval} in C-order
      */
     private static int[] buildInt32(RandomAccessibleInterval<IntType> tensor)
     {
@@ -258,13 +244,11 @@ public final class ImgLib2ToArray
     }
 
     /**
-     * Adds the IntType {@link RandomAccessibleInterval} data to the {@link ByteBuffer} provided.
-     * The position of the ByteBuffer is kept in the same place as it was received.
+     * Gets the {@link UnsignedIntType} {@link RandomAccessibleInterval} data into a Java flat int array with C-ordering
      * 
      * @param tensor 
-     * 	{@link RandomAccessibleInterval} to be mapped into byte buffer
-     * @param byteBuffer 
-     * 	target bytebuffer
+     * 	{@link RandomAccessibleInterval} to be flattened into a Java array
+     * @return a Java flat int array that contains the data of the {@link RandomAccessibleInterval} in C-order
      */
     private static int[] buildUint32(RandomAccessibleInterval<UnsignedIntType> tensor)
     {
@@ -287,13 +271,11 @@ public final class ImgLib2ToArray
     }
 
     /**
-     * Adds the IntType {@link RandomAccessibleInterval} data to the {@link ByteBuffer} provided.
-     * The position of the ByteBuffer is kept in the same place as it was received.
+     * Gets the {@link LongType} {@link RandomAccessibleInterval} data into a Java flat long array with C-ordering
      * 
      * @param tensor 
-     * 	{@link RandomAccessibleInterval} to be mapped into byte buffer
-     * @param byteBuffer 
-     * 	target bytebuffer
+     * 	{@link RandomAccessibleInterval} to be flattened into a Java array
+     * @return a Java flat long array that contains the data of the {@link RandomAccessibleInterval} in C-order
      */
     private static long[] buildInt64(RandomAccessibleInterval<LongType> tensor)
     {
@@ -316,13 +298,11 @@ public final class ImgLib2ToArray
     }
 
     /**
-     * Adds the FloatType {@link RandomAccessibleInterval} data to the {@link ByteBuffer} provided.
-     * The position of the ByteBuffer is kept in the same place as it was received.
+     * Gets the {@link FloatType} {@link RandomAccessibleInterval} data into a Java flat float array with C-ordering
      * 
      * @param tensor 
-     * 	{@link RandomAccessibleInterval} to be mapped into byte buffer
-     * @param byteBuffer 
-     * 	target bytebuffer
+     * 	{@link RandomAccessibleInterval} to be flattened into a Java array
+     * @return a Java flat float array that contains the data of the {@link RandomAccessibleInterval} in C-order
      */
     private static float[] buildFloat32(RandomAccessibleInterval<FloatType> tensor)
     {
@@ -345,13 +325,11 @@ public final class ImgLib2ToArray
     }
 
     /**
-     * Adds the DoubleType {@link RandomAccessibleInterval} data to the {@link ByteBuffer} provided.
-     * The position of the ByteBuffer is kept in the same place as it was received.
+     * Gets the {@link DoubleType} {@link RandomAccessibleInterval} data into a Java flat double array with C-ordering
      * 
      * @param tensor 
-     * 	{@link RandomAccessibleInterval} to be mapped into byte buffer
-     * @param byteBuffer 
-     * 	target bytebuffer
+     * 	{@link RandomAccessibleInterval} to be flattened into a Java array
+     * @return a Java flat double array that contains the data of the {@link RandomAccessibleInterval} in C-order
      */
     private static double[] buildFloat64(RandomAccessibleInterval<DoubleType> tensor)
     {

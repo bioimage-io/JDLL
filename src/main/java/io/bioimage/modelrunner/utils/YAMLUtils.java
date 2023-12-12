@@ -179,7 +179,7 @@ public class YAMLUtils
     }
 
     /**
-     * Method that writes a Map<String, Object> into a YAML file in the path defined
+     * Method that writes a Map&lt;String, Object&gt; into a YAML file in the path defined
      * @param filePath
      * 	path to the yaml file that will be created
      * @param data
