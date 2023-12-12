@@ -368,7 +368,7 @@ public class StardistFineTuneJdllOp implements OpInterface {
 	 * 	single tensor that corresponds to the groudn truth to fine tune the model
 	 */
 	public < T extends RealType< T > & NativeType< T > > 
-		void setFineTuningData(Tensor<T> trainingSamples, Tensor<T> groundTruth) throws IOException, Exception {
+		void setFineTuningData(Tensor<T> trainingSamples, Tensor<T> groundTruth) {
 		checkTrainAndGroundTruthDimensions(trainingSamples, groundTruth);
 		setTrainingSamples(trainingSamples);
 		setGroundTruth(groundTruth);
@@ -384,9 +384,9 @@ public class StardistFineTuneJdllOp implements OpInterface {
 	}
 	
 	/**
-	 * Learning rate used to fine tune the model, if not set, the default one will be used {@link #learningRate}
+	 * Learning rate used to fine tune the model, if not set, the default one will be used {@link #lr}
 	 * @param learningRate
-	 * 	Learning rate used to fine tune the model, if not set, the default one will be used {@link #learningRate}
+	 * 	Learning rate used to fine tune the model, if not set, the default one will be used {@link #lr}
 	 */
 	public void setLearingRate(float learningRate) {
 		this.lr = learningRate;
