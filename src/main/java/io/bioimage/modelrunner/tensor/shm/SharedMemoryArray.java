@@ -30,6 +30,15 @@ import io.bioimage.modelrunner.system.PlatformDetection;
 import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.type.NativeType;
 import net.imglib2.type.numeric.RealType;
+import net.imglib2.type.numeric.integer.ByteType;
+import net.imglib2.type.numeric.integer.IntType;
+import net.imglib2.type.numeric.integer.LongType;
+import net.imglib2.type.numeric.integer.ShortType;
+import net.imglib2.type.numeric.integer.UnsignedByteType;
+import net.imglib2.type.numeric.integer.UnsignedIntType;
+import net.imglib2.type.numeric.integer.UnsignedShortType;
+import net.imglib2.type.numeric.real.DoubleType;
+import net.imglib2.type.numeric.real.FloatType;
 
 /**
  * Interface to interact with shared memory segments retrieving the underlying information 
@@ -264,6 +273,33 @@ public interface SharedMemoryArray extends Closeable {
         if (PlatformDetection.isWindows()) return "Local\\" + UUID.randomUUID().toString();
     	else if (PlatformDetection.isLinux()) return "/shm-" + UUID.randomUUID();
     	else return ("/shm-" + UUID.randomUUID()).substring(0, SharedMemoryArrayMacOS.MACOS_MAX_LENGTH);
+	}
+    
+	/**
+	 * Get the number of bytes that is required to store the data in an nd array of a certain data type
+	 * @param <T>
+     * 	possible ImgLib2 data types of the provided {@link RandomAccessibleInterval}
+	 * @param shape
+	 * 	shape of the array
+	 * @param type
+	 * 	ImgLib2 data type of the array
+	 * @return the number of bytes needed to store the nd array
+	 */
+	public static <T extends RealType<T> & NativeType<T>> int getArrayByteSize(long[] shape, T type) {
+		int noByteSize = 1;
+		for (long l : shape) {noByteSize *= l;}
+		if (type instanceof ByteType || type instanceof UnsignedByteType) {
+			return noByteSize * 1;
+		} else if (type instanceof ShortType || type instanceof UnsignedShortType) {
+			return noByteSize * 2;
+		} else if (type instanceof IntType || type instanceof UnsignedIntType
+				|| type instanceof FloatType) {
+			return noByteSize * 4;
+		} else if (type instanceof LongType || type instanceof DoubleType) {
+			return noByteSize * 8;
+		} else {
+			throw new IllegalArgumentException("Type not supported: " + type.getClass().toString());
+		}
 	}
     
 	/**

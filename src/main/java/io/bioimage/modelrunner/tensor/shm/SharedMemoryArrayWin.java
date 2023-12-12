@@ -156,46 +156,37 @@ public class SharedMemoryArrayWin implements SharedMemoryArray
     	return this.size;
     }
 
-    /**
-     * Adds the {@link RandomAccessibleInterval} data to the {@link ByteBuffer} provided.
-     * The position of the ByteBuffer is kept in the same place as it was received.
-     * 
-     * @param <T> 
-     * 	the type of the {@link RandomAccessibleInterval}
-     * @param rai 
-     * 	{@link RandomAccessibleInterval} to be mapped into byte buffer
-     * @param byteBuffer 
-     * 	target bytebuffer
-     * @return an instance of {@link SharedMemoryArrayWin} containing the pointer to the 
-     * 	shared memory where the array is, the hMapFile, the size of the object in bytes, and 
-     * 	name of the memory location
-     * @throws IllegalArgumentException If the {@link RandomAccessibleInterval} type is not supported.
-     */
+	/**
+	 * This method copies the data from a {@link RandomAccessibleInterval} into a shared memory region
+	 * to be able to shared it with other processes.
+	 * An instance of {@link SharedMemoryArray} is created that helps managing the shared memory data.
+	 * The name is assigned automatically.
+	 * 
+	 * @param <T>
+     * 	possible ImgLib2 data types of the provided {@link RandomAccessibleInterval}
+	 * @param rai
+	 * 	the {@link RandomAccessibleInterval} that is going to be written into a shared memory region
+	 * @return a {@link SharedMemoryArray} instance that helps handling the data written to the shared memory region
+	 */
     protected static <T extends RealType<T> & NativeType<T>> SharedMemoryArrayWin build(RandomAccessibleInterval<T> rai)
     {
-    	String name = "Local\\" + UUID.randomUUID().toString();
-    	return build(name, rai);
+    	return build(SharedMemoryArray.createShmName(), rai);
     }
 
-    /**
-     * Adds the {@link RandomAccessibleInterval} data to the {@link ByteBuffer} provided.
-     * The position of the ByteBuffer is kept in the same place as it was received.
-     * 
-     * @param <T> 
-     * 	the type of the {@link RandomAccessibleInterval}
+	/**
+	 * This method copies the data from a {@link RandomAccessibleInterval} into a shared memory region
+	 * to be able to shared it with other processes.
+	 * An instance of {@link SharedMemoryArray} is created that helps managing the shared memory data.
+	 * 
+	 * @param <T>
+     * 	possible ImgLib2 data types of the provided {@link RandomAccessibleInterval}
      * @param name
-     * 	name of the memory location where the shm segment is going to be created, cannot contain any special character
-     * and should start by "Local\\" in windows. The shm name is generated automatically with the the method {@link #build(String, RandomAccessibleInterval)}
-     * @param rai 
-     * 	{@link RandomAccessibleInterval} to be mapped into byte buffer
-     * @param byteBuffer 
-     * 	target bytebuffer
-     * @return an instance of {@link SharedMemoryArrayWin} containing the pointer to the 
-     * 	shared memory where the array is, the hMapFile, the size of the object in bytes, and 
-     * 	name of the memory location
-     * @throws IllegalArgumentException If the {@link RandomAccessibleInterval} type is not supported or if the name does
-     * 	not fulfil the requirements.
-     */
+     * 	name of the shared memory region where the {@link RandomAccessibleInterval} data has been copied.
+     * 	In Windows systems it consists on "Local\\" + file_name, where file_name does not contain any special character.
+	 * @param rai
+	 * 	the {@link RandomAccessibleInterval} that is going to be written into a shared memory region
+	 * @return a {@link SharedMemoryArray} instance that helps handling the data written to the shared memory region
+	 */
     protected static <T extends RealType<T> & NativeType<T>> SharedMemoryArrayWin build(String name, RandomAccessibleInterval<T> rai)
     {
     	SharedMemoryArray.checkMemorySegmentName(name);
@@ -253,48 +244,48 @@ public class SharedMemoryArrayWin implements SharedMemoryArray
 		return shma;
     }
 
-    /**
-     * Creates a shared memory segment containing the information of the {@link RandomAccessibleInterval}.
-     * The shared memory segment is created with numpy format, which means that it will have a header of bytes indicating
-     * the data type, shape and byte ordering
-     * 
-     * @param <T> 
-     * 	the type of the {@link RandomAccessibleInterval}
-     * @param name
-     * 	name of the memory location where the shm segment is going to be created, cannot contain any special character
-     * and should should start by "Local\\" in windows. The shm name is generated automatically with the the method {@link #build(String, RandomAccessibleInterval)}
-     * @param rai 
-     * 	{@link RandomAccessibleInterval} to be mapped into byte buffer
-     * @return an instance of {@link SharedMemoryArrayLinux} containing the pointer to the 
-     * 	shared memory where the array is, the hMapFile, the size of the object in bytes, and 
-     * 	name of the memory location
-     * @throws IllegalArgumentException If the {@link RandomAccessibleInterval} type is not supported.
-     */
+
+	/**
+	 * This method copies the data from a {@link RandomAccessibleInterval} into a shared memory region
+	 * to be able to shared it with other processes.
+	 * This method copies the data into the shared memory region following the Numpy .npy format. This means
+	 * that the header of the region will contain info about the shape, the byte order, the column order (whether
+	 * is fortran or not) and the data type.
+	 * This way, the underlying nd array can be reconstructed just with the shared memory region name.
+	 * 
+	 * An instance of {@link SharedMemoryArray} is created that helps managing the shared memory data.
+	 * The name is assigned automatically.
+	 * 
+	 * @param <T>
+     * 	possible ImgLib2 data types of the provided {@link RandomAccessibleInterval}
+	 * @param rai
+	 * 	the {@link RandomAccessibleInterval} that is going to be written into a shared memory region
+	 * @return a {@link SharedMemoryArray} instance that helps handling the data written to the shared memory region
+	 */
     protected static <T extends RealType<T> & NativeType<T>> SharedMemoryArrayWin buildNumpyFormat(RandomAccessibleInterval<T> rai)
     {
-    	return buildNumpyFormat("Local\\" + UUID.randomUUID().toString(), rai);
+    	return buildNumpyFormat(SharedMemoryArray.createShmName(), rai);
     }
 
-    /**
-     * Creates a shared memory segment containing the information of the {@link RandomAccessibleInterval} in the 
-     * location specified by the 'name' argument. 
-     * The shared memory segment is created with numpy format, which means that it will have a header of bytes indicating
-     * the data type, shape and byte ordering
-     * 
-     * @param <T> 
-     * 	the type of the {@link RandomAccessibleInterval}
+	/**
+	 * This method copies the data from a {@link RandomAccessibleInterval} into a shared memory region
+	 * to be able to shared it with other processes.
+	 * This method copies the data into the shared memory region following the Numpy .npy format. This means
+	 * that the header of the region will contain info about the shape, the byte order, the column order (whether
+	 * is fortran or not) and the data type.
+	 * This way, the underlying nd array can be reconstructed just with the shared memory region name.
+	 * 
+	 * An instance of {@link SharedMemoryArray} is created that helps managing the shared memory data.
+	 * 
+	 * @param <T>
+     * 	possible ImgLib2 data types of the provided {@link RandomAccessibleInterval}
      * @param name
-     * 	name of the memory location where the shm segment is going to be created, cannot contain any special character
-     *  and should start by "Local\\" in windows. The shm name is generated 
-     *  automatically with the the method {@link #build(String, RandomAccessibleInterval)}. In Macos, names should not be 
-     *  longer than 30 characters
-     * @param rai 
-     * 	{@link RandomAccessibleInterval} to be mapped into byte buffer
-     * @return an instance of {@link SharedMemoryArrayLinux} containing the pointer to the 
-     * 	shared memory where the array is, the hMapFile, the size of the object in bytes, and 
-     * 	name of the memory location
-     * @throws IllegalArgumentException If the {@link RandomAccessibleInterval} type is not supported.
-     */
+     * 	name of the shared memory region where the {@link RandomAccessibleInterval} data has been copied
+     * 	In Windows systems it consists on "Local\\" + file_name, where file_name does not contain any special character.
+	 * @param rai
+	 * 	the {@link RandomAccessibleInterval} that is going to be written into a shared memory region
+	 * @return a {@link SharedMemoryArray} instance that helps handling the data written to the shared memory region
+	 */
     protected static <T extends RealType<T> & NativeType<T>> SharedMemoryArrayWin buildNumpyFormat(String name, RandomAccessibleInterval<T> rai)
     {
     	SharedMemoryArray.checkMemorySegmentName(name);
@@ -548,6 +539,24 @@ public class SharedMemoryArrayWin implements SharedMemoryArray
 
 	
 	// TODO support boolean
+	/**
+	 * Build a {@link HashMap} from the data stored in an existing shared memory segment.
+	 * The returned {@link HashMap} contains one entry for the data type, another for the shape (array dimensions),
+	 * byte ordering, column order (whether it is Fortran ordering or C ordering) and another for the actual byte
+	 * data (a flat array with the byte values of the array).
+	 * 
+	 * The shared memory segment should contain an array of bytes that can be read using the .npy format.
+	 * That is an array of bytes which specifies the characteristics of the nd array (shape, data type, byte order...)
+	 * followed by the flattened data converted into bytes.
+	 * If the shared memory region follows that convention, only the name of the shared memory region is needed to 
+	 * reconstruct the underlying nd array.
+	 * 
+	 * @param <T>
+     * 	possible ImgLib2 data types of the retrieved {@link RandomAccessibleInterval}
+	 * @param memoryName
+	 * 	name of the region where the shared memory segment is located
+	 * @return the {@link RandomAccessibleInterval} defined exclusively by the shared memory region following the .npy format
+	 */
 	protected static HashMap<String, Object> buildMapFromNumpyLikeSHMA(String memoryName) {
 		if (!memoryName.startsWith("Local\\"))
 			memoryName = "Local\\" + memoryName;
@@ -585,8 +594,20 @@ public class SharedMemoryArrayWin implements SharedMemoryArray
         }
 	}
 
-	
 	// TODO support boolean
+	/**
+	 * Build a {@link RandomAccessibleInterval} from the data stored in an existing shared memory segment.
+	 * The shared memory segment should contain an array of bytes that can be read using the .npy format.
+	 * That is an array of bytes which specifies the characteristics of the nd array (shape, data type, byte order...)
+	 * followed by the flattened data converted into bytes.
+	 * If the shared memory region follows that convention, only the name of the shared memory region is needed to 
+	 * reconstruct the underlying nd array
+	 * @param <T>
+     * 	possible ImgLib2 data types of the retrieved {@link RandomAccessibleInterval}
+	 * @param memoryName
+	 * 	name of the region where the shared memory segment is located
+	 * @return the {@link RandomAccessibleInterval} defined exclusively by the shared memory region following the .npy format
+	 */
 	protected static <T extends RealType<T> & NativeType<T>>
 	RandomAccessibleInterval<T> buildImgLib2FromNumpyLikeSHMA(String memoryName) {
 		if (!memoryName.startsWith("Local\\"))
@@ -624,11 +645,24 @@ public class SharedMemoryArrayWin implements SharedMemoryArray
         	throw new RuntimeException(ex);
         }
 	}
-	
-	// TODO support boolean
+
+	/**
+	 * Build a {@link RandomAccessibleInterval} from the data stored in an existing shared memory segment.
+	 * @param <T>
+     * 	possible ImgLib2 data types of the retrieved {@link RandomAccessibleInterval}
+	 * @param memoryName
+	 * 	name of the region where the shared memory segment is located
+	 * @param shape
+	 * 	shape (array dimensions) into which the flat array of the shared memory segment will be reconstructed
+	 * @param isFortran
+	 * 	whether converting the falt array into a ndarray is done using Fortran ordering or not (C-ordering)
+	 * @param dataType
+	 * 	the data type into which the bytes in the shared memory region will be converted
+	 * @return the {@link RandomAccessibleInterval} defined by the arguments and the shared memory segment
+	 */
 	protected static <T extends RealType<T> & NativeType<T>>
 	RandomAccessibleInterval<T> createImgLib2RaiFromSharedMemoryBlock(String memoryName, long[] shape, boolean isFortran, String dataType) {
-		int size = getArrayByteSize(shape, Cast.unchecked(CommonUtils.getImgLib2DataType(dataType)));
+		int size = SharedMemoryArray.getArrayByteSize(shape, Cast.unchecked(CommonUtils.getImgLib2DataType(dataType)));
 		if (!memoryName.startsWith("Local\\"))
 			memoryName = "Local\\" + memoryName;
 		WinNT.HANDLE hMapFile = Kernel32.INSTANCE.OpenFileMapping(
@@ -800,23 +834,6 @@ public class SharedMemoryArrayWin implements SharedMemoryArray
 		} else {
     		throw new IllegalArgumentException("Type not supported: " + dataType.getClass().toString());
 		}
-	}
-        
-    public static <T extends RealType<T> & NativeType<T>> int getArrayByteSize(long[] shape, T type) {
-    	int noByteSize = 1;
-    	for (long l : shape) {noByteSize *= l;}
-    	if (type instanceof ByteType || type instanceof UnsignedByteType) {
-    		return noByteSize * 1;
-    	} else if (type instanceof ShortType || type instanceof UnsignedShortType) {
-    		return noByteSize * 2;
-    	} else if (type instanceof IntType || type instanceof UnsignedIntType
-    			|| type instanceof FloatType) {
-    		return noByteSize * 4;
-    	} else if (type instanceof LongType || type instanceof DoubleType) {
-    		return noByteSize * 8;
-    	} else {
-    		throw new IllegalArgumentException("Type not supported: " + type.getClass().toString());
-    	}
 	}
 
 	@Override
