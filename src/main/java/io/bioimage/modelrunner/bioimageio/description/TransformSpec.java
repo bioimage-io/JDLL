@@ -36,8 +36,8 @@ public class TransformSpec
 	 * Whether the transformation represents a DIJ transformation or not
 	 */
 	private boolean isDIJ = false;
-	private static String kwargsKey = "kwargs";
-	private static String transformationNameKey = "name";
+	private static String KWARGS_KEY = "kwargs";
+	private static String TRANSFORMATION_NAME_KEY = "name";
 	
     /**
      * Builds a transformation specification from the provided element map.
@@ -60,7 +60,7 @@ public class TransformSpec
      */
     public Map<String, Object> getSpecMap()
     {
-        return specMap == null ? null : Collections.unmodifiableMap(specMap);
+        return specMap == null ? null : specMap;
     }
 
     /**
@@ -104,11 +104,11 @@ public class TransformSpec
     }
     
     public static String getKwargsKey() {
-    	return kwargsKey;
+    	return KWARGS_KEY;
     }
     
     public static String getTransformationNameKey() {
-    	return transformationNameKey;
+    	return TRANSFORMATION_NAME_KEY;
     }
 
     @Override

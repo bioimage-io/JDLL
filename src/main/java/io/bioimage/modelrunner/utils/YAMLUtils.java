@@ -22,18 +22,20 @@ package io.bioimage.modelrunner.utils;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.yaml.snakeyaml.DumperOptions;
 import org.yaml.snakeyaml.Yaml;
 
 /**
  * Utility class for YAML files and data structures.
  * 
- * @author Daniel Felipe Gonzalez Obando
+ * @author Daniel Felipe Gonzalez Obando and Carlos Garcia Lopez de Haro
  */
 public class YAMLUtils
 {
@@ -176,4 +178,27 @@ public class YAMLUtils
         }
     }
 
+    /**
+     * Method that writes a Map<String, Object> into a YAML file in the path defined
+     * @param filePath
+     * 	path to the yaml file that will be created
+     * @param data
+     * 	data to be written into the yaml file
+     * @throws IOException if there is any problem writting the yaml file
+     */
+    public static void writeYamlFile(String filePath, Map<String, Object> data) throws IOException {
+    	DumperOptions options = new DumperOptions();
+        options.setDefaultFlowStyle(DumperOptions.FlowStyle.BLOCK);
+        options.setPrettyFlow(true);
+
+        // Creating Yaml instance with options
+        Yaml yaml = new Yaml(options);
+
+        try (FileWriter writer = new FileWriter(filePath)) {
+            // Writing Map to YAML
+            yaml.dump(data, writer);
+        } catch (IOException e) {
+            throw e;
+        }
+    }
 }

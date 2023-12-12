@@ -26,6 +26,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import io.bioimage.modelrunner.bioimageio.description.weights.ModelWeight;
 import io.bioimage.modelrunner.engine.EngineInfo;
 import io.bioimage.modelrunner.system.PlatformDetection;
 
@@ -51,6 +52,7 @@ public class AvailableEngines
 		BIOIMAGEIO_TO_MODELRUNNER_KEYS_MAP.put(EngineInfo.getBioimageioTfKey(), EngineInfo.getTensorflowKey());
 		BIOIMAGEIO_TO_MODELRUNNER_KEYS_MAP.put(EngineInfo.getBioimageioOnnxKey(), EngineInfo.getOnnxKey());
 		BIOIMAGEIO_TO_MODELRUNNER_KEYS_MAP.put(EngineInfo.getBioimageioKerasKey(), EngineInfo.getKerasKey());
+		BIOIMAGEIO_TO_MODELRUNNER_KEYS_MAP.put(ModelWeight.getBioengineID(), ModelWeight.getBioengineID());
 	}
 	/**
 	 * HashMap that translates the keys used by the Deep Learning manager to the ones
@@ -63,6 +65,7 @@ public class AvailableEngines
 		MODELRUNNER_TO_BIOIMAGEIO_KEYS_MAP.put(EngineInfo.getTensorflowKey(), EngineInfo.getBioimageioTfKey());
 		MODELRUNNER_TO_BIOIMAGEIO_KEYS_MAP.put(EngineInfo.getOnnxKey(), EngineInfo.getBioimageioOnnxKey());
 		MODELRUNNER_TO_BIOIMAGEIO_KEYS_MAP.put(EngineInfo.getKerasKey(), EngineInfo.getBioimageioKerasKey());
+		MODELRUNNER_TO_BIOIMAGEIO_KEYS_MAP.put(ModelWeight.getBioengineID(), ModelWeight.getBioengineID());
 	}
 	
 	/**

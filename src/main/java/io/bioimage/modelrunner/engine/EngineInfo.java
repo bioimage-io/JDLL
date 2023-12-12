@@ -231,18 +231,9 @@ public class EngineInfo
 		boolean onnxLoaded = EngineLoader.getLoadedVersions().keySet().stream()
 				.filter(en -> en.startsWith(ONNX_ENGINE_NAME) && !en.equals(versionedEngine))
 				.findFirst().orElse(null) != null;
-		boolean ptLoaded = EngineLoader.getLoadedVersions().keySet().stream()
-				.filter(en -> en.startsWith(PYTORCH_ENGINE_NAME) && !en.equals(versionedEngine))
-				.findFirst().orElse(null) != null;
 		if (engine.equals(ONNX_ENGINE_NAME) && onnxLoaded) {
 			String confV = EngineLoader.getLoadedVersions().entrySet().stream()
 					.filter(en -> en.getKey().startsWith(ONNX_ENGINE_NAME) && !en.getKey().equals(versionedEngine))
-					.map(en -> en.getValue()).findFirst().get();
-			throw new IllegalArgumentException(
-					String.format(ENGINE_ERR, engine, version, confV, version, confV));
-		} else if (engine.equals(PYTORCH_ENGINE_NAME) && ptLoaded) {
-			String confV = EngineLoader.getLoadedVersions().entrySet().stream()
-					.filter(en -> en.getKey().startsWith(PYTORCH_ENGINE_NAME) && !en.getKey().equals(versionedEngine))
 					.map(en -> en.getValue()).findFirst().get();
 			throw new IllegalArgumentException(
 					String.format(ENGINE_ERR, engine, version, confV, version, confV));

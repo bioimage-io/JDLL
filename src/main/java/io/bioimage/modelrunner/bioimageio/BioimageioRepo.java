@@ -29,6 +29,7 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Map.Entry;
 import java.util.function.Consumer;
 
@@ -76,7 +77,7 @@ public class BioimageioRepo {
 	 */
 	private static List<String> modelNicknames;
 	
-	private LinkedHashMap<Path, ModelDescriptor> models;
+	private static LinkedHashMap<Path, ModelDescriptor> models;
 	
 	private Consumer<String> consumer;
 	
@@ -123,9 +124,23 @@ public class BioimageioRepo {
 	}
 	
 	/**
+	 * Refresh the list of models fetched from the Bioimage.io.
+	 * Connects to the Bioimage.io website and retrieves all the models available
+	 */
+	public void refresh() {
+		models = null;
+		listAllModels(false);
+	}
+	
+	/**
 	 * Method that connects to the BioImage.io API and retrieves the models available
 	 * at the Bioimage.io model repository.
-	 * The models are specified at: {@link #location}
+	 * The models are specified at: {@link #location}.
+	 * Once the method has been called, the list of models is not refreshed (that means
+	 * the method does not check the list of Bioimage.io models and returns what 
+	 * was obtained with the first call) unless the method {@link #refresh()}
+	 * is used, {@link #refresh()} actually calls again this method to retrieve the list from zero,
+	 * if not the same list as the one retrieved for the first time calling the method is used..
 	 * @param verbose
 	 * 	whether to print in the terminal and send that printed information in the consumer (if it 
 	 * 	exists) or not
@@ -360,6 +375,7 @@ public class BioimageioRepo {
 	 * @return the {@link ModelDescriptor} of the model
 	 */
 	public ModelDescriptor selectByID(String modelID) {
+		Objects.requireNonNull(modelID, "Argument 'modelID' cannot be null.");
 		Entry<Path, ModelDescriptor> modelEntry = this.listAllModels(false).entrySet().stream()
 				.filter(ee -> {
 					String id = ee.getValue().getModelID();
@@ -384,8 +400,11 @@ public class BioimageioRepo {
 	 * @return the {@link ModelDescriptor} of the model
 	 */
 	public ModelDescriptor selectByNickname(String nickname) {
+		Objects.requireNonNull(nickname, "Argument 'nickname' cannot be null.");
 		Entry<Path, ModelDescriptor> modelEntry = this.listAllModels(false).entrySet().stream()
-				.filter(ee -> ee.getValue().getNickname().equals(nickname)).findFirst().orElse(null);
+				.filter(ee -> ee.getValue().getNickname() != null
+							&& ee.getValue().getNickname().equals(nickname))
+				.findFirst().orElse(null);
 		if (modelEntry != null)
 			return modelEntry.getValue();
 		return null;
@@ -399,6 +418,7 @@ public class BioimageioRepo {
 	 * @return the {@link ModelDescriptor} of the model
 	 */
 	public ModelDescriptor selectByName(String name) {
+		Objects.requireNonNull(name, "Argument 'name' cannot be null.");
 		Entry<Path, ModelDescriptor> modelEntry = this.listAllModels(false).entrySet().stream()
 				.filter(ee -> ee.getValue().getName().equals(name)).findFirst().orElse(null);
 		if (modelEntry != null)
@@ -415,6 +435,7 @@ public class BioimageioRepo {
 	 * @return the {@link ModelDescriptor} of the model
 	 */
 	public ModelDescriptor selectByRdfSource(String rdfURL) {
+		Objects.requireNonNull(rdfURL, "Argument 'rdfURL' cannot be null.");
 		Entry<Path, ModelDescriptor> modelEntry = this.listAllModels(false).entrySet().stream()
 				.filter(ee -> ee.getValue().getRDFSource().equals(rdfURL)).findFirst().orElse(null);
 		if (modelEntry != null)

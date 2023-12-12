@@ -38,6 +38,7 @@ import java.util.stream.Collectors;
 import io.bioimage.modelrunner.bioimageio.BioimageioRepo;
 import io.bioimage.modelrunner.bioimageio.description.exceptions.ModelSpecsException;
 import io.bioimage.modelrunner.bioimageio.description.weights.ModelWeight;
+import io.bioimage.modelrunner.transformations.PythonTransformation;
 import io.bioimage.modelrunner.utils.Log;
 import io.bioimage.modelrunner.utils.YAMLUtils;
 
@@ -199,9 +200,6 @@ public class ModelDescriptor
                     case "name":
                         modelDescription.name = (String) fieldElement;
                         break;
-                    case "nickname":
-                        modelDescription.nickname = (String) fieldElement;
-                        break;
                     case "timestamp":
                         modelDescription.timestamp = fieldElement.toString();
                         break;
@@ -301,11 +299,15 @@ public class ModelDescriptor
                 throw new ModelSpecsException("Invalid model element: " + field + "->" + e.getMessage());
             }
         }
-        
+        Object bio = modelDescription.config.getSpecMap().get("bioimageio");
+        if ((bio != null) && (bio instanceof Map))
+        	modelDescription.nickname = (String) (((Map<String, Object>) bio).get("nickname"));
         modelDescription.addBioEngine();
-        if (modelDescription.localModelPath != null)
-        	modelDescription.addModelPath(new File(modelDescription.localModelPath).toPath());
-        return modelDescription;
+        if (modelDescription.localModelPath == null)
+        	return modelDescription;
+    	modelDescription.addModelPath(new File(modelDescription.localModelPath).toPath());
+    	SpecialModels.checkSpecialModels(modelDescription);
+    	return modelDescription;
     }
     
     /**
@@ -669,7 +671,7 @@ public class ModelDescriptor
     	else
     		info += "&nbsp -Location: " + location + "<br>";
     	// Display the frameworks available for this model
-    	info += "&nbsp -Engine: " + this.weights.getEnginesListWithVersions().toString() + "<br>";
+    	info += "&nbsp -Engine: " + this.weights.getSupportedWeightNamesAndVersion().toString() + "<br>";
     	// Display the model id
     	info += "&nbsp -ID: " + this.modelID + "<br>";
     	info += "<br>";
@@ -696,8 +698,8 @@ public class ModelDescriptor
     		String minString = "&emsp -minimum size: ";
     		String stepString = "&emsp -step: ";
     		for (int i = 0; i < dims.length; i ++) {
-    			minString += dims[i] + ": " + inp.getShape().getPatchMinimumSize()[i] + ", ";
-    			stepString += dims[i] + ": " + inp.getShape().getPatchPositionStep()[i] + ", ";
+    			minString += dims[i] + ": " + inp.getShape().getTileMinimumSize()[i] + ", ";
+    			stepString += dims[i] + ": " + inp.getShape().getTileStep()[i] + ", ";
     		}
     		// Remove the "; " characters at the end and add "]"
     		minString = minString.substring(0, minString.length() - 2) + "<br>";

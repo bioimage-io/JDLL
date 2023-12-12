@@ -33,7 +33,7 @@ public class PatchSpec
 	/**
 	 * Size of the tensor that is going to be tiled
 	 */
-    private long[] tensorDims;
+    private long[] nonTiledTensorDims;
 	/**
 	 * Size of the input patch. Following "xyczb" axes order
 	 */
@@ -65,19 +65,19 @@ public class PatchSpec
      *        sequence sizes.
      * @param patchPaddingSize
      *        The padding size used on each patch.
-     * @param tensorDims
+     * @param nonTiledTensorDims
      * 		  The original size of the image/tensor that is going to be tiled
      * @return The create patch specification.
      */
     public static PatchSpec create(String tensorName, long[] patchInputSize, int[] patchGridSize, 
-    		int[][] patchPaddingSize, long[] tensorDims)
+    		int[][] patchPaddingSize, long[] nonTiledTensorDims)
     {
         PatchSpec ps = new PatchSpec();
         ps.patchInputSize = patchInputSize;
         ps.patchGridSize = patchGridSize;
         ps.patchPaddingSize = patchPaddingSize;
         ps.tensorName = tensorName;
-        ps.tensorDims = tensorDims;
+        ps.nonTiledTensorDims = nonTiledTensorDims;
         return ps;
     }
 
@@ -107,8 +107,8 @@ public class PatchSpec
     	int[] grid = new int[]{1, 1, 1, 1, 1};
     	// If there is any different grid, that will be the absolute one
     	for (PatchSpec pp : patches) {
-    		if (!PatchGridCalculator.compareTwoArrays(grid, pp.getPatchGridSize()))
-    			return pp.getPatchGridSize();
+    		if (!PatchGridCalculator.compareTwoArrays(grid, pp.getTileGrid()))
+    			return pp.getTileGrid();
     	}
     	return grid;
     }
@@ -135,8 +135,8 @@ public class PatchSpec
     	int[] grid = new int[]{1, 1, 1, 1, 1};
     	// If there is any different grid, that will be the absolute one
     	for (PatchSpec pp : patches.values()) {
-    		if (!PatchGridCalculator.compareTwoArrays(grid, pp.getPatchGridSize()))
-    			return pp.getPatchGridSize();
+    		if (!PatchGridCalculator.compareTwoArrays(grid, pp.getTileGrid()))
+    			return pp.getTileGrid();
     	}
     	return grid;
     }
@@ -165,14 +165,14 @@ public class PatchSpec
      * The dimensions of the tensor
      * @return the dimensions of the tensor that is going to be tiled
      */
-    public long[] getTensorDims() {
-    	return tensorDims;
+    public long[] getNonTiledTensorDims() {
+    	return nonTiledTensorDims;
     }
 
     /**
      * @return Input patch size. The patch taken from the input sequence including the halo.
      */
-    public long[] getPatchInputSize()
+    public long[] getTileSize()
     {
         return patchInputSize;
     }
@@ -181,7 +181,7 @@ public class PatchSpec
      * @return The patch grid size. The number of patches in each axis used to cover the entire sequence. It should be computed from the output patch and input
      *         sequence sizes.
      */
-    public int[] getPatchGridSize()
+    public int[] getTileGrid()
     {
         return patchGridSize;
     }
@@ -189,7 +189,7 @@ public class PatchSpec
     /**
      * @return The padding size used on each patch.
      */
-    public int[][] getPatchPaddingSize()
+    public int[][] getPadding()
     {
         return patchPaddingSize;
     }

@@ -19,6 +19,9 @@
  */
 package io.bioimage.modelrunner.tensor;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import net.imglib2.Point;
 import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.transform.integer.MixedTransform;
@@ -58,6 +61,44 @@ public final class Utils
 		for (int i = 0; i < tensorShape.length; i ++) {
 			minMax[i] = min[tensorShape.length - i - 1];
 			minMax[i + tensorShape.length] = max[tensorShape.length - i - 1];
+		}
+		return Views.interval(new MixedTransformView<T>( rai, t ), 
+				Intervals.createMinMax(minMax));
+	}
+	/**
+	 * Method that rearanges the dimensions on the {@link RandomAccessibleInterval}
+	 * to the order provided in the 'orderChange' parameter.
+	 * For example, for an array of {512, 256, 3, 1}, and orderChange = [3, 0, 2, 1] the 
+	 * resulting array would be have the following dimensions [1, 512, 3, 256]
+	 * @param <T>
+	 * 	possible data types of the {@link RandomAccessibleInterval}
+	 * @param rai
+	 * 	{@link RandomAccessibleInterval} to be re-aranged
+	 * @param orderChange
+	 * 	the way to re-arange the new array
+	 * @return the transposed {@link RandomAccessibleInterval}
+	 */
+	public static <T extends NumericType<T> & RealType<T>> 
+	RandomAccessibleInterval<T> rearangeAxes(RandomAccessibleInterval<T> rai, int[] orderChange){
+		if (rai.dimensionsAsLongArray().length != orderChange.length)
+			throw new IllegalArgumentException("The parameter 'orderChange' should have the same dimensions as the array provided witht he first parameter 'rai'.");
+		List<Integer> checker = new ArrayList<Integer>();
+		for (int i : orderChange) {
+			if (!checker.contains(i))
+				checker.add(i);
+		}
+		if (checker.size() != orderChange.length)
+			throw new IllegalArgumentException("The 'orderChange' parameter should not contain repeated"
+					+ " numbers and should go from 0 to rai.dimensionsAsLongArray().length - 1");
+		long[] max = rai.maxAsPoint().positionAsLongArray();
+		long[] min = rai.minAsPoint().positionAsLongArray();
+		long[] tensorShape = rai.dimensionsAsLongArray();
+		MixedTransform t = new MixedTransform( tensorShape.length, tensorShape.length );
+		t.setComponentMapping(orderChange);
+		long[] minMax = new long[tensorShape.length * 2];
+		for (int i = 0; i < tensorShape.length; i ++) {
+			minMax[i] = min[orderChange[0]];
+			minMax[i + tensorShape.length] = max[orderChange[0]];
 		}
 		return Views.interval(new MixedTransformView<T>( rai, t ), 
 				Intervals.createMinMax(minMax));

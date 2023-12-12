@@ -124,6 +124,10 @@ public class DownloadModel {
 	 */
 	private static String ATTACH_KEY = "attachments";
 	/**
+	 * Key for the map that contains the attachment files of the model. This is a subfile of "attachments".
+	 */
+	private static String ATTACH_FILES_KEY = "files";
+	/**
 	 * Key for the map that contains the weights of the model 
 	 */
 	private static String WEIGHTS_KEY = "weights";
@@ -264,9 +268,8 @@ public class DownloadModel {
 	private void addWeights() {
 		ModelWeight weights = descriptor.getWeights();
 		int c = 0;
-		for (String ww : weights.getEnginesListWithVersions()) {
+		for (WeightFormat w : weights.gettAllSupportedWeightObjects()) {
 			try {
-				WeightFormat w = weights.getWeightsByIdentifier(ww);
 				if (w.getSource() != null && checkURL(w.getSource())) {
 					downloadableLinks.put(WEIGHTS_KEY + "_" + c ++, w.getSource());
 					if (w.getSourceFileName().endsWith(".zip"))
@@ -489,10 +492,10 @@ public class DownloadModel {
 	 * @throws IOException if there is any error unzipping
 	 */
 	private void unzipTfWeights() throws IOException {
-		if (descriptor.getWeights().getSupportedDLFrameworks()
+		if (descriptor.getWeights().getAllSuportedWeightNames()
 				.contains(EngineInfo.getBioimageioTfKey())
 				&& !(new File(this.modelsDir, "variables").isDirectory())) {
-			String source = descriptor.getWeights().getSupportedWeights().stream()
+			String source = descriptor.getWeights().gettAllSupportedWeightObjects().stream()
 					.filter(ww -> ww.getFramework().equals(EngineInfo.getBioimageioTfKey()))
 					.findFirst().get().getSource();
 			source = DownloadModel.getFileNameFromURLString(source);

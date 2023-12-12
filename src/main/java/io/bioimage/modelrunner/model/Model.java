@@ -283,7 +283,7 @@ public class Model
 		ModelDescriptor descriptor = 
 			ModelDescriptor.readFromLocalFile(bmzModelFolder + File.separator + Constants.RDF_FNAME, false);
 		String modelSource = null;
-		List<WeightFormat> modelWeights = descriptor.getWeights().getSupportedWeights();
+		List<WeightFormat> modelWeights = descriptor.getWeights().gettAllSupportedWeightObjects();
 		EngineInfo info = null;
 		for (WeightFormat ww : modelWeights) {
 			String source = ww.getSource();
@@ -299,7 +299,7 @@ public class Model
 		if (info == null)
 			throw new IOException("Please install a compatible engine with the model weights. "
 					+ "To be compatible the engine has to be of the same framework and the major version needs to be the same. "
-					+ "The model weights are: " + descriptor.getWeights().getEnginesListWithVersions());
+					+ "The model weights are: " + descriptor.getWeights().getSupportedWeightNamesAndVersion());
 		Model model = Model.createDeepLearningModel(bmzModelFolder, modelSource, info, classloader);
 		model.descriptor = descriptor;
 		return model;
@@ -346,7 +346,7 @@ public class Model
 		ModelDescriptor descriptor = 
 			ModelDescriptor.readFromLocalFile(bmzModelFolder + File.separator + Constants.RDF_FNAME, false);
 		String modelSource = null;
-		List<WeightFormat> modelWeights = descriptor.getWeights().getSupportedWeights();
+		List<WeightFormat> modelWeights = descriptor.getWeights().gettAllSupportedWeightObjects();
 		EngineInfo info = null;
 		for (WeightFormat ww : modelWeights) {
 			String source = ww.getSource();
@@ -361,7 +361,7 @@ public class Model
 		}
 		if (info == null)
 			throw new IOException("Please install the engines defined by the model weights. "
-					+ "The model weights are: " + descriptor.getWeights().getEnginesListWithVersions());
+					+ "The model weights are: " + descriptor.getWeights().getSupportedWeightNamesAndVersion());
 		Model model = Model.createDeepLearningModel(bmzModelFolder, modelSource, info, classloader);
 		model.descriptor = descriptor;
 		return model;
@@ -658,7 +658,7 @@ public class Model
 			else
 				outputTensors.add((Tensor<T>) Tensor.buildBlankTensor(tt.getName(), 
 																	tt.getAxesOrder(), 
-																	outTileSpecs.get(tt.getName()).getTensorDims(), 
+																	outTileSpecs.get(tt.getName()).getNonTiledTensorDims(), 
 																	(T) new FloatType()));
 		}
 		doTiling(inputTensors, outputTensors, tileGrid, tileCounter);
@@ -674,7 +674,7 @@ public class Model
 				.collect(Collectors.toMap(entry -> entry.getKey(), entry -> TileGrid.create(entry.getValue())));
 		Map<Object, TileGrid> outTileGrids = outTileSpecs.entrySet().stream()
 				.collect(Collectors.toMap(entry -> entry.getKey(), entry -> TileGrid.create(entry.getValue())));
-		int[] tilesPerAxis = inTileSpecs.values().stream().findFirst().get().getPatchGridSize();
+		int[] tilesPerAxis = inTileSpecs.values().stream().findFirst().get().getTileGrid();
 		int nTiles = 1;
 		for (int i : tilesPerAxis) nTiles *= i;
 		tileCounter.acceptTotal(Long.valueOf(nTiles));

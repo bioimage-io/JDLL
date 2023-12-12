@@ -137,21 +137,10 @@ public class DeepLearningVersion
     public List<String> checkMissingJars() {
     	String[] jarsArr = new File(this.allEnginesDir, folderName()).list();
     	List<String> folderJars = Arrays.asList(jarsArr);
-    	List<String> missingJars = getJarsFileNames().stream().filter(jar -> !folderJars.contains(jar)).collect(Collectors.toList());
-    	/** TODO remove
-    	if (missingJars.size() != 0) {
-    		
-    		 *  TODO remove
-    		 *   TODO remove
-    		 *    TODO remove
-    		 * System.out.println("");
-    		System.out.println("Folder '" + folderName() + "' is missing the following "
-    				+ "required JAR files:");
-    		for (String jj : missingJars)
-    			System.out.println(" -" + new File(jj).getName());
-    		 * System.out.println("Please download again the corresponding engine.");
-    	}    	
-    		 */
+    	List<String> missingJars = getJarsFileNames().stream()
+    			.filter(jar -> !folderJars.contains(jar) 
+    					|| new File(allEnginesDir + File.separator + folderName() + File.separator + jar).length() <= 0)
+    			.collect(Collectors.toList());
     	return missingJars;
     }
     

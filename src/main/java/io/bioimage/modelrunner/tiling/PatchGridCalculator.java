@@ -183,7 +183,7 @@ public class PatchGridCalculator <T extends RealType<T> & NativeType<T>>
     	int[] grid = null;
     	String firstName = null;
     	for (Entry<String, PatchSpec> spec : patchSpecs.entrySet()) {
-    		int[] nGrid = spec.getValue().getPatchGridSize();
+    		int[] nGrid = spec.getValue().getTileGrid();
     		TensorSpec tt = this.descriptor.findInputTensor(spec.getKey());
     		if (grid == null && tt.getTiling()) {
     			grid = nGrid;
@@ -298,16 +298,16 @@ public class PatchGridCalculator <T extends RealType<T> & NativeType<T>>
     {
     	int[] intShape = new int[rai.dimensionsAsLongArray().length];
     	for (int i = 0; i < intShape.length; i ++) intShape[i] = (int) rai.dimensionsAsLongArray()[i];
-    	if (spec.getProcessingPatch() == null) {
+    	if (spec.getTileSize() == null) {
 			try {
-				spec.setTileSizeForTensorAndImageSize(spec.getOptimalPatch(intShape, spec.getAxesOrder()), intShape);
+				spec.setTileSizeForTensorAndImageSize(spec.getOptimalTileSize(intShape, spec.getAxesOrder()), intShape);
 			} catch (Exception e) {
 				throw new IllegalArgumentException("Tensor dimensions of tensor named '" + spec.getName() + "' "
 						+ "are not compatible with the requirements set by the"
 						+ " rdf.yaml file for tensor '" + spec.getName() + "': " + e.getMessage());
 			}
     	}
-    	long[] tileSize = Arrays.stream(spec.getProcessingPatch()).mapToLong(i -> i).toArray();
+    	long[] tileSize = Arrays.stream(spec.getTileSize()).mapToLong(i -> i).toArray();
     	return computePatchSpecs(spec, rai, tileSize);
     }
 
@@ -362,23 +362,35 @@ public class PatchGridCalculator <T extends RealType<T> & NativeType<T>>
     
     private PatchSpec computePatchSpecsForOutputTensor(TensorSpec tensorSpec, PatchSpec refTilesSpec)
     {
-    	int[] inputTileGrid = refTilesSpec.getPatchGridSize();
+    	int[] inputTileGrid = refTilesSpec.getTileGrid();
+    	String ogAxes = ModelDescriptor.findTensorInList(refTilesSpec.getTensorName(), descriptor.getInputTensors()).getAxesOrder();
+    	inputTileGrid = arrayToWantedAxesOrderAddOnes(inputTileGrid, ogAxes, tensorSpec.getAxesOrder());
         // REgard that the input halo represents the output halo + offset 
         // and must be divisible by 0.5. 
-        int[][] paddingSize = refTilesSpec.getPatchPaddingSize();
+        int[][] paddingSize = refTilesSpec.getPadding();
+        paddingSize[0] = arrayToWantedAxesOrderAddZeros(paddingSize[0], ogAxes, tensorSpec.getAxesOrder());
+        paddingSize[1] = arrayToWantedAxesOrderAddZeros(paddingSize[1], ogAxes, tensorSpec.getAxesOrder());
         long[] tileSize;
         long[] shapeLong;
-        if (tensorSpec.getShape().getReferenceInput() == null) {
-        	tileSize = Arrays.stream(tensorSpec.getShape().getPatchRecomendedSize()).mapToLong(i -> i).toArray();
-        	shapeLong = LongStream.range(0, tensorSpec.getAxesOrder().length())
-        			.map(i -> (tileSize[(int) i] - paddingSize[0][(int) i] - paddingSize[0][(int) i]) * inputTileGrid[(int) i])
+        if (tensorSpec.getShape().getReferenceInput() == null && !tensorSpec.getTiling()) {
+        	shapeLong = Arrays.stream(tensorSpec.getTileSize()).mapToLong(i -> i).toArray();
+        	tileSize = shapeLong;
+        } else if (tensorSpec.getShape().getReferenceInput() == null) {
+        	tileSize = Arrays.stream(tensorSpec.getTileSize()).mapToLong(i -> i).toArray();
+        	double[] inputTileToTotal = IntStream.range(0, refTilesSpec.getNonTiledTensorDims().length)
+        			.mapToDouble(i -> ((double) refTilesSpec.getNonTiledTensorDims()[i]) / ((double) refTilesSpec.getTileSize()[i]))
         			.toArray();
+        	float[] floatInputTileToTotal = new float[inputTileToTotal.length];
+        	for (int ii = 0; ii < floatInputTileToTotal.length; ii ++) floatInputTileToTotal[ii] = (float) inputTileToTotal[ii];
+        	float[] outTileToTotal = arrayToWantedAxesOrderAddOnes(floatInputTileToTotal, ogAxes, tensorSpec.getAxesOrder());
+        	shapeLong = IntStream.range(0, tensorSpec.getAxesOrder().length())
+        			.mapToLong(i -> (long) Math.ceil(tileSize[i] * outTileToTotal[i])).toArray();
         } else {
         	tileSize = IntStream.range(0, tensorSpec.getAxesOrder().length())
-            		.map(i -> (int) (refTilesSpec.getPatchInputSize()[i] * tensorSpec.getShape().getScale()[i] + 2 * tensorSpec.getShape().getOffset()[i]))
+            		.map(i -> (int) (refTilesSpec.getTileSize()[i] * tensorSpec.getShape().getScale()[i] + 2 * tensorSpec.getShape().getOffset()[i]))
             		.mapToLong(i -> i).toArray();
         	shapeLong = LongStream.range(0, tensorSpec.getAxesOrder().length())
-            		.map(i -> (int) (refTilesSpec.getTensorDims()[(int) i] * tensorSpec.getShape().getScale()[(int) i] 
+            		.map(i -> (int) (refTilesSpec.getNonTiledTensorDims()[(int) i] * tensorSpec.getShape().getScale()[(int) i] 
             				+ 2 * tensorSpec.getShape().getOffset()[(int) i])).toArray();
         }
 

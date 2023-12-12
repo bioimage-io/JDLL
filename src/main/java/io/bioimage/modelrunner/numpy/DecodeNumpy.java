@@ -23,10 +23,16 @@ import java.io.DataInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
+import java.nio.DoubleBuffer;
+import java.nio.FloatBuffer;
+import java.nio.IntBuffer;
+import java.nio.LongBuffer;
+import java.nio.ShortBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -34,6 +40,7 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import io.bioimage.modelrunner.tensor.ImgLib2ToArray;
 import io.bioimage.modelrunner.tensor.Utils;
 import io.bioimage.modelrunner.utils.IndexingUtils;
 import net.imglib2.Cursor;
@@ -64,6 +71,8 @@ import net.imglib2.type.numeric.integer.UnsignedIntType;
 import net.imglib2.type.numeric.integer.UnsignedShortType;
 import net.imglib2.type.numeric.real.DoubleType;
 import net.imglib2.type.numeric.real.FloatType;
+import net.imglib2.util.Cast;
+import net.imglib2.util.Util;
 
 /**
  * TODO
@@ -93,7 +102,7 @@ public class DecodeNumpy {
      * Map containing the relation between the datatypes used by numpy and their 
      * explicit name
      */
-    private static final Map<String, Integer> DATA_TYPES_MAP = new HashMap<>();
+    public static final Map<String, Integer> DATA_TYPES_MAP = new HashMap<>();
 
     static
     {
@@ -110,10 +119,16 @@ public class DecodeNumpy {
         DATA_TYPES_MAP.put("float64", 8);
     }
 
+    public final static String DATA_KEY = "data";
+    public final static String SHAPE_KEY = "shape";
+    public final static String DTYPE_KEY = "dtype";
+    public final static String IS_FORTRAN_ORDER_KEY = "is_fortran_order";
+    public final static String BYTE_ORDER_KEY = "byte_order";
+
     /**
      * PAttern that matches the metadata description of a numpy file
      */
-    private static final Pattern HEADER_PATTERN =
+    public static final Pattern HEADER_PATTERN =
             Pattern.compile("\\{'descr': '(.+)', 'fortran_order': (True|False), 'shape': \\((.*)\\),");
 	
     /**
@@ -123,9 +138,13 @@ public class DecodeNumpy {
      * @throws FileNotFoundException if the numpy array file is not found
      * @throws IOException if there is any error opening the files
      */
-    public static void main(String[] args) throws FileNotFoundException, IOException {
-    	String npy = "C:\\Users\\angel\\OneDrive\\Documentos\\pasteur\\git\\deep-icy\\models\\Arabidopsis Leaf Segmentation_30102023_193340\\test_input.npy";
-    	RandomAccessibleInterval<?> aa = retrieveImgLib2FromNpy(npy);
+    public static < T extends RealType< T > & NativeType< T > > void main(String[] args) throws FileNotFoundException, IOException {
+    	//String npy = "C:\\Users\\angel\\OneDrive\\Documentos\\pasteur\\git\\deep-icy\\models\\Arabidopsis Leaf Segmentation_30102023_193340\\test_input.npy";
+    	//RandomAccessibleInterval<?> aa = retrieveImgLib2FromNpy(npy);
+    	String npy = "C:\\Users\\angel\\OneDrive\\Documentos\\pasteur\\test_input.npy";
+    	RandomAccessibleInterval<T> rai = Cast.unchecked(ArrayImgs.doubles(new long[] {1, 512, 512}));
+    	writeRaiToNpyFile(npy, rai);
+    	RandomAccessibleInterval<?> bb = retrieveImgLib2FromNpy(npy);
     }
     
     /**
@@ -146,7 +165,7 @@ public class DecodeNumpy {
     		throw new IllegalArgumentException("Path provided does not correspond to a Numpy file: " + path);
     	}
     	try (InputStream targetStream = new FileInputStream(npyFile)) {
-    		return decodeNumpy(targetStream);
+    		return decodeNumpyFromByteArrayStream(targetStream);
     	}
     }
     
@@ -160,8 +179,7 @@ public class DecodeNumpy {
      * @return an ImgLib2 image with the same datatype, shape and data that the numpy array
      * @throws IOException if there is any error reading the {@link InputStream}
      */
-    private static < T extends RealType< T > & NativeType< T > > 
-    				RandomAccessibleInterval<T> decodeNumpy(InputStream is) throws IOException {
+    public static HashMap<String, Object> decodeNumpyFromByteArrayStreamToRawMap(InputStream is) throws IOException {
         DataInputStream dis;
         if (is instanceof DataInputStream) {
             dis = (DataInputStream) is;
@@ -190,7 +208,97 @@ public class DecodeNumpy {
         }
         buf = new byte[len];
         dis.readFully(buf);
-        String header = new String(buf, StandardCharsets.UTF_8).trim();
+        String header = new String(buf, StandardCharsets.UTF_8);
+        Matcher m = HEADER_PATTERN.matcher(header);
+        if (!m.find()) {
+            throw new IllegalArgumentException("Invalid numpy header: " + header);
+        }
+        String typeStr = m.group(1);
+        String fortranOrder = m.group(2).trim();
+        String shapeStr = m.group(3);
+        long[] shape = new long[0];
+        if (!shapeStr.isEmpty()) {
+            String[] tokens = shapeStr.split(", ?");
+            shape = Arrays.stream(tokens).mapToLong(Long::parseLong).toArray();
+        }
+        char order = typeStr.charAt(0);
+        ByteOrder byteOrder = null;
+        if (order == '>') {
+        	byteOrder = ByteOrder.BIG_ENDIAN;
+        } else if (order == '<') {
+        	byteOrder = ByteOrder.LITTLE_ENDIAN;
+        } else if (order == '|') {
+        	byteOrder = ByteOrder.LITTLE_ENDIAN;
+        	new IOException("Numpy .npy file did not specify the byte order of the array."
+        			+ " It was automatically opened as little endian but this does not guarantee"
+        			+ " the that the file is open correctly. Caution is advised.").printStackTrace();
+    	} else {
+        	new IllegalArgumentException("Not supported ByteOrder for the provided .npy array.");
+        }
+        String dtype = getDataType(typeStr.substring(1));
+        long numBytes = DATA_TYPES_MAP.get(dtype);
+    	long count;
+    	if (shape.length == 0)
+    		count = 1;
+		else
+			count = Arrays.stream(shape).reduce(Math::multiplyExact).getAsLong();
+        //len = Math.toIntExact(shape.length * numBytes);
+        len = Math.toIntExact(count * numBytes);
+        ByteBuffer data = ByteBuffer.allocate(len);
+        data.order(byteOrder);
+        readData(dis, data, len);
+
+        HashMap<String, Object> map = new HashMap<String, Object>();
+        map.put(SHAPE_KEY, shape);
+        map.put(BYTE_ORDER_KEY, byteOrder);
+        map.put(DTYPE_KEY, dtype);
+        map.put(IS_FORTRAN_ORDER_KEY, fortranOrder.equals("True"));
+        map.put(DATA_KEY, data);
+
+        return map;
+    }
+    
+    /**
+     * MEthod to decode the bytes corresponding to a numpy array stored in the numpy file
+     * @param <T>
+     * 	possible data types that the ImgLib2 image can have
+     * @param is
+     * 	{@link InputStream} that results after reading the numpy file. Contains the byte info of the
+     * 	numpy array
+     * @return an ImgLib2 image with the same datatype, shape and data that the numpy array
+     * @throws IOException if there is any error reading the {@link InputStream}
+     */
+    public static < T extends RealType< T > & NativeType< T > > 
+    				RandomAccessibleInterval<T> decodeNumpyFromByteArrayStream(InputStream is) throws IOException {
+        DataInputStream dis;
+        if (is instanceof DataInputStream) {
+            dis = (DataInputStream) is;
+        } else {
+            dis = new DataInputStream(is);
+        }
+
+        byte[] buf = new byte[MAGIC_PREFIX.length];
+        dis.readFully(buf);
+        if (!Arrays.equals(buf, MAGIC_PREFIX)) {
+            throw new IllegalArgumentException("Malformed  or unsopported Numpy array");
+        }
+        byte major = dis.readByte();
+        byte minor = dis.readByte();
+        if (major < 1 || major > 3 || minor != 0) {
+            throw new IllegalArgumentException("Unknown numpy version: " + major + '.' + minor);
+        }
+        int len = major == 1 ? 2 : 4;
+        dis.readFully(buf, 0, len);
+        ByteBuffer bb = ByteBuffer.wrap(buf, 0, len);
+        bb.order(ByteOrder.LITTLE_ENDIAN);
+        if (major == 1) {
+            len = bb.getShort();
+        } else {
+            len = bb.getInt();
+        }
+        buf = new byte[len];
+        dis.readFully(buf);
+        String header = new String(buf, StandardCharsets.UTF_8);
         Matcher m = HEADER_PATTERN.matcher(header);
         if (!m.find()) {
             throw new IllegalArgumentException("Invalid numpy header: " + header);
@@ -274,6 +382,39 @@ public class DecodeNumpy {
     				+ "supported at the moment.");
     	else
     		throw new IllegalArgumentException("Numpy dtype '" + npDtype + "' is not "
+    				+ "supported at the moment.");
+    }
+    
+    /**
+     * Get a String representing a datatype explicitly from the String that numpy uses to
+     * name datatypes
+     * @param npDtype
+     * 	datatype defined per Numpy
+     * @return a String defining the datatype in a explicit manner
+     * @throws IllegalArgumentException if the String provided is not a numpy datatype
+     */
+    public static  <T extends RealType<T> & NativeType<T>> 
+    String getDataType(T type) throws IllegalArgumentException {
+    	if (type instanceof ByteType)
+    		return "i1";
+    	else if (type instanceof ShortType)
+    		return "i2";
+    	else if (type instanceof IntType)
+    		return "i4";
+    	else if (type instanceof LongType)
+    		return "i8";
+    	else if (type instanceof UnsignedByteType)
+    		return "u1";
+    	else if (type instanceof UnsignedShortType)
+    		return "u2";
+    	else if (type instanceof UnsignedIntType)
+    		return "u4";
+    	else if (type instanceof FloatType)
+    		return "f4";
+    	else if (type instanceof DoubleType)
+    		return "f8";
+    	else
+    		throw new IllegalArgumentException("Numpy dtype '" + type.getClass() + "' is not "
     				+ "supported at the moment.");
     }
 
@@ -403,5 +544,99 @@ public class DecodeNumpy {
         	tensorCursor.get().set((byte)(flatArr[flatPos]?1:0));
 		}
 	 	return outputImg;
+    }
+    
+    public static < T extends RealType< T > & NativeType< T > >  byte[]
+    createNumpyStyleByteArray(RandomAccessibleInterval<T> rai) {
+    	String strHeader = "{'descr': '<";
+    	strHeader += getDataType(rai.getAt(rai.minAsLongArray()));
+    	strHeader += "', 'fortran_order': False, 'shape': (";
+    	for (long ll : rai.dimensionsAsLongArray()) strHeader += ll + ", ";
+    	strHeader = strHeader.substring(0, strHeader.length() - 2);
+    	strHeader += "), }" + System.lineSeparator();
+    	byte[] bufInverse = strHeader.getBytes(StandardCharsets.UTF_8);
+    	byte[] major = {1};
+        byte[] minor = {0};
+        byte[] len = new byte[2];
+        len[0] = (byte) (short) strHeader.length();
+        len[1] = (byte) (((short) strHeader.length()) >> 8);
+        byte[] array;
+        if (Util.getTypeFromInterval(rai) instanceof ByteType) {
+        	byte[] data = (byte[]) ImgLib2ToArray.build(rai);
+        	ByteBuffer byteBuffer = ByteBuffer.allocate(data.length).order(ByteOrder.LITTLE_ENDIAN);
+            byteBuffer.put(data);
+            array = byteBuffer.array();
+        } else if (Util.getTypeFromInterval(rai) instanceof UnsignedByteType) {
+        	byte[] data = (byte[]) ImgLib2ToArray.build(rai);
+        	ByteBuffer byteBuffer = ByteBuffer.allocate(data.length).order(ByteOrder.LITTLE_ENDIAN);
+            byteBuffer.put(data);
+            array = byteBuffer.array();
+        } else if (Util.getTypeFromInterval(rai) instanceof ShortType) {
+        	short[] data = (short[]) ImgLib2ToArray.build(rai);
+        	ByteBuffer byteBuffer = ByteBuffer.allocate(data.length * 2).order(ByteOrder.LITTLE_ENDIAN);        
+            ShortBuffer intBuffer = byteBuffer.asShortBuffer();
+            intBuffer.put(data);
+            array = byteBuffer.array();
+        } else if (Util.getTypeFromInterval(rai) instanceof UnsignedShortType) {
+        	short[] data = (short[]) ImgLib2ToArray.build(rai);
+        	ByteBuffer byteBuffer = ByteBuffer.allocate(data.length * 2).order(ByteOrder.LITTLE_ENDIAN);        
+            ShortBuffer intBuffer = byteBuffer.asShortBuffer();
+            intBuffer.put(data);
+            array = byteBuffer.array();
+        } else if (Util.getTypeFromInterval(rai) instanceof IntType) {
+        	int[] data = (int[]) ImgLib2ToArray.build(rai);
+        	ByteBuffer byteBuffer = ByteBuffer.allocate(data.length * 4).order(ByteOrder.LITTLE_ENDIAN);       
+        	IntBuffer intBuffer = byteBuffer.asIntBuffer();
+            intBuffer.put(data);
+            array = byteBuffer.array();
+        } else if (Util.getTypeFromInterval(rai) instanceof UnsignedIntType) {
+        	int[] data = (int[]) ImgLib2ToArray.build(rai);
+        	ByteBuffer byteBuffer = ByteBuffer.allocate(data.length * 4).order(ByteOrder.LITTLE_ENDIAN);       
+            IntBuffer intBuffer = byteBuffer.asIntBuffer();
+            intBuffer.put(data);
+            array = byteBuffer.array();
+        } else if (Util.getTypeFromInterval(rai) instanceof LongType) {
+        	long[] data = (long[]) ImgLib2ToArray.build(rai);
+        	ByteBuffer byteBuffer = ByteBuffer.allocate(data.length * 8).order(ByteOrder.LITTLE_ENDIAN);       
+            LongBuffer intBuffer = byteBuffer.asLongBuffer();
+            intBuffer.put(data);
+            array = byteBuffer.array();
+        } else if (Util.getTypeFromInterval(rai) instanceof FloatType) {
+        	float[] data = (float[]) ImgLib2ToArray.build(rai);
+        	ByteBuffer byteBuffer = ByteBuffer.allocate(data.length * 4).order(ByteOrder.LITTLE_ENDIAN);       
+            FloatBuffer intBuffer = byteBuffer.asFloatBuffer();
+            intBuffer.put(data);
+            array = byteBuffer.array();
+        } else if (Util.getTypeFromInterval(rai) instanceof DoubleType) {
+        	double[] data = (double[]) ImgLib2ToArray.build(rai);
+        	ByteBuffer byteBuffer = ByteBuffer.allocate(data.length * 8).order(ByteOrder.LITTLE_ENDIAN);       
+            DoubleBuffer intBuffer = byteBuffer.asDoubleBuffer();
+            intBuffer.put(data);
+            array = byteBuffer.array();
+        } else {
+        	throw new IllegalArgumentException("Unsupported data type");
+        }
+        int totalLen = MAGIC_PREFIX.length + 2 + 2 + bufInverse.length + array.length;
+        byte[] total = new byte[totalLen];
+        int c = 0;
+        for (int i = 0; i < MAGIC_PREFIX.length; i ++)
+        	total[c ++] = MAGIC_PREFIX[i];
+        total[c ++] = major[0];
+        total[c ++] = minor[0];
+        total[c ++] = len[0];
+        total[c ++] = len[1];
+        for (int i = 0; i < bufInverse.length; i ++)
+        	total[c ++] = bufInverse[i];
+        for (int i = 0; i < array.length; i ++)
+        	total[c ++] = array[i];
+        return total;
+    }
+    
+    public static < T extends RealType< T > & NativeType< T > > 
+    void writeRaiToNpyFile(String filePath, RandomAccessibleInterval<T> rai) throws FileNotFoundException, IOException {
+    	byte[] total = createNumpyStyleByteArray(rai);
+        try (FileOutputStream fos = new FileOutputStream(filePath)) {
+            fos.write(total);
+        }
     }
 }

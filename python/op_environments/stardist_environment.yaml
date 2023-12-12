@@ -1,0 +1,15 @@
+name: stardist_op
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - bioimageio.core
+  - black
+  - conda-build
+  - dask
+  - mypy
+  - pip
+  - python==3.9.*
+  - stardist
+  - tensorflow==2.*
+  - xarray
