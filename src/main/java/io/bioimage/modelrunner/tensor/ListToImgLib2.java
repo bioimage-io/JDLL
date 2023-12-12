@@ -23,11 +23,9 @@ package io.bioimage.modelrunner.tensor;
 import java.io.ByteArrayOutputStream;
 import java.math.BigDecimal;
 import java.util.List;
-import java.util.stream.IntStream;
 
 import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.img.Img;
-import net.imglib2.img.array.ArrayImgFactory;
 import net.imglib2.img.array.ArrayImgs;
 import net.imglib2.type.NativeType;
 import net.imglib2.type.numeric.RealType;
