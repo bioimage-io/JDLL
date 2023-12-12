@@ -23,7 +23,6 @@ package io.bioimage.modelrunner.tensor;
 import net.imglib2.Cursor;
 import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.type.NativeType;
-import net.imglib2.type.Type;
 import net.imglib2.type.numeric.RealType;
 import net.imglib2.type.numeric.integer.ByteType;
 import net.imglib2.type.numeric.integer.IntType;
@@ -34,6 +33,7 @@ import net.imglib2.type.numeric.integer.UnsignedIntType;
 import net.imglib2.type.numeric.integer.UnsignedShortType;
 import net.imglib2.type.numeric.real.DoubleType;
 import net.imglib2.type.numeric.real.FloatType;
+import net.imglib2.util.Cast;
 import net.imglib2.util.Util;
 import net.imglib2.view.Views;
 
@@ -86,23 +86,23 @@ public final class ImgLib2ToArray
     public static < T extends RealType< T > & NativeType< T > > Object build(RandomAccessibleInterval<T> rai)
     {
     	if (Util.getTypeFromInterval(rai) instanceof ByteType) {
-    		return buildInt8((RandomAccessibleInterval<ByteType>) rai);
+    		return buildInt8(Cast.unchecked(rai));
     	} else if (Util.getTypeFromInterval(rai) instanceof UnsignedByteType) {
-    		return buildUint8((RandomAccessibleInterval<UnsignedByteType>) rai);
+    		return buildUint8(Cast.unchecked(rai));
     	} else if (Util.getTypeFromInterval(rai) instanceof ShortType) {
-    		return buildInt16((RandomAccessibleInterval<ShortType>) rai);
+    		return buildInt16(Cast.unchecked(rai));
     	} else if (Util.getTypeFromInterval(rai) instanceof UnsignedShortType) {
-    		return buildUint16((RandomAccessibleInterval<UnsignedShortType>) rai);
+    		return buildUint16(Cast.unchecked(rai));
     	} else if (Util.getTypeFromInterval(rai) instanceof IntType) {
-    		return buildInt32((RandomAccessibleInterval<IntType>) rai);
+    		return buildInt32(Cast.unchecked(rai));
     	} else if (Util.getTypeFromInterval(rai) instanceof UnsignedIntType) {
-    		return buildUint32((RandomAccessibleInterval<UnsignedIntType>) rai);
+    		return buildUint32(Cast.unchecked(rai));
     	} else if (Util.getTypeFromInterval(rai) instanceof LongType) {
-    		return buildInt64((RandomAccessibleInterval<LongType>) rai);
+    		return buildInt64(Cast.unchecked(rai));
     	} else if (Util.getTypeFromInterval(rai) instanceof FloatType) {
-    		return buildFloat32((RandomAccessibleInterval<FloatType>) rai);
+    		return buildFloat32(Cast.unchecked(rai));
     	} else if (Util.getTypeFromInterval(rai) instanceof DoubleType) {
-    		return buildFloat64((RandomAccessibleInterval<DoubleType>) rai);
+    		return buildFloat64(Cast.unchecked(rai));
     	} else {
             throw new IllegalArgumentException("The image has an unsupported type: " + Util.getTypeFromInterval(rai).getClass().toString());
     	}
