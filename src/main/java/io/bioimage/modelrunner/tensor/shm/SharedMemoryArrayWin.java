@@ -21,9 +21,7 @@
 package io.bioimage.modelrunner.tensor.shm;
 
 import java.io.ByteArrayInputStream;
-import java.nio.ByteBuffer;
 import java.util.HashMap;
-import java.util.UUID;
 
 import com.sun.jna.Pointer;
 import com.sun.jna.platform.win32.Kernel32;
@@ -97,7 +95,7 @@ public class SharedMemoryArrayWin implements SharedMemoryArray
 	
     private SharedMemoryArrayWin(int size, String dtype, long[] shape)
     {
-    	this("Local\\" + UUID.randomUUID().toString(), size, dtype, shape);
+    	this(SharedMemoryArray.createShmName(), size, dtype, shape);
     }
 	
     private SharedMemoryArrayWin(String name, int size, String dtype, long[] shape)
@@ -135,23 +133,38 @@ public class SharedMemoryArrayWin implements SharedMemoryArray
             		+ "" + Kernel32.INSTANCE.GetLastError());
         }
     }
-    
+
+    /**
+     * {@inheritDoc}
+     */
     public String getName() {
     	return this.memoryName;
     }
-    
+
+    /**
+     * {@inheritDoc}
+     */
     public String getNameForPython() {
     	return this.memoryName.substring("Local\\".length());
     }
-    
+
+    /**
+     * {@inheritDoc}
+     */
     public Pointer getPointer() {
     	return this.pSharedMemory;
     }
-    
+
+    /**
+     * {@inheritDoc}
+     */
     public HANDLE getSharedMemoryBlock() {
     	return this.hMapFile;
     }
-    
+
+    /**
+     * {@inheritDoc}
+     */
     public int getSize() {
     	return this.size;
     }
@@ -310,15 +323,6 @@ public class SharedMemoryArrayWin implements SharedMemoryArray
     	}
     }
 
-    /**
-     * Adds the ByteType {@link RandomAccessibleInterval} data to the {@link ByteBuffer} provided.
-     * The position of the ByteBuffer is kept in the same place as it was received.
-     * 
-     * @param tensor 
-     * 	{@link RandomAccessibleInterval} to be mapped into byte buffer
-     * @param byteBuffer 
-     * 	target bytebuffer
-     */
     private void buildInt8(RandomAccessibleInterval<ByteType> tensor)
     {
 		tensor = Utils.transpose(tensor);
@@ -330,15 +334,6 @@ public class SharedMemoryArrayWin implements SharedMemoryArray
 		}
     }
 
-    /**
-     * Adds the ByteType {@link RandomAccessibleInterval} data to the {@link ByteBuffer} provided.
-     * The position of the ByteBuffer is kept in the same place as it was received.
-     * 
-     * @param tensor 
-     * 	{@link RandomAccessibleInterval} to be mapped into byte buffer
-     * @param byteBuffer 
-     * 	target bytebuffer
-     */
     private void buildUint8(RandomAccessibleInterval<UnsignedByteType> tensor)
     {
 		tensor = Utils.transpose(tensor);
@@ -350,15 +345,6 @@ public class SharedMemoryArrayWin implements SharedMemoryArray
 		}
     }
 
-    /**
-     * Adds the ByteType {@link RandomAccessibleInterval} data to the {@link ByteBuffer} provided.
-     * The position of the ByteBuffer is kept in the same place as it was received.
-     * 
-     * @param tensor 
-     * 	{@link RandomAccessibleInterval} to be mapped into byte buffer
-     * @param byteBuffer 
-     * 	target bytebuffer
-     */
     private void buildInt16(RandomAccessibleInterval<ShortType> tensor)
     {
 		tensor = Utils.transpose(tensor);
@@ -371,15 +357,6 @@ public class SharedMemoryArrayWin implements SharedMemoryArray
 		}
     }
 
-    /**
-     * Adds the ByteType {@link RandomAccessibleInterval} data to the {@link ByteBuffer} provided.
-     * The position of the ByteBuffer is kept in the same place as it was received.
-     * 
-     * @param tensor 
-     * 	{@link RandomAccessibleInterval} to be mapped into byte buffer
-     * @param byteBuffer 
-     * 	target bytebuffer
-     */
     private void buildUint16(RandomAccessibleInterval<UnsignedShortType> tensor)
     {
 		tensor = Utils.transpose(tensor);
@@ -392,15 +369,6 @@ public class SharedMemoryArrayWin implements SharedMemoryArray
 		}
     }
 
-    /**
-     * Adds the IntType {@link RandomAccessibleInterval} data to the {@link ByteBuffer} provided.
-     * The position of the ByteBuffer is kept in the same place as it was received.
-     * 
-     * @param tensor 
-     * 	{@link RandomAccessibleInterval} to be mapped into byte buffer
-     * @param byteBuffer 
-     * 	target bytebuffer
-     */
     private void buildInt32(RandomAccessibleInterval<IntType> tensor)
     {
 		tensor = Utils.transpose(tensor);
@@ -413,15 +381,6 @@ public class SharedMemoryArrayWin implements SharedMemoryArray
 		}
     }
 
-    /**
-     * Adds the IntType {@link RandomAccessibleInterval} data to the {@link ByteBuffer} provided.
-     * The position of the ByteBuffer is kept in the same place as it was received.
-     * 
-     * @param tensor 
-     * 	{@link RandomAccessibleInterval} to be mapped into byte buffer
-     * @param byteBuffer 
-     * 	target bytebuffer
-     */
     private void buildUint32(RandomAccessibleInterval<UnsignedIntType> tensor)
     {
 		tensor = Utils.transpose(tensor);
@@ -434,15 +393,6 @@ public class SharedMemoryArrayWin implements SharedMemoryArray
 		}
     }
 
-    /**
-     * Adds the IntType {@link RandomAccessibleInterval} data to the {@link ByteBuffer} provided.
-     * The position of the ByteBuffer is kept in the same place as it was received.
-     * 
-     * @param tensor 
-     * 	{@link RandomAccessibleInterval} to be mapped into byte buffer
-     * @param byteBuffer 
-     * 	target bytebuffer
-     */
     private void buildInt64(RandomAccessibleInterval<LongType> tensor)
     {
 		tensor = Utils.transpose(tensor);
@@ -455,15 +405,6 @@ public class SharedMemoryArrayWin implements SharedMemoryArray
 		}
     }
 
-    /**
-     * Adds the FloatType {@link RandomAccessibleInterval} data to the {@link ByteBuffer} provided.
-     * The position of the ByteBuffer is kept in the same place as it was received.
-     * 
-     * @param tensor 
-     * 	{@link RandomAccessibleInterval} to be mapped into byte buffer
-     * @param byteBuffer 
-     * 	target bytebuffer
-     */
     private void buildFloat32(RandomAccessibleInterval<FloatType> tensor)
     {
 		tensor = Utils.transpose(tensor);
@@ -476,15 +417,6 @@ public class SharedMemoryArrayWin implements SharedMemoryArray
 		}
     }
 
-    /**
-     * Adds the DoubleType {@link RandomAccessibleInterval} data to the {@link ByteBuffer} provided.
-     * The position of the ByteBuffer is kept in the same place as it was received.
-     * 
-     * @param tensor 
-     * 	{@link RandomAccessibleInterval} to be mapped into byte buffer
-     * @param byteBuffer 
-     * 	target bytebuffer
-     */
     private void buildFloat64(RandomAccessibleInterval<DoubleType> tensor)
     {
 		tensor = Utils.transpose(tensor);
@@ -499,6 +431,8 @@ public class SharedMemoryArrayWin implements SharedMemoryArray
 
 	@Override
 	/**
+	 * {@inheritDoc}
+	 * 
 	 * Unmap and close the shared memory. Necessary to eliminate the shared memory block
 	 */
 	public void close() {
@@ -837,21 +771,33 @@ public class SharedMemoryArrayWin implements SharedMemoryArray
 	}
 
 	@Override
+    /**
+     * {@inheritDoc}
+     */
 	public <T extends RealType<T> & NativeType<T>> RandomAccessibleInterval<T> getSharedRAI() {
 		return buildFromSharedMemoryBlock(pSharedMemory, this.originalDims, false, this.originalDataType);
 	}
 
 	@Override
+    /**
+     * {@inheritDoc}
+     */
 	public String getOriginalDataType() {
 		return this.originalDataType;
 	}
 
 	@Override
+    /**
+     * {@inheritDoc}
+     */
 	public long[] getOriginalShape() {
 		return this.originalDims;
 	}
 	
 	@Override
+    /**
+     * {@inheritDoc}
+     */
 	public boolean isNumpyFormat() {
 		return this.isNumpyFormat;
 	}
