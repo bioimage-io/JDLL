@@ -165,7 +165,7 @@ public final class ListToImgLib2 {
      * @return the reconstructed {@link RandomAccessibleInterval}
      * @throws IllegalArgumentException if the input argument 'array' is not a {@link List} of {@link Byte}s or {@link Integer}s
      */
-    private static RandomAccessibleInterval<ByteType> buildInt8(List array, List<Integer> tensorShape)
+    private static RandomAccessibleInterval<ByteType> buildInt8(List array, List<Integer> tensorShape) throws IllegalArgumentException
     {
     	if (!(array.get(0) instanceof Byte)
         		&& !(array.get(0) instanceof Integer)) {
@@ -183,11 +183,10 @@ public final class ListToImgLib2 {
      * 
      * @param array
      * 	{@link List} object containing the flat data of the {@link RandomAccessibleInterval}.
-     * 	The list should contain either {@link Byte} objects or {@link Integer} objects
+     * 	The list should contain {@link Byte} objects 
      * @param shape
      * 	{@link List} containing the shape of the {@link RandomAccessibleInterval} that wants to be created from the flat array
      * @return the reconstructed {@link RandomAccessibleInterval}
-     * @throws IllegalArgumentException if the input argument 'array' is not a {@link List} of {@link Byte}s or {@link Integer}s
      */
     private static RandomAccessibleInterval<ByteType> buildInt8FromByte(List<Byte> tensor, List<Integer> tensorShape)
     {
@@ -203,11 +202,10 @@ public final class ListToImgLib2 {
      * 
      * @param array
      * 	{@link List} object containing the flat data of the {@link RandomAccessibleInterval}.
-     * 	The list should contain either {@link Byte} objects or {@link Integer} objects
+     * 	The list should contain {@link Integer} objects
      * @param shape
      * 	{@link List} containing the shape of the {@link RandomAccessibleInterval} that wants to be created from the flat array
      * @return the reconstructed {@link RandomAccessibleInterval}
-     * @throws IllegalArgumentException if the input argument 'array' is not a {@link List} of {@link Byte}s or {@link Integer}s
      */
     private static RandomAccessibleInterval<ByteType> buildInt8FromInteger(List<Integer> tensor, List<Integer> tensorShape)
     {
@@ -224,7 +222,7 @@ public final class ListToImgLib2 {
 	}
 
     /**
-     * Creates a {@link ByteType} {@link RandomAccessibleInterval} from the information stored in a {@link List} given the shape of the RAI.
+     * Creates a {@link UnsignedByteType} {@link RandomAccessibleInterval} from the information stored in a {@link List} given the shape of the RAI.
      * 
      * @param array
      * 	{@link List} object containing the flat data of the {@link RandomAccessibleInterval}.
@@ -234,7 +232,7 @@ public final class ListToImgLib2 {
      * @return the reconstructed {@link RandomAccessibleInterval}
      * @throws IllegalArgumentException if the input argument 'array' is not a {@link List} of {@link Byte}s or {@link Integer}s
      */
-    private static RandomAccessibleInterval<UnsignedByteType> buildUint8(List array, List<Integer> tensorShape)
+    private static RandomAccessibleInterval<UnsignedByteType> buildUint8(List array, List<Integer> tensorShape) throws IllegalArgumentException
     {
     	if (!(array.get(0) instanceof Byte)
         		&& !(array.get(0) instanceof Integer)) {
@@ -248,15 +246,14 @@ public final class ListToImgLib2 {
 	}
 
     /**
-     * Creates a {@link ByteType} {@link RandomAccessibleInterval} from the information stored in a {@link List} given the shape of the RAI.
+     * Creates a {@link UnsignedByteType} {@link RandomAccessibleInterval} from the information stored in a {@link List} given the shape of the RAI.
      * 
      * @param array
      * 	{@link List} object containing the flat data of the {@link RandomAccessibleInterval}.
-     * 	The list should contain either {@link Byte} objects or {@link Integer} objects
+     * 	The list should contain {@link Byte} objects
      * @param shape
      * 	{@link List} containing the shape of the {@link RandomAccessibleInterval} that wants to be created from the flat array
      * @return the reconstructed {@link RandomAccessibleInterval}
-     * @throws IllegalArgumentException if the input argument 'array' is not a {@link List} of {@link Byte}s or {@link Integer}s
      */
     private static RandomAccessibleInterval<UnsignedByteType> buildUint8FromByte(List<Byte> tensor, List<Integer> tensorShape)
     {
@@ -273,15 +270,14 @@ public final class ListToImgLib2 {
 	}
 
     /**
-     * Creates a {@link ByteType} {@link RandomAccessibleInterval} from the information stored in a {@link List} given the shape of the RAI.
+     * Creates a {@link UnsignedByteType} {@link RandomAccessibleInterval} from the information stored in a {@link List} given the shape of the RAI.
      * 
      * @param array
      * 	{@link List} object containing the flat data of the {@link RandomAccessibleInterval}.
-     * 	The list should contain either {@link Byte} objects or {@link Integer} objects
+     * 	The list should contain {@link Integer} objects
      * @param shape
      * 	{@link List} containing the shape of the {@link RandomAccessibleInterval} that wants to be created from the flat array
      * @return the reconstructed {@link RandomAccessibleInterval}
-     * @throws IllegalArgumentException if the input argument 'array' is not a {@link List} of {@link Byte}s or {@link Integer}s
      */
     private static RandomAccessibleInterval<UnsignedByteType> buildUint8FromInteger(List<Integer> tensor, List<Integer> tensorShape)
     {
@@ -298,17 +294,17 @@ public final class ListToImgLib2 {
 	}
 
     /**
-     * Creates a {@link ByteType} {@link RandomAccessibleInterval} from the information stored in a {@link List} given the shape of the RAI.
+     * Creates a {@link ShortType} {@link RandomAccessibleInterval} from the information stored in a {@link List} given the shape of the RAI.
      * 
      * @param array
      * 	{@link List} object containing the flat data of the {@link RandomAccessibleInterval}.
-     * 	The list should contain either {@link Byte} objects or {@link Integer} objects
+     * 	The list should contain either {@link Short} objects or {@link Integer} objects
      * @param shape
      * 	{@link List} containing the shape of the {@link RandomAccessibleInterval} that wants to be created from the flat array
      * @return the reconstructed {@link RandomAccessibleInterval}
-     * @throws IllegalArgumentException if the input argument 'array' is not a {@link List} of {@link Byte}s or {@link Integer}s
+     * @throws IllegalArgumentException if the input argument 'array' is not a {@link List} of {@link Short}s or {@link Integer}s
      */
-    private static RandomAccessibleInterval<ShortType> buildInt16(List array, List<Integer> tensorShape)
+    private static RandomAccessibleInterval<ShortType> buildInt16(List array, List<Integer> tensorShape) throws IllegalArgumentException
     {
     	if (!(array.get(0) instanceof Short)
         		&& !(array.get(0) instanceof Integer)) {
@@ -322,15 +318,14 @@ public final class ListToImgLib2 {
 	}
 
     /**
-     * Creates a {@link ByteType} {@link RandomAccessibleInterval} from the information stored in a {@link List} given the shape of the RAI.
+     * Creates a {@link ShortType} {@link RandomAccessibleInterval} from the information stored in a {@link List} given the shape of the RAI.
      * 
      * @param array
      * 	{@link List} object containing the flat data of the {@link RandomAccessibleInterval}.
-     * 	The list should contain either {@link Byte} objects or {@link Integer} objects
+     * 	The list should contain {@link Short} objects
      * @param shape
      * 	{@link List} containing the shape of the {@link RandomAccessibleInterval} that wants to be created from the flat array
      * @return the reconstructed {@link RandomAccessibleInterval}
-     * @throws IllegalArgumentException if the input argument 'array' is not a {@link List} of {@link Byte}s or {@link Integer}s
      */
     private static RandomAccessibleInterval<ShortType> buildInt16FromShort(List<Short> tensor, List<Integer> tensorShape)
     {
@@ -347,15 +342,14 @@ public final class ListToImgLib2 {
 	}
 
     /**
-     * Creates a {@link ByteType} {@link RandomAccessibleInterval} from the information stored in a {@link List} given the shape of the RAI.
+     * Creates a {@link ShortType} {@link RandomAccessibleInterval} from the information stored in a {@link List} given the shape of the RAI.
      * 
      * @param array
      * 	{@link List} object containing the flat data of the {@link RandomAccessibleInterval}.
-     * 	The list should contain either {@link Byte} objects or {@link Integer} objects
+     * 	The list should contain {@link Integer} objects
      * @param shape
      * 	{@link List} containing the shape of the {@link RandomAccessibleInterval} that wants to be created from the flat array
      * @return the reconstructed {@link RandomAccessibleInterval}
-     * @throws IllegalArgumentException if the input argument 'array' is not a {@link List} of {@link Byte}s or {@link Integer}s
      */
     private static RandomAccessibleInterval<ShortType> buildInt16FromInteger(List<Integer> tensor, List<Integer> tensorShape)
     {
@@ -372,17 +366,17 @@ public final class ListToImgLib2 {
 	}
 
     /**
-     * Creates a {@link ByteType} {@link RandomAccessibleInterval} from the information stored in a {@link List} given the shape of the RAI.
+     * Creates a {@link UnsignedShortType} {@link RandomAccessibleInterval} from the information stored in a {@link List} given the shape of the RAI.
      * 
      * @param array
      * 	{@link List} object containing the flat data of the {@link RandomAccessibleInterval}.
-     * 	The list should contain either {@link Byte} objects or {@link Integer} objects
+     * 	The list should contain either {@link Short} objects or {@link Integer} objects
      * @param shape
      * 	{@link List} containing the shape of the {@link RandomAccessibleInterval} that wants to be created from the flat array
      * @return the reconstructed {@link RandomAccessibleInterval}
-     * @throws IllegalArgumentException if the input argument 'array' is not a {@link List} of {@link Byte}s or {@link Integer}s
+     * @throws IllegalArgumentException if the input argument 'array' is not a {@link List} of {@link Short}s or {@link Integer}s
      */
-    private static RandomAccessibleInterval<UnsignedShortType> buildUint16(List array, List<Integer> tensorShape)
+    private static RandomAccessibleInterval<UnsignedShortType> buildUint16(List array, List<Integer> tensorShape) throws IllegalArgumentException
     {
     	if (!(array.get(0) instanceof Short)
         		&& !(array.get(0) instanceof Integer)) {
@@ -396,15 +390,14 @@ public final class ListToImgLib2 {
 	}
 
     /**
-     * Creates a {@link ByteType} {@link RandomAccessibleInterval} from the information stored in a {@link List} given the shape of the RAI.
+     * Creates a {@link UnsignedShortType} {@link RandomAccessibleInterval} from the information stored in a {@link List} given the shape of the RAI.
      * 
      * @param array
      * 	{@link List} object containing the flat data of the {@link RandomAccessibleInterval}.
-     * 	The list should contain either {@link Byte} objects or {@link Integer} objects
+     * 	The list should contain {@link Short} objects
      * @param shape
      * 	{@link List} containing the shape of the {@link RandomAccessibleInterval} that wants to be created from the flat array
      * @return the reconstructed {@link RandomAccessibleInterval}
-     * @throws IllegalArgumentException if the input argument 'array' is not a {@link List} of {@link Byte}s or {@link Integer}s
      */
     private static RandomAccessibleInterval<UnsignedShortType> buildUint16FromShort(List<Short> tensor, List<Integer> tensorShape)
     {
@@ -421,15 +414,14 @@ public final class ListToImgLib2 {
 	}
 
     /**
-     * Creates a {@link ByteType} {@link RandomAccessibleInterval} from the information stored in a {@link List} given the shape of the RAI.
+     * Creates a {@link UnsignedShortType} {@link RandomAccessibleInterval} from the information stored in a {@link List} given the shape of the RAI.
      * 
      * @param array
      * 	{@link List} object containing the flat data of the {@link RandomAccessibleInterval}.
-     * 	The list should contain either {@link Byte} objects or {@link Integer} objects
+     * 	The list should contain {@link Integer} objects
      * @param shape
      * 	{@link List} containing the shape of the {@link RandomAccessibleInterval} that wants to be created from the flat array
      * @return the reconstructed {@link RandomAccessibleInterval}
-     * @throws IllegalArgumentException if the input argument 'array' is not a {@link List} of {@link Byte}s or {@link Integer}s
      */
     private static RandomAccessibleInterval<UnsignedShortType> buildUint16FromInteger(List<Integer> tensor, List<Integer> tensorShape)
     {
@@ -446,17 +438,17 @@ public final class ListToImgLib2 {
 	}
 
     /**
-     * Creates a {@link ByteType} {@link RandomAccessibleInterval} from the information stored in a {@link List} given the shape of the RAI.
+     * Creates a {@link IntType} {@link RandomAccessibleInterval} from the information stored in a {@link List} given the shape of the RAI.
      * 
      * @param array
      * 	{@link List} object containing the flat data of the {@link RandomAccessibleInterval}.
-     * 	The list should contain either {@link Byte} objects or {@link Integer} objects
+     * 	The list should contain {@link Integer} objects
      * @param shape
      * 	{@link List} containing the shape of the {@link RandomAccessibleInterval} that wants to be created from the flat array
      * @return the reconstructed {@link RandomAccessibleInterval}
-     * @throws IllegalArgumentException if the input argument 'array' is not a {@link List} of {@link Byte}s or {@link Integer}s
+     * @throws IllegalArgumentException if the input argument 'array' is not a {@link List} of @link Integer}s
      */
-    private static RandomAccessibleInterval<IntType> buildInt32(List array, List<Integer> tensorShape)
+    private static RandomAccessibleInterval<IntType> buildInt32(List array, List<Integer> tensorShape) throws IllegalArgumentException
     {
     	if (!(array.get(0) instanceof Integer)) {
     		throw new IllegalArgumentException("Unable to build ImgLib2 array of data type "
@@ -467,15 +459,14 @@ public final class ListToImgLib2 {
 	}
 
     /**
-     * Creates a {@link ByteType} {@link RandomAccessibleInterval} from the information stored in a {@link List} given the shape of the RAI.
+     * Creates a {@link IntType} {@link RandomAccessibleInterval} from the information stored in a {@link List} given the shape of the RAI.
      * 
      * @param array
      * 	{@link List} object containing the flat data of the {@link RandomAccessibleInterval}.
-     * 	The list should contain either {@link Byte} objects or {@link Integer} objects
+     * 	The list should contain {@link Integer} objects
      * @param shape
      * 	{@link List} containing the shape of the {@link RandomAccessibleInterval} that wants to be created from the flat array
      * @return the reconstructed {@link RandomAccessibleInterval}
-     * @throws IllegalArgumentException if the input argument 'array' is not a {@link List} of {@link Byte}s or {@link Integer}s
      */
     private static RandomAccessibleInterval<IntType> buildInt32FromInteger(List<Integer> tensor, List<Integer> tensorShape)
     {
@@ -492,17 +483,17 @@ public final class ListToImgLib2 {
 	}
 
     /**
-     * Creates a {@link ByteType} {@link RandomAccessibleInterval} from the information stored in a {@link List} given the shape of the RAI.
+     * Creates a {@link UnsignedIntType} {@link RandomAccessibleInterval} from the information stored in a {@link List} given the shape of the RAI.
      * 
      * @param array
      * 	{@link List} object containing the flat data of the {@link RandomAccessibleInterval}.
-     * 	The list should contain either {@link Byte} objects or {@link Integer} objects
+     * 	The list should contain either {@link Long} objects or {@link Integer} objects
      * @param shape
      * 	{@link List} containing the shape of the {@link RandomAccessibleInterval} that wants to be created from the flat array
      * @return the reconstructed {@link RandomAccessibleInterval}
-     * @throws IllegalArgumentException if the input argument 'array' is not a {@link List} of {@link Byte}s or {@link Integer}s
+     * @throws IllegalArgumentException if the input argument 'array' is not a {@link List} of {@link Long}s or {@link Integer}s
      */
-    private static RandomAccessibleInterval<UnsignedIntType> buildUint32(List array, List<Integer> tensorShape)
+    private static RandomAccessibleInterval<UnsignedIntType> buildUint32(List array, List<Integer> tensorShape) throws IllegalArgumentException
     {
     	if (!(array.get(0) instanceof Long)
         		&& !(array.get(0) instanceof Integer)) {
@@ -516,15 +507,14 @@ public final class ListToImgLib2 {
 	}
 
     /**
-     * Creates a {@link ByteType} {@link RandomAccessibleInterval} from the information stored in a {@link List} given the shape of the RAI.
+     * Creates a {@link UnsignedIntType} {@link RandomAccessibleInterval} from the information stored in a {@link List} given the shape of the RAI.
      * 
      * @param array
      * 	{@link List} object containing the flat data of the {@link RandomAccessibleInterval}.
-     * 	The list should contain either {@link Byte} objects or {@link Integer} objects
+     * 	The list should contain {@link Integer} objects
      * @param shape
      * 	{@link List} containing the shape of the {@link RandomAccessibleInterval} that wants to be created from the flat array
      * @return the reconstructed {@link RandomAccessibleInterval}
-     * @throws IllegalArgumentException if the input argument 'array' is not a {@link List} of {@link Byte}s or {@link Integer}s
      */
     private static RandomAccessibleInterval<UnsignedIntType> buildUint32FromInteger(List<Integer> tensor, List<Integer> tensorShape)
     {
@@ -541,15 +531,14 @@ public final class ListToImgLib2 {
 	}
 
     /**
-     * Creates a {@link ByteType} {@link RandomAccessibleInterval} from the information stored in a {@link List} given the shape of the RAI.
+     * Creates a {@link UnsignedIntType} {@link RandomAccessibleInterval} from the information stored in a {@link List} given the shape of the RAI.
      * 
      * @param array
      * 	{@link List} object containing the flat data of the {@link RandomAccessibleInterval}.
-     * 	The list should contain either {@link Byte} objects or {@link Integer} objects
+     * 	The list should contain {@link Long} objects
      * @param shape
      * 	{@link List} containing the shape of the {@link RandomAccessibleInterval} that wants to be created from the flat array
      * @return the reconstructed {@link RandomAccessibleInterval}
-     * @throws IllegalArgumentException if the input argument 'array' is not a {@link List} of {@link Byte}s or {@link Integer}s
      */
     private static RandomAccessibleInterval<UnsignedIntType> buildUint32FromLong(List<Long> tensor, List<Integer> tensorShape)
     {
@@ -566,17 +555,17 @@ public final class ListToImgLib2 {
 	}
 
     /**
-     * Creates a {@link ByteType} {@link RandomAccessibleInterval} from the information stored in a {@link List} given the shape of the RAI.
+     * Creates a {@link LongType} {@link RandomAccessibleInterval} from the information stored in a {@link List} given the shape of the RAI.
      * 
      * @param array
      * 	{@link List} object containing the flat data of the {@link RandomAccessibleInterval}.
-     * 	The list should contain either {@link Byte} objects or {@link Integer} objects
+     * 	The list should contain either {@link Long} objects or {@link Integer} objects
      * @param shape
      * 	{@link List} containing the shape of the {@link RandomAccessibleInterval} that wants to be created from the flat array
      * @return the reconstructed {@link RandomAccessibleInterval}
-     * @throws IllegalArgumentException if the input argument 'array' is not a {@link List} of {@link Byte}s or {@link Integer}s
+     * @throws IllegalArgumentException if the input argument 'array' is not a {@link List} of {@link Long}s or {@link Integer}s
      */
-    private static RandomAccessibleInterval<LongType> buildInt64(List array, List<Integer> tensorShape)
+    private static RandomAccessibleInterval<LongType> buildInt64(List array, List<Integer> tensorShape) throws IllegalArgumentException
     {
     	if (!(array.get(0) instanceof Long)
         		&& !(array.get(0) instanceof Integer)) {
@@ -590,15 +579,14 @@ public final class ListToImgLib2 {
 	}
 
     /**
-     * Creates a {@link ByteType} {@link RandomAccessibleInterval} from the information stored in a {@link List} given the shape of the RAI.
+     * Creates a {@link LongType} {@link RandomAccessibleInterval} from the information stored in a {@link List} given the shape of the RAI.
      * 
      * @param array
      * 	{@link List} object containing the flat data of the {@link RandomAccessibleInterval}.
-     * 	The list should contain either {@link Byte} objects or {@link Integer} objects
+     * 	The list should contain {@link Long} objects
      * @param shape
      * 	{@link List} containing the shape of the {@link RandomAccessibleInterval} that wants to be created from the flat array
      * @return the reconstructed {@link RandomAccessibleInterval}
-     * @throws IllegalArgumentException if the input argument 'array' is not a {@link List} of {@link Byte}s or {@link Integer}s
      */
     private static RandomAccessibleInterval<LongType> buildInt64FromLong(List<Long> tensor, List<Integer> tensorShape)
     {
@@ -615,15 +603,14 @@ public final class ListToImgLib2 {
 	}
 
     /**
-     * Creates a {@link ByteType} {@link RandomAccessibleInterval} from the information stored in a {@link List} given the shape of the RAI.
+     * Creates a {@link LongType} {@link RandomAccessibleInterval} from the information stored in a {@link List} given the shape of the RAI.
      * 
      * @param array
      * 	{@link List} object containing the flat data of the {@link RandomAccessibleInterval}.
-     * 	The list should contain either {@link Byte} objects or {@link Integer} objects
+     * 	The list should contain {@link Integer} objects
      * @param shape
      * 	{@link List} containing the shape of the {@link RandomAccessibleInterval} that wants to be created from the flat array
      * @return the reconstructed {@link RandomAccessibleInterval}
-     * @throws IllegalArgumentException if the input argument 'array' is not a {@link List} of {@link Byte}s or {@link Integer}s
      */
     private static RandomAccessibleInterval<LongType> buildInt64FromInteger(List<Integer> tensor, List<Integer> tensorShape)
     {
@@ -640,17 +627,17 @@ public final class ListToImgLib2 {
 	}
 
     /**
-     * Creates a {@link ByteType} {@link RandomAccessibleInterval} from the information stored in a {@link List} given the shape of the RAI.
+     * Creates a {@link FloatType} {@link RandomAccessibleInterval} from the information stored in a {@link List} given the shape of the RAI.
      * 
      * @param array
      * 	{@link List} object containing the flat data of the {@link RandomAccessibleInterval}.
-     * 	The list should contain either {@link Byte} objects or {@link Integer} objects
+     * 	The list should contain either {@link Float} objects or {@link BigDecimal} objects
      * @param shape
      * 	{@link List} containing the shape of the {@link RandomAccessibleInterval} that wants to be created from the flat array
      * @return the reconstructed {@link RandomAccessibleInterval}
-     * @throws IllegalArgumentException if the input argument 'array' is not a {@link List} of {@link Byte}s or {@link Integer}s
+     * @throws IllegalArgumentException if the input argument 'array' is not a {@link List} of {@link Float}s or {@link BigDecimal}s
      */
-    private static RandomAccessibleInterval<FloatType> buildFloat32(List array, List<Integer> tensorShape)
+    private static RandomAccessibleInterval<FloatType> buildFloat32(List array, List<Integer> tensorShape) throws IllegalArgumentException
     {
     	if (!(array.get(0) instanceof Float)
     			&& !(array.get(0) instanceof BigDecimal)) {
@@ -664,15 +651,14 @@ public final class ListToImgLib2 {
 	}
 
     /**
-     * Creates a {@link ByteType} {@link RandomAccessibleInterval} from the information stored in a {@link List} given the shape of the RAI.
+     * Creates a {@link FloatType} {@link RandomAccessibleInterval} from the information stored in a {@link List} given the shape of the RAI.
      * 
      * @param array
      * 	{@link List} object containing the flat data of the {@link RandomAccessibleInterval}.
-     * 	The list should contain either {@link Byte} objects or {@link Integer} objects
+     * 	The list should contain {@link Float} objects
      * @param shape
      * 	{@link List} containing the shape of the {@link RandomAccessibleInterval} that wants to be created from the flat array
      * @return the reconstructed {@link RandomAccessibleInterval}
-     * @throws IllegalArgumentException if the input argument 'array' is not a {@link List} of {@link Byte}s or {@link Integer}s
      */
     private static RandomAccessibleInterval<FloatType> buildFloat32FromFloat(List<Float> tensor, List<Integer> tensorShape)
     {
@@ -689,15 +675,14 @@ public final class ListToImgLib2 {
 	}
 
     /**
-     * Creates a {@link ByteType} {@link RandomAccessibleInterval} from the information stored in a {@link List} given the shape of the RAI.
+     * Creates a {@link FloatType} {@link RandomAccessibleInterval} from the information stored in a {@link List} given the shape of the RAI.
      * 
      * @param array
      * 	{@link List} object containing the flat data of the {@link RandomAccessibleInterval}.
-     * 	The list should contain either {@link Byte} objects or {@link Integer} objects
+     * 	The list should contain {@link BigDecimal} objects
      * @param shape
      * 	{@link List} containing the shape of the {@link RandomAccessibleInterval} that wants to be created from the flat array
      * @return the reconstructed {@link RandomAccessibleInterval}
-     * @throws IllegalArgumentException if the input argument 'array' is not a {@link List} of {@link Byte}s or {@link Integer}s
      */
     private static RandomAccessibleInterval<FloatType> buildFloat32FromBigDecimal(List<BigDecimal> tensor, List<Integer> tensorShape)
     {
@@ -714,17 +699,17 @@ public final class ListToImgLib2 {
 	}
 
     /**
-     * Creates a {@link ByteType} {@link RandomAccessibleInterval} from the information stored in a {@link List} given the shape of the RAI.
+     * Creates a {@link DoubleType} {@link RandomAccessibleInterval} from the information stored in a {@link List} given the shape of the RAI.
      * 
      * @param array
      * 	{@link List} object containing the flat data of the {@link RandomAccessibleInterval}.
-     * 	The list should contain either {@link Byte} objects or {@link Integer} objects
+     * 	The list should contain either {@link Float} objects, {@link BigDecimal} objects or {@link Double} objects
      * @param shape
      * 	{@link List} containing the shape of the {@link RandomAccessibleInterval} that wants to be created from the flat array
      * @return the reconstructed {@link RandomAccessibleInterval}
-     * @throws IllegalArgumentException if the input argument 'array' is not a {@link List} of {@link Byte}s or {@link Integer}s
+     * @throws IllegalArgumentException if the input argument 'array' is not a {@link List} of {@link Float}s , {@link Double}s or {@link BigDecimal}s
      */
-    private static RandomAccessibleInterval<DoubleType> buildFloat64(List array, List<Integer> tensorShape)
+    private static RandomAccessibleInterval<DoubleType> buildFloat64(List array, List<Integer> tensorShape) throws IllegalArgumentException
     {
     	if (!(array.get(0) instanceof Float)
         		&& !(array.get(0) instanceof Double)
@@ -741,15 +726,14 @@ public final class ListToImgLib2 {
 	}
 
     /**
-     * Creates a {@link ByteType} {@link RandomAccessibleInterval} from the information stored in a {@link List} given the shape of the RAI.
+     * Creates a {@link DoubleType} {@link RandomAccessibleInterval} from the information stored in a {@link List} given the shape of the RAI.
      * 
      * @param array
      * 	{@link List} object containing the flat data of the {@link RandomAccessibleInterval}.
-     * 	The list should contain either {@link Byte} objects or {@link Integer} objects
+     * 	The list should contain {@link Double} objects
      * @param shape
      * 	{@link List} containing the shape of the {@link RandomAccessibleInterval} that wants to be created from the flat array
      * @return the reconstructed {@link RandomAccessibleInterval}
-     * @throws IllegalArgumentException if the input argument 'array' is not a {@link List} of {@link Byte}s or {@link Integer}s
      */
     private static RandomAccessibleInterval<DoubleType> buildFloat64FromDouble(List<Double> tensor, List<Integer> tensorShape)
     {
@@ -766,15 +750,14 @@ public final class ListToImgLib2 {
 	}
 
     /**
-     * Creates a {@link ByteType} {@link RandomAccessibleInterval} from the information stored in a {@link List} given the shape of the RAI.
+     * Creates a {@link DoubleType} {@link RandomAccessibleInterval} from the information stored in a {@link List} given the shape of the RAI.
      * 
      * @param array
      * 	{@link List} object containing the flat data of the {@link RandomAccessibleInterval}.
-     * 	The list should contain either {@link Byte} objects or {@link Integer} objects
+     * 	The list should contain {@link Float} objects
      * @param shape
      * 	{@link List} containing the shape of the {@link RandomAccessibleInterval} that wants to be created from the flat array
      * @return the reconstructed {@link RandomAccessibleInterval}
-     * @throws IllegalArgumentException if the input argument 'array' is not a {@link List} of {@link Byte}s or {@link Integer}s
      */
     private static RandomAccessibleInterval<DoubleType> buildFloat64FromFloat(List<Float> tensor, List<Integer> tensorShape)
     {
@@ -791,15 +774,14 @@ public final class ListToImgLib2 {
 	}
 
     /**
-     * Creates a {@link ByteType} {@link RandomAccessibleInterval} from the information stored in a {@link List} given the shape of the RAI.
+     * Creates a {@link DoubleType} {@link RandomAccessibleInterval} from the information stored in a {@link List} given the shape of the RAI.
      * 
      * @param array
      * 	{@link List} object containing the flat data of the {@link RandomAccessibleInterval}.
-     * 	The list should contain either {@link Byte} objects or {@link Integer} objects
+     * 	The list should contain {@link BigDecimal} objects
      * @param shape
      * 	{@link List} containing the shape of the {@link RandomAccessibleInterval} that wants to be created from the flat array
      * @return the reconstructed {@link RandomAccessibleInterval}
-     * @throws IllegalArgumentException if the input argument 'array' is not a {@link List} of {@link Byte}s or {@link Integer}s
      */
     private static RandomAccessibleInterval<DoubleType> buildFloat64FromBigDecimal(List<BigDecimal> tensor, List<Integer> tensorShape)
     {
