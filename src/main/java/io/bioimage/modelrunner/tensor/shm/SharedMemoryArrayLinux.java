@@ -27,6 +27,7 @@ import com.sun.jna.Pointer;
 
 import io.bioimage.modelrunner.numpy.DecodeNumpy;
 import io.bioimage.modelrunner.tensor.Utils;
+import io.bioimage.modelrunner.tensor.Tensor;
 import io.bioimage.modelrunner.utils.CommonUtils;
 
 import com.sun.jna.Native;
@@ -482,8 +483,6 @@ public class SharedMemoryArrayLinux implements SharedMemoryArray
 	 * If the shared memory region follows that convention, only the name of the shared memory region is needed to 
 	 * reconstruct the underlying nd array.
 	 * 
-	 * @param <T>
-     * 	possible ImgLib2 data types of the retrieved {@link RandomAccessibleInterval}
 	 * @param memoryName
 	 * 	name of the region where the shared memory segment is located
 	 * @return the {@link RandomAccessibleInterval} defined exclusively by the shared memory region following the .npy format

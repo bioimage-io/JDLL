@@ -226,8 +226,6 @@ public interface SharedMemoryArray extends Closeable {
 	 * If the shared memory region follows that convention, only the name of the shared memory region is needed to 
 	 * reconstruct the underlying nd array.
 	 * 
-	 * @param <T>
-     * 	possible ImgLib2 data types of the retrieved {@link RandomAccessibleInterval}
 	 * @param memoryName
 	 * 	name of the region where the shared memory segment is located
 	 * @return the {@link RandomAccessibleInterval} defined exclusively by the shared memory region following the .npy format
@@ -316,9 +314,9 @@ public interface SharedMemoryArray extends Closeable {
      * 
 	 * @return the unique name for the shared memory, specified as a string and as 
 	 * 	the Python package multiprocessing.shared_memory returns it. For Unix based systems it removes the 
-	 * 	initial "/", for example: "/shm_block" -> "shm_block".
+	 * 	initial "/", for example: "/shm_block" -&gt; "shm_block".
 	 * 	In Windows shared memory block names start either with "Global\\" or "Local\\", this is also removed when 
-	 * 	providing a shared memory name to Python. Example: "Local\\shm_block" -> "shm_block"
+	 * 	providing a shared memory name to Python. Example: "Local\\shm_block" -&gt; "shm_block"
      */
     public String getNameForPython();
     
@@ -330,7 +328,7 @@ public interface SharedMemoryArray extends Closeable {
     
     /**
      * 
-     * @return
+     * @return get number of bytes in the shared memory segment
      */
     public int getSize();
     
