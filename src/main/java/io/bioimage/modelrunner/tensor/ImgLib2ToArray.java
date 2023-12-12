@@ -51,20 +51,20 @@ public final class ImgLib2ToArray
     {
     }
 
+
     /**
-     * Maps a {@link Tensor} to the provided {@link ByteBuffer} with all the information
-     * needed to reconstruct the tensor again
+     * Gets the {@link Tensor} data into a Java flat array of the corresponding 
+     * primitive type with C-ordering
      * 
      * @param <T> 
-     * 	the type of the tensor
+     * 	the type of the {@link Tensor}
      * @param tensor 
-     * 	tensor to be mapped into byte buffer
-     * @param byteBuffer 
-     * 	target byte bufer
-     * @throws IllegalArgumentException
-     *         If the {@link Tensor} ImgLib2 type is not supported.
+     * 	{@link Tensor} to be flattened into a Java array
+     * @return a Java flat array of the corresponding primitive type that contains the data of the {@link RandomAccessibleInterval}
+     * 	in C-order
+     * @throws IllegalArgumentException If the {@link Tensor} type is not supported.
      */
-    public static < T extends RealType< T > & NativeType< T > > Object build(Tensor<T> tensor)
+    public static < T extends RealType< T > & NativeType< T > > Object build(Tensor<T> tensor) throws IllegalArgumentException
     {
 		if (tensor.isEmpty())
 			return new byte[0];
@@ -83,7 +83,7 @@ public final class ImgLib2ToArray
      * 	in C-order
      * @throws IllegalArgumentException If the {@link RandomAccessibleInterval} type is not supported.
      */
-    public static < T extends RealType< T > & NativeType< T > > Object build(RandomAccessibleInterval<T> rai)
+    public static < T extends RealType< T > & NativeType< T > > Object build(RandomAccessibleInterval<T> rai) throws IllegalArgumentException
     {
     	if (Util.getTypeFromInterval(rai) instanceof ByteType) {
     		return buildInt8(Cast.unchecked(rai));
