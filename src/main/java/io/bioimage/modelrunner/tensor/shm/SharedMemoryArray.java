@@ -22,6 +22,7 @@ package io.bioimage.modelrunner.tensor.shm;
 
 import java.io.Closeable;
 import java.util.HashMap;
+import java.util.UUID;
 
 import com.sun.jna.Pointer;
 
@@ -118,6 +119,16 @@ public interface SharedMemoryArray extends Closeable {
 			throw new IllegalArgumentException("Parameter 'name' cannot have more than " 
 									+ (SharedMemoryArrayMacOS.MACOS_MAX_LENGTH - 1) + " characters. Shared memory segments "
 									+ "cannot have names with more than " + (SharedMemoryArrayMacOS.MACOS_MAX_LENGTH - 1) + " characters.");
+	}
+	
+	/**
+	 * Create a random unique name for a shared memory segment
+	 * @return a random unique name for a shared memory segment
+	 */
+	static String createShmName() {
+        if (PlatformDetection.isWindows()) return "Local\\" + UUID.randomUUID().toString();
+    	else if (PlatformDetection.isLinux()) return "/shm-" + UUID.randomUUID();
+    	else return ("/shm-" + UUID.randomUUID()).substring(0, SharedMemoryArrayMacOS.MACOS_MAX_LENGTH);
 	}
     
     public String getMemoryLocationName();
