@@ -37,6 +37,14 @@ import net.imglib2.type.numeric.RealType;
  * @author Carlos Garcia Lopez de Haro
  */
 public interface SharedMemoryArray extends Closeable {
+
+	
+    public static final int O_RDONLY = 0;
+    public static final int O_RDWR = 2;    // Read-write mode
+    public static final int O_CREAT = 64;  // Create if it does not exist
+    public static final int PROT_READ = 0x1;  // Page can be read
+    public static final int PROT_WRITE = 0x2; // Page can be written
+    public static final int MAP_SHARED = 0x01; // Share changes
 	
 	final static String[] SPECIAL_CHARS_LIST = new String[] {"/", "\\", "#", "·", "!", "¡", "¿", "?", "@", "|", "$", ">", "<", ";"};
 
@@ -131,18 +139,47 @@ public interface SharedMemoryArray extends Closeable {
     	else return ("/shm-" + UUID.randomUUID()).substring(0, SharedMemoryArrayMacOS.MACOS_MAX_LENGTH);
 	}
     
-    public String getMemoryLocationName();
+	/**
+	 * 
+	 * @return
+	 */
+    public String getName();
     
-    public String getMemoryLocationPythonName();
+    /**
+     * 
+     * @return
+     */
+    public String getNameForPython();
     
+    /**
+     * 
+     * @return
+     */
     public Pointer getPointer();
     
+    /**
+     * 
+     * @return
+     */
     public int getSize();
     
+    /**
+     * 
+     * @return
+     */
     public String getOriginalDataType();
     
+    /**
+     * 
+     * @return
+     */
     public long[] getOriginalShape();
     
+    /**
+     * 
+     * @param <T>
+     * @return
+     */
     public <T extends RealType<T> & NativeType<T>> RandomAccessibleInterval<T> getSharedRAI();
     
     /**

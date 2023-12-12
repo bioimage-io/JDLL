@@ -136,11 +136,11 @@ public final class SharedMemoryArrayWin implements SharedMemoryArray
         }
     }
     
-    public String getMemoryLocationName() {
+    public String getName() {
     	return this.memoryName;
     }
     
-    public String getMemoryLocationPythonName() {
+    public String getNameForPython() {
     	return this.memoryName.substring("Local\\".length());
     }
     

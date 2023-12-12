@@ -23,7 +23,6 @@ package io.bioimage.modelrunner.tensor.shm;
 import java.io.ByteArrayInputStream;
 import java.nio.ByteBuffer;
 import java.util.HashMap;
-import java.util.UUID;
 
 import com.sun.jna.Pointer;
 
@@ -58,17 +57,21 @@ import net.imglib2.view.Views;
  */
 public final class SharedMemoryArrayLinux implements SharedMemoryArray
 {
+	/**
+	 * Instance of the CLibrary JNI containing the methods to interact with the Shared memory segments
+	 */
 	private static final CLibrary INSTANCE = CLibrary.INSTANCE;
 	/**
-	 * Shared memory location
+	 * File descriptor value of the shared memory segment
 	 */
 	private final int shmFd;
 	/**
-	 * 
+	 * Pointer referencing the shared memory byte array
 	 */
 	private Pointer pSharedMemory;
 	/**
-	 * Name defining the location of the shared memory block
+	 * Name of the file containing the shared memory segment. In Unix based systems consits of "/" + file_name.
+	 * In Linux the shared memory segments can be inspected at /dev/shm
 	 */
 	private final String memoryName;
 	/**
@@ -76,11 +79,13 @@ public final class SharedMemoryArrayLinux implements SharedMemoryArray
 	 */
 	private int size;
 	/**
-	 * Datatype of the shm array
+	 * Shared memory segments store bytes. This field represents the original data type of the array that was written
+	 * into the bytes of the shared memory segment. It is helful to retrieve the object later.
 	 */
 	private final String originalDataType;
 	/**
-	 * Original dimensions of the shm array
+	 * Shared memory segments are flat arrays, only one dimension. This field keeps the dimensions of the array before
+	 * flattening it and copying it to the shared memory.
 	 */
 	private final long[] originalDims;
 	/**
@@ -93,19 +98,39 @@ public final class SharedMemoryArrayLinux implements SharedMemoryArray
 	 * of bytes corresponding to the values of the array, no header
 	 */
 	private boolean isNumpyFormat = false;
-
-    public static final int O_RDONLY = 0;
-    static final int O_RDWR = 2;    // Read-write mode
-    static final int O_CREAT = 64;  // Create if it does not exist
-    private static final int PROT_READ = 0x1;  // Page can be read
-    private static final int PROT_WRITE = 0x2; // Page can be written
-    private static final int MAP_SHARED = 0x01; // Share changes
     
+	/**
+	 * Create a shared memory segment with the wanted size, where an object of a certain datatype and
+	 * share is going to be stored.
+	 * Unless the array of bytes that is going to be written into the shared memory segment has numpy format,
+	 * the size parameter should only depend on the shape and the data type.
+	 * The name of the file containing the shared memory segment is assigned automatically.
+	 * @param size
+	 * 	number of bytes that are going to be written into the shared memory
+	 * @param dtype
+	 * 	data type of the object that is going to be written into the shared memory
+	 * @param shape
+	 * 	shape (array dimensions) of the array that is going to be  flattened and written into the shared memory segment
+	 */
     private SharedMemoryArrayLinux(int size, String dtype, long[] shape)
     {
-    	this("/shm-" + UUID.randomUUID(), size, dtype, shape);
+    	this(SharedMemoryArray.createShmName(), size, dtype, shape);
     }
-    
+
+	/**
+	 * Create a shared memory segment with the wanted size, where an object of a certain datatype and
+	 * share is going to be stored. The shared memory name is created in the location of the name provided
+	 * Unless the array of bytes that is going to be written into the shared memory segment has numpy format,
+	 * the size parameter should only depend on the shape and the data type.
+	 * @param name
+	 * 	name of the file name that is going to be used to identify the shared memory segment
+	 * @param size
+	 * 	number of bytes that are going to be written into the shared memory
+	 * @param dtype
+	 * 	data type of the object that is going to be written into the shared memory
+	 * @param shape
+	 * 	shape (array dimensions) of the array that is going to be  flattened and written into the shared memory segment
+	 */
     private SharedMemoryArrayLinux(String name, int size, String dtype, long[] shape)
     {
     	this.originalDataType = dtype;
@@ -130,22 +155,30 @@ public final class SharedMemoryArrayLinux implements SharedMemoryArray
         }
     }
     
-    public String getMemoryLocationName() {
+    /**
+     * {@inheritDoc}
+     */
+    public String getName() {
     	return this.memoryName;
     }
     
-    public String getMemoryLocationPythonName() {
+    /**
+     * {@inheritDoc}
+     */
+    public String getNameForPython() {
     	return this.memoryName.substring("/".length());
     }
     
+    /**
+     * {@inheritDoc}
+     */
     public Pointer getPointer() {
     	return this.pSharedMemory;
     }
     
-    public int getSharedMemoryBlock() {
-    	return this.shmFd;
-    }
-    
+    /**
+     * {@inheritDoc}
+     */
     public int getSize() {
     	return this.size;
     }
@@ -167,7 +200,7 @@ public final class SharedMemoryArrayLinux implements SharedMemoryArray
      */
     protected static <T extends RealType<T> & NativeType<T>> SharedMemoryArrayLinux build(RandomAccessibleInterval<T> rai)
     {
-    	return build("/shm-" + UUID.randomUUID(), rai);
+    	return build(SharedMemoryArray.createShmName(), rai);
     }
 
     /**
@@ -262,7 +295,7 @@ public final class SharedMemoryArrayLinux implements SharedMemoryArray
      */
     protected static <T extends RealType<T> & NativeType<T>> SharedMemoryArrayLinux buildNumpyFormat(RandomAccessibleInterval<T> rai)
     {
-    	return buildNumpyFormat("/shm-" + UUID.randomUUID(), rai);
+    	return buildNumpyFormat(SharedMemoryArray.createShmName(), rai);
     }
 
     /**

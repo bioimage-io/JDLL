@@ -377,7 +377,7 @@ public class RunMode {
 		// 									buffer=input0_appose_shm.buf).reshape([64, 64]), 
 		// 									dims=["b", "c", "y", "x"], name="input0")
 		shmInstancesCode += ogName + APPOSE_SHM_KEY + " = shared_memory.SharedMemory(name='" 
-						+ shma.getMemoryLocationPythonName() + "', size=" + shma.getSize() + ")" + System.lineSeparator();
+						+ shma.getNameForPython() + "', size=" + shma.getSize() + ")" + System.lineSeparator();
 		shmInstancesCode += "shm_out_list.append(" + ogName + APPOSE_SHM_KEY + ")" + System.lineSeparator();
 		shmInstancesCode += ogName + APPOSE_SHM_KEY + ".unlink()" + System.lineSeparator();
 		int size = 1;
@@ -409,7 +409,7 @@ public class RunMode {
 		// input0_appose_shm = shared_memory.SharedMemory(name=input0)
 		// input0 = np.ndarray(size, dtype="float64", buffer=input0_appose_shm.buf).reshape([64, 64])
 		shmInstancesCode += ogName + APPOSE_SHM_KEY + " = shared_memory.SharedMemory(name='" 
-							+ shma.getMemoryLocationPythonName() + "', size=" + shma.getSize() + ")" + System.lineSeparator();
+							+ shma.getNameForPython() + "', size=" + shma.getSize() + ")" + System.lineSeparator();
 		shmInstancesCode += "shm_out_list.append(" + ogName + APPOSE_SHM_KEY + ")" + System.lineSeparator();
 		shmInstancesCode += ogName + APPOSE_SHM_KEY + ".unlink()" + System.lineSeparator();
 		int size = 1;

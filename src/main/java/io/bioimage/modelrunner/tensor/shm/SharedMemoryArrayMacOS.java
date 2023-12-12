@@ -131,11 +131,11 @@ public final class SharedMemoryArrayMacOS implements SharedMemoryArray
         }
     }
     
-    public String getMemoryLocationName() {
+    public String getName() {
     	return this.memoryName;
     }
     
-    public String getMemoryLocationPythonName() {
+    public String getNameForPython() {
     	return this.memoryName.substring("/".length());
     }
     
