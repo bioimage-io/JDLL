@@ -58,7 +58,7 @@ import net.imglib2.view.Views;
  * in Windows
  * @author Carlos Garcia Lopez de Haro
  */
-public final class SharedMemoryArrayWin implements SharedMemoryArray
+public class SharedMemoryArrayWin implements SharedMemoryArray
 {
 	/**
 	 * file mapping for shared memory

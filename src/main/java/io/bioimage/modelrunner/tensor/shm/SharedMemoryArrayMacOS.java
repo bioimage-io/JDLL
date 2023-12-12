@@ -56,7 +56,7 @@ import net.imglib2.view.Views;
  * in POSIX based systems (LINUX, MACOS...)
  * @author Carlos Garcia Lopez de Haro
  */
-public final class SharedMemoryArrayMacOS implements SharedMemoryArray
+public class SharedMemoryArrayMacOS implements SharedMemoryArray
 {
 	private static final CLibrary INSTANCE = CLibrary.INSTANCE;
 	private static final MacosHelpers macosInstance = MacosHelpers.INSTANCE;

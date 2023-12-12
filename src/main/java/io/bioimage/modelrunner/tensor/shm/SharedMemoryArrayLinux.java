@@ -55,7 +55,7 @@ import net.imglib2.view.Views;
  * in LINUX based systems
  * @author Carlos Garcia Lopez de Haro
  */
-public final class SharedMemoryArrayLinux implements SharedMemoryArray
+public class SharedMemoryArrayLinux implements SharedMemoryArray
 {
 	/**
 	 * Instance of the CLibrary JNI containing the methods to interact with the Shared memory segments
