@@ -32,29 +32,76 @@ import net.imglib2.type.NativeType;
 import net.imglib2.type.numeric.RealType;
 
 /**
- * Interface that contains the methods required to create or read Shared Memory Blocks for JDLL
+ * Interface to interact with shared memory segments retrieving the underlying information 
  * 
  * @author Carlos Garcia Lopez de Haro
  */
 public interface SharedMemoryArray extends Closeable {
 
-	
+	/**
+	 * Constant to specify that the shared memory segment that is going to be open is only for 
+	 * reading
+	 */
     public static final int O_RDONLY = 0;
-    public static final int O_RDWR = 2;    // Read-write mode
-    public static final int O_CREAT = 64;  // Create if it does not exist
-    public static final int PROT_READ = 0x1;  // Page can be read
-    public static final int PROT_WRITE = 0x2; // Page can be written
-    public static final int MAP_SHARED = 0x01; // Share changes
-	
+	/**
+	 * Constant to specify that the shared memory segment that is going to be open is for 
+	 * reading and/or writing
+	 */
+    public static final int O_RDWR = 2;
+	/**
+	 * Constant to specify that the shared memory segment that is going to be open will
+	 * be created if it does not exist
+	 */
+    public static final int O_CREAT = 64;
+	/**
+	 * Constant to specify that the shared memory regions mapped can be read but not written
+	 */
+    public static final int PROT_READ = 0x1;
+	/**
+	 * Constant to specify that the shared memory regions mapped can be written
+	 */
+    public static final int PROT_WRITE = 0x2;
+	/**
+	 * Constant to specify that the shared memory regions mapped can be shared with other processes
+	 */
+    public static final int MAP_SHARED = 0x01;
+	/**
+	 * List of special characters that should not be used to name shared memory segments
+	 */
 	final static String[] SPECIAL_CHARS_LIST = new String[] {"/", "\\", "#", "·", "!", "¡", "¿", "?", "@", "|", "$", ">", "<", ";"};
 
+	/**
+	 * This method copies the data from a {@link RandomAccessibleInterval} into a shared memory region
+	 * to be able to shared it with other processes.
+	 * An instance of {@link SharedMemoryArray} is created that helps managing the shared memory data.
+	 * The name is assigned automatically.
+	 * 
+	 * @param <T>
+     * 	possible ImgLib2 data types of the retrieved {@link RandomAccessibleInterval}
+	 * @param rai
+	 * 	the {@link RandomAccessibleInterval} that is going to be written into a shared memory region
+	 * @return a {@link SharedMemoryArray} instance that helps handling the data written to the shared memory region
+	 */
 	static <T extends RealType<T> & NativeType<T>>
 	SharedMemoryArray buildSHMA(RandomAccessibleInterval<T> rai) {
         if (PlatformDetection.isWindows()) return SharedMemoryArrayWin.build(rai);
     	else if (PlatformDetection.isLinux()) return SharedMemoryArrayLinux.build(rai);
     	else return SharedMemoryArrayMacOS.build(rai);
     }
-	
+
+	/**
+	 * This method copies the data from a {@link RandomAccessibleInterval} into a shared memory region
+	 * to be able to shared it with other processes.
+	 * An instance of {@link SharedMemoryArray} is created that helps managing the shared memory data.
+	 * 
+	 * @param <T>
+     * 	possible ImgLib2 data types of the retrieved {@link RandomAccessibleInterval}
+     * @param name
+     * 	name of the shared memory region where the {@link RandomAccessibleInterval} data has been copied
+	 * @param rai
+	 * 	the {@link RandomAccessibleInterval} that is going to be written into a shared memory region
+	 * @return a {@link SharedMemoryArray} instance that helps handling the data written to the shared memory region
+	 */
 	static <T extends RealType<T> & NativeType<T>>
 	SharedMemoryArray buildSHMA(String name, RandomAccessibleInterval<T> rai) {
         if (PlatformDetection.isWindows()) return SharedMemoryArrayWin.build(name, rai);
@@ -62,6 +109,15 @@ public interface SharedMemoryArray extends Closeable {
     	else return SharedMemoryArrayMacOS.build(name, rai);
     }
 	
+	/**
+	 * 
+	 * @param <T>
+	 * @param memoryName
+	 * @param shape
+	 * @param isFortran
+	 * @param dataType
+	 * @return
+	 */
 	static <T extends RealType<T> & NativeType<T>>
 	RandomAccessibleInterval<T> buildImgLib2FromSHMA(String memoryName, long[] shape, boolean isFortran, String dataType) {
         if (PlatformDetection.isWindows()) 
@@ -72,6 +128,12 @@ public interface SharedMemoryArray extends Closeable {
     		return SharedMemoryArrayMacOS.createImgLib2RaiFromSharedMemoryBlock(memoryName, shape, isFortran, dataType);
 	}
 	
+	/**
+	 * 
+	 * @param <T>
+	 * @param memoryName
+	 * @return
+	 */
 	static <T extends RealType<T> & NativeType<T>>
 	RandomAccessibleInterval<T> buildImgLib2FromNumpyLikeSHMA(String memoryName) {
         if (PlatformDetection.isWindows()) 
@@ -81,7 +143,11 @@ public interface SharedMemoryArray extends Closeable {
         else
     		return SharedMemoryArrayMacOS.buildImgLib2FromNumpyLikeSHMA(memoryName);
 	}
-	
+	/**
+	 * 
+	 * @param memoryName
+	 * @return
+	 */
 	static HashMap<String, Object> buildMapFromNumpyLikeSHMA(String memoryName) {
         if (PlatformDetection.isWindows()) 
         	return SharedMemoryArrayWin.buildMapFromNumpyLikeSHMA(memoryName);
@@ -91,6 +157,12 @@ public interface SharedMemoryArray extends Closeable {
     		return SharedMemoryArrayMacOS.buildMapFromNumpyLikeSHMA(memoryName);
 	}
 	
+	/**
+	 * 
+	 * @param <T>
+	 * @param rai
+	 * @return
+	 */
 	static <T extends RealType<T> & NativeType<T>>
 	SharedMemoryArray buildNumpyLikeSHMA(RandomAccessibleInterval<T> rai) {
         if (PlatformDetection.isWindows()) return SharedMemoryArrayWin.buildNumpyFormat(rai);
@@ -98,6 +170,13 @@ public interface SharedMemoryArray extends Closeable {
     	else return SharedMemoryArrayMacOS.buildNumpyFormat(rai);
     }
 	
+	/**
+	 * 
+	 * @param <T>
+	 * @param name
+	 * @param rai
+	 * @return
+	 */
 	static <T extends RealType<T> & NativeType<T>>
 	SharedMemoryArray buildNumpyLikeSHMA(String name, RandomAccessibleInterval<T> rai) {
         if (PlatformDetection.isWindows()) return SharedMemoryArrayWin.buildNumpyFormat(name, rai);
@@ -141,19 +220,27 @@ public interface SharedMemoryArray extends Closeable {
     
 	/**
 	 * 
-	 * @return
+	 * @return the unique name for the shared memory, specified as a string. When creating a new shared memory bloc.k instance
+	 * 	{@link SharedMemoryArray} a name can be supploed, and if not it will be generated automatically.
+	 * 	Two shared memory blocks existing at the same time cannot share the name.
+	 * 	In Unix based systems, Shared memory segment names start with "/", for example "/shm_block"
+	 * 	In Windows shared memory block names start either with "Global\\" or "Local\\". Example: "Local\\shm_block" 
 	 */
     public String getName();
     
     /**
      * 
-     * @return
+	 * @return the unique name for the shared memory, specified as a string and as 
+	 * 	the Python package multiprocessing.shared_memory returns it. For Unix based systems it removes the 
+	 * 	initial "/", for example: "/shm_block" -> "shm_block".
+	 * 	In Windows shared memory block names start either with "Global\\" or "Local\\", this is also removed when 
+	 * 	providing a shared memory name to Python. Example: "Local\\shm_block" -> "shm_block"
      */
     public String getNameForPython();
     
     /**
      * 
-     * @return
+     * @return the pointer to the shared memory segment
      */
     public Pointer getPointer();
     
@@ -165,20 +252,22 @@ public interface SharedMemoryArray extends Closeable {
     
     /**
      * 
-     * @return
+     * @return the data type of the array that was flattened and copied into the shared memory segment
      */
     public String getOriginalDataType();
     
     /**
      * 
-     * @return
+     * @return the shape (array dimensions) of the array that was flattened and copied into the shared memory segment
      */
     public long[] getOriginalShape();
     
     /**
+     * Retrieve the {@link RandomAccessibleInterval} defined in the shared memory segment
      * 
      * @param <T>
-     * @return
+     * 	possible ImgLib2 data types of the retrieved {@link RandomAccessibleInterval}
+     * @return the randomAccessible interval that is defined in the shared memory segment
      */
     public <T extends RealType<T> & NativeType<T>> RandomAccessibleInterval<T> getSharedRAI();
     
