@@ -19,6 +19,12 @@
  */
 package io.bioimage.modelrunner.runmode.ops;
 
+/**
+ * TODO fill
+ * Class to make inference with cell-pose
+ * 
+ * @author Carlos Garcia Lopez de Haro
+ */
 public class CellposeInferJdllOp {
 
 }

@@ -145,7 +145,7 @@ public class DecodeNumpy {
 	
     /**
      * Main method to test the ImgLib2 creation
-     * @param T
+     * @param <T>
      * 	possible ImgLib2 data types of the provided {@link RandomAccessibleInterval}
      * @param args
      * 	no args are needed
@@ -185,8 +185,6 @@ public class DecodeNumpy {
     
     /**
      * MEthod to decode the bytes corresponding to a numpy array stored in the numpy file
-     * @param <T>
-     * 	possible data types that the ImgLib2 image can have
      * @param is
      * 	{@link InputStream} that results after reading the numpy file. Contains the byte info of the
      * 	numpy array

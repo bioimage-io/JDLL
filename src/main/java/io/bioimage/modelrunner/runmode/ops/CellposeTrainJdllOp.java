@@ -19,6 +19,12 @@
  */
 package io.bioimage.modelrunner.runmode.ops;
 
+/**
+ * TODO fill
+ * Class to train cell-pose from scratch Cellpose
+ * 
+ * @author Carlos Garcia Lopez de Haro
+ */
 public class CellposeTrainJdllOp {
 
 }
