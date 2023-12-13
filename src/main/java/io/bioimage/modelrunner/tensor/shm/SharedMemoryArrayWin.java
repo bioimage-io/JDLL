@@ -234,7 +234,7 @@ public class SharedMemoryArrayWin implements SharedMemoryArray
     protected static <T extends RealType<T> & NativeType<T>> SharedMemoryArrayWin build(String name, RandomAccessibleInterval<T> rai)
     {
     	SharedMemoryArray.checkMemorySegmentName(name);
-    	if (!name.startsWith("Local\\"))
+    	if (!name.startsWith("Local\\") && !name.startsWith("Global\\"))
     		name = "Local\\" + name;
 		SharedMemoryArrayWin shma = null;
     	if (Util.getTypeFromInterval(rai) instanceof ByteType) {
@@ -333,8 +333,8 @@ public class SharedMemoryArrayWin implements SharedMemoryArray
     protected static <T extends RealType<T> & NativeType<T>> SharedMemoryArrayWin buildNumpyFormat(String name, RandomAccessibleInterval<T> rai)
     {
     	SharedMemoryArray.checkMemorySegmentName(name);
-    	if (!name.startsWith("/"))
-    		name = "/" + name;
+    	if (!name.startsWith("Local\\") && !name.startsWith("Global\\"))
+    		name = "Local\\" + name;
     	SharedMemoryArrayWin shma = null;
     	byte[] total = DecodeNumpy.createNumpyStyleByteArray(rai);
     	shma = new SharedMemoryArrayWin(name, total.length, CommonUtils.getDataType(rai), rai.dimensionsAsLongArray());
@@ -521,7 +521,7 @@ public class SharedMemoryArrayWin implements SharedMemoryArray
 	 * @return the {@link RandomAccessibleInterval} defined exclusively by the shared memory region following the .npy format
 	 */
 	protected static HashMap<String, Object> buildMapFromNumpyLikeSHMA(String memoryName) {
-		if (!memoryName.startsWith("Local\\"))
+		if (!memoryName.startsWith("Local\\") && !memoryName.startsWith("Global\\"))
 			memoryName = "Local\\" + memoryName;
 		WinNT.HANDLE hMapFile = Kernel32.INSTANCE.OpenFileMapping( WinNT.FILE_MAP_READ, false, memoryName);
         if (hMapFile == null) {
@@ -573,7 +573,7 @@ public class SharedMemoryArrayWin implements SharedMemoryArray
 	 */
 	protected static <T extends RealType<T> & NativeType<T>>
 	RandomAccessibleInterval<T> buildImgLib2FromNumpyLikeSHMA(String memoryName) {
-		if (!memoryName.startsWith("Local\\"))
+		if (!memoryName.startsWith("Local\\") && !memoryName.startsWith("Global\\"))
 			memoryName = "Local\\" + memoryName;
 		WinNT.HANDLE hMapFile = Kernel32.INSTANCE.OpenFileMapping( WinNT.FILE_MAP_READ, false, memoryName);
         if (hMapFile == null) {
@@ -626,7 +626,7 @@ public class SharedMemoryArrayWin implements SharedMemoryArray
 	protected static <T extends RealType<T> & NativeType<T>>
 	RandomAccessibleInterval<T> createImgLib2RaiFromSharedMemoryBlock(String memoryName, long[] shape, boolean isFortran, String dataType) {
 		int size = SharedMemoryArray.getArrayByteSize(shape, Cast.unchecked(CommonUtils.getImgLib2DataType(dataType)));
-		if (!memoryName.startsWith("Local\\"))
+		if (!memoryName.startsWith("Local\\") && !memoryName.startsWith("Global\\"))
 			memoryName = "Local\\" + memoryName;
 		WinNT.HANDLE hMapFile = Kernel32.INSTANCE.OpenFileMapping(
                 WinNT.FILE_MAP_READ | WinNT.FILE_MAP_WRITE,
