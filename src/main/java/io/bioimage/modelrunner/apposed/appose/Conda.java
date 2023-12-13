@@ -863,10 +863,6 @@ public class Conda {
 	 * @return The list of the Conda environment names as {@code List< String >}.
 	 * @throws IOException
 	 *             If an I/O error occurs.
-	 * @throws InterruptedException
-	 *             If the current thread is interrupted by another thread while it
-	 *             is waiting, then the wait is ended and an InterruptedException is
-	 *             thrown.
 	 */
 	public List< String > getEnvironmentNames() throws IOException
 	{
