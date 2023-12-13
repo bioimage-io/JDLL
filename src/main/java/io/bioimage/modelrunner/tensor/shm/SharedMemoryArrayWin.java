@@ -20,6 +20,7 @@
 package io.bioimage.modelrunner.tensor.shm;
 
 import java.io.ByteArrayInputStream;
+import java.io.File;
 import java.util.HashMap;
 
 import com.sun.jna.Pointer;
@@ -176,7 +177,7 @@ public class SharedMemoryArrayWin implements SharedMemoryArray
      * {@inheritDoc}
      */
     public String getNameForPython() {
-    	return this.memoryName.substring("Local\\".length());
+    	return this.memoryName.substring(("Local" + File.separator).length());
     }
 
     /**
@@ -234,8 +235,8 @@ public class SharedMemoryArrayWin implements SharedMemoryArray
     protected static <T extends RealType<T> & NativeType<T>> SharedMemoryArrayWin build(String name, RandomAccessibleInterval<T> rai)
     {
     	SharedMemoryArray.checkMemorySegmentName(name);
-    	if (!name.startsWith("Local\\") && !name.startsWith("Global\\"))
-    		name = "Local\\" + name;
+    	if (!name.startsWith("Local" + File.separator) && !name.startsWith("Global" + File.separator))
+    		name = "Local" + File.separator+ name;
 		SharedMemoryArrayWin shma = null;
     	if (Util.getTypeFromInterval(rai) instanceof ByteType) {
         	int size = 1;
@@ -333,8 +334,8 @@ public class SharedMemoryArrayWin implements SharedMemoryArray
     protected static <T extends RealType<T> & NativeType<T>> SharedMemoryArrayWin buildNumpyFormat(String name, RandomAccessibleInterval<T> rai)
     {
     	SharedMemoryArray.checkMemorySegmentName(name);
-    	if (!name.startsWith("Local\\") && !name.startsWith("Global\\"))
-    		name = "Local\\" + name;
+    	if (!name.startsWith("Local" + File.separator) && !name.startsWith("Global" + File.separator))
+    		name = "Local" + File.separator + name;
     	SharedMemoryArrayWin shma = null;
     	byte[] total = DecodeNumpy.createNumpyStyleByteArray(rai);
     	shma = new SharedMemoryArrayWin(name, total.length, CommonUtils.getDataType(rai), rai.dimensionsAsLongArray());
@@ -474,7 +475,7 @@ public class SharedMemoryArrayWin implements SharedMemoryArray
 	}
 	
 	public static void main(String[] args) {
-	    String memoryName = "Local\\wnsm_52f561c9";
+	    String memoryName = "Local" + File.separator + "wnsm_52f561c9";
 	    WinNT.HANDLE hMapFile = Kernel32.INSTANCE.OpenFileMapping(
 	            WinNT.FILE_MAP_READ, false, memoryName
 	    );
@@ -521,8 +522,8 @@ public class SharedMemoryArrayWin implements SharedMemoryArray
 	 * @return the {@link RandomAccessibleInterval} defined exclusively by the shared memory region following the .npy format
 	 */
 	protected static HashMap<String, Object> buildMapFromNumpyLikeSHMA(String memoryName) {
-		if (!memoryName.startsWith("Local\\") && !memoryName.startsWith("Global\\"))
-			memoryName = "Local\\" + memoryName;
+		if (!memoryName.startsWith("Local" + File.separator) && !memoryName.startsWith("Global" + File.separator))
+			memoryName = "Local" + File.separator + memoryName;
 		WinNT.HANDLE hMapFile = Kernel32.INSTANCE.OpenFileMapping( WinNT.FILE_MAP_READ, false, memoryName);
         if (hMapFile == null) {
             throw new RuntimeException("OpenFileMapping failed with error: " + Kernel32.INSTANCE.GetLastError());
@@ -573,8 +574,8 @@ public class SharedMemoryArrayWin implements SharedMemoryArray
 	 */
 	protected static <T extends RealType<T> & NativeType<T>>
 	RandomAccessibleInterval<T> buildImgLib2FromNumpyLikeSHMA(String memoryName) {
-		if (!memoryName.startsWith("Local\\") && !memoryName.startsWith("Global\\"))
-			memoryName = "Local\\" + memoryName;
+		if (!memoryName.startsWith("Local" + File.separator) && !memoryName.startsWith("Global" + File.separator))
+			memoryName = "Local" + File.separator + memoryName;
 		WinNT.HANDLE hMapFile = Kernel32.INSTANCE.OpenFileMapping( WinNT.FILE_MAP_READ, false, memoryName);
         if (hMapFile == null) {
             throw new RuntimeException("OpenFileMapping failed with error: " + Kernel32.INSTANCE.GetLastError());
@@ -626,8 +627,8 @@ public class SharedMemoryArrayWin implements SharedMemoryArray
 	protected static <T extends RealType<T> & NativeType<T>>
 	RandomAccessibleInterval<T> createImgLib2RaiFromSharedMemoryBlock(String memoryName, long[] shape, boolean isFortran, String dataType) {
 		int size = SharedMemoryArray.getArrayByteSize(shape, Cast.unchecked(CommonUtils.getImgLib2DataType(dataType)));
-		if (!memoryName.startsWith("Local\\") && !memoryName.startsWith("Global\\"))
-			memoryName = "Local\\" + memoryName;
+		if (!memoryName.startsWith("Local" + File.separator) && !memoryName.startsWith("Global" + File.separator))
+			memoryName = "Local" + File.separator + memoryName;
 		WinNT.HANDLE hMapFile = Kernel32.INSTANCE.OpenFileMapping(
                 WinNT.FILE_MAP_READ | WinNT.FILE_MAP_WRITE,
                 false,

@@ -20,6 +20,7 @@
 package io.bioimage.modelrunner.tensor.shm;
 
 import java.io.Closeable;
+import java.io.File;
 import java.util.HashMap;
 import java.util.UUID;
 
@@ -267,7 +268,7 @@ public interface SharedMemoryArray extends Closeable {
 	 * @return a random unique name for a shared memory segment
 	 */
 	static String createShmName() {
-        if (PlatformDetection.isWindows()) return "Local\\" + UUID.randomUUID().toString();
+        if (PlatformDetection.isWindows()) return "Local" + File.separator + UUID.randomUUID().toString();
     	else if (PlatformDetection.isLinux()) return "/shm-" + UUID.randomUUID();
     	else return ("/shm-" + UUID.randomUUID()).substring(0, SharedMemoryArrayMacOS.MACOS_MAX_LENGTH);
 	}
