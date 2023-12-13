@@ -263,8 +263,7 @@ public class SharedMemoryArrayWin implements SharedMemoryArray
 		SharedMemoryArrayWin shma = null;
 		if (rai == null) {
         	shma = new SharedMemoryArrayWin(name, -1, null, null);
-		}
-    	if (Util.getTypeFromInterval(rai) instanceof ByteType) {
+		} else if (Util.getTypeFromInterval(rai) instanceof ByteType) {
         	int size = 1;
         	for (long i : rai.dimensionsAsLongArray()) {size *= i;}
         	shma = new SharedMemoryArrayWin(name, size, CommonUtils.getDataType(rai), rai.dimensionsAsLongArray());
