@@ -500,9 +500,9 @@ public class RunMode {
 	private static < T extends RealType< T > & NativeType< T > > 
 		RandomAccessibleInterval<T> createImgLib2ArrFromApposeOutput(Map<String, Object> apposeTensor) {
 		String shmName = (String) apposeTensor.get(RunModeScripts.DATA_KEY);
-		List<Integer> shape = (List<Integer>) apposeTensor.get(RunModeScripts.SHAPE_KEY);
+		List<Number> shape = (List<Number>) apposeTensor.get(RunModeScripts.SHAPE_KEY);
 		long[] longShape = new long[shape.size()];
-		for (int i = 0; i < shape.size(); i ++) {longShape[i] = shape.get(i);}
+		for (int i = 0; i < shape.size(); i ++) {longShape[i] = shape.get(i).longValue();}
 		String dtype = (String) apposeTensor.get(RunModeScripts.DTYPE_KEY);
 		boolean isFortran = (boolean) apposeTensor.get(RunModeScripts.IS_FORTRAN_KEY);
 		RandomAccessibleInterval<T> rai = SharedMemoryArray.buildImgLib2FromSHMA(shmName, longShape, isFortran, dtype);

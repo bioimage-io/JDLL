@@ -95,7 +95,7 @@ public class PythonTransformation extends AbstractTensorTransformation
 	
 	private boolean install = false;
 	
-	private LinkedHashMap<String, Object> kwargs = new LinkedHashMap<String, Object>();
+	private Map<String, Object> kwargs = new LinkedHashMap<String, Object>();
 	{
 		kwargs.put("prob_thresh", 0.6924782541382084);
 		kwargs.put("nms_thresh", 0.3);
@@ -203,12 +203,12 @@ public class PythonTransformation extends AbstractTensorTransformation
 			this.kwargs = new LinkedHashMap<String, Object>();
 			return;
 		}
-		if (kwargs instanceof LinkedHashMap) {
-			this.kwargs = (LinkedHashMap<String, Object>) kwargs;
+		if (kwargs instanceof Map) {
+			this.kwargs = (Map<String, Object>) kwargs;
 		} else {
 			throw new IllegalArgumentException("'kwargs' parameter has to be an instance of "
-					+ LinkedHashMap.class
-					+ ". The provided argument is an instance of: " + method.getClass());
+					+ Map.class
+					+ ". The provided argument is an instance of: " + kwargs.getClass());
 		}
 	}
 	
