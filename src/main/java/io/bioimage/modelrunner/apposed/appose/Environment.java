@@ -57,7 +57,6 @@ public interface Environment {
 	 * </p>
 	 * 
 	 * @return The newly created service.
-	 * @see #groovy To create a service for Groovy script execution.
 	 * @throws IOException If something goes wrong starting the worker process.
 	 */
 	default Service python() throws IOException {
@@ -125,7 +124,6 @@ public interface Environment {
 	 * @param args Command line arguments to pass to the worker process
 	 *          (e.g. <code>{"-v", "--enable-everything"}</code>.
 	 * @return The newly created service.
-	 * @see #groovy To create a service for Groovy script execution.
 	 * @see #python() To create a service for Python script execution.
 	 * @throws IOException If something goes wrong starting the worker process.
 	 */

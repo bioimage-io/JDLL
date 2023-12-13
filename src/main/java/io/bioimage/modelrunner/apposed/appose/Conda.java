@@ -146,8 +146,8 @@ public class Conda {
 	 *             If the current thread is interrupted by another thread while it
 	 *             is waiting, then the wait is ended and an InterruptedException is
 	 *             thrown.
-	 * @throws ArchiveException 
-	 * @throws URISyntaxException 
+	 * @throws ArchiveException if there is any error decompressing the micromamba files
+	 * @throws URISyntaxException if the micromamba install link is wrong or does not work or there is no internet connection
 	 */
 	public Conda() throws IOException, InterruptedException, ArchiveException, URISyntaxException
 	{
@@ -178,8 +178,8 @@ public class Conda {
 	 *             If the current thread is interrupted by another thread while it
 	 *             is waiting, then the wait is ended and an InterruptedException is
 	 *             thrown.
-	 * @throws ArchiveException 
-	 * @throws URISyntaxException 
+	 * @throws ArchiveException if there is any error decompressing the micromamba files
+	 * @throws URISyntaxException if the micromamba install link is wrong or does not work or there is no internet connection
 	 */
 	public Conda( final String rootdir ) throws IOException, InterruptedException, ArchiveException, URISyntaxException
 	{
@@ -784,6 +784,8 @@ public class Conda {
 	 *            One or more arguments for the Conda command.
 	 * @throws IOException
 	 *             If an I/O error occurs.
+	 * @throws RuntimeException
+	 *             If the Conda command does not run properly
 	 * @throws InterruptedException
 	 *             If the current thread is interrupted by another thread while it
 	 *             is waiting, then the wait is ended and an InterruptedException is
@@ -876,6 +878,15 @@ public class Conda {
 		return envs;
 	}
 	
+	/**
+	 * TODO
+	 * Check whether an environment has the wanted deps installed
+	 * @param envDir
+	 * 	directory of the environment
+	 * @param dependencies
+	 * 	lsit of wanted deps
+	 * @return true if the wanted deps are installed or false otherwise
+	 */
 	public static boolean checkDependenciesInEnv(String envDir, List<String> dependencies) {
 		if (!(new File(envDir).isDirectory()))
 			return false;
@@ -884,6 +895,13 @@ public class Conda {
 		return false;
 	}
 	
+	/**
+	 * TODO
+	 * Check the environment defined by this yaml file exists
+	 * @param envYaml
+	 * 	path to the Conda/Mamba env yaml file
+	 * @return	true if it exists and false otherwise
+	 */
 	public boolean checkEnvFromYamlExists(String envYaml) {
 		if (envYaml == null || new File(envYaml).isFile() == false 
 				|| (envYaml.endsWith(".yaml") && envYaml.endsWith(".yml"))) {

@@ -93,9 +93,9 @@ public final class MambaInstallerUtils {
 	 * 
 	 * @param inputFile     the input .tar file
 	 * @param outputDir     the output directory file. 
-	 * @throws IOException 
-	 * @throws FileNotFoundException
-	 * @throws ArchiveException 
+	 * @throws IOException reding, writting or creating the target or source files
+	 * @throws FileNotFoundException if the file that needs to be untared is not found
+	 * @throws ArchiveException  if there is any error decompressing the tar file
 	 */
 	public static void unTar(final File inputFile, final File outputDir) throws FileNotFoundException, IOException, ArchiveException {
 
@@ -126,6 +126,15 @@ public final class MambaInstallerUtils {
 
 	}
 	
+	/**
+	 * Example main method
+	 * @param args
+	 * 	no args are required
+	 * @throws FileNotFoundException if some file is not found
+	 * @throws IOException if there is any error reading or writting
+	 * @throws ArchiveException if there is any error decompressing
+	 * @throws URISyntaxException if the url is wrong or there is no internet connection
+	 */
 	public static void main(String[] args) throws FileNotFoundException, IOException, ArchiveException, URISyntaxException {
 		String url = Conda.MICROMAMBA_URL;
 		final File tempFile = File.createTempFile( "miniconda", ".tar.bz2" );
@@ -156,11 +165,9 @@ public final class MambaInstallerUtils {
 	 * has been redirected
 	 * @param url
 	 * 	original url. Connecting to that url must give a 301, 302 or 303 response code
-	 * @param conn
-	 * 	connection to the url
 	 * @return the redirected url
-	 * @throws MalformedURLException 
-	 * @throws URISyntaxException 
+	 * @throws MalformedURLException if the url does not fulfil the requirements for an url to be correct
+	 * @throws URISyntaxException if the url is incorrect or there is no internet connection
 	 */
 	public static URL redirectedURL(URL url) throws MalformedURLException, URISyntaxException {
 		int statusCode;

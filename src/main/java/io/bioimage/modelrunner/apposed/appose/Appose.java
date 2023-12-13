@@ -134,9 +134,9 @@ import java.io.File;
  * </p>
  * <p>
  * Appose comes with built-in support for two worker implementations:
- * {@code python_worker} to run Python scripts, and {@link GroovyWorker}
+ * {@code python_worker} to run Python scripts,
  * to run Groovy scripts. These workers can be created easily by invoking
- * the {@link Environment#python} and {@link Environment#groovy} methods
+ * the {@link Environment#python} methods
  * respectively.
  * </p>
  * <p>
