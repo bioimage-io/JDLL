@@ -123,10 +123,7 @@ public final class Tensor< T extends RealType< T > & NativeType< T > >
 		{
 			emptyTensor = true;
 		}
-		if (this.axesString.length() < 3 
-				|| this.axesString.indexOf("r") != -1
-				|| (this.axesString.length() < 4 && this.axesString.indexOf("b") != -1)
-				|| !(this.axesString.indexOf("x") != -1 && this.axesString.indexOf("y") != -1))
+		if (this.axesString.indexOf("x") == -1 && this.axesString.indexOf("y") == -1 && this.axesString.indexOf("z") == -1)
 			this.isImage = false;
 	}
 
