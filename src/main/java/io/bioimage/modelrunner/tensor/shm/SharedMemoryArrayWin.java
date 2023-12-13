@@ -66,7 +66,11 @@ public class SharedMemoryArrayWin implements SharedMemoryArray
 	/**
 	 * Pointer referencing the shared memory byte array
 	 */
-	private Pointer pSharedMemory;
+	private Pointer mappedPointer;
+	/**
+	 * Pointer referencing the shared memory byte array
+	 */
+	private Pointer writePointer;
 	/**
 	 * Name of the file containing the shared memory segment. In Unix based systems consits of "/" + file_name.
 	 * In Linux the shared memory segments can be inspected at /dev/shm.
@@ -97,6 +101,8 @@ public class SharedMemoryArrayWin implements SharedMemoryArray
 	 * of bytes corresponding to the values of the array, no header
 	 */
 	private boolean isNumpyFormat = false;
+	private static final int SEC_RESERVE = 0x4000000;
+	private static final int DEFAULT_RESERVED_MEMORY = 1024 * 1024 * 1024 * 2;
 
 	/**
 	 * Create a shared memory segment with the wanted size, where an object of a certain datatype and
@@ -136,10 +142,17 @@ public class SharedMemoryArrayWin implements SharedMemoryArray
     	this.originalDataType = dtype;
     	this.originalDims = shape;
     	this.size = size;
+    	int flag = WinNT.PAGE_READWRITE;
+    	boolean write = true;
+    	if (size < 1) {
+    		flag = WinNT.PAGE_READWRITE | SEC_RESERVE;
+    		size = DEFAULT_RESERVED_MEMORY;
+    		write = false;
+    	}
         hMapFile = Kernel32.INSTANCE.CreateFileMapping(
                 WinBase.INVALID_HANDLE_VALUE,
                 null,
-                WinNT.PAGE_READWRITE,
+                flag,
                 0,
                 size,
                 memoryName
@@ -151,7 +164,7 @@ public class SharedMemoryArrayWin implements SharedMemoryArray
         }
         
         // Map the shared memory
-        pSharedMemory = Kernel32.INSTANCE.MapViewOfFile(
+        mappedPointer = Kernel32.INSTANCE.MapViewOfFile(
                 hMapFile,
                 WinNT.FILE_MAP_WRITE,
                 0,
@@ -159,10 +172,20 @@ public class SharedMemoryArrayWin implements SharedMemoryArray
                 size
         );
         
-        if (pSharedMemory == null) {
+        if (mappedPointer == null) {
             Kernel32.INSTANCE.CloseHandle(hMapFile);
             throw new RuntimeException("Error creating shared memory array. MapViewOfFile failed: "
             		+ "" + Kernel32.INSTANCE.GetLastError());
+        }
+        if (write) {
+    	    writePointer = Kernel32.INSTANCE.VirtualAllocEx(Kernel32.INSTANCE.GetCurrentProcess(), 
+    	    		mappedPointer, 
+    	    		new BaseTSD.SIZE_T(size), WinNT.MEM_COMMIT, WinNT.PAGE_READWRITE);
+    	    if (writePointer == null) {
+    	    	close();
+                throw new RuntimeException("Error committing to the shared memory pages. Errno: "
+                		+ "" + Kernel32.INSTANCE.GetLastError());
+    	    }
         }
     }
 
@@ -184,7 +207,7 @@ public class SharedMemoryArrayWin implements SharedMemoryArray
      * {@inheritDoc}
      */
     public Pointer getPointer() {
-    	return this.pSharedMemory;
+    	return this.writePointer;
     }
 
     /**
@@ -238,6 +261,9 @@ public class SharedMemoryArrayWin implements SharedMemoryArray
     	if (!name.startsWith("Local" + File.separator) && !name.startsWith("Global" + File.separator))
     		name = "Local" + File.separator+ name;
 		SharedMemoryArrayWin shma = null;
+		if (rai == null) {
+        	shma = new SharedMemoryArrayWin(name, -1, null, null);
+		}
     	if (Util.getTypeFromInterval(rai) instanceof ByteType) {
         	int size = 1;
         	for (long i : rai.dimensionsAsLongArray()) {size *= i;}
@@ -351,7 +377,7 @@ public class SharedMemoryArrayWin implements SharedMemoryArray
      */
     private void addByteArray(byte[] arr) {
     	for (int i = 0; i < arr.length; i ++) {
-    		this.pSharedMemory.setByte(i, arr[i]);
+    		this.writePointer.setByte(i, arr[i]);
     	}
     }
 
@@ -362,7 +388,7 @@ public class SharedMemoryArrayWin implements SharedMemoryArray
 		long i = 0;
 		while (cursor.hasNext()) {
 			cursor.fwd();
-			this.pSharedMemory.setByte(i ++, cursor.get().get());
+			this.writePointer.setByte(i ++, cursor.get().get());
 		}
     }
 
@@ -373,7 +399,7 @@ public class SharedMemoryArrayWin implements SharedMemoryArray
 		long i = 0;
 		while (cursor.hasNext()) {
 			cursor.fwd();
-			this.pSharedMemory.setByte(i ++, cursor.get().getByte());
+			this.writePointer.setByte(i ++, cursor.get().getByte());
 		}
     }
 
@@ -384,7 +410,7 @@ public class SharedMemoryArrayWin implements SharedMemoryArray
 		long i = 0;
 		while (cursor.hasNext()) {
 			cursor.fwd();
-			this.pSharedMemory.setShort((i * Short.BYTES), cursor.get().get());
+			this.writePointer.setShort((i * Short.BYTES), cursor.get().get());
 			i ++;
 		}
     }
@@ -396,7 +422,7 @@ public class SharedMemoryArrayWin implements SharedMemoryArray
 		long i = 0;
 		while (cursor.hasNext()) {
 			cursor.fwd();
-			this.pSharedMemory.setShort((i * Short.BYTES), cursor.get().getShort());
+			this.writePointer.setShort((i * Short.BYTES), cursor.get().getShort());
 			i ++;
 		}
     }
@@ -408,7 +434,7 @@ public class SharedMemoryArrayWin implements SharedMemoryArray
 		long i = 0;
 		while (cursor.hasNext()) {
 			cursor.fwd();
-			this.pSharedMemory.setInt((i * Integer.BYTES), cursor.get().get());
+			this.writePointer.setInt((i * Integer.BYTES), cursor.get().get());
 			i ++;
 		}
     }
@@ -420,7 +446,7 @@ public class SharedMemoryArrayWin implements SharedMemoryArray
 		long i = 0;
 		while (cursor.hasNext()) {
 			cursor.fwd();
-			this.pSharedMemory.setInt((i * Integer.BYTES), cursor.get().getInt());
+			this.writePointer.setInt((i * Integer.BYTES), cursor.get().getInt());
 			i ++;
 		}
     }
@@ -432,7 +458,7 @@ public class SharedMemoryArrayWin implements SharedMemoryArray
 		long i = 0;
 		while (cursor.hasNext()) {
 			cursor.fwd();
-			this.pSharedMemory.setLong((i * Long.BYTES), cursor.get().get());
+			this.writePointer.setLong((i * Long.BYTES), cursor.get().get());
 			i ++;
 		}
     }
@@ -444,7 +470,7 @@ public class SharedMemoryArrayWin implements SharedMemoryArray
 		long i = 0;
 		while (cursor.hasNext()) {
 			cursor.fwd();
-			this.pSharedMemory.setFloat((i * Float.BYTES), cursor.get().get());
+			this.writePointer.setFloat((i * Float.BYTES), cursor.get().get());
 			i ++;
 		}
     }
@@ -456,7 +482,7 @@ public class SharedMemoryArrayWin implements SharedMemoryArray
 		long i = 0;
 		while (cursor.hasNext()) {
 			cursor.fwd();
-			this.pSharedMemory.setDouble((i * Double.BYTES), cursor.get().get());
+			this.writePointer.setDouble((i * Double.BYTES), cursor.get().get());
 			i ++;
 		}
     }
@@ -469,19 +495,42 @@ public class SharedMemoryArrayWin implements SharedMemoryArray
 	 */
 	public void close() {
 		if (unlinked) return;
-        Kernel32.INSTANCE.UnmapViewOfFile(pSharedMemory);
+        Kernel32.INSTANCE.UnmapViewOfFile(mappedPointer);
         Kernel32.INSTANCE.CloseHandle(hMapFile);
         unlinked = true;
 	}
 	
 	public static void main(String[] args) {
 	    String memoryName = "Local" + File.separator + "wnsm_52f561c9";
-	    WinNT.HANDLE hMapFile = Kernel32.INSTANCE.OpenFileMapping(
-	            WinNT.FILE_MAP_READ, false, memoryName
-	    );
+
+	    WinNT.HANDLE hMapFile = Kernel32.INSTANCE.CreateFileMapping(
+                WinBase.INVALID_HANDLE_VALUE,
+                null,
+                WinNT.PAGE_READWRITE | SEC_RESERVE,
+                0,
+                1024 * 1024 * 1024 * 3,
+                memoryName
+        );
 	    if (hMapFile == null) {
 	        throw new RuntimeException("OpenFileMapping failed with error: " + Kernel32.INSTANCE.GetLastError());
 	    }
+        
+        // Map the shared memory
+	    Pointer dpSharedMemory = Kernel32.INSTANCE.MapViewOfFile(
+                hMapFile,
+                WinNT.FILE_MAP_WRITE,
+                0,
+                0,
+                1024 * 1024 * 1024 * 3
+        );
+        Kernel32.INSTANCE.UnmapViewOfFile(dpSharedMemory);
+        Kernel32.INSTANCE.CloseHandle(hMapFile);
+	    Pointer aa = Kernel32.INSTANCE.VirtualAllocEx(Kernel32.INSTANCE.GetCurrentProcess(), 
+	    		dpSharedMemory, 
+	    		new BaseTSD.SIZE_T(1024 * 1024 * 2000), WinNT.MEM_COMMIT, WinNT.PAGE_READWRITE);
+	    for (int i = 0; i < 1024*1024*2000; i ++)
+	    	aa.setByte(i, (byte) i);
+	    if (true) return;
 
 	    // Map the shared memory object into the current process's address space
 	    Pointer pSharedMemory = Kernel32.INSTANCE.MapViewOfFile(
@@ -805,7 +854,7 @@ public class SharedMemoryArrayWin implements SharedMemoryArray
      * {@inheritDoc}
      */
 	public <T extends RealType<T> & NativeType<T>> RandomAccessibleInterval<T> getSharedRAI() {
-		return buildFromSharedMemoryBlock(pSharedMemory, this.originalDims, false, this.originalDataType);
+		return buildFromSharedMemoryBlock(writePointer, this.originalDims, false, this.originalDataType);
 	}
 
 	@Override
