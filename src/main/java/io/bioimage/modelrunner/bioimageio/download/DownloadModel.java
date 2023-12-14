@@ -592,8 +592,8 @@ public class DownloadModel {
 		HttpURLConnection conn = null;
 		try {
 			conn = (HttpURLConnection) url.openConnection();
-			if (conn.getResponseCode() > 300 && conn.getResponseCode() < 304)
-				return getFileSize(redirectedURL(url, conn));
+			if (conn.getResponseCode() >= 300 && conn.getResponseCode() <= 308)
+				return getFileSize(redirectedURL(url));
 			if (conn.getResponseCode() != 200)
 				throw new Exception("Unable to connect to: " + url.toString());
 			return conn.getContentLengthLong();
@@ -608,6 +608,7 @@ public class DownloadModel {
 	}
 	
 	/**
+	 * TODO remove
 	 * This method shuold be used when we get the following response codes from 
 	 * a {@link HttpURLConnection}:
 	 * - {@link HttpURLConnection#HTTP_MOVED_TEMP}
@@ -649,6 +650,55 @@ public class DownloadModel {
 		} catch (URISyntaxException | MalformedURLException e) {
 			return null;
 		}
+	}
+	
+	/**
+	 * This method shuold be used when we get the following response codes from 
+	 * a {@link HttpURLConnection}:
+	 * - {@link HttpURLConnection#HTTP_MOVED_TEMP}
+	 * - {@link HttpURLConnection#HTTP_MOVED_PERM}
+	 * - {@link HttpURLConnection#HTTP_SEE_OTHER}
+	 * 
+	 * If that is not the response code or the connection does not work, the url
+	 * returned will be the same as the provided.
+	 * If the method is used corretly, it will return the URL to which the original URL
+	 * has been redirected
+	 * @param url
+	 * 	original url. Connecting to that url must give a 301, 302 or 303 response code
+	 * @param conn
+	 * 	connection to the url
+	 * @return the redirected url
+	 * @throws MalformedURLException 
+	 * @throws URISyntaxException 
+	 */
+	public static URL redirectedURL(URL url) throws MalformedURLException, URISyntaxException {
+		int statusCode;
+		HttpURLConnection conn;
+		try {
+			conn = (HttpURLConnection) url.openConnection();
+			statusCode = conn.getResponseCode();
+		} catch (IOException ex) {
+			return url;
+		}
+		if (statusCode < 300 || statusCode > 308)
+			return url;
+		String newURL = conn.getHeaderField("Location");
+		try {
+			return redirectedURL(new URL(newURL));
+		} catch (MalformedURLException ex) {
+		}
+		try {
+			if (newURL.startsWith("//"))
+				return redirectedURL(new URL("http:" + newURL));
+			else
+				throw new MalformedURLException();
+		} catch (MalformedURLException ex) {
+		}
+        URI uri = url.toURI();
+        String scheme = uri.getScheme();
+        String host = uri.getHost();
+        String mainDomain = scheme + "://" + host;
+		return redirectedURL(new URL(mainDomain + newURL));
 	}
 	
 	/**
