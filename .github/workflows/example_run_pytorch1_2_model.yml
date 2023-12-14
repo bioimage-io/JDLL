@@ -1,4 +1,4 @@
-name: Run Pytorch model
+name: Run Pytorch 1 and 2
 on:
   push:
     branches:
@@ -35,9 +35,9 @@ jobs:
 
     - name: Run Specific Class (Unix)
       if: runner.os != 'Windows'
-      run: java -cp $CLASSPATH:target/classes io.bioimage.modelrunner.example.ExampleLoadAndRunModel
+      run: java -cp $CLASSPATH:target/classes io.bioimage.modelrunner.example.ExampleLoadPytorch1Pytorch2
 
     - name: Run Specific Class (Windows)
       if: runner.os == 'Windows'
       shell: powershell
-      run: java -cp "$env:CLASSPATH;target/classes" io.bioimage.modelrunner.example.ExampleLoadAndRunModel
+      run: java -cp "$env:CLASSPATH;target/classes" io.bioimage.modelrunner.example.ExampleLoadPytorch1Pytorch2
