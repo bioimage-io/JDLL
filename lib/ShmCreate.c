@@ -12,6 +12,10 @@ int create_shared_memory(const char *name, long size) {
         perror("shm_open");
         return -1;
     }
+    int size = get_shared_memory_size(fd);
+    if (size > 0) {
+        return fd;
+    }
 
     if (ftruncate(fd, size) == -1) {
         perror("ftruncate");
@@ -19,7 +23,6 @@ int create_shared_memory(const char *name, long size) {
         return -1;
     }
 
-    printf("Shared memory segment '%s' created with size %ld\n", name, size);
     return fd;
 }
 
@@ -27,8 +30,6 @@ int create_shared_memory(const char *name, long size) {
 void unlink_shared_memory(const char *name) {
     if (shm_unlink(name) == -1) {
         perror("shm_unlink");
-    } else {
-        printf("Shared memory segment '%s' unlinked\n", name);
     }
 }
 
