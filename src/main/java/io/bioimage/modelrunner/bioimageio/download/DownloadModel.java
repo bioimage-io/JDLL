@@ -599,7 +599,9 @@ public class DownloadModel {
 				return getFileSize(redirectedURL(url));
 			if (conn.getResponseCode() != 200)
 				throw new Exception("Unable to connect to: " + url.toString());
-			return conn.getContentLengthLong();
+			long size = conn.getContentLengthLong();
+			conn.disconnect();
+			return size;
 		} catch (IOException e) {
 			throw new RuntimeException(e);
 		} catch (Exception ex) {
@@ -688,10 +690,12 @@ public class DownloadModel {
 			return url;
 		String newURL = conn.getHeaderField("Location");
 		try {
+			conn.disconnect();
 			return redirectedURL(new URL(newURL));
 		} catch (MalformedURLException ex) {
 		}
 		try {
+			conn.disconnect();
 			if (newURL.startsWith("//"))
 				return redirectedURL(new URL("http:" + newURL));
 			else
@@ -702,6 +706,7 @@ public class DownloadModel {
         String scheme = uri.getScheme();
         String host = uri.getHost();
         String mainDomain = scheme + "://" + host;
+		conn.disconnect();
 		return redirectedURL(new URL(mainDomain + newURL));
 	}
 	
