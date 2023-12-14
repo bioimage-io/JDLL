@@ -48,6 +48,8 @@ import io.bioimage.modelrunner.bioimageio.description.weights.ModelWeight;
 import io.bioimage.modelrunner.bioimageio.description.weights.WeightFormat;
 import io.bioimage.modelrunner.engine.EngineInfo;
 import io.bioimage.modelrunner.engine.installation.FileDownloader;
+import io.bioimage.modelrunner.system.PlatformDetection;
+import io.bioimage.modelrunner.utils.CommonUtils;
 import io.bioimage.modelrunner.utils.Constants;
 import io.bioimage.modelrunner.utils.ZipUtils;
 
@@ -592,6 +594,7 @@ public class DownloadModel {
 		HttpURLConnection conn = null;
 		try {
 			conn = (HttpURLConnection) url.openConnection();
+			conn.setRequestProperty("User-Agent", CommonUtils.getJDLLUserAgent());
 			if (conn.getResponseCode() >= 300 && conn.getResponseCode() <= 308)
 				return getFileSize(redirectedURL(url));
 			if (conn.getResponseCode() != 200)
@@ -676,6 +679,7 @@ public class DownloadModel {
 		HttpURLConnection conn;
 		try {
 			conn = (HttpURLConnection) url.openConnection();
+			conn.setRequestProperty("User-Agent", CommonUtils.getJDLLUserAgent());
 			statusCode = conn.getResponseCode();
 		} catch (IOException ex) {
 			return url;

@@ -25,6 +25,7 @@ import java.net.URL;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 
+import io.bioimage.modelrunner.system.PlatformDetection;
 import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.type.NativeType;
 import net.imglib2.type.numeric.RealType;
@@ -45,6 +46,8 @@ import net.imglib2.util.Cast;
  *
  */
 public class CommonUtils {
+	
+	private static String USER_AGENT;
 	
 	public static Calendar cal;
 	
@@ -160,5 +163,24 @@ public class CommonUtils {
 	
 	public static void main(String[] args) {
 		System.out.println(getTime());
+	}
+	
+	/**
+	 * Create a user agent for browsing
+	 * @return the user agent
+	 */
+	public static String getJDLLUserAgent() {
+		if (USER_AGENT != null)
+			return USER_AGENT;
+		String os = "Unknown";
+		if (PlatformDetection.isWindows()) {
+			os = "Windows";
+		} else if (PlatformDetection.isLinux()) {
+			os = "Linux";
+		} else if (PlatformDetection.isMacOS()) {
+			os = "MacOS";
+		}
+		USER_AGENT = "JDLL/0.5.0(" + os + "; Java " + PlatformDetection.getJavaVersion();
+		return USER_AGENT;
 	}
 }
