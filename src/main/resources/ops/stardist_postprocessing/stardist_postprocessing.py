@@ -34,8 +34,8 @@ import os
 ENV_DIR = os.path.dirname(sys.executable if os.name == 'nt' else os.path.dirname(sys.executable))
 SITE_PACKAGES_DIR = os.path.join(ENV_DIR, "lib")
 if os.name != 'nt':
-	if os.path.isdir(SITE_PACKAGES_DIR + "/python" + sys.version_info[0] + "." + sys.version_info[1]):
-		SITE_PACKAGES_DIR = os.path.join(SITE_PACKAGES_DIR, "python" + sys.version_info[0] + "." + sys.version_info[1])
+	if os.path.isdir(SITE_PACKAGES_DIR + "/python" + str(sys.version_info[0]) + "." + str(sys.version_info[1])):
+		SITE_PACKAGES_DIR = os.path.join(SITE_PACKAGES_DIR, "python" + str(sys.version_info[0]) + "." + str(sys.version_info[1]))
 	else:
 		PATTERN = r"python3\.\d{1,2}$"
 		matching_files = [file for file in os.listdir(SITE_PACKAGES_DIR) if re.match(PATTERN, file)]
