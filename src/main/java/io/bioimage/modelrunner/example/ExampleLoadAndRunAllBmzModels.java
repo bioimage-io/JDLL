@@ -43,10 +43,8 @@ import net.imglib2.type.numeric.real.FloatType;
 
 /**
  * This class tries to run every Bioimage.io model available.
- * It should be successful running every Tensorflow, Onnx and Pytorch 1 model
+ * It should be successful running every Tensorflow, Onnx and Pytorch models
  * in Windows, Ubuntu and Mac Intel. 
- * Pytorch 2 models cannot be run in this example as they have conflicts with
- * Python 1. 
  * Macs based on Apple Silicon have a reduced number of models to work with. 
  * They cannot run Tensorflow 1 and need at least Java 11 for Tensorflow 2.
  * 
@@ -190,19 +188,13 @@ public class ExampleLoadAndRunAllBmzModels {
 	private static void checkModelCompatibleWithEngines(ModelDescriptor descriptor) {
 		List<WeightFormat> wws = descriptor.getWeights().gettAllSupportedWeightObjects();
 		boolean supported = false;
-		boolean pytorch2 = false;
 		for (WeightFormat ww : wws) {
 			if (!SUPPORTED_FRAMEWORKS.contains(ww.getFramework()))
 				continue;
-			if (ww.getFramework().equals(ModelWeight.getTorchscriptID()) 
-					&& ww.getTrainingVersion().startsWith("2")) {
-				pytorch2 = true;
-				continue;
-			}
 			supported = true;
 		}
 		
-		if (!supported && pytorch2)
+		if (!supported)
 			throw new IllegalArgumentException(descriptor.getName() 
 					+ ": pytorch 2 models cannot run on this test");
 		if (!supported)
