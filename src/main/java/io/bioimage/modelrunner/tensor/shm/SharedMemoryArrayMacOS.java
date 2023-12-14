@@ -146,15 +146,16 @@ public class SharedMemoryArrayMacOS implements SharedMemoryArray
     	this.originalDims = shape;
     	this.size = size;
     	this.memoryName = name;
-
-        int openFd = macosInstance.create_shared_memory(memoryName, size);
-        if (openFd < 0) {
-            throw new RuntimeException("shm_open failed, errno: " + Native.getLastError());
-        }
-        shmFd = INSTANCE.shm_open(this.memoryName, O_RDWR, 0666);
+    	
+        shmFd = macosInstance.create_shared_memory(memoryName, size);
         if (shmFd < 0) {
             throw new RuntimeException("shm_open failed, errno: " + Native.getLastError());
         }
+        /*
+        shmFd = INSTANCE.shm_open(this.memoryName, O_RDWR, 0666);
+        if (shmFd < 0) {
+            throw new RuntimeException("shm_open failed, errno: " + Native.getLastError());
+        }*/
 
         pSharedMemory = INSTANCE.mmap(Pointer.NULL, this.size, PROT_READ | PROT_WRITE, MAP_SHARED, shmFd, 0);
         if (pSharedMemory == Pointer.NULL) {
