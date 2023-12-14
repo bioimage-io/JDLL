@@ -77,8 +77,8 @@ public class ExampleLoadPytorch1Pytorch2 {
 		// Path to the model source. The model source locally is the path to the source file defined in the 
 		// yaml inside the model folder
 		String modelSource = new File(modelFolder, "weights-torchscript.pt").getAbsolutePath();
-		loadAndRunPt2(modelFolder, modelSource);
 		loadAndRunPt1(modelFolder, modelSource);
+		loadAndRunPt2(modelFolder, modelSource);
 		System.out.println("Great success!");
 	}
 	
