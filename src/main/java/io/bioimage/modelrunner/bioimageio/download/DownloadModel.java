@@ -670,11 +670,9 @@ public class DownloadModel {
 	 * has been redirected
 	 * @param url
 	 * 	original url. Connecting to that url must give a 301, 302 or 303 response code
-	 * @param conn
-	 * 	connection to the url
 	 * @return the redirected url
-	 * @throws MalformedURLException 
-	 * @throws URISyntaxException 
+	 * @throws MalformedURLException if the url is invalid
+	 * @throws URISyntaxException if the url is invalid
 	 */
 	public static URL redirectedURL(URL url) throws MalformedURLException, URISyntaxException {
 		int statusCode;
