@@ -505,7 +505,7 @@ public class SharedMemoryArrayMacOS implements SharedMemoryArray
         if (shmFd < 0) 
             throw new RuntimeException("Failed to open shared memory. Errno: " + Native.getLastError());
 
-        long size = INSTANCE.lseek(shmFd, 0, CLibrary.SEEK_END);
+        long size = macosInstance.get_shared_memory_size(shmFd);;
 	    if (size == -1) {
             CLibrary.INSTANCE.close(shmFd);
 	    	throw new RuntimeException("Failed to get shared memory segment size. Errno: " + Native.getLastError());
@@ -563,7 +563,7 @@ public class SharedMemoryArrayMacOS implements SharedMemoryArray
         if (shmFd < 0) 
             throw new RuntimeException("Failed to open shared memory. Errno: " + Native.getLastError());
 
-        long size = INSTANCE.lseek(shmFd, 0, CLibrary.SEEK_END);
+        long size = macosInstance.get_shared_memory_size(shmFd);
 	    if (size == -1) {
             CLibrary.INSTANCE.close(shmFd);
 	    	throw new RuntimeException("Failed to get shared memory segment size. Errno: " + Native.getLastError());

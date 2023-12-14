@@ -32,7 +32,7 @@ import com.sun.jna.Platform;
 
 public interface MacosHelpers extends Library {
 	
-	static final String LIBRARY_NAME = "libShmCreate";
+	static final String LIBRARY_NAME = "ShmCreate";
 	
 	static final String LIBRARY_NAME_SUF = ".dylib";
 
@@ -70,6 +70,8 @@ public interface MacosHelpers extends Library {
     int create_shared_memory(String name, int size);
     
     void unlink_shared_memory(String name);
+    
+    long get_shared_memory_size(int fd);
 }
 
 
