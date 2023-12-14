@@ -5,6 +5,16 @@
 #include <unistd.h>
 #include <sys/stat.h>
 
+// Function to get the size of a shared memory segment given its file descriptor
+long get_shared_memory_size(int fd) {
+    struct stat shm_stat;
+    if (fstat(fd, &shm_stat) == -1) {
+        perror("fstat");
+        return -1;
+    }
+    return (long)shm_stat.st_size;
+}
+
 // Function to create a shared memory segment, modified to accept a long for size
 int create_shared_memory(const char *name, long size) {
     int fd = shm_open(name, O_CREAT | O_RDWR, 0666);
@@ -12,8 +22,8 @@ int create_shared_memory(const char *name, long size) {
         perror("shm_open");
         return -1;
     }
-    int size = get_shared_memory_size(fd);
-    if (size > 0) {
+    long already_size = get_shared_memory_size(fd);
+    if (already_size > 0) {
         return fd;
     }
 
@@ -31,16 +41,6 @@ void unlink_shared_memory(const char *name) {
     if (shm_unlink(name) == -1) {
         perror("shm_unlink");
     }
-}
-
-// Function to get the size of a shared memory segment given its file descriptor
-long get_shared_memory_size(int fd) {
-    struct stat shm_stat;
-    if (fstat(fd, &shm_stat) == -1) {
-        perror("fstat");
-        return -1;
-    }
-    return (long)shm_stat.st_size;
 }
 
 int main() {
