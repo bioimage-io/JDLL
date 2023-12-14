@@ -174,7 +174,10 @@ public class SharedMemoryArrayWin implements SharedMemoryArray
         
         if (mappedPointer == null) {
             Kernel32.INSTANCE.CloseHandle(hMapFile);
-            throw new RuntimeException("Error creating shared memory array. MapViewOfFile failed: "
+            throw new RuntimeException("Error creating shared memory array. "
+            		+ "Please check that a shared memory segment with another size has "
+            		+ "not previously been created on the same memory region with the same name: " + this.memoryName 
+            		+ ". MapViewOfFile failed: "
             		+ "" + Kernel32.INSTANCE.GetLastError());
         }
         if (write) {
