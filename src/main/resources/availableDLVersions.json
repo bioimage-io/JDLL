@@ -635,10 +635,10 @@
 			"rosetta": false,
 			"java": 8,
 			"jars": [
-				"https://www.dropbox.com/s/84ly6hjhfbc2u2u/tensorflow-core-api-0.4.0-SNAPSHOT-macosx-arm64.jar?dl=1",
+				"https://icy-nexus.pasteur.fr/repository/icy-plugins/org/bioimageanalysis/icy/tensorflow-arm64/0.4.0/tensorflow-arm64-0.4.0.jar",
 				"https://repo1.maven.org/maven2/com/google/protobuf/protobuf-java/3.22.0/protobuf-java-3.22.0.jar",
 				"https://repo1.maven.org/maven2/org/tensorflow/ndarray/0.3.3/ndarray-0.3.3.jar",
-				"https://www.dropbox.com/s/0ptmnsjnoddthyu/tensorflow-core-api-0.4.0-SNAPSHOT.jar?dl=1",
+				"https://repo1.maven.org/maven2/org/tensorflow/tensorflow-core-api/0.4.0/tensorflow-core-api-0.4.0.jar",
 				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.8/javacpp-1.5.8.jar",
 				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.8/javacpp-1.5.8-macosx-arm64.jar",
 				"https://maven.scijava.org/service/local/repositories/releases/content/io/bioimage/dl-modelrunner-tensorflow-2b/0.3.9/dl-modelrunner-tensorflow-2b-0.3.9.jar"
