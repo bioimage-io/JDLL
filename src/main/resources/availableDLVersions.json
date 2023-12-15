@@ -1138,9 +1138,7 @@
 			"java": 8,
 			"jars": [
 				"https://maven.scijava.org/service/local/repositories/releases/content/io/bioimage/dl-modelrunner-pytorch-javacpp/0.3.5/dl-modelrunner-pytorch-javacpp-0.3.5.jar",
-				"https://www.dropbox.com/s/s7vm0zhsahe35tf/pytorch-platform-1.13.0-1.5.9-SNAPSHOT.jar?dl=1",
-				"https://www.dropbox.com/s/xjb3dg2ga78w412/pytorch-1.13.0-1.5.9-SNAPSHOT.jar?dl=1",
-				"https://www.dropbox.com/s/479myw8x861d389/pytorch-1.13.0-1.5.9-SNAPSHOT-macosx-x86_64.jar?dl=1",
+				"https://icy-nexus.pasteur.fr/repository/icy-plugins/org/bioimageanalysis/icy/pytorch-java-cpp/1.13.0-1.5.9/pytorch-java-cpp-1.13.0-1.5.9.jar",
 				"https://repo1.maven.org/maven2/org/bytedeco/javacpp-platform/1.5.9/javacpp-platform-1.5.9.jar",
 				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.9/javacpp-1.5.9-macosx-x86_64.jar",
 				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.8/javacpp-1.5.8.jar",
