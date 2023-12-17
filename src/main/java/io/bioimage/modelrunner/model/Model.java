@@ -287,12 +287,11 @@ public class Model
 		EngineInfo info = null;
 		for (WeightFormat ww : modelWeights) {
 			String source = ww.getSourceFileName();
-			if (!(new File(bmzModelFolder, source.substring(source.lastIndexOf("/")) )).isFile())
+			if (!(new File(bmzModelFolder, source )).isFile())
 					continue;
 			info = EngineInfo.defineCompatibleDLEngineWithRdfYamlWeights(ww, enginesFolder);
 			if (info != null) {
-				modelSource = new File(bmzModelFolder, 
-						source.substring(source.lastIndexOf("/"))).getAbsolutePath();
+				modelSource = new File(bmzModelFolder, source).getAbsolutePath();
 				break;
 			}
 		}
@@ -350,12 +349,11 @@ public class Model
 		EngineInfo info = null;
 		for (WeightFormat ww : modelWeights) {
 			String source = ww.getSourceFileName();
-			if (!(new File(bmzModelFolder, source.substring(source.lastIndexOf("/")) )).isFile())
+			if (!(new File(bmzModelFolder, source )).isFile())
 					continue;
 			info = EngineInfo.defineExactDLEngineWithRdfYamlWeights(ww, enginesFolder);
 			if (info != null) {
-				modelSource = new File(bmzModelFolder, 
-						source.substring(source.lastIndexOf("/"))).getAbsolutePath();
+				modelSource = new File(bmzModelFolder, source).getAbsolutePath();
 				break;
 			}
 		}
