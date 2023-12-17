@@ -286,7 +286,7 @@ public class Model
 		List<WeightFormat> modelWeights = descriptor.getWeights().gettAllSupportedWeightObjects();
 		EngineInfo info = null;
 		for (WeightFormat ww : modelWeights) {
-			String source = ww.getSource();
+			String source = ww.getSourceFileName();
 			if (!(new File(bmzModelFolder, source.substring(source.lastIndexOf("/")) )).isFile())
 					continue;
 			info = EngineInfo.defineCompatibleDLEngineWithRdfYamlWeights(ww, enginesFolder);
@@ -349,7 +349,7 @@ public class Model
 		List<WeightFormat> modelWeights = descriptor.getWeights().gettAllSupportedWeightObjects();
 		EngineInfo info = null;
 		for (WeightFormat ww : modelWeights) {
-			String source = ww.getSource();
+			String source = ww.getSourceFileName();
 			if (!(new File(bmzModelFolder, source.substring(source.lastIndexOf("/")) )).isFile())
 					continue;
 			info = EngineInfo.defineExactDLEngineWithRdfYamlWeights(ww, enginesFolder);
