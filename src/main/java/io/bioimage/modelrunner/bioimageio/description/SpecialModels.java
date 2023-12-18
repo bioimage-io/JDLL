@@ -101,7 +101,7 @@ public class SpecialModels
     	File scriptFile = new File(descriptor.getModelPath() + File.separator + "stardist_postprocessing.py");
     	if (!envFile.isFile()) {
     		try (InputStream envStream = SpecialModels.class.getClassLoader()
-        			.getResourceAsStream("op_environments" + File.separator + "stardist.yaml")){
+        			.getResourceAsStream("op_environments" + "/stardist.yaml")){
     			Files.copy(envStream, envFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
     		} catch (IOException e) {
     			e.printStackTrace();
@@ -110,7 +110,7 @@ public class SpecialModels
     	}
     	if (!scriptFile.isFile()) {
     		try (InputStream scriptStream = SpecialModels.class.getClassLoader()
-        			.getResourceAsStream("ops" + File.separator + "stardist_postprocessing" + File.separator + "stardist_postprocessing.py")){
+        			.getResourceAsStream("ops" + "/stardist_postprocessing" + "/stardist_postprocessing.py")){
     			Files.copy(scriptStream, scriptFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
     		} catch (IOException e) {
     			e.printStackTrace();
