@@ -38,7 +38,7 @@ jobs:
     - name: Print pending_matrix
       run: echo "Pending Matrix ${{ github.event.inputs.pending_matrix }}"
     - name: Setup Maven Action
-      uses: s4u/setup-maven-action@4.5
+      uses: stCarolas/setup-maven@v4.5
       with:
         java-version: 11
         maven-version: 3.9.5
