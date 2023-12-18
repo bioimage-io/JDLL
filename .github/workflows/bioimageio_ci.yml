@@ -38,9 +38,10 @@ jobs:
     - name: Print pending_matrix
       run: echo "Pending Matrix ${{ github.event.inputs.pending_matrix }}"
     - name: Setup Maven Action
-      uses: s4u/setup-maven-action@3.9.5
+      uses: s4u/setup-maven-action@4.5
       with:
         java-version: 11
+        java-version: 3.9.5
     - name: test with JDLL
       shell: bash -l {0}
       run: python scripts/test_many_with_ilastik.py dist '${{ github.event.inputs.pending_matrix }}' --postfix ${{ matrix.v }}
