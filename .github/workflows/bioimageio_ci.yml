@@ -35,6 +35,8 @@ jobs:
         repository: bioimage-io/collection-bioimage-io
         ref: gh-pages
         path: bioimageio-gh-pages
+    - name: Print GitHub Event Context
+      run: echo "${{ toJson(github.event) }}"
     - name: Print pending_matrix
       run: echo "Pending Matrix ${{ github.event.inputs.pending_matrix }}"
     - name: Setup Maven Action
