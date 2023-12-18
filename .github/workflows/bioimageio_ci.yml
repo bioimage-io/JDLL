@@ -20,33 +20,6 @@ jobs:
     outputs:
       version_matrix: ${{ steps.cvm.outputs.version_matrix }}
       pending_empty: ${{ steps.pending_empty.outputs.is_empty }}
-    steps:
-    - name: is pending matrix empty?
-      id: pending_empty
-      shell: python
-      run: |
-        import json
-        import os
-        pm = json.loads('${{ github.event.inputs.pending_matrix }}')
-        with open(os.environ['GITHUB_OUTPUT'], 'a') as fh:
-            print(f"is_empty={'no' if pm['include'] else 'yes'}", file=fh)
-    - name: download version list
-      if: steps.pending_empty.outputs.is_empty == 'no'
-      run: wget https://files.ilastik.org/ilastik-versions-bmz.json
-    - name: create version matrix
-      if: steps.pending_empty.outputs.is_empty == 'no'
-      id: cvm
-      shell: python
-      run: |
-        import json
-        import os
-
-        with open("ilastik-versions-bmz.json") as f:
-            vs = json.load(f)
-
-        version_matrix = dict(include=[dict(v=v, env_url=f"https://files.ilastik.org/ilastik-{v}-Linux.yml") for v in vs])
-        with open(os.environ["GITHUB_OUTPUT"], "a") as fh:
-          print(f"version_matrix={version_matrix}", file=fh)
 
   run:
     runs-on: ubuntu-latest
