@@ -30,7 +30,7 @@ jobs:
       uses: s4u/setup-maven-action@< version >
       with:
         java-version: 11
-        maven-version: 3.9.5
+        maven-version: '3.9.5'
     - name: test with JDLL
       shell: bash -l {0}
       run: python scripts/test_many_with_ilastik.py dist '${{ github.event.inputs.pending_matrix }}' --postfix ${{ matrix.v }}
