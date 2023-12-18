@@ -6,6 +6,8 @@ on:
       - main
     tags:
       - "*-[0-9]+.*"
+    paths-ignore:
+      - .github/workflows/bioimageio_ci.yml
   pull_request:
     branches:
       - main

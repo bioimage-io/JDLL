@@ -5,6 +5,8 @@ on:
       - main
   pull_request:
     branches: [ main ]
+    paths-ignore:
+      - .github/workflows/bioimageio_ci.yml
 jobs:
   build-and-run:
     runs-on: ${{ matrix.os }}
