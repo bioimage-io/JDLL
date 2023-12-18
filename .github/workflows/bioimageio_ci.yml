@@ -5,6 +5,17 @@ concurrency:
   cancel-in-progress: true
 
 on:
+  push:
+    branches:
+      - main
+    paths:
+      - .github/workflows/bioimageio_ci.yml
+    inputs:
+      pending_matrix:
+        description: 'json encoded gh matrix of pending validations for new or updated resources (default: test on all resources)'
+        required: true
+        default: '{"include": [{"resource_id": "**", "version_id": "**"}]}'
+        type: string
   workflow_dispatch:
     inputs:
       pending_matrix:
