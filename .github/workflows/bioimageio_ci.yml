@@ -30,22 +30,14 @@ jobs:
         repository: bioimage-io/collection-bioimage-io
         ref: gh-pages
         path: bioimageio-gh-pages
+    - name: Print pending_matrix
+      run: echo "Pending Matrix: ${{ github.event.inputs.pending_matrix }}"
     - name: Setup Maven Action
       uses: s4u/setup-maven-action@< version >
-        with:
-          java-version: 11
-          maven-version: 3.9.5
-    - name: Download JDLL
-      run: git clone 
-    - name: ignore unrelated packages
-      run: sed -i '/multi-hypotheses-tracking-with-gurobi/d; /gurobi-symlink/d' env.yaml
-    - name: Setup ilastik env
-      uses: mamba-org/setup-micromamba@v1
       with:
-        environment-file: env.yaml
-        cache-downloads: true
-        cache-environment: true
-    - name: test with ilastik ${{ matrix.v }}
+        java-version: 11
+        maven-version: 3.9.5
+    - name: test with JDLL
       shell: bash -l {0}
       run: python scripts/test_many_with_ilastik.py dist '${{ github.event.inputs.pending_matrix }}' --postfix ${{ matrix.v }}
     - name: Upload test summaries
@@ -56,7 +48,7 @@ jobs:
         retention-days: 1
 
   deploy:
-    needs: [run, setup]
+    needs: [run]
     if: needs.setup.outputs.pending_empty == 'no'
     runs-on: ubuntu-latest
     steps:
