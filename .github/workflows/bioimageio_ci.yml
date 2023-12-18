@@ -15,12 +15,6 @@ on:
 
 
 jobs:
-  setup:
-    runs-on: ubuntu-latest
-    outputs:
-      version_matrix: ${{ steps.cvm.outputs.version_matrix }}
-      pending_empty: ${{ steps.pending_empty.outputs.is_empty }}
-
   run:
     runs-on: ubuntu-latest
     steps:
