@@ -1,21 +1,104 @@
 name: Bioimage.io CI
-on:
+
 concurrency:
   group: test-resources
   cancel-in-progress: true
+
+on:
+  workflow_dispatch:
+    inputs:
+      pending_matrix:
+        description: 'json encoded gh matrix of pending validations for new or updated resources (default: test on all resources)'
+        required: true
+        default: '{"include": [{"resource_id": "**", "version_id": "**"}]}'
+        type: string
+
+
 jobs:
-  build-and-run:
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        os: [macos-latest, ubuntu-latest, windows-latest] # macos-10.15,
+  setup:
+    runs-on: ubuntu-latest
+    outputs:
+      version_matrix: ${{ steps.cvm.outputs.version_matrix }}
+      pending_empty: ${{ steps.pending_empty.outputs.is_empty }}
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@v2
-    - name: Set up Python 3.9
-      uses: actions/setup-python@v4
-      with:
-        python-version: 3.9
-    - name: Download all engines
+    - name: is pending matrix empty?
+      id: pending_empty
+      shell: python
       run: |
-        python download-engines.py
+        import json
+        import os
+        pm = json.loads('${{ github.event.inputs.pending_matrix }}')
+        with open(os.environ['GITHUB_OUTPUT'], 'a') as fh:
+            print(f"is_empty={'no' if pm['include'] else 'yes'}", file=fh)
+    - name: download version list
+      if: steps.pending_empty.outputs.is_empty == 'no'
+      run: wget https://files.ilastik.org/ilastik-versions-bmz.json
+    - name: create version matrix
+      if: steps.pending_empty.outputs.is_empty == 'no'
+      id: cvm
+      shell: python
+      run: |
+        import json
+        import os
+
+        with open("ilastik-versions-bmz.json") as f:
+            vs = json.load(f)
+
+        version_matrix = dict(include=[dict(v=v, env_url=f"https://files.ilastik.org/ilastik-{v}-Linux.yml") for v in vs])
+        with open(os.environ["GITHUB_OUTPUT"], "a") as fh:
+          print(f"version_matrix={version_matrix}", file=fh)
+
+  run:
+    runs-on: ubuntu-latest
+    needs: setup
+    if: needs.setup.outputs.pending_empty == 'no'
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJson(needs.setup.outputs.version_matrix) }}
+
+    steps:
+    - uses: actions/checkout@v3
+    - uses: actions/checkout@v3
+      with:
+        repository: bioimage-io/collection-bioimage-io
+        ref: gh-pages
+        path: bioimageio-gh-pages
+    - name: Download ilastik env
+      run: wget --output-document env.yaml ${{ matrix.env_url }}
+    - name: ignore unrelated packages
+      run: sed -i '/multi-hypotheses-tracking-with-gurobi/d; /gurobi-symlink/d' env.yaml
+    - name: Setup ilastik env
+      uses: mamba-org/setup-micromamba@v1
+      with:
+        environment-file: env.yaml
+        cache-downloads: true
+        cache-environment: true
+    - name: test with ilastik ${{ matrix.v }}
+      shell: bash -l {0}
+      run: python scripts/test_many_with_ilastik.py dist '${{ github.event.inputs.pending_matrix }}' --postfix ${{ matrix.v }}
+    - name: Upload test summaries
+      uses: actions/upload-artifact@v3
+      with:
+        name: ${{ matrix.v }}
+        path: dist
+        retention-days: 1
+
+  deploy:
+    needs: [run, setup]
+    if: needs.setup.outputs.pending_empty == 'no'
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    - uses: actions/download-artifact@v3
+      with:
+        path: artifacts
+    - name: merge ilastik test summaries  # (they differ by postfix)
+      run: |
+        mkdir dist
+        cp -r artifacts/*/* dist
+    - name: Deploy test summaries to gh-pages 🚀
+      uses: JamesIves/github-pages-deploy-action@v4.2.3
+      with:
+        clean: false
+        branch: gh-pages
+        folder: dist
