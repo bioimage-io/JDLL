@@ -186,7 +186,7 @@ public class YAMLUtils
      * 	data to be written into the yaml file
      * @throws IOException if there is any problem writting the yaml file
      */
-    public static void writeYamlFile(String filePath, Map<String, Object> data) throws IOException {
+    public static void writeYamlFile(String filePath, Object data) throws IOException {
     	DumperOptions options = new DumperOptions();
         options.setDefaultFlowStyle(DumperOptions.FlowStyle.BLOCK);
         options.setPrettyFlow(true);
