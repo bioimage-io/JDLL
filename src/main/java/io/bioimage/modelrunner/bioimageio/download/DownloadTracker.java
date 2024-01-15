@@ -126,7 +126,7 @@ public class DownloadTracker {
 	 * @throws IOException if there i any error related to the download
 	 */
 	private DownloadTracker(String folder, TwoParameterConsumer<String, Double> consumer, List<String> links, Thread thread) throws IOException {
-		Objects.requireNonNull(folder, "Please provide teh folder where the files are going to be "
+		Objects.requireNonNull(folder, "Please provide the folder where the files are going to be "
 				+ "downloaded.");
 		Objects.requireNonNull(consumer);
 		Objects.requireNonNull(links, "Please provide the links to the files that are going to be downloaded.");
