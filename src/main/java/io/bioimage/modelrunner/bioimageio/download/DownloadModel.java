@@ -48,7 +48,6 @@ import io.bioimage.modelrunner.bioimageio.description.weights.ModelWeight;
 import io.bioimage.modelrunner.bioimageio.description.weights.WeightFormat;
 import io.bioimage.modelrunner.engine.EngineInfo;
 import io.bioimage.modelrunner.engine.installation.FileDownloader;
-import io.bioimage.modelrunner.system.PlatformDetection;
 import io.bioimage.modelrunner.utils.CommonUtils;
 import io.bioimage.modelrunner.utils.Constants;
 import io.bioimage.modelrunner.utils.ZipUtils;

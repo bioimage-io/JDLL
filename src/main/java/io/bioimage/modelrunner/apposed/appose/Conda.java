@@ -906,5 +906,14 @@ public class Conda {
 		// TODO parse yaml without adding deps
 		return false;
 	}
+	
+	public boolean checkPackageInstalled(String packageName) {
+		return checkPackageInstalled(packageName, null);
+	}
+	
+	// TODO try to import from terminal and return either one or 0
+	public boolean checkPackageInstalled(String packageName, String version) {
+		return false;
+	}
 
 }
