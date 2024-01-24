@@ -27,6 +27,7 @@
 package io.bioimage.modelrunner.apposed.appose;
 
 import org.apache.commons.compress.archivers.ArchiveException;
+
 import io.bioimage.modelrunner.apposed.appose.CondaException.EnvironmentExistsException;
 import io.bioimage.modelrunner.system.PlatformDetection;
 
@@ -65,7 +66,7 @@ import java.util.stream.Collectors;
  */
 public class Conda {
 	
-	final String pythonCommand = PlatformDetection.isWindows() ? "python.exe" : "bin/python";
+	final static String PYTHON_COMMAND = PlatformDetection.isWindows() ? "python.exe" : "bin/python";
 	
 	final String condaCommand;
 	
@@ -235,7 +236,7 @@ public class Conda {
 	 *         Mac/Linux.
 	 * @throws IOException
 	 */
-	private List< String > getBaseCommand()
+	private static List< String > getBaseCommand()
 	{
 		final List< String > cmd = new ArrayList<>();
 		if ( PlatformDetection.isWindows() )
@@ -649,15 +650,56 @@ public class Conda {
 	{
 		final List< String > cmd = getBaseCommand();
 		if ( envName.equals( DEFAULT_ENVIRONMENT_NAME ) )
-			cmd.add( pythonCommand );
+			cmd.add( PYTHON_COMMAND );
 		else
-			cmd.add( Paths.get( "envs", envName, pythonCommand ).toString() );
+			cmd.add( Paths.get( "envs", envName, PYTHON_COMMAND ).toString() );
 		cmd.addAll( Arrays.asList( args ) );
 		final ProcessBuilder builder = getBuilder( true );
 		if ( PlatformDetection.isWindows() )
 		{
 			final Map< String, String > envs = builder.environment();
 			final String envDir = Paths.get( rootdir, "envs", envName ).toString();
+			envs.put( "Path", envDir + ";" + envs.get( "Path" ) );
+			envs.put( "Path", Paths.get( envDir, "Scripts" ).toString() + ";" + envs.get( "Path" ) );
+			envs.put( "Path", Paths.get( envDir, "Library" ).toString() + ";" + envs.get( "Path" ) );
+			envs.put( "Path", Paths.get( envDir, "Library", "Bin" ).toString() + ";" + envs.get( "Path" ) );
+		}
+		// TODO find way to get env vars in micromamba builder.environment().putAll( getEnvironmentVariables( envName ) );
+		if ( builder.command( cmd ).start().waitFor() != 0 )
+			throw new RuntimeException();
+	}
+
+	/**
+	 * Run a Python command in the specified environment. This method automatically
+	 * sets environment variables associated with the specified environment. In
+	 * Windows, this method also sets the {@code PATH} environment variable so that
+	 * the specified environment runs as expected.
+	 * 
+	 * @param envName
+	 *            The environment name used to run the Python command.
+	 * @param args
+	 *            One or more arguments for the Python command.
+	 * @throws IOException
+	 *             If an I/O error occurs.
+	 * @throws InterruptedException
+	 *             If the current thread is interrupted by another thread while it
+	 *             is waiting, then the wait is ended and an InterruptedException is
+	 *             thrown.
+	 */
+	public static void runPythonIn( final File envFile, final String... args ) throws IOException, InterruptedException
+	{
+		if (!Paths.get( envFile.getAbsolutePath(), PYTHON_COMMAND ).toFile().isFile())
+			throw new IOException("No Python found in the environment provided. The following "
+					+ "file does not exist: " + Paths.get( envFile.getAbsolutePath(), PYTHON_COMMAND ).toAbsolutePath());
+		final List< String > cmd = getBaseCommand();
+		cmd.add( Paths.get( envFile.getAbsolutePath(), PYTHON_COMMAND ).toAbsolutePath().toString() );
+		cmd.addAll( Arrays.asList( args ) );
+		final ProcessBuilder builder = new ProcessBuilder().directory( envFile );
+		builder.inheritIO();
+		if ( PlatformDetection.isWindows() )
+		{
+			final Map< String, String > envs = builder.environment();
+			final String envDir = envFile.getAbsolutePath();
 			envs.put( "Path", envDir + ";" + envs.get( "Path" ) );
 			envs.put( "Path", Paths.get( envDir, "Scripts" ).toString() + ";" + envs.get( "Path" ) );
 			envs.put( "Path", Paths.get( envDir, "Library" ).toString() + ";" + envs.get( "Path" ) );
@@ -875,45 +917,180 @@ public class Conda {
 		return envs;
 	}
 	
-	/**
-	 * TODO
-	 * Check whether an environment has the wanted deps installed
-	 * @param envDir
-	 * 	directory of the environment
-	 * @param dependencies
-	 * 	lsit of wanted deps
-	 * @return true if the wanted deps are installed or false otherwise
-	 */
-	public static boolean checkDependenciesInEnv(String envDir, List<String> dependencies) {
-		if (!(new File(envDir).isDirectory()))
+	public static boolean checkAllDependenciesInEnv(String envDir, List<String> dependencies) {
+		return checkUninstalledDependenciesInEnv(envDir, dependencies).size() == 0;
+	}
+	
+	public static List<String>  checkUninstalledDependenciesInEnv(String envDir, List<String> dependencies) {
+		File envFile = new File(envDir);
+		if (!envFile.isDirectory())
+			return dependencies;
+		List<String> uninstalled = dependencies.stream().filter(dep -> {
+			int ind = dep.indexOf("=");
+			if (ind == -1) return checkDependencyInEnv(envDir, dep);
+			String packName = dep.substring(0, ind);
+			String vv = dep.substring(ind + 1);
+			return checkDependencyInEnv(envDir, packName, vv);
+		}).collect(Collectors.toList());
+		return uninstalled;
+	}
+	
+	public static boolean checkDependencyInEnv(String envDir, String dependency) {
+		if (dependency.contains("==")) {
+			int ind = dependency.indexOf("==");
+			return checkDependencyInEnv(envDir, dependency.substring(0, ind).trim(), dependency.substring(ind + 2).trim());
+		} else if (dependency.contains(">=") && dependency.contains("<=") && dependency.contains(",")) {
+			int commaInd = dependency.indexOf(",");
+			int highInd = dependency.indexOf(">=");
+			int lowInd = dependency.indexOf("<=");
+			int minInd = Math.min(Math.min(commaInd, lowInd), highInd);
+			String packName = dependency.substring(0, minInd).trim();
+			String minV = dependency.substring(lowInd + 1, lowInd < highInd ? commaInd : dependency.length());
+			String maxV = dependency.substring(highInd + 1, lowInd < highInd ? dependency.length() : commaInd);
+			return checkDependencyInEnv(envDir, packName, minV, maxV, false);
+		} else if (dependency.contains(">=") && dependency.contains("<") && dependency.contains(",")) {
+			int commaInd = dependency.indexOf(",");
+			int highInd = dependency.indexOf(">=");
+			int lowInd = dependency.indexOf("<");
+			int minInd = Math.min(Math.min(commaInd, lowInd), highInd);
+			String packName = dependency.substring(0, minInd).trim();
+			String minV = dependency.substring(lowInd + 1, lowInd < highInd ? commaInd : dependency.length());
+			String maxV = dependency.substring(highInd + 1, lowInd < highInd ? dependency.length() : commaInd);
+			return checkDependencyInEnv(envDir, packName, minV, null, false) && checkDependencyInEnv(envDir, packName, null, maxV, true);
+		} else if (dependency.contains(">") && dependency.contains("<=") && dependency.contains(",")) {
+			int commaInd = dependency.indexOf(",");
+			int highInd = dependency.indexOf(">");
+			int lowInd = dependency.indexOf("<=");
+			int minInd = Math.min(Math.min(commaInd, lowInd), highInd);
+			String packName = dependency.substring(0, minInd).trim();
+			String minV = dependency.substring(lowInd + 1, lowInd < highInd ? commaInd : dependency.length());
+			String maxV = dependency.substring(highInd + 1, lowInd < highInd ? dependency.length() : commaInd);
+			return checkDependencyInEnv(envDir, packName, minV, null, true) && checkDependencyInEnv(envDir, packName, null, maxV, false);
+		} else if (dependency.contains(">") && dependency.contains("<") && dependency.contains(",")) {
+			int commaInd = dependency.indexOf(",");
+			int highInd = dependency.indexOf(">");
+			int lowInd = dependency.indexOf(">");
+			int minInd = Math.min(Math.min(commaInd, lowInd), highInd);
+			String packName = dependency.substring(0, minInd).trim();
+			String minV = dependency.substring(lowInd + 1, lowInd < highInd ? commaInd : dependency.length());
+			String maxV = dependency.substring(highInd + 1, lowInd < highInd ? dependency.length() : commaInd);
+			return checkDependencyInEnv(envDir, packName, minV, maxV, true);
+		} else if (dependency.contains(">")) {
+			int ind = dependency.indexOf(">");
+			return checkDependencyInEnv(envDir, null, dependency.substring(0, ind).trim(), dependency.substring(ind + 2).trim(), true);
+		} else if (dependency.contains(">=")) {
+			int ind = dependency.indexOf(">=");
+			return checkDependencyInEnv(envDir, null, dependency.substring(0, ind).trim(), dependency.substring(ind + 2).trim(), false);
+		} else if (dependency.contains("<=")) {
+			int ind = dependency.indexOf("<=");
+			return checkDependencyInEnv(envDir, dependency.substring(0, ind).trim(), dependency.substring(ind + 2).trim(), null, false);
+		} else if (dependency.contains("<")) {
+			int ind = dependency.indexOf("<");
+			return checkDependencyInEnv(envDir, dependency.substring(0, ind).trim(), dependency.substring(ind + 1).trim(), null, true);
+		} else {
+			return checkDependencyInEnv(envDir, dependency, null);
+		}
+	}
+	
+	public static boolean checkDependencyInEnv(String envDir, String dependency, String version) {
+		return checkDependencyInEnv(envDir, dependency, version, version, true);
+	}
+	
+	public static boolean checkDependencyInEnv(String envDir, String dependency, String minversion, String maxversion) {
+		return checkDependencyInEnv(envDir, dependency, minversion, maxversion, true);
+	}
+	
+	public static boolean checkDependencyInEnv(String envDir, String dependency, String minversion, String maxversion, boolean strictlyBiggerOrSmaller) {
+		File envFile = new File(envDir);
+		if (!envFile.isDirectory())
 			return false;
-		Builder env = new Builder().conda(new File(envDir));
-		// TODO run conda list -p /full/path/to/env
-		return false;
+		if (dependency.trim().equals("python")) return checkPythonInstallation(envDir, minversion, maxversion, strictlyBiggerOrSmaller);
+		String checkDepCode;
+		if (minversion != null && maxversion != null && minversion.equals(maxversion)) {
+			checkDepCode = "import importlib, sys; "
+					+ "from importlib.metadata import version; "
+					+ "from packaging import version as vv; "
+					+ "pkg = %s; wanted_v = %s; "
+					+ "spec = importlib.util.find_spec(pkg); "
+					+ "sys.exit(0) if spec and vv.parse(version(pkg)) == vv.parse(wanted_v) else sys.exit(1)";
+			checkDepCode = String.format(checkDepCode, dependency, maxversion);
+		} else if (minversion == null && maxversion == null) {
+			checkDepCode = "import importlib, sys; sys.exit(0) if importlib.util.find_spec(%s) else sys.exit(1)";
+			checkDepCode = String.format(checkDepCode, dependency);
+		} else if (maxversion == null) {
+			checkDepCode = "import importlib, sys; "
+					+ "from importlib.metadata import version; "
+					+ "from packaging import version as vv; "
+					+ "pkg = '%s'; desired_version = '%s'; "
+					+ "spec = importlib.util.find_spec(pkg); "
+					+ "sys.exit(0) if spec and vv.parse(version(pkg)) %s vv.parse(desired_version) else sys.exit(1)";
+			checkDepCode = String.format(checkDepCode, dependency, minversion, strictlyBiggerOrSmaller ? ">" : ">=");
+		} else if (minversion == null) {
+			checkDepCode = "import importlib, sys; "
+					+ "from importlib.metadata import version; "
+					+ "from packaging import version as vv; "
+					+ "pkg = '%s'; desired_version = '%s'; "
+					+ "spec = importlib.util.find_spec(pkg); "
+					+ "sys.exit(0) if spec and vv.parse(version(pkg)) %s vv.parse(desired_version) else sys.exit(1)";
+			checkDepCode = String.format(checkDepCode, dependency, maxversion, strictlyBiggerOrSmaller ? "<" : "<=");
+		} else {
+			checkDepCode = "import importlib, sys; "
+					+ "from importlib.metadata import version; "
+					+ "from packaging import version as vv; "
+					+ "pkg = '%s'; min_v = '%s'; max_v = '%s'; "
+					+ "spec = importlib.util.find_spec(pkg); "
+					+ "sys.exit(0) if spec and vv.parse(version(pkg)) %s vv.parse(min_v) and vv.parse(version(pkg)) %s vv.parse(max_v) else sys.exit(1)";
+			checkDepCode = String.format(checkDepCode, dependency, minversion, maxversion, strictlyBiggerOrSmaller ? ">" : ">=", strictlyBiggerOrSmaller ? "<" : ">=");
+		}
+		try {
+			runPythonIn(envFile, checkDepCode);
+		} catch (RuntimeException | IOException | InterruptedException e) {
+			return false;
+		}
+		return true;
+	}
+	
+	private static boolean checkPythonInstallation(String envDir, String minversion, String maxversion, boolean strictlyBiggerOrSmaller) {
+		File envFile = new File(envDir);
+		String checkDepCode;
+		if (minversion != null && maxversion != null && minversion.equals(maxversion)) {
+			checkDepCode = "import platform; from packaging import version as vv; desired_version = '%s'; "
+					+ "sys.exit(0) if vv.parse(version(pkg)) == vv.parse(desired_version) else sys.exit(1)";
+			checkDepCode = String.format(checkDepCode, maxversion);
+		} else if (minversion == null && maxversion == null) {
+			return true;
+		} else if (maxversion == null) {
+			checkDepCode = "import platform; from packaging import version as vv; desired_version = '%s'; "
+					+ "sys.exit(0) if vv.parse(version(platform.python_version())) %s vv.parse(desired_version) else sys.exit(1)";
+			checkDepCode = String.format(checkDepCode, minversion, strictlyBiggerOrSmaller ? ">" : ">=");
+		} else if (minversion == null) {
+			checkDepCode = "import platform; from packaging import version as vv; desired_version = '%s'; "
+					+ "sys.exit(0) if vv.parse(version(platform.python_version())) %s vv.parse(desired_version) else sys.exit(1)";
+			checkDepCode = String.format(checkDepCode, maxversion, strictlyBiggerOrSmaller ? "<" : "<=");
+		} else {
+			checkDepCode = "import platform; "
+					+ "from packaging import version as vv; min_v = '%s'; max_v = '%s'; "
+					+ "sys.exit(0) if vv.parse(platform.python_version()) %s vv.parse(min_v) and vv.parse(platform.python_version()) %s vv.parse(max_v) else sys.exit(1)";
+			checkDepCode = String.format(checkDepCode, minversion, maxversion, strictlyBiggerOrSmaller ? ">" : ">=", strictlyBiggerOrSmaller ? "<" : ">=");
+		}
+		try {
+			runPythonIn(envFile, checkDepCode);
+		} catch (RuntimeException | IOException | InterruptedException e) {
+			return false;
+		}
+		return true;
 	}
 	
 	/**
-	 * TODO
-	 * Check the environment defined by this yaml file exists
+	 * TODO figure out whether to use a dependency or not to parse the yaml file
 	 * @param envYaml
-	 * 	path to the Conda/Mamba env yaml file
-	 * @return	true if it exists and false otherwise
+	 * @return
 	 */
 	public boolean checkEnvFromYamlExists(String envYaml) {
 		if (envYaml == null || new File(envYaml).isFile() == false 
 				|| (envYaml.endsWith(".yaml") && envYaml.endsWith(".yml"))) {
 			return false;
 		}
-		// TODO parse yaml without adding deps
-		return false;
-	}
-	
-	public boolean checkPackageInstalled(String packageName) {
-		return checkPackageInstalled(packageName, null);
-	}
-	
-	// TODO try to import from terminal and return either one or 0
-	public boolean checkPackageInstalled(String packageName, String version) {
 		return false;
 	}
 
