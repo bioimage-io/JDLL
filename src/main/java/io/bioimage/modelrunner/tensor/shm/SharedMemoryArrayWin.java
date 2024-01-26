@@ -117,7 +117,7 @@ public class SharedMemoryArrayWin implements SharedMemoryArray
 	 * @param shape
 	 * 	shape (array dimensions) of the array that is going to be  flattened and written into the shared memory segment
 	 */
-    private SharedMemoryArrayWin(int size, String dtype, long[] shape)
+	protected SharedMemoryArrayWin(int size, String dtype, long[] shape)
     {
     	this(SharedMemoryArray.createShmName(), size, dtype, shape);
     }
@@ -136,7 +136,7 @@ public class SharedMemoryArrayWin implements SharedMemoryArray
 	 * @param shape
 	 * 	shape (array dimensions) of the array that is going to be  flattened and written into the shared memory segment
 	 */
-    private SharedMemoryArrayWin(String name, int size, String dtype, long[] shape)
+	protected SharedMemoryArrayWin(String name, int size, String dtype, long[] shape)
     {
     	memoryName = name;
     	this.originalDataType = dtype;

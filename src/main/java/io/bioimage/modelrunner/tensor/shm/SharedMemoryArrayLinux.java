@@ -111,7 +111,7 @@ public class SharedMemoryArrayLinux implements SharedMemoryArray
 	 * @param shape
 	 * 	shape (array dimensions) of the array that is going to be  flattened and written into the shared memory segment
 	 */
-    private SharedMemoryArrayLinux(int size, String dtype, long[] shape)
+    protected SharedMemoryArrayLinux(int size, String dtype, long[] shape)
     {
     	this(SharedMemoryArray.createShmName(), size, dtype, shape);
     }
@@ -130,7 +130,7 @@ public class SharedMemoryArrayLinux implements SharedMemoryArray
 	 * @param shape
 	 * 	shape (array dimensions) of the array that is going to be  flattened and written into the shared memory segment
 	 */
-    private SharedMemoryArrayLinux(String name, int size, String dtype, long[] shape)
+    protected SharedMemoryArrayLinux(String name, int size, String dtype, long[] shape)
     {
     	this.originalDataType = dtype;
     	this.originalDims = shape;

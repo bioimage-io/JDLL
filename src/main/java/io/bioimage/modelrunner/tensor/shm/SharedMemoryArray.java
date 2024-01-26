@@ -26,7 +26,9 @@ import java.util.UUID;
 
 import com.sun.jna.Pointer;
 
+import io.bioimage.modelrunner.numpy.DecodeNumpy;
 import io.bioimage.modelrunner.system.PlatformDetection;
+import io.bioimage.modelrunner.utils.CommonUtils;
 import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.type.NativeType;
 import net.imglib2.type.numeric.RealType;
@@ -78,6 +80,63 @@ public interface SharedMemoryArray extends Closeable {
 	 * List of special characters that should not be used to name shared memory segments
 	 */
 	final static String[] SPECIAL_CHARS_LIST = new String[] {"/", "\\", "#", "·", "!", "¡", "¿", "?", "@", "|", "$", ">", "<", ";"};
+
+
+	/**
+	 * This method creates a segment on the Shared Memory region of the computer with the size
+	 * needed to store an image of the wanted characteristics.
+	 * It is useful to allocate in advance the space that a certain {@link RandomAccessibleInterval}
+	 * will need. The image can then reference this shared memory region.
+	 * An instance of {@link SharedMemoryArray} is created that helps managing the shared memory data.
+	 * 
+	 * The amount of space reserved will depend on the shape provided and the datatype.
+	 * 
+	 * @param <T>
+     * 	possible ImgLib2 data types of the wanted {@link RandomAccessibleInterval}
+     * @param name
+     * 	name of the shared memory region that has been created
+	 * @param shape
+	 * 	shape of an ndimensional array that could be stored in the shared memory region
+	 * @param datatype
+	 * 	datatype of the data that is going to be stored in the region
+	 * @return a {@link SharedMemoryArray} instance that helps handling the data written to the shared memory region
+	 */
+	static <T extends RealType<T> & NativeType<T>>
+	SharedMemoryArray buildMemorySegmentForImage(String name, long[] shape, T datatype) {
+		String strDType = DecodeNumpy.getDataType(datatype);
+    	int size = 1;
+    	for (long i : shape) {size *= i;}
+        if (PlatformDetection.isWindows()) return new SharedMemoryArrayWin(name, size * DecodeNumpy.DATA_TYPES_MAP.get(strDType), strDType, shape);
+    	else if (PlatformDetection.isLinux()) return new SharedMemoryArrayLinux(name, size * DecodeNumpy.DATA_TYPES_MAP.get(strDType), strDType, shape);
+    	else return new SharedMemoryArrayMacOS(name, size * DecodeNumpy.DATA_TYPES_MAP.get(strDType), strDType, shape);
+	}
+
+	/**
+	 * This method creates a segment on the Shared Memory region of the computer with the size
+	 * needed to store an image of the wanted characteristics.
+	 * It is useful to allocate in advance the space that a certain {@link RandomAccessibleInterval}
+	 * will need. The image can then reference this shared memory region.
+	 * An instance of {@link SharedMemoryArray} is created that helps managing the shared memory data.
+	 * 
+	 * The amount of space reserved will depend on the shape provided and the datatype.
+	 * 
+	 * @param <T>
+     * 	possible ImgLib2 data types of the wanted {@link RandomAccessibleInterval}
+	 * @param shape
+	 * 	shape of an ndimensional array that could be stored in the shared memory region
+	 * @param datatype
+	 * 	datatype of the data that is going to be stored in the region
+	 * @return a {@link SharedMemoryArray} instance that helps handling the data written to the shared memory region
+	 */
+	static <T extends RealType<T> & NativeType<T>>
+	SharedMemoryArray buildMemorySegmentForImage(long[] shape, T datatype) {
+		String strDType = DecodeNumpy.getDataType(datatype);
+    	int size = 1;
+    	for (long i : shape) {size *= i;}
+        if (PlatformDetection.isWindows()) return new SharedMemoryArrayWin(size * DecodeNumpy.DATA_TYPES_MAP.get(strDType), strDType, shape);
+    	else if (PlatformDetection.isLinux()) return new SharedMemoryArrayLinux(size * DecodeNumpy.DATA_TYPES_MAP.get(strDType), strDType, shape);
+    	else return new SharedMemoryArrayMacOS(size * DecodeNumpy.DATA_TYPES_MAP.get(strDType), strDType, shape);
+	}
 
 	/**
 	 * This method copies the data from a {@link RandomAccessibleInterval} into a shared memory region
