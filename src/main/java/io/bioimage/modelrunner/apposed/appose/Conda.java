@@ -927,10 +927,10 @@ public class Conda {
 			return dependencies;
 		List<String> uninstalled = dependencies.stream().filter(dep -> {
 			int ind = dep.indexOf("=");
-			if (ind == -1) return checkDependencyInEnv(envDir, dep);
+			if (ind == -1) return !checkDependencyInEnv(envDir, dep);
 			String packName = dep.substring(0, ind);
 			String vv = dep.substring(ind + 1);
-			return checkDependencyInEnv(envDir, packName, vv);
+			return !checkDependencyInEnv(envDir, packName, vv);
 		}).collect(Collectors.toList());
 		return uninstalled;
 	}
@@ -1007,7 +1007,7 @@ public class Conda {
 		if (dependency.trim().equals("python")) return checkPythonInstallation(envDir, minversion, maxversion, strictlyBiggerOrSmaller);
 		String checkDepCode;
 		if (minversion != null && maxversion != null && minversion.equals(maxversion)) {
-			checkDepCode = "import importlib, sys; "
+			checkDepCode = "import importlib.util, sys; "
 					+ "from importlib.metadata import version; "
 					+ "from packaging import version as vv; "
 					+ "pkg = %s; wanted_v = %s; "
@@ -1015,10 +1015,10 @@ public class Conda {
 					+ "sys.exit(0) if spec and vv.parse(version(pkg)) == vv.parse(wanted_v) else sys.exit(1)";
 			checkDepCode = String.format(checkDepCode, dependency, maxversion);
 		} else if (minversion == null && maxversion == null) {
-			checkDepCode = "import importlib, sys; sys.exit(0) if importlib.util.find_spec(%s) else sys.exit(1)";
+			checkDepCode = "import importlib.util, sys; sys.exit(0) if importlib.util.find_spec('%s') else sys.exit(1)";
 			checkDepCode = String.format(checkDepCode, dependency);
 		} else if (maxversion == null) {
-			checkDepCode = "import importlib, sys; "
+			checkDepCode = "import importlib.util, sys; "
 					+ "from importlib.metadata import version; "
 					+ "from packaging import version as vv; "
 					+ "pkg = '%s'; desired_version = '%s'; "
@@ -1026,7 +1026,7 @@ public class Conda {
 					+ "sys.exit(0) if spec and vv.parse(version(pkg)) %s vv.parse(desired_version) else sys.exit(1)";
 			checkDepCode = String.format(checkDepCode, dependency, minversion, strictlyBiggerOrSmaller ? ">" : ">=");
 		} else if (minversion == null) {
-			checkDepCode = "import importlib, sys; "
+			checkDepCode = "import importlib.util, sys; "
 					+ "from importlib.metadata import version; "
 					+ "from packaging import version as vv; "
 					+ "pkg = '%s'; desired_version = '%s'; "
@@ -1034,7 +1034,7 @@ public class Conda {
 					+ "sys.exit(0) if spec and vv.parse(version(pkg)) %s vv.parse(desired_version) else sys.exit(1)";
 			checkDepCode = String.format(checkDepCode, dependency, maxversion, strictlyBiggerOrSmaller ? "<" : "<=");
 		} else {
-			checkDepCode = "import importlib, sys; "
+			checkDepCode = "import importlib.util, sys; "
 					+ "from importlib.metadata import version; "
 					+ "from packaging import version as vv; "
 					+ "pkg = '%s'; min_v = '%s'; max_v = '%s'; "
@@ -1043,7 +1043,7 @@ public class Conda {
 			checkDepCode = String.format(checkDepCode, dependency, minversion, maxversion, strictlyBiggerOrSmaller ? ">" : ">=", strictlyBiggerOrSmaller ? "<" : ">=");
 		}
 		try {
-			runPythonIn(envFile, checkDepCode);
+			runPythonIn(envFile, "-c", checkDepCode);
 		} catch (RuntimeException | IOException | InterruptedException e) {
 			return false;
 		}
