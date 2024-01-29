@@ -34,6 +34,18 @@ import com.sun.jna.Native;
 import net.imglib2.Cursor;
 import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.img.array.ArrayImgs;
+import net.imglib2.img.basictypeaccess.ByteAccess;
+import net.imglib2.img.basictypeaccess.DoubleAccess;
+import net.imglib2.img.basictypeaccess.FloatAccess;
+import net.imglib2.img.basictypeaccess.IntAccess;
+import net.imglib2.img.basictypeaccess.LongAccess;
+import net.imglib2.img.basictypeaccess.ShortAccess;
+import net.imglib2.img.basictypeaccess.nio.ByteBufferAccess;
+import net.imglib2.img.basictypeaccess.nio.DoubleBufferAccess;
+import net.imglib2.img.basictypeaccess.nio.FloatBufferAccess;
+import net.imglib2.img.basictypeaccess.nio.IntBufferAccess;
+import net.imglib2.img.basictypeaccess.nio.LongBufferAccess;
+import net.imglib2.img.basictypeaccess.nio.ShortBufferAccess;
 import net.imglib2.type.NativeType;
 import net.imglib2.type.numeric.RealType;
 import net.imglib2.type.numeric.integer.ByteType;
@@ -661,131 +673,95 @@ public class SharedMemoryArrayMacOS implements SharedMemoryArray
 		if (dataType instanceof ByteType) {
 			int arrSize = 1;
 			for (long l : shape) {arrSize *= l;}
-			byte[] flat = new byte[arrSize]; 
-			for (int i = 0; i < arrSize; i++)
-				flat[i] = pSharedMemory.getByte((long) i);
-			return Cast.unchecked(Utils.transpose(ArrayImgs.bytes(flat, transposedShape)));
+    		ByteAccess access = new ByteBufferAccess(pSharedMemory.getByteBuffer(0, arrSize), true);
+			return Cast.unchecked(Utils.transpose(ArrayImgs.bytes(access, transposedShape)));
 		} else if (dataType instanceof ByteType && isFortran) {
 			int arrSize = 1;
 			for (long l : shape) {arrSize *= l;}
-			byte[] flat = new byte[arrSize]; 
-			for (int i = 0; i < arrSize; i++)
-				flat[i] = pSharedMemory.getByte((long) i);
-			return Cast.unchecked(ArrayImgs.bytes(flat, shape));
+    		ByteAccess access = new ByteBufferAccess(pSharedMemory.getByteBuffer(0, arrSize), true);
+			return Cast.unchecked(ArrayImgs.bytes(access, shape));
 		} else if (dataType instanceof UnsignedByteType && isFortran) {
 			int arrSize = 1;
 			for (long l : shape) {arrSize *= l;}
-			byte[] flat = new byte[arrSize]; 
-			for (int i = 0; i < arrSize; i++)
-				flat[i] = pSharedMemory.getByte((long) i);
-			return Cast.unchecked(ArrayImgs.unsignedBytes(flat, shape));
+    		ByteAccess access = new ByteBufferAccess(pSharedMemory.getByteBuffer(0, arrSize), true);
+			return Cast.unchecked(ArrayImgs.unsignedBytes(access, shape));
 		} else if (dataType instanceof UnsignedByteType) {
 			int arrSize = 1;
 			for (long l : shape) {arrSize *= l;}
-			byte[] flat = new byte[arrSize]; 
-			for (int i = 0; i < arrSize; i++)
-				flat[i] = pSharedMemory.getByte((long) i);
-			return Cast.unchecked(Utils.transpose(ArrayImgs.unsignedBytes(flat, transposedShape)));
+    		ByteAccess access = new ByteBufferAccess(pSharedMemory.getByteBuffer(0, arrSize), true);
+			return Cast.unchecked(Utils.transpose(ArrayImgs.unsignedBytes(access, transposedShape)));
 		} else if (dataType instanceof ShortType && isFortran) {
-			int arrSize = 1;
+			int arrSize = 2;
 			for (long l : shape) {arrSize *= l;}
-			short[] flat = new short[arrSize]; 
-			for (int i = 0; i < arrSize; i++)
-				flat[i] = pSharedMemory.getShort((long) i * Short.BYTES);
-			return Cast.unchecked(ArrayImgs.shorts(flat, shape));
+			ShortAccess access = new ShortBufferAccess(pSharedMemory.getByteBuffer(0, arrSize), true);
+			return Cast.unchecked(ArrayImgs.shorts(access, shape));
 		} else if (dataType instanceof ShortType) {
-			int arrSize = 1;
+			int arrSize = 2;
 			for (long l : shape) {arrSize *= l;}
-			short[] flat = new short[arrSize]; 
-			for (int i = 0; i < arrSize; i++)
-				flat[i] = pSharedMemory.getShort((long) i * Short.BYTES);
-			return Cast.unchecked(Utils.transpose(ArrayImgs.shorts(flat, transposedShape)));
+			ShortAccess access = new ShortBufferAccess(pSharedMemory.getByteBuffer(0, arrSize), true);
+			return Cast.unchecked(Utils.transpose(ArrayImgs.shorts(access, transposedShape)));
 		} else if (dataType instanceof UnsignedShortType && isFortran) {
-			int arrSize = 1;
+			int arrSize = 2;
 			for (long l : shape) {arrSize *= l;}
-			short[] flat = new short[arrSize]; 
-			for (int i = 0; i < arrSize; i++)
-				flat[i] = pSharedMemory.getShort((long) i * Short.BYTES);
-			return Cast.unchecked(ArrayImgs.unsignedShorts(flat, shape));
+			ShortAccess access = new ShortBufferAccess(pSharedMemory.getByteBuffer(0, arrSize), true);
+			return Cast.unchecked(ArrayImgs.unsignedShorts(access, shape));
 			
 		} else if (dataType instanceof UnsignedShortType) {
-			int arrSize = 1;
+			int arrSize = 2;
 			for (long l : shape) {arrSize *= l;}
-			short[] flat = new short[arrSize]; 
-			for (int i = 0; i < arrSize; i++)
-				flat[i] = pSharedMemory.getShort((long) i * Short.BYTES);
-			return Cast.unchecked(Utils.transpose(ArrayImgs.unsignedShorts(flat, transposedShape)));
+			ShortAccess access = new ShortBufferAccess(pSharedMemory.getByteBuffer(0, arrSize), true);
+			return Cast.unchecked(Utils.transpose(ArrayImgs.unsignedShorts(access, transposedShape)));
 			
 		} else if (dataType instanceof IntType && isFortran) {
-			int arrSize = 1;
+			int arrSize = 4;
 			for (long l : shape) {arrSize *= l;}
-			int[] flat = new int[arrSize]; 
-			for (int i = 0; i < arrSize; i++)
-				flat[i] = pSharedMemory.getInt((long) i * Integer.BYTES);
-			return Cast.unchecked(ArrayImgs.ints(flat, shape));
+			IntAccess access = new IntBufferAccess(pSharedMemory.getByteBuffer(0, arrSize), true);
+			return Cast.unchecked(ArrayImgs.ints(access, shape));
 		} else if (dataType instanceof IntType) {
-			int arrSize = 1;
+			int arrSize = 4;
 			for (long l : shape) {arrSize *= l;}
-			int[] flat = new int[arrSize]; 
-			for (int i = 0; i < arrSize; i++)
-				flat[i] = pSharedMemory.getInt((long) i * Integer.BYTES);
-			return Cast.unchecked(Utils.transpose(ArrayImgs.ints(flat, transposedShape)));
+			IntAccess access = new IntBufferAccess(pSharedMemory.getByteBuffer(0, arrSize), true);
+			return Cast.unchecked(Utils.transpose(ArrayImgs.ints(access, transposedShape)));
 		} else if (dataType instanceof UnsignedIntType && isFortran) {
-			int arrSize = 1;
+			int arrSize = 4;
 			for (long l : shape) {arrSize *= l;}
-			int[] flat = new int[arrSize]; 
-			for (int i = 0; i < arrSize; i++)
-				flat[i] = pSharedMemory.getInt((long) i * Integer.BYTES);
-			return Cast.unchecked(ArrayImgs.unsignedInts(flat, shape));
+			IntAccess access = new IntBufferAccess(pSharedMemory.getByteBuffer(0, arrSize), true);
+			return Cast.unchecked(ArrayImgs.unsignedInts(access, shape));
 		} else if (dataType instanceof UnsignedIntType) {
-			int arrSize = 1;
+			int arrSize = 4;
 			for (long l : shape) {arrSize *= l;}
-			int[] flat = new int[arrSize]; 
-			for (int i = 0; i < arrSize; i++)
-				flat[i] = pSharedMemory.getInt((long) i * Integer.BYTES);
-			return Cast.unchecked(Utils.transpose(ArrayImgs.unsignedInts(flat, transposedShape)));
+			IntAccess access = new IntBufferAccess(pSharedMemory.getByteBuffer(0, arrSize), true);
+			return Cast.unchecked(Utils.transpose(ArrayImgs.unsignedInts(access, transposedShape)));
 		} else if (dataType instanceof LongType && isFortran) {
-			int arrSize = 1;
+			int arrSize = 8;
 			for (long l : shape) {arrSize *= l;}
-			long[] flat = new long[arrSize]; 
-			for (int i = 0; i < arrSize; i++)
-				flat[i] = pSharedMemory.getLong((long) i * Long.BYTES);
-			return Cast.unchecked(ArrayImgs.longs(flat, shape));
+			LongAccess access = new LongBufferAccess(pSharedMemory.getByteBuffer(0, arrSize), true);
+			return Cast.unchecked(ArrayImgs.longs(access, shape));
 		} else if (dataType instanceof LongType) {
-			int arrSize = 1;
+			int arrSize = 8;
 			for (long l : shape) {arrSize *= l;}
-			long[] flat = new long[arrSize]; 
-			for (int i = 0; i < arrSize; i++)
-				flat[i] = pSharedMemory.getLong((long) i * Long.BYTES);
-			return Cast.unchecked(Utils.transpose(ArrayImgs.longs(flat, transposedShape)));
+			LongAccess access = new LongBufferAccess(pSharedMemory.getByteBuffer(0, arrSize), true);
+			return Cast.unchecked(Utils.transpose(ArrayImgs.longs(access, transposedShape)));
 		} else if (dataType instanceof FloatType && isFortran) {
-			int arrSize = 1;
+			int arrSize = 4;
 			for (long l : shape) {arrSize *= l;}
-			float[] flat = new float[arrSize]; 
-			for (int i = 0; i < arrSize; i++)
-				flat[i] = pSharedMemory.getFloat((long) i * Float.BYTES);
-			return Cast.unchecked(ArrayImgs.floats(flat, shape));
+			FloatAccess access = new FloatBufferAccess(pSharedMemory.getByteBuffer(0, arrSize), true);
+			return Cast.unchecked(ArrayImgs.floats(access, shape));
 		} else if (dataType instanceof FloatType) {
-			int arrSize = 1;
+			int arrSize = 4;
 			for (long l : shape) {arrSize *= l;}
-			float[] flat = new float[arrSize]; 
-			for (int i = 0; i < arrSize; i++)
-				flat[i] = pSharedMemory.getFloat((long) i * Float.BYTES);
-			return Cast.unchecked(Utils.transpose(ArrayImgs.floats(flat, transposedShape)));
+			FloatAccess access = new FloatBufferAccess(pSharedMemory.getByteBuffer(0, arrSize), true);
+			return Cast.unchecked(Utils.transpose(ArrayImgs.floats(access, transposedShape)));
 		} else if (dataType instanceof DoubleType && isFortran) {
-			int arrSize = 1;
+			int arrSize = 8;
 			for (long l : shape) {arrSize *= l;}
-			double[] flat = new double[arrSize]; 
-			for (int i = 0; i < arrSize; i++)
-				flat[i] = pSharedMemory.getDouble((long) i * Double.BYTES);
-			return Cast.unchecked(ArrayImgs.doubles(flat, shape));
+			DoubleAccess access = new DoubleBufferAccess(pSharedMemory.getByteBuffer(0, arrSize), true);
+			return Cast.unchecked(ArrayImgs.doubles(access, shape));
 		} else if (dataType instanceof DoubleType) {
-			int arrSize = 1;
+			int arrSize = 8;
 			for (long l : shape) {arrSize *= l;}
-			double[] flat = new double[arrSize]; 
-			for (int i = 0; i < arrSize; i++)
-				flat[i] = pSharedMemory.getDouble((long) i * Double.BYTES);
-			return Cast.unchecked(Utils.transpose(ArrayImgs.doubles(flat, transposedShape)));
+			DoubleAccess access = new DoubleBufferAccess(pSharedMemory.getByteBuffer(0, arrSize), true);
+			return Cast.unchecked(Utils.transpose(ArrayImgs.doubles(access, transposedShape)));
 		} else {
     		throw new IllegalArgumentException("Type not supported: " + dataType.getClass().toString());
 		}
