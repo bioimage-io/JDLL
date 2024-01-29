@@ -130,7 +130,7 @@ public interface SharedMemoryArray extends Closeable {
 	 */
 	static <T extends RealType<T> & NativeType<T>>
 	SharedMemoryArray buildMemorySegmentForImage(long[] shape, T datatype) {
-		String strDType = DecodeNumpy.getDataType(datatype);
+		String strDType = CommonUtils.getDataType(datatype);
     	int size = 1;
     	for (long i : shape) {size *= i;}
         if (PlatformDetection.isWindows()) return new SharedMemoryArrayWin(size * DecodeNumpy.DATA_TYPES_MAP.get(strDType), strDType, shape);

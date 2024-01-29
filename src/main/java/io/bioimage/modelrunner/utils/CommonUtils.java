@@ -65,6 +65,15 @@ public class CommonUtils {
 		return new File(url.getPath()).getName();
 	}
 	
+	/**
+	 * Get the ImgLib2 datatype from a String datatype.
+	 * String data types are "int8", "uint8", "int16", "uint16", "int32", "uint32", "int64", "float32", "float64"
+	 * @param <T>
+	 * 	what the possible ImgLib2 data types have to extend
+	 * @param dataType
+	 * 	the String data type of interest
+	 * @return the ImgLib2 data type referred by the string
+	 */
 	public static <T extends RealType<T> & NativeType<T>> T getImgLib2DataType(String dataType) {
 		T type;
 		if (dataType.equals("int8")) {
@@ -91,6 +100,15 @@ public class CommonUtils {
 		return type;
 	}
 	
+	/**
+	 * Get a the String name of an ImgLib2 {@link RandomAccessibleInterval}
+	 * String data types are "int8", "uint8", "int16", "uint16", "int32", "uint32", "int64", "float32", "float64"
+	 * @param <T>
+	 * 	what the possible ImgLib2 data types have to extend
+	 * @param rai
+	 * 	the image from which the data type will be retrieved
+	 * @return a String containing the data type of the {@link RandomAccessibleInterval}
+	 */
 	public static <T extends RealType<T> & NativeType<T>>
 	String getDataType(RandomAccessibleInterval<T> rai) {
 		if (rai.getAt(rai.minAsLongArray()) instanceof ByteType) {
@@ -114,6 +132,40 @@ public class CommonUtils {
 		} else {
 			throw new IllegalArgumentException("Data type not supported: " 
 					+ rai.getAt(rai.minAsLongArray()).getClass());
+		}
+	}
+	
+	/**
+	 * Get a the String name of an ImgLib2 {@link T} type
+	 * String data types are "int8", "uint8", "int16", "uint16", "int32", "uint32", "int64", "float32", "float64"
+	 * @param <T>
+	 * 	what the possible ImgLib2 data types have to extend
+	 * @param type
+	 * 	the ImgLib2 type.
+	 * @return a String representing the data type represented by the argument 'type'
+	 */
+	public static <T extends RealType<T> & NativeType<T>>
+	String getDataType(T type) {
+		if (type instanceof ByteType) {
+			return "int8";
+		} else if (type instanceof UnsignedByteType) {
+			return "uint8";
+		} else if (type instanceof ShortType) {
+			return "int16";
+		} else if (type instanceof UnsignedShortType) {
+			return "uint16";
+		} else if (type instanceof IntType) {
+			return "int32";
+		} else if (type instanceof UnsignedIntType) {
+			return "uint";
+		} else if (type instanceof LongType) {
+			return "int64";
+		} else if (type instanceof FloatType) {
+			return "float32";
+		} else if (type instanceof DoubleType) {
+			return "float64";
+		} else {
+			throw new IllegalArgumentException("Data type not supported: " + type.getClass());
 		}
 	}
 	
