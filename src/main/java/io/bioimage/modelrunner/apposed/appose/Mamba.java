@@ -689,7 +689,7 @@ public class Mamba {
 	{
 		if ( !isForceCreation && getEnvironmentNames().contains( envName ) )
 			throw new EnvironmentExistsException();
-		final List< String > cmd = new ArrayList<>( Arrays.asList( "env", "create", "--force", "-p", envsdir + File.separator + envName ) );
+		final List< String > cmd = new ArrayList<>( Arrays.asList( "env", "create", "-p", envsdir + File.separator + envName ) );
 		cmd.addAll( Arrays.asList( args ) );
 		runMamba( cmd.stream().toArray( String[]::new ) );
 	}
