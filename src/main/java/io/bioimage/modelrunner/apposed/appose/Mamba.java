@@ -392,6 +392,12 @@ public class Mamba {
 		if (installed)
 			return;
 		installMicromamba();
+		try {
+			getVersion();
+		} catch (Exception ex) {
+			throw new MambaInstallException("Micromamba was installed but it is not working properly. Installation can be found at: "
+					+ this.rootdir);
+		}
 	}
 	
 	/**
@@ -636,6 +642,56 @@ public class Mamba {
 		if ( !isForceCreation && getEnvironmentNames().contains( envName ) )
 			throw new EnvironmentExistsException();
 		runMamba( "create", "-y", "-p", envsdir + File.separator + envName );
+	}
+
+	/**
+	 * Run {@code conda create} to create a new mamba environment with a list of
+	 * specified packages.
+	 * 
+	 * @param envName
+	 *            The environment name to be created.
+	 * @param args
+	 *            The list of packages to be installed on environment creation and
+	 *            extra parameters as {@code String...}.
+	 * @throws IOException
+	 *             If an I/O error occurs.
+	 * @throws InterruptedException
+	 *             If the current thread is interrupted by another thread while it
+	 *             is waiting, then the wait is ended and an InterruptedException is
+	 *             thrown.
+	 */
+	public void create( final String envName, final String... args ) throws IOException, InterruptedException
+	{
+		create( envName, false, args );
+	}
+
+	/**
+	 * Run {@code conda create} to create a new conda environment with a list of
+	 * specified packages.
+	 * 
+	 * @param envName
+	 *            The environment name to be created.
+	 * @param isForceCreation
+	 *            Force creation of the environment if {@code true}. If this value
+	 *            is {@code false} and an environment with the specified name
+	 *            already exists, throw an {@link EnvironmentExistsException}.
+	 * @param args
+	 *            The list of packages to be installed on environment creation and
+	 *            extra parameters as {@code String...}.
+	 * @throws IOException
+	 *             If an I/O error occurs.
+	 * @throws InterruptedException
+	 *             If the current thread is interrupted by another thread while it
+	 *             is waiting, then the wait is ended and an InterruptedException is
+	 *             thrown.
+	 */
+	public void create( final String envName, final boolean isForceCreation, final String... args ) throws IOException, InterruptedException
+	{
+		if ( !isForceCreation && getEnvironmentNames().contains( envName ) )
+			throw new EnvironmentExistsException();
+		final List< String > cmd = new ArrayList<>( Arrays.asList( "env", "create", "--force", "-p", envsdir + File.separator + envName ) );
+		cmd.addAll( Arrays.asList( args ) );
+		runMamba( cmd.stream().toArray( String[]::new ) );
 	}
 
 	/**
