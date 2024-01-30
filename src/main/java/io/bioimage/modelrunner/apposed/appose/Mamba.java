@@ -29,10 +29,13 @@ package io.bioimage.modelrunner.apposed.appose;
 import org.apache.commons.compress.archivers.ArchiveException;
 
 import io.bioimage.modelrunner.apposed.appose.CondaException.EnvironmentExistsException;
+import io.bioimage.modelrunner.bioimageio.download.DownloadModel;
+import io.bioimage.modelrunner.engine.installation.FileDownloader;
 import io.bioimage.modelrunner.system.PlatformDetection;
 
 import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -49,6 +52,7 @@ import java.util.Arrays;
 import java.util.Calendar;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.UUID;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
@@ -59,38 +63,132 @@ import java.util.stream.Collectors;
 //TODO remove once appose project is released with the needed changes
 //TODO remove once appose project is released with the needed changes
 /**
- * Conda environment manager, implemented by delegating to micromamba.
+ * Python environment manager, implemented by delegating to micromamba.
  * 
  * @author Ko Sugawara
  * @author Curtis Rueden
  */
-public class Conda {
+public class Mamba {
 	
-	final static String PYTHON_COMMAND = PlatformDetection.isWindows() ? "python.exe" : "bin/python";
-	
-	final String condaCommand;
-	
-	private String envName = DEFAULT_ENVIRONMENT_NAME;
-	
+	/**
+	 * String containing the path that points to the micromamba executable
+	 */
+	final String mambaCommand;
+	/**
+	 * Name of the environment where the changes are going to be applied
+	 */
+	private String envName;
+	/**
+	 * Root directory of micromamba that also contains the environments folder
+	 * 
+	 * <pre>
+	 * rootdir
+	 * ├── bin
+	 * │   ├── micromamba(.exe)
+	 * │   ... 
+	 * ├── envs
+	 * │   ├── your_env
+	 * │   │   ├── python(.exe)
+	 * </pre>
+	 */
 	private final String rootdir;
-	
+	/**
+	 * Path to the folder that contains the directories
+	 */
 	private final String envsdir;
-	
+	/**
+	 * Progress made on the download from the Internet of the micromamba software. VAlue between 0 and 1.
+	 * 
+	 */
+	private double mambaDnwldProgress = 0.0;
+	/**
+	 * Progress made on the decompressing the micromamba files downloaded from the Internet of the micromamba 
+	 * software. VAlue between 0 and 1.
+	 */
+	private double mambaDecompressProgress = 0.0;
+	/**
+	 * Consumer that tracks the progress in the download of micromamba, the software used 
+	 * by this class to manage Python environments
+	 */
+	private Consumer<Double> mambaDnwldProgressConsumer = (p) -> {
+		mambaDnwldProgress = p;
+	};
+	/**
+	 * Consumer that tracks the progress decompressing the downloaded micromamba files.
+	 */
+	private Consumer<Double> mambaDecompressProgressConsumer = (p) -> {
+		mambaDecompressProgress = p;
+	};
+	/**
+	 * String that contains all the console output produced by micromamba ever since the {@link Mamba} was instantiated
+	 */
+	private String mambaConsoleOut = "";
+	/**
+	 * String that contains all the error output produced by micromamba ever since the {@link Mamba} was instantiated
+	 */
+	private String mambaConsoleErr = "";
+	/**
+	 * User custom consumer that tracks the console output produced by the micromamba process when it is executed.
+	 */
+	private Consumer<String> customConsoleConsumer;
+	/**
+	 * User custom consumer that tracks the error output produced by the micromamba process when it is executed.
+	 */
+	private Consumer<String> customErrorConsumer;
+	/**
+	 * Consumer that tracks the console output produced by the micromamba process when it is executed.
+	 * This consumer saves all the log of every micromamba execution
+	 */
+	private Consumer<String> consoleConsumer = (str) -> {
+		mambaConsoleOut += str;
+		if (customConsoleConsumer != null)
+			customConsoleConsumer.accept(str);
+	};
+	/**
+	 * Consumer that tracks the error output produced by the micromamba process when it is executed.
+	 * This consumer saves all the log of every micromamba execution
+	 */
+	private Consumer<String> errConsumer = (str) -> {
+		mambaConsoleErr += str;
+		if (customErrorConsumer != null)
+			customErrorConsumer.accept(str);
+	};
+	/*
+	 * Path to Python executable from the environment directory
+	 */
+	final static String PYTHON_COMMAND = PlatformDetection.isWindows() ? "python.exe" : "bin/python";
+	/**
+	 * Default name for a Python environment
+	 */
 	public final static String DEFAULT_ENVIRONMENT_NAME = "base";
-	
-	private final static String CONDA_RELATIVE_PATH = PlatformDetection.isWindows() ? 
+	/**
+	 * Relative path to the micromamba executable from the micromamba {@link #rootdir}
+	 */
+	private final static String MICROMAMBA_RELATIVE_PATH = PlatformDetection.isWindows() ? 
 			 File.separator + "Library" + File.separator + "bin" + File.separator + "micromamba.exe" 
 			: File.separator + "bin" + File.separator + "micromamba";
-
+	/**
+	 * Path where Appose installs Micromamba by default
+	 */
 	final public static String BASE_PATH = Paths.get(System.getProperty("user.home"), ".local", "share", "appose", "micromamba").toString();
-	
+	/**
+	 * Name of the folder inside the {@link #rootdir} that contains the different Python environments created by the Appose Micromamba
+	 */
 	final public static String ENVS_NAME = "envs";
-	
+	/**
+	 * URL from where Micromamba is downloaded to be installed
+	 */
 	public final static String MICROMAMBA_URL =
 		"https://micro.mamba.pm/api/micromamba/" + microMambaPlatform() + "/latest";
-	
+	/**
+	 * ID used to identify the text retrieved from the error stream when a consumer is used
+	 */
 	public final static String ERR_STREAM_UUUID = UUID.randomUUID().toString();
 
+	/**
+	 * 
+	 * @return a String that identifies the current OS to download the correct Micromamba version
+	 */
 	private static String microMambaPlatform() {
 		String osName = System.getProperty("os.name");
 		if (osName.startsWith("Windows")) osName = "Windows";
@@ -125,16 +223,16 @@ public class Conda {
 	}
 
 	/**
-	 * Create a new Conda object. The root dir for the Micromamba installation
-	 * will be /user/.local/share/appose/micromamba.
-	 * If there is no directory found at the specified
-	 * path, Miniconda will be automatically installed in the path. It is expected
-	 * that the Conda installation has executable commands as shown below:
+	 * Create a new {@link Mamba} object. The root dir for the Micromamba installation
+	 * will be the default base path defined at {@link BASE_PATH}
+	 * If there is no Micromamba found at the base path {@link BASE_PATH}, a {@link MambaInstallException} will be thrown
+	 * 
+	 * It is expected that the Micromamba installation has executable commands as shown below:
 	 * 
 	 * <pre>
-	 * CONDA_ROOT
-	 * ├── condabin
-	 * │   ├── conda(.bat)
+	 * MAMBA_ROOT
+	 * ├── bin
+	 * │   ├── micromamba(.exe)
 	 * │   ... 
 	 * ├── envs
 	 * │   ├── your_env
@@ -147,24 +245,69 @@ public class Conda {
 	 *             If the current thread is interrupted by another thread while it
 	 *             is waiting, then the wait is ended and an InterruptedException is
 	 *             thrown.
-	 * @throws ArchiveException if there is any error decompressing the micromamba files
-	 * @throws URISyntaxException if the micromamba install link is wrong or does not work or there is no internet connection
+	 * @throws ArchiveException 
+	 * @throws URISyntaxException 
+	 * @throws MambaInstallException if Micromamba has not been installed in the default path {@link #BASE_PATH}
 	 */
-	public Conda() throws IOException, InterruptedException, ArchiveException, URISyntaxException
+	public Mamba() throws IOException, 
+							InterruptedException, ArchiveException, 
+							URISyntaxException, MambaInstallException
 	{
-		this(BASE_PATH);
+		this(BASE_PATH, false);
 	}
 
 	/**
-	 * Create a new Conda object. The root dir for Conda installation can be
-	 * specified as {@code String}. If there is no directory found at the specified
-	 * path, Miniconda will be automatically installed in the path. It is expected
-	 * that the Conda installation has executable commands as shown below:
+	 * Create a new {@link Mamba} object. The root dir for the Micromamba installation
+	 * will be the default base path defined at {@link BASE_PATH}
+	 * If there is no Micromamba found at the specified
+	 * path, it will be installed automatically if the parameter 'installIfNeeded'
+	 * is true. If not a {@link MambaInstallException} will be thrown.
+	 * 
+	 * It is expected that the Micromamba installation has executable commands as shown below:
 	 * 
 	 * <pre>
-	 * CONDA_ROOT
-	 * ├── condabin
-	 * │   ├── conda(.bat)
+	 * MAMBA_ROOT
+	 * ├── bin
+	 * │   ├── micromamba(.exe)
+	 * │   ... 
+	 * ├── envs
+	 * │   ├── your_env
+	 * │   │   ├── python(.exe)
+	 * </pre>
+	 * 
+	 * @param installIfNeeded
+	 * 	if Micormamba is not installed in the default dir {@link #BASE_PATH}, Appose installs it
+	 * 	automatically
+	 * 
+	 * @throws IOException
+	 *             If an I/O error occurs.
+	 * @throws InterruptedException
+	 *             If the current thread is interrupted by another thread while it
+	 *             is waiting, then the wait is ended and an InterruptedException is
+	 *             thrown.
+	 * @throws ArchiveException 
+	 * @throws URISyntaxException 
+	 * @throws MambaInstallException if Micromamba has not been installed in the default path {@link #BASE_PATH} 
+	 *  and 'installIfNeeded' is false
+	 */
+	public Mamba(boolean installIfNeeded) throws IOException, 
+													InterruptedException, ArchiveException, 
+													URISyntaxException, MambaInstallException
+	{
+		this(BASE_PATH, installIfNeeded);
+	}
+
+	/**
+	 * Create a new Mamba object. The root dir for Mamba installation can be
+	 * specified as {@code String}. 
+	 * If there is no Micromamba found at the specified path, a {@link MambaInstallException} will be thrown.
+	 * 
+	 * It is expected that the Micromamba installation has executable commands as shown below:
+	 * 
+	 * <pre>
+	 * MAMBA_ROOT
+	 * ├── bin
+	 * │   ├── micromamba(.exe)
 	 * │   ... 
 	 * ├── envs
 	 * │   ├── your_env
@@ -172,56 +315,178 @@ public class Conda {
 	 * </pre>
 	 * 
 	 * @param rootdir
-	 *            The root dir for Conda installation.
+	 *            The root dir for Mamba installation.
 	 * @throws IOException
 	 *             If an I/O error occurs.
 	 * @throws InterruptedException
 	 *             If the current thread is interrupted by another thread while it
 	 *             is waiting, then the wait is ended and an InterruptedException is
 	 *             thrown.
-	 * @throws ArchiveException if there is any error decompressing the micromamba files
-	 * @throws URISyntaxException if the micromamba install link is wrong or does not work or there is no internet connection
+	 * @throws ArchiveException 
+	 * @throws URISyntaxException 
+	 * @throws MambaInstallException if Micromamba has not been installed in the provided 'rootdir' path
 	 */
-	public Conda( final String rootdir ) throws IOException, InterruptedException, ArchiveException, URISyntaxException
+	public Mamba( final String rootdir) throws IOException, 
+												InterruptedException, ArchiveException, 
+												URISyntaxException, MambaInstallException
+	{
+		this(rootdir, false);
+	}
+
+	/**
+	 * Create a new Conda object. The root dir for Conda installation can be
+	 * specified as {@code String}. 
+	 * If there is no Micromamba found at the specified path, it will be installed automatically 
+	 * if the parameter 'installIfNeeded' is true. If not a {@link MambaInstallException} will be thrown.
+	 * 
+	 * It is expected that the Conda installation has executable commands as shown below:
+	 * 
+	 * <pre>
+	 * MAMBA_ROOT
+	 * ├── bin
+	 * │   ├── micromamba(.exe)
+	 * │   ... 
+	 * ├── envs
+	 * │   ├── your_env
+	 * │   │   ├── python(.exe)
+	 * </pre>
+	 * 
+	 * @param rootdir
+	 *  The root dir for Mamba installation.
+	 * @param installIfNeeded
+	 * 	if Micormamba is not installed in the path specified by 'rootdir', Appose installs it
+	 * 	automatically
+	 * @throws IOException
+	 *             If an I/O error occurs.
+	 * @throws InterruptedException
+	 *             If the current thread is interrupted by another thread while it
+	 *             is waiting, then the wait is ended and an InterruptedException is
+	 *             thrown.
+	 * @throws ArchiveException 
+	 * @throws URISyntaxException 
+	 * @throws MambaInstallException if Micromamba has not been installed in the dir defined by 'rootdir' 
+	 *  and 'installIfNeeded' is false
+	 */
+	public Mamba( final String rootdir, boolean installIfMissing) throws IOException, 
+																			InterruptedException, ArchiveException, 
+																			URISyntaxException, MambaInstallException
 	{
 		if (rootdir == null)
 			this.rootdir = BASE_PATH;
 		else
 			this.rootdir = rootdir;
-		this.condaCommand = this.rootdir + CONDA_RELATIVE_PATH;
-		this.envsdir = this.rootdir + File.separator + "envs";
-		if ( Files.notExists( Paths.get( condaCommand ) ) )
-		{
-
-			final File tempFile = File.createTempFile( "miniconda", ".tar.bz2" );
-			tempFile.deleteOnExit();
-			URL website = MambaInstallerUtils.redirectedURL(new URL(MICROMAMBA_URL));
-			ReadableByteChannel rbc = Channels.newChannel(website.openStream());
-			try (FileOutputStream fos = new FileOutputStream(tempFile)) {
-				fos.getChannel().transferFrom(rbc, 0, Long.MAX_VALUE);
-			}
-			final File tempTarFile = File.createTempFile( "miniconda", ".tar" );
-			tempTarFile.deleteOnExit();
-			MambaInstallerUtils.unBZip2(tempFile, tempTarFile);
-			File mambaBaseDir = new File(rootdir);
-			if (!mambaBaseDir.isDirectory() && !mambaBaseDir.mkdirs())
-    	        throw new IOException("Failed to create Micromamba default directory " + mambaBaseDir.getParentFile().getAbsolutePath());
-			MambaInstallerUtils.unTar(tempTarFile, mambaBaseDir);
-			if (!(new File(envsdir)).isDirectory() && !new File(envsdir).mkdirs())
-    	        throw new IOException("Failed to create Micromamba default envs directory " + envsdir);
-			
+		this.mambaCommand = this.rootdir + MICROMAMBA_RELATIVE_PATH;
+		this.envsdir = this.rootdir + File.separator + ENVS_NAME;
+		boolean filesExist = Files.notExists( Paths.get( mambaCommand ) );
+		if (!filesExist && !installIfMissing)
+			throw new MambaInstallException();
+		boolean installed = true;
+		try {
+			getVersion();
+		} catch (RuntimeException ex) {
+			installed = false;
 		}
-
-		// The following command will throw an exception if Conda does not work as
-		// expected.
-		boolean executableSet = new File(condaCommand).setExecutable(true);
+		if (!installed && !installIfMissing)
+			throw new MambaInstallException("Even though Micromamba installation has been found, "
+					+ "it did not work as expected. Re-installation is advised. Path of installation found: " + this.rootdir);
+		if (installed)
+			return;
+		installMicromamba();
+	}
+	
+	/**
+	 * 
+	 * @return the progress made on the download from the Internet of the micromamba software. VAlue between 0 and 1.
+	 */
+	public double getMicromambaDownloadProgress(){
+		return this.mambaDnwldProgress;
+	}
+	
+	/**
+	 * 
+	 * @returnthe the progress made on the decompressing the micromamba files downloaded from the Internet of the micromamba 
+	 * software. VAlue between 0 and 1.
+	 */
+	public double getMicromambaDecompressProgress(){
+		return this.mambaDecompressProgress;
+	}
+	
+	/**
+	 * 
+	 * @return all the console output produced by micromamba ever since the {@link Mamba} was instantiated
+	 */
+	public String getMicromambaConsoleStream(){
+		return this.mambaConsoleOut;
+	}
+	
+	/**
+	 * 
+	 * @return all the error output produced by micromamba ever since the {@link Mamba} was instantiated
+	 */
+	public String getMicromambaErrStream(){
+		return mambaConsoleErr;
+	}
+	
+	/**
+	 * Set a custom consumer for the console output of every micromamba call
+	 * @param custom
+	 * 	custom consumer that receives every console line outputed by ecery micromamba call
+	 */
+	public void setConsoleOutputConsumer(Consumer<String> custom) {
+		this.customConsoleConsumer = custom;
+	}
+	
+	/**
+	 * Set a custom consumer for the error output of every micromamba call
+	 * @param custom
+	 * 	custom consumer that receives every error line outputed by ecery micromamba call
+	 */
+	public void setErrorOutputConsumer(Consumer<String> custom) {
+		this.customErrorConsumer = custom;
+	}
+	
+	private File downloadMicromamba() throws IOException, URISyntaxException {
+		final File tempFile = File.createTempFile( "micromamba", ".tar.bz2" );
+		tempFile.deleteOnExit();
+		URL website = MambaInstallerUtils.redirectedURL(new URL(MICROMAMBA_URL));
+		long size = DownloadModel.getFileSize(website);
+		Thread currentThread = Thread.currentThread();
+		Thread dwnldThread = new Thread(() -> {
+			try (
+					ReadableByteChannel rbc = Channels.newChannel(website.openStream());
+					FileOutputStream fos = new FileOutputStream(tempFile);
+					) {
+				new FileDownloader(rbc, fos).call(currentThread);
+			} catch (IOException | InterruptedException e) {
+				e.printStackTrace();
+			}
+		});
+		dwnldThread.start();
+		while (dwnldThread.isAlive()) 
+			this.mambaDnwldProgressConsumer.accept(((double) tempFile.length()) / ((double) size));
+		if ((((double) tempFile.length()) / ((double) size)) < 1)
+			throw new IOException("Error downloading micromamba from: " + MICROMAMBA_URL);
+		return tempFile;
+	}
+	
+	private void decompressMicromamba(final File tempFile) throws FileNotFoundException, IOException, ArchiveException {
+		final File tempTarFile = File.createTempFile( "micromamba", ".tar" );
+		tempTarFile.deleteOnExit();
+		MambaInstallerUtils.unBZip2(tempFile, tempTarFile);
+		File mambaBaseDir = new File(rootdir);
+		if (!mambaBaseDir.isDirectory() && !mambaBaseDir.mkdirs())
+	        throw new IOException("Failed to create Micromamba default directory " + mambaBaseDir.getParentFile().getAbsolutePath());
+		MambaInstallerUtils.unTar(tempTarFile, mambaBaseDir);
+		if (!(new File(envsdir)).isDirectory() && !new File(envsdir).mkdirs())
+	        throw new IOException("Failed to create Micromamba default envs directory " + envsdir);
+		boolean executableSet = new File(mambaCommand).setExecutable(true);
 		if (!executableSet)
 			throw new IOException("Cannot set file as executable due to missing permissions, "
-					+ "please do it manually: " + condaCommand);
-		
-		// The following command will throw an exception if Conda does not work as
-		// expected.
-		getVersion();
+					+ "please do it manually: " + mambaCommand);
+	}
+	
+	private void installMicromamba() throws IOException, InterruptedException, ArchiveException, URISyntaxException {
+		decompressMicromamba(downloadMicromamba());
 	}
 	
 	public String getEnvsDir() {
@@ -239,7 +504,7 @@ public class Conda {
 	private static List< String > getBaseCommand()
 	{
 		final List< String > cmd = new ArrayList<>();
-		if ( PlatformDetection.isWindows() )
+		if ( SystemUtils.IS_OS_WINDOWS )
 			cmd.addAll( Arrays.asList( "cmd.exe", "/c" ) );
 		return cmd;
 	}
@@ -281,9 +546,9 @@ public class Conda {
 	 */
 	public void updateIn( final String envName, final String... args ) throws IOException, InterruptedException
 	{
-		final List< String > cmd = new ArrayList<>( Arrays.asList( "update", "-y", "-n", envName ) );
+		final List< String > cmd = new ArrayList<>( Arrays.asList( "update", "-y", "-p", this.envsdir + File.separator + envName ) );
 		cmd.addAll( Arrays.asList( args ) );
-		runConda( cmd.stream().toArray( String[]::new ) );
+		runMamba( cmd.stream().toArray( String[]::new ) );
 	}
 
 	/**
@@ -311,27 +576,6 @@ public class Conda {
 	 * @param envName
 	 *            The environment name to be created.
 	 * @param envYaml
-	 *            The environment yaml file containing the information required to build it 
-	 * @param consumer
-	 *            String consumer that keeps track of the environment creation
-	 * @throws IOException
-	 *             If an I/O error occurs.
-	 * @throws InterruptedException
-	 *             If the current thread is interrupted by another thread while it
-	 *             is waiting, then the wait is ended and an InterruptedException is
-	 *             thrown.
-	 */
-	public void createWithYaml( final String envName, final String envYaml, Consumer<String> consumer ) throws IOException, InterruptedException
-	{
-		createWithYaml(envName, envYaml, false, consumer);
-	}
-
-	/**
-	 * Run {@code conda create} to create a conda environment defined by the input environment yaml file.
-	 * 
-	 * @param envName
-	 *            The environment name to be created.
-	 * @param envYaml
 	 *            The environment yaml file containing the information required to build it  
 	 * @param envName
 	 *            The environment name to be created.
@@ -346,41 +590,11 @@ public class Conda {
 	 *             is waiting, then the wait is ended and an InterruptedException is
 	 *             thrown.
 	 */
-	public void createWithYaml( final String envName, final String envYaml, final boolean isForceCreation ) throws IOException, InterruptedException
+	public void createWithYaml( final String envName, final String envYaml, final boolean isForceCreation) throws IOException, InterruptedException
 	{
 		if ( !isForceCreation && getEnvironmentNames().contains( envName ) )
 			throw new EnvironmentExistsException();
-		runConda( "env", "create", "--prefix",
-				envsdir + File.separator + envName, "-f", envYaml, "-y" );
-	}
-
-	/**
-	 * Run {@code conda create} to create a conda environment defined by the input environment yaml file.
-	 * 
-	 * @param envName
-	 *            The environment name to be created.
-	 * @param envYaml
-	 *            The environment yaml file containing the information required to build it  
-	 * @param envName
-	 *            The environment name to be created.
-	 * @param isForceCreation
-	 *            Force creation of the environment if {@code true}. If this value
-	 *            is {@code false} and an environment with the specified name
-	 *            already exists, throw an {@link EnvironmentExistsException}.
-	 * @param consumer
-	 *            String consumer that keeps track of the environment creation
-	 * @throws IOException
-	 *             If an I/O error occurs.
-	 * @throws InterruptedException
-	 *             If the current thread is interrupted by another thread while it
-	 *             is waiting, then the wait is ended and an InterruptedException is
-	 *             thrown.
-	 */
-	public void createWithYaml( final String envName, final String envYaml, final boolean isForceCreation, Consumer<String> consumer) throws IOException, InterruptedException
-	{
-		if ( !isForceCreation && getEnvironmentNames().contains( envName ) )
-			throw new EnvironmentExistsException();
-		runConda(consumer, "env", "create", "--prefix",
+		runMamba("env", "create", "--prefix",
 				envsdir + File.separator + envName, "-f", envYaml, "-y", "-vv" );
 	}
 
@@ -421,7 +635,7 @@ public class Conda {
 	{
 		if ( !isForceCreation && getEnvironmentNames().contains( envName ) )
 			throw new EnvironmentExistsException();
-		runConda( "create", "-y", "-p", envsdir + File.separator + envName );
+		runMamba( "create", "-y", "-p", envsdir + File.separator + envName );
 	}
 
 	/**
@@ -429,35 +643,16 @@ public class Conda {
 	 * specified packages.
 	 * 
 	 * @param envName
-	 *            The environment name to be created.
-	 * @param args
-	 *            The list of packages to be installed on environment creation and
-	 *            extra parameters as {@code String...}.
-	 * @throws IOException
-	 *             If an I/O error occurs.
-	 * @throws InterruptedException
-	 *             If the current thread is interrupted by another thread while it
-	 *             is waiting, then the wait is ended and an InterruptedException is
-	 *             thrown.
-	 */
-	public void create( final String envName, final String... args ) throws IOException, InterruptedException
-	{
-		create( envName, false, args );
-	}
-
-	/**
-	 * Run {@code conda create} to create a new conda environment with a list of
-	 * specified packages.
-	 * 
-	 * @param envName
-	 *            The environment name to be created.
+	 *            The environment name to be created. CAnnot be null.
 	 * @param isForceCreation
 	 *            Force creation of the environment if {@code true}. If this value
 	 *            is {@code false} and an environment with the specified name
 	 *            already exists, throw an {@link EnvironmentExistsException}.
-	 * @param args
-	 *            The list of packages to be installed on environment creation and
-	 *            extra parameters as {@code String...}.
+	 * @param channels
+	 *            the channels from where the packages can be installed. Can be null
+	 * @param packages
+	 * 			  the packages that want to be installed during env creation. They can contain the version.
+	 * 			  For example, "python" or "python=3.10.1", "numpy" or "numpy=1.20.1". CAn be null if no packages want to be installed
 	 * @throws IOException
 	 *             If an I/O error occurs.
 	 * @throws InterruptedException
@@ -465,19 +660,22 @@ public class Conda {
 	 *             is waiting, then the wait is ended and an InterruptedException is
 	 *             thrown.
 	 */
-	public void create( final String envName, final boolean isForceCreation, final String... args ) throws IOException, InterruptedException
+	public void create( final String envName, final boolean isForceCreation, List<String> channels, List<String> packages ) throws IOException, InterruptedException
 	{
+		Objects.requireNonNull(envName, "The name of the environment of interest needs to be provided.");
 		if ( !isForceCreation && getEnvironmentNames().contains( envName ) )
 			throw new EnvironmentExistsException();
-		final List< String > cmd = new ArrayList<>( Arrays.asList( "env", "create", "-p", envsdir + File.separator + envName ) );
-		cmd.addAll( Arrays.asList( args ) );
-		cmd.add("--yes");
-		runConda( cmd.stream().toArray( String[]::new ) );
+		final List< String > cmd = new ArrayList<>( Arrays.asList( "env", "create", "--force", "-p", envsdir + File.separator + envName ) );
+		if (channels == null) channels = new ArrayList<String>();
+		for (String chan : channels) { cmd.add("-c"); cmd.add(chan);}
+		if (packages == null) packages = new ArrayList<String>();
+		for (String pack : packages) { cmd.add(pack);}
+		runMamba( cmd.stream().toArray( String[]::new ) );
 	}
 
 	/**
 	 * This method works as if the user runs {@code conda activate envName}. This
-	 * method internally calls {@link Conda#setEnvName(String)}.
+	 * method internally calls {@link Mamba#setEnvName(String)}.
 	 * 
 	 * @param envName
 	 *            The environment name to be activated.
@@ -545,6 +743,56 @@ public class Conda {
 	}
 
 	/**
+	 * Run {@code conda install} in the activated environment. A list of packages to
+	 * install and extra parameters can be specified as {@code args}.
+	 * 
+	 * @param channels
+	 *            the channels from where the packages can be installed. Can be null
+	 * @param packages
+	 * 			  the packages that want to be installed during env creation. They can contain the version.
+	 * 			  For example, "python" or "python=3.10.1", "numpy" or "numpy=1.20.1". CAn be null if no packages want to be installed
+	 * @throws IOException
+	 *             If an I/O error occurs.
+	 * @throws InterruptedException
+	 *             If the current thread is interrupted by another thread while it
+	 *             is waiting, then the wait is ended and an InterruptedException is
+	 *             thrown.
+	 */
+	public void install( List<String> channels, List<String> packages ) throws IOException, InterruptedException
+	{
+		installIn( envName, channels, packages );
+	}
+
+	/**
+	 * Run {@code conda install} in the specified environment. A list of packages to
+	 * install and extra parameters can be specified as {@code args}.
+	 * 
+	 * @param envName
+	 *            The environment name to be used for the install command.
+	 * @param channels
+	 *            the channels from where the packages can be installed. Can be null
+	 * @param packages
+	 * 			  the packages that want to be installed during env creation. They can contain the version.
+	 * 			  For example, "python" or "python=3.10.1", "numpy" or "numpy=1.20.1". CAn be null if no packages want to be installed
+	 * @throws IOException
+	 *             If an I/O error occurs.
+	 * @throws InterruptedException
+	 *             If the current thread is interrupted by another thread while it
+	 *             is waiting, then the wait is ended and an InterruptedException is
+	 *             thrown.
+	 */
+	public void installIn( final String envName, List<String> channels, List<String> packages ) throws IOException, InterruptedException
+	{
+		Objects.requireNonNull(envName, "The name of the environment of interest needs to be provided.");		
+		final List< String > cmd = new ArrayList<>( Arrays.asList( "install", "-y", "-p", this.envsdir + File.separator + envName ) );
+		if (channels == null) channels = new ArrayList<String>();
+		for (String chan : channels) { cmd.add("-c"); cmd.add(chan);}
+		if (packages == null) packages = new ArrayList<String>();
+		for (String pack : packages) { cmd.add(pack);}
+		runMamba( cmd.stream().toArray( String[]::new ) );
+	}
+
+	/**
 	 * Run {@code conda install} in the specified environment. A list of packages to
 	 * install and extra parameters can be specified as {@code args}.
 	 * 
@@ -562,9 +810,9 @@ public class Conda {
 	 */
 	public void installIn( final String envName, final String... args ) throws IOException, InterruptedException
 	{
-		final List< String > cmd = new ArrayList<>( Arrays.asList( "install", "-y", "-n", envName ) );
+		final List< String > cmd = new ArrayList<>( Arrays.asList( "install", "-y", "-p", this.envsdir + File.separator + envName ) );
 		cmd.addAll( Arrays.asList( args ) );
-		runConda( cmd.stream().toArray( String[]::new ) );
+		runMamba( cmd.stream().toArray( String[]::new ) );
 	}
 
 	/**
@@ -652,13 +900,13 @@ public class Conda {
 		if ( envName.equals( DEFAULT_ENVIRONMENT_NAME ) )
 			cmd.add( PYTHON_COMMAND );
 		else
-			cmd.add( Paths.get( "envs", envName, PYTHON_COMMAND ).toString() );
+			cmd.add( Paths.get( ENVS_NAME, envName, PYTHON_COMMAND ).toString() );
 		cmd.addAll( Arrays.asList( args ) );
 		final ProcessBuilder builder = getBuilder( true );
 		if ( PlatformDetection.isWindows() )
 		{
 			final Map< String, String > envs = builder.environment();
-			final String envDir = Paths.get( rootdir, "envs", envName ).toString();
+			final String envDir = Paths.get( rootdir, ENVS_NAME, envName ).toString();
 			envs.put( "Path", envDir + ";" + envs.get( "Path" ) );
 			envs.put( "Path", Paths.get( envDir, "Scripts" ).toString() + ";" + envs.get( "Path" ) );
 			envs.put( "Path", Paths.get( envDir, "Library" ).toString() + ";" + envs.get( "Path" ) );
@@ -724,7 +972,7 @@ public class Conda {
 	public String getVersion() throws IOException, InterruptedException
 	{
 		final List< String > cmd = getBaseCommand();
-		cmd.addAll( Arrays.asList( condaCommand, "--version" ) );
+		cmd.addAll( Arrays.asList( mambaCommand, "--version" ) );
 		final Process process = getBuilder( false ).command( cmd ).start();
 		if ( process.waitFor() != 0 )
 			throw new RuntimeException();
@@ -738,6 +986,9 @@ public class Conda {
 	 * 			  String consumer that receives the Strings that the process prints to the console
 	 * @param args
 	 *            One or more arguments for the Conda command.
+	 * @param isInheritIO
+	 *            Sets the source and destination for subprocess standard I/O to be
+	 *            the same as those of the current Java process.
 	 * @throws IOException
 	 *             If an I/O error occurs.
 	 * @throws InterruptedException
@@ -745,18 +996,19 @@ public class Conda {
 	 *             is waiting, then the wait is ended and an InterruptedException is
 	 *             thrown.
 	 */
-	public void runConda(Consumer<String> consumer, final String... args ) throws RuntimeException, IOException, InterruptedException
+	public void runMamba(boolean isInheritIO, final String... args ) throws RuntimeException, IOException, InterruptedException
 	{
+		Thread mainThread = Thread.currentThread();
 		SimpleDateFormat sdf = new SimpleDateFormat("HH:mm:ss");
 		
 		final List< String > cmd = getBaseCommand();
-		cmd.add( condaCommand );
+		cmd.add( mambaCommand );
 		cmd.addAll( Arrays.asList( args ) );
 
-		ProcessBuilder builder = getBuilder(false).command(cmd);
+		ProcessBuilder builder = getBuilder(isInheritIO).command(cmd);
 		Process process = builder.start();
 		// Use separate threads to read each stream to avoid a deadlock.
-		consumer.accept(sdf.format(Calendar.getInstance().getTime()) + " -- STARTING INSTALLATION" + System.lineSeparator());
+		this.consoleConsumer.accept(sdf.format(Calendar.getInstance().getTime()) + " -- STARTING INSTALLATION" + System.lineSeparator());
 		long updatePeriod = 300;
 		Thread outputThread = new Thread(() -> {
 			try (
@@ -771,6 +1023,7 @@ public class Conda {
                 int newLineIndex;
 		        long t0 = System.currentTimeMillis();
 		        while (process.isAlive() || inputStream.available() > 0) {
+		        	if (mainThread.isInterrupted()) return;
 		            if (inputStream.available() > 0) {
 		                processBuff.append(new String(buffer, 0, inputStream.read(buffer)));
 		                while ((newLineIndex = processBuff.indexOf(System.lineSeparator())) != -1) {
@@ -789,8 +1042,7 @@ public class Conda {
 	                // Sleep for a bit to avoid busy waiting
 	                Thread.sleep(60);
 	                if (System.currentTimeMillis() - t0 > updatePeriod) {
-						// TODO decide what to do with the err stream consumer.accept(errChunk.equals("") ? null : errChunk);
-						consumer.accept(processChunk);
+						this.consoleConsumer.accept(processChunk);
 						processChunk = "";
 						errChunk = "";
 						t0 = System.currentTimeMillis();
@@ -804,9 +1056,9 @@ public class Conda {
 	                errBuff.append(new String(buffer, 0, errStream.read(buffer)));
 	                errChunk += ERR_STREAM_UUUID + errBuff.toString().trim();
 	            }
-				consumer.accept(errChunk);
-				consumer.accept(processChunk + System.lineSeparator() 
-								+ sdf.format(Calendar.getInstance().getTime()) + " -- TERMINATED INSTALLATION");
+				this.errConsumer.accept(errChunk);
+				this.consoleConsumer.accept(processChunk + System.lineSeparator() 
+								+ sdf.format(Calendar.getInstance().getTime()) + " -- TERMINATED PROCESS");
 		    } catch (IOException | InterruptedException e) {
 		        e.printStackTrace();
 		    }
@@ -827,20 +1079,14 @@ public class Conda {
 	 *            One or more arguments for the Conda command.
 	 * @throws IOException
 	 *             If an I/O error occurs.
-	 * @throws RuntimeException
-	 *             If the Conda command does not run properly
 	 * @throws InterruptedException
 	 *             If the current thread is interrupted by another thread while it
 	 *             is waiting, then the wait is ended and an InterruptedException is
 	 *             thrown.
 	 */
-	public void runConda(final String... args ) throws RuntimeException, IOException, InterruptedException
+	public void runMamba(final String... args ) throws RuntimeException, IOException, InterruptedException
 	{
-		final List< String > cmd = getBaseCommand();
-		cmd.add( condaCommand );
-		cmd.addAll( Arrays.asList( args ) );
-		if ( getBuilder( true ).command( cmd ).start().waitFor() != 0 )
-			throw new RuntimeException();
+		runMamba(false, args);
 	}
 
 	/**
@@ -906,6 +1152,10 @@ public class Conda {
 	 * @return The list of the Conda environment names as {@code List< String >}.
 	 * @throws IOException
 	 *             If an I/O error occurs.
+	 * @throws InterruptedException
+	 *             If the current thread is interrupted by another thread while it
+	 *             is waiting, then the wait is ended and an InterruptedException is
+	 *             thrown.
 	 */
 	public List< String > getEnvironmentNames() throws IOException
 	{
@@ -917,28 +1167,69 @@ public class Conda {
 		return envs;
 	}
 	
-	public static boolean checkAllDependenciesInEnv(String envDir, List<String> dependencies) {
-		return checkUninstalledDependenciesInEnv(envDir, dependencies).size() == 0;
+	/**
+	 * Check whether a list of dependencies provided is installed in the wanted environment.
+	 * 
+	 * @param envName
+	 * 	The name of the environment of interest. Should be one of the environments of the current Mamba instance.
+	 * 	This parameter can also be the full path to an independent environment.
+	 * @param dependencies
+	 * 	The list of dependencies that should be installed in the environment.
+	 * 	They can contain version requirements. The names should be the ones used to import the package inside python,
+	 * 	"skimage", not "scikit-image" or "sklearn", not "scikit-learn"
+	 * 	An example list: "numpy", "numba>=0.43.1", "torch==1.6", "torch>=1.6, <2.0"
+	 * @return true if the packages are installed or false otherwise
+	 */
+	public boolean checkAllDependenciesInEnv(String envName, List<String> dependencies) {
+		return checkUninstalledDependenciesInEnv(envName, dependencies).size() == 0;
 	}
 	
-	public static List<String>  checkUninstalledDependenciesInEnv(String envDir, List<String> dependencies) {
-		File envFile = new File(envDir);
-		if (!envFile.isDirectory())
+	/**
+	 * Returns a list containing the packages that are not installed in the wanted environment
+	 * from the list of dependencies provided
+	 * 
+	 * @param envName
+	 * 	The name of the environment of interest. Should be one of the environments of the current Mamba instance.
+	 * 	This parameter can also be the full path to an independent environment.
+	 * @param dependencies
+	 * 	The list of dependencies that should be installed in the environment.
+	 * 	They can contain version requirements. The names should be the ones used to import the package inside python,
+	 * 	"skimage", not "scikit-image" or "sklearn", not "scikit-learn"
+	 * 	An example list: "numpy", "numba>=0.43.1", "torch==1.6", "torch>=1.6, <2.0"
+	 * @return true if the packages are installed or false otherwise
+	 */
+	public List<String>  checkUninstalledDependenciesInEnv(String envName, List<String> dependencies) {
+		File envFile = new File(this.envsdir, envName);
+		File envFile2 = new File(envName);
+		if (!envFile.isDirectory() && !envFile2.isDirectory())
 			return dependencies;
 		List<String> uninstalled = dependencies.stream().filter(dep -> {
 			int ind = dep.indexOf("=");
-			if (ind == -1) return !checkDependencyInEnv(envDir, dep);
+			if (ind == -1) return !checkDependencyInEnv(envName, dep);
 			String packName = dep.substring(0, ind);
 			String vv = dep.substring(ind + 1);
-			return !checkDependencyInEnv(envDir, packName, vv);
+			return !checkDependencyInEnv(envName, packName, vv);
 		}).collect(Collectors.toList());
 		return uninstalled;
 	}
 	
-	public static boolean checkDependencyInEnv(String envDir, String dependency) {
+	/**
+	 * Checks whether a package is installed in the wanted environment.
+	 * 
+	 * @param envName
+	 * 	The name of the environment of interest. Should be one of the environments of the current Mamba instance.
+	 * 	This parameter can also be the full path to an independent environment.
+	 * @param dependencies
+	 * 	The name of the package that should be installed in the env
+	 * 	They can contain version requirements. The names should be the ones used to import the package inside python,
+	 * 	"skimage", not "scikit-image" or "sklearn", not "scikit-learn"
+	 * 	An example list: "numpy", "numba>=0.43.1", "torch==1.6", "torch>=1.6, <2.0"
+	 * @return true if the package is installed or false otherwise
+	 */
+	public boolean checkDependencyInEnv(String envName, String dependency) {
 		if (dependency.contains("==")) {
 			int ind = dependency.indexOf("==");
-			return checkDependencyInEnv(envDir, dependency.substring(0, ind).trim(), dependency.substring(ind + 2).trim());
+			return checkDependencyInEnv(envName, dependency.substring(0, ind).trim(), dependency.substring(ind + 2).trim());
 		} else if (dependency.contains(">=") && dependency.contains("<=") && dependency.contains(",")) {
 			int commaInd = dependency.indexOf(",");
 			int highInd = dependency.indexOf(">=");
@@ -947,7 +1238,7 @@ public class Conda {
 			String packName = dependency.substring(0, minInd).trim();
 			String minV = dependency.substring(lowInd + 1, lowInd < highInd ? commaInd : dependency.length());
 			String maxV = dependency.substring(highInd + 1, lowInd < highInd ? dependency.length() : commaInd);
-			return checkDependencyInEnv(envDir, packName, minV, maxV, false);
+			return checkDependencyInEnv(envName, packName, minV, maxV, false);
 		} else if (dependency.contains(">=") && dependency.contains("<") && dependency.contains(",")) {
 			int commaInd = dependency.indexOf(",");
 			int highInd = dependency.indexOf(">=");
@@ -956,7 +1247,7 @@ public class Conda {
 			String packName = dependency.substring(0, minInd).trim();
 			String minV = dependency.substring(lowInd + 1, lowInd < highInd ? commaInd : dependency.length());
 			String maxV = dependency.substring(highInd + 1, lowInd < highInd ? dependency.length() : commaInd);
-			return checkDependencyInEnv(envDir, packName, minV, null, false) && checkDependencyInEnv(envDir, packName, null, maxV, true);
+			return checkDependencyInEnv(envName, packName, minV, null, false) && checkDependencyInEnv(envName, packName, null, maxV, true);
 		} else if (dependency.contains(">") && dependency.contains("<=") && dependency.contains(",")) {
 			int commaInd = dependency.indexOf(",");
 			int highInd = dependency.indexOf(">");
@@ -965,7 +1256,7 @@ public class Conda {
 			String packName = dependency.substring(0, minInd).trim();
 			String minV = dependency.substring(lowInd + 1, lowInd < highInd ? commaInd : dependency.length());
 			String maxV = dependency.substring(highInd + 1, lowInd < highInd ? dependency.length() : commaInd);
-			return checkDependencyInEnv(envDir, packName, minV, null, true) && checkDependencyInEnv(envDir, packName, null, maxV, false);
+			return checkDependencyInEnv(envName, packName, minV, null, true) && checkDependencyInEnv(envName, packName, null, maxV, false);
 		} else if (dependency.contains(">") && dependency.contains("<") && dependency.contains(",")) {
 			int commaInd = dependency.indexOf(",");
 			int highInd = dependency.indexOf(">");
@@ -974,36 +1265,104 @@ public class Conda {
 			String packName = dependency.substring(0, minInd).trim();
 			String minV = dependency.substring(lowInd + 1, lowInd < highInd ? commaInd : dependency.length());
 			String maxV = dependency.substring(highInd + 1, lowInd < highInd ? dependency.length() : commaInd);
-			return checkDependencyInEnv(envDir, packName, minV, maxV, true);
+			return checkDependencyInEnv(envName, packName, minV, maxV, true);
 		} else if (dependency.contains(">")) {
 			int ind = dependency.indexOf(">");
-			return checkDependencyInEnv(envDir, null, dependency.substring(0, ind).trim(), dependency.substring(ind + 2).trim(), true);
+			return checkDependencyInEnv(envName, null, dependency.substring(0, ind).trim(), dependency.substring(ind + 2).trim(), true);
 		} else if (dependency.contains(">=")) {
 			int ind = dependency.indexOf(">=");
-			return checkDependencyInEnv(envDir, null, dependency.substring(0, ind).trim(), dependency.substring(ind + 2).trim(), false);
+			return checkDependencyInEnv(envName, null, dependency.substring(0, ind).trim(), dependency.substring(ind + 2).trim(), false);
 		} else if (dependency.contains("<=")) {
 			int ind = dependency.indexOf("<=");
-			return checkDependencyInEnv(envDir, dependency.substring(0, ind).trim(), dependency.substring(ind + 2).trim(), null, false);
+			return checkDependencyInEnv(envName, dependency.substring(0, ind).trim(), dependency.substring(ind + 2).trim(), null, false);
 		} else if (dependency.contains("<")) {
 			int ind = dependency.indexOf("<");
-			return checkDependencyInEnv(envDir, dependency.substring(0, ind).trim(), dependency.substring(ind + 1).trim(), null, true);
+			return checkDependencyInEnv(envName, dependency.substring(0, ind).trim(), dependency.substring(ind + 1).trim(), null, true);
 		} else {
-			return checkDependencyInEnv(envDir, dependency, null);
+			return checkDependencyInEnv(envName, dependency, null);
 		}
 	}
 	
-	public static boolean checkDependencyInEnv(String envDir, String dependency, String version) {
+	/**
+	 * Checks whether a package of a specific version is installed in the wanted environment.
+	 * 
+	 * @param envName
+	 * 	The name of the environment of interest. Should be one of the environments of the current Mamba instance.
+	 * 	This parameter can also be the full path to an independent environment.
+	 * @param dependencies
+	 * 	The name of the package that should be installed in the env. The String should only contain the name, no version,
+	 * 	and the name should be the one used to import the package inside python. For example, "skimage", not "scikit-image"
+	 *  or "sklearn", not "scikit-learn".
+	 * @param version
+	 * 	the specific version of the package that needs to be installed. For example:, "0.43.1", "1.6", "2.0"
+	 * @return true if the package is installed or false otherwise
+	 */
+	public boolean checkDependencyInEnv(String envDir, String dependency, String version) {
 		return checkDependencyInEnv(envDir, dependency, version, version, true);
 	}
 	
-	public static boolean checkDependencyInEnv(String envDir, String dependency, String minversion, String maxversion) {
+	/**
+	 * Checks whether a package with specific version constraints is installed in the wanted environment.
+	 * In this method the minversion argument should be strictly smaller than the version of interest and
+	 * the maxversion strictly bigger.
+	 * This method checks that: dependency >minversion, <maxversion
+	 * For smaller or equal or bigger or equal (dependency >=minversion, <=maxversion) look at the method
+	 * {@link #checkDependencyInEnv(String, String, String, String, boolean)} with the lst parameter set to false.
+	 * 
+	 * @param envName
+	 * 	The name of the environment of interest. Should be one of the environments of the current Mamba instance.
+	 * 	This parameter can also be the full path to an independent environment.
+	 * @param dependencies
+	 * 	The name of the package that should be installed in the env. The String should only contain the name, no version,
+	 * 	and the name should be the one used to import the package inside python. For example, "skimage", not "scikit-image"
+	 *  or "sklearn", not "scikit-learn".
+	 * @param minversion
+	 * 	the minimum required version of the package that needs to be installed. For example:, "0.43.1", "1.6", "2.0".
+	 * 	This version should be strictly smaller than the one of interest, if for example "1.9" is given, it is assumed that
+	 * 	pacakge_version>1.9.
+	 * 	If there is no minimum version requirement for the package of interest, set this argument to null.
+	 * @param maxversion
+	 * 	the maximum required version of the package that needs to be installed. For example:, "0.43.1", "1.6", "2.0".
+	 * 	This version should be strictly bigger than the one of interest, if for example "1.9" is given, it is assumed that
+	 * 	pacakge_version<1.9.
+	 * 	If there is no maximum version requirement for the package of interest, set this argument to null.
+	 * @return true if the package is installed or false otherwise
+	 */
+	public boolean checkDependencyInEnv(String envDir, String dependency, String minversion, String maxversion) {
 		return checkDependencyInEnv(envDir, dependency, minversion, maxversion, true);
 	}
 	
-	public static boolean checkDependencyInEnv(String envDir, String dependency, String minversion, String maxversion, boolean strictlyBiggerOrSmaller) {
-		File envFile = new File(envDir);
-		if (!envFile.isDirectory())
+	/**
+	 * Checks whether a package with specific version constraints is installed in the wanted environment.
+	 * Depending on the last argument ('strictlyBiggerOrSmaller') 'minversion' and 'maxversion'
+	 * will be strictly bigger(>=) or smaller(<) or bigger or equal (>=) or smaller or equal<>=)
+	 * In this method the minversion argument should be strictly smaller than the version of interest and
+	 * the maxversion strictly bigger.
+	 * 
+	 * @param envName
+	 * 	The name of the environment of interest. Should be one of the environments of the current Mamba instance.
+	 * 	This parameter can also be the full path to an independent environment.
+	 * @param dependencies
+	 * 	The name of the package that should be installed in the env. The String should only contain the name, no version,
+	 * 	and the name should be the one used to import the package inside python. For example, "skimage", not "scikit-image"
+	 *  or "sklearn", not "scikit-learn".
+	 * @param minversion
+	 * 	the minimum required version of the package that needs to be installed. For example:, "0.43.1", "1.6", "2.0".
+	 * 	If there is no minimum version requirement for the package of interest, set this argument to null.
+	 * @param maxversion
+	 * 	the maximum required version of the package that needs to be installed. For example:, "0.43.1", "1.6", "2.0".
+	 * 	If there is no maximum version requirement for the package of interest, set this argument to null.
+	 * @param strictlyBiggerOrSmaller
+	 * 	Whether the minversion and maxversion shuld be strictly smaller and bigger or not
+	 * @return true if the package is installed or false otherwise
+	 */
+	public boolean checkDependencyInEnv(String envDir, String dependency, String minversion, String maxversion, boolean strictlyBiggerOrSmaller) {
+		File envFile = new File(this.envsdir, envDir);
+		File envFile2 = new File(envDir);
+		if (!envFile.isDirectory() && !envFile2.isDirectory())
 			return false;
+		else if (!envFile.isDirectory())
+			envFile = envFile2;
 		if (dependency.trim().equals("python")) return checkPythonInstallation(envDir, minversion, maxversion, strictlyBiggerOrSmaller);
 		String checkDepCode;
 		if (minversion != null && maxversion != null && minversion.equals(maxversion)) {
@@ -1050,8 +1409,13 @@ public class Conda {
 		return true;
 	}
 	
-	private static boolean checkPythonInstallation(String envDir, String minversion, String maxversion, boolean strictlyBiggerOrSmaller) {
-		File envFile = new File(envDir);
+	private boolean checkPythonInstallation(String envDir, String minversion, String maxversion, boolean strictlyBiggerOrSmaller) {
+		File envFile = new File(this.envsdir, envDir);
+		File envFile2 = new File(envDir);
+		if (!envFile.isDirectory() && !envFile2.isDirectory())
+			return false;
+		else if (!envFile.isDirectory())
+			envFile = envFile2;
 		String checkDepCode;
 		if (minversion != null && maxversion != null && minversion.equals(maxversion)) {
 			checkDepCode = "import platform; from packaging import version as vv; desired_version = '%s'; "
@@ -1074,7 +1438,7 @@ public class Conda {
 			checkDepCode = String.format(checkDepCode, minversion, maxversion, strictlyBiggerOrSmaller ? ">" : ">=", strictlyBiggerOrSmaller ? "<" : ">=");
 		}
 		try {
-			runPythonIn(envFile, checkDepCode);
+			runPythonIn(envFile, "-c", checkDepCode);
 		} catch (RuntimeException | IOException | InterruptedException e) {
 			return false;
 		}
