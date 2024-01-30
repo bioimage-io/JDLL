@@ -54,13 +54,13 @@ public class Builder {
 		// - Populate ${baseDirectory}/jars with Maven artifacts?
 
 		try {
-			Conda conda = new Conda(Conda.BASE_PATH);
+			Mamba conda = new Mamba(Mamba.BASE_PATH);
 			String envName = "appose";
 			if (conda.getEnvironmentNames().contains( envName )) {
 				// TODO: Should we update it? For now, we just use it.
 			}
 			else {
-				conda.create(envName, "-f", condaEnvironmentYaml.getAbsolutePath());
+				conda.createWithYaml(envName, condaEnvironmentYaml.getAbsolutePath());
 			}
 		} catch (IOException e) {
 			throw new RuntimeException(e);
@@ -69,6 +69,8 @@ public class Builder {
 		} catch (ArchiveException e) {
 			throw new RuntimeException(e);
 		} catch (URISyntaxException e) {
+			throw new RuntimeException(e);
+		} catch (MambaInstallException e) {
 			throw new RuntimeException(e);
 		}
 

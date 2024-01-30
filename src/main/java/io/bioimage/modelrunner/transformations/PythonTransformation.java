@@ -33,8 +33,8 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 import org.apache.commons.compress.archivers.ArchiveException;
-import io.bioimage.modelrunner.apposed.appose.Conda;
-
+import io.bioimage.modelrunner.apposed.appose.Mamba;
+import io.bioimage.modelrunner.apposed.appose.MambaInstallException;
 import io.bioimage.modelrunner.numpy.DecodeNumpy;
 import io.bioimage.modelrunner.runmode.RunMode;
 import io.bioimage.modelrunner.runmode.ops.GenericOp;
@@ -229,8 +229,10 @@ public class PythonTransformation extends AbstractTensorTransformation
 	 * @throws InterruptedException
 	 * @throws ArchiveException
 	 * @throws URISyntaxException
+	 * @throws MambaInstallException 
+	 * @throws RuntimeException 
 	 */
-	private void checkArgs() throws IOException, InterruptedException, ArchiveException, URISyntaxException {
+	private void checkArgs() throws IOException, InterruptedException, ArchiveException, URISyntaxException, RuntimeException, MambaInstallException {
 		//Check that the path to the script of interest is correct
 		if (!(new File(script).isFile()) && !(new File(this.scriptFilePath).exists()))
 			throw new IllegalArgumentException();
@@ -292,7 +294,7 @@ public class PythonTransformation extends AbstractTensorTransformation
 	{
 		try {
 			checkArgs();
-		} catch (IOException | InterruptedException | ArchiveException | URISyntaxException e) {
+		} catch (IOException | InterruptedException | ArchiveException | URISyntaxException | RuntimeException | MambaInstallException e) {
 			e.printStackTrace();
 			return Cast.unchecked(input);
 		}
@@ -332,23 +334,23 @@ public class PythonTransformation extends AbstractTensorTransformation
 		System.out.println();
 	}
 	
-	public void installMamba() throws IOException, InterruptedException, ArchiveException, URISyntaxException {
+	public void installMamba() throws IOException, InterruptedException, ArchiveException, URISyntaxException, MambaInstallException {
 		this.mambaPath = new File("appose_" + PlatformDetection.getArch()).getAbsolutePath();
-		new Conda(mambaPath);
+		new Mamba(mambaPath);
 	}
 	
-	public static void installMamba(String dir) throws IOException, InterruptedException, ArchiveException, URISyntaxException {
+	public static void installMamba(String dir) throws IOException, InterruptedException, ArchiveException, URISyntaxException, MambaInstallException {
 		String mambaDir = new File(dir + File.separator + "appose_" + PlatformDetection.getArch()).getAbsolutePath();
-		new Conda(mambaDir);
+		new Mamba(mambaDir);
 	}
 	
 	private void installEnv() throws RuntimeException, IOException, 
-									InterruptedException, ArchiveException, URISyntaxException {
-		Conda conda = new Conda(mambaPath);
+									InterruptedException, ArchiveException, URISyntaxException, MambaInstallException {
+		Mamba conda = new Mamba(mambaPath);
 		final List< String > cmd = 
 				new ArrayList<>( Arrays.asList( "env", "create", "--prefix",
 						envPath + File.separator + "envs", "--force", 
 						"--file", envYaml, "-y" ) );
-		conda.runConda( cmd.stream().toArray( String[]::new ) );
+		conda.runMamba( cmd.stream().toArray( String[]::new ) );
 	}
 }

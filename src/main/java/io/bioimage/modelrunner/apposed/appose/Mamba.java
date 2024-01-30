@@ -504,7 +504,7 @@ public class Mamba {
 	private static List< String > getBaseCommand()
 	{
 		final List< String > cmd = new ArrayList<>();
-		if ( SystemUtils.IS_OS_WINDOWS )
+		if ( PlatformDetection.isWindows() )
 			cmd.addAll( Arrays.asList( "cmd.exe", "/c" ) );
 		return cmd;
 	}
