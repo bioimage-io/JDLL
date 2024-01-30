@@ -383,7 +383,7 @@ public class Mamba {
 		boolean installed = true;
 		try {
 			getVersion();
-		} catch (RuntimeException ex) {
+		} catch (Exception ex) {
 			installed = false;
 		}
 		if (!installed && !installIfMissing)
