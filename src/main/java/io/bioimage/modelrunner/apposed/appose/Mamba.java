@@ -721,7 +721,7 @@ public class Mamba {
 		Objects.requireNonNull(envName, "The name of the environment of interest needs to be provided.");
 		if ( !isForceCreation && getEnvironmentNames().contains( envName ) )
 			throw new EnvironmentExistsException();
-		final List< String > cmd = new ArrayList<>( Arrays.asList( "env", "create", "--force", "-p", envsdir + File.separator + envName ) );
+		final List< String > cmd = new ArrayList<>( Arrays.asList( "env", "create", "-p", envsdir + File.separator + envName ) );
 		if (channels == null) channels = new ArrayList<String>();
 		for (String chan : channels) { cmd.add("-c"); cmd.add(chan);}
 		if (packages == null) packages = new ArrayList<String>();
