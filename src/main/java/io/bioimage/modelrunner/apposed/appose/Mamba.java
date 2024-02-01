@@ -97,6 +97,10 @@ public class Mamba {
 	 */
 	private final String envsdir;
 	/**
+	 * Whether Micromamba is installed or not
+	 */
+	private boolean installed = false;
+	/**
 	 * Progress made on the download from the Internet of the micromamba software. VAlue between 0 and 1.
 	 * 
 	 */
@@ -253,84 +257,7 @@ public class Mamba {
 							InterruptedException, ArchiveException, 
 							URISyntaxException, MambaInstallException
 	{
-		this(BASE_PATH, false);
-	}
-
-	/**
-	 * Create a new {@link Mamba} object. The root dir for the Micromamba installation
-	 * will be the default base path defined at {@link BASE_PATH}
-	 * If there is no Micromamba found at the specified
-	 * path, it will be installed automatically if the parameter 'installIfNeeded'
-	 * is true. If not a {@link MambaInstallException} will be thrown.
-	 * 
-	 * It is expected that the Micromamba installation has executable commands as shown below:
-	 * 
-	 * <pre>
-	 * MAMBA_ROOT
-	 * ├── bin
-	 * │   ├── micromamba(.exe)
-	 * │   ... 
-	 * ├── envs
-	 * │   ├── your_env
-	 * │   │   ├── python(.exe)
-	 * </pre>
-	 * 
-	 * @param installIfNeeded
-	 * 	if Micormamba is not installed in the default dir {@link #BASE_PATH}, Appose installs it
-	 * 	automatically
-	 * 
-	 * @throws IOException
-	 *             If an I/O error occurs.
-	 * @throws InterruptedException
-	 *             If the current thread is interrupted by another thread while it
-	 *             is waiting, then the wait is ended and an InterruptedException is
-	 *             thrown.
-	 * @throws ArchiveException 
-	 * @throws URISyntaxException 
-	 * @throws MambaInstallException if Micromamba has not been installed in the default path {@link #BASE_PATH} 
-	 *  and 'installIfNeeded' is false
-	 */
-	public Mamba(boolean installIfNeeded) throws IOException, 
-													InterruptedException, ArchiveException, 
-													URISyntaxException, MambaInstallException
-	{
-		this(BASE_PATH, installIfNeeded);
-	}
-
-	/**
-	 * Create a new Mamba object. The root dir for Mamba installation can be
-	 * specified as {@code String}. 
-	 * If there is no Micromamba found at the specified path, a {@link MambaInstallException} will be thrown.
-	 * 
-	 * It is expected that the Micromamba installation has executable commands as shown below:
-	 * 
-	 * <pre>
-	 * MAMBA_ROOT
-	 * ├── bin
-	 * │   ├── micromamba(.exe)
-	 * │   ... 
-	 * ├── envs
-	 * │   ├── your_env
-	 * │   │   ├── python(.exe)
-	 * </pre>
-	 * 
-	 * @param rootdir
-	 *            The root dir for Mamba installation.
-	 * @throws IOException
-	 *             If an I/O error occurs.
-	 * @throws InterruptedException
-	 *             If the current thread is interrupted by another thread while it
-	 *             is waiting, then the wait is ended and an InterruptedException is
-	 *             thrown.
-	 * @throws ArchiveException 
-	 * @throws URISyntaxException 
-	 * @throws MambaInstallException if Micromamba has not been installed in the provided 'rootdir' path
-	 */
-	public Mamba( final String rootdir) throws IOException, 
-												InterruptedException, ArchiveException, 
-												URISyntaxException, MambaInstallException
-	{
-		this(rootdir, false);
+		this(BASE_PATH);
 	}
 
 	/**
@@ -353,9 +280,6 @@ public class Mamba {
 	 * 
 	 * @param rootdir
 	 *  The root dir for Mamba installation.
-	 * @param installIfNeeded
-	 * 	if Micormamba is not installed in the path specified by 'rootdir', Appose installs it
-	 * 	automatically
 	 * @throws IOException
 	 *             If an I/O error occurs.
 	 * @throws InterruptedException
@@ -367,7 +291,7 @@ public class Mamba {
 	 * @throws MambaInstallException if Micromamba has not been installed in the dir defined by 'rootdir' 
 	 *  and 'installIfNeeded' is false
 	 */
-	public Mamba( final String rootdir, boolean installIfMissing) throws IOException, 
+	public Mamba( final String rootdir) throws IOException, 
 																			InterruptedException, ArchiveException, 
 																			URISyntaxException, MambaInstallException
 	{
@@ -378,26 +302,29 @@ public class Mamba {
 		this.mambaCommand = this.rootdir + MICROMAMBA_RELATIVE_PATH;
 		this.envsdir = this.rootdir + File.separator + ENVS_NAME;
 		boolean filesExist = Files.notExists( Paths.get( mambaCommand ) );
-		if (!filesExist && !installIfMissing)
-			throw new MambaInstallException();
-		boolean installed = true;
-		try {
-			getVersion();
-		} catch (Exception ex) {
-			installed = false;
-		}
-		if (!installed && !installIfMissing)
-			throw new MambaInstallException("Even though Micromamba installation has been found, "
-					+ "it did not work as expected. Re-installation is advised. Path of installation found: " + this.rootdir);
-		if (installed)
+		if (!filesExist)
 			return;
-		installMicromamba();
 		try {
 			getVersion();
 		} catch (Exception ex) {
-			throw new MambaInstallException("Micromamba was installed but it is not working properly. Installation can be found at: "
-					+ this.rootdir);
+			return;
 		}
+		installed = true;
+	}
+	
+	/**
+	 * Check whether micromamba is installed or not to be able to use the instance of {@link Mamba}
+	 * @return whether micromamba is installed or not to be able to use the instance of {@link Mamba}
+	 */
+	public boolean checkMambaInstalled() {
+		try {
+			getVersion();
+			this.installed = true;
+		} catch (Exception ex) {
+			this.installed = false;
+			return false;
+		}
+		return true;
 	}
 	
 	/**
@@ -491,7 +418,22 @@ public class Mamba {
 					+ "please do it manually: " + mambaCommand);
 	}
 	
-	private void installMicromamba() throws IOException, InterruptedException, ArchiveException, URISyntaxException {
+	/**
+	 * Install Micromamba automatically
+	 * @throws IOException
+	 *             If an I/O error occurs.
+	 * @throws InterruptedException
+	 *             If the current thread is interrupted by another thread while it
+	 *             is waiting, then the wait is ended and an InterruptedException is
+	 *             thrown.
+	 * @throws ArchiveException 
+	 * @throws URISyntaxException 
+	 * @throws MambaInstallException if Micromamba has not been installed in the dir defined by 'rootdir' 
+	 *  and 'installIfNeeded' is false
+	 */
+	public void installMicromamba() throws IOException, InterruptedException, ArchiveException, URISyntaxException {
+		checkMambaInstalled();
+		if (installed) return;
 		decompressMicromamba(downloadMicromamba());
 	}
 	
@@ -528,9 +470,12 @@ public class Mamba {
 	 *             If the current thread is interrupted by another thread while it
 	 *             is waiting, then the wait is ended and an InterruptedException is
 	 *             thrown.
+	 * @throws MambaInstallException if Micromamba has not been installed, thus the instance of {@link Mamba} cannot be used
 	 */
-	public void update( final String... args ) throws IOException, InterruptedException
+	public void update( final String... args ) throws IOException, InterruptedException, MambaInstallException
 	{
+		checkMambaInstalled();
+		if (!installed) throw new MambaInstallException("Micromamba is not installed");
 		updateIn( envName, args );
 	}
 
@@ -549,9 +494,12 @@ public class Mamba {
 	 *             If the current thread is interrupted by another thread while it
 	 *             is waiting, then the wait is ended and an InterruptedException is
 	 *             thrown.
+	 * @throws MambaInstallException if Micromamba has not been installed, thus the instance of {@link Mamba} cannot be used
 	 */
-	public void updateIn( final String envName, final String... args ) throws IOException, InterruptedException
+	public void updateIn( final String envName, final String... args ) throws IOException, InterruptedException, MambaInstallException
 	{
+		checkMambaInstalled();
+		if (!installed) throw new MambaInstallException("Micromamba is not installed");
 		final List< String > cmd = new ArrayList<>( Arrays.asList( "update", "-p", this.envsdir + File.separator + envName ) );
 		cmd.addAll( Arrays.asList( args ) );
 		if (!cmd.contains("--yes") && !cmd.contains("-y")) cmd.add("--yes");
@@ -571,9 +519,12 @@ public class Mamba {
 	 *             If the current thread is interrupted by another thread while it
 	 *             is waiting, then the wait is ended and an InterruptedException is
 	 *             thrown.
+	 * @throws MambaInstallException if Micromamba has not been installed, thus the instance of {@link Mamba} cannot be used
 	 */
-	public void createWithYaml( final String envName, final String envYaml ) throws IOException, InterruptedException
+	public void createWithYaml( final String envName, final String envYaml ) throws IOException, InterruptedException, MambaInstallException
 	{
+		checkMambaInstalled();
+		if (!installed) throw new MambaInstallException("Micromamba is not installed");
 		createWithYaml(envName, envYaml, false);
 	}
 
@@ -596,9 +547,14 @@ public class Mamba {
 	 *             If the current thread is interrupted by another thread while it
 	 *             is waiting, then the wait is ended and an InterruptedException is
 	 *             thrown.
+	 * @throws RuntimeException
+	 *             If there is any error running the commands
+	 * @throws MambaInstallException if Micromamba has not been installed, thus the instance of {@link Mamba} cannot be used
 	 */
-	public void createWithYaml( final String envName, final String envYaml, final boolean isForceCreation) throws IOException, InterruptedException
+	public void createWithYaml( final String envName, final String envYaml, final boolean isForceCreation) throws IOException, InterruptedException, RuntimeException, MambaInstallException
 	{
+		checkMambaInstalled();
+		if (!installed) throw new MambaInstallException("Micromamba is not installed");
 		if ( !isForceCreation && getEnvironmentNames().contains( envName ) )
 			throw new EnvironmentExistsException();
 		runMamba("env", "create", "--prefix",
@@ -616,9 +572,12 @@ public class Mamba {
 	 *             If the current thread is interrupted by another thread while it
 	 *             is waiting, then the wait is ended and an InterruptedException is
 	 *             thrown.
+	 * @throws MambaInstallException if Micromamba has not been installed, thus the instance of {@link Mamba} cannot be used
 	 */
-	public void create( final String envName ) throws IOException, InterruptedException
+	public void create( final String envName ) throws IOException, InterruptedException, MambaInstallException
 	{
+		checkMambaInstalled();
+		if (!installed) throw new MambaInstallException("Micromamba is not installed");
 		create( envName, false );
 	}
 
@@ -637,9 +596,14 @@ public class Mamba {
 	 *             If the current thread is interrupted by another thread while it
 	 *             is waiting, then the wait is ended and an InterruptedException is
 	 *             thrown.
+	 * @throws RuntimeException
+	 *             If there is any error running the commands
+	 * @throws MambaInstallException if Micromamba has not been installed, thus the instance of {@link Mamba} cannot be used
 	 */
-	public void create( final String envName, final boolean isForceCreation ) throws IOException, InterruptedException
+	public void create( final String envName, final boolean isForceCreation ) throws IOException, InterruptedException, RuntimeException, MambaInstallException
 	{
+		checkMambaInstalled();
+		if (!installed) throw new MambaInstallException("Micromamba is not installed");
 		if ( !isForceCreation && getEnvironmentNames().contains( envName ) )
 			throw new EnvironmentExistsException();
 		runMamba( "create", "-y", "-p", envsdir + File.separator + envName );
@@ -660,9 +624,12 @@ public class Mamba {
 	 *             If the current thread is interrupted by another thread while it
 	 *             is waiting, then the wait is ended and an InterruptedException is
 	 *             thrown.
+	 * @throws MambaInstallException if Micromamba has not been installed, thus the instance of {@link Mamba} cannot be used
 	 */
-	public void create( final String envName, final String... args ) throws IOException, InterruptedException
+	public void create( final String envName, final String... args ) throws IOException, InterruptedException, MambaInstallException
 	{
+		checkMambaInstalled();
+		if (!installed) throw new MambaInstallException("Micromamba is not installed");
 		create( envName, false, args );
 	}
 
@@ -685,9 +652,12 @@ public class Mamba {
 	 *             If the current thread is interrupted by another thread while it
 	 *             is waiting, then the wait is ended and an InterruptedException is
 	 *             thrown.
+	 * @throws MambaInstallException if Micromamba has not been installed, thus the instance of {@link Mamba} cannot be used
 	 */
-	public void create( final String envName, final boolean isForceCreation, final String... args ) throws IOException, InterruptedException
+	public void create( final String envName, final boolean isForceCreation, final String... args ) throws IOException, InterruptedException, MambaInstallException
 	{
+		checkMambaInstalled();
+		if (!installed) throw new MambaInstallException("Micromamba is not installed");
 		if ( !isForceCreation && getEnvironmentNames().contains( envName ) )
 			throw new EnvironmentExistsException();
 		final List< String > cmd = new ArrayList<>( Arrays.asList( "create", "-p", envsdir + File.separator + envName ) );
@@ -717,9 +687,14 @@ public class Mamba {
 	 *             If the current thread is interrupted by another thread while it
 	 *             is waiting, then the wait is ended and an InterruptedException is
 	 *             thrown.
+	 * @throws RuntimeException
+	 *             If there is any error running the commands
+	 * @throws MambaInstallException if Micromamba has not been installed, thus the instance of {@link Mamba} cannot be used
 	 */
-	public void create( final String envName, final boolean isForceCreation, List<String> channels, List<String> packages ) throws IOException, InterruptedException
+	public void create( final String envName, final boolean isForceCreation, List<String> channels, List<String> packages ) throws IOException, InterruptedException, RuntimeException, MambaInstallException
 	{
+		checkMambaInstalled();
+		if (!installed) throw new MambaInstallException("Micromamba is not installed");
 		Objects.requireNonNull(envName, "The name of the environment of interest needs to be provided.");
 		if ( !isForceCreation && getEnvironmentNames().contains( envName ) )
 			throw new EnvironmentExistsException();
@@ -740,9 +715,12 @@ public class Mamba {
 	 *            The environment name to be activated.
 	 * @throws IOException
 	 *             If an I/O error occurs.
+	 * @throws MambaInstallException if Micromamba has not been installed, thus the instance of {@link Mamba} cannot be used
 	 */
-	public void activate( final String envName ) throws IOException
+	public void activate( final String envName ) throws IOException, MambaInstallException
 	{
+		checkMambaInstalled();
+		if (!installed) throw new MambaInstallException("Micromamba is not installed");
 		if ( getEnvironmentNames().contains( envName ) )
 			setEnvName( envName );
 		else
@@ -752,9 +730,12 @@ public class Mamba {
 	/**
 	 * This method works as if the user runs {@code conda deactivate}. This method
 	 * internally sets the {@code envName} to {@code base}.
+	 * @throws MambaInstallException if Micromamba has not been installed, thus the instance of {@link Mamba} cannot be used
 	 */
-	public void deactivate()
+	public void deactivate() throws MambaInstallException
 	{
+		checkMambaInstalled();
+		if (!installed) throw new MambaInstallException("Micromamba is not installed");
 		setEnvName( DEFAULT_ENVIRONMENT_NAME );
 	}
 
@@ -795,9 +776,12 @@ public class Mamba {
 	 *             If the current thread is interrupted by another thread while it
 	 *             is waiting, then the wait is ended and an InterruptedException is
 	 *             thrown.
+	 * @throws MambaInstallException if Micromamba has not been installed, thus the instance of {@link Mamba} cannot be used
 	 */
-	public void install( final String... args ) throws IOException, InterruptedException
+	public void install( final String... args ) throws IOException, InterruptedException, MambaInstallException
 	{
+		checkMambaInstalled();
+		if (!installed) throw new MambaInstallException("Micromamba is not installed");
 		installIn( envName, args );
 	}
 
@@ -816,9 +800,12 @@ public class Mamba {
 	 *             If the current thread is interrupted by another thread while it
 	 *             is waiting, then the wait is ended and an InterruptedException is
 	 *             thrown.
+	 * @throws MambaInstallException if Micromamba has not been installed, thus the instance of {@link Mamba} cannot be used
 	 */
-	public void install( List<String> channels, List<String> packages ) throws IOException, InterruptedException
+	public void install( List<String> channels, List<String> packages ) throws IOException, InterruptedException, MambaInstallException
 	{
+		checkMambaInstalled();
+		if (!installed) throw new MambaInstallException("Micromamba is not installed");
 		installIn( envName, channels, packages );
 	}
 
@@ -839,9 +826,13 @@ public class Mamba {
 	 *             If the current thread is interrupted by another thread while it
 	 *             is waiting, then the wait is ended and an InterruptedException is
 	 *             thrown.
+	 * @throws RuntimeException 
+	 * @throws MambaInstallException if Micromamba has not been installed, thus the instance of {@link Mamba} cannot be used
 	 */
-	public void installIn( final String envName, List<String> channels, List<String> packages ) throws IOException, InterruptedException
+	public void installIn( final String envName, List<String> channels, List<String> packages ) throws IOException, InterruptedException, RuntimeException, MambaInstallException
 	{
+		checkMambaInstalled();
+		if (!installed) throw new MambaInstallException("Micromamba is not installed");
 		Objects.requireNonNull(envName, "The name of the environment of interest needs to be provided.");		
 		final List< String > cmd = new ArrayList<>( Arrays.asList( "install", "-y", "-p", this.envsdir + File.separator + envName ) );
 		if (channels == null) channels = new ArrayList<String>();
@@ -866,9 +857,12 @@ public class Mamba {
 	 *             If the current thread is interrupted by another thread while it
 	 *             is waiting, then the wait is ended and an InterruptedException is
 	 *             thrown.
+	 * @throws MambaInstallException if Micromamba has not been installed, thus the instance of {@link Mamba} cannot be used
 	 */
-	public void installIn( final String envName, final String... args ) throws IOException, InterruptedException
+	public void installIn( final String envName, final String... args ) throws IOException, InterruptedException, MambaInstallException
 	{
+		checkMambaInstalled();
+		if (!installed) throw new MambaInstallException("Micromamba is not installed");
 		final List< String > cmd = new ArrayList<>( Arrays.asList( "install", "-p", this.envsdir + File.separator + envName ) );
 		cmd.addAll( Arrays.asList( args ) );
 		if (!cmd.contains("--yes") && !cmd.contains("-y")) cmd.add("--yes");
@@ -888,9 +882,12 @@ public class Mamba {
 	 *             If the current thread is interrupted by another thread while it
 	 *             is waiting, then the wait is ended and an InterruptedException is
 	 *             thrown.
+	 * @throws MambaInstallException if Micromamba has not been installed, thus the instance of {@link Mamba} cannot be used
 	 */
-	public void pipInstall( final String... args ) throws IOException, InterruptedException
+	public void pipInstall( final String... args ) throws IOException, InterruptedException, MambaInstallException
 	{
+		checkMambaInstalled();
+		if (!installed) throw new MambaInstallException("Micromamba is not installed");
 		pipInstallIn( envName, args );
 	}
 
@@ -909,9 +906,12 @@ public class Mamba {
 	 *             If the current thread is interrupted by another thread while it
 	 *             is waiting, then the wait is ended and an InterruptedException is
 	 *             thrown.
+	 * @throws MambaInstallException if Micromamba has not been installed, thus the instance of {@link Mamba} cannot be used
 	 */
-	public void pipInstallIn( final String envName, final String... args ) throws IOException, InterruptedException
+	public void pipInstallIn( final String envName, final String... args ) throws IOException, InterruptedException, MambaInstallException
 	{
+		checkMambaInstalled();
+		if (!installed) throw new MambaInstallException("Micromamba is not installed");
 		final List< String > cmd = new ArrayList<>( Arrays.asList( "-m", "pip", "install" ) );
 		cmd.addAll( Arrays.asList( args ) );
 		runPythonIn( envName, cmd.stream().toArray( String[]::new ) );
@@ -931,9 +931,12 @@ public class Mamba {
 	 *             If the current thread is interrupted by another thread while it
 	 *             is waiting, then the wait is ended and an InterruptedException is
 	 *             thrown.
+	 * @throws MambaInstallException if Micromamba has not been installed, thus the instance of {@link Mamba} cannot be used
 	 */
-	public void runPython( final String... args ) throws IOException, InterruptedException
+	public void runPython( final String... args ) throws IOException, InterruptedException, MambaInstallException
 	{
+		checkMambaInstalled();
+		if (!installed) throw new MambaInstallException("Micromamba is not installed");
 		runPythonIn( envName, args );
 	}
 
@@ -953,9 +956,12 @@ public class Mamba {
 	 *             If the current thread is interrupted by another thread while it
 	 *             is waiting, then the wait is ended and an InterruptedException is
 	 *             thrown.
+	 * @throws MambaInstallException if Micromamba has not been installed, thus the instance of {@link Mamba} cannot be used
 	 */
-	public void runPythonIn( final String envName, final String... args ) throws IOException, InterruptedException
+	public void runPythonIn( final String envName, final String... args ) throws IOException, InterruptedException, MambaInstallException
 	{
+		checkMambaInstalled();
+		if (!installed) throw new MambaInstallException("Micromamba is not installed");
 		final List< String > cmd = getBaseCommand();
 		if ( envName.equals( DEFAULT_ENVIRONMENT_NAME ) )
 			cmd.add( PYTHON_COMMAND );
@@ -1028,9 +1034,12 @@ public class Mamba {
 	 *             If the current thread is interrupted by another thread while it
 	 *             is waiting, then the wait is ended and an InterruptedException is
 	 *             thrown.
+	 * @throws MambaInstallException if Micromamba has not been installed, thus the instance of {@link Mamba} cannot be used
 	 */
-	public String getVersion() throws IOException, InterruptedException
+	public String getVersion() throws IOException, InterruptedException, MambaInstallException
 	{
+		checkMambaInstalled();
+		if (!installed) throw new MambaInstallException("Micromamba is not installed");
 		final List< String > cmd = getBaseCommand();
 		cmd.addAll( Arrays.asList( mambaCommand, "--version" ) );
 		final Process process = getBuilder( false ).command( cmd ).start();
@@ -1049,15 +1058,20 @@ public class Mamba {
 	 * @param isInheritIO
 	 *            Sets the source and destination for subprocess standard I/O to be
 	 *            the same as those of the current Java process.
+	 * @throws RuntimeException
+	 *             If there is any error running the commands
 	 * @throws IOException
 	 *             If an I/O error occurs.
 	 * @throws InterruptedException
 	 *             If the current thread is interrupted by another thread while it
 	 *             is waiting, then the wait is ended and an InterruptedException is
 	 *             thrown.
+	 * @throws MambaInstallException if Micromamba has not been installed, thus the instance of {@link Mamba} cannot be used
 	 */
-	public void runMamba(boolean isInheritIO, final String... args ) throws RuntimeException, IOException, InterruptedException
+	public void runMamba(boolean isInheritIO, final String... args ) throws RuntimeException, IOException, InterruptedException, MambaInstallException
 	{
+		checkMambaInstalled();
+		if (!installed) throw new MambaInstallException("Micromamba is not installed");
 		Thread mainThread = Thread.currentThread();
 		SimpleDateFormat sdf = new SimpleDateFormat("HH:mm:ss");
 		
@@ -1137,15 +1151,20 @@ public class Mamba {
 	 * 
 	 * @param args
 	 *            One or more arguments for the Conda command.
+	 * @throws RuntimeException
+	 *             If there is any error running the commands
 	 * @throws IOException
 	 *             If an I/O error occurs.
 	 * @throws InterruptedException
 	 *             If the current thread is interrupted by another thread while it
 	 *             is waiting, then the wait is ended and an InterruptedException is
 	 *             thrown.
+	 * @throws MambaInstallException if Micromamba has not been installed, thus the instance of {@link Mamba} cannot be used
 	 */
-	public void runMamba(final String... args ) throws RuntimeException, IOException, InterruptedException
+	public void runMamba(final String... args ) throws RuntimeException, IOException, InterruptedException, MambaInstallException
 	{
+		checkMambaInstalled();
+		if (!installed) throw new MambaInstallException("Micromamba is not installed");
 		runMamba(false, args);
 	}
 
@@ -1216,9 +1235,12 @@ public class Mamba {
 	 *             If the current thread is interrupted by another thread while it
 	 *             is waiting, then the wait is ended and an InterruptedException is
 	 *             thrown.
+	 * @throws MambaInstallException if Micromamba has not been installed, thus the instance of {@link Mamba} cannot be used
 	 */
-	public List< String > getEnvironmentNames() throws IOException
+	public List< String > getEnvironmentNames() throws IOException, MambaInstallException
 	{
+		checkMambaInstalled();
+		if (!installed) throw new MambaInstallException("Micromamba is not installed");
 		final List< String > envs = new ArrayList<>( Arrays.asList( DEFAULT_ENVIRONMENT_NAME ) );
 		envs.addAll( Files.list( Paths.get( envsdir ) )
 				.map( p -> p.getFileName().toString() )
@@ -1239,8 +1261,11 @@ public class Mamba {
 	 * 	"skimage", not "scikit-image" or "sklearn", not "scikit-learn"
 	 * 	An example list: "numpy", "numba>=0.43.1", "torch==1.6", "torch>=1.6, <2.0"
 	 * @return true if the packages are installed or false otherwise
+	 * @throws MambaInstallException if Micromamba has not been installed, thus the instance of {@link Mamba} cannot be used
 	 */
-	public boolean checkAllDependenciesInEnv(String envName, List<String> dependencies) {
+	public boolean checkAllDependenciesInEnv(String envName, List<String> dependencies) throws MambaInstallException {
+		checkMambaInstalled();
+		if (!installed) throw new MambaInstallException("Micromamba is not installed");
 		return checkUninstalledDependenciesInEnv(envName, dependencies).size() == 0;
 	}
 	
@@ -1257,18 +1282,25 @@ public class Mamba {
 	 * 	"skimage", not "scikit-image" or "sklearn", not "scikit-learn"
 	 * 	An example list: "numpy", "numba>=0.43.1", "torch==1.6", "torch>=1.6, <2.0"
 	 * @return true if the packages are installed or false otherwise
+	 * @throws MambaInstallException if Micromamba has not been installed, thus the instance of {@link Mamba} cannot be used
 	 */
-	public List<String>  checkUninstalledDependenciesInEnv(String envName, List<String> dependencies) {
+	public List<String>  checkUninstalledDependenciesInEnv(String envName, List<String> dependencies) throws MambaInstallException {
+		checkMambaInstalled();
+		if (!installed) throw new MambaInstallException("Micromamba is not installed");
 		File envFile = new File(this.envsdir, envName);
 		File envFile2 = new File(envName);
 		if (!envFile.isDirectory() && !envFile2.isDirectory())
 			return dependencies;
 		List<String> uninstalled = dependencies.stream().filter(dep -> {
-			int ind = dep.indexOf("=");
-			if (ind == -1) return !checkDependencyInEnv(envName, dep);
-			String packName = dep.substring(0, ind);
-			String vv = dep.substring(ind + 1);
+			try {
+				int ind = dep.indexOf("=");
+				if (ind == -1) return !checkDependencyInEnv(envName, dep);
+				String packName = dep.substring(0, ind);
+				String vv = dep.substring(ind + 1);
 			return !checkDependencyInEnv(envName, packName, vv);
+			} catch (Exception ex) {
+				return true;
+			}
 		}).collect(Collectors.toList());
 		return uninstalled;
 	}
@@ -1285,8 +1317,11 @@ public class Mamba {
 	 * 	"skimage", not "scikit-image" or "sklearn", not "scikit-learn"
 	 * 	An example list: "numpy", "numba>=0.43.1", "torch==1.6", "torch>=1.6, <2.0"
 	 * @return true if the package is installed or false otherwise
+	 * @throws MambaInstallException if Micromamba has not been installed, thus the instance of {@link Mamba} cannot be used
 	 */
-	public boolean checkDependencyInEnv(String envName, String dependency) {
+	public boolean checkDependencyInEnv(String envName, String dependency) throws MambaInstallException {
+		checkMambaInstalled();
+		if (!installed) throw new MambaInstallException("Micromamba is not installed");
 		if (dependency.contains("==")) {
 			int ind = dependency.indexOf("==");
 			return checkDependencyInEnv(envName, dependency.substring(0, ind).trim(), dependency.substring(ind + 2).trim());
@@ -1356,8 +1391,11 @@ public class Mamba {
 	 * @param version
 	 * 	the specific version of the package that needs to be installed. For example:, "0.43.1", "1.6", "2.0"
 	 * @return true if the package is installed or false otherwise
+	 * @throws MambaInstallException if Micromamba has not been installed, thus the instance of {@link Mamba} cannot be used
 	 */
-	public boolean checkDependencyInEnv(String envDir, String dependency, String version) {
+	public boolean checkDependencyInEnv(String envDir, String dependency, String version) throws MambaInstallException {
+		checkMambaInstalled();
+		if (!installed) throw new MambaInstallException("Micromamba is not installed");
 		return checkDependencyInEnv(envDir, dependency, version, version, true);
 	}
 	
@@ -1387,8 +1425,11 @@ public class Mamba {
 	 * 	pacakge_version<1.9.
 	 * 	If there is no maximum version requirement for the package of interest, set this argument to null.
 	 * @return true if the package is installed or false otherwise
+	 * @throws MambaInstallException if Micromamba has not been installed, thus the instance of {@link Mamba} cannot be used
 	 */
-	public boolean checkDependencyInEnv(String envDir, String dependency, String minversion, String maxversion) {
+	public boolean checkDependencyInEnv(String envDir, String dependency, String minversion, String maxversion) throws MambaInstallException {
+		checkMambaInstalled();
+		if (!installed) throw new MambaInstallException("Micromamba is not installed");
 		return checkDependencyInEnv(envDir, dependency, minversion, maxversion, true);
 	}
 	
@@ -1415,8 +1456,12 @@ public class Mamba {
 	 * @param strictlyBiggerOrSmaller
 	 * 	Whether the minversion and maxversion shuld be strictly smaller and bigger or not
 	 * @return true if the package is installed or false otherwise
+	 * @throws MambaInstallException if Micromamba has not been installed, thus the instance of {@link Mamba} cannot be used
 	 */
-	public boolean checkDependencyInEnv(String envDir, String dependency, String minversion, String maxversion, boolean strictlyBiggerOrSmaller) {
+	public boolean checkDependencyInEnv(String envDir, String dependency, String minversion, 
+			String maxversion, boolean strictlyBiggerOrSmaller) throws MambaInstallException {
+		checkMambaInstalled();
+		if (!installed) throw new MambaInstallException("Micromamba is not installed");
 		File envFile = new File(this.envsdir, envDir);
 		File envFile2 = new File(envDir);
 		if (!envFile.isDirectory() && !envFile2.isDirectory())
@@ -1469,7 +1514,9 @@ public class Mamba {
 		return true;
 	}
 	
-	private boolean checkPythonInstallation(String envDir, String minversion, String maxversion, boolean strictlyBiggerOrSmaller) {
+	private boolean checkPythonInstallation(String envDir, String minversion, String maxversion, boolean strictlyBiggerOrSmaller) throws MambaInstallException {
+		checkMambaInstalled();
+		if (!installed) throw new MambaInstallException("Micromamba is not installed");
 		File envFile = new File(this.envsdir, envDir);
 		File envFile2 = new File(envDir);
 		if (!envFile.isDirectory() && !envFile2.isDirectory())
@@ -1509,8 +1556,11 @@ public class Mamba {
 	 * TODO figure out whether to use a dependency or not to parse the yaml file
 	 * @param envYaml
 	 * @return
+	 * @throws MambaInstallException if Micromamba has not been installed, thus the instance of {@link Mamba} cannot be used
 	 */
-	public boolean checkEnvFromYamlExists(String envYaml) {
+	public boolean checkEnvFromYamlExists(String envYaml) throws MambaInstallException {
+		checkMambaInstalled();
+		if (!installed) throw new MambaInstallException("Micromamba is not installed");
 		if (envYaml == null || new File(envYaml).isFile() == false 
 				|| (envYaml.endsWith(".yaml") && envYaml.endsWith(".yml"))) {
 			return false;
