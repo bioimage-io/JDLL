@@ -114,14 +114,14 @@ public class Mamba {
 	 * Consumer that tracks the progress in the download of micromamba, the software used 
 	 * by this class to manage Python environments
 	 */
-	private Consumer<Double> mambaDnwldProgressConsumer = (p) -> {
-		mambaDnwldProgress = p;
+	private Consumer<Double> mambaDnwldProgressConsumer = (pp) -> {
+		mambaDnwldProgress = pp * 1.0;
 	};
 	/**
 	 * Consumer that tracks the progress decompressing the downloaded micromamba files.
 	 */
-	private Consumer<Double> mambaDecompressProgressConsumer = (p) -> {
-		mambaDecompressProgress = p;
+	private Consumer<Double> mambaDecompressProgressConsumer = (pp) -> {
+		mambaDecompressProgress = pp * 1.0;
 	};
 	/**
 	 * String that contains all the console output produced by micromamba ever since the {@link Mamba} was instantiated
@@ -274,7 +274,6 @@ public class Mamba {
 			this.rootdir = BASE_PATH;
 		else
 			this.rootdir = rootdir;
-		installed = false;
 		this.mambaCommand = this.rootdir + MICROMAMBA_RELATIVE_PATH;
 		this.envsdir = this.rootdir + File.separator + ENVS_NAME;
 		boolean filesExist = Files.notExists( Paths.get( mambaCommand ) );
