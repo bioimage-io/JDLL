@@ -243,20 +243,8 @@ public class Mamba {
 	 * │   │   ├── python(.exe)
 	 * </pre>
 	 * 
-	 * @throws IOException
-	 *             If an I/O error occurs.
-	 * @throws InterruptedException
-	 *             If the current thread is interrupted by another thread while it
-	 *             is waiting, then the wait is ended and an InterruptedException is
-	 *             thrown.
-	 * @throws ArchiveException 
-	 * @throws URISyntaxException 
-	 * @throws MambaInstallException if Micromamba has not been installed in the default path {@link #BASE_PATH}
 	 */
-	public Mamba() throws IOException, 
-							InterruptedException, ArchiveException, 
-							URISyntaxException, MambaInstallException
-	{
+	public Mamba() {
 		this(BASE_PATH);
 	}
 
@@ -280,21 +268,8 @@ public class Mamba {
 	 * 
 	 * @param rootdir
 	 *  The root dir for Mamba installation.
-	 * @throws IOException
-	 *             If an I/O error occurs.
-	 * @throws InterruptedException
-	 *             If the current thread is interrupted by another thread while it
-	 *             is waiting, then the wait is ended and an InterruptedException is
-	 *             thrown.
-	 * @throws ArchiveException 
-	 * @throws URISyntaxException 
-	 * @throws MambaInstallException if Micromamba has not been installed in the dir defined by 'rootdir' 
-	 *  and 'installIfNeeded' is false
 	 */
-	public Mamba( final String rootdir) throws IOException, 
-																			InterruptedException, ArchiveException, 
-																			URISyntaxException, MambaInstallException
-	{
+	public Mamba( final String rootdir) {
 		if (rootdir == null)
 			this.rootdir = BASE_PATH;
 		else
