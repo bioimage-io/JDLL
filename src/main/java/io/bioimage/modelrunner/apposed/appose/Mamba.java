@@ -435,6 +435,7 @@ public class Mamba {
 		checkMambaInstalled();
 		if (installed) return;
 		decompressMicromamba(downloadMicromamba());
+		checkMambaInstalled();
 	}
 	
 	public String getEnvsDir() {
