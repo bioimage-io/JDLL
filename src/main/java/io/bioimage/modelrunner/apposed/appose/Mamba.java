@@ -1014,7 +1014,6 @@ public class Mamba {
 	 */
 	public String getVersion() throws IOException, InterruptedException, MambaInstallException
 	{
-		checkMambaInstalled();
 		if (!installed) throw new MambaInstallException("Micromamba is not installed");
 		final List< String > cmd = getBaseCommand();
 		cmd.addAll( Arrays.asList( mambaCommand, "--version" ) );
