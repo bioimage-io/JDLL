@@ -274,6 +274,7 @@ public class Mamba {
 			this.rootdir = BASE_PATH;
 		else
 			this.rootdir = rootdir;
+		installed = false;
 		this.mambaCommand = this.rootdir + MICROMAMBA_RELATIVE_PATH;
 		this.envsdir = this.rootdir + File.separator + ENVS_NAME;
 		boolean filesExist = Files.notExists( Paths.get( mambaCommand ) );
