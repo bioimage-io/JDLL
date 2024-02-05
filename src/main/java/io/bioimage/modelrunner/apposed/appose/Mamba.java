@@ -115,12 +115,14 @@ public class Mamba {
 	 * by this class to manage Python environments
 	 */
 	private Consumer<Double> mambaDnwldProgressConsumer = (pp) -> {
+		if (pp == null) pp = 0.0;
 		mambaDnwldProgress = pp * 1.0;
 	};
 	/**
 	 * Consumer that tracks the progress decompressing the downloaded micromamba files.
 	 */
 	private Consumer<Double> mambaDecompressProgressConsumer = (pp) -> {
+		if (pp == null) pp = 0.0;
 		mambaDecompressProgress = pp * 1.0;
 	};
 	/**
