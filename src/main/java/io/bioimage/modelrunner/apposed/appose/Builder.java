@@ -55,6 +55,7 @@ public class Builder {
 
 		try {
 			Mamba conda = new Mamba(Mamba.BASE_PATH);
+			conda.installMicromamba();
 			String envName = "appose";
 			if (conda.getEnvironmentNames().contains( envName )) {
 				// TODO: Should we update it? For now, we just use it.
