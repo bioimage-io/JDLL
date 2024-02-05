@@ -1529,7 +1529,8 @@ public class Mamba {
 	/**
 	 * TODO figure out whether to use a dependency or not to parse the yaml file
 	 * @param envYaml
-	 * @return
+	 * 	the path to the yaml file where a Python environment should be specified
+	 * @return true if the env exists or false otherwise
 	 * @throws MambaInstallException if Micromamba has not been installed, thus the instance of {@link Mamba} cannot be used
 	 */
 	public boolean checkEnvFromYamlExists(String envYaml) throws MambaInstallException {
