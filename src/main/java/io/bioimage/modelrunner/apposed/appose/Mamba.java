@@ -324,8 +324,8 @@ public class Mamba {
 	
 	/**
 	 * 
-	 * @returnthe the progress made on the decompressing the micromamba files downloaded from the Internet of the micromamba 
-	 * software. VAlue between 0 and 1.
+	 * @return the the progress made on the decompressing the micromamba files downloaded from the Internet of the micromamba 
+	 * 	software. VAlue between 0 and 1.
 	 */
 	public double getMicromambaDecompressProgress(){
 		return this.mambaDecompressProgress;
@@ -413,10 +413,8 @@ public class Mamba {
 	 *             If the current thread is interrupted by another thread while it
 	 *             is waiting, then the wait is ended and an InterruptedException is
 	 *             thrown.
-	 * @throws ArchiveException 
-	 * @throws URISyntaxException 
-	 * @throws MambaInstallException if Micromamba has not been installed in the dir defined by 'rootdir' 
-	 *  and 'installIfNeeded' is false
+	 * @throws ArchiveException if there is any error decompressing
+	 * @throws URISyntaxException  if there is any error with the micromamba url
 	 */
 	public void installMicromamba() throws IOException, InterruptedException, ArchiveException, URISyntaxException {
 		checkMambaInstalled();
@@ -535,7 +533,7 @@ public class Mamba {
 	 *             If the current thread is interrupted by another thread while it
 	 *             is waiting, then the wait is ended and an InterruptedException is
 	 *             thrown.
-	 * @throws RuntimeException
+	 * @throws RuntimeException if the process to create the env of the yaml file is not terminated correctly
 	 *             If there is any error running the commands
 	 * @throws MambaInstallException if Micromamba has not been installed, thus the instance of {@link Mamba} cannot be used
 	 */
@@ -977,8 +975,8 @@ public class Mamba {
 	 * Windows, this method also sets the {@code PATH} environment variable so that
 	 * the specified environment runs as expected.
 	 * 
-	 * @param envName
-	 *            The environment name used to run the Python command.
+	 * @param envFile
+	 *            file corresponding to the environment directory
 	 * @param args
 	 *            One or more arguments for the Python command.
 	 * @throws IOException
@@ -1037,13 +1035,11 @@ public class Mamba {
 	/**
 	 * Run a Conda command with one or more arguments.
 	 * 
-	 * @param consumer
-	 * 			  String consumer that receives the Strings that the process prints to the console
-	 * @param args
-	 *            One or more arguments for the Conda command.
 	 * @param isInheritIO
 	 *            Sets the source and destination for subprocess standard I/O to be
 	 *            the same as those of the current Java process.
+	 * @param args
+	 *            One or more arguments for the Mamba command.
 	 * @throws RuntimeException
 	 *             If there is any error running the commands
 	 * @throws IOException
@@ -1212,15 +1208,10 @@ public class Mamba {
 	*/
 
 	/**
-	 * Returns a list of the Conda environment names as {@code List< String >}.
+	 * Returns a list of the Mamba environment names as {@code List< String >}.
 	 * 
-	 * @return The list of the Conda environment names as {@code List< String >}.
-	 * @throws IOException
-	 *             If an I/O error occurs.
-	 * @throws InterruptedException
-	 *             If the current thread is interrupted by another thread while it
-	 *             is waiting, then the wait is ended and an InterruptedException is
-	 *             thrown.
+	 * @return The list of the Mamba environment names as {@code List< String >}.
+	 * @throws IOException If an I/O error occurs.
 	 * @throws MambaInstallException if Micromamba has not been installed, thus the instance of {@link Mamba} cannot be used
 	 */
 	public List< String > getEnvironmentNames() throws IOException, MambaInstallException
@@ -1297,7 +1288,7 @@ public class Mamba {
 	 * @param envName
 	 * 	The name of the environment of interest. Should be one of the environments of the current Mamba instance.
 	 * 	This parameter can also be the full path to an independent environment.
-	 * @param dependencies
+	 * @param dependency
 	 * 	The name of the package that should be installed in the env
 	 * 	They can contain version requirements. The names should be the ones used to import the package inside python,
 	 * 	"skimage", not "scikit-image" or "sklearn", not "scikit-learn"
@@ -1367,10 +1358,10 @@ public class Mamba {
 	/**
 	 * Checks whether a package of a specific version is installed in the wanted environment.
 	 * 
-	 * @param envName
-	 * 	The name of the environment of interest. Should be one of the environments of the current Mamba instance.
+	 * @param envDir
+	 * 	The directory of the environment of interest. Should be one of the environments of the current Mamba instance.
 	 * 	This parameter can also be the full path to an independent environment.
-	 * @param dependencies
+	 * @param dependency
 	 * 	The name of the package that should be installed in the env. The String should only contain the name, no version,
 	 * 	and the name should be the one used to import the package inside python. For example, "skimage", not "scikit-image"
 	 *  or "sklearn", not "scikit-learn".
@@ -1393,10 +1384,10 @@ public class Mamba {
 	 * For smaller or equal or bigger or equal (dependency >=minversion, <=maxversion) look at the method
 	 * {@link #checkDependencyInEnv(String, String, String, String, boolean)} with the lst parameter set to false.
 	 * 
-	 * @param envName
-	 * 	The name of the environment of interest. Should be one of the environments of the current Mamba instance.
+	 * @param envDir
+	 * 	The directory of the environment of interest. Should be one of the environments of the current Mamba instance.
 	 * 	This parameter can also be the full path to an independent environment.
-	 * @param dependencies
+	 * @param dependency
 	 * 	The name of the package that should be installed in the env. The String should only contain the name, no version,
 	 * 	and the name should be the one used to import the package inside python. For example, "skimage", not "scikit-image"
 	 *  or "sklearn", not "scikit-learn".
@@ -1426,10 +1417,10 @@ public class Mamba {
 	 * In this method the minversion argument should be strictly smaller than the version of interest and
 	 * the maxversion strictly bigger.
 	 * 
-	 * @param envName
-	 * 	The name of the environment of interest. Should be one of the environments of the current Mamba instance.
+	 * @param envDir
+	 * 	The directory of the environment of interest. Should be one of the environments of the current Mamba instance.
 	 * 	This parameter can also be the full path to an independent environment.
-	 * @param dependencies
+	 * @param dependency
 	 * 	The name of the package that should be installed in the env. The String should only contain the name, no version,
 	 * 	and the name should be the one used to import the package inside python. For example, "skimage", not "scikit-image"
 	 *  or "sklearn", not "scikit-learn".
