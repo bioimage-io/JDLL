@@ -114,17 +114,11 @@ public class Mamba {
 	 * Consumer that tracks the progress in the download of micromamba, the software used 
 	 * by this class to manage Python environments
 	 */
-	private Consumer<Double> mambaDnwldProgressConsumer = pp -> {
-	    double progress = pp != null ? pp : 0.0;
-	    mambaDnwldProgress = progress * 1.0;
-	};
+	private Consumer<Double> mambaDnwldProgressConsumer = this::updateMambaDnwldProgress;
 	/**
 	 * Consumer that tracks the progress decompressing the downloaded micromamba files.
 	 */
-	private Consumer<Double> mambaDecompressProgressConsumer = pp -> {
-	    double progress = pp != null ? pp : 0.0;
-	    mambaDecompressProgress = progress * 1.0;
-	};
+	private Consumer<Double> mambaDecompressProgressConsumer = this::updateMambaDecompressProgress;
 	/**
 	 * String that contains all the console output produced by micromamba ever since the {@link Mamba} was instantiated
 	 */
@@ -208,6 +202,16 @@ public class Mamba {
 			case "Windows|amd64":    return "win-64";
 			default:                 return null;
 		}
+	}
+	
+	private void updateMambaDnwldProgress(Double pp) {
+	    double progress = pp != null ? pp : 0.0;
+	    mambaDnwldProgress = progress * 1.0;
+	}
+	
+	private void updateMambaDecompressProgress(Double pp) {
+	    double progress = pp != null ? pp : 0.0;
+	    this.mambaDecompressProgress = progress * 1.0;
 	}
 
 	/**
