@@ -139,20 +139,12 @@ public class Mamba {
 	 * Consumer that tracks the console output produced by the micromamba process when it is executed.
 	 * This consumer saves all the log of every micromamba execution
 	 */
-	private Consumer<String> consoleConsumer = (str) -> {
-		mambaConsoleOut += str;
-		if (customConsoleConsumer != null)
-			customConsoleConsumer.accept(str);
-	};
+	private Consumer<String> consoleConsumer = this::updateConsoleConsumer;
 	/**
 	 * Consumer that tracks the error output produced by the micromamba process when it is executed.
 	 * This consumer saves all the log of every micromamba execution
 	 */
-	private Consumer<String> errConsumer = (str) -> {
-		mambaConsoleErr += str;
-		if (customErrorConsumer != null)
-			customErrorConsumer.accept(str);
-	};
+	private Consumer<String> errConsumer = this::updateErrorConsumer;
 	/*
 	 * Path to Python executable from the environment directory
 	 */
@@ -207,6 +199,20 @@ public class Mamba {
 	private void updateMambaDnwldProgress(Double pp) {
 	    double progress = pp != null ? pp : 0.0;
 	    mambaDnwldProgress = progress * 1.0;
+	}
+	
+	private void updateConsoleConsumer(String str) {
+		if (str == null) str = "";
+		mambaConsoleOut += str;
+		if (customConsoleConsumer != null)
+			customConsoleConsumer.accept(str);
+	}
+	
+	private void updateErrorConsumer(String str) {
+		if (str == null) str = "";
+		mambaConsoleErr += str;
+		if (customErrorConsumer != null)
+			customErrorConsumer.accept(str);
 	}
 	
 	private void updateMambaDecompressProgress(Double pp) {
