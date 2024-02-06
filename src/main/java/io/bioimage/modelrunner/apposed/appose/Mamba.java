@@ -1236,7 +1236,7 @@ public class Mamba {
 	 * 	The list of dependencies that should be installed in the environment.
 	 * 	They can contain version requirements. The names should be the ones used to import the package inside python,
 	 * 	"skimage", not "scikit-image" or "sklearn", not "scikit-learn"
-	 * 	An example list: "numpy", "numba>=0.43.1", "torch==1.6", "torch>=1.6, <2.0"
+	 * 	An example list: "numpy", "numba&gt;=0.43.1", "torch==1.6", "torch&gt;=1.6, &lt;2.0"
 	 * @return true if the packages are installed or false otherwise
 	 * @throws MambaInstallException if Micromamba has not been installed, thus the instance of {@link Mamba} cannot be used
 	 */
@@ -1257,7 +1257,7 @@ public class Mamba {
 	 * 	The list of dependencies that should be installed in the environment.
 	 * 	They can contain version requirements. The names should be the ones used to import the package inside python,
 	 * 	"skimage", not "scikit-image" or "sklearn", not "scikit-learn"
-	 * 	An example list: "numpy", "numba>=0.43.1", "torch==1.6", "torch>=1.6, <2.0"
+	 * 	An example list: "numpy", "numba&gt;=0.43.1", "torch==1.6", "torch&gt;=1.6, &lt;2.0"
 	 * @return true if the packages are installed or false otherwise
 	 * @throws MambaInstallException if Micromamba has not been installed, thus the instance of {@link Mamba} cannot be used
 	 */
@@ -1292,7 +1292,7 @@ public class Mamba {
 	 * 	The name of the package that should be installed in the env
 	 * 	They can contain version requirements. The names should be the ones used to import the package inside python,
 	 * 	"skimage", not "scikit-image" or "sklearn", not "scikit-learn"
-	 * 	An example list: "numpy", "numba>=0.43.1", "torch==1.6", "torch>=1.6, <2.0"
+	 * 	An example list: "numpy", "numba&gt;=0.43.1", "torch==1.6", "torch&gt;=1.6, &lt;2.0"
 	 * @return true if the package is installed or false otherwise
 	 * @throws MambaInstallException if Micromamba has not been installed, thus the instance of {@link Mamba} cannot be used
 	 */
@@ -1381,7 +1381,7 @@ public class Mamba {
 	 * In this method the minversion argument should be strictly smaller than the version of interest and
 	 * the maxversion strictly bigger.
 	 * This method checks that: dependency >minversion, <maxversion
-	 * For smaller or equal or bigger or equal (dependency >=minversion, <=maxversion) look at the method
+	 * For smaller or equal or bigger or equal (dependency &gt;=minversion, &lt;=maxversion) look at the method
 	 * {@link #checkDependencyInEnv(String, String, String, String, boolean)} with the lst parameter set to false.
 	 * 
 	 * @param envDir
@@ -1394,12 +1394,12 @@ public class Mamba {
 	 * @param minversion
 	 * 	the minimum required version of the package that needs to be installed. For example:, "0.43.1", "1.6", "2.0".
 	 * 	This version should be strictly smaller than the one of interest, if for example "1.9" is given, it is assumed that
-	 * 	pacakge_version>1.9.
+	 * 	package_version&gt;1.9.
 	 * 	If there is no minimum version requirement for the package of interest, set this argument to null.
 	 * @param maxversion
 	 * 	the maximum required version of the package that needs to be installed. For example:, "0.43.1", "1.6", "2.0".
 	 * 	This version should be strictly bigger than the one of interest, if for example "1.9" is given, it is assumed that
-	 * 	pacakge_version<1.9.
+	 * 	package_version&lt;1.9.
 	 * 	If there is no maximum version requirement for the package of interest, set this argument to null.
 	 * @return true if the package is installed or false otherwise
 	 * @throws MambaInstallException if Micromamba has not been installed, thus the instance of {@link Mamba} cannot be used
@@ -1413,7 +1413,7 @@ public class Mamba {
 	/**
 	 * Checks whether a package with specific version constraints is installed in the wanted environment.
 	 * Depending on the last argument ('strictlyBiggerOrSmaller') 'minversion' and 'maxversion'
-	 * will be strictly bigger(>=) or smaller(<) or bigger or equal (>=) or smaller or equal<>=)
+	 * will be strictly bigger(&gt;=) or smaller(&lt;) or bigger or equal &gt;=) or smaller or equal&lt;=)
 	 * In this method the minversion argument should be strictly smaller than the version of interest and
 	 * the maxversion strictly bigger.
 	 * 
