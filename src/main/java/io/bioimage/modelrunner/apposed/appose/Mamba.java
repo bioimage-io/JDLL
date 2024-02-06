@@ -114,16 +114,16 @@ public class Mamba {
 	 * Consumer that tracks the progress in the download of micromamba, the software used 
 	 * by this class to manage Python environments
 	 */
-	private Consumer<Double> mambaDnwldProgressConsumer = (pp) -> {
+	private Consumer<Double> mambaDnwldProgressConsumer = (Double pp) -> {
 	    double progress = (pp == null) ? 0.0 : pp;
-		mambaDnwldProgress = pp * 1.0;
+		mambaDnwldProgress = progress * 1.0;
 	};
 	/**
 	 * Consumer that tracks the progress decompressing the downloaded micromamba files.
 	 */
-	private Consumer<Double> mambaDecompressProgressConsumer = (pp) -> {
+	private Consumer<Double> mambaDecompressProgressConsumer = (Double pp) -> {
 	    double progress = (pp == null) ? 0.0 : pp;
-		mambaDecompressProgress = pp * 1.0;
+		mambaDecompressProgress = progress * 1.0;
 	};
 	/**
 	 * String that contains all the console output produced by micromamba ever since the {@link Mamba} was instantiated
