@@ -104,12 +104,12 @@ public class Mamba {
 	 * Progress made on the download from the Internet of the micromamba software. VAlue between 0 and 1.
 	 * 
 	 */
-	private double mambaDnwldProgress = 0.0;
+	private Double mambaDnwldProgress = 0.0;
 	/**
 	 * Progress made on the decompressing the micromamba files downloaded from the Internet of the micromamba 
 	 * software. VAlue between 0 and 1.
 	 */
-	private double mambaDecompressProgress = 0.0;
+	private Double mambaDecompressProgress = 0.0;
 	/**
 	 * Consumer that tracks the progress in the download of micromamba, the software used 
 	 * by this class to manage Python environments
