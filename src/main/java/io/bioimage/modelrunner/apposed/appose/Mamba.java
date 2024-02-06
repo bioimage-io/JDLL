@@ -533,8 +533,7 @@ public class Mamba {
 	 *             If the current thread is interrupted by another thread while it
 	 *             is waiting, then the wait is ended and an InterruptedException is
 	 *             thrown.
-	 * @throws RuntimeException if the process to create the env of the yaml file is not terminated correctly
-	 *             If there is any error running the commands
+	 * @throws RuntimeException if the process to create the env of the yaml file is not terminated correctly. If there is any error running the commands
 	 * @throws MambaInstallException if Micromamba has not been installed, thus the instance of {@link Mamba} cannot be used
 	 */
 	public void createWithYaml( final String envName, final String envYaml, final boolean isForceCreation) throws IOException, InterruptedException, RuntimeException, MambaInstallException
@@ -812,7 +811,7 @@ public class Mamba {
 	 *             If the current thread is interrupted by another thread while it
 	 *             is waiting, then the wait is ended and an InterruptedException is
 	 *             thrown.
-	 * @throws RuntimeException 
+	 * @throws RuntimeException if the process to create the env of the yaml file is not terminated correctly. If there is any error running the commands
 	 * @throws MambaInstallException if Micromamba has not been installed, thus the instance of {@link Mamba} cannot be used
 	 */
 	public void installIn( final String envName, List<String> channels, List<String> packages ) throws IOException, InterruptedException, RuntimeException, MambaInstallException
@@ -1380,7 +1379,7 @@ public class Mamba {
 	 * Checks whether a package with specific version constraints is installed in the wanted environment.
 	 * In this method the minversion argument should be strictly smaller than the version of interest and
 	 * the maxversion strictly bigger.
-	 * This method checks that: dependency >minversion, <maxversion
+	 * This method checks that: dependency &gt;minversion, &lt;maxversion
 	 * For smaller or equal or bigger or equal (dependency &gt;=minversion, &lt;=maxversion) look at the method
 	 * {@link #checkDependencyInEnv(String, String, String, String, boolean)} with the lst parameter set to false.
 	 * 
