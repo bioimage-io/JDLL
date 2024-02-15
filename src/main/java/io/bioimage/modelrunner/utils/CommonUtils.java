@@ -157,7 +157,7 @@ public class CommonUtils {
 		} else if (type instanceof IntType) {
 			return "int32";
 		} else if (type instanceof UnsignedIntType) {
-			return "uint";
+			return "uint32";
 		} else if (type instanceof LongType) {
 			return "int64";
 		} else if (type instanceof FloatType) {
