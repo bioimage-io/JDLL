@@ -24,8 +24,8 @@ import com.sun.jna.Native;
 import com.sun.jna.Pointer;
 
 
-public interface CLibrary extends Library {
-    CLibrary INSTANCE = Native.load("c", CLibrary.class);
+public interface LibRt extends Library {
+    LibRt INSTANCE = Native.load("rt", LibRt.class);
 
     int shm_open(String name, int oflag, int mode);
     int ftruncate(int fd, int length);
