@@ -71,7 +71,7 @@ public class SharedMemoryArrayLinux implements SharedMemoryArray
 	/**
 	 * Instance of the CLibrary JNI containing the methods to interact with the Shared memory segments
 	 */
-	private static final CLibrary INSTANCE = CLibrary.INSTANCE;
+	private static final LibRt INSTANCE = LibRt.INSTANCE;
 	/**
 	 * File descriptor value of the shared memory segment
 	 */
