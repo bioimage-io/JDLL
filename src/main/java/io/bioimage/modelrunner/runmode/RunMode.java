@@ -43,6 +43,7 @@ import io.bioimage.modelrunner.utils.CommonUtils;
 import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.type.NativeType;
 import net.imglib2.type.numeric.RealType;
+import net.imglib2.util.Util;
 
 public class RunMode {
 	
@@ -485,7 +486,7 @@ public class RunMode {
 		String axes = (String) apposeTensor.get(RunModeScripts.AXES_KEY);
 		boolean isFortran = (boolean) apposeTensor.get(RunModeScripts.IS_FORTRAN_KEY);
 		RandomAccessibleInterval<T> rai = SharedMemoryArray.buildImgLib2FromSHMA(shmName, longShape, isFortran, dtype);
-		return Tensor.build(tensorname, axes, rai);
+		return Tensor.build(tensorname, axes, Tensor.createCopyOfRaiInWantedDataType(rai, Util.getTypeFromInterval(rai)));
 	}
 	
 	private static < T extends RealType< T > & NativeType< T > > 
@@ -506,7 +507,7 @@ public class RunMode {
 		String dtype = (String) apposeTensor.get(RunModeScripts.DTYPE_KEY);
 		boolean isFortran = (boolean) apposeTensor.get(RunModeScripts.IS_FORTRAN_KEY);
 		RandomAccessibleInterval<T> rai = SharedMemoryArray.buildImgLib2FromSHMA(shmName, longShape, isFortran, dtype);
-		return rai;
+		return Tensor.createCopyOfRaiInWantedDataType(rai, Util.getTypeFromInterval(rai));
 	}
 	
 	private static List<Object> createListFromApposeOutput(List<Object> list) throws FileNotFoundException, IOException {
