@@ -102,6 +102,8 @@ public class TensorSpec {
      * "I" comes from instance
      */
     public static final String LIST = "list";
+    
+    private static final long OPTIMAL_MAX_NUMBER_PIXELS = 4096 * 4096 * 3;
 
     /**
      * Builds the tensor specification instance from the tensor map and an input flag.
@@ -302,7 +304,14 @@ public class TensorSpec {
 				patch[ii] = min;
 			}
 		}
-		return patch;
+		
+		if (!applyTiling || Arrays.stream(shape.getTileStep()).allMatch(i -> i == 0))
+			return patch;
+		long totPix = 1;
+		for (int ii : patch) totPix *= (long) ii;
+		
+		if (totPix < OPTIMAL_MAX_NUMBER_PIXELS)
+			return patch;
     }
     
     /**
