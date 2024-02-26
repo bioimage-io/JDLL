@@ -634,7 +634,6 @@ public class SharedMemoryArrayLinux implements SharedMemoryArray
             if (shmFd >= 0) {
             	INSTANCE.close(shmFd);
             }
-            INSTANCE.shm_unlink(memoryName);
         	return rai;
         } catch (Exception ex) {
             if (pSharedMemory != Pointer.NULL) {
@@ -643,7 +642,6 @@ public class SharedMemoryArrayLinux implements SharedMemoryArray
             if (shmFd >= 0) {
             	INSTANCE.close(shmFd);
             }
-            INSTANCE.shm_unlink(memoryName);
         	throw new RuntimeException(ex);
         }
 	}
