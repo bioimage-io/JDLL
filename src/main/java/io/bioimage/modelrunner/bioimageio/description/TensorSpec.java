@@ -309,9 +309,37 @@ public class TensorSpec {
 			return patch;
 		long totPix = 1;
 		for (int ii : patch) totPix *= (long) ii;
-		
 		if (totPix < OPTIMAL_MAX_NUMBER_PIXELS)
 			return patch;
+		
+		long minPix = 1;
+		for (int ii : shape.getTileMinimumSize()) minPix *= (long) ii;
+		if (minPix > OPTIMAL_MAX_NUMBER_PIXELS)
+			return shape.getTileMinimumSize();
+		
+		double ratio = (double) OPTIMAL_MAX_NUMBER_PIXELS / (double) totPix;
+		
+		for (int ii = 0; ii < axesArr.length; ii ++) {
+			int step = shape.getTileStep()[ii];
+			if (step == 0) continue;
+			float haloVal = halo[ii];
+			int min = shape.getTileMinimumSize()[ii];
+			int ind = seqSizeAxesUpper.indexOf(axesArr[ii]);
+			int size = seqSize[ind];
+			int prevTile = patch[ii];
+			long nTot = totPix / prevTile;
+			if ((prevTile * ratio < min) && (min < 100))
+				patch[ii] = (int)Math.ceil((double)100 / (double)step) * step;
+			else if (prevTile * ratio < min)
+				patch[ii] = min;
+			else 
+				patch[ii] = (int)Math.ceil(prevTile * ratio);
+			totPix = nTot * patch[ii];
+			ratio = (double) OPTIMAL_MAX_NUMBER_PIXELS / (double) totPix;
+			if (ratio < 1.1)
+				break;
+		}
+		return patch;
     }
     
     /**
