@@ -322,13 +322,10 @@ public class TensorSpec {
 		for (int ii = 0; ii < axesArr.length; ii ++) {
 			int step = shape.getTileStep()[ii];
 			if (step == 0) continue;
-			float haloVal = halo[ii];
 			int min = shape.getTileMinimumSize()[ii];
-			int ind = seqSizeAxesUpper.indexOf(axesArr[ii]);
-			int size = seqSize[ind];
 			int prevTile = patch[ii];
 			long nTot = totPix / prevTile;
-			if ((prevTile * ratio < min) && (min < 100))
+			if ((prevTile * ratio < min) && (min < 100) && (min != 1) && (min != 0))
 				patch[ii] = (int)Math.ceil((double)100 / (double)step) * step;
 			else if (prevTile * ratio < min)
 				patch[ii] = min;
@@ -336,7 +333,7 @@ public class TensorSpec {
 				patch[ii] = (int)Math.ceil(prevTile * ratio);
 			totPix = nTot * patch[ii];
 			ratio = (double) OPTIMAL_MAX_NUMBER_PIXELS / (double) totPix;
-			if (ratio < 1.1)
+			if (ratio > 0.9)
 				break;
 		}
 		return patch;
@@ -833,5 +830,4 @@ public class TensorSpec {
     public boolean isImage() {
     	return this.type.equals(IMAGE);
     }
-
 }
