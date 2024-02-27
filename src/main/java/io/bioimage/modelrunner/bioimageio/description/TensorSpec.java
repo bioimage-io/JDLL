@@ -280,6 +280,7 @@ public class TensorSpec {
     public int[] getOptimalTileSizeForTiling(int[] seqSize, String seqSizeAxes, boolean applyTiling) {
     	int[] patch = new int[axes.length()];
     	String seqSizeAxesUpper = seqSizeAxes.toUpperCase();
+    	seqSizeAxesUpper = seqSizeAxesUpper.replace("T", "B");
     	String[] axesArr = axes.toUpperCase().split("");
 		for (int ii = 0; ii < axesArr.length; ii ++) {
 			float haloVal = halo[ii];
