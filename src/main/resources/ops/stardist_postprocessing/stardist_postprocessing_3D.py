@@ -17,6 +17,7 @@
 # limitations under the License.
 # #L%
 ###
+from __future__ import print_function, unicode_literals, absolute_import, division
 from time import time
 t = time()
 import numpy as np
@@ -42,13 +43,13 @@ if os.name != 'nt':
 		SITE_PACKAGES_DIR = os.path.join(SITE_PACKAGES_DIR, matching_files[0])
 STARDIST_DIR = os.path.join(SITE_PACKAGES_DIR, "site-packages", "stardist", "lib")
 sys.path.append(os.path.join(STARDIST_DIR))
-from stardist3d import c_non_max_suppression_inds
+from stardist3d import c_non_max_suppression_inds, c_polyhedron_to_label
 print("impot nms star " + str(time() - t))
 t = time()
-POLYGON_DIR = os.path.join(SITE_PACKAGES_DIR, "site-packages", "skimage", "draw")
-sys.path.append(POLYGON_DIR)
-from skimage.draw import polygon
-print("impot geometry star " + str(time() - t))
+
+from scipy.spatial import ConvexHull
+import copy
+import warnings
 
 
 
@@ -100,7 +101,7 @@ def stardist_postprocessing_3D(raw_output, prob_thresh, nms_thresh, n_classes=No
     return res_instances[0].astype("float32")
 
 
-def _prep(prob, dist, channel=2):
+def _prep(prob, dist, channel=3):
     prob = np.take(prob, 0, axis=channel)
     dist = np.moveaxis(dist, channel, -1)
     dist = np.maximum(1e-3, dist)
@@ -136,7 +137,7 @@ def instances_from_prediction(img_shape, prob, dist, prob_thresh, nms_thresh, gr
 
     # sparse prediction
     if points is not None:
-        points, probi, disti, indsi = non_maximum_suppression_3d_sparse(dist, prob, points, rays, nms_thresh=nms_thresh,
+        points, probi, disti, indsi = non_maximum_suppression_3D_sparse(dist, prob, points, rays, nms_thresh=nms_thresh,
                                                                      **nms_kwargs)
         if prob_class is not None:
             prob_class = prob_class[indsi]
@@ -161,17 +162,17 @@ def instances_from_prediction(img_shape, prob, dist, prob_thresh, nms_thresh, gr
         rescale = (1, 1)
 
     if return_labels:
-        labels = polyhedron_to_label(disti, points, rays=rays, prob=probi, shape=img_shape, overlap_label=overlap_label, verbose=verbose)
-    	if overlap_label is not None and overlap_label<0 and (overlap_label in labels):
+        labels = polyhedron_to_label(disti, points, rays=rays, prob=probi, shape=img_shape, overlap_label=overlap_label)
+        if overlap_label is not None and overlap_label<0 and (overlap_label in labels):
                 overlap_mask = (labels == overlap_label)
                 overlap_label2 = max(set(np.unique(labels))-{overlap_label})+1
                 labels[overlap_mask] = overlap_label2
                 labels, fwd, bwd = relabel_sequential(labels)
                 labels[labels == fwd[overlap_label2]] = overlap_label
-	else:
+        else:
 		# TODO relabel_sequential necessary?
 		# print(np.unique(labels))
-		labels, _,_ = relabel_sequential(labels)
+            labels, _,_ = relabel_sequential(labels)
     else:
         labels = None
 
@@ -360,7 +361,7 @@ def non_maximum_suppression_3D_sparse(dist, prob, points, rays, b=2, nms_thresh=
     n_rays = dist.shape[-1]
 
     assert dist.ndim == 2 and prob.ndim == 1 and points.ndim == 2 and \
-        points.shape[-1]==2 and len(prob) == len(dist) == len(points)
+        points.shape[-1]==3 and len(prob) == len(dist) == len(points)
 
     verbose and print("predicting instances with nms_thresh = {nms_thresh}".format(nms_thresh=nms_thresh), flush=True)
 
@@ -526,55 +527,105 @@ def ray_angles(n_rays=32):
     return np.linspace(0,2*np.pi,n_rays,endpoint=False)
 
 
-def polygons_to_label(dist, points, shape, prob=None, thr=-np.inf, scale_dist=(1,1)):
-    """converts distances and center points to label image
-
-    dist.shape   = (n_polys, n_rays)
-    points.shape = (n_polys, 2)
-
-    label ids will be consecutive and adhere to the order given
+def polyhedron_to_label(dist, points, rays, shape, prob=None, thr=-np.inf, labels=None, mode="full", verbose=True, overlap_label=None):
     """
-    dist = np.asarray(dist)
-    points = np.asarray(points)
-    prob = np.inf*np.ones(len(points)) if prob is None else np.asarray(prob)
+    creates labeled image from stardist representations
 
-    assert dist.ndim==2 and points.ndim==2 and len(dist)==len(points)
-    assert len(points)==len(prob) and points.shape[1]==2 and prob.ndim==1
+    :param dist: array of shape (n_points,n_rays)
+        the list of distances for each point and ray
+    :param points: array of shape (n_points, 3)
+        the list of center points
+    :param rays: Rays object
+        Ray object (e.g. `stardist.Rays_GoldenSpiral`) defining
+        vertices and faces
+    :param shape: (nz,ny,nx)
+        output shape of the image
+    :param prob: array of length/shape (n_points,) or None
+        probability per polyhedron
+    :param thr: scalar
+        probability threshold (only polyhedra with prob>thr are labeled)
+    :param labels: array of length/shape (n_points,) or None
+        labels to use
+    :param mode: str
+        labeling mode, can be "full", "kernel", "hull", "bbox" or  "debug"
+    :param verbose: bool
+        enable to print some debug messages
+    :param overlap_label: scalar or None
+        if given, will label each pixel that belongs ot more than one polyhedron with that label
+    :return: array of given shape
+        labeled image
+    """
+    if len(points) == 0:
+        if verbose:
+            print("warning: empty list of points (returning background-only image)")
+        return np.zeros(shape, np.uint16)
 
-    n_rays = dist.shape[1]
+    dist = np.asanyarray(dist)
+    points = np.asanyarray(points)
 
-    ind = prob>thr
-    points = points[ind]
-    dist = dist[ind]
+    if dist.ndim == 1:
+        dist = dist.reshape(1, -1)
+    if points.ndim == 1:
+        points = points.reshape(1, -1)
+    if labels is None:
+        labels = np.arange(1, len(points) + 1)
+
+    if np.amin(dist) <= 0:
+        raise ValueError("distance array should be positive!")
+
+    prob = np.ones(len(points)) if prob is None else np.asanyarray(prob)
+
+    if dist.ndim != 2:
+        raise ValueError("dist should be 2 dimensional but has shape %s" % str(dist.shape))
+
+    if dist.shape[1] != len(rays):
+        raise ValueError("inconsistent number of rays!")
+
+    if len(prob) != len(points):
+        raise ValueError("len(prob) != len(points)")
+
+    if len(labels) != len(points):
+        raise ValueError("len(labels) != len(points)")
+
+    modes = {"full": 0, "kernel": 1, "hull": 2, "bbox": 3, "debug": 4}
+
+    if not mode in modes:
+        raise KeyError("Unknown render mode '%s' , allowed:  %s" % (mode, tuple(modes.keys())))
+
+    lbl = np.zeros(shape, np.uint16)
+
+    # filter points
+    ind = np.where(prob >= thr)[0]
+    if len(ind) == 0:
+        if verbose:
+            print("warning: no points found with probability>= {thr:.4f} (returning background-only image)".format(thr=thr))
+        return lbl
+
     prob = prob[ind]
-
-    ind = np.argsort(prob, kind='stable')
     points = points[ind]
     dist = dist[ind]
+    labels = labels[ind]
 
-    coord = dist_to_coord(dist, points, scale_dist=scale_dist)
+    # sort points with decreasing probability
+    ind = np.argsort(prob)[::-1]
+    points = points[ind]
+    dist = dist[ind]
+    labels = labels[ind]
 
-    return polygons_to_label_coord(coord, shape=shape, labels=ind)
+    def _prep(x, dtype):
+        return np.ascontiguousarray(x.astype(dtype, copy=False))
 
-
-def polygons_to_label_coord(coord, shape, labels=None):
-    """renders polygons to image of given shape
-
-    coord.shape   = (n_polys, n_rays)
-    """
-    coord = np.asarray(coord)
-    if labels is None: labels = np.arange(len(coord))
-
-    _check_label_array(labels, "labels")
-    assert coord.ndim==3 and coord.shape[1]==2 and len(coord)==len(labels)
-
-    lbl = np.zeros(shape,np.int32)
-
-    for i,c in zip(labels,coord):
-        rr,cc = polygon(*c, shape)
-        lbl[rr,cc] = i+1
-
-    return lbl
+    return c_polyhedron_to_label(_prep(dist, np.float32),
+                                 _prep(points, np.float32),
+                                 _prep(rays.vertices, np.float32),
+                                 _prep(rays.faces, np.int32),
+                                 _prep(labels, np.int32),
+                                 np.int32(modes[mode]),
+                                 np.int32(verbose),
+                                 np.int32(overlap_label is not None),
+                                 np.int32(0 if overlap_label is None else overlap_label),
+                                 shape
+                                 )
 
 def _check_label_array(y, name=None, check_sequential=False):
     err = ValueError("{label} must be an array of {integers}.".format(
@@ -625,11 +676,6 @@ Example:
     print(rays.faces)
 
 """
-from __future__ import print_function, unicode_literals, absolute_import, division
-import numpy as np
-from scipy.spatial import ConvexHull
-import copy
-import warnings
 
 class Rays_Base(object):
     def __init__(self, **kwargs):
