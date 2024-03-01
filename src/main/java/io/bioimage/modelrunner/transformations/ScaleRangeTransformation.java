@@ -125,11 +125,8 @@ public class ScaleRangeTransformation extends AbstractTensorTransformation
 		if (axes == null || selectedAxes.equals("") 
 				|| input.getAxesOrderString().replace("b", "").length() == selectedAxes.length()) {
 			globalScale(input);
-		} else if (axes.length() <= 2 && axes.length() > 0) {
+		} else if (axes.length() > 0) {
 			axesScale(input, selectedAxes);
-		} else {
-			//TODO allow scaling of more complex structures
-			throw new IllegalArgumentException("At the moment, only allowed scaling of planes.");
 		}
 		
 	}
