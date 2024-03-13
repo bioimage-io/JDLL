@@ -395,7 +395,8 @@ public class Mamba {
 		MambaInstallerUtils.unBZip2(tempFile, tempTarFile);
 		File mambaBaseDir = new File(rootdir);
 		if (!mambaBaseDir.isDirectory() && !mambaBaseDir.mkdirs())
-	        throw new IOException("Failed to create Micromamba default directory " + mambaBaseDir.getParentFile().getAbsolutePath());
+	        throw new IOException("Failed to create Micromamba default directory " + mambaBaseDir.getParentFile().getAbsolutePath()
+	        		+ ". Please try installing it in another directory.");
 		MambaInstallerUtils.unTar(tempTarFile, mambaBaseDir);
 		if (!(new File(envsdir)).isDirectory() && !new File(envsdir).mkdirs())
 	        throw new IOException("Failed to create Micromamba default envs directory " + envsdir);
@@ -1124,7 +1125,8 @@ public class Mamba {
 		// Wait for all output to be read
 		outputThread.join();
 		if (processResult != 0)
-        	throw new RuntimeException("Error executing the following command: " + builder.command());
+        	throw new RuntimeException("Error executing the following command: " + builder.command()
+        								+ System.lineSeparator() + this.mambaConsoleOut);
 	}
 
 	/**
