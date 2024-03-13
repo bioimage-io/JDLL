@@ -1086,7 +1086,7 @@ public class Mamba {
                 int newLineIndex;
 		        long t0 = System.currentTimeMillis();
 		        while (process.isAlive() || inputStream.available() > 0) {
-		        	if (mainThread.isInterrupted()) {
+		        	if (!mainThread.isAlive()) {
 		        		process.destroyForcibly();
 		        		return;
 		        	}
@@ -1131,7 +1131,12 @@ public class Mamba {
 		});
 		// Start reading threads
 		outputThread.start();
-		int processResult = process.waitFor();
+		int processResult;
+		try {
+			processResult = process.waitFor();
+		} catch (InterruptedException ex) {
+			throw new InterruptedException("Mamba process stopped. The command being executed was: " + cmd);
+		}
 		// Wait for all output to be read
 		outputThread.join();
 		if (processResult != 0)
