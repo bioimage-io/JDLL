@@ -529,42 +529,70 @@ public class SharedMemoryArrayLinux implements SharedMemoryArray
 	 */
 	public static HashMap<String, Object> buildMapFromNumpyLikeSHMA(String memoryName) {
 		if (!memoryName.startsWith("/")) memoryName = "/" + memoryName;
-	    int shmFd = INSTANCE.shm_open(memoryName, O_RDONLY, 0700);
+		boolean useLibRT = true;
+		int shmFd;
+		try {
+		    shmFd = INSTANCE_RT.shm_open(memoryName, O_RDONLY, 0700);
+		} catch (Exception ex) {
+		    shmFd = INSTANCE_C.shm_open(memoryName, O_RDONLY, 0700);
+		    useLibRT = false;
+		}
         if (shmFd < 0 )
             throw new RuntimeException("Failed to open shared memory. Errno: " + Native.getLastError());
 
-        long size = INSTANCE.lseek(shmFd, 0, CLibrary.SEEK_END);
-	    if (size == -1) {
-            CLibrary.INSTANCE.close(shmFd);
+        long size;
+        if (useLibRT) size = INSTANCE_RT.lseek(shmFd, 0, CLibrary.SEEK_END);
+        else size = INSTANCE_C.lseek(shmFd, 0, CLibrary.SEEK_END);
+	    if (size == -1 && useLibRT) {
+            INSTANCE_RT.close(shmFd);
+	    	throw new RuntimeException("Failed to get shared memory segment size. Errno: " + Native.getLastError());
+	    } else if (size == -1 && !useLibRT) {
+            INSTANCE_C.close(shmFd);
 	    	throw new RuntimeException("Failed to get shared memory segment size. Errno: " + Native.getLastError());
 	    }
 
         // Map the shared memory into the process's address space
-        Pointer pSharedMemory = INSTANCE.mmap(null, (int) size, PROT_READ, MAP_SHARED, shmFd, 0);
-        if (pSharedMemory == Pointer.NULL) {
-            CLibrary.INSTANCE.close(shmFd);
+        Pointer pSharedMemory;
+        if (useLibRT) pSharedMemory = INSTANCE_RT.mmap(null, (int) size, PROT_READ, MAP_SHARED, shmFd, 0);
+        else pSharedMemory = INSTANCE_C.mmap(null, (int) size, PROT_READ, MAP_SHARED, shmFd, 0);
+        
+        if (pSharedMemory == Pointer.NULL && useLibRT) {
+            INSTANCE_RT.close(shmFd);
+            throw new RuntimeException("Failed to map shared memory. Errmo: " + Native.getLastError());
+        } else if (pSharedMemory == Pointer.NULL && !useLibRT) {
+            INSTANCE_C.close(shmFd);
             throw new RuntimeException("Failed to map shared memory. Errmo: " + Native.getLastError());
         }
         byte[] flat = new byte[(int) size];
         pSharedMemory.read(0, flat, 0, flat.length);
 		try (ByteArrayInputStream bis = new ByteArrayInputStream(flat)){
 			HashMap<String, Object> map = DecodeNumpy.decodeNumpyFromByteArrayStreamToRawMap(bis);
-        	if (pSharedMemory != Pointer.NULL) {
-                INSTANCE.munmap(pSharedMemory, (int) size);
+        	if (pSharedMemory != Pointer.NULL && useLibRT) {
+                INSTANCE_RT.munmap(pSharedMemory, (int) size);
+            } else if (pSharedMemory != Pointer.NULL && !useLibRT) {
+                INSTANCE_C.munmap(pSharedMemory, (int) size);
             }
-            if (shmFd >= 0) {
-            	INSTANCE.close(shmFd);
+            if (shmFd >= 0 && useLibRT) {
+            	INSTANCE_RT.close(shmFd);
+            } else if (shmFd >= 0 && !useLibRT) {
+            	INSTANCE_C.close(shmFd);
             }
-            INSTANCE.shm_unlink(memoryName);
+            if (useLibRT) INSTANCE_RT.shm_unlink(memoryName);
+            else INSTANCE_C.shm_unlink(memoryName);
         	return map;
         } catch (Exception ex) {
-            if (pSharedMemory != Pointer.NULL) {
-                INSTANCE.munmap(pSharedMemory, (int) size);
+        	if (pSharedMemory != Pointer.NULL && useLibRT) {
+                INSTANCE_RT.munmap(pSharedMemory, (int) size);
+            } else if (pSharedMemory != Pointer.NULL && !useLibRT) {
+                INSTANCE_C.munmap(pSharedMemory, (int) size);
             }
-            if (shmFd >= 0) {
-            	INSTANCE.close(shmFd);
+            if (shmFd >= 0 && useLibRT) {
+            	INSTANCE_RT.close(shmFd);
+            } else if (shmFd >= 0 && !useLibRT) {
+            	INSTANCE_C.close(shmFd);
             }
-            INSTANCE.shm_unlink(memoryName);
+            if (useLibRT) INSTANCE_RT.shm_unlink(memoryName);
+            else INSTANCE_C.shm_unlink(memoryName);
         	throw new RuntimeException(ex.toString());
         }
 	}
@@ -586,17 +614,32 @@ public class SharedMemoryArrayLinux implements SharedMemoryArray
 	public static <T extends RealType<T> & NativeType<T>>
 	RandomAccessibleInterval<T> buildImgLib2FromNumpyLikeSHMA(String memoryName) {
 		if (!memoryName.startsWith("/")) memoryName = "/" + memoryName;
-	    int shmFd = INSTANCE.shm_open(memoryName, O_RDONLY, 0700);
+		boolean useLibRT = true;
+		int shmFd;
+		try {
+		    shmFd = INSTANCE_RT.shm_open(memoryName, O_RDONLY, 0700);
+		} catch (Exception ex) {
+		    shmFd = INSTANCE_C.shm_open(memoryName, O_RDONLY, 0700);
+		    useLibRT = false;
+		}
         if (shmFd < 0) throw new RuntimeException("Failed to open shared memory. Errno: " + Native.getLastError());
 
-        long size = INSTANCE.lseek(shmFd, 0, CLibrary.SEEK_END);
-	    if (size == -1) {
-            CLibrary.INSTANCE.close(shmFd);
+
+        long size;
+        if (useLibRT) size = INSTANCE_RT.lseek(shmFd, 0, CLibrary.SEEK_END);
+        else size = INSTANCE_C.lseek(shmFd, 0, CLibrary.SEEK_END);
+	    if (size == -1 && useLibRT) {
+            INSTANCE_RT.close(shmFd);
+	    	throw new RuntimeException("Failed to get shared memory segment size. Errno: " + Native.getLastError());
+	    } else if (size == -1 && !useLibRT) {
+            INSTANCE_C.close(shmFd);
 	    	throw new RuntimeException("Failed to get shared memory segment size. Errno: " + Native.getLastError());
 	    }
 
         // Map the shared memory into the process's address space
-        Pointer pSharedMemory = INSTANCE.mmap(null, (int) size, PROT_READ, MAP_SHARED, shmFd, 0);
+        Pointer pSharedMemory;
+        if (useLibRT) pSharedMemory = INSTANCE_RT.mmap(null, (int) size, PROT_READ, MAP_SHARED, shmFd, 0);
+        else pSharedMemory = INSTANCE_C.mmap(null, (int) size, PROT_READ, MAP_SHARED, shmFd, 0);
         if (pSharedMemory == Pointer.NULL) {
             CLibrary.INSTANCE.close(shmFd);
             throw new RuntimeException("Failed to map shared memory. Errmo: " + Native.getLastError());
@@ -605,22 +648,32 @@ public class SharedMemoryArrayLinux implements SharedMemoryArray
         pSharedMemory.read(0, flat, 0, flat.length);
 		try (ByteArrayInputStream bis = new ByteArrayInputStream(flat)){
 			RandomAccessibleInterval<T> rai = DecodeNumpy.decodeNumpyFromByteArrayStream(bis);
-        	if (pSharedMemory != Pointer.NULL) {
-                INSTANCE.munmap(pSharedMemory, (int) size);
+			if (pSharedMemory != Pointer.NULL && useLibRT) {
+                INSTANCE_RT.munmap(pSharedMemory, (int) size);
+            } else if (pSharedMemory != Pointer.NULL && !useLibRT) {
+                INSTANCE_C.munmap(pSharedMemory, (int) size);
             }
-            if (shmFd >= 0) {
-            	INSTANCE.close(shmFd);
+            if (shmFd >= 0 && useLibRT) {
+            	INSTANCE_RT.close(shmFd);
+            } else if (shmFd >= 0 && !useLibRT) {
+            	INSTANCE_C.close(shmFd);
             }
-            INSTANCE.shm_unlink(memoryName);
+            if (useLibRT) INSTANCE_RT.shm_unlink(memoryName);
+            else INSTANCE_C.shm_unlink(memoryName);
         	return rai;
         } catch (Exception ex) {
-            if (pSharedMemory != Pointer.NULL) {
-                INSTANCE.munmap(pSharedMemory, (int) size);
+        	if (pSharedMemory != Pointer.NULL && useLibRT) {
+                INSTANCE_RT.munmap(pSharedMemory, (int) size);
+            } else if (pSharedMemory != Pointer.NULL && !useLibRT) {
+                INSTANCE_C.munmap(pSharedMemory, (int) size);
             }
-            if (shmFd >= 0) {
-            	INSTANCE.close(shmFd);
+            if (shmFd >= 0 && useLibRT) {
+            	INSTANCE_RT.close(shmFd);
+            } else if (shmFd >= 0 && !useLibRT) {
+            	INSTANCE_C.close(shmFd);
             }
-            INSTANCE.shm_unlink(memoryName);
+            if (useLibRT) INSTANCE_RT.shm_unlink(memoryName);
+            else INSTANCE_C.shm_unlink(memoryName);
         	throw new RuntimeException(ex);
         }
 	}
@@ -644,13 +697,22 @@ public class SharedMemoryArrayLinux implements SharedMemoryArray
 	RandomAccessibleInterval<T> createImgLib2RaiFromSharedMemoryBlock(String memoryName, long[] shape, boolean isFortran, String dataType) {
 		int size = SharedMemoryArray.getArrayByteSize(shape, Cast.unchecked(CommonUtils.getImgLib2DataType(dataType)));
 		if (!memoryName.startsWith("/")) memoryName = "/" + memoryName;
-		int shmFd = INSTANCE.shm_open(memoryName, O_RDONLY, 0);
+		boolean useLibRT = true;
+		int shmFd;
+		try {
+		    shmFd = INSTANCE_RT.shm_open(memoryName, O_RDONLY, 0);
+		} catch (Exception ex) {
+		    shmFd = INSTANCE_C.shm_open(memoryName, O_RDONLY, 0);
+		    useLibRT = false;
+		}
         if (shmFd < 0) {
             throw new RuntimeException("Failed to open shared memory. Errno: " + Native.getLastError());
         }
 
         // Map the shared memory into the process's address space
-        Pointer pSharedMemory = INSTANCE.mmap(null, size, PROT_READ, MAP_SHARED, shmFd, 0);
+        Pointer pSharedMemory;
+        if (useLibRT) pSharedMemory = INSTANCE_RT.mmap(null, size, PROT_READ, MAP_SHARED, shmFd, 0);
+        else pSharedMemory = INSTANCE_C.mmap(null, size, PROT_READ, MAP_SHARED, shmFd, 0);
         if (pSharedMemory == Pointer.NULL) {
             CLibrary.INSTANCE.close(shmFd);
             throw new RuntimeException("Failed to map shared memory. Errmo: " + Native.getLastError());
@@ -672,11 +734,15 @@ public class SharedMemoryArrayLinux implements SharedMemoryArray
             */
         	return rai;
         } catch (Exception ex) {
-            if (pSharedMemory != Pointer.NULL) {
-                INSTANCE.munmap(pSharedMemory, size);
+        	if (pSharedMemory != Pointer.NULL && useLibRT) {
+                INSTANCE_RT.munmap(pSharedMemory, (int) size);
+            } else if (pSharedMemory != Pointer.NULL && !useLibRT) {
+                INSTANCE_C.munmap(pSharedMemory, (int) size);
             }
-            if (shmFd >= 0) {
-            	INSTANCE.close(shmFd);
+            if (shmFd >= 0 && useLibRT) {
+            	INSTANCE_RT.close(shmFd);
+            } else if (shmFd >= 0 && !useLibRT) {
+            	INSTANCE_C.close(shmFd);
             }
         	throw new RuntimeException(ex);
         }
