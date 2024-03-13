@@ -928,6 +928,12 @@ public class Mamba {
 	}
 
 	/**
+	 * TODO stop process if the thread is interrupted, same as with mamba, look for runmamna method for example
+	 * TODO stop process if the thread is interrupted, same as with mamba, look for runmamna method for example
+	 * TODO stop process if the thread is interrupted, same as with mamba, look for runmamna method for example
+	 * TODO stop process if the thread is interrupted, same as with mamba, look for runmamna method for example
+	 * TODO stop process if the thread is interrupted, same as with mamba, look for runmamna method for example
+	 * 
 	 * Run a Python command in the specified environment. This method automatically
 	 * sets environment variables associated with the specified environment. In
 	 * Windows, this method also sets the {@code PATH} environment variable so that
