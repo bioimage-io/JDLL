@@ -640,8 +640,11 @@ public class SharedMemoryArrayLinux implements SharedMemoryArray
         Pointer pSharedMemory;
         if (useLibRT) pSharedMemory = INSTANCE_RT.mmap(null, (int) size, PROT_READ, MAP_SHARED, shmFd, 0);
         else pSharedMemory = INSTANCE_C.mmap(null, (int) size, PROT_READ, MAP_SHARED, shmFd, 0);
-        if (pSharedMemory == Pointer.NULL) {
-            CLibrary.INSTANCE.close(shmFd);
+        if (pSharedMemory == Pointer.NULL && useLibRT) {
+            INSTANCE_RT.close(shmFd);
+            throw new RuntimeException("Failed to map shared memory. Errmo: " + Native.getLastError());
+        } else if (pSharedMemory == Pointer.NULL && !useLibRT) {
+            INSTANCE_C.close(shmFd);
             throw new RuntimeException("Failed to map shared memory. Errmo: " + Native.getLastError());
         }
         byte[] flat = new byte[(int) size];
@@ -713,8 +716,11 @@ public class SharedMemoryArrayLinux implements SharedMemoryArray
         Pointer pSharedMemory;
         if (useLibRT) pSharedMemory = INSTANCE_RT.mmap(null, size, PROT_READ, MAP_SHARED, shmFd, 0);
         else pSharedMemory = INSTANCE_C.mmap(null, size, PROT_READ, MAP_SHARED, shmFd, 0);
-        if (pSharedMemory == Pointer.NULL) {
-            CLibrary.INSTANCE.close(shmFd);
+        if (pSharedMemory == Pointer.NULL && useLibRT) {
+            INSTANCE_RT.close(shmFd);
+            throw new RuntimeException("Failed to map shared memory. Errmo: " + Native.getLastError());
+        } else if (pSharedMemory == Pointer.NULL && !useLibRT) {
+            INSTANCE_C.close(shmFd);
             throw new RuntimeException("Failed to map shared memory. Errmo: " + Native.getLastError());
         }
 		try {
