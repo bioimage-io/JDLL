@@ -76,15 +76,42 @@ public final class MambaInstallerUtils {
 	 * 	destination folder where the contents of the file are going to be decompressed
 	 * @throws FileNotFoundException if the .bzip2 file is not found or does not exist
 	 * @throws IOException if the source file already exists or there is any error with the decompression
+	 * @throws InterruptedException if the therad where the decompression is happening is interrupted
 	 */
-	public static void unBZip2(File source, File destination) throws FileNotFoundException, IOException {
+	public static void unBZip2(File source, File destination) throws FileNotFoundException, IOException, InterruptedException {
 	    try (
 	    		BZip2CompressorInputStream input = new BZip2CompressorInputStream(new BufferedInputStream(new FileInputStream(source)));
 	    		FileOutputStream output = new FileOutputStream(destination);
 	    		) {
-	        IOUtils.copy(input, output);
+	        copy(input, output);
 	    }
 	}
+
+    /**
+     * Copies the content of a InputStream into an OutputStream
+     *
+     * @param input
+     * 	the InputStream to copy
+     * @param output
+     * 	the target, may be null to simulate output to dev/null on Linux and NUL on Windows
+     * @return the number of bytes copied
+     * @throws IOException if an error occurs copying the streams
+     * @throws InterruptedException if the thread where this is happening is interrupted
+     */
+    private static long copy(final InputStream input, final OutputStream output) throws IOException, InterruptedException {
+        int bufferSize = 4096;
+        final byte[] buffer = new byte[bufferSize];
+        int n = 0;
+        long count = 0;
+        while (-1 != (n = input.read(buffer))) {
+        	if (Thread.currentThread().isInterrupted()) throw new InterruptedException("Decompressing stopped.");
+            if (output != null) {
+                output.write(buffer, 0, n);
+            }
+            count += n;
+        }
+        return count;
+    }
 	
 	/** Untar an input file into an output file.
 
@@ -134,8 +161,9 @@ public final class MambaInstallerUtils {
 	 * @throws IOException if there is any error reading or writting
 	 * @throws ArchiveException if there is any error decompressing
 	 * @throws URISyntaxException if the url is wrong or there is no internet connection
+	 * @throws InterruptedException if there is interrruption
 	 */
-	public static void main(String[] args) throws FileNotFoundException, IOException, ArchiveException, URISyntaxException {
+	public static void main(String[] args) throws FileNotFoundException, IOException, ArchiveException, URISyntaxException, InterruptedException {
 		String url = Mamba.MICROMAMBA_URL;
 		final File tempFile = File.createTempFile( "miniconda", ".tar.bz2" );
 		tempFile.deleteOnExit();

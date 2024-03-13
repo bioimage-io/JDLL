@@ -389,7 +389,8 @@ public class Mamba {
 		return tempFile;
 	}
 	
-	private void decompressMicromamba(final File tempFile) throws FileNotFoundException, IOException, ArchiveException {
+	private void decompressMicromamba(final File tempFile) 
+				throws FileNotFoundException, IOException, ArchiveException, InterruptedException {
 		final File tempTarFile = File.createTempFile( "micromamba", ".tar" );
 		tempTarFile.deleteOnExit();
 		MambaInstallerUtils.unBZip2(tempFile, tempTarFile);
@@ -1079,7 +1080,10 @@ public class Mamba {
                 int newLineIndex;
 		        long t0 = System.currentTimeMillis();
 		        while (process.isAlive() || inputStream.available() > 0) {
-		        	if (mainThread.isInterrupted()) return;
+		        	if (mainThread.isInterrupted()) {
+		        		process.destroyForcibly();
+		        		return;
+		        	}
 		            if (inputStream.available() > 0) {
 		                processBuff.append(new String(buffer, 0, inputStream.read(buffer)));
 		                while ((newLineIndex = processBuff.indexOf(System.lineSeparator())) != -1) {
