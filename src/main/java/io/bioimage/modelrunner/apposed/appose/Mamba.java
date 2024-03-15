@@ -1141,7 +1141,8 @@ public class Mamba {
 		outputThread.join();
 		if (processResult != 0)
         	throw new RuntimeException("Error executing the following command: " + builder.command()
-        								+ System.lineSeparator() + this.mambaConsoleOut);
+        								+ System.lineSeparator() + this.mambaConsoleOut
+        								+ System.lineSeparator() + this.mambaConsoleErr);
 	}
 
 	/**
