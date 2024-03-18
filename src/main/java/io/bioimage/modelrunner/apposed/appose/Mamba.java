@@ -979,7 +979,7 @@ public class Mamba {
 		}
 		// TODO find way to get env vars in micromamba builder.environment().putAll( getEnvironmentVariables( envName ) );
 		if ( builder.command( cmd ).start().waitFor() != 0 )
-			throw new RuntimeException();
+			throw new RuntimeException("Error executing the following command: " + builder.command());
 	}
 
 	/**
@@ -1027,7 +1027,7 @@ public class Mamba {
 		}
 		// TODO find way to get env vars in micromamba builder.environment().putAll( getEnvironmentVariables( envName ) );
 		if ( builder.command( cmd ).start().waitFor() != 0 )
-			throw new RuntimeException();
+			throw new RuntimeException("Error executing the following command: " + builder.command());
 	}
 
 	/**
@@ -1051,7 +1051,7 @@ public class Mamba {
 			cmd.addAll( Arrays.asList( checkExecutablePath(mambaCommand), "--version" ) );
 		final Process process = getBuilder( false ).command( cmd ).start();
 		if ( process.waitFor() != 0 )
-			throw new RuntimeException();
+			throw new RuntimeException("Error getting Micromamba version");
 		return new BufferedReader( new InputStreamReader( process.getInputStream() ) ).readLine();
 	}
 
