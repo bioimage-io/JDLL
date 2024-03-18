@@ -959,7 +959,7 @@ public class Mamba {
 		if ( envName.equals( DEFAULT_ENVIRONMENT_NAME ) )
 			cmd.add( PYTHON_COMMAND );
 		else
-			cmd.add( Paths.get( ENVS_NAME, envName, PYTHON_COMMAND ).toString() );
+			cmd.add( checkExecutablePath(Paths.get( ENVS_NAME, envName, PYTHON_COMMAND ).toString()) );
 		cmd.addAll( Arrays.asList( args ) );
 		final ProcessBuilder builder = getBuilder( true );
 		if ( PlatformDetection.isWindows() )
@@ -999,7 +999,7 @@ public class Mamba {
 			throw new IOException("No Python found in the environment provided. The following "
 					+ "file does not exist: " + Paths.get( envFile.getAbsolutePath(), PYTHON_COMMAND ).toAbsolutePath());
 		final List< String > cmd = getBaseCommand();
-		cmd.add( Paths.get( envFile.getAbsolutePath(), PYTHON_COMMAND ).toAbsolutePath().toString() );
+		cmd.add( checkExecutablePath(Paths.get( envFile.getAbsolutePath(), PYTHON_COMMAND ).toAbsolutePath().toString()) );
 		cmd.addAll( Arrays.asList( args ) );
 		final ProcessBuilder builder = new ProcessBuilder().directory( envFile );
 		builder.inheritIO();
@@ -1032,7 +1032,7 @@ public class Mamba {
 	public String getVersion() throws IOException, InterruptedException, MambaInstallException
 	{
 		final List< String > cmd = getBaseCommand();
-		cmd.addAll( Arrays.asList( mambaCommand, "--version" ) );
+		cmd.addAll( Arrays.asList( checkExecutablePath(mambaCommand), "--version" ) );
 		final Process process = getBuilder( false ).command( cmd ).start();
 		if ( process.waitFor() != 0 )
 			throw new RuntimeException();
@@ -1065,7 +1065,7 @@ public class Mamba {
 		SimpleDateFormat sdf = new SimpleDateFormat("HH:mm:ss");
 		
 		final List< String > cmd = getBaseCommand();
-		cmd.add( mambaCommand );
+		cmd.add( checkExecutablePath(mambaCommand) );
 		cmd.addAll( Arrays.asList( args ) );
 
 		ProcessBuilder builder = getBuilder(isInheritIO).command(cmd);
@@ -1561,6 +1561,23 @@ public class Mamba {
 			return false;
 		}
 		return false;
+	}
+	
+	/**
+	 * In Windows, if the path to the wanted executable contains spaces, it is surrounded by 
+	 * double quotes
+	 * @param path
+	 * 	path to the wanted executable
+	 * @return a robust executable path
+	 */
+	private static String checkExecutablePath(String path) {
+		String[] specialChars = new String[] {" "};
+        for (String schar : specialChars) {
+        	if (path.contains(schar) && PlatformDetection.isWindows()) {
+        		return "\"" + path + "\"";
+        	}
+        }
+        return path;
 	}
 
 }
