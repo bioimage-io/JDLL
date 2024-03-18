@@ -488,7 +488,7 @@ public class Mamba {
 	{
 		checkMambaInstalled();
 		if (!installed) throw new MambaInstallException("Micromamba is not installed");
-		final List< String > cmd = new ArrayList<>( Arrays.asList( "update", "-p", this.envsdir + File.separator + envName ) );
+		final List< String > cmd = new ArrayList<>( Arrays.asList( "update", "-p", checkExecutablePath(this.envsdir + File.separator + envName )) );
 		cmd.addAll( Arrays.asList( args ) );
 		if (!cmd.contains("--yes") && !cmd.contains("-y")) cmd.add("--yes");
 		runMamba( cmd.stream().toArray( String[]::new ) );
@@ -545,7 +545,7 @@ public class Mamba {
 		if ( !isForceCreation && getEnvironmentNames().contains( envName ) )
 			throw new EnvironmentExistsException();
 		runMamba("env", "create", "--prefix",
-				envsdir + File.separator + envName, "-f", envYaml, "-y", "-vv" );
+				checkExecutablePath(envsdir + File.separator + envName), "-f", envYaml, "-y", "-vv" );
 	}
 
 	/**
@@ -593,7 +593,7 @@ public class Mamba {
 		if (!installed) throw new MambaInstallException("Micromamba is not installed");
 		if ( !isForceCreation && getEnvironmentNames().contains( envName ) )
 			throw new EnvironmentExistsException();
-		runMamba( "create", "-y", "-p", envsdir + File.separator + envName );
+		runMamba( "create", "-y", "-p", checkExecutablePath(envsdir + File.separator + envName) );
 	}
 
 	/**
@@ -647,7 +647,7 @@ public class Mamba {
 		if (!installed) throw new MambaInstallException("Micromamba is not installed");
 		if ( !isForceCreation && getEnvironmentNames().contains( envName ) )
 			throw new EnvironmentExistsException();
-		final List< String > cmd = new ArrayList<>( Arrays.asList( "create", "-p", envsdir + File.separator + envName ) );
+		final List< String > cmd = new ArrayList<>( Arrays.asList( "create", "-p", checkExecutablePath(envsdir + File.separator + envName) ) );
 		cmd.addAll( Arrays.asList( args ) );
 		if (!cmd.contains("--yes") && !cmd.contains("-y")) cmd.add("--yes");
 		runMamba( cmd.stream().toArray( String[]::new ) );
@@ -821,7 +821,7 @@ public class Mamba {
 		checkMambaInstalled();
 		if (!installed) throw new MambaInstallException("Micromamba is not installed");
 		Objects.requireNonNull(envName, "The name of the environment of interest needs to be provided.");		
-		final List< String > cmd = new ArrayList<>( Arrays.asList( "install", "-y", "-p", this.envsdir + File.separator + envName ) );
+		final List< String > cmd = new ArrayList<>( Arrays.asList( "install", "-y", "-p", checkExecutablePath(this.envsdir + File.separator + envName )) );
 		if (channels == null) channels = new ArrayList<String>();
 		for (String chan : channels) { cmd.add("-c"); cmd.add(chan);}
 		if (packages == null) packages = new ArrayList<String>();
@@ -850,7 +850,7 @@ public class Mamba {
 	{
 		checkMambaInstalled();
 		if (!installed) throw new MambaInstallException("Micromamba is not installed");
-		final List< String > cmd = new ArrayList<>( Arrays.asList( "install", "-p", this.envsdir + File.separator + envName ) );
+		final List< String > cmd = new ArrayList<>( Arrays.asList( "install", "-p", checkExecutablePath(this.envsdir + File.separator + envName )) );
 		cmd.addAll( Arrays.asList( args ) );
 		if (!cmd.contains("--yes") && !cmd.contains("-y")) cmd.add("--yes");
 		runMamba( cmd.stream().toArray( String[]::new ) );
@@ -1573,6 +1573,8 @@ public class Mamba {
 	private static String checkExecutablePath(String path) {
 		String[] specialChars = new String[] {" "};
         for (String schar : specialChars) {
+        	if (path.startsWith("\"") && path.endsWith("\""))
+        		continue;
         	if (path.contains(schar) && PlatformDetection.isWindows()) {
         		return "\"" + path + "\"";
         	}
