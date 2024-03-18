@@ -961,7 +961,10 @@ public class Mamba {
 			argsList.add( PYTHON_COMMAND );
 		else
 			argsList.add( checkExecutablePath(Paths.get( ENVS_NAME, envName, PYTHON_COMMAND ).toString()) );
-		argsList.addAll( Arrays.asList( args ) );
+		argsList.addAll( Arrays.asList( args ).stream().map(aa -> {
+							if (aa.contains(" ") && PlatformDetection.isWindows()) return checkExecutablePath(aa);
+							else return aa;
+						}).collect(Collectors.toList()) );
 		boolean containsSpaces = argsList.stream().filter(aa -> aa.contains(" ")).collect(Collectors.toList()).size() > 0;
 		
 		if (!containsSpaces || !PlatformDetection.isWindows()) cmd.addAll(argsList);
@@ -1618,6 +1621,14 @@ public class Mamba {
 		arg = arg.substring(0, arg.length() - 1);
 		arg += "\"";
 		return arg;
+	}
+	
+	public static void main(String[] args) throws IOException, InterruptedException, MambaInstallException {
+		
+		Mamba m = new Mamba("C:\\Users\\angel\\Desktop\\Fiji app\\appose_x86_64");
+		String envName = "efficientvit_sam_env";
+		m.pipInstallIn(envName, new String[] {m.getEnvsDir() + File.separator + envName
+				+ File.separator + "appose-python"});
 	}
 
 }
