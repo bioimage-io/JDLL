@@ -28,6 +28,8 @@ package io.bioimage.modelrunner.apposed.appose;
 
 import org.apache.commons.compress.archivers.ArchiveException;
 
+import com.sun.jna.Platform;
+
 import io.bioimage.modelrunner.apposed.appose.CondaException.EnvironmentExistsException;
 import io.bioimage.modelrunner.bioimageio.download.DownloadModel;
 import io.bioimage.modelrunner.engine.installation.FileDownloader;
@@ -488,7 +490,7 @@ public class Mamba {
 	{
 		checkMambaInstalled();
 		if (!installed) throw new MambaInstallException("Micromamba is not installed");
-		final List< String > cmd = new ArrayList<>( Arrays.asList( "update", "-p", checkExecutablePath(this.envsdir + File.separator + envName )) );
+		final List< String > cmd = new ArrayList<>( Arrays.asList( "update", "-p", this.envsdir + File.separator + envName ) );
 		cmd.addAll( Arrays.asList( args ) );
 		if (!cmd.contains("--yes") && !cmd.contains("-y")) cmd.add("--yes");
 		runMamba( cmd.stream().toArray( String[]::new ) );
@@ -545,7 +547,7 @@ public class Mamba {
 		if ( !isForceCreation && getEnvironmentNames().contains( envName ) )
 			throw new EnvironmentExistsException();
 		runMamba("env", "create", "--prefix",
-				checkExecutablePath(envsdir + File.separator + envName), "-f", envYaml, "-y", "-vv" );
+				envsdir + File.separator + envName, "-f", envYaml, "-y", "-vv" );
 	}
 
 	/**
@@ -593,7 +595,7 @@ public class Mamba {
 		if (!installed) throw new MambaInstallException("Micromamba is not installed");
 		if ( !isForceCreation && getEnvironmentNames().contains( envName ) )
 			throw new EnvironmentExistsException();
-		runMamba( "create", "-y", "-p", checkExecutablePath(envsdir + File.separator + envName) );
+		runMamba( "create", "-y", "-p", envsdir + File.separator + envName );
 	}
 
 	/**
@@ -647,7 +649,7 @@ public class Mamba {
 		if (!installed) throw new MambaInstallException("Micromamba is not installed");
 		if ( !isForceCreation && getEnvironmentNames().contains( envName ) )
 			throw new EnvironmentExistsException();
-		final List< String > cmd = new ArrayList<>( Arrays.asList( "create", "-p", checkExecutablePath(envsdir + File.separator + envName) ) );
+		final List< String > cmd = new ArrayList<>( Arrays.asList( "create", "-p", envsdir + File.separator + envName ) );
 		cmd.addAll( Arrays.asList( args ) );
 		if (!cmd.contains("--yes") && !cmd.contains("-y")) cmd.add("--yes");
 		runMamba( cmd.stream().toArray( String[]::new ) );
@@ -821,7 +823,7 @@ public class Mamba {
 		checkMambaInstalled();
 		if (!installed) throw new MambaInstallException("Micromamba is not installed");
 		Objects.requireNonNull(envName, "The name of the environment of interest needs to be provided.");		
-		final List< String > cmd = new ArrayList<>( Arrays.asList( "install", "-y", "-p", checkExecutablePath(this.envsdir + File.separator + envName )) );
+		final List< String > cmd = new ArrayList<>( Arrays.asList( "install", "-y", "-p", this.envsdir + File.separator + envName ) );
 		if (channels == null) channels = new ArrayList<String>();
 		for (String chan : channels) { cmd.add("-c"); cmd.add(chan);}
 		if (packages == null) packages = new ArrayList<String>();
@@ -850,7 +852,7 @@ public class Mamba {
 	{
 		checkMambaInstalled();
 		if (!installed) throw new MambaInstallException("Micromamba is not installed");
-		final List< String > cmd = new ArrayList<>( Arrays.asList( "install", "-p", checkExecutablePath(this.envsdir + File.separator + envName )) );
+		final List< String > cmd = new ArrayList<>( Arrays.asList( "install", "-p", this.envsdir + File.separator + envName ) );
 		cmd.addAll( Arrays.asList( args ) );
 		if (!cmd.contains("--yes") && !cmd.contains("-y")) cmd.add("--yes");
 		runMamba( cmd.stream().toArray( String[]::new ) );
@@ -960,9 +962,9 @@ public class Mamba {
 		if ( envName.equals( DEFAULT_ENVIRONMENT_NAME ) )
 			argsList.add( PYTHON_COMMAND );
 		else
-			argsList.add( checkExecutablePath(Paths.get( ENVS_NAME, envName, PYTHON_COMMAND ).toString()) );
+			argsList.add( coverArgWithDoubleQuotes(Paths.get( ENVS_NAME, envName, PYTHON_COMMAND ).toString()) );
 		argsList.addAll( Arrays.asList( args ).stream().map(aa -> {
-							if (aa.contains(" ") && PlatformDetection.isWindows()) return checkExecutablePath(aa);
+							if (aa.contains(" ") && PlatformDetection.isWindows()) return coverArgWithDoubleQuotes(aa);
 							else return aa;
 						}).collect(Collectors.toList()) );
 		boolean containsSpaces = argsList.stream().filter(aa -> aa.contains(" ")).collect(Collectors.toList()).size() > 0;
@@ -1009,8 +1011,11 @@ public class Mamba {
 					+ "file does not exist: " + Paths.get( envFile.getAbsolutePath(), PYTHON_COMMAND ).toAbsolutePath());
 		final List< String > cmd = getBaseCommand();
 		List<String> argsList = new ArrayList<String>();
-		argsList.add( checkExecutablePath(Paths.get( envFile.getAbsolutePath(), PYTHON_COMMAND ).toAbsolutePath().toString()) );
-		argsList.addAll( Arrays.asList( args ) );
+		argsList.add( coverArgWithDoubleQuotes(Paths.get( envFile.getAbsolutePath(), PYTHON_COMMAND ).toAbsolutePath().toString()) );
+		argsList.addAll( Arrays.asList( args ).stream().map(aa -> {
+							if (Platform.isWindows() && aa.contains(" ")) return coverArgWithDoubleQuotes(aa);
+							else return aa;
+						}).collect(Collectors.toList()) );
 		boolean containsSpaces = argsList.stream().filter(aa -> aa.contains(" ")).collect(Collectors.toList()).size() > 0;
 		
 		if (!containsSpaces || !PlatformDetection.isWindows()) cmd.addAll(argsList);
@@ -1049,9 +1054,9 @@ public class Mamba {
 	{
 		final List< String > cmd = getBaseCommand();
 		if (mambaCommand.contains(" ") && PlatformDetection.isWindows())
-			cmd.add( surroundWithQuotes(Arrays.asList( checkExecutablePath(mambaCommand), "--version" )) );
+			cmd.add( surroundWithQuotes(Arrays.asList( coverArgWithDoubleQuotes(mambaCommand), "--version" )) );
 		else
-			cmd.addAll( Arrays.asList( checkExecutablePath(mambaCommand), "--version" ) );
+			cmd.addAll( Arrays.asList( coverArgWithDoubleQuotes(mambaCommand), "--version" ) );
 		final Process process = getBuilder( false ).command( cmd ).start();
 		if ( process.waitFor() != 0 )
 			throw new RuntimeException("Error getting Micromamba version");
@@ -1085,8 +1090,11 @@ public class Mamba {
 		
 		final List< String > cmd = getBaseCommand();
 		List<String> argsList = new ArrayList<String>();
-		argsList.add( checkExecutablePath(mambaCommand) );
-		argsList.addAll( Arrays.asList( args ) );
+		argsList.add( coverArgWithDoubleQuotes(mambaCommand) );
+		argsList.addAll( Arrays.asList( args ).stream().map(aa -> {
+			if (aa.contains(" ") && PlatformDetection.isWindows()) return coverArgWithDoubleQuotes(aa);
+			else return aa;
+		}).collect(Collectors.toList()) );
 		boolean containsSpaces = argsList.stream().filter(aa -> aa.contains(" ")).collect(Collectors.toList()).size() > 0;
 		
 		if (!containsSpaces || !PlatformDetection.isWindows()) cmd.addAll(argsList);
@@ -1588,22 +1596,22 @@ public class Mamba {
 	}
 	
 	/**
-	 * In Windows, if the path to the wanted executable contains spaces, it is surrounded by 
-	 * double quotes
-	 * @param path
-	 * 	path to the wanted executable
-	 * @return a robust executable path
+	 * In Windows, if a command prompt argument contains and space " " it needs to
+	 * start and end with double quotes
+	 * @param arg
+	 * 	the cmd argument
+	 * @return a robust argument
 	 */
-	private static String checkExecutablePath(String path) {
+	private static String coverArgWithDoubleQuotes(String arg) {
 		String[] specialChars = new String[] {" "};
         for (String schar : specialChars) {
-        	if (path.startsWith("\"") && path.endsWith("\""))
+        	if (arg.startsWith("\"") && arg.endsWith("\""))
         		continue;
-        	if (path.contains(schar) && PlatformDetection.isWindows()) {
-        		return "\"" + path + "\"";
+        	if (arg.contains(schar) && PlatformDetection.isWindows()) {
+        		return "\"" + arg + "\"";
         	}
         }
-        return path;
+        return arg;
 	}
 	
 	/**
