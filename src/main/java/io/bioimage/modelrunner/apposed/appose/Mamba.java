@@ -956,11 +956,17 @@ public class Mamba {
 		checkMambaInstalled();
 		if (!installed) throw new MambaInstallException("Micromamba is not installed");
 		final List< String > cmd = getBaseCommand();
+		List<String> argsList = new ArrayList<String>();
 		if ( envName.equals( DEFAULT_ENVIRONMENT_NAME ) )
-			cmd.add( PYTHON_COMMAND );
+			argsList.add( PYTHON_COMMAND );
 		else
-			cmd.add( checkExecutablePath(Paths.get( ENVS_NAME, envName, PYTHON_COMMAND ).toString()) );
-		cmd.addAll( Arrays.asList( args ) );
+			argsList.add( checkExecutablePath(Paths.get( ENVS_NAME, envName, PYTHON_COMMAND ).toString()) );
+		argsList.addAll( Arrays.asList( args ) );
+		boolean containsSpaces = argsList.stream().filter(aa -> aa.contains(" ")).collect(Collectors.toList()).size() > 0;
+		
+		if (!containsSpaces || !PlatformDetection.isWindows()) cmd.addAll(argsList);
+		else cmd.add(surroundWithQuotes(argsList));
+
 		final ProcessBuilder builder = getBuilder( true );
 		if ( PlatformDetection.isWindows() )
 		{
@@ -999,8 +1005,15 @@ public class Mamba {
 			throw new IOException("No Python found in the environment provided. The following "
 					+ "file does not exist: " + Paths.get( envFile.getAbsolutePath(), PYTHON_COMMAND ).toAbsolutePath());
 		final List< String > cmd = getBaseCommand();
-		cmd.add( checkExecutablePath(Paths.get( envFile.getAbsolutePath(), PYTHON_COMMAND ).toAbsolutePath().toString()) );
-		cmd.addAll( Arrays.asList( args ) );
+		List<String> argsList = new ArrayList<String>();
+		argsList.add( checkExecutablePath(Paths.get( envFile.getAbsolutePath(), PYTHON_COMMAND ).toAbsolutePath().toString()) );
+		argsList.addAll( Arrays.asList( args ) );
+		boolean containsSpaces = argsList.stream().filter(aa -> aa.contains(" ")).collect(Collectors.toList()).size() > 0;
+		
+		if (!containsSpaces || !PlatformDetection.isWindows()) cmd.addAll(argsList);
+		else cmd.add(surroundWithQuotes(argsList));
+		
+		
 		final ProcessBuilder builder = new ProcessBuilder().directory( envFile );
 		builder.inheritIO();
 		if ( PlatformDetection.isWindows() )
@@ -1032,7 +1045,10 @@ public class Mamba {
 	public String getVersion() throws IOException, InterruptedException, MambaInstallException
 	{
 		final List< String > cmd = getBaseCommand();
-		cmd.addAll( Arrays.asList( checkExecutablePath(mambaCommand), "--version" ) );
+		if (mambaCommand.contains(" ") && PlatformDetection.isWindows())
+			cmd.add( surroundWithQuotes(Arrays.asList( checkExecutablePath(mambaCommand), "--version" )) );
+		else
+			cmd.addAll( Arrays.asList( checkExecutablePath(mambaCommand), "--version" ) );
 		final Process process = getBuilder( false ).command( cmd ).start();
 		if ( process.waitFor() != 0 )
 			throw new RuntimeException();
@@ -1065,9 +1081,14 @@ public class Mamba {
 		SimpleDateFormat sdf = new SimpleDateFormat("HH:mm:ss");
 		
 		final List< String > cmd = getBaseCommand();
-		cmd.add( checkExecutablePath(mambaCommand) );
-		cmd.addAll( Arrays.asList( args ) );
-
+		List<String> argsList = new ArrayList<String>();
+		argsList.add( checkExecutablePath(mambaCommand) );
+		argsList.addAll( Arrays.asList( args ) );
+		boolean containsSpaces = argsList.stream().filter(aa -> aa.contains(" ")).collect(Collectors.toList()).size() > 0;
+		
+		if (!containsSpaces || !PlatformDetection.isWindows()) cmd.addAll(argsList);
+		else cmd.add(surroundWithQuotes(argsList));
+		
 		ProcessBuilder builder = getBuilder(isInheritIO).command(cmd);
 		Process process = builder.start();
 		// Use separate threads to read each stream to avoid a deadlock.
@@ -1580,6 +1601,23 @@ public class Mamba {
         	}
         }
         return path;
+	}
+	
+	/**
+	 * When an argument of a command prompt argument in Windows contains an space, not
+	 * only the argument needs to be surrounded by double quotes, but the whole sentence
+	 * @param args
+	 * 	arguments to be executed by the windows cmd
+	 * @return a complete Sting containing all the arguments and surrounded by double quotes
+	 */
+	private static String surroundWithQuotes(List<String> args) {
+		String arg = "\"";
+		for (String aa : args) {
+			arg += aa + " ";
+		}
+		arg = arg.substring(0, arg.length() - 1);
+		arg += "\"";
+		return arg;
 	}
 
 }
