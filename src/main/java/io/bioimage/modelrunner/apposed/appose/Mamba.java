@@ -289,7 +289,7 @@ public class Mamba {
 		else
 			this.rootdir = rootdir;
 		this.mambaCommand = new File(this.rootdir + MICROMAMBA_RELATIVE_PATH).getAbsolutePath();
-		this.envsdir = this.rootdir + File.separator + ENVS_NAME;
+		this.envsdir = Paths.get(rootdir, ENVS_NAME).toAbsolutePath().toString();
 		boolean filesExist = Files.notExists( Paths.get( mambaCommand ) );
 		if (!filesExist)
 			return;
@@ -522,7 +522,7 @@ public class Mamba {
 	 * Run {@code conda create} to create a conda environment defined by the input environment yaml file.
 	 * 
 	 * @param envName
-	 *            The environment name to be created.
+	 *            The environment name to be created. It should not be a path, just the name.
 	 * @param envYaml
 	 *            The environment yaml file containing the information required to build it  
 	 * @param envName
@@ -542,6 +542,9 @@ public class Mamba {
 	 */
 	public void createWithYaml( final String envName, final String envYaml, final boolean isForceCreation) throws IOException, InterruptedException, RuntimeException, MambaInstallException
 	{
+		if (envName.contains(File.pathSeparator))
+			throw new IllegalArgumentException("The environment name should not contain the file separator character: '"
+					+ File.separator + "'");
 		checkMambaInstalled();
 		if (!installed) throw new MambaInstallException("Micromamba is not installed");
 		if ( !isForceCreation && getEnvironmentNames().contains( envName ) )
