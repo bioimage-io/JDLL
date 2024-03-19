@@ -240,8 +240,7 @@ public interface SharedMemoryArray extends Closeable {
 	 * 	the data type into which the bytes in the shared memory region will be converted
 	 * @return the {@link RandomAccessibleInterval} defined by the arguments and the shared memory segment
 	 */
-	static <T extends RealType<T> & NativeType<T>>
-	RandomAccessibleInterval<T> buildImgLib2FromSHMA(String memoryName, long[] shape, boolean isFortran, String dataType) {
+	static SharedMemoryArray readSHMArray(String memoryName, long[] shape, boolean isFortran, String dataType) {
         if (PlatformDetection.isWindows()) 
         	return SharedMemoryArrayWin.createImgLib2RaiFromSharedMemoryBlock(memoryName, shape, isFortran, dataType);
         else if (PlatformDetection.isLinux())
@@ -263,8 +262,7 @@ public interface SharedMemoryArray extends Closeable {
 	 * 	name of the region where the shared memory segment is located
 	 * @return the {@link RandomAccessibleInterval} defined exclusively by the shared memory region following the .npy format
 	 */
-	static <T extends RealType<T> & NativeType<T>>
-	RandomAccessibleInterval<T> buildImgLib2FromNumpyLikeSHMA(String memoryName) {
+	static SharedMemoryArray readNumpyLikeSHMA(String memoryName) {
         if (PlatformDetection.isWindows()) 
         	return SharedMemoryArrayWin.buildImgLib2FromNumpyLikeSHMA(memoryName);
         else if (PlatformDetection.isLinux())
@@ -289,6 +287,7 @@ public interface SharedMemoryArray extends Closeable {
 	 * 	name of the region where the shared memory segment is located
 	 * @return the {@link RandomAccessibleInterval} defined exclusively by the shared memory region following the .npy format
 	 */
+	/*
 	static HashMap<String, Object> buildMapFromNumpyLikeSHMA(String memoryName) {
         if (PlatformDetection.isWindows()) 
         	return SharedMemoryArrayWin.buildMapFromNumpyLikeSHMA(memoryName);
@@ -297,6 +296,7 @@ public interface SharedMemoryArray extends Closeable {
         else
     		return SharedMemoryArrayMacOS.buildMapFromNumpyLikeSHMA(memoryName);
 	}
+	*/
 	
 	/**
 	 * Checks whether the String provided  can be used as the name given to a shared memory segment
@@ -411,6 +411,21 @@ public interface SharedMemoryArray extends Closeable {
      * @return the randomAccessible interval that is defined in the shared memory segment
      */
     public <T extends RealType<T> & NativeType<T>> RandomAccessibleInterval<T> getSharedRAI();
+
+    /**
+     * Retrieve the {@link RandomAccessibleInterval} defined in the shared memory segment
+     * 
+     * @param <T>
+     * 	possible ImgLib2 data types of the retrieved {@link RandomAccessibleInterval}
+	 * @param shape
+	 * 	shape (array dimensions) into which the flat array of the shared memory segment will be reconstructed
+	 * @param isFortran
+	 * 	whether converting the falt array into a ndarray is done using Fortran ordering or not (C-ordering)
+	 * @param dataType
+	 * 	the data type into which the bytes in the shared memory region will be converted
+     * @return the randomAccessible interval that is defined in the shared memory segment
+     */
+    public <T extends RealType<T> & NativeType<T>> RandomAccessibleInterval<T> getSharedRAI(long[] shape, boolean isFortran, T dataType);
     
     /**
      * 
