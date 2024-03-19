@@ -22,7 +22,6 @@ package io.bioimage.modelrunner.tensor.shm;
 import java.io.Closeable;
 import java.io.File;
 import java.nio.ByteBuffer;
-import java.util.HashMap;
 import java.util.UUID;
 
 import com.sun.jna.Pointer;
@@ -137,6 +136,55 @@ public interface SharedMemoryArray extends Closeable {
         if (PlatformDetection.isWindows()) return new SharedMemoryArrayWin(size * DecodeNumpy.DATA_TYPES_MAP.get(strDType), strDType, shape);
     	else if (PlatformDetection.isLinux()) return new SharedMemoryArrayLinux(size * DecodeNumpy.DATA_TYPES_MAP.get(strDType), strDType, shape);
     	else return new SharedMemoryArrayMacOS(size * DecodeNumpy.DATA_TYPES_MAP.get(strDType), strDType, shape);
+	}
+
+	/**
+	 * This method creates a segment on the Shared Memory region of the computer with the size
+	 * needed to store an image of the wanted characteristics.
+	 * It is useful to allocate in advance the space that a certain {@link RandomAccessibleInterval}
+	 * will need. The image can then reference this shared memory region.
+	 * An instance of {@link SharedMemoryArray} is created that helps managing the shared memory data.
+	 * 
+	 * The amount of space reserved will depend on the shape provided and the datatype.
+	 * 
+	 * @param <T>
+     * 	possible ImgLib2 data types of the wanted {@link RandomAccessibleInterval}
+     * @param name
+     * 	name of the shared memory region that has been created
+	 * @param shape
+	 * 	shape of an ndimensional array that could be stored in the shared memory region
+	 * @param datatype
+	 * 	datatype of the data that is going to be stored in the region
+	 * @return a {@link SharedMemoryArray} instance that helps handling the data written to the shared memory region
+	 */
+	static <T extends RealType<T> & NativeType<T>>
+	SharedMemoryArray readOrCreate(String name, int size) {
+        if (PlatformDetection.isWindows()) return new SharedMemoryArrayWin(name, size, null, null);
+    	else if (PlatformDetection.isLinux()) return new SharedMemoryArrayLinux(name, size, null, null);
+    	else return new SharedMemoryArrayMacOS(name, size, null, null);
+	}
+
+	/**
+	 * This method creates a segment on the Shared Memory region of the computer with the size
+	 * needed to store an image of the wanted characteristics.
+	 * It is useful to allocate in advance the space that a certain {@link RandomAccessibleInterval}
+	 * will need. The image can then reference this shared memory region.
+	 * An instance of {@link SharedMemoryArray} is created that helps managing the shared memory data.
+	 * 
+	 * The amount of space reserved will depend on the shape provided and the datatype.
+	 * 
+	 * @param <T>
+     * 	possible ImgLib2 data types of the wanted {@link RandomAccessibleInterval}
+	 * @param shape
+	 * 	shape of an ndimensional array that could be stored in the shared memory region
+	 * @param datatype
+	 * 	datatype of the data that is going to be stored in the region
+	 * @return a {@link SharedMemoryArray} instance that helps handling the data written to the shared memory region
+	 */
+	static SharedMemoryArray create(int size) {
+        if (PlatformDetection.isWindows()) return new SharedMemoryArrayWin(size, null, null);
+    	else if (PlatformDetection.isLinux()) return new SharedMemoryArrayLinux(size, null, null);
+    	else return new SharedMemoryArrayMacOS(size, null, null);
 	}
 
 	/**
