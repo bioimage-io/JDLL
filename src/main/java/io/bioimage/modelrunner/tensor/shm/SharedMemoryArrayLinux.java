@@ -20,6 +20,7 @@
 package io.bioimage.modelrunner.tensor.shm;
 
 import java.io.ByteArrayInputStream;
+import java.nio.ByteBuffer;
 import java.util.HashMap;
 
 import com.sun.jna.Pointer;
@@ -214,23 +215,6 @@ public class SharedMemoryArrayLinux implements SharedMemoryArray
      */
     public int getSize() {
     	return this.size;
-    }
-
-	/**
-	 * This method copies the data from a {@link RandomAccessibleInterval} into a shared memory region
-	 * to be able to shared it with other processes.
-	 * An instance of {@link SharedMemoryArray} is created that helps managing the shared memory data.
-	 * The name is assigned automatically.
-	 * 
-	 * @param <T>
-     * 	possible ImgLib2 data types of the provided {@link RandomAccessibleInterval}
-	 * @param rai
-	 * 	the {@link RandomAccessibleInterval} that is going to be written into a shared memory region
-	 * @return a {@link SharedMemoryArray} instance that helps handling the data written to the shared memory region
-	 */
-    protected static <T extends RealType<T> & NativeType<T>> SharedMemoryArrayLinux build(RandomAccessibleInterval<T> rai)
-    {
-    	return build(SharedMemoryArray.createShmName(), rai);
     }
 
 	/**
@@ -512,180 +496,7 @@ public class SharedMemoryArrayLinux implements SharedMemoryArray
 	
 	// TODO support boolean
 	/**
-	 * Build a {@link HashMap} from the data stored in an existing shared memory segment.
-	 * The returned {@link HashMap} contains one entry for the data type, another for the shape (array dimensions),
-	 * byte ordering, column order (whether it is Fortran ordering or C ordering) and another for the actual byte
-	 * data (a flat array with the byte values of the array).
-	 * 
-	 * The shared memory segment should contain an array of bytes that can be read using the .npy format.
-	 * That is an array of bytes which specifies the characteristics of the nd array (shape, data type, byte order...)
-	 * followed by the flattened data converted into bytes.
-	 * If the shared memory region follows that convention, only the name of the shared memory region is needed to 
-	 * reconstruct the underlying nd array.
-	 * 
-	 * @param memoryName
-	 * 	name of the region where the shared memory segment is located
-	 * @return the {@link RandomAccessibleInterval} defined exclusively by the shared memory region following the .npy format
-	 */
-	public static HashMap<String, Object> buildMapFromNumpyLikeSHMA(String memoryName) {
-		if (!memoryName.startsWith("/")) memoryName = "/" + memoryName;
-		boolean useLibRT = true;
-		int shmFd;
-		try {
-		    shmFd = INSTANCE_RT.shm_open(memoryName, O_RDONLY, 0700);
-		} catch (Exception ex) {
-		    shmFd = INSTANCE_C.shm_open(memoryName, O_RDONLY, 0700);
-		    useLibRT = false;
-		}
-        if (shmFd < 0 )
-            throw new RuntimeException("Failed to open shared memory. Errno: " + Native.getLastError());
-
-        long size;
-        if (useLibRT) size = INSTANCE_RT.lseek(shmFd, 0, CLibrary.SEEK_END);
-        else size = INSTANCE_C.lseek(shmFd, 0, CLibrary.SEEK_END);
-	    if (size == -1 && useLibRT) {
-            INSTANCE_RT.close(shmFd);
-	    	throw new RuntimeException("Failed to get shared memory segment size. Errno: " + Native.getLastError());
-	    } else if (size == -1 && !useLibRT) {
-            INSTANCE_C.close(shmFd);
-	    	throw new RuntimeException("Failed to get shared memory segment size. Errno: " + Native.getLastError());
-	    }
-
-        // Map the shared memory into the process's address space
-        Pointer pSharedMemory;
-        if (useLibRT) pSharedMemory = INSTANCE_RT.mmap(null, (int) size, PROT_READ, MAP_SHARED, shmFd, 0);
-        else pSharedMemory = INSTANCE_C.mmap(null, (int) size, PROT_READ, MAP_SHARED, shmFd, 0);
-        
-        if (pSharedMemory == Pointer.NULL && useLibRT) {
-            INSTANCE_RT.close(shmFd);
-            throw new RuntimeException("Failed to map shared memory. Errmo: " + Native.getLastError());
-        } else if (pSharedMemory == Pointer.NULL && !useLibRT) {
-            INSTANCE_C.close(shmFd);
-            throw new RuntimeException("Failed to map shared memory. Errmo: " + Native.getLastError());
-        }
-        byte[] flat = new byte[(int) size];
-        pSharedMemory.read(0, flat, 0, flat.length);
-		try (ByteArrayInputStream bis = new ByteArrayInputStream(flat)){
-			HashMap<String, Object> map = DecodeNumpy.decodeNumpyFromByteArrayStreamToRawMap(bis);
-        	if (pSharedMemory != Pointer.NULL && useLibRT) {
-                INSTANCE_RT.munmap(pSharedMemory, (int) size);
-            } else if (pSharedMemory != Pointer.NULL && !useLibRT) {
-                INSTANCE_C.munmap(pSharedMemory, (int) size);
-            }
-            if (shmFd >= 0 && useLibRT) {
-            	INSTANCE_RT.close(shmFd);
-            } else if (shmFd >= 0 && !useLibRT) {
-            	INSTANCE_C.close(shmFd);
-            }
-            if (useLibRT) INSTANCE_RT.shm_unlink(memoryName);
-            else INSTANCE_C.shm_unlink(memoryName);
-        	return map;
-        } catch (Exception ex) {
-        	if (pSharedMemory != Pointer.NULL && useLibRT) {
-                INSTANCE_RT.munmap(pSharedMemory, (int) size);
-            } else if (pSharedMemory != Pointer.NULL && !useLibRT) {
-                INSTANCE_C.munmap(pSharedMemory, (int) size);
-            }
-            if (shmFd >= 0 && useLibRT) {
-            	INSTANCE_RT.close(shmFd);
-            } else if (shmFd >= 0 && !useLibRT) {
-            	INSTANCE_C.close(shmFd);
-            }
-            if (useLibRT) INSTANCE_RT.shm_unlink(memoryName);
-            else INSTANCE_C.shm_unlink(memoryName);
-        	throw new RuntimeException(ex.toString());
-        }
-	}
-	
-	// TODO support boolean
-	/**
 	 * Build a {@link RandomAccessibleInterval} from the data stored in an existing shared memory segment.
-	 * The shared memory segment should contain an array of bytes that can be read using the .npy format.
-	 * That is an array of bytes which specifies the characteristics of the nd array (shape, data type, byte order...)
-	 * followed by the flattened data converted into bytes.
-	 * If the shared memory region follows that convention, only the name of the shared memory region is needed to 
-	 * reconstruct the underlying nd array
-	 * @param <T>
-     * 	possible ImgLib2 data types of the retrieved {@link RandomAccessibleInterval}
-	 * @param memoryName
-	 * 	name of the region where the shared memory segment is located
-	 * @return the {@link RandomAccessibleInterval} defined exclusively by the shared memory region following the .npy format
-	 */
-	public static <T extends RealType<T> & NativeType<T>>
-	RandomAccessibleInterval<T> buildImgLib2FromNumpyLikeSHMA(String memoryName) {
-		if (!memoryName.startsWith("/")) memoryName = "/" + memoryName;
-		boolean useLibRT = true;
-		int shmFd;
-		try {
-		    shmFd = INSTANCE_RT.shm_open(memoryName, O_RDONLY, 0700);
-		} catch (Exception ex) {
-		    shmFd = INSTANCE_C.shm_open(memoryName, O_RDONLY, 0700);
-		    useLibRT = false;
-		}
-        if (shmFd < 0) throw new RuntimeException("Failed to open shared memory. Errno: " + Native.getLastError());
-
-
-        long size;
-        if (useLibRT) size = INSTANCE_RT.lseek(shmFd, 0, CLibrary.SEEK_END);
-        else size = INSTANCE_C.lseek(shmFd, 0, CLibrary.SEEK_END);
-	    if (size == -1 && useLibRT) {
-            INSTANCE_RT.close(shmFd);
-	    	throw new RuntimeException("Failed to get shared memory segment size. Errno: " + Native.getLastError());
-	    } else if (size == -1 && !useLibRT) {
-            INSTANCE_C.close(shmFd);
-	    	throw new RuntimeException("Failed to get shared memory segment size. Errno: " + Native.getLastError());
-	    }
-
-        // Map the shared memory into the process's address space
-        Pointer pSharedMemory;
-        if (useLibRT) pSharedMemory = INSTANCE_RT.mmap(null, (int) size, PROT_READ, MAP_SHARED, shmFd, 0);
-        else pSharedMemory = INSTANCE_C.mmap(null, (int) size, PROT_READ, MAP_SHARED, shmFd, 0);
-        if (pSharedMemory == Pointer.NULL && useLibRT) {
-            INSTANCE_RT.close(shmFd);
-            throw new RuntimeException("Failed to map shared memory. Errmo: " + Native.getLastError());
-        } else if (pSharedMemory == Pointer.NULL && !useLibRT) {
-            INSTANCE_C.close(shmFd);
-            throw new RuntimeException("Failed to map shared memory. Errmo: " + Native.getLastError());
-        }
-        byte[] flat = new byte[(int) size];
-        pSharedMemory.read(0, flat, 0, flat.length);
-		try (ByteArrayInputStream bis = new ByteArrayInputStream(flat)){
-			RandomAccessibleInterval<T> rai = DecodeNumpy.decodeNumpyFromByteArrayStream(bis);
-			if (pSharedMemory != Pointer.NULL && useLibRT) {
-                INSTANCE_RT.munmap(pSharedMemory, (int) size);
-            } else if (pSharedMemory != Pointer.NULL && !useLibRT) {
-                INSTANCE_C.munmap(pSharedMemory, (int) size);
-            }
-            if (shmFd >= 0 && useLibRT) {
-            	INSTANCE_RT.close(shmFd);
-            } else if (shmFd >= 0 && !useLibRT) {
-            	INSTANCE_C.close(shmFd);
-            }
-            if (useLibRT) INSTANCE_RT.shm_unlink(memoryName);
-            else INSTANCE_C.shm_unlink(memoryName);
-        	return rai;
-        } catch (Exception ex) {
-        	if (pSharedMemory != Pointer.NULL && useLibRT) {
-                INSTANCE_RT.munmap(pSharedMemory, (int) size);
-            } else if (pSharedMemory != Pointer.NULL && !useLibRT) {
-                INSTANCE_C.munmap(pSharedMemory, (int) size);
-            }
-            if (shmFd >= 0 && useLibRT) {
-            	INSTANCE_RT.close(shmFd);
-            } else if (shmFd >= 0 && !useLibRT) {
-            	INSTANCE_C.close(shmFd);
-            }
-            if (useLibRT) INSTANCE_RT.shm_unlink(memoryName);
-            else INSTANCE_C.shm_unlink(memoryName);
-        	throw new RuntimeException(ex);
-        }
-	}
-	
-	// TODO support boolean
-	/**
-	 * Build a {@link RandomAccessibleInterval} from the data stored in an existing shared memory segment.
-	 * @param <T>
-     * 	possible ImgLib2 data types of the retrieved {@link RandomAccessibleInterval}
 	 * @param memoryName
 	 * 	name of the region where the shared memory segment is located
 	 * @param shape
@@ -696,8 +507,7 @@ public class SharedMemoryArrayLinux implements SharedMemoryArray
 	 * 	the data type into which the bytes in the shared memory region will be converted
 	 * @return the {@link RandomAccessibleInterval} defined by the arguments and the shared memory segment
 	 */
-	public static <T extends RealType<T> & NativeType<T>>
-	RandomAccessibleInterval<T> createImgLib2RaiFromSharedMemoryBlock(String memoryName, long[] shape, boolean isFortran, String dataType) {
+	public static SharedMemoryArray readSHMArray(String memoryName, long[] shape, boolean isFortran, String dataType) {
 		int size = SharedMemoryArray.getArrayByteSize(shape, Cast.unchecked(CommonUtils.getImgLib2DataType(dataType)));
 		if (!memoryName.startsWith("/")) memoryName = "/" + memoryName;
 		boolean useLibRT = true;
@@ -722,35 +532,6 @@ public class SharedMemoryArrayLinux implements SharedMemoryArray
         } else if (pSharedMemory == Pointer.NULL && !useLibRT) {
             INSTANCE_C.close(shmFd);
             throw new RuntimeException("Failed to map shared memory. Errmo: " + Native.getLastError());
-        }
-		try {
-        	RandomAccessibleInterval<T> rai = buildFromSharedMemoryBlock(pSharedMemory, shape, isFortran, dataType);
-        	/** TODO decide
-        	/** TODO decide
-        	/** TODO decide
-        	/** TODO decide
-        	/** TODO decide
-        	/** TODO decide
-        	if (pSharedMemory != Pointer.NULL) {
-                INSTANCE.munmap(pSharedMemory, size);
-            }
-            if (shmFd >= 0) {
-            	INSTANCE.close(shmFd);
-            }
-            */
-        	return rai;
-        } catch (Exception ex) {
-        	if (pSharedMemory != Pointer.NULL && useLibRT) {
-                INSTANCE_RT.munmap(pSharedMemory, (int) size);
-            } else if (pSharedMemory != Pointer.NULL && !useLibRT) {
-                INSTANCE_C.munmap(pSharedMemory, (int) size);
-            }
-            if (shmFd >= 0 && useLibRT) {
-            	INSTANCE_RT.close(shmFd);
-            } else if (shmFd >= 0 && !useLibRT) {
-            	INSTANCE_C.close(shmFd);
-            }
-        	throw new RuntimeException(ex);
         }
 	}
 	
@@ -889,5 +670,18 @@ public class SharedMemoryArrayLinux implements SharedMemoryArray
      */
 	public boolean isNumpyFormat() {
 		return this.isNumpyFormat;
+	}
+
+	@Override
+	public <T extends RealType<T> & NativeType<T>> RandomAccessibleInterval<T> getSharedRAI(long[] shape,
+			boolean isFortran, T dataType) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public ByteBuffer getDataBuffer() {
+		// TODO Auto-generated method stub
+		return null;
 	}
 }
