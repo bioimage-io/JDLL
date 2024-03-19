@@ -21,6 +21,7 @@ package io.bioimage.modelrunner.tensor.shm;
 
 import java.io.Closeable;
 import java.io.File;
+import java.nio.ByteBuffer;
 import java.util.HashMap;
 import java.util.UUID;
 
@@ -242,11 +243,11 @@ public interface SharedMemoryArray extends Closeable {
 	 */
 	static SharedMemoryArray readSHMArray(String memoryName, long[] shape, boolean isFortran, String dataType) {
         if (PlatformDetection.isWindows()) 
-        	return SharedMemoryArrayWin.createImgLib2RaiFromSharedMemoryBlock(memoryName, shape, isFortran, dataType);
+        	return SharedMemoryArrayWin.readSHMArray(memoryName, shape, isFortran, dataType);
         else if (PlatformDetection.isLinux())
-    		return SharedMemoryArrayLinux.createImgLib2RaiFromSharedMemoryBlock(memoryName, shape, isFortran, dataType);
+    		return SharedMemoryArrayLinux.readSHMArray(memoryName, shape, isFortran, dataType);
         else
-    		return SharedMemoryArrayMacOS.createImgLib2RaiFromSharedMemoryBlock(memoryName, shape, isFortran, dataType);
+    		return SharedMemoryArrayMacOS.readSHMArray(memoryName, shape, isFortran, dataType);
 	}
 
 	/**
@@ -264,11 +265,11 @@ public interface SharedMemoryArray extends Closeable {
 	 */
 	static SharedMemoryArray readNumpyLikeSHMA(String memoryName) {
         if (PlatformDetection.isWindows()) 
-        	return SharedMemoryArrayWin.buildImgLib2FromNumpyLikeSHMA(memoryName);
+        	return SharedMemoryArrayWin.readNumpyLikeSHMA(memoryName);
         else if (PlatformDetection.isLinux())
-    		return SharedMemoryArrayLinux.buildImgLib2FromNumpyLikeSHMA(memoryName);
+    		return SharedMemoryArrayLinux.readNumpyLikeSHMA(memoryName);
         else
-    		return SharedMemoryArrayMacOS.buildImgLib2FromNumpyLikeSHMA(memoryName);
+    		return SharedMemoryArrayMacOS.readNumpyLikeSHMA(memoryName);
 	}
 
 	/**
@@ -426,6 +427,12 @@ public interface SharedMemoryArray extends Closeable {
      * @return the randomAccessible interval that is defined in the shared memory segment
      */
     public <T extends RealType<T> & NativeType<T>> RandomAccessibleInterval<T> getSharedRAI(long[] shape, boolean isFortran, T dataType);
+    
+    /**
+     * 
+     * @return the {@link ByteBuffer} with all the bytes of the Shared memory segment
+     */
+    public ByteBuffer getDataBuffer();
     
     /**
      * 
