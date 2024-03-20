@@ -222,21 +222,6 @@ public class SharedMemoryArrayLinux implements SharedMemoryArray {
 		return new SharedMemoryArrayLinux(size, null, null, null, false);
 	}
 
-	protected static <T extends RealType<T> & NativeType<T>>
-	SharedMemoryArrayLinux createSHMAFromRAI(String name, RandomAccessibleInterval<T> rai) {
-		return createSHMAFromRAI(name, rai, false, true);
-    }
-
-	protected static <T extends RealType<T> & NativeType<T>>
-	SharedMemoryArrayLinux createSHMAFromRAI(RandomAccessibleInterval<T> rai) {
-		return createSHMAFromRAI(rai, false, true);
-    }
-
-	protected static <T extends RealType<T> & NativeType<T>>
-	SharedMemoryArrayLinux createSHMAFromRAI(RandomAccessibleInterval<T> rai, boolean isFortranOrder, boolean isNumpy) {
-		return createSHMAFromRAI(SharedMemoryArray.createShmName(), rai, isFortranOrder, isNumpy);
-    }
-
 	/**
 	 * This method copies the data from a {@link RandomAccessibleInterval} into a shared memory region
 	 * to be able to shared it with other processes.
@@ -365,6 +350,7 @@ public class SharedMemoryArrayLinux implements SharedMemoryArray {
         shm.pSharedMemory = pSharedMemory;
         shm.size = (int) size;
         shm.useLibRT = useLibRT;
+        shm.findNumpyFormat();
         return shm;
     }
     

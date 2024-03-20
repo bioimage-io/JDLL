@@ -106,9 +106,54 @@ public interface SharedMemoryArray extends Closeable {
 		String strDType = DecodeNumpy.getDataType(datatype);
     	int size = 1;
     	for (long i : shape) {size *= i;}
-        if (PlatformDetection.isWindows()) return new SharedMemoryArrayWin(name, size * DecodeNumpy.DATA_TYPES_MAP.get(strDType), strDType, shape);
-    	else if (PlatformDetection.isLinux()) return new SharedMemoryArrayLinux(name, size * DecodeNumpy.DATA_TYPES_MAP.get(strDType), strDType, shape);
-    	else return new SharedMemoryArrayMacOS(name, size * DecodeNumpy.DATA_TYPES_MAP.get(strDType), strDType, shape);
+        if (PlatformDetection.isWindows()) 
+        	return new SharedMemoryArrayWin(name, size * DecodeNumpy.DATA_TYPES_MAP.get(strDType), strDType, shape);
+    	else if (PlatformDetection.isLinux()) 
+    		return new SharedMemoryArrayLinux(name, size * DecodeNumpy.DATA_TYPES_MAP.get(strDType), strDType, shape, null, false);
+    	else 
+    		return new SharedMemoryArrayMacOS(name, size * DecodeNumpy.DATA_TYPES_MAP.get(strDType), strDType, shape);
+	}
+
+	static <T extends RealType<T> & NativeType<T>>
+	SharedMemoryArray readOrCreate(String name, long[] shape, T datatype, boolean isFortran, boolean isNpy) {
+		String strDType = DecodeNumpy.getDataType(datatype);
+    	int size = 1;
+    	for (long i : shape) {size *= i;}
+        if (PlatformDetection.isWindows()) 
+        	return new SharedMemoryArrayWin(name, size * DecodeNumpy.DATA_TYPES_MAP.get(strDType), strDType, shape);
+    	else if (PlatformDetection.isLinux()) 
+    		return new SharedMemoryArrayLinux(name, size * DecodeNumpy.DATA_TYPES_MAP.get(strDType), strDType, shape, isFortran, isNpy);
+    	else 
+    		return new SharedMemoryArrayMacOS(name, size * DecodeNumpy.DATA_TYPES_MAP.get(strDType), strDType, shape);
+	}
+
+	/**
+	 * This method creates a segment on the Shared Memory region of the computer with the size
+	 * needed to store an image of the wanted characteristics.
+	 * It is useful to allocate in advance the space that a certain {@link RandomAccessibleInterval}
+	 * will need. The image can then reference this shared memory region.
+	 * An instance of {@link SharedMemoryArray} is created that helps managing the shared memory data.
+	 * 
+	 * The amount of space reserved will depend on the shape provided and the datatype.
+	 * 
+	 * @param <T>
+     * 	possible ImgLib2 data types of the wanted {@link RandomAccessibleInterval}
+     * @param name
+     * 	name of the shared memory region that has been created
+	 * @param shape
+	 * 	shape of an ndimensional array that could be stored in the shared memory region
+	 * @param datatype
+	 * 	datatype of the data that is going to be stored in the region
+	 * @return a {@link SharedMemoryArray} instance that helps handling the data written to the shared memory region
+	 */
+	static <T extends RealType<T> & NativeType<T>>
+	SharedMemoryArray readOrCreate(String name, int size) {
+        if (PlatformDetection.isWindows()) 
+        	return new SharedMemoryArrayWin(name, size, null, null);
+    	else if (PlatformDetection.isLinux()) 
+    		return SharedMemoryArrayLinux.readOrCreate(name, size);
+    	else 
+    		return new SharedMemoryArrayMacOS(name, size, null, null);
 	}
 
 	/**
@@ -134,34 +179,22 @@ public interface SharedMemoryArray extends Closeable {
     	int size = 1;
     	for (long i : shape) {size *= i;}
         if (PlatformDetection.isWindows()) return new SharedMemoryArrayWin(size * DecodeNumpy.DATA_TYPES_MAP.get(strDType), strDType, shape);
-    	else if (PlatformDetection.isLinux()) return new SharedMemoryArrayLinux(size * DecodeNumpy.DATA_TYPES_MAP.get(strDType), strDType, shape);
+    	else if (PlatformDetection.isLinux()) 
+    		return SharedMemoryArrayLinux.create(size, shape, strDType, true, false);
     	else return new SharedMemoryArrayMacOS(size * DecodeNumpy.DATA_TYPES_MAP.get(strDType), strDType, shape);
 	}
 
-	/**
-	 * This method creates a segment on the Shared Memory region of the computer with the size
-	 * needed to store an image of the wanted characteristics.
-	 * It is useful to allocate in advance the space that a certain {@link RandomAccessibleInterval}
-	 * will need. The image can then reference this shared memory region.
-	 * An instance of {@link SharedMemoryArray} is created that helps managing the shared memory data.
-	 * 
-	 * The amount of space reserved will depend on the shape provided and the datatype.
-	 * 
-	 * @param <T>
-     * 	possible ImgLib2 data types of the wanted {@link RandomAccessibleInterval}
-     * @param name
-     * 	name of the shared memory region that has been created
-	 * @param shape
-	 * 	shape of an ndimensional array that could be stored in the shared memory region
-	 * @param datatype
-	 * 	datatype of the data that is going to be stored in the region
-	 * @return a {@link SharedMemoryArray} instance that helps handling the data written to the shared memory region
-	 */
 	static <T extends RealType<T> & NativeType<T>>
-	SharedMemoryArray readOrCreate(String name, int size) {
-        if (PlatformDetection.isWindows()) return new SharedMemoryArrayWin(name, size, null, null);
-    	else if (PlatformDetection.isLinux()) return new SharedMemoryArrayLinux(name, size, null, null);
-    	else return new SharedMemoryArrayMacOS(name, size, null, null);
+	SharedMemoryArray create(long[] shape, T datatype, boolean isFortran, boolean isNpy) {
+		String strDType = DecodeNumpy.getDataType(datatype);
+    	int size = 1;
+    	for (long i : shape) {size *= i;}
+        if (PlatformDetection.isWindows()) 
+        	return new SharedMemoryArrayWin(name, size * DecodeNumpy.DATA_TYPES_MAP.get(strDType), strDType, shape);
+    	else if (PlatformDetection.isLinux())
+    		return SharedMemoryArrayLinux.create(size, shape, strDType, isNpy, isFortran);
+    	else 
+    		return new SharedMemoryArrayMacOS(name, size * DecodeNumpy.DATA_TYPES_MAP.get(strDType), strDType, shape);
 	}
 
 	/**
@@ -182,58 +215,46 @@ public interface SharedMemoryArray extends Closeable {
 	 * @return a {@link SharedMemoryArray} instance that helps handling the data written to the shared memory region
 	 */
 	static SharedMemoryArray create(int size) {
-        if (PlatformDetection.isWindows()) return new SharedMemoryArrayWin(size, null, null);
-    	else if (PlatformDetection.isLinux()) return new SharedMemoryArrayLinux(size, null, null);
-    	else return new SharedMemoryArrayMacOS(size, null, null);
+        if (PlatformDetection.isWindows()) 
+        	return new SharedMemoryArrayWin(size, null, null);
+    	else if (PlatformDetection.isLinux()) 
+    		return SharedMemoryArrayLinux.create(size);
+    	else 
+    		return new SharedMemoryArrayMacOS(size, null, null);
 	}
 
-	/**
-	 * This method copies the data from a {@link RandomAccessibleInterval} into a shared memory region
-	 * to be able to shared it with other processes.
-	 * This method copies the data into the shared memory region following the Numpy .npy format. This means
-	 * that the header of the region will contain info about the shape, the byte order, the column order (whether
-	 * is fortran or not) and the data type.
-	 * This way, the underlying nd array can be reconstructed just with the shared memory region name.
-	 * 
-	 * An instance of {@link SharedMemoryArray} is created that helps managing the shared memory data.
-	 * The name is assigned automatically.
-	 * 
-	 * @param <T>
-     * 	possible ImgLib2 data types of the provided {@link RandomAccessibleInterval}
-	 * @param rai
-	 * 	the {@link RandomAccessibleInterval} that is going to be written into a shared memory region
-	 * @return a {@link SharedMemoryArray} instance that helps handling the data written to the shared memory region
-	 */
-	static <T extends RealType<T> & NativeType<T>>
-	SharedMemoryArray createNumpyLikeSHMA(RandomAccessibleInterval<T> rai) {
-        if (PlatformDetection.isWindows()) return SharedMemoryArrayWin.buildNumpyFormat(rai);
-    	else if (PlatformDetection.isLinux()) return SharedMemoryArrayLinux.buildNumpyFormat(rai);
-    	else return SharedMemoryArrayMacOS.buildNumpyFormat(rai);
+	static SharedMemoryArray read(String name) {
+        if (PlatformDetection.isWindows()) 
+        	return new SharedMemoryArrayWin(size, null, null);
+    	else if (PlatformDetection.isLinux()) 
+    		return SharedMemoryArrayLinux.read(name);
+    	else 
+    		return new SharedMemoryArrayMacOS(size, null, null);
+	}
+
+	public static <T extends RealType<T> & NativeType<T>>
+	SharedMemoryArray createSHMAFromRAI(String name, RandomAccessibleInterval<T> rai) {
+		return createSHMAFromRAI(name, rai, false, true);
     }
 
-	/**
-	 * This method copies the data from a {@link RandomAccessibleInterval} into a shared memory region
-	 * to be able to shared it with other processes.
-	 * This method copies the data into the shared memory region following the Numpy .npy format. This means
-	 * that the header of the region will contain info about the shape, the byte order, the column order (whether
-	 * is fortran or not) and the data type.
-	 * This way, the underlying nd array can be reconstructed just with the shared memory region name.
-	 * 
-	 * An instance of {@link SharedMemoryArray} is created that helps managing the shared memory data.
-	 * 
-	 * @param <T>
-     * 	possible ImgLib2 data types of the provided {@link RandomAccessibleInterval}
-     * @param name
-     * 	name of the shared memory region where the {@link RandomAccessibleInterval} data has been copied
-	 * @param rai
-	 * 	the {@link RandomAccessibleInterval} that is going to be written into a shared memory region
-	 * @return a {@link SharedMemoryArray} instance that helps handling the data written to the shared memory region
-	 */
-	static <T extends RealType<T> & NativeType<T>>
-	SharedMemoryArray createNumpyLikeSHMA(String name, RandomAccessibleInterval<T> rai) {
-        if (PlatformDetection.isWindows()) return SharedMemoryArrayWin.buildNumpyFormat(name, rai);
-    	else if (PlatformDetection.isLinux()) return SharedMemoryArrayLinux.buildNumpyFormat(name, rai);
-    	else return SharedMemoryArrayMacOS.buildNumpyFormat(name, rai);
+	public static <T extends RealType<T> & NativeType<T>>
+	SharedMemoryArray createSHMAFromRAI(RandomAccessibleInterval<T> rai) {
+		return createSHMAFromRAI(rai, false, true);
+    }
+
+	public static <T extends RealType<T> & NativeType<T>>
+	SharedMemoryArray createSHMAFromRAI(RandomAccessibleInterval<T> rai, boolean isFortranOrder, boolean isNumpy) {
+		return createSHMAFromRAI(SharedMemoryArray.createShmName(), rai, isFortranOrder, isNumpy);
+    }
+
+	public static <T extends RealType<T> & NativeType<T>>
+	SharedMemoryArray createSHMAFromRAI(String name, RandomAccessibleInterval<T> rai, boolean isFortranOrder, boolean isNumpy) {
+        if (PlatformDetection.isWindows()) 
+        	return SharedMemoryArrayWin.createSHMAFromRAI(SharedMemoryArray.createShmName(), rai, isFortranOrder, isNumpy);;
+    	else if (PlatformDetection.isLinux()) 
+    		return SharedMemoryArrayLinux.createSHMAFromRAI(SharedMemoryArray.createShmName(), rai, isFortranOrder, isNumpy);
+    	else 
+    		return SharedMemoryArrayMacOS.createSHMAFromRAI(SharedMemoryArray.createShmName(), rai, isFortranOrder, isNumpy);
     }
 	
 	/**
@@ -363,7 +384,8 @@ public interface SharedMemoryArray extends Closeable {
 	 * 	the data type into which the bytes in the shared memory region will be converted
      * @return the randomAccessible interval that is defined in the shared memory segment
      */
-    public <T extends RealType<T> & NativeType<T>> RandomAccessibleInterval<T> getSharedRAI(long[] shape, boolean isFortran, T dataType);
+    // TODO public <T extends RealType<T> & NativeType<T>> RandomAccessibleInterval<T> getSharedRAI(long[] shape, boolean isFortran, T dataType);
+    public <T extends RealType<T> & NativeType<T>> RandomAccessibleInterval<T> getSharedRAI(long[] shape, T dataType);
     
     /**
      * Copy the data from the {@link RandomAccessibleInterval} to the Shared memory segment.
@@ -376,7 +398,7 @@ public interface SharedMemoryArray extends Closeable {
      * @param rai
      * 	the data array that is going to be copied into the shared memory array
      */
-    public <T extends RealType<T> & NativeType<T>> void setRAI(RandomAccessibleInterval<T> rai);
+    // TODO is it necessary? public <T extends RealType<T> & NativeType<T>> void setRAI(RandomAccessibleInterval<T> rai);
     
     /**
      * Copy the ByteBuffer to the shared memory array.
