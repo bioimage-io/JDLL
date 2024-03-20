@@ -22,6 +22,13 @@ package io.bioimage.modelrunner.tensor.shm;
 import java.io.Closeable;
 import java.io.File;
 import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
+import java.nio.DoubleBuffer;
+import java.nio.FloatBuffer;
+import java.nio.IntBuffer;
+import java.nio.LongBuffer;
+import java.nio.ShortBuffer;
+import java.nio.charset.StandardCharsets;
 import java.util.UUID;
 
 import com.sun.jna.Native;
@@ -29,6 +36,7 @@ import com.sun.jna.Pointer;
 
 import io.bioimage.modelrunner.numpy.DecodeNumpy;
 import io.bioimage.modelrunner.system.PlatformDetection;
+import io.bioimage.modelrunner.tensor.ImgLib2ToArray;
 import io.bioimage.modelrunner.tensor.Utils;
 import io.bioimage.modelrunner.utils.CommonUtils;
 import net.imglib2.Cursor;
@@ -307,117 +315,199 @@ public class SharedMemoryArrayLiunxTem implements SharedMemoryArray {
 
     private void buildInt8(RandomAccessibleInterval<ByteType> tensor, boolean isFortranOrder, boolean isNumpy)
     {
-    	if (!isFortranOrder)
-    		tensor = Utils.transpose(tensor);
+    	if (!isFortranOrder) tensor = Utils.transpose(tensor);
+    	byte[] header = new byte[0];
+    	if (isNumpy) header = getNpyHeader(tensor);
+    	long offset = 0;
+    	for (byte b : header) {
+			this.pSharedMemory.setByte(offset, b);
+    		offset ++;
+    	}
 		Cursor<ByteType> cursor = Views.flatIterable(tensor).cursor();
 		long i = 0;
 		while (cursor.hasNext()) {
 			cursor.fwd();
-			this.pSharedMemory.setByte(i ++, cursor.get().get());
+			this.pSharedMemory.setByte(offset + (i ++), cursor.get().get());
 		}
     }
 
     private void buildUint8(RandomAccessibleInterval<UnsignedByteType> tensor, boolean isFortranOrder, boolean isNumpy)
     {
-    	if (!isFortranOrder)
-    		tensor = Utils.transpose(tensor);
+    	if (!isFortranOrder) tensor = Utils.transpose(tensor);
+    	byte[] header = new byte[0];
+    	if (isNumpy) header = getNpyHeader(tensor);
+    	long offset = 0;
+    	for (byte b : header) {
+			this.pSharedMemory.setByte(offset, b);
+    		offset ++;
+    	}
 		Cursor<UnsignedByteType> cursor = Views.flatIterable(tensor).cursor();
 		long i = 0;
 		while (cursor.hasNext()) {
 			cursor.fwd();
-			this.pSharedMemory.setByte(i ++, cursor.get().getByte());
+			this.pSharedMemory.setByte(offset + (i ++), cursor.get().getByte());
 		}
     }
 
     private void buildInt16(RandomAccessibleInterval<ShortType> tensor, boolean isFortranOrder, boolean isNumpy)
     {
-    	if (!isFortranOrder)
-    		tensor = Utils.transpose(tensor);
+    	if (!isFortranOrder) tensor = Utils.transpose(tensor);
+    	byte[] header = new byte[0];
+    	if (isNumpy) header = getNpyHeader(tensor);
+    	long offset = 0;
+    	for (byte b : header) {
+			this.pSharedMemory.setByte(offset, b);
+    		offset ++;
+    	}
 		Cursor<ShortType> cursor = Views.flatIterable(tensor).cursor();
 		long i = 0;
 		while (cursor.hasNext()) {
 			cursor.fwd();
-			this.pSharedMemory.setShort((i * Short.BYTES), cursor.get().get());
+			this.pSharedMemory.setShort(offset + (i * Short.BYTES), cursor.get().get());
 			i ++;
 		}
     }
 
     private void buildUint16(RandomAccessibleInterval<UnsignedShortType> tensor, boolean isFortranOrder, boolean isNumpy)
     {
-    	if (!isFortranOrder)
-    		tensor = Utils.transpose(tensor);
+    	if (!isFortranOrder) tensor = Utils.transpose(tensor);
+    	byte[] header = new byte[0];
+    	if (isNumpy) header = getNpyHeader(tensor);
+    	long offset = 0;
+    	for (byte b : header) {
+			this.pSharedMemory.setByte(offset, b);
+    		offset ++;
+    	}
 		Cursor<UnsignedShortType> cursor = Views.flatIterable(tensor).cursor();
 		long i = 0;
 		while (cursor.hasNext()) {
 			cursor.fwd();
-			this.pSharedMemory.setShort((i * Short.BYTES), cursor.get().getShort());
+			this.pSharedMemory.setShort(offset + (i * Short.BYTES), cursor.get().getShort());
 			i ++;
 		}
     }
 
     private void buildInt32(RandomAccessibleInterval<IntType> tensor, boolean isFortranOrder, boolean isNumpy)
     {
-    	if (!isFortranOrder)
-    		tensor = Utils.transpose(tensor);
+    	if (!isFortranOrder) tensor = Utils.transpose(tensor);
+    	byte[] header = new byte[0];
+    	if (isNumpy) header = getNpyHeader(tensor);
+    	long offset = 0;
+    	for (byte b : header) {
+			this.pSharedMemory.setByte(offset, b);
+    		offset ++;
+    	}
 		Cursor<IntType> cursor = Views.flatIterable(tensor).cursor();
 		long i = 0;
 		while (cursor.hasNext()) {
 			cursor.fwd();
-			this.pSharedMemory.setInt((i * Integer.BYTES), cursor.get().get());
+			this.pSharedMemory.setInt(offset + (i * Integer.BYTES), cursor.get().get());
 			i ++;
 		}
     }
 
     private void buildUint32(RandomAccessibleInterval<UnsignedIntType> tensor, boolean isFortranOrder, boolean isNumpy)
     {
-    	if (!isFortranOrder)
-    		tensor = Utils.transpose(tensor);
+    	if (!isFortranOrder) tensor = Utils.transpose(tensor);
+    	byte[] header = new byte[0];
+    	if (isNumpy) header = getNpyHeader(tensor);
+    	long offset = 0;
+    	for (byte b : header) {
+			this.pSharedMemory.setByte(offset, b);
+    		offset ++;
+    	}
 		Cursor<UnsignedIntType> cursor = Views.flatIterable(tensor).cursor();
 		long i = 0;
 		while (cursor.hasNext()) {
 			cursor.fwd();
-			this.pSharedMemory.setInt((i * Integer.BYTES), cursor.get().getInt());
+			this.pSharedMemory.setInt(offset + (i * Integer.BYTES), cursor.get().getInt());
 			i ++;
 		}
     }
 
     private void buildInt64(RandomAccessibleInterval<LongType> tensor, boolean isFortranOrder, boolean isNumpy)
     {
-    	if (!isFortranOrder)
-    		tensor = Utils.transpose(tensor);
+    	if (!isFortranOrder) tensor = Utils.transpose(tensor);
+    	byte[] header = new byte[0];
+    	if (isNumpy) header = getNpyHeader(tensor);
+    	long offset = 0;
+    	for (byte b : header) {
+			this.pSharedMemory.setByte(offset, b);
+    		offset ++;
+    	}
 		Cursor<LongType> cursor = Views.flatIterable(tensor).cursor();
 		long i = 0;
 		while (cursor.hasNext()) {
 			cursor.fwd();
-			this.pSharedMemory.setLong((i * Long.BYTES), cursor.get().get());
+			this.pSharedMemory.setLong(offset + (i * Long.BYTES), cursor.get().get());
 			i ++;
 		}
     }
 
     private void buildFloat32(RandomAccessibleInterval<FloatType> tensor, boolean isFortranOrder, boolean isNumpy)
     {
-    	if (!isFortranOrder)
-    		tensor = Utils.transpose(tensor);
+    	if (!isFortranOrder) tensor = Utils.transpose(tensor);
+    	byte[] header = new byte[0];
+    	if (isNumpy) header = getNpyHeader(tensor);
+    	long offset = 0;
+    	for (byte b : header) {
+			this.pSharedMemory.setByte(offset, b);
+    		offset ++;
+    	}
 		Cursor<FloatType> cursor = Views.flatIterable(tensor).cursor();
 		long i = 0;
 		while (cursor.hasNext()) {
 			cursor.fwd();
-			this.pSharedMemory.setFloat((i * Float.BYTES), cursor.get().get());
+			this.pSharedMemory.setFloat(offset + (i * Float.BYTES), cursor.get().get());
 			i ++;
 		}
     }
 
     private void buildFloat64(RandomAccessibleInterval<DoubleType> tensor, boolean isFortranOrder, boolean isNumpy)
     {
-    	if (!isFortranOrder)
-    		tensor = Utils.transpose(tensor);
+    	if (!isFortranOrder) tensor = Utils.transpose(tensor);
+    	byte[] header = new byte[0];
+    	if (isNumpy) header = getNpyHeader(tensor);
+    	long offset = 0;
+    	for (byte b : header) {
+			this.pSharedMemory.setByte(offset, b);
+    		offset ++;
+    	}
 		Cursor<DoubleType> cursor = Views.flatIterable(tensor).cursor();
 		long i = 0;
 		while (cursor.hasNext()) {
 			cursor.fwd();
-			this.pSharedMemory.setDouble((i * Double.BYTES), cursor.get().get());
+			this.pSharedMemory.setDouble(offset + (i * Double.BYTES), cursor.get().get());
 			i ++;
 		}
+    }
+    
+    private static <T extends RealType<T> & NativeType<T>>
+    byte[] getNpyHeader(RandomAccessibleInterval<T> tensor) {
+    	String strHeader = "{'descr': '<";
+    	strHeader += DecodeNumpy.getDataType(tensor.getAt(tensor.minAsLongArray()));
+    	strHeader += "', 'fortran_order': False, 'shape': (";
+    	for (long ll : tensor.dimensionsAsLongArray()) strHeader += ll + ", ";
+    	strHeader = strHeader.substring(0, strHeader.length() - 2);
+    	strHeader += "), }" + System.lineSeparator();
+    	byte[] bufInverse = strHeader.getBytes(StandardCharsets.UTF_8);
+    	byte[] major = {1};
+        byte[] minor = {0};
+        byte[] len = new byte[2];
+        len[0] = (byte) (short) strHeader.length();
+        len[1] = (byte) (((short) strHeader.length()) >> 8);
+        int totalLen = DecodeNumpy.MAGIC_PREFIX.length + 2 + 2 + bufInverse.length;
+        byte[] total = new byte[totalLen];
+        int c = 0;
+        for (int i = 0; i < DecodeNumpy.MAGIC_PREFIX.length; i ++)
+        	total[c ++] = DecodeNumpy.MAGIC_PREFIX[i];
+        total[c ++] = major[0];
+        total[c ++] = minor[0];
+        total[c ++] = len[0];
+        total[c ++] = len[1];
+        for (int i = 0; i < bufInverse.length; i ++)
+        	total[c ++] = bufInverse[i];
+        return total;
     }
     
 	/**

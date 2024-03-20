@@ -94,7 +94,7 @@ public class DecodeNumpy {
     /**
      * Prefix used to identify every numpy array
      */
-    private static final byte[] MAGIC_PREFIX = {(byte) 0x93, 'N', 'U', 'M', 'P', 'Y'};
+    public static final byte[] NUMPY_PREFIX = {(byte) 0x93, 'N', 'U', 'M', 'P', 'Y'};
     /**
      * Map containing the relation between the datatypes used by numpy and their 
      * explicit name
@@ -199,9 +199,9 @@ public class DecodeNumpy {
             dis = new DataInputStream(is);
         }
 
-        byte[] buf = new byte[MAGIC_PREFIX.length];
+        byte[] buf = new byte[NUMPY_PREFIX.length];
         dis.readFully(buf);
-        if (!Arrays.equals(buf, MAGIC_PREFIX)) {
+        if (!Arrays.equals(buf, NUMPY_PREFIX)) {
             throw new IllegalArgumentException("Malformed  or unsopported Numpy array");
         }
         byte major = dis.readByte();
@@ -290,9 +290,9 @@ public class DecodeNumpy {
             dis = new DataInputStream(is);
         }
 
-        byte[] buf = new byte[MAGIC_PREFIX.length];
+        byte[] buf = new byte[NUMPY_PREFIX.length];
         dis.readFully(buf);
-        if (!Arrays.equals(buf, MAGIC_PREFIX)) {
+        if (!Arrays.equals(buf, NUMPY_PREFIX)) {
             throw new IllegalArgumentException("Malformed  or unsopported Numpy array");
         }
         byte major = dis.readByte();
@@ -585,23 +585,23 @@ public class DecodeNumpy {
         long flatSize = 1;
         for (long ss : rai.dimensionsAsLongArray()) flatSize *= ss;
         if (Util.getTypeFromInterval(rai) instanceof ByteType) {
-        	return MAGIC_PREFIX.length + 2 + 2 + bufInverse.length + flatSize;
+        	return NUMPY_PREFIX.length + 2 + 2 + bufInverse.length + flatSize;
         } else if (Util.getTypeFromInterval(rai) instanceof UnsignedByteType) {
-        	return MAGIC_PREFIX.length + 2 + 2 + bufInverse.length + flatSize;
+        	return NUMPY_PREFIX.length + 2 + 2 + bufInverse.length + flatSize;
         } else if (Util.getTypeFromInterval(rai) instanceof ShortType) {
-        	return MAGIC_PREFIX.length + 2 + 2 + bufInverse.length + flatSize * 2;
+        	return NUMPY_PREFIX.length + 2 + 2 + bufInverse.length + flatSize * 2;
         } else if (Util.getTypeFromInterval(rai) instanceof UnsignedShortType) {
-        	return MAGIC_PREFIX.length + 2 + 2 + bufInverse.length + flatSize * 2;
+        	return NUMPY_PREFIX.length + 2 + 2 + bufInverse.length + flatSize * 2;
         } else if (Util.getTypeFromInterval(rai) instanceof IntType) {
-        	return MAGIC_PREFIX.length + 2 + 2 + bufInverse.length + flatSize * 4;
+        	return NUMPY_PREFIX.length + 2 + 2 + bufInverse.length + flatSize * 4;
         } else if (Util.getTypeFromInterval(rai) instanceof UnsignedIntType) {
-        	return MAGIC_PREFIX.length + 2 + 2 + bufInverse.length + flatSize * 4;
+        	return NUMPY_PREFIX.length + 2 + 2 + bufInverse.length + flatSize * 4;
         } else if (Util.getTypeFromInterval(rai) instanceof LongType) {
-        	return MAGIC_PREFIX.length + 2 + 2 + bufInverse.length + flatSize * 8;
+        	return NUMPY_PREFIX.length + 2 + 2 + bufInverse.length + flatSize * 8;
         } else if (Util.getTypeFromInterval(rai) instanceof FloatType) {
-        	return MAGIC_PREFIX.length + 2 + 2 + bufInverse.length + flatSize * 4;
+        	return NUMPY_PREFIX.length + 2 + 2 + bufInverse.length + flatSize * 4;
         } else if (Util.getTypeFromInterval(rai) instanceof DoubleType) {
-        	return MAGIC_PREFIX.length + 2 + 2 + bufInverse.length + flatSize * 8;
+        	return NUMPY_PREFIX.length + 2 + 2 + bufInverse.length + flatSize * 8;
         } else {
         	throw new IllegalArgumentException("Unsupported data type");
         }
@@ -689,11 +689,11 @@ public class DecodeNumpy {
         } else {
         	throw new IllegalArgumentException("Unsupported data type");
         }
-        int totalLen = MAGIC_PREFIX.length + 2 + 2 + bufInverse.length + array.length;
+        int totalLen = NUMPY_PREFIX.length + 2 + 2 + bufInverse.length + array.length;
         byte[] total = new byte[totalLen];
         int c = 0;
-        for (int i = 0; i < MAGIC_PREFIX.length; i ++)
-        	total[c ++] = MAGIC_PREFIX[i];
+        for (int i = 0; i < NUMPY_PREFIX.length; i ++)
+        	total[c ++] = NUMPY_PREFIX[i];
         total[c ++] = major[0];
         total[c ++] = minor[0];
         total[c ++] = len[0];
