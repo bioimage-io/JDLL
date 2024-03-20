@@ -113,13 +113,11 @@ public class SharedMemoryArrayLinux implements SharedMemoryArray {
 		 */
 		private boolean unlinked = false;
 		/**
-		 * TODO think whether it makes sense or not to identify the numpy format, (maybe change the header
-		 * TODO but then it is not numpy format anymore)
 		 * Whether the shared memory segment has numpy format or not. Numpy format means that 
 		 * it comes with a header indicating shape, dtype and order. If false it is just hte array 
 		 * of bytes corresponding to the values of the array, no header
 		 */
-		private boolean isNumpyFormat = false;
+		private Boolean isNumpyFormat = null;
 		/**
 		 * This parameter makes sense for nd-arrays. Whether the n-dimensional array is flattened followin
 		 * fortran order or not (c order)
@@ -140,7 +138,7 @@ public class SharedMemoryArrayLinux implements SharedMemoryArray {
 	 * @param shape
 	 * 	shape (array dimensions) of the array that is going to be  flattened and written into the shared memory segment
 	 */
-    protected SharedMemoryArrayLinux(int size, String dtype, long[] shape, boolean isNumpy, boolean isFortran)
+    protected SharedMemoryArrayLinux(int size, String dtype, long[] shape, Boolean isNumpy, boolean isFortran)
     {
     	this(SharedMemoryArray.createShmName(), size, dtype, shape, isNumpy, isFortran);
     }
@@ -159,7 +157,7 @@ public class SharedMemoryArrayLinux implements SharedMemoryArray {
 	 * @param shape
 	 * 	shape (array dimensions) of the array that is going to be  flattened and written into the shared memory segment
 	 */
-    protected SharedMemoryArrayLinux(String name, int size, String dtype, long[] shape, boolean isNumpy, boolean isFortran)
+    protected SharedMemoryArrayLinux(String name, int size, String dtype, long[] shape, Boolean isNumpy, boolean isFortran)
     {
     	this.originalDataType = dtype;
     	this.originalDims = shape;
@@ -211,17 +209,17 @@ public class SharedMemoryArrayLinux implements SharedMemoryArray {
 	}
 
 	protected static <T extends RealType<T> & NativeType<T>>
+	SharedMemoryArrayLinux readOrCreate(String name, int size) {
+		return new SharedMemoryArrayLinux(name, size, null, null, null, false);
+	}
+
+	protected static <T extends RealType<T> & NativeType<T>>
 	SharedMemoryArrayLinux create(int size, long[] shape, String strDType, boolean isNumpy, boolean isFortran) {
 		return new SharedMemoryArrayLinux(size, strDType, shape, isNumpy, isFortran);
 	}
 
-	protected static <T extends RealType<T> & NativeType<T>>
-	SharedMemoryArrayLinux readOrCreate(String name, int size) {
-		return new SharedMemoryArrayLinux(name, size, null, null, false, false);
-	}
-
 	protected static SharedMemoryArrayLinux create(int size) {
-		return new SharedMemoryArrayLinux(size, null, null, false, false);
+		return new SharedMemoryArrayLinux(size, null, null, null, false);
 	}
 
 	protected static <T extends RealType<T> & NativeType<T>>
@@ -627,7 +625,68 @@ public class SharedMemoryArrayLinux implements SharedMemoryArray {
      * {@inheritDoc}
      */
 	public boolean isNumpyFormat() {
+		if (this.isNumpyFormat == null) {
+			findNumpyFormat();
+		}
 		return this.isNumpyFormat;
+	}
+	
+	private void findNumpyFormat() {
+		this.isNumpyFormat = true;
+		try {
+			int offset = 0;
+	        byte[] buf = pSharedMemory.getByteBuffer(offset, DecodeNumpy.NUMPY_PREFIX.length).array();
+	        if (!Arrays.equals(buf, DecodeNumpy.NUMPY_PREFIX)) {
+	            throw new IllegalArgumentException("Malformed  or unsopported Numpy array");
+	        }
+	        offset = DecodeNumpy.NUMPY_PREFIX.length;
+	        byte major = pSharedMemory.getByteBuffer(offset, 1).array()[0];
+	        offset ++;
+	        byte minor = pSharedMemory.getByteBuffer(offset, 1).array()[0];
+	        offset ++;
+	        if (major < 1 || major > 3 || minor != 0) {
+	            throw new IllegalArgumentException("Unknown numpy version: " + major + '.' + minor);
+	        }
+	        int len = major == 1 ? 2 : 4;
+	        ByteBuffer bb = pSharedMemory.getByteBuffer(offset, len);
+	        offset += len;
+	        bb.order(ByteOrder.LITTLE_ENDIAN);
+	        if (major == 1) {
+	            len = bb.getShort();
+	        } else {
+	            len = bb.getInt();
+	        }
+	        buf = pSharedMemory.getByteBuffer(offset, len).array();
+	        offset += len;
+	        String header = new String(buf, StandardCharsets.UTF_8);
+	        Matcher m = DecodeNumpy.HEADER_PATTERN.matcher(header);
+	        if (!m.find()) {
+	            throw new IllegalArgumentException("Invalid numpy header: " + header);
+	        }
+	        String typeStr = m.group(1);
+	        String shapeStr = m.group(3);
+	        long[] shape = new long[0];
+	        if (!shapeStr.isEmpty()) {
+	            String[] tokens = shapeStr.split(", ?");
+	            shape = Arrays.stream(tokens).mapToLong(Long::parseLong).toArray();
+	        }
+	        char order = typeStr.charAt(0);
+	    	if (order != '>' && order != '<' && order != '|') {
+	        	new IllegalArgumentException("Not supported ByteOrder for the provided .npy array.");
+	        }
+	        String dtype = DecodeNumpy.getDataType(typeStr.substring(1));
+	        long numBytes = DecodeNumpy.DATA_TYPES_MAP.get(dtype);
+	    	long count;
+	    	if (shape.length == 0)
+	    		count = 1;
+			else
+				count = Arrays.stream(shape).reduce(Math::multiplyExact).getAsLong();
+	        len = Math.toIntExact(count * numBytes);
+	        if (offset + len > this.size)
+	        	throw new IllegalArgumentException("Npy array exceeds shared memory segment size");
+		} catch (Exception ex) {
+			this.isNumpyFormat = false;
+		}
 	}
 
 	@Override
@@ -670,11 +729,11 @@ public class SharedMemoryArrayLinux implements SharedMemoryArray {
      */
     @Override
     public <T extends RealType<T> & NativeType<T>> RandomAccessibleInterval<T> getSharedRAI() {
-    	if ((this.originalDims == null || this.originalDataType == null) && !this.isNumpyFormat)
+    	if ((this.originalDims == null || this.originalDataType == null) && !this.isNumpyFormat())
     		throw new IllegalArgumentException("The shared memory segment is not stored in Numpy format and the shape and/or "
     				+ "data type are not known. Please provide information about them and use the method "
     				+ "'getSharedRAI(long[] shape, boolean isFortran, T dataType)'.");
-    	if (this.isNumpyFormat) {
+    	if (this.isNumpyFormat()) {
     		return buildImgLib2FromNumpyLikeSHMA();
     	} else {
     		return buildFromSharedMemoryBlock(pSharedMemory, this.originalDims, this.originalDataType, this.isFortran);
