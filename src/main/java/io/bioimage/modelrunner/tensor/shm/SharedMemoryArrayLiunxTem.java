@@ -19,27 +19,17 @@
  */
 package io.bioimage.modelrunner.tensor.shm;
 
-import java.io.Closeable;
-import java.io.File;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
-import java.nio.DoubleBuffer;
-import java.nio.FloatBuffer;
-import java.nio.IntBuffer;
-import java.nio.LongBuffer;
-import java.nio.ShortBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
-import java.util.UUID;
 import java.util.regex.Matcher;
 
 import com.sun.jna.Native;
 import com.sun.jna.Pointer;
 
 import io.bioimage.modelrunner.numpy.DecodeNumpy;
-import io.bioimage.modelrunner.system.PlatformDetection;
-import io.bioimage.modelrunner.tensor.ImgLib2ToArray;
 import io.bioimage.modelrunner.tensor.Utils;
 import io.bioimage.modelrunner.utils.CommonUtils;
 import net.imglib2.Cursor;
@@ -678,6 +668,7 @@ public class SharedMemoryArrayLiunxTem implements SharedMemoryArray {
     /**
      * {@inheritDoc}
      */
+    @Override
     public <T extends RealType<T> & NativeType<T>> RandomAccessibleInterval<T> getSharedRAI() {
     	if ((this.originalDims == null || this.originalDataType == null) && !this.isNumpyFormat)
     		throw new IllegalArgumentException("The shared memory segment is not stored in Numpy format and the shape and/or "
@@ -693,29 +684,29 @@ public class SharedMemoryArrayLiunxTem implements SharedMemoryArray {
     /**
      * {@inheritDoc}
      */
-    public <T extends RealType<T> & NativeType<T>> RandomAccessibleInterval<T> getSharedRAI(long[] shape, T dataType, boolean isFortran) {
+    @Override
+    public <T extends RealType<T> & NativeType<T>> RandomAccessibleInterval<T> getSharedRAI(long[] shape, T dataType) {
 		return buildFromSharedMemoryBlock(pSharedMemory, shape, dataType, isFortran, 0, ByteOrder.LITTLE_ENDIAN);
     }
     
     /**
      * {@inheritDoc}
      */
-    public <T extends RealType<T> & NativeType<T>> void setRAI(RandomAccessibleInterval<T> rai) {
-    	
-    }
-    
-    /**
-     * {@inheritDoc}
-     */
+    @Override
     public void setBuffer(ByteBuffer buffer) {
-    	
+    	if (buffer.capacity() > this.size) {
+    		throw new IllegalArgumentException("The buffer capacity has to be smaller or equal "
+    				+ "than the size of the shared memory segment.");
+    	}
+    	this.pSharedMemory.write(0, buffer.array(), 0, buffer.capacity());
     }
     
     /**
      * {@inheritDoc}
      */
+    @Override
     public ByteBuffer getDataBuffer() {
-    	
+    	return pSharedMemory.getByteBuffer(0, this.size);
     }
 	
 	private static <T extends RealType<T> & NativeType<T>>
@@ -840,7 +831,7 @@ public class SharedMemoryArrayLiunxTem implements SharedMemoryArray {
 	 * 	name of the region where the shared memory segment is located
 	 * @return the {@link RandomAccessibleInterval} defined exclusively by the shared memory region following the .npy format
 	 */
-	public <T extends RealType<T> & NativeType<T>>
+	private <T extends RealType<T> & NativeType<T>>
 	RandomAccessibleInterval<T> buildImgLib2FromNumpyLikeSHMA() {
 		int offset = 0;
         byte[] buf = pSharedMemory.getByteBuffer(offset, DecodeNumpy.NUMPY_PREFIX.length).array();
