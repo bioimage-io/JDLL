@@ -562,6 +562,52 @@ public class DecodeNumpy {
     }
     
     /**
+     * Find the byte size that the Numpy format needs to save a N-dimensional array of the wanted data type
+     * @param <T>
+     * 	possible ImgLib2 datatypes of the {@link RandomAccessibleInterval}
+     * @param rai
+     * 	the n-dimensional array of interest
+     * @return a long value specifying the number of bytes it would take to store the nd-array in Numpy format
+     */
+    public static < T extends RealType< T > & NativeType< T > >
+    long calculateNpyStyleByteArrayLength(RandomAccessibleInterval<T> rai) {
+    	String strHeader = "{'descr': '<";
+    	strHeader += getDataType(rai.getAt(rai.minAsLongArray()));
+    	strHeader += "', 'fortran_order': False, 'shape': (";
+    	for (long ll : rai.dimensionsAsLongArray()) strHeader += ll + ", ";
+    	strHeader = strHeader.substring(0, strHeader.length() - 2);
+    	strHeader += "), }" + System.lineSeparator();
+    	byte[] bufInverse = strHeader.getBytes(StandardCharsets.UTF_8);
+        byte[] len = new byte[2];
+        len[0] = (byte) (short) strHeader.length();
+        len[1] = (byte) (((short) strHeader.length()) >> 8);
+        
+        long flatSize = 1;
+        for (long ss : rai.dimensionsAsLongArray()) flatSize *= ss;
+        if (Util.getTypeFromInterval(rai) instanceof ByteType) {
+        	return MAGIC_PREFIX.length + 2 + 2 + bufInverse.length + flatSize;
+        } else if (Util.getTypeFromInterval(rai) instanceof UnsignedByteType) {
+        	return MAGIC_PREFIX.length + 2 + 2 + bufInverse.length + flatSize;
+        } else if (Util.getTypeFromInterval(rai) instanceof ShortType) {
+        	return MAGIC_PREFIX.length + 2 + 2 + bufInverse.length + flatSize * 2;
+        } else if (Util.getTypeFromInterval(rai) instanceof UnsignedShortType) {
+        	return MAGIC_PREFIX.length + 2 + 2 + bufInverse.length + flatSize * 2;
+        } else if (Util.getTypeFromInterval(rai) instanceof IntType) {
+        	return MAGIC_PREFIX.length + 2 + 2 + bufInverse.length + flatSize * 4;
+        } else if (Util.getTypeFromInterval(rai) instanceof UnsignedIntType) {
+        	return MAGIC_PREFIX.length + 2 + 2 + bufInverse.length + flatSize * 4;
+        } else if (Util.getTypeFromInterval(rai) instanceof LongType) {
+        	return MAGIC_PREFIX.length + 2 + 2 + bufInverse.length + flatSize * 8;
+        } else if (Util.getTypeFromInterval(rai) instanceof FloatType) {
+        	return MAGIC_PREFIX.length + 2 + 2 + bufInverse.length + flatSize * 4;
+        } else if (Util.getTypeFromInterval(rai) instanceof DoubleType) {
+        	return MAGIC_PREFIX.length + 2 + 2 + bufInverse.length + flatSize * 8;
+        } else {
+        	throw new IllegalArgumentException("Unsupported data type");
+        }
+    }
+    
+    /**
      * Method to convert a {@link RandomAccessibleInterval} into the byte array that is used by Numpy
      * to create .npy files.
      * The byte array created contains the flattened data of the {@link RandomAccessibleInterval} plus
