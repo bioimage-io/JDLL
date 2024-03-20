@@ -941,4 +941,16 @@ public class SharedMemoryArrayLinux implements SharedMemoryArray {
         return buildFromSharedMemoryBlock(this.pSharedMemory, shape, 
         		Cast.unchecked(CommonUtils.getImgLib2DataType(dtype)), fortranOrder.equals("True"), offset, byteOrder);
 	}
+	
+	public static void main(String[] args) {
+        int shmFd0 = INSTANCE_RT.shm_open("/psm_834af6a5", O_RDONLY, 0700);
+
+        int shmFd = INSTANCE_RT.shm_open("/psm_834af6a9", O_RDWR | O_CREAT, 0700);
+        if (shmFd < 0) {
+            throw new RuntimeException("shm_open failed, errno: " + Native.getLastError());
+        }
+        int aa = INSTANCE_RT.ftruncate(shmFd, 1024);
+        Pointer cc = INSTANCE_RT.mmap(Pointer.NULL, 1024, PROT_READ | PROT_WRITE, MAP_SHARED, shmFd, 0);
+        int b = 2;
+	}
 }
