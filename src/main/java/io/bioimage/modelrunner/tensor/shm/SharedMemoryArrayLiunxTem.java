@@ -62,7 +62,6 @@ import net.imglib2.view.Views;
  * @author Carlos Garcia Lopez de Haro
  */
 public class SharedMemoryArrayLiunxTem implements SharedMemoryArray {
-	{
 		/**
 		 * Instance of the LibRT JNI containing the methods to interact with the Shared memory segments
 		 */
@@ -505,11 +504,11 @@ public class SharedMemoryArrayLiunxTem implements SharedMemoryArray {
         byte[] len = new byte[2];
         len[0] = (byte) (short) strHeader.length();
         len[1] = (byte) (((short) strHeader.length()) >> 8);
-        int totalLen = DecodeNumpy.MAGIC_PREFIX.length + 2 + 2 + bufInverse.length;
+        int totalLen = DecodeNumpy.NUMPY_PREFIX.length + 2 + 2 + bufInverse.length;
         byte[] total = new byte[totalLen];
         int c = 0;
-        for (int i = 0; i < DecodeNumpy.MAGIC_PREFIX.length; i ++)
-        	total[c ++] = DecodeNumpy.MAGIC_PREFIX[i];
+        for (int i = 0; i < DecodeNumpy.NUMPY_PREFIX.length; i ++)
+        	total[c ++] = DecodeNumpy.NUMPY_PREFIX[i];
         total[c ++] = major[0];
         total[c ++] = minor[0];
         total[c ++] = len[0];
@@ -519,49 +518,92 @@ public class SharedMemoryArrayLiunxTem implements SharedMemoryArray {
         return total;
     }
     
-	/**
-	 * 
-	 * @return the unique name for the shared memory, specified as a string. When creating a new shared memory bloc.k instance
-	 * 	{@link SharedMemoryArrayLiunxTem} a name can be supploed, and if not it will be generated automatically.
-	 * 	Two shared memory blocks existing at the same time cannot share the name.
-	 * 	In Unix based systems, Shared memory segment names start with "/", for example "/shm_block"
-	 * 	In Windows shared memory block names start either with "Global\\" or "Local\\". Example: "Local\\shm_block" 
+    /**
+     * {@inheritDoc}
+     */
+    public String getName() {
+    	return this.memoryName;
+    }
+    
+    /**
+     * {@inheritDoc}
+     */
+    public String getNameForPython() {
+    	return this.memoryName.substring("/".length());
+    }
+    
+    /**
+     * {@inheritDoc}
+     */
+    public Pointer getPointer() {
+    	return this.pSharedMemory;
+    }
+    
+    /**
+     * {@inheritDoc}
+     */
+    public int getSize() {
+    	return this.size;
+    }
+
+	@Override
+    /**
+     * {@inheritDoc}
+     */
+	public String getOriginalDataType() {
+		return this.originalDataType;
+	}
+
+	@Override
+    /**
+     * {@inheritDoc}
+     */
+	public long[] getOriginalShape() {
+		return this.originalDims;
+	}
+	
+	@Override
+    /**
+     * {@inheritDoc}
+     */
+	public boolean isNumpyFormat() {
+		return this.isNumpyFormat;
+	}
+
+	@Override
+	/** TODO add close and unlink separated
+	 * Unmap and close the shared memory. Necessary to eliminate the shared memory block
 	 */
-    public String getName();
-    
-    /**
-     * 
-	 * @return the unique name for the shared memory, specified as a string and as 
-	 * 	the Python package multiprocessing.shared_memory returns it. For Unix based systems it removes the 
-	 * 	initial "/", for example: "/shm_block" -&gt; "shm_block".
-	 * 	In Windows shared memory block names start either with "Global\\" or "Local\\", this is also removed when 
-	 * 	providing a shared memory name to Python. Example: "Local\\shm_block" -&gt; "shm_block"
-     */
-    public String getNameForPython();
-    
-    /**
-     * 
-     * @return the pointer to the shared memory segment
-     */
-    public Pointer getPointer();
-    
-    /**
-     * 
-     * @return get number of bytes in the shared memory segment
-     */
-    public int getSize();
-    
-    /**
-     * 
-     * @return the data type of the array that was flattened and copied into the shared memory segment
-     */
-    public String getOriginalDataType();
-    
-    /**
-     * 
-     * @return the shape (array dimensions) of the array that was flattened and copied into the shared memory segment
-     */
-    public long[] getOriginalShape();
+	public void close() {
+		if (this.unlinked) return;
+		int checkhmFd;
+		if (this.useLibRT) checkhmFd = INSTANCE_RT.shm_open(this.memoryName, O_RDONLY, 0700);
+		else checkhmFd = INSTANCE_C.shm_open(this.memoryName, O_RDONLY, 0700);
+		
+        if (checkhmFd < 0) {
+            unlinked = true;
+            return;
+        }
+
+        // Unmap the shared memory
+        if (this.pSharedMemory != Pointer.NULL && this.useLibRT && INSTANCE_RT.munmap(this.pSharedMemory, size) == -1) {
+            throw new RuntimeException("munmap failed. Errno: " + Native.getLastError());
+        } else if (this.pSharedMemory != Pointer.NULL && !this.useLibRT && INSTANCE_C.munmap(this.pSharedMemory, size) == -1) {
+            throw new RuntimeException("munmap failed. Errno: " + Native.getLastError());
+        }
+
+        // Close the file descriptor
+        if (this.useLibRT && INSTANCE_RT.close(this.shmFd) == -1) {
+            throw new RuntimeException("close failed. Errno: " + Native.getLastError());
+        } else if (!this.useLibRT && INSTANCE_C.close(this.shmFd) == -1) {
+            throw new RuntimeException("close failed. Errno: " + Native.getLastError());
+        }
+
+        // Unlink the shared memory object
+        if (this.useLibRT) INSTANCE_RT.shm_unlink(memoryName);
+        else INSTANCE_C.shm_unlink(memoryName);
+        unlinked = true;
+	}
     
     /**
      * Retrieve the {@link RandomAccessibleInterval} defined in the shared memory segment
@@ -612,12 +654,4 @@ public class SharedMemoryArrayLiunxTem implements SharedMemoryArray {
      * @return the {@link ByteBuffer} with all the bytes of the Shared memory segment
      */
     public ByteBuffer getDataBuffer();
-    
-    /**
-     * 
-     * @return whether the shared memory segment has numpy format or not. Numpy format means that 
-	 * it comes with a header indicating shape, dtype and order. If false it is just hte array 
-	 * of bytes corresponding to the values of the array, no header
-     */
-    public boolean isNumpyFormat();
 }
