@@ -118,7 +118,7 @@ public class SharedMemoryArrayWin implements SharedMemoryArray
 	 * it comes with a header indicating shape, dtype and order. If false it is just hte array 
 	 * of bytes corresponding to the values of the array, no header
 	 */
-	private Boolean isNumpyFormat = false;
+	private Boolean isNumpyFormat = null;
 	/**
 	 * This parameter makes sense for nd-arrays. Whether the n-dimensional array is flattened followin
 	 * fortran order or not (c order)
