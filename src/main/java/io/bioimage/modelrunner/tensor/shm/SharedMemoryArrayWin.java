@@ -173,6 +173,7 @@ public class SharedMemoryArrayWin implements SharedMemoryArray
     	boolean write = true;
     	long prevSize = getSHMSize(name);
     	boolean alreadyExists = false;
+    	// TODO
     	if (0 != -1) alreadyExists = true;
 		if (alreadyExists && prevSize != size) {
     		throw new FileAlreadyExistsException("Shared memory segment already exists with different dimensions, data type or format. "

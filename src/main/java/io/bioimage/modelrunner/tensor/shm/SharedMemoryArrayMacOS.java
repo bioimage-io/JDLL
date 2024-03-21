@@ -174,9 +174,12 @@ public class SharedMemoryArrayMacOS implements SharedMemoryArray
 
     	boolean alreadyExists = false;
     	int shmFd = INSTANCE.shm_open(memoryName, O_RDONLY, 0700);
-    	if (shmFd != -1) alreadyExists = true;
+    	long prevSize = 0;
+    	if (shmFd != -1) {
+        	prevSize = getSHMSize(shmFd);
+    		alreadyExists = true;
+    	}
 
-    	long prevSize = getSHMSize(shmFd);
 		if (alreadyExists && prevSize != size) {
     		throw new FileAlreadyExistsException("Shared memory segment already exists with different dimensions, data type or format. "
     				+ "Size of existing shared memory segment: " + prevSize + ", size of proposed object: " + size);

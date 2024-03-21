@@ -175,9 +175,12 @@ public class SharedMemoryArrayLinux implements SharedMemoryArray {
     		this.useLibRT = false;
             shmFd = INSTANCE_C.shm_open(this.memoryName, O_RDWR, 0700);
     	}
+    	long prevSize = 0;
     	boolean alreadyExists = false;
-    	if (shmFd != -1) alreadyExists = true;
-    	long prevSize = getSHMSize(shmFd, useLibRT);
+    	if (shmFd != -1) {
+    		alreadyExists = true;
+        	prevSize = getSHMSize(shmFd, useLibRT);
+    	}
 		if (alreadyExists && prevSize != size) {
     		throw new FileAlreadyExistsException("Shared memory segment already exists with different dimensions, data type or format. "
     				+ "Size of existing shared memory segment: " + prevSize + ", size of proposed object: " + size);
@@ -1018,15 +1021,7 @@ public class SharedMemoryArrayLinux implements SharedMemoryArray {
         		Cast.unchecked(CommonUtils.getImgLib2DataType(dtype)), fortranOrder.equals("True"), offset, byteOrder);
 	}
 	
-	public static void main(String[] args) {
-        int shmFd0 = INSTANCE_RT.shm_open("/aa", O_RDWR, 0700);
-
-        int shmFd = INSTANCE_RT.shm_open("/psm_834af6a9", O_RDWR | O_CREAT, 0700);
-        if (shmFd < 0) {
-            throw new RuntimeException("shm_open failed, errno: " + Native.getLastError());
-        }
-        int aa = INSTANCE_RT.ftruncate(shmFd, 1024);
-        Pointer cc = INSTANCE_RT.mmap(Pointer.NULL, 1024, PROT_READ | PROT_WRITE, MAP_SHARED, shmFd, 0);
-        int b = 2;
+	public static void main(String[] args) throws FileAlreadyExistsException {
+		SharedMemoryArrayLinux ss = createSHMAFromRAI("aa", ArrayImgs.floats(new long[] {1, 64, 64}), false, false);
 	}
 }
