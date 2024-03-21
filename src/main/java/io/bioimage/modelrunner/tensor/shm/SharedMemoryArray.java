@@ -109,11 +109,11 @@ public interface SharedMemoryArray extends Closeable {
     	int size = 1;
     	for (long i : shape) {size *= i;}
         if (PlatformDetection.isWindows()) 
-        	return new SharedMemoryArrayWin(name, size * DecodeNumpy.DATA_TYPES_MAP.get(strDType), strDType, shape);
+        	return SharedMemoryArrayWin.readOrCreate(name, size * DecodeNumpy.DATA_TYPES_MAP.get(strDType), shape, strDType, null, false);
     	else if (PlatformDetection.isLinux()) 
     		return SharedMemoryArrayLinux.readOrCreate(name, size * DecodeNumpy.DATA_TYPES_MAP.get(strDType), shape, strDType, null, false);
     	else 
-    		return new SharedMemoryArrayMacOS(name, size * DecodeNumpy.DATA_TYPES_MAP.get(strDType), strDType, shape);
+    		return SharedMemoryArrayMacOS.readOrCreate(name, size * DecodeNumpy.DATA_TYPES_MAP.get(strDType), shape, strDType, null, false);
 	}
 
 	static <T extends RealType<T> & NativeType<T>>
@@ -122,11 +122,11 @@ public interface SharedMemoryArray extends Closeable {
     	int size = 1;
     	for (long i : shape) {size *= i;}
         if (PlatformDetection.isWindows()) 
-        	return new SharedMemoryArrayWin(name, size * DecodeNumpy.DATA_TYPES_MAP.get(strDType), strDType, shape);
+        	return SharedMemoryArrayWin.readOrCreate(name, size * DecodeNumpy.DATA_TYPES_MAP.get(strDType), shape, strDType, isFortran, isNpy);
     	else if (PlatformDetection.isLinux()) 
     		return SharedMemoryArrayLinux.readOrCreate(name, size * DecodeNumpy.DATA_TYPES_MAP.get(strDType), shape, strDType, isFortran, isNpy);
     	else 
-    		return new SharedMemoryArrayMacOS(name, size * DecodeNumpy.DATA_TYPES_MAP.get(strDType), strDType, shape);
+    		return SharedMemoryArrayMacOS.readOrCreate(name, size * DecodeNumpy.DATA_TYPES_MAP.get(strDType), shape, strDType, isFortran, isNpy);
 	}
 
 	/**
@@ -152,11 +152,11 @@ public interface SharedMemoryArray extends Closeable {
 	static <T extends RealType<T> & NativeType<T>>
 	SharedMemoryArray readOrCreate(String name, int size) throws FileAlreadyExistsException {
         if (PlatformDetection.isWindows()) 
-        	return new SharedMemoryArrayWin(name, size, null, null);
+        	return SharedMemoryArrayWin.readOrCreate(name, size);
     	else if (PlatformDetection.isLinux()) 
     		return SharedMemoryArrayLinux.readOrCreate(name, size);
     	else 
-    		return new SharedMemoryArrayMacOS(name, size, null, null);
+    		return SharedMemoryArrayMacOS.readOrCreate(name, size);
 	}
 
 	/**
@@ -181,10 +181,12 @@ public interface SharedMemoryArray extends Closeable {
 		String strDType = CommonUtils.getDataType(datatype);
     	int size = 1;
     	for (long i : shape) {size *= i;}
-        if (PlatformDetection.isWindows()) return new SharedMemoryArrayWin(size * DecodeNumpy.DATA_TYPES_MAP.get(strDType), strDType, shape);
+        if (PlatformDetection.isWindows()) 
+        	return SharedMemoryArrayWin.create(size, shape, strDType, true, false);
     	else if (PlatformDetection.isLinux()) 
     		return SharedMemoryArrayLinux.create(size, shape, strDType, true, false);
-    	else return new SharedMemoryArrayMacOS(size * DecodeNumpy.DATA_TYPES_MAP.get(strDType), strDType, shape);
+    	else 
+    		return SharedMemoryArrayMacOS.create(size, shape, strDType, true, false);
 	}
 
 	static <T extends RealType<T> & NativeType<T>>
@@ -193,11 +195,11 @@ public interface SharedMemoryArray extends Closeable {
     	int size = 1;
     	for (long i : shape) {size *= i;}
         if (PlatformDetection.isWindows()) 
-        	return new SharedMemoryArrayWin(name, size * DecodeNumpy.DATA_TYPES_MAP.get(strDType), strDType, shape);
+        	return SharedMemoryArrayWin.create(size, shape, strDType, isNpy, isFortran);
     	else if (PlatformDetection.isLinux())
     		return SharedMemoryArrayLinux.create(size, shape, strDType, isNpy, isFortran);
     	else 
-    		return new SharedMemoryArrayMacOS(name, size * DecodeNumpy.DATA_TYPES_MAP.get(strDType), strDType, shape);
+    		return SharedMemoryArrayMacOS.create(size, shape, strDType, isNpy, isFortran);
 	}
 
 	/**
@@ -219,20 +221,29 @@ public interface SharedMemoryArray extends Closeable {
 	 */
 	static SharedMemoryArray create(int size) {
         if (PlatformDetection.isWindows()) 
-        	return new SharedMemoryArrayWin(size, null, null);
+        	return SharedMemoryArrayWin.create(size);
     	else if (PlatformDetection.isLinux()) 
     		return SharedMemoryArrayLinux.create(size);
     	else 
-    		return new SharedMemoryArrayMacOS(size, null, null);
+    		return SharedMemoryArrayMacOS.create(size);
 	}
 
 	static SharedMemoryArray read(String name) {
         if (PlatformDetection.isWindows()) 
-        	return new SharedMemoryArrayWin(size, null, null);
+        	return SharedMemoryArrayWin.read(name);
     	else if (PlatformDetection.isLinux()) 
     		return SharedMemoryArrayLinux.read(name);
     	else 
-    		return new SharedMemoryArrayMacOS(size, null, null);
+    		return SharedMemoryArrayMacOS.read(name);
+	}
+
+	static long getSize(String name) {
+        if (PlatformDetection.isWindows()) 
+        	return SharedMemoryArrayWin.getSHMSize(name);
+    	else if (PlatformDetection.isLinux()) 
+    		return SharedMemoryArrayLinux.getSHMSize(name);
+    	else 
+    		return SharedMemoryArrayMacOS.getSHMSize(name);
 	}
 
 	public static <T extends RealType<T> & NativeType<T>>
