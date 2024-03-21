@@ -23,6 +23,7 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.FileAlreadyExistsException;
 import java.util.Arrays;
 import java.util.regex.Matcher;
 
@@ -137,8 +138,10 @@ public class SharedMemoryArrayLinux implements SharedMemoryArray {
 	 * 	data type of the object that is going to be written into the shared memory
 	 * @param shape
 	 * 	shape (array dimensions) of the array that is going to be  flattened and written into the shared memory segment
+	 * @throws FileAlreadyExistsException if a shared memory segment already exists with the specified name and the size is different that the size specified.
+	 * 				This exception should never happen as the generated memory name should always be unique
 	 */
-    protected SharedMemoryArrayLinux(int size, String dtype, long[] shape, Boolean isNumpy, boolean isFortran)
+    protected SharedMemoryArrayLinux(int size, String dtype, long[] shape, Boolean isNumpy, boolean isFortran) throws FileAlreadyExistsException
     {
     	this(SharedMemoryArray.createShmName(), size, dtype, shape, isNumpy, isFortran);
     }
@@ -156,8 +159,9 @@ public class SharedMemoryArrayLinux implements SharedMemoryArray {
 	 * 	data type of the object that is going to be written into the shared memory
 	 * @param shape
 	 * 	shape (array dimensions) of the array that is going to be  flattened and written into the shared memory segment
+	 * @throws FileAlreadyExistsException if a shared memory segment already exists with the specified name and the size is different that the size specified
 	 */
-    protected SharedMemoryArrayLinux(String name, int size, String dtype, long[] shape, Boolean isNumpy, boolean isFortran)
+    private SharedMemoryArrayLinux(String name, int size, String dtype, long[] shape, Boolean isNumpy, boolean isFortran) throws FileAlreadyExistsException
     {
     	this.originalDataType = dtype;
     	this.originalDims = shape;
@@ -166,22 +170,38 @@ public class SharedMemoryArrayLinux implements SharedMemoryArray {
     	this.isNumpyFormat = isNumpy;
     	this.isFortran = isFortran;
     	try {
-            shmFd = INSTANCE_RT.shm_open(this.memoryName, O_RDWR | O_CREAT, 0700);
+            shmFd = INSTANCE_RT.shm_open(this.memoryName, O_RDWR, 0700);
     	} catch (Exception ex) {
     		this.useLibRT = false;
-            shmFd = INSTANCE_C.shm_open(this.memoryName, O_RDWR | O_CREAT, 0700);
+            shmFd = INSTANCE_C.shm_open(this.memoryName, O_RDWR, 0700);
     	}
-        if (shmFd < 0) {
-            throw new RuntimeException("shm_open failed, errno: " + Native.getLastError());
-        }
+    	boolean alreadyExists = false;
+    	if (shmFd != -1) alreadyExists = true;
+    	long prevSize = getSHMSize(shmFd, useLibRT);
+		if (alreadyExists && prevSize != size) {
+    		throw new FileAlreadyExistsException("Shared memory segment already exists with different dimensions, data type or format. "
+    				+ "Size of existing shared memory segment: " + prevSize + ", size of proposed object: " + size);
+    	}
+    	if (!alreadyExists) {
+        	try {
+                shmFd = INSTANCE_RT.shm_open(this.memoryName, O_RDWR | O_CREAT, 0700);
+        	} catch (Exception ex) {
+                shmFd = INSTANCE_C.shm_open(this.memoryName, O_RDWR | O_CREAT, 0700);
+        	}
+            if (shmFd < 0) {
+                throw new RuntimeException("shm_open failed, errno: " + Native.getLastError());
+            }
+    	}
 
-        if (this.useLibRT && INSTANCE_RT.ftruncate(shmFd, this.size) == -1) {
-        	INSTANCE_RT.close(shmFd);
-            throw new RuntimeException("ftruncate failed, errno: " + Native.getLastError());
-        } else if (!this.useLibRT && INSTANCE_C.ftruncate(shmFd, this.size) == -1) {
-        	INSTANCE_C.close(shmFd);
-            throw new RuntimeException("ftruncate failed, errno: " + Native.getLastError());
-        }
+    	if (!alreadyExists) {
+            if (this.useLibRT && INSTANCE_RT.ftruncate(shmFd, this.size) == -1) {
+            	INSTANCE_RT.close(shmFd);
+                throw new RuntimeException("ftruncate failed, errno: " + Native.getLastError());
+            } else if (!this.useLibRT && INSTANCE_C.ftruncate(shmFd, this.size) == -1) {
+            	INSTANCE_C.close(shmFd);
+                throw new RuntimeException("ftruncate failed, errno: " + Native.getLastError());
+            }
+    	}
         if (this.useLibRT)
         	pSharedMemory = INSTANCE_RT.mmap(Pointer.NULL, this.size, PROT_READ | PROT_WRITE, MAP_SHARED, shmFd, 0);
         else
@@ -195,6 +215,52 @@ public class SharedMemoryArrayLinux implements SharedMemoryArray {
             throw new RuntimeException("mmap failed, errno: " + Native.getLastError());
         }
     }
+    
+    /**
+     * MEthod to find the size of an already created shared memory segment
+     * @param memoryName
+     * 	the name of the shared memory segment
+     * @return the size in bytes of the shared memory segment
+     */
+    protected static long getSHMSize(String memoryName) {
+		if (!memoryName.startsWith("/")) memoryName = "/" + memoryName;
+		boolean useLibRT = true;
+		int shmFd;
+		try {
+		    shmFd = INSTANCE_RT.shm_open(memoryName, O_RDWR, 0700);
+		} catch (Exception ex) {
+		    shmFd = INSTANCE_C.shm_open(memoryName, O_RDWR, 0700);
+		    useLibRT = false;
+		}
+        if (shmFd < 0) throw new RuntimeException("Failed to open shared memory, it might not exist. Errno: " + Native.getLastError());
+
+	    return getSHMSize(shmFd, useLibRT);
+    }
+    
+    /**
+     * MEthod to find the size of an already created shared memory segment
+     * @param shmFd
+     * 	the shared memory segment identifier
+     * @param useLibRT
+     * 	whether to use LibRt or not (LibC)
+     * @return the size in bytes of the shared memory segment
+     */
+    protected static long getSHMSize(int shmFd, boolean useLibRT) {
+        if (shmFd < 0) throw new RuntimeException("Invalid shmFd. It should be bigger than 0.");
+
+
+        long size;
+        if (useLibRT) size = INSTANCE_RT.lseek(shmFd, 0, LibRt.SEEK_END);
+        else size = INSTANCE_C.lseek(shmFd, 0, CLibrary.SEEK_END);
+	    if (size == -1 && useLibRT) {
+            INSTANCE_RT.close(shmFd);
+	    	throw new RuntimeException("Failed to get shared memory segment size. Errno: " + Native.getLastError());
+	    } else if (size == -1 && !useLibRT) {
+            INSTANCE_C.close(shmFd);
+	    	throw new RuntimeException("Failed to get shared memory segment size. Errno: " + Native.getLastError());
+	    }
+	    return size;
+    }
 
     /**
      * 
@@ -204,22 +270,30 @@ public class SharedMemoryArrayLinux implements SharedMemoryArray {
 	}
 
 	protected static <T extends RealType<T> & NativeType<T>>
-	SharedMemoryArrayLinux readOrCreate(String name, int size, long[] shape, String strDType, boolean isNumpy, boolean isFortran) {
+	SharedMemoryArrayLinux readOrCreate(String name, int size, long[] shape, String strDType, Boolean isNumpy, boolean isFortran) throws FileAlreadyExistsException {
 		return new SharedMemoryArrayLinux(name, size, strDType, shape, isNumpy, isFortran);
 	}
 
 	protected static <T extends RealType<T> & NativeType<T>>
-	SharedMemoryArrayLinux readOrCreate(String name, int size) {
+	SharedMemoryArrayLinux readOrCreate(String name, int size) throws FileAlreadyExistsException {
 		return new SharedMemoryArrayLinux(name, size, null, null, null, false);
 	}
 
 	protected static <T extends RealType<T> & NativeType<T>>
-	SharedMemoryArrayLinux create(int size, long[] shape, String strDType, boolean isNumpy, boolean isFortran) {
-		return new SharedMemoryArrayLinux(size, strDType, shape, isNumpy, isFortran);
+	SharedMemoryArrayLinux create(int size, long[] shape, String strDType, Boolean isNumpy, boolean isFortran) {
+		try {
+			return new SharedMemoryArrayLinux(size, strDType, shape, isNumpy, isFortran);
+		} catch (FileAlreadyExistsException e) {
+			throw new RuntimeException("Unexpected error.", e);
+		}
 	}
 
 	protected static SharedMemoryArrayLinux create(int size) {
-		return new SharedMemoryArrayLinux(size, null, null, null, false);
+		try {
+			return new SharedMemoryArrayLinux(size, null, null, null, false);
+		} catch (FileAlreadyExistsException e) {
+			throw new RuntimeException("Unexpected error.", e);
+		}
 	}
 
 	/**
@@ -235,9 +309,10 @@ public class SharedMemoryArrayLinux implements SharedMemoryArray {
 	 * @param rai
 	 * 	the {@link RandomAccessibleInterval} that is going to be written into a shared memory region
 	 * @return a {@link SharedMemoryArray} instance that helps handling the data written to the shared memory region
+	 * @throws FileAlreadyExistsException 
 	 */
     protected static <T extends RealType<T> & NativeType<T>> 
-    SharedMemoryArrayLinux createSHMAFromRAI(String name, RandomAccessibleInterval<T> rai, boolean isFortranOrder, boolean isNumpy)
+    SharedMemoryArrayLinux createSHMAFromRAI(String name, RandomAccessibleInterval<T> rai, boolean isFortranOrder, boolean isNumpy) throws FileAlreadyExistsException
     {
     	SharedMemoryArray.checkMemorySegmentName(name);
     	if (!name.startsWith("/"))
@@ -943,7 +1018,7 @@ public class SharedMemoryArrayLinux implements SharedMemoryArray {
 	}
 	
 	public static void main(String[] args) {
-        int shmFd0 = INSTANCE_RT.shm_open("/psm_834af6a5", O_RDONLY, 0700);
+        int shmFd0 = INSTANCE_RT.shm_open("/psm_133f2b6f", O_RDWR, 0700);
 
         int shmFd = INSTANCE_RT.shm_open("/psm_834af6a9", O_RDWR | O_CREAT, 0700);
         if (shmFd < 0) {

@@ -22,6 +22,7 @@ package io.bioimage.modelrunner.tensor.shm;
 import java.io.Closeable;
 import java.io.File;
 import java.nio.ByteBuffer;
+import java.nio.file.FileAlreadyExistsException;
 import java.util.UUID;
 
 import com.sun.jna.Pointer;
@@ -100,29 +101,30 @@ public interface SharedMemoryArray extends Closeable {
 	 * @param datatype
 	 * 	datatype of the data that is going to be stored in the region
 	 * @return a {@link SharedMemoryArray} instance that helps handling the data written to the shared memory region
+	 * @throws FileAlreadyExistsException 
 	 */
 	static <T extends RealType<T> & NativeType<T>>
-	SharedMemoryArray readOrCreate(String name, long[] shape, T datatype) {
+	SharedMemoryArray readOrCreate(String name, long[] shape, T datatype) throws FileAlreadyExistsException {
 		String strDType = DecodeNumpy.getDataType(datatype);
     	int size = 1;
     	for (long i : shape) {size *= i;}
         if (PlatformDetection.isWindows()) 
         	return new SharedMemoryArrayWin(name, size * DecodeNumpy.DATA_TYPES_MAP.get(strDType), strDType, shape);
     	else if (PlatformDetection.isLinux()) 
-    		return new SharedMemoryArrayLinux(name, size * DecodeNumpy.DATA_TYPES_MAP.get(strDType), strDType, shape, null, false);
+    		return SharedMemoryArrayLinux.readOrCreate(name, size * DecodeNumpy.DATA_TYPES_MAP.get(strDType), shape, strDType, null, false);
     	else 
     		return new SharedMemoryArrayMacOS(name, size * DecodeNumpy.DATA_TYPES_MAP.get(strDType), strDType, shape);
 	}
 
 	static <T extends RealType<T> & NativeType<T>>
-	SharedMemoryArray readOrCreate(String name, long[] shape, T datatype, boolean isFortran, boolean isNpy) {
+	SharedMemoryArray readOrCreate(String name, long[] shape, T datatype, boolean isFortran, boolean isNpy) throws FileAlreadyExistsException {
 		String strDType = DecodeNumpy.getDataType(datatype);
     	int size = 1;
     	for (long i : shape) {size *= i;}
         if (PlatformDetection.isWindows()) 
         	return new SharedMemoryArrayWin(name, size * DecodeNumpy.DATA_TYPES_MAP.get(strDType), strDType, shape);
     	else if (PlatformDetection.isLinux()) 
-    		return new SharedMemoryArrayLinux(name, size * DecodeNumpy.DATA_TYPES_MAP.get(strDType), strDType, shape, isFortran, isNpy);
+    		return SharedMemoryArrayLinux.readOrCreate(name, size * DecodeNumpy.DATA_TYPES_MAP.get(strDType), shape, strDType, isFortran, isNpy);
     	else 
     		return new SharedMemoryArrayMacOS(name, size * DecodeNumpy.DATA_TYPES_MAP.get(strDType), strDType, shape);
 	}
@@ -145,9 +147,10 @@ public interface SharedMemoryArray extends Closeable {
 	 * @param datatype
 	 * 	datatype of the data that is going to be stored in the region
 	 * @return a {@link SharedMemoryArray} instance that helps handling the data written to the shared memory region
+	 * @throws FileAlreadyExistsException 
 	 */
 	static <T extends RealType<T> & NativeType<T>>
-	SharedMemoryArray readOrCreate(String name, int size) {
+	SharedMemoryArray readOrCreate(String name, int size) throws FileAlreadyExistsException {
         if (PlatformDetection.isWindows()) 
         	return new SharedMemoryArrayWin(name, size, null, null);
     	else if (PlatformDetection.isLinux()) 
@@ -233,28 +236,28 @@ public interface SharedMemoryArray extends Closeable {
 	}
 
 	public static <T extends RealType<T> & NativeType<T>>
-	SharedMemoryArray createSHMAFromRAI(String name, RandomAccessibleInterval<T> rai) {
+	SharedMemoryArray createSHMAFromRAI(String name, RandomAccessibleInterval<T> rai) throws FileAlreadyExistsException {
 		return createSHMAFromRAI(name, rai, false, true);
     }
 
 	public static <T extends RealType<T> & NativeType<T>>
-	SharedMemoryArray createSHMAFromRAI(RandomAccessibleInterval<T> rai) {
+	SharedMemoryArray createSHMAFromRAI(RandomAccessibleInterval<T> rai) throws FileAlreadyExistsException {
 		return createSHMAFromRAI(rai, false, true);
     }
 
 	public static <T extends RealType<T> & NativeType<T>>
-	SharedMemoryArray createSHMAFromRAI(RandomAccessibleInterval<T> rai, boolean isFortranOrder, boolean isNumpy) {
+	SharedMemoryArray createSHMAFromRAI(RandomAccessibleInterval<T> rai, boolean isFortranOrder, boolean isNumpy) throws FileAlreadyExistsException {
 		return createSHMAFromRAI(SharedMemoryArray.createShmName(), rai, isFortranOrder, isNumpy);
     }
 
 	public static <T extends RealType<T> & NativeType<T>>
-	SharedMemoryArray createSHMAFromRAI(String name, RandomAccessibleInterval<T> rai, boolean isFortranOrder, boolean isNumpy) {
+	SharedMemoryArray createSHMAFromRAI(String name, RandomAccessibleInterval<T> rai, boolean isFortranOrder, boolean isNumpy) throws FileAlreadyExistsException {
         if (PlatformDetection.isWindows()) 
-        	return SharedMemoryArrayWin.createSHMAFromRAI(SharedMemoryArray.createShmName(), rai, isFortranOrder, isNumpy);;
+        	return null;//SharedMemoryArrayWin.createSHMAFromRAI(SharedMemoryArray.createShmName(), rai, isFortranOrder, isNumpy);;
     	else if (PlatformDetection.isLinux()) 
     		return SharedMemoryArrayLinux.createSHMAFromRAI(SharedMemoryArray.createShmName(), rai, isFortranOrder, isNumpy);
     	else 
-    		return SharedMemoryArrayMacOS.createSHMAFromRAI(SharedMemoryArray.createShmName(), rai, isFortranOrder, isNumpy);
+    		return null;//SharedMemoryArrayMacOS.createSHMAFromRAI(SharedMemoryArray.createShmName(), rai, isFortranOrder, isNumpy);
     }
 	
 	/**
