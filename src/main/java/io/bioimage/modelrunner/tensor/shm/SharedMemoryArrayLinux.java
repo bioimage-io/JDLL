@@ -253,10 +253,10 @@ public class SharedMemoryArrayLinux implements SharedMemoryArray {
         if (useLibRT) size = INSTANCE_RT.lseek(shmFd, 0, LibRt.SEEK_END);
         else size = INSTANCE_C.lseek(shmFd, 0, CLibrary.SEEK_END);
 	    if (size == -1 && useLibRT) {
-            INSTANCE_RT.close(shmFd);
+	    	// TODO remove INSTANCE_RT.close(shmFd);
 	    	throw new RuntimeException("Failed to get shared memory segment size. Errno: " + Native.getLastError());
 	    } else if (size == -1 && !useLibRT) {
-            INSTANCE_C.close(shmFd);
+	    	// TODO remove INSTANCE_C.close(shmFd);
 	    	throw new RuntimeException("Failed to get shared memory segment size. Errno: " + Native.getLastError());
 	    }
 	    return size;
@@ -394,7 +394,8 @@ public class SharedMemoryArrayLinux implements SharedMemoryArray {
 		    shmFd = INSTANCE_C.shm_open(memoryName, O_RDWR, 0700);
 		    useLibRT = false;
 		}
-        if (shmFd < 0) throw new RuntimeException("Failed to open shared memory. Errno: " + Native.getLastError());
+        if (shmFd < 0) throw new RuntimeException("Shared memory segmentmight not exist: "
+        							+ memoryName + ". Failed to open shared memory. Errno: " + Native.getLastError());
 
 
         long size;
@@ -1018,7 +1019,7 @@ public class SharedMemoryArrayLinux implements SharedMemoryArray {
 	}
 	
 	public static void main(String[] args) {
-        int shmFd0 = INSTANCE_RT.shm_open("/psm_133f2b6f", O_RDWR, 0700);
+        int shmFd0 = INSTANCE_RT.shm_open("/aa", O_RDWR, 0700);
 
         int shmFd = INSTANCE_RT.shm_open("/psm_834af6a9", O_RDWR | O_CREAT, 0700);
         if (shmFd < 0) {
