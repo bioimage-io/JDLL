@@ -430,7 +430,6 @@ public class SharedMemoryArrayLinux implements SharedMemoryArray {
         shm.size = (int) size;
         shm.useLibRT = useLibRT;
         shm.findNumpyFormat();
-        if (shm.isNumpyFormat) shm.getSharedRAI()
         return shm;
     }
     
@@ -703,14 +702,15 @@ public class SharedMemoryArrayLinux implements SharedMemoryArray {
 		this.isNumpyFormat = true;
 		try {
 			int offset = 0;
-	        byte[] buf = pSharedMemory.getByteBuffer(offset, DecodeNumpy.NUMPY_PREFIX.length).array();
+			byte[] buf = new byte[DecodeNumpy.NUMPY_PREFIX.length];
+			pSharedMemory.getByteBuffer(offset, DecodeNumpy.NUMPY_PREFIX.length).get(buf, 0, DecodeNumpy.NUMPY_PREFIX.length);
 	        if (!Arrays.equals(buf, DecodeNumpy.NUMPY_PREFIX)) {
 	            throw new IllegalArgumentException("Malformed  or unsopported Numpy array");
 	        }
 	        offset = DecodeNumpy.NUMPY_PREFIX.length;
-	        byte major = pSharedMemory.getByteBuffer(offset, 1).array()[0];
+	        byte major = pSharedMemory.getByteBuffer(offset, 1).get();
 	        offset ++;
-	        byte minor = pSharedMemory.getByteBuffer(offset, 1).array()[0];
+	        byte minor = pSharedMemory.getByteBuffer(offset, 1).get();
 	        offset ++;
 	        if (major < 1 || major > 3 || minor != 0) {
 	            throw new IllegalArgumentException("Unknown numpy version: " + major + '.' + minor);
@@ -724,7 +724,8 @@ public class SharedMemoryArrayLinux implements SharedMemoryArray {
 	        } else {
 	            len = bb.getInt();
 	        }
-	        buf = pSharedMemory.getByteBuffer(offset, len).array();
+	        buf = new byte[len];
+	        pSharedMemory.getByteBuffer(offset, len).get(buf, 0, len);
 	        offset += len;
 	        String header = new String(buf, StandardCharsets.UTF_8);
 	        Matcher m = DecodeNumpy.HEADER_PATTERN.matcher(header);
@@ -1027,6 +1028,10 @@ public class SharedMemoryArrayLinux implements SharedMemoryArray {
 	}
 	
 	public static void main(String[] args) throws FileAlreadyExistsException {
-		SharedMemoryArrayLinux ss = createSHMAFromRAI("aa", ArrayImgs.floats(new long[] {1, 64, 64}), false, false);
+		SharedMemoryArrayLinux ss = createSHMAFromRAI("aa", ArrayImgs.floats(new long[] {1, 64, 64}), false, true);
+		
+		read("aa");
+		
+		ss.close();
 	}
 }
