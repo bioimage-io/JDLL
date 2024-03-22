@@ -22,6 +22,7 @@ package io.bioimage.modelrunner.runmode;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.nio.file.FileAlreadyExistsException;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -43,6 +44,7 @@ import io.bioimage.modelrunner.utils.CommonUtils;
 import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.type.NativeType;
 import net.imglib2.type.numeric.RealType;
+import net.imglib2.util.Cast;
 import net.imglib2.util.Util;
 
 public class RunMode {
@@ -298,12 +300,12 @@ public class RunMode {
 				apposeInputMap.put(entry.getKey(), null);
 				addCodeToRecreateTensorFile(entry.getKey(), (Tensor<T>) entry.getValue(), fileName);
 			} else if (entry.getValue() instanceof Tensor) {
-				SharedMemoryArray shma = SharedMemoryArray.buildSHMA(((Tensor<T>) entry.getValue()).getData());
+				SharedMemoryArray shma = SharedMemoryArray.createSHMAFromRAI(((Tensor<T>) entry.getValue()).getData());
 				shmaList.add(shma);
 				apposeInputMap.put(entry.getKey(), null);
 				addCodeToRecreateTensor(entry.getKey(), shma, (Tensor<T>) entry.getValue());
 			} else if (entry.getValue() instanceof RandomAccessibleInterval) {
-				SharedMemoryArray shma = SharedMemoryArray.buildSHMA((RandomAccessibleInterval<T>) entry.getValue());
+				SharedMemoryArray shma = SharedMemoryArray.createSHMAFromRAI((RandomAccessibleInterval<T>) entry.getValue());
 				shmaList.add(shma);
 				apposeInputMap.put(entry.getKey(), null);
 				addCodeToRecreateNumpyArray(entry.getKey(), shma, (RandomAccessibleInterval<T>) entry.getValue());
@@ -485,7 +487,19 @@ public class RunMode {
 		String tensorname = (String) apposeTensor.get(RunModeScripts.NAME_KEY);
 		String axes = (String) apposeTensor.get(RunModeScripts.AXES_KEY);
 		boolean isFortran = (boolean) apposeTensor.get(RunModeScripts.IS_FORTRAN_KEY);
-		RandomAccessibleInterval<T> rai = SharedMemoryArray.buildImgLib2FromSHMA(shmName, longShape, isFortran, dtype);
+		SharedMemoryArray shm;
+		try {
+			shm = SharedMemoryArray.readOrCreate(shmName, longShape, 
+									Cast.unchecked(CommonUtils.getImgLib2DataType(dtype)), isFortran, false);
+		} catch (FileAlreadyExistsException e) {
+			throw new RuntimeException("Error retrieving the image from Python", e);
+		}
+		RandomAccessibleInterval<T> rai = shm.getSharedRAI();
+		try {
+			shm.close();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
 		return Tensor.build(tensorname, axes, Tensor.createCopyOfRaiInWantedDataType(rai, Util.getTypeFromInterval(rai)));
 	}
 	
@@ -506,7 +520,19 @@ public class RunMode {
 		for (int i = 0; i < shape.size(); i ++) {longShape[i] = shape.get(i).longValue();}
 		String dtype = (String) apposeTensor.get(RunModeScripts.DTYPE_KEY);
 		boolean isFortran = (boolean) apposeTensor.get(RunModeScripts.IS_FORTRAN_KEY);
-		RandomAccessibleInterval<T> rai = SharedMemoryArray.buildImgLib2FromSHMA(shmName, longShape, isFortran, dtype);
+		SharedMemoryArray shm;
+		try {
+			shm = SharedMemoryArray.readOrCreate(shmName, longShape, 
+									Cast.unchecked(CommonUtils.getImgLib2DataType(dtype)), isFortran, false);
+		} catch (FileAlreadyExistsException e) {
+			throw new RuntimeException("Error retrieving the image from Python", e);
+		}
+		RandomAccessibleInterval<T> rai = shm.getSharedRAI();
+		try {
+			shm.close();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
 		return Tensor.createCopyOfRaiInWantedDataType(rai, Util.getTypeFromInterval(rai));
 	}
 	
