@@ -163,6 +163,8 @@ public class SharedMemoryArrayWin implements SharedMemoryArray
 	 */
 	protected SharedMemoryArrayWin(String name, int size, String dtype, long[] shape, Boolean isNumpy, boolean isFortran) throws FileAlreadyExistsException
     {
+		if (size < 1)
+			throw new IllegalArgumentException("Cannot create empty shared memory segment.");
     	memoryName = name;
     	this.originalDataType = dtype;
     	this.originalDims = shape;
@@ -171,14 +173,13 @@ public class SharedMemoryArrayWin implements SharedMemoryArray
     	this.isFortran = isFortran;
     	int flag = WinNT.PAGE_READWRITE;
     	boolean write = true;
-    	long prevSize = getSHMSize(name);
-    	boolean alreadyExists = false;
-    	// TODO
-    	if (0 != -1) alreadyExists = true;
-		if (alreadyExists && prevSize != size) {
-    		throw new FileAlreadyExistsException("Shared memory segment already exists with different dimensions, data type or format. "
-    				+ "Size of existing shared memory segment: " + prevSize + ", size of proposed object: " + size);
+    	if (checkSHMExists(memoryName)) {
+        	long prevSize = getSHMSize(name);
+        	if (prevSize < size)
+        		throw new FileAlreadyExistsException("Shared memory segment already exists with different dimensions, data type or format. "
+        				+ "Size of existing shared memory segment: " + prevSize + ", size of proposed object: " + size);
     	}
+		
     	if (size < 1) {
     		flag = WinNT.PAGE_READWRITE | SEC_RESERVE;
     		size = DEFAULT_RESERVED_MEMORY;
@@ -226,6 +227,17 @@ public class SharedMemoryArrayWin implements SharedMemoryArray
     	    }
         }
     }
+	
+	private boolean checkSHMExists(String memoryName) {
+    	SharedMemoryArray.checkMemorySegmentName(memoryName);
+    	if (!memoryName.startsWith("Local" + File.separator) && !memoryName.startsWith("Global" + File.separator))
+    		memoryName = "Local" + File.separator+ memoryName;
+		WinNT.HANDLE hMapFile = Kernel32.INSTANCE.OpenFileMapping( WinNT.FILE_MAP_READ, false, memoryName);
+		if (hMapFile == null)
+			return false;
+    	Kernel32.INSTANCE.CloseHandle(hMapFile);
+		return true;
+	}
     
     /**
      * MEthod to find the size of an already created shared memory segment
@@ -234,7 +246,35 @@ public class SharedMemoryArrayWin implements SharedMemoryArray
      * @return the size in bytes of the shared memory segment
      */
     protected static long getSHMSize(String memoryName) {
-    	return 0;
+    	SharedMemoryArray.checkMemorySegmentName(memoryName);
+    	if (!memoryName.startsWith("Local" + File.separator) && !memoryName.startsWith("Global" + File.separator))
+    		memoryName = "Local" + File.separator+ memoryName;
+		WinNT.HANDLE hMapFile = Kernel32.INSTANCE.OpenFileMapping( WinNT.FILE_MAP_READ, false, memoryName);
+
+    	if (hMapFile == null) {
+            throw new RuntimeException("Shared memory segment might not exist: " + memoryName
+            			+ ". OpenFileMapping failed with error: " + Kernel32.INSTANCE.GetLastError());
+        }
+        // Map the shared memory object into the current process's address space
+        Pointer pSharedMemory = Kernel32.INSTANCE.MapViewOfFile(hMapFile, WinNT.FILE_MAP_READ, 0, 0, 0);
+        if (pSharedMemory == null) {
+        	Kernel32.INSTANCE.CloseHandle(hMapFile);
+            throw new RuntimeException("MapViewOfFile failed with error: " + Kernel32.INSTANCE.GetLastError());
+        }
+        Kernel32.MEMORY_BASIC_INFORMATION mbi = new Kernel32.MEMORY_BASIC_INFORMATION();
+        
+        if (Kernel32.INSTANCE.VirtualQueryEx(
+        		Kernel32.INSTANCE.GetCurrentProcess(), pSharedMemory, mbi, new BaseTSD.SIZE_T((long) mbi.size())
+        		).intValue() == 0) {
+            throw new RuntimeException("Unable to retrieve the size of the shm segment located at '" 
+        		+ "'. Errno: " + Kernel32.INSTANCE.GetLastError());
+        }
+        int size = mbi.regionSize.intValue();
+
+        Kernel32.INSTANCE.UnmapViewOfFile(pSharedMemory);
+    	Kernel32.INSTANCE.CloseHandle(hMapFile);
+    	
+    	return size;
     }
 
     /**
@@ -677,6 +717,7 @@ public class SharedMemoryArrayWin implements SharedMemoryArray
 	 */
 	public void close() {
 		if (unlinked) return;
+        Kernel32.INSTANCE.UnmapViewOfFile(this.writePointer);
         Kernel32.INSTANCE.UnmapViewOfFile(mappedPointer);
         Kernel32.INSTANCE.CloseHandle(hMapFile);
         unlinked = true;
@@ -970,14 +1011,18 @@ public class SharedMemoryArrayWin implements SharedMemoryArray
 		}
 	}
 	
+	/**
+	 * Windows shared memory persists until every reference to it from every process 
+	 * unlinks it. Is not the same as in Unix systems where just one reference to unlink unlinks it
+	 * completely and no othere process can come and use it anymore
+	 * 
+	 * @param args
+	 */
 	public static void main(String[] args) {
-		WinNT.HANDLE hMapFile = Kernel32.INSTANCE.OpenFileMapping( WinNT.FILE_MAP_READ, false, "Local\\wnsm_a637b65a");
+		WinNT.HANDLE hMapFile = Kernel32.INSTANCE.OpenFileMapping( WinNT.FILE_MAP_READ, false, "Local\\wnsm_89f5c80c");
 
-    	Kernel32.INSTANCE.CloseHandle(hMapFile);
     	if (hMapFile == null) {
             throw new RuntimeException("OpenFileMapping failed with error: " + Kernel32.INSTANCE.GetLastError());
-        } else if (true){
-        	return;
         }
         // Map the shared memory object into the current process's address space
         Pointer pSharedMemory = Kernel32.INSTANCE.MapViewOfFile(hMapFile, WinNT.FILE_MAP_READ, 0, 0, 0);
@@ -994,5 +1039,8 @@ public class SharedMemoryArrayWin implements SharedMemoryArray
         		+ "'. Errno: " + Kernel32.INSTANCE.GetLastError());
         }
         int size = mbi.regionSize.intValue();
+
+        Kernel32.INSTANCE.UnmapViewOfFile(pSharedMemory);
+    	Kernel32.INSTANCE.CloseHandle(hMapFile);
 	}
 }
