@@ -338,55 +338,55 @@ public class SharedMemoryArrayWin implements SharedMemoryArray
         	int size = 1;
         	for (long i : rai.dimensionsAsLongArray()) {size *= i;}
         	if (isNumpy) size = (int) DecodeNumpy.calculateNpyStyleByteArrayLength(rai);
-        	shma = new SharedMemoryArrayWin(name, size, CommonUtils.getDataType(rai), rai.dimensionsAsLongArray(), isFortranOrder, isNumpy);
+        	shma = new SharedMemoryArrayWin(name, size, CommonUtils.getDataType(rai), rai.dimensionsAsLongArray(), isNumpy, isFortranOrder);
         	shma.buildInt8(Cast.unchecked(rai), isFortranOrder, isNumpy);
     	} else if (Util.getTypeFromInterval(rai) instanceof UnsignedByteType) {
         	int size = 1;
         	for (long i : rai.dimensionsAsLongArray()) {size *= i;}
         	if (isNumpy) size = (int) DecodeNumpy.calculateNpyStyleByteArrayLength(rai);
-        	shma = new SharedMemoryArrayWin(name, size, CommonUtils.getDataType(rai), rai.dimensionsAsLongArray(), isFortranOrder, isNumpy);
+        	shma = new SharedMemoryArrayWin(name, size, CommonUtils.getDataType(rai), rai.dimensionsAsLongArray(), isNumpy, isFortranOrder);
         	shma.buildUint8(Cast.unchecked(rai), isFortranOrder, isNumpy);
     	} else if (Util.getTypeFromInterval(rai) instanceof ShortType) {
         	int size = 2;
         	for (long i : rai.dimensionsAsLongArray()) {size *= i;}
         	if (isNumpy) size = (int) DecodeNumpy.calculateNpyStyleByteArrayLength(rai);
-        	shma = new SharedMemoryArrayWin(name, size, CommonUtils.getDataType(rai), rai.dimensionsAsLongArray(), isFortranOrder, isNumpy);
+        	shma = new SharedMemoryArrayWin(name, size, CommonUtils.getDataType(rai), rai.dimensionsAsLongArray(), isNumpy, isFortranOrder);
         	shma.buildInt16(Cast.unchecked(rai), isFortranOrder, isNumpy);
     	} else if (Util.getTypeFromInterval(rai) instanceof UnsignedShortType) {
         	int size = 2;
         	for (long i : rai.dimensionsAsLongArray()) {size *= i;}
         	if (isNumpy) size = (int) DecodeNumpy.calculateNpyStyleByteArrayLength(rai);
-        	shma = new SharedMemoryArrayWin(name, size, CommonUtils.getDataType(rai), rai.dimensionsAsLongArray(), isFortranOrder, isNumpy);
+        	shma = new SharedMemoryArrayWin(name, size, CommonUtils.getDataType(rai), rai.dimensionsAsLongArray(), isNumpy, isFortranOrder);
         	shma.buildUint16(Cast.unchecked(rai), isFortranOrder, isNumpy);
     	} else if (Util.getTypeFromInterval(rai) instanceof IntType) {
         	int size = 4;
         	for (long i : rai.dimensionsAsLongArray()) {size *= i;}
         	if (isNumpy) size = (int) DecodeNumpy.calculateNpyStyleByteArrayLength(rai);
-        	shma = new SharedMemoryArrayWin(name, size, CommonUtils.getDataType(rai), rai.dimensionsAsLongArray(), isFortranOrder, isNumpy);
+        	shma = new SharedMemoryArrayWin(name, size, CommonUtils.getDataType(rai), rai.dimensionsAsLongArray(), isNumpy, isFortranOrder);
         	shma.buildInt32(Cast.unchecked(rai), isFortranOrder, isNumpy);
     	} else if (Util.getTypeFromInterval(rai) instanceof UnsignedIntType) {
         	int size = 4;
         	for (long i : rai.dimensionsAsLongArray()) {size *= i;}
         	if (isNumpy) size = (int) DecodeNumpy.calculateNpyStyleByteArrayLength(rai);
-        	shma = new SharedMemoryArrayWin(name, size, CommonUtils.getDataType(rai), rai.dimensionsAsLongArray(), isFortranOrder, isNumpy);
+        	shma = new SharedMemoryArrayWin(name, size, CommonUtils.getDataType(rai), rai.dimensionsAsLongArray(), isNumpy, isFortranOrder);
         	shma.buildUint32(Cast.unchecked(rai), isFortranOrder, isNumpy);
     	} else if (Util.getTypeFromInterval(rai) instanceof LongType) {
         	int size = 8;
         	for (long i : rai.dimensionsAsLongArray()) {size *= i;}
         	if (isNumpy) size = (int) DecodeNumpy.calculateNpyStyleByteArrayLength(rai);
-        	shma = new SharedMemoryArrayWin(name, size, CommonUtils.getDataType(rai), rai.dimensionsAsLongArray(), isFortranOrder, isNumpy);
+        	shma = new SharedMemoryArrayWin(name, size, CommonUtils.getDataType(rai), rai.dimensionsAsLongArray(), isNumpy, isFortranOrder);
         	shma.buildInt64(Cast.unchecked(rai), isFortranOrder, isNumpy);
     	} else if (Util.getTypeFromInterval(rai) instanceof FloatType) {
         	int size = 4;
         	for (long i : rai.dimensionsAsLongArray()) {size *= i;}
         	if (isNumpy) size = (int) DecodeNumpy.calculateNpyStyleByteArrayLength(rai);
-        	shma = new SharedMemoryArrayWin(name, size, CommonUtils.getDataType(rai), rai.dimensionsAsLongArray(), isFortranOrder, isNumpy);
+        	shma = new SharedMemoryArrayWin(name, size, CommonUtils.getDataType(rai), rai.dimensionsAsLongArray(), isNumpy, isFortranOrder);
         	shma.buildFloat32(Cast.unchecked(rai), isFortranOrder, isNumpy);
     	} else if (Util.getTypeFromInterval(rai) instanceof DoubleType) {
         	int size = 8;
         	for (long i : rai.dimensionsAsLongArray()) {size *= i;}
         	if (isNumpy) size = (int) DecodeNumpy.calculateNpyStyleByteArrayLength(rai);
-        	shma = new SharedMemoryArrayWin(name, size, CommonUtils.getDataType(rai), rai.dimensionsAsLongArray(), isFortranOrder, isNumpy);
+        	shma = new SharedMemoryArrayWin(name, size, CommonUtils.getDataType(rai), rai.dimensionsAsLongArray(), isNumpy, isFortranOrder);
         	shma.buildFloat64(Cast.unchecked(rai), isFortranOrder, isNumpy);
     	} else {
             throw new IllegalArgumentException("The image has an unsupported type: " + Util.getTypeFromInterval(rai).getClass().toString());
@@ -480,7 +480,6 @@ public class SharedMemoryArrayWin implements SharedMemoryArray
 
     private void buildInt8(RandomAccessibleInterval<ByteType> tensor, boolean isFortranOrder, boolean isNumpy)
     {
-    	if (!isFortranOrder) tensor = Utils.transpose(tensor);
     	byte[] header = new byte[0];
     	if (isNumpy) header = getNpyHeader(tensor);
     	long offset = 0;
@@ -488,6 +487,7 @@ public class SharedMemoryArrayWin implements SharedMemoryArray
 			this.writePointer.setByte(offset, b);
     		offset ++;
     	}
+    	if (!isFortranOrder) tensor = Utils.transpose(tensor);
 		Cursor<ByteType> cursor = Views.flatIterable(tensor).cursor();
 		long i = 0;
 		while (cursor.hasNext()) {
@@ -498,7 +498,6 @@ public class SharedMemoryArrayWin implements SharedMemoryArray
 
     private void buildUint8(RandomAccessibleInterval<UnsignedByteType> tensor, boolean isFortranOrder, boolean isNumpy)
     {
-    	if (!isFortranOrder) tensor = Utils.transpose(tensor);
     	byte[] header = new byte[0];
     	if (isNumpy) header = getNpyHeader(tensor);
     	long offset = 0;
@@ -506,6 +505,7 @@ public class SharedMemoryArrayWin implements SharedMemoryArray
 			this.writePointer.setByte(offset, b);
     		offset ++;
     	}
+    	if (!isFortranOrder) tensor = Utils.transpose(tensor);
 		Cursor<UnsignedByteType> cursor = Views.flatIterable(tensor).cursor();
 		long i = 0;
 		while (cursor.hasNext()) {
@@ -516,7 +516,6 @@ public class SharedMemoryArrayWin implements SharedMemoryArray
 
     private void buildInt16(RandomAccessibleInterval<ShortType> tensor, boolean isFortranOrder, boolean isNumpy)
     {
-    	if (!isFortranOrder) tensor = Utils.transpose(tensor);
     	byte[] header = new byte[0];
     	if (isNumpy) header = getNpyHeader(tensor);
     	long offset = 0;
@@ -524,6 +523,7 @@ public class SharedMemoryArrayWin implements SharedMemoryArray
 			this.writePointer.setByte(offset, b);
     		offset ++;
     	}
+    	if (!isFortranOrder) tensor = Utils.transpose(tensor);
 		Cursor<ShortType> cursor = Views.flatIterable(tensor).cursor();
 		long i = 0;
 		while (cursor.hasNext()) {
@@ -535,7 +535,6 @@ public class SharedMemoryArrayWin implements SharedMemoryArray
 
     private void buildUint16(RandomAccessibleInterval<UnsignedShortType> tensor, boolean isFortranOrder, boolean isNumpy)
     {
-    	if (!isFortranOrder) tensor = Utils.transpose(tensor);
     	byte[] header = new byte[0];
     	if (isNumpy) header = getNpyHeader(tensor);
     	long offset = 0;
@@ -543,6 +542,7 @@ public class SharedMemoryArrayWin implements SharedMemoryArray
 			this.writePointer.setByte(offset, b);
     		offset ++;
     	}
+    	if (!isFortranOrder) tensor = Utils.transpose(tensor);
 		Cursor<UnsignedShortType> cursor = Views.flatIterable(tensor).cursor();
 		long i = 0;
 		while (cursor.hasNext()) {
@@ -554,7 +554,6 @@ public class SharedMemoryArrayWin implements SharedMemoryArray
 
     private void buildInt32(RandomAccessibleInterval<IntType> tensor, boolean isFortranOrder, boolean isNumpy)
     {
-    	if (!isFortranOrder) tensor = Utils.transpose(tensor);
     	byte[] header = new byte[0];
     	if (isNumpy) header = getNpyHeader(tensor);
     	long offset = 0;
@@ -562,6 +561,7 @@ public class SharedMemoryArrayWin implements SharedMemoryArray
 			this.writePointer.setByte(offset, b);
     		offset ++;
     	}
+    	if (!isFortranOrder) tensor = Utils.transpose(tensor);
 		Cursor<IntType> cursor = Views.flatIterable(tensor).cursor();
 		long i = 0;
 		while (cursor.hasNext()) {
@@ -573,7 +573,6 @@ public class SharedMemoryArrayWin implements SharedMemoryArray
 
     private void buildUint32(RandomAccessibleInterval<UnsignedIntType> tensor, boolean isFortranOrder, boolean isNumpy)
     {
-    	if (!isFortranOrder) tensor = Utils.transpose(tensor);
     	byte[] header = new byte[0];
     	if (isNumpy) header = getNpyHeader(tensor);
     	long offset = 0;
@@ -581,6 +580,7 @@ public class SharedMemoryArrayWin implements SharedMemoryArray
 			this.writePointer.setByte(offset, b);
     		offset ++;
     	}
+    	if (!isFortranOrder) tensor = Utils.transpose(tensor);
 		Cursor<UnsignedIntType> cursor = Views.flatIterable(tensor).cursor();
 		long i = 0;
 		while (cursor.hasNext()) {
@@ -592,7 +592,6 @@ public class SharedMemoryArrayWin implements SharedMemoryArray
 
     private void buildInt64(RandomAccessibleInterval<LongType> tensor, boolean isFortranOrder, boolean isNumpy)
     {
-    	if (!isFortranOrder) tensor = Utils.transpose(tensor);
     	byte[] header = new byte[0];
     	if (isNumpy) header = getNpyHeader(tensor);
     	long offset = 0;
@@ -600,6 +599,7 @@ public class SharedMemoryArrayWin implements SharedMemoryArray
 			this.writePointer.setByte(offset, b);
     		offset ++;
     	}
+    	if (!isFortranOrder) tensor = Utils.transpose(tensor);
 		Cursor<LongType> cursor = Views.flatIterable(tensor).cursor();
 		long i = 0;
 		while (cursor.hasNext()) {
@@ -611,7 +611,6 @@ public class SharedMemoryArrayWin implements SharedMemoryArray
 
     private void buildFloat32(RandomAccessibleInterval<FloatType> tensor, boolean isFortranOrder, boolean isNumpy)
     {
-    	if (!isFortranOrder) tensor = Utils.transpose(tensor);
     	byte[] header = new byte[0];
     	if (isNumpy) header = getNpyHeader(tensor);
     	long offset = 0;
@@ -619,6 +618,7 @@ public class SharedMemoryArrayWin implements SharedMemoryArray
 			this.writePointer.setByte(offset, b);
     		offset ++;
     	}
+    	if (!isFortranOrder) tensor = Utils.transpose(tensor);
 		Cursor<FloatType> cursor = Views.flatIterable(tensor).cursor();
 		long i = 0;
 		while (cursor.hasNext()) {
@@ -630,7 +630,6 @@ public class SharedMemoryArrayWin implements SharedMemoryArray
 
     private void buildFloat64(RandomAccessibleInterval<DoubleType> tensor, boolean isFortranOrder, boolean isNumpy)
     {
-    	if (!isFortranOrder) tensor = Utils.transpose(tensor);
     	byte[] header = new byte[0];
     	if (isNumpy) header = getNpyHeader(tensor);
     	long offset = 0;
@@ -638,6 +637,7 @@ public class SharedMemoryArrayWin implements SharedMemoryArray
 			this.writePointer.setByte(offset, b);
     		offset ++;
     	}
+    	if (!isFortranOrder) tensor = Utils.transpose(tensor);
 		Cursor<DoubleType> cursor = Views.flatIterable(tensor).cursor();
 		long i = 0;
 		while (cursor.hasNext()) {
@@ -756,6 +756,7 @@ public class SharedMemoryArrayWin implements SharedMemoryArray
 	            throw new IllegalArgumentException("Invalid numpy header: " + header);
 	        }
 	        String typeStr = m.group(1);
+	        String fortranOrder = m.group(2).trim();
 	        String shapeStr = m.group(3);
 	        long[] shape = new long[0];
 	        if (!shapeStr.isEmpty()) {
@@ -776,6 +777,9 @@ public class SharedMemoryArrayWin implements SharedMemoryArray
 	        len = Math.toIntExact(count * numBytes);
 	        if (offset + len > this.size)
 	        	throw new IllegalArgumentException("Npy array exceeds shared memory segment size");
+	        this.originalDims = shape;
+	        this.originalDataType = dtype;
+	        this.isFortran = fortranOrder.equals("True");
 		} catch (Exception ex) {
 			this.isNumpyFormat = false;
 		}
@@ -824,6 +828,17 @@ public class SharedMemoryArrayWin implements SharedMemoryArray
     public ByteBuffer getDataBuffer() {
     	return writePointer.getByteBuffer(0, this.size);
     }
+
+	@Override
+	public ByteBuffer getDataBufferNoHeader() {
+    	int offset = 0;
+    	if (this.isNumpyFormat()) {
+    		long flatSize = 1;
+    		for (long l : this.originalDims) flatSize *= l;
+    		offset =  (int) (this.size - DecodeNumpy.DATA_TYPES_MAP.get(this.originalDataType) * flatSize);
+    	}
+    	return writePointer.getByteBuffer(offset, this.size - offset);
+	}
 	
 	private static <T extends RealType<T> & NativeType<T>>
 	RandomAccessibleInterval<T> buildFromSharedMemoryBlock(Pointer pSharedMemory, long[] shape, String type, boolean isFortran) {
@@ -848,20 +863,21 @@ public class SharedMemoryArrayWin implements SharedMemoryArray
 	protected <T extends RealType<T> & NativeType<T>>
 	RandomAccessibleInterval<T> buildImgLib2FromNumpyLikeSHMA() {
 		int offset = 0;
-        byte[] buf = writePointer.getByteBuffer(offset, DecodeNumpy.NUMPY_PREFIX.length).array();
+		byte[] buf = new byte[DecodeNumpy.NUMPY_PREFIX.length];
+		mappedPointer.getByteBuffer(offset, DecodeNumpy.NUMPY_PREFIX.length).get(buf, 0, DecodeNumpy.NUMPY_PREFIX.length);
         if (!Arrays.equals(buf, DecodeNumpy.NUMPY_PREFIX)) {
             throw new IllegalArgumentException("Malformed  or unsopported Numpy array");
         }
         offset = DecodeNumpy.NUMPY_PREFIX.length;
-        byte major = writePointer.getByteBuffer(offset, 1).array()[0];
+        byte major = mappedPointer.getByteBuffer(offset, 1).get();
         offset ++;
-        byte minor = writePointer.getByteBuffer(offset, 1).array()[0];
+        byte minor = mappedPointer.getByteBuffer(offset, 1).get();
         offset ++;
         if (major < 1 || major > 3 || minor != 0) {
             throw new IllegalArgumentException("Unknown numpy version: " + major + '.' + minor);
         }
         int len = major == 1 ? 2 : 4;
-        ByteBuffer bb = writePointer.getByteBuffer(offset, len);
+        ByteBuffer bb = mappedPointer.getByteBuffer(offset, len);
         offset += len;
         bb.order(ByteOrder.LITTLE_ENDIAN);
         if (major == 1) {
@@ -869,7 +885,8 @@ public class SharedMemoryArrayWin implements SharedMemoryArray
         } else {
             len = bb.getInt();
         }
-        buf = writePointer.getByteBuffer(offset, len).array();
+        buf = new byte[len];
+        mappedPointer.getByteBuffer(offset, len).get(buf, 0, len);
         offset += len;
         String header = new String(buf, StandardCharsets.UTF_8);
         Matcher m = DecodeNumpy.HEADER_PATTERN.matcher(header);
