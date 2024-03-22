@@ -430,6 +430,7 @@ public class SharedMemoryArrayLinux implements SharedMemoryArray {
         shm.size = (int) size;
         shm.useLibRT = useLibRT;
         shm.findNumpyFormat();
+        if (shm.isNumpyFormat) shm.getSharedRAI()
         return shm;
     }
     
@@ -674,6 +675,7 @@ public class SharedMemoryArrayLinux implements SharedMemoryArray {
      * {@inheritDoc}
      */
 	public String getOriginalDataType() {
+		if (originalDataType == null && this.isNumpyFormat) findNumpyFormat();
 		return this.originalDataType;
 	}
 
@@ -682,6 +684,7 @@ public class SharedMemoryArrayLinux implements SharedMemoryArray {
      * {@inheritDoc}
      */
 	public long[] getOriginalShape() {
+		if (originalDims == null && this.isNumpyFormat) findNumpyFormat();
 		return this.originalDims;
 	}
 	
@@ -749,6 +752,8 @@ public class SharedMemoryArrayLinux implements SharedMemoryArray {
 	        len = Math.toIntExact(count * numBytes);
 	        if (offset + len > this.size)
 	        	throw new IllegalArgumentException("Npy array exceeds shared memory segment size");
+	        this.originalDims = shape;
+	        this.originalDataType = dtype;
 		} catch (Exception ex) {
 			this.isNumpyFormat = false;
 		}

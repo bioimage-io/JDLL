@@ -163,8 +163,8 @@ public class SharedMemoryArrayWin implements SharedMemoryArray
 	 */
 	protected SharedMemoryArrayWin(String name, int size, String dtype, long[] shape, Boolean isNumpy, boolean isFortran) throws FileAlreadyExistsException
     {
-		if (size < 1)
-			throw new IllegalArgumentException("Cannot create empty shared memory segment.");
+		if (size < 0)
+			throw new IllegalArgumentException("The size of a shared memory segment cannot be negative.");
     	memoryName = name;
     	this.originalDataType = dtype;
     	this.originalDims = shape;
@@ -175,7 +175,7 @@ public class SharedMemoryArrayWin implements SharedMemoryArray
     	boolean write = true;
     	if (checkSHMExists(memoryName)) {
         	long prevSize = getSHMSize(name);
-        	if (prevSize < size)
+        	if (prevSize != 0 && prevSize < size)
         		throw new FileAlreadyExistsException("Shared memory segment already exists with different dimensions, data type or format. "
         				+ "Size of existing shared memory segment: " + prevSize + ", size of proposed object: " + size);
     	}
@@ -717,7 +717,7 @@ public class SharedMemoryArrayWin implements SharedMemoryArray
 	 */
 	public void close() {
 		if (unlinked) return;
-        Kernel32.INSTANCE.UnmapViewOfFile(this.writePointer);
+		if (writePointer != null) Kernel32.INSTANCE.UnmapViewOfFile(this.writePointer);
         Kernel32.INSTANCE.UnmapViewOfFile(mappedPointer);
         Kernel32.INSTANCE.CloseHandle(hMapFile);
         unlinked = true;
