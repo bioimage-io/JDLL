@@ -271,11 +271,11 @@ public interface SharedMemoryArray extends Closeable {
 	public static <T extends RealType<T> & NativeType<T>>
 	SharedMemoryArray createSHMAFromRAI(String name, RandomAccessibleInterval<T> rai, boolean isFortranOrder, boolean isNumpy) throws FileAlreadyExistsException {
         if (PlatformDetection.isWindows()) 
-        	return SharedMemoryArrayWin.createSHMAFromRAI(SharedMemoryArray.createShmName(), rai, isFortranOrder, isNumpy);
+        	return SharedMemoryArrayWin.createSHMAFromRAI(name, rai, isFortranOrder, isNumpy);
     	else if (PlatformDetection.isLinux()) 
-    		return SharedMemoryArrayLinux.createSHMAFromRAI(SharedMemoryArray.createShmName(), rai, isFortranOrder, isNumpy);
+    		return SharedMemoryArrayLinux.createSHMAFromRAI(name, rai, isFortranOrder, isNumpy);
     	else 
-    		return SharedMemoryArrayMacOS.createSHMAFromRAI(SharedMemoryArray.createShmName(), rai, isFortranOrder, isNumpy);
+    		return SharedMemoryArrayMacOS.createSHMAFromRAI(name, rai, isFortranOrder, isNumpy);
     }
 	
 	/**
@@ -433,6 +433,14 @@ public interface SharedMemoryArray extends Closeable {
      * @return the {@link ByteBuffer} with all the bytes of the Shared memory segment
      */
     public ByteBuffer getDataBuffer();
+    
+    /**
+     * This method is only different frmo {@link #getDataBuffer()} if the shm segment is saved in 
+     * Numpy Npy format, which contains a header at the beginning of the shm segment with information
+     * about he array
+     * @return the {@link ByteBuffer} with all the bytes of the Shared memory segment except those dedicated to the header
+     */
+    public ByteBuffer getDataBufferNoHeader();
     
     /**
      * 
