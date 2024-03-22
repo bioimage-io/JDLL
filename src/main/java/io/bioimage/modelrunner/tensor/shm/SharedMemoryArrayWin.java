@@ -971,54 +971,28 @@ public class SharedMemoryArrayWin implements SharedMemoryArray
 	}
 	
 	public static void main(String[] args) {
-	    String memoryName = "Local" + File.separator + "wnsm_52f561c9";
+		WinNT.HANDLE hMapFile = Kernel32.INSTANCE.OpenFileMapping( WinNT.FILE_MAP_READ, false, "Local\\wnsm_a637b65a");
 
-	    WinNT.HANDLE hMapFile = Kernel32.INSTANCE.CreateFileMapping(
-                WinBase.INVALID_HANDLE_VALUE,
-                null,
-                WinNT.PAGE_READWRITE | SEC_RESERVE,
-                0,
-                1024 * 1024 * 1024 * 3,
-                memoryName
-        );
-	    if (hMapFile == null) {
-	        throw new RuntimeException("OpenFileMapping failed with error: " + Kernel32.INSTANCE.GetLastError());
-	    }
+    	Kernel32.INSTANCE.CloseHandle(hMapFile);
+    	if (hMapFile == null) {
+            throw new RuntimeException("OpenFileMapping failed with error: " + Kernel32.INSTANCE.GetLastError());
+        } else if (true){
+        	return;
+        }
+        // Map the shared memory object into the current process's address space
+        Pointer pSharedMemory = Kernel32.INSTANCE.MapViewOfFile(hMapFile, WinNT.FILE_MAP_READ, 0, 0, 0);
+        if (pSharedMemory == null) {
+        	Kernel32.INSTANCE.CloseHandle(hMapFile);
+            throw new RuntimeException("MapViewOfFile failed with error: " + Kernel32.INSTANCE.GetLastError());
+        }
+        Kernel32.MEMORY_BASIC_INFORMATION mbi = new Kernel32.MEMORY_BASIC_INFORMATION();
         
-        // Map the shared memory
-	    Pointer dpSharedMemory = Kernel32.INSTANCE.MapViewOfFile(
-                hMapFile,
-                WinNT.FILE_MAP_WRITE,
-                0,
-                0,
-                1024 * 1024 * 1024 * 3
-        );
-        Kernel32.INSTANCE.UnmapViewOfFile(dpSharedMemory);
-        Kernel32.INSTANCE.CloseHandle(hMapFile);
-	    Pointer aa = Kernel32.INSTANCE.VirtualAllocEx(Kernel32.INSTANCE.GetCurrentProcess(), 
-	    		dpSharedMemory, 
-	    		new BaseTSD.SIZE_T(1024 * 1024 * 2000), WinNT.MEM_COMMIT, WinNT.PAGE_READWRITE);
-	    for (int i = 0; i < 1024*1024*2000; i ++)
-	    	aa.setByte(i, (byte) i);
-	    if (true) return;
-
-	    // Map the shared memory object into the current process's address space
-	    Pointer pSharedMemory = Kernel32.INSTANCE.MapViewOfFile(
-	            hMapFile, WinNT.FILE_MAP_READ, 0, 0, 0
-	    );
-	    if (pSharedMemory == null) {
-	        Kernel32.INSTANCE.CloseHandle(hMapFile);
-	        throw new RuntimeException("MapViewOfFile failed with error: " + Kernel32.INSTANCE.GetLastError());
-	    }
-
-	    Kernel32.MEMORY_BASIC_INFORMATION mbi = new Kernel32.MEMORY_BASIC_INFORMATION();
-	    if (Kernel32.INSTANCE.VirtualQueryEx(Kernel32.INSTANCE.GetCurrentProcess(), pSharedMemory, mbi, new BaseTSD.SIZE_T((long) mbi.size())).intValue() != 0) {
-	        System.out.println("Shared Memory Size: " + mbi.regionSize + " bytes");
-	    } else {
-	        System.err.println("Unable to query memory region.");
-	    }
-
-	    Kernel32.INSTANCE.UnmapViewOfFile(pSharedMemory);
-	    Kernel32.INSTANCE.CloseHandle(hMapFile);
+        if (Kernel32.INSTANCE.VirtualQueryEx(
+        		Kernel32.INSTANCE.GetCurrentProcess(), pSharedMemory, mbi, new BaseTSD.SIZE_T((long) mbi.size())
+        		).intValue() == 0) {
+            throw new RuntimeException("Unable to retrieve the size of the shm segment located at '" 
+        		+ "'. Errno: " + Kernel32.INSTANCE.GetLastError());
+        }
+        int size = mbi.regionSize.intValue();
 	}
 }
