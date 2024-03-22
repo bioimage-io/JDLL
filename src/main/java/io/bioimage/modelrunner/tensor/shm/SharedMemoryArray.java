@@ -44,6 +44,13 @@ import net.imglib2.type.numeric.real.DoubleType;
 import net.imglib2.type.numeric.real.FloatType;
 
 /**
+ * TODO separate unlink and close
+ * TODO separate unlink and close
+ * TODO separate unlink and close
+ * TODO separate unlink and close
+ * TODO separate unlink and close
+ * TODO separate unlink and close
+ * 
  * Interface to interact with shared memory segments retrieving the underlying information 
  * 
  * @author Carlos Garcia Lopez de Haro
