@@ -1043,7 +1043,7 @@ public class SharedMemoryArrayLinux implements SharedMemoryArray {
 	}
 	
 	public static void main(String[] args) throws FileAlreadyExistsException {
-		SharedMemoryArrayLinux ss = read("shm-d602a00e-dbe2-4569-9cf4-3f1ecc20d897");
+		SharedMemoryArrayLinux ss = read("shm-b86eb953-943d-499e-b74e-c38a48e924b6");
 		
 		
 		ss.close();

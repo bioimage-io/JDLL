@@ -181,6 +181,9 @@ public class RunMode {
 					case LAUNCH:
 						System.out.println("LAunched code");
 						break;
+					case CRASH:
+						System.out.println("Task crashed: " + task.error);
+						break;
 					default:
 						break;
                 }
@@ -188,12 +191,15 @@ public class RunMode {
             task.waitFor();
             System.out.println("here2");
             outputs = recreateOutputObjects(task.outputs);
-            Task closeShmTask = python.task(RunModeScripts.UNLINK_AND_CLOSE_SHM, null);
-            closeShmTask.waitFor();
+            // TODO remove Task closeShmTask = python.task(RunModeScripts.UNLINK_AND_CLOSE_SHM, null);
+           // TODO remove  closeShmTask.waitFor();
         } catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		} catch (InterruptedException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (Exception e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
@@ -300,12 +306,12 @@ public class RunMode {
 				apposeInputMap.put(entry.getKey(), null);
 				addCodeToRecreateTensorFile(entry.getKey(), (Tensor<T>) entry.getValue(), fileName);
 			} else if (entry.getValue() instanceof Tensor) {
-				SharedMemoryArray shma = SharedMemoryArray.createSHMAFromRAI(((Tensor<T>) entry.getValue()).getData());
+				SharedMemoryArray shma = SharedMemoryArray.createSHMAFromRAI(((Tensor<T>) entry.getValue()).getData(), false, false);
 				shmaList.add(shma);
 				apposeInputMap.put(entry.getKey(), null);
 				addCodeToRecreateTensor(entry.getKey(), shma, (Tensor<T>) entry.getValue());
 			} else if (entry.getValue() instanceof RandomAccessibleInterval) {
-				SharedMemoryArray shma = SharedMemoryArray.createSHMAFromRAI((RandomAccessibleInterval<T>) entry.getValue());
+				SharedMemoryArray shma = SharedMemoryArray.createSHMAFromRAI((RandomAccessibleInterval<T>) entry.getValue(), false, false);
 				shmaList.add(shma);
 				apposeInputMap.put(entry.getKey(), null);
 				addCodeToRecreateNumpyArray(entry.getKey(), shma, (RandomAccessibleInterval<T>) entry.getValue());
@@ -495,12 +501,13 @@ public class RunMode {
 			throw new RuntimeException("Error retrieving the image from Python", e);
 		}
 		RandomAccessibleInterval<T> rai = shm.getSharedRAI();
+		rai = Tensor.createCopyOfRaiInWantedDataType(rai, Util.getTypeFromInterval(rai));
 		try {
 			shm.close();
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
-		return Tensor.build(tensorname, axes, Tensor.createCopyOfRaiInWantedDataType(rai, Util.getTypeFromInterval(rai)));
+		return Tensor.build(tensorname, axes, rai);
 	}
 	
 	private static < T extends RealType< T > & NativeType< T > > 
@@ -528,12 +535,13 @@ public class RunMode {
 			throw new RuntimeException("Error retrieving the image from Python", e);
 		}
 		RandomAccessibleInterval<T> rai = shm.getSharedRAI();
+		rai = Tensor.createCopyOfRaiInWantedDataType(rai, Util.getTypeFromInterval(rai));
 		try {
 			shm.close();
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
-		return Tensor.createCopyOfRaiInWantedDataType(rai, Util.getTypeFromInterval(rai));
+		return rai;
 	}
 	
 	private static List<Object> createListFromApposeOutput(List<Object> list) throws FileNotFoundException, IOException {

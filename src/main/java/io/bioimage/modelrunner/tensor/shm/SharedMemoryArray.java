@@ -112,7 +112,7 @@ public interface SharedMemoryArray extends Closeable {
 	 */
 	static <T extends RealType<T> & NativeType<T>>
 	SharedMemoryArray readOrCreate(String name, long[] shape, T datatype) throws FileAlreadyExistsException {
-		String strDType = DecodeNumpy.getDataType(datatype);
+		String strDType = CommonUtils.getDataType(datatype);
     	int size = 1;
     	for (long i : shape) {size *= i;}
         if (PlatformDetection.isWindows()) 
@@ -125,7 +125,7 @@ public interface SharedMemoryArray extends Closeable {
 
 	static <T extends RealType<T> & NativeType<T>>
 	SharedMemoryArray readOrCreate(String name, long[] shape, T datatype, boolean isFortran, boolean isNpy) throws FileAlreadyExistsException {
-		String strDType = DecodeNumpy.getDataType(datatype);
+		String strDType = CommonUtils.getDataType(datatype);
     	int size = 1;
     	for (long i : shape) {size *= i;}
         if (PlatformDetection.isWindows()) 
@@ -198,7 +198,7 @@ public interface SharedMemoryArray extends Closeable {
 
 	static <T extends RealType<T> & NativeType<T>>
 	SharedMemoryArray create(long[] shape, T datatype, boolean isFortran, boolean isNpy) {
-		String strDType = DecodeNumpy.getDataType(datatype);
+		String strDType = CommonUtils.getDataType(datatype);
     	int size = 1;
     	for (long i : shape) {size *= i;}
         if (PlatformDetection.isWindows()) 
