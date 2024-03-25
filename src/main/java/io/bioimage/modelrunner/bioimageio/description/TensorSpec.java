@@ -278,6 +278,22 @@ public class TensorSpec {
      * @return the array with the patch of interest
      */
     public int[] getOptimalTileSizeForTiling(int[] seqSize, String seqSizeAxes, boolean applyTiling) {
+    	return getOptimalTileSizeForTiling(seqSize, seqSizeAxes, applyTiling, null);
+    }
+    
+    /**
+     * REturn an array containing the optimal patch for the given sequence.
+     * TODO add: An optimal patch has the arbitrary requirement of not being bigger than
+     * 10^6 pixels
+     * @param seqSize
+     * 	array containing the size of the sequence with the axes order defined
+     * @param seqSizeAxes
+     * 	axes order of the size array
+     * @param applyTiling
+     * 	whether tiling is considered or not.
+     * @return the array with the patch of interest
+     */
+    public int[] getOptimalTileSizeForTiling(int[] seqSize, String seqSizeAxes, boolean applyTiling, TensorSpec affectedTensor) {
     	int[] patch = new int[axes.length()];
     	String seqSizeAxesUpper = seqSizeAxes.toUpperCase();
     	seqSizeAxesUpper = seqSizeAxesUpper.replace("T", "B");
@@ -310,15 +326,20 @@ public class TensorSpec {
 			return patch;
 		long totPix = 1;
 		for (int ii : patch) totPix *= (long) ii;
-		if (totPix < OPTIMAL_MAX_NUMBER_PIXELS)
+		long outputTotByteSize = calculateByteSizeOfAffectedOutput(this.axes, patch, affectedTensor);
+		
+		if (totPix < OPTIMAL_MAX_NUMBER_PIXELS && outputTotByteSize < Integer.MAX_VALUE)
 			return patch;
 		
 		long minPix = 1;
 		for (int ii : shape.getTileMinimumSize()) minPix *= (long) ii;
 		if (minPix > OPTIMAL_MAX_NUMBER_PIXELS)
 			return shape.getTileMinimumSize();
+
+		double ratioSize = (double) OPTIMAL_MAX_NUMBER_PIXELS / (double) totPix;
+		double ratioByte = (double) Integer.MAX_VALUE / (double) outputTotByteSize;
 		
-		double ratio = (double) OPTIMAL_MAX_NUMBER_PIXELS / (double) totPix;
+		double ratio = Math.min(ratioSize, ratioByte);
 		
 		for (int ii = 0; ii < axesArr.length; ii ++) {
 			int step = shape.getTileStep()[ii];
@@ -331,13 +352,44 @@ public class TensorSpec {
 			else if (prevTile * ratio < min)
 				patch[ii] = min;
 			else 
-				patch[ii] = (int)Math.ceil(prevTile * ratio);
+				patch[ii] = (int)Math.floor((prevTile * ratio - min) / step) * step + min;
 			totPix = nTot * patch[ii];
-			ratio = (double) OPTIMAL_MAX_NUMBER_PIXELS / (double) totPix;
-			if (ratio > 0.9)
+			ratioSize = (double) OPTIMAL_MAX_NUMBER_PIXELS / (double) totPix;
+			ratioByte = (double) Integer.MAX_VALUE / (double) calculateByteSizeOfAffectedOutput(this.axes, patch, affectedTensor);
+			ratio = Math.min(ratioSize, ratioByte);
+			if (ratio > 1)
 				break;
 		}
 		return patch;
+    }
+    
+    private long calculateByteSizeOfAffectedOutput(String inputAxes, int[] inputSize, TensorSpec affectedOutput) {
+    	if (affectedOutput == null) return 0;
+        inputSize = PatchGridCalculator.arrayToWantedAxesOrderAddOnes(inputSize, inputAxes, affectedOutput.axes);
+        int[] outputSize = new int[inputSize.length];
+        if (!affectedOutput.shape.isFixedSize()) {
+        	float[] scale = affectedOutput.shape.getScale();
+        	float[] offset = affectedOutput.shape.getOffset();
+        	for (int i = 0; i < scale.length; i ++) {
+        		outputSize[i] = (int) (inputSize[i] * scale[i] + offset[i] * 2);
+        	}
+        } else {
+        	outputSize = affectedOutput.shape.getTileRecomendedSize();
+        }
+        
+        long flatSize = 1;
+        for (int i : outputSize) flatSize *= (long) i;
+        if (affectedOutput.dataType.toLowerCase().equals("float32")
+        		|| affectedOutput.dataType.toLowerCase().equals("int32")
+        		|| affectedOutput.dataType.toLowerCase().equals("uint32"))
+        	flatSize *= 4;
+        else if (affectedOutput.dataType.toLowerCase().equals("int16")
+        		|| affectedOutput.dataType.toLowerCase().equals("uint16"))
+        	flatSize *= 2;
+        else if (affectedOutput.dataType.toLowerCase().equals("int64")
+        		|| affectedOutput.dataType.toLowerCase().equals("float64"))
+        	flatSize *= 8;
+        return flatSize;
     }
     
     /**
