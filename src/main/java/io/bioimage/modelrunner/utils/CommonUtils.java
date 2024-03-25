@@ -177,8 +177,8 @@ public class CommonUtils {
 		return dateString;
 	}
 	
-	public static boolean int32Overflows(int[] arr) {
-		double div = Integer.MAX_VALUE;
+	public static boolean int32Overflows(int[] arr, int bytesPerValue) {
+		double div = Integer.MAX_VALUE / bytesPerValue;
 		for (int a : arr)
 			div = div / (double) a;
 		if (div <  1)
@@ -186,8 +186,8 @@ public class CommonUtils {
 		return false;
 	}
 	
-	public static boolean int32Overflows(long[] arr) {
-		double div = Integer.MAX_VALUE;
+	public static boolean int32Overflows(long[] arr, int bytesPerValue) {
+		double div = Integer.MAX_VALUE / bytesPerValue;
 		for (long a : arr)
 			div = div / (double) a;
 		if (div <  1)
@@ -195,8 +195,8 @@ public class CommonUtils {
 		return false;
 	}
 	
-	public static boolean int64Overflows(int[] arr) {
-		double div = Long.MAX_VALUE;
+	public static boolean int64Overflows(int[] arr, int bytesPerValue) {
+		double div = Long.MAX_VALUE / bytesPerValue;
 		for (int a : arr)
 			div = div / (double) a;
 		if (div <  1)
@@ -204,8 +204,8 @@ public class CommonUtils {
 		return false;
 	}
 	
-	public static boolean int64Overflows(long[] arr) {
-		double div = Long.MAX_VALUE;
+	public static boolean int64Overflows(long[] arr, int bytesPerValue) {
+		double div = Long.MAX_VALUE / bytesPerValue;
 		for (long a : arr)
 			div = div / (double) a;
 		if (div <  1)
