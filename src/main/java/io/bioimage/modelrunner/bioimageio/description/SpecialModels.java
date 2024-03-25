@@ -66,13 +66,18 @@ public class SpecialModels
     }
     
     private static void completeStardist(ModelDescriptor descriptor) {
+    	boolean is3D = descriptor.getInputTensors().get(0).getAxesOrder().length() == 5;
     	Map<String, Object> stardistMap = (Map<String, Object>) descriptor.getConfig().getSpecMap().get(STARDIST_KEY);
     	Map<String, Object> stardistThres = (Map<String, Object>) stardistMap.get("thresholds");
     	Map<String, Object> stardistPostProcessing = new HashMap<String, Object>();
     	Map<String, Object> outerKwargs = new HashMap<String, Object>();
     	stardistPostProcessing.put(TransformSpec.getTransformationNameKey(), PythonTransformation.NAME);
     	outerKwargs.put(PythonTransformation.ENV_YAML_KEY, descriptor.getModelPath() + File.separator + "stardist.yaml");
-    	outerKwargs.put(PythonTransformation.SCRIPT_KEY, descriptor.getModelPath() + File.separator + "stardist_postprocessing.py");
+    	String fname = "stardist_postprocessing.py";
+    	if (is3D)
+    		fname = "stardist_postprocessing_3D.py";
+		outerKwargs.put(PythonTransformation.SCRIPT_KEY, descriptor.getModelPath() + File.separator + fname);
+    		
     	outerKwargs.put(PythonTransformation.N_OUTPUTS_KEY, 1);
     	outerKwargs.put(PythonTransformation.METHOD_KEY, "stardist_postprocessing");
     	Map<String, Object> kwargs = new HashMap<String, Object>();
