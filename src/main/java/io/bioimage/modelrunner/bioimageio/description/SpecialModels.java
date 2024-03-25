@@ -99,11 +99,15 @@ public class SpecialModels
     }
     
     private static boolean extractStardist(ModelDescriptor descriptor) {
+    	boolean is3D = descriptor.getInputTensors().get(0).getAxesOrder().length() == 5;
     	if (descriptor.getModelPath() == null) {
     		return true;
     	}
         File envFile = new File(descriptor.getModelPath() + File.separator + "stardist.yaml");
-    	File scriptFile = new File(descriptor.getModelPath() + File.separator + "stardist_postprocessing.py");
+    	String fname = "stardist_postprocessing.py";
+    	if (is3D)
+    		fname = "stardist_postprocessing_3D.py";
+    	File scriptFile = new File(descriptor.getModelPath() + File.separator + fname);
     	if (!envFile.isFile()) {
     		try (InputStream envStream = SpecialModels.class.getClassLoader()
         			.getResourceAsStream("op_environments" + "/stardist.yaml")){
@@ -115,7 +119,7 @@ public class SpecialModels
     	}
     	if (!scriptFile.isFile()) {
     		try (InputStream scriptStream = SpecialModels.class.getClassLoader()
-        			.getResourceAsStream("ops" + "/stardist_postprocessing" + "/stardist_postprocessing.py")){
+        			.getResourceAsStream("ops" + "/stardist_postprocessing" + "/" + fname)){
     			Files.copy(scriptStream, scriptFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
     		} catch (IOException e) {
     			e.printStackTrace();

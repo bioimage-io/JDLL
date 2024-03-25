@@ -53,7 +53,7 @@ import warnings
 
 
 
-def stardist_postprocessing_3D(raw_output, prob_thresh, nms_thresh, n_classes=None,
+def stardist_postprocessing(raw_output, prob_thresh, nms_thresh, n_classes=None,
                              grid=(1,1,1), b=2, channel=3, n_rays=96, n_dim=3, axes_net='ZYXC'):
     prob = raw_output[0, :, :, :, 0:1]
     dist = raw_output[0, :, :, :, 1:]
