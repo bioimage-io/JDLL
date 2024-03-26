@@ -104,7 +104,7 @@ public interface SharedMemoryArray extends Closeable {
 	 * 
 	 * 		SharedMemoryArray shma = SharedMemoryArray.readOrCreate("shm_example", new long[]{2048}, new FloatType());	
 	 * 
-	 * An exception will be thrown because the required number of bytes is 2048 * 4 (4 bytes per float) = 8196 bytes > 1024 bytes
+	 * An exception will be thrown because the required number of bytes is 2048 * 4 (4 bytes per float) = 8196 bytes &gt; 1024 bytes
 	 * 
 	 * 
 	 * It is useful to allocate in advance the space that a certain {@link RandomAccessibleInterval}
@@ -151,7 +151,7 @@ public interface SharedMemoryArray extends Closeable {
 	 * 
 	 * 		SharedMemoryArray shma = SharedMemoryArray.readOrCreate("shm_example", new long[]{2048}, new FloatType());	
 	 * 
-	 * An exception will be thrown because the required number of bytes is 2048 * 4 (4 bytes per float) = 8196 bytes > 1024 bytes
+	 * An exception will be thrown because the required number of bytes is 2048 * 4 (4 bytes per float) = 8196 bytes &gt; 1024 bytes
 	 * 
 	 * 
 	 * It is useful to allocate in advance the space that a certain {@link RandomAccessibleInterval}
@@ -205,7 +205,7 @@ public interface SharedMemoryArray extends Closeable {
 	 * 
 	 * 		SharedMemoryArray shma = SharedMemoryArray.readOrCreate("shm_example", 8196;	
 	 * 
-	 * An exception will be thrown because the required number of bytes is 8196 bytes > 1024 bytes
+	 * An exception will be thrown because the required number of bytes is 8196 bytes &gt; 1024 bytes
 	 * 
 	 * 
 	 * It is useful to allocate in advance the space that a certain {@link RandomAccessibleInterval}
