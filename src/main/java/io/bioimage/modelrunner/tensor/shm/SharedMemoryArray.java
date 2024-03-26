@@ -91,13 +91,26 @@ public interface SharedMemoryArray extends Closeable {
 
 
 	/**
-	 * This method creates a segment on the Shared Memory region of the computer with the size
-	 * needed to store an image of the wanted characteristics.
+	 * This method creates a shared memory segment with the wanted name. The byte size is defined by the
+	 * 'shape' and 'datatype' arguments.
+	 * If a memory segment with the provided name already exists, it is wrapped, with read and write permissions.
+	 * 
+	 * The byte size of the shared memory segment cannot be modified.
+	 * 
+	 * If a shared memory segment already exists in the location of the name provided, but the size required by the
+	 * shape and data type is not the same as the size of the existing shared memory segment, an exception will
+	 * be thrown.
+	 * For example if a shared memory segment of size 1024 has been created at "shm_example" and we try:
+	 * 
+	 * 		SharedMemoryArray shma = SharedMemoryArray.readOrCreate("shm_example", new long[]{2048}, new FloatType());	
+	 * 
+	 * An exception will be thrown because the required number of bytes is 2048 * 4 (4 bytes per float) = 8196 bytes > 1024 bytes
+	 * 
+	 * 
 	 * It is useful to allocate in advance the space that a certain {@link RandomAccessibleInterval}
 	 * will need. The image can then reference this shared memory region.
 	 * An instance of {@link SharedMemoryArray} is created that helps managing the shared memory data.
 	 * 
-	 * The amount of space reserved will depend on the shape provided and the datatype.
 	 * 
 	 * @param <T>
      * 	possible ImgLib2 data types of the wanted {@link RandomAccessibleInterval}
@@ -108,7 +121,8 @@ public interface SharedMemoryArray extends Closeable {
 	 * @param datatype
 	 * 	datatype of the data that is going to be stored in the region
 	 * @return a {@link SharedMemoryArray} instance that helps handling the data written to the shared memory region
-	 * @throws FileAlreadyExistsException 
+	 * @throws FileAlreadyExistsException if a shared memory array with the same name exists and its byte size
+	 *                                    does not match the specified shape and datatype
 	 */
 	static <T extends RealType<T> & NativeType<T>>
 	SharedMemoryArray readOrCreate(String name, long[] shape, T datatype) throws FileAlreadyExistsException {
@@ -123,6 +137,48 @@ public interface SharedMemoryArray extends Closeable {
     		return SharedMemoryArrayMacOS.readOrCreate(name, size * DecodeNumpy.DATA_TYPES_MAP.get(strDType), shape, strDType, null, false);
 	}
 
+	/**
+	 * This method creates a shared memory segment with the wanted name. The byte size is defined by the
+	 * 'shape' and 'datatype' arguments.
+	 * If a memory segment with the provided name already exists, it is wrapped, with read and write permissions.
+	 * 
+	 * The byte size of the shared memory segment cannot be modified.
+	 * 
+	 * If a shared memory segment already exists in the location of the name provided, but the size required by the
+	 * shape and data type is not the same as the size of the existing shared memory segment, an exception will
+	 * be thrown.
+	 * For example if a shared memory segment of size 1024 has been created at "shm_example" and we try:
+	 * 
+	 * 		SharedMemoryArray shma = SharedMemoryArray.readOrCreate("shm_example", new long[]{2048}, new FloatType());	
+	 * 
+	 * An exception will be thrown because the required number of bytes is 2048 * 4 (4 bytes per float) = 8196 bytes > 1024 bytes
+	 * 
+	 * 
+	 * It is useful to allocate in advance the space that a certain {@link RandomAccessibleInterval}
+	 * will need. The image can then reference this shared memory region.
+	 * An instance of {@link SharedMemoryArray} is created that helps managing the shared memory data.
+	 * 
+	 * 
+	 * @param <T>
+     * 	possible ImgLib2 data types of the wanted {@link RandomAccessibleInterval}
+     * @param name
+     * 	name of the shared memory region that has been created
+	 * @param shape
+	 * 	shape of an ndimensional array that could be stored in the shared memory region
+	 * @param datatype
+	 * 	datatype of the data that is going to be stored in the region
+	 * @param isFortran
+	 * 	whether the nd array that is going to be stored in the shared memory segment will be flattened in fortran order
+	 * 	or not (c-order)
+	 * @param isNpy
+	 * 	whether th end array that is going to be stored in the shared memory segment will be preceded by a header 
+	 * 	containing the information of the nd array. The header will follow the style of Numpy npy files. Note that 
+	 * 	the header will occupy some bytes at the begining of the array but it could be useful to blindly retrieve the 
+	 * 	array in the shared memory segment
+	 * @return a {@link SharedMemoryArray} instance that helps handling the data written to the shared memory region
+	 * @throws FileAlreadyExistsException if a shared memory array with the same name exists and its byte size
+	 *                                    does not match the specified shape and datatype
+	 */
 	static <T extends RealType<T> & NativeType<T>>
 	SharedMemoryArray readOrCreate(String name, long[] shape, T datatype, boolean isFortran, boolean isNpy) throws FileAlreadyExistsException {
 		String strDType = CommonUtils.getDataType(datatype);
