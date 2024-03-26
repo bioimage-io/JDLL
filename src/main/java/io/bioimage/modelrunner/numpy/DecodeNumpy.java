@@ -608,6 +608,55 @@ public class DecodeNumpy {
     }
     
     /**
+     * Find the byte size that the Numpy npy format needs to save a N-dimensional array of the wanted data type
+     * and dimensions
+     * @param <T>
+     * 	possible ImgLib2 datatypes of the {@link RandomAccessibleInterval}
+     * @param shape
+     * 	the dimensions of the nd array
+     * @param datatype
+     * 	the data type of the nd array
+     * @return a long value specifying the number of bytes it would take to store the nd-array in Numpy npy format
+     */
+    public static < T extends RealType< T > & NativeType< T > >
+    long calculateNpyStyleByteArrayLength(long[] shape, T datatype) {
+    	String strHeader = "{'descr': '<";
+    	strHeader += getDataType(datatype);
+    	strHeader += "', 'fortran_order': False, 'shape': (";
+    	for (long ll : shape) strHeader += ll + ", ";
+    	strHeader = strHeader.substring(0, strHeader.length() - 2);
+    	strHeader += "), }" + System.lineSeparator();
+    	byte[] bufInverse = strHeader.getBytes(StandardCharsets.UTF_8);
+        byte[] len = new byte[2];
+        len[0] = (byte) (short) strHeader.length();
+        len[1] = (byte) (((short) strHeader.length()) >> 8);
+        
+        long flatSize = 1;
+        for (long ss : shape) flatSize *= ss;
+        if (datatype instanceof ByteType) {
+        	return NUMPY_PREFIX.length + 2 + 2 + bufInverse.length + flatSize;
+        } else if (datatype instanceof UnsignedByteType) {
+        	return NUMPY_PREFIX.length + 2 + 2 + bufInverse.length + flatSize;
+        } else if (datatype instanceof ShortType) {
+        	return NUMPY_PREFIX.length + 2 + 2 + bufInverse.length + flatSize * 2;
+        } else if (datatype instanceof UnsignedShortType) {
+        	return NUMPY_PREFIX.length + 2 + 2 + bufInverse.length + flatSize * 2;
+        } else if (datatype instanceof IntType) {
+        	return NUMPY_PREFIX.length + 2 + 2 + bufInverse.length + flatSize * 4;
+        } else if (datatype instanceof UnsignedIntType) {
+        	return NUMPY_PREFIX.length + 2 + 2 + bufInverse.length + flatSize * 4;
+        } else if (datatype instanceof LongType) {
+        	return NUMPY_PREFIX.length + 2 + 2 + bufInverse.length + flatSize * 8;
+        } else if (datatype instanceof FloatType) {
+        	return NUMPY_PREFIX.length + 2 + 2 + bufInverse.length + flatSize * 4;
+        } else if (datatype instanceof DoubleType) {
+        	return NUMPY_PREFIX.length + 2 + 2 + bufInverse.length + flatSize * 8;
+        } else {
+        	throw new IllegalArgumentException("Unsupported data type");
+        }
+    }
+    
+    /**
      * Method to convert a {@link RandomAccessibleInterval} into the byte array that is used by Numpy
      * to create .npy files.
      * The byte array created contains the flattened data of the {@link RandomAccessibleInterval} plus
