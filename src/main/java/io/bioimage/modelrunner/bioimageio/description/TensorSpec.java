@@ -255,6 +255,10 @@ public class TensorSpec {
     /** TODO this method does not realy required to be non-static because the instance already
      * contains the axes order, maybe separate two methods
      * REturn an array containing the optimal patch for the given sequence.
+     * 
+     * If the ouptut tensor size depends on the size of the current tensor, 
+     * please use {@link #getOptimalTileSize(int[], String, TensorSpec)}
+     * 
      * @param seqSize
      * 	array containing the size of the sequence with the axes order defined
      * @param seqSizeAxes
@@ -265,10 +269,31 @@ public class TensorSpec {
     	return getOptimalTileSizeForTiling(seqSize, seqSizeAxes, tiling);
     }
     
+    /** TODO this method does not realy required to be non-static because the instance already
+     * contains the axes order, maybe separate two methods
+     * REturn an array containing the optimal patch for the given sequence.
+     * @param seqSize
+     * 	array containing the size of the sequence with the axes order defined
+     * @param seqSizeAxes
+     * 	axes order of the size array
+     * @param affectedTensor
+     * 	the output tensor whose size depends on the size of the current tensor. Mainly to avoid that the 
+     * 	ouput tensor is too big.
+     * @return the array with the patch of interest
+     */
+    public int[] getOptimalTileSize(int[] seqSize, String seqSizeAxes, TensorSpec affectedTensor) {
+    	return getOptimalTileSizeForTiling(seqSize, seqSizeAxes, tiling, affectedTensor);
+    }
+    
     /**
      * REturn an array containing the optimal patch for the given sequence.
      * TODO add: An optimal patch has the arbitrary requirement of not being bigger than
      * 10^6 pixels
+     * 
+     * 
+     * If the ouptut tensor size depends on the size of the current tensor, 
+     * please use {@link #getOptimalTileSizeForTiling(int[], String, boolean, TensorSpec)}
+     * 
      * @param seqSize
      * 	array containing the size of the sequence with the axes order defined
      * @param seqSizeAxes
@@ -291,6 +316,9 @@ public class TensorSpec {
      * 	axes order of the size array
      * @param applyTiling
      * 	whether tiling is considered or not.
+     * @param affectedTensor
+     * 	the output tensor whose size depends on the size of the current tensor. Mainly to avoid that the 
+     * 	ouput tensor is too big.
      * @return the array with the patch of interest
      */
     public int[] getOptimalTileSizeForTiling(int[] seqSize, String seqSizeAxes, boolean applyTiling, TensorSpec affectedTensor) {

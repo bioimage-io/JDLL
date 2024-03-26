@@ -70,7 +70,7 @@ import net.imglib2.util.Util;
 import net.imglib2.view.Views;
 
 /**
- * Class that maps {@link RandomAccessibleInteral} objects to the shared memory for interprocessing communication
+ * Class that maps {@link RandomAccessibleInterval} objects to the shared memory for interprocessing communication
  * in Windows
  * @author Carlos Garcia Lopez de Haro
  */
