@@ -91,7 +91,7 @@ public interface SharedMemoryArray extends Closeable {
 
 
 	/**
-	 * This method creates a shared memory segment with the wanted name. The byte size is defined by the
+	 * This method creates (or retrieves if it already exists) a shared memory segment with the wanted name. The byte size is defined by the
 	 * 'shape' and 'datatype' arguments.
 	 * If a memory segment with the provided name already exists, it is wrapped, with read and write permissions.
 	 * 
@@ -138,7 +138,7 @@ public interface SharedMemoryArray extends Closeable {
 	}
 
 	/**
-	 * This method creates a shared memory segment with the wanted name. The byte size is defined by the
+	 * This method creates (or retrieves if it already exists) a shared memory segment with the wanted name. The byte size is defined by the
 	 * 'shape' and 'datatype' arguments.
 	 * If a memory segment with the provided name already exists, it is wrapped, with read and write permissions.
 	 * 
@@ -193,7 +193,7 @@ public interface SharedMemoryArray extends Closeable {
 	}
 
 	/**
-	 * This method creates a shared memory segment with the wanted name and wanted size.
+	 * This method creates (or retrieves if it already exists) a shared memory segment with the wanted name and wanted size.
 	 * If a memory segment with the provided name already exists, it is wrapped, with read and write permissions.
 	 * 
 	 * The byte size of the shared memory segment cannot be modified.
@@ -367,7 +367,7 @@ public interface SharedMemoryArray extends Closeable {
 	}
 
 	/**
-	 * Creates a {@link SharedMemoryArray} instance that wraps a shared memory segment where the 
+	 * Creates (or retrieves if it already exists) a {@link SharedMemoryArray} instance that wraps a shared memory segment where the 
 	 * nd array represented by the {@link RandomAccessibleInterval} is going to be copied.
 	 * 
 	 * The name should not be already taken or the shared memory segment at the location of the 
@@ -441,7 +441,7 @@ public interface SharedMemoryArray extends Closeable {
     }
 
 	/**
-	 * Creates a {@link SharedMemoryArray} instance that wraps a shared memory segment where the 
+	 * Creates (or retrieves if it already exists) a {@link SharedMemoryArray} instance that wraps a shared memory segment where the 
 	 * nd array represented by the {@link RandomAccessibleInterval} is going to be copied.
 	 * 
 	 * The name should not be already taken or the shared memory segment at the location of the 
