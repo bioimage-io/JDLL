@@ -64,8 +64,8 @@ import net.imglib2.util.Util;
 import net.imglib2.view.Views;
 
 /**
- * Interface to interact with shared memory segments retrieving the underlying information 
- * 
+ * Class that maps {@link RandomAccessibleInteral} objects to the shared memory for interprocessing communication
+ * in MacOS based systems
  * @author Carlos Garcia Lopez de Haro
  */
 public class SharedMemoryArrayLinux implements SharedMemoryArray {
@@ -125,41 +125,82 @@ public class SharedMemoryArrayLinux implements SharedMemoryArray {
 		 */
 		private boolean isFortran = false;
 	
-
 	/**
-	 * Create a shared memory segment with the wanted size, where an object of a certain datatype and
-	 * share is going to be stored.
-	 * Unless the array of bytes that is going to be written into the shared memory segment has numpy format,
-	 * the size parameter should only depend on the shape and the data type.
-	 * The name of the file containing the shared memory segment is assigned automatically.
+	 * This method creates a shared memory segment with the wanted name. The byte size is defined by the
+	 * 'size' argument, but it has to be coherent with 'shape', 'dtype' and 'isNumpy' arguments.
+	 * If a memory segment with the provided name already exists, it is wrapped, with read and write permissions.
+	 * 
+	 * The byte size of the shared memory segment cannot be modified.
+	 * 
+	 * If a shared memory segment already exists in the location of the name provided, but the size required by the
+	 * shape and data type is not the same as the size of the existing shared memory segment, an exception will
+	 * be thrown.
+	 * For example if a shared memory segment of size 1024 has been created at "shm_example" and we try:
+	 * 		
+	 * 		SharedMemoryArrayLinux("shm_example", 4096, "float32", new long[]{1024}, false, false);
+	 * 
+	 * An exception will be thrown because the required number of bytes is 1024 * 4 (4 bytes per float) = 4096 bytes &gt; 1024 bytes
+	 * 
+	 * 
+	 * It is useful to allocate in advance the space that a certain {@link RandomAccessibleInterval}
+	 * will need. The image can then reference this shared memory region.
+	 * An instance of {@link SharedMemoryArray} is created that helps managing the shared memory data.
+	 * 
 	 * @param size
-	 * 	number of bytes that are going to be written into the shared memory
+	 * 	the byte size of the shared memory segment
 	 * @param dtype
-	 * 	data type of the object that is going to be written into the shared memory
+	 * 	the data type of the nd array that is written from the shared memory segment
 	 * @param shape
-	 * 	shape (array dimensions) of the array that is going to be  flattened and written into the shared memory segment
-	 * @throws FileAlreadyExistsException if a shared memory segment already exists with the specified name and the size is different that the size specified.
-	 * 				This exception should never happen as the generated memory name should always be unique
+	 * 	the dimensions of the nd array that is written from the shared memory segment
+	 * @param isNumpy
+	 * 	whether an nd array is saved to the shared memory segment in Numpy npy format, that is with a header at the 
+	 * 	beginning that increases the byte size
+	 * @param isFortran
+	 * 	whether nd arrays are stored with fortran order or not (c-order)
+	 * @throws FileAlreadyExistsException if a shared memory array with the same name exists and its byte size
+	 *                                    does not match the specified shape and datatype
 	 */
     protected SharedMemoryArrayLinux(int size, String dtype, long[] shape, Boolean isNumpy, boolean isFortran) throws FileAlreadyExistsException
     {
     	this(SharedMemoryArray.createShmName(), size, dtype, shape, isNumpy, isFortran);
     }
-
+    
 	/**
-	 * Create a shared memory segment with the wanted size, where an object of a certain datatype and
-	 * share is going to be stored. The shared memory name is created in the location of the name provided
-	 * Unless the array of bytes that is going to be written into the shared memory segment has numpy format,
-	 * the size parameter should only depend on the shape and the data type.
+	 * This method creates (or retrieves if it already exists) a shared memory segment with the wanted name. The byte size is defined by the
+	 * 'size' argument, but it has to be coherent with 'shape', 'dtype' and 'isNumpy' arguments.
+	 * If a memory segment with the provided name already exists, it is wrapped, with read and write permissions.
+	 * 
+	 * The byte size of the shared memory segment cannot be modified.
+	 * 
+	 * If a shared memory segment already exists in the location of the name provided, but the size required by the
+	 * shape and data type is not the same as the size of the existing shared memory segment, an exception will
+	 * be thrown.
+	 * For example if a shared memory segment of size 1024 has been created at "shm_example" and we try:
+	 * 		
+	 * 		SharedMemoryArrayLinux("shm_example", 4096, "float32", new long[]{1024}, false, false);
+	 * 
+	 * An exception will be thrown because the required number of bytes is 1024 * 4 (4 bytes per float) = 4096 bytes &gt; 1024 bytes
+	 * 
+	 * 
+	 * It is useful to allocate in advance the space that a certain {@link RandomAccessibleInterval}
+	 * will need. The image can then reference this shared memory region.
+	 * An instance of {@link SharedMemoryArray} is created that helps managing the shared memory data.
+	 * 
 	 * @param name
 	 * 	name of the file name that is going to be used to identify the shared memory segment
 	 * @param size
-	 * 	number of bytes that are going to be written into the shared memory
+	 * 	the byte size of the shared memory segment
 	 * @param dtype
-	 * 	data type of the object that is going to be written into the shared memory
+	 * 	the data type of the nd array that is written from the shared memory segment
 	 * @param shape
-	 * 	shape (array dimensions) of the array that is going to be  flattened and written into the shared memory segment
-	 * @throws FileAlreadyExistsException if a shared memory segment already exists with the specified name and the size is different that the size specified
+	 * 	the dimensions of the nd array that is written from the shared memory segment
+	 * @param isNumpy
+	 * 	whether an nd array is saved to the shared memory segment in Numpy npy format, that is with a header at the 
+	 * 	beginning that increases the byte size
+	 * @param isFortran
+	 * 	whether nd arrays are stored with fortran order or not (c-order)
+	 * @throws FileAlreadyExistsException if a shared memory array with the same name exists and its byte size
+	 *                                    does not match the specified shape and datatype
 	 */
     private SharedMemoryArrayLinux(String name, int size, String dtype, long[] shape, Boolean isNumpy, boolean isFortran) throws FileAlreadyExistsException
     {
@@ -266,7 +307,10 @@ public class SharedMemoryArrayLinux implements SharedMemoryArray {
     }
 
     /**
-     * 
+     * Private constructor to create an instance for the specific case when it is wrapping an ImgLib2
+     * {@link RandomAccessibleInterval}
+     * @param name
+     * 	name of the shared memory segment
      */
 	private SharedMemoryArrayLinux(String name) {
 		this.memoryName = name;
@@ -299,21 +343,6 @@ public class SharedMemoryArrayLinux implements SharedMemoryArray {
 		}
 	}
 
-	/**
-	 * This method copies the data from a {@link RandomAccessibleInterval} into a shared memory region
-	 * to be able to shared it with other processes.
-	 * An instance of {@link SharedMemoryArray} is created that helps managing the shared memory data.
-	 * 
-	 * @param <T>
-     * 	possible ImgLib2 data types of the provided {@link RandomAccessibleInterval}
-     * @param name
-     * 	name of the shared memory region where the {@link RandomAccessibleInterval} data has been copied.
-     * 	The name should consist of "/" + file_name, where file_name should not contain any special character
-	 * @param rai
-	 * 	the {@link RandomAccessibleInterval} that is going to be written into a shared memory region
-	 * @return a {@link SharedMemoryArray} instance that helps handling the data written to the shared memory region
-	 * @throws FileAlreadyExistsException 
-	 */
     protected static <T extends RealType<T> & NativeType<T>> 
     SharedMemoryArrayLinux createSHMAFromRAI(String name, RandomAccessibleInterval<T> rai, boolean isFortranOrder, boolean isNumpy) throws FileAlreadyExistsException
     {
@@ -644,6 +673,7 @@ public class SharedMemoryArrayLinux implements SharedMemoryArray {
     /**
      * {@inheritDoc}
      */
+	@Override
     public String getName() {
     	return this.memoryName;
     }
@@ -651,6 +681,7 @@ public class SharedMemoryArrayLinux implements SharedMemoryArray {
     /**
      * {@inheritDoc}
      */
+	@Override
     public String getNameForPython() {
     	return this.memoryName.substring("/".length());
     }
@@ -658,6 +689,7 @@ public class SharedMemoryArrayLinux implements SharedMemoryArray {
     /**
      * {@inheritDoc}
      */
+	@Override
     public Pointer getPointer() {
     	return this.pSharedMemory;
     }
@@ -665,6 +697,7 @@ public class SharedMemoryArrayLinux implements SharedMemoryArray {
     /**
      * {@inheritDoc}
      */
+	@Override
     public int getSize() {
     	return this.size;
     }
@@ -698,6 +731,9 @@ public class SharedMemoryArrayLinux implements SharedMemoryArray {
 		return this.isNumpyFormat;
 	}
 	
+	/**
+	 * Find whether the shared memory segment wrapped by the {@link SharedMemoryArray} is in Numpy npy format of not.
+	 */
 	private void findNumpyFormat() {
 		this.isNumpyFormat = true;
 		try {
@@ -850,6 +886,9 @@ public class SharedMemoryArrayLinux implements SharedMemoryArray {
     }
 
 	@Override
+	/**
+	 * {@inheritDoc}
+	 */
 	public ByteBuffer getDataBufferNoHeader() {
     	int offset = 0;
     	if (this.isNumpyFormat()) {
@@ -969,19 +1008,6 @@ public class SharedMemoryArrayLinux implements SharedMemoryArray {
 	}
 	
 	// TODO support boolean
-	/**
-	 * Build a {@link RandomAccessibleInterval} from the data stored in an existing shared memory segment.
-	 * The shared memory segment should contain an array of bytes that can be read using the .npy format.
-	 * That is an array of bytes which specifies the characteristics of the nd array (shape, data type, byte order...)
-	 * followed by the flattened data converted into bytes.
-	 * If the shared memory region follows that convention, only the name of the shared memory region is needed to 
-	 * reconstruct the underlying nd array
-	 * @param <T>
-     * 	possible ImgLib2 data types of the retrieved {@link RandomAccessibleInterval}
-	 * @param memoryName
-	 * 	name of the region where the shared memory segment is located
-	 * @return the {@link RandomAccessibleInterval} defined exclusively by the shared memory region following the .npy format
-	 */
 	private <T extends RealType<T> & NativeType<T>>
 	RandomAccessibleInterval<T> buildImgLib2FromNumpyLikeSHMA() {
 		int offset = 0;
@@ -1048,12 +1074,5 @@ public class SharedMemoryArrayLinux implements SharedMemoryArray {
         
         return buildFromSharedMemoryBlock(this.pSharedMemory, shape, 
         		Cast.unchecked(CommonUtils.getImgLib2DataType(dtype)), fortranOrder.equals("True"), offset, byteOrder);
-	}
-	
-	public static void main(String[] args) throws FileAlreadyExistsException {
-		SharedMemoryArrayLinux ss = read("shm-b86eb953-943d-499e-b74e-c38a48e924b6");
-		
-		
-		ss.close();
 	}
 }
