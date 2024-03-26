@@ -313,14 +313,9 @@ public interface SharedMemoryArray extends Closeable {
 	 * will need. The image can then reference this shared memory region.
 	 * An instance of {@link SharedMemoryArray} is created that helps managing the shared memory data.
 	 * 
-	 * The amount of space reserved will depend on the shape provided and the datatype.
 	 * 
-	 * @param <T>
-     * 	possible ImgLib2 data types of the wanted {@link RandomAccessibleInterval}
-	 * @param shape
-	 * 	shape of an ndimensional array that could be stored in the shared memory region
-	 * @param datatype
-	 * 	datatype of the data that is going to be stored in the region
+	 * @param size
+	 * 	byte size wanted to allocate
 	 * @return a {@link SharedMemoryArray} instance that helps handling the data written to the shared memory region
 	 */
 	static SharedMemoryArray create(int size) {
@@ -332,6 +327,21 @@ public interface SharedMemoryArray extends Closeable {
     		return SharedMemoryArrayMacOS.create(size);
 	}
 
+	/**
+	 * Wraps an existing shared memory segment to allow the user its manipulation.
+	 * The name should be the same as the name of the shared memory segment.
+	 * 
+	 *  The shared memory segment has a defined size and characteristics such as how the
+	 *  nd arrays are saved (with fortran or c order, with Numpy npy format or not, ...).
+	 *  
+	 *  The {@link SharedMemoryArray} instance retrieved can be used to modify the underlying shared
+	 *  memory segment
+	 * 
+	 * 
+	 * @param name
+	 * 	name of the shared memory segment to be accessed
+	 * @return a {@link SharedMemoryArray} instance that helps handling the data written to the shared memory region
+	 */
 	static SharedMemoryArray read(String name) {
         if (PlatformDetection.isWindows()) 
         	return SharedMemoryArrayWin.read(name);
@@ -341,6 +351,12 @@ public interface SharedMemoryArray extends Closeable {
     		return SharedMemoryArrayMacOS.read(name);
 	}
 
+	/**
+	 * Get the size of the shared memory segment at the location of the provided name
+	 * @param name
+	 * 	name of the shared memory segment
+	 * @return the size in bytes of the shared memory segment of interest
+	 */
 	static long getSize(String name) {
         if (PlatformDetection.isWindows()) 
         	return SharedMemoryArrayWin.getSHMSize(name);
@@ -350,21 +366,104 @@ public interface SharedMemoryArray extends Closeable {
     		return SharedMemoryArrayMacOS.getSHMSize(name);
 	}
 
+	/**
+	 * Creates a {@link SharedMemoryArray} instance that wraps a shared memory segment where the 
+	 * nd array represented by the {@link RandomAccessibleInterval} is going to be copied.
+	 * 
+	 * The name should not be already taken or the shared memory segment at the location of the 
+	 * name should be of the same byte suze as the required to write the {@link RandomAccessibleInterval}.
+	 * 
+	 * The {@link RandomAccessibleInterval} is flattened in c-order and with a header specifying the 
+	 * characteristics of the nd array (datatype, dimensions...) at the beginning of the byte array. This
+	 * follows the Numpy npy format. Note that this header increases the byte size of the shared memory segment.
+	 * 
+	 * @param <T>
+	 * 	the possible ImgLib2 data types that the {@link RandomAccessibleInterval} can have
+	 * @param name
+	 * 	the name of the shared memory segment where the {@link RandomAccessibleInterval} is going to be copied
+	 * @param rai
+	 * 	the nd array that is going to be copied to the shared memory segment
+	 * @return an instance of {@link SharedMemoryArray} that allows manipulation of the shared memory region
+	 * @throws FileAlreadyExistsException if the shared memory segment already exists and has a different size than
+	 * 	the required to copy the nd array {@link RandomAccessibleInterval} instance 
+	 */
 	public static <T extends RealType<T> & NativeType<T>>
 	SharedMemoryArray createSHMAFromRAI(String name, RandomAccessibleInterval<T> rai) throws FileAlreadyExistsException {
 		return createSHMAFromRAI(name, rai, false, true);
     }
 
+	/**
+	 * Creates a {@link SharedMemoryArray} instance that wraps a shared memory segment where the 
+	 * nd array represented by the {@link RandomAccessibleInterval} is going to be copied.
+	 * 
+	 * The {@link RandomAccessibleInterval} is flattened in c-order and with a header specifying the 
+	 * characteristics of the nd array (datatype, dimensions...) at the beginning of the byte array. This
+	 * follows the Numpy npy format. Note that this header increases the byte size of the shared memory segment.
+	 * 
+	 * @param <T>
+	 * 	the possible ImgLib2 data types that the {@link RandomAccessibleInterval} can have
+	 * @param rai
+	 * 	the nd array that is going to be copied to the shared memory segment
+	 * @return an instance of {@link SharedMemoryArray} that allows manipulation of the shared memory region
+	 */
 	public static <T extends RealType<T> & NativeType<T>>
-	SharedMemoryArray createSHMAFromRAI(RandomAccessibleInterval<T> rai) throws FileAlreadyExistsException {
+	SharedMemoryArray createSHMAFromRAI(RandomAccessibleInterval<T> rai) {
 		return createSHMAFromRAI(rai, false, true);
     }
 
+	/**
+	 * Creates a {@link SharedMemoryArray} instance that wraps a shared memory segment where the 
+	 * nd array represented by the {@link RandomAccessibleInterval} is going to be copied.
+	 * 
+	 * The {@link RandomAccessibleInterval} is flattened in c-order and with a header specifying the 
+	 * characteristics of the nd array (datatype, dimensions...) at the beginning of the byte array. This
+	 * follows the Numpy npy format.
+	 * 
+	 * @param <T>
+	 * 	the possible ImgLib2 data types that the {@link RandomAccessibleInterval} can have
+	 * @param rai
+	 * 	the nd array that is going to be copied to the shared memory segment
+	 * @param isFortranOrder
+	 * 	whether the {@link RandomAccessibleInterval} nd array is save in fortran order or not (c-order)
+	 * @param isNumpy
+	 * 	whether the shared memory segment starts with a byte array header that converted into string 
+	 * 	provides information about the array, such as shape, data type or byte order. Note that this header increases
+	 * 	the shared memory segment byte size.
+	 * @return an instance of {@link SharedMemoryArray} that allows manipulation of the shared memory region
+	 */
 	public static <T extends RealType<T> & NativeType<T>>
-	SharedMemoryArray createSHMAFromRAI(RandomAccessibleInterval<T> rai, boolean isFortranOrder, boolean isNumpy) throws FileAlreadyExistsException {
-		return createSHMAFromRAI(SharedMemoryArray.createShmName(), rai, isFortranOrder, isNumpy);
+	SharedMemoryArray createSHMAFromRAI(RandomAccessibleInterval<T> rai, boolean isFortranOrder, boolean isNumpy) {
+		try {
+			return createSHMAFromRAI(SharedMemoryArray.createShmName(), rai, isFortranOrder, isNumpy);
+		} catch (FileAlreadyExistsException e) {
+			throw new RuntimeException("Unexpected exception", e);
+		}
     }
 
+	/**
+	 * Creates a {@link SharedMemoryArray} instance that wraps a shared memory segment where the 
+	 * nd array represented by the {@link RandomAccessibleInterval} is going to be copied.
+	 * 
+	 * The name should not be already taken or the shared memory segment at the location of the 
+	 * name should be of the same byte suze as the required to write the {@link RandomAccessibleInterval}.
+	 * 
+	 * 
+	 * @param <T>
+	 * 	the possible ImgLib2 data types that the {@link RandomAccessibleInterval} can have
+	 * @param name
+	 * 	the name of the shared memory segment where the {@link RandomAccessibleInterval} is going to be copied
+	 * @param rai
+	 * 	the nd array that is going to be copied to the shared memory segment
+	 * @param isFortranOrder
+	 * 	whether the {@link RandomAccessibleInterval} nd array is save in fortran order or not (c-order)
+	 * @param isNumpy
+	 * 	whether the shared memory segment starts with a byte array header that converted into string 
+	 * 	provides information about the array, such as shape, data type or byte order. Note that this header increases
+	 * 	the shared memory segment byte size.
+	 * @return an instance of {@link SharedMemoryArray} that allows manipulation of the shared memory region
+	 * @throws FileAlreadyExistsException if the shared memory segment already exists and has a different size than
+	 * 	the required to copy the nd array {@link RandomAccessibleInterval} instance 
+	 */
 	public static <T extends RealType<T> & NativeType<T>>
 	SharedMemoryArray createSHMAFromRAI(String name, RandomAccessibleInterval<T> rai, boolean isFortranOrder, boolean isNumpy) throws FileAlreadyExistsException {
         if (PlatformDetection.isWindows()) 
@@ -410,7 +509,9 @@ public interface SharedMemoryArray extends Closeable {
 	}
     
 	/**
-	 * Get the number of bytes that is required to store the data in an nd array of a certain data type
+	 * Get the number of bytes that is required to store the data in an nd array of a certain data type.
+	 * The size of only the array in the corresponding data type, with no header.
+	 * For example a [2, 3] float32 array would be 2 * 3 * 4 bytes (per float32 number) = 24 bytes
 	 * @param <T>
      * 	possible ImgLib2 data types of the provided {@link RandomAccessibleInterval}
 	 * @param shape
@@ -420,17 +521,35 @@ public interface SharedMemoryArray extends Closeable {
 	 * @return the number of bytes needed to store the nd array
 	 */
 	public static <T extends RealType<T> & NativeType<T>> int getArrayByteSize(long[] shape, T type) {
+		return getArrayByteSize(shape, type, false);
+	}
+    
+	/**
+	 * Get the number of bytes that is required to store the data in an nd array of a certain data type
+	 * @param <T>
+     * 	possible ImgLib2 data types of the provided {@link RandomAccessibleInterval}
+	 * @param shape
+	 * 	shape of the array
+	 * @param type
+	 * 	ImgLib2 data type of the array
+	 * @param isNpy
+	 * 	whether the array is stored with a Numpy npy header at the beginning
+	 * @return the number of bytes needed to store the nd array
+	 */
+	public static <T extends RealType<T> & NativeType<T>> int getArrayByteSize(long[] shape, T type, boolean isNpy) {
 		int noByteSize = 1;
+		int headerSize = 0;
+		if (isNpy) headerSize = (int) DecodeNumpy.calculateNpyStyleByteArrayLength(shape, type);
 		for (long l : shape) {noByteSize *= l;}
 		if (type instanceof ByteType || type instanceof UnsignedByteType) {
-			return noByteSize * 1;
+			return noByteSize * 1 + headerSize;
 		} else if (type instanceof ShortType || type instanceof UnsignedShortType) {
-			return noByteSize * 2;
+			return noByteSize * 2 + headerSize;
 		} else if (type instanceof IntType || type instanceof UnsignedIntType
 				|| type instanceof FloatType) {
-			return noByteSize * 4;
+			return noByteSize * 4 + headerSize;
 		} else if (type instanceof LongType || type instanceof DoubleType) {
-			return noByteSize * 8;
+			return noByteSize * 8 + headerSize;
 		} else {
 			throw new IllegalArgumentException("Type not supported: " + type.getClass().toString());
 		}
@@ -481,7 +600,16 @@ public interface SharedMemoryArray extends Closeable {
     public long[] getOriginalShape();
     
     /**
-     * Retrieve the {@link RandomAccessibleInterval} defined in the shared memory segment
+     * Retrieve the {@link RandomAccessibleInterval} defined in the shared memory segment.
+     * This method references the shared memory segment, thus every change in the {@link RandomAccessibleInterval}
+     * will be reflected in the shared memory segment. 
+     * This method assumes that the shape and data type have already been defined or that the shared memory segment
+     * contains a header at the beginning with he info on how to reconstruct the nd array (saved as Numpy npy) format.
+     * If that is not the case use {@link #getSharedRAI(long[], RealType)}.
+     * 
+     * IMPORTANT: once the shared memory segment is closed ({@link #close()}, trying to copy or manipulate the 
+     * data in the {@link RandomAccessibleInterval} might result in a segmentation error. If you want to close the
+     * shared memory segment and keep the {@link RandomAccessibleInterval}, copy it into a new standard one (not backed by a shared memory segment).
      * 
      * @param <T>
      * 	possible ImgLib2 data types of the retrieved {@link RandomAccessibleInterval}
@@ -490,33 +618,46 @@ public interface SharedMemoryArray extends Closeable {
     public <T extends RealType<T> & NativeType<T>> RandomAccessibleInterval<T> getSharedRAI();
 
     /**
-     * Retrieve the {@link RandomAccessibleInterval} defined in the shared memory segment
+     * Retrieve the {@link RandomAccessibleInterval} defined in the shared memory segment.
+     * This method references the shared memory segment, thus every change in the {@link RandomAccessibleInterval}
+     * will be reflected in the shared memory segment. 
+     * Unless defined differently using {@link #create(long[], RealType, boolean, boolean)} or {@link #readOrCreate(String, long[], RealType, boolean, boolean)}
+     * this method assumes that the data is saved in c-order. To change it use {@link #getSharedRAI(long[], RealType, boolean)}
+     * 
+     * IMPORTANT: once the shared memory segment is closed ({@link #close()}, trying to copy or manipulate the 
+     * data in the {@link RandomAccessibleInterval} might result in a segmentation error. If you want to close the
+     * shared memory segment and keep the {@link RandomAccessibleInterval}, copy it into a new standard one (not backed by a shared memory segment).
      * 
      * @param <T>
      * 	possible ImgLib2 data types of the retrieved {@link RandomAccessibleInterval}
 	 * @param shape
 	 * 	shape (array dimensions) into which the flat array of the shared memory segment will be reconstructed
-	 * @param isFortran
-	 * 	whether converting the falt array into a ndarray is done using Fortran ordering or not (C-ordering)
 	 * @param dataType
 	 * 	the data type into which the bytes in the shared memory region will be converted
      * @return the randomAccessible interval that is defined in the shared memory segment
      */
-    // TODO public <T extends RealType<T> & NativeType<T>> RandomAccessibleInterval<T> getSharedRAI(long[] shape, boolean isFortran, T dataType);
     public <T extends RealType<T> & NativeType<T>> RandomAccessibleInterval<T> getSharedRAI(long[] shape, T dataType);
-    
+
     /**
-     * Copy the data from the {@link RandomAccessibleInterval} to the Shared memory segment.
-     * TODO decide whether the copy is in fortran or c order
+     * Retrieve the {@link RandomAccessibleInterval} defined in the shared memory segment.
+     * This method references the shared memory segment, thus every change in the {@link RandomAccessibleInterval}
+     * will be reflected in the shared memory segment. 
      * 
-     * Note that if the dimensions of the array are not valid for the shared memory array, it will throw an exception
+     * IMPORTANT: once the shared memory segment is closed ({@link #close()}, trying to copy or manipulate the 
+     * data in the {@link RandomAccessibleInterval} might result in a segmentation error. If you want to close the
+     * shared memory segment and keep the {@link RandomAccessibleInterval}, copy it into a new standard one (not backed by a shared memory segment).
      * 
      * @param <T>
-     * 	the possible ImgLib2 data types of the {@link RandomAccessibleInterval}
-     * @param rai
-     * 	the data array that is going to be copied into the shared memory array
+     * 	possible ImgLib2 data types of the retrieved {@link RandomAccessibleInterval}
+	 * @param shape
+	 * 	shape (array dimensions) into which the flat array of the shared memory segment will be reconstructed
+	 * @param dataType
+	 * 	the data type into which the bytes in the shared memory region will be converted
+	 * @param isFortran
+	 * 	whether the nd array has been flattened using fortran order or not (c-order)
+     * @return the randomAccessible interval that is defined in the shared memory segment
      */
-    // TODO is it necessary? public <T extends RealType<T> & NativeType<T>> void setRAI(RandomAccessibleInterval<T> rai);
+    public <T extends RealType<T> & NativeType<T>> RandomAccessibleInterval<T> getSharedRAI(long[] shape, T dataType, boolean isFortran);
     
     /**
      * Copy the ByteBuffer to the shared memory array.
@@ -532,7 +673,7 @@ public interface SharedMemoryArray extends Closeable {
     public ByteBuffer getDataBuffer();
     
     /**
-     * This method is only different frmo {@link #getDataBuffer()} if the shm segment is saved in 
+     * This method is only different from {@link #getDataBuffer()} if the shm segment is saved in 
      * Numpy Npy format, which contains a header at the beginning of the shm segment with information
      * about he array
      * @return the {@link ByteBuffer} with all the bytes of the Shared memory segment except those dedicated to the header
