@@ -193,27 +193,35 @@ public interface SharedMemoryArray extends Closeable {
 	}
 
 	/**
-	 * This method creates a segment on the Shared Memory region of the computer with the size
-	 * needed to store an image of the wanted characteristics.
+	 * This method creates a shared memory segment with the wanted name and wanted size.
+	 * If a memory segment with the provided name already exists, it is wrapped, with read and write permissions.
+	 * 
+	 * The byte size of the shared memory segment cannot be modified.
+	 * 
+	 * If a shared memory segment already exists in the location of the name provided, but its size is
+	 * different than the specified size, an exception will be thrown.
+	 * 
+	 * For example if a shared memory segment of size 1024 has been created at "shm_example" and we try:
+	 * 
+	 * 		SharedMemoryArray shma = SharedMemoryArray.readOrCreate("shm_example", 8196;	
+	 * 
+	 * An exception will be thrown because the required number of bytes is 8196 bytes > 1024 bytes
+	 * 
+	 * 
 	 * It is useful to allocate in advance the space that a certain {@link RandomAccessibleInterval}
 	 * will need. The image can then reference this shared memory region.
 	 * An instance of {@link SharedMemoryArray} is created that helps managing the shared memory data.
 	 * 
-	 * The amount of space reserved will depend on the shape provided and the datatype.
 	 * 
-	 * @param <T>
-     * 	possible ImgLib2 data types of the wanted {@link RandomAccessibleInterval}
      * @param name
      * 	name of the shared memory region that has been created
-	 * @param shape
-	 * 	shape of an ndimensional array that could be stored in the shared memory region
-	 * @param datatype
-	 * 	datatype of the data that is going to be stored in the region
+	 * @param size
+	 * 	number of bytes that the shared memory region will be
 	 * @return a {@link SharedMemoryArray} instance that helps handling the data written to the shared memory region
-	 * @throws FileAlreadyExistsException 
+	 * @throws FileAlreadyExistsException if a shared memory array with the same name exists and its byte size
+	 *                                    does not match the wanted size
 	 */
-	static <T extends RealType<T> & NativeType<T>>
-	SharedMemoryArray readOrCreate(String name, int size) throws FileAlreadyExistsException {
+	static SharedMemoryArray readOrCreate(String name, int size) throws FileAlreadyExistsException {
         if (PlatformDetection.isWindows()) 
         	return SharedMemoryArrayWin.readOrCreate(name, size);
     	else if (PlatformDetection.isLinux()) 
@@ -223,13 +231,17 @@ public interface SharedMemoryArray extends Closeable {
 	}
 
 	/**
-	 * This method creates a segment on the Shared Memory region of the computer with the size
-	 * needed to store an image of the wanted characteristics.
+	 * This method creates a shared memory segment with the wanted size to allocate an nd array
+	 * with the wanted data type and shape. The byte size is defined by the
+	 * 'shape' and 'datatype' arguments.
+	 * 
+	 * The byte size of the shared memory segment cannot be modified.
+	 * 
+	 * 
 	 * It is useful to allocate in advance the space that a certain {@link RandomAccessibleInterval}
 	 * will need. The image can then reference this shared memory region.
 	 * An instance of {@link SharedMemoryArray} is created that helps managing the shared memory data.
 	 * 
-	 * The amount of space reserved will depend on the shape provided and the datatype.
 	 * 
 	 * @param <T>
      * 	possible ImgLib2 data types of the wanted {@link RandomAccessibleInterval}
@@ -252,6 +264,35 @@ public interface SharedMemoryArray extends Closeable {
     		return SharedMemoryArrayMacOS.create(size, shape, strDType, true, false);
 	}
 
+	/**
+	 * This method creates a shared memory segment with the wanted size to allocate an nd array
+	 * with the wanted data type and shape. The byte size is defined by the
+	 * 'shape' and 'datatype' arguments.
+	 * 
+	 * The byte size of the shared memory segment cannot be modified.
+	 * 
+	 * 
+	 * It is useful to allocate in advance the space that a certain {@link RandomAccessibleInterval}
+	 * will need. The image can then reference this shared memory region.
+	 * An instance of {@link SharedMemoryArray} is created that helps managing the shared memory data.
+	 * 
+	 * 
+	 * @param <T>
+     * 	possible ImgLib2 data types of the wanted {@link RandomAccessibleInterval}
+	 * @param shape
+	 * 	shape of an ndimensional array that could be stored in the shared memory region
+	 * @param datatype
+	 * 	datatype of the data that is going to be stored in the region
+	 * @param isFortran
+	 * 	whether the nd array that is going to be stored in the shared memory segment will be flattened in fortran order
+	 * 	or not (c-order)
+	 * @param isNpy
+	 * 	whether the end array that is going to be stored in the shared memory segment will be preceded by a header 
+	 * 	containing the information of the nd array. The header will follow the style of Numpy npy files. Note that 
+	 * 	the header will occupy some bytes at the begining of the array but it could be useful to blindly retrieve the 
+	 * 	array in the shared memory segment
+	 * @return a {@link SharedMemoryArray} instance that helps handling the data written to the shared memory region
+	 */
 	static <T extends RealType<T> & NativeType<T>>
 	SharedMemoryArray create(long[] shape, T datatype, boolean isFortran, boolean isNpy) {
 		String strDType = CommonUtils.getDataType(datatype);
