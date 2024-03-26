@@ -820,6 +820,14 @@ public class SharedMemoryArrayLinux implements SharedMemoryArray {
     public <T extends RealType<T> & NativeType<T>> RandomAccessibleInterval<T> getSharedRAI(long[] shape, T dataType) {
 		return buildFromSharedMemoryBlock(pSharedMemory, shape, dataType, isFortran, 0, ByteOrder.LITTLE_ENDIAN);
     }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public <T extends RealType<T> & NativeType<T>> RandomAccessibleInterval<T> getSharedRAI(long[] shape, T dataType, boolean isFortran) {
+		return buildFromSharedMemoryBlock(pSharedMemory, shape, dataType, isFortran, 0, ByteOrder.LITTLE_ENDIAN);
+    }
     
     /**
      * {@inheritDoc}
