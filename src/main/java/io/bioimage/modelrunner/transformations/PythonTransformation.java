@@ -317,7 +317,9 @@ public class PythonTransformation extends AbstractTensorTransformation
 		Map<String, Object> resMap = rm.runOP();
 		RandomAccessibleInterval<FloatType> outImg = (RandomAccessibleInterval<FloatType>) resMap.entrySet().stream()
 				.map(e -> e.getValue()).collect(Collectors.toList()).get(0);
-		return Tensor.build("output", "yx", outImg);
+		String axes = "yx";
+		if (input.getAxesOrder().length == 5) axes = "zyx";
+		return Tensor.build("output", axes, outImg);
 	}
 
 	public void applyInPlace( final Tensor< FloatType > input )
