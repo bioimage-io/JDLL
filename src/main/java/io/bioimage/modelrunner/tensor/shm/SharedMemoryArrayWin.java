@@ -38,7 +38,6 @@ import com.sun.jna.platform.win32.BaseTSD;
 
 import io.bioimage.modelrunner.numpy.DecodeNumpy;
 import io.bioimage.modelrunner.tensor.Utils;
-import io.bioimage.modelrunner.tensor.Tensor;
 import io.bioimage.modelrunner.utils.CommonUtils;
 import net.imglib2.Cursor;
 import net.imglib2.RandomAccessibleInterval;
@@ -71,7 +70,7 @@ import net.imglib2.util.Util;
 import net.imglib2.view.Views;
 
 /**
- * Class that maps {@link Tensor} objects to the shared memory for interprocessing communication
+ * Class that maps {@link RandomAccessibleInteral} objects to the shared memory for interprocessing communication
  * in Windows
  * @author Carlos Garcia Lopez de Haro
  */
@@ -650,6 +649,7 @@ public class SharedMemoryArrayWin implements SharedMemoryArray
     /**
      * {@inheritDoc}
      */
+	@Override
     public String getName() {
     	return this.memoryName;
     }
@@ -657,6 +657,7 @@ public class SharedMemoryArrayWin implements SharedMemoryArray
     /**
      * {@inheritDoc}
      */
+	@Override
     public String getNameForPython() {
     	return this.memoryName.substring(("Local" + File.separator).length());
     }
@@ -664,6 +665,7 @@ public class SharedMemoryArrayWin implements SharedMemoryArray
     /**
      * {@inheritDoc}
      */
+	@Override
     public Pointer getPointer() {
     	return this.writePointer;
     }
@@ -671,13 +673,15 @@ public class SharedMemoryArrayWin implements SharedMemoryArray
     /**
      * {@inheritDoc}
      */
-    public HANDLE getSharedMemoryBlock() {
+	@Override
+    public HANDLE getSharedMemoryBlockID() {
     	return this.hMapFile;
     }
 
     /**
      * {@inheritDoc}
      */
+	@Override
     public int getSize() {
     	return this.size;
     }
@@ -723,6 +727,9 @@ public class SharedMemoryArrayWin implements SharedMemoryArray
         unlinked = true;
 	}
 	
+	/**
+	 * Find whether the shared memory segment wrapped by the {@link SharedMemoryArray} is in Numpy npy format of not.
+	 */
 	private void findNumpyFormat() {
 		this.isNumpyFormat = true;
 		try {
@@ -838,6 +845,9 @@ public class SharedMemoryArrayWin implements SharedMemoryArray
     }
 
 	@Override
+	/**
+	 * {@inheritDoc}
+	 */
 	public ByteBuffer getDataBufferNoHeader() {
     	int offset = 0;
     	if (this.isNumpyFormat()) {

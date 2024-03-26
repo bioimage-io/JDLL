@@ -693,6 +693,14 @@ public class SharedMemoryArrayLinux implements SharedMemoryArray {
     public Pointer getPointer() {
     	return this.pSharedMemory;
     }
+
+    /**
+     * {@inheritDoc}
+     */
+	@Override
+    public Object getSharedMemoryBlockID() {
+    	return this.shmFd;
+    }
     
     /**
      * {@inheritDoc}

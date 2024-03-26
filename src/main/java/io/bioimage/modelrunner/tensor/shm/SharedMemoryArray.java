@@ -26,6 +26,7 @@ import java.nio.file.FileAlreadyExistsException;
 import java.util.UUID;
 
 import com.sun.jna.Pointer;
+import com.sun.jna.platform.win32.WinNT;
 
 import io.bioimage.modelrunner.numpy.DecodeNumpy;
 import io.bioimage.modelrunner.system.PlatformDetection;
@@ -554,6 +555,13 @@ public interface SharedMemoryArray extends Closeable {
 			throw new IllegalArgumentException("Type not supported: " + type.getClass().toString());
 		}
 	}
+	
+	/**
+	 * Return the identifier that points to where the shared memory block is stored. In Linux and MacOS
+	 * systems it is an int (file descriptor) and in Windows it is a {@link WinNT.HANDLE}
+	 * @return the identifier that points to the shared memory block
+	 */
+	public Object getSharedMemoryBlockID();
     
 	/**
 	 * 
