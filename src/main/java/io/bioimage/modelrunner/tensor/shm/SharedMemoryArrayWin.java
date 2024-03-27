@@ -871,7 +871,11 @@ public class SharedMemoryArrayWin implements SharedMemoryArray
      */
     @Override
     public ByteBuffer getDataBuffer() {
-    	return mappedPointer.getByteBuffer(0, this.size);
+    	int len = this.size;
+    	if (this.isNumpyFormat() || (this.originalDataType != null && this.originalDims != null))
+    		len = SharedMemoryArray.getArrayByteSize(originalDims, 
+    				Cast.unchecked(CommonUtils.getImgLib2DataType(originalDataType)), false);
+    	return mappedPointer.getByteBuffer(0, len);
     }
 
 	@Override
@@ -880,12 +884,15 @@ public class SharedMemoryArrayWin implements SharedMemoryArray
 	 */
 	public ByteBuffer getDataBufferNoHeader() {
     	int offset = 0;
+    	int len = this.size;
     	if (this.isNumpyFormat()) {
-    		long flatSize = 1;
-    		for (long l : this.originalDims) flatSize *= l;
-    		offset =  (int) (this.size - DecodeNumpy.DATA_TYPES_MAP.get(this.originalDataType) * flatSize);
+    		offset = (int) DecodeNumpy.calculateNpyStyleByteArrayLength(originalDims,
+    				Cast.unchecked(CommonUtils.getImgLib2DataType(originalDataType)));
+    		len = SharedMemoryArray.getArrayByteSize(originalDims, 
+    				Cast.unchecked(CommonUtils.getImgLib2DataType(originalDataType)), false);
+    		offset = offset - len;
     	}
-    	return mappedPointer.getByteBuffer(offset, this.size - offset);
+    	return mappedPointer.getByteBuffer(offset, len);
 	}
 	
 	private static <T extends RealType<T> & NativeType<T>>
