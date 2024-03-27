@@ -433,12 +433,12 @@ public class SharedMemoryArrayWin implements SharedMemoryArray
     protected static SharedMemoryArrayWin read(String memoryName) {
 		if (!memoryName.startsWith("Local" + File.separator) && !memoryName.startsWith("Global" + File.separator))
 			memoryName = "Local" + File.separator + memoryName;
-		WinNT.HANDLE hMapFile = Kernel32.INSTANCE.OpenFileMapping( WinNT.FILE_MAP_READ, false, memoryName);
+		WinNT.HANDLE hMapFile = Kernel32.INSTANCE.OpenFileMapping( WinNT.FILE_MAP_ALL_ACCESS, false, memoryName);
         if (hMapFile == null) {
             throw new RuntimeException("OpenFileMapping failed with error: " + Kernel32.INSTANCE.GetLastError());
         }
         // Map the shared memory object into the current process's address space
-        Pointer pSharedMemory = Kernel32.INSTANCE.MapViewOfFile(hMapFile, WinNT.FILE_MAP_READ, 0, 0, 0);
+        Pointer pSharedMemory = Kernel32.INSTANCE.MapViewOfFile(hMapFile, WinNT.FILE_MAP_ALL_ACCESS, 0, 0, 0);
         if (pSharedMemory == null) {
         	Kernel32.INSTANCE.CloseHandle(hMapFile);
             throw new RuntimeException("MapViewOfFile failed with error: " + Kernel32.INSTANCE.GetLastError());
@@ -448,6 +448,8 @@ public class SharedMemoryArrayWin implements SharedMemoryArray
         if (Kernel32.INSTANCE.VirtualQueryEx(
         		Kernel32.INSTANCE.GetCurrentProcess(), pSharedMemory, mbi, new BaseTSD.SIZE_T((long) mbi.size())
         		).intValue() == 0) {
+	        Kernel32.INSTANCE.UnmapViewOfFile(pSharedMemory);
+            Kernel32.INSTANCE.CloseHandle(hMapFile);
             throw new RuntimeException("Unable to retrieve the size of the shm segment located at '" 
         		+ memoryName + "'. Errno: " + Kernel32.INSTANCE.GetLastError());
         }
@@ -456,6 +458,7 @@ public class SharedMemoryArrayWin implements SharedMemoryArray
         Pointer writePointer = Kernel32.INSTANCE.VirtualAllocEx(Kernel32.INSTANCE.GetCurrentProcess(), 
         		pSharedMemory, new BaseTSD.SIZE_T(size), WinNT.MEM_COMMIT, WinNT.PAGE_READWRITE);
 	    if (writePointer == null) {
+	        Kernel32.INSTANCE.CloseHandle(hMapFile);
 	        Kernel32.INSTANCE.UnmapViewOfFile(pSharedMemory);
             throw new RuntimeException("Error committing to the shared memory pages. Errno: "
             		+ "" + Kernel32.INSTANCE.GetLastError());
@@ -765,14 +768,15 @@ public class SharedMemoryArrayWin implements SharedMemoryArray
 		this.isNumpyFormat = true;
 		try {
 			int offset = 0;
-	        byte[] buf = this.writePointer.getByteBuffer(offset, DecodeNumpy.NUMPY_PREFIX.length).array();
+			byte[] buf = new byte[DecodeNumpy.NUMPY_PREFIX.length];
+			writePointer.getByteBuffer(offset, DecodeNumpy.NUMPY_PREFIX.length).get(buf, 0, DecodeNumpy.NUMPY_PREFIX.length);
 	        if (!Arrays.equals(buf, DecodeNumpy.NUMPY_PREFIX)) {
 	            throw new IllegalArgumentException("Malformed  or unsopported Numpy array");
 	        }
 	        offset = DecodeNumpy.NUMPY_PREFIX.length;
-	        byte major = writePointer.getByteBuffer(offset, 1).array()[0];
+	        byte major = writePointer.getByteBuffer(offset, 1).get();
 	        offset ++;
-	        byte minor = writePointer.getByteBuffer(offset, 1).array()[0];
+	        byte minor = writePointer.getByteBuffer(offset, 1).get();
 	        offset ++;
 	        if (major < 1 || major > 3 || minor != 0) {
 	            throw new IllegalArgumentException("Unknown numpy version: " + major + '.' + minor);
@@ -786,7 +790,8 @@ public class SharedMemoryArrayWin implements SharedMemoryArray
 	        } else {
 	            len = bb.getInt();
 	        }
-	        buf = writePointer.getByteBuffer(offset, len).array();
+	        buf = new byte[len];
+	        writePointer.getByteBuffer(offset, len).get(buf, 0, len);
 	        offset += len;
 	        String header = new String(buf, StandardCharsets.UTF_8);
 	        Matcher m = DecodeNumpy.HEADER_PATTERN.matcher(header);
