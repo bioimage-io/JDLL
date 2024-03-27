@@ -124,6 +124,9 @@ public class SharedMemoryArrayWin implements SharedMemoryArray
 	 */
 	private boolean isFortran = false;
 	private static final int SEC_RESERVE = 0x4000000;
+	/**
+	 * TODO change size to long, this number overflows and becomes negative
+	 */
 	private static final int DEFAULT_RESERVED_MEMORY = 1024 * 1024 * 1024 * 2;
 	
 	/**
@@ -217,7 +220,7 @@ public class SharedMemoryArrayWin implements SharedMemoryArray
     	boolean write = true;
     	if (checkSHMExists(memoryName)) {
         	long prevSize = getSHMSize(name);
-        	if (prevSize != 0 && prevSize < size)
+        	if (prevSize != 0 && prevSize != DEFAULT_RESERVED_MEMORY && prevSize < size)
         		throw new FileAlreadyExistsException("Shared memory segment already exists with different dimensions, data type or format. "
         				+ "Size of existing shared memory segment: " + prevSize + ", size of proposed object: " + size);
     	}
