@@ -789,15 +789,6 @@ public class SharedMemoryArrayLinux implements SharedMemoryArray {
 	        	new IllegalArgumentException("Not supported ByteOrder for the provided .npy array.");
 	        }
 	        String dtype = DecodeNumpy.getDataType(typeStr.substring(1));
-	        long numBytes = DecodeNumpy.DATA_TYPES_MAP.get(dtype);
-	    	long count;
-	    	if (shape.length == 0)
-	    		count = 1;
-			else
-				count = Arrays.stream(shape).reduce(Math::multiplyExact).getAsLong();
-	        len = Math.toIntExact(count * numBytes);
-	        if (offset + len > this.size)
-	        	throw new IllegalArgumentException("Npy array exceeds shared memory segment size");
 	        this.originalDims = shape;
 	        this.originalDataType = dtype;
 	        this.isFortran = fortranOrder.equals("True");
