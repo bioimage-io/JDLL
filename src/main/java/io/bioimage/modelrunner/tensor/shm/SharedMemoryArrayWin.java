@@ -520,7 +520,7 @@ public class SharedMemoryArrayWin implements SharedMemoryArray
     	if (isNumpy) header = getNpyHeader(tensor);
     	long offset = 0;
     	for (byte b : header) {
-			this.writePointer.setByte(offset, b);
+			this.mappedPointer.setByte(offset, b);
     		offset ++;
     	}
     	if (!isFortranOrder) tensor = Utils.transpose(tensor);
@@ -528,7 +528,7 @@ public class SharedMemoryArrayWin implements SharedMemoryArray
 		long i = 0;
 		while (cursor.hasNext()) {
 			cursor.fwd();
-			this.writePointer.setByte(offset + (i ++), cursor.get().get());
+			this.mappedPointer.setByte(offset + (i ++), cursor.get().get());
 		}
     }
 
@@ -538,7 +538,7 @@ public class SharedMemoryArrayWin implements SharedMemoryArray
     	if (isNumpy) header = getNpyHeader(tensor);
     	long offset = 0;
     	for (byte b : header) {
-			this.writePointer.setByte(offset, b);
+			this.mappedPointer.setByte(offset, b);
     		offset ++;
     	}
     	if (!isFortranOrder) tensor = Utils.transpose(tensor);
@@ -546,7 +546,7 @@ public class SharedMemoryArrayWin implements SharedMemoryArray
 		long i = 0;
 		while (cursor.hasNext()) {
 			cursor.fwd();
-			this.writePointer.setByte(offset + (i ++), cursor.get().getByte());
+			this.mappedPointer.setByte(offset + (i ++), cursor.get().getByte());
 		}
     }
 
@@ -556,7 +556,7 @@ public class SharedMemoryArrayWin implements SharedMemoryArray
     	if (isNumpy) header = getNpyHeader(tensor);
     	long offset = 0;
     	for (byte b : header) {
-			this.writePointer.setByte(offset, b);
+			this.mappedPointer.setByte(offset, b);
     		offset ++;
     	}
     	if (!isFortranOrder) tensor = Utils.transpose(tensor);
@@ -564,7 +564,7 @@ public class SharedMemoryArrayWin implements SharedMemoryArray
 		long i = 0;
 		while (cursor.hasNext()) {
 			cursor.fwd();
-			this.writePointer.setShort(offset + (i * Short.BYTES), cursor.get().get());
+			this.mappedPointer.setShort(offset + (i * Short.BYTES), cursor.get().get());
 			i ++;
 		}
     }
@@ -575,7 +575,7 @@ public class SharedMemoryArrayWin implements SharedMemoryArray
     	if (isNumpy) header = getNpyHeader(tensor);
     	long offset = 0;
     	for (byte b : header) {
-			this.writePointer.setByte(offset, b);
+			this.mappedPointer.setByte(offset, b);
     		offset ++;
     	}
     	if (!isFortranOrder) tensor = Utils.transpose(tensor);
@@ -583,7 +583,7 @@ public class SharedMemoryArrayWin implements SharedMemoryArray
 		long i = 0;
 		while (cursor.hasNext()) {
 			cursor.fwd();
-			this.writePointer.setShort(offset + (i * Short.BYTES), cursor.get().getShort());
+			this.mappedPointer.setShort(offset + (i * Short.BYTES), cursor.get().getShort());
 			i ++;
 		}
     }
@@ -594,7 +594,7 @@ public class SharedMemoryArrayWin implements SharedMemoryArray
     	if (isNumpy) header = getNpyHeader(tensor);
     	long offset = 0;
     	for (byte b : header) {
-			this.writePointer.setByte(offset, b);
+			this.mappedPointer.setByte(offset, b);
     		offset ++;
     	}
     	if (!isFortranOrder) tensor = Utils.transpose(tensor);
@@ -602,7 +602,7 @@ public class SharedMemoryArrayWin implements SharedMemoryArray
 		long i = 0;
 		while (cursor.hasNext()) {
 			cursor.fwd();
-			this.writePointer.setInt(offset + (i * Integer.BYTES), cursor.get().get());
+			this.mappedPointer.setInt(offset + (i * Integer.BYTES), cursor.get().get());
 			i ++;
 		}
     }
@@ -613,7 +613,7 @@ public class SharedMemoryArrayWin implements SharedMemoryArray
     	if (isNumpy) header = getNpyHeader(tensor);
     	long offset = 0;
     	for (byte b : header) {
-			this.writePointer.setByte(offset, b);
+			this.mappedPointer.setByte(offset, b);
     		offset ++;
     	}
     	if (!isFortranOrder) tensor = Utils.transpose(tensor);
@@ -621,7 +621,7 @@ public class SharedMemoryArrayWin implements SharedMemoryArray
 		long i = 0;
 		while (cursor.hasNext()) {
 			cursor.fwd();
-			this.writePointer.setInt(offset + (i * Integer.BYTES), cursor.get().getInt());
+			this.mappedPointer.setInt(offset + (i * Integer.BYTES), cursor.get().getInt());
 			i ++;
 		}
     }
@@ -632,7 +632,7 @@ public class SharedMemoryArrayWin implements SharedMemoryArray
     	if (isNumpy) header = getNpyHeader(tensor);
     	long offset = 0;
     	for (byte b : header) {
-			this.writePointer.setByte(offset, b);
+			this.mappedPointer.setByte(offset, b);
     		offset ++;
     	}
     	if (!isFortranOrder) tensor = Utils.transpose(tensor);
@@ -640,7 +640,7 @@ public class SharedMemoryArrayWin implements SharedMemoryArray
 		long i = 0;
 		while (cursor.hasNext()) {
 			cursor.fwd();
-			this.writePointer.setLong(offset + (i * Long.BYTES), cursor.get().get());
+			this.mappedPointer.setLong(offset + (i * Long.BYTES), cursor.get().get());
 			i ++;
 		}
     }
@@ -651,7 +651,7 @@ public class SharedMemoryArrayWin implements SharedMemoryArray
     	if (isNumpy) header = getNpyHeader(tensor);
     	long offset = 0;
     	for (byte b : header) {
-			this.writePointer.setByte(offset, b);
+			this.mappedPointer.setByte(offset, b);
     		offset ++;
     	}
     	if (!isFortranOrder) tensor = Utils.transpose(tensor);
@@ -659,7 +659,7 @@ public class SharedMemoryArrayWin implements SharedMemoryArray
 		long i = 0;
 		while (cursor.hasNext()) {
 			cursor.fwd();
-			this.writePointer.setFloat(offset + (i * Float.BYTES), cursor.get().get());
+			this.mappedPointer.setFloat(offset + (i * Float.BYTES), cursor.get().get());
 			i ++;
 		}
     }
@@ -670,7 +670,7 @@ public class SharedMemoryArrayWin implements SharedMemoryArray
     	if (isNumpy) header = getNpyHeader(tensor);
     	long offset = 0;
     	for (byte b : header) {
-			this.writePointer.setByte(offset, b);
+			this.mappedPointer.setByte(offset, b);
     		offset ++;
     	}
     	if (!isFortranOrder) tensor = Utils.transpose(tensor);
@@ -678,7 +678,7 @@ public class SharedMemoryArrayWin implements SharedMemoryArray
 		long i = 0;
 		while (cursor.hasNext()) {
 			cursor.fwd();
-			this.writePointer.setDouble(offset + (i * Double.BYTES), cursor.get().get());
+			this.mappedPointer.setDouble(offset + (i * Double.BYTES), cursor.get().get());
 			i ++;
 		}
     }
@@ -704,7 +704,7 @@ public class SharedMemoryArrayWin implements SharedMemoryArray
      */
 	@Override
     public Pointer getPointer() {
-    	return this.writePointer;
+    	return this.mappedPointer;
     }
 
     /**
@@ -772,20 +772,20 @@ public class SharedMemoryArrayWin implements SharedMemoryArray
 		try {
 			int offset = 0;
 			byte[] buf = new byte[DecodeNumpy.NUMPY_PREFIX.length];
-			writePointer.getByteBuffer(offset, DecodeNumpy.NUMPY_PREFIX.length).get(buf, 0, DecodeNumpy.NUMPY_PREFIX.length);
+			mappedPointer.getByteBuffer(offset, DecodeNumpy.NUMPY_PREFIX.length).get(buf, 0, DecodeNumpy.NUMPY_PREFIX.length);
 	        if (!Arrays.equals(buf, DecodeNumpy.NUMPY_PREFIX)) {
 	            throw new IllegalArgumentException("Malformed  or unsopported Numpy array");
 	        }
 	        offset = DecodeNumpy.NUMPY_PREFIX.length;
-	        byte major = writePointer.getByteBuffer(offset, 1).get();
+	        byte major = mappedPointer.getByteBuffer(offset, 1).get();
 	        offset ++;
-	        byte minor = writePointer.getByteBuffer(offset, 1).get();
+	        byte minor = mappedPointer.getByteBuffer(offset, 1).get();
 	        offset ++;
 	        if (major < 1 || major > 3 || minor != 0) {
 	            throw new IllegalArgumentException("Unknown numpy version: " + major + '.' + minor);
 	        }
 	        int len = major == 1 ? 2 : 4;
-	        ByteBuffer bb = writePointer.getByteBuffer(offset, len);
+	        ByteBuffer bb = mappedPointer.getByteBuffer(offset, len);
 	        offset += len;
 	        bb.order(ByteOrder.LITTLE_ENDIAN);
 	        if (major == 1) {
@@ -794,7 +794,7 @@ public class SharedMemoryArrayWin implements SharedMemoryArray
 	            len = bb.getInt();
 	        }
 	        buf = new byte[len];
-	        writePointer.getByteBuffer(offset, len).get(buf, 0, len);
+	        mappedPointer.getByteBuffer(offset, len).get(buf, 0, len);
 	        offset += len;
 	        String header = new String(buf, StandardCharsets.UTF_8);
 	        Matcher m = DecodeNumpy.HEADER_PATTERN.matcher(header);
@@ -814,15 +814,6 @@ public class SharedMemoryArrayWin implements SharedMemoryArray
 	        	new IllegalArgumentException("Not supported ByteOrder for the provided .npy array.");
 	        }
 	        String dtype = DecodeNumpy.getDataType(typeStr.substring(1));
-	        long numBytes = DecodeNumpy.DATA_TYPES_MAP.get(dtype);
-	    	long count;
-	    	if (shape.length == 0)
-	    		count = 1;
-			else
-				count = Arrays.stream(shape).reduce(Math::multiplyExact).getAsLong();
-	        len = Math.toIntExact(count * numBytes);
-	        if (offset + len > this.size)
-	        	throw new IllegalArgumentException("Npy array exceeds shared memory segment size");
 	        this.originalDims = shape;
 	        this.originalDataType = dtype;
 	        this.isFortran = fortranOrder.equals("True");
@@ -843,7 +834,7 @@ public class SharedMemoryArrayWin implements SharedMemoryArray
     	if (this.isNumpyFormat()) {
     		return buildImgLib2FromNumpyLikeSHMA();
     	} else {
-    		return buildFromSharedMemoryBlock(this.writePointer, this.originalDims, this.originalDataType, this.isFortran);
+    		return buildFromSharedMemoryBlock(this.mappedPointer, this.originalDims, this.originalDataType, this.isFortran);
     	}
     }
 
@@ -852,7 +843,7 @@ public class SharedMemoryArrayWin implements SharedMemoryArray
      */
     @Override
     public <T extends RealType<T> & NativeType<T>> RandomAccessibleInterval<T> getSharedRAI(long[] shape, T dataType) {
-		return buildFromSharedMemoryBlock(writePointer, shape, dataType, isFortran, 0, ByteOrder.LITTLE_ENDIAN);
+		return buildFromSharedMemoryBlock(mappedPointer, shape, dataType, isFortran, 0, ByteOrder.LITTLE_ENDIAN);
     }
 
     /**
@@ -860,7 +851,7 @@ public class SharedMemoryArrayWin implements SharedMemoryArray
      */
     @Override
     public <T extends RealType<T> & NativeType<T>> RandomAccessibleInterval<T> getSharedRAI(long[] shape, T dataType, boolean isFortran) {
-		return buildFromSharedMemoryBlock(writePointer, shape, dataType, isFortran, 0, ByteOrder.LITTLE_ENDIAN);
+		return buildFromSharedMemoryBlock(mappedPointer, shape, dataType, isFortran, 0, ByteOrder.LITTLE_ENDIAN);
     }
     
     /**
@@ -872,7 +863,7 @@ public class SharedMemoryArrayWin implements SharedMemoryArray
     		throw new IllegalArgumentException("The buffer capacity has to be smaller or equal "
     				+ "than the size of the shared memory segment.");
     	}
-    	this.writePointer.write(0, buffer.array(), 0, buffer.capacity());
+    	this.mappedPointer.write(0, buffer.array(), 0, buffer.capacity());
     }
     
     /**
@@ -880,7 +871,7 @@ public class SharedMemoryArrayWin implements SharedMemoryArray
      */
     @Override
     public ByteBuffer getDataBuffer() {
-    	return writePointer.getByteBuffer(0, this.size);
+    	return mappedPointer.getByteBuffer(0, this.size);
     }
 
 	@Override
@@ -894,7 +885,7 @@ public class SharedMemoryArrayWin implements SharedMemoryArray
     		for (long l : this.originalDims) flatSize *= l;
     		offset =  (int) (this.size - DecodeNumpy.DATA_TYPES_MAP.get(this.originalDataType) * flatSize);
     	}
-    	return writePointer.getByteBuffer(offset, this.size - offset);
+    	return mappedPointer.getByteBuffer(offset, this.size - offset);
 	}
 	
 	private static <T extends RealType<T> & NativeType<T>>
@@ -968,7 +959,7 @@ public class SharedMemoryArrayWin implements SharedMemoryArray
 			count = Arrays.stream(shape).reduce(Math::multiplyExact).getAsLong();
         len = Math.toIntExact(count * numBytes);
         
-        return buildFromSharedMemoryBlock(this.writePointer, shape, 
+        return buildFromSharedMemoryBlock(this.mappedPointer, shape, 
         		Cast.unchecked(CommonUtils.getImgLib2DataType(dtype)), fortranOrder.equals("True"), offset, byteOrder);
 	}
 
