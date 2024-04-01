@@ -5,7 +5,6 @@ on:
       - main
     paths-ignore:
       - .github/workflows/bioimageio_ci.yml
-      - .github/workflows/test_mac_shm.yml
   pull_request:
     branches: [ main ]
 jobs:
@@ -13,7 +12,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [macos-latest, ubuntu-latest, windows-latest, macos-11]
+        os: [macos-latest, macos-11]
       fail-fast: false
     steps:
     - name: Checkout repository
@@ -29,18 +28,6 @@ jobs:
       if: runner.os != 'Windows'
       run: echo "CLASSPATH=$(mvn -q exec:exec -Dexec.executable=echo -Dexec.args='%classpath')" >> $GITHUB_ENV
 
-    - name: Generate Classpath (Windows)
-      if: runner.os == 'Windows'
-      shell: powershell
-      run: |
-        $classpath = mvn -q exec:exec "-Dexec.executable=echo" "-Dexec.args='%classpath'"
-        echo "CLASSPATH=$classpath" | Out-File -FilePath $env:GITHUB_ENV -Append
-
     - name: Run Specific Class (Unix)
       if: runner.os != 'Windows'
-      run: java -cp $CLASSPATH:target/classes io.bioimage.modelrunner.example.ExampleLoadPytorch1Pytorch2
-
-    - name: Run Specific Class (Windows)
-      if: runner.os == 'Windows'
-      shell: powershell
-      run: java -cp "$env:CLASSPATH;target/classes" io.bioimage.modelrunner.example.ExampleLoadPytorch1Pytorch2
+      run: java -cp $CLASSPATH:target/classes io.bioimage.modelrunner.tensor.shm.SharedMemoryArray
