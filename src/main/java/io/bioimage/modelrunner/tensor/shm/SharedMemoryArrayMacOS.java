@@ -367,7 +367,9 @@ public class SharedMemoryArrayMacOS implements SharedMemoryArray
     	} else if (Util.getTypeFromInterval(rai) instanceof FloatType) {
         	int size = 4;
         	for (long i : rai.dimensionsAsLongArray()) {size *= i;}
+        	System.out.println(size);
         	if (isNumpy) size = (int) DecodeNumpy.calculateNpyStyleByteArrayLength(rai);
+        	System.out.println(size);
         	shma = new SharedMemoryArrayMacOS(name, size, CommonUtils.getDataType(rai), rai.dimensionsAsLongArray(), isNumpy, isFortranOrder);
         	shma.buildFloat32(Cast.unchecked(rai), isFortranOrder, isNumpy);
     	} else if (Util.getTypeFromInterval(rai) instanceof DoubleType) {
