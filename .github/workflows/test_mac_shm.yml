@@ -1,4 +1,4 @@
-name: Run Pytorch 1 and 2
+name: Test mac shm
 on:
   push:
     branches:
