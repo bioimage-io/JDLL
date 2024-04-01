@@ -96,7 +96,7 @@ public interface SharedMemoryArray extends Closeable {
 
 	
 	public static void main(String[] args) throws FileAlreadyExistsException {
-		ArrayImg<FloatType, FloatArray> data = ArrayImgs.floats(new long[] {1, 64, 64});
+		ArrayImg<FloatType, FloatArray> data = ArrayImgs.floats(new long[] {1, 1024, 1024});
 		SharedMemoryArray shma = SharedMemoryArray.createSHMAFromRAI(data, false, true);
 		
 		SharedMemoryArray shma2 = SharedMemoryArray.createSHMAFromRAI(shma.getName(), Cast.unchecked(data), false, true);
