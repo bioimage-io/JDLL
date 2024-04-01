@@ -19,9 +19,6 @@
  */
 package io.bioimage.modelrunner.tensor.shm;
 
-import java.util.Arrays;
-import java.util.List;
-
 import com.sun.jna.Library;
 import com.sun.jna.Native;
 import com.sun.jna.Pointer;
@@ -41,48 +38,4 @@ public interface CLibrary extends Library {
     int SEEK_CUR = 1;
     int SEEK_END = 2;
     long lseek(int fd, long offset, int whence);
-    
-    
-    // TODO new
-    int IPC_STAT = 1;
-
-    // shmid_ds structure definition
-    class shmid_ds extends com.sun.jna.Structure {
-        public int shm_perm_uid;
-        public int shm_perm_gid;
-        public int shm_perm_cuid;
-        public int shm_perm_cgid;
-        public int shm_perm_mode;
-        public int shm_segsz;
-        public long shm_atime;
-        public long shm_dtime;
-        public long shm_ctime;
-        public long shm_cpid;
-        public long shm_lpid;
-        public int shm_nattch;
-        public long shm_unused1;
-        public long shm_unused2;
-
-        @Override
-        protected List<String> getFieldOrder() {
-            return Arrays.asList(
-                "shm_perm_uid",
-                "shm_perm_gid",
-                "shm_perm_cuid",
-                "shm_perm_cgid",
-                "shm_perm_mode",
-                "shm_segsz",
-                "shm_atime",
-                "shm_dtime",
-                "shm_ctime",
-                "shm_cpid",
-                "shm_lpid",
-                "shm_nattch",
-                "shm_unused1",
-                "shm_unused2"
-            );
-        }
-    }
-
-    int shmctl(int shmid, int cmd, shmid_ds buf);
 }
