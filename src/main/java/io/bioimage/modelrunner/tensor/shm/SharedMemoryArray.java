@@ -32,6 +32,9 @@ import io.bioimage.modelrunner.numpy.DecodeNumpy;
 import io.bioimage.modelrunner.system.PlatformDetection;
 import io.bioimage.modelrunner.utils.CommonUtils;
 import net.imglib2.RandomAccessibleInterval;
+import net.imglib2.img.array.ArrayImg;
+import net.imglib2.img.array.ArrayImgs;
+import net.imglib2.img.basictypeaccess.array.FloatArray;
 import net.imglib2.type.NativeType;
 import net.imglib2.type.numeric.RealType;
 import net.imglib2.type.numeric.integer.ByteType;
@@ -43,6 +46,7 @@ import net.imglib2.type.numeric.integer.UnsignedIntType;
 import net.imglib2.type.numeric.integer.UnsignedShortType;
 import net.imglib2.type.numeric.real.DoubleType;
 import net.imglib2.type.numeric.real.FloatType;
+import net.imglib2.util.Cast;
 
 /**
  * TODO separate unlink and close
@@ -90,6 +94,13 @@ public interface SharedMemoryArray extends Closeable {
 	 */
 	final static String[] SPECIAL_CHARS_LIST = new String[] {"/", "\\", "#", "·", "!", "¡", "¿", "?", "@", "|", "$", ">", "<", ";"};
 
+	
+	public static void main(String[] args) throws FileAlreadyExistsException {
+		ArrayImg<FloatType, FloatArray> data = ArrayImgs.floats(new long[] {1, 64, 64});
+		SharedMemoryArray shma = SharedMemoryArray.createSHMAFromRAI(data, false, true);
+		
+		SharedMemoryArray shma2 = SharedMemoryArray.createSHMAFromRAI(shma.getName(), Cast.unchecked(data), false, true);
+	}
 
 	/**
 	 * This method creates (or retrieves if it already exists) a shared memory segment with the wanted name. The byte size is defined by the
