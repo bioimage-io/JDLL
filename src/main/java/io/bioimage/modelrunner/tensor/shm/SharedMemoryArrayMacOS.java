@@ -80,7 +80,7 @@ public class SharedMemoryArrayMacOS implements SharedMemoryArray
 	 * Instance of the  JNI containing the methods that help ineracting with shared memory segments
 	 * and are not contained in the {@link CLibrary} {@value #INSTANCE}
 	 */
-	private static final MacosHelpers macosInstance = MacosHelpers.INSTANCE;
+	private static final MacosHelpers MACOS_INSTANCE = MacosHelpers.INSTANCE;
 	/**
 	 * File descriptor value of the shared memory segment
 	 */
@@ -227,7 +227,7 @@ public class SharedMemoryArrayMacOS implements SharedMemoryArray
     		throw new FileAlreadyExistsException("Shared memory segment already exists with different dimensions, data type or format. "
     				+ "Size of existing shared memory segment: " + prevSize + ", size of proposed object: " + size);
     	}
-        shmFd = macosInstance.create_shared_memory(memoryName, size);
+        shmFd = MACOS_INSTANCE.create_shared_memory(memoryName, size);
         if (shmFd < 0) {
             throw new RuntimeException("shm_open failed, errno: " + Native.getLastError());
         }
@@ -270,7 +270,10 @@ public class SharedMemoryArrayMacOS implements SharedMemoryArray
         if (shmFd < 0) throw new RuntimeException("Invalid shmFd. It should be bigger than 0.");
 
 
-        long size = macosInstance.get_shared_memory_size(shmFd);
+        long size = MACOS_INSTANCE.get_shared_memory_size(shmFd);
+        System.out.println("first size: " + size);
+        long size2 = INSTANCE.lseek(shmFd, 0, CLibrary.SEEK_END);
+        System.out.println("second size: " + size2);
 	    if (size == -1) {
 	    	// TODO remove macosInstance.unlink_shared_memory(null);;
 	    	throw new RuntimeException("Failed to get shared memory segment size. Errno: " + Native.getLastError());
@@ -395,7 +398,7 @@ public class SharedMemoryArrayMacOS implements SharedMemoryArray
             throw new RuntimeException("Shared memory segmentmight not exist: "
 					+ memoryName + ". Failed to open shared memory. Errno: " + Native.getLastError());
 
-        long size = macosInstance.get_shared_memory_size(shmFd);;
+        long size = MACOS_INSTANCE.get_shared_memory_size(shmFd);;
 	    if (size == -1) {
             CLibrary.INSTANCE.close(shmFd);
 	    	throw new RuntimeException("Failed to get shared memory segment size. Errno: " + Native.getLastError());
