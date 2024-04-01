@@ -38,4 +38,30 @@ public interface CLibrary extends Library {
     int SEEK_CUR = 1;
     int SEEK_END = 2;
     long lseek(int fd, long offset, int whence);
+    
+    
+    // TODO new
+    int IPC_STAT = 1;
+
+    // shmid_ds structure definition
+    class shmid_ds extends com.sun.jna.Structure {
+        public int shm_perm__pad1;
+        public int shm_perm__pad2;
+        public short shm_perm_mode;
+        public short shm_perm__pad3;
+        public int shm_perm_uid;
+        public int shm_perm_gid;
+        public long shm_perm__pad4;
+        public long shm_segsz;
+        public long shm_atime;
+        public long shm_dtime;
+        public long shm_ctime;
+        public long shm_cpid;
+        public long shm_lpid;
+        public long shm_nattch;
+        public long shm_unused1;
+        public long shm_unused2;
+    }
+
+    int shmctl(int shmid, int cmd, shmid_ds buf);
 }

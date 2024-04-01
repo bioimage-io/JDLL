@@ -271,9 +271,12 @@ public class SharedMemoryArrayMacOS implements SharedMemoryArray
 
 
         long size = MACOS_INSTANCE.get_shared_memory_size(shmFd);
+        // TODO
         System.out.println("first size: " + size);
-        long size2 = INSTANCE.lseek(shmFd, 0, CLibrary.SEEK_END);
+        CLibrary.shmid_ds buf = new CLibrary.shmid_ds();
+        long size2 = INSTANCE.shmctl(shmFd, CLibrary.IPC_STAT, buf);
         System.out.println("second size: " + size2);
+        // TODO
 	    if (size == -1) {
 	    	// TODO remove macosInstance.unlink_shared_memory(null);;
 	    	throw new RuntimeException("Failed to get shared memory segment size. Errno: " + Native.getLastError());
