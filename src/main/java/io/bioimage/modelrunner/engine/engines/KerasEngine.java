@@ -9,8 +9,10 @@ import java.util.stream.Collectors;
 
 import org.apache.commons.compress.archivers.ArchiveException;
 
+import io.bioimage.modelrunner.apposed.appose.Environment;
 import io.bioimage.modelrunner.apposed.appose.Mamba;
 import io.bioimage.modelrunner.apposed.appose.MambaInstallException;
+import io.bioimage.modelrunner.apposed.appose.Service;
 import io.bioimage.modelrunner.engine.AbstractEngine;
 import io.bioimage.modelrunner.model.Model;
 
@@ -25,6 +27,10 @@ public class KerasEngine extends AbstractEngine {
 	private boolean isPython;
 	
 	private Boolean installed;
+
+	private Environment env;
+	
+	private Service python;
 	
 	public static final String NAME = "keras";
 
@@ -63,7 +69,14 @@ public class KerasEngine extends AbstractEngine {
 	}
 	
 	public static List<KerasEngine> getInstalledVersions() {
-		return null;
+		List<KerasEngine> cpus = SUPPORTED_KERAS_VERSION_NUMBERS.stream()
+				.map(str -> new KerasEngine(str, false, true))
+				.filter(vv -> vv.isInstalled()).collect(Collectors.toList());
+		List<KerasEngine> gpus = SUPPORTED_KERAS_VERSION_NUMBERS.stream()
+				.map(str -> new KerasEngine(str, false, true))
+				.filter(vv -> vv.isInstalled()).collect(Collectors.toList());
+		cpus.addAll(gpus);
+		return cpus;
 	}
 	
 	@Override
@@ -117,10 +130,16 @@ public class KerasEngine extends AbstractEngine {
 
 
 	@Override
-	public Model load(String modelFolder, String modelSource) {
+	public Model load(String modelFolder, String modelSource) throws IOException {
 		if (!this.isInstalled())
 			throw new IllegalArgumentException("Current engine '" + this.toString() 
 												+ "' is not installed. Please install it first.");
+
+		this.env = new Environment() {
+			@Override public String base() { return KerasEngine.this.getDir(); }
+			@Override public boolean useSystemPath() { return false; }
+			};
+		python = env.python();
 		return null;
 	}
 	

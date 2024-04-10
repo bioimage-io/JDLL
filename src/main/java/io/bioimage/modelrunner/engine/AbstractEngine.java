@@ -14,10 +14,9 @@ import io.bioimage.modelrunner.engine.engines.KerasEngine;
 import io.bioimage.modelrunner.engine.engines.OnnxEngine;
 import io.bioimage.modelrunner.engine.engines.PytorchEngine;
 import io.bioimage.modelrunner.engine.engines.TensorflowEngine;
-import io.bioimage.modelrunner.engine.engines.TorchscriptEngine;
 import io.bioimage.modelrunner.model.Model;
 
-public abstract class AbstractEngine {
+public abstract class AbstractEngine implements AutoCloseable {
 	
 	private static String JAX_KEY = "jax";
 	
@@ -95,6 +94,6 @@ public abstract class AbstractEngine {
 
 	public abstract void install() throws IOException, InterruptedException, MambaInstallException, ArchiveException, URISyntaxException;
 
-	public abstract Model load(String modelFolder, String modelSource);
+	public abstract Model load(String modelFolder, String modelSource) throws IOException;
 	
 }
