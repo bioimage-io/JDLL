@@ -2,7 +2,7 @@ package io.bioimage.modelrunner.engine;
 
 import java.util.Arrays;
 
-public class AbstractEngine {
+public abstract class AbstractEngine {
 	
 	private static String JAX_KEY = "jax";
 	
@@ -17,19 +17,17 @@ public class AbstractEngine {
 		if (!isSupported(name)) throw new IllegalArgumentException("Name provided is not on the list of supported engine keys: "
 				+ Arrays.toString(SUPPORTED_ENGINE_NAMES));
 		if (KerasEngine.NAME.equals(name)) {
-			
+			return KerasEngine.initilize(version, cpu, gpu, isPython);
 		} else if (TensorflowEngine.NAME.equals(name)) {
-			return TensorflowEngine.initilize();
-		} else if (KerasEngine.NAME.equals(name)) {
-			return KerasEngine.initilize();
+			return TensorflowEngine.initilize(version, cpu, gpu, isPython);
 		} else if (PytorchEngine.NAME.equals(name)) {
-			return PytorchEngine.initilize();
+			return PytorchEngine.initilize(version, cpu, gpu, isPython);
 		} else if (TorchscriptEngine.NAME.equals(name)) {
-			return TorchscriptEngine.initilize();
+			return TorchscriptEngine.initilize(version, cpu, gpu, isPython);
 		} else if (JaxEngine.NAME.equals(name)) {
-			return JaxEngine.initilize();
+			return JaxEngine.initilize(version, cpu, gpu, isPython);
 		} else if (OnnxEngine.NAME.equals(name)) {
-			return OnnxEngine.initilize();
+			return OnnxEngine.initilize(version, cpu, gpu, isPython);
 		}
 	}
 	
@@ -40,5 +38,7 @@ public class AbstractEngine {
 	public static String[] getSupportedEngineKeys() {
 		return SUPPORTED_ENGINE_NAMES;
 	}
+	
+	public abstract String getName();
 
 }
