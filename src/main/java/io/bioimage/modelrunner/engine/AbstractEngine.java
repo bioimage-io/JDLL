@@ -1,6 +1,15 @@
 package io.bioimage.modelrunner.engine;
 
+import java.io.IOException;
+import java.net.URISyntaxException;
 import java.util.Arrays;
+import java.util.List;
+
+import org.apache.commons.compress.archivers.ArchiveException;
+
+import io.bioimage.modelrunner.apposed.appose.MambaInstallException;
+import io.bioimage.modelrunner.bioimageio.description.weights.WeightFormat;
+import io.bioimage.modelrunner.model.Model;
 
 public abstract class AbstractEngine {
 	
@@ -12,22 +21,49 @@ public abstract class AbstractEngine {
 			EngineInfo.getBioimageioPytorchKey(), EngineInfo.getPytorchKey(), EngineInfo.getOnnxKey(), EngineInfo.getKerasKey(),
 			EngineInfo.getBioimageioKerasKey(), PYTORCH_STATE_DIC_KEY, JAX_KEY};
 	
+	public static AbstractEngine initialize(WeightFormat ww) {
+		return null;
+	}
 	
-	public static AbstractEngine initialize(String name, String version, Boolean cpu, Boolean gpu, Boolean isPython) {
+	
+	public static AbstractEngine initialize(String name, String version, boolean gpu, boolean isPython) {
 		if (!isSupported(name)) throw new IllegalArgumentException("Name provided is not on the list of supported engine keys: "
 				+ Arrays.toString(SUPPORTED_ENGINE_NAMES));
 		if (KerasEngine.NAME.equals(name)) {
-			return KerasEngine.initilize(version, cpu, gpu, isPython);
+			return KerasEngine.initilize(version, gpu, isPython);
 		} else if (TensorflowEngine.NAME.equals(name)) {
-			return TensorflowEngine.initilize(version, cpu, gpu, isPython);
+			return TensorflowEngine.initilize(version, gpu, isPython);
 		} else if (PytorchEngine.NAME.equals(name)) {
-			return PytorchEngine.initilize(version, cpu, gpu, isPython);
+			return PytorchEngine.initilize(version, gpu, isPython);
 		} else if (TorchscriptEngine.NAME.equals(name)) {
-			return TorchscriptEngine.initilize(version, cpu, gpu, isPython);
+			return TorchscriptEngine.initilize(version, gpu, isPython);
 		} else if (JaxEngine.NAME.equals(name)) {
-			return JaxEngine.initilize(version, cpu, gpu, isPython);
+			return JaxEngine.initilize(version, gpu, isPython);
 		} else if (OnnxEngine.NAME.equals(name)) {
-			return OnnxEngine.initilize(version, cpu, gpu, isPython);
+			return OnnxEngine.initilize(version, gpu, isPython);
+		}
+	}
+	
+	public static AbstractEngine initializeSimilar(WeightFormat ww) {
+		return null;
+	}
+	
+	
+	public static AbstractEngine initializeSimilar(String name, String version, Boolean gpu, Boolean isPython) {
+		if (!isSupported(name)) throw new IllegalArgumentException("Name provided is not on the list of supported engine keys: "
+				+ Arrays.toString(SUPPORTED_ENGINE_NAMES));
+		if (KerasEngine.NAME.equals(name)) {
+			return KerasEngine.initilize(version, gpu, isPython);
+		} else if (TensorflowEngine.NAME.equals(name)) {
+			return TensorflowEngine.initilize(version, gpu, isPython);
+		} else if (PytorchEngine.NAME.equals(name)) {
+			return PytorchEngine.initilize(version, gpu, isPython);
+		} else if (TorchscriptEngine.NAME.equals(name)) {
+			return TorchscriptEngine.initilize(version, gpu, isPython);
+		} else if (JaxEngine.NAME.equals(name)) {
+			return JaxEngine.initilize(version, gpu, isPython);
+		} else if (OnnxEngine.NAME.equals(name)) {
+			return OnnxEngine.initilize(version, gpu, isPython);
 		}
 	}
 	
@@ -40,5 +76,19 @@ public abstract class AbstractEngine {
 	}
 	
 	public abstract String getName();
+	
+	public abstract boolean isPython();
+	
+	public abstract String getVersion();
+	
+	public abstract boolean supportsGPU();
 
+	public abstract String getDir();
+
+	public abstract boolean isInstalled();
+
+	public abstract void install() throws IOException, InterruptedException, MambaInstallException, ArchiveException, URISyntaxException;
+
+	public abstract Model load(String modelFolder, String modelSource);
+	
 }

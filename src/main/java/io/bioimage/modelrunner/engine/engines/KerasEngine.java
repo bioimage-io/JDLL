@@ -1,12 +1,18 @@
 package io.bioimage.modelrunner.engine.engines;
 
 import java.io.File;
+import java.io.IOException;
+import java.net.URISyntaxException;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import org.apache.commons.compress.archivers.ArchiveException;
+
 import io.bioimage.modelrunner.apposed.appose.Mamba;
+import io.bioimage.modelrunner.apposed.appose.MambaInstallException;
 import io.bioimage.modelrunner.engine.AbstractEngine;
+import io.bioimage.modelrunner.model.Model;
 
 public class KerasEngine extends AbstractEngine {
 	
@@ -17,6 +23,8 @@ public class KerasEngine extends AbstractEngine {
 	private boolean gpu;
 	
 	private boolean isPython;
+	
+	private Boolean installed;
 	
 	public static final String NAME = "keras";
 
@@ -89,17 +97,36 @@ public class KerasEngine extends AbstractEngine {
 
 	@Override
 	public boolean isInstalled() {
+		if (installed != null)
+			return installed;
 		if (!(new File(getDir()).exists()))
 			return false;
-		return getInstalledVersions().stream()
+		installed = getInstalledVersions().stream()
 				.filter(vv -> vv.gpu == gpu && vv.version.equals(version)).findFirst().orElse(null) != null;
+		return installed;
 	}
 
 
 	@Override
-	public void install() {
-		// TODO Auto-generated method stub
+	public void install() throws IOException, InterruptedException, MambaInstallException, ArchiveException, URISyntaxException {
+		if (!mamba.checkMambaInstalled()) mamba.installMicromamba();
 		
+		mamba.create(getDir(), getSupportedEngineKeys());
+		installed = true;
+	}
+
+
+	@Override
+	public Model load(String modelFolder, String modelSource) {
+		if (!this.isInstalled())
+			throw new IllegalArgumentException("Current engine '" + this.toString() 
+												+ "' is not installed. Please install it first.");
+		return null;
+	}
+	
+	@Override
+	public String toString() {
+		return NAME + "_" + version + (gpu ? "_gpu" : "");
 	}
 
 }
