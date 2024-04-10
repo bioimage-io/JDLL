@@ -26,20 +26,18 @@ public class TensorflowEngine extends AbstractEngine {
 	
 	private Boolean installed;
 	
-	public static final String NAME = "keras";
+	public static final String NAME = "tensorflow";
 
-	private static final List<String> SUPPORTED_KERAS_GPU_VERSIONS = Arrays.stream(new String[] {}).collect(Collectors.toList());
-	private static final List<String> SUPPORTED_KERAS_VERSION_NUMBERS = Arrays.stream(new String[] {}).collect(Collectors.toList());
+	private static final List<String> SUPPORTED_TF_GPU_VERSIONS = Arrays.stream(new String[] {}).collect(Collectors.toList());
+	private static final List<String> SUPPORTED_TF_VERSION_NUMBERS = Arrays.stream(new String[] {}).collect(Collectors.toList());
 	
 	private TensorflowEngine(String version, boolean gpu, boolean isPython) {
-		if (!isPython) 
-			throw new IllegalArgumentException("JDLL only has support for Keras through a Python engine.");
-		if (!SUPPORTED_KERAS_VERSION_NUMBERS.contains(version))
-			throw new IllegalArgumentException("The provided Keras version is not supported by JDLL: " + version
-					+ ". The supported versions are: " + SUPPORTED_KERAS_VERSION_NUMBERS);
-		if (gpu && !SUPPORTED_KERAS_GPU_VERSIONS.contains(version))
-			throw new IllegalArgumentException("The provided Keras version has no GPU support in JDLL: " + version
-					+ ". GPU supported versions are: " + SUPPORTED_KERAS_GPU_VERSIONS);
+		if (!SUPPORTED_TF_VERSION_NUMBERS.contains(version))
+			throw new IllegalArgumentException("The provided Tensorflow version is not supported by JDLL: " + version
+					+ ". The supported versions are: " + SUPPORTED_TF_VERSION_NUMBERS);
+		if (gpu && !SUPPORTED_TF_GPU_VERSIONS.contains(version))
+			throw new IllegalArgumentException("The provided Tensorflow version has no GPU support in JDLL: " + version
+					+ ". GPU supported versions are: " + SUPPORTED_TF_GPU_VERSIONS);
 		mamba = new Mamba();
 		this.isPython = isPython;
 		this.version = version;
@@ -48,18 +46,6 @@ public class TensorflowEngine extends AbstractEngine {
 	
 	public static TensorflowEngine initialize(String version, boolean gpu, boolean isPython) {
 		return new TensorflowEngine(version, gpu, isPython);
-	}
-	
-	public static String getFolderName(String version, boolean gpu, boolean isPython) {
-		if (!isPython) 
-			throw new IllegalArgumentException("JDLL only has support for Keras through a Python engine.");
-		if (!SUPPORTED_KERAS_VERSION_NUMBERS.contains(version))
-			throw new IllegalArgumentException("The provided Keras version is not supported by JDLL: " + version
-					+ ". The supported versions are: " + SUPPORTED_KERAS_VERSION_NUMBERS);
-		if (gpu && !SUPPORTED_KERAS_GPU_VERSIONS.contains(version))
-			throw new IllegalArgumentException("The provided Keras version has no GPU support in JDLL: " + version
-					+ ". GPU supported versions are: " + SUPPORTED_KERAS_GPU_VERSIONS);
-		return NAME + "_" + version + (gpu ? "_gpu" : "");
 	}
 	
 	public static List<TensorflowEngine> getInstalledVersions() {
@@ -73,7 +59,7 @@ public class TensorflowEngine extends AbstractEngine {
 	
 	@Override
 	public String getDir() {
-		return mamba.getEnvsDir() + File.separator + getFolderName(version, gpu, false);
+		return mamba.getEnvsDir() + File.separator + this.toString();
 	}
 
 

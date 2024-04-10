@@ -26,20 +26,20 @@ public class JaxEngine extends AbstractEngine {
 	
 	private Boolean installed;
 	
-	public static final String NAME = "keras";
+	public static final String NAME = "jax";
 
-	private static final List<String> SUPPORTED_KERAS_GPU_VERSIONS = Arrays.stream(new String[] {}).collect(Collectors.toList());
-	private static final List<String> SUPPORTED_KERAS_VERSION_NUMBERS = Arrays.stream(new String[] {}).collect(Collectors.toList());
+	private static final List<String> SUPPORTED_JAX_GPU_VERSIONS = Arrays.stream(new String[] {}).collect(Collectors.toList());
+	private static final List<String> SUPPORTED_JAX_VERSION_NUMBERS = Arrays.stream(new String[] {}).collect(Collectors.toList());
 	
 	private JaxEngine(String version, boolean gpu, boolean isPython) {
 		if (!isPython) 
-			throw new IllegalArgumentException("JDLL only has support for Keras through a Python engine.");
-		if (!SUPPORTED_KERAS_VERSION_NUMBERS.contains(version))
-			throw new IllegalArgumentException("The provided Keras version is not supported by JDLL: " + version
-					+ ". The supported versions are: " + SUPPORTED_KERAS_VERSION_NUMBERS);
-		if (gpu && !SUPPORTED_KERAS_GPU_VERSIONS.contains(version))
-			throw new IllegalArgumentException("The provided Keras version has no GPU support in JDLL: " + version
-					+ ". GPU supported versions are: " + SUPPORTED_KERAS_GPU_VERSIONS);
+			throw new IllegalArgumentException("JDLL only has support for JAX through a Python engine.");
+		if (!SUPPORTED_JAX_VERSION_NUMBERS.contains(version))
+			throw new IllegalArgumentException("The provided JAX version is not supported by JDLL: " + version
+					+ ". The supported versions are: " + SUPPORTED_JAX_VERSION_NUMBERS);
+		if (gpu && !SUPPORTED_JAX_GPU_VERSIONS.contains(version))
+			throw new IllegalArgumentException("The provided JAX version has no GPU support in JDLL: " + version
+					+ ". GPU supported versions are: " + SUPPORTED_JAX_GPU_VERSIONS);
 		mamba = new Mamba();
 		this.isPython = isPython;
 		this.version = version;
@@ -48,18 +48,6 @@ public class JaxEngine extends AbstractEngine {
 	
 	public static JaxEngine initialize(String version, boolean gpu, boolean isPython) {
 		return new JaxEngine(version, gpu, isPython);
-	}
-	
-	public static String getFolderName(String version, boolean gpu, boolean isPython) {
-		if (!isPython) 
-			throw new IllegalArgumentException("JDLL only has support for Keras through a Python engine.");
-		if (!SUPPORTED_KERAS_VERSION_NUMBERS.contains(version))
-			throw new IllegalArgumentException("The provided Keras version is not supported by JDLL: " + version
-					+ ". The supported versions are: " + SUPPORTED_KERAS_VERSION_NUMBERS);
-		if (gpu && !SUPPORTED_KERAS_GPU_VERSIONS.contains(version))
-			throw new IllegalArgumentException("The provided Keras version has no GPU support in JDLL: " + version
-					+ ". GPU supported versions are: " + SUPPORTED_KERAS_GPU_VERSIONS);
-		return NAME + "_" + version + (gpu ? "_gpu" : "");
 	}
 	
 	public static List<JaxEngine> getInstalledVersions() {
@@ -73,7 +61,7 @@ public class JaxEngine extends AbstractEngine {
 	
 	@Override
 	public String getDir() {
-		return mamba.getEnvsDir() + File.separator + getFolderName(version, gpu, false);
+		return mamba.getEnvsDir() + File.separator + toString();
 	}
 
 

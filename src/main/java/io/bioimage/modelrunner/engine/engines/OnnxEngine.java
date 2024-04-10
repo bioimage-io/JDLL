@@ -28,18 +28,18 @@ public class OnnxEngine extends AbstractEngine {
 	
 	public static final String NAME = "onnx";
 
-	private static final List<String> SUPPORTED_KERAS_GPU_VERSIONS = Arrays.stream(new String[] {}).collect(Collectors.toList());
-	private static final List<String> SUPPORTED_KERAS_VERSION_NUMBERS = Arrays.stream(new String[] {}).collect(Collectors.toList());
+	private static final List<String> SUPPORTED_ONNX_GPU_VERSIONS = Arrays.stream(new String[] {}).collect(Collectors.toList());
+	private static final List<String> SUPPORTED_ONNX_VERSION_NUMBERS = Arrays.stream(new String[] {}).collect(Collectors.toList());
 	
 	private OnnxEngine(String version, boolean gpu, boolean isPython) {
 		if (!isPython) 
 			throw new IllegalArgumentException("JDLL only has support for Onnx through a Java engine.");
-		if (!SUPPORTED_KERAS_VERSION_NUMBERS.contains(version))
+		if (!SUPPORTED_ONNX_VERSION_NUMBERS.contains(version))
 			throw new IllegalArgumentException("The provided Onnx version is not supported by JDLL: " + version
-					+ ". The supported versions are: " + SUPPORTED_KERAS_VERSION_NUMBERS);
-		if (gpu && !SUPPORTED_KERAS_GPU_VERSIONS.contains(version))
+					+ ". The supported versions are: " + SUPPORTED_ONNX_VERSION_NUMBERS);
+		if (gpu && !SUPPORTED_ONNX_GPU_VERSIONS.contains(version))
 			throw new IllegalArgumentException("The provided Onnx version has no GPU support in JDLL: " + version
-					+ ". GPU supported versions are: " + SUPPORTED_KERAS_GPU_VERSIONS);
+					+ ". GPU supported versions are: " + SUPPORTED_ONNX_GPU_VERSIONS);
 		mamba = new Mamba();
 		this.isPython = isPython;
 		this.version = version;
