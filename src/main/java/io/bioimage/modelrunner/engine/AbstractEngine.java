@@ -9,6 +9,12 @@ import org.apache.commons.compress.archivers.ArchiveException;
 
 import io.bioimage.modelrunner.apposed.appose.MambaInstallException;
 import io.bioimage.modelrunner.bioimageio.description.weights.WeightFormat;
+import io.bioimage.modelrunner.engine.engines.JaxEngine;
+import io.bioimage.modelrunner.engine.engines.KerasEngine;
+import io.bioimage.modelrunner.engine.engines.OnnxEngine;
+import io.bioimage.modelrunner.engine.engines.PytorchEngine;
+import io.bioimage.modelrunner.engine.engines.TensorflowEngine;
+import io.bioimage.modelrunner.engine.engines.TorchscriptEngine;
 import io.bioimage.modelrunner.model.Model;
 
 public abstract class AbstractEngine {
