@@ -21,7 +21,9 @@ import io.bioimage.modelrunner.apposed.appose.Service.Task;
 import io.bioimage.modelrunner.apposed.appose.Service.TaskStatus;
 import io.bioimage.modelrunner.engine.AbstractEngine;
 import io.bioimage.modelrunner.model.Model;
+import io.bioimage.modelrunner.system.PlatformDetection;
 import io.bioimage.modelrunner.tensor.Tensor;
+import io.bioimage.modelrunner.tensor.shm.SharedMemoryArray;
 import net.imglib2.type.NativeType;
 import net.imglib2.type.numeric.RealType;
 
@@ -169,18 +171,52 @@ public class KerasEngine extends AbstractEngine {
 	}
 
 	@Override
-	public void isModelLoaded(String modelFolder, String modelSource) throws IOException {
-		// TODO Auto-generated method stub
-		
+	public boolean isModelLoaded(String modelFolder, String modelSource) throws IOException, InterruptedException {
+		if (python == null)
+			return false;
+		String loadScriptFormatted = String.format(IS_MODEL_LOADED_SCRIPT_MAP.get(this.version));
+		Task task = python.task(loadScriptFormatted);
+		task.waitFor();
+		if (task.status == TaskStatus.COMPLETE)
+			return task.outputs.get("isLoaded").equals("True");
+		throw new RuntimeException("Error unloading the model. " + task.error);	
 	}
 
 	@Override
 	public <T extends RealType<T> & NativeType<T>> void runModel(List<Tensor<T>> inputTensors, List<Tensor<T>> outputTensors)
-			throws IOException {
-		// TODO Auto-generated method stub
-		
+			throws IOException, InterruptedException {
+		if (python == null)
+			throw new RuntimeException("Python Keras engine has not been loaded yet.");
+		List<SharedMemoryArray> inputShms = inputTensors.stream()
+				.map(tt -> SharedMemoryArray.createSHMAFromRAI(tt.getData(), false, false)).collect(Collectors.toList());
+		List<Object> outputShms = inputTensors.stream()
+				.map(tt -> {
+					if (tt.isEmpty() && PlatformDetection.isWindows())
+						return SharedMemoryArray.create(0);
+					else if (tt.isEmpty())
+						return SharedMemoryArray.createShmName();
+					else
+						return SharedMemoryArray.createSHMAFromRAI(tt.getData(), false, false);
+				}).collect(Collectors.toList());
+		String runScriptFormatted = createScriptForInference(inputShms, outputShms);
+		Task task = python.task(runScriptFormatted);
+		task.waitFor();
+		if (task.status != TaskStatus.COMPLETE)
+			throw new RuntimeException("Error making inference with the model. " + task.error);
+		retrieveOutputs(outputShms, outputTensors);
 	}
 
+	private String createScriptForInference(List<SharedMemoryArray> inputs, List<Object> outputs) {
+		String runScriptFormatted = String.format(RUN_SCRIPT_MAP.get(this.version));
+		return "";
+	}
+
+	private <T extends RealType<T> & NativeType<T>> 
+	void retrieveOutputs(List<Object> outputShms, List<Tensor<T>> outputTensors) {
+		String runScriptFormatted = String.format(RUN_SCRIPT_MAP.get(this.version));
+		return "";
+	}
+	
 	@Override
 	public void unloadModel() throws IOException, InterruptedException {
 		if (python == null)

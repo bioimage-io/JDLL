@@ -101,8 +101,9 @@ public abstract class AbstractEngine implements AutoCloseable {
 
 	public abstract void unloadModel() throws IOException, InterruptedException;
 	
-	public abstract void isModelLoaded(String modelFolder, String modelSource) throws IOException;
+	public abstract boolean isModelLoaded(String modelFolder, String modelSource) throws IOException, InterruptedException;
 	
-	public abstract <T extends RealType<T> & NativeType<T>> void runModel(List<Tensor<T>> inputTensors, List<Tensor<T>> outputTensors) throws IOException;
+	public abstract <T extends RealType<T> & NativeType<T>> 
+	void runModel(List<Tensor<T>> inputTensors, List<Tensor<T>> outputTensors) throws IOException, InterruptedException;
 	
 }
