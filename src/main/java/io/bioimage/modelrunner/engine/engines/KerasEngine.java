@@ -3,8 +3,11 @@ package io.bioimage.modelrunner.engine.engines;
 import java.io.File;
 import java.io.IOException;
 import java.net.URISyntaxException;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 import org.apache.commons.compress.archivers.ArchiveException;
@@ -13,8 +16,14 @@ import io.bioimage.modelrunner.apposed.appose.Environment;
 import io.bioimage.modelrunner.apposed.appose.Mamba;
 import io.bioimage.modelrunner.apposed.appose.MambaInstallException;
 import io.bioimage.modelrunner.apposed.appose.Service;
+import io.bioimage.modelrunner.apposed.appose.Service.ResponseType;
+import io.bioimage.modelrunner.apposed.appose.Service.Task;
+import io.bioimage.modelrunner.apposed.appose.Service.TaskStatus;
 import io.bioimage.modelrunner.engine.AbstractEngine;
 import io.bioimage.modelrunner.model.Model;
+import io.bioimage.modelrunner.tensor.Tensor;
+import net.imglib2.type.NativeType;
+import net.imglib2.type.numeric.RealType;
 
 public class KerasEngine extends AbstractEngine {
 	
@@ -36,6 +45,18 @@ public class KerasEngine extends AbstractEngine {
 
 	private static final List<String> SUPPORTED_KERAS_GPU_VERSIONS = Arrays.stream(new String[] {}).collect(Collectors.toList());
 	private static final List<String> SUPPORTED_KERAS_VERSION_NUMBERS = Arrays.stream(new String[] {}).collect(Collectors.toList());
+	
+	private static final String LOAD_SCRIPT_KERAS_2 = "";
+	
+	private static final String LOAD_SCRIPT_KERAS_3 = "";
+	
+	private static final Map<String, String> LOAD_SCRIPT_MAP;
+	
+	static {
+		LOAD_SCRIPT_MAP = new HashMap<String, String>();
+		LOAD_SCRIPT_MAP.put(LOAD_SCRIPT_KERAS_3, LOAD_SCRIPT_KERAS_2);
+		LOAD_SCRIPT_MAP.put(LOAD_SCRIPT_KERAS_3, LOAD_SCRIPT_KERAS_3);
+	}
 	
 	private KerasEngine(String version, boolean gpu, boolean isPython) {
 		if (!isPython) 
@@ -89,24 +110,20 @@ public class KerasEngine extends AbstractEngine {
 		return mamba.getEnvsDir() + File.separator + getFolderName(version, gpu, false);
 	}
 
-
 	@Override
 	public boolean isPython() {
 		return isPython;
 	}
-
 
 	@Override
 	public String getVersion() {
 		return version;
 	}
 
-
 	@Override
 	public boolean supportsGPU() {
 		return gpu;
 	}
-
 
 	@Override
 	public boolean isInstalled() {
@@ -114,33 +131,77 @@ public class KerasEngine extends AbstractEngine {
 			return installed;
 		if (!(new File(getDir()).exists()))
 			return false;
-		installed = getInstalledVersions().stream()
-				.filter(vv -> vv.gpu == gpu && vv.version.equals(version)).findFirst().orElse(null) != null;
+		List<String> dependencies = new ArrayList<String>();
+		try {
+			installed = mamba.checkAllDependenciesInEnv(this.getDir(), dependencies);
+		} catch (MambaInstallException e) {
+			installed = false;
+		}
 		return installed;
 	}
-
 
 	@Override
 	public void install() throws IOException, InterruptedException, MambaInstallException, ArchiveException, URISyntaxException {
 		if (!mamba.checkMambaInstalled()) mamba.installMicromamba();
-		
-		mamba.create(getDir(), getSupportedEngineKeys());
+		List<String> dependencies = new ArrayList<String>();
+		mamba.create(getDir(), dependencies.toArray(new String[dependencies.size()]));
 		installed = true;
 	}
 
-
 	@Override
-	public Model load(String modelFolder, String modelSource) throws IOException {
+	public void loadModel(String modelFolder, String modelSource) throws IOException, InterruptedException {
 		if (!this.isInstalled())
 			throw new IllegalArgumentException("Current engine '" + this.toString() 
 												+ "' is not installed. Please install it first.");
+		if (env == null) {
+			this.env = new Environment() {
+				@Override public String base() { return KerasEngine.this.getDir(); }
+				@Override public boolean useSystemPath() { return false; }
+				};
+			python = env.python();
+		}
+		String loadScriptFormatted = String.format(LOAD_SCRIPT_MAP.get(this.version), modelFolder, modelSource);
+		Task task = python.task(loadScriptFormatted);
+		task.waitFor();
+		if (task.status == TaskStatus.COMPLETE)
+			return;
+		throw new RuntimeException("Error loading the model. " + task.error);
+	}
 
-		this.env = new Environment() {
-			@Override public String base() { return KerasEngine.this.getDir(); }
-			@Override public boolean useSystemPath() { return false; }
-			};
-		python = env.python();
-		return null;
+	@Override
+	public void isModelLoaded(String modelFolder, String modelSource) throws IOException {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public <T extends RealType<T> & NativeType<T>> void runModel(List<Tensor<T>> inputTensors, List<Tensor<T>> outputTensors)
+			throws IOException {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public void unloadModel() throws IOException, InterruptedException {
+		if (python == null)
+			return;
+		String loadScriptFormatted = String.format(UNLOAD_SCRIPT_MAP.get(this.version));
+		Task task = python.task(loadScriptFormatted);
+		task.waitFor();
+		if (task.status == TaskStatus.COMPLETE)
+			return;
+		throw new RuntimeException("Error unloading the model. " + task.error);		
+	}
+
+	@Override
+	public void close() throws Exception {
+		if (this.env == null && this.python == null)
+			return;
+		this.unloadModel();
+		this.python.close();
+		this.python = null;
+		this.env = null;
+		
 	}
 	
 	@Override

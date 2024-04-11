@@ -15,6 +15,9 @@ import io.bioimage.modelrunner.engine.engines.OnnxEngine;
 import io.bioimage.modelrunner.engine.engines.PytorchEngine;
 import io.bioimage.modelrunner.engine.engines.TensorflowEngine;
 import io.bioimage.modelrunner.model.Model;
+import io.bioimage.modelrunner.tensor.Tensor;
+import net.imglib2.type.NativeType;
+import net.imglib2.type.numeric.RealType;
 
 public abstract class AbstractEngine implements AutoCloseable {
 	
@@ -94,10 +97,12 @@ public abstract class AbstractEngine implements AutoCloseable {
 
 	public abstract void install() throws IOException, InterruptedException, MambaInstallException, ArchiveException, URISyntaxException;
 
-	public abstract void load(String modelFolder, String modelSource) throws IOException;
+	public abstract void loadModel(String modelFolder, String modelSource) throws IOException, InterruptedException;
+
+	public abstract void unloadModel() throws IOException, InterruptedException;
 	
 	public abstract void isModelLoaded(String modelFolder, String modelSource) throws IOException;
 	
-	public abstract void run(String modelFolder, String modelSource) throws IOException;
+	public abstract <T extends RealType<T> & NativeType<T>> void runModel(List<Tensor<T>> inputTensors, List<Tensor<T>> outputTensors) throws IOException;
 	
 }
