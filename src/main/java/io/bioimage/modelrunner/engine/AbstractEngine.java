@@ -94,6 +94,10 @@ public abstract class AbstractEngine implements AutoCloseable {
 
 	public abstract void install() throws IOException, InterruptedException, MambaInstallException, ArchiveException, URISyntaxException;
 
-	public abstract Model load(String modelFolder, String modelSource) throws IOException;
+	public abstract void load(String modelFolder, String modelSource) throws IOException;
+	
+	public abstract void isModelLoaded(String modelFolder, String modelSource) throws IOException;
+	
+	public abstract void run(String modelFolder, String modelSource) throws IOException;
 	
 }
