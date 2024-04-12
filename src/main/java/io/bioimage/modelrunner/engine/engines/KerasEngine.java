@@ -16,11 +16,9 @@ import io.bioimage.modelrunner.apposed.appose.Environment;
 import io.bioimage.modelrunner.apposed.appose.Mamba;
 import io.bioimage.modelrunner.apposed.appose.MambaInstallException;
 import io.bioimage.modelrunner.apposed.appose.Service;
-import io.bioimage.modelrunner.apposed.appose.Service.ResponseType;
 import io.bioimage.modelrunner.apposed.appose.Service.Task;
 import io.bioimage.modelrunner.apposed.appose.Service.TaskStatus;
 import io.bioimage.modelrunner.engine.AbstractEngine;
-import io.bioimage.modelrunner.model.Model;
 import io.bioimage.modelrunner.system.PlatformDetection;
 import io.bioimage.modelrunner.tensor.Tensor;
 import io.bioimage.modelrunner.tensor.shm.SharedMemoryArray;
@@ -50,7 +48,12 @@ public class KerasEngine extends AbstractEngine {
 	
 	private static final String LOAD_SCRIPT_KERAS_2 = "";
 	
-	private static final String LOAD_SCRIPT_KERAS_3 = "";
+	private static final String LOAD_SCRIPT_KERAS_3 = ""
+			+ "keras_model = None" + System.lineSeparator()
+			+ "if %s.endswith('.keras'):" + System.lineSeparator()
+			+ "  keras_model = keras.saving.load_model('%s')"   + System.lineSeparator()
+			+ ""   + System.lineSeparator()
+			+ ""   + System.lineSeparator();
 	
 	private static final Map<String, String> LOAD_SCRIPT_MAP;
 	
@@ -58,6 +61,42 @@ public class KerasEngine extends AbstractEngine {
 		LOAD_SCRIPT_MAP = new HashMap<String, String>();
 		LOAD_SCRIPT_MAP.put(LOAD_SCRIPT_KERAS_3, LOAD_SCRIPT_KERAS_2);
 		LOAD_SCRIPT_MAP.put(LOAD_SCRIPT_KERAS_3, LOAD_SCRIPT_KERAS_3);
+	}
+
+	private static final String UNLOAD_SCRIPT_KERAS_2 = "";
+	
+	private static final String UNLOAD_SCRIPT_KERAS_3 = "";
+	
+	private static final Map<String, String> UNLOAD_SCRIPT_MAP;
+	
+	static {
+		UNLOAD_SCRIPT_MAP = new HashMap<String, String>();
+		UNLOAD_SCRIPT_MAP.put(LOAD_SCRIPT_KERAS_3, UNLOAD_SCRIPT_KERAS_2);
+		UNLOAD_SCRIPT_MAP.put(LOAD_SCRIPT_KERAS_3, UNLOAD_SCRIPT_KERAS_3);
+	}
+	
+	private static final String IS_MODEL_LOADED_SCRIPT_KERAS_2 = "";
+	
+	private static final String IS_MODEL_LOADED_SCRIPT_KERAS_3 = "";
+	
+	private static final Map<String, String> IS_MODEL_LOADED_SCRIPT_MAP;
+	
+	static {
+		IS_MODEL_LOADED_SCRIPT_MAP = new HashMap<String, String>();
+		IS_MODEL_LOADED_SCRIPT_MAP.put(LOAD_SCRIPT_KERAS_3, IS_MODEL_LOADED_SCRIPT_KERAS_2);
+		IS_MODEL_LOADED_SCRIPT_MAP.put(LOAD_SCRIPT_KERAS_3, IS_MODEL_LOADED_SCRIPT_KERAS_3);
+	}
+	
+	private static final String RUN_SCRIPT_KERAS_2 = "";
+	
+	private static final String RUN_SCRIPT_KERAS_3 = "";
+	
+	private static final Map<String, String> RUN_SCRIPT_MAP;
+	
+	static {
+		RUN_SCRIPT_MAP = new HashMap<String, String>();
+		RUN_SCRIPT_MAP.put(LOAD_SCRIPT_KERAS_3, RUN_SCRIPT_KERAS_2);
+		RUN_SCRIPT_MAP.put(LOAD_SCRIPT_KERAS_3, RUN_SCRIPT_KERAS_3);
 	}
 	
 	private KerasEngine(String version, boolean gpu, boolean isPython) {
@@ -213,8 +252,7 @@ public class KerasEngine extends AbstractEngine {
 
 	private <T extends RealType<T> & NativeType<T>> 
 	void retrieveOutputs(List<Object> outputShms, List<Tensor<T>> outputTensors) {
-		String runScriptFormatted = String.format(RUN_SCRIPT_MAP.get(this.version));
-		return "";
+		String retrieveOutputsScriptFormatted = String.format(RUN_SCRIPT_MAP.get(this.version));
 	}
 	
 	@Override
