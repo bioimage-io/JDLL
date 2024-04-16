@@ -20,24 +20,29 @@
 package io.bioimage.modelrunner.models;
 
 import java.io.File;
-import java.io.IOException;
 import java.nio.file.Paths;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Calendar;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 import io.bioimage.modelrunner.apposed.appose.Mamba;
 import io.bioimage.modelrunner.apposed.appose.MambaInstallException;
 import io.bioimage.modelrunner.engine.EngineInfo;
 import io.bioimage.modelrunner.engine.installation.EngineInstall;
-import io.bioimage.modelrunner.exceptions.LoadEngineException;
-import io.bioimage.modelrunner.exceptions.RunModelException;
 import io.bioimage.modelrunner.model.Model;
+import io.bioimage.modelrunner.runmode.RunMode;
+import io.bioimage.modelrunner.runmode.ops.GenericOp;
 import io.bioimage.modelrunner.tensor.Tensor;
 import io.bioimage.modelrunner.versionmanagement.InstalledEngines;
 import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.type.NativeType;
 import net.imglib2.type.numeric.RealType;
+import net.imglib2.type.numeric.real.FloatType;
 
 public class Models {
 	
@@ -49,9 +54,7 @@ public class Models {
 	
 	public static <T extends RealType<T> & NativeType<T>> 
 	RandomAccessibleInterval<T> stardist(String modelPath, RandomAccessibleInterval<T> image, boolean returnPolys, boolean install) 
-			throws IOException, InterruptedException, 
-			IllegalStateException, LoadEngineException, 
-			RunModelException {
+			throws Exception {
 		
 		boolean installed = InstalledEngines.buildEnginesFinder()
 				.checkEngineWithArgsInstalledForOS("tensorflow", "1.15.0", null, null).size() != 0;
@@ -85,6 +88,20 @@ public class Models {
 			
 		}
 		
+		GenericOp op = GenericOp.create(envPath, scriptPath, "", returnPolys ? 2 : 1);
+		LinkedHashMap<String, Object> nMap = new LinkedHashMap<String, Object>();
+		Calendar cal = Calendar.getInstance();
+		SimpleDateFormat sdf = new SimpleDateFormat("ddMMYYYY_HHmmss");
+		String dateString = sdf.format(cal.getTime());
+		nMap.put("input_" + dateString, image);
+		//nMap.putAll(kwargs);
+		op.setInputs(nMap);
+		
+		RunMode rm;
+		rm = RunMode.createRunMode(op);
+		Map<String, Object> resMap = rm.runOP();
+		RandomAccessibleInterval<FloatType> outImg = (RandomAccessibleInterval<FloatType>) resMap.entrySet().stream()
+				.map(e -> e.getValue()).collect(Collectors.toList()).get(0);
 		
 		return null;
 	}
