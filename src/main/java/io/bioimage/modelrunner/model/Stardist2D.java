@@ -44,6 +44,7 @@ import io.bioimage.modelrunner.bioimageio.description.ModelDescriptor;
 import io.bioimage.modelrunner.bioimageio.description.exceptions.ModelSpecsException;
 import io.bioimage.modelrunner.engine.installation.EngineInstall;
 import io.bioimage.modelrunner.exceptions.LoadEngineException;
+import io.bioimage.modelrunner.exceptions.LoadModelException;
 import io.bioimage.modelrunner.exceptions.RunModelException;
 import io.bioimage.modelrunner.runmode.RunMode;
 import io.bioimage.modelrunner.runmode.ops.GenericOp;
@@ -87,11 +88,11 @@ public class Stardist2D {
 	private Stardist2D(ModelDescriptor descriptor) {
 		this.descriptor = descriptor;
     	Map<String, Object> stardistMap = (Map<String, Object>) descriptor.getConfig().getSpecMap().get("stardist");
-    	Map<String, Object> stardistConfig = (Map<String, Object>) descriptor.getConfig().getSpecMap().get("config");
+    	Map<String, Object> stardistConfig = (Map<String, Object>) stardistMap.get("config");
     	Map<String, Object> stardistThres = (Map<String, Object>) stardistMap.get("thresholds");
 		this.channels = (int) stardistConfig.get("n_channel_in");;
-		this.nms_threshold = (float) stardistThres.get("nms");
-		this.prob_threshold = (float) stardistThres.get("prob");
+		this.nms_threshold = new Double((double) stardistThres.get("nms")).floatValue();
+		this.prob_threshold = new Double((double) stardistThres.get("prob")).floatValue();
 	}
 	
 	public static Stardist2D fromBioimageioModel(String modelPath) throws ModelSpecsException {
@@ -146,14 +147,14 @@ public class Stardist2D {
 	private <T extends RealType<T> & NativeType<T>>  void checkInput(RandomAccessibleInterval<T> image) {
 		if (image.dimensionsAsLongArray().length == 2 && this.channels != 1)
 			throw new IllegalArgumentException("Stardist2D needs an image with three dimensions: XYC");
-		else if (image.dimensionsAsLongArray().length != 3)
+		else if (image.dimensionsAsLongArray().length != 3 && this.channels != 1)
 			throw new IllegalArgumentException("Stardist2D needs an image with three dimensions: XYC");
 		else if (image.dimensionsAsLongArray().length != 2 && image.dimensionsAsLongArray()[2] != channels)
 			throw new IllegalArgumentException("This Stardist2D model requires " + channels + " channels.");
 	}
 	
 	public <T extends RealType<T> & NativeType<T>> 
-	RandomAccessibleInterval<T> predict(RandomAccessibleInterval<T> image) throws ModelSpecsException, 
+	RandomAccessibleInterval<T> predict(RandomAccessibleInterval<T> image) throws ModelSpecsException, LoadModelException,
 																				LoadEngineException, IOException, 
 																				RunModelException, InterruptedException {
 		checkInput(image);
@@ -171,6 +172,7 @@ public class Stardist2D {
 		outputList.add(outputTensor);
 		
 		Model model = Model.createBioimageioModel(this.descriptor.getModelPath());
+		model.loadModel();
 		model.runModel(inputList, outputList);
 		
 		return postProcessing(image);
@@ -242,11 +244,12 @@ public class Stardist2D {
 	public static void main(String[] args) throws IOException, InterruptedException, 
 													RuntimeException, MambaInstallException, 
 													ModelSpecsException, LoadEngineException, 
-													RunModelException, ArchiveException, URISyntaxException {
+													RunModelException, ArchiveException, 
+													URISyntaxException, LoadModelException {
 		Stardist2D.installRequirements();
 		Stardist2D model = Stardist2D.fromPretained("2D_versatile_fluo", false);
 		
-		RandomAccessibleInterval<FloatType> img = ArrayImgs.floats(new long[] {1, 512, 512, 1});
+		RandomAccessibleInterval<FloatType> img = ArrayImgs.floats(new long[] {512, 512});
 		
 		RandomAccessibleInterval<FloatType> res = model.predict(img);
 		System.out.println(true);

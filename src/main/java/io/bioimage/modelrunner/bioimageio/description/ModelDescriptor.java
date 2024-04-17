@@ -39,6 +39,7 @@ import io.bioimage.modelrunner.bioimageio.BioimageioRepo;
 import io.bioimage.modelrunner.bioimageio.description.exceptions.ModelSpecsException;
 import io.bioimage.modelrunner.bioimageio.description.weights.ModelWeight;
 import io.bioimage.modelrunner.transformations.PythonTransformation;
+import io.bioimage.modelrunner.utils.Constants;
 import io.bioimage.modelrunner.utils.Log;
 import io.bioimage.modelrunner.utils.YAMLUtils;
 
@@ -1139,8 +1140,8 @@ public class ModelDescriptor
 			throw new IllegalArgumentException("The provided path is not a valid directory: " + localRepo);
 		return Arrays.asList(repoFile.listFiles()).stream().map(ff -> {
 			try {
-				return ModelDescriptor.readFromLocalFile(ff.getAbsolutePath(), false);
-			} catch (ModelSpecsException e) {
+				return ModelDescriptor.readFromLocalFile(ff.getAbsolutePath() + File.separator + Constants.RDF_FNAME, false);
+			} catch (Exception e) {
 				return null;
 			}
 			}).filter(mm -> mm != null).collect(Collectors.toList());
