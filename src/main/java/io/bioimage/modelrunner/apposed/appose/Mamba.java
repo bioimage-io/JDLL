@@ -1402,7 +1402,10 @@ public class Mamba {
 		} else if (dependency.contains("<")) {
 			int ind = dependency.indexOf("<");
 			return checkDependencyInEnv(envName, dependency.substring(0, ind).trim(), dependency.substring(ind + 1).trim(), null, true);
-		} else {
+		} else if (dependency.contains("=")) {
+			int ind = dependency.indexOf("=");
+			return checkDependencyInEnv(envName, dependency.substring(0, ind).trim(), dependency.substring(ind + 2).trim());
+		}else {
 			return checkDependencyInEnv(envName, dependency, null);
 		}
 	}
@@ -1554,23 +1557,28 @@ public class Mamba {
 			envFile = envFile2;
 		String checkDepCode;
 		if (minversion != null && maxversion != null && minversion.equals(maxversion)) {
-			checkDepCode = "import platform; from packaging import version as vv; desired_version = '%s'; "
-					+ "sys.exit(0) if vv.parse(version(pkg)) == vv.parse(desired_version) else sys.exit(1)";
+			checkDepCode = "import sys; import platform; from packaging import version as vv; desired_version = '%s'; "
+					+ "sys.exit(0) if vv.parse(platform.python_version()).major == vv.parse(desired_version).major"
+					+ " and vv.parse(platform.python_version()).minor == vv.parse(desired_version).minor else sys.exit(1)";
 			checkDepCode = String.format(checkDepCode, maxversion);
 		} else if (minversion == null && maxversion == null) {
 			return true;
 		} else if (maxversion == null) {
-			checkDepCode = "import platform; from packaging import version as vv; desired_version = '%s'; "
-					+ "sys.exit(0) if vv.parse(version(platform.python_version())) %s vv.parse(desired_version) else sys.exit(1)";
+			checkDepCode = "import sys; import platform; from packaging import version as vv; desired_version = '%s'; "
+					+ "sys.exit(0) if vv.parse(platform.python_version()).major == vv.parse(desired_version).major "
+					+ "and vv.parse(platform.python_version()).minor %s vv.parse(desired_version).minor else sys.exit(1)";
 			checkDepCode = String.format(checkDepCode, minversion, strictlyBiggerOrSmaller ? ">" : ">=");
 		} else if (minversion == null) {
-			checkDepCode = "import platform; from packaging import version as vv; desired_version = '%s'; "
-					+ "sys.exit(0) if vv.parse(version(platform.python_version())) %s vv.parse(desired_version) else sys.exit(1)";
+			checkDepCode = "import sys; import platform; from packaging import version as vv; desired_version = '%s'; "
+					+ "sys.exit(0) if vv.parse(platform.python_version()).major == vv.parse(desired_version).major "
+					+ "and vv.parse(platform.python_version()).minor %s vv.parse(desired_version).minor else sys.exit(1)";
 			checkDepCode = String.format(checkDepCode, maxversion, strictlyBiggerOrSmaller ? "<" : "<=");
 		} else {
 			checkDepCode = "import platform; "
 					+ "from packaging import version as vv; min_v = '%s'; max_v = '%s'; "
-					+ "sys.exit(0) if vv.parse(platform.python_version()) %s vv.parse(min_v) and vv.parse(platform.python_version()) %s vv.parse(max_v) else sys.exit(1)";
+					+ "sys.exit(0) if vv.parse(platform.python_version()).major == vv.parse(desired_version).major "
+					+ "and vv.parse(platform.python_version()).minor %s vv.parse(min_v).minor "
+					+ "and vv.parse(platform.python_version()).minor %s vv.parse(max_v).minor else sys.exit(1)";
 			checkDepCode = String.format(checkDepCode, minversion, maxversion, strictlyBiggerOrSmaller ? ">" : ">=", strictlyBiggerOrSmaller ? "<" : ">=");
 		}
 		try {
