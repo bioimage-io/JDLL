@@ -443,7 +443,7 @@ public class StardistFineTuneJdllOp implements OpInterface {
 	/**
 	 * {@inheritDoc}
 	 */
-	public LinkedHashMap<String, Object> getOpInputs() throws Exception {
+	public LinkedHashMap<String, Object> getOpInputs() {
 		inputsMap = new LinkedHashMap<String, Object>();
 		Objects.requireNonNull(trainingSamples, "Please make sure that the training samples have "
 				+ "been provided and that they are not null.Use the method: "
@@ -455,7 +455,11 @@ public class StardistFineTuneJdllOp implements OpInterface {
 		inputsMap.put(TRAIN_SAMPLES_KEY, this.trainingSamples);
 		inputsMap.put(GROUND_TRUTH_KEY, this.groundTruth);
 		// TODO remove inputsMap.put(DOWNLOAD_STARDIST_KEY, this.downloadStardistPretrained);
-		setUpConfigs();
+		try {
+			setUpConfigs();
+		} catch (IOException | ModelSpecsException e) {
+			throw new RuntimeException(e);
+		}
 		if (this.weightsToFineTune != null)
 			setWeigthsFile();
 		return inputsMap;

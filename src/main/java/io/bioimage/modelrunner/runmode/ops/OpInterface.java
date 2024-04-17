@@ -53,7 +53,7 @@ public interface OpInterface {
 	 * is the variable name and the object is the variable
 	 * @throws Exception if there is any error handling the inputs to the Python OP
 	 */
-	public LinkedHashMap<String, Object> getOpInputs() throws Exception ;
+	public LinkedHashMap<String, Object> getOpInputs() ;
 	/**
 	 * Get the Conda env needed to run the OP
 	 * 
