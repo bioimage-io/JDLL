@@ -1331,11 +1331,14 @@ public class Mamba {
 			return dependencies;
 		List<String> uninstalled = dependencies.stream().filter(dep -> {
 			try {
+				/** TODO remove
 				int ind = dep.indexOf("=");
 				if (ind == -1) return !checkDependencyInEnv(envName, dep);
 				String packName = dep.substring(0, ind);
 				String vv = dep.substring(ind + 1);
-			return !checkDependencyInEnv(envName, packName, vv);
+				return !checkDependencyInEnv(envName, packName, vv);
+				 */
+				return checkDependencyInEnv(envName, dep);
 			} catch (Exception ex) {
 				return true;
 			}
