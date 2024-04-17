@@ -293,18 +293,23 @@ public class DownloadTracker {
 			keep = false;
 			for (int i = 0; i < this.remainingFiles.size(); i ++) {
 				File ff = remainingFiles.get(i);
-				if (ff.isFile() && ff.length() < this.sizeFiles.get(ff.getAbsolutePath())){
-					consumer.accept(ff.getAbsolutePath(), Math.min(1, (double) (ff.length()) / (double) this.sizeFiles.get(ff.getAbsolutePath())));
+				Long storedValue = this.sizeFiles.get( ff.getAbsolutePath() );
+				long fileSize = storedValue != null ? storedValue : -1;
+				if ( ff.isFile() && ff.length() < fileSize )
+				{
+					consumer.accept( ff.getAbsolutePath(), Math.min( 1, ( double ) ( ff.length() ) / fileSize ) );
 					consumer.accept(TOTAL_PROGRESS_KEY, (double) (totalDownloadSize + ff.length()) / (double) totalSize);
 					break;
 				} else if (remainingFiles.get(i).isFile()) {
 					consumer.accept(ff.getAbsolutePath(), 1.0);
-					totalDownloadSize += (double) this.sizeFiles.get(ff.getAbsolutePath());
+					totalDownloadSize += fileSize;
 					consumer.accept(TOTAL_PROGRESS_KEY, (double) (totalDownloadSize) / (double) totalSize);
 					remainingFiles.remove(i);
 					keep = true;
 					break;
-				} else if (this.sizeFiles.get(ff.getAbsolutePath()) == -1) {
+				}
+				else if ( fileSize == -1 )
+				{
 					consumer.accept(ff.getAbsolutePath(), -0.01);
 					remainingFiles.remove(i);
 					keep = true;
