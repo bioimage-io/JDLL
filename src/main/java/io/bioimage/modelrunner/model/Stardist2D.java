@@ -17,7 +17,7 @@
  * limitations under the License.
  * #L%
  */
-package io.bioimage.modelrunner.models;
+package io.bioimage.modelrunner.model;
 
 import java.io.File;
 import java.nio.file.Paths;
@@ -44,7 +44,7 @@ import net.imglib2.type.NativeType;
 import net.imglib2.type.numeric.RealType;
 import net.imglib2.type.numeric.real.FloatType;
 
-public class Models {
+public class Stardist2D {
 	
 	private static final List<String> STARDIST_DEPS = Arrays.asList(new String[] {"python=3.10", "stardist", "numpy"});
 	
@@ -52,8 +52,11 @@ public class Models {
 	
 	private static final String STARDIST2D_SCRIPT_NAME= "stardist_postprocessing.py";
 	
+	private static final String STARDIST2D_METHOD_NAME= "stardist_postprocessing";
+	
 	public static <T extends RealType<T> & NativeType<T>> 
-	RandomAccessibleInterval<T> stardist(String modelPath, RandomAccessibleInterval<T> image, boolean returnPolys, boolean install) 
+	RandomAccessibleInterval<T> stardist(String modelPath, RandomAccessibleInterval<T> image, 
+			float prob_threshold, float nms_threshold, boolean install) 
 			throws Exception {
 		
 		boolean installed = InstalledEngines.buildEnginesFinder()
@@ -88,26 +91,36 @@ public class Models {
 			
 		}
 		
-		GenericOp op = GenericOp.create(envPath, scriptPath, "", returnPolys ? 2 : 1);
+		GenericOp op = GenericOp.create(envPath, scriptPath, STARDIST2D_METHOD_NAME, 1);
 		LinkedHashMap<String, Object> nMap = new LinkedHashMap<String, Object>();
 		Calendar cal = Calendar.getInstance();
 		SimpleDateFormat sdf = new SimpleDateFormat("ddMMYYYY_HHmmss");
 		String dateString = sdf.format(cal.getTime());
 		nMap.put("input_" + dateString, image);
-		//nMap.putAll(kwargs);
+		Map<String, Object> kwargs = new LinkedHashMap<String, Object>();
+		kwargs.put("nms_thresh", nms_threshold);
+		kwargs.put("prob_thresh", prob_threshold);
 		op.setInputs(nMap);
 		
 		RunMode rm;
 		rm = RunMode.createRunMode(op);
 		Map<String, Object> resMap = rm.runOP();
-		RandomAccessibleInterval<FloatType> outImg = (RandomAccessibleInterval<FloatType>) resMap.entrySet().stream()
-				.map(e -> e.getValue()).collect(Collectors.toList()).get(0);
 		
-		return null;
+		List<RandomAccessibleInterval<T>> rais = resMap.entrySet().stream()
+				.filter(e -> {
+					Object val = e.getValue();
+					if (val instanceof RandomAccessibleInterval) return true;
+					return false;
+				}).map(rai -> (RandomAccessibleInterval<T>) rai).collect(Collectors.toList());
+		
+		return rais.get(0);
 	}
 	
-	public static <T extends RealType<T> & NativeType<T>> 
-	RandomAccessibleInterval<T> stardist(String modelPath, RandomAccessibleInterval<T> image, boolean returnPolys) {
+	public void checkStardistInstalled() {
+		
+	}
+	
+	private void install() {
 		
 	}
 }

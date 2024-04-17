@@ -35,7 +35,7 @@ import io.bioimage.modelrunner.apposed.appose.Appose;
 import io.bioimage.modelrunner.apposed.appose.Environment;
 import io.bioimage.modelrunner.apposed.appose.Service;
 import io.bioimage.modelrunner.apposed.appose.Service.Task;
-
+import io.bioimage.modelrunner.apposed.appose.Service.TaskStatus;
 import io.bioimage.modelrunner.runmode.ops.OpInterface;
 import io.bioimage.modelrunner.tensor.shm.SharedMemoryArray;
 import io.bioimage.modelrunner.tensor.shm.SharedMemoryFile;
@@ -151,8 +151,10 @@ public class RunMode {
 	 * @return a Map where the keys are the name of the Python variables in the Python scope
 	 * 	and the values are the actual variable values retrieved from the Python process as the 
 	 * 	outputs from the Python OP
+	 * @throws IOException 
+	 * @throws InterruptedException 
 	 */
-	public Map<String, Object> runOP() {
+	public Map<String, Object> runOP() throws IOException, InterruptedException {
 		env = new Environment() {
 			@Override public String base() { return op.getCondaEnv(); }
 			@Override public boolean useSystemPath() { return false; }
@@ -163,46 +165,26 @@ public class RunMode {
         		System.err.println(line);
         	});
             Task task = python.task(opCode, apposeInputMap);
-            task.listen(event -> {
-                switch (event.responseType) {
-	                case UPDATE:
-	                    System.out.println("Progress: " + task.message);
-	                    break;
-	                case COMPLETION:
-	                    Object numer =  task.outputs.get("output0");
-	                    System.out.println("Task complete. Result: " + numer);
-	                    break;
-	                case CANCELATION:
-	                    System.out.println("Task canceled");
-	                    break;
-	                case FAILURE:
-	                    System.out.println("Task failed: " + task.error);
-	                    break;
-					case LAUNCH:
-						System.out.println("LAunched code");
-						break;
-					case CRASH:
-						System.out.println("Task crashed: " + task.error);
-						break;
-					default:
-						break;
-                }
-            });
             task.waitFor();
-            System.out.println("here2");
+			if (task.status != TaskStatus.COMPLETE)
+				throw new RuntimeException("Error running Python code: " + task.error);
             outputs = recreateOutputObjects(task.outputs);
             // TODO remove Task closeShmTask = python.task(RunModeScripts.UNLINK_AND_CLOSE_SHM, null);
            // TODO remove  closeShmTask.waitFor();
         } catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+        	closeShmaList();
+        	throw e;
 		} catch (InterruptedException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+        	closeShmaList();
+        	throw e;
 		} catch (Exception e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+        	closeShmaList();
+        	throw new RuntimeException(e);
 		}
+		return outputs;
+	}
+	
+	private void closeShmaList() {
 		this.shmaList.stream().forEach(entry ->{
 			try {
 				entry.close();
@@ -210,7 +192,6 @@ public class RunMode {
 				e.printStackTrace();
 			}
 		});
-		return outputs;
 	}
 	
 	@SuppressWarnings("unchecked")
