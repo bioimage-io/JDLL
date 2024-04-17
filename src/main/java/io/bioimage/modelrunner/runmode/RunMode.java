@@ -111,16 +111,12 @@ public class RunMode {
 	private List<String> outputNames = new ArrayList<String>();
 	private List<String> filesToDestroy = new ArrayList<String>();
 	
-	private RunMode(OpInterface op) throws Exception {
+	private RunMode(OpInterface op) {
 		this.op = op;
 		this.moduleName = op.getOpPythonFilename().substring(0, op.getOpPythonFilename().length() - 3);
 		IntStream.range(0, op.getNumberOfOutputs()).forEach(i -> outputNames.add("output" + i));
 		addImports();
-		try {
-			convertInputMap();
-		} catch (Exception e) {
-			throw new Exception("Error unpacking the Java inputs into the Python Appose process.", e);
-		}
+		convertInputMap();
 		opExecutionCode();
 		retrieveResultsCode();
 		
@@ -139,10 +135,8 @@ public class RunMode {
 	 * @param op
 	 * 	the {@link OpInterface} instance containing the details to run custom Python code
 	 * @return a {@link RunMode} instance
-	 * @throws Exception if there is any error retrieving the inputs and creating
-	 *  the code to pass them to the Python process
 	 */
-	public static RunMode createRunMode(OpInterface op) throws Exception {
+	public static RunMode createRunMode(OpInterface op) {
 		return new RunMode(op);
 	}
 	
@@ -273,19 +267,20 @@ public class RunMode {
 				+ "task.update('Imports')" + System.lineSeparator();
 	}
 	
-	private < T extends RealType< T > & NativeType< T > > void convertInputMap() throws Exception {
+	private < T extends RealType< T > & NativeType< T > > void convertInputMap() {
 		apposeInputMap = new LinkedHashMap<>();
 		if (op.getOpInputs() == null)
 			return;
 		for (Entry<String, Object> entry : this.op.getOpInputs().entrySet()) {
 			if (entry.getValue() instanceof String) {
 				apposeInputMap.put(entry.getKey(), entry.getValue());
-			} else if (entry.getValue() instanceof Tensor && false) {
+			/*else if (entry.getValue() instanceof Tensor && false) {
 				String fileName = new File(UUID.randomUUID().toString() + ".npy").getAbsolutePath();
 				SharedMemoryFile.buildFileFromRai(fileName, ((Tensor<T>) entry.getValue()).getData());
 				filesToDestroy.add(fileName);
 				apposeInputMap.put(entry.getKey(), null);
 				addCodeToRecreateTensorFile(entry.getKey(), (Tensor<T>) entry.getValue(), fileName);
+			*/
 			} else if (entry.getValue() instanceof Tensor) {
 				SharedMemoryArray shma = SharedMemoryArray.createSHMAFromRAI(((Tensor<T>) entry.getValue()).getData(), false, false);
 				shmaList.add(shma);
