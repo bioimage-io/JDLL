@@ -1331,14 +1331,7 @@ public class Mamba {
 			return dependencies;
 		List<String> uninstalled = dependencies.stream().filter(dep -> {
 			try {
-				/** TODO remove
-				int ind = dep.indexOf("=");
-				if (ind == -1) return !checkDependencyInEnv(envName, dep);
-				String packName = dep.substring(0, ind);
-				String vv = dep.substring(ind + 1);
-				return !checkDependencyInEnv(envName, packName, vv);
-				 */
-				return checkDependencyInEnv(envName, dep);
+				return !checkDependencyInEnv(envName, dep);
 			} catch (Exception ex) {
 				return true;
 			}
@@ -1416,7 +1409,7 @@ public class Mamba {
 			return checkDependencyInEnv(envName, dependency.substring(0, ind).trim(), dependency.substring(ind + 1).trim(), null, true);
 		} else if (dependency.contains("=")) {
 			int ind = dependency.indexOf("=");
-			return checkDependencyInEnv(envName, dependency.substring(0, ind).trim(), dependency.substring(ind + 2).trim());
+			return checkDependencyInEnv(envName, dependency.substring(0, ind).trim(), dependency.substring(ind + 1).trim());
 		}else {
 			return checkDependencyInEnv(envName, dependency, null);
 		}
@@ -1518,7 +1511,7 @@ public class Mamba {
 			checkDepCode = "import importlib.util, sys; "
 					+ "from importlib.metadata import version; "
 					+ "from packaging import version as vv; "
-					+ "pkg = %s; wanted_v = %s; "
+					+ "pkg = '%s'; wanted_v = '%s'; "
 					+ "spec = importlib.util.find_spec(pkg); "
 					+ "sys.exit(0) if spec and vv.parse(version(pkg)) == vv.parse(wanted_v) else sys.exit(1)";
 			checkDepCode = String.format(checkDepCode, dependency, maxversion);
