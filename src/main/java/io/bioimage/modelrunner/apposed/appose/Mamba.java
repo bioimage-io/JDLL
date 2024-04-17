@@ -42,6 +42,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.OutputStream;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.channels.Channels;
@@ -49,6 +50,7 @@ import java.nio.channels.ReadableByteChannel;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.text.SimpleDateFormat;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
@@ -58,6 +60,8 @@ import java.util.Objects;
 import java.util.UUID;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipInputStream;
 
 //TODO remove once appose project is released with the needed changes
 //TODO remove once appose project is released with the needed changes
@@ -551,6 +555,7 @@ public class Mamba {
 			throw new EnvironmentExistsException();
 		runMamba("env", "create", "--prefix",
 				envsdir + File.separator + envName, "-f", envYaml, "-y", "-vv" );
+		installApposeFromSource(envsdir + File.separator + envName);
 	}
 
 	/**
@@ -599,6 +604,7 @@ public class Mamba {
 		if ( !isForceCreation && getEnvironmentNames().contains( envName ) )
 			throw new EnvironmentExistsException();
 		runMamba( "create", "-y", "-p", envsdir + File.separator + envName );
+		installApposeFromSource(envsdir + File.separator + envName);
 	}
 
 	/**
@@ -656,6 +662,7 @@ public class Mamba {
 		cmd.addAll( Arrays.asList( args ) );
 		if (!cmd.contains("--yes") && !cmd.contains("-y")) cmd.add("--yes");
 		runMamba( cmd.stream().toArray( String[]::new ) );
+		installApposeFromSource(envsdir + File.separator + envName);
 	}
 
 	/**
@@ -697,6 +704,7 @@ public class Mamba {
 		for (String pack : packages) { cmd.add(pack);}
 		if (!cmd.contains("--yes") && !cmd.contains("-y")) cmd.add("--yes");
 		runMamba( cmd.stream().toArray( String[]::new ) );
+		installApposeFromSource(envsdir + File.separator + envName);
 	}
 
 	/**
@@ -1648,6 +1656,45 @@ public class Mamba {
 		String envName = "efficientvit_sam_env";
 		m.pipInstallIn(envName, new String[] {m.getEnvsDir() + File.separator + envName
 				+ File.separator + "appose-python"});
+	}
+	
+	/**
+	 * TODO keep until release of stable Appose
+	 * Install the Python package to run Appose in Python
+	 * @param envName
+	 * 	environment where Appose is going to be installed
+	 * @throws IOException if there is any file creation related issue
+	 * @throws InterruptedException if the package installation is interrupted
+	 * @throws MambaInstallException if there is any error with the Mamba installation
+	 */
+	private void installApposeFromSource(String envName) throws IOException, InterruptedException, MambaInstallException {
+		checkMambaInstalled();
+		if (!installed) throw new MambaInstallException("Micromamba is not installed");
+		String zipResourcePath = "appose-python.zip";
+        String outputDirectory = this.getEnvsDir() + File.separator + envName;
+		if (new File(envName).isDirectory()) outputDirectory = new File(envName).getAbsolutePath();
+        try (
+            	InputStream zipInputStream = Mamba.class.getClassLoader().getResourceAsStream(zipResourcePath);
+            	ZipInputStream zipInput = new ZipInputStream(zipInputStream);
+            		) {
+            	ZipEntry entry;
+            	while ((entry = zipInput.getNextEntry()) != null) {
+                    File entryFile = new File(outputDirectory + File.separator + entry.getName());
+                    if (entry.isDirectory()) {
+                    	entryFile.mkdirs();
+                    	continue;
+                    }
+                	entryFile.getParentFile().mkdirs();
+                    try (OutputStream entryOutput = new FileOutputStream(entryFile)) {
+                        byte[] buffer = new byte[1024];
+                        int bytesRead;
+                        while ((bytesRead = zipInput.read(buffer)) != -1) {
+                            entryOutput.write(buffer, 0, bytesRead);
+                        }
+                    }
+                }
+            }
+        this.pipInstallIn(envName, new String[] {outputDirectory + File.separator + "appose-python"});
 	}
 
 }
