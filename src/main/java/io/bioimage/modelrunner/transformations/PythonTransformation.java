@@ -314,7 +314,13 @@ public class PythonTransformation extends AbstractTensorTransformation
 			e1.printStackTrace();
 			return Cast.unchecked(input);
 		}
-		Map<String, Object> resMap = rm.runOP();
+		Map<String, Object> resMap;
+		try {
+			resMap = rm.runOP();
+		} catch (IOException | InterruptedException e) {
+			e.printStackTrace();
+			return Cast.unchecked(input);
+		}
 		RandomAccessibleInterval<FloatType> outImg = (RandomAccessibleInterval<FloatType>) resMap.entrySet().stream()
 				.map(e -> e.getValue()).collect(Collectors.toList()).get(0);
 		String axes = "yx";

@@ -35,6 +35,7 @@ public abstract class AbstractEngine implements AutoCloseable {
 	
 	
 	public static AbstractEngine initialize(String name, String version, boolean gpu, boolean isPython) {
+		/** TODO
 		if (!isSupported(name)) throw new IllegalArgumentException("Name provided is not on the list of supported engine keys: "
 				+ Arrays.toString(SUPPORTED_ENGINE_NAMES));
 		if (KerasEngine.NAME.equals(name)) {
@@ -49,7 +50,8 @@ public abstract class AbstractEngine implements AutoCloseable {
 			return JaxEngine.initilize(version, gpu, isPython);
 		} else if (OnnxEngine.NAME.equals(name)) {
 			return OnnxEngine.initilize(version, gpu, isPython);
-		}
+		}*/
+		return null;
 	}
 	
 	public static AbstractEngine initializeSimilar(WeightFormat ww) {
@@ -58,6 +60,7 @@ public abstract class AbstractEngine implements AutoCloseable {
 	
 	
 	public static AbstractEngine initializeSimilar(String name, String version, Boolean gpu, Boolean isPython) {
+		/** TODO
 		if (!isSupported(name)) throw new IllegalArgumentException("Name provided is not on the list of supported engine keys: "
 				+ Arrays.toString(SUPPORTED_ENGINE_NAMES));
 		if (KerasEngine.NAME.equals(name)) {
@@ -72,7 +75,8 @@ public abstract class AbstractEngine implements AutoCloseable {
 			return JaxEngine.initilize(version, gpu, isPython);
 		} else if (OnnxEngine.NAME.equals(name)) {
 			return OnnxEngine.initilize(version, gpu, isPython);
-		}
+		}*/
+		return null;
 	}
 	
 	public static boolean isSupported(String name) {

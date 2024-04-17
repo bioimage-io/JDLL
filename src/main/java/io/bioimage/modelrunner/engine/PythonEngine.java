@@ -19,6 +19,7 @@
  */
 package io.bioimage.modelrunner.engine;
 
+import io.bioimage.modelrunner.versionmanagement.SupportedVersions;
 
 /**
  * Class to create an object that contains all the information about a Deep
