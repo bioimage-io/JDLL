@@ -21,7 +21,11 @@ package io.bioimage.modelrunner.model;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
+import java.net.URISyntaxException;
+import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -30,6 +34,8 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+
+import org.apache.commons.compress.archivers.ArchiveException;
 
 import io.bioimage.modelrunner.apposed.appose.Mamba;
 import io.bioimage.modelrunner.apposed.appose.MambaInstallException;
@@ -45,8 +51,11 @@ import io.bioimage.modelrunner.tensor.Tensor;
 import io.bioimage.modelrunner.utils.Constants;
 import io.bioimage.modelrunner.versionmanagement.InstalledEngines;
 import net.imglib2.RandomAccessibleInterval;
+import net.imglib2.img.array.ArrayImgs;
 import net.imglib2.type.NativeType;
 import net.imglib2.type.numeric.RealType;
+import net.imglib2.type.numeric.real.FloatType;
+import net.imglib2.view.Views;
 
 public class Stardist2D {
 	
@@ -59,6 +68,8 @@ public class Stardist2D {
 	private final float prob_threshold;
 	
 	private static final List<String> STARDIST_DEPS = Arrays.asList(new String[] {"python=3.10", "stardist", "numpy"});
+	
+	private static final List<String> STARDIST_CHANNELS = Arrays.asList(new String[] {"conda-forge", "default"});
 	
 	private static final String STARDIST2D_PATH_IN_RESOURCES = "ops/stardist_postprocessing/";
 	
@@ -84,29 +95,44 @@ public class Stardist2D {
 	}
 	
 	public static Stardist2D fromBioimageioModel(String modelPath) throws ModelSpecsException {
-		ModelDescriptor descriptor = ModelDescriptor.readFromLocalFile(modelPath + File.separator + Constants.RDF_FNAME);
+		ModelDescriptor descriptor = ModelDescriptor.readFromLocalFile(modelPath + File.separator + Constants.RDF_FNAME, false);
 		return new Stardist2D(descriptor);
 	}
 	
-	public static Stardist2D fromPretained(String pretrainedModel) throws IOException, InterruptedException, ModelSpecsException {
-		return fromPretained(pretrainedModel, new File("models").getAbsolutePath());
+	public static Stardist2D fromPretained(String pretrainedModel, boolean forceInstall) throws IOException, InterruptedException, ModelSpecsException {
+		return fromPretained(pretrainedModel, new File("models").getAbsolutePath(), forceInstall);
 	}
 	
 	/**
 	 * TODO add support for 2D_paper_dsb2018
 	 * @param pretrainedModel
 	 * @param installDir
+	 * @param forceInstall
 	 * @return
 	 * @throws IOException
 	 * @throws InterruptedException
 	 * @throws ModelSpecsException
 	 */
-	public static Stardist2D fromPretained(String pretrainedModel, String installDir) throws IOException, 
+	public static Stardist2D fromPretained(String pretrainedModel, String installDir, boolean forceInstall) throws IOException, 
 																					InterruptedException, 
 																					ModelSpecsException {
-		if (pretrainedModel.equals("StarDist H&E Nuclei Segmentation")
+		if ((pretrainedModel.equals("StarDist H&E Nuclei Segmentation")
+				|| pretrainedModel.equals("2D_versatile_he")) && !forceInstall) {
+			ModelDescriptor md = ModelDescriptor.getModelsAtLocalRepo().stream()
+					.filter(mm ->mm.getName().equals("StarDist H&E Nuclei Segmentation")).findFirst().orElse(null);
+			if (md != null) return new Stardist2D(md);
+			String path = BioimageioRepo.connect().downloadByName("StarDist H&E Nuclei Segmentation", installDir);
+			return Stardist2D.fromBioimageioModel(path);
+		} else if (pretrainedModel.equals("StarDist H&E Nuclei Segmentation")
 				|| pretrainedModel.equals("2D_versatile_he")) {
 			String path = BioimageioRepo.connect().downloadByName("StarDist H&E Nuclei Segmentation", installDir);
+			return Stardist2D.fromBioimageioModel(path);
+		} else if ((pretrainedModel.equals("StarDist Fluorescence Nuclei Segmentation")
+				|| pretrainedModel.equals("2D_versatile_fluo")) && !forceInstall) {
+			ModelDescriptor md = ModelDescriptor.getModelsAtLocalRepo().stream()
+					.filter(mm ->mm.getName().equals("StarDist Fluorescence Nuclei Segmentation")).findFirst().orElse(null);
+			if (md != null) return new Stardist2D(md);
+			String path = BioimageioRepo.connect().downloadByName("StarDist Fluorescence Nuclei Segmentation", installDir);
 			return Stardist2D.fromBioimageioModel(path);
 		} else if (pretrainedModel.equals("StarDist Fluorescence Nuclei Segmentation")
 				|| pretrainedModel.equals("2D_versatile_fluo")) {
@@ -118,9 +144,11 @@ public class Stardist2D {
 	}
 	
 	private <T extends RealType<T> & NativeType<T>>  void checkInput(RandomAccessibleInterval<T> image) {
-		if (image.dimensionsAsLongArray().length != 3)
+		if (image.dimensionsAsLongArray().length == 2 && this.channels != 1)
 			throw new IllegalArgumentException("Stardist2D needs an image with three dimensions: XYC");
-		else if (image.dimensionsAsLongArray()[2] != channels)
+		else if (image.dimensionsAsLongArray().length != 3)
+			throw new IllegalArgumentException("Stardist2D needs an image with three dimensions: XYC");
+		else if (image.dimensionsAsLongArray().length != 2 && image.dimensionsAsLongArray()[2] != channels)
 			throw new IllegalArgumentException("This Stardist2D model requires " + channels + " channels.");
 	}
 	
@@ -129,7 +157,10 @@ public class Stardist2D {
 																				LoadEngineException, IOException, 
 																				RunModelException, InterruptedException {
 		checkInput(image);
-		// TODO improve this series of transformations
+		if (image.dimensionsAsLongArray().length == 2) image = Views.addDimension(image, 0, 0);
+		image = Views.permute(image, 0, 2);
+		image = Views.addDimension(image, 0, 0);
+		image = Views.permute(image, 0, 3);
 
 		Tensor<T> inputTensor = Tensor.build("input", "byxc", image);
 		Tensor<T> outputTensor = Tensor.buildEmptyTensor("output", "byxc");
@@ -150,9 +181,6 @@ public class Stardist2D {
 		Mamba mamba = new Mamba();
 		String envPath = mamba.getEnvsDir() + File.separator + "stardist";
 		String scriptPath = envPath + File.separator + STARDIST2D_SCRIPT_NAME;
-		if (!Paths.get(scriptPath).toFile().isFile()) {
-			
-		}
 		
 		GenericOp op = GenericOp.create(envPath, scriptPath, STARDIST2D_METHOD_NAME, 1);
 		LinkedHashMap<String, Object> nMap = new LinkedHashMap<String, Object>();
@@ -182,20 +210,45 @@ public class Stardist2D {
 		// TODO
 	}
 	
-	public void installRequirements() throws IOException, InterruptedException, RuntimeException, MambaInstallException {
+	public static void installRequirements() throws IOException, InterruptedException, 
+													RuntimeException, MambaInstallException, 
+													ArchiveException, URISyntaxException {
 		boolean installed = InstalledEngines.buildEnginesFinder()
 				.checkEngineWithArgsInstalledForOS("tensorflow", "1.15.0", null, null).size() != 0;
 		if (!installed)
-			EngineInstall.installEngineWithArgs("tensorflow", "1.15", true, true);
+			EngineInstall.installEngineWithArgs("tensorflow", "1.15.0", true, true);
 		
 		Mamba mamba = new Mamba();
 		boolean stardistPythonInstalled = false;
 		try {
 			stardistPythonInstalled = mamba.checkAllDependenciesInEnv("stardist", STARDIST_DEPS);
 		} catch (MambaInstallException e) {
+			mamba.installMicromamba();
 		}
 		if (!stardistPythonInstalled){
-			mamba.create("stardist", true, STARDIST_DEPS, STARDIST_DEPS);
+			mamba.create("stardist", true, STARDIST_CHANNELS, STARDIST_DEPS);
 		};
+		String envPath = mamba.getEnvsDir() + File.separator + "stardist";
+		String scriptPath = envPath + File.separator + STARDIST2D_SCRIPT_NAME;
+		if (!Paths.get(scriptPath).toFile().isFile()) {
+			try (InputStream scriptStream = Stardist2D.class.getClassLoader()
+        			.getResourceAsStream(STARDIST2D_PATH_IN_RESOURCES + STARDIST2D_SCRIPT_NAME)){
+    			Files.copy(scriptStream, Paths.get(scriptPath), StandardCopyOption.REPLACE_EXISTING);
+    		}
+		}
+	}
+	
+	
+	public static void main(String[] args) throws IOException, InterruptedException, 
+													RuntimeException, MambaInstallException, 
+													ModelSpecsException, LoadEngineException, 
+													RunModelException, ArchiveException, URISyntaxException {
+		Stardist2D.installRequirements();
+		Stardist2D model = Stardist2D.fromPretained("2D_versatile_fluo", false);
+		
+		RandomAccessibleInterval<FloatType> img = ArrayImgs.floats(new long[] {1, 512, 512, 1});
+		
+		RandomAccessibleInterval<FloatType> res = model.predict(img);
+		System.out.println(true);
 	}
 }

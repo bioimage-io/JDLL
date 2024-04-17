@@ -1126,4 +1126,33 @@ public class ModelDescriptor
 	public boolean canRunOnBioengine() {
 		return this.supportBioengine;
 	}
+
+	/**
+	 * Get the models at the local repo defined by the argument local repo
+	 * @param localRepo
+	 * 	String containing the path the directory that contains the model folders
+	 * @return a list of the {@link ModelDescriptor}s of the available models
+	 */
+	public static List<ModelDescriptor> getModelsAtLocalRepo(String localRepo) {
+		File repoFile = new File(localRepo);
+		if (!repoFile.isDirectory())
+			throw new IllegalArgumentException("The provided path is not a valid directory: " + localRepo);
+		return Arrays.asList(repoFile.listFiles()).stream().map(ff -> {
+			try {
+				return ModelDescriptor.readFromLocalFile(ff.getAbsolutePath(), false);
+			} catch (ModelSpecsException e) {
+				return null;
+			}
+			}).filter(mm -> mm != null).collect(Collectors.toList());
+	}
+
+	/**
+	 * Get the models at the local repo.
+	 * The default local repo is the 'models' folder in the directory where the program is being executed
+	 * 
+	 * @return a list of the {@link ModelDescriptor}s of the available models
+	 */
+	public static List<ModelDescriptor> getModelsAtLocalRepo() {
+		return getModelsAtLocalRepo(new File("models").getAbsolutePath());
+	}
 }
