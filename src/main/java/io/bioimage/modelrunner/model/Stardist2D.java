@@ -68,7 +68,7 @@ public class Stardist2D {
 	
 	private final float prob_threshold;
 	
-	private static final List<String> STARDIST_DEPS = Arrays.asList(new String[] {"python=3.10", "stardist", "numpy"});
+	private static final List<String> STARDIST_DEPS = Arrays.asList(new String[] {"python=3.10", "stardist", "numpy", "appose"});
 	
 	private static final List<String> STARDIST_CHANNELS = Arrays.asList(new String[] {"conda-forge", "default"});
 	
@@ -203,7 +203,7 @@ public class Stardist2D {
 					Object val = e.getValue();
 					if (val instanceof RandomAccessibleInterval) return true;
 					return false;
-				}).map(rai -> (RandomAccessibleInterval<T>) rai).collect(Collectors.toList());
+				}).map(e -> (RandomAccessibleInterval<T>) e.getValue()).collect(Collectors.toList());
 		
 		return rais.get(0);
 	}
@@ -227,7 +227,8 @@ public class Stardist2D {
 		} catch (MambaInstallException e) {
 			mamba.installMicromamba();
 		}
-		if (!stardistPythonInstalled){
+		if (!stardistPythonInstalled) {
+			// TODO add logging for environment installation
 			mamba.create("stardist", true, STARDIST_CHANNELS, STARDIST_DEPS);
 		};
 		String envPath = mamba.getEnvsDir() + File.separator + "stardist";
