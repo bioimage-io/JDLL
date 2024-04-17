@@ -971,8 +971,10 @@ public class Mamba {
 		List<String> argsList = new ArrayList<String>();
 		if ( envName.equals( DEFAULT_ENVIRONMENT_NAME ) )
 			argsList.add( PYTHON_COMMAND );
+		else if (new File(envName).isDirectory())
+			argsList.add( coverArgWithDoubleQuotes(Paths.get( envName, PYTHON_COMMAND ).toString()) );
 		else
-			argsList.add( coverArgWithDoubleQuotes(Paths.get( ENVS_NAME, envName, PYTHON_COMMAND ).toString()) );
+			argsList.add( coverArgWithDoubleQuotes(Paths.get( this.envsdir, envName, PYTHON_COMMAND ).toString()) );
 		argsList.addAll( Arrays.asList( args ).stream().map(aa -> {
 							if (aa.contains(" ") && PlatformDetection.isWindows()) return coverArgWithDoubleQuotes(aa);
 							else return aa;
