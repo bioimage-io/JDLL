@@ -20,6 +20,7 @@
 package io.bioimage.modelrunner.model;
 
 import java.io.File;
+import java.io.IOException;
 import java.nio.file.Paths;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -32,19 +33,30 @@ import java.util.stream.Collectors;
 
 import io.bioimage.modelrunner.apposed.appose.Mamba;
 import io.bioimage.modelrunner.apposed.appose.MambaInstallException;
-import io.bioimage.modelrunner.engine.EngineInfo;
+import io.bioimage.modelrunner.bioimageio.BioimageioRepo;
+import io.bioimage.modelrunner.bioimageio.description.ModelDescriptor;
+import io.bioimage.modelrunner.bioimageio.description.exceptions.ModelSpecsException;
 import io.bioimage.modelrunner.engine.installation.EngineInstall;
-import io.bioimage.modelrunner.model.Model;
+import io.bioimage.modelrunner.exceptions.LoadEngineException;
+import io.bioimage.modelrunner.exceptions.RunModelException;
 import io.bioimage.modelrunner.runmode.RunMode;
 import io.bioimage.modelrunner.runmode.ops.GenericOp;
 import io.bioimage.modelrunner.tensor.Tensor;
+import io.bioimage.modelrunner.utils.Constants;
 import io.bioimage.modelrunner.versionmanagement.InstalledEngines;
 import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.type.NativeType;
 import net.imglib2.type.numeric.RealType;
-import net.imglib2.type.numeric.real.FloatType;
 
 public class Stardist2D {
+	
+	ModelDescriptor descriptor;
+	
+	private final int channels;
+	
+	private final float nms_threshold;
+	
+	private final float prob_threshold;
 	
 	private static final List<String> STARDIST_DEPS = Arrays.asList(new String[] {"python=3.10", "stardist", "numpy"});
 	
@@ -54,37 +66,88 @@ public class Stardist2D {
 	
 	private static final String STARDIST2D_METHOD_NAME= "stardist_postprocessing";
 	
-	public static <T extends RealType<T> & NativeType<T>> 
-	RandomAccessibleInterval<T> stardist(String modelPath, RandomAccessibleInterval<T> image, 
-			float prob_threshold, float nms_threshold, boolean install) 
-			throws Exception {
-		
-		boolean installed = InstalledEngines.buildEnginesFinder()
-				.checkEngineWithArgsInstalledForOS("tensorflow", "1.15.0", null, null).size() != 0;
-		if (!installed && !install)
-			throw new IllegalArgumentException("Tensorflow is required but it is not installed. "
-					+ "Install it manually or set argument 'install=true'");
-		else if (!installed)
-			EngineInstall.installEngineWithArgs("tensorflow", "1.15", true, true);
-		
-		EngineInfo tfJavaEngine  = EngineInfo.defineDLEngine("tensorflow", "1.15");
-		Model model = Model.createDeepLearningModel(modelPath, modelPath, tfJavaEngine);
-		
-		Tensor<T> inputTensor = Tensor.build(modelPath, modelPath, image);
-		
-		List<Tensor<T>> inputs = new ArrayList<Tensor<T>>();
-		model.runModel(null, null);
-		
-		Mamba mamba = new Mamba();
-		
-		boolean stardistPythonInstalled = false;
-		try {
-			stardistPythonInstalled = mamba.checkAllDependenciesInEnv("stardist", STARDIST_DEPS);
-		} catch (MambaInstallException e) {
+	public Stardist2D() {
+		this.channels = 1;
+		// TODO get from config??
+		this.nms_threshold = 0;
+		this.prob_threshold = 0;
+	}
+	
+	private Stardist2D(ModelDescriptor descriptor) {
+		this.descriptor = descriptor;
+    	Map<String, Object> stardistMap = (Map<String, Object>) descriptor.getConfig().getSpecMap().get("stardist");
+    	Map<String, Object> stardistConfig = (Map<String, Object>) descriptor.getConfig().getSpecMap().get("config");
+    	Map<String, Object> stardistThres = (Map<String, Object>) stardistMap.get("thresholds");
+		this.channels = (int) stardistConfig.get("n_channel_in");;
+		this.nms_threshold = (float) stardistThres.get("nms");
+		this.prob_threshold = (float) stardistThres.get("prob");
+	}
+	
+	public static Stardist2D fromBioimageioModel(String modelPath) throws ModelSpecsException {
+		ModelDescriptor descriptor = ModelDescriptor.readFromLocalFile(modelPath + File.separator + Constants.RDF_FNAME);
+		return new Stardist2D(descriptor);
+	}
+	
+	public static Stardist2D fromPretained(String pretrainedModel) throws IOException, InterruptedException, ModelSpecsException {
+		return fromPretained(pretrainedModel, new File("models").getAbsolutePath());
+	}
+	
+	/**
+	 * TODO add support for 2D_paper_dsb2018
+	 * @param pretrainedModel
+	 * @param installDir
+	 * @return
+	 * @throws IOException
+	 * @throws InterruptedException
+	 * @throws ModelSpecsException
+	 */
+	public static Stardist2D fromPretained(String pretrainedModel, String installDir) throws IOException, 
+																					InterruptedException, 
+																					ModelSpecsException {
+		if (pretrainedModel.equals("StarDist H&E Nuclei Segmentation")
+				|| pretrainedModel.equals("2D_versatile_he")) {
+			String path = BioimageioRepo.connect().downloadByName("StarDist H&E Nuclei Segmentation", installDir);
+			return Stardist2D.fromBioimageioModel(path);
+		} else if (pretrainedModel.equals("StarDist Fluorescence Nuclei Segmentation")
+				|| pretrainedModel.equals("2D_versatile_fluo")) {
+			String path = BioimageioRepo.connect().downloadByName("StarDist Fluorescence Nuclei Segmentation", installDir);
+			return Stardist2D.fromBioimageioModel(path);
+		} else {
+			throw new IllegalArgumentException("There is no Stardist2D model called: " + pretrainedModel);
 		}
-		if (!stardistPythonInstalled)
-			throw new IllegalArgumentException();
+	}
+	
+	private <T extends RealType<T> & NativeType<T>>  void checkInput(RandomAccessibleInterval<T> image) {
+		if (image.dimensionsAsLongArray().length != 3)
+			throw new IllegalArgumentException("Stardist2D needs an image with three dimensions: XYC");
+		else if (image.dimensionsAsLongArray()[2] != channels)
+			throw new IllegalArgumentException("This Stardist2D model requires " + channels + " channels.");
+	}
+	
+	public <T extends RealType<T> & NativeType<T>> 
+	RandomAccessibleInterval<T> predict(RandomAccessibleInterval<T> image) throws ModelSpecsException, 
+																				LoadEngineException, IOException, 
+																				RunModelException, InterruptedException {
+		checkInput(image);
+		// TODO improve this series of transformations
+
+		Tensor<T> inputTensor = Tensor.build("input", "byxc", image);
+		Tensor<T> outputTensor = Tensor.buildEmptyTensor("output", "byxc");
+
+		List<Tensor<?>> inputList = new ArrayList<Tensor<?>>();
+		List<Tensor<?>> outputList = new ArrayList<Tensor<?>>();
+		inputList.add(inputTensor);
+		outputList.add(outputTensor);
 		
+		Model model = Model.createBioimageioModel(this.descriptor.getModelPath());
+		model.runModel(inputList, outputList);
+		
+		return postProcessing(image);
+	}
+	
+	public <T extends RealType<T> & NativeType<T>> 
+	RandomAccessibleInterval<T> postProcessing(RandomAccessibleInterval<T> image) throws IOException, InterruptedException {
+		Mamba mamba = new Mamba();
 		String envPath = mamba.getEnvsDir() + File.separator + "stardist";
 		String scriptPath = envPath + File.separator + STARDIST2D_SCRIPT_NAME;
 		if (!Paths.get(scriptPath).toFile().isFile()) {
@@ -97,9 +160,8 @@ public class Stardist2D {
 		SimpleDateFormat sdf = new SimpleDateFormat("ddMMYYYY_HHmmss");
 		String dateString = sdf.format(cal.getTime());
 		nMap.put("input_" + dateString, image);
-		Map<String, Object> kwargs = new LinkedHashMap<String, Object>();
-		kwargs.put("nms_thresh", nms_threshold);
-		kwargs.put("prob_thresh", prob_threshold);
+		nMap.put("nms_thresh", nms_threshold);
+		nMap.put("prob_thresh", prob_threshold);
 		op.setInputs(nMap);
 		
 		RunMode rm;
@@ -116,11 +178,24 @@ public class Stardist2D {
 		return rais.get(0);
 	}
 	
-	public void checkStardistInstalled() {
-		
+	public void checkRequirementsInstalled() {
+		// TODO
 	}
 	
-	private void install() {
+	public void installRequirements() throws IOException, InterruptedException, RuntimeException, MambaInstallException {
+		boolean installed = InstalledEngines.buildEnginesFinder()
+				.checkEngineWithArgsInstalledForOS("tensorflow", "1.15.0", null, null).size() != 0;
+		if (!installed)
+			EngineInstall.installEngineWithArgs("tensorflow", "1.15", true, true);
 		
+		Mamba mamba = new Mamba();
+		boolean stardistPythonInstalled = false;
+		try {
+			stardistPythonInstalled = mamba.checkAllDependenciesInEnv("stardist", STARDIST_DEPS);
+		} catch (MambaInstallException e) {
+		}
+		if (!stardistPythonInstalled){
+			mamba.create("stardist", true, STARDIST_DEPS, STARDIST_DEPS);
+		};
 	}
 }
