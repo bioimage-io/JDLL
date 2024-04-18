@@ -57,6 +57,7 @@ import net.imglib2.img.array.ArrayImgs;
 import net.imglib2.type.NativeType;
 import net.imglib2.type.numeric.RealType;
 import net.imglib2.type.numeric.real.FloatType;
+import net.imglib2.util.Cast;
 import net.imglib2.view.Views;
 
 public class Stardist2D {
@@ -178,7 +179,7 @@ public class Stardist2D {
 		model.loadModel();
 		model.runModel(inputList, outputList);
 		
-		return Utils.transpose(postProcessing(image));
+		return Utils.transpose(Cast.unchecked(postProcessing(outputList.get(0).getData())));
 	}
 	
 	public <T extends RealType<T> & NativeType<T>> 
