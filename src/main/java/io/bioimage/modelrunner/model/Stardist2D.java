@@ -49,6 +49,7 @@ import io.bioimage.modelrunner.exceptions.RunModelException;
 import io.bioimage.modelrunner.runmode.RunMode;
 import io.bioimage.modelrunner.runmode.ops.GenericOp;
 import io.bioimage.modelrunner.tensor.Tensor;
+import io.bioimage.modelrunner.tensor.Utils;
 import io.bioimage.modelrunner.utils.Constants;
 import io.bioimage.modelrunner.versionmanagement.InstalledEngines;
 import net.imglib2.RandomAccessibleInterval;
@@ -151,6 +152,8 @@ public class Stardist2D {
 			throw new IllegalArgumentException("Stardist2D needs an image with three dimensions: XYC");
 		else if (image.dimensionsAsLongArray().length != 2 && image.dimensionsAsLongArray()[2] != channels)
 			throw new IllegalArgumentException("This Stardist2D model requires " + channels + " channels.");
+		else if (image.dimensionsAsLongArray().length > 3 || image.dimensionsAsLongArray().length < 2)
+			throw new IllegalArgumentException("Stardist2D model requires an image with dimensions XYC.");
 	}
 	
 	public <T extends RealType<T> & NativeType<T>> 
@@ -175,7 +178,7 @@ public class Stardist2D {
 		model.loadModel();
 		model.runModel(inputList, outputList);
 		
-		return postProcessing(image);
+		return Utils.transpose(postProcessing(image));
 	}
 	
 	public <T extends RealType<T> & NativeType<T>> 
