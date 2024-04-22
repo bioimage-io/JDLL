@@ -232,7 +232,7 @@ public class CommonUtils {
 		} else if (PlatformDetection.isMacOS()) {
 			os = "MacOS";
 		}
-		USER_AGENT = "JDLL/0.5.0(" + os + "; Java " + PlatformDetection.getJavaVersion();
+		USER_AGENT = "jdll/" + Constants.JDLL_VERSION + "(" + os + "; Java " + PlatformDetection.getJavaVersion();
 		return USER_AGENT;
 	}
 }

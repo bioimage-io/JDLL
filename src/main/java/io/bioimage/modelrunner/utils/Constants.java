@@ -49,4 +49,6 @@ public class Constants {
 	 * Name of the pre- or post-processing that requires using Python
 	 */
 	public static final String PYTHON_PROCESSING_NAME = PythonTransformation.NAME;
+	
+	public static final String JDLL_VERSION = "0.5.8-SNAPSHOT";
 }

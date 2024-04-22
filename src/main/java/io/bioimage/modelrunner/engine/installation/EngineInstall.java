@@ -44,6 +44,7 @@ import io.bioimage.modelrunner.bioimageio.download.DownloadTracker;
 import io.bioimage.modelrunner.bioimageio.download.DownloadTracker.TwoParameterConsumer;
 import io.bioimage.modelrunner.engine.EngineInfo;
 import io.bioimage.modelrunner.system.PlatformDetection;
+import io.bioimage.modelrunner.utils.CommonUtils;
 import io.bioimage.modelrunner.utils.Log;
 import io.bioimage.modelrunner.versionmanagement.AvailableEngines;
 import io.bioimage.modelrunner.versionmanagement.DeepLearningVersion;
@@ -1141,17 +1142,22 @@ public class EngineInstall {
 		for (String jar : engine.getJars()) {
 			try {
 				URL website = new URL(jar);
+		        HttpURLConnection conn = (HttpURLConnection) website.openConnection();
+		        conn.setRequestMethod("GET");
+		        conn.setRequestProperty("User-Agent", CommonUtils.getJDLLUserAgent());
 				Path filePath = Paths.get(website.getPath()).getFileName();
-				try (ReadableByteChannel rbc = Channels.newChannel(website.openStream());
+				try (ReadableByteChannel rbc = Channels.newChannel(conn.getInputStream());
 						FileOutputStream fos = new FileOutputStream(new File(engineDir, filePath.toString()))){
 						FileDownloader downloader = new FileDownloader(rbc, fos);
 						downloader.call();
 				} catch (IOException e) {
+					conn.disconnect();
 					String msg = "The link for the file: " + filePath.getFileName() + " is broken." + System.lineSeparator() 
 								+ "JDLL will continue with the download but the model might be "
 								+ "downloaded incorrectly. The link is '" + jar + "'.";
 					new IOException(msg, e).printStackTrace();
 				}
+				conn.disconnect();
 			} catch (IOException e) {
 				new IOException("The following URL is wrong: " + jar, e).printStackTrace();
 			}
