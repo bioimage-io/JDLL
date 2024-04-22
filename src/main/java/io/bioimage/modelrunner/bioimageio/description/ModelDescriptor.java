@@ -28,6 +28,7 @@ import java.net.URL;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -38,7 +39,6 @@ import java.util.stream.Collectors;
 import io.bioimage.modelrunner.bioimageio.BioimageioRepo;
 import io.bioimage.modelrunner.bioimageio.description.exceptions.ModelSpecsException;
 import io.bioimage.modelrunner.bioimageio.description.weights.ModelWeight;
-import io.bioimage.modelrunner.transformations.PythonTransformation;
 import io.bioimage.modelrunner.utils.Constants;
 import io.bioimage.modelrunner.utils.Log;
 import io.bioimage.modelrunner.utils.YAMLUtils;
@@ -1136,8 +1136,13 @@ public class ModelDescriptor
 	 */
 	public static List<ModelDescriptor> getModelsAtLocalRepo(String localRepo) {
 		File repoFile = new File(localRepo);
-		if (!repoFile.isDirectory())
-			throw new IllegalArgumentException("The provided path is not a valid directory: " + localRepo);
+		if ( !repoFile.isDirectory() )
+		{
+			boolean created = repoFile.mkdirs();
+			if ( !created )
+				throw new IllegalArgumentException( "The directory " + repoFile.getAbsolutePath() + " cannot be created." );
+			return Collections.emptyList();
+		}
 		return Arrays.asList(repoFile.listFiles()).stream().map(ff -> {
 			try {
 				return ModelDescriptor.readFromLocalFile(ff.getAbsolutePath() + File.separator + Constants.RDF_FNAME, false);
