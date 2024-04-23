@@ -354,55 +354,55 @@ public class SharedMemoryArrayLinux implements SharedMemoryArray {
         	int size = 1;
         	for (long i : rai.dimensionsAsLongArray()) {size *= i;}
         	if (isNumpy) size = (int) DecodeNumpy.calculateNpyStyleByteArrayLength(rai);
-        	shma = new SharedMemoryArrayLinux(name, size, CommonUtils.getDataType(rai), rai.dimensionsAsLongArray(), isNumpy, isFortranOrder);
+        	shma = new SharedMemoryArrayLinux(name, size, CommonUtils.getDataTypeFromRAI(rai), rai.dimensionsAsLongArray(), isNumpy, isFortranOrder);
         	shma.buildInt8(Cast.unchecked(rai), isFortranOrder, isNumpy);
     	} else if (Util.getTypeFromInterval(rai) instanceof UnsignedByteType) {
         	int size = 1;
         	for (long i : rai.dimensionsAsLongArray()) {size *= i;}
         	if (isNumpy) size = (int) DecodeNumpy.calculateNpyStyleByteArrayLength(rai);
-        	shma = new SharedMemoryArrayLinux(name, size, CommonUtils.getDataType(rai), rai.dimensionsAsLongArray(), isNumpy, isFortranOrder);
+        	shma = new SharedMemoryArrayLinux(name, size, CommonUtils.getDataTypeFromRAI(rai), rai.dimensionsAsLongArray(), isNumpy, isFortranOrder);
         	shma.buildUint8(Cast.unchecked(rai), isFortranOrder, isNumpy);
     	} else if (Util.getTypeFromInterval(rai) instanceof ShortType) {
         	int size = 2;
         	for (long i : rai.dimensionsAsLongArray()) {size *= i;}
         	if (isNumpy) size = (int) DecodeNumpy.calculateNpyStyleByteArrayLength(rai);
-        	shma = new SharedMemoryArrayLinux(name, size, CommonUtils.getDataType(rai), rai.dimensionsAsLongArray(), isNumpy, isFortranOrder);
+        	shma = new SharedMemoryArrayLinux(name, size, CommonUtils.getDataTypeFromRAI(rai), rai.dimensionsAsLongArray(), isNumpy, isFortranOrder);
         	shma.buildInt16(Cast.unchecked(rai), isFortranOrder, isNumpy);
     	} else if (Util.getTypeFromInterval(rai) instanceof UnsignedShortType) {
         	int size = 2;
         	for (long i : rai.dimensionsAsLongArray()) {size *= i;}
         	if (isNumpy) size = (int) DecodeNumpy.calculateNpyStyleByteArrayLength(rai);
-        	shma = new SharedMemoryArrayLinux(name, size, CommonUtils.getDataType(rai), rai.dimensionsAsLongArray(), isNumpy, isFortranOrder);
+        	shma = new SharedMemoryArrayLinux(name, size, CommonUtils.getDataTypeFromRAI(rai), rai.dimensionsAsLongArray(), isNumpy, isFortranOrder);
         	shma.buildUint16(Cast.unchecked(rai), isFortranOrder, isNumpy);
     	} else if (Util.getTypeFromInterval(rai) instanceof IntType) {
         	int size = 4;
         	for (long i : rai.dimensionsAsLongArray()) {size *= i;}
         	if (isNumpy) size = (int) DecodeNumpy.calculateNpyStyleByteArrayLength(rai);
-        	shma = new SharedMemoryArrayLinux(name, size, CommonUtils.getDataType(rai), rai.dimensionsAsLongArray(), isNumpy, isFortranOrder);
+        	shma = new SharedMemoryArrayLinux(name, size, CommonUtils.getDataTypeFromRAI(rai), rai.dimensionsAsLongArray(), isNumpy, isFortranOrder);
         	shma.buildInt32(Cast.unchecked(rai), isFortranOrder, isNumpy);
     	} else if (Util.getTypeFromInterval(rai) instanceof UnsignedIntType) {
         	int size = 4;
         	for (long i : rai.dimensionsAsLongArray()) {size *= i;}
         	if (isNumpy) size = (int) DecodeNumpy.calculateNpyStyleByteArrayLength(rai);
-        	shma = new SharedMemoryArrayLinux(name, size, CommonUtils.getDataType(rai), rai.dimensionsAsLongArray(), isNumpy, isFortranOrder);
+        	shma = new SharedMemoryArrayLinux(name, size, CommonUtils.getDataTypeFromRAI(rai), rai.dimensionsAsLongArray(), isNumpy, isFortranOrder);
         	shma.buildUint32(Cast.unchecked(rai), isFortranOrder, isNumpy);
     	} else if (Util.getTypeFromInterval(rai) instanceof LongType) {
         	int size = 8;
         	for (long i : rai.dimensionsAsLongArray()) {size *= i;}
         	if (isNumpy) size = (int) DecodeNumpy.calculateNpyStyleByteArrayLength(rai);
-        	shma = new SharedMemoryArrayLinux(name, size, CommonUtils.getDataType(rai), rai.dimensionsAsLongArray(), isNumpy, isFortranOrder);
+        	shma = new SharedMemoryArrayLinux(name, size, CommonUtils.getDataTypeFromRAI(rai), rai.dimensionsAsLongArray(), isNumpy, isFortranOrder);
         	shma.buildInt64(Cast.unchecked(rai), isFortranOrder, isNumpy);
     	} else if (Util.getTypeFromInterval(rai) instanceof FloatType) {
         	int size = 4;
         	for (long i : rai.dimensionsAsLongArray()) {size *= i;}
         	if (isNumpy) size = (int) DecodeNumpy.calculateNpyStyleByteArrayLength(rai);
-        	shma = new SharedMemoryArrayLinux(name, size, CommonUtils.getDataType(rai), rai.dimensionsAsLongArray(), isNumpy, isFortranOrder);
+        	shma = new SharedMemoryArrayLinux(name, size, CommonUtils.getDataTypeFromRAI(rai), rai.dimensionsAsLongArray(), isNumpy, isFortranOrder);
         	shma.buildFloat32(Cast.unchecked(rai), isFortranOrder, isNumpy);
     	} else if (Util.getTypeFromInterval(rai) instanceof DoubleType) {
         	int size = 8;
         	for (long i : rai.dimensionsAsLongArray()) {size *= i;}
         	if (isNumpy) size = (int) DecodeNumpy.calculateNpyStyleByteArrayLength(rai);
-        	shma = new SharedMemoryArrayLinux(name, size, CommonUtils.getDataType(rai), rai.dimensionsAsLongArray(), isNumpy, isFortranOrder);
+        	shma = new SharedMemoryArrayLinux(name, size, CommonUtils.getDataTypeFromRAI(rai), rai.dimensionsAsLongArray(), isNumpy, isFortranOrder);
         	shma.buildFloat64(Cast.unchecked(rai), isFortranOrder, isNumpy);
     	} else {
             throw new IllegalArgumentException("The image has an unsupported type: " + Util.getTypeFromInterval(rai).getClass().toString());

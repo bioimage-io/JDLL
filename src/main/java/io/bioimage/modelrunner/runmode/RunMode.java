@@ -391,7 +391,7 @@ public class RunMode {
 		long[] dims = tensor.getData().dimensionsAsLongArray();
 		for (long l : dims) {size *= l;}
 		tensorRecreationCode += ogName + " = xr.DataArray(np.ndarray(" + size + ", dtype='" 
-				+ CommonUtils.getDataType(tensor.getData()) + "', buffer=" 
+				+ CommonUtils.getDataTypeFromRAI(tensor.getData()) + "', buffer=" 
 				+ ogName + APPOSE_SHM_KEY + ".buf).reshape([";
 		for (long ll : dims)
 			tensorRecreationCode += ll + ", ";
@@ -423,7 +423,7 @@ public class RunMode {
 		long[] dims = rai.dimensionsAsLongArray();
 		for (long l : dims) {size *= l;}
 		tensorRecreationCode += ogName + " = np.ndarray(" + size + ", dtype='" 
-				+ CommonUtils.getDataType(rai) + "', buffer=" 
+				+ CommonUtils.getDataTypeFromRAI(rai) + "', buffer=" 
 				+ ogName + APPOSE_SHM_KEY + ".buf).reshape([";
 		for (long ll : dims)
 			tensorRecreationCode += ll + ", ";

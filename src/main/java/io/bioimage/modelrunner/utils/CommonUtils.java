@@ -110,7 +110,7 @@ public class CommonUtils {
 	 * @return a String containing the data type of the {@link RandomAccessibleInterval}
 	 */
 	public static <T extends RealType<T> & NativeType<T>>
-	String getDataType(RandomAccessibleInterval<T> rai) {
+	String getDataTypeFromRAI(RandomAccessibleInterval<T> rai) {
 		if (rai.getAt(rai.minAsLongArray()) instanceof ByteType) {
 			return "int8";
 		} else if (rai.getAt(rai.minAsLongArray()) instanceof UnsignedByteType) {
