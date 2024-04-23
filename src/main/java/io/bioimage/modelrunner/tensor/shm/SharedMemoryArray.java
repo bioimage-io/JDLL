@@ -128,7 +128,7 @@ public interface SharedMemoryArray extends Closeable {
 	static <T extends RealType<T> & NativeType<T>>
 	SharedMemoryArray readOrCreate(String name, long[] shape, T datatype) throws FileAlreadyExistsException {
 		String strDType = CommonUtils.getDataType(datatype);
-    	int size = 1;
+    	int size = DecodeNumpy.DATA_TYPES_MAP.get(strDType);
     	for (long i : shape) {size *= i;}
         if (PlatformDetection.isWindows()) 
         	return SharedMemoryArrayWin.readOrCreate(name, size * DecodeNumpy.DATA_TYPES_MAP.get(strDType), shape, strDType, null, false);
@@ -183,7 +183,7 @@ public interface SharedMemoryArray extends Closeable {
 	static <T extends RealType<T> & NativeType<T>>
 	SharedMemoryArray readOrCreate(String name, long[] shape, T datatype, boolean isFortran, boolean isNpy) throws FileAlreadyExistsException {
 		String strDType = CommonUtils.getDataType(datatype);
-    	int size = 1;
+    	int size = DecodeNumpy.DATA_TYPES_MAP.get(strDType);
     	for (long i : shape) {size *= i;}
         if (PlatformDetection.isWindows()) 
         	return SharedMemoryArrayWin.readOrCreate(name, size * DecodeNumpy.DATA_TYPES_MAP.get(strDType), shape, strDType, isFortran, isNpy);
@@ -255,7 +255,7 @@ public interface SharedMemoryArray extends Closeable {
 	static <T extends RealType<T> & NativeType<T>>
 	SharedMemoryArray create(long[] shape, T datatype) {
 		String strDType = CommonUtils.getDataType(datatype);
-    	int size = 1;
+    	int size = DecodeNumpy.DATA_TYPES_MAP.get(strDType);
     	for (long i : shape) {size *= i;}
         if (PlatformDetection.isWindows()) 
         	return SharedMemoryArrayWin.create(size, shape, strDType, true, false);
@@ -297,7 +297,7 @@ public interface SharedMemoryArray extends Closeable {
 	static <T extends RealType<T> & NativeType<T>>
 	SharedMemoryArray create(long[] shape, T datatype, boolean isFortran, boolean isNpy) {
 		String strDType = CommonUtils.getDataType(datatype);
-    	int size = 1;
+    	int size = DecodeNumpy.DATA_TYPES_MAP.get(strDType);
     	for (long i : shape) {size *= i;}
         if (PlatformDetection.isWindows()) 
         	return SharedMemoryArrayWin.create(size, shape, strDType, isNpy, isFortran);
