@@ -131,11 +131,11 @@ public interface SharedMemoryArray extends Closeable {
     	int size = DecodeNumpy.DATA_TYPES_MAP.get(strDType);
     	for (long i : shape) {size *= i;}
         if (PlatformDetection.isWindows()) 
-        	return SharedMemoryArrayWin.readOrCreate(name, size * DecodeNumpy.DATA_TYPES_MAP.get(strDType), shape, strDType, null, false);
+        	return SharedMemoryArrayWin.readOrCreate(name, size, shape, strDType, null, false);
     	else if (PlatformDetection.isLinux()) 
-    		return SharedMemoryArrayLinux.readOrCreate(name, size * DecodeNumpy.DATA_TYPES_MAP.get(strDType), shape, strDType, null, false);
+    		return SharedMemoryArrayLinux.readOrCreate(name, size, shape, strDType, null, false);
     	else 
-    		return SharedMemoryArrayMacOS.readOrCreate(name, size * DecodeNumpy.DATA_TYPES_MAP.get(strDType), shape, strDType, null, false);
+    		return SharedMemoryArrayMacOS.readOrCreate(name, size, shape, strDType, null, false);
 	}
 
 	/**
@@ -186,11 +186,11 @@ public interface SharedMemoryArray extends Closeable {
     	int size = DecodeNumpy.DATA_TYPES_MAP.get(strDType);
     	for (long i : shape) {size *= i;}
         if (PlatformDetection.isWindows()) 
-        	return SharedMemoryArrayWin.readOrCreate(name, size * DecodeNumpy.DATA_TYPES_MAP.get(strDType), shape, strDType, isFortran, isNpy);
+        	return SharedMemoryArrayWin.readOrCreate(name, size, shape, strDType, isFortran, isNpy);
     	else if (PlatformDetection.isLinux()) 
-    		return SharedMemoryArrayLinux.readOrCreate(name, size * DecodeNumpy.DATA_TYPES_MAP.get(strDType), shape, strDType, isFortran, isNpy);
+    		return SharedMemoryArrayLinux.readOrCreate(name, size, shape, strDType, isFortran, isNpy);
     	else 
-    		return SharedMemoryArrayMacOS.readOrCreate(name, size * DecodeNumpy.DATA_TYPES_MAP.get(strDType), shape, strDType, isFortran, isNpy);
+    		return SharedMemoryArrayMacOS.readOrCreate(name, size, shape, strDType, isFortran, isNpy);
 	}
 
 	/**
