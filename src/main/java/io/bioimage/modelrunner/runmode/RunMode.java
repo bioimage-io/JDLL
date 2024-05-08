@@ -145,8 +145,8 @@ public class RunMode {
 	 * @return a Map where the keys are the name of the Python variables in the Python scope
 	 * 	and the values are the actual variable values retrieved from the Python process as the 
 	 * 	outputs from the Python OP
-	 * @throws IOException 
-	 * @throws InterruptedException 
+	 * @throws IOException if there is any error running the Python from the python environment
+	 * @throws InterruptedException  if the Python process is interrupted abruptly
 	 */
 	public Map<String, Object> runOP() throws IOException, InterruptedException {
 		env = new Environment() {
