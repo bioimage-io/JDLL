@@ -60,9 +60,17 @@ import net.imglib2.type.numeric.real.FloatType;
 import net.imglib2.util.Cast;
 import net.imglib2.view.Views;
 
+/**
+ * Implementation of an API to run Stardist 2D models out of the box with little configuration.
+ * 
+ *TODO add fine tuning
+ *TODO add support for Mac arm
+ *
+ *@author Carlos Garcia
+ */
 public class Stardist2D {
 	
-	ModelDescriptor descriptor;
+	private ModelDescriptor descriptor;
 	
 	private final int channels;
 	
@@ -80,7 +88,7 @@ public class Stardist2D {
 	
 	private static final String STARDIST2D_METHOD_NAME= "stardist_postprocessing";
 	
-	public Stardist2D() {
+	private Stardist2D() {
 		this.channels = 1;
 		// TODO get from config??
 		this.nms_threshold = 0;
@@ -97,24 +105,46 @@ public class Stardist2D {
 		this.prob_threshold = new Double((double) stardistThres.get("prob")).floatValue();
 	}
 	
+	/**
+	 * Initialize a Stardist2D using the format of the Bioiamge.io model zoo.
+	 * @param modelPath
+	 * 	path to the Bioimage.io model
+	 * @return an instance of a Stardist2D model ready to be used
+	 * @throws ModelSpecsException if there is any error in the configuration of the specs rdf.yaml file of the Bioimage.io
+	 */
 	public static Stardist2D fromBioimageioModel(String modelPath) throws ModelSpecsException {
 		ModelDescriptor descriptor = ModelDescriptor.readFromLocalFile(modelPath + File.separator + Constants.RDF_FNAME, false);
 		return new Stardist2D(descriptor);
 	}
-	
+	/**
+	 * Initialize one of the "official" pretrained Stardist 2D models.
+	 * By default, the model will be installed in the "models" folder inside the application
+	 * @param pretrainedModel
+	 * 	the name of the pretrained model. 
+	 * @param forceInstall
+	 * 	whether to force the installation or to try to look if the model has already been installed before
+	 * @return an instance of a pretrained Stardist2D model ready to be used
+	 * @throws IOException if there is any error downloading the model, in the case it is needed
+	 * @throws InterruptedException if the download of the model is stopped
+	 * @throws ModelSpecsException if the model downloaded is not well specified in the config file
+	 */
 	public static Stardist2D fromPretained(String pretrainedModel, boolean forceInstall) throws IOException, InterruptedException, ModelSpecsException {
 		return fromPretained(pretrainedModel, new File("models").getAbsolutePath(), forceInstall);
 	}
 	
 	/**
 	 * TODO add support for 2D_paper_dsb2018
+	 * Initialize one of the "official" pretrained Stardist 2D models
 	 * @param pretrainedModel
+	 * 	the name of the pretrained model.
 	 * @param installDir
+	 * 	the directory where the model wants to be installed
 	 * @param forceInstall
-	 * @return
-	 * @throws IOException
-	 * @throws InterruptedException
-	 * @throws ModelSpecsException
+	 * 	whether to force the installation or to try to look if the model has already been installed before
+	 * @return an instance of a pretrained Stardist2D model ready to be used
+	 * @throws IOException if there is any error downloading the model, in the case it is needed
+	 * @throws InterruptedException if the download of the model is stopped
+	 * @throws ModelSpecsException if the model downloaded is not well specified in the config file
 	 */
 	public static Stardist2D fromPretained(String pretrainedModel, String installDir, boolean forceInstall) throws IOException, 
 																					InterruptedException, 
@@ -157,6 +187,20 @@ public class Stardist2D {
 			throw new IllegalArgumentException("Stardist2D model requires an image with dimensions XYC.");
 	}
 	
+	/**
+	 * Run the Stardist 2D model end to end, including pre- and post-processing. 
+	 * @param <T>
+	 * 	possible ImgLib2 data types of the input and output images
+	 * @param image
+	 * 	the input image that is going to be processed by Stardist2D
+	 * @return the final output of Stardist2D including pre- and post-processing
+	 * @throws ModelSpecsException if there is any error with the specs of the model
+	 * @throws LoadModelException if there is any error loading the model in Tensorflow Java
+	 * @throws LoadEngineException if there is any error loading Tensorflow Java engine
+	 * @throws IOException if there is any error with the files that are required to run the model
+	 * @throws RunModelException if there is any unexpected exception running the post-processing
+	 * @throws InterruptedException if the inference or post-processing are interrupted unexpectedly
+	 */
 	public <T extends RealType<T> & NativeType<T>> 
 	RandomAccessibleInterval<T> predict(RandomAccessibleInterval<T> image) throws ModelSpecsException, LoadModelException,
 																				LoadEngineException, IOException, 
@@ -182,6 +226,16 @@ public class Stardist2D {
 		return Utils.transpose(Cast.unchecked(postProcessing(outputList.get(0).getData())));
 	}
 	
+	/**
+	 * Execute stardist post-processing on the raw output of a Stardist 2D model
+	 * @param <T>
+	 * 	possible data type of the input image
+	 * @param image
+	 * 	the raw output of a Stardist 2D model
+	 * @return the final output of a Stardist 2D model
+	 * @throws IOException if there is any error running the post-processing
+	 * @throws InterruptedException if the post-processing is interrupted
+	 */
 	public <T extends RealType<T> & NativeType<T>> 
 	RandomAccessibleInterval<T> postProcessing(RandomAccessibleInterval<T> image) throws IOException, InterruptedException {
 		Mamba mamba = new Mamba();
@@ -212,10 +266,27 @@ public class Stardist2D {
 		return rais.get(0);
 	}
 	
+	/**
+	 * Check whether everything that is needed for Stardist 2D is installed or not
+	 */
 	public void checkRequirementsInstalled() {
 		// TODO
 	}
 	
+	/**
+	 * Check whether the requirements needed to run Stardist 2D are satisfied or not.
+	 * First checks if the corresponding Java DL engine is installed or not, then checks
+	 * if the Python environment needed for Stardist2D post processing is fine too.
+	 * 
+	 * If anything is not installed, this method also installs it
+	 * 
+	 * @throws IOException if there is any error downloading the DL engine or installing the micromamba environment
+	 * @throws InterruptedException if the installation is stopped
+	 * @throws RuntimeException if there is any unexpected error in the micromamba environment installation
+	 * @throws MambaInstallException if there is any error downloading or installing micromamba
+	 * @throws ArchiveException if there is any error decompressing the micromamba installer
+	 * @throws URISyntaxException if the URL to the micromamba installation is not correct
+	 */
 	public static void installRequirements() throws IOException, InterruptedException, 
 													RuntimeException, MambaInstallException, 
 													ArchiveException, URISyntaxException {
@@ -245,7 +316,21 @@ public class Stardist2D {
 		}
 	}
 	
-	
+	/**
+	 * Main method to check functionality
+	 * @param args
+	 * 	nothing
+	 * @throws IOException nothing
+	 * @throws InterruptedException nothing
+	 * @throws RuntimeException nothing
+	 * @throws MambaInstallException nothing
+	 * @throws ModelSpecsException nothing
+	 * @throws LoadEngineException nothing
+	 * @throws RunModelException nothing
+	 * @throws ArchiveException nothing
+	 * @throws URISyntaxException nothing
+	 * @throws LoadModelException nothing
+	 */
 	public static void main(String[] args) throws IOException, InterruptedException, 
 													RuntimeException, MambaInstallException, 
 													ModelSpecsException, LoadEngineException, 
