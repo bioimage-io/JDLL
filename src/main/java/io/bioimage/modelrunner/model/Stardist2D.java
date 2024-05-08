@@ -116,6 +116,7 @@ public class Stardist2D {
 		ModelDescriptor descriptor = ModelDescriptor.readFromLocalFile(modelPath + File.separator + Constants.RDF_FNAME, false);
 		return new Stardist2D(descriptor);
 	}
+	
 	/**
 	 * Initialize one of the "official" pretrained Stardist 2D models.
 	 * By default, the model will be installed in the "models" folder inside the application
