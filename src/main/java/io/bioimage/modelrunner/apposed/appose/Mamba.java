@@ -554,7 +554,8 @@ public class Mamba {
 			throw new EnvironmentExistsException();
 		runMamba("env", "create", "--prefix",
 				envsdir + File.separator + envName, "-f", envYaml, "-y", "-vv" );
-		installApposeFromSource(envsdir + File.separator + envName);
+		if (this.checkDependencyInEnv(envsdir + File.separator + envName, "python"))
+			installApposeFromSource(envsdir + File.separator + envName);
 	}
 
 	/**
@@ -603,7 +604,8 @@ public class Mamba {
 		if ( !isForceCreation && getEnvironmentNames().contains( envName ) )
 			throw new EnvironmentExistsException();
 		runMamba( "create", "-y", "-p", envsdir + File.separator + envName );
-		installApposeFromSource(envsdir + File.separator + envName);
+		if (this.checkDependencyInEnv(envsdir + File.separator + envName, "python"))
+			installApposeFromSource(envsdir + File.separator + envName);
 	}
 
 	/**
@@ -661,7 +663,8 @@ public class Mamba {
 		cmd.addAll( Arrays.asList( args ) );
 		if (!cmd.contains("--yes") && !cmd.contains("-y")) cmd.add("--yes");
 		runMamba( cmd.stream().toArray( String[]::new ) );
-		installApposeFromSource(envsdir + File.separator + envName);
+		if (this.checkDependencyInEnv(envsdir + File.separator + envName, "python"))
+			installApposeFromSource(envsdir + File.separator + envName);
 	}
 
 	/**
@@ -703,7 +706,8 @@ public class Mamba {
 		for (String pack : packages) { cmd.add(pack);}
 		if (!cmd.contains("--yes") && !cmd.contains("-y")) cmd.add("--yes");
 		runMamba( cmd.stream().toArray( String[]::new ) );
-		installApposeFromSource(envsdir + File.separator + envName);
+		if (this.checkDependencyInEnv(envsdir + File.separator + envName, "python"))
+			installApposeFromSource(envsdir + File.separator + envName);
 	}
 
 	/**
