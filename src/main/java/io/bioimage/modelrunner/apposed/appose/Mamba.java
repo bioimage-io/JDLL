@@ -1571,7 +1571,7 @@ public class Mamba {
 					+ " and vv.parse(platform.python_version()).minor == vv.parse(desired_version).minor else sys.exit(1)";
 			checkDepCode = String.format(checkDepCode, maxversion);
 		} else if (minversion == null && maxversion == null) {
-			return true;
+			checkDepCode = "2 + 2";
 		} else if (maxversion == null) {
 			checkDepCode = "import sys; import platform; from packaging import version as vv; desired_version = '%s'; "
 					+ "sys.exit(0) if vv.parse(platform.python_version()).major == vv.parse(desired_version).major "
