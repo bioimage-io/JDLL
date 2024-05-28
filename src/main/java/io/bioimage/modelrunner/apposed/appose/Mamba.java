@@ -973,12 +973,16 @@ public class Mamba {
 		if (!installed) throw new MambaInstallException("Micromamba is not installed");
 		final List< String > cmd = getBaseCommand();
 		List<String> argsList = new ArrayList<String>();
-		if ( envName.equals( DEFAULT_ENVIRONMENT_NAME ) )
-			argsList.add( PYTHON_COMMAND );
-		else if (new File(envName).isDirectory())
-			argsList.add( coverArgWithDoubleQuotes(Paths.get( envName, PYTHON_COMMAND ).toString()) );
-		else
-			argsList.add( coverArgWithDoubleQuotes(Paths.get( this.envsdir, envName, PYTHON_COMMAND ).toString()) );
+		String envDir;
+		if (new File(envName, PYTHON_COMMAND).isFile()) {
+			argsList.add( coverArgWithDoubleQuotes(Paths.get( envName, PYTHON_COMMAND ).toAbsolutePath().toString()) );
+			envDir = Paths.get( envName ).toAbsolutePath().toString();
+		} else if (Paths.get( this.envsdir, envName, PYTHON_COMMAND ).toFile().isFile()) {
+			argsList.add( coverArgWithDoubleQuotes(Paths.get( this.envsdir, envName, PYTHON_COMMAND ).toAbsolutePath().toString()) );
+			envDir = Paths.get( envsdir, envName ).toAbsolutePath().toString();
+		} else 
+			throw new IOException("The environment provided ("
+					+ envName + ") does not exist or does not contain a Python executable (" + PYTHON_COMMAND + ").");
 		argsList.addAll( Arrays.asList( args ).stream().map(aa -> {
 							if (aa.contains(" ") && PlatformDetection.isWindows()) return coverArgWithDoubleQuotes(aa);
 							else return aa;
@@ -992,7 +996,6 @@ public class Mamba {
 		if ( PlatformDetection.isWindows() )
 		{
 			final Map< String, String > envs = builder.environment();
-			final String envDir = Paths.get( rootdir, ENVS_NAME, envName ).toString();
 			envs.put( "Path", envDir + ";" + envs.get( "Path" ) );
 			envs.put( "Path", Paths.get( envDir, "Scripts" ).toString() + ";" + envs.get( "Path" ) );
 			envs.put( "Path", Paths.get( envDir, "Library" ).toString() + ";" + envs.get( "Path" ) );
