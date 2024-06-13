@@ -40,12 +40,7 @@ jobs:
     - name: Run Specific Class (Unix)
       if: runner.os != 'Windows'
       run: |
-        pwd
-        cd target
-        pwd
-        ls
-        cd ..
-        java -cp target/dl-modelrunner-*.jar io.bioimage.modelrunner.example.ExampleLoadPytorch1Pytorch2
+        java -cp "target/dl-modelrunner-*.jar" io.bioimage.modelrunner.example.ExampleLoadPytorch1Pytorch2
 
     - name: Run Specific Class (Windows)
       if: runner.os == 'Windows'
