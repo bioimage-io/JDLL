@@ -27,7 +27,8 @@ jobs:
       run: mvn clean install
     - name: Generate Classpath (Unix)
       if: runner.os != 'Windows'
-      run: echo "CLASSPATH=$(mvn -q exec:exec -Dexec.executable=echo -Dexec.args='%classpath')" >> $GITHUB_ENV
+      run: |
+        mvn clean install org.apache.maven.plugins:maven-shade-plugin:3.2.4:shade -Dshade.mainClass=io.bioimage.modelrunner.example.ExampleLoadPytorch1Pytorch2
 
     - name: Generate Classpath (Windows)
       if: runner.os == 'Windows'
@@ -38,7 +39,7 @@ jobs:
 
     - name: Run Specific Class (Unix)
       if: runner.os != 'Windows'
-      run: java -cp $CLASSPATH:target/classes io.bioimage.modelrunner.example.ExampleLoadPytorch1Pytorch2
+      run: java -cp target/dl-modelrunner-*.jar io.bioimage.modelrunner.example.ExampleLoadPytorch1Pytorch2
 
     - name: Run Specific Class (Windows)
       if: runner.os == 'Windows'
