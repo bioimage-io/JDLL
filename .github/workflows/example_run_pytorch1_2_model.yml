@@ -43,6 +43,7 @@ jobs:
         pwd
         cd target
         pwd
+        ls
         cd ..
         java -cp target/dl-modelrunner-*.jar io.bioimage.modelrunner.example.ExampleLoadPytorch1Pytorch2
 
