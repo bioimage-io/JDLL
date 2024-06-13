@@ -40,7 +40,9 @@ jobs:
     - name: Run Specific Class (Unix)
       if: runner.os != 'Windows'
       run: |
-        java -cp target/dl-modelrunner-0.5.9-SNAPSHOT.jar io.bioimage.modelrunner.example.ExampleLoadPytorch1Pytorch2
+        mvn help:evaluate -Dexpression=project.version -q -DforceStdout > version.txt
+        echo "JAR_PATH=target/dl-modelrunner-$(cat version.txt).jar" >> $GITHUB_ENV
+        java -cp $JAR_PATH  io.bioimage.modelrunner.example.ExampleLoadPytorch1Pytorch2
 
     - name: Run Specific Class (Windows)
       if: runner.os == 'Windows'
