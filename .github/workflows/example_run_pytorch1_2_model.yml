@@ -48,6 +48,11 @@ jobs:
       shell: bash
       run: |
         echo $JAR_PATH
+    - name: LS
+      if: runner.os != 'Windows'
+      shell: bash
+      run: |
+        ls target
     - name: Run Specific Class (Unix)
       if: runner.os != 'Windows'
       shell: bash
