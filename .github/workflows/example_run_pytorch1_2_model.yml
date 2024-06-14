@@ -37,6 +37,10 @@ jobs:
         $classpath = mvn -q exec:exec "-Dexec.executable=echo" "-Dexec.args='%classpath'"
         echo "CLASSPATH=$classpath" | Out-File -FilePath $env:GITHUB_ENV -Append
 
+    - name: Write Version to File
+      if: runner.os != 'Windows'
+      run: echo "$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)" > version.txt
+      shell: bash
     - name: Run Specific Class (Unix)
       if: runner.os != 'Windows'
       run: |
