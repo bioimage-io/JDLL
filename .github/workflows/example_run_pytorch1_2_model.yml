@@ -39,13 +39,15 @@ jobs:
 
     - name: Write Version to File
       if: runner.os != 'Windows'
-      run: echo "$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)" > version.txt
+      run: |
+        echo "$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)" > version.txt
       shell: bash
     - name: Run Specific Class (Unix)
       if: runner.os != 'Windows'
       shell: bash
       run: |
         echo "JAR_PATH=target/dl-modelrunner-$(cat version.txt).jar" >> $GITHUB_ENV
+        echo $JAR_PATH
         java -cp $JAR_PATH  io.bioimage.modelrunner.example.ExampleLoadPytorch1Pytorch2
 
     - name: Run Specific Class (Windows)
