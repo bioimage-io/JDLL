@@ -43,6 +43,7 @@ jobs:
       shell: bash
     - name: Run Specific Class (Unix)
       if: runner.os != 'Windows'
+      shell: bash
       run: |
         echo "JAR_PATH=target/dl-modelrunner-$(cat version.txt).jar" >> $GITHUB_ENV
         java -cp $JAR_PATH  io.bioimage.modelrunner.example.ExampleLoadPytorch1Pytorch2
