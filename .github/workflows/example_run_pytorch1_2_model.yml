@@ -41,18 +41,8 @@ jobs:
       if: runner.os != 'Windows'
       run: |
         echo "$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)" > version.txt
-        echo "JAR_PATH=target/dl-modelrunner-$(cat version.txt)-shaded.jar" >> $GITHUB_ENV
+        echo "JAR_PATH=target/dl-modelrunner-$(cat version.txt).jar" >> $GITHUB_ENV
       shell: bash
-    - name: ECHO
-      if: runner.os != 'Windows'
-      shell: bash
-      run: |
-        echo $JAR_PATH
-    - name: LS
-      if: runner.os != 'Windows'
-      shell: bash
-      run: |
-        ls target
     - name: Run Specific Class (Unix)
       if: runner.os != 'Windows'
       shell: bash
