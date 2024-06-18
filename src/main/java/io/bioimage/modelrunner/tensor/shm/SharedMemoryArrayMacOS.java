@@ -216,7 +216,7 @@ public class SharedMemoryArrayMacOS implements SharedMemoryArray
     	this.isFortran = isFortran;
 
     	boolean alreadyExists = false;
-    	int shmFd = INSTANCE.shm_open(memoryName, O_RDONLY, 0700);
+    	shmFd = INSTANCE.shm_open(memoryName, O_RDONLY, 0700);
     	long prevSize = 0;
     	if (shmFd != -1) {
         	prevSize = getSHMSize(shmFd);
