@@ -29,6 +29,9 @@ import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.channels.Channels;
 import java.nio.channels.ReadableByteChannel;
+import java.security.KeyManagementException;
+import java.security.NoSuchAlgorithmException;
+import java.security.cert.X509Certificate;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -51,6 +54,11 @@ import io.bioimage.modelrunner.engine.installation.FileDownloader;
 import io.bioimage.modelrunner.utils.CommonUtils;
 import io.bioimage.modelrunner.utils.Constants;
 import io.bioimage.modelrunner.utils.ZipUtils;
+
+import javax.net.ssl.HttpsURLConnection;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.TrustManager;
+import javax.net.ssl.X509TrustManager;
 
 /**
  * Class to manage the downloading of models from the BioImage.io
@@ -535,7 +543,10 @@ public class DownloadModel {
 		ReadableByteChannel rbc = null;
 		try {
 			URL website = new URL(downloadURL);
-			rbc = Channels.newChannel(website.openStream());
+			HttpsURLConnection conn = ( HttpsURLConnection ) website.openConnection();
+			SSLContext sslContext = getAllTrustingSSLContext();
+			conn.setSSLSocketFactory( sslContext.getSocketFactory() );
+			rbc = Channels.newChannel( conn.getInputStream() );
 			// Create the new model file as a zip
 			fos = new FileOutputStream(targetFile);
 			// Send the correct parameters to the progress screen
@@ -552,6 +563,14 @@ public class DownloadModel {
 		} catch (InterruptedException e) {
 			consumer.accept(DOWNLOAD_ERROR_STR);
 			System.out.println("Download interrupted at file: " + downloadURL);
+		}
+		catch ( NoSuchAlgorithmException e )
+		{
+			throw new RuntimeException( e );
+		}
+		catch ( KeyManagementException e )
+		{
+			throw new RuntimeException( e );
 		} finally {
 			try {
 				if (fos != null)
@@ -563,7 +582,36 @@ public class DownloadModel {
 			}
 		}
 	}
-	
+
+	private static SSLContext getAllTrustingSSLContext() throws NoSuchAlgorithmException, KeyManagementException
+	{
+		// Create a trust manager that does not validate certificate chains
+		TrustManager[] trustAllCerts = new TrustManager[] {
+				new X509TrustManager()
+				{
+					public java.security.cert.X509Certificate[] getAcceptedIssuers()
+					{
+						return new X509Certificate[ 0 ];
+					}
+
+					public void checkClientTrusted( X509Certificate[] certs, String authType )
+					{
+						// Do nothing, since we trust all certificates here
+					}
+
+					public void checkServerTrusted( X509Certificate[] certs, String authType )
+					{
+						// Do nothing, since we trust all certificates here
+					}
+				}
+		};
+
+		// Create a SSLContext with an all-trusting trust manager
+		SSLContext sslContext = SSLContext.getInstance( "SSL" );
+		sslContext.init( null, trustAllCerts, new java.security.SecureRandom() );
+		return sslContext;
+	}
+
 	/**
 	 * Get the final size of the downloadable model by getting the size of 
 	 * all the links that are going to be downloaded
@@ -590,16 +638,19 @@ public class DownloadModel {
 	 * @return the size of the file
 	 */
 	public static long getFileSize(URL url) {
-		HttpURLConnection conn = null;
+		HttpsURLConnection conn = null;
 		try {
-			conn = (HttpURLConnection) url.openConnection();
+			SSLContext sslContext = getAllTrustingSSLContext();
+			conn = ( HttpsURLConnection ) url.openConnection();
+			conn.setSSLSocketFactory( sslContext.getSocketFactory() );
 			conn.setRequestProperty("User-Agent", CommonUtils.getJDLLUserAgent());
 			if (conn.getResponseCode() >= 300 && conn.getResponseCode() <= 308)
 				return getFileSize(redirectedURL(url));
 			if (conn.getResponseCode() != 200)
-				throw new Exception("Unable to connect to: " + url.toString());
+				throw new Exception( "Unable to connect to: " + url );
 			long size = conn.getContentLengthLong();
 			conn.disconnect();
+			System.out.println( "Size of file: " + url + " is: " + size + " bytes" );
 			return size;
 		} catch (IOException e) {
 			throw new RuntimeException(e);
