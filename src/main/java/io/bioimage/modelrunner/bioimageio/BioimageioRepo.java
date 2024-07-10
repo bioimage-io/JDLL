@@ -543,7 +543,7 @@ public class BioimageioRepo {
 		ModelDescriptor model = selectByID(id);
 		if (model == null)
 			throw new IllegalArgumentException("The provided id does not correspond "
-					+ "to an existing Bioimage.io online repository model.");
+					+ "to an existing model in the Bioimage.io online repo.");
 		return downloadModel(model, modelsDirectory, null);
 	}
 	
@@ -574,7 +574,7 @@ public class BioimageioRepo {
 		ModelDescriptor model = selectByID(id);
 		if (model == null)
 			throw new IllegalArgumentException("The provided id does not correspond "
-					+ "to an existing Bioimage.io online repository model.");
+					+ "to an existing model in the Bioimage.io online repo.");
 		return downloadModel(model, modelsDirectory, consumer);
 	}
 	
@@ -601,7 +601,7 @@ public class BioimageioRepo {
 		ModelDescriptor model = selectByName(name);
 		if (model == null)
 			throw new IllegalArgumentException("The provided name does not correspond "
-					+ "to an existing Bioimage.io online repository model.");
+					+ "to an existing model in the Bioimage.io online repo.");
 		return downloadModel(model, modelsDirectory, null);
 	}
 	
@@ -632,7 +632,7 @@ public class BioimageioRepo {
 		ModelDescriptor model = selectByName(name);
 		if (model == null)
 			throw new IllegalArgumentException("The provided name does not correspond "
-					+ "to an existing Bioimage.io online repository model.");
+					+ "to an existing model in the Bioimage.io online repo.");
 		return downloadModel(model, modelsDirectory, consumer);
 	}
 	
@@ -659,7 +659,7 @@ public class BioimageioRepo {
 		ModelDescriptor model = selectByNickname(nickname);
 		if (model == null)
 			throw new IllegalArgumentException("The provided nickname does not correspond "
-					+ "to an existing Bioimage.io online repository model.");
+					+ "to an existing model in the Bioimage.io online repo.");
 		return downloadModel(model, modelsDirectory, null);
 	}
 	
@@ -690,7 +690,7 @@ public class BioimageioRepo {
 		ModelDescriptor model = selectByNickname(nickname);
 		if (model == null)
 			throw new IllegalArgumentException("The provided nickname does not correspond "
-					+ "to an existing Bioimage.io online repository model.");
+					+ "to an existing model in the Bioimage.io online repo.");
 		return downloadModel(model, modelsDirectory, consumer);
 	}
 	
@@ -717,7 +717,7 @@ public class BioimageioRepo {
 		ModelDescriptor model = selectByRdfSource(rdfUrl);
 		if (model == null)
 			throw new IllegalArgumentException("The provided rdf_url does not correspond "
-					+ "to an existing Bioimage.io online repository model.");
+					+ "to an existing model in the Bioimage.io online repo.");
 		return downloadModel(model, modelsDirectory, null);
 	}
 	
@@ -748,7 +748,7 @@ public class BioimageioRepo {
 		ModelDescriptor model = selectByRdfSource(rdfUrl);
 		if (model == null)
 			throw new IllegalArgumentException("The provided rdf_url does not correspond "
-					+ "to an existing Bioimage.io online repository model.");
+					+ "to an existing model in the Bioimage.io online repo.");
 		return downloadModel(model, modelsDirectory, consumer);
 	}
 }
