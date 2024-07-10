@@ -332,9 +332,6 @@ public class DecodeNumpy {
         	byteOrder = ByteOrder.LITTLE_ENDIAN;
         } else if (order == '|') {
         	byteOrder = ByteOrder.LITTLE_ENDIAN;
-        	new IOException("Numpy .npy file did not specify the byte order of the array."
-        			+ " It was automatically opened as little endian but this does not guarantee"
-        			+ " the that the file is open correctly. Caution is advised.").printStackTrace();
     	} else {
         	new IllegalArgumentException("Not supported ByteOrder for the provided .npy array.");
         }
