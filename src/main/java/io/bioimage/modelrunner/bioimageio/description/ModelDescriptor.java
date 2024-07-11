@@ -1071,19 +1071,20 @@ public class ModelDescriptor
 	 * 	the path to the model in the local machine
 	 */
 	public void addModelPath(Path modelBasePath) {
-		if (!modelBasePath.toFile().exists()) {
+		Path absPath = modelBasePath.toAbsolutePath();
+		if (!absPath.toFile().exists()) {
 			throw new IllegalArgumentException("The path '" 
-					 + modelBasePath.toString() + "' does not exist in the computer.");
+					 + absPath.toString() + "' does not exist in the computer.");
 		}
-		localModelPath = modelBasePath.toString();
+		localModelPath = absPath.toString();
 		if (sample_inputs != null)
-			sample_inputs.stream().forEach(i -> i.addLocalModelPath(modelBasePath));
+			sample_inputs.stream().forEach(i -> i.addLocalModelPath(absPath));
 		if (sample_outputs != null)
-			sample_outputs.stream().forEach(i -> i.addLocalModelPath(modelBasePath));
+			sample_outputs.stream().forEach(i -> i.addLocalModelPath(absPath));
 		if (test_inputs != null)
-			test_inputs.stream().forEach(i -> i.addLocalModelPath(modelBasePath));
+			test_inputs.stream().forEach(i -> i.addLocalModelPath(absPath));
 		if (test_outputs != null)
-			test_outputs.stream().forEach(i -> i.addLocalModelPath(modelBasePath));
+			test_outputs.stream().forEach(i -> i.addLocalModelPath(absPath));
 	}
 	
 	/**
