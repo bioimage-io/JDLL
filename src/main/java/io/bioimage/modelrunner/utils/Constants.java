@@ -19,7 +19,6 @@
  */
 package io.bioimage.modelrunner.utils;
 
-import java.io.IOException;
 import java.io.InputStream;
 import java.util.Properties;
 
@@ -59,21 +58,21 @@ public class Constants {
 	public static final String JAR_NAME = getNAME();
 	
     private static String getVersion() {
-        try (InputStream input = Constants.class.getResourceAsStream(".properties")) {
+        try (InputStream input = Constants.class.getResourceAsStream("/.jdll_properties")) {
             Properties prop = new Properties();
             prop.load(input);
             return prop.getProperty("version");
-        } catch (IOException ex) {
+        } catch (Exception | Error ex) {
             return "unknown";
         }
     }
 	
     private static String getNAME() {
-        try (InputStream input = Constants.class.getResourceAsStream(".properties")) {
+        try (InputStream input = Constants.class.getResourceAsStream("/.jdll_properties")) {
             Properties prop = new Properties();
             prop.load(input);
             return prop.getProperty("name");
-        } catch (IOException ex) {
+        } catch (Exception | Error ex) {
             return "unknown";
         }
     }
