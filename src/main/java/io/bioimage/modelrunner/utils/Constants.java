@@ -19,6 +19,10 @@
  */
 package io.bioimage.modelrunner.utils;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.Properties;
+
 import io.bioimage.modelrunner.transformations.PythonTransformation;
 
 /**
@@ -50,5 +54,27 @@ public class Constants {
 	 */
 	public static final String PYTHON_PROCESSING_NAME = PythonTransformation.NAME;
 	
-	public static final String JDLL_VERSION = "0.5.8-SNAPSHOT";
+	public static final String JDLL_VERSION = getVersion();
+	
+	public static final String JAR_NAME = getNAME();
+	
+    private static String getVersion() {
+        try (InputStream input = Constants.class.getResourceAsStream(".properties")) {
+            Properties prop = new Properties();
+            prop.load(input);
+            return prop.getProperty("version");
+        } catch (IOException ex) {
+            return "unknown";
+        }
+    }
+	
+    private static String getNAME() {
+        try (InputStream input = Constants.class.getResourceAsStream(".properties")) {
+            Properties prop = new Properties();
+            prop.load(input);
+            return prop.getProperty("name");
+        } catch (IOException ex) {
+            return "unknown";
+        }
+    }
 }
