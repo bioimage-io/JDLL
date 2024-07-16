@@ -40,25 +40,17 @@ public class TensorSpecV05 {
 	/**
 	 * Whether the tensor represents an input or an output
 	 */
-    private boolean input;
+    private final boolean input;
     
-    private Axes axes;
+    private final Axes axes;
     /**
      * The name of the tensor
      */
-    private String id;
+    private final String id;
     /**
      * The description of the tensor
      */
-    private String description;
-    /**
-     * The shape information of a tensor
-     */
-    private ShapeSpec shape;
-    /**
-     * The type of tensor (image, list)
-     */
-    private String type;
+    private final String description;
     /**
      * The list of pre-processing routines
      */
@@ -78,34 +70,15 @@ public class TensorSpecV05 {
      * @return The tensor specification instance.
      * @throws ModelSpecsException if any of the fields does not fulfill the requirements
      */
-    @SuppressWarnings("unchecked")
-    public static TensorSpecV05 build(Map<String, Object> tensorSpecMap, boolean input) throws ModelSpecsException
+    protected TensorSpecV05(Map<String, Object> tensorSpecMap, boolean input) throws ModelSpecsException
     {
-        TensorSpecV05 tensor = new TensorSpecV05();
-        tensor.id = (String) tensorSpecMap.get("name");
+        id = (String) tensorSpecMap.get("name");
         if (tensorSpecMap.get("axes") == null || (tensorSpecMap.get("axes") instanceof List))
         	throw new IllegalArgumentException("Invalid tensor specifications for '" + tensor.id
         			+ "'. The axes are incorrectly specified. For more info, visit the Bioimage.io docs.");
-        tensor.axes = new Axes((List<Object>) tensorSpecMap.get("axes"));
-        tensor.dataType = (String) tensorSpecMap.get("data_type");
-        tensor.description = (String) tensorSpecMap.get("description");
-        tensor.input = input;
-        // TODO
-        // List<String> rangeList = (List<String>) tensorSpecMap.get("data_range");
-        // tensor.range = rangeList == null ? null : new ArrayList<>(rangeList);
-        List<?> haloList = (List<?>) tensorSpecMap.get("halo");
-        tensor.halo = (input
-            ? null
-            : (haloList == null ? new float[tensor.axes.length()] : YAMLUtils.castListToFloatArray(haloList)));
-        tensor.shape = ShapeSpec.build(tensorSpecMap.get("shape"), input);
-        tensor.type = IMAGE;
-        if ((tensor.axes == null) ||
-            (tensor.axes.length() <= 2 && tensor.axes.toUpperCase().matches(".*[B|I].*"))
-            || tensor.axes.toUpperCase().contains("I")|| tensor.axes.length() == 1)
-        {
-            tensor.type = LIST;
-        }
-        tensor.processingTile = tensor.shape.getTileRecomendedSize();
+        axes = new Axes((List<Object>) tensorSpecMap.get("axes"));
+        description = (String) tensorSpecMap.get("description");
+        this.input = input;
 
         List<?> preprocessingTensors = (List<?>) tensorSpecMap.get("preprocessing");
         if (preprocessingTensors == null)
