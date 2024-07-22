@@ -185,6 +185,7 @@ public interface SharedMemoryArray extends Closeable {
 		String strDType = CommonUtils.getDataType(datatype);
     	int size = DecodeNumpy.DATA_TYPES_MAP.get(strDType);
     	for (long i : shape) {size *= i;}
+    	if (isNpy) size = (int) DecodeNumpy.calculateNpyStyleByteArrayLength(shape, datatype);
         if (PlatformDetection.isWindows()) 
         	return SharedMemoryArrayWin.readOrCreate(name, size, shape, strDType, isFortran, isNpy);
     	else if (PlatformDetection.isLinux()) 
@@ -299,6 +300,7 @@ public interface SharedMemoryArray extends Closeable {
 		String strDType = CommonUtils.getDataType(datatype);
     	int size = DecodeNumpy.DATA_TYPES_MAP.get(strDType);
     	for (long i : shape) {size *= i;}
+    	if (isNpy) size = (int) DecodeNumpy.calculateNpyStyleByteArrayLength(shape, datatype);
         if (PlatformDetection.isWindows()) 
         	return SharedMemoryArrayWin.create(size, shape, strDType, isNpy, isFortran);
     	else if (PlatformDetection.isLinux())
