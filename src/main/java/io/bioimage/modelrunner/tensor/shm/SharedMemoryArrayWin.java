@@ -863,7 +863,14 @@ public class SharedMemoryArrayWin implements SharedMemoryArray
     		throw new IllegalArgumentException("The buffer capacity has to be smaller or equal "
     				+ "than the size of the shared memory segment.");
     	}
-    	this.mappedPointer.write(0, buffer.array(), 0, buffer.capacity());
+    	byte[] array;
+    	if (buffer.hasArray()) {
+    	    array = buffer.array();
+    	} else {
+    	    array = new byte[buffer.remaining()];
+    	    buffer.get(array);
+    	}
+    	this.mappedPointer.write(0, array, 0, buffer.capacity());
     }
     
     /**
