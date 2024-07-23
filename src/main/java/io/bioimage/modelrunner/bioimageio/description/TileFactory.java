@@ -1,6 +1,8 @@
 package io.bioimage.modelrunner.bioimageio.description;
 
 import java.util.Arrays;
+import java.util.List;
+import java.util.stream.Collectors;
 
 import io.bioimage.modelrunner.tiling.PatchGridCalculator;
 
@@ -59,7 +61,11 @@ public class TileFactory {
 			return patch;
 		long totPix = 1;
 		for (long ii : patch) totPix *= (long) ii;
-		long outputTotByteSize = calculateByteSizeOfAffectedOutput(tensor.getAxesOrder(), patch, affectedTensor);
+		
+		List<String> affectedTensors = tensor.getAxesInfo().getAxesList().stream()
+										.map(i -> i.getReferenceTensor()).collect(Collectors.toList());
+		
+		long outputTotByteSize = calculateByteSizeOfAffectedOutput(tensor.getAxesOrder(), patch, affectedTensors);
 		
 		if (totPix < OPTIMAL_MAX_NUMBER_PIXELS && outputTotByteSize < Integer.MAX_VALUE)
 			return patch;
@@ -67,7 +73,7 @@ public class TileFactory {
 		long minPix = 1;
 		for (int ii : tensor.getMinTileSizeArr()) minPix *= (long) ii;
 		if (minPix > OPTIMAL_MAX_NUMBER_PIXELS)
-			return tensor.getMinTileSizeArr();
+			return Arrays.stream(min).mapToLong(i -> i).toArray();
 
 		double ratioSize = (double) OPTIMAL_MAX_NUMBER_PIXELS / (double) totPix;
 		double ratioByte = (double) Integer.MAX_VALUE / (double) outputTotByteSize;
@@ -75,20 +81,18 @@ public class TileFactory {
 		double ratio = Math.min(ratioSize, ratioByte);
 		
 		for (int ii = 0; ii < axesArr.length; ii ++) {
-			int step = tensor.getTileStepArr()[ii];
-			if (step == 0) continue;
-			int min = tensor[ii];
-			int prevTile = patch[ii];
+			if (step[ii] == 0) continue;
+			long prevTile = patch[ii];
 			long nTot = totPix / prevTile;
-			if ((prevTile * ratio < min) && (min < 100) && (min != 1) && (min != 0))
-				patch[ii] = (int)Math.ceil((double)100 / (double)step) * step;
-			else if (prevTile * ratio < min)
-				patch[ii] = min;
+			if ((prevTile * ratio < min[ii]) && (min[ii] < 100) && (min[ii] != 1) && (min[ii] != 0))
+				patch[ii] = (int)Math.ceil((double)100 / (double)step[ii]) * step[ii];
+			else if (prevTile * ratio < min[ii])
+				patch[ii] = min[ii];
 			else 
-				patch[ii] = (int)Math.floor((prevTile * ratio - min) / step) * step + min;
+				patch[ii] = (long) (Math.floor((prevTile * ratio - min[ii]) / step[ii]) * step[ii] + min[ii]);
 			totPix = nTot * patch[ii];
 			ratioSize = (double) OPTIMAL_MAX_NUMBER_PIXELS / (double) totPix;
-			ratioByte = (double) Integer.MAX_VALUE / (double) calculateByteSizeOfAffectedOutput(this.axes, patch, affectedTensor);
+			ratioByte = (double) Integer.MAX_VALUE / (double) calculateByteSizeOfAffectedOutput(tensor.getAxesOrder(), patch, affectedTensors);
 			ratio = Math.min(ratioSize, ratioByte);
 			if (ratio > 1)
 				break;
@@ -96,8 +100,8 @@ public class TileFactory {
 		return patch;
 	}
     
-    private long calculateByteSizeOfAffectedOutput(String inputAxes, int[] inputSize, TensorSpecV05 affectedOutput) {
-    	if (affectedOutput == null) return 0;
+    private long calculateByteSizeOfAffectedOutput(String inputAxes, long[] inputSize, List<String> affectedOutputs) {
+    	if (affectedOutputs == null || affectedOutputs.size() == 0) return 0;
         inputSize = PatchGridCalculator.arrayToWantedAxesOrderAddOnes(inputSize, inputAxes, affectedOutput.axes);
         int[] outputSize = new int[inputSize.length];
         if (!affectedOutput.shape.isFixedSize()) {

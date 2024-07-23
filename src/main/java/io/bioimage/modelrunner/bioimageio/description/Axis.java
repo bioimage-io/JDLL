@@ -96,5 +96,13 @@ public class Axis {
 	public int getHalo() {
 		return this.halo;
 	}
+	
+	public String getReferenceTensor() {
+		return this.size.getReferenceTensor();
+	}
+	
+	public String getReferenceAxis() {
+		return this.size.getReferenceAxis();
+	}
 
 }

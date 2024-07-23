@@ -166,4 +166,8 @@ public class TensorSpecV05 {
     public double[] getTileScaleArr() {
     	return this.axes.getTileScaleArr();
     }
+    
+    public Axes getAxesInfo() {
+    	return this.axes;
+    }
 }
