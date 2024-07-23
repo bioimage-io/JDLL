@@ -39,6 +39,7 @@ import io.bioimage.modelrunner.bioimageio.bioengine.BioengineInterface;
 import io.bioimage.modelrunner.bioimageio.description.ModelDescriptor;
 import io.bioimage.modelrunner.bioimageio.description.TensorSpec;
 import io.bioimage.modelrunner.bioimageio.description.exceptions.ModelSpecsException;
+import io.bioimage.modelrunner.bioimageio.description.weights.ModelWeight;
 import io.bioimage.modelrunner.bioimageio.description.weights.WeightFormat;
 import io.bioimage.modelrunner.engine.DeepLearningEngineInterface;
 import io.bioimage.modelrunner.engine.EngineInfo;
@@ -287,8 +288,12 @@ public class Model
 		EngineInfo info = null;
 		for (WeightFormat ww : modelWeights) {
 			String source = ww.getSourceFileName();
-			if (!(new File(bmzModelFolder, source )).isFile())
+			if (!(new File(bmzModelFolder, source )).isFile() && !ww.getFramework().equals(ModelWeight.getTensorflowID()))
 					continue;
+			else if (ww.getFramework().equals(ModelWeight.getTensorflowID()) && !(new File(bmzModelFolder, source )).isFile()
+					&& (!(new File(bmzModelFolder, "saved_model.pb" )).isFile() 
+							|| !(new File(bmzModelFolder, "variables" )).isDirectory()))
+				continue;
 			info = EngineInfo.defineCompatibleDLEngineWithRdfYamlWeights(ww, enginesFolder);
 			if (info != null) {
 				modelSource = new File(bmzModelFolder, source).getAbsolutePath();
