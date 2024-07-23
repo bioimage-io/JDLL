@@ -12,8 +12,10 @@ public class Axis {
 	private final String abreviation;
 	private boolean concat = false;
 	private double scale = 1.0;
+	private AxisSize size;
 	private int min = 1;
 	private int step = 1;
+	private int halo = 0;
 	
 	
 	protected Axis(Map<String, Object> map) {
@@ -27,15 +29,11 @@ public class Axis {
 			this.concat = (boolean) map.get("concatenable");
 		if (map.get("scale") != null) 
 			this.scale = (double) map.get("scale");
+		if (map.get("halo") != null) 
+			this.halo = (int) map.get("halo");
 		
+		this.size = new AxisSize(map.get("size"));
 		
-		if (map.get("size") != null && (map.get("size") instanceof Map)) {
-			Map<String, Object> size = (Map<String, Object>) map.get("size");
-			if (size.get("min") != null && (size.get("min") instanceof Integer)) 
-				min = (int) size.get("min");
-			if (size.get("step") != null && (size.get("step") instanceof Integer)) 
-				step = (int) size.get("step");
-		}
 		if (this.id == null && this.type == null)
 			throw new IllegalArgumentException("Invalid axis configuration: "
 					+ "Either 'type' or 'id' must be defined for each axis. "
@@ -91,6 +89,14 @@ public class Axis {
 	 */
 	public boolean isConcat() {
 		return concat;
+	}
+	
+	public AxisSize getSize() {
+		return this.size;
+	}
+	
+	public int getHalo() {
+		return this.halo;
 	}
 
 }

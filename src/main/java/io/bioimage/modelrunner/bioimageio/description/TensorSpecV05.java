@@ -20,14 +20,10 @@
 package io.bioimage.modelrunner.bioimageio.description;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.IntStream;
 
 import io.bioimage.modelrunner.bioimageio.description.exceptions.ModelSpecsException;
-import io.bioimage.modelrunner.tiling.PatchGridCalculator;
-import io.bioimage.modelrunner.utils.YAMLUtils;
 
 
 /**
@@ -43,6 +39,9 @@ public class TensorSpecV05 {
     private final boolean input;
     
     private final Axes axes;
+    
+    // TODO
+    private final InputData data = null;
     /**
      * The name of the tensor
      */
@@ -59,6 +58,10 @@ public class TensorSpecV05 {
      * The list of post-processing routines
      */
     private List<TransformSpec> postprocessing;
+    
+    private String sampleTensorName;
+    
+    private String testTensorName;
 
     /**
      * Builds the tensor specification instance from the tensor map and an input flag.
@@ -70,11 +73,11 @@ public class TensorSpecV05 {
      * @return The tensor specification instance.
      * @throws ModelSpecsException if any of the fields does not fulfill the requirements
      */
-    protected TensorSpecV05(Map<String, Object> tensorSpecMap, boolean input) throws ModelSpecsException
+    protected TensorSpecV05(Map<String, Object> tensorSpecMap, boolean input)
     {
         id = (String) tensorSpecMap.get("name");
         if (tensorSpecMap.get("axes") == null || (tensorSpecMap.get("axes") instanceof List))
-        	throw new IllegalArgumentException("Invalid tensor specifications for '" + tensor.id
+        	throw new IllegalArgumentException("Invalid tensor specifications for '" + id
         			+ "'. The axes are incorrectly specified. For more info, visit the Bioimage.io docs.");
         axes = new Axes((List<Object>) tensorSpecMap.get("axes"));
         description = (String) tensorSpecMap.get("description");
@@ -83,31 +86,84 @@ public class TensorSpecV05 {
         List<?> preprocessingTensors = (List<?>) tensorSpecMap.get("preprocessing");
         if (preprocessingTensors == null)
         {
-            tensor.preprocessing = new ArrayList<>(0);
+            preprocessing = new ArrayList<>(0);
         }
         else
         {
-            tensor.preprocessing = new ArrayList<TransformSpec>(preprocessingTensors.size());
+            preprocessing = new ArrayList<TransformSpec>(preprocessingTensors.size());
             for (Object elem : preprocessingTensors)
             {
-                tensor.preprocessing.add(TransformSpec.build((Map<String, Object>) elem));
+                preprocessing.add(TransformSpec.build((Map<String, Object>) elem));
             }
         }
 
         List<?> postprocessingTensors = (List<?>) tensorSpecMap.get("postprocessing");
         if (postprocessingTensors == null)
         {
-            tensor.postprocessing = new ArrayList<>(0);
+            postprocessing = new ArrayList<>(0);
         }
         else
         {
-            tensor.postprocessing = new ArrayList<TransformSpec>(postprocessingTensors.size());
+            postprocessing = new ArrayList<TransformSpec>(postprocessingTensors.size());
             for (Object elem : postprocessingTensors)
             {
-                tensor.postprocessing.add(TransformSpec.build((Map<String, Object>) elem));
+                postprocessing.add(TransformSpec.build((Map<String, Object>) elem));
             }
         }
 
-        return tensor;
+        if (!(tensorSpecMap.get("sample_tensor") instanceof Map)) {
+        	Map<String, Object> sampleMap = (Map<String, Object>) tensorSpecMap.get("sample_tensor");
+        	if (sampleMap.get("source") != null && (sampleMap.get("source") instanceof String))
+        		this.sampleTensorName = (String) sampleMap.get("source");
+        }
+        if (!(tensorSpecMap.get("test_tensor") instanceof Map)) {
+        	Map<String, Object> sampleMap = (Map<String, Object>) tensorSpecMap.get("test_tensor");
+        	if (sampleMap.get("source") != null && (sampleMap.get("source") instanceof String))
+        		this.testTensorName = (String) sampleMap.get("source");
+        }
+    }
+    
+    public String getTensorID() {
+    	return this.id;
+    }
+    
+    public String getDescription() {
+    	return this.description;
+    }
+    
+    public List<TransformSpec> getPreprocessing(){
+    	if (this.input)
+    		return new ArrayList<TransformSpec>();
+    	return this.preprocessing;
+    }
+    
+    public List<TransformSpec> getPostprocessing(){
+    	if (!this.input)
+    		return new ArrayList<TransformSpec>();
+    	return this.postprocessing;
+    }
+    
+    public String getAxesOrder() {
+    	return this.axes.getAxesOrder();
+    }
+    
+    public String getSampleTensorName() {
+    	return this.sampleTensorName;
+    }
+    
+    public String getTestTensorName() {
+    	return this.testTensorName;
+    }
+    
+    public int[] getMinTileSizeArr() {
+    	return this.axes.getMinTileSizeArr();
+    }
+    
+    public int[] getTileStepArr() {
+    	return this.axes.getTileStepArr();
+    }
+    
+    public double[] getTileScaleArr() {
+    	return this.axes.getTileScaleArr();
     }
 }

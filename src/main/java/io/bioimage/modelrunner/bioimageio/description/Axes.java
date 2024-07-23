@@ -10,9 +10,19 @@ public class Axes {
 	
 	private final String axesOrder;
 	
+	private final double[] scaleArr;
+	
+	private final int[] minArr;
+	
+	private final int[] stepArr;
+	
 	protected Axes(List<Object> axesList) {
 		List<Axis> axesListInit = new ArrayList<Axis>();
 		String order = "";
+		int[] minArr = new int[axesList.size()];
+		int[] stepArr = new int[axesList.size()];
+		double[] scaleArr = new double[axesList.size()];
+		int c = 0;
 		for (Object axisObject : axesList) {
 			if (!(axisObject instanceof Map))
 				throw new IllegalArgumentException("The input argument should be a list of maps. "
@@ -20,9 +30,15 @@ public class Axes {
 			Axis axis = new Axis((Map<String, Object>) axisObject);
 			axesListInit.add(axis);
 			order += axis.getAxis();
+			minArr[c] = axis.getMin();
+			stepArr[c] = axis.getStep();
+			scaleArr[c] = axis.getScale();
 		}
 		this.axesList = axesListInit;
-		this.axesOrder = order; 
+		this.axesOrder = order;
+		this.scaleArr = scaleArr;
+		this.minArr = minArr;
+		this.stepArr = stepArr; 
 	}
 	
 	public String getAxesOrder() {
@@ -34,6 +50,18 @@ public class Axes {
 	 */
 	public List<Axis> getAxesList() {
 		return axesList;
+	}
+
+	public int[] getMinTileSizeArr() {
+		return this.minArr;
+	}
+
+	public int[] getTileStepArr() {
+		return this.stepArr;
+	}
+
+	public double[] getTileScaleArr() {
+		return this.scaleArr;
 	}
 
 }

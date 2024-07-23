@@ -20,7 +20,6 @@
 package io.bioimage.modelrunner.bioimageio.description;
 
 import java.io.ByteArrayOutputStream;
-import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.MalformedURLException;
@@ -28,20 +27,15 @@ import java.net.URL;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.Map.Entry;
-import java.util.stream.Collectors;
 
 import io.bioimage.modelrunner.bioimageio.BioimageioRepo;
 import io.bioimage.modelrunner.bioimageio.description.exceptions.ModelSpecsException;
 import io.bioimage.modelrunner.bioimageio.description.weights.ModelWeight;
-import io.bioimage.modelrunner.utils.Constants;
 import io.bioimage.modelrunner.utils.Log;
-import io.bioimage.modelrunner.utils.YAMLUtils;
 
 
 /**
@@ -187,7 +181,6 @@ public class ModelDescriptorV05
         addBioEngine();
         if (localModelPath == null)
         	return;
-    	addModelPath(new File(localModelPath).toPath());
     	// TODO SpecialModels.checkSpecialModels(null);
     }
     
@@ -701,28 +694,6 @@ public class ModelDescriptorV05
 	 */
 	public boolean isModelInLocalRepo() {
 		return isModelLocal;
-	}
-	
-	/**
-	 * Add the path where the local model is stored to the model descriptor
-	 * @param modelBasePath
-	 * 	the path to the model in the local machine
-	 */
-	public void addModelPath(Path modelBasePath) {
-		Path absPath = modelBasePath.toAbsolutePath();
-		if (!absPath.toFile().exists()) {
-			throw new IllegalArgumentException("The path '" 
-					 + absPath.toString() + "' does not exist in the computer.");
-		}
-		localModelPath = absPath.toString();
-		if (sample_inputs != null)
-			sample_inputs.stream().forEach(i -> i.addLocalModelPath(absPath));
-		if (sample_outputs != null)
-			sample_outputs.stream().forEach(i -> i.addLocalModelPath(absPath));
-		if (test_inputs != null)
-			test_inputs.stream().forEach(i -> i.addLocalModelPath(absPath));
-		if (test_outputs != null)
-			test_outputs.stream().forEach(i -> i.addLocalModelPath(absPath));
 	}
 	
 	/**
