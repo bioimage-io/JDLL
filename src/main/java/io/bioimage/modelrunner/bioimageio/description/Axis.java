@@ -59,11 +59,13 @@ public class Axis {
 	}
 	
 	public int getMin() {
-		return this.min;
+		if (this.abreviation .equals("c"))
+			return this.channelNames != null ? this.channelNames.size() : 1;
+		return this.size.getMin();
 	}
 	
 	public int getStep() {
-		return this.step;
+		return this.size.getStep();
 	}
 	
 	public double getScale() {
@@ -89,10 +91,6 @@ public class Axis {
 	 */
 	public boolean isConcat() {
 		return concat;
-	}
-	
-	public AxisSize getSize() {
-		return this.size;
 	}
 	
 	public int getHalo() {
