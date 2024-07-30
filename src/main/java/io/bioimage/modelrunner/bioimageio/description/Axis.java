@@ -97,6 +97,10 @@ public class Axis {
 		return this.halo;
 	}
 	
+	public double getOffset() {
+		return this.size.getOffset();
+	}
+	
 	public String getReferenceTensor() {
 		return this.size.getReferenceTensor();
 	}

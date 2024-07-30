@@ -170,4 +170,9 @@ public class TensorSpecV05 {
     public Axes getAxesInfo() {
     	return this.axes;
     }
+    
+    public String getDataType() {
+    	// TODO 
+    	return this.data.toString();
+    }
 }

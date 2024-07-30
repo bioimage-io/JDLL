@@ -3,6 +3,7 @@ package io.bioimage.modelrunner.bioimageio.description;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
+import java.util.stream.LongStream;
 
 import io.bioimage.modelrunner.tiling.PatchGridCalculator;
 
@@ -99,35 +100,6 @@ public class TileFactory {
 		}
 		return patch;
 	}
-    
-    private long calculateByteSizeOfAffectedOutput(String inputAxes, long[] inputSize, List<String> affectedOutputs) {
-    	if (affectedOutputs == null || affectedOutputs.size() == 0) return 0;
-        inputSize = PatchGridCalculator.arrayToWantedAxesOrderAddOnes(inputSize, inputAxes, affectedOutput.axes);
-        int[] outputSize = new int[inputSize.length];
-        if (!affectedOutput.shape.isFixedSize()) {
-        	float[] scale = affectedOutput.shape.getScale();
-        	float[] offset = affectedOutput.shape.getOffset();
-        	for (int i = 0; i < scale.length; i ++) {
-        		outputSize[i] = (int) (inputSize[i] * scale[i] + offset[i] * 2);
-        	}
-        } else {
-        	outputSize = affectedOutput.shape.getTileRecomendedSize();
-        }
-        
-        long flatSize = 1;
-        for (int i : outputSize) flatSize *= (long) i;
-        if (affectedOutput.dataType.toLowerCase().equals("float32")
-        		|| affectedOutput.dataType.toLowerCase().equals("int32")
-        		|| affectedOutput.dataType.toLowerCase().equals("uint32"))
-        	flatSize *= 4;
-        else if (affectedOutput.dataType.toLowerCase().equals("int16")
-        		|| affectedOutput.dataType.toLowerCase().equals("uint16"))
-        	flatSize *= 2;
-        else if (affectedOutput.dataType.toLowerCase().equals("int64")
-        		|| affectedOutput.dataType.toLowerCase().equals("float64"))
-        	flatSize *= 8;
-        return flatSize;
-    }
 	
 	public void validateTileSize(String tensorName, long[] dims, String inputAxesOrder) {
 		
@@ -136,4 +108,57 @@ public class TileFactory {
 	public void getTileSizeForNTiles(int nTiles, String tensorName, long[] dims, String inputAxesOrder) {
 		
 	}
+    
+    private List<Long> calculateByteSizeOfAffectedOutput(List<TensorSpecV05> inputTensors, List<long[]> inputSize, List<String> affectedOutputs) {
+    	if (affectedOutputs == null || affectedOutputs.size() == 0) 
+    		return LongStream.range(0, affectedOutputs.size()).map(i -> 0L).boxed().collect(Collectors.toList());
+    	List<String> names = inputTensors.stream().map(t -> t.getTensorID()).collect(Collectors.toList());
+    	List<String> axesOrders = inputTensors.stream().map(t -> t.getAxesOrder()).collect(Collectors.toList());
+    	List<TensorSpecV05> outputTensors = null; // TODO
+    	outputTensors = outputTensors.stream()
+    			.filter(t -> {
+    				return t.getAxesInfo().getAxesList().stream()
+    						.filter(tt -> names.contains(tt.getReferenceTensor())).findFirst().orElse(null) != null;
+    			}).collect(Collectors.toList());
+    	
+    	List<long[]> outTiles = outputTensors.stream()
+    			.map(t -> new long[t.getAxesInfo().getAxesList().size()]).collect(Collectors.toList());
+    	
+    	for (int i = 0; i < outputTensors.size(); i ++) {
+    		TensorSpecV05 tt = outputTensors.get(i);
+    		for (int j = 0; j < outputTensors.get(i).getAxesInfo().getAxesList().size(); j ++) {
+    			Axis ax = tt.getAxesInfo().getAxesList().get(j);
+    			if (ax.getStep() == 0) {
+    				outTiles.get(i)[j] = ax.getMin();
+    				continue;
+    			}
+    			String refName = ax.getReferenceTensor();
+    			String refAxisStr = ax.getReferenceAxis();
+    			TensorSpecV05 refTensor = inputTensors.get(names.indexOf(refName));
+    			long[] refTileSize = inputSize.get(names.indexOf(refName));
+    			String axesOrder = axesOrders.get(names.indexOf(refName));
+    			Axis refAxis = refTensor.getAxesInfo().getAxis(refAxisStr);
+    			outTiles.get(i)[j] = 
+    					(long) (refTileSize[axesOrder.indexOf(refAxisStr)] * refAxis.getScale() + refAxis.getOffset());
+    		}
+    	}
+        
+    	List<Long> flatSizes = LongStream.range(0, outTiles.size()).map(i -> 1L).boxed().collect(Collectors.toList());
+
+    	for (int i = 0; i < flatSizes.size(); i ++) {
+            if (outputTensors.get(i).getDataType().toLowerCase().equals("float32")
+            		|| outputTensors.get(i).getDataType().toLowerCase().equals("int32")
+            		|| outputTensors.get(i).getDataType().toLowerCase().equals("uint32"))
+            	flatSizes.set(i, flatSizes.get(i) * 8);
+            else if (outputTensors.get(i).getDataType().toLowerCase().equals("int16")
+            		|| outputTensors.get(i).getDataType().toLowerCase().equals("uint16"))
+            	flatSizes.set(i, flatSizes.get(i) * 2);
+            else if (outputTensors.get(i).getDataType().toLowerCase().equals("int64")
+            		|| outputTensors.get(i).getDataType().toLowerCase().equals("float64"))
+            	flatSizes.set(i, flatSizes.get(i) * 4);
+            for (long j : outTiles.get(i)) 
+            	flatSizes.set(i, flatSizes.get(i) * j);
+    	}
+        return flatSizes;
+    }
 }
