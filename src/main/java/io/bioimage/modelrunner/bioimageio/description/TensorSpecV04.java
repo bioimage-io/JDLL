@@ -32,13 +32,13 @@ import io.bioimage.modelrunner.bioimageio.description.exceptions.ModelSpecsExcep
  * 
  * @author Carlos Garcia Lopez de Haro and Daniel Felipe Gonzalez Obando
  */
-public class TensorSpecV05 {
+public class TensorSpecV04 {
 	/**
 	 * Whether the tensor represents an input or an output
 	 */
     private final boolean input;
     
-    private final AxesV05 axes;
+    private final Axes axes;
     
     // TODO
     private final InputData data = null;
@@ -73,13 +73,13 @@ public class TensorSpecV05 {
      * @return The tensor specification instance.
      * @throws ModelSpecsException if any of the fields does not fulfill the requirements
      */
-    protected TensorSpecV05(Map<String, Object> tensorSpecMap, boolean input)
+    protected TensorSpecV04(Map<String, Object> tensorSpecMap, boolean input)
     {
         id = (String) tensorSpecMap.get("name");
         if (tensorSpecMap.get("axes") == null || (tensorSpecMap.get("axes") instanceof List))
         	throw new IllegalArgumentException("Invalid tensor specifications for '" + id
         			+ "'. The axes are incorrectly specified. For more info, visit the Bioimage.io docs.");
-        axes = new AxesV05((List<Object>) tensorSpecMap.get("axes"));
+        axes = new AxesV04(tensorSpecMap);
         description = (String) tensorSpecMap.get("description");
         this.input = input;
 
@@ -110,17 +110,14 @@ public class TensorSpecV05 {
                 postprocessing.add(TransformSpec.build((Map<String, Object>) elem));
             }
         }
-
-        if (!(tensorSpecMap.get("sample_tensor") instanceof Map)) {
-        	Map<String, Object> sampleMap = (Map<String, Object>) tensorSpecMap.get("sample_tensor");
-        	if (sampleMap.get("source") != null && (sampleMap.get("source") instanceof String))
-        		this.sampleTensorName = (String) sampleMap.get("source");
-        }
-        if (!(tensorSpecMap.get("test_tensor") instanceof Map)) {
-        	Map<String, Object> sampleMap = (Map<String, Object>) tensorSpecMap.get("test_tensor");
-        	if (sampleMap.get("source") != null && (sampleMap.get("source") instanceof String))
-        		this.testTensorName = (String) sampleMap.get("source");
-        }
+    }
+    
+    protected void setSampleTensor(String sampleTensorName) {
+    	this.sampleTensorName = sampleTensorName;
+    }
+    
+    protected void setTestTensor(String testTensorName) {
+    	this.testTensorName = testTensorName;
     }
     
     public String getTensorID() {

@@ -66,9 +66,10 @@ public class TileFactory {
 		List<String> affectedTensors = tensor.getAxesInfo().getAxesList().stream()
 										.map(i -> i.getReferenceTensor()).collect(Collectors.toList());
 		
-		long outputTotByteSize = calculateByteSizeOfAffectedOutput(tensor.getAxesOrder(), patch, affectedTensors);
+		List<Long> outputTotByteSizes = calculateByteSizeOfAffectedOutput(null, null, affectedTensors);
 		
-		if (totPix < OPTIMAL_MAX_NUMBER_PIXELS && outputTotByteSize < Integer.MAX_VALUE)
+		if (totPix < OPTIMAL_MAX_NUMBER_PIXELS 
+				&& outputTotByteSizes.stream().filter(oo -> oo > Integer.MAX_VALUE).findFirst().orElse(null) == null)
 			return patch;
 		
 		long minPix = 1;
