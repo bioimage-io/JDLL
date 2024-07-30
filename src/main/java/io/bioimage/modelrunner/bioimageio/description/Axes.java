@@ -63,5 +63,9 @@ public class Axes {
 	public double[] getTileScaleArr() {
 		return this.scaleArr;
 	}
+	
+	public Axis getAxis(String abreviation) {
+		return axesList.stream().filter(ax -> ax.getAxis().equals(abreviation)).findFirst().orElse(null);
+	}
 
 }
