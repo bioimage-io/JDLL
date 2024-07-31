@@ -13,8 +13,6 @@ public class AxisV05 {
 	private boolean concat = false;
 	private double scale = 1.0;
 	private AxisSize size;
-	private int min = 1;
-	private int step = 1;
 	private int halo = 0;
 	
 	

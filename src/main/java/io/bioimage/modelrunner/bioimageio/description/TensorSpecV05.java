@@ -23,6 +23,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import io.bioimage.modelrunner.bioimageio.description.axes.Axes;
+import io.bioimage.modelrunner.bioimageio.description.axes.AxesV05;
 import io.bioimage.modelrunner.bioimageio.description.exceptions.ModelSpecsException;
 
 
@@ -38,7 +40,7 @@ public class TensorSpecV05 {
 	 */
     private final boolean input;
     
-    private final AxesV05 axes;
+    private final Axes axes;
     
     // TODO
     private final InputData data = null;
@@ -167,7 +169,7 @@ public class TensorSpecV05 {
     	return this.axes.getTileScaleArr();
     }
     
-    public AxesV05 getAxesInfo() {
+    public Axes getAxesInfo() {
     	return this.axes;
     }
     

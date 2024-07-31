@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.LongStream;
 
+import io.bioimage.modelrunner.bioimageio.description.axes.axis.Axis;
 import io.bioimage.modelrunner.tiling.PatchGridCalculator;
 
 public class TileFactory {
