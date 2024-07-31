@@ -1,9 +1,9 @@
-package io.bioimage.modelrunner.bioimageio.description;
+package io.bioimage.modelrunner.bioimageio.description.axes.axis;
 
 import java.util.List;
 import java.util.Map;
 
-public class Axis {
+public class AxisV05 {
 
 	private String id;
 	private String type;
@@ -18,7 +18,7 @@ public class Axis {
 	private int halo = 0;
 	
 	
-	protected Axis(Map<String, Object> map) {
+	protected AxisV05(Map<String, Object> map) {
 		this.id = (String) map.get("id");
 		this.type = (String) map.get("type");
 		this.channelNames = (List<String>) map.get("channel_names");

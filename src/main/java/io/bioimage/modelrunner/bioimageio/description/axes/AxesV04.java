@@ -1,4 +1,4 @@
-package io.bioimage.modelrunner.bioimageio.description;
+package io.bioimage.modelrunner.bioimageio.description.axes;
 
 import java.util.ArrayList;
 import java.util.List;

@@ -1,8 +1,10 @@
-package io.bioimage.modelrunner.bioimageio.description;
+package io.bioimage.modelrunner.bioimageio.description.axes;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+
+import io.bioimage.modelrunner.bioimageio.description.axes.axis.Axis;
 
 public class AxesV05 implements Axes {
 	

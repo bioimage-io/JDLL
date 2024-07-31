@@ -1,6 +1,8 @@
-package io.bioimage.modelrunner.bioimageio.description;
+package io.bioimage.modelrunner.bioimageio.description.axes;
 
 import java.util.List;
+
+import io.bioimage.modelrunner.bioimageio.description.axes.axis.Axis;
 
 public interface Axes {
 	
