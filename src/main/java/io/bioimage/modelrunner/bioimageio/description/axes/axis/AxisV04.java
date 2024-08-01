@@ -1,57 +1,30 @@
 package io.bioimage.modelrunner.bioimageio.description.axes.axis;
 
 import java.util.List;
-import java.util.Map;
 
-public class AxisV04 {
+public class AxisV04 implements Axis {
 
-	private String id;
-	private String type;
 	private String description = "";
-	private List<String> channelNames;
 	private final String abreviation;
 	private boolean concat = false;
 	private double scale = 1.0;
-	private AxisSize size;
 	private int min = 1;
 	private int step = 1;
 	private int halo = 0;
+	private double offset = 0;
+	String referenceTensor;
+	String referenceAxis;
 	
 	
-	protected AxisV04(Map<String, Object> map) {
-		this.id = (String) map.get("id");
-		this.type = (String) map.get("type");
-		this.channelNames = (List<String>) map.get("channel_names");
-		
-		if (map.get("description") != null) 
-			this.description = (String) map.get("description");
-		if (map.get("concatenable") != null) 
-			this.concat = (boolean) map.get("concatenable");
-		if (map.get("scale") != null) 
-			this.scale = (double) map.get("scale");
-		if (map.get("halo") != null) 
-			this.halo = (int) map.get("halo");
-		
-		this.size = new AxisSize(map.get("size"));
-		
-		if (this.id == null && this.type == null)
-			throw new IllegalArgumentException("Invalid axis configuration: "
-					+ "Either 'type' or 'id' must be defined for each axis. "
-					+ "Current axis definition is missing both.");
-		else if (this.id == null && this.type.equals("space"))
-			throw new IllegalArgumentException(String.format(
-				    "Invalid axis configuration: When axis type is 'spaces', an 'id' must be defined. " +
-				    "Current configuration: type='%s', id=%s", 
-				    type, "null"
-				));
-		else if (this.id == null && this.type.equals("batch"))
-			this.abreviation = "b";
-		else if (this.id != null && id.equals("channel"))
-			this.abreviation = "c";
-		else if (this.type != null && this.type.equals("channel"))
-			this.abreviation = "c";
-		else
-			this.abreviation = this.id;
+	protected AxisV04(String abreviation, int min, int step, int halo, double offset, double scale, String ref) {
+		this.abreviation = abreviation;
+		this.halo = halo;
+		this.step = step;
+		this.offset = offset;
+		this.scale = scale;
+		this.step = step;
+		this.referenceAxis = abreviation;
+		this.referenceTensor = ref;
 	}
 	
 	public String getAxis() {
@@ -59,13 +32,11 @@ public class AxisV04 {
 	}
 	
 	public int getMin() {
-		if (this.abreviation .equals("c"))
-			return this.channelNames != null ? this.channelNames.size() : 1;
-		return this.size.getMin();
+		return this.min;
 	}
 	
 	public int getStep() {
-		return this.size.getStep();
+		return this.step;
 	}
 	
 	public double getScale() {
@@ -76,7 +47,7 @@ public class AxisV04 {
 	 * @return the channelNames
 	 */
 	public List<String> getChannelNames() {
-		return channelNames;
+		return null;
 	}
 
 	/**
@@ -98,15 +69,15 @@ public class AxisV04 {
 	}
 	
 	public double getOffset() {
-		return this.size.getOffset();
+		return this.offset;
 	}
 	
 	public String getReferenceTensor() {
-		return this.size.getReferenceTensor();
+		return this.referenceTensor;
 	}
 	
 	public String getReferenceAxis() {
-		return this.size.getReferenceAxis();
+		return this.referenceAxis;
 	}
 
 }

@@ -3,7 +3,7 @@ package io.bioimage.modelrunner.bioimageio.description.axes.axis;
 import java.util.List;
 import java.util.Map;
 
-public class AxisV05 {
+public class AxisV05 implements Axis{
 
 	private String id;
 	private String type;
