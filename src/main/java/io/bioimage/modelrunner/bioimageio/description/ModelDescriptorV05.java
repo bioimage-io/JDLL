@@ -52,6 +52,8 @@ public class ModelDescriptorV05 implements ModelDescriptor
     private String timestamp;
     private String description;
     private String type;
+    private boolean tiling = false;
+    private float[] halo;
     private List<Author> authors;
     private List<Author> maintainers;
     private List<Author> packaged_by;
@@ -74,9 +76,9 @@ public class ModelDescriptorV05 implements ModelDescriptor
     private String modelID;
     private String localModelPath;
     private boolean supportBioengine = false;
-	private final Map<String, Object> yamlElements;
+	private  Map<String, Object> yamlElements;
 
-	protected ModelDescriptorV05(Map<String, Object> yamlElements)
+	protected ModelDescriptorV05(Map<String, Object> yamlElements) throws ModelSpecsException
     {
     	this.yamlElements = yamlElements;
     	buildModelDescription();
@@ -156,7 +158,7 @@ public class ModelDescriptorV05 implements ModelDescriptor
                     	setInputTensors(buildInputTensors((List<?>) yamlElements.get(field)));
                         break;
                     case "outputs":
-                        setOutputTensors(buildOutputTensors((List<?>) yamlElements.get(field)));
+                        buildOutputTensors((List<?>) yamlElements.get(field));
                         break;
                     case "config":
                         config = buildConfig((Map<String, Object>) yamlElements.get(field));
@@ -346,7 +348,7 @@ public class ModelDescriptorV05 implements ModelDescriptor
         {
             if (!(elem instanceof Map<?, ?>))
             	continue;
-            tensors.add(TensorSpec.build((Map<String, Object>) elem, true));
+            tensors.add(new TensorSpecV05((Map<String, Object>) elem, true));
         }
         return tensors;
     }
@@ -359,9 +361,7 @@ public class ModelDescriptorV05 implements ModelDescriptor
     public void setInputTensors(List<TensorSpec> inputTensors) {
     	boolean tiling = getConfig() == null ? true : 
     				(getConfig().getDeepImageJ() == null ? true : getConfig().getDeepImageJ().isAllowTiling());
-    	for (TensorSpec tt : inputTensors)
-    		tt.setTiling(tiling);
-    	this.input_tensors = inputTensors;
+    	this.tiling = tiling;
     }
 
     @SuppressWarnings("unchecked")
@@ -374,21 +374,9 @@ public class ModelDescriptorV05 implements ModelDescriptor
         {
             if (!(elem instanceof Map<?, ?>))
             	continue;
-            tensors.add(TensorSpec.build((Map<String, Object>) elem, false));
+            tensors.add(new TensorSpecV05((Map<String, Object>) elem, false));
         }
         return tensors;
-    }
-    
-    /**
-     * This method sets the output tensors and creates a total halo that is used
-     * by the inputs
-     * @param outputTensors
-     */
-    private void setOutputTensors(List<TensorSpec> outputTensors) {
-		this.output_tensors = outputTensors;
-		float[] halo = calculateTotalInputHalo();
-		for (TensorSpec inp : this.input_tensors)
-			inp.setTotalHalo(halo);
     }
     
     /**
@@ -566,7 +554,7 @@ public class ModelDescriptorV05 implements ModelDescriptor
         }
 
         return input_tensors.stream()
-                .filter(t -> t.getName().equals(name))
+                .filter(t -> t.getTensorID().equals(name))
                 .findAny().orElse(null);
     }
 
@@ -585,28 +573,7 @@ public class ModelDescriptorV05 implements ModelDescriptor
         }
 
         return output_tensors.stream()
-                .filter(t -> t.getName().equals(name))
-                .findAny().orElse(null);
-    }
-
-    /**
-     * Searches for an input tensor with the given name in the given list.
-     * 
-     * @param name
-     *        Name of the tensor.
-     * @param tts
-     * 		  list of tensors where to look for the wanted name
-     * @return The tensor with the provided name. null is returned if no tensor is found or if the input tensors list is not initialized.
-     */
-    public static TensorSpec findTensorInList(String name, List<TensorSpec> tts)
-    {
-        if (tts == null)
-        {
-            return null;
-        }
-
-        return tts.stream()
-                .filter(t -> t.getName().equals(name))
+                .filter(t -> t.getTensorID().equals(name))
                 .findAny().orElse(null);
     }
 
@@ -819,7 +786,9 @@ public class ModelDescriptorV05 implements ModelDescriptor
 
 	@Override
 	public Map<String, Integer> getTotalHalo() {
-		// TODO Auto-generated method stub
+		if (halo == null)
+			calculateTotalInputHalo();
+		// TODO
 		return null;
 	}
 }

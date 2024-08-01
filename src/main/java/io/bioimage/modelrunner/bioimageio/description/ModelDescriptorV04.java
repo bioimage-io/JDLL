@@ -80,7 +80,6 @@ public class ModelDescriptorV04 implements ModelDescriptor
     private ModelWeight weights;
     private Map<String, Object> attachments;
     private String download_url;
-    private String icon;
     private String version;
     private List<String> links;
     private Map<String, String> parent;
@@ -179,9 +178,6 @@ public class ModelDescriptorV04 implements ModelDescriptor
                     case "type":
                         modelDescription.type = (String) fieldElement;
                         break;
-                    case "icon":
-                        modelDescription.icon = (String) fieldElement;
-                        break;
                     case "download_url":
                         modelDescription.download_url = checkUrl((String) fieldElement);
                         break;
@@ -198,10 +194,10 @@ public class ModelDescriptorV04 implements ModelDescriptor
                         modelDescription.badges = buildBadgeElements((List<?>) fieldElement);
                         break;
                     case "inputs":
-                    	modelDescription.setInputTensors(buildInputTensors((List<?>) yamlElements.get(field)));
+                    	modelDescription.input_tensors = buildInputTensors((List<?>) yamlElements.get(field));
                         break;
                     case "outputs":
-                        modelDescription.setOutputTensors(buildOutputTensors((List<?>) yamlElements.get(field)));
+                        modelDescription.output_tensors = buildOutputTensors((List<?>) yamlElements.get(field));
                         break;
                     case "config":
                         modelDescription.config = buildConfig((Map<String, Object>) yamlElements.get(field));
@@ -455,22 +451,9 @@ public class ModelDescriptorV04 implements ModelDescriptor
         {
             if (!(elem instanceof Map<?, ?>))
             	continue;
-            tensors.add(TensorSpec.build((Map<String, Object>) elem, true));
+            tensors.add(new TensorSpecV04((Map<String, Object>) elem, true));
         }
         return tensors;
-    }
-    
-    /**
-     * Sets the input tensors of the model specs. Also adds the tiling
-     * @param inputTensors
-     * 	the input tensors
-     */
-    public void setInputTensors(List<TensorSpec> inputTensors) {
-    	boolean tiling = getConfig() == null ? true : 
-    				(getConfig().getDeepImageJ() == null ? true : getConfig().getDeepImageJ().isAllowTiling());
-    	for (TensorSpec tt : inputTensors)
-    		tt.setTiling(tiling);
-    	this.input_tensors = inputTensors;
     }
 
     @SuppressWarnings("unchecked")
@@ -483,21 +466,9 @@ public class ModelDescriptorV04 implements ModelDescriptor
         {
             if (!(elem instanceof Map<?, ?>))
             	continue;
-            tensors.add(TensorSpec.build((Map<String, Object>) elem, false));
+            tensors.add(new TensorSpecV04((Map<String, Object>) elem, false));
         }
         return tensors;
-    }
-    
-    /**
-     * This method sets the output tensors and creates a total halo that is used
-     * by the inputs
-     * @param outputTensors
-     */
-    private void setOutputTensors(List<TensorSpec> outputTensors) {
-		this.output_tensors = outputTensors;
-		float[] halo = calculateTotalInputHalo();
-		for (TensorSpec inp : this.input_tensors)
-			inp.setTotalHalo(halo);
     }
     
     /**
@@ -553,100 +524,6 @@ public class ModelDescriptorV04 implements ModelDescriptor
 		} catch (MalformedURLException e) {
 			return null;
 		}
-    }
-    
-    /**
-     * Create a set of specifications about the basic info of the model: name od the model, authors,
-     * references and Deep Learning framework
-     * @return a set of specs for the model
-     */
-    public String buildBasicInfo() {
-    	String info = "";
-    	// Display the name
-    	info += "&nbsp -Name: " + this.getName().toUpperCase() + "<br>";
-    	// Create authors string
-    	String auth = "[";
-    	for (Author author : this.authors)
-    		auth += (author.getName() != null ? author.getName() : "null") + "; ";
-    	// Remove the "; " characters at the end and add "]"
-    	if (auth.length() < 3)
-    		auth = "[]";
-    	else
-    		auth = auth.substring(0, auth.length() - 2) + "]";
-    	// Display the authors
-    	info += "&nbsp -Authors: " + auth + "<br>";
-    	// Create the references String
-    	String refs = "[";
-    	if (cite != null) {
-	    	for (Cite citation : this.cite)
-	    		refs += (citation.getText() != null ? citation.getText() : (citation.getDoi() != null ? citation.getDoi() : "null")) + "; ";
-    	}
-    	// Remove the "; " characters at the end and add "]"
-    	refs = refs.length() > 2 ? refs.substring(0, refs.length() - 2) + "]" : "[]";
-    	// Display the references
-    	info += "&nbsp -References: " + refs + "<br>";
-    	// Add the model description
-    	if (this.getDescription() != null)
-    		info += "&nbsp -Description: " + this.getDescription() + "<br>";
-    	info += "<br>";
-    	// Add the location of the model in the local machine if it exists
-    	String location = localModelPath != null ? localModelPath : rdf_source;
-    	if (location == null)
-    		info += "&nbsp -Location: " + "UNKNOWN" + "<br>";
-    	else
-    		info += "&nbsp -Location: " + location + "<br>";
-    	// Display the frameworks available for this model
-    	info += "&nbsp -Engine: " + this.weights.getSupportedWeightNamesAndVersion().toString() + "<br>";
-    	// Display the model id
-    	info += "&nbsp -ID: " + this.modelID + "<br>";
-    	info += "<br>";
-    	return info;
-    }
-    
-    /**
-     * Write the tiling specs for the model
-     * @return the tiling specs for the model
-     */
-    public String buildTilingInfo() {
-    	String info = "&nbsp ----TILING SPECIFICATIONS----"  + "<br>";
-    	HashMap<String, String> dimMeaning = new HashMap<String, String>(){{
-    		put("H", "height"); put("X", "width");
-    		put("Z", "depth"); put("C", "channels");
-    		}};
-    	// Create the String that explains the dimensions letters
-    	info += "&nbsp Y: height, X: width, Z: depth, C: channels" + "<br>";
-    	// Add tiling info foe each of the arguments
-    	info += "&nbsp -input images:" + "<br>";
-    	for (TensorSpec inp : this.input_tensors) {
-    		info += "&ensp -" + inp.getName() + ":<br>";
-    		String[] dims = inp.getAxesOrder().toUpperCase().split("");
-    		String minString = "&emsp -minimum size: ";
-    		String stepString = "&emsp -step: ";
-    		for (int i = 0; i < dims.length; i ++) {
-    			minString += dims[i] + ": " + inp.getShape().getTileMinimumSize()[i] + ", ";
-    			stepString += dims[i] + ": " + inp.getShape().getTileStep()[i] + ", ";
-    		}
-    		// Remove the "; " characters at the end and add "]"
-    		minString = minString.substring(0, minString.length() - 2) + "<br>";
-    		stepString = stepString.substring(0, stepString.length() - 2) + "<br>";
-    		info += minString;
-    		info += stepString;
-    	}
-    	// Add small explanation
-    	info += "&nbsp Each dimension is calculated as:" + "<br>";
-    	info += "&ensp " + "tile_size = minimum_size + n * step, where n >= 0" + "<br>";
-    	return info;
-    }
-    
-    /**
-     * Create specifications of the model containing the most important
-     * info that is going to be displayed on the DeepIcy plugin
-     * @return a String with the most important info
-     */
-    public String buildInfo() {
-    	String basicInfo = buildBasicInfo();
-    	String tilingInfo = buildTilingInfo();    		
-    	return basicInfo + tilingInfo;
     }
 
     /**
@@ -785,7 +662,7 @@ public class ModelDescriptorV04 implements ModelDescriptor
         }
 
         return input_tensors.stream()
-                .filter(t -> t.getName().equals(name))
+                .filter(t -> t.getTensorID().equals(name))
                 .findAny().orElse(null);
     }
 
@@ -804,28 +681,7 @@ public class ModelDescriptorV04 implements ModelDescriptor
         }
 
         return output_tensors.stream()
-                .filter(t -> t.getName().equals(name))
-                .findAny().orElse(null);
-    }
-
-    /**
-     * Searches for an input tensor with the given name in the given list.
-     * 
-     * @param name
-     *        Name of the tensor.
-     * @param tts
-     * 		  list of tensors where to look for the wanted name
-     * @return The tensor with the provided name. null is returned if no tensor is found or if the input tensors list is not initialized.
-     */
-    public static TensorSpec findTensorInList(String name, List<TensorSpec> tts)
-    {
-        if (tts == null)
-        {
-            return null;
-        }
-
-        return tts.stream()
-                .filter(t -> t.getName().equals(name))
+                .filter(t -> t.getTensorID().equals(name))
                 .findAny().orElse(null);
     }
 
@@ -1046,42 +902,26 @@ public class ModelDescriptorV04 implements ModelDescriptor
 		return this.supportBioengine;
 	}
 
-	/**
-	 * Get the models at the local repo defined by the argument local repo
-	 * @param localRepo
-	 * 	String containing the path the directory that contains the model folders
-	 * @return a list of the {@link ModelDescriptorV04}s of the available models
-	 */
-	public static List<ModelDescriptorV04> getModelsAtLocalRepo(String localRepo) {
-		File repoFile = new File(localRepo);
-		if ( !repoFile.isDirectory() )
-		{
-			boolean created = repoFile.mkdirs();
-			if ( !created )
-				throw new IllegalArgumentException( "The directory " + repoFile.getAbsolutePath() + " cannot be created." );
-			return Collections.emptyList();
-		}
-		return Arrays.asList(repoFile.listFiles()).stream().map(ff -> {
-			try {
-				return ModelDescriptorV04.readFromLocalFile(ff.getAbsolutePath() + File.separator + Constants.RDF_FNAME, false);
-			} catch (Exception e) {
-				return null;
-			}
-			}).filter(mm -> mm != null).collect(Collectors.toList());
-	}
-
-	/**
-	 * Get the models at the local repo.
-	 * The default local repo is the 'models' folder in the directory where the program is being executed
-	 * 
-	 * @return a list of the {@link ModelDescriptorV04}s of the available models
-	 */
-	public static List<ModelDescriptorV04> getModelsAtLocalRepo() {
-		return getModelsAtLocalRepo(new File("models").getAbsolutePath());
+	@Override
+	public Map<String, Integer> getTotalHalo() {
+		// TODO Auto-generated method stub
+		return null;
 	}
 
 	@Override
-	public Map<String, Integer> getTotalHalo() {
+	public String buildBasicInfo() {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public String buildTilingInfo() {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public String buildInfo() {
 		// TODO Auto-generated method stub
 		return null;
 	}
