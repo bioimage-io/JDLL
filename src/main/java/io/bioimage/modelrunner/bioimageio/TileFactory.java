@@ -1,5 +1,6 @@
 package io.bioimage.modelrunner.bioimageio;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
@@ -63,25 +64,52 @@ public class TileFactory {
 		return patch;
 	}
 	
-	public Map<String, long[]> getOptimalTileSize(List<ImageInfo> inputInfo) {
+	public List<ImageInfo> getOptimalTileSize(List<ImageInfo> inputInfo) {
+		if (this.descriptor.getInputTensors().size() != inputInfo.size())
+			throw new IllegalArgumentException("In order to calculate the optimal patch size, "
+					+ "image dimensions for every input tensor need to be provided");
 		boolean tiling = this.descriptor.isTilingAllowed();
-		for (ImageInfo im : inputInfo) {
-			TensorSpec tt = descriptor.findInputTensor(im.getTensorName());
-			if (tt == null) 
-				throw new IllegalArgumentException("The tensor provided '" + im.getTensorName() + "' is not found in the model specs.");
+		List<ImageInfo> firstIterationInputs = new ArrayList<ImageInfo>();
+		for (TensorSpec tt : this.descriptor.getInputTensors()) {
+			ImageInfo im = inputInfo.stream()
+					.filter(ii -> ii.getTensorName().equals(tt.getTensorID())).findFirst().orElse(null);
+			if (im == null) 
+				throw new IllegalArgumentException("No data was provided for input tensor: " + tt.getTensorID());
 			
 			long[] tileSize = getOptimalTileSize(tt, im.getAxesOrder(), im.getDimensions());
+			
+			firstIterationInputs.add(new ImageInfo(im.getTensorName(), im.getAxesOrder(), tileSize));
 		}
 		
-		if (!tiling || Arrays.stream(tensor.getTileStepArr()).allMatch(i -> i == 0))
-			return patch;
-		long totPix = 1;
-		for (long ii : patch) totPix *= (long) ii;
+		if (!tiling)
+			return firstIterationInputs;
 		
-		List<String> affectedTensors = tensor.getAxesInfo().getAxesList().stream()
-										.map(i -> i.getReferenceTensor()).collect(Collectors.toList());
+		List<TensorSpec> affectedTensors = this.descriptor.getOutputTensors().stream()
+				.filter(ot -> {
+					return ot.getAxesInfo().getAxesList().stream()
+					.filter(ax -> ax.getReferenceTensor() != null)
+					.findFirst().orElse(null) != null;
+		}).collect(Collectors.toList());
+
+		List<ImageInfo> secondIterationInputs = new ArrayList<ImageInfo>();
+		List<Long> totPixels = new ArrayList<Long>();
+		for (int i = 0; i < firstIterationInputs.size(); i ++) {
+			TensorSpec tensor = descriptor.findInputTensor(firstIterationInputs.get(i).getTensorName());
+			if (Arrays.stream(tensor.getTileStepArr()).allMatch(ii -> ii == 0)) {
+				secondIterationInputs.add(firstIterationInputs.get(i));
+			}
+			totPixels.add(Arrays.stream(firstIterationInputs.get(i).getDimensions()).reduce(1, (x, y) -> x * y));
+		}
+		if (firstIterationInputs.size() == firstIterationInputs.size())
+			return secondIterationInputs;
+		
 		
 		List<Long> outputTotByteSizes = calculateByteSizeOfAffectedOutput(null, null, affectedTensors);
+		return checkOutputSize(firstIterationInputs, affectedTensors, outputTotByteSizes);
+	}
+	
+	
+	private List<ImageInfo> checkOutputSize(List<ImageInfo> inputs, List<TensorSpec> affected, List<Long> byteSizes) {
 		
 		if (totPix < OPTIMAL_MAX_NUMBER_PIXELS 
 				&& outputTotByteSizes.stream().filter(oo -> oo > Integer.MAX_VALUE).findFirst().orElse(null) == null)
@@ -114,7 +142,7 @@ public class TileFactory {
 			if (ratio > 1)
 				break;
 		}
-		return patch;
+		return null;
 	}
 	
 	public void validateTileSize(String tensorName, long[] dims, String inputAxesOrder) {
@@ -125,7 +153,7 @@ public class TileFactory {
 		
 	}
     
-    private List<Long> calculateByteSizeOfAffectedOutput(List<TensorSpecV05> inputTensors, List<long[]> inputSize, List<String> affectedOutputs) {
+    private List<Long> calculateByteSizeOfAffectedOutput(List<TensorSpec> inputTensors, List<long[]> inputSize, List<String> affectedOutputs) {
     	if (affectedOutputs == null || affectedOutputs.size() == 0) 
     		return LongStream.range(0, affectedOutputs.size()).map(i -> 0L).boxed().collect(Collectors.toList());
     	List<String> names = inputTensors.stream().map(t -> t.getTensorID()).collect(Collectors.toList());
