@@ -76,9 +76,10 @@ public class ModelDescriptorV05 implements ModelDescriptor
     private boolean supportBioengine = false;
 	private final Map<String, Object> yamlElements;
 
-    private ModelDescriptorV05(Map<String, Object> yamlElements)
+	protected ModelDescriptorV05(Map<String, Object> yamlElements)
     {
     	this.yamlElements = yamlElements;
+    	buildModelDescription();
     }
 
     @SuppressWarnings("unchecked")
@@ -90,7 +91,7 @@ public class ModelDescriptorV05 implements ModelDescriptor
      * @return a {@link ModelDescriptorV05} with the info of a Bioimage.io model
      * @throws ModelSpecsException if any of the parameters in the rdf.yaml file does not make fit the constraints
      */
-    private void buildModelDescription() throws ModelSpecsException
+    protected void buildModelDescription() throws ModelSpecsException
     {
 
         Set<String> yamlFields = yamlElements.keySet();

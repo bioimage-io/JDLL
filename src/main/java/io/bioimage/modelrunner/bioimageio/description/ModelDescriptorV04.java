@@ -95,82 +95,6 @@ public class ModelDescriptorV04 implements ModelDescriptor
     private ModelDescriptorV04()
     {
     }
-    
-    /**
-     * Opens the provided file and builds an instance of {@link ModelDescriptorV04} from it.
-     * 
-     * @param modelFile
-     *        Model descriptor file.
-     * @return The instance of the model descriptor.
-     * @throws ModelSpecsException if any of the parameters in the rdf.yaml file does not make fit the constraints
-     */
-    public static ModelDescriptorV04 readFromLocalFile(String modelFile) throws ModelSpecsException
-    {
-    	return readFromLocalFile(modelFile, true);
-    }
-    
-    /**
-     * Opens the provided file and builds an instance of {@link ModelDescriptorV04} from it.
-     * 
-     * @param modelFile
-     * 	Model descriptor file.
-     * @param verbose
-     * 	whether to print the path to the file and the time to the console or not
-     * @return The instance of the model descriptor.
-     * @throws ModelSpecsException if any of the parameters in the rdf.yaml file does not make fit the constraints,
-     */
-    public static ModelDescriptorV04 readFromLocalFile(String modelFile, boolean verbose) throws ModelSpecsException
-    {
-    	// Get the date to be able to log with the time
-    	if (verbose)
-    		System.out.println(Log.gct() + " -- LOCAL: Searching model at " + new File(modelFile).getParent());
-    	Map<String, Object> yamlElements;
-    	try {
-        	yamlElements = YAMLUtils.load(modelFile);
-        } catch (IOException ex) {
-        	throw new IllegalStateException("", ex);
-        }
-        yamlElements.put(fromLocalKey, true);
-        yamlElements.put(modelPathKey, new File(modelFile).getParent());
-        return buildModelDescription(yamlElements);
-    }
-    
-    /**
-     * Reads a yaml text String and builds an instance of {@link ModelDescriptorV04} from it
-     * 
-     * @param yamlText
-     *        text read from a yaml file that contains an rdf.yaml file
-     * @return The instance of the model descriptor.
-     * @throws ModelSpecsException if any of the parameters in the rdf.yaml file does not make fit the constraints
-     */
-    public static ModelDescriptorV04 readFromYamlTextString(String yamlText) throws ModelSpecsException
-    {
-    	return readFromYamlTextString(yamlText, true);
-    }
-    
-    /**
-     * Reads a yaml text String and builds an instance of {@link ModelDescriptorV04} from it.
-     * 
-     * @param yamlText
-     * 	text read from a yaml file that contains an rdf.yaml file
-     * @param verbose
-     * 	whether to print info about the rdf.yaml that is being read or not
-     * @return The instance of the model descriptor.
-     * @throws ModelSpecsException if any of the parameters in the rdf.yaml file does not make fit the constraints
-     */
-    public static ModelDescriptorV04 readFromYamlTextString(String yamlText, boolean verbose) throws ModelSpecsException
-    {
-    	// Convert the String of text that contains the yaml file into Map
-    	Map<String,Object> yamlElements = YAMLUtils.loadFromString(yamlText);
-    	// Let the user know the model the plugin is trying to load
-    	if (yamlElements.get("name") != null && verbose) {
-        	System.out.println(Log.gct() + " -- Bioimage.io: Inspecting model: " + (String) yamlElements.get("name"));
-    	} else if (verbose) {
-        	System.out.println(Log.gct() + " -- Bioimage.io: Inspecting model defined by: " + yamlText);
-    	}
-        yamlElements.put(fromLocalKey, false);
-        return buildModelDescription(yamlElements);
-    }
 
     @SuppressWarnings("unchecked")
     /**
@@ -181,7 +105,7 @@ public class ModelDescriptorV04 implements ModelDescriptor
      * @return a {@link ModelDescriptorV04} with the info of a Bioimage.io model
      * @throws ModelSpecsException if any of the parameters in the rdf.yaml file does not make fit the constraints
      */
-    private static ModelDescriptorV04 buildModelDescription(Map<String, Object> yamlElements) throws ModelSpecsException
+    protected static ModelDescriptorV04 buildModelDescription(Map<String, Object> yamlElements) throws ModelSpecsException
     {
         ModelDescriptorV04 modelDescription = new ModelDescriptorV04();
 
