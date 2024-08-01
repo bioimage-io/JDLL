@@ -20,6 +20,7 @@
 package io.bioimage.modelrunner.bioimageio.description;
 
 import java.io.ByteArrayOutputStream;
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.MalformedURLException;
@@ -27,15 +28,20 @@ import java.net.URL;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.Map.Entry;
+import java.util.stream.Collectors;
 
 import io.bioimage.modelrunner.bioimageio.BioimageioRepo;
 import io.bioimage.modelrunner.bioimageio.description.exceptions.ModelSpecsException;
 import io.bioimage.modelrunner.bioimageio.description.weights.ModelWeight;
+import io.bioimage.modelrunner.utils.Constants;
 import io.bioimage.modelrunner.utils.Log;
+import io.bioimage.modelrunner.utils.YAMLUtils;
 
 
 /**
@@ -43,12 +49,13 @@ import io.bioimage.modelrunner.utils.Log;
  * More info about the parameters can be found at:
  * https://github.com/bioimage-io/spec-bioimage-io/blob/gh-pages/model_spec_latest.md
  * 
- * @author Carlos Garcia Lopez de Haro and Daniel Felipe Gonzalez Obando
+ * @author Daniel Felipe Gonzalez Obando and Carlos Garcia Lopez de Haro
  */
-public class ModelDescriptorV05 implements ModelDescriptor
+public class ModelDescriptor_old
 {
     private String format_version;
     private String name;
+    private String nickname;
     private String timestamp;
     private String description;
     private String type;
@@ -56,17 +63,27 @@ public class ModelDescriptorV05 implements ModelDescriptor
     private List<Author> maintainers;
     private List<Author> packaged_by;
     private List<Cite> cite;
+    private List<Badge> badges;
     private List<String> tags;
     private String license;
+    private String git_repo;
     private String documentation;
+    private String rdf_source;
     private List<String> covers;
+    private List<SampleImage> sample_inputs;
+    private List<SampleImage> sample_outputs;
+    private List<TestArtifact> test_inputs;
+    private List<TestArtifact> test_outputs;
     private List<TensorSpec> input_tensors;
     private List<TensorSpec> output_tensors;
     private ExecutionConfig config;
     private ModelWeight weights;
     private Map<String, Object> attachments;
+    private String download_url;
+    private String icon;
     private String version;
     private List<String> links;
+    private Map<String, String> parent;
     private boolean isModelLocal;
     private static String fromLocalKey = "fromLocalRepo";
     private static String modelPathKey = "modelPath";
@@ -74,24 +91,99 @@ public class ModelDescriptorV05 implements ModelDescriptor
     private String modelID;
     private String localModelPath;
     private boolean supportBioengine = false;
-	private final Map<String, Object> yamlElements;
 
-    private ModelDescriptorV05(Map<String, Object> yamlElements)
+    private ModelDescriptor_old()
     {
-    	this.yamlElements = yamlElements;
+    }
+    
+    /**
+     * Opens the provided file and builds an instance of {@link ModelDescriptor_old} from it.
+     * 
+     * @param modelFile
+     *        Model descriptor file.
+     * @return The instance of the model descriptor.
+     * @throws ModelSpecsException if any of the parameters in the rdf.yaml file does not make fit the constraints
+     */
+    public static ModelDescriptor_old readFromLocalFile(String modelFile) throws ModelSpecsException
+    {
+    	return readFromLocalFile(modelFile, true);
+    }
+    
+    /**
+     * Opens the provided file and builds an instance of {@link ModelDescriptor_old} from it.
+     * 
+     * @param modelFile
+     * 	Model descriptor file.
+     * @param verbose
+     * 	whether to print the path to the file and the time to the console or not
+     * @return The instance of the model descriptor.
+     * @throws ModelSpecsException if any of the parameters in the rdf.yaml file does not make fit the constraints,
+     */
+    public static ModelDescriptor_old readFromLocalFile(String modelFile, boolean verbose) throws ModelSpecsException
+    {
+    	// Get the date to be able to log with the time
+    	if (verbose)
+    		System.out.println(Log.gct() + " -- LOCAL: Searching model at " + new File(modelFile).getParent());
+    	Map<String, Object> yamlElements;
+    	try {
+        	yamlElements = YAMLUtils.load(modelFile);
+        } catch (IOException ex) {
+        	throw new IllegalStateException("", ex);
+        }
+        yamlElements.put(fromLocalKey, true);
+        yamlElements.put(modelPathKey, new File(modelFile).getParent());
+        return buildModelDescription(yamlElements);
+    }
+    
+    /**
+     * Reads a yaml text String and builds an instance of {@link ModelDescriptor_old} from it
+     * 
+     * @param yamlText
+     *        text read from a yaml file that contains an rdf.yaml file
+     * @return The instance of the model descriptor.
+     * @throws ModelSpecsException if any of the parameters in the rdf.yaml file does not make fit the constraints
+     */
+    public static ModelDescriptor_old readFromYamlTextString(String yamlText) throws ModelSpecsException
+    {
+    	return readFromYamlTextString(yamlText, true);
+    }
+    
+    /**
+     * Reads a yaml text String and builds an instance of {@link ModelDescriptor_old} from it.
+     * 
+     * @param yamlText
+     * 	text read from a yaml file that contains an rdf.yaml file
+     * @param verbose
+     * 	whether to print info about the rdf.yaml that is being read or not
+     * @return The instance of the model descriptor.
+     * @throws ModelSpecsException if any of the parameters in the rdf.yaml file does not make fit the constraints
+     */
+    public static ModelDescriptor_old readFromYamlTextString(String yamlText, boolean verbose) throws ModelSpecsException
+    {
+    	// Convert the String of text that contains the yaml file into Map
+    	Map<String,Object> yamlElements = YAMLUtils.loadFromString(yamlText);
+    	// Let the user know the model the plugin is trying to load
+    	if (yamlElements.get("name") != null && verbose) {
+        	System.out.println(Log.gct() + " -- Bioimage.io: Inspecting model: " + (String) yamlElements.get("name"));
+    	} else if (verbose) {
+        	System.out.println(Log.gct() + " -- Bioimage.io: Inspecting model defined by: " + yamlText);
+    	}
+        yamlElements.put(fromLocalKey, false);
+        return buildModelDescription(yamlElements);
     }
 
     @SuppressWarnings("unchecked")
     /**
-     * Build a {@link ModelDescriptorV05} object from a map containing the elements read from
+     * Build a {@link ModelDescriptor_old} object from a map containing the elements read from
      * a rdf.yaml file
      * @param yamlElements
      * 	map with the information read from a yaml file
-     * @return a {@link ModelDescriptorV05} with the info of a Bioimage.io model
+     * @return a {@link ModelDescriptor_old} with the info of a Bioimage.io model
      * @throws ModelSpecsException if any of the parameters in the rdf.yaml file does not make fit the constraints
      */
-    private void buildModelDescription() throws ModelSpecsException
+    private static ModelDescriptor_old buildModelDescription(Map<String, Object> yamlElements) throws ModelSpecsException
     {
+        ModelDescriptor_old modelDescription = new ModelDescriptor_old();
 
         Set<String> yamlFields = yamlElements.keySet();
         String[] yamlFieldsArr = new String[yamlFields.size()];
@@ -104,70 +196,100 @@ public class ModelDescriptorV05 implements ModelDescriptor
                 switch (field)
                 {
                     case "format_version":
-                        format_version = (String) fieldElement;
+                        modelDescription.format_version = (String) fieldElement;
                         break;
                     case "name":
-                        name = (String) fieldElement;
+                        modelDescription.name = (String) fieldElement;
                         break;
                     case "timestamp":
-                        timestamp = fieldElement.toString();
+                        modelDescription.timestamp = fieldElement.toString();
                         break;
                     case "description":
-                        description = (String) fieldElement;
+                        modelDescription.description = (String) fieldElement;
                         break;
                     case "id":
-                        modelID = (String) fieldElement;
+                        modelDescription.modelID = (String) fieldElement;
                         break;
                     case "authors":
-                        buildAuthors();
+                        modelDescription.authors = buildAuthorElements((List<?>) fieldElement);
                         break;
                     case "maintainers":
-                        buildAuthors();
+                        modelDescription.maintainers = buildAuthorElements((List<?>) fieldElement);
                         break;
                     case "packaged_by":
-                        buildAuthors();
+                        modelDescription.packaged_by = buildAuthorElements((List<?>) fieldElement);
                         break;
                     case "cite":
-                        buildCiteElements();
+                        modelDescription.cite = buildCiteElements((List<?>) fieldElement);
+                        break;
+                    case "parent":
+                        modelDescription.parent = (Map<String, String>) fieldElement;
+                        break;
+                    case "git_repo":
+                        modelDescription.git_repo = checkUrl((String) fieldElement);
                         break;
                     case "tags":
-                        tags = castListStrings(fieldElement);
+                        modelDescription.tags = castListStrings(fieldElement);
                         break;
                     case "links":
-                        links = castListStrings(fieldElement);
+                        modelDescription.links = castListStrings(fieldElement);
                         break;
                     case "license":
-                        license = (String) fieldElement;
+                        modelDescription.license = (String) fieldElement;
                         break;
                     case "documentation":
-                        documentation = (String) fieldElement;
+                        modelDescription.documentation = (String) fieldElement;
+                        break;
+                    case "test_inputs":
+                        modelDescription.test_inputs = buildTestArtifacts((List<?>) fieldElement);
+                        break;
+                    case "test_outputs":
+                        modelDescription.test_outputs = buildTestArtifacts((List<?>) fieldElement);
+                        break;
+                    case "sample_inputs":
+                        modelDescription.sample_inputs = buildSampleImages((List<?>) fieldElement);
+                        break;
+                    case "sample_outputs":
+                        modelDescription.sample_outputs = buildSampleImages((List<?>) fieldElement);
                         break;
                     case "type":
-                        type = (String) fieldElement;
+                        modelDescription.type = (String) fieldElement;
+                        break;
+                    case "icon":
+                        modelDescription.icon = (String) fieldElement;
+                        break;
+                    case "download_url":
+                        modelDescription.download_url = checkUrl((String) fieldElement);
+                        break;
+                    case "rdf_source":
+                        modelDescription.rdf_source = checkUrl((String) fieldElement);
                         break;
                     case "attachments":
-                        // TODO createAttachments();
+                        modelDescription.attachments = (Map<String, Object>) fieldElement;
                         break;
                     case "covers":
-                    	// TODO createCovers();
+                        modelDescription.covers = buildUrlElements((List<?>) fieldElement);
+                        break;
+                    case "badges":
+                        modelDescription.badges = buildBadgeElements((List<?>) fieldElement);
                         break;
                     case "inputs":
-                    	setInputTensors(buildInputTensors((List<?>) yamlElements.get(field)));
+                    	modelDescription.setInputTensors(buildInputTensors((List<?>) yamlElements.get(field)));
                         break;
                     case "outputs":
-                        setOutputTensors(buildOutputTensors((List<?>) yamlElements.get(field)));
+                        modelDescription.setOutputTensors(buildOutputTensors((List<?>) yamlElements.get(field)));
                         break;
                     case "config":
-                        config = buildConfig((Map<String, Object>) yamlElements.get(field));
+                        modelDescription.config = buildConfig((Map<String, Object>) yamlElements.get(field));
                         break;
                     case "weights":
-                        weights = buildWeights((Map<String, Object>) yamlElements.get(field));
+                        modelDescription.weights = buildWeights((Map<String, Object>) yamlElements.get(field));
                         break;
                     case "fromLocalRepo":
-                        isModelLocal = (boolean) fieldElement;
+                        modelDescription.isModelLocal = (boolean) fieldElement;
                         break;
                     case "modelPath":
-                        localModelPath = (String) fieldElement;
+                        modelDescription.localModelPath = (String) fieldElement;
                         break;
                     default:
                         break;
@@ -178,10 +300,15 @@ public class ModelDescriptorV05 implements ModelDescriptor
                 throw new ModelSpecsException("Invalid model element: " + field + "->" + e.getMessage());
             }
         }
-        addBioEngine();
-        if (localModelPath == null)
-        	return;
-    	// TODO SpecialModels.checkSpecialModels(null);
+        Object bio = modelDescription.config.getSpecMap().get("bioimageio");
+        if ((bio != null) && (bio instanceof Map))
+        	modelDescription.nickname = (String) (((Map<String, Object>) bio).get("nickname"));
+        modelDescription.addBioEngine();
+        if (modelDescription.localModelPath == null)
+        	return modelDescription;
+    	modelDescription.addModelPath(new File(modelDescription.localModelPath).toPath());
+    	SpecialModels.checkSpecialModels(modelDescription);
+    	return modelDescription;
     }
     
     /**
@@ -219,11 +346,11 @@ public class ModelDescriptorV05 implements ModelDescriptor
      * to test the BioEngine
      * @return a list with sample biengine models
      */
-    public static ArrayList<Entry<Path, ModelDescriptorV05>> addSampleBioEngineModels() {
-    	ArrayList<Entry<Path, ModelDescriptorV05>> sampleModels = new ArrayList<Entry<Path, ModelDescriptorV05>>();
+    public static ArrayList<Entry<Path, ModelDescriptor_old>> addSampleBioEngineModels() {
+    	ArrayList<Entry<Path, ModelDescriptor_old>> sampleModels = new ArrayList<Entry<Path, ModelDescriptor_old>>();
     	for (String sample : sampleBioengineModels) {
 			 try {
-	        	InputStream inputStream = ModelDescriptorV05.class.getClassLoader()
+	        	InputStream inputStream = ModelDescriptor_old.class.getClassLoader()
 	        												.getResourceAsStream(sample + ".yaml");
 	        	ByteArrayOutputStream result = new ByteArrayOutputStream();
 				 byte[] buffer = new byte[1024];
@@ -264,17 +391,14 @@ public class ModelDescriptorV05 implements ModelDescriptor
     
     /**
      * Create a list with the authors of teh model as read from the rdf.yaml file
+     * @param authElements
+     * 	a raw list with the info about the authors
      * @return a list with the info about the authors packaged in the {@link Author} object
      */
-    private void buildAuthors()
+    private static List<Author> buildAuthorElements(List<?> authElements)
     {
-        List<Author> authors = new ArrayList<Author>();
-    	Object authorsElems = this.yamlElements.get("authors");
-    	if (authorsElems == null || !(authorsElems instanceof List)) {
-            this.authors = authors;
-            return;
-    	}
-        for (Object elem : (List<Object>) authorsElems)
+        List<Author> authors = new ArrayList<>();
+        for (Object elem : authElements)
         {
             if (!(elem instanceof Map<?, ?>))
             	continue;
@@ -282,22 +406,21 @@ public class ModelDescriptorV05 implements ModelDescriptor
             Map<String, String> dict = (Map<String, String>) elem;
             authors.add(Author.build(dict.get("affiliation"), dict.get("email"), dict.get("github_user"), dict.get("name"), dict.get("orcid")));
         }
-        this.authors = authors;
+        return authors;
     }
     
     /**
      * Create a list with the citations of the model as read from the rdf.yaml file
+     * @param citeElements
+     * 	a raw list with the info about the citations
      * @return a list with the info about the citations packaged in the {@link Cite} object
      */
-    private void buildCiteElements() throws MalformedURLException
+    private static List<Cite> buildCiteElements(List<?> citeElements) throws MalformedURLException
     {
-    	Object citeElements = this.yamlElements.get("cite");
-        List<Cite> cites = new ArrayList<Cite>();
-    	if (citeElements == null || !(citeElements instanceof List<?>)) {
-    		this.cite = cites;
-    		return;
-    	}
-        for (Object elem : (List) citeElements)
+    	if (!(citeElements instanceof List<?>))
+    		return null;
+        List<Cite> cites = new ArrayList<>();
+        for (Object elem : citeElements)
         {
             if (!(elem instanceof Map<?, ?>))
             	continue;
@@ -305,7 +428,7 @@ public class ModelDescriptorV05 implements ModelDescriptor
             Map<String, Object> dict = (Map<String, Object>) elem;
             cites.add(Cite.build((String) dict.get("text"), (String) dict.get("doi"), (String) dict.get("url")));
         }
-		this.cite = cites;
+        return cites;
     }
 
     /**
@@ -333,6 +456,69 @@ public class ModelDescriptorV05 implements ModelDescriptor
     	}
     	
         return covers;
+    }
+
+    /**
+     * REturns a List<SampleInputs> of the sample images that are packed in the model
+     * folder as tifs and that are specified in the rdf.yaml file
+     * @param coverElements
+     * 	data from the yaml
+     * @return the List<SampleInputs> with the sample images data
+     */
+    private static List<SampleImage> buildSampleImages(Object coverElements)
+    {
+        List<SampleImage> covers = new ArrayList<>();
+    	if ((coverElements instanceof List<?>)) {
+    		List<?> elems = (List<?>) coverElements;
+	        for (Object elem : elems)
+	        {
+	        	if (!(elem instanceof String))
+	        		continue;
+	        	covers.add(SampleImage.build((String) elem));
+	        }
+    	} else if ((coverElements instanceof String)) {
+            covers.add(SampleImage.build((String) coverElements));
+    	}   	
+        return covers.stream().filter(i -> i != null).collect(Collectors.toList());
+    }
+
+    /**
+     * REturns a List<TestArtifact> of the npy artifacts that are packed in the model
+     * folder as input and output test objects
+     * @param coverElements
+     * 	data from the yaml
+     * @return the List<TestArtifact> with the sample images data
+     */
+    private static List<TestArtifact> buildTestArtifacts(Object coverElements)
+    {
+        List<TestArtifact> covers = new ArrayList<>();
+    	if ((coverElements instanceof List<?>)) {
+    		List<?> elems = (List<?>) coverElements;
+	        for (Object elem : elems)
+	        {
+	        	if (!(elem instanceof String))
+	        		continue;
+	        	covers.add(TestArtifact.build((String) elem));
+	        }
+    	} else if ((coverElements instanceof String)) {
+            covers.add(TestArtifact.build((String) coverElements));
+    	}   	
+        return covers.stream().filter(i -> i != null).collect(Collectors.toList());
+    }
+
+    private static List<Badge> buildBadgeElements(List<?> coverElements)
+    {
+    	if (!(coverElements instanceof List<?>))
+    		return null;
+        List<Badge> badges = new ArrayList<>();
+        for (Object elem : coverElements)
+        {
+            if (!(elem instanceof Map<?, ?>))
+            	continue;
+            Map<String, Object> dict = (Map<String, Object>) elem;
+        	badges.add(Badge.build((String) dict.get("label"), (String) dict.get("icon"), (String) dict.get("url")));
+        }
+        return badges;
     }
 
     @SuppressWarnings("unchecked")
@@ -444,6 +630,100 @@ public class ModelDescriptorV05 implements ModelDescriptor
 			return null;
 		}
     }
+    
+    /**
+     * Create a set of specifications about the basic info of the model: name od the model, authors,
+     * references and Deep Learning framework
+     * @return a set of specs for the model
+     */
+    public String buildBasicInfo() {
+    	String info = "";
+    	// Display the name
+    	info += "&nbsp -Name: " + this.getName().toUpperCase() + "<br>";
+    	// Create authors string
+    	String auth = "[";
+    	for (Author author : this.authors)
+    		auth += (author.getName() != null ? author.getName() : "null") + "; ";
+    	// Remove the "; " characters at the end and add "]"
+    	if (auth.length() < 3)
+    		auth = "[]";
+    	else
+    		auth = auth.substring(0, auth.length() - 2) + "]";
+    	// Display the authors
+    	info += "&nbsp -Authors: " + auth + "<br>";
+    	// Create the references String
+    	String refs = "[";
+    	if (cite != null) {
+	    	for (Cite citation : this.cite)
+	    		refs += (citation.getText() != null ? citation.getText() : (citation.getDoi() != null ? citation.getDoi() : "null")) + "; ";
+    	}
+    	// Remove the "; " characters at the end and add "]"
+    	refs = refs.length() > 2 ? refs.substring(0, refs.length() - 2) + "]" : "[]";
+    	// Display the references
+    	info += "&nbsp -References: " + refs + "<br>";
+    	// Add the model description
+    	if (this.getDescription() != null)
+    		info += "&nbsp -Description: " + this.getDescription() + "<br>";
+    	info += "<br>";
+    	// Add the location of the model in the local machine if it exists
+    	String location = localModelPath != null ? localModelPath : rdf_source;
+    	if (location == null)
+    		info += "&nbsp -Location: " + "UNKNOWN" + "<br>";
+    	else
+    		info += "&nbsp -Location: " + location + "<br>";
+    	// Display the frameworks available for this model
+    	info += "&nbsp -Engine: " + this.weights.getSupportedWeightNamesAndVersion().toString() + "<br>";
+    	// Display the model id
+    	info += "&nbsp -ID: " + this.modelID + "<br>";
+    	info += "<br>";
+    	return info;
+    }
+    
+    /**
+     * Write the tiling specs for the model
+     * @return the tiling specs for the model
+     */
+    public String buildTilingInfo() {
+    	String info = "&nbsp ----TILING SPECIFICATIONS----"  + "<br>";
+    	HashMap<String, String> dimMeaning = new HashMap<String, String>(){{
+    		put("H", "height"); put("X", "width");
+    		put("Z", "depth"); put("C", "channels");
+    		}};
+    	// Create the String that explains the dimensions letters
+    	info += "&nbsp Y: height, X: width, Z: depth, C: channels" + "<br>";
+    	// Add tiling info foe each of the arguments
+    	info += "&nbsp -input images:" + "<br>";
+    	for (TensorSpec inp : this.input_tensors) {
+    		info += "&ensp -" + inp.getName() + ":<br>";
+    		String[] dims = inp.getAxesOrder().toUpperCase().split("");
+    		String minString = "&emsp -minimum size: ";
+    		String stepString = "&emsp -step: ";
+    		for (int i = 0; i < dims.length; i ++) {
+    			minString += dims[i] + ": " + inp.getShape().getTileMinimumSize()[i] + ", ";
+    			stepString += dims[i] + ": " + inp.getShape().getTileStep()[i] + ", ";
+    		}
+    		// Remove the "; " characters at the end and add "]"
+    		minString = minString.substring(0, minString.length() - 2) + "<br>";
+    		stepString = stepString.substring(0, stepString.length() - 2) + "<br>";
+    		info += minString;
+    		info += stepString;
+    	}
+    	// Add small explanation
+    	info += "&nbsp Each dimension is calculated as:" + "<br>";
+    	info += "&ensp " + "tile_size = minimum_size + n * step, where n >= 0" + "<br>";
+    	return info;
+    }
+    
+    /**
+     * Create specifications of the model containing the most important
+     * info that is going to be displayed on the DeepIcy plugin
+     * @return a String with the most important info
+     */
+    public String buildInfo() {
+    	String basicInfo = buildBasicInfo();
+    	String tilingInfo = buildTilingInfo();    		
+    	return basicInfo + tilingInfo;
+    }
 
     /**
      * @return The version of the format used in the descriptor file.
@@ -459,6 +739,14 @@ public class ModelDescriptorV05 implements ModelDescriptor
     public String getName()
     {
         return name;
+    }
+
+    /**
+     * @return The nickname of this model.
+     */
+    public String getNickname()
+    {
+        return nickname;
     }
 
     /**
@@ -499,6 +787,14 @@ public class ModelDescriptorV05 implements ModelDescriptor
     public List<Cite> getCite()
     {
         return cite;
+    }
+
+    /**
+     * @return The URL of the git repository of this model.
+     */
+    public String getGitRepo()
+    {
+        return git_repo;
     }
 
     /**
@@ -633,11 +929,20 @@ public class ModelDescriptorV05 implements ModelDescriptor
         return weights;
     }
 
+    /**
+	 * @return the sample_inputs
+	 */
+	public List<SampleImage> getSampleInputs() {
+		if (sample_inputs == null) 
+			sample_inputs = new ArrayList<SampleImage>();
+		return sample_inputs;
+	}
+
 	@Override
     public String toString()
     {
         return "ModelDescription {formatVersion=" + format_version + ", name=" + name + ", timestamp=" + timestamp
-                + ", description=" + description + ", authors=" + authors + ", cite=" + cite
+                + ", description=" + description + ", authors=" + authors + ", cite=" + cite + ", gitRepo=" + git_repo
                 + ", tags=" + tags + ", license=" + license + ", documentation=" + documentation + ", covers=" + covers
                 + ", inputTensors=" + input_tensors + ", outputTensors=" + output_tensors + ", config=" + config
                 + ", weights=" + weights + "}";
@@ -658,10 +963,67 @@ public class ModelDescriptorV05 implements ModelDescriptor
 	}
 
 	/**
+	 * @return the badges
+	 */
+	public List<Badge> getBadges() {
+		if (badges == null) 
+			badges = new ArrayList<Badge>();
+		return badges;
+	}
+
+	/**
+	 * @return the sample_outputs
+	 */
+	public List<SampleImage> getSampleOutputs() {
+		if (sample_outputs == null) 
+			sample_outputs = new ArrayList<SampleImage>();
+		return sample_outputs;
+	}
+
+	/**
+	 * @return the test_inputs
+	 */
+	public List<TestArtifact> getTestInputs() {
+		if (test_inputs == null) 
+			test_inputs = new ArrayList<TestArtifact>();
+		return test_inputs;
+	}
+
+	/**
+	 * @return the test_outputs
+	 */
+	public List<TestArtifact> getTestOutputs() {
+		if (test_outputs == null) 
+			test_outputs = new ArrayList<TestArtifact>();
+		return test_outputs;
+	}
+
+	/**
 	 * @return the attachments
 	 */
 	public Map<String, Object> getAttachments() {
 		return attachments;
+	}
+
+	/**
+	 * @return the download_url
+	 */
+	public String getDownloadUrl() {
+		return download_url;
+	}
+
+	/**
+	 * @return the rdf_source
+	 */
+	public String getRDFSource() {
+		return rdf_source;
+	}
+
+	/**
+	 * @return the icon
+	 */
+	public String getIcon() {
+		return icon;
 	}
 
 	/**
@@ -676,6 +1038,13 @@ public class ModelDescriptorV05 implements ModelDescriptor
 	 */
 	public List<String> getLinks() {
 		return links;
+	}
+
+	/**
+	 * @return the parent
+	 */
+	public Map<String, String> getParent() {
+		return parent;
 	}
 	
 	/**
@@ -694,6 +1063,28 @@ public class ModelDescriptorV05 implements ModelDescriptor
 	 */
 	public boolean isModelInLocalRepo() {
 		return isModelLocal;
+	}
+	
+	/**
+	 * Add the path where the local model is stored to the model descriptor
+	 * @param modelBasePath
+	 * 	the path to the model in the local machine
+	 */
+	public void addModelPath(Path modelBasePath) {
+		Path absPath = modelBasePath.toAbsolutePath();
+		if (!absPath.toFile().exists()) {
+			throw new IllegalArgumentException("The path '" 
+					 + absPath.toString() + "' does not exist in the computer.");
+		}
+		localModelPath = absPath.toString();
+		if (sample_inputs != null)
+			sample_inputs.stream().forEach(i -> i.addLocalModelPath(absPath));
+		if (sample_outputs != null)
+			sample_outputs.stream().forEach(i -> i.addLocalModelPath(absPath));
+		if (test_inputs != null)
+			test_inputs.stream().forEach(i -> i.addLocalModelPath(absPath));
+		if (test_outputs != null)
+			test_outputs.stream().forEach(i -> i.addLocalModelPath(absPath));
 	}
 	
 	/**
@@ -738,87 +1129,37 @@ public class ModelDescriptorV05 implements ModelDescriptor
 		return this.supportBioengine;
 	}
 
-	@Override
-	public String buildBasicInfo() {
-		// TODO Auto-generated method stub
-		return null;
+	/**
+	 * Get the models at the local repo defined by the argument local repo
+	 * @param localRepo
+	 * 	String containing the path the directory that contains the model folders
+	 * @return a list of the {@link ModelDescriptor_old}s of the available models
+	 */
+	public static List<ModelDescriptor_old> getModelsAtLocalRepo(String localRepo) {
+		File repoFile = new File(localRepo);
+		if ( !repoFile.isDirectory() )
+		{
+			boolean created = repoFile.mkdirs();
+			if ( !created )
+				throw new IllegalArgumentException( "The directory " + repoFile.getAbsolutePath() + " cannot be created." );
+			return Collections.emptyList();
+		}
+		return Arrays.asList(repoFile.listFiles()).stream().map(ff -> {
+			try {
+				return ModelDescriptor_old.readFromLocalFile(ff.getAbsolutePath() + File.separator + Constants.RDF_FNAME, false);
+			} catch (Exception e) {
+				return null;
+			}
+			}).filter(mm -> mm != null).collect(Collectors.toList());
 	}
 
-	@Override
-	public String buildTilingInfo() {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
-	public String buildInfo() {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
-	public String getNickname() {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
-	public String getGitRepo() {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
-	public List<SampleImage> getSampleInputs() {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
-	public List<Badge> getBadges() {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
-	public List<SampleImage> getSampleOutputs() {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
-	public List<TestArtifact> getTestInputs() {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
-	public List<TestArtifact> getTestOutputs() {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
-	public String getDownloadUrl() {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
-	public String getRDFSource() {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
-	public void addModelPath(Path modelBasePath) {
-		// TODO Auto-generated method stub
-		
-	}
-
-	@Override
-	public Map<String, Integer> getTotalHalo() {
-		// TODO Auto-generated method stub
-		return null;
+	/**
+	 * Get the models at the local repo.
+	 * The default local repo is the 'models' folder in the directory where the program is being executed
+	 * 
+	 * @return a list of the {@link ModelDescriptor_old}s of the available models
+	 */
+	public static List<ModelDescriptor_old> getModelsAtLocalRepo() {
+		return getModelsAtLocalRepo(new File("models").getAbsolutePath());
 	}
 }

@@ -2,10 +2,13 @@ package io.bioimage.modelrunner.bioimageio;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
 import java.util.stream.Collectors;
 import java.util.stream.LongStream;
 
 import io.bioimage.modelrunner.bioimageio.description.ModelDescriptor;
+import io.bioimage.modelrunner.bioimageio.description.TensorSpec;
 import io.bioimage.modelrunner.bioimageio.description.axes.axis.Axis;
 import io.bioimage.modelrunner.tiling.PatchGridCalculator;
 
@@ -23,9 +26,7 @@ public class TileFactory {
 		return new TileFactory(descriptor);
 	}
 	
-	public long[] getOptimalTileSize(String tensorName, long[] dims, String inputAxesOrder) {
-		// TODO TensorSpec tensor = descriptor.findInputTensor(tensorName);
-		TensorSpec tensor = null;
+	private long[] getOptimalTileSize(TensorSpec tensor, String inputAxesOrder, long[] dims) {
 		boolean tiling = this.descriptor.isTilingAllowed();
 		int[] halo = descriptor.getTotalHalo();
 		int[] min = tensor.getMinTileSizeArr();
@@ -58,6 +59,18 @@ public class TileFactory {
 			} else if (step[ii] == 0){
 				patch[ii] = min[ii];
 			}
+		}
+		return patch;
+	}
+	
+	public Map<String, long[]> getOptimalTileSize(List<ImageInfo> inputInfo) {
+		boolean tiling = this.descriptor.isTilingAllowed();
+		for (ImageInfo im : inputInfo) {
+			TensorSpec tt = descriptor.findInputTensor(im.getTensorName());
+			if (tt == null) 
+				throw new IllegalArgumentException("The tensor provided '" + im.getTensorName() + "' is not found in the model specs.");
+			
+			long[] tileSize = getOptimalTileSize(tt, im.getAxesOrder(), im.getDimensions());
 		}
 		
 		if (!tiling || Arrays.stream(tensor.getTileStepArr()).allMatch(i -> i == 0))

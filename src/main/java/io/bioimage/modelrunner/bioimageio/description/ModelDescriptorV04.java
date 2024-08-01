@@ -49,9 +49,9 @@ import io.bioimage.modelrunner.utils.YAMLUtils;
  * More info about the parameters can be found at:
  * https://github.com/bioimage-io/spec-bioimage-io/blob/gh-pages/model_spec_latest.md
  * 
- * @author Daniel Felipe Gonzalez Obando and Carlos Garcia Lopez de Haro
+ * @author Carlos Garcia Lopez de Haro and Daniel Felipe Gonzalez Obando
  */
-public class ModelDescriptorV04
+public class ModelDescriptorV04 implements ModelDescriptor
 {
     private String format_version;
     private String name;
@@ -1020,13 +1020,6 @@ public class ModelDescriptorV04
 	}
 
 	/**
-	 * @return the icon
-	 */
-	public String getIcon() {
-		return icon;
-	}
-
-	/**
 	 * @return the version
 	 */
 	public String getVersion() {
@@ -1161,5 +1154,11 @@ public class ModelDescriptorV04
 	 */
 	public static List<ModelDescriptorV04> getModelsAtLocalRepo() {
 		return getModelsAtLocalRepo(new File("models").getAbsolutePath());
+	}
+
+	@Override
+	public Map<String, Integer> getTotalHalo() {
+		// TODO Auto-generated method stub
+		return null;
 	}
 }
