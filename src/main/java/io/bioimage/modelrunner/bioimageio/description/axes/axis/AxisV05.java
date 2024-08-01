@@ -16,7 +16,7 @@ public class AxisV05 implements Axis{
 	private int halo = 0;
 	
 	
-	protected AxisV05(Map<String, Object> map) {
+	public AxisV05(Map<String, Object> map) {
 		this.id = (String) map.get("id");
 		this.type = (String) map.get("type");
 		this.channelNames = (List<String>) map.get("channel_names");

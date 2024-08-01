@@ -23,6 +23,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import io.bioimage.modelrunner.bioimageio.description.axes.Axes;
+import io.bioimage.modelrunner.bioimageio.description.axes.AxesV04;
 import io.bioimage.modelrunner.bioimageio.description.exceptions.ModelSpecsException;
 
 
@@ -32,7 +34,7 @@ import io.bioimage.modelrunner.bioimageio.description.exceptions.ModelSpecsExcep
  * 
  * @author Carlos Garcia Lopez de Haro and Daniel Felipe Gonzalez Obando
  */
-public class TensorSpecV04 {
+public class TensorSpecV04 implements TensorSpec {
 	/**
 	 * Whether the tensor represents an input or an output
 	 */
@@ -79,7 +81,7 @@ public class TensorSpecV04 {
         if (tensorSpecMap.get("axes") == null || (tensorSpecMap.get("axes") instanceof List))
         	throw new IllegalArgumentException("Invalid tensor specifications for '" + id
         			+ "'. The axes are incorrectly specified. For more info, visit the Bioimage.io docs.");
-        axes = new AxesV04(tensorSpecMap);
+        axes = new AxesV04(tensorSpecMap, input);
         description = (String) tensorSpecMap.get("description");
         this.input = input;
 

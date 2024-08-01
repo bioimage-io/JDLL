@@ -16,7 +16,7 @@ public class AxisV04 implements Axis {
 	String referenceAxis;
 	
 	
-	protected AxisV04(String abreviation, int min, int step, int halo, double offset, double scale, String ref) {
+	public AxisV04(String abreviation, int min, int step, int halo, double offset, double scale, String ref) {
 		this.abreviation = abreviation;
 		this.halo = halo;
 		this.step = step;

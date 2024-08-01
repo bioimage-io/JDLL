@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.Map;
 
 import io.bioimage.modelrunner.bioimageio.description.axes.axis.Axis;
+import io.bioimage.modelrunner.bioimageio.description.axes.axis.AxisV05;
 
 public class AxesV05 implements Axes {
 	
@@ -18,7 +19,7 @@ public class AxesV05 implements Axes {
 	
 	private final int[] stepArr;
 	
-	protected AxesV05(List<Object> axesList) {
+	public AxesV05(List<Object> axesList) {
 		List<Axis> axesListInit = new ArrayList<Axis>();
 		String order = "";
 		int[] minArr = new int[axesList.size()];
@@ -29,7 +30,7 @@ public class AxesV05 implements Axes {
 			if (!(axisObject instanceof Map))
 				throw new IllegalArgumentException("The input argument should be a list of maps. "
 						+ "Go to the Bioimage.io specs documentation for more info.");
-			Axis axis = new Axis((Map<String, Object>) axisObject);
+			Axis axis = new AxisV05((Map<String, Object>) axisObject);
 			axesListInit.add(axis);
 			order += axis.getAxis();
 			minArr[c] = axis.getMin();

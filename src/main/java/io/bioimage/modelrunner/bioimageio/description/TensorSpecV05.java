@@ -34,7 +34,7 @@ import io.bioimage.modelrunner.bioimageio.description.exceptions.ModelSpecsExcep
  * 
  * @author Carlos Garcia Lopez de Haro and Daniel Felipe Gonzalez Obando
  */
-public class TensorSpecV05 {
+public class TensorSpecV05 implements TensorSpec {
 	/**
 	 * Whether the tensor represents an input or an output
 	 */

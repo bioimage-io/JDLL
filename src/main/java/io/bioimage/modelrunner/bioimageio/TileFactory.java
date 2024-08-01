@@ -1,10 +1,11 @@
-package io.bioimage.modelrunner.bioimageio.description;
+package io.bioimage.modelrunner.bioimageio;
 
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.LongStream;
 
+import io.bioimage.modelrunner.bioimageio.description.ModelDescriptor;
 import io.bioimage.modelrunner.bioimageio.description.axes.axis.Axis;
 import io.bioimage.modelrunner.tiling.PatchGridCalculator;
 
@@ -24,7 +25,7 @@ public class TileFactory {
 	
 	public long[] getOptimalTileSize(String tensorName, long[] dims, String inputAxesOrder) {
 		// TODO TensorSpec tensor = descriptor.findInputTensor(tensorName);
-		TensorSpecV05 tensor = null;
+		TensorSpec tensor = null;
 		boolean tiling = this.descriptor.isTilingAllowed();
 		int[] halo = descriptor.getTotalHalo();
 		int[] min = tensor.getMinTileSizeArr();

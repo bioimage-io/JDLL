@@ -1,10 +1,12 @@
 package io.bioimage.modelrunner.bioimageio.description.axes;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
 import io.bioimage.modelrunner.bioimageio.description.axes.axis.Axis;
+import io.bioimage.modelrunner.bioimageio.description.axes.axis.AxisV04;
 import io.bioimage.modelrunner.utils.YAMLUtils;
 
 public class AxesV04 implements Axes{
@@ -25,7 +27,7 @@ public class AxesV04 implements Axes{
 	
 	private String reference;
 	
-	protected AxesV04(Map<String, Object> tensorSpecMap, boolean isInput) {
+	public AxesV04(Map<String, Object> tensorSpecMap, boolean isInput) {
 		axesOrder = (String) tensorSpecMap.get("axes");
 		if (axesOrder == null)
 			throw new IllegalArgumentException("Model rdf.yaml Bioimage.io specs does not contain information about the axes order.");
@@ -49,7 +51,12 @@ public class AxesV04 implements Axes{
 			if (step == null) throw new IllegalArgumentException("Step size needs to be defined for every input.");
 			this.stepArr = YAMLUtils.castListToIntArray((List<?>) step);
 			this.offsetArr = new double[stepArr.length];
+			double[] arr = new double[stepArr.length];
+			Arrays.fill(arr, -1);
+			scaleArr = arr;
 		} else if (shape instanceof Map && !isInput) {
+			stepArr = new int[axesOrder.length()];
+			minArr = new int[axesOrder.length()];
 			Map<String, Object> shapeMap = (Map<String, Object>) shape;
 			reference = (String) shapeMap.get("reference_tensor");
 			if (reference == null) 
@@ -62,6 +69,8 @@ public class AxesV04 implements Axes{
 			if (offset == null) 
 				throw new IllegalArgumentException("Output tensors need to define a scale with respect to the reference input.");
 			offsetArr = YAMLUtils.castListToDoubleArray((List<?>) offset);
+		} else {
+			throw new IllegalArgumentException("Incorrect specs consfiguration for the tensors.");
 		}
 		
 		if (!isInput) {
@@ -70,7 +79,17 @@ public class AxesV04 implements Axes{
 				haloArr = new int[axesOrder.length()];
 			else
 				haloArr = YAMLUtils.castListToIntArray((List<?>) halo);
+		} else {
+			this.haloArr = new int[stepArr.length];
 		}
+		
+		this.axesList = new ArrayList<Axis>();
+		for (int i = 0; i < this.axesOrder.length(); i ++) {
+			Axis ax = new AxisV04(axesOrder.split("")[i], this.minArr[i], this.stepArr[i], this.haloArr[i], 
+					this.offsetArr[i], this.scaleArr[i], this.reference);
+			this.axesList.add(ax);
+		}
+		
 	}
 	
 	public String getAxesOrder() {
