@@ -33,6 +33,8 @@ import java.util.Set;
 import java.util.Map.Entry;
 
 import io.bioimage.modelrunner.bioimageio.BioimageioRepo;
+import io.bioimage.modelrunner.bioimageio.description.axes.axis.Axis;
+import io.bioimage.modelrunner.bioimageio.description.axes.axis.AxisV05;
 import io.bioimage.modelrunner.bioimageio.description.exceptions.ModelSpecsException;
 import io.bioimage.modelrunner.bioimageio.description.weights.ModelWeight;
 import io.bioimage.modelrunner.utils.Log;
@@ -159,6 +161,7 @@ public class ModelDescriptorV05 implements ModelDescriptor
                         break;
                     case "outputs":
                         buildOutputTensors((List<?>) yamlElements.get(field));
+                        calculateTotalInputHalo();
                         break;
                     case "config":
                         config = buildConfig((Map<String, Object>) yamlElements.get(field));
@@ -386,25 +389,32 @@ public class ModelDescriptorV05 implements ModelDescriptor
      * for each of them
      * @return the total input halo in "xyczb" axes order
      */
-    private float[] calculateTotalInputHalo() {
-    	String[] targetForm = "XYCZB".split("");
-		float[] halo = new float[targetForm.length];
+    private void calculateTotalInputHalo() {
 		for (TensorSpec out: output_tensors) {
-			for (int i = 0; i < targetForm.length; i ++) {
-				int ind = out.getAxesOrder().toUpperCase().indexOf(targetForm[i]);
-				if (ind == -1)
+			for (Axis ax : out.getAxesInfo().getAxesList()) {
+				int axHalo = ax.getHalo();
+				if (axHalo == 0)
 					continue;
-				float inputHalo = out.getHalo()[ind];
-				// No halo in channel C because of offset
-				float inputOffset = -1 * out.getShape().getOffset()[ind];
-				if (targetForm[i].toLowerCase().equals("c"))
-					inputOffset = 0;
-				float possibleHalo = (inputHalo + inputOffset) / out.getShape().getScale()[ind];
-				if (possibleHalo > halo[i])
-					halo[i] = possibleHalo;
+				String ref = ax.getReferenceTensor();
+				if (ref == null) {
+					this.input_tensors.stream().forEach( tt -> {
+						AxisV05 inAx = (AxisV05) tt.getAxesInfo().getAxesList().stream()
+						.filter(xx -> xx.getAxis().equals(ax.getAxis()))
+						.findFirst().orElse(null);
+						if (inAx == null || inAx.getHalo() > axHalo) return;
+						inAx.halo = axHalo;
+					});
+				}
+				
+				double axScale = ax.getScale();
+				double axOffset = ax.getOffset();
+				double nHalo = (axHalo + axOffset) / axScale;
+				AxisV05 inAx = (AxisV05) this.findInputTensor(ref).getAxesInfo().getAxis(ax.getReferenceAxis());
+
+				if (inAx == null || inAx.getHalo() > nHalo) return;
+				inAx.halo = nHalo;
 			}
 		}
-		return halo;
     }
 
     private static ExecutionConfig buildConfig(Map<String, Object> yamlFieldElements)
@@ -758,13 +768,5 @@ public class ModelDescriptorV05 implements ModelDescriptor
 	public void addModelPath(Path modelBasePath) {
 		// TODO Auto-generated method stub
 		
-	}
-
-	@Override
-	public Map<String, Integer> getTotalHalo() {
-		if (halo == null)
-			calculateTotalInputHalo();
-		// TODO
-		return null;
 	}
 }

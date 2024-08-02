@@ -852,12 +852,6 @@ public class ModelDescriptorV04 implements ModelDescriptor
 	}
 
 	@Override
-	public Map<String, Integer> getTotalHalo() {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
 	public String buildBasicInfo() {
 		// TODO Auto-generated method stub
 		return null;

@@ -287,6 +287,4 @@ public interface ModelDescriptor {
 	 * @return whether the model can be run on the bioengino or not
 	 */
 	public boolean canRunOnBioengine();
-	
-	public Map<String, Integer> getTotalHalo();
 }
