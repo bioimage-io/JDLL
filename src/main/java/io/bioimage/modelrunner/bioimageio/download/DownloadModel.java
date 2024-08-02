@@ -42,11 +42,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import io.bioimage.modelrunner.bioimageio.description.ModelDescriptor;
-import io.bioimage.modelrunner.bioimageio.description.SampleImage;
-import io.bioimage.modelrunner.bioimageio.description.TestArtifact;
 import io.bioimage.modelrunner.bioimageio.description.weights.ModelWeight;
 import io.bioimage.modelrunner.bioimageio.description.weights.WeightFormat;
 import io.bioimage.modelrunner.engine.EngineInfo;
@@ -132,10 +131,6 @@ public class DownloadModel {
 	 * Key for the map that contains the attachments of the model 
 	 */
 	private static String ATTACH_KEY = "attachments";
-	/**
-	 * Key for the map that contains the attachment files of the model. This is a subfile of "attachments".
-	 */
-	private static String ATTACH_FILES_KEY = "files";
 	/**
 	 * Key for the map that contains the weights of the model 
 	 */
@@ -280,7 +275,7 @@ public class DownloadModel {
 		for (WeightFormat w : weights.gettAllSupportedWeightObjects()) {
 			try {
 				if (w.getSource() != null && checkURL(w.getSource())) {
-					downloadableLinks.put(WEIGHTS_KEY + "_" + c ++, w.getSource());
+					downloadableLinks.put(WEIGHTS_KEY + "_" + c ++, descriptor.getModelURL() + w.getSource());
 					if (w.getSourceFileName().endsWith(".zip"))
 						unzip = true;
 				}
@@ -295,70 +290,51 @@ public class DownloadModel {
 	 * Add the test inputs to the downloadable links
 	 */
 	private void addTestInputs() {
-		List<TestArtifact> sampleInps = descriptor.getTestInputs();
-		if (sampleInps == null)
-			return;
+		List<String> fileNames = descriptor.getInputTensors().stream()
+				.map(tt -> tt.getTestTensorName()).collect(Collectors.toList());
 		int c = 0;
-		for (TestArtifact ss : sampleInps) {
-			if (ss != null && ss.getUrl() != null) {
-				downloadableLinks.put(TEST_INPUTS_KEY + "_" + c ++, ss.getString());
-			}
-		}
+		for (String ss : fileNames) 
+			downloadableLinks.put(TEST_INPUTS_KEY + "_" + c ++, this.descriptor.getModelURL() + ss);
 	}
 	
 	/**
 	 * Add the test outputs to the dowloadable links
 	 */
 	private void addTestOutputs() {
-		List<TestArtifact> sampleOuts = descriptor.getTestOutputs();
-		if (sampleOuts == null)
-			return;
+		List<String> fileNames = descriptor.getOutputTensors().stream()
+				.map(tt -> tt.getTestTensorName()).collect(Collectors.toList());
 		int c = 0;
-		for (TestArtifact ss : sampleOuts) {
-			if (ss != null && ss.getUrl() != null) {
-				downloadableLinks.put(TEST_OUTPUTS_KEY + "_" + c ++, ss.getString());
-			}
-		}
+		for (String ss : fileNames) 
+			downloadableLinks.put(TEST_OUTPUTS_KEY + "_" + c ++, this.descriptor.getModelURL() + ss);
 	}
 	
 	/**
 	 * Add the sample inputs to the dowloadable links
 	 */
 	private void addSampleInputs() {
-		List<SampleImage> sampleInps = descriptor.getSampleInputs();
-		if (sampleInps == null)
-			return;
+		List<String> fileNames = descriptor.getInputTensors().stream()
+				.map(tt -> tt.getSampleTensorName()).collect(Collectors.toList());
 		int c = 0;
-		for (SampleImage ss : sampleInps) {
-			if (ss != null && ss.getUrl() != null) {
-				downloadableLinks.put(SAMPLE_INPUTS_KEY + "_" + c ++, ss.getString());
-			}
-		}
+		for (String ss : fileNames) 
+			downloadableLinks.put(SAMPLE_INPUTS_KEY + "_" + c ++, this.descriptor.getModelURL() + ss);
 	}
 	
 	/**
 	 * Add the sample outputs to the dowloadable links
 	 */
 	private void addSampleOutputs() {
-		List<SampleImage> sampleOuts = descriptor.getSampleOutputs();
-		if (sampleOuts == null)
-			return;
+		List<String> fileNames = descriptor.getOutputTensors().stream()
+				.map(tt -> tt.getSampleTensorName()).collect(Collectors.toList());
 		int c = 0;
-		for (SampleImage ss : sampleOuts) {
-			if (ss != null && ss.getUrl() != null) {
-				downloadableLinks.put(SAMPLE_OUTPUTS_KEY + "_" + c ++, ss.getString());
-			}
-		}
+		for (String ss : fileNames) 
+			downloadableLinks.put(SAMPLE_OUTPUTS_KEY + "_" + c ++, this.descriptor.getModelURL() + ss);
 	}
 	
 	/**
 	 * Add the rdf.yaml file to the downloadable links of the model
 	 */
 	private void addRDF() {
-		String rdf = descriptor.getRDFSource();
-		if (rdf != null && checkURL(rdf)) {
-			downloadableLinks.put(RDF_KEY, rdf);
-		}
+		downloadableLinks.put(RDF_KEY, descriptor.getModelURL() + Constants.RDF_FNAME);
 	}
 	
 	/**
@@ -370,7 +346,7 @@ public class DownloadModel {
 			return;
 		int c = 0;
 		for (String kk : attachments.keySet()) {
-			if (attachments.get(kk) instanceof String && checkURL((String) attachments.get(kk))) {
+			if (attachments.get(kk) instanceof String) {
 				downloadableLinks.put(ATTACH_KEY + "_" + c ++, (String) attachments.get(kk));
 			} else if (attachments.get(kk) instanceof URL) {
 				downloadableLinks.put(ATTACH_KEY + "_" + c ++, ((URL) attachments.get(kk)).toString());
