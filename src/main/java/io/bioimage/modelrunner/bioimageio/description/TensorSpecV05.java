@@ -23,8 +23,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import io.bioimage.modelrunner.bioimageio.description.axes.Axes;
-import io.bioimage.modelrunner.bioimageio.description.axes.AxesV05;
 import io.bioimage.modelrunner.bioimageio.description.exceptions.ModelSpecsException;
 
 

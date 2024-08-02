@@ -22,6 +22,9 @@ package io.bioimage.modelrunner.bioimageio.description;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -125,4 +128,48 @@ public class ModelDescriptorFactory {
 	public static List<ModelDescriptor> getModelsAtLocalRepo() {
 		return getModelsAtLocalRepo(new File("models").getAbsolutePath());
 	}
+    
+    /**
+     * Method that checks if a String corresponds to an URL
+     * 
+     * @param str
+     * 	the string that should be possible to convert into URL
+     * @return the original string if it does correspond to an URL
+     * 	or null if it does not
+     */
+    protected static String checkUrl(String str) {
+		try {
+			new URL(str);
+			return str;
+		} catch (MalformedURLException e) {
+			return null;
+		}
+    }
+
+    /**
+     * REturns a List<String> of data from the yaml file that is supposed
+     * to correspond to an URI.
+     * @param coverElements
+     * 	data from the yaml
+     * @return the List<String> with the URI data
+     */
+    protected static List<String> buildUrlElements(Object coverElements)
+    {
+        List<String> covers = new ArrayList<>();
+    	if ((coverElements instanceof List<?>)) {
+    		List<?> elems = (List<?>) coverElements;
+	        for (Object elem : elems)
+	        {
+	        	if (checkUrl((String) elem) == null)
+	        		continue;
+	            covers.add((String) elem);
+	        }
+    	} else if ((coverElements instanceof String) && checkUrl((String) coverElements) != null) {
+            covers.add((String) coverElements);
+    	} else {
+    		covers = null;
+    	}
+    	
+        return covers;
+    }
 }

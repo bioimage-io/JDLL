@@ -1,11 +1,9 @@
-package io.bioimage.modelrunner.bioimageio.description.axes;
+package io.bioimage.modelrunner.bioimageio.description;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import io.bioimage.modelrunner.bioimageio.description.axes.axis.Axis;
-import io.bioimage.modelrunner.bioimageio.description.axes.axis.AxisV05;
 
 public class AxesV05 implements Axes {
 	
@@ -19,7 +17,7 @@ public class AxesV05 implements Axes {
 	
 	private final int[] stepArr;
 	
-	public AxesV05(List<Object> axesList) {
+	protected AxesV05(List<Object> axesList) {
 		List<Axis> axesListInit = new ArrayList<Axis>();
 		String order = "";
 		int[] minArr = new int[axesList.size()];

@@ -1,4 +1,4 @@
-package io.bioimage.modelrunner.bioimageio.description.axes.axis;
+package io.bioimage.modelrunner.bioimageio.description;
 
 import java.util.Map;
 

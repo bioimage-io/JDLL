@@ -1,4 +1,4 @@
-package io.bioimage.modelrunner.bioimageio.description.axes.axis;
+package io.bioimage.modelrunner.bioimageio.description;
 
 import java.util.List;
 
@@ -16,7 +16,7 @@ public class AxisV04 implements Axis {
 	String referenceAxis;
 	
 	
-	public AxisV04(String abreviation, int min, int step, int halo, double offset, double scale, String ref) {
+	protected AxisV04(String abreviation, int min, int step, int halo, double offset, double scale, String ref) {
 		this.abreviation = abreviation;
 		this.halo = halo;
 		this.step = step;

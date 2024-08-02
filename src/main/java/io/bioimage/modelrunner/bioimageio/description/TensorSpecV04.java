@@ -23,8 +23,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import io.bioimage.modelrunner.bioimageio.description.axes.Axes;
-import io.bioimage.modelrunner.bioimageio.description.axes.AxesV04;
 import io.bioimage.modelrunner.bioimageio.description.exceptions.ModelSpecsException;
 
 
@@ -61,9 +59,9 @@ public class TensorSpecV04 implements TensorSpec {
      */
     private List<TransformSpec> postprocessing;
     
-    private String sampleTensorName;
+    protected String sampleTensorName;
     
-    private String testTensorName;
+    protected String testTensorName;
 
     /**
      * Builds the tensor specification instance from the tensor map and an input flag.

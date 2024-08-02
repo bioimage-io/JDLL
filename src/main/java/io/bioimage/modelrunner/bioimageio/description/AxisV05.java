@@ -1,4 +1,4 @@
-package io.bioimage.modelrunner.bioimageio.description.axes.axis;
+package io.bioimage.modelrunner.bioimageio.description;
 
 import java.util.List;
 import java.util.Map;
@@ -13,10 +13,10 @@ public class AxisV05 implements Axis{
 	private boolean concat = false;
 	private double scale = 1.0;
 	private AxisSize size;
-	private int halo = 0;
+	protected int halo = 0;
 	
 	
-	public AxisV05(Map<String, Object> map) {
+	protected AxisV05(Map<String, Object> map) {
 		this.id = (String) map.get("id");
 		this.type = (String) map.get("type");
 		this.channelNames = (List<String>) map.get("channel_names");

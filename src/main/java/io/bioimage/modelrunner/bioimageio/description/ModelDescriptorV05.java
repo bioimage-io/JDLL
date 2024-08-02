@@ -19,25 +19,18 @@
  */
 package io.bioimage.modelrunner.bioimageio.description;
 
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.net.MalformedURLException;
-import java.net.URL;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.Map.Entry;
 
 import io.bioimage.modelrunner.bioimageio.BioimageioRepo;
-import io.bioimage.modelrunner.bioimageio.description.axes.axis.Axis;
-import io.bioimage.modelrunner.bioimageio.description.axes.axis.AxisV05;
 import io.bioimage.modelrunner.bioimageio.description.exceptions.ModelSpecsException;
 import io.bioimage.modelrunner.bioimageio.description.weights.ModelWeight;
-import io.bioimage.modelrunner.utils.Log;
 
 
 /**
@@ -54,8 +47,6 @@ public class ModelDescriptorV05 implements ModelDescriptor
     private String timestamp;
     private String description;
     private String type;
-    private boolean tiling = false;
-    private float[] halo;
     private List<Author> authors;
     private List<Author> maintainers;
     private List<Author> packaged_by;
@@ -74,7 +65,6 @@ public class ModelDescriptorV05 implements ModelDescriptor
     private boolean isModelLocal;
     private static String fromLocalKey = "fromLocalRepo";
     private static String modelPathKey = "modelPath";
-    private static List<String> sampleBioengineModels = Arrays.asList(new String[] {"cell_pose"});//, "inception", "stardist"});
     private String modelID;
     private String localModelPath;
     private boolean supportBioengine = false;
@@ -157,7 +147,7 @@ public class ModelDescriptorV05 implements ModelDescriptor
                     	// TODO createCovers();
                         break;
                     case "inputs":
-                    	setInputTensors(buildInputTensors((List<?>) yamlElements.get(field)));
+                    	buildInputTensors((List<?>) yamlElements.get(field));
                         break;
                     case "outputs":
                         buildOutputTensors((List<?>) yamlElements.get(field));
@@ -215,38 +205,6 @@ public class ModelDescriptorV05 implements ModelDescriptor
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
-    }
-    
-    /**
-     * TODO
-     * TODO
-     * TODO ADD BIOENGINE SOON
-     * Method that retrieves the sample BioEngine models that Icy provides as an example
-     * to test the BioEngine
-     * @return a list with sample biengine models
-     */
-    public static ArrayList<Entry<Path, ModelDescriptorV05>> addSampleBioEngineModels() {
-    	ArrayList<Entry<Path, ModelDescriptorV05>> sampleModels = new ArrayList<Entry<Path, ModelDescriptorV05>>();
-    	for (String sample : sampleBioengineModels) {
-			 try {
-	        	InputStream inputStream = ModelDescriptorV05.class.getClassLoader()
-	        												.getResourceAsStream(sample + ".yaml");
-	        	ByteArrayOutputStream result = new ByteArrayOutputStream();
-				 byte[] buffer = new byte[1024];
-				 for (int length; (length = inputStream.read(buffer)) != -1; ) {
-				     result.write(buffer, 0, length);
-				 }
-				 // StandardCharsets.UTF_8.name() > JDK 7
-				 String txt = result.toString("UTF-8");
-				 result.close();
-				 inputStream.close();
-				 // TODO sampleModels.add(CollectionUtils.createEntry(Paths.get(sample), loadFromYamlTextString(txt)));
-			} catch (Exception e) {
-				e.printStackTrace();
-				System.out.println(Log.gct() + " -- BioEngine: unable to load sample model " + sample);
-			}
-    	}
-    	return sampleModels;
     }
     
     /**
@@ -314,33 +272,6 @@ public class ModelDescriptorV05 implements ModelDescriptor
 		this.cite = cites;
     }
 
-    /**
-     * REturns a List<String> of data from the yaml file that is supposed
-     * to correspond to an URI.
-     * @param coverElements
-     * 	data from the yaml
-     * @return the List<String> with the URI data
-     */
-    private static List<String> buildUrlElements(Object coverElements)
-    {
-        List<String> covers = new ArrayList<>();
-    	if ((coverElements instanceof List<?>)) {
-    		List<?> elems = (List<?>) coverElements;
-	        for (Object elem : elems)
-	        {
-	        	if (checkUrl((String) elem) == null)
-	        		continue;
-	            covers.add((String) elem);
-	        }
-    	} else if ((coverElements instanceof String) && checkUrl((String) coverElements) != null) {
-            covers.add((String) coverElements);
-    	} else {
-    		covers = null;
-    	}
-    	
-        return covers;
-    }
-
     @SuppressWarnings("unchecked")
     private static List<TensorSpec> buildInputTensors(List<?> list) throws ModelSpecsException
     {
@@ -354,17 +285,6 @@ public class ModelDescriptorV05 implements ModelDescriptor
             tensors.add(new TensorSpecV05((Map<String, Object>) elem, true));
         }
         return tensors;
-    }
-    
-    /**
-     * Sets the input tensors of the model specs. Also adds the tiling
-     * @param inputTensors
-     * 	the input tensors
-     */
-    public void setInputTensors(List<TensorSpec> inputTensors) {
-    	boolean tiling = getConfig() == null ? true : 
-    				(getConfig().getDeepImageJ() == null ? true : getConfig().getDeepImageJ().isAllowTiling());
-    	this.tiling = tiling;
     }
 
     @SuppressWarnings("unchecked")
@@ -412,7 +332,7 @@ public class ModelDescriptorV05 implements ModelDescriptor
 				AxisV05 inAx = (AxisV05) this.findInputTensor(ref).getAxesInfo().getAxis(ax.getReferenceAxis());
 
 				if (inAx == null || inAx.getHalo() > nHalo) return;
-				inAx.halo = nHalo;
+				inAx.halo = (int) nHalo;
 			}
 		}
     }
@@ -425,23 +345,6 @@ public class ModelDescriptorV05 implements ModelDescriptor
     private static ModelWeight buildWeights(Map<String, Object> yamlFieldElements)
     {
         return ModelWeight.build(yamlFieldElements);
-    }
-    
-    /**
-     * Method that checks if a String corresponds to an URL
-     * 
-     * @param str
-     * 	the string that should be possible to convert into URL
-     * @return the original string if it does correspond to an URL
-     * 	or null if it does not
-     */
-    public static String checkUrl(String str) {
-		try {
-			URL url = new URL(str);
-			return str;
-		} catch (MalformedURLException e) {
-			return null;
-		}
     }
 
     /**

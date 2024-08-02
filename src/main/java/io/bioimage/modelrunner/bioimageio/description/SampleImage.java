@@ -192,5 +192,9 @@ public class SampleImage {
 	public static List<String> getAllowedExtensions(){
 		return allowedExtensions;
 	}
+	
+	public String getName() {
+		return this.filename;
+	}
 
 }

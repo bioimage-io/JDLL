@@ -19,31 +19,21 @@
  */
 package io.bioimage.modelrunner.bioimageio.description;
 
-import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.Map.Entry;
 import java.util.stream.Collectors;
 
 import io.bioimage.modelrunner.bioimageio.BioimageioRepo;
-import io.bioimage.modelrunner.bioimageio.description.axes.axis.Axis;
-import io.bioimage.modelrunner.bioimageio.description.axes.axis.AxisV04;
 import io.bioimage.modelrunner.bioimageio.description.exceptions.ModelSpecsException;
 import io.bioimage.modelrunner.bioimageio.description.weights.ModelWeight;
-import io.bioimage.modelrunner.utils.Constants;
-import io.bioimage.modelrunner.utils.Log;
-import io.bioimage.modelrunner.utils.YAMLUtils;
 
 
 /**
@@ -84,11 +74,9 @@ public class ModelDescriptorV04 implements ModelDescriptor
     private boolean isModelLocal;
     private static String fromLocalKey = "fromLocalRepo";
     private static String modelPathKey = "modelPath";
-    private static List<String> sampleBioengineModels = Arrays.asList(new String[] {"cell_pose"});//, "inception", "stardist"});
     private String modelID;
     private String localModelPath;
     private boolean supportBioengine = false;
-    private Map<String, Long> halo;
 
     private ModelDescriptorV04()
     {
@@ -148,7 +136,7 @@ public class ModelDescriptorV04 implements ModelDescriptor
                         modelDescription.parent = (Map<String, String>) fieldElement;
                         break;
                     case "git_repo":
-                        modelDescription.git_repo = checkUrl((String) fieldElement);
+                        modelDescription.git_repo = ModelDescriptorFactory.checkUrl((String) fieldElement);
                         break;
                     case "tags":
                         modelDescription.tags = castListStrings(fieldElement);
@@ -162,32 +150,20 @@ public class ModelDescriptorV04 implements ModelDescriptor
                     case "documentation":
                         modelDescription.documentation = (String) fieldElement;
                         break;
-                    case "test_inputs":
-                        modelDescription.test_inputs = buildTestArtifacts((List<?>) fieldElement);
-                        break;
-                    case "test_outputs":
-                        modelDescription.test_outputs = buildTestArtifacts((List<?>) fieldElement);
-                        break;
-                    case "sample_inputs":
-                        modelDescription.sample_inputs = buildSampleImages((List<?>) fieldElement);
-                        break;
-                    case "sample_outputs":
-                        modelDescription.sample_outputs = buildSampleImages((List<?>) fieldElement);
-                        break;
                     case "type":
                         modelDescription.type = (String) fieldElement;
                         break;
                     case "download_url":
-                        modelDescription.download_url = checkUrl((String) fieldElement);
+                        modelDescription.download_url = ModelDescriptorFactory.checkUrl((String) fieldElement);
                         break;
                     case "rdf_source":
-                        modelDescription.rdf_source = checkUrl((String) fieldElement);
+                        modelDescription.rdf_source = ModelDescriptorFactory.checkUrl((String) fieldElement);
                         break;
                     case "attachments":
                         modelDescription.attachments = (Map<String, Object>) fieldElement;
                         break;
                     case "covers":
-                        modelDescription.covers = buildUrlElements((List<?>) fieldElement);
+                        modelDescription.covers = ModelDescriptorFactory.buildUrlElements((List<?>) fieldElement);
                         break;
                     case "badges":
                         modelDescription.badges = buildBadgeElements((List<?>) fieldElement);
@@ -220,6 +196,9 @@ public class ModelDescriptorV04 implements ModelDescriptor
                 throw new ModelSpecsException("Invalid model element: " + field + "->" + e.getMessage());
             }
         }
+        
+        modelDescription.addSampleAndTestImages(yamlElements);
+        
         Object bio = modelDescription.config.getSpecMap().get("bioimageio");
         if ((bio != null) && (bio instanceof Map))
         	modelDescription.nickname = (String) (((Map<String, Object>) bio).get("nickname"));
@@ -229,6 +208,33 @@ public class ModelDescriptorV04 implements ModelDescriptor
     	modelDescription.addModelPath(new File(modelDescription.localModelPath).toPath());
     	SpecialModels.checkSpecialModels(modelDescription);
     	return modelDescription;
+    }
+    
+    private void addSampleAndTestImages(Map<String, Object> yamlElements) {
+        List<SampleImage> sampleInputs = buildSampleImages((List<?>) yamlElements.get("sample_inputs"));
+        List<SampleImage> sampleOutputs = buildSampleImages((List<?>) yamlElements.get("sample_outputs"));
+
+        List<TestArtifact> testInputs = buildTestArtifacts((List<?>) yamlElements.get("test_inputs"));
+        List<TestArtifact> testOutputs = buildTestArtifacts((List<?>) yamlElements.get("test_outputs"));
+
+        for (int i = 0; i < sampleInputs.size(); i ++) {
+        	TensorSpecV04 tt = (TensorSpecV04) this.input_tensors.get(i);
+        	tt.sampleTensorName = sampleInputs.get(i).getName();
+        }
+        for (int i = 0; i < testInputs.size(); i ++) {
+        	TensorSpecV04 tt = (TensorSpecV04) this.input_tensors.get(i);
+        	tt.testTensorName = testInputs.get(i).getName();
+        }
+        
+        for (int i = 0; i < sampleOutputs.size(); i ++) {
+        	TensorSpecV04 tt = (TensorSpecV04) this.output_tensors.get(i);
+        	tt.sampleTensorName = sampleOutputs.get(i).getName();
+        }
+        for (int i = 0; i < testOutputs.size(); i ++) {
+        	TensorSpecV04 tt = (TensorSpecV04) this.output_tensors.get(i);
+        	tt.testTensorName = testOutputs.get(i).getName();
+        }
+        
     }
     
     /**
@@ -256,38 +262,6 @@ public class ModelDescriptorV04 implements ModelDescriptor
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
-    }
-    
-    /**
-     * TODO
-     * TODO
-     * TODO ADD BIOENGINE SOON
-     * Method that retrieves the sample BioEngine models that Icy provides as an example
-     * to test the BioEngine
-     * @return a list with sample biengine models
-     */
-    public static ArrayList<Entry<Path, ModelDescriptorV04>> addSampleBioEngineModels() {
-    	ArrayList<Entry<Path, ModelDescriptorV04>> sampleModels = new ArrayList<Entry<Path, ModelDescriptorV04>>();
-    	for (String sample : sampleBioengineModels) {
-			 try {
-	        	InputStream inputStream = ModelDescriptorV04.class.getClassLoader()
-	        												.getResourceAsStream(sample + ".yaml");
-	        	ByteArrayOutputStream result = new ByteArrayOutputStream();
-				 byte[] buffer = new byte[1024];
-				 for (int length; (length = inputStream.read(buffer)) != -1; ) {
-				     result.write(buffer, 0, length);
-				 }
-				 // StandardCharsets.UTF_8.name() > JDK 7
-				 String txt = result.toString("UTF-8");
-				 result.close();
-				 inputStream.close();
-				 // TODO sampleModels.add(CollectionUtils.createEntry(Paths.get(sample), loadFromYamlTextString(txt)));
-			} catch (Exception e) {
-				e.printStackTrace();
-				System.out.println(Log.gct() + " -- BioEngine: unable to load sample model " + sample);
-			}
-    	}
-    	return sampleModels;
     }
     
     /**
@@ -349,33 +323,6 @@ public class ModelDescriptorV04 implements ModelDescriptor
             cites.add(Cite.build((String) dict.get("text"), (String) dict.get("doi"), (String) dict.get("url")));
         }
         return cites;
-    }
-
-    /**
-     * REturns a List<String> of data from the yaml file that is supposed
-     * to correspond to an URI.
-     * @param coverElements
-     * 	data from the yaml
-     * @return the List<String> with the URI data
-     */
-    private static List<String> buildUrlElements(Object coverElements)
-    {
-        List<String> covers = new ArrayList<>();
-    	if ((coverElements instanceof List<?>)) {
-    		List<?> elems = (List<?>) coverElements;
-	        for (Object elem : elems)
-	        {
-	        	if (checkUrl((String) elem) == null)
-	        		continue;
-	            covers.add((String) elem);
-	        }
-    	} else if ((coverElements instanceof String) && checkUrl((String) coverElements) != null) {
-            covers.add((String) coverElements);
-    	} else {
-    		covers = null;
-    	}
-    	
-        return covers;
     }
 
     /**
@@ -501,7 +448,7 @@ public class ModelDescriptorV04 implements ModelDescriptor
 				AxisV04 inAx = (AxisV04) this.findInputTensor(ref).getAxesInfo().getAxis(ax.getReferenceAxis());
 
 				if (inAx == null || inAx.getHalo() > nHalo) return;
-				inAx.halo = nHalo;
+				inAx.halo = (int) nHalo;
 			}
 		}
     }
@@ -514,23 +461,6 @@ public class ModelDescriptorV04 implements ModelDescriptor
     private static ModelWeight buildWeights(Map<String, Object> yamlFieldElements)
     {
         return ModelWeight.build(yamlFieldElements);
-    }
-    
-    /**
-     * Method that checks if a String corresponds to an URL
-     * 
-     * @param str
-     * 	the string that should be possible to convert into URL
-     * @return the original string if it does correspond to an URL
-     * 	or null if it does not
-     */
-    public static String checkUrl(String str) {
-		try {
-			URL url = new URL(str);
-			return str;
-		} catch (MalformedURLException e) {
-			return null;
-		}
     }
 
     /**

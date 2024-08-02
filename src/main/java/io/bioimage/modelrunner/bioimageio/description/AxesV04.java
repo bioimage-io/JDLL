@@ -1,15 +1,13 @@
-package io.bioimage.modelrunner.bioimageio.description.axes;
+package io.bioimage.modelrunner.bioimageio.description;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
-import io.bioimage.modelrunner.bioimageio.description.axes.axis.Axis;
-import io.bioimage.modelrunner.bioimageio.description.axes.axis.AxisV04;
 import io.bioimage.modelrunner.utils.YAMLUtils;
 
-public class AxesV04 implements Axes{
+public class AxesV04 implements Axes {
 	
 	private final List<Axis> axesList;
 	
@@ -27,7 +25,7 @@ public class AxesV04 implements Axes{
 	
 	private String reference;
 	
-	public AxesV04(Map<String, Object> tensorSpecMap, boolean isInput) {
+	protected AxesV04(Map<String, Object> tensorSpecMap, boolean isInput) {
 		axesOrder = (String) tensorSpecMap.get("axes");
 		if (axesOrder == null)
 			throw new IllegalArgumentException("Model rdf.yaml Bioimage.io specs does not contain information about the axes order.");

@@ -21,7 +21,6 @@ package io.bioimage.modelrunner.bioimageio.description;
 
 import java.util.List;
 
-import io.bioimage.modelrunner.bioimageio.description.axes.Axes;
 
 /**
  * A tensor specification descriptor. It holds the information of an input or output tensor (name, shape, axis order, data type, halo, etc.).

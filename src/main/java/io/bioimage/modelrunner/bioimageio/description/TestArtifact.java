@@ -27,7 +27,6 @@ import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.List;
 
-import io.bioimage.modelrunner.tensor.Utils;
 import io.bioimage.modelrunner.utils.CommonUtils;
 import io.bioimage.modelrunner.utils.Constants;
 
@@ -191,6 +190,10 @@ public class TestArtifact {
 	 */
 	public static List<String> getAllowedExtensions(){
 		return allowedExtensions;
+	}
+	
+	public String getName() {
+		return filename;
 	}
 
 }
