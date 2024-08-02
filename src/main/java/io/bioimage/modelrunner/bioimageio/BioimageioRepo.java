@@ -41,6 +41,7 @@ import com.google.gson.JsonParser;
 
 import io.bioimage.modelrunner.bioimageio.bioengine.BioEngineAvailableModels;
 import io.bioimage.modelrunner.bioimageio.description.ModelDescriptor;
+import io.bioimage.modelrunner.bioimageio.description.ModelDescriptorFactory;
 import io.bioimage.modelrunner.bioimageio.download.DownloadModel;
 import io.bioimage.modelrunner.bioimageio.download.DownloadTracker;
 import io.bioimage.modelrunner.utils.Log;
@@ -168,7 +169,7 @@ public class BioimageioRepo {
 					continue;
 				String stringRDF = getJSONFromUrl(jsonResource.get("rdf_source").getAsString());
 				modelPath = createPathFromURLString(jsonResource.get("rdf_source").getAsString());
-				ModelDescriptor descriptor = ModelDescriptor.readFromYamlTextString(stringRDF, verbose);
+				ModelDescriptor descriptor = ModelDescriptorFactory.readFromYamlTextString(stringRDF);
 				models.put(modelPath, descriptor);
 			} catch (Exception ex) {
 				// TODO Maybe add some error message? This should be responsibility of the BioImage.io user

@@ -38,6 +38,7 @@ import java.util.stream.Collectors;
 
 import io.bioimage.modelrunner.bioimageio.BioimageioRepo;
 import io.bioimage.modelrunner.bioimageio.description.ModelDescriptor;
+import io.bioimage.modelrunner.bioimageio.description.ModelDescriptorFactory;
 import io.bioimage.modelrunner.bioimageio.description.exceptions.ModelSpecsException;
 import io.bioimage.modelrunner.bioimageio.description.weights.WeightFormat;
 import io.bioimage.modelrunner.bioimageio.download.DownloadTracker;
@@ -1036,7 +1037,7 @@ public class EngineInstall {
 		if (new File(modelFolder, "rdf.yaml").isFile() == false)
 			throw new FileNotFoundException("A Bioimage.io model folder should contain its corresponding rdf.yaml file.");
 		ModelDescriptor descriptor = 
-				ModelDescriptor.readFromLocalFile(modelFolder + File.separator + "rdf.yaml", false);
+				ModelDescriptorFactory.readFromLocalFile(modelFolder + File.separator + "rdf.yaml");
 		return installEnginesForModelInDir(descriptor, enginesDir, consumer);
 	}
 	

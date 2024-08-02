@@ -23,6 +23,7 @@
 package io.bioimage.modelrunner.model;
 
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.util.ArrayList;
@@ -37,6 +38,7 @@ import java.util.stream.LongStream;
 import io.bioimage.modelrunner.bioimageio.bioengine.BioEngineAvailableModels;
 import io.bioimage.modelrunner.bioimageio.bioengine.BioengineInterface;
 import io.bioimage.modelrunner.bioimageio.description.ModelDescriptor;
+import io.bioimage.modelrunner.bioimageio.description.ModelDescriptorFactory;
 import io.bioimage.modelrunner.bioimageio.description.TensorSpec;
 import io.bioimage.modelrunner.bioimageio.description.exceptions.ModelSpecsException;
 import io.bioimage.modelrunner.bioimageio.description.weights.ModelWeight;
@@ -282,7 +284,7 @@ public class Model
 		if (new File(bmzModelFolder, Constants.RDF_FNAME).isFile() == false)
 			throw new IOException("A Bioimage.io model folder should contain its corresponding rdf.yaml file.");
 		ModelDescriptor descriptor = 
-			ModelDescriptor.readFromLocalFile(bmzModelFolder + File.separator + Constants.RDF_FNAME, false);
+			ModelDescriptorFactory.readFromLocalFile(bmzModelFolder + File.separator + Constants.RDF_FNAME);
 		String modelSource = null;
 		List<WeightFormat> modelWeights = descriptor.getWeights().gettAllSupportedWeightObjects();
 		EngineInfo info = null;
@@ -348,7 +350,7 @@ public class Model
 		if (new File(bmzModelFolder, Constants.RDF_FNAME).isFile() == false)
 			throw new IOException("A Bioimage.io model folder should contain its corresponding rdf.yaml file.");
 		ModelDescriptor descriptor = 
-			ModelDescriptor.readFromLocalFile(bmzModelFolder + File.separator + Constants.RDF_FNAME, false);
+				ModelDescriptorFactory.readFromLocalFile(bmzModelFolder + File.separator + Constants.RDF_FNAME);
 		String modelSource = null;
 		List<WeightFormat> modelWeights = descriptor.getWeights().gettAllSupportedWeightObjects();
 		EngineInfo info = null;
@@ -431,7 +433,7 @@ public class Model
 		if (new File(bmzModelFolder, Constants.RDF_FNAME).isFile() == false)
 			throw new IOException("A Bioimage.io model folder should contain its corresponding rdf.yaml file.");
 		ModelDescriptor descriptor = 
-				ModelDescriptor.readFromLocalFile(bmzModelFolder + File.separator + Constants.RDF_FNAME, false);
+				ModelDescriptorFactory.readFromLocalFile(bmzModelFolder + File.separator + Constants.RDF_FNAME);
 		boolean valid = BioEngineAvailableModels.isModelSupportedInBioengine(descriptor.getModelID());
 		if (!valid)
 			throw new IllegalArgumentException("The selected model is currently not supported by the Bioegine. "
@@ -531,11 +533,13 @@ public class Model
 	 * @return the resulting tensors 
 	 * @throws ModelSpecsException if the parameters of the rdf.yaml file are not correct
 	 * @throws RunModelException if the model has not been previously loaded
+	 * @throws IOException 
+	 * @throws FileNotFoundException 
 	 * @throws IllegalArgumentException if the model is not a Bioimage.io model or if lacks a Bioimage.io
 	 *  rdf.yaml specs file in the model folder. 
 	 */
 	public <T extends RealType<T> & NativeType<T>, R extends RealType<R> & NativeType<R>> 
-	List<Tensor<T>> runBioimageioModelOnImgLib2WithTiling(List<Tensor<R>> inputTensors) throws ModelSpecsException, RunModelException {
+	List<Tensor<T>> runBioimageioModelOnImgLib2WithTiling(List<Tensor<R>> inputTensors) throws ModelSpecsException, RunModelException, FileNotFoundException, IOException {
 		return runBioimageioModelOnImgLib2WithTiling(inputTensors, new TilingConsumer());
 	}
 	
@@ -556,17 +560,19 @@ public class Model
 	 * @return the resulting tensors 
 	 * @throws ModelSpecsException if the parameters of the rdf.yaml file are not correct
 	 * @throws RunModelException if the model has not been previously loaded
+	 * @throws IOException 
+	 * @throws FileNotFoundException 
 	 * @throws IllegalArgumentException if the model is not a Bioimage.io model or if lacks a Bioimage.io
 	 *  rdf.yaml specs file in the model folder. 
 	 */
 	public <T extends RealType<T> & NativeType<T>, R extends RealType<R> & NativeType<R>> 
-	List<Tensor<T>> runBioimageioModelOnImgLib2WithTiling(List<Tensor<R>> inputTensors, TilingConsumer tileCounter) throws ModelSpecsException, RunModelException {
+	List<Tensor<T>> runBioimageioModelOnImgLib2WithTiling(List<Tensor<R>> inputTensors, TilingConsumer tileCounter) throws ModelSpecsException, RunModelException, FileNotFoundException, IOException {
 		if (!this.isLoaded())
 			throw new RunModelException("Please first load the model.");
 		if (descriptor == null && !(new File(modelFolder, Constants.RDF_FNAME).isFile()))
 			throw new IllegalArgumentException("Automatic tiling can only be done if the model contains a Bioiamge.io rdf.yaml specs file.");
 		else if (descriptor == null)
-			descriptor = ModelDescriptor.readFromLocalFile(modelFolder + File.separator + Constants.RDF_FNAME, false);
+			descriptor = ModelDescriptorFactory.readFromLocalFile(modelFolder + File.separator + Constants.RDF_FNAME);
 		PatchGridCalculator<R> tileGrid = PatchGridCalculator.build(descriptor, inputTensors);
 		return runTiling(inputTensors, tileGrid, tileCounter);
 	}
@@ -628,18 +634,18 @@ public class Model
 		if (descriptor == null && !(new File(modelFolder, Constants.RDF_FNAME).isFile()))
 			throw new IllegalArgumentException("Automatic tiling can only be done if the model contains a Bioiamge.io rdf.yaml specs file.");
 		else if (descriptor == null)
-			descriptor = ModelDescriptor.readFromLocalFile(modelFolder + File.separator + Constants.RDF_FNAME, false);
+			descriptor = ModelDescriptorFactory.readFromLocalFile(modelFolder + File.separator + Constants.RDF_FNAME);
 		for (TensorSpec t : descriptor.getInputTensors()) {
 			if (!t.isImage())
 				continue;
-			if (tileMap.get(t.getName()) == null)
+			if (tileMap.get(t.getTensorID()) == null)
 				throw new RunModelException("Either provide the wanted tile size for every image tensor (" 
-						+ "in this case tenso '" + t.getName() + "' is missing) or let JDLL compute all "
+						+ "in this case tenso '" + t.getTensorID() + "' is missing) or let JDLL compute all "
 						+ "tile sizes automatically using runBioimageioModelOnImgLib2WithTiling(List<Tensor<R>> inputTensors).");
-			if (Tensor.getTensorByNameFromList(inputTensors, t.getName()) == null)
-				throw new RunModelException("Required tensor named '" + t.getName() + "' is missing from the list of input tensors");
+			if (Tensor.getTensorByNameFromList(inputTensors, t.getTensorID()) == null)
+				throw new RunModelException("Required tensor named '" + t.getTensorID() + "' is missing from the list of input tensors");
 			try {
-				t.setTileSizeForTensorAndImageSize(tileMap.get(t.getName()), Tensor.getTensorByNameFromList(inputTensors, t.getName()).getShape());
+				t.setTileSizeForTensorAndImageSize(tileMap.get(t.getTensorID()), Tensor.getTensorByNameFromList(inputTensors, t.getTensorID()).getShape());
 			} catch (Exception e) {
 				throw new RunModelException(e.getMessage());
 			}
@@ -656,12 +662,12 @@ public class Model
 		LinkedHashMap<String, PatchSpec> outTileSpecs = tileGrid.getOutputTensorsTileSpecs();
 		List<Tensor<T>> outputTensors = new ArrayList<Tensor<T>>();
 		for (TensorSpec tt : descriptor.getOutputTensors()) {
-			if (outTileSpecs.get(tt.getName()) == null)
-				outputTensors.add(Tensor.buildEmptyTensor(tt.getName(), tt.getAxesOrder()));
+			if (outTileSpecs.get(tt.getTensorID()) == null)
+				outputTensors.add(Tensor.buildEmptyTensor(tt.getTensorID(), tt.getAxesOrder()));
 			else
-				outputTensors.add((Tensor<T>) Tensor.buildBlankTensor(tt.getName(), 
+				outputTensors.add((Tensor<T>) Tensor.buildBlankTensor(tt.getTensorID(), 
 																	tt.getAxesOrder(), 
-																	outTileSpecs.get(tt.getName()).getNonTiledTensorDims(), 
+																	outTileSpecs.get(tt.getTensorID()).getNonTiledTensorDims(), 
 																	(T) new FloatType()));
 		}
 		doTiling(inputTensors, outputTensors, tileGrid, tileCounter);
@@ -797,14 +803,13 @@ public class Model
 	 * If the model does not contain a specs file, the methods returns null
 	 * @return the {@link ModelDescriptor} instance that contains the specs defined in the 
 	 * 	Bioimage.io rdf.yaml specs file.
+	 * @throws IOException 
+	 * @throws ModelSpecsException 
+	 * @throws FileNotFoundException 
 	 */
-	public ModelDescriptor getBioimageioSpecs() {
+	public ModelDescriptor getBioimageioSpecs() throws FileNotFoundException, ModelSpecsException, IOException {
 		if (descriptor == null && new File(modelFolder + File.separator + Constants.RDF_FNAME).isFile()) {
-			try {
-				descriptor = ModelDescriptor.readFromLocalFile(modelFolder + File.separator + Constants.RDF_FNAME, false);
-			} catch (ModelSpecsException e) {
-				e.printStackTrace();
-			}
+			descriptor = ModelDescriptorFactory.readFromLocalFile(modelFolder + File.separator + Constants.RDF_FNAME);
 		}
 		return this.descriptor;
 	}

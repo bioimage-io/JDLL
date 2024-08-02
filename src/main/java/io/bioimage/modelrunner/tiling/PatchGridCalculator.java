@@ -31,6 +31,7 @@ import java.util.stream.IntStream;
 import java.util.stream.LongStream;
 
 import io.bioimage.modelrunner.bioimageio.description.ModelDescriptor;
+import io.bioimage.modelrunner.bioimageio.description.ModelDescriptorFactory;
 import io.bioimage.modelrunner.bioimageio.description.TensorSpec;
 import io.bioimage.modelrunner.tensor.Tensor;
 import io.bioimage.modelrunner.utils.Constants;
@@ -78,16 +79,16 @@ public class PatchGridCalculator <T extends RealType<T> & NativeType<T>>
     		throws IllegalArgumentException
     {
     	for (TensorSpec tt : descriptor.getInputTensors()) {
-    		if (tt.isImage() && Tensor.getTensorByNameFromList(tensorList, tt.getName()) == null)
-    			throw new IllegalArgumentException("Model input tensor '" + tt.getName() + "' is specified in the rdf.yaml specs file "
+    		if (tt.isImage() && Tensor.getTensorByNameFromList(tensorList, tt.getTensorID()) == null)
+    			throw new IllegalArgumentException("Model input tensor '" + tt.getTensorID() + "' is specified in the rdf.yaml specs file "
     					+ "but cannot be found in the model inputs map provided.");
     		// TODO change isImage() by isTensor()
-    		if (tt.isImage() && !(Tensor.getTensorByNameFromList(tensorList, tt.getName()) instanceof Tensor))
-    			throw new IllegalArgumentException("Model input tensor '" + tt.getName() + "' is specified in the rdf.yaml specs file "
+    		if (tt.isImage() && !(Tensor.getTensorByNameFromList(tensorList, tt.getTensorID()) instanceof Tensor))
+    			throw new IllegalArgumentException("Model input tensor '" + tt.getTensorID() + "' is specified in the rdf.yaml specs file "
     					+ "as a tensor but. JDLL needs tensor to be specified either as JDLL tensors (io.bioimage.tensor.Tensor) "
     					+ "or ImgLib2 Imgs (net.imglib2.img.Img), ImgLib2 RandomAccessibleIntervals (net.imglib2.RandomAccessibleInterval) "
     					+ "or ImgLib2 IterableIntervals (net.imglib2.IterableInterval). However, input "
-    					+ "'" + tt.getName() + "' is defined as: " + Tensor.getTensorByNameFromList(tensorList, tt.getName()).getClass());
+    					+ "'" + tt.getTensorID() + "' is defined as: " + Tensor.getTensorByNameFromList(tensorList, tt.getTensorID()).getClass());
     	}
     	this.descriptor = descriptor;
     	this.inputValuesMap = tensorList.stream().collect(Collectors.toMap(t -> t.getName(), t -> t));
@@ -113,7 +114,7 @@ public class PatchGridCalculator <T extends RealType<T> & NativeType<T>>
     	ModelDescriptor descriptor;
     	try {
 	    	descriptor = 
-	    			ModelDescriptor.readFromLocalFile(modelFolder + File.separator + Constants.RDF_FNAME, false);
+	    			ModelDescriptorFactory.readFromLocalFile(modelFolder + File.separator + Constants.RDF_FNAME);
     	} catch (Exception ex) {
     		throw new IOException("Unable to process the rf.yaml specifications file.", ex);
     	}
@@ -158,8 +159,8 @@ public class PatchGridCalculator <T extends RealType<T> & NativeType<T>>
     		return inputTilesSpecs;
     	List<TensorSpec> inputTensors = findInputImageTensorSpec();
         List<Tensor<T>> inputImages = inputTensors.stream()
-        		.filter(k -> this.inputValuesMap.get(k.getName()) != null)
-        		.map(k -> this.inputValuesMap.get(k.getName())).collect(Collectors.toList());
+        		.filter(k -> this.inputValuesMap.get(k.getTensorID()) != null)
+        		.map(k -> this.inputValuesMap.get(k.getTensorID())).collect(Collectors.toList());
         if (inputImages.size() == 0)
         	throw new IllegalArgumentException("No inputs have been provided that match the "
         			+ "specified input tensors specified in the rdf.yaml file.");
@@ -304,7 +305,7 @@ public class PatchGridCalculator <T extends RealType<T> & NativeType<T>>
 			} catch (Exception e) {
 				throw new IllegalArgumentException("Tensor dimensions of tensor named '" + spec.getName() + "' "
 						+ "are not compatible with the requirements set by the"
-						+ " rdf.yaml file for tensor '" + spec.getName() + "': " + e.getMessage());
+						+ " rdf.yaml file for tensor '" + spec.getTensorID() + "': " + e.getMessage());
 			}
     	}
     	long[] tileSize = Arrays.stream(spec.getTileSize()).mapToLong(i -> i).toArray();
@@ -357,7 +358,7 @@ public class PatchGridCalculator <T extends RealType<T> & NativeType<T>>
             .map(i -> (int) Math.max( paddingSize[1][i], 
             		tileSize[i] - shapeLong[i] - paddingSize[0][i])).toArray();
 
-        return PatchSpec.create(spec.getName(), tileSize, patchGridSize, paddingSize, rai.dimensionsAsLongArray());
+        return PatchSpec.create(spec.getTensorID(), tileSize, patchGridSize, paddingSize, rai.dimensionsAsLongArray());
     }
     
     private PatchSpec computePatchSpecsForOutputTensor(TensorSpec tensorSpec, PatchSpec refTilesSpec)
@@ -394,7 +395,7 @@ public class PatchGridCalculator <T extends RealType<T> & NativeType<T>>
             				+ 2 * tensorSpec.getShape().getOffset()[(int) i])).toArray();
         }
 
-        return PatchSpec.create(tensorSpec.getName(), tileSize, inputTileGrid, paddingSize, shapeLong);
+        return PatchSpec.create(tensorSpec.getTensorID(), tileSize, inputTileGrid, paddingSize, shapeLong);
     }
     
     /**
