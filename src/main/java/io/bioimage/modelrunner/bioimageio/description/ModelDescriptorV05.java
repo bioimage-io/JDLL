@@ -737,31 +737,7 @@ public class ModelDescriptorV05 implements ModelDescriptor
 	}
 
 	@Override
-	public List<SampleImage> getSampleInputs() {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
 	public List<Badge> getBadges() {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
-	public List<SampleImage> getSampleOutputs() {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
-	public List<TestArtifact> getTestInputs() {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
-	public List<TestArtifact> getTestOutputs() {
 		// TODO Auto-generated method stub
 		return null;
 	}

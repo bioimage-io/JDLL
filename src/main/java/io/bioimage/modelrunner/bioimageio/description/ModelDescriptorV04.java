@@ -37,6 +37,8 @@ import java.util.Map.Entry;
 import java.util.stream.Collectors;
 
 import io.bioimage.modelrunner.bioimageio.BioimageioRepo;
+import io.bioimage.modelrunner.bioimageio.description.axes.axis.Axis;
+import io.bioimage.modelrunner.bioimageio.description.axes.axis.AxisV04;
 import io.bioimage.modelrunner.bioimageio.description.exceptions.ModelSpecsException;
 import io.bioimage.modelrunner.bioimageio.description.weights.ModelWeight;
 import io.bioimage.modelrunner.utils.Constants;
@@ -70,10 +72,6 @@ public class ModelDescriptorV04 implements ModelDescriptor
     private String documentation;
     private String rdf_source;
     private List<String> covers;
-    private List<SampleImage> sample_inputs;
-    private List<SampleImage> sample_outputs;
-    private List<TestArtifact> test_inputs;
-    private List<TestArtifact> test_outputs;
     private List<TensorSpec> input_tensors;
     private List<TensorSpec> output_tensors;
     private ExecutionConfig config;
@@ -90,6 +88,7 @@ public class ModelDescriptorV04 implements ModelDescriptor
     private String modelID;
     private String localModelPath;
     private boolean supportBioengine = false;
+    private Map<String, Long> halo;
 
     private ModelDescriptorV04()
     {
@@ -198,6 +197,7 @@ public class ModelDescriptorV04 implements ModelDescriptor
                         break;
                     case "outputs":
                         modelDescription.output_tensors = buildOutputTensors((List<?>) yamlElements.get(field));
+                        modelDescription.calculateTotalInputHalo();
                         break;
                     case "config":
                         modelDescription.config = buildConfig((Map<String, Object>) yamlElements.get(field));
@@ -478,25 +478,32 @@ public class ModelDescriptorV04 implements ModelDescriptor
      * for each of them
      * @return the total input halo in "xyczb" axes order
      */
-    private float[] calculateTotalInputHalo() {
-    	String[] targetForm = "XYCZB".split("");
-		float[] halo = new float[targetForm.length];
+    private void calculateTotalInputHalo() {
 		for (TensorSpec out: output_tensors) {
-			for (int i = 0; i < targetForm.length; i ++) {
-				int ind = out.getAxesOrder().toUpperCase().indexOf(targetForm[i]);
-				if (ind == -1)
+			for (Axis ax : out.getAxesInfo().getAxesList()) {
+				int axHalo = ax.getHalo();
+				if (axHalo == 0)
 					continue;
-				float inputHalo = out.getHalo()[ind];
-				// No halo in channel C because of offset
-				float inputOffset = -1 * out.getShape().getOffset()[ind];
-				if (targetForm[i].toLowerCase().equals("c"))
-					inputOffset = 0;
-				float possibleHalo = (inputHalo + inputOffset) / out.getShape().getScale()[ind];
-				if (possibleHalo > halo[i])
-					halo[i] = possibleHalo;
+				String ref = ax.getReferenceTensor();
+				if (ref == null) {
+					this.input_tensors.stream().forEach( tt -> {
+						AxisV04 inAx = (AxisV04) tt.getAxesInfo().getAxesList().stream()
+						.filter(xx -> xx.getAxis().equals(ax.getAxis()))
+						.findFirst().orElse(null);
+						if (inAx == null || inAx.getHalo() > axHalo) return;
+						inAx.halo = axHalo;
+					});
+				}
+				
+				double axScale = ax.getScale();
+				double axOffset = ax.getOffset();
+				double nHalo = (axHalo + axOffset) / axScale;
+				AxisV04 inAx = (AxisV04) this.findInputTensor(ref).getAxesInfo().getAxis(ax.getReferenceAxis());
+
+				if (inAx == null || inAx.getHalo() > nHalo) return;
+				inAx.halo = nHalo;
 			}
 		}
-		return halo;
     }
 
     private static ExecutionConfig buildConfig(Map<String, Object> yamlFieldElements)
@@ -709,15 +716,6 @@ public class ModelDescriptorV04 implements ModelDescriptor
         return weights;
     }
 
-    /**
-	 * @return the sample_inputs
-	 */
-	public List<SampleImage> getSampleInputs() {
-		if (sample_inputs == null) 
-			sample_inputs = new ArrayList<SampleImage>();
-		return sample_inputs;
-	}
-
 	@Override
     public String toString()
     {
@@ -749,33 +747,6 @@ public class ModelDescriptorV04 implements ModelDescriptor
 		if (badges == null) 
 			badges = new ArrayList<Badge>();
 		return badges;
-	}
-
-	/**
-	 * @return the sample_outputs
-	 */
-	public List<SampleImage> getSampleOutputs() {
-		if (sample_outputs == null) 
-			sample_outputs = new ArrayList<SampleImage>();
-		return sample_outputs;
-	}
-
-	/**
-	 * @return the test_inputs
-	 */
-	public List<TestArtifact> getTestInputs() {
-		if (test_inputs == null) 
-			test_inputs = new ArrayList<TestArtifact>();
-		return test_inputs;
-	}
-
-	/**
-	 * @return the test_outputs
-	 */
-	public List<TestArtifact> getTestOutputs() {
-		if (test_outputs == null) 
-			test_outputs = new ArrayList<TestArtifact>();
-		return test_outputs;
 	}
 
 	/**
@@ -836,28 +807,6 @@ public class ModelDescriptorV04 implements ModelDescriptor
 	 */
 	public boolean isModelInLocalRepo() {
 		return isModelLocal;
-	}
-	
-	/**
-	 * Add the path where the local model is stored to the model descriptor
-	 * @param modelBasePath
-	 * 	the path to the model in the local machine
-	 */
-	public void addModelPath(Path modelBasePath) {
-		Path absPath = modelBasePath.toAbsolutePath();
-		if (!absPath.toFile().exists()) {
-			throw new IllegalArgumentException("The path '" 
-					 + absPath.toString() + "' does not exist in the computer.");
-		}
-		localModelPath = absPath.toString();
-		if (sample_inputs != null)
-			sample_inputs.stream().forEach(i -> i.addLocalModelPath(absPath));
-		if (sample_outputs != null)
-			sample_outputs.stream().forEach(i -> i.addLocalModelPath(absPath));
-		if (test_inputs != null)
-			test_inputs.stream().forEach(i -> i.addLocalModelPath(absPath));
-		if (test_outputs != null)
-			test_outputs.stream().forEach(i -> i.addLocalModelPath(absPath));
 	}
 	
 	/**
@@ -924,5 +873,11 @@ public class ModelDescriptorV04 implements ModelDescriptor
 	public String buildInfo() {
 		// TODO Auto-generated method stub
 		return null;
+	}
+
+	@Override
+	public void addModelPath(Path modelBasePath) {
+		// TODO Auto-generated method stub
+		
 	}
 }

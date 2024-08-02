@@ -203,11 +203,6 @@ public interface ModelDescriptor {
      */
     public ModelWeight getWeights();
 
-    /**
-	 * @return the sample_inputs
-	 */
-	public List<SampleImage> getSampleInputs();
-
 	/**
 	 * @return the maintainers
 	 */
@@ -222,21 +217,6 @@ public interface ModelDescriptor {
 	 * @return the badges
 	 */
 	public List<Badge> getBadges();
-
-	/**
-	 * @return the sample_outputs
-	 */
-	public List<SampleImage> getSampleOutputs();
-
-	/**
-	 * @return the test_inputs
-	 */
-	public List<TestArtifact> getTestInputs();
-
-	/**
-	 * @return the test_outputs
-	 */
-	public List<TestArtifact> getTestOutputs();
 
 	/**
 	 * @return the attachments

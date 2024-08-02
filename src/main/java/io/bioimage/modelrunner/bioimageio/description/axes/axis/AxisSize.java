@@ -13,6 +13,11 @@ public class AxisSize {
 	
 	
 	protected AxisSize(Object object) {
+		if (object instanceof Number) {
+			min = (int) object;
+			step = 0;
+		}
+			
 		if (!(object instanceof Map))
 			return;
 		Map<String, Object> map = (Map<String, Object>) object;

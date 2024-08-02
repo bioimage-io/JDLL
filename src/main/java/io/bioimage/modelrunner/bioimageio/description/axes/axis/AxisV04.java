@@ -10,7 +10,7 @@ public class AxisV04 implements Axis {
 	private double scale = 1.0;
 	private int min = 1;
 	private int step = 1;
-	private int halo = 0;
+	protected int halo = 0;
 	private double offset = 0;
 	String referenceTensor;
 	String referenceAxis;
