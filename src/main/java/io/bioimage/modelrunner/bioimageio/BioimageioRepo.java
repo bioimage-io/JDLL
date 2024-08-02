@@ -64,7 +64,7 @@ public class BioimageioRepo {
 	/**
 	 * URL to the file containing all the model zoo models
 	 */
-	public static String location = "https://raw.githubusercontent.com/bioimage-io/collection-bioimage-io/gh-pages/collection.json";
+	public static String location = "https://uk1s3.embassy.ebi.ac.uk/public-datasets/bioimage.io/all_versions.json";
 	/**
 	 * JSon containing all the info about the Bioimage.io models
 	 */
@@ -246,9 +246,8 @@ public class BioimageioRepo {
 		if (stringRDF == null)
 			return descriptor;
 		try {
-			descriptor = ModelDescriptor.readFromYamlTextString(stringRDF, false);
+			descriptor = ModelDescriptorFactory.readFromYamlTextString(stringRDF);
 		} catch (Exception ex) {
-			ex.printStackTrace();
 			return descriptor;
 		}
 		return descriptor;
