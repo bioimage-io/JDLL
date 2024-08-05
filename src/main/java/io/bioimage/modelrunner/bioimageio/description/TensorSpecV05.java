@@ -76,7 +76,7 @@ public class TensorSpecV05 implements TensorSpec {
     protected TensorSpecV05(Map<String, Object> tensorSpecMap, boolean input)
     {
         id = (String) tensorSpecMap.get("name");
-        if (tensorSpecMap.get("axes") == null || (tensorSpecMap.get("axes") instanceof List))
+        if (tensorSpecMap.get("axes") == null || !(tensorSpecMap.get("axes") instanceof List))
         	throw new IllegalArgumentException("Invalid tensor specifications for '" + id
         			+ "'. The axes are incorrectly specified. For more info, visit the Bioimage.io docs.");
         axes = new AxesV05((List<Object>) tensorSpecMap.get("axes"));
@@ -111,12 +111,12 @@ public class TensorSpecV05 implements TensorSpec {
             }
         }
 
-        if (!(tensorSpecMap.get("sample_tensor") instanceof Map)) {
+        if (tensorSpecMap.get("sample_tensor") != null && (tensorSpecMap.get("sample_tensor") instanceof Map)) {
         	Map<String, Object> sampleMap = (Map<String, Object>) tensorSpecMap.get("sample_tensor");
         	if (sampleMap.get("source") != null && (sampleMap.get("source") instanceof String))
         		this.sampleTensorName = (String) sampleMap.get("source");
         }
-        if (!(tensorSpecMap.get("test_tensor") instanceof Map)) {
+        if (tensorSpecMap.get("test_tensor") != null && (tensorSpecMap.get("test_tensor") instanceof Map)) {
         	Map<String, Object> sampleMap = (Map<String, Object>) tensorSpecMap.get("test_tensor");
         	if (sampleMap.get("source") != null && (sampleMap.get("source") instanceof String))
         		this.testTensorName = (String) sampleMap.get("source");

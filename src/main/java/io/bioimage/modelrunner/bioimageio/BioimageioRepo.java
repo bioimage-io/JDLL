@@ -25,7 +25,12 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
 import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.sql.Timestamp;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -73,13 +78,9 @@ public class BioimageioRepo {
 	 * List of all the IDs of the models existing in the BioImage.io
 	 */
 	private static List<String> modelIDs;
-	/**
-	 * List of all the unique nicknames of the models existing in the BioImage.io
-	 */
-	private static List<String> modelNicknames;
 	
 	private static LinkedHashMap<Path, ModelDescriptor> models;
-	
+		
 	private Consumer<String> consumer;
 	
 	/**
@@ -167,10 +168,15 @@ public class BioimageioRepo {
 			try {
 				if (jsonResource.get("type") == null || !jsonResource.get("type").getAsString().equals("model"))
 					continue;
-				String stringRDF = getJSONFromUrl(jsonResource.get("rdf_source").getAsString());
-				modelPath = createPathFromURLString(jsonResource.get("rdf_source").getAsString());
+				String url = jsonResource.get("versions").getAsJsonArray().asList().stream()
+					    .max(Comparator.comparingLong(elem -> strToTimestamp(elem.getAsJsonObject().get("created").getAsString())))
+					    .map(elem -> elem.getAsJsonObject().get("source").getAsString())
+					    .orElseThrow(null);
+				if (url == null)
+					continue;
+				String stringRDF = getJSONFromUrl(url);
 				ModelDescriptor descriptor = ModelDescriptorFactory.readFromYamlTextString(stringRDF);
-				models.put(modelPath, descriptor);
+				models.put(Paths.get(url), descriptor);
 			} catch (Exception ex) {
 				// TODO Maybe add some error message? This should be responsibility of the BioImage.io user
 				// Only display error message if there was an error creating
@@ -193,7 +199,6 @@ public class BioimageioRepo {
 	 */
 	private void setCollectionsRepo() {
 		modelIDs = new ArrayList<String>();
-		modelNicknames = new ArrayList<String>();
 		String text = getJSONFromUrl(location);
 		if (text == null) {
 			Log.addProgressAndShowInTerminal(consumer, MODELS_NOT_FOUND_MSG, true);
@@ -211,7 +216,7 @@ public class BioimageioRepo {
 		}
 		// Iterate over the array corresponding to the key: "resources"
 		// which contains all the resources of the Bioimage.io
-		collections = (JsonArray) json.get("collection");
+		collections = (JsonArray) json.get("entries");
 		if (collections == null) {
 			Log.addProgressAndShowInTerminal(consumer, MODELS_NOT_FOUND_MSG, true);
 			return;
@@ -220,10 +225,8 @@ public class BioimageioRepo {
 			JsonObject jsonResource = (JsonObject) resource;
 			if (jsonResource.get("type") == null || !jsonResource.get("type").getAsString().equals("model"))
 				continue;
-			String modelID = jsonResource.get("id").getAsString();
+			String modelID = jsonResource.get("concept").getAsString();
 			modelIDs.add(modelID);
-			if (jsonResource.get("nickname") != null)
-				modelNicknames.add(jsonResource.get("nickname").getAsString());
 		}
 	}
 	
@@ -341,18 +344,6 @@ public class BioimageioRepo {
 		if (modelIDs == null)
 			return new ArrayList<String>();
 		return modelIDs;
-	}
-	
-	/**
-	 * Return a list with all the model unique nicknames for the models existing in the Bioimage.io repo
-	 * @return list with the unique nicknames for each of the models in the repo
-	 */
-	public static List<String> getModelNicknames(){
-		if (modelNicknames == null || modelNicknames.size() == 0)
-			BioimageioRepo.connect();
-		if (modelNicknames == null)
-			return new ArrayList<String>();
-		return modelNicknames;
 	}
 	
 	/**
@@ -750,5 +741,18 @@ public class BioimageioRepo {
 			throw new IllegalArgumentException("The provided rdf_url does not correspond "
 					+ "to an existing model in the Bioimage.io online repo.");
 		return downloadModel(model, modelsDirectory, consumer);
+	}
+	
+	private static long strToTimestamp(String str) {
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSSSSS");
+        LocalDateTime localDateTime = LocalDateTime.parse(str, formatter);
+        Timestamp timestamp = Timestamp.valueOf(localDateTime);
+        return timestamp.getTime();
+	}
+	
+	
+	public static void main(String[] args) {
+		BioimageioRepo br = new BioimageioRepo();
+		br.listAllModels(false);
 	}
 }

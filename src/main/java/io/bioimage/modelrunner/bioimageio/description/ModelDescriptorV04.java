@@ -804,4 +804,10 @@ public class ModelDescriptorV04 implements ModelDescriptor
 		// TODO Auto-generated method stub
 		
 	}
+
+	@Override
+	public String getModelURL() {
+		// TODO Auto-generated method stub
+		return null;
+	}
 }

@@ -26,9 +26,9 @@ public class AxisV05 implements Axis{
 		if (map.get("concatenable") != null) 
 			this.concat = (boolean) map.get("concatenable");
 		if (map.get("scale") != null) 
-			this.scale = (double) map.get("scale");
+			this.scale = ((Number) map.get("scale")).doubleValue();
 		if (map.get("halo") != null) 
-			this.halo = (int) map.get("halo");
+			this.halo = ((Number) map.get("scale")).intValue();
 		
 		this.size = new AxisSize(map.get("size"));
 		

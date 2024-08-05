@@ -26,10 +26,12 @@ public class AxisSize {
 			return;
 		
 		Map<String, Object> size = (Map<String, Object>) map.get("size");
-		if (size.get("min") != null && (size.get("min") instanceof Integer)) 
-			min = (int) size.get("min");
-		if (size.get("step") != null && (size.get("step") instanceof Integer)) 
-			step = (int) size.get("step");
+		if (size.get("min") != null && (size.get("min") instanceof Number)) 
+			min = ((Number) map.get("min")).intValue();
+		if (size.get("step") != null && (size.get("step") instanceof Number)) 
+			step = ((Number) map.get("step")).intValue();
+		if (size.get("offset") != null && (size.get("offset") instanceof Number)) 
+			offset = ((Number) map.get("offset")).doubleValue();
 		if (size.get("axis_id") != null && (size.get("axis_id") instanceof String)) 
 			axisID = (String) size.get("axis_id");
 		if (size.get("tensor_id") != null && (size.get("tensor_id") instanceof String)) 
