@@ -22,7 +22,6 @@ package io.bioimage.modelrunner.bioimageio.description;
 import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
-import java.net.URL;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -118,7 +117,7 @@ public class ModelDescriptorV04 implements ModelDescriptor
                         modelDescription.description = (String) fieldElement;
                         break;
                     case "id":
-                        modelDescription.modelID = (String) fieldElement;
+                    	modelDescription.modelID = findID(yamlElements);
                         break;
                     case "authors":
                         modelDescription.authors = buildAuthorElements((List<?>) fieldElement);
@@ -262,6 +261,19 @@ public class ModelDescriptorV04 implements ModelDescriptor
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
+    }
+    
+    private static String findID(Map<String, Object> yamlElements) {
+
+    	if (yamlElements.get("config") instanceof Map) {
+    		Map<String, Object> configMap = (Map<String, Object>) yamlElements.get("config");
+    		if (configMap.get("bioimageio") instanceof Map) {
+    			Map<String, Object> bioimageMap = (Map<String, Object>) configMap.get("bioimageio");
+    			if (bioimageMap.get("nickname") != null)
+    				return (String) bioimageMap.get("nickname");
+    		}
+    	}
+    	return (String) yamlElements.get("id");
     }
     
     /**
@@ -440,6 +452,7 @@ public class ModelDescriptorV04 implements ModelDescriptor
 						if (inAx == null || inAx.getHalo() > axHalo) return;
 						inAx.halo = axHalo;
 					});
+					return;
 				}
 				
 				double axScale = ax.getScale();

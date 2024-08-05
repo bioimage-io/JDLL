@@ -147,10 +147,10 @@ public class ModelDescriptorV05 implements ModelDescriptor
                     	// TODO createCovers();
                         break;
                     case "inputs":
-                    	buildInputTensors((List<?>) yamlElements.get(field));
+                    	input_tensors = buildInputTensors((List<?>) yamlElements.get(field));
                         break;
                     case "outputs":
-                        buildOutputTensors((List<?>) yamlElements.get(field));
+                        output_tensors = buildOutputTensors((List<?>) yamlElements.get(field));
                         calculateTotalInputHalo();
                         break;
                     case "config":
@@ -324,6 +324,7 @@ public class ModelDescriptorV05 implements ModelDescriptor
 						if (inAx == null || inAx.getHalo() > axHalo) return;
 						inAx.halo = axHalo;
 					});
+					return;
 				}
 				
 				double axScale = ax.getScale();

@@ -178,6 +178,7 @@ public class BioimageioRepo {
 				ModelDescriptor descriptor = ModelDescriptorFactory.readFromYamlTextString(stringRDF);
 				models.put(Paths.get(url), descriptor);
 			} catch (Exception ex) {
+				ex.printStackTrace();
 				// TODO Maybe add some error message? This should be responsibility of the BioImage.io user
 				// Only display error message if there was an error creating
 				// the descriptor from the yaml file
