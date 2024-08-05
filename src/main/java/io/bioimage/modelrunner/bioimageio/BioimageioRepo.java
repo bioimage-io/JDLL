@@ -31,6 +31,7 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -41,6 +42,7 @@ import java.util.function.Consumer;
 import javax.net.ssl.HttpsURLConnection;
 
 import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 
@@ -80,6 +82,28 @@ public class BioimageioRepo {
 	private static List<String> modelIDs;
 	
 	private static LinkedHashMap<Path, ModelDescriptor> models;
+	
+	/**
+	 * Structure of the map:
+	 * 
+	 * happy-fish :{
+	 * 				0.1.0:{
+	 * 					   source: http/:.....
+	 * 					   latest: false
+	 * 					  }
+	 * 				0.2.0:{
+	 * 					   source: http/:.....
+	 * 					   latest: false
+	 * 					  }
+	 * 				0.3.0:{
+	 * 					   source: http/:.....
+	 * 					   latest: true
+	 * 					  }
+	 * 				}
+	 * 
+	 * 
+	 */
+	private static Map<String, Map<String, Map<String, String>>> modelsInfo;
 		
 	private Consumer<String> consumer;
 	
@@ -163,7 +187,6 @@ public class BioimageioRepo {
 		for (Object resource : collections) {
 			if (Thread.interrupted())
 				break;
-			Path modelPath = null;
 			JsonObject jsonResource = (JsonObject) resource;
 			try {
 				if (jsonResource.get("type") == null || !jsonResource.get("type").getAsString().equals("model"))
@@ -178,12 +201,11 @@ public class BioimageioRepo {
 				ModelDescriptor descriptor = ModelDescriptorFactory.readFromYamlTextString(stringRDF);
 				models.put(Paths.get(url), descriptor);
 			} catch (Exception ex) {
-				ex.printStackTrace();
 				// TODO Maybe add some error message? This should be responsibility of the BioImage.io user
 				// Only display error message if there was an error creating
 				// the descriptor from the yaml file
-				if (modelPath != null && verbose) {
-					String errMSg = "Could not load descriptor for the Bioimage.io model " + modelPath.getFileName() + ": " + ex.toString();
+				if (verbose) {
+					String errMSg = "Could not load descriptor for the Bioimage.io model " + jsonResource.get("concept") + ".";
 					Log.addProgressAndShowInTerminal(consumer, errMSg, true);
 				}
                 ex.printStackTrace();
@@ -200,6 +222,7 @@ public class BioimageioRepo {
 	 */
 	private void setCollectionsRepo() {
 		modelIDs = new ArrayList<String>();
+		modelsInfo = new HashMap<String, Map<String, Map<String, String>>>();
 		String text = getJSONFromUrl(location);
 		if (text == null) {
 			Log.addProgressAndShowInTerminal(consumer, MODELS_NOT_FOUND_MSG, true);
@@ -228,6 +251,21 @@ public class BioimageioRepo {
 				continue;
 			String modelID = jsonResource.get("concept").getAsString();
 			modelIDs.add(modelID);
+			
+			HashMap<String, Map<String, String>> vMap = new HashMap<String, Map<String, String>>();
+			for (JsonElement vv : jsonResource.get("versions").getAsJsonArray()) {
+				JsonObject vvObject = vv.getAsJsonObject();
+				Map<String, String> map = new HashMap<String, String>();
+				map.put("latest", "false");
+				map.put("source", vvObject.get("source").getAsString());
+				vMap.put(vvObject.get("v").getAsString(), map);
+			}
+			String lastV = jsonResource.get("versions").getAsJsonArray().asList().stream()
+				    .max(Comparator.comparingLong(elem -> strToTimestamp(elem.getAsJsonObject().get("created").getAsString())))
+				    .map(elem -> elem.getAsJsonObject().get("v").getAsString())
+				    .orElseThrow(null);
+			vMap.get(lastV).put("latest", "true");
+			modelsInfo.put(modelID, vMap);
 		}
 	}
 	
@@ -263,7 +301,7 @@ public class BioimageioRepo {
 	 * 	String url of the file
 	 * @return a String representation of the file. It is null if the file was not accessed
 	 */
-	private static String getJSONFromUrl(String url) {
+	public static String getJSONFromUrl(String url) {
 		return getJSONFromUrl(url, null);
 	}
 
@@ -599,6 +637,27 @@ public class BioimageioRepo {
         LocalDateTime localDateTime = LocalDateTime.parse(str, formatter);
         Timestamp timestamp = Timestamp.valueOf(localDateTime);
         return timestamp.getTime();
+	}
+	
+	
+	public String getModelURL(String id) {
+		return getModelRdfUrl(id, null);
+	}
+	
+	
+	public String getModelRdfUrl(String id, String version) {
+		if (modelsInfo == null || modelsInfo.get("id") == null) {
+			BioimageioRepo.connect();
+		}
+		
+		if (modelsInfo.get(id) == null)
+			return null;
+		if (version == null) {
+			return modelsInfo.get(id).values().stream()
+					.filter(val -> val.get("latest").equals("true")).findFirst().get().get("source");
+		}
+		
+		return modelsInfo.get(id).get(version).get("source");
 	}
 	
 	

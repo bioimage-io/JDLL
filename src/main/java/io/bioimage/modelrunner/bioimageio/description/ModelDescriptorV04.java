@@ -30,9 +30,14 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
+
 import io.bioimage.modelrunner.bioimageio.BioimageioRepo;
 import io.bioimage.modelrunner.bioimageio.description.exceptions.ModelSpecsException;
 import io.bioimage.modelrunner.bioimageio.description.weights.ModelWeight;
+import io.bioimage.modelrunner.utils.Log;
 
 
 /**
@@ -59,7 +64,6 @@ public class ModelDescriptorV04 implements ModelDescriptor
     private String license;
     private String git_repo;
     private String documentation;
-    private String rdf_source;
     private List<String> covers;
     private List<TensorSpec> input_tensors;
     private List<TensorSpec> output_tensors;
@@ -104,9 +108,12 @@ public class ModelDescriptorV04 implements ModelDescriptor
             {
                 switch (field)
                 {
-                    case "format_version":
-                        modelDescription.format_version = (String) fieldElement;
-                        break;
+	                case "format_version":
+	                    modelDescription.format_version = (String) fieldElement;
+	                    break;
+	                case "version":
+	                    modelDescription.version = (String) fieldElement;
+	                    break;
                     case "name":
                         modelDescription.name = (String) fieldElement;
                         break;
@@ -151,12 +158,6 @@ public class ModelDescriptorV04 implements ModelDescriptor
                         break;
                     case "type":
                         modelDescription.type = (String) fieldElement;
-                        break;
-                    case "download_url":
-                        modelDescription.download_url = ModelDescriptorFactory.checkUrl((String) fieldElement);
-                        break;
-                    case "rdf_source":
-                        modelDescription.rdf_source = ModelDescriptorFactory.checkUrl((String) fieldElement);
                         break;
                     case "attachments":
                         modelDescription.attachments = (Map<String, Object>) fieldElement;
@@ -817,10 +818,26 @@ public class ModelDescriptorV04 implements ModelDescriptor
 		// TODO Auto-generated method stub
 		
 	}
+	
+	private void findDownloadURL() {
+		String text = BioimageioRepo.getJSONFromUrl(BioimageioRepo.location);
+		if (text == null) {
+			return;
+		}
+		JsonObject json = null;
+		try {
+			json = (JsonObject) JsonParser.parseString(text);
+			List<JsonElement> entries = json.get("entries").getAsJsonArray().asList();
+			entries.stream()
+		} catch (Exception ex) {
+			return;
+		}
+	}
 
 	@Override
 	public String getModelURL() {
-		// TODO Auto-generated method stub
-		return null;
+		if (this.download_url == null)
+			findDownloadURL();
+		return download_url;
 	}
 }
