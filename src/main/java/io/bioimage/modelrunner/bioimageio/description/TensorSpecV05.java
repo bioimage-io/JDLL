@@ -175,4 +175,9 @@ public class TensorSpecV05 implements TensorSpec {
     	// TODO 
     	return this.data.toString();
     }
+
+	@Override
+	public int[] getHaloArr() {
+		return this.axes.getHaloArr();
+	}
 }

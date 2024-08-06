@@ -11,9 +11,9 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.LongStream;
 
+import io.bioimage.modelrunner.bioimageio.description.Axis;
 import io.bioimage.modelrunner.bioimageio.description.ModelDescriptor;
 import io.bioimage.modelrunner.bioimageio.description.TensorSpec;
-import io.bioimage.modelrunner.bioimageio.description.axes.axis.Axis;
 import io.bioimage.modelrunner.tiling.PatchGridCalculator;
 
 public class TileFactory {
@@ -32,10 +32,9 @@ public class TileFactory {
 	
 	private long[] getOptimalTileSize(TensorSpec tensor, String inputAxesOrder, long[] dims) {
 		boolean tiling = this.descriptor.isTilingAllowed();
-		int[] halo = descriptor.getTotalHalo();
+		int[] halo = tensor.getAxesInfo().getHaloArr();
 		int[] min = tensor.getMinTileSizeArr();
 		int[] step = tensor.getTileStepArr();
-		double[] scale = tensor.getTileScaleArr();
 		
     	long[] patch = new long[inputAxesOrder.length()];
     	String seqSizeAxesUpper = inputAxesOrder.toUpperCase();

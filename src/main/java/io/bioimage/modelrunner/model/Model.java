@@ -26,6 +26,7 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.MalformedURLException;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -171,7 +172,15 @@ public class Model
 				&& !engineInfo.getFramework().equals(EngineInfo.getTensorflowKey())
 				&& !engineInfo.getFramework().equals(EngineInfo.getBioimageioTfKey()) )
 			Objects.requireNonNull(modelSource);
-		return new Model( engineInfo, modelFolder, modelSource, null );
+		Model model = new Model( engineInfo, modelFolder, modelSource, null );
+
+		if (Paths.get(modelFolder, Constants.RDF_FNAME).toFile().isFile()) {
+			try {
+				model.descriptor = ModelDescriptorFactory.readFromLocalFile(Paths.get(modelFolder, Constants.RDF_FNAME).toAbsolutePath().toString());
+			} catch (ModelSpecsException | IOException e) {
+			}
+		}
+		return model;
 	}
 	
 	/**
@@ -412,7 +421,15 @@ public class Model
 				&& !engineInfo.getFramework().equals(EngineInfo.getTensorflowKey())
 				&& !engineInfo.getFramework().equals(EngineInfo.getBioimageioTfKey()))
 			Objects.requireNonNull(modelSource);
-		return new Model( engineInfo, modelFolder, modelSource, classLoader );
+		Model model = new Model( engineInfo, modelFolder, modelSource, classLoader );
+
+		if (Paths.get(modelFolder, Constants.RDF_FNAME).toFile().isFile()) {
+			try {
+				model.descriptor = ModelDescriptorFactory.readFromLocalFile(Paths.get(modelFolder, Constants.RDF_FNAME).toAbsolutePath().toString());
+			} catch (ModelSpecsException | IOException e) {
+			}
+		}
+		return model;
 	}
 
 	/**

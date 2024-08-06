@@ -19,7 +19,7 @@ public class AxesV04 implements Axes {
 	
 	private final int[] stepArr;
 	
-	private final int[] haloArr;
+	private int[] haloArr;
 	
 	private final double[] offsetArr;
 	
@@ -118,6 +118,9 @@ public class AxesV04 implements Axes {
 	}
 
 	public int[] getHaloArr() {
+		haloArr = new int[this.axesList.size()];
+		for (int i = 0; i < this.axesList.size(); i ++)
+			haloArr[i] = this.axesList.get(i).getHalo();
 		return this.haloArr;
 	}
 	

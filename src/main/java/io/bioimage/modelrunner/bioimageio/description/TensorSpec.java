@@ -50,6 +50,8 @@ public interface TensorSpec {
     
     public int[] getTileStepArr();
     
+    public int[] getHaloArr();
+    
     public double[] getTileScaleArr();
     
     public Axes getAxesInfo();

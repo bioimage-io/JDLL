@@ -18,6 +18,8 @@ public interface Axes {
 
 	public double[] getTileScaleArr();
 	
+	public int[] getHaloArr();
+	
 	public Axis getAxis(String abreviation);
 
 }

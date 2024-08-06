@@ -17,6 +17,8 @@ public class AxesV05 implements Axes {
 	
 	private final int[] stepArr;
 	
+	private int[] haloArr;
+	
 	protected AxesV05(List<Object> axesList) {
 		List<Axis> axesListInit = new ArrayList<Axis>();
 		String order = "";
@@ -59,6 +61,13 @@ public class AxesV05 implements Axes {
 
 	public int[] getTileStepArr() {
 		return this.stepArr;
+	}
+
+	public int[] getHaloArr() {
+		haloArr = new int[this.axesList.size()];
+		for (int i = 0; i < this.axesList.size(); i ++)
+			haloArr[i] = this.axesList.get(i).getHalo();
+		return this.haloArr;
 	}
 
 	public double[] getTileScaleArr() {
