@@ -66,11 +66,6 @@ public interface ModelDescriptor {
     public String getName();
 
     /**
-     * @return The nickname of this model.
-     */
-    public String getNickname();
-
-    /**
      * @return The ID of this model.
      */
     public String getModelID();
@@ -204,11 +199,6 @@ public interface ModelDescriptor {
 	 * @return the attachments
 	 */
 	public Map<String, Object> getAttachments();
-
-	/**
-	 * @return the download_url
-	 */
-	public String getDownloadUrl();
 
 	/**
 	 * @return the rdf_source

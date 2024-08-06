@@ -51,6 +51,7 @@ import io.bioimage.modelrunner.bioimageio.description.ModelDescriptor;
 import io.bioimage.modelrunner.bioimageio.description.ModelDescriptorFactory;
 import io.bioimage.modelrunner.bioimageio.download.DownloadModel;
 import io.bioimage.modelrunner.bioimageio.download.DownloadTracker;
+import io.bioimage.modelrunner.utils.Constants;
 import io.bioimage.modelrunner.utils.Log;
 
 /**
@@ -652,12 +653,18 @@ public class BioimageioRepo {
 		
 		if (modelsInfo.get(id) == null)
 			return null;
+		String rdfURL;
 		if (version == null) {
-			return modelsInfo.get(id).values().stream()
+			rdfURL = modelsInfo.get(id).values().stream()
 					.filter(val -> val.get("latest").equals("true")).findFirst().get().get("source");
+		} else if (version != null && modelsInfo.get(id).get(version) != null) {
+			rdfURL = modelsInfo.get(id).get(version).get("source");
+		} else {
+			return null;
 		}
+		if (rdfURL == null) return null;
 		
-		return modelsInfo.get(id).get(version).get("source");
+		return rdfURL.substring(0, rdfURL.length() - Constants.RDF_FNAME.length());
 	}
 	
 	

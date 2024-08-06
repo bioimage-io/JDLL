@@ -30,14 +30,10 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import com.google.gson.JsonElement;
-import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
-
 import io.bioimage.modelrunner.bioimageio.BioimageioRepo;
 import io.bioimage.modelrunner.bioimageio.description.exceptions.ModelSpecsException;
 import io.bioimage.modelrunner.bioimageio.description.weights.ModelWeight;
-import io.bioimage.modelrunner.utils.Log;
+import io.bioimage.modelrunner.utils.Constants;
 
 
 /**
@@ -80,6 +76,8 @@ public class ModelDescriptorV04 implements ModelDescriptor
     private String modelID;
     private String localModelPath;
     private boolean supportBioengine = false;
+    
+    private static BioimageioRepo BMZ_REPO;
 
     private ModelDescriptorV04()
     {
@@ -701,20 +699,6 @@ public class ModelDescriptorV04 implements ModelDescriptor
 	}
 
 	/**
-	 * @return the download_url
-	 */
-	public String getDownloadUrl() {
-		return download_url;
-	}
-
-	/**
-	 * @return the rdf_source
-	 */
-	public String getRDFSource() {
-		return rdf_source;
-	}
-
-	/**
 	 * @return the version
 	 */
 	public String getVersion() {
@@ -818,26 +802,20 @@ public class ModelDescriptorV04 implements ModelDescriptor
 		// TODO Auto-generated method stub
 		
 	}
-	
-	private void findDownloadURL() {
-		String text = BioimageioRepo.getJSONFromUrl(BioimageioRepo.location);
-		if (text == null) {
-			return;
-		}
-		JsonObject json = null;
-		try {
-			json = (JsonObject) JsonParser.parseString(text);
-			List<JsonElement> entries = json.get("entries").getAsJsonArray().asList();
-			entries.stream()
-		} catch (Exception ex) {
-			return;
-		}
-	}
 
 	@Override
 	public String getModelURL() {
+		if (this.download_url == null && BMZ_REPO == null) {
+			BMZ_REPO = BioimageioRepo.connect();
+		}
+		
 		if (this.download_url == null)
-			findDownloadURL();
-		return download_url;
+			this.download_url = BMZ_REPO.getModelRdfUrl(modelID, version);
+		return this.download_url;
+	}
+
+	@Override
+	public String getRDFSource() {
+		return getModelURL() + Constants.RDF_FNAME;
 	}
 }

@@ -31,6 +31,7 @@ import java.util.Set;
 import io.bioimage.modelrunner.bioimageio.BioimageioRepo;
 import io.bioimage.modelrunner.bioimageio.description.exceptions.ModelSpecsException;
 import io.bioimage.modelrunner.bioimageio.description.weights.ModelWeight;
+import io.bioimage.modelrunner.utils.Constants;
 
 
 /**
@@ -44,9 +45,11 @@ public class ModelDescriptorV05 implements ModelDescriptor
 {
     private String format_version;
     private String name;
+    private String download_url;
     private String timestamp;
     private String description;
     private String type;
+    private String git_repo;
     private List<Author> authors;
     private List<Author> maintainers;
     private List<Author> packaged_by;
@@ -69,6 +72,8 @@ public class ModelDescriptorV05 implements ModelDescriptor
     private String localModelPath;
     private boolean supportBioengine = false;
 	private  Map<String, Object> yamlElements;
+	
+	private static BioimageioRepo BMZ_REPO;
 
 	protected ModelDescriptorV05(Map<String, Object> yamlElements) throws ModelSpecsException
     {
@@ -136,6 +141,9 @@ public class ModelDescriptorV05 implements ModelDescriptor
                         break;
                     case "documentation":
                         documentation = (String) fieldElement;
+                        break;
+                    case "git_repo":
+                    	git_repo = (String) fieldElement;
                         break;
                     case "type":
                         type = (String) fieldElement;
@@ -639,33 +647,13 @@ public class ModelDescriptorV05 implements ModelDescriptor
 	}
 
 	@Override
-	public String getNickname() {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
 	public String getGitRepo() {
-		// TODO Auto-generated method stub
-		return null;
+		return this.git_repo;
 	}
 
 	@Override
 	public List<Badge> getBadges() {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
-	public String getDownloadUrl() {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
-	public String getRDFSource() {
-		// TODO Auto-generated method stub
-		return null;
+		return new ArrayList<Badge>();
 	}
 
 	@Override
@@ -676,7 +664,17 @@ public class ModelDescriptorV05 implements ModelDescriptor
 
 	@Override
 	public String getModelURL() {
-		// TODO Auto-generated method stub
-		return null;
+		if (this.download_url == null && BMZ_REPO == null) {
+			BMZ_REPO = BioimageioRepo.connect();
+		}
+		
+		if (this.download_url == null)
+			this.download_url = BMZ_REPO.getModelRdfUrl(modelID, version);
+		return this.download_url;
+	}
+
+	@Override
+	public String getRDFSource() {
+		return getModelURL() + Constants.RDF_FNAME;
 	}
 }
