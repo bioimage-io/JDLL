@@ -186,11 +186,11 @@ public class PatchGridCalculator <T extends RealType<T> & NativeType<T>>
     	for (Entry<String, PatchSpec> spec : patchSpecs.entrySet()) {
     		int[] nGrid = spec.getValue().getTileGrid();
     		TensorSpec tt = this.descriptor.findInputTensor(spec.getKey());
-    		if (grid == null && tt.getTiling()) {
+    		if (grid == null && this.descriptor.isTilingAllowed()) {
     			grid = nGrid;
     			firstName = spec.getKey();
     		}
-    		if (tt.getTiling() && !compareTwoArrays(nGrid, grid)){
+    		if (this.descriptor.isTilingAllowed() && !compareTwoArrays(nGrid, grid)){
     			throw new IllegalArgumentException("All the input images must be processed with the same number of patches.\n"
 						+ "The relationship between the patch size and image size should be the same for every input that allows patching/tiling.\n"
 						+ "Tensors '" + firstName + "' and '" + spec.getKey() + "' need different number of patches to "
@@ -247,7 +247,7 @@ public class PatchGridCalculator <T extends RealType<T> & NativeType<T>>
     private LinkedHashMap<String, PatchSpec> computePatchSpecsForEveryTensor(List<TensorSpec> tensors, List<Tensor<T>> images){
     	LinkedHashMap<String, PatchSpec> patchInfoList = new LinkedHashMap<String, PatchSpec>();
     	for (int i = 0; i < tensors.size(); i ++)
-    		patchInfoList.put(tensors.get(i).getName(), computePatchSpecs(tensors.get(i), images.get(i)));
+    		patchInfoList.put(tensors.get(i).getTensorID(), computePatchSpecs(tensors.get(i), images.get(i)));
     	return patchInfoList;
     }
     
@@ -272,7 +272,7 @@ public class PatchGridCalculator <T extends RealType<T> & NativeType<T>>
 		for (int i = 0; i < outTensors.size(); i ++) {
     		String refTensor = outTensors.get(i).getShape().getReferenceInput();
     		PatchSpec refSpec = refTensor == null ? inputTilesSpecs.values().stream().findFirst().get() : inputTilesSpecs.get(refTensor);
-    		patchInfoList.put(outTensors.get(i).getName(), computePatchSpecsForOutputTensor(outTensors.get(i), refSpec));
+    		patchInfoList.put(outTensors.get(i).getTensorID(), computePatchSpecsForOutputTensor(outTensors.get(i), refSpec));
 		}
 		outputTilesSpecs = patchInfoList;
     	return outputTilesSpecs;
@@ -331,8 +331,8 @@ public class PatchGridCalculator <T extends RealType<T> & NativeType<T>>
         int[][] paddingSize = new int[2][tileSize.length];
         // REgard that the input halo represents the output halo + offset 
         // and must be divisible by 0.5. 
-        float[] halo = spec.getHalo();
-        if (!descriptor.isPyramidal() && spec.getTiling()) {
+        int[] halo = spec.getHaloArr();
+        if (!descriptor.isPyramidal() && this.descriptor.isTilingAllowed()) {
         	// In the case that padding is asymmetrical, the left upper padding has the extra pixel
             for (int i = 0; i < halo.length; i ++) {paddingSize[0][i] = (int) Math.ceil(halo[i]);}
             // In the case that padding is asymmetrical, the right bottom padding has one pixel less
@@ -373,7 +373,7 @@ public class PatchGridCalculator <T extends RealType<T> & NativeType<T>>
         paddingSize[1] = arrayToWantedAxesOrderAddZeros(paddingSize[1], ogAxes, tensorSpec.getAxesOrder());
         long[] tileSize;
         long[] shapeLong;
-        if (tensorSpec.getShape().getReferenceInput() == null && !tensorSpec.getTiling()) {
+        if (tensorSpec.getShape().getReferenceInput() == null && !this.descriptor.isTilingAllowed()) {
         	shapeLong = Arrays.stream(tensorSpec.getTileSize()).mapToLong(i -> i).toArray();
         	tileSize = shapeLong;
         } else if (tensorSpec.getShape().getReferenceInput() == null) {

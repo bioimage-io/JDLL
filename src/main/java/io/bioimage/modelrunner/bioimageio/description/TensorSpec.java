@@ -57,4 +57,6 @@ public interface TensorSpec {
     public Axes getAxesInfo();
     
     public String getDataType();
+    
+    public boolean isImage();
 }

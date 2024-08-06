@@ -177,4 +177,12 @@ public class TensorSpecV04 implements TensorSpec {
 	public int[] getHaloArr() {
 		return this.axes.getHaloArr();
 	}
+
+	@Override
+	public boolean isImage() {
+		if (axes.getAxesOrder().contains("x") && axes.getAxesOrder().contains("y"))
+			return true;
+		else
+			return false;
+	}
 }

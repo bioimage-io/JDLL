@@ -160,22 +160,4 @@ public class TileGrid
     	return this.roiPositionsInImage;
     }
 
-    @Override
-    public String toString()
-    {
-    	return "";
-    	/*
-    	String[] paddingStrArr = new String[patchPaddingSize[0].length];
-    	for (int i = 0; i < paddingStrArr.length; i ++)
-    		paddingStrArr[i] = patchPaddingSize[0][i] + "," + patchPaddingSize[1][i];
-        StringBuilder builder = new StringBuilder();
-        builder.append("PatchSpec of '" + tensorName + "'"
-        		+ "[patchInputSize=").append(Arrays.toString(this.tileSize))
-                .append(", patchGridSize=").append(Arrays.toString(patchGridSize))
-                .append(", patchPaddingSize=").append(Arrays.toString(paddingStrArr))
-                .append("]");
-        return builder.toString();
-        */
-    }
-
 }
