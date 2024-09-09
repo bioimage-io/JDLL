@@ -1348,6 +1348,7 @@ public class Mamba {
 	
 	/**
 	 * Checks whether a package is installed in the wanted environment.
+	 * TODO improve the logic for bigger or smaller versions
 	 * 
 	 * @param envName
 	 * 	The name of the environment of interest. Should be one of the environments of the current Mamba instance.
@@ -1381,8 +1382,8 @@ public class Mamba {
 			int lowInd = dependency.indexOf("<");
 			int minInd = Math.min(Math.min(commaInd, lowInd), highInd);
 			String packName = dependency.substring(0, minInd).trim();
-			String minV = dependency.substring(lowInd + 1, lowInd < highInd ? commaInd : dependency.length());
-			String maxV = dependency.substring(highInd + 1, lowInd < highInd ? dependency.length() : commaInd);
+			String maxV = dependency.substring(lowInd + 1, lowInd < highInd ? commaInd : dependency.length());
+			String minV = dependency.substring(highInd + 2, lowInd < highInd ? dependency.length() : commaInd);
 			return checkDependencyInEnv(envName, packName, minV, null, false) && checkDependencyInEnv(envName, packName, null, maxV, true);
 		} else if (dependency.contains(">") && dependency.contains("<=") && dependency.contains(",")) {
 			int commaInd = dependency.indexOf(",");
@@ -1390,8 +1391,8 @@ public class Mamba {
 			int lowInd = dependency.indexOf("<=");
 			int minInd = Math.min(Math.min(commaInd, lowInd), highInd);
 			String packName = dependency.substring(0, minInd).trim();
-			String minV = dependency.substring(lowInd + 1, lowInd < highInd ? commaInd : dependency.length());
-			String maxV = dependency.substring(highInd + 1, lowInd < highInd ? dependency.length() : commaInd);
+			String maxV = dependency.substring(lowInd + 2, lowInd < highInd ? commaInd : dependency.length());
+			String minV = dependency.substring(highInd + 1, lowInd < highInd ? dependency.length() : commaInd);
 			return checkDependencyInEnv(envName, packName, minV, null, true) && checkDependencyInEnv(envName, packName, null, maxV, false);
 		} else if (dependency.contains(">") && dependency.contains("<") && dependency.contains(",")) {
 			int commaInd = dependency.indexOf(",");
@@ -1399,8 +1400,8 @@ public class Mamba {
 			int lowInd = dependency.indexOf("<");
 			int minInd = Math.min(Math.min(commaInd, lowInd), highInd);
 			String packName = dependency.substring(0, minInd).trim();
-			String minV = dependency.substring(lowInd + 1, lowInd < highInd ? commaInd : dependency.length());
-			String maxV = dependency.substring(highInd + 1, lowInd < highInd ? dependency.length() : commaInd);
+			String maxV = dependency.substring(lowInd + 1, lowInd < highInd ? commaInd : dependency.length());
+			String minV = dependency.substring(highInd + 1, lowInd < highInd ? dependency.length() : commaInd);
 			return checkDependencyInEnv(envName, packName, minV, maxV, true);
 		} else if (dependency.contains(">")) {
 			int ind = dependency.indexOf(">");
