@@ -1396,7 +1396,7 @@ public class Mamba {
 		} else if (dependency.contains(">") && dependency.contains("<") && dependency.contains(",")) {
 			int commaInd = dependency.indexOf(",");
 			int highInd = dependency.indexOf(">");
-			int lowInd = dependency.indexOf(">");
+			int lowInd = dependency.indexOf("<");
 			int minInd = Math.min(Math.min(commaInd, lowInd), highInd);
 			String packName = dependency.substring(0, minInd).trim();
 			String minV = dependency.substring(lowInd + 1, lowInd < highInd ? commaInd : dependency.length());
