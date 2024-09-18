@@ -5,6 +5,7 @@ import java.util.stream.Collectors;
 
 import io.bioimage.modelrunner.bioimageio.TileFactory;
 import io.bioimage.modelrunner.bioimageio.description.ModelDescriptor;
+import io.bioimage.modelrunner.bioimageio.description.TensorSpec;
 
 public class TileCalculator {
 	
@@ -25,8 +26,34 @@ public class TileCalculator {
 	}
 	
 	public boolean validateTileSize() {
-		// TODO add code
+		checkAllTensorsDefined();
+		for (TileInfo tile : tileInfoList) {
+			String id = tile.getName();
+			TensorSpec tensor = descriptor.getInputTensors().stream()
+					.filter(tt -> tt.getTensorID().equals(id)).findFirst().orElse(null);
+			if (tensor == null)
+				throw new IllegalArgumentException("Invalid tiling information: The input tensor named '" 
+			            + id + "' does not exist in the model. Please check the model's input tensors "
+	            		+ "and provide tiling information for an existing tensor.");
+			checkTileDims(tensor, tile);
+		}
+		checkTilesCombine();
 		return false;
+	}
+	
+	private void checkTilesCombine() {
+		
+	}
+	
+	private void checkAllTensorsDefined() {
+		for (TensorSpec tensor : this.descriptor.getInputTensors()) {
+			TileInfo info = tileInfoList.stream()
+					.filter(tt -> tt.getName().equals(tensor.getTensorID())).findFirst().orElse(null);
+			if (info == null) {
+				throw new IllegalArgumentException("Tiling info for input tensor '" + tensor.getTensorID()
+													+ "' not defined.");
+			}
+		}
 	}
 	
 	private void calculate() {
@@ -64,7 +91,7 @@ public class TileCalculator {
      * @return size of the tile that is going to be used to process the image
      */
     public long[] getTileSize(String tensorId) {
-    	return this.tileSize;
+    	return null;
     }
     
     /**
@@ -72,7 +99,7 @@ public class TileCalculator {
      * @return size of the roi of each of the tiles that is going to be used to process the image
      */
     public int[] getRoiSize(String tensorId) {
-    	return this.roiSize;
+    	return null;
     }
     
     /**
@@ -82,7 +109,7 @@ public class TileCalculator {
      * The positions might be negative as the image that is going to be processed might have padding on the edges
      */
     public List<long[]> getTilePostionsInputImage(String tensorId) {
-    	return this.tilePostionsInImage;
+    	return null;
     }
     
     /**
@@ -92,8 +119,12 @@ public class TileCalculator {
      * The positions might be negative as the image that is going to be processed might have padding on the edges
      */
     public List<long[]> getTilePostionsOutputImage(String tensorId) {
-    	return this.tilePostionsInImage;
+    	return null;
     }
+	
+	private static void checkTileDims(TensorSpec tensor, TileInfo tile) {
+		
+	}
 	
 	
 	
