@@ -3,7 +3,6 @@ package io.bioimage.modelrunner.tiling;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 
 import io.bioimage.modelrunner.bioimageio.TileFactory;
 import io.bioimage.modelrunner.bioimageio.description.ModelDescriptor;
@@ -33,17 +32,12 @@ public class TileCalculator {
 		validateTileVsImageSize();
 		validateStepMin();
 		validateTileVsHalo();
-		validateNoTiling();
 		validateTileVsImageChannel();
 		checkTilesCombine();
 		return false;
 	}
 	
 	private void validateTileVsHalo() {
-		
-	}
-	
-	private void validateNoTiling() {
 		
 	}
 	
@@ -73,7 +67,26 @@ public class TileCalculator {
 	}
 	
 	private void validateTileVsImageChannel() {
-		
+    	for (TileInfo tile : this.tileInfoList) {
+    		String tileAxes = tile.getTileAxesOrder();
+    		String imageAxes = tile.getImageAxesOrder();
+    		long[] tileSize = tile.getProposedTileDimensions();
+    		long[] imSize = tile.getImageDimensions();
+    		int indTile = tileAxes.indexOf("c");
+    		int indIm = imageAxes.indexOf("c");
+    		if (indIm != -1 && indTile != -1 && tileSize[indTile] != imSize[indIm])
+    			throw new IllegalArgumentException("Tiling cannot happen accross the channel dimension. "
+    					+ "The tile number of channels (" + tileSize[indTile] + ") must be the same "
+						+ "as the image number of channels (" + imSize[indIm] + ").");
+    		else if (indIm == -1 && tileSize[indTile] != 1)
+    			throw new IllegalArgumentException("Tiling cannot happen accross the channel dimension. "
+    					+ "The tile number of channels (" + tileSize[indTile] + ") must be the same "
+						+ "as the image number of channels (" + 1 + ").");
+    		else if (indTile == -1 && imSize[indIm] != 1)
+    			throw new IllegalArgumentException("Tiling cannot happen accross the channel dimension. "
+    					+ "The tile number of channels (" + 1 + ") must be the same "
+						+ "as the image number of channels (" + imSize[indIm] + ").");
+    	}
 	}
 	
     private void validateTileVsImageSize() throws IllegalArgumentException {
