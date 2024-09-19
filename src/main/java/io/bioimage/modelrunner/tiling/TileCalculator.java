@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import io.bioimage.modelrunner.bioimageio.TileFactory;
+import io.bioimage.modelrunner.bioimageio.description.Axis;
 import io.bioimage.modelrunner.bioimageio.description.ModelDescriptor;
 import io.bioimage.modelrunner.bioimageio.description.TensorSpec;
 
@@ -38,6 +39,27 @@ public class TileCalculator {
 	}
 	
 	private void validateTileVsHalo() {
+		for (TensorSpec tt : this.descriptor.getOutputTensors()) {
+			for (Axis ax : tt.getAxesInfo().getAxesList()) {
+				String ref = ax.getReferenceTensor();
+				if (ref == null) continue;
+				if (ax.getMin() != 0 && ax.getStep() == 0)
+					continue;
+				TileInfo tile = this.tileInfoList.stream().filter(til -> til.getName().equals(ref)).findFirst().orElse(null);
+				if (tile == null) throw new IllegalArgumentException("Tile specs of input tensor '" + ref + "' not defined.");
+				String axisStr = ax.getReferenceAxis();
+				String tileAxes = tile.getTileAxesOrder();
+				int ind = tileAxes.indexOf(axisStr);
+				long refSize = 1;
+				if (ind != -1)
+					refSize = tile.getProposedTileDimensions()[ind];
+				double outSize = ax.getScale() * refSize + ax.getOffset() * 2;
+				if (outSize - ax.getHalo() * 2 <= 0)
+					throw new IllegalArgumentException("Input size too small, halo would be bigger than "
+							+ "the image accross dimension '" + axisStr + "'. Toal halo = " + ax.getHalo() * 2
+							+ ", image size = " + outSize + ".");
+			}
+		}
 		
 	}
 	
