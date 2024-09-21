@@ -123,12 +123,28 @@ public class TileCalculator {
 							+ "Please contact the team and create and issue attaching the rdf.yaml file"
 							+ " so we can troubleshoot at: " + Constants.ISSUES_LINK);
 				}
-				outputTileInfo.add(TileInfo.build(tt.getTensorID(), imagSize, outAxesOrder, tileSize, outAxesOrder));
 			}
+			outputTileInfo.add(TileInfo.build(tt.getTensorID(), imagSize, outAxesOrder, tileSize, outAxesOrder));
 		}
 	}
 	
 	private void validateTileVsHalo() {
+		for (TileInfo tile : this.outputTileInfo) {
+			TensorSpec tt = this.descriptor.findOutputTensor(tile.getName());
+			for (Axis ax : tt.getAxesInfo().getAxesList()) {
+				int ind = tile.getImageAxesOrder().indexOf(ax.getAxis());
+				if (tile.getProposedTileDimensions()[ind] - ax.getHalo() * 2 <= 0)
+					throw new IllegalArgumentException("Input size too small, halo would be bigger than "
+							+ "the image accross dimension '" + ax.getAxis() + "'. Toal halo = " + ax.getHalo() * 2
+							+ ", image size = " + tile.getProposedTileDimensions()[ind] + ".");
+			}
+		}
+	}
+	
+	/**
+	 * TODO remove
+	 */
+	private void validateTileVsHalo2() {
 		for (TensorSpec tt : this.descriptor.getOutputTensors()) {
 			for (Axis ax : tt.getAxesInfo().getAxesList()) {
 				String ref = ax.getReferenceTensor();
@@ -150,7 +166,6 @@ public class TileCalculator {
 							+ ", image size = " + outSize + ".");
 			}
 		}
-		
 	}
 	
 	private void validateStepMin() {
