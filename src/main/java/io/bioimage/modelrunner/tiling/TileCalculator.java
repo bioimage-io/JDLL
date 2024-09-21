@@ -1,5 +1,6 @@
 package io.bioimage.modelrunner.tiling;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -11,11 +12,14 @@ import io.bioimage.modelrunner.bioimageio.description.Axis;
 import io.bioimage.modelrunner.bioimageio.description.ModelDescriptor;
 import io.bioimage.modelrunner.bioimageio.description.TensorSpec;
 import io.bioimage.modelrunner.tensor.Tensor;
+import io.bioimage.modelrunner.utils.Constants;
 import net.imglib2.RandomAccessibleInterval;
 
 public class TileCalculator {
 	
-	private final List<TileInfo> tileInfoList;
+	private final List<TileInfo> inputTileInfo;
+	
+	private List<TileInfo> outputTileInfo;
 	
 	private final ModelDescriptor descriptor;
 	
@@ -27,7 +31,7 @@ public class TileCalculator {
 	
 	private TileCalculator(ModelDescriptor descriptor, List<TileInfo> tileInfoList) {
 		this.descriptor = descriptor;
-		this.tileInfoList = tileInfoList;
+		this.inputTileInfo = tileInfoList;
 		validate();
 		this.factory = TileFactory.init(descriptor);
 	}
@@ -40,9 +44,88 @@ public class TileCalculator {
 		checkAllTensorsDefined();
 		validateTileVsImageSize();
 		validateStepMin();
+		getOutputTiles();
 		validateTileVsHalo();
 		validateTileVsImageChannel();
 		checkTilesCombine();
+	}
+	
+	private void getOutputTiles() {
+		outputTileInfo = new ArrayList<TileInfo>();
+		for (TensorSpec tt : this.descriptor.getOutputTensors()) {
+			String outAxesOrder = tt.getAxesOrder();
+			long[] tileSize = new long[outAxesOrder.length()];
+			long[] imagSize = new long[outAxesOrder.length()];
+			int i = -1;
+			for (Axis ax : tt.getAxesInfo().getAxesList()) {
+				i ++;
+				if (ax.getStep() == 0 && !descriptor.isTilingAllowed()) {
+					tileSize[i] = ax.getMin();
+					imagSize[i] = ax.getMin();
+				} else if (ax.getStep() != 0 && !descriptor.isTilingAllowed()) {
+					throw new IllegalArgumentException(""
+							+ "Model specs too complex for JDLL. "
+							+ "Please contact the team and create and issue attaching the rdf.yaml file"
+							+ " so we can troubleshoot at: " + Constants.ISSUES_LINK);
+				} else if (ax.getStep() == 0 && ax.getReferenceTensor() == null) {
+					TensorSpec intt = descriptor.getInputTensors().stream()
+							.filter(t -> t.isImage()).findFirst().orElse(null);
+					TileInfo inTile = inputTileInfo.stream()
+							.filter(t -> t.getName().equals(intt.getTensorID())).findFirst().orElse(null);
+					int indTile = inTile.getTileAxesOrder().indexOf(ax.getAxis());
+					int indIm = inTile.getImageAxesOrder().indexOf(ax.getAxis());
+					if (indTile == -1 || indIm == -1)
+						throw new IllegalArgumentException(""
+								+ "Model specs too complex for JDLL. "
+								+ "Please contact the team and create and issue attaching the rdf.yaml file"
+								+ " so we can troubleshoot at: " + Constants.ISSUES_LINK);
+					double factor = (double) inTile.getImageDimensions()[indIm] / inTile.getProposedTileDimensions()[indTile];
+					if (Math.floor(ax.getMin() * factor) != ax.getMin() * factor)
+						throw new IllegalArgumentException(""
+								+ "Model specs too complex for JDLL. "
+								+ "Please contact the team and create and issue attaching the rdf.yaml file"
+								+ " so we can troubleshoot at: " + Constants.ISSUES_LINK);
+					imagSize[i] = (long) (ax.getMin() * factor);
+					tileSize[i] = (long) (ax.getMin() * factor);
+				} else if (ax.getStep() == 0) {
+					TileInfo inTile = inputTileInfo.stream()
+							.filter(t -> t.getName().equals(ax.getReferenceTensor())).findFirst().orElse(null);
+					int indTile = inTile.getTileAxesOrder().indexOf(ax.getReferenceAxis());
+					int indIm = inTile.getImageAxesOrder().indexOf(ax.getReferenceAxis());
+					if (indTile == -1 || indIm == -1)
+						throw new IllegalArgumentException(""
+								+ "Model specs too complex for JDLL. "
+								+ "Please contact the team and create and issue attaching the rdf.yaml file"
+								+ " so we can troubleshoot at: " + Constants.ISSUES_LINK);
+					double factor = (double) inTile.getImageDimensions()[indIm] / inTile.getProposedTileDimensions()[indTile];
+					if (Math.floor(ax.getMin() * factor) != ax.getMin() * factor)
+						throw new IllegalArgumentException(""
+								+ "Model specs too complex for JDLL. "
+								+ "Please contact the team and create and issue attaching the rdf.yaml file"
+								+ " so we can troubleshoot at: " + Constants.ISSUES_LINK);
+					imagSize[i] = (long) (ax.getMin() * factor);
+					tileSize[i] = (long) (ax.getMin() * factor);
+				} else if (ax.getReferenceTensor() == null) {
+					throw new IllegalArgumentException(""
+							+ "Model specs too complex for JDLL. "
+							+ "Please contact the team and create and issue attaching the rdf.yaml file"
+							+ " so we can troubleshoot at: " + Constants.ISSUES_LINK);
+				} else if (ax.getStep() != 0) {
+					TileInfo inTile = inputTileInfo.stream()
+							.filter(t -> t.getName().equals(ax.getReferenceTensor())).findFirst().orElse(null);
+					int indTile = inTile.getTileAxesOrder().indexOf(ax.getReferenceAxis());
+					int indIm = inTile.getImageAxesOrder().indexOf(ax.getReferenceAxis());
+					imagSize[i] = (long) (inTile.getImageDimensions()[indIm] * ax.getScale());
+					tileSize[i] = (long) (inTile.getProposedTileDimensions()[indTile] * ax.getScale() + ax.getOffset() * 2);
+				} else {
+					throw new IllegalArgumentException(""
+							+ "Model specs too complex for JDLL. "
+							+ "Please contact the team and create and issue attaching the rdf.yaml file"
+							+ " so we can troubleshoot at: " + Constants.ISSUES_LINK);
+				}
+				outputTileInfo.add(TileInfo.build(tt.getTensorID(), imagSize, outAxesOrder, tileSize, outAxesOrder));
+			}
+		}
 	}
 	
 	private void validateTileVsHalo() {
@@ -52,7 +135,7 @@ public class TileCalculator {
 				if (ref == null) continue;
 				if (ax.getMin() != 0 && ax.getStep() == 0)
 					continue;
-				TileInfo tile = this.tileInfoList.stream().filter(til -> til.getName().equals(ref)).findFirst().orElse(null);
+				TileInfo tile = this.inputTileInfo.stream().filter(til -> til.getName().equals(ref)).findFirst().orElse(null);
 				if (tile == null) throw new IllegalArgumentException("Tile specs of input tensor '" + ref + "' not defined.");
 				String axisStr = ax.getReferenceAxis();
 				String tileAxes = tile.getTileAxesOrder();
@@ -71,7 +154,7 @@ public class TileCalculator {
 	}
 	
 	private void validateStepMin() {
-		for (TileInfo tile : this.tileInfoList) {
+		for (TileInfo tile : this.inputTileInfo) {
 			TensorSpec tt = this.descriptor.findInputTensor(tile.getName());
 			if (tt == null) continue;
     		String axesTile = tile.getTileAxesOrder();
@@ -96,7 +179,7 @@ public class TileCalculator {
 	}
 	
 	private void validateTileVsImageChannel() {
-    	for (TileInfo tile : this.tileInfoList) {
+    	for (TileInfo tile : this.inputTileInfo) {
     		String tileAxes = tile.getTileAxesOrder();
     		String imageAxes = tile.getImageAxesOrder();
     		long[] tileSize = tile.getProposedTileDimensions();
@@ -119,7 +202,7 @@ public class TileCalculator {
 	}
 	
     private void validateTileVsImageSize() throws IllegalArgumentException {
-    	for (TileInfo tile : this.tileInfoList) {
+    	for (TileInfo tile : this.inputTileInfo) {
     		String axesTile = tile.getTileAxesOrder();
     		String axesImage = tile.getImageAxesOrder();
     		long[] tileDims = tile.getProposedTileDimensions();
@@ -160,7 +243,7 @@ public class TileCalculator {
 	
 	private void checkAllTensorsDefined() {
 		for (TensorSpec tensor : this.descriptor.getInputTensors()) {
-			TileInfo info = tileInfoList.stream()
+			TileInfo info = inputTileInfo.stream()
 					.filter(tt -> tt.getName().equals(tensor.getTensorID())).findFirst().orElse(null);
 			if (info == null) {
 				throw new IllegalArgumentException("Tiling info for input tensor '" + tensor.getTensorID()
@@ -171,7 +254,7 @@ public class TileCalculator {
 	
 	private void calculate() {
 		for (TensorSpec tt : this.descriptor.getInputTensors()) {
-			TileInfo tile = tileInfoList.stream()
+			TileInfo tile = inputTileInfo.stream()
 					.filter(til -> til.getName().equals(tt.getTensorID())).findFirst().orElse(null);
 			input.put(tt.getTensorID(), computePatchSpecs(tt, tile));
 		}

@@ -20,6 +20,10 @@ public class TileInfo {
 		this.proposedTileDims = proposedTileDims;
 		this.tileAxesOrder = tileAxesOrder;
 	}
+	
+	public static TileInfo build(String tensorName, long[] imDims, String imAxesOrder, long[] proposedTileDims, String tileAxesOrder) {
+		return new TileInfo(tensorName, imDims, imAxesOrder, proposedTileDims, tileAxesOrder);
+	}
 
 	/**
 	 * @return the name
