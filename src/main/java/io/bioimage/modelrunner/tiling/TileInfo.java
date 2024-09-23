@@ -35,14 +35,14 @@ public class TileInfo {
 	/**
 	 * @return the imDims
 	 */
-	public long[] getImageDimensions() {
+	public long[] getImageDims() {
 		return imDims;
 	}
 
 	/**
 	 * @return the proposedTileDims
 	 */
-	public long[] getProposedTileDimensions() {
+	public long[] getTileDims() {
 		return proposedTileDims;
 	}
 

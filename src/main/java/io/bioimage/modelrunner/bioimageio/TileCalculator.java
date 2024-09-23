@@ -105,7 +105,7 @@ public class TileCalculator {
 	
 	
 	private List<TileInfo> checkOutputSize(List<TileInfo> inputs, List<TensorSpec> affected, List<Long> outByteSizes) {
-		List<Long> totInPixels = inputs.stream().map(in -> Arrays.stream(in.getProposedTileDimensions()).reduce(1, (x, y) -> x * y)).collect(Collectors.toList());
+		List<Long> totInPixels = inputs.stream().map(in -> Arrays.stream(in.getTileDims()).reduce(1, (x, y) -> x * y)).collect(Collectors.toList());
 			
 		
 		if (totInPixels.stream().filter(oo -> oo > OPTIMAL_MAX_NUMBER_PIXELS).findFirst().orElse(null) == null 
@@ -138,15 +138,15 @@ public class TileCalculator {
 			for (String ax : in.getTileAxesOrder().split("")) {
 				Axis axis = tt.getAxesInfo().getAxis(ax);
 				if (axis.getStep() == 0) continue;
-				long nTot = totInPixels.get(argmin) / in.getProposedTileDimensions()[c];
-				if ((in.getProposedTileDimensions()[c] * inRatio.get(argmin) < axis.getMin()) && (axis.getMin() > 1)) {
-					in.getProposedTileDimensions()[c] = (int)Math.ceil((double) 100 / (double) axis.getStep()) * axis.getStep();
-				} else if (in.getProposedTileDimensions()[c] * inRatio.get(argmin) < axis.getMin()) {
-					in.getProposedTileDimensions()[c] = axis.getMin();
+				long nTot = totInPixels.get(argmin) / in.getTileDims()[c];
+				if ((in.getTileDims()[c] * inRatio.get(argmin) < axis.getMin()) && (axis.getMin() > 1)) {
+					in.getTileDims()[c] = (int)Math.ceil((double) 100 / (double) axis.getStep()) * axis.getStep();
+				} else if (in.getTileDims()[c] * inRatio.get(argmin) < axis.getMin()) {
+					in.getTileDims()[c] = axis.getMin();
 				} else {
-					in.getProposedTileDimensions()[c] = (long) (Math.floor((in.getProposedTileDimensions()[c] * inRatio.get(argmin) - axis.getMin()) / axis.getStep()) * axis.getStep() + axis.getMin());
+					in.getTileDims()[c] = (long) (Math.floor((in.getTileDims()[c] * inRatio.get(argmin) - axis.getMin()) / axis.getStep()) * axis.getStep() + axis.getMin());
 				}
-				totInPixels.set(argmin, nTot * in.getProposedTileDimensions()[c]);
+				totInPixels.set(argmin, nTot * in.getTileDims()[c]);
 				inRatio = totInPixels.stream().map(ss -> (double) OPTIMAL_MAX_NUMBER_PIXELS / (double) ss).collect(Collectors.toList());
 				
 				if (startingRatio == inRatio.get(argmin))
@@ -176,16 +176,16 @@ public class TileCalculator {
 				String refAxis = ax.getReferenceAxis();
 				int index = im.getTileAxesOrder().indexOf(refAxis);
 				Axis inAx = inputT.getAxesInfo().getAxis(refAxis);
-				long size = im.getProposedTileDimensions()[index];
+				long size = im.getTileDims()[index];
 				
 				if ((size * outRatio.get(argmin) < inAx.getMin()) && (inAx.getMin() > 1)) {
-					im.getProposedTileDimensions()[index] = (int)Math.ceil((double) 100 / (double) inAx.getStep()) * inAx.getStep();
+					im.getTileDims()[index] = (int)Math.ceil((double) 100 / (double) inAx.getStep()) * inAx.getStep();
 				} else if (size * outRatio.get(argmin) < inAx.getMin()) {
-					im.getProposedTileDimensions()[index] = inAx.getMin();
+					im.getTileDims()[index] = inAx.getMin();
 				} else {
-					im.getProposedTileDimensions()[index] = (long) (Math.floor((size * outRatio.get(argmin) - inAx.getMin()) / inAx.getStep()) * inAx.getStep() + inAx.getMin());
+					im.getTileDims()[index] = (long) (Math.floor((size * outRatio.get(argmin) - inAx.getMin()) / inAx.getStep()) * inAx.getStep() + inAx.getMin());
 				}
-				double change = (size * ax.getScale() + 2 * ax.getOffset()) / (im.getProposedTileDimensions()[index] * ax.getScale() + 2 * ax.getOffset());
+				double change = (size * ax.getScale() + 2 * ax.getOffset()) / (im.getTileDims()[index] * ax.getScale() + 2 * ax.getOffset());
 				outRatio.set(argmin, outRatio.get(argmin) * change);
 				if (outRatio.get(argmin) > 1)
 					break;

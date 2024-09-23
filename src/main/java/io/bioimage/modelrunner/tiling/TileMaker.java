@@ -85,7 +85,7 @@ public class TileMaker {
 								+ "Model specs too complex for JDLL. "
 								+ "Please contact the team and create and issue attaching the rdf.yaml file"
 								+ " so we can troubleshoot at: " + Constants.ISSUES_LINK);
-					double factor = (double) inTile.getImageDimensions()[indIm] / inTile.getProposedTileDimensions()[indTile];
+					double factor = (double) inTile.getImageDims()[indIm] / inTile.getTileDims()[indTile];
 					if (Math.floor(ax.getMin() * factor) != ax.getMin() * factor)
 						throw new IllegalArgumentException(""
 								+ "Model specs too complex for JDLL. "
@@ -103,7 +103,7 @@ public class TileMaker {
 								+ "Model specs too complex for JDLL. "
 								+ "Please contact the team and create and issue attaching the rdf.yaml file"
 								+ " so we can troubleshoot at: " + Constants.ISSUES_LINK);
-					double factor = (double) inTile.getImageDimensions()[indIm] / inTile.getProposedTileDimensions()[indTile];
+					double factor = (double) inTile.getImageDims()[indIm] / inTile.getTileDims()[indTile];
 					if (Math.floor(ax.getMin() * factor) != ax.getMin() * factor)
 						throw new IllegalArgumentException(""
 								+ "Model specs too complex for JDLL. "
@@ -121,8 +121,8 @@ public class TileMaker {
 							.filter(t -> t.getName().equals(ax.getReferenceTensor())).findFirst().orElse(null);
 					int indTile = inTile.getTileAxesOrder().indexOf(ax.getReferenceAxis());
 					int indIm = inTile.getImageAxesOrder().indexOf(ax.getReferenceAxis());
-					imagSize[i] = (long) (inTile.getImageDimensions()[indIm] * ax.getScale());
-					tileSize[i] = (long) (inTile.getProposedTileDimensions()[indTile] * ax.getScale() + ax.getOffset() * 2);
+					imagSize[i] = (long) (inTile.getImageDims()[indIm] * ax.getScale());
+					tileSize[i] = (long) (inTile.getTileDims()[indTile] * ax.getScale() + ax.getOffset() * 2);
 				} else {
 					throw new IllegalArgumentException(""
 							+ "Model specs too complex for JDLL. "
@@ -139,10 +139,10 @@ public class TileMaker {
 			TensorSpec tt = this.descriptor.findOutputTensor(tile.getName());
 			for (Axis ax : tt.getAxesInfo().getAxesList()) {
 				int ind = tile.getImageAxesOrder().indexOf(ax.getAxis());
-				if (tile.getProposedTileDimensions()[ind] - ax.getHalo() * 2 <= 0)
+				if (tile.getTileDims()[ind] - ax.getHalo() * 2 <= 0)
 					throw new IllegalArgumentException("Input size too small, halo would be bigger than "
 							+ "the image accross dimension '" + ax.getAxis() + "'. Toal halo = " + ax.getHalo() * 2
-							+ ", image size = " + tile.getProposedTileDimensions()[ind] + ".");
+							+ ", image size = " + tile.getTileDims()[ind] + ".");
 			}
 		}
 	}
@@ -164,7 +164,7 @@ public class TileMaker {
 				int ind = tileAxes.indexOf(axisStr);
 				long refSize = 1;
 				if (ind != -1)
-					refSize = tile.getProposedTileDimensions()[ind];
+					refSize = tile.getTileDims()[ind];
 				double outSize = ax.getScale() * refSize + ax.getOffset() * 2;
 				if (outSize - ax.getHalo() * 2 <= 0)
 					throw new IllegalArgumentException("Input size too small, halo would be bigger than "
@@ -179,7 +179,7 @@ public class TileMaker {
 			TensorSpec tt = this.descriptor.findInputTensor(tile.getName());
 			if (tt == null) continue;
     		String axesTile = tile.getTileAxesOrder();
-    		long[] tileDims = tile.getProposedTileDimensions();
+    		long[] tileDims = tile.getTileDims();
     		String axesTensor = tt.getAxesOrder();
     		axesTile = addMissingAxes(axesTensor, axesTile);
     		axesTensor = addMissingAxes(axesTile, axesTensor);
@@ -203,8 +203,8 @@ public class TileMaker {
     	for (TileInfo tile : this.inputTileInfo) {
     		String tileAxes = tile.getTileAxesOrder();
     		String imageAxes = tile.getImageAxesOrder();
-    		long[] tileSize = tile.getProposedTileDimensions();
-    		long[] imSize = tile.getImageDimensions();
+    		long[] tileSize = tile.getTileDims();
+    		long[] imSize = tile.getImageDims();
     		int indTile = tileAxes.indexOf("c");
     		int indIm = imageAxes.indexOf("c");
     		if (indIm != -1 && indTile != -1 && tileSize[indTile] != imSize[indIm])
@@ -226,9 +226,9 @@ public class TileMaker {
     	for (TileInfo tile : this.inputTileInfo) {
     		String axesTile = tile.getTileAxesOrder();
     		String axesImage = tile.getImageAxesOrder();
-    		long[] tileDims = tile.getProposedTileDimensions();
+    		long[] tileDims = tile.getTileDims();
     		checkAxisSize(tile);
-    		long[] imDims = arrayToWantedAxesOrderAddOnes(tile.getImageDimensions(), axesImage, axesTile);
+    		long[] imDims = arrayToWantedAxesOrderAddOnes(tile.getImageDims(), axesImage, axesTile);
     		for (int i = 0; i < axesTile.length(); i ++) {
     			int indIm = axesImage.indexOf(axesTile.split("")[i]);
     			if (imDims[indIm] * 3 < tileDims[i])
@@ -245,13 +245,13 @@ public class TileMaker {
     
     private static void checkAxisSize(TileInfo tile) {
 		String axesTile = tile.getTileAxesOrder();
-		long[] tileDims = tile.getProposedTileDimensions();
+		long[] tileDims = tile.getTileDims();
 		if (axesTile.length() != tileDims.length)
 			throw new IllegalArgumentException("The tile dimensions and tile axes should be of the same length:"
 					+ " " + axesTile + " (" + axesTile.length() + ") vs " + Arrays.toString(tileDims) 
 					+ " (" + tileDims.length + ")");
 		String axesImage = tile.getImageAxesOrder();
-		long[] imDims = tile.getImageDimensions();
+		long[] imDims = tile.getImageDims();
 		if (axesImage.length() != imDims.length)
 			throw new IllegalArgumentException("The image dimensions and image axes should be of the same length:"
 					+ " " + axesImage + " (" + axesImage.length() + ") vs " + Arrays.toString(imDims) 
@@ -306,9 +306,9 @@ public class TileMaker {
      */
     private PatchSpec computePatchSpecs(TensorSpec spec, TileInfo tile)
     {
-    	long[] imSize = arrayToWantedAxesOrderAddOnes(tile.getImageDimensions(), 
+    	long[] imSize = arrayToWantedAxesOrderAddOnes(tile.getImageDims(), 
     			tile.getImageAxesOrder(), spec.getAxesInfo().getAxesOrder());
-    	long[] tileSize = arrayToWantedAxesOrderAddOnes(tile.getProposedTileDimensions(), 
+    	long[] tileSize = arrayToWantedAxesOrderAddOnes(tile.getTileDims(), 
     			tile.getTileAxesOrder(), spec.getAxesInfo().getAxesOrder());
         int[][] paddingSize = new int[2][tileSize.length];
         // REgard that the input halo represents the output halo + offset 
@@ -390,7 +390,7 @@ public class TileMaker {
     	TileInfo tile = this.inputTileInfo.stream().filter(t -> t.getName().equals(tensorID)).findFirst().orElse(null);
     	if (tile == null)
     		throw new IllegalArgumentException("Input tensor '" + tensorID + "' does not require tiling.");
-    	return tile.getProposedTileDimensions();
+    	return tile.getTileDims();
     }
     
     /**
@@ -401,7 +401,7 @@ public class TileMaker {
     	TileInfo tile = this.outputTileInfo.stream().filter(t -> t.getName().equals(tensorID)).findFirst().orElse(null);
     	if (tile == null)
     		throw new IllegalArgumentException("Output tensor '" + tensorID + "' does not require tiling.");
-    	return tile.getProposedTileDimensions();
+    	return tile.getTileDims();
     }
     
     /**
@@ -498,7 +498,7 @@ public class TileMaker {
     	if (tile == null)
     		throw new IllegalArgumentException("The tensor ID proposed does not correspond to an output tensor: "
     				+ "'" + tensorID + "'.");
-    	return tile.getImageDimensions();
+    	return tile.getImageDims();
     }
     
     /**
