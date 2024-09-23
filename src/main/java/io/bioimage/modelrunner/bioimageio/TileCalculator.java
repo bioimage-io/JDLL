@@ -13,6 +13,7 @@ import io.bioimage.modelrunner.bioimageio.description.Axis;
 import io.bioimage.modelrunner.bioimageio.description.ModelDescriptor;
 import io.bioimage.modelrunner.bioimageio.description.TensorSpec;
 import io.bioimage.modelrunner.tiling.TileInfo;
+import io.bioimage.modelrunner.utils.Constants;
 
 public class TileCalculator {
 	
@@ -28,6 +29,7 @@ public class TileCalculator {
 		return new TileCalculator(descriptor);
 	}
 	
+	// TODO what to do when the axes order do not coincide
 	private long[] getOptimalTileSize(TensorSpec tensor, String inputAxesOrder, long[] dims) {
 		boolean tiling = this.descriptor.isTilingAllowed();
 		int[] halo = tensor.getAxesInfo().getHaloArr();
@@ -75,7 +77,7 @@ public class TileCalculator {
 			
 			long[] tileSize = getOptimalTileSize(tt, im.getAxesOrder(), im.getDimensions());
 			
-			firstIterationInputs.add(TileInfo.build(im.getTensorName(), im.getDimensions(), im.getAxesOrder(), tileSize, im.getAxesOrder()));
+			firstIterationInputs.add(TileInfo.build(tt.getTensorID(), im.getDimensions(), im.getAxesOrder(), tileSize, im.getAxesOrder()));
 		}
 		
 		if (!tiling)
@@ -95,11 +97,11 @@ public class TileCalculator {
 				secondIterationInputs.add(firstIterationInputs.get(i));
 			}
 		}
-		if (firstIterationInputs.size() == firstIterationInputs.size())
+		if (firstIterationInputs.size() == secondIterationInputs.size())
 			return secondIterationInputs;
 		
 		
-		List<Long> outputTotByteSizes = calculateByteSizeOfAffectedOutput(affectedTensors, null, null);
+		List<Long> outputTotByteSizes = calculateByteSizeOfAffectedOutput(affectedTensors, firstIterationInputs);
 		return checkOutputSize(firstIterationInputs, affectedTensors, outputTotByteSizes);
 	}
 	
@@ -154,7 +156,7 @@ public class TileCalculator {
 			}
 		}
 		
-		outByteSizes = calculateByteSizeOfAffectedOutput(affected, null, null);
+		outByteSizes = calculateByteSizeOfAffectedOutput(affected, null);
 		outRatio = outByteSizes.stream().map(ss -> (double) Integer.MAX_VALUE / (double) ss).collect(Collectors.toList());
 		
 		if (Collections.min(outRatio) < 1 && Collections.min(inRatio) < 1 )
@@ -207,55 +209,75 @@ public class TileCalculator {
 		
 	}
     
-    private List<Long> calculateByteSizeOfAffectedOutput(List<TensorSpec> inputTensors, List<long[]> inputSize, List<String> affectedOutputs) {
-    	if (affectedOutputs == null || affectedOutputs.size() == 0) 
-    		return LongStream.range(0, affectedOutputs.size()).map(i -> 0L).boxed().collect(Collectors.toList());
-    	List<String> names = inputTensors.stream().map(t -> t.getTensorID()).collect(Collectors.toList());
-    	List<String> axesOrders = inputTensors.stream().map(t -> t.getAxesOrder()).collect(Collectors.toList());
-    	List<TensorSpec> outputTensors = this.descriptor.getOutputTensors();
-    	outputTensors = outputTensors.stream()
-    			.filter(t -> {
-    				return t.getAxesInfo().getAxesList().stream()
-    						.filter(tt -> names.contains(tt.getReferenceTensor())).findFirst().orElse(null) != null;
-    			}).collect(Collectors.toList());
+    private List<Long> calculateByteSizeOfAffectedOutput(List<TensorSpec> outputTensors, List<TileInfo> inputSize) {
+    	if (outputTensors == null || outputTensors.size() == 0) 
+    		return new ArrayList<Long>();
     	
     	List<long[]> outTiles = outputTensors.stream()
     			.map(t -> new long[t.getAxesInfo().getAxesList().size()]).collect(Collectors.toList());
     	
     	for (int i = 0; i < outputTensors.size(); i ++) {
     		TensorSpec tt = outputTensors.get(i);
+    		ArrayList<String> referencesList = new ArrayList<String>();
     		for (int j = 0; j < outputTensors.get(i).getAxesInfo().getAxesList().size(); j ++) {
     			Axis ax = tt.getAxesInfo().getAxesList().get(j);
-    			if (ax.getStep() == 0) {
+    			String refName = ax.getReferenceTensor();
+    			if (refName == null && ax.getMin()!= 0) {
     				outTiles.get(i)[j] = ax.getMin();
     				continue;
+    			} else if (refName == null) {
+    				outTiles.get(i)[j] = -1;
+    				continue;
     			}
-    			String refName = ax.getReferenceTensor();
+				referencesList.add(refName);
     			String refAxisStr = ax.getReferenceAxis();
-    			TensorSpec refTensor = inputTensors.get(names.indexOf(refName));
-    			long[] refTileSize = inputSize.get(names.indexOf(refName));
-    			String axesOrder = axesOrders.get(names.indexOf(refName));
-    			Axis refAxis = refTensor.getAxesInfo().getAxis(refAxisStr);
+    			TensorSpec refTensor = descriptor.findInputTensor(refName);
+    			long[] refTileSize = inputSize.stream()
+    					.filter(tile -> tile.getName().equals(refName)).findFirst().orElse(null).getTileDims();
+    			String axesOrder = refTensor.getAxesOrder();
     			outTiles.get(i)[j] = 
-    					(long) (refTileSize[axesOrder.indexOf(refAxisStr)] * refAxis.getScale() + refAxis.getOffset());
+    					(long) (refTileSize[axesOrder.indexOf(refAxisStr)] * ax.getScale() + ax.getOffset());
+    		}
+    		if (referencesList.stream().distinct().count() != 1)
+    			throw new IllegalArgumentException(""
+						+ "Model specs too complex for JDLL. "
+						+ "Please contact the team and create and issue attaching the rdf.yaml file"
+						+ " so we can troubleshoot at: " + Constants.ISSUES_LINK);
+    		else {
+    			for (int j = 0; j < outputTensors.get(i).getAxesInfo().getAxesList().size(); j ++) {
+    				if (outTiles.get(i)[j] != -1)
+    					continue;
+    				TensorSpec refInput = this.descriptor.findInputTensor(referencesList.get(0));
+    				int ind = refInput.getAxesOrder().indexOf(outputTensors.get(i).getAxesInfo().getAxesList().get(j).getAxis());
+    				if (ind == -1)
+    	    			throw new IllegalArgumentException(""
+    							+ "Model specs too complex for JDLL. "
+    							+ "Please contact the team and create and issue attaching the rdf.yaml file"
+    							+ " so we can troubleshoot at: " + Constants.ISSUES_LINK);
+        			long[] refTileSize = inputSize.stream()
+        					.filter(tile -> tile.getName().equals(referencesList.get(0))).findFirst().orElse(null).getTileDims();
+    				outTiles.get(i)[j] = refTileSize[ind];
+    			}
     		}
     	}
         
-    	List<Long> flatSizes = LongStream.range(0, outTiles.size()).map(i -> 1L).boxed().collect(Collectors.toList());
+    	List<Long> flatSizes = outTiles.stream().map(arr -> {
+								                    long a = 1L;
+								                    for (long l : arr) a *= l;
+								                    return a;
+								                }).collect(Collectors.toList());
 
     	for (int i = 0; i < flatSizes.size(); i ++) {
             if (outputTensors.get(i).getDataType().toLowerCase().equals("float32")
             		|| outputTensors.get(i).getDataType().toLowerCase().equals("int32")
             		|| outputTensors.get(i).getDataType().toLowerCase().equals("uint32"))
-            	flatSizes.set(i, flatSizes.get(i) * 8);
+            	flatSizes.set(i, flatSizes.get(i) * 4);
             else if (outputTensors.get(i).getDataType().toLowerCase().equals("int16")
             		|| outputTensors.get(i).getDataType().toLowerCase().equals("uint16"))
             	flatSizes.set(i, flatSizes.get(i) * 2);
             else if (outputTensors.get(i).getDataType().toLowerCase().equals("int64")
             		|| outputTensors.get(i).getDataType().toLowerCase().equals("float64"))
-            	flatSizes.set(i, flatSizes.get(i) * 4);
-            for (long j : outTiles.get(i)) 
-            	flatSizes.set(i, flatSizes.get(i) * j);
+            	flatSizes.set(i, flatSizes.get(i) * 8);
     	}
         return flatSizes;
     }

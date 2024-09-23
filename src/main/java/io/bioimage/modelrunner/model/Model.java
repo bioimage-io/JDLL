@@ -55,11 +55,14 @@ import io.bioimage.modelrunner.exceptions.RunModelException;
 import io.bioimage.modelrunner.tensor.Tensor;
 import io.bioimage.modelrunner.tiling.PatchSpec;
 import io.bioimage.modelrunner.tiling.TileGrid;
+import io.bioimage.modelrunner.tiling.TileInfo;
 import io.bioimage.modelrunner.tiling.TileMaker;
 import io.bioimage.modelrunner.utils.Constants;
 import io.bioimage.modelrunner.versionmanagement.InstalledEngines;
 import net.imglib2.FinalInterval;
 import net.imglib2.RandomAccessibleInterval;
+import net.imglib2.img.Img;
+import net.imglib2.img.array.ArrayImgs;
 import net.imglib2.type.NativeType;
 import net.imglib2.type.numeric.RealType;
 import net.imglib2.type.numeric.real.FloatType;
@@ -660,7 +663,12 @@ public class Model
 		if (descriptor == null && !(new File(modelFolder, Constants.RDF_FNAME).isFile()))
 			throw new IllegalArgumentException("Automatic tiling can only be done if the model contains a Bioiamge.io rdf.yaml specs file.");
 		else if (descriptor == null)
-			descriptor = ModelDescriptorFactory.readFromLocalFile(modelFolder + File.separator + Constants.RDF_FNAME);
+			try {
+				descriptor = ModelDescriptorFactory.readFromLocalFile(modelFolder + File.separator + Constants.RDF_FNAME);
+			} catch (ModelSpecsException | IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
 		
 		return runTiling(inputTensors, tiles, tileCounter);
 	}
@@ -678,15 +686,17 @@ public class Model
 		}
 		
 		for (int i = 0; i < tiles.getNumberOfTiles(); i ++) {
+			int nTile = 0 + i;
 			List<Tensor<R>> inputTiles = inputTensors.stream()
-					.map(tt -> tiles.getNthTileInput(tt.getName(), i, tt)).collect(Collectors.toList());
+					.map(tt -> tiles.getNthTileInput(tt, nTile)).collect(Collectors.toList());
 			List<Tensor<T>> outputTiles = outputTensors.stream()
-					.map(tt -> tiles.getNthTileOutput(tt.getName(), i, tt)).collect(Collectors.toList());
+					.map(tt -> tiles.getNthTileOutput(tt, nTile)).collect(Collectors.toList());
 			runModel(inputTiles, outputTiles);
 		}
 		return outputTensors;
 	}
 	
+	/** TODO remove
 	private <T extends RealType<T> & NativeType<T>, R extends RealType<R> & NativeType<R>> 
 	void doTiling(List<Tensor<R>> inputTensors, List<Tensor<T>> outputTensors, 
 			TileMaker tiles, TilingConsumer tileCounter) throws RunModelException {
@@ -720,20 +730,21 @@ public class Model
 			this.runModel(inputTileList, outputTileList);
 		}
 	}
+	*/
 	
 	public static <T extends NativeType<T> & RealType<T>> void main(String[] args) throws IOException, ModelSpecsException, LoadEngineException, RunModelException, LoadModelException {
-		/*
-		String mm = "C:\\Users\\angel\\OneDrive\\Documentos\\pasteur\\git\\model-runner-java\\models\\\\EnhancerMitochondriaEM2D_22092023_133921\\";
+		
+		String mm = "/home/carlos/git/JDLL/models/NucleiSegmentationBoundaryModel_17122023_143125";
 		Img<T> im = (Img<T>) ArrayImgs.floats(new long[] {1, 1, 512, 512});
 		List<Tensor<T>> l = new ArrayList<Tensor<T>>();
 		l.add((Tensor<T>) Tensor.build("input0", "bcyx", im));
 		Model model = createBioimageioModel(mm);
 		model.loadModel();
 		Map<String, int[]> tilingList = new LinkedHashMap<String, int[]>();
-		tilingList.put("input0", new int[] {1, 1, 256, 256});
-		List<Tensor<T>> out = model.runBioimageioModelOnImgLib2WithTiling(l, tilingList);
+		tilingList.put("input0", new int[] {1, 2, 256, 256});
+		List<Tensor<T>> out = model.runBioimageioModelOnImgLib2WithTiling(l);
 		System.out.println(false);
-		*/
+		
 	}
 
 	/**
