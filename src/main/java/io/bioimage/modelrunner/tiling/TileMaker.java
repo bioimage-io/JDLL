@@ -11,7 +11,11 @@ import java.util.stream.IntStream;
 import io.bioimage.modelrunner.bioimageio.description.Axis;
 import io.bioimage.modelrunner.bioimageio.description.ModelDescriptor;
 import io.bioimage.modelrunner.bioimageio.description.TensorSpec;
+import io.bioimage.modelrunner.tensor.Tensor;
 import io.bioimage.modelrunner.utils.Constants;
+import net.imglib2.RandomAccessibleInterval;
+import net.imglib2.type.NativeType;
+import net.imglib2.type.numeric.RealType;
 
 public class TileMaker {
 	
@@ -344,17 +348,17 @@ public class TileMaker {
     	return null;
     }
 	
-	public void getInputInsertionPoints(String tensorId, int nTile, String axes) {
-    	TileInfo tile = this.inputTileInfo.stream().filter(t -> t.getName().equals(tensorId)).findFirst().orElse(null);
+	public void getInputInsertionPoints(String tensorID, int nTile, String axes) {
+    	TileInfo tile = this.inputTileInfo.stream().filter(t -> t.getName().equals(tensorID)).findFirst().orElse(null);
     	if (tile == null)
-    		throw new IllegalArgumentException("Input tensor '" + tensorId + "' does not require tiling.");
+    		throw new IllegalArgumentException("Input tensor '" + tensorID + "' does not require tiling.");
 		
 	}
 	
-	public void getOutputInsertionPoints(String tensorId, int nTile, String axes) {
-    	TileInfo tile = this.outputTileInfo.stream().filter(t -> t.getName().equals(tensorId)).findFirst().orElse(null);
+	public void getOutputInsertionPoints(String tensorID, int nTile, String axes) {
+    	TileInfo tile = this.outputTileInfo.stream().filter(t -> t.getName().equals(tensorID)).findFirst().orElse(null);
     	if (tile == null)
-    		throw new IllegalArgumentException("Output tensor '" + tensorId + "' does not require tiling.");
+    		throw new IllegalArgumentException("Output tensor '" + tensorID + "' does not require tiling.");
 		
 	}
     
@@ -380,10 +384,10 @@ public class TileMaker {
      * 
      * @return size of the tile that is going to be used to process the image
      */
-    public long[] getInputTileSize(String tensorId) {
-    	TileInfo tile = this.inputTileInfo.stream().filter(t -> t.getName().equals(tensorId)).findFirst().orElse(null);
+    public long[] getInputTileSize(String tensorID) {
+    	TileInfo tile = this.inputTileInfo.stream().filter(t -> t.getName().equals(tensorID)).findFirst().orElse(null);
     	if (tile == null)
-    		throw new IllegalArgumentException("Input tensor '" + tensorId + "' does not require tiling.");
+    		throw new IllegalArgumentException("Input tensor '" + tensorID + "' does not require tiling.");
     	return tile.getProposedTileDimensions();
     }
     
@@ -391,10 +395,10 @@ public class TileMaker {
      * 
      * @return size of the tile that is going to be used to process the image
      */
-    public long[] getOutputTileSize(String tensorId) {
-    	TileInfo tile = this.outputTileInfo.stream().filter(t -> t.getName().equals(tensorId)).findFirst().orElse(null);
+    public long[] getOutputTileSize(String tensorID) {
+    	TileInfo tile = this.outputTileInfo.stream().filter(t -> t.getName().equals(tensorID)).findFirst().orElse(null);
     	if (tile == null)
-    		throw new IllegalArgumentException("Output tensor '" + tensorId + "' does not require tiling.");
+    		throw new IllegalArgumentException("Output tensor '" + tensorID + "' does not require tiling.");
     	return tile.getProposedTileDimensions();
     }
     
@@ -402,22 +406,22 @@ public class TileMaker {
      * 
      * @return size of the roi of each of the tiles that is going to be used to process the image
      */
-    public int[] getInputRoiSize(String tensorId) {
-    	TileInfo tile = this.inputTileInfo.stream().filter(t -> t.getName().equals(tensorId)).findFirst().orElse(null);
+    public int[] getInputRoiSize(String tensorID) {
+    	TileInfo tile = this.inputTileInfo.stream().filter(t -> t.getName().equals(tensorID)).findFirst().orElse(null);
     	if (tile == null)
-    		throw new IllegalArgumentException("Input tensor '" + tensorId + "' does not require tiling.");
-    	return this.inputGrid.get(tensorId).getRoiSize();
+    		throw new IllegalArgumentException("Input tensor '" + tensorID + "' does not require tiling.");
+    	return this.inputGrid.get(tensorID).getRoiSize();
     }
     
     /**
      * 
      * @return size of the roi of each of the tiles that is going to be used to process the image
      */
-    public int[] getOutputRoiSize(String tensorId) {
-    	TileInfo tile = this.outputTileInfo.stream().filter(t -> t.getName().equals(tensorId)).findFirst().orElse(null);
+    public int[] getOutputRoiSize(String tensorID) {
+    	TileInfo tile = this.outputTileInfo.stream().filter(t -> t.getName().equals(tensorID)).findFirst().orElse(null);
     	if (tile == null)
-    		throw new IllegalArgumentException("Output tensor '" + tensorId + "' does not require tiling.");
-    	return this.outputGrid.get(tensorId).getRoiSize();
+    		throw new IllegalArgumentException("Output tensor '" + tensorID + "' does not require tiling.");
+    	return this.outputGrid.get(tensorID).getRoiSize();
     }
     
     /**
@@ -426,11 +430,11 @@ public class TileMaker {
      * respect to the original image of the tensor.
      * The positions might be negative as the image that is going to be processed might have padding on the edges
      */
-    public List<long[]> getTilePostionsInputImage(String tensorId) {
-    	TileInfo tile = this.inputTileInfo.stream().filter(t -> t.getName().equals(tensorId)).findFirst().orElse(null);
+    public List<long[]> getTilePostionsInputImage(String tensorID) {
+    	TileInfo tile = this.inputTileInfo.stream().filter(t -> t.getName().equals(tensorID)).findFirst().orElse(null);
     	if (tile == null)
-    		throw new IllegalArgumentException("Input tensor '" + tensorId + "' does not require tiling.");
-    	return inputGrid.get(tensorId).getTilePostionsInImage();
+    		throw new IllegalArgumentException("Input tensor '" + tensorID + "' does not require tiling.");
+    	return inputGrid.get(tensorID).getTilePostionsInImage();
     }
     
     /**
@@ -439,27 +443,47 @@ public class TileMaker {
      * respect to the original image of the tensor.
      * The positions might be negative as the image that is going to be processed might have padding on the edges
      */
-    public List<long[]> getTilePostionsOutputImage(String tensorId) {
-    	TileInfo tile = this.outputTileInfo.stream().filter(t -> t.getName().equals(tensorId)).findFirst().orElse(null);
+    public List<long[]> getTilePostionsOutputImage(String tensorID) {
+    	TileInfo tile = this.outputTileInfo.stream().filter(t -> t.getName().equals(tensorID)).findFirst().orElse(null);
     	if (tile == null)
-    		throw new IllegalArgumentException("Output tensor '" + tensorId + "' does not require tiling.");
-    	return outputGrid.get(tensorId).getTilePostionsInImage();
+    		throw new IllegalArgumentException("Output tensor '" + tensorID + "' does not require tiling.");
+    	return outputGrid.get(tensorID).getTilePostionsInImage();
     }
     
-    public long[] getNthTileInput(String tensorId, int n) {
-    	List<long[]> tiles = this.getTilePostionsOutputImage(tensorId);
+    public <T extends NativeType<T> & RealType<T>> RandomAccessibleInterval<T> getNthTileInput(String tensorID, int n, RandomAccessibleInterval<T> rai) {
+    	List<long[]> tiles = this.getTilePostionsOutputImage(tensorID);
     	if (tiles.size() >= n) {
     		throw new IllegalArgumentException();
     	}
-    	return tiles.get(n);
+    	return null;
     }
     
-    public long[] getNthTileOutput(String tensorId, int n) {
-    	List<long[]> tiles = this.getTilePostionsOutputImage(tensorId);
+    public <T extends NativeType<T> & RealType<T>> RandomAccessibleInterval<T> getNthTileOutput(String tensorID, int n, RandomAccessibleInterval<T> rai) {
+    	List<long[]> tiles = this.getTilePostionsOutputImage(tensorID);
     	if (tiles.size() >= n) {
     		throw new IllegalArgumentException();
     	}
-    	return tiles.get(n);
+    	return null;
+    }
+    
+    public <T extends NativeType<T> & RealType<T>> Tensor<T> getNthTileInput(String tensorID, int n, Tensor<T> tensor) {
+    	List<long[]> tiles = this.getTilePostionsOutputImage(tensorID);
+    	if (tiles.size() >= n) {
+    		throw new IllegalArgumentException();
+    	}
+    	return null;
+    }
+    
+    public <T extends NativeType<T> & RealType<T>> Tensor<T> getNthTileOutput(String tensorID, int n, Tensor<T> tensor) {
+    	List<long[]> tiles = this.getTilePostionsOutputImage(tensorID);
+    	if (tiles.size() >= n) {
+    		throw new IllegalArgumentException();
+    	}
+    	return null;
+    }
+    
+    public long[] getOutputImageSize(String tensorID) {
+    	return null;
     }
     
     /**

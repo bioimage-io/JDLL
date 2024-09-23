@@ -527,11 +527,13 @@ public class Model
 	 * @throws RunModelException
 	 *             if the is any problem running the model
 	 */
-	public void runModel( List< Tensor < ? > > inTensors, List< Tensor < ? > > outTensors ) throws RunModelException
+	@SuppressWarnings("unchecked")
+	public <T extends RealType<T> & NativeType<T>, R extends RealType<R> & NativeType<R>> 
+	void runModel( List< Tensor < T > > inTensors, List< Tensor < R > > outTensors ) throws RunModelException
 	{
 		DeepLearningEngineInterface engineInstance = engineClassLoader.getEngineInstance();
 		engineClassLoader.setEngineClassLoader();
-		inTensors.stream().forEach( tt -> tt = Tensor.createCopyOfTensorInWantedDataType( tt, new FloatType() ) );
+		inTensors.stream().forEach( tt -> tt = (Tensor<T>) Tensor.createCopyOfTensorInWantedDataType( tt, new FloatType() ) );
 		engineInstance.run( inTensors, outTensors );
 		engineClassLoader.setBaseClassLoader();
 	}
@@ -654,7 +656,7 @@ public class Model
 		else if (descriptor == null)
 			descriptor = ModelDescriptorFactory.readFromLocalFile(modelFolder + File.separator + Constants.RDF_FNAME);
 		
-		return runTiling(inputTensors, tileGrid, tileCounter);
+		return runTiling(inputTensors, tiles, tileCounter);
 	}
 	
 	@SuppressWarnings("unchecked")
@@ -662,15 +664,20 @@ public class Model
 	List<Tensor<T>> runTiling(List<Tensor<R>> inputTensors, TileMaker tiles, TilingConsumer tileCounter) throws RunModelException {
 		List<Tensor<T>> outputTensors = new ArrayList<Tensor<T>>();
 		for (TensorSpec tt : descriptor.getOutputTensors()) {
-			if (outTileSpecs.get(tt.getTensorID()) == null)
-				outputTensors.add(Tensor.buildEmptyTensor(tt.getTensorID(), tt.getAxesOrder()));
-			else
-				outputTensors.add((Tensor<T>) Tensor.buildBlankTensor(tt.getTensorID(), 
+			long[] dims = tiles.getOutputImageSize(tt.getTensorID());
+			outputTensors.add((Tensor<T>) Tensor.buildBlankTensor(tt.getTensorID(), 
 																	tt.getAxesOrder(), 
-																	outTileSpecs.get(tt.getTensorID()).getNonTiledTensorDims(), 
+																	dims, 
 																	(T) new FloatType()));
 		}
-		doTiling(inputTensors, outputTensors, tileGrid, tileCounter);
+		
+		for (int i = 0; i < tiles.getNumberOfTiles(); i ++) {
+			List<Tensor<R>> inputTiles = inputTensors.stream()
+					.map(tt -> tiles.getNthTileInput(tt.getName(), i, tt)).collect(Collectors.toList());
+			List<Tensor<T>> outputTiles = outputTensors.stream()
+					.map(tt -> tiles.getNthTileOutput(tt.getName(), i, tt)).collect(Collectors.toList());
+			runModel(inputTiles, outputTiles);
+		}
 		return outputTensors;
 	}
 	
