@@ -54,6 +54,7 @@ import io.bioimage.modelrunner.tensor.Tensor;
 import io.bioimage.modelrunner.tiling.PatchGridCalculator;
 import io.bioimage.modelrunner.tiling.PatchSpec;
 import io.bioimage.modelrunner.tiling.TileGrid;
+import io.bioimage.modelrunner.tiling.TileMaker;
 import io.bioimage.modelrunner.utils.Constants;
 import io.bioimage.modelrunner.versionmanagement.InstalledEngines;
 import net.imglib2.FinalInterval;
@@ -616,8 +617,8 @@ public class Model
 	 */
 	public <T extends RealType<T> & NativeType<T>, R extends RealType<R> & NativeType<R>> 
 	List<Tensor<T>> runBioimageioModelOnImgLib2WithTiling(List<Tensor<R>> inputTensors, 
-			Map<String, int[]> tileMap) throws ModelSpecsException, RunModelException {
-		return runBioimageioModelOnImgLib2WithTiling(inputTensors, tileMap, null);
+			TileMaker tiles) throws ModelSpecsException, RunModelException {
+		return runBioimageioModelOnImgLib2WithTiling(inputTensors, tiles, null);
 	}
 	
 	/**
@@ -644,7 +645,7 @@ public class Model
 	 */
 	public <T extends RealType<T> & NativeType<T>, R extends RealType<R> & NativeType<R>> 
 	List<Tensor<T>> runBioimageioModelOnImgLib2WithTiling(List<Tensor<R>> inputTensors, 
-			Map<String, int[]> tileMap, TilingConsumer tileCounter) throws ModelSpecsException, RunModelException {
+			TileMaker tiles, TilingConsumer tileCounter) throws ModelSpecsException, RunModelException {
 		
 		if (!this.isLoaded())
 			throw new RunModelException("Please first load the model.");
@@ -652,31 +653,13 @@ public class Model
 			throw new IllegalArgumentException("Automatic tiling can only be done if the model contains a Bioiamge.io rdf.yaml specs file.");
 		else if (descriptor == null)
 			descriptor = ModelDescriptorFactory.readFromLocalFile(modelFolder + File.separator + Constants.RDF_FNAME);
-		for (TensorSpec t : descriptor.getInputTensors()) {
-			if (!t.isImage())
-				continue;
-			if (tileMap.get(t.getTensorID()) == null)
-				throw new RunModelException("Either provide the wanted tile size for every image tensor (" 
-						+ "in this case tenso '" + t.getTensorID() + "' is missing) or let JDLL compute all "
-						+ "tile sizes automatically using runBioimageioModelOnImgLib2WithTiling(List<Tensor<R>> inputTensors).");
-			if (Tensor.getTensorByNameFromList(inputTensors, t.getTensorID()) == null)
-				throw new RunModelException("Required tensor named '" + t.getTensorID() + "' is missing from the list of input tensors");
-			try {
-				t.setTileSizeForTensorAndImageSize(tileMap.get(t.getTensorID()), Tensor.getTensorByNameFromList(inputTensors, t.getTensorID()).getShape());
-			} catch (Exception e) {
-				throw new RunModelException(e.getMessage());
-			}
-		}
-		PatchGridCalculator<R> tileGrid = PatchGridCalculator.build(descriptor, inputTensors);
+		
 		return runTiling(inputTensors, tileGrid, tileCounter);
 	}
 	
 	@SuppressWarnings("unchecked")
 	private <T extends RealType<T> & NativeType<T>, R extends RealType<R> & NativeType<R>> 
-	List<Tensor<T>> runTiling(List<Tensor<R>> inputTensors, 
-			PatchGridCalculator<R> tileGrid, TilingConsumer tileCounter) throws RunModelException {
-		LinkedHashMap<String, PatchSpec> inTileSpecs = tileGrid.getInputTensorsTileSpecs();
-		LinkedHashMap<String, PatchSpec> outTileSpecs = tileGrid.getOutputTensorsTileSpecs();
+	List<Tensor<T>> runTiling(List<Tensor<R>> inputTensors, TileMaker tiles, TilingConsumer tileCounter) throws RunModelException {
 		List<Tensor<T>> outputTensors = new ArrayList<Tensor<T>>();
 		for (TensorSpec tt : descriptor.getOutputTensors()) {
 			if (outTileSpecs.get(tt.getTensorID()) == null)
@@ -693,16 +676,8 @@ public class Model
 	
 	private <T extends RealType<T> & NativeType<T>, R extends RealType<R> & NativeType<R>> 
 	void doTiling(List<Tensor<R>> inputTensors, List<Tensor<T>> outputTensors, 
-			PatchGridCalculator<R> tileGrid, TilingConsumer tileCounter) throws RunModelException {
-		LinkedHashMap<String, PatchSpec> inTileSpecs = tileGrid.getInputTensorsTileSpecs();
-		LinkedHashMap<String, PatchSpec> outTileSpecs = tileGrid.getOutputTensorsTileSpecs();
-		Map<Object, TileGrid> inTileGrids = inTileSpecs.entrySet().stream()
-				.collect(Collectors.toMap(entry -> entry.getKey(), entry -> TileGrid.create(entry.getValue())));
-		Map<Object, TileGrid> outTileGrids = outTileSpecs.entrySet().stream()
-				.collect(Collectors.toMap(entry -> entry.getKey(), entry -> TileGrid.create(entry.getValue())));
-		int[] tilesPerAxis = inTileSpecs.values().stream().findFirst().get().getTileGrid();
-		int nTiles = 1;
-		for (int i : tilesPerAxis) nTiles *= i;
+			TileMaker tiles, TilingConsumer tileCounter) throws RunModelException {
+		int nTiles = tiles.getNumberOfTiles();
 		tileCounter.acceptTotal(Long.valueOf(nTiles));
 		for (int j = 0; j < nTiles; j ++) {
 			tileCounter.acceptProgress(Long.valueOf(j));

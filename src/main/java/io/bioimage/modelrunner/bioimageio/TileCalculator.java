@@ -16,18 +16,18 @@ import io.bioimage.modelrunner.bioimageio.description.ModelDescriptor;
 import io.bioimage.modelrunner.bioimageio.description.TensorSpec;
 import io.bioimage.modelrunner.tiling.PatchGridCalculator;
 
-public class TileFactory {
+public class TileCalculator {
 	
 	private final ModelDescriptor descriptor;
     
     private static final long OPTIMAL_MAX_NUMBER_PIXELS = 4096 * 4096 * 3;
 	
-	private TileFactory(ModelDescriptor descriptor) {
+	private TileCalculator(ModelDescriptor descriptor) {
 		this.descriptor = descriptor;
 	}
 
-	public static TileFactory init(ModelDescriptor descriptor) {
-		return new TileFactory(descriptor);
+	public static TileCalculator init(ModelDescriptor descriptor) {
+		return new TileCalculator(descriptor);
 	}
 	
 	private long[] getOptimalTileSize(TensorSpec tensor, String inputAxesOrder, long[] dims) {
@@ -202,11 +202,11 @@ public class TileFactory {
 		return null;
 	}
 	
-	public void validateTileSize(String tensorName, long[] dims, String inputAxesOrder) {
+	public void getTilesForNPixels(String tensorName, long[] dims, String inputAxesOrder) {
 		
 	}
 	
-	public void getTileSizeForNTiles(int nTiles, String tensorName, long[] dims, String inputAxesOrder) {
+	public void getForNTiles(int nTiles, String tensorName, long[] dims, String inputAxesOrder) {
 		
 	}
     

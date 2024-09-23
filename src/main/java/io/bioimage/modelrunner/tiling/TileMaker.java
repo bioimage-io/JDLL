@@ -4,18 +4,16 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-import io.bioimage.modelrunner.bioimageio.TileFactory;
 import io.bioimage.modelrunner.bioimageio.description.Axis;
 import io.bioimage.modelrunner.bioimageio.description.ModelDescriptor;
 import io.bioimage.modelrunner.bioimageio.description.TensorSpec;
-import io.bioimage.modelrunner.tensor.Tensor;
 import io.bioimage.modelrunner.utils.Constants;
-import net.imglib2.RandomAccessibleInterval;
 
-public class TileCalculator {
+public class TileMaker {
 	
 	private final List<TileInfo> inputTileInfo;
 	
@@ -31,15 +29,15 @@ public class TileCalculator {
 	
 	private final LinkedHashMap<String, TileGrid> outputGrid = new LinkedHashMap<String, TileGrid>();
 	
-	private TileCalculator(ModelDescriptor descriptor, List<TileInfo> tileInfoList) {
+	private TileMaker(ModelDescriptor descriptor, List<TileInfo> tileInfoList) {
 		this.descriptor = descriptor;
 		this.inputTileInfo = tileInfoList;
 		validate();
 		calculate();
 	}
 	
-	public static TileCalculator build(ModelDescriptor descriptor, List<TileInfo> tileInfoList) {
-		return new TileCalculator(descriptor, tileInfoList);
+	public static TileMaker build(ModelDescriptor descriptor, List<TileInfo> tileInfoList) {
+		return new TileMaker(descriptor, tileInfoList);
 	}
 	
 	private void validate() {
@@ -337,10 +335,14 @@ public class TileCalculator {
 
         return PatchSpec.create(spec.getTensorID(), tileSize, patchGridSize, paddingSize, imSize);
     }
-	
-	public void getTileList() {
-		
-	}
+    
+    public int getNumberOfTiles() {
+    	return 0;
+    }
+    
+    public Map<String, Integer> getTilesPerAxis() {
+    	return null;
+    }
 	
 	public void getInputInsertionPoints(String tensorId, int nTile, String axes) {
     	TileInfo tile = this.inputTileInfo.stream().filter(t -> t.getName().equals(tensorId)).findFirst().orElse(null);
@@ -442,6 +444,22 @@ public class TileCalculator {
     	if (tile == null)
     		throw new IllegalArgumentException("Output tensor '" + tensorId + "' does not require tiling.");
     	return outputGrid.get(tensorId).getTilePostionsInImage();
+    }
+    
+    public long[] getNthTileInput(String tensorId, int n) {
+    	List<long[]> tiles = this.getTilePostionsOutputImage(tensorId);
+    	if (tiles.size() >= n) {
+    		throw new IllegalArgumentException();
+    	}
+    	return tiles.get(n);
+    }
+    
+    public long[] getNthTileOutput(String tensorId, int n) {
+    	List<long[]> tiles = this.getTilePostionsOutputImage(tensorId);
+    	if (tiles.size() >= n) {
+    		throw new IllegalArgumentException();
+    	}
+    	return tiles.get(n);
     }
     
     /**
