@@ -22,7 +22,8 @@ package io.bioimage.modelrunner.engine;
 import java.util.List;
 
 import io.bioimage.modelrunner.tensor.Tensor;
-
+import net.imglib2.type.NativeType;
+import net.imglib2.type.numeric.RealType;
 import io.bioimage.modelrunner.exceptions.LoadModelException;
 import io.bioimage.modelrunner.exceptions.RunModelException;
 
@@ -47,7 +48,8 @@ public interface DeepLearningEngineInterface
 	 * TODO should it be like the commented option? ask jean-yves
 	 */
 	//public void run( List< Tensor > inputTensors, List< Tensor > outputTensors ) throws RunModelException;
-	public void run( List< Tensor  < ? > > inputTensors, List< Tensor  < ? > > outputTensors ) throws RunModelException;
+	public <T extends RealType<T> & NativeType<T>, R extends RealType<R> & NativeType<R>>
+	void run( List< Tensor  < T > > inputTensors, List< Tensor  < R > > outputTensors ) throws RunModelException;
 
 	/**
 	 * Load the model with the corresponding engine on the particular
