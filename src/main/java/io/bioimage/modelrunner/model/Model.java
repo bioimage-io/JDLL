@@ -36,6 +36,8 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.LongStream;
 
+import io.bioimage.modelrunner.bioimageio.ImageInfo;
+import io.bioimage.modelrunner.bioimageio.TileCalculator;
 import io.bioimage.modelrunner.bioimageio.bioengine.BioEngineAvailableModels;
 import io.bioimage.modelrunner.bioimageio.bioengine.BioengineInterface;
 import io.bioimage.modelrunner.bioimageio.description.ModelDescriptor;
@@ -51,7 +53,6 @@ import io.bioimage.modelrunner.exceptions.LoadEngineException;
 import io.bioimage.modelrunner.exceptions.LoadModelException;
 import io.bioimage.modelrunner.exceptions.RunModelException;
 import io.bioimage.modelrunner.tensor.Tensor;
-import io.bioimage.modelrunner.tiling.PatchGridCalculator;
 import io.bioimage.modelrunner.tiling.PatchSpec;
 import io.bioimage.modelrunner.tiling.TileGrid;
 import io.bioimage.modelrunner.tiling.TileMaker;
@@ -593,8 +594,13 @@ public class Model
 			throw new IllegalArgumentException("Automatic tiling can only be done if the model contains a Bioiamge.io rdf.yaml specs file.");
 		else if (descriptor == null)
 			descriptor = ModelDescriptorFactory.readFromLocalFile(modelFolder + File.separator + Constants.RDF_FNAME);
-		PatchGridCalculator<R> tileGrid = PatchGridCalculator.build(descriptor, inputTensors);
-		return runTiling(inputTensors, tileGrid, tileCounter);
+		TileCalculator calc = TileCalculator.init(descriptor);
+		List<ImageInfo> imageInfos = inputTensors.stream()
+				.map(tt -> new ImageInfo(tt.getName(), tt.getAxesOrderString(), tt.getData().dimensionsAsLongArray()))
+				.collect(Collectors.toList());
+		List<TileInfo> inputTiles = calc.getOptimalTileSize(imageInfos);
+		TileMaker tiles = TileMaker.build(descriptor, inputTiles);
+		return runTiling(inputTensors, tiles, tileCounter);
 	}
 	
 	/**

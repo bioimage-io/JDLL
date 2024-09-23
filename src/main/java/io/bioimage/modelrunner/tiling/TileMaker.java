@@ -13,9 +13,11 @@ import io.bioimage.modelrunner.bioimageio.description.ModelDescriptor;
 import io.bioimage.modelrunner.bioimageio.description.TensorSpec;
 import io.bioimage.modelrunner.tensor.Tensor;
 import io.bioimage.modelrunner.utils.Constants;
+import net.imglib2.FinalInterval;
 import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.type.NativeType;
 import net.imglib2.type.numeric.RealType;
+import net.imglib2.view.Views;
 
 public class TileMaker {
 	
@@ -257,7 +259,7 @@ public class TileMaker {
     }
 	
 	private void checkTilesCombine() {
-		
+		// TODO 
 	}
 	
 	private void checkAllTensorsDefined() {
@@ -341,7 +343,7 @@ public class TileMaker {
     }
     
     public int getNumberOfTiles() {
-    	return 0;
+    	return inputGrid.get(this.descriptor.getInputTensors().get(0).getTensorID()).getRoiPostionsInImage().size();
     }
     
     public Map<String, Integer> getTilesPerAxis() {
@@ -450,40 +452,53 @@ public class TileMaker {
     	return outputGrid.get(tensorID).getTilePostionsInImage();
     }
     
-    public <T extends NativeType<T> & RealType<T>> RandomAccessibleInterval<T> getNthTileInput(String tensorID, int n, RandomAccessibleInterval<T> rai) {
+    public <T extends NativeType<T> & RealType<T>> RandomAccessibleInterval<T> getNthTileInput(String tensorID, RandomAccessibleInterval<T> rai, int n) {
     	List<long[]> tiles = this.getTilePostionsOutputImage(tensorID);
     	if (tiles.size() >= n) {
-    		throw new IllegalArgumentException();
+    		throw new IllegalArgumentException("There are only " + tiles.size() + " tiles. Tile " + n 
+    				+ " is out of bounds.");
     	}
-    	return null;
+    	long[] minLim = tiles.get(n);
+    	long[] size = this.getInputTileSize(tensorID);
+    	long[] maxLim = new long[size.length];
+    	for (int i = 0; i < size.length; i ++) maxLim[i] = minLim[i] + maxLim[i] - 1;
+		RandomAccessibleInterval<T> tileRai = Views.interval(
+				Views.extendMirrorDouble(rai), new FinalInterval( minLim, maxLim ));
+    	return tileRai;
     }
     
-    public <T extends NativeType<T> & RealType<T>> RandomAccessibleInterval<T> getNthTileOutput(String tensorID, int n, RandomAccessibleInterval<T> rai) {
+    public <T extends NativeType<T> & RealType<T>> RandomAccessibleInterval<T> getNthTileOutput(String tensorID, RandomAccessibleInterval<T> rai, int n) {
     	List<long[]> tiles = this.getTilePostionsOutputImage(tensorID);
     	if (tiles.size() >= n) {
-    		throw new IllegalArgumentException();
+    		throw new IllegalArgumentException("There are only " + tiles.size() + " tiles. Tile " + n 
+    				+ " is out of bounds.");
     	}
-    	return null;
+    	long[] minLim = tiles.get(n);
+    	long[] size = this.getOutputTileSize(tensorID);
+    	long[] maxLim = new long[size.length];
+    	for (int i = 0; i < size.length; i ++) maxLim[i] = minLim[i] + maxLim[i] - 1;
+		RandomAccessibleInterval<T> tileRai = Views.interval(
+				Views.extendMirrorDouble(rai), new FinalInterval( minLim, maxLim ));
+    	return tileRai;
     }
     
-    public <T extends NativeType<T> & RealType<T>> Tensor<T> getNthTileInput(String tensorID, int n, Tensor<T> tensor) {
-    	List<long[]> tiles = this.getTilePostionsOutputImage(tensorID);
-    	if (tiles.size() >= n) {
-    		throw new IllegalArgumentException();
-    	}
-    	return null;
+    public <T extends NativeType<T> & RealType<T>> Tensor<T> getNthTileInput(Tensor<T> tensor, int n) {
+    	RandomAccessibleInterval<T> rai = getNthTileInput(tensor.getName(), tensor.getData(), n);
+    	return Tensor.build(tensor.getName(), tensor.getAxesOrderString(), rai);
     }
     
-    public <T extends NativeType<T> & RealType<T>> Tensor<T> getNthTileOutput(String tensorID, int n, Tensor<T> tensor) {
-    	List<long[]> tiles = this.getTilePostionsOutputImage(tensorID);
-    	if (tiles.size() >= n) {
-    		throw new IllegalArgumentException();
-    	}
-    	return null;
+    public <T extends NativeType<T> & RealType<T>> Tensor<T> getNthTileOutput(Tensor<T> tensor, int n) {
+    	RandomAccessibleInterval<T> rai = getNthTileOutput(tensor.getName(), tensor.getData(), n);
+    	return Tensor.build(tensor.getName(), tensor.getAxesOrderString(), rai);
     }
     
     public long[] getOutputImageSize(String tensorID) {
-    	return null;
+    	TileInfo tile = this.outputTileInfo.stream()
+    			.filter(tt -> tt.getName().equals(tensorID)).findFirst().orElse(null);
+    	if (tile == null)
+    		throw new IllegalArgumentException("The tensor ID proposed does not correspond to an output tensor: "
+    				+ "'" + tensorID + "'.");
+    	return tile.getImageDimensions();
     }
     
     /**
