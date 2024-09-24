@@ -161,7 +161,7 @@ public interface ModelDescriptor {
         }
 
         return tts.stream()
-                .filter(t -> t.getTensorID().equals(name))
+                .filter(t -> t.getName().equals(name))
                 .findAny().orElse(null);
     }
 

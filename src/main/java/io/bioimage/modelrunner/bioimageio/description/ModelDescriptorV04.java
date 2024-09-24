@@ -611,7 +611,7 @@ public class ModelDescriptorV04 implements ModelDescriptor
         }
 
         return input_tensors.stream()
-                .filter(t -> t.getTensorID().equals(name))
+                .filter(t -> t.getName().equals(name))
                 .findAny().orElse(null);
     }
 
@@ -630,7 +630,7 @@ public class ModelDescriptorV04 implements ModelDescriptor
         }
 
         return output_tensors.stream()
-                .filter(t -> t.getTensorID().equals(name))
+                .filter(t -> t.getName().equals(name))
                 .findAny().orElse(null);
     }
 

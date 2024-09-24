@@ -71,13 +71,13 @@ public class TileCalculator {
 		List<TileInfo> firstIterationInputs = new ArrayList<TileInfo>();
 		for (TensorSpec tt : this.descriptor.getInputTensors()) {
 			ImageInfo im = inputInfo.stream()
-					.filter(ii -> ii.getTensorName().equals(tt.getTensorID())).findFirst().orElse(null);
+					.filter(ii -> ii.getTensorName().equals(tt.getName())).findFirst().orElse(null);
 			if (im == null) 
-				throw new IllegalArgumentException("No data was provided for input tensor: " + tt.getTensorID());
+				throw new IllegalArgumentException("No data was provided for input tensor: " + tt.getName());
 			
 			long[] tileSize = getOptimalTileSize(tt, im.getAxesOrder(), im.getDimensions());
 			
-			firstIterationInputs.add(TileInfo.build(tt.getTensorID(), im.getDimensions(), im.getAxesOrder(), tileSize, im.getAxesOrder()));
+			firstIterationInputs.add(TileInfo.build(tt.getName(), im.getDimensions(), im.getAxesOrder(), tileSize, im.getAxesOrder()));
 		}
 		
 		if (!tiling)
@@ -174,7 +174,7 @@ public class TileCalculator {
 				if (ax.getReferenceTensor() == null)
 					continue;
 				TensorSpec inputT = this.descriptor.findInputTensor(ax.getReferenceTensor());
-				TileInfo im = inputs.stream().filter(in -> in.getName().equals(inputT.getTensorID())).findFirst().orElse(null);
+				TileInfo im = inputs.stream().filter(in -> in.getName().equals(inputT.getName())).findFirst().orElse(null);
 				String refAxis = ax.getReferenceAxis();
 				int index = im.getTileAxesOrder().indexOf(refAxis);
 				Axis inAx = inputT.getAxesInfo().getAxis(refAxis);

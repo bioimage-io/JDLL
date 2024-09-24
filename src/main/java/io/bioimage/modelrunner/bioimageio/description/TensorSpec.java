@@ -32,7 +32,7 @@ public interface TensorSpec {
 	
 
     
-    public String getTensorID();
+    public String getName();
 
     public String getDescription();
     

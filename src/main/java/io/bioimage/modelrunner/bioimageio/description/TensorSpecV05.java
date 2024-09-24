@@ -123,7 +123,7 @@ public class TensorSpecV05 implements TensorSpec {
         }
     }
     
-    public String getTensorID() {
+    public String getName() {
     	return this.id;
     }
     

@@ -678,8 +678,8 @@ public class Model
 	List<Tensor<T>> runTiling(List<Tensor<R>> inputTensors, TileMaker tiles, TilingConsumer tileCounter) throws RunModelException {
 		List<Tensor<T>> outputTensors = new ArrayList<Tensor<T>>();
 		for (TensorSpec tt : descriptor.getOutputTensors()) {
-			long[] dims = tiles.getOutputImageSize(tt.getTensorID());
-			outputTensors.add((Tensor<T>) Tensor.buildBlankTensor(tt.getTensorID(), 
+			long[] dims = tiles.getOutputImageSize(tt.getName());
+			outputTensors.add((Tensor<T>) Tensor.buildBlankTensor(tt.getName(), 
 																	tt.getAxesOrder(), 
 																	dims, 
 																	(T) new FloatType()));

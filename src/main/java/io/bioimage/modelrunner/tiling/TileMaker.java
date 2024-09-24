@@ -77,7 +77,7 @@ public class TileMaker {
 					TensorSpec intt = descriptor.getInputTensors().stream()
 							.filter(t -> t.isImage()).findFirst().orElse(null);
 					TileInfo inTile = inputTileInfo.stream()
-							.filter(t -> t.getName().equals(intt.getTensorID())).findFirst().orElse(null);
+							.filter(t -> t.getName().equals(intt.getName())).findFirst().orElse(null);
 					int indTile = inTile.getTileAxesOrder().indexOf(ax.getAxis());
 					int indIm = inTile.getImageAxesOrder().indexOf(ax.getAxis());
 					if (indTile == -1 || indIm == -1)
@@ -112,7 +112,7 @@ public class TileMaker {
 							+ " so we can troubleshoot at: " + Constants.ISSUES_LINK);
 				}
 			}
-			outputTileInfo.add(TileInfo.build(tt.getTensorID(), imagSize, outAxesOrder, tileSize, outAxesOrder));
+			outputTileInfo.add(TileInfo.build(tt.getName(), imagSize, outAxesOrder, tileSize, outAxesOrder));
 		}
 	}
 	
@@ -247,9 +247,9 @@ public class TileMaker {
 	private void checkAllTensorsDefined() {
 		for (TensorSpec tensor : this.descriptor.getInputTensors()) {
 			TileInfo info = inputTileInfo.stream()
-					.filter(tt -> tt.getName().equals(tensor.getTensorID())).findFirst().orElse(null);
+					.filter(tt -> tt.getName().equals(tensor.getName())).findFirst().orElse(null);
 			if (info == null) {
-				throw new IllegalArgumentException("Tiling info for input tensor '" + tensor.getTensorID()
+				throw new IllegalArgumentException("Tiling info for input tensor '" + tensor.getName()
 													+ "' not defined.");
 			}
 		}
@@ -258,17 +258,17 @@ public class TileMaker {
 	private void calculate() {
 		for (TensorSpec tt : this.descriptor.getInputTensors()) {
 			TileInfo tile = inputTileInfo.stream()
-					.filter(til -> til.getName().equals(tt.getTensorID())).findFirst().orElse(null);
+					.filter(til -> til.getName().equals(tt.getName())).findFirst().orElse(null);
 			PatchSpec patch = computePatchSpecs(tt, tile);
-			input.put(tt.getTensorID(), patch);
-			inputGrid.put(tt.getTensorID(), TileGrid.create(patch));
+			input.put(tt.getName(), patch);
+			inputGrid.put(tt.getName(), TileGrid.create(patch));
 		}
 		for (TensorSpec tt : this.descriptor.getOutputTensors()) {
 			TileInfo tile = outputTileInfo.stream()
-					.filter(til -> til.getName().equals(tt.getTensorID())).findFirst().orElse(null);
+					.filter(til -> til.getName().equals(tt.getName())).findFirst().orElse(null);
 			PatchSpec patch = computePatchSpecs(tt, tile);
-			output.put(tt.getTensorID(), patch);
-			outputGrid.put(tt.getTensorID(), TileGrid.create(patch));
+			output.put(tt.getName(), patch);
+			outputGrid.put(tt.getName(), TileGrid.create(patch));
 		}
 	}
 
@@ -321,11 +321,11 @@ public class TileMaker {
             .map(i -> (int) Math.max( paddingSize[1][i], 
             		tileSize[i] - imSize[i] - paddingSize[0][i])).toArray();
 
-        return PatchSpec.create(spec.getTensorID(), tileSize, patchGridSize, paddingSize, imSize);
+        return PatchSpec.create(spec.getName(), tileSize, patchGridSize, paddingSize, imSize);
     }
     
     public int getNumberOfTiles() {
-    	return inputGrid.get(this.descriptor.getInputTensors().get(0).getTensorID()).getRoiPostionsInImage().size();
+    	return inputGrid.get(this.descriptor.getInputTensors().get(0).getName()).getRoiPostionsInImage().size();
     }
     
     public Map<String, Integer> getTilesPerAxis() {
@@ -352,7 +352,7 @@ public class TileMaker {
      */
     public List<String> getInputTensorNames() {
     	return descriptor.getInputTensors().stream()
-    			.map(tt -> tt.getTensorID()).collect(Collectors.toList());
+    			.map(tt -> tt.getName()).collect(Collectors.toList());
     }
     
     /**
@@ -361,7 +361,7 @@ public class TileMaker {
      */
     public List<String> getOutputTensorNames() {
     	return descriptor.getOutputTensors().stream()
-    			.map(tt -> tt.getTensorID()).collect(Collectors.toList());
+    			.map(tt -> tt.getName()).collect(Collectors.toList());
     }
     
     /**

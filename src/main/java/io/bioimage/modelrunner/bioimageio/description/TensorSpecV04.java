@@ -120,7 +120,7 @@ public class TensorSpecV04 implements TensorSpec {
     	this.testTensorName = testTensorName;
     }
     
-    public String getTensorID() {
+    public String getName() {
     	return this.id;
     }
     

@@ -39,6 +39,8 @@ import java.util.stream.LongStream;
 
 import net.imglib2.img.ImgFactory;
 import net.imglib2.img.array.ArrayImgFactory;
+import net.imglib2.type.NativeType;
+import net.imglib2.type.numeric.RealType;
 import net.imglib2.type.numeric.real.FloatType;
 
 /**
@@ -121,11 +123,12 @@ public class ExampleLoadAndRunAllBmzModels {
 	 * 	descriptor containing the rdf.yaml information
 	 * @throws Exception if any error occurs
 	 */
-	public static void loadAndRunModel(String modelFolder, ModelDescriptor descriptor) throws Exception {
+	public static <T extends RealType<T> & NativeType<T>, R extends RealType<R> & NativeType<R>>
+	void loadAndRunModel(String modelFolder, ModelDescriptor descriptor) throws Exception {
 		Model model = Model.createBioimageioModel(modelFolder, ENGINES_DIR);
 		model.loadModel();
-		List<Tensor<?>> inputs = createInputs(descriptor);
-		List<Tensor<?>> outputs = createOutputs(descriptor);
+		List<Tensor<T>> inputs = createInputs(descriptor);
+		List<Tensor<R>> outputs = createOutputs(descriptor);
 		model.runModel(inputs, outputs);
 		for (Tensor<?> tt : outputs) {
 			if (tt.isEmpty())
@@ -144,19 +147,19 @@ public class ExampleLoadAndRunAllBmzModels {
 	 * 	file containing the information
 	 * @return the input Tensor list
 	 */
-	private static List<Tensor<?>> createInputs(ModelDescriptor descriptor) {
-		List<Tensor<?>> inputs = new ArrayList<Tensor<?>>();
+	private static <T extends RealType<T> & NativeType<T>> List<Tensor<T>> createInputs(ModelDescriptor descriptor) {
+		List<Tensor<T>> inputs = new ArrayList<Tensor<T>>();
 		final ImgFactory< FloatType > imgFactory = new ArrayImgFactory<>( new FloatType() );
 		
 		for ( TensorSpec it : descriptor.getInputTensors()) {
 			String axesStr = it.getAxesOrder();
 			String name = it.getName();
-			int[] min = it.getShape().getTileMinimumSize();
-			int[] step = it.getShape().getTileStep();
+			int[] min = it.getMinTileSizeArr();
+			int[] step = it.getTileStepArr();
 			long[] imSize = LongStream.range(0, step.length)
 					.map(i -> min[(int) i] + step[(int) i]).toArray();
 			Tensor<FloatType> tt = Tensor.build(name, axesStr, imgFactory.create(imSize));
-			inputs.add(tt);
+			inputs.add((Tensor<T>) tt);
 		}
 		return inputs;
 	}
@@ -168,13 +171,13 @@ public class ExampleLoadAndRunAllBmzModels {
 	 * 	file containing the information
 	 * @return the output Tensor list
 	 */
-	private static List<Tensor<?>> createOutputs(ModelDescriptor descriptor) {
-		List<Tensor<?>> outputs = new ArrayList<Tensor<?>>();
+	private static <T extends RealType<T> & NativeType<T>> List<Tensor<T>> createOutputs(ModelDescriptor descriptor) {
+		List<Tensor<T>> outputs = new ArrayList<Tensor<T>>();
 		
 		for ( TensorSpec ot : descriptor.getOutputTensors()) {
 			String axesStr = ot.getAxesOrder();
 			String name = ot.getName();
-			Tensor<?> tt = Tensor.buildEmptyTensor(name, axesStr);
+			Tensor<T> tt = Tensor.buildEmptyTensor(name, axesStr);
 			outputs.add(tt);
 		}
 		return outputs;
