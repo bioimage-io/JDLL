@@ -102,7 +102,8 @@ public class TileGrid
                     .map(i -> Math.min(roiSize[(int) i] * patchIndex[(int) i], imageDims[(int) i] - roiSize[(int) i])).toArray();
 			ps.roiPositionsInImage.add(roiStart);
         	long[] patchStart = LongStream.range(0, patchIndex.length)
-                    .map(i -> Math.min(roiSize[(int) i] * patchIndex[(int) i] - padSize[0][(int) i], imageDims[(int) i] - roiSize[(int) i]))
+                    .map(i -> Math.min(roiSize[(int) i] * patchIndex[(int) i] - padSize[0][(int) i], 
+                    		imageDims[(int) i] - roiSize[(int) i] - padSize[0][(int) i]))
                     .toArray();
         	ps.tilePostionsInImage.add(patchStart);
         }
