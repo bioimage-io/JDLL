@@ -73,7 +73,7 @@ public class TileMaker {
 							+ "Model specs too complex for JDLL. "
 							+ "Please contact the team and create and issue attaching the rdf.yaml file"
 							+ " so we can troubleshoot at: " + Constants.ISSUES_LINK);
-				} else if (ax.getStep() == 0 && ax.getReferenceTensor() == null) {
+				} else if (ax.getStep() == 0 && ax.getMin() != 0 && ax.getReferenceTensor() == null) {
 					TensorSpec intt = descriptor.getInputTensors().stream()
 							.filter(t -> t.isImage()).findFirst().orElse(null);
 					TileInfo inTile = inputTileInfo.stream()
@@ -92,31 +92,13 @@ public class TileMaker {
 								+ "Please contact the team and create and issue attaching the rdf.yaml file"
 								+ " so we can troubleshoot at: " + Constants.ISSUES_LINK);
 					imagSize[i] = (long) (ax.getMin() * factor);
-					tileSize[i] = (long) (ax.getMin() * factor);
-				} else if (ax.getStep() == 0) {
-					TileInfo inTile = inputTileInfo.stream()
-							.filter(t -> t.getName().equals(ax.getReferenceTensor())).findFirst().orElse(null);
-					int indTile = inTile.getTileAxesOrder().indexOf(ax.getReferenceAxis());
-					int indIm = inTile.getImageAxesOrder().indexOf(ax.getReferenceAxis());
-					if (indTile == -1 || indIm == -1)
-						throw new IllegalArgumentException(""
-								+ "Model specs too complex for JDLL. "
-								+ "Please contact the team and create and issue attaching the rdf.yaml file"
-								+ " so we can troubleshoot at: " + Constants.ISSUES_LINK);
-					double factor = (double) inTile.getImageDims()[indIm] / inTile.getTileDims()[indTile];
-					if (Math.floor(ax.getMin() * factor) != ax.getMin() * factor)
-						throw new IllegalArgumentException(""
-								+ "Model specs too complex for JDLL. "
-								+ "Please contact the team and create and issue attaching the rdf.yaml file"
-								+ " so we can troubleshoot at: " + Constants.ISSUES_LINK);
-					imagSize[i] = (long) (ax.getMin() * factor);
-					tileSize[i] = (long) (ax.getMin() * factor);
+					tileSize[i] = (long) (ax.getMin());
 				} else if (ax.getReferenceTensor() == null) {
 					throw new IllegalArgumentException(""
 							+ "Model specs too complex for JDLL. "
 							+ "Please contact the team and create and issue attaching the rdf.yaml file"
 							+ " so we can troubleshoot at: " + Constants.ISSUES_LINK);
-				} else if (ax.getStep() != 0) {
+				} else if (ax.getReferenceTensor() != null) {
 					TileInfo inTile = inputTileInfo.stream()
 							.filter(t -> t.getName().equals(ax.getReferenceTensor())).findFirst().orElse(null);
 					int indTile = inTile.getTileAxesOrder().indexOf(ax.getReferenceAxis());
@@ -191,7 +173,7 @@ public class TileMaker {
     			if (tileDims[i] != min[i] && step[i] == 0)
     				throw new IllegalArgumentException("Invalid tile size for axis '" + axesTile.split("")[i].toUpperCase()
     						+ "'. Only allowed tile size for this axis is: " + min[i]);
-    			else if ((tileDims[i] - min[i]) % step[i] != 0)
+    			else if (step[i] != 0 && (tileDims[i] - min[i]) % step[i] != 0)
     				throw new IllegalArgumentException("Invalid tile size for axis '" + axesTile.split("")[i].toUpperCase()
     						+ "'. Tile size for this axis should satisfy: " + min[i] + " + n x " + step[i]
     						+ " where n can be any positive integer.");
