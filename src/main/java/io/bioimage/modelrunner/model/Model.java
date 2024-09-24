@@ -563,8 +563,8 @@ public class Model
 	 *  rdf.yaml specs file in the model folder. 
 	 */
 	public <T extends RealType<T> & NativeType<T>, R extends RealType<R> & NativeType<R>> 
-	List<Tensor<T>> runBioimageioModelOnImgLib2WithTiling(List<Tensor<R>> inputTensors) throws ModelSpecsException, RunModelException, FileNotFoundException, IOException {
-		return runBioimageioModelOnImgLib2WithTiling(inputTensors, new TilingConsumer());
+	List<Tensor<T>> runBMZ(List<Tensor<R>> inputTensors) throws ModelSpecsException, RunModelException, FileNotFoundException, IOException {
+		return runBMZ(inputTensors, new TilingConsumer());
 	}
 	
 	/**
@@ -590,7 +590,7 @@ public class Model
 	 *  rdf.yaml specs file in the model folder. 
 	 */
 	public <T extends RealType<T> & NativeType<T>, R extends RealType<R> & NativeType<R>> 
-	List<Tensor<T>> runBioimageioModelOnImgLib2WithTiling(List<Tensor<R>> inputTensors, TilingConsumer tileCounter) throws ModelSpecsException, RunModelException, FileNotFoundException, IOException {
+	List<Tensor<T>> runBMZ(List<Tensor<R>> inputTensors, TilingConsumer tileCounter) throws ModelSpecsException, RunModelException, FileNotFoundException, IOException {
 		if (!this.isLoaded())
 			throw new RunModelException("Please first load the model.");
 		if (descriptor == null && !(new File(modelFolder, Constants.RDF_FNAME).isFile()))
@@ -627,9 +627,9 @@ public class Model
 	 *  rdf.yaml specs file in the model folder. 
 	 */
 	public <T extends RealType<T> & NativeType<T>, R extends RealType<R> & NativeType<R>> 
-	List<Tensor<T>> runBioimageioModelOnImgLib2WithTiling(List<Tensor<R>> inputTensors, 
-			TileMaker tiles) throws ModelSpecsException, RunModelException {
-		return runBioimageioModelOnImgLib2WithTiling(inputTensors, tiles, null);
+	List<Tensor<T>> runBMZ(List<Tensor<R>> inputTensors, 
+			List<TileInfo> tiles) throws ModelSpecsException, RunModelException {
+		return runBMZ(inputTensors, tiles, null);
 	}
 	
 	/**
@@ -655,8 +655,8 @@ public class Model
 	 *  rdf.yaml specs file in the model folder. 
 	 */
 	public <T extends RealType<T> & NativeType<T>, R extends RealType<R> & NativeType<R>> 
-	List<Tensor<T>> runBioimageioModelOnImgLib2WithTiling(List<Tensor<R>> inputTensors, 
-			TileMaker tiles, TilingConsumer tileCounter) throws ModelSpecsException, RunModelException {
+	List<Tensor<T>> runBMZ(List<Tensor<R>> inputTensors, 
+			List<TileInfo> tiles, TilingConsumer tileCounter) throws ModelSpecsException, RunModelException {
 		
 		if (!this.isLoaded())
 			throw new RunModelException("Please first load the model.");
@@ -669,8 +669,8 @@ public class Model
 				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
-		
-		return runTiling(inputTensors, tiles, tileCounter);
+		TileMaker maker = TileMaker.build(descriptor, tiles);
+		return runTiling(inputTensors, maker, tileCounter);
 	}
 	
 	@SuppressWarnings("unchecked")
@@ -740,9 +740,11 @@ public class Model
 		l.add((Tensor<T>) Tensor.build("input0", "bcyx", im));
 		Model model = createBioimageioModel(mm);
 		model.loadModel();
-		Map<String, int[]> tilingList = new LinkedHashMap<String, int[]>();
-		tilingList.put("input0", new int[] {1, 2, 256, 256});
-		List<Tensor<T>> out = model.runBioimageioModelOnImgLib2WithTiling(l);
+		TileInfo tile = TileInfo.build(l.get(0).getName(), new long[] {1, 1, 512, 512}, 
+				l.get(0).getAxesOrderString(), new long[] {1, 1, 512, 512}, l.get(0).getAxesOrderString());
+		List<TileInfo> tileList = new ArrayList<TileInfo>();
+		tileList.add(tile);
+		List<Tensor<T>> out = model.runBMZ(l, tileList);
 		System.out.println(false);
 		
 	}
@@ -831,7 +833,7 @@ public class Model
 	}
 	
 	/**
-	 * Create consumer used to be used with {@link Model} for the methods {@link #runBioimageioModelOnImgLib2WithTiling(List, TilingConsumer)}
+	 * Create consumer used to be used with {@link Model} for the methods {@link #runBMZ(List, TilingConsumer)}
 	 * or {@link #runBioimageioModelOnImgLib2WithTiling(List, Map, TilingConsumer)}.
 	 * The coonsumer helps to track the number if tiles that have already been processed.
 	 * @return a consumer to track the tiling process
