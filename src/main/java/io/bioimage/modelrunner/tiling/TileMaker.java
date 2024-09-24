@@ -435,15 +435,15 @@ public class TileMaker {
     }
     
     public <T extends NativeType<T> & RealType<T>> RandomAccessibleInterval<T> getNthTileInput(String tensorID, RandomAccessibleInterval<T> rai, int n) {
-    	List<long[]> tiles = this.getTilePostionsOutputImage(tensorID);
-    	if (tiles.size() >= n) {
+    	List<long[]> tiles = this.getTilePostionsInputImage(tensorID);
+    	if (tiles.size() <= n) {
     		throw new IllegalArgumentException("There are only " + tiles.size() + " tiles. Tile " + n 
     				+ " is out of bounds.");
     	}
     	long[] minLim = tiles.get(n);
     	long[] size = this.getInputTileSize(tensorID);
     	long[] maxLim = new long[size.length];
-    	for (int i = 0; i < size.length; i ++) maxLim[i] = minLim[i] + maxLim[i] - 1;
+    	for (int i = 0; i < size.length; i ++) maxLim[i] = minLim[i] + size[i] - 1;
 		RandomAccessibleInterval<T> tileRai = Views.interval(
 				Views.extendMirrorDouble(rai), new FinalInterval( minLim, maxLim ));
     	return tileRai;
@@ -451,14 +451,14 @@ public class TileMaker {
     
     public <T extends NativeType<T> & RealType<T>> RandomAccessibleInterval<T> getNthTileOutput(String tensorID, RandomAccessibleInterval<T> rai, int n) {
     	List<long[]> tiles = this.getTilePostionsOutputImage(tensorID);
-    	if (tiles.size() >= n) {
+    	if (tiles.size() <= n) {
     		throw new IllegalArgumentException("There are only " + tiles.size() + " tiles. Tile " + n 
     				+ " is out of bounds.");
     	}
     	long[] minLim = tiles.get(n);
     	long[] size = this.getOutputTileSize(tensorID);
     	long[] maxLim = new long[size.length];
-    	for (int i = 0; i < size.length; i ++) maxLim[i] = minLim[i] + maxLim[i] - 1;
+    	for (int i = 0; i < size.length; i ++) maxLim[i] = minLim[i] + size[i] - 1;
 		RandomAccessibleInterval<T> tileRai = Views.interval(
 				Views.extendMirrorDouble(rai), new FinalInterval( minLim, maxLim ));
     	return tileRai;
