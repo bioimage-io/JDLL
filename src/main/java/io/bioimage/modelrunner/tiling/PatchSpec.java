@@ -86,62 +86,6 @@ public class PatchSpec
     }
     
     /**
-     * TODO this method should be per image, not in total??
-     * TODO this method should be per image, not in total??
-     * TODO this method should be per image, not in total??
-     * TODO this method should be per image, not in total??
-     * Obtain the number of patches in each axes for a list of input patch specs.
-     * When tiling is allowed, only one patch grid is permitted. If among the tensors
-     * there are one or more that do not allow tiling, then two patch sizes are allowed,
-     * the one for the tensors that allow tiling and the one for the ones that not (that will
-     * just be 1s in every axes).
-     * In the case there exist tensors that allow tiling, the grid size for those will be the
-     * one returned
-     * @param patches
-     * 	list of specs for the tiling strategy of a list of tensors
-     * @return the number of patches in each axes
-     */
-    public static int[] getGridSize(List<PatchSpec> patches) {
-    	// The minimum possible grid is just one patch in every direction. This is the
-    	// grid if no tiling is allowed
-    	int[] grid = new int[]{1, 1, 1, 1, 1};
-    	// If there is any different grid, that will be the absolute one
-    	for (PatchSpec pp : patches) {
-    		if (!PatchGridCalculator.compareTwoArrays(grid, pp.getTileGrid()))
-    			return pp.getTileGrid();
-    	}
-    	return grid;
-    }
-    
-    /**
-     * TODO this method should be per image, not in total??
-     * TODO this method should be per image, not in total??
-     * TODO this method should be per image, not in total??
-     * TODO this method should be per image, not in total??
-     * Obtain the number of patches in each axes for a list of input patch specs.
-     * When tiling is allowed, only one patch grid is permitted. If among the tensors
-     * there are one or more that do not allow tiling, then two patch sizes are allowed,
-     * the one for the tensors that allow tiling and the one for the ones that not (that will
-     * just be 1s in every axes).
-     * In the case there exist tensors that allow tiling, the grid size for those will be the
-     * one returned
-     * @param patches
-     * 	map containing tiling specs per tensor
-     * @return the number of patches in each axes
-     */
-    public static int[] getGridSize(Map<String, PatchSpec> patches) {
-    	// The minimum possible grid is just one patch in every direction. This is the
-    	// grid if no tiling is allowed
-    	int[] grid = new int[]{1, 1, 1, 1, 1};
-    	// If there is any different grid, that will be the absolute one
-    	for (PatchSpec pp : patches.values()) {
-    		if (!PatchGridCalculator.compareTwoArrays(grid, pp.getTileGrid()))
-    			return pp.getTileGrid();
-    	}
-    	return grid;
-    }
-    
-    /**
      * Return the PatchSpec corresponding to the tensor called by the name defined
      * @param specs
      * 	list of patch specs
