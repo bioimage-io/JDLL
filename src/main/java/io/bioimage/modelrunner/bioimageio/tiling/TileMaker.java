@@ -1,4 +1,4 @@
-package io.bioimage.modelrunner.tiling;
+package io.bioimage.modelrunner.bioimageio.tiling;
 
 import java.util.ArrayList;
 import java.util.Arrays;

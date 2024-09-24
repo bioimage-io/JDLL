@@ -1,4 +1,4 @@
-package io.bioimage.modelrunner.tiling;
+package io.bioimage.modelrunner.bioimageio.tiling;
 
 public class TileInfo {
 	

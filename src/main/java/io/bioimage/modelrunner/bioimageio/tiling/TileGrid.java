@@ -17,7 +17,7 @@
  * limitations under the License.
  * #L%
  */
-package io.bioimage.modelrunner.tiling;
+package io.bioimage.modelrunner.bioimageio.tiling;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -81,7 +81,7 @@ public class TileGrid
      * @return an instance of {@link TileGrid} that contains the information about where the tiles need to be 
      * 	positioned with respect to the original image
      */
-    public static TileGrid create(PatchSpec tileSpecs)
+    protected static TileGrid create(PatchSpec tileSpecs)
     {
         TileGrid ps = new TileGrid();
         ps.tensorName = tileSpecs.getTensorName();
@@ -114,7 +114,7 @@ public class TileGrid
      * 
      * @return name of the tensor that is going to be processed
      */
-    public String getTensorName() {
+    protected String getTensorName() {
     	return tensorName;
     }
     
@@ -122,7 +122,7 @@ public class TileGrid
      * 
      * @return size of the tile that is going to be used to process the image
      */
-    public long[] getTileSize() {
+    protected long[] getTileSize() {
     	return this.tileSize;
     }
     
@@ -130,7 +130,7 @@ public class TileGrid
      * 
      * @return size of the roi of each of the tiles that is going to be used to process the image
      */
-    public int[] getRoiSize() {
+    protected int[] getRoiSize() {
     	return this.roiSize;
     }
     
@@ -140,7 +140,7 @@ public class TileGrid
      * respect to the original image of the tensor.
      * The positions might be negative as the image that is going to be processed might have padding on the edges
      */
-    public List<long[]> getTilePostionsInImage() {
+    protected List<long[]> getTilePostionsInImage() {
     	return this.tilePostionsInImage;
     }
     
@@ -148,7 +148,7 @@ public class TileGrid
      * 
      * @return the positions of the roi in each of the tiles that are going to be used
      */
-    public List<long[]> getRoiPositionsInTile() {
+    protected List<long[]> getRoiPositionsInTile() {
     	return this.roiPositionsInTile;
     }
     
@@ -157,7 +157,7 @@ public class TileGrid
      * @return the positions of the roi of each of the tiles in the original image. Where the ROIs are
      * inserted on the original image.
      */
-    public List<long[]> getRoiPostionsInImage() {
+    protected List<long[]> getRoiPostionsInImage() {
     	return this.roiPositionsInImage;
     }
 

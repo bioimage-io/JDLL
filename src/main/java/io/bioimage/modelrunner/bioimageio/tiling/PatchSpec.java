@@ -17,11 +17,10 @@
  * limitations under the License.
  * #L%
  */
-package io.bioimage.modelrunner.tiling;
+package io.bioimage.modelrunner.bioimageio.tiling;
 
 import java.util.Arrays;
 import java.util.List;
-import java.util.Map;
 
 /**
  * Patch specification providing information about the patch size and patch grid size.
@@ -69,7 +68,7 @@ public class PatchSpec
      * 		  The original size of the image/tensor that is going to be tiled
      * @return The create patch specification.
      */
-    public static PatchSpec create(String tensorName, long[] patchInputSize, int[] patchGridSize, 
+    protected static PatchSpec create(String tensorName, long[] patchInputSize, int[] patchGridSize, 
     		int[][] patchPaddingSize, long[] nonTiledTensorDims)
     {
         PatchSpec ps = new PatchSpec();
@@ -86,22 +85,10 @@ public class PatchSpec
     }
     
     /**
-     * Return the PatchSpec corresponding to the tensor called by the name defined
-     * @param specs
-     * 	list of patch specs
-     * @param name
-     * 	name of the tensor of interest
-     * @return the patch specs of the tensor if interest
-     */
-    public static PatchSpec getPatchSpecFromListByName(List<PatchSpec> specs, String name) {
-    	return specs.stream().filter(pp -> pp.getTensorName().equals(name)).findAny().orElse(null);
-    }
-    
-    /**
      * GEt the name of the tensor
      * @return the name of the tensor
      */
-    public String getTensorName() {
+    protected String getTensorName() {
     	return tensorName;
     }
     
@@ -109,14 +96,14 @@ public class PatchSpec
      * The dimensions of the tensor
      * @return the dimensions of the tensor that is going to be tiled
      */
-    public long[] getNonTiledTensorDims() {
+    protected long[] getNonTiledTensorDims() {
     	return nonTiledTensorDims;
     }
 
     /**
      * @return Input patch size. The patch taken from the input sequence including the halo.
      */
-    public long[] getTileSize()
+    protected long[] getTileSize()
     {
         return patchInputSize;
     }
@@ -125,7 +112,7 @@ public class PatchSpec
      * @return The patch grid size. The number of patches in each axis used to cover the entire sequence. It should be computed from the output patch and input
      *         sequence sizes.
      */
-    public int[] getTileGrid()
+    protected int[] getTileGrid()
     {
         return patchGridSize;
     }
@@ -133,7 +120,7 @@ public class PatchSpec
     /**
      * @return The padding size used on each patch.
      */
-    public int[][] getPadding()
+    protected int[][] getPadding()
     {
         return patchPaddingSize;
     }

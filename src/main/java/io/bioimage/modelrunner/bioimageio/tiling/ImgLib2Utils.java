@@ -17,7 +17,7 @@
  * limitations under the License.
  * #L%
  */
-package io.bioimage.modelrunner.tiling;
+package io.bioimage.modelrunner.bioimageio.tiling;
 
 import java.util.stream.LongStream;
 

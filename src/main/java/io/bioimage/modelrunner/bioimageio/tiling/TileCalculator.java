@@ -1,4 +1,4 @@
-package io.bioimage.modelrunner.bioimageio;
+package io.bioimage.modelrunner.bioimageio.tiling;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -12,7 +12,7 @@ import java.util.stream.LongStream;
 import io.bioimage.modelrunner.bioimageio.description.Axis;
 import io.bioimage.modelrunner.bioimageio.description.ModelDescriptor;
 import io.bioimage.modelrunner.bioimageio.description.TensorSpec;
-import io.bioimage.modelrunner.tiling.TileInfo;
+import io.bioimage.modelrunner.bioimageio.tiling.TileInfo;
 import io.bioimage.modelrunner.utils.Constants;
 
 public class TileCalculator {
