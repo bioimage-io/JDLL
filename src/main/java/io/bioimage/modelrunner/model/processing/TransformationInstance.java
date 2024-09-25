@@ -28,6 +28,7 @@ import java.lang.reflect.Parameter;
 import java.util.List;
 import java.util.Map;
 
+import io.bioimage.modelrunner.apposed.appose.Types;
 import io.bioimage.modelrunner.bioimageio.description.TransformSpec;
 import io.bioimage.modelrunner.tensor.Tensor;
 import io.bioimage.modelrunner.transformations.BinarizeTransformation;
@@ -35,11 +36,6 @@ import net.imglib2.type.NativeType;
 import net.imglib2.type.numeric.RealType;
 
 /**
- * TODO work on the exceptions
- * TODO work on the exceptions
- * TODO work on the exceptions
- * TODO work on the exceptions
- * TODO work on the exceptions
  * 
  * @author Carlos Jaier Garcia Lopez de Haro
  */
@@ -58,34 +54,39 @@ public class TransformationInstance {
 	
 	private final static String RUN_INPLACE_NAME = "applyInPlace";
 	
-	protected TransformationInstance(TransformSpec transform) throws ClassNotFoundException, InstantiationException, IllegalAccessException, IllegalArgumentException, InvocationTargetException, NoSuchMethodException, SecurityException {
+	protected TransformationInstance(TransformSpec transform) throws RuntimeException, IllegalArgumentException {
 		this.name = transform.getName();
 		this.args = transform.getKwargs();
 		this.build();
 	}
 	
-	public static TransformationInstance create(TransformSpec transform) throws ClassNotFoundException, InstantiationException, IllegalAccessException, IllegalArgumentException, InvocationTargetException, NoSuchMethodException, SecurityException {
+	public static TransformationInstance create(TransformSpec transform) throws RuntimeException, IllegalArgumentException {
 		return new TransformationInstance(transform);
 	}
 	
 	public <T extends RealType<T> & NativeType<T>, R extends RealType<R> & NativeType<R>>
-	List<Tensor<R>> run(Tensor<T> tensor) throws NoSuchMethodException, SecurityException, IllegalAccessException, IllegalArgumentException, InvocationTargetException{
+	List<Tensor<R>> run(Tensor<T> tensor) throws RuntimeException {
 		return run(tensor, false);
 	}
 	
 	public <T extends RealType<T> & NativeType<T>, R extends RealType<R> & NativeType<R>>
-	List<Tensor<R>> run(Tensor<T> tensor, boolean inplace) throws NoSuchMethodException, SecurityException, IllegalAccessException, IllegalArgumentException, InvocationTargetException {
+	List<Tensor<R>> run(Tensor<T> tensor, boolean inplace) throws RuntimeException {
 		Method m;
-		if (inplace)
-			m = cls.getMethod(RUN_INPLACE_NAME, Tensor.class);
-		else
-			m = cls.getMethod(RUN_NAME, Tensor.class);
+		try {
+			if (inplace)
+				m = cls.getMethod(RUN_INPLACE_NAME, Tensor.class);
+			else
+				m = cls.getMethod(RUN_NAME, Tensor.class);
 			
-		m.invoke(this.instance, tensor);
-		return null;
+			m.invoke(this.instance, tensor);
+			return null;
+		} catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException 
+				| NoSuchMethodException | SecurityException e) {
+			throw new RuntimeException(Types.stackTrace(e));
+		}
 	}
 	
-	private void build() throws ClassNotFoundException, InstantiationException, IllegalAccessException, IllegalArgumentException, InvocationTargetException, NoSuchMethodException, SecurityException {
+	private void build() {
 		getTransformationClass();
 		createInstanceWithArgs();
 	}
@@ -94,19 +95,28 @@ public class TransformationInstance {
 	 * Find of the transformation exists in the BioImage.io Java Core
 	 * @throws ClassNotFoundException if the BioImage.io transformation does not exist
 	 */
-	private void getTransformationClass() throws ClassNotFoundException {
+	private void getTransformationClass() throws RuntimeException {
 		String javaMethodName = snakeCaseToCamelCaseFirstCap(this.name) + "Transformation";
 		String clsName = TRANSFORMATIONS_PACKAGE + "." + javaMethodName;
 		findClassInClassPath(clsName);
-		this.cls = getClass().getClassLoader().loadClass(clsName);
+		try {
+			this.cls = getClass().getClassLoader().loadClass(clsName);
+		} catch (ClassNotFoundException e) {
+			throw new RuntimeException(Types.stackTrace(e));
+		}
 	}
 	
 	/**
 	 * Tries to find a given class in the classpath
 	 * @throws ClassNotFoundException if the class does not exist in the classpath
 	 */
-	private void findClassInClassPath(String clsName) throws ClassNotFoundException {
-		Class.forName(clsName, false, TransformationInstance.class.getClassLoader());
+	private void findClassInClassPath(String clsName) throws IllegalArgumentException {
+		try {
+			Class.forName(clsName, false, TransformationInstance.class.getClassLoader());
+		} catch (ClassNotFoundException e) {
+			throw new IllegalArgumentException("Invalid method '" + this.name + "' in the specs file. The method does not"
+					+ " exist in the Bioimage.io framework.");
+		}
 	}
 	
 	/**
@@ -124,8 +134,13 @@ public class TransformationInstance {
 		return str;
 	}
 	
-	private void createInstanceWithArgs() throws InstantiationException, IllegalAccessException, IllegalArgumentException, InvocationTargetException, NoSuchMethodException, SecurityException, ClassNotFoundException {
-		this.instance = this.cls.getConstructor().newInstance();
+	private void createInstanceWithArgs() throws RuntimeException {
+		try {
+			this.instance = this.cls.getConstructor().newInstance();
+		} catch (InstantiationException | IllegalAccessException | IllegalArgumentException | InvocationTargetException
+				| NoSuchMethodException | SecurityException e) {
+			throw new RuntimeException(Types.stackTrace(e));
+		}
 
 		for (String kk : args.keySet()) {
 			setArg(kk);
@@ -142,10 +157,14 @@ public class TransformationInstance {
 	 * @throws InvocationTargetExceptionif there is any error invoking the method
 	 * @throws IllegalAccessException if it is illegal to access the method
 	 */
-	public void setArg(String argName) throws IllegalArgumentException, IllegalAccessException, InvocationTargetException {
+	public void setArg(String argName) {
 		Method mm = getMethodForArgument(argName);
 		checkArgType(mm);
-		mm.invoke(instance, this.args.get(argName));	
+		try {
+			mm.invoke(instance, this.args.get(argName));
+		} catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
+			throw new RuntimeException(Types.stackTrace(e));
+		}	
 	}
 	
 	/**
