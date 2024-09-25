@@ -1,12 +1,8 @@
 package io.bioimage.modelrunner.model.processing;
 
-import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
-import java.lang.reflect.Parameter;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -15,7 +11,6 @@ import io.bioimage.modelrunner.bioimageio.description.ModelDescriptor;
 import io.bioimage.modelrunner.bioimageio.description.TensorSpec;
 import io.bioimage.modelrunner.bioimageio.description.TransformSpec;
 import io.bioimage.modelrunner.tensor.Tensor;
-import io.bioimage.modelrunner.transformations.BinarizeTransformation;
 import net.imglib2.type.NativeType;
 import net.imglib2.type.numeric.RealType;
 
@@ -31,17 +26,11 @@ public class Processing {
 	 */
 	private ModelDescriptor descriptor;
 	/**
-	 * Specifications of the tensor of interest
-	 */
-	private TensorSpec tensorSpec;
-	/**
 	 * Map containing all the needed input objects to make the processing.
 	 * It has to contain the tensor of interest.
 	 */
-	private LinkedHashMap<String, Object> inputsMap;
 	private Map<String, List<TransformationInstance>> preMap;
 	private Map<String, List<TransformationInstance>> postMap;
-	// TODO when adding python
 	//private static BioImageIoPython interp;
 	private static String BIOIMAGEIO_PYTHON_TRANSFORMATIONS_WEB = 
 						"https://github.com/bioimage-io/core-bioimage-io-python/blob/b0cea"
@@ -54,14 +43,21 @@ public class Processing {
 	 * 	the tensor specifications
 	 * @param seq
 	 * 	the image corresponding to a tensor where processing is going to be executed
+	 * @throws SecurityException 
+	 * @throws NoSuchMethodException 
+	 * @throws InvocationTargetException 
+	 * @throws IllegalArgumentException 
+	 * @throws IllegalAccessException 
+	 * @throws InstantiationException 
+	 * @throws ClassNotFoundException 
 	 */
-	private Processing(ModelDescriptor descriptor) {
+	private Processing(ModelDescriptor descriptor) throws ClassNotFoundException, InstantiationException, IllegalAccessException, IllegalArgumentException, InvocationTargetException, NoSuchMethodException, SecurityException {
 		this.descriptor = descriptor;
 		buildPreprocessing();
 		buildPostprocessing();
 	}
 	
-	private void buildPreprocessing() throws ClassNotFoundException {
+	private void buildPreprocessing() throws ClassNotFoundException, InstantiationException, IllegalAccessException, IllegalArgumentException, InvocationTargetException, NoSuchMethodException, SecurityException {
 		preMap = new HashMap<String, List<TransformationInstance>>();
 		for (TensorSpec tt : this.descriptor.getInputTensors()) {
 			List<TransformSpec> preprocessing = tt.getPreprocessing();
@@ -72,10 +68,10 @@ public class Processing {
 		}
 	}
 	
-	private void buildPostprocessing() throws ClassNotFoundException {
+	private void buildPostprocessing() throws ClassNotFoundException, InstantiationException, IllegalAccessException, IllegalArgumentException, InvocationTargetException, NoSuchMethodException, SecurityException {
 		postMap = new HashMap<String, List<TransformationInstance>>();
-		for (TensorSpec tt : this.descriptor.getInputTensors()) {
-			List<TransformSpec> preprocessing = tt.getPreprocessing();
+		for (TensorSpec tt : this.descriptor.getOutputTensors()) {
+			List<TransformSpec> preprocessing = tt.getPostprocessing();
 			List<TransformationInstance> list = new ArrayList<TransformationInstance>();
 			for (TransformSpec transformation : preprocessing) {
 				list.add(TransformationInstance.create(transformation));
@@ -83,7 +79,7 @@ public class Processing {
 		}
 	}
 	
-	public static Processing init(ModelDescriptor descriptor) {
+	public static Processing init(ModelDescriptor descriptor) throws ClassNotFoundException, InstantiationException, IllegalAccessException, IllegalArgumentException, InvocationTargetException, NoSuchMethodException, SecurityException {
 		return new Processing(descriptor);
 	}
 	
@@ -98,7 +94,34 @@ public class Processing {
 			Tensor<T> tt = tensorList.stream().filter(t -> t.getName().equals(ee.getKey())).findFirst().orElse(null);
 			if (tt == null)
 				continue;
-			ee.getValue().forEach(trans -> trans.run(tt));
+			ee.getValue().forEach(trans -> {
+				try {
+					trans.run(tt, inplace);
+				} catch (NoSuchMethodException | SecurityException | IllegalAccessException | IllegalArgumentException
+						| InvocationTargetException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+			});
+		}
+		return null;
+	}
+	
+	public <T extends RealType<T> & NativeType<T>, R extends RealType<R> & NativeType<R>>
+	List<Tensor<R>> postprocess(List<Tensor<T>> tensorList, boolean inplace) {
+		for (Entry<String, List<TransformationInstance>> ee : this.postMap.entrySet()) {
+			Tensor<T> tt = tensorList.stream().filter(t -> t.getName().equals(ee.getKey())).findFirst().orElse(null);
+			if (tt == null)
+				continue;
+			ee.getValue().forEach(trans -> {
+				try {
+					trans.run(tt, inplace);
+				} catch (NoSuchMethodException | SecurityException | IllegalAccessException | IllegalArgumentException
+						| InvocationTargetException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+			});
 		}
 		return null;
 	}

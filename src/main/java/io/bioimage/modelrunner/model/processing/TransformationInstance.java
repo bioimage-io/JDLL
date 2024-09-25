@@ -12,6 +12,16 @@ import io.bioimage.modelrunner.transformations.BinarizeTransformation;
 import net.imglib2.type.NativeType;
 import net.imglib2.type.numeric.RealType;
 
+/**
+ * TODO work on the exceptions
+ * TODO work on the exceptions
+ * TODO work on the exceptions
+ * TODO work on the exceptions
+ * TODO work on the exceptions
+ * 
+ * @author Carlos Jaier Garcia Lopez de Haro
+ */
+
 public class TransformationInstance {
 	private final String name;
 	private final Map<String, Object> args;
@@ -24,29 +34,36 @@ public class TransformationInstance {
 	
 	private final static String RUN_NAME = "apply";
 	
-	protected TransformationInstance(TransformSpec transform) {
+	private final static String RUN_INPLACE_NAME = "applyInPlace";
+	
+	protected TransformationInstance(TransformSpec transform) throws ClassNotFoundException, InstantiationException, IllegalAccessException, IllegalArgumentException, InvocationTargetException, NoSuchMethodException, SecurityException {
 		this.name = transform.getName();
 		this.args = transform.getKwargs();
 		this.build();
 	}
 	
-	public static TransformationInstance create(TransformSpec transform) {
+	public static TransformationInstance create(TransformSpec transform) throws ClassNotFoundException, InstantiationException, IllegalAccessException, IllegalArgumentException, InvocationTargetException, NoSuchMethodException, SecurityException {
 		return new TransformationInstance(transform);
 	}
 	
 	public <T extends RealType<T> & NativeType<T>, R extends RealType<R> & NativeType<R>>
-	List<Tensor<R>> run(Tensor<T> tensor){
+	List<Tensor<R>> run(Tensor<T> tensor) throws NoSuchMethodException, SecurityException, IllegalAccessException, IllegalArgumentException, InvocationTargetException{
 		return run(tensor, false);
 	}
 	
 	public <T extends RealType<T> & NativeType<T>, R extends RealType<R> & NativeType<R>>
-	List<Tensor<R>> run(Tensor<T> tensor, boolean inplace) {
-		Method m = cls.getMethod(RUN_NAME, List.class);
+	List<Tensor<R>> run(Tensor<T> tensor, boolean inplace) throws NoSuchMethodException, SecurityException, IllegalAccessException, IllegalArgumentException, InvocationTargetException {
+		Method m;
+		if (inplace)
+			m = cls.getMethod(RUN_INPLACE_NAME, Tensor.class);
+		else
+			m = cls.getMethod(RUN_NAME, Tensor.class);
+			
 		m.invoke(this.instance, tensor);
 		return null;
 	}
 	
-	private void build() {
+	private void build() throws ClassNotFoundException, InstantiationException, IllegalAccessException, IllegalArgumentException, InvocationTargetException, NoSuchMethodException, SecurityException {
 		getTransformationClass();
 		createInstanceWithArgs();
 	}
@@ -67,7 +84,7 @@ public class TransformationInstance {
 	 * @throws ClassNotFoundException if the class does not exist in the classpath
 	 */
 	private void findClassInClassPath(String clsName) throws ClassNotFoundException {
-		Class.forName(clsName, false, JavaProcessing.class.getClassLoader());
+		Class.forName(clsName, false, TransformationInstance.class.getClassLoader());
 	}
 	
 	/**
