@@ -35,6 +35,7 @@ import java.util.stream.Collectors;
 
 import io.bioimage.modelrunner.bioimageio.tiling.ImageInfo;
 import io.bioimage.modelrunner.bioimageio.tiling.TileCalculator;
+import io.bioimage.modelrunner.apposed.appose.Types;
 import io.bioimage.modelrunner.bioimageio.bioengine.BioEngineAvailableModels;
 import io.bioimage.modelrunner.bioimageio.bioengine.BioengineInterface;
 import io.bioimage.modelrunner.bioimageio.description.ModelDescriptor;
@@ -43,8 +44,6 @@ import io.bioimage.modelrunner.bioimageio.description.TensorSpec;
 import io.bioimage.modelrunner.bioimageio.description.exceptions.ModelSpecsException;
 import io.bioimage.modelrunner.bioimageio.description.weights.ModelWeight;
 import io.bioimage.modelrunner.bioimageio.description.weights.WeightFormat;
-import io.bioimage.modelrunner.bioimageio.tiling.PatchSpec;
-import io.bioimage.modelrunner.bioimageio.tiling.TileGrid;
 import io.bioimage.modelrunner.bioimageio.tiling.TileInfo;
 import io.bioimage.modelrunner.bioimageio.tiling.TileMaker;
 import io.bioimage.modelrunner.engine.DeepLearningEngineInterface;
@@ -656,14 +655,15 @@ public class Model
 			throw new RunModelException("Please first load the model.");
 		if (descriptor == null && !(new File(modelFolder, Constants.RDF_FNAME).isFile()))
 			throw new IllegalArgumentException("Automatic tiling can only be done if the model contains a Bioiamge.io rdf.yaml specs file.");
-		else if (descriptor == null)
+		else if (descriptor == null) {
 			try {
 				descriptor = ModelDescriptorFactory.readFromLocalFile(modelFolder + File.separator + Constants.RDF_FNAME);
 			} catch (ModelSpecsException | IOException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
+				throw new ModelSpecsException(Types.stackTrace(e));
 			}
+		}
 		TileMaker maker = TileMaker.build(descriptor, tiles);
+		
 		return runTiling(inputTensors, maker, tileCounter);
 	}
 	
@@ -689,42 +689,6 @@ public class Model
 		}
 		return outputTensors;
 	}
-	
-	/** TODO remove
-	private <T extends RealType<T> & NativeType<T>, R extends RealType<R> & NativeType<R>> 
-	void doTiling(List<Tensor<R>> inputTensors, List<Tensor<T>> outputTensors, 
-			TileMaker tiles, TilingConsumer tileCounter) throws RunModelException {
-		int nTiles = tiles.getNumberOfTiles();
-		tileCounter.acceptTotal(Long.valueOf(nTiles));
-		for (int j = 0; j < nTiles; j ++) {
-			tileCounter.acceptProgress(Long.valueOf(j));
-			int tileCount = j + 0;
-			List<Tensor<?>> inputTileList = IntStream.range(0, inputTensors.size()).mapToObj(i -> {
-				if (!inputTensors.get(i).isImage())
-					return inputTensors.get(i);
-				long[] minLim = inTileGrids.get(inputTensors.get(i).getName()).getTilePostionsInImage().get(tileCount);
-				long[] tileSize = inTileGrids.get(inputTensors.get(i).getName()).getTileSize();
-				long[] maxLim = LongStream.range(0, tileSize.length).map(c -> tileSize[(int) c] - 1 + minLim[(int) c]).toArray();
-				RandomAccessibleInterval<R> tileRai = Views.interval(
-						Views.extendMirrorDouble(inputTensors.get(i).getData()), new FinalInterval( minLim, maxLim ));
-				return Tensor.build(inputTensors.get(i).getName(), inputTensors.get(i).getAxesOrderString(), tileRai);
-			}).collect(Collectors.toList());
-			
-			List<Tensor<?>> outputTileList = IntStream.range(0, outputTensors.size()).mapToObj(i -> {
-				if (!outputTensors.get(i).isImage())
-					return outputTensors.get(i);
-				long[] minLim = outTileGrids.get(outputTensors.get(i).getName()).getTilePostionsInImage().get(tileCount);
-				long[] tileSize = outTileGrids.get(outputTensors.get(i).getName()).getTileSize();
-				long[] maxLim = LongStream.range(0, tileSize.length).map(c -> tileSize[(int) c] - 1 + minLim[(int) c]).toArray();
-				RandomAccessibleInterval<T> tileRai = Views.interval(
-						Views.extendMirrorDouble(outputTensors.get(i).getData()),  new FinalInterval( minLim, maxLim ));
-				return Tensor.build(outputTensors.get(i).getName(), outputTensors.get(i).getAxesOrderString(), tileRai);
-			}).collect(Collectors.toList());
-			
-			this.runModel(inputTileList, outputTileList);
-		}
-	}
-	*/
 	
 	public static <T extends NativeType<T> & RealType<T>> void main(String[] args) throws IOException, ModelSpecsException, LoadEngineException, RunModelException, LoadModelException {
 		
