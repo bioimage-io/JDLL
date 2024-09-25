@@ -22,7 +22,6 @@
  */
 package io.bioimage.modelrunner.model.processing;
 
-import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -59,27 +58,13 @@ public class Processing {
 						+ "c8fa5b412b1ea811c442697de2150fa1b90/bioimageio/core/prediction_pipeline"
 						+ "/_processing.py#L105";
 
-	/**
-	 * The object that is going to execute processing on the given image
-	 * @param tensorSpec
-	 * 	the tensor specifications
-	 * @param seq
-	 * 	the image corresponding to a tensor where processing is going to be executed
-	 * @throws SecurityException 
-	 * @throws NoSuchMethodException 
-	 * @throws InvocationTargetException 
-	 * @throws IllegalArgumentException 
-	 * @throws IllegalAccessException 
-	 * @throws InstantiationException 
-	 * @throws ClassNotFoundException 
-	 */
-	private Processing(ModelDescriptor descriptor) throws ClassNotFoundException, InstantiationException, IllegalAccessException, IllegalArgumentException, InvocationTargetException, NoSuchMethodException, SecurityException {
+	private Processing(ModelDescriptor descriptor) throws IllegalArgumentException, RuntimeException {
 		this.descriptor = descriptor;
 		buildPreprocessing();
 		buildPostprocessing();
 	}
 	
-	private void buildPreprocessing() throws ClassNotFoundException, InstantiationException, IllegalAccessException, IllegalArgumentException, InvocationTargetException, NoSuchMethodException, SecurityException {
+	private void buildPreprocessing() throws IllegalArgumentException, RuntimeException {
 		preMap = new HashMap<String, List<TransformationInstance>>();
 		for (TensorSpec tt : this.descriptor.getInputTensors()) {
 			List<TransformSpec> preprocessing = tt.getPreprocessing();
@@ -90,7 +75,7 @@ public class Processing {
 		}
 	}
 	
-	private void buildPostprocessing() throws ClassNotFoundException, InstantiationException, IllegalAccessException, IllegalArgumentException, InvocationTargetException, NoSuchMethodException, SecurityException {
+	private void buildPostprocessing() throws IllegalArgumentException, RuntimeException {
 		postMap = new HashMap<String, List<TransformationInstance>>();
 		for (TensorSpec tt : this.descriptor.getOutputTensors()) {
 			List<TransformSpec> preprocessing = tt.getPostprocessing();
@@ -101,7 +86,7 @@ public class Processing {
 		}
 	}
 	
-	public static Processing init(ModelDescriptor descriptor) throws ClassNotFoundException, InstantiationException, IllegalAccessException, IllegalArgumentException, InvocationTargetException, NoSuchMethodException, SecurityException {
+	public static Processing init(ModelDescriptor descriptor) throws IllegalArgumentException, RuntimeException {
 		return new Processing(descriptor);
 	}
 	
@@ -117,13 +102,7 @@ public class Processing {
 			if (tt == null)
 				continue;
 			ee.getValue().forEach(trans -> {
-				try {
 					trans.run(tt, inplace);
-				} catch (NoSuchMethodException | SecurityException | IllegalAccessException | IllegalArgumentException
-						| InvocationTargetException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				}
 			});
 		}
 		return null;
@@ -136,13 +115,7 @@ public class Processing {
 			if (tt == null)
 				continue;
 			ee.getValue().forEach(trans -> {
-				try {
 					trans.run(tt, inplace);
-				} catch (NoSuchMethodException | SecurityException | IllegalAccessException | IllegalArgumentException
-						| InvocationTargetException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				}
 			});
 		}
 		return null;
