@@ -1521,7 +1521,13 @@ public class Mamba {
 					+ "from packaging import version as vv; "
 					+ "pkg = '%s'; wanted_v = '%s'; "
 					+ "spec = importlib.util.find_spec(pkg); "
-					+ "sys.exit(0) if spec and vv.parse(version(pkg)) == vv.parse(wanted_v) else sys.exit(1)";
+					+ "vv_og = vv.parse(version(pkg)); "
+					+ "vv_nw = vv.parse(wanted_v); "
+					+ "sys.exit(1) if spec is None else None; "
+					+ "sys.exit(1) if vv_og.major != vv_nw.major else None; "
+					+ "sys.exit(1) if vv_og.minor != vv_nw.minor else None; "
+					+ "sys.exit(1) if vv_og.micro != vv_nw.micro else None; "
+					+ "sys.exit(0);";
 			checkDepCode = String.format(checkDepCode, dependency, maxversion);
 		} else if (minversion == null && maxversion == null) {
 			checkDepCode = "import importlib.util, sys; sys.exit(0) if importlib.util.find_spec('%s') else sys.exit(1)";
@@ -1657,10 +1663,8 @@ public class Mamba {
 	
 	public static void main(String[] args) throws IOException, InterruptedException, MambaInstallException {
 		
-		Mamba m = new Mamba("C:\\Users\\angel\\Desktop\\Fiji app\\appose_x86_64");
-		String envName = "efficientvit_sam_env";
-		m.pipInstallIn(envName, new String[] {m.getEnvsDir() + File.separator + envName
-				+ File.separator + "appose-python"});
+		Mamba m = new Mamba("/home/carlos/git/SAMJ-IJ/appose_x86_64");
+		m.checkDependencyInEnv("sam2", "torch=2.4.0");
 	}
 	
 	/**
