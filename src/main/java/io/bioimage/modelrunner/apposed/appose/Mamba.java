@@ -1364,6 +1364,14 @@ public class Mamba {
 	public boolean checkDependencyInEnv(String envName, String dependency) throws MambaInstallException {
 		checkMambaInstalled();
 		if (!installed) throw new MambaInstallException("Micromamba is not installed");
+		if (dependency.contains("=<"))
+			throw new IllegalArgumentException("=< is not valid, use <=");
+		else if (dependency.contains("=>"))
+			throw new IllegalArgumentException("=> is not valid, use >=");
+		else if (dependency.contains(">") && dependency.contains("<") && !dependency.contains(","))
+			throw new IllegalArgumentException("Invalid dependency format. To specify both a minimum and maximum version, "
+					+ "separate the conditions with a comma. For example: 'torch>2.0.0, torch<2.5.0'.");
+		
 		if (dependency.contains("==")) {
 			int ind = dependency.indexOf("==");
 			return checkDependencyInEnv(envName, dependency.substring(0, ind).trim(), dependency.substring(ind + 2).trim());
@@ -1375,6 +1383,9 @@ public class Mamba {
 			String packName = dependency.substring(0, minInd).trim();
 			String maxV = dependency.substring(lowInd + 2, lowInd < highInd ? commaInd : dependency.length());
 			String minV = dependency.substring(highInd + 2, lowInd < highInd ? dependency.length() : commaInd);
+			if (maxV.equals("") || minV.equals(""))
+				throw new IllegalArgumentException("Conditions must always begin with either '<' or '>' signs and then "
+						+ "the version number. For example: 'torch>=2.0.0, torch<=2.5.0'.");
 			return checkDependencyInEnv(envName, packName, minV, maxV, false);
 		} else if (dependency.contains(">=") && dependency.contains("<") && dependency.contains(",")) {
 			int commaInd = dependency.indexOf(",");
@@ -1384,6 +1395,9 @@ public class Mamba {
 			String packName = dependency.substring(0, minInd).trim();
 			String maxV = dependency.substring(lowInd + 1, lowInd < highInd ? commaInd : dependency.length());
 			String minV = dependency.substring(highInd + 2, lowInd < highInd ? dependency.length() : commaInd);
+			if (maxV.equals("") || minV.equals(""))
+				throw new IllegalArgumentException("Conditions must always begin with either '<' or '>' signs and then "
+						+ "the version number. For example: 'torch>=2.0.0, torch<2.5.0'.");
 			return checkDependencyInEnv(envName, packName, minV, null, false) && checkDependencyInEnv(envName, packName, null, maxV, true);
 		} else if (dependency.contains(">") && dependency.contains("<=") && dependency.contains(",")) {
 			int commaInd = dependency.indexOf(",");
@@ -1393,6 +1407,9 @@ public class Mamba {
 			String packName = dependency.substring(0, minInd).trim();
 			String maxV = dependency.substring(lowInd + 2, lowInd < highInd ? commaInd : dependency.length());
 			String minV = dependency.substring(highInd + 1, lowInd < highInd ? dependency.length() : commaInd);
+			if (maxV.equals("") || minV.equals(""))
+				throw new IllegalArgumentException("Conditions must always begin with either '<' or '>' signs and then "
+						+ "the version number. For example: 'torch>2.0.0, torch<=2.5.0'.");
 			return checkDependencyInEnv(envName, packName, minV, null, true) && checkDependencyInEnv(envName, packName, null, maxV, false);
 		} else if (dependency.contains(">") && dependency.contains("<") && dependency.contains(",")) {
 			int commaInd = dependency.indexOf(",");
@@ -1402,19 +1419,38 @@ public class Mamba {
 			String packName = dependency.substring(0, minInd).trim();
 			String maxV = dependency.substring(lowInd + 1, lowInd < highInd ? commaInd : dependency.length());
 			String minV = dependency.substring(highInd + 1, lowInd < highInd ? dependency.length() : commaInd);
+			if (maxV.equals("") || minV.equals(""))
+				throw new IllegalArgumentException("Conditions must always begin with either '<' or '>' signs and then "
+						+ "the version number. For example: 'torch>2.0.0, torch<2.5.0'.");
 			return checkDependencyInEnv(envName, packName, minV, maxV, true);
 		} else if (dependency.contains(">=")) {
 			int ind = dependency.indexOf(">=");
-			return checkDependencyInEnv(envName, dependency.substring(0, ind).trim(), dependency.substring(ind + 2).trim(), null, false);
+			String maxV = dependency.substring(ind + 2).trim();
+			if (maxV.equals(""))
+				throw new IllegalArgumentException("Conditions must always begin with either '<' or '>' signs and then "
+						+ "the version number. For example: 'torch>=2.0.0'.");
+			return checkDependencyInEnv(envName, dependency.substring(0, ind).trim(), maxV, null, false);
 		} else if (dependency.contains(">")) {
 			int ind = dependency.indexOf(">");
-			return checkDependencyInEnv(envName, dependency.substring(0, ind).trim(), dependency.substring(ind + 1).trim(), null, true);
+			String maxV = dependency.substring(ind + 1).trim();
+			if (maxV.equals(""))
+				throw new IllegalArgumentException("Conditions must always begin with either '<' or '>' signs and then "
+						+ "the version number. For example: 'torch>2.0.0'.");
+			return checkDependencyInEnv(envName, dependency.substring(0, ind).trim(), maxV, null, true);
 		} else if (dependency.contains("<=")) {
 			int ind = dependency.indexOf("<=");
-			return checkDependencyInEnv(envName, dependency.substring(0, ind).trim(), null, dependency.substring(ind + 2).trim(), false);
+			String maxV = dependency.substring(ind + 2).trim();
+			if (maxV.equals(""))
+				throw new IllegalArgumentException("Conditions must always begin with either '<' or '>' signs and then "
+						+ "the version number. For example: 'torch<=2.0.0'.");
+			return checkDependencyInEnv(envName, dependency.substring(0, ind).trim(), null, maxV, false);
 		} else if (dependency.contains("<")) {
 			int ind = dependency.indexOf("<");
-			return checkDependencyInEnv(envName, dependency.substring(0, ind).trim(), null, dependency.substring(ind + 1).trim(), true);
+			String maxV = dependency.substring(ind + 1).trim();
+			if (maxV.equals(""))
+				throw new IllegalArgumentException("Conditions must always begin with either '<' or '>' signs and then "
+						+ "the version number. For example: 'torch<2.0.0'.");
+			return checkDependencyInEnv(envName, dependency.substring(0, ind).trim(), null, maxV, true);
 		} else if (dependency.contains("=")) {
 			int ind = dependency.indexOf("=");
 			return checkDependencyInEnv(envName, dependency.substring(0, ind).trim(), dependency.substring(ind + 1).trim());
@@ -1670,7 +1706,8 @@ public class Mamba {
 	public static void main(String[] args) throws IOException, InterruptedException, MambaInstallException {
 		
 		Mamba m = new Mamba("/home/carlos/git/SAMJ-IJ/appose_x86_64");
-		m.checkDependencyInEnv("sam2", "torch> 2.0.0, torch<2.5.0");
+		boolean aa = m.checkDependencyInEnv("sam2", "torch >=2.3.9, <=3.0.0");
+		System.out.println(aa);
 	}
 	
 	/**
