@@ -1373,8 +1373,8 @@ public class Mamba {
 			int lowInd = dependency.indexOf("<=");
 			int minInd = Math.min(Math.min(commaInd, lowInd), highInd);
 			String packName = dependency.substring(0, minInd).trim();
-			String minV = dependency.substring(lowInd + 1, lowInd < highInd ? commaInd : dependency.length());
-			String maxV = dependency.substring(highInd + 1, lowInd < highInd ? dependency.length() : commaInd);
+			String maxV = dependency.substring(lowInd + 2, lowInd < highInd ? commaInd : dependency.length());
+			String minV = dependency.substring(highInd + 2, lowInd < highInd ? dependency.length() : commaInd);
 			return checkDependencyInEnv(envName, packName, minV, maxV, false);
 		} else if (dependency.contains(">=") && dependency.contains("<") && dependency.contains(",")) {
 			int commaInd = dependency.indexOf(",");
@@ -1403,18 +1403,18 @@ public class Mamba {
 			String maxV = dependency.substring(lowInd + 1, lowInd < highInd ? commaInd : dependency.length());
 			String minV = dependency.substring(highInd + 1, lowInd < highInd ? dependency.length() : commaInd);
 			return checkDependencyInEnv(envName, packName, minV, maxV, true);
-		} else if (dependency.contains(">")) {
-			int ind = dependency.indexOf(">");
-			return checkDependencyInEnv(envName, null, dependency.substring(0, ind).trim(), dependency.substring(ind + 2).trim(), true);
 		} else if (dependency.contains(">=")) {
 			int ind = dependency.indexOf(">=");
-			return checkDependencyInEnv(envName, null, dependency.substring(0, ind).trim(), dependency.substring(ind + 2).trim(), false);
+			return checkDependencyInEnv(envName, dependency.substring(0, ind).trim(), dependency.substring(ind + 2).trim(), null, false);
+		} else if (dependency.contains(">")) {
+			int ind = dependency.indexOf(">");
+			return checkDependencyInEnv(envName, dependency.substring(0, ind).trim(), dependency.substring(ind + 1).trim(), null, true);
 		} else if (dependency.contains("<=")) {
 			int ind = dependency.indexOf("<=");
-			return checkDependencyInEnv(envName, dependency.substring(0, ind).trim(), dependency.substring(ind + 2).trim(), null, false);
+			return checkDependencyInEnv(envName, dependency.substring(0, ind).trim(), null, dependency.substring(ind + 2).trim(), false);
 		} else if (dependency.contains("<")) {
 			int ind = dependency.indexOf("<");
-			return checkDependencyInEnv(envName, dependency.substring(0, ind).trim(), dependency.substring(ind + 1).trim(), null, true);
+			return checkDependencyInEnv(envName, dependency.substring(0, ind).trim(), null, dependency.substring(ind + 1).trim(), true);
 		} else if (dependency.contains("=")) {
 			int ind = dependency.indexOf("=");
 			return checkDependencyInEnv(envName, dependency.substring(0, ind).trim(), dependency.substring(ind + 1).trim());
@@ -1538,7 +1538,9 @@ public class Mamba {
 					+ "from packaging import version as vv; "
 					+ "pkg = '%s'; desired_version = '%s'; "
 					+ "spec = importlib.util.find_spec(pkg); "
-					+ "sys.exit(0) if spec and vv.parse(version(pkg)) %s vv.parse(desired_version) else sys.exit(1)";
+					+ "curr_v = vv.parse(version(pkg)); "
+					+ "curr_v_str = str(curr_v.major) + '.' + str(curr_v.minor) + '.' + str(curr_v.micro); "
+					+ "sys.exit(0) if spec and vv.parse(curr_v_str) %s vv.parse(desired_version) else sys.exit(1)";
 			checkDepCode = String.format(checkDepCode, dependency, minversion, strictlyBiggerOrSmaller ? ">" : ">=");
 		} else if (minversion == null) {
 			checkDepCode = "import importlib.util, sys; "
@@ -1546,7 +1548,9 @@ public class Mamba {
 					+ "from packaging import version as vv; "
 					+ "pkg = '%s'; desired_version = '%s'; "
 					+ "spec = importlib.util.find_spec(pkg); "
-					+ "sys.exit(0) if spec and vv.parse(version(pkg)) %s vv.parse(desired_version) else sys.exit(1)";
+					+ "curr_v = vv.parse(version(pkg)); "
+					+ "curr_v_str = str(curr_v.major) + '.' + str(curr_v.minor) + '.' + str(curr_v.micro); "
+					+ "sys.exit(0) if spec and vv.parse(curr_v_str) %s vv.parse(desired_version) else sys.exit(1)";
 			checkDepCode = String.format(checkDepCode, dependency, maxversion, strictlyBiggerOrSmaller ? "<" : "<=");
 		} else {
 			checkDepCode = "import importlib.util, sys; "
@@ -1554,8 +1558,10 @@ public class Mamba {
 					+ "from packaging import version as vv; "
 					+ "pkg = '%s'; min_v = '%s'; max_v = '%s'; "
 					+ "spec = importlib.util.find_spec(pkg); "
-					+ "sys.exit(0) if spec and vv.parse(version(pkg)) %s vv.parse(min_v) and vv.parse(version(pkg)) %s vv.parse(max_v) else sys.exit(1)";
-			checkDepCode = String.format(checkDepCode, dependency, minversion, maxversion, strictlyBiggerOrSmaller ? ">" : ">=", strictlyBiggerOrSmaller ? "<" : ">=");
+					+ "curr_v = vv.parse(version(pkg)); "
+					+ "curr_v_str = str(curr_v.major) + '.' + str(curr_v.minor) + '.' + str(curr_v.micro); "
+					+ "sys.exit(0) if spec and vv.parse(curr_v_str) %s vv.parse(min_v) and vv.parse(curr_v_str) %s vv.parse(max_v) else sys.exit(1)";
+			checkDepCode = String.format(checkDepCode, dependency, minversion, maxversion, strictlyBiggerOrSmaller ? ">" : ">=", strictlyBiggerOrSmaller ? "<" : "<=");
 		}
 		try {
 			runPythonIn(envFile, "-c", checkDepCode);
@@ -1664,7 +1670,7 @@ public class Mamba {
 	public static void main(String[] args) throws IOException, InterruptedException, MambaInstallException {
 		
 		Mamba m = new Mamba("/home/carlos/git/SAMJ-IJ/appose_x86_64");
-		m.checkDependencyInEnv("sam2", "torch=2.4.0");
+		m.checkDependencyInEnv("sam2", "torch> 2.0.0, torch<2.5.0");
 	}
 	
 	/**
