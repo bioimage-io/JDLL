@@ -34,6 +34,15 @@ public class BinarizeTransformation extends AbstractTensorPixelTransformation
 	public BinarizeTransformation()
 	{
 		super( name );
+		super.setFloatUnitaryOperator(v -> ( v >= threshold ) ? 1f : 0f);
+		super.setDoubleUnitaryOperator(v -> ( v >= threshold ) ? 1d : 0d);
+		super.setByteUnitaryOperator(v -> ( v >= threshold ) ? (byte) 1 : 0);
+		super.setUByteUnitaryOperator(v -> ( v >= threshold ) ? 1 : 0);
+		super.setShortUnitaryOperator(v -> ( v >= threshold ) ? (short) 1 : 0);
+		super.setUShortUnitaryOperator(v -> ( v >= threshold ) ? 1 : 0);
+		super.setIntUnitaryOperator(v -> ( v >= threshold ) ? 1 : 0);
+		super.setUIntUnitaryOperator(v -> ( v >= threshold ) ? 1L : 0L);
+		super.setLongUnitaryOperator(v -> ( v >= threshold ) ? 1L : 0L);
 	}
 	
 	public void setThreshold(Object threshold) {
@@ -52,21 +61,19 @@ public class BinarizeTransformation extends AbstractTensorPixelTransformation
 	
 	public void checkRequiredArgs() {
 		if (threshold == null) {
-			throw new IllegalArgumentException(String.format(DEFAULT_MISSING_ARG_ERR, "threshold"));
+			throw new IllegalArgumentException(String.format(DEFAULT_MISSING_ARG_ERR, name, "threshold"));
 		}
 	}
 
 	public < R extends RealType< R > & NativeType< R > > Tensor< FloatType > apply( final Tensor< R > input )
 	{
 		checkRequiredArgs();
-		super.setFloatUnitaryOperator(v -> ( v >= threshold ) ? 1f : 0f);
 		return super.apply(input);
 	}
 
-	public void applyInPlace( final Tensor< FloatType > input )
+	public < R extends RealType< R > & NativeType< R > >  void applyInPlace( final Tensor< R > input )
 	{
 		checkRequiredArgs();
-		super.setFloatUnitaryOperator(v -> ( v >= threshold ) ? 1f : 0f);
-		super.apply(input);
+		super.applyInPlace(input);
 	}
 }
