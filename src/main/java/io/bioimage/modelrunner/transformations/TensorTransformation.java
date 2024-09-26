@@ -56,7 +56,7 @@ public interface TensorTransformation
 	 * @param input
 	 *            the input tensor.
 	 */
-	public void applyInPlace( Tensor< FloatType > input );
+	public < R extends RealType< R > & NativeType< R > > void applyInPlace( Tensor< R > input );
 
 	/**
 	 * Returns the name of this transformation.
