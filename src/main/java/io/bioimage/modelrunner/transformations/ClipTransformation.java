@@ -27,30 +27,6 @@ import net.imglib2.type.numeric.real.FloatType;
 
 public class ClipTransformation extends AbstractTensorPixelTransformation
 {
-
-	private static final class ClipFunction implements FloatUnaryOperator
-	{
-
-		private final float min;
-
-		private final float max;
-
-		private ClipFunction( final double min, final double max )
-		{
-			this.min = (float) min;
-			this.max = (float) max;
-		}
-
-		@Override
-		public final float applyAsFloat( final float in )
-		{
-			return ( in > max )
-					? max
-					: ( in < min )
-							? min
-							: in;
-		}
-	}
 	
 	private static String name = "clip";
 	private Double min;
@@ -59,6 +35,15 @@ public class ClipTransformation extends AbstractTensorPixelTransformation
 	public ClipTransformation()
 	{
 		super(name);
+		super.setFloatUnitaryOperator(v -> v >= max ? max.floatValue() : (v < min ? min.floatValue() : v));
+		super.setDoubleUnitaryOperator(v -> v >= max ? max.doubleValue() : (v < min ? min.doubleValue() : v));
+		super.setByteUnitaryOperator(v -> v >= max ? max.byteValue() : (v < min ? min.byteValue() : v));
+		super.setUByteUnitaryOperator(v -> v >= max ? max.intValue() : (v < min ? min.intValue() : v));
+		super.setShortUnitaryOperator(v -> v >= max ? max.shortValue() : (v < min ? min.shortValue() : v));
+		super.setUShortUnitaryOperator(v -> v >= max ? max.intValue() : (v < min ? min.intValue() : v));
+		super.setIntUnitaryOperator(v -> v >= max ? max.intValue() : (v < min ? min.intValue() : v));
+		super.setUIntUnitaryOperator(v -> v >= max ? max.longValue() : (v < min ? min.longValue() : v));
+		super.setLongUnitaryOperator(v -> v >= max ? max.longValue() : (v < min ? min.longValue() : v));
 	}
 	
 	public void setMin(Object min) {
@@ -91,23 +76,22 @@ public class ClipTransformation extends AbstractTensorPixelTransformation
 	
 	public void checkRequiredArgs() {
 		if (min == null) {
-			throw new IllegalArgumentException(String.format(DEFAULT_MISSING_ARG_ERR, "min"));
+			throw new IllegalArgumentException(String.format(DEFAULT_MISSING_ARG_ERR, name, "min"));
 		} else if (max == null) {
-			throw new IllegalArgumentException(String.format(DEFAULT_MISSING_ARG_ERR, "max"));
+			throw new IllegalArgumentException(String.format(DEFAULT_MISSING_ARG_ERR, name, "max"));
 		}
 	}
 
 	public < R extends RealType< R > & NativeType< R > > Tensor< FloatType > apply( final Tensor< R > input )
 	{
 		checkRequiredArgs();
-		super.setFloatUnitaryOperator(new ClipFunction( min, max ) );
 		return super.apply(input);
 	}
 
-	public void applyInPlace( final Tensor< FloatType > input )
+	public < R extends RealType< R > & NativeType< R > >
+	void applyInPlace( final Tensor< R > input )
 	{
 		checkRequiredArgs();
-		super.setFloatUnitaryOperator(new ClipFunction( min, max ) );
-		super.apply(input);
+		super.applyInPlace(input);
 	}
 }
