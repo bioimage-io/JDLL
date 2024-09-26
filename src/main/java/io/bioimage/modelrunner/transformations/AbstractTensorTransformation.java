@@ -36,7 +36,7 @@ public abstract class AbstractTensorTransformation implements TensorTransformati
 
 	private Mode mode = Mode.FIXED;
 	
-	protected static String DEFAULT_MISSING_ARG_ERR = "Cannot execute Clip BioImage.io transformation because '%s' "
+	protected static String DEFAULT_MISSING_ARG_ERR = "Cannot execute %s BioImage.io transformation because '%s' "
 			+ "parameter was not set.";
 
 	protected AbstractTensorTransformation( final String name )
