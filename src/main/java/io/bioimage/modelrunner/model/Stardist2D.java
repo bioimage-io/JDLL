@@ -112,9 +112,9 @@ public class Stardist2D {
 	 * @param modelPath
 	 * 	path to the Bioimage.io model
 	 * @return an instance of a Stardist2D model ready to be used
-	 * @throws ModelSpecsException if there is any error in the configuration of the specs rdf.yaml file of the Bioimage.io
-	 * @throws IOException 
-	 * @throws FileNotFoundException 
+     * @throws ModelSpecsException If there is any error in the configuration of the specs rdf.yaml file of the Bioimage.io.
+     * @throws FileNotFoundException If the model file is not found.
+     * @throws IOException If there's an I/O error.
 	 */
 	public static Stardist2D fromBioimageioModel(String modelPath) throws ModelSpecsException, FileNotFoundException, IOException {
 		ModelDescriptor descriptor = ModelDescriptorFactory.readFromLocalFile(modelPath + File.separator + Constants.RDF_FNAME);

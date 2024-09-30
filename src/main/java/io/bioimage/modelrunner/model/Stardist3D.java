@@ -63,7 +63,34 @@ import net.imglib2.util.Cast;
 import net.imglib2.view.Views;
 
 /**
- * Implementation of an API to run Stardist 3D models out of the box with little configuration.
+ * This class provides an implementation of an API to run Stardist 3D models, including pre- 
+ * and post-processing, with minimal configuration. The class allows for loading pretrained
+ * models from Bioimage.io and also includes methods for running predictions using 3D images.
+ * 
+ * <p>Stardist is a deep learning model specialized in detecting object shapes, particularly
+ * star-convex shapes in images, which is especially useful in biomedical imaging applications
+ * such as cell nuclei detection.</p>
+ * 
+ * <p>The Stardist3D class includes methods for installing the necessary requirements (such as
+ * Python environments), running predictions, and handling Stardist-specific post-processing.</p>
+ * 
+ * <p>TODO: add support for fine-tuning models and Mac ARM processors.</p>
+ * 
+ * Example usage:
+ * <pre>
+ * {@code
+ * Stardist3D.installRequirements();
+ * Stardist3D model = Stardist3D.fromPretained("StarDist Plant Nuclei 3D ResNet", false);
+ * RandomAccessibleInterval<FloatType> img = ArrayImgs.floats(new long[] {116, 120, 66});
+ * RandomAccessibleInterval<FloatType> res = model.predict(img);
+ * }
+ * </pre>
+ * 
+ * @see io.bioimage.modelrunner.model.ModelDescriptor
+ * @see io.bioimage.modelrunner.bioimageio.description.ModelDescriptorFactory
+ * @see io.bioimage.modelrunner.exceptions.LoadModelException
+ * @see io.bioimage.modelrunner.exceptions.RunModelException
+ * @see io.bioimage.modelrunner.runmode.ops.GenericOp
  * 
  *TODO add fine tuning
  *TODO add support for Mac arm
@@ -112,9 +139,9 @@ public class Stardist3D {
 	 * @param modelPath
 	 * 	path to the Bioimage.io model
 	 * @return an instance of a Stardist3D model ready to be used
-	 * @throws ModelSpecsException if there is any error in the configuration of the specs rdf.yaml file of the Bioimage.io
-	 * @throws IOException 
-	 * @throws FileNotFoundException 
+	 * @throws ModelSpecsException if the model configuration is incorrect in the specs file (rdf.yaml).
+	 * @throws FileNotFoundException if the model file is not found in the specified path.
+	 * @throws IOException if there is an issue reading the model file.
 	 */
 	public static Stardist3D fromBioimageioModel(String modelPath) throws ModelSpecsException, FileNotFoundException, IOException {
 		ModelDescriptor descriptor = ModelDescriptorFactory.readFromLocalFile(modelPath + File.separator + Constants.RDF_FNAME);
