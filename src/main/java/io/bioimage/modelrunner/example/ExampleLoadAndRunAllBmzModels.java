@@ -127,10 +127,10 @@ public class ExampleLoadAndRunAllBmzModels {
 	void loadAndRunModel(String modelFolder, ModelDescriptor descriptor) throws Exception {
 		Model model = Model.createBioimageioModel(modelFolder, ENGINES_DIR);
 		model.loadModel();
-		List<Tensor<T>> inputs = createInputs(descriptor);
-		List<Tensor<R>> outputs = createOutputs(descriptor);
+		List<Tensor<FloatType>> inputs = createInputs(descriptor);
+		List<Tensor<FloatType>> outputs = createOutputs(descriptor);
 		model.runModel(inputs, outputs);
-		for (Tensor<?> tt : outputs) {
+		for (Tensor<FloatType> tt : outputs) {
 			if (tt.isEmpty())
 				throw new Exception(descriptor.getName() + ": Output tensor is empty");
 		}
@@ -147,8 +147,8 @@ public class ExampleLoadAndRunAllBmzModels {
 	 * 	file containing the information
 	 * @return the input Tensor list
 	 */
-	private static <T extends RealType<T> & NativeType<T>> List<Tensor<T>> createInputs(ModelDescriptor descriptor) {
-		List<Tensor<T>> inputs = new ArrayList<Tensor<T>>();
+	private static List<Tensor<FloatType>> createInputs(ModelDescriptor descriptor) {
+		List<Tensor<FloatType>> inputs = new ArrayList<Tensor<FloatType>>();
 		final ImgFactory< FloatType > imgFactory = new ArrayImgFactory<>( new FloatType() );
 		
 		for ( TensorSpec it : descriptor.getInputTensors()) {
@@ -159,7 +159,7 @@ public class ExampleLoadAndRunAllBmzModels {
 			long[] imSize = LongStream.range(0, step.length)
 					.map(i -> min[(int) i] + step[(int) i]).toArray();
 			Tensor<FloatType> tt = Tensor.build(name, axesStr, imgFactory.create(imSize));
-			inputs.add((Tensor<T>) tt);
+			inputs.add(tt);
 		}
 		return inputs;
 	}

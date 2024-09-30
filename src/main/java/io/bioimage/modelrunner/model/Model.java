@@ -61,6 +61,7 @@ import net.imglib2.img.array.ArrayImgs;
 import net.imglib2.type.NativeType;
 import net.imglib2.type.numeric.RealType;
 import net.imglib2.type.numeric.real.FloatType;
+import net.imglib2.util.Cast;
 
 /**
  * Class that manages a Deep Learning model to load it and run it.
@@ -534,7 +535,7 @@ public class Model
 		ArrayList<Tensor<FloatType>> inTensorsFloat = new ArrayList<Tensor<FloatType>>();
 		for (Tensor<T> tt : inTensors) {
 			if (tt.getData().getAt(0) instanceof FloatType)
-				inTensorsFloat.add((Tensor<FloatType>) tt);
+				inTensorsFloat.add(Cast.unchecked(tt));
 			else
 				inTensorsFloat.add(Tensor.createCopyOfTensorInWantedDataType( tt, new FloatType() ));
 		}
@@ -707,9 +708,9 @@ public class Model
 	public static <T extends NativeType<T> & RealType<T>> void main(String[] args) throws IOException, ModelSpecsException, LoadEngineException, RunModelException, LoadModelException {
 		
 		String mm = "/home/carlos/git/JDLL/models/NucleiSegmentationBoundaryModel_17122023_143125";
-		Img<T> im = (Img<T>) ArrayImgs.floats(new long[] {1, 1, 512, 512});
+		Img<T> im = Cast.unchecked(ArrayImgs.floats(new long[] {1, 1, 512, 512}));
 		List<Tensor<T>> l = new ArrayList<Tensor<T>>();
-		l.add((Tensor<T>) Tensor.build("input0", "bcyx", im));
+		l.add(Tensor.build("input0", "bcyx", im));
 		Model model = createBioimageioModel(mm);
 		model.loadModel();
 		TileInfo tile = TileInfo.build(l.get(0).getName(), new long[] {1, 1, 512, 512}, 

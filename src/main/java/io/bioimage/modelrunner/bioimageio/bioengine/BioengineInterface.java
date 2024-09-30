@@ -167,12 +167,12 @@ public class BioengineInterface implements DeepLearningEngineInterface {
 		final ImgFactory< FloatType > imgFactory = new ArrayImgFactory<>( new FloatType() );
 		final Img< FloatType > img1 = imgFactory.create( 1, 1, 512, 512 );
 		Tensor<FloatType> inpTensor = Tensor.build("input0", "bcyx", img1);
-		List<Tensor<T>> inputs = new ArrayList<Tensor<T>>();
-		inputs.add((Tensor<T>) inpTensor);
+		List<Tensor<FloatType>> inputs = new ArrayList<Tensor<FloatType>>();
+		inputs.add(inpTensor);
 		final Img< FloatType > img2 = imgFactory.create( 1, 2, 512, 512 );
 		Tensor<FloatType> outTensor = Tensor.build("output0", "bcyx", img2);
-		List<Tensor<R>> outputs = new ArrayList<Tensor<R>>();
-		outputs.add((Tensor<R>) outTensor);
+		List<Tensor<FloatType>> outputs = new ArrayList<Tensor<FloatType>>();
+		outputs.add(outTensor);
 		bi.run(inputs, outputs);
 		System.out.print(DECODE_JSON_VAL);
 	}

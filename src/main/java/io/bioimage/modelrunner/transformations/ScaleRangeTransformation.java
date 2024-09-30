@@ -31,15 +31,8 @@ import net.imglib2.img.array.ArrayImgs;
 import net.imglib2.img.basictypeaccess.array.FloatArray;
 import net.imglib2.loops.LoopBuilder;
 import net.imglib2.type.NativeType;
+import net.imglib2.type.numeric.IntegerType;
 import net.imglib2.type.numeric.RealType;
-import net.imglib2.type.numeric.integer.ByteType;
-import net.imglib2.type.numeric.integer.IntType;
-import net.imglib2.type.numeric.integer.LongType;
-import net.imglib2.type.numeric.integer.ShortType;
-import net.imglib2.type.numeric.integer.UnsignedByteType;
-import net.imglib2.type.numeric.integer.UnsignedIntType;
-import net.imglib2.type.numeric.integer.UnsignedShortType;
-import net.imglib2.type.numeric.real.DoubleType;
 import net.imglib2.type.numeric.real.FloatType;
 import net.imglib2.util.Util;
 import net.imglib2.view.IntervalView;
@@ -146,7 +139,6 @@ public class ScaleRangeTransformation extends AbstractTensorTransformation
 		scaleRange(output.getData(), maxPercentileVal, minPercentileVal);
 	}
 	
-	@SuppressWarnings("unchecked")
 	private < R extends RealType< R > & NativeType< R > > 
 	double findPercentileValue(RandomAccessibleInterval<R> rai, double percentile) {
 		final IterableInterval<R> flatImage = Views.iterable(rai);
@@ -154,6 +146,14 @@ public class ScaleRangeTransformation extends AbstractTensorTransformation
 		double[] flatArr = new double[(int) flatSize];
 		
 		int count = 0;
+		final Cursor<R> cursor = (Cursor<R>) flatImage.cursor();
+		while ( cursor.hasNext() )
+		{
+			cursor.next();
+			flatArr[count ++] = cursor.get().getRealDouble();
+		}
+		/* 
+		 * TODO remove
 		if (rai.getAt(0) instanceof ByteType) {
 			final Cursor<ByteType> cursor = (Cursor<ByteType>) flatImage.cursor();
 			while ( cursor.hasNext() )
@@ -220,6 +220,7 @@ public class ScaleRangeTransformation extends AbstractTensorTransformation
 		} else {
 			throw new IllegalArgumentException("Unsupported data type: " + Util.getTypeFromInterval(rai));
 		}
+		 */
 		Arrays.sort(flatArr);
 		
 		int percentilePos = (int) (flatSize * percentile);
@@ -306,10 +307,22 @@ public class ScaleRangeTransformation extends AbstractTensorTransformation
 		 System.out.print(true);
 	}
 	
-	@SuppressWarnings("unchecked")
 	public < R extends RealType< R > & NativeType< R > > 
 	void scaleRange(RandomAccessibleInterval<R> rai, double maxPercentileVal, double minPercentileVal) {
 		double diff = maxPercentileVal - minPercentileVal;
+
+        R type = Util.getTypeFromInterval(rai);
+        if (type instanceof IntegerType) {
+			LoopBuilder.setImages( rai )
+			.multiThreaded()
+			.forEachPixel( i -> i.setReal(Math.floor((i.getRealDouble() - minPercentileVal) / (diff + eps)) ) );
+        } else {
+			LoopBuilder.setImages( rai )
+			.multiThreaded()
+			.forEachPixel( i -> i.setReal(((i.getRealDouble() - minPercentileVal) / (diff + eps)) ) );
+        }
+        /**
+         * TODO remove
 		if (rai.getAt(0) instanceof ByteType) {
 			LoopBuilder.setImages( (RandomAccessibleInterval<ByteType>) rai )
 			.multiThreaded()
@@ -349,5 +362,6 @@ public class ScaleRangeTransformation extends AbstractTensorTransformation
 		} else {
 			throw new IllegalArgumentException("Unsupported data type: " + Util.getTypeFromInterval(rai));
 		}
+		*/
 	}
 }

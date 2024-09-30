@@ -202,8 +202,8 @@ public class ExampleLoadTensorflow1Tensorflow2 {
 		// Create the input tensor with the nameand axes given by the rdf.yaml file
 		// and add it to the list of input tensors
 		Tensor<FloatType> inpTensor = Tensor.build("input", "byxc", img1);
-		List<Tensor<T>> inputs = new ArrayList<Tensor<T>>();
-		inputs.add((Tensor<T>) inpTensor);
+		List<Tensor<FloatType>> inputs = new ArrayList<Tensor<FloatType>>();
+		inputs.add(inpTensor);
 		
 		// Create the output tensors defined in the rdf.yaml file with their corresponding 
 		// name and axes and add them to the output list of tensors.
@@ -212,8 +212,8 @@ public class ExampleLoadTensorflow1Tensorflow2 {
 		// defining the dimensions and data type
 		final Img< FloatType > img2 = imgFactory.create( 1, 512, 512, 33 );
 		Tensor<FloatType> outTensor = Tensor.build("output", "byxc", img2);
-		List<Tensor<R>> outputs = new ArrayList<Tensor<R>>();
-		outputs.add((Tensor<R>) outTensor);
+		List<Tensor<FloatType>> outputs = new ArrayList<Tensor<FloatType>>();
+		outputs.add(outTensor);
 		
 		// Run the model on the input tensors. THe output tensors 
 		// will be rewritten with the result of the execution

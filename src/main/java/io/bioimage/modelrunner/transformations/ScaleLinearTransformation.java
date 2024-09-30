@@ -25,15 +25,8 @@ import io.bioimage.modelrunner.tensor.Tensor;
 import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.loops.LoopBuilder;
 import net.imglib2.type.NativeType;
+import net.imglib2.type.numeric.IntegerType;
 import net.imglib2.type.numeric.RealType;
-import net.imglib2.type.numeric.integer.ByteType;
-import net.imglib2.type.numeric.integer.IntType;
-import net.imglib2.type.numeric.integer.LongType;
-import net.imglib2.type.numeric.integer.ShortType;
-import net.imglib2.type.numeric.integer.UnsignedByteType;
-import net.imglib2.type.numeric.integer.UnsignedIntType;
-import net.imglib2.type.numeric.integer.UnsignedShortType;
-import net.imglib2.type.numeric.real.DoubleType;
 import net.imglib2.type.numeric.real.FloatType;
 import net.imglib2.util.Util;
 import net.imglib2.view.IntervalView;
@@ -227,9 +220,21 @@ public class ScaleLinearTransformation extends AbstractTensorTransformation
 		return allPoints;
 	}
 	
-	@SuppressWarnings("unchecked")
 	public < R extends RealType< R > & NativeType< R > > 
 	void scaleLinear(RandomAccessibleInterval<R> rai, double gain, double offset) {
+
+        R type = Util.getTypeFromInterval(rai);
+        if (type instanceof IntegerType) {
+			LoopBuilder.setImages( rai )
+			.multiThreaded()
+			.forEachPixel( i -> i.setReal(Math.floor(i.getRealDouble() * gain + offset) ) );
+        } else {
+			LoopBuilder.setImages( rai )
+			.multiThreaded()
+			.forEachPixel( i -> i.setReal((i.getRealDouble() * gain + offset) ) );
+        }
+        /**
+         * TODO remove
 		if (rai.getAt(0) instanceof ByteType) {
 			LoopBuilder.setImages( (RandomAccessibleInterval<ByteType>) rai )
 			.multiThreaded()
@@ -269,5 +274,6 @@ public class ScaleLinearTransformation extends AbstractTensorTransformation
 		} else {
 			throw new IllegalArgumentException("Unsupported data type: " + Util.getTypeFromInterval(rai));
 		}
+         */
 	}
 }
