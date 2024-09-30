@@ -42,6 +42,7 @@ import io.bioimage.modelrunner.bioimageio.bioengine.tensor.BioEngineOutput;
 import io.bioimage.modelrunner.bioimageio.bioengine.tensor.BioEngineOutputArray;
 import io.bioimage.modelrunner.bioimageio.bioengine.tensor.BioengineTensor;
 import io.bioimage.modelrunner.bioimageio.description.ModelDescriptor;
+import io.bioimage.modelrunner.bioimageio.description.ModelDescriptorFactory;
 import io.bioimage.modelrunner.engine.DeepLearningEngineInterface;
 import io.bioimage.modelrunner.exceptions.LoadModelException;
 import io.bioimage.modelrunner.exceptions.RunModelException;
@@ -50,6 +51,8 @@ import io.bioimage.modelrunner.utils.Constants;
 import net.imglib2.img.Img;
 import net.imglib2.img.ImgFactory;
 import net.imglib2.img.array.ArrayImgFactory;
+import net.imglib2.type.NativeType;
+import net.imglib2.type.numeric.RealType;
 import net.imglib2.type.numeric.real.FloatType;
 
 /**
@@ -153,7 +156,8 @@ public class BioengineInterface implements DeepLearningEngineInterface {
 	 */
 	private static final String SERIALIZATION_VAL = "imjoy";
 	
-	public static void main(String[] args) throws LoadModelException, RunModelException {
+	public static <T extends RealType<T> & NativeType<T>, R extends RealType<R> & NativeType<R>>
+	void main(String[] args) throws LoadModelException, RunModelException {
 		BioengineInterface bi = new BioengineInterface();
 		String path = "C:\\Users\\angel\\OneDrive\\Documentos\\"
 				+ "pasteur\\git\\deep-icy\\models\\2D UNet Arabidopsis Ap"
@@ -163,12 +167,12 @@ public class BioengineInterface implements DeepLearningEngineInterface {
 		final ImgFactory< FloatType > imgFactory = new ArrayImgFactory<>( new FloatType() );
 		final Img< FloatType > img1 = imgFactory.create( 1, 1, 512, 512 );
 		Tensor<FloatType> inpTensor = Tensor.build("input0", "bcyx", img1);
-		List<Tensor<?>> inputs = new ArrayList<Tensor<?>>();
-		inputs.add(inpTensor);
+		List<Tensor<T>> inputs = new ArrayList<Tensor<T>>();
+		inputs.add((Tensor<T>) inpTensor);
 		final Img< FloatType > img2 = imgFactory.create( 1, 2, 512, 512 );
 		Tensor<FloatType> outTensor = Tensor.build("output0", "bcyx", img2);
-		List<Tensor<?>> outputs = new ArrayList<Tensor<?>>();
-		outputs.add(outTensor);
+		List<Tensor<R>> outputs = new ArrayList<Tensor<R>>();
+		outputs.add((Tensor<R>) outTensor);
 		bi.run(inputs, outputs);
 		System.out.print(DECODE_JSON_VAL);
 	}
@@ -177,7 +181,8 @@ public class BioengineInterface implements DeepLearningEngineInterface {
 	/**
 	 * {@inheritDoc}
 	 */
-	public void run(List<Tensor<?>> inputTensors, List<Tensor<?>> outputTensors) throws RunModelException {
+	public <T extends RealType<T> & NativeType<T>, R extends RealType<R> & NativeType<R>>
+	void run(List<Tensor<T>> inputTensors, List<Tensor<R>> outputTensors) throws RunModelException {
 		
 		List<Object> inputs = new ArrayList<Object>();
 		for (Tensor<?> tt : inputTensors) {
@@ -222,14 +227,14 @@ public class BioengineInterface implements DeepLearningEngineInterface {
 	 * @throws RunModelException if the number of tensors expected is not the same as
 	 * 	the number of tensors returned by the Bioengine
 	 */
-	private void fillOutputTensors(List<Tensor<?>> outputTensors, List<BioEngineOutputArray> arrayOutputs) throws RunModelException {
+	private <T extends RealType<T> & NativeType<T>> void fillOutputTensors(List<Tensor<T>> outputTensors, List<BioEngineOutputArray> arrayOutputs) throws RunModelException {
 		if (outputTensors.size() != arrayOutputs.size()) {
 			throw new RunModelException("The rdf.yaml file specifies '" + outputTensors.size()
 				+ "' tensors, but the Bioengine has "
 				+ "produced '" + arrayOutputs.size() + "' output tensors.");
 		}
 		int c = 0;
-		for (Tensor<?> tt : outputTensors) {
+		for (Tensor<T> tt : outputTensors) {
 			tt.setData(arrayOutputs.get(c ++).getImg());
 		}
 	}
@@ -240,7 +245,7 @@ public class BioengineInterface implements DeepLearningEngineInterface {
 	 */
 	public void loadModel(String modelFolder, String modelSource) throws LoadModelException {
 		try {
-			rdf = ModelDescriptor.readFromLocalFile(modelFolder + File.separator + Constants.RDF_FNAME, false);
+			rdf = ModelDescriptorFactory.readFromLocalFile(modelFolder + File.separator + Constants.RDF_FNAME);
 		} catch (Exception e) {
 			throw new LoadModelException("The rdf.yaml file for "
 					+ "model at '" + modelFolder + "' cannot be read.");
