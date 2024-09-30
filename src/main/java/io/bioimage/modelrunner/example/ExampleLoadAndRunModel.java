@@ -37,6 +37,8 @@ import java.util.List;
 import net.imglib2.img.Img;
 import net.imglib2.img.ImgFactory;
 import net.imglib2.img.array.ArrayImgFactory;
+import net.imglib2.type.NativeType;
+import net.imglib2.type.numeric.RealType;
 import net.imglib2.type.numeric.real.FloatType;
 import net.imglib2.util.Util;
 
@@ -68,7 +70,8 @@ public class ExampleLoadAndRunModel {
 	 * @throws Exception if there is any error downloading the engines or the models
 	 * 	or running the model
 	 */
-	public static void main(String[] args) throws LoadEngineException, Exception {
+	public static <T extends RealType<T> & NativeType<T>, R extends RealType<R> & NativeType<R>> 
+	void main(String[] args) throws LoadEngineException, Exception {
 
 		// Tag for the DL framework (engine) that wants to be used
 		String framework = "torchscript";
@@ -109,8 +112,8 @@ public class ExampleLoadAndRunModel {
 		// Create the input tensor with the nameand axes given by the rdf.yaml file
 		// and add it to the list of input tensors
 		Tensor<FloatType> inpTensor = Tensor.build("input0", "bcyx", img1);
-		List<Tensor<?>> inputs = new ArrayList<Tensor<?>>();
-		inputs.add(inpTensor);
+		List<Tensor<T>> inputs = new ArrayList<Tensor<T>>();
+		inputs.add((Tensor<T>) inpTensor);
 		
 		// Create the output tensors defined in the rdf.yaml file with their corresponding 
 		// name and axes and add them to the output list of tensors.
@@ -123,8 +126,8 @@ public class ExampleLoadAndRunModel {
 				new FloatType());*/
 		final Img< FloatType > img2 = imgFactory.create( 1, 2, 512, 512 );
 		Tensor<FloatType> outTensor = Tensor.build("output0", "bcyx", img2);
-		List<Tensor<?>> outputs = new ArrayList<Tensor<?>>();
-		outputs.add(outTensor);
+		List<Tensor<R>> outputs = new ArrayList<Tensor<R>>();
+		outputs.add((Tensor<R>) outTensor);
 		
 		// Run the model on the input tensors. THe output tensors 
 		// will be rewritten with the result of the execution

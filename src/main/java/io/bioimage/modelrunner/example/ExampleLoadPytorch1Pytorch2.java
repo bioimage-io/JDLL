@@ -36,6 +36,8 @@ import io.bioimage.modelrunner.versionmanagement.InstalledEngines;
 import net.imglib2.img.Img;
 import net.imglib2.img.ImgFactory;
 import net.imglib2.img.array.ArrayImgFactory;
+import net.imglib2.type.NativeType;
+import net.imglib2.type.numeric.RealType;
 import net.imglib2.type.numeric.real.FloatType;
 import net.imglib2.util.Util;
 
@@ -91,7 +93,8 @@ public class ExampleLoadPytorch1Pytorch2 {
 	 * @throws LoadEngineException if there is any error loading an engine
 	 * @throws Exception if there is any exception running the model
 	 */
-	public static void loadAndRunPt2(String modelFolder, String modelSource) throws LoadEngineException, Exception {
+	public static <T extends RealType<T> & NativeType<T>, R extends RealType<R> & NativeType<R>> 
+	void loadAndRunPt2(String modelFolder, String modelSource) throws LoadEngineException, Exception {
 		// Tag for the DL framework (engine) that wants to be used
 		String framework = "torchscript";
 		// Version of the engine
@@ -123,8 +126,8 @@ public class ExampleLoadPytorch1Pytorch2 {
 		// Create the input tensor with the nameand axes given by the rdf.yaml file
 		// and add it to the list of input tensors
 		Tensor<FloatType> inpTensor = Tensor.build("input0", "bcyx", img1);
-		List<Tensor<?>> inputs = new ArrayList<Tensor<?>>();
-		inputs.add(inpTensor);
+		List<Tensor<T>> inputs = new ArrayList<Tensor<T>>();
+		inputs.add((Tensor<T>) inpTensor);
 		
 		// Create the output tensors defined in the rdf.yaml file with their corresponding 
 		// name and axes and add them to the output list of tensors.
@@ -137,8 +140,8 @@ public class ExampleLoadPytorch1Pytorch2 {
 				new FloatType());*/
 		final Img< FloatType > img2 = imgFactory.create( 1, 2, 512, 512 );
 		Tensor<FloatType> outTensor = Tensor.build("output0", "bcyx", img2);
-		List<Tensor<?>> outputs = new ArrayList<Tensor<?>>();
-		outputs.add(outTensor);
+		List<Tensor<R>> outputs = new ArrayList<Tensor<R>>();
+		outputs.add((Tensor<R>) outTensor);
 		
 		// Run the model on the input tensors. THe output tensors 
 		// will be rewritten with the result of the execution
@@ -161,7 +164,8 @@ public class ExampleLoadPytorch1Pytorch2 {
 	 * @throws LoadEngineException if there is any error loading an engine
 	 * @throws Exception if there is any exception running the model
 	 */
-	public static void loadAndRunPt1(String modelFolder, String modelSource) throws LoadEngineException, Exception {
+	public static <T extends RealType<T> & NativeType<T>, R extends RealType<R> & NativeType<R>> 
+	void loadAndRunPt1(String modelFolder, String modelSource) throws LoadEngineException, Exception {
 		// Tag for the DL framework (engine) that wants to be used
 		String framework = "torchscript";
 		// Version of the engine
@@ -193,8 +197,8 @@ public class ExampleLoadPytorch1Pytorch2 {
 		// Create the input tensor with the nameand axes given by the rdf.yaml file
 		// and add it to the list of input tensors
 		Tensor<FloatType> inpTensor = Tensor.build("input0", "bcyx", img1);
-		List<Tensor<?>> inputs = new ArrayList<Tensor<?>>();
-		inputs.add(inpTensor);
+		List<Tensor<T>> inputs = new ArrayList<Tensor<T>>();
+		inputs.add((Tensor<T>) inpTensor);
 		
 		// Create the output tensors defined in the rdf.yaml file with their corresponding 
 		// name and axes and add them to the output list of tensors.
@@ -207,8 +211,8 @@ public class ExampleLoadPytorch1Pytorch2 {
 				new FloatType());*/
 		final Img< FloatType > img2 = imgFactory.create( 1, 2, 512, 512 );
 		Tensor<FloatType> outTensor = Tensor.build("output0", "bcyx", img2);
-		List<Tensor<?>> outputs = new ArrayList<Tensor<?>>();
-		outputs.add(outTensor);
+		List<Tensor<R>> outputs = new ArrayList<Tensor<R>>();
+		outputs.add((Tensor<R>) outTensor);
 		
 		// Run the model on the input tensors. THe output tensors 
 		// will be rewritten with the result of the execution
