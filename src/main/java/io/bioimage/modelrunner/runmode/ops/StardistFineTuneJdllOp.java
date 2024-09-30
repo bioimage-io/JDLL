@@ -37,6 +37,7 @@ import java.util.Objects;
 
 import io.bioimage.modelrunner.bioimageio.BioimageioRepo;
 import io.bioimage.modelrunner.bioimageio.description.ModelDescriptor;
+import io.bioimage.modelrunner.bioimageio.description.ModelDescriptorFactory;
 import io.bioimage.modelrunner.bioimageio.description.exceptions.ModelSpecsException;
 import io.bioimage.modelrunner.bioimageio.download.DownloadModel;
 import io.bioimage.modelrunner.engine.installation.FileDownloader;
@@ -551,8 +552,6 @@ public class StardistFineTuneJdllOp implements OpInterface {
 			model = br.downloadByName(model, nModelParentPath);
 		} else if (br.selectByID(model) != null) {
 			model = br.downloadModelByID(model, nModelParentPath);
-		} else if (br.selectByNickname(model) != null) {
-			model = br.downloadByNickame(model, nModelParentPath);
 		}
 		File folder = new File(model);
 		String fineTuned = folder.getParent() + File.separator + "finetuned_" + folder.getName();
@@ -597,7 +596,7 @@ public class StardistFineTuneJdllOp implements OpInterface {
 	@SuppressWarnings("unchecked")
 	private void setUpConfigsBioimageio() throws IOException, ModelSpecsException {
 		String rdfDir = new File(model).getParent();
-		ModelDescriptor descriptor = ModelDescriptor.readFromLocalFile(rdfDir + File.separator + Constants.RDF_FNAME, false);
+		ModelDescriptor descriptor = ModelDescriptorFactory.readFromLocalFile(rdfDir + File.separator + Constants.RDF_FNAME);
 		Object stardistInfo = descriptor.getConfig().getSpecMap().get(StardistInferJdllOp.STARDIST_FIELD_KEY);
 		
 		if (stardistInfo == null || !(stardistInfo instanceof Map)) {
@@ -629,7 +628,7 @@ public class StardistFineTuneJdllOp implements OpInterface {
 	
 	private void setUpKerasWeights() throws IOException, ModelSpecsException {
 		String rdfYamlFN = this.model + File.separator + Constants.RDF_FNAME;
-		ModelDescriptor descriptor = ModelDescriptor.readFromLocalFile(rdfYamlFN, false);
+		ModelDescriptor descriptor = ModelDescriptorFactory.readFromLocalFile(rdfYamlFN);
 		String stardistWeights = this.model + File.separator +  StardistInferJdllOp.STARDIST_FIELD_KEY;
 		stardistWeights += File.separator + STARDIST_WEIGHTS_FILE;
 		String stardistWeightsParent = this.model + File.separator + STARDIST_WEIGHTS_FILE;
@@ -795,9 +794,9 @@ public class StardistFineTuneJdllOp implements OpInterface {
 			this.nChannelsModel = 3;
 		}
 		String rdfFileName = new File(model).getParentFile() + File.separator + Constants.RDF_FNAME;
-		ModelDescriptor descriptor = ModelDescriptor.readFromLocalFile(rdfFileName, false);
+		ModelDescriptor descriptor = ModelDescriptorFactory.readFromLocalFile(rdfFileName);
 		int cInd = descriptor.getInputTensors().get(0).getAxesOrder().indexOf("c");
-		nChannelsModel = descriptor.getInputTensors().get(0).getShape().getTileMinimumSize()[cInd];
+		nChannelsModel = descriptor.getInputTensors().get(0).getMinTileSizeArr()[cInd];
 	}
 	
 	/**
