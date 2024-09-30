@@ -95,6 +95,7 @@ public class ExampleLoadTensorflow1Tensorflow2 {
 	 * @throws LoadEngineException if there is any error loading an engine
 	 * @throws Exception if there is any exception running the model
 	 */
+	@SuppressWarnings("unchecked")
 	public static <T extends RealType<T> & NativeType<T>, R extends RealType<R> & NativeType<R>> 
 	void loadAndRunTf2() throws LoadEngineException, Exception {
 		// Tag for the DL framework (engine) that wants to be used
@@ -163,6 +164,7 @@ public class ExampleLoadTensorflow1Tensorflow2 {
 	 * @throws LoadEngineException if there is any error loading an engine
 	 * @throws Exception if there is any exception running the model
 	 */
+	@SuppressWarnings("unchecked")
 	public static <T extends RealType<T> & NativeType<T>, R extends RealType<R> & NativeType<R>> 
 	void loadAndRunTf1() throws LoadEngineException, Exception {
 		// Tag for the DL framework (engine) that wants to be used
