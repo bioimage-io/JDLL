@@ -20,6 +20,7 @@
 package io.bioimage.modelrunner.model;
 
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URISyntaxException;
@@ -41,6 +42,7 @@ import io.bioimage.modelrunner.apposed.appose.Mamba;
 import io.bioimage.modelrunner.apposed.appose.MambaInstallException;
 import io.bioimage.modelrunner.bioimageio.BioimageioRepo;
 import io.bioimage.modelrunner.bioimageio.description.ModelDescriptor;
+import io.bioimage.modelrunner.bioimageio.description.ModelDescriptorFactory;
 import io.bioimage.modelrunner.bioimageio.description.exceptions.ModelSpecsException;
 import io.bioimage.modelrunner.engine.installation.EngineInstall;
 import io.bioimage.modelrunner.exceptions.LoadEngineException;
@@ -111,9 +113,11 @@ public class Stardist2D {
 	 * 	path to the Bioimage.io model
 	 * @return an instance of a Stardist2D model ready to be used
 	 * @throws ModelSpecsException if there is any error in the configuration of the specs rdf.yaml file of the Bioimage.io
+	 * @throws IOException 
+	 * @throws FileNotFoundException 
 	 */
-	public static Stardist2D fromBioimageioModel(String modelPath) throws ModelSpecsException {
-		ModelDescriptor descriptor = ModelDescriptor.readFromLocalFile(modelPath + File.separator + Constants.RDF_FNAME, false);
+	public static Stardist2D fromBioimageioModel(String modelPath) throws ModelSpecsException, FileNotFoundException, IOException {
+		ModelDescriptor descriptor = ModelDescriptorFactory.readFromLocalFile(modelPath + File.separator + Constants.RDF_FNAME);
 		return new Stardist2D(descriptor);
 	}
 	
@@ -152,7 +156,7 @@ public class Stardist2D {
 																					ModelSpecsException {
 		if ((pretrainedModel.equals("StarDist H&E Nuclei Segmentation")
 				|| pretrainedModel.equals("2D_versatile_he")) && !forceInstall) {
-			ModelDescriptor md = ModelDescriptor.getModelsAtLocalRepo().stream()
+			ModelDescriptor md = ModelDescriptorFactory.getModelsAtLocalRepo().stream()
 					.filter(mm ->mm.getName().equals("StarDist H&E Nuclei Segmentation")).findFirst().orElse(null);
 			if (md != null) return new Stardist2D(md);
 			String path = BioimageioRepo.connect().downloadByName("StarDist H&E Nuclei Segmentation", installDir);
@@ -163,7 +167,7 @@ public class Stardist2D {
 			return Stardist2D.fromBioimageioModel(path);
 		} else if ((pretrainedModel.equals("StarDist Fluorescence Nuclei Segmentation")
 				|| pretrainedModel.equals("2D_versatile_fluo")) && !forceInstall) {
-			ModelDescriptor md = ModelDescriptor.getModelsAtLocalRepo().stream()
+			ModelDescriptor md = ModelDescriptorFactory.getModelsAtLocalRepo().stream()
 					.filter(mm ->mm.getName().equals("StarDist Fluorescence Nuclei Segmentation")).findFirst().orElse(null);
 			if (md != null) return new Stardist2D(md);
 			String path = BioimageioRepo.connect().downloadByName("StarDist Fluorescence Nuclei Segmentation", installDir);
@@ -215,8 +219,8 @@ public class Stardist2D {
 		Tensor<T> inputTensor = Tensor.build("input", "byxc", image);
 		Tensor<T> outputTensor = Tensor.buildEmptyTensor("output", "byxc");
 
-		List<Tensor<?>> inputList = new ArrayList<Tensor<?>>();
-		List<Tensor<?>> outputList = new ArrayList<Tensor<?>>();
+		List<Tensor<T>> inputList = new ArrayList<Tensor<T>>();
+		List<Tensor<T>> outputList = new ArrayList<Tensor<T>>();
 		inputList.add(inputTensor);
 		outputList.add(outputTensor);
 		

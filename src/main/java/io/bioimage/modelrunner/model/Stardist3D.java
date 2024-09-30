@@ -20,6 +20,7 @@
 package io.bioimage.modelrunner.model;
 
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URISyntaxException;
@@ -41,6 +42,7 @@ import io.bioimage.modelrunner.apposed.appose.Mamba;
 import io.bioimage.modelrunner.apposed.appose.MambaInstallException;
 import io.bioimage.modelrunner.bioimageio.BioimageioRepo;
 import io.bioimage.modelrunner.bioimageio.description.ModelDescriptor;
+import io.bioimage.modelrunner.bioimageio.description.ModelDescriptorFactory;
 import io.bioimage.modelrunner.bioimageio.description.exceptions.ModelSpecsException;
 import io.bioimage.modelrunner.engine.installation.EngineInstall;
 import io.bioimage.modelrunner.exceptions.LoadEngineException;
@@ -111,9 +113,11 @@ public class Stardist3D {
 	 * 	path to the Bioimage.io model
 	 * @return an instance of a Stardist3D model ready to be used
 	 * @throws ModelSpecsException if there is any error in the configuration of the specs rdf.yaml file of the Bioimage.io
+	 * @throws IOException 
+	 * @throws FileNotFoundException 
 	 */
-	public static Stardist3D fromBioimageioModel(String modelPath) throws ModelSpecsException {
-		ModelDescriptor descriptor = ModelDescriptor.readFromLocalFile(modelPath + File.separator + Constants.RDF_FNAME, false);
+	public static Stardist3D fromBioimageioModel(String modelPath) throws ModelSpecsException, FileNotFoundException, IOException {
+		ModelDescriptor descriptor = ModelDescriptorFactory.readFromLocalFile(modelPath + File.separator + Constants.RDF_FNAME);
 		return new Stardist3D(descriptor);
 	}
 
@@ -150,7 +154,7 @@ public class Stardist3D {
 																					InterruptedException, 
 																					ModelSpecsException {
 		if (pretrainedModel.equals("StarDist Plant Nuclei 3D ResNet") && !forceInstall) {
-			ModelDescriptor md = ModelDescriptor.getModelsAtLocalRepo().stream()
+			ModelDescriptor md = ModelDescriptorFactory.getModelsAtLocalRepo().stream()
 					.filter(mm ->mm.getName().equals(pretrainedModel)).findFirst().orElse(null);
 			if (md != null) return new Stardist3D(md);
 			String path = BioimageioRepo.connect().downloadByName("StarDist Plant Nuclei 3D ResNet", installDir);
@@ -207,8 +211,8 @@ public class Stardist3D {
 		Tensor<T> inputTensor = Tensor.build("input", "bzyxc", image);
 		Tensor<T> outputTensor = Tensor.buildEmptyTensor("output", "bzyxc");
 
-		List<Tensor<?>> inputList = new ArrayList<Tensor<?>>();
-		List<Tensor<?>> outputList = new ArrayList<Tensor<?>>();
+		List<Tensor<T>> inputList = new ArrayList<Tensor<T>>();
+		List<Tensor<T>> outputList = new ArrayList<Tensor<T>>();
 		inputList.add(inputTensor);
 		outputList.add(outputTensor);
 		
