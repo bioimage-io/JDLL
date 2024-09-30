@@ -36,7 +36,9 @@ import net.imglib2.type.NativeType;
 import net.imglib2.type.numeric.RealType;
 
 /**
- * Class that executes the pre-processing associated to a given tensor
+ * Class that executes the pre- or post-processing associated to a given tensor.
+ * This class manages the preprocessing and postprocessing steps for tensors
+ * based on the specifications provided in valid rdf.yaml Bioimage.io specs file.
  * 
  * @author Carlos Garcia Lopez de Haro
  *
@@ -85,16 +87,49 @@ public class Processing {
 			}
 		}
 	}
-	
+    
+    /**
+     * Initializes and returns a new Processing object.
+     * 
+     * @param descriptor
+     *  The {@link ModelDescriptor} object created from the Bioimage.io rdf spec file containing model information.
+     * @return A new {@link Processing} object.
+     * @throws IllegalArgumentException If there's an issue with the model descriptor.
+     * @throws RuntimeException If there's an error during initialization.
+     */
 	public static Processing init(ModelDescriptor descriptor) throws IllegalArgumentException, RuntimeException {
 		return new Processing(descriptor);
 	}
-	
+    
+    /**
+     * Applies preprocessing to a list of tensors.
+     * If the tensors do not correspond to the input tensors of the model, nothing happens to them.
+     * 
+     * The method output is a separate list of tensors. In order to apply the 
+     * pre-processing in-place, use {@link #preprocess(List, boolean)}.
+     * 
+     * @param <T>
+     *  The type of the input tensor elements.
+     * @param <R>
+     *  The type of the output tensor elements.
+     * @param tensorList
+     *  The list of tensors to preprocess.
+     * @return A list of preprocessed tensors.
+     */
 	public <T extends RealType<T> & NativeType<T>, R extends RealType<R> & NativeType<R>>
 	List<Tensor<R>> preprocess(List<Tensor<T>> tensorList){
 		return preprocess(tensorList, false);
 	}
 	
+	/**
+     * Applies preprocessing to a list of tensors with an option for in-place operations.
+     * 
+     * @param <T> The type of the input tensor elements.
+     * @param <R> The type of the output tensor elements.
+     * @param tensorList The list of tensors to preprocess.
+     * @param inplace If true, preprocessing is done in-place; otherwise, new tensors are created.
+     * @return A list of preprocessed tensors.
+     */
 	public <T extends RealType<T> & NativeType<T>, R extends RealType<R> & NativeType<R>>
 	List<Tensor<R>> preprocess(List<Tensor<T>> tensorList, boolean inplace) {
 		for (Entry<String, List<TransformationInstance>> ee : this.preMap.entrySet()) {
@@ -107,7 +142,36 @@ public class Processing {
 		}
 		return null;
 	}
-	
+    
+    /**
+     * Applies postprocessing to a list of tensors.
+     * If the tensors do not correspond to the output tensors of the model, nothing happens to them.
+     * 
+     * The method output is a separate list of tensors. In order to apply the 
+     * pre-processing in-place, use {@link #postprocess(List, boolean)}.
+     * 
+     * @param <T>
+     *  The type of the input tensor elements.
+     * @param <R>
+     *  The type of the output tensor elements.
+     * @param tensorList
+     *  The list of tensors to postprocess.
+     * @return A list of postprocessed tensors.
+     */
+	public <T extends RealType<T> & NativeType<T>, R extends RealType<R> & NativeType<R>>
+	List<Tensor<R>> postprocess(List<Tensor<T>> tensorList){
+		return postprocess(tensorList, false);
+	}
+
+    /**
+     * Applies postprocessing to a list of tensors with an option for in-place operations.
+     * 
+     * @param <T> The type of the input tensor elements.
+     * @param <R> The type of the output tensor elements.
+     * @param tensorList The list of tensors to postprocess.
+     * @param inplace If true, postprocessing is done in-place; otherwise, new tensors are created.
+     * @return A list of postprocessed tensors.
+     */
 	public <T extends RealType<T> & NativeType<T>, R extends RealType<R> & NativeType<R>>
 	List<Tensor<R>> postprocess(List<Tensor<T>> tensorList, boolean inplace) {
 		for (Entry<String, List<TransformationInstance>> ee : this.postMap.entrySet()) {
