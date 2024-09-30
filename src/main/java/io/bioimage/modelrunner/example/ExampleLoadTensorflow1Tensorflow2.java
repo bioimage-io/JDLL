@@ -40,7 +40,6 @@ import net.imglib2.img.array.ArrayImgFactory;
 import net.imglib2.type.NativeType;
 import net.imglib2.type.numeric.RealType;
 import net.imglib2.type.numeric.real.FloatType;
-import net.imglib2.util.Cast;
 import net.imglib2.util.Util;
 
 /**
@@ -135,8 +134,8 @@ public class ExampleLoadTensorflow1Tensorflow2 {
 		// Create the input tensor with the nameand axes given by the rdf.yaml file
 		// and add it to the list of input tensors
 		Tensor<FloatType> inpTensor = Tensor.build("input_1", "bxyc", img1);
-		List<Tensor<T>> inputs = new ArrayList<Tensor<T>>();
-		inputs.add(Cast.unchecked(inpTensor));
+		List<Tensor<FloatType>> inputs = new ArrayList<Tensor<FloatType>>();
+		inputs.add(inpTensor);
 		
 		// Create the output tensors defined in the rdf.yaml file with their corresponding 
 		// name and axes and add them to the output list of tensors.
@@ -145,8 +144,8 @@ public class ExampleLoadTensorflow1Tensorflow2 {
 		// defining the dimensions and data type
 		Tensor<FloatType> outTensor0 = Tensor.buildBlankTensor(
 				"conv2d_19", "bxyc", new long[] {1, 512, 512, 3}, new FloatType());
-		List<Tensor<R>> outputs = new ArrayList<Tensor<R>>();
-		outputs.add((Tensor<R>) outTensor0);
+		List<Tensor<FloatType>> outputs = new ArrayList<Tensor<FloatType>>();
+		outputs.add(outTensor0);
 		
 		// Run the model on the input tensors. THe output tensors 
 		// will be rewritten with the result of the execution
@@ -165,7 +164,6 @@ public class ExampleLoadTensorflow1Tensorflow2 {
 	 * @throws LoadEngineException if there is any error loading an engine
 	 * @throws Exception if there is any exception running the model
 	 */
-	@SuppressWarnings("unchecked")
 	public static <T extends RealType<T> & NativeType<T>, R extends RealType<R> & NativeType<R>> 
 	void loadAndRunTf1() throws LoadEngineException, Exception {
 		// Tag for the DL framework (engine) that wants to be used
