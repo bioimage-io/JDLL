@@ -47,6 +47,14 @@ import net.imglib2.type.numeric.RealType;
 import net.imglib2.type.numeric.real.FloatType;
 import net.imglib2.util.Cast;
 
+
+/*
+ * TODO
+ * TODO
+ * TODO
+ * TODO
+ * TODO REorganize and adapt to the new architecture
+ */
 public class PythonTransformation extends AbstractTensorTransformation
 {
 	public static final String NAME = "python";
@@ -328,7 +336,7 @@ public class PythonTransformation extends AbstractTensorTransformation
 		return Tensor.build("output", axes, outImg);
 	}
 
-	public void applyInPlace( final Tensor< FloatType > input )
+	public < R extends RealType< R > & NativeType< R > > void applyInPlace( final Tensor< R > input )
 	{
 	}
 	
