@@ -126,8 +126,8 @@ public class ExampleLoadPytorch1Pytorch2 {
 		// Create the input tensor with the nameand axes given by the rdf.yaml file
 		// and add it to the list of input tensors
 		Tensor<FloatType> inpTensor = Tensor.build("input0", "bcyx", img1);
-		List<Tensor<T>> inputs = new ArrayList<Tensor<T>>();
-		inputs.add((Tensor<T>) inpTensor);
+		List<Tensor<FloatType>> inputs = new ArrayList<Tensor<FloatType>>();
+		inputs.add(inpTensor);
 		
 		// Create the output tensors defined in the rdf.yaml file with their corresponding 
 		// name and axes and add them to the output list of tensors.
@@ -140,8 +140,8 @@ public class ExampleLoadPytorch1Pytorch2 {
 				new FloatType());*/
 		final Img< FloatType > img2 = imgFactory.create( 1, 2, 512, 512 );
 		Tensor<FloatType> outTensor = Tensor.build("output0", "bcyx", img2);
-		List<Tensor<R>> outputs = new ArrayList<Tensor<R>>();
-		outputs.add((Tensor<R>) outTensor);
+		List<Tensor<FloatType>> outputs = new ArrayList<Tensor<FloatType>>();
+		outputs.add(outTensor);
 		
 		// Run the model on the input tensors. THe output tensors 
 		// will be rewritten with the result of the execution
@@ -197,8 +197,8 @@ public class ExampleLoadPytorch1Pytorch2 {
 		// Create the input tensor with the nameand axes given by the rdf.yaml file
 		// and add it to the list of input tensors
 		Tensor<FloatType> inpTensor = Tensor.build("input0", "bcyx", img1);
-		List<Tensor<T>> inputs = new ArrayList<Tensor<T>>();
-		inputs.add((Tensor<T>) inpTensor);
+		List<Tensor<FloatType>> inputs = new ArrayList<Tensor<FloatType>>();
+		inputs.add(inpTensor);
 		
 		// Create the output tensors defined in the rdf.yaml file with their corresponding 
 		// name and axes and add them to the output list of tensors.
@@ -211,8 +211,8 @@ public class ExampleLoadPytorch1Pytorch2 {
 				new FloatType());*/
 		final Img< FloatType > img2 = imgFactory.create( 1, 2, 512, 512 );
 		Tensor<FloatType> outTensor = Tensor.build("output0", "bcyx", img2);
-		List<Tensor<R>> outputs = new ArrayList<Tensor<R>>();
-		outputs.add((Tensor<R>) outTensor);
+		List<Tensor<FloatType>> outputs = new ArrayList<Tensor<FloatType>>();
+		outputs.add(outTensor);
 		
 		// Run the model on the input tensors. THe output tensors 
 		// will be rewritten with the result of the execution
