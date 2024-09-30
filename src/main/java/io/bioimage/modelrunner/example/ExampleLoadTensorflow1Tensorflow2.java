@@ -40,6 +40,7 @@ import net.imglib2.img.array.ArrayImgFactory;
 import net.imglib2.type.NativeType;
 import net.imglib2.type.numeric.RealType;
 import net.imglib2.type.numeric.real.FloatType;
+import net.imglib2.util.Cast;
 import net.imglib2.util.Util;
 
 /**
@@ -135,7 +136,7 @@ public class ExampleLoadTensorflow1Tensorflow2 {
 		// and add it to the list of input tensors
 		Tensor<FloatType> inpTensor = Tensor.build("input_1", "bxyc", img1);
 		List<Tensor<T>> inputs = new ArrayList<Tensor<T>>();
-		inputs.add((Tensor<T>) inpTensor);
+		inputs.add(Cast.unchecked(inpTensor));
 		
 		// Create the output tensors defined in the rdf.yaml file with their corresponding 
 		// name and axes and add them to the output list of tensors.
