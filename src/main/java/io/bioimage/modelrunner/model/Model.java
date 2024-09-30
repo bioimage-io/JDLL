@@ -29,7 +29,6 @@ import java.net.MalformedURLException;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
@@ -526,7 +525,6 @@ public class Model
 	 * @throws RunModelException
 	 *             if the is any problem running the model
 	 */
-	@SuppressWarnings("unchecked")
 	public <T extends RealType<T> & NativeType<T>, R extends RealType<R> & NativeType<R>> 
 	void runModel( List< Tensor < T > > inTensors, List< Tensor < R > > outTensors ) throws RunModelException
 	{
@@ -558,8 +556,8 @@ public class Model
 	 * @return the resulting tensors 
 	 * @throws ModelSpecsException if the parameters of the rdf.yaml file are not correct
 	 * @throws RunModelException if the model has not been previously loaded
-	 * @throws IOException 
-	 * @throws FileNotFoundException 
+	 * @throws IOException if any of the required files is missing or corrupt
+	 * @throws FileNotFoundException if any of the required files is missing
 	 * @throws IllegalArgumentException if the model is not a Bioimage.io model or if lacks a Bioimage.io
 	 *  rdf.yaml specs file in the model folder. 
 	 */
@@ -585,8 +583,8 @@ public class Model
 	 * @return the resulting tensors 
 	 * @throws ModelSpecsException if the parameters of the rdf.yaml file are not correct
 	 * @throws RunModelException if the model has not been previously loaded
-	 * @throws IOException 
-	 * @throws FileNotFoundException 
+	 * @throws IOException if any of the required files is missing or corrupt
+	 * @throws FileNotFoundException if any of the required files is missing
 	 * @throws IllegalArgumentException if the model is not a Bioimage.io model or if lacks a Bioimage.io
 	 *  rdf.yaml specs file in the model folder. 
 	 */
@@ -619,8 +617,9 @@ public class Model
 	 * 	ImgLib2 data type of the input images
 	 * @param inputTensors
 	 * 	list of the input tensors that are going to be inputed to the model
-	 * @param tileMap
-	 * 	Map containing the tiles for all the image tensors with their corresponding names each
+	 * @param tiles
+	 * 	List of {@link TileInfo} objects containing information about the image size and tile
+	 * 	size of each of the input tensors to the model
 	 * @return the resulting tensors 
 	 * @throws ModelSpecsException if the parameters of the rdf.yaml file are not correct
 	 * @throws RunModelException if the model has not been previously loaded
@@ -645,8 +644,9 @@ public class Model
 	 * 	ImgLib2 data type of the input images
 	 * @param inputTensors
 	 * 	list of the input tensors that are going to be inputed to the model
-	 * @param tileMap
-	 * 	Map containing the tiles for all the image tensors with their corresponding names each
+	 * @param tiles
+	 * 	List of {@link TileInfo} objects containing information about the image size and tile
+	 * 	size of each of the input tensors to the model
 	 * @param tileCounter
 	 * 	consumer that counts the number of tiles processed out of the total, if null, nothing is counted
 	 * @return the resulting tensors 
@@ -705,6 +705,18 @@ public class Model
 		return outputTensors;
 	}
 	
+	/**
+	 * 
+	 * @param <T>
+	 * 	nothing
+	 * @param args
+	 * 	nothing
+	 * @throws IOException	nothing
+	 * @throws ModelSpecsException	nothing
+	 * @throws LoadEngineException	nothing
+	 * @throws RunModelException	nothing
+	 * @throws LoadModelException	nothing
+	 */
 	public static <T extends NativeType<T> & RealType<T>> void main(String[] args) throws IOException, ModelSpecsException, LoadEngineException, RunModelException, LoadModelException {
 		
 		String mm = "/home/carlos/git/JDLL/models/NucleiSegmentationBoundaryModel_17122023_143125";
@@ -717,7 +729,7 @@ public class Model
 				l.get(0).getAxesOrderString(), new long[] {1, 1, 512, 512}, l.get(0).getAxesOrderString());
 		List<TileInfo> tileList = new ArrayList<TileInfo>();
 		tileList.add(tile);
-		List<Tensor<T>> out = model.runBMZ(l, tileList);
+		model.runBMZ(l, tileList);
 		System.out.println(false);
 		
 	}
@@ -794,9 +806,9 @@ public class Model
 	 * If the model does not contain a specs file, the methods returns null
 	 * @return the {@link ModelDescriptor} instance that contains the specs defined in the 
 	 * 	Bioimage.io rdf.yaml specs file.
-	 * @throws IOException 
-	 * @throws ModelSpecsException 
-	 * @throws FileNotFoundException 
+	 * @throws IOException if any of the required files is corrupt or missing
+	 * @throws ModelSpecsException if the specs of rdf.yaml file are not compliant with the Bioimage.io specs
+	 * @throws FileNotFoundException if any of the files required is not found
 	 */
 	public ModelDescriptor getBioimageioSpecs() throws FileNotFoundException, ModelSpecsException, IOException {
 		if (descriptor == null && new File(modelFolder + File.separator + Constants.RDF_FNAME).isFile()) {
@@ -807,8 +819,8 @@ public class Model
 	
 	/**
 	 * Create consumer used to be used with {@link Model} for the methods {@link #runBMZ(List, TilingConsumer)}
-	 * or {@link #runBioimageioModelOnImgLib2WithTiling(List, Map, TilingConsumer)}.
-	 * The coonsumer helps to track the number if tiles that have already been processed.
+	 * or {@link #runBMZ(List, List, TilingConsumer)}.
+	 * The consumer helps to track the number if tiles that have already been processed.
 	 * @return a consumer to track the tiling process
 	 */
 	public static TilingConsumer createTilingConsumer() {
