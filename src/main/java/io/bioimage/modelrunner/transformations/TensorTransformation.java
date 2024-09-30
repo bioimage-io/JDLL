@@ -53,6 +53,8 @@ public interface TensorTransformation
 	 * Applies this transformation to the specified input tensor, and overwrites
 	 * it with the results. The input tensor must of type <code>float</code>.
 	 *
+	 * @param <R>
+	 * 	ImgLib2 data type of the input tensor
 	 * @param input
 	 *            the input tensor.
 	 */

@@ -36,7 +36,7 @@ import net.imglib2.type.NativeType;
 import net.imglib2.type.numeric.RealType;
 
 /**
- * 
+ * Class that creates an instance able to run the corresponding Bioimage.io processing routine
  * @author Carlos Jaier Garcia Lopez de Haro
  */
 
@@ -60,15 +60,58 @@ public class TransformationInstance {
 		this.build();
 	}
 	
+	/**
+	 * Create a {@link TransformationInstance} from a {@link TransformSpec} created from a valid rdf.yaml Bioimage.io
+	 * spec file
+	 * @param transform
+	 * 	{@link TransformSpec} object from an rd.yaml file
+	 * @return the {@link TransformationInstance}
+	 * @throws RuntimeException if there is any error because the transformation defined by {@link TransformSpec} is not
+	 * 	valid or not yet supported
+	 * @throws IllegalArgumentException if there is any error because the transformation defined by {@link TransformSpec} is not
+	 * 	valid or not yet supported
+	 */
 	public static TransformationInstance create(TransformSpec transform) throws RuntimeException, IllegalArgumentException {
 		return new TransformationInstance(transform);
 	}
 	
+	/**
+	 * Run the defined transformation on the input {@link Tensor} of interest.
+	 * This method creates a new object for the output tensor, so at the end, 
+	 * there is one object for the input and another for the output.
+	 * If you want to do the transfromation in-place (modify the input tensor 
+	 * instead of creating another one) use {@link #run(Tensor, boolean)}
+	 * 
+	 * @param <T>
+	 * 	ImgLib2 data type of the input tensor
+	 * @param <R>
+	 * 	ImgLib2 data type of the resulting output tensor
+	 * @param tensor
+	 * 	the input tensor to be processed
+	 * @return the output tensor
+	 * @throws RuntimeException if there is any error running the transformation
+	 */
 	public <T extends RealType<T> & NativeType<T>, R extends RealType<R> & NativeType<R>>
 	List<Tensor<R>> run(Tensor<T> tensor) throws RuntimeException {
 		return run(tensor, false);
 	}
 	
+	/**
+	 * Run the defined transformation on the input {@link Tensor} of interest.
+	 * 
+	 * @param <T>
+	 * 	ImgLib2 data type of the input tensor
+	 * @param <R>
+	 * 	ImgLib2 data type of the resulting output tensor
+	 * @param tensor
+	 * 	the input tensor to be processed
+	 * @param inplace
+	 * 	whether to apply the transformation to the input object and modify it or 
+	 * 	to create a separate tensor as the output and do the modifications there.
+	 * 	With inplace=false, two separate tensors exist after the method is done.
+	 * @return the output tensor
+	 * @throws RuntimeException if there is any error running the transformation
+	 */
 	public <T extends RealType<T> & NativeType<T>, R extends RealType<R> & NativeType<R>>
 	List<Tensor<R>> run(Tensor<T> tensor, boolean inplace) throws RuntimeException {
 		Method m;
@@ -157,7 +200,7 @@ public class TransformationInstance {
 	 * @throws InvocationTargetExceptionif there is any error invoking the method
 	 * @throws IllegalAccessException if it is illegal to access the method
 	 */
-	public void setArg(String argName) {
+	private void setArg(String argName) {
 		Method mm = getMethodForArgument(argName);
 		checkArgType(mm);
 		try {
@@ -176,7 +219,7 @@ public class TransformationInstance {
 	 * @return the method name 
 	 * @throws IllegalArgumentException if no method is found for the given argument
 	 */
-	public Method getMethodForArgument(String argName) throws IllegalArgumentException {
+	private Method getMethodForArgument(String argName) throws IllegalArgumentException {
 		String mName = "set" + snakeCaseToCamelCaseFirstCap(argName);
 		// Check that the method exists
 		Method[] methods = this.cls.getMethods();
