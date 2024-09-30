@@ -22,11 +22,20 @@ package io.bioimage.modelrunner.transformations;
 import java.util.ArrayList;
 
 import io.bioimage.modelrunner.tensor.Tensor;
-
+import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.loops.LoopBuilder;
 import net.imglib2.type.NativeType;
 import net.imglib2.type.numeric.RealType;
+import net.imglib2.type.numeric.integer.ByteType;
+import net.imglib2.type.numeric.integer.IntType;
+import net.imglib2.type.numeric.integer.LongType;
+import net.imglib2.type.numeric.integer.ShortType;
+import net.imglib2.type.numeric.integer.UnsignedByteType;
+import net.imglib2.type.numeric.integer.UnsignedIntType;
+import net.imglib2.type.numeric.integer.UnsignedShortType;
+import net.imglib2.type.numeric.real.DoubleType;
 import net.imglib2.type.numeric.real.FloatType;
+import net.imglib2.util.Util;
 import net.imglib2.view.IntervalView;
 import net.imglib2.view.Views;
 
@@ -119,9 +128,9 @@ public class ScaleLinearTransformation extends AbstractTensorTransformation
 	
 	public void checkRequiredArgs() {
 		if (offsetDouble == null && offsetArr == null) {
-			throw new IllegalArgumentException(String.format(DEFAULT_MISSING_ARG_ERR, "offset"));
+			throw new IllegalArgumentException(String.format(DEFAULT_MISSING_ARG_ERR, name, "offset"));
 		} else if (gainDouble == null && gainArr == null) {
-			throw new IllegalArgumentException(String.format(DEFAULT_MISSING_ARG_ERR, "gain"));
+			throw new IllegalArgumentException(String.format(DEFAULT_MISSING_ARG_ERR, name, "gain"));
 		} else if ((offsetDouble == null && gainDouble != null)
 				|| (offsetDouble != null && gainDouble == null)) {
 			throw new IllegalArgumentException("Both arguments 'gain' and "
@@ -142,7 +151,7 @@ public class ScaleLinearTransformation extends AbstractTensorTransformation
 	}
 
 	@Override
-	public void applyInPlace(Tensor<FloatType> input) {
+	public < R extends RealType< R > & NativeType< R > > void applyInPlace(Tensor<R> input) {
 		checkRequiredArgs();
 		String selectedAxes = "";
 		for (String ax : input.getAxesOrderString().split("")) {
@@ -167,13 +176,11 @@ public class ScaleLinearTransformation extends AbstractTensorTransformation
 		
 	}
 	
-	private void globalScale( final Tensor< FloatType > output ) {
-		LoopBuilder.setImages( output.getData() )
-				.multiThreaded()
-				.forEachPixel( i -> i.set( gainDouble.floatValue() * i.get() + offsetDouble.floatValue() ) );
+	private < R extends RealType< R > & NativeType< R > > void globalScale( final Tensor< R > output ) {
+		scaleLinear(output.getData(), gainDouble.doubleValue(), offsetDouble.doubleValue());
 	}
 	
-	private void axesScale( final Tensor< FloatType > output, String axesOfInterest) {
+	private < R extends RealType< R > & NativeType< R > > void axesScale( final Tensor< R > output, String axesOfInterest) {
 		long[] start = new long[output.getData().numDimensions()];
 		long[] dims = output.getData().dimensionsAsLongArray();
 		long[] indOfDims = new long[axesOfInterest.length()];
@@ -195,12 +202,10 @@ public class ScaleLinearTransformation extends AbstractTensorTransformation
 			// Define the view by defining the length per axis
 			long[] end = new long[dims.length];
 			for (int i = 0; i < dims.length; i ++) end[i] = dims[i] - start[i];
-			IntervalView<FloatType> plane = Views.offsetInterval( output.getData(), start, end );
+			IntervalView<R> plane = Views.offsetInterval( output.getData(), start, end );
 			final float gain = (float) this.gainArr[c];
 			final float offset = (float) this.offsetArr[c ++ ];
-			LoopBuilder.setImages( plane )
-					.multiThreaded()
-					.forEachPixel( i -> i.set( i.get() * gain + offset ) );
+			scaleLinear(plane, gain, offset);
 		}
 	}
 	
@@ -220,5 +225,49 @@ public class ScaleLinearTransformation extends AbstractTensorTransformation
 			}
 		}
 		return allPoints;
+	}
+	
+	@SuppressWarnings("unchecked")
+	public < R extends RealType< R > & NativeType< R > > 
+	void scaleLinear(RandomAccessibleInterval<R> rai, double gain, double offset) {
+		if (rai.getAt(0) instanceof ByteType) {
+			LoopBuilder.setImages( (RandomAccessibleInterval<ByteType>) rai )
+			.multiThreaded()
+			.forEachPixel( i -> i.set((byte) (i.get() * gain + offset) ) );
+		} else if (rai.getAt(0) instanceof UnsignedByteType) {
+			LoopBuilder.setImages( (RandomAccessibleInterval<UnsignedByteType>) rai )
+			.multiThreaded()
+			.forEachPixel( i -> i.set((int) (i.get() * gain + offset) ) );
+		} else if (rai.getAt(0) instanceof ShortType) {
+			LoopBuilder.setImages((RandomAccessibleInterval<ShortType>) rai )
+			.multiThreaded()
+			.forEachPixel( i -> i.set((short) (i.get() * gain + offset) ) );
+		} else if (rai.getAt(0) instanceof UnsignedShortType) {
+			LoopBuilder.setImages((RandomAccessibleInterval<UnsignedShortType>) rai )
+			.multiThreaded()
+			.forEachPixel( i -> i.set((int) (i.get() * gain + offset) ) );
+		} else if (rai.getAt(0) instanceof IntType) {
+			LoopBuilder.setImages((RandomAccessibleInterval<IntType>) rai )
+			.multiThreaded()
+			.forEachPixel( i -> i.set((int) (i.get() * gain + offset) ) );
+		} else if (rai.getAt(0) instanceof UnsignedIntType) {
+			LoopBuilder.setImages((RandomAccessibleInterval<UnsignedIntType>) rai )
+			.multiThreaded()
+			.forEachPixel( i -> i.set((long) (i.get() * gain + offset) ) );
+		} else if (rai.getAt(0) instanceof LongType) {
+			LoopBuilder.setImages((RandomAccessibleInterval<LongType>) rai )
+			.multiThreaded()
+			.forEachPixel( i -> i.set((long) (i.get() * gain + offset) ) );
+		} else if (rai.getAt(0) instanceof FloatType) {
+			LoopBuilder.setImages((RandomAccessibleInterval<FloatType>) rai )
+			.multiThreaded()
+			.forEachPixel( i -> i.set((float) (i.get() * gain + offset) ) );
+		} else if (rai.getAt(0) instanceof DoubleType) {
+			LoopBuilder.setImages((RandomAccessibleInterval<DoubleType>) rai )
+			.multiThreaded()
+			.forEachPixel( i -> i.set((double) (i.get() * gain + offset) ) );
+		} else {
+			throw new IllegalArgumentException("Unsupported data type: " + Util.getTypeFromInterval(rai));
+		}
 	}
 }
