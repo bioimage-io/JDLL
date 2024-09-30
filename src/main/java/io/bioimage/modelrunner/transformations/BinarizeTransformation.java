@@ -34,15 +34,7 @@ public class BinarizeTransformation extends AbstractTensorPixelTransformation
 	public BinarizeTransformation()
 	{
 		super( name );
-		super.setFloatUnitaryOperator(v -> ( v >= threshold ) ? 1f : 0f);
 		super.setDoubleUnitaryOperator(v -> ( v >= threshold ) ? 1d : 0d);
-		super.setByteUnitaryOperator(v -> ( v >= threshold ) ? (byte) 1 : 0);
-		super.setUByteUnitaryOperator(v -> ( v >= threshold ) ? 1 : 0);
-		super.setShortUnitaryOperator(v -> ( v >= threshold ) ? (short) 1 : 0);
-		super.setUShortUnitaryOperator(v -> ( v >= threshold ) ? 1 : 0);
-		super.setIntUnitaryOperator(v -> ( v >= threshold ) ? 1 : 0);
-		super.setUIntUnitaryOperator(v -> ( v >= threshold ) ? 1L : 0L);
-		super.setLongUnitaryOperator(v -> ( v >= threshold ) ? 1L : 0L);
 	}
 	
 	public void setThreshold(Object threshold) {

@@ -23,6 +23,7 @@ import io.bioimage.modelrunner.tensor.Tensor;
 import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.loops.LoopBuilder;
 import net.imglib2.type.NativeType;
+import net.imglib2.type.numeric.IntegerType;
 import net.imglib2.type.numeric.RealType;
 import net.imglib2.type.numeric.integer.ByteType;
 import net.imglib2.type.numeric.integer.IntType;
@@ -45,55 +46,15 @@ import net.imglib2.type.numeric.real.FloatType;
 public class AbstractTensorPixelTransformation extends AbstractTensorTransformation
 {
 
-	private FloatUnaryOperator fun;
-	private DoubleUnaryOperator dun;
-	private ByteUnaryOperator bun;
-	private UByteUnaryOperator ubun;
-	private ShortUnaryOperator sun;
-	private UShortUnaryOperator usun;
-	private IntUnaryOperator iun;
-	private UIntUnaryOperator uiun;
-	private LongUnaryOperator lun;
+	private DoubleUnitaryOperator dun;
 
 	protected AbstractTensorPixelTransformation( final String name)
 	{
 		super( name );
 	}
 	
-	protected void setFloatUnitaryOperator(final FloatUnaryOperator fun) {
-		this.fun = fun;
-	}
-	
-	protected void setDoubleUnitaryOperator(final DoubleUnaryOperator fun) {
+	protected void setDoubleUnitaryOperator(final DoubleUnitaryOperator fun) {
 		this.dun = fun;
-	}
-	
-	protected void setByteUnitaryOperator(final ByteUnaryOperator fun) {
-		this.bun = fun;
-	}
-	
-	protected void setUByteUnitaryOperator(final UByteUnaryOperator fun) {
-		this.ubun = fun;
-	}
-	
-	protected void setShortUnitaryOperator(final ShortUnaryOperator fun) {
-		this.sun = fun;
-	}
-	
-	protected void setUShortUnitaryOperator(final UShortUnaryOperator fun) {
-		this.usun = fun;
-	}
-	
-	protected void setIntUnitaryOperator(final IntUnaryOperator fun) {
-		this.iun = fun;
-	}
-	
-	protected void setUIntUnitaryOperator(final UIntUnaryOperator fun) {
-		this.uiun = fun;
-	}
-	
-	protected void setLongUnitaryOperator(final LongUnaryOperator fun) {
-		this.lun = fun;
 	}
 
 	@Override
@@ -104,112 +65,26 @@ public class AbstractTensorPixelTransformation extends AbstractTensorTransformat
 		return output;
 	}
 
-	@SuppressWarnings("unchecked")
 	@Override
 	public < R extends RealType< R > & NativeType< R > >
 	void applyInPlace( final Tensor< R > input )
 	{
-		if (input.getData().getAt(0) instanceof FloatType && fun != null) {
+		if (input.getData().getAt(0) instanceof IntegerType && dun != null) {
 			LoopBuilder
-			.setImages( (RandomAccessibleInterval<FloatType>) input.getData() )
+			.setImages( input.getData() )
 			.multiThreaded()
-			.forEachPixel( i -> i.set( fun.applyAs( i.get() ) ) );
-		} else if (input.getData().getAt(0) instanceof DoubleType && dun != null) {
+			.forEachPixel( i -> i.setReal( Math.floor(dun.applyAs( i.getRealDouble() )) ) );
+		} else if (dun != null) {
 			LoopBuilder
-			.setImages( (RandomAccessibleInterval<DoubleType>) input.getData() )
+			.setImages( input.getData() )
 			.multiThreaded()
-			.forEachPixel( i -> i.set( dun.applyAs( i.get() ) ) );
-		} else if (input.getData().getAt(0) instanceof ByteType && bun != null) {
-			LoopBuilder
-			.setImages( (RandomAccessibleInterval<ByteType>) input.getData() )
-			.multiThreaded()
-			.forEachPixel( i -> i.set( bun.applyAs( i.get() ) ) );
-		} else if (input.getData().getAt(0) instanceof UnsignedByteType && ubun != null) {
-			LoopBuilder
-			.setImages( (RandomAccessibleInterval<UnsignedByteType>) input.getData() )
-			.multiThreaded()
-			.forEachPixel( i -> i.set( ubun.applyAs( i.get() ) ) );
-		} else if (input.getData().getAt(0) instanceof ShortType && sun != null) {
-			LoopBuilder
-			.setImages( (RandomAccessibleInterval<ShortType>) input.getData() )
-			.multiThreaded()
-			.forEachPixel( i -> i.set( sun.applyAs( i.get() ) ) );
-		} else if (input.getData().getAt(0) instanceof UnsignedShortType && usun != null) {
-			LoopBuilder
-			.setImages( (RandomAccessibleInterval<UnsignedShortType>) input.getData() )
-			.multiThreaded()
-			.forEachPixel( i -> i.set( usun.applyAs( i.get() ) ) );
-		} else if (input.getData().getAt(0) instanceof IntType && iun != null) {
-			LoopBuilder
-			.setImages( (RandomAccessibleInterval<IntType>) input.getData() )
-			.multiThreaded()
-			.forEachPixel( i -> i.set( iun.applyAs( i.get() ) ) );
-		} else if (input.getData().getAt(0) instanceof UnsignedIntType && uiun != null) {
-			LoopBuilder
-			.setImages( (RandomAccessibleInterval<UnsignedIntType>) input.getData() )
-			.multiThreaded()
-			.forEachPixel( i -> i.set( uiun.applyAs( i.get() ) ) );
-		} else if (input.getData().getAt(0) instanceof LongType && lun != null) {
-			LoopBuilder
-			.setImages( (RandomAccessibleInterval<LongType>) input.getData() )
-			.multiThreaded()
-			.forEachPixel( i -> i.set( lun.applyAs( i.get() ) ) );
-		} else {
-			throw new IllegalArgumentException("Unsupported data type.");
+			.forEachPixel( i -> i.setReal( dun.applyAs( i.getRealDouble() ) ) );
 		}
 	}
 
 	@FunctionalInterface
-	public interface FloatUnaryOperator
-	{
-		float applyAs( float in );
-	}
-
-	@FunctionalInterface
-	public interface DoubleUnaryOperator
+	public interface DoubleUnitaryOperator
 	{
 		double applyAs( double in );
-	}
-
-	@FunctionalInterface
-	public interface ByteUnaryOperator
-	{
-		byte applyAs( byte in );
-	}
-
-	@FunctionalInterface
-	public interface UByteUnaryOperator
-	{
-		int applyAs( int i );
-	}
-
-	@FunctionalInterface
-	public interface ShortUnaryOperator
-	{
-		short applyAs( short in );
-	}
-
-	@FunctionalInterface
-	public interface UShortUnaryOperator
-	{
-		int applyAs( int i );
-	}
-
-	@FunctionalInterface
-	public interface IntUnaryOperator
-	{
-		int applyAs( int in );
-	}
-
-	@FunctionalInterface
-	public interface UIntUnaryOperator
-	{
-		long applyAs( long in );
-	}
-
-	@FunctionalInterface
-	public interface LongUnaryOperator
-	{
-		long applyAs( long in );
 	}
 }

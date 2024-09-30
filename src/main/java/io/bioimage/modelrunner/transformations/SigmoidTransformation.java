@@ -32,15 +32,7 @@ public class SigmoidTransformation extends AbstractTensorPixelTransformation
 	public SigmoidTransformation()
 	{
 		super(name);
-		super.setFloatUnitaryOperator( v -> ( float ) ( 1. / ( 1. + Math.exp( -v ) ) ) );
 		super.setDoubleUnitaryOperator(v -> ( double ) ( 1. / ( 1. + Math.exp( -v ) ) ));
-		super.setByteUnitaryOperator(v -> ( byte ) ( 1. / ( 1. + Math.exp( -v ) ) ));
-		super.setUByteUnitaryOperator(v -> ( int ) ( 1. / ( 1. + Math.exp( -v ) ) ));
-		super.setShortUnitaryOperator(v -> ( short ) ( 1. / ( 1. + Math.exp( -v ) ) ));
-		super.setUShortUnitaryOperator(v -> ( int ) ( 1. / ( 1. + Math.exp( -v ) ) ));
-		super.setIntUnitaryOperator(v -> ( int ) ( 1. / ( 1. + Math.exp( -v ) ) ));
-		super.setUIntUnitaryOperator(v -> ( long ) ( 1. / ( 1. + Math.exp( -v ) ) ));
-		super.setLongUnitaryOperator(v -> ( long ) ( 1. / ( 1. + Math.exp( -v ) ) ));
 	}
 
 	public < R extends RealType< R > & NativeType< R > > Tensor< FloatType > apply( final Tensor< R > input )

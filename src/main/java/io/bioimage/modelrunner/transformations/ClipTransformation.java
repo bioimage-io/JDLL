@@ -35,15 +35,7 @@ public class ClipTransformation extends AbstractTensorPixelTransformation
 	public ClipTransformation()
 	{
 		super(name);
-		super.setFloatUnitaryOperator(v -> v >= max ? max.floatValue() : (v < min ? min.floatValue() : v));
 		super.setDoubleUnitaryOperator(v -> v >= max ? max.doubleValue() : (v < min ? min.doubleValue() : v));
-		super.setByteUnitaryOperator(v -> v >= max ? max.byteValue() : (v < min ? min.byteValue() : v));
-		super.setUByteUnitaryOperator(v -> v >= max ? max.intValue() : (v < min ? min.intValue() : v));
-		super.setShortUnitaryOperator(v -> v >= max ? max.shortValue() : (v < min ? min.shortValue() : v));
-		super.setUShortUnitaryOperator(v -> v >= max ? max.intValue() : (v < min ? min.intValue() : v));
-		super.setIntUnitaryOperator(v -> v >= max ? max.intValue() : (v < min ? min.intValue() : v));
-		super.setUIntUnitaryOperator(v -> v >= max ? max.longValue() : (v < min ? min.longValue() : v));
-		super.setLongUnitaryOperator(v -> v >= max ? max.longValue() : (v < min ? min.longValue() : v));
 	}
 	
 	public void setMin(Object min) {
