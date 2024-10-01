@@ -64,6 +64,10 @@ public class ExampleLoadAndRunModel {
 
 	/**
 	 * 
+	 * @param <T>
+	 * 	ImgLib2 input data type
+	 * @param <R>
+	 * 	ImgLib2 output data type, can be the same as the input
 	 * @param args
 	 * 	main args, in this case nothing is needed
 	 * @throws LoadEngineException if the engine fails to load the model

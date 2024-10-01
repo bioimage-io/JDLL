@@ -86,6 +86,10 @@ public class ExampleLoadPytorch1Pytorch2 {
 	
 	/**
 	 * Loads a Pytorch 2 model and runs it
+	 * @param <T>
+	 * 	ImgLib2 input data type
+	 * @param <R>
+	 * 	ImgLib2 output data type, can be the same as the input
 	 * @param modelFolder
 	 * 	folder of the model
 	 * @param modelSource
@@ -157,6 +161,10 @@ public class ExampleLoadPytorch1Pytorch2 {
 
 	/**
 	 * Loads a Pytorch 1 model and runs it
+	 * @param <T>
+	 * 	ImgLib2 input data type
+	 * @param <R>
+	 * 	ImgLib2 output data type, can be the same as the input
 	 * @param modelFolder
 	 * 	folder of the model
 	 * @param modelSource

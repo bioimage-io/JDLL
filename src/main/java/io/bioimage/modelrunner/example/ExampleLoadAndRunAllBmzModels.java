@@ -117,6 +117,10 @@ public class ExampleLoadAndRunAllBmzModels {
 	}
 	/**
 	 * Load and run any model provided
+	 * @param <T>
+	 * 	ImgLib2 input data type
+	 * @param <R>
+	 * 	ImgLib2 output data type, can be the same as the input
 	 * @param modelFolder
 	 * 	the paht to the model folder
 	 * @param descriptor

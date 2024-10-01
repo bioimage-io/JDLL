@@ -92,10 +92,13 @@ public class ExampleLoadTensorflow1Tensorflow2 {
 	
 	/**
 	 * Loads a TF2 model and runs it
-	 * @throws LoadEngineException if there is any error loading an engine
+	 * @throws LoadEngineException if there
+	 * @param <T>
+	 * 	ImgLib2 input data type
+	 * @param <R>
+	 * 	ImgLib2 output data type, can be the same as the input is any error loading an engine
 	 * @throws Exception if there is any exception running the model
 	 */
-	@SuppressWarnings("unchecked")
 	public static <T extends RealType<T> & NativeType<T>, R extends RealType<R> & NativeType<R>> 
 	void loadAndRunTf2() throws LoadEngineException, Exception {
 		// Tag for the DL framework (engine) that wants to be used
@@ -161,6 +164,10 @@ public class ExampleLoadTensorflow1Tensorflow2 {
 
 	/**
 	 * Loads a TF1 model and runs it
+	 * @param <T>
+	 * 	ImgLib2 input data type
+	 * @param <R>
+	 * 	ImgLib2 output data type, can be the same as the input
 	 * @throws LoadEngineException if there is any error loading an engine
 	 * @throws Exception if there is any exception running the model
 	 */
