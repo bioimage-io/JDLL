@@ -35,6 +35,10 @@ public interface DeepLearningEngineInterface
 	 * implements the interface, the code to run the model on the tensors should
 	 * go here.
 	 * 
+	 * @param <T>
+	 * 	ImgLib2 data type of the inputs
+	 * @param <R>
+	 * 	ImgLib2 data type of the outputs, both can be the same
 	 * @param inputTensors
 	 *            list containing the input tensors
 	 * @param outputTensors
@@ -42,12 +46,6 @@ public interface DeepLearningEngineInterface
 	 * @throws RunModelException
 	 *             if there is an error in the execution of the model
 	 */
-	/*
-	 * TODO
-	 * TODO
-	 * TODO should it be like the commented option? ask jean-yves
-	 */
-	//public void run( List< Tensor > inputTensors, List< Tensor > outputTensors ) throws RunModelException;
 	public <T extends RealType<T> & NativeType<T>, R extends RealType<R> & NativeType<R>>
 	void run( List< Tensor  < T > > inputTensors, List< Tensor  < R > > outputTensors ) throws RunModelException;
 
