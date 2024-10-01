@@ -14,7 +14,7 @@
 				"https://repo1.maven.org/maven2/org/tensorflow/libtensorflow_jni/1.12.0/libtensorflow_jni-1.12.0.jar",
 				"https://repo1.maven.org/maven2/com/google/protobuf/protobuf-java/3.5.1/protobuf-java-3.5.1.jar",
 				"https://repo1.maven.org/maven2/org/tensorflow/proto/1.12.0/proto-1.12.0.jar",
-				"https://maven.scijava.org/service/local/repositories/releases/content/io/bioimage/dl-modelrunner-tensorflow-1/0.4.2-SNAPSHOT/dl-modelrunner-tensorflow-1-0.4.2-20241001.170208-4.jar"
+				"https://maven.scijava.org/service/local/repositories/snapshots/content/io/bioimage/dl-modelrunner-tensorflow-1/0.4.2-SNAPSHOT/dl-modelrunner-tensorflow-1-0.4.2-20241001.170208-4.jar"
 			]
 		},
 		{
@@ -31,7 +31,7 @@
 				"https://repo1.maven.org/maven2/org/tensorflow/libtensorflow_jni_gpu/1.12.0/libtensorflow_jni_gpu-1.12.0.jar",
 				"https://repo1.maven.org/maven2/com/google/protobuf/protobuf-java/3.5.1/protobuf-java-3.5.1.jar",
 				"https://repo1.maven.org/maven2/org/tensorflow/proto/1.12.0/proto-1.12.0.jar",
-				"https://maven.scijava.org/service/local/repositories/releases/content/io/bioimage/dl-modelrunner-tensorflow-1/0.4.2-SNAPSHOT/dl-modelrunner-tensorflow-1-0.4.2-20241001.170208-4.jar"
+				"https://maven.scijava.org/service/local/repositories/snapshots/content/io/bioimage/dl-modelrunner-tensorflow-1/0.4.2-SNAPSHOT/dl-modelrunner-tensorflow-1-0.4.2-20241001.170208-4.jar"
 			]
 		},
 		{
@@ -48,7 +48,7 @@
 				"https://repo1.maven.org/maven2/org/tensorflow/libtensorflow_jni/1.12.0/libtensorflow_jni-1.12.0.jar",
 				"https://repo1.maven.org/maven2/com/google/protobuf/protobuf-java/3.5.1/protobuf-java-3.5.1.jar",
 				"https://repo1.maven.org/maven2/org/tensorflow/proto/1.12.0/proto-1.12.0.jar",
-				"https://maven.scijava.org/service/local/repositories/releases/content/io/bioimage/dl-modelrunner-tensorflow-1/0.4.2-SNAPSHOT/dl-modelrunner-tensorflow-1-0.4.2-20241001.170208-4.jar"
+				"https://maven.scijava.org/service/local/repositories/snapshots/content/io/bioimage/dl-modelrunner-tensorflow-1/0.4.2-SNAPSHOT/dl-modelrunner-tensorflow-1-0.4.2-20241001.170208-4.jar"
 			]
 		},
 		{
@@ -65,7 +65,7 @@
 				"https://repo1.maven.org/maven2/org/tensorflow/libtensorflow_jni/1.12.0/libtensorflow_jni-1.12.0.jar",
 				"https://repo1.maven.org/maven2/com/google/protobuf/protobuf-java/3.5.1/protobuf-java-3.5.1.jar",
 				"https://repo1.maven.org/maven2/org/tensorflow/proto/1.12.0/proto-1.12.0.jar",
-				"https://maven.scijava.org/service/local/repositories/releases/content/io/bioimage/dl-modelrunner-tensorflow-1/0.4.2-SNAPSHOT/dl-modelrunner-tensorflow-1-0.4.2-20241001.170208-4.jar"
+				"https://maven.scijava.org/service/local/repositories/snapshots/content/io/bioimage/dl-modelrunner-tensorflow-1/0.4.2-SNAPSHOT/dl-modelrunner-tensorflow-1-0.4.2-20241001.170208-4.jar"
 			]
 		},
 		{
@@ -82,7 +82,7 @@
 				"https://repo1.maven.org/maven2/org/tensorflow/libtensorflow_jni_gpu/1.12.0/libtensorflow_jni_gpu-1.12.0.jar",
 				"https://repo1.maven.org/maven2/com/google/protobuf/protobuf-java/3.5.1/protobuf-java-3.5.1.jar",
 				"https://repo1.maven.org/maven2/org/tensorflow/proto/1.12.0/proto-1.12.0.jar",
-				"https://maven.scijava.org/service/local/repositories/releases/content/io/bioimage/dl-modelrunner-tensorflow-1/0.4.2-SNAPSHOT/dl-modelrunner-tensorflow-1-0.4.2-20241001.170208-4.jar"
+				"https://maven.scijava.org/service/local/repositories/snapshots/content/io/bioimage/dl-modelrunner-tensorflow-1/0.4.2-SNAPSHOT/dl-modelrunner-tensorflow-1-0.4.2-20241001.170208-4.jar"
 			]
 		},
 		{
@@ -99,7 +99,7 @@
 				"https://repo1.maven.org/maven2/org/tensorflow/libtensorflow_jni/1.13.1/libtensorflow_jni-1.13.1.jar",
 				"https://repo1.maven.org/maven2/com/google/protobuf/protobuf-java/3.5.1/protobuf-java-3.5.1.jar",
 				"https://repo1.maven.org/maven2/org/tensorflow/proto/1.13.1/proto-1.13.1.jar",
-				"https://maven.scijava.org/service/local/repositories/releases/content/io/bioimage/dl-modelrunner-tensorflow-1/0.4.2-SNAPSHOT/dl-modelrunner-tensorflow-1-0.4.2-20241001.170208-4.jar"
+				"https://maven.scijava.org/service/local/repositories/snapshots/content/io/bioimage/dl-modelrunner-tensorflow-1/0.4.2-SNAPSHOT/dl-modelrunner-tensorflow-1-0.4.2-20241001.170208-4.jar"
 			]
 		},
 		{
@@ -116,7 +116,7 @@
 				"https://repo1.maven.org/maven2/org/tensorflow/libtensorflow_jni_gpu/1.13.1/libtensorflow_jni_gpu-1.13.1.jar",
 				"https://repo1.maven.org/maven2/com/google/protobuf/protobuf-java/3.5.1/protobuf-java-3.5.1.jar",
 				"https://repo1.maven.org/maven2/org/tensorflow/proto/1.13.1/proto-1.13.1.jar",
-				"https://maven.scijava.org/service/local/repositories/releases/content/io/bioimage/dl-modelrunner-tensorflow-1/0.4.2-SNAPSHOT/dl-modelrunner-tensorflow-1-0.4.2-20241001.170208-4.jar"
+				"https://maven.scijava.org/service/local/repositories/snapshots/content/io/bioimage/dl-modelrunner-tensorflow-1/0.4.2-SNAPSHOT/dl-modelrunner-tensorflow-1-0.4.2-20241001.170208-4.jar"
 			]
 		},
 		{
@@ -133,7 +133,7 @@
 				"https://repo1.maven.org/maven2/org/tensorflow/libtensorflow_jni/1.13.1/libtensorflow_jni-1.13.1.jar",
 				"https://repo1.maven.org/maven2/com/google/protobuf/protobuf-java/3.5.1/protobuf-java-3.5.1.jar",
 				"https://repo1.maven.org/maven2/org/tensorflow/proto/1.13.1/proto-1.13.1.jar",
-				"https://maven.scijava.org/service/local/repositories/releases/content/io/bioimage/dl-modelrunner-tensorflow-1/0.4.2-SNAPSHOT/dl-modelrunner-tensorflow-1-0.4.2-20241001.170208-4.jar"
+				"https://maven.scijava.org/service/local/repositories/snapshots/content/io/bioimage/dl-modelrunner-tensorflow-1/0.4.2-SNAPSHOT/dl-modelrunner-tensorflow-1-0.4.2-20241001.170208-4.jar"
 			]
 		},
 		{
@@ -150,7 +150,7 @@
 				"https://repo1.maven.org/maven2/org/tensorflow/libtensorflow_jni/1.13.1/libtensorflow_jni-1.13.1.jar",
 				"https://repo1.maven.org/maven2/com/google/protobuf/protobuf-java/3.5.1/protobuf-java-3.5.1.jar",
 				"https://repo1.maven.org/maven2/org/tensorflow/proto/1.13.1/proto-1.13.1.jar",
-				"https://maven.scijava.org/service/local/repositories/releases/content/io/bioimage/dl-modelrunner-tensorflow-1/0.4.2-SNAPSHOT/dl-modelrunner-tensorflow-1-0.4.2-20241001.170208-4.jar"
+				"https://maven.scijava.org/service/local/repositories/snapshots/content/io/bioimage/dl-modelrunner-tensorflow-1/0.4.2-SNAPSHOT/dl-modelrunner-tensorflow-1-0.4.2-20241001.170208-4.jar"
 			]
 		},
 		{
@@ -167,7 +167,7 @@
 				"https://repo1.maven.org/maven2/org/tensorflow/libtensorflow_jni_gpu/1.13.1/libtensorflow_jni_gpu-1.13.1.jar",
 				"https://repo1.maven.org/maven2/com/google/protobuf/protobuf-java/3.5.1/protobuf-java-3.5.1.jar",
 				"https://repo1.maven.org/maven2/org/tensorflow/proto/1.13.1/proto-1.13.1.jar",
-				"https://maven.scijava.org/service/local/repositories/releases/content/io/bioimage/dl-modelrunner-tensorflow-1/0.4.2-SNAPSHOT/dl-modelrunner-tensorflow-1-0.4.2-20241001.170208-4.jar"
+				"https://maven.scijava.org/service/local/repositories/snapshots/content/io/bioimage/dl-modelrunner-tensorflow-1/0.4.2-SNAPSHOT/dl-modelrunner-tensorflow-1-0.4.2-20241001.170208-4.jar"
 			]
 		},
 		{
@@ -184,7 +184,7 @@
 				"https://repo1.maven.org/maven2/org/tensorflow/libtensorflow_jni/1.14.0/libtensorflow_jni-1.14.0.jar",
 				"https://repo1.maven.org/maven2/com/google/protobuf/protobuf-java/3.5.1/protobuf-java-3.5.1.jar",
 				"https://repo1.maven.org/maven2/org/tensorflow/proto/1.14.0/proto-1.14.0.jar",
-				"https://maven.scijava.org/service/local/repositories/releases/content/io/bioimage/dl-modelrunner-tensorflow-1/0.4.2-SNAPSHOT/dl-modelrunner-tensorflow-1-0.4.2-20241001.170208-4.jar"
+				"https://maven.scijava.org/service/local/repositories/snapshots/content/io/bioimage/dl-modelrunner-tensorflow-1/0.4.2-SNAPSHOT/dl-modelrunner-tensorflow-1-0.4.2-20241001.170208-4.jar"
 			]
 		},
 		{
@@ -201,7 +201,7 @@
 				"https://repo1.maven.org/maven2/org/tensorflow/libtensorflow_jni_gpu/1.14.0/libtensorflow_jni_gpu-1.14.0.jar",
 				"https://repo1.maven.org/maven2/com/google/protobuf/protobuf-java/3.5.1/protobuf-java-3.5.1.jar",
 				"https://repo1.maven.org/maven2/org/tensorflow/proto/1.14.0/proto-1.14.0.jar",
-				"https://maven.scijava.org/service/local/repositories/releases/content/io/bioimage/dl-modelrunner-tensorflow-1/0.4.2-SNAPSHOT/dl-modelrunner-tensorflow-1-0.4.2-20241001.170208-4.jar"
+				"https://maven.scijava.org/service/local/repositories/snapshots/content/io/bioimage/dl-modelrunner-tensorflow-1/0.4.2-SNAPSHOT/dl-modelrunner-tensorflow-1-0.4.2-20241001.170208-4.jar"
 			]
 		},
 		{
@@ -218,7 +218,7 @@
 				"https://repo1.maven.org/maven2/org/tensorflow/libtensorflow_jni/1.14.0/libtensorflow_jni-1.14.0.jar",
 				"https://repo1.maven.org/maven2/com/google/protobuf/protobuf-java/3.5.1/protobuf-java-3.5.1.jar",
 				"https://repo1.maven.org/maven2/org/tensorflow/proto/1.14.0/proto-1.14.0.jar",
-				"https://maven.scijava.org/service/local/repositories/releases/content/io/bioimage/dl-modelrunner-tensorflow-1/0.4.2-SNAPSHOT/dl-modelrunner-tensorflow-1-0.4.2-20241001.170208-4.jar"
+				"https://maven.scijava.org/service/local/repositories/snapshots/content/io/bioimage/dl-modelrunner-tensorflow-1/0.4.2-SNAPSHOT/dl-modelrunner-tensorflow-1-0.4.2-20241001.170208-4.jar"
 			]
 		},
 		{
@@ -235,7 +235,7 @@
 				"https://repo1.maven.org/maven2/org/tensorflow/libtensorflow_jni/1.14.0/libtensorflow_jni-1.14.0.jar",
 				"https://repo1.maven.org/maven2/com/google/protobuf/protobuf-java/3.5.1/protobuf-java-3.5.1.jar",
 				"https://repo1.maven.org/maven2/org/tensorflow/proto/1.14.0/proto-1.14.0.jar",
-				"https://maven.scijava.org/service/local/repositories/releases/content/io/bioimage/dl-modelrunner-tensorflow-1/0.4.2-SNAPSHOT/dl-modelrunner-tensorflow-1-0.4.2-20241001.170208-4.jar"
+				"https://maven.scijava.org/service/local/repositories/snapshots/content/io/bioimage/dl-modelrunner-tensorflow-1/0.4.2-SNAPSHOT/dl-modelrunner-tensorflow-1-0.4.2-20241001.170208-4.jar"
 			]
 		},
 		{
@@ -252,7 +252,7 @@
 				"https://repo1.maven.org/maven2/org/tensorflow/libtensorflow_jni_gpu/1.14.0/libtensorflow_jni_gpu-1.14.0.jar",
 				"https://repo1.maven.org/maven2/com/google/protobuf/protobuf-java/3.5.1/protobuf-java-3.5.1.jar",
 				"https://repo1.maven.org/maven2/org/tensorflow/proto/1.14.0/proto-1.14.0.jar",
-				"https://maven.scijava.org/service/local/repositories/releases/content/io/bioimage/dl-modelrunner-tensorflow-1/0.4.2-SNAPSHOT/dl-modelrunner-tensorflow-1-0.4.2-20241001.170208-4.jar"
+				"https://maven.scijava.org/service/local/repositories/snapshots/content/io/bioimage/dl-modelrunner-tensorflow-1/0.4.2-SNAPSHOT/dl-modelrunner-tensorflow-1-0.4.2-20241001.170208-4.jar"
 			]
 		},
 		{
@@ -269,7 +269,7 @@
 				"https://repo1.maven.org/maven2/org/tensorflow/libtensorflow_jni/1.15.0/libtensorflow_jni-1.15.0.jar",
 				"https://repo1.maven.org/maven2/com/google/protobuf/protobuf-java/3.5.1/protobuf-java-3.5.1.jar",
 				"https://repo1.maven.org/maven2/org/tensorflow/proto/1.15.0/proto-1.15.0.jar",
-				"https://maven.scijava.org/service/local/repositories/releases/content/io/bioimage/dl-modelrunner-tensorflow-1/0.4.2-SNAPSHOT/dl-modelrunner-tensorflow-1-0.4.2-20241001.170208-4.jar"
+				"https://maven.scijava.org/service/local/repositories/snapshots/content/io/bioimage/dl-modelrunner-tensorflow-1/0.4.2-SNAPSHOT/dl-modelrunner-tensorflow-1-0.4.2-20241001.170208-4.jar"
 			]
 		},
 		{
@@ -286,7 +286,7 @@
 				"https://repo1.maven.org/maven2/org/tensorflow/libtensorflow_jni_gpu/1.15.0/libtensorflow_jni_gpu-1.15.0.jar",
 				"https://repo1.maven.org/maven2/com/google/protobuf/protobuf-java/3.5.1/protobuf-java-3.5.1.jar",
 				"https://repo1.maven.org/maven2/org/tensorflow/proto/1.15.0/proto-1.15.0.jar",
-				"https://maven.scijava.org/service/local/repositories/releases/content/io/bioimage/dl-modelrunner-tensorflow-1/0.4.2-SNAPSHOT/dl-modelrunner-tensorflow-1-0.4.2-20241001.170208-4.jar"
+				"https://maven.scijava.org/service/local/repositories/snapshots/content/io/bioimage/dl-modelrunner-tensorflow-1/0.4.2-SNAPSHOT/dl-modelrunner-tensorflow-1-0.4.2-20241001.170208-4.jar"
 			]
 		},
 		{
@@ -303,7 +303,7 @@
 				"https://repo1.maven.org/maven2/org/tensorflow/libtensorflow_jni/1.15.0/libtensorflow_jni-1.15.0.jar",
 				"https://repo1.maven.org/maven2/com/google/protobuf/protobuf-java/3.5.1/protobuf-java-3.5.1.jar",
 				"https://repo1.maven.org/maven2/org/tensorflow/proto/1.15.0/proto-1.15.0.jar",
-				"https://maven.scijava.org/service/local/repositories/releases/content/io/bioimage/dl-modelrunner-tensorflow-1/0.4.2-SNAPSHOT/dl-modelrunner-tensorflow-1-0.4.2-20241001.170208-4.jar"
+				"https://maven.scijava.org/service/local/repositories/snapshots/content/io/bioimage/dl-modelrunner-tensorflow-1/0.4.2-SNAPSHOT/dl-modelrunner-tensorflow-1-0.4.2-20241001.170208-4.jar"
 			]
 		},
 		{
@@ -320,7 +320,7 @@
 				"https://repo1.maven.org/maven2/org/tensorflow/libtensorflow_jni/1.15.0/libtensorflow_jni-1.15.0.jar",
 				"https://repo1.maven.org/maven2/com/google/protobuf/protobuf-java/3.5.1/protobuf-java-3.5.1.jar",
 				"https://repo1.maven.org/maven2/org/tensorflow/proto/1.15.0/proto-1.15.0.jar",
-				"https://maven.scijava.org/service/local/repositories/releases/content/io/bioimage/dl-modelrunner-tensorflow-1/0.4.2-SNAPSHOT/dl-modelrunner-tensorflow-1-0.4.2-20241001.170208-4.jar"
+				"https://maven.scijava.org/service/local/repositories/snapshots/content/io/bioimage/dl-modelrunner-tensorflow-1/0.4.2-SNAPSHOT/dl-modelrunner-tensorflow-1-0.4.2-20241001.170208-4.jar"
 			]
 		},
 		{
@@ -337,7 +337,7 @@
 				"https://repo1.maven.org/maven2/org/tensorflow/libtensorflow_jni_gpu/1.15.0/libtensorflow_jni_gpu-1.15.0.jar",
 				"https://repo1.maven.org/maven2/com/google/protobuf/protobuf-java/3.5.1/protobuf-java-3.5.1.jar",
 				"https://repo1.maven.org/maven2/org/tensorflow/proto/1.15.0/proto-1.15.0.jar",
-				"https://maven.scijava.org/service/local/repositories/releases/content/io/bioimage/dl-modelrunner-tensorflow-1/0.4.2-SNAPSHOT/dl-modelrunner-tensorflow-1-0.4.2-20241001.170208-4.jar"
+				"https://maven.scijava.org/service/local/repositories/snapshots/content/io/bioimage/dl-modelrunner-tensorflow-1/0.4.2-SNAPSHOT/dl-modelrunner-tensorflow-1-0.4.2-20241001.170208-4.jar"
 			]
 		},
 		{
@@ -356,7 +356,7 @@
 				"https://repo1.maven.org/maven2/org/tensorflow/tensorflow-core-api/0.2.0/tensorflow-core-api-0.2.0-windows-x86_64.jar",
 				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.8/javacpp-1.5.8.jar",
 				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.4/javacpp-1.5.4-windows-x86_64.jar",
-				"https://maven.scijava.org/service/local/repositories/releases/content/io/bioimage/dl-modelrunner-tensorflow-2a/0.4.2-SNAPSHOT/dl-modelrunner-tensorflow-2a-0.4.2-20241001.165816-3.jar"
+				"https://maven.scijava.org/service/local/repositories/snapshots/content/io/bioimage/dl-modelrunner-tensorflow-2a/0.4.2-SNAPSHOT/dl-modelrunner-tensorflow-2a-0.4.2-20241001.165816-3.jar"
 			]
 		},
 		{
@@ -375,7 +375,7 @@
 				"https://repo1.maven.org/maven2/org/tensorflow/tensorflow-core-api/0.2.0/tensorflow-core-api-0.2.0-windows-x86_64-gpu.jar",
 				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.8/javacpp-1.5.8.jar",
 				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.4/javacpp-1.5.4-windows-x86_64.jar",
-				"https://maven.scijava.org/service/local/repositories/releases/content/io/bioimage/dl-modelrunner-tensorflow-2a/0.4.2-SNAPSHOT/dl-modelrunner-tensorflow-2a-0.4.2-20241001.165816-3.jar"
+				"https://maven.scijava.org/service/local/repositories/snapshots/content/io/bioimage/dl-modelrunner-tensorflow-2a/0.4.2-SNAPSHOT/dl-modelrunner-tensorflow-2a-0.4.2-20241001.165816-3.jar"
 			]
 		},
 		{
@@ -394,7 +394,7 @@
 				"https://repo1.maven.org/maven2/org/tensorflow/tensorflow-core-api/0.2.0/tensorflow-core-api-0.2.0-linux-x86_64.jar",
 				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.8/javacpp-1.5.8.jar",
 				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.4/javacpp-1.5.4-linux-x86_64.jar",
-				"https://maven.scijava.org/service/local/repositories/releases/content/io/bioimage/dl-modelrunner-tensorflow-2a/0.4.2-SNAPSHOT/dl-modelrunner-tensorflow-2a-0.4.2-20241001.165816-3.jar"
+				"https://maven.scijava.org/service/local/repositories/snapshots/content/io/bioimage/dl-modelrunner-tensorflow-2a/0.4.2-SNAPSHOT/dl-modelrunner-tensorflow-2a-0.4.2-20241001.165816-3.jar"
 			]
 		},
 		{
@@ -413,7 +413,7 @@
 				"https://repo1.maven.org/maven2/org/tensorflow/tensorflow-core-api/0.2.0/tensorflow-core-api-0.2.0-linux-x86_64-gpu.jar",
 				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.8/javacpp-1.5.8.jar",
 				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.4/javacpp-1.5.4-linux-x86_64.jar",
-				"https://maven.scijava.org/service/local/repositories/releases/content/io/bioimage/dl-modelrunner-tensorflow-2a/0.4.2-SNAPSHOT/dl-modelrunner-tensorflow-2a-0.4.2-20241001.165816-3.jar"
+				"https://maven.scijava.org/service/local/repositories/snapshots/content/io/bioimage/dl-modelrunner-tensorflow-2a/0.4.2-SNAPSHOT/dl-modelrunner-tensorflow-2a-0.4.2-20241001.165816-3.jar"
 			]
 		},
 		{
@@ -432,7 +432,7 @@
 				"https://repo1.maven.org/maven2/org/tensorflow/tensorflow-core-api/0.2.0/tensorflow-core-api-0.2.0-macosx-x86_64.jar",
 				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.8/javacpp-1.5.8.jar",
 				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.4/javacpp-1.5.4-macosx-x86_64.jar",
-				"https://maven.scijava.org/service/local/repositories/releases/content/io/bioimage/dl-modelrunner-tensorflow-2a/0.4.2-SNAPSHOT/dl-modelrunner-tensorflow-2a-0.4.2-20241001.165816-3.jar"
+				"https://maven.scijava.org/service/local/repositories/snapshots/content/io/bioimage/dl-modelrunner-tensorflow-2a/0.4.2-SNAPSHOT/dl-modelrunner-tensorflow-2a-0.4.2-20241001.165816-3.jar"
 			]
 		},
 		{
@@ -451,7 +451,7 @@
 				"https://repo1.maven.org/maven2/org/tensorflow/tensorflow-core-api/0.3.3/tensorflow-core-api-0.3.3-windows-x86_64.jar",
 				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.8/javacpp-1.5.8.jar",
 				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.4/javacpp-1.5.4-windows-x86_64.jar",
-				"https://maven.scijava.org/service/local/repositories/releases/content/io/bioimage/dl-modelrunner-tensorflow-2b/0.4.2-SNAPSHOT/dl-modelrunner-tensorflow-2b-0.4.2-20241001.165845-5.jar"
+				"https://maven.scijava.org/service/local/repositories/snapshots/content/io/bioimage/dl-modelrunner-tensorflow-2b/0.4.2-SNAPSHOT/dl-modelrunner-tensorflow-2b-0.4.2-20241001.165845-5.jar"
 			]
 		},
 		{
@@ -470,7 +470,7 @@
 				"https://repo1.maven.org/maven2/org/tensorflow/tensorflow-core-api/0.3.3/tensorflow-core-api-0.3.3-windows-x86_64-gpu.jar",
 				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.8/javacpp-1.5.8.jar",
 				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.4/javacpp-1.5.4-windows-x86_64.jar",
-				"https://maven.scijava.org/service/local/repositories/releases/content/io/bioimage/dl-modelrunner-tensorflow-2b/0.4.2-SNAPSHOT/dl-modelrunner-tensorflow-2b-0.4.2-20241001.165845-5.jar"
+				"https://maven.scijava.org/service/local/repositories/snapshots/content/io/bioimage/dl-modelrunner-tensorflow-2b/0.4.2-SNAPSHOT/dl-modelrunner-tensorflow-2b-0.4.2-20241001.165845-5.jar"
 			]
 		},
 		{
@@ -489,7 +489,7 @@
 				"https://repo1.maven.org/maven2/org/tensorflow/tensorflow-core-api/0.3.3/tensorflow-core-api-0.3.3-linux-x86_64.jar",
 				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.8/javacpp-1.5.8.jar",
 				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.4/javacpp-1.5.4-linux-x86_64.jar",
-				"https://maven.scijava.org/service/local/repositories/releases/content/io/bioimage/dl-modelrunner-tensorflow-2b/0.4.2-SNAPSHOT/dl-modelrunner-tensorflow-2b-0.4.2-20241001.165845-5.jar"
+				"https://maven.scijava.org/service/local/repositories/snapshots/content/io/bioimage/dl-modelrunner-tensorflow-2b/0.4.2-SNAPSHOT/dl-modelrunner-tensorflow-2b-0.4.2-20241001.165845-5.jar"
 			]
 		},
 		{
@@ -508,7 +508,7 @@
 				"https://repo1.maven.org/maven2/org/tensorflow/tensorflow-core-api/0.3.3/tensorflow-core-api-0.3.3-linux-x86_64-gpu.jar",
 				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.8/javacpp-1.5.8.jar",
 				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.4/javacpp-1.5.4-linux-x86_64.jar",
-				"https://maven.scijava.org/service/local/repositories/releases/content/io/bioimage/dl-modelrunner-tensorflow-2b/0.4.2-SNAPSHOT/dl-modelrunner-tensorflow-2b-0.4.2-20241001.165845-5.jar"
+				"https://maven.scijava.org/service/local/repositories/snapshots/content/io/bioimage/dl-modelrunner-tensorflow-2b/0.4.2-SNAPSHOT/dl-modelrunner-tensorflow-2b-0.4.2-20241001.165845-5.jar"
 			]
 		},
 		{
@@ -527,7 +527,7 @@
 				"https://repo1.maven.org/maven2/org/tensorflow/tensorflow-core-api/0.3.3/tensorflow-core-api-0.3.3-macosx-x86_64.jar",
 				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.8/javacpp-1.5.8.jar",
 				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.4/javacpp-1.5.4-macosx-x86_64.jar",
-				"https://maven.scijava.org/service/local/repositories/releases/content/io/bioimage/dl-modelrunner-tensorflow-2b/0.4.2-SNAPSHOT/dl-modelrunner-tensorflow-2b-0.4.2-20241001.165845-5.jar"
+				"https://maven.scijava.org/service/local/repositories/snapshots/content/io/bioimage/dl-modelrunner-tensorflow-2b/0.4.2-SNAPSHOT/dl-modelrunner-tensorflow-2b-0.4.2-20241001.165845-5.jar"
 			]
 		},
 		{
@@ -546,7 +546,7 @@
 				"https://repo1.maven.org/maven2/org/tensorflow/tensorflow-core-api/0.4.0/tensorflow-core-api-0.4.0-windows-x86_64.jar",
 				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.8/javacpp-1.5.8.jar",
 				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.6/javacpp-1.5.6-windows-x86_64.jar",
-				"https://maven.scijava.org/service/local/repositories/releases/content/io/bioimage/dl-modelrunner-tensorflow-2b/0.4.2-SNAPSHOT/dl-modelrunner-tensorflow-2b-0.4.2-20241001.165845-5.jar"
+				"https://maven.scijava.org/service/local/repositories/snapshots/content/io/bioimage/dl-modelrunner-tensorflow-2b/0.4.2-SNAPSHOT/dl-modelrunner-tensorflow-2b-0.4.2-20241001.165845-5.jar"
 			]
 		},
 		{
@@ -565,7 +565,7 @@
 				"https://repo1.maven.org/maven2/org/tensorflow/tensorflow-core-api/0.4.0/tensorflow-core-api-0.4.0-windows-x86_64-gpu.jar",
 				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.8/javacpp-1.5.8.jar",
 				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.6/javacpp-1.5.6-windows-x86_64.jar",
-				"https://maven.scijava.org/service/local/repositories/releases/content/io/bioimage/dl-modelrunner-tensorflow-2b/0.4.2-SNAPSHOT/dl-modelrunner-tensorflow-2b-0.4.2-20241001.165845-5.jar"
+				"https://maven.scijava.org/service/local/repositories/snapshots/content/io/bioimage/dl-modelrunner-tensorflow-2b/0.4.2-SNAPSHOT/dl-modelrunner-tensorflow-2b-0.4.2-20241001.165845-5.jar"
 			]
 		},
 		{
@@ -584,7 +584,7 @@
 				"https://repo1.maven.org/maven2/org/tensorflow/tensorflow-core-api/0.4.0/tensorflow-core-api-0.4.0-linux-x86_64.jar",
 				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.8/javacpp-1.5.8.jar",
 				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.6/javacpp-1.5.6-linux-x86_64.jar",
-				"https://maven.scijava.org/service/local/repositories/releases/content/io/bioimage/dl-modelrunner-tensorflow-2b/0.4.2-SNAPSHOT/dl-modelrunner-tensorflow-2b-0.4.2-20241001.165845-5.jar"
+				"https://maven.scijava.org/service/local/repositories/snapshots/content/io/bioimage/dl-modelrunner-tensorflow-2b/0.4.2-SNAPSHOT/dl-modelrunner-tensorflow-2b-0.4.2-20241001.165845-5.jar"
 			]
 		},
 		{
@@ -603,7 +603,7 @@
 				"https://repo1.maven.org/maven2/org/tensorflow/tensorflow-core-api/0.4.0/tensorflow-core-api-0.4.0-linux-x86_64-gpu.jar",
 				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.8/javacpp-1.5.8.jar",
 				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.6/javacpp-1.5.6-linux-x86_64.jar",
-				"https://maven.scijava.org/service/local/repositories/releases/content/io/bioimage/dl-modelrunner-tensorflow-2b/0.4.2-SNAPSHOT/dl-modelrunner-tensorflow-2b-0.4.2-20241001.165845-5.jar"
+				"https://maven.scijava.org/service/local/repositories/snapshots/content/io/bioimage/dl-modelrunner-tensorflow-2b/0.4.2-SNAPSHOT/dl-modelrunner-tensorflow-2b-0.4.2-20241001.165845-5.jar"
 			]
 		},
 		{
@@ -622,7 +622,7 @@
 				"https://repo1.maven.org/maven2/org/tensorflow/tensorflow-core-api/0.4.0/tensorflow-core-api-0.4.0-macosx-x86_64.jar",
 				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.8/javacpp-1.5.8.jar",
 				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.6/javacpp-1.5.6-macosx-x86_64.jar",
-				"https://maven.scijava.org/service/local/repositories/releases/content/io/bioimage/dl-modelrunner-tensorflow-2b/0.4.2-SNAPSHOT/dl-modelrunner-tensorflow-2b-0.4.2-20241001.165845-5.jar"
+				"https://maven.scijava.org/service/local/repositories/snapshots/content/io/bioimage/dl-modelrunner-tensorflow-2b/0.4.2-SNAPSHOT/dl-modelrunner-tensorflow-2b-0.4.2-20241001.165845-5.jar"
 			]
 		},
 		{
@@ -641,7 +641,7 @@
 				"https://repo1.maven.org/maven2/org/tensorflow/tensorflow-core-api/0.4.0/tensorflow-core-api-0.4.0.jar",
 				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.8/javacpp-1.5.8.jar",
 				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.8/javacpp-1.5.8-macosx-arm64.jar",
-				"https://maven.scijava.org/service/local/repositories/releases/content/io/bioimage/dl-modelrunner-tensorflow-2b/0.4.2-SNAPSHOT/dl-modelrunner-tensorflow-2b-0.4.2-20241001.165845-5.jar"
+				"https://maven.scijava.org/service/local/repositories/snapshots/content/io/bioimage/dl-modelrunner-tensorflow-2b/0.4.2-SNAPSHOT/dl-modelrunner-tensorflow-2b-0.4.2-20241001.165845-5.jar"
 			]
 		},
 		{
@@ -660,7 +660,7 @@
 				"https://repo1.maven.org/maven2/org/tensorflow/tensorflow-core-api/0.4.1/tensorflow-core-api-0.4.1-windows-x86_64.jar",
 				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.8/javacpp-1.5.8.jar",
 				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.6/javacpp-1.5.6-windows-x86_64.jar",
-				"https://maven.scijava.org/service/local/repositories/releases/content/io/bioimage/dl-modelrunner-tensorflow-2b/0.4.2-SNAPSHOT/dl-modelrunner-tensorflow-2b-0.4.2-20241001.165845-5.jar"
+				"https://maven.scijava.org/service/local/repositories/snapshots/content/io/bioimage/dl-modelrunner-tensorflow-2b/0.4.2-SNAPSHOT/dl-modelrunner-tensorflow-2b-0.4.2-20241001.165845-5.jar"
 			]
 		},
 		{
@@ -679,7 +679,7 @@
 				"https://repo1.maven.org/maven2/org/tensorflow/tensorflow-core-api/0.4.1/tensorflow-core-api-0.4.1-windows-x86_64-gpu.jar",
 				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.8/javacpp-1.5.8.jar",
 				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.6/javacpp-1.5.6-windows-x86_64.jar",
-				"https://maven.scijava.org/service/local/repositories/releases/content/io/bioimage/dl-modelrunner-tensorflow-2b/0.4.2-SNAPSHOT/dl-modelrunner-tensorflow-2b-0.4.2-20241001.165845-5.jar"
+				"https://maven.scijava.org/service/local/repositories/snapshots/content/io/bioimage/dl-modelrunner-tensorflow-2b/0.4.2-SNAPSHOT/dl-modelrunner-tensorflow-2b-0.4.2-20241001.165845-5.jar"
 			]
 		},
 		{
@@ -698,7 +698,7 @@
 				"https://repo1.maven.org/maven2/org/tensorflow/tensorflow-core-api/0.4.1/tensorflow-core-api-0.4.1-linux-x86_64.jar",
 				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.8/javacpp-1.5.8.jar",
 				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.6/javacpp-1.5.6-linux-x86_64.jar",
-				"https://maven.scijava.org/service/local/repositories/releases/content/io/bioimage/dl-modelrunner-tensorflow-2b/0.4.2-SNAPSHOT/dl-modelrunner-tensorflow-2b-0.4.2-20241001.165845-5.jar"
+				"https://maven.scijava.org/service/local/repositories/snapshots/content/io/bioimage/dl-modelrunner-tensorflow-2b/0.4.2-SNAPSHOT/dl-modelrunner-tensorflow-2b-0.4.2-20241001.165845-5.jar"
 			]
 		},
 		{
@@ -717,7 +717,7 @@
 				"https://repo1.maven.org/maven2/org/tensorflow/tensorflow-core-api/0.4.1/tensorflow-core-api-0.4.1-linux-x86_64-gpu.jar",
 				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.8/javacpp-1.5.8.jar",
 				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.6/javacpp-1.5.6-linux-x86_64.jar",
-				"https://maven.scijava.org/service/local/repositories/releases/content/io/bioimage/dl-modelrunner-tensorflow-2b/0.4.2-SNAPSHOT/dl-modelrunner-tensorflow-2b-0.4.2-20241001.165845-5.jar"
+				"https://maven.scijava.org/service/local/repositories/snapshots/content/io/bioimage/dl-modelrunner-tensorflow-2b/0.4.2-SNAPSHOT/dl-modelrunner-tensorflow-2b-0.4.2-20241001.165845-5.jar"
 			]
 		},
 		{
@@ -736,7 +736,7 @@
 				"https://repo1.maven.org/maven2/org/tensorflow/tensorflow-core-api/0.4.1/tensorflow-core-api-0.4.1-macosx-x86_64.jar",
 				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.8/javacpp-1.5.8.jar",
 				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.6/javacpp-1.5.6-macosx-x86_64.jar",
-				"https://maven.scijava.org/service/local/repositories/releases/content/io/bioimage/dl-modelrunner-tensorflow-2b/0.4.2-SNAPSHOT/dl-modelrunner-tensorflow-2b-0.4.2-20241001.165845-5.jar"
+				"https://maven.scijava.org/service/local/repositories/snapshots/content/io/bioimage/dl-modelrunner-tensorflow-2b/0.4.2-SNAPSHOT/dl-modelrunner-tensorflow-2b-0.4.2-20241001.165845-5.jar"
 			]
 		},
 		{
@@ -755,7 +755,7 @@
 				"https://repo1.maven.org/maven2/org/tensorflow/tensorflow-core-api/0.4.2/tensorflow-core-api-0.4.2-windows-x86_64.jar",
 				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.8/javacpp-1.5.8.jar",
 				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.6/javacpp-1.5.6-windows-x86_64.jar",
-				"https://maven.scijava.org/service/local/repositories/releases/content/io/bioimage/dl-modelrunner-tensorflow-2b/0.4.2-SNAPSHOT/dl-modelrunner-tensorflow-2b-0.4.2-20241001.165845-5.jar"
+				"https://maven.scijava.org/service/local/repositories/snapshots/content/io/bioimage/dl-modelrunner-tensorflow-2b/0.4.2-SNAPSHOT/dl-modelrunner-tensorflow-2b-0.4.2-20241001.165845-5.jar"
 			]
 		},
 		{
@@ -774,7 +774,7 @@
 				"https://repo1.maven.org/maven2/org/tensorflow/tensorflow-core-api/0.4.2/tensorflow-core-api-0.4.2-windows-x86_64-gpu.jar",
 				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.8/javacpp-1.5.8.jar",
 				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.6/javacpp-1.5.6-windows-x86_64.jar",
-				"https://maven.scijava.org/service/local/repositories/releases/content/io/bioimage/dl-modelrunner-tensorflow-2b/0.4.2-SNAPSHOT/dl-modelrunner-tensorflow-2b-0.4.2-20241001.165845-5.jar"
+				"https://maven.scijava.org/service/local/repositories/snapshots/content/io/bioimage/dl-modelrunner-tensorflow-2b/0.4.2-SNAPSHOT/dl-modelrunner-tensorflow-2b-0.4.2-20241001.165845-5.jar"
 			]
 		},
 		{
@@ -793,7 +793,7 @@
 				"https://repo1.maven.org/maven2/org/tensorflow/tensorflow-core-api/0.4.2/tensorflow-core-api-0.4.2-linux-x86_64.jar",
 				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.8/javacpp-1.5.8.jar",
 				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.6/javacpp-1.5.6-linux-x86_64.jar",
-				"https://maven.scijava.org/service/local/repositories/releases/content/io/bioimage/dl-modelrunner-tensorflow-2b/0.4.2-SNAPSHOT/dl-modelrunner-tensorflow-2b-0.4.2-20241001.165845-5.jar"
+				"https://maven.scijava.org/service/local/repositories/snapshots/content/io/bioimage/dl-modelrunner-tensorflow-2b/0.4.2-SNAPSHOT/dl-modelrunner-tensorflow-2b-0.4.2-20241001.165845-5.jar"
 			]
 		},
 		{
@@ -812,7 +812,7 @@
 				"https://repo1.maven.org/maven2/org/tensorflow/tensorflow-core-api/0.4.2/tensorflow-core-api-0.4.2-linux-x86_64-gpu.jar",
 				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.8/javacpp-1.5.8.jar",
 				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.6/javacpp-1.5.6-linux-x86_64.jar",
-				"https://maven.scijava.org/service/local/repositories/releases/content/io/bioimage/dl-modelrunner-tensorflow-2b/0.4.2-SNAPSHOT/dl-modelrunner-tensorflow-2b-0.4.2-20241001.165845-5.jar"
+				"https://maven.scijava.org/service/local/repositories/snapshots/content/io/bioimage/dl-modelrunner-tensorflow-2b/0.4.2-SNAPSHOT/dl-modelrunner-tensorflow-2b-0.4.2-20241001.165845-5.jar"
 			]
 		},
 		{
@@ -831,7 +831,7 @@
 				"https://repo1.maven.org/maven2/org/tensorflow/tensorflow-core-api/0.4.2/tensorflow-core-api-0.4.2-macosx-x86_64.jar",
 				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.8/javacpp-1.5.8.jar",
 				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.6/javacpp-1.5.6-macosx-x86_64.jar",
-				"https://maven.scijava.org/service/local/repositories/releases/content/io/bioimage/dl-modelrunner-tensorflow-2b/0.4.2-SNAPSHOT/dl-modelrunner-tensorflow-2b-0.4.2-20241001.165845-5.jar"
+				"https://maven.scijava.org/service/local/repositories/snapshots/content/io/bioimage/dl-modelrunner-tensorflow-2b/0.4.2-SNAPSHOT/dl-modelrunner-tensorflow-2b-0.4.2-20241001.165845-5.jar"
 			]
 		},
 		{
@@ -850,7 +850,7 @@
 				"https://repo1.maven.org/maven2/org/tensorflow/tensorflow-core-api/0.5.0/tensorflow-core-api-0.5.0-windows-x86_64.jar",
 				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.8/javacpp-1.5.8.jar",
 				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.8/javacpp-1.5.8-windows-x86_64.jar",
-				"https://maven.scijava.org/service/local/repositories/releases/content/io/bioimage/dl-modelrunner-tensorflow-2c/0.4.2-SNAPSHOT/dl-modelrunner-tensorflow-2c-0.4.2-20241001.173000-3.jar"
+				"https://maven.scijava.org/service/local/repositories/snapshots/content/io/bioimage/dl-modelrunner-tensorflow-2c/0.4.2-SNAPSHOT/dl-modelrunner-tensorflow-2c-0.4.2-20241001.173000-3.jar"
 			]
 		},
 		{
@@ -869,7 +869,7 @@
 				"https://repo1.maven.org/maven2/org/tensorflow/tensorflow-core-api/0.5.0/tensorflow-core-api-0.5.0-windows-x86_64-gpu.jar",
 				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.8/javacpp-1.5.8.jar",
 				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.8/javacpp-1.5.8-windows-x86_64.jar",
-				"https://maven.scijava.org/service/local/repositories/releases/content/io/bioimage/dl-modelrunner-tensorflow-2c/0.4.2-SNAPSHOT/dl-modelrunner-tensorflow-2c-0.4.2-20241001.173000-3.jar"
+				"https://maven.scijava.org/service/local/repositories/snapshots/content/io/bioimage/dl-modelrunner-tensorflow-2c/0.4.2-SNAPSHOT/dl-modelrunner-tensorflow-2c-0.4.2-20241001.173000-3.jar"
 			]
 		},
 		{
@@ -888,7 +888,7 @@
 				"https://repo1.maven.org/maven2/org/tensorflow/tensorflow-core-api/0.5.0/tensorflow-core-api-0.5.0-linux-x86_64.jar",
 				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.8/javacpp-1.5.8.jar",
 				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.8/javacpp-1.5.8-linux-x86_64.jar",
-				"https://maven.scijava.org/service/local/repositories/releases/content/io/bioimage/dl-modelrunner-tensorflow-2c/0.4.2-SNAPSHOT/dl-modelrunner-tensorflow-2c-0.4.2-20241001.173000-3.jar"
+				"https://maven.scijava.org/service/local/repositories/snapshots/content/io/bioimage/dl-modelrunner-tensorflow-2c/0.4.2-SNAPSHOT/dl-modelrunner-tensorflow-2c-0.4.2-20241001.173000-3.jar"
 			]
 		},
 		{
@@ -907,7 +907,7 @@
 				"https://repo1.maven.org/maven2/org/tensorflow/tensorflow-core-api/0.5.0/tensorflow-core-api-0.5.0-linux-x86_64-gpu.jar",
 				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.8/javacpp-1.5.8.jar",
 				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.8/javacpp-1.5.8-linux-x86_64.jar",
-				"https://maven.scijava.org/service/local/repositories/releases/content/io/bioimage/dl-modelrunner-tensorflow-2c/0.4.2-SNAPSHOT/dl-modelrunner-tensorflow-2c-0.4.2-20241001.173000-3.jar"
+				"https://maven.scijava.org/service/local/repositories/snapshots/content/io/bioimage/dl-modelrunner-tensorflow-2c/0.4.2-SNAPSHOT/dl-modelrunner-tensorflow-2c-0.4.2-20241001.173000-3.jar"
 			]
 		},
 		{
@@ -926,7 +926,7 @@
 				"https://repo1.maven.org/maven2/org/tensorflow/tensorflow-core-api/0.5.0/tensorflow-core-api-0.5.0-macosx-x86_64.jar",
 				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.8/javacpp-1.5.8.jar",
 				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.8/javacpp-1.5.8-macosx-x86_64.jar",
-				"https://maven.scijava.org/service/local/repositories/releases/content/io/bioimage/dl-modelrunner-tensorflow-2c/0.4.2-SNAPSHOT/dl-modelrunner-tensorflow-2c-0.4.2-20241001.173000-3.jar"
+				"https://maven.scijava.org/service/local/repositories/snapshots/content/io/bioimage/dl-modelrunner-tensorflow-2c/0.4.2-SNAPSHOT/dl-modelrunner-tensorflow-2c-0.4.2-20241001.173000-3.jar"
 			]
 		},
 		{
@@ -939,7 +939,7 @@
 			"rosetta": true,
 			"java": 8,
 			"jars": [
-				"https://maven.scijava.org/service/local/repositories/releases/content/io/bioimage/dl-modelrunner-pytorch-javacpp/0.4.4-SNAPSHOT/dl-modelrunner-pytorch-javacpp-0.4.4-20241001.162506-6.jar",
+				"https://maven.scijava.org/service/local/repositories/snapshots/content/io/bioimage/dl-modelrunner-pytorch-javacpp/0.4.4-SNAPSHOT/dl-modelrunner-pytorch-javacpp-0.4.4-20241001.162506-6.jar",
 				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.9/javacpp-1.5.9-macosx-x86_64.jar",
 				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.8/javacpp-1.5.8.jar",
 				"https://repo1.maven.org/maven2/org/bytedeco/pytorch-platform/2.0.1-1.5.9/pytorch-platform-2.0.1-1.5.9.jar",
@@ -964,7 +964,7 @@
 				"https://repo1.maven.org/maven2/ai/djl/pytorch/pytorch-jni/2.0.0-0.22.1/pytorch-jni-2.0.0-0.22.1.jar",
 				"https://repo1.maven.org/maven2/ai/djl/pytorch/pytorch-engine/0.22.1/pytorch-engine-0.22.1.jar",
 				"https://repo1.maven.org/maven2/ai/djl/api/0.22.1/api-0.22.1.jar",
-				"https://maven.scijava.org/service/local/repositories/releases/content/io/bioimage/dl-modelrunner-pytorch/0.4.4-SNAPSHOT/dl-modelrunner-pytorch-0.4.4-20240924.161426-3.jar",
+				"https://maven.scijava.org/service/local/repositories/snapshots/content/io/bioimage/dl-modelrunner-pytorch/0.4.4-SNAPSHOT/dl-modelrunner-pytorch-0.4.4-20240924.161426-3.jar",
 				"https://repo1.maven.org/maven2/net/java/dev/jna/jna/5.13.0/jna-5.13.0.jar",
 				"https://repo1.maven.org/maven2/org/apache/commons/commons-compress/1.22/commons-compress-1.22.jar",
 				"https://repo1.maven.org/maven2/org/slf4j/slf4j-api/2.0.6/slf4j-api-2.0.6.jar"	
@@ -983,7 +983,7 @@
 				"https://repo1.maven.org/maven2/ai/djl/pytorch/pytorch-jni/2.0.0-0.22.1/pytorch-jni-2.0.0-0.22.1.jar",
 				"https://repo1.maven.org/maven2/ai/djl/pytorch/pytorch-engine/0.22.1/pytorch-engine-0.22.1.jar",
 				"https://repo1.maven.org/maven2/ai/djl/api/0.22.1/api-0.22.1.jar",
-				"https://maven.scijava.org/service/local/repositories/releases/content/io/bioimage/dl-modelrunner-pytorch/0.4.4-SNAPSHOT/dl-modelrunner-pytorch-0.4.4-20240924.161426-3.jar",
+				"https://maven.scijava.org/service/local/repositories/snapshots/content/io/bioimage/dl-modelrunner-pytorch/0.4.4-SNAPSHOT/dl-modelrunner-pytorch-0.4.4-20240924.161426-3.jar",
 				"https://repo1.maven.org/maven2/net/java/dev/jna/jna/5.13.0/jna-5.13.0.jar",
 				"https://repo1.maven.org/maven2/org/apache/commons/commons-compress/1.22/commons-compress-1.22.jar",
 				"https://repo1.maven.org/maven2/org/slf4j/slf4j-api/2.0.6/slf4j-api-2.0.6.jar"	
@@ -1002,7 +1002,7 @@
 				"https://repo1.maven.org/maven2/ai/djl/pytorch/pytorch-jni/2.0.0-0.22.1/pytorch-jni-2.0.0-0.22.1.jar",
 				"https://repo1.maven.org/maven2/ai/djl/pytorch/pytorch-engine/0.22.1/pytorch-engine-0.22.1.jar",
 				"https://repo1.maven.org/maven2/ai/djl/api/0.22.1/api-0.22.1.jar",
-				"https://maven.scijava.org/service/local/repositories/releases/content/io/bioimage/dl-modelrunner-pytorch/0.4.4-SNAPSHOT/dl-modelrunner-pytorch-0.4.4-20240924.161426-3.jar",
+				"https://maven.scijava.org/service/local/repositories/snapshots/content/io/bioimage/dl-modelrunner-pytorch/0.4.4-SNAPSHOT/dl-modelrunner-pytorch-0.4.4-20240924.161426-3.jar",
 				"https://repo1.maven.org/maven2/net/java/dev/jna/jna/5.13.0/jna-5.13.0.jar",
 				"https://repo1.maven.org/maven2/org/apache/commons/commons-compress/1.22/commons-compress-1.22.jar",
 				"https://repo1.maven.org/maven2/org/slf4j/slf4j-api/2.0.6/slf4j-api-2.0.6.jar"	
@@ -1021,7 +1021,7 @@
 				"https://repo1.maven.org/maven2/ai/djl/pytorch/pytorch-jni/2.0.0-0.22.1/pytorch-jni-2.0.0-0.22.1.jar",
 				"https://repo1.maven.org/maven2/ai/djl/pytorch/pytorch-engine/0.22.1/pytorch-engine-0.22.1.jar",
 				"https://repo1.maven.org/maven2/ai/djl/api/0.22.1/api-0.22.1.jar",
-				"https://maven.scijava.org/service/local/repositories/releases/content/io/bioimage/dl-modelrunner-pytorch/0.4.4-SNAPSHOT/dl-modelrunner-pytorch-0.4.4-20240924.161426-3.jar",
+				"https://maven.scijava.org/service/local/repositories/snapshots/content/io/bioimage/dl-modelrunner-pytorch/0.4.4-SNAPSHOT/dl-modelrunner-pytorch-0.4.4-20240924.161426-3.jar",
 				"https://repo1.maven.org/maven2/net/java/dev/jna/jna/5.13.0/jna-5.13.0.jar",
 				"https://repo1.maven.org/maven2/org/apache/commons/commons-compress/1.22/commons-compress-1.22.jar",
 				"https://repo1.maven.org/maven2/org/slf4j/slf4j-api/2.0.6/slf4j-api-2.0.6.jar"	
@@ -1037,7 +1037,7 @@
 			"rosetta": true,
 			"java": 8,
 			"jars": [
-				"https://maven.scijava.org/service/local/repositories/releases/content/io/bioimage/dl-modelrunner-pytorch-javacpp/0.4.4-SNAPSHOT/dl-modelrunner-pytorch-javacpp-0.4.4-20241001.162506-6.jar",
+				"https://maven.scijava.org/service/local/repositories/snapshots/content/io/bioimage/dl-modelrunner-pytorch-javacpp/0.4.4-SNAPSHOT/dl-modelrunner-pytorch-javacpp-0.4.4-20241001.162506-6.jar",
 				"https://icy-nexus.pasteur.fr/repository/icy-plugins/org/bioimageanalysis/icy/pytorch-java-cpp/1.13.1-1.5.9/pytorch-java-cpp-1.13.1-1.5.9.jar",				
 				"https://repo1.maven.org/maven2/org/bytedeco/javacpp-platform/1.5.9/javacpp-platform-1.5.9.jar",
 				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.9/javacpp-1.5.9-macosx-x86_64.jar",
@@ -1061,7 +1061,7 @@
 				"https://repo1.maven.org/maven2/ai/djl/pytorch/pytorch-engine/0.21.0/pytorch-engine-0.21.0.jar",
 				"https://repo1.maven.org/maven2/ai/djl/api/0.21.0/api-0.21.0.jar",
 				"https://repo1.maven.org/maven2/org/slf4j/slf4j-simple/1.7.25/slf4j-simple-1.7.25.jar",
-				"https://maven.scijava.org/service/local/repositories/releases/content/io/bioimage/dl-modelrunner-pytorch/0.4.4-SNAPSHOT/dl-modelrunner-pytorch-0.4.4-20240924.161426-3.jar",
+				"https://maven.scijava.org/service/local/repositories/snapshots/content/io/bioimage/dl-modelrunner-pytorch/0.4.4-SNAPSHOT/dl-modelrunner-pytorch-0.4.4-20240924.161426-3.jar",
 				"https://repo1.maven.org/maven2/net/java/dev/jna/jna/5.13.0/jna-5.13.0.jar",
 				"https://repo1.maven.org/maven2/org/apache/commons/commons-compress/1.21/commons-compress-1.21.jar",
 				"https://repo1.maven.org/maven2/org/slf4j/slf4j-api/2.0.6/slf4j-api-2.0.6.jar"
@@ -1081,7 +1081,7 @@
 				"https://repo1.maven.org/maven2/ai/djl/pytorch/pytorch-engine/0.21.0/pytorch-engine-0.21.0.jar",
 				"https://repo1.maven.org/maven2/ai/djl/api/0.21.0/api-0.21.0.jar",
 				"https://repo1.maven.org/maven2/org/slf4j/slf4j-simple/1.7.25/slf4j-simple-1.7.25.jar",
-				"https://maven.scijava.org/service/local/repositories/releases/content/io/bioimage/dl-modelrunner-pytorch/0.4.4-SNAPSHOT/dl-modelrunner-pytorch-0.4.4-20240924.161426-3.jar",
+				"https://maven.scijava.org/service/local/repositories/snapshots/content/io/bioimage/dl-modelrunner-pytorch/0.4.4-SNAPSHOT/dl-modelrunner-pytorch-0.4.4-20240924.161426-3.jar",
 				"https://repo1.maven.org/maven2/net/java/dev/jna/jna/5.13.0/jna-5.13.0.jar",
 				"https://repo1.maven.org/maven2/org/apache/commons/commons-compress/1.21/commons-compress-1.21.jar",
 				"https://repo1.maven.org/maven2/org/slf4j/slf4j-api/2.0.6/slf4j-api-2.0.6.jar"	
@@ -1101,7 +1101,7 @@
 				"https://repo1.maven.org/maven2/ai/djl/pytorch/pytorch-engine/0.21.0/pytorch-engine-0.21.0.jar",
 				"https://repo1.maven.org/maven2/ai/djl/api/0.21.0/api-0.21.0.jar",
 				"https://repo1.maven.org/maven2/org/slf4j/slf4j-simple/1.7.25/slf4j-simple-1.7.25.jar",
-				"https://maven.scijava.org/service/local/repositories/releases/content/io/bioimage/dl-modelrunner-pytorch/0.4.4-SNAPSHOT/dl-modelrunner-pytorch-0.4.4-20240924.161426-3.jar",
+				"https://maven.scijava.org/service/local/repositories/snapshots/content/io/bioimage/dl-modelrunner-pytorch/0.4.4-SNAPSHOT/dl-modelrunner-pytorch-0.4.4-20240924.161426-3.jar",
 				"https://repo1.maven.org/maven2/net/java/dev/jna/jna/5.13.0/jna-5.13.0.jar",
 				"https://repo1.maven.org/maven2/org/apache/commons/commons-compress/1.21/commons-compress-1.21.jar",
 				"https://repo1.maven.org/maven2/org/slf4j/slf4j-api/2.0.6/slf4j-api-2.0.6.jar"		
@@ -1121,7 +1121,7 @@
 				"https://repo1.maven.org/maven2/ai/djl/pytorch/pytorch-engine/0.21.0/pytorch-engine-0.21.0.jar",
 				"https://repo1.maven.org/maven2/ai/djl/api/0.21.0/api-0.21.0.jar",
 				"https://repo1.maven.org/maven2/org/slf4j/slf4j-simple/1.7.25/slf4j-simple-1.7.25.jar",
-				"https://maven.scijava.org/service/local/repositories/releases/content/io/bioimage/dl-modelrunner-pytorch/0.4.4-SNAPSHOT/dl-modelrunner-pytorch-0.4.4-20240924.161426-3.jar",
+				"https://maven.scijava.org/service/local/repositories/snapshots/content/io/bioimage/dl-modelrunner-pytorch/0.4.4-SNAPSHOT/dl-modelrunner-pytorch-0.4.4-20240924.161426-3.jar",
 				"https://repo1.maven.org/maven2/net/java/dev/jna/jna/5.13.0/jna-5.13.0.jar",
 				"https://repo1.maven.org/maven2/org/apache/commons/commons-compress/1.21/commons-compress-1.21.jar",
 				"https://repo1.maven.org/maven2/org/slf4j/slf4j-api/2.0.6/slf4j-api-2.0.6.jar"	
@@ -1137,7 +1137,7 @@
 			"rosetta": true,
 			"java": 8,
 			"jars": [
-				"https://maven.scijava.org/service/local/repositories/releases/content/io/bioimage/dl-modelrunner-pytorch-javacpp/0.4.4-SNAPSHOT/dl-modelrunner-pytorch-javacpp-0.4.4-20241001.162506-6.jar",
+				"https://maven.scijava.org/service/local/repositories/snapshots/content/io/bioimage/dl-modelrunner-pytorch-javacpp/0.4.4-SNAPSHOT/dl-modelrunner-pytorch-javacpp-0.4.4-20241001.162506-6.jar",
 				"https://icy-nexus.pasteur.fr/repository/icy-plugins/org/bioimageanalysis/icy/pytorch-java-cpp/1.13.0-1.5.9/pytorch-java-cpp-1.13.0-1.5.9.jar",
 				"https://repo1.maven.org/maven2/org/bytedeco/javacpp-platform/1.5.9/javacpp-platform-1.5.9.jar",
 				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.9/javacpp-1.5.9-macosx-x86_64.jar",
@@ -1161,7 +1161,7 @@
 				"https://repo1.maven.org/maven2/ai/djl/pytorch/pytorch-engine/0.20.0/pytorch-engine-0.20.0.jar",
 				"https://repo1.maven.org/maven2/ai/djl/api/0.20.0/api-0.20.0.jar",
 				"https://repo1.maven.org/maven2/org/slf4j/slf4j-simple/1.7.25/slf4j-simple-1.7.25.jar",
-				"https://maven.scijava.org/service/local/repositories/releases/content/io/bioimage/dl-modelrunner-pytorch/0.4.4-SNAPSHOT/dl-modelrunner-pytorch-0.4.4-20240924.161426-3.jar",
+				"https://maven.scijava.org/service/local/repositories/snapshots/content/io/bioimage/dl-modelrunner-pytorch/0.4.4-SNAPSHOT/dl-modelrunner-pytorch-0.4.4-20240924.161426-3.jar",
 				"https://repo1.maven.org/maven2/net/java/dev/jna/jna/5.13.0/jna-5.13.0.jar",
 				"https://repo1.maven.org/maven2/org/apache/commons/commons-compress/1.21/commons-compress-1.21.jar",
 				"https://repo1.maven.org/maven2/org/slf4j/slf4j-api/2.0.6/slf4j-api-2.0.6.jar"		
@@ -1181,7 +1181,7 @@
 				"https://repo1.maven.org/maven2/ai/djl/pytorch/pytorch-engine/0.21.0/pytorch-engine-0.21.0.jar",
 				"https://repo1.maven.org/maven2/ai/djl/api/0.21.0/api-0.21.0.jar",
 				"https://repo1.maven.org/maven2/org/slf4j/slf4j-simple/1.7.25/slf4j-simple-1.7.25.jar",
-				"https://maven.scijava.org/service/local/repositories/releases/content/io/bioimage/dl-modelrunner-pytorch/0.4.4-SNAPSHOT/dl-modelrunner-pytorch-0.4.4-20240924.161426-3.jar",
+				"https://maven.scijava.org/service/local/repositories/snapshots/content/io/bioimage/dl-modelrunner-pytorch/0.4.4-SNAPSHOT/dl-modelrunner-pytorch-0.4.4-20240924.161426-3.jar",
 				"https://repo1.maven.org/maven2/net/java/dev/jna/jna/5.13.0/jna-5.13.0.jar",
 				"https://repo1.maven.org/maven2/org/apache/commons/commons-compress/1.21/commons-compress-1.21.jar",
 				"https://repo1.maven.org/maven2/org/slf4j/slf4j-api/2.0.6/slf4j-api-2.0.6.jar"	
@@ -1201,7 +1201,7 @@
 				"https://repo1.maven.org/maven2/ai/djl/pytorch/pytorch-engine/0.20.0/pytorch-engine-0.20.0.jar",
 				"https://repo1.maven.org/maven2/ai/djl/api/0.20.0/api-0.20.0.jar",
 				"https://repo1.maven.org/maven2/org/slf4j/slf4j-simple/1.7.25/slf4j-simple-1.7.25.jar",
-				"https://maven.scijava.org/service/local/repositories/releases/content/io/bioimage/dl-modelrunner-pytorch/0.4.4-SNAPSHOT/dl-modelrunner-pytorch-0.4.4-20240924.161426-3.jar",
+				"https://maven.scijava.org/service/local/repositories/snapshots/content/io/bioimage/dl-modelrunner-pytorch/0.4.4-SNAPSHOT/dl-modelrunner-pytorch-0.4.4-20240924.161426-3.jar",
 				"https://repo1.maven.org/maven2/net/java/dev/jna/jna/5.13.0/jna-5.13.0.jar",
 				"https://repo1.maven.org/maven2/org/apache/commons/commons-compress/1.21/commons-compress-1.21.jar",
 				"https://repo1.maven.org/maven2/org/slf4j/slf4j-api/2.0.6/slf4j-api-2.0.6.jar"		
@@ -1221,7 +1221,7 @@
 				"https://repo1.maven.org/maven2/ai/djl/pytorch/pytorch-engine/0.21.0/pytorch-engine-0.21.0.jar",
 				"https://repo1.maven.org/maven2/ai/djl/api/0.21.0/api-0.21.0.jar",
 				"https://repo1.maven.org/maven2/org/slf4j/slf4j-simple/1.7.25/slf4j-simple-1.7.25.jar",
-				"https://maven.scijava.org/service/local/repositories/releases/content/io/bioimage/dl-modelrunner-pytorch/0.4.4-SNAPSHOT/dl-modelrunner-pytorch-0.4.4-20240924.161426-3.jar",
+				"https://maven.scijava.org/service/local/repositories/snapshots/content/io/bioimage/dl-modelrunner-pytorch/0.4.4-SNAPSHOT/dl-modelrunner-pytorch-0.4.4-20240924.161426-3.jar",
 				"https://repo1.maven.org/maven2/net/java/dev/jna/jna/5.13.0/jna-5.13.0.jar",
 				"https://repo1.maven.org/maven2/org/apache/commons/commons-compress/1.21/commons-compress-1.21.jar",
 				"https://repo1.maven.org/maven2/org/slf4j/slf4j-api/2.0.6/slf4j-api-2.0.6.jar"	
@@ -1237,7 +1237,7 @@
 			"rosetta": true,
 			"java": 8,
 			"jars": [
-				"https://maven.scijava.org/service/local/repositories/releases/content/io/bioimage/dl-modelrunner-pytorch-javacpp/0.4.4-SNAPSHOT/dl-modelrunner-pytorch-javacpp-0.4.4-20241001.162506-6.jar",
+				"https://maven.scijava.org/service/local/repositories/snapshots/content/io/bioimage/dl-modelrunner-pytorch-javacpp/0.4.4-SNAPSHOT/dl-modelrunner-pytorch-javacpp-0.4.4-20241001.162506-6.jar",
 				"https://repo1.maven.org/maven2/org/bytedeco/pytorch/1.12.1-1.5.8/pytorch-1.12.1-1.5.8.jar",
 				"https://repo1.maven.org/maven2/org/bytedeco/pytorch/1.12.1-1.5.8/pytorch-1.12.1-1.5.8-macosx-x86_64.jar",
 				"https://repo1.maven.org/maven2/org/bytedeco/pytorch-platform/1.12.1-1.5.8/pytorch-platform-1.12.1-1.5.8.jar",
@@ -1263,7 +1263,7 @@
 				"https://repo1.maven.org/maven2/ai/djl/pytorch/pytorch-engine/0.19.0/pytorch-engine-0.19.0.jar",
 				"https://repo1.maven.org/maven2/ai/djl/api/0.19.0/api-0.19.0.jar",
 				"https://repo1.maven.org/maven2/org/slf4j/slf4j-simple/1.7.25/slf4j-simple-1.7.25.jar",
-				"https://maven.scijava.org/service/local/repositories/releases/content/io/bioimage/dl-modelrunner-pytorch/0.4.4-SNAPSHOT/dl-modelrunner-pytorch-0.4.4-20240924.161426-3.jar",
+				"https://maven.scijava.org/service/local/repositories/snapshots/content/io/bioimage/dl-modelrunner-pytorch/0.4.4-SNAPSHOT/dl-modelrunner-pytorch-0.4.4-20240924.161426-3.jar",
 				"https://repo1.maven.org/maven2/net/java/dev/jna/jna/5.13.0/jna-5.13.0.jar",
 				"https://repo1.maven.org/maven2/org/apache/commons/commons-compress/1.21/commons-compress-1.21.jar",
 				"https://repo1.maven.org/maven2/org/slf4j/slf4j-api/2.0.6/slf4j-api-2.0.6.jar"			
@@ -1283,7 +1283,7 @@
 				"https://repo1.maven.org/maven2/ai/djl/pytorch/pytorch-engine/0.19.0/pytorch-engine-0.19.0.jar",
 				"https://repo1.maven.org/maven2/ai/djl/api/0.19.0/api-0.19.0.jar",
 				"https://repo1.maven.org/maven2/org/slf4j/slf4j-simple/1.7.25/slf4j-simple-1.7.25.jar",
-				"https://maven.scijava.org/service/local/repositories/releases/content/io/bioimage/dl-modelrunner-pytorch/0.4.4-SNAPSHOT/dl-modelrunner-pytorch-0.4.4-20240924.161426-3.jar",
+				"https://maven.scijava.org/service/local/repositories/snapshots/content/io/bioimage/dl-modelrunner-pytorch/0.4.4-SNAPSHOT/dl-modelrunner-pytorch-0.4.4-20240924.161426-3.jar",
 				"https://repo1.maven.org/maven2/net/java/dev/jna/jna/5.13.0/jna-5.13.0.jar",
 				"https://repo1.maven.org/maven2/org/apache/commons/commons-compress/1.21/commons-compress-1.21.jar",
 				"https://repo1.maven.org/maven2/org/slf4j/slf4j-api/2.0.6/slf4j-api-2.0.6.jar"		
@@ -1303,7 +1303,7 @@
 				"https://repo1.maven.org/maven2/ai/djl/pytorch/pytorch-engine/0.19.0/pytorch-engine-0.19.0.jar",
 				"https://repo1.maven.org/maven2/ai/djl/api/0.19.0/api-0.19.0.jar",
 				"https://repo1.maven.org/maven2/org/slf4j/slf4j-simple/1.7.25/slf4j-simple-1.7.25.jar",
-				"https://maven.scijava.org/service/local/repositories/releases/content/io/bioimage/dl-modelrunner-pytorch/0.4.4-SNAPSHOT/dl-modelrunner-pytorch-0.4.4-20240924.161426-3.jar",
+				"https://maven.scijava.org/service/local/repositories/snapshots/content/io/bioimage/dl-modelrunner-pytorch/0.4.4-SNAPSHOT/dl-modelrunner-pytorch-0.4.4-20240924.161426-3.jar",
 				"https://repo1.maven.org/maven2/net/java/dev/jna/jna/5.13.0/jna-5.13.0.jar",
 				"https://repo1.maven.org/maven2/org/apache/commons/commons-compress/1.21/commons-compress-1.21.jar",
 				"https://repo1.maven.org/maven2/org/slf4j/slf4j-api/2.0.6/slf4j-api-2.0.6.jar"		
@@ -1323,7 +1323,7 @@
 				"https://repo1.maven.org/maven2/ai/djl/pytorch/pytorch-engine/0.19.0/pytorch-engine-0.19.0.jar",
 				"https://repo1.maven.org/maven2/ai/djl/api/0.19.0/api-0.19.0.jar",
 				"https://repo1.maven.org/maven2/org/slf4j/slf4j-simple/1.7.25/slf4j-simple-1.7.25.jar",
-				"https://maven.scijava.org/service/local/repositories/releases/content/io/bioimage/dl-modelrunner-pytorch/0.4.4-SNAPSHOT/dl-modelrunner-pytorch-0.4.4-20240924.161426-3.jar",
+				"https://maven.scijava.org/service/local/repositories/snapshots/content/io/bioimage/dl-modelrunner-pytorch/0.4.4-SNAPSHOT/dl-modelrunner-pytorch-0.4.4-20240924.161426-3.jar",
 				"https://repo1.maven.org/maven2/net/java/dev/jna/jna/5.13.0/jna-5.13.0.jar",
 				"https://repo1.maven.org/maven2/org/apache/commons/commons-compress/1.21/commons-compress-1.21.jar",
 				"https://repo1.maven.org/maven2/org/slf4j/slf4j-api/2.0.6/slf4j-api-2.0.6.jar"		
@@ -1343,7 +1343,7 @@
 				"https://repo1.maven.org/maven2/ai/djl/pytorch/pytorch-engine/0.19.0/pytorch-engine-0.19.0.jar",
 				"https://repo1.maven.org/maven2/ai/djl/api/0.19.0/api-0.19.0.jar",
 				"https://repo1.maven.org/maven2/org/slf4j/slf4j-simple/1.7.25/slf4j-simple-1.7.25.jar",
-				"https://maven.scijava.org/service/local/repositories/releases/content/io/bioimage/dl-modelrunner-pytorch/0.4.4-SNAPSHOT/dl-modelrunner-pytorch-0.4.4-20240924.161426-3.jar",
+				"https://maven.scijava.org/service/local/repositories/snapshots/content/io/bioimage/dl-modelrunner-pytorch/0.4.4-SNAPSHOT/dl-modelrunner-pytorch-0.4.4-20240924.161426-3.jar",
 				"https://repo1.maven.org/maven2/net/java/dev/jna/jna/5.13.0/jna-5.13.0.jar",
 				"https://repo1.maven.org/maven2/org/apache/commons/commons-compress/1.21/commons-compress-1.21.jar",
 				"https://repo1.maven.org/maven2/org/slf4j/slf4j-api/2.0.6/slf4j-api-2.0.6.jar"			
@@ -1363,7 +1363,7 @@
 				"https://repo1.maven.org/maven2/ai/djl/pytorch/pytorch-engine/0.19.0/pytorch-engine-0.19.0.jar",
 				"https://repo1.maven.org/maven2/ai/djl/api/0.19.0/api-0.19.0.jar",
 				"https://repo1.maven.org/maven2/org/slf4j/slf4j-simple/1.7.25/slf4j-simple-1.7.25.jar",
-				"https://maven.scijava.org/service/local/repositories/releases/content/io/bioimage/dl-modelrunner-pytorch/0.4.4-SNAPSHOT/dl-modelrunner-pytorch-0.4.4-20240924.161426-3.jar",
+				"https://maven.scijava.org/service/local/repositories/snapshots/content/io/bioimage/dl-modelrunner-pytorch/0.4.4-SNAPSHOT/dl-modelrunner-pytorch-0.4.4-20240924.161426-3.jar",
 				"https://repo1.maven.org/maven2/net/java/dev/jna/jna/5.13.0/jna-5.13.0.jar",
 				"https://repo1.maven.org/maven2/org/apache/commons/commons-compress/1.21/commons-compress-1.21.jar",
 				"https://repo1.maven.org/maven2/org/slf4j/slf4j-api/2.0.6/slf4j-api-2.0.6.jar"			
@@ -1383,7 +1383,7 @@
 				"https://repo1.maven.org/maven2/ai/djl/pytorch/pytorch-engine/0.19.0/pytorch-engine-0.19.0.jar",
 				"https://repo1.maven.org/maven2/ai/djl/api/0.19.0/api-0.19.0.jar",
 				"https://repo1.maven.org/maven2/org/slf4j/slf4j-simple/1.7.25/slf4j-simple-1.7.25.jar",
-				"https://maven.scijava.org/service/local/repositories/releases/content/io/bioimage/dl-modelrunner-pytorch/0.4.4-SNAPSHOT/dl-modelrunner-pytorch-0.4.4-20240924.161426-3.jar",
+				"https://maven.scijava.org/service/local/repositories/snapshots/content/io/bioimage/dl-modelrunner-pytorch/0.4.4-SNAPSHOT/dl-modelrunner-pytorch-0.4.4-20240924.161426-3.jar",
 				"https://repo1.maven.org/maven2/net/java/dev/jna/jna/5.13.0/jna-5.13.0.jar",
 				"https://repo1.maven.org/maven2/org/apache/commons/commons-compress/1.21/commons-compress-1.21.jar",
 				"https://repo1.maven.org/maven2/org/slf4j/slf4j-api/2.0.6/slf4j-api-2.0.6.jar"		
@@ -1403,7 +1403,7 @@
 				"https://repo1.maven.org/maven2/ai/djl/pytorch/pytorch-engine/0.19.0/pytorch-engine-0.19.0.jar",
 				"https://repo1.maven.org/maven2/ai/djl/api/0.19.0/api-0.19.0.jar",
 				"https://repo1.maven.org/maven2/org/slf4j/slf4j-simple/1.7.25/slf4j-simple-1.7.25.jar",
-				"https://maven.scijava.org/service/local/repositories/releases/content/io/bioimage/dl-modelrunner-pytorch/0.4.4-SNAPSHOT/dl-modelrunner-pytorch-0.4.4-20240924.161426-3.jar",
+				"https://maven.scijava.org/service/local/repositories/snapshots/content/io/bioimage/dl-modelrunner-pytorch/0.4.4-SNAPSHOT/dl-modelrunner-pytorch-0.4.4-20240924.161426-3.jar",
 				"https://repo1.maven.org/maven2/net/java/dev/jna/jna/5.13.0/jna-5.13.0.jar",
 				"https://repo1.maven.org/maven2/org/apache/commons/commons-compress/1.21/commons-compress-1.21.jar",
 				"https://repo1.maven.org/maven2/org/slf4j/slf4j-api/2.0.6/slf4j-api-2.0.6.jar"		
@@ -1423,7 +1423,7 @@
 				"https://repo1.maven.org/maven2/ai/djl/pytorch/pytorch-engine/0.19.0/pytorch-engine-0.19.0.jar",
 				"https://repo1.maven.org/maven2/ai/djl/api/0.19.0/api-0.19.0.jar",
 				"https://repo1.maven.org/maven2/org/slf4j/slf4j-simple/1.7.25/slf4j-simple-1.7.25.jar",
-				"https://maven.scijava.org/service/local/repositories/releases/content/io/bioimage/dl-modelrunner-pytorch/0.4.4-SNAPSHOT/dl-modelrunner-pytorch-0.4.4-20240924.161426-3.jar",
+				"https://maven.scijava.org/service/local/repositories/snapshots/content/io/bioimage/dl-modelrunner-pytorch/0.4.4-SNAPSHOT/dl-modelrunner-pytorch-0.4.4-20240924.161426-3.jar",
 				"https://repo1.maven.org/maven2/net/java/dev/jna/jna/5.13.0/jna-5.13.0.jar",
 				"https://repo1.maven.org/maven2/org/apache/commons/commons-compress/1.21/commons-compress-1.21.jar",
 				"https://repo1.maven.org/maven2/org/slf4j/slf4j-api/2.0.6/slf4j-api-2.0.6.jar"		
@@ -1443,7 +1443,7 @@
 				"https://repo1.maven.org/maven2/ai/djl/pytorch/pytorch-engine/0.19.0/pytorch-engine-0.19.0.jar",
 				"https://repo1.maven.org/maven2/ai/djl/api/0.19.0/api-0.19.0.jar",
 				"https://repo1.maven.org/maven2/org/slf4j/slf4j-simple/1.7.25/slf4j-simple-1.7.25.jar",
-				"https://maven.scijava.org/service/local/repositories/releases/content/io/bioimage/dl-modelrunner-pytorch/0.4.4-SNAPSHOT/dl-modelrunner-pytorch-0.4.4-20240924.161426-3.jar",
+				"https://maven.scijava.org/service/local/repositories/snapshots/content/io/bioimage/dl-modelrunner-pytorch/0.4.4-SNAPSHOT/dl-modelrunner-pytorch-0.4.4-20240924.161426-3.jar",
 				"https://repo1.maven.org/maven2/net/java/dev/jna/jna/5.12.1/jna-5.12.1.jar",
 				"https://repo1.maven.org/maven2/org/apache/commons/commons-compress/1.21/commons-compress-1.21.jar",
 				"https://repo1.maven.org/maven2/org/slf4j/slf4j-api/2.0.6/slf4j-api-2.0.6.jar"			
@@ -1463,7 +1463,7 @@
 				"https://repo1.maven.org/maven2/ai/djl/pytorch/pytorch-engine/0.19.0/pytorch-engine-0.19.0.jar",
 				"https://repo1.maven.org/maven2/ai/djl/api/0.19.0/api-0.19.0.jar",
 				"https://repo1.maven.org/maven2/org/slf4j/slf4j-simple/1.7.25/slf4j-simple-1.7.25.jar",
-				"https://maven.scijava.org/service/local/repositories/releases/content/io/bioimage/dl-modelrunner-pytorch/0.4.4-SNAPSHOT/dl-modelrunner-pytorch-0.4.4-20240924.161426-3.jar",
+				"https://maven.scijava.org/service/local/repositories/snapshots/content/io/bioimage/dl-modelrunner-pytorch/0.4.4-SNAPSHOT/dl-modelrunner-pytorch-0.4.4-20240924.161426-3.jar",
 				"https://repo1.maven.org/maven2/net/java/dev/jna/jna/5.12.1/jna-5.12.1.jar",
 				"https://repo1.maven.org/maven2/org/apache/commons/commons-compress/1.21/commons-compress-1.21.jar",
 				"https://repo1.maven.org/maven2/org/slf4j/slf4j-api/2.0.6/slf4j-api-2.0.6.jar"		
@@ -1483,7 +1483,7 @@
 				"https://repo1.maven.org/maven2/ai/djl/pytorch/pytorch-engine/0.19.0/pytorch-engine-0.19.0.jar",
 				"https://repo1.maven.org/maven2/ai/djl/api/0.19.0/api-0.19.0.jar",
 				"https://repo1.maven.org/maven2/org/slf4j/slf4j-simple/1.7.25/slf4j-simple-1.7.25.jar",
-				"https://maven.scijava.org/service/local/repositories/releases/content/io/bioimage/dl-modelrunner-pytorch/0.4.4-SNAPSHOT/dl-modelrunner-pytorch-0.4.4-20240924.161426-3.jar",
+				"https://maven.scijava.org/service/local/repositories/snapshots/content/io/bioimage/dl-modelrunner-pytorch/0.4.4-SNAPSHOT/dl-modelrunner-pytorch-0.4.4-20240924.161426-3.jar",
 				"https://repo1.maven.org/maven2/net/java/dev/jna/jna/5.12.1/jna-5.12.1.jar",
 				"https://repo1.maven.org/maven2/org/apache/commons/commons-compress/1.21/commons-compress-1.21.jar",
 				"https://repo1.maven.org/maven2/org/slf4j/slf4j-api/2.0.6/slf4j-api-2.0.6.jar"		
@@ -1503,7 +1503,7 @@
 				"https://repo1.maven.org/maven2/ai/djl/pytorch/pytorch-engine/0.14.0/pytorch-engine-0.14.0.jar",
 				"https://repo1.maven.org/maven2/ai/djl/api/0.14.0/api-0.14.0.jar",
 				"https://repo1.maven.org/maven2/org/slf4j/slf4j-simple/1.7.25/slf4j-simple-1.7.25.jar",
-				"https://maven.scijava.org/service/local/repositories/releases/content/io/bioimage/dl-modelrunner-pytorch/0.4.4-SNAPSHOT/dl-modelrunner-pytorch-0.4.4-20240924.161426-3.jar",
+				"https://maven.scijava.org/service/local/repositories/snapshots/content/io/bioimage/dl-modelrunner-pytorch/0.4.4-SNAPSHOT/dl-modelrunner-pytorch-0.4.4-20240924.161426-3.jar",
 				"https://repo1.maven.org/maven2/net/java/dev/jna/jna/5.12.1/jna-5.12.1.jar",
 				"https://repo1.maven.org/maven2/org/apache/commons/commons-compress/1.21/commons-compress-1.21.jar",
 				"https://repo1.maven.org/maven2/org/slf4j/slf4j-api/2.0.6/slf4j-api-2.0.6.jar"			
@@ -1523,7 +1523,7 @@
 				"https://repo1.maven.org/maven2/ai/djl/pytorch/pytorch-engine/0.14.0/pytorch-engine-0.14.0.jar",
 				"https://repo1.maven.org/maven2/ai/djl/api/0.14.0/api-0.14.0.jar",
 				"https://repo1.maven.org/maven2/org/slf4j/slf4j-simple/1.7.25/slf4j-simple-1.7.25.jar",
-				"https://maven.scijava.org/service/local/repositories/releases/content/io/bioimage/dl-modelrunner-pytorch/0.4.4-SNAPSHOT/dl-modelrunner-pytorch-0.4.4-20240924.161426-3.jar",
+				"https://maven.scijava.org/service/local/repositories/snapshots/content/io/bioimage/dl-modelrunner-pytorch/0.4.4-SNAPSHOT/dl-modelrunner-pytorch-0.4.4-20240924.161426-3.jar",
 				"https://repo1.maven.org/maven2/net/java/dev/jna/jna/5.12.1/jna-5.12.1.jar",
 				"https://repo1.maven.org/maven2/org/apache/commons/commons-compress/1.21/commons-compress-1.21.jar",
 				"https://repo1.maven.org/maven2/org/slf4j/slf4j-api/2.0.6/slf4j-api-2.0.6.jar"		
@@ -1543,7 +1543,7 @@
 				"https://repo1.maven.org/maven2/ai/djl/pytorch/pytorch-engine/0.14.0/pytorch-engine-0.14.0.jar",
 				"https://repo1.maven.org/maven2/ai/djl/api/0.14.0/api-0.14.0.jar",
 				"https://repo1.maven.org/maven2/org/slf4j/slf4j-simple/1.7.25/slf4j-simple-1.7.25.jar",
-				"https://maven.scijava.org/service/local/repositories/releases/content/io/bioimage/dl-modelrunner-pytorch/0.4.4-SNAPSHOT/dl-modelrunner-pytorch-0.4.4-20240924.161426-3.jar",
+				"https://maven.scijava.org/service/local/repositories/snapshots/content/io/bioimage/dl-modelrunner-pytorch/0.4.4-SNAPSHOT/dl-modelrunner-pytorch-0.4.4-20240924.161426-3.jar",
 				"https://repo1.maven.org/maven2/net/java/dev/jna/jna/5.12.1/jna-5.12.1.jar",
 				"https://repo1.maven.org/maven2/org/apache/commons/commons-compress/1.21/commons-compress-1.21.jar",
 				"https://repo1.maven.org/maven2/org/slf4j/slf4j-api/2.0.6/slf4j-api-2.0.6.jar"		
@@ -1563,7 +1563,7 @@
 				"https://repo1.maven.org/maven2/ai/djl/pytorch/pytorch-engine/0.13.0/pytorch-engine-0.13.0.jar",
 				"https://repo1.maven.org/maven2/ai/djl/api/0.13.0/api-0.13.0.jar",
 				"https://repo1.maven.org/maven2/org/slf4j/slf4j-simple/1.7.25/slf4j-simple-1.7.25.jar",
-				"https://maven.scijava.org/service/local/repositories/releases/content/io/bioimage/dl-modelrunner-pytorch/0.4.4-SNAPSHOT/dl-modelrunner-pytorch-0.4.4-20240924.161426-3.jar",
+				"https://maven.scijava.org/service/local/repositories/snapshots/content/io/bioimage/dl-modelrunner-pytorch/0.4.4-SNAPSHOT/dl-modelrunner-pytorch-0.4.4-20240924.161426-3.jar",
 				"https://repo1.maven.org/maven2/net/java/dev/jna/jna/5.12.1/jna-5.12.1.jar",
 				"https://repo1.maven.org/maven2/org/apache/commons/commons-compress/1.21/commons-compress-1.21.jar",
 				"https://repo1.maven.org/maven2/org/slf4j/slf4j-api/2.0.6/slf4j-api-2.0.6.jar"			
@@ -1583,7 +1583,7 @@
 				"https://repo1.maven.org/maven2/ai/djl/pytorch/pytorch-engine/0.13.0/pytorch-engine-0.13.0.jar",
 				"https://repo1.maven.org/maven2/ai/djl/api/0.13.0/api-0.13.0.jar",
 				"https://repo1.maven.org/maven2/org/slf4j/slf4j-simple/1.7.25/slf4j-simple-1.7.25.jar",
-				"https://maven.scijava.org/service/local/repositories/releases/content/io/bioimage/dl-modelrunner-pytorch/0.4.4-SNAPSHOT/dl-modelrunner-pytorch-0.4.4-20240924.161426-3.jar",
+				"https://maven.scijava.org/service/local/repositories/snapshots/content/io/bioimage/dl-modelrunner-pytorch/0.4.4-SNAPSHOT/dl-modelrunner-pytorch-0.4.4-20240924.161426-3.jar",
 				"https://repo1.maven.org/maven2/net/java/dev/jna/jna/5.12.1/jna-5.12.1.jar",
 				"https://repo1.maven.org/maven2/org/apache/commons/commons-compress/1.21/commons-compress-1.21.jar",
 				"https://repo1.maven.org/maven2/org/slf4j/slf4j-api/2.0.6/slf4j-api-2.0.6.jar"			
@@ -1603,7 +1603,7 @@
 				"https://repo1.maven.org/maven2/ai/djl/pytorch/pytorch-engine/0.13.0/pytorch-engine-0.13.0.jar",
 				"https://repo1.maven.org/maven2/ai/djl/api/0.13.0/api-0.13.0.jar",
 				"https://repo1.maven.org/maven2/org/slf4j/slf4j-simple/1.7.25/slf4j-simple-1.7.25.jar",
-				"https://maven.scijava.org/service/local/repositories/releases/content/io/bioimage/dl-modelrunner-pytorch/0.4.4-SNAPSHOT/dl-modelrunner-pytorch-0.4.4-20240924.161426-3.jar",
+				"https://maven.scijava.org/service/local/repositories/snapshots/content/io/bioimage/dl-modelrunner-pytorch/0.4.4-SNAPSHOT/dl-modelrunner-pytorch-0.4.4-20240924.161426-3.jar",
 				"https://repo1.maven.org/maven2/net/java/dev/jna/jna/5.12.1/jna-5.12.1.jar",
 				"https://repo1.maven.org/maven2/org/apache/commons/commons-compress/1.21/commons-compress-1.21.jar",
 				"https://repo1.maven.org/maven2/org/slf4j/slf4j-api/2.0.6/slf4j-api-2.0.6.jar"				
@@ -1623,7 +1623,7 @@
 				"https://repo1.maven.org/maven2/ai/djl/pytorch/pytorch-engine/0.15.0/pytorch-engine-0.15.0.jar",
 				"https://repo1.maven.org/maven2/ai/djl/api/0.12.0/api-0.12.0.jar",
 				"https://repo1.maven.org/maven2/org/slf4j/slf4j-simple/1.7.25/slf4j-simple-1.7.25.jar",
-				"https://maven.scijava.org/service/local/repositories/releases/content/io/bioimage/dl-modelrunner-pytorch/0.4.4-SNAPSHOT/dl-modelrunner-pytorch-0.4.4-20240924.161426-3.jar",
+				"https://maven.scijava.org/service/local/repositories/snapshots/content/io/bioimage/dl-modelrunner-pytorch/0.4.4-SNAPSHOT/dl-modelrunner-pytorch-0.4.4-20240924.161426-3.jar",
 				"https://repo1.maven.org/maven2/net/java/dev/jna/jna/5.12.1/jna-5.12.1.jar",
 				"https://repo1.maven.org/maven2/org/apache/commons/commons-compress/1.21/commons-compress-1.21.jar",
 				"https://repo1.maven.org/maven2/org/slf4j/slf4j-api/2.0.6/slf4j-api-2.0.6.jar"			
@@ -1643,7 +1643,7 @@
 				"https://repo1.maven.org/maven2/ai/djl/pytorch/pytorch-engine/0.15.0/pytorch-engine-0.15.0.jar",
 				"https://repo1.maven.org/maven2/ai/djl/api/0.12.0/api-0.12.0.jar",
 				"https://repo1.maven.org/maven2/org/slf4j/slf4j-simple/1.7.25/slf4j-simple-1.7.25.jar",
-				"https://maven.scijava.org/service/local/repositories/releases/content/io/bioimage/dl-modelrunner-pytorch/0.4.4-SNAPSHOT/dl-modelrunner-pytorch-0.4.4-20240924.161426-3.jar",
+				"https://maven.scijava.org/service/local/repositories/snapshots/content/io/bioimage/dl-modelrunner-pytorch/0.4.4-SNAPSHOT/dl-modelrunner-pytorch-0.4.4-20240924.161426-3.jar",
 				"https://repo1.maven.org/maven2/net/java/dev/jna/jna/5.12.1/jna-5.12.1.jar",
 				"https://repo1.maven.org/maven2/org/apache/commons/commons-compress/1.21/commons-compress-1.21.jar",
 				"https://repo1.maven.org/maven2/org/slf4j/slf4j-api/2.0.6/slf4j-api-2.0.6.jar"			
@@ -1663,7 +1663,7 @@
 				"https://repo1.maven.org/maven2/ai/djl/pytorch/pytorch-engine/0.15.0/pytorch-engine-0.15.0.jar",
 				"https://repo1.maven.org/maven2/ai/djl/api/0.12.0/api-0.12.0.jar",
 				"https://repo1.maven.org/maven2/org/slf4j/slf4j-simple/1.7.25/slf4j-simple-1.7.25.jar",
-				"https://maven.scijava.org/service/local/repositories/releases/content/io/bioimage/dl-modelrunner-pytorch/0.4.4-SNAPSHOT/dl-modelrunner-pytorch-0.4.4-20240924.161426-3.jar",
+				"https://maven.scijava.org/service/local/repositories/snapshots/content/io/bioimage/dl-modelrunner-pytorch/0.4.4-SNAPSHOT/dl-modelrunner-pytorch-0.4.4-20240924.161426-3.jar",
 				"https://repo1.maven.org/maven2/net/java/dev/jna/jna/5.12.1/jna-5.12.1.jar",
 				"https://repo1.maven.org/maven2/org/apache/commons/commons-compress/1.21/commons-compress-1.21.jar",
 				"https://repo1.maven.org/maven2/org/slf4j/slf4j-api/2.0.6/slf4j-api-2.0.6.jar"			
@@ -1683,7 +1683,7 @@
 				"https://repo1.maven.org/maven2/ai/djl/pytorch/pytorch-engine/0.10.0/pytorch-engine-0.10.0.jar",
 				"https://repo1.maven.org/maven2/ai/djl/api/0.10.0/api-0.10.0.jar",
 				"https://repo1.maven.org/maven2/org/slf4j/slf4j-simple/1.7.25/slf4j-simple-1.7.25.jar",
-				"https://maven.scijava.org/service/local/repositories/releases/content/io/bioimage/dl-modelrunner-pytorch/0.4.4-SNAPSHOT/dl-modelrunner-pytorch-0.4.4-20240924.161426-3.jar",
+				"https://maven.scijava.org/service/local/repositories/snapshots/content/io/bioimage/dl-modelrunner-pytorch/0.4.4-SNAPSHOT/dl-modelrunner-pytorch-0.4.4-20240924.161426-3.jar",
 				"https://repo1.maven.org/maven2/net/java/dev/jna/jna/5.12.1/jna-5.12.1.jar",
 				"https://repo1.maven.org/maven2/org/apache/commons/commons-compress/1.21/commons-compress-1.21.jar",
 				"https://repo1.maven.org/maven2/org/slf4j/slf4j-api/2.0.6/slf4j-api-2.0.6.jar"				
@@ -1703,7 +1703,7 @@
 				"https://repo1.maven.org/maven2/ai/djl/pytorch/pytorch-engine/0.10.0/pytorch-engine-0.10.0.jar",
 				"https://repo1.maven.org/maven2/ai/djl/api/0.10.0/api-0.10.0.jar",
 				"https://repo1.maven.org/maven2/org/slf4j/slf4j-simple/1.7.25/slf4j-simple-1.7.25.jar"	,
-				"https://maven.scijava.org/service/local/repositories/releases/content/io/bioimage/dl-modelrunner-pytorch/0.4.4-SNAPSHOT/dl-modelrunner-pytorch-0.4.4-20240924.161426-3.jar",
+				"https://maven.scijava.org/service/local/repositories/snapshots/content/io/bioimage/dl-modelrunner-pytorch/0.4.4-SNAPSHOT/dl-modelrunner-pytorch-0.4.4-20240924.161426-3.jar",
 				"https://repo1.maven.org/maven2/net/java/dev/jna/jna/5.12.1/jna-5.12.1.jar",
 				"https://repo1.maven.org/maven2/org/apache/commons/commons-compress/1.21/commons-compress-1.21.jar",
 				"https://repo1.maven.org/maven2/org/slf4j/slf4j-api/2.0.6/slf4j-api-2.0.6.jar"				
@@ -1723,7 +1723,7 @@
 				"https://repo1.maven.org/maven2/ai/djl/pytorch/pytorch-engine/0.10.0/pytorch-engine-0.10.0.jar",
 				"https://repo1.maven.org/maven2/ai/djl/api/0.10.0/api-0.10.0.jar",
 				"https://repo1.maven.org/maven2/org/slf4j/slf4j-simple/1.7.25/slf4j-simple-1.7.25.jar",
-				"https://maven.scijava.org/service/local/repositories/releases/content/io/bioimage/dl-modelrunner-pytorch/0.4.4-SNAPSHOT/dl-modelrunner-pytorch-0.4.4-20240924.161426-3.jar",
+				"https://maven.scijava.org/service/local/repositories/snapshots/content/io/bioimage/dl-modelrunner-pytorch/0.4.4-SNAPSHOT/dl-modelrunner-pytorch-0.4.4-20240924.161426-3.jar",
 				"https://repo1.maven.org/maven2/net/java/dev/jna/jna/5.12.1/jna-5.12.1.jar",
 				"https://repo1.maven.org/maven2/org/apache/commons/commons-compress/1.21/commons-compress-1.21.jar",
 				"https://repo1.maven.org/maven2/org/slf4j/slf4j-api/2.0.6/slf4j-api-2.0.6.jar"			
