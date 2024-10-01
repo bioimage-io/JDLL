@@ -518,6 +518,10 @@ public class Model
 	 * Learning framework (engine) loaded to run inference on the tensors. The
 	 * method returns the corresponding output tensors
 	 * 
+	 * @param <T>
+	 * 	ImgLib2 data type of the input tensors
+	 * @param <R>
+	 * 	ImgLib2 data type of the output tensors, it can be the same as in the input
 	 * @param inTensors
 	 *            input tensors containing all the tensor data
 	 * @param outTensors

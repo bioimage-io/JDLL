@@ -86,11 +86,10 @@ import net.imglib2.view.Views;
  * }
  * </pre>
  * 
- * @see io.bioimage.modelrunner.model.ModelDescriptor
+ * @see io.bioimage.modelrunner.bioimageio.description.ModelDescriptor
  * @see io.bioimage.modelrunner.bioimageio.description.ModelDescriptorFactory
  * @see io.bioimage.modelrunner.exceptions.LoadModelException
  * @see io.bioimage.modelrunner.exceptions.RunModelException
- * @see io.bioimage.modelrunner.runmode.ops.GenericOp
  * 
  *TODO add fine tuning
  *TODO add support for Mac arm

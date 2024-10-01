@@ -19,6 +19,13 @@ import net.imglib2.type.NativeType;
 import net.imglib2.type.numeric.RealType;
 import net.imglib2.view.Views;
 
+/**
+ * Class that handles the tiling of the image of interest following the specs of the Bioimage.io rdf.yaml file.
+ * It requires the user providing the image size and intended tile size. With it, the class finds the division
+ * of the image in tiles, and where each of the tiles is inserted.
+ * 
+ * @author Carlos Javier Garcia Lopez de Haro
+ */
 public class TileMaker {
 	
 	private final List<TileInfo> inputTileInfo;
@@ -42,6 +49,15 @@ public class TileMaker {
 		calculate();
 	}
 	
+	/**
+	 * Create the {@link TileMaker} object that will handle tiling of the images of interest for a wanted model.
+	 * @param descriptor
+	 * 	Bioimage.io rdf.yaml specs file of the model of interest
+	 * @param tileInfoList
+	 * 	list of {@link Tileinfo} objects. Each of them should refer to one the input tensors of the model of 
+	 * 	interest, by the name used in the Bioimage.io specs file.
+	 * @return an instance of {@link TileMaker} that handles tiling for the images and model of interest.
+	 */
 	public static TileMaker build(ModelDescriptor descriptor, List<TileInfo> tileInfoList) {
 		return new TileMaker(descriptor, tileInfoList);
 	}
@@ -324,26 +340,48 @@ public class TileMaker {
         return PatchSpec.create(spec.getName(), tileSize, patchGridSize, paddingSize, imSize);
     }
     
+    /**
+     * 
+     * @return the maximum number of tiles into which any of the input images is going to be tiled
+     */
     public int getNumberOfTiles() {
     	return inputGrid.get(this.descriptor.getInputTensors().get(0).getName()).getRoiPostionsInImage().size();
     }
     
+    /**
+     * 
+     * @return the maximum number of tiles into which any of the input images is going to be tiled
+     */
     public Map<String, Integer> getTilesPerAxis() {
     	return null;
     }
 	
-	public void getInputInsertionPoints(String tensorID, int nTile, String axes) {
-    	TileInfo tile = this.inputTileInfo.stream().filter(t -> t.getName().equals(tensorID)).findFirst().orElse(null);
+    /**
+     * Get the positions in the input image from where the tile number {@code nTile} is going to be cut 
+     * for input tensor named {@code tensorName}
+     * @param tensorName
+     * 	name of the tensor as per the Bioimage.io rdf.yaml file
+     * @param nTile
+     * 	the nth tile for which we want the information, should be smaller than the number of total tiles
+     */
+	public void getInputInsertionPoints(String tensorName, int nTile) {
+    	TileInfo tile = this.inputTileInfo.stream().filter(t -> t.getName().equals(tensorName)).findFirst().orElse(null);
     	if (tile == null)
-    		throw new IllegalArgumentException("Input tensor '" + tensorID + "' does not require tiling.");
-		
+    		throw new IllegalArgumentException("Input tensor '" + tensorName + "' does not require tiling.");
 	}
 	
-	public void getOutputInsertionPoints(String tensorID, int nTile, String axes) {
-    	TileInfo tile = this.outputTileInfo.stream().filter(t -> t.getName().equals(tensorID)).findFirst().orElse(null);
+    /**
+     * Get the positions in the output image where the tile number {@code nTile} is going to be inserted 
+     * for output named {@code tensorName}
+     * @param tensorName
+     * 	name of the tensor as per the Bioimage.io rdf.yaml file
+     * @param nTile
+     * 	the nth tile for which we want the information, should be smaller than the number of total tiles
+     */
+	public void getOutputInsertionPoints(String tensorName, int nTile) {
+    	TileInfo tile = this.outputTileInfo.stream().filter(t -> t.getName().equals(tensorName)).findFirst().orElse(null);
     	if (tile == null)
-    		throw new IllegalArgumentException("Output tensor '" + tensorID + "' does not require tiling.");
-		
+    		throw new IllegalArgumentException("Output tensor '" + tensorName + "' does not require tiling.");
 	}
     
     /**
@@ -365,83 +403,109 @@ public class TileMaker {
     }
     
     /**
-     * 
-     * @return size of the tile that is going to be used to process the image
+     * Return the size of the tiles for the wanted input tensor
+     * @param tensorName
+     * 	name of the tensor as per the Bioimage.io rdf.yaml file
+     * @return the size of the tiles for the wanted input tensor
      */
-    public long[] getInputTileSize(String tensorID) {
-    	TileInfo tile = this.inputTileInfo.stream().filter(t -> t.getName().equals(tensorID)).findFirst().orElse(null);
+    public long[] getInputTileSize(String tensorName) {
+    	TileInfo tile = this.inputTileInfo.stream().filter(t -> t.getName().equals(tensorName)).findFirst().orElse(null);
     	if (tile == null)
-    		throw new IllegalArgumentException("Input tensor '" + tensorID + "' does not require tiling.");
+    		throw new IllegalArgumentException("Input tensor '" + tensorName + "' does not require tiling.");
     	return tile.getTileDims();
     }
     
     /**
-     * 
-     * @return size of the tile that is going to be used to process the image
+     * Return the size of the tiles for the wanted output tensor
+     * @param tensorName
+     * 	name of the tensor as per the Bioimage.io rdf.yaml file
+     * @return the size of the tiles for the wanted output tensor
      */
-    public long[] getOutputTileSize(String tensorID) {
-    	TileInfo tile = this.outputTileInfo.stream().filter(t -> t.getName().equals(tensorID)).findFirst().orElse(null);
+    public long[] getOutputTileSize(String tensorName) {
+    	TileInfo tile = this.outputTileInfo.stream().filter(t -> t.getName().equals(tensorName)).findFirst().orElse(null);
     	if (tile == null)
-    		throw new IllegalArgumentException("Output tensor '" + tensorID + "' does not require tiling.");
+    		throw new IllegalArgumentException("Output tensor '" + tensorName + "' does not require tiling.");
     	return tile.getTileDims();
     }
-    
+
     /**
-     * 
-     * @return size of the roi of each of the tiles that is going to be used to process the image
+     * Return the size of the Region Of Interest of the tiles for the wanted input tensor
+     * @param tensorName
+     * 	name of the tensor as per the Bioimage.io rdf.yaml file
+     * @return the size of the Region Of Interest of the tiles for the wanted input tensor
      */
-    public int[] getInputRoiSize(String tensorID) {
-    	TileInfo tile = this.inputTileInfo.stream().filter(t -> t.getName().equals(tensorID)).findFirst().orElse(null);
+    public int[] getInputRoiSize(String tensorName) {
+    	TileInfo tile = this.inputTileInfo.stream().filter(t -> t.getName().equals(tensorName)).findFirst().orElse(null);
     	if (tile == null)
-    		throw new IllegalArgumentException("Input tensor '" + tensorID + "' does not require tiling.");
-    	return this.inputGrid.get(tensorID).getRoiSize();
+    		throw new IllegalArgumentException("Input tensor '" + tensorName + "' does not require tiling.");
+    	return this.inputGrid.get(tensorName).getRoiSize();
+    }
+
+    /**
+     * Return the size of the Region Of Interest of the tiles for the wanted output tensor
+     * @param tensorName
+     * 	name of the tensor as per the Bioimage.io rdf.yaml file
+     * @return the size of the Region Of Interest of the tiles for the wanted output tensor
+     */
+    public int[] getOutputRoiSize(String tensorName) {
+    	TileInfo tile = this.outputTileInfo.stream().filter(t -> t.getName().equals(tensorName)).findFirst().orElse(null);
+    	if (tile == null)
+    		throw new IllegalArgumentException("Output tensor '" + tensorName + "' does not require tiling.");
+    	return this.outputGrid.get(tensorName).getRoiSize();
     }
     
     /**
-     * 
-     * @return size of the roi of each of the tiles that is going to be used to process the image
-     */
-    public int[] getOutputRoiSize(String tensorID) {
-    	TileInfo tile = this.outputTileInfo.stream().filter(t -> t.getName().equals(tensorID)).findFirst().orElse(null);
-    	if (tile == null)
-    		throw new IllegalArgumentException("Output tensor '" + tensorID + "' does not require tiling.");
-    	return this.outputGrid.get(tensorID).getRoiSize();
-    }
-    
-    /**
-     * 
+     * Same as {@link #getInputInsertionPoints(String, int)} but returning a list for every tile.
+     * @param tensorName
+     * 	name of the tensor as per the Bioimage.io rdf.yaml file
      * @return the position of the closest corner to the center for each of the tiles  with 
      * respect to the original image of the tensor.
      * The positions might be negative as the image that is going to be processed might have padding on the edges
      */
-    public List<long[]> getTilePostionsInputImage(String tensorID) {
-    	TileInfo tile = this.inputTileInfo.stream().filter(t -> t.getName().equals(tensorID)).findFirst().orElse(null);
+    public List<long[]> getTilePostionsInputImage(String tensorName) {
+    	TileInfo tile = this.inputTileInfo.stream().filter(t -> t.getName().equals(tensorName)).findFirst().orElse(null);
     	if (tile == null)
-    		throw new IllegalArgumentException("Input tensor '" + tensorID + "' does not require tiling.");
-    	return inputGrid.get(tensorID).getTilePostionsInImage();
+    		throw new IllegalArgumentException("Input tensor '" + tensorName + "' does not require tiling.");
+    	return inputGrid.get(tensorName).getTilePostionsInImage();
     }
     
     /**
      * 
+     * Same as {@link #getOutputInsertionPoints(String, int)} but returning a list for every tile.
+     * @param tensorName
+     * 	name of the tensor as per the Bioimage.io rdf.yaml file
      * @return the position of the closest corner to the center for each of the tiles  with 
      * respect to the original image of the tensor.
      * The positions might be negative as the image that is going to be processed might have padding on the edges
      */
-    public List<long[]> getTilePostionsOutputImage(String tensorID) {
-    	TileInfo tile = this.outputTileInfo.stream().filter(t -> t.getName().equals(tensorID)).findFirst().orElse(null);
+    public List<long[]> getTilePostionsOutputImage(String tensorName) {
+    	TileInfo tile = this.outputTileInfo.stream().filter(t -> t.getName().equals(tensorName)).findFirst().orElse(null);
     	if (tile == null)
-    		throw new IllegalArgumentException("Output tensor '" + tensorID + "' does not require tiling.");
-    	return outputGrid.get(tensorID).getTilePostionsInImage();
+    		throw new IllegalArgumentException("Output tensor '" + tensorName + "' does not require tiling.");
+    	return outputGrid.get(tensorName).getTilePostionsInImage();
     }
     
-    public <T extends NativeType<T> & RealType<T>> RandomAccessibleInterval<T> getNthTileInput(String tensorID, RandomAccessibleInterval<T> rai, int n) {
-    	List<long[]> tiles = this.getTilePostionsInputImage(tensorID);
+    /**
+     * Same as {@link #getInputInsertionPoints(String, int)}, but instead of returning the coordinates where the tile is 
+     * cut, it returns the actual tile
+     * @param <T>
+     * 	ImgLib2 data type of the image from where a tile is going to be extracted
+     * @param tensorName
+     * 	name of the tensor that the image represents as per the Bioimage.io rdf.yaml file
+     * @param rai
+     * 	image that represents the tensor of interest
+     * @param n
+     * 	the nth tile to be extracted from the image
+     * @return the wanted tile cut from the image provided
+     */
+    public <T extends NativeType<T> & RealType<T>> RandomAccessibleInterval<T> getNthTileInput(String tensorName, RandomAccessibleInterval<T> rai, int n) {
+    	List<long[]> tiles = this.getTilePostionsInputImage(tensorName);
     	if (tiles.size() <= n) {
     		throw new IllegalArgumentException("There are only " + tiles.size() + " tiles. Tile " + n 
     				+ " is out of bounds.");
     	}
     	long[] minLim = tiles.get(n);
-    	long[] size = this.getInputTileSize(tensorID);
+    	long[] size = this.getInputTileSize(tensorName);
     	long[] maxLim = new long[size.length];
     	for (int i = 0; i < size.length; i ++) maxLim[i] = minLim[i] + size[i] - 1;
 		RandomAccessibleInterval<T> tileRai = Views.interval(
@@ -449,14 +513,27 @@ public class TileMaker {
     	return tileRai;
     }
     
-    public <T extends NativeType<T> & RealType<T>> RandomAccessibleInterval<T> getNthTileOutput(String tensorID, RandomAccessibleInterval<T> rai, int n) {
-    	List<long[]> tiles = this.getTilePostionsOutputImage(tensorID);
+    /**
+     * Same as {@link #getOutputInsertionPoints(String, int)}, but instead of returning the coordinates where the tile is 
+     * cut, it returns the actual tile
+     * @param <T>
+     * 	ImgLib2 data type of the image from where a tile is going to be extracted
+     * @param tensorName
+     * 	name of the tensor that the image represents as per the Bioimage.io rdf.yaml file
+     * @param rai
+     * 	image that represents the tensor of interest
+     * @param n
+     * 	the nth tile to be extracted from the image
+     * @return the wanted tile cut from the image provided
+     */
+    public <T extends NativeType<T> & RealType<T>> RandomAccessibleInterval<T> getNthTileOutput(String tensorName, RandomAccessibleInterval<T> rai, int n) {
+    	List<long[]> tiles = this.getTilePostionsOutputImage(tensorName);
     	if (tiles.size() <= n) {
     		throw new IllegalArgumentException("There are only " + tiles.size() + " tiles. Tile " + n 
     				+ " is out of bounds.");
     	}
     	long[] minLim = tiles.get(n);
-    	long[] size = this.getOutputTileSize(tensorID);
+    	long[] size = this.getOutputTileSize(tensorName);
     	long[] maxLim = new long[size.length];
     	for (int i = 0; i < size.length; i ++) maxLim[i] = minLim[i] + size[i] - 1;
 		RandomAccessibleInterval<T> tileRai = Views.interval(
@@ -464,22 +541,49 @@ public class TileMaker {
     	return tileRai;
     }
     
+    /**
+     * Same as {@link #getNthTileInput(String, RandomAccessibleInterval, int)} but with tensors
+     * @param <T>
+     * 	ImgLib2 data type of the tensor from where a tile is going to be extracted
+     * @param tensor
+     * 	tensor of interest that is going to be tiled. It needs to fulfill the requirements of the Bioimage.io rdf.yaml
+     * @param n
+     * 	the nth tile to be extracted from the image
+     * @return the wanted tensor tile cut from the tensor provided
+     */
     public <T extends NativeType<T> & RealType<T>> Tensor<T> getNthTileInput(Tensor<T> tensor, int n) {
     	RandomAccessibleInterval<T> rai = getNthTileInput(tensor.getName(), tensor.getData(), n);
     	return Tensor.build(tensor.getName(), tensor.getAxesOrderString(), rai);
     }
-    
+
+    /**
+     * Same as {@link #getNthTileOutput(String, RandomAccessibleInterval, int)} but with tensors
+     * @param <T>
+     * 	ImgLib2 data type of the tensor from where a tile is going to be extracted
+     * @param tensor
+     * 	tensor of interest that is going to be tiled. It needs to fulfill the requirements of the Bioimage.io rdf.yaml
+     * @param n
+     * 	the nth tile to be extracted from the image
+     * @return the wanted tensor tile cut from the tensor provided
+     */
     public <T extends NativeType<T> & RealType<T>> Tensor<T> getNthTileOutput(Tensor<T> tensor, int n) {
     	RandomAccessibleInterval<T> rai = getNthTileOutput(tensor.getName(), tensor.getData(), n);
     	return Tensor.build(tensor.getName(), tensor.getAxesOrderString(), rai);
     }
     
-    public long[] getOutputImageSize(String tensorID) {
+    /**
+     * REturn the size that the output image will have, as per the Bioimage.io specs, given the input image size
+     * provided in the List of {@link TileInfo} at {@link #build(ModelDescriptor, List)}
+     * @param tensorName
+     * 	name of the tensor of interest as per the Bioiamge.io rdf.yaml file 
+     * @return the final output size of the image of interest
+     */
+    public long[] getOutputImageSize(String tensorName) {
     	TileInfo tile = this.outputTileInfo.stream()
-    			.filter(tt -> tt.getName().equals(tensorID)).findFirst().orElse(null);
+    			.filter(tt -> tt.getName().equals(tensorName)).findFirst().orElse(null);
     	if (tile == null)
     		throw new IllegalArgumentException("The tensor ID proposed does not correspond to an output tensor: "
-    				+ "'" + tensorID + "'.");
+    				+ "'" + tensorName + "'.");
     	return tile.getImageDims();
     }
     

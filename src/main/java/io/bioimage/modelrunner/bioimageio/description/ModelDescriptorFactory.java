@@ -58,8 +58,8 @@ public class ModelDescriptorFactory {
      * 	Model descriptor file.
      * @return The instance of the model descriptor.
      * @throws ModelSpecsException if any of the parameters in the rdf.yaml file does not make fit the constraints,
-     * @throws IOException 
-     * @throws FileNotFoundException 
+     * @throws IOException if any of the required files is incorrect or corrupted
+     * @throws FileNotFoundException if any of the required files is missing
      */
     public static ModelDescriptor readFromLocalFile(String modelFile) throws ModelSpecsException, FileNotFoundException, IOException
     {
@@ -147,11 +147,11 @@ public class ModelDescriptorFactory {
     }
 
     /**
-     * REturns a List<String> of data from the yaml file that is supposed
+     * REturns a {@code List<String>} of data from the yaml file that is supposed
      * to correspond to an URI.
      * @param coverElements
      * 	data from the yaml
-     * @return the List<String> with the URI data
+     * @return the {@code List<String>}with the URI data
      */
     protected static List<String> buildUrlElements(Object coverElements)
     {

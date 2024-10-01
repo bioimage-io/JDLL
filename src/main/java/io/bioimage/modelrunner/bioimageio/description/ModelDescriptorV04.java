@@ -89,7 +89,6 @@ public class ModelDescriptorV04 implements ModelDescriptor
      * a rdf.yaml file
      * @param yamlElements
      * 	map with the information read from a yaml file
-     * @return a {@link ModelDescriptorV04} with the info of a Bioimage.io model
      * @throws ModelSpecsException if any of the parameters in the rdf.yaml file does not make fit the constraints
      */
     protected static ModelDescriptorV04 buildModelDescription(Map<String, Object> yamlElements) throws ModelSpecsException

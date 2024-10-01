@@ -70,8 +70,6 @@ public class TensorSpecV05 implements TensorSpec {
      *        The map of elements describing the tensor.
      * @param input
      *        Whether it is an input (true) or an output (false) tensor.
-     * @return The tensor specification instance.
-     * @throws ModelSpecsException if any of the fields does not fulfill the requirements
      */
     protected TensorSpecV05(Map<String, Object> tensorSpecMap, boolean input)
     {
