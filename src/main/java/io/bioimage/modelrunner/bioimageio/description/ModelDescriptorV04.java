@@ -74,6 +74,7 @@ public class ModelDescriptorV04 implements ModelDescriptor
     private static String fromLocalKey = "fromLocalRepo";
     private static String modelPathKey = "modelPath";
     private String modelID;
+    private String newModelID;
     private String localModelPath;
     private boolean supportBioengine = false;
     
@@ -121,7 +122,8 @@ public class ModelDescriptorV04 implements ModelDescriptor
                         modelDescription.description = (String) fieldElement;
                         break;
                     case "id":
-                    	modelDescription.modelID = findID(yamlElements);
+                    	modelDescription.newModelID = findID(yamlElements);
+                    	modelDescription.modelID = findOldID(yamlElements);
                         break;
                     case "authors":
                         modelDescription.authors = buildAuthorElements((List<?>) fieldElement);
@@ -263,12 +265,23 @@ public class ModelDescriptorV04 implements ModelDescriptor
     
     private static String findID(Map<String, Object> yamlElements) {
 
-    	if (yamlElements.get("config") instanceof Map) {
+    	if (yamlElements.get("config") != null && yamlElements.get("config") instanceof Map) {
     		Map<String, Object> configMap = (Map<String, Object>) yamlElements.get("config");
-    		if (configMap.get("bioimageio") instanceof Map) {
+    		if (configMap.get("bioimageio") != null && configMap.get("bioimageio") instanceof Map) {
     			Map<String, Object> bioimageMap = (Map<String, Object>) configMap.get("bioimageio");
     			if (bioimageMap.get("nickname") != null)
     				return (String) bioimageMap.get("nickname");
+    		}
+    	}
+    	return (String) yamlElements.get("id");
+    }
+    
+    private static String findOldID(Map<String, Object> yamlElements) {
+
+    	if (yamlElements.get("config") != null && yamlElements.get("config") instanceof Map) {
+    		Map<String, Object> configMap = (Map<String, Object>) yamlElements.get("config");
+    		if (configMap.get("_conceptdoi") != null && configMap.get("_conceptdoi") instanceof String) {
+    			return (String) configMap.get("_conceptdoi");
     		}
     	}
     	return (String) yamlElements.get("id");
