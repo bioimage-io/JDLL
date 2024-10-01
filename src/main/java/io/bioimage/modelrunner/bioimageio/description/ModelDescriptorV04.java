@@ -109,10 +109,10 @@ public class ModelDescriptorV04 implements ModelDescriptor
 	                    modelDescription.format_version = (String) fieldElement;
 	                    break;
 	                case "version":
-	                    modelDescription.version = (String) fieldElement;
+	                    modelDescription.version = "" + fieldElement;
 	                    break;
                     case "name":
-                        modelDescription.name = (String) fieldElement;
+                        modelDescription.name = "" + fieldElement;
                         break;
                     case "timestamp":
                         modelDescription.timestamp = fieldElement.toString();

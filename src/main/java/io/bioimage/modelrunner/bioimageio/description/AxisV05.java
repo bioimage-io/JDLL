@@ -28,7 +28,7 @@ public class AxisV05 implements Axis{
 		if (map.get("scale") != null) 
 			this.scale = ((Number) map.get("scale")).doubleValue();
 		if (map.get("halo") != null) 
-			this.halo = ((Number) map.get("scale")).intValue();
+			this.halo = ((Number) map.get("halo")).intValue();
 		
 		this.size = new AxisSize(map.get("size"));
 		
