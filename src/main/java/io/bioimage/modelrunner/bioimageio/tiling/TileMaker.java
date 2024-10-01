@@ -54,7 +54,7 @@ public class TileMaker {
 	 * @param descriptor
 	 * 	Bioimage.io rdf.yaml specs file of the model of interest
 	 * @param tileInfoList
-	 * 	list of {@link Tileinfo} objects. Each of them should refer to one the input tensors of the model of 
+	 * 	list of {@link TileInfo} objects. Each of them should refer to one the input tensors of the model of 
 	 * 	interest, by the name used in the Bioimage.io specs file.
 	 * @return an instance of {@link TileMaker} that handles tiling for the images and model of interest.
 	 */
