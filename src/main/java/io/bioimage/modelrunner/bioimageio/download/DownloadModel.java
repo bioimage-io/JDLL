@@ -626,7 +626,6 @@ public class DownloadModel {
 				throw new Exception( "Unable to connect to: " + url );
 			long size = conn.getContentLengthLong();
 			conn.disconnect();
-			System.out.println( "Size of file: " + url + " is: " + size + " bytes" );
 			return size;
 		} catch (IOException e) {
 			throw new RuntimeException(e);
