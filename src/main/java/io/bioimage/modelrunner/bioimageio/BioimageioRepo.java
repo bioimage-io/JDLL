@@ -82,7 +82,7 @@ public class BioimageioRepo {
 	 */
 	private static List<String> modelIDs;
 	
-	private static LinkedHashMap<Path, ModelDescriptor> models;
+	private static LinkedHashMap<String, ModelDescriptor> models;
 	
 	/**
 	 * Structure of the map:
@@ -174,12 +174,12 @@ public class BioimageioRepo {
 	 * @return an object containing the URL location of the model as key and the {@link ModelDescriptor}
 	 * 	with the yaml file information in the value
 	 */
-	public Map<Path, ModelDescriptor> listAllModels(boolean verbose) {
+	public Map<String, ModelDescriptor> listAllModels(boolean verbose) {
 		if (models != null && models.entrySet().size() > 0)
 			return models;
 		if (verbose)
 			Log.addProgressAndShowInTerminal(consumer, "BioImage.io: Accessing the BioImage.io API to retrieve available models", true);
-		models = new LinkedHashMap<Path, ModelDescriptor>();
+		models = new LinkedHashMap<String, ModelDescriptor>();
 		if (collections == null) {
 			if (verbose)
 				Log.addProgressAndShowInTerminal(consumer, MODELS_NOT_FOUND_MSG, true);
@@ -200,7 +200,7 @@ public class BioimageioRepo {
 					continue;
 				String stringRDF = getJSONFromUrl(url);
 				ModelDescriptor descriptor = ModelDescriptorFactory.readFromYamlTextString(stringRDF);
-				models.put(Paths.get(url), descriptor);
+				models.put(url, descriptor);
 			} catch (Exception ex) {
 				// TODO Maybe add some error message? This should be responsibility of the BioImage.io user
 				// Only display error message if there was an error creating
@@ -407,7 +407,7 @@ public class BioimageioRepo {
 	 */
 	public ModelDescriptor selectByID(String modelID) {
 		Objects.requireNonNull(modelID, "Argument 'modelID' cannot be null.");
-		Entry<Path, ModelDescriptor> modelEntry = this.listAllModels(false).entrySet().stream()
+		Entry<String, ModelDescriptor> modelEntry = this.listAllModels(false).entrySet().stream()
 				.filter(ee -> {
 					String id = ee.getValue().getModelID();
 					if (id.length() - id.replace("/", "").length() == 2) {
@@ -432,7 +432,7 @@ public class BioimageioRepo {
 	 */
 	public ModelDescriptor selectByName(String name) {
 		Objects.requireNonNull(name, "Argument 'name' cannot be null.");
-		Entry<Path, ModelDescriptor> modelEntry = this.listAllModels(false).entrySet().stream()
+		Entry<String, ModelDescriptor> modelEntry = this.listAllModels(false).entrySet().stream()
 				.filter(ee -> ee.getValue().getName().equals(name)).findFirst().orElse(null);
 		if (modelEntry != null)
 			return modelEntry.getValue();

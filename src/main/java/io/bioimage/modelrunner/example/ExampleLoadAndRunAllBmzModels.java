@@ -30,7 +30,6 @@ import io.bioimage.modelrunner.tensor.Tensor;
 
 import java.io.File;
 import java.io.IOException;
-import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -88,10 +87,10 @@ public class ExampleLoadAndRunAllBmzModels {
 		installAllValidEngines();
 		
 		BioimageioRepo br = BioimageioRepo.connect();
-		Map<Path, ModelDescriptor> bmzModelList = br.listAllModels(false);
+		Map<String, ModelDescriptor> bmzModelList = br.listAllModels(false);
 		int successModelCount = 0;
 		
-		for (Entry<Path, ModelDescriptor> modelEntry : bmzModelList.entrySet()) {
+		for (Entry<String, ModelDescriptor> modelEntry : bmzModelList.entrySet()) {
 			try {
 				checkModelCompatibleWithEngines(modelEntry.getValue());
 				String modelFolder = br.downloadByName(modelEntry.getValue().getName(), MODELS_DIR);
