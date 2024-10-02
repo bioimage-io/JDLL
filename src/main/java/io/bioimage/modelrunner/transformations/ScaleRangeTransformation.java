@@ -152,75 +152,6 @@ public class ScaleRangeTransformation extends AbstractTensorTransformation
 			cursor.next();
 			flatArr[count ++] = cursor.get().getRealDouble();
 		}
-		/* 
-		 * TODO remove
-		if (rai.getAt(0) instanceof ByteType) {
-			final Cursor<ByteType> cursor = (Cursor<ByteType>) flatImage.cursor();
-			while ( cursor.hasNext() )
-			{
-				cursor.next();
-				flatArr[count ++] = (double) cursor.get().get();
-			}
-		} else if (rai.getAt(0) instanceof UnsignedByteType) {
-			final Cursor<ByteType> cursor = (Cursor<ByteType>) flatImage.cursor();
-			while ( cursor.hasNext() )
-			{
-				cursor.next();
-				flatArr[count ++] = (double) cursor.get().get();
-			}
-		} else if (rai.getAt(0) instanceof ShortType) {
-			final Cursor<ByteType> cursor = (Cursor<ByteType>) flatImage.cursor();
-			while ( cursor.hasNext() )
-			{
-				cursor.next();
-				flatArr[count ++] = (double) cursor.get().get();
-			}
-		} else if (rai.getAt(0) instanceof UnsignedShortType) {
-			final Cursor<ByteType> cursor = (Cursor<ByteType>) flatImage.cursor();
-			while ( cursor.hasNext() )
-			{
-				cursor.next();
-				flatArr[count ++] = (double) cursor.get().get();
-			}
-		} else if (rai.getAt(0) instanceof IntType) {
-			final Cursor<ByteType> cursor = (Cursor<ByteType>) flatImage.cursor();
-			while ( cursor.hasNext() )
-			{
-				cursor.next();
-				flatArr[count ++] = (double) cursor.get().get();
-			}
-		} else if (rai.getAt(0) instanceof UnsignedIntType) {
-			final Cursor<ByteType> cursor = (Cursor<ByteType>) flatImage.cursor();
-			while ( cursor.hasNext() )
-			{
-				cursor.next();
-				flatArr[count ++] = (double) cursor.get().get();
-			}
-		} else if (rai.getAt(0) instanceof LongType) {
-			final Cursor<ByteType> cursor = (Cursor<ByteType>) flatImage.cursor();
-			while ( cursor.hasNext() )
-			{
-				cursor.next();
-				flatArr[count ++] = (double) cursor.get().get();
-			}
-		} else if (rai.getAt(0) instanceof FloatType) {
-			final Cursor<ByteType> cursor = (Cursor<ByteType>) flatImage.cursor();
-			while ( cursor.hasNext() )
-			{
-				cursor.next();
-				flatArr[count ++] = (double) cursor.get().get();
-			}
-		} else if (rai.getAt(0) instanceof DoubleType) {
-			final Cursor<ByteType> cursor = (Cursor<ByteType>) flatImage.cursor();
-			while ( cursor.hasNext() )
-			{
-				cursor.next();
-				flatArr[count ++] = (double) cursor.get().get();
-			}
-		} else {
-			throw new IllegalArgumentException("Unsupported data type: " + Util.getTypeFromInterval(rai));
-		}
-		 */
 		Arrays.sort(flatArr);
 		
 		int percentilePos = (int) (flatSize * percentile);
@@ -321,47 +252,5 @@ public class ScaleRangeTransformation extends AbstractTensorTransformation
 			.multiThreaded()
 			.forEachPixel( i -> i.setReal(((i.getRealDouble() - minPercentileVal) / (diff + eps)) ) );
         }
-        /**
-         * TODO remove
-		if (rai.getAt(0) instanceof ByteType) {
-			LoopBuilder.setImages( (RandomAccessibleInterval<ByteType>) rai )
-			.multiThreaded()
-			.forEachPixel( i -> i.set((byte) ((i.get() - minPercentileVal) / (diff + eps)) ) );
-		} else if (rai.getAt(0) instanceof UnsignedByteType) {
-			LoopBuilder.setImages( (RandomAccessibleInterval<UnsignedByteType>) rai )
-			.multiThreaded()
-			.forEachPixel( i -> i.set((int) ((i.get() - minPercentileVal) / (diff + eps)) ) );
-		} else if (rai.getAt(0) instanceof ShortType) {
-			LoopBuilder.setImages((RandomAccessibleInterval<ShortType>) rai )
-			.multiThreaded()
-			.forEachPixel( i -> i.set((short) ((i.get() - minPercentileVal) / (diff + eps)) ) );
-		} else if (rai.getAt(0) instanceof UnsignedShortType) {
-			LoopBuilder.setImages((RandomAccessibleInterval<UnsignedShortType>) rai )
-			.multiThreaded()
-			.forEachPixel( i -> i.set((int) ((i.get() - minPercentileVal) / (diff + eps)) ) );
-		} else if (rai.getAt(0) instanceof IntType) {
-			LoopBuilder.setImages((RandomAccessibleInterval<IntType>) rai )
-			.multiThreaded()
-			.forEachPixel( i -> i.set((int) ((i.get() - minPercentileVal) / (diff + eps)) ) );
-		} else if (rai.getAt(0) instanceof UnsignedIntType) {
-			LoopBuilder.setImages((RandomAccessibleInterval<UnsignedIntType>) rai )
-			.multiThreaded()
-			.forEachPixel( i -> i.set((long) ((i.get() - minPercentileVal) / (diff + eps)) ) );
-		} else if (rai.getAt(0) instanceof LongType) {
-			LoopBuilder.setImages((RandomAccessibleInterval<LongType>) rai )
-			.multiThreaded()
-			.forEachPixel( i -> i.set((long) ((i.get() - minPercentileVal) / (diff + eps)) ) );
-		} else if (rai.getAt(0) instanceof FloatType) {
-			LoopBuilder.setImages((RandomAccessibleInterval<FloatType>) rai )
-			.multiThreaded()
-			.forEachPixel( i -> i.set((float) ((i.get() - minPercentileVal) / (diff + eps))) );
-		} else if (rai.getAt(0) instanceof DoubleType) {
-			LoopBuilder.setImages((RandomAccessibleInterval<DoubleType>) rai )
-			.multiThreaded()
-			.forEachPixel( i -> i.set((double) ((i.get() - minPercentileVal) / (diff + eps)) ) );
-		} else {
-			throw new IllegalArgumentException("Unsupported data type: " + Util.getTypeFromInterval(rai));
-		}
-		*/
 	}
 }

@@ -20,20 +20,12 @@
 package io.bioimage.modelrunner.transformations;
 
 import io.bioimage.modelrunner.tensor.Tensor;
-import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.loops.LoopBuilder;
 import net.imglib2.type.NativeType;
 import net.imglib2.type.numeric.IntegerType;
 import net.imglib2.type.numeric.RealType;
-import net.imglib2.type.numeric.integer.ByteType;
-import net.imglib2.type.numeric.integer.IntType;
-import net.imglib2.type.numeric.integer.LongType;
-import net.imglib2.type.numeric.integer.ShortType;
-import net.imglib2.type.numeric.integer.UnsignedByteType;
-import net.imglib2.type.numeric.integer.UnsignedIntType;
-import net.imglib2.type.numeric.integer.UnsignedShortType;
-import net.imglib2.type.numeric.real.DoubleType;
 import net.imglib2.type.numeric.real.FloatType;
+import net.imglib2.util.Util;
 
 /**
  * Abstract classes for tensor transformations where a new pixel value can be
@@ -69,7 +61,7 @@ public class AbstractTensorPixelTransformation extends AbstractTensorTransformat
 	public < R extends RealType< R > & NativeType< R > >
 	void applyInPlace( final Tensor< R > input )
 	{
-		if (input.getData().getAt(0) instanceof IntegerType && dun != null) {
+		if (Util.getTypeFromInterval(input.getData()) instanceof IntegerType && dun != null) {
 			LoopBuilder
 			.setImages( input.getData() )
 			.multiThreaded()

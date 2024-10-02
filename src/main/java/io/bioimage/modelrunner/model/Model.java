@@ -61,6 +61,7 @@ import net.imglib2.type.NativeType;
 import net.imglib2.type.numeric.RealType;
 import net.imglib2.type.numeric.real.FloatType;
 import net.imglib2.util.Cast;
+import net.imglib2.util.Util;
 
 /**
  * Class that manages a Deep Learning model to load it and run it.
@@ -536,7 +537,7 @@ public class Model
 		engineClassLoader.setEngineClassLoader();
 		ArrayList<Tensor<FloatType>> inTensorsFloat = new ArrayList<Tensor<FloatType>>();
 		for (Tensor<T> tt : inTensors) {
-			if (tt.getData().getAt(0) instanceof FloatType)
+			if (Util.getTypeFromInterval(tt.getData()) instanceof FloatType)
 				inTensorsFloat.add(Cast.unchecked(tt));
 			else
 				inTensorsFloat.add(Tensor.createCopyOfTensorInWantedDataType( tt, new FloatType() ));

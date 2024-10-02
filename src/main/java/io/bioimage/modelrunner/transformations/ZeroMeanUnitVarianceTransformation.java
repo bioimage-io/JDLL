@@ -389,47 +389,5 @@ public class ZeroMeanUnitVarianceTransformation extends AbstractTensorTransforma
 			.multiThreaded()
 			.forEachPixel( i -> i.setReal(((i.getRealDouble() - mean) / (std + eps)) ) );
         }
-        /**
-         * TODO remove
-		if (rai.getAt(0) instanceof ByteType) {
-			LoopBuilder.setImages( (RandomAccessibleInterval<ByteType>) rai )
-			.multiThreaded()
-			.forEachPixel( i -> i.set((byte) ((i.get() - mean) / (std + eps)) ) );
-		} else if (rai.getAt(0) instanceof UnsignedByteType) {
-			LoopBuilder.setImages( (RandomAccessibleInterval<UnsignedByteType>) rai )
-			.multiThreaded()
-			.forEachPixel( i -> i.set((int) ((i.get() - mean) / (std + eps)) ) );
-		} else if (rai.getAt(0) instanceof ShortType) {
-			LoopBuilder.setImages((RandomAccessibleInterval<ShortType>) rai )
-			.multiThreaded()
-			.forEachPixel( i -> i.set((short) ((i.get() - mean) / (std + eps)) ) );
-		} else if (rai.getAt(0) instanceof UnsignedShortType) {
-			LoopBuilder.setImages((RandomAccessibleInterval<UnsignedShortType>) rai )
-			.multiThreaded()
-			.forEachPixel( i -> i.set((int) ((i.get() - mean) / (std + eps)) ) );
-		} else if (rai.getAt(0) instanceof IntType) {
-			LoopBuilder.setImages((RandomAccessibleInterval<IntType>) rai )
-			.multiThreaded()
-			.forEachPixel( i -> i.set((int) ((i.get() - mean) / (std + eps)) ) );
-		} else if (rai.getAt(0) instanceof UnsignedIntType) {
-			LoopBuilder.setImages((RandomAccessibleInterval<UnsignedIntType>) rai )
-			.multiThreaded()
-			.forEachPixel( i -> i.set((long) ((i.get() - mean) / (std + eps)) ) );
-		} else if (rai.getAt(0) instanceof LongType) {
-			LoopBuilder.setImages((RandomAccessibleInterval<LongType>) rai )
-			.multiThreaded()
-			.forEachPixel( i -> i.set((long) ((i.get() - mean) / (std + eps)) ) );
-		} else if (rai.getAt(0) instanceof FloatType) {
-			LoopBuilder.setImages((RandomAccessibleInterval<FloatType>) rai )
-			.multiThreaded()
-			.forEachPixel( i -> i.set((float) ((i.get() - mean) / (std + eps))) );
-		} else if (rai.getAt(0) instanceof DoubleType) {
-			LoopBuilder.setImages((RandomAccessibleInterval<DoubleType>) rai )
-			.multiThreaded()
-			.forEachPixel( i -> i.set((double) ((i.get() - mean) / (std + eps)) ) );
-		} else {
-			throw new IllegalArgumentException("Unsupported data type: " + Util.getTypeFromInterval(rai));
-		}
-		*/
 	}
 }
