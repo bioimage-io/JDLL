@@ -187,11 +187,11 @@ public interface SharedMemoryArray extends Closeable {
     	for (long i : shape) {size *= i;}
     	if (isNpy) size = (int) DecodeNumpy.calculateNpyStyleByteArrayLength(shape, datatype);
         if (PlatformDetection.isWindows()) 
-        	return SharedMemoryArrayWin.readOrCreate(name, size, shape, strDType, isFortran, isNpy);
+        	return SharedMemoryArrayWin.readOrCreate(name, size, shape, strDType, isNpy, isFortran);
     	else if (PlatformDetection.isLinux()) 
-    		return SharedMemoryArrayLinux.readOrCreate(name, size, shape, strDType, isFortran, isNpy);
+    		return SharedMemoryArrayLinux.readOrCreate(name, size, shape, strDType, isNpy, isFortran);
     	else 
-    		return SharedMemoryArrayMacOS.readOrCreate(name, size, shape, strDType, isFortran, isNpy);
+    		return SharedMemoryArrayMacOS.readOrCreate(name, size, shape, strDType, isNpy, isFortran);
 	}
 
 	/**
