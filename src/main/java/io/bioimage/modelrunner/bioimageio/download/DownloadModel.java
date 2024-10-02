@@ -274,7 +274,7 @@ public class DownloadModel {
 		int c = 0;
 		for (WeightFormat w : weights.gettAllSupportedWeightObjects()) {
 			try {
-				if (w.getSource() != null && checkURL(w.getSource())) {
+				if (w.getSource() != null) {
 					downloadableLinks.put(WEIGHTS_KEY + "_" + c ++, descriptor.getModelURL() + w.getSource());
 					if (w.getSourceFileName().endsWith(".zip"))
 						unzip = true;
@@ -347,20 +347,26 @@ public class DownloadModel {
 		int c = 0;
 		for (String kk : attachments.keySet()) {
 			if (attachments.get(kk) instanceof String) {
-				downloadableLinks.put(ATTACH_KEY + "_" + c ++, (String) attachments.get(kk));
+				downloadableLinks.put(ATTACH_KEY + "_" + c ++, descriptor.getModelURL() + (String) attachments.get(kk));
 			} else if (attachments.get(kk) instanceof URL) {
-				downloadableLinks.put(ATTACH_KEY + "_" + c ++, ((URL) attachments.get(kk)).toString());
+				downloadableLinks.put(ATTACH_KEY + "_" + c ++, descriptor.getModelURL() + ((URL) attachments.get(kk)).toString());
 			} else if (attachments.get(kk) instanceof Map) {
 				Map <String, Object> nFilesMap = (Map<String, Object>) attachments.get(kk);
 				for (String jj : nFilesMap.keySet()) {
-					if (nFilesMap.get(jj) instanceof String && checkURL((String) nFilesMap.get(jj)))
-						downloadableLinks.put(ATTACH_KEY + "_" + c ++, (nFilesMap.get(jj)).toString());
+					if (nFilesMap.get(jj) instanceof String)
+						downloadableLinks.put(ATTACH_KEY + "_" + c ++, descriptor.getModelURL() + (nFilesMap.get(jj)).toString());
 				}
 			} else if (attachments.get(kk) instanceof List) {
 				List <Object> nFilesList = (List<Object>) attachments.get(kk);
 				for (Object jj : nFilesList) {
-					if (jj instanceof String && checkURL((String) jj))
-						downloadableLinks.put(ATTACH_KEY + "_" + c ++, jj.toString());
+					if (jj instanceof String)
+						downloadableLinks.put(ATTACH_KEY + "_" + c ++, descriptor.getModelURL() + jj.toString());
+					else if (jj instanceof List) {
+						for (Object jjEntry : (List) jj) {
+							if (jjEntry instanceof String)
+								downloadableLinks.put(ATTACH_KEY + "_" + c ++, descriptor.getModelURL() + jj.toString());
+						}
+					}
 				}
 			}
 		}
