@@ -263,7 +263,8 @@ public class ModelDescriptorV04 implements ModelDescriptor
 		}
     }
     
-    private static String findID(Map<String, Object> yamlElements) {
+    @SuppressWarnings("unchecked")
+	private static String findID(Map<String, Object> yamlElements) {
 
     	if (yamlElements.get("config") != null && yamlElements.get("config") instanceof Map) {
     		Map<String, Object> configMap = (Map<String, Object>) yamlElements.get("config");
@@ -276,7 +277,8 @@ public class ModelDescriptorV04 implements ModelDescriptor
     	return (String) yamlElements.get("id");
     }
     
-    private static String findOldID(Map<String, Object> yamlElements) {
+    @SuppressWarnings("unchecked")
+	private static String findOldID(Map<String, Object> yamlElements) {
 
     	if (yamlElements.get("config") != null && yamlElements.get("config") instanceof Map) {
     		Map<String, Object> configMap = (Map<String, Object>) yamlElements.get("config");
@@ -284,7 +286,15 @@ public class ModelDescriptorV04 implements ModelDescriptor
     			return (String) configMap.get("_conceptdoi");
     		}
     	}
-    	return (String) yamlElements.get("id");
+    	if (yamlElements.get("id") != null && yamlElements.get("id") instanceof String) {
+    		String id = (String) yamlElements.get("id");
+    		if (id.length() - id.replace("/", "").length() >= 2 
+    				&& id.substring(id.indexOf("/") + 1).indexOf("/") - id.indexOf("/") > 2 )
+    			return id.substring(0, id.indexOf("/") + id.substring(id.indexOf("/") + 1).indexOf("/") + 1);
+    		else
+    			return id;
+    	}
+    	return null;
     }
     
     /**
