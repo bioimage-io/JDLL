@@ -141,6 +141,7 @@ public class Service implements AutoCloseable {
 	@Override
 	public void close() {
 		stdin.close();
+		stdin.flush();
 	}
 
 	/** Input loop processing lines from the worker stdout stream. */
