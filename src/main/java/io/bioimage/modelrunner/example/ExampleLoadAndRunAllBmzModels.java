@@ -128,19 +128,20 @@ public class ExampleLoadAndRunAllBmzModels {
 	 */
 	public static <T extends RealType<T> & NativeType<T>, R extends RealType<R> & NativeType<R>>
 	void loadAndRunModel(String modelFolder, ModelDescriptor descriptor) throws Exception {
-		Model model = Model.createBioimageioModel(modelFolder, ENGINES_DIR);
-		model.loadModel();
-		List<Tensor<FloatType>> inputs = createInputs(descriptor);
-		List<Tensor<FloatType>> outputs = createOutputs(descriptor);
-		model.runModel(inputs, outputs);
-		for (Tensor<FloatType> tt : outputs) {
-			if (tt.isEmpty())
-				throw new Exception(descriptor.getName() + ": Output tensor is empty");
+		try (Model model = Model.createBioimageioModel(modelFolder, ENGINES_DIR);) {
+			model.loadModel();
+			List<Tensor<FloatType>> inputs = createInputs(descriptor);
+			List<Tensor<FloatType>> outputs = createOutputs(descriptor);
+			model.runModel(inputs, outputs);
+			for (Tensor<FloatType> tt : outputs) {
+				if (tt.isEmpty())
+					throw new Exception(descriptor.getName() + ": Output tensor is empty");
+			}
+			
+			model.close();
+			inputs.stream().forEach(t -> t.close());
+			outputs.stream().forEach(t -> t.close());
 		}
-		
-		model.closeModel();
-		inputs.stream().forEach(t -> t.close());
-		outputs.stream().forEach(t -> t.close());
 	}
 	
 	/**

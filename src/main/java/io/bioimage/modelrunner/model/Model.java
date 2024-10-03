@@ -22,6 +22,7 @@
  */
 package io.bioimage.modelrunner.model;
 
+import java.io.Closeable;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -68,7 +69,7 @@ import net.imglib2.util.Util;
  * 
  * @author Carlos Garcia Lopez de Haro
  */
-public class Model
+public class Model implements Closeable
 {
 	/**
 	 * Whether the model is loaded or not
@@ -499,10 +500,11 @@ public class Model
 	}
 
 	/**
+	 * @Override
 	 * Close the Deep LEarning model in the ClassLoader where the Deep Learning
 	 * framework has been called and instantiated
 	 */
-	public void closeModel()
+	public void close()
 	{
 		DeepLearningEngineInterface engineInstance = getEngineClassLoader().getEngineInstance();
 		engineClassLoader.setEngineClassLoader();

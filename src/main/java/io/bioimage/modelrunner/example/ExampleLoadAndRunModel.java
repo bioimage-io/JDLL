@@ -139,7 +139,7 @@ public class ExampleLoadAndRunModel {
 		model.runModel(inputs, outputs);
 		System.out.println(Util.average(Util.asDoubleArray(outputs.get(0).getData())));
 		// The result is stored in the list of tensors "outputs"
-		model.closeModel();
+		model.close();
 		inputs.stream().forEach(t -> t.close());
 		outputs.stream().forEach(t -> t.close());
 		System.out.print("Success!!");

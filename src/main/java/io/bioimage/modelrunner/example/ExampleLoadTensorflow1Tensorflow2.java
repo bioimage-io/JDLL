@@ -130,36 +130,37 @@ public class ExampleLoadTensorflow1Tensorflow2 {
 		// REGARD THAT the engine folders need to follow a naming convention
 		EngineInfo engineInfo = createEngineInfo(framework, engineVersion, enginesDir, cpu, gpu);
 		// Load the corresponding model, for Tensorflow model_source arg is not needed
-		Model model = loadModel(modelFolder, null, engineInfo);
-		// Create an image that will be the backend of the Input Tensor
-		final ImgFactory< FloatType > imgFactory = new ArrayImgFactory<>( new FloatType() );
-		final Img< FloatType > img1 = imgFactory.create( 1, 512, 512, 1 );
-		// Create the input tensor with the nameand axes given by the rdf.yaml file
-		// and add it to the list of input tensors
-		Tensor<FloatType> inpTensor = Tensor.build("input_1", "bxyc", img1);
-		List<Tensor<FloatType>> inputs = new ArrayList<Tensor<FloatType>>();
-		inputs.add(inpTensor);
-		
-		// Create the output tensors defined in the rdf.yaml file with their corresponding 
-		// name and axes and add them to the output list of tensors.
-		/// Regard that output tensors can be built empty without allocating memory
-		// or allocating memory by creating the tensor with a sample empty image, or by
-		// defining the dimensions and data type
-		Tensor<FloatType> outTensor0 = Tensor.buildBlankTensor(
-				"conv2d_19", "bxyc", new long[] {1, 512, 512, 3}, new FloatType());
-		List<Tensor<FloatType>> outputs = new ArrayList<Tensor<FloatType>>();
-		outputs.add(outTensor0);
-		
-		// Run the model on the input tensors. THe output tensors 
-		// will be rewritten with the result of the execution
-		System.out.println(Util.average(Util.asDoubleArray(outputs.get(0).getData())));
-		model.runModel(inputs, outputs);
-		System.out.println(Util.average(Util.asDoubleArray(outputs.get(0).getData())));
-		// The result is stored in the list of tensors "outputs"
-		model.closeModel();
-		inputs.stream().forEach(t -> t.close());
-		outputs.stream().forEach(t -> t.close());
-		System.out.println("Success running Tensorflow 2!!");
+		try (Model model = loadModel(modelFolder, null, engineInfo)){
+			// Create an image that will be the backend of the Input Tensor
+			final ImgFactory< FloatType > imgFactory = new ArrayImgFactory<>( new FloatType() );
+			final Img< FloatType > img1 = imgFactory.create( 1, 512, 512, 1 );
+			// Create the input tensor with the nameand axes given by the rdf.yaml file
+			// and add it to the list of input tensors
+			Tensor<FloatType> inpTensor = Tensor.build("input_1", "bxyc", img1);
+			List<Tensor<FloatType>> inputs = new ArrayList<Tensor<FloatType>>();
+			inputs.add(inpTensor);
+			
+			// Create the output tensors defined in the rdf.yaml file with their corresponding 
+			// name and axes and add them to the output list of tensors.
+			/// Regard that output tensors can be built empty without allocating memory
+			// or allocating memory by creating the tensor with a sample empty image, or by
+			// defining the dimensions and data type
+			Tensor<FloatType> outTensor0 = Tensor.buildBlankTensor(
+					"conv2d_19", "bxyc", new long[] {1, 512, 512, 3}, new FloatType());
+			List<Tensor<FloatType>> outputs = new ArrayList<Tensor<FloatType>>();
+			outputs.add(outTensor0);
+			
+			// Run the model on the input tensors. THe output tensors 
+			// will be rewritten with the result of the execution
+			System.out.println(Util.average(Util.asDoubleArray(outputs.get(0).getData())));
+			model.runModel(inputs, outputs);
+			System.out.println(Util.average(Util.asDoubleArray(outputs.get(0).getData())));
+			// The result is stored in the list of tensors "outputs"
+			model.close();
+			inputs.stream().forEach(t -> t.close());
+			outputs.stream().forEach(t -> t.close());
+			System.out.println("Success running Tensorflow 2!!");
+		}
 	}
 
 	/**
@@ -202,36 +203,37 @@ public class ExampleLoadTensorflow1Tensorflow2 {
 		// REGARD THAT the engine folders need to follow a naming convention
 		EngineInfo engineInfo = createEngineInfo(framework, engineVersion, enginesDir, cpu, gpu);
 		// Load the corresponding model, for Tensorflow the arg model_source is not needed
-		Model model = loadModel(modelFolder, null, engineInfo);
-		// Create an image that will be the backend of the Input Tensor
-		final ImgFactory< FloatType > imgFactory = new ArrayImgFactory<>( new FloatType() );
-		final Img< FloatType > img1 = imgFactory.create( 1, 512, 512, 3 );
-		// Create the input tensor with the nameand axes given by the rdf.yaml file
-		// and add it to the list of input tensors
-		Tensor<FloatType> inpTensor = Tensor.build("input", "byxc", img1);
-		List<Tensor<FloatType>> inputs = new ArrayList<Tensor<FloatType>>();
-		inputs.add(inpTensor);
-		
-		// Create the output tensors defined in the rdf.yaml file with their corresponding 
-		// name and axes and add them to the output list of tensors.
-		/// Regard that output tensors can be built empty without allocating memory
-		// or allocating memory by creating the tensor with a sample empty image, or by
-		// defining the dimensions and data type
-		final Img< FloatType > img2 = imgFactory.create( 1, 512, 512, 33 );
-		Tensor<FloatType> outTensor = Tensor.build("output", "byxc", img2);
-		List<Tensor<FloatType>> outputs = new ArrayList<Tensor<FloatType>>();
-		outputs.add(outTensor);
-		
-		// Run the model on the input tensors. THe output tensors 
-		// will be rewritten with the result of the execution
-		System.out.println(Util.average(Util.asDoubleArray(outputs.get(0).getData())));
-		model.runModel(inputs, outputs);
-		System.out.println(Util.average(Util.asDoubleArray(outputs.get(0).getData())));
-		// The result is stored in the list of tensors "outputs"
-		model.closeModel();
-		inputs.stream().forEach(t -> t.close());
-		outputs.stream().forEach(t -> t.close());
-		System.out.println("Success running Tensorflow 1!!");
+		try (Model model = loadModel(modelFolder, null, engineInfo);){
+			// Create an image that will be the backend of the Input Tensor
+			final ImgFactory< FloatType > imgFactory = new ArrayImgFactory<>( new FloatType() );
+			final Img< FloatType > img1 = imgFactory.create( 1, 512, 512, 3 );
+			// Create the input tensor with the nameand axes given by the rdf.yaml file
+			// and add it to the list of input tensors
+			Tensor<FloatType> inpTensor = Tensor.build("input", "byxc", img1);
+			List<Tensor<FloatType>> inputs = new ArrayList<Tensor<FloatType>>();
+			inputs.add(inpTensor);
+			
+			// Create the output tensors defined in the rdf.yaml file with their corresponding 
+			// name and axes and add them to the output list of tensors.
+			/// Regard that output tensors can be built empty without allocating memory
+			// or allocating memory by creating the tensor with a sample empty image, or by
+			// defining the dimensions and data type
+			final Img< FloatType > img2 = imgFactory.create( 1, 512, 512, 33 );
+			Tensor<FloatType> outTensor = Tensor.build("output", "byxc", img2);
+			List<Tensor<FloatType>> outputs = new ArrayList<Tensor<FloatType>>();
+			outputs.add(outTensor);
+			
+			// Run the model on the input tensors. THe output tensors 
+			// will be rewritten with the result of the execution
+			System.out.println(Util.average(Util.asDoubleArray(outputs.get(0).getData())));
+			model.runModel(inputs, outputs);
+			System.out.println(Util.average(Util.asDoubleArray(outputs.get(0).getData())));
+			// The result is stored in the list of tensors "outputs"
+			model.close();
+			inputs.stream().forEach(t -> t.close());
+			outputs.stream().forEach(t -> t.close());
+			System.out.println("Success running Tensorflow 1!!");
+		}
 	}
 	
 	/**
