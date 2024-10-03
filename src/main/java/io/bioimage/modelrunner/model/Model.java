@@ -506,6 +506,8 @@ public class Model implements Closeable
 	 */
 	public void close()
 	{
+		if (getEngineClassLoader() == null)
+			return;
 		DeepLearningEngineInterface engineInstance = getEngineClassLoader().getEngineInstance();
 		engineClassLoader.setEngineClassLoader();
 		engineInstance.closeModel();
