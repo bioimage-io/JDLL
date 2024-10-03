@@ -489,7 +489,9 @@ public class DownloadModel {
 			String source = descriptor.getWeights().gettAllSupportedWeightObjects().stream()
 					.filter(ww -> ww.getFramework().equals(EngineInfo.getBioimageioTfKey()))
 					.findFirst().get().getSource();
-			source = DownloadModel.getFileNameFromURLString(source);
+			try {
+				source = DownloadModel.getFileNameFromURLString(source);
+			} catch (Exception ex) {}
 			System.out.println("Unzipping model...");
 			unzippingConsumer.accept(0.);
 			ZipUtils.unzipFolder(this.modelsDir + File.separator + source, this.modelsDir,
