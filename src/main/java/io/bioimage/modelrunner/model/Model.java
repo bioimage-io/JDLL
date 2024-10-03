@@ -500,10 +500,10 @@ public class Model implements Closeable
 	}
 
 	/**
-	 * @Override
 	 * Close the Deep LEarning model in the ClassLoader where the Deep Learning
 	 * framework has been called and instantiated
 	 */
+	@Override
 	public void close()
 	{
 		if (getEngineClassLoader() == null)
