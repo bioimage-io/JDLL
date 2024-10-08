@@ -111,8 +111,10 @@ public class ModelDescriptorFactory {
 			return Collections.emptyList();
 		}
 		return Arrays.asList(repoFile.listFiles()).stream().map(ff -> {
+			String rdfPath = ff.getAbsolutePath() + File.separator + Constants.RDF_FNAME;
+			if (!(new File(rdfPath).isFile())) return null;
 			try {
-				return ModelDescriptorFactory.readFromLocalFile(ff.getAbsolutePath() + File.separator + Constants.RDF_FNAME);
+				return ModelDescriptorFactory.readFromLocalFile(rdfPath);
 			} catch (Exception e) {
 				return null;
 			}
