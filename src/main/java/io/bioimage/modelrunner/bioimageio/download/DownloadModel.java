@@ -232,6 +232,7 @@ public class DownloadModel {
 		downloadableLinks = new HashMap<String, String>();
 		addAttachments();
 		addRDF();
+		addCovers();
 		addSampleInputs();
 		addSampleOutputs();
 		addTestInputs();
@@ -283,6 +284,19 @@ public class DownloadModel {
 				// The exception is thrown whenever the weight format is not present.
 				// This exception will not be thrown here because the weight formats are retrieved from the same object
 			}
+		}
+	}
+	
+	/**
+	 * Add the model covers to the downloadable links
+	 */
+	private void addCovers() {
+		int c = 0;
+		for (String ss : descriptor.getCovers()) {
+			if (!checkURL(ss))
+				downloadableLinks.put(TEST_INPUTS_KEY + "_" + c ++, this.descriptor.getModelURL() + ss);
+			else
+				downloadableLinks.put(TEST_INPUTS_KEY + "_" + c ++, ss);
 		}
 	}
 	

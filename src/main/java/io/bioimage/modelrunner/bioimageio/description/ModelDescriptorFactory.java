@@ -66,6 +66,7 @@ public class ModelDescriptorFactory {
     	Map<String, Object> yamlElements = YAMLUtils.load(modelFile);
         // TODO yamlElements.put(fromLocalKey, true);
     	// TODO yamlElements.put(modelPathKey, new File(modelFile).getParent());
+    	yamlElements.put("modelPath", new File(modelFile).getParentFile().getAbsolutePath());
         return fromMap(yamlElements);
     }
     
@@ -162,11 +163,9 @@ public class ModelDescriptorFactory {
     		List<?> elems = (List<?>) coverElements;
 	        for (Object elem : elems)
 	        {
-	        	if (checkUrl((String) elem) == null)
-	        		continue;
 	            covers.add((String) elem);
 	        }
-    	} else if ((coverElements instanceof String) && checkUrl((String) coverElements) != null) {
+    	} else if ((coverElements instanceof String)) {
             covers.add((String) coverElements);
     	} else {
     		covers = null;
