@@ -157,8 +157,8 @@ public class DecodeNumpy {
     	//RandomAccessibleInterval<?> aa = retrieveImgLib2FromNpy(npy);
     	String npy = "C:\\Users\\angel\\OneDrive\\Documentos\\pasteur\\test_input.npy";
     	RandomAccessibleInterval<T> rai = Cast.unchecked(ArrayImgs.doubles(new long[] {1, 512, 512}));
-    	writeRaiToNpyFile(npy, rai);
-    	RandomAccessibleInterval<?> bb = retrieveImgLib2FromNpy(npy);
+    	saveNpy(npy, rai);
+    	RandomAccessibleInterval<?> bb = loadNpy(npy);
     }
     
     /**
@@ -173,7 +173,7 @@ public class DecodeNumpy {
      * @throws IOException if there is any error opening the numpy file
      */
     public static < T extends RealType< T > & NativeType< T > > 
-								RandomAccessibleInterval<T> retrieveImgLib2FromNpy(String path) throws FileNotFoundException, IOException{
+								RandomAccessibleInterval<T> loadNpy(String path) throws FileNotFoundException, IOException{
     	File npyFile = new File(path);
     	if (!npyFile.isFile() || !path.endsWith(NUMPY_EXTENSION)) {
     		throw new IllegalArgumentException("Path provided does not correspond to a Numpy file: " + path);
@@ -191,7 +191,7 @@ public class DecodeNumpy {
      * @return an ImgLib2 image with the same datatype, shape and data that the numpy array
      * @throws IOException if there is any error reading the {@link InputStream}
      */
-    public static HashMap<String, Object> decodeNumpyFromByteArrayStreamToRawMap(InputStream is) throws IOException {
+    private static HashMap<String, Object> decodeNumpyFromByteArrayStreamToRawMap(InputStream is) throws IOException {
         DataInputStream dis;
         if (is instanceof DataInputStream) {
             dis = (DataInputStream) is;
@@ -281,7 +281,7 @@ public class DecodeNumpy {
      * @return an ImgLib2 image with the same datatype, shape and data that the numpy array
      * @throws IOException if there is any error reading the {@link InputStream}
      */
-    public static < T extends RealType< T > & NativeType< T > > 
+    private static < T extends RealType< T > & NativeType< T > > 
     				RandomAccessibleInterval<T> decodeNumpyFromByteArrayStream(InputStream is) throws IOException {
         DataInputStream dis;
         if (is instanceof DataInputStream) {
@@ -475,7 +475,7 @@ public class DecodeNumpy {
      *         If the tensor type is not supported.
      */
     @SuppressWarnings("unchecked")
-    public static <T extends NativeType<T>> RandomAccessibleInterval<T> build(ByteBuffer buf, ByteOrder byteOrder, String dtype, long[] shape, boolean fortranOrder) throws IllegalArgumentException
+    private static <T extends NativeType<T>> RandomAccessibleInterval<T> build(ByteBuffer buf, ByteOrder byteOrder, String dtype, long[] shape, boolean fortranOrder) throws IllegalArgumentException
     {
     	long[] transposedShape = new long[shape.length];
     	for (int i = 0; i < shape.length; i ++)
@@ -764,7 +764,7 @@ public class DecodeNumpy {
      * @throws IOException if there is any error saving the file
      */
     public static < T extends RealType< T > & NativeType< T > > 
-    void writeRaiToNpyFile(String filePath, RandomAccessibleInterval<T> rai) throws FileNotFoundException, IOException {
+    void saveNpy(String filePath, RandomAccessibleInterval<T> rai) throws FileNotFoundException, IOException {
     	byte[] total = createNumpyStyleByteArray(rai);
         try (FileOutputStream fos = new FileOutputStream(filePath)) {
             fos.write(total);

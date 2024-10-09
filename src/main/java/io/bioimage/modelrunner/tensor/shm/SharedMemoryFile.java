@@ -50,7 +50,7 @@ public final class SharedMemoryFile
 	 */
 	public static <T extends RealType<T> & NativeType<T>> 
 	void buildFileFromRai(String fileDir, RandomAccessibleInterval<T> rai) throws FileNotFoundException, IOException {
-		DecodeNumpy.writeRaiToNpyFile(fileDir, rai);
+		DecodeNumpy.saveNpy(fileDir, rai);
 	}
 	
 	/**
@@ -65,6 +65,6 @@ public final class SharedMemoryFile
 	 */
 	public static <T extends RealType<T> & NativeType<T>> 
 	RandomAccessibleInterval<T> buildRaiFromFile(String fileName) throws FileNotFoundException, IOException {
-		return DecodeNumpy.retrieveImgLib2FromNpy(fileName);
+		return DecodeNumpy.loadNpy(fileName);
 	}
 }

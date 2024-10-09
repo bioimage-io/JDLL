@@ -344,7 +344,7 @@ public class PythonTransformation extends AbstractTensorTransformation
 		PythonTransformation pt = new PythonTransformation();
 		//RandomAccessibleInterval<FloatType> img = ArrayImgs.floats(new long[] {1, 1024, 1024, 33});
 		String fname = "C:\\Users\\angel\\OneDrive\\Documentos\\pasteur\\git\\deep-icy\\models\\stardist\\test_output.npy";
-		RandomAccessibleInterval<FloatType> img = DecodeNumpy.retrieveImgLib2FromNpy(fname);
+		RandomAccessibleInterval<FloatType> img = DecodeNumpy.loadNpy(fname);
 		Tensor<FloatType> tt = Tensor.build("output", "bcyx", img);
 		Tensor<FloatType> out = pt.apply(tt);
 		System.out.println();
