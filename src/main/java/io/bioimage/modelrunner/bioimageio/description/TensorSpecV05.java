@@ -73,7 +73,10 @@ public class TensorSpecV05 implements TensorSpec {
      */
     protected TensorSpecV05(Map<String, Object> tensorSpecMap, boolean input)
     {
-        id = (String) tensorSpecMap.get("name");
+        if (tensorSpecMap.get("id") == null)
+        	id = (String) tensorSpecMap.get("name");
+        else
+        	id = (String) tensorSpecMap.get("id");
         if (tensorSpecMap.get("axes") == null || !(tensorSpecMap.get("axes") instanceof List))
         	throw new IllegalArgumentException("Invalid tensor specifications for '" + id
         			+ "'. The axes are incorrectly specified. For more info, visit the Bioimage.io docs.");
