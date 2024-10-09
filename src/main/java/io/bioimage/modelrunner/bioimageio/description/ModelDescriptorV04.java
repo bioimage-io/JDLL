@@ -47,7 +47,6 @@ public class ModelDescriptorV04 implements ModelDescriptor
 {
     private String format_version;
     private String name;
-    private String nickname;
     private String timestamp;
     private String description;
     private String type;
@@ -121,10 +120,6 @@ public class ModelDescriptorV04 implements ModelDescriptor
                     case "description":
                         modelDescription.description = (String) fieldElement;
                         break;
-                    case "id":
-                    	modelDescription.newModelID = findID(yamlElements);
-                    	modelDescription.modelID = findOldID(yamlElements);
-                        break;
                     case "authors":
                         modelDescription.authors = buildAuthorElements((List<?>) fieldElement);
                         break;
@@ -195,12 +190,11 @@ public class ModelDescriptorV04 implements ModelDescriptor
                 throw new ModelSpecsException("Invalid model element: " + field + "->" + e.getMessage());
             }
         }
+    	modelDescription.newModelID = findID(yamlElements);
+    	modelDescription.modelID = findOldID(yamlElements);
         
         modelDescription.addSampleAndTestImages(yamlElements);
         
-        Object bio = modelDescription.config.getSpecMap().get("bioimageio");
-        if ((bio != null) && (bio instanceof Map))
-        	modelDescription.nickname = (String) (((Map<String, Object>) bio).get("nickname"));
         modelDescription.addBioEngine();
         if (modelDescription.localModelPath == null)
         	return modelDescription;
@@ -284,6 +278,13 @@ public class ModelDescriptorV04 implements ModelDescriptor
     		Map<String, Object> configMap = (Map<String, Object>) yamlElements.get("config");
     		if (configMap.get("_conceptdoi") != null && configMap.get("_conceptdoi") instanceof String) {
     			return (String) configMap.get("_conceptdoi");
+    		} else if (configMap.get("_id") != null && configMap.get("_id") instanceof String) {
+        		String id = (String) configMap.get("_id");
+        		if (id.length() - id.replace("/", "").length() >= 2 
+        				&& id.substring(id.indexOf("/") + 1).indexOf("/") - id.indexOf("/") > 2 )
+        			return id.substring(0, id.indexOf("/") + id.substring(id.indexOf("/") + 1).indexOf("/") + 1);
+        		else
+        			return id;
     		}
     	}
     	if (yamlElements.get("id") != null && yamlElements.get("id") instanceof String) {
@@ -518,7 +519,7 @@ public class ModelDescriptorV04 implements ModelDescriptor
      */
     public String getNickname()
     {
-        return nickname;
+        return this.newModelID;
     }
 
     /**

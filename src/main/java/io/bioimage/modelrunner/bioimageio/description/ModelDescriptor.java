@@ -71,6 +71,11 @@ public interface ModelDescriptor {
     public String getModelID();
 
     /**
+     * @return The ID of this model.
+     */
+    public String getNickname();
+
+    /**
      * @return The creation timestamp of this model.
      */
     public String getTimestamp();

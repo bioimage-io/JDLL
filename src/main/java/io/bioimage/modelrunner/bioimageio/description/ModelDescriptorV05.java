@@ -152,7 +152,7 @@ public class ModelDescriptorV05 implements ModelDescriptor
                         // TODO createAttachments();
                         break;
                     case "covers":
-                    	// TODO createCovers();
+                    	covers = castListStrings(yamlElements.get(field));
                         break;
                     case "inputs":
                     	input_tensors = buildInputTensors((List<?>) yamlElements.get(field));
@@ -182,10 +182,27 @@ public class ModelDescriptorV05 implements ModelDescriptor
                 throw new ModelSpecsException("Invalid model element: " + field + "->" + e.getMessage());
             }
         }
+        if (modelID == null) {
+        	modelID = findID(yamlElements);
+        }
         addBioEngine();
         if (localModelPath == null)
         	return;
     	// TODO SpecialModels.checkSpecialModels(null);
+    }
+    
+    @SuppressWarnings("unchecked")
+	private static String findID(Map<String, Object> yamlElements) {
+
+    	if (yamlElements.get("config") != null && yamlElements.get("config") instanceof Map) {
+    		Map<String, Object> configMap = (Map<String, Object>) yamlElements.get("config");
+    		if (configMap.get("bioimageio") != null && configMap.get("bioimageio") instanceof Map) {
+    			Map<String, Object> bioimageMap = (Map<String, Object>) configMap.get("bioimageio");
+    			if (bioimageMap.get("nickname") != null)
+    				return (String) bioimageMap.get("nickname");
+    		}
+    	}
+    	return (String) yamlElements.get("id");
     }
     
     /**
@@ -376,6 +393,14 @@ public class ModelDescriptorV05 implements ModelDescriptor
      * @return The ID of this model.
      */
     public String getModelID()
+    {
+        return modelID;
+    }
+
+    /**
+     * @return The nickname of this model, for v0.5 is the same as the id.
+     */
+    public String getNickname()
     {
         return modelID;
     }
