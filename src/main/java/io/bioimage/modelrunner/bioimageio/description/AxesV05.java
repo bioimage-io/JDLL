@@ -35,7 +35,7 @@ public class AxesV05 implements Axes {
 			order += axis.getAxis();
 			minArr[c] = axis.getMin();
 			stepArr[c] = axis.getStep();
-			scaleArr[c] = axis.getScale();
+			scaleArr[c ++] = axis.getScale();
 		}
 		this.axesList = axesListInit;
 		this.axesOrder = order;

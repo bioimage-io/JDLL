@@ -22,20 +22,17 @@ public class AxisSize {
 			return;
 		Map<String, Object> map = (Map<String, Object>) object;
 		
-		if (map.get("size") == null || !(map.get("size") instanceof Map))
-			return;
 		
-		Map<String, Object> size = (Map<String, Object>) map.get("size");
-		if (size.get("min") != null && (size.get("min") instanceof Number)) 
+		if (map.get("min") != null && (map.get("min") instanceof Number)) 
 			min = ((Number) map.get("min")).intValue();
-		if (size.get("step") != null && (size.get("step") instanceof Number)) 
+		if (map.get("step") != null && (map.get("step") instanceof Number)) 
 			step = ((Number) map.get("step")).intValue();
-		if (size.get("offset") != null && (size.get("offset") instanceof Number)) 
+		if (map.get("offset") != null && (map.get("offset") instanceof Number)) 
 			offset = ((Number) map.get("offset")).doubleValue();
-		if (size.get("axis_id") != null && (size.get("axis_id") instanceof String)) 
-			axisID = (String) size.get("axis_id");
-		if (size.get("tensor_id") != null && (size.get("tensor_id") instanceof String)) 
-			ref = (String) size.get("tensor_id");
+		if (map.get("axis_id") != null && (map.get("axis_id") instanceof String)) 
+			axisID = (String) map.get("axis_id");
+		if (map.get("tensor_id") != null && (map.get("tensor_id") instanceof String)) 
+			ref = (String) map.get("tensor_id");
 	}
 	
 	public int getMin() {

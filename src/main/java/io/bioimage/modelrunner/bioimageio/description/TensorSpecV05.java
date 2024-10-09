@@ -173,8 +173,8 @@ public class TensorSpecV05 implements TensorSpec {
     }
     
     public String getDataType() {
-    	// TODO 
-    	return this.data.toString();
+    	// TODO  return this.data.toString();
+    	return "float32";
     }
 
 	@Override
