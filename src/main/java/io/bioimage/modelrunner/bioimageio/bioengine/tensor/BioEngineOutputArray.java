@@ -152,7 +152,7 @@ public class BioEngineOutputArray {
 			throws IllegalArgumentException {
 		Objects.requireNonNull(arr);
 		ByteBuffer buf = ByteBuffer.wrap(arr).order(byteOrder);
-		return DecodeNumpy.build(buf, byteOrder, dtype, shape, IS_FORTRAN_ORDER);
+		return null; // TODO remove DecodeNumpy.build(buf, byteOrder, dtype, shape, IS_FORTRAN_ORDER);
 	}
 
 	/**
@@ -174,7 +174,7 @@ public class BioEngineOutputArray {
 			throws IllegalArgumentException {
 		Objects.requireNonNull(arr);
 		ByteBuffer buf = ByteBuffer.wrap(arr).order(byteOrder);
-		return DecodeNumpy.build(buf, byteOrder, dtype, shape, isFortranOrder);
+		return null; // TODO remove DecodeNumpy.build(buf, byteOrder, dtype, shape, isFortranOrder);
 	}
 	
 	/**
