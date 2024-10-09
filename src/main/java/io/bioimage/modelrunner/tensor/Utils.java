@@ -97,8 +97,8 @@ public final class Utils
 		t.setComponentMapping(orderChange);
 		long[] minMax = new long[tensorShape.length * 2];
 		for (int i = 0; i < tensorShape.length; i ++) {
-			minMax[i] = min[orderChange[0]];
-			minMax[i + tensorShape.length] = max[orderChange[0]];
+			minMax[i] = min[orderChange[i]];
+			minMax[i + tensorShape.length] = max[orderChange[i]];
 		}
 		return Views.interval(new MixedTransformView<T>( rai, t ), 
 				Intervals.createMinMax(minMax));
