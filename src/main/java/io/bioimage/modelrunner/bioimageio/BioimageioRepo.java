@@ -646,7 +646,7 @@ public class BioimageioRepo {
 	
 	
 	public static String getModelRdfUrl(String id, String version) {
-		if (MODELS_INFO == null || MODELS_INFO.get("id") == null) {
+		if (MODELS_INFO == null || MODELS_INFO.get(id) == null) {
 			BioimageioRepo.connect();
 		}
 		
