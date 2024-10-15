@@ -67,9 +67,6 @@ public class DeepLearningVersion
      * 	and implies that the user has manipulated wrongly the engines
      */
     public static DeepLearningVersion fromFile(File engineDir) throws IOException, IllegalStateException {
-    	if (!engineDir.isDirectory())
-    		throw new IOException("The file '" + engineDir.getAbsolutePath() + "' does not correspond "
-    				+ "to an existing directory.");
     	DeepLearningVersion dlVersion =  new DeepLearningVersion();
     	dlVersion.engineName = engineDir.getName();
     	dlVersion.allEnginesDir = engineDir.getParentFile().getAbsolutePath();

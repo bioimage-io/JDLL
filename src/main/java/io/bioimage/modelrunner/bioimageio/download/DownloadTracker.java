@@ -153,6 +153,7 @@ public class DownloadTracker {
 		this.consumer = consumer;
 		this.remainingFiles = sizeFiles.keySet().stream().map(i -> new File(i)).collect(Collectors.toList());
 		this.downloadThread = thread;
+		this.consumer.accept(TOTAL_PROGRESS_KEY, 0.0);
 	}
 
 	
@@ -526,6 +527,8 @@ public class DownloadTracker {
 				continue;
 			}
 			for (String kk : new String[] {select, DownloadTracker.TOTAL_PROGRESS_KEY}) {
+				if (kk.endsWith(EngineInstall.NBYTES_SUFFIX))
+					continue;
 				int nProgressBar = (int) (consumer.get().get(kk) * n);
 				String progressStr = new File(kk).getName() + ": [" 
 					+ ogProgressStr.substring(0, nProgressBar) + ogRemainingStr.substring(nProgressBar)
