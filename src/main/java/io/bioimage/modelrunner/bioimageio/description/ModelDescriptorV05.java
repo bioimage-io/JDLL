@@ -72,8 +72,6 @@ public class ModelDescriptorV05 implements ModelDescriptor
     private String localModelPath;
     private boolean supportBioengine = false;
 	private  Map<String, Object> yamlElements;
-	
-	private static BioimageioRepo BMZ_REPO;
 
 	protected ModelDescriptorV05(Map<String, Object> yamlElements) throws ModelSpecsException
     {
@@ -185,6 +183,9 @@ public class ModelDescriptorV05 implements ModelDescriptor
         if (modelID == null) {
         	modelID = findID(yamlElements);
         }
+        if (modelID.length() - modelID.replace("/", "").length() >= 2 
+				&& modelID.substring(modelID.indexOf("/") + 1).indexOf("/") - modelID.indexOf("/") > 2 )
+        	modelID = modelID.substring(0, modelID.indexOf("/") + modelID.substring(modelID.indexOf("/") + 1).indexOf("/") + 1);
         addBioEngine();
         if (localModelPath == null)
         	return;
@@ -689,12 +690,8 @@ public class ModelDescriptorV05 implements ModelDescriptor
 
 	@Override
 	public String getModelURL() {
-		if (this.download_url == null && BMZ_REPO == null) {
-			BMZ_REPO = BioimageioRepo.connect();
-		}
-		
 		if (this.download_url == null)
-			this.download_url = BMZ_REPO.getModelRdfUrl(modelID, version);
+			this.download_url = BioimageioRepo.getModelRdfUrl(modelID, version);
 		return this.download_url;
 	}
 
