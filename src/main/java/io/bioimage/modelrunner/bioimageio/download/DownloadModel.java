@@ -155,6 +155,10 @@ public class DownloadModel {
 	 * Key for the map that contains the test outputs of the model 
 	 */
 	private static String TEST_OUTPUTS_KEY = "test_output";
+	/**
+	 * Key for the map that contains the covers for the model
+	 */
+	private static String COVERS_KEY = "covers";
 	
 	/**
 	 * Constructor that contains all the info and is able to download a BioImage.io model
@@ -293,10 +297,10 @@ public class DownloadModel {
 	private void addCovers() {
 		int c = 0;
 		for (String ss : descriptor.getCovers()) {
-			if (!checkURL(ss))
-				downloadableLinks.put(TEST_INPUTS_KEY + "_" + c ++, this.descriptor.getModelURL() + ss);
-			else
-				downloadableLinks.put(TEST_INPUTS_KEY + "_" + c ++, ss);
+			if (ss != null && !checkURL(ss))
+				downloadableLinks.put(COVERS_KEY + "_" + c ++, this.descriptor.getModelURL() + ss);
+			else if (ss != null)
+				downloadableLinks.put(COVERS_KEY + "_" + c ++, ss);
 		}
 	}
 	
@@ -307,8 +311,11 @@ public class DownloadModel {
 		List<String> fileNames = descriptor.getInputTensors().stream()
 				.map(tt -> tt.getTestTensorName()).collect(Collectors.toList());
 		int c = 0;
-		for (String ss : fileNames) 
+		for (String ss : fileNames) {
+			if (ss == null)
+				continue;
 			downloadableLinks.put(TEST_INPUTS_KEY + "_" + c ++, this.descriptor.getModelURL() + ss);
+		}
 	}
 	
 	/**
@@ -318,8 +325,11 @@ public class DownloadModel {
 		List<String> fileNames = descriptor.getOutputTensors().stream()
 				.map(tt -> tt.getTestTensorName()).collect(Collectors.toList());
 		int c = 0;
-		for (String ss : fileNames) 
+		for (String ss : fileNames) {
+			if (ss == null)
+				continue;
 			downloadableLinks.put(TEST_OUTPUTS_KEY + "_" + c ++, this.descriptor.getModelURL() + ss);
+		}
 	}
 	
 	/**
@@ -329,8 +339,11 @@ public class DownloadModel {
 		List<String> fileNames = descriptor.getInputTensors().stream()
 				.map(tt -> tt.getSampleTensorName()).collect(Collectors.toList());
 		int c = 0;
-		for (String ss : fileNames) 
+		for (String ss : fileNames) {
+			if (ss == null)
+				continue;
 			downloadableLinks.put(SAMPLE_INPUTS_KEY + "_" + c ++, this.descriptor.getModelURL() + ss);
+		}
 	}
 	
 	/**
@@ -340,8 +353,11 @@ public class DownloadModel {
 		List<String> fileNames = descriptor.getOutputTensors().stream()
 				.map(tt -> tt.getSampleTensorName()).collect(Collectors.toList());
 		int c = 0;
-		for (String ss : fileNames) 
+		for (String ss : fileNames) {
+			if (ss == null)
+				continue;
 			downloadableLinks.put(SAMPLE_OUTPUTS_KEY + "_" + c ++, this.descriptor.getModelURL() + ss);
+		}
 	}
 	
 	/**
