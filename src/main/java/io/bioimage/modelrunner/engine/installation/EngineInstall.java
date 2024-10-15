@@ -577,7 +577,7 @@ public class EngineInstall {
 				long engineSize = 0;
 				DeepLearningVersion dlVersion = DeepLearningVersion.fromFile(new File(ee.getValue()));
 				for (String link : dlVersion.getJars()) {
-					String key = DownloadModel.getFileNameFromURLString(link) + NBYTES_SUFFIX;
+					String key = ee.getValue() + File.separator + DownloadModel.getFileNameFromURLString(link) + NBYTES_SUFFIX;
 					long val = DownloadModel.getFileSize(new URL(link));
 					this.consumersMap.get(ee.getValue()).accept(key, (double) val);
 					engineSize += val;
@@ -631,7 +631,7 @@ public class EngineInstall {
 		if (dlVersion == null)
 			throw new IOException("JDLL does not support any engine compatible with the provided engine directory: "
 					+ engineDir);
-		return installEngine(dlVersion, consumer);
+		return installEngineInDir(dlVersion, engineFileDir.getParentFile().getAbsolutePath(), consumer);
 	}
 	
 	/**
