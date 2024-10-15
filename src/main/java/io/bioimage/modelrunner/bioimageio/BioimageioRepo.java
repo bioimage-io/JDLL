@@ -80,9 +80,9 @@ public class BioimageioRepo {
 	/**
 	 * List of all the IDs of the models existing in the BioImage.io
 	 */
-	private static List<String> modelIDs;
+	private static List<String> MODEL_IDS;
 	
-	private static LinkedHashMap<String, ModelDescriptor> models;
+	private static LinkedHashMap<String, ModelDescriptor> MODELS;
 	
 	/**
 	 * Structure of the map:
@@ -104,7 +104,7 @@ public class BioimageioRepo {
 	 * 
 	 * 
 	 */
-	private static Map<String, Map<String, Map<String, String>>> modelsInfo;
+	private static Map<String, Map<String, Map<String, String>>> MODELS_INFO;
 		
 	private Consumer<String> consumer;
 	
@@ -155,7 +155,7 @@ public class BioimageioRepo {
 	 * Connects to the Bioimage.io website and retrieves all the models available
 	 */
 	public void refresh() {
-		models = null;
+		MODELS = null;
 		listAllModels(false);
 	}
 	
@@ -175,15 +175,15 @@ public class BioimageioRepo {
 	 * 	with the yaml file information in the value
 	 */
 	public Map<String, ModelDescriptor> listAllModels(boolean verbose) {
-		if (models != null && models.entrySet().size() > 0)
-			return models;
+		if (MODELS != null && MODELS.entrySet().size() > 0)
+			return MODELS;
 		if (verbose)
 			Log.addProgressAndShowInTerminal(consumer, "BioImage.io: Accessing the BioImage.io API to retrieve available models", true);
-		models = new LinkedHashMap<String, ModelDescriptor>();
+		MODELS = new LinkedHashMap<String, ModelDescriptor>();
 		if (collections == null) {
 			if (verbose)
 				Log.addProgressAndShowInTerminal(consumer, MODELS_NOT_FOUND_MSG, true);
-			return models;
+			return MODELS;
 		}
 		for (Object resource : collections) {
 			if (Thread.interrupted())
@@ -200,7 +200,7 @@ public class BioimageioRepo {
 					continue;
 				String stringRDF = getJSONFromUrl(url);
 				ModelDescriptor descriptor = ModelDescriptorFactory.readFromYamlTextString(stringRDF);
-				models.put(url, descriptor);
+				MODELS.put(url, descriptor);
 			} catch (Exception ex) {
 				// TODO Maybe add some error message? This should be responsibility of the BioImage.io user
 				// Only display error message if there was an error creating
@@ -212,7 +212,7 @@ public class BioimageioRepo {
                 ex.printStackTrace();
 			}
 		}
-		return models;
+		return MODELS;
 	}
 	
 	/**
@@ -222,8 +222,8 @@ public class BioimageioRepo {
 	 * The file is at: {@link #location}
 	 */
 	private void setCollectionsRepo() {
-		modelIDs = new ArrayList<String>();
-		modelsInfo = new HashMap<String, Map<String, Map<String, String>>>();
+		MODEL_IDS = new ArrayList<String>();
+		MODELS_INFO = new HashMap<String, Map<String, Map<String, String>>>();
 		String text = getJSONFromUrl(location);
 		if (text == null) {
 			Log.addProgressAndShowInTerminal(consumer, MODELS_NOT_FOUND_MSG, true);
@@ -251,7 +251,7 @@ public class BioimageioRepo {
 			if (jsonResource.get("type") == null || !jsonResource.get("type").getAsString().equals("model"))
 				continue;
 			String modelID = jsonResource.get("concept").getAsString();
-			modelIDs.add(modelID);
+			MODEL_IDS.add(modelID);
 			
 			HashMap<String, Map<String, String>> vMap = new HashMap<String, Map<String, String>>();
 			for (JsonElement vv : jsonResource.get("versions").getAsJsonArray()) {
@@ -266,7 +266,7 @@ public class BioimageioRepo {
 				    .map(elem -> elem.getAsJsonObject().get("v").getAsString())
 				    .orElseThrow(null);
 			vMap.get(lastV).put("latest", "true");
-			modelsInfo.put(modelID, vMap);
+			MODELS_INFO.put(modelID, vMap);
 		}
 	}
 	
@@ -379,11 +379,11 @@ public class BioimageioRepo {
 	 * @return list with the ids for each of the models in the repo
 	 */
 	public static List<String> getModelIDs(){
-		if (modelIDs == null || modelIDs.size() == 0)
+		if (MODEL_IDS == null || MODEL_IDS.size() == 0)
 			BioimageioRepo.connect();
-		if (modelIDs == null)
+		if (MODEL_IDS == null)
 			return new ArrayList<String>();
-		return modelIDs;
+		return MODEL_IDS;
 	}
 	
 	/**
@@ -646,19 +646,19 @@ public class BioimageioRepo {
 	}
 	
 	
-	public String getModelRdfUrl(String id, String version) {
-		if (modelsInfo == null || modelsInfo.get("id") == null) {
+	public static String getModelRdfUrl(String id, String version) {
+		if (MODELS_INFO == null || MODELS_INFO.get("id") == null) {
 			BioimageioRepo.connect();
 		}
 		
-		if (modelsInfo.get(id) == null)
+		if (MODELS_INFO.get(id) == null)
 			return null;
 		String rdfURL;
 		if (version == null) {
-			rdfURL = modelsInfo.get(id).values().stream()
+			rdfURL = MODELS_INFO.get(id).values().stream()
 					.filter(val -> val.get("latest").equals("true")).findFirst().get().get("source");
-		} else if (version != null && modelsInfo.get(id).get(version) != null) {
-			rdfURL = modelsInfo.get(id).get(version).get("source");
+		} else if (version != null && MODELS_INFO.get(id).get(version) != null) {
+			rdfURL = MODELS_INFO.get(id).get(version).get("source");
 		} else {
 			return null;
 		}
