@@ -25,7 +25,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.sql.Timestamp;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -72,7 +71,7 @@ public class BioimageioRepo {
 	/**
 	 * URL to the file containing all the model zoo models
 	 */
-	public static String location = "https://uk1s3.embassy.ebi.ac.uk/public-datasets/bioimage.io/all_versions.json";
+	public static final String LOCATE = "https://uk1s3.embassy.ebi.ac.uk/public-datasets/bioimage.io/all_versions.json";
 	/**
 	 * JSon containing all the info about the Bioimage.io models
 	 */
@@ -162,7 +161,7 @@ public class BioimageioRepo {
 	/**
 	 * Method that connects to the BioImage.io API and retrieves the models available
 	 * at the Bioimage.io model repository.
-	 * The models are specified at: {@link #location}.
+	 * The models are specified at: {@link #LOCATE}.
 	 * Once the method has been called, the list of models is not refreshed (that means
 	 * the method does not check the list of Bioimage.io models and returns what 
 	 * was obtained with the first call) unless the method {@link #refresh()}
@@ -219,15 +218,15 @@ public class BioimageioRepo {
 	 * MEthod that reads the yaml file that contains all the information about the bioimage.io.
 	 * Including the models available.
 	 * This method also stores the model IDs of the available models.
-	 * The file is at: {@link #location}
+	 * The file is at: {@link #LOCATE}
 	 */
 	private void setCollectionsRepo() {
 		MODEL_IDS = new ArrayList<String>();
 		MODELS_INFO = new HashMap<String, Map<String, Map<String, String>>>();
-		String text = getJSONFromUrl(location);
+		String text = getJSONFromUrl(LOCATE);
 		if (text == null) {
 			Log.addProgressAndShowInTerminal(consumer, MODELS_NOT_FOUND_MSG, true);
-			Log.addProgressAndShowInTerminal(consumer, "BioImage.io: Cannot access file: " + location, true);
+			Log.addProgressAndShowInTerminal(consumer, "BioImage.io: Cannot access file: " + LOCATE, true);
 			Log.addProgressAndShowInTerminal(consumer, "BioImage.io: Please review the certificates needed to access the website.", true);
 			return;
 		}
@@ -641,7 +640,7 @@ public class BioimageioRepo {
 	}
 	
 	
-	public String getModelURL(String id) {
+	public static String getModelURL(String id) {
 		return getModelRdfUrl(id, null);
 	}
 	
