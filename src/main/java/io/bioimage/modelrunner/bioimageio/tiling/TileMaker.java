@@ -96,11 +96,11 @@ public class TileMaker {
 							.filter(t -> t.getName().equals(intt.getName())).findFirst().orElse(null);
 					int indTile = inTile.getTileAxesOrder().indexOf(ax.getAxis());
 					int indIm = inTile.getImageAxesOrder().indexOf(ax.getAxis());
-					if (indTile == -1 || indIm == -1)
-						throw new IllegalArgumentException(""
-								+ "Model specs too complex for JDLL. "
-								+ "Please contact the team and create and issue attaching the rdf.yaml file"
-								+ " so we can troubleshoot at: " + Constants.ISSUES_LINK);
+					if (indTile == -1 || indIm == -1) {
+						imagSize[i] = (long) ax.getMin();
+						tileSize[i] = (long) ax.getMin();
+						continue;
+					}
 					double factor = (double) inTile.getImageDims()[indIm] / inTile.getTileDims()[indTile];
 					if (Math.floor(ax.getMin() * factor) != ax.getMin() * factor)
 						throw new IllegalArgumentException(""
