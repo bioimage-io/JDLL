@@ -221,14 +221,6 @@ public interface ModelDescriptor {
 	public List<String> getLinks();
 	
 	/**
-	 * Mark the model as downloaded or not. This method is useful for when the
-	 * user selects a model from the BioImage.io
-	 * @param dd
-	 * 	whether the model is already downloaded or not
-	 */
-	public void setDownloaded(boolean dd);
-	
-	/**
 	 * Whether the model is already in the local repo or it has to be downloaded
 	 * @return true if the model is already installed or false otherwise
 	 */

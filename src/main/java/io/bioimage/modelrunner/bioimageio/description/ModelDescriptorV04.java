@@ -69,15 +69,12 @@ public class ModelDescriptorV04 implements ModelDescriptor
     private String version;
     private List<String> links;
     private Map<String, String> parent;
-    private boolean isModelLocal;
     private static String fromLocalKey = "fromLocalRepo";
     private static String modelPathKey = "modelPath";
     private String modelID;
     private String newModelID;
     private String localModelPath;
     private boolean supportBioengine = false;
-    
-    private static BioimageioRepo BMZ_REPO;
 
     private ModelDescriptorV04()
     {
@@ -174,9 +171,6 @@ public class ModelDescriptorV04 implements ModelDescriptor
                         break;
                     case "weights":
                         modelDescription.weights = buildWeights((Map<String, Object>) yamlElements.get(field));
-                        break;
-                    case "fromLocalRepo":
-                        modelDescription.isModelLocal = (boolean) fieldElement;
                         break;
                     case "modelPath":
                         modelDescription.localModelPath = (String) fieldElement;
@@ -743,21 +737,13 @@ public class ModelDescriptorV04 implements ModelDescriptor
 	}
 	
 	/**
-	 * Mark the model as downloaded or not. This method is useful for when the
-	 * user selects a model from the BioImage.io
-	 * @param dd
-	 * 	whether the model is already downloaded or not
-	 */
-	public void setDownloaded(boolean dd) {
-		isModelLocal = dd;
-	}
-	
-	/**
 	 * Whether the model is already in the local repo or it has to be downloaded
 	 * @return true if the model is already installed or false otherwise
 	 */
 	public boolean isModelInLocalRepo() {
-		return isModelLocal;
+		if (this.localModelPath == null)
+			return false;
+		return new File(localModelPath).isDirectory();
 	}
 	
 	/**
@@ -822,18 +808,13 @@ public class ModelDescriptorV04 implements ModelDescriptor
 
 	@Override
 	public void addModelPath(Path modelBasePath) {
-		// TODO Auto-generated method stub
-		
+		this.localModelPath = modelBasePath.toFile().getAbsolutePath();
 	}
 
 	@Override
 	public String getModelURL() {
-		if (this.download_url == null && BMZ_REPO == null) {
-			BMZ_REPO = BioimageioRepo.connect();
-		}
-		
 		if (this.download_url == null)
-			this.download_url = BMZ_REPO.getModelRdfUrl(modelID, version);
+			this.download_url = BioimageioRepo.getModelRdfUrl(modelID, version);
 		return this.download_url;
 	}
 

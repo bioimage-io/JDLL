@@ -19,6 +19,7 @@
  */
 package io.bioimage.modelrunner.bioimageio.description;
 
+import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.nio.file.Path;
@@ -65,7 +66,6 @@ public class ModelDescriptorV05 implements ModelDescriptor
     private Map<String, Object> attachments;
     private String version;
     private List<String> links;
-    private boolean isModelLocal;
     private static String fromLocalKey = "fromLocalRepo";
     private static String modelPathKey = "modelPath";
     private String modelID;
@@ -164,9 +164,6 @@ public class ModelDescriptorV05 implements ModelDescriptor
                         break;
                     case "weights":
                         weights = buildWeights((Map<String, Object>) yamlElements.get(field));
-                        break;
-                    case "fromLocalRepo":
-                        isModelLocal = (boolean) fieldElement;
                         break;
                     case "modelPath":
                         localModelPath = (String) fieldElement;
@@ -595,21 +592,13 @@ public class ModelDescriptorV05 implements ModelDescriptor
 	}
 	
 	/**
-	 * Mark the model as downloaded or not. This method is useful for when the
-	 * user selects a model from the BioImage.io
-	 * @param dd
-	 * 	whether the model is already downloaded or not
-	 */
-	public void setDownloaded(boolean dd) {
-		isModelLocal = dd;
-	}
-	
-	/**
 	 * Whether the model is already in the local repo or it has to be downloaded
 	 * @return true if the model is already installed or false otherwise
 	 */
 	public boolean isModelInLocalRepo() {
-		return isModelLocal;
+		if (this.localModelPath == null)
+			return false;
+		return new File(localModelPath).isDirectory();
 	}
 	
 	/**
@@ -684,8 +673,7 @@ public class ModelDescriptorV05 implements ModelDescriptor
 
 	@Override
 	public void addModelPath(Path modelBasePath) {
-		// TODO Auto-generated method stub
-		
+		this.localModelPath = modelBasePath.toFile().getAbsolutePath();
 	}
 
 	@Override
