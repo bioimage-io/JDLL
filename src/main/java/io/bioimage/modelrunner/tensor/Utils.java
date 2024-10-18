@@ -80,27 +80,17 @@ public final class Utils
 	 */
 	public static <T extends NumericType<T> & RealType<T>> 
 	RandomAccessibleInterval<T> rearangeAxes(RandomAccessibleInterval<T> rai, int[] orderChange){
-		if (rai.dimensionsAsLongArray().length != orderChange.length)
-			throw new IllegalArgumentException("The parameter 'orderChange' should have the same dimensions as the array provided witht he first parameter 'rai'.");
-		List<Integer> checker = new ArrayList<Integer>();
-		for (int i : orderChange) {
-			if (!checker.contains(i))
-				checker.add(i);
-		}
-		if (checker.size() != orderChange.length)
-			throw new IllegalArgumentException("The 'orderChange' parameter should not contain repeated"
-					+ " numbers and should go from 0 to rai.dimensionsAsLongArray().length - 1");
-		long[] max = rai.maxAsPoint().positionAsLongArray();
-		long[] min = rai.minAsPoint().positionAsLongArray();
-		long[] tensorShape = rai.dimensionsAsLongArray();
-		MixedTransform t = new MixedTransform( tensorShape.length, tensorShape.length );
-		t.setComponentMapping(orderChange);
-		long[] minMax = new long[tensorShape.length * 2];
-		for (int i = 0; i < tensorShape.length; i ++) {
-			minMax[i] = min[orderChange[i]];
-			minMax[i + tensorShape.length] = max[orderChange[i]];
-		}
-		return Views.interval(new MixedTransformView<T>( rai, t ), 
-				Intervals.createMinMax(minMax));
+        final int n = rai.numDimensions();
+        final long[] min = new long[n];
+        final long[] max = new long[n];
+        final int[] invOrderChange = new int[n];
+        for (int i = 0; i < n; i++) {
+            min[i] = rai.min(orderChange[i]);
+            max[i] = rai.max(orderChange[i]);
+            invOrderChange[orderChange[i]] = i;
+        }
+        MixedTransform t = new MixedTransform(n, n);
+        t.setComponentMapping(invOrderChange);
+        return Views.interval(new MixedTransformView<>(rai, t), min, max);
 	}
 }

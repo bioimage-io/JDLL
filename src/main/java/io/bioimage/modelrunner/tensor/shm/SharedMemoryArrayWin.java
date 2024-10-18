@@ -527,8 +527,8 @@ public class SharedMemoryArrayWin implements SharedMemoryArray
 		Cursor<ByteType> cursor = Views.flatIterable(tensor).cursor();
 		long i = 0;
 		while (cursor.hasNext()) {
-			this.mappedPointer.setByte(offset + (i ++), cursor.get().get());
 			cursor.fwd();
+			this.mappedPointer.setByte(offset + (i ++), cursor.get().get());
 		}
     }
 
@@ -563,8 +563,8 @@ public class SharedMemoryArrayWin implements SharedMemoryArray
 		Cursor<ShortType> cursor = Views.flatIterable(tensor).cursor();
 		long i = 0;
 		while (cursor.hasNext()) {
-			this.mappedPointer.setShort(offset + (i * Short.BYTES), cursor.get().get());
 			cursor.fwd();
+			this.mappedPointer.setShort(offset + (i * Short.BYTES), cursor.get().get());
 			i ++;
 		}
     }
@@ -582,8 +582,8 @@ public class SharedMemoryArrayWin implements SharedMemoryArray
 		Cursor<UnsignedShortType> cursor = Views.flatIterable(tensor).cursor();
 		long i = 0;
 		while (cursor.hasNext()) {
-			this.mappedPointer.setShort(offset + (i * Short.BYTES), cursor.get().getShort());
 			cursor.fwd();
+			this.mappedPointer.setShort(offset + (i * Short.BYTES), cursor.get().getShort());
 			i ++;
 		}
     }
@@ -601,8 +601,8 @@ public class SharedMemoryArrayWin implements SharedMemoryArray
 		Cursor<IntType> cursor = Views.flatIterable(tensor).cursor();
 		long i = 0;
 		while (cursor.hasNext()) {
-			this.mappedPointer.setInt(offset + (i * Integer.BYTES), cursor.get().get());
 			cursor.fwd();
+			this.mappedPointer.setInt(offset + (i * Integer.BYTES), cursor.get().get());
 			i ++;
 		}
     }
@@ -620,8 +620,8 @@ public class SharedMemoryArrayWin implements SharedMemoryArray
 		Cursor<UnsignedIntType> cursor = Views.flatIterable(tensor).cursor();
 		long i = 0;
 		while (cursor.hasNext()) {
-			this.mappedPointer.setInt(offset + (i * Integer.BYTES), cursor.get().getInt());
 			cursor.fwd();
+			this.mappedPointer.setInt(offset + (i * Integer.BYTES), cursor.get().getInt());
 			i ++;
 		}
     }
@@ -639,8 +639,8 @@ public class SharedMemoryArrayWin implements SharedMemoryArray
 		Cursor<LongType> cursor = Views.flatIterable(tensor).cursor();
 		long i = 0;
 		while (cursor.hasNext()) {
-			this.mappedPointer.setLong(offset + (i * Long.BYTES), cursor.get().get());
 			cursor.fwd();
+			this.mappedPointer.setLong(offset + (i * Long.BYTES), cursor.get().get());
 			i ++;
 		}
     }
@@ -658,8 +658,8 @@ public class SharedMemoryArrayWin implements SharedMemoryArray
 		Cursor<FloatType> cursor = Views.flatIterable(tensor).cursor();
 		long i = 0;
 		while (cursor.hasNext()) {
-			this.mappedPointer.setFloat(offset + (i * Float.BYTES), cursor.get().get());
 			cursor.fwd();
+			this.mappedPointer.setFloat(offset + (i * Float.BYTES), cursor.get().get());
 			i ++;
 		}
     }
@@ -677,8 +677,8 @@ public class SharedMemoryArrayWin implements SharedMemoryArray
 		Cursor<DoubleType> cursor = Views.flatIterable(tensor).cursor();
 		long i = 0;
 		while (cursor.hasNext()) {
-			this.mappedPointer.setDouble(offset + (i * Double.BYTES), cursor.get().get());
 			cursor.fwd();
+			this.mappedPointer.setDouble(offset + (i * Double.BYTES), cursor.get().get());
 			i ++;
 		}
     }
