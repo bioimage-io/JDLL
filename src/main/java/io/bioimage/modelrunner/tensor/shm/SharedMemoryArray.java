@@ -185,7 +185,7 @@ public interface SharedMemoryArray extends Closeable {
 		String strDType = CommonUtils.getDataType(datatype);
     	int size = DecodeNumpy.DATA_TYPES_MAP.get(strDType);
     	for (long i : shape) {size *= i;}
-    	if (isNpy) size = (int) DecodeNumpy.calculateNpyStyleByteArrayLength(shape, datatype);
+    	if (isNpy) size = (int) DecodeNumpy.calculateNpyStyleByteArrayLength(shape, datatype, isFortran);
         if (PlatformDetection.isWindows()) 
         	return SharedMemoryArrayWin.readOrCreate(name, size, shape, strDType, isNpy, isFortran);
     	else if (PlatformDetection.isLinux()) 
@@ -300,7 +300,7 @@ public interface SharedMemoryArray extends Closeable {
 		String strDType = CommonUtils.getDataType(datatype);
     	int size = DecodeNumpy.DATA_TYPES_MAP.get(strDType);
     	for (long i : shape) {size *= i;}
-    	if (isNpy) size = (int) DecodeNumpy.calculateNpyStyleByteArrayLength(shape, datatype);
+    	if (isNpy) size = (int) DecodeNumpy.calculateNpyStyleByteArrayLength(shape, datatype, isFortran);
         if (PlatformDetection.isWindows()) 
         	return SharedMemoryArrayWin.create(size, shape, strDType, isNpy, isFortran);
     	else if (PlatformDetection.isLinux())
@@ -524,7 +524,7 @@ public interface SharedMemoryArray extends Closeable {
 	 * @return the number of bytes needed to store the nd array
 	 */
 	public static <T extends RealType<T> & NativeType<T>> int getArrayByteSize(long[] shape, T type) {
-		return getArrayByteSize(shape, type, false);
+		return getArrayByteSize(shape, type, false, false);
 	}
     
 	/**
@@ -537,12 +537,14 @@ public interface SharedMemoryArray extends Closeable {
 	 * 	ImgLib2 data type of the array
 	 * @param isNpy
 	 * 	whether the array is stored with a Numpy npy header at the beginning
+	 * @param isFortran
+	 * 	whether the array is stored as fortran or not. Only relevant for this method if the aisNpy argument is true
 	 * @return the number of bytes needed to store the nd array
 	 */
-	public static <T extends RealType<T> & NativeType<T>> int getArrayByteSize(long[] shape, T type, boolean isNpy) {
+	public static <T extends RealType<T> & NativeType<T>> int getArrayByteSize(long[] shape, T type, boolean isNpy, boolean isFortran) {
 		int noByteSize = 1;
 		int headerSize = 0;
-		if (isNpy) headerSize = (int) DecodeNumpy.calculateNpyStyleByteArrayLength(shape, type);
+		if (isNpy) headerSize = (int) DecodeNumpy.calculateNpyStyleByteArrayLength(shape, type, isFortran);
 		for (long l : shape) {noByteSize *= l;}
 		if (type instanceof ByteType || type instanceof UnsignedByteType) {
 			return noByteSize * 1 + headerSize;

@@ -370,55 +370,55 @@ public class SharedMemoryArrayWin implements SharedMemoryArray
     	if (Util.getTypeFromInterval(rai) instanceof ByteType) {
         	int size = 1;
         	for (long i : rai.dimensionsAsLongArray()) {size *= i;}
-        	if (isNumpy) size = (int) DecodeNumpy.calculateNpyStyleByteArrayLength(rai);
+        	if (isNumpy) size = (int) DecodeNumpy.calculateNpyStyleByteArrayLength(rai, isFortranOrder);
         	shma = new SharedMemoryArrayWin(name, size, CommonUtils.getDataTypeFromRAI(rai), rai.dimensionsAsLongArray(), isNumpy, isFortranOrder);
         	shma.buildInt8(Cast.unchecked(rai), isFortranOrder, isNumpy);
     	} else if (Util.getTypeFromInterval(rai) instanceof UnsignedByteType) {
         	int size = 1;
         	for (long i : rai.dimensionsAsLongArray()) {size *= i;}
-        	if (isNumpy) size = (int) DecodeNumpy.calculateNpyStyleByteArrayLength(rai);
+        	if (isNumpy) size = (int) DecodeNumpy.calculateNpyStyleByteArrayLength(rai, isFortranOrder);
         	shma = new SharedMemoryArrayWin(name, size, CommonUtils.getDataTypeFromRAI(rai), rai.dimensionsAsLongArray(), isNumpy, isFortranOrder);
         	shma.buildUint8(Cast.unchecked(rai), isFortranOrder, isNumpy);
     	} else if (Util.getTypeFromInterval(rai) instanceof ShortType) {
         	int size = 2;
         	for (long i : rai.dimensionsAsLongArray()) {size *= i;}
-        	if (isNumpy) size = (int) DecodeNumpy.calculateNpyStyleByteArrayLength(rai);
+        	if (isNumpy) size = (int) DecodeNumpy.calculateNpyStyleByteArrayLength(rai, isFortranOrder);
         	shma = new SharedMemoryArrayWin(name, size, CommonUtils.getDataTypeFromRAI(rai), rai.dimensionsAsLongArray(), isNumpy, isFortranOrder);
         	shma.buildInt16(Cast.unchecked(rai), isFortranOrder, isNumpy);
     	} else if (Util.getTypeFromInterval(rai) instanceof UnsignedShortType) {
         	int size = 2;
         	for (long i : rai.dimensionsAsLongArray()) {size *= i;}
-        	if (isNumpy) size = (int) DecodeNumpy.calculateNpyStyleByteArrayLength(rai);
+        	if (isNumpy) size = (int) DecodeNumpy.calculateNpyStyleByteArrayLength(rai, isFortranOrder);
         	shma = new SharedMemoryArrayWin(name, size, CommonUtils.getDataTypeFromRAI(rai), rai.dimensionsAsLongArray(), isNumpy, isFortranOrder);
         	shma.buildUint16(Cast.unchecked(rai), isFortranOrder, isNumpy);
     	} else if (Util.getTypeFromInterval(rai) instanceof IntType) {
         	int size = 4;
         	for (long i : rai.dimensionsAsLongArray()) {size *= i;}
-        	if (isNumpy) size = (int) DecodeNumpy.calculateNpyStyleByteArrayLength(rai);
+        	if (isNumpy) size = (int) DecodeNumpy.calculateNpyStyleByteArrayLength(rai, isFortranOrder);
         	shma = new SharedMemoryArrayWin(name, size, CommonUtils.getDataTypeFromRAI(rai), rai.dimensionsAsLongArray(), isNumpy, isFortranOrder);
         	shma.buildInt32(Cast.unchecked(rai), isFortranOrder, isNumpy);
     	} else if (Util.getTypeFromInterval(rai) instanceof UnsignedIntType) {
         	int size = 4;
         	for (long i : rai.dimensionsAsLongArray()) {size *= i;}
-        	if (isNumpy) size = (int) DecodeNumpy.calculateNpyStyleByteArrayLength(rai);
+        	if (isNumpy) size = (int) DecodeNumpy.calculateNpyStyleByteArrayLength(rai, isFortranOrder);
         	shma = new SharedMemoryArrayWin(name, size, CommonUtils.getDataTypeFromRAI(rai), rai.dimensionsAsLongArray(), isNumpy, isFortranOrder);
         	shma.buildUint32(Cast.unchecked(rai), isFortranOrder, isNumpy);
     	} else if (Util.getTypeFromInterval(rai) instanceof LongType) {
         	int size = 8;
         	for (long i : rai.dimensionsAsLongArray()) {size *= i;}
-        	if (isNumpy) size = (int) DecodeNumpy.calculateNpyStyleByteArrayLength(rai);
+        	if (isNumpy) size = (int) DecodeNumpy.calculateNpyStyleByteArrayLength(rai, isFortranOrder);
         	shma = new SharedMemoryArrayWin(name, size, CommonUtils.getDataTypeFromRAI(rai), rai.dimensionsAsLongArray(), isNumpy, isFortranOrder);
         	shma.buildInt64(Cast.unchecked(rai), isFortranOrder, isNumpy);
     	} else if (Util.getTypeFromInterval(rai) instanceof FloatType) {
         	int size = 4;
         	for (long i : rai.dimensionsAsLongArray()) {size *= i;}
-        	if (isNumpy) size = (int) DecodeNumpy.calculateNpyStyleByteArrayLength(rai);
+        	if (isNumpy) size = (int) DecodeNumpy.calculateNpyStyleByteArrayLength(rai, isFortranOrder);
         	shma = new SharedMemoryArrayWin(name, size, CommonUtils.getDataTypeFromRAI(rai), rai.dimensionsAsLongArray(), isNumpy, isFortranOrder);
         	shma.buildFloat32(Cast.unchecked(rai), isFortranOrder, isNumpy);
     	} else if (Util.getTypeFromInterval(rai) instanceof DoubleType) {
         	int size = 8;
         	for (long i : rai.dimensionsAsLongArray()) {size *= i;}
-        	if (isNumpy) size = (int) DecodeNumpy.calculateNpyStyleByteArrayLength(rai);
+        	if (isNumpy) size = (int) DecodeNumpy.calculateNpyStyleByteArrayLength(rai, isFortranOrder);
         	shma = new SharedMemoryArrayWin(name, size, CommonUtils.getDataTypeFromRAI(rai), rai.dimensionsAsLongArray(), isNumpy, isFortranOrder);
         	shma.buildFloat64(Cast.unchecked(rai), isFortranOrder, isNumpy);
     	} else {
@@ -881,7 +881,7 @@ public class SharedMemoryArrayWin implements SharedMemoryArray
     	int len = this.size;
     	if (this.isNumpyFormat() || (this.originalDataType != null && this.originalDims != null))
     		len = SharedMemoryArray.getArrayByteSize(originalDims, 
-    				Cast.unchecked(CommonUtils.getImgLib2DataType(originalDataType)), false);
+    				Cast.unchecked(CommonUtils.getImgLib2DataType(originalDataType)), false, this.isFortran);
     	return mappedPointer.getByteBuffer(0, len);
     }
 
@@ -894,9 +894,9 @@ public class SharedMemoryArrayWin implements SharedMemoryArray
     	int len = this.size;
     	if (this.isNumpyFormat()) {
     		offset = (int) DecodeNumpy.calculateNpyStyleByteArrayLength(originalDims,
-    				Cast.unchecked(CommonUtils.getImgLib2DataType(originalDataType)));
+    				Cast.unchecked(CommonUtils.getImgLib2DataType(originalDataType)), this.isFortran);
     		len = SharedMemoryArray.getArrayByteSize(originalDims, 
-    				Cast.unchecked(CommonUtils.getImgLib2DataType(originalDataType)), false);
+    				Cast.unchecked(CommonUtils.getImgLib2DataType(originalDataType)), false, this.isFortran);
     		offset = offset - len;
     	}
     	return mappedPointer.getByteBuffer(offset, len);

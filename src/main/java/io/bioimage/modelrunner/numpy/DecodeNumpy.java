@@ -565,13 +565,15 @@ public class DecodeNumpy {
      * 	possible ImgLib2 datatypes of the {@link RandomAccessibleInterval}
      * @param rai
      * 	the n-dimensional array of interest
+     * @param
+     * 	whether the array is in fortran order or not
      * @return a long value specifying the number of bytes it would take to store the nd-array in Numpy format
      */
     public static < T extends RealType< T > & NativeType< T > >
-    long calculateNpyStyleByteArrayLength(RandomAccessibleInterval<T> rai) {
+    long calculateNpyStyleByteArrayLength(RandomAccessibleInterval<T> rai, boolean fortranOrder) {
     	String strHeader = "{'descr': '<";
     	strHeader += getDataType(rai.getAt(rai.minAsLongArray()));
-    	strHeader += "', 'fortran_order': False, 'shape': (";
+    	strHeader += "', 'fortran_order': " + (fortranOrder ? "True" : "False") + ", 'shape': (";
     	for (long ll : rai.dimensionsAsLongArray()) strHeader += ll + ", ";
     	strHeader = strHeader.substring(0, strHeader.length() - 2);
     	strHeader += "), }" + System.lineSeparator();
@@ -614,13 +616,15 @@ public class DecodeNumpy {
      * 	the dimensions of the nd array
      * @param datatype
      * 	the data type of the nd array
+     * @param fortranOrder
+     * 	whether the array is going to be saved on fortan order or not
      * @return a long value specifying the number of bytes it would take to store the nd-array in Numpy npy format
      */
     public static < T extends RealType< T > & NativeType< T > >
-    long calculateNpyStyleByteArrayLength(long[] shape, T datatype) {
+    long calculateNpyStyleByteArrayLength(long[] shape, T datatype, boolean fortranOrder) {
     	String strHeader = "{'descr': '<";
     	strHeader += getDataType(datatype);
-    	strHeader += "', 'fortran_order': False, 'shape': (";
+    	strHeader += "', 'fortran_order': " + (fortranOrder ? "True" : "False") + ", 'shape': (";
     	for (long ll : shape) strHeader += ll + ", ";
     	strHeader = strHeader.substring(0, strHeader.length() - 2);
     	strHeader += "), }" + System.lineSeparator();

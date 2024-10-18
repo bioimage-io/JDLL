@@ -353,55 +353,55 @@ public class SharedMemoryArrayLinux implements SharedMemoryArray {
     	if (Util.getTypeFromInterval(rai) instanceof ByteType) {
         	int size = 1;
         	for (long i : rai.dimensionsAsLongArray()) {size *= i;}
-        	if (isNumpy) size = (int) DecodeNumpy.calculateNpyStyleByteArrayLength(rai);
+        	if (isNumpy) size = (int) DecodeNumpy.calculateNpyStyleByteArrayLength(rai, isFortranOrder);
         	shma = new SharedMemoryArrayLinux(name, size, CommonUtils.getDataTypeFromRAI(rai), rai.dimensionsAsLongArray(), isNumpy, isFortranOrder);
         	shma.buildInt8(Cast.unchecked(rai), isFortranOrder, isNumpy);
     	} else if (Util.getTypeFromInterval(rai) instanceof UnsignedByteType) {
         	int size = 1;
         	for (long i : rai.dimensionsAsLongArray()) {size *= i;}
-        	if (isNumpy) size = (int) DecodeNumpy.calculateNpyStyleByteArrayLength(rai);
+        	if (isNumpy) size = (int) DecodeNumpy.calculateNpyStyleByteArrayLength(rai, isFortranOrder);
         	shma = new SharedMemoryArrayLinux(name, size, CommonUtils.getDataTypeFromRAI(rai), rai.dimensionsAsLongArray(), isNumpy, isFortranOrder);
         	shma.buildUint8(Cast.unchecked(rai), isFortranOrder, isNumpy);
     	} else if (Util.getTypeFromInterval(rai) instanceof ShortType) {
         	int size = 2;
         	for (long i : rai.dimensionsAsLongArray()) {size *= i;}
-        	if (isNumpy) size = (int) DecodeNumpy.calculateNpyStyleByteArrayLength(rai);
+        	if (isNumpy) size = (int) DecodeNumpy.calculateNpyStyleByteArrayLength(rai, isFortranOrder);
         	shma = new SharedMemoryArrayLinux(name, size, CommonUtils.getDataTypeFromRAI(rai), rai.dimensionsAsLongArray(), isNumpy, isFortranOrder);
         	shma.buildInt16(Cast.unchecked(rai), isFortranOrder, isNumpy);
     	} else if (Util.getTypeFromInterval(rai) instanceof UnsignedShortType) {
         	int size = 2;
         	for (long i : rai.dimensionsAsLongArray()) {size *= i;}
-        	if (isNumpy) size = (int) DecodeNumpy.calculateNpyStyleByteArrayLength(rai);
+        	if (isNumpy) size = (int) DecodeNumpy.calculateNpyStyleByteArrayLength(rai, isFortranOrder);
         	shma = new SharedMemoryArrayLinux(name, size, CommonUtils.getDataTypeFromRAI(rai), rai.dimensionsAsLongArray(), isNumpy, isFortranOrder);
         	shma.buildUint16(Cast.unchecked(rai), isFortranOrder, isNumpy);
     	} else if (Util.getTypeFromInterval(rai) instanceof IntType) {
         	int size = 4;
         	for (long i : rai.dimensionsAsLongArray()) {size *= i;}
-        	if (isNumpy) size = (int) DecodeNumpy.calculateNpyStyleByteArrayLength(rai);
+        	if (isNumpy) size = (int) DecodeNumpy.calculateNpyStyleByteArrayLength(rai, isFortranOrder);
         	shma = new SharedMemoryArrayLinux(name, size, CommonUtils.getDataTypeFromRAI(rai), rai.dimensionsAsLongArray(), isNumpy, isFortranOrder);
         	shma.buildInt32(Cast.unchecked(rai), isFortranOrder, isNumpy);
     	} else if (Util.getTypeFromInterval(rai) instanceof UnsignedIntType) {
         	int size = 4;
         	for (long i : rai.dimensionsAsLongArray()) {size *= i;}
-        	if (isNumpy) size = (int) DecodeNumpy.calculateNpyStyleByteArrayLength(rai);
+        	if (isNumpy) size = (int) DecodeNumpy.calculateNpyStyleByteArrayLength(rai, isFortranOrder);
         	shma = new SharedMemoryArrayLinux(name, size, CommonUtils.getDataTypeFromRAI(rai), rai.dimensionsAsLongArray(), isNumpy, isFortranOrder);
         	shma.buildUint32(Cast.unchecked(rai), isFortranOrder, isNumpy);
     	} else if (Util.getTypeFromInterval(rai) instanceof LongType) {
         	int size = 8;
         	for (long i : rai.dimensionsAsLongArray()) {size *= i;}
-        	if (isNumpy) size = (int) DecodeNumpy.calculateNpyStyleByteArrayLength(rai);
+        	if (isNumpy) size = (int) DecodeNumpy.calculateNpyStyleByteArrayLength(rai, isFortranOrder);
         	shma = new SharedMemoryArrayLinux(name, size, CommonUtils.getDataTypeFromRAI(rai), rai.dimensionsAsLongArray(), isNumpy, isFortranOrder);
         	shma.buildInt64(Cast.unchecked(rai), isFortranOrder, isNumpy);
     	} else if (Util.getTypeFromInterval(rai) instanceof FloatType) {
         	int size = 4;
         	for (long i : rai.dimensionsAsLongArray()) {size *= i;}
-        	if (isNumpy) size = (int) DecodeNumpy.calculateNpyStyleByteArrayLength(rai);
+        	if (isNumpy) size = (int) DecodeNumpy.calculateNpyStyleByteArrayLength(rai, isFortranOrder);
         	shma = new SharedMemoryArrayLinux(name, size, CommonUtils.getDataTypeFromRAI(rai), rai.dimensionsAsLongArray(), isNumpy, isFortranOrder);
         	shma.buildFloat32(Cast.unchecked(rai), isFortranOrder, isNumpy);
     	} else if (Util.getTypeFromInterval(rai) instanceof DoubleType) {
         	int size = 8;
         	for (long i : rai.dimensionsAsLongArray()) {size *= i;}
-        	if (isNumpy) size = (int) DecodeNumpy.calculateNpyStyleByteArrayLength(rai);
+        	if (isNumpy) size = (int) DecodeNumpy.calculateNpyStyleByteArrayLength(rai, isFortranOrder);
         	shma = new SharedMemoryArrayLinux(name, size, CommonUtils.getDataTypeFromRAI(rai), rai.dimensionsAsLongArray(), isNumpy, isFortranOrder);
         	shma.buildFloat64(Cast.unchecked(rai), isFortranOrder, isNumpy);
     	} else {
@@ -476,7 +476,7 @@ public class SharedMemoryArrayLinux implements SharedMemoryArray {
     private void buildInt8(RandomAccessibleInterval<ByteType> tensor, boolean isFortranOrder, boolean isNumpy)
     {
     	byte[] header = new byte[0];
-    	if (isNumpy) header = getNpyHeader(tensor);
+    	if (isNumpy) header = getNpyHeader(tensor, this.isFortran);
     	long offset = 0;
     	for (byte b : header) {
 			this.pSharedMemory.setByte(offset, b);
@@ -494,7 +494,7 @@ public class SharedMemoryArrayLinux implements SharedMemoryArray {
     private void buildUint8(RandomAccessibleInterval<UnsignedByteType> tensor, boolean isFortranOrder, boolean isNumpy)
     {
     	byte[] header = new byte[0];
-    	if (isNumpy) header = getNpyHeader(tensor);
+    	if (isNumpy) header = getNpyHeader(tensor, isFortranOrder);
     	long offset = 0;
     	for (byte b : header) {
 			this.pSharedMemory.setByte(offset, b);
@@ -512,7 +512,7 @@ public class SharedMemoryArrayLinux implements SharedMemoryArray {
     private void buildInt16(RandomAccessibleInterval<ShortType> tensor, boolean isFortranOrder, boolean isNumpy)
     {
     	byte[] header = new byte[0];
-    	if (isNumpy) header = getNpyHeader(tensor);
+    	if (isNumpy) header = getNpyHeader(tensor, this.isFortran);
     	long offset = 0;
     	for (byte b : header) {
 			this.pSharedMemory.setByte(offset, b);
@@ -531,7 +531,7 @@ public class SharedMemoryArrayLinux implements SharedMemoryArray {
     private void buildUint16(RandomAccessibleInterval<UnsignedShortType> tensor, boolean isFortranOrder, boolean isNumpy)
     {
     	byte[] header = new byte[0];
-    	if (isNumpy) header = getNpyHeader(tensor);
+    	if (isNumpy) header = getNpyHeader(tensor, this.isFortran);
     	long offset = 0;
     	for (byte b : header) {
 			this.pSharedMemory.setByte(offset, b);
@@ -550,7 +550,7 @@ public class SharedMemoryArrayLinux implements SharedMemoryArray {
     private void buildInt32(RandomAccessibleInterval<IntType> tensor, boolean isFortranOrder, boolean isNumpy)
     {
     	byte[] header = new byte[0];
-    	if (isNumpy) header = getNpyHeader(tensor);
+    	if (isNumpy) header = getNpyHeader(tensor, this.isFortran);
     	long offset = 0;
     	for (byte b : header) {
 			this.pSharedMemory.setByte(offset, b);
@@ -569,7 +569,7 @@ public class SharedMemoryArrayLinux implements SharedMemoryArray {
     private void buildUint32(RandomAccessibleInterval<UnsignedIntType> tensor, boolean isFortranOrder, boolean isNumpy)
     {
     	byte[] header = new byte[0];
-    	if (isNumpy) header = getNpyHeader(tensor);
+    	if (isNumpy) header = getNpyHeader(tensor, this.isFortran);
     	long offset = 0;
     	for (byte b : header) {
 			this.pSharedMemory.setByte(offset, b);
@@ -588,7 +588,7 @@ public class SharedMemoryArrayLinux implements SharedMemoryArray {
     private void buildInt64(RandomAccessibleInterval<LongType> tensor, boolean isFortranOrder, boolean isNumpy)
     {
     	byte[] header = new byte[0];
-    	if (isNumpy) header = getNpyHeader(tensor);
+    	if (isNumpy) header = getNpyHeader(tensor, this.isFortran);
     	long offset = 0;
     	for (byte b : header) {
 			this.pSharedMemory.setByte(offset, b);
@@ -607,7 +607,7 @@ public class SharedMemoryArrayLinux implements SharedMemoryArray {
     private void buildFloat32(RandomAccessibleInterval<FloatType> tensor, boolean isFortranOrder, boolean isNumpy)
     {
     	byte[] header = new byte[0];
-    	if (isNumpy) header = getNpyHeader(tensor);
+    	if (isNumpy) header = getNpyHeader(tensor, this.isFortran);
     	long offset = 0;
     	for (byte b : header) {
 			this.pSharedMemory.setByte(offset, b);
@@ -626,7 +626,7 @@ public class SharedMemoryArrayLinux implements SharedMemoryArray {
     private void buildFloat64(RandomAccessibleInterval<DoubleType> tensor, boolean isFortranOrder, boolean isNumpy)
     {
     	byte[] header = new byte[0];
-    	if (isNumpy) header = getNpyHeader(tensor);
+    	if (isNumpy) header = getNpyHeader(tensor, this.isFortran);
     	long offset = 0;
     	for (byte b : header) {
 			this.pSharedMemory.setByte(offset, b);
@@ -643,10 +643,10 @@ public class SharedMemoryArrayLinux implements SharedMemoryArray {
     }
     
     private static <T extends RealType<T> & NativeType<T>>
-    byte[] getNpyHeader(RandomAccessibleInterval<T> tensor) {
+    byte[] getNpyHeader(RandomAccessibleInterval<T> tensor, boolean fortranOrder) {
     	String strHeader = "{'descr': '<";
     	strHeader += DecodeNumpy.getDataType(tensor.getAt(tensor.minAsLongArray()));
-    	strHeader += "', 'fortran_order': False, 'shape': (";
+    	strHeader += "', 'fortran_order': " + (fortranOrder ? "True" : "False") + ", 'shape': (";
     	for (long ll : tensor.dimensionsAsLongArray()) strHeader += ll + ", ";
     	strHeader = strHeader.substring(0, strHeader.length() - 2);
     	strHeader += "), }" + System.lineSeparator();
