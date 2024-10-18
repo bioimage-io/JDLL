@@ -431,7 +431,7 @@ public class SharedMemoryArrayMacOS implements SharedMemoryArray
     private void buildInt8(RandomAccessibleInterval<ByteType> tensor, boolean isFortranOrder, boolean isNumpy)
     {
     	byte[] header = new byte[0];
-    	if (isNumpy) header = getNpyHeader(tensor);
+    	if (isNumpy) header = getNpyHeader(tensor, isFortranOrder);
     	long offset = 0;
     	for (byte b : header) {
 			this.pSharedMemory.setByte(offset, b);
@@ -449,7 +449,7 @@ public class SharedMemoryArrayMacOS implements SharedMemoryArray
     private void buildUint8(RandomAccessibleInterval<UnsignedByteType> tensor, boolean isFortranOrder, boolean isNumpy)
     {
     	byte[] header = new byte[0];
-    	if (isNumpy) header = getNpyHeader(tensor);
+    	if (isNumpy) header = getNpyHeader(tensor, isFortranOrder);
     	long offset = 0;
     	for (byte b : header) {
 			this.pSharedMemory.setByte(offset, b);
@@ -467,7 +467,7 @@ public class SharedMemoryArrayMacOS implements SharedMemoryArray
     private void buildInt16(RandomAccessibleInterval<ShortType> tensor, boolean isFortranOrder, boolean isNumpy)
     {
     	byte[] header = new byte[0];
-    	if (isNumpy) header = getNpyHeader(tensor);
+    	if (isNumpy) header = getNpyHeader(tensor, isFortranOrder);
     	long offset = 0;
     	for (byte b : header) {
 			this.pSharedMemory.setByte(offset, b);
@@ -486,7 +486,7 @@ public class SharedMemoryArrayMacOS implements SharedMemoryArray
     private void buildUint16(RandomAccessibleInterval<UnsignedShortType> tensor, boolean isFortranOrder, boolean isNumpy)
     {
     	byte[] header = new byte[0];
-    	if (isNumpy) header = getNpyHeader(tensor);
+    	if (isNumpy) header = getNpyHeader(tensor, isFortranOrder);
     	long offset = 0;
     	for (byte b : header) {
 			this.pSharedMemory.setByte(offset, b);
@@ -505,7 +505,7 @@ public class SharedMemoryArrayMacOS implements SharedMemoryArray
     private void buildInt32(RandomAccessibleInterval<IntType> tensor, boolean isFortranOrder, boolean isNumpy)
     {
     	byte[] header = new byte[0];
-    	if (isNumpy) header = getNpyHeader(tensor);
+    	if (isNumpy) header = getNpyHeader(tensor, isFortranOrder);
     	long offset = 0;
     	for (byte b : header) {
 			this.pSharedMemory.setByte(offset, b);
@@ -524,7 +524,7 @@ public class SharedMemoryArrayMacOS implements SharedMemoryArray
     private void buildUint32(RandomAccessibleInterval<UnsignedIntType> tensor, boolean isFortranOrder, boolean isNumpy)
     {
     	byte[] header = new byte[0];
-    	if (isNumpy) header = getNpyHeader(tensor);
+    	if (isNumpy) header = getNpyHeader(tensor, isFortranOrder);
     	long offset = 0;
     	for (byte b : header) {
 			this.pSharedMemory.setByte(offset, b);
@@ -543,7 +543,7 @@ public class SharedMemoryArrayMacOS implements SharedMemoryArray
     private void buildInt64(RandomAccessibleInterval<LongType> tensor, boolean isFortranOrder, boolean isNumpy)
     {
     	byte[] header = new byte[0];
-    	if (isNumpy) header = getNpyHeader(tensor);
+    	if (isNumpy) header = getNpyHeader(tensor, isFortranOrder);
     	long offset = 0;
     	for (byte b : header) {
 			this.pSharedMemory.setByte(offset, b);
@@ -562,7 +562,7 @@ public class SharedMemoryArrayMacOS implements SharedMemoryArray
     private void buildFloat32(RandomAccessibleInterval<FloatType> tensor, boolean isFortranOrder, boolean isNumpy)
     {
     	byte[] header = new byte[0];
-    	if (isNumpy) header = getNpyHeader(tensor);
+    	if (isNumpy) header = getNpyHeader(tensor, isFortranOrder);
     	long offset = 0;
     	for (byte b : header) {
 			this.pSharedMemory.setByte(offset, b);
@@ -581,7 +581,7 @@ public class SharedMemoryArrayMacOS implements SharedMemoryArray
     private void buildFloat64(RandomAccessibleInterval<DoubleType> tensor, boolean isFortranOrder, boolean isNumpy)
     {
     	byte[] header = new byte[0];
-    	if (isNumpy) header = getNpyHeader(tensor);
+    	if (isNumpy) header = getNpyHeader(tensor, isFortranOrder);
     	long offset = 0;
     	for (byte b : header) {
 			this.pSharedMemory.setByte(offset, b);
@@ -598,10 +598,10 @@ public class SharedMemoryArrayMacOS implements SharedMemoryArray
     }
     
     private static <T extends RealType<T> & NativeType<T>>
-    byte[] getNpyHeader(RandomAccessibleInterval<T> tensor) {
+    byte[] getNpyHeader(RandomAccessibleInterval<T> tensor, boolean isFortran) {
     	String strHeader = "{'descr': '<";
     	strHeader += DecodeNumpy.getDataType(tensor.getAt(tensor.minAsLongArray()));
-    	strHeader += "', 'fortran_order': False, 'shape': (";
+    	strHeader += "', 'fortran_order': " + (isFortran ? "True" : "False") + ", 'shape': (";
     	for (long ll : tensor.dimensionsAsLongArray()) strHeader += ll + ", ";
     	strHeader = strHeader.substring(0, strHeader.length() - 2);
     	strHeader += "), }" + System.lineSeparator();
