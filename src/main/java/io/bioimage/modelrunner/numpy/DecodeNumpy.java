@@ -565,7 +565,7 @@ public class DecodeNumpy {
      * 	possible ImgLib2 datatypes of the {@link RandomAccessibleInterval}
      * @param rai
      * 	the n-dimensional array of interest
-     * @param
+     * @param fortranOrder
      * 	whether the array is in fortran order or not
      * @return a long value specifying the number of bytes it would take to store the nd-array in Numpy format
      */
@@ -660,7 +660,7 @@ public class DecodeNumpy {
     
     /**
      * Method to convert a {@link RandomAccessibleInterval} into the byte array that is used by Numpy
-     * to create .npy files.
+     * to create .npy files. The array craeted is always c order, not fortran order.
      * The byte array created contains the flattened data of the {@link RandomAccessibleInterval} plus
      * information of the shape, data type, fortran order and byte order
      * @param <T>
@@ -757,7 +757,8 @@ public class DecodeNumpy {
     }
     
     /**
-     * Method that saves a {@link RandomAccessibleInterval} nd array to a .npy Numpy radable file
+     * Method that saves a {@link RandomAccessibleInterval} nd array to a .npy Numpy readable file.
+     * The array is always saved as 'c' order.
      * @param <T>
      * 	possible ImgLib2 data types of the provided {@link RandomAccessibleInterval}
      * @param filePath
