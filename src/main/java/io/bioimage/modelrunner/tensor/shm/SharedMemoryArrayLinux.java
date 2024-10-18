@@ -486,8 +486,8 @@ public class SharedMemoryArrayLinux implements SharedMemoryArray {
 		Cursor<ByteType> cursor = Views.flatIterable(tensor).cursor();
 		long i = 0;
 		while (cursor.hasNext()) {
-			cursor.fwd();
 			this.pSharedMemory.setByte(offset + (i ++), cursor.get().get());
+			cursor.fwd();
 		}
     }
 
@@ -522,8 +522,8 @@ public class SharedMemoryArrayLinux implements SharedMemoryArray {
 		Cursor<ShortType> cursor = Views.flatIterable(tensor).cursor();
 		long i = 0;
 		while (cursor.hasNext()) {
-			cursor.fwd();
 			this.pSharedMemory.setShort(offset + (i * Short.BYTES), cursor.get().get());
+			cursor.fwd();
 			i ++;
 		}
     }
@@ -541,8 +541,8 @@ public class SharedMemoryArrayLinux implements SharedMemoryArray {
 		Cursor<UnsignedShortType> cursor = Views.flatIterable(tensor).cursor();
 		long i = 0;
 		while (cursor.hasNext()) {
-			cursor.fwd();
 			this.pSharedMemory.setShort(offset + (i * Short.BYTES), cursor.get().getShort());
+			cursor.fwd();
 			i ++;
 		}
     }
@@ -617,8 +617,8 @@ public class SharedMemoryArrayLinux implements SharedMemoryArray {
 		Cursor<FloatType> cursor = Views.flatIterable(tensor).cursor();
 		long i = 0;
 		while (cursor.hasNext()) {
-			cursor.fwd();
 			this.pSharedMemory.setFloat(offset + (i * Float.BYTES), cursor.get().get());
+			cursor.fwd();
 			i ++;
 		}
     }
@@ -636,8 +636,8 @@ public class SharedMemoryArrayLinux implements SharedMemoryArray {
 		Cursor<DoubleType> cursor = Views.flatIterable(tensor).cursor();
 		long i = 0;
 		while (cursor.hasNext()) {
-			cursor.fwd();
 			this.pSharedMemory.setDouble(offset + (i * Double.BYTES), cursor.get().get());
+			cursor.fwd();
 			i ++;
 		}
     }
