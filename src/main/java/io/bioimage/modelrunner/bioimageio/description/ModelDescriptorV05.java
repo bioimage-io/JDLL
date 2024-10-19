@@ -644,21 +644,9 @@ public class ModelDescriptorV05 implements ModelDescriptor
 	}
 
 	@Override
-	public String buildBasicInfo() {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
-	public String buildTilingInfo() {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
 	public String buildInfo() {
-		// TODO Auto-generated method stub
-		return null;
+		return String.format(TEXT_DESCRIPTION, this.name, this.getNickname(), this.description, this.authors.toString(),
+				this.cite.toString());
 	}
 
 	@Override

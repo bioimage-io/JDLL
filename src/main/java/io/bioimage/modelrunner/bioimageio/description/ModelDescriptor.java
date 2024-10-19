@@ -34,24 +34,18 @@ import io.bioimage.modelrunner.bioimageio.description.weights.ModelWeight;
  * @author Carlos Garcia Lopez de Haro and Daniel Felipe Gonzalez Obando
  */
 public interface ModelDescriptor {
+	
+	static final String TEXT_DESCRIPTION = ""
+			+ "Model name: %s" + System.lineSeparator()
+			+ "Model nickname: %s" + System.lineSeparator()
+			+ "Model description: %s" + System.lineSeparator()
+			+ "Model author(s): %s" + System.lineSeparator()
+			+ "Model citation: %s" + System.lineSeparator();
     
     /**
      * Create a set of specifications about the basic info of the model: name od the model, authors,
      * references and Deep Learning framework
      * @return a set of specs for the model
-     */
-    public String buildBasicInfo();
-    
-    /**
-     * Write the tiling specs for the model
-     * @return the tiling specs for the model
-     */
-    public String buildTilingInfo();
-    
-    /**
-     * Create specifications of the model containing the most important
-     * info that is going to be displayed on the DeepIcy plugin
-     * @return a String with the most important info
      */
     public String buildInfo();
 
