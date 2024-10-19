@@ -39,6 +39,10 @@ public interface ModelDescriptor {
 		    + "<h3>%s</h3>"
 		    + "<p><strong>Nickname:</strong> %s</p>"
 		    + "<p><strong>Description:</strong> %s</p>"
+		    + "<p><strong>Author(s):</strong></p>"
+		    + "%s"
+		    + "<p><strong>Citation:</strong></p>"
+		    + "%s"
 		    + "</body></html>";
     
     /**
