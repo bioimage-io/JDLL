@@ -35,12 +35,11 @@ import io.bioimage.modelrunner.bioimageio.description.weights.ModelWeight;
  */
 public interface ModelDescriptor {
 	
-	static final String TEXT_DESCRIPTION = ""
-			+ "Model name: %s" + System.lineSeparator()
-			+ "Model nickname: %s" + System.lineSeparator()
-			+ "Model description: %s" + System.lineSeparator()
-			+ "Model author(s): %s" + System.lineSeparator()
-			+ "Model citation: %s" + System.lineSeparator();
+	static final String TEXT_DESCRIPTION = "<html><body>"
+		    + "<h3>%s</h3>"
+		    + "<p><strong>Nickname:</strong> %s</p>"
+		    + "<p><strong>Description:</strong> %s</p>"
+		    + "</body></html>";
     
     /**
      * Create a set of specifications about the basic info of the model: name od the model, authors,

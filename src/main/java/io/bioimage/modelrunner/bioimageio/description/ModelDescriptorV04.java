@@ -790,8 +790,17 @@ public class ModelDescriptorV04 implements ModelDescriptor
 
 	@Override
 	public String buildInfo() {
-		return String.format(TEXT_DESCRIPTION, this.name, this.getNickname(), this.description, this.authors.toString(),
-				this.cite.toString());
+		String authorNames = "";
+		for (Author auth : this.authors) {
+			authorNames += "  - " + auth.getName() + System.lineSeparator();
+		}
+		String citation = "";
+		for (Cite ci : this.cite) {
+			citation += "  - " + ci.getText() + System.lineSeparator();
+			if (ci.getUrl() != null)
+				citation += "    " + ci.getUrl() + System.lineSeparator();
+		}
+		return String.format(TEXT_DESCRIPTION, this.name, this.getNickname(), this.description);
 	}
 
 	@Override
