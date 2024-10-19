@@ -34,11 +34,21 @@ import io.bioimage.modelrunner.bioimageio.description.weights.ModelWeight;
  * @author Carlos Garcia Lopez de Haro and Daniel Felipe Gonzalez Obando
  */
 public interface ModelDescriptor {
-	
+
 	static final String TEXT_DESCRIPTION = "<html><body>"
 		    + "<h3>%s</h3>"
 		    + "<p><strong>Nickname:</strong> %s</p>"
 		    + "<p><strong>Description:</strong> %s</p>"
+		    + "<p><strong>Author(s):</strong></p>"
+		    + "%s"
+		    + "<p><strong>Citation:</strong></p>"
+		    + "%s"
+		    + "</body></html>";
+	static final String TEXT_DESCRIPTION_LOCAL = "<html><body>"
+		    + "<h3>%s</h3>"
+		    + "<p><strong>Nickname:</strong> %s</p>"
+		    + "<p><strong>Description:</strong> %s</p>"
+		    + "<p><strong>Folder name:</strong> %s</p>"
 		    + "<p><strong>Author(s):</strong></p>"
 		    + "%s"
 		    + "<p><strong>Citation:</strong></p>"

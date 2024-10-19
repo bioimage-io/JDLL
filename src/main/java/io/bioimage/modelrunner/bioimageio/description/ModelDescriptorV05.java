@@ -658,7 +658,11 @@ public class ModelDescriptorV05 implements ModelDescriptor
 				citation += "<li>" + ci.getText() + "</li>";
 		}
 		citation += "</ul>";
-		return String.format(TEXT_DESCRIPTION, this.name, this.getNickname(), this.description, authorNames, citation);
+		if (this.isModelInLocalRepo())
+			return String.format(TEXT_DESCRIPTION_LOCAL, this.name, this.getNickname(), 
+					this.description, new File(localModelPath).getName(), authorNames, citation);
+		else
+			return String.format(TEXT_DESCRIPTION, this.name, this.getNickname(), this.description, authorNames, citation);
 	}
 
 	@Override
