@@ -81,8 +81,9 @@ public class ExampleLoadAndRunAllBmzModels {
 	 * 
 	 * @param args
 	 * 	main args, in this case nothing is needed
+	 * @throws InterruptedException if the thread is interrupted
 	 */
-	public static void main(String[] args) {
+	public static void main(String[] args) throws InterruptedException {
 		List<String> modelsWithErrors = new ArrayList<String>();
 		installAllValidEngines();
 		

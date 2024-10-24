@@ -99,9 +99,11 @@ public class StardistInferJdllOp implements OpInterface {
 	 * @param tensor
 	 * 	input tensor for stardist
 	 * @return the OP can be run to use stardist
+	 * @throws InterruptedException if the thread is interrupted while looking for the model on the zoo
+	 * @throws IllegalArgumentException if tehre is any incorrect argument
 	 */
 	public static < T extends RealType< T > & NativeType< T > > 
-			StardistInferJdllOp create(String modelName, Tensor<T> tensor) {
+			StardistInferJdllOp create(String modelName, Tensor<T> tensor) throws IllegalArgumentException, InterruptedException {
 		StardistInferJdllOp op = new StardistInferJdllOp();
 		op.setModel(modelName);
 		op.setInputTensor(tensor);
@@ -115,8 +117,9 @@ public class StardistInferJdllOp implements OpInterface {
 	 * 	the model name. It can be either the path to a Bioimage.io model folder or the name of 
 	 * 	one of the pretrained models available in the stardist package
 	 * @throws IllegalArgumentException	if the model name is not valid
+	 * @throws InterruptedException if the thread is interrupted while looking for the model on the zoo
 	 */
-	public void setModel(String modelName) throws IllegalArgumentException {
+	public void setModel(String modelName) throws IllegalArgumentException, InterruptedException {
 		Objects.requireNonNull(modelName, "The modelName input argument cannot be null.");
 		if (new File(modelName).isFile() && !isModelFileStardist(modelName))
 			throw new IllegalArgumentException("The file selected does not correspond to "
@@ -222,8 +225,9 @@ public class StardistInferJdllOp implements OpInterface {
 	 * @param modelName
 	 * 	file path or name of a stardist model
 	 * @return true if it corresponds to a stardsit model or false otherwise
+	 * @throws InterruptedException if the thread is interrupted while looking for the model on the zoo
 	 */
-	public static boolean isModelCompatible(String modelName) {
+	public static boolean isModelCompatible(String modelName) throws InterruptedException {
 		if (modelName == null)
 			return false;
 		if (new File(modelName).isFile())
@@ -258,8 +262,9 @@ public class StardistInferJdllOp implements OpInterface {
 	 * 	a String corresponding to any of the following fields of the rdf.yaml file of a stardist
 	 * 	model: 'name', 'nickname' or 'id'
 	 * @return true if it actually corresponds to astardist model or false otherwise
+	 * @throws InterruptedException if the thread is interrupted while looking for the model on the zoo
 	 */
-	public static boolean isModelNameStardist(String modelName) {
+	public static boolean isModelNameStardist(String modelName) throws InterruptedException {
 		BioimageioRepo br = BioimageioRepo.connect();
 		if (br.selectByName(modelName) != null) {
 			return br.selectByName(modelName).getConfig().getSpecMap().keySet().contains(STARDIST_FIELD_KEY);
@@ -273,8 +278,9 @@ public class StardistInferJdllOp implements OpInterface {
 	 * Returns a list containing all the model names that corresponds to 
 	 * StarDist models existing in the Bioimage.io online repository.
 	 * @return list of StarDist model names from the Bioimage.io repository
+	 * @throws InterruptedException if the thread is interrupted while looking for the model on the zoo
 	 */
-	public static List<String> fetchStarDistModelNamesFromBioImage() {
+	public static List<String> fetchStarDistModelNamesFromBioImage() throws InterruptedException {
 		BioimageioRepo br = BioimageioRepo.connect();
 		List<String> stardistModels = br.listAllModels(false).values().stream()
 				.filter(md -> md.getConfig().getSpecMap().keySet().contains(STARDIST_FIELD_KEY))
@@ -286,8 +292,9 @@ public class StardistInferJdllOp implements OpInterface {
 	 * Returns a list containing all the model IDs that corresponds to 
 	 * StarDist models existing in the Bioimage.io online repository.
 	 * @return list of StarDist model IDs from the Bioimage.io repository
+	 * @throws InterruptedException if the thread is interrupted while looking for the model on the zoo
 	 */
-	public static List<String> fetchStarDistModelIdsFromBioImage() {
+	public static List<String> fetchStarDistModelIdsFromBioImage() throws InterruptedException {
 		BioimageioRepo br = BioimageioRepo.connect();
 		List<String> stardistModels = br.listAllModels(false).values().stream()
 				.filter(md -> md.getConfig().getSpecMap().keySet().contains(STARDIST_FIELD_KEY))

@@ -829,8 +829,9 @@ public class EngineInstall {
 	 * @return true if at least one DL engine of the model weights defined in the rdf.yaml is
 	 * 	successfully installed
 	 * @throws IOException if there is any error creating the folder for the engine
+	 * @throws InterruptedException if the thread is interrupted while trying to connect to the Bioimage.io
 	 */
-	public static boolean installEnginesForModelByID(String modelID) throws IOException {
+	public static boolean installEnginesForModelByID(String modelID) throws IOException, InterruptedException {
 		return installEnginesForModelByIDInDir(modelID, InstalledEngines.getEnginesDir(), null);
 	}
 	
@@ -849,9 +850,10 @@ public class EngineInstall {
 	 * @return true if at least one DL engine of the model weights defined in the rdf.yaml is
 	 * 	successfully installed
 	 * @throws IOException if there is any error creating the folder for the engine
+	 * @throws InterruptedException if the thread is interrupted while trying to connect to the Bioimage.io
 	 */
 	public static boolean installEnginesForModelByID(String modelID, 
-			DownloadTracker.TwoParameterConsumer<String, Double> consumer) throws IOException {
+			DownloadTracker.TwoParameterConsumer<String, Double> consumer) throws IOException, InterruptedException {
 		return installEnginesForModelByIDInDir(modelID, InstalledEngines.getEnginesDir(), consumer);
 	}
 	
@@ -869,8 +871,9 @@ public class EngineInstall {
 	 * @return true if at least one DL engine of the model weights defined in the rdf.yaml is
 	 * 	successfully installed
 	 * @throws IOException if there is any error creating the folder for the engine
+	 * @throws InterruptedException if the thread is interrupted while trying to connect to the Bioimage.io
 	 */
-	public static boolean installEnginesForModelByIDInDir(String modelID, String enginesDir) throws IOException {
+	public static boolean installEnginesForModelByIDInDir(String modelID, String enginesDir) throws IOException, InterruptedException {
 		return installEnginesForModelByIDInDir(modelID, enginesDir, null);
 	}
 	
@@ -890,9 +893,10 @@ public class EngineInstall {
 	 * @return true if at least one DL engine of the model weights defined in the rdf.yaml is
 	 * 	successfully installed
 	 * @throws IOException if there is any error creating the folder for the engine
+	 * @throws InterruptedException if the thread is interrupted while trying to connect to the Bioimage.io
 	 */
 	public static boolean installEnginesForModelByIDInDir(String modelID, String enginesDir, 
-			DownloadTracker.TwoParameterConsumer<String, Double> consumer) throws IOException {
+			DownloadTracker.TwoParameterConsumer<String, Double> consumer) throws IOException, InterruptedException {
 		ModelDescriptor descriptor = BioimageioRepo.connect().selectByID(modelID);
 		if (descriptor == null)
 			return false;
@@ -912,8 +916,9 @@ public class EngineInstall {
 	 * @return true if at least one DL engine of the model weights defined in the rdf.yaml is
 	 * 	successfully installed
 	 * @throws IOException if there is any error creating the folder for the engine
+	 * @throws InterruptedException if the thread is interrupted while trying to connect to the Bioimage.io
 	 */
-	public static boolean installEnginesForModelByName(String modelName) throws IOException {
+	public static boolean installEnginesForModelByName(String modelName) throws IOException, InterruptedException {
 		return installEnginesForModelByNameinDir(modelName, InstalledEngines.getEnginesDir(), null);
 	}
 	
@@ -932,9 +937,10 @@ public class EngineInstall {
 	 * @return true if at least one DL engine of the model weights defined in the rdf.yaml is
 	 * 	successfully installed
 	 * @throws IOException if there is any error creating the folder for the engine
+	 * @throws InterruptedException if the thread is interrupted while trying to connect to the Bioimage.io
 	 */
 	public static boolean installEnginesForModelByName(String modelName, 
-			DownloadTracker.TwoParameterConsumer<String, Double> consumer) throws IOException {
+			DownloadTracker.TwoParameterConsumer<String, Double> consumer) throws IOException, InterruptedException {
 		return installEnginesForModelByNameinDir(modelName, InstalledEngines.getEnginesDir(), consumer);
 	}
 
@@ -952,8 +958,9 @@ public class EngineInstall {
 	 * @return true if at least one DL engine of the model weights defined in the rdf.yaml is
 	 * 	successfully installed
 	 * @throws IOException if there is any error creating the folder for the engine
+	 * @throws InterruptedException if the thread is interrupted while trying to connect to the Bioimage.io
 	 */
-	public static boolean installEnginesForModelByNameinDir(String modelName, String enginesDir) throws IOException {
+	public static boolean installEnginesForModelByNameinDir(String modelName, String enginesDir) throws IOException, InterruptedException {
 		return installEnginesForModelByNameinDir(modelName, enginesDir, null);
 	}
 
@@ -973,9 +980,10 @@ public class EngineInstall {
 	 * @return true if at least one DL engine of the model weights defined in the rdf.yaml is
 	 * 	successfully installed
 	 * @throws IOException if there is any error creating the folder for the engine
+	 * @throws InterruptedException if the thread is interrupted while trying to connect to the Bioimage.io
 	 */
 	public static boolean installEnginesForModelByNameinDir(String modelName, String enginesDir, 
-			DownloadTracker.TwoParameterConsumer<String, Double> consumer) throws IOException {
+			DownloadTracker.TwoParameterConsumer<String, Double> consumer) throws IOException, InterruptedException {
 		ModelDescriptor descriptor = BioimageioRepo.connect().selectByName(modelName);
 		if (descriptor == null)
 			return false;
