@@ -110,8 +110,9 @@ public class BioimageioRepo {
 	/**
 	 * Constructor for the object that retrieves information about the 
 	 * models in teh Bioimage.io repo. It also handles the download of said models.
+	 * @throws InterruptedException 
 	 */
-	private BioimageioRepo() {
+	private BioimageioRepo() throws InterruptedException {
 		setCollectionsRepo();
 	}
 	
@@ -122,8 +123,9 @@ public class BioimageioRepo {
 	 * @param consumer
 	 * 	String consumer that will contain the info about the models accessed (time accessed, 
 	 * 	name, ...)
+	 * @throws InterruptedException 
 	 */
-	private BioimageioRepo(Consumer<String> consumer) {
+	private BioimageioRepo(Consumer<String> consumer) throws InterruptedException {
 		this.consumer = consumer;
 		setCollectionsRepo();
 	}
@@ -132,8 +134,9 @@ public class BioimageioRepo {
 	 * Create an instance of {@link BioimageioRepo}. This instance can be used to retrieve 
 	 * information about the models i the Bioimage.io repository and handle their download.
 	 * @return an instance of the {@link BioimageioRepo}
+	 * @throws InterruptedException if the thread that is retrieving the information from the Bioimage.io is interrupted
 	 */
-	public static BioimageioRepo connect() {
+	public static BioimageioRepo connect() throws InterruptedException {
 		return new BioimageioRepo();
 	}
 	
@@ -144,8 +147,9 @@ public class BioimageioRepo {
 	 * 	a String consumer that will record all the info about the access to the models in the
 	 * 	bioimage.io
 	 * @return an instance of the {@link BioimageioRepo}
+	 * @throws InterruptedException if the thread that is retrieving the information from the Bioimage.io is interrupted
 	 */
-	public static BioimageioRepo connect(Consumer<String> consumer) {
+	public static BioimageioRepo connect(Consumer<String> consumer) throws InterruptedException {
 		return new BioimageioRepo(consumer);
 	}
 	
@@ -219,8 +223,9 @@ public class BioimageioRepo {
 	 * Including the models available.
 	 * This method also stores the model IDs of the available models.
 	 * The file is at: {@link #LOCATE}
+	 * @throws InterruptedException if the thread that is retrieving the information from the Bioimage.io is interrupted
 	 */
-	private void setCollectionsRepo() {
+	private void setCollectionsRepo() throws InterruptedException {
 		MODEL_IDS = new ArrayList<String>();
 		MODELS_INFO = new HashMap<String, Map<String, Map<String, String>>>();
 		String text = getJSONFromUrl(LOCATE);
@@ -281,8 +286,9 @@ public class BioimageioRepo {
 	 * 	URL pointing to the rdf.yaml file of interest
 	 * @return the {@link ModelDescriptor} from the rdf.yaml of interest or null
 	 * if the URL does not point to a valid URL
+	 * @throws InterruptedException if the thread that is retrieving the information from the Bioimage.io is interrupted
 	 */
-	public static ModelDescriptor retreiveDescriptorFromURL(String rdfSource) {
+	public static ModelDescriptor retreiveDescriptorFromURL(String rdfSource) throws InterruptedException {
 		ModelDescriptor descriptor = null;
 		String stringRDF = getJSONFromUrl(rdfSource);
 		if (stringRDF == null)
@@ -300,8 +306,9 @@ public class BioimageioRepo {
 	 * @param url
 	 * 	String url of the file
 	 * @return a String representation of the file. It is null if the file was not accessed
+	 * @throws InterruptedException if the thread that is retrieving the information from the Bioimage.io is interrupted
 	 */
-	public static String getJSONFromUrl(String url) {
+	public static String getJSONFromUrl(String url) throws InterruptedException {
 		return getJSONFromUrl(url, null);
 	}
 
@@ -312,8 +319,9 @@ public class BioimageioRepo {
 	 * @param consumer
 	 * 	object to communicate with the main interface
 	 * @return a String representation of the file. It is null if the file was not accessed
+	 * @throws InterruptedException if the thread that is retrieving the information from the Bioimage.io is interrupted
 	 */
-	private static String getJSONFromUrl(String url, Consumer<String> consumer) {
+	private static String getJSONFromUrl(String url, Consumer<String> consumer) throws InterruptedException {
 
 		HttpsURLConnection con = null;
 		try {
@@ -326,6 +334,8 @@ public class BioimageioRepo {
 			 byte[] buffer = new byte[1024];
 			 for (int length; (length = inputStream.read(buffer)) != -1; ) {
 			     result.write(buffer, 0, length);
+			     if (Thread.currentThread().isInterrupted())
+			    	 throw new InterruptedException("Thread connecting to the Bioimage.io interrupted forcibly.");
 			 }
 			 // StandardCharsets.UTF_8.name() > JDK 7
 			 String txt = result.toString("UTF-8");
@@ -378,8 +388,13 @@ public class BioimageioRepo {
 	 * @return list with the ids for each of the models in the repo
 	 */
 	public static List<String> getModelIDs(){
-		if (MODEL_IDS == null || MODEL_IDS.size() == 0)
-			BioimageioRepo.connect();
+		if (MODEL_IDS == null || MODEL_IDS.size() == 0) {
+			try {
+				BioimageioRepo.connect();
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			}
+		}
 		if (MODEL_IDS == null)
 			return new ArrayList<String>();
 		return MODEL_IDS;
@@ -639,15 +654,34 @@ public class BioimageioRepo {
         return timestamp.getTime();
 	}
 	
-	
+
+	/**
+	 * Get the where the model files are stored for a model id. If there are seeral versions, it returns
+	 * the url for the latest
+	 * @param id
+	 * 	unique identifier of the model, can be either the nickname or id, depending on the specs version
+	 * @return the url where all the model files are
+	 */
 	public static String getModelURL(String id) {
 		return getModelRdfUrl(id, null);
 	}
 	
 	
+	/**
+	 * Get the where the model files are stored for a model id and version
+	 * @param id
+	 * 	unique identifier of the model, can be either the nickname or id, depending on the specs version
+	 * @param version
+	 * 	version of the model
+	 * @return the url where all the model files are
+	 */
 	public static String getModelRdfUrl(String id, String version) {
 		if (MODELS_INFO == null || MODELS_INFO.get(id) == null) {
-			BioimageioRepo.connect();
+			try {
+				BioimageioRepo.connect();
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			}
 		}
 		
 		if (MODELS_INFO.get(id) == null)
@@ -667,7 +701,7 @@ public class BioimageioRepo {
 	}
 	
 	
-	public static void main(String[] args) {
+	public static void main(String[] args) throws InterruptedException {
 		BioimageioRepo br = new BioimageioRepo();
 		br.listAllModels(false);
 	}
