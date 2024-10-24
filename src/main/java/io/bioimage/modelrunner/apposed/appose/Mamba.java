@@ -1160,6 +1160,7 @@ public class Mamba {
 	                Thread.sleep(60);
 	                if (System.currentTimeMillis() - t0 > updatePeriod) {
 						this.consoleConsumer.accept(processChunk);
+						this.consoleConsumer.accept(errChunk);
 						processChunk = "";
 						errChunk = "";
 						t0 = System.currentTimeMillis();
