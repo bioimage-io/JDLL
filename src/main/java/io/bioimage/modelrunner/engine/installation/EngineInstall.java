@@ -580,7 +580,7 @@ public class EngineInstall {
 		for (int i = 0; i < installedArr.size(); i ++) {
 			if (!installedArr.get(i))
 				continue;
-			missingEngineFolders.remove(missingEngineFolders.get(keys.get(i)));
+			missingEngineFolders.remove(keys.get(i));
 		}
 	}
 	
