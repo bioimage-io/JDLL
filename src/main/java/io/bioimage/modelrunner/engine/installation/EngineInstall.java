@@ -267,6 +267,8 @@ public class EngineInstall {
 	 * Regard, that for certain engines, downloading all the OS depending engines
 	 * is necessary, as the dependencies vary from one system to another.  
 	 * 
+	 * If the thread where the installation is happening stops, the method exits without throwing
+	 * an exception.
 	 */
 	private void checkAndSetBasicEngineInstallation() {
 		isManagementFinished = false;
@@ -333,6 +335,8 @@ public class EngineInstall {
 	 * Regard, that for certain engines, downloading all the OS depending engines
 	 * is necessary, as the dependencies vary from one system to another. 
 	 * 
+	 * If the thread where the installation is happening stops, the method exits without throwing
+	 * an exception.
 	 */
 	public void basicEngineInstallation() {
 		if (!this.everythingInstalled)
@@ -522,6 +526,8 @@ public class EngineInstall {
 	 * Regard, that for certain engines, downloading all the OS depending engines
 	 * is necessary, as the dependencies vary from one system to another. 
 	 * 
+	 * If the thread where the installation is happening stops, the method exits without throwing
+	 * an exception.
 	 */
 	private void manageMissingEngines() {
 		if (missingEngineFolders == null)
@@ -543,32 +549,53 @@ public class EngineInstall {
 	}
 	
 	/**
-	 * Install the missing engines from scratch
+	 * Install the missing engines from scratch.
+	 * If the thread where the installation is happening stops, the method exits without throwing
+	 * an exception.
 	 */
 	private void installMissingBasicEngines() {
 		if (missingEngineFolders == null)
 			checkEnginesInstalled();
 		if (missingEngineFolders.entrySet().size() == 0)
 			return;
-		getBasicDownloadTotalSize();
+		try {
+			getBasicDownloadTotalSize();
+		} catch (InterruptedException e) {
+			return;
+		}
+		/**
 		missingEngineFolders = missingEngineFolders.entrySet().stream()
 				.filter(v -> {
 					try {
-						return!installEngineByCompleteName(v.getValue(), consumersMap.get(v.getValue()));
-					} catch (IOException | InterruptedException e) {
+						return !installEngineByCompleteName(v.getValue(), consumersMap.get(v.getValue()));
+					} catch (IOException e) {
+						return true;
+					} catch (InterruptedException e) {
 						return true;
 					}
 				})
 				.collect(Collectors.toMap(v -> v.getKey(), v -> v.getValue(),
 						(u, v) -> u, LinkedHashMap::new));
+		*/
+		for (Entry<String, String> v : missingEngineFolders.entrySet()) {
+			try {
+				boolean installed = installEngineByCompleteName(v.getValue(), consumersMap.get(v.getValue()));
+				if (installed)
+					missingEngineFolders.remove(v.getKey());
+			} catch (IOException e) {
+			} catch (InterruptedException e) {
+				return;
+			}
+		}
 	}
 	
 	/**
 	 * 
 	 * @return the total numebr of bytes to be downloaded in the basic installation. This also prepares the 
 	 * download tracker by setting the number of bytes per file
+	 * @throws InterruptedException if the thread where this method is being run is interrupted
 	 */
-	public long getBasicDownloadTotalSize() {
+	public long getBasicDownloadTotalSize() throws InterruptedException {
 		if (this.consumersMap == null)
 			getBasicEnginesProgress();
 		long totalSize = 0;
@@ -577,6 +604,8 @@ public class EngineInstall {
 				long engineSize = 0;
 				DeepLearningVersion dlVersion = DeepLearningVersion.fromFile(new File(ee.getValue()));
 				for (String link : dlVersion.getJars()) {
+					if (Thread.currentThread().isInterrupted())
+						throw new InterruptedException("Retrieval of download size interrupted.");
 					String key = ee.getValue() + File.separator + DownloadModel.getFileNameFromURLString(link) + NBYTES_SUFFIX;
 					long val = DownloadModel.getFileSize(new URL(link));
 					this.consumersMap.get(ee.getValue()).accept(key, (double) val);
@@ -1150,8 +1179,13 @@ public class EngineInstall {
 			throw new IOException("Unable to create the folder where the engine "
 					+ "will be installed: " + folder);
 		
+		Thread parentThread = Thread.currentThread();
 		Thread downloadThread = new Thread(() -> {
-			downloadEngineFiles(engine, folder);
+			try {
+				downloadEngineFiles(engine, folder, parentThread);
+			} catch (InterruptedException e) {
+				return;
+			}
         });
 		downloadThread.start();
 		
@@ -1180,8 +1214,24 @@ public class EngineInstall {
 	 * 	engine to be downloaded
 	 * @param engineDir
 	 * 	directory where the files will be downloaded
+	 * @throws InterruptedException if the thread where the download is happening is stopped
 	 */
-	public static void downloadEngineFiles(DeepLearningVersion engine, String engineDir) {
+	public static void downloadEngineFiles(DeepLearningVersion engine, String engineDir) throws InterruptedException {
+		downloadEngineFiles(engine, engineDir, Thread.currentThread());
+	}
+	
+	/**
+	 * Method that just downloads all the files that form a given engine into the
+	 * directory provided
+	 * @param engine
+	 * 	engine to be downloaded
+	 * @param engineDir
+	 * 	directory where the files will be downloaded
+	 * @param parentThread
+	 * 	thread that when stopped, stops the download
+	 * @throws InterruptedException if the thread where the download is happening is stopped
+	 */
+	public static void downloadEngineFiles(DeepLearningVersion engine, String engineDir, Thread parentThread) throws InterruptedException {
 		for (String jar : engine.getJars()) {
 			try {
 				URL website = new URL(jar);
@@ -1192,7 +1242,7 @@ public class EngineInstall {
 				try (ReadableByteChannel rbc = Channels.newChannel(conn.getInputStream());
 						FileOutputStream fos = new FileOutputStream(new File(engineDir, filePath.toString()))){
 						FileDownloader downloader = new FileDownloader(rbc, fos);
-						downloader.call();
+						downloader.call(parentThread);
 				} catch (IOException e) {
 					conn.disconnect();
 					String msg = "The link for the file: " + filePath.getFileName() + " is broken." + System.lineSeparator() 
