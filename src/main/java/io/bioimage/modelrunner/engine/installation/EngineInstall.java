@@ -37,6 +37,8 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.stream.Collectors;
 
+import org.omg.IOP.RMICustomMaxStreamFormat;
+
 import io.bioimage.modelrunner.bioimageio.BioimageioRepo;
 import io.bioimage.modelrunner.bioimageio.description.ModelDescriptor;
 import io.bioimage.modelrunner.bioimageio.description.ModelDescriptorFactory;
@@ -563,29 +565,22 @@ public class EngineInstall {
 		} catch (InterruptedException e) {
 			return;
 		}
-		/**
-		missingEngineFolders = missingEngineFolders.entrySet().stream()
-				.filter(v -> {
-					try {
-						return !installEngineByCompleteName(v.getValue(), consumersMap.get(v.getValue()));
-					} catch (IOException e) {
-						return true;
-					} catch (InterruptedException e) {
-						return true;
-					}
-				})
-				.collect(Collectors.toMap(v -> v.getKey(), v -> v.getValue(),
-						(u, v) -> u, LinkedHashMap::new));
-		*/
+		List<Boolean> installedArr = new ArrayList<Boolean>();
 		for (Entry<String, String> v : missingEngineFolders.entrySet()) {
+			boolean installed = false;
 			try {
-				boolean installed = installEngineByCompleteName(v.getValue(), consumersMap.get(v.getValue()));
-				if (installed)
-					missingEngineFolders.remove(v.getKey());
+				installed = installEngineByCompleteName(v.getValue(), consumersMap.get(v.getValue()));
 			} catch (IOException e) {
 			} catch (InterruptedException e) {
 				return;
 			}
+			installedArr.add(installed);
+		}
+		List<String> keys = missingEngineFolders.keySet().stream().collect(Collectors.toList());
+		for (int i = 0; i < installedArr.size(); i ++) {
+			if (!installedArr.get(i))
+				continue;
+			missingEngineFolders.remove(missingEngineFolders.get(keys.get(i)));
 		}
 	}
 	
