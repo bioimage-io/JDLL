@@ -21,7 +21,22 @@ package io.bioimage.modelrunner.engine.installation;
 
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.net.HttpURLConnection;
+import java.net.MalformedURLException;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.net.URL;
 import java.nio.channels.ReadableByteChannel;
+import java.security.KeyManagementException;
+import java.security.NoSuchAlgorithmException;
+import java.security.cert.X509Certificate;
+
+import javax.net.ssl.HttpsURLConnection;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.TrustManager;
+import javax.net.ssl.X509TrustManager;
+
+import io.bioimage.modelrunner.utils.CommonUtils;
 
 public class FileDownloader {
 	private ReadableByteChannel rbc;
@@ -71,4 +86,114 @@ public class FileDownloader {
         if (rbc != null) rbc.close();
         if (fos != null) fos.close();
     }
+
+	/**
+	 * Get the size of the file stored in the given URL
+	 * @param url
+	 * 	url where the file is stored
+	 * @return the size of the file
+	 */
+	public static long getFileSize(URL url) {
+		HttpsURLConnection conn = null;
+		try {
+			SSLContext sslContext = getAllTrustingSSLContext();
+			conn = ( HttpsURLConnection ) url.openConnection();
+			conn.setSSLSocketFactory( sslContext.getSocketFactory() );
+			conn.setRequestProperty("User-Agent", CommonUtils.getJDLLUserAgent());
+			if (conn.getResponseCode() >= 300 && conn.getResponseCode() <= 308)
+				return getFileSize(redirectedURL(url));
+			if (conn.getResponseCode() != 200)
+				throw new Exception( "Unable to connect to: " + url );
+			long size = conn.getContentLengthLong();
+			conn.disconnect();
+			return size;
+		} catch (IOException e) {
+			throw new RuntimeException(e);
+		} catch (Exception ex) {
+			ex.printStackTrace();
+			String msg = "Unable to connect to " + url.toString();
+			System.out.println(msg);
+			return 1;
+		}
+	}
+
+	private static SSLContext getAllTrustingSSLContext() throws NoSuchAlgorithmException, KeyManagementException
+	{
+		// Create a trust manager that does not validate certificate chains
+		TrustManager[] trustAllCerts = new TrustManager[] {
+				new X509TrustManager()
+				{
+					public java.security.cert.X509Certificate[] getAcceptedIssuers()
+					{
+						return new X509Certificate[ 0 ];
+					}
+
+					public void checkClientTrusted( X509Certificate[] certs, String authType )
+					{
+						// Do nothing, since we trust all certificates here
+					}
+
+					public void checkServerTrusted( X509Certificate[] certs, String authType )
+					{
+						// Do nothing, since we trust all certificates here
+					}
+				}
+		};
+
+		// Create a SSLContext with an all-trusting trust manager
+		SSLContext sslContext = SSLContext.getInstance( "SSL" );
+		sslContext.init( null, trustAllCerts, new java.security.SecureRandom() );
+		return sslContext;
+	}
+	
+	/**
+	 * This method shuold be used when we get the following response codes from 
+	 * a {@link HttpURLConnection}:
+	 * - {@link HttpURLConnection#HTTP_MOVED_TEMP}
+	 * - {@link HttpURLConnection#HTTP_MOVED_PERM}
+	 * - {@link HttpURLConnection#HTTP_SEE_OTHER}
+	 * 
+	 * If that is not the response code or the connection does not work, the url
+	 * returned will be the same as the provided.
+	 * If the method is used corretly, it will return the URL to which the original URL
+	 * has been redirected
+	 * @param url
+	 * 	original url. Connecting to that url must give a 301, 302 or 303 response code
+	 * @return the redirected url
+	 * @throws MalformedURLException if the url is invalid
+	 * @throws URISyntaxException if the url is invalid
+	 */
+	public static URL redirectedURL(URL url) throws MalformedURLException, URISyntaxException {
+		int statusCode;
+		HttpURLConnection conn;
+		try {
+			conn = (HttpURLConnection) url.openConnection();
+			conn.setRequestProperty("User-Agent", CommonUtils.getJDLLUserAgent());
+			statusCode = conn.getResponseCode();
+		} catch (IOException ex) {
+			return url;
+		}
+		if (statusCode < 300 || statusCode > 308)
+			return url;
+		String newURL = conn.getHeaderField("Location");
+		try {
+			conn.disconnect();
+			return redirectedURL(new URL(newURL));
+		} catch (MalformedURLException ex) {
+		}
+		try {
+			conn.disconnect();
+			if (newURL.startsWith("//"))
+				return redirectedURL(new URL("http:" + newURL));
+			else
+				throw new MalformedURLException();
+		} catch (MalformedURLException ex) {
+		}
+        URI uri = url.toURI();
+        String scheme = uri.getScheme();
+        String host = uri.getHost();
+        String mainDomain = scheme + "://" + host;
+		conn.disconnect();
+		return redirectedURL(new URL(mainDomain + newURL));
+	}
 }
