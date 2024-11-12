@@ -424,13 +424,14 @@ public class BioimageioRepo {
 		Entry<String, ModelDescriptor> modelEntry = this.listAllModels(false).entrySet().stream()
 				.filter(ee -> {
 					String id = ee.getValue().getModelID();
+					String nickname = ee.getValue().getNickname();
 					if (id.length() - id.replace("/", "").length() == 2) {
 						id = id.substring(0, id.lastIndexOf("/"));
 					}
 					if (modelID.length() - modelID.replace("/", "").length() == 2) {
-						return modelID.substring(0, modelID.lastIndexOf("/")).equals(id);
+						return modelID.substring(0, modelID.lastIndexOf("/")).equals(id) || modelID.equals(nickname);
 					}
-					return modelID.equals(id);
+					return modelID.equals(id) || modelID.equals(nickname);
 				}).findFirst().orElse(null);
 		if (modelEntry != null)
 			return modelEntry.getValue();
