@@ -78,6 +78,8 @@ public class ModelWeight
         model.weightsDic = new HashMap<String, WeightFormat>();
         for (String ww : weightsFormats) {
         	Map<String, Object> weights = (Map<String, Object>) yamlFieldElements.get(ww);
+        	if (weights == null)
+        		continue;
 	        if (ww.contentEquals(kerasIdentifier)) {
 	        	KerasWeights weightsObject = new KerasWeights(weights);
 	        	model.weightsDic.put(model.kerasEngineName(weightsObject), weightsObject);
