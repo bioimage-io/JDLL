@@ -119,7 +119,7 @@ public class TileMaker {
 							.filter(t -> t.getName().equals(ax.getReferenceTensor())).findFirst().orElse(null);
 					int indTile = inTile.getTileAxesOrder().indexOf(ax.getReferenceAxis());
 					int indIm = inTile.getImageAxesOrder().indexOf(ax.getReferenceAxis());
-					imagSize[i] = (long) (inTile.getImageDims()[indIm] * ax.getScale());
+					imagSize[i] = (long) (inTile.getImageDims()[indIm] * ax.getScale() + ax.getOffset() * 2);
 					tileSize[i] = (long) (inTile.getTileDims()[indTile] * ax.getScale() + ax.getOffset() * 2);
 				} else {
 					throw new IllegalArgumentException(""

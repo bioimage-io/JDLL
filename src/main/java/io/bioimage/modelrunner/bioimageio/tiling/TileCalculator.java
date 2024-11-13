@@ -236,7 +236,7 @@ public class TileCalculator {
     					.filter(tile -> tile.getName().equals(refName)).findFirst().orElse(null).getTileDims();
     			String axesOrder = refTensor.getAxesOrder();
     			outTiles.get(i)[j] = 
-    					(long) (refTileSize[axesOrder.indexOf(refAxisStr)] * ax.getScale() + ax.getOffset());
+    					(long) (refTileSize[axesOrder.indexOf(refAxisStr)] * ax.getScale() + 2 * ax.getOffset());
     		}
     		if (referencesList.stream().distinct().count() != 1)
     			throw new IllegalArgumentException(""
