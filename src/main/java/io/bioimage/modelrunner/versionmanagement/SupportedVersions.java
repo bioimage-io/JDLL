@@ -21,6 +21,7 @@ package io.bioimage.modelrunner.versionmanagement;
 
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Set;
@@ -70,8 +71,6 @@ public class SupportedVersions
 	 * 	not used
 	 */
 	public static void main(String[] args) {
-		new SupportedVersions( "tensorflow_saved_model_bundle" );
-		/*
 		String vv = getClosestSupportedPythonVersion("tensorflow", "2.13.0");
 		String v1 = getClosestSupportedPythonVersion("tensorflow", "2");
 		String v2 = getClosestSupportedPythonVersion("tensorflow", "2.8");
@@ -81,7 +80,6 @@ public class SupportedVersions
 		String v7 = getClosestSupportedPythonVersion("onnx", "20");
 		String v8 = getClosestSupportedPythonVersion("onnx", "13");
 		System.out.print(false);
-		*/
 	}
 
 	/**
@@ -99,7 +97,10 @@ public class SupportedVersions
     		this.versionsDic = new LinkedTreeMap<String, Object>();
     	else
     		this.versionsDic = getSupportedVersionsForEngine( engine );
-		this.versionSet = this.versionsDic.keySet();
+    	if (versionsDic == null)
+    		this.versionSet = Collections.<String>emptySet();
+    	else
+    		this.versionSet = this.versionsDic.keySet();
 	}
 	
 	/**
