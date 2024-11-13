@@ -70,6 +70,8 @@ public class SupportedVersions
 	 * 	not used
 	 */
 	public static void main(String[] args) {
+		new SupportedVersions( "tensorflow_saved_model_bundle" );
+		/*
 		String vv = getClosestSupportedPythonVersion("tensorflow", "2.13.0");
 		String v1 = getClosestSupportedPythonVersion("tensorflow", "2");
 		String v2 = getClosestSupportedPythonVersion("tensorflow", "2.8");
@@ -79,6 +81,7 @@ public class SupportedVersions
 		String v7 = getClosestSupportedPythonVersion("onnx", "20");
 		String v8 = getClosestSupportedPythonVersion("onnx", "13");
 		System.out.print(false);
+		*/
 	}
 
 	/**
