@@ -340,7 +340,7 @@ public class ModelDescriptorV04 implements ModelDescriptor
     private static List<Cite> buildCiteElements(List<?> citeElements) throws MalformedURLException
     {
     	if (!(citeElements instanceof List<?>))
-    		return null;
+    		return new ArrayList<>();
         List<Cite> cites = new ArrayList<>();
         for (Object elem : citeElements)
         {
