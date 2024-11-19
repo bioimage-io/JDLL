@@ -518,6 +518,7 @@ public class BioimageioRepo {
 				mdt.track();
 			} catch (IOException | InterruptedException e) {
 				e.printStackTrace();
+			} catch (NumberFormatException ex) {
 			}
         });
 		trackerThread.start();

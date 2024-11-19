@@ -60,6 +60,8 @@ import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509TrustManager;
 
 /**
+ * TODO get rid of consumer here and at DownloadTracker (trackstring)
+ * 
  * Class to manage the downloading of models from the BioImage.io
  * @author Carlos Garcia Lopez de Haro
  *
@@ -492,7 +494,7 @@ public class DownloadModel {
 			throw new IOException("The provided directory where the model is going to "
 					+ "be downloaded does not exist and cannot be created ->" + modelsDir);
 		for (int i = 0; i < getListOfLinks().size(); i ++) {
-        	if (Thread.currentThread().isInterrupted() || !this.parentThread.isAlive()) {
+        	if (!Thread.currentThread().isAlive() || !this.parentThread.isAlive()) {
                 throw new InterruptedException("Interrupted before downloading the remaining files: "
             		+ Arrays.toString(IntStream.range(i, getListOfLinks().size())
             									.mapToObj(j -> getListOfLinks().get(j)).toArray()));
