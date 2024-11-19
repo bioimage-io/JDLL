@@ -76,7 +76,7 @@ public class FileDownloader {
             }
 
             position += transferred;
-            if (parentThread.isInterrupted()) {
+            if (!parentThread.isAlive()) {
                 // Close resources if needed and exit
                 closeResources();
                 throw new InterruptedException("File download was interrupted.");

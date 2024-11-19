@@ -145,7 +145,7 @@ public class ZipUtils
         try (ZipFile zip = new ZipFile(zipFile)) {
             Enumeration<? extends ZipEntry> entries = zip.entries();
 
-            while (entries.hasMoreElements() && !parentThread.isInterrupted()) {
+            while (entries.hasMoreElements() && parentThread.isAlive()) {
                 ZipEntry entry = entries.nextElement();
 
                 // Skip directories
@@ -171,7 +171,7 @@ public class ZipUtils
 
         try (InputStream is = zip.getInputStream(entry)) {
             int read;
-            while ((read = is.read(buffer)) != -1 && !parentThread.isInterrupted()) {
+            while ((read = is.read(buffer)) != -1 && parentThread.isAlive()) {
                 size += read;
             }
         }
