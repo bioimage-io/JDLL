@@ -19,6 +19,7 @@
  */
 package io.bioimage.modelrunner.engine.installation;
 
+import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.net.HttpURLConnection;
@@ -37,6 +38,7 @@ import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509TrustManager;
 
 import io.bioimage.modelrunner.utils.CommonUtils;
+import io.bioimage.modelrunner.utils.Constants;
 
 public class FileDownloader {
 	private ReadableByteChannel rbc;
@@ -195,5 +197,19 @@ public class FileDownloader {
         String mainDomain = scheme + "://" + host;
 		conn.disconnect();
 		return redirectedURL(new URL(mainDomain + newURL));
+	}
+	
+	/**
+	 * Gets the filename of the file in an URL from the url String
+	 * @param str
+	 * 	the URL string
+	 * @return the file name of the file in the URL
+	 * @throws MalformedURLException if the String does not correspond to an URL
+	 */
+	public static String getFileNameFromURLString(String str) throws MalformedURLException {
+		if (str.startsWith(Constants.ZENODO_DOMAIN) && str.endsWith(Constants.ZENODO_ANNOYING_SUFFIX))
+			str = str.substring(0, str.length() - Constants.ZENODO_ANNOYING_SUFFIX.length());
+		URL url = new URL(str);
+		return new File(url.getPath()).getName();
 	}
 }

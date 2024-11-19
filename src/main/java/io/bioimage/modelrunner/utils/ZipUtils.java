@@ -24,11 +24,14 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.Enumeration;
 import java.util.function.Consumer;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipException;
+import java.util.zip.ZipFile;
 import java.util.zip.ZipInputStream;
 
 
@@ -115,4 +118,64 @@ public class ZipUtils
  	    zis.close();
  	    fis.close();
  	}
+    
+    /**
+     * Calculate the uncompressed size of a .zip file
+     * @param zipFile
+     * 	the zip file of interest
+     * @return the size in bytes if the zip file was to be uncompressed
+     * @throws IOException if there is any error finding the size
+     */
+    public static long getUncompressedSize(File zipFile) throws IOException {
+    	return getUncompressedSize(zipFile, Thread.currentThread());
+    }
+    
+    /**
+     * Calculate the uncompressed size of a .zip file
+     * @param zipFile
+     * 	the zip file of interest
+     * @param parentThread
+     * 	thread from where this operation is being launched
+     * @return the size in bytes if the zip file was to be uncompressed
+     * @throws IOException if there is any error finding the size
+     */
+    public static long getUncompressedSize(File zipFile, Thread parentThread) throws IOException {
+        long totalSize = 0;
+
+        try (ZipFile zip = new ZipFile(zipFile)) {
+            Enumeration<? extends ZipEntry> entries = zip.entries();
+
+            while (entries.hasMoreElements() && !parentThread.isInterrupted()) {
+                ZipEntry entry = entries.nextElement();
+
+                // Skip directories
+                if (!entry.isDirectory()) {
+                    long size = entry.getSize();
+
+                    // If size is not known (-1), read the entry to determine its size
+                    if (size == -1) {
+                        size = calculateEntrySize(zip, entry, parentThread);
+                    }
+
+                    totalSize += size;
+                }
+            }
+        }
+
+        return totalSize;
+    }
+
+    private static long calculateEntrySize(ZipFile zip, ZipEntry entry, Thread parentThread) throws IOException {
+        long size = 0;
+        byte[] buffer = new byte[8192];
+
+        try (InputStream is = zip.getInputStream(entry)) {
+            int read;
+            while ((read = is.read(buffer)) != -1 && !parentThread.isInterrupted()) {
+                size += read;
+            }
+        }
+
+        return size;
+    }
 }
