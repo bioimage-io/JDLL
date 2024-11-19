@@ -796,6 +796,8 @@ public class ModelDescriptorV04 implements ModelDescriptor
 		}
 		authorNames += "</ul>";
 		String citation = "<ul>";
+		if (this.cite == null)
+			cite = new ArrayList<>();
 		for (Cite ci : this.cite) {
 			if (ci.getUrl() != null && ci.getText() != null)
 				citation += "<li><a href='" + ci.getUrl() + "'>" + ci.getText() + "</a></li>";
