@@ -127,13 +127,13 @@ public class TensorSpecV04 implements TensorSpec {
     }
     
     public List<TransformSpec> getPreprocessing(){
-    	if (this.input)
+    	if (!this.input)
     		return new ArrayList<TransformSpec>();
     	return this.preprocessing;
     }
     
     public List<TransformSpec> getPostprocessing(){
-    	if (!this.input)
+    	if (this.input)
     		return new ArrayList<TransformSpec>();
     	return this.postprocessing;
     }
