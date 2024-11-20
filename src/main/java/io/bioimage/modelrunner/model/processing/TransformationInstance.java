@@ -25,6 +25,8 @@ package io.bioimage.modelrunner.model.processing;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
@@ -34,6 +36,7 @@ import io.bioimage.modelrunner.tensor.Tensor;
 import io.bioimage.modelrunner.transformations.BinarizeTransformation;
 import net.imglib2.type.NativeType;
 import net.imglib2.type.numeric.RealType;
+import net.imglib2.util.Cast;
 
 /**
  * Class that creates an instance able to run the corresponding Bioimage.io processing routine
@@ -116,13 +119,43 @@ public class TransformationInstance {
 	List<Tensor<R>> run(Tensor<T> tensor, boolean inplace) throws RuntimeException {
 		Method m;
 		try {
-			if (inplace)
-				m = cls.getMethod(RUN_INPLACE_NAME, Tensor.class);
-			else
-				m = cls.getMethod(RUN_NAME, Tensor.class);
-			
-			m.invoke(this.instance, tensor);
-			return null;
+			if (inplace) {
+	            m = cls.getMethod(RUN_INPLACE_NAME, Tensor.class);
+	            m.invoke(this.instance, tensor);
+	            return Collections.singletonList(Cast.unchecked(tensor));
+	        } else {
+	            m = cls.getMethod(RUN_NAME, Tensor.class);
+	            Object result = m.invoke(this.instance, tensor);
+	            
+	            // Handle different possible return types
+	            if (result == null) {
+	                return null;
+	            } else if (result instanceof List<?>) {
+	                // Cast and verify each element is a Tensor<R>
+	                List<?> resultList = (List<?>) result;
+	                List<Tensor<R>> outputList = new ArrayList<>();
+	                
+	                for (Object item : resultList) {
+	                    if (item instanceof Tensor<?>) {
+	                        @SuppressWarnings("unchecked")
+	                        Tensor<R> tensorItem = (Tensor<R>) item;
+	                        outputList.add(tensorItem);
+	                    } else {
+	                        throw new RuntimeException("Invalid return type: Expected Tensor but got " + 
+	                            (item != null ? item.getClass().getName() : "null"));
+	                    }
+	                }
+	                return outputList;
+	            } else if (result instanceof Tensor<?>) {
+	                // Single Tensor result
+	                @SuppressWarnings("unchecked")
+	                Tensor<R> tensorResult = (Tensor<R>) result;
+	                return Collections.singletonList(tensorResult);
+	            } else {
+	                throw new RuntimeException("Unexpected return type: " + 
+	                    (result != null ? result.getClass().getName() : "null"));
+	            }
+	        }
 		} catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException 
 				| NoSuchMethodException | SecurityException e) {
 			throw new RuntimeException(Types.stackTrace(e));

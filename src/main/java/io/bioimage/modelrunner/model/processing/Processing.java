@@ -75,6 +75,7 @@ public class Processing {
 			for (TransformSpec transformation : preprocessing) {
 				list.add(TransformationInstance.create(transformation));
 			}
+			preMap.put(tt.getName(), list);
 		}
 	}
 	
@@ -86,6 +87,7 @@ public class Processing {
 			for (TransformSpec transformation : preprocessing) {
 				list.add(TransformationInstance.create(transformation));
 			}
+			postMap.put(tt.getName(), list);
 		}
 	}
     
@@ -139,6 +141,8 @@ public class Processing {
 			Tensor<T> tt = tensorList.stream().filter(t -> t.getName().equals(ee.getKey())).findFirst().orElse(null);
 			if (tt == null)
 				continue;
+			if (ee.getValue().size() == 0)
+				outputs.add(Cast.unchecked(tt));
 			for (TransformationInstance trans : ee.getValue()) {
 				List<Tensor<R>> outList = trans.run(tt, inplace);
 				outputs.addAll(outList);
@@ -184,6 +188,8 @@ public class Processing {
 			Tensor<T> tt = tensorList.stream().filter(t -> t.getName().equals(ee.getKey())).findFirst().orElse(null);
 			if (tt == null)
 				continue;
+			if (ee.getValue().size() == 0)
+				outputs.add(Cast.unchecked(tt));
 			for (TransformationInstance trans : ee.getValue()) {
 				List<Tensor<R>> outList = trans.run(tt, inplace);
 				outputs.addAll(outList);
