@@ -47,11 +47,25 @@ public class ScaleRangeTransformation extends AbstractTensorTransformation
 	private String axes;
 	private Mode mode = Mode.PER_SAMPLE;
 	private String tensorName;
-	private float eps = (float) Math.pow(10, -6);
+	private double eps = Math.pow(10, -6);
 	
 	public ScaleRangeTransformation()
 	{
 		super( name );
+	}
+	
+	public void setEps(Object eps) {
+		if (eps instanceof Integer) {
+			this.eps = Double.valueOf((int) eps);
+		} else if (eps instanceof Double) {
+			this.eps = (double) eps;
+		} else if (eps instanceof String) {
+			this.eps = Double.valueOf((String) eps);
+		} else {
+			throw new IllegalArgumentException("'eps' parameter has to be either and instance of "
+					+ Float.class + " or " + Double.class
+					+ ". The provided argument is an instance of: " + eps.getClass());
+		}
 	}
 	
 	public void setMinPercentile(Object minPercentile) {

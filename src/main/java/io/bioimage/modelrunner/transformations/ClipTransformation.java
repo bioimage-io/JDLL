@@ -31,11 +31,26 @@ public class ClipTransformation extends AbstractTensorPixelTransformation
 	private static String name = "clip";
 	private Double min;
 	private Double max;
+	private double eps = Math.pow(10, -6);
 
 	public ClipTransformation()
 	{
 		super(name);
 		super.setDoubleUnitaryOperator(v -> v >= max ? max.doubleValue() : (v < min ? min.doubleValue() : v));
+	}
+	
+	public void setEps(Object eps) {
+		if (eps instanceof Integer) {
+			this.eps = Double.valueOf((int) eps);
+		} else if (eps instanceof Double) {
+			this.eps = (double) eps;
+		} else if (eps instanceof String) {
+			this.eps = Double.valueOf((String) eps);
+		} else {
+			throw new IllegalArgumentException("'eps' parameter has to be either and instance of "
+					+ Float.class + " or " + Double.class
+					+ ". The provided argument is an instance of: " + eps.getClass());
+		}
 	}
 	
 	public void setMin(Object min) {

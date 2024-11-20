@@ -46,7 +46,7 @@ public class ZeroMeanUnitVarianceTransformation extends AbstractTensorTransforma
 	private double[] stdArr;
 	private Mode mode = Mode.PER_SAMPLE;
 	private String axes;
-	private float eps = (float) Math.pow(10, -6);
+	private double eps = Math.pow(10, -6);
 
 	private static String FIXED_MODE_ERR = "If the mode is 'fixed', the parameters 'mean' and"
 			+ " 'std need to be specified";
@@ -56,6 +56,20 @@ public class ZeroMeanUnitVarianceTransformation extends AbstractTensorTransforma
 	public ZeroMeanUnitVarianceTransformation()
 	{
 		super( name );
+	}
+	
+	public void setEps(Object eps) {
+		if (eps instanceof Integer) {
+			this.eps = Double.valueOf((int) eps);
+		} else if (eps instanceof Double) {
+			this.eps = (double) eps;
+		} else if (eps instanceof String) {
+			this.eps = Double.valueOf((String) eps);
+		} else {
+			throw new IllegalArgumentException("'eps' parameter has to be either and instance of "
+					+ Float.class + " or " + Double.class
+					+ ". The provided argument is an instance of: " + eps.getClass());
+		}
 	}
 	
 	public void setMean(Object mean) {
