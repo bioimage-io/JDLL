@@ -939,7 +939,7 @@
 			"rosetta": true,
 			"java": 8,
 			"jars": [
-				"https://maven.scijava.org/service/local/repositories/snapshots/content/io/bioimage/dl-modelrunner-pytorch-javacpp/0.4.4-SNAPSHOT/dl-modelrunner-pytorch-javacpp-0.4.4-20241119.114150-14.jar",
+				"https://maven.scijava.org/service/local/repositories/snapshots/content/io/bioimage/dl-modelrunner-pytorch-javacpp/0.4.4-SNAPSHOT/dl-modelrunner-pytorch-javacpp-0.4.4-20241123.015230-15.jar",
 				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.9/javacpp-1.5.9-macosx-x86_64.jar",
 				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.8/javacpp-1.5.8.jar",
 				"https://repo1.maven.org/maven2/org/bytedeco/pytorch-platform/2.0.1-1.5.9/pytorch-platform-2.0.1-1.5.9.jar",
@@ -1037,7 +1037,7 @@
 			"rosetta": true,
 			"java": 8,
 			"jars": [
-				"https://maven.scijava.org/service/local/repositories/snapshots/content/io/bioimage/dl-modelrunner-pytorch-javacpp/0.4.4-SNAPSHOT/dl-modelrunner-pytorch-javacpp-0.4.4-20241119.114150-14.jar",
+				"https://maven.scijava.org/service/local/repositories/snapshots/content/io/bioimage/dl-modelrunner-pytorch-javacpp/0.4.4-SNAPSHOT/dl-modelrunner-pytorch-javacpp-0.4.4-20241123.015230-15.jar",
 				"https://icy-nexus.pasteur.fr/repository/icy-plugins/org/bioimageanalysis/icy/pytorch-java-cpp/1.13.1-1.5.9/pytorch-java-cpp-1.13.1-1.5.9.jar",				
 				"https://repo1.maven.org/maven2/org/bytedeco/javacpp-platform/1.5.9/javacpp-platform-1.5.9.jar",
 				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.9/javacpp-1.5.9-macosx-x86_64.jar",
@@ -1137,7 +1137,7 @@
 			"rosetta": true,
 			"java": 8,
 			"jars": [
-				"https://maven.scijava.org/service/local/repositories/snapshots/content/io/bioimage/dl-modelrunner-pytorch-javacpp/0.4.4-SNAPSHOT/dl-modelrunner-pytorch-javacpp-0.4.4-20241119.114150-14.jar",
+				"https://maven.scijava.org/service/local/repositories/snapshots/content/io/bioimage/dl-modelrunner-pytorch-javacpp/0.4.4-SNAPSHOT/dl-modelrunner-pytorch-javacpp-0.4.4-20241123.015230-15.jar",
 				"https://icy-nexus.pasteur.fr/repository/icy-plugins/org/bioimageanalysis/icy/pytorch-java-cpp/1.13.0-1.5.9/pytorch-java-cpp-1.13.0-1.5.9.jar",
 				"https://repo1.maven.org/maven2/org/bytedeco/javacpp-platform/1.5.9/javacpp-platform-1.5.9.jar",
 				"https://repo1.maven.org/maven2/org/bytedeco/javacpp/1.5.9/javacpp-1.5.9-macosx-x86_64.jar",
@@ -1237,7 +1237,7 @@
 			"rosetta": true,
 			"java": 8,
 			"jars": [
-				"https://maven.scijava.org/service/local/repositories/snapshots/content/io/bioimage/dl-modelrunner-pytorch-javacpp/0.4.4-SNAPSHOT/dl-modelrunner-pytorch-javacpp-0.4.4-20241119.114150-14.jar",
+				"https://maven.scijava.org/service/local/repositories/snapshots/content/io/bioimage/dl-modelrunner-pytorch-javacpp/0.4.4-SNAPSHOT/dl-modelrunner-pytorch-javacpp-0.4.4-20241123.015230-15.jar",
 				"https://repo1.maven.org/maven2/org/bytedeco/pytorch/1.12.1-1.5.8/pytorch-1.12.1-1.5.8.jar",
 				"https://repo1.maven.org/maven2/org/bytedeco/pytorch/1.12.1-1.5.8/pytorch-1.12.1-1.5.8-macosx-x86_64.jar",
 				"https://repo1.maven.org/maven2/org/bytedeco/pytorch-platform/1.12.1-1.5.8/pytorch-platform-1.12.1-1.5.8.jar",
