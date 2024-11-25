@@ -73,6 +73,9 @@ public class Processing {
 			List<TransformSpec> preprocessing = tt.getPreprocessing();
 			List<TransformationInstance> list = new ArrayList<TransformationInstance>();
 			for (TransformSpec transformation : preprocessing) {
+				// TODO fix
+				if (transformation.getName() == null)
+					continue;
 				list.add(TransformationInstance.create(transformation));
 			}
 			preMap.put(tt.getName(), list);
@@ -85,6 +88,9 @@ public class Processing {
 			List<TransformSpec> preprocessing = tt.getPostprocessing();
 			List<TransformationInstance> list = new ArrayList<TransformationInstance>();
 			for (TransformSpec transformation : preprocessing) {
+				// TODO fix
+				if (transformation.getName() == null)
+					continue;
 				list.add(TransformationInstance.create(transformation));
 			}
 			postMap.put(tt.getName(), list);

@@ -61,7 +61,7 @@ public class AxisV05 implements Axis{
 				    "Current configuration: type='%s', id=%s", 
 				    type, "null"
 				));
-		else if (this.id == null && this.type.equals("batch"))
+		else if ((this.id == null || this.id != "b") && this.type.equals("batch"))
 			this.abreviation = "b";
 		else if (this.id != null && id.equals("channel"))
 			this.abreviation = "c";

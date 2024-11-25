@@ -68,7 +68,11 @@ public class TransformSpec
      */
     public String getName()
     {
-        return specMap == null ? null : (String) specMap.get("name");
+    	if (specMap == null)
+    		return null;
+    	if (specMap.get("name") != null)
+    		return (String) specMap.get("name");
+    	return (String) specMap.get("id");
     }
 
     /**

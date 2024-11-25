@@ -94,6 +94,10 @@ public class TensorSpecV05 implements TensorSpec {
             preprocessing = new ArrayList<TransformSpec>(preprocessingTensors.size());
             for (Object elem : preprocessingTensors)
             {
+            	// TODO fix
+            	if (((Map<String, Object>) elem).get("id") != null 
+            			&& ((Map<String, Object>) elem).get("id").equals("ensure_dtype"))
+            		continue;
                 preprocessing.add(TransformSpec.build((Map<String, Object>) elem));
             }
         }
@@ -108,6 +112,10 @@ public class TensorSpecV05 implements TensorSpec {
             postprocessing = new ArrayList<TransformSpec>(postprocessingTensors.size());
             for (Object elem : postprocessingTensors)
             {
+            	// TODO fix
+            	if (((Map<String, Object>) elem).get("id") != null 
+            			&& ((Map<String, Object>) elem).get("id").equals("ensure_dtype"))
+            		continue;
                 postprocessing.add(TransformSpec.build((Map<String, Object>) elem));
             }
         }

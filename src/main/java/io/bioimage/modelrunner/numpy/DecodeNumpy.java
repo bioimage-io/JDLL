@@ -140,9 +140,9 @@ public class DecodeNumpy {
     /**
      * PAttern that matches the metadata description of a numpy file
      */
-    public static final Pattern HEADER_PATTERN =
-            Pattern.compile("\\{'descr': '(.+)', 'fortran_order': (True|False), 'shape': \\((.*)\\),");
-	
+    public static final Pattern HEADER_PATTERN = 
+            Pattern.compile("\\{'descr': '(.+)', 'fortran_order': (True|False), 'shape': \\((.+?)\\)(?:\\s*,\\s*|\\s*)\\}");
+    
     /**
      * Main method to test the ImgLib2 creation
      * @param <T>
