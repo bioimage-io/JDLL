@@ -180,6 +180,8 @@ public class ModelDescriptorV05 implements ModelDescriptor
         if (modelID == null) {
         	modelID = findID(yamlElements);
         }
+        if (localModelPath != null && modelID == null)
+        	return;
         if (modelID.length() - modelID.replace("/", "").length() >= 2 
 				&& modelID.substring(modelID.indexOf("/") + 1).indexOf("/") - modelID.indexOf("/") > 2 )
         	modelID = modelID.substring(0, modelID.indexOf("/") + modelID.substring(modelID.indexOf("/") + 1).indexOf("/") + 1);
