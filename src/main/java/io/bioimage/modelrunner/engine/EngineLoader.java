@@ -323,7 +323,7 @@ public class EngineLoader extends ClassLoader
 				jarFile.close();
 			}
 		}
-		catch (Exception ex) {
+		catch (Exception | Error ex) {
 			errMsg = ex.toString();
 		}
 		// As no interface has been found create an exception
