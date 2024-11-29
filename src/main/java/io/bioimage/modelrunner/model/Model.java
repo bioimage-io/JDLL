@@ -316,7 +316,7 @@ public class Model implements Closeable
 			throw new IOException("Please install a compatible engine with the model weights. "
 					+ "To be compatible the engine has to be of the same framework and the major version needs to be the same. "
 					+ "The model weights are: " + descriptor.getWeights().getSupportedWeightNamesAndVersion());
-		Model model = new Model( info, bmzModelFolder, modelSource, null );
+		Model model = new Model( info, bmzModelFolder, modelSource, classloader );
 		model.descriptor = descriptor;
 		return model;
 	}
