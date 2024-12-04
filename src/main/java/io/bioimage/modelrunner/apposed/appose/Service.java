@@ -340,7 +340,6 @@ public class Service implements AutoCloseable {
 				return;
 			}
 			ResponseType responseType = ResponseType.valueOf(maybeResponseType);
-
 			switch (responseType) {
 				case LAUNCH:
 					status = TaskStatus.RUNNING;
@@ -351,6 +350,9 @@ public class Service implements AutoCloseable {
 					Number maximum = (Number) response.get("maximum");
 					if (current != null) this.current = current.longValue();
 					if (maximum != null) this.maximum = maximum.longValue();
+					@SuppressWarnings({ "rawtypes", "unchecked" })
+					Map<String, Object> outputsUpdate = (Map) response.get("outputs");
+					if (outputsUpdate != null) mOutputs.putAll(outputsUpdate);
 					break;
 				case COMPLETION:
 					tasks.remove(uuid);
