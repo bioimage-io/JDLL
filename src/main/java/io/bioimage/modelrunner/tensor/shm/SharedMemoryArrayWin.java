@@ -891,7 +891,7 @@ public class SharedMemoryArrayWin implements SharedMemoryArray
 	 */
 	public ByteBuffer getDataBufferNoHeader() {
     	int offset = 0;
-    	long totSize = this.size;
+    	long totSize = 1;
 		for (long l : this.originalDims)
 			totSize *= l;
     	if (this.isNumpyFormat()) {
