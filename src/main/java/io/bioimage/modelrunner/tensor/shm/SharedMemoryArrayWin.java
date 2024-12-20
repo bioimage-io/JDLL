@@ -891,15 +891,15 @@ public class SharedMemoryArrayWin implements SharedMemoryArray
 	 */
 	public ByteBuffer getDataBufferNoHeader() {
     	int offset = 0;
-    	int len = this.size;
+    	long totSize = this.size;
+		for (long l : this.originalDims)
+			totSize *= l;
     	if (this.isNumpyFormat()) {
-    		offset = (int) DecodeNumpy.calculateNpyStyleByteArrayLength(originalDims,
-    				Cast.unchecked(CommonUtils.getImgLib2DataType(originalDataType)), this.isFortran);
-    		len = SharedMemoryArray.getArrayByteSize(originalDims, 
-    				Cast.unchecked(CommonUtils.getImgLib2DataType(originalDataType)), false, this.isFortran);
-    		offset = offset - len;
+    		long npSize = DecodeNumpy.calculateNpyStyleByteArrayLength(originalDims, Cast.unchecked(CommonUtils.getImgLib2DataType(originalDataType)), this.isFortran);
+    		offset =  (int) (npSize - DecodeNumpy.DATA_TYPES_MAP.get(this.originalDataType) * totSize);
+    		totSize = npSize;
     	}
-    	return mappedPointer.getByteBuffer(offset, len);
+    	return mappedPointer.getByteBuffer(offset, totSize - offset);
 	}
 	
 	private static <T extends RealType<T> & NativeType<T>>
