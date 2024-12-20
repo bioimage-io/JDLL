@@ -897,12 +897,15 @@ public class SharedMemoryArrayLinux implements SharedMemoryArray {
 	 */
 	public ByteBuffer getDataBufferNoHeader() {
     	int offset = 0;
+    	long totSize = this.size;
+		for (long l : this.originalDims)
+			totSize *= l;
     	if (this.isNumpyFormat()) {
-    		long flatSize = 1;
-    		for (long l : this.originalDims) flatSize *= l;
-    		offset =  (int) (this.size - DecodeNumpy.DATA_TYPES_MAP.get(this.originalDataType) * flatSize);
+    		long npSize = DecodeNumpy.calculateNpyStyleByteArrayLength(originalDims, Cast.unchecked(CommonUtils.getImgLib2DataType(originalDataType)), this.isFortran);
+    		offset =  (int) (npSize - DecodeNumpy.DATA_TYPES_MAP.get(this.originalDataType) * totSize);
+    		totSize = npSize;
     	}
-    	return pSharedMemory.getByteBuffer(offset, this.size - offset);
+    	return pSharedMemory.getByteBuffer(offset, totSize - offset);
 	}
 	
 	private static <T extends RealType<T> & NativeType<T>>
