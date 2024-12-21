@@ -24,6 +24,7 @@ import java.util.List;
 import java.util.Objects;
 
 import net.imglib2.RandomAccessibleInterval;
+import net.imglib2.converter.Converter;
 import net.imglib2.converter.RealTypeConverters;
 import net.imglib2.img.Img;
 import net.imglib2.img.ImgFactory;
@@ -32,6 +33,7 @@ import net.imglib2.loops.LoopBuilder;
 import net.imglib2.type.NativeType;
 import net.imglib2.type.Type;
 import net.imglib2.type.numeric.RealType;
+import net.imglib2.util.Intervals;
 import net.imglib2.util.Util;
 
 /**
@@ -306,8 +308,12 @@ public final class Tensor< T extends RealType< T > & NativeType< T > >
 
 		final ImgFactory< R > factory = Util.getArrayOrCellImgFactory( input, type );
 		final Img< R > output = factory.create( input );
-		RealTypeConverters.copyFromTo( input, output );
-		return Tensor.build( tt.getName(), tt.getAxesOrderString(), output );
+		RealType< ? > s = Util.getTypeFromInterval( input );
+		RealType< ? > d = Util.getTypeFromInterval( output );
+		Converter< RealType< ? >, RealType< ? > > copy = RealTypeConverters.getConverter( s, d );
+		boolean useMultiThreading = Intervals.numElements(output) >= 20_000;
+		LoopBuilder.setImages( input, output ).multiThreaded( useMultiThreading ).forEachPixel( copy::convert );
+				return Tensor.build( tt.getName(), tt.getAxesOrderString(), output );
 	}
 
 	/**
