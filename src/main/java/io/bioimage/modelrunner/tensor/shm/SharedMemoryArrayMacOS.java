@@ -243,6 +243,16 @@ public class SharedMemoryArrayMacOS implements SharedMemoryArray
         	INSTANCE.close(shmFd);
             throw new RuntimeException("mmap failed, errno: " + Native.getLastError());
         }
+        
+
+        
+        if (!alreadyExists && this.isNumpyFormat) {
+        	byte[] header = getNpyHeader(dtype, shape, this.isFortran);
+        	long offset = 0;
+        	for (byte b : header) {
+    			this.pSharedMemory.setByte(offset ++, b);
+        	}
+        }
     }
     
     /**
@@ -595,6 +605,35 @@ public class SharedMemoryArrayMacOS implements SharedMemoryArray
 			this.pSharedMemory.setDouble(offset + (i * Double.BYTES), cursor.get().get());
 			i ++;
 		}
+    }
+    
+    @SuppressWarnings("unchecked")
+	private static <T extends RealType<T> & NativeType<T>>
+    byte[] getNpyHeader(String dtype, long[] shape, boolean fortranOrder) {
+    	String strHeader = "{'descr': '<";
+    	strHeader += DecodeNumpy.getDataType((T) CommonUtils.getImgLib2DataType(dtype));
+    	strHeader += "', 'fortran_order': " + (fortranOrder ? "True" : "False") + ", 'shape': (";
+    	for (long ll : shape) strHeader += ll + ", ";
+    	strHeader = strHeader.substring(0, strHeader.length() - 2);
+    	strHeader += "), }" + System.lineSeparator();
+    	byte[] bufInverse = strHeader.getBytes(StandardCharsets.UTF_8);
+    	byte[] major = {1};
+        byte[] minor = {0};
+        byte[] len = new byte[2];
+        len[0] = (byte) (short) strHeader.length();
+        len[1] = (byte) (((short) strHeader.length()) >> 8);
+        int totalLen = DecodeNumpy.NUMPY_PREFIX.length + 2 + 2 + bufInverse.length;
+        byte[] total = new byte[totalLen];
+        int c = 0;
+        for (int i = 0; i < DecodeNumpy.NUMPY_PREFIX.length; i ++)
+        	total[c ++] = DecodeNumpy.NUMPY_PREFIX[i];
+        total[c ++] = major[0];
+        total[c ++] = minor[0];
+        total[c ++] = len[0];
+        total[c ++] = len[1];
+        for (int i = 0; i < bufInverse.length; i ++)
+        	total[c ++] = bufInverse[i];
+        return total;
     }
     
     private static <T extends RealType<T> & NativeType<T>>

@@ -218,7 +218,8 @@ public class SharedMemoryArrayWin implements SharedMemoryArray
     	this.isFortran = isFortran;
     	int flag = WinNT.PAGE_READWRITE;
     	boolean write = true;
-    	if (checkSHMExists(memoryName)) {
+    	boolean alreadyExists = checkSHMExists(memoryName);
+    	if (alreadyExists) {
         	long prevSize = getSHMSize(name);
         	if (prevSize != 0 && prevSize != DEFAULT_RESERVED_MEMORY && prevSize < size)
         		throw new FileAlreadyExistsException("Shared memory segment already exists with different dimensions, data type or format. "
@@ -270,6 +271,16 @@ public class SharedMemoryArrayWin implements SharedMemoryArray
                 throw new RuntimeException("Error committing to the shared memory pages. Errno: "
                 		+ "" + Kernel32.INSTANCE.GetLastError());
     	    }
+        }
+        
+
+        
+        if (!alreadyExists && this.isNumpyFormat) {
+        	byte[] header = getNpyHeader(dtype, shape, this.isFortran);
+        	long offset = 0;
+        	for (byte b : header) {
+    			this.mappedPointer.setByte(offset, b);
+        	}
         }
     }
 	
@@ -484,6 +495,35 @@ public class SharedMemoryArrayWin implements SharedMemoryArray
     	for (int i = 0; i < arr.length; i ++) {
     		this.writePointer.setByte(i, arr[i]);
     	}
+    }
+    
+    @SuppressWarnings("unchecked")
+	private static <T extends RealType<T> & NativeType<T>>
+    byte[] getNpyHeader(String dtype, long[] shape, boolean fortranOrder) {
+    	String strHeader = "{'descr': '<";
+    	strHeader += DecodeNumpy.getDataType((T) CommonUtils.getImgLib2DataType(dtype));
+    	strHeader += "', 'fortran_order': " + (fortranOrder ? "True" : "False") + ", 'shape': (";
+    	for (long ll : shape) strHeader += ll + ", ";
+    	strHeader = strHeader.substring(0, strHeader.length() - 2);
+    	strHeader += "), }" + System.lineSeparator();
+    	byte[] bufInverse = strHeader.getBytes(StandardCharsets.UTF_8);
+    	byte[] major = {1};
+        byte[] minor = {0};
+        byte[] len = new byte[2];
+        len[0] = (byte) (short) strHeader.length();
+        len[1] = (byte) (((short) strHeader.length()) >> 8);
+        int totalLen = DecodeNumpy.NUMPY_PREFIX.length + 2 + 2 + bufInverse.length;
+        byte[] total = new byte[totalLen];
+        int c = 0;
+        for (int i = 0; i < DecodeNumpy.NUMPY_PREFIX.length; i ++)
+        	total[c ++] = DecodeNumpy.NUMPY_PREFIX[i];
+        total[c ++] = major[0];
+        total[c ++] = minor[0];
+        total[c ++] = len[0];
+        total[c ++] = len[1];
+        for (int i = 0; i < bufInverse.length; i ++)
+        	total[c ++] = bufInverse[i];
+        return total;
     }
     
     private static <T extends RealType<T> & NativeType<T>>
