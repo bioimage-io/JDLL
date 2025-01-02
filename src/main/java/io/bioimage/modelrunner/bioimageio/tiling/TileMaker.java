@@ -556,7 +556,7 @@ public class TileMaker {
     	long[] maxLim = new long[size.length];
     	for (int i = 0; i < size.length; i ++) maxLim[i] = minLim[i] + size[i] - 1;
 		RandomAccessibleInterval<T> tileRai = Views.interval(
-				Views.extendMirrorDouble(rai), new FinalInterval( minLim, maxLim ));
+				Views.extendZero(rai), new FinalInterval( minLim, maxLim ));
     	return tileRai;
     }
     
