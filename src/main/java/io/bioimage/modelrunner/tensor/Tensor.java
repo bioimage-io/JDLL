@@ -335,7 +335,11 @@ public final class Tensor< T extends RealType< T > & NativeType< T > >
 	{
 		final ImgFactory< R > factory = Util.getArrayOrCellImgFactory( input, type );
 		final Img< R > output = factory.create( input );
-		RealTypeConverters.copyFromTo( input, output );
+		RealType< ? > s = Util.getTypeFromInterval( input );
+		RealType< ? > d = Util.getTypeFromInterval( output );
+		Converter< RealType< ? >, RealType< ? > > copy = RealTypeConverters.getConverter( s, d );
+		boolean useMultiThreading = Intervals.numElements(output) >= 20_000;
+		LoopBuilder.setImages( input, output ).multiThreaded( useMultiThreading ).forEachPixel( copy::convert );
 		return output;
 	}
 
