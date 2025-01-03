@@ -232,7 +232,6 @@ public final class Tensor< T extends RealType< T > & NativeType< T > >
 		} else {
 			LoopBuilder.setImages( this.data, data )
 				.multiThreaded().forEachPixel( ( i, o ) -> i.set( o ) );
-				
 		}
 		
 		if ( emptyTensor ) {
