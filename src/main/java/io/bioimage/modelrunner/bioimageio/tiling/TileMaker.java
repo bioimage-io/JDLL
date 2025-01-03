@@ -19,6 +19,7 @@
  */
 package io.bioimage.modelrunner.bioimageio.tiling;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedHashMap;
@@ -30,6 +31,7 @@ import java.util.stream.IntStream;
 import io.bioimage.modelrunner.bioimageio.description.Axis;
 import io.bioimage.modelrunner.bioimageio.description.ModelDescriptor;
 import io.bioimage.modelrunner.bioimageio.description.TensorSpec;
+import io.bioimage.modelrunner.numpy.DecodeNumpy;
 import io.bioimage.modelrunner.tensor.Tensor;
 import io.bioimage.modelrunner.utils.Constants;
 import net.imglib2.FinalInterval;
@@ -552,12 +554,25 @@ public class TileMaker {
     				+ " is out of bounds.");
     	}
     	long[] minLim = tiles.get(n);
+    	int[] rois = this.getOutputRoiSize(tensorName);
     	long[] size = this.getOutputTileSize(tensorName);
+    	int[][] padding = new int[2][rois.length];
+    	for (int i = 0; i < rois.length; i ++) {
+    		padding[0][i] = (int) Math.ceil((size[i] - rois[i]) / 2.0);
+    		padding[1][i] = (int) (size[i] - rois[i] - padding[0][i]);
+    	}
     	long[] maxLim = new long[size.length];
     	for (int i = 0; i < size.length; i ++) maxLim[i] = minLim[i] + size[i] - 1;
+    	
+    	long[] minLimNoPad = new long[minLim.length];
+    	for (int i = 0; i < size.length; i ++) minLimNoPad[i] = minLim[i] + padding[0][i];
+    	long[] maxLimNoPad = new long[maxLim.length];
+    	for (int i = 0; i < size.length; i ++) maxLimNoPad[i] = maxLim[i] - padding[1][i];
 		RandomAccessibleInterval<T> tileRai = Views.interval(
-				Views.extendZero(rai), new FinalInterval( minLim, maxLim ));
-    	return tileRai;
+				rai, new FinalInterval( minLimNoPad, maxLimNoPad ));
+		RandomAccessibleInterval<T> extendedTileRai = Views.interval(
+				Views.extendZero(tileRai), new FinalInterval( minLim, maxLim ));
+    	return extendedTileRai;
     }
     
     /**
