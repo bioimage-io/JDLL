@@ -1,0 +1,26 @@
+name: Get jar sizes
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - src/main/resources/availableDLVersions.json
+      - .github/workflows/jar_sizes.yml
+  pull_request:
+    branches: [ main ]
+jobs:
+  build-and-run:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest]
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v2
+    - name: Set up Python 3.9
+      uses: actions/setup-python@v4
+      with:
+        python-version: 3.9
+    - name: Download all engines
+      run: |
+        python download-engines.py
