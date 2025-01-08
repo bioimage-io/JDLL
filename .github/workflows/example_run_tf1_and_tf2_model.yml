@@ -8,6 +8,7 @@ on:
     paths-ignore:
       - .github/workflows/bioimageio_ci.yml
       - .github/workflows/jar_sizes.yml
+      - .github/get_jars_sizes.py
 jobs:
   build-and-run:
     runs-on: ${{ matrix.os }}

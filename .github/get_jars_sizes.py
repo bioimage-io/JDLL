@@ -32,4 +32,4 @@ for engine in engines["versions"]:
 		
 		
 with open(target_file, "w") as ff:
-	json.dump(jar_dict)
+	json.dump(jar_dict, ff)

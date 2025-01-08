@@ -6,6 +6,7 @@ on:
     paths-ignore:
       - .github/workflows/bioimageio_ci.yml
       - .github/workflows/jar_sizes.yml
+      - .github/get_jars_sizes.py
   pull_request:
     branches: [ main ]
 jobs:
