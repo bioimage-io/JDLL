@@ -6,21 +6,36 @@ on:
     paths:
       - src/main/resources/availableDLVersions.json
       - .github/workflows/jar_sizes.yml
-  pull_request:
-    branches: [ main ]
+      - .github/get_jar_sizes.py
+  workflow_dispatch:
 jobs:
   build-and-run:
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        os: [ubuntu-latest]
+    runs-on: ubuntu-latest
+
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@v2
-    - name: Set up Python 3.9
-      uses: actions/setup-python@v4
-      with:
-        python-version: 3.9
-    - name: Download all engines
-      run: |
-        python download-engines.py
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      # Step 2: Set up Python environment
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11' # Specify the Python version
+
+      - name: Get file sizes and generate JSON
+        run: python .github/get_jar_sizes.py
+
+      - name: Commit and push changes
+        run: |
+          # Configure Git
+          git config user.name "github-actions"
+          git config user.email "github-actions@github.com"
+
+          # Only commit/push if there are changes
+          if [ -n "$(git status --porcelain)" ]; then
+            git add src/main/resources/sizes.json
+            git commit -m "Update file sizes"
+            git push
+          else
+            echo "No changes to commit."
+          fi
