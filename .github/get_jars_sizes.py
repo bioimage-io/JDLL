@@ -16,7 +16,6 @@ args = parser.parse_args()
 # Assign the target file from the command-line argument
 target_file = args.target_file
 
-
 fname="src/main/resources/availableDLVersions.json"
 
 with open(fname, 'r') as ff:
