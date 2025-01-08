@@ -26,7 +26,9 @@ jobs:
           python-version: '3.11'
 
       - name: Get file sizes and generate JSON
-        run: python .github/get_jar_sizes.py ${{ env.FPATH }}
+        run: |
+          ls
+          python .github/get_jar_sizes.py ${{ env.FPATH }}
 
       - name: Commit and push changes
         run: |
