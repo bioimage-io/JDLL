@@ -7,7 +7,7 @@ on:
     branches: [ main ]
     paths-ignore:
       - .github/workflows/bioimageio_ci.yml
-      - .github/workflows/test_mac_shm.yml
+      - .github/workflows/jar_sizes.yml
 jobs:
   build-and-run:
     runs-on: ${{ matrix.os }}

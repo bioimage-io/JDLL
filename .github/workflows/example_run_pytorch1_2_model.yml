@@ -5,7 +5,7 @@ on:
       - main
     paths-ignore:
       - .github/workflows/bioimageio_ci.yml
-      - .github/workflows/test_mac_shm.yml
+      - .github/workflows/jar_sizes.yml
   pull_request:
     branches: [ main ]
 jobs:

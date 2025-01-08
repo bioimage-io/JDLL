@@ -26,7 +26,7 @@ jar_dict = {}
 
 for engine in engines["versions"]:
 	for jar in engine["jars"]:
-		if jar in jar_dict.keys:
+		if jar in jar_dict.keys():
 			continue
 		jar_dict[jar] = get_file_size(jar)
 		
