@@ -8,6 +8,10 @@ on:
       - .github/workflows/jar_sizes.yml
       - .github/get_jar_sizes.py
   workflow_dispatch:
+  
+  
+env:
+  FPATH: "src/main/resources/jar_sizes.json"
 jobs:
   build-and-run:
     runs-on: ubuntu-latest
@@ -16,14 +20,13 @@ jobs:
       - name: Check out repository
         uses: actions/checkout@v4
 
-      # Step 2: Set up Python environment
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
-          python-version: '3.11' # Specify the Python version
+          python-version: '3.11'
 
       - name: Get file sizes and generate JSON
-        run: python .github/get_jar_sizes.py
+        run: python .github/get_jar_sizes.py ${{ env.FPATH }}
 
       - name: Commit and push changes
         run: |
@@ -33,7 +36,7 @@ jobs:
 
           # Only commit/push if there are changes
           if [ -n "$(git status --porcelain)" ]; then
-            git add src/main/resources/sizes.json
+            git add ${{ env.FPATH }}
             git commit -m "Update file sizes"
             git push
           else
