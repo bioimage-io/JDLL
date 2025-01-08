@@ -6,7 +6,7 @@ on:
     paths:
       - src/main/resources/availableDLVersions.json
       - .github/workflows/jar_sizes.yml
-      - .github/get_jar_sizes.py
+      - .github/get_jars_sizes.py
   workflow_dispatch:
   
   
@@ -26,9 +26,7 @@ jobs:
           python-version: '3.11'
 
       - name: Get file sizes and generate JSON
-        run: |
-          ls .github
-          python .github/get_jar_sizes.py ${{ env.FPATH }}
+        run: python .github/get_jars_sizes.py ${{ env.FPATH }}
 
       - name: Commit and push changes
         run: |
