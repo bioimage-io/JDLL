@@ -34,6 +34,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import io.bioimage.modelrunner.engine.installation.EngineInstall;
+import io.bioimage.modelrunner.versionmanagement.JarInfo;
 
 /**
  * Class that contains the methods to track the progress downloading files. 
@@ -136,6 +137,7 @@ public class DownloadTracker {
 		this.parentThread = Thread.currentThread();
 		this.folder = folder;
 		sizeFiles = new LinkedHashMap<String, Long>();
+		JarInfo jarInfo = JarInfo.getInstance();
 		for (String link : links) {
 			String key = folder + File.separator + DownloadModel.getFileNameFromURLString(link);
 			if (consumer.get().get(key + EngineInstall.NBYTES_SUFFIX) != null && consumer.get().get(key + EngineInstall.NBYTES_SUFFIX) != -1) {
@@ -143,7 +145,7 @@ public class DownloadTracker {
 				continue;
 			}
 			try {
-				sizeFiles.put(key, DownloadModel.getFileSize(new URL(link)));
+				sizeFiles.put(key, (jarInfo.get(link) != null ? jarInfo.get(link) : DownloadModel.getFileSize(new URL(link))));
 			} catch (MalformedURLException e) {
 				throw new IOException("The URL '" + link + "' cannot be found.");
 			}

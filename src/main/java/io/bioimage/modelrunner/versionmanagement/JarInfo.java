@@ -39,7 +39,7 @@ public class JarInfo {
      *
      * @return Map containing the URL and their respective sizes
      */
-    public Map<String, Long> getUrlData() {
+    public Map<String, Long> getAllData() {
         return urlData;
     }
 
@@ -49,7 +49,7 @@ public class JarInfo {
      * @param url The URL to look up
      * @return The size associated with the URL, or null if not found
      */
-    public Long getSizeForUrl(String url) {
+    public Long get(String url) {
         return urlData.get(url);
     }
 
