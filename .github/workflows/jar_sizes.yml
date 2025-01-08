@@ -25,6 +25,9 @@ jobs:
         with:
           python-version: '3.11'
 
+      - name: Install dep
+        run: python -m pip install requests
+
       - name: Get file sizes and generate JSON
         run: python .github/get_jars_sizes.py ${{ env.FPATH }}
 
