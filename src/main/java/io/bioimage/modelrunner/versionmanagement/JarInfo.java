@@ -12,7 +12,7 @@ public class JarInfo {
     private static JarInfo instance;
 
     // Map to store the parsed JSON data
-    private Map<String, Long> urlData;
+    private Map<String, Integer> urlData;
         
     private static URL FILE_PATH = JarInfo.class.getClassLoader().getResource("jar_sizes.json");
 
@@ -39,7 +39,7 @@ public class JarInfo {
      *
      * @return Map containing the URL and their respective sizes
      */
-    public Map<String, Long> getAllData() {
+    public Map<String, Integer> getAllData() {
         return urlData;
     }
 
@@ -49,7 +49,7 @@ public class JarInfo {
      * @param url The URL to look up
      * @return The size associated with the URL, or null if not found
      */
-    public Long get(String url) {
+    public Integer get(String url) {
         return urlData.get(url);
     }
 
