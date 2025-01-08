@@ -27,7 +27,7 @@ jobs:
 
       - name: Get file sizes and generate JSON
         run: |
-          ls
+          ls .github
           python .github/get_jar_sizes.py ${{ env.FPATH }}
 
       - name: Commit and push changes
