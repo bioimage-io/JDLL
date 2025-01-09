@@ -500,7 +500,8 @@ public class DownloadTracker {
 		Set<String> already = new HashSet<String>();
 		while (Thread.currentThread().isAlive() && downloadThread.isAlive()) {
 			long waitMillis = 0;
-			while (consumer.get().get(TOTAL_PROGRESS_KEY) < 1.0 && waitMillis < 3000) {
+			while ((consumer.get().get(TOTAL_PROGRESS_KEY) == null || consumer.get().get(TOTAL_PROGRESS_KEY) < 1.0)
+					&& waitMillis < 3000) {
 				Thread.sleep(30);
 				waitMillis += 30;
 			}
