@@ -395,11 +395,6 @@ public class DownloadTracker {
 					continue;
 				}
 				badDownloads.add(link);
-				/* TODO
-				if (consumer.get().get(this.folder + File.separator + name) == null
-						|| consumer.get().get(folder + File.separator + name) != 1.0)
-					badDownloads.add(link);
-				 */
 			} catch (MalformedURLException e) {
 				badDownloads.add(link);
 			}
@@ -502,47 +497,36 @@ public class DownloadTracker {
 	 */
 	public static void printProgress(Thread downloadThread,
 			DownloadTracker.TwoParameterConsumer<String, Double> consumer) throws InterruptedException {
-		int n = 30;
-		String ogProgressStr = "";
-		String ogRemainingStr = "";
-		for (int i = 0; i < n; i ++) {
-			ogProgressStr += "#";
-			ogRemainingStr += ".";
-		}
 		Set<String> already = new HashSet<String>();
-		boolean keep = true;
-		while (Thread.currentThread().isAlive() && (downloadThread.isAlive() || keep)) {
-			boolean end = consumer.get().keySet().contains(TOTAL_PROGRESS_KEY)
-					&& consumer.get().get(TOTAL_PROGRESS_KEY) == 1.0;
-			int millis = keep == true || end ? 10 : 3000;
-			keep = false;
-			//try {Thread.sleep(millis);} catch (InterruptedException ex) {System.out.println("Stopping..."); break;}
-			Thread.sleep(millis);
-			String select = null;
+		while (Thread.currentThread().isAlive() && downloadThread.isAlive()) {
+			long waitMillis = 0;
+			while (consumer.get().get(TOTAL_PROGRESS_KEY) < 1.0 && waitMillis < 3000) {
+				Thread.sleep(30);
+				waitMillis += 30;
+			}
 			for (String key : consumer.get().keySet()) {
-				if (!already.contains(key) && !key.equals(DownloadTracker.TOTAL_PROGRESS_KEY)) {
-					select = key;
-					break;
-				}
-			}
-			if (select == null) {
-				continue;
-			}
-			for (String kk : new String[] {select, DownloadTracker.TOTAL_PROGRESS_KEY}) {
-				if (kk.endsWith(EngineInstall.NBYTES_SUFFIX))
+				if (already.contains(key) || key.equals(DownloadTracker.TOTAL_PROGRESS_KEY) 
+						|| key.contains(EngineInstall.NBYTES_SUFFIX)) {
 					continue;
-				int nProgressBar = (int) (consumer.get().get(kk) * n);
-				String progressStr = new File(kk).getName() + ": [" 
-					+ ogProgressStr.substring(0, nProgressBar) + ogRemainingStr.substring(nProgressBar)
-					+ "] " + Math.round(consumer.get().get(kk) * 100) + "%";
-				System.out.println(progressStr);
+				}
+				double progress = consumer.get().get(key);
+				System.out.println(getStringToPrintProgress(key, progress));
+				if (progress == 1) already.add(key);
+				else break;
 			}
-			if (consumer.get().get(select) == 1 || consumer.get().get(select) < 0
-					|| consumer.get().get(TOTAL_PROGRESS_KEY) == 1.0) {
-				already.add(select);
-				keep = true;
-			}
+			double progress = consumer.get().get(DownloadTracker.TOTAL_PROGRESS_KEY);
+			System.out.println(getStringToPrintProgress(DownloadTracker.TOTAL_PROGRESS_KEY, progress));
 		}
+	}
+	
+	private static String getStringToPrintProgress(String kk, double progress) {
+		int n = 30;
+		int nProgressBar = (int) (progress * n);
+		String progressStr = new File(kk).getName() + ": [";
+		for (int i = 0; i < nProgressBar; i ++) progressStr += "#";
+		for (int i = nProgressBar; i < n; i ++) progressStr += ".";
+		progressStr += "] " + Math.round(progress * 100) + "%";
+		return progressStr;
 	}
 
 }
