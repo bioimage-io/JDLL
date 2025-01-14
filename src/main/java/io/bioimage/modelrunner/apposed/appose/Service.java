@@ -69,6 +69,8 @@ public class Service implements AutoCloseable {
 	private Thread stdoutThread;
 	private Thread stderrThread;
 	private Thread monitorThread;
+	
+	private Map<String, String> envMap = new HashMap<String, String>();
 
 	private Consumer<String> debugListener;
 
@@ -87,6 +89,17 @@ public class Service implements AutoCloseable {
 	public void debug(Consumer<String> debugListener) {
 		this.debugListener = debugListener;
 	}
+	
+	/**
+	 * Set the wanted environment variable for the task
+	 * @param key
+	 * 	key of the env var
+	 * @param val
+	 * 	value of the environment var
+	 */
+	public void setEnvVar(String key, String val) {
+		this.envMap.put(key, val);
+	}
 
 	/**
 	 * Launches the worker process associated with this service.
@@ -102,6 +115,12 @@ public class Service implements AutoCloseable {
 
 		String prefix = "Appose-Service-" + serviceID;
 		ProcessBuilder pb = new ProcessBuilder(args).directory(cwd);
+		envMap.entrySet().stream().forEach(ee -> {
+			if (ee.getValue() == null && pb.environment().get(ee.getKey()) != null)
+				pb.environment().remove(ee.getKey());
+			else if (ee.getValue() != null)
+				pb.environment().put(ee.getKey(), ee.getValue());
+		});
 		process = pb.start();
 		stdin = new PrintWriter(process.getOutputStream());
 		stdoutThread = new Thread(this::stdoutLoop, prefix + "-Stdout");
