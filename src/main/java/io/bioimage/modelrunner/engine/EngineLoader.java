@@ -33,6 +33,7 @@ import java.util.HashMap;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
+import io.bioimage.modelrunner.apposed.appose.Types;
 import io.bioimage.modelrunner.bioimageio.bioengine.BioengineInterface;
 import io.bioimage.modelrunner.exceptions.LoadEngineException;
 import io.bioimage.modelrunner.versionmanagement.DeepLearningVersion;
@@ -324,7 +325,7 @@ public class EngineLoader extends ClassLoader
 			}
 		}
 		catch (Exception | Error ex) {
-			errMsg = ex.toString();
+			errMsg = Types.stackTrace(ex);
 		}
 		// As no interface has been found create an exception
 		throw new LoadEngineException( new File( this.enginePath ), errMsg );
