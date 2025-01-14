@@ -48,6 +48,7 @@ import io.bioimage.modelrunner.engine.installation.EngineInstall;
 import io.bioimage.modelrunner.exceptions.LoadEngineException;
 import io.bioimage.modelrunner.exceptions.LoadModelException;
 import io.bioimage.modelrunner.exceptions.RunModelException;
+import io.bioimage.modelrunner.model.processing.Processing;
 import io.bioimage.modelrunner.runmode.RunMode;
 import io.bioimage.modelrunner.runmode.ops.GenericOp;
 import io.bioimage.modelrunner.tensor.Tensor;
@@ -244,6 +245,8 @@ public class Stardist3D {
 		
 		Model model = Model.createBioimageioModel(this.descriptor.getModelPath());
 		model.loadModel();
+		Processing processing = Processing.init(descriptor);
+		inputList = processing.preprocess(inputList, false);
 		model.runModel(inputList, outputList);
 
 		return Utils.transpose(Cast.unchecked(postProcessing(outputList.get(0).getData())));
