@@ -38,14 +38,8 @@ import java.util.stream.Collectors;
 
 import org.apache.commons.compress.archivers.ArchiveException;
 
-import ai.nets.samj.install.EfficientSamEnvManager;
-import ai.nets.samj.models.PythonMethods;
-import io.bioimage.modelrunner.apposed.appose.Environment;
 import io.bioimage.modelrunner.apposed.appose.Mamba;
 import io.bioimage.modelrunner.apposed.appose.MambaInstallException;
-import io.bioimage.modelrunner.apposed.appose.Service;
-import io.bioimage.modelrunner.apposed.appose.Service.Task;
-import io.bioimage.modelrunner.apposed.appose.Service.TaskStatus;
 import io.bioimage.modelrunner.bioimageio.BioimageioRepo;
 import io.bioimage.modelrunner.bioimageio.description.ModelDescriptor;
 import io.bioimage.modelrunner.bioimageio.description.ModelDescriptorFactory;
@@ -60,8 +54,6 @@ import io.bioimage.modelrunner.runmode.RunMode;
 import io.bioimage.modelrunner.runmode.ops.GenericOp;
 import io.bioimage.modelrunner.tensor.Tensor;
 import io.bioimage.modelrunner.tensor.Utils;
-import io.bioimage.modelrunner.tensor.shm.SharedMemoryArray;
-import io.bioimage.modelrunner.utils.CommonUtils;
 import io.bioimage.modelrunner.utils.Constants;
 import io.bioimage.modelrunner.utils.JSONUtils;
 import io.bioimage.modelrunner.versionmanagement.InstalledEngines;
@@ -74,6 +66,7 @@ import net.imglib2.util.Cast;
 import net.imglib2.view.Views;
 
 /**
+ * @deprecated
  * Implementation of an API to run Stardist 2D models out of the box with little configuration.
  * 
  *TODO add fine tuning
@@ -81,17 +74,9 @@ import net.imglib2.view.Views;
  *
  *@author Carlos Garcia
  */
-public class Stardist2D {
+public class Stardist2D_old {
 	
 	private String modelDir;
-	
-	private final String name;
-	
-	private final String basedir;
-	
-	private boolean loaded = false;
-	
-	private SharedMemoryArray shma;
 	
 	private ModelDescriptor descriptor;
 	
@@ -101,119 +86,67 @@ public class Stardist2D {
 	
 	private Float prob_threshold;
 	
-	private Environment env;
-	
-	private Service python;
-	
 	private static final List<String> STARDIST_DEPS = Arrays.asList(new String[] {"python=3.10", "stardist", "numpy", "appose"});
 	
 	private static final List<String> STARDIST_CHANNELS = Arrays.asList(new String[] {"conda-forge", "default"});
 	
-	private static final String LOAD_MODEL_CODE = ""
-			+ "if 'StarDist2D' not in globals().keys():" + System.lineSeparator()
-			+ "  from stardist.models import StarDist2D" + System.lineSeparator()
-			+ "  globals()['StarDist2D'] = StarDist2D" + System.lineSeparator()
-			+ "if 'np' not in globals().keys():" + System.lineSeparator()
-			+ "  import numpy as np" + System.lineSeparator()
-			+ "  globals()['np'] = np" + System.lineSeparator()
-			+ "if 'shared_memory' not in globals().keys():" + System.lineSeparator()
-			+ "  from multiprocessing import shared_memory" + System.lineSeparator()
-			+ "  globals()['shared_memory'] = shared_memory" + System.lineSeparator()
-			+ "model = StarDist2D(None, name='%s', basedir='%s')" + System.lineSeparator()
-			+ "globals()['model'] = model";
+	private static final String STARDIST2D_PATH_IN_RESOURCES = "ops/stardist_postprocessing/";
 	
-	private static final String RUN_MODEL_CODE = ""
-			+ "shm_coords_id = task.inputs['shm_coords_id']" + System.lineSeparator()
-			+ "shm_points_id = task.inputs['shm_points_id']" + System.lineSeparator()
-			+ "output = model.predict_instances(im, returnPredcit=False)" + System.lineSeparator()
-			+ "im[:] = output[0]" + System.lineSeparator()
-			+ "task.outputs['coords_shape'] = output[1]['coords'].shape" + System.lineSeparator()
-			+ "task.outputs['coords_dtype'] = output[1]['coords'].dtype" + System.lineSeparator()
-			+ "task.outputs['points_shape'] = output[1]['points'].shape" + System.lineSeparator()
-			+ "task.outputs['points_dtype'] = output[1]['points'].dtype" + System.lineSeparator()
-			+ "";
+	private static final String STARDIST2D_SCRIPT_NAME= "stardist_postprocessing.py";
 	
-	private Stardist2D(String modelName, String baseDir) {
-		this.name = modelName;
-		this.basedir = baseDir;
+	private static final String STARDIST2D_METHOD_NAME= "stardist_postprocessing";
+	
+	private static final String THRES_FNAME = "thresholds.json";
+	
+	private static final String PROB_THRES_KEY = "thres";
+	
+	private static final String NMS_THRES_KEY = "thres";
+	
+	private static final float DEFAULT_NMS_THRES = (float) 0.4;
+	
+	private static final float DEFAULT_PROB_THRES = (float) 0.5;
+	
+	private Stardist2D_old(StardistConfig config, String modelName, String baseDir) {
 		modelDir = new File(baseDir, modelName).getAbsolutePath();
-		if (new File(modelDir, "config.json").isFile() == false && new File(modelDir, Constants.RDF_FNAME).isFile() == false)
-			throw new IllegalArgumentException("No 'config.json' file found in the model directory");
-		else if (new File(modelDir, "config.json").isFile() == false)
-			createConfigFromBioimageio();
+		findWeights();
+		findThresholds();
+		
+		this.channels = 1;
+	}
+	
+	private void findWeights() {
+		
+	}
+	
+	private void findThresholds() {
+		if (new File(modelDir, THRES_FNAME).isFile()) {
+			try {
+				Map<String, Object> json = JSONUtils.load(modelDir + File.separator + THRES_FNAME);
+				if (json.get(PROB_THRES_KEY) != null && json.get(PROB_THRES_KEY) instanceof Number)
+					prob_threshold = ((Number) json.get(PROB_THRES_KEY)).floatValue();
+				if (json.get(NMS_THRES_KEY) != null && json.get(NMS_THRES_KEY) instanceof Number)
+					nms_threshold = ((Number) json.get(NMS_THRES_KEY)).floatValue();
+			} catch (IOException e) {
+			}
+		}
+		if (nms_threshold == null) {
+			System.out.println("Nms threshold not defined, using default value: " + DEFAULT_NMS_THRES);
+			nms_threshold = DEFAULT_NMS_THRES;
+		}
+		if (prob_threshold == null) {
+			System.out.println("Probability threshold not defined, using default value: " + DEFAULT_PROB_THRES);
+			prob_threshold = DEFAULT_NMS_THRES;
+		}
+	}
+	
+	private Stardist2D_old(ModelDescriptor descriptor) {
+		this.descriptor = descriptor;
     	Map<String, Object> stardistMap = (Map<String, Object>) descriptor.getConfig().getSpecMap().get("stardist");
     	Map<String, Object> stardistConfig = (Map<String, Object>) stardistMap.get("config");
     	Map<String, Object> stardistThres = (Map<String, Object>) stardistMap.get("thresholds");
 		this.channels = (int) stardistConfig.get("n_channel_in");;
 		this.nms_threshold = new Double((double) stardistThres.get("nms")).floatValue();
 		this.prob_threshold = new Double((double) stardistThres.get("prob")).floatValue();
-		
-	}
-	
-	private void createConfigFromBioimageio() {
-		
-	}
-	
-	private void loadModel() throws IOException, InterruptedException {
-		if (loaded)
-			return;
-		String code =  String.format(LOAD_MODEL_CODE, this.name, this.basedir);
-		Task task = python.task(code);
-		task.waitFor();
-		if (task.status == TaskStatus.CANCELED)
-			throw new RuntimeException("Task canceled");
-		else if (task.status == TaskStatus.FAILED)
-			throw new RuntimeException(task.error);
-		else if (task.status == TaskStatus.CRASHED)
-			throw new RuntimeException(task.error);
-		loaded = true;
-	}
-	
-	
-	protected String createEncodeImageScript() {
-		String code = "";
-		// This line wants to recreate the original numpy array. Should look like:
-		// input0_appose_shm = shared_memory.SharedMemory(name=input0)
-		// input0 = np.ndarray(size, dtype="float64", buffer=input0_appose_shm.buf).reshape([64, 64])
-		code += "im_shm = shared_memory.SharedMemory(name='"
-							+ shma.getNameForPython() + "', size=" + shma.getSize() 
-							+ ")" + System.lineSeparator();
-		code += "im = np.ndarray(" + shma.getSize()  + ", dtype='" + CommonUtils.getDataTypeFromRAI(Cast.unchecked(shma.getSharedRAI()))
-			  + "', buffer=im_shm.buf).reshape([";
-		for (int i = 0; i < shma.getOriginalShape().length; i ++)
-			code += shma.getOriginalShape()[i] + ", ";
-		code += "])" + System.lineSeparator();
-		return code;
-	}
-	
-	public void close() {
-		if (!loaded)
-			return;
-		python.close();
-	}
-	
-	public <T extends RealType<T> & NativeType<T>> void run(RandomAccessibleInterval<T> img) throws IOException, InterruptedException {
-		
-		shma = SharedMemoryArray.createSHMAFromRAI(img);
-		String code = "";
-		if (!loaded) {
-			code += String.format(LOAD_MODEL_CODE, this.name, this.basedir) + System.lineSeparator();
-		}
-		
-		code += createEncodeImageScript() + System.lineSeparator();
-		code += RUN_MODEL_CODE + System.lineSeparator();
-
-		Task task = python.task(code);
-		task.waitFor();
-		if (task.status == TaskStatus.CANCELED)
-			throw new RuntimeException("Task canceled");
-		else if (task.status == TaskStatus.FAILED)
-			throw new RuntimeException(task.error);
-		else if (task.status == TaskStatus.CRASHED)
-			throw new RuntimeException(task.error);
-		task.outputs.get("");
-		
-		
 	}
 	
 	/**
@@ -225,9 +158,9 @@ public class Stardist2D {
      * @throws FileNotFoundException If the model file is not found.
      * @throws IOException If there's an I/O error.
 	 */
-	public static Stardist2D fromBioimageioModel(String modelPath) throws ModelSpecsException, FileNotFoundException, IOException {
+	public static Stardist2D_old fromBioimageioModel(String modelPath) throws ModelSpecsException, FileNotFoundException, IOException {
 		ModelDescriptor descriptor = ModelDescriptorFactory.readFromLocalFile(modelPath + File.separator + Constants.RDF_FNAME);
-		return new Stardist2D(modelPath);
+		return new Stardist2D_old(descriptor);
 	}
 	
 	/**
@@ -242,7 +175,7 @@ public class Stardist2D {
 	 * @throws InterruptedException if the download of the model is stopped
 	 * @throws ModelSpecsException if the model downloaded is not well specified in the config file
 	 */
-	public static Stardist2D fromPretained(String pretrainedModel, boolean forceInstall) throws IOException, InterruptedException, ModelSpecsException {
+	public static Stardist2D_old fromPretained(String pretrainedModel, boolean forceInstall) throws IOException, InterruptedException, ModelSpecsException {
 		return fromPretained(pretrainedModel, new File("models").getAbsolutePath(), forceInstall);
 	}
 	
@@ -260,31 +193,31 @@ public class Stardist2D {
 	 * @throws InterruptedException if the download of the model is stopped
 	 * @throws ModelSpecsException if the model downloaded is not well specified in the config file
 	 */
-	public static Stardist2D fromPretained(String pretrainedModel, String installDir, boolean forceInstall) throws IOException, 
+	public static Stardist2D_old fromPretained(String pretrainedModel, String installDir, boolean forceInstall) throws IOException, 
 																					InterruptedException, 
 																					ModelSpecsException {
 		if ((pretrainedModel.equals("StarDist H&E Nuclei Segmentation")
 				|| pretrainedModel.equals("2D_versatile_he")) && !forceInstall) {
 			ModelDescriptor md = ModelDescriptorFactory.getModelsAtLocalRepo().stream()
 					.filter(mm ->mm.getName().equals("StarDist H&E Nuclei Segmentation")).findFirst().orElse(null);
-			if (md != null) return new Stardist2D(md);
+			if (md != null) return new Stardist2D_old(md);
 			String path = BioimageioRepo.connect().downloadByName("StarDist H&E Nuclei Segmentation", installDir);
-			return Stardist2D.fromBioimageioModel(path);
+			return Stardist2D_old.fromBioimageioModel(path);
 		} else if (pretrainedModel.equals("StarDist H&E Nuclei Segmentation")
 				|| pretrainedModel.equals("2D_versatile_he")) {
 			String path = BioimageioRepo.connect().downloadByName("StarDist H&E Nuclei Segmentation", installDir);
-			return Stardist2D.fromBioimageioModel(path);
+			return Stardist2D_old.fromBioimageioModel(path);
 		} else if ((pretrainedModel.equals("StarDist Fluorescence Nuclei Segmentation")
 				|| pretrainedModel.equals("2D_versatile_fluo")) && !forceInstall) {
 			ModelDescriptor md = ModelDescriptorFactory.getModelsAtLocalRepo().stream()
 					.filter(mm ->mm.getName().equals("StarDist Fluorescence Nuclei Segmentation")).findFirst().orElse(null);
-			if (md != null) return new Stardist2D(md);
+			if (md != null) return new Stardist2D_old(md);
 			String path = BioimageioRepo.connect().downloadByName("StarDist Fluorescence Nuclei Segmentation", installDir);
-			return Stardist2D.fromBioimageioModel(path);
+			return Stardist2D_old.fromBioimageioModel(path);
 		} else if (pretrainedModel.equals("StarDist Fluorescence Nuclei Segmentation")
 				|| pretrainedModel.equals("2D_versatile_fluo")) {
 			String path = BioimageioRepo.connect().downloadByName("StarDist Fluorescence Nuclei Segmentation", installDir);
-			return Stardist2D.fromBioimageioModel(path);
+			return Stardist2D_old.fromBioimageioModel(path);
 		} else {
 			throw new IllegalArgumentException("There is no Stardist2D model called: " + pretrainedModel);
 		}
@@ -299,6 +232,87 @@ public class Stardist2D {
 			throw new IllegalArgumentException("This Stardist2D model requires " + channels + " channels.");
 		else if (image.dimensionsAsLongArray().length > 3 || image.dimensionsAsLongArray().length < 2)
 			throw new IllegalArgumentException("Stardist2D model requires an image with dimensions XYC.");
+	}
+	
+	/**
+	 * Run the Stardist 2D model end to end, including pre- and post-processing. 
+	 * @param <T>
+	 * 	possible ImgLib2 data types of the input and output images
+	 * @param image
+	 * 	the input image that is going to be processed by Stardist2D
+	 * @return the final output of Stardist2D including pre- and post-processing
+	 * @throws ModelSpecsException if there is any error with the specs of the model
+	 * @throws LoadModelException if there is any error loading the model in Tensorflow Java
+	 * @throws LoadEngineException if there is any error loading Tensorflow Java engine
+	 * @throws IOException if there is any error with the files that are required to run the model
+	 * @throws RunModelException if there is any unexpected exception running the post-processing
+	 * @throws InterruptedException if the inference or post-processing are interrupted unexpectedly
+	 */
+	public <T extends RealType<T> & NativeType<T>> 
+	RandomAccessibleInterval<T> predict(RandomAccessibleInterval<T> image) throws ModelSpecsException, LoadModelException,
+																				LoadEngineException, IOException, 
+																				RunModelException, InterruptedException {
+		checkInput(image);
+		if (image.dimensionsAsLongArray().length == 2) image = Views.addDimension(image, 0, 0);
+		image = Views.permute(image, 0, 2);
+		image = Views.addDimension(image, 0, 0);
+		image = Views.permute(image, 0, 3);
+
+		Tensor<T> inputTensor = Tensor.build("input", "byxc", image);
+		Tensor<T> outputTensor = Tensor.buildEmptyTensor("output", "byxc");
+
+		List<Tensor<T>> inputList = new ArrayList<Tensor<T>>();
+		List<Tensor<T>> outputList = new ArrayList<Tensor<T>>();
+		inputList.add(inputTensor);
+		outputList.add(outputTensor);
+		
+		Model model = Model.createBioimageioModel(this.descriptor.getModelPath());
+		model.loadModel();
+		Processing processing = Processing.init(descriptor);
+		inputList = processing.preprocess(inputList, false);
+		model.runModel(inputList, outputList);
+		
+		return Utils.transpose(Cast.unchecked(postProcessing(outputList.get(0).getData())));
+	}
+	
+	/**
+	 * Execute stardist post-processing on the raw output of a Stardist 2D model
+	 * @param <T>
+	 * 	possible data type of the input image
+	 * @param image
+	 * 	the raw output of a Stardist 2D model
+	 * @return the final output of a Stardist 2D model
+	 * @throws IOException if there is any error running the post-processing
+	 * @throws InterruptedException if the post-processing is interrupted
+	 */
+	public <T extends RealType<T> & NativeType<T>> 
+	RandomAccessibleInterval<T> postProcessing(RandomAccessibleInterval<T> image) throws IOException, InterruptedException {
+		Mamba mamba = new Mamba();
+		String envPath = mamba.getEnvsDir() + File.separator + "stardist";
+		String scriptPath = envPath + File.separator + STARDIST2D_SCRIPT_NAME;
+		
+		GenericOp op = GenericOp.create(envPath, scriptPath, STARDIST2D_METHOD_NAME, 1);
+		LinkedHashMap<String, Object> nMap = new LinkedHashMap<String, Object>();
+		Calendar cal = Calendar.getInstance();
+		SimpleDateFormat sdf = new SimpleDateFormat("ddMMYYYY_HHmmss");
+		String dateString = sdf.format(cal.getTime());
+		nMap.put("input_" + dateString, image);
+		nMap.put("nms_thresh", nms_threshold);
+		nMap.put("prob_thresh", prob_threshold);
+		op.setInputs(nMap);
+		
+		RunMode rm;
+		rm = RunMode.createRunMode(op);
+		Map<String, Object> resMap = rm.runOP();
+		
+		List<RandomAccessibleInterval<T>> rais = resMap.entrySet().stream()
+				.filter(e -> {
+					Object val = e.getValue();
+					if (val instanceof RandomAccessibleInterval) return true;
+					return false;
+				}).map(e -> (RandomAccessibleInterval<T>) e.getValue()).collect(Collectors.toList());
+		
+		return rais.get(0);
 	}
 	
 	/**
@@ -344,7 +358,7 @@ public class Stardist2D {
 		String envPath = mamba.getEnvsDir() + File.separator + "stardist";
 		String scriptPath = envPath + File.separator + STARDIST2D_SCRIPT_NAME;
 		if (!Paths.get(scriptPath).toFile().isFile()) {
-			try (InputStream scriptStream = Stardist2D.class.getClassLoader()
+			try (InputStream scriptStream = Stardist2D_old.class.getClassLoader()
         			.getResourceAsStream(STARDIST2D_PATH_IN_RESOURCES + STARDIST2D_SCRIPT_NAME)){
     			Files.copy(scriptStream, Paths.get(scriptPath), StandardCopyOption.REPLACE_EXISTING);
     		}
@@ -371,8 +385,8 @@ public class Stardist2D {
 													ModelSpecsException, LoadEngineException, 
 													RunModelException, ArchiveException, 
 													URISyntaxException, LoadModelException {
-		Stardist2D.installRequirements();
-		Stardist2D model = Stardist2D.fromPretained("2D_versatile_fluo", false);
+		Stardist2D_old.installRequirements();
+		Stardist2D_old model = Stardist2D_old.fromPretained("2D_versatile_fluo", false);
 		
 		RandomAccessibleInterval<FloatType> img = ArrayImgs.floats(new long[] {512, 512});
 		
