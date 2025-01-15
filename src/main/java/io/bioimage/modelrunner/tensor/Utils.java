@@ -19,10 +19,7 @@
  */
 package io.bioimage.modelrunner.tensor;
 
-import java.util.ArrayList;
-import java.util.List;
 
-import net.imglib2.Point;
 import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.transform.integer.MixedTransform;
 import net.imglib2.type.numeric.NumericType;

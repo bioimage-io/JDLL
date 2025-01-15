@@ -1,4 +1,4 @@
-package io.bioimage.modelrunner.model.stardist;
+package io.bioimage.modelrunner.model.stardist_java_deprecate;
 
 import java.util.HashMap;
 import java.util.List;

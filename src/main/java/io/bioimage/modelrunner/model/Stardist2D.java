@@ -49,7 +49,7 @@ import io.bioimage.modelrunner.exceptions.LoadEngineException;
 import io.bioimage.modelrunner.exceptions.LoadModelException;
 import io.bioimage.modelrunner.exceptions.RunModelException;
 import io.bioimage.modelrunner.model.processing.Processing;
-import io.bioimage.modelrunner.model.stardist.StardistConfig;
+import io.bioimage.modelrunner.model.stardist_java_deprecate.StardistConfig;
 import io.bioimage.modelrunner.runmode.RunMode;
 import io.bioimage.modelrunner.runmode.ops.GenericOp;
 import io.bioimage.modelrunner.tensor.Tensor;

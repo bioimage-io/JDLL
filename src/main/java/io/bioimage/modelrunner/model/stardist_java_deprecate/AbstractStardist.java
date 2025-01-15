@@ -1,4 +1,4 @@
-package io.bioimage.modelrunner.model.stardist;
+package io.bioimage.modelrunner.model.stardist_java_deprecate;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -9,7 +9,7 @@ import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.img.array.ArrayImgs;
 
 public class AbstractStardist {
-	
+	/*
 	private StardistConfig config;
 	
 	private float probThres;
@@ -39,8 +39,14 @@ public class AbstractStardist {
 		
 		String _axes = normalizeAxes(img, axes);
 		String axesNet = config.axes;
-		String permuteAxes = permuteAxes(_axes, axesNet);
-		int[] shapeInst;
+		long[] shape = permuteAxes(null, null, _axes, axesNet, null, true).dimensionsAsLongArray();
+		int[] shapeInst = new int[_axes.toUpperCase().replace("C", "").length()];
+		int i = 0;
+		for (long s : shape) {
+			if (_axes.toUpperCase().split("")[i].equals("C"))
+				continue;
+			shapeInst[i ++] = (int) s;
+		}
 		
 		Number scale = null;
 		if (kwargs.get("scale") != null && kwargs.get("scale") instanceof Number)
@@ -78,7 +84,7 @@ public class AbstractStardist {
 		Map<String, Object> returns = predictSetup(img, axes, normalizer, nTiles);
 		
 		RandomAccessibleInterval x = (RandomAccessibleInterval) returns.get("x");
-		List<Integer> nTiles = (List<Integer>) returns.get("nTiles");
+		nTiles = (List<Integer>) returns.get("nTiles");
 		axes = (String) returns.get("axes");
 		String axesNet = (String) returns.get("axesNet");
 		int[] axesNetDivBy = (int[]) returns.get("axesNetDivBy");
@@ -90,7 +96,9 @@ public class AbstractStardist {
 		if (product > 1) {
 			// TODO
 		} else {
-			
+			// TODO
+			RandomAccessibleInterval prob = null; //(256, 256, 1)
+			RandomAccessibleInterval dist = null; //(256, 256, 32)
 		}
 		
 	}
@@ -105,13 +113,12 @@ public class AbstractStardist {
 					+ ") should be the same as the tile list lenght (" + nTiles.size() + ").");
 		axes = normalizeAxes(img, axes);
 		String axesNet = this.config.axes;
-		// TODO permuteAxes
-		RandomAccessibleInterval x = null; // TODO
-		channel = axesDict(axesNet).get("C");
-		if (this.config.nChannelIn != x.dimensionsAsLongArray()[channel])
+		RandomAccessibleInterval x = permuteAxes(img, axes, axesNet, null, null, true);
+		int channel = Utils.axesDict(axesNet).get("C");
+		if (this.config.n_channel_in != x.dimensionsAsLongArray()[channel])
 			throw new IllegalArgumentException("The number of channels of the image ("
 					+ x.dimensionsAsLongArray()[channel] + ") should be the same as the model config ("
-					+ config.nChannelIn + ").");
+					+ config.n_channel_in + ").");
 		int[] axesNetDivBy = axesDivBy(axesNet);
 		int[] grid = config.grid;
 		if (grid.length != axesNet.length() - 1)
@@ -131,7 +138,6 @@ public class AbstractStardist {
 		returns.put("axes", axes);
 		returns.put("axesNet", axesNet);
 		returns.put("axesNetDivBy", axesNetDivBy);
-		returns.put("permuteAxes", permuteAxes);
 		returns.put("resizer", resizer);
 		returns.put("nTiles", nTiles);
 		returns.put("grid", grid);
@@ -140,16 +146,15 @@ public class AbstractStardist {
 		return returns;
 	}
 	
-	private int channel;
 	private Integer[] sh;
 	
 	private void tilingSetup(RandomAccessibleInterval x, List<Integer> nTiles, int[] axesNetDivBy,
-			String axesNet, Map<String, Integer> gridDict) {
+			String axesNet, Map<String, Integer> gridDict, int channel) {
 		String tilingAxes = axesNet.replace("C", "");
 		int[] xTilingAxes = new int[tilingAxes.length()];
 		int c = 0;
 		for (String a : tilingAxes.split("")) {
-			xTilingAxes[c ++] = axesDict(axesNet).get(a);
+			xTilingAxes[c ++] = Utils.axesDict(axesNet).get(a);
 		}
 		int[] axesNetTileOverlaps = axesTileOverlap(axesNet);
 		// TODO nTiles = permuteAxes();
@@ -166,7 +171,13 @@ public class AbstractStardist {
 		}
 	}
 	
-	private RandomAccessibleInterval createEmptyOutput(int nChannel) {
+	private void indProbThresh(RandomAccessibleInterval prob, float probThresh, Integer b) {
+		if (b == null)
+			b = 2;
+		
+	}
+	
+	private RandomAccessibleInterval createEmptyOutput(int nChannel, int channel) {
 		sh[channel] = nChannel;
 		long[] dims = new long[sh.length];
 		for (int i = 0; i < sh.length; i ++)
@@ -222,23 +233,40 @@ public class AbstractStardist {
 		}
 		return arr;
 	}
-	
-	private Map<String, Integer> axesDict(String axes) {
-		String[] strs = Utils.axesCheckAndNormalize(axes, null, null);
-		axes = strs[0];
-		String allowed = strs[1];
-		Map<String, Integer> map = new HashMap<String, Integer>();
-		for (String a : allowed.split(""))
-			map.put(a, axes.indexOf(a) == -1 ? null : axes.indexOf(a));
-		return map;
-	}
 
 	private String normalizeAxes(RandomAccessibleInterval img, String axes) {
-		return null;
+		if (axes == null) {
+			axes = this.config.axes;
+			if (!axes.toUpperCase().contains("C"))
+				throw new IllegalArgumentException();
+			if (img.numDimensions() == axes.length() - 1 && this.config.n_channel_in == 1)
+				axes = axes.replace("C", "");
+		}
+		return Utils.axesCheckAndNormalize(axes, img.numDimensions(), null)[0];
 	}
 	
-	private String permuteAxes(String axes, String axesNet) {
+	private RandomAccessibleInterval permuteAxes(RandomAccessibleInterval data, 
+			String imgAxesIn, String netAxesIn, String netAxesOut, String imgAxesOut, 
+			boolean undo) {
+		if (data == null)
+			return null;
+		if (netAxesOut == null)
+			netAxesOut = netAxesIn;
+		if (imgAxesOut == null)
+			imgAxesOut = imgAxesIn;
+		if (imgAxesIn.toUpperCase().contains("C") || imgAxesOut.toUpperCase().contains("C"))
+			throw new IllegalArgumentException();
+		if (!netAxesIn.toUpperCase().contains("C") || !netAxesOut.toUpperCase().contains("C"))
+			throw new IllegalArgumentException();
+		
+		if (undo && imgAxesIn.toUpperCase().contains("C")) {
+			return Utils.moveImageAxes(data, netAxesOut, imgAxesOut, true);
+		} else if (undo) {
+			// TODO
+		} else {
+			return Utils.moveImageAxes(data, imgAxesIn, netAxesIn, true);
+		}
 		return null;
 	}
-
+	*/
 }
