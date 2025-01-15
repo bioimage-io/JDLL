@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Map;
 
 import net.imglib2.RandomAccessibleInterval;
+import net.imglib2.img.array.ArrayImgs;
 
 public class AbstractStardist {
 	
@@ -14,6 +15,8 @@ public class AbstractStardist {
 	private float probThres;
 	
 	private float nmsThres;
+	
+	private int[][] tileOverlap;
 	
 	private void predict_instances(RandomAccessibleInterval img, Map<String, Object> kwargs) {
 		Map<String, Object> predictKwargs = new HashMap<String, Object>();
@@ -72,7 +75,23 @@ public class AbstractStardist {
 			Float probThresh) {
 		if (probThresh == null) probThresh = this.probThres;
 		
-		Map<String, Object> args = predictSetup(img, axes, normalizer, nTiles);
+		Map<String, Object> returns = predictSetup(img, axes, normalizer, nTiles);
+		
+		RandomAccessibleInterval x = (RandomAccessibleInterval) returns.get("x");
+		List<Integer> nTiles = (List<Integer>) returns.get("nTiles");
+		axes = (String) returns.get("axes");
+		String axesNet = (String) returns.get("axesNet");
+		int[] axesNetDivBy = (int[]) returns.get("axesNetDivBy");
+		int[] grid = (int[]) returns.get("grid");
+		Map<String, Integer> gridDict = (Map<String, Integer>) returns.get("gridDict");
+		Resizer resizer = (Resizer) returns.get("resizer");
+		int channel = (int) returns.get("channel");
+		int product = nTiles.stream().reduce(1, (a, b) -> a * b);
+		if (product > 1) {
+			// TODO
+		} else {
+			
+		}
 		
 	}
 	
@@ -88,7 +107,7 @@ public class AbstractStardist {
 		String axesNet = this.config.axes;
 		// TODO permuteAxes
 		RandomAccessibleInterval x = null; // TODO
-		int channel = axesDict(axesNet).get("C");
+		channel = axesDict(axesNet).get("C");
 		if (this.config.nChannelIn != x.dimensionsAsLongArray()[channel])
 			throw new IllegalArgumentException("The number of channels of the image ("
 					+ x.dimensionsAsLongArray()[channel] + ") should be the same as the model config ("
@@ -106,6 +125,76 @@ public class AbstractStardist {
 		}
 		
 		Resizer resizer = new Resizer(gridDict);
+		x = resizer.before(x, axesNet, axesNetDivBy);
+		Map<String, Object> returns = new HashMap<String, Object>();
+		returns.put("x", x);
+		returns.put("axes", axes);
+		returns.put("axesNet", axesNet);
+		returns.put("axesNetDivBy", axesNetDivBy);
+		returns.put("permuteAxes", permuteAxes);
+		returns.put("resizer", resizer);
+		returns.put("nTiles", nTiles);
+		returns.put("grid", grid);
+		returns.put("gridDict", gridDict);
+		returns.put("channel", channel);
+		return returns;
+	}
+	
+	private int channel;
+	private Integer[] sh;
+	
+	private void tilingSetup(RandomAccessibleInterval x, List<Integer> nTiles, int[] axesNetDivBy,
+			String axesNet, Map<String, Integer> gridDict) {
+		String tilingAxes = axesNet.replace("C", "");
+		int[] xTilingAxes = new int[tilingAxes.length()];
+		int c = 0;
+		for (String a : tilingAxes.split("")) {
+			xTilingAxes[c ++] = axesDict(axesNet).get(a);
+		}
+		int[] axesNetTileOverlaps = axesTileOverlap(axesNet);
+		// TODO nTiles = permuteAxes();
+		sh = new Integer[axesNet.length()];
+		for (int i = 0; i < axesNet.length(); i ++) {
+			String a = axesNet.split("")[i];
+			sh[i] = (int) Math.floorDiv(x.dimensionsAsLongArray()[i], 
+					gridDict.keySet().contains(a) ? gridDict.get(a) : 1);
+		}
+		sh[channel] = null;
+		int[] nBlockOverlaps = new int[axesNetTileOverlaps.length];
+		for (int i = 0; i < axesNetTileOverlaps.length; i ++) {
+			nBlockOverlaps[i] = (int) Math.ceil(axesNetTileOverlaps[i] / (double) axesNetDivBy[i]);
+		}
+	}
+	
+	private RandomAccessibleInterval createEmptyOutput(int nChannel) {
+		sh[channel] = nChannel;
+		long[] dims = new long[sh.length];
+		for (int i = 0; i < sh.length; i ++)
+			dims[i] = sh[i].longValue();
+		return ArrayImgs.floats(dims);
+	}
+	
+	private int[] axesTileOverlap(String queryAxes) {
+		String[] strs = Utils.axesCheckAndNormalize(queryAxes, null, null);
+		queryAxes = strs[0];
+		if (this.tileOverlap != null) {
+			tileOverlap = computeReceptiveField();
+		}
+		int i = 0;
+		Map<String, Integer> overlap = new HashMap<String, Integer>();
+		for (String ax : config.axes.split("")) {
+			if (ax.equals("C"))
+				continue;
+			overlap.put(ax, Math.max(tileOverlap[i][0], tileOverlap[i][1]));
+		}
+		int[] arr = new int[queryAxes.length()];
+		i = 0;
+		for (String ax : queryAxes.split(""))
+			arr[i ++] = overlap.keySet().contains(ax) ? overlap.get(ax) : 0;
+		return arr;
+	}
+	
+	private int[][] computeReceptiveField() {
 		return null;
 	}
 	

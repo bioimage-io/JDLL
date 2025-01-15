@@ -15,7 +15,7 @@ public class Resizer {
 	
 	private final Map<String, Integer> grid;
 	
-	private Map<String, Integer> pad;
+	private Map<String, int[]> pad;
 	
 	private Map<String, Integer> paddedShape;
 	
@@ -35,17 +35,17 @@ public class Resizer {
 		
 		String[] strs = Utils.axesCheckAndNormalize(axes, x.numDimensions(), null);
 		axes = strs[0];
-		pad = new HashMap<String, Integer>();
+		pad = new HashMap<String, int[]>();
 		for (int i = 0; i < axes.length(); i ++) {
 			long val = (axesDivBy[i] - x.dimensionsAsLongArray()[i] % axesDivBy[i]) % axesDivBy[i];
 			String a = axes.split("")[i];
-			pad.put(a, (int) val);
+			pad.put(a, new int[] {0, (int) val});
 		}
 		long[] minLim = x.minAsLongArray();
 		long[] maxLim = x.maxAsLongArray();
 		int i = 0;
 		for (String a : axes.split("")) {
-			maxLim[ i ++] += pad.get(a);
+			maxLim[ i ++] += pad.get(a)[1];
 		}
 		RandomAccessibleInterval<T> xPad = Views.interval(
 				Views.extendMirrorDouble(x), new FinalInterval( minLim, maxLim ));
@@ -63,7 +63,32 @@ public class Resizer {
 	after(RandomAccessibleInterval<T> x, String axes) {
 		String[] strs = Utils.axesCheckAndNormalize(axes, x.numDimensions(), null);
 		axes = strs[0];
-		RandomAccessibleInterval<T> crop = null;
+		for (int i = 0; i < axes.length(); i ++) {
+			String ax = axes.split("")[i];
+			long s = x.dimensionsAsLongArray()[i];
+			int g = this.grid.keySet().contains(ax) ? grid.get(ax) : 1;
+			long sPad = this.paddedShape.keySet().contains(ax) ? paddedShape.get(ax) : s;
+			if (sPad != s * g)
+				throw new IllegalArgumentException();
+		}
+		
+		int[] end = new int[axes.length()];
+		for (int i = 0; i < axes.length(); i ++) {
+			String ax = axes.split("")[i];
+			int p = pad.keySet().contains(ax) ? pad.get(ax)[1] : 0;
+			int g = grid.keySet().contains(ax) ? grid.get(ax) : 1;
+			if (p < g)
+				end[i] = 0;
+			else
+				end[i] = -Math.floorDiv(p, g);
+		}
+		long[] minLim = x.minAsLongArray();
+		long[] maxLim = x.maxAsLongArray();
+		for (int i = 0; i < maxLim.length; i ++) {
+			maxLim[i] += end[i];
+		}
+		RandomAccessibleInterval<T> crop = Views.interval(
+				x, new FinalInterval( minLim, maxLim ));
 		return crop;
 	}
 	
