@@ -48,11 +48,14 @@ import io.bioimage.modelrunner.engine.installation.EngineInstall;
 import io.bioimage.modelrunner.exceptions.LoadEngineException;
 import io.bioimage.modelrunner.exceptions.LoadModelException;
 import io.bioimage.modelrunner.exceptions.RunModelException;
+import io.bioimage.modelrunner.model.processing.Processing;
+import io.bioimage.modelrunner.model.stardist.StardistConfig;
 import io.bioimage.modelrunner.runmode.RunMode;
 import io.bioimage.modelrunner.runmode.ops.GenericOp;
 import io.bioimage.modelrunner.tensor.Tensor;
 import io.bioimage.modelrunner.tensor.Utils;
 import io.bioimage.modelrunner.utils.Constants;
+import io.bioimage.modelrunner.utils.JSONUtils;
 import io.bioimage.modelrunner.versionmanagement.InstalledEngines;
 import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.img.array.ArrayImgs;
@@ -72,13 +75,15 @@ import net.imglib2.view.Views;
  */
 public class Stardist2D {
 	
+	private String modelDir;
+	
 	private ModelDescriptor descriptor;
 	
 	private final int channels;
 	
-	private final float nms_threshold;
+	private Float nms_threshold;
 	
-	private final float prob_threshold;
+	private Float prob_threshold;
 	
 	private static final List<String> STARDIST_DEPS = Arrays.asList(new String[] {"python=3.10", "stardist", "numpy", "appose"});
 	
@@ -90,11 +95,47 @@ public class Stardist2D {
 	
 	private static final String STARDIST2D_METHOD_NAME= "stardist_postprocessing";
 	
-	private Stardist2D() {
+	private static final String THRES_FNAME = "thresholds.json";
+	
+	private static final String PROB_THRES_KEY = "thres";
+	
+	private static final String NMS_THRES_KEY = "thres";
+	
+	private static final float DEFAULT_NMS_THRES = (float) 0.4;
+	
+	private static final float DEFAULT_PROB_THRES = (float) 0.5;
+	
+	private Stardist2D(StardistConfig config, String modelName, String baseDir) {
+		modelDir = new File(baseDir, modelName).getAbsolutePath();
+		findWeights();
+		findThresholds();
+		
 		this.channels = 1;
-		// TODO get from config??
-		this.nms_threshold = 0;
-		this.prob_threshold = 0;
+	}
+	
+	private void findWeights() {
+		
+	}
+	
+	private void findThresholds() {
+		if (new File(modelDir, THRES_FNAME).isFile()) {
+			try {
+				Map<String, Object> json = JSONUtils.load(modelDir + File.separator + THRES_FNAME);
+				if (json.get(PROB_THRES_KEY) != null && json.get(PROB_THRES_KEY) instanceof Number)
+					prob_threshold = ((Number) json.get(PROB_THRES_KEY)).floatValue();
+				if (json.get(NMS_THRES_KEY) != null && json.get(NMS_THRES_KEY) instanceof Number)
+					nms_threshold = ((Number) json.get(NMS_THRES_KEY)).floatValue();
+			} catch (IOException e) {
+			}
+		}
+		if (nms_threshold == null) {
+			System.out.println("Nms threshold not defined, using default value: " + DEFAULT_NMS_THRES);
+			nms_threshold = DEFAULT_NMS_THRES;
+		}
+		if (prob_threshold == null) {
+			System.out.println("Probability threshold not defined, using default value: " + DEFAULT_PROB_THRES);
+			prob_threshold = DEFAULT_NMS_THRES;
+		}
 	}
 	
 	private Stardist2D(ModelDescriptor descriptor) {
@@ -226,6 +267,8 @@ public class Stardist2D {
 		
 		Model model = Model.createBioimageioModel(this.descriptor.getModelPath());
 		model.loadModel();
+		Processing processing = Processing.init(descriptor);
+		inputList = processing.preprocess(inputList, false);
 		model.runModel(inputList, outputList);
 		
 		return Utils.transpose(Cast.unchecked(postProcessing(outputList.get(0).getData())));
