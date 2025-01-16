@@ -51,7 +51,7 @@ import net.imglib2.type.numeric.real.FloatType;
  */
 public class Stardist2D extends StardistAbstract {
 	
-	private static String MODULE_NAME = "Stardist2D";
+	private static String MODULE_NAME = "StarDist2D";
 	
 	private Stardist2D(String modelName, String baseDir) throws IOException, ModelSpecsException {
 		super(modelName, baseDir);

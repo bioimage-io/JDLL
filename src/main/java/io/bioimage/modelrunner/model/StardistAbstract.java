@@ -81,17 +81,13 @@ public abstract class StardistAbstract implements Closeable {
 	private static final List<String> STARDIST_CHANNELS = Arrays.asList(new String[] {"conda-forge", "default"});
 
 	
-	private static final String COORDS_DTYPE_KEY = "coords_dtype";
+	private static final String SHM_NAME_KEY = "_shm_name";
 	
-	private static final String COORDS_SHAPE_KEY = "coords_shape";
+	private static final String DTYPE_KEY = "_dtype";
 	
-	private static final String POINTS_DTYPE_KEY = "points_dtype";
+	private static final String SHAPE_KEY = "_shape";
 	
-	private static final String POINTS_SHAPE_KEY = "points_shape";
-	
-	private static final String POINTS_KEY = "points";
-	
-	private static final String COORDS_KEY = "coords";
+	private static final String KEYS_KEY = "keys";
 	
 	protected static final String LOAD_MODEL_CODE_ABSTRACT = ""
 			+ "if '%s' not in globals().keys():" + System.lineSeparator()
@@ -106,41 +102,67 @@ public abstract class StardistAbstract implements Closeable {
 			+ "if 'shared_memory' not in globals().keys():" + System.lineSeparator()
 			+ "  from multiprocessing import shared_memory" + System.lineSeparator()
 			+ "  globals()['shared_memory'] = shared_memory" + System.lineSeparator()
+			+ "os.environ[\"CUDA_VISIBLE_DEVICES\"] = \"-1\"" + System.lineSeparator()
 			+ "model = %s(None, name='%s', basedir='%s')" + System.lineSeparator()
-			+ "globals()['model'] = model";
+			+ "globals()['model'] = model" + System.lineSeparator();
 	
 	private static final String RUN_MODEL_CODE = ""
 			+ "output = model.predict_instances(im, return_predict=False)" + System.lineSeparator()
+			//+ "print(output)" + System.lineSeparator()
+			+ "print(type(output))" + System.lineSeparator()
+			+ "if type(output) == np.ndarray:" + System.lineSeparator()
+			+ "  im[:] = output" + System.lineSeparator()
+			+ "  im[:] = output" + System.lineSeparator()
+			+ "  if os.name == 'nt':" + System.lineSeparator()
+			+ "    im_shm.close()" + System.lineSeparator()
+			+ "    im_shm.unlink()" + System.lineSeparator()
+			+ "if type(output) != list and type(output) != tuple:" + System.lineSeparator()
+			+ "  raise TypeError('StarDist output should be a list of a np.ndarray')" + System.lineSeparator()
+			+ "if type(output[0]) != np.ndarray:" + System.lineSeparator()
+			+ "  raise TypeError('If the StarDist output is a list, the first entry should be a np.ndarray')" + System.lineSeparator()
 			+ "im[:] = output[0]" + System.lineSeparator()
-			+ "if output[1]['" + POINTS_KEY + "'].nbytes == 0:" + System.lineSeparator()
-			+ "  task.outputs['" + POINTS_SHAPE_KEY + "'] = None" + System.lineSeparator()
-			+ "else:" + System.lineSeparator()
-			+ "  task.outputs['" + POINTS_SHAPE_KEY + "'] = output[1]['" + POINTS_KEY + "'].shape" + System.lineSeparator()
-			+ "  task.outputs['"+ POINTS_DTYPE_KEY + "'] = output[1]['" + POINTS_KEY + "'].dtype" + System.lineSeparator()
-			+ "  points_shm = "
-			+ "  shared_memory.SharedMemory(create=True, name=os.path.basename(shm_points_id), size=output[1]['" + POINTS_KEY + "'].nbytes)" + System.lineSeparator()
-			+ "  shared_points = np.ndarray(output[1]['" + POINTS_KEY + "'].shape, dtype=output[1]['" + POINTS_KEY + "'].dtype, buffer=points_shm.buf)" + System.lineSeparator()
-			+ "  globals()['shared_points'] = shared_points" + System.lineSeparator()
-			+ "if output[1]['" + COORDS_KEY + "'].nbytes == 0:" + System.lineSeparator()
-			+ "  task.outputs['" + COORDS_SHAPE_KEY + "'] = None" + System.lineSeparator()
-			+ "else:" + System.lineSeparator()
-			+ "  task.outputs['" + COORDS_SHAPE_KEY + "'] = output[1]['" + COORDS_KEY + "'].shape" + System.lineSeparator()
-			+ "  task.outputs['" + COORDS_DTYPE_KEY + "'] = output[1]['" + COORDS_KEY + "'].dtype" + System.lineSeparator()
-			+ "  coords_shm = "
-			+ "  shared_memory.SharedMemory(create=True, name=os.path.basename(shm_points_id), size=output[1]['" + COORDS_KEY + "'].nbytes)" + System.lineSeparator()
-			+ "  shared_coords = np.ndarray(output[1]['" + COORDS_KEY + "'].shape, dtype=output[1]['" + COORDS_KEY + "'].dtype, buffer=coords_shm.buf)" + System.lineSeparator()
-			+ "  globals()['shared_coords'] = shared_coords" + System.lineSeparator()
+			+ "if len(output) > 1 and type(output[1]) != dict:" + System.lineSeparator()
+			+ "  raise TypeError('If the StarDist output is a list, the second entry needs to be a dict.')" + System.lineSeparator()
+			+ "task.outputs['" + KEYS_KEY + "'] = list(output[1].keys())" + System.lineSeparator()
+			+ "shm_list = []" + System.lineSeparator()
+			+ "np_list = []" + System.lineSeparator()
+			+ "for kk, vv in output[1].items():" + System.lineSeparator()
+			+ "  print(kk)" + System.lineSeparator()
+			+ "  if type(vv) != np.ndarray:" + System.lineSeparator()
+			+ "    task.update('Output ' + kk + ' is not a np.ndarray. Only np.ndarrays supported.')" + System.lineSeparator()
+			+ "    print(type(vv))" + System.lineSeparator()
+			+ "    continue" + System.lineSeparator()
+			+ "  if output[1][kk].nbytes == 0:" + System.lineSeparator()
+			+ "    task.outputs[kk] = None" + System.lineSeparator()
+			+ "  else:" + System.lineSeparator()
+			+ "    task.outputs[kk + '" + SHAPE_KEY + "'] = output[1][kk].shape" + System.lineSeparator()
+			+ "    print(type(output[1][kk].shape))" + System.lineSeparator()
+			+ "    task.outputs[kk + '"+ DTYPE_KEY + "'] = str(output[1][kk].dtype)" + System.lineSeparator()
+			+ "    print(type(output[1][kk].dtype))" + System.lineSeparator()
+			+ "    shm = shared_memory.SharedMemory(create=True, size=output[1][kk].nbytes)" + System.lineSeparator()
+			+ "    task.outputs[kk + '"+ SHM_NAME_KEY + "'] = shm.name" + System.lineSeparator()
+			+ "    print(type(shm.name))" + System.lineSeparator()
+			+ "    shm_list.append(shm)" + System.lineSeparator()
+			+ "    aa = np.ndarray(output[1][kk].shape, dtype=output[1][kk].dtype, buffer=shm.buf)" + System.lineSeparator()
+			+ "    aa[:] = output[1][kk]" + System.lineSeparator()
+			+ "    np_list.append(aa)" + System.lineSeparator()
+			+ "print('dd')" + System.lineSeparator()
+			+ "globals()['shm_list'] = shm_list" + System.lineSeparator()
+			+ "globals()['np_list'] = np_list" + System.lineSeparator()
+			
+			
 			+ "if os.name == 'nt':" + System.lineSeparator()
 			+ "  im_shm.close()" + System.lineSeparator()
 			+ "  im_shm.unlink()" + System.lineSeparator();
 	
 	private static final String CLOSE_SHM_CODE = ""
-			+ "if 'points_shm' in globals().keys():" + System.lineSeparator()
-			+ "  points_shm.close()" + System.lineSeparator()
-			+ "  points_shm.unlink()" + System.lineSeparator()
-			+ "if 'coords_shm' in globals().keys():" + System.lineSeparator()
-			+ "  coords_shm.close()" + System.lineSeparator()
-			+ "  coords_shm.unlink()" + System.lineSeparator();
+			+ "if 'np_list' in globals().keys():" + System.lineSeparator()
+			+ "  for a in np_list:" + System.lineSeparator()
+			+ "    del a" + System.lineSeparator()
+			+ "if 'shm_list' in globals().keys():" + System.lineSeparator()
+			+ "  for s in shm_list:" + System.lineSeparator()
+			+ "    s.unlink()" + System.lineSeparator()
+			+ "    del s" + System.lineSeparator();
 	
 	protected abstract String createImportsCode();
 	
@@ -265,11 +287,14 @@ public abstract class StardistAbstract implements Closeable {
 		// TODO I do not understand why is complaining when the types align perfectly
 		RandomAccessibleInterval<T> maskCopy = Tensor.createCopyOfRaiInWantedDataType(Cast.unchecked(shma.getSharedRAI()), 
 				Util.getTypeFromInterval(Cast.unchecked(shma.getSharedRAI())));
-		outs.put("mask", maskCopy);
-		outs.put(POINTS_KEY, reconstructPoints(task, shm_points_id));
-		outs.put(COORDS_KEY, reconstructCoord(task, shm_coords_id));
-		
 		shma.close();
+		outs.put("mask", maskCopy);
+		
+		if (task.outputs.get(KEYS_KEY) != null) {
+			for (String kk : (List<String>) task.outputs.get(KEYS_KEY)) {
+				outs.put("", reconstruct(task, kk));
+			}
+		}
 		
 		if (PlatformDetection.isWindows()) {
 			Task closeSHMTask = python.task(CLOSE_SHM_CODE);
@@ -279,17 +304,18 @@ public abstract class StardistAbstract implements Closeable {
 	}
 	
 	private <T extends RealType<T> & NativeType<T>> 
-	RandomAccessibleInterval<T> reconstructCoord(Task task, String shm_coords_id) throws IOException {
-		
-		String coords_dtype = (String) task.outputs.get(COORDS_DTYPE_KEY);
-		List<Number> coords_shape = (List<Number>) task.outputs.get(COORDS_SHAPE_KEY);
+	RandomAccessibleInterval<T> reconstruct(Task task, String key) throws IOException {
+
+		String shm_name = (String) task.outputs.get(key + SHM_NAME_KEY);
+		String coords_dtype = (String) task.outputs.get(key + DTYPE_KEY);
+		List<Number> coords_shape = (List<Number>) task.outputs.get(key + SHAPE_KEY);
 		if (coords_shape == null)
 			return null;
 		
 		long[] coordsSh = new long[coords_shape.size()];
 		for (int i = 0; i < coordsSh.length; i ++)
 			coordsSh[i] = coords_shape.get(i).longValue();
-		SharedMemoryArray shmCoords = SharedMemoryArray.readOrCreate(shm_coords_id, coordsSh, 
+		SharedMemoryArray shmCoords = SharedMemoryArray.readOrCreate(shm_name, coordsSh, 
 				Cast.unchecked(CommonUtils.getImgLib2DataType(coords_dtype)), false, false);
 		
 		Map<String, RandomAccessibleInterval<T>> outs = new HashMap<String, RandomAccessibleInterval<T>>();
@@ -302,29 +328,6 @@ public abstract class StardistAbstract implements Closeable {
 		shmCoords.close();
 		
 		return coordsCopy;
-	}
-	
-	private <T extends RealType<T> & NativeType<T>> 
-	RandomAccessibleInterval<T> reconstructPoints(Task task, String shm_points_id) throws IOException {
-		
-		String points_dtype = (String) task.outputs.get(POINTS_DTYPE_KEY);
-		List<Number> points_shape = (List<Number>) task.outputs.get(POINTS_SHAPE_KEY);
-		if (points_shape == null)
-			return null;
-		
-		
-		long[] pointsSh = new long[points_shape.size()];
-		for (int i = 0; i < pointsSh.length; i ++)
-			pointsSh[i] = points_shape.get(i).longValue();
-		SharedMemoryArray shmPoints = SharedMemoryArray.readOrCreate(shm_points_id, pointsSh, 
-				Cast.unchecked(CommonUtils.getImgLib2DataType(points_dtype)), false, false);
-		
-		// TODO I do not understand why is complaining when the types align perfectly
-		RandomAccessibleInterval<T> pointsRAI = shmPoints.getSharedRAI();
-		RandomAccessibleInterval<T> pointsCopy = Tensor.createCopyOfRaiInWantedDataType(Cast.unchecked(pointsRAI), 
-				Util.getTypeFromInterval(Cast.unchecked(pointsRAI)));
-		shmPoints.close();
-		return pointsCopy;
 	}
 	
 	/**
