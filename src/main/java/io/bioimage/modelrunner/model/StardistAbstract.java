@@ -108,8 +108,6 @@ public abstract class StardistAbstract implements Closeable {
 	
 	private static final String RUN_MODEL_CODE = ""
 			+ "output = model.predict_instances(im, return_predict=False)" + System.lineSeparator()
-			//+ "print(output)" + System.lineSeparator()
-			+ "print(type(output))" + System.lineSeparator()
 			+ "if type(output) == np.ndarray:" + System.lineSeparator()
 			+ "  im[:] = output" + System.lineSeparator()
 			+ "  im[:] = output" + System.lineSeparator()
@@ -127,26 +125,20 @@ public abstract class StardistAbstract implements Closeable {
 			+ "shm_list = []" + System.lineSeparator()
 			+ "np_list = []" + System.lineSeparator()
 			+ "for kk, vv in output[1].items():" + System.lineSeparator()
-			+ "  print(kk)" + System.lineSeparator()
 			+ "  if type(vv) != np.ndarray:" + System.lineSeparator()
 			+ "    task.update('Output ' + kk + ' is not a np.ndarray. Only np.ndarrays supported.')" + System.lineSeparator()
-			+ "    print(type(vv))" + System.lineSeparator()
 			+ "    continue" + System.lineSeparator()
 			+ "  if output[1][kk].nbytes == 0:" + System.lineSeparator()
 			+ "    task.outputs[kk] = None" + System.lineSeparator()
 			+ "  else:" + System.lineSeparator()
 			+ "    task.outputs[kk + '" + SHAPE_KEY + "'] = output[1][kk].shape" + System.lineSeparator()
-			+ "    print(type(output[1][kk].shape))" + System.lineSeparator()
 			+ "    task.outputs[kk + '"+ DTYPE_KEY + "'] = str(output[1][kk].dtype)" + System.lineSeparator()
-			+ "    print(type(output[1][kk].dtype))" + System.lineSeparator()
 			+ "    shm = shared_memory.SharedMemory(create=True, size=output[1][kk].nbytes)" + System.lineSeparator()
 			+ "    task.outputs[kk + '"+ SHM_NAME_KEY + "'] = shm.name" + System.lineSeparator()
-			+ "    print(type(shm.name))" + System.lineSeparator()
 			+ "    shm_list.append(shm)" + System.lineSeparator()
 			+ "    aa = np.ndarray(output[1][kk].shape, dtype=output[1][kk].dtype, buffer=shm.buf)" + System.lineSeparator()
 			+ "    aa[:] = output[1][kk]" + System.lineSeparator()
 			+ "    np_list.append(aa)" + System.lineSeparator()
-			+ "print('dd')" + System.lineSeparator()
 			+ "globals()['shm_list'] = shm_list" + System.lineSeparator()
 			+ "globals()['np_list'] = np_list" + System.lineSeparator()
 			
@@ -292,7 +284,7 @@ public abstract class StardistAbstract implements Closeable {
 		
 		if (task.outputs.get(KEYS_KEY) != null) {
 			for (String kk : (List<String>) task.outputs.get(KEYS_KEY)) {
-				outs.put("", reconstruct(task, kk));
+				outs.put(kk, reconstruct(task, kk));
 			}
 		}
 		
@@ -318,12 +310,10 @@ public abstract class StardistAbstract implements Closeable {
 		SharedMemoryArray shmCoords = SharedMemoryArray.readOrCreate(shm_name, coordsSh, 
 				Cast.unchecked(CommonUtils.getImgLib2DataType(coords_dtype)), false, false);
 		
-		Map<String, RandomAccessibleInterval<T>> outs = new HashMap<String, RandomAccessibleInterval<T>>();
 		// TODO I do not understand why is complaining when the types align perfectly
 		RandomAccessibleInterval<T> coordsRAI = shmCoords.getSharedRAI();
 		RandomAccessibleInterval<T> coordsCopy = Tensor.createCopyOfRaiInWantedDataType(Cast.unchecked(coordsRAI), 
-				Util.getTypeFromInterval(Cast.unchecked(shmCoords)));
-		outs.put("coords", coordsCopy);
+				Util.getTypeFromInterval(Cast.unchecked(coordsRAI)));
 		
 		shmCoords.close();
 		
