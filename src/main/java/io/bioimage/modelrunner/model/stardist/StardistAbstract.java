@@ -17,7 +17,7 @@
  * limitations under the License.
  * #L%
  */
-package io.bioimage.modelrunner.model;
+package io.bioimage.modelrunner.model.stardist;
 
 import java.io.Closeable;
 import java.io.File;
