@@ -70,7 +70,7 @@ public abstract class StardistAbstract implements Closeable {
 	
 	private boolean loaded = false;
 	
-	private SharedMemoryArray shma;
+	protected SharedMemoryArray shma;
 	
 	private ModelDescriptor descriptor;
 		
@@ -120,7 +120,10 @@ public abstract class StardistAbstract implements Closeable {
 			+ "  raise TypeError('StarDist output should be a list of a np.ndarray')" + System.lineSeparator()
 			+ "if type(output[0]) != np.ndarray:" + System.lineSeparator()
 			+ "  raise TypeError('If the StarDist output is a list, the first entry should be a np.ndarray')" + System.lineSeparator()
-			+ "im[:] = output[0]" + System.lineSeparator()
+			+ "if len(im.shape) == 3 and len(output[0].shape) == 2:" + System.lineSeparator()
+			+ "  im[:, :, 0] = output[0]" + System.lineSeparator()
+			+ "else:" + System.lineSeparator()
+			+ "  im[:] = output[0]" + System.lineSeparator()
 			+ "if len(output) > 1 and type(output[1]) != dict:" + System.lineSeparator()
 			+ "  raise TypeError('If the StarDist output is a list, the second entry needs to be a dict.')" + System.lineSeparator()
 			+ "task.outputs['" + KEYS_KEY + "'] = list(output[1].keys())" + System.lineSeparator()
@@ -161,6 +164,8 @@ public abstract class StardistAbstract implements Closeable {
 	protected abstract String createImportsCode();
 	
 	protected abstract <T extends RealType<T> & NativeType<T>>  void checkInput(RandomAccessibleInterval<T> image);
+	
+	protected abstract <T extends RealType<T> & NativeType<T>> RandomAccessibleInterval<T> reconstructMask() throws IOException;
 	
 	protected StardistAbstract(String modelName, String baseDir) throws IOException, ModelSpecsException {
 		this.name = modelName;
@@ -275,11 +280,7 @@ public abstract class StardistAbstract implements Closeable {
 			throws IOException, InterruptedException {
 		
 		Map<String, RandomAccessibleInterval<T>> outs = new HashMap<String, RandomAccessibleInterval<T>>();
-		// TODO I do not understand why is complaining when the types align perfectly
-		RandomAccessibleInterval<T> maskCopy = Tensor.createCopyOfRaiInWantedDataType(Cast.unchecked(shma.getSharedRAI()), 
-				Util.getTypeFromInterval(Cast.unchecked(shma.getSharedRAI())));
-		shma.close();
-		outs.put("mask", maskCopy);
+		outs.put("mask", reconstructMask());
 		
 		if (task.outputs.get(KEYS_KEY) != null) {
 			for (String kk : (List<String>) task.outputs.get(KEYS_KEY)) {

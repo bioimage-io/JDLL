@@ -35,12 +35,17 @@ import io.bioimage.modelrunner.bioimageio.description.exceptions.ModelSpecsExcep
 import io.bioimage.modelrunner.exceptions.LoadEngineException;
 import io.bioimage.modelrunner.exceptions.LoadModelException;
 import io.bioimage.modelrunner.exceptions.RunModelException;
+import io.bioimage.modelrunner.tensor.Tensor;
 import io.bioimage.modelrunner.utils.Constants;
 import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.img.array.ArrayImgs;
 import net.imglib2.type.NativeType;
 import net.imglib2.type.numeric.RealType;
 import net.imglib2.type.numeric.real.FloatType;
+import net.imglib2.util.Cast;
+import net.imglib2.util.Util;
+import net.imglib2.view.IntervalView;
+import net.imglib2.view.Views;
 
 /**
  * Implementation of an API to run Stardist 2D models out of the box with little configuration.
@@ -77,6 +82,26 @@ public class Stardist2D extends StardistAbstract {
 			throw new IllegalArgumentException("This Stardist2D model requires " + nChannels + " channels.");
 		else if (image.dimensionsAsLongArray().length > 3 || image.dimensionsAsLongArray().length < 2)
 			throw new IllegalArgumentException("Stardist2D model requires an image with dimensions XYC.");
+	}
+	
+	@Override
+	protected <T extends RealType<T> & NativeType<T>> RandomAccessibleInterval<T> reconstructMask() throws IOException {
+		// TODO I do not understand why is complaining when the types align perfectly
+		RandomAccessibleInterval<T> mask = shma.getSharedRAI();
+		RandomAccessibleInterval<T> maskCopy;
+		if (this.nChannels == 1) {
+			maskCopy = Tensor.createCopyOfRaiInWantedDataType(Cast.unchecked(mask), 
+					Util.getTypeFromInterval(Cast.unchecked(shma.getSharedRAI())));
+			shma.close();
+		} else {
+			long[] maxPos = mask.maxAsLongArray();
+			maxPos[2] = 0;
+			IntervalView<T> maskInterval = Views.interval(mask, mask.minAsLongArray(), maxPos);
+			maskCopy = Tensor.createCopyOfRaiInWantedDataType(Cast.unchecked(maskInterval), 
+					Util.getTypeFromInterval(Cast.unchecked(shma.getSharedRAI())));
+			shma.close();
+		}
+		return maskCopy;
 	}
 	
 	/**
