@@ -30,7 +30,7 @@ public class AxisV05 implements Axis{
 	private List<String> channelNames;
 	private final String abreviation;
 	private boolean concat = false;
-	private double scale = -1.0;
+	private double scale = 1.0;
 	private AxisSize size;
 	protected int halo = 0;
 	

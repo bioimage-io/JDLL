@@ -24,7 +24,7 @@ import java.util.Map;
 public class AxisSize {
 
 	private int min = 1;
-	private int step = 0;
+	private int step = 1;
 	private double offset = 0;
 	private String axisID;
 	private String ref;
