@@ -234,6 +234,10 @@ public abstract class StardistAbstract implements Closeable {
 		return code;
 	}
 	
+	public boolean isLoaded() {
+		return loaded;
+	}
+	
 	public void close() {
 		if (!loaded)
 			return;
