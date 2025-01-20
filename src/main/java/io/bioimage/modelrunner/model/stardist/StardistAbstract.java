@@ -244,8 +244,8 @@ public abstract class StardistAbstract implements Closeable {
 		python.close();
 	}
 	
-	public <T extends RealType<T> & NativeType<T>> 
-	Map<String, RandomAccessibleInterval<T>> predict(RandomAccessibleInterval<T> img) throws IOException, InterruptedException {
+	public <T extends RealType<T> & NativeType<T>, R extends RealType<R> & NativeType<R>> 
+	Map<String, RandomAccessibleInterval<R>> predict(RandomAccessibleInterval<T> img) throws IOException, InterruptedException {
 		checkInput(img);
 		shma = SharedMemoryArray.createSHMAFromRAI(img, false, false);
 		String code = "";
@@ -255,15 +255,8 @@ public abstract class StardistAbstract implements Closeable {
 		
 		code += createEncodeImageScript() + System.lineSeparator();
 		code += RUN_MODEL_CODE + System.lineSeparator();
-
 		
-		Map<String, Object> inputs = new HashMap<String, Object>();
-		String shm_coords_id = SharedMemoryArray.createShmName();
-		String shm_points_id = SharedMemoryArray.createShmName();
-		inputs.put("shm_coords_id", shm_coords_id);
-		inputs.put("shm_points_id", shm_points_id);
-		
-		Task task = python.task(code, inputs);
+		Task task = python.task(code);
 		task.waitFor();
 		if (task.status == TaskStatus.CANCELED)
 			throw new RuntimeException("Task canceled");
@@ -274,11 +267,11 @@ public abstract class StardistAbstract implements Closeable {
 		loaded = true;
 		
 		
-		return reconstructOutputs(task, shm_coords_id, shm_points_id);
+		return reconstructOutputs(task);
 	}
 	
 	private <T extends RealType<T> & NativeType<T>> 
-	Map<String, RandomAccessibleInterval<T>> reconstructOutputs(Task task, String shm_coords_id, String shm_points_id) 
+	Map<String, RandomAccessibleInterval<T>> reconstructOutputs(Task task) 
 			throws IOException, InterruptedException {
 		
 		Map<String, RandomAccessibleInterval<T>> outs = new HashMap<String, RandomAccessibleInterval<T>>();
