@@ -76,6 +76,8 @@ public abstract class StardistAbstract implements Closeable {
 		
 	private Service python;
 	
+	private static String INSTALLATION_DIR = Mamba.BASE_PATH;
+	
 	private static final List<String> STARDIST_DEPS = Arrays.asList(new String[] {"python=3.10", "stardist", "numpy", "appose"});
 	
 	private static final List<String> STARDIST_CHANNELS = Arrays.asList(new String[] {"conda-forge", "default"});
@@ -208,7 +210,7 @@ public abstract class StardistAbstract implements Closeable {
 	
 	private void createPythonService() throws IOException {
 		Environment env = new Environment() {
-			@Override public String base() { return new Mamba().getEnvsDir() + File.separator + "stardist"; }
+			@Override public String base() { return new Mamba(INSTALLATION_DIR).getEnvsDir() + File.separator + "stardist"; }
 			};
 		python = env.python();
 		python.debug(System.err::println);
@@ -345,7 +347,7 @@ public abstract class StardistAbstract implements Closeable {
 													RuntimeException, MambaInstallException, 
 													ArchiveException, URISyntaxException {
 		
-		Mamba mamba = new Mamba();
+		Mamba mamba = new Mamba(INSTALLATION_DIR);
 		boolean stardistPythonInstalled = false;
 		try {
 			stardistPythonInstalled = mamba.checkAllDependenciesInEnv("stardist", STARDIST_DEPS);
@@ -356,5 +358,22 @@ public abstract class StardistAbstract implements Closeable {
 			// TODO add logging for environment installation
 			mamba.create("stardist", true, STARDIST_CHANNELS, STARDIST_DEPS);
 		};
+	}
+	
+	/**
+	 * Set the directory where the StarDist Python environment will be installed
+	 * @param installationDir
+	 * 	directory where the StarDist Python environment will be created
+	 */
+	public static void setInstallationDir(String installationDir) {
+		INSTALLATION_DIR = installationDir;
+	}
+	
+	/**
+	 * 
+	 * @return the directory where the StarDist Python environment will be created
+	 */
+	public static String getInstallationDir() {
+		return INSTALLATION_DIR;
 	}
 }
