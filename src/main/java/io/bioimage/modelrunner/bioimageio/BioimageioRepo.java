@@ -405,10 +405,8 @@ public class BioimageioRepo {
 	 * @param id
 	 * 	id of the model of interest
 	 * @return true if it is available or false otherwise
-	 * @throws IOException if there is no connection to the internet or the
-	 * 	JSOn with the information cannot be accessed: https://raw.githubusercontent.com/bioimage-io/bioengine-model-runner/gh-pages/manifest.bioengine.json
 	 */
-	public static boolean isModelOnTheBioengineById(String id) throws IOException {
+	public static boolean isModelOnTheBioengineById(String id) {
 		return BioEngineAvailableModels.isModelSupportedInBioengine(id);
 	}
 	

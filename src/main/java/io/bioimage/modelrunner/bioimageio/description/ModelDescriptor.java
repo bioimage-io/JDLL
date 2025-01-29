@@ -28,7 +28,6 @@ import java.util.Map;
 import java.util.Set;
 
 import io.bioimage.modelrunner.bioimageio.BioimageioRepo;
-import io.bioimage.modelrunner.bioimageio.description.exceptions.ModelSpecsException;
 import io.bioimage.modelrunner.bioimageio.description.weights.ModelWeight;
 import io.bioimage.modelrunner.utils.Constants;
 
@@ -98,21 +97,28 @@ public abstract class ModelDescriptor {
      */
     public abstract String getNickname();
     
-    public abstract List<Author> buildAuthors(Object object);
+    protected abstract List<Author> buildAuthors(Object object);
     
-    public abstract List<Cite> buildCiteElements();
+    protected abstract List<Cite> buildCiteElements();
     
-    public abstract List<TensorSpec> buildInputTensors();
+    protected abstract List<TensorSpec> buildInputTensors();
     
-    public abstract List<TensorSpec> buildOutputTensors();
-    
+    protected abstract List<TensorSpec> buildOutputTensors();
+
+    /**
+     * Calculate the total input halo once the output tensors are set.
+     * NOte that the total halo is calculated following "xyczb" axes order,
+     * not the input axes order, as for several inputs the axes order might change
+     * for each of them
+     * @return the total input halo in "xyczb" axes order
+     */
     protected abstract void calculateTotalInputHalo();
     
-    public abstract ExecutionConfig buildConfig();
+    protected abstract ExecutionConfig buildConfig();
     
-    public abstract ModelWeight buildWeights();
+    protected abstract ModelWeight buildWeights();
     
-    public abstract String findID();
+    protected abstract String findID();
     
     protected abstract void addBioEngine();
     
