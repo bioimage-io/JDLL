@@ -19,10 +19,8 @@
  */
 package io.bioimage.modelrunner.bioimageio.description;
 
-import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
-import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -32,7 +30,6 @@ import java.util.Set;
 import io.bioimage.modelrunner.bioimageio.BioimageioRepo;
 import io.bioimage.modelrunner.bioimageio.description.exceptions.ModelSpecsException;
 import io.bioimage.modelrunner.bioimageio.description.weights.ModelWeight;
-import io.bioimage.modelrunner.utils.Constants;
 
 
 /**
@@ -42,36 +39,8 @@ import io.bioimage.modelrunner.utils.Constants;
  * 
  * @author Carlos Garcia Lopez de Haro and Daniel Felipe Gonzalez Obando
  */
-public class ModelDescriptorV05 implements ModelDescriptor
+public class ModelDescriptorV05 extends ModelDescriptor
 {
-    private String format_version;
-    private String name;
-    private String download_url;
-    private String timestamp;
-    private String description;
-    private String type;
-    private String git_repo;
-    private List<Author> authors;
-    private List<Author> maintainers;
-    private List<Author> packaged_by;
-    private List<Cite> cite;
-    private List<String> tags;
-    private String license;
-    private String documentation;
-    private List<String> covers;
-    private List<TensorSpec> input_tensors;
-    private List<TensorSpec> output_tensors;
-    private ExecutionConfig config;
-    private ModelWeight weights;
-    private Map<String, Object> attachments;
-    private String version;
-    private List<String> links;
-    private static String fromLocalKey = "fromLocalRepo";
-    private static String modelPathKey = "modelPath";
-    private String modelID;
-    private String localModelPath;
-    private boolean supportBioengine = false;
-	private  Map<String, Object> yamlElements;
 
 	protected ModelDescriptorV05(Map<String, Object> yamlElements) throws ModelSpecsException
     {
@@ -374,178 +343,12 @@ public class ModelDescriptorV05 implements ModelDescriptor
     }
 
     /**
-     * @return The version of the format used in the descriptor file.
-     */
-    public String getFormatVersion()
-    {
-        return format_version;
-    }
-
-    /**
-     * @return The name of this model.
-     */
-    public String getName()
-    {
-        return name;
-    }
-
-    /**
-     * @return The ID of this model.
-     */
-    public String getModelID()
-    {
-        return modelID;
-    }
-
-    /**
      * @return The nickname of this model, for v0.5 is the same as the id.
      */
+    @Override
     public String getNickname()
     {
         return modelID;
-    }
-
-    /**
-     * @return The creation timestamp of this model.
-     */
-    public String getTimestamp()
-    {
-        return timestamp;
-    }
-
-    /**
-     * @return The description of this model.
-     */
-    public String getDescription()
-    {
-        return description;
-    }
-
-    /**
-     * @return The list of authors for this model.
-     */
-    public List<Author> getAuthors()
-    {
-        return authors;
-    }
-
-    /**
-     * @return The list of citations for this model.
-     */
-    public List<Cite> getCite()
-    {
-        return cite;
-    }
-
-    /**
-     * @return The list of tags associated with this model.
-     */
-    public List<String> getTags()
-    {
-        return tags;
-    }
-
-    /**
-     * @return The license description for this model.
-     */
-    public String getLicense()
-    {
-        return license;
-    }
-
-    /**
-     * @return the type of Bioimage.io artifact that the rdf.yaml
-     * refers to. It can be model, dataset, application...
-     */
-    public String getType()
-    {
-        return type;
-    }
-
-    /**
-     * @return The documentation text associated to this model.
-     */
-    public String getDocumentation()
-    {
-        return documentation;
-    }
-
-    /**
-     * @return The list of URIs of the covers for this model.
-     */
-    public List<String> getCovers()
-    {
-        return covers;
-    }
-
-    /**
-     * @return The list of input tensor specification instances for this model.
-     */
-    public List<TensorSpec> getInputTensors()
-    {
-        return input_tensors;
-    }
-
-    /**
-     * Searches for an input tensor with the given name.
-     * 
-     * @param name
-     *        Name of the tensor.
-     * @return The tensor with the provided name. null is returned if no tensor is found or if the input tensors list is not initialized.
-     */
-    public TensorSpec findInputTensor(String name)
-    {
-        if (input_tensors == null)
-        {
-            return null;
-        }
-
-        return input_tensors.stream()
-                .filter(t -> t.getName().equals(name))
-                .findAny().orElse(null);
-    }
-
-    /**
-     * Searches for an output tensor with the given name.
-     * 
-     * @param name
-     *        Name of the tensor.
-     * @return The tensor with the provided name. null is returned if no tensor is found or if the output tensors list is not initialized.
-     */
-    public TensorSpec findOutputTensor(String name)
-    {
-        if (output_tensors == null)
-        {
-            return null;
-        }
-
-        return output_tensors.stream()
-                .filter(t -> t.getName().equals(name))
-                .findAny().orElse(null);
-    }
-
-    /**
-     * @return The list of output tensor specification instances for this model.
-     */
-    public List<TensorSpec> getOutputTensors()
-    {
-        return output_tensors;
-    }
-
-    /**
-     * @return The execution configuration instance for this model.
-     */
-    public ExecutionConfig getConfig()
-    {
-        return config;
-    }
-
-    /**
-     * @return The model weights instance for this model.
-     */
-    public ModelWeight getWeights()
-    {
-        return weights;
     }
 
 	@Override
@@ -557,140 +360,4 @@ public class ModelDescriptorV05 implements ModelDescriptor
                 + ", inputTensors=" + input_tensors + ", outputTensors=" + output_tensors + ", config=" + config
                 + ", weights=" + weights + "}";
     }
-
-	/**
-	 * @return the maintainers
-	 */
-	public List<Author> getMaintainers() {
-		return maintainers;
-	}
-
-	/**
-	 * @return the packaged_by
-	 */
-	public List<Author> getPackagedBy() {
-		return packaged_by;
-	}
-
-	/**
-	 * @return the attachments
-	 */
-	public Map<String, Object> getAttachments() {
-		return attachments;
-	}
-
-	/**
-	 * @return the version
-	 */
-	public String getVersion() {
-		return version;
-	}
-
-	/**
-	 * @return the links
-	 */
-	public List<String> getLinks() {
-		return links;
-	}
-	
-	/**
-	 * Whether the model is already in the local repo or it has to be downloaded
-	 * @return true if the model is already installed or false otherwise
-	 */
-	public boolean isModelInLocalRepo() {
-		if (this.localModelPath == null)
-			return false;
-		return new File(localModelPath).isDirectory();
-	}
-	
-	/**
-	 * Return String to path where the model is stored
-	 * @return String directory where the model is stored
-	 */
-	public String getModelPath() {
-		return this.localModelPath;
-	}
-	
-	/**
-	 * Method that returns whether tiling is allowed or not for the model
-	 * @return true if tiling is allowed and false otherwise
-	 */
-	public boolean isTilingAllowed() {
-		if (this.config == null)
-			return true;
-		else if (this.config.getDeepImageJ() == null)
-			return true;
-		else 
-			return this.getConfig().getDeepImageJ().isAllowTiling();
-	}
-	
-	/**
-	 * Method that returns whether the model is pyramidal or not
-	 * @return true if the model is pyramidal, false otherwise
-	 */
-	public boolean isPyramidal() {
-		if (this.config == null)
-			return false;
-		else if (this.config.getDeepImageJ() == null)
-			return false;
-		else 
-			return this.getConfig().getDeepImageJ().isPyramidalModel();
-	}
-	
-	/**
-	 * 
-	 * @return whether the model can be run on the bioengino or not
-	 */
-	public boolean canRunOnBioengine() {
-		return this.supportBioengine;
-	}
-
-	@Override
-	public String buildInfo() {
-		String authorNames = "<ul>";
-		for (Author auth : this.authors) {
-			authorNames += "<li>" + auth.getName() + "</li>";
-		}
-		authorNames += "</ul>";
-		String citation = "<ul>";
-		for (Cite ci : this.cite) {
-			if (ci.getUrl() != null && ci.getText() != null)
-				citation += "<li><a href='" + ci.getUrl() + "'>" + ci.getText() + "</a></li>";
-			else if (ci.getText() != null)
-				citation += "<li>" + ci.getText() + "</li>";
-		}
-		citation += "</ul>";
-		if (this.isModelInLocalRepo())
-			return String.format(TEXT_DESCRIPTION_LOCAL, this.name, this.getNickname(), 
-					this.description, new File(localModelPath).getName(), authorNames, citation);
-		else
-			return String.format(TEXT_DESCRIPTION, this.name, this.getNickname(), this.description, authorNames, citation);
-	}
-
-	@Override
-	public String getGitRepo() {
-		return this.git_repo;
-	}
-
-	@Override
-	public List<Badge> getBadges() {
-		return new ArrayList<Badge>();
-	}
-
-	@Override
-	public void addModelPath(Path modelBasePath) {
-		this.localModelPath = modelBasePath.toFile().getAbsolutePath();
-	}
-
-	@Override
-	public String getModelURL() {
-		if (this.download_url == null)
-			this.download_url = BioimageioRepo.getModelRdfUrl(modelID, version);
-		return this.download_url;
-	}
-
-	@Override
-	public String getRDFSource() {
-		return getModelURL() + Constants.RDF_FNAME;
-	}
 }

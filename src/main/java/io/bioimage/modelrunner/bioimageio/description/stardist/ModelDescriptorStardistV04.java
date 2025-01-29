@@ -17,7 +17,7 @@
  * limitations under the License.
  * #L%
  */
-package io.bioimage.modelrunner.bioimageio.description;
+package io.bioimage.modelrunner.bioimageio.description.stardist;
 
 import java.io.File;
 import java.io.IOException;
@@ -28,8 +28,13 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import io.bioimage.modelrunner.bioimageio.BioimageioRepo;
+import io.bioimage.modelrunner.bioimageio.description.Author;
+import io.bioimage.modelrunner.bioimageio.description.Badge;
+import io.bioimage.modelrunner.bioimageio.description.Cite;
+import io.bioimage.modelrunner.bioimageio.description.ModelDescriptor;
 import io.bioimage.modelrunner.bioimageio.description.exceptions.ModelSpecsException;
 import io.bioimage.modelrunner.bioimageio.description.weights.ModelWeight;
 import io.bioimage.modelrunner.utils.Constants;
@@ -42,21 +47,21 @@ import io.bioimage.modelrunner.utils.Constants;
  * 
  * @author Carlos Garcia Lopez de Haro and Daniel Felipe Gonzalez Obando
  */
-public class ModelDescriptorStardistV05 implements ModelDescriptor
+public class ModelDescriptorStardistV04 implements ModelDescriptor
 {
     private String format_version;
     private String name;
-    private String download_url;
     private String timestamp;
     private String description;
     private String type;
-    private String git_repo;
     private List<Author> authors;
     private List<Author> maintainers;
     private List<Author> packaged_by;
     private List<Cite> cite;
+    private List<Badge> badges;
     private List<String> tags;
     private String license;
+    private String git_repo;
     private String documentation;
     private List<String> covers;
     private List<TensorSpec> input_tensors;
@@ -64,32 +69,32 @@ public class ModelDescriptorStardistV05 implements ModelDescriptor
     private ExecutionConfig config;
     private ModelWeight weights;
     private Map<String, Object> attachments;
+    private String download_url;
     private String version;
     private List<String> links;
+    private Map<String, String> parent;
     private static String fromLocalKey = "fromLocalRepo";
     private static String modelPathKey = "modelPath";
     private String modelID;
+    private String newModelID;
     private String localModelPath;
     private boolean supportBioengine = false;
-	private  Map<String, Object> yamlElements;
 
-	protected ModelDescriptorStardistV05(Map<String, Object> yamlElements) throws ModelSpecsException
+    private ModelDescriptorStardistV04()
     {
-    	this.yamlElements = yamlElements;
-    	buildModelDescription();
     }
 
     @SuppressWarnings("unchecked")
     /**
-     * Build a {@link ModelDescriptorStardistV05} object from a map containing the elements read from
+     * Build a {@link ModelDescriptorStardistV04} object from a map containing the elements read from
      * a rdf.yaml file
      * @param yamlElements
      * 	map with the information read from a yaml file
-     * @return a {@link ModelDescriptorStardistV05} with the info of a Bioimage.io model
      * @throws ModelSpecsException if any of the parameters in the rdf.yaml file does not make fit the constraints
      */
-    protected void buildModelDescription() throws ModelSpecsException
+    protected static ModelDescriptorStardistV04 buildModelDescription(Map<String, Object> yamlElements) throws ModelSpecsException
     {
+        ModelDescriptorStardistV04 modelDescription = new ModelDescriptorStardistV04();
 
         Set<String> yamlFields = yamlElements.keySet();
         String[] yamlFieldsArr = new String[yamlFields.size()];
@@ -101,72 +106,78 @@ public class ModelDescriptorStardistV05 implements ModelDescriptor
             {
                 switch (field)
                 {
-                    case "format_version":
-                        format_version = (String) fieldElement;
-                        break;
+	                case "format_version":
+	                    modelDescription.format_version = (String) fieldElement;
+	                    break;
+	                case "version":
+	                    modelDescription.version = "" + fieldElement;
+	                    break;
                     case "name":
-                        name = (String) fieldElement;
+                        modelDescription.name = "" + fieldElement;
                         break;
                     case "timestamp":
-                        timestamp = fieldElement.toString();
+                        modelDescription.timestamp = fieldElement.toString();
                         break;
                     case "description":
-                        description = (String) fieldElement;
-                        break;
-                    case "id":
-                        modelID = (String) fieldElement;
+                        modelDescription.description = (String) fieldElement;
                         break;
                     case "authors":
-                        buildAuthors();
+                        modelDescription.authors = buildAuthorElements((List<?>) fieldElement);
                         break;
                     case "maintainers":
-                        buildAuthors();
+                        modelDescription.maintainers = buildAuthorElements((List<?>) fieldElement);
                         break;
                     case "packaged_by":
-                        buildAuthors();
+                        modelDescription.packaged_by = buildAuthorElements((List<?>) fieldElement);
                         break;
                     case "cite":
-                        buildCiteElements();
+                        modelDescription.cite = buildCiteElements((List<?>) fieldElement);
                         break;
-                    case "tags":
-                        tags = castListStrings(fieldElement);
-                        break;
-                    case "links":
-                        links = castListStrings(fieldElement);
-                        break;
-                    case "license":
-                        license = (String) fieldElement;
-                        break;
-                    case "documentation":
-                        documentation = (String) fieldElement;
+                    case "parent":
+                        modelDescription.parent = (Map<String, String>) fieldElement;
                         break;
                     case "git_repo":
-                    	git_repo = (String) fieldElement;
+                        modelDescription.git_repo = ModelDescriptorFactory.checkUrl((String) fieldElement);
+                        break;
+                    case "tags":
+                        modelDescription.tags = castListStrings(fieldElement);
+                        break;
+                    case "links":
+                        modelDescription.links = castListStrings(fieldElement);
+                        break;
+                    case "license":
+                        modelDescription.license = (String) fieldElement;
+                        break;
+                    case "documentation":
+                        modelDescription.documentation = (String) fieldElement;
                         break;
                     case "type":
-                        type = (String) fieldElement;
+                        modelDescription.type = (String) fieldElement;
                         break;
                     case "attachments":
-                        // TODO createAttachments();
+                        modelDescription.attachments = (Map<String, Object>) fieldElement;
                         break;
                     case "covers":
-                    	covers = castListStrings(yamlElements.get(field));
+                        modelDescription.covers = ModelDescriptorFactory.buildUrlElements((List<?>) fieldElement);
+                        break;
+                    case "badges":
+                        modelDescription.badges = buildBadgeElements((List<?>) fieldElement);
                         break;
                     case "inputs":
-                    	input_tensors = buildInputTensors((List<?>) yamlElements.get(field));
+                    	modelDescription.input_tensors = buildInputTensors((List<?>) yamlElements.get(field));
                         break;
                     case "outputs":
-                        output_tensors = buildOutputTensors((List<?>) yamlElements.get(field));
-                        calculateTotalInputHalo();
+                        modelDescription.output_tensors = buildOutputTensors((List<?>) yamlElements.get(field));
+                        modelDescription.calculateTotalInputHalo();
                         break;
                     case "config":
-                        config = buildConfig((Map<String, Object>) yamlElements.get(field));
+                        modelDescription.config = buildConfig((Map<String, Object>) yamlElements.get(field));
                         break;
                     case "weights":
-                        weights = buildWeights((Map<String, Object>) yamlElements.get(field));
+                        modelDescription.weights = buildWeights((Map<String, Object>) yamlElements.get(field));
                         break;
                     case "modelPath":
-                        localModelPath = (String) fieldElement;
+                        modelDescription.localModelPath = (String) fieldElement;
                         break;
                     default:
                         break;
@@ -177,32 +188,44 @@ public class ModelDescriptorStardistV05 implements ModelDescriptor
                 throw new ModelSpecsException("Invalid model element: " + field + "->" + e.getMessage());
             }
         }
-        if (modelID == null) {
-        	modelID = findID(yamlElements);
-        }
-        if (localModelPath != null && modelID == null)
-        	return;
-        if (modelID.length() - modelID.replace("/", "").length() >= 2 
-				&& modelID.substring(modelID.indexOf("/") + 1).indexOf("/") - modelID.indexOf("/") > 2 )
-        	modelID = modelID.substring(0, modelID.indexOf("/") + modelID.substring(modelID.indexOf("/") + 1).indexOf("/") + 1);
-        addBioEngine();
-        if (localModelPath == null)
-        	return;
-    	// TODO SpecialModels.checkSpecialModels(null);
+    	modelDescription.newModelID = findID(yamlElements);
+    	modelDescription.modelID = findOldID(yamlElements);
+        
+        modelDescription.addSampleAndTestImages(yamlElements);
+        
+        modelDescription.addBioEngine();
+        if (modelDescription.localModelPath == null)
+        	return modelDescription;
+    	modelDescription.addModelPath(new File(modelDescription.localModelPath).toPath());
+    	SpecialModels.checkSpecialModels(modelDescription);
+    	return modelDescription;
     }
     
-    @SuppressWarnings("unchecked")
-	private static String findID(Map<String, Object> yamlElements) {
+    private void addSampleAndTestImages(Map<String, Object> yamlElements) {
+        List<SampleImage> sampleInputs = buildSampleImages((List<?>) yamlElements.get("sample_inputs"));
+        List<SampleImage> sampleOutputs = buildSampleImages((List<?>) yamlElements.get("sample_outputs"));
 
-    	if (yamlElements.get("config") != null && yamlElements.get("config") instanceof Map) {
-    		Map<String, Object> configMap = (Map<String, Object>) yamlElements.get("config");
-    		if (configMap.get("bioimageio") != null && configMap.get("bioimageio") instanceof Map) {
-    			Map<String, Object> bioimageMap = (Map<String, Object>) configMap.get("bioimageio");
-    			if (bioimageMap.get("nickname") != null)
-    				return (String) bioimageMap.get("nickname");
-    		}
-    	}
-    	return (String) yamlElements.get("id");
+        List<TestArtifact> testInputs = buildTestArtifacts((List<?>) yamlElements.get("test_inputs"));
+        List<TestArtifact> testOutputs = buildTestArtifacts((List<?>) yamlElements.get("test_outputs"));
+
+        for (int i = 0; i < sampleInputs.size(); i ++) {
+        	TensorSpecV04 tt = (TensorSpecV04) this.input_tensors.get(i);
+        	tt.sampleTensorName = sampleInputs.get(i).getName();
+        }
+        for (int i = 0; i < testInputs.size(); i ++) {
+        	TensorSpecV04 tt = (TensorSpecV04) this.input_tensors.get(i);
+        	tt.testTensorName = testInputs.get(i).getName();
+        }
+        
+        for (int i = 0; i < sampleOutputs.size(); i ++) {
+        	TensorSpecV04 tt = (TensorSpecV04) this.output_tensors.get(i);
+        	tt.sampleTensorName = sampleOutputs.get(i).getName();
+        }
+        for (int i = 0; i < testOutputs.size(); i ++) {
+        	TensorSpecV04 tt = (TensorSpecV04) this.output_tensors.get(i);
+        	tt.testTensorName = testOutputs.get(i).getName();
+        }
+        
     }
     
     /**
@@ -232,6 +255,47 @@ public class ModelDescriptorStardistV05 implements ModelDescriptor
 		}
     }
     
+    @SuppressWarnings("unchecked")
+	private static String findID(Map<String, Object> yamlElements) {
+
+    	if (yamlElements.get("config") != null && yamlElements.get("config") instanceof Map) {
+    		Map<String, Object> configMap = (Map<String, Object>) yamlElements.get("config");
+    		if (configMap.get("bioimageio") != null && configMap.get("bioimageio") instanceof Map) {
+    			Map<String, Object> bioimageMap = (Map<String, Object>) configMap.get("bioimageio");
+    			if (bioimageMap.get("nickname") != null)
+    				return (String) bioimageMap.get("nickname");
+    		}
+    	}
+    	return (String) yamlElements.get("id");
+    }
+    
+    @SuppressWarnings("unchecked")
+	private static String findOldID(Map<String, Object> yamlElements) {
+
+    	if (yamlElements.get("config") != null && yamlElements.get("config") instanceof Map) {
+    		Map<String, Object> configMap = (Map<String, Object>) yamlElements.get("config");
+    		if (configMap.get("_conceptdoi") != null && configMap.get("_conceptdoi") instanceof String) {
+    			return (String) configMap.get("_conceptdoi");
+    		} else if (configMap.get("_id") != null && configMap.get("_id") instanceof String) {
+        		String id = (String) configMap.get("_id");
+        		if (id.length() - id.replace("/", "").length() >= 2 
+        				&& id.substring(id.indexOf("/") + 1).indexOf("/") - id.indexOf("/") > 2 )
+        			return id.substring(0, id.indexOf("/") + id.substring(id.indexOf("/") + 1).indexOf("/") + 1);
+        		else
+        			return id;
+    		}
+    	}
+    	if (yamlElements.get("id") != null && yamlElements.get("id") instanceof String) {
+    		String id = (String) yamlElements.get("id");
+    		if (id.length() - id.replace("/", "").length() >= 2 
+    				&& id.substring(id.indexOf("/") + 1).indexOf("/") - id.indexOf("/") > 2 )
+    			return id.substring(0, id.indexOf("/") + id.substring(id.indexOf("/") + 1).indexOf("/") + 1);
+    		else
+    			return id;
+    	}
+    	return null;
+    }
+    
     /**
      * MAke sure that an object that is supposed to be a List<String>
      * is actually a List<String>
@@ -253,17 +317,14 @@ public class ModelDescriptorStardistV05 implements ModelDescriptor
     
     /**
      * Create a list with the authors of teh model as read from the rdf.yaml file
+     * @param authElements
+     * 	a raw list with the info about the authors
      * @return a list with the info about the authors packaged in the {@link Author} object
      */
-    private void buildAuthors()
+    private static List<Author> buildAuthorElements(List<?> authElements)
     {
-        List<Author> authors = new ArrayList<Author>();
-    	Object authorsElems = this.yamlElements.get("authors");
-    	if (authorsElems == null || !(authorsElems instanceof List)) {
-            this.authors = authors;
-            return;
-    	}
-        for (Object elem : (List<Object>) authorsElems)
+        List<Author> authors = new ArrayList<>();
+        for (Object elem : authElements)
         {
             if (!(elem instanceof Map<?, ?>))
             	continue;
@@ -271,22 +332,21 @@ public class ModelDescriptorStardistV05 implements ModelDescriptor
             Map<String, String> dict = (Map<String, String>) elem;
             authors.add(Author.build(dict.get("affiliation"), dict.get("email"), dict.get("github_user"), dict.get("name"), dict.get("orcid")));
         }
-        this.authors = authors;
+        return authors;
     }
     
     /**
      * Create a list with the citations of the model as read from the rdf.yaml file
+     * @param citeElements
+     * 	a raw list with the info about the citations
      * @return a list with the info about the citations packaged in the {@link Cite} object
      */
-    private void buildCiteElements() throws MalformedURLException
+    private static List<Cite> buildCiteElements(List<?> citeElements) throws MalformedURLException
     {
-    	Object citeElements = this.yamlElements.get("cite");
-        List<Cite> cites = new ArrayList<Cite>();
-    	if (citeElements == null || !(citeElements instanceof List<?>)) {
-    		this.cite = cites;
-    		return;
-    	}
-        for (Object elem : (List) citeElements)
+    	if (!(citeElements instanceof List<?>))
+    		return new ArrayList<>();
+        List<Cite> cites = new ArrayList<>();
+        for (Object elem : citeElements)
         {
             if (!(elem instanceof Map<?, ?>))
             	continue;
@@ -294,7 +354,70 @@ public class ModelDescriptorStardistV05 implements ModelDescriptor
             Map<String, Object> dict = (Map<String, Object>) elem;
             cites.add(Cite.build((String) dict.get("text"), (String) dict.get("doi"), (String) dict.get("url")));
         }
-		this.cite = cites;
+        return cites;
+    }
+
+    /**
+     * REturns a List<SampleInputs> of the sample images that are packed in the model
+     * folder as tifs and that are specified in the rdf.yaml file
+     * @param coverElements
+     * 	data from the yaml
+     * @return the List<SampleInputs> with the sample images data
+     */
+    private static List<SampleImage> buildSampleImages(Object coverElements)
+    {
+        List<SampleImage> covers = new ArrayList<>();
+    	if ((coverElements instanceof List<?>)) {
+    		List<?> elems = (List<?>) coverElements;
+	        for (Object elem : elems)
+	        {
+	        	if (!(elem instanceof String))
+	        		continue;
+	        	covers.add(SampleImage.build((String) elem));
+	        }
+    	} else if ((coverElements instanceof String)) {
+            covers.add(SampleImage.build((String) coverElements));
+    	}   	
+        return covers.stream().filter(i -> i != null).collect(Collectors.toList());
+    }
+
+    /**
+     * REturns a List<TestArtifact> of the npy artifacts that are packed in the model
+     * folder as input and output test objects
+     * @param coverElements
+     * 	data from the yaml
+     * @return the List<TestArtifact> with the sample images data
+     */
+    private static List<TestArtifact> buildTestArtifacts(Object coverElements)
+    {
+        List<TestArtifact> covers = new ArrayList<>();
+    	if ((coverElements instanceof List<?>)) {
+    		List<?> elems = (List<?>) coverElements;
+	        for (Object elem : elems)
+	        {
+	        	if (!(elem instanceof String))
+	        		continue;
+	        	covers.add(TestArtifact.build((String) elem));
+	        }
+    	} else if ((coverElements instanceof String)) {
+            covers.add(TestArtifact.build((String) coverElements));
+    	}   	
+        return covers.stream().filter(i -> i != null).collect(Collectors.toList());
+    }
+
+    private static List<Badge> buildBadgeElements(List<?> coverElements)
+    {
+    	if (!(coverElements instanceof List<?>))
+    		return null;
+        List<Badge> badges = new ArrayList<>();
+        for (Object elem : coverElements)
+        {
+            if (!(elem instanceof Map<?, ?>))
+            	continue;
+            Map<String, Object> dict = (Map<String, Object>) elem;
+        	badges.add(Badge.build((String) dict.get("label"), (String) dict.get("icon"), (String) dict.get("url")));
+        }
+        return badges;
     }
 
     @SuppressWarnings("unchecked")
@@ -307,7 +430,7 @@ public class ModelDescriptorStardistV05 implements ModelDescriptor
         {
             if (!(elem instanceof Map<?, ?>))
             	continue;
-            tensors.add(new TensorSpecV05((Map<String, Object>) elem, true));
+            tensors.add(new TensorSpecV04((Map<String, Object>) elem, true));
         }
         return tensors;
     }
@@ -322,7 +445,7 @@ public class ModelDescriptorStardistV05 implements ModelDescriptor
         {
             if (!(elem instanceof Map<?, ?>))
             	continue;
-            tensors.add(new TensorSpecV05((Map<String, Object>) elem, false));
+            tensors.add(new TensorSpecV04((Map<String, Object>) elem, false));
         }
         return tensors;
     }
@@ -343,7 +466,7 @@ public class ModelDescriptorStardistV05 implements ModelDescriptor
 				String ref = ax.getReferenceTensor();
 				if (ref == null) {
 					this.input_tensors.stream().forEach( tt -> {
-						AxisV05 inAx = (AxisV05) tt.getAxesInfo().getAxesList().stream()
+						AxisV04 inAx = (AxisV04) tt.getAxesInfo().getAxesList().stream()
 						.filter(xx -> xx.getAxis().equals(ax.getAxis()))
 						.findFirst().orElse(null);
 						if (inAx == null || inAx.getHalo() > axHalo) return;
@@ -355,7 +478,7 @@ public class ModelDescriptorStardistV05 implements ModelDescriptor
 				double axScale = ax.getScale();
 				double axOffset = ax.getOffset();
 				double nHalo = (axHalo + axOffset) / axScale;
-				AxisV05 inAx = (AxisV05) this.findInputTensor(ref).getAxesInfo().getAxis(ax.getReferenceAxis());
+				AxisV04 inAx = (AxisV04) this.findInputTensor(ref).getAxesInfo().getAxis(ax.getReferenceAxis());
 
 				if (inAx == null || inAx.getHalo() > nHalo) return;
 				inAx.halo = (int) nHalo;
@@ -390,17 +513,17 @@ public class ModelDescriptorStardistV05 implements ModelDescriptor
     }
 
     /**
-     * @return The ID of this model.
+     * @return The nickname of this model.
      */
-    public String getModelID()
+    public String getNickname()
     {
-        return modelID;
+        return this.newModelID;
     }
 
     /**
-     * @return The nickname of this model, for v0.5 is the same as the id.
+     * @return The ID of this model.
      */
-    public String getNickname()
+    public String getModelID()
     {
         return modelID;
     }
@@ -435,6 +558,14 @@ public class ModelDescriptorStardistV05 implements ModelDescriptor
     public List<Cite> getCite()
     {
         return cite;
+    }
+
+    /**
+     * @return The URL of the git repository of this model.
+     */
+    public String getGitRepo()
+    {
+        return git_repo;
     }
 
     /**
@@ -552,7 +683,7 @@ public class ModelDescriptorStardistV05 implements ModelDescriptor
     public String toString()
     {
         return "ModelDescription {formatVersion=" + format_version + ", name=" + name + ", timestamp=" + timestamp
-                + ", description=" + description + ", authors=" + authors + ", cite=" + cite
+                + ", description=" + description + ", authors=" + authors + ", cite=" + cite + ", gitRepo=" + git_repo
                 + ", tags=" + tags + ", license=" + license + ", documentation=" + documentation + ", covers=" + covers
                 + ", inputTensors=" + input_tensors + ", outputTensors=" + output_tensors + ", config=" + config
                 + ", weights=" + weights + "}";
@@ -570,6 +701,15 @@ public class ModelDescriptorStardistV05 implements ModelDescriptor
 	 */
 	public List<Author> getPackagedBy() {
 		return packaged_by;
+	}
+
+	/**
+	 * @return the badges
+	 */
+	public List<Badge> getBadges() {
+		if (badges == null) 
+			badges = new ArrayList<Badge>();
+		return badges;
 	}
 
 	/**
@@ -591,6 +731,13 @@ public class ModelDescriptorStardistV05 implements ModelDescriptor
 	 */
 	public List<String> getLinks() {
 		return links;
+	}
+
+	/**
+	 * @return the parent
+	 */
+	public Map<String, String> getParent() {
+		return parent;
 	}
 	
 	/**
@@ -653,6 +800,8 @@ public class ModelDescriptorStardistV05 implements ModelDescriptor
 		}
 		authorNames += "</ul>";
 		String citation = "<ul>";
+		if (this.cite == null)
+			cite = new ArrayList<>();
 		for (Cite ci : this.cite) {
 			if (ci.getUrl() != null && ci.getText() != null)
 				citation += "<li><a href='" + ci.getUrl() + "'>" + ci.getText() + "</a></li>";
@@ -665,16 +814,6 @@ public class ModelDescriptorStardistV05 implements ModelDescriptor
 					this.description, new File(localModelPath).getName(), authorNames, citation);
 		else
 			return String.format(TEXT_DESCRIPTION, this.name, this.getNickname(), this.description, authorNames, citation);
-	}
-
-	@Override
-	public String getGitRepo() {
-		return this.git_repo;
-	}
-
-	@Override
-	public List<Badge> getBadges() {
-		return new ArrayList<Badge>();
 	}
 
 	@Override
