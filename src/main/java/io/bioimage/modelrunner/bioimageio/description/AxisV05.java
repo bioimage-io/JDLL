@@ -63,11 +63,13 @@ public class AxisV05 implements Axis{
 				));
 		else if ((this.id == null || this.id != "b") && this.type.equals("batch"))
 			this.abreviation = "b";
-		else if (this.id != null && id.equals("channel"))
+		else if (this.id != null && id.equals("channel")) {
 			this.abreviation = "c";
-		else if (this.type != null && this.type.equals("channel"))
+			this.size.min = channelNames.size();
+		} else if (this.type != null && this.type.equals("channel")) {
 			this.abreviation = "c";
-		else
+			this.size.min = channelNames.size();
+		} else
 			this.abreviation = this.id;
 	}
 	
