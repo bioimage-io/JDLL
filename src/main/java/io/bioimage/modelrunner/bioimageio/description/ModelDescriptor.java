@@ -148,13 +148,13 @@ public abstract class ModelDescriptor {
                         modelID = (String) yamlElements.get(field);
                         break;
                     case "authors":
-                        buildAuthors(yamlElements.get(field));
+                        this.authors = buildAuthors(yamlElements.get(field));
                         break;
                     case "maintainers":
-                        buildAuthors(yamlElements.get(field));
+                        this.maintainers = buildAuthors(yamlElements.get(field));
                         break;
                     case "packaged_by":
-                        buildAuthors(yamlElements.get(field));
+                    	this.packaged_by = buildAuthors(yamlElements.get(field));
                         break;
                     case "tags":
                         tags = castListStrings(yamlElements.get(field));
