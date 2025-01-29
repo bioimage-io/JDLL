@@ -97,10 +97,6 @@ public abstract class ModelDescriptor {
      */
     public abstract String getNickname();
     
-    protected abstract List<Author> buildAuthors(Object object);
-    
-    protected abstract List<Cite> buildCiteElements();
-    
     protected abstract List<TensorSpec> buildInputTensors();
     
     protected abstract List<TensorSpec> buildOutputTensors();
@@ -114,15 +110,10 @@ public abstract class ModelDescriptor {
      */
     protected abstract void calculateTotalInputHalo();
     
-    protected abstract ExecutionConfig buildConfig();
-    
-    protected abstract ModelWeight buildWeights();
-    
     protected abstract String findID();
     
     protected abstract void addBioEngine();
     
-    @SuppressWarnings("unchecked")
     /**
      * Build a {@link ModelDescriptorV05} object from a map containing the elements read from
      * a rdf.yaml file
@@ -203,20 +194,53 @@ public abstract class ModelDescriptor {
         config = this.buildConfig();
         calculateTotalInputHalo();
         
-        
-        if (modelID == null) {
-        	modelID = findID();
-        }
-        if (localModelPath != null && modelID == null)
-        	return;
-        if (modelID.length() - modelID.replace("/", "").length() >= 2 
-				&& modelID.substring(modelID.indexOf("/") + 1).indexOf("/") - modelID.indexOf("/") > 2 )
-        	modelID = modelID.substring(0, modelID.indexOf("/") + modelID.substring(modelID.indexOf("/") + 1).indexOf("/") + 1);
         addBioEngine();
-        if (localModelPath == null)
-        	return;
+        if (localModelPath != null)
+        	addModelPath(new File(localModelPath).toPath());
     }
+
+	protected List<Author> buildAuthors(Object object) {
+		List<Author> authors = new ArrayList<>();
+    	if (object == null || !(object instanceof List)) {
+            this.authors = authors;
+            return authors;
+    	}
+        for (Object elem : (List<Object>) object)
+        {
+            if (!(elem instanceof Map<?, ?>))
+            	continue;
+            @SuppressWarnings("unchecked")
+            Map<String, String> dict = (Map<String, String>) elem;
+            authors.add(Author.build(dict.get("affiliation"), dict.get("email"), dict.get("github_user"), dict.get("name"), dict.get("orcid")));
+        }
+        return authors;
+	}
+
+	protected List<Cite> buildCiteElements() {
+		Object citeElements = this.yamlElements.get("cite");
+        List<Cite> cites = new ArrayList<Cite>();
+    	if (citeElements == null || !(citeElements instanceof List<?>)) {
+    		this.cite = cites;
+    		return cites;
+    	}
+        for (Object elem : (List) citeElements)
+        {
+            if (!(elem instanceof Map<?, ?>))
+            	continue;
+            @SuppressWarnings("unchecked")
+            Map<String, Object> dict = (Map<String, Object>) elem;
+            cites.add(Cite.build((String) dict.get("text"), (String) dict.get("doi"), (String) dict.get("url")));
+        }
+		return cites;
+	}
+
+	protected ModelWeight buildWeights() {
+        return ModelWeight.build((Map<String, Object>) this.yamlElements.get("weights"));
+	}
 	
+	protected ExecutionConfig buildConfig() {
+        return ExecutionConfig.build((Map<String, Object>) this.yamlElements.get("config"));
+	}
 	
     /**
      * Create a set of specifications about the basic info of the model: name od the model, authors,

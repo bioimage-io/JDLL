@@ -19,19 +19,11 @@
  */
 package io.bioimage.modelrunner.bioimageio.description;
 
-import java.io.File;
-import java.io.IOException;
-import java.net.MalformedURLException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.stream.Collectors;
 
-import io.bioimage.modelrunner.bioimageio.BioimageioRepo;
-import io.bioimage.modelrunner.bioimageio.description.exceptions.ModelSpecsException;
-import io.bioimage.modelrunner.bioimageio.description.weights.ModelWeight;
 
 
 /**
@@ -39,131 +31,112 @@ import io.bioimage.modelrunner.bioimageio.description.weights.ModelWeight;
  * More info about the parameters can be found at:
  * https://github.com/bioimage-io/spec-bioimage-io/blob/gh-pages/model_spec_latest.md
  * 
- * @author Carlos Garcia Lopez de Haro and Daniel Felipe Gonzalez Obando
+ * @author Carlos Garcia Lopez de Haro
  */
 public class ModelDescriptorV04 extends ModelDescriptor
 {
 	private String newModelID;
 
-    private ModelDescriptorV04()
+    private ModelDescriptorV04(Map<String, Object> yamlElements)
     {
+    	this.yamlElements = yamlElements;
+    	buildModelDescription();
+    	buildBadgeElements();
+    	addSampleAndTestImages();
+    	newModelID = findID();
+    	modelID = findOldID();
     }
 
-    @SuppressWarnings("unchecked")
     /**
-     * Build a {@link ModelDescriptorV04} object from a map containing the elements read from
-     * a rdf.yaml file
-     * @param yamlElements
-     * 	map with the information read from a yaml file
-     * @throws ModelSpecsException if any of the parameters in the rdf.yaml file does not make fit the constraints
+     * @return The nickname of this model.
      */
-    protected static ModelDescriptorV04 buildModelDescription(Map<String, Object> yamlElements) throws ModelSpecsException
+    @Override
+    public String getNickname()
     {
-        ModelDescriptorV04 modelDescription = new ModelDescriptorV04();
-
-        Set<String> yamlFields = yamlElements.keySet();
-        String[] yamlFieldsArr = new String[yamlFields.size()];
-        Arrays.sort(yamlFields.toArray(yamlFieldsArr));
-        for (String field : yamlFieldsArr)
-        {
-            Object fieldElement = yamlElements.get(field);
-            try
-            {
-                switch (field)
-                {
-	                case "format_version":
-	                    modelDescription.format_version = (String) fieldElement;
-	                    break;
-	                case "version":
-	                    modelDescription.version = "" + fieldElement;
-	                    break;
-                    case "name":
-                        modelDescription.name = "" + fieldElement;
-                        break;
-                    case "timestamp":
-                        modelDescription.timestamp = fieldElement.toString();
-                        break;
-                    case "description":
-                        modelDescription.description = (String) fieldElement;
-                        break;
-                    case "authors":
-                        modelDescription.authors = buildAuthorElements((List<?>) fieldElement);
-                        break;
-                    case "maintainers":
-                        modelDescription.maintainers = buildAuthorElements((List<?>) fieldElement);
-                        break;
-                    case "packaged_by":
-                        modelDescription.packaged_by = buildAuthorElements((List<?>) fieldElement);
-                        break;
-                    case "cite":
-                        modelDescription.cite = buildCiteElements((List<?>) fieldElement);
-                        break;
-                    case "git_repo":
-                        modelDescription.git_repo = ModelDescriptorFactory.checkUrl((String) fieldElement);
-                        break;
-                    case "tags":
-                        modelDescription.tags = castListStrings(fieldElement);
-                        break;
-                    case "links":
-                        modelDescription.links = castListStrings(fieldElement);
-                        break;
-                    case "license":
-                        modelDescription.license = (String) fieldElement;
-                        break;
-                    case "documentation":
-                        modelDescription.documentation = (String) fieldElement;
-                        break;
-                    case "type":
-                        modelDescription.type = (String) fieldElement;
-                        break;
-                    case "attachments":
-                        modelDescription.attachments = (Map<String, Object>) fieldElement;
-                        break;
-                    case "covers":
-                        modelDescription.covers = ModelDescriptorFactory.buildUrlElements((List<?>) fieldElement);
-                        break;
-                    case "badges":
-                        modelDescription.badges = buildBadgeElements((List<?>) fieldElement);
-                        break;
-                    case "inputs":
-                    	modelDescription.input_tensors = buildInputTensors((List<?>) yamlElements.get(field));
-                        break;
-                    case "outputs":
-                        modelDescription.output_tensors = buildOutputTensors((List<?>) yamlElements.get(field));
-                        modelDescription.calculateTotalInputHalo();
-                        break;
-                    case "config":
-                        modelDescription.config = buildConfig((Map<String, Object>) yamlElements.get(field));
-                        break;
-                    case "weights":
-                        modelDescription.weights = buildWeights((Map<String, Object>) yamlElements.get(field));
-                        break;
-                    case "modelPath":
-                        modelDescription.localModelPath = (String) fieldElement;
-                        break;
-                    default:
-                        break;
-                }
-            }
-            catch (IOException e)
-            {
-                throw new ModelSpecsException("Invalid model element: " + field + "->" + e.getMessage());
-            }
-        }
-    	modelDescription.newModelID = findID(yamlElements);
-    	modelDescription.modelID = findOldID(yamlElements);
-        
-        modelDescription.addSampleAndTestImages(yamlElements);
-        
-        modelDescription.addBioEngine();
-        if (modelDescription.localModelPath == null)
-        	return modelDescription;
-    	modelDescription.addModelPath(new File(modelDescription.localModelPath).toPath());
-    	SpecialModels.checkSpecialModels(modelDescription);
-    	return modelDescription;
+        return this.newModelID;
     }
+
+	@Override
+	protected List<TensorSpec> buildInputTensors() {
+		Object list = this.yamlElements.get("inputs");
+		if (!(list instanceof List<?>))
+    		return null;
+        List<TensorSpec> tensors = new ArrayList<>(((List<?>) list).size());
+        for (Object elem : (List<?>) list)
+        {
+            if (!(elem instanceof Map<?, ?>))
+            	continue;
+            tensors.add(new TensorSpecV04((Map<String, Object>) elem, true));
+        }
+        return tensors;
+	}
+
+	@Override
+	protected List<TensorSpec> buildOutputTensors() {
+		Object list = this.yamlElements.get("outputs");
+		if (!(list instanceof List<?>))
+    		return null;
+        List<TensorSpec> tensors = new ArrayList<>(((List<?>) list).size());
+        for (Object elem : (List<?>) list)
+        {
+            if (!(elem instanceof Map<?, ?>))
+            	continue;
+            tensors.add(new TensorSpecV04((Map<String, Object>) elem, false));
+        }
+        return tensors;
+	}
+
+	@Override
+	protected void calculateTotalInputHalo() {
+		for (TensorSpec out: output_tensors) {
+			for (Axis ax : out.getAxesInfo().getAxesList()) {
+				int axHalo = ax.getHalo();
+				if (axHalo == 0)
+					continue;
+				String ref = ax.getReferenceTensor();
+				if (ref == null) {
+					this.input_tensors.stream().forEach( tt -> {
+						AxisV04 inAx = (AxisV04) tt.getAxesInfo().getAxesList().stream()
+						.filter(xx -> xx.getAxis().equals(ax.getAxis()))
+						.findFirst().orElse(null);
+						if (inAx == null || inAx.getHalo() > axHalo) return;
+						inAx.halo = axHalo;
+					});
+					return;
+				}
+				
+				double axScale = ax.getScale();
+				double axOffset = ax.getOffset();
+				double nHalo = (axHalo + axOffset) / axScale;
+				AxisV04 inAx = (AxisV04) this.findInputTensor(ref).getAxesInfo().getAxis(ax.getReferenceAxis());
+
+				if (inAx == null || inAx.getHalo() > nHalo) return;
+				inAx.halo = (int) nHalo;
+			}
+		}
+		
+	}
+
+	@Override
+	protected String findID() {
+		if (yamlElements.get("config") != null && yamlElements.get("config") instanceof Map) {
+    		Map<String, Object> configMap = (Map<String, Object>) yamlElements.get("config");
+    		if (configMap.get("bioimageio") != null && configMap.get("bioimageio") instanceof Map) {
+    			Map<String, Object> bioimageMap = (Map<String, Object>) configMap.get("bioimageio");
+    			if (bioimageMap.get("nickname") != null)
+    				return (String) bioimageMap.get("nickname");
+    		}
+    	}
+    	return (String) yamlElements.get("id");
+	}
+
+	@Override
+	protected void addBioEngine() {
+		// TODO Auto-generated method stub
+		
+	}
     
-    private void addSampleAndTestImages(Map<String, Object> yamlElements) {
+    private void addSampleAndTestImages() {
         List<SampleImage> sampleInputs = buildSampleImages((List<?>) yamlElements.get("sample_inputs"));
         List<SampleImage> sampleOutputs = buildSampleImages((List<?>) yamlElements.get("sample_outputs"));
 
@@ -187,136 +160,6 @@ public class ModelDescriptorV04 extends ModelDescriptor
         	TensorSpecV04 tt = (TensorSpecV04) this.output_tensors.get(i);
         	tt.testTensorName = testOutputs.get(i).getName();
         }
-        
-    }
-    
-    /**
-     * Every model in the bioimage.io can be run in the BioEngine as long as it is in the
-     * collections repo: 
-     * https://github.com/bioimage-io/collection-bioimage-io/blob/e77fec7fa4d92d90c25e11331a7d19f14b9dc2cf/rdfs/10.5281/zenodo.6200999/6224243/rdf.yaml
-     * @throws ModelSpecsException servers do not correspond to an actual url
-     */
-    private void addBioEngine() throws ModelSpecsException {
-		// TODO decide what to do with servers. Probably need permissions / Implement authentication
-    	if (getName().equals("cellpose-python")) {
-    		supportBioengine = true;
-			return;
-	    } else if (getName().equals("bestfitting-inceptionv3-single-cell")) {
-			return;
-	    } else if (getName().equals("stardist")) {
-    		supportBioengine = true;
-			return;
-	    } else if (modelID == null) {
-    		supportBioengine = false;
-	    	return;
-	    }
-    	try {
-			supportBioengine =  BioimageioRepo.isModelOnTheBioengineById(modelID);
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-    }
-    
-    @SuppressWarnings("unchecked")
-	private static String findID(Map<String, Object> yamlElements) {
-
-    	if (yamlElements.get("config") != null && yamlElements.get("config") instanceof Map) {
-    		Map<String, Object> configMap = (Map<String, Object>) yamlElements.get("config");
-    		if (configMap.get("bioimageio") != null && configMap.get("bioimageio") instanceof Map) {
-    			Map<String, Object> bioimageMap = (Map<String, Object>) configMap.get("bioimageio");
-    			if (bioimageMap.get("nickname") != null)
-    				return (String) bioimageMap.get("nickname");
-    		}
-    	}
-    	return (String) yamlElements.get("id");
-    }
-    
-    @SuppressWarnings("unchecked")
-	private static String findOldID(Map<String, Object> yamlElements) {
-
-    	if (yamlElements.get("config") != null && yamlElements.get("config") instanceof Map) {
-    		Map<String, Object> configMap = (Map<String, Object>) yamlElements.get("config");
-    		if (configMap.get("_conceptdoi") != null && configMap.get("_conceptdoi") instanceof String) {
-    			return (String) configMap.get("_conceptdoi");
-    		} else if (configMap.get("_id") != null && configMap.get("_id") instanceof String) {
-        		String id = (String) configMap.get("_id");
-        		if (id.length() - id.replace("/", "").length() >= 2 
-        				&& id.substring(id.indexOf("/") + 1).indexOf("/") - id.indexOf("/") > 2 )
-        			return id.substring(0, id.indexOf("/") + id.substring(id.indexOf("/") + 1).indexOf("/") + 1);
-        		else
-        			return id;
-    		}
-    	}
-    	if (yamlElements.get("id") != null && yamlElements.get("id") instanceof String) {
-    		String id = (String) yamlElements.get("id");
-    		if (id.length() - id.replace("/", "").length() >= 2 
-    				&& id.substring(id.indexOf("/") + 1).indexOf("/") - id.indexOf("/") > 2 )
-    			return id.substring(0, id.indexOf("/") + id.substring(id.indexOf("/") + 1).indexOf("/") + 1);
-    		else
-    			return id;
-    	}
-    	return null;
-    }
-    
-    /**
-     * MAke sure that an object that is supposed to be a List<String>
-     * is actually a List<String>
-     * @param list
-     * 	the possible List<String>
-     * @return a List<String> or null if the Object was not an instance of a List<String>
-     */
-    private static List<String> castListStrings(Object list) {
-    	List<String> out = null;
-    	if (list instanceof List<?>) {
-    		out = new ArrayList<String>();
-    		out = (List<String>) list;
-    	} else if (list instanceof String) {
-    		out = new ArrayList<String>();
-    		out.add((String) list);
-    	}
-    	return out;
-    }
-    
-    /**
-     * Create a list with the authors of teh model as read from the rdf.yaml file
-     * @param authElements
-     * 	a raw list with the info about the authors
-     * @return a list with the info about the authors packaged in the {@link Author} object
-     */
-    private static List<Author> buildAuthorElements(List<?> authElements)
-    {
-        List<Author> authors = new ArrayList<>();
-        for (Object elem : authElements)
-        {
-            if (!(elem instanceof Map<?, ?>))
-            	continue;
-            @SuppressWarnings("unchecked")
-            Map<String, String> dict = (Map<String, String>) elem;
-            authors.add(Author.build(dict.get("affiliation"), dict.get("email"), dict.get("github_user"), dict.get("name"), dict.get("orcid")));
-        }
-        return authors;
-    }
-    
-    /**
-     * Create a list with the citations of the model as read from the rdf.yaml file
-     * @param citeElements
-     * 	a raw list with the info about the citations
-     * @return a list with the info about the citations packaged in the {@link Cite} object
-     */
-    private static List<Cite> buildCiteElements(List<?> citeElements) throws MalformedURLException
-    {
-    	if (!(citeElements instanceof List<?>))
-    		return new ArrayList<>();
-        List<Cite> cites = new ArrayList<>();
-        for (Object elem : citeElements)
-        {
-            if (!(elem instanceof Map<?, ?>))
-            	continue;
-            @SuppressWarnings("unchecked")
-            Map<String, Object> dict = (Map<String, Object>) elem;
-            cites.add(Cite.build((String) dict.get("text"), (String) dict.get("doi"), (String) dict.get("url")));
-        }
-        return cites;
     }
 
     /**
@@ -367,12 +210,13 @@ public class ModelDescriptorV04 extends ModelDescriptor
         return covers.stream().filter(i -> i != null).collect(Collectors.toList());
     }
 
-    private static List<Badge> buildBadgeElements(List<?> coverElements)
+    private List<Badge> buildBadgeElements()
     {
+    	Object coverElements = this.yamlElements.get("badges");
     	if (!(coverElements instanceof List<?>))
     		return null;
         List<Badge> badges = new ArrayList<>();
-        for (Object elem : coverElements)
+        for (Object elem : (List<?>) coverElements)
         {
             if (!(elem instanceof Map<?, ?>))
             	continue;
@@ -381,89 +225,29 @@ public class ModelDescriptorV04 extends ModelDescriptor
         }
         return badges;
     }
-
-    @SuppressWarnings("unchecked")
-    private static List<TensorSpec> buildInputTensors(List<?> list) throws ModelSpecsException
-    {
-    	if (!(list instanceof List<?>))
-    		return null;
-        List<TensorSpec> tensors = new ArrayList<>(list.size());
-        for (Object elem : list)
-        {
-            if (!(elem instanceof Map<?, ?>))
-            	continue;
-            tensors.add(new TensorSpecV04((Map<String, Object>) elem, true));
-        }
-        return tensors;
-    }
-
-    @SuppressWarnings("unchecked")
-    private static List<TensorSpec> buildOutputTensors(List<?> list) throws ModelSpecsException
-    {
-    	if (!(list instanceof List<?>))
-    		return null;
-        List<TensorSpec> tensors = new ArrayList<>(list.size());
-        for (Object elem : list)
-        {
-            if (!(elem instanceof Map<?, ?>))
-            	continue;
-            tensors.add(new TensorSpecV04((Map<String, Object>) elem, false));
-        }
-        return tensors;
-    }
     
-    /**
-     * Calculate the total input halo once the output tensors are set.
-     * NOte that the total halo is calculated following "xyczb" axes order,
-     * not the input axes order, as for several inputs the axes order might change
-     * for each of them
-     * @return the total input halo in "xyczb" axes order
-     */
-    private void calculateTotalInputHalo() {
-		for (TensorSpec out: output_tensors) {
-			for (Axis ax : out.getAxesInfo().getAxesList()) {
-				int axHalo = ax.getHalo();
-				if (axHalo == 0)
-					continue;
-				String ref = ax.getReferenceTensor();
-				if (ref == null) {
-					this.input_tensors.stream().forEach( tt -> {
-						AxisV04 inAx = (AxisV04) tt.getAxesInfo().getAxesList().stream()
-						.filter(xx -> xx.getAxis().equals(ax.getAxis()))
-						.findFirst().orElse(null);
-						if (inAx == null || inAx.getHalo() > axHalo) return;
-						inAx.halo = axHalo;
-					});
-					return;
-				}
-				
-				double axScale = ax.getScale();
-				double axOffset = ax.getOffset();
-				double nHalo = (axHalo + axOffset) / axScale;
-				AxisV04 inAx = (AxisV04) this.findInputTensor(ref).getAxesInfo().getAxis(ax.getReferenceAxis());
-
-				if (inAx == null || inAx.getHalo() > nHalo) return;
-				inAx.halo = (int) nHalo;
-			}
-		}
-    }
-
-    private static ExecutionConfig buildConfig(Map<String, Object> yamlFieldElements)
-    {
-        return ExecutionConfig.build(yamlFieldElements);
-    }
-
-    private static ModelWeight buildWeights(Map<String, Object> yamlFieldElements)
-    {
-        return ModelWeight.build(yamlFieldElements);
-    }
-
-    /**
-     * @return The nickname of this model.
-     */
-    @Override
-    public String getNickname()
-    {
-        return this.newModelID;
+	private String findOldID() {
+		if (yamlElements.get("config") != null && yamlElements.get("config") instanceof Map) {
+    		Map<String, Object> configMap = (Map<String, Object>) yamlElements.get("config");
+    		if (configMap.get("_conceptdoi") != null && configMap.get("_conceptdoi") instanceof String) {
+    			return (String) configMap.get("_conceptdoi");
+    		} else if (configMap.get("_id") != null && configMap.get("_id") instanceof String) {
+        		String id = (String) configMap.get("_id");
+        		if (id.length() - id.replace("/", "").length() >= 2 
+        				&& id.substring(id.indexOf("/") + 1).indexOf("/") - id.indexOf("/") > 2 )
+        			return id.substring(0, id.indexOf("/") + id.substring(id.indexOf("/") + 1).indexOf("/") + 1);
+        		else
+        			return id;
+    		}
+    	}
+    	if (yamlElements.get("id") != null && yamlElements.get("id") instanceof String) {
+    		String id = (String) yamlElements.get("id");
+    		if (id.length() - id.replace("/", "").length() >= 2 
+    				&& id.substring(id.indexOf("/") + 1).indexOf("/") - id.indexOf("/") > 2 )
+    			return id.substring(0, id.indexOf("/") + id.substring(id.indexOf("/") + 1).indexOf("/") + 1);
+    		else
+    			return id;
+    	}
+    	return null;
     }
 }

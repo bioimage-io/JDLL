@@ -24,7 +24,6 @@ import java.util.List;
 import java.util.Map;
 
 import io.bioimage.modelrunner.bioimageio.BioimageioRepo;
-import io.bioimage.modelrunner.bioimageio.description.weights.ModelWeight;
 
 
 /**
@@ -41,48 +40,17 @@ public class ModelDescriptorV05 extends ModelDescriptor
     {
     	this.yamlElements = yamlElements;
     	buildModelDescription();
+        if (modelID == null) {
+        	modelID = findID();
+        if (modelID.length() - modelID.replace("/", "").length() >= 2 
+				&& modelID.substring(modelID.indexOf("/") + 1).indexOf("/") - modelID.indexOf("/") > 2 )
+        	modelID = modelID.substring(0, modelID.indexOf("/") + modelID.substring(modelID.indexOf("/") + 1).indexOf("/") + 1);
+        }
     }
 
 	@Override
 	public String getNickname() {
 		return modelID;
-	}
-
-	@Override
-	protected List<Author> buildAuthors(Object object) {
-		List<Author> authors = new ArrayList<Author>();
-    	if (object == null || !(object instanceof List)) {
-            this.authors = authors;
-            return authors;
-    	}
-        for (Object elem : (List<Object>) object)
-        {
-            if (!(elem instanceof Map<?, ?>))
-            	continue;
-            @SuppressWarnings("unchecked")
-            Map<String, String> dict = (Map<String, String>) elem;
-            authors.add(Author.build(dict.get("affiliation"), dict.get("email"), dict.get("github_user"), dict.get("name"), dict.get("orcid")));
-        }
-		return authors;
-	}
-
-	@Override
-	protected List<Cite> buildCiteElements() {
-		Object citeElements = this.yamlElements.get("cite");
-        List<Cite> cites = new ArrayList<Cite>();
-    	if (citeElements == null || !(citeElements instanceof List<?>)) {
-    		this.cite = cites;
-    		return cites;
-    	}
-        for (Object elem : (List) citeElements)
-        {
-            if (!(elem instanceof Map<?, ?>))
-            	continue;
-            @SuppressWarnings("unchecked")
-            Map<String, Object> dict = (Map<String, Object>) elem;
-            cites.add(Cite.build((String) dict.get("text"), (String) dict.get("doi"), (String) dict.get("url")));
-        }
-		return cites;
 	}
 
 	@Override
@@ -146,16 +114,6 @@ public class ModelDescriptorV05 extends ModelDescriptor
 			}
 		}
 		
-	}
-
-	@Override
-	protected ExecutionConfig buildConfig() {
-        return ExecutionConfig.build((Map<String, Object>) this.yamlElements.get("config"));
-	}
-
-	@Override
-	protected ModelWeight buildWeights() {
-        return ModelWeight.build((Map<String, Object>) this.yamlElements.get("weights"));
 	}
 
 	@Override
