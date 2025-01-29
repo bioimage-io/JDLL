@@ -466,14 +466,4 @@ public class ModelDescriptorV04 extends ModelDescriptor
     {
         return this.newModelID;
     }
-
-	@Override
-    public String toString()
-    {
-        return "ModelDescription {formatVersion=" + format_version + ", name=" + name + ", timestamp=" + timestamp
-                + ", description=" + description + ", authors=" + authors + ", cite=" + cite + ", gitRepo=" + git_repo
-                + ", tags=" + tags + ", license=" + license + ", documentation=" + documentation + ", covers=" + covers
-                + ", inputTensors=" + input_tensors + ", outputTensors=" + output_tensors + ", config=" + config
-                + ", weights=" + weights + "}";
-    }
 }

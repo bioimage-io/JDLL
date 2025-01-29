@@ -350,14 +350,4 @@ public class ModelDescriptorV05 extends ModelDescriptor
     {
         return modelID;
     }
-
-	@Override
-    public String toString()
-    {
-        return "ModelDescription {formatVersion=" + format_version + ", name=" + name + ", timestamp=" + timestamp
-                + ", description=" + description + ", authors=" + authors + ", cite=" + cite
-                + ", tags=" + tags + ", license=" + license + ", documentation=" + documentation + ", covers=" + covers
-                + ", inputTensors=" + input_tensors + ", outputTensors=" + output_tensors + ", config=" + config
-                + ", weights=" + weights + "}";
-    }
 }

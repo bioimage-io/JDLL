@@ -22,10 +22,13 @@ package io.bioimage.modelrunner.bioimageio.description;
 import java.io.File;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import io.bioimage.modelrunner.bioimageio.BioimageioRepo;
+import io.bioimage.modelrunner.bioimageio.description.exceptions.ModelSpecsException;
 import io.bioimage.modelrunner.bioimageio.description.weights.ModelWeight;
 import io.bioimage.modelrunner.utils.Constants;
 
@@ -94,6 +97,119 @@ public abstract class ModelDescriptor {
      * @return The ID of this model.
      */
     public abstract String getNickname();
+    
+    public abstract List<Author> buildAuthors(Object object);
+    
+    public abstract List<Cite> buildCiteElements();
+    
+    public abstract List<TensorSpec> buildInputTensors();
+    
+    public abstract List<TensorSpec> buildOutputTensors();
+    
+    protected abstract void calculateTotalInputHalo();
+    
+    public abstract ExecutionConfig buildConfig();
+    
+    public abstract ModelWeight buildWeights();
+    
+    public abstract String findID();
+    
+    protected abstract void addBioEngine();
+    
+    @SuppressWarnings("unchecked")
+    /**
+     * Build a {@link ModelDescriptorV05} object from a map containing the elements read from
+     * a rdf.yaml file
+     * @param yamlElements
+     * 	map with the information read from a yaml file
+     * @return a {@link ModelDescriptorV05} with the info of a Bioimage.io model
+     * @throws ModelSpecsException if any of the parameters in the rdf.yaml file does not make fit the constraints
+     */
+    protected void buildModelDescription()
+    {
+
+        Set<String> yamlFields = yamlElements.keySet();
+        String[] yamlFieldsArr = new String[yamlFields.size()];
+        Arrays.sort(yamlFields.toArray(yamlFieldsArr));
+        for (String field : yamlFieldsArr)
+        {
+                switch (field)
+                {
+                    case "format_version":
+                        format_version = (String) yamlElements.get(field);
+                        break;
+                    case "name":
+                        name = (String) yamlElements.get(field);
+                        break;
+                    case "timestamp":
+                        timestamp = yamlElements.get(field).toString();
+                        break;
+                    case "description":
+                        description = (String) yamlElements.get(field);
+                        break;
+                    case "id":
+                        modelID = (String) yamlElements.get(field);
+                        break;
+                    case "authors":
+                        buildAuthors(yamlElements.get(field));
+                        break;
+                    case "maintainers":
+                        buildAuthors(yamlElements.get(field));
+                        break;
+                    case "packaged_by":
+                        buildAuthors(yamlElements.get(field));
+                        break;
+                    case "tags":
+                        tags = castListStrings(yamlElements.get(field));
+                        break;
+                    case "links":
+                        links = castListStrings(yamlElements.get(field));
+                        break;
+                    case "license":
+                        license = (String) yamlElements.get(field);
+                        break;
+                    case "documentation":
+                        documentation = (String) yamlElements.get(field);
+                        break;
+                    case "git_repo":
+                    	git_repo = (String) yamlElements.get(field);
+                        break;
+                    case "type":
+                        type = (String) yamlElements.get(field);
+                        break;
+                    case "attachments":
+                        // TODO createAttachments();
+                        break;
+                    case "covers":
+                    	covers = castListStrings(yamlElements.get(field));
+                        break;
+                    case "modelPath":
+                        localModelPath = (String) yamlElements.get(field);
+                        break;
+                    default:
+                        break;
+            }
+        }
+        cite = buildCiteElements();
+        input_tensors = this.buildInputTensors();
+        output_tensors = this.buildOutputTensors();
+        weights = this.buildWeights();
+        config = this.buildConfig();
+        calculateTotalInputHalo();
+        
+        
+        if (modelID == null) {
+        	modelID = findID();
+        }
+        if (localModelPath != null && modelID == null)
+        	return;
+        if (modelID.length() - modelID.replace("/", "").length() >= 2 
+				&& modelID.substring(modelID.indexOf("/") + 1).indexOf("/") - modelID.indexOf("/") > 2 )
+        	modelID = modelID.substring(0, modelID.indexOf("/") + modelID.substring(modelID.indexOf("/") + 1).indexOf("/") + 1);
+        addBioEngine();
+        if (localModelPath == null)
+        	return;
+    }
 	
 	
     /**
@@ -433,9 +549,42 @@ public abstract class ModelDescriptor {
 		return this.supportBioengine;
 	}
 
+	/**
+	 * 
+	 * @return the url to the online folder that contains all the files of the model
+	 */
 	public String getModelURL() {
 		if (this.download_url == null)
 			this.download_url = BioimageioRepo.getModelRdfUrl(modelID, version);
 		return this.download_url;
 	}
+    
+    /**
+     * MAke sure that an object that is supposed to be a List<String>
+     * is actually a List<String>
+     * @param list
+     * 	the possible List<String>
+     * @return a List<String> or null if the Object was not an instance of a List<String>
+     */
+    private static List<String> castListStrings(Object list) {
+    	List<String> out = null;
+    	if (list instanceof List<?>) {
+    		out = new ArrayList<String>();
+    		out = (List<String>) list;
+    	} else if (list instanceof String) {
+    		out = new ArrayList<String>();
+    		out.add((String) list);
+    	}
+    	return out;
+    }
+
+	@Override
+    public String toString()
+    {
+        return "ModelDescription {formatVersion=" + format_version + ", name=" + name + ", timestamp=" + timestamp
+                + ", description=" + description + ", authors=" + authors + ", cite=" + cite + ", gitRepo=" + git_repo
+                + ", tags=" + tags + ", license=" + license + ", documentation=" + documentation + ", covers=" + covers
+                + ", inputTensors=" + input_tensors + ", outputTensors=" + output_tensors + ", config=" + config
+                + ", weights=" + weights + "}";
+    }
 }
