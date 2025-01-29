@@ -409,7 +409,7 @@ public abstract class ModelDescriptor {
      *        Name of the tensor.
      * @return The tensor with the provided name. null is returned if no tensor is found or if the output tensors list is not initialized.
      */
-    public TensorSpec findIOutputTensor(String name)
+    public TensorSpec findOutputTensor(String name)
     {
         if (output_tensors == null)
         {

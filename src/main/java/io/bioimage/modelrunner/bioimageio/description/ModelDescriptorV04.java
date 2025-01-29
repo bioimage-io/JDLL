@@ -37,7 +37,7 @@ public class ModelDescriptorV04 extends ModelDescriptor
 {
 	private String newModelID;
 
-    private ModelDescriptorV04(Map<String, Object> yamlElements)
+	protected ModelDescriptorV04(Map<String, Object> yamlElements)
     {
     	this.yamlElements = yamlElements;
     	buildModelDescription();

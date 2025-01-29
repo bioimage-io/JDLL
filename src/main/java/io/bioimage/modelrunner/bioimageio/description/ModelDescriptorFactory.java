@@ -89,7 +89,7 @@ public class ModelDescriptorFactory {
     {
     	Object formatVersion = yamlElements.get(FORMAT);
     	if (formatVersion instanceof String && ((String) formatVersion).startsWith(V04_START)) {
-    		return ModelDescriptorV04.buildModelDescription(yamlElements);
+    		return new ModelDescriptorV04(yamlElements);
     	} else if (formatVersion instanceof String && ((String) formatVersion).startsWith(V05_START)) {
     		return new ModelDescriptorV05(yamlElements);
     	} else if (formatVersion instanceof String)
