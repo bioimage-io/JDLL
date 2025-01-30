@@ -17,7 +17,7 @@
  * limitations under the License.
  * #L%
  */
-package io.bioimage.modelrunner.bioimageio.description.stardist;
+package io.bioimage.modelrunner.bioimageio.description.cellpose;
 
 import java.io.File;
 import java.io.IOException;
@@ -45,10 +45,10 @@ import io.bioimage.modelrunner.utils.Constants;
  * 
  * @author Carlos Garcia Lopez de Haro
  */
-public class ModelDescriptorStardistV05 extends ModelDescriptorV05
+public class ModelDescriptorCellposeV05 extends ModelDescriptorV05
 {
 
-	public ModelDescriptorStardistV05(Map<String, Object> yamlElements) {
+	public ModelDescriptorCellposeV05(Map<String, Object> yamlElements) {
 		super(yamlElements);
 		// TODO Auto-generated constructor stub
 	}

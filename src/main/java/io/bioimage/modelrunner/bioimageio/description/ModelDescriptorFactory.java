@@ -31,7 +31,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import io.bioimage.modelrunner.bioimageio.description.cellpose.ModelDescriptorCellposeV04;
+import io.bioimage.modelrunner.bioimageio.description.cellpose.ModelDescriptorCellposeV05;
 import io.bioimage.modelrunner.bioimageio.description.exceptions.ModelSpecsException;
+import io.bioimage.modelrunner.bioimageio.description.stardist.ModelDescriptorStardistV04;
+import io.bioimage.modelrunner.bioimageio.description.stardist.ModelDescriptorStardistV05;
+import io.bioimage.modelrunner.model.cellpose.Cellpose;
+import io.bioimage.modelrunner.model.stardist.StardistAbstract;
 import io.bioimage.modelrunner.utils.Constants;
 import io.bioimage.modelrunner.utils.YAMLUtils;
 
@@ -87,11 +93,44 @@ public class ModelDescriptorFactory {
 
     private static ModelDescriptor fromMap(Map<String,Object> yamlElements) throws ModelSpecsException
     {
+    	if (isStardist(yamlElements) && StardistAbstract.isInstalled()) {
+    		return fromStardistMap(yamlElements);
+    	} else if (isCellpose(yamlElements) && Cellpose.isInstalled()) {
+    		return fromCellposeMap(yamlElements);
+    	}
     	Object formatVersion = yamlElements.get(FORMAT);
     	if (formatVersion instanceof String && ((String) formatVersion).startsWith(V04_START)) {
     		return new ModelDescriptorV04(yamlElements);
     	} else if (formatVersion instanceof String && ((String) formatVersion).startsWith(V05_START)) {
     		return new ModelDescriptorV05(yamlElements);
+    	} else if (formatVersion instanceof String)
+    		throw new IllegalArgumentException("JDLL only supports the Bioimage.io model specs 0.4 and 0.5.");
+    	else {
+    		throw new IllegalArgumentException("Incorrect format, missing 'format_version' field.");
+    	}
+    }
+
+    private static ModelDescriptor fromStardistMap(Map<String,Object> yamlElements) throws ModelSpecsException
+    {
+    	Object formatVersion = yamlElements.get(FORMAT);
+    	if (formatVersion instanceof String && ((String) formatVersion).startsWith(V04_START)) {
+    		return new ModelDescriptorStardistV04(yamlElements);
+    	} else if (formatVersion instanceof String && ((String) formatVersion).startsWith(V05_START)) {
+    		return new ModelDescriptorStardistV05(yamlElements);
+    	} else if (formatVersion instanceof String)
+    		throw new IllegalArgumentException("JDLL only supports the Bioimage.io model specs 0.4 and 0.5.");
+    	else {
+    		throw new IllegalArgumentException("Incorrect format, missing 'format_version' field.");
+    	}
+    }
+
+    private static ModelDescriptor fromCellposeMap(Map<String,Object> yamlElements) throws ModelSpecsException
+    {
+    	Object formatVersion = yamlElements.get(FORMAT);
+    	if (formatVersion instanceof String && ((String) formatVersion).startsWith(V04_START)) {
+    		return new ModelDescriptorCellposeV04(yamlElements);
+    	} else if (formatVersion instanceof String && ((String) formatVersion).startsWith(V05_START)) {
+    		return new ModelDescriptorCellposeV05(yamlElements);
     	} else if (formatVersion instanceof String)
     		throw new IllegalArgumentException("JDLL only supports the Bioimage.io model specs 0.4 and 0.5.");
     	else {
@@ -172,5 +211,29 @@ public class ModelDescriptorFactory {
     	}
     	
         return covers;
+    }
+    
+    /**
+     * Check whether the Map corresponds to the yaml file of a Stardist model
+     * @param yamlElements
+     * 	a Map containing the contents of an rdf.yaml file
+     * @return true if the model corresponds to Stardist and false otherwise
+     */
+    public static boolean isStardist(Map<String,Object> yamlElements) {
+    	boolean nameCheck = (yamlElements.get("name") != null) && (yamlElements.get("name") instanceof String) 
+    			&& (((String) yamlElements.get("name")).toLowerCase().contains("stardist"));
+    	boolean configCheck = (yamlElements.get("config") != null) && (yamlElements.get("config") instanceof Map) 
+    			&& (((Map<String, Object>) yamlElements.get("config")).get("stardist") != null);
+    	return nameCheck && configCheck;
+    }
+    
+    /**
+     * Check whether the Map corresponds to the yaml file of a cellpose model
+     * @param yamlElements
+     * 	a Map containing the contents of an rdf.yaml file
+     * @return true if the model corresponds to cellpose and false otherwise
+     */
+    public static boolean isCellpose(Map<String,Object> yamlElements) {
+    	return false;
     }
 }

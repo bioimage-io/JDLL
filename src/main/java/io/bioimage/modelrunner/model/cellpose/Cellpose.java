@@ -17,7 +17,7 @@
  * limitations under the License.
  * #L%
  */
-package io.bioimage.modelrunner.model.stardist;
+package io.bioimage.modelrunner.model.cellpose;
 
 import java.io.Closeable;
 import java.io.File;
@@ -52,13 +52,13 @@ import net.imglib2.util.Cast;
 import net.imglib2.util.Util;
 
 /**
- * Implementation of an API to run Stardist 2D models out of the box with little configuration.
+ * Implementation of an API to run Cellpose models out of the box with little configuration.
  * 
  *TODO add fine tuning
  *
  *@author Carlos Garcia
  */
-public abstract class StardistAbstract implements Closeable {
+public abstract class Cellpose implements Closeable {
 	
 	private final String modelDir;
 	
@@ -167,7 +167,7 @@ public abstract class StardistAbstract implements Closeable {
 	
 	protected abstract <T extends RealType<T> & NativeType<T>> RandomAccessibleInterval<T> reconstructMask() throws IOException;
 	
-	protected StardistAbstract(String modelName, String baseDir) throws IOException, ModelSpecsException {
+	protected Cellpose(String modelName, String baseDir) throws IOException, ModelSpecsException {
 		this.name = modelName;
 		this.basedir = baseDir;
 		modelDir = new File(baseDir, modelName).getAbsolutePath();
@@ -183,7 +183,7 @@ public abstract class StardistAbstract implements Closeable {
     	createPythonService();
 	}
 	
-	protected StardistAbstract(ModelDescriptor descriptor) throws IOException, ModelSpecsException {
+	protected Cellpose(ModelDescriptor descriptor) throws IOException, ModelSpecsException {
 		this.descriptor = descriptor;
 		this.name = new File(descriptor.getModelPath()).getName();
 		this.basedir = new File(descriptor.getModelPath()).getParentFile().getAbsolutePath();
