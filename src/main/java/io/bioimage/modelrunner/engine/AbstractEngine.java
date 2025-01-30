@@ -33,7 +33,7 @@ import io.bioimage.modelrunner.engine.engines.KerasEngine;
 import io.bioimage.modelrunner.engine.engines.OnnxEngine;
 import io.bioimage.modelrunner.engine.engines.PytorchEngine;
 import io.bioimage.modelrunner.engine.engines.TensorflowEngine;
-import io.bioimage.modelrunner.model.Model;
+import io.bioimage.modelrunner.model.BioimageIoModel;
 import io.bioimage.modelrunner.tensor.Tensor;
 import net.imglib2.type.NativeType;
 import net.imglib2.type.numeric.RealType;

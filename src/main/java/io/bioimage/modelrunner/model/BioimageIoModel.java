@@ -69,7 +69,7 @@ import net.imglib2.util.Util;
  * 
  * @author Carlos Garcia Lopez de Haro
  */
-public class Model implements Closeable
+public class BioimageIoModel extends DLModel
 {
 	/**
 	 * Whether the model is loaded or not
@@ -129,7 +129,7 @@ public class Model implements Closeable
 	 * @throws IOException if there is any error finding the engines in the system
 	 * @throws IllegalStateException if any of the engines has been incorrectly modified
 	 */
-	private Model( EngineInfo engineInfo, String modelFolder, String modelSource, ClassLoader classLoader )
+	protected BioimageIoModel( EngineInfo engineInfo, String modelFolder, String modelSource, ClassLoader classLoader )
 			throws LoadEngineException, MalformedURLException, IllegalStateException, IOException
 	{
 		if ( !engineInfo.isBioengine()
@@ -143,7 +143,7 @@ public class Model implements Closeable
 	}
 
 	/**
-	 * Creates a DeepLearning model {@link Model} from the wanted Deep Learning
+	 * Creates a DeepLearning model {@link BioimageIoModel} from the wanted Deep Learning
 	 * framework (engine)
 	 * 
 	 * @param modelFolder
@@ -164,7 +164,7 @@ public class Model implements Closeable
 	 * @throws IllegalStateException if any of the engines has been incorrectly modified
 	 * @throws LoadEngineException if there is any error loading the engines
 	 */
-	public static Model createDeepLearningModel( String modelFolder, String modelSource, EngineInfo engineInfo )
+	public static BioimageIoModel createDeepLearningModel( String modelFolder, String modelSource, EngineInfo engineInfo )
 			throws LoadEngineException, MalformedURLException, IllegalStateException, IOException
 	{
 		Objects.requireNonNull(modelFolder);
@@ -173,7 +173,7 @@ public class Model implements Closeable
 				&& !engineInfo.getFramework().equals(EngineInfo.getTensorflowKey())
 				&& !engineInfo.getFramework().equals(EngineInfo.getBioimageioTfKey()) )
 			Objects.requireNonNull(modelSource);
-		Model model = new Model( engineInfo, modelFolder, modelSource, null );
+		BioimageIoModel model = new BioimageIoModel( engineInfo, modelFolder, modelSource, null );
 
 		if (Paths.get(modelFolder, Constants.RDF_FNAME).toFile().isFile()) {
 			try {
@@ -211,7 +211,7 @@ public class Model implements Closeable
 	 * @throws IOException if there is any error finding the engines in the system
 	 * @throws ModelSpecsException if the rdf.yaml file has some at least a field which does not comply with the Bioiamge.io constraints
 	 */
-	public static Model createBioimageioModel(String bmzModelFolder, ClassLoader classloader)
+	public static BioimageIoModel createBioimageioModel(String bmzModelFolder, ClassLoader classloader)
 			throws LoadEngineException, ModelSpecsException, IOException {
 		return createBioimageioModel(bmzModelFolder, InstalledEngines.getEnginesDir(), classloader);
 	}
@@ -231,7 +231,7 @@ public class Model implements Closeable
 	 * @throws IOException if there is any error finding the engines in the system
 	 * @throws ModelSpecsException if the rdf.yaml file has some at least a field which does not comply with the Bioiamge.io constraints
 	 */
-	public static Model createBioimageioModel(String bmzModelFolder)
+	public static BioimageIoModel createBioimageioModel(String bmzModelFolder)
 			throws ModelSpecsException, LoadEngineException, IOException {
 		return createBioimageioModel(bmzModelFolder, InstalledEngines.getEnginesDir());
 	}
@@ -253,7 +253,7 @@ public class Model implements Closeable
 	 * @throws IOException if there is any error finding the engines in the system
 	 * @throws ModelSpecsException if the rdf.yaml file has some at least a field which does not comply with the Bioiamge.io constraints
 	 */
-	public static Model createBioimageioModel(String bmzModelFolder, String enginesFolder) 
+	public static BioimageIoModel createBioimageioModel(String bmzModelFolder, String enginesFolder) 
 			throws ModelSpecsException, LoadEngineException, IOException {
 		return createBioimageioModel(bmzModelFolder, enginesFolder, null);
 	}
@@ -287,7 +287,7 @@ public class Model implements Closeable
 	 * @throws IOException if there is any error finding the engines in the system
 	 * @throws ModelSpecsException if the rdf.yaml file has some at least a field which does not comply with the Bioiamge.io constraints
 	 */
-	public static Model createBioimageioModel(String bmzModelFolder, String enginesFolder, ClassLoader classloader) 
+	public static BioimageIoModel createBioimageioModel(String bmzModelFolder, String enginesFolder, ClassLoader classloader) 
 			throws LoadEngineException, IOException, ModelSpecsException {
 		Objects.requireNonNull(bmzModelFolder);
 		Objects.requireNonNull(enginesFolder);
@@ -316,7 +316,7 @@ public class Model implements Closeable
 			throw new IOException("Please install a compatible engine with the model weights. "
 					+ "To be compatible the engine has to be of the same framework and the major version needs to be the same. "
 					+ "The model weights are: " + descriptor.getWeights().getSupportedWeightNamesAndVersion());
-		Model model = new Model( info, bmzModelFolder, modelSource, classloader );
+		BioimageIoModel model = new BioimageIoModel( info, bmzModelFolder, modelSource, classloader );
 		model.descriptor = descriptor;
 		return model;
 	}
@@ -352,7 +352,7 @@ public class Model implements Closeable
 	 * @throws ModelSpecsException if the rdf.yaml file has some at least a field which does not comply with the Bioiamge.io constraints
 	 * @throws IllegalStateException if any of the installed DL engines have been manipulated incorrectly
 	 */
-	public static Model createBioimageioModelWithExactWeigths(String bmzModelFolder, 
+	public static BioimageIoModel createBioimageioModelWithExactWeigths(String bmzModelFolder, 
 			String enginesFolder, ClassLoader classloader)
 			throws IOException, ModelSpecsException, IllegalStateException, LoadEngineException {
 		Objects.requireNonNull(bmzModelFolder);
@@ -377,13 +377,13 @@ public class Model implements Closeable
 		if (info == null)
 			throw new IOException("Please install the engines defined by the model weights. "
 					+ "The model weights are: " + descriptor.getWeights().getSupportedWeightNamesAndVersion());
-		Model model = Model.createDeepLearningModel(bmzModelFolder, modelSource, info, classloader);
+		BioimageIoModel model = BioimageIoModel.createDeepLearningModel(bmzModelFolder, modelSource, info, classloader);
 		model.descriptor = descriptor;
 		return model;
 	}
 
 	/**
-	 * Creates a DeepLearning model {@link Model} from the wanted Deep Learning
+	 * Creates a DeepLearning model {@link BioimageIoModel} from the wanted Deep Learning
 	 * framework (engine)
 	 * 
 	 * @param modelFolder
@@ -413,7 +413,7 @@ public class Model implements Closeable
 	 * @throws IllegalStateException if any of the installed DL engines have been manipulated incorrectly
 	 * @throws MalformedURLException if the JAR files are not well defined in the .json file
 	 */
-	public static Model createDeepLearningModel( String modelFolder, String modelSource, EngineInfo engineInfo,
+	public static BioimageIoModel createDeepLearningModel( String modelFolder, String modelSource, EngineInfo engineInfo,
 			ClassLoader classLoader ) throws LoadEngineException, MalformedURLException, IllegalStateException, IOException
 	{
 		Objects.requireNonNull(modelFolder);
@@ -422,7 +422,7 @@ public class Model implements Closeable
 				&& !engineInfo.getFramework().equals(EngineInfo.getTensorflowKey())
 				&& !engineInfo.getFramework().equals(EngineInfo.getBioimageioTfKey()))
 			Objects.requireNonNull(modelSource);
-		Model model = new Model( engineInfo, modelFolder, modelSource, classLoader );
+		BioimageIoModel model = new BioimageIoModel( engineInfo, modelFolder, modelSource, classLoader );
 
 		if (Paths.get(modelFolder, Constants.RDF_FNAME).toFile().isFile()) {
 			try {
@@ -447,7 +447,7 @@ public class Model implements Closeable
 	 *  or the url does not exist) or if the model is not supported on the Bioengine.
 	 *  To check the models supported on the Bioengine, visit: https://raw.githubusercontent.com/bioimage-io/bioengine-model-runner/gh-pages/manifest.bioengine.yaml
 	 */
-	public static Model createBioimageioModelForBioengine(String bmzModelFolder, String serverURL) throws Exception {
+	public static BioimageIoModel createBioimageioModelForBioengine(String bmzModelFolder, String serverURL) throws Exception {
 		if (new File(bmzModelFolder, Constants.RDF_FNAME).isFile() == false)
 			throw new IOException("A Bioimage.io model folder should contain its corresponding rdf.yaml file.");
 		ModelDescriptor descriptor = 
@@ -457,7 +457,7 @@ public class Model implements Closeable
 			throw new IllegalArgumentException("The selected model is currently not supported by the Bioegine. "
 					+ "To check the list of supported models please visit: " + BioEngineAvailableModels.getBioengineJson());
 		EngineInfo info = EngineInfo.defineBioengine(serverURL);
-		Model model =  Model.createDeepLearningModel(bmzModelFolder, null, info);
+		BioimageIoModel model =  BioimageIoModel.createDeepLearningModel(bmzModelFolder, null, info);
 		model.bioengine = true;
 		model.descriptor = descriptor;
 		return model;
@@ -732,7 +732,7 @@ public class Model implements Closeable
 		Img<T> im = Cast.unchecked(ArrayImgs.floats(new long[] {1, 1, 512, 512}));
 		List<Tensor<T>> l = new ArrayList<Tensor<T>>();
 		l.add(Tensor.build("input0", "bcyx", im));
-		Model model = createBioimageioModel(mm);
+		BioimageIoModel model = createBioimageioModel(mm);
 		model.loadModel();
 		TileInfo tile = TileInfo.build(l.get(0).getName(), new long[] {1, 1, 512, 512}, 
 				l.get(0).getAxesOrderString(), new long[] {1, 1, 512, 512}, l.get(0).getAxesOrderString());
@@ -745,7 +745,7 @@ public class Model implements Closeable
 
 	/**
 	 * Get the EngineClassLoader created by the DeepLearning Model
-	 * {@link Model}. The EngineClassLoader loads the JAR files needed to use
+	 * {@link BioimageIoModel}. The EngineClassLoader loads the JAR files needed to use
 	 * the corresponding Deep Learning framework (engine)
 	 * 
 	 * @return the Model corresponding EngineClassLoader
@@ -827,7 +827,7 @@ public class Model implements Closeable
 	}
 	
 	/**
-	 * Create consumer used to be used with {@link Model} for the methods {@link #runBMZ(List, TilingConsumer)}
+	 * Create consumer used to be used with {@link BioimageIoModel} for the methods {@link #runBMZ(List, TilingConsumer)}
 	 * or {@link #runBMZ(List, List, TilingConsumer)}.
 	 * The consumer helps to track the number if tiles that have already been processed.
 	 * @return a consumer to track the tiling process

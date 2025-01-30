@@ -28,7 +28,7 @@ import io.bioimage.modelrunner.bioimageio.BioimageioRepo;
 import io.bioimage.modelrunner.engine.EngineInfo;
 import io.bioimage.modelrunner.engine.installation.EngineInstall;
 import io.bioimage.modelrunner.exceptions.LoadEngineException;
-import io.bioimage.modelrunner.model.Model;
+import io.bioimage.modelrunner.model.BioimageIoModel;
 import io.bioimage.modelrunner.tensor.Tensor;
 import io.bioimage.modelrunner.versionmanagement.AvailableEngines;
 import io.bioimage.modelrunner.versionmanagement.DeepLearningVersion;
@@ -123,7 +123,7 @@ public class ExampleLoadPytorch1Pytorch2 {
 		// REGARD THAT the engine folders need to follow a naming convention
 		EngineInfo engineInfo = createEngineInfo(framework, engineVersion, enginesDir, cpu, gpu);
 		// Load the corresponding model, for Pytorch model_source arg is not needed
-		try (Model model = loadModel(modelFolder, modelSource, engineInfo);) {
+		try (BioimageIoModel model = loadModel(modelFolder, modelSource, engineInfo);) {
 			// Create an image that will be the backend of the Input Tensor
 			final ImgFactory< FloatType > imgFactory = new ArrayImgFactory<>( new FloatType() );
 			final Img< FloatType > img1 = imgFactory.create( 1, 1, 512, 512 );
@@ -198,7 +198,7 @@ public class ExampleLoadPytorch1Pytorch2 {
 		// REGARD THAT the engine folders need to follow a naming convention
 		EngineInfo engineInfo = createEngineInfo(framework, engineVersion, enginesDir, cpu, gpu);
 		// Load the corresponding model, for Pytorch the arg model_source is not needed
-		try (Model model = loadModel(modelFolder, modelSource, engineInfo);) {
+		try (BioimageIoModel model = loadModel(modelFolder, modelSource, engineInfo);) {
 			// Create an image that will be the backend of the Input Tensor
 			final ImgFactory< FloatType > imgFactory = new ArrayImgFactory<>( new FloatType() );
 			final Img< FloatType > img1 = imgFactory.create( 1, 1, 512, 512 );
@@ -266,9 +266,9 @@ public class ExampleLoadPytorch1Pytorch2 {
 	 * @throws LoadEngineException if there is any error loading the model
 	 * @throws Exception if there is any exception loading the model
 	 */
-	public static Model loadModel(String modelFolder, String modelSource, EngineInfo engineInfo) throws LoadEngineException, Exception {
+	public static BioimageIoModel loadModel(String modelFolder, String modelSource, EngineInfo engineInfo) throws LoadEngineException, Exception {
 		
-		Model model = Model.createDeepLearningModel(modelFolder, modelSource, engineInfo);
+		BioimageIoModel model = BioimageIoModel.createDeepLearningModel(modelFolder, modelSource, engineInfo);
 		model.loadModel();
 		return model;
 	}

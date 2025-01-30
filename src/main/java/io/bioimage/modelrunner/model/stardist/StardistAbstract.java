@@ -19,7 +19,6 @@
  */
 package io.bioimage.modelrunner.model.stardist;
 
-import java.io.Closeable;
 import java.io.File;
 import java.io.IOException;
 import java.net.URISyntaxException;
@@ -39,6 +38,7 @@ import io.bioimage.modelrunner.apposed.appose.Service.TaskStatus;
 import io.bioimage.modelrunner.bioimageio.description.ModelDescriptor;
 import io.bioimage.modelrunner.bioimageio.description.ModelDescriptorFactory;
 import io.bioimage.modelrunner.bioimageio.description.exceptions.ModelSpecsException;
+import io.bioimage.modelrunner.model.BaseModel;
 import io.bioimage.modelrunner.system.PlatformDetection;
 import io.bioimage.modelrunner.tensor.Tensor;
 import io.bioimage.modelrunner.tensor.shm.SharedMemoryArray;
@@ -58,7 +58,7 @@ import net.imglib2.util.Util;
  *
  *@author Carlos Garcia
  */
-public abstract class StardistAbstract implements Closeable {
+public abstract class StardistAbstract extends BaseModel {
 	
 	private final String modelDir;
 	
@@ -67,8 +67,6 @@ public abstract class StardistAbstract implements Closeable {
 	protected final String basedir;
 	
 	protected final int nChannels;
-	
-	private boolean loaded = false;
 	
 	protected SharedMemoryArray shma;
 	
@@ -239,18 +237,15 @@ public abstract class StardistAbstract implements Closeable {
 		return code;
 	}
 	
-	public boolean isLoaded() {
-		return loaded;
-	}
-	
+	@Override
 	public void close() {
 		if (!loaded)
 			return;
 		python.close();
 	}
-	
+
 	public <T extends RealType<T> & NativeType<T>, R extends RealType<R> & NativeType<R>> 
-	Map<String, RandomAccessibleInterval<R>> predict(RandomAccessibleInterval<T> img) throws IOException, InterruptedException {
+	Map<String, RandomAccessibleInterval<R>> run(RandomAccessibleInterval<T> img) throws IOException, InterruptedException {
 		checkInput(img);
 		shma = SharedMemoryArray.createSHMAFromRAI(img, false, false);
 		String code = "";
