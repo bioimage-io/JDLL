@@ -22,10 +22,12 @@ package io.bioimage.modelrunner.model.stardist;
 import java.io.File;
 import java.io.IOException;
 import java.net.URISyntaxException;
+import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 
 import org.apache.commons.compress.archivers.ArchiveException;
 
@@ -35,9 +37,12 @@ import io.bioimage.modelrunner.apposed.appose.MambaInstallException;
 import io.bioimage.modelrunner.apposed.appose.Service;
 import io.bioimage.modelrunner.apposed.appose.Service.Task;
 import io.bioimage.modelrunner.apposed.appose.Service.TaskStatus;
+import io.bioimage.modelrunner.apposed.appose.Types;
 import io.bioimage.modelrunner.bioimageio.description.ModelDescriptor;
 import io.bioimage.modelrunner.bioimageio.description.ModelDescriptorFactory;
 import io.bioimage.modelrunner.bioimageio.description.exceptions.ModelSpecsException;
+import io.bioimage.modelrunner.exceptions.LoadModelException;
+import io.bioimage.modelrunner.exceptions.RunModelException;
 import io.bioimage.modelrunner.model.BaseModel;
 import io.bioimage.modelrunner.system.PlatformDetection;
 import io.bioimage.modelrunner.tensor.Tensor;
@@ -80,6 +85,8 @@ public abstract class StardistAbstract extends BaseModel {
 	
 	private static final List<String> STARDIST_CHANNELS = Arrays.asList(new String[] {"conda-forge", "default"});
 
+	
+	private static final String OUTPUT_MASK_KEY = "mask";
 	
 	private static final String SHM_NAME_KEY = "_shm_name";
 	
@@ -244,6 +251,71 @@ public abstract class StardistAbstract extends BaseModel {
 		python.close();
 	}
 
+	@Override
+	public <T extends RealType<T> & NativeType<T>, R extends RealType<R> & NativeType<R>> 
+	void run( List< Tensor < T > > inTensors, List< Tensor < R > > outTensors ) throws RunModelException {
+		if (inTensors.size() > 1)
+			throw new RunModelException("Stardist needs just one input image");
+		try {
+			Map<String, RandomAccessibleInterval<R>> outputs = run(inTensors.get(0).getData());
+			for (Tensor<R> tensor : outTensors) {
+				Entry<String, RandomAccessibleInterval<R>> entry = outputs.entrySet().stream()
+						.filter(ee -> tensor.getName().equals(ee.getKey())
+								&& Arrays.equals(tensor.getData().dimensionsAsLongArray(), ee.getValue().dimensionsAsLongArray()))
+						.findFirst().orElse(null);
+				if (entry == null 
+						&& Arrays.equals(tensor.getData().dimensionsAsLongArray(), outputs.get(OUTPUT_MASK_KEY).dimensionsAsLongArray()))
+					tensor.setData(outputs.get(OUTPUT_MASK_KEY));
+				else if (entry != null)
+					tensor.setData(entry.getValue());
+			}
+		} catch (IOException | InterruptedException e) {
+			throw new RunModelException(Types.stackTrace(e));
+		}
+	}
+	
+	@Override
+	public void loadModel() throws LoadModelException {
+		String code = "";
+		if (!loaded) {
+			code += createImportsCode() + System.lineSeparator();
+		}
+		
+		Task task;
+		try {
+			task = python.task(code);
+			task.waitFor();
+			if (task.status == TaskStatus.CANCELED)
+				throw new RuntimeException("Task canceled");
+			else if (task.status == TaskStatus.FAILED)
+				throw new RuntimeException(task.error);
+			else if (task.status == TaskStatus.CRASHED)
+				throw new RuntimeException(task.error);
+			loaded = true;
+		} catch (IOException | InterruptedException e) {
+			throw new LoadModelException(Types.stackTrace(e));
+		}
+	}
+	
+	@Override
+	public <T extends RealType<T> & NativeType<T>, R extends RealType<R> & NativeType<R>> 
+	List<Tensor<T>> run(List<Tensor<R>> inputTensors) 
+			throws RunModelException {
+		if (inputTensors.size() > 1)
+			throw new RunModelException("Stardist needs just one input image");
+		try {
+			Map<String, RandomAccessibleInterval<T>> outputs = run(inputTensors.get(0).getData());
+			List<Tensor<T>> outTensors = new ArrayList<Tensor<T>>();
+			for (Entry<String, RandomAccessibleInterval<T>> entry : outputs.entrySet()) {
+				Tensor<T> tt = Tensor.build(entry.getKey(), CLOSE_SHM_CODE, entry.getValue());
+				outTensors.add(tt);
+			}
+			return outTensors;
+		} catch (IOException | InterruptedException e) {
+			throw new RunModelException(Types.stackTrace(e));
+		}
+	}
+
 	public <T extends RealType<T> & NativeType<T>, R extends RealType<R> & NativeType<R>> 
 	Map<String, RandomAccessibleInterval<R>> run(RandomAccessibleInterval<T> img) throws IOException, InterruptedException {
 		checkInput(img);
@@ -274,8 +346,8 @@ public abstract class StardistAbstract extends BaseModel {
 	Map<String, RandomAccessibleInterval<T>> reconstructOutputs(Task task) 
 			throws IOException, InterruptedException {
 		
-		Map<String, RandomAccessibleInterval<T>> outs = new HashMap<String, RandomAccessibleInterval<T>>();
-		outs.put("mask", reconstructMask());
+		Map<String, RandomAccessibleInterval<T>> outs = new LinkedHashMap<String, RandomAccessibleInterval<T>>();
+		outs.put(OUTPUT_MASK_KEY, reconstructMask());
 		
 		if (task.outputs.get(KEYS_KEY) != null) {
 			for (String kk : (List<String>) task.outputs.get(KEYS_KEY)) {

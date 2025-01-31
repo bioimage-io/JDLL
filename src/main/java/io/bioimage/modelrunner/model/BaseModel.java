@@ -108,7 +108,7 @@ public abstract class BaseModel implements Closeable
 	 */
 	public abstract <T extends RealType<T> & NativeType<T>, R extends RealType<R> & NativeType<R>> 
 	List<Tensor<T>> run(List<Tensor<R>> inputTensors) 
-			throws ModelSpecsException, RunModelException, FileNotFoundException, IOException;
+			throws RunModelException;
 
 	/**
 	 * Get the folder where this model is located

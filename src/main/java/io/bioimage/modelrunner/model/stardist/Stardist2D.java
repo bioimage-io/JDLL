@@ -205,7 +205,7 @@ public class Stardist2D extends StardistAbstract {
 		
 		RandomAccessibleInterval<FloatType> img = ArrayImgs.floats(new long[] {512, 512});
 		
-		Map<String, RandomAccessibleInterval<FloatType>> res = model.predict(img);
+		Map<String, RandomAccessibleInterval<FloatType>> res = model.run(img);
 		model.close();
 		System.out.println(true);
 	}
