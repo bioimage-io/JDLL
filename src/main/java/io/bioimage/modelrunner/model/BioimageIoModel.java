@@ -72,6 +72,10 @@ import net.imglib2.util.Util;
 public class BioimageIoModel extends DLModel
 {
 	/**
+	 * Whether to do tiling or not when doing inference
+	 */
+	private boolean tiling = true;
+	/**
 	 * Whether the model is created for the bioengine or not
 	 */
 	private boolean bioengine = false;
@@ -102,14 +106,15 @@ public class BioimageIoModel extends DLModel
 	protected BioimageIoModel( EngineInfo engineInfo, String modelFolder, String modelSource, ClassLoader classLoader )
 			throws LoadEngineException, MalformedURLException, IllegalStateException, IOException
 	{
-		if ( !engineInfo.isBioengine()
-				&& !engineInfo.getFramework().equals(EngineInfo.getTensorflowKey())
-				&& !engineInfo.getFramework().equals(EngineInfo.getBioimageioTfKey()) )
-			Objects.requireNonNull(modelSource);
-		this.engineInfo = engineInfo;
-		this.modelFolder = modelFolder;
-		this.modelSource = modelSource;
-		setEngineClassLoader( classLoader );
+		super(engineInfo, modelFolder, modelSource, classLoader);
+	}
+	
+	public void setTiling(boolean doTiling) {
+		this.tiling = false;
+	}
+	
+	public boolean isTiling() {
+		return this.tiling;
 	}
 	
 	/**
@@ -305,37 +310,7 @@ public class BioimageIoModel extends DLModel
 		if (info == null)
 			throw new IOException("Please install the engines defined by the model weights. "
 					+ "The model weights are: " + descriptor.getWeights().getSupportedWeightNamesAndVersion());
-		BioimageIoModel model = BioimageIoModel.createDeepLearningModel(bmzModelFolder, modelSource, info, classloader);
-		model.descriptor = descriptor;
-		return model;
-	}
-
-	/**
-	 * Load a model from the bioimage.io directly on the Bioengine. 
-	 * Only the path to the model folder that contains the rdf.yaml is needed.
-	 * To load a model on the bioengine we need to specify the server where our instance
-	 * of the Bioengine is hosted.
-	 * @param bmzModelFolder
-	 * 	folder where the bioimage.io model is located (parent folder of the rdf.yaml file)
-	 * @param serverURL
-	 * 	url where the wanted insance of the bioengine is hosted
-	 * @return a model ready to be loaded
-	 * @throws Exception if there is any error creating the model (no rdf.yaml file,
-	 *  or the url does not exist) or if the model is not supported on the Bioengine.
-	 *  To check the models supported on the Bioengine, visit: https://raw.githubusercontent.com/bioimage-io/bioengine-model-runner/gh-pages/manifest.bioengine.yaml
-	 */
-	public static BioimageIoModel createBioimageioModelForBioengine(String bmzModelFolder, String serverURL) throws Exception {
-		if (new File(bmzModelFolder, Constants.RDF_FNAME).isFile() == false)
-			throw new IOException("A Bioimage.io model folder should contain its corresponding rdf.yaml file.");
-		ModelDescriptor descriptor = 
-				ModelDescriptorFactory.readFromLocalFile(bmzModelFolder + File.separator + Constants.RDF_FNAME);
-		boolean valid = BioEngineAvailableModels.isModelSupportedInBioengine(descriptor.getModelID());
-		if (!valid)
-			throw new IllegalArgumentException("The selected model is currently not supported by the Bioegine. "
-					+ "To check the list of supported models please visit: " + BioEngineAvailableModels.getBioengineJson());
-		EngineInfo info = EngineInfo.defineBioengine(serverURL);
-		BioimageIoModel model =  BioimageIoModel.createDeepLearningModel(bmzModelFolder, null, info);
-		model.bioengine = true;
+		BioimageIoModel model = BioimageIoModel.createModel(bmzModelFolder, modelSource, info, classloader);
 		model.descriptor = descriptor;
 		return model;
 	}
@@ -353,42 +328,12 @@ public class BioimageIoModel extends DLModel
 	 * @param inputTensors
 	 * 	list of the input tensors that are going to be inputed to the model
 	 * @return the resulting tensors 
-	 * @throws ModelSpecsException if the parameters of the rdf.yaml file are not correct
 	 * @throws RunModelException if the model has not been previously loaded
-	 * @throws IOException if any of the required files is missing or corrupt
-	 * @throws FileNotFoundException if any of the required files is missing
 	 * @throws IllegalArgumentException if the model is not a Bioimage.io model or if lacks a Bioimage.io
 	 *  rdf.yaml specs file in the model folder. 
 	 */
 	public <T extends RealType<T> & NativeType<T>, R extends RealType<R> & NativeType<R>> 
-	List<Tensor<T>> runBMZ(List<Tensor<R>> inputTensors) throws ModelSpecsException, RunModelException, FileNotFoundException, IOException {
-		return runBMZ(inputTensors, new TilingConsumer());
-	}
-	
-	/**
-	 * Run a Bioimage.io model and execute the tiling strategy in one go.
-	 * The model needs to have been previously loaded with {@link #loadModel()}.
-	 * This method does not execute pre- or post-processing, they
-	 * need to be executed independently before or after
-	 * 
-	 * @param <T>
-	 * 	ImgLib2 data type of the output images
-	 * @param <R>
-	 * 	ImgLib2 data type of the input images
-	 * @param inputTensors
-	 * 	list of the input tensors that are going to be inputed to the model
-	 * @param tileCounter
-	 * 	consumer that counts the number of tiles processed out of the total, if null, nothing is counted
-	 * @return the resulting tensors 
-	 * @throws ModelSpecsException if the parameters of the rdf.yaml file are not correct
-	 * @throws RunModelException if the model has not been previously loaded
-	 * @throws IOException if any of the required files is missing or corrupt
-	 * @throws FileNotFoundException if any of the required files is missing
-	 * @throws IllegalArgumentException if the model is not a Bioimage.io model or if lacks a Bioimage.io
-	 *  rdf.yaml specs file in the model folder. 
-	 */
-	public <T extends RealType<T> & NativeType<T>, R extends RealType<R> & NativeType<R>> 
-	List<Tensor<T>> runBMZ(List<Tensor<R>> inputTensors, TilingConsumer tileCounter) throws ModelSpecsException, RunModelException, FileNotFoundException, IOException {
+	List<Tensor<T>> run(List<Tensor<R>> inputTensors) throws RunModelException {
 		if (!this.isLoaded())
 			throw new RunModelException("Please first load the model.");
 		if (descriptor == null && !(new File(modelFolder, Constants.RDF_FNAME).isFile()))
@@ -402,33 +347,6 @@ public class BioimageIoModel extends DLModel
 		List<TileInfo> inputTiles = calc.getOptimalTileSize(imageInfos);
 		TileMaker maker = TileMaker.build(descriptor, inputTiles);
 		return runBMZ(inputTensors, maker, tileCounter);
-	}
-	
-	/**
-	 * Run a Bioimage.io model and execute the tiling strategy in one go.
-	 * The model needs to have been previously loaded with {@link #loadModel()}.
-	 * This method does not execute pre- or post-processing, they
-	 * need to be executed independently before or after
-	 * 
-	 * @param <T>
-	 * 	ImgLib2 data type of the output images
-	 * @param <R>
-	 * 	ImgLib2 data type of the input images
-	 * @param inputTensors
-	 * 	list of the input tensors that are going to be inputed to the model
-	 * @param tiles
-	 * 	List of {@link TileInfo} objects containing information about the image size and tile
-	 * 	size of each of the input tensors to the model
-	 * @return the resulting tensors 
-	 * @throws ModelSpecsException if the parameters of the rdf.yaml file are not correct
-	 * @throws RunModelException if the model has not been previously loaded
-	 * @throws IllegalArgumentException if the model is not a Bioimage.io model or if lacks a Bioimage.io
-	 *  rdf.yaml specs file in the model folder. 
-	 */
-	public <T extends RealType<T> & NativeType<T>, R extends RealType<R> & NativeType<R>> 
-	List<Tensor<T>> runBMZ(List<Tensor<R>> inputTensors, 
-			List<TileInfo> tiles) throws ModelSpecsException, RunModelException {
-		return runBMZ(inputTensors, tiles, null);
 	}
 	
 	/**

@@ -226,7 +226,7 @@ public class ExampleLoadAndRunModel {
 	 */
 	public static BioimageIoModel loadModel(String modelFolder, String modelSource, EngineInfo engineInfo) throws LoadEngineException, Exception {
 		
-		BioimageIoModel model = BioimageIoModel.createDeepLearningModel(modelFolder, modelSource, engineInfo);
+		BioimageIoModel model = BioimageIoModel.createModel(modelFolder, modelSource, engineInfo);
 		model.loadModel();
 		return model;
 	}
