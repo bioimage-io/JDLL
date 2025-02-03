@@ -22,8 +22,6 @@
  */
 package io.bioimage.modelrunner.model;
 
-import java.io.Closeable;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.nio.file.Paths;
@@ -31,6 +29,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 import io.bioimage.modelrunner.bioimageio.bioengine.BioengineInterface;
 import io.bioimage.modelrunner.bioimageio.description.ModelDescriptorFactory;
@@ -44,10 +43,8 @@ import io.bioimage.modelrunner.engine.EngineLoader;
 import io.bioimage.modelrunner.exceptions.LoadEngineException;
 import io.bioimage.modelrunner.exceptions.LoadModelException;
 import io.bioimage.modelrunner.exceptions.RunModelException;
-import io.bioimage.modelrunner.model.DLModel.TilingConsumer;
 import io.bioimage.modelrunner.tensor.Tensor;
 import io.bioimage.modelrunner.utils.Constants;
-import io.bioimage.modelrunner.versionmanagement.InstalledEngines;
 import net.imglib2.type.NativeType;
 import net.imglib2.type.numeric.RealType;
 import net.imglib2.type.numeric.real.FloatType;
@@ -91,6 +88,26 @@ public class DLModel extends BaseModel
 	 * Model name as defined in the yaml file. For identification purposes
 	 */
 	protected String modelName;
+	
+	/**
+	 * List containing the desired tiling strategy for each of the input tensors
+	 */
+	protected List<TileInfo> inputTiles;
+	
+	/**
+	 * List containing the desired tiling strategy for each of the output tensors
+	 */
+	protected List<TileInfo> outputTiles;
+	/**
+	 * Whether to do tiling or not when doing inference
+	 */
+	protected boolean tiling = true;
+	
+	/**
+	 * Consumer used to inform the current tile being processed and in how many
+	 * tiles the input images are going to be separated
+	 */
+	protected TilingConsumer tileCounter;
 
 	/**
 	 * Construct the object model with all the needed information to load a
@@ -163,7 +180,6 @@ public class DLModel extends BaseModel
 	}
 
 	@Override
-
 	/**
 	 * Method that calls the ClassLoader with the corresponding JARs of the Deep
 	 * Learning framework (engine) loaded to run inference on the tensors. The
@@ -183,6 +199,63 @@ public class DLModel extends BaseModel
 	public <T extends RealType<T> & NativeType<T>, R extends RealType<R> & NativeType<R>> 
 	void run( List< Tensor < T > > inTensors, List< Tensor < R > > outTensors ) throws RunModelException
 	{
+		if (!this.isLoaded())
+			throw new RunModelException("Please first load the model.");
+		if (!this.tiling) {
+			this.inference(inTensors, outTensors);
+			return;
+		}
+		TileMaker maker = TileMaker.build(inputTiles, outputTiles);
+	}
+
+	@Override
+	public <T extends RealType<T> & NativeType<T>, R extends RealType<R> & NativeType<R>> 
+	List<Tensor<T>> run(List<Tensor<R>> inputTensors) throws RunModelException {
+		if (!this.isLoaded())
+			throw new RunModelException("Please first load the model.");
+		if (!this.tiling) {
+			throw new UnsupportedOperationException("Cannot run a DLModel if no information about the outputs is provided."
+					+ " Either try with 'run( List< Tensor < T > > inTensors, List< Tensor < R > > outTensors )'"
+					+ " or set the tiling information with 'setTileInfo(List<TileInfo> inputTiles, List<TileInfo> outputTiles)'."
+					+ " Another option is to run simple inference over an ImgLib2 RandomAccessibleInterval with"
+					+ " 'inference(List<RandomAccessibleInteral<T>> input)'");
+		}
+		
+		TileMaker maker = TileMaker.build(inputTiles, outputTiles);
+		List<Tensor<T>> outTensors = createOutputTensors();
+		runTiling(inputTensors, outTensors, maker);
+		return outTensors;
+	}
+	
+	private <T extends RealType<T> & NativeType<T>> List<Tensor<T>> createOutputTensors() {
+		List<Tensor<T>> outputTensors = new ArrayList<Tensor<T>>();
+		for (TileInfo tt : this.outputTiles) {
+			outputTensors.add((Tensor<T>) Tensor.buildBlankTensor(tt.getName(), 
+																	tt.getImageAxesOrder(), 
+																	tt.getImageDims(), 
+																	(T) new FloatType()));
+		}
+		return outputTensors;
+	}
+
+	/**
+	 * Run a model on the input tensors and get the output tensors. This just does inference,
+	 * no tiling, pre-processing, post-processing or anything else.
+	 * 
+	 * @param <T>
+	 * 	ImgLib2 data type of the input tensors
+	 * @param <R>
+	 * 	ImgLib2 data type of the output tensors, it can be the same as in the input
+	 * @param inTensors
+	 *            input tensors containing all the tensor data
+	 * @param outTensors
+	 *            expected output tensors. Their backend data will be rewritten with the result of the inference
+	 * @throws RunModelException
+	 *             if the is any problem running the model
+	 */
+	public <T extends RealType<T> & NativeType<T>, R extends RealType<R> & NativeType<R>> 
+	void inference( List< Tensor < T > > inTensors, List< Tensor < R > > outTensors ) throws RunModelException
+	{
 		DeepLearningEngineInterface engineInstance = engineClassLoader.getEngineInstance();
 		engineClassLoader.setEngineClassLoader();
 		ArrayList<Tensor<FloatType>> inTensorsFloat = new ArrayList<Tensor<FloatType>>();
@@ -195,35 +268,103 @@ public class DLModel extends BaseModel
 		engineInstance.run( inTensorsFloat, outTensors );
 		engineClassLoader.setBaseClassLoader();
 	}
-
-	@Override
-	public <T extends RealType<T> & NativeType<T>, R extends RealType<R> & NativeType<R>> List<Tensor<T>> run(
-			List<Tensor<R>> inputTensors) throws RunModelException {
-		// TODO Auto-generated method stub
-		return null;
-	}
 	
-	@SuppressWarnings("unchecked")
-	private <T extends RealType<T> & NativeType<T>, R extends RealType<R> & NativeType<R>> 
-	List<Tensor<T>> runTiling(List<Tensor<R>> inputTensors, TileMaker tiles, TilingConsumer tileCounter) throws RunModelException {
-		List<Tensor<T>> outputTensors = new ArrayList<Tensor<T>>();
-		for (TensorSpec tt : descriptor.getOutputTensors()) {
-			long[] dims = tiles.getOutputImageSize(tt.getName());
-			outputTensors.add((Tensor<T>) Tensor.buildBlankTensor(tt.getName(), 
-																	tt.getAxesOrder(), 
-																	dims, 
-																	(T) new FloatType()));
-		}
-		
+	protected <T extends RealType<T> & NativeType<T>, R extends RealType<R> & NativeType<R>> 
+	void runTiling(List<Tensor<R>> inputTensors, List<Tensor<T>> outputTensors, TileMaker tiles) throws RunModelException {
 		for (int i = 0; i < tiles.getNumberOfTiles(); i ++) {
 			int nTile = 0 + i;
 			List<Tensor<R>> inputTiles = inputTensors.stream()
 					.map(tt -> tiles.getNthTileInput(tt, nTile)).collect(Collectors.toList());
 			List<Tensor<T>> outputTiles = outputTensors.stream()
 					.map(tt -> tiles.getNthTileOutput(tt, nTile)).collect(Collectors.toList());
-			runModel(inputTiles, outputTiles);
+			inference(inputTiles, outputTiles);
 		}
-		return outputTensors;
+	}
+	
+	/**
+	 * Set the wanted tile specifications for each of the input tensors.
+	 * If this is not set, the model will process every input in just one run.
+	 * however, if this is set, the model will always do tiling when running following
+	 * this specifications
+	 * @param tileInfo
+	 * 	the specifications of how each of the input images can be tiled
+	 */
+	public void setTileInfo(List<TileInfo> inputTiles, List<TileInfo> outputTiles) {
+		this.inputTiles = inputTiles;
+		this.outputTiles = outputTiles;
+	}
+	
+	/**
+	 * Set a consumer that can be used to get the number of tiles
+	 * in which the input images will be separated and 
+	 * the tile that is being processed
+	 * @param tileCounter
+	 * 	{@link TileConsumer} used to track the inference of tiles
+	 */
+	public void setTilingCounter(TilingConsumer tileCounter) {
+		this.tileCounter = tileCounter;
+	}
+	
+	/**
+	 * Add method to get the {@link EngineInfo} used to create the model
+	 * @return the {@link EngineInfo} used to create the model
+	 */
+	public EngineInfo getEngineInfo() {
+		return engineInfo;
+	}
+	
+	/**
+	 * Whether the model is loaded or not
+	 * @return whether the model is loaded or not
+	 */
+	public boolean isLoaded() {
+		return loaded;
+	}
+
+	/**
+	 * Get the EngineClassLoader created by the DeepLearning Model
+	 * {@link BioimageIoModel}. The EngineClassLoader loads the JAR files needed to use
+	 * the corresponding Deep Learning framework (engine)
+	 * 
+	 * @return the Model corresponding EngineClassLoader
+	 */
+	public EngineLoader getEngineClassLoader()
+	{
+		return this.engineClassLoader;
+	}
+
+	/**
+	 * Get the folder where this model is located
+	 * 
+	 * @return the folder where this model is located
+	 */
+	public String getModelFolder()
+	{
+		return this.modelFolder;
+	}
+
+	/**
+	 * Get the source of this model as specified in the yaml file
+	 * 
+	 * @return the source of this model from the yaml file
+	 */
+	public String getModelSource()
+	{
+		return this.modelSource;
+	}
+
+	/**
+	 * Gets the name of the model
+	 * 
+	 * @return the name of the model
+	 */
+	public String getModelName()
+	{
+		return this.modelName;
+	}
+	
+	public boolean isTiling() {
+		return this.tiling;
 	}
 
 	/**
@@ -337,72 +478,6 @@ public class DLModel extends BaseModel
 	{
 		this.engineClassLoader = EngineLoader.createEngine(
 				( classLoader == null ) ? Thread.currentThread().getContextClassLoader() : classLoader, engineInfo );
-	}
-	
-	public void setTiles(List<TileInfo> tiles) {
-		
-	}
-	
-	public void setTilingCounter(TilingConsumer tileCounter) {
-		
-	}
-	
-	/**
-	 * Add method to get the {@link EngineInfo} used to create the model
-	 * @return the {@link EngineInfo} used to create the model
-	 */
-	public EngineInfo getEngineInfo() {
-		return engineInfo;
-	}
-	
-	/**
-	 * Whether the model is loaded or not
-	 * @return whether the model is loaded or not
-	 */
-	public boolean isLoaded() {
-		return loaded;
-	}
-
-	/**
-	 * Get the EngineClassLoader created by the DeepLearning Model
-	 * {@link BioimageIoModel}. The EngineClassLoader loads the JAR files needed to use
-	 * the corresponding Deep Learning framework (engine)
-	 * 
-	 * @return the Model corresponding EngineClassLoader
-	 */
-	public EngineLoader getEngineClassLoader()
-	{
-		return this.engineClassLoader;
-	}
-
-	/**
-	 * Get the folder where this model is located
-	 * 
-	 * @return the folder where this model is located
-	 */
-	public String getModelFolder()
-	{
-		return this.modelFolder;
-	}
-
-	/**
-	 * Get the source of this model as specified in the yaml file
-	 * 
-	 * @return the source of this model from the yaml file
-	 */
-	public String getModelSource()
-	{
-		return this.modelSource;
-	}
-
-	/**
-	 * Gets the name of the model
-	 * 
-	 * @return the name of the model
-	 */
-	public String getModelName()
-	{
-		return this.modelName;
 	}
 	
 	/**

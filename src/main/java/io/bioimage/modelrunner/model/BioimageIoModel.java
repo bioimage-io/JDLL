@@ -65,10 +65,6 @@ import net.imglib2.util.Cast;
 public class BioimageIoModel extends DLModel
 {
 	/**
-	 * Whether to do tiling or not when doing inference
-	 */
-	private boolean tiling = true;
-	/**
 	 * Whether the model is created for the bioengine or not
 	 */
 	private boolean bioengine = false;
@@ -108,10 +104,6 @@ public class BioimageIoModel extends DLModel
 	
 	public void setTiling(boolean doTiling) {
 		this.tiling = false;
-	}
-	
-	public boolean isTiling() {
-		return this.tiling;
 	}
 	
 	/**
@@ -394,8 +386,7 @@ public class BioimageIoModel extends DLModel
 			Tensor<R> tt = outputTensors.get(i);
 			long[] expectedSize = maker.getOutputImageSize(tt.getName());
 			if (expectedSize == null) {
-				throw new IllegalArgumentException("Tensor '" + tt.getName() + "' is not one of the defined "
-						+ "outputs.");
+				throw new IllegalArgumentException("Tensor '" + tt.getName() + "' is missing in the outputs.");
 			} else if (!tt.isEmpty() && Arrays.equals(expectedSize, tt.getData().dimensionsAsLongArray())) {
 				throw new IllegalArgumentException("Tensor '" + tt.getName() + "' size is different than the expected size"
 						+ " as defined by the rdf.yaml: " + Arrays.toString(tt.getData().dimensionsAsLongArray()) 
@@ -403,18 +394,6 @@ public class BioimageIoModel extends DLModel
 			}
 		}
 		runBMZ(inputTensors, outputTensors, maker);
-	}
-	
-	protected <T extends RealType<T> & NativeType<T>, R extends RealType<R> & NativeType<R>> 
-	void runTiling(List<Tensor<R>> inputTensors, List<Tensor<T>> outputTensors, TileMaker tiles) throws RunModelException {
-		for (int i = 0; i < tiles.getNumberOfTiles(); i ++) {
-			int nTile = 0 + i;
-			List<Tensor<R>> inputTiles = inputTensors.stream()
-					.map(tt -> tiles.getNthTileInput(tt, nTile)).collect(Collectors.toList());
-			List<Tensor<T>> outputTiles = outputTensors.stream()
-					.map(tt -> tiles.getNthTileOutput(tt, nTile)).collect(Collectors.toList());
-			inference(inputTiles, outputTiles);
-		}
 	}
 	
 	/**

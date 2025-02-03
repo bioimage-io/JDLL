@@ -19,7 +19,6 @@
  */
 package io.bioimage.modelrunner.bioimageio.tiling;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedHashMap;
@@ -31,7 +30,6 @@ import java.util.stream.IntStream;
 import io.bioimage.modelrunner.bioimageio.description.Axis;
 import io.bioimage.modelrunner.bioimageio.description.ModelDescriptor;
 import io.bioimage.modelrunner.bioimageio.description.TensorSpec;
-import io.bioimage.modelrunner.numpy.DecodeNumpy;
 import io.bioimage.modelrunner.tensor.Tensor;
 import io.bioimage.modelrunner.utils.Constants;
 import net.imglib2.FinalInterval;
@@ -70,6 +68,21 @@ public class TileMaker {
 		calculate();
 	}
 	
+	private TileMaker(List<TileInfo> inputTiles, List<TileInfo> outputTiles) {
+		this.inputTileInfo = inputTiles;
+		this.outputTileInfo = outputTiles;
+		for (TileInfo tile : inputTileInfo) {
+			PatchSpec patch = PatchSpec.create(tile.getName(), tile.getTileDims(), patchGridSize, paddingSize, tile.getImageDims());
+			input.put(tile.getName(), patch);
+			inputGrid.put(tile.getName(), TileGrid.create(patch));
+		}
+		for (TileInfo tile : outputTileInfo) {
+			PatchSpec patch = PatchSpec.create(tile.getName(), tile.getTileDims(), patchGridSize, paddingSize, tile.getImageDims());
+			output.put(tile.getName(), patch);
+			outputGrid.put(tile.getName(), TileGrid.create(patch));
+		}
+	}
+	
 	/**
 	 * Create the {@link TileMaker} object that will handle tiling of the images of interest for a wanted model.
 	 * @param descriptor
@@ -81,6 +94,10 @@ public class TileMaker {
 	 */
 	public static TileMaker build(ModelDescriptor descriptor, List<TileInfo> tileInfoList) {
 		return new TileMaker(descriptor, tileInfoList);
+	}
+	
+	public static TileMaker build(List<TileInfo> inputTiles, List<TileInfo> outputTiles) {
+		return new TileMaker(inputTiles, outputTiles);
 	}
 	
 	private void validate() {
