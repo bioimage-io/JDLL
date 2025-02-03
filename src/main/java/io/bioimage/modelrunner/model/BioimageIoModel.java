@@ -22,22 +22,18 @@
  */
 package io.bioimage.modelrunner.model;
 
-import java.io.Closeable;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.MalformedURLException;
-import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
 import io.bioimage.modelrunner.bioimageio.tiling.ImageInfo;
 import io.bioimage.modelrunner.bioimageio.tiling.TileCalculator;
-import io.bioimage.modelrunner.apposed.appose.Types;
-import io.bioimage.modelrunner.bioimageio.bioengine.BioEngineAvailableModels;
-import io.bioimage.modelrunner.bioimageio.bioengine.BioengineInterface;
 import io.bioimage.modelrunner.bioimageio.description.ModelDescriptor;
 import io.bioimage.modelrunner.bioimageio.description.ModelDescriptorFactory;
 import io.bioimage.modelrunner.bioimageio.description.TensorSpec;
@@ -46,9 +42,7 @@ import io.bioimage.modelrunner.bioimageio.description.weights.ModelWeight;
 import io.bioimage.modelrunner.bioimageio.description.weights.WeightFormat;
 import io.bioimage.modelrunner.bioimageio.tiling.TileInfo;
 import io.bioimage.modelrunner.bioimageio.tiling.TileMaker;
-import io.bioimage.modelrunner.engine.DeepLearningEngineInterface;
 import io.bioimage.modelrunner.engine.EngineInfo;
-import io.bioimage.modelrunner.engine.EngineLoader;
 import io.bioimage.modelrunner.exceptions.LoadEngineException;
 import io.bioimage.modelrunner.exceptions.LoadModelException;
 import io.bioimage.modelrunner.exceptions.RunModelException;
@@ -62,7 +56,6 @@ import net.imglib2.type.NativeType;
 import net.imglib2.type.numeric.RealType;
 import net.imglib2.type.numeric.real.FloatType;
 import net.imglib2.util.Cast;
-import net.imglib2.util.Util;
 
 /**
  * Class that manages a Deep Learning model to load it and run it.
@@ -83,6 +76,10 @@ public class BioimageIoModel extends DLModel
 	 * Object containing the information of the rdf.yaml file of a Bioimage.io model
 	 */
 	protected ModelDescriptor descriptor;
+	/**
+	 * Calculates the tile sizes depending on the model specs
+	 */
+	protected TileCalculator tileCalculator;
 
 	/**
 	 * Construct the object model with all the needed information to load a
@@ -251,6 +248,7 @@ public class BioimageIoModel extends DLModel
 					+ "The model weights are: " + descriptor.getWeights().getSupportedWeightNamesAndVersion());
 		BioimageIoModel model = new BioimageIoModel( info, bmzModelFolder, modelSource, classloader );
 		model.descriptor = descriptor;
+		model.tileCalculator = TileCalculator.init(descriptor);
 		return model;
 	}
 	
@@ -310,8 +308,9 @@ public class BioimageIoModel extends DLModel
 		if (info == null)
 			throw new IOException("Please install the engines defined by the model weights. "
 					+ "The model weights are: " + descriptor.getWeights().getSupportedWeightNamesAndVersion());
-		BioimageIoModel model = BioimageIoModel.createModel(bmzModelFolder, modelSource, info, classloader);
+		BioimageIoModel model = new BioimageIoModel(info, bmzModelFolder, modelSource, classloader);
 		model.descriptor = descriptor;
+		model.tileCalculator = TileCalculator.init(descriptor);
 		return model;
 	}
 	
@@ -336,67 +335,86 @@ public class BioimageIoModel extends DLModel
 	List<Tensor<T>> run(List<Tensor<R>> inputTensors) throws RunModelException {
 		if (!this.isLoaded())
 			throw new RunModelException("Please first load the model.");
-		if (descriptor == null && !(new File(modelFolder, Constants.RDF_FNAME).isFile()))
-			throw new IllegalArgumentException("Automatic tiling can only be done if the model contains a Bioiamge.io rdf.yaml specs file.");
-		else if (descriptor == null)
-			descriptor = ModelDescriptorFactory.readFromLocalFile(modelFolder + File.separator + Constants.RDF_FNAME);
-		TileCalculator calc = TileCalculator.init(descriptor);
+		if (!this.tiling) {
+			List<Tensor<T>> outs = createOutputTensors();
+			inference(inputTensors, outs);
+			return outs;
+		}
 		List<ImageInfo> imageInfos = inputTensors.stream()
 				.map(tt -> new ImageInfo(tt.getName(), tt.getAxesOrderString(), tt.getData().dimensionsAsLongArray()))
 				.collect(Collectors.toList());
-		List<TileInfo> inputTiles = calc.getOptimalTileSize(imageInfos);
+		List<TileInfo> inputTiles = tileCalculator.getOptimalTileSize(imageInfos);
 		TileMaker maker = TileMaker.build(descriptor, inputTiles);
-		return runBMZ(inputTensors, maker, tileCounter);
+		List<Tensor<T>> outTensors = createOutputTensors(maker);
+		return runBMZ(inputTensors, outTensors, maker);
 	}
 	
-	/**
-	 * Run a Bioimage.io model and execute the tiling strategy in one go.
-	 * The model needs to have been previously loaded with {@link #loadModel()}.
-	 * This method does not execute pre- or post-processing, they
-	 * need to be executed independently before or after
-	 * 
-	 * @param <T>
-	 * 	ImgLib2 data type of the output images
-	 * @param <R>
-	 * 	ImgLib2 data type of the input images
-	 * @param inputTensors
-	 * 	list of the input tensors that are going to be inputed to the model
-	 * @param tiles
-	 * 	List of {@link TileInfo} objects containing information about the image size and tile
-	 * 	size of each of the input tensors to the model
-	 * @param tileCounter
-	 * 	consumer that counts the number of tiles processed out of the total, if null, nothing is counted
-	 * @return the resulting tensors 
-	 * @throws ModelSpecsException if the parameters of the rdf.yaml file are not correct
-	 * @throws RunModelException if the model has not been previously loaded
-	 * @throws IllegalArgumentException if the model is not a Bioimage.io model or if lacks a Bioimage.io
-	 *  rdf.yaml specs file in the model folder. 
-	 */
-	public <T extends RealType<T> & NativeType<T>, R extends RealType<R> & NativeType<R>> 
-	List<Tensor<T>> runBMZ(List<Tensor<R>> inputTensors, 
-			List<TileInfo> tiles, TilingConsumer tileCounter) throws ModelSpecsException, RunModelException {
-		
-		if (!this.isLoaded())
-			throw new RunModelException("Please first load the model.");
-		if (descriptor == null && !(new File(modelFolder, Constants.RDF_FNAME).isFile()))
-			throw new IllegalArgumentException("Automatic tiling can only be done if the model contains a Bioiamge.io rdf.yaml specs file.");
-		else if (descriptor == null) {
-			try {
-				descriptor = ModelDescriptorFactory.readFromLocalFile(modelFolder + File.separator + Constants.RDF_FNAME);
-			} catch (ModelSpecsException | IOException e) {
-				throw new ModelSpecsException(Types.stackTrace(e));
-			}
+	private <T extends RealType<T> & NativeType<T>> List<Tensor<T>> createOutputTensors(TileMaker maker) {
+		List<Tensor<T>> outputTensors = new ArrayList<Tensor<T>>();
+		for (TensorSpec tt : descriptor.getOutputTensors()) {
+			long[] dims = maker.getOutputImageSize(tt.getName());
+			outputTensors.add((Tensor<T>) Tensor.buildBlankTensor(tt.getName(), 
+																	tt.getAxesOrder(), 
+																	dims, 
+																	(T) new FloatType()));
 		}
-		TileMaker maker = TileMaker.build(descriptor, tiles);
-		return runBMZ(inputTensors, maker, tileCounter);
+		return outputTensors;
+	}
+	
+	private <T extends RealType<T> & NativeType<T>> List<Tensor<T>> createOutputTensors() {
+		List<Tensor<T>> outputTensors = new ArrayList<Tensor<T>>();
+		for (TensorSpec tt : descriptor.getOutputTensors()) {
+			outputTensors.add(Tensor.buildEmptyTensor(tt.getName(), tt.getAxesOrder()));
+		}
+		return outputTensors;
 	}
 	
 	private <T extends RealType<T> & NativeType<T>, R extends RealType<R> & NativeType<R>> 
-	List<Tensor<T>> runBMZ(List<Tensor<R>> inputTensors, TileMaker tiles, TilingConsumer tileCounter) throws RunModelException {
+	List<Tensor<T>> runBMZ(List<Tensor<R>> inputTensors, List<Tensor<T>> outputTensors, TileMaker tiles) throws RunModelException {
 		Processing processing = Processing.init(descriptor);
 		inputTensors = processing.preprocess(inputTensors, false);
-		List<Tensor<R>> outputTensors = runTiling(inputTensors, tiles, tileCounter);
+		runTiling(inputTensors, outputTensors, tiles);
 		return processing.postprocess(outputTensors, true);
+	}
+
+	public <T extends RealType<T> & NativeType<T>, R extends RealType<R> & NativeType<R>> 
+	void run(List<Tensor<T>> inputTensors, List<Tensor<R>> outputTensors) throws RunModelException {
+		if (!this.isLoaded())
+			throw new RunModelException("Please first load the model.");
+		if (!this.tiling) {
+			this.inference(inputTensors, outputTensors);
+			return;
+		}
+		List<ImageInfo> imageInfos = inputTensors.stream()
+				.map(tt -> new ImageInfo(tt.getName(), tt.getAxesOrderString(), tt.getData().dimensionsAsLongArray()))
+				.collect(Collectors.toList());
+		List<TileInfo> inputTiles = tileCalculator.getOptimalTileSize(imageInfos);
+		TileMaker maker = TileMaker.build(descriptor, inputTiles);
+		for (int i = 0; i < maker.getNumberOfTiles(); i ++) {
+			Tensor<R> tt = outputTensors.get(i);
+			long[] expectedSize = maker.getOutputImageSize(tt.getName());
+			if (expectedSize == null) {
+				throw new IllegalArgumentException("Tensor '" + tt.getName() + "' is not one of the defined "
+						+ "outputs.");
+			} else if (!tt.isEmpty() && Arrays.equals(expectedSize, tt.getData().dimensionsAsLongArray())) {
+				throw new IllegalArgumentException("Tensor '" + tt.getName() + "' size is different than the expected size"
+						+ " as defined by the rdf.yaml: " + Arrays.toString(tt.getData().dimensionsAsLongArray()) 
+						+ " vs " + Arrays.toString(expectedSize) + ".");
+			}
+		}
+		runBMZ(inputTensors, outputTensors, maker);
+	}
+	
+	protected <T extends RealType<T> & NativeType<T>, R extends RealType<R> & NativeType<R>> 
+	void runTiling(List<Tensor<R>> inputTensors, List<Tensor<T>> outputTensors, TileMaker tiles) throws RunModelException {
+		for (int i = 0; i < tiles.getNumberOfTiles(); i ++) {
+			int nTile = 0 + i;
+			List<Tensor<R>> inputTiles = inputTensors.stream()
+					.map(tt -> tiles.getNthTileInput(tt, nTile)).collect(Collectors.toList());
+			List<Tensor<T>> outputTiles = outputTensors.stream()
+					.map(tt -> tiles.getNthTileOutput(tt, nTile)).collect(Collectors.toList());
+			inference(inputTiles, outputTiles);
+		}
 	}
 	
 	/**
@@ -423,7 +441,7 @@ public class BioimageIoModel extends DLModel
 				l.get(0).getAxesOrderString(), new long[] {1, 1, 512, 512}, l.get(0).getAxesOrderString());
 		List<TileInfo> tileList = new ArrayList<TileInfo>();
 		tileList.add(tile);
-		model.runBMZ(l, tileList);
+		model.run(l);
 		System.out.println(false);
 		
 	}
