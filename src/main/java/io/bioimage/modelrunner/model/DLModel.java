@@ -26,6 +26,7 @@ import java.io.IOException;
 import java.net.MalformedURLException;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
@@ -101,7 +102,7 @@ public class DLModel extends BaseModel
 	/**
 	 * Whether to do tiling or not when doing inference
 	 */
-	protected boolean tiling = true;
+	protected boolean tiling = false;
 	
 	/**
 	 * Consumer used to inform the current tile being processed and in how many
@@ -205,7 +206,23 @@ public class DLModel extends BaseModel
 			this.inference(inTensors, outTensors);
 			return;
 		}
-		TileMaker maker = TileMaker.build(inputTiles, outputTiles);
+		if (this.isTiling() && (inputTiles != null || this.inputTiles.size() == 0))
+			throw new UnsupportedOperationException("Tiling is set to 'true' but the input tiles are not well defined");
+		else if (this.isTiling() && (this.outputTiles == null || this.outputTiles.size() == 0))
+			throw new UnsupportedOperationException("Tiling is set to 'true' but the output tiles are not well defined");
+		TileMaker tiles = TileMaker.build(inputTiles, outputTiles);
+		for (int i = 0; i < tiles.getNumberOfTiles(); i ++) {
+			Tensor<R> tt = outTensors.get(i);
+			long[] expectedSize = tiles.getOutputImageSize(tt.getName());
+			if (expectedSize == null) {
+				throw new IllegalArgumentException("Tensor '" + tt.getName() + "' is missing in the outputs.");
+			} else if (!tt.isEmpty() && Arrays.equals(expectedSize, tt.getData().dimensionsAsLongArray())) {
+				throw new IllegalArgumentException("Tensor '" + tt.getName() + "' size is different than the expected size"
+						+ " defined for the output image: " + Arrays.toString(tt.getData().dimensionsAsLongArray()) 
+						+ " vs " + Arrays.toString(expectedSize) + ".");
+			}
+		}
+		runTiling(inTensors, outTensors, tiles);
 	}
 
 	@Override
@@ -220,6 +237,10 @@ public class DLModel extends BaseModel
 					+ " Another option is to run simple inference over an ImgLib2 RandomAccessibleInterval with"
 					+ " 'inference(List<RandomAccessibleInteral<T>> input)'");
 		}
+		if (this.isTiling() && (inputTiles != null || this.inputTiles.size() == 0))
+			throw new UnsupportedOperationException("Tiling is set to 'true' but the input tiles are not well defined");
+		else if (this.isTiling() && (this.outputTiles == null || this.outputTiles.size() == 0))
+			throw new UnsupportedOperationException("Tiling is set to 'true' but the output tiles are not well defined");
 		
 		TileMaker maker = TileMaker.build(inputTiles, outputTiles);
 		List<Tensor<T>> outTensors = createOutputTensors();
@@ -286,12 +307,18 @@ public class DLModel extends BaseModel
 	 * If this is not set, the model will process every input in just one run.
 	 * however, if this is set, the model will always do tiling when running following
 	 * this specifications
-	 * @param tileInfo
+	 * 
+	 * If this is called, automatically sets {@link #tiling} to true
+	 * 
+	 * @param inputTiles
 	 * 	the specifications of how each of the input images can be tiled
+	 * @param outputTiles
+	 * 	the specifications of how each of the output images will be tiled
 	 */
 	public void setTileInfo(List<TileInfo> inputTiles, List<TileInfo> outputTiles) {
 		this.inputTiles = inputTiles;
 		this.outputTiles = outputTiles;
+		this.tiling = true;
 	}
 	
 	/**
@@ -365,6 +392,10 @@ public class DLModel extends BaseModel
 	
 	public boolean isTiling() {
 		return this.tiling;
+	}
+	
+	public void setTiling(boolean doTiling) {
+		this.tiling = doTiling;
 	}
 
 	/**

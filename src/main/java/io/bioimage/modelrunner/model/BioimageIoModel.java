@@ -100,10 +100,7 @@ public class BioimageIoModel extends DLModel
 			throws LoadEngineException, MalformedURLException, IllegalStateException, IOException
 	{
 		super(engineInfo, modelFolder, modelSource, classLoader);
-	}
-	
-	public void setTiling(boolean doTiling) {
-		this.tiling = false;
+		this.tiling = true;
 	}
 	
 	/**
