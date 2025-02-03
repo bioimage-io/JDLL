@@ -320,7 +320,7 @@ public class BioimageIoModel extends DLModel
 			throw new RunModelException("Please first load the model.");
 		if (!this.tiling) {
 			List<Tensor<T>> outs = createOutputTensors();
-			inference(inputTensors, outs);
+			this.runNoTiles(inputTensors, outs);
 			return outs;
 		}
 		List<ImageInfo> imageInfos = inputTensors.stream()
@@ -365,7 +365,7 @@ public class BioimageIoModel extends DLModel
 		if (!this.isLoaded())
 			throw new RunModelException("Please first load the model.");
 		if (!this.tiling) {
-			this.inference(inputTensors, outputTensors);
+			this.runNoTiles(inputTensors, outputTensors);
 			return;
 		}
 		List<ImageInfo> imageInfos = inputTensors.stream()

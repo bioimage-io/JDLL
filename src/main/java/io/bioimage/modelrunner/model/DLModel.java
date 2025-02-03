@@ -30,12 +30,9 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 
 import io.bioimage.modelrunner.bioimageio.bioengine.BioengineInterface;
 import io.bioimage.modelrunner.bioimageio.description.ModelDescriptorFactory;
-import io.bioimage.modelrunner.bioimageio.description.TensorSpec;
-import io.bioimage.modelrunner.bioimageio.description.exceptions.ModelSpecsException;
 import io.bioimage.modelrunner.bioimageio.tiling.TileInfo;
 import io.bioimage.modelrunner.bioimageio.tiling.TileMaker;
 import io.bioimage.modelrunner.engine.DeepLearningEngineInterface;
@@ -46,6 +43,7 @@ import io.bioimage.modelrunner.exceptions.LoadModelException;
 import io.bioimage.modelrunner.exceptions.RunModelException;
 import io.bioimage.modelrunner.tensor.Tensor;
 import io.bioimage.modelrunner.utils.Constants;
+import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.type.NativeType;
 import net.imglib2.type.numeric.RealType;
 import net.imglib2.type.numeric.real.FloatType;
@@ -203,7 +201,7 @@ public class DLModel extends BaseModel
 		if (!this.isLoaded())
 			throw new RunModelException("Please first load the model.");
 		if (!this.tiling) {
-			this.inference(inTensors, outTensors);
+			this.runNoTiles(inTensors, outTensors);
 			return;
 		}
 		if (this.isTiling() && (inputTiles != null || this.inputTiles.size() == 0))
@@ -274,8 +272,8 @@ public class DLModel extends BaseModel
 	 * @throws RunModelException
 	 *             if the is any problem running the model
 	 */
-	public <T extends RealType<T> & NativeType<T>, R extends RealType<R> & NativeType<R>> 
-	void inference( List< Tensor < T > > inTensors, List< Tensor < R > > outTensors ) throws RunModelException
+	protected <T extends RealType<T> & NativeType<T>, R extends RealType<R> & NativeType<R>> 
+	void runNoTiles( List< Tensor < T > > inTensors, List< Tensor < R > > outTensors ) throws RunModelException
 	{
 		DeepLearningEngineInterface engineInstance = engineClassLoader.getEngineInstance();
 		engineClassLoader.setEngineClassLoader();
@@ -298,8 +296,30 @@ public class DLModel extends BaseModel
 					.map(tt -> tiles.getNthTileInput(tt, nTile)).collect(Collectors.toList());
 			List<Tensor<T>> outputTiles = outputTensors.stream()
 					.map(tt -> tiles.getNthTileOutput(tt, nTile)).collect(Collectors.toList());
-			inference(inputTiles, outputTiles);
+			runNoTiles(inputTiles, outputTiles);
 		}
+	}
+	
+	/**
+	 * Simply run inference on the images provided. If the dimensions, number, data type or other
+	 * characteristic of the tensor is not correct, an exception will be thrown.
+	 * @param <T>
+	 * 	input data type
+	 * @param <R>
+	 * 	ouptut data type
+	 * @param inputs
+	 * 	the list of {@link RandomAccessibleInterval} that will be used as inputs
+	 * @return a list of {@link RandomAccessibleInterval} that has been outputed by the model
+	 * @throws RunModelException
+	 *             if there is an error in the execution of the model
+	 */
+	public <T extends RealType<T> & NativeType<T>, R extends RealType<R> & NativeType<R>>
+	List<RandomAccessibleInterval<R>> inference(List<RandomAccessibleInterval<T>> inputs) throws RunModelException {
+		DeepLearningEngineInterface engineInstance = engineClassLoader.getEngineInstance();
+		engineClassLoader.setEngineClassLoader();
+		List<RandomAccessibleInterval<R>> outs = engineInstance.inference( inputs);
+		engineClassLoader.setBaseClassLoader();
+		return outs;
 	}
 	
 	/**
@@ -435,7 +455,7 @@ public class DLModel extends BaseModel
 				BioimageIoModel model = new BioimageIoModel( engineInfo, modelFolder, modelSource, null );
 				model.descriptor = ModelDescriptorFactory.readFromLocalFile(Paths.get(modelFolder, Constants.RDF_FNAME).toAbsolutePath().toString());
 				return model;
-			} catch (ModelSpecsException | IOException e) {
+			} catch (IOException e) {
 			}
 		}
 		return new DLModel( engineInfo, modelFolder, modelSource, null );
@@ -487,7 +507,7 @@ public class DLModel extends BaseModel
 				BioimageIoModel model = new BioimageIoModel( engineInfo, modelFolder, modelSource, classLoader );
 				model.descriptor = ModelDescriptorFactory.readFromLocalFile(Paths.get(modelFolder, Constants.RDF_FNAME).toAbsolutePath().toString());
 				return model;
-			} catch (ModelSpecsException | IOException e) {
+			} catch (IOException e) {
 			}
 		}
 		return new DLModel( engineInfo, modelFolder, modelSource, classLoader );
