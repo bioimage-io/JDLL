@@ -22,6 +22,7 @@ package io.bioimage.modelrunner.engine;
 import java.util.List;
 
 import io.bioimage.modelrunner.tensor.Tensor;
+import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.type.NativeType;
 import net.imglib2.type.numeric.RealType;
 import io.bioimage.modelrunner.exceptions.LoadModelException;
@@ -29,6 +30,21 @@ import io.bioimage.modelrunner.exceptions.RunModelException;
 
 public interface DeepLearningEngineInterface
 {
+	/**
+	 * Simply run inference on the images provided. If the dimensions, number, data type or other
+	 * characteristic of the tensor is not correct, an exception will be thrown.
+	 * @param <T>
+	 * 	input data type
+	 * @param <R>
+	 * 	ouptut data type
+	 * @param inputs
+	 * 	the list of {@link RandomAccessibleInterval} that will be used as inputs
+	 * @return a list of {@link RandomAccessibleInterval} that has been outputed by the model
+	 * @throws RunModelException
+	 *             if there is an error in the execution of the model
+	 */
+	public <T extends RealType<T> & NativeType<T>, R extends RealType<R> & NativeType<R>>
+	List<RandomAccessibleInterval<R>> inference(List<RandomAccessibleInterval<T>> inputs) throws RunModelException;
 
 	/**
 	 * Method that the interface implements to make inference. In the class that
