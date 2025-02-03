@@ -52,4 +52,9 @@ public class ModelDescriptorStardistV05 extends ModelDescriptorV05
 		super(yamlElements);
 		// TODO Auto-generated constructor stub
 	}
+
+	@Override
+	public String getModelFamily() {
+		return ModelDescriptor.STARDIST;
+	}
 }

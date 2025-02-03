@@ -135,6 +135,11 @@ public class ModelDescriptorV04 extends ModelDescriptor
 		// TODO Auto-generated method stub
 		
 	}
+
+	@Override
+	public String getModelFamily() {
+		return ModelDescriptor.BIOIMAGEIO;
+	}
     
     private void addSampleAndTestImages() {
         List<SampleImage> sampleInputs = buildSampleImages((List<?>) yamlElements.get("sample_inputs"));

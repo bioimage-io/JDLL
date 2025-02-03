@@ -148,4 +148,9 @@ public class ModelDescriptorV05 extends ModelDescriptor
     	supportBioengine =  BioimageioRepo.isModelOnTheBioengineById(modelID);
 		
 	}
+
+	@Override
+	public String getModelFamily() {
+		return ModelDescriptor.BIOIMAGEIO;
+	}
 }

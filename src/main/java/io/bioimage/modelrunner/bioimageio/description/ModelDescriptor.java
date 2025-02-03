@@ -90,12 +90,33 @@ public abstract class ModelDescriptor {
 		    + "<p><strong>Citation:</strong></p>"
 		    + "%s"
 		    + "</body></html>";
+	
+	/**
+	 * String key for models that need to be run in the stardist way
+	 */
+	public static final String STARDIST = "stardist";
+	
+	/**
+	 * String key for models that need to be run in the stardist way
+	 */
+	public static final String BIOIMAGEIO = "bioimage.io";
+	
+	/**
+	 * String key for models that need to be run in the stardist way
+	 */
+	public static final String CELLPOSE = "cellpose";
 
 
     /**
      * @return The ID of this model.
      */
     public abstract String getNickname();
+    
+    /**
+     * 
+     * @return the family to which this model belongs. It can be either: {@value #STARDIST}, {@value #CELLPOSE} or {@value #BIOIMAGEIO}
+     */
+    public abstract String getModelFamily();
     
     protected abstract List<TensorSpec> buildInputTensors();
     
