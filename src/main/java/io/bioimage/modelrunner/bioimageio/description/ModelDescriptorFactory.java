@@ -67,7 +67,7 @@ public class ModelDescriptorFactory {
      * @throws IOException if any of the required files is incorrect or corrupted
      * @throws FileNotFoundException if any of the required files is missing
      */
-    public static ModelDescriptor readFromLocalFile(String modelFile) throws ModelSpecsException, FileNotFoundException, IOException
+    public static ModelDescriptor readFromLocalFile(String modelFile) throws FileNotFoundException, IOException
     {
     	Map<String, Object> yamlElements = YAMLUtils.load(modelFile);
         // TODO yamlElements.put(fromLocalKey, true);
@@ -91,7 +91,7 @@ public class ModelDescriptorFactory {
         return fromMap(yamlElements);
     }
 
-    private static ModelDescriptor fromMap(Map<String,Object> yamlElements) throws ModelSpecsException
+    private static ModelDescriptor fromMap(Map<String,Object> yamlElements)
     {
     	if (isStardist(yamlElements) && StardistAbstract.isInstalled()) {
     		return fromStardistMap(yamlElements);
@@ -110,7 +110,7 @@ public class ModelDescriptorFactory {
     	}
     }
 
-    private static ModelDescriptor fromStardistMap(Map<String,Object> yamlElements) throws ModelSpecsException
+    private static ModelDescriptor fromStardistMap(Map<String,Object> yamlElements)
     {
     	Object formatVersion = yamlElements.get(FORMAT);
     	if (formatVersion instanceof String && ((String) formatVersion).startsWith(V04_START)) {
@@ -124,7 +124,7 @@ public class ModelDescriptorFactory {
     	}
     }
 
-    private static ModelDescriptor fromCellposeMap(Map<String,Object> yamlElements) throws ModelSpecsException
+    private static ModelDescriptor fromCellposeMap(Map<String,Object> yamlElements)
     {
     	Object formatVersion = yamlElements.get(FORMAT);
     	if (formatVersion instanceof String && ((String) formatVersion).startsWith(V04_START)) {

@@ -31,7 +31,6 @@ import io.bioimage.modelrunner.apposed.appose.MambaInstallException;
 import io.bioimage.modelrunner.bioimageio.BioimageioRepo;
 import io.bioimage.modelrunner.bioimageio.description.ModelDescriptor;
 import io.bioimage.modelrunner.bioimageio.description.ModelDescriptorFactory;
-import io.bioimage.modelrunner.bioimageio.description.exceptions.ModelSpecsException;
 import io.bioimage.modelrunner.exceptions.LoadEngineException;
 import io.bioimage.modelrunner.exceptions.LoadModelException;
 import io.bioimage.modelrunner.exceptions.RunModelException;
@@ -56,11 +55,11 @@ public class Stardist3D extends StardistAbstract {
 	
 	private static String MODULE_NAME = "StarDist3D";
 	
-	private Stardist3D(String modelName, String baseDir) throws IOException, ModelSpecsException {
+	private Stardist3D(String modelName, String baseDir) throws IOException {
 		super(modelName, baseDir);
 	}
 	
-	private Stardist3D(ModelDescriptor descriptor) throws IOException, ModelSpecsException {
+	private Stardist3D(ModelDescriptor descriptor) throws IOException {
 		super(descriptor);
 	}
 
@@ -97,12 +96,10 @@ public class Stardist3D extends StardistAbstract {
 	 * Initialize a Stardist2D using the format of the Bioiamge.io model zoo.
 	 * @param modelPath
 	 * 	path to the Bioimage.io model
-	 * @return an instance of a Stardist2D model ready to be used
-     * @throws ModelSpecsException If there is any error in the configuration of the specs rdf.yaml file of the Bioimage.io.
-     * @throws FileNotFoundException If the model file is not found.
+	 * @return an instance of a Stardist2D model ready to be used     * @throws FileNotFoundException If the model file is not found.
      * @throws IOException If there's an I/O error.
 	 */
-	public static Stardist3D fromBioimageioModel(String modelPath) throws ModelSpecsException, FileNotFoundException, IOException {
+	public static Stardist3D fromBioimageioModel(String modelPath) throws FileNotFoundException, IOException {
 		ModelDescriptor descriptor = ModelDescriptorFactory.readFromLocalFile(modelPath + File.separator + Constants.RDF_FNAME);
 		return new Stardist3D(descriptor);
 	}
@@ -117,9 +114,8 @@ public class Stardist3D extends StardistAbstract {
 	 * @return an instance of a pretrained Stardist2D model ready to be used
 	 * @throws IOException if there is any error downloading the model, in the case it is needed
 	 * @throws InterruptedException if the download of the model is stopped
-	 * @throws ModelSpecsException if the model downloaded is not well specified in the config file
 	 */
-	public static Stardist3D fromPretained(String pretrainedModel, boolean forceInstall) throws IOException, InterruptedException, ModelSpecsException {
+	public static Stardist3D fromPretained(String pretrainedModel, boolean forceInstall) throws IOException, InterruptedException {
 		return fromPretained(pretrainedModel, new File("models").getAbsolutePath(), forceInstall);
 	}
 	
@@ -134,11 +130,9 @@ public class Stardist3D extends StardistAbstract {
 	 * @return an instance of a pretrained Stardist3D model ready to be used
 	 * @throws IOException if there is any error downloading the model, in the case it is needed
 	 * @throws InterruptedException if the download of the model is stopped
-	 * @throws ModelSpecsException if the model downloaded is not well specified in the config file
 	 */
 	public static Stardist3D fromPretained(String pretrainedModel, String installDir, boolean forceInstall) throws IOException, 
-																					InterruptedException, 
-																					ModelSpecsException {
+																					InterruptedException {
 		if (pretrainedModel.equals("StarDist Plant Nuclei 3D ResNet") && !forceInstall) {
 			ModelDescriptor md = ModelDescriptorFactory.getModelsAtLocalRepo().stream()
 					.filter(mm ->mm.getName().equals(pretrainedModel)).findFirst().orElse(null);
@@ -163,7 +157,6 @@ public class Stardist3D extends StardistAbstract {
 	 * @throws InterruptedException nothing
 	 * @throws RuntimeException nothing
 	 * @throws MambaInstallException nothing
-	 * @throws ModelSpecsException nothing
 	 * @throws LoadEngineException nothing
 	 * @throws RunModelException nothing
 	 * @throws ArchiveException nothing
@@ -172,7 +165,7 @@ public class Stardist3D extends StardistAbstract {
 	 */
 	public static void main(String[] args) throws IOException, InterruptedException, 
 													RuntimeException, MambaInstallException, 
-													ModelSpecsException, LoadEngineException, 
+													LoadEngineException, 
 													RunModelException, ArchiveException, 
 													URISyntaxException, LoadModelException {
 		Stardist3D.installRequirements();

@@ -40,7 +40,6 @@ import io.bioimage.modelrunner.apposed.appose.Service.TaskStatus;
 import io.bioimage.modelrunner.apposed.appose.Types;
 import io.bioimage.modelrunner.bioimageio.description.ModelDescriptor;
 import io.bioimage.modelrunner.bioimageio.description.ModelDescriptorFactory;
-import io.bioimage.modelrunner.bioimageio.description.exceptions.ModelSpecsException;
 import io.bioimage.modelrunner.exceptions.LoadModelException;
 import io.bioimage.modelrunner.exceptions.RunModelException;
 import io.bioimage.modelrunner.model.BaseModel;
@@ -172,7 +171,7 @@ public abstract class StardistAbstract extends BaseModel {
 	
 	protected abstract <T extends RealType<T> & NativeType<T>> RandomAccessibleInterval<T> reconstructMask() throws IOException;
 	
-	protected StardistAbstract(String modelName, String baseDir) throws IOException, ModelSpecsException {
+	protected StardistAbstract(String modelName, String baseDir) throws IOException {
 		this.name = modelName;
 		this.basedir = baseDir;
 		modelDir = new File(baseDir, modelName).getAbsolutePath();
@@ -188,7 +187,7 @@ public abstract class StardistAbstract extends BaseModel {
     	createPythonService();
 	}
 	
-	protected StardistAbstract(ModelDescriptor descriptor) throws IOException, ModelSpecsException {
+	protected StardistAbstract(ModelDescriptor descriptor) throws IOException {
 		this.descriptor = descriptor;
 		this.name = new File(descriptor.getModelPath()).getName();
 		this.basedir = new File(descriptor.getModelPath()).getParentFile().getAbsolutePath();
@@ -202,7 +201,7 @@ public abstract class StardistAbstract extends BaseModel {
 	}
 	
 	@SuppressWarnings("unchecked")
-	private void createConfigFromBioimageio() throws IOException, ModelSpecsException {
+	private void createConfigFromBioimageio() throws IOException {
 		if (descriptor == null)
 			descriptor = ModelDescriptorFactory.readFromLocalFile(modelDir + File.separator + Constants.RDF_FNAME);
     	Map<String, Object> stardistMap = (Map<String, Object>) descriptor.getConfig().getSpecMap().get("stardist");
@@ -210,7 +209,7 @@ public abstract class StardistAbstract extends BaseModel {
     	JSONUtils.writeJSONFile(new File(modelDir, "config.json").getAbsolutePath(), stardistConfig);
 	}	
 	
-	private void createThresholdsFromBioimageio() throws IOException, ModelSpecsException {
+	private void createThresholdsFromBioimageio() throws IOException {
 		if (descriptor == null)
 			descriptor = ModelDescriptorFactory.readFromLocalFile(modelDir + File.separator + Constants.RDF_FNAME);
     	Map<String, Object> stardistMap = (Map<String, Object>) descriptor.getConfig().getSpecMap().get("stardist");

@@ -37,7 +37,6 @@ import io.bioimage.modelrunner.bioimageio.tiling.TileCalculator;
 import io.bioimage.modelrunner.bioimageio.description.ModelDescriptor;
 import io.bioimage.modelrunner.bioimageio.description.ModelDescriptorFactory;
 import io.bioimage.modelrunner.bioimageio.description.TensorSpec;
-import io.bioimage.modelrunner.bioimageio.description.exceptions.ModelSpecsException;
 import io.bioimage.modelrunner.bioimageio.description.weights.ModelWeight;
 import io.bioimage.modelrunner.bioimageio.description.weights.WeightFormat;
 import io.bioimage.modelrunner.bioimageio.tiling.TileInfo;
@@ -128,10 +127,9 @@ public class BioimageIoModel extends DLModel
 	 * @return a model ready to be loaded
 	 * @throws LoadEngineException if there is any error loading the DL framework
 	 * @throws IOException if there is any error finding the engines in the system
-	 * @throws ModelSpecsException if the rdf.yaml file has some at least a field which does not comply with the Bioiamge.io constraints
 	 */
 	public static BioimageIoModel createBioimageioModel(String bmzModelFolder, ClassLoader classloader)
-			throws LoadEngineException, ModelSpecsException, IOException {
+			throws LoadEngineException, IOException {
 		return createBioimageioModel(bmzModelFolder, InstalledEngines.getEnginesDir(), classloader);
 	}
 	
@@ -148,10 +146,9 @@ public class BioimageIoModel extends DLModel
 	 * @return a model ready to be loaded
 	 * @throws LoadEngineException if there is any error loading the DL framework
 	 * @throws IOException if there is any error finding the engines in the system
-	 * @throws ModelSpecsException if the rdf.yaml file has some at least a field which does not comply with the Bioiamge.io constraints
 	 */
 	public static BioimageIoModel createBioimageioModel(String bmzModelFolder)
-			throws ModelSpecsException, LoadEngineException, IOException {
+			throws LoadEngineException, IOException {
 		return createBioimageioModel(bmzModelFolder, InstalledEngines.getEnginesDir());
 	}
 	
@@ -170,10 +167,9 @@ public class BioimageIoModel extends DLModel
 	 * @return a model ready to be loaded
 	 * @throws LoadEngineException if there is any error loading the DL framework
 	 * @throws IOException if there is any error finding the engines in the system
-	 * @throws ModelSpecsException if the rdf.yaml file has some at least a field which does not comply with the Bioiamge.io constraints
 	 */
 	public static BioimageIoModel createBioimageioModel(String bmzModelFolder, String enginesFolder) 
-			throws ModelSpecsException, LoadEngineException, IOException {
+			throws LoadEngineException, IOException {
 		return createBioimageioModel(bmzModelFolder, enginesFolder, null);
 	}
 	
@@ -204,10 +200,9 @@ public class BioimageIoModel extends DLModel
 	 * @return a model ready to be loaded
 	 * @throws LoadEngineException if there is any error loading the DL framework
 	 * @throws IOException if there is any error finding the engines in the system
-	 * @throws ModelSpecsException if the rdf.yaml file has some at least a field which does not comply with the Bioiamge.io constraints
 	 */
 	public static BioimageIoModel createBioimageioModel(String bmzModelFolder, String enginesFolder, ClassLoader classloader) 
-			throws LoadEngineException, IOException, ModelSpecsException {
+			throws LoadEngineException, IOException {
 		Objects.requireNonNull(bmzModelFolder);
 		Objects.requireNonNull(enginesFolder);
 		if (new File(bmzModelFolder, Constants.RDF_FNAME).isFile() == false)
@@ -269,12 +264,11 @@ public class BioimageIoModel extends DLModel
 	 * @return a model ready to be loaded
 	 * @throws LoadEngineException if there is any error loading the DL framework
 	 * @throws IOException if there is any error finding the engines in the system
-	 * @throws ModelSpecsException if the rdf.yaml file has some at least a field which does not comply with the Bioiamge.io constraints
 	 * @throws IllegalStateException if any of the installed DL engines have been manipulated incorrectly
 	 */
 	public static BioimageIoModel createBioimageioModelWithExactWeigths(String bmzModelFolder, 
 			String enginesFolder, ClassLoader classloader)
-			throws IOException, ModelSpecsException, IllegalStateException, LoadEngineException {
+			throws IOException, IllegalStateException, LoadEngineException {
 		Objects.requireNonNull(bmzModelFolder);
 		Objects.requireNonNull(enginesFolder);
 		if (new File(bmzModelFolder, Constants.RDF_FNAME).isFile() == false)
@@ -400,12 +394,11 @@ public class BioimageIoModel extends DLModel
 	 * @param args
 	 * 	nothing
 	 * @throws IOException	nothing
-	 * @throws ModelSpecsException	nothing
 	 * @throws LoadEngineException	nothing
 	 * @throws RunModelException	nothing
 	 * @throws LoadModelException	nothing
 	 */
-	public static <T extends NativeType<T> & RealType<T>> void main(String[] args) throws IOException, ModelSpecsException, LoadEngineException, RunModelException, LoadModelException {
+	public static <T extends NativeType<T> & RealType<T>> void main(String[] args) throws IOException, LoadEngineException, RunModelException, LoadModelException {
 		
 		String mm = "/home/carlos/git/JDLL/models/NucleiSegmentationBoundaryModel_17122023_143125";
 		Img<T> im = Cast.unchecked(ArrayImgs.floats(new long[] {1, 1, 512, 512}));
@@ -437,10 +430,9 @@ public class BioimageIoModel extends DLModel
 	 * @return the {@link ModelDescriptor} instance that contains the specs defined in the 
 	 * 	Bioimage.io rdf.yaml specs file.
 	 * @throws IOException if any of the required files is corrupt or missing
-	 * @throws ModelSpecsException if the specs of rdf.yaml file are not compliant with the Bioimage.io specs
 	 * @throws FileNotFoundException if any of the files required is not found
 	 */
-	public ModelDescriptor getBioimageioSpecs() throws FileNotFoundException, ModelSpecsException, IOException {
+	public ModelDescriptor getBioimageioSpecs() throws FileNotFoundException, IOException {
 		if (descriptor == null && new File(modelFolder + File.separator + Constants.RDF_FNAME).isFile()) {
 			descriptor = ModelDescriptorFactory.readFromLocalFile(modelFolder + File.separator + Constants.RDF_FNAME);
 		}
