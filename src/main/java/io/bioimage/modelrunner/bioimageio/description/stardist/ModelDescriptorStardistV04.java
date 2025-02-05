@@ -92,11 +92,11 @@ public class ModelDescriptorStardistV04 extends ModelDescriptorV04
 			map.put("name", tt.getName());
 			oldOrdersOut.add(tt.getAxesOrder());
 			map.put("description", tt.getDescription());
-			List<Map<String, Object>> preList = new ArrayList<Map<String, Object>>();
-			for (TransformSpec prep : tt.getPreprocessing()) {
-				preList.add(prep.getSpecMap());
+			List<Map<String, Object>> postList = new ArrayList<Map<String, Object>>();
+			for (TransformSpec prep : tt.getPostprocessing()) {
+				postList.add(prep.getSpecMap());
 			}
-			map.put("postprocessing", preList);
+			map.put("postprocessing", postList);
 			tensors.add(map);
 		}
 		yamlElements.put("outputs", tensors);
@@ -133,7 +133,8 @@ public class ModelDescriptorStardistV04 extends ModelDescriptorV04
 	    		String newImAxesOrder = removeExtraDims(im, oldOrdersInp.get(i), tt.getAxesOrder());
 	    		im = transposeToAxesOrder(im, tt.getAxesOrder(), newImAxesOrder);
 	    		String newTestName = STARDIST_TEST + "_input_" + i + ".npy";
-	    		DecodeNumpy.saveNpy(this.localModelPath + File.separator + newTestName, im);
+	    		if (!(new File(localModelPath + File.separator + newTestName).isFile()))
+	    			DecodeNumpy.saveNpy(localModelPath + File.separator + newTestName, im);
 	    		setInputTestNpyName(i, newTestName);
 			} catch (IOException e) {
 				continue;

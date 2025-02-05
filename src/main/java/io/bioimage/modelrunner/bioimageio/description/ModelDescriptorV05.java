@@ -153,4 +153,12 @@ public class ModelDescriptorV05 extends ModelDescriptor
 	public String getModelFamily() {
 		return ModelDescriptor.BIOIMAGEIO;
 	}
+	
+	protected void setInputTestNpyName(int n, String newName) {
+		((TensorSpecV05) input_tensors.get(n)).testTensorName = newName;
+	}
+	
+	protected void setOutputTestNpyName(int n, String newName) {
+		((TensorSpecV05) output_tensors.get(n)).testTensorName = newName;
+	}
 }

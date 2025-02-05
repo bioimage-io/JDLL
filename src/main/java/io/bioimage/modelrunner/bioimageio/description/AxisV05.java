@@ -34,8 +34,11 @@ public class AxisV05 implements Axis{
 	private AxisSize size;
 	protected int halo = 0;
 	
+	private Map<String, Object> originalDescription; 
+	
 	
 	protected AxisV05(Map<String, Object> map) {
+		originalDescription = map;
 		this.id = (String) map.get("id");
 		this.type = (String) map.get("type");
 		this.channelNames = (List<String>) map.get("channel_names");
@@ -126,6 +129,14 @@ public class AxisV05 implements Axis{
 	
 	public String getReferenceAxis() {
 		return this.size.getReferenceAxis();
+	}
+	
+	/**
+	 * 
+	 * @return a map containing the original description used in the Bioimage.io rdf.yaml file
+	 */
+	public Map<String, Object> getOriginalDescription(){
+		return this.originalDescription;
 	}
 
 }

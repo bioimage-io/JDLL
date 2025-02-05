@@ -59,9 +59,9 @@ public class TensorSpecV05 implements TensorSpec {
      */
     private List<TransformSpec> postprocessing;
     
-    private String sampleTensorName;
+    protected String sampleTensorName;
     
-    private String testTensorName;
+    protected String testTensorName;
 
     /**
      * Builds the tensor specification instance from the tensor map and an input flag.
