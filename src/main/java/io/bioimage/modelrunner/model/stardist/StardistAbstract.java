@@ -72,13 +72,17 @@ public abstract class StardistAbstract extends BaseModel {
 	
 	protected final int nChannels;
 	
+	protected Map<String, Object> config;
+	
 	protected SharedMemoryArray shma;
 	
 	private ModelDescriptor descriptor;
 		
 	private Service python;
 	
-	private static String INSTALLATION_DIR = Mamba.BASE_PATH;
+	private static String INSTALLATION_DIR = 
+			(System.getProperty("user.home") == null || System.getProperty("user.home").equals("")) 
+			? Mamba.BASE_PATH : System.getProperty("user.home") + File.separator + ".jdll";
 	
 	private static final List<String> STARDIST_DEPS = Arrays.asList(new String[] {"python=3.10", "stardist", "numpy", "appose"});
 	
@@ -170,21 +174,47 @@ public abstract class StardistAbstract extends BaseModel {
 	protected abstract <T extends RealType<T> & NativeType<T>>  void checkInput(RandomAccessibleInterval<T> image);
 	
 	protected abstract <T extends RealType<T> & NativeType<T>> RandomAccessibleInterval<T> reconstructMask() throws IOException;
+
+	/**
+	 * 
+	 * @return whether the model is stardist2d or not
+	 */
+	public abstract boolean is2D();
+	
+	/**
+	 * 
+	 * @return whether the model is stardist3d or not
+	 */
+	public abstract boolean is3D();
+	
+	protected StardistAbstract(String modelName, String baseDir, Map<String, Object> config) throws IOException {
+		this.name = modelName;
+		this.basedir = baseDir;
+		modelDir = new File(baseDir, modelName).getAbsolutePath();
+		checkFilesPresent(modelDir);
+		this.nChannels = ((Number) config.get("n_channel_in")).intValue();
+    	createPythonService();
+	}
 	
 	protected StardistAbstract(String modelName, String baseDir) throws IOException {
 		this.name = modelName;
 		this.basedir = baseDir;
 		modelDir = new File(baseDir, modelName).getAbsolutePath();
+		checkFilesPresent(modelDir);
+		config = JSONUtils.load(new File(modelDir, "config.json").getAbsolutePath());
+		this.nChannels = ((Number) config.get("n_channel_in")).intValue();
+    	createPythonService();
+	}
+	
+	private static void checkFilesPresent(String modelDir) throws IOException {
 		if (new File(modelDir, "config.json").isFile() == false && new File(modelDir, Constants.RDF_FNAME).isFile() == false)
 			throw new IllegalArgumentException("No 'config.json' file found in the model directory");
 		else if (new File(modelDir, "config.json").isFile() == false)
-			createConfigFromBioimageio();
+			createConfigFromBioimageio(null, modelDir);
 		if (new File(modelDir, "thresholds.json").isFile() == false && new File(modelDir, Constants.RDF_FNAME).isFile() == false)
 			throw new IllegalArgumentException("No 'thresholds.json' file found in the model directory");
 		else if (new File(modelDir, "thresholds.json").isFile() == false)
-			createThresholdsFromBioimageio();
-		this.nChannels = ((Number) JSONUtils.load(new File(modelDir, "config.json").getAbsolutePath()).get("n_channel_in")).intValue();
-    	createPythonService();
+			createThresholdsFromBioimageio(null, modelDir);
 	}
 	
 	protected StardistAbstract(ModelDescriptor descriptor) throws IOException {
@@ -193,15 +223,16 @@ public abstract class StardistAbstract extends BaseModel {
 		this.basedir = new File(descriptor.getModelPath()).getParentFile().getAbsolutePath();
 		modelDir = descriptor.getModelPath();
 		if (new File(modelDir, "config.json").isFile() == false)
-			createConfigFromBioimageio();
+			createConfigFromBioimageio(descriptor, modelDir);
 		if (new File(modelDir, "thresholds.json").isFile() == false)
-			createThresholdsFromBioimageio();
-		this.nChannels = ((Number) JSONUtils.load(new File(modelDir, "config.json").getAbsolutePath()).get("n_channel_in")).intValue();
+			createThresholdsFromBioimageio(descriptor, modelDir);
+		config = JSONUtils.load(new File(modelDir, "config.json").getAbsolutePath());
+		this.nChannels = ((Number) config.get("n_channel_in")).intValue();
     	createPythonService();
 	}
 	
 	@SuppressWarnings("unchecked")
-	private void createConfigFromBioimageio() throws IOException {
+	private static  void createConfigFromBioimageio(ModelDescriptor descriptor, String modelDir) throws IOException {
 		if (descriptor == null)
 			descriptor = ModelDescriptorFactory.readFromLocalFile(modelDir + File.separator + Constants.RDF_FNAME);
     	Map<String, Object> stardistMap = (Map<String, Object>) descriptor.getConfig().getSpecMap().get("stardist");
@@ -209,7 +240,7 @@ public abstract class StardistAbstract extends BaseModel {
     	JSONUtils.writeJSONFile(new File(modelDir, "config.json").getAbsolutePath(), stardistConfig);
 	}	
 	
-	private void createThresholdsFromBioimageio() throws IOException {
+	private static void createThresholdsFromBioimageio(ModelDescriptor descriptor, String modelDir) throws IOException {
 		if (descriptor == null)
 			descriptor = ModelDescriptorFactory.readFromLocalFile(modelDir + File.separator + Constants.RDF_FNAME);
     	Map<String, Object> stardistMap = (Map<String, Object>) descriptor.getConfig().getSpecMap().get("stardist");
@@ -384,6 +415,28 @@ public abstract class StardistAbstract extends BaseModel {
 		shmCoords.close();
 		
 		return coordsCopy;
+	}
+	
+	public static StardistAbstract init(String modelName, String baseDir) throws IOException {
+		String modelDir = new File(baseDir, modelName).getAbsolutePath();
+		checkFilesPresent(modelDir);
+		Map<String, Object> configMap = JSONUtils.load(new File(modelDir, "config.json").getAbsolutePath());
+		String axes = ((String) configMap.get("axes")).toUpperCase();
+		if (axes.contains("Z"))
+			return new Stardist3D(modelName, baseDir, configMap);
+		else
+			return new Stardist2D(modelName, baseDir, configMap);
+	}
+	
+	public static StardistAbstract fromBioimageioModel(ModelDescriptor descriptor) throws IOException {
+		if (!descriptor.getConfig().getSpecMap().keySet().contains("stardist"))
+			throw new IllegalArgumentException("This Bioimage.io model does not correspond to a StarDist model.");
+		if (!descriptor.getModelFamily().equals(ModelDescriptor.STARDIST))
+			throw new RuntimeException("Please first install StarDist with 'StardistAbstract.installRequirements()'");
+		if (descriptor.getInputTensors().get(0).getAxesOrder().contains("z"))
+			return Stardist3D.fromBioimageioModel(descriptor);
+		else 
+			return Stardist2D.fromBioimageioModel(descriptor);
 	}
 	
 	/**

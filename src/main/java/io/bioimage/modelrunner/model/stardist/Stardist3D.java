@@ -20,7 +20,6 @@
 package io.bioimage.modelrunner.model.stardist;
 
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.util.Map;
@@ -35,7 +34,6 @@ import io.bioimage.modelrunner.exceptions.LoadEngineException;
 import io.bioimage.modelrunner.exceptions.LoadModelException;
 import io.bioimage.modelrunner.exceptions.RunModelException;
 import io.bioimage.modelrunner.tensor.Tensor;
-import io.bioimage.modelrunner.utils.Constants;
 import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.img.array.ArrayImgs;
 import net.imglib2.type.NativeType;
@@ -55,12 +53,24 @@ public class Stardist3D extends StardistAbstract {
 	
 	private static String MODULE_NAME = "StarDist3D";
 	
+	protected Stardist3D(String modelName, String baseDir, Map<String, Object> config) throws IOException {
+		super(modelName, baseDir, config);
+	}
+	
 	private Stardist3D(String modelName, String baseDir) throws IOException {
 		super(modelName, baseDir);
+		String axes = ((String) config.get("axes")).toUpperCase();
+		if (!axes.contains("Z"))
+			throw new IllegalArgumentException("Trying to instantiate a StarDist2D model."
+					+ " Please use Stardist2D instead of Stardist3D.");
 	}
 	
 	private Stardist3D(ModelDescriptor descriptor) throws IOException {
 		super(descriptor);
+		String axes = ((String) config.get("axes")).toUpperCase();
+		if (!axes.contains("Z"))
+			throw new IllegalArgumentException("Trying to instantiate a StarDist2D model."
+					+ " Please use Stardist2D instead of Stardist3D.");
 	}
 
 	@Override
@@ -91,16 +101,31 @@ public class Stardist3D extends StardistAbstract {
 		shma.close();
 		return maskCopy;
 	}
+
+	@Override
+	public boolean is2D() {
+		return true;
+	}
+
+	@Override
+	public boolean is3D() {
+		return false;
+	}
 	
 	/**
 	 * Initialize a Stardist2D using the format of the Bioiamge.io model zoo.
-	 * @param modelPath
-	 * 	path to the Bioimage.io model
+	 * @param descriptor
+	 * 	the bioimage.io model descriptor
 	 * @return an instance of a Stardist2D model ready to be used     * @throws FileNotFoundException If the model file is not found.
      * @throws IOException If there's an I/O error.
 	 */
-	public static Stardist3D fromBioimageioModel(String modelPath) throws FileNotFoundException, IOException {
-		ModelDescriptor descriptor = ModelDescriptorFactory.readFromLocalFile(modelPath + File.separator + Constants.RDF_FNAME);
+	public static Stardist3D fromBioimageioModel(ModelDescriptor descriptor) throws IOException {
+		if (!descriptor.getConfig().getSpecMap().keySet().contains("stardist"))
+			throw new IllegalArgumentException("This Bioimage.io model does not correspond to a StarDist model.");
+		if (!descriptor.getModelFamily().equals(ModelDescriptor.STARDIST))
+			throw new RuntimeException("Please first install StarDist with 'StardistAbstract.installRequirements()'");
+		if (!descriptor.getInputTensors().get(0).getAxesOrder().contains("z"))
+			throw new IllegalArgumentException("This StarDist model is not 3D");
 		return new Stardist3D(descriptor);
 	}
 	
@@ -138,10 +163,10 @@ public class Stardist3D extends StardistAbstract {
 					.filter(mm ->mm.getName().equals(pretrainedModel)).findFirst().orElse(null);
 			if (md != null) return new Stardist3D(md);
 			String path = BioimageioRepo.connect().downloadByName("StarDist Plant Nuclei 3D ResNet", installDir);
-			return Stardist3D.fromBioimageioModel(path);
+			return Stardist3D.fromBioimageioModel(ModelDescriptorFactory.readFromLocalFile(path));
 		} else if (pretrainedModel.equals("StarDist Plant Nuclei 3D ResNet")) {
 			String path = BioimageioRepo.connect().downloadByName("StarDist Plant Nuclei 3D ResNet", installDir);
-			return Stardist3D.fromBioimageioModel(path);
+			return Stardist3D.fromBioimageioModel(ModelDescriptorFactory.readFromLocalFile(path));
 		} else {
 			throw new IllegalArgumentException("There is no Stardist3D model called: " + pretrainedModel);
 		}

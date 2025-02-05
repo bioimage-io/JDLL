@@ -76,7 +76,9 @@ public abstract class Cellpose implements Closeable {
 		
 	private Service python;
 	
-	private static String INSTALLATION_DIR = Mamba.BASE_PATH;
+	private static String INSTALLATION_DIR = 
+			(System.getProperty("user.home") == null || System.getProperty("user.home").equals("")) 
+			? Mamba.BASE_PATH : System.getProperty("user.home") + File.separator + ".jdll";
 	
 	private static final List<String> STARDIST_DEPS = Arrays.asList(new String[] {"python=3.10", "stardist", "numpy", "appose"});
 	
