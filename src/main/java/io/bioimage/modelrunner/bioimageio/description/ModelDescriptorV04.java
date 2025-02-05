@@ -141,7 +141,7 @@ public class ModelDescriptorV04 extends ModelDescriptor
 		return ModelDescriptor.BIOIMAGEIO;
 	}
     
-    private void addSampleAndTestImages() {
+    protected void addSampleAndTestImages() {
         List<SampleImage> sampleInputs = buildSampleImages((List<?>) yamlElements.get("sample_inputs"));
         List<SampleImage> sampleOutputs = buildSampleImages((List<?>) yamlElements.get("sample_outputs"));
 
@@ -174,7 +174,7 @@ public class ModelDescriptorV04 extends ModelDescriptor
      * 	data from the yaml
      * @return the List<SampleInputs> with the sample images data
      */
-    private static List<SampleImage> buildSampleImages(Object coverElements)
+    protected static List<SampleImage> buildSampleImages(Object coverElements)
     {
         List<SampleImage> covers = new ArrayList<>();
     	if ((coverElements instanceof List<?>)) {
@@ -198,7 +198,7 @@ public class ModelDescriptorV04 extends ModelDescriptor
      * 	data from the yaml
      * @return the List<TestArtifact> with the sample images data
      */
-    private static List<TestArtifact> buildTestArtifacts(Object coverElements)
+    protected static List<TestArtifact> buildTestArtifacts(Object coverElements)
     {
         List<TestArtifact> covers = new ArrayList<>();
     	if ((coverElements instanceof List<?>)) {
@@ -255,4 +255,14 @@ public class ModelDescriptorV04 extends ModelDescriptor
     	}
     	return null;
     }
+	
+	protected void setInputTestNpyName(int n, String name) {
+    	TensorSpecV04 tt = (TensorSpecV04) this.output_tensors.get(n);
+    	tt.testTensorName = name;
+	}
+	
+	protected void setOutputTestNpyName(int n, String name) {
+    	TensorSpecV04 tt = (TensorSpecV04) this.output_tensors.get(n);
+    	tt.testTensorName = name;
+	}
 }

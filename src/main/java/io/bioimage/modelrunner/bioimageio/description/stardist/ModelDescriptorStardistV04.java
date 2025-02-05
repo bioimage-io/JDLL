@@ -21,25 +21,22 @@ package io.bioimage.modelrunner.bioimageio.description.stardist;
 
 import java.io.File;
 import java.io.IOException;
-import java.net.MalformedURLException;
-import java.nio.file.Path;
 import java.util.ArrayList;
-import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
-import java.util.stream.Collectors;
 
-import io.bioimage.modelrunner.bioimageio.BioimageioRepo;
-import io.bioimage.modelrunner.bioimageio.description.Author;
-import io.bioimage.modelrunner.bioimageio.description.Badge;
-import io.bioimage.modelrunner.bioimageio.description.Cite;
+import io.bioimage.modelrunner.bioimageio.description.Axes;
+import io.bioimage.modelrunner.bioimageio.description.Axis;
 import io.bioimage.modelrunner.bioimageio.description.ModelDescriptor;
 import io.bioimage.modelrunner.bioimageio.description.ModelDescriptorV04;
 import io.bioimage.modelrunner.bioimageio.description.TensorSpec;
-import io.bioimage.modelrunner.bioimageio.description.exceptions.ModelSpecsException;
-import io.bioimage.modelrunner.bioimageio.description.weights.ModelWeight;
-import io.bioimage.modelrunner.utils.Constants;
+import io.bioimage.modelrunner.bioimageio.description.TransformSpec;
+import io.bioimage.modelrunner.numpy.DecodeNumpy;
+import io.bioimage.modelrunner.tensor.Utils;
+import net.imglib2.RandomAccessibleInterval;
+import net.imglib2.type.NativeType;
+import net.imglib2.type.numeric.RealType;
 
 
 /**
@@ -52,13 +49,152 @@ import io.bioimage.modelrunner.utils.Constants;
 public class ModelDescriptorStardistV04 extends ModelDescriptorV04
 {
 
+	private List<String> oldOrdersInp = new ArrayList<String>();
+	private List<String> oldOrdersOut = new ArrayList<String>();
+	
+	private static final String STARDIST_TEST = "stardist_test";
+
 	public ModelDescriptorStardistV04(Map<String, Object> yamlElements) {
 		super(yamlElements);
-		// TODO Auto-generated constructor stub
+		this.input_tensors = this.buildInputTensors();
+		this.output_tensors = this.buildOutputTensors();
+    	this.modifyTestInputs();
+    	this.modifyTestOutputs();
 	}
 
 	@Override
 	public String getModelFamily() {
 		return ModelDescriptor.STARDIST;
+	}
+	
+	protected List<TensorSpec> buildInputTensors() {
+		List<Map<String, Object>> tensors = new ArrayList<Map<String, Object>>();
+		for (TensorSpec tt : this.input_tensors) {
+			Map<String, Object> map = reverseAxesShape(tt);
+			oldOrdersInp.add(tt.getAxesOrder());
+			map.put("name", tt.getName());
+			map.put("description", tt.getDescription());
+			List<Map<String, Object>> preList = new ArrayList<Map<String, Object>>();
+			for (TransformSpec prep : tt.getPreprocessing()) {
+				preList.add(prep.getSpecMap());
+			}
+			map.put("preprocessing", preList);
+			tensors.add(map);
+		}
+		yamlElements.put("inputs", tensors);
+		return super.buildInputTensors();
+	}
+	
+	protected List<TensorSpec> buildOutputTensors() {
+		List<Map<String, Object>> tensors = new ArrayList<Map<String, Object>>();
+		for (TensorSpec tt : this.output_tensors) {
+			Map<String, Object> map = reverseAxesShape(tt);
+			map.put("name", tt.getName());
+			oldOrdersOut.add(tt.getAxesOrder());
+			map.put("description", tt.getDescription());
+			List<Map<String, Object>> preList = new ArrayList<Map<String, Object>>();
+			for (TransformSpec prep : tt.getPreprocessing()) {
+				preList.add(prep.getSpecMap());
+			}
+			map.put("postprocessing", preList);
+			tensors.add(map);
+		}
+		yamlElements.put("outputs", tensors);
+		return super.buildOutputTensors();
+	}
+    
+    protected <T extends RealType<T> & NativeType<T>> void modifyTestInputs() {
+    	if (this.localModelPath == null)
+    		return;
+    	for (int i = 0; i < this.oldOrdersInp.size(); i ++) {
+    		TensorSpec tt = input_tensors.get(i);
+    		String testName = tt.getTestTensorName();
+			try {
+				RandomAccessibleInterval<T> im = DecodeNumpy.loadNpy(this.localModelPath + File.separator + testName);
+	    		String newImAxesOrder = removeExtraDims(im, oldOrdersInp.get(i), tt.getAxesOrder());
+	    		im = transposeToAxesOrder(im, tt.getAxesOrder(), newImAxesOrder);
+	    		String newTestName = STARDIST_TEST + "_input_" + i + ".npy";
+	    		DecodeNumpy.saveNpy(this.localModelPath + File.separator + newTestName, im);
+	    		setInputTestNpyName(i, newTestName);
+			} catch (IOException e) {
+				continue;
+			}
+    	}
+    }
+    
+    protected <T extends RealType<T> & NativeType<T>> void modifyTestOutputs() {
+    	if (this.localModelPath == null)
+    		return;
+    	for (int i = 0; i < this.oldOrdersInp.size(); i ++) {
+    		TensorSpec tt = input_tensors.get(i);
+    		String testName = tt.getTestTensorName();
+			try {
+				RandomAccessibleInterval<T> im = DecodeNumpy.loadNpy(this.localModelPath + File.separator + testName);
+	    		String newImAxesOrder = removeExtraDims(im, oldOrdersInp.get(i), tt.getAxesOrder());
+	    		im = transposeToAxesOrder(im, tt.getAxesOrder(), newImAxesOrder);
+	    		String newTestName = STARDIST_TEST + "_input_" + i + ".npy";
+	    		DecodeNumpy.saveNpy(this.localModelPath + File.separator + newTestName, im);
+	    		setInputTestNpyName(i, newTestName);
+			} catch (IOException e) {
+				continue;
+			}
+    	}
+    }
+	
+	private Map<String, Object> reverseAxesShape(TensorSpec tt) {
+		Axes axes = tt.getAxesInfo();
+		boolean is3d = axes.getAxesOrder().contains("z");
+		String nAxesOrder = is3d ? "xyzc" : "xyc";
+		Map<String, Object> shape = new HashMap<String, Object>();
+		double[] scale = new double[nAxesOrder.length()];
+		for (int i = 0; i < scale.length; i ++) scale[i] = 1;
+		int[] minArr = new int[nAxesOrder.length()];
+		for (int i = 0; i < minArr.length; i ++) minArr[i] = 1;
+		int[] stepArr = new int[nAxesOrder.length()];
+		int[] haloArr = new int[nAxesOrder.length()];
+		double[] offsetArr = new double[nAxesOrder.length()];
+		int c = 0;
+		for (String ax : nAxesOrder.split("")) {
+			Axis axis = axes.getAxesList().stream()
+					.filter(aa -> aa.getAxis().equals(ax)).findFirst().orElse(null);
+			if (axis == null)
+				continue;
+			scale[c] = axis.getScale();
+			minArr[c] = axis.getMin();
+			stepArr[c] = axis.getStep();
+			haloArr[c] = axis.getHalo();
+			offsetArr[c] = axis.getOffset();
+			c ++;
+		}
+		shape.put("step", stepArr);
+		shape.put("min", minArr);
+		shape.put("scale", scale);
+		shape.put("offset", offsetArr);
+		shape.put("reference_tensor", axes.getAxesList().get(0).getReferenceTensor());
+		HashMap<String, Object> axesMap = new HashMap<String, Object>();
+		axesMap.put("halo", haloArr);
+		axesMap.put("axes", nAxesOrder);
+		return axesMap;
+	}
+	
+	private static <T extends RealType<T> & NativeType<T>>
+	String removeExtraDims(RandomAccessibleInterval<T> rai, String ogAxes, String targetAxes) {
+		String nAxes = "";
+		for (String ax : ogAxes.split("")) {
+			if (!targetAxes.contains(ax))
+				continue;
+			nAxes += ax;
+		}
+		return nAxes;
+	}
+	
+	private static <T extends RealType<T> & NativeType<T>>
+	RandomAccessibleInterval<T> transposeToAxesOrder(RandomAccessibleInterval<T> rai, String ogAxes, String targetAxes) {
+		int[] transformation = new int[ogAxes.length()];
+		int c = 0;
+		for (String ss : targetAxes.split("")) {
+			transformation[c ++] = ogAxes.indexOf(ss);
+		}
+		return Utils.rearangeAxes(rai, transformation);
 	}
 }
