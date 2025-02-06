@@ -31,7 +31,6 @@ import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
-import io.bioimage.modelrunner.bioimageio.bioengine.BioengineInterface;
 import io.bioimage.modelrunner.bioimageio.description.ModelDescriptorFactory;
 import io.bioimage.modelrunner.bioimageio.tiling.TileInfo;
 import io.bioimage.modelrunner.bioimageio.tiling.TileMaker;
@@ -130,8 +129,7 @@ public class DLModel extends BaseModel
 	protected DLModel(EngineInfo engineInfo, String modelFolder, String modelSource, ClassLoader classLoader )
 			throws LoadEngineException, MalformedURLException, IllegalStateException, IOException
 	{
-		if ( !engineInfo.isBioengine()
-				&& !engineInfo.getFramework().equals(EngineInfo.getTensorflowKey())
+		if ( !engineInfo.getFramework().equals(EngineInfo.getTensorflowKey())
 				&& !engineInfo.getFramework().equals(EngineInfo.getBioimageioTfKey()) )
 			Objects.requireNonNull(modelSource);
 		this.engineInfo = engineInfo;
@@ -153,8 +151,6 @@ public class DLModel extends BaseModel
 		DeepLearningEngineInterface engineInstance = engineClassLoader.getEngineInstance();
 		engineClassLoader.setEngineClassLoader();
 		engineInstance.loadModel( modelFolder, modelSource );
-		if (engineClassLoader.isBioengine())
-			((BioengineInterface) engineInstance).addServer(engineInfo.getServer());
 		engineClassLoader.setBaseClassLoader();
 		loaded = true;
 	}
@@ -445,8 +441,7 @@ public class DLModel extends BaseModel
 	{
 		Objects.requireNonNull(modelFolder);
 		Objects.requireNonNull(engineInfo);
-		if ( !engineInfo.isBioengine() 
-				&& !engineInfo.getFramework().equals(EngineInfo.getTensorflowKey())
+		if ( !engineInfo.getFramework().equals(EngineInfo.getTensorflowKey())
 				&& !engineInfo.getFramework().equals(EngineInfo.getBioimageioTfKey()) )
 			Objects.requireNonNull(modelSource);
 
@@ -497,8 +492,7 @@ public class DLModel extends BaseModel
 	{
 		Objects.requireNonNull(modelFolder);
 		Objects.requireNonNull(engineInfo);
-		if ( !engineInfo.isBioengine()
-				&& !engineInfo.getFramework().equals(EngineInfo.getTensorflowKey())
+		if ( !engineInfo.getFramework().equals(EngineInfo.getTensorflowKey())
 				&& !engineInfo.getFramework().equals(EngineInfo.getBioimageioTfKey()))
 			Objects.requireNonNull(modelSource);
 

@@ -45,7 +45,6 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 
-import io.bioimage.modelrunner.bioimageio.bioengine.BioEngineAvailableModels;
 import io.bioimage.modelrunner.bioimageio.description.ModelDescriptor;
 import io.bioimage.modelrunner.bioimageio.description.ModelDescriptorFactory;
 import io.bioimage.modelrunner.bioimageio.download.DownloadModel;
@@ -407,7 +406,8 @@ public class BioimageioRepo {
 	 * @return true if it is available or false otherwise
 	 */
 	public static boolean isModelOnTheBioengineById(String id) {
-		return BioEngineAvailableModels.isModelSupportedInBioengine(id);
+		// TODO remove return BioEngineAvailableModels.isModelSupportedInBioengine(id);
+		return false;
 	}
 	
 	/**

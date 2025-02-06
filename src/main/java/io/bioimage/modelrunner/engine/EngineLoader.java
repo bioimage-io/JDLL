@@ -34,7 +34,6 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
 import io.bioimage.modelrunner.apposed.appose.Types;
-import io.bioimage.modelrunner.bioimageio.bioengine.BioengineInterface;
 import io.bioimage.modelrunner.exceptions.LoadEngineException;
 import io.bioimage.modelrunner.versionmanagement.DeepLearningVersion;
 
@@ -73,10 +72,6 @@ public class EngineLoader extends ClassLoader
 	 * Key for the cache of loaded engines.
 	 */
 	private String versionedEngine;
-	/**
-	 * Whether the model is going to be run in the bioengine or not
-	 */
-	private boolean bioengine;
 
 	/**
 	 * Instance of the class from the wanted Deep Learning engine that is used
@@ -127,11 +122,6 @@ public class EngineLoader extends ClassLoader
 		super();
 		this.baseClassloader = classloader;
 		this.engine = engineInfo.getFramework();
-		this.bioengine = engineInfo.isBioengine();
-		if (engineInfo.isBioengine()) {
-			this.engineInstance = new BioengineInterface();
-			return;
-		}
 		this.enginePath = engineInfo.getDeepLearningVersionJarsDirectory();
 		this.versionedEngine = this.engine + engineInfo.getMajorVersion();
 		loadClasses();
@@ -199,24 +189,18 @@ public class EngineLoader extends ClassLoader
 	/**
 	 * Set the ClassLoader containing the engines classes as the Thread
 	 * classloader.
-	 * If the model is to be loaded on the bioengine, nothing happens
 	 * 
 	 */
 	public void setEngineClassLoader()
 	{
-		if (bioengine)
-			return;
 		Thread.currentThread().setContextClassLoader( engineClassloader );
 	}
 
 	/**
 	 * Set the parent ClassLoader as the Thread classloader
-	 * If the model is to be loaded on the bioengine, nothing happens
 	 */
 	public void setBaseClassLoader()
 	{
-		if (bioengine)
-			return;
 		Thread.currentThread().setContextClassLoader( this.baseClassloader );
 	}
 
@@ -340,14 +324,6 @@ public class EngineLoader extends ClassLoader
 	public DeepLearningEngineInterface getEngineInstance()
 	{
 		return this.engineInstance;
-	}
-	
-	/**
-	 * 
-	 * @return whether the engine of choice is the bioengine (a remotely hosted service)
-	 */
-	public boolean isBioengine() {
-		return bioengine;
 	}
 
 	/**
