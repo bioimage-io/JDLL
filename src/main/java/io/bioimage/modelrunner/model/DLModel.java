@@ -342,7 +342,7 @@ public class DLModel extends BaseModel
 	 * in which the input images will be separated and 
 	 * the tile that is being processed
 	 * @param tileCounter
-	 * 	{@link io.bioimage.modelrunner.model.DLModel.TileConsumer} used to track the inference of tiles
+	 * 	{@link TilingConsumer} used to track the inference of tiles
 	 */
 	public void setTilingCounter(TilingConsumer tileCounter) {
 		this.tileCounter = tileCounter;
