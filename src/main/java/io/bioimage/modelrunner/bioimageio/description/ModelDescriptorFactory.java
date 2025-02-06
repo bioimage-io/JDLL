@@ -33,7 +33,6 @@ import java.util.stream.Collectors;
 
 import io.bioimage.modelrunner.bioimageio.description.cellpose.ModelDescriptorCellposeV04;
 import io.bioimage.modelrunner.bioimageio.description.cellpose.ModelDescriptorCellposeV05;
-import io.bioimage.modelrunner.bioimageio.description.exceptions.ModelSpecsException;
 import io.bioimage.modelrunner.bioimageio.description.stardist.ModelDescriptorStardistV04;
 import io.bioimage.modelrunner.bioimageio.description.stardist.ModelDescriptorStardistV05;
 import io.bioimage.modelrunner.model.cellpose.Cellpose;
@@ -63,7 +62,6 @@ public class ModelDescriptorFactory {
      * @param modelFile
      * 	Model descriptor file.
      * @return The instance of the model descriptor.
-     * @throws ModelSpecsException if any of the parameters in the rdf.yaml file does not make fit the constraints,
      * @throws IOException if any of the required files is incorrect or corrupted
      * @throws FileNotFoundException if any of the required files is missing
      */
@@ -82,9 +80,8 @@ public class ModelDescriptorFactory {
      * @param yamlText
      * 	text read from a yaml file that contains an rdf.yaml file
      * @return The instance of the model descriptor.
-     * @throws ModelSpecsException if any of the parameters in the rdf.yaml file does not make fit the constraints
      */
-    public static ModelDescriptor readFromYamlTextString(String yamlText) throws ModelSpecsException
+    public static ModelDescriptor readFromYamlTextString(String yamlText)
     {
     	// Convert the String of text that contains the yaml file into Map
     	Map<String,Object> yamlElements = YAMLUtils.loadFromString(yamlText);

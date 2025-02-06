@@ -342,7 +342,7 @@ public class DLModel extends BaseModel
 	 * in which the input images will be separated and 
 	 * the tile that is being processed
 	 * @param tileCounter
-	 * 	{@link TileConsumer} used to track the inference of tiles
+	 * 	{@link io.bioimage.modelrunner.model.DLModel.TileConsumer} used to track the inference of tiles
 	 */
 	public void setTilingCounter(TilingConsumer tileCounter) {
 		this.tileCounter = tileCounter;
@@ -526,9 +526,10 @@ public class DLModel extends BaseModel
 	}
 	
 	/**
-	 * Create consumer used to be used with {@link BioimageIoModel} for the methods {@link #runBMZ(List, TilingConsumer)}
-	 * or {@link #runBMZ(List, List, TilingConsumer)}.
-	 * The consumer helps to track the number if tiles that have already been processed.
+	 * Create consumer used to be used with {@link BioimageIoModel} to count the number of tiles that
+	 * have been processed in the case there are tiles. 
+	 * Optional
+	 * 
 	 * @return a consumer to track the tiling process
 	 */
 	public static TilingConsumer createTilingConsumer() {

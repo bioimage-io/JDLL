@@ -127,7 +127,6 @@ public abstract class ModelDescriptor {
      * NOte that the total halo is calculated following "xyczb" axes order,
      * not the input axes order, as for several inputs the axes order might change
      * for each of them
-     * @return the total input halo in "xyczb" axes order
      */
     protected abstract void calculateTotalInputHalo();
     
@@ -136,12 +135,8 @@ public abstract class ModelDescriptor {
     protected abstract void addBioEngine();
     
     /**
-     * Build a {@link ModelDescriptorV05} object from a map containing the elements read from
+     * Build a {@link ModelDescriptor} object from a map containing the elements read from
      * a rdf.yaml file
-     * @param yamlElements
-     * 	map with the information read from a yaml file
-     * @return a {@link ModelDescriptorV05} with the info of a Bioimage.io model
-     * @throws ModelSpecsException if any of the parameters in the rdf.yaml file does not make fit the constraints
      */
     protected void buildModelDescription()
     {
@@ -559,8 +554,9 @@ public abstract class ModelDescriptor {
 	}
 	
 	/**
-	 * Return String to path where the model is stored
-	 * @return String directory where the model is stored
+	 * Set the model path for the model if it is installed locally
+	 * @param modelBasePath
+	 * 	the path to the bioimage.io model
 	 */
 	public void addModelPath(Path modelBasePath) {
 		this.localModelPath = modelBasePath.toFile().getAbsolutePath();

@@ -168,11 +168,11 @@ public class ModelDescriptorV04 extends ModelDescriptor
     }
 
     /**
-     * REturns a List<SampleInputs> of the sample images that are packed in the model
+     * REturns a list of {@link SampleInput} of the sample images that are packed in the model
      * folder as tifs and that are specified in the rdf.yaml file
      * @param coverElements
      * 	data from the yaml
-     * @return the List<SampleInputs> with the sample images data
+     * @return the list of {@link SampleInput} with the sample images data
      */
     protected static List<SampleImage> buildSampleImages(Object coverElements)
     {
@@ -192,11 +192,11 @@ public class ModelDescriptorV04 extends ModelDescriptor
     }
 
     /**
-     * REturns a List<TestArtifact> of the npy artifacts that are packed in the model
+     * REturns a list of {@link TestArtifact} of the npy artifacts that are packed in the model
      * folder as input and output test objects
      * @param coverElements
      * 	data from the yaml
-     * @return the List<TestArtifact> with the sample images data
+     * @return the list of {@link TestArtifact} with the sample images data
      */
     protected static List<TestArtifact> buildTestArtifacts(Object coverElements)
     {

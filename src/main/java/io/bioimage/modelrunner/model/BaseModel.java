@@ -99,11 +99,7 @@ public abstract class BaseModel implements Closeable
 	 * @param inputTensors
 	 * 	list of the input tensors that are going to be inputed to the model
 	 * @return the resulting tensors 
-	 * @throws ModelSpecsException if the parameters of the rdf.yaml file are not correct
 	 * @throws RunModelException if the model has not been previously loaded
-	 * @throws IOException if any of the required files is missing or corrupt
-	 * @throws FileNotFoundException if any of the required files is missing
-	 * @throws IllegalArgumentException if the model is not a Bioimage.io model or if lacks a Bioimage.io
 	 *  rdf.yaml specs file in the model folder. 
 	 */
 	public abstract <T extends RealType<T> & NativeType<T>, R extends RealType<R> & NativeType<R>> 
