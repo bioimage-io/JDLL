@@ -26,12 +26,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+import java.util.stream.LongStream;
 
 import io.bioimage.modelrunner.bioimageio.description.Axis;
 import io.bioimage.modelrunner.bioimageio.description.ModelDescriptor;
 import io.bioimage.modelrunner.bioimageio.description.TensorSpec;
 import io.bioimage.modelrunner.tensor.Tensor;
 import io.bioimage.modelrunner.utils.Constants;
+import io.bioimage.modelrunner.utils.IndexingUtils;
 import net.imglib2.FinalInterval;
 import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.type.NativeType;
@@ -71,16 +73,50 @@ public class TileMaker {
 	private TileMaker(List<TileInfo> inputTiles, List<TileInfo> outputTiles) {
 		this.inputTileInfo = inputTiles;
 		this.outputTileInfo = outputTiles;
+		this.descriptor = null;
 		for (TileInfo tile : inputTileInfo) {
-			PatchSpec patch = PatchSpec.create(tile.getName(), tile.getTileDims(), patchGridSize, paddingSize, tile.getImageDims());
+			PatchSpec patch = createPatch(tile);
 			input.put(tile.getName(), patch);
 			inputGrid.put(tile.getName(), TileGrid.create(patch));
 		}
+		TileInfo.adaptHalos(outputTileInfo);
 		for (TileInfo tile : outputTileInfo) {
-			PatchSpec patch = PatchSpec.create(tile.getName(), tile.getTileDims(), patchGridSize, paddingSize, tile.getImageDims());
+			PatchSpec patch = createPatch(tile);
 			output.put(tile.getName(), patch);
 			outputGrid.put(tile.getName(), TileGrid.create(patch));
 		}
+	}
+	
+	private PatchSpec createPatch(TileInfo tile) {
+    	long[] imSize = arrayToWantedAxesOrderAddOnes(tile.getImageDims(), 
+    			tile.getImageAxesOrder(), tile.getTileAxesOrder());
+    	long[] tileSize = tile.getTileDims();
+    	int[][] paddingSize = new int[2][tileSize.length];
+        // REgard that the input halo represents the output halo + offset 
+        // and must be divisible by 0.5. 
+        long[] halo = arrayToWantedAxesOrderAddZeros(tile.getHalo(), 
+    			tile.getHaloAxesOrder(), tile.getTileAxesOrder());
+    	// In the case that padding is asymmetrical, the left upper padding has the extra pixel
+        for (int i = 0; i < halo.length; i ++) {paddingSize[0][i] = (int) halo[i];}
+        // In the case that padding is asymmetrical, the right bottom padding has one pixel less
+        for (int i = 0; i < halo.length; i ++) {paddingSize[1][i] = (int) halo[i];}
+        int[] patchGridSize = new int[imSize.length];
+        for (int i = 0; i < patchGridSize.length; i ++) patchGridSize[i] = 1;
+        patchGridSize = IntStream.range(0, tileSize.length)
+                .map(i -> (int) Math.ceil((double) imSize[i] / ((double) tileSize[i] - halo[i] * 2)))
+                .toArray();
+        // For the cases when the patch is bigger than the  image size, share the
+        // padding between both sides of the image
+        paddingSize[0] = IntStream.range(0, tileSize.length)
+                .map(i -> 
+                	(int) Math.max(paddingSize[0][i],
+                			Math.ceil( (double) (tileSize[i] - imSize[i]) / 2))
+                ).toArray();
+        paddingSize[1] = IntStream.range(0, tileSize.length)
+            .map(i -> (int) Math.max( paddingSize[1][i], 
+            		tileSize[i] - imSize[i] - paddingSize[0][i])).toArray();
+
+        return PatchSpec.create(tile.getName(), tileSize, patchGridSize, paddingSize, imSize);
 	}
 	
 	/**
