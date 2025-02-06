@@ -29,6 +29,7 @@ import io.bioimage.modelrunner.engine.EngineInfo;
 import io.bioimage.modelrunner.engine.installation.EngineInstall;
 import io.bioimage.modelrunner.exceptions.LoadEngineException;
 import io.bioimage.modelrunner.model.BioimageIoModel;
+import io.bioimage.modelrunner.model.DLModel;
 import io.bioimage.modelrunner.tensor.Tensor;
 import io.bioimage.modelrunner.versionmanagement.AvailableEngines;
 import io.bioimage.modelrunner.versionmanagement.DeepLearningVersion;
@@ -123,7 +124,7 @@ public class ExampleLoadPytorch1Pytorch2 {
 		// REGARD THAT the engine folders need to follow a naming convention
 		EngineInfo engineInfo = createEngineInfo(framework, engineVersion, enginesDir, cpu, gpu);
 		// Load the corresponding model, for Pytorch model_source arg is not needed
-		try (BioimageIoModel model = loadModel(modelFolder, modelSource, engineInfo);) {
+		try (DLModel model = loadModel(modelFolder, modelSource, engineInfo);) {
 			// Create an image that will be the backend of the Input Tensor
 			final ImgFactory< FloatType > imgFactory = new ArrayImgFactory<>( new FloatType() );
 			final Img< FloatType > img1 = imgFactory.create( 1, 1, 512, 512 );
@@ -150,7 +151,7 @@ public class ExampleLoadPytorch1Pytorch2 {
 			// Run the model on the input tensors. THe output tensors 
 			// will be rewritten with the result of the execution
 			System.out.println(Util.average(Util.asDoubleArray(outputs.get(0).getData())));
-			model.runModel(inputs, outputs);
+			model.run(inputs, outputs);
 			System.out.println(Util.average(Util.asDoubleArray(outputs.get(0).getData())));
 			// The result is stored in the list of tensors "outputs"
 			inputs.stream().forEach(t -> t.close());
@@ -198,7 +199,7 @@ public class ExampleLoadPytorch1Pytorch2 {
 		// REGARD THAT the engine folders need to follow a naming convention
 		EngineInfo engineInfo = createEngineInfo(framework, engineVersion, enginesDir, cpu, gpu);
 		// Load the corresponding model, for Pytorch the arg model_source is not needed
-		try (BioimageIoModel model = loadModel(modelFolder, modelSource, engineInfo);) {
+		try (DLModel model = loadModel(modelFolder, modelSource, engineInfo);) {
 			// Create an image that will be the backend of the Input Tensor
 			final ImgFactory< FloatType > imgFactory = new ArrayImgFactory<>( new FloatType() );
 			final Img< FloatType > img1 = imgFactory.create( 1, 1, 512, 512 );
@@ -225,7 +226,7 @@ public class ExampleLoadPytorch1Pytorch2 {
 			// Run the model on the input tensors. THe output tensors 
 			// will be rewritten with the result of the execution
 			System.out.println(Util.average(Util.asDoubleArray(outputs.get(0).getData())));
-			model.runModel(inputs, outputs);
+			model.run(inputs, outputs);
 			System.out.println(Util.average(Util.asDoubleArray(outputs.get(0).getData())));
 			// The result is stored in the list of tensors "outputs"
 			inputs.stream().forEach(t -> t.close());
@@ -266,9 +267,9 @@ public class ExampleLoadPytorch1Pytorch2 {
 	 * @throws LoadEngineException if there is any error loading the model
 	 * @throws Exception if there is any exception loading the model
 	 */
-	public static BioimageIoModel loadModel(String modelFolder, String modelSource, EngineInfo engineInfo) throws LoadEngineException, Exception {
+	public static DLModel loadModel(String modelFolder, String modelSource, EngineInfo engineInfo) throws LoadEngineException, Exception {
 		
-		BioimageIoModel model = BioimageIoModel.createModel(modelFolder, modelSource, engineInfo);
+		DLModel model = DLModel.createModel(modelFolder, modelSource, engineInfo);
 		model.loadModel();
 		return model;
 	}
