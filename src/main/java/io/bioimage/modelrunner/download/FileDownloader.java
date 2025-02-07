@@ -33,7 +33,6 @@ import java.nio.channels.ReadableByteChannel;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
 import java.security.cert.X509Certificate;
-import java.util.function.Consumer;
 
 import javax.net.ssl.HttpsURLConnection;
 import javax.net.ssl.SSLContext;
@@ -51,8 +50,10 @@ public class FileDownloader {
 	
 	private Long fileSize;
 	
-	private Consumer<Long> sizeConsumer;
-
+	private long sizeDownloaded;
+	
+    private int lost_conn = 0;
+	
 	private static final long CHUNK_SIZE = 1024 * 1024 * 5;
 
 	private static final int STALL_THRES = 10000;
@@ -62,20 +63,27 @@ public class FileDownloader {
 		this.file = file;
 	}
 	
-	public void setDownloadTracker(Consumer<Long> sizeconsumer) {
-		this.sizeConsumer = sizeconsumer;
-	}
-	
 	public long getOnlineFileSize() {
 		if (fileSize != null)
 			return fileSize;
 		return getFileSize(website);
 	}
 	
-	public void download(Thread parentThread) throws IOException {
+	public long getSizeDownloaded() {
+		return this.sizeDownloaded;
+	}
+	
+	private void downloadAttempt(Thread parentThread, long already) {
+		
+	}
+	
+	private void download(Thread parentThread, long already) throws IOException {
 		HttpsURLConnection conn = ( HttpsURLConnection ) website.openConnection();
 		conn.setConnectTimeout(STALL_THRES);
 		conn.setReadTimeout(STALL_THRES);
+		if (already > 0) {
+			conn.setRequestProperty("Range", "bytes=" + already + "-");
+        }
 		SSLContext sslContext;
 		try {
 			sslContext = getAllTrustingSSLContext();
@@ -89,7 +97,16 @@ public class FileDownloader {
 				ReadableByteChannel rbc = Channels.newChannel(str);
 				FileOutputStream fos = new FileOutputStream(file);
 				){
-			call(rbc, fos, parentThread);
+			Thread downloadThread = new Thread(() -> {
+				try {
+					call(rbc, fos, parentThread);
+				} catch (IOException e) {
+					e.printStackTrace();
+				}
+			});
+			downloadThread.start();
+			
+			checkDownloadContinues(parentThread, downloadThread);
 		}
 	}
 	
@@ -97,8 +114,8 @@ public class FileDownloader {
 	 * Download a file without the possibility of interrupting the download
 	 * @throws IOException if there is any error downloading the file from the url
 	 */
-	public void call(ReadableByteChannel rbc, FileOutputStream fos) throws IOException  {
-		fos.getChannel().transferFrom(rbc, 0, Long.MAX_VALUE);
+	public void download() throws IOException  {
+		download(Thread.currentThread(), 0);
 	}
 	
 	/**
@@ -110,19 +127,45 @@ public class FileDownloader {
 	 * @throws IOException if there is any error downloading the file from the url
 	 */
 	public void call(ReadableByteChannel rbc, FileOutputStream fos, Thread parentThread) throws IOException {
-        long position = 0;
+		sizeDownloaded = 0;
         while (true) {
-            long transferred = fos.getChannel().transferFrom(rbc, position, CHUNK_SIZE);
+            long transferred = fos.getChannel().transferFrom(rbc, sizeDownloaded, CHUNK_SIZE);
             if (transferred == 0) {
                 break;
             }
 
-            position += transferred;
-            if (!parentThread.isAlive()) {
+            sizeDownloaded += transferred;
+            if (!parentThread.isAlive() && !Thread.currentThread().isInterrupted()) {
                 return;
             }
         }
     }
+	
+	private void checkDownloadContinues(Thread parentThread, Thread downloadThread) throws IOException {
+		long lastBytesDownloaded = 0;
+        long lastCheckedTime = System.currentTimeMillis();
+        while (parentThread.isAlive() && downloadThread.isAlive()) {
+            try {Thread.sleep(1000);} catch (InterruptedException e) {return;}
+            
+            if (System.currentTimeMillis() - lastCheckedTime > STALL_THRES) {
+            	long totalBytesDownloaded = file.length();
+                if (lastBytesDownloaded == totalBytesDownloaded) {
+                    System.err.println("Connection lost. Time number: " + (lost_conn + 1));
+                    if (lost_conn < 3) {
+                    	lost_conn ++;
+                    	downloadThread.interrupt();
+                    	download(parentThread, file.length());
+                    } else {
+                    	throw new IOException("Unable to download file: " + website);
+                    }
+                    return;
+                }
+                lastBytesDownloaded = totalBytesDownloaded;
+            }
+
+            lastCheckedTime = System.currentTimeMillis();
+        }
+	}
 
 	/**
 	 * Get the size of the file stored in the given URL
