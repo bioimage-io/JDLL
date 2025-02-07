@@ -602,8 +602,8 @@ public class EngineInstall {
 				for (String link : dlVersion.getJars()) {
 					if (Thread.currentThread().isInterrupted())
 						throw new InterruptedException("Retrieval of download size interrupted.");
-					String key = ee.getValue() + File.separator + DownloadModel.getFileNameFromURLString(link) + NBYTES_SUFFIX;
-					long val = jarInfo.get(link) != null ? jarInfo.get(link) : DownloadModel.getFileSize(new URL(link));
+					String key = ee.getValue() + File.separator + FileDownloader.getFileNameFromURLString(link) + NBYTES_SUFFIX;
+					long val = jarInfo.get(link) != null ? jarInfo.get(link) : FileDownloader.getFileSize(new URL(link));
 					this.consumersMap.get(ee.getValue()).accept(key, (double) val);
 					engineSize += val;
 				}

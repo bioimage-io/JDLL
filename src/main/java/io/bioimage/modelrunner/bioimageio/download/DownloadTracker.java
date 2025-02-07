@@ -33,6 +33,7 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import io.bioimage.modelrunner.download.FileDownloader;
 import io.bioimage.modelrunner.engine.installation.EngineInstall;
 import io.bioimage.modelrunner.versionmanagement.JarInfo;
 
@@ -139,13 +140,13 @@ public class DownloadTracker {
 		sizeFiles = new LinkedHashMap<String, Long>();
 		JarInfo jarInfo = JarInfo.getInstance();
 		for (String link : links) {
-			String key = folder + File.separator + DownloadModel.getFileNameFromURLString(link);
+			String key = folder + File.separator + FileDownloader.getFileNameFromURLString(link);
 			if (consumer.get().get(key + EngineInstall.NBYTES_SUFFIX) != null && consumer.get().get(key + EngineInstall.NBYTES_SUFFIX) != -1) {
 				sizeFiles.put(key, consumer.get().get(key + EngineInstall.NBYTES_SUFFIX).longValue());
 				continue;
 			}
 			try {
-				sizeFiles.put(key, (jarInfo.get(link) != null ? jarInfo.get(link) : DownloadModel.getFileSize(new URL(link))));
+				sizeFiles.put(key, (jarInfo.get(link) != null ? jarInfo.get(link) : FileDownloader.getFileSize(new URL(link))));
 			} catch (MalformedURLException e) {
 				throw new IOException("The URL '" + link + "' cannot be found.");
 			}
@@ -382,7 +383,7 @@ public class DownloadTracker {
 			return links;
 		for (String link : links) {
 			try {
-				String fName = folder + File.separator + DownloadModel.getFileNameFromURLString(link);
+				String fName = folder + File.separator + FileDownloader.getFileNameFromURLString(link);
 				if (!(new File(fName).isFile())) {
 					badDownloads.add(link);
 					continue;

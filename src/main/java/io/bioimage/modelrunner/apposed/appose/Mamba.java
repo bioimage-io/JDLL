@@ -374,7 +374,7 @@ public class Mamba {
 		final File tempFile = File.createTempFile( "micromamba", ".tar.bz2" );
 		tempFile.deleteOnExit();
 		URL website = FileDownloader.redirectedURL(new URL(MICROMAMBA_URL));
-		long size = DownloadModel.getFileSize(website);
+		long size = FileDownloader.getFileSize(website);
 		Thread currentThread = Thread.currentThread();
 		Thread dwnldThread = new Thread(() -> {
 			try (

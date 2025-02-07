@@ -652,7 +652,7 @@ public class StardistFineTuneJdllOp implements OpInterface {
 			throw new IllegalArgumentException("");
 		for (String url : (List<String>) yamlFiles) {
 			try {
-				if (DownloadModel.getFileNameFromURLString(url).equals(STARDIST_WEIGHTS_FILE))
+				if (FileDownloader.getFileNameFromURLString(url).equals(STARDIST_WEIGHTS_FILE))
 					return url;
 			} catch (MalformedURLException e) {
 			}

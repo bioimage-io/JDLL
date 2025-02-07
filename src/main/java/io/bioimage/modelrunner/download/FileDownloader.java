@@ -22,15 +22,18 @@ package io.bioimage.modelrunner.download;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
+import java.nio.channels.Channels;
 import java.nio.channels.ReadableByteChannel;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
 import java.security.cert.X509Certificate;
+import java.util.function.Consumer;
 
 import javax.net.ssl.HttpsURLConnection;
 import javax.net.ssl.SSLContext;
@@ -41,20 +44,60 @@ import io.bioimage.modelrunner.utils.CommonUtils;
 import io.bioimage.modelrunner.utils.Constants;
 
 public class FileDownloader {
-	private ReadableByteChannel rbc;
-	private FileOutputStream fos;
-	private static final long CHUNK_SIZE = 1024 * 1024 * 5;
 	
-	public FileDownloader(ReadableByteChannel rbc, FileOutputStream fos) {
-		this.rbc = rbc;
-		this.fos = fos;
+	private final URL website;
+	
+	private final File file;
+	
+	private Long fileSize;
+	
+	private Consumer<Long> sizeConsumer;
+
+	private static final long CHUNK_SIZE = 1024 * 1024 * 5;
+
+	private static final int STALL_THRES = 10000;
+	
+	public FileDownloader(String url, File file) throws MalformedURLException {
+		this.website = new URL(url);
+		this.file = file;
+	}
+	
+	public void setDownloadTracker(Consumer<Long> sizeconsumer) {
+		this.sizeConsumer = sizeconsumer;
+	}
+	
+	public long getOnlineFileSize() {
+		if (fileSize != null)
+			return fileSize;
+		return getFileSize(website);
+	}
+	
+	public void download(Thread parentThread) throws IOException {
+		HttpsURLConnection conn = ( HttpsURLConnection ) website.openConnection();
+		conn.setConnectTimeout(STALL_THRES);
+		conn.setReadTimeout(STALL_THRES);
+		SSLContext sslContext;
+		try {
+			sslContext = getAllTrustingSSLContext();
+		} catch (KeyManagementException | NoSuchAlgorithmException e) {
+			throw new RuntimeException(e);
+		}
+		conn.setSSLSocketFactory( sslContext.getSocketFactory() );
+		
+		try (
+				InputStream str = conn.getInputStream();
+				ReadableByteChannel rbc = Channels.newChannel(str);
+				FileOutputStream fos = new FileOutputStream(file);
+				){
+			call(rbc, fos, parentThread);
+		}
 	}
 	
 	/**
 	 * Download a file without the possibility of interrupting the download
 	 * @throws IOException if there is any error downloading the file from the url
 	 */
-	public void call() throws IOException  {
+	public void call(ReadableByteChannel rbc, FileOutputStream fos) throws IOException  {
 		fos.getChannel().transferFrom(rbc, 0, Long.MAX_VALUE);
 	}
 	
@@ -65,9 +108,8 @@ public class FileDownloader {
 	 * @param parentThread
 	 * 	thread from where the download was launched, it is the reference used to stop the download
 	 * @throws IOException if there is any error downloading the file from the url
-	 * @throws InterruptedException if the download is interrupted because the parentThread is interrupted
 	 */
-	public void call(Thread parentThread) throws IOException, InterruptedException {
+	public void call(ReadableByteChannel rbc, FileOutputStream fos, Thread parentThread) throws IOException {
         long position = 0;
         while (true) {
             long transferred = fos.getChannel().transferFrom(rbc, position, CHUNK_SIZE);
@@ -77,16 +119,9 @@ public class FileDownloader {
 
             position += transferred;
             if (!parentThread.isAlive()) {
-                // Close resources if needed and exit
-                closeResources();
-                throw new InterruptedException("File download was interrupted.");
+                return;
             }
         }
-    }
-
-    private void closeResources() throws IOException {
-        if (rbc != null) rbc.close();
-        if (fos != null) fos.close();
     }
 
 	/**
@@ -149,7 +184,18 @@ public class FileDownloader {
 	}
 	
 	/**
-	 * This method shuold be used when we get the following response codes from 
+	 * Method that downloads the model selected from the internet,
+	 * copies it and unzips it into the models folder
+	 * @param downloadURL
+	 * 	url of the file to be downloaded
+	 * @param targetFile
+	 * 	file where the file from the url will be downloaded too
+	 */
+	public void downloadFileFromInternet(String downloadURL, File targetFile) {
+	}
+	
+	/**
+	 * This method should be used when we get the following response codes from 
 	 * a {@link HttpURLConnection}:
 	 * - {@link HttpURLConnection#HTTP_MOVED_TEMP}
 	 * - {@link HttpURLConnection#HTTP_MOVED_PERM}
