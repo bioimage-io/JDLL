@@ -17,7 +17,7 @@
  * limitations under the License.
  * #L%
  */
-package io.bioimage.modelrunner.engine.installation;
+package io.bioimage.modelrunner.download;
 
 import java.io.File;
 import java.io.FileOutputStream;

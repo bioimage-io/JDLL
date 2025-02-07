@@ -48,8 +48,8 @@ import java.util.stream.IntStream;
 import io.bioimage.modelrunner.bioimageio.description.ModelDescriptor;
 import io.bioimage.modelrunner.bioimageio.description.weights.ModelWeight;
 import io.bioimage.modelrunner.bioimageio.description.weights.WeightFormat;
+import io.bioimage.modelrunner.download.FileDownloader;
 import io.bioimage.modelrunner.engine.EngineInfo;
-import io.bioimage.modelrunner.engine.installation.FileDownloader;
 import io.bioimage.modelrunner.utils.CommonUtils;
 import io.bioimage.modelrunner.utils.Constants;
 import io.bioimage.modelrunner.utils.ZipUtils;
@@ -661,7 +661,7 @@ public class DownloadModel {
 			conn.setSSLSocketFactory( sslContext.getSocketFactory() );
 			conn.setRequestProperty("User-Agent", CommonUtils.getJDLLUserAgent());
 			if (conn.getResponseCode() >= 300 && conn.getResponseCode() <= 308)
-				return getFileSize(redirectedURL(url));
+				return getFileSize(FileDownloader.redirectedURL(url));
 			if (conn.getResponseCode() != 200)
 				throw new Exception( "Unable to connect to: " + url );
 			long size = conn.getContentLengthLong();
@@ -720,57 +720,6 @@ public class DownloadModel {
 		} catch (URISyntaxException | MalformedURLException e) {
 			return null;
 		}
-	}
-	
-	/**
-	 * This method shuold be used when we get the following response codes from 
-	 * a {@link HttpURLConnection}:
-	 * - {@link HttpURLConnection#HTTP_MOVED_TEMP}
-	 * - {@link HttpURLConnection#HTTP_MOVED_PERM}
-	 * - {@link HttpURLConnection#HTTP_SEE_OTHER}
-	 * 
-	 * If that is not the response code or the connection does not work, the url
-	 * returned will be the same as the provided.
-	 * If the method is used corretly, it will return the URL to which the original URL
-	 * has been redirected
-	 * @param url
-	 * 	original url. Connecting to that url must give a 301, 302 or 303 response code
-	 * @return the redirected url
-	 * @throws MalformedURLException if the url is invalid
-	 * @throws URISyntaxException if the url is invalid
-	 */
-	public static URL redirectedURL(URL url) throws MalformedURLException, URISyntaxException {
-		int statusCode;
-		HttpURLConnection conn;
-		try {
-			conn = (HttpURLConnection) url.openConnection();
-			conn.setRequestProperty("User-Agent", CommonUtils.getJDLLUserAgent());
-			statusCode = conn.getResponseCode();
-		} catch (IOException ex) {
-			return url;
-		}
-		if (statusCode < 300 || statusCode > 308)
-			return url;
-		String newURL = conn.getHeaderField("Location");
-		try {
-			conn.disconnect();
-			return redirectedURL(new URL(newURL));
-		} catch (MalformedURLException ex) {
-		}
-		try {
-			conn.disconnect();
-			if (newURL.startsWith("//"))
-				return redirectedURL(new URL("http:" + newURL));
-			else
-				throw new MalformedURLException();
-		} catch (MalformedURLException ex) {
-		}
-        URI uri = url.toURI();
-        String scheme = uri.getScheme();
-        String host = uri.getHost();
-        String mainDomain = scheme + "://" + host;
-		conn.disconnect();
-		return redirectedURL(new URL(mainDomain + newURL));
 	}
 	
 	/**

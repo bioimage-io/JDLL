@@ -40,7 +40,7 @@ import io.bioimage.modelrunner.bioimageio.description.ModelDescriptor;
 import io.bioimage.modelrunner.bioimageio.description.ModelDescriptorFactory;
 import io.bioimage.modelrunner.bioimageio.description.exceptions.ModelSpecsException;
 import io.bioimage.modelrunner.bioimageio.download.DownloadModel;
-import io.bioimage.modelrunner.engine.installation.FileDownloader;
+import io.bioimage.modelrunner.download.FileDownloader;
 import io.bioimage.modelrunner.runmode.RunMode;
 import io.bioimage.modelrunner.tensor.Tensor;
 import io.bioimage.modelrunner.utils.Constants;

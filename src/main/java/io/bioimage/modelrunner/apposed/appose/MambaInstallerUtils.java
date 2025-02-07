@@ -52,6 +52,8 @@ import org.apache.commons.compress.archivers.tar.TarArchiveInputStream;
 import org.apache.commons.compress.compressors.bzip2.BZip2CompressorInputStream;
 import org.apache.commons.compress.utils.IOUtils;
 
+import io.bioimage.modelrunner.download.FileDownloader;
+
 //TODO remove once appose project is released with the needed changes
 //TODO remove once appose project is released with the needed changes
 //TODO remove once appose project is released with the needed changes
@@ -167,7 +169,7 @@ public final class MambaInstallerUtils {
 		String url = Mamba.MICROMAMBA_URL;
 		final File tempFile = File.createTempFile( "miniconda", ".tar.bz2" );
 		tempFile.deleteOnExit();
-		URL website = MambaInstallerUtils.redirectedURL(new URL(url));
+		URL website = FileDownloader.redirectedURL(new URL(url));
 		ReadableByteChannel rbc = Channels.newChannel(website.openStream());
 		try (FileOutputStream fos = new FileOutputStream(tempFile)) {
 			long transferred = fos.getChannel().transferFrom(rbc, 0, Long.MAX_VALUE);
@@ -178,52 +180,5 @@ public final class MambaInstallerUtils {
 		unBZip2(new File("C:\\Users\\angel\\OneDrive\\Documentos\\pasteur\\git\\micromamba-1.5.1-1.tar.bz2"), 
 			new File(tarPath));
 		unTar(new File(tarPath), new File(mambaPath));
-	}
-	
-	/**
-	 * This method shuold be used when we get the following response codes from 
-	 * a {@link HttpURLConnection}:
-	 * - {@link HttpURLConnection#HTTP_MOVED_TEMP}
-	 * - {@link HttpURLConnection#HTTP_MOVED_PERM}
-	 * - {@link HttpURLConnection#HTTP_SEE_OTHER}
-	 * 
-	 * If that is not the response code or the connection does not work, the url
-	 * returned will be the same as the provided.
-	 * If the method is used corretly, it will return the URL to which the original URL
-	 * has been redirected
-	 * @param url
-	 * 	original url. Connecting to that url must give a 301, 302 or 303 response code
-	 * @return the redirected url
-	 * @throws MalformedURLException if the url does not fulfil the requirements for an url to be correct
-	 * @throws URISyntaxException if the url is incorrect or there is no internet connection
-	 */
-	public static URL redirectedURL(URL url) throws MalformedURLException, URISyntaxException {
-		int statusCode;
-		HttpURLConnection conn;
-		try {
-			conn = (HttpURLConnection) url.openConnection();
-			statusCode = conn.getResponseCode();
-		} catch (IOException ex) {
-			return url;
-		}
-		if (statusCode < 300 || statusCode > 308)
-			return url;
-		String newURL = conn.getHeaderField("Location");
-		try {
-			return redirectedURL(new URL(newURL));
-		} catch (MalformedURLException ex) {
-		}
-		try {
-			if (newURL.startsWith("//"))
-				return redirectedURL(new URL("http:" + newURL));
-			else
-				throw new MalformedURLException();
-		} catch (MalformedURLException ex) {
-		}
-        URI uri = url.toURI();
-        String scheme = uri.getScheme();
-        String host = uri.getHost();
-        String mainDomain = scheme + "://" + host;
-		return redirectedURL(new URL(mainDomain + newURL));
 	}
 }

@@ -32,7 +32,7 @@ import com.sun.jna.Platform;
 
 import io.bioimage.modelrunner.apposed.appose.CondaException.EnvironmentExistsException;
 import io.bioimage.modelrunner.bioimageio.download.DownloadModel;
-import io.bioimage.modelrunner.engine.installation.FileDownloader;
+import io.bioimage.modelrunner.download.FileDownloader;
 import io.bioimage.modelrunner.system.PlatformDetection;
 
 import java.io.BufferedReader;
@@ -373,7 +373,7 @@ public class Mamba {
 	private File downloadMicromamba() throws IOException, URISyntaxException {
 		final File tempFile = File.createTempFile( "micromamba", ".tar.bz2" );
 		tempFile.deleteOnExit();
-		URL website = MambaInstallerUtils.redirectedURL(new URL(MICROMAMBA_URL));
+		URL website = FileDownloader.redirectedURL(new URL(MICROMAMBA_URL));
 		long size = DownloadModel.getFileSize(website);
 		Thread currentThread = Thread.currentThread();
 		Thread dwnldThread = new Thread(() -> {
