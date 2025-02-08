@@ -103,9 +103,9 @@ public class FileDownloader {
 		return this.sizeDownloaded;
 	}
 	
-	private void download(Thread parentThread) throws IOException {
+	private void download(Thread parentThread) throws IOException, ExecutionException {
 		already = 0;
-		while (lost_conn < MAX_RETRIES && !complete) {
+		while (lost_conn < MAX_RETRIES && !complete && parentThread.isAlive()) {
 			downloadAttempt(parentThread);
 		}
 		if (!complete) {
@@ -113,7 +113,7 @@ public class FileDownloader {
 		}
 	}
 	
-	private void downloadAttempt(Thread parentThread) throws IOException {
+	private void downloadAttempt(Thread parentThread) throws IOException, ExecutionException {
 		HttpsURLConnection conn = ( HttpsURLConnection ) website.openConnection();
 		conn.setConnectTimeout(STALL_THRES);
 		conn.setReadTimeout(STALL_THRES);
@@ -133,6 +133,8 @@ public class FileDownloader {
 				ReadableByteChannel rbc = Channels.newChannel(str);
 				FileOutputStream fos = new FileOutputStream(file, already != 0 ? true : false);
 				){
+			/**
+			 * TODO remove
 			Thread downloadThread = new Thread(() -> {
 				try {
 					call(rbc, fos, parentThread);
@@ -143,17 +145,19 @@ public class FileDownloader {
 			downloadThread.start();
 			
 			checkDownloadContinues(parentThread, downloadThread);
+			 */
+			performDownload(fos, rbc, parentThread);
 		}
 	}
 	
-	private void performDownload(FileOutputStream fos, ReadableByteChannel rbc, Thread parentThread) {
+	private void performDownload(FileOutputStream fos, ReadableByteChannel rbc, Thread parentThread) throws ExecutionException {
 
         ExecutorService downloadExecutor = Executors.newSingleThreadExecutor();
         ScheduledExecutorService monitorExecutor = Executors.newScheduledThreadPool(2);
         this.getOnlineFileSize();
 
         Callable<Void> downloadTask = () -> {
-			call(rbc, fos, parentThread);
+			call(rbc, fos);
             return null;
         };
 
@@ -190,15 +194,10 @@ public class FileDownloader {
         try {
             // Wait for the download task to complete.
             downloadFuture.get();
-        } catch (CancellationException e) {
+            complete = true;
+        } catch (CancellationException | InterruptedException e) {
             lost_conn ++;
-        } catch (InterruptedException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (ExecutionException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} finally {
+        } finally {
             downloadExecutor.shutdownNow();
             monitorExecutor.shutdownNow();
         }
@@ -207,8 +206,9 @@ public class FileDownloader {
 	/**
 	 * Download a file without the possibility of interrupting the download
 	 * @throws IOException if there is any error downloading the file from the url
+	 * @throws ExecutionException 
 	 */
-	public void download() throws IOException  {
+	public void download() throws IOException, ExecutionException  {
 		download(Thread.currentThread());
 	}
 	
@@ -220,7 +220,7 @@ public class FileDownloader {
 	 * 	thread from where the download was launched, it is the reference used to stop the download
 	 * @throws IOException if there is any error downloading the file from the url
 	 */
-	public void call(ReadableByteChannel rbc, FileOutputStream fos, Thread parentThread) throws IOException {
+	public void call(ReadableByteChannel rbc, FileOutputStream fos) throws IOException {
 		sizeDownloaded = already;
         while (true) {
             long transferred = fos.getChannel().transferFrom(rbc, sizeDownloaded, CHUNK_SIZE);
@@ -229,7 +229,7 @@ public class FileDownloader {
             }
 
             sizeDownloaded += transferred;
-            if (!parentThread.isAlive() && !Thread.currentThread().isInterrupted()) {
+            if (Thread.currentThread().isInterrupted()) {
                 return;
             }
         }
