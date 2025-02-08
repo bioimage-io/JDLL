@@ -41,6 +41,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicLong;
 
 import javax.net.ssl.HttpsURLConnection;
 import javax.net.ssl.SSLContext;
@@ -62,7 +63,7 @@ public class FileDownloader {
 	
 	private Long fileSize;
 	
-	private long sizeDownloaded;
+	private AtomicLong sizeDownloaded;
 	
     private int lost_conn = 0;
 	
@@ -100,7 +101,7 @@ public class FileDownloader {
 	}
 	
 	public long getSizeDownloaded() {
-		return this.sizeDownloaded;
+		return this.sizeDownloaded.get();
 	}
 	
 	private void download(Thread parentThread) throws IOException, ExecutionException {
@@ -221,14 +222,14 @@ public class FileDownloader {
 	 * @throws IOException if there is any error downloading the file from the url
 	 */
 	public void call(ReadableByteChannel rbc, FileOutputStream fos) throws IOException {
-		sizeDownloaded = already;
+		sizeDownloaded.set(already);
         while (true) {
-            long transferred = fos.getChannel().transferFrom(rbc, sizeDownloaded, CHUNK_SIZE);
+            long transferred = fos.getChannel().transferFrom(rbc, sizeDownloaded.get(), CHUNK_SIZE);
             if (transferred == 0) {
                 break;
             }
 
-            sizeDownloaded += transferred;
+            sizeDownloaded.set(sizeDownloaded.get() + transferred);
             if (Thread.currentThread().isInterrupted()) {
                 return;
             }
