@@ -33,6 +33,14 @@ import java.nio.channels.ReadableByteChannel;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
 import java.security.cert.X509Certificate;
+import java.util.concurrent.Callable;
+import java.util.concurrent.CancellationException;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 import javax.net.ssl.HttpsURLConnection;
 import javax.net.ssl.SSLContext;
@@ -48,19 +56,41 @@ public class FileDownloader {
 	
 	private final File file;
 	
+	private final boolean printProgress;
+	
+	private final String name;
+	
 	private Long fileSize;
 	
 	private long sizeDownloaded;
 	
     private int lost_conn = 0;
 	
+    private long already = 0;
+    
+    private boolean complete = false;
+	
 	private static final long CHUNK_SIZE = 1024 * 1024 * 5;
 
 	private static final int STALL_THRES = 10000;
+
+	private static final int PROGRESS_INTER = 10000;
 	
-	public FileDownloader(String url, File file) throws MalformedURLException {
+	private static final int MAX_RETRIES = 3;
+	
+	public FileDownloader(String url, File file, boolean printProgress) throws MalformedURLException {
 		this.website = new URL(url);
 		this.file = file;
+		this.printProgress = printProgress;
+		this.name = getFileNameFromURLString(url);
+	}
+	
+	public FileDownloader(String url, File file) throws MalformedURLException {
+		this(url, file, true);
+	}
+	
+	public String getFileName() {
+		return this.name;
 	}
 	
 	public long getOnlineFileSize() {
@@ -73,11 +103,17 @@ public class FileDownloader {
 		return this.sizeDownloaded;
 	}
 	
-	private void downloadAttempt(Thread parentThread, long already) {
-		
+	private void download(Thread parentThread) throws IOException {
+		already = 0;
+		while (lost_conn < MAX_RETRIES && !complete) {
+			downloadAttempt(parentThread);
+		}
+		if (!complete) {
+			throw new IOException("Unable to download file after " + MAX_RETRIES + " attempts.");
+		}
 	}
 	
-	private void download(Thread parentThread, long already) throws IOException {
+	private void downloadAttempt(Thread parentThread) throws IOException {
 		HttpsURLConnection conn = ( HttpsURLConnection ) website.openConnection();
 		conn.setConnectTimeout(STALL_THRES);
 		conn.setReadTimeout(STALL_THRES);
@@ -95,7 +131,7 @@ public class FileDownloader {
 		try (
 				InputStream str = conn.getInputStream();
 				ReadableByteChannel rbc = Channels.newChannel(str);
-				FileOutputStream fos = new FileOutputStream(file);
+				FileOutputStream fos = new FileOutputStream(file, already != 0 ? true : false);
 				){
 			Thread downloadThread = new Thread(() -> {
 				try {
@@ -110,12 +146,70 @@ public class FileDownloader {
 		}
 	}
 	
+	private void performDownload(FileOutputStream fos, ReadableByteChannel rbc, Thread parentThread) {
+
+        ExecutorService downloadExecutor = Executors.newSingleThreadExecutor();
+        ScheduledExecutorService monitorExecutor = Executors.newScheduledThreadPool(2);
+        this.getOnlineFileSize();
+
+        Callable<Void> downloadTask = () -> {
+			call(rbc, fos, parentThread);
+            return null;
+        };
+
+        Future<Void> downloadFuture = downloadExecutor.submit(downloadTask);
+        final long[] lastProgress = { already };
+
+        Runnable stallDetectionTask = () -> {
+            if (!parentThread.isAlive()) {
+                downloadFuture.cancel(true);
+                return;
+            }
+            long bytesDownloaded = file.length();
+            if (bytesDownloaded == lastProgress[0]) {
+                System.err.println("Connection lost. Time number: " + (lost_conn + 1));
+                downloadFuture.cancel(true);
+            } else {
+                lastProgress[0] = bytesDownloaded;
+            }
+        };
+
+        Runnable progressPrintTask = () -> {
+            if (!parentThread.isAlive()) {
+                downloadFuture.cancel(true);
+                return;
+            }
+            System.out.println(getStringToPrintProgress(file.getName(), file.length() / (double) this.fileSize));
+        };
+
+        monitorExecutor.scheduleAtFixedRate(
+                stallDetectionTask, STALL_THRES, STALL_THRES, TimeUnit.SECONDS);
+        monitorExecutor.scheduleAtFixedRate(
+                progressPrintTask, PROGRESS_INTER, PROGRESS_INTER, TimeUnit.SECONDS);
+
+        try {
+            // Wait for the download task to complete.
+            downloadFuture.get();
+        } catch (CancellationException e) {
+            lost_conn ++;
+        } catch (InterruptedException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (ExecutionException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} finally {
+            downloadExecutor.shutdownNow();
+            monitorExecutor.shutdownNow();
+        }
+	}
+	
 	/**
 	 * Download a file without the possibility of interrupting the download
 	 * @throws IOException if there is any error downloading the file from the url
 	 */
 	public void download() throws IOException  {
-		download(Thread.currentThread(), 0);
+		download(Thread.currentThread());
 	}
 	
 	/**
@@ -127,7 +221,7 @@ public class FileDownloader {
 	 * @throws IOException if there is any error downloading the file from the url
 	 */
 	public void call(ReadableByteChannel rbc, FileOutputStream fos, Thread parentThread) throws IOException {
-		sizeDownloaded = 0;
+		sizeDownloaded = already;
         while (true) {
             long transferred = fos.getChannel().transferFrom(rbc, sizeDownloaded, CHUNK_SIZE);
             if (transferred == 0) {
@@ -144,27 +238,26 @@ public class FileDownloader {
 	private void checkDownloadContinues(Thread parentThread, Thread downloadThread) throws IOException {
 		long lastBytesDownloaded = 0;
         long lastCheckedTime = System.currentTimeMillis();
+        this.getSizeDownloaded();
         while (parentThread.isAlive() && downloadThread.isAlive()) {
             try {Thread.sleep(1000);} catch (InterruptedException e) {return;}
-            
+
+        	long totalBytesDownloaded = file.length();
             if (System.currentTimeMillis() - lastCheckedTime > STALL_THRES) {
-            	long totalBytesDownloaded = file.length();
                 if (lastBytesDownloaded == totalBytesDownloaded) {
+                	downloadThread.interrupt();
                     System.err.println("Connection lost. Time number: " + (lost_conn + 1));
-                    if (lost_conn < 3) {
-                    	lost_conn ++;
-                    	downloadThread.interrupt();
-                    	download(parentThread, file.length());
-                    } else {
-                    	throw new IOException("Unable to download file: " + website);
-                    }
+                    already = file.length();
+                	lost_conn ++;
                     return;
                 }
                 lastBytesDownloaded = totalBytesDownloaded;
             }
-
+            if (printProgress)
+            	System.out.println(getStringToPrintProgress(name, lastBytesDownloaded / (double) this.fileSize));
             lastCheckedTime = System.currentTimeMillis();
         }
+        complete = true;
 	}
 
 	/**
@@ -300,5 +393,15 @@ public class FileDownloader {
 			str = str.substring(0, str.length() - Constants.ZENODO_ANNOYING_SUFFIX.length());
 		URL url = new URL(str);
 		return new File(url.getPath()).getName();
+	}
+	
+	private static String getStringToPrintProgress(String kk, double progress) {
+		int n = 30;
+		int nProgressBar = (int) (progress * n);
+		String progressStr = new File(kk).getName() + ": [";
+		for (int i = 0; i < nProgressBar; i ++) progressStr += "#";
+		for (int i = nProgressBar; i < n; i ++) progressStr += ".";
+		progressStr += "] " + Math.round(progress * 100) + "%";
+		return progressStr;
 	}
 }
