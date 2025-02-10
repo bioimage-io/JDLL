@@ -114,7 +114,7 @@ public class FileDownloader {
 		return this.sizeDownloaded.get();
 	}
 	
-	private void download(Thread parentThread) throws IOException, ExecutionException {
+	public void download(Thread parentThread) throws IOException, ExecutionException {
 		already = 0;
 		while (lost_conn < MAX_RETRIES && !complete && parentThread.isAlive()) {
 			downloadAttempt(parentThread);
@@ -198,9 +198,9 @@ public class FileDownloader {
         };
 
         monitorExecutor.scheduleAtFixedRate(
-                stallDetectionTask, STALL_THRES, STALL_THRES, TimeUnit.SECONDS);
+                stallDetectionTask, STALL_THRES, STALL_THRES, TimeUnit.MILLISECONDS);
         monitorExecutor.scheduleAtFixedRate(
-                progressPrintTask, PROGRESS_INTER, PROGRESS_INTER, TimeUnit.SECONDS);
+                progressPrintTask, PROGRESS_INTER, PROGRESS_INTER, TimeUnit.MILLISECONDS);
 
         try {
             // Wait for the download task to complete.
