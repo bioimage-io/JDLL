@@ -31,7 +31,6 @@ import org.apache.commons.compress.archivers.ArchiveException;
 import com.sun.jna.Platform;
 
 import io.bioimage.modelrunner.apposed.appose.CondaException.EnvironmentExistsException;
-import io.bioimage.modelrunner.bioimageio.download.DownloadModel;
 import io.bioimage.modelrunner.download.FileDownloader;
 import io.bioimage.modelrunner.system.PlatformDetection;
 
@@ -45,8 +44,6 @@ import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.net.URISyntaxException;
 import java.net.URL;
-import java.nio.channels.Channels;
-import java.nio.channels.ReadableByteChannel;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.text.SimpleDateFormat;
@@ -57,6 +54,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
+import java.util.concurrent.ExecutionException;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
@@ -374,21 +372,13 @@ public class Mamba {
 		final File tempFile = File.createTempFile( "micromamba", ".tar.bz2" );
 		tempFile.deleteOnExit();
 		URL website = FileDownloader.redirectedURL(new URL(MICROMAMBA_URL));
-		long size = FileDownloader.getFileSize(website);
-		Thread currentThread = Thread.currentThread();
-		Thread dwnldThread = new Thread(() -> {
-			try (
-					ReadableByteChannel rbc = Channels.newChannel(website.openStream());
-					FileOutputStream fos = new FileOutputStream(tempFile);
-					) {
-				new FileDownloader(rbc, fos).call(currentThread);
-			} catch (IOException | InterruptedException e) {
-				e.printStackTrace();
-			}
-		});
-		dwnldThread.start();
-		while (dwnldThread.isAlive()) 
-			this.mambaDnwldProgressConsumer.accept(((double) tempFile.length()) / ((double) size));
+		FileDownloader fd = new FileDownloader(website.toString(), tempFile);
+		long size = fd.getOnlineFileSize();
+		try {
+			fd.download(Thread.currentThread());
+		} catch (ExecutionException e) {
+			throw new RuntimeException(e);
+		};
 		if ((((double) tempFile.length()) / ((double) size)) < 1)
 			throw new IOException("Error downloading micromamba from: " + MICROMAMBA_URL);
 		return tempFile;
