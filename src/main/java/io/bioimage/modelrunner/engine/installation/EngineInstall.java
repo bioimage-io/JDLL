@@ -21,20 +21,16 @@ package io.bioimage.modelrunner.engine.installation;
 
 import java.io.File;
 import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
 import java.io.IOException;
-import java.net.HttpURLConnection;
 import java.net.URL;
-import java.nio.channels.Channels;
-import java.nio.channels.ReadableByteChannel;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.concurrent.ExecutionException;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 import io.bioimage.modelrunner.bioimageio.BioimageioRepo;
@@ -42,14 +38,10 @@ import io.bioimage.modelrunner.bioimageio.description.ModelDescriptor;
 import io.bioimage.modelrunner.bioimageio.description.ModelDescriptorFactory;
 import io.bioimage.modelrunner.bioimageio.description.exceptions.ModelSpecsException;
 import io.bioimage.modelrunner.bioimageio.description.weights.WeightFormat;
-import io.bioimage.modelrunner.bioimageio.download.DownloadModel;
-import io.bioimage.modelrunner.bioimageio.download.DownloadTracker;
-import io.bioimage.modelrunner.bioimageio.download.DownloadTracker.TwoParameterConsumer;
 import io.bioimage.modelrunner.download.FileDownloader;
+import io.bioimage.modelrunner.download.MultiFileDownloader;
 import io.bioimage.modelrunner.engine.EngineInfo;
 import io.bioimage.modelrunner.system.PlatformDetection;
-import io.bioimage.modelrunner.utils.CommonUtils;
-import io.bioimage.modelrunner.utils.Log;
 import io.bioimage.modelrunner.versionmanagement.AvailableEngines;
 import io.bioimage.modelrunner.versionmanagement.DeepLearningVersion;
 import io.bioimage.modelrunner.versionmanagement.InstalledEngines;
@@ -137,12 +129,6 @@ public class EngineInstall {
 	 */
 	private boolean isManagementFinished = false;
 	/**
-	 * For the automatic installation of basic engines, consumer that contains 
-	 * a consumer for each of the engines that is going to be installed.
-	 * Key is the engine installed, the value is the consumer for that engine
-	 */
-	private Map<String, TwoParameterConsumer<String, Double>> consumersMap;
-	/**
 	 * Directory where the manager will install the basic installation
 	 */
 	private String managersDir;
@@ -150,6 +136,8 @@ public class EngineInstall {
 	 * Whether the Json containing the versions has been read or not.
 	 */
 	private boolean readJSon = false;
+	
+	private Consumer<Double> consumer;
 	
 	/**
 	 * Constructor that checks whether the minimum engines are installed
@@ -244,41 +232,8 @@ public class EngineInstall {
 		return manager;
 	}
 	
-	/**
-	 * Checks if the minimal required engines to execute the majority of models
-	 * are installed, if not it manages the installation of the missing ones.
-	 *  
-	 * In order to reduce repetition and to reduce the number of deps downloaded
-	 * by the user when deepImageJ is installed, a selection of engines is created.
-	 * There are some of the engines that are the same for every operating system,
-	 * for example TF1 and Pytorch.
-	 * To reduce the number of deps donwloaded, the TF1 and Pytorch engines are
-	 * installed as for example:
-	 *  - "tensorflow-1.15.0-1.15.0" + {@link #GENERAL_KEYWORD}
-	 * Just one of the above folder is downloaded for all the OS.
-	 * If it was not done like this, as the Fiji update site does not recognise the
-	 * OS of the user, the three following engines would be required:
-	 *  - "tensorflow-1.15.0-1.15.0-windows-x86_64-cpu-gpu"
-	 *  - "tensorflow-1.15.0-1.15.0-linux-x86_64-cpu-gpu"
-	 *  - "tensorflow-1.15.0-1.15.0-macos-x86_64-cpu"
-	 * however, the 3 engines would contain exactly the same deps.
-	 * This is the reason why we make the workaround to download a single
-	 * engine for certain engines and then rename it follwoing the corresponding
-	 * convention
-	 * 
-	 * Regard, that for certain engines, downloading all the OS depending engines
-	 * is necessary, as the dependencies vary from one system to another.  
-	 * 
-	 * If the thread where the installation is happening stops, the method exits without throwing
-	 * an exception.
-	 */
-	private void checkAndSetBasicEngineInstallation() {
-		isManagementFinished = false;
-		readEnginesJSON();
-		checkEnginesInstalled();
-		if (!this.everythingInstalled)
-			manageMissingEngines();
-		isManagementFinished = true;
+	public void setProgresConsumer(Consumer<Double> consumer) {
+		this.consumer = consumer;
 	}
 	
 	/**
@@ -356,26 +311,6 @@ public class EngineInstall {
 		if (missingEngineFolders == null)
 			checkEnginesInstalled();
 		return missingEngineFolders;
-	}
-	
-	/**
-	 * Retrieve a map that contains a {@link TwoParameterConsumer} for each of the 
-	 * engines installed. 
-	 * The engines will be download in order of the keys in the map.
-	 * @return a map where each key corresponds to each of the basic engines
-	 *  ({@link #ENGINES_VERSIONS}) missing and its value will be the consumer 
-	 *  used to track the progress of its download
-	 */
-	public Map<String, TwoParameterConsumer<String, Double>> getBasicEnginesProgress() {
-		if (consumersMap != null && consumersMap.size() != 0)
-			return consumersMap;
-		if (missingEngineFolders == null)
-			checkBasicEngineInstallation();
-		consumersMap = new LinkedHashMap<String, TwoParameterConsumer<String, Double>>();
-		for (String missing : missingEngineFolders.values()) {
-			this.consumersMap.put(missing, DownloadTracker.createConsumerProgress());
-		}
-		return consumersMap;
 	}
 	
 	/**
@@ -569,8 +504,8 @@ public class EngineInstall {
 		for (Entry<String, String> v : missingEngineFolders.entrySet()) {
 			boolean installed = false;
 			try {
-				installed = installEngineByCompleteName(v.getValue(), consumersMap.get(v.getValue()));
-			} catch (IOException e) {
+				installed = installEngineByCompleteName(v.getValue(), consumer);
+			} catch (IOException | ExecutionException e) {
 			} catch (InterruptedException e) {
 				return;
 			}
@@ -591,8 +526,6 @@ public class EngineInstall {
 	 * @throws InterruptedException if the thread where this method is being run is interrupted
 	 */
 	public long getBasicDownloadTotalSize() throws InterruptedException {
-		if (this.consumersMap == null)
-			getBasicEnginesProgress();
 		long totalSize = 0;
 		for (Entry<String, String> ee : missingEngineFolders.entrySet()) {
 			try {
@@ -602,12 +535,9 @@ public class EngineInstall {
 				for (String link : dlVersion.getJars()) {
 					if (Thread.currentThread().isInterrupted())
 						throw new InterruptedException("Retrieval of download size interrupted.");
-					String key = ee.getValue() + File.separator + FileDownloader.getFileNameFromURLString(link) + NBYTES_SUFFIX;
 					long val = jarInfo.get(link) != null ? jarInfo.get(link) : FileDownloader.getFileSize(new URL(link));
-					this.consumersMap.get(ee.getValue()).accept(key, (double) val);
 					engineSize += val;
 				}
-				this.consumersMap.get(ee.getValue()).accept("total" + NBYTES_SUFFIX, (double) engineSize);
 				totalSize += engineSize;
 			} catch (IllegalStateException | IOException e) {
 				continue;
@@ -625,8 +555,9 @@ public class EngineInstall {
 	 * @return true if the installation was successful and false otherwise
 	 * @throws InterruptedException if the engine defined does not exist or any of the files is downloaded incorrectly
 	 * @throws IOException if the download is interrupted
+	 * @throws ExecutionException if there is any error in the download
 	 */
-	public static boolean installEngineByCompleteName(String engineDir) throws IOException, InterruptedException {
+	public static boolean installEngineByCompleteName(String engineDir) throws IOException, InterruptedException, ExecutionException {
 		return installEngineByCompleteName(engineDir, null);
 	}
 	
@@ -641,9 +572,10 @@ public class EngineInstall {
 	 * @return true if the installation was successful and false otherwise
 	 * @throws IOException if the engine does not exist or the download of any of the files fails
 	 * @throws InterruptedException if the download is interrupted
+	 * @throws ExecutionException if there is any error in the download
 	 */
 	public static boolean installEngineByCompleteName(String engineDir,
-			DownloadTracker.TwoParameterConsumer<String, Double> consumer) throws IOException, InterruptedException {
+			Consumer< Double> consumer) throws IOException, InterruptedException, ExecutionException {
 		File engineFileDir = new File(engineDir);
 		if (!engineFileDir.isDirectory() && engineFileDir.mkdirs() == false)
 			return false;
@@ -656,7 +588,8 @@ public class EngineInstall {
 		if (dlVersion == null)
 			throw new IOException("JDLL does not support any engine compatible with the provided engine directory: "
 					+ engineDir);
-		return installEngineInDir(dlVersion, engineFileDir.getParentFile().getAbsolutePath(), consumer);
+		installEngineInDir(dlVersion, engineFileDir.getParentFile().getAbsolutePath(), consumer);
+		return true;
 	}
 	
 	/**
@@ -670,8 +603,9 @@ public class EngineInstall {
 	 * @return true if the DL engine was installed or false otherwise
 	 * @throws IOException if there is any error creating the folder for the engine
 	 * @throws InterruptedException if the thread of the download is interrumpted abruptly
+	 * @throws ExecutionException if anything happens with the installation
 	 */
-	public static boolean installEngineForWeights(WeightFormat ww) throws IOException, InterruptedException {
+	public static boolean installEngineForWeights(WeightFormat ww) throws IOException, InterruptedException, ExecutionException {
 		return installEngineForWeightsInDir(ww, InstalledEngines.getEnginesDir(), null);
 	}
 	
@@ -688,9 +622,10 @@ public class EngineInstall {
 	 * @return true if the DL engine was installed or false otherwise
 	 * @throws IOException if there is any error creating the folder for the engine
 	 * @throws InterruptedException if the thread of the download is interrumpted abruptly
+	 * @throws ExecutionException if anything happens with the installation
 	 */
 	public static boolean installEngineForWeights(WeightFormat ww, 
-			DownloadTracker.TwoParameterConsumer<String, Double> consumer) throws IOException, InterruptedException {
+			Consumer<Double> consumer) throws IOException, InterruptedException, ExecutionException {
 		return installEngineForWeightsInDir(ww, InstalledEngines.getEnginesDir(), consumer);
 	}
 
@@ -706,8 +641,9 @@ public class EngineInstall {
 	 * @return true if the DL engine was installed or false otherwise
 	 * @throws IOException if there is any error creating the folder for the engine
 	 * @throws InterruptedException if the thread of the download is interrumpted abruptly
+	 * @throws ExecutionException if anything happens with the installatio
 	 */
-	public static boolean installEngineForWeightsInDir(WeightFormat ww, String enginesDir) throws IOException, InterruptedException {
+	public static boolean installEngineForWeightsInDir(WeightFormat ww, String enginesDir) throws IOException, InterruptedException, ExecutionException {
 		return installEngineForWeightsInDir(ww, enginesDir, null);
 	}
 
@@ -725,10 +661,11 @@ public class EngineInstall {
 	 * 	consumer used to keep track of the process of download of the weights
 	 * @return true if the DL engine was installed or false otherwise
 	 * @throws IOException if there is any error creating the folder for the engine
-	 * @throws InterruptedException if the thread of the download is interrumpted abruptly
+	 * @throws InterruptedException if the thread of the download is interrupted abruptly
+	 * @throws ExecutionException if there is any error in the download
 	 */
 	public static boolean installEngineForWeightsInDir(WeightFormat ww, String enginesDir, 
-			DownloadTracker.TwoParameterConsumer<String, Double> consumer) throws IOException, InterruptedException {
+			Consumer<Double> consumer) throws IOException, InterruptedException, ExecutionException {
 		InstalledEngines manager = InstalledEngines.buildEnginesFinder(enginesDir);
 		String engine = ww.getFramework();
 		String version = ww.getTrainingVersion();
@@ -748,7 +685,8 @@ public class EngineInstall {
 		if (dlv == null)
 			throw new IOException("JDLL does not support any engine compatible with the provided WeightFormat: "
 					+ ww.getFramework() + " " + ww.getTrainingVersion());
-		return installEngineInDir(dlv, enginesDir, consumer);
+		installEngineInDir(dlv, enginesDir, consumer);
+		return true;
 	}
 
 	/**
@@ -785,7 +723,7 @@ public class EngineInstall {
 	 * @throws IOException if there is any error creating the folder for the engine
 	 */
 	public static boolean installEnginesForModel(ModelDescriptor descriptor, 
-			DownloadTracker.TwoParameterConsumer<String, Double> consumer) throws IOException {
+			Consumer<Double> consumer) throws IOException {
 		return installEnginesForModelInDir(descriptor, InstalledEngines.getEnginesDir(), consumer);
 	}
 	
@@ -826,14 +764,14 @@ public class EngineInstall {
 	 * @throws IOException if there is any error creating the folder for the engine
 	 */
 	public static boolean installEnginesForModelInDir(ModelDescriptor descriptor, String enginesDir,
-			DownloadTracker.TwoParameterConsumer<String, Double> consumer) throws IOException {
+			Consumer<Double> consumer) throws IOException {
 		boolean installed = true;
 		for (WeightFormat ww : descriptor.getWeights().gettAllSupportedWeightObjects()) {
 			try {
 				boolean status = installEngineForWeightsInDir(ww, enginesDir, consumer);
 				if (!status)
 					System.out.println("DL engine not supported by JDLL: " + ww.getFramework());
-			} catch (IOException | InterruptedException e) {
+			} catch (IOException | InterruptedException | ExecutionException e) {
 				e.printStackTrace();
 				installed = false;
 			}
@@ -878,7 +816,7 @@ public class EngineInstall {
 	 * @throws InterruptedException if the thread is interrupted while trying to connect to the Bioimage.io
 	 */
 	public static boolean installEnginesForModelByID(String modelID, 
-			DownloadTracker.TwoParameterConsumer<String, Double> consumer) throws IOException, InterruptedException {
+			Consumer<Double> consumer) throws IOException, InterruptedException {
 		return installEnginesForModelByIDInDir(modelID, InstalledEngines.getEnginesDir(), consumer);
 	}
 	
@@ -921,7 +859,7 @@ public class EngineInstall {
 	 * @throws InterruptedException if the thread is interrupted while trying to connect to the Bioimage.io
 	 */
 	public static boolean installEnginesForModelByIDInDir(String modelID, String enginesDir, 
-			DownloadTracker.TwoParameterConsumer<String, Double> consumer) throws IOException, InterruptedException {
+			Consumer<Double> consumer) throws IOException, InterruptedException {
 		ModelDescriptor descriptor = BioimageioRepo.connect().selectByID(modelID);
 		if (descriptor == null)
 			return false;
@@ -965,7 +903,7 @@ public class EngineInstall {
 	 * @throws InterruptedException if the thread is interrupted while trying to connect to the Bioimage.io
 	 */
 	public static boolean installEnginesForModelByName(String modelName, 
-			DownloadTracker.TwoParameterConsumer<String, Double> consumer) throws IOException, InterruptedException {
+			Consumer<Double> consumer) throws IOException, InterruptedException {
 		return installEnginesForModelByNameinDir(modelName, InstalledEngines.getEnginesDir(), consumer);
 	}
 
@@ -1008,7 +946,7 @@ public class EngineInstall {
 	 * @throws InterruptedException if the thread is interrupted while trying to connect to the Bioimage.io
 	 */
 	public static boolean installEnginesForModelByNameinDir(String modelName, String enginesDir, 
-			DownloadTracker.TwoParameterConsumer<String, Double> consumer) throws IOException, InterruptedException {
+			Consumer<Double> consumer) throws IOException, InterruptedException {
 		ModelDescriptor descriptor = BioimageioRepo.connect().selectByName(modelName);
 		if (descriptor == null)
 			return false;
@@ -1054,7 +992,7 @@ public class EngineInstall {
 	 * @throws IOException if there is any error creating the folder for the engine or downloading the jar files
 	 */
 	public static boolean installEnginesForModelInFolder(String modelFolder, 
-			DownloadTracker.TwoParameterConsumer<String, Double> consumer) throws FileNotFoundException, ModelSpecsException, IOException {
+			Consumer<Double> consumer) throws FileNotFoundException, ModelSpecsException, IOException {
 		return installEnginesinDirForModelInFolder(modelFolder, InstalledEngines.getEnginesDir(), consumer);
 	}
 	
@@ -1099,7 +1037,7 @@ public class EngineInstall {
 	 * @throws IOException if there is any error creating the folder for the engine or downloading the jar files
 	 */
 	public static boolean installEnginesinDirForModelInFolder(String modelFolder, String enginesDir, 
-			DownloadTracker.TwoParameterConsumer<String, Double> consumer) 
+			Consumer<Double> consumer) 
 					throws FileNotFoundException, ModelSpecsException, IOException {
 		if (new File(modelFolder, "rdf.yaml").isFile() == false)
 			throw new FileNotFoundException("A Bioimage.io model folder should contain its corresponding rdf.yaml file.");
@@ -1115,9 +1053,10 @@ public class EngineInstall {
 	 * @return true if the installation was successful and false otherwise
 	 * @throws IOException if there is any error downloading the engine
 	 * @throws InterruptedException if the main thread is interrumpted abruptly while downloading
+	 * @throws ExecutionException if there is any error in the download
 	 */
-	public static boolean installEngine(DeepLearningVersion engine) throws IOException, InterruptedException {
-		return installEngine(engine, null);
+	public static void installEngine(DeepLearningVersion engine) throws IOException, InterruptedException, ExecutionException {
+		installEngine(engine, null);
 	}
 	
 	/**
@@ -1129,10 +1068,11 @@ public class EngineInstall {
 	 * @return true if the installation was successful and false otherwise
 	 * @throws IOException if there is any error downloading the engine
 	 * @throws InterruptedException if the main thread is interrumpted abruptly while downloading
+	 * @throws ExecutionException if there is any error in the download
 	 */
-	public static boolean installEngine(DeepLearningVersion engine, 
-			DownloadTracker.TwoParameterConsumer<String, Double> consumer) throws IOException, InterruptedException {
-		return installEngineInDir(engine, ENGINES_DIR, consumer);
+	public static void installEngine(DeepLearningVersion engine, 
+			Consumer<Double> consumer) throws IOException, InterruptedException, ExecutionException {
+		installEngineInDir(engine, ENGINES_DIR, consumer);
 	}
 	
 	/**
@@ -1146,9 +1086,10 @@ public class EngineInstall {
 	 * @return true if the installation was successful and false otherwise
 	 * @throws IOException if there is any error downloading the engine
 	 * @throws InterruptedException if the main thread is interrumped abruptly while downloading
+	 * @throws ExecutionException if there is any error in the download
 	 */
-	public static boolean installEngineInDir(DeepLearningVersion engine, String engineDir) throws IOException, InterruptedException {
-		return installEngineInDir(engine, engineDir, null);
+	public static void installEngineInDir(DeepLearningVersion engine, String engineDir) throws IOException, InterruptedException, ExecutionException {
+		installEngineInDir(engine, engineDir, null);
 	}
 	
 	/**
@@ -1161,96 +1102,27 @@ public class EngineInstall {
 	 * 	files needed to run the engine
 	 * @param consumer
 	 * 	consumer used to communicate the progress made donwloading files
-	 * @return true if the installation was successful and false otherwise
 	 * @throws IOException if there is any error downloading the engine
 	 * @throws InterruptedException if the main thread is interrumped abruptly while downloading
+	 * @throws ExecutionException if there is any error in the donwload
 	 */
-	public static boolean installEngineInDir(DeepLearningVersion engine, String engineDir, 
-			DownloadTracker.TwoParameterConsumer<String, Double> consumer) throws IOException, InterruptedException {
-		Log.addProgressAndShowInTerminal(null, PROGRESS_ENGINE_KEYWORD + engine.folderName(), true);
-		if (consumer == null)
-			consumer = DownloadTracker.createConsumerProgress();
+	public static void installEngineInDir(DeepLearningVersion engine, String engineDir, 
+			Consumer<Double> consumer) throws IOException, InterruptedException, ExecutionException {
 		String folder = engineDir + File.separator + engine.folderName();
 		if (!new File(folder).isDirectory() && !new File(folder).mkdirs())
 			throw new IOException("Unable to create the folder where the engine "
 					+ "will be installed: " + folder);
 		
-		Thread parentThread = Thread.currentThread();
-		Thread downloadThread = new Thread(() -> {
-			try {
-				downloadEngineFiles(engine, folder, parentThread);
-			} catch (InterruptedException e) {
-				return;
-			}
-        });
-		downloadThread.start();
-		
-		DownloadTracker tracker = DownloadTracker.getFilesDownloadTracker(folder,
-				consumer, engine.getJars(), downloadThread);
-		Thread trackerThread = new Thread(() -> {
-            try {
-            	tracker.track();
-			} catch (IOException | InterruptedException e) {
-				e.printStackTrace();
-			}
-        });
-		trackerThread.start();
-		DownloadTracker.printProgress(downloadThread, consumer);
-		List<String> badDownloads = tracker.findMissingDownloads();
-		if (badDownloads.size() > 0)
-			throw new IOException("The following files of engine '" + engine.folderName()
-			+ "' were downloaded incorrectly: " + badDownloads.toString());
-		return true;
-	}
-	
-	/**
-	 * Method that just downloads all the files that form a given engine into the
-	 * directory provided
-	 * @param engine
-	 * 	engine to be downloaded
-	 * @param engineDir
-	 * 	directory where the files will be downloaded
-	 * @throws InterruptedException if the thread where the download is happening is stopped
-	 */
-	public static void downloadEngineFiles(DeepLearningVersion engine, String engineDir) throws InterruptedException {
-		downloadEngineFiles(engine, engineDir, Thread.currentThread());
-	}
-	
-	/**
-	 * Method that just downloads all the files that form a given engine into the
-	 * directory provided
-	 * @param engine
-	 * 	engine to be downloaded
-	 * @param engineDir
-	 * 	directory where the files will be downloaded
-	 * @param parentThread
-	 * 	thread that when stopped, stops the download
-	 * @throws InterruptedException if the thread where the download is happening is stopped
-	 */
-	public static void downloadEngineFiles(DeepLearningVersion engine, String engineDir, Thread parentThread) throws InterruptedException {
-		for (String jar : engine.getJars()) {
-			try {
-				URL website = new URL(jar);
-		        HttpURLConnection conn = (HttpURLConnection) website.openConnection();
-		        conn.setRequestMethod("GET");
-		        conn.setRequestProperty("User-Agent", CommonUtils.getJDLLUserAgent());
-				Path filePath = Paths.get(website.getPath()).getFileName();
-				try (ReadableByteChannel rbc = Channels.newChannel(conn.getInputStream());
-						FileOutputStream fos = new FileOutputStream(new File(engineDir, filePath.toString()))){
-						FileDownloader downloader = new FileDownloader(rbc, fos);
-						downloader.call(parentThread);
-				} catch (IOException e) {
-					conn.disconnect();
-					String msg = "The link for the file: " + filePath.getFileName() + " is broken." + System.lineSeparator() 
-								+ "JDLL will continue with the download but the model might be "
-								+ "downloaded incorrectly. The link is '" + jar + "'.";
-					new IOException(msg, e).printStackTrace();
-				}
-				conn.disconnect();
-			} catch (IOException e) {
-				new IOException("The following URL is wrong: " + jar, e).printStackTrace();
-			}
+		List<URL> urls = new ArrayList<URL>();
+		for (String jj : engine.getJars()) {
+			urls.add(new URL(jj));
 		}
+		MultiFileDownloader mfd = new MultiFileDownloader(urls, new File(folder), Thread.currentThread());
+
+		if (consumer == null)
+			mfd.setPartialProgressConsumer(consumer);
+		
+		mfd.download();
 	}
 	
 	/**
@@ -1266,11 +1138,12 @@ public class EngineInstall {
 	 * @param gpu
 	 * 	whether the engine supports gpu or not
 	 * @return true if the installation was successful and false otherwise
-	 * @throws IOException if tehre is any error downloading the engine
-	 * @throws InterruptedException if the main thread is interrumped abruptly while downloading
+	 * @throws IOException if there is any error downloading the engine
+	 * @throws InterruptedException if the main thread is interrupted abruptly while downloading
+	 * @throws ExecutionException if there is any error in the download
 	 */
-	public static  boolean installEngineWithArgs(String framework, String version, boolean cpu, boolean gpu) throws IOException, InterruptedException {
-		return installEngineWithArgsInDir(framework, version, cpu, gpu, ENGINES_DIR, null);
+	public static void installEngineWithArgs(String framework, String version, boolean cpu, boolean gpu) throws IOException, InterruptedException, ExecutionException {
+		installEngineWithArgsInDir(framework, version, cpu, gpu, ENGINES_DIR, null);
 	}
 	
 	/**
@@ -1290,10 +1163,11 @@ public class EngineInstall {
 	 * @return true if the installation was successful and false otherwise
 	 * @throws IOException if tehre is any error downloading the engine
 	 * @throws InterruptedException if the main thread is interrumped abruptly while downloading
+	 * @throws ExecutionException if there is any error in the download
 	 */
-	public static  boolean installEngineWithArgsInDir(String framework, String version, 
-			boolean cpu, boolean gpu, String dir) throws IOException, InterruptedException {
-		return installEngineWithArgsInDir(framework, version, cpu, gpu, dir, null);
+	public static void installEngineWithArgsInDir(String framework, String version, 
+			boolean cpu, boolean gpu, String dir) throws IOException, InterruptedException, ExecutionException {
+		installEngineWithArgsInDir(framework, version, cpu, gpu, dir, null);
 	}
 	
 	/**
@@ -1313,10 +1187,11 @@ public class EngineInstall {
 	 * @return true if the installation was successful and false otherwise
 	 * @throws IOException if tehre is any error downloading the engine
 	 * @throws InterruptedException if the main thread is interrumped abruptly while downloading
+	 * @throws ExecutionException if there is any error in the download
 	 */
-	public static  boolean installEngineWithArgs(String framework, String version, 
-			boolean cpu, boolean gpu, DownloadTracker.TwoParameterConsumer<String, Double> consumer) throws IOException, InterruptedException {
-		return installEngineWithArgsInDir(framework, version, cpu, gpu, ENGINES_DIR, consumer);
+	public static void installEngineWithArgs(String framework, String version, 
+			boolean cpu, boolean gpu, Consumer<Double> consumer) throws IOException, InterruptedException, ExecutionException {
+		installEngineWithArgsInDir(framework, version, cpu, gpu, ENGINES_DIR, consumer);
 	}
 	
 	/**
@@ -1333,13 +1208,13 @@ public class EngineInstall {
 	 * 	folder where the engine will be installed
 	 * @param consumer
 	 * 	consumer used to communicate the progress made donwloading files
-	 * @return true if the installation was successful and false otherwise
 	 * @throws IOException if tehre is any error downloading the engine
 	 * @throws InterruptedException if the main thread is interrumped abruptly while downloading
+	 * @throws ExecutionException if there is any error in the download
 	 */
-	public static  boolean installEngineWithArgsInDir(String framework, String version, 
+	public static void installEngineWithArgsInDir(String framework, String version, 
 			boolean cpu, boolean gpu, String dir,
-			DownloadTracker.TwoParameterConsumer<String, Double> consumer) throws IOException, InterruptedException {
+			Consumer<Double> consumer) throws IOException, InterruptedException, ExecutionException {
 		if (AvailableEngines.bioimageioToModelRunnerKeysMap().get(framework) != null)
 			framework = AvailableEngines.bioimageioToModelRunnerKeysMap().get(framework);
 		DeepLearningVersion engine = AvailableEngines.filterByFrameworkForOS(framework)
@@ -1353,7 +1228,7 @@ public class EngineInstall {
 					+ "version=" + version + " " 
 					+ "cpu=" + cpu + " " 
 					+ "gpu=" + gpu);
-		return installEngineInDir(engine, dir, consumer);
+		installEngineInDir(engine, dir, consumer);
 	}
     
     /**
@@ -1390,38 +1265,4 @@ public class EngineInstall {
 			return false;
 		return true;
     }
-	
-    /**
-     * Get file size of the file located in the given url
-     * @param url
-     * 		url of interest
-     * @return the size of the file at the url or -1 if there is any error
-     */
-	public static long getFileSize(URL url) {
-		long totSize = -1;
-		HttpURLConnection conn = null;
-		try {
-			conn = (HttpURLConnection) url.openConnection();
-			conn.setRequestMethod("HEAD");
-			totSize = conn.getContentLengthLong();
-		} catch (IOException e) {
-		}
-		return totSize;
-	}
-	
-    /**
-     * Get file size of the file located in the given url
-     * @param strUrl
-     * 		url of interest as a String 
-     * @return the size of the file at the url or -1 if there is any error
-     */
-	public long getFileSize(String strUrl) {
-		long totSize = -1;
-		try {
-			URL url = new URL(strUrl);
-			totSize = getFileSize(url);
-		} catch (IOException e) {
-		}
-		return totSize;
-	}
 }
