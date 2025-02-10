@@ -50,6 +50,7 @@ import javax.net.ssl.X509TrustManager;
 
 import io.bioimage.modelrunner.utils.CommonUtils;
 import io.bioimage.modelrunner.utils.Constants;
+import io.bioimage.modelrunner.versionmanagement.JarInfo;
 
 public class FileDownloader {
 	
@@ -97,7 +98,16 @@ public class FileDownloader {
 	public long getOnlineFileSize() {
 		if (fileSize != null)
 			return fileSize;
-		return getFileSize(website);
+		try {
+			JarInfo jarInfo = JarInfo.getInstance();
+			if (jarInfo.get(website.toString()) != null) {
+				fileSize = jarInfo.get(website.toString()).longValue();
+				return fileSize;
+			}
+		} catch (IOException e) {
+		}
+		fileSize = getFileSize(website);
+		return fileSize;
 	}
 	
 	public long getSizeDownloaded() {
