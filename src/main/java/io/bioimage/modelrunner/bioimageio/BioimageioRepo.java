@@ -35,6 +35,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.concurrent.ExecutionException;
 import java.util.Map.Entry;
 import java.util.function.Consumer;
 
@@ -498,36 +499,14 @@ public class BioimageioRepo {
 	 * @throws InterruptedException	if the download or tracking threads are interrupted abruptly
 	 */
 	public static String downloadModel(ModelDescriptor descriptor, String modelsDirectory, 
-			DownloadTracker.TwoParameterConsumer<String, Double> consumer) throws IOException, InterruptedException {
+			Consumer<Double> consumer) throws IOException, InterruptedException {
 		DownloadModel dm = DownloadModel.build(descriptor, modelsDirectory);
-		Thread downloadThread = new Thread(() -> {
-			try {
-				dm.downloadModel();
-			} catch (IOException | InterruptedException e) {
-				e.printStackTrace();
-			}
-        });
-		if (consumer == null)
-			consumer = DownloadTracker.createConsumerProgress();
-		DownloadTracker mdt = DownloadTracker.getBMZModelDownloadTracker(consumer, dm, downloadThread);
-		downloadThread.start();
-		Thread trackerThread = new Thread(() -> {
-            try {
-				mdt.track();
-			} catch (IOException | InterruptedException e) {
-				e.printStackTrace();
-			} catch (NumberFormatException ex) {
-			}
-        });
-		trackerThread.start();
-		try { DownloadTracker.printProgress(downloadThread, consumer); } 
-		catch (InterruptedException ex) { throw new InterruptedException("Model download interrupted."); }
-		
-		List<String> badDownloads = mdt.findMissingDownloads();
-		
-		if (badDownloads.size() > 0 && Thread.currentThread().isAlive())
-			throw new IOException("The following files of model '" + descriptor.getName()
-			+ "' were downloaded incorrectly: " + badDownloads.toString());
+		dm.setProgressConsumer(consumer);
+		try {
+			dm.downloadModel();
+		} catch ( ExecutionException e) {
+			throw new RuntimeException(e);
+		}
 		return dm.getModelFolder();
 	}
 	
@@ -581,7 +560,7 @@ public class BioimageioRepo {
 	 * @throws InterruptedException	if the download or tracking threads are interrupted abruptly
 	 */
 	public String downloadModelByID(String id, String modelsDirectory, 
-			DownloadTracker.TwoParameterConsumer<String, Double> consumer) throws IOException, InterruptedException {
+			Consumer<Double> consumer) throws IOException, InterruptedException {
 		ModelDescriptor model = selectByID(id);
 		if (model == null)
 			throw new IllegalArgumentException("The provided id does not correspond "
@@ -639,7 +618,7 @@ public class BioimageioRepo {
 	 * @throws InterruptedException	if the download or tracking threads are interrupted abruptly
 	 */
 	public String downloadByName(String name, String modelsDirectory, 
-			DownloadTracker.TwoParameterConsumer<String, Double> consumer) throws IOException, InterruptedException {
+			Consumer<Double> consumer) throws IOException, InterruptedException {
 		ModelDescriptor model = selectByName(name);
 		if (model == null)
 			throw new IllegalArgumentException("The provided name does not correspond "

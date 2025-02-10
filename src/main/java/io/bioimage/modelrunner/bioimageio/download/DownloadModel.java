@@ -20,44 +20,29 @@
 package io.bioimage.modelrunner.bioimageio.download;
 
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
-import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
-import java.net.URI;
-import java.net.URISyntaxException;
 import java.net.URL;
-import java.nio.channels.Channels;
-import java.nio.channels.ReadableByteChannel;
-import java.security.KeyManagementException;
-import java.security.NoSuchAlgorithmException;
-import java.security.cert.X509Certificate;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Calendar;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ExecutionException;
 import java.util.function.Consumer;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 
 import io.bioimage.modelrunner.bioimageio.description.ModelDescriptor;
 import io.bioimage.modelrunner.bioimageio.description.weights.ModelWeight;
 import io.bioimage.modelrunner.bioimageio.description.weights.WeightFormat;
 import io.bioimage.modelrunner.download.FileDownloader;
+import io.bioimage.modelrunner.download.MultiFileDownloader;
 import io.bioimage.modelrunner.engine.EngineInfo;
-import io.bioimage.modelrunner.utils.CommonUtils;
 import io.bioimage.modelrunner.utils.Constants;
 import io.bioimage.modelrunner.utils.ZipUtils;
-
-import javax.net.ssl.HttpsURLConnection;
-import javax.net.ssl.SSLContext;
-import javax.net.ssl.TrustManager;
-import javax.net.ssl.X509TrustManager;
 
 /**
  * TODO get rid of consumer here and at DownloadTracker (trackstring)
@@ -86,7 +71,7 @@ public class DownloadModel {
     /**
      * Consumer used to send info about the download to other threads
      */
-    private Consumer<String> consumer;
+    private Consumer<Double> consumer;
     /**
      * String that logs the file that it is being downloaded at the current moment
      */
@@ -104,10 +89,6 @@ public class DownloadModel {
      * if they are stored in a zip
      */
     private Consumer<Double> unzippingConsumer;
-    /**
-     * The thread that has called the download method
-     */
-    private Thread parentThread;
     /**
      * String that announces that certain file is just begining to be downloaded
      */
@@ -169,12 +150,8 @@ public class DownloadModel {
 	 */
 	private DownloadModel(ModelDescriptor descriptor, String modelsDir) {
 		this.descriptor = descriptor;
-		this.parentThread = Thread.currentThread();
 		String fname = addTimeStampToFileName(descriptor.getName(), true);
 		this.modelsDir = modelsDir + File.separator + getValidFileName(fname);
-		this.consumer = (String b) -> {
-    		progressString += b;
-    		};
     	this.unzippingConsumer = new Consumer<Double>() {
     		@Override
             public void accept(Double d) {
@@ -182,6 +159,10 @@ public class DownloadModel {
             }
         };
 		retriveDownloadModelLinks();
+	}
+	
+	public void setProgressConsumer(Consumer<Double> consumer) {
+		this.consumer = consumer;
 	}
 	
 	/**
@@ -487,26 +468,33 @@ public class DownloadModel {
 	 * the model folder into a created folder inside the models repo
 	 * @throws IOException if there is any error creating the folder or downloading the files
 	 * @throws InterruptedException if the thread was stopped by the user
+	 * @throws ExecutionException if anything in the download goes wrong
 	 */
-	public void downloadModel() throws IOException, InterruptedException {
+	public void downloadModel() throws IOException, InterruptedException, ExecutionException {
+		downloadModel(Thread.currentThread());
+	}
+	
+	/**
+	 * Download a model downloading one by one all the files that should be inside
+	 * the model folder into a created folder inside the models repo
+	 * @throws IOException if there is any error creating the folder or downloading the files
+	 * @throws InterruptedException if the thread was stopped by the user
+	 * @throws ExecutionException if anything in the download goes wrong
+	 */
+	public void downloadModel(Thread parentThread) throws IOException, InterruptedException, ExecutionException {
 		File folder = new File(modelsDir);
 		if (!folder.isDirectory() && !folder.mkdirs())
 			throw new IOException("The provided directory where the model is going to "
 					+ "be downloaded does not exist and cannot be created ->" + modelsDir);
-		for (int i = 0; i < getListOfLinks().size(); i ++) {
-        	if (!Thread.currentThread().isAlive() || !this.parentThread.isAlive()) {
-                throw new InterruptedException("Interrupted before downloading the remaining files: "
-            		+ Arrays.toString(IntStream.range(i, getListOfLinks().size())
-            									.mapToObj(j -> getListOfLinks().get(j)).toArray()));
-        	}
-			String item = getListOfLinks().get(i);
-			String fileName = FileDownloader.getFileNameFromURLString(item);
-			downloadFileFromInternet(item, new File(modelsDir, fileName));
-		}
+		List<URL> urls = new ArrayList<URL>();
+		for (String link : getListOfLinks()) 
+			urls.add(new URL(link));
+		MultiFileDownloader mfd = new MultiFileDownloader(urls, folder, parentThread);
+		mfd.setPartialProgressConsumer(consumer);
+		mfd.download();
 		
 		if (unzip)
 			unzipTfWeights();
-		consumer.accept(FINISH_STR);
 	}
 	
 	/**

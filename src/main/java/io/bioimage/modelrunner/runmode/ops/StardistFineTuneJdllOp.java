@@ -23,8 +23,6 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.net.MalformedURLException;
-import java.net.URL;
-import java.nio.channels.Channels;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.file.Files;
 import java.nio.file.Paths;
@@ -34,12 +32,12 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.concurrent.ExecutionException;
 
 import io.bioimage.modelrunner.bioimageio.BioimageioRepo;
 import io.bioimage.modelrunner.bioimageio.description.ModelDescriptor;
 import io.bioimage.modelrunner.bioimageio.description.ModelDescriptorFactory;
 import io.bioimage.modelrunner.bioimageio.description.exceptions.ModelSpecsException;
-import io.bioimage.modelrunner.bioimageio.download.DownloadModel;
 import io.bioimage.modelrunner.download.FileDownloader;
 import io.bioimage.modelrunner.runmode.RunMode;
 import io.bioimage.modelrunner.tensor.Tensor;
@@ -811,14 +809,9 @@ public class StardistFineTuneJdllOp implements OpInterface {
 		FileOutputStream fos = null;
 		ReadableByteChannel rbc = null;
 		try {
-			URL website = new URL(downloadURL);
-			rbc = Channels.newChannel(website.openStream());
-			// Create the new model file as a zip
-			fos = new FileOutputStream(targetFile);
-			// Send the correct parameters to the progress screen
-			FileDownloader downloader = new FileDownloader(rbc, fos);
-			downloader.call();
-		} catch (IOException e) {
+			FileDownloader downloader = new FileDownloader(downloadURL, targetFile);
+			downloader.download();
+		} catch (IOException | ExecutionException e) {
 			String msg = "The link for the file: " + targetFile.getName() + " is broken.";
 			new IOException(msg, e).printStackTrace();
 		} finally {
