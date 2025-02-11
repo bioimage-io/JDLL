@@ -40,12 +40,11 @@ public class ModelDescriptorV05 extends ModelDescriptor
     {
     	this.yamlElements = yamlElements;
     	buildModelDescription();
-        if (modelID == null) {
+        if (modelID == null) 
         	modelID = findID();
         if (modelID.length() - modelID.replace("/", "").length() >= 2 
 				&& modelID.substring(modelID.indexOf("/") + 1).indexOf("/") - modelID.indexOf("/") > 2 )
         	modelID = modelID.substring(0, modelID.indexOf("/") + modelID.substring(modelID.indexOf("/") + 1).indexOf("/") + 1);
-        }
     }
 
 	@Override
