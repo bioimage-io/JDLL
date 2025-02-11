@@ -122,13 +122,14 @@ public class MultiFileDownloader {
     }
 	
 	private void finalProgress() {
-        long total = 0;
+        AtomicLong total = new AtomicLong(0);
         for (FileDownloader fd : this.downloaders)
-        	total += fd.getSizeDownloaded();
+        	total.addAndGet(fd.getSizeDownloaded());
         if (totalProgress != null)
-        	this.totalProgress.accept(total);
+        	this.totalProgress.accept(total.get());
         if (partialProgress != null)
-        	this.partialProgress.accept(total / (double) this.totalSize);
+        	this.partialProgress.accept(total.get() / (double) this.totalSize);
+        progressSize = total;
 	}
 
     private void monitorTotalProgress(List<Future<Void>> downloadFutures) {
@@ -136,13 +137,13 @@ public class MultiFileDownloader {
             downloadFutures.stream().forEach(fut -> fut.cancel(true));
             return;
         }
-        long total = 0;
+        AtomicLong total = new AtomicLong(0);
         for (FileDownloader fd : this.downloaders)
-        	total += fd.getSizeDownloaded();
+        	total.addAndGet(fd.getSizeDownloaded());
         if (totalProgress != null)
-        	this.totalProgress.accept(total);
+        	this.totalProgress.accept(total.get());
         if (partialProgress != null)
-        	this.partialProgress.accept(total / (double) this.totalSize);
-        progressSize.set(total);
+        	this.partialProgress.accept(total.get() / (double) this.totalSize);
+        progressSize = total;
     }
 }

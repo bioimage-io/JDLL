@@ -543,6 +543,7 @@ public class EngineInstall {
 				e.printStackTrace();
 			}
 		}
+		consumerLong.accept(0L);
 		List<String> keys = missingEngineFolders.keySet().stream().collect(Collectors.toList());
 		for (int i = 0; i < installedArr.size(); i ++) {
 			if (!installedArr.get(i))
