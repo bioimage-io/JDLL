@@ -74,6 +74,14 @@ public class MultiFileDownloader {
 		this.totalSize = size;
 	}
 	
+	public File getFolder() {
+		return this.folder;
+	}
+	
+	public long getTotalSize() {
+		return this.totalSize;
+	}
+	
 	public long getDownloadedBytes() {
 		return this.progressSize.get();
 	}

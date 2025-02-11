@@ -22,6 +22,7 @@ package io.bioimage.modelrunner.engine.installation;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -38,14 +39,12 @@ import io.bioimage.modelrunner.bioimageio.description.ModelDescriptor;
 import io.bioimage.modelrunner.bioimageio.description.ModelDescriptorFactory;
 import io.bioimage.modelrunner.bioimageio.description.exceptions.ModelSpecsException;
 import io.bioimage.modelrunner.bioimageio.description.weights.WeightFormat;
-import io.bioimage.modelrunner.download.FileDownloader;
 import io.bioimage.modelrunner.download.MultiFileDownloader;
 import io.bioimage.modelrunner.engine.EngineInfo;
 import io.bioimage.modelrunner.system.PlatformDetection;
 import io.bioimage.modelrunner.versionmanagement.AvailableEngines;
 import io.bioimage.modelrunner.versionmanagement.DeepLearningVersion;
 import io.bioimage.modelrunner.versionmanagement.InstalledEngines;
-import io.bioimage.modelrunner.versionmanagement.JarInfo;
 
 /**
  * Class that manages the dl-modelrunner engines.
@@ -55,6 +54,14 @@ import io.bioimage.modelrunner.versionmanagement.JarInfo;
  * This class also contains the methods to install engines on demand.
  * @author Carlos Garcia Lopez de Haro, Ivan Estevez Albuja and Caterina Fuster Barcelo
  *
+ *
+ *
+ * TODO rethink this class, remove methods and how to communicate progress
+ * TODO rethink this class, remove methods and how to communicate progress
+ * TODO rethink this class, remove methods and how to communicate progress
+ * TODO rethink this class, remove methods and how to communicate progress
+ * TODO rethink this class, remove methods and how to communicate progress
+ * TODO rethink this class, remove methods and how to communicate progress
  */
 public class EngineInstall {
 	/**
@@ -138,6 +145,10 @@ public class EngineInstall {
 	private boolean readJSon = false;
 	
 	private Consumer<Double> consumer;
+	
+	private Consumer<String> strConsumer;
+	
+	private long downloaded = 0;
 	
 	/**
 	 * Constructor that checks whether the minimum engines are installed
@@ -236,6 +247,10 @@ public class EngineInstall {
 		this.consumer = consumer;
 	}
 	
+	public void setEngineInstalledConsumer(Consumer<String> strConsumer) {
+		this.strConsumer = strConsumer;
+	}
+	
 	/**
 	 * Checks if the minimal required engines to execute the majority of models
 	 * are installed.
@@ -294,8 +309,9 @@ public class EngineInstall {
 	 * 
 	 * If the thread where the installation is happening stops, the method exits without throwing
 	 * an exception.
+	 * @throws InterruptedException if the rhread that launched the download is stopped
 	 */
-	public void basicEngineInstallation() {
+	public void basicEngineInstallation() throws InterruptedException {
 		if (!this.everythingInstalled)
 			manageMissingEngines();
 		isManagementFinished = true;
@@ -465,8 +481,9 @@ public class EngineInstall {
 	 * 
 	 * If the thread where the installation is happening stops, the method exits without throwing
 	 * an exception.
+	 * @throws InterruptedException if the thread that launched the download is interrupted
 	 */
-	private void manageMissingEngines() {
+	private void manageMissingEngines() throws InterruptedException {
 		if (missingEngineFolders == null)
 			checkEnginesInstalled();
 		if (missingEngineFolders.entrySet().size() == 0)
@@ -489,27 +506,42 @@ public class EngineInstall {
 	 * Install the missing engines from scratch.
 	 * If the thread where the installation is happening stops, the method exits without throwing
 	 * an exception.
+	 * @throws InterruptedException if the thread that launched the download is interrupted
 	 */
-	private void installMissingBasicEngines() {
+	private void installMissingBasicEngines() throws InterruptedException {
 		if (missingEngineFolders == null)
 			checkEnginesInstalled();
 		if (missingEngineFolders.entrySet().size() == 0)
 			return;
-		try {
-			getBasicDownloadTotalSize();
-		} catch (InterruptedException e) {
-			return;
-		}
-		List<Boolean> installedArr = new ArrayList<Boolean>();
+		List<MultiFileDownloader> mfdList = new ArrayList<MultiFileDownloader>();
 		for (Entry<String, String> v : missingEngineFolders.entrySet()) {
-			boolean installed = false;
 			try {
-				installed = installEngineByCompleteName(v.getValue(), consumer);
-			} catch (IOException | ExecutionException e) {
-			} catch (InterruptedException e) {
-				return;
+				DeepLearningVersion dlv = DeepLearningVersion.fromFile(new File(v.getValue()));
+				mfdList.add(getDownloaderForEngine(dlv, new File(v.getValue()).getParentFile().getAbsolutePath()));
+			} catch (IllegalStateException | IOException e) {
+				mfdList.add(null);
 			}
-			installedArr.add(installed);
+		}
+		long totalSize = mfdList.stream().mapToLong(m -> m == null ? 0 : m.getTotalSize()).sum();
+		List<Boolean> installedArr = new ArrayList<Boolean>();
+		downloaded = 0;
+		Consumer<Long> consumerLong = (l) -> {
+			consumer.accept( (l + downloaded) / (double) totalSize);
+		};
+		for (MultiFileDownloader mfd : mfdList) {
+			if (mfd == null) {
+				installedArr.add(false);
+				continue;
+			}
+			strConsumer.accept(mfd.getFolder().getName());
+			mfd.setTotalProgressConsumer(consumerLong);
+			try {
+				mfd.download();
+				downloaded += mfd.getDownloadedBytes();
+				installedArr.add(true);
+			} catch (ExecutionException e) {
+				e.printStackTrace();
+			}
 		}
 		List<String> keys = missingEngineFolders.keySet().stream().collect(Collectors.toList());
 		for (int i = 0; i < installedArr.size(); i ++) {
@@ -519,31 +551,16 @@ public class EngineInstall {
 		}
 	}
 	
-	/**
-	 * 
-	 * @return the total numebr of bytes to be downloaded in the basic installation. This also prepares the 
-	 * download tracker by setting the number of bytes per file
-	 * @throws InterruptedException if the thread where this method is being run is interrupted
-	 */
-	public long getBasicDownloadTotalSize() throws InterruptedException {
-		long totalSize = 0;
-		for (Entry<String, String> ee : missingEngineFolders.entrySet()) {
+	private MultiFileDownloader getDownloaderForEngine(DeepLearningVersion dlv, String dir) {
+		dir += File.separator + dlv.folderName();
+		List<URL> urls = new ArrayList<URL>();
+		for (String str : dlv.getJars()) {
 			try {
-				JarInfo jarInfo = JarInfo.getInstance();
-				long engineSize = 0;
-				DeepLearningVersion dlVersion = DeepLearningVersion.fromFile(new File(ee.getValue()));
-				for (String link : dlVersion.getJars()) {
-					if (Thread.currentThread().isInterrupted())
-						throw new InterruptedException("Retrieval of download size interrupted.");
-					long val = jarInfo.get(link) != null ? jarInfo.get(link) : FileDownloader.getFileSize(new URL(link));
-					engineSize += val;
-				}
-				totalSize += engineSize;
-			} catch (IllegalStateException | IOException e) {
-				continue;
+				urls.add(new URL(str));
+			} catch (MalformedURLException e) {
 			}
 		}
-		return totalSize;
+		return new MultiFileDownloader(urls, new File(dir), Thread.currentThread());
 	}
 	
 	/**

@@ -27,6 +27,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import io.bioimage.modelrunner.bioimageio.download.DownloadModel;
+import io.bioimage.modelrunner.download.FileDownloader;
 import io.bioimage.modelrunner.utils.Constants;
 
 
@@ -314,7 +315,7 @@ public class DeepLearningVersion
     public List<String> getJarsFileNames() {
     	return jars.stream().map(jar -> {
 			try {
-				return DownloadModel.getFileNameFromURLString(jar);
+				return FileDownloader.getFileNameFromURLString(jar);
 			} catch (MalformedURLException e) {
 				return jar;
 			}
