@@ -42,6 +42,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.function.Consumer;
 
 import javax.net.ssl.HttpsURLConnection;
 import javax.net.ssl.SSLContext;
@@ -71,6 +72,18 @@ public class FileDownloader {
     private long already = 0;
     
     private boolean complete = false;
+	
+	private Consumer<Long> totalProgress;
+	
+	private Consumer<Double> partialProgress;
+	
+	public void setTotalProgressConsumer(Consumer<Long> totalProgress) {
+		this.totalProgress = totalProgress;
+	}
+	
+	public void setPartialProgressConsumer(Consumer<Double> partialProgress) {
+		this.partialProgress = partialProgress;
+	}
 	
 	private static final long CHUNK_SIZE = 1024 * 1024 * 5;
 
@@ -194,8 +207,14 @@ public class FileDownloader {
                 downloadFuture.cancel(true);
                 return;
             }
+    		long totalPro = file.length();
+    		double partialPro = totalPro / (double) this.fileSize;
             if (printProgress)
-            	System.out.println(getStringToPrintProgress(file.getName(), file.length() / (double) this.fileSize));
+            	System.out.println(getStringToPrintProgress(file.getName(), partialPro));
+            if (totalProgress != null)
+            	this.totalProgress.accept(totalPro);
+            if (partialProgress != null)
+            	this.partialProgress.accept(partialPro);
         };
 
         monitorExecutor.scheduleAtFixedRate(
@@ -213,8 +232,18 @@ public class FileDownloader {
             downloadExecutor.shutdownNow();
             monitorExecutor.shutdownNow();
         }
+        finalProgress();
+	}
+	
+	private void finalProgress() {
+		long totalPro = file.length();
+		double partialPro = totalPro / (double) this.fileSize;
         if (printProgress)
-        	System.out.println(getStringToPrintProgress(file.getName(), file.length() / (double) this.fileSize));
+        	System.out.println(getStringToPrintProgress(file.getName(), partialPro));
+        if (totalProgress != null)
+        	this.totalProgress.accept(totalPro);
+        if (partialProgress != null)
+        	this.partialProgress.accept(partialPro);
 	}
 	
 	/**
