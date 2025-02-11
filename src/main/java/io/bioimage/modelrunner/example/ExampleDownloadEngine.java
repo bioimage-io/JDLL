@@ -22,8 +22,9 @@ package io.bioimage.modelrunner.example;
 import java.io.File;
 import java.io.IOException;
 import java.util.List;
+import java.util.concurrent.ExecutionException;
+import java.util.function.Consumer;
 
-import io.bioimage.modelrunner.bioimageio.download.DownloadTracker;
 import io.bioimage.modelrunner.bioimageio.download.DownloadTracker.TwoParameterConsumer;
 import io.bioimage.modelrunner.engine.installation.EngineInstall;
 import io.bioimage.modelrunner.versionmanagement.AvailableEngines;
@@ -78,16 +79,19 @@ public class ExampleDownloadEngine {
 		// This consumer contains a LinkedHashMap that where the keys
 		// correspond to the file being downloaded and the value corresponds
 		// to the fraction of file that has already been downloaded.
-		TwoParameterConsumer<String, Double> consumer = DownloadTracker.createConsumerProgress();
+		Consumer<Double> consumer = (c) -> {System.out.println("TOTAL PROGRESS OF THE DOWNLOAD: " + c);};
 		// Download the engines in the wanted dir that are needed to run the model
 		// defined by the model ID.
 		// This method prints information about the total progress of the download and of the 
 		// particular files being downloaded on the terminal.
+		System.out.println("start");
 		EngineInstall.installEnginesForModelByIDInDir(MODEL_ID, ENGINES_DIR, consumer);
 		// Another option is to launch the download in a separate thread 
 		// and wait for it to end while tracking the progress using the consumer
+		System.out.println("start thread");
 		Thread downloadThread = new Thread(() -> {
 			try {
+				Thread.sleep(5000);
 				// In this case, the engine downloaded is defined independently from any model
 				String engine = "tensorflow";
 				String version = "2.7.0";
@@ -98,20 +102,12 @@ public class ExampleDownloadEngine {
 				if (dlv.size() == 0)
 					throw new IOException("Engine defined is not supported by JDLL.");
 				EngineInstall.installEngineInDir(dlv.get(0), ENGINES_DIR, consumer);
-			} catch (IOException | InterruptedException e) {
+			} catch (IOException | InterruptedException | ExecutionException e) {
 				// If one of the files to be downloaded is corrupted or the download thread 
 				// is stopped abruptly
 				e.printStackTrace();
 			}
         });
 		downloadThread.start();
-		
-		// Track the engine download
-		while (downloadThread.isAlive()) {
-			Thread.sleep(1000);
-			// GEt the total progress of the download
-			Double totalProgress = consumer.get().get(DownloadTracker.TOTAL_PROGRESS_KEY);
-			System.out.println("TOTAL PROGRESS OF THE DOWNLOAD: " + totalProgress);
-		}
 	}
 }

@@ -1136,7 +1136,7 @@ public class EngineInstall {
 		}
 		MultiFileDownloader mfd = new MultiFileDownloader(urls, new File(folder), Thread.currentThread());
 
-		if (consumer == null)
+		if (consumer != null)
 			mfd.setPartialProgressConsumer(consumer);
 		
 		mfd.download();

@@ -40,7 +40,7 @@ public class MultiFileDownloader {
 	private final List<FileDownloader> downloaders;
 	private final Thread thread;
 	private final long totalSize;
-	private AtomicLong progressSize;
+	private AtomicLong progressSize = new AtomicLong(0);
 	
 	private Consumer<Long> totalProgress;
 	
@@ -108,7 +108,7 @@ public class MultiFileDownloader {
         }
 
         monitorExecutor.scheduleAtFixedRate(
-        		() -> monitorTotalProgress(downloadFutures), 300, 300, TimeUnit.MILLISECONDS);
+        		() -> monitorTotalProgress(downloadFutures), 0, 100, TimeUnit.MILLISECONDS);
 
         // Wait for all download tasks to complete
         try {
@@ -118,7 +118,18 @@ public class MultiFileDownloader {
             downloadExecutor.shutdown();
             monitorExecutor.shutdown();
         }
+        finalProgress();
     }
+	
+	private void finalProgress() {
+        long total = 0;
+        for (FileDownloader fd : this.downloaders)
+        	total += fd.getSizeDownloaded();
+        if (totalProgress != null)
+        	this.totalProgress.accept(total);
+        if (partialProgress != null)
+        	this.partialProgress.accept(total / (double) this.totalSize);
+	}
 
     private void monitorTotalProgress(List<Future<Void>> downloadFutures) {
         if (!this.thread.isAlive()) {

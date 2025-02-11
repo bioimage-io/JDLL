@@ -64,7 +64,7 @@ public class FileDownloader {
 	
 	private Long fileSize;
 	
-	private AtomicLong sizeDownloaded;
+	private AtomicLong sizeDownloaded = new AtomicLong(0);
 	
     private int lost_conn = 0;
 	
@@ -76,7 +76,7 @@ public class FileDownloader {
 
 	private static final int STALL_THRES = 10000;
 
-	private static final int PROGRESS_INTER = 10000;
+	private static final int PROGRESS_INTER = 1000;
 	
 	private static final int MAX_RETRIES = 3;
 	
@@ -194,13 +194,14 @@ public class FileDownloader {
                 downloadFuture.cancel(true);
                 return;
             }
-            System.out.println(getStringToPrintProgress(file.getName(), file.length() / (double) this.fileSize));
+            if (printProgress)
+            	System.out.println(getStringToPrintProgress(file.getName(), file.length() / (double) this.fileSize));
         };
 
         monitorExecutor.scheduleAtFixedRate(
                 stallDetectionTask, STALL_THRES, STALL_THRES, TimeUnit.MILLISECONDS);
         monitorExecutor.scheduleAtFixedRate(
-                progressPrintTask, PROGRESS_INTER, PROGRESS_INTER, TimeUnit.MILLISECONDS);
+                progressPrintTask, 0, PROGRESS_INTER, TimeUnit.MILLISECONDS);
 
         try {
             // Wait for the download task to complete.
@@ -212,6 +213,8 @@ public class FileDownloader {
             downloadExecutor.shutdownNow();
             monitorExecutor.shutdownNow();
         }
+        if (printProgress)
+        	System.out.println(getStringToPrintProgress(file.getName(), file.length() / (double) this.fileSize));
 	}
 	
 	/**

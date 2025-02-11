@@ -21,10 +21,9 @@ package io.bioimage.modelrunner.example;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.function.Consumer;
 
 import io.bioimage.modelrunner.bioimageio.BioimageioRepo;
-import io.bioimage.modelrunner.bioimageio.download.DownloadTracker;
-import io.bioimage.modelrunner.bioimageio.download.DownloadTracker.TwoParameterConsumer;
 
 /**
  * Class that provides an example on how to download a model using JDLL.
@@ -74,7 +73,7 @@ public class ExampleDownloadModel {
 		// This consumer contains a LinkedHashMap that where the keys
 		// correspond to the file being downloaded and the value corresponds
 		// to the fraction of file that has already been downloaded.
-		TwoParameterConsumer<String, Double> consumer = DownloadTracker.createConsumerProgress();
+		Consumer<Double> consumer = (c) -> {System.out.println("TOTAL PROGRESS OF THE DOWNLOAD: " + c);};
 		// Download the model using the ID, regard that we can also download the model
 		// using its gieven name, the model descriptor or the url to its rdf.yaml file.
 		// The download of the model prints some information about the download in the terminal.
@@ -93,12 +92,5 @@ public class ExampleDownloadModel {
         });
 		downloadThread.start();
 		
-		// Track the model download
-		while (downloadThread.isAlive()) {
-			Thread.sleep(1000);
-			// GEt the total progress of the download
-			Double totalProgress = consumer.get().get(DownloadTracker.TOTAL_PROGRESS_KEY);
-			System.out.println("TOTAL PROGRESS OF THE DOWNLOAD: " + totalProgress);
-		}
 	}
 }
