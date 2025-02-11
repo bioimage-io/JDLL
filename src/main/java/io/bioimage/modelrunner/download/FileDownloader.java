@@ -53,6 +53,10 @@ import io.bioimage.modelrunner.utils.CommonUtils;
 import io.bioimage.modelrunner.utils.Constants;
 import io.bioimage.modelrunner.versionmanagement.JarInfo;
 
+/**
+ * Class that implements the download of a file and the tracking of the download
+ * @author Carlos Garcia
+ */
 public class FileDownloader {
 	
 	private final URL website;
@@ -77,14 +81,6 @@ public class FileDownloader {
 	
 	private Consumer<Double> partialProgress;
 	
-	public void setTotalProgressConsumer(Consumer<Long> totalProgress) {
-		this.totalProgress = totalProgress;
-	}
-	
-	public void setPartialProgressConsumer(Consumer<Double> partialProgress) {
-		this.partialProgress = partialProgress;
-	}
-	
 	private static final long CHUNK_SIZE = 1024 * 1024 * 5;
 
 	private static final int STALL_THRES = 10000;
@@ -93,21 +89,68 @@ public class FileDownloader {
 	
 	private static final int MAX_RETRIES = 3;
 	
+	/**
+	 * Create an instance of an object that can download the file at the wanted url in the wanted file
+	 * 
+	 * @param url
+	 * 	the url where the file of interest is
+	 * @param file
+	 * 	file into which the contents of the url are going to be copied
+	 * @param printProgress
+	 * 	whether to print to the terminal the progress of the download or not
+	 * @throws MalformedURLException if the provided url is not valid
+	 */
 	public FileDownloader(String url, File file, boolean printProgress) throws MalformedURLException {
 		this.website = new URL(url);
 		this.file = file;
 		this.printProgress = printProgress;
 		this.name = getFileNameFromURLString(url);
 	}
-	
+
+	/**
+	 * Create an instance of an object that can download the file at the wanted url in the wanted file.
+	 * By default the progress of the file download is printed to the terminal.
+	 * 
+	 * @param url
+	 * 	the url where the file of interest is
+	 * @param file
+	 * 	file into which the contents of the url are going to be copied
+	 * @throws MalformedURLException if the provided url is not valid
+	 */
 	public FileDownloader(String url, File file) throws MalformedURLException {
 		this(url, file, true);
 	}
 	
+	/**
+	 * Set a consumer that will receive the number of bytes that have been downloaded
+	 * @param totalProgress
+	 * 	consumer that will receive the number of bytes that have been downloaded
+	 */
+	public void setTotalProgressConsumer(Consumer<Long> totalProgress) {
+		this.totalProgress = totalProgress;
+	}
+	
+	/**
+	 * Set a consumer that will receive the percentage of the bytes out of the total that have been downloaded
+	 * @param totalProgress
+	 * 	consumer that will receive the percentage of the bytes out of the total that have been downloaded
+	 */
+	public void setPartialProgressConsumer(Consumer<Double> partialProgress) {
+		this.partialProgress = partialProgress;
+	}
+	
+	/**
+	 * 
+	 * @return the name of the file at the url
+	 */
 	public String getFileName() {
 		return this.name;
 	}
 	
+	/**
+	 * 
+	 * @return the size in bytes of the object that wants to be downloaded.
+	 */
 	public long getOnlineFileSize() {
 		if (fileSize != null)
 			return fileSize;
@@ -123,10 +166,23 @@ public class FileDownloader {
 		return fileSize;
 	}
 	
+	/**
+	 * 
+	 * @return the amount of bytes that have been downloaded at the moment
+	 */
 	public long getSizeDownloaded() {
 		return this.sizeDownloaded.get();
 	}
 	
+	/**
+	 * Download the file of interest.
+	 * 
+	 * 
+	 * @param parentThread
+	 * 	if not null, whenever this thread is interrupted, the download will stop
+	 * @throws IOException if there is any file related error in the download
+	 * @throws ExecutionException if there is any error with the urls or the conection
+	 */
 	public void download(Thread parentThread) throws IOException, ExecutionException {
 		already = 0;
 		while (lost_conn < MAX_RETRIES && !complete && parentThread.isAlive()) {
@@ -157,19 +213,6 @@ public class FileDownloader {
 				ReadableByteChannel rbc = Channels.newChannel(str);
 				FileOutputStream fos = new FileOutputStream(file, already != 0 ? true : false);
 				){
-			/**
-			 * TODO remove
-			Thread downloadThread = new Thread(() -> {
-				try {
-					call(rbc, fos, parentThread);
-				} catch (IOException e) {
-					e.printStackTrace();
-				}
-			});
-			downloadThread.start();
-			
-			checkDownloadContinues(parentThread, downloadThread);
-			 */
 			performDownload(fos, rbc, parentThread);
 		}
 	}
@@ -245,25 +288,20 @@ public class FileDownloader {
         if (partialProgress != null)
         	this.partialProgress.accept(partialPro);
 	}
-	
+
 	/**
-	 * Download a file without the possibility of interrupting the download
-	 * @throws IOException if there is any error downloading the file from the url
-	 * @throws ExecutionException 
+	 * Download the file of interest.
+	 * The download will stop when the thread that executed this method is interrupted
+	 * or when the download is finished or when it fails
+	 * 
+	 * @throws IOException if there is any file related error in the download
+	 * @throws ExecutionException if there is any error with the urls or the conection
 	 */
 	public void download() throws IOException, ExecutionException  {
 		download(Thread.currentThread());
 	}
 	
-	/**
-	 * Download a file with the possibility of interrupting the download if the parentThread is
-	 * interrupted
-	 * 
-	 * @param parentThread
-	 * 	thread from where the download was launched, it is the reference used to stop the download
-	 * @throws IOException if there is any error downloading the file from the url
-	 */
-	public void call(ReadableByteChannel rbc, FileOutputStream fos) throws IOException {
+	private void call(ReadableByteChannel rbc, FileOutputStream fos) throws IOException {
 		sizeDownloaded.set(already);
         while (true) {
             long transferred = fos.getChannel().transferFrom(rbc, sizeDownloaded.get(), CHUNK_SIZE);
@@ -277,31 +315,6 @@ public class FileDownloader {
             }
         }
     }
-	
-	private void checkDownloadContinues(Thread parentThread, Thread downloadThread) throws IOException {
-		long lastBytesDownloaded = 0;
-        long lastCheckedTime = System.currentTimeMillis();
-        this.getSizeDownloaded();
-        while (parentThread.isAlive() && downloadThread.isAlive()) {
-            try {Thread.sleep(1000);} catch (InterruptedException e) {return;}
-
-        	long totalBytesDownloaded = file.length();
-            if (System.currentTimeMillis() - lastCheckedTime > STALL_THRES) {
-                if (lastBytesDownloaded == totalBytesDownloaded) {
-                	downloadThread.interrupt();
-                    System.err.println("Connection lost. Time number: " + (lost_conn + 1));
-                    already = file.length();
-                	lost_conn ++;
-                    return;
-                }
-                lastBytesDownloaded = totalBytesDownloaded;
-            }
-            if (printProgress)
-            	System.out.println(getStringToPrintProgress(name, lastBytesDownloaded / (double) this.fileSize));
-            lastCheckedTime = System.currentTimeMillis();
-        }
-        complete = true;
-	}
 
 	/**
 	 * Get the size of the file stored in the given URL
@@ -360,17 +373,6 @@ public class FileDownloader {
 		SSLContext sslContext = SSLContext.getInstance( "SSL" );
 		sslContext.init( null, trustAllCerts, new java.security.SecureRandom() );
 		return sslContext;
-	}
-	
-	/**
-	 * Method that downloads the model selected from the internet,
-	 * copies it and unzips it into the models folder
-	 * @param downloadURL
-	 * 	url of the file to be downloaded
-	 * @param targetFile
-	 * 	file where the file from the url will be downloaded too
-	 */
-	public void downloadFileFromInternet(String downloadURL, File targetFile) {
 	}
 	
 	/**

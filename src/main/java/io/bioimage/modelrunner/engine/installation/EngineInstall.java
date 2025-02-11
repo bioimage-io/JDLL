@@ -1068,7 +1068,6 @@ public class EngineInstall {
 	 * Install the engine specified by the {@link DeepLearningVersion} object
 	 * @param engine
 	 * 	the {@link DeepLearningVersion} object specifying the wanted engine
-	 * @return true if the installation was successful and false otherwise
 	 * @throws IOException if there is any error downloading the engine
 	 * @throws InterruptedException if the main thread is interrumpted abruptly while downloading
 	 * @throws ExecutionException if there is any error in the download
@@ -1083,7 +1082,6 @@ public class EngineInstall {
 	 * 	the {@link DeepLearningVersion} object specifying the wanted engine
 	 * @param consumer
 	 * 	consumer used to communicate the progress made donwloading files
-	 * @return true if the installation was successful and false otherwise
 	 * @throws IOException if there is any error downloading the engine
 	 * @throws InterruptedException if the main thread is interrumpted abruptly while downloading
 	 * @throws ExecutionException if there is any error in the download
@@ -1101,7 +1099,6 @@ public class EngineInstall {
 	 * 	directory where the engines are downloaded. Inside the dir specififed the 
 	 * 	corresponding folder for the engine will be created, which will contain the 
 	 * 	files needed to run the engine
-	 * @return true if the installation was successful and false otherwise
 	 * @throws IOException if there is any error downloading the engine
 	 * @throws InterruptedException if the main thread is interrumped abruptly while downloading
 	 * @throws ExecutionException if there is any error in the download
@@ -1155,7 +1152,6 @@ public class EngineInstall {
 	 * 	whether the engine supports cpu or not
 	 * @param gpu
 	 * 	whether the engine supports gpu or not
-	 * @return true if the installation was successful and false otherwise
 	 * @throws IOException if there is any error downloading the engine
 	 * @throws InterruptedException if the main thread is interrupted abruptly while downloading
 	 * @throws ExecutionException if there is any error in the download
@@ -1178,7 +1174,6 @@ public class EngineInstall {
 	 * 	whether the engine supports gpu or not
 	 * @param dir
 	 * 	directory where the engine will be installed
-	 * @return true if the installation was successful and false otherwise
 	 * @throws IOException if tehre is any error downloading the engine
 	 * @throws InterruptedException if the main thread is interrumped abruptly while downloading
 	 * @throws ExecutionException if there is any error in the download
@@ -1202,7 +1197,6 @@ public class EngineInstall {
 	 * 	whether the engine supports gpu or not
 	 * @param consumer
 	 * 	consumer used to communicate the progress made donwloading files
-	 * @return true if the installation was successful and false otherwise
 	 * @throws IOException if tehre is any error downloading the engine
 	 * @throws InterruptedException if the main thread is interrumped abruptly while downloading
 	 * @throws ExecutionException if there is any error in the download

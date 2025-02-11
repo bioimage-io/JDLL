@@ -49,7 +49,6 @@ import com.google.gson.JsonParser;
 import io.bioimage.modelrunner.bioimageio.description.ModelDescriptor;
 import io.bioimage.modelrunner.bioimageio.description.ModelDescriptorFactory;
 import io.bioimage.modelrunner.bioimageio.download.DownloadModel;
-import io.bioimage.modelrunner.bioimageio.download.DownloadTracker;
 import io.bioimage.modelrunner.utils.Constants;
 import io.bioimage.modelrunner.utils.Log;
 
@@ -458,9 +457,7 @@ public class BioimageioRepo {
 	 * Download the model in the Bioimage.io defined by the {@link ModelDescriptor}
 	 * provided as a parameter.
 	 * This method launches one thread for the download of the files of the model and 
-	 * another thread to track the progress download. The thread where this method has
-	 * been launched is just used to print the information about the progress using
-	 * {@link DownloadTracker#printProgress(Thread, io.bioimage.modelrunner.bioimageio.download.DownloadTracker.TwoParameterConsumer)}
+	 * another thread to track the progress download. 
 	 * 
 	 * @param descriptor
 	 * 	the {@link ModelDescriptor} of the model that wants to be downloaded
@@ -481,9 +478,7 @@ public class BioimageioRepo {
 	 * Download the model in the Bioimage.io defined by the {@link ModelDescriptor}
 	 * provided as a parameter.
 	 * This method launches one thread for the download of the files of the model and 
-	 * another thread to track the progress download. The thread where this method has
-	 * been launched is just used to print the information about the progress using
-	 * {@link DownloadTracker#printProgress(Thread, DownloadTracker.TwoParameterConsumer)}
+	 * another thread to track the progress download. 
 	 * 
 	 * @param descriptor
 	 * 	the {@link ModelDescriptor} of the model that wants to be downloaded
@@ -492,8 +487,7 @@ public class BioimageioRepo {
 	 * 	is a folder too. So if the argument provided is "C:\\users\\carlos\\models",
 	 * 	the model path will then be: "C:\\users\\carlos\\models\\model_name_date string""
 	 * @param consumer
-	 * 	a {@link DownloadTracker.TwoParameterConsumer} consumer that ccan be used to track the
-	 * 	download of the individual files that compose the model.
+	 * 	a consumer to track the progress of the model download.
 	 * @return the path to the model that was just installed. 
 	 * @throws IOException	if there is any error downloading the files from the URLs provided
 	 * @throws InterruptedException	if the download or tracking threads are interrupted abruptly
@@ -515,9 +509,7 @@ public class BioimageioRepo {
 	 * rdf.yaml file) corresponds to the first parameter given
 	 * 
 	 * This method launches one thread for the download of the files of the model and 
-	 * another thread to track the progress download. The thread where this method has
-	 * been launched is just used to print the information about the progress using
-	 * {@link DownloadTracker#printProgress(Thread, io.bioimage.modelrunner.bioimageio.download.DownloadTracker.TwoParameterConsumer)}
+	 * another thread to track the progress download. 
 	 * 
 	 * @param id
 	 * 	the id of the model of interest. This is the field 'id' of the model descriptor
@@ -542,9 +534,7 @@ public class BioimageioRepo {
 	 * rdf.yaml file) corresponds to the first parameter given
 	 * 
 	 * This method launches one thread for the download of the files of the model and 
-	 * another thread to track the progress download. The thread where this method has
-	 * been launched is just used to print the information about the progress using
-	 * {@link DownloadTracker#printProgress(Thread, io.bioimage.modelrunner.bioimageio.download.DownloadTracker.TwoParameterConsumer)}
+	 * another thread to track the progress download. 
 	 * 
 	 * @param id
 	 * 	the id of the model of interest. This is the field 'id' of the model descriptor
@@ -553,8 +543,7 @@ public class BioimageioRepo {
 	 * 	is a folder too. So if the argument provided is "C:\\users\\carlos\\models",
 	 * 	the model path will then be: "C:\\users\\carlos\\models\\model_name_date string""
 	 * @param consumer
-	 * 	a {@link DownloadTracker.TwoParameterConsumer} consumer that ccan be used to track the
-	 * 	download of the individual files that compose the model.
+	 * 	a consumer to track the progress of the model download.
 	 * @return the path to the model that was just installed. 
 	 * @throws IOException	if there is any error downloading the files from the URLs provided
 	 * @throws InterruptedException	if the download or tracking threads are interrupted abruptly
@@ -573,9 +562,7 @@ public class BioimageioRepo {
 	 * rdf.yaml file) corresponds to the first parameter given
 	 * 
 	 * This method launches one thread for the download of the files of the model and 
-	 * another thread to track the progress download. The thread where this method has
-	 * been launched is just used to print the information about the progress using
-	 * {@link DownloadTracker#printProgress(Thread, io.bioimage.modelrunner.bioimageio.download.DownloadTracker.TwoParameterConsumer)}
+	 * another thread to track the progress download. 
 	 * 
 	 * @param name
 	 * 	the name of the model of interest. This is the field 'name' of the model descriptor
@@ -600,9 +587,7 @@ public class BioimageioRepo {
 	 * rdf.yaml file) corresponds to the first parameter given
 	 * 
 	 * This method launches one thread for the download of the files of the model and 
-	 * another thread to track the progress download. The thread where this method has
-	 * been launched is just used to print the information about the progress using
-	 * {@link DownloadTracker#printProgress(Thread, io.bioimage.modelrunner.bioimageio.download.DownloadTracker.TwoParameterConsumer)}
+	 * another thread to track the progress download. 
 	 * 
 	 * @param name
 	 * 	the name of the model of interest. This is the field 'name' of the model descriptor
@@ -611,8 +596,7 @@ public class BioimageioRepo {
 	 * 	is a folder too. So if the argument provided is "C:\\users\\carlos\\models",
 	 * 	the model path will then be: "C:\\users\\carlos\\models\\model_name_date string""
 	 * @param consumer
-	 * 	a {@link DownloadTracker.TwoParameterConsumer} consumer that ccan be used to track the
-	 * 	download of the individual files that compose the model.
+	 * 	a consumer to track the progress of the model download.
 	 * @return the path to the model that was just installed. 
 	 * @throws IOException	if there is any error downloading the files from the URLs provided
 	 * @throws InterruptedException	if the download or tracking threads are interrupted abruptly
