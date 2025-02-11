@@ -45,7 +45,6 @@ import io.bioimage.modelrunner.utils.Constants;
 import io.bioimage.modelrunner.utils.ZipUtils;
 
 /**
- * TODO get rid of consumer here and at DownloadTracker (trackstring)
  * 
  * Class to manage the downloading of models from the BioImage.io
  * @author Carlos Garcia Lopez de Haro
@@ -477,6 +476,8 @@ public class DownloadModel {
 	/**
 	 * Download a model downloading one by one all the files that should be inside
 	 * the model folder into a created folder inside the models repo
+	 * @param parentThread
+	 * 	reference thread for the download. If it is stopped the download will stop too.
 	 * @throws IOException if there is any error creating the folder or downloading the files
 	 * @throws InterruptedException if the thread was stopped by the user
 	 * @throws ExecutionException if anything in the download goes wrong

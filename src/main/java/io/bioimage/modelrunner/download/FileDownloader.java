@@ -132,7 +132,7 @@ public class FileDownloader {
 	
 	/**
 	 * Set a consumer that will receive the percentage of the bytes out of the total that have been downloaded
-	 * @param totalProgress
+	 * @param partialProgress
 	 * 	consumer that will receive the percentage of the bytes out of the total that have been downloaded
 	 */
 	public void setPartialProgressConsumer(Consumer<Double> partialProgress) {
