@@ -71,8 +71,9 @@ public class ExampleLoadAndRunAllBmzModels {
 	 * Method that installs one engine compatible with the OS and Java version
 	 * per DL framework and major version, this is installing Tf1, Tf2, Pytorch 1,
 	 * Pytorch 2 and Onnx 17
+	 * @throws InterruptedException if the amain thread is stopped
 	 */
-	private static void installAllValidEngines() {
+	private static void installAllValidEngines() throws InterruptedException {
 		EngineInstall installer = EngineInstall.createInstaller(ENGINES_DIR);
 		installer.basicEngineInstallation();
 	}

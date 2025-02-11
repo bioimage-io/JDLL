@@ -33,6 +33,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.ExecutionException;
 
 import net.imglib2.img.Img;
 import net.imglib2.img.ImgFactory;
@@ -157,20 +158,18 @@ public class ExampleLoadAndRunModel {
 	 * @throws IOException if the engine is not installed correctly or no
 	 * 	engine with the criteria is found
 	 * @throws InterruptedException if the engine download is interrupted
+	 * @throws ExecutionException if there si any error during the installation
 	 */
 	public static void downloadCPUEngine(String framework, String engineVersion,
-			String enginesDir) throws IOException, InterruptedException {
+			String enginesDir) throws IOException, InterruptedException, ExecutionException {
 		// Check if there is any engine supported by JDLL that fulfils the
 		// framework and version requirements that also runs on CPU
 		List<DeepLearningVersion> possibleEngines = 
 				AvailableEngines.getEnginesForOsByParams(framework, engineVersion, true, null);
 		// Try to install the first match that fits the requirements, any other 
 		// match could have been used too.
-		boolean success = EngineInstall.installEngineInDir(possibleEngines.get(0), enginesDir);
+		EngineInstall.installEngineInDir(possibleEngines.get(0), enginesDir);
 		
-		if (!success)
-			throw new IOException("The wanted DL engine was not downloaed correctly: "
-								+ possibleEngines.get(0).folderName());
 	}
 	
 	/**
