@@ -605,6 +605,22 @@ public abstract class ModelDescriptor {
 			this.download_url = BioimageioRepo.getModelRdfUrl(modelID, version);
 		return this.download_url;
 	}
+	
+	/**
+	 * 
+	 * @return whether the Bioimage.io model corresponds to a StarDist model or not
+	 */
+	public boolean isStardist() {
+		return ModelDescriptorFactory.isStardist(this.yamlElements);
+	}
+	
+	/**
+	 * 
+	 * @return whether the Bioimage.io model corresponds to a Cellpose model or not
+	 */
+	public boolean isCellpose() {
+		return ModelDescriptorFactory.isCellpose(this.yamlElements);
+	}
     
     /**
      * MAke sure that an object that is supposed to be a List<String>
