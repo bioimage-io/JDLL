@@ -32,6 +32,7 @@ import io.bioimage.modelrunner.bioimageio.description.ModelDescriptor;
 import io.bioimage.modelrunner.bioimageio.description.ModelDescriptorV04;
 import io.bioimage.modelrunner.bioimageio.description.TensorSpec;
 import io.bioimage.modelrunner.bioimageio.description.TransformSpec;
+import io.bioimage.modelrunner.model.stardist.StardistAbstract;
 import io.bioimage.modelrunner.numpy.DecodeNumpy;
 import io.bioimage.modelrunner.tensor.Utils;
 import net.imglib2.RandomAccessibleInterval;
@@ -60,6 +61,11 @@ public class ModelDescriptorStardistV04 extends ModelDescriptorV04
 		this.output_tensors = this.buildOutputTensors();
     	this.modifyTestInputs();
     	this.modifyTestOutputs();
+	}
+
+	@Override
+	public boolean areRequirementsInstalled() {
+		return StardistAbstract.isInstalled();
 	}
 
 	@Override

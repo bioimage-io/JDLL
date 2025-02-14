@@ -114,6 +114,12 @@ public abstract class ModelDescriptor {
     
     /**
      * 
+     * @return whether the requirements to run this model are installed or not
+     */
+    public abstract boolean areRequirementsInstalled();
+    
+    /**
+     * 
      * @return the family to which this model belongs. It can be either: {@value #STARDIST}, {@value #CELLPOSE} or {@value #BIOIMAGEIO}
      */
     public abstract String getModelFamily();

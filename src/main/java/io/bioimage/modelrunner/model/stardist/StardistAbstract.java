@@ -28,6 +28,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.function.Consumer;
 
 import org.apache.commons.compress.archivers.ArchiveException;
 
@@ -465,8 +466,35 @@ public abstract class StardistAbstract extends BaseModel {
 	public static void installRequirements() throws IOException, InterruptedException, 
 													RuntimeException, MambaInstallException, 
 													ArchiveException, URISyntaxException {
+		installRequirements(null);
+	}
+	
+	/**
+	 * Check whether the requirements needed to run Stardist 2D are satisfied or not.
+	 * First checks if the corresponding Java DL engine is installed or not, then checks
+	 * if the Python environment needed for Stardist2D post processing is fine too.
+	 * 
+	 * If anything is not installed, this method also installs it
+	 * 
+	 * @param consumer
+	 * 	String consumer that reads the installation log
+	 * 
+	 * @throws IOException if there is any error downloading the DL engine or installing the micromamba environment
+	 * @throws InterruptedException if the installation is stopped
+	 * @throws RuntimeException if there is any unexpected error in the micromamba environment installation
+	 * @throws MambaInstallException if there is any error downloading or installing micromamba
+	 * @throws ArchiveException if there is any error decompressing the micromamba installer
+	 * @throws URISyntaxException if the URL to the micromamba installation is not correct
+	 */
+	public static void installRequirements(Consumer<String> consumer) throws IOException, InterruptedException, 
+													RuntimeException, MambaInstallException, 
+													ArchiveException, URISyntaxException {
 		
 		Mamba mamba = new Mamba(INSTALLATION_DIR);
+		if (consumer != null) {
+			mamba.setConsoleOutputConsumer(consumer);
+			mamba.setErrorOutputConsumer(consumer);
+		}
 		boolean stardistPythonInstalled = false;
 		try {
 			stardistPythonInstalled = mamba.checkAllDependenciesInEnv("stardist", STARDIST_DEPS);

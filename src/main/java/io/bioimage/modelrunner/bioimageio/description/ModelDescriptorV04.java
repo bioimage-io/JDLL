@@ -57,6 +57,11 @@ public class ModelDescriptorV04 extends ModelDescriptor
     }
 
 	@Override
+	public boolean areRequirementsInstalled() {
+		return true;
+	}
+
+	@Override
 	protected List<TensorSpec> buildInputTensors() {
 		Object list = this.yamlElements.get("inputs");
 		if (!(list instanceof List<?>))
