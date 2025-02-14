@@ -39,6 +39,7 @@ import io.bioimage.modelrunner.tensor.Utils;
 import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.type.NativeType;
 import net.imglib2.type.numeric.RealType;
+import net.imglib2.view.Views;
 
 
 /**
@@ -127,11 +128,17 @@ public class ModelDescriptorStardistV05 extends ModelDescriptorV05
     	for (int i = 0; i < this.oldOrdersInp.size(); i ++) {
     		TensorSpec tt = input_tensors.get(i);
     		String testName = tt.getTestTensorName();
+    		String newTestName = STARDIST_TEST + "_input_" + i + ".npy";
+    		if (new File(localModelPath + File.separator + newTestName).exists()) {
+	    		setInputTestNpyName(i, newTestName);
+	    		continue;
+    		}
 			try {
 				RandomAccessibleInterval<T> im = DecodeNumpy.loadNpy(this.localModelPath + File.separator + testName);
-	    		String newImAxesOrder = removeExtraDims(im, oldOrdersInp.get(i), tt.getAxesOrder());
+				List<Integer> removeDims = removeExtraDims(oldOrdersInp.get(i), tt.getAxesOrder());
+	    		String newImAxesOrder = getNewAxes(oldOrdersInp.get(i), removeDims);
+	    		im = getNewRai(im, removeDims);
 	    		im = transposeToAxesOrder(im, tt.getAxesOrder(), newImAxesOrder);
-	    		String newTestName = STARDIST_TEST + "_input_" + i + ".npy";
 	    		DecodeNumpy.saveNpy(this.localModelPath + File.separator + newTestName, im);
 	    		setInputTestNpyName(i, newTestName);
 			} catch (IOException e) {
@@ -146,14 +153,20 @@ public class ModelDescriptorStardistV05 extends ModelDescriptorV05
     	for (int i = 0; i < this.oldOrdersInp.size(); i ++) {
     		TensorSpec tt = input_tensors.get(i);
     		String testName = tt.getTestTensorName();
+    		String newTestName = STARDIST_TEST + "_output_" + i + ".npy";
+    		if (new File(localModelPath + File.separator + newTestName).exists()) {
+	    		setOutputTestNpyName(i, newTestName);
+	    		continue;
+    		}
 			try {
 				RandomAccessibleInterval<T> im = DecodeNumpy.loadNpy(this.localModelPath + File.separator + testName);
-	    		String newImAxesOrder = removeExtraDims(im, oldOrdersInp.get(i), tt.getAxesOrder());
+				List<Integer> removeDims = removeExtraDims(oldOrdersInp.get(i), tt.getAxesOrder());
+	    		String newImAxesOrder = getNewAxes(oldOrdersInp.get(i), removeDims);
+	    		im = getNewRai(im, removeDims);
 	    		im = transposeToAxesOrder(im, tt.getAxesOrder(), newImAxesOrder);
-	    		String newTestName = STARDIST_TEST + "_input_" + i + ".npy";
 	    		if (!(new File(localModelPath + File.separator + newTestName).isFile()))
 	    			DecodeNumpy.saveNpy(localModelPath + File.separator + newTestName, im);
-	    		setInputTestNpyName(i, newTestName);
+	    		setOutputTestNpyName(i, newTestName);
 			} catch (IOException e) {
 				continue;
 			}
@@ -178,14 +191,33 @@ public class ModelDescriptorStardistV05 extends ModelDescriptorV05
 	}
 	
 	private static <T extends RealType<T> & NativeType<T>>
-	String removeExtraDims(RandomAccessibleInterval<T> rai, String ogAxes, String targetAxes) {
-		String nAxes = "";
-		for (String ax : ogAxes.split("")) {
-			if (!targetAxes.contains(ax))
+	RandomAccessibleInterval<T> getNewRai(RandomAccessibleInterval<T> rai, List<Integer> removeDims) {
+		for (int i = 0; i < removeDims.size(); i ++)
+			rai = Views.hyperSlice(rai, removeDims.get(removeDims.size() - 1 - i), 0);
+		return rai;
+	}
+	
+	private static String getNewAxes(String ogAxes, List<Integer> removeDims) {
+		String newAxis = "";
+		String[] splitAxes = ogAxes.split("");
+		for (int i = 0; i < ogAxes.length(); i ++) {
+			if (removeDims.contains(i))
 				continue;
-			nAxes += ax;
+			newAxis += splitAxes[i];
 		}
-		return nAxes;
+		return newAxis;
+	}
+	
+	private static List<Integer> removeExtraDims(String ogAxes, String targetAxes) {
+		List<Integer> remove = new ArrayList<Integer>();
+		int c = -1;
+		for (String ax : ogAxes.split("")) {
+			c ++;
+			if (targetAxes.contains(ax))
+				continue;
+			remove.add(c);
+		}
+		return remove;
 	}
 	
 	private static <T extends RealType<T> & NativeType<T>>

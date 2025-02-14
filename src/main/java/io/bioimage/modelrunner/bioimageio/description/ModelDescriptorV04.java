@@ -19,6 +19,7 @@
  */
 package io.bioimage.modelrunner.bioimageio.description;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -262,12 +263,16 @@ public class ModelDescriptorV04 extends ModelDescriptor
     }
 	
 	protected void setInputTestNpyName(int n, String name) {
-    	TensorSpecV04 tt = (TensorSpecV04) this.output_tensors.get(n);
+    	TensorSpecV04 tt = (TensorSpecV04) this.input_tensors.get(n);
+    	if (this.localModelPath != null)
+    		name = localModelPath + File.separator + name;
     	tt.testTensorName = name;
 	}
 	
 	protected void setOutputTestNpyName(int n, String name) {
     	TensorSpecV04 tt = (TensorSpecV04) this.output_tensors.get(n);
+    	if (this.localModelPath != null)
+    		name = localModelPath + File.separator + name;
     	tt.testTensorName = name;
 	}
 }
