@@ -295,6 +295,8 @@ public class BioimageioRepo {
 		try {
 			descriptor = ModelDescriptorFactory.readFromYamlTextString(stringRDF);
 		} catch (Exception ex) {
+			System.err.println(rdfSource);
+			ex.printStackTrace();
 			return descriptor;
 		}
 		return descriptor;
