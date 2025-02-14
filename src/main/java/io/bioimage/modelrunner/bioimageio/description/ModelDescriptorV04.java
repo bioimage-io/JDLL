@@ -68,6 +68,8 @@ public class ModelDescriptorV04 extends ModelDescriptor
 	@Override
 	protected List<String> buildAttachments() {
 		Object att = yamlElements.get("attachments");
+		if (att == null)
+			return new ArrayList<String>();
 		if (att instanceof Map)
 			return getAllStrings((Map<String, Object>) att);
 		else if (att instanceof List)
@@ -86,7 +88,7 @@ public class ModelDescriptorV04 extends ModelDescriptor
     		else if (ee.getValue() instanceof Map)
     			strs.addAll(getAllStrings((Map<String, Object>) ee.getValue()));
     		else if (ee.getValue() instanceof List)
-    			strs.addAll(getAllStrings((List<Object>) ee));
+    			strs.addAll(getAllStrings((List<Object>) ee.getValue()));
     	}
     	return strs;
     }

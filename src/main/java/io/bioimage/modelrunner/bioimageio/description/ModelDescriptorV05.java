@@ -61,6 +61,8 @@ public class ModelDescriptorV05 extends ModelDescriptor
 	protected List<String> buildAttachments() {
 		List<String> strs = new ArrayList<String>();
 		Object att =  yamlElements.get("attachments");
+		if (att == null)
+			return new ArrayList<String>();
 		if (!(att instanceof List)) {
 			System.err.println("Cannot parse the attachments of: " + name);
 			return new ArrayList<String>();
