@@ -20,9 +20,12 @@
 package io.bioimage.modelrunner.bioimageio.description;
 
 import java.io.File;
+import java.net.URL;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.stream.Collectors;
 
 
@@ -61,6 +64,45 @@ public class ModelDescriptorV04 extends ModelDescriptor
 	public boolean areRequirementsInstalled() {
 		return true;
 	}
+
+	@Override
+	protected List<String> buildAttachments() {
+		Object att = yamlElements.get("attachments");
+		if (att instanceof Map)
+			return getAllStrings((Map<String, Object>) att);
+		else if (att instanceof List)
+			return getAllStrings((List<Object>) att);
+		else if (att instanceof String)
+			return Arrays.asList((String) att);
+		System.err.println("Cannot build the attachments for: " + name);
+		return new ArrayList<String>();
+	}
+	
+    private static List<String> getAllStrings(Map<String, Object> map) {
+    	List<String> strs = new ArrayList<String>();
+    	for (Entry<String, Object> ee : map.entrySet()) {
+    		if (ee.getValue() instanceof String)
+    			strs.add((String) ee.getValue());
+    		else if (ee.getValue() instanceof Map)
+    			strs.addAll(getAllStrings((Map<String, Object>) ee.getValue()));
+    		else if (ee.getValue() instanceof List)
+    			strs.addAll(getAllStrings((List<Object>) ee));
+    	}
+    	return strs;
+    }
+	
+    private static List<String> getAllStrings(List<Object> list) {
+    	List<String> strs = new ArrayList<String>();
+    	for (Object ee : list) {
+    		if (ee instanceof String)
+    			strs.add((String) ee);
+    		else if (ee instanceof Map)
+    			strs.addAll(getAllStrings((Map<String, Object>) ee));
+    		else if (ee instanceof List)
+    			strs.addAll(getAllStrings((List<Object>) ee));
+    	}
+    	return strs;
+    }
 
 	@Override
 	protected List<TensorSpec> buildInputTensors() {

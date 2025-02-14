@@ -353,35 +353,12 @@ public class DownloadModel {
 	 * Add the attachment files to the downloadable links of the model
 	 */
 	private void addAttachments() {
-		Map<String, Object> attachments = descriptor.getAttachments();
+		List<String> attachments = descriptor.getAttachments();
 		if (attachments == null)
 			return;
 		int c = 0;
-		for (String kk : attachments.keySet()) {
-			if (attachments.get(kk) instanceof String) {
-				downloadableLinks.put(ATTACH_KEY + "_" + c ++, descriptor.getModelURL() + (String) attachments.get(kk));
-			} else if (attachments.get(kk) instanceof URL) {
-				downloadableLinks.put(ATTACH_KEY + "_" + c ++, descriptor.getModelURL() + ((URL) attachments.get(kk)).toString());
-			} else if (attachments.get(kk) instanceof Map) {
-				Map <String, Object> nFilesMap = (Map<String, Object>) attachments.get(kk);
-				for (String jj : nFilesMap.keySet()) {
-					if (nFilesMap.get(jj) instanceof String)
-						downloadableLinks.put(ATTACH_KEY + "_" + c ++, descriptor.getModelURL() + (nFilesMap.get(jj)).toString());
-				}
-			} else if (attachments.get(kk) instanceof List) {
-				List <Object> nFilesList = (List<Object>) attachments.get(kk);
-				for (Object jj : nFilesList) {
-					if (jj instanceof String)
-						downloadableLinks.put(ATTACH_KEY + "_" + c ++, descriptor.getModelURL() + jj.toString());
-					else if (jj instanceof List) {
-						for (Object jjEntry : (List) jj) {
-							if (jjEntry instanceof String)
-								downloadableLinks.put(ATTACH_KEY + "_" + c ++, descriptor.getModelURL() + jj.toString());
-						}
-					}
-				}
-			}
-		}
+		for (String kk : attachments)
+			downloadableLinks.put(ATTACH_KEY + "_" + c ++, descriptor.getModelURL() + kk);
 	}
 	
 	/**

@@ -61,7 +61,7 @@ public abstract class ModelDescriptor {
     protected List<TensorSpec> output_tensors;
     protected ExecutionConfig config;
     protected ModelWeight weights;
-    protected Map<String, Object> attachments;
+    protected List<String> attachments;
     protected String version;
     protected List<String> links;
     protected static String fromLocalKey = "fromLocalRepo";
@@ -127,6 +127,8 @@ public abstract class ModelDescriptor {
     protected abstract List<TensorSpec> buildInputTensors();
     
     protected abstract List<TensorSpec> buildOutputTensors();
+    
+    protected abstract List<String> buildAttachments();
 
     /**
      * Calculate the total input halo once the output tensors are set.
@@ -196,9 +198,6 @@ public abstract class ModelDescriptor {
                     case "type":
                         type = (String) yamlElements.get(field);
                         break;
-                    case "attachments":
-                        // TODO createAttachments();
-                        break;
                     case "covers":
                     	covers = castListStrings(yamlElements.get(field));
                         break;
@@ -214,6 +213,7 @@ public abstract class ModelDescriptor {
         output_tensors = this.buildOutputTensors();
         weights = this.buildWeights();
         config = this.buildConfig();
+        attachments = buildAttachments();
         calculateTotalInputHalo();
         
         addBioEngine();
@@ -514,7 +514,7 @@ public abstract class ModelDescriptor {
 	/**
 	 * @return the attachments
 	 */
-    public Map<String, Object> getAttachments() {
+    public List<String> getAttachments() {
 		return attachments;
 	}
 

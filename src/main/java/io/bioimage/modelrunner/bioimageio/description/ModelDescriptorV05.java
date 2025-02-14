@@ -58,6 +58,24 @@ public class ModelDescriptorV05 extends ModelDescriptor
 	}
 
 	@Override
+	protected List<String> buildAttachments() {
+		List<String> strs = new ArrayList<String>();
+		Object att =  yamlElements.get("attachments");
+		if (!(att instanceof List)) {
+			System.err.println("Cannot parse the attachments of: " + name);
+			return new ArrayList<String>();
+		}
+		for (Object ll : (List<Object>) att) {
+			if (ll instanceof String) {
+				strs.add((String) ll);
+			} else if (ll instanceof Map && ((Map) ll).keySet().contains("source")) {
+				strs.add((String) ((Map) ll).get("source"));
+			}
+		}
+		return strs;
+	}
+
+	@Override
 	protected List<TensorSpec> buildInputTensors() {
 		Object object = this.yamlElements.get("inputs");
 		if (!(object instanceof List<?>))
