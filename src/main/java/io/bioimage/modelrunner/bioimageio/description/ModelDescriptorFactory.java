@@ -158,6 +158,8 @@ public class ModelDescriptorFactory {
 			try {
 				return ModelDescriptorFactory.readFromLocalFile(rdfPath);
 			} catch (Exception e) {
+				System.err.println(rdfPath);
+				e.printStackTrace();
 				return null;
 			}
 			}).filter(mm -> mm != null).collect(Collectors.toList());
