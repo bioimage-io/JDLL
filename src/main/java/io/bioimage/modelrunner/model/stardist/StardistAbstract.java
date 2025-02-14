@@ -338,7 +338,21 @@ public abstract class StardistAbstract extends BaseModel {
 			Map<String, RandomAccessibleInterval<T>> outputs = run(inputTensors.get(0).getData());
 			List<Tensor<T>> outTensors = new ArrayList<Tensor<T>>();
 			for (Entry<String, RandomAccessibleInterval<T>> entry : outputs.entrySet()) {
-				Tensor<T> tt = Tensor.build(entry.getKey(), CLOSE_SHM_CODE, entry.getValue());
+				if (entry.getValue() == null)
+					continue;
+				String axesOrder = "xy";
+				if (entry.getValue().dimensionsAsLongArray().length > 2 && this.is2D())
+					axesOrder += "c";
+				else if (entry.getValue().dimensionsAsLongArray().length == 3 && this.is3D())
+					axesOrder += "z";
+				else if (entry.getValue().dimensionsAsLongArray().length > 3 && this.is3D())
+					axesOrder += "zc";
+				else if (entry.getValue().dimensionsAsLongArray().length == 1)
+					axesOrder = "i";
+				Tensor<T> tt = Tensor.build(entry.getKey(), axesOrder, entry.getValue());
+				// TODO
+				if (tt.getName() != "mask")
+					continue;
 				outTensors.add(tt);
 			}
 			return outTensors;
@@ -446,7 +460,7 @@ public abstract class StardistAbstract extends BaseModel {
 	 */
 	public static boolean isInstalled() {
 		// TODO
-		return false;
+		return true;
 	}
 	
 	/**
