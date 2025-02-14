@@ -85,14 +85,19 @@ public class ModelDescriptorFactory {
     {
     	// Convert the String of text that contains the yaml file into Map
     	Map<String,Object> yamlElements = YAMLUtils.loadFromString(yamlText);
-        return fromMap(yamlElements);
+        return fromMap(yamlElements, true);
     }
 
     private static ModelDescriptor fromMap(Map<String,Object> yamlElements)
     {
-    	if (isStardist(yamlElements) && StardistAbstract.isInstalled()) {
+    	return fromMap(yamlElements, false);
+    }
+
+    private static ModelDescriptor fromMap(Map<String,Object> yamlElements, boolean specialModel)
+    {
+    	if (isStardist(yamlElements) && (StardistAbstract.isInstalled() || specialModel)) {
     		return fromStardistMap(yamlElements);
-    	} else if (isCellpose(yamlElements) && Cellpose.isInstalled()) {
+    	} else if (isCellpose(yamlElements) && (Cellpose.isInstalled() || specialModel)) {
     		return fromCellposeMap(yamlElements);
     	}
     	Object formatVersion = yamlElements.get(FORMAT);

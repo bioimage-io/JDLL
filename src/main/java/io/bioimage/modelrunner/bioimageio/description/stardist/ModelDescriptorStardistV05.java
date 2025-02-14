@@ -57,8 +57,8 @@ public class ModelDescriptorStardistV05 extends ModelDescriptorV05
 
 	public ModelDescriptorStardistV05(Map<String, Object> yamlElements) {
 		super(yamlElements);
-		this.input_tensors = this.buildInputTensors();
-		this.output_tensors = this.buildOutputTensors();
+		this.input_tensors = this.buildInputTensorsStardist();
+		this.output_tensors = this.buildOutputTensorsStardist();
     	this.modifyTestInputs();
     	this.modifyTestOutputs();
 	}
@@ -73,7 +73,7 @@ public class ModelDescriptorStardistV05 extends ModelDescriptorV05
 		return ModelDescriptor.STARDIST;
 	}
 	
-	protected List<TensorSpec> buildInputTensors() {
+	protected List<TensorSpec> buildInputTensorsStardist() {
 		List<Map<String, Object>> tensors = new ArrayList<Map<String, Object>>();
 		for (TensorSpec tt : this.input_tensors) {
 			Map<String, Object> map = reverseAxesShape(tt);
@@ -97,7 +97,7 @@ public class ModelDescriptorStardistV05 extends ModelDescriptorV05
 		return super.buildInputTensors();
 	}
 	
-	protected List<TensorSpec> buildOutputTensors() {
+	protected List<TensorSpec> buildOutputTensorsStardist() {
 		List<Map<String, Object>> tensors = new ArrayList<Map<String, Object>>();
 		for (TensorSpec tt : this.output_tensors) {
 			Map<String, Object> map = reverseAxesShape(tt);
