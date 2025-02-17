@@ -327,6 +327,7 @@ public abstract class StardistAbstract extends BaseModel {
 	void run( List< Tensor < T > > inTensors, List< Tensor < R > > outTensors ) throws RunModelException {
 		if (inTensors.size() > 1)
 			throw new RunModelException("Stardist needs just one input image");
+		preprocess(inTensors);
 		try {
 			Map<String, RandomAccessibleInterval<R>> outputs = run(inTensors.get(0).getData());
 			for (Tensor<R> tensor : outTensors) {
@@ -374,6 +375,7 @@ public abstract class StardistAbstract extends BaseModel {
 			throws RunModelException {
 		if (inputTensors.size() > 1)
 			throw new RunModelException("Stardist needs just one input image");
+		preprocess(inputTensors);
 		try {
 			Map<String, RandomAccessibleInterval<T>> outputs = run(inputTensors.get(0).getData());
 			List<Tensor<T>> outTensors = new ArrayList<Tensor<T>>();
