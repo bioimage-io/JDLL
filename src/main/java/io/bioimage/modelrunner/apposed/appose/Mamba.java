@@ -372,7 +372,12 @@ public class Mamba {
 		final File tempFile = File.createTempFile( "micromamba", ".tar.bz2" );
 		tempFile.deleteOnExit();
 		URL website = FileDownloader.redirectedURL(new URL(MICROMAMBA_URL));
+		Consumer<Double> micromambaConsumer = (d) -> {
+			d = (double) (Math.round(d * 1000) / 10);
+			customConsoleConsumer.accept("Installing micromamba: " + d + "%");
+		};
 		FileDownloader fd = new FileDownloader(website.toString(), tempFile);
+		fd.setPartialProgressConsumer(micromambaConsumer);
 		long size = fd.getOnlineFileSize();
 		try {
 			fd.download(Thread.currentThread());
@@ -1126,12 +1131,12 @@ public class Mamba {
 		        String errChunk = "";
                 int newLineIndex;
 		        long t0 = System.currentTimeMillis();
-		        while (process.isAlive() || inputStream.available() > 0) {
-		        	if (!mainThread.isAlive()) {
+		        while (process.isAlive() || inputStreamOpen(inputStream)) {
+		        	if (mainThread.isInterrupted() || !mainThread.isAlive()) {
 		        		process.destroyForcibly();
 		        		return;
 		        	}
-		            if (inputStream.available() > 0) {
+		            if (inputStreamOpen(inputStream)) {
 		                processBuff.append(new String(buffer, 0, inputStream.read(buffer)));
 		                while ((newLineIndex = processBuff.indexOf(System.lineSeparator())) != -1) {
 		                	processChunk += sdf.format(Calendar.getInstance().getTime()) + " -- " 
@@ -1139,7 +1144,7 @@ public class Mamba {
 		                	processBuff.delete(0, newLineIndex + 1);
 		                }
 		            }
-		            if (errStream.available() > 0) {
+		            if (inputStreamOpen(inputStream)) {
 		                errBuff.append(new String(buffer, 0, errStream.read(buffer)));
 		                while ((newLineIndex = errBuff.indexOf(System.lineSeparator())) != -1) {
 		                	errChunk += ERR_STREAM_UUUID + errBuff.substring(0, newLineIndex + 1).trim() + System.lineSeparator();
@@ -1156,11 +1161,11 @@ public class Mamba {
 						t0 = System.currentTimeMillis();
 					}
 		        }
-		        if (inputStream.available() > 0) {
+		        if (inputStreamOpen(inputStream)) {
 	                processBuff.append(new String(buffer, 0, inputStream.read(buffer)));
                 	processChunk += sdf.format(Calendar.getInstance().getTime()) + " -- " + processBuff.toString().trim();
 	            }
-	            if (errStream.available() > 0) {
+	            if (inputStreamOpen(errStream)) {
 	                errBuff.append(new String(buffer, 0, errStream.read(buffer)));
 	                errChunk += ERR_STREAM_UUUID + errBuff.toString().trim();
 	            }
@@ -1177,6 +1182,7 @@ public class Mamba {
 		try {
 			processResult = process.waitFor();
 		} catch (InterruptedException ex) {
+			process.destroyForcibly();
 			throw new InterruptedException("Mamba process stopped. The command being executed was: " + cmd);
 		}
 		// Wait for all output to be read
@@ -1185,6 +1191,15 @@ public class Mamba {
         	throw new RuntimeException("Error executing the following command: " + builder.command()
         								+ System.lineSeparator() + this.mambaConsoleOut
         								+ System.lineSeparator() + this.mambaConsoleErr);
+	}
+	
+	private static boolean inputStreamOpen(InputStream inputStream) {
+
+        try {
+        	return inputStream.available() > 0;
+        } catch (Exception ex) {
+        	return false;
+        }
 	}
 
 	/**

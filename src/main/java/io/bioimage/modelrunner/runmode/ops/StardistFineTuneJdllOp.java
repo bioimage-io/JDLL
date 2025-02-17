@@ -645,10 +645,7 @@ public class StardistFineTuneJdllOp implements OpInterface {
 	
 	@SuppressWarnings("unchecked")
 	private static String getKerasWeigthsLink(ModelDescriptor descriptor) throws IOException {
-		Object yamlFiles = descriptor.getAttachments().get("files");
-		if (yamlFiles == null || !(yamlFiles instanceof List))
-			throw new IllegalArgumentException("");
-		for (String url : (List<String>) yamlFiles) {
+		for (String url : descriptor.getAttachments()) {
 			try {
 				if (FileDownloader.getFileNameFromURLString(url).equals(STARDIST_WEIGHTS_FILE))
 					return url;
