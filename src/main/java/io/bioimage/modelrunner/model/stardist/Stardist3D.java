@@ -85,13 +85,13 @@ public class Stardist3D extends StardistAbstract {
 	@Override
 	protected <T extends RealType<T> & NativeType<T>>  void checkInput(RandomAccessibleInterval<T> image) {
 		if (image.dimensionsAsLongArray().length == 3 && this.nChannels != 1)
-			throw new IllegalArgumentException("Stardist3D needs an image with four dimensions: XYCZ");
+			throw new IllegalArgumentException("Stardist3D needs an image with four dimensions: XYZC");
 		else if (image.dimensionsAsLongArray().length != 4 && this.nChannels != 1)
-			throw new IllegalArgumentException("Stardist3D needs an image with four dimensions: XYCZ");
-		else if (image.dimensionsAsLongArray().length == 4 && image.dimensionsAsLongArray()[2] != nChannels)
+			throw new IllegalArgumentException("Stardist3D needs an image with four dimensions: XYZC");
+		else if (image.dimensionsAsLongArray().length == 4 && image.dimensionsAsLongArray()[3] != nChannels)
 			throw new IllegalArgumentException("This Stardist3D model requires " + nChannels + " channels.");
 		else if (image.dimensionsAsLongArray().length > 4 || image.dimensionsAsLongArray().length < 2)
-			throw new IllegalArgumentException("Stardist3D model requires an image with dimensions XYCZ.");
+			throw new IllegalArgumentException("Stardist3D model requires an image with dimensions XYZC.");
 	}
 	
 
@@ -107,12 +107,12 @@ public class Stardist3D extends StardistAbstract {
 
 	@Override
 	public boolean is2D() {
-		return true;
+		return false;
 	}
 
 	@Override
 	public boolean is3D() {
-		return false;
+		return true;
 	}
 	
 	/**
