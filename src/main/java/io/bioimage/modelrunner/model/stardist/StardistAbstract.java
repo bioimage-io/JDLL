@@ -44,9 +44,11 @@ import io.bioimage.modelrunner.bioimageio.description.ModelDescriptorFactory;
 import io.bioimage.modelrunner.exceptions.LoadModelException;
 import io.bioimage.modelrunner.exceptions.RunModelException;
 import io.bioimage.modelrunner.model.BaseModel;
+import io.bioimage.modelrunner.model.processing.Processing;
 import io.bioimage.modelrunner.system.PlatformDetection;
 import io.bioimage.modelrunner.tensor.Tensor;
 import io.bioimage.modelrunner.tensor.shm.SharedMemoryArray;
+import io.bioimage.modelrunner.transformations.ScaleRangeTransformation;
 import io.bioimage.modelrunner.utils.CommonUtils;
 import io.bioimage.modelrunner.utils.Constants;
 import io.bioimage.modelrunner.utils.JSONUtils;
@@ -80,6 +82,29 @@ public abstract class StardistAbstract extends BaseModel {
 	private ModelDescriptor descriptor;
 		
 	private Service python;
+	
+	/**
+	 * Value used to scale the image wihtin the [0, 1] range.
+	 * Using minimum percentile 0 is equivalent to use the minimum of the image as the max
+	 * Every pixels is transformed as follows: new_pixel = (pixel - min) / (max - min)
+	 */
+	public double scaleRangeMaxPercentile = 99.8;
+	
+	/**
+	 * Value used to scale the image wihtin the [0, 1] range.
+	 * Using maximum percentile 100 is equivalent to use the maximum of the image as the max
+	 * Every pixels is transformed as follows: new_pixel = (pixel - min) / (max - min)
+	 */
+	public double scaleRangeMinPercentile = 99.8;
+	
+	/**
+	 * Channels along which the scalin is performed.
+	 * Imagine a xyc image, if the axes specified are xyc, the image will be scaled all together.
+	 * However if the axes specified are xy, each channel will be scaled differently.
+	 * By default all the image is scaled together
+	 * 
+	 */
+	public String scaleRangeAxes = null;
 	
 	private static String INSTALLATION_DIR = 
 			(System.getProperty("user.home") == null || System.getProperty("user.home").equals("")) 
@@ -273,6 +298,21 @@ public abstract class StardistAbstract extends BaseModel {
 			code += shma.getOriginalShape()[i] + ", ";
 		code += "])" + System.lineSeparator();
 		return code;
+	}
+	
+	protected <T extends RealType<T> & NativeType<T>, R extends RealType<R> & NativeType<R>> 
+	void preprocess(List<Tensor<T>> inputs) {
+		if (descriptor != null) {
+			Processing processing = Processing.init(descriptor);
+			processing.preprocess(inputs, true);
+		} else {
+			ScaleRangeTransformation transform = new ScaleRangeTransformation();
+			transform.setAxes(transform);
+			transform.setMaxPercentile(scaleRangeMaxPercentile);
+			transform.setMinPercentile(scaleRangeMinPercentile);
+			transform.setAxes(scaleRangeAxes);
+			transform.applyInPlace(inputs.get(0));
+		}
 	}
 	
 	@Override

@@ -57,6 +57,7 @@ public class Stardist2D extends StardistAbstract {
 	
 	protected Stardist2D(String modelName, String baseDir, Map<String, Object> config) throws IOException {
 		super(modelName, baseDir, config);
+		this.scaleRangeAxes = "xyc";
 	}
 	
 	private Stardist2D(String modelName, String baseDir) throws IOException {
@@ -65,6 +66,7 @@ public class Stardist2D extends StardistAbstract {
 		if (axes.contains("Z"))
 			throw new IllegalArgumentException("Trying to instantiate a StarDist3D model."
 					+ " Please use Stardist3D instead of Stardist2D.");
+		this.scaleRangeAxes = "xyc";
 	}
 	
 	private Stardist2D(ModelDescriptor descriptor) throws IOException {
@@ -73,6 +75,7 @@ public class Stardist2D extends StardistAbstract {
 		if (axes.contains("Z"))
 			throw new IllegalArgumentException("Trying to instantiate a StarDist3D model."
 					+ " Please use Stardist3D instead of Stardist2D.");
+		this.scaleRangeAxes = "xyc";
 	}
 
 	@Override
