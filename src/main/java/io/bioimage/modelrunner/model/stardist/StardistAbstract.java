@@ -306,14 +306,15 @@ public abstract class StardistAbstract extends BaseModel {
 	void preprocess(List<Tensor<T>> inputs) {
 		if (descriptor != null) {
 			Processing processing = Processing.init(descriptor);
-			processing.preprocess(inputs, true);
+			List<Tensor<T>> inputsProcessed = processing.preprocess(inputs, false);
+			inputs.set(0, inputsProcessed.get(0));
 		} else {
 			ScaleRangeTransformation transform = new ScaleRangeTransformation();
 			transform.setAxes(transform);
 			transform.setMaxPercentile(scaleRangeMaxPercentile);
 			transform.setMinPercentile(scaleRangeMinPercentile);
 			transform.setAxes(scaleRangeAxes);
-			transform.applyInPlace(inputs.get(0));
+			inputs.set(0, Cast.unchecked(transform.apply(inputs.get(0))));
 		}
 	}
 	
