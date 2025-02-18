@@ -144,7 +144,6 @@ public abstract class StardistAbstract extends BaseModel {
 	
 	private static final String RUN_MODEL_CODE = ""
 			+ "output = model.predict_instances(im, return_predict=False)" + System.lineSeparator()
-			+ "print(type(output))" + System.lineSeparator()
 			+ "if type(output) == np.ndarray:" + System.lineSeparator()
 			+ "  im[:] = output" + System.lineSeparator()
 			+ "  im[:] = output" + System.lineSeparator()
@@ -157,7 +156,7 @@ public abstract class StardistAbstract extends BaseModel {
 			+ "  raise TypeError('If the StarDist output is a list, the first entry should be a np.ndarray')" + System.lineSeparator()
 			+ "if len(im.shape) == 3 and len(output[0].shape) == 2:" + System.lineSeparator()
 			+ "  im[:, :, 0] = output[0]" + System.lineSeparator()
-			+ "if len(im.shape) == 4 and len(output[0].shape) == 3:" + System.lineSeparator()
+			+ "elif len(im.shape) == 4 and len(output[0].shape) == 3:" + System.lineSeparator()
 			+ "  im[:, :, :, 0] = output[0]" + System.lineSeparator()
 			+ "else:" + System.lineSeparator()
 			+ "  im[:] = output[0]" + System.lineSeparator()
