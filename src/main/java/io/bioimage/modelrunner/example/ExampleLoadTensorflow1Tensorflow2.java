@@ -29,8 +29,7 @@ import io.bioimage.modelrunner.bioimageio.BioimageioRepo;
 import io.bioimage.modelrunner.engine.EngineInfo;
 import io.bioimage.modelrunner.engine.installation.EngineInstall;
 import io.bioimage.modelrunner.exceptions.LoadEngineException;
-import io.bioimage.modelrunner.model.BioimageIoModel;
-import io.bioimage.modelrunner.model.DLModel;
+import io.bioimage.modelrunner.model.java.DLModelJava;
 import io.bioimage.modelrunner.system.PlatformDetection;
 import io.bioimage.modelrunner.tensor.Tensor;
 import io.bioimage.modelrunner.versionmanagement.AvailableEngines;
@@ -132,7 +131,7 @@ public class ExampleLoadTensorflow1Tensorflow2 {
 		// REGARD THAT the engine folders need to follow a naming convention
 		EngineInfo engineInfo = createEngineInfo(framework, engineVersion, enginesDir, cpu, gpu);
 		// Load the corresponding model, for Tensorflow model_source arg is not needed
-		try (DLModel model = loadModel(modelFolder, null, engineInfo)){
+		try (DLModelJava model = loadModel(modelFolder, null, engineInfo)){
 			// Create an image that will be the backend of the Input Tensor
 			final ImgFactory< FloatType > imgFactory = new ArrayImgFactory<>( new FloatType() );
 			final Img< FloatType > img1 = imgFactory.create( 1, 512, 512, 1 );
@@ -205,7 +204,7 @@ public class ExampleLoadTensorflow1Tensorflow2 {
 		// REGARD THAT the engine folders need to follow a naming convention
 		EngineInfo engineInfo = createEngineInfo(framework, engineVersion, enginesDir, cpu, gpu);
 		// Load the corresponding model, for Tensorflow the arg model_source is not needed
-		try (DLModel model = loadModel(modelFolder, null, engineInfo);){
+		try (DLModelJava model = loadModel(modelFolder, null, engineInfo);){
 			// Create an image that will be the backend of the Input Tensor
 			final ImgFactory< FloatType > imgFactory = new ArrayImgFactory<>( new FloatType() );
 			final Img< FloatType > img1 = imgFactory.create( 1, 512, 512, 3 );
@@ -270,9 +269,9 @@ public class ExampleLoadTensorflow1Tensorflow2 {
 	 * @throws LoadEngineException if there is any error loading the model
 	 * @throws Exception if there is any exception loading the model
 	 */
-	public static DLModel loadModel(String modelFolder, String modelSource, EngineInfo engineInfo) throws LoadEngineException, Exception {
+	public static DLModelJava loadModel(String modelFolder, String modelSource, EngineInfo engineInfo) throws LoadEngineException, Exception {
 		
-		DLModel model = DLModel.createModel(modelFolder, modelSource, engineInfo);
+		DLModelJava model = DLModelJava.createModel(modelFolder, modelSource, engineInfo);
 		model.loadModel();
 		return model;
 	}

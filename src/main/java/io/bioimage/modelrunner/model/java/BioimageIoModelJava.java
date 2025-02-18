@@ -20,7 +20,7 @@
 /**
  * 
  */
-package io.bioimage.modelrunner.model;
+package io.bioimage.modelrunner.model.java;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -61,7 +61,7 @@ import net.imglib2.util.Cast;
  * 
  * @author Carlos Garcia Lopez de Haro
  */
-public class BioimageIoModel extends DLModel
+public class BioimageIoModelJava extends DLModelJava
 {
 	/**
 	 * Whether the model is created for the bioengine or not
@@ -95,7 +95,7 @@ public class BioimageIoModel extends DLModel
 	 * @throws IOException if there is any error finding the engines in the system
 	 * @throws IllegalStateException if any of the engines has been incorrectly modified
 	 */
-	protected BioimageIoModel( EngineInfo engineInfo, String modelFolder, String modelSource, ClassLoader classLoader )
+	protected BioimageIoModelJava( EngineInfo engineInfo, String modelFolder, String modelSource, ClassLoader classLoader )
 			throws LoadEngineException, MalformedURLException, IllegalStateException, IOException
 	{
 		super(engineInfo, modelFolder, modelSource, classLoader);
@@ -128,7 +128,7 @@ public class BioimageIoModel extends DLModel
 	 * @throws LoadEngineException if there is any error loading the DL framework
 	 * @throws IOException if there is any error finding the engines in the system
 	 */
-	public static BioimageIoModel createBioimageioModel(String bmzModelFolder, ClassLoader classloader)
+	public static BioimageIoModelJava createBioimageioModel(String bmzModelFolder, ClassLoader classloader)
 			throws LoadEngineException, IOException {
 		return createBioimageioModel(bmzModelFolder, InstalledEngines.getEnginesDir(), classloader);
 	}
@@ -147,7 +147,7 @@ public class BioimageIoModel extends DLModel
 	 * @throws LoadEngineException if there is any error loading the DL framework
 	 * @throws IOException if there is any error finding the engines in the system
 	 */
-	public static BioimageIoModel createBioimageioModel(String bmzModelFolder)
+	public static BioimageIoModelJava createBioimageioModel(String bmzModelFolder)
 			throws LoadEngineException, IOException {
 		return createBioimageioModel(bmzModelFolder, InstalledEngines.getEnginesDir());
 	}
@@ -168,7 +168,7 @@ public class BioimageIoModel extends DLModel
 	 * @throws LoadEngineException if there is any error loading the DL framework
 	 * @throws IOException if there is any error finding the engines in the system
 	 */
-	public static BioimageIoModel createBioimageioModel(String bmzModelFolder, String enginesFolder) 
+	public static BioimageIoModelJava createBioimageioModel(String bmzModelFolder, String enginesFolder) 
 			throws LoadEngineException, IOException {
 		return createBioimageioModel(bmzModelFolder, enginesFolder, null);
 	}
@@ -201,7 +201,7 @@ public class BioimageIoModel extends DLModel
 	 * @throws LoadEngineException if there is any error loading the DL framework
 	 * @throws IOException if there is any error finding the engines in the system
 	 */
-	public static BioimageIoModel createBioimageioModel(String bmzModelFolder, String enginesFolder, ClassLoader classloader) 
+	public static BioimageIoModelJava createBioimageioModel(String bmzModelFolder, String enginesFolder, ClassLoader classloader) 
 			throws LoadEngineException, IOException {
 		Objects.requireNonNull(bmzModelFolder);
 		Objects.requireNonNull(enginesFolder);
@@ -230,7 +230,7 @@ public class BioimageIoModel extends DLModel
 			throw new IOException("Please install a compatible engine with the model weights. "
 					+ "To be compatible the engine has to be of the same framework and the major version needs to be the same. "
 					+ "The model weights are: " + descriptor.getWeights().getSupportedWeightNamesAndVersion());
-		BioimageIoModel model = new BioimageIoModel( info, bmzModelFolder, modelSource, classloader );
+		BioimageIoModelJava model = new BioimageIoModelJava( info, bmzModelFolder, modelSource, classloader );
 		model.descriptor = descriptor;
 		model.tileCalculator = TileCalculator.init(descriptor);
 		return model;
@@ -266,7 +266,7 @@ public class BioimageIoModel extends DLModel
 	 * @throws IOException if there is any error finding the engines in the system
 	 * @throws IllegalStateException if any of the installed DL engines have been manipulated incorrectly
 	 */
-	public static BioimageIoModel createBioimageioModelWithExactWeigths(String bmzModelFolder, 
+	public static BioimageIoModelJava createBioimageioModelWithExactWeigths(String bmzModelFolder, 
 			String enginesFolder, ClassLoader classloader)
 			throws IOException, IllegalStateException, LoadEngineException {
 		Objects.requireNonNull(bmzModelFolder);
@@ -291,7 +291,7 @@ public class BioimageIoModel extends DLModel
 		if (info == null)
 			throw new IOException("Please install the engines defined by the model weights. "
 					+ "The model weights are: " + descriptor.getWeights().getSupportedWeightNamesAndVersion());
-		BioimageIoModel model = new BioimageIoModel(info, bmzModelFolder, modelSource, classloader);
+		BioimageIoModelJava model = new BioimageIoModelJava(info, bmzModelFolder, modelSource, classloader);
 		model.descriptor = descriptor;
 		model.tileCalculator = TileCalculator.init(descriptor);
 		return model;
@@ -404,7 +404,7 @@ public class BioimageIoModel extends DLModel
 		Img<T> im = Cast.unchecked(ArrayImgs.floats(new long[] {1, 1, 512, 512}));
 		List<Tensor<T>> l = new ArrayList<Tensor<T>>();
 		l.add(Tensor.build("input0", "bcyx", im));
-		BioimageIoModel model = createBioimageioModel(mm);
+		BioimageIoModelJava model = createBioimageioModel(mm);
 		model.loadModel();
 		TileInfo tile = TileInfo.build(l.get(0).getName(), new long[] {1, 1, 512, 512}, 
 				l.get(0).getAxesOrderString(), new long[] {1, 1, 512, 512}, l.get(0).getAxesOrderString());

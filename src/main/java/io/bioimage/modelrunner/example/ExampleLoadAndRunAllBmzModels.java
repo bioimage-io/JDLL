@@ -25,7 +25,7 @@ import io.bioimage.modelrunner.bioimageio.description.TensorSpec;
 import io.bioimage.modelrunner.bioimageio.description.weights.ModelWeight;
 import io.bioimage.modelrunner.bioimageio.description.weights.WeightFormat;
 import io.bioimage.modelrunner.engine.installation.EngineInstall;
-import io.bioimage.modelrunner.model.BioimageIoModel;
+import io.bioimage.modelrunner.model.java.BioimageIoModelJava;
 import io.bioimage.modelrunner.tensor.Tensor;
 
 import java.io.File;
@@ -130,7 +130,7 @@ public class ExampleLoadAndRunAllBmzModels {
 	 */
 	public static <T extends RealType<T> & NativeType<T>, R extends RealType<R> & NativeType<R>>
 	void loadAndRunModel(String modelFolder, ModelDescriptor descriptor) throws Exception {
-		try (BioimageIoModel model = BioimageIoModel.createBioimageioModel(modelFolder, ENGINES_DIR);) {
+		try (BioimageIoModelJava model = BioimageIoModelJava.createBioimageioModel(modelFolder, ENGINES_DIR);) {
 			model.loadModel();
 			List<Tensor<FloatType>> inputs = createInputs(descriptor);
 			List<Tensor<FloatType>> outputs = createOutputs(descriptor);

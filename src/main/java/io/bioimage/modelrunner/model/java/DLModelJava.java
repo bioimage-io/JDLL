@@ -20,7 +20,7 @@
 /**
  * 
  */
-package io.bioimage.modelrunner.model;
+package io.bioimage.modelrunner.model.java;
 
 import java.io.IOException;
 import java.net.MalformedURLException;
@@ -40,6 +40,7 @@ import io.bioimage.modelrunner.engine.EngineLoader;
 import io.bioimage.modelrunner.exceptions.LoadEngineException;
 import io.bioimage.modelrunner.exceptions.LoadModelException;
 import io.bioimage.modelrunner.exceptions.RunModelException;
+import io.bioimage.modelrunner.model.BaseModel;
 import io.bioimage.modelrunner.tensor.Tensor;
 import io.bioimage.modelrunner.utils.Constants;
 import net.imglib2.RandomAccessibleInterval;
@@ -54,7 +55,7 @@ import net.imglib2.util.Util;
  * 
  * @author Carlos Garcia Lopez de Haro
  */
-public class DLModel extends BaseModel
+public class DLModelJava extends BaseModel
 {
 	/**
 	 * Whether the model is loaded or not
@@ -126,7 +127,7 @@ public class DLModel extends BaseModel
 	 * @throws IOException if there is any error finding the engines in the system
 	 * @throws IllegalStateException if any of the engines has been incorrectly modified
 	 */
-	protected DLModel(EngineInfo engineInfo, String modelFolder, String modelSource, ClassLoader classLoader )
+	protected DLModelJava(EngineInfo engineInfo, String modelFolder, String modelSource, ClassLoader classLoader )
 			throws LoadEngineException, MalformedURLException, IllegalStateException, IOException
 	{
 		if ( !engineInfo.getFramework().equals(EngineInfo.getTensorflowKey())
@@ -366,7 +367,7 @@ public class DLModel extends BaseModel
 
 	/**
 	 * Get the EngineClassLoader created by the DeepLearning Model
-	 * {@link BioimageIoModel}. The EngineClassLoader loads the JAR files needed to use
+	 * {@link BioimageIoModelJava}. The EngineClassLoader loads the JAR files needed to use
 	 * the corresponding Deep Learning framework (engine)
 	 * 
 	 * @return the Model corresponding EngineClassLoader
@@ -415,7 +416,7 @@ public class DLModel extends BaseModel
 	}
 
 	/**
-	 * Creates a DeepLearning model {@link BioimageIoModel} from the wanted Deep Learning
+	 * Creates a DeepLearning model {@link BioimageIoModelJava} from the wanted Deep Learning
 	 * framework (engine)
 	 * 
 	 * @param modelFolder
@@ -436,7 +437,7 @@ public class DLModel extends BaseModel
 	 * @throws IllegalStateException if any of the engines has been incorrectly modified
 	 * @throws LoadEngineException if there is any error loading the engines
 	 */
-	public static DLModel createModel( String modelFolder, String modelSource, EngineInfo engineInfo )
+	public static DLModelJava createModel( String modelFolder, String modelSource, EngineInfo engineInfo )
 			throws LoadEngineException, MalformedURLException, IllegalStateException, IOException
 	{
 		Objects.requireNonNull(modelFolder);
@@ -447,17 +448,17 @@ public class DLModel extends BaseModel
 
 		if (Paths.get(modelFolder, Constants.RDF_FNAME).toFile().isFile()) {
 			try {
-				BioimageIoModel model = new BioimageIoModel( engineInfo, modelFolder, modelSource, null );
+				BioimageIoModelJava model = new BioimageIoModelJava( engineInfo, modelFolder, modelSource, null );
 				model.descriptor = ModelDescriptorFactory.readFromLocalFile(Paths.get(modelFolder, Constants.RDF_FNAME).toAbsolutePath().toString());
 				return model;
 			} catch (IOException e) {
 			}
 		}
-		return new DLModel( engineInfo, modelFolder, modelSource, null );
+		return new DLModelJava( engineInfo, modelFolder, modelSource, null );
 	}
 
 	/**
-	 * Creates a DeepLearning model {@link BioimageIoModel} from the wanted Deep Learning
+	 * Creates a DeepLearning model {@link BioimageIoModelJava} from the wanted Deep Learning
 	 * framework (engine)
 	 * 
 	 * @param modelFolder
@@ -487,7 +488,7 @@ public class DLModel extends BaseModel
 	 * @throws IllegalStateException if any of the installed DL engines have been manipulated incorrectly
 	 * @throws MalformedURLException if the JAR files are not well defined in the .json file
 	 */
-	public static DLModel createModel( String modelFolder, String modelSource, EngineInfo engineInfo,
+	public static DLModelJava createModel( String modelFolder, String modelSource, EngineInfo engineInfo,
 			ClassLoader classLoader ) throws LoadEngineException, MalformedURLException, IllegalStateException, IOException
 	{
 		Objects.requireNonNull(modelFolder);
@@ -498,13 +499,13 @@ public class DLModel extends BaseModel
 
 		if (Paths.get(modelFolder, Constants.RDF_FNAME).toFile().isFile()) {
 			try {
-				BioimageIoModel model = new BioimageIoModel( engineInfo, modelFolder, modelSource, classLoader );
+				BioimageIoModelJava model = new BioimageIoModelJava( engineInfo, modelFolder, modelSource, classLoader );
 				model.descriptor = ModelDescriptorFactory.readFromLocalFile(Paths.get(modelFolder, Constants.RDF_FNAME).toAbsolutePath().toString());
 				return model;
 			} catch (IOException e) {
 			}
 		}
-		return new DLModel( engineInfo, modelFolder, modelSource, classLoader );
+		return new DLModelJava( engineInfo, modelFolder, modelSource, classLoader );
 	}
 
 	/**
@@ -526,7 +527,7 @@ public class DLModel extends BaseModel
 	}
 	
 	/**
-	 * Create consumer used to be used with {@link BioimageIoModel} to count the number of tiles that
+	 * Create consumer used to be used with {@link BioimageIoModelJava} to count the number of tiles that
 	 * have been processed in the case there are tiles. 
 	 * Optional
 	 * 
