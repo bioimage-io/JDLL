@@ -1144,7 +1144,7 @@ public class Mamba {
 		                	processBuff.delete(0, newLineIndex + 1);
 		                }
 		            }
-		            if (inputStreamOpen(inputStream)) {
+		            if (inputStreamOpen(errStream)) {
 		                errBuff.append(new String(buffer, 0, errStream.read(buffer)));
 		                while ((newLineIndex = errBuff.indexOf(System.lineSeparator())) != -1) {
 		                	errChunk += ERR_STREAM_UUUID + errBuff.substring(0, newLineIndex + 1).trim() + System.lineSeparator();
