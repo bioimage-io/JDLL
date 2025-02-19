@@ -27,6 +27,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Consumer;
 
 import org.apache.commons.compress.archivers.ArchiveException;
 
@@ -39,6 +40,7 @@ import io.bioimage.modelrunner.apposed.appose.Service.TaskStatus;
 import io.bioimage.modelrunner.bioimageio.description.ModelDescriptor;
 import io.bioimage.modelrunner.bioimageio.description.ModelDescriptorFactory;
 import io.bioimage.modelrunner.bioimageio.description.exceptions.ModelSpecsException;
+import io.bioimage.modelrunner.model.python.DLModelPytorch;
 import io.bioimage.modelrunner.system.PlatformDetection;
 import io.bioimage.modelrunner.tensor.Tensor;
 import io.bioimage.modelrunner.tensor.shm.SharedMemoryArray;
@@ -62,11 +64,11 @@ public abstract class Cellpose implements Closeable {
 	
 	private final String modelDir;
 	
-	protected final String name;
-	
-	protected final String basedir;
+	protected final String weightsPath;
 	
 	protected final int nChannels;
+	
+	private int diameter = 30;
 	
 	private boolean loaded = false;
 	
@@ -76,14 +78,14 @@ public abstract class Cellpose implements Closeable {
 		
 	private Service python;
 	
-	private static String INSTALLATION_DIR = 
-			(System.getProperty("user.home") == null || System.getProperty("user.home").equals("")) 
-			? Mamba.BASE_PATH : System.getProperty("user.home") + File.separator + ".jdll";
+	private String envPath = DEFAULT_ENV_DIR;
 	
-	private static final List<String> STARDIST_DEPS = Arrays.asList(new String[] {"python=3.10", "stardist", "numpy", "appose"});
+	private static String INSTALLATION_DIR = Mamba.BASE_PATH;
 	
-	private static final List<String> STARDIST_CHANNELS = Arrays.asList(new String[] {"conda-forge", "default"});
-
+	private static String DEFAULT_ENV_DIR = INSTALLATION_DIR + File.separator + "envs" + DLModelPytorch.COMMON_PYTORCH_ENV_NAME;
+	
+	private static final List<String> CELLPOSE_DEPS = Arrays.asList(new String[] {"cellpose==3.1.1.1"});
+	
 	
 	private static final String SHM_NAME_KEY = "_shm_name";
 	
@@ -169,31 +171,23 @@ public abstract class Cellpose implements Closeable {
 	
 	protected abstract <T extends RealType<T> & NativeType<T>> RandomAccessibleInterval<T> reconstructMask() throws IOException;
 	
-	protected Cellpose(String modelName, String baseDir) throws IOException, ModelSpecsException {
-		this.name = modelName;
-		this.basedir = baseDir;
-		modelDir = new File(baseDir, modelName).getAbsolutePath();
+	protected Cellpose(String weightsPath) throws IOException, ModelSpecsException {
+		this.weightsPath = weightsPath;
+		this.modelDir = new File(weightsPath).getParentFile().getAbsolutePath();
 		if (new File(modelDir, "config.json").isFile() == false && new File(modelDir, Constants.RDF_FNAME).isFile() == false)
 			throw new IllegalArgumentException("No 'config.json' file found in the model directory");
 		else if (new File(modelDir, "config.json").isFile() == false)
 			createConfigFromBioimageio();
-		if (new File(modelDir, "thresholds.json").isFile() == false && new File(modelDir, Constants.RDF_FNAME).isFile() == false)
-			throw new IllegalArgumentException("No 'thresholds.json' file found in the model directory");
-		else if (new File(modelDir, "thresholds.json").isFile() == false)
-			createThresholdsFromBioimageio();
 		this.nChannels = ((Number) JSONUtils.load(new File(modelDir, "config.json").getAbsolutePath()).get("n_channel_in")).intValue();
     	createPythonService();
 	}
 	
 	protected Cellpose(ModelDescriptor descriptor) throws IOException, ModelSpecsException {
 		this.descriptor = descriptor;
-		this.name = new File(descriptor.getModelPath()).getName();
-		this.basedir = new File(descriptor.getModelPath()).getParentFile().getAbsolutePath();
 		modelDir = descriptor.getModelPath();
+		this.weightsPath = descriptor.getModelPath() + File.separator + "";
 		if (new File(modelDir, "config.json").isFile() == false)
 			createConfigFromBioimageio();
-		if (new File(modelDir, "thresholds.json").isFile() == false)
-			createThresholdsFromBioimageio();
 		this.nChannels = ((Number) JSONUtils.load(new File(modelDir, "config.json").getAbsolutePath()).get("n_channel_in")).intValue();
     	createPythonService();
 	}
@@ -205,19 +199,28 @@ public abstract class Cellpose implements Closeable {
     	Map<String, Object> stardistMap = (Map<String, Object>) descriptor.getConfig().getSpecMap().get("stardist");
     	Map<String, Object> stardistConfig = (Map<String, Object>) stardistMap.get("config");
     	JSONUtils.writeJSONFile(new File(modelDir, "config.json").getAbsolutePath(), stardistConfig);
-	}	
+	}
 	
-	private void createThresholdsFromBioimageio() throws IOException, ModelSpecsException {
-		if (descriptor == null)
-			descriptor = ModelDescriptorFactory.readFromLocalFile(modelDir + File.separator + Constants.RDF_FNAME);
-    	Map<String, Object> stardistMap = (Map<String, Object>) descriptor.getConfig().getSpecMap().get("stardist");
-    	Map<String, Object> stardistThres = (Map<String, Object>) stardistMap.get("thresholds");
-    	JSONUtils.writeJSONFile(new File(modelDir, "thresholds.json").getAbsolutePath(), stardistThres);
-	}	
+	public void setEnvPath(String envPath) throws IOException {
+		if (!isInstalled(envPath))
+			throw new IOException("Missing Cellpose requirements in the specified dir. These are the cellpose requirements: "
+					+  CELLPOSE_DEPS);
+		this.envPath = envPath;
+		this.python.close();
+		createPythonService();
+	}
+	
+	public void setDiameter(int diameter) {
+		this.diameter = diameter;
+	}
+	
+	public int getDiameter() {
+		return this.diameter;
+	}
 	
 	private void createPythonService() throws IOException {
 		Environment env = new Environment() {
-			@Override public String base() { return new Mamba(INSTALLATION_DIR).getEnvsDir() + File.separator + "stardist"; }
+			@Override public String base() { return envPath; }
 			};
 		python = env.python();
 		python.debug(System.err::println);
@@ -328,13 +331,22 @@ public abstract class Cellpose implements Closeable {
 	 */
 	public static boolean isInstalled() {
 		// TODO
+		return isInstalled(null);
+	}
+	
+	/**
+	 * Check whether everything that is needed for Stardist 2D is installed or not
+	 * @return true if the full python environment is installed or not
+	 */
+	public static boolean isInstalled(String envPath) {
+		// TODO
 		return false;
 	}
 	
 	/**
-	 * Check whether the requirements needed to run Stardist 2D are satisfied or not.
+	 * Check whether the requirements needed to run cellpose are satisfied or not.
 	 * First checks if the corresponding Java DL engine is installed or not, then checks
-	 * if the Python environment needed for Stardist2D post processing is fine too.
+	 * if the Python environment needed for cellpose post processing is fine too.
 	 * 
 	 * If anything is not installed, this method also installs it
 	 * 
@@ -348,32 +360,65 @@ public abstract class Cellpose implements Closeable {
 	public static void installRequirements() throws IOException, InterruptedException, 
 													RuntimeException, MambaInstallException, 
 													ArchiveException, URISyntaxException {
-		
+		installRequirements(null);
+	}
+	
+	/**
+	 * Check whether the requirements needed to run cellpose are satisfied or not.
+	 * First checks if the corresponding Java DL engine is installed or not, then checks
+	 * if the Python environment needed for cellpose post processing is fine too.
+	 * 
+	 * If anything is not installed, this method also installs it
+	 * 
+	 * @param consumer
+	 * 	String consumer that reads the installation log
+	 * 
+	 * @throws IOException if there is any error downloading the DL engine or installing the micromamba environment
+	 * @throws InterruptedException if the installation is stopped
+	 * @throws RuntimeException if there is any unexpected error in the micromamba environment installation
+	 * @throws MambaInstallException if there is any error downloading or installing micromamba
+	 * @throws ArchiveException if there is any error decompressing the micromamba installer
+	 * @throws URISyntaxException if the URL to the micromamba installation is not correct
+	 */
+	public static void installRequirements(Consumer<String> consumer) throws IOException, InterruptedException, 
+													RuntimeException, MambaInstallException, 
+													ArchiveException, URISyntaxException {
+		if (!DLModelPytorch.isInstalled(DEFAULT_ENV_DIR)) {
+			String pytorchDir = DLModelPytorch.getInstallationDir();
+			DLModelPytorch.setInstallationDir(INSTALLATION_DIR);
+			DLModelPytorch.installRequirements(consumer);
+			DLModelPytorch.setInstallationDir(pytorchDir);
+		}
+			
 		Mamba mamba = new Mamba(INSTALLATION_DIR);
-		boolean stardistPythonInstalled = false;
+		if (consumer != null) {
+			mamba.setConsoleOutputConsumer(consumer);
+			mamba.setErrorOutputConsumer(consumer);
+		}
+		boolean cellposePythonInstalled = false;
 		try {
-			stardistPythonInstalled = mamba.checkAllDependenciesInEnv("stardist", STARDIST_DEPS);
+			cellposePythonInstalled = mamba.checkAllDependenciesInEnv(DLModelPytorch.COMMON_PYTORCH_ENV_NAME, CELLPOSE_DEPS);
 		} catch (MambaInstallException e) {
 			mamba.installMicromamba();
 		}
-		if (!stardistPythonInstalled) {
-			// TODO add logging for environment installation
-			mamba.create("stardist", true, STARDIST_CHANNELS, STARDIST_DEPS);
+		if (!cellposePythonInstalled) {
+			mamba.pipInstallIn(CLOSE_SHM_CODE, CELLPOSE_DEPS.toArray(new String[CELLPOSE_DEPS.size()]));
 		};
 	}
 	
 	/**
-	 * Set the directory where the StarDist Python environment will be installed
+	 * Set the directory where the cellpose Python environment will be installed
 	 * @param installationDir
-	 * 	directory where the StarDist Python environment will be created
+	 * 	directory where the cellpose Python environment will be created
 	 */
 	public static void setInstallationDir(String installationDir) {
 		INSTALLATION_DIR = installationDir;
+		DEFAULT_ENV_DIR = INSTALLATION_DIR + File.separator + "envs" + DLModelPytorch.COMMON_PYTORCH_ENV_NAME;
 	}
 	
 	/**
 	 * 
-	 * @return the directory where the StarDist Python environment will be created
+	 * @return the directory where the cellpose Python environment will be created
 	 */
 	public static String getInstallationDir() {
 		return INSTALLATION_DIR;

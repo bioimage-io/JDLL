@@ -106,9 +106,7 @@ public abstract class StardistAbstract extends BaseModel {
 	 */
 	public String scaleRangeAxes = null;
 	
-	private static String INSTALLATION_DIR = 
-			(System.getProperty("user.home") == null || System.getProperty("user.home").equals("")) 
-			? Mamba.BASE_PATH : System.getProperty("user.home") + File.separator + ".jdll";
+	private static String INSTALLATION_DIR = Mamba.BASE_PATH;
 	
 	private static final List<String> STARDIST_DEPS = Arrays.asList(new String[] {"python=3.10", "stardist", "numpy", "appose"});
 	
@@ -509,9 +507,9 @@ public abstract class StardistAbstract extends BaseModel {
 	}
 	
 	/**
-	 * Check whether the requirements needed to run Stardist 2D are satisfied or not.
+	 * Check whether the requirements needed to run Stardist are satisfied or not.
 	 * First checks if the corresponding Java DL engine is installed or not, then checks
-	 * if the Python environment needed for Stardist2D post processing is fine too.
+	 * if the Python environment needed for Stardist post processing is fine too.
 	 * 
 	 * If anything is not installed, this method also installs it
 	 * 
@@ -529,9 +527,9 @@ public abstract class StardistAbstract extends BaseModel {
 	}
 	
 	/**
-	 * Check whether the requirements needed to run Stardist 2D are satisfied or not.
+	 * Check whether the requirements needed to run Stardist are satisfied or not.
 	 * First checks if the corresponding Java DL engine is installed or not, then checks
-	 * if the Python environment needed for Stardist2D post processing is fine too.
+	 * if the Python environment needed for Stardist post processing is fine too.
 	 * 
 	 * If anything is not installed, this method also installs it
 	 * 
