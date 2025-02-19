@@ -23,11 +23,16 @@ import java.io.Closeable;
 import java.io.File;
 import java.io.IOException;
 import java.net.URISyntaxException;
+import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.function.Consumer;
+import java.util.stream.Collectors;
 
 import org.apache.commons.compress.archivers.ArchiveException;
 
@@ -37,10 +42,12 @@ import io.bioimage.modelrunner.apposed.appose.MambaInstallException;
 import io.bioimage.modelrunner.apposed.appose.Service;
 import io.bioimage.modelrunner.apposed.appose.Service.Task;
 import io.bioimage.modelrunner.apposed.appose.Service.TaskStatus;
+import io.bioimage.modelrunner.bioimageio.BioimageioRepo;
 import io.bioimage.modelrunner.bioimageio.description.ModelDescriptor;
 import io.bioimage.modelrunner.bioimageio.description.ModelDescriptorFactory;
 import io.bioimage.modelrunner.bioimageio.description.exceptions.ModelSpecsException;
 import io.bioimage.modelrunner.model.python.DLModelPytorch;
+import io.bioimage.modelrunner.model.stardist.Stardist2D;
 import io.bioimage.modelrunner.system.PlatformDetection;
 import io.bioimage.modelrunner.tensor.Tensor;
 import io.bioimage.modelrunner.tensor.shm.SharedMemoryArray;
@@ -66,7 +73,7 @@ public abstract class Cellpose implements Closeable {
 	
 	protected final String weightsPath;
 	
-	protected final int nChannels;
+	protected int[] channels;
 	
 	private int diameter = 30;
 	
@@ -86,6 +93,18 @@ public abstract class Cellpose implements Closeable {
 	
 	private static final List<String> CELLPOSE_DEPS = Arrays.asList(new String[] {"cellpose==3.1.1.1"});
 	
+	private static final List<String> PRETRAINED_CELLPOSE_MODELS = Arrays.asList(new String[] {"cyto", "cyto2", "cyto3", "nuclei"});
+	
+	private static final String CELLPOSE_URL = "https://www.cellpose.org/models/%s";
+	
+	private static final Map<String, String[]> MODEL_REQ;
+	static {
+		MODEL_REQ = new HashMap<String, String[]>();
+		MODEL_REQ.put("cyto2", new String[] {"", ""});
+		MODEL_REQ.put("cyto3", new String[] {"", ""});
+		MODEL_REQ.put("cyto", new String[] {"", ""});
+		MODEL_REQ.put("nuclei", new String[] {"", ""});
+	}
 	
 	private static final String SHM_NAME_KEY = "_shm_name";
 	
@@ -178,7 +197,6 @@ public abstract class Cellpose implements Closeable {
 			throw new IllegalArgumentException("No 'config.json' file found in the model directory");
 		else if (new File(modelDir, "config.json").isFile() == false)
 			createConfigFromBioimageio();
-		this.nChannels = ((Number) JSONUtils.load(new File(modelDir, "config.json").getAbsolutePath()).get("n_channel_in")).intValue();
     	createPythonService();
 	}
 	
@@ -188,7 +206,6 @@ public abstract class Cellpose implements Closeable {
 		this.weightsPath = descriptor.getModelPath() + File.separator + "";
 		if (new File(modelDir, "config.json").isFile() == false)
 			createConfigFromBioimageio();
-		this.nChannels = ((Number) JSONUtils.load(new File(modelDir, "config.json").getAbsolutePath()).get("n_channel_in")).intValue();
     	createPythonService();
 	}
 	
@@ -208,6 +225,10 @@ public abstract class Cellpose implements Closeable {
 		this.envPath = envPath;
 		this.python.close();
 		createPythonService();
+	}
+	
+	public void setChannels(int[] channels) {
+		this.channels = channels;
 	}
 	
 	public void setDiameter(int diameter) {
@@ -323,6 +344,97 @@ public abstract class Cellpose implements Closeable {
 		shmCoords.close();
 		
 		return coordsCopy;
+	}
+	
+	/**
+	 * Initialize one of the "official" pretrained Stardist 2D models.
+	 * By default, the model will be installed in the "models" folder inside the application
+	 * @param pretrainedModel
+	 * 	the name of the pretrained model. 
+	 * @param forceDownload
+	 * 	whether to force the download or to try to look if the model has already been installed before
+	 * @return an instance of a pretrained Stardist2D model ready to be used
+	 * @throws IOException if there is any error downloading the model, in the case it is needed
+	 * @throws InterruptedException if the download of the model is stopped
+	 */
+	public static Cellpose fromPretained(String pretrainedModel, boolean forceDownload) throws IOException, InterruptedException {
+		return fromPretained(pretrainedModel, new File("models").getAbsolutePath(), forceDownload);
+	}
+	
+	/**
+	 * Initialize a Stardist2D using the format of the Bioiamge.io model zoo.
+	 * @param descriptor
+	 * 	the bioimage.io model descriptor
+	 * @return an instance of a Stardist2D model ready to be used
+     * @throws IOException If there's an I/O error.
+	 */
+	public static Cellpose fromBioimageioModel(ModelDescriptor descriptor) throws IOException {
+		if (descriptor.getTags().stream().filter(tt -> tt.toLowerCase().equals("cellpose")).findFirst().orElse(null) == null
+				&& !descriptor.getName().toLowerCase().contains("cellpose"))
+			throw new RuntimeException("This model does not seem to be a cellpose model from the Bioimage.io");
+		return new Cellpose(descriptor);
+	}
+	
+	/**
+	 * Initialize one of the "official" pretrained cellpose ("cyto2", "cyto3"...) models or
+	 * those available in the bioimage.io
+	 * @param pretrainedModel
+	 * 	the name of the pretrained model.
+	 * @param installDir
+	 * 	the directory where the model wants to be installed
+	 * @param forceInstall
+	 * 	whether to force the installation or to try to look if the model has already been installed before
+	 * @return an instance of a pretrained Stardist2D model ready to be used
+	 * @throws IOException if there is any error downloading the model, in the case it is needed
+	 * @throws InterruptedException if the download of the model is stopped
+	 */
+	public static Cellpose fromPretained(String pretrainedModel, String installDir, boolean forceInstall) throws IOException, 
+																					InterruptedException {
+		if (PRETRAINED_CELLPOSE_MODELS.contains(pretrainedModel) && !forceInstall) {
+			ModelDescriptor md = ModelDescriptorFactory.getModelsAtLocalRepo().stream()
+					.filter(mm ->mm.getName().equals("StarDist H&E Nuclei Segmentation")).findFirst().orElse(null);
+			if (md != null) return new Stardist2D(md);
+			String path = BioimageioRepo.connect().downloadByName("StarDist H&E Nuclei Segmentation", installDir);
+			return Cellpose.fromPretained(pretrainedModel);
+		} else if (PRETRAINED_CELLPOSE_MODELS.contains(pretrainedModel)) {
+			String path = BioimageioRepo.connect().downloadByName("StarDist H&E Nuclei Segmentation", installDir);
+			return Cellpose.fromPretained(pretrainedModel);
+		}
+		
+		BioimageioRepo br = BioimageioRepo.connect();
+
+		ModelDescriptor descriptor = br.selectByName(pretrainedModel);
+		if (descriptor == null)
+			descriptor = br.selectByID(pretrainedModel);
+		if (descriptor == null)
+			throw new IllegalArgumentException("The model does not correspond to on of the available pretrained cellpose models."
+					+ " To find a list of available cellpose models, please run Cellpose.getPretrainedList()");
+
+		String path = BioimageioRepo.downloadModel(descriptor, installDir);
+		descriptor.addModelPath(Paths.get(path));
+		return Cellpose.fromBioimageioModel(descriptor);
+	}
+	
+	public static List<String> getPretrainedList() {
+		List<String> list = new ArrayList<String>();
+		try {
+			BioimageioRepo br = BioimageioRepo.connect();
+			Map<String, ModelDescriptor> models = br.listAllModels(false);
+			list = models.entrySet().stream()
+					.filter(ee -> ee.getValue().getModelFamily().equals(ModelDescriptor.CELLPOSE))
+					.map(ee -> ee.getValue().getName()).collect(Collectors.toList());
+		} catch (InterruptedException e) {
+		}
+		list.addAll(PRETRAINED_CELLPOSE_MODELS);
+		return list;
+	}
+	
+	public static String donwloadPretrained(String modelName, String downloadDir) {
+		return donwloadPretrained(modelName, downloadDir, null);
+	}
+	
+	public static String donwloadPretrained(String modelName, String downloadDir, Consumer<Double> progressConsumer) {
+		
 	}
 	
 	/**
