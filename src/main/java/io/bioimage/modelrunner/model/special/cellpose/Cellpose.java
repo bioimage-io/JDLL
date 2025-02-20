@@ -149,7 +149,7 @@ public class Cellpose extends SpecialModelBase {
 	private static final String KEYS_KEY = "keys";
 
 	protected static final String LOAD_MODEL_CODE_ABSTRACT = ""
-			+ "if denoise not in globals().keys():" + System.lineSeparator()
+			+ "if 'denoise' not in globals().keys():" + System.lineSeparator()
 			+ "  from cellpose import denoise" + System.lineSeparator()
 			+ "  globals()['denoise'] = denoise" + System.lineSeparator()
 			+ "if 'np' not in globals().keys():" + System.lineSeparator()
@@ -279,6 +279,7 @@ public class Cellpose extends SpecialModelBase {
 		if (!loaded)
 			return;
 		python.close();
+		loaded = false;
 	}
 	
 	public <T extends RealType<T> & NativeType<T>, R extends RealType<R> & NativeType<R>> 

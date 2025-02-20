@@ -321,6 +321,7 @@ public abstract class StardistAbstract extends BaseModel {
 		if (!loaded)
 			return;
 		python.close();
+		loaded = false;
 	}
 
 	@Override
