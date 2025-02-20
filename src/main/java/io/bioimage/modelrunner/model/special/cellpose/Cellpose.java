@@ -19,7 +19,6 @@
  */
 package io.bioimage.modelrunner.model.special.cellpose;
 
-import java.io.Closeable;
 import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
@@ -28,18 +27,16 @@ import java.net.URL;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.concurrent.ExecutionException;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 import org.apache.commons.compress.archivers.ArchiveException;
 
-import io.bioimage.modelrunner.apposed.appose.Environment;
 import io.bioimage.modelrunner.apposed.appose.Mamba;
 import io.bioimage.modelrunner.apposed.appose.MambaInstallException;
 import io.bioimage.modelrunner.apposed.appose.Service;
@@ -48,21 +45,20 @@ import io.bioimage.modelrunner.apposed.appose.Service.TaskStatus;
 import io.bioimage.modelrunner.bioimageio.BioimageioRepo;
 import io.bioimage.modelrunner.bioimageio.description.ModelDescriptor;
 import io.bioimage.modelrunner.bioimageio.description.ModelDescriptorFactory;
-import io.bioimage.modelrunner.bioimageio.description.exceptions.ModelSpecsException;
 import io.bioimage.modelrunner.download.MultiFileDownloader;
+import io.bioimage.modelrunner.exceptions.RunModelException;
 import io.bioimage.modelrunner.model.python.DLModelPytorch;
-import io.bioimage.modelrunner.model.stardist.Stardist2D;
-import io.bioimage.modelrunner.system.PlatformDetection;
+import io.bioimage.modelrunner.model.special.SpecialModelBase;
 import io.bioimage.modelrunner.tensor.Tensor;
 import io.bioimage.modelrunner.tensor.shm.SharedMemoryArray;
-import io.bioimage.modelrunner.utils.CommonUtils;
 import io.bioimage.modelrunner.utils.Constants;
 import io.bioimage.modelrunner.utils.JSONUtils;
 import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.type.NativeType;
 import net.imglib2.type.numeric.RealType;
-import net.imglib2.util.Cast;
-import net.imglib2.util.Util;
+import net.imglib2.type.numeric.real.FloatType;
+import net.imglib2.view.IntervalView;
+import net.imglib2.view.Views;
 
 /**
  * Implementation of an API to run Cellpose models out of the box with little configuration.
@@ -71,25 +67,37 @@ import net.imglib2.util.Util;
  *
  *@author Carlos Garcia
  */
-public abstract class Cellpose implements Closeable {
+public class Cellpose extends SpecialModelBase {
 	
 	private final String modelDir;
 	
 	protected final String weightsPath;
 	
+	protected final String sizeWeigthsPath;
+	
+	protected final String modelType;
+	
+	private String axes = "";
+	
 	protected int[] channels;
 	
-	private int diameter;
+	private Integer diameter;
+	
+	private boolean is3D = false;
 	
 	private boolean loaded = false;
 	
 	protected SharedMemoryArray shma;
 	
+	protected SharedMemoryArray shmaFl;
+	
+	protected SharedMemoryArray shmaDn;
+	
+	protected SharedMemoryArray shmaSt;
+	
 	private ModelDescriptor descriptor;
 		
 	private Service python;
-	
-	private String envPath = DEFAULT_ENV_DIR;
 	
 	private static int DEFAULT_DIAMETER = 30;
 	
@@ -137,11 +145,11 @@ public abstract class Cellpose implements Closeable {
 	private static final String SHAPE_KEY = "_shape";
 	
 	private static final String KEYS_KEY = "keys";
-	
+
 	protected static final String LOAD_MODEL_CODE_ABSTRACT = ""
-			+ "if '%s' not in globals().keys():" + System.lineSeparator()
-			+ "  from stardist.models import %s" + System.lineSeparator()
-			+ "  globals()['%s'] = %s" + System.lineSeparator()
+			+ "if denoise not in globals().keys():" + System.lineSeparator()
+			+ "  from cellpose import denoise" + System.lineSeparator()
+			+ "  globals()['denoise'] = denoise" + System.lineSeparator()
 			+ "if 'np' not in globals().keys():" + System.lineSeparator()
 			+ "  import numpy as np" + System.lineSeparator()
 			+ "  globals()['np'] = np" + System.lineSeparator()
@@ -151,8 +159,7 @@ public abstract class Cellpose implements Closeable {
 			+ "if 'shared_memory' not in globals().keys():" + System.lineSeparator()
 			+ "  from multiprocessing import shared_memory" + System.lineSeparator()
 			+ "  globals()['shared_memory'] = shared_memory" + System.lineSeparator()
-			+ "os.environ[\"CUDA_VISIBLE_DEVICES\"] = \"-1\"" + System.lineSeparator()
-			+ "model = %s(None, name='%s', basedir='%s')" + System.lineSeparator()
+			+ "model = denoise.CellposeDenoiseModel(gpu=True, model_type='%s')" + System.lineSeparator()
 			+ "globals()['model'] = model" + System.lineSeparator();
 	
 	private static final String RUN_MODEL_CODE = ""
@@ -199,38 +206,32 @@ public abstract class Cellpose implements Closeable {
 			+ "  im_shm.close()" + System.lineSeparator()
 			+ "  im_shm.unlink()" + System.lineSeparator();
 	
-	private static final String CLOSE_SHM_CODE = ""
-			+ "if 'np_list' in globals().keys():" + System.lineSeparator()
-			+ "  for a in np_list:" + System.lineSeparator()
-			+ "    del a" + System.lineSeparator()
-			+ "if 'shm_list' in globals().keys():" + System.lineSeparator()
-			+ "  for s in shm_list:" + System.lineSeparator()
-			+ "    s.unlink()" + System.lineSeparator()
-			+ "    del s" + System.lineSeparator();
-	
-	protected abstract String createImportsCode();
-	
-	protected abstract <T extends RealType<T> & NativeType<T>>  void checkInput(RandomAccessibleInterval<T> image);
-	
-	protected abstract <T extends RealType<T> & NativeType<T>> RandomAccessibleInterval<T> reconstructMask() throws IOException;
-	
-	protected Cellpose(String weightsPath) throws IOException, ModelSpecsException {
+	protected Cellpose(String weightsPath) throws IOException {
 		this.weightsPath = weightsPath;
 		this.modelDir = new File(weightsPath).getParentFile().getAbsolutePath();
+		this.axes = "yxc";
+		this.modelType = ALIAS.entrySet().stream()
+				.filter(ee -> ee.getValue().equals(new File(this.weightsPath).getName()))
+				.map(ee -> ee.getValue()).findFirst().get();
+		this.sizeWeigthsPath = modelDir + File.separator + MODEL_REQ.get(modelType)[1];
+		this.envPath = DEFAULT_ENV_DIR;
     	createPythonService();
 	}
 	
-	protected Cellpose(ModelDescriptor descriptor) throws IOException, ModelSpecsException {
+	protected Cellpose(ModelDescriptor descriptor) throws IOException {
 		this.descriptor = descriptor;
+		this.sizeWeigthsPath = null;
+		this.modelType = "bioimage.io";
 		modelDir = descriptor.getModelPath();
 		this.weightsPath = descriptor.getModelPath() + File.separator + "";
 		if (new File(modelDir, "config.json").isFile() == false)
 			createConfigFromBioimageio();
+		envPath = DEFAULT_ENV_DIR;
     	createPythonService();
 	}
 	
 	@SuppressWarnings("unchecked")
-	private void createConfigFromBioimageio() throws IOException, ModelSpecsException {
+	private void createConfigFromBioimageio() throws IOException {
 		if (descriptor == null)
 			descriptor = ModelDescriptorFactory.readFromLocalFile(modelDir + File.separator + Constants.RDF_FNAME);
     	Map<String, Object> stardistMap = (Map<String, Object>) descriptor.getConfig().getSpecMap().get("stardist");
@@ -259,29 +260,12 @@ public abstract class Cellpose implements Closeable {
 		return this.diameter;
 	}
 	
-	private void createPythonService() throws IOException {
-		Environment env = new Environment() {
-			@Override public String base() { return envPath; }
-			};
-		python = env.python();
-		python.debug(System.err::println);
-	}
-	
 	protected String createEncodeImageScript() {
 		String code = "";
-		// This line wants to recreate the original numpy array. Should look like:
-		// input0_appose_shm = shared_memory.SharedMemory(name=input0)
-		// input0 = np.ndarray(size, dtype="float64", buffer=input0_appose_shm.buf).reshape([64, 64])
-		code += "im_shm = shared_memory.SharedMemory(name='"
-							+ shma.getNameForPython() + "', size=" + shma.getSize() 
-							+ ")" + System.lineSeparator();
-		long nElems = 1;
-		for (long elem : shma.getOriginalShape()) nElems *= elem;
-		code += "im = np.ndarray(" + nElems  + ", dtype='" + CommonUtils.getDataTypeFromRAI(Cast.unchecked(shma.getSharedRAI()))
-			  + "', buffer=im_shm.buf).reshape([";
-		for (int i = 0; i < shma.getOriginalShape().length; i ++)
-			code += shma.getOriginalShape()[i] + ", ";
-		code += "])" + System.lineSeparator();
+		code += codeToConvertShmaToPython(shma, "im") + System.lineSeparator();
+		code += codeToConvertShmaToPython(shmaFl, "fl") + System.lineSeparator();
+		code += codeToConvertShmaToPython(shmaSt, "st") + System.lineSeparator();
+		code += codeToConvertShmaToPython(shmaDn, "dn") + System.lineSeparator();
 		return code;
 	}
 	
@@ -321,51 +305,6 @@ public abstract class Cellpose implements Closeable {
 		return reconstructOutputs(task);
 	}
 	
-	private <T extends RealType<T> & NativeType<T>> 
-	Map<String, RandomAccessibleInterval<T>> reconstructOutputs(Task task) 
-			throws IOException, InterruptedException {
-		
-		Map<String, RandomAccessibleInterval<T>> outs = new HashMap<String, RandomAccessibleInterval<T>>();
-		outs.put("mask", reconstructMask());
-		
-		if (task.outputs.get(KEYS_KEY) != null) {
-			for (String kk : (List<String>) task.outputs.get(KEYS_KEY)) {
-				outs.put(kk, reconstruct(task, kk));
-			}
-		}
-		
-		if (PlatformDetection.isWindows()) {
-			Task closeSHMTask = python.task(CLOSE_SHM_CODE);
-			closeSHMTask.waitFor();
-		}
-		return outs;
-	}
-	
-	private <T extends RealType<T> & NativeType<T>> 
-	RandomAccessibleInterval<T> reconstruct(Task task, String key) throws IOException {
-
-		String shm_name = (String) task.outputs.get(key + SHM_NAME_KEY);
-		String coords_dtype = (String) task.outputs.get(key + DTYPE_KEY);
-		List<Number> coords_shape = (List<Number>) task.outputs.get(key + SHAPE_KEY);
-		if (coords_shape == null)
-			return null;
-		
-		long[] coordsSh = new long[coords_shape.size()];
-		for (int i = 0; i < coordsSh.length; i ++)
-			coordsSh[i] = coords_shape.get(i).longValue();
-		SharedMemoryArray shmCoords = SharedMemoryArray.readOrCreate(shm_name, coordsSh, 
-				Cast.unchecked(CommonUtils.getImgLib2DataType(coords_dtype)), false, false);
-		
-		// TODO I do not understand why is complaining when the types align perfectly
-		RandomAccessibleInterval<T> coordsRAI = shmCoords.getSharedRAI();
-		RandomAccessibleInterval<T> coordsCopy = Tensor.createCopyOfRaiInWantedDataType(Cast.unchecked(coordsRAI), 
-				Util.getTypeFromInterval(Cast.unchecked(coordsRAI)));
-		
-		shmCoords.close();
-		
-		return coordsCopy;
-	}
-	
 	/**
 	 * Initialize one of the "official" pretrained Stardist 2D models.
 	 * By default, the model will be installed in the "models" folder inside the application
@@ -376,8 +315,9 @@ public abstract class Cellpose implements Closeable {
 	 * @return an instance of a pretrained Stardist2D model ready to be used
 	 * @throws IOException if there is any error downloading the model, in the case it is needed
 	 * @throws InterruptedException if the download of the model is stopped
+	 * @throws ExecutionException 
 	 */
-	public static Cellpose fromPretained(String pretrainedModel, boolean forceDownload) throws IOException, InterruptedException {
+	public static Cellpose fromPretained(String pretrainedModel, boolean forceDownload) throws IOException, InterruptedException, ExecutionException {
 		return fromPretained(pretrainedModel, new File("models").getAbsolutePath(), forceDownload);
 	}
 	
@@ -407,9 +347,10 @@ public abstract class Cellpose implements Closeable {
 	 * @return an instance of a pretrained Stardist2D model ready to be used
 	 * @throws IOException if there is any error downloading the model, in the case it is needed
 	 * @throws InterruptedException if the download of the model is stopped
+	 * @throws ExecutionException 
 	 */
 	public static Cellpose fromPretained(String pretrainedModel, String modelsDir, boolean forceInstall) throws IOException, 
-																					InterruptedException {
+																					InterruptedException, ExecutionException {
 		if (PRETRAINED_CELLPOSE_MODELS.contains(pretrainedModel) && !forceInstall) {
 			String weightsPath = fileIsCellpose(pretrainedModel, modelsDir);
 			if (weightsPath != null) return new Cellpose(weightsPath);
@@ -617,7 +558,7 @@ public abstract class Cellpose implements Closeable {
 			mamba.installMicromamba();
 		}
 		if (!cellposePythonInstalled) {
-			mamba.pipInstallIn(CLOSE_SHM_CODE, CELLPOSE_DEPS.toArray(new String[CELLPOSE_DEPS.size()]));
+			mamba.pipInstallIn(DLModelPytorch.COMMON_PYTORCH_ENV_NAME, CELLPOSE_DEPS.toArray(new String[CELLPOSE_DEPS.size()]));
 		};
 	}
 	
@@ -637,5 +578,171 @@ public abstract class Cellpose implements Closeable {
 	 */
 	public static String getInstallationDir() {
 		return INSTALLATION_DIR;
+	}
+
+	@Override
+	protected String createImportsCode() {
+		String modelName = new File(weightsPath).getName();
+		String modelType = ALIAS.entrySet().stream()
+				.filter(ee -> ee.getValue().equals(modelName))
+				.map(ee -> ee.getKey()).findFirst().get();
+		return String.format(LOAD_MODEL_CODE_ABSTRACT, modelType);
+	}
+
+	@Override
+	// TODO add 3d
+	protected <T extends RealType<T> & NativeType<T>> void checkInput(RandomAccessibleInterval<T> image) {
+		long[] dims = image.dimensionsAsLongArray();
+		if (channels != null && !is3D && dims.length == 2 && (channels.length < 2 || channels[0] != 0 || channels[1] != 0))
+			throw new IllegalArgumentException("To process a 2d grayscale image, the channels parameter must be [0, 0]");
+		else if (channels != null && !is3D && dims.length == 3
+				&& Arrays.stream(dims).anyMatch(num -> num == 1) && (channels.length < 2 || channels[0] != 0 || channels[1] != 0))
+			throw new IllegalArgumentException("To process a 2d grayscale image, the channels parameter must be [0, 0]");
+		else if (channels != null && !is3D && dims.length == 3
+				&& (channels.length < 2 || channels[0] == 0 || channels[1] == 0))
+			throw new IllegalArgumentException("To process a 2d RGB image, the channels parameter must be [2, 3]"
+					+ " or [2, 1], depending whether the blue or the red channels contains nuclei.");
+		else if (channels != null && !is3D && dims.length == 3 && isRedChannelEmpty(image)
+				&& (channels.length < 2 || channels[0] != 2 || channels[1] != 3))
+			throw new IllegalArgumentException("To process a 2d RGB image, the channels parameter must be [2, 3]"
+					+ " if the cytoplasm is green and the nuclei are blue.");
+		else if (channels != null && !is3D && dims.length == 3 && !isRedChannelEmpty(image)
+				&& (channels.length < 2 || channels[0] != 2 || channels[1] != 1))
+			throw new IllegalArgumentException("To process a 2d RGB image, the channels parameter must be [2, 1]"
+					+ " if the cytoplasm is green and the nuclei are red.");
+		else if (dims.length == 2 || (dims.length == 3 && Arrays.stream(dims).anyMatch(num -> num == 1) ))
+			this.channels = new int[2];
+		else if (dims.length == 3 && isRedChannelEmpty(image))
+			this.channels = new int[] {2, 3};
+		else if (dims.length == 3 && isRedChannelEmpty(image))
+			this.channels = new int[] {2, 1};
+	}
+	
+	private static <T extends RealType<T> & NativeType<T>> boolean isRedChannelEmpty(RandomAccessibleInterval<T> image) {
+		// TODO
+		return true;
+	}
+
+	@SuppressWarnings("unchecked")
+	@Override
+	protected <T extends RealType<T> & NativeType<T>> Map<String, RandomAccessibleInterval<T>> reconstructOutputs(
+			Task task) throws IOException {
+
+		Map<String, RandomAccessibleInterval<T>> outs = new LinkedHashMap<String, RandomAccessibleInterval<T>>();
+		outs.put("mask", reconstructMask());
+		shma.close();
+		outs.put("flows", SpecialModelBase.copy((RandomAccessibleInterval<T>) shmaFl.getSharedRAI()));
+		shmaFl.close();
+		outs.put("denoised", SpecialModelBase.copy((RandomAccessibleInterval<T>) shmaDn.getSharedRAI()));
+		shmaDn.close();
+		outs.put("styles", SpecialModelBase.copy((RandomAccessibleInterval<T>) shmaSt.getSharedRAI()));
+		shmaSt.close();
+		return outs;
+	}
+	
+	private <T extends RealType<T> & NativeType<T>> RandomAccessibleInterval<T> reconstructMask() {
+		// TODO I do not understand why is complaining when the types align perfectly
+		RandomAccessibleInterval<T> mask = shma.getSharedRAI();
+		if (shma.getOriginalShape().length == 2 
+				|| axes.indexOf("c") == -1
+				|| shma.getOriginalShape()[axes.indexOf("c")] == 1) {
+			return SpecialModelBase.copy(mask);
+		} else {
+			long[] maxPos = mask.maxAsLongArray();
+			maxPos[2] = 0;
+			IntervalView<T> maskInterval = Views.interval(mask, mask.minAsLongArray(), maxPos);
+			return SpecialModelBase.copy(maskInterval);
+		}
+	}
+
+	protected String createRunModelCode() {
+		String code = "";
+		if (shma.getOriginalShape().length == 2 && shma.getOriginalShape()[axes.indexOf("c")] == -1) {
+			code = "im[:]";
+		} else if (shma.getOriginalShape().length == 3 && shma.getOriginalShape()[axes.indexOf("c")] == 0) {
+			code = "im[0, :, :]";
+		} else if (shma.getOriginalShape().length == 3 && shma.getOriginalShape()[axes.indexOf("c")] == 1) {
+			code = "im[:, 0, :]";
+		} else if (shma.getOriginalShape().length == 3 && shma.getOriginalShape()[axes.indexOf("c")] == 2) {
+			code = "im[:, :, 0]";
+		} else if (shma.getOriginalShape().length == 4 && shma.getOriginalShape()[axes.indexOf("c")] == 0) {
+			code = "im[0, :, :, :]";
+		} else if (shma.getOriginalShape().length == 4 && shma.getOriginalShape()[axes.indexOf("c")] == 1) {
+			code = "im[:, 0, :, :]";
+		} else if (shma.getOriginalShape().length == 4 && shma.getOriginalShape()[axes.indexOf("c")] == 2) {
+			code = "im[:, :, 0, :]";
+		} else if (shma.getOriginalShape().length == 4 && shma.getOriginalShape()[axes.indexOf("c")] == 3) {
+			code = "im[:, :, :, 0]";
+		} else {
+			throw new RuntimeException("shape: " + Arrays.toString(shma.getOriginalShape()) + ", axes: " + axes);
+		}
+		code += ", fl[:], st[:], dn[:] = model.eval(im, diameter=";
+		if (this.diameter == null && new File(sizeWeigthsPath).isFile()) {
+			code += "None";
+		} else if (diameter != null) {
+			code += this.diameter;
+		} else {
+			code += DEFAULT_DIAMETER;
+		}
+		code += ""
+				+ ", channels=["
+				+ channels[0] + "," + channels[1] + "])" + System.lineSeparator()
+				+ "if os.name == 'nt':" + System.lineSeparator()
+				+ "    im_shm.close()" + System.lineSeparator()
+				+ "    im_shm.unlink()" + System.lineSeparator()
+				+ "    fl_shm.close()" + System.lineSeparator()
+				+ "    fl_shm.unlink()" + System.lineSeparator()
+				+ "    st_shm.close()" + System.lineSeparator()
+				+ "    st_shm.unlink()" + System.lineSeparator()
+				+ "    dn_shm.close()" + System.lineSeparator()
+				+ "    dn_shm.unlink()" + System.lineSeparator();
+		return code;
+	}
+
+	@Override
+	public <T extends RealType<T> & NativeType<T>, R extends RealType<R> & NativeType<R>> 
+	Map<String, RandomAccessibleInterval<R>> run(RandomAccessibleInterval<T> img) throws IOException, InterruptedException {
+		checkInput(img);
+		shma = SharedMemoryArray.createSHMAFromRAI(img, false, false);
+		long[] dnShape = new long[] {};
+		shmaDn = SharedMemoryArray.create(dnShape, new FloatType(0), false, false);
+		long[] flShape = new long[] {};
+		shmaFl = SharedMemoryArray.create(flShape, new FloatType(0), false, false);
+		long[] stShape = new long[] {};
+		shmaSt = SharedMemoryArray.create(stShape, new FloatType(0), false, false);
+		String code = "";
+		if (!loaded) {
+			code += createImportsCode() + System.lineSeparator();
+		}
+		
+		code += createEncodeImageScript() + System.lineSeparator();
+		code += createRunModelCode() + System.lineSeparator();
+		
+		Task task = python.task(code);
+		task.waitFor();
+		if (task.status == TaskStatus.CANCELED)
+			throw new RuntimeException("Task canceled");
+		else if (task.status == TaskStatus.FAILED)
+			throw new RuntimeException(task.error);
+		else if (task.status == TaskStatus.CRASHED)
+			throw new RuntimeException(task.error);
+		loaded = true;
+		
+		
+		return reconstructOutputs(task);
+	}
+
+	@Override
+	public <T extends RealType<T> & NativeType<T>, R extends RealType<R> & NativeType<R>> void run(
+			List<Tensor<T>> inTensors, List<Tensor<R>> outTensors) throws RunModelException {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public <T extends RealType<T> & NativeType<T>, R extends RealType<R> & NativeType<R>> List<Tensor<T>> run(
+			List<Tensor<R>> inputTensors) throws RunModelException {
+		// TODO Auto-generated method stub
+		return null;
 	}
 }
