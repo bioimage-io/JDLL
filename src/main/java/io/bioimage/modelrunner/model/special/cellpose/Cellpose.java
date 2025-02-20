@@ -31,6 +31,7 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.concurrent.ExecutionException;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
@@ -40,6 +41,7 @@ import org.apache.commons.compress.archivers.ArchiveException;
 import io.bioimage.modelrunner.apposed.appose.Mamba;
 import io.bioimage.modelrunner.apposed.appose.MambaInstallException;
 import io.bioimage.modelrunner.apposed.appose.Service;
+import io.bioimage.modelrunner.apposed.appose.Types;
 import io.bioimage.modelrunner.apposed.appose.Service.Task;
 import io.bioimage.modelrunner.apposed.appose.Service.TaskStatus;
 import io.bioimage.modelrunner.bioimageio.BioimageioRepo;
@@ -735,14 +737,69 @@ public class Cellpose extends SpecialModelBase {
 	@Override
 	public <T extends RealType<T> & NativeType<T>, R extends RealType<R> & NativeType<R>> void run(
 			List<Tensor<T>> inTensors, List<Tensor<R>> outTensors) throws RunModelException {
-		// TODO Auto-generated method stub
+		if (inTensors.size() > 1)
+			throw new IllegalArgumentException("Cellpose can only take one argument.");
+		if (this.modelType.equals("bioimage.io") && !inTensors.get(0).getAxesOrderString().equals(axes))
+			throw new IllegalArgumentException("Input axes should be " + axes);
+		else if (!inTensors.get(0).getAxesOrderString().equals(axes) 
+				&& !inTensors.get(0).getAxesOrderString().replace("c", "").equals(axes.replace("c", "")))
+			throw new IllegalArgumentException("Input axes should be " + axes);
+		if (!modelType.equals("bioimage.io") 
+				&& inTensors.get(0).getAxesOrderString().replace("c", "").equals(axes.replace("c", "")))
+				axes = inTensors.get(0).getAxesOrderString();
+		try {
+			Map<String, RandomAccessibleInterval<R>> outputs = run(inTensors.get(0).getData());
+			for (Tensor<R> tensor : outTensors) {
+				Entry<String, RandomAccessibleInterval<R>> entry = outputs.entrySet().stream()
+						.filter(ee -> tensor.getName().equals(ee.getKey())
+								&& Arrays.equals(tensor.getData().dimensionsAsLongArray(), ee.getValue().dimensionsAsLongArray()))
+						.findFirst().orElse(null);
+				if (entry != null)
+					tensor.setData(entry.getValue());
+			}
+		} catch (IOException | InterruptedException e) {
+			throw new RunModelException(Types.stackTrace(e));
+		}
 		
 	}
 
 	@Override
-	public <T extends RealType<T> & NativeType<T>, R extends RealType<R> & NativeType<R>> List<Tensor<T>> run(
-			List<Tensor<R>> inputTensors) throws RunModelException {
-		// TODO Auto-generated method stub
-		return null;
+	public <T extends RealType<T> & NativeType<T>, R extends RealType<R> & NativeType<R>> 
+	List<Tensor<T>> run(List<Tensor<R>> inputTensors) throws RunModelException {
+		if (inputTensors.size() > 1)
+			throw new IllegalArgumentException("Cellpose can only take one argument.");
+		if (this.modelType.equals("bioimage.io") && !inputTensors.get(0).getAxesOrderString().equals(axes))
+			throw new IllegalArgumentException("Input axes should be " + axes);
+		else if (!inputTensors.get(0).getAxesOrderString().equals(axes) 
+				&& !inputTensors.get(0).getAxesOrderString().replace("c", "").equals(axes.replace("c", "")))
+			throw new IllegalArgumentException("Input axes should be " + axes);
+		if (!modelType.equals("bioimage.io") 
+				&& inputTensors.get(0).getAxesOrderString().replace("c", "").equals(axes.replace("c", "")))
+				axes = inputTensors.get(0).getAxesOrderString();
+		try {
+			Map<String, RandomAccessibleInterval<T>> outputs = run(inputTensors.get(0).getData());
+			List<Tensor<T>> outTensors = new ArrayList<Tensor<T>>();
+			for (Entry<String, RandomAccessibleInterval<T>> entry : outputs.entrySet()) {
+				if (entry.getValue() == null)
+					continue;
+				String axesOrder = "xy";
+				if (entry.getValue().dimensionsAsLongArray().length > 2 && this.is3D)
+					axesOrder += "c";
+				else if (entry.getValue().dimensionsAsLongArray().length == 3 && this.is3D)
+					axesOrder += "z";
+				else if (entry.getValue().dimensionsAsLongArray().length > 3 && this.is3D)
+					axesOrder += "zc";
+				else if (entry.getValue().dimensionsAsLongArray().length == 1)
+					axesOrder = "i";
+				Tensor<T> tt = Tensor.build(entry.getKey(), axesOrder, entry.getValue());
+				// TODO
+				if (tt.getName() != "mask")
+					continue;
+				outTensors.add(tt);
+			}
+			return outTensors;
+		} catch (IOException | InterruptedException e) {
+			throw new RunModelException(Types.stackTrace(e));
+		}
 	}
 }
