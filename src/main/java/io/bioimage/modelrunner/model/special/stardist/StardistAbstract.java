@@ -17,7 +17,7 @@
  * limitations under the License.
  * #L%
  */
-package io.bioimage.modelrunner.model.stardist;
+package io.bioimage.modelrunner.model.special.stardist;
 
 import java.io.File;
 import java.io.IOException;

@@ -35,8 +35,8 @@ import io.bioimage.modelrunner.bioimageio.description.cellpose.ModelDescriptorCe
 import io.bioimage.modelrunner.bioimageio.description.cellpose.ModelDescriptorCellposeV05;
 import io.bioimage.modelrunner.bioimageio.description.stardist.ModelDescriptorStardistV04;
 import io.bioimage.modelrunner.bioimageio.description.stardist.ModelDescriptorStardistV05;
-import io.bioimage.modelrunner.model.cellpose.Cellpose;
-import io.bioimage.modelrunner.model.stardist.StardistAbstract;
+import io.bioimage.modelrunner.model.special.cellpose.Cellpose;
+import io.bioimage.modelrunner.model.special.stardist.StardistAbstract;
 import io.bioimage.modelrunner.utils.Constants;
 import io.bioimage.modelrunner.utils.YAMLUtils;
 

@@ -17,12 +17,14 @@
  * limitations under the License.
  * #L%
  */
-package io.bioimage.modelrunner.model.cellpose;
+package io.bioimage.modelrunner.model.special.cellpose;
 
 import java.io.Closeable;
 import java.io.File;
 import java.io.IOException;
+import java.net.MalformedURLException;
 import java.net.URISyntaxException;
+import java.net.URL;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -31,6 +33,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.concurrent.ExecutionException;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
@@ -46,6 +49,7 @@ import io.bioimage.modelrunner.bioimageio.BioimageioRepo;
 import io.bioimage.modelrunner.bioimageio.description.ModelDescriptor;
 import io.bioimage.modelrunner.bioimageio.description.ModelDescriptorFactory;
 import io.bioimage.modelrunner.bioimageio.description.exceptions.ModelSpecsException;
+import io.bioimage.modelrunner.download.MultiFileDownloader;
 import io.bioimage.modelrunner.model.python.DLModelPytorch;
 import io.bioimage.modelrunner.model.stardist.Stardist2D;
 import io.bioimage.modelrunner.system.PlatformDetection;
@@ -75,7 +79,7 @@ public abstract class Cellpose implements Closeable {
 	
 	protected int[] channels;
 	
-	private int diameter = 30;
+	private int diameter;
 	
 	private boolean loaded = false;
 	
@@ -86,6 +90,8 @@ public abstract class Cellpose implements Closeable {
 	private Service python;
 	
 	private String envPath = DEFAULT_ENV_DIR;
+	
+	private static int DEFAULT_DIAMETER = 30;
 	
 	private static String INSTALLATION_DIR = Mamba.BASE_PATH;
 	
@@ -100,10 +106,28 @@ public abstract class Cellpose implements Closeable {
 	private static final Map<String, String[]> MODEL_REQ;
 	static {
 		MODEL_REQ = new HashMap<String, String[]>();
-		MODEL_REQ.put("cyto2", new String[] {"", ""});
-		MODEL_REQ.put("cyto3", new String[] {"", ""});
-		MODEL_REQ.put("cyto", new String[] {"", ""});
-		MODEL_REQ.put("nuclei", new String[] {"", ""});
+		MODEL_REQ.put("cyto2", new String[] {"cyto2torch_0", "size_cyto2torch_0.npy"});
+		MODEL_REQ.put("cyto3", new String[] {"cyto3", "size_cyto3.npy"});
+		MODEL_REQ.put("cyto", new String[] {"cytotorch_0", "size_cytotorch_0.npy"});
+		MODEL_REQ.put("nuclei", new String[] {"nucleitorch_0", "size_nucleitorch_0.npy"});
+	}
+	
+	private static final Map<String, String> ALIAS;
+	static {
+		ALIAS = new HashMap<String, String>();
+		ALIAS.put("cyto2", "cyto2torch_0");
+		ALIAS.put("cyto3", "cyto3");
+		ALIAS.put("cyto", "cytotorch_0");
+		ALIAS.put("nuclei", "nucleitorch_0");
+	}
+	
+	private static final Map<String, Long> MODEL_SIZE;
+	static {
+		MODEL_SIZE = new HashMap<String, Long>();
+		MODEL_SIZE.put("cyto2torch_0", 26_563_614L);
+		MODEL_SIZE.put("cyto3", 26_566_255L);
+		MODEL_SIZE.put("cytotorch_0", 26_563_614L);
+		MODEL_SIZE.put("nucleitorch_0", 26_563_614L);
 	}
 	
 	private static final String SHM_NAME_KEY = "_shm_name";
@@ -193,10 +217,6 @@ public abstract class Cellpose implements Closeable {
 	protected Cellpose(String weightsPath) throws IOException, ModelSpecsException {
 		this.weightsPath = weightsPath;
 		this.modelDir = new File(weightsPath).getParentFile().getAbsolutePath();
-		if (new File(modelDir, "config.json").isFile() == false && new File(modelDir, Constants.RDF_FNAME).isFile() == false)
-			throw new IllegalArgumentException("No 'config.json' file found in the model directory");
-		else if (new File(modelDir, "config.json").isFile() == false)
-			createConfigFromBioimageio();
     	createPythonService();
 	}
 	
@@ -380,7 +400,7 @@ public abstract class Cellpose implements Closeable {
 	 * those available in the bioimage.io
 	 * @param pretrainedModel
 	 * 	the name of the pretrained model.
-	 * @param installDir
+	 * @param modelsDir
 	 * 	the directory where the model wants to be installed
 	 * @param forceInstall
 	 * 	whether to force the installation or to try to look if the model has already been installed before
@@ -388,31 +408,75 @@ public abstract class Cellpose implements Closeable {
 	 * @throws IOException if there is any error downloading the model, in the case it is needed
 	 * @throws InterruptedException if the download of the model is stopped
 	 */
-	public static Cellpose fromPretained(String pretrainedModel, String installDir, boolean forceInstall) throws IOException, 
+	public static Cellpose fromPretained(String pretrainedModel, String modelsDir, boolean forceInstall) throws IOException, 
 																					InterruptedException {
 		if (PRETRAINED_CELLPOSE_MODELS.contains(pretrainedModel) && !forceInstall) {
-			ModelDescriptor md = ModelDescriptorFactory.getModelsAtLocalRepo().stream()
-					.filter(mm ->mm.getName().equals("StarDist H&E Nuclei Segmentation")).findFirst().orElse(null);
-			if (md != null) return new Stardist2D(md);
-			String path = BioimageioRepo.connect().downloadByName("StarDist H&E Nuclei Segmentation", installDir);
-			return Cellpose.fromPretained(pretrainedModel);
+			String weightsPath = fileIsCellpose(pretrainedModel, modelsDir);
+			if (weightsPath != null) return new Cellpose(weightsPath);
+			String path = donwloadPretrainedOfficial(pretrainedModel, modelsDir, null);
+			return new Cellpose(path);
 		} else if (PRETRAINED_CELLPOSE_MODELS.contains(pretrainedModel)) {
-			String path = BioimageioRepo.connect().downloadByName("StarDist H&E Nuclei Segmentation", installDir);
-			return Cellpose.fromPretained(pretrainedModel);
+			String path = donwloadPretrainedOfficial(pretrainedModel, modelsDir, null);
+			return new Cellpose(path);
+		}
+		if (!forceInstall) {
+			List<ModelDescriptor> localModels = ModelDescriptorFactory.getModelsAtLocalRepo();
+			ModelDescriptor model = localModels.stream()
+					.filter(md -> md.getModelID().equals(pretrainedModel) 
+							|| md.getName().toLowerCase().equals(pretrainedModel.toLowerCase()))
+					.findFirst().orElse(null);
+			if (model != null)
+				return Cellpose.fromBioimageioModel(model);
 		}
 		
 		BioimageioRepo br = BioimageioRepo.connect();
-
 		ModelDescriptor descriptor = br.selectByName(pretrainedModel);
 		if (descriptor == null)
 			descriptor = br.selectByID(pretrainedModel);
 		if (descriptor == null)
 			throw new IllegalArgumentException("The model does not correspond to on of the available pretrained cellpose models."
 					+ " To find a list of available cellpose models, please run Cellpose.getPretrainedList()");
-
-		String path = BioimageioRepo.downloadModel(descriptor, installDir);
+		String path = BioimageioRepo.downloadModel(descriptor, modelsDir);
 		descriptor.addModelPath(Paths.get(path));
 		return Cellpose.fromBioimageioModel(descriptor);
+	}
+	
+	private static String fileIsCellpose(String pretrainedModel, String modelsDir) {
+		File pretrainedFile = new File(pretrainedModel);
+		 if (pretrainedFile.isFile() && isCellposeFile(pretrainedFile))
+			 return pretrainedFile.getAbsolutePath();
+		 if (ALIAS.keySet().contains(pretrainedModel) || MODEL_SIZE.containsKey(pretrainedModel)) {
+			 String path = lookForModelInDir(pretrainedModel, modelsDir);
+			 if (path != null)
+				 return path;
+		 }
+		 return null;
+	}
+	
+	private static boolean isCellposeFile(File pretrainedFile) {
+		return MODEL_SIZE.keySet().contains(pretrainedFile.getName()) && MODEL_SIZE.get(pretrainedFile.getName()) == pretrainedFile.length();
+	}
+	
+	private static String lookForModelInDir(String modelName, String modelsDir) {
+		File dir = new File(modelsDir);
+		if (!dir.isDirectory())
+			return null;
+		String name;
+		if (MODEL_SIZE.keySet().contains(modelName))
+			name = ALIAS.entrySet().stream().filter(ee -> ee.getValue().equals(modelName))
+			.map(ee -> ee.getKey()).findFirst().get();
+		else 
+			name = modelName;
+		File modelDir = Arrays.stream(dir.listFiles())
+				.filter(ff -> ff.isDirectory() && ff.getName().startsWith(name + "_"))
+				.findFirst().orElse(null);
+		if (modelDir == null)
+			return null;
+		String weightsPath = modelDir.getAbsolutePath() + File.separator + ALIAS.get(name);
+		File weigthsFile = new File(weightsPath);
+		if (weigthsFile.isFile() && weigthsFile.length() == MODEL_SIZE.get(ALIAS.get(name)))
+			return weightsPath;
+		return null;
 	}
 	
 	public static List<String> getPretrainedList() {
@@ -429,12 +493,51 @@ public abstract class Cellpose implements Closeable {
 		return list;
 	}
 	
-	public static String donwloadPretrained(String modelName, String downloadDir) {
+	public static String donwloadPretrained(String modelName, String downloadDir) 
+			throws ExecutionException, InterruptedException, IOException {
 		return donwloadPretrained(modelName, downloadDir, null);
 	}
 	
-	public static String donwloadPretrained(String modelName, String downloadDir, Consumer<Double> progressConsumer) {
+	public static String donwloadPretrained(String modelName, String downloadDir, Consumer<Double> progressConsumer) 
+			throws ExecutionException, InterruptedException, IOException {
+		String path = donwloadPretrainedOfficial(modelName, downloadDir, progressConsumer);
+		if (path == null)
+			path = donwloadPretrainedBioimageio(modelName, downloadDir, progressConsumer);
+		if (path == null)
+			throw new IllegalArgumentException("The model does not correspond to on of the available pretrained cellpose models."
+					+ " To find a list of available cellpose models, please run Cellpose.getPretrainedList()");
+		return path;
+	}
+	
+	private static String donwloadPretrainedBioimageio(String modelName, String downloadDir, Consumer<Double> progressConsumer) 
+			throws InterruptedException, IOException {
 		
+		BioimageioRepo br = BioimageioRepo.connect();
+
+		ModelDescriptor descriptor = br.selectByName(modelName);
+		if (descriptor == null)
+			descriptor = br.selectByID(modelName);
+		if (descriptor == null)
+			return null;
+		String path = BioimageioRepo.downloadModel(descriptor, downloadDir);
+		return path + File.separator + ""; // TODO
+	}
+	
+	private static String donwloadPretrainedOfficial(String modelName, String downloadDir, Consumer<Double> progressConsumer) throws ExecutionException, InterruptedException {
+		List<URL> urls = new ArrayList<URL>();
+		if (!MODEL_REQ.keySet().contains(modelName))
+			return null;
+		for (String str : MODEL_REQ.get(modelName)) {
+			try {
+				urls.add(new URL(String.format(CELLPOSE_URL, str)));
+			} catch (MalformedURLException e) {
+			}
+		}
+		MultiFileDownloader mfd = new MultiFileDownloader(urls, new File(downloadDir));
+		if (progressConsumer != null)
+			mfd.setPartialProgressConsumer(progressConsumer);
+		mfd.download();
+		return downloadDir + File.separator + MODEL_REQ.get(modelName)[0];
 	}
 	
 	/**
