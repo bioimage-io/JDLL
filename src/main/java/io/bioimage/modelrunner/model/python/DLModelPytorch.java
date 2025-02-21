@@ -1,3 +1,25 @@
+/*-
+ * #%L
+ * Use deep learning frameworks from Java in an agnostic and isolated way.
+ * %%
+ * Copyright (C) 2022 - 2024 Institut Pasteur and BioImage.IO developers.
+ * %%
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ * 
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ * 
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ * #L%
+ */
+/**
+ * 
+ */
 package io.bioimage.modelrunner.model.python;
 
 import java.io.File;
@@ -12,6 +34,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.UUID;
 import java.util.function.Consumer;
+import java.util.stream.Collectors;
 
 import org.apache.commons.compress.archivers.ArchiveException;
 
@@ -21,10 +44,13 @@ import io.bioimage.modelrunner.apposed.appose.MambaInstallException;
 import io.bioimage.modelrunner.apposed.appose.Service;
 import io.bioimage.modelrunner.apposed.appose.Service.Task;
 import io.bioimage.modelrunner.apposed.appose.Service.TaskStatus;
+import io.bioimage.modelrunner.bioimageio.tiling.TileInfo;
+import io.bioimage.modelrunner.bioimageio.tiling.TileMaker;
 import io.bioimage.modelrunner.apposed.appose.Types;
 import io.bioimage.modelrunner.exceptions.LoadModelException;
 import io.bioimage.modelrunner.exceptions.RunModelException;
 import io.bioimage.modelrunner.model.BaseModel;
+import io.bioimage.modelrunner.model.java.DLModelJava.TilingConsumer;
 import io.bioimage.modelrunner.system.PlatformDetection;
 import io.bioimage.modelrunner.tensor.Tensor;
 import io.bioimage.modelrunner.tensor.shm.SharedMemoryArray;
@@ -32,6 +58,7 @@ import io.bioimage.modelrunner.utils.CommonUtils;
 import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.type.NativeType;
 import net.imglib2.type.numeric.RealType;
+import net.imglib2.type.numeric.real.FloatType;
 import net.imglib2.util.Cast;
 import net.imglib2.util.Util;
 
@@ -56,6 +83,26 @@ public class DLModelPytorch extends BaseModel {
 	private List<String> outShmDTypes;
 	
 	private List<long[]> outShmDims;
+	
+	/**
+	 * List containing the desired tiling strategy for each of the input tensors
+	 */
+	protected List<TileInfo> inputTiles;
+	
+	/**
+	 * List containing the desired tiling strategy for each of the output tensors
+	 */
+	protected List<TileInfo> outputTiles;
+	/**
+	 * Whether to do tiling or not when doing inference
+	 */
+	protected boolean tiling = false;
+	
+	/**
+	 * Consumer used to inform the current tile being processed and in how many
+	 * tiles the input images are going to be separated
+	 */
+	protected TilingConsumer tileCounter;
 	
 	public static final String COMMON_PYTORCH_ENV_NAME = "biapy";
 	
@@ -185,6 +232,44 @@ public class DLModelPytorch extends BaseModel {
 		this.envPath = envPath;
 		this.python.close();
 		createPythonService();
+	}
+	
+	public boolean isTiling() {
+		return this.tiling;
+	}
+	
+	public void setTiling(boolean doTiling) {
+		this.tiling = doTiling;
+	}
+	
+	/**
+	 * Set the wanted tile specifications for each of the input tensors.
+	 * If this is not set, the model will process every input in just one run.
+	 * however, if this is set, the model will always do tiling when running following
+	 * this specifications
+	 * 
+	 * If this is called, automatically sets {@link #tiling} to true
+	 * 
+	 * @param inputTiles
+	 * 	the specifications of how each of the input images can be tiled
+	 * @param outputTiles
+	 * 	the specifications of how each of the output images will be tiled
+	 */
+	public void setTileInfo(List<TileInfo> inputTiles, List<TileInfo> outputTiles) {
+		this.inputTiles = inputTiles;
+		this.outputTiles = outputTiles;
+		this.tiling = true;
+	}
+	
+	/**
+	 * Set a consumer that can be used to get the number of tiles
+	 * in which the input images will be separated and 
+	 * the tile that is being processed
+	 * @param tileCounter
+	 * 	{@link TilingConsumer} used to track the inference of tiles
+	 */
+	public void setTilingCounter(TilingConsumer tileCounter) {
+		this.tileCounter = tileCounter;
 	}
 
 	@Override
@@ -350,19 +435,80 @@ public class DLModelPytorch extends BaseModel {
 	@Override
 	public <T extends RealType<T> & NativeType<T>, R extends RealType<R> & NativeType<R>> 
 	List<Tensor<T>> run(List<Tensor<R>> inputTensors) throws RunModelException {
-		Map<String, RandomAccessibleInterval<T>> outMap = predictForInputTensors(inputTensors);
-		List<Tensor<T>> outTensors = new ArrayList<Tensor<T>>();
-		for (Entry<String, RandomAccessibleInterval<T>> ee : outMap.entrySet()) {
-			RandomAccessibleInterval<T> rai = ee.getValue();
-			Tensor<T> tt = Tensor.build(ee.getKey(), null, rai);
-			outTensors.add(tt);
+		if (!this.isLoaded())
+			throw new RunModelException("Please first load the model.");
+		if (!this.tiling) {
+			throw new UnsupportedOperationException("Cannot run a DLModel if no information about the outputs is provided."
+					+ " Either try with 'run( List< Tensor < T > > inTensors, List< Tensor < R > > outTensors )'"
+					+ " or set the tiling information with 'setTileInfo(List<TileInfo> inputTiles, List<TileInfo> outputTiles)'."
+					+ " Another option is to run simple inference over an ImgLib2 RandomAccessibleInterval with"
+					+ " 'inference(List<RandomAccessibleInteral<T>> input)'");
 		}
+		if (this.isTiling() && (inputTiles != null || this.inputTiles.size() == 0))
+			throw new UnsupportedOperationException("Tiling is set to 'true' but the input tiles are not well defined");
+		else if (this.isTiling() && (this.outputTiles == null || this.outputTiles.size() == 0))
+			throw new UnsupportedOperationException("Tiling is set to 'true' but the output tiles are not well defined");
+		
+		TileMaker maker = TileMaker.build(inputTiles, outputTiles);
+		List<Tensor<T>> outTensors = createOutputTensors();
+		runTiling(inputTensors, outTensors, maker);
 		return outTensors;
+	}
+	
+	private <T extends RealType<T> & NativeType<T>> List<Tensor<T>> createOutputTensors() {
+		List<Tensor<T>> outputTensors = new ArrayList<Tensor<T>>();
+		for (TileInfo tt : this.outputTiles) {
+			outputTensors.add((Tensor<T>) Tensor.buildBlankTensor(tt.getName(), 
+																	tt.getImageAxesOrder(), 
+																	tt.getImageDims(), 
+																	(T) new FloatType()));
+		}
+		return outputTensors;
 	}
 
 	@Override
-	public <T extends RealType<T> & NativeType<T>, R extends RealType<R> & NativeType<R>> void run(
-			List<Tensor<T>> inTensors, List<Tensor<R>> outTensors) throws RunModelException {
+	public <T extends RealType<T> & NativeType<T>, R extends RealType<R> & NativeType<R>>
+	void run(List<Tensor<T>> inTensors, List<Tensor<R>> outTensors)
+			throws RunModelException {
+		if (!this.isLoaded())
+			throw new RunModelException("Please first load the model.");
+		if (!this.tiling) {
+			this.runNoTiles(inTensors, outTensors);
+			return;
+		}
+		if (this.isTiling() && (inputTiles != null || this.inputTiles.size() == 0))
+			throw new UnsupportedOperationException("Tiling is set to 'true' but the input tiles are not well defined");
+		else if (this.isTiling() && (this.outputTiles == null || this.outputTiles.size() == 0))
+			throw new UnsupportedOperationException("Tiling is set to 'true' but the output tiles are not well defined");
+		TileMaker tiles = TileMaker.build(inputTiles, outputTiles);
+		for (int i = 0; i < tiles.getNumberOfTiles(); i ++) {
+			Tensor<R> tt = outTensors.get(i);
+			long[] expectedSize = tiles.getOutputImageSize(tt.getName());
+			if (expectedSize == null) {
+				throw new IllegalArgumentException("Tensor '" + tt.getName() + "' is missing in the outputs.");
+			} else if (!tt.isEmpty() && Arrays.equals(expectedSize, tt.getData().dimensionsAsLongArray())) {
+				throw new IllegalArgumentException("Tensor '" + tt.getName() + "' size is different than the expected size"
+						+ " defined for the output image: " + Arrays.toString(tt.getData().dimensionsAsLongArray()) 
+						+ " vs " + Arrays.toString(expectedSize) + ".");
+			}
+		}
+		runTiling(inTensors, outTensors, tiles);
+	}
+	
+	protected <T extends RealType<T> & NativeType<T>, R extends RealType<R> & NativeType<R>> 
+	void runTiling(List<Tensor<R>> inputTensors, List<Tensor<T>> outputTensors, TileMaker tiles) throws RunModelException {
+		for (int i = 0; i < tiles.getNumberOfTiles(); i ++) {
+			int nTile = 0 + i;
+			List<Tensor<R>> inputTiles = inputTensors.stream()
+					.map(tt -> tiles.getNthTileInput(tt, nTile)).collect(Collectors.toList());
+			List<Tensor<T>> outputTiles = outputTensors.stream()
+					.map(tt -> tiles.getNthTileOutput(tt, nTile)).collect(Collectors.toList());
+			runNoTiles(inputTiles, outputTiles);
+		}
+	}
+
+	public <T extends RealType<T> & NativeType<T>, R extends RealType<R> & NativeType<R>>
+	void runNoTiles(List<Tensor<T>> inTensors, List<Tensor<R>> outTensors) throws RunModelException {
 		Map<String, RandomAccessibleInterval<R>> outMap = predictForInputTensors(inTensors);
 		int c = 0;
 		for (Entry<String, RandomAccessibleInterval<R>> ee : outMap.entrySet()) {

@@ -319,6 +319,14 @@ public class DLModelJava extends BaseModel
 		return outs;
 	}
 	
+	public boolean isTiling() {
+		return this.tiling;
+	}
+	
+	public void setTiling(boolean doTiling) {
+		this.tiling = doTiling;
+	}
+	
 	/**
 	 * Set the wanted tile specifications for each of the input tensors.
 	 * If this is not set, the model will process every input in just one run.
@@ -405,14 +413,6 @@ public class DLModelJava extends BaseModel
 	public String getModelName()
 	{
 		return this.modelName;
-	}
-	
-	public boolean isTiling() {
-		return this.tiling;
-	}
-	
-	public void setTiling(boolean doTiling) {
-		this.tiling = doTiling;
 	}
 
 	/**
