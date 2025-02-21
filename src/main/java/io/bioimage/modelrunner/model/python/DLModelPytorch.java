@@ -197,7 +197,7 @@ public class DLModelPytorch extends BaseModel {
 			+ "    s.unlink()" + System.lineSeparator()
 			+ "    del s" + System.lineSeparator();
 	
-	private DLModelPytorch(String modelFile, String callable, String weightsPath, 
+	protected DLModelPytorch(String modelFile, String callable, String weightsPath, 
 			Map<String, Object> kwargs) throws IOException {
 		if (new File(modelFile).isFile() == false || !modelFile.endsWith(".py"))
 			throw new IllegalArgumentException("The model file does not correspond to an existing .py file.");
@@ -602,13 +602,13 @@ public class DLModelPytorch extends BaseModel {
 				Cast.unchecked(CommonUtils.getImgLib2DataType(dtype)), false, false);
 		
 		// TODO I do not understand why is complaining when the types align perfectly
-		RandomAccessibleInterval<T> coordsRAI = shm.getSharedRAI();
-		RandomAccessibleInterval<T> coordsCopy = Tensor.createCopyOfRaiInWantedDataType(Cast.unchecked(coordsRAI), 
-				Util.getTypeFromInterval(Cast.unchecked(coordsRAI)));
+		RandomAccessibleInterval<T> rai = shm.getSharedRAI();
+		RandomAccessibleInterval<T> raiCopy = Tensor.createCopyOfRaiInWantedDataType(Cast.unchecked(rai), 
+				Util.getTypeFromInterval(Cast.unchecked(rai)));
 		
 		shm.close();
 		
-		return coordsCopy;
+		return raiCopy;
 	}
 	
 	public static String codeToConvertShmaToPython(SharedMemoryArray shma, String varName) {

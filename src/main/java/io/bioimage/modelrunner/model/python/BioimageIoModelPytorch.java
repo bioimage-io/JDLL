@@ -1,165 +1,193 @@
+/*-
+ * #%L
+ * Use deep learning frameworks from Java in an agnostic and isolated way.
+ * %%
+ * Copyright (C) 2022 - 2024 Institut Pasteur and BioImage.IO developers.
+ * %%
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ * 
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ * 
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ * #L%
+ */
+/**
+ * 
+ */
 package io.bioimage.modelrunner.model.python;
 
 import java.io.IOException;
-import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Map;
-import java.util.function.Consumer;
+import java.util.stream.Collectors;
 
-import org.apache.commons.compress.archivers.ArchiveException;
 
-import io.bioimage.modelrunner.apposed.appose.Mamba;
-import io.bioimage.modelrunner.apposed.appose.MambaInstallException;
+import io.bioimage.modelrunner.bioimageio.description.ModelDescriptor;
+import io.bioimage.modelrunner.bioimageio.description.ModelDescriptorFactory;
+import io.bioimage.modelrunner.bioimageio.description.TensorSpec;
+import io.bioimage.modelrunner.bioimageio.tiling.ImageInfo;
+import io.bioimage.modelrunner.bioimageio.tiling.TileCalculator;
+import io.bioimage.modelrunner.bioimageio.tiling.TileInfo;
+import io.bioimage.modelrunner.bioimageio.tiling.TileMaker;
+import io.bioimage.modelrunner.exceptions.LoadEngineException;
 import io.bioimage.modelrunner.exceptions.LoadModelException;
 import io.bioimage.modelrunner.exceptions.RunModelException;
-import io.bioimage.modelrunner.model.BaseModel;
+import io.bioimage.modelrunner.model.processing.Processing;
 import io.bioimage.modelrunner.tensor.Tensor;
+import net.imglib2.img.Img;
+import net.imglib2.img.array.ArrayImgs;
 import net.imglib2.type.NativeType;
 import net.imglib2.type.numeric.RealType;
+import net.imglib2.type.numeric.real.FloatType;
+import net.imglib2.util.Cast;
 
-public class BioimageIoModelPytorch extends BaseModel {
+public class BioimageIoModelPytorch extends DLModelPytorch {
+	/**
+	 * Object containing the information of the rdf.yaml file of a Bioimage.io model
+	 */
+	protected ModelDescriptor descriptor;
+	/**
+	 * Calculates the tile sizes depending on the model specs
+	 */
+	protected TileCalculator tileCalculator;
 	
-	public static final String COMMON_PYTORCH_ENV_NAME = "biapy";
-	
-	private static final List<String> BIAPY_CONDA_DEPS = Arrays.asList(new String[] {"python=3.10"});
-	
-	private static final List<String> BIAPY_PIP_DEPS = Arrays.asList(new String[] {"python=3.10", 
-			"torch==2.4.0", "torchvision==0.19.0", "torchaudio==2.4.0",
-			"timm==1.0.14", "pytorch-msssim==1.0.0", "torchmetrics[image]==1.4.*",
-			"biapy==3.5.10", "appose",
-			"--index-url https://download.pytorch.org/whl/cpu"});
-		
-	private static String INSTALLATION_DIR = Mamba.BASE_PATH;
-	
-	private BioimageIoModelPytorch(String modelClass, String callable, String modelPath, Map<String, Object> kwargs) {
-		
+	protected BioimageIoModelPytorch(ModelDescriptor descriptor) throws IOException {
+		super(descriptor.getWeights().getSelectedWeights().getSource(),
+				null, null, null);
+		this.tiling = true;
 	}
 	
-	public static BioimageIoModelPytorch create(String modelClass, String callable, String modelPath, Map<String, Object> kwargs) {
-		return new BioimageIoModelPytorch(modelClass, callable, modelPath, kwargs);
+	public static BioimageIoModelPytorch create(ModelDescriptor descriptor) throws IOException {
+		return new BioimageIoModelPytorch(descriptor);
 	}
-
-	@Override
-	public void loadModel() throws LoadModelException {
-		// TODO Auto-generated method stub
-		
-	}
-
-	@Override
-	public void close() {
-		// TODO Auto-generated method stub
-		
-	}
-
-	@Override
-	public <T extends RealType<T> & NativeType<T>, R extends RealType<R> & NativeType<R>> void run(
-			List<Tensor<T>> inTensors, List<Tensor<R>> outTensors) throws RunModelException {
-		// TODO Auto-generated method stub
-		
-	}
-
-	@Override
-	public <T extends RealType<T> & NativeType<T>, R extends RealType<R> & NativeType<R>> List<Tensor<T>> run(
-			List<Tensor<R>> inputTensors) throws RunModelException {
-		// TODO Auto-generated method stub
-		return null;
+	
+	public static BioimageIoModelPytorch create(String descriptorPath) throws IOException {
+		return new BioimageIoModelPytorch(ModelDescriptorFactory.readFromLocalFile(descriptorPath));
 	}
 	
 	/**
-	 * Check whether everything that is needed for Stardist 2D is installed or not
-	 * @return true if the full python environment is installed or not
+	 * Run a Bioimage.io model and execute the tiling strategy in one go.
+	 * The model needs to have been previously loaded with {@link #loadModel()}.
+	 * This method does not execute pre- or post-processing, they
+	 * need to be executed independently before or after
+	 * 
+	 * @param <T>
+	 * 	ImgLib2 data type of the output images
+	 * @param <R>
+	 * 	ImgLib2 data type of the input images
+	 * @param inputTensors
+	 * 	list of the input tensors that are going to be inputed to the model
+	 * @return the resulting tensors 
+	 * @throws RunModelException if the model has not been previously loaded
+	 * @throws IllegalArgumentException if the model is not a Bioimage.io model or if lacks a Bioimage.io
+	 *  rdf.yaml specs file in the model folder. 
 	 */
-	public static boolean isInstalled() {
-		// TODO
-		return isInstalled(null);
-	}
-	
-	/**
-	 * Check whether everything that is needed for Stardist 2D is installed or not
-	 * @return true if the full python environment is installed or not
-	 */
-	public static boolean isInstalled(String envPath) {
-		// TODO
-		return false;
-	}
-	
-	/**
-	 * Check whether the requirements needed to run a pytorch model are satisfied or not.
-	 * First checks if the corresponding Java DL engine is installed or not, then checks
-	 * if the Python environment needed for a pytorch model post processing is fine too.
-	 * 
-	 * If anything is not installed, this method also installs it
-	 * 
-	 * @throws IOException if there is any error downloading the DL engine or installing the micromamba environment
-	 * @throws InterruptedException if the installation is stopped
-	 * @throws RuntimeException if there is any unexpected error in the micromamba environment installation
-	 * @throws MambaInstallException if there is any error downloading or installing micromamba
-	 * @throws ArchiveException if there is any error decompressing the micromamba installer
-	 * @throws URISyntaxException if the URL to the micromamba installation is not correct
-	 */
-	public static void installRequirements() throws IOException, InterruptedException, 
-													RuntimeException, MambaInstallException, 
-													ArchiveException, URISyntaxException {
-		installRequirements(null);
-	}
-	
-	/**
-	 * Check whether the requirements needed to run a pytorch model are satisfied or not.
-	 * First checks if the corresponding Java DL engine is installed or not, then checks
-	 * if the Python environment needed for a pytorch model post processing is fine too.
-	 * 
-	 * If anything is not installed, this method also installs it
-	 * 
-	 * @param consumer
-	 * 	String consumer that reads the installation log
-	 * 
-	 * @throws IOException if there is any error downloading the DL engine or installing the micromamba environment
-	 * @throws InterruptedException if the installation is stopped
-	 * @throws RuntimeException if there is any unexpected error in the micromamba environment installation
-	 * @throws MambaInstallException if there is any error downloading or installing micromamba
-	 * @throws ArchiveException if there is any error decompressing the micromamba installer
-	 * @throws URISyntaxException if the URL to the micromamba installation is not correct
-	 */
-	public static void installRequirements(Consumer<String> consumer) throws IOException, InterruptedException, 
-													RuntimeException, MambaInstallException, 
-													ArchiveException, URISyntaxException {
-		
-		Mamba mamba = new Mamba(INSTALLATION_DIR);
-		if (consumer != null) {
-			mamba.setConsoleOutputConsumer(consumer);
-			mamba.setErrorOutputConsumer(consumer);
+	public <T extends RealType<T> & NativeType<T>, R extends RealType<R> & NativeType<R>> 
+	List<Tensor<T>> run(List<Tensor<R>> inputTensors) throws RunModelException {
+		if (!this.isLoaded())
+			throw new RunModelException("Please first load the model.");
+		if (!this.tiling) {
+			List<Tensor<T>> outs = createOutputTensors();
+			this.runNoTiles(inputTensors, outs);
+			return outs;
 		}
-		boolean biapyPythonInstalled = false;
-		try {
-			biapyPythonInstalled = mamba.checkAllDependenciesInEnv(COMMON_PYTORCH_ENV_NAME, BIAPY_CONDA_DEPS);
-			biapyPythonInstalled = mamba.checkAllDependenciesInEnv(COMMON_PYTORCH_ENV_NAME, BIAPY_PIP_DEPS);
-		} catch (MambaInstallException e) {
-			mamba.installMicromamba();
-		}
-		if (!biapyPythonInstalled) {
-			// TODO add logging for environment installation
-			mamba.create(COMMON_PYTORCH_ENV_NAME, true, new ArrayList<String>(), BIAPY_CONDA_DEPS);
-			mamba.pipInstallIn(COMMON_PYTORCH_ENV_NAME, BIAPY_PIP_DEPS.toArray(new String[BIAPY_PIP_DEPS.size()]));
-		};
+		List<ImageInfo> imageInfos = inputTensors.stream()
+				.map(tt -> new ImageInfo(tt.getName(), tt.getAxesOrderString(), tt.getData().dimensionsAsLongArray()))
+				.collect(Collectors.toList());
+		List<TileInfo> inputTiles = tileCalculator.getOptimalTileSize(imageInfos);
+		TileMaker maker = TileMaker.build(descriptor, inputTiles);
+		List<Tensor<T>> outTensors = createOutputTensors(maker);
+		return runBMZ(inputTensors, outTensors, maker);
 	}
 	
-	/**
-	 * Set the directory where the Python for Pytorch environment will be installed
-	 * @param installationDir
-	 * 	directory where the Python for Pytorch environment will be created
-	 */
-	public static void setInstallationDir(String installationDir) {
-		INSTALLATION_DIR = installationDir;
+	private <T extends RealType<T> & NativeType<T>> List<Tensor<T>> createOutputTensors(TileMaker maker) {
+		List<Tensor<T>> outputTensors = new ArrayList<Tensor<T>>();
+		for (TensorSpec tt : descriptor.getOutputTensors()) {
+			long[] dims = maker.getOutputImageSize(tt.getName());
+			outputTensors.add((Tensor<T>) Tensor.buildBlankTensor(tt.getName(), 
+																	tt.getAxesOrder(), 
+																	dims, 
+																	(T) new FloatType()));
+		}
+		return outputTensors;
+	}
+	
+	private <T extends RealType<T> & NativeType<T>> List<Tensor<T>> createOutputTensors() {
+		List<Tensor<T>> outputTensors = new ArrayList<Tensor<T>>();
+		for (TensorSpec tt : descriptor.getOutputTensors()) {
+			outputTensors.add(Tensor.buildEmptyTensor(tt.getName(), tt.getAxesOrder()));
+		}
+		return outputTensors;
+	}
+	
+	private <T extends RealType<T> & NativeType<T>, R extends RealType<R> & NativeType<R>> 
+	List<Tensor<T>> runBMZ(List<Tensor<R>> inputTensors, List<Tensor<T>> outputTensors, TileMaker tiles) throws RunModelException {
+		Processing processing = Processing.init(descriptor);
+		inputTensors = processing.preprocess(inputTensors, false);
+		runTiling(inputTensors, outputTensors, tiles);
+		return processing.postprocess(outputTensors, true);
+	}
+
+	public <T extends RealType<T> & NativeType<T>, R extends RealType<R> & NativeType<R>> 
+	void run(List<Tensor<T>> inputTensors, List<Tensor<R>> outputTensors) throws RunModelException {
+		if (!this.isLoaded())
+			throw new RunModelException("Please first load the model.");
+		if (!this.tiling) {
+			this.runNoTiles(inputTensors, outputTensors);
+			return;
+		}
+		List<ImageInfo> imageInfos = inputTensors.stream()
+				.map(tt -> new ImageInfo(tt.getName(), tt.getAxesOrderString(), tt.getData().dimensionsAsLongArray()))
+				.collect(Collectors.toList());
+		List<TileInfo> inputTiles = tileCalculator.getOptimalTileSize(imageInfos);
+		TileMaker maker = TileMaker.build(descriptor, inputTiles);
+		for (int i = 0; i < maker.getNumberOfTiles(); i ++) {
+			Tensor<R> tt = outputTensors.get(i);
+			long[] expectedSize = maker.getOutputImageSize(tt.getName());
+			if (expectedSize == null) {
+				throw new IllegalArgumentException("Tensor '" + tt.getName() + "' is missing in the outputs.");
+			} else if (!tt.isEmpty() && Arrays.equals(expectedSize, tt.getData().dimensionsAsLongArray())) {
+				throw new IllegalArgumentException("Tensor '" + tt.getName() + "' size is different than the expected size"
+						+ " as defined by the rdf.yaml: " + Arrays.toString(tt.getData().dimensionsAsLongArray()) 
+						+ " vs " + Arrays.toString(expectedSize) + ".");
+			}
+		}
+		runBMZ(inputTensors, outputTensors, maker);
 	}
 	
 	/**
 	 * 
-	 * @return the directory where the Python for Pytorch environment will be created
+	 * @param <T>
+	 * 	nothing
+	 * @param args
+	 * 	nothing
+	 * @throws IOException	nothing
+	 * @throws LoadEngineException	nothing
+	 * @throws RunModelException	nothing
+	 * @throws LoadModelException	nothing
 	 */
-	public static String getInstallationDir() {
-		return INSTALLATION_DIR;
+	public static <T extends NativeType<T> & RealType<T>> void main(String[] args) throws IOException, LoadEngineException, RunModelException, LoadModelException {
+		
+		String mm = "/home/carlos/git/JDLL/models/NucleiSegmentationBoundaryModel_17122023_143125";
+		Img<T> im = Cast.unchecked(ArrayImgs.floats(new long[] {1, 1, 512, 512}));
+		List<Tensor<T>> l = new ArrayList<Tensor<T>>();
+		l.add(Tensor.build("input0", "bcyx", im));
+		BioimageIoModelPytorch model = create(mm);
+		model.loadModel();
+		TileInfo tile = TileInfo.build(l.get(0).getName(), new long[] {1, 1, 512, 512}, 
+				l.get(0).getAxesOrderString(), new long[] {1, 1, 512, 512}, l.get(0).getAxesOrderString());
+		List<TileInfo> tileList = new ArrayList<TileInfo>();
+		tileList.add(tile);
+		model.run(l);
+		System.out.println(false);
+		
 	}
 
 }
