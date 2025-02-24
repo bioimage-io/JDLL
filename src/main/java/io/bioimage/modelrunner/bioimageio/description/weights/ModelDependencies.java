@@ -20,11 +20,15 @@
 
 package io.bioimage.modelrunner.bioimageio.description.weights;
 
+import java.io.File;
 import java.net.URL;
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+import io.bioimage.modelrunner.bioimageio.BioimageioRepo;
+import io.bioimage.modelrunner.bioimageio.description.ModelDescriptor;
 import io.bioimage.modelrunner.utils.YAMLUtils;
 
 public class ModelDependencies {
@@ -41,15 +45,26 @@ public class ModelDependencies {
 		return envFile;
 	}
 
-	public static List<String> getDependencies(URL url) {
-		return null;
-	}
-
-	public static List<String> getDependencies(String envFilePath){
-		if (!envFilePath.endsWith(".yaml") && !envFilePath.endsWith(".yml"))
-			throw new IllegalArgumentException("The env file should be a .yaml file.");
-		Map<String, Object> map = YAMLUtils.loadFromString(envFilePath);
-		return null;
+	public static List<String> getDependencies(ModelDescriptor descriptor, WeightFormat weights) {
+		List<String> deps = new ArrayList<String>();
+		if (weights.getEnvDependencies() == null || weights.getEnvDependencies().getSource() == null)
+			return deps;
+		if (descriptor.getModelPath() != null) {
+			String path = descriptor.getModelPath() + File.separator + weights.getEnvDependencies().getSource();
+			Map<String, Object> map = YAMLUtils.loadFromString(path);
+			if (map.get("dependencies") != null && map.get("dependencies") instanceof String)
+				return (List<String>) map.get("dependencies");
+		}
+		String url = descriptor.getModelURL() + weights.getEnvDependencies().getSource();
+		try {
+			String stringRDF = BioimageioRepo.getJSONFromUrl(url);
+			Map<String,Object> map = YAMLUtils.loadFromString(stringRDF);
+			if (map.get("dependencies") != null && map.get("dependencies") instanceof String)
+				return (List<String>) map.get("dependencies");
+		} catch (InterruptedException e) {
+			return deps;
+		}
+		return deps;
 	}
 
 }
