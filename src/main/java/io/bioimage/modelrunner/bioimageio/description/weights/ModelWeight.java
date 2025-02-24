@@ -112,7 +112,12 @@ public class ModelWeight
      * @return the weights in the wanted format if they are available
      */
     public WeightFormat getModelWeights(String weightID) {
-    	return this.weightsDic.get(weightID);
+    	if (this.weightsDic.get(weightID) != null)
+    		return weightsDic.get(weightID);
+    	String sel = this.weightsDic.keySet().stream().filter(kk -> kk.startsWith(weightID)).findFirst().orElse(null);
+    	if (sel == null)
+    		return null;
+    	return this.weightsDic.get(sel);
     }
 
 	/**

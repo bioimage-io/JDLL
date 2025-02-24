@@ -27,7 +27,6 @@ import java.io.IOException;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -109,16 +108,18 @@ public class DLModelPytorch extends BaseModel {
 	
 	private static final List<String> BIAPY_CONDA_DEPS = Arrays.asList(new String[] {"python=3.10"});
 	
-	private static final List<String> BIAPY_PIP_DEPS = Arrays.asList(new String[] {"torch==2.4.0", 
-			"torchvision==0.19.0", "torchaudio==2.4.0",
-			"timm==1.0.14", "pytorch-msssim==1.0.0", "torchmetrics[image]==1.4.*",
+	private static final List<String> BIAPY_PIP_DEPS_TORCH = Arrays.asList(new String[] {"torch==2.4.0", 
+			"torchvision==0.19.0", "torchaudio==2.4.0"});
+	
+	private static final List<String> BIAPY_PIP_DEPS = Arrays.asList(new String[] {"timm==1.0.14", "pytorch-msssim==1.0.0", 
+			"torchmetrics[image]==1.4.*",
 			"biapy==3.5.10", "appose"});
 	
-	private static final List<String> BIAPY_PIP_ARGS = Arrays.asList(new String[] {"--index-url https://download.pytorch.org/whl/cpu"});
+	private static final List<String> BIAPY_PIP_ARGS = Arrays.asList(new String[] {"--index-url", "https://download.pytorch.org/whl/cpu"});
 		
 	private static String INSTALLATION_DIR = Mamba.BASE_PATH;
 	
-	private static final String MODEL_VAR_NAME = "model_" + UUID.randomUUID().toString();
+	private static final String MODEL_VAR_NAME = "model_" + UUID.randomUUID().toString().replace("-", "_");
 
 	protected static final String LOAD_MODEL_CODE_ABSTRACT = ""
 			+ "if 'sys' not in globals().keys():" + System.lineSeparator()
@@ -136,15 +137,15 @@ public class DLModelPytorch extends BaseModel {
 			+ "sys.path.append(os.path.abspath('%s'))" + System.lineSeparator()
 			+ "from %s import %s" + System.lineSeparator();
 	
-	private static final String OUTPUT_LIST_KEY = "out_list" + UUID.randomUUID().toString();
+	private static final String OUTPUT_LIST_KEY = "out_list" + UUID.randomUUID().toString().replace("-", "_");
 	
-	private static final String SHMS_KEY = "shms_" + UUID.randomUUID().toString();
+	private static final String SHMS_KEY = "shms_" + UUID.randomUUID().toString().replace("-", "_");
 	
-	private static final String SHM_NAMES_KEY = "shm_names_" + UUID.randomUUID().toString();
+	private static final String SHM_NAMES_KEY = "shm_names_" + UUID.randomUUID().toString().replace("-", "_");
 	
-	private static final String DTYPES_KEY = "dtypes_" + UUID.randomUUID().toString();
+	private static final String DTYPES_KEY = "dtypes_" + UUID.randomUUID().toString().replace("-", "_");
 	
-	private static final String DIMS_KEY = "dims_" + UUID.randomUUID().toString();
+	private static final String DIMS_KEY = "dims_" + UUID.randomUUID().toString().replace("-", "_");
 	
 	protected static final String RECOVER_OUTPUTS_CODE = ""
 			+ "def handle_output_list(out_list):" + System.lineSeparator()
@@ -203,12 +204,13 @@ public class DLModelPytorch extends BaseModel {
 			Map<String, Object> kwargs) throws IOException {
 		if (new File(modelFile).isFile() == false || !modelFile.endsWith(".py"))
 			throw new IllegalArgumentException("The model file does not correspond to an existing .py file.");
-		if (new File(weightsPath).isFile() == false || (!modelFile.endsWith(".pt") && !modelFile.endsWith(".pth")))
+		if (new File(weightsPath).isFile() == false || !(weightsPath.endsWith(".pt") || weightsPath.endsWith(".pth")))
 			throw new IllegalArgumentException("The weights file does not correspond to an existing .pt/.pth file.");
 		this.callable = callable;
 		this.modelFile = new File(modelFile).getAbsolutePath();
 		this.weightsPath = new File(weightsPath).getAbsolutePath();
 		this.kwargs = kwargs;
+		this.envPath = INSTALLATION_DIR + File.separator + "envs" + File.separator + COMMON_PYTORCH_ENV_NAME;
 		createPythonService();
 	}
 	
@@ -280,7 +282,7 @@ public class DLModelPytorch extends BaseModel {
 			return;
 		String moduleName = new File(modelFile).getName();
 		moduleName = moduleName.substring(0, moduleName.length() - 3);
-		String code = String.format(LOAD_MODEL_CODE_ABSTRACT, this.modelFile, moduleName, callable);
+		String code = String.format(LOAD_MODEL_CODE_ABSTRACT, new File(modelFile).getParentFile().getAbsolutePath(), moduleName, callable);
 		code += buildModelCode();
 		
 		code += RECOVER_OUTPUTS_CODE;
@@ -712,8 +714,9 @@ public class DLModelPytorch extends BaseModel {
 			// TODO add logging for environment installation
 			mamba.create(COMMON_PYTORCH_ENV_NAME, true, new ArrayList<String>(), BIAPY_CONDA_DEPS);
 			ArrayList<String> args = new ArrayList<String>(BIAPY_PIP_ARGS);
-			args.addAll(BIAPY_PIP_DEPS);
+			args.addAll(BIAPY_PIP_DEPS_TORCH);
 			mamba.pipInstallIn(COMMON_PYTORCH_ENV_NAME, args.toArray(new String[args.size()]));
+			mamba.pipInstallIn(COMMON_PYTORCH_ENV_NAME, BIAPY_PIP_DEPS.toArray(new String[BIAPY_PIP_DEPS.size()]));
 		};
 	}
 	

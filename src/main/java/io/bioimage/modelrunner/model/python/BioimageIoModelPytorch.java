@@ -48,6 +48,7 @@ import io.bioimage.modelrunner.exceptions.LoadModelException;
 import io.bioimage.modelrunner.exceptions.RunModelException;
 import io.bioimage.modelrunner.model.processing.Processing;
 import io.bioimage.modelrunner.tensor.Tensor;
+import io.bioimage.modelrunner.utils.Constants;
 import net.imglib2.img.Img;
 import net.imglib2.img.array.ArrayImgs;
 import net.imglib2.type.NativeType;
@@ -77,14 +78,14 @@ public class BioimageIoModelPytorch extends DLModelPytorch {
 					+ ModelWeight.getPytorchID() + ".");
 		WeightFormat pytorchWeights = descriptor.getWeights().getModelWeights(ModelWeight.getPytorchID());
 		String modelFile = descriptor.getModelPath() +  File.separator + pytorchWeights.getArchitecture().getSource();
-		String callable = descriptor.getModelPath() +  File.separator + pytorchWeights.getArchitecture().getCallable();
+		String callable = pytorchWeights.getArchitecture().getCallable();
 		String weightsFile = descriptor.getModelPath() +  File.separator + pytorchWeights.getSource();
 		Map<String, Object> kwargs = pytorchWeights.getArchitecture().getKwargs();
 		return new BioimageIoModelPytorch(modelFile, callable, weightsFile, kwargs);
 	}
 	
-	public static BioimageIoModelPytorch create(String descriptorPath) throws IOException {
-		return create(ModelDescriptorFactory.readFromLocalFile(descriptorPath));
+	public static BioimageIoModelPytorch create(String modelPath) throws IOException {
+		return create(ModelDescriptorFactory.readFromLocalFile(modelPath + File.separator + Constants.RDF_FNAME));
 	}
 	
 	/**
@@ -199,7 +200,7 @@ public class BioimageIoModelPytorch extends DLModelPytorch {
 		Img<T> im = Cast.unchecked(ArrayImgs.floats(new long[] {1, 1, 512, 512}));
 		List<Tensor<T>> l = new ArrayList<Tensor<T>>();
 		l.add(Tensor.build("input0", "bcyx", im));
-		BioimageIoModelPytorch.installRequirements();
+		//BioimageIoModelPytorch.installRequirements();
 		BioimageIoModelPytorch model = create(mm);
 		model.loadModel();
 		TileInfo tile = TileInfo.build(l.get(0).getName(), new long[] {1, 1, 512, 512}, 
