@@ -266,6 +266,8 @@ public class DownloadModel {
 					if (w.getSourceFileName().endsWith(".zip"))
 						unzip = true;
 				}
+				if (w.getArchitecture() != null && w.getArchitecture().getSource() != null)
+					downloadableLinks.put(WEIGHTS_KEY + "_" + c ++, descriptor.getModelURL() + w.getArchitecture().getSource());
 			} catch (Exception ex) {
 				// The exception is thrown whenever the weight format is not present.
 				// This exception will not be thrown here because the weight formats are retrieved from the same object

@@ -19,9 +19,6 @@
  */
 package io.bioimage.modelrunner.bioimageio.description.weights;
 
-import java.util.List;
-import java.util.Map;
-
 /**
  * Interface that contains all the methods needed to create a 
  * Bioimage.io weight specification for any format.
@@ -75,8 +72,8 @@ public interface WeightFormat {
 	public String getSha256();
 	
 	/**
-	 * REturn the String defined in the Bioimage.io rdf.yaml file as the weigths source
-	 * @return the String defined in the Bioimage.io rdf.yaml file as the weigths source
+	 * REturn the String defined in the Bioimage.io rdf.yaml file as the weights source
+	 * @return the String defined in the Bioimage.io rdf.yaml file as the weights source
 	 */
 	public String getSource();
 	
@@ -85,24 +82,6 @@ public interface WeightFormat {
 	 * @return name of the file containing the weights
 	 */
 	public String getSourceFileName();
-	
-	/**
-	 * List of the authors that have trained the model in the case there is no
-	 * parent model, or list of authors that converted the weights into this format
-	 * 
-	 * @return the authors of the weights
-	 */
-	public List<String> getAuthors();
-	
-	/** REturn the attachments needed for the weights 
-	 * 
-	 * @return the attachements. Attachments consists of a dictionary 
-	 * of text keys and list values (that may contain any valid yaml) to 
-	 * additional, relevant files that are specific to the current 
-	 * weight format. A list of URIs can be listed under the files key 
-	 * to included additional files for generating the model package 
-	 */
-	public Map<String, Object> getAttachments();
 	
 	/**
 	 * Returns the parent of the weights. 
@@ -127,12 +106,6 @@ public interface WeightFormat {
 	 * @return the archiecture used to train the weights
 	 */
 	public ModelArchitecture getArchitecture();
-	
-	/**
-	 * SHA256 of the architecture
-	 * @return the SHA256 of the architecture
-	 */
-	public String getArchitectureSha256();
 	
 	/**
 	 * Method to set whether the engine used for this weights supports GPU or not

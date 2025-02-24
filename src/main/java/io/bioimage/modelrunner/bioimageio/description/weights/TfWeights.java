@@ -21,8 +21,6 @@ package io.bioimage.modelrunner.bioimageio.description.weights;
 
 import java.io.File;
 import java.net.MalformedURLException;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -50,13 +48,7 @@ public class TfWeights implements WeightFormat{
 
 	private String source;
 
-	private List<String> authors;
-
-	private Map<String, Object> attachments;
-
 	private String parent;
-
-	private String architectureSha256;
 	
 	boolean gpu = false;
 
@@ -82,12 +74,6 @@ public class TfWeights implements WeightFormat{
 	            case "source":
 	                setSource(fieldElement);
 	                break;
-	            case "attachments":
-	            	setAttachments(fieldElement);
-	                break;
-	            case "authors":
-	                setAuthors(fieldElement);
-	                break;
 	            case "parent":
 	                setParent(fieldElement);
 	                break;
@@ -96,9 +82,6 @@ public class TfWeights implements WeightFormat{
 	                break;
 	            case "architecture":
 	            	setArchitecture(fieldElement);
-	                break;
-	            case "architecture_sha256":
-	            	setArchitectureSha256(fieldElement);
 	                break;
 	        }
 		}
@@ -191,49 +174,6 @@ public class TfWeights implements WeightFormat{
 	}
 
 	@Override
-	/**
-	 * {@inheritDoc}
-	 */
-	public List<String> getAuthors() {
-		return authors;
-	}
-	
-	/**
-	 * Set the authors of the model
-	 * @param authors
-	 * 	authors of the model
-	 */
-	public void setAuthors(Object authors) {
-		if (authors instanceof String) {
-			List<String> authList = new ArrayList<String>();
-			authList.add((String) authors);
-			this.authors = authList;
-		} else if (authors instanceof List<?>) {
-			this.authors = (List<String>) authors;
-		}
-		
-	}
-
-	@Override
-	/**
-	 * {@inheritDoc}
-	 */
-	public Map<String, Object> getAttachments() {
-		return attachments;
-	}
-	
-	/**
-	 * Set the attachments of the weights if they exist
-	 * @param attachments
-	 * 	attachments of the model
-	 */
-	public void setAttachments(Object attachments) {
-		if (attachments instanceof Map<?, ?>)
-			this.attachments = (Map<String, Object>) attachments;
-		
-	}
-
-	@Override
 	public String getParent() {
 		return parent;
 	}
@@ -266,24 +206,6 @@ public class TfWeights implements WeightFormat{
 	public void setArchitecture(Object architecture) {
 		if (architecture instanceof Map)
 			this.architecture = new ModelArchitecture((Map<String, Object>) architecture);
-	}
-
-	@Override
-	/**
-	 * {@inheritDoc}
-	 */
-	public String getArchitectureSha256() {
-		return architectureSha256;
-	}
-	
-	/**
-	 * Set the architecture Sha256 in the case it exists
-	 * @param architectureSha256
-	 * 	architecture Sha256 of the model
-	 */
-	public void setArchitectureSha256(Object architectureSha256) {
-		if (architectureSha256 instanceof String)
-			this.architectureSha256 = (String) architectureSha256;
 	}
 
 	@Override
