@@ -112,12 +112,12 @@ public class DLModelPytorch extends BaseModel {
 			"torchvision==0.19.0", "torchaudio==2.4.0"});
 	
 	private static final List<String> BIAPY_PIP_DEPS = Arrays.asList(new String[] {"timm==1.0.14", "pytorch-msssim==1.0.0", 
-			"torchmetrics[image]==1.4.*",
+			"torchmetrics[image]==1.4.*", "cellpose==3.1.1.1",
 			"biapy==3.5.10", "appose"});
 	
 	private static final List<String> BIAPY_PIP_ARGS = Arrays.asList(new String[] {"--index-url", "https://download.pytorch.org/whl/cpu"});
 		
-	private static String INSTALLATION_DIR = Mamba.BASE_PATH;
+	protected static String INSTALLATION_DIR = Mamba.BASE_PATH;
 	
 	private static final String MODEL_VAR_NAME = "model_" + UUID.randomUUID().toString().replace("-", "_");
 
@@ -149,7 +149,9 @@ public class DLModelPytorch extends BaseModel {
 	
 	protected static final String RECOVER_OUTPUTS_CODE = ""
 			+ "def handle_output_list(out_list):" + System.lineSeparator()
-			+ "  for i, outs_i in range(out_list):" + System.lineSeparator()
+			+ "  print(out_list)" + System.lineSeparator()
+			+ "  for outs_i in out_list:" + System.lineSeparator()
+			+ "    print(outs_i)" + System.lineSeparator()
 			+ "    if type(outs_i) == np.ndarray:" + System.lineSeparator()
 			+ "      shm = shared_memory.SharedMemory(create=True, size=outs_i.nbytes)" + System.lineSeparator()
 			+ "      sh_np_array = np.ndarray(outs_i.shape, dtype=outs_i.dtype, buffer=outs_i.buf)" + System.lineSeparator()
@@ -308,15 +310,29 @@ public class DLModelPytorch extends BaseModel {
 				+ "if 'torch' not in globals().keys():" + System.lineSeparator()
 				+ "  import torch" + System.lineSeparator()
 				+ "  globals()['torch'] = torch" + System.lineSeparator();
-		code = MODEL_VAR_NAME + "=" + callable + "(";
-		for (Entry<String, Object> ee : kwargs.entrySet()) {
-			code += ee.getKey() + "=" + ee.getValue() + ",";
-		}
-		code += ")" + System.lineSeparator();
-		code += MODEL_VAR_NAME + ".load_state_dict("
-				+ "torch.load('" + this.weightsPath + "', map_location=" + MODEL_VAR_NAME  + ".device)"
-				+ ")" + System.lineSeparator();
+		code += MODEL_VAR_NAME + "=" + callable + "(" + codeForKwargs()  + ")" + System.lineSeparator();
+		code += "try:" + System.lineSeparator()
+				+ "  " + MODEL_VAR_NAME + ".load_state_dict("
+				+ "torch.load('" + this.weightsPath + "', map_location=" + MODEL_VAR_NAME  + ".device))" + System.lineSeparator()
+				+ "except:" + System.lineSeparator()
+				+ "  " + MODEL_VAR_NAME + ".load_state_dict("
+				+ "torch.load('" + this.weightsPath + "', map_location=torch.device('cpu')))" + System.lineSeparator();
 		code += "globals()['" + MODEL_VAR_NAME + "'] = " + MODEL_VAR_NAME + System.lineSeparator();
+		return code;
+	}
+	
+	private String codeForKwargs() {
+		String code = "";
+		for (Entry<String, Object> ee : kwargs.entrySet()) {
+			Object codeVal = ee.getValue();
+			if (codeVal == null)
+				codeVal = "None";
+			else if ((codeVal instanceof Boolean && (Boolean) codeVal) || codeVal.equals("true"))
+				codeVal = "True";
+			else if ((codeVal instanceof Boolean && !((Boolean) codeVal)) || codeVal.equals("false"))
+				codeVal = "False";
+			code += ee.getKey() + "=" + codeVal + ",";
+		}
 		return code;
 	}
 
@@ -421,6 +437,8 @@ public class DLModelPytorch extends BaseModel {
 			code += codeToConvertShmaToPython(shma, in.getName() + "_torch");
 			inShmaList.add(shma);
 		}
+		code += "print(type(input_torch))" + System.lineSeparator();
+		code += "print(input_torch.shape)" + System.lineSeparator();
 		code += OUTPUT_LIST_KEY + " = " + MODEL_VAR_NAME + "(";
 		for (Tensor<T> in : inTensors)
 			code += in.getName() + "_torch, ";
@@ -630,7 +648,10 @@ public class DLModelPytorch extends BaseModel {
 		for (int i = 0; i < shma.getOriginalShape().length; i ++)
 			code += shma.getOriginalShape()[i] + ", ";
 		code += "])" + System.lineSeparator();
-		code += varName + " = torch.from_numpy(" + varName + "_np).to(" + MODEL_VAR_NAME + ".device)" + System.lineSeparator();
+		code += "try:" + System.lineSeparator();
+		code += "  " + varName + " = torch.from_numpy(" + varName + "_np).to(" + MODEL_VAR_NAME + ".device)" + System.lineSeparator();
+		code += "except:" + System.lineSeparator();
+		code += "  " + varName + " = torch.from_numpy(" + varName + "_np).to(torch.device('cpu'))" + System.lineSeparator();
 
 		code += ""
 			+ "if os.name == 'nt':" + System.lineSeparator()

@@ -1555,6 +1555,7 @@ public class Mamba {
 			return false;
 		else if (!envFile.isDirectory())
 			envFile = envFile2;
+		dependency = resolveAliases(dependency);
 		if (dependency.trim().equals("python")) return checkPythonInstallation(envDir, minversion, maxversion, strictlyBiggerOrSmaller);
 		String checkDepCode;
 		if (minversion != null && maxversion != null && minversion.equals(maxversion)) {
@@ -1611,6 +1612,10 @@ public class Mamba {
 			return false;
 		}
 		return true;
+	}
+	
+	private static String resolveAliases(String dep) {
+		return dep.replace("pytorch", "torch");
 	}
 	
 	private boolean checkPythonInstallation(String envDir, String minversion, String maxversion, boolean strictlyBiggerOrSmaller) throws MambaInstallException {

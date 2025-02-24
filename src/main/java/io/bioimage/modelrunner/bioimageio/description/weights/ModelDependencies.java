@@ -21,6 +21,7 @@
 package io.bioimage.modelrunner.bioimageio.description.weights;
 
 import java.io.File;
+import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -49,20 +50,34 @@ public class ModelDependencies {
 		List<String> deps = new ArrayList<String>();
 		if (weights.getEnvDependencies() == null || weights.getEnvDependencies().getSource() == null)
 			return deps;
-		if (descriptor.getModelPath() != null) {
-			String path = descriptor.getModelPath() + File.separator + weights.getEnvDependencies().getSource();
-			Map<String, Object> map = YAMLUtils.loadFromString(path);
-			if (map.get("dependencies") != null && map.get("dependencies") instanceof String)
-				return (List<String>) map.get("dependencies");
-		}
-		String url = descriptor.getModelURL() + weights.getEnvDependencies().getSource();
 		try {
+			if (descriptor.getModelPath() != null) {
+				String path = descriptor.getModelPath() + File.separator + weights.getEnvDependencies().getSource();
+				Map<String, Object> map = YAMLUtils.load(path);
+				if (map.get("dependencies") != null && map.get("dependencies") instanceof List)
+					return dependenciesMapToList((List<Object>) map.get("dependencies"));
+			}
+			String url = descriptor.getModelURL() + weights.getEnvDependencies().getSource();
 			String stringRDF = BioimageioRepo.getJSONFromUrl(url);
 			Map<String,Object> map = YAMLUtils.loadFromString(stringRDF);
-			if (map.get("dependencies") != null && map.get("dependencies") instanceof String)
-				return (List<String>) map.get("dependencies");
-		} catch (InterruptedException e) {
+			if (map.get("dependencies") != null && map.get("dependencies") instanceof List)
+				return dependenciesMapToList((List<Object>) map.get("dependencies"));
+		} catch (InterruptedException | IOException e) {
 			return deps;
+		}
+		return deps;
+	}
+	
+	private static List<String> dependenciesMapToList(List<Object> list) {
+		List<String> deps = new ArrayList<String>();
+		for (Object elem : list) {
+			if (elem instanceof String) {
+				deps.add((String) elem);
+			} else if (elem instanceof Map && ((Map) elem).containsKey("pip")) {
+				Object pipList = ((Map<String, Object>) elem).get("pip");
+				if (pipList instanceof List)
+					deps.addAll(dependenciesMapToList((List<Object>) pipList));
+			}
 		}
 		return deps;
 	}

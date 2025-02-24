@@ -33,10 +33,12 @@ import java.util.stream.Collectors;
 
 import org.apache.commons.compress.archivers.ArchiveException;
 
+import io.bioimage.modelrunner.apposed.appose.Mamba;
 import io.bioimage.modelrunner.apposed.appose.MambaInstallException;
 import io.bioimage.modelrunner.bioimageio.description.ModelDescriptor;
 import io.bioimage.modelrunner.bioimageio.description.ModelDescriptorFactory;
 import io.bioimage.modelrunner.bioimageio.description.TensorSpec;
+import io.bioimage.modelrunner.bioimageio.description.weights.ModelDependencies;
 import io.bioimage.modelrunner.bioimageio.description.weights.ModelWeight;
 import io.bioimage.modelrunner.bioimageio.description.weights.WeightFormat;
 import io.bioimage.modelrunner.bioimageio.tiling.ImageInfo;
@@ -67,9 +69,11 @@ public class BioimageIoModelPytorch extends DLModelPytorch {
 	protected TileCalculator tileCalculator;
 	
 	protected BioimageIoModelPytorch(String modelFile, String callable, String weightsPath, 
-			Map<String, Object> kwargs) throws IOException {
+			Map<String, Object> kwargs, ModelDescriptor descriptor) throws IOException {
 		super(modelFile, callable, weightsPath, kwargs);
 		this.tiling = true;
+		this.descriptor = descriptor;
+		this.tileCalculator = TileCalculator.init(descriptor);
 	}
 	
 	public static BioimageIoModelPytorch create(ModelDescriptor descriptor) throws IOException {
@@ -81,7 +85,7 @@ public class BioimageIoModelPytorch extends DLModelPytorch {
 		String callable = pytorchWeights.getArchitecture().getCallable();
 		String weightsFile = descriptor.getModelPath() +  File.separator + pytorchWeights.getSource();
 		Map<String, Object> kwargs = pytorchWeights.getArchitecture().getKwargs();
-		return new BioimageIoModelPytorch(modelFile, callable, weightsFile, kwargs);
+		return new BioimageIoModelPytorch(modelFile, callable, weightsFile, kwargs, descriptor);
 	}
 	
 	public static BioimageIoModelPytorch create(String modelPath) throws IOException {
@@ -178,6 +182,21 @@ public class BioimageIoModelPytorch extends DLModelPytorch {
 		runBMZ(inputTensors, outputTensors, maker);
 	}
 	
+	public List<String> findMissingDependencies() {
+		Mamba mamba = new Mamba(new File(envPath).getParentFile().getParentFile().getAbsolutePath());
+		List<String> reqDeps = ModelDependencies.getDependencies(descriptor, 
+				descriptor.getWeights().getModelWeights(ModelWeight.getPytorchID()));
+		try {
+			return mamba.checkUninstalledDependenciesInEnv(this.envPath, reqDeps);
+		} catch (MambaInstallException e) {
+			return reqDeps;
+		}
+	}
+	
+	public boolean allDependenciesInstalled() {
+		return findMissingDependencies().size() == 0;
+	}
+	
 	/**
 	 * 
 	 * @param <T>
@@ -197,11 +216,12 @@ public class BioimageIoModelPytorch extends DLModelPytorch {
 	public static <T extends NativeType<T> & RealType<T>> void main(String[] args) throws IOException, LoadEngineException, RunModelException, LoadModelException, InterruptedException, RuntimeException, MambaInstallException, ArchiveException, URISyntaxException {
 		
 		String mm = "/home/carlos/git/deepimagej-plugin/models/OC1 Project 11 Cellpose_24022025_131039";
-		Img<T> im = Cast.unchecked(ArrayImgs.floats(new long[] {1, 1, 512, 512}));
+		Img<T> im = Cast.unchecked(ArrayImgs.floats(new long[] {1, 1, 1024, 1024}));
 		List<Tensor<T>> l = new ArrayList<Tensor<T>>();
-		l.add(Tensor.build("input0", "bcyx", im));
+		l.add(Tensor.build("input", "bcyx", im));
 		//BioimageIoModelPytorch.installRequirements();
 		BioimageIoModelPytorch model = create(mm);
+		List<String> missing = model.findMissingDependencies();
 		model.loadModel();
 		TileInfo tile = TileInfo.build(l.get(0).getName(), new long[] {1, 1, 512, 512}, 
 				l.get(0).getAxesOrderString(), new long[] {1, 1, 512, 512}, l.get(0).getAxesOrderString());
