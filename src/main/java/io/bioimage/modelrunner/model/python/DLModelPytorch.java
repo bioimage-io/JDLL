@@ -27,6 +27,7 @@ import java.io.IOException;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -108,11 +109,12 @@ public class DLModelPytorch extends BaseModel {
 	
 	private static final List<String> BIAPY_CONDA_DEPS = Arrays.asList(new String[] {"python=3.10"});
 	
-	private static final List<String> BIAPY_PIP_DEPS = Arrays.asList(new String[] {"python=3.10", 
-			"torch==2.4.0", "torchvision==0.19.0", "torchaudio==2.4.0",
+	private static final List<String> BIAPY_PIP_DEPS = Arrays.asList(new String[] {"torch==2.4.0", 
+			"torchvision==0.19.0", "torchaudio==2.4.0",
 			"timm==1.0.14", "pytorch-msssim==1.0.0", "torchmetrics[image]==1.4.*",
-			"biapy==3.5.10", "appose",
-			"--index-url https://download.pytorch.org/whl/cpu"});
+			"biapy==3.5.10", "appose"});
+	
+	private static final List<String> BIAPY_PIP_ARGS = Arrays.asList(new String[] {"--index-url https://download.pytorch.org/whl/cpu"});
 		
 	private static String INSTALLATION_DIR = Mamba.BASE_PATH;
 	
@@ -709,7 +711,9 @@ public class DLModelPytorch extends BaseModel {
 		if (!biapyPythonInstalled) {
 			// TODO add logging for environment installation
 			mamba.create(COMMON_PYTORCH_ENV_NAME, true, new ArrayList<String>(), BIAPY_CONDA_DEPS);
-			mamba.pipInstallIn(COMMON_PYTORCH_ENV_NAME, BIAPY_PIP_DEPS.toArray(new String[BIAPY_PIP_DEPS.size()]));
+			ArrayList<String> args = new ArrayList<String>(BIAPY_PIP_ARGS);
+			args.addAll(BIAPY_PIP_DEPS);
+			mamba.pipInstallIn(COMMON_PYTORCH_ENV_NAME, args.toArray(new String[args.size()]));
 		};
 	}
 	

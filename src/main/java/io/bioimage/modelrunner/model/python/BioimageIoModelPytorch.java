@@ -22,16 +22,23 @@
  */
 package io.bioimage.modelrunner.model.python;
 
+import java.io.File;
 import java.io.IOException;
+import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
+import org.apache.commons.compress.archivers.ArchiveException;
 
+import io.bioimage.modelrunner.apposed.appose.MambaInstallException;
 import io.bioimage.modelrunner.bioimageio.description.ModelDescriptor;
 import io.bioimage.modelrunner.bioimageio.description.ModelDescriptorFactory;
 import io.bioimage.modelrunner.bioimageio.description.TensorSpec;
+import io.bioimage.modelrunner.bioimageio.description.weights.ModelWeight;
+import io.bioimage.modelrunner.bioimageio.description.weights.WeightFormat;
 import io.bioimage.modelrunner.bioimageio.tiling.ImageInfo;
 import io.bioimage.modelrunner.bioimageio.tiling.TileCalculator;
 import io.bioimage.modelrunner.bioimageio.tiling.TileInfo;
@@ -58,18 +65,26 @@ public class BioimageIoModelPytorch extends DLModelPytorch {
 	 */
 	protected TileCalculator tileCalculator;
 	
-	protected BioimageIoModelPytorch(ModelDescriptor descriptor) throws IOException {
-		super(descriptor.getWeights().getSelectedWeights().getSource(),
-				null, null, null);
+	protected BioimageIoModelPytorch(String modelFile, String callable, String weightsPath, 
+			Map<String, Object> kwargs) throws IOException {
+		super(modelFile, callable, weightsPath, kwargs);
 		this.tiling = true;
 	}
 	
 	public static BioimageIoModelPytorch create(ModelDescriptor descriptor) throws IOException {
-		return new BioimageIoModelPytorch(descriptor);
+		if (descriptor.getWeights().getModelWeights(ModelWeight.getPytorchID()) == null)
+			throw new IllegalArgumentException("The model provided does not have weights in the required format, "
+					+ ModelWeight.getPytorchID() + ".");
+		WeightFormat pytorchWeights = descriptor.getWeights().getModelWeights(ModelWeight.getPytorchID());
+		String modelFile = descriptor.getModelPath() +  File.separator + pytorchWeights.getArchitecture().getSource();
+		String callable = descriptor.getModelPath() +  File.separator + pytorchWeights.getArchitecture().getCallable();
+		String weightsFile = descriptor.getModelPath() +  File.separator + pytorchWeights.getSource();
+		Map<String, Object> kwargs = pytorchWeights.getArchitecture().getKwargs();
+		return new BioimageIoModelPytorch(modelFile, callable, weightsFile, kwargs);
 	}
 	
 	public static BioimageIoModelPytorch create(String descriptorPath) throws IOException {
-		return new BioimageIoModelPytorch(ModelDescriptorFactory.readFromLocalFile(descriptorPath));
+		return create(ModelDescriptorFactory.readFromLocalFile(descriptorPath));
 	}
 	
 	/**
@@ -172,13 +187,19 @@ public class BioimageIoModelPytorch extends DLModelPytorch {
 	 * @throws LoadEngineException	nothing
 	 * @throws RunModelException	nothing
 	 * @throws LoadModelException	nothing
+	 * @throws URISyntaxException 
+	 * @throws ArchiveException 
+	 * @throws MambaInstallException 
+	 * @throws RuntimeException 
+	 * @throws InterruptedException 
 	 */
-	public static <T extends NativeType<T> & RealType<T>> void main(String[] args) throws IOException, LoadEngineException, RunModelException, LoadModelException {
+	public static <T extends NativeType<T> & RealType<T>> void main(String[] args) throws IOException, LoadEngineException, RunModelException, LoadModelException, InterruptedException, RuntimeException, MambaInstallException, ArchiveException, URISyntaxException {
 		
-		String mm = "/home/carlos/git/JDLL/models/NucleiSegmentationBoundaryModel_17122023_143125";
+		String mm = "/home/carlos/git/deepimagej-plugin/models/OC1 Project 11 Cellpose_24022025_131039";
 		Img<T> im = Cast.unchecked(ArrayImgs.floats(new long[] {1, 1, 512, 512}));
 		List<Tensor<T>> l = new ArrayList<Tensor<T>>();
 		l.add(Tensor.build("input0", "bcyx", im));
+		BioimageIoModelPytorch.installRequirements();
 		BioimageIoModelPytorch model = create(mm);
 		model.loadModel();
 		TileInfo tile = TileInfo.build(l.get(0).getName(), new long[] {1, 1, 512, 512}, 

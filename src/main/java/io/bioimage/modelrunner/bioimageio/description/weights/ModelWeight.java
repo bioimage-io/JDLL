@@ -103,6 +103,17 @@ public class ModelWeight
         }
         return model;
     }
+    
+    /**
+     * Get the weight object for the weight identifier provided. If it does not exist or the model
+     * does not have weights in the wanted format, the method will return null
+     * @param weightID
+     * 	the identifier for the model weights. 
+     * @return the weights in the wanted format if they are available
+     */
+    public WeightFormat getModelWeights(String weightID) {
+    	return this.weightsDic.get(weightID);
+    }
 
 	/**
      * Return the corresponding weight format
