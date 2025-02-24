@@ -83,6 +83,9 @@ public class TfWeights implements WeightFormat{
 	            case "architecture":
 	            	setArchitecture(fieldElement);
 	                break;
+	            case "dependencies":
+	            	setDependencies(fieldElement);
+	                break;
 	        }
 		}
 		setCompatibleVersion();
@@ -203,9 +206,29 @@ public class TfWeights implements WeightFormat{
 	 * @param architecture
 	 * 	path to the architecture of the model
 	 */
-	public void setArchitecture(Object architecture) {
+	private void setArchitecture(Object architecture) {
 		if (architecture instanceof Map)
 			this.architecture = new ModelArchitecture((Map<String, Object>) architecture);
+	}
+
+	private ModelDependencies dependencies;
+	
+	@Override
+	/**
+	 * {@inheritDoc}
+	 */
+	public ModelDependencies getEnvDependencies() {
+		return dependencies;
+	}
+	
+	/**
+	 * Set the path to the architecture of the weights in the case it exists
+	 * @param dependencies
+	 * 	object specifying the dependencies of the model
+	 */
+	private void setDependencies(Object dependencies) {
+		if (dependencies instanceof Map)
+			this.dependencies = new ModelDependencies((Map<String, Object>) dependencies);
 	}
 
 	@Override

@@ -108,6 +108,13 @@ public interface WeightFormat {
 	public ModelArchitecture getArchitecture();
 	
 	/**
+	 * 
+	 * @return the env.yaml file that contains the Python dependencies required to run the model. If the model
+	 * 	is not in python, there should not be any dependency or dependency file.
+	 */
+	public ModelDependencies getEnvDependencies();
+	
+	/**
 	 * Method to set whether the engine used for this weights supports GPU or not
 	 * @param support
 	 * 	whether the engine support GPU or not
