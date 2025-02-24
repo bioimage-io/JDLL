@@ -37,7 +37,7 @@ import io.bioimage.modelrunner.utils.Constants;
  * @author Carlos Garcia Lopez de Haro
  *
  */
-public class PytorchWeights implements WeightFormat{
+public class PytorchWeights implements WeightFormat {
 
 	/**
 	 * Crate an object that specifies Pytorch state dic weights
@@ -235,12 +235,13 @@ public class PytorchWeights implements WeightFormat{
 			this.parent = (String) parent;
 	}
 
-	private String architecture;
+	private ModelArchitecture architecture;
+	
 	@Override
 	/**
 	 * {@inheritDoc}
 	 */
-	public String getArchitecture() {
+	public ModelArchitecture getArchitecture() {
 		return architecture;
 	}
 	
@@ -250,8 +251,8 @@ public class PytorchWeights implements WeightFormat{
 	 * 	path to the architecture of the model
 	 */
 	public void setArchitecture(Object architecture) {
-		if (architecture instanceof String)
-			this.architecture = (String) architecture;
+		if (architecture instanceof Map)
+			this.architecture = new ModelArchitecture((Map<String, Object>) architecture);
 	}
 
 	private String architectureSha256;

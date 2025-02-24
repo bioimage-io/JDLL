@@ -56,8 +56,6 @@ public class OnnxWeights implements WeightFormat {
 
 	private String parent;
 
-	private String architecture;
-
 	private String architectureSha256;
 	
 	boolean gpu = false;
@@ -254,11 +252,13 @@ public class OnnxWeights implements WeightFormat {
 			this.parent = (String) parent;
 	}
 
+	private ModelArchitecture architecture;
+	
 	@Override
 	/**
 	 * {@inheritDoc}
 	 */
-	public String getArchitecture() {
+	public ModelArchitecture getArchitecture() {
 		return architecture;
 	}
 	
@@ -268,8 +268,8 @@ public class OnnxWeights implements WeightFormat {
 	 * 	path to the architecture of the model
 	 */
 	public void setArchitecture(Object architecture) {
-		if (architecture instanceof String)
-			this.architecture = (String) architecture;
+		if (architecture instanceof Map)
+			this.architecture = new ModelArchitecture((Map<String, Object>) architecture);
 	}
 
 	@Override

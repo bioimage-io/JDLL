@@ -126,7 +126,7 @@ public interface WeightFormat {
 	 * 
 	 * @return the archiecture used to train the weights
 	 */
-	public String getArchitecture();
+	public ModelArchitecture getArchitecture();
 	
 	/**
 	 * SHA256 of the architecture
