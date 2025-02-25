@@ -27,6 +27,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.stream.IntStream;
 
 import io.bioimage.modelrunner.bioimageio.description.ModelDescriptor;
 import io.bioimage.modelrunner.bioimageio.description.TensorSpec;
@@ -144,14 +145,31 @@ public class Processing {
 		List<Tensor<R>> outputs = new ArrayList<Tensor<R>>();
 		if (preMap.entrySet().size() == 0) return Cast.unchecked(tensorList);
 		for (Entry<String, List<TransformationInstance>> ee : this.preMap.entrySet()) {
-			Tensor<T> tt = tensorList.stream().filter(t -> t.getName().equals(ee.getKey())).findFirst().orElse(null);
-			if (tt == null)
+			int index = IntStream.range(0, tensorList.size())
+                    .filter(i -> tensorList.get(i).getName().equals(ee.getKey()))
+                    .findFirst().orElse(-1);
+			if (index == -1)
 				continue;
 			if (ee.getValue().size() == 0)
-				outputs.add(Cast.unchecked(tt));
+				outputs.add(Cast.unchecked(tensorList.get(index)));
 			for (TransformationInstance trans : ee.getValue()) {
-				List<Tensor<R>> outList = trans.run(tt, inplace);
-				outputs.addAll(outList);
+				List<Tensor<R>> outList = trans.run(tensorList.get(index), inplace);
+				int index2 = IntStream.range(0, outList.size())
+	                    .filter(i -> outList.get(i).getName().equals(tensorList.get(index).getName())).findFirst().orElse(-1);
+				if (index2 != -1)
+					tensorList.set(index, (Tensor<T>) outList.get(index2));
+				for (int j = 0; j < outList.size(); j ++) {
+					boolean found = false;
+					for (int k = 0; k < outputs.size(); k ++) {
+						if (outputs.get(k).getName().equals(outList.get(j).getName())) {
+							found = true;
+							outputs.set(k, outList.get(j));
+							break;
+						}
+					}
+					if (!found)
+						outputs.add(outList.get(j));
+				}
 			}
 		}
 		return outputs;
@@ -191,14 +209,31 @@ public class Processing {
 		List<Tensor<R>> outputs = new ArrayList<Tensor<R>>();
 		if (postMap.entrySet().size() == 0) return Cast.unchecked(tensorList);
 		for (Entry<String, List<TransformationInstance>> ee : this.postMap.entrySet()) {
-			Tensor<T> tt = tensorList.stream().filter(t -> t.getName().equals(ee.getKey())).findFirst().orElse(null);
-			if (tt == null)
+			int index = IntStream.range(0, tensorList.size())
+                    .filter(i -> tensorList.get(i).getName().equals(ee.getKey()))
+                    .findFirst().orElse(-1);
+			if (index == -1)
 				continue;
 			if (ee.getValue().size() == 0)
-				outputs.add(Cast.unchecked(tt));
+				outputs.add(Cast.unchecked(tensorList.get(index)));
 			for (TransformationInstance trans : ee.getValue()) {
-				List<Tensor<R>> outList = trans.run(tt, inplace);
-				outputs.addAll(outList);
+				List<Tensor<R>> outList = trans.run(tensorList.get(index), inplace);
+				int index2 = IntStream.range(0, outList.size())
+	                    .filter(i -> outList.get(i).getName().equals(tensorList.get(index).getName())).findFirst().orElse(-1);
+				if (index2 != -1)
+					tensorList.set(index, (Tensor<T>) outList.get(index2));
+				for (int j = 0; j < outList.size(); j ++) {
+					boolean found = false;
+					for (int k = 0; k < outputs.size(); k ++) {
+						if (outputs.get(k).getName().equals(outList.get(j).getName())) {
+							found = true;
+							outputs.set(k, outList.get(j));
+							break;
+						}
+					}
+					if (!found)
+						outputs.add(outList.get(j));
+				}
 			}
 		}
 		return outputs;

@@ -72,7 +72,7 @@ public class DLModelPytorch extends BaseModel {
 	
 	protected final Map<String, Object> kwargs;
 	
-	public String envPath;
+	protected String envPath;
 	
 	private Service python;
 	
@@ -232,6 +232,10 @@ public class DLModelPytorch extends BaseModel {
 			};
 		python = env.python();
 		python.debug(System.err::println);
+	}
+	
+	public String getEnvPath() {
+		return this.envPath;
 	}
 	
 	public void setCustomEnvPath(String envPath) throws IOException {

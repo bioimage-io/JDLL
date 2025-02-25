@@ -230,8 +230,8 @@ public class ScaleLinearTransformation extends AbstractTensorTransformation
 			long[] end = new long[dims.length];
 			for (int i = 0; i < dims.length; i ++) end[i] = dims[i] - start[i];
 			IntervalView<R> plane = Views.offsetInterval( output.getData(), start, end );
-			final float gain = (float) this.gainArr[c];
-			final float offset = (float) this.offsetArr[c ++ ];
+			final float gain = (float) (this.gainArr != null ? gainArr[c] : this.gainDouble);
+			final float offset = (float) (this.offsetArr != null ? offsetArr[c] : this.offsetDouble);
 			scaleLinear(plane, gain, offset);
 		}
 	}
