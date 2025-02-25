@@ -137,7 +137,7 @@ public abstract class StardistAbstract extends BaseModel {
 			+ "  from multiprocessing import shared_memory" + System.lineSeparator()
 			+ "  globals()['shared_memory'] = shared_memory" + System.lineSeparator()
 			+ "os.environ[\"CUDA_VISIBLE_DEVICES\"] = \"-1\"" + System.lineSeparator()
-			+ "model = %s(None, name='%s', basedir='%s')" + System.lineSeparator()
+			+ "model = %s(None, name='%s', basedir=r\"%s\")" + System.lineSeparator()
 			+ "globals()['model'] = model" + System.lineSeparator();
 	
 	private static final String RUN_MODEL_CODE = ""

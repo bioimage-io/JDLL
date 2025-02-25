@@ -121,6 +121,10 @@ public class Cellpose extends BioimageIoModelPytorchProtected {
 	}
 	
 	public void setChannels(int[] channels) {
+		if (channels.length != 2)
+			throw new IllegalArgumentException("The channels arrays can only be [0, 0], [2, 3] or [2, 1]."
+					+ " For grayscale images [0, 0], for 3 channels images where teh cytoplasm is in the second channel "
+					+ "(green)");
 		this.channels = channels;
 	}
 	
@@ -233,9 +237,15 @@ public class Cellpose extends BioimageIoModelPytorchProtected {
 			return "[0, 0]";
 		else if (channels == null && dims.length == 3 && dims[2] == 1)
 			return "[0, 0]";
-		else if (channels == null && dims.length == 3 && dims[2] == 1)
-			return "[0, 0]";
-		return null;
+		else if (channels == null && dims.length == 3 && dims[2] == 3 && isRedChannelEmpty(rai))
+			return "[2, 3]";
+		else if (channels == null && dims.length == 3 && dims[2] == 3)
+			return "[2, 1]";
+		else if (channels != null)
+			return Arrays.toString(channels);
+		else
+			throw new IllegalArgumentException("Bad configuration, dims=" + Arrays.toString(dims) 
+			+ ", channels=" + Arrays.toString(channels));
 		
 	}
 	
