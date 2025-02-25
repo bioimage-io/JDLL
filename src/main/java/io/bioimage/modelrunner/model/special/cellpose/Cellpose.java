@@ -225,6 +225,20 @@ public class Cellpose extends BioimageIoModelPytorchProtected {
 		return code;
 	}
 	
+	protected <T extends RealType<T> & NativeType<T>> String createChannelsArgCode(RandomAccessibleInterval<T> rai) {
+		long[] dims = rai.dimensionsAsLongArray();
+		if (channels == null && dims.length == 2)
+			return "[0, 0]";
+		else if (channels == null && dims.length == 3 && dims[2] == 1)
+			return "[0, 0]";
+		else if (channels == null && dims.length == 3 && dims[2] == 1)
+			return "[0, 0]";
+		else if (channels == null && dims.length == 3 && dims[2] == 1)
+			return "[0, 0]";
+		return null;
+		
+	}
+	
 	/**
 	 * Initialize a Stardist2D using the format of the Bioiamge.io model zoo.
 	 * @param descriptor
