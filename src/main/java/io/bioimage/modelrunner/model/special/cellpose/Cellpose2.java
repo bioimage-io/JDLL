@@ -49,7 +49,6 @@ import io.bioimage.modelrunner.bioimageio.description.ModelDescriptor;
 import io.bioimage.modelrunner.bioimageio.description.ModelDescriptorFactory;
 import io.bioimage.modelrunner.download.MultiFileDownloader;
 import io.bioimage.modelrunner.exceptions.RunModelException;
-import io.bioimage.modelrunner.model.python.BioimageIoModelPytorch;
 import io.bioimage.modelrunner.model.python.DLModelPytorch;
 import io.bioimage.modelrunner.model.special.SpecialModelBase;
 import io.bioimage.modelrunner.tensor.Tensor;
@@ -70,7 +69,7 @@ import net.imglib2.view.Views;
  *
  *@author Carlos Garcia
  */
-public class Cellpose extends BioimageIoModelPytorch {
+public class Cellpose2 extends SpecialModelBase {
 	
 	private final String modelDir;
 	
@@ -103,6 +102,10 @@ public class Cellpose extends BioimageIoModelPytorch {
 	private Service python;
 	
 	private static int DEFAULT_DIAMETER = 30;
+	
+	private static String INSTALLATION_DIR = Mamba.BASE_PATH;
+	
+	private static String DEFAULT_ENV_DIR = INSTALLATION_DIR + File.separator + "envs" + DLModelPytorch.COMMON_PYTORCH_ENV_NAME;
 	
 	private static final List<String> CELLPOSE_DEPS = Arrays.asList(new String[] {"cellpose==3.1.1.1"});
 	
@@ -160,8 +163,52 @@ public class Cellpose extends BioimageIoModelPytorch {
 			+ "  globals()['shared_memory'] = shared_memory" + System.lineSeparator()
 			+ "model = denoise.CellposeDenoiseModel(gpu=True, model_type='%s')" + System.lineSeparator()
 			+ "globals()['model'] = model" + System.lineSeparator();
-
-	protected Cellpose(String weightsPath) throws IOException {
+	
+	private static final String RUN_MODEL_CODE = ""
+			+ "output = model.predict_instances(im, return_predict=False)" + System.lineSeparator()
+			+ "if type(output) == np.ndarray:" + System.lineSeparator()
+			+ "  im[:] = output" + System.lineSeparator()
+			+ "  im[:] = output" + System.lineSeparator()
+			+ "  if os.name == 'nt':" + System.lineSeparator()
+			+ "    im_shm.close()" + System.lineSeparator()
+			+ "    im_shm.unlink()" + System.lineSeparator()
+			+ "if type(output) != list and type(output) != tuple:" + System.lineSeparator()
+			+ "  raise TypeError('StarDist output should be a list of a np.ndarray')" + System.lineSeparator()
+			+ "if type(output[0]) != np.ndarray:" + System.lineSeparator()
+			+ "  raise TypeError('If the StarDist output is a list, the first entry should be a np.ndarray')" + System.lineSeparator()
+			+ "if len(im.shape) == 3 and len(output[0].shape) == 2:" + System.lineSeparator()
+			+ "  im[:, :, 0] = output[0]" + System.lineSeparator()
+			+ "else:" + System.lineSeparator()
+			+ "  im[:] = output[0]" + System.lineSeparator()
+			+ "if len(output) > 1 and type(output[1]) != dict:" + System.lineSeparator()
+			+ "  raise TypeError('If the StarDist output is a list, the second entry needs to be a dict.')" + System.lineSeparator()
+			+ "task.outputs['" + KEYS_KEY + "'] = list(output[1].keys())" + System.lineSeparator()
+			+ "shm_list = []" + System.lineSeparator()
+			+ "np_list = []" + System.lineSeparator()
+			+ "for kk, vv in output[1].items():" + System.lineSeparator()
+			+ "  if type(vv) != np.ndarray:" + System.lineSeparator()
+			+ "    task.update('Output ' + kk + ' is not a np.ndarray. Only np.ndarrays supported.')" + System.lineSeparator()
+			+ "    continue" + System.lineSeparator()
+			+ "  if output[1][kk].nbytes == 0:" + System.lineSeparator()
+			+ "    task.outputs[kk] = None" + System.lineSeparator()
+			+ "  else:" + System.lineSeparator()
+			+ "    task.outputs[kk + '" + SHAPE_KEY + "'] = output[1][kk].shape" + System.lineSeparator()
+			+ "    task.outputs[kk + '"+ DTYPE_KEY + "'] = str(output[1][kk].dtype)" + System.lineSeparator()
+			+ "    shm = shared_memory.SharedMemory(create=True, size=output[1][kk].nbytes)" + System.lineSeparator()
+			+ "    task.outputs[kk + '"+ SHM_NAME_KEY + "'] = shm.name" + System.lineSeparator()
+			+ "    shm_list.append(shm)" + System.lineSeparator()
+			+ "    aa = np.ndarray(output[1][kk].shape, dtype=output[1][kk].dtype, buffer=shm.buf)" + System.lineSeparator()
+			+ "    aa[:] = output[1][kk]" + System.lineSeparator()
+			+ "    np_list.append(aa)" + System.lineSeparator()
+			+ "globals()['shm_list'] = shm_list" + System.lineSeparator()
+			+ "globals()['np_list'] = np_list" + System.lineSeparator()
+			
+			
+			+ "if os.name == 'nt':" + System.lineSeparator()
+			+ "  im_shm.close()" + System.lineSeparator()
+			+ "  im_shm.unlink()" + System.lineSeparator();
+	
+	protected Cellpose2(String weightsPath) throws IOException {
 		this.weightsPath = weightsPath;
 		this.modelDir = new File(weightsPath).getParentFile().getAbsolutePath();
 		this.axes = "yxc";
@@ -173,12 +220,34 @@ public class Cellpose extends BioimageIoModelPytorch {
     	createPythonService();
 	}
 	
-	protected Cellpose(ModelDescriptor descriptor) throws IOException {
-		super(descriptor);
+	protected Cellpose2(ModelDescriptor descriptor) throws IOException {
 		this.descriptor = descriptor;
 		this.sizeWeigthsPath = null;
 		this.modelType = "bioimage.io";
+		modelDir = descriptor.getModelPath();
 		this.weightsPath = descriptor.getModelPath() + File.separator + "";
+		if (new File(modelDir, "config.json").isFile() == false)
+			createConfigFromBioimageio();
+		envPath = DEFAULT_ENV_DIR;
+    	createPythonService();
+	}
+	
+	@SuppressWarnings("unchecked")
+	private void createConfigFromBioimageio() throws IOException {
+		if (descriptor == null)
+			descriptor = ModelDescriptorFactory.readFromLocalFile(modelDir + File.separator + Constants.RDF_FNAME);
+    	Map<String, Object> stardistMap = (Map<String, Object>) descriptor.getConfig().getSpecMap().get("stardist");
+    	Map<String, Object> stardistConfig = (Map<String, Object>) stardistMap.get("config");
+    	JSONUtils.writeJSONFile(new File(modelDir, "config.json").getAbsolutePath(), stardistConfig);
+	}
+	
+	public void setEnvPath(String envPath) throws IOException {
+		if (!isInstalled(envPath))
+			throw new IOException("Missing Cellpose requirements in the specified dir. These are the cellpose requirements: "
+					+  CELLPOSE_DEPS);
+		this.envPath = envPath;
+		this.python.close();
+		createPythonService();
 	}
 	
 	public void setChannels(int[] channels) {
@@ -200,6 +269,17 @@ public class Cellpose extends BioimageIoModelPytorch {
 		code += codeToConvertShmaToPython(shmaSt, "st") + System.lineSeparator();
 		code += codeToConvertShmaToPython(shmaDn, "dn") + System.lineSeparator();
 		return code;
+	}
+	
+	public boolean isLoaded() {
+		return loaded;
+	}
+	
+	public void close() {
+		if (!loaded)
+			return;
+		python.close();
+		loaded = false;
 	}
 	
 	public <T extends RealType<T> & NativeType<T>, R extends RealType<R> & NativeType<R>> 
@@ -240,7 +320,7 @@ public class Cellpose extends BioimageIoModelPytorch {
 	 * @throws InterruptedException if the download of the model is stopped
 	 * @throws ExecutionException 
 	 */
-	public static Cellpose fromPretained(String pretrainedModel, boolean forceDownload) throws IOException, InterruptedException, ExecutionException {
+	public static Cellpose2 fromPretained(String pretrainedModel, boolean forceDownload) throws IOException, InterruptedException, ExecutionException {
 		return fromPretained(pretrainedModel, new File("models").getAbsolutePath(), forceDownload);
 	}
 	
@@ -251,11 +331,11 @@ public class Cellpose extends BioimageIoModelPytorch {
 	 * @return an instance of a Stardist2D model ready to be used
      * @throws IOException If there's an I/O error.
 	 */
-	public static Cellpose fromBioimageioModel(ModelDescriptor descriptor) throws IOException {
+	public static Cellpose2 fromBioimageioModel(ModelDescriptor descriptor) throws IOException {
 		if (descriptor.getTags().stream().filter(tt -> tt.toLowerCase().equals("cellpose")).findFirst().orElse(null) == null
 				&& !descriptor.getName().toLowerCase().contains("cellpose"))
 			throw new RuntimeException("This model does not seem to be a cellpose model from the Bioimage.io");
-		return new Cellpose(descriptor);
+		return new Cellpose2(descriptor);
 	}
 	
 	/**
@@ -272,16 +352,16 @@ public class Cellpose extends BioimageIoModelPytorch {
 	 * @throws InterruptedException if the download of the model is stopped
 	 * @throws ExecutionException 
 	 */
-	public static Cellpose fromPretained(String pretrainedModel, String modelsDir, boolean forceInstall) throws IOException, 
+	public static Cellpose2 fromPretained(String pretrainedModel, String modelsDir, boolean forceInstall) throws IOException, 
 																					InterruptedException, ExecutionException {
 		if (PRETRAINED_CELLPOSE_MODELS.contains(pretrainedModel) && !forceInstall) {
 			String weightsPath = fileIsCellpose(pretrainedModel, modelsDir);
-			if (weightsPath != null) return new Cellpose(weightsPath);
+			if (weightsPath != null) return new Cellpose2(weightsPath);
 			String path = donwloadPretrainedOfficial(pretrainedModel, modelsDir, null);
-			return new Cellpose(path);
+			return new Cellpose2(path);
 		} else if (PRETRAINED_CELLPOSE_MODELS.contains(pretrainedModel)) {
 			String path = donwloadPretrainedOfficial(pretrainedModel, modelsDir, null);
-			return new Cellpose(path);
+			return new Cellpose2(path);
 		}
 		if (!forceInstall) {
 			List<ModelDescriptor> localModels = ModelDescriptorFactory.getModelsAtLocalRepo();
@@ -290,7 +370,7 @@ public class Cellpose extends BioimageIoModelPytorch {
 							|| md.getName().toLowerCase().equals(pretrainedModel.toLowerCase()))
 					.findFirst().orElse(null);
 			if (model != null)
-				return Cellpose.fromBioimageioModel(model);
+				return Cellpose2.fromBioimageioModel(model);
 		}
 		
 		BioimageioRepo br = BioimageioRepo.connect();
@@ -302,7 +382,7 @@ public class Cellpose extends BioimageIoModelPytorch {
 					+ " To find a list of available cellpose models, please run Cellpose.getPretrainedList()");
 		String path = BioimageioRepo.downloadModel(descriptor, modelsDir);
 		descriptor.addModelPath(Paths.get(path));
-		return Cellpose.fromBioimageioModel(descriptor);
+		return Cellpose2.fromBioimageioModel(descriptor);
 	}
 	
 	private static String fileIsCellpose(String pretrainedModel, String modelsDir) {
@@ -483,6 +563,24 @@ public class Cellpose extends BioimageIoModelPytorch {
 		if (!cellposePythonInstalled) {
 			mamba.pipInstallIn(DLModelPytorch.COMMON_PYTORCH_ENV_NAME, CELLPOSE_DEPS.toArray(new String[CELLPOSE_DEPS.size()]));
 		};
+	}
+	
+	/**
+	 * Set the directory where the cellpose Python environment will be installed
+	 * @param installationDir
+	 * 	directory where the cellpose Python environment will be created
+	 */
+	public static void setInstallationDir(String installationDir) {
+		INSTALLATION_DIR = installationDir;
+		DEFAULT_ENV_DIR = INSTALLATION_DIR + File.separator + "envs" + DLModelPytorch.COMMON_PYTORCH_ENV_NAME;
+	}
+	
+	/**
+	 * 
+	 * @return the directory where the cellpose Python environment will be created
+	 */
+	public static String getInstallationDir() {
+		return INSTALLATION_DIR;
 	}
 
 	@Override
