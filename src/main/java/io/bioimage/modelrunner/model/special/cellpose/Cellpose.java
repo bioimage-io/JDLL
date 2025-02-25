@@ -121,10 +121,14 @@ public class Cellpose extends BioimageIoModelPytorchProtected {
 	}
 	
 	public void setChannels(int[] channels) {
+		/**
+		 * TODO remove
 		if (channels.length != 2)
 			throw new IllegalArgumentException("The channels arrays can only be [0, 0], [2, 3] or [2, 1]."
-					+ " For grayscale images [0, 0], for 3 channels images where teh cytoplasm is in the second channel "
-					+ "(green)");
+					+ " For grayscale images [0, 0], for 3 channels images where the cytoplasm is in the second channel "
+					+ "(green) and the nuclei are in the first channel (red), [2, 1]; and when the nuclei are in the "
+					+ "third channel (blue), [2, 3].");
+		 */
 		this.channels = channels;
 	}
 	
@@ -218,7 +222,8 @@ public class Cellpose extends BioimageIoModelPytorchProtected {
 		code += OUTPUT_LIST_KEY + " = " + MODEL_VAR_NAME + ".eval(";
 		for (Tensor<T> in : inTensors)
 			code += in.getName() + "_torch, ";
-		code += "channels=[0,0])" + System.lineSeparator();
+		code += "channels=" + createChannelsArgCode(inTensors.get(0).getData()) 
+		+ ", diameter=" + createDiamCode() + ")" + System.lineSeparator();
 		code += ""
 				+ SHMS_KEY + " = []" + System.lineSeparator()
 				+ SHM_NAMES_KEY + " = []" + System.lineSeparator()
@@ -246,7 +251,13 @@ public class Cellpose extends BioimageIoModelPytorchProtected {
 		else
 			throw new IllegalArgumentException("Bad configuration, dims=" + Arrays.toString(dims) 
 			+ ", channels=" + Arrays.toString(channels));
-		
+	}
+	
+	protected String createDiamCode() {
+		if (this.diameter  == null)
+			return "None";
+		else
+			return "" + diameter;
 	}
 	
 	/**
