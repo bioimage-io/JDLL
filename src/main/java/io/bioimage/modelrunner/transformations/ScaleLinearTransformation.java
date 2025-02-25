@@ -38,8 +38,8 @@ public class ScaleLinearTransformation extends AbstractTensorTransformation
 {
 
 	private static final String name = "scale_linear";
-	private Double gainDouble;
-	private Double offsetDouble;
+	private Double gainDouble = 1d;
+	private Double offsetDouble = 0d;
 	private double[] gainArr;
 	private double[] offsetArr;
 	private String axes;

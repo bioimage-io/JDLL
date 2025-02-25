@@ -20,7 +20,7 @@
 package io.bioimage.modelrunner.transformations;
 
 import io.bioimage.modelrunner.tensor.Tensor;
-
+import io.bioimage.modelrunner.transformations.TensorTransformation.Mode;
 import net.imglib2.type.NativeType;
 import net.imglib2.type.numeric.RealType;
 import net.imglib2.type.numeric.real.FloatType;
@@ -31,8 +31,10 @@ import net.imglib2.type.numeric.real.FloatType;
  * @author Jean-Yves Tinevez
  *
  */
-public interface TensorTransformation
+public abstract class TensorTransformation
 {
+	
+	protected Mode mode = Mode.FIXED;
 
 	/**
 	 * Applies this transformation to the specified input tensor.
@@ -47,7 +49,7 @@ public interface TensorTransformation
 	 *            the input tensor.
 	 * @return a new tensor with <code>float</code> pixels.
 	 */
-	public < R extends RealType< R > & NativeType< R > > Tensor< FloatType > apply( Tensor< R > input );
+	public abstract < R extends RealType< R > & NativeType< R > > Tensor< FloatType > apply( Tensor< R > input );
 
 	/**
 	 * Applies this transformation to the specified input tensor, and overwrites
@@ -58,30 +60,26 @@ public interface TensorTransformation
 	 * @param input
 	 *            the input tensor.
 	 */
-	public < R extends RealType< R > & NativeType< R > > void applyInPlace( Tensor< R > input );
+	public abstract < R extends RealType< R > & NativeType< R > > void applyInPlace( Tensor< R > input );
 
 	/**
 	 * Returns the name of this transformation.
 	 *
 	 * @return the name of this transformation.
 	 */
-	public String getName();
-
-	default void setMode( final String mode )
-	{
-		for ( final Mode value : Mode.values() )
-		{
-			if ( value.toString().equalsIgnoreCase( mode ) )
-			{
-				setMode( value );
-				return;
-			}
-		}
+	public abstract String getName();
+	
+	public void setMode(Object mode) {
+		if (mode instanceof String )
+			this.mode = Mode.valueOf(((String) mode).toUpperCase());
+		else if (mode instanceof Mode)
+			this.mode = (Mode) mode;
+		else
+			throw new IllegalArgumentException("'mode' parameter has to be either and instance of " + String.class
+					+ " or " + Mode.class + ". The provided argument is an instance of: " + mode.getClass());
 	}
 
-	public void setMode( Mode mode );
-
-	public Mode getMode();
+	public abstract Mode getMode();
 
 	/**
 	 * Tensor transformation modes.

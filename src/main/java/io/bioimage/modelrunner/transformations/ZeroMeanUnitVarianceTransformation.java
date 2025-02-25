@@ -45,7 +45,6 @@ public class ZeroMeanUnitVarianceTransformation extends AbstractTensorTransforma
 	private Double stdDouble;
 	private double[] meanArr;
 	private double[] stdArr;
-	private Mode mode = Mode.PER_SAMPLE;
 	private String axes;
 	private double eps = Math.pow(10, -6);
 
@@ -57,6 +56,7 @@ public class ZeroMeanUnitVarianceTransformation extends AbstractTensorTransforma
 	public ZeroMeanUnitVarianceTransformation()
 	{
 		super( name );
+		mode = Mode.PER_SAMPLE;
 	}
 	
 	public void setEps(Object eps) {
@@ -159,16 +159,6 @@ public class ZeroMeanUnitVarianceTransformation extends AbstractTensorTransforma
 		} else
 			throw new IllegalArgumentException("'axes' parameter has to be an instance of " + String.class
 					 + ", of a String array or of a List of Strings. The provided argument is " + axes.getClass());
-	}
-	
-	public void setMode(Object mode) {
-		if (mode instanceof String )
-			this.mode = Mode.valueOf(((String) mode).toUpperCase());
-		else if (mode instanceof Mode)
-			this.mode = (Mode) mode;
-		else
-			throw new IllegalArgumentException("'mode' parameter has to be either and instance of " + String.class
-					+ " or " + Mode.class + ". The provided argument is an instance of: " + mode.getClass());
 	}
 	
 	public void checkRequiredArgs() {

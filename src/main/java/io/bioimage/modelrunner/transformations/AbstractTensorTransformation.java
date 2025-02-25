@@ -29,12 +29,10 @@ import net.imglib2.type.numeric.RealType;
 import net.imglib2.type.numeric.real.FloatType;
 import net.imglib2.util.Util;
 
-public abstract class AbstractTensorTransformation implements TensorTransformation
+public abstract class AbstractTensorTransformation extends TensorTransformation
 {
 
 	private final String name;
-
-	private Mode mode = Mode.FIXED;
 	
 	protected static String DEFAULT_MISSING_ARG_ERR = "Cannot execute %s BioImage.io transformation because '%s' "
 			+ "parameter was not set.";
@@ -48,12 +46,6 @@ public abstract class AbstractTensorTransformation implements TensorTransformati
 	public String getName()
 	{
 		return name;
-	}
-
-	@Override
-	public void setMode( final Mode mode )
-	{
-		this.mode = mode;
 	}
 
 	@Override

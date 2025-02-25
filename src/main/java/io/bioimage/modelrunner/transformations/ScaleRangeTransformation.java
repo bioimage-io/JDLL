@@ -46,13 +46,13 @@ public class ScaleRangeTransformation extends AbstractTensorTransformation
 	private double minPercentile = 0;
 	private double maxPercentile = 100;
 	private String axes;
-	private Mode mode = Mode.PER_SAMPLE;
 	private String tensorName;
 	private double eps = Math.pow(10, -6);
 	
 	public ScaleRangeTransformation()
 	{
 		super( name );
+		mode = Mode.PER_SAMPLE;
 	}
 	
 	public void setEps(Object eps) {
@@ -128,16 +128,6 @@ public class ScaleRangeTransformation extends AbstractTensorTransformation
 		else
 			throw new IllegalArgumentException("'tensorName' parameter has to be an instance of " + String.class
 					 + ". The provided argument is " + tensorName.getClass());
-	}
-	
-	public void setMode(Object mode) {
-		if (mode instanceof String )
-			this.mode = Mode.valueOf(((String) mode).toUpperCase());
-		else if (mode instanceof Mode)
-			this.mode = (Mode) mode;
-		else
-			throw new IllegalArgumentException("'mode' parameter has to be either and instance of " + String.class
-					+ " or " + Mode.class + ". The provided argument is an instance of: " + mode.getClass());
 	}
 
 	@Override
