@@ -503,8 +503,12 @@ public abstract class StardistAbstract extends BaseModel {
 	 * @return true if the full python environment is installed or not
 	 */
 	public static boolean isInstalled() {
-		// TODO
-		return true;
+		Mamba mamba = new Mamba(INSTALLATION_DIR);
+		try {
+			return mamba.checkAllDependenciesInEnv("stardist", STARDIST_DEPS);
+		} catch (MambaInstallException e) {
+			return false;
+		}
 	}
 	
 	/**
@@ -560,7 +564,6 @@ public abstract class StardistAbstract extends BaseModel {
 			mamba.installMicromamba();
 		}
 		if (!stardistPythonInstalled) {
-			// TODO add logging for environment installation
 			mamba.create("stardist", true, STARDIST_CHANNELS, STARDIST_DEPS);
 		};
 	}
