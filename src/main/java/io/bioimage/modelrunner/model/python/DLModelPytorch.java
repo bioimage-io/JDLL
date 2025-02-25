@@ -76,7 +76,7 @@ public class DLModelPytorch extends BaseModel {
 	
 	private Service python;
 	
-	private List<SharedMemoryArray> inShmaList = new ArrayList<SharedMemoryArray>();
+	protected List<SharedMemoryArray> inShmaList = new ArrayList<SharedMemoryArray>();
 		
 	private List<String> outShmNames;
 	
@@ -119,7 +119,7 @@ public class DLModelPytorch extends BaseModel {
 		
 	protected static String INSTALLATION_DIR = Mamba.BASE_PATH;
 	
-	private static final String MODEL_VAR_NAME = "model_" + UUID.randomUUID().toString().replace("-", "_");
+	protected static final String MODEL_VAR_NAME = "model_" + UUID.randomUUID().toString().replace("-", "_");
 
 	protected static final String LOAD_MODEL_CODE_ABSTRACT = ""
 			+ "if 'sys' not in globals().keys():" + System.lineSeparator()
@@ -137,15 +137,15 @@ public class DLModelPytorch extends BaseModel {
 			+ "sys.path.append(os.path.abspath('%s'))" + System.lineSeparator()
 			+ "from %s import %s" + System.lineSeparator();
 	
-	private static final String OUTPUT_LIST_KEY = "out_list" + UUID.randomUUID().toString().replace("-", "_");
+	protected static final String OUTPUT_LIST_KEY = "out_list" + UUID.randomUUID().toString().replace("-", "_");
 	
-	private static final String SHMS_KEY = "shms_" + UUID.randomUUID().toString().replace("-", "_");
+	protected static final String SHMS_KEY = "shms_" + UUID.randomUUID().toString().replace("-", "_");
 	
-	private static final String SHM_NAMES_KEY = "shm_names_" + UUID.randomUUID().toString().replace("-", "_");
+	protected static final String SHM_NAMES_KEY = "shm_names_" + UUID.randomUUID().toString().replace("-", "_");
 	
-	private static final String DTYPES_KEY = "dtypes_" + UUID.randomUUID().toString().replace("-", "_");
+	protected static final String DTYPES_KEY = "dtypes_" + UUID.randomUUID().toString().replace("-", "_");
 	
-	private static final String DIMS_KEY = "dims_" + UUID.randomUUID().toString().replace("-", "_");
+	protected static final String DIMS_KEY = "dims_" + UUID.randomUUID().toString().replace("-", "_");
 	
 	protected static final String RECOVER_OUTPUTS_CODE = ""
 			+ "def handle_output_list(out_list):" + System.lineSeparator()
@@ -286,10 +286,7 @@ public class DLModelPytorch extends BaseModel {
 	public void loadModel() throws LoadModelException {
 		if (loaded)
 			return;
-		String moduleName = new File(modelFile).getName();
-		moduleName = moduleName.substring(0, moduleName.length() - 3);
-		String code = String.format(LOAD_MODEL_CODE_ABSTRACT, new File(modelFile).getParentFile().getAbsolutePath(), moduleName, callable);
-		code += buildModelCode();
+		String code = buildModelCode();
 		
 		code += RECOVER_OUTPUTS_CODE;
 
@@ -309,8 +306,14 @@ public class DLModelPytorch extends BaseModel {
 		loaded = true;
 	}
 	
-	private String buildModelCode() {
-		String code = ""
+	protected String buildModelCode() {
+		String moduleName = new File(modelFile).getName();
+		moduleName = moduleName.substring(0, moduleName.length() - 3);
+		String code = String.format(LOAD_MODEL_CODE_ABSTRACT, 
+				new File(modelFile).getParentFile().getAbsolutePath(), 
+				moduleName, callable);
+		
+		code += ""
 				+ "if 'torch' not in globals().keys():" + System.lineSeparator()
 				+ "  import torch" + System.lineSeparator()
 				+ "  globals()['torch'] = torch" + System.lineSeparator();
@@ -434,7 +437,7 @@ public class DLModelPytorch extends BaseModel {
 		return outRais;
 	}
 	
-	private <T extends RealType<T> & NativeType<T>> String createInputsCode(List<Tensor<T>> inTensors) {
+	protected <T extends RealType<T> & NativeType<T>> String createInputsCode(List<Tensor<T>> inTensors) {
 		String code = "";
 		for (Tensor<T> in : inTensors) {
 			SharedMemoryArray shma = SharedMemoryArray.createSHMAFromRAI(in.getData());

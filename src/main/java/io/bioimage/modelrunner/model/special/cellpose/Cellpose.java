@@ -80,31 +80,13 @@ public class Cellpose extends BioimageIoModelPytorch {
 	
 	protected final String modelType;
 	
-	private String axes = "";
-	
 	protected int[] channels;
 	
 	private Integer diameter;
 	
 	private boolean is3D = false;
 	
-	private boolean loaded = false;
-	
-	protected SharedMemoryArray shma;
-	
-	protected SharedMemoryArray shmaFl;
-	
-	protected SharedMemoryArray shmaDn;
-	
-	protected SharedMemoryArray shmaSt;
-	
-	private ModelDescriptor descriptor;
-		
-	private Service python;
-	
 	private static int DEFAULT_DIAMETER = 30;
-	
-	private static final List<String> CELLPOSE_DEPS = Arrays.asList(new String[] {"cellpose==3.1.1.1"});
 	
 	private static final List<String> PRETRAINED_CELLPOSE_MODELS = Arrays.asList(new String[] {"cyto", "cyto2", "cyto3", "nuclei"});
 	
@@ -137,14 +119,6 @@ public class Cellpose extends BioimageIoModelPytorch {
 		MODEL_SIZE.put("nucleitorch_0", 26_563_614L);
 	}
 	
-	private static final String SHM_NAME_KEY = "_shm_name";
-	
-	private static final String DTYPE_KEY = "_dtype";
-	
-	private static final String SHAPE_KEY = "_shape";
-	
-	private static final String KEYS_KEY = "keys";
-
 	protected static final String LOAD_MODEL_CODE_ABSTRACT = ""
 			+ "if 'denoise' not in globals().keys():" + System.lineSeparator()
 			+ "  from cellpose import denoise" + System.lineSeparator()
@@ -193,39 +167,50 @@ public class Cellpose extends BioimageIoModelPytorch {
 		return this.diameter;
 	}
 	
-	protected String createEncodeImageScript() {
-		String code = "";
-		code += codeToConvertShmaToPython(shma, "im") + System.lineSeparator();
-		code += codeToConvertShmaToPython(shmaFl, "fl") + System.lineSeparator();
-		code += codeToConvertShmaToPython(shmaSt, "st") + System.lineSeparator();
-		code += codeToConvertShmaToPython(shmaDn, "dn") + System.lineSeparator();
+	protected String buildModelCode() {
+		String moduleName = new File(modelFile).getName();
+		moduleName = moduleName.substring(0, moduleName.length() - 3);
+		String code = String.format(LOAD_MODEL_CODE_ABSTRACT, 
+				new File(modelFile).getParentFile().getAbsolutePath(), 
+				moduleName, callable);
+		
+		code += ""
+				+ "if 'torch' not in globals().keys():" + System.lineSeparator()
+				+ "  import torch" + System.lineSeparator()
+				+ "  globals()['torch'] = torch" + System.lineSeparator();
+		code += MODEL_VAR_NAME + "=" + callable + "(" + codeForKwargs()  + ")" + System.lineSeparator();
+		code += "try:" + System.lineSeparator()
+				+ "  " + MODEL_VAR_NAME + ".load_state_dict("
+				+ "torch.load('" + this.weightsPath + "', map_location=" + MODEL_VAR_NAME  + ".device))" + System.lineSeparator()
+				+ "except:" + System.lineSeparator()
+				+ "  " + MODEL_VAR_NAME + ".load_state_dict("
+				+ "torch.load('" + this.weightsPath + "', map_location=torch.device('cpu')))" + System.lineSeparator();
+		code += "globals()['" + MODEL_VAR_NAME + "'] = " + MODEL_VAR_NAME + System.lineSeparator();
 		return code;
 	}
 	
-	public <T extends RealType<T> & NativeType<T>, R extends RealType<R> & NativeType<R>> 
-	Map<String, RandomAccessibleInterval<R>> predict(RandomAccessibleInterval<T> img) throws IOException, InterruptedException {
-		checkInput(img);
-		shma = SharedMemoryArray.createSHMAFromRAI(img, false, false);
+	protected <T extends RealType<T> & NativeType<T>> String createInputsCode(List<Tensor<T>> inTensors) {
 		String code = "";
-		if (!loaded) {
-			code += createImportsCode() + System.lineSeparator();
+		for (Tensor<T> in : inTensors) {
+			SharedMemoryArray shma = SharedMemoryArray.createSHMAFromRAI(in.getData());
+			code += codeToConvertShmaToPython(shma, in.getName() + "_torch");
+			inShmaList.add(shma);
 		}
-		
-		code += createEncodeImageScript() + System.lineSeparator();
-		code += RUN_MODEL_CODE + System.lineSeparator();
-		
-		Task task = python.task(code);
-		task.waitFor();
-		if (task.status == TaskStatus.CANCELED)
-			throw new RuntimeException("Task canceled");
-		else if (task.status == TaskStatus.FAILED)
-			throw new RuntimeException(task.error);
-		else if (task.status == TaskStatus.CRASHED)
-			throw new RuntimeException(task.error);
-		loaded = true;
-		
-		
-		return reconstructOutputs(task);
+		code += "print(type(input_torch))" + System.lineSeparator();
+		code += "print(input_torch.shape)" + System.lineSeparator();
+		code += OUTPUT_LIST_KEY + " = " + MODEL_VAR_NAME + "(";
+		for (Tensor<T> in : inTensors)
+			code += in.getName() + "_torch, ";
+		code = code.substring(0, code.length() - 2);
+		code += ")" + System.lineSeparator();
+		code += ""
+				+ SHMS_KEY + " = []" + System.lineSeparator()
+				+ SHM_NAMES_KEY + " = []" + System.lineSeparator()
+				+ DTYPES_KEY + " = []" + System.lineSeparator()
+				+ DIMS_KEY + " = []" + System.lineSeparator()
+				+ "globals()['" + SHMS_KEY + "'] = " + SHMS_KEY + System.lineSeparator();
+		code += "handle_output_list(OUTPUT_LIST_KEY)" + System.lineSeparator();
+		return code;
 	}
 	
 	/**
@@ -404,97 +389,6 @@ public class Cellpose extends BioimageIoModelPytorch {
 		return downloadDir + File.separator + MODEL_REQ.get(modelName)[0];
 	}
 	
-	/**
-	 * Check whether everything that is needed for Stardist 2D is installed or not
-	 * @return true if the full python environment is installed or not
-	 */
-	public static boolean isInstalled() {
-		// TODO
-		return isInstalled(null);
-	}
-	
-	/**
-	 * Check whether everything that is needed for Stardist 2D is installed or not
-	 * @return true if the full python environment is installed or not
-	 */
-	public static boolean isInstalled(String envPath) {
-		// TODO
-		return false;
-	}
-	
-	/**
-	 * Check whether the requirements needed to run cellpose are satisfied or not.
-	 * First checks if the corresponding Java DL engine is installed or not, then checks
-	 * if the Python environment needed for cellpose post processing is fine too.
-	 * 
-	 * If anything is not installed, this method also installs it
-	 * 
-	 * @throws IOException if there is any error downloading the DL engine or installing the micromamba environment
-	 * @throws InterruptedException if the installation is stopped
-	 * @throws RuntimeException if there is any unexpected error in the micromamba environment installation
-	 * @throws MambaInstallException if there is any error downloading or installing micromamba
-	 * @throws ArchiveException if there is any error decompressing the micromamba installer
-	 * @throws URISyntaxException if the URL to the micromamba installation is not correct
-	 */
-	public static void installRequirements() throws IOException, InterruptedException, 
-													RuntimeException, MambaInstallException, 
-													ArchiveException, URISyntaxException {
-		installRequirements(null);
-	}
-	
-	/**
-	 * Check whether the requirements needed to run cellpose are satisfied or not.
-	 * First checks if the corresponding Java DL engine is installed or not, then checks
-	 * if the Python environment needed for cellpose post processing is fine too.
-	 * 
-	 * If anything is not installed, this method also installs it
-	 * 
-	 * @param consumer
-	 * 	String consumer that reads the installation log
-	 * 
-	 * @throws IOException if there is any error downloading the DL engine or installing the micromamba environment
-	 * @throws InterruptedException if the installation is stopped
-	 * @throws RuntimeException if there is any unexpected error in the micromamba environment installation
-	 * @throws MambaInstallException if there is any error downloading or installing micromamba
-	 * @throws ArchiveException if there is any error decompressing the micromamba installer
-	 * @throws URISyntaxException if the URL to the micromamba installation is not correct
-	 */
-	public static void installRequirements(Consumer<String> consumer) throws IOException, InterruptedException, 
-													RuntimeException, MambaInstallException, 
-													ArchiveException, URISyntaxException {
-		if (!DLModelPytorch.isInstalled(DEFAULT_ENV_DIR)) {
-			String pytorchDir = DLModelPytorch.getInstallationDir();
-			DLModelPytorch.setInstallationDir(INSTALLATION_DIR);
-			DLModelPytorch.installRequirements(consumer);
-			DLModelPytorch.setInstallationDir(pytorchDir);
-		}
-			
-		Mamba mamba = new Mamba(INSTALLATION_DIR);
-		if (consumer != null) {
-			mamba.setConsoleOutputConsumer(consumer);
-			mamba.setErrorOutputConsumer(consumer);
-		}
-		boolean cellposePythonInstalled = false;
-		try {
-			cellposePythonInstalled = mamba.checkAllDependenciesInEnv(DLModelPytorch.COMMON_PYTORCH_ENV_NAME, CELLPOSE_DEPS);
-		} catch (MambaInstallException e) {
-			mamba.installMicromamba();
-		}
-		if (!cellposePythonInstalled) {
-			mamba.pipInstallIn(DLModelPytorch.COMMON_PYTORCH_ENV_NAME, CELLPOSE_DEPS.toArray(new String[CELLPOSE_DEPS.size()]));
-		};
-	}
-
-	@Override
-	protected String createImportsCode() {
-		String modelName = new File(weightsPath).getName();
-		String modelType = ALIAS.entrySet().stream()
-				.filter(ee -> ee.getValue().equals(modelName))
-				.map(ee -> ee.getKey()).findFirst().get();
-		return String.format(LOAD_MODEL_CODE_ABSTRACT, modelType);
-	}
-
-	@Override
 	// TODO add 3d
 	protected <T extends RealType<T> & NativeType<T>> void checkInput(RandomAccessibleInterval<T> image) {
 		long[] dims = image.dimensionsAsLongArray();
@@ -526,183 +420,5 @@ public class Cellpose extends BioimageIoModelPytorch {
 	private static <T extends RealType<T> & NativeType<T>> boolean isRedChannelEmpty(RandomAccessibleInterval<T> image) {
 		// TODO
 		return true;
-	}
-
-	@SuppressWarnings("unchecked")
-	@Override
-	protected <T extends RealType<T> & NativeType<T>> Map<String, RandomAccessibleInterval<T>> reconstructOutputs(
-			Task task) throws IOException {
-
-		Map<String, RandomAccessibleInterval<T>> outs = new LinkedHashMap<String, RandomAccessibleInterval<T>>();
-		outs.put("mask", reconstructMask());
-		shma.close();
-		outs.put("flows", SpecialModelBase.copy((RandomAccessibleInterval<T>) shmaFl.getSharedRAI()));
-		shmaFl.close();
-		outs.put("denoised", SpecialModelBase.copy((RandomAccessibleInterval<T>) shmaDn.getSharedRAI()));
-		shmaDn.close();
-		outs.put("styles", SpecialModelBase.copy((RandomAccessibleInterval<T>) shmaSt.getSharedRAI()));
-		shmaSt.close();
-		return outs;
-	}
-	
-	private <T extends RealType<T> & NativeType<T>> RandomAccessibleInterval<T> reconstructMask() {
-		// TODO I do not understand why is complaining when the types align perfectly
-		RandomAccessibleInterval<T> mask = shma.getSharedRAI();
-		if (shma.getOriginalShape().length == 2 
-				|| axes.indexOf("c") == -1
-				|| shma.getOriginalShape()[axes.indexOf("c")] == 1) {
-			return SpecialModelBase.copy(mask);
-		} else {
-			long[] maxPos = mask.maxAsLongArray();
-			maxPos[2] = 0;
-			IntervalView<T> maskInterval = Views.interval(mask, mask.minAsLongArray(), maxPos);
-			return SpecialModelBase.copy(maskInterval);
-		}
-	}
-
-	protected String createRunModelCode() {
-		String code = "";
-		if (shma.getOriginalShape().length == 2 && shma.getOriginalShape()[axes.indexOf("c")] == -1) {
-			code = "im[:]";
-		} else if (shma.getOriginalShape().length == 3 && shma.getOriginalShape()[axes.indexOf("c")] == 0) {
-			code = "im[0, :, :]";
-		} else if (shma.getOriginalShape().length == 3 && shma.getOriginalShape()[axes.indexOf("c")] == 1) {
-			code = "im[:, 0, :]";
-		} else if (shma.getOriginalShape().length == 3 && shma.getOriginalShape()[axes.indexOf("c")] == 2) {
-			code = "im[:, :, 0]";
-		} else if (shma.getOriginalShape().length == 4 && shma.getOriginalShape()[axes.indexOf("c")] == 0) {
-			code = "im[0, :, :, :]";
-		} else if (shma.getOriginalShape().length == 4 && shma.getOriginalShape()[axes.indexOf("c")] == 1) {
-			code = "im[:, 0, :, :]";
-		} else if (shma.getOriginalShape().length == 4 && shma.getOriginalShape()[axes.indexOf("c")] == 2) {
-			code = "im[:, :, 0, :]";
-		} else if (shma.getOriginalShape().length == 4 && shma.getOriginalShape()[axes.indexOf("c")] == 3) {
-			code = "im[:, :, :, 0]";
-		} else {
-			throw new RuntimeException("shape: " + Arrays.toString(shma.getOriginalShape()) + ", axes: " + axes);
-		}
-		code += ", fl[:], st[:], dn[:] = model.eval(im, diameter=";
-		if (this.diameter == null && new File(sizeWeigthsPath).isFile()) {
-			code += "None";
-		} else if (diameter != null) {
-			code += this.diameter;
-		} else {
-			code += DEFAULT_DIAMETER;
-		}
-		code += ""
-				+ ", channels=["
-				+ channels[0] + "," + channels[1] + "])" + System.lineSeparator()
-				+ "if os.name == 'nt':" + System.lineSeparator()
-				+ "    im_shm.close()" + System.lineSeparator()
-				+ "    im_shm.unlink()" + System.lineSeparator()
-				+ "    fl_shm.close()" + System.lineSeparator()
-				+ "    fl_shm.unlink()" + System.lineSeparator()
-				+ "    st_shm.close()" + System.lineSeparator()
-				+ "    st_shm.unlink()" + System.lineSeparator()
-				+ "    dn_shm.close()" + System.lineSeparator()
-				+ "    dn_shm.unlink()" + System.lineSeparator();
-		return code;
-	}
-
-	@Override
-	public <T extends RealType<T> & NativeType<T>, R extends RealType<R> & NativeType<R>> 
-	Map<String, RandomAccessibleInterval<R>> run(RandomAccessibleInterval<T> img) throws IOException, InterruptedException {
-		checkInput(img);
-		shma = SharedMemoryArray.createSHMAFromRAI(img, false, false);
-		long[] dnShape = new long[] {};
-		shmaDn = SharedMemoryArray.create(dnShape, new FloatType(0), false, false);
-		long[] flShape = new long[] {};
-		shmaFl = SharedMemoryArray.create(flShape, new FloatType(0), false, false);
-		long[] stShape = new long[] {};
-		shmaSt = SharedMemoryArray.create(stShape, new FloatType(0), false, false);
-		String code = "";
-		if (!loaded) {
-			code += createImportsCode() + System.lineSeparator();
-		}
-		
-		code += createEncodeImageScript() + System.lineSeparator();
-		code += createRunModelCode() + System.lineSeparator();
-		
-		Task task = python.task(code);
-		task.waitFor();
-		if (task.status == TaskStatus.CANCELED)
-			throw new RuntimeException("Task canceled");
-		else if (task.status == TaskStatus.FAILED)
-			throw new RuntimeException(task.error);
-		else if (task.status == TaskStatus.CRASHED)
-			throw new RuntimeException(task.error);
-		loaded = true;
-		
-		
-		return reconstructOutputs(task);
-	}
-
-	@Override
-	public <T extends RealType<T> & NativeType<T>, R extends RealType<R> & NativeType<R>> void run(
-			List<Tensor<T>> inTensors, List<Tensor<R>> outTensors) throws RunModelException {
-		if (inTensors.size() > 1)
-			throw new IllegalArgumentException("Cellpose can only take one argument.");
-		if (this.modelType.equals("bioimage.io") && !inTensors.get(0).getAxesOrderString().equals(axes))
-			throw new IllegalArgumentException("Input axes should be " + axes);
-		else if (!inTensors.get(0).getAxesOrderString().equals(axes) 
-				&& !inTensors.get(0).getAxesOrderString().replace("c", "").equals(axes.replace("c", "")))
-			throw new IllegalArgumentException("Input axes should be " + axes);
-		if (!modelType.equals("bioimage.io") 
-				&& inTensors.get(0).getAxesOrderString().replace("c", "").equals(axes.replace("c", "")))
-				axes = inTensors.get(0).getAxesOrderString();
-		try {
-			Map<String, RandomAccessibleInterval<R>> outputs = run(inTensors.get(0).getData());
-			for (Tensor<R> tensor : outTensors) {
-				Entry<String, RandomAccessibleInterval<R>> entry = outputs.entrySet().stream()
-						.filter(ee -> tensor.getName().equals(ee.getKey())
-								&& Arrays.equals(tensor.getData().dimensionsAsLongArray(), ee.getValue().dimensionsAsLongArray()))
-						.findFirst().orElse(null);
-				if (entry != null)
-					tensor.setData(entry.getValue());
-			}
-		} catch (IOException | InterruptedException e) {
-			throw new RunModelException(Types.stackTrace(e));
-		}
-		
-	}
-
-	@Override
-	public <T extends RealType<T> & NativeType<T>, R extends RealType<R> & NativeType<R>> 
-	List<Tensor<T>> run(List<Tensor<R>> inputTensors) throws RunModelException {
-		if (inputTensors.size() > 1)
-			throw new IllegalArgumentException("Cellpose can only take one argument.");
-		if (this.modelType.equals("bioimage.io") && !inputTensors.get(0).getAxesOrderString().equals(axes))
-			throw new IllegalArgumentException("Input axes should be " + axes);
-		else if (!inputTensors.get(0).getAxesOrderString().equals(axes) 
-				&& !inputTensors.get(0).getAxesOrderString().replace("c", "").equals(axes.replace("c", "")))
-			throw new IllegalArgumentException("Input axes should be " + axes);
-		if (!modelType.equals("bioimage.io") 
-				&& inputTensors.get(0).getAxesOrderString().replace("c", "").equals(axes.replace("c", "")))
-				axes = inputTensors.get(0).getAxesOrderString();
-		try {
-			Map<String, RandomAccessibleInterval<T>> outputs = run(inputTensors.get(0).getData());
-			List<Tensor<T>> outTensors = new ArrayList<Tensor<T>>();
-			for (Entry<String, RandomAccessibleInterval<T>> entry : outputs.entrySet()) {
-				if (entry.getValue() == null)
-					continue;
-				String axesOrder = "xy";
-				if (entry.getValue().dimensionsAsLongArray().length > 2 && this.is3D)
-					axesOrder += "c";
-				else if (entry.getValue().dimensionsAsLongArray().length == 3 && this.is3D)
-					axesOrder += "z";
-				else if (entry.getValue().dimensionsAsLongArray().length > 3 && this.is3D)
-					axesOrder += "zc";
-				else if (entry.getValue().dimensionsAsLongArray().length == 1)
-					axesOrder = "i";
-				Tensor<T> tt = Tensor.build(entry.getKey(), axesOrder, entry.getValue());
-				// TODO
-				if (tt.getName() != "mask")
-					continue;
-				outTensors.add(tt);
-			}
-			return outTensors;
-		} catch (IOException | InterruptedException e) {
-			throw new RunModelException(Types.stackTrace(e));
-		}
 	}
 }
