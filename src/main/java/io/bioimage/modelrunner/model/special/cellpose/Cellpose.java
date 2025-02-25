@@ -22,28 +22,17 @@ package io.bioimage.modelrunner.model.special.cellpose;
 import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
-import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.concurrent.ExecutionException;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
-import org.apache.commons.compress.archivers.ArchiveException;
-
-import io.bioimage.modelrunner.apposed.appose.Mamba;
-import io.bioimage.modelrunner.apposed.appose.MambaInstallException;
-import io.bioimage.modelrunner.apposed.appose.Service;
-import io.bioimage.modelrunner.apposed.appose.Types;
-import io.bioimage.modelrunner.apposed.appose.Service.Task;
-import io.bioimage.modelrunner.apposed.appose.Service.TaskStatus;
 import io.bioimage.modelrunner.bioimageio.BioimageioRepo;
 import io.bioimage.modelrunner.bioimageio.description.ModelDescriptor;
 import io.bioimage.modelrunner.bioimageio.description.ModelDescriptorFactory;
@@ -51,18 +40,13 @@ import io.bioimage.modelrunner.bioimageio.description.weights.ModelWeight;
 import io.bioimage.modelrunner.bioimageio.description.weights.WeightFormat;
 import io.bioimage.modelrunner.download.MultiFileDownloader;
 import io.bioimage.modelrunner.exceptions.RunModelException;
-import io.bioimage.modelrunner.model.python.BioimageIoModelPytorch;
 import io.bioimage.modelrunner.model.python.BioimageIoModelPytorchProtected;
-import io.bioimage.modelrunner.model.python.DLModelPytorch;
-import io.bioimage.modelrunner.model.special.SpecialModelBase;
 import io.bioimage.modelrunner.tensor.Tensor;
 import io.bioimage.modelrunner.tensor.shm.SharedMemoryArray;
-import io.bioimage.modelrunner.utils.Constants;
-import io.bioimage.modelrunner.utils.JSONUtils;
+import net.imglib2.FinalInterval;
 import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.type.NativeType;
 import net.imglib2.type.numeric.RealType;
-import net.imglib2.type.numeric.real.FloatType;
 import net.imglib2.view.IntervalView;
 import net.imglib2.view.Views;
 
@@ -74,10 +58,7 @@ import net.imglib2.view.Views;
  *@author Carlos Garcia
  */
 public class Cellpose extends BioimageIoModelPytorchProtected {
-	
 		
-	protected final String sizeWeigthsPath;
-	
 	protected boolean isBMZ;
 	
 	protected int[] channels;
@@ -85,8 +66,6 @@ public class Cellpose extends BioimageIoModelPytorchProtected {
 	private Integer diameter;
 	
 	private boolean is3D = false;
-	
-	private static int DEFAULT_DIAMETER = 30;
 	
 	private static final List<String> PRETRAINED_CELLPOSE_MODELS = Arrays.asList(new String[] {"cyto", "cyto2", "cyto3", "nuclei"});
 	
@@ -138,7 +117,6 @@ public class Cellpose extends BioimageIoModelPytorchProtected {
 	protected Cellpose(String modelFile, String callable, String weightsPath, 
 			Map<String, Object> kwargs, ModelDescriptor descriptor) throws IOException {
 		super(modelFile, callable, weightsPath, kwargs, descriptor);
-		// TODO this.sizeWeigthsPath = descriptor.getModelPath() + File.separator + MODEL_REQ.get(modelType)[1];
     	createPythonService();
 	}
 	
@@ -152,6 +130,62 @@ public class Cellpose extends BioimageIoModelPytorchProtected {
 	
 	public int getDiameter() {
 		return this.diameter;
+	}
+	
+	private static <T extends RealType<T> & NativeType<T>> boolean isRedChannelEmpty(RandomAccessibleInterval<T> image) {
+		// TODO
+		return true;
+	}
+	
+	// TODO add 3D
+	protected <R extends RealType<R> & NativeType<R>> 
+	List<Tensor<R>> checkInputTensors(List<Tensor<R>> inputTensors) {
+		if (inputTensors.size() > 1)
+			throw new IllegalArgumentException("The input tensor list should contain just one tensor");
+		if (!inputTensors.get(0).getAxesOrderString().equals("xy") && !inputTensors.get(0).getAxesOrderString().equals("xyc"))
+			throw new IllegalArgumentException("The input axes should be 'xyc'");
+
+		long[] dims = inputTensors.get(0).getData().dimensionsAsLongArray();
+		if (dims.length == 2) {
+			FinalInterval interval = new FinalInterval(new long[3], new long[] {dims[0], dims[1], 1});
+			IntervalView<R> nData = Views.interval(inputTensors.get(0).getData(), interval);
+			inputTensors.set(0, Tensor.build(inputTensors.get(0).getName(), "xyc", nData));
+		} else if (dims.length == 3 && dims[2] != 3 && dims[2] != 1)
+			throw new IllegalArgumentException("Only 1 and 3 channel images supported. The provided input has " + dims[2]);
+		return inputTensors;
+	}
+	
+	protected <T extends RealType<T> & NativeType<T>> 
+	List<Tensor<T>> checkOutputTensors(List<Tensor<T>> outputTensors) {
+		// TODO 
+		return outputTensors;
+	}
+	
+	/**
+	 * Run a Bioimage.io model and execute the tiling strategy in one go.
+	 * The model needs to have been previously loaded with {@link #loadModel()}.
+	 * This method does not execute pre- or post-processing, they
+	 * need to be executed independently before or after
+	 * 
+	 * @param <T>
+	 * 	ImgLib2 data type of the output images
+	 * @param <R>
+	 * 	ImgLib2 data type of the input images
+	 * @param inputTensors
+	 * 	list of the input tensors that are going to be inputed to the model
+	 * @return the resulting tensors 
+	 * @throws RunModelException if the model has not been previously loaded
+	 * @throws IllegalArgumentException if the model is not a Bioimage.io model or if lacks a Bioimage.io
+	 *  rdf.yaml specs file in the model folder. 
+	 */
+	public <T extends RealType<T> & NativeType<T>, R extends RealType<R> & NativeType<R>> 
+	List<Tensor<T>> run(List<Tensor<R>> inputTensors) throws RunModelException {
+		return super.run(checkInputTensors(inputTensors));
+	}
+
+	public <T extends RealType<T> & NativeType<T>, R extends RealType<R> & NativeType<R>> 
+	void run(List<Tensor<T>> inputTensors, List<Tensor<R>> outputTensors) throws RunModelException {
+		super.run(checkInputTensors(inputTensors), checkOutputTensors(outputTensors));
 	}
 	
 	protected String buildModelCode() {
@@ -192,19 +226,16 @@ public class Cellpose extends BioimageIoModelPytorchProtected {
 	}
 	
 	/**
-	 * Initialize one of the "official" pretrained Stardist 2D models.
-	 * By default, the model will be installed in the "models" folder inside the application
-	 * @param pretrainedModel
-	 * 	the name of the pretrained model. 
-	 * @param forceDownload
-	 * 	whether to force the download or to try to look if the model has already been installed before
-	 * @return an instance of a pretrained Stardist2D model ready to be used
-	 * @throws IOException if there is any error downloading the model, in the case it is needed
-	 * @throws InterruptedException if the download of the model is stopped
-	 * @throws ExecutionException 
+	 * Initialize a Stardist2D using the format of the Bioiamge.io model zoo.
+	 * @param descriptor
+	 * 	the bioimage.io model descriptor
+	 * @return an instance of a Stardist2D model ready to be used
+     * @throws IOException If there's an I/O error.
 	 */
-	public static Cellpose fromPretained(String pretrainedModel, boolean forceDownload) throws IOException, InterruptedException, ExecutionException {
-		return fromPretained(pretrainedModel, new File("models").getAbsolutePath(), forceDownload);
+	public static Cellpose init(String weightsPath) throws IOException {
+		if (!(new File(weightsPath).isFile()))
+			throw new IllegalArgumentException("The path provided does not correspond to an existing file: " + weightsPath);
+		return new Cellpose(null, null, weightsPath, null, null);
 	}
 	
 	/**
@@ -214,7 +245,7 @@ public class Cellpose extends BioimageIoModelPytorchProtected {
 	 * @return an instance of a Stardist2D model ready to be used
      * @throws IOException If there's an I/O error.
 	 */
-	public static Cellpose fromBioimageioModel(ModelDescriptor descriptor) throws IOException {
+	public static Cellpose init(ModelDescriptor descriptor) throws IOException {
 		if (descriptor.getTags().stream().filter(tt -> tt.toLowerCase().equals("cellpose")).findFirst().orElse(null) == null
 				&& !descriptor.getName().toLowerCase().contains("cellpose"))
 			throw new RuntimeException("This model does not seem to be a cellpose model from the Bioimage.io");
@@ -229,6 +260,22 @@ public class Cellpose extends BioimageIoModelPytorchProtected {
 		Cellpose model =  new Cellpose(modelFile, callable, weightsFile, kwargs, descriptor);
 		model.isBMZ = true;
 		return model;
+	}
+	
+	/**
+	 * Initialize one of the "official" pretrained Stardist 2D models.
+	 * By default, the model will be installed in the "models" folder inside the application
+	 * @param pretrainedModel
+	 * 	the name of the pretrained model. 
+	 * @param forceDownload
+	 * 	whether to force the download or to try to look if the model has already been installed before
+	 * @return an instance of a pretrained Stardist2D model ready to be used
+	 * @throws IOException if there is any error downloading the model, in the case it is needed
+	 * @throws InterruptedException if the download of the model is stopped
+	 * @throws ExecutionException 
+	 */
+	public static Cellpose fromPretained(String pretrainedModel, boolean forceDownload) throws IOException, InterruptedException, ExecutionException {
+		return fromPretained(pretrainedModel, new File("models").getAbsolutePath(), forceDownload);
 	}
 	
 	/**
@@ -249,12 +296,12 @@ public class Cellpose extends BioimageIoModelPytorchProtected {
 																					InterruptedException, ExecutionException {
 		if (PRETRAINED_CELLPOSE_MODELS.contains(pretrainedModel) && !forceInstall) {
 			String weightsPath = fileIsCellpose(pretrainedModel, modelsDir);
-			if (weightsPath != null) return new Cellpose(weightsPath);
+			if (weightsPath != null) return init(weightsPath);
 			String path = donwloadPretrainedOfficial(pretrainedModel, modelsDir, null);
-			return new Cellpose(path);
+			return init(path);
 		} else if (PRETRAINED_CELLPOSE_MODELS.contains(pretrainedModel)) {
 			String path = donwloadPretrainedOfficial(pretrainedModel, modelsDir, null);
-			return new Cellpose(path);
+			return init(path);
 		}
 		if (!forceInstall) {
 			List<ModelDescriptor> localModels = ModelDescriptorFactory.getModelsAtLocalRepo();
@@ -263,7 +310,7 @@ public class Cellpose extends BioimageIoModelPytorchProtected {
 							|| md.getName().toLowerCase().equals(pretrainedModel.toLowerCase()))
 					.findFirst().orElse(null);
 			if (model != null)
-				return Cellpose.fromBioimageioModel(model);
+				return Cellpose.init(model);
 		}
 		
 		BioimageioRepo br = BioimageioRepo.connect();
@@ -275,7 +322,7 @@ public class Cellpose extends BioimageIoModelPytorchProtected {
 					+ " To find a list of available cellpose models, please run Cellpose.getPretrainedList()");
 		String path = BioimageioRepo.downloadModel(descriptor, modelsDir);
 		descriptor.addModelPath(Paths.get(path));
-		return Cellpose.fromBioimageioModel(descriptor);
+		return Cellpose.init(descriptor);
 	}
 	
 	private static String fileIsCellpose(String pretrainedModel, String modelsDir) {
@@ -375,39 +422,6 @@ public class Cellpose extends BioimageIoModelPytorchProtected {
 			mfd.setPartialProgressConsumer(progressConsumer);
 		mfd.download();
 		return downloadDir + File.separator + MODEL_REQ.get(modelName)[0];
-	}
-	
-	// TODO add 3d
-	protected <T extends RealType<T> & NativeType<T>> void checkInput(RandomAccessibleInterval<T> image) {
-		long[] dims = image.dimensionsAsLongArray();
-		if (channels != null && !is3D && dims.length == 2 && (channels.length < 2 || channels[0] != 0 || channels[1] != 0))
-			throw new IllegalArgumentException("To process a 2d grayscale image, the channels parameter must be [0, 0]");
-		else if (channels != null && !is3D && dims.length == 3
-				&& Arrays.stream(dims).anyMatch(num -> num == 1) && (channels.length < 2 || channels[0] != 0 || channels[1] != 0))
-			throw new IllegalArgumentException("To process a 2d grayscale image, the channels parameter must be [0, 0]");
-		else if (channels != null && !is3D && dims.length == 3
-				&& (channels.length < 2 || channels[0] == 0 || channels[1] == 0))
-			throw new IllegalArgumentException("To process a 2d RGB image, the channels parameter must be [2, 3]"
-					+ " or [2, 1], depending whether the blue or the red channels contains nuclei.");
-		else if (channels != null && !is3D && dims.length == 3 && isRedChannelEmpty(image)
-				&& (channels.length < 2 || channels[0] != 2 || channels[1] != 3))
-			throw new IllegalArgumentException("To process a 2d RGB image, the channels parameter must be [2, 3]"
-					+ " if the cytoplasm is green and the nuclei are blue.");
-		else if (channels != null && !is3D && dims.length == 3 && !isRedChannelEmpty(image)
-				&& (channels.length < 2 || channels[0] != 2 || channels[1] != 1))
-			throw new IllegalArgumentException("To process a 2d RGB image, the channels parameter must be [2, 1]"
-					+ " if the cytoplasm is green and the nuclei are red.");
-		else if (dims.length == 2 || (dims.length == 3 && Arrays.stream(dims).anyMatch(num -> num == 1) ))
-			this.channels = new int[2];
-		else if (dims.length == 3 && isRedChannelEmpty(image))
-			this.channels = new int[] {2, 3};
-		else if (dims.length == 3 && isRedChannelEmpty(image))
-			this.channels = new int[] {2, 1};
-	}
-	
-	private static <T extends RealType<T> & NativeType<T>> boolean isRedChannelEmpty(RandomAccessibleInterval<T> image) {
-		// TODO
-		return true;
 	}
 	
 	
