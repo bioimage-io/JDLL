@@ -47,9 +47,12 @@ import io.bioimage.modelrunner.apposed.appose.Service.TaskStatus;
 import io.bioimage.modelrunner.bioimageio.BioimageioRepo;
 import io.bioimage.modelrunner.bioimageio.description.ModelDescriptor;
 import io.bioimage.modelrunner.bioimageio.description.ModelDescriptorFactory;
+import io.bioimage.modelrunner.bioimageio.description.weights.ModelWeight;
+import io.bioimage.modelrunner.bioimageio.description.weights.WeightFormat;
 import io.bioimage.modelrunner.download.MultiFileDownloader;
 import io.bioimage.modelrunner.exceptions.RunModelException;
 import io.bioimage.modelrunner.model.python.BioimageIoModelPytorch;
+import io.bioimage.modelrunner.model.python.BioimageIoModelPytorchProtected;
 import io.bioimage.modelrunner.model.python.DLModelPytorch;
 import io.bioimage.modelrunner.model.special.SpecialModelBase;
 import io.bioimage.modelrunner.tensor.Tensor;
@@ -70,15 +73,12 @@ import net.imglib2.view.Views;
  *
  *@author Carlos Garcia
  */
-public class Cellpose extends BioimageIoModelPytorch {
+public class Cellpose extends BioimageIoModelPytorchProtected {
 	
-	private final String modelDir;
-	
-	protected final String weightsPath;
-	
+		
 	protected final String sizeWeigthsPath;
 	
-	protected final String modelType;
+	protected boolean isBMZ;
 	
 	protected int[] channels;
 	
@@ -132,27 +132,14 @@ public class Cellpose extends BioimageIoModelPytorch {
 			+ "if 'shared_memory' not in globals().keys():" + System.lineSeparator()
 			+ "  from multiprocessing import shared_memory" + System.lineSeparator()
 			+ "  globals()['shared_memory'] = shared_memory" + System.lineSeparator()
-			+ "model = denoise.CellposeDenoiseModel(gpu=True, model_type='%s')" + System.lineSeparator()
-			+ "globals()['model'] = model" + System.lineSeparator();
+			+ MODEL_VAR_NAME + " = denoise.CellposeDenoiseModel(gpu=%s, pretrained_model='%s')" + System.lineSeparator()
+			+ "globals()['" + MODEL_VAR_NAME + "'] = " + MODEL_VAR_NAME + System.lineSeparator();
 
-	protected Cellpose(String weightsPath) throws IOException {
-		this.weightsPath = weightsPath;
-		this.modelDir = new File(weightsPath).getParentFile().getAbsolutePath();
-		this.axes = "yxc";
-		this.modelType = ALIAS.entrySet().stream()
-				.filter(ee -> ee.getValue().equals(new File(this.weightsPath).getName()))
-				.map(ee -> ee.getValue()).findFirst().get();
-		this.sizeWeigthsPath = modelDir + File.separator + MODEL_REQ.get(modelType)[1];
-		this.envPath = DEFAULT_ENV_DIR;
+	protected Cellpose(String modelFile, String callable, String weightsPath, 
+			Map<String, Object> kwargs, ModelDescriptor descriptor) throws IOException {
+		super(modelFile, callable, weightsPath, kwargs, descriptor);
+		// TODO this.sizeWeigthsPath = descriptor.getModelPath() + File.separator + MODEL_REQ.get(modelType)[1];
     	createPythonService();
-	}
-	
-	protected Cellpose(ModelDescriptor descriptor) throws IOException {
-		super(descriptor);
-		this.descriptor = descriptor;
-		this.sizeWeigthsPath = null;
-		this.modelType = "bioimage.io";
-		this.weightsPath = descriptor.getModelPath() + File.separator + "";
 	}
 	
 	public void setChannels(int[] channels) {
@@ -168,28 +155,20 @@ public class Cellpose extends BioimageIoModelPytorch {
 	}
 	
 	protected String buildModelCode() {
+		if (this.isBMZ)
+			return super.buildModelCode();
 		String moduleName = new File(modelFile).getName();
 		moduleName = moduleName.substring(0, moduleName.length() - 3);
 		String code = String.format(LOAD_MODEL_CODE_ABSTRACT, 
-				new File(modelFile).getParentFile().getAbsolutePath(), 
-				moduleName, callable);
-		
-		code += ""
-				+ "if 'torch' not in globals().keys():" + System.lineSeparator()
-				+ "  import torch" + System.lineSeparator()
-				+ "  globals()['torch'] = torch" + System.lineSeparator();
-		code += MODEL_VAR_NAME + "=" + callable + "(" + codeForKwargs()  + ")" + System.lineSeparator();
-		code += "try:" + System.lineSeparator()
-				+ "  " + MODEL_VAR_NAME + ".load_state_dict("
-				+ "torch.load('" + this.weightsPath + "', map_location=" + MODEL_VAR_NAME  + ".device))" + System.lineSeparator()
-				+ "except:" + System.lineSeparator()
-				+ "  " + MODEL_VAR_NAME + ".load_state_dict("
-				+ "torch.load('" + this.weightsPath + "', map_location=torch.device('cpu')))" + System.lineSeparator();
-		code += "globals()['" + MODEL_VAR_NAME + "'] = " + MODEL_VAR_NAME + System.lineSeparator();
+				false, // TODO GPU 
+				descriptor.getModelPath() + File.separator 
+				+ descriptor.getWeights().getModelWeights(ModelWeight.getPytorchID()).getSource());
 		return code;
 	}
 	
 	protected <T extends RealType<T> & NativeType<T>> String createInputsCode(List<Tensor<T>> inTensors) {
+		if (this.isBMZ)
+			return super.createInputsCode(inTensors);
 		String code = "";
 		for (Tensor<T> in : inTensors) {
 			SharedMemoryArray shma = SharedMemoryArray.createSHMAFromRAI(in.getData());
@@ -198,11 +177,10 @@ public class Cellpose extends BioimageIoModelPytorch {
 		}
 		code += "print(type(input_torch))" + System.lineSeparator();
 		code += "print(input_torch.shape)" + System.lineSeparator();
-		code += OUTPUT_LIST_KEY + " = " + MODEL_VAR_NAME + "(";
+		code += OUTPUT_LIST_KEY + " = " + MODEL_VAR_NAME + ".eval(";
 		for (Tensor<T> in : inTensors)
 			code += in.getName() + "_torch, ";
-		code = code.substring(0, code.length() - 2);
-		code += ")" + System.lineSeparator();
+		code += "channels=[0,0])" + System.lineSeparator();
 		code += ""
 				+ SHMS_KEY + " = []" + System.lineSeparator()
 				+ SHM_NAMES_KEY + " = []" + System.lineSeparator()
@@ -240,7 +218,17 @@ public class Cellpose extends BioimageIoModelPytorch {
 		if (descriptor.getTags().stream().filter(tt -> tt.toLowerCase().equals("cellpose")).findFirst().orElse(null) == null
 				&& !descriptor.getName().toLowerCase().contains("cellpose"))
 			throw new RuntimeException("This model does not seem to be a cellpose model from the Bioimage.io");
-		return new Cellpose(descriptor);
+		if (descriptor.getWeights().getModelWeights(ModelWeight.getPytorchID()) == null)
+			throw new IllegalArgumentException("The model provided does not have weights in the required format, "
+					+ ModelWeight.getPytorchID() + ".");
+		WeightFormat pytorchWeights = descriptor.getWeights().getModelWeights(ModelWeight.getPytorchID());
+		String modelFile = descriptor.getModelPath() +  File.separator + pytorchWeights.getArchitecture().getSource();
+		String callable = pytorchWeights.getArchitecture().getCallable();
+		String weightsFile = descriptor.getModelPath() +  File.separator + pytorchWeights.getSource();
+		Map<String, Object> kwargs = pytorchWeights.getArchitecture().getKwargs();
+		Cellpose model =  new Cellpose(modelFile, callable, weightsFile, kwargs, descriptor);
+		model.isBMZ = true;
+		return model;
 	}
 	
 	/**
@@ -420,5 +408,9 @@ public class Cellpose extends BioimageIoModelPytorch {
 	private static <T extends RealType<T> & NativeType<T>> boolean isRedChannelEmpty(RandomAccessibleInterval<T> image) {
 		// TODO
 		return true;
+	}
+	
+	
+	public static void main(String[] args) {
 	}
 }
