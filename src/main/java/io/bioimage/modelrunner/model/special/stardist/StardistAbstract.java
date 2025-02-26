@@ -29,6 +29,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.function.Consumer;
+import java.util.stream.Collectors;
 
 import org.apache.commons.compress.archivers.ArchiveException;
 
@@ -108,7 +109,7 @@ public abstract class StardistAbstract extends BaseModel {
 	
 	private static String INSTALLATION_DIR = Mamba.BASE_PATH;
 	
-	private static final List<String> STARDIST_DEPS = Arrays.asList(new String[] {"python=3.10", "stardist", "numpy", "tensorflow=2.10", "appose"});
+	private static final List<String> STARDIST_DEPS = Arrays.asList(new String[] {"python=3.10", "stardist", "numpy", "tensorflow<2.11", "appose"});
 	
 	private static final List<String> STARDIST_CHANNELS = Arrays.asList(new String[] {"conda-forge", "default"});
 
@@ -564,7 +565,9 @@ public abstract class StardistAbstract extends BaseModel {
 			mamba.installMicromamba();
 		}
 		if (!stardistPythonInstalled) {
-			mamba.create("stardist", true, STARDIST_CHANNELS, STARDIST_DEPS);
+			mamba.create("stardist", true, STARDIST_CHANNELS, STARDIST_DEPS.stream()
+					.map(dd -> dd.contains("<") | dd.contains(">") ? "\"" + dd + "\"": dd)
+					.collect(Collectors.toList()));
 		};
 	}
 	
