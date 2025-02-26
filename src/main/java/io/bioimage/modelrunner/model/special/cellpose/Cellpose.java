@@ -486,6 +486,7 @@ public class Cellpose extends BioimageIoModelPytorchProtected {
 		List<RandomAccessibleInterval<FloatType>> rais = new ArrayList<RandomAccessibleInterval<FloatType>>();
 		rais.add(rai);
 		List<RandomAccessibleInterval<T>> res = model.inference(rais);
+		model.close();
 		System.out.println(false);
 	}
 }

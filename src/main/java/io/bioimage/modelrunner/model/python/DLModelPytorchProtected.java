@@ -156,7 +156,7 @@ public class DLModelPytorchProtected extends BaseModel {
 			+ "      np.copyto(sh_np_array, outs_i)" + System.lineSeparator()
 			+ "      " + SHMS_KEY + ".append(shm)" + System.lineSeparator()
 			+ "      " + SHM_NAMES_KEY + ".append(shm.name)" + System.lineSeparator()
-			+ "      " + DTYPES_KEY + ".append(outs_i.dtype)" + System.lineSeparator()
+			+ "      " + DTYPES_KEY + ".append(str(outs_i.dtype))" + System.lineSeparator()
 			+ "      " + DIMS_KEY + ".append(outs_i.shape)" + System.lineSeparator()
 			+ "    elif str(type(outs_i)) == \"<class 'torch.Tensor'>\":" + System.lineSeparator()
 			+ "      if 'torch' not in globals().keys():" + System.lineSeparator()
@@ -608,16 +608,30 @@ public class DLModelPytorchProtected extends BaseModel {
 			throw new RuntimeException("Unexpected type for '" + DIMS_KEY + "'.");
 		List<?> list = (List<?>) task.outputs.get(DIMS_KEY);
 		for (Object elem : list) {
-			if (elem instanceof Object[] == false)
+			if (elem instanceof Object[] == false && elem instanceof List == false)
 				throw new RuntimeException("Unexpected type for element of  '" + DIMS_KEY + "' list.");
-			Object[] arr = (Object[]) elem;
-			long[] longArr = new long[arr.length];
-			for (int i = 0; i < arr.length; i ++) {
-				if (arr[i] instanceof Number == false)
-					throw new RuntimeException("Unexpected type for array of element of  '" + DIMS_KEY + "' list.");
-				longArr[i] = ((Number) arr[i]).longValue();
+			if (elem instanceof Object[]) {
+				Object[] arr = (Object[]) elem;
+				long[] longArr = new long[arr.length];
+				for (int i = 0; i < arr.length; i ++) {
+					if (arr[i] instanceof Number == false)
+						throw new RuntimeException("Unexpected type for array of element of  '" + DIMS_KEY + "' list.");
+					longArr[i] = ((Number) arr[i]).longValue();
+				}
+				outShmDims.add(longArr);
+			} else if (elem instanceof List) {
+				@SuppressWarnings("unchecked")
+				List<Object> arr = (List<Object>) elem;
+				long[] longArr = new long[arr.size()];
+				for (int i = 0; i < arr.size(); i ++) {
+					if (arr.get(i) instanceof Number == false)
+						throw new RuntimeException("Unexpected type for array of element of  '" + DIMS_KEY + "' list.");
+					longArr[i] = ((Number) arr.get(i)).longValue();
+				}
+				outShmDims.add(longArr);
+			} else {
+				throw new RuntimeException("Unexpected type for element of  '" + DIMS_KEY + "' list.");
 			}
-			outShmDims.add(longArr);
 		}
 	}
 	
