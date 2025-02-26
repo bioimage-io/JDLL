@@ -109,7 +109,9 @@ public abstract class StardistAbstract extends BaseModel {
 	
 	private static String INSTALLATION_DIR = Mamba.BASE_PATH;
 	
-	private static final List<String> STARDIST_DEPS = Arrays.asList(new String[] {"python=3.10", "stardist", "numpy", "tensorflow<2.11", "appose"});
+	private static final List<String> STARDIST_DEPS = Arrays.asList(new String[] {"python=3.10", "stardist", "numpy", "appose"});
+	
+	private static final List<String> STARDIST_DEPS_PIP = Arrays.asList(new String[] {"tensorflow<2.11"});
 	
 	private static final List<String> STARDIST_CHANNELS = Arrays.asList(new String[] {"conda-forge", "default"});
 
@@ -560,7 +562,9 @@ public abstract class StardistAbstract extends BaseModel {
 		}
 		boolean stardistPythonInstalled = false;
 		try {
-			stardistPythonInstalled = mamba.checkAllDependenciesInEnv("stardist", STARDIST_DEPS);
+			List<String> deps = new ArrayList<String>(STARDIST_DEPS);
+			deps.addAll(STARDIST_DEPS_PIP);
+			stardistPythonInstalled = mamba.checkAllDependenciesInEnv("stardist", deps);
 		} catch (MambaInstallException e) {
 			mamba.installMicromamba();
 		}
@@ -568,6 +572,7 @@ public abstract class StardistAbstract extends BaseModel {
 			mamba.create("stardist", true, STARDIST_CHANNELS, STARDIST_DEPS.stream()
 					.map(dd -> dd.contains("<") | dd.contains(">") ? "\"" + dd + "\"": dd)
 					.collect(Collectors.toList()));
+			mamba.pipInstallIn("stardist", STARDIST_DEPS_PIP.toArray(new String[STARDIST_DEPS_PIP.size()]));
 		};
 	}
 	
