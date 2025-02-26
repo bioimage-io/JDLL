@@ -20,6 +20,7 @@
 package io.bioimage.modelrunner.runmode;
 
 import io.bioimage.modelrunner.bioimageio.download.DownloadModel;
+import io.bioimage.modelrunner.download.MultiFileDownloader;
 
 public class RunModeScripts {
 	
@@ -41,7 +42,7 @@ public class RunModeScripts {
 	
 	protected static final String DICT_METHOD = "convertDicIntoDic";
 	
-	protected static final String APPOSE_DT_KEY = DownloadModel.addTimeStampToFileName("appose_data_type_", true);
+	protected static final String APPOSE_DT_KEY = MultiFileDownloader.addTimeStampToFileName("appose_data_type_", true);
 	
 	protected static final String TENSOR_KEY = "tensor";
 

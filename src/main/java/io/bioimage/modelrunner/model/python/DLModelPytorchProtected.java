@@ -27,7 +27,6 @@ import java.io.IOException;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -35,6 +34,7 @@ import java.util.Map.Entry;
 import java.util.UUID;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 import org.apache.commons.compress.archivers.ArchiveException;
 
@@ -204,12 +204,24 @@ public class DLModelPytorchProtected extends BaseModel {
 	
 	protected DLModelPytorchProtected(String modelFile, String callable, String weightsPath, 
 			Map<String, Object> kwargs) throws IOException {
-		if (new File(modelFile).isFile() == false || !modelFile.endsWith(".py"))
+		this(modelFile, callable, weightsPath, kwargs, false);
+	}
+	
+	protected DLModelPytorchProtected(String modelFile, String callable, String weightsPath, 
+			Map<String, Object> kwargs, boolean customJDLL) throws IOException {
+		if (!customJDLL && (new File(modelFile).isFile() == false || !modelFile.endsWith(".py")))
 			throw new IllegalArgumentException("The model file does not correspond to an existing .py file.");
-		if (new File(weightsPath).isFile() == false || !(weightsPath.endsWith(".pt") || weightsPath.endsWith(".pth")))
+		if (new File(weightsPath).isFile() == false 
+				|| (!customJDLL 
+						&& !(weightsPath.endsWith(".pt") || weightsPath.endsWith(".pth"))
+						)
+				)
 			throw new IllegalArgumentException("The weights file does not correspond to an existing .pt/.pth file.");
 		this.callable = callable;
-		this.modelFile = new File(modelFile).getAbsolutePath();
+		if (!customJDLL || (modelFile != null && new File(modelFile).isFile()))
+			this.modelFile = new File(modelFile).getAbsolutePath();
+		else 
+			this.modelFile = null;
 		this.weightsPath = new File(weightsPath).getAbsolutePath();
 		this.kwargs = kwargs;
 		this.envPath = INSTALLATION_DIR + File.separator + "envs" + File.separator + COMMON_PYTORCH_ENV_NAME;
@@ -347,7 +359,10 @@ public class DLModelPytorchProtected extends BaseModel {
 	throws RunModelException {
 		if (!loaded)
 			throw new RuntimeException("Please load the model first.");
-		return executeCode(createInputsCode(inTensors));		
+		List<String> names = inTensors.stream()
+				.map(tt -> tt.getName() + "_np").collect(Collectors.toList());
+		List<RandomAccessibleInterval<T>> rais = inTensors.stream().map(tt -> tt.getData()).collect(Collectors.toList());
+		return executeCode(createInputsCode(rais, names));		
 	}
 	
 	private <T extends RealType<T> & NativeType<T>, R extends RealType<R> & NativeType<R>> 
@@ -377,29 +392,6 @@ public class DLModelPytorchProtected extends BaseModel {
 		return outMap;
 	}
 	
-	private <T extends RealType<T> & NativeType<T>> String 
-	createInpusCode(List<RandomAccessibleInterval<T>> rais) {
-		String code = "";
-		for (int i = 0; i < rais.size(); i ++) {
-			SharedMemoryArray shma = SharedMemoryArray.createSHMAFromRAI(rais.get(i));
-			code += codeToConvertShmaToPython(shma, "torch_rai_" + i);
-			inShmaList.add(shma);
-		}
-		code += OUTPUT_LIST_KEY + " = " + MODEL_VAR_NAME + "(";
-		for (int i = 0; i < rais.size(); i ++)
-			code += "torch_rai_" + i;
-		code = code.substring(0, code.length() - 2);
-		code += ")" + System.lineSeparator();
-		code += ""
-				+ SHMS_KEY + " = []" + System.lineSeparator()
-				+ SHM_NAMES_KEY + " = []" + System.lineSeparator()
-				+ DTYPES_KEY + " = []" + System.lineSeparator()
-				+ DIMS_KEY + " = []" + System.lineSeparator()
-				+ "globals()['" + SHMS_KEY + "'] = " + SHMS_KEY + System.lineSeparator();
-		code += "handle_output_list(OUTPUT_LIST_KEY)" + System.lineSeparator();
-		return code;
-	}
-	
 	/**
 	 * Simply run inference on the images provided. If the dimensions, number, data type or other
 	 * characteristic of the tensor is not correct, an exception will be thrown.
@@ -418,7 +410,9 @@ public class DLModelPytorchProtected extends BaseModel {
 
 		if (!loaded)
 			throw new RuntimeException("Please load the model first.");
-		String code = createInpusCode(inputs);
+		List<String> names = IntStream.range(0, inputs.size())
+				.mapToObj(i -> UUID.randomUUID().toString()).collect(Collectors.toList());
+		String code = createInputsCode(inputs, names);
 		Map<String, RandomAccessibleInterval<R>> map = executeCode(code);
 		List<RandomAccessibleInterval<R>> outRais = new ArrayList<RandomAccessibleInterval<R>>();
 		for (Entry<String, RandomAccessibleInterval<R>> ee : map.entrySet()) {
@@ -427,18 +421,18 @@ public class DLModelPytorchProtected extends BaseModel {
 		return outRais;
 	}
 	
-	protected <T extends RealType<T> & NativeType<T>> String createInputsCode(List<Tensor<T>> inTensors) {
+	protected <T extends RealType<T> & NativeType<T>> String createInputsCode(List<RandomAccessibleInterval<T>> rais, List<String> names) {
 		String code = "";
-		for (Tensor<T> in : inTensors) {
-			SharedMemoryArray shma = SharedMemoryArray.createSHMAFromRAI(in.getData());
-			code += codeToConvertShmaToPython(shma, in.getName() + "_torch");
+		for (int i = 0; i < rais.size(); i ++) {
+			SharedMemoryArray shma = SharedMemoryArray.createSHMAFromRAI(rais.get(i));
+			code += codeToConvertShmaToPython(shma, names.get(i));
 			inShmaList.add(shma);
 		}
 		code += "print(type(input_torch))" + System.lineSeparator();
 		code += "print(input_torch.shape)" + System.lineSeparator();
 		code += OUTPUT_LIST_KEY + " = " + MODEL_VAR_NAME + "(";
-		for (Tensor<T> in : inTensors)
-			code += in.getName() + "_torch, ";
+		for (int i = 0; i < rais.size(); i ++)
+			code += names.get(i) + ", ";
 		code = code.substring(0, code.length() - 2);
 		code += ")" + System.lineSeparator();
 		code += ""
@@ -526,7 +520,7 @@ public class DLModelPytorchProtected extends BaseModel {
 		}
 	}
 
-	public <T extends RealType<T> & NativeType<T>, R extends RealType<R> & NativeType<R>>
+	protected <T extends RealType<T> & NativeType<T>, R extends RealType<R> & NativeType<R>>
 	void runNoTiles(List<Tensor<T>> inTensors, List<Tensor<R>> outTensors) throws RunModelException {
 		Map<String, RandomAccessibleInterval<R>> outMap = predictForInputTensors(inTensors);
 		int c = 0;

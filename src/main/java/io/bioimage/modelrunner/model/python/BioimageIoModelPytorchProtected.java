@@ -24,39 +24,29 @@ package io.bioimage.modelrunner.model.python;
 
 import java.io.File;
 import java.io.IOException;
-import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-import org.apache.commons.compress.archivers.ArchiveException;
 
 import io.bioimage.modelrunner.apposed.appose.Mamba;
 import io.bioimage.modelrunner.apposed.appose.MambaInstallException;
 import io.bioimage.modelrunner.bioimageio.description.ModelDescriptor;
-import io.bioimage.modelrunner.bioimageio.description.ModelDescriptorFactory;
 import io.bioimage.modelrunner.bioimageio.description.TensorSpec;
 import io.bioimage.modelrunner.bioimageio.description.weights.ModelDependencies;
 import io.bioimage.modelrunner.bioimageio.description.weights.ModelWeight;
-import io.bioimage.modelrunner.bioimageio.description.weights.WeightFormat;
 import io.bioimage.modelrunner.bioimageio.tiling.ImageInfo;
 import io.bioimage.modelrunner.bioimageio.tiling.TileCalculator;
 import io.bioimage.modelrunner.bioimageio.tiling.TileInfo;
 import io.bioimage.modelrunner.bioimageio.tiling.TileMaker;
-import io.bioimage.modelrunner.exceptions.LoadEngineException;
-import io.bioimage.modelrunner.exceptions.LoadModelException;
 import io.bioimage.modelrunner.exceptions.RunModelException;
 import io.bioimage.modelrunner.model.processing.Processing;
 import io.bioimage.modelrunner.tensor.Tensor;
-import io.bioimage.modelrunner.utils.Constants;
-import net.imglib2.img.Img;
-import net.imglib2.img.array.ArrayImgs;
 import net.imglib2.type.NativeType;
 import net.imglib2.type.numeric.RealType;
 import net.imglib2.type.numeric.real.FloatType;
-import net.imglib2.util.Cast;
 
 public class BioimageIoModelPytorchProtected extends DLModelPytorchProtected {
 	/**
@@ -69,11 +59,16 @@ public class BioimageIoModelPytorchProtected extends DLModelPytorchProtected {
 	protected TileCalculator tileCalculator;
 	
 	protected BioimageIoModelPytorchProtected(String modelFile, String callable, String weightsPath, 
-			Map<String, Object> kwargs, ModelDescriptor descriptor) throws IOException {
-		super(modelFile, callable, weightsPath, kwargs);
+			Map<String, Object> kwargs, ModelDescriptor descriptor, boolean custom) throws IOException {
+		super(modelFile, callable, weightsPath, kwargs, custom);
 		this.tiling = true;
 		this.descriptor = descriptor;
 		this.tileCalculator = TileCalculator.init(descriptor);
+	}
+		
+	protected BioimageIoModelPytorchProtected(String modelFile, String callable, String weightsPath, 
+			Map<String, Object> kwargs, ModelDescriptor descriptor) throws IOException {
+		this(modelFile, callable, weightsPath, kwargs, descriptor, false);
 	}
 	
 	/**

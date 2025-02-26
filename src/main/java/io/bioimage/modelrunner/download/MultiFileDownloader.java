@@ -22,7 +22,9 @@ package io.bioimage.modelrunner.download;
 import java.io.File;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
@@ -146,4 +148,32 @@ public class MultiFileDownloader {
         	this.partialProgress.accept(total.get() / (double) this.totalSize);
         progressSize = total;
     }
+	
+	/**
+	 * Add the timestamp to the String given
+	 * @param str
+	 * 	String to add the time stamp
+	 * @param isDir
+	 * 	whether the file name represents a directory or not
+	 * @return string with the timestamp
+	 */
+	public static String addTimeStampToFileName(String str, boolean isDir) {
+		// Add timestamp to the model name. 
+		// The format consists on: modelName + date as ddmmyyyy + time as hhmmss
+        Calendar cal = Calendar.getInstance();
+		SimpleDateFormat sdf = new SimpleDateFormat("ddMMYYYY_HHmmss");
+		String dateString = sdf.format(cal.getTime());
+		if (isDir)
+			return str + "_" + dateString;
+		int ind = str.lastIndexOf(File.separator);
+		String fileName = str;
+		if (ind != -1)
+			fileName = str.substring(ind + 1);
+		int extensionPos = fileName.lastIndexOf(".");
+		if (extensionPos == -1)
+			return str + "_" + dateString;
+		String nameNoExtension = str.substring(0, extensionPos);
+		String extension = str.substring(extensionPos);
+		return nameNoExtension + "_" + dateString + extension;
+	}
 }

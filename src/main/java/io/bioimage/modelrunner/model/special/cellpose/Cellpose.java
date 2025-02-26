@@ -31,6 +31,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
 import java.util.function.Consumer;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import io.bioimage.modelrunner.bioimageio.BioimageioRepo;
@@ -39,14 +40,19 @@ import io.bioimage.modelrunner.bioimageio.description.ModelDescriptorFactory;
 import io.bioimage.modelrunner.bioimageio.description.weights.ModelWeight;
 import io.bioimage.modelrunner.bioimageio.description.weights.WeightFormat;
 import io.bioimage.modelrunner.download.MultiFileDownloader;
+import io.bioimage.modelrunner.exceptions.LoadModelException;
 import io.bioimage.modelrunner.exceptions.RunModelException;
 import io.bioimage.modelrunner.model.python.BioimageIoModelPytorchProtected;
 import io.bioimage.modelrunner.tensor.Tensor;
 import io.bioimage.modelrunner.tensor.shm.SharedMemoryArray;
 import net.imglib2.FinalInterval;
 import net.imglib2.RandomAccessibleInterval;
+import net.imglib2.img.array.ArrayImg;
+import net.imglib2.img.array.ArrayImgs;
+import net.imglib2.img.basictypeaccess.array.FloatArray;
 import net.imglib2.type.NativeType;
 import net.imglib2.type.numeric.RealType;
+import net.imglib2.type.numeric.real.FloatType;
 import net.imglib2.view.IntervalView;
 import net.imglib2.view.Views;
 
@@ -116,7 +122,7 @@ public class Cellpose extends BioimageIoModelPytorchProtected {
 
 	protected Cellpose(String modelFile, String callable, String weightsPath, 
 			Map<String, Object> kwargs, ModelDescriptor descriptor) throws IOException {
-		super(modelFile, callable, weightsPath, kwargs, descriptor);
+		super(modelFile, callable, weightsPath, kwargs, descriptor, true);
     	createPythonService();
 	}
 	
@@ -199,30 +205,27 @@ public class Cellpose extends BioimageIoModelPytorchProtected {
 	protected String buildModelCode() {
 		if (this.isBMZ)
 			return super.buildModelCode();
-		String moduleName = new File(modelFile).getName();
-		moduleName = moduleName.substring(0, moduleName.length() - 3);
 		String code = String.format(LOAD_MODEL_CODE_ABSTRACT, 
-				false, // TODO GPU 
-				descriptor.getModelPath() + File.separator 
-				+ descriptor.getWeights().getModelWeights(ModelWeight.getPytorchID()).getSource());
+				"False", // TODO GPU 
+				this.weightsPath);
 		return code;
 	}
 	
-	protected <T extends RealType<T> & NativeType<T>> String createInputsCode(List<Tensor<T>> inTensors) {
+	protected <T extends RealType<T> & NativeType<T>> 
+	String createInputsCode(List<RandomAccessibleInterval<T>> inRais, List<String> names) {
 		if (this.isBMZ)
-			return super.createInputsCode(inTensors);
+			return super.createInputsCode(inRais, names);
 		String code = "";
-		for (Tensor<T> in : inTensors) {
-			SharedMemoryArray shma = SharedMemoryArray.createSHMAFromRAI(in.getData());
-			code += codeToConvertShmaToPython(shma, in.getName() + "_torch");
+		for (int i = 0; i < inRais.size(); i ++) {
+			SharedMemoryArray shma = SharedMemoryArray.createSHMAFromRAI(inRais.get(i));
+			code += codeToConvertShmaToPython(shma, names.get(i));
 			inShmaList.add(shma);
 		}
-		code += "print(type(input_torch))" + System.lineSeparator();
-		code += "print(input_torch.shape)" + System.lineSeparator();
+		code += "print(type(input_np))" + System.lineSeparator();
+		code += "print(input_np.shape)" + System.lineSeparator();
 		code += OUTPUT_LIST_KEY + " = " + MODEL_VAR_NAME + ".eval(";
-		for (Tensor<T> in : inTensors)
-			code += in.getName() + "_torch, ";
-		code += "channels=" + createChannelsArgCode(inTensors.get(0).getData()) 
+		for (int i = 0; i < inRais.size(); i ++)
+			code += names.get(i) + ", channels=" + createChannelsArgCode(inRais.get(i)) 
 		+ ", diameter=" + createDiamCode() + ")" + System.lineSeparator();
 		code += ""
 				+ SHMS_KEY + " = []" + System.lineSeparator()
@@ -332,10 +335,14 @@ public class Cellpose extends BioimageIoModelPytorchProtected {
 		if (PRETRAINED_CELLPOSE_MODELS.contains(pretrainedModel) && !forceInstall) {
 			String weightsPath = fileIsCellpose(pretrainedModel, modelsDir);
 			if (weightsPath != null) return init(weightsPath);
-			String path = donwloadPretrainedOfficial(pretrainedModel, modelsDir, null);
+			String fname = MultiFileDownloader.addTimeStampToFileName(pretrainedModel, true);
+			fname = modelsDir + File.separator + fname;
+			String path = donwloadPretrainedOfficial(pretrainedModel, fname, null);
 			return init(path);
 		} else if (PRETRAINED_CELLPOSE_MODELS.contains(pretrainedModel)) {
-			String path = donwloadPretrainedOfficial(pretrainedModel, modelsDir, null);
+			String fname = MultiFileDownloader.addTimeStampToFileName(pretrainedModel, true);
+			fname = modelsDir + File.separator + fname;
+			String path = donwloadPretrainedOfficial(pretrainedModel, fname, null);
 			return init(path);
 		}
 		if (!forceInstall) {
@@ -365,11 +372,13 @@ public class Cellpose extends BioimageIoModelPytorchProtected {
 		 if (pretrainedFile.isFile() && isCellposeFile(pretrainedFile))
 			 return pretrainedFile.getAbsolutePath();
 		 if (ALIAS.keySet().contains(pretrainedModel) || MODEL_SIZE.containsKey(pretrainedModel)) {
-			 String path = lookForModelInDir(pretrainedModel, modelsDir);
-			 if (path != null)
-				 return path;
+			 for (String dir : findDirectoriesWithPattern(modelsDir, pretrainedModel)) {
+				 String path = lookForModelInDir(pretrainedModel, dir);
+				 if (path != null)
+					 return path;
+			 }
 		 }
-		 return null;
+		 return lookForModelInDir(pretrainedModel, modelsDir);
 	}
 	
 	private static boolean isCellposeFile(File pretrainedFile) {
@@ -386,12 +395,7 @@ public class Cellpose extends BioimageIoModelPytorchProtected {
 			.map(ee -> ee.getKey()).findFirst().get();
 		else 
 			name = modelName;
-		File modelDir = Arrays.stream(dir.listFiles())
-				.filter(ff -> ff.isDirectory() && ff.getName().startsWith(name + "_"))
-				.findFirst().orElse(null);
-		if (modelDir == null)
-			return null;
-		String weightsPath = modelDir.getAbsolutePath() + File.separator + ALIAS.get(name);
+		String weightsPath = dir.getAbsolutePath() + File.separator + ALIAS.get(name);
 		File weigthsFile = new File(weightsPath);
 		if (weigthsFile.isFile() && weigthsFile.length() == MODEL_SIZE.get(ALIAS.get(name)))
 			return weightsPath;
@@ -459,7 +463,25 @@ public class Cellpose extends BioimageIoModelPytorchProtected {
 		return downloadDir + File.separator + MODEL_REQ.get(modelName)[0];
 	}
 	
+	private static List<String> findDirectoriesWithPattern(String folderPath, String keyword) {
+        // Regex pattern to match: keyword_ddMMyyyy_HHmmss
+        String regex = "^" + Pattern.quote(keyword) + "_\\d{8}_\\d{6}$";
+        Pattern pattern = Pattern.compile(regex);
+        return Arrays.stream(new File(folderPath).listFiles())
+        		.filter(File::isDirectory)
+        		.filter(ff -> pattern.matcher(ff.getName()).matches())
+        		.map(ff -> ff.getAbsolutePath())
+        		.collect(Collectors.toList());
+    }
 	
-	public static void main(String[] args) {
+	
+	public static <T extends RealType<T> & NativeType<T>>
+	void main(String[] args) throws IOException, InterruptedException, ExecutionException, LoadModelException, RunModelException {
+		Cellpose model = Cellpose.fromPretained("cyto3", false);
+		model.loadModel();
+		ArrayImg<FloatType, FloatArray> rai = ArrayImgs.floats(new long[] {512, 512, 1});
+		List<RandomAccessibleInterval<FloatType>> rais = new ArrayList<RandomAccessibleInterval<FloatType>>();
+		List<RandomAccessibleInterval<T>> res = model.inference(rais);
+		System.out.println(false);
 	}
 }
