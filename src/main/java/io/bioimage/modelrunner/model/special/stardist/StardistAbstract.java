@@ -572,7 +572,9 @@ public abstract class StardistAbstract extends BaseModel {
 			mamba.create("stardist", true, STARDIST_CHANNELS, STARDIST_DEPS.stream()
 					.map(dd -> dd.contains("<") | dd.contains(">") ? "\"" + dd + "\"": dd)
 					.collect(Collectors.toList()));
-			mamba.pipInstallIn("stardist", STARDIST_DEPS_PIP.toArray(new String[STARDIST_DEPS_PIP.size()]));
+			mamba.pipInstallIn("stardist", STARDIST_DEPS_PIP.stream()
+					.map(dd -> dd.contains("<") | dd.contains(">") ? "\"" + dd + "\"": dd)
+					.collect(Collectors.toList()).toArray(new String[STARDIST_DEPS_PIP.size()]));
 		};
 	}
 	
