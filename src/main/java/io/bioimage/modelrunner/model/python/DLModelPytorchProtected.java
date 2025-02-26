@@ -149,18 +149,19 @@ public class DLModelPytorchProtected extends BaseModel {
 	
 	protected static final String RECOVER_OUTPUTS_CODE = ""
 			+ "def handle_output_list(out_list):" + System.lineSeparator()
-			+ "  print(out_list)" + System.lineSeparator()
 			+ "  for outs_i in out_list:" + System.lineSeparator()
-			+ "    print(outs_i)" + System.lineSeparator()
 			+ "    if type(outs_i) == np.ndarray:" + System.lineSeparator()
 			+ "      shm = shared_memory.SharedMemory(create=True, size=outs_i.nbytes)" + System.lineSeparator()
-			+ "      sh_np_array = np.ndarray(outs_i.shape, dtype=outs_i.dtype, buffer=outs_i.buf)" + System.lineSeparator()
+			+ "      sh_np_array = np.ndarray(outs_i.shape, dtype=outs_i.dtype, buffer=shm.buf)" + System.lineSeparator()
 			+ "      np.copyto(sh_np_array, outs_i)" + System.lineSeparator()
 			+ "      " + SHMS_KEY + ".append(shm)" + System.lineSeparator()
 			+ "      " + SHM_NAMES_KEY + ".append(shm.name)" + System.lineSeparator()
 			+ "      " + DTYPES_KEY + ".append(outs_i.dtype)" + System.lineSeparator()
 			+ "      " + DIMS_KEY + ".append(outs_i.shape)" + System.lineSeparator()
-			+ "    elif type(outs_i) == torch.tensor:" + System.lineSeparator()
+			+ "    elif str(type(outs_i)) == \"<class 'torch.Tensor'>\":" + System.lineSeparator()
+			+ "      if 'torch' not in globals().keys():" + System.lineSeparator()
+			+ "        import torch" + System.lineSeparator()
+			+ "        globals()['torch'] = torch" + System.lineSeparator()
 			+ "      shm = shared_memory.SharedMemory(create=True, size=outs_i.numel() * outs_i.element_size())" + System.lineSeparator()
 			+ "      np_arr = np.ndarray(outs_i.shape, dtype=outs_i.dtype.name, buffer=shm.buf)" + System.lineSeparator()
 			+ "      tensor_np_view = torch.from_numpy(np_arr)" + System.lineSeparator()
@@ -411,8 +412,9 @@ public class DLModelPytorchProtected extends BaseModel {
 		if (!loaded)
 			throw new RuntimeException("Please load the model first.");
 		List<String> names = IntStream.range(0, inputs.size())
-				.mapToObj(i -> UUID.randomUUID().toString()).collect(Collectors.toList());
+				.mapToObj(i -> "var_" + UUID.randomUUID().toString().replace("-", "_")).collect(Collectors.toList());
 		String code = createInputsCode(inputs, names);
+		code += taskOutputsCode();
 		Map<String, RandomAccessibleInterval<R>> map = executeCode(code);
 		List<RandomAccessibleInterval<R>> outRais = new ArrayList<RandomAccessibleInterval<R>>();
 		for (Entry<String, RandomAccessibleInterval<R>> ee : map.entrySet()) {
@@ -440,8 +442,19 @@ public class DLModelPytorchProtected extends BaseModel {
 				+ SHM_NAMES_KEY + " = []" + System.lineSeparator()
 				+ DTYPES_KEY + " = []" + System.lineSeparator()
 				+ DIMS_KEY + " = []" + System.lineSeparator()
-				+ "globals()['" + SHMS_KEY + "'] = " + SHMS_KEY + System.lineSeparator();
-		code += "handle_output_list(OUTPUT_LIST_KEY)" + System.lineSeparator();
+				+ "globals()['" + SHMS_KEY + "'] = " + SHMS_KEY + System.lineSeparator()
+				+ "globals()['" + SHM_NAMES_KEY + "'] = " + SHM_NAMES_KEY + System.lineSeparator()
+				+ "globals()['" + DTYPES_KEY + "'] = " + DTYPES_KEY + System.lineSeparator()
+				+ "globals()['" + DIMS_KEY + "'] = " + DIMS_KEY + System.lineSeparator();
+		code += "handle_output_list(" + OUTPUT_LIST_KEY + ")" + System.lineSeparator();
+		return code;
+	}
+	
+	private String taskOutputsCode() {
+		String code = ""
+				+ "task.outputs['" + SHM_NAMES_KEY + "'] = " + SHM_NAMES_KEY + System.lineSeparator()
+				+ "task.outputs['" + DTYPES_KEY + "'] = " + DTYPES_KEY + System.lineSeparator()
+				+ "task.outputs['" + DIMS_KEY + "'] = " + DIMS_KEY + System.lineSeparator();
 		return code;
 	}
 
@@ -634,16 +647,17 @@ public class DLModelPytorchProtected extends BaseModel {
 							+ ")" + System.lineSeparator();
 		long nElems = 1;
 		for (long elem : shma.getOriginalShape()) nElems *= elem;
-		code += varName + "_np = np.ndarray(" + nElems  + ", dtype='" + CommonUtils.getDataTypeFromRAI(Cast.unchecked(shma.getSharedRAI()))
+		code += varName + " = np.ndarray(" + nElems  + ", dtype='" + CommonUtils.getDataTypeFromRAI(Cast.unchecked(shma.getSharedRAI()))
 			  + "', buffer=" + varName +"_shm.buf).reshape([";
 		for (int i = 0; i < shma.getOriginalShape().length; i ++)
 			code += shma.getOriginalShape()[i] + ", ";
 		code += "])" + System.lineSeparator();
+		/**
 		code += "try:" + System.lineSeparator();
 		code += "  " + varName + " = torch.from_numpy(" + varName + "_np).to(" + MODEL_VAR_NAME + ".device)" + System.lineSeparator();
 		code += "except:" + System.lineSeparator();
 		code += "  " + varName + " = torch.from_numpy(" + varName + "_np).to(torch.device('cpu'))" + System.lineSeparator();
-
+		*/
 		code += ""
 			+ "if os.name == 'nt':" + System.lineSeparator()
 			+ "  im_shm.close()" + System.lineSeparator()

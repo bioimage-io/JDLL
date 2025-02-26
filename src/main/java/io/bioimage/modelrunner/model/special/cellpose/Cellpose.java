@@ -221,19 +221,22 @@ public class Cellpose extends BioimageIoModelPytorchProtected {
 			code += codeToConvertShmaToPython(shma, names.get(i));
 			inShmaList.add(shma);
 		}
-		code += "print(type(input_np))" + System.lineSeparator();
-		code += "print(input_np.shape)" + System.lineSeparator();
+		code += "print(type(" + names.get(0)  + "))" + System.lineSeparator();
+		code += "print(" + names.get(0) + ".shape)" + System.lineSeparator();
 		code += OUTPUT_LIST_KEY + " = " + MODEL_VAR_NAME + ".eval(";
 		for (int i = 0; i < inRais.size(); i ++)
-			code += names.get(i) + ", channels=" + createChannelsArgCode(inRais.get(i)) 
-		+ ", diameter=" + createDiamCode() + ")" + System.lineSeparator();
+			code += names.get(i) + ", channels=" + createChannelsArgCode(inRais.get(i)) +", ";
+		code += "diameter=" + createDiamCode() + ")" + System.lineSeparator();
 		code += ""
 				+ SHMS_KEY + " = []" + System.lineSeparator()
 				+ SHM_NAMES_KEY + " = []" + System.lineSeparator()
 				+ DTYPES_KEY + " = []" + System.lineSeparator()
 				+ DIMS_KEY + " = []" + System.lineSeparator()
-				+ "globals()['" + SHMS_KEY + "'] = " + SHMS_KEY + System.lineSeparator();
-		code += "handle_output_list(OUTPUT_LIST_KEY)" + System.lineSeparator();
+				+ "globals()['" + SHMS_KEY + "'] = " + SHMS_KEY + System.lineSeparator()
+				+ "globals()['" + SHM_NAMES_KEY + "'] = " + SHM_NAMES_KEY + System.lineSeparator()
+				+ "globals()['" + DTYPES_KEY + "'] = " + DTYPES_KEY + System.lineSeparator()
+				+ "globals()['" + DIMS_KEY + "'] = " + DIMS_KEY + System.lineSeparator();
+		code += "handle_output_list(" + OUTPUT_LIST_KEY + ")" + System.lineSeparator();
 		return code;
 	}
 	
@@ -481,6 +484,7 @@ public class Cellpose extends BioimageIoModelPytorchProtected {
 		model.loadModel();
 		ArrayImg<FloatType, FloatArray> rai = ArrayImgs.floats(new long[] {512, 512, 1});
 		List<RandomAccessibleInterval<FloatType>> rais = new ArrayList<RandomAccessibleInterval<FloatType>>();
+		rais.add(rai);
 		List<RandomAccessibleInterval<T>> res = model.inference(rais);
 		System.out.println(false);
 	}
