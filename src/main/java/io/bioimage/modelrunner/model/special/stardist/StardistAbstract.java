@@ -108,7 +108,7 @@ public abstract class StardistAbstract extends BaseModel {
 	
 	private static String INSTALLATION_DIR = Mamba.BASE_PATH;
 	
-	private static final List<String> STARDIST_DEPS = Arrays.asList(new String[] {"python=3.10", "stardist", "numpy", "appose"});
+	private static final List<String> STARDIST_DEPS = Arrays.asList(new String[] {"python=3.10", "stardist", "numpy", "tensorflow<2.11", "appose"});
 	
 	private static final List<String> STARDIST_CHANNELS = Arrays.asList(new String[] {"conda-forge", "default"});
 
