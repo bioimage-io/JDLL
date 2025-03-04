@@ -1,22 +1,32 @@
-package io.bioimage.modelrunner.gui.cellpose;
+package io.bioimage.modelrunner.gui;
 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
+import javax.swing.event.PopupMenuEvent;
+import javax.swing.event.PopupMenuListener;
+
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 
-public class SpecialModelGUI extends JPanel {
+public class CellposeGUI extends JPanel implements ActionListener {
 
     private static final long serialVersionUID = 5381352117710530216L;
 	private JComboBox<String> modelComboBox;
+	private JLabel customLabel;
     private JTextField customModelPathField;
     private JButton browseButton;
     private JTextField diameterField;
     private JComboBox<String> channelComboBox;
     private JButton cancelButton, installButton, runButton;
+    
+    private final String CUSOTM_STR = "your custom model";
 
-    public SpecialModelGUI() {
+    public CellposeGUI() {
+    	this(null);
+    }
+
+    public CellposeGUI(Integer nChannels) {
         // Set a modern-looking border layout with padding
         setLayout(new BorderLayout());
         JPanel mainPanel = new JPanel();
@@ -25,14 +35,16 @@ public class SpecialModelGUI extends JPanel {
 
         // --- Model Selection Panel ---
         JPanel modelPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
-        modelPanel.add(new JLabel("Select Pretrained Model:"));
-        String[] models = {"Default Model 1", "Default Model 2", "Default Model 3", "Custom Model"};
+        modelPanel.add(new JLabel("Select a model:"));
+        String[] models = {"cyto3", "cyto2", "cyto", "nuclei", CUSOTM_STR};
         modelComboBox = new JComboBox<>(models);
         modelPanel.add(modelComboBox);
 
         // Panel for custom model file path
         JPanel customModelPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
-        customModelPanel.add(new JLabel("Custom Model Path:"));
+        customLabel = new JLabel("Custom Model Path:");
+        customLabel.setEnabled(false);
+        customModelPanel.add(customLabel);
         customModelPathField = new JTextField(20);
         customModelPathField.setEnabled(false);
         customModelPanel.add(customModelPathField);
@@ -49,7 +61,13 @@ public class SpecialModelGUI extends JPanel {
         parametersPanel.add(diameterField);
         // Channel selection
         parametersPanel.add(new JLabel("Channel:"));
-        String[] channels = {"[0,0]", "[2,3]", "[2,1]"};
+        String[] channels;
+        if (nChannels != null && nChannels == 1)
+        	channels = new String[] {"[0,0]"};
+        else if (nChannels != null && nChannels == 3)
+        	channels = new String[] {"[2,3]", "[2,1]"};
+        else
+        	channels = new String[] {"[0,0]", "[2,3]", "[2,1]"};
         channelComboBox = new JComboBox<>(channels);
         parametersPanel.add(channelComboBox);
 
@@ -73,27 +91,21 @@ public class SpecialModelGUI extends JPanel {
         // Add main panel to the current panel
         add(mainPanel, BorderLayout.CENTER);
 
-        // --- Event Listeners ---
-        // Enable custom model file fields if "Custom Model" is selected
-        modelComboBox.addActionListener(new ActionListener() {
+        // Enable when custom selected
+        modelComboBox.addPopupMenuListener(new PopupMenuListener() {
             @Override
-            public void actionPerformed(ActionEvent e) {
-                boolean isCustom = modelComboBox.getSelectedItem().toString().equals("Custom Model");
-                customModelPathField.setEnabled(isCustom);
-                browseButton.setEnabled(isCustom);
-            }
-        });
+            public void popupMenuWillBecomeVisible(PopupMenuEvent e) {}
+            @Override
+            public void popupMenuCanceled(PopupMenuEvent e) {}
 
-        // Browse button action to open a file chooser dialog
-        browseButton.addActionListener(new ActionListener() {
             @Override
-            public void actionPerformed(ActionEvent e) {
-                JFileChooser fileChooser = new JFileChooser();
-                int option = fileChooser.showOpenDialog(SpecialModelGUI.this);
-                if (option == JFileChooser.APPROVE_OPTION) {
-                    customModelPathField.setText(fileChooser.getSelectedFile().getAbsolutePath());
-                }
+            public void popupMenuWillBecomeInvisible(PopupMenuEvent e) {
+            	boolean enabled = modelComboBox.getSelectedItem().equals(CUSOTM_STR);
+                customLabel.setEnabled(enabled);
+                customModelPathField.setEnabled(enabled);
+                browseButton.setEnabled(enabled);
             }
+
         });
 
         // You can add additional listeners for the Cancel, Install, and Run buttons here.
@@ -105,11 +117,39 @@ public class SpecialModelGUI extends JPanel {
             public void run() {
                 JFrame frame = new JFrame("Cellpose Plugin");
                 frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-                frame.getContentPane().add(new SpecialModelGUI());
+                frame.getContentPane().add(new CellposeGUI());
                 frame.pack();
                 frame.setLocationRelativeTo(null);
                 frame.setVisible(true);
             }
         });
+    }
+    
+    @Override
+    public void actionPerformed(ActionEvent e) {
+    	if (e.getSource() == browseButton) {
+    		browseFiles();
+    	} else if (e.getSource() == this.runButton) {
+    		runCellpose();
+    	} else if (e.getSource() == this.installButton) {
+    		installCellpose();
+    	}
+    }
+    
+    private void runCellpose() {
+    	
+    }
+    
+    private void installCellpose() {
+    	
+    }
+    
+    private void browseFiles() {
+        JFileChooser fileChooser = new JFileChooser();
+        fileChooser.setFileSelectionMode(JFileChooser.FILES_ONLY);
+        int option = fileChooser.showOpenDialog(CellposeGUI.this);
+        if (option == JFileChooser.APPROVE_OPTION) {
+            customModelPathField.setText(fileChooser.getSelectedFile().getAbsolutePath());
+        }
     }
 }
