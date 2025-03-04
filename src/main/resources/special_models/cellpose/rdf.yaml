@@ -1,0 +1,105 @@
+authors: null
+cite:
+- {doi: 10.1038/s41592-020-01018-x, text: 'Stringer, C., Wang, T., Michaelos, M.,
+    & Pachitariu, M. (2021). Cellpose: a generalist algorithm for cellular segmentation.
+    Nature methods, 18(1), 100-106.', url: null}
+- {doi: 10.1038/s41592-022-01663-4, text: 'Pachitariu, M. & Stringer, C. (2022). Cellpose
+    2.0: how to train your own model. Nature methods, 1-8.', url: null}
+config:
+  bioimageio:
+    thumbnails: {cover.png: cover.thumbnail.png}
+covers: [cover.png]
+description: cellpose %s. Generalist algorithm for cellular segmentation.
+documentation: doc.md
+format_version: 0.5.3
+id: jdll-cellpose
+inputs:
+- axes:
+  - {id: x, size: -1, type: space}
+  - {id: y, size: -1, type: space}
+  - {id: c, size: -1, type: channel}
+  id: input
+  test_tensor: null
+license: CC-BY-NC-4.0
+maintainers: []
+name: jdll cellpose
+outputs:
+- axes:
+  - id: x
+    scale: 1.0
+    size: {axis_id: x, offset: 0, tensor_id: input}
+    type: space
+  - id: y
+    scale: 1.0
+    size: {axis_id: y, offset: 0, tensor_id: input}
+    type: space
+  id: masks
+  test_tensor: null
+- axes:
+  - id: x
+    scale: 1.0
+    size: {axis_id: x, offset: 0, tensor_id: input}
+    type: space
+  - id: y
+    scale: 1.0
+    size: {axis_id: y, offset: 0, tensor_id: input}
+    type: space
+  - channel_names: [ch_0, ch_1, ch_2]
+    type: channel
+  id: flows_0
+  test_tensor: null
+- axes:
+  - channel_names: [ch_0, ch_1]
+    type: channel
+  - id: x
+    scale: 1.0
+    size: {axis_id: x, offset: 0, tensor_id: input}
+    type: space
+  - id: y
+    scale: 1.0
+    size: {axis_id: y, offset: 0, tensor_id: input}
+    type: space
+  id: flows_1
+  test_tensor: null
+- axes:
+  - id: x
+    scale: 1.0
+    size: {axis_id: x, offset: 0, tensor_id: input}
+    type: space
+  - id: y
+    scale: 1.0
+    size: {axis_id: y, offset: 0, tensor_id: input}
+    type: space
+  id: flows_2
+  test_tensor: null
+- axes:
+  - {id: i, size: 256, type: space}
+  id: styles
+  test_tensor: null
+- axes:
+  - id: x
+    scale: 1.0
+    size: {axis_id: x, offset: 0, tensor_id: input}
+    type: space
+  - id: y
+    scale: 1.0
+    size: {axis_id: y, offset: 0, tensor_id: input}
+    type: space
+  - channel_names: [%s]
+    type: channel
+  id: image_dn
+  test_tensor: null
+tags: [nuclei segmentation, epithelial cells, fluorescence microscopy, cell-segmentation, cellpose, 2D]
+type: model
+version: 0.1.0
+weights:
+  pytorch_state_dict:
+    architecture:
+      callable: CellposeJDLLWrapper
+      kwargs:
+        channels: [0, 0]
+        flow_threshold: 0.4
+      source: cellpose_jdll.py
+    pytorch_version: 2.4.0
+    sha256: 02b82974f25f670215bbfba32409e02941e90bf4852e3fcea6a0a8e75edc3936
+    source: %s
