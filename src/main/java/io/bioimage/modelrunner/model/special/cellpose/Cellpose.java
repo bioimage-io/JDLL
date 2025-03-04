@@ -19,9 +19,12 @@
  */
 package io.bioimage.modelrunner.model.special.cellpose;
 
+import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileReader;
 import java.io.IOException;
 import java.net.MalformedURLException;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -39,6 +42,7 @@ import io.bioimage.modelrunner.bioimageio.description.ModelDescriptor;
 import io.bioimage.modelrunner.bioimageio.description.ModelDescriptorFactory;
 import io.bioimage.modelrunner.bioimageio.description.weights.ModelWeight;
 import io.bioimage.modelrunner.bioimageio.description.weights.WeightFormat;
+import io.bioimage.modelrunner.bioimageio.tiling.TileCalculator;
 import io.bioimage.modelrunner.download.MultiFileDownloader;
 import io.bioimage.modelrunner.exceptions.LoadModelException;
 import io.bioimage.modelrunner.exceptions.RunModelException;
@@ -70,6 +74,8 @@ public class Cellpose extends BioimageIoModelPytorchProtected {
 	protected int[] channels;
 	
 	private Integer diameter;
+	
+	private String rdfString;
 	
 	private boolean is3D = false;
 	
@@ -119,6 +125,16 @@ public class Cellpose extends BioimageIoModelPytorchProtected {
 			+ "  globals()['shared_memory'] = shared_memory" + System.lineSeparator()
 			+ MODEL_VAR_NAME + " = denoise.CellposeDenoiseModel(gpu=%s, pretrained_model='%s')" + System.lineSeparator()
 			+ "globals()['" + MODEL_VAR_NAME + "'] = " + MODEL_VAR_NAME + System.lineSeparator();
+	
+	protected static final String PATH_TO_RDF = "special_models/cellpose/rdf.yaml";
+	
+	protected static final URL RDF_URL = Cellpose.class.getClassLoader().getResource(PATH_TO_RDF);
+	
+	private static final String ONE_CHANNEL_STR = "ch_0";
+	
+	private static final String TWO_CHANNEL_STR = "ch_0, ch_1";
+	
+	private static final String THREE_CHANNEL_STR = "ch_0, ch_1, ch_3";
 
 	protected Cellpose(String modelFile, String callable, String weightsPath, 
 			Map<String, Object> kwargs, ModelDescriptor descriptor) throws IOException {
@@ -175,6 +191,28 @@ public class Cellpose extends BioimageIoModelPytorchProtected {
 		return outputTensors;
 	}
 	
+	private <R extends RealType<R> & NativeType<R>> 
+	void createCustomDescriptor(List<Tensor<R>> inputTensors) {
+		int nChannels = 1;
+		String axesOrder = inputTensors.get(0).getAxesOrderString().toLowerCase();
+		if (axesOrder.contains("c")
+				&& inputTensors.get(0).getData().dimensionsAsLongArray()[axesOrder.indexOf("c")] == 3)
+			nChannels = 3;
+		else if (axesOrder.contains("c")
+				&& inputTensors.get(0).getData().dimensionsAsLongArray()[axesOrder.indexOf("c")] != 1)
+			throw new IllegalArgumentException("Inputs to cellpose model can only have either 1 or 3 channels.");
+		String adaptedRdfString;
+		String weightsName = new File(this.weightsPath).getName();
+		if (nChannels == 1)
+			adaptedRdfString = String.format(CELLPOSE_URL, ONE_CHANNEL_STR, ONE_CHANNEL_STR, weightsName);
+		else
+			adaptedRdfString = String.format(CELLPOSE_URL, THREE_CHANNEL_STR, TWO_CHANNEL_STR, weightsName);
+			
+		this.descriptor = ModelDescriptorFactory.readFromYamlTextString(adaptedRdfString);
+		descriptor.addModelPath(Paths.get(new File(this.weightsPath).getParentFile().getAbsolutePath()));
+		this.tileCalculator = TileCalculator.init(descriptor);
+	}
+	
 	/**
 	 * Run a Bioimage.io model and execute the tiling strategy in one go.
 	 * The model needs to have been previously loaded with {@link #loadModel()}.
@@ -194,11 +232,13 @@ public class Cellpose extends BioimageIoModelPytorchProtected {
 	 */
 	public <T extends RealType<T> & NativeType<T>, R extends RealType<R> & NativeType<R>> 
 	List<Tensor<T>> run(List<Tensor<R>> inputTensors) throws RunModelException {
+		createCustomDescriptor(inputTensors);
 		return super.run(checkInputTensors(inputTensors));
 	}
 
 	public <T extends RealType<T> & NativeType<T>, R extends RealType<R> & NativeType<R>> 
 	void run(List<Tensor<T>> inputTensors, List<Tensor<R>> outputTensors) throws RunModelException {
+		createCustomDescriptor(inputTensors);
 		super.run(checkInputTensors(inputTensors), checkOutputTensors(outputTensors));
 	}
 	
@@ -275,8 +315,18 @@ public class Cellpose extends BioimageIoModelPytorchProtected {
 	 */
 	public static Cellpose init(String weightsPath) throws IOException {
 		if (!(new File(weightsPath).isFile()))
-			throw new IllegalArgumentException("The path provided does not correspond to an existing file: " + weightsPath);
-		return new Cellpose(null, null, weightsPath, null, null);
+			throw new IllegalArgumentException("The path provided does not correspond to an existing file: " + weightsPath);		        
+        Cellpose cellpose = new Cellpose(null, null, weightsPath, null, null);
+		StringBuilder content = new StringBuilder();
+        try (BufferedReader reader = new BufferedReader(new FileReader(new File(RDF_URL.toURI())))) {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                content.append(line).append(System.lineSeparator());
+            }
+            cellpose.rdfString = line;
+        } catch (IOException | URISyntaxException e) {
+        }
+		return cellpose;
 	}
 	
 	/**
@@ -480,12 +530,17 @@ public class Cellpose extends BioimageIoModelPytorchProtected {
 	
 	public static <T extends RealType<T> & NativeType<T>>
 	void main(String[] args) throws IOException, InterruptedException, ExecutionException, LoadModelException, RunModelException {
-		Cellpose model = Cellpose.fromPretained("cyto3", false);
+		Cellpose model = Cellpose.fromPretained("cyto2", false);
 		model.loadModel();
-		ArrayImg<FloatType, FloatArray> rai = ArrayImgs.floats(new long[] {512, 512, 1});
+		ArrayImg<FloatType, FloatArray> rai = ArrayImgs.floats(new long[] {512, 512, 3});
 		List<RandomAccessibleInterval<FloatType>> rais = new ArrayList<RandomAccessibleInterval<FloatType>>();
 		rais.add(rai);
+		long tt = System.currentTimeMillis();
 		List<RandomAccessibleInterval<T>> res = model.inference(rais);
+		System.out.println(System.currentTimeMillis() - tt);
+		tt = System.currentTimeMillis();
+		List<RandomAccessibleInterval<T>> rees = model.inference(rais);
+		System.out.println(System.currentTimeMillis() - tt);
 		model.close();
 		System.out.println(false);
 	}

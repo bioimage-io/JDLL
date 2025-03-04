@@ -9,7 +9,7 @@ config:
   bioimageio:
     thumbnails: {cover.png: cover.thumbnail.png}
 covers: [cover.png]
-description: cellpose %s. Generalist algorithm for cellular segmentation.
+description: cellpose, a eneralist algorithm for cellular segmentation.
 documentation: doc.md
 format_version: 0.5.3
 id: jdll-cellpose
@@ -17,7 +17,8 @@ inputs:
 - axes:
   - {id: x, size: -1, type: space}
   - {id: y, size: -1, type: space}
-  - {id: c, size: -1, type: channel}
+  - channel_names: [%s]
+    type: channel
   id: input
   test_tensor: null
 license: CC-BY-NC-4.0
