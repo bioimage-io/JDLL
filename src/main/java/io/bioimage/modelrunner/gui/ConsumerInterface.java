@@ -1,5 +1,9 @@
 package io.bioimage.modelrunner.gui;
 
+import java.util.List;
+
+import javax.swing.JComponent;
+
 import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.type.NativeType;
 import net.imglib2.type.numeric.RealType;
@@ -10,6 +14,8 @@ import net.imglib2.type.numeric.RealType;
  * @author Carlos Garcia
  */
 public abstract class ConsumerInterface {
+	
+	protected List<String> varNames;
 
 	
 	public interface ConsumerCallback { 
@@ -20,12 +26,18 @@ public abstract class ConsumerInterface {
 	
 	protected ConsumerCallback callback;
 	
+	public abstract void setListenersForComponents(List<JComponent> components);
+	
 	public abstract Object getFocusedImage();
 
 	public abstract < T extends RealType< T > & NativeType< T > > RandomAccessibleInterval<T> getFocusedImageAsRai();
 	
 	public abstract < T extends RealType< T > & NativeType< T > > 
 	void display(RandomAccessibleInterval<T> rai, String axes, String name);
+	
+	public void setVariableNames(List<String> varNames) {
+		this.varNames = varNames;
+	}
 	
 	public void setCallback(ConsumerCallback callback) {
 		this.callback = callback;
