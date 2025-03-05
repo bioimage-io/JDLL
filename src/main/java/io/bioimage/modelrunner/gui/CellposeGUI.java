@@ -5,7 +5,11 @@ import javax.swing.border.EmptyBorder;
 import javax.swing.event.PopupMenuEvent;
 import javax.swing.event.PopupMenuListener;
 
+import io.bioimage.modelrunner.bioimageio.BioimageioRepo;
+import io.bioimage.modelrunner.bioimageio.description.ModelDescriptor;
+import io.bioimage.modelrunner.exceptions.LoadModelException;
 import io.bioimage.modelrunner.exceptions.RunModelException;
+import io.bioimage.modelrunner.gui.workers.InstallEnvWorker;
 import io.bioimage.modelrunner.model.special.cellpose.Cellpose;
 import io.bioimage.modelrunner.tensor.Tensor;
 import net.imglib2.RandomAccessibleInterval;
@@ -18,16 +22,21 @@ import net.imglib2.view.Views;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.io.File;
 import java.io.IOException;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutionException;
 
 public class CellposeGUI extends JPanel implements ActionListener {
 
     private static final long serialVersionUID = 5381352117710530216L;
     
     private final ConsumerInterface consumer;
+    private String whichLoaded;
     private Cellpose model;
     
 	private JComboBox<String> modelComboBox;
@@ -173,29 +182,51 @@ public class CellposeGUI extends JPanel implements ActionListener {
         });
     }
     
+    Thread workerThread;
+    
     @Override
     public void actionPerformed(ActionEvent e) {
     	if (e.getSource() == browseButton) {
     		browseFiles();
     	} else if (e.getSource() == this.runButton) {
-    		try {
-				runCellpose();
-			} catch (IOException | RunModelException e1) {
-				e1.printStackTrace();
-			}
+    		workerThread = new Thread(() -> {
+        		try {
+    				runCellpose();
+    			} catch (IOException | RunModelException | LoadModelException e1) {
+    				e1.printStackTrace();
+    			}
+    		});
+    		workerThread.start();
     	} else if (e.getSource() == this.installButton) {
-    		installCellpose();
+    		workerThread = new Thread(() -> {
+        		installCellpose();
+    		});
+    		workerThread.start();
+    	} else if (e.getSource() == this.cancelButton) {
+    		cancel();
     	}
     }
     
-    private < T extends RealType< T > & NativeType< T > > void runCellpose() throws IOException, RunModelException {
+    private void cancel() {
+    	if (workerThread != null && workerThread.isAlive())
+    		workerThread.interrupt();
+    	if (model != null)
+    		model.close();
+    }
+    
+    private < T extends RealType< T > & NativeType< T > > void runCellpose() throws IOException, RunModelException, LoadModelException {
     	installCellpose();
     	RandomAccessibleInterval<T> rai = consumer.getFocusedImageAsRai();
     	String modelPath = (String) this.modelComboBox.getSelectedItem();
     	if (modelPath.equals(CUSOTM_STR))
     		modelPath = this.customModelPathField.getText();
-    	if (model == null || !model.isLoaded())
+    	if (whichLoaded != null && !whichLoaded.equals(modelPath))
+    		model.close();
+    	if (model == null || !model.isLoaded()) {
     		model = Cellpose.init(modelPath);
+    		model.loadModel();
+    	}
+    	whichLoaded = modelPath;
     	if (rai.dimensionsAsLongArray().length == 4) {
     		runCellposeOnFramesStack(rai);
     	} else {
@@ -237,6 +268,62 @@ public class CellposeGUI extends JPanel implements ActionListener {
     private void installCellpose() {
     	if (Cellpose.isInstalled())
     		return;
+    	CountDownLatch latch = new CountDownLatch(2);
+		Thread dwnlThread = new Thread(() -> {
+			try {
+				Cellpose.donwloadPretrained(whichLoaded, CUSOTM_STR, null);
+			} catch (IOException | InterruptedException | ExecutionException e) {
+				e.printStackTrace();
+			}
+			latch.countDown();
+			checkModelInstallationFinished(latch);
+		});
+		dwnlThread.start();
+    	
+    }public static boolean askQuestion(String title, String message) {
+        // Show the Yes/No dialog
+        int response = JOptionPane.showConfirmDialog(null, message, title, JOptionPane.YES_NO_OPTION);
+        return response == JOptionPane.YES_OPTION ? true : false;
+    }
+    
+    private void installEnv(CountDownLatch latch) {
+    	String msg = "Installation of Python environments might take up to 20 minutes.";
+    	String question = "Install Python for Cellpose";
+    	if (Cellpose.isInstalled() || !askQuestion(question, msg)) {
+			latch.countDown();
+			checkModelInstallationFinished(latch);
+    		return;
+    	}
+		JDialog installerFrame = new JDialog();
+		installerFrame.setTitle("Installing Cellpose");
+		installerFrame.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
+    	Runnable callback = () -> {
+    		checkModelInstallationFinished(latch);
+    		if (installerFrame.isVisible())
+    			installerFrame.dispose();
+    	};
+    	InstallEnvWorker worker = new InstallEnvWorker("Cellpose", latch, callback);
+		EnvironmentInstaller installerPanel = EnvironmentInstaller.create(worker);
+    	worker.execute();
+		installerPanel.addToFrame(installerFrame);
+    	installerFrame.setSize(600, 300);
+    }
+    
+    private void checkModelInstallationFinished(CountDownLatch latch) {
+    	if (latch.getCount() == 0)
+    		startModelInstallation(false);
+    }
+    
+    private void startModelInstallation(boolean isStarting) {
+    	SwingUtilities.invokeLater(() -> {
+        	this.runButton.setEnabled(!isStarting);
+        	this.installButton.setEnabled(!isStarting);
+        	this.modelComboBox.setEnabled(!isStarting);
+        	if (isStarting)
+        		this.contentPanel.setProgressLabelText("Installing ...");
+        	else
+		    	this.contentPanel.setProgressLabelText("");
+    	});
     }
     
     private void browseFiles() {
@@ -246,5 +333,27 @@ public class CellposeGUI extends JPanel implements ActionListener {
         if (option == JFileChooser.APPROVE_OPTION) {
             customModelPathField.setText(fileChooser.getSelectedFile().getAbsolutePath());
         }
+    }
+    
+    private void progressBarLoad(boolean enabled) {
+    	bar.setIndeterminate(enabled);
+    	setStringToBar("Loading model", enabled);
+    }
+    
+    private void progressBarRun(boolean enabled) {
+    	bar.setIndeterminate(enabled);
+    	setStringToBar("Running model", enabled);
+    }
+    
+    private void progressBarInstallCellpose(boolean enabled) {
+    	bar.setIndeterminate(enabled);
+    	setStringToBar("Installing Cellpose env", enabled);
+    }
+    
+    private void setStringToBar(String str, boolean enabled) {
+    	if (enabled)
+    		bar.setString("Loading model");
+    	else
+    		bar.setString(null);
     }
 }
