@@ -5,8 +5,6 @@ import javax.swing.border.EmptyBorder;
 import javax.swing.event.PopupMenuEvent;
 import javax.swing.event.PopupMenuListener;
 
-import io.bioimage.modelrunner.bioimageio.BioimageioRepo;
-import io.bioimage.modelrunner.bioimageio.description.ModelDescriptor;
 import io.bioimage.modelrunner.exceptions.LoadModelException;
 import io.bioimage.modelrunner.exceptions.RunModelException;
 import io.bioimage.modelrunner.gui.workers.InstallEnvWorker;
@@ -19,17 +17,18 @@ import net.imglib2.type.numeric.RealType;
 import net.imglib2.util.Cast;
 import net.imglib2.view.Views;
 
-import java.awt.*;
+import java.awt.BorderLayout;
+import java.awt.FlowLayout;
+import java.awt.GridLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.io.File;
 import java.io.IOException;
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
+import java.util.function.Consumer;
 
 public class CellposeGUI extends JPanel implements ActionListener {
 
@@ -192,9 +191,12 @@ public class CellposeGUI extends JPanel implements ActionListener {
     		workerThread = new Thread(() -> {
         		try {
     				runCellpose();
+    				SwingUtilities.invokeLater(() -> this.bar.setString(null));
     			} catch (IOException | RunModelException | LoadModelException e1) {
     				e1.printStackTrace();
+    				SwingUtilities.invokeLater(() -> this.bar.setString("Error running the model"));
     			}
+        		SwingUtilities.invokeLater(() -> this.bar.setIndeterminate(false));
     		});
     		workerThread.start();
     	} else if (e.getSource() == this.installButton) {
@@ -216,6 +218,10 @@ public class CellposeGUI extends JPanel implements ActionListener {
     
     private < T extends RealType< T > & NativeType< T > > void runCellpose() throws IOException, RunModelException, LoadModelException {
     	installCellpose();
+    	SwingUtilities.invokeLater(() ->{
+    		this.bar.setIndeterminate(true);
+    		this.bar.setString("Loading model");
+    	});
     	RandomAccessibleInterval<T> rai = consumer.getFocusedImageAsRai();
     	String modelPath = (String) this.modelComboBox.getSelectedItem();
     	if (modelPath.equals(CUSOTM_STR))
@@ -227,6 +233,9 @@ public class CellposeGUI extends JPanel implements ActionListener {
     		model.loadModel();
     	}
     	whichLoaded = modelPath;
+    	SwingUtilities.invokeLater(() ->{
+    		this.bar.setString("Running the model");
+    	});
     	if (rai.dimensionsAsLongArray().length == 4) {
     		runCellposeOnFramesStack(rai);
     	} else {
@@ -249,7 +258,7 @@ public class CellposeGUI extends JPanel implements ActionListener {
 	    	
 	    	model.run(inList, outputList);
 		}
-    	consumer.display(outMaskRai, "xyt", "mask");
+    	consumer.display(outMaskRai, "xyb", "mask");
     	if (!check.isSelected())
     		return;
     }
@@ -266,12 +275,38 @@ public class CellposeGUI extends JPanel implements ActionListener {
     }
     
     private void installCellpose() {
-    	if (Cellpose.isInstalled())
+    	boolean envInstalled = Cellpose.isInstalled();
+    	boolean wwInstalled = weightsInstalled();
+    	if (envInstalled && wwInstalled)
     		return;
-    	CountDownLatch latch = new CountDownLatch(2);
+    	CountDownLatch latch = !wwInstalled && !envInstalled ? new CountDownLatch(2) : new CountDownLatch(1);
+    	if (!wwInstalled)
+    		installModelWeights(latch);
+    	if (!envInstalled)
+    		installEnv(latch);
+    }
+    
+    private boolean weightsInstalled() {
+    	String model = (String) this.modelComboBox.getSelectedItem();
+    	if (model.equals(CUSOTM_STR))
+    		return true;
+    	try {
+			Cellpose.fromPretained(model, consumer.getModelsDir(), false);
+		} catch (IOException | InterruptedException | ExecutionException e) {
+			return false;
+		}
+    	return true;
+    }
+    
+    private void installModelWeights(CountDownLatch latch) {
+    	Consumer<Double> cons = (d) -> {
+    		d = Math.round(d * 1000) / 10.0d;
+    		this.bar.setValue((int) Math.floor(d));
+    		this.bar.setString(d + "% of weights");
+    	};
 		Thread dwnlThread = new Thread(() -> {
 			try {
-				Cellpose.donwloadPretrained(whichLoaded, CUSOTM_STR, null);
+				Cellpose.donwloadPretrained((String) modelComboBox.getSelectedItem(), this.consumer.getModelsDir(), cons);
 			} catch (IOException | InterruptedException | ExecutionException e) {
 				e.printStackTrace();
 			}
@@ -279,17 +314,13 @@ public class CellposeGUI extends JPanel implements ActionListener {
 			checkModelInstallationFinished(latch);
 		});
 		dwnlThread.start();
-    	
-    }public static boolean askQuestion(String title, String message) {
-        // Show the Yes/No dialog
-        int response = JOptionPane.showConfirmDialog(null, message, title, JOptionPane.YES_NO_OPTION);
-        return response == JOptionPane.YES_OPTION ? true : false;
     }
     
     private void installEnv(CountDownLatch latch) {
     	String msg = "Installation of Python environments might take up to 20 minutes.";
     	String question = "Install Python for Cellpose";
-    	if (Cellpose.isInstalled() || !askQuestion(question, msg)) {
+    	if (Cellpose.isInstalled() || 
+    			JOptionPane.showConfirmDialog(null, msg, question, JOptionPane.YES_NO_OPTION) != JOptionPane.YES_OPTION) {
 			latch.countDown();
 			checkModelInstallationFinished(latch);
     		return;
@@ -320,9 +351,11 @@ public class CellposeGUI extends JPanel implements ActionListener {
         	this.installButton.setEnabled(!isStarting);
         	this.modelComboBox.setEnabled(!isStarting);
         	if (isStarting)
-        		this.contentPanel.setProgressLabelText("Installing ...");
-        	else
-		    	this.contentPanel.setProgressLabelText("");
+        		this.bar.setString("Installing...");
+        	else {
+		    	this.bar.setString("");
+		    	this.bar.setValue(0);
+        	}
     	});
     }
     
@@ -333,27 +366,5 @@ public class CellposeGUI extends JPanel implements ActionListener {
         if (option == JFileChooser.APPROVE_OPTION) {
             customModelPathField.setText(fileChooser.getSelectedFile().getAbsolutePath());
         }
-    }
-    
-    private void progressBarLoad(boolean enabled) {
-    	bar.setIndeterminate(enabled);
-    	setStringToBar("Loading model", enabled);
-    }
-    
-    private void progressBarRun(boolean enabled) {
-    	bar.setIndeterminate(enabled);
-    	setStringToBar("Running model", enabled);
-    }
-    
-    private void progressBarInstallCellpose(boolean enabled) {
-    	bar.setIndeterminate(enabled);
-    	setStringToBar("Installing Cellpose env", enabled);
-    }
-    
-    private void setStringToBar(String str, boolean enabled) {
-    	if (enabled)
-    		bar.setString("Loading model");
-    	else
-    		bar.setString(null);
     }
 }

@@ -16,15 +16,8 @@ public abstract class ConsumerInterface {
 	protected List<String> varNames;
 	
 	protected List<JComponent> componentsGui;
-
 	
-	public interface ConsumerCallback { 
-		
-		void validPromptChosen(boolean isValid);
-		
-		}
-	
-	protected ConsumerCallback callback;
+	public abstract String getModelsDir();
 	
 	public abstract void setComponents(List<JComponent> components);
 	
@@ -49,9 +42,5 @@ public abstract class ConsumerInterface {
 	
 	public void setVariableNames(List<String> varNames) {
 		this.varNames = varNames;
-	}
-	
-	public void setCallback(ConsumerCallback callback) {
-		this.callback = callback;
 	}
 }
