@@ -12,6 +12,7 @@ import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.img.array.ArrayImgs;
 import net.imglib2.type.NativeType;
 import net.imglib2.type.numeric.RealType;
+import net.imglib2.util.Cast;
 import net.imglib2.view.Views;
 
 import java.awt.*;
@@ -41,10 +42,6 @@ public class CellposeGUI extends JPanel implements ActionListener {
     private final String CUSOTM_STR = "your custom model";
 
     public CellposeGUI(ConsumerInterface consumer) {
-    	this(consumer, null);
-    }
-
-    public CellposeGUI(ConsumerInterface consumer, Integer nChannels) {
         // Set a modern-looking border layout with padding
     	this.consumer = consumer;
         setLayout(new BorderLayout());
@@ -56,7 +53,7 @@ public class CellposeGUI extends JPanel implements ActionListener {
         JPanel modelPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
         modelPanel.add(new JLabel("Select a model:"));
         String[] models = {"cyto3", "cyto2", "cyto", "nuclei", CUSOTM_STR};
-        modelComboBox = new JComboBox<>(models);
+        modelComboBox = new JComboBox<String>(models);
         modelPanel.add(modelComboBox);
 
         // Panel for custom model file path
@@ -81,13 +78,13 @@ public class CellposeGUI extends JPanel implements ActionListener {
         // Channel selection
         parametersPanel.add(new JLabel("Channel:"));
         String[] channels;
-        if (nChannels != null && nChannels == 1)
+        if (consumer.getFocusedImageChannels() != null && consumer.getFocusedImageChannels() == 1)
         	channels = new String[] {"[0,0]"};
-        else if (nChannels != null && nChannels == 3)
+        else if (consumer.getFocusedImageChannels() != null && consumer.getFocusedImageChannels() == 3)
         	channels = new String[] {"[2,3]", "[2,1]"};
         else
         	channels = new String[] {"[0,0]", "[2,3]", "[2,1]"};
-        channelComboBox = new JComboBox<>(channels);
+        channelComboBox = new JComboBox<String>(channels);
         parametersPanel.add(channelComboBox);
         check = new JCheckBox("Display all outputs");
         check.setSelected(false);
@@ -143,6 +140,11 @@ public class CellposeGUI extends JPanel implements ActionListener {
 
         // You can add additional listeners for the Cancel, Install, and Run buttons here.
     }
+    
+    public void close() {
+    	if (model != null && model.isLoaded())
+    		model.close();
+    }
 
     // For demonstration purposes: a main method to show the UI in a JFrame.
     public static void main(String[] args) {
@@ -191,7 +193,7 @@ public class CellposeGUI extends JPanel implements ActionListener {
     private <T extends RealType<T> & NativeType<T>, R extends RealType<R> & NativeType<R>>
     void runCellposeOnFramesStack(RandomAccessibleInterval<R> rai) throws RunModelException {
     	long[] dims = rai.dimensionsAsLongArray();
-		RandomAccessibleInterval<T> outMaskRai = (RandomAccessibleInterval<T>) ArrayImgs.floats(new long[] {dims[0], dims[1], dims[3]});
+		RandomAccessibleInterval<T> outMaskRai = Cast.unchecked(ArrayImgs.floats(new long[] {dims[0], dims[1], dims[3]}));
 		for (int i = 0; i < rai.dimensionsAsLongArray()[3]; i ++) {
 	    	List<Tensor<R>> inList = new ArrayList<Tensor<R>>();
 	    	Tensor<R> inIm = Tensor.build("input", "xyc", Views.hyperSlice(rai, 3, i));

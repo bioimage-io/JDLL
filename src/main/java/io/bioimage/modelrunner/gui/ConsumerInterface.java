@@ -9,13 +9,13 @@ import net.imglib2.type.NativeType;
 import net.imglib2.type.numeric.RealType;
 
 /**
- * Interface to be implemented by the imaging software that wants to use the default SAMJ UI.
- * Provides a list of the images open to the SAMJ GUI
  * @author Carlos Garcia
  */
 public abstract class ConsumerInterface {
 	
 	protected List<String> varNames;
+	
+	protected List<JComponent> componentsGui;
 
 	
 	public interface ConsumerCallback { 
@@ -28,7 +28,19 @@ public abstract class ConsumerInterface {
 	
 	public abstract void setListenersForComponents(List<JComponent> components);
 	
+	public abstract void setVarNames(List<String> componentNames);
+	
 	public abstract Object getFocusedImage();
+	
+	public abstract Integer getFocusedImageChannels();
+	
+	public abstract Integer getFocusedImageSlices();
+	
+	public abstract Integer getFocusedImageFrames();
+	
+	public abstract Integer getFocusedImageWidth();
+	
+	public abstract Integer getFocusedImageHeight();
 
 	public abstract < T extends RealType< T > & NativeType< T > > RandomAccessibleInterval<T> getFocusedImageAsRai();
 	
