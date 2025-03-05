@@ -26,7 +26,7 @@ public abstract class ConsumerInterface {
 	
 	protected ConsumerCallback callback;
 	
-	public abstract void setListenersForComponents(List<JComponent> components);
+	public abstract void setComponents(List<JComponent> components);
 	
 	public abstract void setVarNames(List<String> componentNames);
 	

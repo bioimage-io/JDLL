@@ -20,6 +20,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 public class CellposeGUI extends JPanel implements ActionListener {
@@ -40,10 +41,14 @@ public class CellposeGUI extends JPanel implements ActionListener {
     private JButton cancelButton, installButton, runButton;
     
     private final String CUSOTM_STR = "your custom model";
+    private static List<String> VAR_NAMES = Arrays.asList(new String[] {
+    		"Select a model:", "Custom Model Path:", "Diameter:", "Channel:", "Display all outputs"
+    });
 
     public CellposeGUI(ConsumerInterface consumer) {
         // Set a modern-looking border layout with padding
     	this.consumer = consumer;
+    	List<JComponent> componentList = new ArrayList<JComponent>();
         setLayout(new BorderLayout());
         JPanel mainPanel = new JPanel();
         mainPanel.setLayout(new BoxLayout(mainPanel, BoxLayout.Y_AXIS));
@@ -51,14 +56,14 @@ public class CellposeGUI extends JPanel implements ActionListener {
 
         // --- Model Selection Panel ---
         JPanel modelPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
-        modelPanel.add(new JLabel("Select a model:"));
+        modelPanel.add(new JLabel(VAR_NAMES.get(0)));
         String[] models = {"cyto3", "cyto2", "cyto", "nuclei", CUSOTM_STR};
         modelComboBox = new JComboBox<String>(models);
         modelPanel.add(modelComboBox);
 
         // Panel for custom model file path
         JPanel customModelPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
-        customLabel = new JLabel("Custom Model Path:");
+        customLabel = new JLabel(VAR_NAMES.get(1));
         customLabel.setEnabled(false);
         customModelPanel.add(customLabel);
         customModelPathField = new JTextField(20);
@@ -72,11 +77,11 @@ public class CellposeGUI extends JPanel implements ActionListener {
         JPanel parametersPanel = new JPanel(new GridLayout(3, 2, 10, 10));
         parametersPanel.setBorder(BorderFactory.createTitledBorder("Optional Parameters"));
         // Diameter input
-        parametersPanel.add(new JLabel("Diameter:"));
+        parametersPanel.add(new JLabel(VAR_NAMES.get(2)));
         diameterField = new JTextField();
         parametersPanel.add(diameterField);
         // Channel selection
-        parametersPanel.add(new JLabel("Channel:"));
+        parametersPanel.add(new JLabel(VAR_NAMES.get(3)));
         String[] channels;
         if (consumer.getFocusedImageChannels() != null && consumer.getFocusedImageChannels() == 1)
         	channels = new String[] {"[0,0]"};
@@ -86,7 +91,7 @@ public class CellposeGUI extends JPanel implements ActionListener {
         	channels = new String[] {"[0,0]", "[2,3]", "[2,1]"};
         channelComboBox = new JComboBox<String>(channels);
         parametersPanel.add(channelComboBox);
-        check = new JCheckBox("Display all outputs");
+        check = new JCheckBox(VAR_NAMES.get(4));
         check.setSelected(false);
         parametersPanel.add(check);
 
@@ -120,6 +125,14 @@ public class CellposeGUI extends JPanel implements ActionListener {
 
         // Add main panel to the current panel
         add(mainPanel, BorderLayout.CENTER);
+
+        this.consumer.setVariableNames(VAR_NAMES);
+        componentList.add(this.modelComboBox);
+        componentList.add(this.customModelPathField);
+        componentList.add(this.diameterField);
+        componentList.add(this.channelComboBox);
+        componentList.add(this.check);
+        this.consumer.setComponents(componentList);
 
         // Enable when custom selected
         modelComboBox.addPopupMenuListener(new PopupMenuListener() {
