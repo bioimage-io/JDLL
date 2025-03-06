@@ -18,6 +18,7 @@ import net.imglib2.util.Cast;
 import net.imglib2.view.Views;
 
 import java.awt.BorderLayout;
+import java.awt.Color;
 import java.awt.FlowLayout;
 import java.awt.GridLayout;
 import java.awt.event.ActionEvent;
@@ -118,6 +119,8 @@ public class CellposeGUI extends JPanel implements ActionListener {
         buttonPanel.add(runButton);
         
         bar = new JProgressBar();
+		bar.setStringPainted(true);
+		bar.setString("");
         progressPanel.add(bar, BorderLayout.CENTER);
         footerPanel.add(progressPanel);
         footerPanel.add(buttonPanel);
@@ -194,7 +197,7 @@ public class CellposeGUI extends JPanel implements ActionListener {
     		workerThread = new Thread(() -> {
         		try {
     				runCellpose();
-    				SwingUtilities.invokeLater(() -> this.bar.setString(null));
+    				SwingUtilities.invokeLater(() -> this.bar.setString(""));
     			} catch (IOException | RunModelException | LoadModelException e1) {
     				e1.printStackTrace();
     				SwingUtilities.invokeLater(() -> this.bar.setString("Error running the model"));
@@ -282,7 +285,7 @@ public class CellposeGUI extends JPanel implements ActionListener {
     	boolean envInstalled = Cellpose.isInstalled(this.consumer.getModelsDir());
     	boolean wwInstalled = weightsInstalled();
     	if (envInstalled && wwInstalled) {
-        	startModelInstallation(true);
+        	startModelInstallation(false);
     		return;
     	}
     	CountDownLatch latch = !wwInstalled && !envInstalled ? new CountDownLatch(2) : new CountDownLatch(1);
@@ -342,7 +345,17 @@ public class CellposeGUI extends JPanel implements ActionListener {
     			installerFrame.dispose();
     	};
     	InstallEnvWorker worker = new InstallEnvWorker("Cellpose", latch, callback);
+    	worker.setConsumer(null);
 		EnvironmentInstaller installerPanel = EnvironmentInstaller.create(worker);
+		Consumer<String> cons = (s) ->{
+			installerPanel.updateText(s, Color.black);
+			if (latch.getCount() == 1 
+					&& (!bar.isIndeterminate() || (bar.isIndeterminate() && !bar.getString().equals("Installing Python")))) {
+				bar.setIndeterminate(true);
+				bar.setString("Installing Python");
+			}
+		};
+		worker.setConsumer(cons);
     	worker.execute();
 		installerPanel.addToFrame(installerFrame);
     	installerFrame.setSize(600, 300);
@@ -365,8 +378,9 @@ public class CellposeGUI extends JPanel implements ActionListener {
         		this.bar.setString("Installing...");
         		this.bar.setIndeterminate(true);
         	} else {
-		    	this.bar.setString("");
+        		this.bar.setIndeterminate(false);
 		    	this.bar.setValue(0);
+		    	this.bar.setString("");
         	}
     	});
     }

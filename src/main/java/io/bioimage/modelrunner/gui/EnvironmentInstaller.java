@@ -70,7 +70,6 @@ public class EnvironmentInstaller extends JPanel {
         
         consumer = (str) -> {
         	updateText(str, Color.BLACK);
-        	//System.out.println(str);
         };
         worker.setConsumer(consumer);
         setLayout(new BorderLayout());
@@ -147,7 +146,7 @@ public class EnvironmentInstaller extends JPanel {
     }
 
 	// Method to append text with a specific color to the JEditorPane
-    private void updateText(String text, Color color) {
+    public void updateText(String text, Color color) {
     	text = text.trim();
     	if (text.equals("") || text.equals(null))
     		updateWait();
