@@ -420,17 +420,30 @@ public class Cellpose extends BioimageIoModelPytorchProtected {
 		return Cellpose.init(descriptor);
 	}
 	
+	public static String findPretrainedModelInstalled(String modelName, String modelsDir) {
+		if (modelName.endsWith(".pth"))
+			modelName = modelName.substring(0, modelName.length() - 4);
+		else if (modelName.endsWith(".pt"))
+				modelName = modelName.substring(0, modelName.length() - 3);
+		if (ALIAS.keySet().contains(modelName) || MODEL_SIZE.containsKey(modelName)) {
+			 for (String dir : findDirectoriesWithPattern(modelsDir, modelName)) {
+				 String path = lookForModelInDir(modelName, dir);
+				 if (path != null)
+					 return path;
+			 }
+		 } else {
+			 throw new IllegalArgumentException("Only supported pretrained models are: " + ALIAS.keySet());
+		 }
+		 return null;
+	}
+	
 	private static String fileIsCellpose(String pretrainedModel, String modelsDir) {
 		File pretrainedFile = new File(pretrainedModel);
 		 if (pretrainedFile.isFile() && isCellposeFile(pretrainedFile))
 			 return pretrainedFile.getAbsolutePath();
-		 if (ALIAS.keySet().contains(pretrainedModel) || MODEL_SIZE.containsKey(pretrainedModel)) {
-			 for (String dir : findDirectoriesWithPattern(modelsDir, pretrainedModel)) {
-				 String path = lookForModelInDir(pretrainedModel, dir);
-				 if (path != null)
-					 return path;
-			 }
-		 }
+		 String path = findPretrainedModelInstalled(pretrainedModel, modelsDir);
+		 if (path != null)
+			 return path;
 		 return lookForModelInDir(pretrainedModel, modelsDir);
 	}
 	

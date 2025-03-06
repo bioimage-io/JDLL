@@ -141,6 +141,9 @@ public class CellposeGUI extends JPanel implements ActionListener {
         componentList.add(this.channelComboBox);
         componentList.add(this.check);
         this.consumer.setComponents(componentList);
+        this.installButton.addActionListener(this);
+        this.runButton.addActionListener(this);
+        this.cancelButton.addActionListener(this);
 
         // Enable when custom selected
         modelComboBox.addPopupMenuListener(new PopupMenuListener() {
@@ -275,10 +278,13 @@ public class CellposeGUI extends JPanel implements ActionListener {
     }
     
     private void installCellpose() {
-    	boolean envInstalled = Cellpose.isInstalled();
+    	startModelInstallation(true);
+    	boolean envInstalled = Cellpose.isInstalled(this.consumer.getModelsDir());
     	boolean wwInstalled = weightsInstalled();
-    	if (envInstalled && wwInstalled)
+    	if (envInstalled && wwInstalled) {
+        	startModelInstallation(true);
     		return;
+    	}
     	CountDownLatch latch = !wwInstalled && !envInstalled ? new CountDownLatch(2) : new CountDownLatch(1);
     	if (!wwInstalled)
     		installModelWeights(latch);
@@ -291,8 +297,10 @@ public class CellposeGUI extends JPanel implements ActionListener {
     	if (model.equals(CUSOTM_STR))
     		return true;
     	try {
-			Cellpose.fromPretained(model, consumer.getModelsDir(), false);
-		} catch (IOException | InterruptedException | ExecutionException e) {
+			String path = Cellpose.findPretrainedModelInstalled(model, consumer.getModelsDir());
+			if (path == null)
+				return false;
+		} catch (Exception e) {
 			return false;
 		}
     	return true;
@@ -350,9 +358,13 @@ public class CellposeGUI extends JPanel implements ActionListener {
         	this.runButton.setEnabled(!isStarting);
         	this.installButton.setEnabled(!isStarting);
         	this.modelComboBox.setEnabled(!isStarting);
-        	if (isStarting)
+        	this.diameterField.setEnabled(!isStarting);
+        	this.channelComboBox.setEnabled(!isStarting);
+        	this.check.setEnabled(!isStarting);
+        	if (isStarting) {
         		this.bar.setString("Installing...");
-        	else {
+        		this.bar.setIndeterminate(true);
+        	} else {
 		    	this.bar.setString("");
 		    	this.bar.setValue(0);
         	}

@@ -684,7 +684,6 @@ public class DLModelPytorchProtected extends BaseModel {
 	 * @return true if the full python environment is installed or not
 	 */
 	public static boolean isInstalled() {
-		// TODO
 		return isInstalled(null);
 	}
 	
@@ -693,8 +692,17 @@ public class DLModelPytorchProtected extends BaseModel {
 	 * @return true if the full python environment is installed or not
 	 */
 	public static boolean isInstalled(String envPath) {
-		// TODO
-		return false;
+		
+		Mamba mamba = new Mamba(INSTALLATION_DIR);
+		try {
+			 boolean inst = mamba.checkAllDependenciesInEnv(COMMON_PYTORCH_ENV_NAME, BIAPY_CONDA_DEPS);
+			 if (!inst) return inst;
+			inst = mamba.checkAllDependenciesInEnv(COMMON_PYTORCH_ENV_NAME, BIAPY_PIP_DEPS);
+			 if (!inst) return inst;
+		} catch (MambaInstallException e) {
+			return false;
+		}
+		return true;
 	}
 	
 	/**
