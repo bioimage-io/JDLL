@@ -9,6 +9,7 @@ import java.awt.event.MouseEvent;
 import java.awt.event.MouseMotionAdapter;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
+import java.lang.reflect.InvocationTargetException;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.util.function.Consumer;
@@ -162,46 +163,53 @@ public class EnvironmentInstaller extends JPanel {
         
         // Create an HTML snippet that uses the pre-defined class and overrides the color.
         String htmlSnippet = "<p class='logline' style='color:" + hexColor + ";'>" + text + "</p>";
-        String fullText = htmlPane.getText();
-        int containerStart = fullText.indexOf("</h1>" + System.lineSeparator());
-        int containerEnd   = fullText.indexOf("</div>", containerStart);
+    	String[] fullText = new String[1];
+    	fullText[0] = "";
+        try {
+			SwingUtilities.invokeAndWait(() -> fullText[0] = htmlPane.getText());
+		} catch (InvocationTargetException | InterruptedException e) {
+		}
+        int containerStart = fullText[0].indexOf("</h1>" + System.lineSeparator());
+        int containerEnd   = fullText[0].indexOf("</div>", containerStart);
         if (containerStart < 0 || containerEnd < 0) {
             return;
         }
-        String nText = fullText.substring(0, containerEnd) + htmlSnippet + fullText.substring(containerEnd, fullText.length());
-        htmlPane.setText(nText);
-        
-        
-        // Optionally, scroll the pane to the end.
-        HTMLDocument doc = (HTMLDocument) htmlPane.getDocument();
-        htmlPane.setCaretPosition(doc.getLength());
+        String nText = fullText[0].substring(0, containerEnd) + htmlSnippet + fullText[0].substring(containerEnd, fullText[0].length());
+        SwingUtilities.invokeLater(() -> {
+            htmlPane.setText(nText);
+            HTMLDocument doc = (HTMLDocument) htmlPane.getDocument();
+            htmlPane.setCaretPosition(doc.getLength());
+        });
     }
     
     private void updateWait() {
-    	htmlPane.select(loadingCharInd, loadingCharInd);
-        
-        String fullText = htmlPane.getText();
-        int containerStart = fullText.indexOf("</h1>" + System.lineSeparator());
-        int containerEnd   = fullText.indexOf("</div>", containerStart);
+    	String[] fullText = new String[1];
+    	fullText[0] = "";
+        try {
+			SwingUtilities.invokeAndWait(() -> fullText[0] = htmlPane.getText());
+		} catch (InvocationTargetException | InterruptedException e) {
+		}
+        int containerStart = fullText[0].indexOf("</h1>" + System.lineSeparator());
+        int containerEnd   = fullText[0].indexOf("</div>", containerStart);
         if (containerStart < 0 || containerEnd < 0) {
             return;
         }
         Pattern pattern = Pattern.compile(LOADING_REGEX);
-        Matcher matcher = pattern.matcher(fullText);
+        Matcher matcher = pattern.matcher(fullText[0]);
         int lastMatchStart = -1;
         int lastMatchEnd = -1;
         while (matcher.find()) {
             // Save the position of the captured group for the last match.
             lastMatchStart = matcher.start(1) - "<p class='logline'>".length();
-            lastMatchStart = fullText.substring(0, lastMatchStart).lastIndexOf("<p");
-            lastMatchEnd = fullText.substring(lastMatchStart).indexOf("</p>") + "</p>".length() + lastMatchStart;
+            lastMatchStart = fullText[0].substring(0, lastMatchStart).lastIndexOf("<p");
+            lastMatchEnd = fullText[0].substring(lastMatchStart).indexOf("</p>") + "</p>".length() + lastMatchStart;
         }
         String loadingString = String.format(LOADING_STR, LocalTime.now().format(FORMATTER), getLoadingChar());
-        if (lastMatchEnd == -1 || !fullText.substring(lastMatchEnd, containerEnd).trim().equals("")) {
+        if (lastMatchEnd == -1 || !fullText[0].substring(lastMatchEnd, containerEnd).trim().equals("")) {
         	lastMatchStart = containerEnd;
         	lastMatchEnd = containerEnd;
         }
-        String nText = fullText.substring(0, lastMatchStart) + loadingString + fullText.substring(lastMatchEnd, fullText.length());
+        String nText = fullText[0].substring(0, lastMatchStart) + loadingString + fullText[0].substring(lastMatchEnd, fullText[0].length());
         htmlPane.setText(nText);
 
         HTMLDocument doc = (HTMLDocument) htmlPane.getDocument();

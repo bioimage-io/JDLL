@@ -987,7 +987,7 @@ public class Mamba {
 		if (!containsSpaces || !PlatformDetection.isWindows()) cmd.addAll(argsList);
 		else cmd.add(surroundWithQuotes(argsList));
 
-		final ProcessBuilder builder = getBuilder( true );
+		final ProcessBuilder builder = getBuilder( false );
 		if ( PlatformDetection.isWindows() )
 		{
 			final Map< String, String > envs = builder.environment();
@@ -997,8 +997,9 @@ public class Mamba {
 			envs.put( "Path", Paths.get( envDir, "Library", "Bin" ).toString() + ";" + envs.get( "Path" ) );
 		}
 		// TODO find way to get env vars in micromamba builder.environment().putAll( getEnvironmentVariables( envName ) );
-		if ( builder.command( cmd ).start().waitFor() != 0 )
-			throw new RuntimeException("Error executing the following command: " + builder.command());
+		runPythonIn(builder.command( cmd ), this.consoleConsumer, this.errConsumer);
+		// TODO remove if ( builder.command( cmd ).start().waitFor() != 0 )
+		// TODO remove    throw new RuntimeException("Error executing the following command: " + builder.command());
 	}
 
 	/**
@@ -1050,6 +1051,92 @@ public class Mamba {
 		// TODO find way to get env vars in micromamba builder.environment().putAll( getEnvironmentVariables( envName ) );
 		if ( builder.command( cmd ).start().waitFor() != 0 )
 			throw new RuntimeException("Error executing the following command: " + builder.command());
+	}
+	
+	private static void runPythonIn(ProcessBuilder builder, Consumer<String> consumerOut, Consumer<String> consumerErr) throws RuntimeException, IOException, InterruptedException, MambaInstallException
+	{
+		Thread mainThread = Thread.currentThread();
+		SimpleDateFormat sdf = new SimpleDateFormat("HH:mm:ss");
+		Process process = builder.start();
+		// Use separate threads to read each stream to avoid a deadlock.
+		consumerOut.accept(sdf.format(Calendar.getInstance().getTime()) + " -- STARTING PROCESS: " + builder.command() + System.lineSeparator());
+		long updatePeriod = 300;
+		String[] mambaConsoleOut = new String[] {""};
+		String[] mambaConsoleErr = new String[] {""};
+		Thread outputThread = new Thread(() -> {
+			try (
+			        InputStream inputStream = process.getInputStream();
+			        InputStream errStream = process.getErrorStream();
+					){
+		        byte[] buffer = new byte[1024]; // Buffer size can be adjusted
+		        StringBuilder processBuff = new StringBuilder();
+		        StringBuilder errBuff = new StringBuilder();
+		        String processChunk = "";
+		        String errChunk = "";
+                int newLineIndex;
+		        long t0 = System.currentTimeMillis();
+		        while (process.isAlive() || inputStreamOpen(inputStream)) {
+		        	if (mainThread.isInterrupted() || !mainThread.isAlive()) {
+		        		process.destroyForcibly();
+		        		return;
+		        	}
+		            if (inputStreamOpen(inputStream)) {
+		                processBuff.append(new String(buffer, 0, inputStream.read(buffer)));
+		                while ((newLineIndex = processBuff.indexOf(System.lineSeparator())) != -1) {
+		                	processChunk += sdf.format(Calendar.getInstance().getTime()) + " -- " 
+		                					+ processBuff.substring(0, newLineIndex + 1).trim() + System.lineSeparator();
+		                	processBuff.delete(0, newLineIndex + 1);
+		                }
+		            }
+		            if (inputStreamOpen(errStream)) {
+		                errBuff.append(new String(buffer, 0, errStream.read(buffer)));
+		                while ((newLineIndex = errBuff.indexOf(System.lineSeparator())) != -1) {
+		                	errChunk += ERR_STREAM_UUUID + errBuff.substring(0, newLineIndex + 1).trim() + System.lineSeparator();
+		                	errBuff.delete(0, newLineIndex + 1);
+		                }
+		            }
+	                // Sleep for a bit to avoid busy waiting
+	                Thread.sleep(60);
+	                if (System.currentTimeMillis() - t0 > updatePeriod) {
+	                	consumerOut.accept(processChunk);
+	                	consumerErr.accept(errChunk);
+	                	mambaConsoleOut[0] += processChunk + System.lineSeparator();
+	                	mambaConsoleErr[0] += errChunk + System.lineSeparator();
+						processChunk = "";
+						errChunk = "";
+						t0 = System.currentTimeMillis();
+					}
+		        }
+		        if (inputStreamOpen(inputStream)) {
+	                processBuff.append(new String(buffer, 0, inputStream.read(buffer)));
+                	processChunk += sdf.format(Calendar.getInstance().getTime()) + " -- " + processBuff.toString().trim();
+	            }
+	            if (inputStreamOpen(errStream)) {
+	                errBuff.append(new String(buffer, 0, errStream.read(buffer)));
+	                errChunk += ERR_STREAM_UUUID + errBuff.toString().trim();
+	            }
+	            consumerErr.accept(errChunk);
+	            consumerOut.accept(processChunk + System.lineSeparator() 
+								+ sdf.format(Calendar.getInstance().getTime()) + " -- TERMINATED PROCESS");
+		    } catch (IOException | InterruptedException e) {
+		        e.printStackTrace();
+		    }
+		});
+		// Start reading threads
+		outputThread.start();
+		int processResult;
+		try {
+			processResult = process.waitFor();
+		} catch (InterruptedException ex) {
+			process.destroyForcibly();
+			throw new InterruptedException("Mamba process stopped. The command being executed was: " + builder.command());
+		}
+		// Wait for all output to be read
+		outputThread.join();
+		if (processResult != 0)
+        	throw new RuntimeException("Error executing the following command: " + builder.command()
+        								+ System.lineSeparator() + mambaConsoleOut[0]
+        								+ System.lineSeparator() + mambaConsoleErr[0]);
 	}
 
 	/**

@@ -345,15 +345,17 @@ public class CellposeGUI extends JPanel implements ActionListener {
     			installerFrame.dispose();
     	};
     	InstallEnvWorker worker = new InstallEnvWorker("Cellpose", latch, callback);
-    	worker.setConsumer(null);
 		EnvironmentInstaller installerPanel = EnvironmentInstaller.create(worker);
 		Consumer<String> cons = (s) ->{
 			installerPanel.updateText(s, Color.black);
-			if (latch.getCount() == 1 
-					&& (!bar.isIndeterminate() || (bar.isIndeterminate() && !bar.getString().equals("Installing Python")))) {
-				bar.setIndeterminate(true);
-				bar.setString("Installing Python");
-			}
+			if (latch.getCount() != 1)
+				return;
+			SwingUtilities.invokeLater(() ->{
+				if (!bar.isIndeterminate() || (bar.isIndeterminate() && !bar.getString().equals("Installing Python"))) {
+					bar.setIndeterminate(true);
+					bar.setString("Installing Python");
+				}
+			});
 		};
 		worker.setConsumer(cons);
     	worker.execute();
