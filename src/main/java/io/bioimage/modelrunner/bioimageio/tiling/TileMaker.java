@@ -262,7 +262,7 @@ public class TileMaker {
     		int[] step = arrayToWantedAxesOrderAddZeros(tt.getTileStepArr(), tt.getAxesOrder(), axesTile);
     		
     		for (int i = 0; i < tileDims.length; i ++) {
-    			if (tileDims[i] != min[i] && step[i] == 0)
+    			if (min[i] != -1 && tileDims[i] != min[i] && step[i] == 0)
     				throw new IllegalArgumentException("Invalid tile size for axis '" + axesTile.split("")[i].toUpperCase()
     						+ "'. Only allowed tile size for this axis is: " + min[i]);
     			else if (step[i] != 0 && (tileDims[i] - min[i]) % step[i] != 0)

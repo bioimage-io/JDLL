@@ -78,6 +78,8 @@ public class TileCalculator {
 				// dimension is left to -1 and then calculated automatically after pre-processing
 				// just in case pre-processing changes the image size
 				patch[ii] = -1;
+			} else if (step[ii] == 0 && min[ii] == -1){
+				patch[ii] = size;
 			} else if (step[ii] == 0){
 				patch[ii] = min[ii];
 			}

@@ -277,6 +277,7 @@ public class Cellpose extends BioimageIoModelPytorchProtected {
 				+ "globals()['" + DTYPES_KEY + "'] = " + DTYPES_KEY + System.lineSeparator()
 				+ "globals()['" + DIMS_KEY + "'] = " + DIMS_KEY + System.lineSeparator();
 		code += "handle_output_list(" + OUTPUT_LIST_KEY + ")" + System.lineSeparator();
+		code += taskOutputsCode();
 		return code;
 	}
 	

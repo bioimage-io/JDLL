@@ -414,7 +414,6 @@ public class DLModelPytorchProtected extends BaseModel {
 		List<String> names = IntStream.range(0, inputs.size())
 				.mapToObj(i -> "var_" + UUID.randomUUID().toString().replace("-", "_")).collect(Collectors.toList());
 		String code = createInputsCode(inputs, names);
-		code += taskOutputsCode();
 		Map<String, RandomAccessibleInterval<R>> map = executeCode(code);
 		List<RandomAccessibleInterval<R>> outRais = new ArrayList<RandomAccessibleInterval<R>>();
 		for (Entry<String, RandomAccessibleInterval<R>> ee : map.entrySet()) {
@@ -447,10 +446,11 @@ public class DLModelPytorchProtected extends BaseModel {
 				+ "globals()['" + DTYPES_KEY + "'] = " + DTYPES_KEY + System.lineSeparator()
 				+ "globals()['" + DIMS_KEY + "'] = " + DIMS_KEY + System.lineSeparator();
 		code += "handle_output_list(" + OUTPUT_LIST_KEY + ")" + System.lineSeparator();
+		code += taskOutputsCode();
 		return code;
 	}
 	
-	private String taskOutputsCode() {
+	protected String taskOutputsCode() {
 		String code = ""
 				+ "task.outputs['" + SHM_NAMES_KEY + "'] = " + SHM_NAMES_KEY + System.lineSeparator()
 				+ "task.outputs['" + DTYPES_KEY + "'] = " + DTYPES_KEY + System.lineSeparator()
