@@ -193,8 +193,10 @@ public class TileMaker {
 							.filter(t -> t.getName().equals(ax.getReferenceTensor())).findFirst().orElse(null);
 					int indTile = inTile.getTileAxesOrder().indexOf(ax.getReferenceAxis());
 					int indIm = inTile.getImageAxesOrder().indexOf(ax.getReferenceAxis());
-					imagSize[i] = (long) (inTile.getImageDims()[indIm] * ax.getScale() + ax.getOffset() * 2);
-					tileSize[i] = (long) (inTile.getTileDims()[indTile] * ax.getScale() + ax.getOffset() * 2);
+					long imDim = inTile.getImageDims()[indIm];
+					long tileDim = inTile.getTileDims()[indTile];
+					imagSize[i] = (long) (imDim * ax.getScale() + ax.getOffset() * 2);
+					tileSize[i] = (long) ((tileDim == -1 ? imDim : tileDim) * ax.getScale() + ax.getOffset() * 2);
 				} else {
 					throw new IllegalArgumentException(""
 							+ "Model specs too complex for JDLL. "
