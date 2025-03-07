@@ -204,9 +204,9 @@ public class Cellpose extends BioimageIoModelPytorchProtected {
 		String adaptedRdfString;
 		String weightsName = new File(this.weightsPath).getName();
 		if (nChannels == 1)
-			adaptedRdfString = String.format(CELLPOSE_URL, ONE_CHANNEL_STR, ONE_CHANNEL_STR, weightsName);
+			adaptedRdfString = String.format(rdfString, ONE_CHANNEL_STR, ONE_CHANNEL_STR, weightsName);
 		else
-			adaptedRdfString = String.format(CELLPOSE_URL, THREE_CHANNEL_STR, TWO_CHANNEL_STR, weightsName);
+			adaptedRdfString = String.format(rdfString, THREE_CHANNEL_STR, TWO_CHANNEL_STR, weightsName);
 			
 		this.descriptor = ModelDescriptorFactory.readFromYamlTextString(adaptedRdfString);
 		descriptor.addModelPath(Paths.get(new File(this.weightsPath).getParentFile().getAbsolutePath()));
@@ -323,7 +323,7 @@ public class Cellpose extends BioimageIoModelPytorchProtected {
             while ((line = reader.readLine()) != null) {
                 content.append(line).append(System.lineSeparator());
             }
-            cellpose.rdfString = line;
+            cellpose.rdfString = content.toString();
         } catch (IOException | URISyntaxException e) {
         }
 		return cellpose;

@@ -224,14 +224,20 @@ public class CellposeGUI extends JPanel implements ActionListener {
     
     private < T extends RealType< T > & NativeType< T > > void runCellpose() throws IOException, RunModelException, LoadModelException {
     	installCellpose();
+    	RandomAccessibleInterval<T> rai = consumer.getFocusedImageAsRai();
+    	if (rai == null) {
+    		JOptionPane.showMessageDialog(null, "Please open an image", "No image open", JOptionPane.ERROR_MESSAGE);
+    		return;
+    	}
     	SwingUtilities.invokeLater(() ->{
     		this.bar.setIndeterminate(true);
     		this.bar.setString("Loading model");
     	});
-    	RandomAccessibleInterval<T> rai = consumer.getFocusedImageAsRai();
     	String modelPath = (String) this.modelComboBox.getSelectedItem();
     	if (modelPath.equals(CUSOTM_STR))
     		modelPath = this.customModelPathField.getText();
+    	else
+    		modelPath = Cellpose.findPretrainedModelInstalled(modelPath, consumer.getModelsDir());
     	if (whichLoaded != null && !whichLoaded.equals(modelPath))
     		model.close();
     	if (model == null || !model.isLoaded()) {

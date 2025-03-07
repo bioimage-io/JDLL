@@ -1702,7 +1702,9 @@ public class Mamba {
 	}
 	
 	private static String resolveAliases(String dep) {
-		return dep.replace("pytorch", "torch");
+		if (dep.equals("pytorch"))
+			return "torch";
+		return dep.replace("-", "_");
 	}
 	
 	private boolean checkPythonInstallation(String envDir, String minversion, String maxversion, boolean strictlyBiggerOrSmaller) throws MambaInstallException {
