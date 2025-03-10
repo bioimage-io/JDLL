@@ -34,7 +34,7 @@ outputs:
     scale: 1.0
     size: {axis_id: y, offset: 0, tensor_id: input}
     type: space
-  id: masks
+  id: labels
   test_tensor: null
   data:
     type: uint16

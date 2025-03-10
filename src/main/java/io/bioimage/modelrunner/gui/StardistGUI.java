@@ -317,6 +317,8 @@ public class StardistGUI extends JPanel implements ActionListener {
     }
     
     private void installStardist(boolean wwInstalled, boolean envInstalled) {
+    	if (wwInstalled && envInstalled)
+    		return;
     	SwingUtilities.invokeLater(() -> this.bar.setString("Installing..."));
     	CountDownLatch latch = !wwInstalled && !envInstalled ? new CountDownLatch(2) : new CountDownLatch(1);
     	if (!wwInstalled)
