@@ -221,7 +221,7 @@ public class StardistGUI extends JPanel implements ActionListener {
     private < T extends RealType< T > & NativeType< T > > void runStardist() throws IOException, RunModelException, LoadModelException {
     	installStardist();
     	startModelInstallation(true);
-    	installStardist(weightsInstalled(), StardistAbstract.isInstalled(this.consumer.getModelsDir()));
+    	installStardist(weightsInstalled(), StardistAbstract.isInstalled());
     	RandomAccessibleInterval<T> rai = consumer.getFocusedImageAsRai();
     	this.inputTitle = consumer.getFocusedImageName();
     	if (rai == null) {
@@ -297,7 +297,7 @@ public class StardistGUI extends JPanel implements ActionListener {
     
     private void installStardist() {
     	startModelInstallation(true);
-    	boolean envInstalled = StardistAbstract.isInstalled(this.consumer.getModelsDir());
+    	boolean envInstalled = StardistAbstract.isInstalled();
     	boolean wwInstalled = weightsInstalled();
     	if (envInstalled && wwInstalled) {
         	startModelInstallation(false);

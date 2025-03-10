@@ -226,7 +226,7 @@ public class CellposeGUI extends JPanel implements ActionListener {
     private < T extends RealType< T > & NativeType< T > > void runCellpose() throws IOException, RunModelException, LoadModelException {
     	installCellpose();
     	startModelInstallation(true);
-    	installCellpose(weightsInstalled(), Cellpose.isInstalled(this.consumer.getModelsDir()));
+    	installCellpose(weightsInstalled(), Cellpose.isInstalled());
     	RandomAccessibleInterval<T> rai = consumer.getFocusedImageAsRai();
     	this.inputTitle = consumer.getFocusedImageName();
     	if (rai == null) {
@@ -302,7 +302,7 @@ public class CellposeGUI extends JPanel implements ActionListener {
     
     private void installCellpose() {
     	startModelInstallation(true);
-    	boolean envInstalled = Cellpose.isInstalled(this.consumer.getModelsDir());
+    	boolean envInstalled = Cellpose.isInstalled();
     	boolean wwInstalled = weightsInstalled();
     	if (envInstalled && wwInstalled) {
         	startModelInstallation(false);

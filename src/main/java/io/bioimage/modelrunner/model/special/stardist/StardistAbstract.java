@@ -235,7 +235,7 @@ public abstract class StardistAbstract extends BaseModel {
     	createPythonService();
 	}
 	
-	private static void checkFilesPresent(String modelDir) throws IOException {
+	public static void checkFilesPresent(String modelDir) throws IOException {
 		if (new File(modelDir, "config.json").isFile() == false && new File(modelDir, Constants.RDF_FNAME).isFile() == false)
 			throw new IllegalArgumentException("No 'config.json' file found in the model directory");
 		else if (new File(modelDir, "config.json").isFile() == false)
@@ -479,6 +479,19 @@ public abstract class StardistAbstract extends BaseModel {
 		return coordsCopy;
 	}
 	
+	public static StardistAbstract init(String modelDir) throws IOException {
+		File modelDirFile = new File(modelDir);
+		String modelName = modelDirFile.getName();
+		String baseDir = modelDirFile.getParentFile().getAbsolutePath();
+		checkFilesPresent(modelDir);
+		Map<String, Object> configMap = JSONUtils.load(new File(modelDir, "config.json").getAbsolutePath());
+		String axes = ((String) configMap.get("axes")).toUpperCase();
+		if (axes.contains("Z"))
+			return new Stardist3D(modelName, baseDir, configMap);
+		else
+			return new Stardist2D(modelName, baseDir, configMap);
+	}
+	
 	public static StardistAbstract init(String modelName, String baseDir) throws IOException {
 		String modelDir = new File(baseDir, modelName).getAbsolutePath();
 		checkFilesPresent(modelDir);
@@ -509,6 +522,21 @@ public abstract class StardistAbstract extends BaseModel {
 		Mamba mamba = new Mamba(INSTALLATION_DIR);
 		try {
 			return mamba.checkAllDependenciesInEnv("stardist", STARDIST_DEPS);
+		} catch (MambaInstallException e) {
+			return false;
+		}
+	}
+	
+	/**
+	 * Check whether everything that is needed for Stardist 2D is installed or not
+	 * @param envPath
+	 * 	path to the directory where the StarDist env is installed
+	 * @return true if the full python environment is installed or not
+	 */
+	public static boolean isInstalled(String envPath) {
+		Mamba mamba = new Mamba(INSTALLATION_DIR);
+		try {
+			return mamba.checkAllDependenciesInEnv(envPath, STARDIST_DEPS);
 		} catch (MambaInstallException e) {
 			return false;
 		}
