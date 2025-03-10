@@ -8,6 +8,7 @@ import javax.swing.event.PopupMenuListener;
 import io.bioimage.modelrunner.exceptions.LoadModelException;
 import io.bioimage.modelrunner.exceptions.RunModelException;
 import io.bioimage.modelrunner.gui.workers.InstallEnvWorker;
+import io.bioimage.modelrunner.model.special.stardist.Stardist2D;
 import io.bioimage.modelrunner.model.special.stardist.StardistAbstract;
 import io.bioimage.modelrunner.tensor.Tensor;
 import net.imglib2.RandomAccessibleInterval;
@@ -28,7 +29,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.ExecutionException;
 import java.util.function.Consumer;
 
 public class StardistGUI extends JPanel implements ActionListener {
@@ -67,7 +67,7 @@ public class StardistGUI extends JPanel implements ActionListener {
         // --- Model Selection Panel ---
         JPanel modelPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
         modelPanel.add(new JLabel(VAR_NAMES.get(0)));
-        String[] models = {"cyto3", "cyto2", "cyto", "nuclei", CUSOTM_STR};
+        String[] models = {"StarDist H&E Nuclei Segmentation", "StarDist Fluorescence Nuclei Segmentation", CUSOTM_STR};
         modelComboBox = new JComboBox<String>(models);
         modelPanel.add(modelComboBox);
 
@@ -232,18 +232,28 @@ public class StardistGUI extends JPanel implements ActionListener {
     		this.bar.setIndeterminate(true);
     		this.bar.setString("Loading model");
     	});
-    	String modelPath = (String) this.modelComboBox.getSelectedItem();
-    	if (modelPath.equals(CUSOTM_STR))
-    		modelPath = this.customModelPathField.getText();
-    	else
-    		modelPath = StardistAbstract.findPretrainedModelInstalled(modelPath, consumer.getModelsDir());
-    	if (whichLoaded != null && !whichLoaded.equals(modelPath))
-    		model.close();
-    	if (model == null || !model.isLoaded()) {
-    		model = StardistAbstract.init(modelPath);
+    	String selectedModel = (String) this.modelComboBox.getSelectedItem();
+    	String modelype = "" + selectedModel;
+    	if (modelype.equals(CUSOTM_STR))
+    		selectedModel = customModelPathField.getText();
+    	
+    	if (modelype.equals(CUSOTM_STR) 
+    			&& (whichLoaded == null || model == null || model.isClosed() || !whichLoaded.equals(selectedModel)))
+    		model = StardistAbstract.init(selectedModel);
+    	else if (!modelype.equals(CUSOTM_STR) 
+    			&& (whichLoaded == null || model == null || model.isClosed() || !whichLoaded.equals(selectedModel))) {
+			try {
+				model = Stardist2D.fromPretained(selectedModel, consumer.getModelsDir(), false);
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+				return;
+			}
+    	} else if (model == null)
+    		throw new IllegalArgumentException();
+    	if (!model.isLoaded())
     		model.loadModel();
-    	}
-    	whichLoaded = modelPath;
+    	
+    	whichLoaded = selectedModel;
     	SwingUtilities.invokeLater(() ->{
     		this.bar.setString("Running the model");
     	});
@@ -317,11 +327,12 @@ public class StardistGUI extends JPanel implements ActionListener {
     
     private boolean weightsInstalled() {
     	String model = (String) this.modelComboBox.getSelectedItem();
-    	if (model.equals(CUSOTM_STR))
+    	if (model.equals(CUSOTM_STR)) {
     		return true;
+    	}
     	try {
-			String path = StardistAbstract.findPretrainedModelInstalled(model, consumer.getModelsDir());
-			if (path == null)
+			Stardist2D pretrained = Stardist2D.fromPretained(model, consumer.getModelsDir(), false);
+			if (pretrained == null)
 				return false;
 		} catch (Exception e) {
 			return false;
@@ -339,8 +350,8 @@ public class StardistGUI extends JPanel implements ActionListener {
     	};
 		Thread dwnlThread = new Thread(() -> {
 			try {
-				StardistAbstract.donwloadPretrained((String) modelComboBox.getSelectedItem(), this.consumer.getModelsDir(), cons);
-			} catch (IOException | InterruptedException | ExecutionException e) {
+				Stardist2D.fromPretained((String) modelComboBox.getSelectedItem(), this.consumer.getModelsDir(), true);
+			} catch (IOException | InterruptedException e) {
 				e.printStackTrace();
 			}
 			latch.countDown();

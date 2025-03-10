@@ -290,6 +290,8 @@ public class DLModelPytorchProtected extends BaseModel {
 	public void loadModel() throws LoadModelException {
 		if (loaded)
 			return;
+		if (closed)
+			throw new RuntimeException("Cannot load model after it has been closed");
 		String code = buildModelCode();
 		
 		code += RECOVER_OUTPUTS_CODE;
@@ -353,6 +355,7 @@ public class DLModelPytorchProtected extends BaseModel {
 			return;
 		python.close();
 		loaded = false;
+		closed = true;
 		
 	}
 	

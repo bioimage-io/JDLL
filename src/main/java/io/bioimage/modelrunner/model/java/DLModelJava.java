@@ -173,6 +173,7 @@ public class DLModelJava extends BaseModel
 		engineClassLoader.setBaseClassLoader();
 		engineClassLoader = null;
 		loaded = false;
+		closed = true;
 	}
 
 	@Override

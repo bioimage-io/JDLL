@@ -45,6 +45,10 @@ public abstract class BaseModel implements Closeable
 	 * Whether the model is loaded or not
 	 */
 	protected boolean loaded = false;
+	/**
+	 * Whether the model is closed or not
+	 */
+	protected boolean closed = false;
 
 	/**
 	 * Path to the folder containing the Bioimage.io model
@@ -122,5 +126,13 @@ public abstract class BaseModel implements Closeable
 	 */
 	public boolean isLoaded() {
 		return loaded;
+	}
+	
+	/**
+	 * Whether the model is closed or not
+	 * @return whether the model is closed or not
+	 */
+	public boolean isClosed() {
+		return closed;
 	}
 }

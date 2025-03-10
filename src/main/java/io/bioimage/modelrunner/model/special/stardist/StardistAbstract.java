@@ -325,6 +325,7 @@ public abstract class StardistAbstract extends BaseModel {
 			return;
 		python.close();
 		loaded = false;
+		closed = true;
 	}
 
 	@Override
@@ -353,6 +354,8 @@ public abstract class StardistAbstract extends BaseModel {
 	
 	@Override
 	public void loadModel() throws LoadModelException {
+		if (closed)
+			throw new RuntimeException("Cannot load model after it has been closed");
 		String code = "";
 		if (!loaded) {
 			code += createImportsCode() + System.lineSeparator();
