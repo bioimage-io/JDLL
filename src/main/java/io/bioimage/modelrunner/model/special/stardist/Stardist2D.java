@@ -21,8 +21,15 @@ package io.bioimage.modelrunner.model.special.stardist;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.MalformedURLException;
 import java.net.URISyntaxException;
+import java.net.URL;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ExecutionException;
+import java.util.function.Consumer;
 
 import org.apache.commons.compress.archivers.ArchiveException;
 
@@ -30,6 +37,7 @@ import io.bioimage.modelrunner.apposed.appose.MambaInstallException;
 import io.bioimage.modelrunner.bioimageio.BioimageioRepo;
 import io.bioimage.modelrunner.bioimageio.description.ModelDescriptor;
 import io.bioimage.modelrunner.bioimageio.description.ModelDescriptorFactory;
+import io.bioimage.modelrunner.download.MultiFileDownloader;
 import io.bioimage.modelrunner.exceptions.LoadEngineException;
 import io.bioimage.modelrunner.exceptions.LoadModelException;
 import io.bioimage.modelrunner.exceptions.RunModelException;
@@ -54,6 +62,15 @@ import net.imglib2.view.Views;
 public class Stardist2D extends StardistAbstract {
 	
 	private static String MODULE_NAME = "StarDist2D";
+	
+	private static final String[] PRETRAINED_MODELS = new String[] {"2D_versatile_he", "2D_versatile_fluo"};
+	
+	private static final Map<String, String> PRETRAINED_EQUIVALENCE;
+	static {
+		PRETRAINED_EQUIVALENCE = new HashMap<String, String>();
+		PRETRAINED_EQUIVALENCE.put("2D_versatile_he", "StarDist H&E Nuclei Segmentation");
+		PRETRAINED_EQUIVALENCE.put("2D_versatile_fluo", "StarDist Fluorescence Nuclei Segmentation");
+	}
 	
 	protected Stardist2D(String modelName, String baseDir, Map<String, Object> config) throws IOException {
 		super(modelName, baseDir, config);
@@ -198,6 +215,33 @@ public class Stardist2D extends StardistAbstract {
 		} else {
 			throw new IllegalArgumentException("There is no Stardist2D model called: " + pretrainedModel);
 		}
+	}
+	
+	public static String donwloadPretrained(String modelName, String downloadDir) 
+			throws ExecutionException, InterruptedException, IOException {
+		return donwloadPretrained(modelName, downloadDir, null);
+	}
+	
+	public static String donwloadPretrained(String modelName, String downloadDir, Consumer<Double> progressConsumer) throws InterruptedException, IOException {
+		if (!PRETRAINED_EQUIVALENCE.keySet().contains(modelName))
+			return donwloadPretrainedBioimageio(PRETRAINED_EQUIVALENCE.get(modelName), downloadDir, progressConsumer);
+		else
+			return donwloadPretrainedBioimageio(PRETRAINED_EQUIVALENCE.get(modelName), downloadDir, progressConsumer);
+	}
+	
+	private static String donwloadPretrainedBioimageio(String modelName, String downloadDir, Consumer<Double> progressConsumer) 
+			throws InterruptedException, IOException {
+		
+		BioimageioRepo br = BioimageioRepo.connect();
+
+		ModelDescriptor descriptor = br.selectByName(modelName);
+		if (descriptor == null)
+			descriptor = br.selectByID(modelName);
+		if (descriptor == null) {
+			throw new IllegalArgumentException("The model does not correspond to on of the available pretrained StarDist2D models."
+					+ " To find a list of available cellpose models, please run StarDist2D.getPretrainedList()");
+		}
+		return BioimageioRepo.downloadModel(descriptor, downloadDir, progressConsumer);
 	}
 	
 	

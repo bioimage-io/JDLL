@@ -29,6 +29,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutionException;
 import java.util.function.Consumer;
 
 public class StardistGUI extends JPanel implements ActionListener {
@@ -350,7 +351,7 @@ public class StardistGUI extends JPanel implements ActionListener {
     	};
 		Thread dwnlThread = new Thread(() -> {
 			try {
-				Stardist2D.fromPretained((String) modelComboBox.getSelectedItem(), this.consumer.getModelsDir(), true);
+				Stardist2D.donwloadPretrained((String) modelComboBox.getSelectedItem(), this.consumer.getModelsDir(), cons);
 			} catch (IOException | InterruptedException e) {
 				e.printStackTrace();
 			}

@@ -23,6 +23,8 @@ import java.io.File;
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.util.Map;
+import java.util.concurrent.ExecutionException;
+import java.util.function.Consumer;
 
 import org.apache.commons.compress.archivers.ArchiveException;
 
@@ -173,6 +175,30 @@ public class Stardist3D extends StardistAbstract {
 		} else {
 			throw new IllegalArgumentException("There is no Stardist3D model called: " + pretrainedModel);
 		}
+	}
+	
+	public static String donwloadPretrained(String modelName, String downloadDir) 
+			throws ExecutionException, InterruptedException, IOException {
+		return donwloadPretrained(modelName, downloadDir, null);
+	}
+	
+	public static String donwloadPretrained(String modelName, String downloadDir, Consumer<Double> progressConsumer) throws InterruptedException, IOException {
+		return donwloadPretrainedBioimageio(modelName, downloadDir, progressConsumer);
+	}
+	
+	private static String donwloadPretrainedBioimageio(String modelName, String downloadDir, Consumer<Double> progressConsumer) 
+			throws InterruptedException, IOException {
+		
+		BioimageioRepo br = BioimageioRepo.connect();
+
+		ModelDescriptor descriptor = br.selectByName(modelName);
+		if (descriptor == null)
+			descriptor = br.selectByID(modelName);
+		if (descriptor == null) {
+			throw new IllegalArgumentException("The model does not correspond to on of the available pretrained StarDist3D models."
+					+ " To find a list of available cellpose models, please run StarDist3D.getPretrainedList()");
+		}
+		return BioimageioRepo.downloadModel(descriptor, downloadDir, progressConsumer);
 	}
 	
 	

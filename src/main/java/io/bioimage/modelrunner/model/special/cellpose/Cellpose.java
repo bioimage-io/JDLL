@@ -49,6 +49,7 @@ import io.bioimage.modelrunner.exceptions.RunModelException;
 import io.bioimage.modelrunner.model.python.BioimageIoModelPytorchProtected;
 import io.bioimage.modelrunner.tensor.Tensor;
 import io.bioimage.modelrunner.tensor.shm.SharedMemoryArray;
+import io.bioimage.modelrunner.utils.Constants;
 import net.imglib2.FinalInterval;
 import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.img.array.ArrayImg;
@@ -315,7 +316,10 @@ public class Cellpose extends BioimageIoModelPytorchProtected {
      * @throws IOException If there's an I/O error.
 	 */
 	public static Cellpose init(String weightsPath) throws IOException {
-		if (!(new File(weightsPath).isFile()))
+		File wFile = new File(weightsPath);
+		if (wFile.isDirectory() && new File(wFile, Constants.RDF_FNAME).isFile())
+			return init(ModelDescriptorFactory.readFromLocalFile(new File(wFile, Constants.RDF_FNAME).getAbsolutePath()));
+		if (!wFile.isFile())
 			throw new IllegalArgumentException("The path provided does not correspond to an existing file: " + weightsPath);		        
         Cellpose cellpose = new Cellpose(null, null, weightsPath, null, null);
 		StringBuilder content = new StringBuilder();
@@ -509,8 +513,8 @@ public class Cellpose extends BioimageIoModelPytorchProtected {
 			descriptor = br.selectByID(modelName);
 		if (descriptor == null)
 			return null;
-		String path = BioimageioRepo.downloadModel(descriptor, downloadDir);
-		return path + File.separator + ""; // TODO
+		String path = BioimageioRepo.downloadModel(descriptor, downloadDir, progressConsumer);
+		return path;
 	}
 	
 	private static String donwloadPretrainedOfficial(String modelName, String downloadDir, Consumer<Double> progressConsumer) throws ExecutionException, InterruptedException {
