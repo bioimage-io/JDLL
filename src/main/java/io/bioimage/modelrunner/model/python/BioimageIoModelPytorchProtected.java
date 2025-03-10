@@ -44,6 +44,7 @@ import io.bioimage.modelrunner.bioimageio.tiling.TileMaker;
 import io.bioimage.modelrunner.exceptions.RunModelException;
 import io.bioimage.modelrunner.model.processing.Processing;
 import io.bioimage.modelrunner.tensor.Tensor;
+import io.bioimage.modelrunner.utils.CommonUtils;
 import net.imglib2.type.NativeType;
 import net.imglib2.type.numeric.RealType;
 import net.imglib2.type.numeric.real.FloatType;
@@ -113,7 +114,7 @@ public class BioimageIoModelPytorchProtected extends DLModelPytorchProtected {
 			outputTensors.add((Tensor<T>) Tensor.buildBlankTensor(tt.getName(), 
 																	tt.getAxesOrder(), 
 																	dims, 
-																	(T) new FloatType()));
+																	(T) CommonUtils.getImgLib2DataType(tt.getDataType())));
 		}
 		return outputTensors;
 	}
