@@ -47,6 +47,7 @@ import io.bioimage.modelrunner.exceptions.LoadModelException;
 import io.bioimage.modelrunner.exceptions.RunModelException;
 import io.bioimage.modelrunner.model.processing.Processing;
 import io.bioimage.modelrunner.tensor.Tensor;
+import io.bioimage.modelrunner.utils.CommonUtils;
 import io.bioimage.modelrunner.utils.Constants;
 import io.bioimage.modelrunner.versionmanagement.InstalledEngines;
 import net.imglib2.img.Img;
@@ -339,7 +340,7 @@ public class BioimageIoModelJava extends DLModelJava
 			outputTensors.add((Tensor<T>) Tensor.buildBlankTensor(tt.getName(), 
 																	tt.getAxesOrder(), 
 																	dims, 
-																	(T) new FloatType()));
+																	(T) CommonUtils.getImgLib2DataType(tt.getDataType())));
 		}
 		return outputTensors;
 	}
