@@ -24,6 +24,7 @@ package io.bioimage.modelrunner.model.processing;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -69,7 +70,7 @@ public class Processing {
 	}
 	
 	private void buildPreprocessing() throws IllegalArgumentException, RuntimeException {
-		preMap = new HashMap<String, List<TransformationInstance>>();
+		preMap = new LinkedHashMap<String, List<TransformationInstance>>();
 		for (TensorSpec tt : this.descriptor.getInputTensors()) {
 			List<TransformSpec> preprocessing = tt.getPreprocessing();
 			List<TransformationInstance> list = new ArrayList<TransformationInstance>();
@@ -84,7 +85,7 @@ public class Processing {
 	}
 	
 	private void buildPostprocessing() throws IllegalArgumentException, RuntimeException {
-		postMap = new HashMap<String, List<TransformationInstance>>();
+		postMap = new LinkedHashMap<String, List<TransformationInstance>>();
 		for (TensorSpec tt : this.descriptor.getOutputTensors()) {
 			List<TransformSpec> preprocessing = tt.getPostprocessing();
 			List<TransformationInstance> list = new ArrayList<TransformationInstance>();
