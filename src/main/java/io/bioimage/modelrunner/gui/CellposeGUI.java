@@ -294,7 +294,7 @@ public class CellposeGUI extends JPanel implements ActionListener {
     }
     
     private String getOutputName(String tensorName) {
-    	String noExtension = inputTitle.substring(inputTitle.lastIndexOf("."));
+    	String noExtension = inputTitle.substring(0, inputTitle.lastIndexOf("."));
     	String extension = ".tif";
     	return noExtension + "_" + tensorName + extension;
     }
@@ -317,6 +317,11 @@ public class CellposeGUI extends JPanel implements ActionListener {
     		installModelWeights(latch);
     	if (!envInstalled)
     		installEnv(latch);
+    	try {
+			latch.await();
+		} catch (InterruptedException e) {
+			e.printStackTrace();
+		}
     }
     
     private boolean weightsInstalled() {
@@ -341,6 +346,7 @@ public class CellposeGUI extends JPanel implements ActionListener {
         		this.bar.setString(perc + "% of weights");
     		});
     	};
+    	SwingUtilities.invokeLater(() -> bar.setIndeterminate(false));
 		Thread dwnlThread = new Thread(() -> {
 			try {
 				Cellpose.donwloadPretrained((String) modelComboBox.getSelectedItem(), this.consumer.getModelsDir(), cons);

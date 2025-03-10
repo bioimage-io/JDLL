@@ -702,6 +702,8 @@ public class DLModelPytorchProtected extends BaseModel {
 	 * @return true if the full python environment is installed or not
 	 */
 	public static boolean isInstalled(String envPath) {
+		if (envPath == null)
+			envPath = COMMON_PYTORCH_ENV_NAME;
 		
 		Mamba mamba = new Mamba(INSTALLATION_DIR);
 		try {
