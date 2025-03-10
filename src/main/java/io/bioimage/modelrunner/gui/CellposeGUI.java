@@ -197,12 +197,12 @@ public class CellposeGUI extends JPanel implements ActionListener {
     		workerThread = new Thread(() -> {
         		try {
     				runCellpose();
-    				SwingUtilities.invokeLater(() -> this.bar.setString(""));
+    				startModelInstallation(false);
     			} catch (IOException | RunModelException | LoadModelException e1) {
     				e1.printStackTrace();
+    				startModelInstallation(false);
     				SwingUtilities.invokeLater(() -> this.bar.setString("Error running the model"));
     			}
-        		SwingUtilities.invokeLater(() -> this.bar.setIndeterminate(false));
     		});
     		workerThread.start();
     	} else if (e.getSource() == this.installButton) {
@@ -224,6 +224,8 @@ public class CellposeGUI extends JPanel implements ActionListener {
     
     private < T extends RealType< T > & NativeType< T > > void runCellpose() throws IOException, RunModelException, LoadModelException {
     	installCellpose();
+    	startModelInstallation(true);
+    	installCellpose(weightsInstalled(), Cellpose.isInstalled(this.consumer.getModelsDir()));
     	RandomAccessibleInterval<T> rai = consumer.getFocusedImageAsRai();
     	if (rai == null) {
     		JOptionPane.showMessageDialog(null, "Please open an image", "No image open", JOptionPane.ERROR_MESSAGE);
@@ -284,6 +286,8 @@ public class CellposeGUI extends JPanel implements ActionListener {
     	for (Tensor<T> tt : out) {
     		if (!check.isSelected() && !tt.getName().equals("masks"))
     			continue;
+    		else if (tt.getAxesOrder().length == 1)
+    			continue;
         	consumer.display(tt.getData(), tt.getAxesOrderString(), tt.getName());
     	}
     }
@@ -296,6 +300,11 @@ public class CellposeGUI extends JPanel implements ActionListener {
         	startModelInstallation(false);
     		return;
     	}
+    	installCellpose(wwInstalled, envInstalled);
+    }
+    
+    private void installCellpose(boolean wwInstalled, boolean envInstalled) {
+    	SwingUtilities.invokeLater(() -> this.bar.setString("Installing..."));
     	CountDownLatch latch = !wwInstalled && !envInstalled ? new CountDownLatch(2) : new CountDownLatch(1);
     	if (!wwInstalled)
     		installModelWeights(latch);
@@ -319,9 +328,11 @@ public class CellposeGUI extends JPanel implements ActionListener {
     
     private void installModelWeights(CountDownLatch latch) {
     	Consumer<Double> cons = (d) -> {
-    		d = Math.round(d * 1000) / 10.0d;
-    		this.bar.setValue((int) Math.floor(d));
-    		this.bar.setString(d + "% of weights");
+    		double perc = Math.round(d * 1000) / 10.0d;
+    		SwingUtilities.invokeLater(() -> {
+        		this.bar.setValue((int) Math.floor(perc));
+        		this.bar.setString(perc + "% of weights");
+    		});
     	};
 		Thread dwnlThread = new Thread(() -> {
 			try {
@@ -385,7 +396,7 @@ public class CellposeGUI extends JPanel implements ActionListener {
         	this.channelComboBox.setEnabled(!isStarting);
         	this.check.setEnabled(!isStarting);
         	if (isStarting) {
-        		this.bar.setString("Installing...");
+        		this.bar.setString("Checking cellpose installed...");
         		this.bar.setIndeterminate(true);
         	} else {
         		this.bar.setIndeterminate(false);
