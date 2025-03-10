@@ -139,14 +139,14 @@ public class Stardist3D extends StardistAbstract {
 	 * By default, the model will be installed in the "models" folder inside the application
 	 * @param pretrainedModel
 	 * 	the name of the pretrained model. 
-	 * @param forceInstall
+	 * @param install
 	 * 	whether to force the installation or to try to look if the model has already been installed before
 	 * @return an instance of a pretrained Stardist2D model ready to be used
 	 * @throws IOException if there is any error downloading the model, in the case it is needed
 	 * @throws InterruptedException if the download of the model is stopped
 	 */
-	public static Stardist3D fromPretained(String pretrainedModel, boolean forceInstall) throws IOException, InterruptedException {
-		return fromPretained(pretrainedModel, new File("models").getAbsolutePath(), forceInstall);
+	public static Stardist3D fromPretained(String pretrainedModel, boolean install) throws IOException, InterruptedException {
+		return fromPretained(pretrainedModel, new File("models").getAbsolutePath(), install);
 	}
 	
 	/**
@@ -155,20 +155,19 @@ public class Stardist3D extends StardistAbstract {
 	 * 	the name of the pretrained model.
 	 * @param installDir
 	 * 	the directory where the model wants to be installed
-	 * @param forceInstall
+	 * @param install
 	 * 	whether to force the installation or to try to look if the model has already been installed before
 	 * @return an instance of a pretrained Stardist3D model ready to be used
 	 * @throws IOException if there is any error downloading the model, in the case it is needed
 	 * @throws InterruptedException if the download of the model is stopped
 	 */
-	public static Stardist3D fromPretained(String pretrainedModel, String installDir, boolean forceInstall) throws IOException, 
+	public static Stardist3D fromPretained(String pretrainedModel, String installDir, boolean install) throws IOException, 
 																					InterruptedException {
-		if (pretrainedModel.equals("StarDist Plant Nuclei 3D ResNet") && !forceInstall) {
+		if (pretrainedModel.equals("StarDist Plant Nuclei 3D ResNet") && !install) {
 			ModelDescriptor md = ModelDescriptorFactory.getModelsAtLocalRepo().stream()
 					.filter(mm ->mm.getName().equals(pretrainedModel)).findFirst().orElse(null);
 			if (md != null) return new Stardist3D(md);
-			String path = BioimageioRepo.connect().downloadByName("StarDist Plant Nuclei 3D ResNet", installDir);
-			return Stardist3D.fromBioimageioModel(ModelDescriptorFactory.readFromLocalFile(path));
+			return null;
 		} else if (pretrainedModel.equals("StarDist Plant Nuclei 3D ResNet")) {
 			String path = BioimageioRepo.connect().downloadByName("StarDist Plant Nuclei 3D ResNet", installDir);
 			return Stardist3D.fromBioimageioModel(ModelDescriptorFactory.readFromLocalFile(path));

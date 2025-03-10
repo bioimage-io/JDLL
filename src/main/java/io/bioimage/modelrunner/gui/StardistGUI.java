@@ -68,7 +68,7 @@ public class StardistGUI extends JPanel implements ActionListener {
         // --- Model Selection Panel ---
         JPanel modelPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
         modelPanel.add(new JLabel(VAR_NAMES.get(0)));
-        String[] models = {"StarDist H&E Nuclei Segmentation", "StarDist Fluorescence Nuclei Segmentation", CUSOTM_STR};
+        String[] models = {"StarDist Fluorescence Nuclei Segmentation", "StarDist H&E Nuclei Segmentation", CUSOTM_STR};
         modelComboBox = new JComboBox<String>(models);
         modelPanel.add(modelComboBox);
 

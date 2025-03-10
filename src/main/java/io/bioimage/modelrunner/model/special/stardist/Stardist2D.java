@@ -21,12 +21,8 @@ package io.bioimage.modelrunner.model.special.stardist;
 
 import java.io.File;
 import java.io.IOException;
-import java.net.MalformedURLException;
 import java.net.URISyntaxException;
-import java.net.URL;
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
 import java.util.function.Consumer;
@@ -37,7 +33,6 @@ import io.bioimage.modelrunner.apposed.appose.MambaInstallException;
 import io.bioimage.modelrunner.bioimageio.BioimageioRepo;
 import io.bioimage.modelrunner.bioimageio.description.ModelDescriptor;
 import io.bioimage.modelrunner.bioimageio.description.ModelDescriptorFactory;
-import io.bioimage.modelrunner.download.MultiFileDownloader;
 import io.bioimage.modelrunner.exceptions.LoadEngineException;
 import io.bioimage.modelrunner.exceptions.LoadModelException;
 import io.bioimage.modelrunner.exceptions.RunModelException;
@@ -62,8 +57,6 @@ import net.imglib2.view.Views;
 public class Stardist2D extends StardistAbstract {
 	
 	private static String MODULE_NAME = "StarDist2D";
-	
-	private static final String[] PRETRAINED_MODELS = new String[] {"2D_versatile_he", "2D_versatile_fluo"};
 	
 	private static final Map<String, String> PRETRAINED_EQUIVALENCE;
 	static {
@@ -165,14 +158,14 @@ public class Stardist2D extends StardistAbstract {
 	 * By default, the model will be installed in the "models" folder inside the application
 	 * @param pretrainedModel
 	 * 	the name of the pretrained model. 
-	 * @param forceDownload
+	 * @param install
 	 * 	whether to force the download or to try to look if the model has already been installed before
 	 * @return an instance of a pretrained Stardist2D model ready to be used
 	 * @throws IOException if there is any error downloading the model, in the case it is needed
 	 * @throws InterruptedException if the download of the model is stopped
 	 */
-	public static Stardist2D fromPretained(String pretrainedModel, boolean forceDownload) throws IOException, InterruptedException {
-		return fromPretained(pretrainedModel, new File("models").getAbsolutePath(), forceDownload);
+	public static Stardist2D fromPretained(String pretrainedModel, boolean install) throws IOException, InterruptedException {
+		return fromPretained(pretrainedModel, new File("models").getAbsolutePath(), install);
 	}
 	
 	/**
@@ -182,32 +175,30 @@ public class Stardist2D extends StardistAbstract {
 	 * 	the name of the pretrained model.
 	 * @param installDir
 	 * 	the directory where the model wants to be installed
-	 * @param forceInstall
+	 * @param install
 	 * 	whether to force the installation or to try to look if the model has already been installed before
 	 * @return an instance of a pretrained Stardist2D model ready to be used
 	 * @throws IOException if there is any error downloading the model, in the case it is needed
 	 * @throws InterruptedException if the download of the model is stopped
 	 */
-	public static Stardist2D fromPretained(String pretrainedModel, String installDir, boolean forceInstall) throws IOException, 
+	public static Stardist2D fromPretained(String pretrainedModel, String installDir, boolean install) throws IOException, 
 																					InterruptedException {
 		if ((pretrainedModel.equals("StarDist H&E Nuclei Segmentation")
-				|| pretrainedModel.equals("2D_versatile_he")) && !forceInstall) {
+				|| pretrainedModel.equals("2D_versatile_he")) && !install) {
 			ModelDescriptor md = ModelDescriptorFactory.getModelsAtLocalRepo().stream()
 					.filter(mm ->mm.getName().equals("StarDist H&E Nuclei Segmentation")).findFirst().orElse(null);
 			if (md != null) return new Stardist2D(md);
-			String path = BioimageioRepo.connect().downloadByName("StarDist H&E Nuclei Segmentation", installDir);
-			return Stardist2D.fromBioimageioModel(ModelDescriptorFactory.readFromLocalFile(path));
+			return null;
 		} else if (pretrainedModel.equals("StarDist H&E Nuclei Segmentation")
 				|| pretrainedModel.equals("2D_versatile_he")) {
 			String path = BioimageioRepo.connect().downloadByName("StarDist H&E Nuclei Segmentation", installDir);
 			return Stardist2D.fromBioimageioModel(ModelDescriptorFactory.readFromLocalFile(path));
 		} else if ((pretrainedModel.equals("StarDist Fluorescence Nuclei Segmentation")
-				|| pretrainedModel.equals("2D_versatile_fluo")) && !forceInstall) {
+				|| pretrainedModel.equals("2D_versatile_fluo")) && !install) {
 			ModelDescriptor md = ModelDescriptorFactory.getModelsAtLocalRepo().stream()
 					.filter(mm ->mm.getName().equals("StarDist Fluorescence Nuclei Segmentation")).findFirst().orElse(null);
 			if (md != null) return new Stardist2D(md);
-			String path = BioimageioRepo.connect().downloadByName("StarDist Fluorescence Nuclei Segmentation", installDir);
-			return Stardist2D.fromBioimageioModel(ModelDescriptorFactory.readFromLocalFile(path));
+			return null;
 		} else if (pretrainedModel.equals("StarDist Fluorescence Nuclei Segmentation")
 				|| pretrainedModel.equals("2D_versatile_fluo")) {
 			String path = BioimageioRepo.connect().downloadByName("StarDist Fluorescence Nuclei Segmentation", installDir);

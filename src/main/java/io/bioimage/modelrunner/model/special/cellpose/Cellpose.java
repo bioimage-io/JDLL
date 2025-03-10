@@ -363,15 +363,15 @@ public class Cellpose extends BioimageIoModelPytorchProtected {
 	 * By default, the model will be installed in the "models" folder inside the application
 	 * @param pretrainedModel
 	 * 	the name of the pretrained model. 
-	 * @param forceDownload
+	 * @param install
 	 * 	whether to force the download or to try to look if the model has already been installed before
 	 * @return an instance of a pretrained Stardist2D model ready to be used
 	 * @throws IOException if there is any error downloading the model, in the case it is needed
 	 * @throws InterruptedException if the download of the model is stopped
 	 * @throws ExecutionException 
 	 */
-	public static Cellpose fromPretained(String pretrainedModel, boolean forceDownload) throws IOException, InterruptedException, ExecutionException {
-		return fromPretained(pretrainedModel, new File("models").getAbsolutePath(), forceDownload);
+	public static Cellpose fromPretained(String pretrainedModel, boolean install) throws IOException, InterruptedException, ExecutionException {
+		return fromPretained(pretrainedModel, new File("models").getAbsolutePath(), install);
 	}
 	
 	/**
@@ -381,29 +381,26 @@ public class Cellpose extends BioimageIoModelPytorchProtected {
 	 * 	the name of the pretrained model.
 	 * @param modelsDir
 	 * 	the directory where the model wants to be installed
-	 * @param forceInstall
+	 * @param install
 	 * 	whether to force the installation or to try to look if the model has already been installed before
 	 * @return an instance of a pretrained Stardist2D model ready to be used
 	 * @throws IOException if there is any error downloading the model, in the case it is needed
 	 * @throws InterruptedException if the download of the model is stopped
 	 * @throws ExecutionException 
 	 */
-	public static Cellpose fromPretained(String pretrainedModel, String modelsDir, boolean forceInstall) throws IOException, 
+	public static Cellpose fromPretained(String pretrainedModel, String modelsDir, boolean install) throws IOException, 
 																					InterruptedException, ExecutionException {
-		if (PRETRAINED_CELLPOSE_MODELS.contains(pretrainedModel) && !forceInstall) {
+		if (PRETRAINED_CELLPOSE_MODELS.contains(pretrainedModel) && !install) {
 			String weightsPath = fileIsCellpose(pretrainedModel, modelsDir);
 			if (weightsPath != null) return init(weightsPath);
-			String fname = MultiFileDownloader.addTimeStampToFileName(pretrainedModel, true);
-			fname = modelsDir + File.separator + fname;
-			String path = donwloadPretrainedOfficial(pretrainedModel, fname, null);
-			return init(path);
+			return null;
 		} else if (PRETRAINED_CELLPOSE_MODELS.contains(pretrainedModel)) {
 			String fname = MultiFileDownloader.addTimeStampToFileName(pretrainedModel, true);
 			fname = modelsDir + File.separator + fname;
 			String path = donwloadPretrainedOfficial(pretrainedModel, fname, null);
 			return init(path);
 		}
-		if (!forceInstall) {
+		if (!install) {
 			List<ModelDescriptor> localModels = ModelDescriptorFactory.getModelsAtLocalRepo();
 			ModelDescriptor model = localModels.stream()
 					.filter(md -> md.getModelID().equals(pretrainedModel) 
@@ -411,6 +408,8 @@ public class Cellpose extends BioimageIoModelPytorchProtected {
 					.findFirst().orElse(null);
 			if (model != null)
 				return Cellpose.init(model);
+			else 
+				return null;
 		}
 		
 		BioimageioRepo br = BioimageioRepo.connect();
