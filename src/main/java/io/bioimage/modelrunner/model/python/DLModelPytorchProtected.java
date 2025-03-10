@@ -51,6 +51,7 @@ import io.bioimage.modelrunner.exceptions.LoadModelException;
 import io.bioimage.modelrunner.exceptions.RunModelException;
 import io.bioimage.modelrunner.model.BaseModel;
 import io.bioimage.modelrunner.model.java.DLModelJava.TilingConsumer;
+import io.bioimage.modelrunner.numpy.DecodeNumpy;
 import io.bioimage.modelrunner.system.PlatformDetection;
 import io.bioimage.modelrunner.tensor.Tensor;
 import io.bioimage.modelrunner.tensor.shm.SharedMemoryArray;
@@ -363,6 +364,12 @@ public class DLModelPytorchProtected extends BaseModel {
 		List<String> names = inTensors.stream()
 				.map(tt -> tt.getName() + "_np").collect(Collectors.toList());
 		List<RandomAccessibleInterval<T>> rais = inTensors.stream().map(tt -> tt.getData()).collect(Collectors.toList());
+		try {
+			DecodeNumpy.saveNpy("/home/carlos/git/test.npy", rais.get(0));
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 		return executeCode(createInputsCode(rais, names));		
 	}
 	

@@ -281,9 +281,11 @@ public class CellposeGUI extends JPanel implements ActionListener {
     	List<Tensor<R>> inList = new ArrayList<Tensor<R>>();
 		inList.add(tensor);
     	List<Tensor<T>> out = model.run(inList);
-    	consumer.display(out.get(0).getData(), out.get(0).getAxesOrderString(), out.get(0).getName());
-    	if (!check.isSelected())
-    		return;
+    	for (Tensor<T> tt : out) {
+    		if (!check.isSelected() && !tt.getName().equals("masks"))
+    			continue;
+        	consumer.display(tt.getData(), tt.getAxesOrderString(), tt.getName());
+    	}
     }
     
     private void installCellpose() {

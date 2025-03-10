@@ -257,7 +257,7 @@ public class Cellpose extends BioimageIoModelPytorchProtected {
 			return super.createInputsCode(inRais, names);
 		String code = "";
 		for (int i = 0; i < inRais.size(); i ++) {
-			SharedMemoryArray shma = SharedMemoryArray.createSHMAFromRAI(inRais.get(i));
+			SharedMemoryArray shma = SharedMemoryArray.createSHMAFromRAI(inRais.get(i), false, false);
 			code += codeToConvertShmaToPython(shma, names.get(i));
 			inShmaList.add(shma);
 		}
