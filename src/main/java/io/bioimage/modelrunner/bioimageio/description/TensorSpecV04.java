@@ -23,8 +23,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import io.bioimage.modelrunner.bioimageio.description.exceptions.ModelSpecsException;
-
 
 /**
  * A tensor specification descriptor. It holds the information of an input or output tensor (name, shape, axis order, data type, halo, etc.).
@@ -40,8 +38,6 @@ public class TensorSpecV04 implements TensorSpec {
     
     private final Axes axes;
     
-    // TODO
-    private final InputData data = null;
     /**
      * The name of the tensor
      */
@@ -62,6 +58,10 @@ public class TensorSpecV04 implements TensorSpec {
     protected String sampleTensorName;
     
     protected String testTensorName;
+    
+    protected String dataType = "float32";
+    
+    protected String unit = "arbitrary unit";
 
     /**
      * Builds the tensor specification instance from the tensor map and an input flag.
@@ -116,6 +116,8 @@ public class TensorSpecV04 implements TensorSpec {
                 postprocessing.add(TransformSpec.build((Map<String, Object>) elem));
             }
         }
+        if (tensorSpecMap.get("data_type") != null && tensorSpecMap.get("data_type") instanceof String)
+        	this.dataType = (String) tensorSpecMap.get("data_type");
     }
     
     protected void setSampleTensor(String sampleTensorName) {
@@ -175,9 +177,11 @@ public class TensorSpecV04 implements TensorSpec {
     }
     
     public String getDataType() {
-    	// TODO 
-    	//return this.data.toString();
-    	return "float32";
+    	return dataType;
+    }
+    
+    public String getPixelSizeUnit() {
+    	return unit;
     }
 
 	@Override

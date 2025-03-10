@@ -59,4 +59,6 @@ public interface TensorSpec {
     public String getDataType();
     
     public boolean isImage();
+    
+    public String getPixelSizeUnit();
 }

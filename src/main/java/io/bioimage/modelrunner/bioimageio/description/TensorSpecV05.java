@@ -40,8 +40,6 @@ public class TensorSpecV05 implements TensorSpec {
     
     private final Axes axes;
     
-    // TODO
-    private final InputData data = null;
     /**
      * The name of the tensor
      */
@@ -62,6 +60,10 @@ public class TensorSpecV05 implements TensorSpec {
     protected String sampleTensorName;
     
     protected String testTensorName;
+    
+    protected String dataType = "float32";
+    
+    protected String unit = "arbitrary unit";
 
     /**
      * Builds the tensor specification instance from the tensor map and an input flag.
@@ -130,6 +132,13 @@ public class TensorSpecV05 implements TensorSpec {
         	if (sampleMap.get("source") != null && (sampleMap.get("source") instanceof String))
         		this.testTensorName = (String) sampleMap.get("source");
         }
+        if (tensorSpecMap.get("data") != null && (tensorSpecMap.get("data") instanceof Map)) {
+        	Map<String, Object> typeData = (Map<String, Object>) tensorSpecMap.get("data");
+        	if (typeData.get("type") != null && (typeData.get("type") instanceof String))
+        		this.dataType = (String) typeData.get("type");
+        	if (typeData.get("unit") != null && (typeData.get("unit") instanceof String))
+        		this.unit = (String) typeData.get("unit");
+        }
     }
     
     public String getName() {
@@ -181,8 +190,11 @@ public class TensorSpecV05 implements TensorSpec {
     }
     
     public String getDataType() {
-    	// TODO  return this.data.toString();
-    	return "float32";
+    	return dataType;
+    }
+    
+    public String getPixelSizeUnit() {
+    	return unit;
     }
 
 	@Override
