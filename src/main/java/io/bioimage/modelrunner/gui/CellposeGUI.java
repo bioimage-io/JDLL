@@ -38,6 +38,7 @@ public class CellposeGUI extends JPanel implements ActionListener {
     private final ConsumerInterface consumer;
     private String whichLoaded;
     private Cellpose model;
+    private String inputTitle;
     
 	private JComboBox<String> modelComboBox;
 	private JLabel customLabel;
@@ -227,6 +228,7 @@ public class CellposeGUI extends JPanel implements ActionListener {
     	startModelInstallation(true);
     	installCellpose(weightsInstalled(), Cellpose.isInstalled(this.consumer.getModelsDir()));
     	RandomAccessibleInterval<T> rai = consumer.getFocusedImageAsRai();
+    	this.inputTitle = consumer.getFocusedImageName();
     	if (rai == null) {
     		JOptionPane.showMessageDialog(null, "Please open an image", "No image open", JOptionPane.ERROR_MESSAGE);
     		return;
@@ -284,12 +286,18 @@ public class CellposeGUI extends JPanel implements ActionListener {
 		inList.add(tensor);
     	List<Tensor<T>> out = model.run(inList);
     	for (Tensor<T> tt : out) {
-    		if (!check.isSelected() && !tt.getName().equals("masks"))
+    		if (!check.isSelected() && !tt.getName().equals("labels"))
     			continue;
     		else if (tt.getAxesOrder().length == 1)
     			continue;
-        	consumer.display(tt.getData(), tt.getAxesOrderString(), tt.getName());
+        	consumer.display(tt.getData(), tt.getAxesOrderString(), getOutputName(tt.getName()));
     	}
+    }
+    
+    private String getOutputName(String tensorName) {
+    	String noExtension = inputTitle.substring(inputTitle.lastIndexOf("."));
+    	String extension = ".tif";
+    	return noExtension + "_" + tensorName + extension;
     }
     
     private void installCellpose() {

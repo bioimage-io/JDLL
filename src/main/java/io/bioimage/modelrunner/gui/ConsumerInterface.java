@@ -25,6 +25,8 @@ public abstract class ConsumerInterface {
 	
 	public abstract Object getFocusedImage();
 	
+	public abstract String getFocusedImageName();
+	
 	public abstract Integer getFocusedImageChannels();
 	
 	public abstract Integer getFocusedImageSlices();
