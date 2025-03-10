@@ -395,9 +395,7 @@ public class Cellpose extends BioimageIoModelPytorchProtected {
 			if (weightsPath != null) return init(weightsPath);
 			return null;
 		} else if (PRETRAINED_CELLPOSE_MODELS.contains(pretrainedModel)) {
-			String fname = MultiFileDownloader.addTimeStampToFileName(pretrainedModel, true);
-			fname = modelsDir + File.separator + fname;
-			String path = donwloadPretrainedOfficial(pretrainedModel, fname, null);
+			String path = donwloadPretrainedOfficial(pretrainedModel, modelsDir, null);
 			return init(path);
 		}
 		if (!install) {
@@ -526,6 +524,8 @@ public class Cellpose extends BioimageIoModelPytorchProtected {
 			} catch (MalformedURLException e) {
 			}
 		}
+		String fname = MultiFileDownloader.addTimeStampToFileName(modelName, true);
+		downloadDir = downloadDir + File.separator + fname;
 		MultiFileDownloader mfd = new MultiFileDownloader(urls, new File(downloadDir));
 		if (progressConsumer != null)
 			mfd.setPartialProgressConsumer(progressConsumer);
