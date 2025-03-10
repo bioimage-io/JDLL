@@ -220,7 +220,6 @@ public class StardistGUI extends JPanel implements ActionListener {
     }
     
     private < T extends RealType< T > & NativeType< T > > void runStardist() throws IOException, RunModelException, LoadModelException {
-    	installStardist();
     	startModelInstallation(true);
     	installStardist(weightsInstalled(), StardistAbstract.isInstalled());
     	RandomAccessibleInterval<T> rai = consumer.getFocusedImageAsRai();
