@@ -215,7 +215,7 @@ public class Stardist2D extends StardistAbstract {
 	
 	public static String donwloadPretrained(String modelName, String downloadDir, Consumer<Double> progressConsumer) throws InterruptedException, IOException {
 		if (!PRETRAINED_EQUIVALENCE.keySet().contains(modelName))
-			return donwloadPretrainedBioimageio(PRETRAINED_EQUIVALENCE.get(modelName), downloadDir, progressConsumer);
+			return donwloadPretrainedBioimageio(modelName, downloadDir, progressConsumer);
 		else
 			return donwloadPretrainedBioimageio(PRETRAINED_EQUIVALENCE.get(modelName), downloadDir, progressConsumer);
 	}

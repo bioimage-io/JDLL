@@ -56,6 +56,9 @@ public class CellposeGUI extends JPanel implements ActionListener {
     private Cellpose model;
     private String inputTitle;
     
+    private Runnable cancelCallback;
+    Thread workerThread;
+    
 	private JComboBox<String> modelComboBox;
 	private JLabel customLabel;
     private JTextField customModelPathField;
@@ -185,6 +188,10 @@ public class CellposeGUI extends JPanel implements ActionListener {
         // You can add additional listeners for the Cancel, Install, and Run buttons here.
     }
     
+    public void setCancelCallback(Runnable cancelCallback) {
+    	this.cancelCallback = cancelCallback;
+    }
+    
     public void close() {
     	if (model != null && model.isLoaded())
     		model.close();
@@ -203,8 +210,6 @@ public class CellposeGUI extends JPanel implements ActionListener {
             }
         });
     }
-    
-    Thread workerThread;
     
     @Override
     public void actionPerformed(ActionEvent e) {
@@ -237,6 +242,8 @@ public class CellposeGUI extends JPanel implements ActionListener {
     		workerThread.interrupt();
     	if (model != null)
     		model.close();
+    	if (cancelCallback != null)
+    		cancelCallback.run();
     }
     
     private < T extends RealType< T > & NativeType< T > > void runCellpose() throws IOException, RunModelException, LoadModelException {
