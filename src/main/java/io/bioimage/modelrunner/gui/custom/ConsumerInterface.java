@@ -1,4 +1,4 @@
-package io.bioimage.modelrunner.gui;
+package io.bioimage.modelrunner.gui.custom;
 
 import java.util.List;
 

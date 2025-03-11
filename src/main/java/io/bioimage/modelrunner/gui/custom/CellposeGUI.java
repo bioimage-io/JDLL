@@ -1,15 +1,30 @@
-package io.bioimage.modelrunner.gui;
+package io.bioimage.modelrunner.gui.custom;
 
-import javax.swing.*;
+import javax.swing.BorderFactory;
+import javax.swing.Box;
+import javax.swing.BoxLayout;
+import javax.swing.JButton;
+import javax.swing.JCheckBox;
+import javax.swing.JComboBox;
+import javax.swing.JComponent;
+import javax.swing.JDialog;
+import javax.swing.JFileChooser;
+import javax.swing.JFrame;
+import javax.swing.JLabel;
+import javax.swing.JOptionPane;
+import javax.swing.JPanel;
+import javax.swing.JProgressBar;
+import javax.swing.JTextField;
+import javax.swing.SwingUtilities;
 import javax.swing.border.EmptyBorder;
 import javax.swing.event.PopupMenuEvent;
 import javax.swing.event.PopupMenuListener;
 
 import io.bioimage.modelrunner.exceptions.LoadModelException;
 import io.bioimage.modelrunner.exceptions.RunModelException;
+import io.bioimage.modelrunner.gui.EnvironmentInstaller;
 import io.bioimage.modelrunner.gui.workers.InstallEnvWorker;
-import io.bioimage.modelrunner.model.special.stardist.Stardist2D;
-import io.bioimage.modelrunner.model.special.stardist.StardistAbstract;
+import io.bioimage.modelrunner.model.special.cellpose.Cellpose;
 import io.bioimage.modelrunner.tensor.Tensor;
 import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.img.array.ArrayImgs;
@@ -29,32 +44,34 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutionException;
 import java.util.function.Consumer;
 
-public class StardistGUI extends JPanel implements ActionListener {
+public class CellposeGUI extends JPanel implements ActionListener {
 
     private static final long serialVersionUID = 5381352117710530216L;
     
     private final ConsumerInterface consumer;
     private String whichLoaded;
-    private StardistAbstract model;
+    private Cellpose model;
     private String inputTitle;
     
 	private JComboBox<String> modelComboBox;
 	private JLabel customLabel;
     private JTextField customModelPathField;
     private JButton browseButton;
-    private JSpinner minPercField;
-    private JSpinner maxPercField;
+    private JTextField diameterField;
+    private JComboBox<String> channelComboBox;
+    private JCheckBox check;
     private JProgressBar bar;
     private JButton cancelButton, installButton, runButton;
     
     private final String CUSOTM_STR = "your custom model";
     private static List<String> VAR_NAMES = Arrays.asList(new String[] {
-    		"Select a model:", "Custom Model Path:", "Normalization low percentile:", "Normalization low percentile:"
+    		"Select a model:", "Custom Model Path:", "Diameter:", "Channel:", "Display all outputs"
     });
 
-    public StardistGUI(ConsumerInterface consumer) {
+    public CellposeGUI(ConsumerInterface consumer) {
         // Set a modern-looking border layout with padding
     	this.consumer = consumer;
     	List<JComponent> componentList = new ArrayList<JComponent>();
@@ -66,7 +83,7 @@ public class StardistGUI extends JPanel implements ActionListener {
         // --- Model Selection Panel ---
         JPanel modelPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
         modelPanel.add(new JLabel(VAR_NAMES.get(0)));
-        String[] models = {"StarDist Fluorescence Nuclei Segmentation", "StarDist H&E Nuclei Segmentation", CUSOTM_STR};
+        String[] models = {"cyto3", "cyto2", "cyto", "nuclei", CUSOTM_STR};
         modelComboBox = new JComboBox<String>(models);
         modelPanel.add(modelComboBox);
 
@@ -87,14 +104,22 @@ public class StardistGUI extends JPanel implements ActionListener {
         parametersPanel.setBorder(BorderFactory.createTitledBorder("Optional Parameters"));
         // Diameter input
         parametersPanel.add(new JLabel(VAR_NAMES.get(2)));
-        SpinnerNumberModel modelL = new SpinnerNumberModel(1., 0., 100., 0.01);
-        minPercField= new JSpinner(modelL);
-        parametersPanel.add(minPercField);
+        diameterField = new JTextField();
+        parametersPanel.add(diameterField);
         // Channel selection
         parametersPanel.add(new JLabel(VAR_NAMES.get(3)));
-        SpinnerNumberModel modelH = new SpinnerNumberModel(99.8, 0., 100., 0.01);
-        maxPercField= new JSpinner(modelH);
-        parametersPanel.add(maxPercField);
+        String[] channels;
+        if (consumer.getFocusedImageChannels() != null && consumer.getFocusedImageChannels() == 1)
+        	channels = new String[] {"[0,0]"};
+        else if (consumer.getFocusedImageChannels() != null && consumer.getFocusedImageChannels() == 3)
+        	channels = new String[] {"[2,3]", "[2,1]"};
+        else
+        	channels = new String[] {"[0,0]", "[2,3]", "[2,1]"};
+        channelComboBox = new JComboBox<String>(channels);
+        parametersPanel.add(channelComboBox);
+        check = new JCheckBox(VAR_NAMES.get(4));
+        check.setSelected(false);
+        parametersPanel.add(check);
 
         // --- Buttons Panel ---
         JPanel footerPanel = new JPanel(new GridLayout(1, 2));
@@ -132,8 +157,9 @@ public class StardistGUI extends JPanel implements ActionListener {
         this.consumer.setVariableNames(VAR_NAMES);
         componentList.add(this.modelComboBox);
         componentList.add(this.customModelPathField);
-        componentList.add(this.minPercField);
-        componentList.add(this.maxPercField);
+        componentList.add(this.diameterField);
+        componentList.add(this.channelComboBox);
+        componentList.add(this.check);
         this.consumer.setComponents(componentList);
         this.installButton.addActionListener(this);
         this.runButton.addActionListener(this);
@@ -168,9 +194,9 @@ public class StardistGUI extends JPanel implements ActionListener {
     public static void main(String[] args) {
         SwingUtilities.invokeLater(new Runnable() {
             public void run() {
-                JFrame frame = new JFrame("StarDist Plugin");
+                JFrame frame = new JFrame("Cellpose Plugin");
                 frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-                frame.getContentPane().add(new StardistGUI(null));
+                frame.getContentPane().add(new CellposeGUI(null));
                 frame.pack();
                 frame.setLocationRelativeTo(null);
                 frame.setVisible(true);
@@ -187,7 +213,7 @@ public class StardistGUI extends JPanel implements ActionListener {
     	} else if (e.getSource() == this.runButton) {
     		workerThread = new Thread(() -> {
         		try {
-    				runStardist();
+    				runCellpose();
     				startModelInstallation(false);
     			} catch (IOException | RunModelException | LoadModelException e1) {
     				e1.printStackTrace();
@@ -198,7 +224,7 @@ public class StardistGUI extends JPanel implements ActionListener {
     		workerThread.start();
     	} else if (e.getSource() == this.installButton) {
     		workerThread = new Thread(() -> {
-        		installStardist();
+        		installCellpose();
     		});
     		workerThread.start();
     	} else if (e.getSource() == this.cancelButton) {
@@ -213,9 +239,9 @@ public class StardistGUI extends JPanel implements ActionListener {
     		model.close();
     }
     
-    private < T extends RealType< T > & NativeType< T > > void runStardist() throws IOException, RunModelException, LoadModelException {
+    private < T extends RealType< T > & NativeType< T > > void runCellpose() throws IOException, RunModelException, LoadModelException {
     	startModelInstallation(true);
-    	installStardist(weightsInstalled(), StardistAbstract.isInstalled());
+    	installCellpose(weightsInstalled(), Cellpose.isInstalled());
     	RandomAccessibleInterval<T> rai = consumer.getFocusedImageAsRai();
     	this.inputTitle = consumer.getFocusedImageName();
     	if (rai == null) {
@@ -226,40 +252,30 @@ public class StardistGUI extends JPanel implements ActionListener {
     		this.bar.setIndeterminate(true);
     		this.bar.setString("Loading model");
     	});
-    	String selectedModel = (String) this.modelComboBox.getSelectedItem();
-    	String modelype = "" + selectedModel;
-    	if (modelype.equals(CUSOTM_STR))
-    		selectedModel = customModelPathField.getText();
-    	
-    	if (modelype.equals(CUSOTM_STR) 
-    			&& (whichLoaded == null || model == null || model.isClosed() || !whichLoaded.equals(selectedModel)))
-    		model = StardistAbstract.init(selectedModel);
-    	else if (!modelype.equals(CUSOTM_STR) 
-    			&& (whichLoaded == null || model == null || model.isClosed() || !whichLoaded.equals(selectedModel))) {
-			try {
-				model = Stardist2D.fromPretained(selectedModel, consumer.getModelsDir(), false);
-			} catch (InterruptedException e) {
-				e.printStackTrace();
-				return;
-			}
-    	} else if (model == null)
-    		throw new IllegalArgumentException();
-    	if (!model.isLoaded())
+    	String modelPath = (String) this.modelComboBox.getSelectedItem();
+    	if (modelPath.equals(CUSOTM_STR))
+    		modelPath = this.customModelPathField.getText();
+    	else
+    		modelPath = Cellpose.findPretrainedModelInstalled(modelPath, consumer.getModelsDir());
+    	if (whichLoaded != null && !whichLoaded.equals(modelPath))
+    		model.close();
+    	if (model == null || !model.isLoaded()) {
+    		model = Cellpose.init(modelPath);
     		model.loadModel();
-    	
-    	whichLoaded = selectedModel;
+    	}
+    	whichLoaded = modelPath;
     	SwingUtilities.invokeLater(() ->{
     		this.bar.setString("Running the model");
     	});
     	if (rai.dimensionsAsLongArray().length == 4) {
-    		runStardistOnFramesStack(rai);
+    		runCellposeOnFramesStack(rai);
     	} else {
-    		runStardistOnTensor(rai);
+    		runCellposeOnTensor(rai);
     	}
     }
     
     private <T extends RealType<T> & NativeType<T>, R extends RealType<R> & NativeType<R>>
-    void runStardistOnFramesStack(RandomAccessibleInterval<R> rai) throws RunModelException {
+    void runCellposeOnFramesStack(RandomAccessibleInterval<R> rai) throws RunModelException {
     	long[] dims = rai.dimensionsAsLongArray();
 		RandomAccessibleInterval<T> outMaskRai = Cast.unchecked(ArrayImgs.floats(new long[] {dims[0], dims[1], dims[3]}));
 		for (int i = 0; i < rai.dimensionsAsLongArray()[3]; i ++) {
@@ -274,16 +290,20 @@ public class StardistGUI extends JPanel implements ActionListener {
 	    	model.run(inList, outputList);
 		}
     	consumer.display(outMaskRai, "xyb", "mask");
+    	if (!check.isSelected())
+    		return;
     }
     
     private <T extends RealType<T> & NativeType<T>, R extends RealType<R> & NativeType<R>>
-    void runStardistOnTensor(RandomAccessibleInterval<R> rai) throws RunModelException {
+    void runCellposeOnTensor(RandomAccessibleInterval<R> rai) throws RunModelException {
 		Tensor<R> tensor = Tensor.build("input", "xyc", rai);
     	List<Tensor<R>> inList = new ArrayList<Tensor<R>>();
 		inList.add(tensor);
     	List<Tensor<T>> out = model.run(inList);
     	for (Tensor<T> tt : out) {
-    		if (tt.getAxesOrder().length == 1)
+    		if (!check.isSelected() && !tt.getName().equals("labels"))
+    			continue;
+    		else if (tt.getAxesOrder().length == 1)
     			continue;
         	consumer.display(tt.getData(), tt.getAxesOrderString(), getOutputName(tt.getName()));
     	}
@@ -295,18 +315,18 @@ public class StardistGUI extends JPanel implements ActionListener {
     	return noExtension + "_" + tensorName + extension;
     }
     
-    private void installStardist() {
+    private void installCellpose() {
     	startModelInstallation(true);
-    	boolean envInstalled = StardistAbstract.isInstalled();
+    	boolean envInstalled = Cellpose.isInstalled();
     	boolean wwInstalled = weightsInstalled();
     	if (envInstalled && wwInstalled) {
         	startModelInstallation(false);
     		return;
     	}
-    	installStardist(wwInstalled, envInstalled);
+    	installCellpose(wwInstalled, envInstalled);
     }
     
-    private void installStardist(boolean wwInstalled, boolean envInstalled) {
+    private void installCellpose(boolean wwInstalled, boolean envInstalled) {
     	if (wwInstalled && envInstalled)
     		return;
     	SwingUtilities.invokeLater(() -> this.bar.setString("Installing..."));
@@ -324,12 +344,11 @@ public class StardistGUI extends JPanel implements ActionListener {
     
     private boolean weightsInstalled() {
     	String model = (String) this.modelComboBox.getSelectedItem();
-    	if (model.equals(CUSOTM_STR)) {
+    	if (model.equals(CUSOTM_STR))
     		return true;
-    	}
     	try {
-			Stardist2D pretrained = Stardist2D.fromPretained(model, consumer.getModelsDir(), false);
-			if (pretrained == null)
+			String path = Cellpose.findPretrainedModelInstalled(model, consumer.getModelsDir());
+			if (path == null)
 				return false;
 		} catch (Exception e) {
 			return false;
@@ -345,11 +364,11 @@ public class StardistGUI extends JPanel implements ActionListener {
         		this.bar.setString(perc + "% of weights");
     		});
     	};
-		SwingUtilities.invokeLater(() -> bar.setIndeterminate(false));
+    	SwingUtilities.invokeLater(() -> bar.setIndeterminate(false));
 		Thread dwnlThread = new Thread(() -> {
 			try {
-				Stardist2D.donwloadPretrained((String) modelComboBox.getSelectedItem(), this.consumer.getModelsDir(), cons);
-			} catch (IOException | InterruptedException e) {
+				Cellpose.donwloadPretrained((String) modelComboBox.getSelectedItem(), this.consumer.getModelsDir(), cons);
+			} catch (IOException | InterruptedException | ExecutionException e) {
 				e.printStackTrace();
 			}
 			latch.countDown();
@@ -360,22 +379,22 @@ public class StardistGUI extends JPanel implements ActionListener {
     
     private void installEnv(CountDownLatch latch) {
     	String msg = "Installation of Python environments might take up to 20 minutes.";
-    	String question = "Install Python for StarDist";
-    	if (StardistAbstract.isInstalled() || 
+    	String question = "Install Python for Cellpose";
+    	if (Cellpose.isInstalled() || 
     			JOptionPane.showConfirmDialog(null, msg, question, JOptionPane.YES_NO_OPTION) != JOptionPane.YES_OPTION) {
 			latch.countDown();
 			checkModelInstallationFinished(latch);
     		return;
     	}
 		JDialog installerFrame = new JDialog();
-		installerFrame.setTitle("Installing StarDist");
+		installerFrame.setTitle("Installing Cellpose");
 		installerFrame.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
     	Runnable callback = () -> {
     		checkModelInstallationFinished(latch);
     		if (installerFrame.isVisible())
     			installerFrame.dispose();
     	};
-    	InstallEnvWorker worker = new InstallEnvWorker("StarDist", latch, callback);
+    	InstallEnvWorker worker = new InstallEnvWorker("Cellpose", latch, callback);
 		EnvironmentInstaller installerPanel = EnvironmentInstaller.create(worker);
 		Consumer<String> cons = (s) ->{
 			installerPanel.updateText(s, Color.black);
@@ -404,10 +423,11 @@ public class StardistGUI extends JPanel implements ActionListener {
         	this.runButton.setEnabled(!isStarting);
         	this.installButton.setEnabled(!isStarting);
         	this.modelComboBox.setEnabled(!isStarting);
-        	this.minPercField.setEnabled(!isStarting);
-        	this.maxPercField.setEnabled(!isStarting);
+        	this.diameterField.setEnabled(!isStarting);
+        	this.channelComboBox.setEnabled(!isStarting);
+        	this.check.setEnabled(!isStarting);
         	if (isStarting) {
-        		this.bar.setString("Checking stardist installed...");
+        		this.bar.setString("Checking cellpose installed...");
         		this.bar.setIndeterminate(true);
         	} else {
         		this.bar.setIndeterminate(false);
@@ -420,7 +440,7 @@ public class StardistGUI extends JPanel implements ActionListener {
     private void browseFiles() {
         JFileChooser fileChooser = new JFileChooser();
         fileChooser.setFileSelectionMode(JFileChooser.FILES_ONLY);
-        int option = fileChooser.showOpenDialog(StardistGUI.this);
+        int option = fileChooser.showOpenDialog(CellposeGUI.this);
         if (option == JFileChooser.APPROVE_OPTION) {
             customModelPathField.setText(fileChooser.getSelectedFile().getAbsolutePath());
         }
