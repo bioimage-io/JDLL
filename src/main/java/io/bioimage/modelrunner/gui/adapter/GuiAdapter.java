@@ -16,6 +16,10 @@ public interface GuiAdapter {
 	
 	public String getSoftwareName();
 	
+	public String getSoftwareDescription();
+	
+	public String getIconPath();
+	
 	public String getModelsDir();
 	
 	public String getEnginesDir();

@@ -92,6 +92,7 @@ public class Gui extends JPanel {
     		+ "To download models from the Bioimage.io, click on the Bioimage.io button on the top right.";
 
     public Gui(GuiAdapter guiAdapter) {
+    	DefaultIcon.setIconPath(guiAdapter.getIconPath());
     	INSTALL_INSTRUCTIONS = String.format(INSTALL_INSTRUCTIONS_FORMAT, guiAdapter.getSoftwareName());
         this.guiAdapter = guiAdapter;
         long tt = System.currentTimeMillis();
@@ -174,7 +175,7 @@ public class Gui extends JPanel {
     }
 
     private void initTitlePanel() {
-    	titlePanel = new Header("deepImageJ", "The Fiji/ImageJ Plugin for AI", this.getWidth(), this.getHeight());
+    	titlePanel = new Header(this.guiAdapter.getSoftwareName(), this.guiAdapter.getSoftwareDescription(), this.getWidth(), this.getHeight());
         add(titlePanel, layout.get(0));
     }
 

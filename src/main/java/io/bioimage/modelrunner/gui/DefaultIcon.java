@@ -20,29 +20,34 @@ import javax.swing.SwingUtilities;
 
 public class DefaultIcon {
 
-    protected static final String DIJ_ICON_PATH = "dij_imgs/deepimagej_icon.png";
+	protected static String DIJ_ICON_PATH;
     
     private static final Map<Dimension, CompletableFuture<ImageIcon>> PENDING_ICONS = new ConcurrentHashMap<>();
     private static Map<Dimension, ImageIcon> ICONS_CACHE = new ConcurrentHashMap<>();
     private static final ExecutorService scaleExecutor = Executors.newFixedThreadPool(2);
     // Approach 2: Cache single BufferedImage
-    private static final BufferedImage MASTER_IMAGE;
+    private static BufferedImage MASTER_IMAGE;
 
     
     // Initialize the loading icon once when the class is loaded
     static {
-        // You can use any loading icon image you have
-        // This example assumes the loading.gif is in the resources folder
-    	MASTER_IMAGE = initializeMasterImage();
+        initializeMasterImage();
     }
     
-    private static BufferedImage initializeMasterImage() {
+    protected static void setIconPath(String iconPath) {
+    	DIJ_ICON_PATH = iconPath;
+    	initializeMasterImage();
+    }
+    
+    protected static void initializeMasterImage() {
         try {
+        	if (DIJ_ICON_PATH == null)
+        		new IOException();
             URL defaultIconUrl = DefaultIcon.class.getClassLoader().getResource(DIJ_ICON_PATH);
             if (defaultIconUrl == null) {
                 throw new IOException();
             }
-            return ImageIO.read(defaultIconUrl);
+            MASTER_IMAGE = ImageIO.read(defaultIconUrl);
         } catch (IOException e) {
             // Fallback to creating a simple buffered image
             BufferedImage bi = new BufferedImage(50, 50, BufferedImage.TYPE_INT_ARGB);
@@ -50,12 +55,14 @@ public class DefaultIcon {
             g.setColor(Color.GRAY);
             g.drawString("Loading...", 5, 25);
             g.dispose();
-            return bi;
+            MASTER_IMAGE = bi;
         }
     }
 
     public static ImageIcon getDefaultIcon(int width, int height) {
         try {
+        	if (DIJ_ICON_PATH == null)
+        		return null;
             URL defaultIconUrl = Gui.class.getClassLoader().getResource(DIJ_ICON_PATH);
             if (defaultIconUrl == null) {
                 return null;
