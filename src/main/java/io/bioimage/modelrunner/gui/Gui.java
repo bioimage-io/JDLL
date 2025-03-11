@@ -4,7 +4,6 @@ import io.bioimage.modelrunner.bioimageio.BioimageioRepo;
 import io.bioimage.modelrunner.bioimageio.description.ModelDescriptor;
 import io.bioimage.modelrunner.bioimageio.description.ModelDescriptorFactory;
 import io.bioimage.modelrunner.engine.installation.EngineInstall;
-import io.bioimage.modelrunner.gui.EnvironmentInstaller;
 import io.bioimage.modelrunner.gui.workers.InstallEnvWorker;
 import io.bioimage.modelrunner.tensor.Tensor;
 import net.imglib2.type.NativeType;
@@ -17,8 +16,6 @@ import java.awt.FlowLayout;
 import java.awt.Font;
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
-import java.awt.event.WindowAdapter;
-import java.awt.event.WindowEvent;
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
@@ -33,10 +30,9 @@ import javax.swing.JPanel;
 import javax.swing.SwingUtilities;
 import javax.swing.border.EmptyBorder;
 
-import io.bioimage.modelrunner.Constants;
-import io.bioimage.modelrunner.Runner;
+import io.bioimage.modelrunner.gui.adapter.GuiAdapter;
 import io.bioimage.modelrunner.gui.adapter.ImageAdapter;
-import io.bioimage.modelrunner.tools.ImPlusRaiManager;
+import io.bioimage.modelrunner.gui.adapter.RunnerAdapter;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -46,7 +42,8 @@ import java.util.function.Consumer;
 public class Gui extends JPanel {
 
     private static final long serialVersionUID = 1081914206026104187L;
-    private Runner runner;
+    private RunnerAdapter runner;
+    private GuiAdapter adapter;
 	private int currentIndex = 1;
 	private final String modelsDir;
 	private final String enginesDir;
@@ -92,7 +89,6 @@ public class Gui extends JPanel {
     }
 
     public Gui(ImageAdapter imAdapter, String modelsDir, String enginesDir) {
-        super(Constants.DIJ_NAME + "-" + Constants.DIJ_VERSION);
         long tt = System.currentTimeMillis();
         this.imAdapter = imAdapter;
         this.modelsDir = modelsDir != null ? modelsDir : new File(MODELS_DEAFULT).getAbsolutePath();
@@ -120,15 +116,7 @@ public class Gui extends JPanel {
         tt = System.currentTimeMillis();
         initFooterPanel();
         System.out.println("Footer: " + (System.currentTimeMillis() - tt));
-        
-        this.addWindowListener(new WindowAdapter() {
-            @Override
-            public void windowClosed(WindowEvent e) {
-                onClose();
-            }
-        });
 
-        this.pack();
         setVisible(true);
     }
     
@@ -245,7 +233,7 @@ public class Gui extends JPanel {
         runButtonPanel.add(runOnTestButton);
         runButtonPanel.add(runButton);
 
-        JLabel copyrightLabel = new JLabel("© 2024 " + Constants.DIJ_NAME + " and JDLL");
+        JLabel copyrightLabel = new JLabel("© 2024 " + adapter.getSoftwareName() + " and JDLL");
         copyrightLabel.setFont(new Font("SansSerif", Font.PLAIN, 12));
         copyrightLabel.setForeground(Color.WHITE);
 
@@ -256,7 +244,7 @@ public class Gui extends JPanel {
     }
     
     private void cancel() {
-    	this.dispose();
+    	this.onClose();
     }
     
     private <T extends RealType<T> & NativeType<T>> void runModel() {
@@ -265,7 +253,7 @@ public class Gui extends JPanel {
         	try {
             	if (runner == null || runner.isClosed()) {
                 	SwingUtilities.invokeLater(() -> this.contentPanel.setProgressLabelText("Loading model..."));
-            		runner = Runner.create(this.modelSelectionPanel.getModels().get(currentIndex));
+            		runner = adapter.createRunner(this.modelSelectionPanel.getModels().get(currentIndex));
             	}
         		if (!runner.isLoaded() && GuiUtils.isEDTAlive())
         			runner.load();
@@ -277,10 +265,9 @@ public class Gui extends JPanel {
     			for (Tensor<T> tt : outs) {
     				if (!GuiUtils.isEDTAlive())
             			return;
-    				ImagePlus im = ImPlusRaiManager.convert(tt.getData(), tt.getAxesOrderString());
     				if (!GuiUtils.isEDTAlive())
             			return;
-    				SwingUtilities.invokeLater(() -> im.show());
+    				adapter.displayRai(tt.getData(), tt.getAxesOrderString());
     			}
     		} catch (Exception e) {
     			e.printStackTrace();
@@ -307,7 +294,7 @@ public class Gui extends JPanel {
         	try {
             	if (runner == null || runner.isClosed()) {
                 	SwingUtilities.invokeLater(() -> this.contentPanel.setProgressLabelText("Loading model..."));
-            		runner = Runner.create(this.modelSelectionPanel.getModels().get(currentIndex));
+            		runner = adapter.createRunner(this.modelSelectionPanel.getModels().get(currentIndex));
             	}
         		if (!runner.isLoaded() && GuiUtils.isEDTAlive())
         			runner.load();
@@ -318,10 +305,9 @@ public class Gui extends JPanel {
     			for (Tensor<T> tt : outs) {
     				if (!GuiUtils.isEDTAlive())
             			return;
-    				ImagePlus im = ImPlusRaiManager.convert(tt.getData(), tt.getAxesOrderString());
     				if (!GuiUtils.isEDTAlive())
             			return;
-    				SwingUtilities.invokeLater(() -> im.show());
+    				adapter.displayRai(tt.getData(), tt.getAxesOrderString());
     			}
     		} catch (Exception e) {
     			e.printStackTrace();
@@ -636,7 +622,7 @@ public class Gui extends JPanel {
     	installerFrame.setSize(600, 300);
     }
     
-    private void onClose() {
+    public void onClose() {
     	DefaultIcon.closeThreads();
     	if (dwnlThread != null && this.dwnlThread.isAlive())
     		this.dwnlThread.interrupt();
