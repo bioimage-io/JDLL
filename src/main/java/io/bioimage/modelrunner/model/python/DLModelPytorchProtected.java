@@ -367,12 +367,6 @@ public class DLModelPytorchProtected extends BaseModel {
 		List<String> names = inTensors.stream()
 				.map(tt -> tt.getName() + "_np").collect(Collectors.toList());
 		List<RandomAccessibleInterval<T>> rais = inTensors.stream().map(tt -> tt.getData()).collect(Collectors.toList());
-		try {
-			DecodeNumpy.saveNpy("/home/carlos/git/test.npy", rais.get(0));
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
 		return executeCode(createInputsCode(rais, names));		
 	}
 	
