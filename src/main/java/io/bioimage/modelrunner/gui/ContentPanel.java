@@ -42,11 +42,6 @@ public class ContentPanel extends JPanel {
     private ImageLoaderWorker imageWorker;
     private final long parentHeight;
     private final long parentWidth;
-    
-    public final static String INSTALL_INSTRUCTIONS = ""
-    		+ "No models found at: " + Constants.FIJI_FOLDER + File.separator + "models<br><br>"
-    		+ "Please, install manually or download models from the Bioimage.io.<br><br>"
-    		+ "To download models from the Bioimage.io, click on the Bioimage.io button on the top right.";
 
 	private final static double MODEL_VRATIO = 0.4;
 	private final static double PROGRESS_VRATIO = 0.2;

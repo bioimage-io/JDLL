@@ -43,7 +43,7 @@ public class Gui extends JPanel {
 
     private static final long serialVersionUID = 1081914206026104187L;
     private RunnerAdapter runner;
-    private GuiAdapter adapter;
+    private GuiAdapter guiAdapter;
 	private int currentIndex = 1;
 	private final String modelsDir;
 	private final String enginesDir;
@@ -82,17 +82,24 @@ public class Gui extends JPanel {
     protected static final String INSTALL_STR = "Install model";
     private static final String MODELS_DEAFULT = "models";
     private static final String ENGINES_DEAFULT = "engines";
+    
+    private final static String INSTALL_INSTRUCTIONS_FORMAT = ""
+    		+ "No models found at: %s" + File.separator + "models<br><br>"
+    		+ "Please, install manually or download models from the Bioimage.io.<br><br>"
+    		+ "To download models from the Bioimage.io, click on the Bioimage.io button on the top right.";
+    
+    public static String INSTALL_INSTRUCTIONS = ""
+    		+ "No models found.<br><br>"
+    		+ "Please, install manually or download models from the Bioimage.io.<br><br>"
+    		+ "To download models from the Bioimage.io, click on the Bioimage.io button on the top right.";
 
-
-    public Gui(ImageAdapter imAdapter) {
-    	this(imAdapter, null, null);
-    }
-
-    public Gui(ImageAdapter imAdapter, String modelsDir, String enginesDir) {
-        long tt = System.currentTimeMillis();
+    public Gui(ImageAdapter imAdapter, GuiAdapter guiAdapter) {
+    	INSTALL_INSTRUCTIONS = String.format(INSTALL_INSTRUCTIONS_FORMAT, guiAdapter.getSoftwareName());
         this.imAdapter = imAdapter;
-        this.modelsDir = modelsDir != null ? modelsDir : new File(MODELS_DEAFULT).getAbsolutePath();
-        this.enginesDir = enginesDir != null ? enginesDir : new File(ENGINES_DEAFULT).getAbsolutePath();
+        this.guiAdapter = guiAdapter;
+        long tt = System.currentTimeMillis();
+        this.modelsDir = guiAdapter.getModelsDir() != null ? guiAdapter.getModelsDir() : new File(MODELS_DEAFULT).getAbsolutePath();
+        this.enginesDir = guiAdapter.getEnginesDir() != null ? guiAdapter.getEnginesDir() : new File(ENGINES_DEAFULT).getAbsolutePath();
         loadLocalModels();
         System.out.println("Model loading: " + (System.currentTimeMillis() - tt));
         tt = System.currentTimeMillis();
@@ -233,7 +240,7 @@ public class Gui extends JPanel {
         runButtonPanel.add(runOnTestButton);
         runButtonPanel.add(runButton);
 
-        JLabel copyrightLabel = new JLabel("© 2024 " + adapter.getSoftwareName() + " and JDLL");
+        JLabel copyrightLabel = new JLabel("© 2024 " + guiAdapter.getSoftwareName() + " and JDLL");
         copyrightLabel.setFont(new Font("SansSerif", Font.PLAIN, 12));
         copyrightLabel.setForeground(Color.WHITE);
 
@@ -253,7 +260,7 @@ public class Gui extends JPanel {
         	try {
             	if (runner == null || runner.isClosed()) {
                 	SwingUtilities.invokeLater(() -> this.contentPanel.setProgressLabelText("Loading model..."));
-            		runner = adapter.createRunner(this.modelSelectionPanel.getModels().get(currentIndex));
+            		runner = guiAdapter.createRunner(this.modelSelectionPanel.getModels().get(currentIndex));
             	}
         		if (!runner.isLoaded() && GuiUtils.isEDTAlive())
         			runner.load();
@@ -267,7 +274,7 @@ public class Gui extends JPanel {
             			return;
     				if (!GuiUtils.isEDTAlive())
             			return;
-    				adapter.displayRai(tt.getData(), tt.getAxesOrderString());
+    				guiAdapter.displayRai(tt.getData(), tt.getAxesOrderString());
     			}
     		} catch (Exception e) {
     			e.printStackTrace();
@@ -294,7 +301,7 @@ public class Gui extends JPanel {
         	try {
             	if (runner == null || runner.isClosed()) {
                 	SwingUtilities.invokeLater(() -> this.contentPanel.setProgressLabelText("Loading model..."));
-            		runner = adapter.createRunner(this.modelSelectionPanel.getModels().get(currentIndex));
+            		runner = guiAdapter.createRunner(this.modelSelectionPanel.getModels().get(currentIndex));
             	}
         		if (!runner.isLoaded() && GuiUtils.isEDTAlive())
         			runner.load();
@@ -307,7 +314,7 @@ public class Gui extends JPanel {
             			return;
     				if (!GuiUtils.isEDTAlive())
             			return;
-    				adapter.displayRai(tt.getData(), tt.getAxesOrderString());
+    				guiAdapter.displayRai(tt.getData(), tt.getAxesOrderString());
     			}
     		} catch (Exception e) {
     			e.printStackTrace();

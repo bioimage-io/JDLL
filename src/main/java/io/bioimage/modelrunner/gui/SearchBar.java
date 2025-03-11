@@ -2,6 +2,7 @@ package io.bioimage.modelrunner.gui;
 
 import java.awt.BorderLayout;
 import java.awt.Color;
+import java.awt.Desktop;
 import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.GridLayout;
@@ -65,7 +66,7 @@ public class SearchBar extends JPanel {
             @Override
             public void mouseClicked(MouseEvent e) {
                 try {
-                    WebBrowser.open("https://www.bioimage.io");
+                	Desktop.getDesktop().browse(new URL("https://www.bioimage.io").toURI());
                 } catch (Exception ex) {
                     ex.printStackTrace();
                 }

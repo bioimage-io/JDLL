@@ -3,7 +3,7 @@ package io.bioimage.modelrunner.gui.workers;
 import javax.swing.SwingUtilities;
 import javax.swing.SwingWorker;
 
-import io.bioimage.modelrunner.gui.ContentPanel;
+import io.bioimage.modelrunner.gui.Gui;
 import io.bioimage.modelrunner.bioimageio.description.ModelDescriptor;
 
 public class ModelInfoWorker extends SwingWorker<String, Void> {
@@ -21,7 +21,7 @@ public class ModelInfoWorker extends SwingWorker<String, Void> {
         // Perform the time-consuming task of generating the info text
         if (model == null) {
             // Return default text if model is null
-            return ContentPanel.INSTALL_INSTRUCTIONS;
+            return Gui.INSTALL_INSTRUCTIONS;
         } else {
             // Generate the info from the model
             return model.buildInfo();

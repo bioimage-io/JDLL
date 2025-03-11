@@ -10,6 +10,10 @@ public interface GuiAdapter {
 	
 	public String getSoftwareName();
 	
+	public String getModelsDir();
+	
+	public String getEnginesDir();
+	
 	public RunnerAdapter createRunner(ModelDescriptor descriptor);
 	
 	public RunnerAdapter createRunner(ModelDescriptor descriptor, String enginesPath);
