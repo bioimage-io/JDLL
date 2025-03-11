@@ -31,7 +31,6 @@ import javax.swing.SwingUtilities;
 import javax.swing.border.EmptyBorder;
 
 import io.bioimage.modelrunner.gui.adapter.GuiAdapter;
-import io.bioimage.modelrunner.gui.adapter.ImageAdapter;
 import io.bioimage.modelrunner.gui.adapter.RunnerAdapter;
 
 import java.util.ArrayList;
@@ -47,7 +46,6 @@ public class Gui extends JPanel {
 	private int currentIndex = 1;
 	private final String modelsDir;
 	private final String enginesDir;
-	private final ImageAdapter imAdapter;
     private final Object lock = new Object();
     private int nParsedModels;
 
@@ -93,9 +91,8 @@ public class Gui extends JPanel {
     		+ "Please, install manually or download models from the Bioimage.io.<br><br>"
     		+ "To download models from the Bioimage.io, click on the Bioimage.io button on the top right.";
 
-    public Gui(ImageAdapter imAdapter, GuiAdapter guiAdapter) {
+    public Gui(GuiAdapter guiAdapter) {
     	INSTALL_INSTRUCTIONS = String.format(INSTALL_INSTRUCTIONS_FORMAT, guiAdapter.getSoftwareName());
-        this.imAdapter = imAdapter;
         this.guiAdapter = guiAdapter;
         long tt = System.currentTimeMillis();
         this.modelsDir = guiAdapter.getModelsDir() != null ? guiAdapter.getModelsDir() : new File(MODELS_DEAFULT).getAbsolutePath();
@@ -267,7 +264,7 @@ public class Gui extends JPanel {
         		else if (!GuiUtils.isEDTAlive())
         			return;
             	SwingUtilities.invokeLater(() -> this.contentPanel.setProgressLabelText("Running the model..."));
-            	List<Tensor<T>> list = imAdapter.getInputTensors(runner.getDescriptor());
+            	List<Tensor<T>> list = guiAdapter.getInputTensors(runner.getDescriptor());
     			List<Tensor<T>> outs = runner.run(list);
     			for (Tensor<T> tt : outs) {
     				if (!GuiUtils.isEDTAlive())
