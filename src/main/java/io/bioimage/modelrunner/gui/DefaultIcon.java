@@ -42,7 +42,7 @@ public class DefaultIcon {
     protected static void initializeMasterImage() {
         try {
         	if (DIJ_ICON_PATH == null)
-        		new IOException();
+        		throw new IOException();
             URL defaultIconUrl = DefaultIcon.class.getClassLoader().getResource(DIJ_ICON_PATH);
             if (defaultIconUrl == null) {
                 throw new IOException();
