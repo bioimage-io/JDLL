@@ -38,7 +38,7 @@ public abstract class RunnerAdapter implements Closeable {
 	
 	protected abstract LinkedHashMap<TensorSpec, String> getTestInputs();
 
-	protected RunnerAdapter(ModelDescriptor descriptor) throws IOException, ModelSpecsException, LoadEngineException {
+	protected RunnerAdapter(ModelDescriptor descriptor) throws IOException, LoadEngineException {
 		this.descriptor = descriptor;
 		if (descriptor.getModelFamily().equals(ModelDescriptor.STARDIST)) {
 			model = StardistAbstract.fromBioimageioModel(descriptor);
@@ -50,7 +50,7 @@ public abstract class RunnerAdapter implements Closeable {
 	}
 
 	protected RunnerAdapter(ModelDescriptor descriptor, String enginesPath) 
-			throws IOException, ModelSpecsException, LoadEngineException {
+			throws IOException, LoadEngineException {
 		this.descriptor = descriptor;
 		if (descriptor.getModelFamily().equals(ModelDescriptor.STARDIST)) {
 			model = Stardist2D.fromBioimageioModel(descriptor);
