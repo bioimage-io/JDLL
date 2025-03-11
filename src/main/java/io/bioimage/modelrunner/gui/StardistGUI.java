@@ -29,7 +29,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.ExecutionException;
 import java.util.function.Consumer;
 
 public class StardistGUI extends JPanel implements ActionListener {
@@ -47,13 +46,12 @@ public class StardistGUI extends JPanel implements ActionListener {
     private JButton browseButton;
     private JSpinner minPercField;
     private JSpinner maxPercField;
-    private JCheckBox check;
     private JProgressBar bar;
     private JButton cancelButton, installButton, runButton;
     
     private final String CUSOTM_STR = "your custom model";
     private static List<String> VAR_NAMES = Arrays.asList(new String[] {
-    		"Select a model:", "Custom Model Path:", "Normalization low percentile:", "Normalization low percentile:", "Display all outputs"
+    		"Select a model:", "Custom Model Path:", "Normalization low percentile:", "Normalization low percentile:"
     });
 
     public StardistGUI(ConsumerInterface consumer) {
@@ -97,9 +95,6 @@ public class StardistGUI extends JPanel implements ActionListener {
         SpinnerNumberModel modelH = new SpinnerNumberModel(99.8, 0., 100., 0.01);
         maxPercField= new JSpinner(modelH);
         parametersPanel.add(maxPercField);
-        check = new JCheckBox(VAR_NAMES.get(4));
-        check.setSelected(false);
-        parametersPanel.add(check);
 
         // --- Buttons Panel ---
         JPanel footerPanel = new JPanel(new GridLayout(1, 2));
@@ -139,7 +134,6 @@ public class StardistGUI extends JPanel implements ActionListener {
         componentList.add(this.customModelPathField);
         componentList.add(this.minPercField);
         componentList.add(this.maxPercField);
-        componentList.add(this.check);
         this.consumer.setComponents(componentList);
         this.installButton.addActionListener(this);
         this.runButton.addActionListener(this);
@@ -280,8 +274,6 @@ public class StardistGUI extends JPanel implements ActionListener {
 	    	model.run(inList, outputList);
 		}
     	consumer.display(outMaskRai, "xyb", "mask");
-    	if (!check.isSelected())
-    		return;
     }
     
     private <T extends RealType<T> & NativeType<T>, R extends RealType<R> & NativeType<R>>
@@ -291,9 +283,7 @@ public class StardistGUI extends JPanel implements ActionListener {
 		inList.add(tensor);
     	List<Tensor<T>> out = model.run(inList);
     	for (Tensor<T> tt : out) {
-    		if (!check.isSelected() && !tt.getName().equals("labels"))
-    			continue;
-    		else if (tt.getAxesOrder().length == 1)
+    		if (tt.getAxesOrder().length == 1)
     			continue;
         	consumer.display(tt.getData(), tt.getAxesOrderString(), getOutputName(tt.getName()));
     	}
@@ -416,7 +406,6 @@ public class StardistGUI extends JPanel implements ActionListener {
         	this.modelComboBox.setEnabled(!isStarting);
         	this.minPercField.setEnabled(!isStarting);
         	this.maxPercField.setEnabled(!isStarting);
-        	this.check.setEnabled(!isStarting);
         	if (isStarting) {
         		this.bar.setString("Checking stardist installed...");
         		this.bar.setIndeterminate(true);
