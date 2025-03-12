@@ -69,7 +69,7 @@ public class StardistGUI extends JPanel implements ActionListener {
     private JProgressBar bar;
     private JButton cancelButton, installButton, runButton;
     
-    private final String CUSOTM_STR = "your custom model";
+    private final String CUSTOM_STR = "your custom model";
     private static List<String> VAR_NAMES = Arrays.asList(new String[] {
     		"Select a model:", "Custom Model Path:", "Normalization low percentile:", "Normalization low percentile:"
     });
@@ -86,7 +86,7 @@ public class StardistGUI extends JPanel implements ActionListener {
         // --- Model Selection Panel ---
         JPanel modelPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
         modelPanel.add(new JLabel(VAR_NAMES.get(0)));
-        String[] models = {"StarDist Fluorescence Nuclei Segmentation", "StarDist H&E Nuclei Segmentation", CUSOTM_STR};
+        String[] models = {"StarDist Fluorescence Nuclei Segmentation", "StarDist H&E Nuclei Segmentation", CUSTOM_STR};
         modelComboBox = new JComboBox<String>(models);
         modelPanel.add(modelComboBox);
 
@@ -168,7 +168,7 @@ public class StardistGUI extends JPanel implements ActionListener {
 
             @Override
             public void popupMenuWillBecomeInvisible(PopupMenuEvent e) {
-            	boolean enabled = modelComboBox.getSelectedItem().equals(CUSOTM_STR);
+            	boolean enabled = modelComboBox.getSelectedItem().equals(CUSTOM_STR);
                 customLabel.setEnabled(enabled);
                 customModelPathField.setEnabled(enabled);
                 browseButton.setEnabled(enabled);
@@ -252,13 +252,13 @@ public class StardistGUI extends JPanel implements ActionListener {
     	});
     	String selectedModel = (String) this.modelComboBox.getSelectedItem();
     	String modelype = "" + selectedModel;
-    	if (modelype.equals(CUSOTM_STR))
+    	if (modelype.equals(CUSTOM_STR))
     		selectedModel = customModelPathField.getText();
     	
-    	if (modelype.equals(CUSOTM_STR) 
+    	if (modelype.equals(CUSTOM_STR) 
     			&& (whichLoaded == null || model == null || model.isClosed() || !whichLoaded.equals(selectedModel)))
     		model = StardistAbstract.init(selectedModel);
-    	else if (!modelype.equals(CUSOTM_STR) 
+    	else if (!modelype.equals(CUSTOM_STR) 
     			&& (whichLoaded == null || model == null || model.isClosed() || !whichLoaded.equals(selectedModel))) {
 			try {
 				model = Stardist2D.fromPretained(selectedModel, consumer.getModelsDir(), false);
@@ -348,7 +348,7 @@ public class StardistGUI extends JPanel implements ActionListener {
     
     private boolean weightsInstalled() {
     	String model = (String) this.modelComboBox.getSelectedItem();
-    	if (model.equals(CUSOTM_STR)) {
+    	if (model.equals(CUSTOM_STR)) {
     		return true;
     	}
     	try {
