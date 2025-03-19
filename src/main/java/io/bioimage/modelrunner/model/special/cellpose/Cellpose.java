@@ -124,7 +124,7 @@ public class Cellpose extends BioimageIoModelPytorchProtected {
 			+ "if 'shared_memory' not in globals().keys():" + System.lineSeparator()
 			+ "  from multiprocessing import shared_memory" + System.lineSeparator()
 			+ "  globals()['shared_memory'] = shared_memory" + System.lineSeparator()
-			+ MODEL_VAR_NAME + " = denoise.CellposeDenoiseModel(gpu=%s, pretrained_model='%s')" + System.lineSeparator()
+			+ MODEL_VAR_NAME + " = denoise.CellposeDenoiseModel(gpu=%s, pretrained_model=r'%s')" + System.lineSeparator()
 			+ "globals()['" + MODEL_VAR_NAME + "'] = " + MODEL_VAR_NAME + System.lineSeparator();
 	
 	protected static final String PATH_TO_RDF = "special_models/cellpose/rdf.yaml";
