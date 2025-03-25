@@ -317,7 +317,11 @@ public class CellposeGUI extends JPanel implements ActionListener {
     }
     
     private String getOutputName(String tensorName) {
-    	String noExtension = inputTitle.substring(0, inputTitle.lastIndexOf("."));
+    	String noExtension;
+    	if (inputTitle.lastIndexOf(".") != -1)
+    		noExtension = inputTitle.substring(0, inputTitle.lastIndexOf("."));
+    	else
+    		noExtension = inputTitle;
     	String extension = ".tif";
     	return noExtension + "_" + tensorName + extension;
     }
