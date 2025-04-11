@@ -49,6 +49,17 @@ public abstract class RunnerAdapter implements Closeable {
 		}
 	}
 
+	protected RunnerAdapter(ModelDescriptor descriptor, ClassLoader classloader) throws IOException, LoadEngineException {
+		this.descriptor = descriptor;
+		if (descriptor.getModelFamily().equals(ModelDescriptor.STARDIST)) {
+			model = StardistAbstract.fromBioimageioModel(descriptor);
+		} else if (descriptor.getModelFamily().equals(ModelDescriptor.BIOIMAGEIO)) {
+			model = BioimageIoModelJava.createBioimageioModel(descriptor.getModelPath(), classloader);
+		} else {
+			throw new IllegalArgumentException("Model not supported");
+		}
+	}
+
 	protected RunnerAdapter(ModelDescriptor descriptor, String enginesPath) 
 			throws IOException, LoadEngineException {
 		this.descriptor = descriptor;
@@ -56,6 +67,18 @@ public abstract class RunnerAdapter implements Closeable {
 			model = Stardist2D.fromBioimageioModel(descriptor);
 		} else if (descriptor.getModelFamily().equals(ModelDescriptor.BIOIMAGEIO)) {
 			model = BioimageIoModelJava.createBioimageioModel(descriptor.getModelPath(), enginesPath);
+		} else {
+			throw new IllegalArgumentException("Model not supported");
+		}
+	}
+
+	protected RunnerAdapter(ModelDescriptor descriptor, String enginesPath, ClassLoader classloader) 
+			throws IOException, LoadEngineException {
+		this.descriptor = descriptor;
+		if (descriptor.getModelFamily().equals(ModelDescriptor.STARDIST)) {
+			model = Stardist2D.fromBioimageioModel(descriptor);
+		} else if (descriptor.getModelFamily().equals(ModelDescriptor.BIOIMAGEIO)) {
+			model = BioimageIoModelJava.createBioimageioModel(descriptor.getModelPath(), enginesPath, classloader);
 		} else {
 			throw new IllegalArgumentException("Model not supported");
 		}
