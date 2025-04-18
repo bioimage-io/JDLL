@@ -265,6 +265,7 @@ public class Gui extends JPanel {
         		else if (!GuiUtils.isEDTAlive())
         			return;
             	SwingUtilities.invokeLater(() -> this.contentPanel.setProgressLabelText("Running the model..."));
+            	List<String> inputNames = guiAdapter.getInputImageNames();
             	List<Tensor<T>> list = guiAdapter.getInputTensors(runner.getDescriptor());
     			List<Tensor<T>> outs = runner.run(list);
     			for (Tensor<T> tt : outs) {
@@ -272,7 +273,7 @@ public class Gui extends JPanel {
             			return;
     				if (!GuiUtils.isEDTAlive())
             			return;
-    				guiAdapter.displayRai(tt.getData(), tt.getAxesOrderString());
+    				guiAdapter.displayRai(tt.getData(), tt.getAxesOrderString(), tt.getName() + "_of_" + inputNames.get(0));
     			}
     		} catch (Exception e) {
     			e.printStackTrace();
@@ -307,12 +308,13 @@ public class Gui extends JPanel {
         			return;
             	SwingUtilities.invokeLater(() -> this.contentPanel.setProgressLabelText("Running the model..."));
     			List<Tensor<T>> outs = runner.runOnTestImages();
+            	List<String> inputNames = guiAdapter.getInputImageNames();
     			for (Tensor<T> tt : outs) {
     				if (!GuiUtils.isEDTAlive())
             			return;
     				if (!GuiUtils.isEDTAlive())
             			return;
-    				guiAdapter.displayRai(tt.getData(), tt.getAxesOrderString());
+    				guiAdapter.displayRai(tt.getData(), tt.getAxesOrderString(), tt.getName() + "_of_" + inputNames.get(0));
     			}
     		} catch (Exception e) {
     			e.printStackTrace();
