@@ -37,9 +37,6 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.net.HttpURLConnection;
-import java.net.MalformedURLException;
-import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.channels.Channels;
@@ -85,7 +82,11 @@ public final class MambaInstallerUtils {
 	    		BZip2CompressorInputStream input = new BZip2CompressorInputStream(new BufferedInputStream(new FileInputStream(source)));
 	    		FileOutputStream output = new FileOutputStream(destination);
 	    		) {
+	    	System.out.println("aa");
 	        copy(input, output);
+	    } catch (Error e) {
+	    	e.printStackTrace();
+	    	throw e;
 	    }
 	}
 
