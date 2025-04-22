@@ -14,6 +14,10 @@ import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.Font;
+import java.awt.GridBagConstraints;
+import java.awt.GridBagLayout;
+import java.awt.GridLayout;
+import java.awt.Insets;
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
 import java.io.File;
@@ -65,7 +69,6 @@ public class Gui extends JPanel {
     private JButton runButton;
     private JButton runOnTestButton;
     private JButton cancelButton;
-    private Layout layout = Layout.createVertical(LAYOUT_WEIGHTS);
 
     private static final double FOOTER_VRATIO = 0.06;
     private static final double[] LAYOUT_WEIGHTS = new double[] {0.1, 0.05, 0.8, 0.05};
@@ -104,8 +107,7 @@ public class Gui extends JPanel {
         installEnginesIfNeeded();
         System.out.println("Engines loading: " + (System.currentTimeMillis() - tt));
         tt = System.currentTimeMillis();
-        setSize(800, 900);
-        setLayout(layout);
+        setLayout(new GridBagLayout());
         System.out.println("Set size: " + (System.currentTimeMillis() - tt));
         tt = System.currentTimeMillis();
 
@@ -175,14 +177,24 @@ public class Gui extends JPanel {
     }
 
     private void initTitlePanel() {
-    	titlePanel = new Header(this.guiAdapter.getSoftwareName(), this.guiAdapter.getSoftwareDescription(), this.getWidth(), this.getHeight());
-        add(titlePanel, layout.get(0));
+    	titlePanel = new Header(this.guiAdapter.getSoftwareName(), this.guiAdapter.getSoftwareDescription());
+    	titlePanel.setPreferredSize(new Dimension(0, 0));
+    	titlePanel.setMinimumSize(new Dimension(0, 0));
+    	GridBagConstraints gbc = new GridBagConstraints();
+        gbc.gridx      = 0;
+        gbc.gridwidth  = 1;
+        gbc.fill       = GridBagConstraints.BOTH;
+        gbc.weightx    = 1.0;
+        gbc.gridy     = 0;
+        gbc.weighty   = 0.15;   
+        this.add(titlePanel, gbc);
     }
 
     private void initSearchBar() {
         // Set up the title panel
-        searchBar = new SearchBar(this.getWidth(), this.getHeight());
-        add(searchBar, layout.get(1));
+        searchBar = new SearchBar();
+        searchBar.setPreferredSize(new Dimension(0, 0));
+        searchBar.setMinimumSize(new Dimension(0, 0));
         searchBar.switchButton.addActionListener(ee -> switchBtnClicked());
         searchBar.searchButton.addActionListener(ee -> searchModels());
         searchBar.searchField.addKeyListener(new KeyAdapter() {
@@ -192,12 +204,24 @@ public class Gui extends JPanel {
                 	searchModels();
             }
         });
+    	GridBagConstraints gbc = new GridBagConstraints();
+        gbc.gridx      = 0;
+        gbc.gridwidth  = 1;
+        gbc.fill       = GridBagConstraints.BOTH;
+        gbc.weightx    = 1.0;
+        gbc.gridy     = 1;
+        gbc.weighty   = 0.06;
+        this.add(searchBar, gbc);
     }
 
     private void initMainContentPanel() {
         // Create a main content panel with vertical BoxLayout
         JPanel mainContentPanel = new JPanel();
-        Layout mainPanelLayout = Layout.createVertical(new double[] {0.45, 0.55});
+        JPanel mainContentPanel2 = new JPanel();
+        mainContentPanel2.setPreferredSize(new Dimension(0, 0));
+        mainContentPanel2.setMinimumSize(new Dimension(0, 0));
+        /*
+         * Layout mainPanelLayout = Layout.createVertical(new double[] {0.45, 0.55});
         mainContentPanel.setLayout(mainPanelLayout);
         mainContentPanel.setBackground(Color.WHITE);
 
@@ -206,47 +230,106 @@ public class Gui extends JPanel {
         mainContentPanel.add(this.modelSelectionPanel, mainPanelLayout.get(0));
         contentPanel = new ContentPanel(this.getWidth(), this.getHeight());
         mainContentPanel.add(contentPanel, mainPanelLayout.get(1));
-
-        // Add the main content panel to the frame's CENTER region
-        add(mainContentPanel, layout.get(2));
         
         modelSelectionPanel.prevButton.addActionListener(e -> updateCarousel(-1));
         modelSelectionPanel.nextButton.addActionListener(e -> updateCarousel(1));
+         */
+        // Add the main content panel to the frame's CENTER region
+    	GridBagConstraints gbc = new GridBagConstraints();
+        gbc.gridx      = 0;
+        gbc.gridwidth  = 1;
+        gbc.fill       = GridBagConstraints.BOTH;
+        gbc.weightx    = 1.0;
+        gbc.gridy     = 2;
+        gbc.weighty   = 0.69;   
+        add(mainContentPanel2, gbc);
     }
-
+    
     private void initFooterPanel() {
-        footerPanel = new JPanel(new BorderLayout());
+        // ───────────────────────────────────────────────────────────────
+        // 1) Footer container with GridBagLayout
+        footerPanel = new JPanel(new GridBagLayout());
+        footerPanel.setPreferredSize(new Dimension(0, 0));
+        footerPanel.setMinimumSize(new Dimension(0, 0));
         footerPanel.setBackground(new Color(45, 62, 80));
         footerPanel.setBorder(new EmptyBorder(10, 5, 10, 5));
-        footerPanel.setPreferredSize(new Dimension(this.getWidth(), (int) (this.getHeight() * FOOTER_VRATIO)));
 
-        JPanel runButtonPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 20, 0));
-        runButtonPanel.setBackground(new Color(45, 62, 80));
-
+        // ───────────────────────────────────────────────────────────────
+        // 2) Create & style the three buttons
         runOnTestButton = new JButton(RUN_ON_TEST_STR);
         runOnTestButton.addActionListener(e -> runTestOrInstall());
+        styleButton(runOnTestButton, "blue");
+
         runButton = new JButton(RUN_STR);
         runButton.addActionListener(e -> runModel());
+        styleButton(runButton, "blue");
+
         cancelButton = new JButton(CANCEL_STR);
         cancelButton.addActionListener(e -> cancel());
-
-        styleButton(runOnTestButton, "blue");
-        styleButton(runButton, "blue");
         styleButton(cancelButton, "red");
 
-        runButtonPanel.add(cancelButton);
-        runButtonPanel.add(runOnTestButton);
-        runButtonPanel.add(runButton);
+        // ───────────────────────────────────────────────────────────────
+        // 3) runButtonPanel with GridBagLayout so we can weight each button
+        JPanel runButtonPanel = new JPanel(new GridBagLayout());
+        runButtonPanel.setBackground(new Color(45, 62, 80));
+        GridBagConstraints rbGbc = new GridBagConstraints();
+        rbGbc.gridy   = 0;
+        rbGbc.fill    = GridBagConstraints.BOTH;
+        rbGbc.insets  = new Insets(0, 5, 0, 5);
 
-        JLabel copyrightLabel = new JLabel("© 2024 " + guiAdapter.getSoftwareName() + " and JDLL");
+        // Cancel button: weightx = 0 so it's only as wide as it needs to be
+        rbGbc.gridx   = 0;
+        rbGbc.weightx = 0.2;
+        runButtonPanel.add(cancelButton, rbGbc);
+
+        // Run on Test: weightx = 0.5, takes half of remaining space
+        rbGbc.gridx   = 1;
+        rbGbc.weightx = 0.4;
+        runButtonPanel.add(runOnTestButton, rbGbc);
+
+        // Run: weightx = 0.5, takes the other half of remaining space
+        rbGbc.gridx   = 2;
+        rbGbc.weightx = 0.4;
+        runButtonPanel.add(runButton, rbGbc);
+
+        // ───────────────────────────────────────────────────────────────
+        // 4) Copyright label
+        JLabel copyrightLabel = new JLabel(
+            "© 2024 " + guiAdapter.getSoftwareName() + " and JDLL"
+        );
         copyrightLabel.setFont(new Font("SansSerif", Font.PLAIN, 12));
         copyrightLabel.setForeground(Color.WHITE);
 
-        footerPanel.add(runButtonPanel, BorderLayout.EAST);
-        footerPanel.add(copyrightLabel, BorderLayout.WEST);
+        // ───────────────────────────────────────────────────────────────
+        // 5) Lay out label vs runButtonPanel in footerPanel
+        GridBagConstraints fGbc = new GridBagConstraints();
+        fGbc.gridy  = 0;
+        fGbc.fill   = GridBagConstraints.BOTH;
+        fGbc.insets = new Insets(0, 0, 0, 0);
 
-        add(footerPanel, layout.get(3));
+        // Column 0: label takes 40% of width
+        fGbc.gridx   = 0;
+        fGbc.weightx = 0.4;
+        footerPanel.add(copyrightLabel, fGbc);
+
+        // Column 1: runButtonPanel takes 60% of width
+        fGbc.gridx   = 1;
+        fGbc.weightx = 0.6;
+        footerPanel.add(runButtonPanel, fGbc);
+
+        // ───────────────────────────────────────────────────────────────
+        // 6) Finally, add footerPanel into your main GridBagLayout at row 3
+        GridBagConstraints mainGbc = new GridBagConstraints();
+        mainGbc.gridx     = 0;
+        mainGbc.gridy     = 3;
+        mainGbc.gridwidth = 1;
+        mainGbc.fill      = GridBagConstraints.BOTH;
+        mainGbc.weightx   = 1.0;
+        mainGbc.weighty   = 0.1;
+        this.add(footerPanel, mainGbc);
     }
+
+
     
     private void cancel() {
     	this.onClose();
