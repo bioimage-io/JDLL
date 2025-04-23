@@ -70,9 +70,6 @@ public class Gui extends JPanel {
     private JButton runOnTestButton;
     private JButton cancelButton;
 
-    private static final double FOOTER_VRATIO = 0.06;
-    private static final double[] LAYOUT_WEIGHTS = new double[] {0.1, 0.05, 0.8, 0.05};
-
     protected static final String LOADING_STR = "loading...";
     protected static final String NOT_FOUND_STR = "no models found";
     protected static final String LOCAL_STR = "Local";
@@ -177,7 +174,7 @@ public class Gui extends JPanel {
     }
 
     private void initTitlePanel() {
-    	titlePanel = new Header(this.guiAdapter.getSoftwareName(), this.guiAdapter.getSoftwareDescription());
+    	titlePanel = new Header(this.guiAdapter);
     	titlePanel.setPreferredSize(new Dimension(0, 0));
     	titlePanel.setMinimumSize(new Dimension(0, 0));
     	GridBagConstraints gbc = new GridBagConstraints();

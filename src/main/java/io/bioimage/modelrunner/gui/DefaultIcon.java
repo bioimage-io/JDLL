@@ -21,11 +21,12 @@ import javax.swing.SwingUtilities;
 public class DefaultIcon {
 
 	protected static String DIJ_ICON_PATH;
-    
+
     private static final Map<Dimension, CompletableFuture<ImageIcon>> PENDING_ICONS = new ConcurrentHashMap<>();
     private static Map<Dimension, ImageIcon> ICONS_CACHE = new ConcurrentHashMap<>();
-    private static final ExecutorService scaleExecutor = Executors.newFixedThreadPool(2);
-    // Approach 2: Cache single BufferedImage
+    private static final Map<URL, CompletableFuture<BufferedImage>> PENDING = new ConcurrentHashMap<>();
+    private static Map<URL, BufferedImage> CACHE = new ConcurrentHashMap<>();
+    private static ExecutorService scaleExecutor = Executors.newFixedThreadPool(2);
     private static BufferedImage MASTER_IMAGE;
     private static String MASTER_PATH;
     
@@ -48,14 +49,74 @@ public class DefaultIcon {
             if (defaultIconUrl == null) {
                 throw new IOException();
             }
-            MASTER_IMAGE = ImageIO.read(defaultIconUrl);
-            MASTER_PATH = DIJ_ICON_PATH;
-            return MASTER_IMAGE;
-        } catch (IOException e) {
-            // Fallback to creating a simple buffered image
+            BufferedImage cached = CACHE.get(defaultIconUrl);
+            if (cached != null) {
+                return cached;
+            }
+            
+            if (scaleExecutor.isShutdown())
+            	scaleExecutor = Executors.newFixedThreadPool(2);
+            
+            // Check if already being processed
+            CompletableFuture<BufferedImage> pending = PENDING.get(defaultIconUrl);
+            if (pending == null) {
+                // Start new scaling operation
+                pending = CompletableFuture.supplyAsync(() -> {
+                    try {
+						MASTER_IMAGE = ImageIO.read(defaultIconUrl);
+						CACHE.put(defaultIconUrl, MASTER_IMAGE);
+	                    MASTER_PATH = DIJ_ICON_PATH;
+					} catch (IOException e) {
+						e.printStackTrace();
+						MASTER_IMAGE = getImmediateLoadingSquareLogo();
+					}
+                    PENDING.remove(defaultIconUrl);
+                    return MASTER_IMAGE;
+                }, scaleExecutor);
+                PENDING.put(defaultIconUrl, pending);
+            }
             return getImmediateLoadingSquareLogo();
+        } catch (Exception ex) {
+        	ex.printStackTrace();
+        	return getImmediateLoadingSquareLogo();
         }
     }
+    
+    public static void drawLogo(URL url, LogoPanel panel) {
+        BufferedImage img = CACHE.get(url);
+        if (img != null) {
+        	SwingUtilities.invokeLater(() -> panel.setImage(img, true));
+        	return;
+        };
+
+
+        if (scaleExecutor.isShutdown())
+        	scaleExecutor = Executors.newFixedThreadPool(2);
+        PENDING.computeIfAbsent(url, u ->
+          CompletableFuture.supplyAsync(() -> {
+            	try {
+            		try {
+            			Thread.sleep(3000);
+            		} catch (InterruptedException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+            		}
+	              	BufferedImage loaded = ImageIO.read(u);
+	              	CACHE.put(u, loaded);
+	              	return loaded;
+              } catch(Exception | Error e) {
+            	  e.printStackTrace();
+            	  return getImmediateLoadingSquareLogo();
+              }
+            }, scaleExecutor)
+        );
+        PENDING.get(url)
+        .whenComplete((bi,err)-> {
+        	PENDING.remove(url);
+        	SwingUtilities.invokeLater(() -> panel.setImage(bi, false));
+        });
+    	SwingUtilities.invokeLater(() -> panel.setImage(getImmediateLoadingSquareLogo(), true));
+      }
     
     protected static void setIconPath(String iconPath) {
     	DIJ_ICON_PATH = iconPath;
@@ -100,7 +161,6 @@ public class DefaultIcon {
             PENDING_ICONS.put(size, pending);
         }
         
-        // Return immediately with nearest size while scaling happens
         return createTransparentIcon(width, height);
     }
     
