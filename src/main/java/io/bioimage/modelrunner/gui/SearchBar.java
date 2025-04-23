@@ -3,7 +3,6 @@ package io.bioimage.modelrunner.gui;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Desktop;
-import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.GridLayout;
 import java.awt.event.MouseAdapter;
@@ -33,33 +32,20 @@ public class SearchBar extends JPanel {
     protected JTextField searchField;
 	protected JButton searchButton;
     protected JButton switchButton;
-    private long parentHeight;
-    private long parentWidth;
     private List<ModelDescriptor> bmzModels;
     private int nModels;
-    private static final double H_RATIO = 1;
-    private static final double V_RATIO = 0.05;
-    private static final double ICON_VRATIO = 1.0;
-    private static final double ICON_HRATIO = 0.05;
-    private static final double SEARCH_VRATIO = 1.0;
-    private static final double SEARCH_HRATIO = 0.15;
-    private static final double SWITCH_VRATIO = 1.0;
-    private static final double SWITCH_HRATIO = 0.15;
     protected static final String SEARCH_ICON_PATH = "dij_imgs/search_logo.png";
     
 
-    protected SearchBar(long parentWidth, long parentHeight) {
-    	this.parentHeight = parentHeight;
-    	this.parentWidth = parentWidth;
+    protected SearchBar() {
         setLayout(new BorderLayout());
-        setPreferredSize(new Dimension((int) (parentWidth * H_RATIO), (int) (parentHeight * V_RATIO)));
         setBackground(Color.WHITE);
         setBorder(BorderFactory.createLineBorder(Color.LIGHT_GRAY, 1, true));
 
         // Create the search icon
         URL iconPath = getClass().getClassLoader().getResource(SEARCH_ICON_PATH);
-        int iconH = (int) (parentHeight * V_RATIO * ICON_VRATIO);
-        int iconW = (int) (parentWidth * H_RATIO * ICON_HRATIO);
+        int iconH = 10; // (int) (parentHeight * V_RATIO * ICON_VRATIO);
+        int iconW = 10; // (int) (parentWidth * H_RATIO * ICON_HRATIO);
         ImageIcon scaledImage = ImageLoaderWorker.createScaledIcon(iconPath, iconW, iconH);
         JLabel iconLabel = new JLabel(scaledImage);
         iconLabel.addMouseListener(new MouseAdapter() {
@@ -81,9 +67,6 @@ public class SearchBar extends JPanel {
 
         // Create the search button
         searchButton = new JButton("Search");
-        int searchH = (int) (parentHeight * V_RATIO * SEARCH_VRATIO);
-        int searchW = (int) (parentWidth * H_RATIO * SEARCH_HRATIO);
-        searchButton.setPreferredSize(new Dimension(searchW, searchH));
         searchButton.setBackground(new Color(0, 120, 215));
         searchButton.setForeground(Color.WHITE);
         searchButton.setFocusPainted(false);
@@ -91,9 +74,6 @@ public class SearchBar extends JPanel {
 
         // Create the switch button
         switchButton = new JButton(Gui.BIOIMAGEIO_STR);
-        int switchH = (int) (parentHeight * V_RATIO * SWITCH_VRATIO);
-        int switchW = (int) (parentWidth * H_RATIO * SWITCH_HRATIO);
-        switchButton.setPreferredSize(new Dimension(switchW, switchH));
         switchButton.setBackground(new Color(255, 140, 0));
         switchButton.setForeground(Color.BLACK);
         switchButton.setFocusPainted(false);
@@ -183,7 +163,7 @@ public class SearchBar extends JPanel {
             public void run() {
                 JFrame frame = new JFrame("Modern Search Bar");
                 frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-                frame.getContentPane().add(new SearchBar(600, 800));
+                frame.getContentPane().add(new SearchBar());
                 frame.pack();
                 frame.setLocationRelativeTo(null);
                 frame.setVisible(true);

@@ -95,12 +95,6 @@ public class DefaultIcon {
         PENDING.computeIfAbsent(url, u ->
           CompletableFuture.supplyAsync(() -> {
             	try {
-            		try {
-            			Thread.sleep(3000);
-            		} catch (InterruptedException e) {
-						// TODO Auto-generated catch block
-						e.printStackTrace();
-            		}
 	              	BufferedImage loaded = ImageIO.read(u);
 	              	CACHE.put(u, loaded);
 	              	return loaded;
