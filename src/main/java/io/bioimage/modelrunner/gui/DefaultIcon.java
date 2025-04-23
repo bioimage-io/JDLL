@@ -27,52 +27,52 @@ public class DefaultIcon {
     private static final ExecutorService scaleExecutor = Executors.newFixedThreadPool(2);
     // Approach 2: Cache single BufferedImage
     private static BufferedImage MASTER_IMAGE;
-
+    private static String MASTER_PATH;
     
-    // Initialize the loading icon once when the class is loaded
-    static {
-        initializeMasterImage();
+    protected static BufferedImage getImmediateLoadingSquareLogo() {
+        BufferedImage bi = new BufferedImage(50, 50, BufferedImage.TYPE_INT_ARGB);
+        Graphics2D g = bi.createGraphics();
+        g.setColor(Color.GRAY);
+        g.drawString("Loading...", 5, 25);
+        g.dispose();
+        return bi;
     }
     
-    protected static void setIconPath(String iconPath) {
-    	DIJ_ICON_PATH = iconPath;
-    	initializeMasterImage();
-    }
-    
-    protected static void initializeMasterImage() {
+    protected static BufferedImage getSoftwareLogo() {
         try {
         	if (DIJ_ICON_PATH == null)
         		throw new IOException();
+        	if (MASTER_IMAGE != null && DIJ_ICON_PATH.equals(MASTER_PATH))
+        		return MASTER_IMAGE;
             URL defaultIconUrl = DefaultIcon.class.getClassLoader().getResource(DIJ_ICON_PATH);
             if (defaultIconUrl == null) {
                 throw new IOException();
             }
             MASTER_IMAGE = ImageIO.read(defaultIconUrl);
+            MASTER_PATH = DIJ_ICON_PATH;
+            return MASTER_IMAGE;
         } catch (IOException e) {
             // Fallback to creating a simple buffered image
-            BufferedImage bi = new BufferedImage(50, 50, BufferedImage.TYPE_INT_ARGB);
-            Graphics2D g = bi.createGraphics();
-            g.setColor(Color.GRAY);
-            g.drawString("Loading...", 5, 25);
-            g.dispose();
-            MASTER_IMAGE = bi;
+            return getImmediateLoadingSquareLogo();
         }
+    }
+    
+    protected static void setIconPath(String iconPath) {
+    	DIJ_ICON_PATH = iconPath;
+    	getSoftwareLogo();
     }
 
     public static ImageIcon getDefaultIcon(int width, int height) {
-        try {
-        	if (DIJ_ICON_PATH == null)
-        		return null;
-            URL defaultIconUrl = Gui.class.getClassLoader().getResource(DIJ_ICON_PATH);
-            if (defaultIconUrl == null) {
-                return null;
-            }
-            BufferedImage defaultImage = ImageIO.read(defaultIconUrl);
-            Image scaledDefaultImage = defaultImage.getScaledInstance(width, height, Image.SCALE_FAST);
-            return new ImageIcon(scaledDefaultImage);
-        } catch (IOException e) {
+    	if (DIJ_ICON_PATH == null)
+    		return null;
+        URL defaultIconUrl = Gui.class.getClassLoader().getResource(DIJ_ICON_PATH);
+        if (defaultIconUrl == null) {
             return null;
         }
+        // TODO remove BufferedImage defaultImage = ImageIO.read(defaultIconUrl);
+        // TODO remove Image scaledDefaultImage = defaultImage.getScaledInstance(width, height, Image.SCALE_FAST);
+        Image scaledDefaultImage = MASTER_IMAGE.getScaledInstance(width, height, Image.SCALE_FAST);
+        return new ImageIcon(scaledDefaultImage);
     }
     
     

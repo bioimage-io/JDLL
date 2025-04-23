@@ -1,24 +1,44 @@
 package io.bioimage.modelrunner.gui;
 import java.awt.*;
 import java.awt.event.*;
+import java.awt.image.BufferedImage;
+import java.io.File;
+import java.io.IOException;
+import java.util.concurrent.ExecutionException;
+
+import javax.imageio.ImageIO;
 import javax.swing.*;
 
 public class CenteredNullLayoutDemo {
     /** A red square that stays square and resizes. */
     static class LogoPanel extends JPanel {
-        LogoPanel() { setBackground(Color.RED); }
+    	private static final long serialVersionUID = -3161345822406354L;
+		private BufferedImage image;
+        LogoPanel(BufferedImage img) { 
+        	this.image = img;
+        	setOpaque(false); 
+        }
         @Override protected void paintComponent(Graphics g) {
             super.paintComponent(g);
             int side = Math.min(getWidth(), getHeight());
-            g.setColor(Color.RED);
-            g.fillRect(0, 0, side, side);
+            if (image != null) {
+                g.drawImage(image, 0, 0, side, side, this);
+            } else {
+                g.fillRect(0, 0, side, side);
+            }
+        }
+        public void setImage(BufferedImage image) {
+        	this.image = image;
+            repaint();
         }
     }
 
     private static JLabel title;
     private static JLabel subtitle;
+    private static JLabel barSubtitle;
+    private static JProgressBar bar;
 
-    private static void createAndShow() {
+    private static void createAndShow() throws IOException {
         JFrame frame = new JFrame("Centered UI Demo");
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.setLayout(null);
@@ -29,7 +49,27 @@ public class CenteredNullLayoutDemo {
         frame.add(empty);
 
         // 2) Red square “logo” to the right of empty
-        LogoPanel logo = new LogoPanel();
+        String str = "/home/carlos/git/deepimagej-plugin/src/main/resources/dij_imgs/deepimagej_icon.png";
+        BufferedImage logoImg = ImageIO.read(new File(str));
+        LogoPanel logo = new LogoPanel(null);
+        new SwingWorker<BufferedImage, Void>() {
+            @Override
+            protected BufferedImage doInBackground() throws Exception {
+                // simulate slowness...
+                 Thread.sleep(2000); 
+                // load your real image (from disk, network, classpath…)
+                return ImageIO.read(new File(str));
+            }
+            @Override
+            protected void done() {
+                try {
+					logo.setImage(get());
+				} catch (InterruptedException | ExecutionException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+            }
+        }.execute();
         frame.add(logo);
 
         // 3) The two labels
@@ -42,10 +82,13 @@ public class CenteredNullLayoutDemo {
         frame.add(subtitle);
 
         // 4) Progress bar right of subtitle/title
-        JProgressBar bar = new JProgressBar(0, 100);
+        bar = new JProgressBar(0, 100);
         bar.setStringPainted(true);
-        bar.setPreferredSize(new Dimension(150, 24));
+        bar.setVisible(false);
         frame.add(bar);
+        barSubtitle = new JLabel("Gteakefnkjbgvrekjih vjwkrsnvkjrebhr jrvbksrvb");
+        barSubtitle.setVisible(false);
+        frame.add(barSubtitle);
 
         // 5) On resize, reposition everything
         frame.addComponentListener(new ComponentAdapter() {
@@ -54,6 +97,8 @@ public class CenteredNullLayoutDemo {
                 Insets in = frame.getInsets();
                 int W = frame.getWidth()  - in.left - in.right;
                 int H = frame.getHeight() - in.top  - in.bottom;
+                
+                int logoInset = 2;
                 
                 double ratio = W / (double) H;
 
@@ -68,7 +113,7 @@ public class CenteredNullLayoutDemo {
                 }
                 
 
-                title.setFont(title.getFont().deriveFont(Font.PLAIN, fontSize));
+                title.setFont(title.getFont().deriveFont(Font.BOLD, fontSize));
                 subtitle.setFont(subtitle.getFont().deriveFont(Font.PLAIN, sFontSize));
 
                 // measure text
@@ -77,6 +122,8 @@ public class CenteredNullLayoutDemo {
                 int remainingPixels = H - tSz .height - sSz.height;
                 int titleGap = Math.max(1,  remainingPixels / 6);
                 int headerTop = Math.max(0, (remainingPixels - titleGap) / 2);
+                
+                int logoSize = Math.min(H - logoInset * 2, sSz.width / 2);
 
                 // center each label independently
                 int xTitle    = (W - tSz.width) / 2;
@@ -88,25 +135,30 @@ public class CenteredNullLayoutDemo {
                 title  .setBounds(xTitle,    yTitle,    tSz.width, tSz.height);
                 subtitle.setBounds(xSubtitle, ySubtitle, sSz.width, sSz.height);
 
-                int gap = 8;  // between text and bar
+                int minBarGap = 2;  // between text and bar
                 // position progress bar next to the widest text
                 int textW = Math.max(xTitle + tSz.width, xSubtitle + sSz.width);
-                int xBar = textW + gap;
-                int barH = bar.getPreferredSize().height;
-                int yBar = headerTop ;
-                bar.setBounds(xBar, yBar, bar.getPreferredSize().width, barH);
+                int barGap = Math.max(minBarGap, (W - textW) / 10);
+                int xBar = textW + barGap;
+                int barH = sSz.height;
+                int yBar = - barH - titleGap / 2 +  (yTitle + ySubtitle + tSz.height) / 2;
+                bar.setBounds(xBar, yBar, (W - textW) - barGap * 2, barH);
+
+                int yString = titleGap / 2 +  (yTitle + ySubtitle + tSz.height) / 2;
+                barSubtitle.setFont(barSubtitle.getFont().deriveFont(Font.PLAIN, sFontSize * 0.6f));
+                barSubtitle.setBounds(xBar, yString, (W - textW) - barGap * 2, barH);
 
                 // compute logo size so it never intrudes past the title
-                int minLogoW = Math.min(xTitle, xSubtitle);
-                int logoSide = Math.min(H, minLogoW);
-                int xLogo = minLogoW - logoSide;
+                int logoInsetX = Math.max(logoInset, logoSize / 10);
+                int xLogo = xSubtitle - logoSize - logoInsetX;
                 if (xLogo < 0) xLogo = 0;  // guard against super‑narrow windows
 
                 // place empty panel from x=0 up to logo start
                 empty.setBounds(0, 0, xLogo, H);
 
                 // place logo immediately to its right
-                logo.setBounds(xLogo, 0, logoSide, logoSide);
+                int logoInsetY = Math.max(logoInset, (H - logoSize) / 2);
+                logo.setBounds(xLogo, logoInsetY, logoSize, logoSize);
             }
         });
 
@@ -116,7 +168,14 @@ public class CenteredNullLayoutDemo {
     }
 
     public static void main(String[] args) {
-        SwingUtilities.invokeLater(CenteredNullLayoutDemo::createAndShow);
+        SwingUtilities.invokeLater(() -> {
+			try {
+				createAndShow();
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		});
     }
 }
 
