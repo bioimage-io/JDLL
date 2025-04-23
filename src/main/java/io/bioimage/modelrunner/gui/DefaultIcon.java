@@ -82,10 +82,39 @@ public class DefaultIcon {
         }
     }
     
+    public static void drawImOrLogo(URL imURL, URL logoUrl, LogoPanel panel) {
+        BufferedImage img = CACHE.get(imURL);
+        if (img != null) {
+        	SwingUtilities.invokeLater(() -> panel.setImage(img, false));
+        	return;
+        };
+        drawLogo(logoUrl, panel);
+
+        if (scaleExecutor.isShutdown())
+        	scaleExecutor = Executors.newFixedThreadPool(2);
+        PENDING.computeIfAbsent(imURL, u ->
+          CompletableFuture.supplyAsync(() -> {
+            	try {
+	              	BufferedImage loaded = ImageIO.read(u);
+	              	CACHE.put(u, loaded);
+	              	return loaded;
+              } catch(Exception | Error e) {
+            	  e.printStackTrace();
+            	  return getImmediateLoadingSquareLogo();
+              }
+            }, scaleExecutor)
+        );
+        PENDING.get(imURL)
+        .whenComplete((bi,err)-> {
+        	PENDING.remove(imURL);
+        	SwingUtilities.invokeLater(() -> panel.setImage(bi, false));
+        });
+      }
+    
     public static void drawLogo(URL url, LogoPanel panel) {
         BufferedImage img = CACHE.get(url);
         if (img != null) {
-        	SwingUtilities.invokeLater(() -> panel.setImage(img, true));
+        	SwingUtilities.invokeLater(() -> panel.setImage(img, false));
         	return;
         };
 

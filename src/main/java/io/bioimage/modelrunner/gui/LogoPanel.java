@@ -40,4 +40,8 @@ public class LogoPanel extends JPanel{
     	this.image = image;
         repaint();
     }
+    
+    public BufferedImage getImage() {
+    	return this.image;
+    }
 }
