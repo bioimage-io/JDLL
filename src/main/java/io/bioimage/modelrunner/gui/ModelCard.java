@@ -4,87 +4,131 @@ import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Font;
-import java.awt.image.BufferedImage;
+import java.awt.Insets;
+import java.awt.event.ComponentAdapter;
+import java.awt.event.ComponentEvent;
+import java.io.File;
+import java.net.MalformedURLException;
 import java.net.URL;
 
 import javax.swing.BorderFactory;
-import javax.swing.Icon;
-import javax.swing.ImageIcon;
+import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
-import javax.swing.OverlayLayout; // Import OverlayLayout
-
-import io.bioimage.modelrunner.gui.workers.ImageLoaderWorker;
-import io.bioimage.modelrunner.gui.workers.ImageLoaderWorker.ImageLoadCallback;
+import javax.swing.SwingUtilities;
 
 public class ModelCard extends JPanel {
 
     private static final long serialVersionUID = -5625832740571130175L;
 
+    private final double scale;
+    
     private JLabel nameLabel;
-    private JLabel imageLabel; // The actual image label
     private JLabel nicknameLabel;
     private JLabel unsupportedLabel; // The overlay label
-    private JPanel imagePanel; // Panel holding image and overlay
+    private LogoPanel logoIcon; // Panel holding image and overlay
     private boolean isUnsupported = false; // Flag to track state
 
-    private long cardWidth;
-    private long cardHeight;
-    private String id;
-    private ImageLoaderWorker worker;
-    private final double scale;
-
-    private static double CARD_ICON_VRATIO = 0.8;
-    private static double CARD_ICON_HRATIO = 0.9;
     private static final String UNSUPPORTED_TEXT = "Unsupported";
     private static final Color UNSUPPORTED_BG_COLOR = Color.red;
     private static final Color UNSUPPORTED_FG_COLOR = Color.black;
 
 
-    private ModelCard(long cardWidth, long cardHeight, double scale) {
-        super(new BorderLayout());
-        this.scale = scale;
-        this.cardWidth = cardWidth;
-        this.cardHeight = cardHeight;
-        this.setPreferredSize(new Dimension((int) (cardWidth * scale), (int) (cardHeight * scale)));
+    protected ModelCard() {
+    	this(1d);
+    }
+
+
+    protected ModelCard(double scale) {
+    	super(null);
+    	this.scale = scale;
         this.setBackground(Color.WHITE);
         this.setBorder(BorderFactory.createLineBorder(Color.GRAY, 1));
 
-        int iconW = (int) (CARD_ICON_HRATIO * this.cardWidth * scale);
-        int iconH = (int) (this.cardHeight * CARD_ICON_VRATIO * scale);
 
-        Icon logoIcon = createEmptyIcon(iconW, iconH);
-        this.imageLabel = new JLabel(logoIcon, JLabel.CENTER);
+        this.logoIcon = new LogoPanel();
 
         this.unsupportedLabel = new JLabel(UNSUPPORTED_TEXT);
-        this.unsupportedLabel.setFont(new Font("SansSerif", Font.BOLD, (int) (24 * scale)));
+        this.unsupportedLabel.setFont(new Font("SansSerif", Font.BOLD, (int) (16 * scale)));
         this.unsupportedLabel.setForeground(UNSUPPORTED_FG_COLOR);
         this.unsupportedLabel.setBackground(UNSUPPORTED_BG_COLOR);
-        this.unsupportedLabel.setOpaque(true); // Necessary for background color to show
+        this.unsupportedLabel.setOpaque(true);
         this.unsupportedLabel.setBorder(BorderFactory.createEtchedBorder());
-        this.unsupportedLabel.setVisible(true); // Initially hidden
+        this.unsupportedLabel.setVisible(true);
 
-        this.imagePanel = new JPanel();
-        imagePanel.setBorder(BorderFactory.createEtchedBorder());
-        this.imagePanel.setLayout(new OverlayLayout(imagePanel));
-        this.imagePanel.setOpaque(false); // Make panel transparent
-
-        this.unsupportedLabel.setAlignmentX(JLabel.CENTER_ALIGNMENT);
-        this.unsupportedLabel.setAlignmentY(JLabel.CENTER_ALIGNMENT);
-        this.imagePanel.add(this.unsupportedLabel); // Align left
-        this.imageLabel.setAlignmentX(JLabel.CENTER_ALIGNMENT);
-        this.imageLabel.setAlignmentY(JLabel.CENTER_ALIGNMENT);
-        this.imagePanel.add(this.imageLabel);
 
         this.nameLabel = new JLabel(Gui.LOADING_STR, JLabel.CENTER);
         this.nameLabel.setFont(new Font("SansSerif", Font.BOLD, (int) (16 * scale)));
         this.nicknameLabel = new JLabel(Gui.LOADING_STR, JLabel.CENTER);
         this.nicknameLabel.setFont(new Font("SansSerif", Font.ITALIC, (int) (14 * scale)));
 
-        this.add(this.nameLabel, BorderLayout.NORTH);
-        // Add the imagePanel (containing image and overlay) instead of just imageLabel
-        this.add(this.imagePanel, BorderLayout.CENTER);
-        this.add(this.nicknameLabel, BorderLayout.SOUTH);
+        this.add(this.nameLabel);
+        this.add(this.logoIcon);
+        this.add(this.nicknameLabel);
+        this.add(this.unsupportedLabel);
+        
+        organiseComponents();
+    }
+    
+    private void organiseComponents() {
+    	addComponentListener(new ComponentAdapter() {
+            @Override
+            public void componentResized(ComponentEvent e) {
+                Insets in = getInsets();
+                int W = getWidth()  - in.left - in.right;
+                int H = getHeight() - in.top  - in.bottom;
+                
+                int topInset = 2;
+                int bottomInset = 2;
+                int imTopInset = 2;
+                int imBottomInset = 2;
+                int sideInset = 2;
+                
+
+                nameLabel.setFont(nameLabel.getFont().deriveFont(Font.BOLD, (float) (16 * scale)));
+                nicknameLabel.setFont(nicknameLabel.getFont().deriveFont(Font.PLAIN, (float) (14 * scale)));
+
+                Dimension topSize = nameLabel.getPreferredSize();
+                Dimension bottomSize = nicknameLabel.getPreferredSize();
+
+                int imH = logoIcon.getImage().getHeight();
+                int imW = logoIcon.getImage().getWidth();
+
+                double newW, newH;
+                int posx, posY;
+                double ratio = imH / (double) imW;
+                if (ratio > 1) {
+                	newH = H - topInset - bottomInset - imTopInset - imBottomInset - topSize.height;
+                	newW = newH /ratio;
+                    posY = imTopInset + topInset + topSize.height;
+                    posx = (int) (W / 2 - newW / 2);
+                	while (newW > W + 2 * sideInset) {
+                		newW = W - sideInset * 2;
+                        newH = newW * ratio;
+                        posx = sideInset;
+                        posY = (int) (H / 2 - newH / 2);
+                	}
+                } else {
+                    newW = W - sideInset * 2;
+                    newH = newW * ratio;
+                    posx = sideInset;
+                    posY = (int) (H / 2 - newH / 2);
+                	while (newH > H - topInset - bottomInset - imTopInset - imBottomInset - topSize.height - bottomSize.height) {
+                    	newH = H - topInset - bottomInset - imTopInset - imBottomInset - topSize.height - bottomSize.height;
+                    	newW = newH /ratio;
+                        posY = imTopInset + topInset + topSize.height;
+                        posx = (int) (W / 2 - newW / 2);
+                	}
+                }
+
+                int sideInsetName = Math.max(sideInset, W/ 2 - topSize.width / 2);
+                int sideInsetNickname = Math.max(sideInset, W/ 2 - bottomSize.width / 2);
+
+                nameLabel  .setBounds(sideInsetName, topInset, Math.min(topSize.width, W - sideInset * 2), topSize.height);
+                nicknameLabel.setBounds(sideInsetNickname, H - bottomInset - bottomSize.height, Math.min(bottomSize.width, W - sideInset * 2), bottomSize.height);
+                logoIcon.setBounds(posx, posY, (int) newW, (int) newH);
+            }
+        });
     }
 
     /**
@@ -106,60 +150,54 @@ public class ModelCard extends JPanel {
 	    return this.isUnsupported;
 	}
 
-    /**
-     * Set an optional id
-     * @param id
-     *  the identifier of the card
-     */
-    public void setOptionalID(String id) {
-        this.id = id;
+    protected static ModelCard createModelCard() {
+        ModelCard modelCardPanel = new ModelCard();
+        return modelCardPanel;
     }
 
-    protected static ModelCard createModelCard(long cardWidth, long cardHeight, double scale) {
-        ModelCard modelCardPanel = new ModelCard(cardWidth, cardHeight, scale);
+    protected static ModelCard createModelCard(double scale) {
+        ModelCard modelCardPanel = new ModelCard(scale);
         return modelCardPanel;
     }
 
     protected void updateCard(String name, String nickname, URL imagePath) {
         this.nameLabel.setText(name);
         this.nicknameLabel.setText(nickname);
-        int iconW = (int) (CARD_ICON_HRATIO * this.cardWidth * scale);
-        int iconH = (int) (this.cardHeight * CARD_ICON_VRATIO * scale);
-
-        // Set loading icon on the main imageLabel
-        DefaultIcon.getLoadingIconWithCallback(iconW, iconH, icon -> {
-            imageLabel.setIcon(icon);
-            // No need to revalidate/repaint here if loading icon has same size
-            // as the final image icon. The callback below will handle it.
-        });
-
-        if (worker != null && !worker.isDone())
-            worker.cancelBackground();
-
-        ImageLoadCallback callback = new ImageLoadCallback() {
-            @Override
-            public void onImageLoaded(ImageIcon icon) {
-                // Check if this image is still the one expected for this card ID
-                if (ModelSelectionPanel.ICONS_DISPLAYED.get(id) != imagePath)
-                    return;
-                // Update the icon on the main imageLabel
-                imageLabel.setIcon(icon);
-                // Revalidate and repaint the container panel to ensure layout updates
-                imagePanel.revalidate();
-                imagePanel.repaint();
-                // Optionally revalidate/repaint the whole card if necessary
-                // ModelCard.this.revalidate();
-                // ModelCard.this.repaint();
-            }
-        };
-        worker = ImageLoaderWorker.create(imagePath, iconW, iconH, callback);
-        worker.execute();
+        
+        DefaultIcon.drawImOrLogo(imagePath, imagePath, logoIcon);
     }
+    
+    public static void main(String[] args) {
+        SwingUtilities.invokeLater(() -> {
+            // 1) Create the frame
+            JFrame frame = new JFrame("Model Card Test");
+            frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+            frame.setSize(300, 400);  // or whatever size you need
+            frame.setLocationRelativeTo(null);
 
-    private static ImageIcon createEmptyIcon(int width, int height) {
-        // Create a transparent BufferedImage of the specified size
-        BufferedImage emptyImage = new BufferedImage(Math.max(1, width), Math.max(1, height), BufferedImage.TYPE_INT_ARGB); // Ensure non-zero dimensions
-        // Create an ImageIcon from the empty image
-        return new ImageIcon(emptyImage);
+            // 2) Create and configure your card
+            ModelCard card = ModelCard.createModelCard();
+            try {
+				card.updateCard(
+				    "My Model Name",
+				    "Friendly Nickname",
+				    // try to load an image from resources; fallback to null if missing
+				    new File("/home/carlos/git/deep-icy/src/main/resources/deepicy_imgs/icy_logo.png").toURL()
+				);
+			} catch (MalformedURLException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+            // optionally mark unsupported to see the overlay:
+            card.setUnsupported(true);
+
+            // 3) Add to frame (since ModelCardGui uses null layout internally,
+            //    we’ll use BorderLayout here to have it fill the window)
+            frame.getContentPane().setLayout(new BorderLayout());
+            frame.getContentPane().add(card, BorderLayout.CENTER);
+
+            // 4) Show it
+            frame.setVisible(true);
+        });
     }
 }
