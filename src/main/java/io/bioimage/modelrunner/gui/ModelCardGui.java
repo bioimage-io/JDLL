@@ -92,19 +92,38 @@ public class ModelCardGui extends JPanel {
                 int imH = logoIcon.getImage().getHeight();
                 int imW = logoIcon.getImage().getWidth();
 
-                double newW = W - sideInset * 2;
-                double newH = newW * imH / (double) imW;
-                int posx = sideInset;
-                int posY = (int) (H / 2 - newH / 2);
-                if (imH > imW) {
+                double newW, newH;
+                int posx, posY;
+                double ratio = imH / (double) imW;
+                if (ratio > 1) {
                 	newH = H - topInset - bottomInset - imTopInset - imBottomInset - topSize.height;
-                	newW = newH * imW / (double) imH;
+                	newW = newH /ratio;
                     posY = imTopInset + topInset + topSize.height;
                     posx = (int) (W / 2 - newW / 2);
+                	while (newW > W + 2 * sideInset) {
+                		newW = W - sideInset * 2;
+                        newH = newW * ratio;
+                        posx = sideInset;
+                        posY = (int) (H / 2 - newH / 2);
+                	}
+                } else {
+                    newW = W - sideInset * 2;
+                    newH = newW * ratio;
+                    posx = sideInset;
+                    posY = (int) (H / 2 - newH / 2);
+                	while (newH > H - topInset - bottomInset - imTopInset - imBottomInset - topSize.height - bottomSize.height) {
+                    	newH = H - topInset - bottomInset - imTopInset - imBottomInset - topSize.height - bottomSize.height;
+                    	newW = newH /ratio;
+                        posY = imTopInset + topInset + topSize.height;
+                        posx = (int) (W / 2 - newW / 2);
+                	}
                 }
 
-                nameLabel  .setBounds(sideInset, topInset, topSize.width, topSize.height);
-                nicknameLabel.setBounds(sideInset, H - bottomInset - bottomSize.height, bottomSize.width, bottomSize.height);
+                int sideInsetName = Math.max(sideInset, W/ 2 - topSize.width / 2);
+                int sideInsetNickname = Math.max(sideInset, W/ 2 - bottomSize.width / 2);
+
+                nameLabel  .setBounds(sideInsetName, topInset, Math.min(topSize.width, W - sideInset * 2), topSize.height);
+                nicknameLabel.setBounds(sideInsetNickname, H - bottomInset - bottomSize.height, Math.min(bottomSize.width, W - sideInset * 2), bottomSize.height);
                 logoIcon.setBounds(posx, posY, (int) newW, (int) newH);
             }
         });
