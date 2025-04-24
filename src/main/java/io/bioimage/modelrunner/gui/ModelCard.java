@@ -7,6 +7,7 @@ import java.awt.Font;
 import java.awt.Insets;
 import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
+import java.awt.image.BufferedImage;
 import java.io.File;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -26,7 +27,7 @@ public class ModelCard extends JPanel {
     private JLabel nameLabel;
     private JLabel nicknameLabel;
     private JLabel unsupportedLabel; // The overlay label
-    private LogoPanel logoIcon; // Panel holding image and overlay
+    protected LogoPanel logoIcon; // Panel holding image and overlay
     private boolean isUnsupported = false; // Flag to track state
 
     private static final String UNSUPPORTED_TEXT = "Unsupported";
@@ -91,8 +92,15 @@ public class ModelCard extends JPanel {
                 Dimension topSize = nameLabel.getPreferredSize();
                 Dimension bottomSize = nicknameLabel.getPreferredSize();
 
-                int imH = logoIcon.getImage().getHeight();
-                int imW = logoIcon.getImage().getWidth();
+                BufferedImage im = logoIcon.getImage();
+                int imH, imW;
+                if (im == null) {
+                	imH = logoIcon.getPreferredSize().height;
+                	imW = logoIcon.getPreferredSize().width;
+                } else {
+                    imH = im.getHeight();
+                    imW = im.getWidth();
+                }
 
                 double newW, newH;
                 int posx, posY;
