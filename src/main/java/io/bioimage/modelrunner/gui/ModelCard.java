@@ -128,12 +128,22 @@ public class ModelCard extends JPanel {
                         posx = (int) (W / 2 - newW / 2);
                 	}
                 }
+                newH = Math.max(1, newH);
+                newW = Math.max(1, newW);
+                int nameX = Math.max(1, Math.min(topSize.width, W - sideInset * 2));
+                int nameY = Math.max(1, topSize.height);
+                int nicknameNameX = Math.max(1, Math.min(bottomSize.width, W - sideInset * 2));
+                int nicknameNameY = Math.max(1, bottomSize.height);
 
                 int sideInsetName = Math.max(sideInset, W/ 2 - topSize.width / 2);
                 int sideInsetNickname = Math.max(sideInset, W/ 2 - bottomSize.width / 2);
 
-                nameLabel  .setBounds(sideInsetName, topInset, Math.min(topSize.width, W - sideInset * 2), topSize.height);
-                nicknameLabel.setBounds(sideInsetNickname, H - bottomInset - bottomSize.height, Math.min(bottomSize.width, W - sideInset * 2), bottomSize.height);
+                System.out.println("name label: " + Math.min(topSize.width, W - sideInset * 2) + ", " + topSize.height);
+                System.out.println("nickname label: " + Math.min(bottomSize.width, W - sideInset * 2) + ", " + bottomSize.height);
+                System.out.println("card icon: " + newW + ", " + newH);
+                
+                nameLabel  .setBounds(sideInsetName, topInset, nameX, nameY);
+                nicknameLabel.setBounds(sideInsetNickname, nicknameNameX, nicknameNameX, nicknameNameY);
                 logoIcon.setBounds(posx, posY, (int) newW, (int) newH);
             }
         });

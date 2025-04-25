@@ -114,8 +114,8 @@ public class ContentPanel extends JPanel {
     private void rightSideGUI(int rawH, int rawW, int inset, int spaceX, int xRight) {
         Dimension rightLabelSize = infoTitleLabel.getPreferredSize();
         int labelPosX = Math.max(xRight, 3 * rawW / 4 - rightLabelSize.width / 2);
-        infoTitleLabel.setBounds(labelPosX, inset, 
-        		Math.min(rightLabelSize.width, rawW / 2 + spaceX +  2 * inset - labelPosX), rightLabelSize.height);
+        int labelW = Math.max(1, Math.min(rightLabelSize.width, rawW / 2 + spaceX +  2 * inset - labelPosX));
+        infoTitleLabel.setBounds(labelPosX, inset, labelW, rightLabelSize.height);
 
         double barHeight = rawH * BAR_RATIO;
         double strHeight = rawH * LABEL_RATIO;
@@ -130,6 +130,17 @@ public class ContentPanel extends JPanel {
         progressBar.setBounds(xRight, posY, (int) wPanel, (int) barHeight);
         posY += barHeight + barInset;
         progressInfoLabel.setBounds(xRight, posY, (int) wPanel, (int) strHeight);
+        
+
+        wPanel = Math.max(1, wPanel);
+        hPanel = Math.max(1, hPanel);
+        barHeight = Math.max(1, barHeight);
+        strHeight = Math.max(1, strHeight);
+        
+        System.out.println("content right scroll: " + wPanel + ", " + hPanel);
+        System.out.println("content right bar: " + wPanel + ", " + barHeight);
+        System.out.println("content right str: " + wPanel + ", " + strHeight);
+        System.out.println("content right title: " + labelW + ", " + rightLabelSize.height);
     }
     
     private void leftSideGUI(int H, int W, int spaceX, int inset) {

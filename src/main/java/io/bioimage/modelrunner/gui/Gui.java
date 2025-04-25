@@ -9,10 +9,8 @@ import io.bioimage.modelrunner.tensor.Tensor;
 import net.imglib2.type.NativeType;
 import net.imglib2.type.numeric.RealType;
 
-import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Dimension;
-import java.awt.FlowLayout;
 import java.awt.Font;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
@@ -183,7 +181,7 @@ public class Gui extends JPanel {
         gbc.fill       = GridBagConstraints.BOTH;
         gbc.weightx    = 1.0;
         gbc.gridy     = 0;
-        gbc.weighty   = 0.15;   
+        gbc.weighty   = 0.1;   
         this.add(titlePanel, gbc);
     }
 
@@ -213,24 +211,18 @@ public class Gui extends JPanel {
 
     private void initMainContentPanel() {
         // Create a main content panel with vertical BoxLayout
-        JPanel mainContentPanel = new JPanel();
-        JPanel mainContentPanel2 = new JPanel();
-        mainContentPanel2.setPreferredSize(new Dimension(0, 0));
-        mainContentPanel2.setMinimumSize(new Dimension(0, 0));
-        /*
-         * Layout mainPanelLayout = Layout.createVertical(new double[] {0.45, 0.55});
-        mainContentPanel.setLayout(mainPanelLayout);
-        mainContentPanel.setBackground(Color.WHITE);
+        JPanel mainContentPanel = new JPanel(new GridLayout(2, 1));
+        mainContentPanel.setPreferredSize(new Dimension(0, 0));
+        mainContentPanel.setMinimumSize(new Dimension(0, 0));
 
         // Add the model selection panel and content panel to the main content panel
-        this.modelSelectionPanel = new ModelSelectionPanel(this.getWidth(), this.getHeight());
-        mainContentPanel.add(this.modelSelectionPanel, mainPanelLayout.get(0));
-        contentPanel = new ContentPanel(this.getWidth(), this.getHeight());
-        mainContentPanel.add(contentPanel, mainPanelLayout.get(1));
+        this.modelSelectionPanel = new ModelSelectionPanel();
+        mainContentPanel.add(this.modelSelectionPanel);
+        contentPanel = new ContentPanel(this.guiAdapter);
+        mainContentPanel.add(contentPanel);
         
         modelSelectionPanel.prevButton.addActionListener(e -> updateCarousel(-1));
         modelSelectionPanel.nextButton.addActionListener(e -> updateCarousel(1));
-         */
         // Add the main content panel to the frame's CENTER region
     	GridBagConstraints gbc = new GridBagConstraints();
         gbc.gridx      = 0;
@@ -238,8 +230,8 @@ public class Gui extends JPanel {
         gbc.fill       = GridBagConstraints.BOTH;
         gbc.weightx    = 1.0;
         gbc.gridy     = 2;
-        gbc.weighty   = 0.69;   
-        add(mainContentPanel2, gbc);
+        gbc.weighty   = 0.83;   
+        add(mainContentPanel, gbc);
     }
     
     private void initFooterPanel() {
@@ -322,7 +314,7 @@ public class Gui extends JPanel {
         mainGbc.gridwidth = 1;
         mainGbc.fill      = GridBagConstraints.BOTH;
         mainGbc.weightx   = 1.0;
-        mainGbc.weighty   = 0.1;
+        mainGbc.weighty   = 0.06;
         this.add(footerPanel, mainGbc);
     }
 

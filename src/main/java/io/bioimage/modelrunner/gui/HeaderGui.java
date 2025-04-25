@@ -124,6 +124,13 @@ public class HeaderGui extends JPanel {
                 // place logo immediately to its right
                 int logoInsetY = Math.max(logoInset, (H - logoSize) / 2);
                 logo.setBounds(xLogo, logoInsetY, logoSize, logoSize);
+                
+
+                System.out.println("header title: " + tSz.width + ", " + tSz.height);
+                System.out.println("header subtitle: " + sSz.width + ", " + sSz.height);
+                System.out.println("header bar: " + ((W - textW) - barGap * 2) + ", " + barH);
+                System.out.println("header bar subtitle: " + ((W - textW) - barGap * 2) + ", " + barH);
+                System.out.println("header logo: " + (logoSize) + ", " + logoSize);
             }
         });
     }
