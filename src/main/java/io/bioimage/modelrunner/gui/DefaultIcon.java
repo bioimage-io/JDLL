@@ -112,6 +112,10 @@ public class DefaultIcon {
       }
     
     public static void drawLogo(URL url, LogoPanel panel) {
+    	if (url == null) {
+        	SwingUtilities.invokeLater(() -> panel.setImage(getImmediateLoadingSquareLogo(), true));
+        	return;
+    	}
         BufferedImage img = CACHE.get(url);
         if (img != null) {
         	SwingUtilities.invokeLater(() -> panel.setImage(img, false));

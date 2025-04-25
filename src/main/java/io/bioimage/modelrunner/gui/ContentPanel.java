@@ -8,6 +8,7 @@ import java.awt.Font;
 import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
 import java.awt.image.BufferedImage;
+import java.io.File;
 import java.net.URL;
 
 import javax.swing.JEditorPane;
@@ -20,11 +21,14 @@ import javax.swing.SwingUtilities;
 import javax.swing.event.HyperlinkEvent;
 import javax.swing.event.HyperlinkListener;
 
+import io.bioimage.modelrunner.gui.adapter.GuiAdapter;
 import io.bioimage.modelrunner.gui.workers.ModelInfoWorker;
 import io.bioimage.modelrunner.gui.workers.ModelInfoWorker.TextLoadCallback;
 import io.bioimage.modelrunner.bioimageio.description.ModelDescriptor;
 
 public class ContentPanel extends JPanel {
+	
+	private final URL defaultLogoURL;
 	
 	private LogoPanel exampleImageLabel;
 	private JLabel exampleTitleLabel;
@@ -40,7 +44,17 @@ public class ContentPanel extends JPanel {
 	private static final long serialVersionUID = -7691139174208436363L;
 
 	protected ContentPanel() {
+		this(null);
+	}
+
+	protected ContentPanel(GuiAdapter adapter) {
 		super(null);
+		
+		if (adapter == null) {
+			defaultLogoURL = null;
+		} else {
+			defaultLogoURL = ContentPanel.class.getClassLoader().getResource(adapter.getIconPath());
+		}
 
         exampleTitleLabel = new JLabel("Cover Image");
         exampleTitleLabel.setFont(new Font("SansSerif", Font.BOLD, 18));
@@ -211,7 +225,7 @@ public class ContentPanel extends JPanel {
 	}
 
 	protected void update(ModelDescriptor modelDescriptor, URL path, int logoWidth, int logoHeight) {
-    	DefaultIcon.drawImOrLogo(path, path, exampleImageLabel);;
+    	DefaultIcon.drawImOrLogo(path, defaultLogoURL, exampleImageLabel);
     	TextLoadCallback callback = new TextLoadCallback() {
     	    @Override
     	    public void onTextLoaded(String infoText) {
