@@ -110,7 +110,7 @@ public class ModelCard extends JPanel {
                 	newW = newH /ratio;
                     posY = imTopInset + topInset + topSize.height;
                     posx = (int) (W / 2 - newW / 2);
-                	while (newW > W + 2 * sideInset) {
+                	if (newW > W + 2 * sideInset) {
                 		newW = W - sideInset * 2;
                         newH = newW * ratio;
                         posx = sideInset;
@@ -121,7 +121,7 @@ public class ModelCard extends JPanel {
                     newH = newW * ratio;
                     posx = sideInset;
                     posY = (int) (H / 2 - newH / 2);
-                	while (newH > H - topInset - bottomInset - imTopInset - imBottomInset - topSize.height - bottomSize.height) {
+                	if (newH > H - topInset - bottomInset - imTopInset - imBottomInset - topSize.height - bottomSize.height) {
                     	newH = H - topInset - bottomInset - imTopInset - imBottomInset - topSize.height - bottomSize.height;
                     	newW = newH /ratio;
                         posY = imTopInset + topInset + topSize.height;
