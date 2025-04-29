@@ -29,7 +29,7 @@ import io.bioimage.modelrunner.bioimageio.description.ModelDescriptor;
 public class ContentPanel extends JPanel {
 	
 	private final URL defaultLogoURL;
-	private boolean isUnsupported = true;
+	private boolean isUnsupported = false;
 	
 	private LogoPanel exampleImageLabel;
 	private JLabel exampleTitleLabel;

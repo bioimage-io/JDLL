@@ -28,7 +28,7 @@ public class ModelCard extends JPanel {
     private JLabel nicknameLabel;
     private JLabel unsupportedLabel; // The overlay label
     protected LogoPanel logoIcon; // Panel holding image and overlay
-    private boolean isUnsupported = true; // Flag to track state
+    private boolean isUnsupported = false; // Flag to track state
 
     protected static final String UNSUPPORTED_TEXT = "UNSUPPORTED";
     protected static final Color UNSUPPORTED_BG_COLOR = Color.red;
@@ -212,6 +212,14 @@ public class ModelCard extends JPanel {
     protected void updateCard(String name, String nickname, URL imagePath) {
         this.nameLabel.setText(name);
         this.nicknameLabel.setText(nickname);
+        
+        DefaultIcon.drawImOrLogo(imagePath, imagePath, logoIcon);
+    }
+
+    protected void updateCard(String name, String nickname, URL imagePath, boolean supported) {
+        this.nameLabel.setText(name);
+        this.nicknameLabel.setText(nickname);
+        this.setUnsupported(!supported);
         
         DefaultIcon.drawImOrLogo(imagePath, imagePath, logoIcon);
     }

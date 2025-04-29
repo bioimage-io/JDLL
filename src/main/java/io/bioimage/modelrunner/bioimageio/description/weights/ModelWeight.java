@@ -176,6 +176,8 @@ public class ModelWeight
     public List<String> getAllSuportedWeightNames() {
     	return weightsDic.entrySet().stream().
     			map(i -> i.getValue().getFramework()).
+    			// TODO adapt to pytorch too
+    			filter(i -> i.equals(onnxIdentifier) || i.equals(tfIdentifier) || i.equals(torchscriptIdentifier)).
     			distinct().collect(Collectors.toList());
     }
 

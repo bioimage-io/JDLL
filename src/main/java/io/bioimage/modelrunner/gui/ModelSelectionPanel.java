@@ -96,15 +96,27 @@ public class ModelSelectionPanel extends ModelSelectionPanelGui {
     }
     
     protected void redrawModelCards(int currentIndex) {
+    	boolean prevSupported = true;
+    	boolean mainSupported = true;
+    	boolean nextSupported = true;
+    	if (models.get(getWrappedIndex(currentIndex - 1)) != null)
+    		prevSupported = models.get(getWrappedIndex(currentIndex - 1)).getWeights().getAllSuportedWeightNames().size() != 0;
+    	if (models.get(currentIndex) != null)
+    		mainSupported = models.get(currentIndex).getWeights().getAllSuportedWeightNames().size() != 0;
+    	if (models.get(getWrappedIndex(currentIndex + 1)) != null)
+    		nextSupported = models.get(getWrappedIndex(currentIndex + 1)).getWeights().getAllSuportedWeightNames().size() != 0;
         prevModelPanel.updateCard(modelNames.get(getWrappedIndex(currentIndex - 1)),
                 modelNicknames.get(getWrappedIndex(currentIndex - 1)),
-                modelImagePaths.get(getWrappedIndex(currentIndex - 1)));
+                modelImagePaths.get(getWrappedIndex(currentIndex - 1)),
+                prevSupported);
         selectedModelPanel.updateCard(modelNames.get(currentIndex),
                 modelNicknames.get(currentIndex),
-                modelImagePaths.get(currentIndex));
+                modelImagePaths.get(currentIndex),
+                mainSupported);
         nextModelPanel.updateCard(modelNames.get(getWrappedIndex(currentIndex + 1)),
                 modelNicknames.get(getWrappedIndex(currentIndex + 1)),
-                modelImagePaths.get(getWrappedIndex(currentIndex + 1)));
+                modelImagePaths.get(getWrappedIndex(currentIndex + 1)),
+                nextSupported);
     }
 
     private int getWrappedIndex(int index) {
