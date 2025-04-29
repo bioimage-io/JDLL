@@ -76,8 +76,10 @@ public class ModelSelectionPanelGui extends JPanel {
                 int insetTop = in.top;
                 
                 double btnH = Math.min(MAX_BTN_HEIGHT, rawH * BTN_HEIGHT_RATIO);
-                prevButton.setBounds(in.left, rawH - in.left - (int) btnH, (int) (W * 0.5), (int) btnH);
-                nextButton.setBounds(in.left + (int) (W * 0.5), rawH - in.left - (int) btnH, (int) (W * 0.5), (int) btnH);
+                btnH = Math.max(1, btnH);
+                int btnW = (int) Math.max(1,  W * 0.5);
+                prevButton.setBounds(in.left, rawH - in.left - (int) btnH, btnW, (int) btnH);
+                nextButton.setBounds(in.left + btnW, rawH - in.left - (int) btnH, btnW, (int) btnH);
                 
                 int hSide = (int) (rawH - inset - insetTop - btnH);
                 int wSide = (int) ((W - 4 * inset) / (SECOND_CARD_RT * 2 + 1));
@@ -91,9 +93,9 @@ public class ModelSelectionPanelGui extends JPanel {
                 int topY = (int) ((rawH - btnH) / 2 - side / 2);
                 int bottomY = (int) (topY + side * (1 - SECOND_CARD_RT) / 2);
                 
-                prevModelPanel.setBounds(leftX, bottomY, (int) (side * SECOND_CARD_RT), (int) (side * SECOND_CARD_RT));
+                prevModelPanel.setBounds(leftX, bottomY, (int) Math.max(1, side * SECOND_CARD_RT), (int) Math.max(1, side * SECOND_CARD_RT));
                 selectedModelPanel.setBounds(mediumX, topY, side, side);
-                nextModelPanel.setBounds(rightX, bottomY, (int) (side * SECOND_CARD_RT), (int) (side * SECOND_CARD_RT));
+                nextModelPanel.setBounds(rightX, bottomY, (int) Math.max(1, side * SECOND_CARD_RT), (int) Math.max(1, side * SECOND_CARD_RT));
             }
         });
     }

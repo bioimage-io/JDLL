@@ -8,9 +8,9 @@ import java.awt.Font;
 import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
 import java.awt.image.BufferedImage;
-import java.io.File;
 import java.net.URL;
 
+import javax.swing.BorderFactory;
 import javax.swing.JEditorPane;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
@@ -29,9 +29,11 @@ import io.bioimage.modelrunner.bioimageio.description.ModelDescriptor;
 public class ContentPanel extends JPanel {
 	
 	private final URL defaultLogoURL;
+	private boolean isUnsupported = false;
 	
 	private LogoPanel exampleImageLabel;
 	private JLabel exampleTitleLabel;
+	private JLabel unsupportedLabel;
 	protected JLabel infoTitleLabel;
     private JEditorPane modelInfoArea;
     private JProgressBar progressBar;
@@ -55,6 +57,15 @@ public class ContentPanel extends JPanel {
 		} else {
 			defaultLogoURL = ContentPanel.class.getClassLoader().getResource(adapter.getIconPath());
 		}
+		
+
+        this.unsupportedLabel = new JLabel(ModelCard.UNSUPPORTED_TEXT);
+        this.unsupportedLabel.setFont(new Font("SansSerif", Font.BOLD, (int) (16)));
+        this.unsupportedLabel.setForeground(ModelCard.UNSUPPORTED_FG_COLOR);
+        this.unsupportedLabel.setBackground(ModelCard.UNSUPPORTED_BG_COLOR);
+        this.unsupportedLabel.setOpaque(true);
+        this.unsupportedLabel.setBorder(BorderFactory.createEtchedBorder());
+        this.unsupportedLabel.setVisible(false);
 
         exampleTitleLabel = new JLabel("Cover Image");
         exampleTitleLabel.setFont(new Font("SansSerif", Font.BOLD, 18));
@@ -117,30 +128,26 @@ public class ContentPanel extends JPanel {
         int labelW = Math.max(1, Math.min(rightLabelSize.width, rawW / 2 + spaceX +  2 * inset - labelPosX));
         infoTitleLabel.setBounds(labelPosX, inset, labelW, rightLabelSize.height);
 
-        double barHeight = rawH * BAR_RATIO;
-        double strHeight = rawH * LABEL_RATIO;
+        double barHeight = Math.max(1, rawH * BAR_RATIO);
+        double strHeight = Math.max(1, rawH * LABEL_RATIO);
         
         int barInset = 2;
         
         double hPanel = rawH - barInset - 4 * inset - barHeight - strHeight - rightLabelSize.height;
         double wPanel = rawW / 2 - inset * 2;
         int posY = 2 * inset + rightLabelSize.height;
-        infoScrollPane.setBounds(xRight, posY, (int) wPanel, (int) hPanel);
-        posY += hPanel + inset;
-        progressBar.setBounds(xRight, posY, (int) wPanel, (int) barHeight);
-        posY += barHeight + barInset;
-        progressInfoLabel.setBounds(xRight, posY, (int) wPanel, (int) strHeight);
         
 
         wPanel = Math.max(1, wPanel);
         hPanel = Math.max(1, hPanel);
-        barHeight = Math.max(1, barHeight);
+        barHeight = Math.max(5, barHeight);
         strHeight = Math.max(1, strHeight);
         
-        System.out.println("content right scroll: " + wPanel + ", " + hPanel);
-        System.out.println("content right bar: " + wPanel + ", " + barHeight);
-        System.out.println("content right str: " + wPanel + ", " + strHeight);
-        System.out.println("content right title: " + labelW + ", " + rightLabelSize.height);
+        infoScrollPane.setBounds(xRight, posY, (int) wPanel, (int) hPanel);
+        posY += hPanel + inset;
+        progressBar.setBounds(xRight, posY, (int) wPanel, (int) barHeight);
+        posY += barHeight + barInset;
+        progressInfoLabel.setBounds(xRight, posY, (int) wPanel, (int) strHeight);        
     }
     
     private void leftSideGUI(int H, int W, int spaceX, int inset) {
@@ -148,8 +155,9 @@ public class ContentPanel extends JPanel {
         int xLeft = inset;
         Dimension leftLabelSize = exampleTitleLabel.getPreferredSize();
         int labelPosX = Math.max(xLeft, W / 4 - leftLabelSize.width / 2);
-        exampleTitleLabel.setBounds(labelPosX, inset, 
-        		Math.min(leftLabelSize.width, spaceX + inset - labelPosX), leftLabelSize.height);
+        int titleW = Math.min(leftLabelSize.width, spaceX + inset - labelPosX);
+        titleW = Math.max(1, titleW);
+        exampleTitleLabel.setBounds(labelPosX, inset, titleW, leftLabelSize.height);
         
         
         int imH = exampleImageLabel.getPreferredSize().height;
@@ -181,7 +189,33 @@ public class ContentPanel extends JPanel {
                 posx = (int) (inset + spaceX / 2 - newW / 2);
         	}
         }
+        newW = Math.max(1, newW);
+        newH = Math.max(1, newH);
         exampleImageLabel.setBounds(posx, posY, (int) newW, (int) newH);
+        
+
+
+        
+        unsupportedLabel.setFont(unsupportedLabel.getFont().deriveFont(Font.BOLD, (float) (16)));
+        
+        int labelX = posx;
+        int labelW = (int) newW;
+        if (newW > 5) {
+        	labelX = posx + 2;
+        	labelW = labelW - 4;
+        }
+        int labelY = posY;
+        int labelH = (int) newH;
+        if (newH > 15) {
+        	labelH = (int) (newH / 3);
+        	labelY += ((int) newH / 2) - ((int) labelH);
+        }
+        unsupportedLabel.setBounds(labelX, labelY, labelW, labelH);
+        unsupportedLabel.setVisible(isUnsupported);
+    }
+    
+    protected void setUnsupported(boolean isUnsupported) {
+    	this.isUnsupported = isUnsupported;
     }
 	
 	protected void setIcon(BufferedImage im) {

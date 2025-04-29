@@ -30,9 +30,9 @@ public class ModelCard extends JPanel {
     protected LogoPanel logoIcon; // Panel holding image and overlay
     private boolean isUnsupported = false; // Flag to track state
 
-    private static final String UNSUPPORTED_TEXT = "Unsupported";
-    private static final Color UNSUPPORTED_BG_COLOR = Color.red;
-    private static final Color UNSUPPORTED_FG_COLOR = Color.black;
+    protected static final String UNSUPPORTED_TEXT = "Unsupported";
+    protected static final Color UNSUPPORTED_BG_COLOR = Color.red;
+    protected static final Color UNSUPPORTED_FG_COLOR = Color.black;
 
 
     protected ModelCard() {
@@ -55,7 +55,7 @@ public class ModelCard extends JPanel {
         this.unsupportedLabel.setBackground(UNSUPPORTED_BG_COLOR);
         this.unsupportedLabel.setOpaque(true);
         this.unsupportedLabel.setBorder(BorderFactory.createEtchedBorder());
-        this.unsupportedLabel.setVisible(true);
+        this.unsupportedLabel.setVisible(false);
 
 
         this.nameLabel = new JLabel(Gui.LOADING_STR, JLabel.CENTER);
@@ -137,14 +137,29 @@ public class ModelCard extends JPanel {
 
                 int sideInsetName = Math.max(sideInset, W/ 2 - topSize.width / 2);
                 int sideInsetNickname = Math.max(sideInset, W/ 2 - bottomSize.width / 2);
-
-                System.out.println("name label: " + Math.min(topSize.width, W - sideInset * 2) + ", " + topSize.height);
-                System.out.println("nickname label: " + Math.min(bottomSize.width, W - sideInset * 2) + ", " + bottomSize.height);
-                System.out.println("card icon: " + newW + ", " + newH);
                 
+                int posYNick = Math.max(0, H - bottomInset - bottomSize.height);
+
                 nameLabel  .setBounds(sideInsetName, topInset, nameX, nameY);
-                nicknameLabel.setBounds(sideInsetNickname, nicknameNameX, nicknameNameX, nicknameNameY);
+                nicknameLabel.setBounds(sideInsetNickname, posYNick, nicknameNameX, nicknameNameY);
                 logoIcon.setBounds(posx, posY, (int) newW, (int) newH);
+                
+                unsupportedLabel.setFont(unsupportedLabel.getFont().deriveFont(Font.BOLD, (float) (16 * scale)));
+                
+                int labelX = posx;
+                int labelW = (int) newW;
+                if (newW > 5) {
+                	labelX = posx + 2;
+                	labelW = labelW - 4;
+                }
+                int labelY = posY;
+                int labelH = (int) newH;
+                if (newH > 15) {
+                	labelH = (int) (newH / 3);
+                	labelY += ((int) newH / 2) - ((int) labelH);
+                }
+                unsupportedLabel.setBounds(labelX, labelY, labelW, labelH);
+                unsupportedLabel.setVisible(isUnsupported);
             }
         });
     }
