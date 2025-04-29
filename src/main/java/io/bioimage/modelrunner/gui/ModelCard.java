@@ -69,98 +69,111 @@ public class ModelCard extends JPanel {
         this.add(this.nicknameLabel);
         
         organiseComponents();
+        hookImageListener();
     }
     
     private void organiseComponents() {
     	addComponentListener(new ComponentAdapter() {
             @Override
             public void componentResized(ComponentEvent e) {
-                Insets in = getInsets();
-                int W = getWidth()  - in.left - in.right;
-                int H = getHeight() - in.top  - in.bottom;
-                
-                int topInset = 2;
-                int bottomInset = 2;
-                int imTopInset = 2;
-                int imBottomInset = 2;
-                int sideInset = 2;
-                
-
-                nameLabel.setFont(nameLabel.getFont().deriveFont(Font.BOLD, (float) (16 * scale)));
-                nicknameLabel.setFont(nicknameLabel.getFont().deriveFont(Font.PLAIN, (float) (14 * scale)));
-
-                Dimension topSize = nameLabel.getPreferredSize();
-                Dimension bottomSize = nicknameLabel.getPreferredSize();
-
-                BufferedImage im = logoIcon.getImage();
-                int imH, imW;
-                if (im == null) {
-                	imH = logoIcon.getPreferredSize().height;
-                	imW = logoIcon.getPreferredSize().width;
-                } else {
-                    imH = im.getHeight();
-                    imW = im.getWidth();
-                }
-
-                double newW, newH;
-                int posx, posY;
-                double ratio = imH / (double) imW;
-                if (ratio > 1) {
-                	newH = H - topInset - bottomInset - imTopInset - imBottomInset - topSize.height;
-                	newW = newH /ratio;
-                    posY = imTopInset + topInset + topSize.height;
-                    posx = (int) (W / 2 - newW / 2);
-                	if (newW > W + 2 * sideInset) {
-                		newW = W - sideInset * 2;
-                        newH = newW * ratio;
-                        posx = sideInset;
-                        posY = (int) (H / 2 - newH / 2);
-                	}
-                } else {
-                    newW = W - sideInset * 2;
-                    newH = newW * ratio;
-                    posx = sideInset;
-                    posY = (int) (H / 2 - newH / 2);
-                	if (newH > H - topInset - bottomInset - imTopInset - imBottomInset - topSize.height - bottomSize.height) {
-                    	newH = H - topInset - bottomInset - imTopInset - imBottomInset - topSize.height - bottomSize.height;
-                    	newW = newH /ratio;
-                        posY = imTopInset + topInset + topSize.height;
-                        posx = (int) (W / 2 - newW / 2);
-                	}
-                }
-                newH = Math.max(1, newH);
-                newW = Math.max(1, newW);
-                int nameX = Math.max(1, Math.min(topSize.width, W - sideInset * 2));
-                int nameY = Math.max(1, topSize.height);
-                int nicknameNameX = Math.max(1, Math.min(bottomSize.width, W - sideInset * 2));
-                int nicknameNameY = Math.max(1, bottomSize.height);
-
-                int sideInsetName = Math.max(sideInset, W/ 2 - topSize.width / 2);
-                int sideInsetNickname = Math.max(sideInset, W/ 2 - bottomSize.width / 2);
-                
-                int posYNick = Math.max(0, H - bottomInset - bottomSize.height);
-
-                nameLabel  .setBounds(sideInsetName, topInset, nameX, nameY);
-                nicknameLabel.setBounds(sideInsetNickname, posYNick, nicknameNameX, nicknameNameY);
-                logoIcon.setBounds(posx, posY, (int) newW, (int) newH);
-                
-                int labelX = posx;
-                int labelW = (int) newW;
-                if (newW > 5) {
-                	labelX = posx + 2;
-                	labelW = labelW - 4;
-                }
-                int labelY = posY;
-                int labelH = (int) newH;
-                if (newH > 15) {
-                	labelH = (int) (newH / 3);
-                	labelY += ((int) (newH / 2)) - (int) (labelH / 2);
-                }
-                unsupportedLabel.setBounds(labelX, labelY, labelW, labelH);
-                unsupportedLabel.setVisible(isUnsupported);
-                unsupportedLabel.setFont(unsupportedLabel.getFont().deriveFont(Font.BOLD, (float) (labelH / 3.5)));
+                layoutAll();
             }
         });
+    }
+    
+    private void hookImageListener() {
+        logoIcon.addPropertyChangeListener(evt -> {
+            if ("image".equals(evt.getPropertyName())) {
+                layoutAll();
+            }
+        });
+    }
+    
+    private void layoutAll() {
+        Insets in = getInsets();
+        int W = getWidth()  - in.left - in.right;
+        int H = getHeight() - in.top  - in.bottom;
+        
+        int topInset = 2;
+        int bottomInset = 2;
+        int imTopInset = 2;
+        int imBottomInset = 2;
+        int sideInset = 2;
+        
+
+        nameLabel.setFont(nameLabel.getFont().deriveFont(Font.BOLD, (float) (16 * scale)));
+        nicknameLabel.setFont(nicknameLabel.getFont().deriveFont(Font.PLAIN, (float) (14 * scale)));
+
+        Dimension topSize = nameLabel.getPreferredSize();
+        Dimension bottomSize = nicknameLabel.getPreferredSize();
+
+        BufferedImage im = logoIcon.getImage();
+        int imH, imW;
+        if (im == null) {
+        	imH = logoIcon.getPreferredSize().height;
+        	imW = logoIcon.getPreferredSize().width;
+        } else {
+            imH = im.getHeight();
+            imW = im.getWidth();
+        }
+
+        double newW, newH;
+        int posx, posY;
+        double ratio = imH / (double) imW;
+        if (ratio > 1) {
+        	newH = H - topInset - bottomInset - imTopInset - imBottomInset - topSize.height;
+        	newW = newH /ratio;
+            posY = imTopInset + topInset + topSize.height;
+            posx = (int) (W / 2 - newW / 2);
+        	if (newW > W + 2 * sideInset) {
+        		newW = W - sideInset * 2;
+                newH = newW * ratio;
+                posx = sideInset;
+                posY = (int) (H / 2 - newH / 2);
+        	}
+        } else {
+            newW = W - sideInset * 2;
+            newH = newW * ratio;
+            posx = sideInset;
+            posY = (int) (H / 2 - newH / 2);
+        	if (newH > H - topInset - bottomInset - imTopInset - imBottomInset - topSize.height - bottomSize.height) {
+            	newH = H - topInset - bottomInset - imTopInset - imBottomInset - topSize.height - bottomSize.height;
+            	newW = newH /ratio;
+                posY = imTopInset + topInset + topSize.height;
+                posx = (int) (W / 2 - newW / 2);
+        	}
+        }
+        newH = Math.max(1, newH);
+        newW = Math.max(1, newW);
+        int nameX = Math.max(1, Math.min(topSize.width, W - sideInset * 2));
+        int nameY = Math.max(1, topSize.height);
+        int nicknameNameX = Math.max(1, Math.min(bottomSize.width, W - sideInset * 2));
+        int nicknameNameY = Math.max(1, bottomSize.height);
+
+        int sideInsetName = Math.max(sideInset, W/ 2 - topSize.width / 2);
+        int sideInsetNickname = Math.max(sideInset, W/ 2 - bottomSize.width / 2);
+        
+        int posYNick = Math.max(0, H - bottomInset - bottomSize.height);
+
+        nameLabel  .setBounds(sideInsetName, topInset, nameX, nameY);
+        nicknameLabel.setBounds(sideInsetNickname, posYNick, nicknameNameX, nicknameNameY);
+        logoIcon.setBounds(posx, posY, (int) newW, (int) newH);
+        
+        int labelX = posx;
+        int labelW = (int) newW;
+        if (newW > 5) {
+        	labelX = posx + 2;
+        	labelW = labelW - 4;
+        }
+        int labelY = posY;
+        int labelH = (int) newH;
+        if (newH > 15) {
+        	labelH = (int) (newH / 3);
+        	labelY += ((int) (newH / 2)) - (int) (labelH / 2);
+        }
+        unsupportedLabel.setBounds(labelX, labelY, labelW, labelH);
+        unsupportedLabel.setVisible(isUnsupported);
+        unsupportedLabel.setFont(unsupportedLabel.getFont().deriveFont(Font.BOLD, (float) (labelH / 3.5)));
     }
 
     /**
