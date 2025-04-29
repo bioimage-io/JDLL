@@ -97,7 +97,6 @@ public class ContentPanel extends JPanel {
         add(exampleImageLabel);
         add(exampleTitleLabel);
         add(infoTitleLabel);
-        add(modelInfoArea);
         add(progressBar);
         add(progressInfoLabel);
         add(infoScrollPane);
@@ -206,10 +205,8 @@ public class ContentPanel extends JPanel {
         
         unsupportedLabel.setFont(unsupportedLabel.getFont().deriveFont(Font.BOLD, (float) (16)));
         
-        int labelX = posx;
         int labelW = (int) newW;
         if (newW > 5) {
-        	labelX = posx + 2;
         	labelW = labelW - 4;
         }
         int labelY = posY;
@@ -246,8 +243,10 @@ public class ContentPanel extends JPanel {
 	}
 	
 	protected void setInfo(String text) {
-		this.modelInfoArea.setText(text);
-		modelInfoArea.setCaretPosition(0);
+		SwingUtilities.invokeLater(() -> {
+			this.modelInfoArea.setText(text);
+			modelInfoArea.setCaretPosition(0);
+		});
 	}
 	
 	private void createProgressBar() {
@@ -297,12 +296,6 @@ public class ContentPanel extends JPanel {
     	TextLoadCallback callback = new TextLoadCallback() {
     	    @Override
     	    public void onTextLoaded(String infoText) {
-    	        /**
-    	         * TODO
-    	    	if (!ModelSelectionPanel.ICONS_DISPLAYED.get("main").equals(path)) {
-    	            return;
-    	        }
-    	         */
                 setInfo(infoText);
     	        revalidate();
     	        repaint();

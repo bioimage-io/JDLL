@@ -159,10 +159,8 @@ public class ModelCard extends JPanel {
         nicknameLabel.setBounds(sideInsetNickname, posYNick, nicknameNameX, nicknameNameY);
         logoIcon.setBounds(posx, posY, (int) newW, (int) newH);
         
-        int labelX = posx;
         int labelW = (int) newW;
         if (newW > 5) {
-        	labelX = posx + 2;
         	labelW = labelW - 4;
         }
         int labelY = posY;
@@ -233,10 +231,9 @@ public class ModelCard extends JPanel {
 				    "My Model Name",
 				    "Friendly Nickname",
 				    // try to load an image from resources; fallback to null if missing
-				    new File("/home/carlos/git/deep-icy/src/main/resources/deepicy_imgs/icy_logo.png").toURL()
+				    new File("/home/carlos/git/deep-icy/src/main/resources/deepicy_imgs/icy_logo.png").toURI().toURL()
 				);
 			} catch (MalformedURLException e) {
-				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
             // optionally mark unsupported to see the overlay:
