@@ -1,10 +1,10 @@
 package io.bioimage.modelrunner.gui;
 
-import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Desktop;
 import java.awt.Font;
-import java.awt.GridLayout;
+import java.awt.event.ComponentAdapter;
+import java.awt.event.ComponentEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.net.URL;
@@ -13,42 +13,48 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import javax.swing.BorderFactory;
-import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JFrame;
-import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JTextField;
 import javax.swing.SwingUtilities;
 
-import io.bioimage.modelrunner.gui.workers.ImageLoaderWorker;
 import io.bioimage.modelrunner.bioimageio.BioimageioRepo;
 import io.bioimage.modelrunner.bioimageio.description.ModelDescriptor;
 import io.bioimage.modelrunner.bioimageio.description.ModelDescriptorFactory;
+import io.bioimage.modelrunner.gui.adapter.GuiAdapter;
 import io.bioimage.modelrunner.utils.Constants;
 
 public class SearchBar extends JPanel {
     private static final long serialVersionUID = -1741389221668683293L;
     protected JTextField searchField;
+    protected LogoPanel bmzLogo;
 	protected JButton searchButton;
     protected JButton switchButton;
     private List<ModelDescriptor> bmzModels;
     private int nModels;
-    protected static final String SEARCH_ICON_PATH = "dij_imgs/search_logo.png";
+    protected static final String SEARCH_ICON_PATH = "jdll_icons/search_logo.png";
+    
+    double BUTTONS_PERC = 0.4;
     
 
     protected SearchBar() {
-        setLayout(new BorderLayout());
+    	this(null);
+    }
+
+    protected SearchBar(GuiAdapter adapter) {
+        setLayout(null);
         setBackground(Color.WHITE);
         setBorder(BorderFactory.createLineBorder(Color.LIGHT_GRAY, 1, true));
 
         // Create the search icon
         URL iconPath = getClass().getClassLoader().getResource(SEARCH_ICON_PATH);
-        int iconH = 10; // (int) (parentHeight * V_RATIO * ICON_VRATIO);
-        int iconW = 10; // (int) (parentWidth * H_RATIO * ICON_HRATIO);
-        ImageIcon scaledImage = ImageLoaderWorker.createScaledIcon(iconPath, iconW, iconH);
-        JLabel iconLabel = new JLabel(scaledImage);
-        iconLabel.addMouseListener(new MouseAdapter() {
+        bmzLogo = new LogoPanel();
+        if (adapter != null)
+            DefaultIcon.drawImOrLogo(Header.class.getClassLoader().getResource(adapter.getIconPath()), iconPath, bmzLogo);
+        else
+            DefaultIcon.drawImOrLogo(iconPath, iconPath, bmzLogo);
+        bmzLogo.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseClicked(MouseEvent e) {
                 try {
@@ -58,7 +64,7 @@ public class SearchBar extends JPanel {
                 }
             }
         });
-        iconLabel.setBorder(BorderFactory.createEmptyBorder(0, 0, 0, 0));
+        bmzLogo.setBorder(BorderFactory.createEmptyBorder(0, 0, 0, 0));
 
         // Create the search field
         searchField = new JTextField();
@@ -79,24 +85,49 @@ public class SearchBar extends JPanel {
         switchButton.setFocusPainted(false);
         switchButton.setBorder(BorderFactory.createEmptyBorder(5, 10, 5, 10));
         
-        JPanel wrapperPanel = new JPanel(new GridLayout(1, 2));
-        wrapperPanel.add(searchButton);
-        wrapperPanel.add(switchButton);
 
-        // Add components to the panel
-        add(iconLabel, BorderLayout.WEST);
-        add(searchField, BorderLayout.CENTER);
-        //add(searchButton, BorderLayout.EAST);
-        add(wrapperPanel, BorderLayout.EAST);
-
+        add(bmzLogo);
+        add(searchField);
+        add(searchButton);
+        add(switchButton);
+        
+        organiseComponents();
     }
+    
+    private void organiseComponents() {
+    	addComponentListener(new ComponentAdapter() {
+            @Override
+            public void componentResized(ComponentEvent e) {
+                layoutAll();
+            }
+        });
+    }
+    
+    private void layoutAll() {
+        int W = getWidth();
+        int H = getHeight();
+                
+        this.bmzLogo.setBounds(0, 0, H, H);
+        int searchW = (int) ((W - H) * (1 - BUTTONS_PERC));  
+
+        this.searchField.setBounds(H, 0, searchW, H);
+        int buttonW = (int) (0.5 * (W - H) * BUTTONS_PERC);  
+        this.searchButton.setBounds(H + searchW, 0, buttonW, H);
+        this.switchButton.setBounds(W - buttonW, 0, buttonW, H);
+        
+        
+
+        //nameLabel.setFont(nameLabel.getFont().deriveFont(Font.BOLD, (float) (16 * scale)));
+        //nicknameLabel.setFont(nicknameLabel.getFont().deriveFont(Font.PLAIN, (float) (14 * scale)));
+    }
+    
 
     protected List<ModelDescriptor> performSearch() {
-        String searchText = searchField.getText().trim();
+        String searchText = searchField.getText().trim().toLowerCase();
         return this.bmzModels.stream().filter(mm -> {
         	if (mm == null) return false;
-        	return mm.getName().contains(searchText) || mm.getDescription().contains(searchText)
-        			|| mm.getNickname().contains(searchText) || mm.getTags().contains(searchText);
+        	return mm.getName().toLowerCase().contains(searchText) || mm.getDescription().toLowerCase().contains(searchText)
+        			|| mm.getNickname().toLowerCase().contains(searchText) || mm.getTags().contains(searchText);
         }).collect(Collectors.toList());
     }
     

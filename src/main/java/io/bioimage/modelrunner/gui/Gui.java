@@ -284,7 +284,7 @@ public class Gui extends JPanel {
         // ───────────────────────────────────────────────────────────────
         // 4) Copyright label
         JLabel copyrightLabel = new JLabel(
-            "© 2024 " + guiAdapter.getSoftwareName() + " and JDLL"
+            "© 2025 " + guiAdapter.getSoftwareName() + " and JDLL"
         );
         copyrightLabel.setFont(new Font("SansSerif", Font.PLAIN, 12));
         copyrightLabel.setForeground(Color.WHITE);
