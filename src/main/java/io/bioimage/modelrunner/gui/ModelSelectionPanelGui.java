@@ -93,7 +93,6 @@ public class ModelSelectionPanelGui extends JPanel {
                 int topY = (int) ((rawH - btnH) / 2 - side / 2);
                 int bottomY = (int) (topY + side * (1 - SECOND_CARD_RT) / 2);
                 
-                System.out.println(side);
                 prevModelPanel.setBounds(leftX, bottomY, (int) Math.max(1, side * SECOND_CARD_RT), (int) Math.max(1, side * SECOND_CARD_RT));
                 selectedModelPanel.setBounds(mediumX, topY, side, side);
                 nextModelPanel.setBounds(rightX, bottomY, (int) Math.max(1, side * SECOND_CARD_RT), (int) Math.max(1, side * SECOND_CARD_RT));

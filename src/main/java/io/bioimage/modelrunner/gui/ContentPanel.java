@@ -101,6 +101,7 @@ public class ContentPanel extends JPanel {
         add(progressBar);
         add(progressInfoLabel);
         add(infoScrollPane);
+        hookImageListener();
         organiseComponents();
 	}
     
@@ -160,9 +161,15 @@ public class ContentPanel extends JPanel {
         titleW = Math.max(1, titleW);
         exampleTitleLabel.setBounds(labelPosX, inset, titleW, leftLabelSize.height);
         
-        
-        int imH = exampleImageLabel.getPreferredSize().height;
-        int imW = exampleImageLabel.getPreferredSize().width;
+        BufferedImage im = exampleImageLabel.getImage();
+        int imH, imW;
+        if (im == null) {
+        	imH = exampleImageLabel.getPreferredSize().height;
+        	imW = exampleImageLabel.getPreferredSize().width;
+        } else {
+            imH = im.getHeight();
+            imW = im.getWidth();
+        }
         
         double newW, newH;
         int posx, posY;
@@ -211,8 +218,23 @@ public class ContentPanel extends JPanel {
         	labelH = (int) (newH / 3);
         	labelY += ((int) (newH / 2)) - (int) (labelH / 2);
         }
-        unsupportedLabel.setBounds(labelX, labelY, labelW, labelH);
+        unsupportedLabel.setBounds(xLeft, labelY, spaceX, labelH);
         unsupportedLabel.setVisible(isUnsupported);
+    }
+    
+    private void hookImageListener() {
+    	exampleImageLabel.addPropertyChangeListener(evt -> {
+            if ("image".equals(evt.getPropertyName())) {
+                int rawW = getWidth();
+                int rawH = getHeight();
+                
+                int inset = 4;
+                
+                int spaceX = rawW / 2 - inset * 2;
+                
+                leftSideGUI(rawH, rawW, spaceX, inset);
+            }
+        });
     }
     
     protected void setUnsupported(boolean isUnsupported) {

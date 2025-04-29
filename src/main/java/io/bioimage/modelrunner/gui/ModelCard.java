@@ -121,7 +121,7 @@ public class ModelCard extends JPanel {
         int posx, posY;
         double ratio = imH / (double) imW;
         if (ratio > 1) {
-        	newH = H - topInset - bottomInset - imTopInset - imBottomInset - topSize.height;
+        	newH = H - topInset - bottomInset - imTopInset - imBottomInset - topSize.height - bottomSize.height;
         	newW = newH /ratio;
             posY = imTopInset + topInset + topSize.height;
             posx = (int) (W / 2 - newW / 2);
@@ -171,7 +171,13 @@ public class ModelCard extends JPanel {
         	labelH = (int) (newH / 3);
         	labelY += ((int) (newH / 2)) - (int) (labelH / 2);
         }
-        unsupportedLabel.setBounds(labelX, labelY, labelW, labelH);
+
+        int leftH = (int) (posYNick - imBottomInset - posY - newH);
+        if (leftH > 30 && leftH > labelH) {
+        	labelH = leftH;
+        	labelY = (int) (posY + newH);
+        }
+        unsupportedLabel.setBounds(sideInset, labelY, getWidth() - sideInset * 2, labelH);
         unsupportedLabel.setVisible(isUnsupported);
         unsupportedLabel.setFont(unsupportedLabel.getFont().deriveFont(Font.BOLD, (float) (labelH / 3.5)));
     }
