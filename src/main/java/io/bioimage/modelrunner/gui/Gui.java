@@ -417,6 +417,10 @@ public class Gui extends JPanel {
         		supported = modelSelectionPanel.getModels().get(currentIndex).getWeights().getAllSuportedWeightNames().size() != 0;
             contentPanel.setUnsupported(!supported);
         	contentPanel.update(modelSelectionPanel.getModels().get(currentIndex), coverPath, logoWidth, logoHeight);
+        	if (this.searchBar.isBarOnLocal()) {
+        		this.runOnTestButton.setEnabled(supported);
+        		this.runButton.setEnabled(supported);
+        	}
     	}
     }
     
