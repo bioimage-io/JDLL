@@ -28,9 +28,9 @@ public class ModelCard extends JPanel {
     private JLabel nicknameLabel;
     private JLabel unsupportedLabel; // The overlay label
     protected LogoPanel logoIcon; // Panel holding image and overlay
-    private boolean isUnsupported = false; // Flag to track state
+    private boolean isUnsupported = true; // Flag to track state
 
-    protected static final String UNSUPPORTED_TEXT = "Unsupported";
+    protected static final String UNSUPPORTED_TEXT = "UNSUPPORTED";
     protected static final Color UNSUPPORTED_BG_COLOR = Color.red;
     protected static final Color UNSUPPORTED_FG_COLOR = Color.black;
 
@@ -49,13 +49,13 @@ public class ModelCard extends JPanel {
 
         this.logoIcon = new LogoPanel();
 
-        this.unsupportedLabel = new JLabel(UNSUPPORTED_TEXT);
-        this.unsupportedLabel.setFont(new Font("SansSerif", Font.BOLD, (int) (16 * scale)));
+        this.unsupportedLabel = new JLabel(UNSUPPORTED_TEXT, JLabel.CENTER);
+        this.unsupportedLabel.setFont(new Font("SansSerif", Font.BOLD, (int) (24)));
         this.unsupportedLabel.setForeground(UNSUPPORTED_FG_COLOR);
         this.unsupportedLabel.setBackground(UNSUPPORTED_BG_COLOR);
         this.unsupportedLabel.setOpaque(true);
         this.unsupportedLabel.setBorder(BorderFactory.createEtchedBorder());
-        this.unsupportedLabel.setVisible(false);
+        this.unsupportedLabel.setVisible(true);
 
 
         this.nameLabel = new JLabel(Gui.LOADING_STR, JLabel.CENTER);
@@ -64,9 +64,9 @@ public class ModelCard extends JPanel {
         this.nicknameLabel.setFont(new Font("SansSerif", Font.ITALIC, (int) (14 * scale)));
 
         this.add(this.nameLabel);
+        this.add(this.unsupportedLabel);
         this.add(this.logoIcon);
         this.add(this.nicknameLabel);
-        this.add(this.unsupportedLabel);
         
         organiseComponents();
     }
@@ -144,8 +144,6 @@ public class ModelCard extends JPanel {
                 nicknameLabel.setBounds(sideInsetNickname, posYNick, nicknameNameX, nicknameNameY);
                 logoIcon.setBounds(posx, posY, (int) newW, (int) newH);
                 
-                unsupportedLabel.setFont(unsupportedLabel.getFont().deriveFont(Font.BOLD, (float) (16 * scale)));
-                
                 int labelX = posx;
                 int labelW = (int) newW;
                 if (newW > 5) {
@@ -156,10 +154,11 @@ public class ModelCard extends JPanel {
                 int labelH = (int) newH;
                 if (newH > 15) {
                 	labelH = (int) (newH / 3);
-                	labelY += ((int) newH / 2) - ((int) labelH);
+                	labelY += ((int) (newH / 2)) - (int) (labelH / 2);
                 }
                 unsupportedLabel.setBounds(labelX, labelY, labelW, labelH);
                 unsupportedLabel.setVisible(isUnsupported);
+                unsupportedLabel.setFont(unsupportedLabel.getFont().deriveFont(Font.BOLD, (float) (labelH / 3.5)));
             }
         });
     }

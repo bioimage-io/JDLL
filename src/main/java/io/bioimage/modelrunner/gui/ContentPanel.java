@@ -29,7 +29,7 @@ import io.bioimage.modelrunner.bioimageio.description.ModelDescriptor;
 public class ContentPanel extends JPanel {
 	
 	private final URL defaultLogoURL;
-	private boolean isUnsupported = false;
+	private boolean isUnsupported = true;
 	
 	private LogoPanel exampleImageLabel;
 	private JLabel exampleTitleLabel;
@@ -59,16 +59,16 @@ public class ContentPanel extends JPanel {
 		}
 		
 
-        this.unsupportedLabel = new JLabel(ModelCard.UNSUPPORTED_TEXT);
+        this.unsupportedLabel = new JLabel(ModelCard.UNSUPPORTED_TEXT, JLabel.CENTER);
         this.unsupportedLabel.setFont(new Font("SansSerif", Font.BOLD, (int) (16)));
         this.unsupportedLabel.setForeground(ModelCard.UNSUPPORTED_FG_COLOR);
         this.unsupportedLabel.setBackground(ModelCard.UNSUPPORTED_BG_COLOR);
         this.unsupportedLabel.setOpaque(true);
         this.unsupportedLabel.setBorder(BorderFactory.createEtchedBorder());
-        this.unsupportedLabel.setVisible(false);
+        this.unsupportedLabel.setVisible(true);
 
         exampleTitleLabel = new JLabel("Cover Image");
-        exampleTitleLabel.setFont(new Font("SansSerif", Font.BOLD, 18));
+        exampleTitleLabel.setFont(new Font("SansSerif", Font.BOLD, 24));
 
         // Calculate dimensions for the logo based on the main interface size
         exampleImageLabel = new LogoPanel();
@@ -93,6 +93,7 @@ public class ContentPanel extends JPanel {
 
         createProgressBar();
 
+        add(unsupportedLabel);
         add(exampleImageLabel);
         add(exampleTitleLabel);
         add(infoTitleLabel);
@@ -208,7 +209,7 @@ public class ContentPanel extends JPanel {
         int labelH = (int) newH;
         if (newH > 15) {
         	labelH = (int) (newH / 3);
-        	labelY += ((int) newH / 2) - ((int) labelH);
+        	labelY += ((int) (newH / 2)) - (int) (labelH / 2);
         }
         unsupportedLabel.setBounds(labelX, labelY, labelW, labelH);
         unsupportedLabel.setVisible(isUnsupported);
