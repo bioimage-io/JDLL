@@ -234,6 +234,10 @@ public class ContentPanel extends JPanel {
         });
     }
     
+    protected boolean isUnsupported() {
+    	return this.isUnsupported;
+    }
+    
     protected void setUnsupported(boolean isUnsupported) {
     	this.isUnsupported = isUnsupported;
     }

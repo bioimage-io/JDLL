@@ -480,7 +480,15 @@ public class Gui extends JPanel {
         int logoHeight = (int) (getHeight() * 0.3);
         int logoWidth = getWidth() / 3;
     	URL coverPath = modelSelectionPanel.getCoverPaths().get(currentIndex);
-        contentPanel.update(modelSelectionPanel.getModels().get(currentIndex), coverPath, logoWidth, logoHeight);
+    	boolean supported = true;
+    	if (modelSelectionPanel.getModels().get(currentIndex) != null)
+    		supported = modelSelectionPanel.getModels().get(currentIndex).getWeights().getAllSuportedWeightNames().size() != 0;
+        contentPanel.setUnsupported(!supported);
+    	contentPanel.update(modelSelectionPanel.getModels().get(currentIndex), coverPath, logoWidth, logoHeight);
+    	if (this.searchBar.isBarOnLocal()) {
+    		this.runOnTestButton.setEnabled(supported);
+    		this.runButton.setEnabled(supported);
+    	}
     }
     
     protected void setModelInGuiAt(ModelDescriptor model, int pos) {
@@ -638,9 +646,9 @@ public class Gui extends JPanel {
             	this.contentPanel.setProgressBarText("");
             	this.contentPanel.setProgressLabelText("");
             	this.searchBar.setBarEnabled(true);
-            	this.runOnTestButton.setEnabled(true);
+            	this.runOnTestButton.setEnabled(!contentPanel.isUnsupported());
             	this.modelSelectionPanel.setArrowsEnabled(true);
-            	this.runButton.setEnabled(true);
+            	this.runButton.setEnabled(!contentPanel.isUnsupported());
         	});
     	});
     	
