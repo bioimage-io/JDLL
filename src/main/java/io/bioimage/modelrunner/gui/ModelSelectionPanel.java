@@ -11,6 +11,7 @@ import java.util.stream.Collectors;
 import javax.swing.SwingUtilities;
 
 import io.bioimage.modelrunner.bioimageio.description.ModelDescriptor;
+import io.bioimage.modelrunner.gui.adapter.GuiAdapter;
 
 public class ModelSelectionPanel extends ModelSelectionPanelGui {
 
@@ -22,8 +23,8 @@ public class ModelSelectionPanel extends ModelSelectionPanelGui {
     private List<URL> modelImagePaths;
     private List<ModelDescriptor> models;
 
-	protected ModelSelectionPanel() {
-        super();
+	protected ModelSelectionPanel(GuiAdapter adapter) {
+        super(adapter);
         this.setBackground(new Color(236, 240, 241));
 	}
     

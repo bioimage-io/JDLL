@@ -30,6 +30,9 @@ public class DefaultIcon {
     private static BufferedImage MASTER_IMAGE;
     private static String MASTER_PATH;
     
+
+    private static final Map<String, String> DISPLAYED = new ConcurrentHashMap<String, String>();
+    
     protected static BufferedImage getImmediateLoadingSquareLogo() {
         BufferedImage bi = new BufferedImage(50, 50, BufferedImage.TYPE_INT_ARGB);
         Graphics2D g = bi.createGraphics();
@@ -82,6 +85,73 @@ public class DefaultIcon {
         }
     }
     
+    public static void drawImOrLogo(URL imURL, LogoPanel panel, String panelID) {
+    	DISPLAYED.put(panelID, imURL.toExternalForm());
+        BufferedImage img = CACHE.get(imURL);
+        if (img != null && DISPLAYED.get(panelID).equals(imURL.toExternalForm())) {
+        	SwingUtilities.invokeLater(() -> panel.setImage(img, false));
+        	return;
+        };
+
+        if (scaleExecutor.isShutdown())
+        	scaleExecutor = Executors.newFixedThreadPool(2);
+        PENDING.computeIfAbsent(imURL, u ->
+          CompletableFuture.supplyAsync(() -> {
+            	try {
+	              	BufferedImage loaded = ImageIO.read(u);
+	              	CACHE.put(u, loaded);
+	              	return loaded;
+              } catch(Exception | Error e) {
+            	  e.printStackTrace();
+            	  return getImmediateLoadingSquareLogo();
+              }
+            }, scaleExecutor)
+        );
+        PENDING.get(imURL)
+        .whenComplete((bi,err)-> {
+        	PENDING.remove(imURL);
+    		SwingUtilities.invokeLater(() -> {
+    			if (DISPLAYED.get(panelID).equals(imURL.toExternalForm()))
+            		panel.setImage(bi, false);
+    			else
+    				System.out.println("discarded " + imURL + " at " + panelID);
+    		});
+        });
+    }
+    
+    public static void drawImOrLogo(URL imURL, URL logoUrl, LogoPanel panel, String panelID) {
+    	DISPLAYED.put(panelID, imURL.toExternalForm());
+        BufferedImage img = CACHE.get(imURL);
+        if (img != null && DISPLAYED.get(panelID).equals(imURL.toExternalForm())) {
+        	SwingUtilities.invokeLater(() -> panel.setImage(img, false));
+        	return;
+        };
+        drawLogo(logoUrl, panel);
+
+        if (scaleExecutor.isShutdown())
+        	scaleExecutor = Executors.newFixedThreadPool(2);
+        PENDING.computeIfAbsent(imURL, u ->
+          CompletableFuture.supplyAsync(() -> {
+            	try {
+	              	BufferedImage loaded = ImageIO.read(u);
+	              	CACHE.put(u, loaded);
+	              	return loaded;
+              } catch(Exception | Error e) {
+            	  e.printStackTrace();
+            	  return getImmediateLoadingSquareLogo();
+              }
+            }, scaleExecutor)
+        );
+        PENDING.get(imURL)
+        .whenComplete((bi,err)-> {
+        	PENDING.remove(imURL);
+    		SwingUtilities.invokeLater(() -> {
+    			if (DISPLAYED.get(panelID).equals(imURL.toExternalForm()))
+            		panel.setImage(bi, false);
+    		});
+        });
+    }
+    
     public static void drawImOrLogo(URL imURL, URL logoUrl, LogoPanel panel) {
         BufferedImage img = CACHE.get(imURL);
         if (img != null) {
@@ -109,7 +179,7 @@ public class DefaultIcon {
         	PENDING.remove(imURL);
         	SwingUtilities.invokeLater(() -> panel.setImage(bi, false));
         });
-      }
+    }
     
     public static void drawLogo(URL url, LogoPanel panel) {
     	if (url == null) {
@@ -143,7 +213,7 @@ public class DefaultIcon {
         	SwingUtilities.invokeLater(() -> panel.setImage(bi, false));
         });
     	SwingUtilities.invokeLater(() -> panel.setImage(getImmediateLoadingSquareLogo(), true));
-      }
+    }
     
     protected static void setIconPath(String iconPath) {
     	DIJ_ICON_PATH = iconPath;

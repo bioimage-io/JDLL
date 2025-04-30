@@ -292,7 +292,7 @@ public class ContentPanel extends JPanel {
 	}
 
 	protected void update(ModelDescriptor modelDescriptor, URL path, int logoWidth, int logoHeight) {
-    	DefaultIcon.drawImOrLogo(path, defaultLogoURL, exampleImageLabel);
+    	DefaultIcon.drawImOrLogo(path, defaultLogoURL, exampleImageLabel, ModelSelectionPanelGui.MAIN_CARD_ID);
     	TextLoadCallback callback = new TextLoadCallback() {
     	    @Override
     	    public void onTextLoaded(String infoText) {

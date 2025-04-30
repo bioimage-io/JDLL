@@ -9,8 +9,11 @@ import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
 import java.awt.image.BufferedImage;
 import java.io.File;
+import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.List;
+import java.util.Map;
 
 import javax.swing.BorderFactory;
 import javax.swing.JFrame;
@@ -18,11 +21,22 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.SwingUtilities;
 
+import io.bioimage.modelrunner.bioimageio.description.ModelDescriptor;
+import io.bioimage.modelrunner.exceptions.LoadEngineException;
+import io.bioimage.modelrunner.gui.adapter.GuiAdapter;
+import io.bioimage.modelrunner.gui.adapter.RunnerAdapter;
+import io.bioimage.modelrunner.tensor.Tensor;
+import net.imglib2.RandomAccessibleInterval;
+import net.imglib2.type.NativeType;
+import net.imglib2.type.numeric.RealType;
+
 public class ModelCard extends JPanel {
 
     private static final long serialVersionUID = -5625832740571130175L;
 
+	private final URL defaultLogoURL;
     private final double scale;
+    private final String cardID;
     
     private JLabel nameLabel;
     private JLabel nicknameLabel;
@@ -35,13 +49,18 @@ public class ModelCard extends JPanel {
     protected static final Color UNSUPPORTED_FG_COLOR = Color.black;
 
 
-    protected ModelCard() {
-    	this(1d);
+    protected ModelCard(GuiAdapter adapter) {
+    	this(adapter, ModelSelectionPanelGui.MAIN_CARD_ID, 1d);
     }
 
 
-    protected ModelCard(double scale) {
+    protected ModelCard(GuiAdapter adapter, String cardID, double scale) {
     	super(null);
+		if (adapter == null)
+			defaultLogoURL = null;
+		else
+			defaultLogoURL = ContentPanel.class.getClassLoader().getResource(adapter.getIconPath());
+    	this.cardID = cardID;
     	this.scale = scale;
         this.setBackground(Color.WHITE);
         this.setBorder(BorderFactory.createLineBorder(Color.GRAY, 1));
@@ -199,29 +218,33 @@ public class ModelCard extends JPanel {
 	    return this.isUnsupported;
 	}
 
-    protected static ModelCard createModelCard() {
-        ModelCard modelCardPanel = new ModelCard();
+    protected static ModelCard createModelCard(GuiAdapter adapter) {
+        ModelCard modelCardPanel = new ModelCard(adapter);
         return modelCardPanel;
     }
 
-    protected static ModelCard createModelCard(double scale) {
-        ModelCard modelCardPanel = new ModelCard(scale);
+    protected static ModelCard createModelCard(GuiAdapter adapter, String id, double scale) {
+        ModelCard modelCardPanel = new ModelCard(adapter, id, scale);
         return modelCardPanel;
     }
 
     protected void updateCard(String name, String nickname, URL imagePath) {
         this.nameLabel.setText(name);
         this.nicknameLabel.setText(nickname);
-        
-        DefaultIcon.drawImOrLogo(imagePath, imagePath, logoIcon);
+        if (defaultLogoURL != null)
+        	DefaultIcon.drawImOrLogo(imagePath, defaultLogoURL, logoIcon, cardID);
+        else
+        	DefaultIcon.drawImOrLogo(imagePath, logoIcon, cardID);
     }
 
     protected void updateCard(String name, String nickname, URL imagePath, boolean supported) {
         this.nameLabel.setText(name);
         this.nicknameLabel.setText(nickname);
         this.setUnsupported(!supported);
-        
-        DefaultIcon.drawImOrLogo(imagePath, imagePath, logoIcon);
+        if (defaultLogoURL != null)
+        	DefaultIcon.drawImOrLogo(imagePath, defaultLogoURL, logoIcon, cardID);
+        else
+        	DefaultIcon.drawImOrLogo(imagePath, logoIcon, cardID);
     }
     
     public static void main(String[] args) {
@@ -232,8 +255,71 @@ public class ModelCard extends JPanel {
             frame.setSize(300, 400);  // or whatever size you need
             frame.setLocationRelativeTo(null);
 
+            GuiAdapter adapter = new GuiAdapter () {
+
+				@Override
+				public String getSoftwareName() {
+					return "JOHN DOE";
+				}
+
+				@Override
+				public String getSoftwareDescription() {
+					return "The best AI software";
+				}
+
+				@Override
+				public String getIconPath() {
+					return "/home/carlos/git/deep-icy/src/main/resources/deepicy_imgs/icy_logo.png";
+				}
+
+				@Override
+				public String getModelsDir() {
+					return null;
+				}
+
+				@Override
+				public String getEnginesDir() {
+					return null;
+				}
+
+				@Override
+				public RunnerAdapter createRunner(ModelDescriptor descriptor) throws IOException, LoadEngineException {
+					return null;
+				}
+
+				@Override
+				public RunnerAdapter createRunner(ModelDescriptor descriptor, String enginesPath)
+						throws IOException, LoadEngineException {
+					return null;
+				}
+
+				@Override
+				public <T extends RealType<T> & NativeType<T>> void displayRai(RandomAccessibleInterval<T> rai,
+						String axesOrder, String imTitle) {
+					
+				}
+
+				@Override
+				public <T extends RealType<T> & NativeType<T>> List<Tensor<T>> getInputTensors(
+						ModelDescriptor descriptor) {
+					return null;
+				}
+
+				@Override
+				public List<String> getInputImageNames() {
+					return null;
+				}
+
+				@Override
+				public <T extends RealType<T> & NativeType<T>> List<Tensor<T>> convertToInputTensors(
+						Map<String, Object> inputs, ModelDescriptor descriptor) {
+					return null;
+				}
+            	
+            };
+            
             // 2) Create and configure your card
-            ModelCard card = ModelCard.createModelCard();
+            ModelCard card = ModelCard.createModelCard(adapter);
             try {
 				card.updateCard(
 				    "My Model Name",

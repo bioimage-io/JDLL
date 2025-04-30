@@ -216,7 +216,7 @@ public class Gui extends JPanel {
         mainContentPanel.setMinimumSize(new Dimension(0, 0));
 
         // Add the model selection panel and content panel to the main content panel
-        this.modelSelectionPanel = new ModelSelectionPanel();
+        this.modelSelectionPanel = new ModelSelectionPanel(this.guiAdapter);
         mainContentPanel.add(this.modelSelectionPanel);
         contentPanel = new ContentPanel(this.guiAdapter);
         mainContentPanel.add(contentPanel);

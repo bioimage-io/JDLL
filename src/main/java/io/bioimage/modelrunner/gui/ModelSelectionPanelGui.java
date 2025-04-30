@@ -6,6 +6,9 @@ import java.awt.Font;
 import java.awt.Insets;
 import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
+import java.io.IOException;
+import java.util.List;
+import java.util.Map;
 
 import javax.swing.BorderFactory;
 import javax.swing.JButton;
@@ -14,6 +17,15 @@ import javax.swing.JPanel;
 import javax.swing.SwingUtilities;
 import javax.swing.border.Border;
 import javax.swing.border.TitledBorder;
+
+import io.bioimage.modelrunner.bioimageio.description.ModelDescriptor;
+import io.bioimage.modelrunner.exceptions.LoadEngineException;
+import io.bioimage.modelrunner.gui.adapter.GuiAdapter;
+import io.bioimage.modelrunner.gui.adapter.RunnerAdapter;
+import io.bioimage.modelrunner.tensor.Tensor;
+import net.imglib2.RandomAccessibleInterval;
+import net.imglib2.type.NativeType;
+import net.imglib2.type.numeric.RealType;
 
 public class ModelSelectionPanelGui extends JPanel {
 
@@ -32,11 +44,15 @@ public class ModelSelectionPanelGui extends JPanel {
     protected static final double MAIN_CARD_RT = 1;
     protected static final double SECOND_CARD_RT = 0.6;
 
+    protected static String MAIN_CARD_ID = "main";
+    protected static String PREV_CARD_ID = "prev";
+    protected static String NEXT_CARD_ID = "next";
+
     protected static final double BTN_HEIGHT_RATIO = 0.07;
     protected static final double MAX_BTN_HEIGHT = 33;
 
 
-	protected ModelSelectionPanelGui() {
+	protected ModelSelectionPanelGui(GuiAdapter adapter) {
         super(null);
         this.setBackground(new Color(236, 240, 241));
         lineBorder = BorderFactory.createTitledBorder(BorderFactory.createLineBorder(Color.gray, 2, true), 
@@ -44,9 +60,9 @@ public class ModelSelectionPanelGui extends JPanel {
         Border paddingBorder = BorderFactory.createEmptyBorder(2, 2, 2, 2);
         this.setBorder(BorderFactory.createCompoundBorder(paddingBorder,lineBorder));
 
-        prevModelPanel = ModelCard.createModelCard(SECOND_CARD_RT);
-        selectedModelPanel = ModelCard.createModelCard(MAIN_CARD_RT);
-        nextModelPanel = ModelCard.createModelCard(SECOND_CARD_RT);
+        prevModelPanel = ModelCard.createModelCard(adapter, PREV_CARD_ID, SECOND_CARD_RT);
+        selectedModelPanel = ModelCard.createModelCard(adapter, MAIN_CARD_ID, MAIN_CARD_RT);
+        nextModelPanel = ModelCard.createModelCard(adapter, NEXT_CARD_ID, SECOND_CARD_RT);
 
 
         prevButton = new JButton("◀");
@@ -135,9 +151,70 @@ public class ModelSelectionPanelGui extends JPanel {
             frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
             frame.setSize(300, 400);  // or whatever size you need
             frame.setLocationRelativeTo(null);
+            GuiAdapter adapter = new GuiAdapter () {
 
+				@Override
+				public String getSoftwareName() {
+					return "JOHN DOE";
+				}
+
+				@Override
+				public String getSoftwareDescription() {
+					return "The best AI software";
+				}
+
+				@Override
+				public String getIconPath() {
+					return "/home/carlos/git/deep-icy/src/main/resources/deepicy_imgs/icy_logo.png";
+				}
+
+				@Override
+				public String getModelsDir() {
+					return null;
+				}
+
+				@Override
+				public String getEnginesDir() {
+					return null;
+				}
+
+				@Override
+				public RunnerAdapter createRunner(ModelDescriptor descriptor) throws IOException, LoadEngineException {
+					return null;
+				}
+
+				@Override
+				public RunnerAdapter createRunner(ModelDescriptor descriptor, String enginesPath)
+						throws IOException, LoadEngineException {
+					return null;
+				}
+
+				@Override
+				public <T extends RealType<T> & NativeType<T>> void displayRai(RandomAccessibleInterval<T> rai,
+						String axesOrder, String imTitle) {
+					
+				}
+
+				@Override
+				public <T extends RealType<T> & NativeType<T>> List<Tensor<T>> getInputTensors(
+						ModelDescriptor descriptor) {
+					return null;
+				}
+
+				@Override
+				public List<String> getInputImageNames() {
+					return null;
+				}
+
+				@Override
+				public <T extends RealType<T> & NativeType<T>> List<Tensor<T>> convertToInputTensors(
+						Map<String, Object> inputs, ModelDescriptor descriptor) {
+					return null;
+				}
+            	
+            };
             // 2) Create and configure your card
-            ModelSelectionPanelGui card = new ModelSelectionPanelGui();
+            ModelSelectionPanelGui card = new ModelSelectionPanelGui(adapter);
 
             // 3) Add to frame (since ModelCardGui uses null layout internally,
             //    we’ll use BorderLayout here to have it fill the window)
