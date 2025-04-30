@@ -314,7 +314,9 @@ public class StardistGUI extends JPanel implements ActionListener {
     }
     
     private String getOutputName(String tensorName) {
-    	String noExtension = inputTitle.substring(0, inputTitle.lastIndexOf("."));
+    	int index = inputTitle.lastIndexOf(".");
+    	index = index == -1 ? inputTitle.length() : index;
+    	String noExtension = inputTitle.substring(0, index);
     	String extension = ".tif";
     	return noExtension + "_" + tensorName + extension;
     }
