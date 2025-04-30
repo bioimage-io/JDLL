@@ -653,6 +653,7 @@ public class Gui extends JPanel {
         	this.runOnTestButton.setEnabled(!isStarting);
         	this.searchBar.setBarEnabled(!isStarting);
         	this.modelSelectionPanel.setArrowsEnabled(!isStarting);
+	    	this.contentPanel.setProgressIndeterminate(isStarting);
         	if (isStarting)
         		this.contentPanel.setProgressLabelText("Installing ...");
         	else
@@ -668,7 +669,11 @@ public class Gui extends JPanel {
     private void installSelectedModel() {
     	ModelDescriptor selectedModel = modelSelectionPanel.getModels().get(this.currentIndex);
     	Consumer<Double> progress = (c) -> {
-			SwingUtilities.invokeLater(() -> contentPanel.setDeterminatePorgress((int) (c * 100)));
+			SwingUtilities.invokeLater(() -> {
+				double pr = Math.round(c * 10000) / 100d;
+				contentPanel.setDeterminatePorgress((int) pr);
+				contentPanel.setProgressBarText("" + pr + "%");
+			});
     	};
     	startModelInstallation(true);
     	CountDownLatch latch = new CountDownLatch(2);

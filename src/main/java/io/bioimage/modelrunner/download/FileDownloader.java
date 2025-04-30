@@ -25,6 +25,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
+import java.net.SocketTimeoutException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
@@ -81,7 +82,7 @@ public class FileDownloader {
 	
 	private Consumer<Double> partialProgress;
 	
-	private static final long CHUNK_SIZE = 1024 * 1024 * 5;
+	private static final long CHUNK_SIZE = 1024 * 1024 * 1;
 
 	private static final int STALL_THRES = 10000;
 
@@ -214,6 +215,9 @@ public class FileDownloader {
 				FileOutputStream fos = new FileOutputStream(file, already != 0 ? true : false);
 				){
 			performDownload(fos, rbc, parentThread);
+		} catch (SocketTimeoutException ex) {
+			System.err.println("Socket timeout accessing: " + website);
+			lost_conn ++;
 		}
 	}
 	
@@ -310,6 +314,7 @@ public class FileDownloader {
             }
 
             sizeDownloaded.set(sizeDownloaded.get() + transferred);
+            System.out.println(this.name + ": " + sizeDownloaded);
             if (Thread.currentThread().isInterrupted()) {
                 return;
             }

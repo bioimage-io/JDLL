@@ -265,6 +265,8 @@ public class ContentPanel extends JPanel {
 	}
 	
 	protected void setDeterminatePorgress(int progress) {
+		if (this.progressBar.isIndeterminate())
+			this.progressBar.setIndeterminate(false);
 		this.progressBar.setValue(progress);
 		progressBar.setStringPainted(true);
 		progressBar.setString(progress + "%");
