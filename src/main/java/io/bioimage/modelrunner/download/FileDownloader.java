@@ -314,7 +314,6 @@ public class FileDownloader {
             }
 
             sizeDownloaded.set(sizeDownloaded.get() + transferred);
-            System.out.println(this.name + ": " + sizeDownloaded);
             if (Thread.currentThread().isInterrupted()) {
                 return;
             }
