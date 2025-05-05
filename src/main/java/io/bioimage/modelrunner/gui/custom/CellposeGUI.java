@@ -6,7 +6,6 @@ import javax.swing.JComboBox;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
-import javax.swing.JTextField;
 import javax.swing.SwingUtilities;
 import javax.swing.event.PopupMenuEvent;
 import javax.swing.event.PopupMenuListener;
@@ -23,9 +22,9 @@ public class CellposeGUI extends JPanel {
     
     protected JLabel modelLabel, customLabel, cytoplasmLabel, nucleiLabel, diameterLabel;
 	protected JComboBox<String> modelComboBox;
-	protected JTextField customModelPathField;
+	protected PlaceholderTextField customModelPathField;
     protected JButton browseButton;
-    protected JTextField diameterField;
+    protected PlaceholderTextField diameterField;
     protected JComboBox<String> cytoCbox, nucleiCbox;
     protected JCheckBox check;
     protected FooterPanel footer;
@@ -50,7 +49,7 @@ public class CellposeGUI extends JPanel {
         // Panel for custom model file path
         customLabel = new JLabel(VAR_NAMES.get(1));
         customLabel.setEnabled(false);
-        customModelPathField = new JTextField(20);
+        customModelPathField = new PlaceholderTextField("path to your custom model");
         customModelPathField.setEnabled(false);
         browseButton = new JButton("Browse");
         browseButton.setEnabled(false);
@@ -61,7 +60,7 @@ public class CellposeGUI extends JPanel {
         cytoCbox = new JComboBox<String>(RGB_LIST);
         nucleiCbox = new JComboBox<String>(RGB_LIST);
         diameterLabel = new JLabel(VAR_NAMES.get(4));
-        diameterField = new JTextField();
+        diameterField = new PlaceholderTextField("optional");
         check = new JCheckBox(VAR_NAMES.get(5));
         check.setSelected(false);
 
