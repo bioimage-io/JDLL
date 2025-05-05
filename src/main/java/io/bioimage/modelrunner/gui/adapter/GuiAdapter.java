@@ -1,6 +1,7 @@
 package io.bioimage.modelrunner.gui.adapter;
 
 
+import java.awt.Color;
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
@@ -17,6 +18,12 @@ public interface GuiAdapter {
 	public String getSoftwareName();
 	
 	public String getSoftwareDescription();
+	
+	public Color getTitleColor();
+	
+	public Color getSubtitleColor();
+	
+	public Color getHeaderColor();
 	
 	public String getIconPath();
 	

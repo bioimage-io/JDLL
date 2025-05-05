@@ -28,15 +28,15 @@ public class Header extends JPanel {
 
     public Header(GuiAdapter adapter) {
         super(new BorderLayout());
-        setBackground(Color.GRAY);
+        setForeground(adapter.getHeaderColor());
         setBorder(new LineBorder(Color.BLACK, 2, true));
 
         // — create + style the two text labels
         titleLabel    = new JLabel(adapter.getSoftwareName(), SwingConstants.CENTER);
-        titleLabel.setForeground(Color.WHITE);
+        titleLabel.setForeground(adapter.getTitleColor());
 
         subtitleLabel = new JLabel(adapter.getSoftwareDescription(), SwingConstants.CENTER);
-        subtitleLabel.setForeground(Color.WHITE);
+        subtitleLabel.setForeground(adapter.getSubtitleColor());
         
         createProgressBar();
         URL defaultIconUrl = Header.class.getClassLoader().getResource(adapter.getIconPath());

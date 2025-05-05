@@ -1,6 +1,7 @@
 package io.bioimage.modelrunner.gui;
 
 import java.awt.BorderLayout;
+import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.Insets;
@@ -159,6 +160,11 @@ public class HeaderGui extends JPanel {
 				public String getSoftwareName() {
 					return "JOHN DOE";
 				}
+				
+				@Override
+				public Color getHeaderColor() {
+					return Color.gray;
+				}
 
 				@Override
 				public String getSoftwareDescription() {
@@ -212,6 +218,16 @@ public class HeaderGui extends JPanel {
 				public <T extends RealType<T> & NativeType<T>> List<Tensor<T>> convertToInputTensors(
 						Map<String, Object> inputs, ModelDescriptor descriptor) {
 					return null;
+				}
+
+				@Override
+				public Color getTitleColor() {
+					return Color.white;
+				}
+
+				@Override
+				public Color getSubtitleColor() {
+					return Color.white;
 				}
             	
             };
