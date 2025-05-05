@@ -14,6 +14,7 @@ import java.awt.Dimension;
 import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 
 public class CellposeGUI extends JPanel {
@@ -30,12 +31,20 @@ public class CellposeGUI extends JPanel {
     protected FooterPanel footer;
     
     protected final String CUSOTM_STR = "your custom model";
-    protected static List<String> VAR_NAMES = Arrays.asList(new String[] {
-    		"Select a model:", "Custom Model Path:", "Cytoplasm color:", "Nuclei Color:", "Diameter:", "Display all outputs"
+    protected static final List<String> VAR_NAMES = Arrays.asList(new String[] {
+    		"Select a model:", "Custom Model Path:", "Cytoplasm Color:", "Nuclei Color:", "Diameter:", "Display all outputs"
     });
 
-    public static String[] RGB_LIST = new String[] {"red", "blue", "green"};
-    public static String[] GRAYSCALE_LIST = new String[] {"gray"};
+    public static final String[] RGB_LIST = new String[] {"red", "blue", "green"};
+    public static final String[] GRAYSCALE_LIST = new String[] {"gray"};
+    protected static final HashMap<String, Integer> CHANNEL_MAP;
+    static {
+    	CHANNEL_MAP = new HashMap<String, Integer>();
+    	CHANNEL_MAP.put("red", 1);
+    	CHANNEL_MAP.put("blue", 2);
+    	CHANNEL_MAP.put("green", 3);
+    	CHANNEL_MAP.put("gray", 0);
+    }
     private static final Dimension MIN_D = new Dimension(20, 40);
 
     protected CellposeGUI() {

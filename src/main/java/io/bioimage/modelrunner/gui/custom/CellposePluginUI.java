@@ -183,6 +183,7 @@ public class CellposePluginUI extends CellposeGUI implements ActionListener {
     	SwingUtilities.invokeLater(() ->{
     		footer.bar.setString("Running the model");
     	});
+    	model.setChannels(new int[] {CHANNEL_MAP.get(cytoCbox.getSelectedItem()), CHANNEL_MAP.get(nucleiCbox.getSelectedItem())});
     	if (rai.dimensionsAsLongArray().length == 4) {
     		runCellposeOnFramesStack(rai);
     	} else {
