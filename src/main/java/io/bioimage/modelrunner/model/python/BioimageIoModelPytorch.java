@@ -50,9 +50,9 @@ import net.imglib2.util.Cast;
 
 public class BioimageIoModelPytorch extends BioimageIoModelPytorchProtected {
 	
-	protected BioimageIoModelPytorch(String modelFile, String callable, String weightsPath, Map<String, Object> kwargs,
+	protected BioimageIoModelPytorch(String modelFile, String callable, String importModule, String weightsPath, Map<String, Object> kwargs,
 			ModelDescriptor descriptor) throws IOException {
-		super(modelFile, callable, weightsPath, kwargs, descriptor);
+		super(modelFile, callable, importModule, weightsPath, kwargs, descriptor);
 	}
 
 	public static BioimageIoModelPytorch create(ModelDescriptor descriptor) throws IOException {
@@ -62,9 +62,10 @@ public class BioimageIoModelPytorch extends BioimageIoModelPytorchProtected {
 		WeightFormat pytorchWeights = descriptor.getWeights().getModelWeights(ModelWeight.getPytorchID());
 		String modelFile = descriptor.getModelPath() +  File.separator + pytorchWeights.getArchitecture().getSource();
 		String callable = pytorchWeights.getArchitecture().getCallable();
+		String importModule = pytorchWeights.getArchitecture().getImportModule();
 		String weightsFile = descriptor.getModelPath() +  File.separator + pytorchWeights.getSource();
 		Map<String, Object> kwargs = pytorchWeights.getArchitecture().getKwargs();
-		return new BioimageIoModelPytorch(modelFile, callable, weightsFile, kwargs, descriptor);
+		return new BioimageIoModelPytorch(modelFile, callable, importModule, weightsFile, kwargs, descriptor);
 	}
 	
 	public static BioimageIoModelPytorch create(String modelPath) throws IOException {

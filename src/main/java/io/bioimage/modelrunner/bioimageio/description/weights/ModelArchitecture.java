@@ -27,6 +27,8 @@ public class ModelArchitecture {
 	
 	private String callable;
 	
+	private String importModule;
+	
 	private String source;
 	
 	private LinkedHashMap<String, Object> kwargs;
@@ -35,6 +37,8 @@ public class ModelArchitecture {
 		kwargs = new LinkedHashMap<String, Object>();
 		if (map.get("callable") != null && map.get("callable") instanceof String)
 			callable = (String) map.get("callable");
+		if (map.get("import_from") != null && map.get("import_from") instanceof String)
+			importModule = (String) map.get("import_from");
 		if (map.get("source") != null && map.get("source") instanceof String)
 			source = (String) map.get("source");
 		if (map.get("kwargs") != null && map.get("kwargs") instanceof Map) {
@@ -45,6 +49,10 @@ public class ModelArchitecture {
 	
 	public String getCallable() {
 		return callable;
+	}
+	
+	public String getImportModule() {
+		return importModule;
 	}
 	
 	public String getSource() {

@@ -139,7 +139,7 @@ public class Cellpose extends BioimageIoModelPytorchProtected {
 
 	protected Cellpose(String modelFile, String callable, String weightsPath, 
 			Map<String, Object> kwargs, ModelDescriptor descriptor) throws IOException {
-		super(modelFile, callable, weightsPath, kwargs, descriptor, true);
+		super(modelFile, callable, null, weightsPath, kwargs, descriptor, true);
     	createPythonService();
 	}
 	

@@ -68,6 +68,8 @@ public class DLModelPytorchProtected extends BaseModel {
 	
 	protected final String callable;
 	
+	protected final String importModule;
+	
 	protected final String weightsPath;
 	
 	protected final Map<String, Object> kwargs;
@@ -134,8 +136,10 @@ public class DLModelPytorchProtected extends BaseModel {
 			+ "if 'shared_memory' not in globals().keys():" + System.lineSeparator()
 			+ "  from multiprocessing import shared_memory" + System.lineSeparator()
 			+ "  globals()['shared_memory'] = shared_memory" + System.lineSeparator()
-			+ "sys.path.append(os.path.abspath('%s'))" + System.lineSeparator()
-			+ "from %s import %s" + System.lineSeparator();
+			+ "%s" + System.lineSeparator()
+			+ "%s" + System.lineSeparator()
+			+ "if '%s' not in globals().keys():" + System.lineSeparator()
+			+ "  globals()['%s'] = %s" + System.lineSeparator();
 	
 	protected static final String OUTPUT_LIST_KEY = "out_list" + UUID.randomUUID().toString().replace("-", "_");
 	
@@ -203,14 +207,14 @@ public class DLModelPytorchProtected extends BaseModel {
 			+ "    s.unlink()" + System.lineSeparator()
 			+ "    del s" + System.lineSeparator();
 	
-	protected DLModelPytorchProtected(String modelFile, String callable, String weightsPath, 
+	protected DLModelPytorchProtected(String modelFile, String callable, String importModule, String weightsPath, 
 			Map<String, Object> kwargs) throws IOException {
-		this(modelFile, callable, weightsPath, kwargs, false);
+		this(modelFile, callable, importModule, weightsPath, kwargs, false);
 	}
 	
-	protected DLModelPytorchProtected(String modelFile, String callable, String weightsPath, 
+	protected DLModelPytorchProtected(String modelFile, String callable, String importModule, String weightsPath, 
 			Map<String, Object> kwargs, boolean customJDLL) throws IOException {
-		if (!customJDLL && (new File(modelFile).isFile() == false || !modelFile.endsWith(".py")))
+		if (!customJDLL && (new File(modelFile).isFile() == false || !modelFile.endsWith(".py")) && importModule == null)
 			throw new IllegalArgumentException("The model file does not correspond to an existing .py file.");
 		if (new File(weightsPath).isFile() == false 
 				|| (!customJDLL 
@@ -219,10 +223,14 @@ public class DLModelPytorchProtected extends BaseModel {
 				)
 			throw new IllegalArgumentException("The weights file does not correspond to an existing .pt/.pth file.");
 		this.callable = callable;
-		if (!customJDLL || (modelFile != null && new File(modelFile).isFile()))
+		if (!customJDLL && (modelFile != null && new File(modelFile).isFile()))
 			this.modelFile = new File(modelFile).getAbsolutePath();
 		else 
 			this.modelFile = null;
+		if (!customJDLL && importModule != null)
+			this.importModule = importModule;
+		else 
+			this.importModule = null;
 		this.weightsPath = new File(weightsPath).getAbsolutePath();
 		this.kwargs = kwargs;
 		this.envPath = INSTALLATION_DIR + File.separator + "envs" + File.separator + COMMON_PYTORCH_ENV_NAME;
@@ -312,11 +320,17 @@ public class DLModelPytorchProtected extends BaseModel {
 	}
 	
 	protected String buildModelCode() {
-		String moduleName = new File(modelFile).getName();
-		moduleName = moduleName.substring(0, moduleName.length() - 3);
-		String code = String.format(LOAD_MODEL_CODE_ABSTRACT, 
-				new File(modelFile).getParentFile().getAbsolutePath(), 
-				moduleName, callable);
+		String addPath = "";
+		String importStr = "";
+		if (modelFile != null) {
+			String moduleName = new File(modelFile).getName();
+			moduleName = moduleName.substring(0, moduleName.length() - 3);
+			addPath = String.format("sys.path.append(os.path.abspath('%s'))", new File(modelFile).getParentFile().getAbsolutePath());
+			importStr = String.format("from %s import %s", moduleName, callable);
+		} else {
+			importStr = String.format("from %s import %s", this.importModule, callable);
+		}
+		String code = String.format(LOAD_MODEL_CODE_ABSTRACT, addPath, importStr, callable, callable, callable);
 		
 		code += ""
 				+ "if 'torch' not in globals().keys():" + System.lineSeparator()

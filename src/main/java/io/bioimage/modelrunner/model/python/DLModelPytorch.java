@@ -28,18 +28,18 @@ import java.util.Map;
 
 public class DLModelPytorch extends DLModelPytorchProtected {
 	
-	protected DLModelPytorch(String modelFile, String callable, String weightsPath, Map<String, Object> kwargs)
+	protected DLModelPytorch(String modelFile, String callable, String importModule, String weightsPath, Map<String, Object> kwargs)
 			throws IOException {
-		super(modelFile, callable, weightsPath, kwargs);
+		super(modelFile, callable, importModule, weightsPath, kwargs);
 	}
 
-	public static DLModelPytorch create(String modelClass, String callable, 
+	public static DLModelPytorch create(String modelClass, String callable, String importModule, 
 			String modelPath) throws IOException {
-		return create(modelClass, callable, modelPath, new HashMap<String, Object>());
+		return create(modelClass, callable, importModule, modelPath, new HashMap<String, Object>());
 	}
 	
-	public static DLModelPytorch create(String modelClass, String callable, 
+	public static DLModelPytorch create(String modelClass, String callable, String importModule, 
 			String modelPath, Map<String, Object> kwargs) throws IOException {
-		return new DLModelPytorch(modelClass, callable, modelPath, kwargs);
+		return new DLModelPytorch(modelClass, callable, importModule, modelPath, kwargs);
 	}
 }

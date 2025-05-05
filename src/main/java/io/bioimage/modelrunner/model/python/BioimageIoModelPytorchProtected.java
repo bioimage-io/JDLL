@@ -47,7 +47,6 @@ import io.bioimage.modelrunner.tensor.Tensor;
 import io.bioimage.modelrunner.utils.CommonUtils;
 import net.imglib2.type.NativeType;
 import net.imglib2.type.numeric.RealType;
-import net.imglib2.type.numeric.real.FloatType;
 
 public class BioimageIoModelPytorchProtected extends DLModelPytorchProtected {
 	/**
@@ -59,17 +58,17 @@ public class BioimageIoModelPytorchProtected extends DLModelPytorchProtected {
 	 */
 	protected TileCalculator tileCalculator;
 	
-	protected BioimageIoModelPytorchProtected(String modelFile, String callable, String weightsPath, 
+	protected BioimageIoModelPytorchProtected(String modelFile, String callable, String importModule, String weightsPath, 
 			Map<String, Object> kwargs, ModelDescriptor descriptor, boolean custom) throws IOException {
-		super(modelFile, callable, weightsPath, kwargs, custom);
+		super(modelFile, callable, importModule, weightsPath, kwargs, custom);
 		this.tiling = true;
 		this.descriptor = descriptor;
 		this.tileCalculator = TileCalculator.init(descriptor);
 	}
 		
-	protected BioimageIoModelPytorchProtected(String modelFile, String callable, String weightsPath, 
+	protected BioimageIoModelPytorchProtected(String modelFile, String callable, String importModule, String weightsPath, 
 			Map<String, Object> kwargs, ModelDescriptor descriptor) throws IOException {
-		this(modelFile, callable, weightsPath, kwargs, descriptor, false);
+		this(modelFile, callable, importModule, weightsPath, kwargs, descriptor, false);
 	}
 	
 	/**
