@@ -70,6 +70,10 @@ public class CellposePluginUI extends CellposeGUI implements ActionListener {
         componentList.add(this.diameterField);
         componentList.add(this.check);
         this.consumer.setComponents(componentList);
+        this.footer.buttons.cancelButton.addActionListener(this);
+        this.footer.buttons.installButton.addActionListener(this);
+        this.footer.buttons.runButton.addActionListener(this);
+        this.browseButton.addActionListener(this);
 
         // Enable when custom selected
         modelComboBox.addPopupMenuListener(new PopupMenuListener() {
@@ -110,6 +114,8 @@ public class CellposePluginUI extends CellposeGUI implements ActionListener {
                 frame.pack();
                 frame.setLocationRelativeTo(null);
                 frame.setVisible(true);
+                frame.setResizable(true);
+                frame.setSize(400, 200);
             }
         });
     }
