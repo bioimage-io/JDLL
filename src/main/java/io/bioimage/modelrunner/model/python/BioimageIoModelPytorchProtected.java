@@ -153,7 +153,7 @@ public class BioimageIoModelPytorchProtected extends DLModelPytorchProtected {
 			long[] expectedSize = maker.getOutputImageSize(tt.getName());
 			if (expectedSize == null) {
 				throw new IllegalArgumentException("Tensor '" + tt.getName() + "' is missing in the outputs.");
-			} else if (!tt.isEmpty() && Arrays.equals(expectedSize, tt.getData().dimensionsAsLongArray())) {
+			} else if (!tt.isEmpty() && !Arrays.equals(expectedSize, tt.getData().dimensionsAsLongArray())) {
 				throw new IllegalArgumentException("Tensor '" + tt.getName() + "' size is different than the expected size"
 						+ " as defined by the rdf.yaml: " + Arrays.toString(tt.getData().dimensionsAsLongArray()) 
 						+ " vs " + Arrays.toString(expectedSize) + ".");
