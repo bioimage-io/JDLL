@@ -31,11 +31,11 @@ public class CellposeGUI extends JPanel {
     
     protected final String CUSOTM_STR = "your custom model";
     protected static List<String> VAR_NAMES = Arrays.asList(new String[] {
-    		"Select a model:", "Custom Model Path:", "Cytoplasm color", "Nuclei Color", "Diameter:", "Display all outputs"
+    		"Select a model:", "Custom Model Path:", "Cytoplasm color:", "Nuclei Color:", "Diameter:", "Display all outputs"
     });
 
-    protected static String[] RGB_LIST = new String[] {"red", "blue", "green"};
-    protected static String[] GRAYSCALE_LIST = new String[] {"gray"};
+    public static String[] RGB_LIST = new String[] {"red", "blue", "green"};
+    public static String[] GRAYSCALE_LIST = new String[] {"gray"};
     private static final Dimension MIN_D = new Dimension(20, 40);
 
     protected CellposeGUI() {
