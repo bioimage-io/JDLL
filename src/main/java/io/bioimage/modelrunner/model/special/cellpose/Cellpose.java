@@ -74,7 +74,7 @@ public class Cellpose extends BioimageIoModelPytorchProtected {
 	
 	protected int[] channels;
 	
-	private Integer diameter;
+	private Float diameter;
 	
 	private String rdfString;
 	
@@ -155,11 +155,11 @@ public class Cellpose extends BioimageIoModelPytorchProtected {
 		this.channels = channels;
 	}
 	
-	public void setDiameter(int diameter) {
+	public void setDiameter(float diameter) {
 		this.diameter = diameter;
 	}
 	
-	public int getDiameter() {
+	public Float getDiameter() {
 		return this.diameter;
 	}
 	

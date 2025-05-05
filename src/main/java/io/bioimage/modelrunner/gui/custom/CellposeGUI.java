@@ -37,7 +37,7 @@ public class CellposeGUI extends JPanel {
 
     public static final String[] RGB_LIST = new String[] {"red", "blue", "green"};
     public static final String[] GRAYSCALE_LIST = new String[] {"gray"};
-    protected static final HashMap<String, Integer> CHANNEL_MAP;
+    public static final HashMap<String, Integer> CHANNEL_MAP;
     static {
     	CHANNEL_MAP = new HashMap<String, Integer>();
     	CHANNEL_MAP.put("red", 1);
