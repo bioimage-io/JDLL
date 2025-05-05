@@ -20,12 +20,15 @@
 package io.bioimage.modelrunner.model.special.cellpose;
 
 import java.io.BufferedReader;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.net.URISyntaxException;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -322,14 +325,16 @@ public class Cellpose extends BioimageIoModelPytorchProtected {
 		if (!wFile.isFile())
 			throw new IllegalArgumentException("The path provided does not correspond to an existing file: " + weightsPath);		        
         Cellpose cellpose = new Cellpose(null, null, weightsPath, null, null);
-		StringBuilder content = new StringBuilder();
-        try (BufferedReader reader = new BufferedReader(new FileReader(new File(RDF_URL.toURI())))) {
-            String line;
-            while ((line = reader.readLine()) != null) {
-                content.append(line).append(System.lineSeparator());
-            }
-            cellpose.rdfString = content.toString();
-        } catch (IOException | URISyntaxException e) {
+		try (InputStream in = RDF_URL.openStream();
+		     ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
+
+		    byte[] buffer = new byte[8192];
+		    int len;
+		    while ((len = in.read(buffer)) != -1) {
+		        baos.write(buffer, 0, len);
+		    }
+		    cellpose.rdfString = baos.toString(StandardCharsets.UTF_8.name());
+		} catch (IOException e) {
         }
 		return cellpose;
 	}
