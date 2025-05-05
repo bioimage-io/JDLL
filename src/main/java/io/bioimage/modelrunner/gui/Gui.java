@@ -418,8 +418,8 @@ public class Gui extends JPanel {
             contentPanel.setUnsupported(!supported);
         	contentPanel.update(modelSelectionPanel.getModels().get(currentIndex), coverPath, logoWidth, logoHeight);
         	if (this.searchBar.isBarOnLocal()) {
-        		this.runOnTestButton.setEnabled(!supported);
-        		this.runButton.setEnabled(!supported);
+        		this.runOnTestButton.setEnabled(supported);
+        		this.runButton.setEnabled(supported);
         	}
     	}
     }
@@ -646,9 +646,9 @@ public class Gui extends JPanel {
             	this.contentPanel.setProgressBarText("");
             	this.contentPanel.setProgressLabelText("");
             	this.searchBar.setBarEnabled(true);
-            	this.runOnTestButton.setEnabled(contentPanel.isUnsupported());
+            	this.runOnTestButton.setEnabled(!contentPanel.isUnsupported());
             	this.modelSelectionPanel.setArrowsEnabled(true);
-            	this.runButton.setEnabled(contentPanel.isUnsupported());
+            	this.runButton.setEnabled(!contentPanel.isUnsupported());
         	});
     	});
     	
