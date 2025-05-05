@@ -15,6 +15,7 @@ import io.bioimage.modelrunner.exceptions.LoadModelException;
 import io.bioimage.modelrunner.exceptions.RunModelException;
 import io.bioimage.modelrunner.model.BaseModel;
 import io.bioimage.modelrunner.model.java.BioimageIoModelJava;
+import io.bioimage.modelrunner.model.python.BioimageIoModelPytorch;
 import io.bioimage.modelrunner.model.special.stardist.Stardist2D;
 import io.bioimage.modelrunner.model.special.stardist.StardistAbstract;
 import io.bioimage.modelrunner.tensor.Tensor;
@@ -42,8 +43,11 @@ public abstract class RunnerAdapter implements Closeable {
 		this.descriptor = descriptor;
 		if (descriptor.getModelFamily().equals(ModelDescriptor.STARDIST)) {
 			model = StardistAbstract.fromBioimageioModel(descriptor);
-		} else if (descriptor.getModelFamily().equals(ModelDescriptor.BIOIMAGEIO)) {
+		} else if (descriptor.getModelFamily().equals(ModelDescriptor.BIOIMAGEIO)
+				&& descriptor.getWeights().getAllSuportedWeightNames().size() != 0) {
 			model = BioimageIoModelJava.createBioimageioModel(descriptor.getModelPath());
+		} else if (descriptor.getModelFamily().equals(ModelDescriptor.BIOIMAGEIO)) {
+			model = BioimageIoModelPytorch.create(descriptor);
 		} else {
 			throw new IllegalArgumentException("Model not supported");
 		}
@@ -53,8 +57,11 @@ public abstract class RunnerAdapter implements Closeable {
 		this.descriptor = descriptor;
 		if (descriptor.getModelFamily().equals(ModelDescriptor.STARDIST)) {
 			model = StardistAbstract.fromBioimageioModel(descriptor);
-		} else if (descriptor.getModelFamily().equals(ModelDescriptor.BIOIMAGEIO)) {
+		} else if (descriptor.getModelFamily().equals(ModelDescriptor.BIOIMAGEIO)
+				&& descriptor.getWeights().getAllSuportedWeightNames().size() != 0) {
 			model = BioimageIoModelJava.createBioimageioModel(descriptor.getModelPath(), classloader);
+		} else if (descriptor.getModelFamily().equals(ModelDescriptor.BIOIMAGEIO)) {
+			model = BioimageIoModelPytorch.create(descriptor);
 		} else {
 			throw new IllegalArgumentException("Model not supported");
 		}
@@ -65,8 +72,11 @@ public abstract class RunnerAdapter implements Closeable {
 		this.descriptor = descriptor;
 		if (descriptor.getModelFamily().equals(ModelDescriptor.STARDIST)) {
 			model = Stardist2D.fromBioimageioModel(descriptor);
-		} else if (descriptor.getModelFamily().equals(ModelDescriptor.BIOIMAGEIO)) {
+		} else if (descriptor.getModelFamily().equals(ModelDescriptor.BIOIMAGEIO)
+				&& descriptor.getWeights().getAllSuportedWeightNames().size() != 0) {
 			model = BioimageIoModelJava.createBioimageioModel(descriptor.getModelPath(), enginesPath);
+		} else if (descriptor.getModelFamily().equals(ModelDescriptor.BIOIMAGEIO)) {
+			model = BioimageIoModelPytorch.create(descriptor);
 		} else {
 			throw new IllegalArgumentException("Model not supported");
 		}
@@ -77,8 +87,11 @@ public abstract class RunnerAdapter implements Closeable {
 		this.descriptor = descriptor;
 		if (descriptor.getModelFamily().equals(ModelDescriptor.STARDIST)) {
 			model = Stardist2D.fromBioimageioModel(descriptor);
-		} else if (descriptor.getModelFamily().equals(ModelDescriptor.BIOIMAGEIO)) {
+		} else if (descriptor.getModelFamily().equals(ModelDescriptor.BIOIMAGEIO)
+				&& descriptor.getWeights().getAllSuportedWeightNames().size() != 0) {
 			model = BioimageIoModelJava.createBioimageioModel(descriptor.getModelPath(), enginesPath, classloader);
+		} else if (descriptor.getModelFamily().equals(ModelDescriptor.BIOIMAGEIO)) {
+			model = BioimageIoModelPytorch.create(descriptor);
 		} else {
 			throw new IllegalArgumentException("Model not supported");
 		}
