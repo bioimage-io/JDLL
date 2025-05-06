@@ -378,6 +378,54 @@ public class DLModelPytorchProtected extends BaseModel {
 		return code;
 	}
 	
+	private String codeForKwargsList(List<Object> list) {
+		String code = "[";
+		for (Object codeVal : list) {
+			if (codeVal == null)
+				code += "None";
+			else if ((codeVal instanceof Boolean && (Boolean) codeVal) || codeVal.equals("true"))
+				code += "True";
+			else if ((codeVal instanceof Boolean && !((Boolean) codeVal)) || codeVal.equals("false"))
+				code += "False";
+			else if (codeVal instanceof String)
+				code += "\"" + codeVal + "\"";
+			else if (codeVal instanceof List)
+				code += codeForKwargsList((List<Object>) codeVal);
+			else if (codeVal instanceof Map)
+				code += codeForKwargsMap((Map<String, Object>) codeVal);
+			else
+				code += codeVal;
+			code += ",";
+		}
+		code += "]";
+		return code;
+	}
+	
+	private String codeForKwargsMap(Map<String, Object> map) {
+		String code = "{";
+		for (Entry<String, Object> entry : map.entrySet()) {
+			Object codeVal = entry.getValue();
+			code += "'" + entry.getKey() + "':";
+			if (codeVal == null)
+				code += "None";
+			else if ((codeVal instanceof Boolean && (Boolean) codeVal) || codeVal.equals("true"))
+				code += "True";
+			else if ((codeVal instanceof Boolean && !((Boolean) codeVal)) || codeVal.equals("false"))
+				code += "False";
+			else if (codeVal instanceof String)
+				code += "\"" + codeVal + "\"";
+			else if (codeVal instanceof List)
+				code += codeForKwargsList((List<Object>) codeVal);
+			else if (codeVal instanceof Map)
+				code += codeForKwargsMap((Map<String, Object>) codeVal);
+			else
+				code += codeVal;
+			code += ",";
+		}
+		code += "}";
+		return code;
+	}
+	
 	private String codeForKwargs() {
 		String code = "";
 		for (Entry<String, Object> ee : kwargs.entrySet()) {
@@ -390,6 +438,10 @@ public class DLModelPytorchProtected extends BaseModel {
 				codeVal = "False";
 			else if (codeVal instanceof String)
 				codeVal = "\"" + codeVal + "\"";
+			else if (codeVal instanceof List)
+				codeVal = codeForKwargsList((List<Object>) codeVal);
+			else if (codeVal instanceof Map)
+				codeVal = codeForKwargsMap((Map<String, Object>) codeVal);
 			code += ee.getKey() + "=" + codeVal + ",";
 		}
 		return code;

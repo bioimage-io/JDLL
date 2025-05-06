@@ -36,6 +36,7 @@ import io.bioimage.modelrunner.gui.adapter.GuiAdapter;
 import io.bioimage.modelrunner.gui.adapter.RunnerAdapter;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.function.Consumer;
@@ -78,6 +79,15 @@ public class Gui extends JPanel {
     protected static final String INSTALL_STR = "Install model";
     private static final String MODELS_DEAFULT = "models";
     private static final String ENGINES_DEAFULT = "engines";
+    
+    protected static final List<String> UNSUPPORTED_MODELS = Arrays.asList(
+            "idealistic-rat",
+            "diplomatic-bug", "resourceful-lizard", "famous-fish", "happy-elephant",
+            "affectionate-cow", "faithful-chicken", "humorous-crab", "noisy-ox",
+            "greedy-whale", "efficient-chipmunk",
+    		// TODO check cellpose 3d (philosophical-panda)
+            "philosophical-panda", "amiable-crocodile"
+        );
     
     private final static String INSTALL_INSTRUCTIONS_FORMAT = ""
     		+ "No models found at: %s" + File.separator + "models<br><br>"
@@ -415,7 +425,9 @@ public class Gui extends JPanel {
         	boolean supported = true;
         	if (modelSelectionPanel.getModels().get(currentIndex) != null)
         		supported = modelSelectionPanel.getModels().get(currentIndex).getWeights().getAllSuportedWeightNames().size() != 0;
-            contentPanel.setUnsupported(!supported);
+            if (UNSUPPORTED_MODELS.contains(modelSelectionPanel.getModels().get(currentIndex).getNickname()))
+            	supported = false;
+        	contentPanel.setUnsupported(!supported);
         	contentPanel.update(modelSelectionPanel.getModels().get(currentIndex), coverPath, logoWidth, logoHeight);
         	if (this.searchBar.isBarOnLocal()) {
         		this.runOnTestButton.setEnabled(supported);
@@ -483,6 +495,8 @@ public class Gui extends JPanel {
     	boolean supported = true;
     	if (modelSelectionPanel.getModels().get(currentIndex) != null)
     		supported = modelSelectionPanel.getModels().get(currentIndex).getWeights().getAllSuportedWeightNames().size() != 0;
+    	if (UNSUPPORTED_MODELS.contains(modelSelectionPanel.getModels().get(currentIndex).getNickname()))
+        	supported = false;
         contentPanel.setUnsupported(!supported);
     	contentPanel.update(modelSelectionPanel.getModels().get(currentIndex), coverPath, logoWidth, logoHeight);
     	if (this.searchBar.isBarOnLocal()) {

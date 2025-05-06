@@ -101,11 +101,14 @@ public class ModelSelectionPanel extends ModelSelectionPanelGui {
     	boolean mainSupported = true;
     	boolean nextSupported = true;
     	if (models.get(getWrappedIndex(currentIndex - 1)) != null)
-    		prevSupported = models.get(getWrappedIndex(currentIndex - 1)).getWeights().getAllSuportedWeightNames().size() != 0;
+    		prevSupported = !Gui.UNSUPPORTED_MODELS.contains(models.get(getWrappedIndex(currentIndex - 1)).getNickname()) 
+    					&& (models.get(getWrappedIndex(currentIndex - 1)).getWeights().getAllSuportedWeightNames().size() != 0);
     	if (models.get(currentIndex) != null)
-    		mainSupported = models.get(currentIndex).getWeights().getAllSuportedWeightNames().size() != 0;
+    		mainSupported = !Gui.UNSUPPORTED_MODELS.contains(models.get(currentIndex).getNickname()) 
+					&& models.get(currentIndex).getWeights().getAllSuportedWeightNames().size() != 0;
     	if (models.get(getWrappedIndex(currentIndex + 1)) != null)
-    		nextSupported = models.get(getWrappedIndex(currentIndex + 1)).getWeights().getAllSuportedWeightNames().size() != 0;
+    		nextSupported = !Gui.UNSUPPORTED_MODELS.contains(models.get(getWrappedIndex(currentIndex + 1)).getNickname()) 
+					&& models.get(getWrappedIndex(currentIndex + 1)).getWeights().getAllSuportedWeightNames().size() != 0;
         prevModelPanel.updateCard(modelNames.get(getWrappedIndex(currentIndex - 1)),
                 modelNicknames.get(getWrappedIndex(currentIndex - 1)),
                 modelImagePaths.get(getWrappedIndex(currentIndex - 1)),
