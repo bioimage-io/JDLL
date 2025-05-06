@@ -345,13 +345,15 @@ public class Gui extends JPanel {
     }
     
     private <T extends RealType<T> & NativeType<T>> void runModel() {
-    	SwingUtilities.invokeLater(() -> this.contentPanel.setProgressIndeterminate(true));
+		startModelInstallation(true);
     	runninThread = new Thread(() -> {
         	try {
         		ModelDescriptor model = modelSelectionPanel.getModels().get(currentIndex);
             	if (runner == null || runner.isClosed()) {
-            		if (!installEnvToRun(model) && !model.getModelFamily().equals(ModelDescriptor.STARDIST))
+            		if (!installEnvToRun(model) && !model.getModelFamily().equals(ModelDescriptor.STARDIST)) {
+                		startModelInstallation(false);
             			return;
+            		}
                 	SwingUtilities.invokeLater(() -> this.contentPanel.setProgressLabelText("Loading model..."));
             		runner = guiAdapter.createRunner(model);
             	}
@@ -373,22 +375,21 @@ public class Gui extends JPanel {
     		} catch (Exception e) {
     			e.printStackTrace();
     		}
-        	SwingUtilities.invokeLater(() -> {
-        		this.contentPanel.setProgressLabelText("");
-        		this.contentPanel.setProgressIndeterminate(false);
-        	});
+    		startModelInstallation(false);
     	});
     	runninThread.start();
     }
     
     private <T extends RealType<T> & NativeType<T>> void runModelOnTestImage() {
-    	SwingUtilities.invokeLater(() -> this.contentPanel.setProgressIndeterminate(true));
+		startModelInstallation(true);
     	runninThread = new Thread(() -> {
         	try {
         		ModelDescriptor model = modelSelectionPanel.getModels().get(currentIndex);
             	if (runner == null || runner.isClosed()) {
-            		if (!installEnvToRun(model) && !model.getModelFamily().equals(ModelDescriptor.STARDIST))
+            		if (!installEnvToRun(model) && !model.getModelFamily().equals(ModelDescriptor.STARDIST)) {
+                		startModelInstallation(false);
             			return;
+            		}
                 	SwingUtilities.invokeLater(() -> this.contentPanel.setProgressLabelText("Loading model..."));
             		runner = guiAdapter.createRunner(model);
             	}
@@ -409,10 +410,7 @@ public class Gui extends JPanel {
     		} catch (Exception e) {
     			e.printStackTrace();
     		}
-        	SwingUtilities.invokeLater(() -> {
-        		this.contentPanel.setProgressLabelText("");
-        		this.contentPanel.setProgressIndeterminate(false);
-        	});
+    		startModelInstallation(false);
     	});
     	runninThread.start();
     		
@@ -683,6 +681,7 @@ public class Gui extends JPanel {
     private void startModelInstallation(boolean isStarting) {
     	SwingUtilities.invokeLater(() -> {
         	this.runOnTestButton.setEnabled(!isStarting);
+        	this.runButton.setEnabled(!isStarting);
         	this.searchBar.setBarEnabled(!isStarting);
         	this.modelSelectionPanel.setArrowsEnabled(!isStarting);
 	    	this.contentPanel.setProgressIndeterminate(isStarting);
@@ -747,16 +746,13 @@ public class Gui extends JPanel {
     }
     
     private boolean installEnvToRun(ModelDescriptor descriptor) {
-		startModelInstallation(true);
     	String msg = "The selected model requries Python to run end to end. "
     			+ "Python installation might take up to 20 minutes depending on your computer";
     	String question = String.format("Install %s Python", descriptor.getModelFamily());
     	if (descriptor.areRequirementsInstalled()) {
-    		startModelInstallation(false);
     		return true;
     	}
     	if (!YesNoDialog.askQuestion(question, msg)) {
-    		startModelInstallation(false);
     		return false;
     	}
 		JDialog[] installerFrame = new JDialog[1];
@@ -785,10 +781,8 @@ public class Gui extends JPanel {
     	});
     	try {
         	latch.await();
-    		startModelInstallation(false);
 		} catch (InterruptedException e) {
 			e.printStackTrace();
-    		startModelInstallation(false);
 			return false;
 		}
     	return true;
