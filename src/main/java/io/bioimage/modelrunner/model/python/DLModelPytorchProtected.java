@@ -150,10 +150,9 @@ public class DLModelPytorchProtected extends BaseModel {
 	protected static final String DTYPES_KEY = "dtypes_" + UUID.randomUUID().toString().replace("-", "_");
 	
 	protected static final String DIMS_KEY = "dims_" + UUID.randomUUID().toString().replace("-", "_");
-	
+		
 	protected static final String RECOVER_OUTPUTS_CODE = ""
-			+ "def handle_output_list(out_list):" + System.lineSeparator()
-			+ "  for outs_i in out_list:" + System.lineSeparator()
+			+ "def handle_output(outs_i):" + System.lineSeparator()
 			+ "    if type(outs_i) == np.ndarray:" + System.lineSeparator()
 			+ "      shm = shared_memory.SharedMemory(create=True, size=outs_i.nbytes)" + System.lineSeparator()
 			+ "      sh_np_array = np.ndarray(outs_i.shape, dtype=outs_i.dtype, buffer=shm.buf)" + System.lineSeparator()
@@ -196,9 +195,18 @@ public class DLModelPytorchProtected extends BaseModel {
 			+ "      task.update('output type : ' + str(type(outs_i)) + ' not supported. "
 			+ "Only supported output types are: np.ndarray, torch.tensor, int and float, "
 			+ "or a list or tuple of any of those.')" + System.lineSeparator()
+			+ System.lineSeparator()
+			+ System.lineSeparator()
+			+ "def handle_output_list(out_list):" + System.lineSeparator()
+			+ "  if type(out_list) == tuple or type(out_list) == list:" + System.lineSeparator()
+			+ "    for outs_i in out_list:" + System.lineSeparator()
+			+ "      handle_output(outs_i)" + System.lineSeparator()
+			+ "  else:" + System.lineSeparator()
+			+ "    handle_output(out_list)" + System.lineSeparator()
 			+ "" + System.lineSeparator()
 			+ "" + System.lineSeparator()
 			+ "globals()['handle_output_list'] = handle_output_list" + System.lineSeparator()
+			+ "globals()['handle_output'] = handle_output" + System.lineSeparator()
 			+ "" + System.lineSeparator()
 			+ "" + System.lineSeparator();
 
@@ -446,7 +454,7 @@ public class DLModelPytorchProtected extends BaseModel {
 	protected <T extends RealType<T> & NativeType<T>> String createInputsCode(List<RandomAccessibleInterval<T>> rais, List<String> names) {
 		String code = "";
 		for (int i = 0; i < rais.size(); i ++) {
-			SharedMemoryArray shma = SharedMemoryArray.createSHMAFromRAI(rais.get(i));
+			SharedMemoryArray shma = SharedMemoryArray.createSHMAFromRAI(rais.get(i), false, false);
 			code += codeToConvertShmaToPython(shma, names.get(i));
 			inShmaList.add(shma);
 		}
@@ -455,6 +463,7 @@ public class DLModelPytorchProtected extends BaseModel {
 			code += "torch.from_numpy(" + names.get(i) + "), ";
 		code = code.substring(0, code.length() - 2);
 		code += ")" + System.lineSeparator();
+		code += String.format("print(type(%s))", OUTPUT_LIST_KEY) + System.lineSeparator();
 		code += ""
 				+ SHMS_KEY + " = []" + System.lineSeparator()
 				+ SHM_NAMES_KEY + " = []" + System.lineSeparator()
@@ -664,7 +673,7 @@ public class DLModelPytorchProtected extends BaseModel {
 		RandomAccessibleInterval<T> rai = shm.getSharedRAI();
 		RandomAccessibleInterval<T> raiCopy = Tensor.createCopyOfRaiInWantedDataType(Cast.unchecked(rai), 
 				Util.getTypeFromInterval(Cast.unchecked(rai)));
-		
+
 		shm.close();
 		
 		return raiCopy;
