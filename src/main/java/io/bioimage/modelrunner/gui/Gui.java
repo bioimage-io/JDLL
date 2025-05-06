@@ -334,13 +334,24 @@ public class Gui extends JPanel {
     	this.onClose();
     }
     
+    private void runTestOrInstall() {
+    	if (this.runOnTestButton.getText().equals(INSTALL_STR)) {
+    		installSelectedModel();
+    	} else if (this.runOnTestButton.getText().equals(RUN_ON_TEST_STR)) {
+    		runModelOnTestImage();
+    	}
+    }
+    
     private <T extends RealType<T> & NativeType<T>> void runModel() {
     	SwingUtilities.invokeLater(() -> this.contentPanel.setProgressIndeterminate(true));
     	runninThread = new Thread(() -> {
         	try {
+        		ModelDescriptor model = modelSelectionPanel.getModels().get(currentIndex);
             	if (runner == null || runner.isClosed()) {
+            		if (!installEnvToRun(model) && !model.getModelFamily().equals(ModelDescriptor.STARDIST))
+            			return;
                 	SwingUtilities.invokeLater(() -> this.contentPanel.setProgressLabelText("Loading model..."));
-            		runner = guiAdapter.createRunner(this.modelSelectionPanel.getModels().get(currentIndex));
+            		runner = guiAdapter.createRunner(model);
             	}
         		if (!runner.isLoaded() && GuiUtils.isEDTAlive())
         			runner.load();
@@ -368,21 +379,16 @@ public class Gui extends JPanel {
     	runninThread.start();
     }
     
-    private void runTestOrInstall() {
-    	if (this.runOnTestButton.getText().equals(INSTALL_STR)) {
-    		installSelectedModel();
-    	} else if (this.runOnTestButton.getText().equals(RUN_ON_TEST_STR)) {
-    		runModelOnTestImage();
-    	}
-    }
-    
     private <T extends RealType<T> & NativeType<T>> void runModelOnTestImage() {
     	SwingUtilities.invokeLater(() -> this.contentPanel.setProgressIndeterminate(true));
     	runninThread = new Thread(() -> {
         	try {
+        		ModelDescriptor model = modelSelectionPanel.getModels().get(currentIndex);
             	if (runner == null || runner.isClosed()) {
+            		if (!installEnvToRun(model) && !model.getModelFamily().equals(ModelDescriptor.STARDIST))
+            			return;
                 	SwingUtilities.invokeLater(() -> this.contentPanel.setProgressLabelText("Loading model..."));
-            		runner = guiAdapter.createRunner(this.modelSelectionPanel.getModels().get(currentIndex));
+            		runner = guiAdapter.createRunner(model);
             	}
         		if (!runner.isLoaded() && GuiUtils.isEDTAlive())
         			runner.load();
@@ -736,6 +742,43 @@ public class Gui extends JPanel {
     	worker.execute();
 		installerPanel.addToFrame(installerFrame);
     	installerFrame.setSize(600, 300);
+    }
+    
+    private boolean installEnvToRun(ModelDescriptor descriptor) {
+		startModelInstallation(true);
+    	String msg = "The selected model requries Python to run end to end. "
+    			+ "Python installation might take up to 20 minutes depending on your computer";
+    	String question = String.format("Install %s Python", descriptor.getModelFamily());
+    	if (descriptor.areRequirementsInstalled()) {
+    		startModelInstallation(false);
+    		return true;
+    	}
+    	if (!YesNoDialog.askQuestion(question, msg)) {
+    		startModelInstallation(false);
+    		return false;
+    	}
+		JDialog installerFrame = new JDialog();
+		installerFrame.setTitle("Installing " + descriptor.getName());
+		installerFrame.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
+    	Runnable callback = () -> {
+    		if (installerFrame.isVisible())
+    			installerFrame.dispose();
+    	};
+    	CountDownLatch latch = new CountDownLatch(1);
+    	InstallEnvWorker worker = new InstallEnvWorker(descriptor, latch, callback);
+		EnvironmentInstaller installerPanel = EnvironmentInstaller.create(worker);
+    	worker.execute();
+		installerPanel.addToFrame(installerFrame);
+    	installerFrame.setSize(600, 300);
+    	try {
+        	latch.await();
+    		startModelInstallation(false);
+		} catch (InterruptedException e) {
+			e.printStackTrace();
+    		startModelInstallation(false);
+			return false;
+		}
+    	return true;
     }
     
     public void onClose() {

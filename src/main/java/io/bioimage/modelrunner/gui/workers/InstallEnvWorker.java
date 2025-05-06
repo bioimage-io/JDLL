@@ -11,6 +11,7 @@ import org.apache.commons.compress.archivers.ArchiveException;
 
 import io.bioimage.modelrunner.apposed.appose.MambaInstallException;
 import io.bioimage.modelrunner.bioimageio.description.ModelDescriptor;
+import io.bioimage.modelrunner.model.python.DLModelPytorch;
 import io.bioimage.modelrunner.model.special.cellpose.Cellpose;
 import io.bioimage.modelrunner.model.special.stardist.StardistAbstract;
 
@@ -55,7 +56,8 @@ public class InstallEnvWorker extends SwingWorker<Void, Void> {
             	StardistAbstract.installRequirements(consumer);
             } else if (modelFamily.toLowerCase().equals(ModelDescriptor.CELLPOSE)) {
             	Cellpose.installRequirements(consumer);
-            }
+            } else if (modelFamily.toLowerCase().equals(ModelDescriptor.BIOIMAGEIO))
+            	DLModelPytorch.installRequirements(consumer);
 		} catch (IOException | RuntimeException | MambaInstallException | ArchiveException
 				| URISyntaxException e) {
 			e.printStackTrace();
