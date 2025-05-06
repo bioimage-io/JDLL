@@ -243,7 +243,7 @@ public class Cellpose extends BioimageIoModelPytorchProtected {
 		super.run(checkInputTensors(inputTensors), checkOutputTensors(outputTensors));
 	}
 	
-	protected String buildModelCode() {
+	protected String buildModelCode() throws IOException {
 		if (this.isBMZ)
 			return super.buildModelCode();
 		String code = String.format(LOAD_MODEL_CODE_ABSTRACT, 

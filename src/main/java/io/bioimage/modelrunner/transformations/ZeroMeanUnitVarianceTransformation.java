@@ -138,7 +138,36 @@ public class ZeroMeanUnitVarianceTransformation extends AbstractTensorTransforma
 	
 	@SuppressWarnings("unchecked")
 	public void setAxes(Object axes) {
-		if (axes instanceof String )
+		if (axes instanceof String && ((String) axes).equals("channel"))
+			this.axes = "c";
+		else if (axes instanceof String)
+			this.axes = (String) axes;
+		else if (axes instanceof List) {
+			this.axes = "";
+			for (Object ax : (List<Object>) axes) {
+				if (!(ax instanceof String))
+					throw new IllegalArgumentException("JDLL does not currently support this axes format. Please "
+							+ "write an issue attaching the rdf.yaml file at: " + Constants.ISSUES_LINK);
+				ax = ax.equals("channel") ? "c" : ax;
+				this.axes += ax;
+			}
+		} else if (axes instanceof String[]) {
+			String[] axesArr = (String[]) axes;
+			this.axes = "";
+			for (String ax : axesArr) {
+				ax = ax.equals("channel") ? "c" : ax;
+				this.axes += ax;
+			}
+		} else
+			throw new IllegalArgumentException("'axes' parameter has to be an instance of " + String.class
+					 + ", of a String array or of a List of Strings. The provided argument is " + axes.getClass());
+	}
+	
+	@SuppressWarnings("unchecked")
+	public void setAxis(Object axes) {
+		if (axes instanceof String && ((String) axes).equals("channel"))
+			this.axes = "c";
+		else if (axes instanceof String)
 			this.axes = (String) axes;
 		else if (axes instanceof List) {
 			this.axes = "";

@@ -25,6 +25,8 @@ package io.bioimage.modelrunner.model.python;
 import java.io.File;
 import java.io.IOException;
 import java.net.URISyntaxException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedHashMap;
@@ -217,6 +219,8 @@ public class DLModelPytorchProtected extends BaseModel {
 			+ "    s.unlink()" + System.lineSeparator()
 			+ "    del s" + System.lineSeparator();
 	
+	private static final String JDLL_UUID = UUID.randomUUID().toString().replaceAll("-", "_");
+	
 	protected DLModelPytorchProtected(String modelFile, String callable, String importModule, String weightsPath, 
 			Map<String, Object> kwargs) throws IOException {
 		this(modelFile, callable, importModule, weightsPath, kwargs, false);
@@ -309,12 +313,11 @@ public class DLModelPytorchProtected extends BaseModel {
 			return;
 		if (closed)
 			throw new RuntimeException("Cannot load model after it has been closed");
-		String code = buildModelCode();
-		
-		code += RECOVER_OUTPUTS_CODE;
 
 		Task task;
 		try {
+			String code = buildModelCode();
+			code += RECOVER_OUTPUTS_CODE;
 			task = python.task(code);
 			task.waitFor();
 			if (task.status == TaskStatus.CANCELED)
@@ -328,24 +331,42 @@ public class DLModelPytorchProtected extends BaseModel {
 		}
 		loaded = true;
 	}
+
+    /**
+     * Copies the file from `inputPath` to `outputPath`, replacing every '+' with 'JDLL'.
+     */
+    private static void copyAndReplace(String inputPath, String outputPath) throws IOException {
+    	if (new File(outputPath).isFile())
+    		return;
+        Files.write(Paths.get(outputPath), Files.readAllBytes(Paths.get(inputPath)));
+    }
 	
-	protected String buildModelCode() {
+	protected String buildModelCode() throws IOException {
 		String addPath = "";
 		String importStr = "";
-		if (modelFile != null) {
-			String moduleName = new File(modelFile).getName();
-			moduleName = moduleName.substring(0, moduleName.length() - 3);
-			addPath = String.format("sys.path.append(os.path.abspath('%s'))", new File(modelFile).getParentFile().getAbsolutePath());
-			importStr = String.format("from %s import %s", moduleName, callable);
-		} else {
-			importStr = String.format("from %s import %s", this.importModule, callable);
-		}
-		String code = String.format(LOAD_MODEL_CODE_ABSTRACT, addPath, importStr, callable, callable, callable);
-		
-		code += ""
+		String code = ""
 				+ "if 'torch' not in globals().keys():" + System.lineSeparator()
 				+ "  import torch" + System.lineSeparator()
 				+ "  globals()['torch'] = torch" + System.lineSeparator();
+		if (modelFile != null) {
+			String moduleName = new File(modelFile).getName();
+			moduleName = moduleName.substring(0, moduleName.length() - 3);
+			if (moduleName.contains("+")) {
+				String newModelFile = modelFile.replaceAll("\\+", JDLL_UUID);
+				copyAndReplace(modelFile, newModelFile);
+				moduleName = new File(newModelFile).getName();
+				moduleName = moduleName.substring(0, moduleName.length() - 3);
+				addPath = String.format("sys.path.append(os.path.abspath('%s'))", new File(newModelFile).getParentFile().getAbsolutePath());
+				importStr = String.format("from %s import %s", moduleName, callable);
+			} else {
+				addPath = String.format("sys.path.append(os.path.abspath('%s'))", new File(modelFile).getParentFile().getAbsolutePath());
+				importStr = String.format("from %s import %s", moduleName, callable);
+			}
+		} else {
+			importStr = String.format("from %s import %s", this.importModule, callable);
+		}
+		code += String.format(LOAD_MODEL_CODE_ABSTRACT, addPath, importStr, callable, callable, callable);
+		
 		code += MODEL_VAR_NAME + "=" + callable + "(" + codeForKwargs()  + ")" + System.lineSeparator();
 		code += "try:" + System.lineSeparator()
 				+ "  " + MODEL_VAR_NAME + ".load_state_dict("

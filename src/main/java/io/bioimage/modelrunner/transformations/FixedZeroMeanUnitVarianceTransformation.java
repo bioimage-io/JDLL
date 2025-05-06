@@ -138,7 +138,9 @@ public class FixedZeroMeanUnitVarianceTransformation extends AbstractTensorTrans
 	
 	@SuppressWarnings("unchecked")
 	public void setAxes(Object axes) {
-		if (axes instanceof String )
+		if (axes instanceof String && ((String) axes).equals("channel"))
+			this.axes = "c";
+		else if (axes instanceof String)
 			this.axes = (String) axes;
 		else if (axes instanceof List) {
 			this.axes = "";

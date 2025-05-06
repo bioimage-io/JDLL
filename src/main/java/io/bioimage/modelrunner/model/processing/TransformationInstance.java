@@ -217,7 +217,8 @@ public class TransformationInstance {
 				| NoSuchMethodException | SecurityException e) {
 			throw new RuntimeException(Types.stackTrace(e));
 		}
-
+		if (args == null)
+			return;
 		for (String kk : args.keySet()) {
 			setArg(kk);
 		}
