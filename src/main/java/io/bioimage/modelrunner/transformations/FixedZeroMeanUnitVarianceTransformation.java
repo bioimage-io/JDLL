@@ -37,10 +37,10 @@ import net.imglib2.util.Util;
 import net.imglib2.view.IntervalView;
 import net.imglib2.view.Views;
 
-public class ZeroMeanUnitVarianceTransformation extends AbstractTensorTransformation
+public class FixedZeroMeanUnitVarianceTransformation extends AbstractTensorTransformation
 {
 	
-	private static String name = "zero_mean_unit_variace";
+	private static String name = "fixed_zero_mean_unit_variace";
 	private Double meanDouble;
 	private Double stdDouble;
 	private double[] meanArr;
@@ -53,10 +53,10 @@ public class ZeroMeanUnitVarianceTransformation extends AbstractTensorTransforma
 	private static String NOT_FIXED_MODE_ERR = "Only the mode 'fixed' requires providing the "
 			+ "'std' and 'mean parameters.";
 
-	public ZeroMeanUnitVarianceTransformation()
+	public FixedZeroMeanUnitVarianceTransformation()
 	{
 		super( name );
-		mode = Mode.PER_SAMPLE;
+		mode = Mode.FIXED;
 	}
 	
 	public void setEps(Object eps) {
@@ -139,6 +139,33 @@ public class ZeroMeanUnitVarianceTransformation extends AbstractTensorTransforma
 	@SuppressWarnings("unchecked")
 	public void setAxes(Object axes) {
 		if (axes instanceof String )
+			this.axes = (String) axes;
+		else if (axes instanceof List) {
+			this.axes = "";
+			for (Object ax : (List<Object>) axes) {
+				if (!(ax instanceof String))
+					throw new IllegalArgumentException("JDLL does not currently support this axes format. Please "
+							+ "write an issue attaching the rdf.yaml file at: " + Constants.ISSUES_LINK);
+				ax = ax.equals("channel") ? "c" : ax;
+				this.axes += ax;
+			}
+		} else if (axes instanceof String[]) {
+			String[] axesArr = (String[]) axes;
+			this.axes = "";
+			for (String ax : axesArr) {
+				ax = ax.equals("channel") ? "c" : ax;
+				this.axes += ax;
+			}
+		} else
+			throw new IllegalArgumentException("'axes' parameter has to be an instance of " + String.class
+					 + ", of a String array or of a List of Strings. The provided argument is " + axes.getClass());
+	}
+	
+	@SuppressWarnings("unchecked")
+	public void setAxis(Object axes) {
+		if (axes instanceof String && ((String) axes).equals("channel"))
+			this.axes = "c";
+		else if (axes instanceof String)
 			this.axes = (String) axes;
 		else if (axes instanceof List) {
 			this.axes = "";
@@ -361,7 +388,7 @@ public class ZeroMeanUnitVarianceTransformation extends AbstractTensorTransforma
 		for (int i = 0; i < arr.length; i ++) {
 			arr[i] = i;
 		}
-		ZeroMeanUnitVarianceTransformation preprocessing = new ZeroMeanUnitVarianceTransformation();
+		FixedZeroMeanUnitVarianceTransformation preprocessing = new FixedZeroMeanUnitVarianceTransformation();
 		preprocessing.setMean(4);
 		preprocessing.setStd(4);
 		preprocessing.setMode("fixed");
@@ -377,7 +404,7 @@ public class ZeroMeanUnitVarianceTransformation extends AbstractTensorTransforma
 			arr[i] = i;
 		}
 		ArrayImg<FloatType, FloatArray> rai = ArrayImgs.floats(arr, new long[] {3, 3, 2});
-		ZeroMeanUnitVarianceTransformation preprocessing = new ZeroMeanUnitVarianceTransformation();
+		FixedZeroMeanUnitVarianceTransformation preprocessing = new FixedZeroMeanUnitVarianceTransformation();
 		preprocessing.setAxes("xy");
 		preprocessing.setMode("per_sample");
 		Tensor<FloatType> tt = Tensor.build("name", "xyc", rai);
@@ -391,7 +418,7 @@ public class ZeroMeanUnitVarianceTransformation extends AbstractTensorTransforma
 			arr[i] = i;
 		}
 		ArrayImg<FloatType, FloatArray> rai = ArrayImgs.floats(arr, new long[] {1, 1, 3, 3});
-		ZeroMeanUnitVarianceTransformation preprocessing = new ZeroMeanUnitVarianceTransformation();
+		FixedZeroMeanUnitVarianceTransformation preprocessing = new FixedZeroMeanUnitVarianceTransformation();
 		preprocessing.setAxes("y");
 		preprocessing.setMode("fixed");
 		preprocessing.setMean(new double[] {1, 4, 7});
