@@ -1,5 +1,6 @@
 package io.bioimage.modelrunner.gui;
 
+import io.bioimage.modelrunner.apposed.appose.Types;
 import io.bioimage.modelrunner.bioimageio.BioimageioRepo;
 import io.bioimage.modelrunner.bioimageio.description.ModelDescriptor;
 import io.bioimage.modelrunner.bioimageio.description.ModelDescriptorFactory;
@@ -20,6 +21,7 @@ import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
 import java.io.File;
 import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
 import java.net.URL;
 import java.nio.file.Paths;
 
@@ -757,19 +759,30 @@ public class Gui extends JPanel {
     		startModelInstallation(false);
     		return false;
     	}
-		JDialog installerFrame = new JDialog();
-		installerFrame.setTitle("Installing " + descriptor.getName());
-		installerFrame.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
-    	Runnable callback = () -> {
-    		if (installerFrame.isVisible())
-    			installerFrame.dispose();
-    	};
+		JDialog[] installerFrame = new JDialog[1];
+		InstallEnvWorker[] worker = new InstallEnvWorker[1];
+		EnvironmentInstaller[] installerPanel = new EnvironmentInstaller[1];
     	CountDownLatch latch = new CountDownLatch(1);
-    	InstallEnvWorker worker = new InstallEnvWorker(descriptor, latch, callback);
-		EnvironmentInstaller installerPanel = EnvironmentInstaller.create(worker);
-    	worker.execute();
-		installerPanel.addToFrame(installerFrame);
-    	installerFrame.setSize(600, 300);
+    	Runnable callback = () -> {
+    		if (installerFrame[0].isVisible())
+    			installerFrame[0].dispose();
+    	};
+		try {
+			SwingUtilities.invokeAndWait(() -> {
+				installerFrame[0] = new JDialog();
+				installerFrame[0].setTitle("Installing " + descriptor.getName());
+				installerFrame[0].setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
+		    	worker[0] = new InstallEnvWorker(descriptor, latch, callback);
+				installerPanel[0] = EnvironmentInstaller.create(worker[0]);
+			});
+		} catch (InvocationTargetException | InterruptedException e) {
+			throw new RuntimeException(Types.stackTrace(e));
+		}
+    	worker[0].execute();
+    	SwingUtilities.invokeLater(() -> {
+    		installerPanel[0].addToFrame(installerFrame[0]);
+        	installerFrame[0].setSize(600, 300);
+    	});
     	try {
         	latch.await();
     		startModelInstallation(false);

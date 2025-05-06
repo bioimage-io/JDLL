@@ -82,7 +82,6 @@ public final class MambaInstallerUtils {
 	    		BZip2CompressorInputStream input = new BZip2CompressorInputStream(new BufferedInputStream(new FileInputStream(source)));
 	    		FileOutputStream output = new FileOutputStream(destination);
 	    		) {
-	    	System.out.println("aa");
 	        copy(input, output);
 	    } catch (Error e) {
 	    	e.printStackTrace();
