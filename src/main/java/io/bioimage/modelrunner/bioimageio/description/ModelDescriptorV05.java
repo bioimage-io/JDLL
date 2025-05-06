@@ -24,6 +24,8 @@ import java.util.List;
 import java.util.Map;
 
 import io.bioimage.modelrunner.bioimageio.BioimageioRepo;
+import io.bioimage.modelrunner.bioimageio.description.weights.ModelWeight;
+import io.bioimage.modelrunner.model.python.DLModelPytorchProtected;
 
 
 /**
@@ -54,7 +56,10 @@ public class ModelDescriptorV05 extends ModelDescriptor
 
 	@Override
 	public boolean areRequirementsInstalled() {
-		return true;
+		if (this.weights.getAllSuportedWeightNames().size() > 1 
+				|| !this.weights.getAllSuportedWeightNames().get(0).equals(ModelWeight.getPytorchID()))
+			return true;
+		return DLModelPytorchProtected.isInstalled();
 	}
 
 	@Override

@@ -117,7 +117,7 @@ public class DLModelPytorchProtected extends BaseModel {
 	
 	private static final List<String> BIAPY_PIP_DEPS = Arrays.asList(new String[] {"timm==1.0.14", "pytorch-msssim==1.0.0", 
 			"torchmetrics==1.4.3", "cellpose==3.1.1.1", "scipy==1.15.2", "torch-fidelity==0.3.0",
-			"biapy==3.5.10", "appose"});
+			"biapy==3.5.10", "careamics", "appose"});
 	
 	private static final List<String> BIAPY_PIP_ARGS = Arrays.asList(new String[] {"--index-url", "https://download.pytorch.org/whl/cpu"});
 		

@@ -423,10 +423,11 @@ public class Gui extends JPanel {
             int logoWidth = getWidth() / 3;
         	URL coverPath = modelSelectionPanel.getCoverPaths().get(currentIndex);
         	boolean supported = true;
-        	if (modelSelectionPanel.getModels().get(currentIndex) != null)
+        	if (modelSelectionPanel.getModels().get(currentIndex) != null) {
         		supported = modelSelectionPanel.getModels().get(currentIndex).getWeights().getAllSuportedWeightNames().size() != 0;
-            if (UNSUPPORTED_MODELS.contains(modelSelectionPanel.getModels().get(currentIndex).getNickname()))
-            	supported = false;
+	            if (UNSUPPORTED_MODELS.contains(modelSelectionPanel.getModels().get(currentIndex).getNickname()))
+	            	supported = false;
+        	}
         	contentPanel.setUnsupported(!supported);
         	contentPanel.update(modelSelectionPanel.getModels().get(currentIndex), coverPath, logoWidth, logoHeight);
         	if (this.searchBar.isBarOnLocal()) {
@@ -493,10 +494,11 @@ public class Gui extends JPanel {
         int logoWidth = getWidth() / 3;
     	URL coverPath = modelSelectionPanel.getCoverPaths().get(currentIndex);
     	boolean supported = true;
-    	if (modelSelectionPanel.getModels().get(currentIndex) != null)
+    	if (modelSelectionPanel.getModels().get(currentIndex) != null) {
     		supported = modelSelectionPanel.getModels().get(currentIndex).getWeights().getAllSuportedWeightNames().size() != 0;
-    	if (UNSUPPORTED_MODELS.contains(modelSelectionPanel.getModels().get(currentIndex).getNickname()))
-        	supported = false;
+	    	if (UNSUPPORTED_MODELS.contains(modelSelectionPanel.getModels().get(currentIndex).getNickname()))
+	        	supported = false;
+    	}
         contentPanel.setUnsupported(!supported);
     	contentPanel.update(modelSelectionPanel.getModels().get(currentIndex), coverPath, logoWidth, logoHeight);
     	if (this.searchBar.isBarOnLocal()) {
