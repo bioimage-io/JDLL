@@ -166,13 +166,15 @@ public class DLModelPytorchProtected extends BaseModel {
 			+ "      if 'torch' not in globals().keys():" + System.lineSeparator()
 			+ "        import torch" + System.lineSeparator()
 			+ "        globals()['torch'] = torch" + System.lineSeparator()
+			+ "      else:" + System.lineSeparator()
+			+ "        torch = globals()['torch']" + System.lineSeparator()
 			+ "      shm = shared_memory.SharedMemory(create=True, size=outs_i.numel() * outs_i.element_size())" + System.lineSeparator()
-			+ "      np_arr = np.ndarray(outs_i.shape, dtype=outs_i.dtype.name, buffer=shm.buf)" + System.lineSeparator()
+			+ "      np_arr = np.ndarray(outs_i.shape, dtype=str(outs_i.dtype).split('.')[-1], buffer=shm.buf)" + System.lineSeparator()
 			+ "      tensor_np_view = torch.from_numpy(np_arr)" + System.lineSeparator()
 			+ "      tensor_np_view.copy_(outs_i)" + System.lineSeparator()
 			+ "      " + SHMS_KEY + ".append(shm)" + System.lineSeparator()
 			+ "      " + SHM_NAMES_KEY + ".append(shm.name)" + System.lineSeparator()
-			+ "      " + DTYPES_KEY + ".append(outs_i.dtype.name)" + System.lineSeparator()
+			+ "      " + DTYPES_KEY + ".append(str(outs_i.dtype).split('.')[-1])" + System.lineSeparator()
 			+ "      " + DIMS_KEY + ".append(outs_i.shape)" + System.lineSeparator()
 			+ "    elif type(outs_i) == int:" + System.lineSeparator()
 			+ "      shm = shared_memory.SharedMemory(create=True, size=8)" + System.lineSeparator()
@@ -357,6 +359,8 @@ public class DLModelPytorchProtected extends BaseModel {
 				codeVal = "True";
 			else if ((codeVal instanceof Boolean && !((Boolean) codeVal)) || codeVal.equals("false"))
 				codeVal = "False";
+			else if (codeVal instanceof String)
+				codeVal = "\"" + codeVal + "\"";
 			code += ee.getKey() + "=" + codeVal + ",";
 		}
 		return code;
@@ -446,11 +450,9 @@ public class DLModelPytorchProtected extends BaseModel {
 			code += codeToConvertShmaToPython(shma, names.get(i));
 			inShmaList.add(shma);
 		}
-		code += "print(type(input_torch))" + System.lineSeparator();
-		code += "print(input_torch.shape)" + System.lineSeparator();
 		code += OUTPUT_LIST_KEY + " = " + MODEL_VAR_NAME + "(";
 		for (int i = 0; i < rais.size(); i ++)
-			code += names.get(i) + ", ";
+			code += "torch.from_numpy(" + names.get(i) + "), ";
 		code = code.substring(0, code.length() - 2);
 		code += ")" + System.lineSeparator();
 		code += ""
