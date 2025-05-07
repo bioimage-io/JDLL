@@ -282,6 +282,7 @@ public class ContentPanel extends JPanel {
 
         // Create progress label
         progressInfoLabel = new JLabel("Example text");
+        progressInfoLabel.setVisible(false);
         progressInfoLabel.setForeground(Color.black);
         progressInfoLabel.setFont(new Font("SansSerif", Font.ITALIC, 14));
 
