@@ -49,6 +49,14 @@ public class ModelDescriptorV04 extends ModelDescriptor
     	addSampleAndTestImages();
     	newModelID = findID();
     	modelID = findOldID();
+        // TODO super mega ultra WORKAROUND until model is fixed
+        // TODO super mega ultra WORKAROUND until model is fixed
+        // TODO super mega ultra WORKAROUND until model is fixed
+        // TODO super mega ultra WORKAROUND until model is fixed
+        // TODO super mega ultra WORKAROUND until model is fixed
+        if (this.getNickname().equals("committed-turkey")) {
+        	((TensorSpecV04) this.output_tensors.get(0)).dataType = "float32";
+        }
     }
 
     /**
