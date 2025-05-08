@@ -61,10 +61,11 @@ public abstract class RunnerAdapter implements Closeable {
 
 	protected RunnerAdapter(ModelDescriptor descriptor) throws IOException, LoadEngineException {
 		this.descriptor = descriptor;
+		List<String> wList = descriptor.getWeights().getAllSuportedWeightNames();
 		if (descriptor.getModelFamily().equals(ModelDescriptor.STARDIST)) {
 			model = StardistAbstract.fromBioimageioModel(descriptor);
 		} else if (descriptor.getModelFamily().equals(ModelDescriptor.BIOIMAGEIO)
-				&& !descriptor.getWeights().getAllSuportedWeightNames().contains(ModelWeight.getPytorchID())) {
+				&& !(wList.size() == 1 && wList.contains(ModelWeight.getPytorchID()))) {
 			model = BioimageIoModelJava.createBioimageioModel(descriptor.getModelPath());
 		} else if (descriptor.getModelFamily().equals(ModelDescriptor.BIOIMAGEIO)) {
 			model = BioimageIoModelPytorch.create(descriptor);
@@ -75,10 +76,11 @@ public abstract class RunnerAdapter implements Closeable {
 
 	protected RunnerAdapter(ModelDescriptor descriptor, ClassLoader classloader) throws IOException, LoadEngineException {
 		this.descriptor = descriptor;
+		List<String> wList = descriptor.getWeights().getAllSuportedWeightNames();
 		if (descriptor.getModelFamily().equals(ModelDescriptor.STARDIST)) {
 			model = StardistAbstract.fromBioimageioModel(descriptor);
 		} else if (descriptor.getModelFamily().equals(ModelDescriptor.BIOIMAGEIO)
-				&& !descriptor.getWeights().getAllSuportedWeightNames().contains(ModelWeight.getPytorchID())) {
+				&& !(wList.size() == 1 && wList.contains(ModelWeight.getPytorchID()))) {
 			model = BioimageIoModelJava.createBioimageioModel(descriptor.getModelPath(), classloader);
 		} else if (descriptor.getModelFamily().equals(ModelDescriptor.BIOIMAGEIO)) {
 			model = BioimageIoModelPytorch.create(descriptor);
@@ -90,10 +92,11 @@ public abstract class RunnerAdapter implements Closeable {
 	protected RunnerAdapter(ModelDescriptor descriptor, String enginesPath) 
 			throws IOException, LoadEngineException {
 		this.descriptor = descriptor;
+		List<String> wList = descriptor.getWeights().getAllSuportedWeightNames();
 		if (descriptor.getModelFamily().equals(ModelDescriptor.STARDIST)) {
 			model = Stardist2D.fromBioimageioModel(descriptor);
 		} else if (descriptor.getModelFamily().equals(ModelDescriptor.BIOIMAGEIO)
-				&& !descriptor.getWeights().getAllSuportedWeightNames().contains(ModelWeight.getPytorchID())) {
+				&& !(wList.size() == 1 && wList.contains(ModelWeight.getPytorchID()))) {
 			model = BioimageIoModelJava.createBioimageioModel(descriptor.getModelPath(), enginesPath);
 		} else if (descriptor.getModelFamily().equals(ModelDescriptor.BIOIMAGEIO)) {
 			model = BioimageIoModelPytorch.create(descriptor);
@@ -105,10 +108,11 @@ public abstract class RunnerAdapter implements Closeable {
 	protected RunnerAdapter(ModelDescriptor descriptor, String enginesPath, ClassLoader classloader) 
 			throws IOException, LoadEngineException {
 		this.descriptor = descriptor;
+		List<String> wList = descriptor.getWeights().getAllSuportedWeightNames();
 		if (descriptor.getModelFamily().equals(ModelDescriptor.STARDIST)) {
 			model = Stardist2D.fromBioimageioModel(descriptor);
 		} else if (descriptor.getModelFamily().equals(ModelDescriptor.BIOIMAGEIO)
-				&& !descriptor.getWeights().getAllSuportedWeightNames().contains(ModelWeight.getPytorchID())) {
+				&& !(wList.size() == 1 && wList.contains(ModelWeight.getPytorchID()))) {
 			model = BioimageIoModelJava.createBioimageioModel(descriptor.getModelPath(), enginesPath, classloader);
 		} else if (descriptor.getModelFamily().equals(ModelDescriptor.BIOIMAGEIO)) {
 			model = BioimageIoModelPytorch.create(descriptor);
