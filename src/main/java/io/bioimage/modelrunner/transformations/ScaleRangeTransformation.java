@@ -98,6 +98,18 @@ public class ScaleRangeTransformation extends AbstractTensorTransformation
 	}
 	
 	@SuppressWarnings("unchecked")
+	public void setReferenceTensor(Object refTensor) {
+		// TODO
+		// TODO
+		// TODO
+		// TODO
+		// TODO
+		// TODO
+		System.err.println("JDLL still does not support this processing. Please create an issue "
+				+ "at https://github.com/bioimage-io/JDLL/issues referencing this model.");
+	}
+	
+	@SuppressWarnings("unchecked")
 	public void setAxes(Object axes) {
 		if (axes instanceof String && ((String) axes).equals("channel"))
 			this.axes = "c";
