@@ -465,7 +465,7 @@ public class DownloadModel {
 					.findFirst().get().getSource();
 			try {
 				source = FileDownloader.getFileNameFromURLString(source);
-			} catch (Exception ex) {}
+			} catch (Exception | Error ex) {}
 			System.out.println("Unzipping model...");
 			unzippingConsumer.accept(0.);
 			ZipUtils.unzipFolder(this.modelsDir + File.separator + source, this.modelsDir,

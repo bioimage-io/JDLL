@@ -500,7 +500,7 @@ public class BioimageioRepo {
 		dm.setProgressConsumer(consumer);
 		try {
 			dm.downloadModel();
-		} catch ( ExecutionException e) {
+		} catch ( ExecutionException | Error e) {
 			throw new RuntimeException(e);
 		}
 		return dm.getModelFolder();
