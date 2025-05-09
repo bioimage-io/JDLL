@@ -111,7 +111,14 @@ public abstract class StardistAbstract extends BaseModel {
 	
 	private static final List<String> STARDIST_DEPS = Arrays.asList(new String[] {"python=3.10", "stardist", "numpy", "appose"});
 	
-	private static final List<String> STARDIST_DEPS_PIP = Arrays.asList(new String[] {"tensorflow<2.11"});
+	private static final List<String> STARDIST_DEPS_PIP;
+	static {
+		if (PlatformDetection.isMacOS() 
+				&& (PlatformDetection.getArch().equals(PlatformDetection.ARCH_ARM64) || PlatformDetection.isUsingRosseta()))
+			STARDIST_DEPS_PIP = Arrays.asList(new String[] {"tensorflow-macos<2.11"});
+		else
+			STARDIST_DEPS_PIP = Arrays.asList(new String[] {"tensorflow<2.11"});
+	}
 	
 	private static final List<String> STARDIST_CHANNELS = Arrays.asList(new String[] {"conda-forge", "default"});
 
@@ -594,7 +601,8 @@ public abstract class StardistAbstract extends BaseModel {
 		boolean stardistPythonInstalled = false;
 		try {
 			List<String> deps = new ArrayList<String>(STARDIST_DEPS);
-			deps.addAll(STARDIST_DEPS_PIP);
+			for (String dd : deps)
+				deps.add(dd.equals("tensorflow-macos<2.11") ? dd.replace("-macos", "") : dd);
 			stardistPythonInstalled = mamba.checkAllDependenciesInEnv("stardist", deps);
 		} catch (MambaInstallException e) {
 			mamba.installMicromamba();
