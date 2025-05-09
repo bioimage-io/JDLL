@@ -26,6 +26,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import io.bioimage.modelrunner.system.PlatformDetection;
 import io.bioimage.modelrunner.versionmanagement.SupportedVersions;
 import io.bioimage.modelrunner.versionmanagement.VersionStringUtils;
 
@@ -176,7 +177,10 @@ public class ModelWeight
     public List<String> getAllSuportedWeightNames() {
     	return weightsDic.entrySet().stream().
     			map(i -> i.getValue().getFramework()).
-    			filter(i -> !i.equals(kerasIdentifier) && !i.equals(tfJsIdentifier)).
+    			filter(i -> !i.equals(kerasIdentifier) && !i.equals(tfJsIdentifier)
+    					&& (!PlatformDetection.isMacOS() 
+    							|| !(PlatformDetection.getArch().equals(PlatformDetection.ARCH_ARM64) || PlatformDetection.isUsingRosseta())
+    	    					|| !i.equals(tfIdentifier))).
     			distinct().collect(Collectors.toList());
     }
 
