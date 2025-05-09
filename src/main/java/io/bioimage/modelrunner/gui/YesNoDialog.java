@@ -28,6 +28,21 @@ public class YesNoDialog {
 	
     public static boolean askQuestion(String title, String message) {
         // Show the Yes/No dialog
+    	if (SwingUtilities.isEventDispatchThread()) {
+    		return askFromEDT(title, message);
+    	} else {
+    		return askFromNonEDT(title, message);
+    	}
+    }
+    
+    private static boolean askFromEDT(String title, String message) {
+    	int response = JOptionPane.showConfirmDialog(null, message, title, JOptionPane.YES_NO_OPTION);
+
+
+        return response == JOptionPane.YES_OPTION ? true : false;
+    }
+    
+    private static boolean askFromNonEDT(String title, String message) {
     	int[] response = new int[1];
     	try {
 			SwingUtilities.invokeAndWait(() ->{
