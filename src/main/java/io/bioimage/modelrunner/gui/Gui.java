@@ -72,6 +72,7 @@ public class Gui extends JPanel {
 	private final String enginesDir;
     private final Object lock = new Object();
     private int nParsedModels;
+    private Runnable cancelCallback;
 
 	Thread engineInstallThread;
 	Thread trackEngineInstallThread;
@@ -354,6 +355,8 @@ public class Gui extends JPanel {
 
     
     private void cancel() {
+    	if (cancelCallback != null)
+    		cancelCallback.run();
     	this.onClose();
     }
     
@@ -833,5 +836,9 @@ public class Gui extends JPanel {
     	}
     	if (runninThread != null && this.runninThread.isAlive())
     		this.runninThread.interrupt();
+    }
+    
+    public void setCancelCallback(Runnable callback) {
+    	this.cancelCallback = callback;
     }
 }
