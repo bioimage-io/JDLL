@@ -107,7 +107,9 @@ public class Gui extends JPanel {
             "affectionate-cow", "faithful-chicken", "humorous-crab", "noisy-ox",
             "greedy-whale", "efficient-chipmunk",
     		// TODO check cellpose 3d (philosophical-panda)
-            "philosophical-panda", "amiable-crocodile"
+            "philosophical-panda", "amiable-crocodile",
+            // TODO fix the HPA models
+            "loyal-parrot", "conscientious-seashell", "straightforward-crocodile", "polite-pig"
         );
     
     private final static String INSTALL_INSTRUCTIONS_FORMAT = ""
