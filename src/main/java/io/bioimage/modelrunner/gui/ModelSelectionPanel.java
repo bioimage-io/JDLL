@@ -119,15 +119,20 @@ public class ModelSelectionPanel extends ModelSelectionPanelGui {
     	boolean prevSupported = true;
     	boolean mainSupported = true;
     	boolean nextSupported = true;
-    	if (models.get(getWrappedIndex(currentIndex - 1)) != null)
-    		prevSupported = !Gui.UNSUPPORTED_MODELS.contains(models.get(getWrappedIndex(currentIndex - 1)).getNickname()) 
-    					&& (models.get(getWrappedIndex(currentIndex - 1)).getWeights().getAllSuportedWeightNames().size() != 0);
-    	if (models.get(currentIndex) != null)
+    	int prevInd = getWrappedIndex(currentIndex - 1);
+    	int nextInd = getWrappedIndex(currentIndex + 1);
+    	if (models.get(prevInd) != null
+    			&& models.get(prevInd).getModelFamily().equals(ModelDescriptor.BIOIMAGEIO))
+    		prevSupported = !Gui.UNSUPPORTED_MODELS.contains(models.get(prevInd).getNickname()) 
+    					&& (models.get(prevInd).getWeights().getAllSuportedWeightNames().size() != 0);
+    	if (models.get(currentIndex) != null
+    			&& models.get(currentIndex).getModelFamily().equals(ModelDescriptor.BIOIMAGEIO))
     		mainSupported = !Gui.UNSUPPORTED_MODELS.contains(models.get(currentIndex).getNickname()) 
 					&& models.get(currentIndex).getWeights().getAllSuportedWeightNames().size() != 0;
-    	if (models.get(getWrappedIndex(currentIndex + 1)) != null)
-    		nextSupported = !Gui.UNSUPPORTED_MODELS.contains(models.get(getWrappedIndex(currentIndex + 1)).getNickname()) 
-					&& models.get(getWrappedIndex(currentIndex + 1)).getWeights().getAllSuportedWeightNames().size() != 0;
+    	if (models.get(getWrappedIndex(currentIndex + 1)) != null
+    			&& models.get(nextInd).getModelFamily().equals(ModelDescriptor.BIOIMAGEIO))
+    		nextSupported = !Gui.UNSUPPORTED_MODELS.contains(models.get(nextInd).getNickname()) 
+					&& models.get(nextInd).getWeights().getAllSuportedWeightNames().size() != 0;
         prevModelPanel.updateCard(modelNames.get(getWrappedIndex(currentIndex - 1)),
                 modelNicknames.get(getWrappedIndex(currentIndex - 1)),
                 modelImagePaths.get(getWrappedIndex(currentIndex - 1)),
