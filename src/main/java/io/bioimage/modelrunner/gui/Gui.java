@@ -450,7 +450,8 @@ public class Gui extends JPanel {
             int logoWidth = getWidth() / 3;
         	URL coverPath = modelSelectionPanel.getCoverPaths().get(currentIndex);
         	boolean supported = true;
-        	if (modelSelectionPanel.getModels().get(currentIndex) != null) {
+        	if (modelSelectionPanel.getModels().get(currentIndex) != null
+        			&& modelSelectionPanel.getModels().get(currentIndex).getModelFamily().equals(ModelDescriptor.BIOIMAGEIO)) {
         		supported = modelSelectionPanel.getModels().get(currentIndex).getWeights().getAllSuportedWeightNames().size() != 0;
 	            if (UNSUPPORTED_MODELS.contains(modelSelectionPanel.getModels().get(currentIndex).getNickname()))
 	            	supported = false;
@@ -521,7 +522,8 @@ public class Gui extends JPanel {
         int logoWidth = getWidth() / 3;
     	URL coverPath = modelSelectionPanel.getCoverPaths().get(currentIndex);
     	boolean supported = true;
-    	if (modelSelectionPanel.getModels().get(currentIndex) != null) {
+    	if (modelSelectionPanel.getModels().get(currentIndex) != null
+    			&& modelSelectionPanel.getModels().get(currentIndex).getModelFamily().equals(ModelDescriptor.BIOIMAGEIO)) {
     		supported = modelSelectionPanel.getModels().get(currentIndex).getWeights().getAllSuportedWeightNames().size() != 0;
 	    	if (UNSUPPORTED_MODELS.contains(modelSelectionPanel.getModels().get(currentIndex).getNickname()))
 	        	supported = false;

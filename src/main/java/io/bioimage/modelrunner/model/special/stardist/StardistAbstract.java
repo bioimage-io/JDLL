@@ -600,8 +600,8 @@ public abstract class StardistAbstract extends BaseModel {
 		}
 		boolean stardistPythonInstalled = false;
 		try {
-			List<String> deps = new ArrayList<String>(STARDIST_DEPS);
-			for (String dd : deps)
+			List<String> deps = new ArrayList<String>();
+			for (String dd : STARDIST_DEPS)
 				deps.add(dd.equals("tensorflow-macos<2.11") ? dd.replace("-macos", "") : dd);
 			stardistPythonInstalled = mamba.checkAllDependenciesInEnv("stardist", deps);
 		} catch (MambaInstallException e) {
