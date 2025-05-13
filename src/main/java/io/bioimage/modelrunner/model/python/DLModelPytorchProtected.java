@@ -378,10 +378,10 @@ public class DLModelPytorchProtected extends BaseModel {
 		code += MODEL_VAR_NAME + "=" + callable + "(" + codeForKwargs()  + ")" + System.lineSeparator();
 		code += "try:" + System.lineSeparator()
 				+ "  " + MODEL_VAR_NAME + ".load_state_dict("
-				+ "torch.load('" + this.weightsPath + "', map_location=" + MODEL_VAR_NAME  + ".device))" + System.lineSeparator()
+				+ "torch.load(r'" + this.weightsPath + "', map_location=" + MODEL_VAR_NAME  + ".device))" + System.lineSeparator()
 				+ "except:" + System.lineSeparator()
 				+ "  " + MODEL_VAR_NAME + ".load_state_dict("
-				+ "torch.load('" + this.weightsPath + "', map_location=torch.device('cpu')))" + System.lineSeparator();
+				+ "torch.load(r'" + this.weightsPath + "', map_location=torch.device('cpu')))" + System.lineSeparator();
 		code += "globals()['" + MODEL_VAR_NAME + "'] = " + MODEL_VAR_NAME + System.lineSeparator();
 		return code;
 	}
