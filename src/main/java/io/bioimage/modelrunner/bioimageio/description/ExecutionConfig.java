@@ -19,6 +19,7 @@
  */
 package io.bioimage.modelrunner.bioimageio.description;
 
+import java.util.HashMap;
 import java.util.Map;
 
 import io.bioimage.modelrunner.bioimageio.description.deepimagej.DeepImageJExecutionConfig;
@@ -30,6 +31,8 @@ import io.bioimage.modelrunner.bioimageio.description.deepimagej.DeepImageJExecu
  */
 public class ExecutionConfig
 {
+	
+	private static int FRIEND_COUNT = 0;
 
     /**
      * Creates an execution configuration instance with the config element map from the yaml file.
@@ -40,8 +43,12 @@ public class ExecutionConfig
      */
     public static ExecutionConfig build(Map<String, Object> yamlFieldElements)
     {
-        if (yamlFieldElements == null)
-            return null;
+        if (yamlFieldElements == null) {
+        	yamlFieldElements = new HashMap<String, Object>();
+        	Map<String, String> bmzConfig = new HashMap<String, String>();
+        	bmzConfig.put("nickname", "friend-" + (FRIEND_COUNT ++));
+        	yamlFieldElements.put("bioimageio", bmzConfig);
+        }
 
         ExecutionConfig config = new ExecutionConfig();
         config.specMap = yamlFieldElements;

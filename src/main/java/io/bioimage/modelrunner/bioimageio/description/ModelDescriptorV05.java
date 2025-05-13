@@ -147,6 +147,8 @@ public class ModelDescriptorV05 extends ModelDescriptor
 
 	@Override
 	protected String findID() {
+		if (yamlElements.get("config") == null && this.config.getSpecMap() != null)
+			yamlElements.put("config", this.config.getSpecMap());
 		if (yamlElements.get("config") != null && yamlElements.get("config") instanceof Map) {
     		Map<String, Object> configMap = (Map<String, Object>) yamlElements.get("config");
     		if (configMap.get("bioimageio") != null && configMap.get("bioimageio") instanceof Map) {
