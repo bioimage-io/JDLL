@@ -364,10 +364,10 @@ public class DLModelPytorchProtected extends BaseModel {
 				copyAndReplace(modelFile, newModelFile);
 				moduleName = new File(newModelFile).getName();
 				moduleName = moduleName.substring(0, moduleName.length() - 3);
-				addPath = String.format("sys.path.append(os.path.abspath('%s'))", new File(newModelFile).getParentFile().getAbsolutePath());
+				addPath = String.format("sys.path.append(os.path.abspath(r'%s'))", new File(newModelFile).getParentFile().getAbsolutePath());
 				importStr = String.format("from %s import %s", moduleName, callable);
 			} else {
-				addPath = String.format("sys.path.append(os.path.abspath('%s'))", new File(modelFile).getParentFile().getAbsolutePath());
+				addPath = String.format("sys.path.append(os.path.abspath(r'%s'))", new File(modelFile).getParentFile().getAbsolutePath());
 				importStr = String.format("from %s import %s", moduleName, callable);
 			}
 		} else {
