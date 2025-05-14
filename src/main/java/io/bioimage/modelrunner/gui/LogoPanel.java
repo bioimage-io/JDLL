@@ -71,7 +71,11 @@ public class LogoPanel extends JPanel{
 
     // listener registration
     public void addPropertyChangeListener(PropertyChangeListener l) {
-        pcs.addPropertyChangeListener(l);
+    	if (pcs != null) {
+            pcs.addPropertyChangeListener(l);
+        } else {
+            super.addPropertyChangeListener(l);
+        }
     }
     
     public void removePropertyChangeListener(PropertyChangeListener l) {
