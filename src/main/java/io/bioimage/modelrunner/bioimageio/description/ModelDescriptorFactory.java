@@ -55,6 +55,8 @@ public class ModelDescriptorFactory {
 	private static final String V04_START = "0.4";
 	
 	private static final String FORMAT = "format_version";
+	
+	public static String TEMP_DIR;
     
     /**
      * Opens the provided file and builds an instance of {@link ModelDescriptor} from it.
