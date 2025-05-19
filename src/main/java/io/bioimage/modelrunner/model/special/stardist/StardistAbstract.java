@@ -289,6 +289,12 @@ public abstract class StardistAbstract extends BaseModel {
 			@Override public String base() { return new Mamba(INSTALLATION_DIR).getEnvsDir() + File.separator + "stardist"; }
 			};
 		python = env.python();
+		python.setEnvVar("PATH", null);
+		python.setEnvVar("path", null);
+		python.setEnvVar("PYTHONHOME", null);
+		python.setEnvVar("pythonhome", null);
+		python.setEnvVar("PYTHONPATH", null);
+		python.setEnvVar("pythonpath", null);
 		python.debug(System.err::println);
 	}
 	
