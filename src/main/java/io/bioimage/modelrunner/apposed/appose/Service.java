@@ -115,6 +115,11 @@ public class Service implements AutoCloseable {
 
 		String prefix = "Appose-Service-" + serviceID;
 		ProcessBuilder pb = new ProcessBuilder(args).directory(cwd);
+		pb.environment().keySet().removeIf(key ->
+		     key.equalsIgnoreCase("PATH")
+		  || key.equalsIgnoreCase("PYTHONPATH")
+		  || key.equalsIgnoreCase("PYTHONHOME")
+		);
 		envMap.entrySet().stream().forEach(ee -> {
 			if (ee.getValue() == null && pb.environment().get(ee.getKey()) != null)
 				pb.environment().remove(ee.getKey());
