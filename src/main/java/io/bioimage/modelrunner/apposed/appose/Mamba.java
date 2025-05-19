@@ -991,7 +991,12 @@ public class Mamba {
 		if ( PlatformDetection.isWindows() )
 		{
 			final Map< String, String > envs = builder.environment();
-			envs.put( "Path", envDir + ";" + envs.get( "Path" ) );
+			envs.keySet().removeIf(key ->
+			     key.equalsIgnoreCase("PATH")
+			  || key.equalsIgnoreCase("PYTHONPATH")
+			  || key.equalsIgnoreCase("PYTHONHOME")
+			);
+			envs.put( "Path", envDir + ";");
 			envs.put( "Path", Paths.get( envDir, "Scripts" ).toString() + ";" + envs.get( "Path" ) );
 			envs.put( "Path", Paths.get( envDir, "Library" ).toString() + ";" + envs.get( "Path" ) );
 			envs.put( "Path", Paths.get( envDir, "Library", "Bin" ).toString() + ";" + envs.get( "Path" ) );
@@ -1042,11 +1047,11 @@ public class Mamba {
 		if ( PlatformDetection.isWindows() )
 		{
 			final Map< String, String > envs = builder.environment();
-			for (String kk : envs.keySet()) {
-				if (kk.toLowerCase().equals("path") || kk.toLowerCase().equals("pythonpath")
-						 || kk.toLowerCase().equals("pythonhome"))
-					envs.remove(kk);
-			}
+			envs.keySet().removeIf(key ->
+			     key.equalsIgnoreCase("PATH")
+			  || key.equalsIgnoreCase("PYTHONPATH")
+			  || key.equalsIgnoreCase("PYTHONHOME")
+			);
 			final String envDir = envFile.getAbsolutePath();
 			envs.put( "Path", envDir + ";");
 			envs.put( "Path", Paths.get( envDir, "Scripts" ).toString() + ";" + envs.get( "Path" ) );
