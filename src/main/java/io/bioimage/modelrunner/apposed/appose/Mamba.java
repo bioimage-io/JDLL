@@ -1042,13 +1042,16 @@ public class Mamba {
 		if ( PlatformDetection.isWindows() )
 		{
 			final Map< String, String > envs = builder.environment();
+			for (String kk : envs.keySet()) {
+				if (kk.toLowerCase().equals("path") || kk.toLowerCase().equals("pythonpath")
+						 || kk.toLowerCase().equals("pythonhome"))
+					envs.remove(kk);
+			}
 			final String envDir = envFile.getAbsolutePath();
 			envs.put( "Path", envDir + ";");
 			envs.put( "Path", Paths.get( envDir, "Scripts" ).toString() + ";" + envs.get( "Path" ) );
 			envs.put( "Path", Paths.get( envDir, "Library" ).toString() + ";" + envs.get( "Path" ) );
 			envs.put( "Path", Paths.get( envDir, "Library", "Bin" ).toString() + ";" + envs.get( "Path" ) );
-			envs.remove("pythonpath");
-			envs.remove("pythonhome");
 		}
 		// TODO find way to get env vars in micromamba builder.environment().putAll( getEnvironmentVariables( envName ) );
 		if ( builder.command( cmd ).start().waitFor() != 0 )
