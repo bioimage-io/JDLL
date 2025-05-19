@@ -618,7 +618,7 @@ public abstract class StardistAbstract extends BaseModel {
 					.map(dd -> dd.contains("<") | dd.contains(">") ? "\"" + dd + "\"": dd)
 					.collect(Collectors.toList()));
 			mamba.pipInstallIn("stardist", STARDIST_DEPS_PIP.stream()
-					//.map(dd -> dd.contains("<") | dd.contains(">") ? "\"" + dd + "\"": dd)
+					.map(dd -> (PlatformDetection.isWindows() && (dd.contains("<") | dd.contains(">"))) ? "\"" + dd + "\"": dd)
 					.collect(Collectors.toList()).toArray(new String[STARDIST_DEPS_PIP.size()]));
 		};
 	}
