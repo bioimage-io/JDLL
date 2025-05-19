@@ -1043,10 +1043,12 @@ public class Mamba {
 		{
 			final Map< String, String > envs = builder.environment();
 			final String envDir = envFile.getAbsolutePath();
-			envs.put( "Path", envDir + ";" + envs.get( "Path" ) );
+			envs.put( "Path", envDir + ";");
 			envs.put( "Path", Paths.get( envDir, "Scripts" ).toString() + ";" + envs.get( "Path" ) );
 			envs.put( "Path", Paths.get( envDir, "Library" ).toString() + ";" + envs.get( "Path" ) );
 			envs.put( "Path", Paths.get( envDir, "Library", "Bin" ).toString() + ";" + envs.get( "Path" ) );
+			envs.remove("pythonpath");
+			envs.remove("pythonhome");
 		}
 		// TODO find way to get env vars in micromamba builder.environment().putAll( getEnvironmentVariables( envName ) );
 		if ( builder.command( cmd ).start().waitFor() != 0 )
