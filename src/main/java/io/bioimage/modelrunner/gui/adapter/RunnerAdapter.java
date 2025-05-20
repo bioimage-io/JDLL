@@ -34,6 +34,7 @@ import org.apache.commons.compress.archivers.ArchiveException;
 import io.bioimage.modelrunner.apposed.appose.MambaInstallException;
 import io.bioimage.modelrunner.apposed.appose.Types;
 import io.bioimage.modelrunner.bioimageio.description.ModelDescriptor;
+import io.bioimage.modelrunner.bioimageio.description.ModelDescriptorFactory;
 import io.bioimage.modelrunner.bioimageio.description.TensorSpec;
 import io.bioimage.modelrunner.bioimageio.description.exceptions.ModelSpecsException;
 import io.bioimage.modelrunner.bioimageio.description.weights.ModelWeight;
@@ -48,14 +49,14 @@ import io.bioimage.modelrunner.model.python.DLModelPytorchProtected;
 import io.bioimage.modelrunner.model.special.stardist.Stardist2D;
 import io.bioimage.modelrunner.model.special.stardist.StardistAbstract;
 import io.bioimage.modelrunner.tensor.Tensor;
-import io.bioimage.modelrunner.versionmanagement.InstalledEngines;
+import io.bioimage.modelrunner.utils.Constants;
 import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.type.NativeType;
 import net.imglib2.type.numeric.RealType;
 
 public abstract class RunnerAdapter implements Closeable {
 
-	protected final ModelDescriptor descriptor;
+	protected ModelDescriptor descriptor;
 	
 	protected final String enginesPath;
 	
@@ -155,8 +156,14 @@ public abstract class RunnerAdapter implements Closeable {
 	private void initWithEnginesPath(boolean install) throws IOException, LoadEngineException, InterruptedException, RuntimeException, MambaInstallException, ArchiveException, URISyntaxException {
 		List<String> wList = descriptor.getWeights().getAllSuportedWeightNames();
 		if (descriptor.getModelFamily().equals(ModelDescriptor.STARDIST)) {
-			if (install && !StardistAbstract.isInstalled())
+			boolean installed = StardistAbstract.isInstalled();
+			if (install && !installed)
 				StardistAbstract.installRequirements();
+			else if (!installed) {
+				descriptor = ModelDescriptorFactory.readFromLocalFile(descriptor.getModelPath() + File.separator + Constants.RDF_FNAME, false);
+				initWithEnginesPath(install);
+				return;
+			}
 			model = Stardist2D.fromBioimageioModel(descriptor);
 		} else if (descriptor.getModelFamily().equals(ModelDescriptor.BIOIMAGEIO)
 				&& !(wList.size() == 1 && wList.contains(ModelWeight.getPytorchID()))) {
@@ -180,8 +187,14 @@ public abstract class RunnerAdapter implements Closeable {
 	private void initWithEnginesClassLoader(boolean install) throws LoadEngineException, IOException, InterruptedException, RuntimeException, MambaInstallException, ArchiveException, URISyntaxException {
 		List<String> wList = descriptor.getWeights().getAllSuportedWeightNames();
 		if (descriptor.getModelFamily().equals(ModelDescriptor.STARDIST)) {
-			if (install && !StardistAbstract.isInstalled())
+			boolean installed = StardistAbstract.isInstalled();
+			if (install && !installed)
 				StardistAbstract.installRequirements();
+			else if (!installed) {
+				descriptor = ModelDescriptorFactory.readFromLocalFile(descriptor.getModelPath() + File.separator + Constants.RDF_FNAME, false);
+				initWithEnginesPath(install);
+				return;
+			}
 			model = Stardist2D.fromBioimageioModel(descriptor);
 		} else if (descriptor.getModelFamily().equals(ModelDescriptor.BIOIMAGEIO)
 				&& !(wList.size() == 1 && wList.contains(ModelWeight.getPytorchID()))) {

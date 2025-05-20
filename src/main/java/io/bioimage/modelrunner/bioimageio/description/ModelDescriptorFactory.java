@@ -75,6 +75,27 @@ public class ModelDescriptorFactory {
     }
     
     /**
+     * Opens the provided file and builds an instance of {@link ModelDescriptor} from it.
+     * 
+     * @param modelFile
+     * 	Model descriptor file.
+     * @param specialModel
+     * 	whether to read bioimage.io models that can be special models (stardist) as the standard
+     * 	bioimage.io Java model or as special models with their custom specs
+     * @return The instance of the model descriptor.
+     * @throws IOException if any of the required files is incorrect or corrupted
+     * @throws FileNotFoundException if any of the required files is missing
+     */
+    public static ModelDescriptor readFromLocalFile(String modelFile, boolean specialModel) throws FileNotFoundException, IOException
+    {
+    	Map<String, Object> yamlElements = YAMLUtils.load(modelFile);
+        // TODO yamlElements.put(fromLocalKey, true);
+    	// TODO yamlElements.put(modelPathKey, new File(modelFile).getParent());
+    	yamlElements.put("modelPath", new File(modelFile).getParentFile().getAbsolutePath());
+        return fromMap(yamlElements, specialModel);
+    }
+    
+    /**
      * Reads a yaml text String and builds an instance of {@link ModelDescriptorFactory} from it.
      * 
      * @param yamlText
@@ -90,7 +111,7 @@ public class ModelDescriptorFactory {
 
     private static ModelDescriptor fromMap(Map<String,Object> yamlElements)
     {
-    	return fromMap(yamlElements, false);
+    	return fromMap(yamlElements, true);
     }
 
     private static ModelDescriptor fromMap(Map<String,Object> yamlElements, boolean specialModel)
