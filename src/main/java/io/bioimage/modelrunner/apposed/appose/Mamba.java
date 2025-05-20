@@ -31,12 +31,10 @@ import org.apache.commons.compress.archivers.ArchiveException;
 import com.sun.jna.Platform;
 
 import io.bioimage.modelrunner.apposed.appose.CondaException.EnvironmentExistsException;
-import io.bioimage.modelrunner.bioimageio.description.ModelDescriptorFactory;
 import io.bioimage.modelrunner.download.FileDownloader;
 import io.bioimage.modelrunner.system.PlatformDetection;
 
 import java.io.BufferedReader;
-import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
@@ -46,9 +44,7 @@ import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.net.URISyntaxException;
 import java.net.URL;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
-import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -1007,8 +1003,6 @@ public class Mamba {
 		}
 		// TODO find way to get env vars in micromamba builder.environment().putAll( getEnvironmentVariables( envName ) );
 		runPythonIn(builder.command( cmd ), this.consoleConsumer, this.errConsumer);
-		// TODO remove if ( builder.command( cmd ).start().waitFor() != 0 )
-		// TODO remove    throw new RuntimeException("Error executing the following command: " + builder.command());
 	}
 
 	/**
@@ -1061,47 +1055,30 @@ public class Mamba {
 			envs.put( "Path", Paths.get( envDir, "Library" ).toString() + ";" + envs.get( "Path" ) );
 			envs.put( "Path", Paths.get( envDir, "Library", "Bin" ).toString() + ";" + envs.get( "Path" ) );
 		}
-        boolean hasConsole = (System.console() != null);
-        if (hasConsole) {
-            // We’ve got a terminal session – let Python write straight to it.
-        	builder.inheritIO();
-            Process p = builder.start();
-            int exitCode = p.waitFor();
-            if (exitCode != 0) throw new RuntimeException("Python → exit "+exitCode);
-        } else {
-            // No console (CellProfiler, GUI launch, etc.) – drain the streams yourself.
-        	builder.redirectErrorStream(true);
-            Process p = builder.start();
-            String[] lines = new String[1];
-            Thread reader = new Thread(() -> {
-              try (BufferedReader r = new BufferedReader(
-                     new InputStreamReader(p.getInputStream()))) {
-                String line;
-                lines[0] = "";
-                while ((line = r.readLine()) != null) {
-                  lines[0] += line;
-                }
-              } catch (IOException e) {
-                e.printStackTrace();
-              }
-            }, "Python-stdout-reader");
-            reader.setDaemon(true);
-            reader.start();
 
-            int exitCode = p.waitFor();
-            reader.join();  // wait for final log lines
-            if (exitCode != 0) throw new RuntimeException("Python → exit "+exitCode);
-            
-            try {
-                Files.write(
-                    Paths.get(ModelDescriptorFactory.TEMP_DIR + File.separator + UUID.randomUUID().toString() + ".txt"),
-                    lines[0].toString().getBytes(StandardCharsets.UTF_8)
-                );
-            }
-            catch (IOException e) {
-                e.printStackTrace();
-            }
-        }
+        Process p = builder.command( cmd ).start();
+        Thread reader = new Thread(() -> {
+        	try (
+        			BufferedReader or = new BufferedReader(new InputStreamReader(p.getInputStream()));
+        			BufferedReader er = new BufferedReader(new InputStreamReader(p.getErrorStream()));
+        			) {
+        		String line = null;
+        		String errLine = null;
+        		while ((line = or.readLine()) != null || (errLine = er.readLine()) != null ) {
+        			if (line != null) System.out.println(line);
+        			if (errLine != null) System.out.println(errLine);
+        		}
+        	}  catch (IOException e) {
+        		e.printStackTrace();
+        	}
+        }, "stdout-stderr-reader");
+        reader.setDaemon(true);
+        reader.start();
+
+        int exitCode = p.waitFor();
+        reader.join();  // wait for final log lines
+        if (exitCode != 0)
+        	throw new RuntimeException("Error executing the following command: " + builder.command());
         /**
         if ( builder.command( cmd ).start().waitFor() != 0 )
 			throw new RuntimeException("Error executing the following command: " + builder.command());
@@ -1491,15 +1468,6 @@ public class Mamba {
 				return true;
 			}
 		}).collect(Collectors.toList());
-		try {
-            Files.write(
-                Paths.get(ModelDescriptorFactory.TEMP_DIR + File.separator + "python_env.txt"),
-                uninstalled.toString().getBytes(StandardCharsets.UTF_8)
-            );
-        }
-        catch (IOException e) {
-            e.printStackTrace();
-        }
 		return uninstalled;
 	}
 	
