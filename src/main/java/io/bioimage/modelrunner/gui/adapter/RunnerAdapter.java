@@ -20,6 +20,7 @@
 package io.bioimage.modelrunner.gui.adapter;
 
 import java.io.Closeable;
+import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.URISyntaxException;
@@ -74,13 +75,13 @@ public abstract class RunnerAdapter implements Closeable {
 
 	protected RunnerAdapter(ModelDescriptor descriptor) {
 		this.descriptor = descriptor;
-		this.enginesPath = null;
+		this.enginesPath = new File("engines").getAbsolutePath();
 		this.classLoader = null;
 	}
 
 	protected RunnerAdapter(ModelDescriptor descriptor, ClassLoader classloader) {
 		this.descriptor = descriptor;
-		this.enginesPath = null;
+		this.enginesPath = new File("engines").getAbsolutePath();
 		this.classLoader = classloader;
 	}
 
@@ -112,11 +113,7 @@ public abstract class RunnerAdapter implements Closeable {
 		if (closed)
 			throw new RuntimeException("The model has already been closed");
 		try {
-			if (this.enginesPath == null && this.classLoader == null)
-				this.initAllDefault(installIfMissing);
-			else if (this.enginesPath == null)
-				this.initWithClassLoader(installIfMissing);
-			else if (this.classLoader == null)
+			if (this.classLoader == null)
 				this.initWithEnginesPath(installIfMissing);
 			else
 				this.initWithEnginesClassLoader(installIfMissing);
@@ -155,31 +152,6 @@ public abstract class RunnerAdapter implements Closeable {
 		return this.closed;
 	}
 	
-	private void initAllDefault(boolean install) throws LoadEngineException, IOException, InterruptedException, RuntimeException, MambaInstallException, ArchiveException, URISyntaxException {
-		List<String> wList = descriptor.getWeights().getAllSuportedWeightNames();
-		if (descriptor.getModelFamily().equals(ModelDescriptor.STARDIST)) {
-			if (install && !StardistAbstract.isInstalled())
-				StardistAbstract.installRequirements();
-			model = Stardist2D.fromBioimageioModel(descriptor);
-		} else if (descriptor.getModelFamily().equals(ModelDescriptor.BIOIMAGEIO)
-				&& !(wList.size() == 1 && wList.contains(ModelWeight.getPytorchID()))) {
-			if (install) {
-				Consumer<Double> cons = (dd) -> {
-					double progress = Math.round(dd * 10000) / 100;
-					System.out.println("Downloading engines for " + descriptor.getName() + ":" + progress + "%");
-				};
-				EngineInstall.installEnginesForModelInDir(descriptor, enginesPath, cons);
-			}
-			model = BioimageIoModelJava.createBioimageioModel(descriptor.getModelPath());
-		} else if (descriptor.getModelFamily().equals(ModelDescriptor.BIOIMAGEIO)) {
-			if (install && !DLModelPytorchProtected.isInstalled())
-				DLModelPytorchProtected.installRequirements();
-			model = BioimageIoModelPytorch.create(descriptor);
-		} else {
-			throw new IllegalArgumentException("Model not supported");
-		}
-	}
-	
 	private void initWithEnginesPath(boolean install) throws IOException, LoadEngineException, InterruptedException, RuntimeException, MambaInstallException, ArchiveException, URISyntaxException {
 		List<String> wList = descriptor.getWeights().getAllSuportedWeightNames();
 		if (descriptor.getModelFamily().equals(ModelDescriptor.STARDIST)) {
@@ -194,31 +166,6 @@ public abstract class RunnerAdapter implements Closeable {
 					System.out.println("Downloading engines for " + descriptor.getName() + ":" + progress + "%");
 				};
 				EngineInstall.installEnginesForModelInDir(descriptor, enginesPath, cons);
-			}
-			model = BioimageIoModelJava.createBioimageioModel(descriptor.getModelPath(), enginesPath);
-		} else if (descriptor.getModelFamily().equals(ModelDescriptor.BIOIMAGEIO)) {
-			if (install && !DLModelPytorchProtected.isInstalled())
-				DLModelPytorchProtected.installRequirements();
-			model = BioimageIoModelPytorch.create(descriptor);
-		} else {
-			throw new IllegalArgumentException("Model not supported");
-		}
-	}
-	
-	private void initWithClassLoader(boolean install) throws LoadEngineException, IOException, InterruptedException, RuntimeException, MambaInstallException, ArchiveException, URISyntaxException {
-		List<String> wList = descriptor.getWeights().getAllSuportedWeightNames();
-		if (descriptor.getModelFamily().equals(ModelDescriptor.STARDIST)) {
-			if (install && !StardistAbstract.isInstalled())
-				StardistAbstract.installRequirements();
-			model = Stardist2D.fromBioimageioModel(descriptor);
-		} else if (descriptor.getModelFamily().equals(ModelDescriptor.BIOIMAGEIO)
-				&& !(wList.size() == 1 && wList.contains(ModelWeight.getPytorchID()))) {
-			if (install) {
-				Consumer<Double> cons = (dd) -> {
-					double progress = Math.round(dd * 10000) / 100;
-					System.out.println("Downloading engines for " + descriptor.getName() + ":" + progress + "%");
-				};
-				EngineInstall.installEnginesForModelInDir(descriptor, InstalledEngines.getEnginesDir(), cons);
 			}
 			model = BioimageIoModelJava.createBioimageioModel(descriptor.getModelPath(), enginesPath);
 		} else if (descriptor.getModelFamily().equals(ModelDescriptor.BIOIMAGEIO)) {
