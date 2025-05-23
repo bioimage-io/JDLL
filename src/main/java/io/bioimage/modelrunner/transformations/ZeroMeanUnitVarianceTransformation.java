@@ -267,11 +267,10 @@ public class ZeroMeanUnitVarianceTransformation extends AbstractTensorTransforma
 	private < R extends RealType< R > & NativeType< R > > void notFixedAxesMeanStd( final Tensor< R > output, String axesOfInterest) {
 		long[] start = new long[output.getData().numDimensions()];
 		long[] dims = output.getData().dimensionsAsLongArray();
-		long[] indOfDims = new long[dims.length - axesOfInterest.length()];
-		long[] sizeOfDims = new long[dims.length - axesOfInterest.length()];
-		for (int i = 0; i < dims.length; i ++) {
-			if (axesOfInterest.indexOf(output.getAxesOrderString().split("")[i]) == -1)
-				indOfDims[i] = i;
+		long[] indOfDims = new long[axesOfInterest.length()];
+		long[] sizeOfDims = new long[axesOfInterest.length()];
+		for (int i = 0; i < indOfDims.length; i ++) {
+			indOfDims[i] = output.getAxesOrderString().indexOf(axesOfInterest.split("")[i]);
 		}
 		for (int i = 0; i < sizeOfDims.length; i ++) {
 			sizeOfDims[i] = dims[(int) indOfDims[i]];
@@ -298,11 +297,10 @@ public class ZeroMeanUnitVarianceTransformation extends AbstractTensorTransforma
 	private < R extends RealType< R > & NativeType< R > > void fixedAxesMeanStd( final Tensor< R > output, String axesOfInterest) {
 		long[] start = new long[output.getData().numDimensions()];
 		long[] dims = output.getData().dimensionsAsLongArray();
-		long[] indOfDims = new long[dims.length - axesOfInterest.length()];
-		long[] sizeOfDims = new long[dims.length - axesOfInterest.length()];
-		for (int i = 0; i < dims.length; i ++) {
-			if (axesOfInterest.indexOf(output.getAxesOrderString().split("")[i]) == -1)
-				indOfDims[i] = i;
+		long[] indOfDims = new long[axesOfInterest.length()];
+		long[] sizeOfDims = new long[axesOfInterest.length()];
+		for (int i = 0; i < indOfDims.length; i ++) {
+			indOfDims[i] = output.getAxesOrderString().indexOf(axesOfInterest.split("")[i]);
 		}
 		for (int i = 0; i < sizeOfDims.length; i ++) {
 			sizeOfDims[i] = dims[(int) indOfDims[i]];

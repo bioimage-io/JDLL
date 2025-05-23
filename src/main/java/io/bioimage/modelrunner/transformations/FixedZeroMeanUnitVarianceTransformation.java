@@ -40,6 +40,13 @@ import net.imglib2.view.Views;
 public class FixedZeroMeanUnitVarianceTransformation extends AbstractTensorTransformation
 {
 	
+	// TODO change fixedAxesMeanStd method to what ZeroMeanUnitVarianceTransformation does once n2v has figured it
+	// TODO change fixedAxesMeanStd method to what ZeroMeanUnitVarianceTransformation does once n2v has figured it
+	// TODO change fixedAxesMeanStd method to what ZeroMeanUnitVarianceTransformation does once n2v has figured it
+	// TODO change fixedAxesMeanStd method to what ZeroMeanUnitVarianceTransformation does once n2v has figured it
+	// TODO change fixedAxesMeanStd method to what ZeroMeanUnitVarianceTransformation does once n2v has figured it
+	// TODO change fixedAxesMeanStd method to what ZeroMeanUnitVarianceTransformation does once n2v has figured it
+	
 	private static String name = "fixed_zero_mean_unit_variace";
 	private Double meanDouble;
 	private Double stdDouble;
