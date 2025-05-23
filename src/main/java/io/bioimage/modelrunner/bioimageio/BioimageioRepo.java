@@ -209,9 +209,9 @@ public class BioimageioRepo {
 				// the descriptor from the yaml file
 				if (verbose) {
 					String errMSg = "Could not load descriptor for the Bioimage.io model " + jsonResource.get("concept") + ".";
+					errMSg += "\n" + ex.getMessage();
 					Log.addProgressAndShowInTerminal(consumer, errMSg, true);
 				}
-                ex.printStackTrace();
 			}
 		}
 		return MODELS;
