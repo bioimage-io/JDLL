@@ -32,7 +32,7 @@ import io.bioimage.modelrunner.bioimageio.description.deepimagej.DeepImageJExecu
 public class ExecutionConfig
 {
 	
-	private static int FRIEND_COUNT = 0;
+	protected static int FRIEND_COUNT = 0;
 
     /**
      * Creates an execution configuration instance with the config element map from the yaml file.

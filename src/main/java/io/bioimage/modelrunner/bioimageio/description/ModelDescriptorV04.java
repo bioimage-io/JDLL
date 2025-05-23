@@ -185,6 +185,8 @@ public class ModelDescriptorV04 extends ModelDescriptor
     				return (String) bioimageMap.get("nickname");
     		}
     	}
+		if (yamlElements.get("id") == null)
+			return ("friend-" + (ExecutionConfig.FRIEND_COUNT ++));
     	return (String) yamlElements.get("id");
 	}
 
