@@ -118,17 +118,22 @@ public class DLModelPytorchProtected extends BaseModel {
 				&& PlatformDetection.getArch().equals(PlatformDetection.ARCH_X86_64) && !PlatformDetection.isUsingRosseta())
 			BIAPY_PIP_DEPS_TORCH = Arrays.asList(new String[] {"torch==2.2.2", 
 					"torchvision==0.17.2", "torchaudio==2.2.2"});
-		else if (PlatformDetection.isWindows())
-			BIAPY_PIP_DEPS_TORCH = Arrays.asList(new String[] {"torch==2.2.2", 
-					"torchvision==0.17.2", "torchaudio==2.2.2", "msvc-runtime==14.42.34433"});
 		else
 			BIAPY_PIP_DEPS_TORCH = Arrays.asList(new String[] {"torch==2.4.0", 
 					"torchvision==0.19.0", "torchaudio==2.4.0"});
 	}
 	
-	private static final List<String> BIAPY_PIP_DEPS = Arrays.asList(new String[] {"timm==1.0.14", "pytorch-msssim==1.0.0", 
-			"torchmetrics==1.4.3", "cellpose==3.1.1.1", "scipy==1.15.2", "torch-fidelity==0.3.0",
-			"careamics", "biapy==3.5.10", "appose"});
+	private static final List<String> BIAPY_PIP_DEPS;
+	static {
+		if (PlatformDetection.isWindows())
+			BIAPY_PIP_DEPS = Arrays.asList(new String[] {"timm==1.0.14", "msvc-runtime==14.42.34433",
+					"pytorch-msssim==1.0.0", "torchmetrics==1.4.3", "cellpose==3.1.1.1", "scipy==1.15.2", "torch-fidelity==0.3.0",
+					"careamics", "biapy==3.5.10", "appose"});
+		else
+			BIAPY_PIP_DEPS = Arrays.asList(new String[] {"timm==1.0.14",
+					"pytorch-msssim==1.0.0", "torchmetrics==1.4.3", "cellpose==3.1.1.1", "scipy==1.15.2", "torch-fidelity==0.3.0",
+					"careamics", "biapy==3.5.10", "appose"});
+	}
 	
 	private static final List<String> BIAPY_PIP_ARGS = Arrays.asList(new String[] {"--index-url", "https://download.pytorch.org/whl/cpu"});
 		
