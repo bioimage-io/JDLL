@@ -121,6 +121,7 @@ public class Service implements AutoCloseable {
 		  || key.equalsIgnoreCase("PYTHONHOME")
 		);
 		pb.environment().put("PATH", "");
+		pb.environment().put("PYTHONHOME", "");
 		envMap.entrySet().stream().forEach(ee -> {
 			if (ee.getValue() == null && pb.environment().get(ee.getKey()) != null)
 				pb.environment().remove(ee.getKey());

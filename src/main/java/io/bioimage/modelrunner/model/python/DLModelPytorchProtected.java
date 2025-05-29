@@ -279,12 +279,6 @@ public class DLModelPytorchProtected extends BaseModel {
 			@Override public String base() { return envPath; }
 			};
 		python = env.python();
-		python.setEnvVar("PATH", null);
-		python.setEnvVar("path", null);
-		python.setEnvVar("PYTHONHOME", null);
-		python.setEnvVar("pythonhome", null);
-		python.setEnvVar("PYTHONPATH", null);
-		python.setEnvVar("pythonpath", null);
 		python.debug(System.err::println);
 	}
 	
@@ -502,12 +496,6 @@ public class DLModelPytorchProtected extends BaseModel {
 	throws RunModelException {
 		Map<String, RandomAccessibleInterval<R>> outMap;
 		try {
-			python.setEnvVar("PATH", null);
-			python.setEnvVar("path", null);
-			python.setEnvVar("PYTHONHOME", null);
-			python.setEnvVar("pythonhome", null);
-			python.setEnvVar("PYTHONPATH", null);
-			python.setEnvVar("pythonpath", null);
 			Task task = python.task(code);
 			task.waitFor();
 			if (task.status == TaskStatus.CANCELED)
