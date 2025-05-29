@@ -128,7 +128,7 @@ public class DLModelPytorchProtected extends BaseModel {
 		if (PlatformDetection.isWindows())
 			BIAPY_PIP_DEPS = Arrays.asList(new String[] {"timm==1.0.14", "msvc-runtime==14.42.34433",
 					"pytorch-msssim==1.0.0", "torchmetrics==1.4.3", "cellpose==3.1.1.1", "scipy==1.15.2", "torch-fidelity==0.3.0",
-					"careamics", "biapy==3.5.10", "imgaug>=0.4.0", "", "appose"});
+					"careamics", "biapy==3.5.10", "appose"});
 		else if (PlatformDetection.isMacOS() && PlatformDetection.getOSVersion().getMajor() < 14)
 			BIAPY_PIP_DEPS = Arrays.asList(new String[] {"timm==1.0.14",
 					"pytorch-msssim==1.0.0", "torchmetrics==1.4.3", "cellpose==3.1.1.1", "scipy==1.15.2", "torch-fidelity==0.3.0",
