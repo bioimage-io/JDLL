@@ -158,24 +158,6 @@ public class PlatformDetection
     public static boolean isMacOS() {
     	return getOs().equals(PlatformDetection.OS_OSX);
     }
-    
-    private static String getPythonArchDetectionCommand() {
-    	return PYTHON_ARCH_DETECTION_COMMAND;
-    }
-    
-    private static String executeUnameM() {
-    	if (UNAME_M != null)
-    		return UNAME_M;
-    	Process proc;
-		try {
-			proc = Runtime.getRuntime().exec(
-					new String[] {"bash", "-c", "uname -m"});
-			UNAME_M = archMap.get(waitProcessExecutionAndGetOutputText(proc));
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
-		return UNAME_M;
-    }
 	
     private static String waitProcessExecutionAndGetOutputText(Process proc) throws IOException {
 		BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(proc.getInputStream()));
@@ -204,6 +186,10 @@ public class PlatformDetection
 	    return text;
 	}
 	
+	public Version getOSVersion() {
+		return Version.parse(System.getProperty("os.version"));
+	}
+	
 	/**
 	 * Get the major Java version the program is currently running on
 	 * @return the major Java version the program is running on
@@ -220,5 +206,9 @@ public class PlatformDetection
 	    } 
 	    JAVA_VERSION = Integer.parseInt(version);
 	    return JAVA_VERSION;
+	}
+	
+	public static void main(String[] args) {
+		System.out.println(System.getProperty("os.version"));
 	}
 }
