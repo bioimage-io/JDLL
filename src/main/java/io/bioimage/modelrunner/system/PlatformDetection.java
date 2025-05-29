@@ -186,7 +186,7 @@ public class PlatformDetection
 	    return text;
 	}
 	
-	public Version getOSVersion() {
+	public static Version getOSVersion() {
 		return Version.parse(System.getProperty("os.version"));
 	}
 	

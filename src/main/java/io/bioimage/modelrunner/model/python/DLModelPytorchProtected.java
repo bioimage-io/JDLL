@@ -128,7 +128,14 @@ public class DLModelPytorchProtected extends BaseModel {
 		if (PlatformDetection.isWindows())
 			BIAPY_PIP_DEPS = Arrays.asList(new String[] {"timm==1.0.14", "msvc-runtime==14.42.34433",
 					"pytorch-msssim==1.0.0", "torchmetrics==1.4.3", "cellpose==3.1.1.1", "scipy==1.15.2", "torch-fidelity==0.3.0",
-					"careamics", "biapy==3.5.10", "appose"});
+					"careamics", "biapy==3.5.10", "imgaug>=0.4.0", "", "appose"});
+		else if (PlatformDetection.isMacOS() && PlatformDetection.getOSVersion().getMajor() < 14)
+			BIAPY_PIP_DEPS = Arrays.asList(new String[] {"timm==1.0.14",
+					"pytorch-msssim==1.0.0", "torchmetrics==1.4.3", "cellpose==3.1.1.1", "scipy==1.15.2", "torch-fidelity==0.3.0",
+					"careamics", "pooch>=1.8.1", "numpy<2", "imagecodecs>=2024.1.1", "bioimageio.core==0.8.0", "zarr>=2.16.1",
+					"h5py>=3.9.0", "tensorboardX>=2.6.2.2", "torchinfo>=1.8.0", "pandas>=1.5.3", "opencv-python>=4.8.0.76",
+					"fill-voids>=2.0.6", "edt>=2.3.2", "scikit-image>=0.21.0", "tqdm>=4.66.1", "yacs>=0.1.8",
+					"pydot>=1.4.2", "scikit-learn>=1.4.0", "matplotlib>=3.7.1", "imgaug>=0.4.0", "xarray==2025.1.2", "appose"});
 		else
 			BIAPY_PIP_DEPS = Arrays.asList(new String[] {"timm==1.0.14",
 					"pytorch-msssim==1.0.0", "torchmetrics==1.4.3", "cellpose==3.1.1.1", "scipy==1.15.2", "torch-fidelity==0.3.0",
@@ -886,6 +893,8 @@ public class DLModelPytorchProtected extends BaseModel {
 		try {
 			biapyPythonInstalled = mamba.checkAllDependenciesInEnv(COMMON_PYTORCH_ENV_NAME, BIAPY_CONDA_DEPS);
 			biapyPythonInstalled = mamba.checkAllDependenciesInEnv(COMMON_PYTORCH_ENV_NAME, BIAPY_PIP_DEPS);
+			if (PlatformDetection.isMacOS() && PlatformDetection.getOSVersion().getMajor() < 14)
+				biapyPythonInstalled = mamba.checkDependencyInEnv(COMMON_PYTORCH_ENV_NAME, "biapy==3.5.10");
 		} catch (MambaInstallException e) {
 			mamba.installMicromamba();
 		}
@@ -896,6 +905,8 @@ public class DLModelPytorchProtected extends BaseModel {
 			args.addAll(BIAPY_PIP_DEPS_TORCH);
 			mamba.pipInstallIn(COMMON_PYTORCH_ENV_NAME, args.toArray(new String[args.size()]));
 			mamba.pipInstallIn(COMMON_PYTORCH_ENV_NAME, BIAPY_PIP_DEPS.toArray(new String[BIAPY_PIP_DEPS.size()]));
+			if (PlatformDetection.isMacOS() && PlatformDetection.getOSVersion().getMajor() < 14)
+				mamba.pipInstallIn(COMMON_PYTORCH_ENV_NAME, new String[] {"biapy==3.5.10", "--no-deps"});
 		};
 	}
 	
