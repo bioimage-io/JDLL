@@ -368,8 +368,24 @@ public class Mamba {
 		this.customErrorConsumer = custom;
 	}
 	
+	private File tempDirMacos() throws IOException, URISyntaxException {
+		
+        String filename = "micromamba-" + UUID.randomUUID() + ".tar.bz2";
+        File tempFile = new File(BASE_PATH, filename);
+        boolean created = tempFile.createNewFile();
+        if (!created) {
+            throw new IOException("Failed to create temp file: " + tempFile.getAbsolutePath());
+        }
+        tempFile.deleteOnExit();
+		return tempFile;
+	}
+	
 	private File downloadMicromamba() throws IOException, URISyntaxException {
-		final File tempFile = File.createTempFile( "micromamba", ".tar.bz2" );
+		final File tempFile;
+		if (PlatformDetection.isMacOS())
+			tempFile = tempDirMacos();
+		else
+			tempFile = File.createTempFile( "micromamba", ".tar.bz2" );
 		tempFile.deleteOnExit();
 		URL website = FileDownloader.redirectedURL(new URL(MICROMAMBA_URL));
 		Consumer<Double> micromambaConsumer = (d) -> {
