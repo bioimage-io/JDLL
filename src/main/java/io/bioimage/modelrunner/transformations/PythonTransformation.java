@@ -351,12 +351,16 @@ public class PythonTransformation extends AbstractTensorTransformation
 	}
 	
 	public void installMamba() throws IOException, InterruptedException, ArchiveException, URISyntaxException, MambaInstallException {
-		this.mambaPath = new File("appose_" + PlatformDetection.getArch()).getAbsolutePath();
+		this.mambaPath = new File("appose_"
+				+ ((!PlatformDetection.isMacOS() || !PlatformDetection.isUsingRosseta()) ? PlatformDetection.getArch()
+						: PlatformDetection.ARCH_ARM64 )).getAbsolutePath();
 		new Mamba(mambaPath);
 	}
 	
 	public static void installMamba(String dir) throws IOException, InterruptedException, ArchiveException, URISyntaxException, MambaInstallException {
-		String mambaDir = new File(dir + File.separator + "appose_" + PlatformDetection.getArch()).getAbsolutePath();
+		String mambaDir = new File(dir + File.separator + "appose_"
+				+ ((!PlatformDetection.isMacOS() || !PlatformDetection.isUsingRosseta()) ? PlatformDetection.getArch()
+						: PlatformDetection.ARCH_ARM64 )).getAbsolutePath();
 		new Mamba(mambaDir);
 	}
 	
