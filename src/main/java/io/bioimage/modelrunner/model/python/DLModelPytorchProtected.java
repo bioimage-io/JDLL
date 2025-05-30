@@ -886,6 +886,7 @@ public class DLModelPytorchProtected extends BaseModel {
 		try {
 			biapyPythonInstalled = mamba.checkAllDependenciesInEnv(COMMON_PYTORCH_ENV_NAME, BIAPY_CONDA_DEPS);
 			biapyPythonInstalled = mamba.checkAllDependenciesInEnv(COMMON_PYTORCH_ENV_NAME, BIAPY_PIP_DEPS);
+			biapyPythonInstalled = mamba.checkAllDependenciesInEnv(COMMON_PYTORCH_ENV_NAME, BIAPY_PIP_DEPS_TORCH);
 			if (PlatformDetection.isMacOS() && PlatformDetection.getOSVersion().getMajor() < 14)
 				biapyPythonInstalled = mamba.checkDependencyInEnv(COMMON_PYTORCH_ENV_NAME, "biapy==3.5.10");
 		} catch (MambaInstallException e) {
