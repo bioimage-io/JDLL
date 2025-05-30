@@ -119,11 +119,11 @@ public class DLModelPytorchProtected extends BaseModel {
 			BIAPY_PIP_DEPS_TORCH = Arrays.asList(new String[] {"torch==2.2.2", 
 					"torchvision==0.17.2", "torchaudio==2.2.2"});
 		else if (PlatformDetection.isWindows())
-			BIAPY_PIP_DEPS_TORCH = Arrays.asList(new String[] {"torch==2.4.0", 
-					"torchvision==0.19.0", "torchaudio==2.4.0"});
-		else
 			BIAPY_PIP_DEPS_TORCH = Arrays.asList(new String[] {"torch==2.4.1", 
 					"torchvision==0.19.1", "torchaudio==2.4.1"});
+		else
+			BIAPY_PIP_DEPS_TORCH = Arrays.asList(new String[] {"torch==2.4.0", 
+					"torchvision==0.19.0", "torchaudio==2.4.0"});
 	}
 	
 	private static final List<String> BIAPY_PIP_DEPS;
