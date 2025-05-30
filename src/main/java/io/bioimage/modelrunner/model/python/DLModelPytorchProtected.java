@@ -118,15 +118,18 @@ public class DLModelPytorchProtected extends BaseModel {
 				&& PlatformDetection.getArch().equals(PlatformDetection.ARCH_X86_64) && !PlatformDetection.isUsingRosseta())
 			BIAPY_PIP_DEPS_TORCH = Arrays.asList(new String[] {"torch==2.2.2", 
 					"torchvision==0.17.2", "torchaudio==2.2.2"});
-		else
+		else if (PlatformDetection.isWindows())
 			BIAPY_PIP_DEPS_TORCH = Arrays.asList(new String[] {"torch==2.4.0", 
 					"torchvision==0.19.0", "torchaudio==2.4.0"});
+		else
+			BIAPY_PIP_DEPS_TORCH = Arrays.asList(new String[] {"torch==2.4.1", 
+					"torchvision==0.19.1", "torchaudio==2.4.1"});
 	}
 	
 	private static final List<String> BIAPY_PIP_DEPS;
 	static {
 		if (PlatformDetection.isWindows())
-			BIAPY_PIP_DEPS = Arrays.asList(new String[] {"timm==1.0.14", "msvc-runtime==14.42.34433",
+			BIAPY_PIP_DEPS = Arrays.asList(new String[] {"timm==1.0.14",
 					"pytorch-msssim==1.0.0", "torchmetrics==1.4.3", "cellpose==3.1.1.1", "scipy==1.15.2", "torch-fidelity==0.3.0",
 					"careamics", "biapy==3.5.10", "appose"});
 		else if (PlatformDetection.isMacOS() && PlatformDetection.getOSVersion().getMajor() < 14)
