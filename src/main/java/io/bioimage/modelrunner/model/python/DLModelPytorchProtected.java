@@ -826,7 +826,9 @@ public class DLModelPytorchProtected extends BaseModel {
 		try {
 			 boolean inst = mamba.checkAllDependenciesInEnv(envPath, BIAPY_CONDA_DEPS);
 			 if (!inst) return inst;
-			inst = mamba.checkAllDependenciesInEnv(envPath, BIAPY_PIP_DEPS);
+			 inst = mamba.checkAllDependenciesInEnv(envPath, BIAPY_PIP_DEPS_TORCH);
+			 if (!inst) return inst;
+			 inst = mamba.checkAllDependenciesInEnv(envPath, BIAPY_PIP_DEPS);
 			 if (!inst) return inst;
 		} catch (MambaInstallException e) {
 			return false;
