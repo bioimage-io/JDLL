@@ -406,7 +406,7 @@ public class Gui extends JPanel {
     }
     
     private <T extends RealType<T> & NativeType<T>> void runModelOnTestImage() {
-		startModelInstallation(true);
+		startModelInstallation(true, "Preparing...");
     	runninThread = new Thread(() -> {
         	try {
         		ModelDescriptor model = modelSelectionPanel.getModels().get(currentIndex);
