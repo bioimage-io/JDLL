@@ -315,6 +315,8 @@ public class ContentPanel extends JPanel {
 	protected void setProgressLabelText(String text) {
 		text = text == null ? "" : text;
 		this.progressInfoLabel.setText(text);
+		if (!this.progressInfoLabel.isVisible())
+			this.progressInfoLabel.setVisible(true);
 	}
 
 	protected void update(ModelDescriptor modelDescriptor, URL path, int logoWidth, int logoHeight) {

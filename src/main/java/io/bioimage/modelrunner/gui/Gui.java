@@ -374,7 +374,8 @@ public class Gui extends JPanel {
         	try {
         		ModelDescriptor model = modelSelectionPanel.getModels().get(currentIndex);
             	if (runner == null || runner.isClosed()) {
-            		if (!installEnvToRun(model) && !model.getModelFamily().equals(ModelDescriptor.STARDIST)) {
+                	SwingUtilities.invokeLater(() -> this.contentPanel.setProgressLabelText("Checking deps..."));
+                	if (!installEnvToRun(model) && !model.getModelFamily().equals(ModelDescriptor.STARDIST)) {
                 		startModelInstallation(false);
             			return;
             		}
@@ -382,7 +383,7 @@ public class Gui extends JPanel {
             		runner = guiAdapter.createRunner(model);
             	}
         		if (!runner.isLoaded() && GuiUtils.isEDTAlive())
-        			runner.load();
+        			runner.load(false);
         		else if (!GuiUtils.isEDTAlive())
         			return;
             	SwingUtilities.invokeLater(() -> this.contentPanel.setProgressLabelText("Running the model..."));
