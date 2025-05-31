@@ -369,7 +369,7 @@ public class Gui extends JPanel {
     }
     
     private <T extends RealType<T> & NativeType<T>> void runModel() {
-		startModelInstallation(true);
+		startModelInstallation(true, "Preparing...");
     	runninThread = new Thread(() -> {
         	try {
         		ModelDescriptor model = modelSelectionPanel.getModels().get(currentIndex);
@@ -706,6 +706,10 @@ public class Gui extends JPanel {
     }
     
     private void startModelInstallation(boolean isStarting) {
+    	startModelInstallation(isStarting, "Installing...");
+    }
+    
+    private void startModelInstallation(boolean isStarting, String str) {
     	SwingUtilities.invokeLater(() -> {
         	this.runOnTestButton.setEnabled(!isStarting);
         	this.runButton.setEnabled(!isStarting);
@@ -713,7 +717,7 @@ public class Gui extends JPanel {
         	this.modelSelectionPanel.setArrowsEnabled(!isStarting);
 	    	this.contentPanel.setProgressIndeterminate(isStarting);
         	if (isStarting)
-        		this.contentPanel.setProgressLabelText("Installing ...");
+        		this.contentPanel.setProgressLabelText(str);
         	else
 		    	this.contentPanel.setProgressLabelText("");
     	});
