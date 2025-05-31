@@ -556,6 +556,7 @@ public class DLModelPytorchProtected extends BaseModel {
 	
 	protected <T extends RealType<T> & NativeType<T>> String createInputsCode(List<RandomAccessibleInterval<T>> rais, List<String> names) {
 		String code = "created_shms = []" + System.lineSeparator();
+		code += "try:" + System.lineSeparator();
 		for (int i = 0; i < rais.size(); i ++) {
 			SharedMemoryArray shma = SharedMemoryArray.createSHMAFromRAI(rais.get(i), false, false);
 			code += codeToConvertShmaToPython(shma, names.get(i));
