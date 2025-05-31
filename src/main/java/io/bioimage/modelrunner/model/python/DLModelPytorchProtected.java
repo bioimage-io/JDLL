@@ -555,30 +555,40 @@ public class DLModelPytorchProtected extends BaseModel {
 	}
 	
 	protected <T extends RealType<T> & NativeType<T>> String createInputsCode(List<RandomAccessibleInterval<T>> rais, List<String> names) {
-		String code = "";
+		String code = "created_shms = []" + System.lineSeparator();
 		for (int i = 0; i < rais.size(); i ++) {
 			SharedMemoryArray shma = SharedMemoryArray.createSHMAFromRAI(rais.get(i), false, false);
 			code += codeToConvertShmaToPython(shma, names.get(i));
 			inShmaList.add(shma);
 		}
-		code += OUTPUT_LIST_KEY + " = " + MODEL_VAR_NAME + "(";
+		code += "  " + OUTPUT_LIST_KEY + " = " + MODEL_VAR_NAME + "(";
 		for (int i = 0; i < rais.size(); i ++)
 			code += "torch.from_numpy(" + names.get(i) + "), ";
 		code = code.substring(0, code.length() - 2);
 		code += ")" + System.lineSeparator();
-		code += String.format("print(type(%s))", OUTPUT_LIST_KEY) + System.lineSeparator();
 		code += ""
-				+ SHMS_KEY + " = []" + System.lineSeparator()
-				+ SHM_NAMES_KEY + " = []" + System.lineSeparator()
-				+ DTYPES_KEY + " = []" + System.lineSeparator()
-				+ DIMS_KEY + " = []" + System.lineSeparator()
-				+ "globals()['" + SHMS_KEY + "'] = " + SHMS_KEY + System.lineSeparator()
-				+ "globals()['" + SHM_NAMES_KEY + "'] = " + SHM_NAMES_KEY + System.lineSeparator()
-				+ "globals()['" + DTYPES_KEY + "'] = " + DTYPES_KEY + System.lineSeparator()
-				+ "globals()['" + DIMS_KEY + "'] = " + DIMS_KEY + System.lineSeparator();
-		code += "handle_output_list(" + OUTPUT_LIST_KEY + ")" + System.lineSeparator();
+				+ "  " + SHMS_KEY + " = []" + System.lineSeparator()
+				+ "  " + SHM_NAMES_KEY + " = []" + System.lineSeparator()
+				+ "  " + DTYPES_KEY + " = []" + System.lineSeparator()
+				+ "  " + DIMS_KEY + " = []" + System.lineSeparator()
+				+ "  " + "globals()['" + SHMS_KEY + "'] = " + SHMS_KEY + System.lineSeparator()
+				+ "  " + "globals()['" + SHM_NAMES_KEY + "'] = " + SHM_NAMES_KEY + System.lineSeparator()
+				+ "  " + "globals()['" + DTYPES_KEY + "'] = " + DTYPES_KEY + System.lineSeparator()
+				+ "  " + "globals()['" + DIMS_KEY + "'] = " + DIMS_KEY + System.lineSeparator();
+		code += "  " + "handle_output_list(" + OUTPUT_LIST_KEY + ")" + System.lineSeparator();
+		String closeEverythingWin = closeSHMWin();
+		code += "  " + closeEverythingWin + System.lineSeparator();
+		code += "except Exception as e:" + System.lineSeparator();
+		code += "  " + closeEverythingWin + System.lineSeparator();
+		code += "  raise e" + System.lineSeparator();
 		code += taskOutputsCode();
 		return code;
+	}
+	
+	private static String closeSHMWin() {
+		if (!PlatformDetection.isWindows())
+			return "";
+		return "[(shm_i.close(), shm_i.unlink()) for shm_i in created_shms]";
 	}
 	
 	protected String taskOutputsCode() {
@@ -787,26 +797,17 @@ public class DLModelPytorchProtected extends BaseModel {
 		// This line wants to recreate the original numpy array. Should look like:
 		// input0_appose_shm = shared_memory.SharedMemory(name=input0)
 		// input0 = np.ndarray(size, dtype="float64", buffer=input0_appose_shm.buf).reshape([64, 64])
-		code += varName + "_shm = shared_memory.SharedMemory(name='"
+		code += "  " + varName + "_shm = shared_memory.SharedMemory(name='"
 							+ shma.getNameForPython() + "', size=" + shma.getSize() 
 							+ ")" + System.lineSeparator();
+		code += "  " + "created_shms.append(" + varName + "_shm)" + System.lineSeparator();
 		long nElems = 1;
 		for (long elem : shma.getOriginalShape()) nElems *= elem;
-		code += varName + " = np.ndarray(" + nElems  + ", dtype='" + CommonUtils.getDataTypeFromRAI(Cast.unchecked(shma.getSharedRAI()))
+		code += "  " + varName + " = np.ndarray(" + nElems  + ", dtype='" + CommonUtils.getDataTypeFromRAI(Cast.unchecked(shma.getSharedRAI()))
 			  + "', buffer=" + varName +"_shm.buf).reshape([";
 		for (int i = 0; i < shma.getOriginalShape().length; i ++)
 			code += shma.getOriginalShape()[i] + ", ";
 		code += "])" + System.lineSeparator();
-		/**
-		code += "try:" + System.lineSeparator();
-		code += "  " + varName + " = torch.from_numpy(" + varName + "_np).to(" + MODEL_VAR_NAME + ".device)" + System.lineSeparator();
-		code += "except:" + System.lineSeparator();
-		code += "  " + varName + " = torch.from_numpy(" + varName + "_np).to(torch.device('cpu'))" + System.lineSeparator();
-		*/
-		code += ""
-			+ "if os.name == 'nt':" + System.lineSeparator()
-			+ "  im_shm.close()" + System.lineSeparator()
-			+ "  im_shm.unlink()" + System.lineSeparator();
 		return code;
 	}
 	
