@@ -271,6 +271,10 @@ public class DLModelPytorchProtected extends BaseModel {
 			this.importModule = importModule;
 		else 
 			this.importModule = null;
+		if (new File(weightsPath).isFile())
+			this.modelFolder = new File(weightsPath).getParentFile().getAbsolutePath();
+		else if (new File(modelFile).isFile())
+			this.modelFolder = new File(modelFile).getParentFile().getAbsolutePath();
 		this.weightsPath = new File(weightsPath).getAbsolutePath();
 		this.kwargs = kwargs;
 		this.envPath = INSTALLATION_DIR + File.separator + "envs" + File.separator + COMMON_PYTORCH_ENV_NAME;
