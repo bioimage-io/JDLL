@@ -910,6 +910,10 @@ public class DLModelPytorchProtected extends BaseModel {
 			if (PlatformDetection.isMacOS() && PlatformDetection.getOSVersion().getMajor() < 14)
 				mamba.pipInstallIn(COMMON_PYTORCH_ENV_NAME, new String[] {"biapy==3.5.10", "--no-deps"});
 		};
+		
+		if (!isInstalled(INSTALLATION_DIR))
+			throw new RuntimeException("Not all the requried packages were installed correctly. Please try again."
+					+ " If the error persists, please post an issue at: https://github.com/bioimage-io/JDLL/issues");
 	}
 	
 	/**
