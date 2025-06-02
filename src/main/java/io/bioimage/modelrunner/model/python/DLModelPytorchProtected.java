@@ -198,11 +198,6 @@ public class DLModelPytorchProtected extends BaseModel {
 			+ "      if 'torch' not in globals().keys():" + System.lineSeparator()
 			+ "        import torch" + System.lineSeparator()
 			+ "        globals()['torch'] = torch" + System.lineSeparator()
-			+ (!IS_ARM ? "" 
-					: "        if torch.backends.mps.is_built() and torch.backends.mps.is_available():" + System.lineSeparator()
-					+ "          device = 'mps'" + System.lineSeparator())
-			+ "      else:" + System.lineSeparator()
-			+ "        torch = globals()['torch']" + System.lineSeparator()
 			+ "      shm = shared_memory.SharedMemory(create=True, size=outs_i.numel() * outs_i.element_size())" + System.lineSeparator()
 			+ "      np_arr = np.ndarray(outs_i.shape, dtype=str(outs_i.dtype).split('.')[-1], buffer=shm.buf)" + System.lineSeparator()
 			+ "      tensor_np_view = torch.from_numpy(np_arr)" + System.lineSeparator()
@@ -579,6 +574,7 @@ public class DLModelPytorchProtected extends BaseModel {
 			inShmaList.add(shma);
 		}
 		code += "  " + MODEL_VAR_NAME + ".eval()" + System.lineSeparator();
+		code += "  print(device)" + System.lineSeparator();
 		code += "  with torch.no_grad():" + System.lineSeparator();
 		code += "    " + OUTPUT_LIST_KEY + " = " + MODEL_VAR_NAME + "(";
 		for (int i = 0; i < rais.size(); i ++)
