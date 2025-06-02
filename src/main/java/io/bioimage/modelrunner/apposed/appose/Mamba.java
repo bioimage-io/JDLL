@@ -1691,7 +1691,6 @@ public class Mamba {
 			return false;
 		else if (!envFile.isDirectory())
 			envFile = envFile2;
-		dependency = resolveAliases(dependency);
 		if (dependency.trim().equals("python")) return checkPythonInstallation(envDir, minversion, maxversion, strictlyBiggerOrSmaller);
 		String checkDepCode;
 		if (minversion != null && maxversion != null && minversion.equals(maxversion)) {
@@ -1700,42 +1699,43 @@ public class Mamba {
 					+ "from packaging import version as vv; "
 					+ "pkg = '%s'; wanted_v = '%s'; "
 					+ "spec = importlib.util.find_spec(pkg); "
-					+ "vv_og = vv.parse(version(pkg)); "
+					+ "vv_og = vv.parse(version('%s')); "
 					+ "vv_nw = vv.parse(wanted_v); "
 					+ "sys.exit(1) if spec is None else None; "
 					+ "sys.exit(1) if vv_og != vv_nw else None; "
 					+ "sys.exit(0);";
-			checkDepCode = String.format(checkDepCode, dependency, maxversion);
+			checkDepCode = String.format(checkDepCode, resolveAliases(dependency), maxversion, dependency);
 		} else if (minversion == null && maxversion == null) {
 			checkDepCode = "import importlib.util, sys; sys.exit(0) if importlib.util.find_spec('%s') else sys.exit(1)";
-			checkDepCode = String.format(checkDepCode, dependency);
+			checkDepCode = String.format(checkDepCode, resolveAliases(dependency));
 		} else if (maxversion == null) {
 			checkDepCode = "import importlib.util, sys; "
 					+ "from importlib.metadata import version; "
 					+ "from packaging import version as vv; "
 					+ "pkg = '%s'; desired_version = '%s'; "
 					+ "spec = importlib.util.find_spec(pkg); "
-					+ "curr_v = vv.parse(version(pkg)); "
+					+ "curr_v = vv.parse(version('%s')); "
 					+ "sys.exit(0) if spec and curr_v %s vv.parse(desired_version) else sys.exit(1)";
-			checkDepCode = String.format(checkDepCode, dependency, minversion, strictlyBiggerOrSmaller ? ">" : ">=");
+			checkDepCode = String.format(checkDepCode, resolveAliases(dependency), minversion, dependency, strictlyBiggerOrSmaller ? ">" : ">=");
 		} else if (minversion == null) {
 			checkDepCode = "import importlib.util, sys; "
 					+ "from importlib.metadata import version; "
 					+ "from packaging import version as vv; "
 					+ "pkg = '%s'; desired_version = '%s'; "
 					+ "spec = importlib.util.find_spec(pkg); "
-					+ "curr_v = vv.parse(version(pkg)); "
+					+ "curr_v = vv.parse(version('%s')); "
 					+ "sys.exit(0) if spec and curr_v %s vv.parse(desired_version) else sys.exit(1)";
-			checkDepCode = String.format(checkDepCode, dependency, maxversion, strictlyBiggerOrSmaller ? "<" : "<=");
+			checkDepCode = String.format(checkDepCode, resolveAliases(dependency), maxversion, dependency, strictlyBiggerOrSmaller ? "<" : "<=");
 		} else {
 			checkDepCode = "import importlib.util, sys; "
 					+ "from importlib.metadata import version; "
 					+ "from packaging import version as vv; "
 					+ "pkg = '%s'; min_v = '%s'; max_v = '%s'; "
 					+ "spec = importlib.util.find_spec(pkg); "
-					+ "curr_v = vv.parse(version(pkg)); "
+					+ "curr_v = vv.parse(version('%s')); "
 					+ "sys.exit(0) if spec and curr_v %s vv.parse(min_v) and curr_v %s vv.parse(max_v) else sys.exit(1)";
-			checkDepCode = String.format(checkDepCode, dependency, minversion, maxversion, strictlyBiggerOrSmaller ? ">" : ">=", strictlyBiggerOrSmaller ? "<" : "<=");
+			checkDepCode = String.format(checkDepCode, resolveAliases(dependency), minversion, maxversion, dependency,
+					strictlyBiggerOrSmaller ? ">" : ">=", strictlyBiggerOrSmaller ? "<" : "<=");
 		}
 		try {
 			runPythonIn(envFile, "-c", checkDepCode);
@@ -1856,7 +1856,7 @@ public class Mamba {
 	public static void main(String[] args) throws IOException, InterruptedException, MambaInstallException {
 		
 		Mamba m = new Mamba("/home/carlos/.local/share/appose/micromamba");
-		boolean aa = m.checkDependencyInEnv("biapy", "tensorboardX<=2.6.2.15");
+		boolean aa = m.checkDependencyInEnv("biapy", "scikit-learn>=1.4.0");
 		System.out.println(aa);
 	}
 	
