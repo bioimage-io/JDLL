@@ -1699,8 +1699,8 @@ public class Mamba {
 					+ "from packaging import version as vv; "
 					+ "pkg = '%s'; wanted_v = '%s'; "
 					+ "spec = importlib.util.find_spec(pkg); "
-					+ "vv_og = vv.parse(version('%s')).base_version; "
-					+ "vv_nw = vv.parse(wanted_v).base_version; "
+					+ "vv_og = vv.parse(vv.parse(version('%s')).base_version); "
+					+ "vv_nw = vv.parse(vv.parse(wanted_v).base_version); "
 					+ "sys.exit(1) if spec is None else None; "
 					+ "sys.exit(1) if vv_og != vv_nw else None; "
 					+ "sys.exit(0);";
@@ -1714,8 +1714,8 @@ public class Mamba {
 					+ "from packaging import version as vv; "
 					+ "pkg = '%s'; desired_version = '%s'; "
 					+ "spec = importlib.util.find_spec(pkg); "
-					+ "curr_v = vv.parse(version('%s')).base_version; "
-					+ "sys.exit(0) if spec and curr_v %s vv.parse(desired_version).base_version else sys.exit(1)";
+					+ "curr_v = vv.parse(vv.parse(version('%s')).base_version); "
+					+ "sys.exit(0) if spec and curr_v %s vv.parse(vv.parse(desired_version).base_version) else sys.exit(1)";
 			checkDepCode = String.format(checkDepCode, resolveAliases(dependency), minversion, dependency, strictlyBiggerOrSmaller ? ">" : ">=");
 		} else if (minversion == null) {
 			checkDepCode = "import importlib.util, sys; "
@@ -1723,8 +1723,8 @@ public class Mamba {
 					+ "from packaging import version as vv; "
 					+ "pkg = '%s'; desired_version = '%s'; "
 					+ "spec = importlib.util.find_spec(pkg); "
-					+ "curr_v = vv.parse(version('%s')).base_version; "
-					+ "sys.exit(0) if spec and curr_v %s vv.parse(desired_version).base_version else sys.exit(1)";
+					+ "curr_v = vv.parse(vv.parse(version('%s')).base_version); "
+					+ "sys.exit(0) if spec and curr_v %s vv.parse(vv.parse(desired_version).base_version) else sys.exit(1)";
 			checkDepCode = String.format(checkDepCode, resolveAliases(dependency), maxversion, dependency, strictlyBiggerOrSmaller ? "<" : "<=");
 		} else {
 			checkDepCode = "import importlib.util, sys; "
@@ -1732,8 +1732,8 @@ public class Mamba {
 					+ "from packaging import version as vv; "
 					+ "pkg = '%s'; min_v = '%s'; max_v = '%s'; "
 					+ "spec = importlib.util.find_spec(pkg); "
-					+ "curr_v = vv.parse(version('%s')).base_version; "
-					+ "sys.exit(0) if spec and curr_v %s vv.parse(min_v).base_version and curr_v %s vv.parse(max_v).base_version else sys.exit(1)";
+					+ "curr_v = vv.parse(vv.parse(version('%s')).base_version); "
+					+ "sys.exit(0) if spec and curr_v %s vv.parse(vv.parse(min_v).base_version) and curr_v %s vv.parse(vv.parse(max_v).base_version) else sys.exit(1)";
 			checkDepCode = String.format(checkDepCode, resolveAliases(dependency), minversion, maxversion, dependency,
 					strictlyBiggerOrSmaller ? ">" : ">=", strictlyBiggerOrSmaller ? "<" : "<=");
 		}
@@ -1856,7 +1856,7 @@ public class Mamba {
 	public static void main(String[] args) throws IOException, InterruptedException, MambaInstallException {
 		
 		Mamba m = new Mamba("/home/carlos/.local/share/appose/micromamba");
-		boolean aa = m.checkDependencyInEnv("biapy", "scikit-learn>=1.4.0");
+		boolean aa = m.checkDependencyInEnv("biapy", "h5py>=3.9.0");
 		System.out.println(aa);
 	}
 	
