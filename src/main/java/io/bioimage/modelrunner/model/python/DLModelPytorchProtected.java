@@ -384,8 +384,7 @@ public class DLModelPytorchProtected extends BaseModel {
 				+ "  globals()['torch'] = torch" + System.lineSeparator()
 				+ (!IS_ARM ? "" 
 						: "  if torch.backends.mps.is_built() and torch.backends.mps.is_available():" + System.lineSeparator()
-						+ "    device = 'mps'" + System.lineSeparator())
-				+ "globals()['device'] = device" + System.lineSeparator();
+						+ "    device = 'mps'" + System.lineSeparator());
 		if (modelFile != null) {
 			String moduleName = new File(modelFile).getName();
 			moduleName = moduleName.substring(0, moduleName.length() - 3);
@@ -408,6 +407,7 @@ public class DLModelPytorchProtected extends BaseModel {
 		code += MODEL_VAR_NAME + "=" + callable + "(" + codeForKwargs()  + ")" + System.lineSeparator();
 		code += "if any(isinstance(m, torch.nn.ConvTranspose3d) for m in " + MODEL_VAR_NAME + ".modules()):" + System.lineSeparator();
 		code += "  device = 'cpu'" + System.lineSeparator();
+		code += "globals()['device'] = device" + System.lineSeparator();
 		code += MODEL_VAR_NAME + ".to(device)" + System.lineSeparator();
 		code += "try:" + System.lineSeparator()
 				+ "  " + MODEL_VAR_NAME + ".load_state_dict("
