@@ -576,7 +576,6 @@ public class DLModelPytorchProtected extends BaseModel {
 			inShmaList.add(shma);
 		}
 		code += "  " + MODEL_VAR_NAME + ".eval()" + System.lineSeparator();
-		code += "  print(device)" + System.lineSeparator();
 		code += "  with torch.no_grad():" + System.lineSeparator();
 		code += "    " + OUTPUT_LIST_KEY + " = " + MODEL_VAR_NAME + "(";
 		for (int i = 0; i < rais.size(); i ++)

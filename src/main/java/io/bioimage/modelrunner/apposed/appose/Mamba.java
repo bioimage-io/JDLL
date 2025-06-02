@@ -1484,7 +1484,6 @@ public class Mamba {
 				return true;
 			}
 		}).collect(Collectors.toList());
-		System.out.println(uninstalled);
 		return uninstalled;
 	}
 	
