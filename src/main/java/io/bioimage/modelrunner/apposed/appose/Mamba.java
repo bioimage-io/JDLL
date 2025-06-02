@@ -1748,6 +1748,12 @@ public class Mamba {
 	private static String resolveAliases(String dep) {
 		if (dep.equals("pytorch"))
 			return "torch";
+		else if (dep.equals("opencv-python"))
+			return "cv2";
+		else if (dep.equals("scikit-image"))
+			return "skimage";
+		else if (dep.equals("scikit-learn"))
+			return "sklearn";
 		return dep.replace("-", "_");
 	}
 	
