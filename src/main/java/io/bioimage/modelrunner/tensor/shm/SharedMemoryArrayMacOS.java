@@ -19,6 +19,7 @@
  */
 package io.bioimage.modelrunner.tensor.shm;
 
+import java.io.File;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
@@ -208,6 +209,8 @@ public class SharedMemoryArrayMacOS implements SharedMemoryArray
 	 */
     protected SharedMemoryArrayMacOS(String name, int size, String dtype, long[] shape, Boolean isNumpy, boolean isFortran) throws FileAlreadyExistsException
     {
+    	if (!name.startsWith(File.separator))
+    		name = File.separator + name;
     	this.originalDataType = dtype;
     	this.originalDims = shape;
     	this.size = size;

@@ -208,6 +208,8 @@ public class SharedMemoryArrayWin implements SharedMemoryArray
 	 */
 	protected SharedMemoryArrayWin(String name, int size, String dtype, long[] shape, Boolean isNumpy, boolean isFortran) throws FileAlreadyExistsException
     {
+    	if (!name.startsWith("Local" + File.separator) && !name.startsWith("Global" + File.separator))
+    		name = "Local" + File.separator + name;
 		if (size < 0)
 			throw new IllegalArgumentException("The size of a shared memory segment cannot be negative.");
     	memoryName = name;
