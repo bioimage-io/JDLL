@@ -198,6 +198,8 @@ public class DLModelPytorchProtected extends BaseModel {
 			+ "      if 'torch' not in globals().keys():" + System.lineSeparator()
 			+ "        import torch" + System.lineSeparator()
 			+ "        globals()['torch'] = torch" + System.lineSeparator()
+			+ "      else:" + System.lineSeparator()
+			+ "        torch = globals()['torch']" + System.lineSeparator()
 			+ "      shm = shared_memory.SharedMemory(create=True, size=outs_i.numel() * outs_i.element_size())" + System.lineSeparator()
 			+ "      np_arr = np.ndarray(outs_i.shape, dtype=str(outs_i.dtype).split('.')[-1], buffer=shm.buf)" + System.lineSeparator()
 			+ "      tensor_np_view = torch.from_numpy(np_arr)" + System.lineSeparator()
