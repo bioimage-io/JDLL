@@ -419,7 +419,7 @@ public class Gui extends JPanel {
             		runner = guiAdapter.createRunner(model);
             	}
         		if (!runner.isLoaded() && GuiUtils.isEDTAlive())
-        			runner.load();
+        			runner.load(false);
         		else if (!GuiUtils.isEDTAlive())
         			return;
             	SwingUtilities.invokeLater(() -> this.contentPanel.setProgressLabelText("Running the model..."));
