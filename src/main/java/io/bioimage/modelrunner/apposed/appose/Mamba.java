@@ -1484,6 +1484,7 @@ public class Mamba {
 				return true;
 			}
 		}).collect(Collectors.toList());
+		System.out.println(uninstalled);
 		return uninstalled;
 	}
 	
@@ -1702,9 +1703,7 @@ public class Mamba {
 					+ "vv_og = vv.parse(version(pkg)); "
 					+ "vv_nw = vv.parse(wanted_v); "
 					+ "sys.exit(1) if spec is None else None; "
-					+ "sys.exit(1) if vv_og.major != vv_nw.major else None; "
-					+ "sys.exit(1) if vv_og.minor != vv_nw.minor else None; "
-					+ "sys.exit(1) if vv_og.micro != vv_nw.micro else None; "
+					+ "sys.exit(1) if vv_og != vv_nw else None; "
 					+ "sys.exit(0);";
 			checkDepCode = String.format(checkDepCode, dependency, maxversion);
 		} else if (minversion == null && maxversion == null) {
@@ -1717,8 +1716,7 @@ public class Mamba {
 					+ "pkg = '%s'; desired_version = '%s'; "
 					+ "spec = importlib.util.find_spec(pkg); "
 					+ "curr_v = vv.parse(version(pkg)); "
-					+ "curr_v_str = str(curr_v.major) + '.' + str(curr_v.minor) + '.' + str(curr_v.micro); "
-					+ "sys.exit(0) if spec and vv.parse(curr_v_str) %s vv.parse(desired_version) else sys.exit(1)";
+					+ "sys.exit(0) if spec and curr_v %s vv.parse(desired_version) else sys.exit(1)";
 			checkDepCode = String.format(checkDepCode, dependency, minversion, strictlyBiggerOrSmaller ? ">" : ">=");
 		} else if (minversion == null) {
 			checkDepCode = "import importlib.util, sys; "
@@ -1727,8 +1725,7 @@ public class Mamba {
 					+ "pkg = '%s'; desired_version = '%s'; "
 					+ "spec = importlib.util.find_spec(pkg); "
 					+ "curr_v = vv.parse(version(pkg)); "
-					+ "curr_v_str = str(curr_v.major) + '.' + str(curr_v.minor) + '.' + str(curr_v.micro); "
-					+ "sys.exit(0) if spec and vv.parse(curr_v_str) %s vv.parse(desired_version) else sys.exit(1)";
+					+ "sys.exit(0) if spec and curr_v %s vv.parse(desired_version) else sys.exit(1)";
 			checkDepCode = String.format(checkDepCode, dependency, maxversion, strictlyBiggerOrSmaller ? "<" : "<=");
 		} else {
 			checkDepCode = "import importlib.util, sys; "
@@ -1737,8 +1734,7 @@ public class Mamba {
 					+ "pkg = '%s'; min_v = '%s'; max_v = '%s'; "
 					+ "spec = importlib.util.find_spec(pkg); "
 					+ "curr_v = vv.parse(version(pkg)); "
-					+ "curr_v_str = str(curr_v.major) + '.' + str(curr_v.minor) + '.' + str(curr_v.micro); "
-					+ "sys.exit(0) if spec and vv.parse(curr_v_str) %s vv.parse(min_v) and vv.parse(curr_v_str) %s vv.parse(max_v) else sys.exit(1)";
+					+ "sys.exit(0) if spec and curr_v %s vv.parse(min_v) and curr_v %s vv.parse(max_v) else sys.exit(1)";
 			checkDepCode = String.format(checkDepCode, dependency, minversion, maxversion, strictlyBiggerOrSmaller ? ">" : ">=", strictlyBiggerOrSmaller ? "<" : "<=");
 		}
 		try {
@@ -1853,8 +1849,8 @@ public class Mamba {
 	
 	public static void main(String[] args) throws IOException, InterruptedException, MambaInstallException {
 		
-		Mamba m = new Mamba("/home/carlos/git/SAMJ-IJ/appose_x86_64");
-		boolean aa = m.checkDependencyInEnv("sam2", "torch >=2.3.9, <=3.0.0");
+		Mamba m = new Mamba("/home/carlos/.local/share/appose/micromamba");
+		boolean aa = m.checkDependencyInEnv("biapy", "tensorboardX<=2.6.2.15");
 		System.out.println(aa);
 	}
 	
