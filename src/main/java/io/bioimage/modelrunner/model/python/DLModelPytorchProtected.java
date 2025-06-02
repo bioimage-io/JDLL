@@ -602,7 +602,7 @@ public class DLModelPytorchProtected extends BaseModel {
 		return code;
 	}
 	
-	private static String closeSHMWin() {
+	protected static String closeSHMWin() {
 		if (!PlatformDetection.isWindows())
 			return "";
 		return "[(shm_i.close(), shm_i.unlink()) for shm_i in created_shms]";

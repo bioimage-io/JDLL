@@ -124,7 +124,13 @@ public class Cellpose extends BioimageIoModelPytorchProtected {
 			+ "if 'shared_memory' not in globals().keys():" + System.lineSeparator()
 			+ "  from multiprocessing import shared_memory" + System.lineSeparator()
 			+ "  globals()['shared_memory'] = shared_memory" + System.lineSeparator()
-			+ MODEL_VAR_NAME + " = denoise.CellposeDenoiseModel(gpu=%s, pretrained_model=r'%s')" + System.lineSeparator()
+			+ "gpu_available = False" + System.lineSeparator() // TODO GPU
+			+ ((IS_ARM) 
+					? "" 
+					: "from torch.backends import mps" + System.lineSeparator()
+					+ "if mps.is_built() and mps.is_available():" + System.lineSeparator()
+					+ "  gpu_available = True" + System.lineSeparator())
+			+ MODEL_VAR_NAME + " = denoise.CellposeDenoiseModel(gpu=gpu_available, pretrained_model=r'%s')" + System.lineSeparator()
 			+ "globals()['" + MODEL_VAR_NAME + "'] = " + MODEL_VAR_NAME + System.lineSeparator();
 	
 	protected static final String PATH_TO_RDF = "special_models/cellpose/rdf.yaml";
@@ -247,7 +253,7 @@ public class Cellpose extends BioimageIoModelPytorchProtected {
 		if (this.isBMZ)
 			return super.buildModelCode();
 		String code = String.format(LOAD_MODEL_CODE_ABSTRACT, 
-				"False", // TODO GPU 
+				//"False", // TODO GPU 
 				this.weightsPath);
 		return code;
 	}
@@ -256,18 +262,24 @@ public class Cellpose extends BioimageIoModelPytorchProtected {
 	String createInputsCode(List<RandomAccessibleInterval<T>> inRais, List<String> names) {
 		if (this.isBMZ)
 			return super.createInputsCode(inRais, names);
-		String code = "";
+		String code = "created_shms = []" + System.lineSeparator();
+		code += "try:" + System.lineSeparator();
 		for (int i = 0; i < inRais.size(); i ++) {
 			SharedMemoryArray shma = SharedMemoryArray.createSHMAFromRAI(inRais.get(i), false, false);
 			code += codeToConvertShmaToPython(shma, names.get(i));
 			inShmaList.add(shma);
 		}
-		code += "print(type(" + names.get(0)  + "))" + System.lineSeparator();
-		code += "print(" + names.get(0) + ".shape)" + System.lineSeparator();
-		code += OUTPUT_LIST_KEY + " = " + MODEL_VAR_NAME + ".eval(";
+		code += "  print(type(" + names.get(0)  + "))" + System.lineSeparator();
+		code += "  print(" + names.get(0) + ".shape)" + System.lineSeparator();
+		code += "  " + OUTPUT_LIST_KEY + " = " + MODEL_VAR_NAME + ".eval(";
 		for (int i = 0; i < inRais.size(); i ++)
 			code += names.get(i) + ", channels=" + createChannelsArgCode(inRais.get(i)) +", ";
-		code += "diameter=" + createDiamCode() + ")" + System.lineSeparator();
+		code += "diameter=" + createDiamCode() + ")" + System.lineSeparator();;
+		String closeEverythingWin = closeSHMWin();
+		code += "  " + closeEverythingWin + System.lineSeparator();
+		code += "except Exception as e:" + System.lineSeparator();
+		code += "  " + closeEverythingWin + System.lineSeparator();
+		code += "  raise e" + System.lineSeparator();
 		code += ""
 				+ SHMS_KEY + " = []" + System.lineSeparator()
 				+ SHM_NAMES_KEY + " = []" + System.lineSeparator()
