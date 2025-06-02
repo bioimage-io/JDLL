@@ -1699,8 +1699,8 @@ public class Mamba {
 					+ "from packaging import version as vv; "
 					+ "pkg = '%s'; wanted_v = '%s'; "
 					+ "spec = importlib.util.find_spec(pkg); "
-					+ "vv_og = vv.parse(version('%s')); "
-					+ "vv_nw = vv.parse(wanted_v); "
+					+ "vv_og = vv.parse(version('%s')).base_version; "
+					+ "vv_nw = vv.parse(wanted_v).base_version; "
 					+ "sys.exit(1) if spec is None else None; "
 					+ "sys.exit(1) if vv_og != vv_nw else None; "
 					+ "sys.exit(0);";
@@ -1714,8 +1714,8 @@ public class Mamba {
 					+ "from packaging import version as vv; "
 					+ "pkg = '%s'; desired_version = '%s'; "
 					+ "spec = importlib.util.find_spec(pkg); "
-					+ "curr_v = vv.parse(version('%s')); "
-					+ "sys.exit(0) if spec and curr_v %s vv.parse(desired_version) else sys.exit(1)";
+					+ "curr_v = vv.parse(version('%s')).base_version; "
+					+ "sys.exit(0) if spec and curr_v %s vv.parse(desired_version).base_version else sys.exit(1)";
 			checkDepCode = String.format(checkDepCode, resolveAliases(dependency), minversion, dependency, strictlyBiggerOrSmaller ? ">" : ">=");
 		} else if (minversion == null) {
 			checkDepCode = "import importlib.util, sys; "
@@ -1723,8 +1723,8 @@ public class Mamba {
 					+ "from packaging import version as vv; "
 					+ "pkg = '%s'; desired_version = '%s'; "
 					+ "spec = importlib.util.find_spec(pkg); "
-					+ "curr_v = vv.parse(version('%s')); "
-					+ "sys.exit(0) if spec and curr_v %s vv.parse(desired_version) else sys.exit(1)";
+					+ "curr_v = vv.parse(version('%s')).base_version; "
+					+ "sys.exit(0) if spec and curr_v %s vv.parse(desired_version).base_version else sys.exit(1)";
 			checkDepCode = String.format(checkDepCode, resolveAliases(dependency), maxversion, dependency, strictlyBiggerOrSmaller ? "<" : "<=");
 		} else {
 			checkDepCode = "import importlib.util, sys; "
@@ -1732,8 +1732,8 @@ public class Mamba {
 					+ "from packaging import version as vv; "
 					+ "pkg = '%s'; min_v = '%s'; max_v = '%s'; "
 					+ "spec = importlib.util.find_spec(pkg); "
-					+ "curr_v = vv.parse(version('%s')); "
-					+ "sys.exit(0) if spec and curr_v %s vv.parse(min_v) and curr_v %s vv.parse(max_v) else sys.exit(1)";
+					+ "curr_v = vv.parse(version('%s')).base_version; "
+					+ "sys.exit(0) if spec and curr_v %s vv.parse(min_v).base_version and curr_v %s vv.parse(max_v).base_version else sys.exit(1)";
 			checkDepCode = String.format(checkDepCode, resolveAliases(dependency), minversion, maxversion, dependency,
 					strictlyBiggerOrSmaller ? ">" : ">=", strictlyBiggerOrSmaller ? "<" : "<=");
 		}
@@ -1769,27 +1769,30 @@ public class Mamba {
 		String checkDepCode;
 		if (minversion != null && maxversion != null && minversion.equals(maxversion)) {
 			checkDepCode = "import sys; import platform; from packaging import version as vv; desired_version = '%s'; "
-					+ "sys.exit(0) if vv.parse(platform.python_version()).major == vv.parse(desired_version).major"
-					+ " and vv.parse(platform.python_version()).minor == vv.parse(desired_version).minor else sys.exit(1)";
+					+ "sys.exit(0) if vv.parse(platform.python_version()).base_version == vv.parse(desired_version).base_version"
+					+ " else sys.exit(1)";
 			checkDepCode = String.format(checkDepCode, maxversion);
 		} else if (minversion == null && maxversion == null) {
 			checkDepCode = "2 + 2";
 		} else if (maxversion == null) {
 			checkDepCode = "import sys; import platform; from packaging import version as vv; desired_version = '%s'; "
-					+ "sys.exit(0) if vv.parse(platform.python_version()).major == vv.parse(desired_version).major "
-					+ "and vv.parse(platform.python_version()).minor %s vv.parse(desired_version).minor else sys.exit(1)";
+					+ "sys.exit(0) if "
+					+ "vv.parse(platform.python_version()).base_version %s vv.parse(desired_version).base_version "
+					+ "else sys.exit(1)";
 			checkDepCode = String.format(checkDepCode, minversion, strictlyBiggerOrSmaller ? ">" : ">=");
 		} else if (minversion == null) {
 			checkDepCode = "import sys; import platform; from packaging import version as vv; desired_version = '%s'; "
-					+ "sys.exit(0) if vv.parse(platform.python_version()).major == vv.parse(desired_version).major "
-					+ "and vv.parse(platform.python_version()).minor %s vv.parse(desired_version).minor else sys.exit(1)";
+					+ "sys.exit(0) if "
+					+ "vv.parse(platform.python_version()).base_version %s vv.parse(desired_version).base_version "
+					+ "else sys.exit(1)";
 			checkDepCode = String.format(checkDepCode, maxversion, strictlyBiggerOrSmaller ? "<" : "<=");
 		} else {
 			checkDepCode = "import platform; "
 					+ "from packaging import version as vv; min_v = '%s'; max_v = '%s'; "
-					+ "sys.exit(0) if vv.parse(platform.python_version()).major == vv.parse(desired_version).major "
-					+ "and vv.parse(platform.python_version()).minor %s vv.parse(min_v).minor "
-					+ "and vv.parse(platform.python_version()).minor %s vv.parse(max_v).minor else sys.exit(1)";
+					+ "sys.exit(0) if "
+					+ "vv.parse(platform.python_version()).base_version %s vv.parse(min_v).base_version "
+					+ "and vv.parse(platform.python_version()).base_version %s vv.parse(max_v).base_version "
+					+ "else sys.exit(1)";
 			checkDepCode = String.format(checkDepCode, minversion, maxversion, strictlyBiggerOrSmaller ? ">" : ">=", strictlyBiggerOrSmaller ? "<" : ">=");
 		}
 		try {
