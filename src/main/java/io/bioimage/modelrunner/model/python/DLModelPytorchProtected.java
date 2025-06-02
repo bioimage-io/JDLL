@@ -200,7 +200,7 @@ public class DLModelPytorchProtected extends BaseModel {
 			+ "        globals()['torch'] = torch" + System.lineSeparator()
 			+ (!IS_ARM ? "" 
 					: "        if torch.backends.mps.is_built() and torch.backends.mps.is_available():" + System.lineSeparator()
-					+ "          device = 'cpu' # TODO 'mps'" + System.lineSeparator())
+					+ "          device = 'mps'" + System.lineSeparator())
 			+ "      else:" + System.lineSeparator()
 			+ "        torch = globals()['torch']" + System.lineSeparator()
 			+ "      shm = shared_memory.SharedMemory(create=True, size=outs_i.numel() * outs_i.element_size())" + System.lineSeparator()
@@ -389,7 +389,7 @@ public class DLModelPytorchProtected extends BaseModel {
 				+ "  globals()['torch'] = torch" + System.lineSeparator()
 				+ (!IS_ARM ? "" 
 						: "  if torch.backends.mps.is_built() and torch.backends.mps.is_available():" + System.lineSeparator()
-						+ "    device = 'cpu' # TODO 'mps'" + System.lineSeparator())
+						+ "    device = 'mps'" + System.lineSeparator())
 				+ "globals()['device'] = device" + System.lineSeparator();
 		if (modelFile != null) {
 			String moduleName = new File(modelFile).getName();
@@ -410,7 +410,10 @@ public class DLModelPytorchProtected extends BaseModel {
 		}
 		code += String.format(LOAD_MODEL_CODE_ABSTRACT, addPath, importStr, callable, callable, callable);
 		
-		code += MODEL_VAR_NAME + "=" + callable + "(" + codeForKwargs()  + ").to(device)" + System.lineSeparator();
+		code += MODEL_VAR_NAME + "=" + callable + "(" + codeForKwargs()  + ")" + System.lineSeparator();
+		code += "if any(isinstance(m, torch.nn.ConvTranspose3d) for m in " + MODEL_VAR_NAME + ".modules()):" + System.lineSeparator();
+		code += "  device = 'cpu'" + System.lineSeparator();
+		code += MODEL_VAR_NAME + ".to(device)" + System.lineSeparator();
 		code += "try:" + System.lineSeparator()
 				+ "  " + MODEL_VAR_NAME + ".load_state_dict("
 				+ "torch.load(r'" + this.weightsPath + "', map_location=" + MODEL_VAR_NAME  + ".device))" + System.lineSeparator()

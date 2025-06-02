@@ -43,6 +43,8 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
 
+import io.bioimage.modelrunner.system.PlatformDetection;
+
 
 //TODO remove once appose project is released with the needed changes
 //TODO remove once appose project is released with the needed changes
@@ -122,6 +124,8 @@ public class Service implements AutoCloseable {
 		);
 		pb.environment().put("PATH", "");
 		pb.environment().put("PYTHONHOME", "");
+		if (PlatformDetection.isMacOS() && PlatformDetection.getArch().equals(PlatformDetection.ARCH_ARM64))
+			pb.environment().put("PYTORCH_ENABLE_MPS_FALLBACK", "1");
 		envMap.entrySet().stream().forEach(ee -> {
 			if (ee.getValue() == null && pb.environment().get(ee.getKey()) != null)
 				pb.environment().remove(ee.getKey());
