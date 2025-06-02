@@ -579,10 +579,11 @@ public class DLModelPytorchProtected extends BaseModel {
 			code += codeToConvertShmaToPython(shma, names.get(i));
 			inShmaList.add(shma);
 		}
+		code += "  " + MODEL_VAR_NAME + ".eval()" + System.lineSeparator();
 		code += "  with torch.no_grad():" + System.lineSeparator();
 		code += "    " + OUTPUT_LIST_KEY + " = " + MODEL_VAR_NAME + "(";
 		for (int i = 0; i < rais.size(); i ++)
-			code += "torch.from_numpy(" + names.get(i) + ").eval().to(device), ";
+			code += "torch.from_numpy(" + names.get(i) + ").to(device), ";
 		code = code.substring(0, code.length() - 2);
 		code += ")" + System.lineSeparator();
 		code += ""
