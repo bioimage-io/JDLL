@@ -110,6 +110,9 @@ public class DLModelPytorchProtected extends BaseModel {
 	
 	public static final String COMMON_PYTORCH_ENV_NAME = "biapy";
 	
+	protected static final boolean IS_ARM = PlatformDetection.isMacOS() 
+			&& (PlatformDetection.getArch().equals(PlatformDetection.ARCH_AARCH64) || PlatformDetection.isUsingRosseta());
+	
 	private static final List<String> BIAPY_CONDA_DEPS = Arrays.asList(new String[] {"python=3.10"});
 	
 	private static final List<String> BIAPY_PIP_DEPS_TORCH;
@@ -195,6 +198,9 @@ public class DLModelPytorchProtected extends BaseModel {
 			+ "      if 'torch' not in globals().keys():" + System.lineSeparator()
 			+ "        import torch" + System.lineSeparator()
 			+ "        globals()['torch'] = torch" + System.lineSeparator()
+			+ (!IS_ARM ? "" 
+					: "        if torch.backends.mps.is_built() and torch.backends.mps.is_available():" + System.lineSeparator()
+					+ "          device = 'mps'" + System.lineSeparator())
 			+ "      else:" + System.lineSeparator()
 			+ "        torch = globals()['torch']" + System.lineSeparator()
 			+ "      shm = shared_memory.SharedMemory(create=True, size=outs_i.numel() * outs_i.element_size())" + System.lineSeparator()
@@ -377,9 +383,14 @@ public class DLModelPytorchProtected extends BaseModel {
 		String addPath = "";
 		String importStr = "";
 		String code = ""
+				+ "device = 'cpu'" + System.lineSeparator()
 				+ "if 'torch' not in globals().keys():" + System.lineSeparator()
 				+ "  import torch" + System.lineSeparator()
-				+ "  globals()['torch'] = torch" + System.lineSeparator();
+				+ "  globals()['torch'] = torch" + System.lineSeparator()
+				+ (!IS_ARM ? "" 
+						: "        if torch.backends.mps.is_built() and torch.backends.mps.is_available():" + System.lineSeparator()
+						+ "          device = 'mps'" + System.lineSeparator())
+				+ "globals()['device'] = device" + System.lineSeparator();
 		if (modelFile != null) {
 			String moduleName = new File(modelFile).getName();
 			moduleName = moduleName.substring(0, moduleName.length() - 3);
@@ -399,13 +410,13 @@ public class DLModelPytorchProtected extends BaseModel {
 		}
 		code += String.format(LOAD_MODEL_CODE_ABSTRACT, addPath, importStr, callable, callable, callable);
 		
-		code += MODEL_VAR_NAME + "=" + callable + "(" + codeForKwargs()  + ")" + System.lineSeparator();
+		code += MODEL_VAR_NAME + "=" + callable + "(" + codeForKwargs()  + ").to(device)" + System.lineSeparator();
 		code += "try:" + System.lineSeparator()
 				+ "  " + MODEL_VAR_NAME + ".load_state_dict("
 				+ "torch.load(r'" + this.weightsPath + "', map_location=" + MODEL_VAR_NAME  + ".device))" + System.lineSeparator()
 				+ "except:" + System.lineSeparator()
 				+ "  " + MODEL_VAR_NAME + ".load_state_dict("
-				+ "torch.load(r'" + this.weightsPath + "', map_location=torch.device('cpu')))" + System.lineSeparator();
+				+ "torch.load(r'" + this.weightsPath + "', map_location=torch.device(device)))" + System.lineSeparator();
 		code += "globals()['" + MODEL_VAR_NAME + "'] = " + MODEL_VAR_NAME + System.lineSeparator();
 		return code;
 	}
@@ -566,7 +577,7 @@ public class DLModelPytorchProtected extends BaseModel {
 		}
 		code += "  " + OUTPUT_LIST_KEY + " = " + MODEL_VAR_NAME + "(";
 		for (int i = 0; i < rais.size(); i ++)
-			code += "torch.from_numpy(" + names.get(i) + "), ";
+			code += "torch.from_numpy(" + names.get(i) + ").to(device), ";
 		code = code.substring(0, code.length() - 2);
 		code += ")" + System.lineSeparator();
 		code += ""
