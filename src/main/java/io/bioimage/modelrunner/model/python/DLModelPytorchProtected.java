@@ -413,6 +413,7 @@ public class DLModelPytorchProtected extends BaseModel {
 		code += MODEL_VAR_NAME + "=" + callable + "(" + codeForKwargs()  + ")" + System.lineSeparator();
 		code += "if any(isinstance(m, torch.nn.ConvTranspose3d) for m in " + MODEL_VAR_NAME + ".modules()):" + System.lineSeparator();
 		code += "  device = 'cpu'" + System.lineSeparator();
+		code += "print(device)" + System.lineSeparator();
 		code += MODEL_VAR_NAME + ".to(device)" + System.lineSeparator();
 		code += "try:" + System.lineSeparator()
 				+ "  " + MODEL_VAR_NAME + ".load_state_dict("
@@ -578,7 +579,7 @@ public class DLModelPytorchProtected extends BaseModel {
 			code += codeToConvertShmaToPython(shma, names.get(i));
 			inShmaList.add(shma);
 		}
-		code += "  with torch.no_grad()" + System.lineSeparator();
+		code += "  with torch.no_grad():" + System.lineSeparator();
 		code += "    " + OUTPUT_LIST_KEY + " = " + MODEL_VAR_NAME + "(";
 		for (int i = 0; i < rais.size(); i ++)
 			code += "torch.from_numpy(" + names.get(i) + ").eval().to(device), ";
