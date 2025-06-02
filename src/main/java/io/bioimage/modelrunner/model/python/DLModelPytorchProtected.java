@@ -111,7 +111,7 @@ public class DLModelPytorchProtected extends BaseModel {
 	public static final String COMMON_PYTORCH_ENV_NAME = "biapy";
 	
 	protected static final boolean IS_ARM = PlatformDetection.isMacOS() 
-			&& (PlatformDetection.getArch().equals(PlatformDetection.ARCH_AARCH64) || PlatformDetection.isUsingRosseta());
+			&& (PlatformDetection.getArch().equals(PlatformDetection.ARCH_ARM64) || PlatformDetection.isUsingRosseta());
 	
 	private static final List<String> BIAPY_CONDA_DEPS = Arrays.asList(new String[] {"python=3.10"});
 	
@@ -200,7 +200,7 @@ public class DLModelPytorchProtected extends BaseModel {
 			+ "        globals()['torch'] = torch" + System.lineSeparator()
 			+ (!IS_ARM ? "" 
 					: "        if torch.backends.mps.is_built() and torch.backends.mps.is_available():" + System.lineSeparator()
-					+ "          device = 'mps'" + System.lineSeparator())
+					+ "          device = 'cpu' # TODO 'mps'" + System.lineSeparator())
 			+ "      else:" + System.lineSeparator()
 			+ "        torch = globals()['torch']" + System.lineSeparator()
 			+ "      shm = shared_memory.SharedMemory(create=True, size=outs_i.numel() * outs_i.element_size())" + System.lineSeparator()
@@ -388,8 +388,8 @@ public class DLModelPytorchProtected extends BaseModel {
 				+ "  import torch" + System.lineSeparator()
 				+ "  globals()['torch'] = torch" + System.lineSeparator()
 				+ (!IS_ARM ? "" 
-						: "        if torch.backends.mps.is_built() and torch.backends.mps.is_available():" + System.lineSeparator()
-						+ "          device = 'mps'" + System.lineSeparator())
+						: "  if torch.backends.mps.is_built() and torch.backends.mps.is_available():" + System.lineSeparator()
+						+ "    device = 'cpu' # TODO 'mps'" + System.lineSeparator())
 				+ "globals()['device'] = device" + System.lineSeparator();
 		if (modelFile != null) {
 			String moduleName = new File(modelFile).getName();
@@ -575,9 +575,10 @@ public class DLModelPytorchProtected extends BaseModel {
 			code += codeToConvertShmaToPython(shma, names.get(i));
 			inShmaList.add(shma);
 		}
-		code += "  " + OUTPUT_LIST_KEY + " = " + MODEL_VAR_NAME + "(";
+		code += "  with torch.no_grad()" + System.lineSeparator();
+		code += "    " + OUTPUT_LIST_KEY + " = " + MODEL_VAR_NAME + "(";
 		for (int i = 0; i < rais.size(); i ++)
-			code += "torch.from_numpy(" + names.get(i) + ").to(device), ";
+			code += "torch.from_numpy(" + names.get(i) + ").eval().to(device), ";
 		code = code.substring(0, code.length() - 2);
 		code += ")" + System.lineSeparator();
 		code += ""
