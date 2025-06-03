@@ -380,7 +380,7 @@ public class Gui extends JPanel {
             			return;
             		}
                 	SwingUtilities.invokeLater(() -> this.contentPanel.setProgressLabelText("Loading model..."));
-            		runner = guiAdapter.createRunner(model);
+            		runner = guiAdapter.createRunner(model, this.enginesDir);
             	}
         		if (!runner.isLoaded() && GuiUtils.isEDTAlive())
         			runner.load(false);
@@ -416,7 +416,7 @@ public class Gui extends JPanel {
             			return;
             		}
                 	SwingUtilities.invokeLater(() -> this.contentPanel.setProgressLabelText("Loading model..."));
-            		runner = guiAdapter.createRunner(model);
+            		runner = guiAdapter.createRunner(model, this.enginesDir);
             	}
         		if (!runner.isLoaded() && GuiUtils.isEDTAlive())
         			runner.load(false);
