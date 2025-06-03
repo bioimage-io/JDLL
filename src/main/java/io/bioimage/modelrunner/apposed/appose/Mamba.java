@@ -372,6 +372,10 @@ public class Mamba {
 		
         String filename = "micromamba-" + UUID.randomUUID() + ".tar.bz2";
         File tempFile = new File(BASE_PATH, filename);
+        File parent = tempFile.getParentFile();
+        if (!parent.exists()) {
+            parent.mkdirs();
+        }
         boolean created = tempFile.createNewFile();
         if (!created) {
             throw new IOException("Failed to create temp file: " + tempFile.getAbsolutePath());
