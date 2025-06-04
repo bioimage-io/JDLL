@@ -182,6 +182,8 @@ public class CellposePluginUI extends CellposeGUI implements ActionListener {
     	startModelInstallation(true);
     	if (!INSTALLED_WEIGHTS || !INSTALLED_ENV)
     		installCellpose(weightsInstalled(), (INSTALLED_ENV = Cellpose.isInstalled()));
+    	if (!INSTALLED_WEIGHTS || !INSTALLED_ENV)
+    		return;
     	RandomAccessibleInterval<T> rai = consumer.getFocusedImageAsRai();
     	this.inputTitle = consumer.getFocusedImageName();
     	if (rai == null) {
@@ -331,8 +333,7 @@ public class CellposePluginUI extends CellposeGUI implements ActionListener {
     private void installEnv(CountDownLatch latch) {
     	String msg = "Installation of Python environments might take up to 20 minutes.";
     	String question = "Install Python for Cellpose";
-    	if (Cellpose.isInstalled() || 
-    			JOptionPane.showConfirmDialog(null, msg, question, JOptionPane.YES_NO_OPTION) != JOptionPane.YES_OPTION) {
+    	if (JOptionPane.showConfirmDialog(null, msg, question, JOptionPane.YES_NO_OPTION) != JOptionPane.YES_OPTION) {
 			latch.countDown();
 			checkModelInstallationFinished(latch);
     		return;
