@@ -185,11 +185,11 @@ public class CellposePluginUI extends CellposeGUI implements ActionListener {
     	if (!INSTALLED_WEIGHTS || !INSTALLED_ENV)
     		return;
     	RandomAccessibleInterval<T> rai = consumer.getFocusedImageAsRai();
-    	this.inputTitle = consumer.getFocusedImageName();
     	if (rai == null) {
     		JOptionPane.showMessageDialog(null, "Please open an image", "No image open", JOptionPane.ERROR_MESSAGE);
     		return;
     	}
+    	this.inputTitle = consumer.getFocusedImageName();
     	SwingUtilities.invokeLater(() ->{
     		footer.bar.setIndeterminate(true);
     		footer.bar.setString("Loading model");
@@ -342,7 +342,7 @@ public class CellposePluginUI extends CellposeGUI implements ActionListener {
 		installerFrame.setTitle("Installing Cellpose");
 		installerFrame.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
     	Consumer<Boolean> callback = (bool) -> {
-    		INSTALLED_WEIGHTS = bool;
+    		INSTALLED_ENV = bool;
     		checkModelInstallationFinished(latch);
     		if (installerFrame.isVisible())
     			installerFrame.dispose();

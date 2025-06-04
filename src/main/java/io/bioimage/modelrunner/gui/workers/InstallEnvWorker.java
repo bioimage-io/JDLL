@@ -81,7 +81,9 @@ public class InstallEnvWorker extends SwingWorker<Boolean, Void> {
 		} catch (IOException | RuntimeException | MambaInstallException | ArchiveException
 				| URISyntaxException e) {
 			e.printStackTrace();
+			return false;
 		} catch (InterruptedException e) {
+			return false;
 		}
         return true;
     }
