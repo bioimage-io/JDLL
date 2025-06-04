@@ -140,7 +140,7 @@ public interface Environment {
 		String[] allArgs;
 		if (exeFile == null) throw new IllegalArgumentException("No executables found amongst candidates: " + exes);
 
-		if ((exeFile.getName().equals("python") || exeFile.getName().equals("python.exe"))
+		/*if ((exeFile.getName().equals("python") || exeFile.getName().equals("python.exe"))
 				&& PlatformDetection.isMacOS() && !PlatformDetection.getArch().equals(PlatformDetection.ARCH_ARM64)
 				&& PlatformDetection.isUsingRosseta()) {
 			allArgs = new String[args.length + 3];
@@ -152,7 +152,10 @@ public interface Environment {
 			allArgs = new String[args.length + 1];
 			System.arraycopy(args, 0, allArgs, 1, args.length);
 			allArgs[0] = exeFile.getCanonicalPath();
-		}
+		}*/
+		allArgs = new String[args.length + 1];
+		System.arraycopy(args, 0, allArgs, 1, args.length);
+		allArgs[0] = exeFile.getCanonicalPath();
 
 		return new Service(new File(base()), allArgs);
 	}

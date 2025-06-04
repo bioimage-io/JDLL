@@ -188,13 +188,14 @@ public class Mamba {
 		String osName = System.getProperty("os.name");
 		if (osName.startsWith("Windows")) osName = "Windows";
 		String osArch = System.getProperty("os.arch");
-		switch (osName + "|" + osArch) {
-			case "Linux|amd64":      return "linux-64";
-			case "Linux|aarch64":    return "linux-aarch64";
-			case "Linux|ppc64le":    return "linux-ppc64le";
-			case "Mac OS X|x86_64":  return "osx-64";
-			case "Mac OS X|aarch64": return "osx-arm64";
-			case "Windows|amd64":    return "win-64";
+		switch (osName + "|" + osArch + "|" + PlatformDetection.isUsingRosseta()) {
+			case "Linux|amd64|false":      return "linux-64";
+			case "Linux|aarch64|false":    return "linux-aarch64";
+			case "Linux|ppc64le|false":    return "linux-ppc64le";
+			case "Mac OS X|x86_64|false":  return "osx-64";
+			case "Mac OS X|x86_64|true":  return "osx-arm64";
+			case "Mac OS X|aarch64|false": return "osx-arm64";
+			case "Windows|amd64|false":    return "win-64";
 			default:                 return null;
 		}
 	}
@@ -368,9 +369,8 @@ public class Mamba {
 		this.customErrorConsumer = custom;
 	}
 	
-	private File tempDirMacos() throws IOException, URISyntaxException {
+	private File tempDirMacos(String filename) throws IOException, URISyntaxException {
 		
-        String filename = "micromamba-" + UUID.randomUUID() + ".tar.bz2";
         File tempFile = new File(BASE_PATH, filename);
         File parent = tempFile.getParentFile();
         if (!parent.exists()) {
@@ -387,7 +387,7 @@ public class Mamba {
 	private File downloadMicromamba() throws IOException, URISyntaxException {
 		final File tempFile;
 		if (PlatformDetection.isMacOS())
-			tempFile = tempDirMacos();
+			tempFile = tempDirMacos("micromamba-" + UUID.randomUUID() + ".tar.bz2");
 		else
 			tempFile = File.createTempFile( "micromamba", ".tar.bz2" );
 		tempFile.deleteOnExit();
@@ -410,8 +410,12 @@ public class Mamba {
 	}
 	
 	private void decompressMicromamba(final File tempFile) 
-				throws FileNotFoundException, IOException, ArchiveException, InterruptedException {
-		final File tempTarFile = File.createTempFile( "micromamba", ".tar" );
+				throws FileNotFoundException, IOException, ArchiveException, InterruptedException, URISyntaxException {
+		final File tempTarFile;
+		if (PlatformDetection.isMacOS())
+			tempTarFile = tempDirMacos("micromamba-" + UUID.randomUUID() + ".tar");
+		else
+			tempTarFile = File.createTempFile( "micromamba", ".tar" );
 		tempTarFile.deleteOnExit();
 		MambaInstallerUtils.unBZip2(tempFile, tempTarFile);
 		File mambaBaseDir = new File(rootdir);
@@ -419,6 +423,8 @@ public class Mamba {
 	        throw new IOException("Failed to create Micromamba default directory " + mambaBaseDir.getParentFile().getAbsolutePath()
 	        		+ ". Please try installing it in another directory.");
 		MambaInstallerUtils.unTar(tempTarFile, mambaBaseDir);
+		for (File ff : mambaBaseDir.listFiles())
+			System.out.println(ff.getAbsolutePath());
 		if (!(new File(envsdir)).isDirectory() && !new File(envsdir).mkdirs())
 	        throw new IOException("Failed to create Micromamba default envs directory " + envsdir);
 		boolean executableSet = new File(mambaCommand).setExecutable(true);
@@ -462,11 +468,9 @@ public class Mamba {
 		final List< String > cmd = new ArrayList<>();
 		if ( PlatformDetection.isWindows() )
 			cmd.addAll( Arrays.asList( "cmd.exe", "/c" ) );
-		/**
-		 else if (PlatformDetection.isMacOS() && !PlatformDetection.getArch().equals(PlatformDetection.ARCH_ARM64)
+		/**else if (PlatformDetection.isMacOS() && !PlatformDetection.getArch().equals(PlatformDetection.ARCH_ARM64)
 				&& PlatformDetection.isUsingRosseta())
-			cmd.addAll( Arrays.asList( "arch", "-arm64" ) );
-		*/
+			cmd.addAll( Arrays.asList( "arch", "-arm64" ) );*/
 		return cmd;
 	}
 
