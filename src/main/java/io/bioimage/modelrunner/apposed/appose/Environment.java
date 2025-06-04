@@ -38,8 +38,6 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 
-import com.sun.jna.Platform;
-
 import io.bioimage.modelrunner.system.PlatformDetection;
 
 //TODO remove once appose project is released with the needed changes
