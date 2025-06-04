@@ -76,8 +76,8 @@ public class CellposePluginUI extends CellposeGUI implements ActionListener {
             	this.nucleiCbox.setModel(new DefaultComboBoxModel<>(RGB_LIST));
             	this.cytoCbox.setModel(new DefaultComboBoxModel<>(RGB_LIST));
         } else {
-        	this.nucleiCbox.setModel(new DefaultComboBoxModel<>(RGB_LIST));
-        	this.cytoCbox.setModel(new DefaultComboBoxModel<>(RGB_LIST));
+        	this.nucleiCbox.setModel(new DefaultComboBoxModel<>(ALL_LIST));
+        	this.cytoCbox.setModel(new DefaultComboBoxModel<>(ALL_LIST));
         }
 
 
