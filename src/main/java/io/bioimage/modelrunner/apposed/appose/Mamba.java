@@ -468,9 +468,6 @@ public class Mamba {
 		final List< String > cmd = new ArrayList<>();
 		if ( PlatformDetection.isWindows() )
 			cmd.addAll( Arrays.asList( "cmd.exe", "/c" ) );
-		/**else if (PlatformDetection.isMacOS() && !PlatformDetection.getArch().equals(PlatformDetection.ARCH_ARM64)
-				&& PlatformDetection.isUsingRosseta())
-			cmd.addAll( Arrays.asList( "arch", "-arm64" ) );*/
 		return cmd;
 	}
 
