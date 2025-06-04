@@ -394,6 +394,7 @@ public class StardistGUI extends JPanel implements ActionListener {
 		Thread dwnlThread = new Thread(() -> {
 			try {
 				Stardist2D.donwloadPretrained((String) modelComboBox.getSelectedItem(), this.consumer.getModelsDir(), cons);
+			} catch (IllegalArgumentException e) {
 			} catch (IOException | InterruptedException e) {
 				e.printStackTrace();
 			}
