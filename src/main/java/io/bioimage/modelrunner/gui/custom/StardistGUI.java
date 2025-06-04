@@ -415,7 +415,7 @@ public class StardistGUI extends JPanel implements ActionListener {
 		JDialog installerFrame = new JDialog();
 		installerFrame.setTitle("Installing StarDist");
 		installerFrame.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
-    	Runnable callback = () -> {
+    	Consumer<Boolean> callback = (bool) -> {
     		checkModelInstallationFinished(latch);
     		if (installerFrame.isVisible())
     			installerFrame.dispose();

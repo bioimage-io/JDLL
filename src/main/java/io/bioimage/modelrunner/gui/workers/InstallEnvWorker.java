@@ -22,6 +22,7 @@ package io.bioimage.modelrunner.gui.workers;
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutionException;
 import java.util.function.Consumer;
 
 import javax.swing.SwingWorker;
@@ -34,22 +35,22 @@ import io.bioimage.modelrunner.model.python.DLModelPytorch;
 import io.bioimage.modelrunner.model.special.cellpose.Cellpose;
 import io.bioimage.modelrunner.model.special.stardist.StardistAbstract;
 
-public class InstallEnvWorker extends SwingWorker<Void, Void> {
+public class InstallEnvWorker extends SwingWorker<Boolean, Void> {
 
     private final String modelFamily;
     private Consumer<String> consumer;
     private final CountDownLatch latch;
-    private final Runnable callback;
+    private final Consumer<Boolean> callback;
     
     private Thread workerThread;
 
-    public InstallEnvWorker(ModelDescriptor descriptor, CountDownLatch latch, Runnable callback) {
+    public InstallEnvWorker(ModelDescriptor descriptor, CountDownLatch latch, Consumer<Boolean> callback) {
         this.modelFamily = descriptor.getModelFamily();
         this.latch = latch;
         this.callback = callback;
     }
 
-    public InstallEnvWorker(String modelFamily, CountDownLatch latch, Runnable callback) {
+    public InstallEnvWorker(String modelFamily, CountDownLatch latch, Consumer<Boolean> callback) {
         this.modelFamily = modelFamily;
         this.latch = latch;
         this.callback = callback;
@@ -68,7 +69,7 @@ public class InstallEnvWorker extends SwingWorker<Void, Void> {
     }
 
     @Override
-    protected Void doInBackground() {
+    protected Boolean doInBackground() {
     	workerThread = Thread.currentThread();
     	try {
             if (modelFamily.toLowerCase().equals(ModelDescriptor.STARDIST)) {
@@ -82,14 +83,20 @@ public class InstallEnvWorker extends SwingWorker<Void, Void> {
 			e.printStackTrace();
 		} catch (InterruptedException e) {
 		}
-        return null;
+        return true;
     }
 
     @Override
     protected void done() {
+    	Boolean success = false;
+    	try {
+			success = this.get();
+		} catch (InterruptedException | ExecutionException e) {
+			e.printStackTrace();
+		}
     	latch.countDown();
         if (callback != null) {
-            callback.run();
+            callback.accept(success);
         }
     }
     

@@ -764,7 +764,7 @@ public class Gui extends JPanel {
 		JDialog installerFrame = new JDialog();
 		installerFrame.setTitle("Installing " + descriptor.getName());
 		installerFrame.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
-    	Runnable callback = () -> {
+    	Consumer<Boolean> callback = (bool) -> {
     		checkModelInstallationFinished(latch);
     		if (installerFrame.isVisible())
     			installerFrame.dispose();
@@ -790,7 +790,7 @@ public class Gui extends JPanel {
 		InstallEnvWorker[] worker = new InstallEnvWorker[1];
 		EnvironmentInstaller[] installerPanel = new EnvironmentInstaller[1];
     	CountDownLatch latch = new CountDownLatch(1);
-    	Runnable callback = () -> {
+    	Consumer<Boolean> callback = (bool) -> {
     		if (installerFrame[0].isVisible())
     			installerFrame[0].dispose();
     	};

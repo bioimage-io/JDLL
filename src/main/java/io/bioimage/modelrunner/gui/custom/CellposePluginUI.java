@@ -56,6 +56,10 @@ public class CellposePluginUI extends CellposeGUI implements ActionListener {
 
     private static final long serialVersionUID = 5381352117710530216L;
     
+    private static boolean INSTALLED_WEIGHTS = false;
+    
+    private static boolean INSTALLED_ENV = false;
+    
     private final ConsumerInterface consumer;
     private String whichLoaded;
     private Cellpose model;
@@ -176,7 +180,8 @@ public class CellposePluginUI extends CellposeGUI implements ActionListener {
     
     private < T extends RealType< T > & NativeType< T > > void runCellpose() throws IOException, RunModelException, LoadModelException {
     	startModelInstallation(true);
-    	installCellpose(weightsInstalled(), Cellpose.isInstalled());
+    	if (!INSTALLED_WEIGHTS || !INSTALLED_ENV)
+    		installCellpose(weightsInstalled(), (INSTALLED_ENV = Cellpose.isInstalled()));
     	RandomAccessibleInterval<T> rai = consumer.getFocusedImageAsRai();
     	this.inputTitle = consumer.getFocusedImageName();
     	if (rai == null) {
@@ -286,8 +291,10 @@ public class CellposePluginUI extends CellposeGUI implements ActionListener {
     
     private boolean weightsInstalled() {
     	String model = (String) this.modelComboBox.getSelectedItem();
-    	if (model.equals(CUSOTM_STR))
+    	if (model.equals(CUSOTM_STR)) {
+    		INSTALLED_WEIGHTS = true;
     		return true;
+    	}
     	try {
 			String path = Cellpose.findPretrainedModelInstalled(model, consumer.getModelsDir());
 			if (path == null)
@@ -295,6 +302,7 @@ public class CellposePluginUI extends CellposeGUI implements ActionListener {
 		} catch (Exception e) {
 			return false;
 		}
+		INSTALLED_WEIGHTS = true;
     	return true;
     }
     
@@ -310,6 +318,7 @@ public class CellposePluginUI extends CellposeGUI implements ActionListener {
 		Thread dwnlThread = new Thread(() -> {
 			try {
 				Cellpose.donwloadPretrained((String) modelComboBox.getSelectedItem(), this.consumer.getModelsDir(), cons);
+				INSTALLED_WEIGHTS = true;
 			} catch (IOException | InterruptedException | ExecutionException e) {
 				e.printStackTrace();
 			}
@@ -331,7 +340,8 @@ public class CellposePluginUI extends CellposeGUI implements ActionListener {
 		JDialog installerFrame = new JDialog();
 		installerFrame.setTitle("Installing Cellpose");
 		installerFrame.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
-    	Runnable callback = () -> {
+    	Consumer<Boolean> callback = (bool) -> {
+    		INSTALLED_WEIGHTS = bool;
     		checkModelInstallationFinished(latch);
     		if (installerFrame.isVisible())
     			installerFrame.dispose();
