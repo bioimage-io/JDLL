@@ -423,8 +423,6 @@ public class Mamba {
 	        throw new IOException("Failed to create Micromamba default directory " + mambaBaseDir.getParentFile().getAbsolutePath()
 	        		+ ". Please try installing it in another directory.");
 		MambaInstallerUtils.unTar(tempTarFile, mambaBaseDir);
-		for (File ff : mambaBaseDir.listFiles())
-			System.out.println(ff.getAbsolutePath());
 		if (!(new File(envsdir)).isDirectory() && !new File(envsdir).mkdirs())
 	        throw new IOException("Failed to create Micromamba default envs directory " + envsdir);
 		boolean executableSet = new File(mambaCommand).setExecutable(true);
