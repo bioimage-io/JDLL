@@ -38,6 +38,10 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 
+import com.sun.jna.Platform;
+
+import io.bioimage.modelrunner.system.PlatformDetection;
+
 //TODO remove once appose project is released with the needed changes
 //TODO remove once appose project is released with the needed changes
 //TODO remove once appose project is released with the needed changes
@@ -135,11 +139,22 @@ public interface Environment {
 			: Arrays.asList(base());
 
 		File exeFile = FilePaths.findExe(dirs, exes);
+		String[] allArgs;
 		if (exeFile == null) throw new IllegalArgumentException("No executables found amongst candidates: " + exes);
 
-		String[] allArgs = new String[args.length + 1];
-		System.arraycopy(args, 0, allArgs, 1, args.length);
-		allArgs[0] = exeFile.getCanonicalPath();
+		if ((exeFile.getName().equals("python") || exeFile.getName().equals("python.exe"))
+				&& PlatformDetection.isMacOS() && !PlatformDetection.getArch().equals(PlatformDetection.ARCH_ARM64)
+				&& PlatformDetection.isUsingRosseta()) {
+			allArgs = new String[args.length + 3];
+			System.arraycopy(args, 0, allArgs, 3, args.length);
+			allArgs[0] = "arch";
+			allArgs[1] = "-arm64";
+			allArgs[2] = exeFile.getCanonicalPath();
+		} else {
+			allArgs = new String[args.length + 1];
+			System.arraycopy(args, 0, allArgs, 1, args.length);
+			allArgs[0] = exeFile.getCanonicalPath();
+		}
 
 		return new Service(new File(base()), allArgs);
 	}
