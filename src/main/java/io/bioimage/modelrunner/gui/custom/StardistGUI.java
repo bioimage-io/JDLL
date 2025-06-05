@@ -92,6 +92,10 @@ public class StardistGUI extends JPanel implements ActionListener {
     private static List<String> VAR_NAMES = Arrays.asList(new String[] {
     		"Select a model:", "Custom Model Path:", "Normalization low percentile:", "Normalization low percentile:"
     });
+    
+    private static boolean INSTALLED_WEIGHTS = false;
+    
+    private static boolean INSTALLED_ENV = false;
 
     public StardistGUI(ConsumerInterface consumer) {
         // Set a modern-looking border layout with padding
@@ -258,13 +262,16 @@ public class StardistGUI extends JPanel implements ActionListener {
     
     private < T extends RealType< T > & NativeType< T > > void runStardist() throws IOException, RunModelException, LoadModelException {
     	startModelInstallation(true);
-    	installStardist(weightsInstalled(), StardistAbstract.isInstalled());
+    	if (!INSTALLED_WEIGHTS || !INSTALLED_ENV)
+        	installStardist(weightsInstalled(), (INSTALLED_ENV = StardistAbstract.isInstalled()));
+    	if (!INSTALLED_WEIGHTS || !INSTALLED_ENV)
+    		return;
     	RandomAccessibleInterval<T> rai = consumer.getFocusedImageAsRai();
-    	this.inputTitle = consumer.getFocusedImageName();
     	if (rai == null) {
     		JOptionPane.showMessageDialog(null, "Please open an image", "No image open", JOptionPane.ERROR_MESSAGE);
     		return;
     	}
+    	this.inputTitle = consumer.getFocusedImageName();
     	SwingUtilities.invokeLater(() ->{
     		this.bar.setIndeterminate(true);
     		this.bar.setString("Loading model");
@@ -370,6 +377,7 @@ public class StardistGUI extends JPanel implements ActionListener {
     private boolean weightsInstalled() {
     	String model = (String) this.modelComboBox.getSelectedItem();
     	if (model.equals(CUSTOM_STR)) {
+    		INSTALLED_WEIGHTS = true;
     		return true;
     	}
     	try {
@@ -379,6 +387,7 @@ public class StardistGUI extends JPanel implements ActionListener {
 		} catch (Exception e) {
 			return false;
 		}
+		INSTALLED_WEIGHTS = true;
     	return true;
     }
     
@@ -394,6 +403,7 @@ public class StardistGUI extends JPanel implements ActionListener {
 		Thread dwnlThread = new Thread(() -> {
 			try {
 				Stardist2D.donwloadPretrained((String) modelComboBox.getSelectedItem(), this.consumer.getModelsDir(), cons);
+				INSTALLED_WEIGHTS = true;
 			} catch (IllegalArgumentException e) {
 			} catch (IOException | InterruptedException e) {
 				e.printStackTrace();
@@ -417,6 +427,7 @@ public class StardistGUI extends JPanel implements ActionListener {
 		installerFrame.setTitle("Installing StarDist");
 		installerFrame.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
     	Consumer<Boolean> callback = (bool) -> {
+    		INSTALLED_ENV = bool;
     		checkModelInstallationFinished(latch);
     		if (installerFrame.isVisible())
     			installerFrame.dispose();
