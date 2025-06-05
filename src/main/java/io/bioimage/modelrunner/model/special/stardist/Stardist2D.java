@@ -30,6 +30,7 @@ import java.util.function.Consumer;
 import org.apache.commons.compress.archivers.ArchiveException;
 
 import io.bioimage.modelrunner.apposed.appose.MambaInstallException;
+import io.bioimage.modelrunner.bioimageio.BioimageioDirectConnection;
 import io.bioimage.modelrunner.bioimageio.BioimageioRepo;
 import io.bioimage.modelrunner.bioimageio.description.ModelDescriptor;
 import io.bioimage.modelrunner.bioimageio.description.ModelDescriptorFactory;
@@ -63,6 +64,13 @@ public class Stardist2D extends StardistAbstract {
 		PRETRAINED_EQUIVALENCE = new HashMap<String, String>();
 		PRETRAINED_EQUIVALENCE.put("2D_versatile_he", "StarDist H&E Nuclei Segmentation");
 		PRETRAINED_EQUIVALENCE.put("2D_versatile_fluo", "StarDist Fluorescence Nuclei Segmentation");
+	}
+	
+	private static final Map<String, String> ID_EQUIVALENCE;
+	static {
+		ID_EQUIVALENCE = new HashMap<String, String>();
+		ID_EQUIVALENCE.put("StarDist H&E Nuclei Segmentation", "chatty-frog");
+		ID_EQUIVALENCE.put("StarDist Fluorescence Nuclei Segmentation", "fearless-crab");
 	}
 	
 	protected Stardist2D(String modelName, String baseDir, Map<String, Object> config) throws IOException {
@@ -191,7 +199,7 @@ public class Stardist2D extends StardistAbstract {
 			return null;
 		} else if (pretrainedModel.equals("StarDist H&E Nuclei Segmentation")
 				|| pretrainedModel.equals("2D_versatile_he")) {
-			String path = BioimageioRepo.connect().downloadByName("StarDist H&E Nuclei Segmentation", installDir);
+			String path = BioimageioRepo.downloadModel(BioimageioDirectConnection.selectByID("chatty-frog"), installDir);
 			return Stardist2D.fromBioimageioModel(ModelDescriptorFactory.readFromLocalFile(path));
 		} else if ((pretrainedModel.equals("StarDist Fluorescence Nuclei Segmentation")
 				|| pretrainedModel.equals("2D_versatile_fluo")) && !install) {
@@ -201,7 +209,7 @@ public class Stardist2D extends StardistAbstract {
 			return null;
 		} else if (pretrainedModel.equals("StarDist Fluorescence Nuclei Segmentation")
 				|| pretrainedModel.equals("2D_versatile_fluo")) {
-			String path = BioimageioRepo.connect().downloadByName("StarDist Fluorescence Nuclei Segmentation", installDir);
+			String path = BioimageioRepo.downloadModel(BioimageioDirectConnection.selectByID("fearless-crab"), installDir);
 			return Stardist2D.fromBioimageioModel(ModelDescriptorFactory.readFromLocalFile(path));
 		} else {
 			throw new IllegalArgumentException("There is no Stardist2D model called: " + pretrainedModel);
@@ -223,11 +231,9 @@ public class Stardist2D extends StardistAbstract {
 	private static String donwloadPretrainedBioimageio(String modelName, String downloadDir, Consumer<Double> progressConsumer) 
 			throws InterruptedException, IOException {
 		
-		BioimageioRepo br = BioimageioRepo.connect();
-
-		ModelDescriptor descriptor = br.selectByName(modelName);
-		if (descriptor == null)
-			descriptor = br.selectByID(modelName);
+		if (ID_EQUIVALENCE.get(modelName) != null)
+			modelName = ID_EQUIVALENCE.get(modelName);
+		ModelDescriptor descriptor = BioimageioDirectConnection.selectByID(modelName);
 		if (descriptor == null) {
 			throw new IllegalArgumentException("The model does not correspond to on of the available pretrained StarDist2D models."
 					+ " To find a list of available cellpose models, please run StarDist2D.getPretrainedList()");

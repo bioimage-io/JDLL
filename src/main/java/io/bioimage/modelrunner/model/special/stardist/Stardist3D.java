@@ -22,6 +22,7 @@ package io.bioimage.modelrunner.model.special.stardist;
 import java.io.File;
 import java.io.IOException;
 import java.net.URISyntaxException;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
 import java.util.function.Consumer;
@@ -29,6 +30,7 @@ import java.util.function.Consumer;
 import org.apache.commons.compress.archivers.ArchiveException;
 
 import io.bioimage.modelrunner.apposed.appose.MambaInstallException;
+import io.bioimage.modelrunner.bioimageio.BioimageioDirectConnection;
 import io.bioimage.modelrunner.bioimageio.BioimageioRepo;
 import io.bioimage.modelrunner.bioimageio.description.ModelDescriptor;
 import io.bioimage.modelrunner.bioimageio.description.ModelDescriptorFactory;
@@ -54,6 +56,12 @@ import net.imglib2.util.Util;
 public class Stardist3D extends StardistAbstract {
 	
 	private static String MODULE_NAME = "StarDist3D";
+	
+	private static final Map<String, String> ID_EQUIVALENCE;
+	static {
+		ID_EQUIVALENCE = new HashMap<String, String>();
+		ID_EQUIVALENCE.put("StarDist Plant Nuclei 3D ResNet", "modest-octopus");
+	}
 	
 	protected Stardist3D(String modelName, String baseDir, Map<String, Object> config) throws IOException {
 		super(modelName, baseDir, config);
@@ -169,7 +177,7 @@ public class Stardist3D extends StardistAbstract {
 			if (md != null) return new Stardist3D(md);
 			return null;
 		} else if (pretrainedModel.equals("StarDist Plant Nuclei 3D ResNet")) {
-			String path = BioimageioRepo.connect().downloadByName("StarDist Plant Nuclei 3D ResNet", installDir);
+			String path = BioimageioRepo.downloadModel(BioimageioDirectConnection.selectByID("modest-octopus"), installDir);
 			return Stardist3D.fromBioimageioModel(ModelDescriptorFactory.readFromLocalFile(path));
 		} else {
 			throw new IllegalArgumentException("There is no Stardist3D model called: " + pretrainedModel);
@@ -188,11 +196,10 @@ public class Stardist3D extends StardistAbstract {
 	private static String donwloadPretrainedBioimageio(String modelName, String downloadDir, Consumer<Double> progressConsumer) 
 			throws InterruptedException, IOException {
 		
-		BioimageioRepo br = BioimageioRepo.connect();
 
-		ModelDescriptor descriptor = br.selectByName(modelName);
-		if (descriptor == null)
-			descriptor = br.selectByID(modelName);
+		if (ID_EQUIVALENCE.get(modelName) != null)
+			modelName = ID_EQUIVALENCE.get(modelName);
+		ModelDescriptor descriptor = BioimageioDirectConnection.selectByID(modelName);
 		if (descriptor == null) {
 			throw new IllegalArgumentException("The model does not correspond to on of the available pretrained StarDist3D models."
 					+ " To find a list of available cellpose models, please run StarDist3D.getPretrainedList()");
