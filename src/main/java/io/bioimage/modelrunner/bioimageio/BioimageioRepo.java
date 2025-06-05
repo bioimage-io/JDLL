@@ -109,9 +109,8 @@ public class BioimageioRepo {
 	/**
 	 * Constructor for the object that retrieves information about the 
 	 * models in teh Bioimage.io repo. It also handles the download of said models.
-	 * @throws InterruptedException 
 	 */
-	private BioimageioRepo() throws InterruptedException {
+	private BioimageioRepo() {
 		setCollectionsRepo();
 	}
 	
@@ -122,9 +121,8 @@ public class BioimageioRepo {
 	 * @param consumer
 	 * 	String consumer that will contain the info about the models accessed (time accessed, 
 	 * 	name, ...)
-	 * @throws InterruptedException 
 	 */
-	private BioimageioRepo(Consumer<String> consumer) throws InterruptedException {
+	private BioimageioRepo(Consumer<String> consumer) {
 		this.consumer = consumer;
 		setCollectionsRepo();
 	}
@@ -133,9 +131,8 @@ public class BioimageioRepo {
 	 * Create an instance of {@link BioimageioRepo}. This instance can be used to retrieve 
 	 * information about the models i the Bioimage.io repository and handle their download.
 	 * @return an instance of the {@link BioimageioRepo}
-	 * @throws InterruptedException if the thread that is retrieving the information from the Bioimage.io is interrupted
 	 */
-	public static BioimageioRepo connect() throws InterruptedException {
+	public static BioimageioRepo connect() {
 		return new BioimageioRepo();
 	}
 	
@@ -146,9 +143,8 @@ public class BioimageioRepo {
 	 * 	a String consumer that will record all the info about the access to the models in the
 	 * 	bioimage.io
 	 * @return an instance of the {@link BioimageioRepo}
-	 * @throws InterruptedException if the thread that is retrieving the information from the Bioimage.io is interrupted
 	 */
-	public static BioimageioRepo connect(Consumer<String> consumer) throws InterruptedException {
+	public static BioimageioRepo connect(Consumer<String> consumer) {
 		return new BioimageioRepo(consumer);
 	}
 	
@@ -201,6 +197,8 @@ public class BioimageioRepo {
 				if (url == null)
 					continue;
 				String stringRDF = getJSONFromUrl(url);
+				if (Thread.interrupted())
+					break;
 				ModelDescriptor descriptor = ModelDescriptorFactory.readFromYamlTextString(stringRDF);
 				MODELS.put(url, descriptor);
 			} catch (Exception ex) {
@@ -222,12 +220,13 @@ public class BioimageioRepo {
 	 * Including the models available.
 	 * This method also stores the model IDs of the available models.
 	 * The file is at: {@link #LOCATE}
-	 * @throws InterruptedException if the thread that is retrieving the information from the Bioimage.io is interrupted
 	 */
-	private void setCollectionsRepo() throws InterruptedException {
+	private void setCollectionsRepo() {
 		MODEL_IDS = new ArrayList<String>();
 		MODELS_INFO = new HashMap<String, Map<String, Map<String, String>>>();
 		String text = getJSONFromUrl(LOCATE);
+		if (Thread.interrupted())
+			return;
 		if (text == null) {
 			Log.addProgressAndShowInTerminal(consumer, MODELS_NOT_FOUND_MSG, true);
 			Log.addProgressAndShowInTerminal(consumer, "BioImage.io: Cannot access file: " + LOCATE, true);
@@ -250,6 +249,8 @@ public class BioimageioRepo {
 			return;
 		}
 		for (Object resource : collections) {
+			if (Thread.interrupted())
+				return;
 			JsonObject jsonResource = (JsonObject) resource;
 			if (jsonResource.get("type") == null || !jsonResource.get("type").getAsString().equals("model"))
 				continue;
@@ -285,9 +286,8 @@ public class BioimageioRepo {
 	 * 	URL pointing to the rdf.yaml file of interest
 	 * @return the {@link ModelDescriptor} from the rdf.yaml of interest or null
 	 * if the URL does not point to a valid URL
-	 * @throws InterruptedException if the thread that is retrieving the information from the Bioimage.io is interrupted
 	 */
-	public static ModelDescriptor retreiveDescriptorFromURL(String rdfSource) throws InterruptedException {
+	public static ModelDescriptor retreiveDescriptorFromURL(String rdfSource) {
 		ModelDescriptor descriptor = null;
 		String stringRDF = getJSONFromUrl(rdfSource);
 		if (stringRDF == null)
@@ -307,9 +307,8 @@ public class BioimageioRepo {
 	 * @param url
 	 * 	String url of the file
 	 * @return a String representation of the file. It is null if the file was not accessed
-	 * @throws InterruptedException if the thread that is retrieving the information from the Bioimage.io is interrupted
 	 */
-	public static String getJSONFromUrl(String url) throws InterruptedException {
+	public static String getJSONFromUrl(String url) {
 		return getJSONFromUrl(url, null);
 	}
 
@@ -320,9 +319,8 @@ public class BioimageioRepo {
 	 * @param consumer
 	 * 	object to communicate with the main interface
 	 * @return a String representation of the file. It is null if the file was not accessed
-	 * @throws InterruptedException if the thread that is retrieving the information from the Bioimage.io is interrupted
 	 */
-	private static String getJSONFromUrl(String url, Consumer<String> consumer) throws InterruptedException {
+	protected static String getJSONFromUrl(String url, Consumer<String> consumer) {
 
 		HttpsURLConnection con = null;
 		try {
@@ -336,7 +334,7 @@ public class BioimageioRepo {
 			 for (int length; (length = inputStream.read(buffer)) != -1; ) {
 			     result.write(buffer, 0, length);
 			     if (Thread.currentThread().isInterrupted())
-			    	 throw new InterruptedException("Thread connecting to the Bioimage.io interrupted forcibly.");
+			    	 return null;
 			 }
 			 // StandardCharsets.UTF_8.name() > JDK 7
 			 String txt = result.toString("UTF-8");
@@ -390,11 +388,7 @@ public class BioimageioRepo {
 	 */
 	public static List<String> getModelIDs(){
 		if (MODEL_IDS == null || MODEL_IDS.size() == 0) {
-			try {
-				BioimageioRepo.connect();
-			} catch (InterruptedException e) {
-				e.printStackTrace();
-			}
+			BioimageioRepo.connect();
 		}
 		if (MODEL_IDS == null)
 			return new ArrayList<String>();
@@ -612,7 +606,7 @@ public class BioimageioRepo {
 		return downloadModel(model, modelsDirectory, consumer);
 	}
 	
-	private static long strToTimestamp(String str) {
+	protected static long strToTimestamp(String str) {
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSSSSS");
         LocalDateTime localDateTime = LocalDateTime.parse(str, formatter);
         Timestamp timestamp = Timestamp.valueOf(localDateTime);
@@ -642,11 +636,7 @@ public class BioimageioRepo {
 	 */
 	public static String getModelRdfUrl(String id, String version) {
 		if (MODELS_INFO == null || MODELS_INFO.get(id) == null) {
-			try {
-				BioimageioRepo.connect();
-			} catch (InterruptedException e) {
-				e.printStackTrace();
-			}
+			BioimageioRepo.connect();
 		}
 		
 		if (MODELS_INFO.get(id) == null)
@@ -666,7 +656,7 @@ public class BioimageioRepo {
 	}
 	
 	
-	public static void main(String[] args) throws InterruptedException {
+	public static void main(String[] args) {
 		BioimageioRepo br = new BioimageioRepo();
 		br.listAllModels(false);
 	}

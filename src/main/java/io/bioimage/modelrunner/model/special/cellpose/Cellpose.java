@@ -486,14 +486,11 @@ public class Cellpose extends BioimageIoModelPytorchProtected {
 	
 	public static List<String> getPretrainedList() {
 		List<String> list = new ArrayList<String>();
-		try {
-			BioimageioRepo br = BioimageioRepo.connect();
-			Map<String, ModelDescriptor> models = br.listAllModels(false);
-			list = models.entrySet().stream()
-					.filter(ee -> ee.getValue().getModelFamily().equals(ModelDescriptor.CELLPOSE))
-					.map(ee -> ee.getValue().getName()).collect(Collectors.toList());
-		} catch (InterruptedException e) {
-		}
+		BioimageioRepo br = BioimageioRepo.connect();
+		Map<String, ModelDescriptor> models = br.listAllModels(false);
+		list = models.entrySet().stream()
+				.filter(ee -> ee.getValue().getModelFamily().equals(ModelDescriptor.CELLPOSE))
+				.map(ee -> ee.getValue().getName()).collect(Collectors.toList());
 		list.addAll(PRETRAINED_CELLPOSE_MODELS);
 		return list;
 	}

@@ -22,7 +22,6 @@ package io.bioimage.modelrunner.bioimageio.description.weights;
 
 import java.io.File;
 import java.io.IOException;
-import java.net.URL;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -62,7 +61,7 @@ public class ModelDependencies {
 			Map<String,Object> map = YAMLUtils.loadFromString(stringRDF);
 			if (map.get("dependencies") != null && map.get("dependencies") instanceof List)
 				return dependenciesMapToList((List<Object>) map.get("dependencies"));
-		} catch (InterruptedException | IOException e) {
+		} catch (IOException e) {
 			return deps;
 		}
 		return deps;
