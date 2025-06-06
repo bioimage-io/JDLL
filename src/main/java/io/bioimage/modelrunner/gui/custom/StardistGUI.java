@@ -301,42 +301,69 @@ public class StardistGUI extends JPanel implements ActionListener {
     	SwingUtilities.invokeLater(() ->{
     		this.bar.setString("Running the model");
     	});
-    	if (rai.dimensionsAsLongArray().length == 4) {
-    		runStardistOnFramesStack(rai);
-    	} else {
-    		runStardistOnTensor(rai);
-    	}
+    	runStardistOnFramesStack(rai);
     }
     
     private <T extends RealType<T> & NativeType<T>, R extends RealType<R> & NativeType<R>>
     void runStardistOnFramesStack(RandomAccessibleInterval<R> rai) throws RunModelException {
-    	long[] dims = rai.dimensionsAsLongArray();
-		RandomAccessibleInterval<T> outMaskRai = Cast.unchecked(ArrayImgs.floats(new long[] {dims[0], dims[1], dims[3]}));
-		for (int i = 0; i < rai.dimensionsAsLongArray()[3]; i ++) {
+    	rai = addDimsToInput(rai, model);
+    	long[] inDims = rai.dimensionsAsLongArray();
+    	long[] outDims;
+    	if (model.is2D())
+    		outDims = new long[] {inDims[0], inDims[1], 1, inDims[3]};
+    	else
+    		outDims = new long[] {inDims[0], inDims[1], 1, inDims[3], inDims[4]};
+		RandomAccessibleInterval<T> outMaskRai = Cast.unchecked(ArrayImgs.floats(outDims));
+		for (int i = 0; i < inDims[inDims.length - 1]; i ++) {
 	    	List<Tensor<R>> inList = new ArrayList<Tensor<R>>();
-	    	Tensor<R> inIm = Tensor.build("input", "xyc", Views.hyperSlice(rai, 3, i));
+	    	Tensor<R> inIm = Tensor.build("input", model.is2D() ? "xyc" : "xycz", Views.hyperSlice(rai, inDims.length - 1, i));
 	    	inList.add(inIm);
 	    	
 	    	List<Tensor<T>> outputList = new ArrayList<Tensor<T>>();
-	    	Tensor<T> outMask = Tensor.build("mask", "xy", Views.hyperSlice(outMaskRai, 2, i));
+	    	Tensor<T> outMask = Tensor.build("mask", model.is2D() ? "xyc" : "xycz", Views.hyperSlice(outMaskRai, outDims.length - 1, i));
 	    	outputList.add(outMask);
 	    	
 	    	model.run(inList, outputList);
 		}
-    	consumer.display(outMaskRai, "xyb", "mask");
+    	consumer.display(outMaskRai, model.is2D() ? "xycb" : "xyczb", getOutputName("mask"));
     }
     
-    private <T extends RealType<T> & NativeType<T>, R extends RealType<R> & NativeType<R>>
-    void runStardistOnTensor(RandomAccessibleInterval<R> rai) throws RunModelException {
-		Tensor<R> tensor = Tensor.build("input", "xyc", rai);
-    	List<Tensor<R>> inList = new ArrayList<Tensor<R>>();
-		inList.add(tensor);
-    	List<Tensor<T>> out = model.run(inList);
-    	for (Tensor<T> tt : out) {
-    		if (tt.getAxesOrder().length == 1)
-    			continue;
-        	consumer.display(tt.getData(), tt.getAxesOrderString(), getOutputName(tt.getName()));
-    	}
+    private static <R extends RealType<R> & NativeType<R>>
+    RandomAccessibleInterval<R> addDimsToInput(RandomAccessibleInterval<R> rai, StardistAbstract model) {
+    	int nChannels = model.getNChannels();
+    	boolean is2d = model.is2D();
+    	long[] dims = rai.dimensionsAsLongArray();
+    	if (dims.length == 2 && nChannels == 1 && is2d)
+    		return Views.addDimension(Views.addDimension(rai, 0, 0), 0, 0);
+    	else if (dims.length == 3 && dims[2] == nChannels && is2d)
+    		return Views.addDimension(rai, 0, 0);
+    	else if (dims.length == 4 && dims[2] == nChannels && is2d)
+    		return rai;
+    	else if (dims.length == 5 && dims[2] == nChannels && is2d)
+    		return Views.hyperSlice(rai, 3, 0);
+    	else if (dims.length == 3 && dims[2] != nChannels && nChannels == 1 && !is2d) {
+    		rai = Views.permute(Views.addDimension(rai, 0, 0), 2, 3);
+    		return Views.addDimension(rai, 0, 0);
+    	} else if (dims.length == 4 && dims[2] != nChannels && nChannels == 1 && !is2d)
+    		return Views.permute(Views.permute(Views.addDimension(rai, 0, 0), 3, 4), 2, 3);
+    	else if (dims.length == 4 && dims[2] == nChannels && !is2d)
+    		return Views.addDimension(rai, 0, 0);
+    	else if (dims.length == 5 && dims[2] == nChannels && !is2d)
+    		return rai;
+    	else if (dims.length == 3 && dims[2] != nChannels && is2d)
+    		throw new IllegalArgumentException(String.format("Number of channels required for this model is: %s."
+    				+ " The number of channels (third dimension) in the image provided: %s.", nChannels, dims[2]));
+    	else if (dims.length == 3 && dims[2] != nChannels && is2d)
+    		throw new IllegalArgumentException(String.format("Number of channels required for this model is: %s."
+    				+ " The number of channels (third dimension) in the image provided: %s.", nChannels, dims[2]));
+    	else if (dims.length == 2 && nChannels > 1)
+    		throw new IllegalArgumentException(String.format("Model requires %s channels", nChannels));
+    	else if (dims.length == 2 && !is2d)
+    		throw new IllegalArgumentException("Model is 3d, 2d image provided");
+    	else
+    		throw new IllegalArgumentException(
+    				String.format("Unsupported dimensions for %s model with %s channels. Dimension order should be (X, Y, C, Z, B or T)"
+    						, is2d ? "2D" : "3D", nChannels));
     }
     
     private String getOutputName(String tensorName) {
