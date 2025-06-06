@@ -172,7 +172,7 @@ public class Stardist3D extends StardistAbstract {
 	public static Stardist3D fromPretained(String pretrainedModel, String installDir, boolean install) throws IOException, 
 																					InterruptedException {
 		if (pretrainedModel.equals("StarDist Plant Nuclei 3D ResNet") && !install) {
-			ModelDescriptor md = ModelDescriptorFactory.getModelsAtLocalRepo().stream()
+			ModelDescriptor md = ModelDescriptorFactory.getModelsAtLocalRepo(installDir).stream()
 					.filter(mm ->mm.getName().equals(pretrainedModel)).findFirst().orElse(null);
 			if (md != null) return new Stardist3D(md);
 			return null;

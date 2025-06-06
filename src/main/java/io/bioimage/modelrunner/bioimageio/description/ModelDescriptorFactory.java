@@ -185,16 +185,6 @@ public class ModelDescriptorFactory {
 			}
 			}).filter(mm -> mm != null).collect(Collectors.toList());
 	}
-
-	/**
-	 * Get the models at the local repo.
-	 * The default local repo is the 'models' folder in the directory where the program is being executed
-	 * 
-	 * @return a list of the {@link ModelDescriptor}s of the available models
-	 */
-	public static List<ModelDescriptor> getModelsAtLocalRepo() {
-		return getModelsAtLocalRepo(new File("models").getAbsolutePath());
-	}
     
     /**
      * Method that checks if a String corresponds to an URL

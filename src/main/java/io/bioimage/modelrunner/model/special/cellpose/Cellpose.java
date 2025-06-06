@@ -451,7 +451,7 @@ public class Cellpose extends BioimageIoModelPytorchProtected {
 			return init(path);
 		}
 		if (!install) {
-			List<ModelDescriptor> localModels = ModelDescriptorFactory.getModelsAtLocalRepo();
+			List<ModelDescriptor> localModels = ModelDescriptorFactory.getModelsAtLocalRepo(modelsDir);
 			ModelDescriptor model = localModels.stream()
 					.filter(md -> md.getModelID().equals(pretrainedModel) 
 							|| md.getName().toLowerCase().equals(pretrainedModel.toLowerCase()))

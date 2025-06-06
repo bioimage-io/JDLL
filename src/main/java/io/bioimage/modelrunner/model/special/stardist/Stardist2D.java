@@ -193,7 +193,7 @@ public class Stardist2D extends StardistAbstract {
 																					InterruptedException {
 		if ((pretrainedModel.equals("StarDist H&E Nuclei Segmentation")
 				|| pretrainedModel.equals("2D_versatile_he")) && !install) {
-			ModelDescriptor md = ModelDescriptorFactory.getModelsAtLocalRepo().stream()
+			ModelDescriptor md = ModelDescriptorFactory.getModelsAtLocalRepo(installDir).stream()
 					.filter(mm ->mm.getName().equals("StarDist H&E Nuclei Segmentation")).findFirst().orElse(null);
 			if (md != null) return new Stardist2D(md);
 			return null;
@@ -203,7 +203,7 @@ public class Stardist2D extends StardistAbstract {
 			return Stardist2D.fromBioimageioModel(ModelDescriptorFactory.readFromLocalFile(path));
 		} else if ((pretrainedModel.equals("StarDist Fluorescence Nuclei Segmentation")
 				|| pretrainedModel.equals("2D_versatile_fluo")) && !install) {
-			ModelDescriptor md = ModelDescriptorFactory.getModelsAtLocalRepo().stream()
+			ModelDescriptor md = ModelDescriptorFactory.getModelsAtLocalRepo(installDir).stream()
 					.filter(mm ->mm.getName().equals("StarDist Fluorescence Nuclei Segmentation")).findFirst().orElse(null);
 			if (md != null) return new Stardist2D(md);
 			return null;
