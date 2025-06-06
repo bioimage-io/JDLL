@@ -860,7 +860,9 @@ public class DLModelPytorchProtected extends BaseModel {
 	}
 	
 	/**
-	 * Check whether everything that is needed for Stardist 2D is installed or not
+	 * Check whether everything that is needed for a Pytorch model is installed or not
+	 * @param envPath
+	 * 	path to the environment of interest
 	 * @return true if the full python environment is installed or not
 	 */
 	public static boolean isInstalled(String envPath) {

@@ -359,9 +359,9 @@ public class Cellpose extends BioimageIoModelPytorchProtected {
 	}
 	
 	/**
-	 * Initialize a Stardist2D using the format of the Bioiamge.io model zoo.
-	 * @param descriptor
-	 * 	the bioimage.io model descriptor
+	 * Initialize a Cellpose model with the path to the model weigths.
+	 * @param weightsPath
+	 * 	path to the weights of a pretrained cellpose model
 	 * @return an instance of a Stardist2D model ready to be used
      * @throws IOException If there's an I/O error.
 	 */
