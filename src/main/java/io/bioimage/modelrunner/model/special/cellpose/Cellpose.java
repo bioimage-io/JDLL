@@ -149,6 +149,15 @@ public class Cellpose extends BioimageIoModelPytorchProtected {
     	createPythonService();
 	}
 	
+	/**
+	 * Set the channels array required to run Cellpose. It always has to be an array of length 2.
+	 * If the image is gray scale [0, 0].
+	 * For RGB images: R=1, G=2, B=3, the first value is the channel where cytoplasm is and the second the nuclei.
+	 * If green cyto and red nuclei: [2, 1]
+	 * 
+	 * @param channels
+	 * 	channels paramter for cellpose
+	 */
 	public void setChannels(int[] channels) {
 		/**
 		 * TODO remove
@@ -161,10 +170,21 @@ public class Cellpose extends BioimageIoModelPytorchProtected {
 		this.channels = channels;
 	}
 	
+	/**
+	 * Set the mean diameter of the cells in the image. If not set and the diameter model (an .npy file) is
+	 * present in the same folder as the Cellpose model, the diameter is calculated on the fly, if not set and 
+	 * the duameter model is not present, it is set to the default value (30).
+	 * @param diameter
+	 * 	the mean diameter of cells in the image
+	 */
 	public void setDiameter(float diameter) {
 		this.diameter = diameter;
 	}
 	
+	/**
+	 * 
+	 * @return the diameter that has been set by the user. Cannot return the diameter calculated by the diameter model.
+	 */
 	public Float getDiameter() {
 		return this.diameter;
 	}
@@ -243,6 +263,24 @@ public class Cellpose extends BioimageIoModelPytorchProtected {
 		return super.run(checkInputTensors(inputTensors));
 	}
 
+	/**
+	 * Run a Bioimage.io model and execute the tiling strategy in one go.
+	 * The model needs to have been previously loaded with {@link #loadModel()}.
+	 * This method does not execute pre- or post-processing, they
+	 * need to be executed independently before or after
+	 * 
+	 * @param <T>
+	 * 	ImgLib2 data type of the output images
+	 * @param <R>
+	 * 	ImgLib2 data type of the input images
+	 * @param inputTensors
+	 * 	list of the input tensors that are going to be inputed to the model
+	 * @param outputTensors
+	 * 	list of output tensors that are expected to be returned by the model
+	 * @throws RunModelException if the model has not been previously loaded
+	 * @throws IllegalArgumentException if the model is not a Bioimage.io model or if lacks a Bioimage.io
+	 *  rdf.yaml specs file in the model folder. 
+	 */
 	public <T extends RealType<T> & NativeType<T>, R extends RealType<R> & NativeType<R>> 
 	void run(List<Tensor<T>> inputTensors, List<Tensor<R>> outputTensors) throws RunModelException {
 		createCustomDescriptor(inputTensors);
@@ -382,7 +420,7 @@ public class Cellpose extends BioimageIoModelPytorchProtected {
 	 * @return an instance of a pretrained Stardist2D model ready to be used
 	 * @throws IOException if there is any error downloading the model, in the case it is needed
 	 * @throws InterruptedException if the download of the model is stopped
-	 * @throws ExecutionException 
+	 * @throws ExecutionException if there is an error downloading the model
 	 */
 	public static Cellpose fromPretained(String pretrainedModel, boolean install) throws IOException, InterruptedException, ExecutionException {
 		return fromPretained(pretrainedModel, new File("models").getAbsolutePath(), install);
@@ -400,7 +438,7 @@ public class Cellpose extends BioimageIoModelPytorchProtected {
 	 * @return an instance of a pretrained Stardist2D model ready to be used
 	 * @throws IOException if there is any error downloading the model, in the case it is needed
 	 * @throws InterruptedException if the download of the model is stopped
-	 * @throws ExecutionException 
+	 * @throws ExecutionException if there is an error downloading the model
 	 */
 	public static Cellpose fromPretained(String pretrainedModel, String modelsDir, boolean install) throws IOException, 
 																					InterruptedException, ExecutionException {
@@ -436,6 +474,16 @@ public class Cellpose extends BioimageIoModelPytorchProtected {
 		return Cellpose.init(descriptor);
 	}
 	
+	/**
+	 * Finds whether a pretrained Cellpose model is installed in the wanted directory
+	 * 
+	 * @param modelName
+	 * 	the name of the model, it can be either the name of one of the official Cellpose models (cyto, cyto2, cyto3...)
+	 * 	or a path to the weigths
+	 * @param modelsDir
+	 * 	the directory where we want to know whether the model is installed or not
+	 * @return the path to the model if if exists, null otherwise
+	 */
 	public static String findPretrainedModelInstalled(String modelName, String modelsDir) {
 		if (modelName.endsWith(".pth"))
 			modelName = modelName.substring(0, modelName.length() - 4);
@@ -484,6 +532,11 @@ public class Cellpose extends BioimageIoModelPytorchProtected {
 		return null;
 	}
 	
+	/**
+	 * 
+	 * @return a list of the available pretrained Cellpose models that can be run with JDLL.
+	 * 	It returns both the official cellpose models and the custom bioimage.io ones
+	 */
 	public static List<String> getPretrainedList() {
 		List<String> list = new ArrayList<String>();
 		BioimageioRepo br = BioimageioRepo.connect();
@@ -495,11 +548,41 @@ public class Cellpose extends BioimageIoModelPytorchProtected {
 		return list;
 	}
 	
+	/**
+	 * Download a pretrained cellpose model. It is able to download both official 
+	 * Cellpose releases (cyto, cyto2, cyto3 or nuclei) and Cellpose variants available 
+	 * in the Bioimge.io model zoo.
+	 * 
+	 * @param modelName
+	 * 	name of the pretrained cellpose model (cyto, cyto2, cyto3 or nuclei for official Cellpose releases)
+	 * @param downloadDir
+	 * 	directory where the model is going to be downloaded
+	 * @return the folder of the model downloaded
+	 * @throws ExecutionException if there is any error downloading the model
+	 * @throws InterruptedException if the download is interrupted
+	 * @throws IOException if there is any error writing the downloaded files
+	 */
 	public static String donwloadPretrained(String modelName, String downloadDir) 
 			throws ExecutionException, InterruptedException, IOException {
 		return donwloadPretrained(modelName, downloadDir, null);
 	}
 	
+	/**
+	 * Download a pretrained cellpose model. It is able to download both official 
+	 * Cellpose releases (cyto, cyto2, cyto3 or nuclei) and Cellpose variants available 
+	 * in the Bioimge.io model zoo.
+	 * 
+	 * @param modelName
+	 * 	name of the pretrained cellpose model (cyto, cyto2, cyto3 or nuclei for official Cellpose releases)
+	 * @param downloadDir
+	 * 	directory where the model is going to be downloaded
+	 * @param progressConsumer
+	 * 	consumer that will notify the download progress
+	 * @return the folder of the model downloaded
+	 * @throws ExecutionException if there is any error downloading the model
+	 * @throws InterruptedException if the download is interrupted
+	 * @throws IOException if there is any error writing the downloaded files
+	 */
 	public static String donwloadPretrained(String modelName, String downloadDir, Consumer<Double> progressConsumer) 
 			throws ExecutionException, InterruptedException, IOException {
 		String path = donwloadPretrainedOfficial(modelName, downloadDir, progressConsumer);
@@ -556,6 +639,18 @@ public class Cellpose extends BioimageIoModelPytorchProtected {
     }
 	
 	
+	/**
+	 * Example code that shows how to run a model with cellpose
+	 * @param <T>
+	 * 	method param
+	 * @param args
+	 * 	method param
+	 * @throws IOException exception
+	 * @throws InterruptedException exception
+	 * @throws ExecutionException exception
+	 * @throws LoadModelException exception
+	 * @throws RunModelException exception
+	 */
 	public static <T extends RealType<T> & NativeType<T>>
 	void main(String[] args) throws IOException, InterruptedException, ExecutionException, LoadModelException, RunModelException {
 		Cellpose model = Cellpose.fromPretained("cyto2", false);
