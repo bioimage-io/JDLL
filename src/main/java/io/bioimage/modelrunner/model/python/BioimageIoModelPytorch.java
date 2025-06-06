@@ -107,11 +107,11 @@ public class BioimageIoModelPytorch extends BioimageIoModelPytorchProtected {
 	 * @throws LoadEngineException	nothing
 	 * @throws RunModelException	nothing
 	 * @throws LoadModelException	nothing
-	 * @throws URISyntaxException 
-	 * @throws ArchiveException 
-	 * @throws MambaInstallException 
-	 * @throws RuntimeException 
-	 * @throws InterruptedException 
+	 * @throws URISyntaxException 	nothing
+	 * @throws ArchiveException 	nothing
+	 * @throws MambaInstallException 	nothing
+	 * @throws RuntimeException 	nothing
+	 * @throws InterruptedException 	nothing
 	 */
 	public static <T extends NativeType<T> & RealType<T>> void main(String[] args) throws IOException, LoadEngineException, RunModelException, LoadModelException, InterruptedException, RuntimeException, MambaInstallException, ArchiveException, URISyntaxException {
 		

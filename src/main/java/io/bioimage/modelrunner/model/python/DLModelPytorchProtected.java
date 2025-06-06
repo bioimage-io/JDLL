@@ -64,6 +64,10 @@ import net.imglib2.type.numeric.real.FloatType;
 import net.imglib2.util.Cast;
 import net.imglib2.util.Util;
 
+/**
+ * Class that defines the methods required to load a Python Pytorch model in Java and make inference
+ * @author Carlos Garcia
+ */
 public class DLModelPytorchProtected extends BaseModel {
 	
 	protected final String modelFile;
@@ -294,20 +298,40 @@ public class DLModelPytorchProtected extends BaseModel {
 		python.debug(System.err::println);
 	}
 	
+	/**
+	 * 
+	 * @return the path to the Python environment used by the model
+	 */
 	public String getEnvPath() {
 		return this.envPath;
 	}
 	
+	/**
+	 * Set the path to the environment that we want to use to run the model
+	 * @param envPath
+	 * 	path to the environment we want to use to run the model
+	 * @throws IOException if there is any error connecting to the Python env
+	 */
 	public void setCustomEnvPath(String envPath) throws IOException {
 		this.envPath = envPath;
 		this.python.close();
 		createPythonService();
 	}
 	
+	/**
+	 * 
+	 * @return whether the image is going to be processed in tiles or not
+	 */
 	public boolean isTiling() {
 		return this.tiling;
 	}
 	
+	/**
+	 * Se whether we want to process the image in tiles or just all in one pass. This is usually 
+	 * for the models coming from the Bioimage.io
+	 * @param doTiling
+	 * 	whether to do tiling on inference or not. Usually skip this unless the model comes from the Bioimage.io
+	 */
 	public void setTiling(boolean doTiling) {
 		this.tiling = doTiling;
 	}

@@ -133,7 +133,25 @@ public class BioimageIoModelPytorchProtected extends DLModelPytorchProtected {
 		runTiling(inputTensors, outputTensors, tiles);
 		return processing.postprocess(outputTensors, true);
 	}
-
+	
+	/**
+	 * Run a Bioimage.io model and execute the tiling strategy in one go.
+	 * The model needs to have been previously loaded with {@link #loadModel()}.
+	 * This method does not execute pre- or post-processing, they
+	 * need to be executed independently before or after
+	 * 
+	 * @param <T>
+	 * 	ImgLib2 data type of the output images
+	 * @param <R>
+	 * 	ImgLib2 data type of the input images
+	 * @param inputTensors
+	 * 	list of the input tensors that are going to be inputed to the model
+	 * @param inputTensors
+	 * 	list of the expected output tensors
+	 * @throws RunModelException if the model has not been previously loaded
+	 * @throws IllegalArgumentException if the model is not a Bioimage.io model or if lacks a Bioimage.io
+	 *  rdf.yaml specs file in the model folder. 
+	 */
 	public <T extends RealType<T> & NativeType<T>, R extends RealType<R> & NativeType<R>> 
 	void run(List<Tensor<T>> inputTensors, List<Tensor<R>> outputTensors) throws RunModelException {
 		if (!this.isLoaded())
@@ -161,6 +179,10 @@ public class BioimageIoModelPytorchProtected extends DLModelPytorchProtected {
 		runBMZ(inputTensors, outputTensors, maker);
 	}
 	
+	/**
+	 * Find which of the dependencies required in the env of the model are missing
+	 * @return list of dependencies that are missing in the selected env to run the model
+	 */
 	public List<String> findMissingDependencies() {
 		Mamba mamba = new Mamba(new File(envPath).getParentFile().getParentFile().getAbsolutePath());
 		List<String> reqDeps = ModelDependencies.getDependencies(descriptor, 
@@ -172,6 +194,10 @@ public class BioimageIoModelPytorchProtected extends DLModelPytorchProtected {
 		}
 	}
 	
+	/**
+	 * 
+	 * @return whether all the dependencies requried to run the model are installed or not
+	 */
 	public boolean allDependenciesInstalled() {
 		return findMissingDependencies().size() == 0;
 	}
