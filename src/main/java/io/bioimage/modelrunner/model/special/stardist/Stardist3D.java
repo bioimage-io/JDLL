@@ -65,7 +65,7 @@ public class Stardist3D extends StardistAbstract {
 	
 	protected Stardist3D(String modelName, String baseDir, Map<String, Object> config) throws IOException {
 		super(modelName, baseDir, config);
-		this.scaleRangeAxes = "xyzc";
+		this.scaleRangeAxes = "zyxc";
 	}
 	
 	private Stardist3D(String modelName, String baseDir) throws IOException {

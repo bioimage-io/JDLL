@@ -318,7 +318,6 @@ public abstract class StardistAbstract extends BaseModel {
 			inputs.set(0, inputsProcessed.get(0));
 		} else {
 			ScaleRangeTransformation transform = new ScaleRangeTransformation();
-			transform.setAxes(transform);
 			transform.setMaxPercentile(scaleRangeMaxPercentile);
 			transform.setMinPercentile(scaleRangeMinPercentile);
 			transform.setAxes(scaleRangeAxes);
