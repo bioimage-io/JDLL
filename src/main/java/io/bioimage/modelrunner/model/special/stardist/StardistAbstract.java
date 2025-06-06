@@ -326,6 +326,10 @@ public abstract class StardistAbstract extends BaseModel {
 		}
 	}
 	
+	public int getNChannels() {
+		return nChannels;
+	}
+	
 	@Override
 	public void close() {
 		if (!loaded)
