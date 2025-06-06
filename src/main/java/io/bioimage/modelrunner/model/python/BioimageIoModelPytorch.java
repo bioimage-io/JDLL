@@ -48,6 +48,14 @@ import net.imglib2.type.NativeType;
 import net.imglib2.type.numeric.RealType;
 import net.imglib2.util.Cast;
 
+/**
+ * Class that contains the methods to use a Pytorch model from JDLL using the Bioimage.io model format.
+ * The model should be compatible with the default environment (Biapy environment) or the environmemt
+ * preferred.
+ * 
+ * The Bioimage.io model must have weights in the 'pytroch_state_dict' format
+ * 
+ */
 public class BioimageIoModelPytorch extends BioimageIoModelPytorchProtected {
 	
 	protected BioimageIoModelPytorch(String modelFile, String callable, String importModule, String weightsPath, Map<String, Object> kwargs,
@@ -55,6 +63,14 @@ public class BioimageIoModelPytorch extends BioimageIoModelPytorchProtected {
 		super(modelFile, callable, importModule, weightsPath, kwargs, descriptor);
 	}
 
+	/**
+	 * Create a Bioaimge.io Pytorch model that can be run from JDLL.
+	 * The model should have weights in the 'pytroch_state_dict' format
+	 * @param descriptor
+	 * 	the Bioimage.io {@link ModelDescriptor}
+	 * @return a model from the Bioaimge.io that can be run in Pytorch.
+	 * @throws IOException if there is any error connecting with Python
+	 */
 	public static BioimageIoModelPytorch create(ModelDescriptor descriptor) throws IOException {
 		if (descriptor.getWeights().getModelWeights(ModelWeight.getPytorchID()) == null)
 			throw new IllegalArgumentException("The model provided does not have weights in the required format, "
@@ -67,7 +83,16 @@ public class BioimageIoModelPytorch extends BioimageIoModelPytorchProtected {
 		Map<String, Object> kwargs = pytorchWeights.getArchitecture().getKwargs();
 		return new BioimageIoModelPytorch(modelFile, callable, importModule, weightsFile, kwargs, descriptor);
 	}
-	
+
+
+	/**
+	 * Create a Bioaimge.io Pytorch model that can be run from JDLL.
+	 * The model should have weights in the 'pytroch_state_dict' format
+	 * @param modelPath
+	 * 	path to the Bioimage.io model
+	 * @return a model from the Bioaimge.io that can be run in Pytorch.
+	 * @throws IOException if there is any error connecting with Python
+	 */
 	public static BioimageIoModelPytorch create(String modelPath) throws IOException {
 		return create(ModelDescriptorFactory.readFromLocalFile(modelPath + File.separator + Constants.RDF_FNAME));
 	}
