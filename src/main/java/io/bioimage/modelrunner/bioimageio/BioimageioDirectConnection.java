@@ -35,8 +35,7 @@ import io.bioimage.modelrunner.bioimageio.description.ModelDescriptor;
 import io.bioimage.modelrunner.bioimageio.description.ModelDescriptorFactory;
 
 /**
- * Class to interact with the Bioimage.io API. Used to get information
- * about models and to download them
+ * Class to directly retrieve the information of one model without parsing all of them
  * @author Carlos Javier Garcia Lopez de Haro
  *
  */
@@ -147,6 +146,7 @@ public class BioimageioDirectConnection {
 	/**
 	 * Return the {@link ModelDescriptor} for the model defined by the modelID
 	 * (field 'id' in the rdf.yaml) introduced as a parameter.
+	 * By default retrieves teh latest version.
 	 * @param modelID
 	 * 	unique ID for each Bioimage.io model
 	 * @return the {@link ModelDescriptor} of the model
@@ -160,6 +160,8 @@ public class BioimageioDirectConnection {
 	 * (field 'id' in the rdf.yaml) introduced as a parameter.
 	 * @param modelID
 	 * 	unique ID for each Bioimage.io model
+	 * @param version
+	 * 	version that we want to retrieve ('latest' for latest version)
 	 * @return the {@link ModelDescriptor} of the model
 	 */
 	public static ModelDescriptor selectByID(String modelID, String version) {
@@ -206,11 +208,5 @@ public class BioimageioDirectConnection {
 		ModelDescriptor descriptor = ModelDescriptorFactory.readFromYamlTextString(stringRDF);
 		MODELS.put(modelID + SEPARATOR + version, descriptor);
 		return descriptor;
-	}
-	
-	
-	public static void main(String[] args) {
-		BioimageioDirectConnection.selectByID("affable-shark");
-		BioimageioDirectConnection.selectByID("affable-shark");
 	}
 }
