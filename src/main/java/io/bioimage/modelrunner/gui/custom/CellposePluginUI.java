@@ -152,7 +152,7 @@ public class CellposePluginUI extends CellposeGUI implements ActionListener {
         		try {
     				runCellpose();
     				startModelInstallation(false);
-    			} catch (IOException | RunModelException | LoadModelException e1) {
+    			} catch (Exception e1) {
     				e1.printStackTrace();
     				startModelInstallation(false);
     				SwingUtilities.invokeLater(() -> this.footer.bar.setString("Error running the model"));

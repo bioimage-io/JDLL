@@ -234,7 +234,7 @@ public class StardistGUI extends JPanel implements ActionListener {
         		try {
     				runStardist();
     				startModelInstallation(false);
-    			} catch (IOException | RunModelException | LoadModelException e1) {
+    			} catch (Exception e1) {
     				e1.printStackTrace();
     				startModelInstallation(false);
     				SwingUtilities.invokeLater(() -> this.bar.setString("Error running the model"));
