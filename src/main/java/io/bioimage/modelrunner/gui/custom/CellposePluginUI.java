@@ -212,24 +212,22 @@ public class CellposePluginUI extends CellposeGUI implements ActionListener {
     	if (diameterField.getText() != null &&!diameterField.getText().equals(""))
     		model.setDiameter(Float.parseFloat(diameterField.getText()));
     	model.setChannels(new int[] {CHANNEL_MAP.get(cytoCbox.getSelectedItem()), CHANNEL_MAP.get(nucleiCbox.getSelectedItem())});
-    	if (rai.dimensionsAsLongArray().length == 4) {
-    		runCellposeOnFramesStack(rai);
-    	} else {
-    		runCellposeOnTensor(rai);
-    	}
+    	runCellposeOnFramesStack(rai);
     }
     
     private <T extends RealType<T> & NativeType<T>, R extends RealType<R> & NativeType<R>>
     void runCellposeOnFramesStack(RandomAccessibleInterval<R> rai) throws RunModelException {
-    	long[] dims = rai.dimensionsAsLongArray();
-		RandomAccessibleInterval<T> outMaskRai = Cast.unchecked(ArrayImgs.floats(new long[] {dims[0], dims[1], dims[3]}));
+    	rai = addDimsToInput(rai, cytoCbox.getSelectedItem().equals("gray") ? 0 : 3);
+    	long[] inDims = rai.dimensionsAsLongArray();
+    	long[] outDims = new long[] {inDims[0], inDims[1], inDims[3]};
+		RandomAccessibleInterval<T> outMaskRai = Cast.unchecked(ArrayImgs.floats(outDims));
 		for (int i = 0; i < rai.dimensionsAsLongArray()[3]; i ++) {
 	    	List<Tensor<R>> inList = new ArrayList<Tensor<R>>();
 	    	Tensor<R> inIm = Tensor.build("input", "xyc", Views.hyperSlice(rai, 3, i));
 	    	inList.add(inIm);
 	    	
 	    	List<Tensor<T>> outputList = new ArrayList<Tensor<T>>();
-	    	Tensor<T> outMask = Tensor.build("mask", "xy", Views.hyperSlice(outMaskRai, 2, i));
+	    	Tensor<T> outMask = Tensor.build("labels", "xy", Views.hyperSlice(outMaskRai, 2, i));
 	    	outputList.add(outMask);
 	    	
 	    	model.run(inList, outputList);
@@ -237,6 +235,33 @@ public class CellposePluginUI extends CellposeGUI implements ActionListener {
     	consumer.display(outMaskRai, "xyb", "mask");
     	if (!check.isSelected())
     		return;
+    }
+    
+    private static <R extends RealType<R> & NativeType<R>>
+    RandomAccessibleInterval<R> addDimsToInput(RandomAccessibleInterval<R> rai, int nChannels) {
+    	long[] dims = rai.dimensionsAsLongArray();
+    	if (dims.length == 2 && nChannels == 1)
+    		return Views.addDimension(Views.addDimension(rai, 0, 0), 0, 0);
+    	else if (dims.length == 2)
+    		throw new IllegalArgumentException("Cyto and nuclei specified for RGB image and image provided is grayscale.");
+    	else if (dims.length == 3 && dims[2] == nChannels)
+    		return Views.addDimension(rai, 0, 0);
+    	else if (dims.length == 3 && nChannels == 1)
+    		return Views.permute(Views.addDimension(rai, 0, 0), 2, 3);
+    	else if (dims.length >= 3 && dims[2] == 1 && nChannels == 3)
+    		throw new IllegalArgumentException("Expected RGB (3 channels) image and got instead grayscale image (1 channel).");
+    	else if (dims.length == 4 && dims[2] == nChannels)
+    		return rai;
+    	else if (dims.length == 5 && dims[2] == nChannels)
+    		return Views.hyperSlice(rai, 3, 0);
+    	else if (dims.length == 4 && dims[2] != nChannels && nChannels == 1) {
+    		rai = Views.hyperSlice(rai, 2, 0);
+    		rai = Views.addDimension(rai, 0, 0);
+    		return Views.permute(rai, 2, 3);
+    	} else if (dims.length == 5 && dims[2] != nChannels)
+    		throw new IllegalArgumentException("Expected grayscale (1 channel) image and got instead RGB image (3 channels).");
+    	else
+    		throw new IllegalArgumentException("Unsupported dimensions for Cellpose model");
     }
     
     private <T extends RealType<T> & NativeType<T>, R extends RealType<R> & NativeType<R>>
