@@ -217,10 +217,15 @@ public class CellposePluginUI extends CellposeGUI implements ActionListener {
     
     private <T extends RealType<T> & NativeType<T>, R extends RealType<R> & NativeType<R>>
     void runCellposeOnFramesStack(RandomAccessibleInterval<R> rai) throws RunModelException {
-    	rai = addDimsToInput(rai, cytoCbox.getSelectedItem().equals("gray") ? 0 : 3);
+    	rai = addDimsToInput(rai, cytoCbox.getSelectedItem().equals("gray") ? 1 : 3);
     	long[] inDims = rai.dimensionsAsLongArray();
     	long[] outDims = new long[] {inDims[0], inDims[1], inDims[3]};
-		RandomAccessibleInterval<T> outMaskRai = Cast.unchecked(ArrayImgs.floats(outDims));
+		RandomAccessibleInterval<T> outMaskRai = Cast.unchecked(ArrayImgs.unsignedShorts(outDims));
+		RandomAccessibleInterval<T> output1 = Cast.unchecked(ArrayImgs.unsignedBytes(new long[] {inDims[0], inDims[1], 3, inDims[3]}));
+		RandomAccessibleInterval<T> output2 = Cast.unchecked(ArrayImgs.floats(new long[] {2, inDims[0], inDims[1], inDims[3]}));
+		RandomAccessibleInterval<T> output3 = Cast.unchecked(ArrayImgs.floats(new long[] {inDims[0], inDims[1], inDims[3]}));
+		RandomAccessibleInterval<T> output4 = Cast.unchecked(ArrayImgs.floats(new long[] {inDims[0], inDims[1], 3, inDims[3]}));
+		
 		for (int i = 0; i < rai.dimensionsAsLongArray()[3]; i ++) {
 	    	List<Tensor<R>> inList = new ArrayList<Tensor<R>>();
 	    	Tensor<R> inIm = Tensor.build("input", "xyc", Views.hyperSlice(rai, 3, i));
@@ -229,12 +234,26 @@ public class CellposePluginUI extends CellposeGUI implements ActionListener {
 	    	List<Tensor<T>> outputList = new ArrayList<Tensor<T>>();
 	    	Tensor<T> outMask = Tensor.build("labels", "xy", Views.hyperSlice(outMaskRai, 2, i));
 	    	outputList.add(outMask);
+	    	Tensor<T> flows0 = Tensor.build("flows_0", "xyc", Views.hyperSlice(output1, 3, i));
+	    	outputList.add(flows0);
+	    	Tensor<T> flows1 = Tensor.build("flows_1", "cxy", Views.hyperSlice(output2, 3, i));
+	    	outputList.add(flows1);
+	    	Tensor<T> flows2 = Tensor.build("flows_2", "xy", Views.hyperSlice(output3, 2, i));
+	    	outputList.add(flows2);
+	    	Tensor<T> st = Tensor.buildEmptyTensor("styles", "i");
+	    	outputList.add(st);
+	    	Tensor<T> dn = Tensor.build("image_dn", "xyc", Views.hyperSlice(output4, 3, i));
+	    	outputList.add(dn);
 	    	
 	    	model.run(inList, outputList);
 		}
-    	consumer.display(outMaskRai, "xyb", "mask");
+    	consumer.display(outMaskRai, "xyb", getOutputName("labels"));
     	if (!check.isSelected())
     		return;
+    	consumer.display(output1, "xycb", getOutputName("flows_0"));
+    	consumer.display(output2, "cxyb", getOutputName("flows_1"));
+    	consumer.display(output3, "xyb", getOutputName("flows_2"));
+    	consumer.display(output4, "xycb", getOutputName("image_dn"));
     }
     
     private static <R extends RealType<R> & NativeType<R>>
@@ -252,8 +271,10 @@ public class CellposePluginUI extends CellposeGUI implements ActionListener {
     		throw new IllegalArgumentException("Expected RGB (3 channels) image and got instead grayscale image (1 channel).");
     	else if (dims.length == 4 && dims[2] == nChannels)
     		return rai;
-    	else if (dims.length == 5 && dims[2] == nChannels)
+    	else if (dims.length == 5 && dims[2] == nChannels && dims[4] != 1)
     		return Views.hyperSlice(rai, 3, 0);
+    	else if (dims.length == 5 && dims[2] == nChannels && dims[4] == 1)
+    		return Views.hyperSlice(Views.permute(rai, 3, 4), 3, 0);
     	else if (dims.length == 4 && dims[2] != nChannels && nChannels == 1) {
     		rai = Views.hyperSlice(rai, 2, 0);
     		rai = Views.addDimension(rai, 0, 0);

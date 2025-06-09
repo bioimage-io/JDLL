@@ -224,8 +224,8 @@ public final class Tensor< T extends RealType< T > & NativeType< T > >
 		if ( !emptyTensor && this.data != null
 				&& this.getDataType().getClass() != Util.getTypeFromInterval( data ).getClass() ) { 
 			throw new IllegalArgumentException( "Trying to set an array as the backend of the Tensor "
-				+ "with a different data type than the Tensor. Tensor data type is: " + dType.toString()
-				+ " and array data type is: " + Util.getTypeFromInterval( data ).toString() ); 
+				+ "with a different data type than the Tensor. Tensor data type is: " + dType.getClass().toString()
+				+ " and array data type is: " + Util.getTypeFromInterval( data ).getClass().toString() ); 
 		}
 		if (this.data == null) {
 			this.data = data;

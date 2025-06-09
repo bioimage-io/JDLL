@@ -641,6 +641,8 @@ public class TileMaker {
      * @return the wanted tensor tile cut from the tensor provided
      */
     public <T extends NativeType<T> & RealType<T>> Tensor<T> getNthTileInput(Tensor<T> tensor, int n) {
+    	if (!tensor.isImage())
+    		return tensor;
     	RandomAccessibleInterval<T> rai = getNthTileInput(tensor.getName(), tensor.getData(), n);
     	return Tensor.build(tensor.getName(), tensor.getAxesOrderString(), rai);
     }
@@ -656,6 +658,8 @@ public class TileMaker {
      * @return the wanted tensor tile cut from the tensor provided
      */
     public <T extends NativeType<T> & RealType<T>> Tensor<T> getNthTileOutput(Tensor<T> tensor, int n) {
+    	if (!tensor.isImage())
+    		return tensor;
     	RandomAccessibleInterval<T> rai = getNthTileOutput(tensor.getName(), tensor.getData(), n);
     	return Tensor.build(tensor.getName(), tensor.getAxesOrderString(), rai);
     }
