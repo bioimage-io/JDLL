@@ -268,8 +268,8 @@ public class StardistGUI extends JPanel implements ActionListener {
     		map.put("model", this.customModelPathField.getText());
     	else
     		map.put("model", modelPath);
-    	map.put("minPercentile", "" + minPercField.getValue());
-    	map.put("maxPercentile", "" + maxPercField.getValue());
+    	map.put("min_percentile", "" + minPercField.getValue());
+    	map.put("max_percentile", "" + maxPercField.getValue());
     	this.consumer.notifyParams(map);
     }
     
