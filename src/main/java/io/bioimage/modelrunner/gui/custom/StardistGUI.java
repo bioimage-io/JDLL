@@ -63,6 +63,7 @@ import java.awt.event.ActionListener;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.function.Consumer;
@@ -90,7 +91,7 @@ public class StardistGUI extends JPanel implements ActionListener {
     
     private final String CUSTOM_STR = "your custom model";
     private static List<String> VAR_NAMES = Arrays.asList(new String[] {
-    		"Select a model:", "Custom Model Path:", "Normalization low percentile:", "Normalization low percentile:"
+    		"Select a model:", "Custom Model Path:", "Normalization low percentile:", "Normalization high percentile:"
     });
     
     private static boolean INSTALLED_WEIGHTS = false;
@@ -260,7 +261,20 @@ public class StardistGUI extends JPanel implements ActionListener {
     		cancelCallback.run();
     }
     
+    private void saveParams() {
+    	LinkedHashMap<String, String> map = new LinkedHashMap<String, String>();
+    	String modelPath = (String) this.modelComboBox.getSelectedItem();
+    	if (modelPath.equals(CUSTOM_STR))
+    		map.put("model", this.customModelPathField.getText());
+    	else
+    		map.put("model", modelPath);
+    	map.put("minPercentile", "" + minPercField.getValue());
+    	map.put("maxPercentile", "" + maxPercField.getValue());
+    	this.consumer.notifyParams(map);
+    }
+    
     private < T extends RealType< T > & NativeType< T > > void runStardist() throws IOException, RunModelException, LoadModelException {
+    	saveParams();
     	startModelInstallation(true);
     	if (!INSTALLED_WEIGHTS || !INSTALLED_ENV)
         	installStardist(weightsInstalled(), (INSTALLED_ENV = StardistAbstract.isInstalled()));

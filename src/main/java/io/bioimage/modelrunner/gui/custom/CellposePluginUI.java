@@ -47,6 +47,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
@@ -178,7 +179,20 @@ public class CellposePluginUI extends CellposeGUI implements ActionListener {
     		cancelCallback.run();
     }
     
+    private void saveParams() {
+    	LinkedHashMap<String, String> map = new LinkedHashMap<String, String>();
+    	String modelPath = (String) this.modelComboBox.getSelectedItem();
+    	if (modelPath.equals(CUSOTM_STR))
+    		map.put("model", this.customModelPathField.getText());
+    	else
+    		map.put("model", modelPath);
+    	map.put("cytoColor", (String) cytoCbox.getSelectedItem());
+    	map.put("nucleiColor", (String) nucleiCbox.getSelectedItem());
+    	this.consumer.notifyParams(map);
+    }
+    
     private < T extends RealType< T > & NativeType< T > > void runCellpose() throws IOException, RunModelException, LoadModelException {
+    	saveParams();
     	startModelInstallation(true);
     	if (!INSTALLED_WEIGHTS || !INSTALLED_ENV)
     		installCellpose(weightsInstalled(), (INSTALLED_ENV = Cellpose.isInstalled()));

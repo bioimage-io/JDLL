@@ -19,6 +19,7 @@
  */
 package io.bioimage.modelrunner.gui.custom;
 
+import java.util.LinkedHashMap;
 import java.util.List;
 
 import javax.swing.JComponent;
@@ -41,6 +42,8 @@ public abstract class ConsumerInterface {
 	public abstract void setComponents(List<JComponent> components);
 	
 	public abstract void setVarNames(List<String> componentNames);
+	
+	public abstract void notifyParams(LinkedHashMap<String, String> args);
 	
 	public abstract Object getFocusedImage();
 	
