@@ -501,7 +501,21 @@ public class Cellpose extends BioimageIoModelPytorchProtected {
 		 return null;
 	}
 	
-	private static String fileIsCellpose(String pretrainedModel, String modelsDir) {
+	/**
+	 * Find if the String argument 'pretrainedModel' corresponds to a cellpose model that exists
+	 * in the local computer or not.
+	 * For example if we provide simply the String 'cyto3' it will look for files within the modelsDir
+	 * subfolders that might contain the model. It only checks two levels of subfolders.
+	 * 
+	 * We can also provide the full path to the cellpose model
+	 * @param pretrainedModel
+	 * 	a String referring to a Cellpose model that might exist in our local computer or not. It can be the full path
+	 * 	to our model or just the name of the pretrained cellpose model (cyto, cyto2, cyto3....)
+	 * @param modelsDir
+	 * 	the directory where we will look for a cellpose model if the whole path to the model is not given
+	 * @return the full path to a Cellpose model if it exists or null if it does not exists in the paths specified
+	 */
+	public static String fileIsCellpose(String pretrainedModel, String modelsDir) {
 		File pretrainedFile = new File(pretrainedModel);
 		 if (pretrainedFile.isFile() && isCellposeFile(pretrainedFile))
 			 return pretrainedFile.getAbsolutePath();
