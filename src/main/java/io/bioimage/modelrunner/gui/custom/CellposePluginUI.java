@@ -188,6 +188,7 @@ public class CellposePluginUI extends CellposeGUI implements ActionListener {
     		map.put("model", modelPath);
     	map.put("cytoColor", (String) cytoCbox.getSelectedItem());
     	map.put("nucleiColor", (String) nucleiCbox.getSelectedItem());
+    	map.put("displayAll", "" + this.check.isEnabled());
     	this.consumer.notifyParams(map);
     }
     
