@@ -299,21 +299,6 @@ public class CellposePluginUI extends CellposeGUI implements ActionListener {
     		throw new IllegalArgumentException("Unsupported dimensions for Cellpose model");
     }
     
-    private <T extends RealType<T> & NativeType<T>, R extends RealType<R> & NativeType<R>>
-    void runCellposeOnTensor(RandomAccessibleInterval<R> rai) throws RunModelException {
-		Tensor<R> tensor = Tensor.build("input", "xyc", rai);
-    	List<Tensor<R>> inList = new ArrayList<Tensor<R>>();
-		inList.add(tensor);
-    	List<Tensor<T>> out = model.run(inList);
-    	for (Tensor<T> tt : out) {
-    		if (!check.isSelected() && !tt.getName().equals("labels"))
-    			continue;
-    		else if (tt.getAxesOrder().length == 1)
-    			continue;
-        	consumer.display(tt.getData(), tt.getAxesOrderString(), getOutputName(tt.getName()));
-    	}
-    }
-    
     private String getOutputName(String tensorName) {
     	String noExtension;
     	if (inputTitle.lastIndexOf(".") != -1)
