@@ -645,6 +645,8 @@ public class Cellpose extends BioimageIoModelPytorchProtected {
         // Regex pattern to match: keyword_ddMMyyyy_HHmmss
         String regex = "^" + Pattern.quote(keyword) + "_\\d{8}_\\d{6}$";
         Pattern pattern = Pattern.compile(regex);
+        if (new File(folderPath).isDirectory() == false)
+        	return new ArrayList<String>();
         return Arrays.stream(new File(folderPath).listFiles())
         		.filter(File::isDirectory)
         		.filter(ff -> pattern.matcher(ff.getName()).matches())
