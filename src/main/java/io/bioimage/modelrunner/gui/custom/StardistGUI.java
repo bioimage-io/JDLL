@@ -443,7 +443,7 @@ public class StardistGUI extends JPanel implements ActionListener {
 		SwingUtilities.invokeLater(() -> bar.setIndeterminate(false));
 		Thread dwnlThread = new Thread(() -> {
 			try {
-				Stardist2D.donwloadPretrained((String) modelComboBox.getSelectedItem(), this.consumer.getModelsDir(), cons);
+				Stardist2D.downloadPretrained((String) modelComboBox.getSelectedItem(), this.consumer.getModelsDir(), cons);
 				INSTALLED_WEIGHTS = true;
 			} catch (IllegalArgumentException e) {
 			} catch (IOException | InterruptedException e) {

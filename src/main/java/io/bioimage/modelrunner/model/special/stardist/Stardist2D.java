@@ -216,19 +216,19 @@ public class Stardist2D extends StardistAbstract {
 		}
 	}
 	
-	public static String donwloadPretrained(String modelName, String downloadDir) 
+	public static String downloadPretrained(String modelName, String downloadDir) 
 			throws ExecutionException, InterruptedException, IOException {
-		return donwloadPretrained(modelName, downloadDir, null);
+		return downloadPretrained(modelName, downloadDir, null);
 	}
 	
-	public static String donwloadPretrained(String modelName, String downloadDir, Consumer<Double> progressConsumer) throws InterruptedException, IOException {
+	public static String downloadPretrained(String modelName, String downloadDir, Consumer<Double> progressConsumer) throws InterruptedException, IOException {
 		if (!PRETRAINED_EQUIVALENCE.keySet().contains(modelName))
-			return donwloadPretrainedBioimageio(modelName, downloadDir, progressConsumer);
+			return downloadPretrainedBioimageio(modelName, downloadDir, progressConsumer);
 		else
-			return donwloadPretrainedBioimageio(PRETRAINED_EQUIVALENCE.get(modelName), downloadDir, progressConsumer);
+			return downloadPretrainedBioimageio(PRETRAINED_EQUIVALENCE.get(modelName), downloadDir, progressConsumer);
 	}
 	
-	private static String donwloadPretrainedBioimageio(String modelName, String downloadDir, Consumer<Double> progressConsumer) 
+	private static String downloadPretrainedBioimageio(String modelName, String downloadDir, Consumer<Double> progressConsumer) 
 			throws InterruptedException, IOException {
 		
 		if (ID_EQUIVALENCE.get(modelName) != null)
