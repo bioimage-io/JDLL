@@ -618,7 +618,7 @@ public final class Tensor< T extends RealType< T > & NativeType< T > >
 		if ( data.dimensionsAsLongArray().length != axesOrder.length() )
 			throw new IllegalArgumentException( "The axes order introduced has to correspond "
 					+ "to the same number of dimenensions that the NDArray has. In this case"
-					+ " the axes order is specfied for " + axesOrder.length() + " dimensions " + "while the array has "
+					+ " the axes order is specfied for " + axesOrder.length() + " dimensions (" + axesOrder + ") while the array has "
 					+ data.dimensionsAsLongArray().length + " dimensions." );
 	}
 
