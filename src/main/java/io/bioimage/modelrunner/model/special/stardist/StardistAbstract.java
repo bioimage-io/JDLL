@@ -74,6 +74,8 @@ public abstract class StardistAbstract extends BaseModel {
 	
 	protected final String basedir;
 	
+	protected Double threshold = null;
+	
 	protected final int nChannels;
 	
 	protected Map<String, Object> config;
@@ -292,6 +294,10 @@ public abstract class StardistAbstract extends BaseModel {
 		python.debug(System.err::println);
 	}
 	
+	public void setThreshold(Double threshold) {
+		this.threshold = threshold;
+	}
+	
 	protected String createEncodeImageScript() {
 		String code = "";
 		// This line wants to recreate the original numpy array. Should look like:
@@ -431,6 +437,9 @@ public abstract class StardistAbstract extends BaseModel {
 		}
 		
 		code += createEncodeImageScript() + System.lineSeparator();
+		if (this.threshold != null) {
+			code += "model.thresholds()['prob'] = " + threshold + System.lineSeparator();
+		}
 		code += RUN_MODEL_CODE + System.lineSeparator();
 		
 		Task task = python.task(code);

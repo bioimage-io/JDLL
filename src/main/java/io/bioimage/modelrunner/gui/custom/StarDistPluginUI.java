@@ -212,7 +212,7 @@ public class StarDistPluginUI extends StarDistGUI implements ActionListener {
     		throw new IllegalArgumentException();
     	if (!model.isLoaded())
     		model.loadModel();
-    	
+    	model.setThreshold((double) (this.thresholdSlider.getSlider().getValue() / 100d));
     	whichLoaded = selectedModel;
     	SwingUtilities.invokeLater(() ->{
     		this.footer.getBar().setString("Running the model");
