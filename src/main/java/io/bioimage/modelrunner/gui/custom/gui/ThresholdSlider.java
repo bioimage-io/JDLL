@@ -21,6 +21,7 @@ package io.bioimage.modelrunner.gui.custom.gui;
 
 import java.awt.BorderLayout;
 import java.awt.Font;
+import java.awt.FontMetrics;
 import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
 import java.awt.event.FocusAdapter;
@@ -58,8 +59,10 @@ public class ThresholdSlider extends JPanel {
         // custom labels at 0 -> "0", 50 -> "0.5", 100 -> "1"
         Dictionary<Integer, JLabel> labels = new Hashtable<>();
         leftLabel = new JLabel("<html><center>0<br>(more detections)</center></html>");
+        leftLabel = new JLabel("0 (more detections)");
         centreLabel = new JLabel("0.5");
         rightLabel = new JLabel("<html><center>1<br>(less detections)</center></html>");
+        rightLabel = new JLabel("1 (less detections)");
         labels.put(0, leftLabel);
         labels.put(50, centreLabel);
         labels.put(100, rightLabel);
@@ -113,12 +116,24 @@ public class ThresholdSlider extends JPanel {
                 sizeX = (int) ( (1 - percSlider) * (rawW - inset * 2 - inset));
                 sizeY = Math.max(1, rawH - 2 * textFieldInset);
                 valueField.setBounds(x, textFieldInset, sizeX, sizeY);
-                float vFontSize = (rawH - 2 * inset) / 5.3f;
+                float vFontSize = (rawH - 2 * inset) / 6f;
                 vFontSize = Math.min(Math.max(1, vFontSize), 18);
                 float wFontSize = (float) (((1 - percSlider) * (rawW - inset * 2 - inset)) / 3.3f);
                 wFontSize = Math.min(Math.max(1, wFontSize), 18);
-                Font font = slider.getFont().deriveFont(Math.min(vFontSize, wFontSize));
-                slider.setFont(font);
+                float fontSize = Math.min(vFontSize, wFontSize);
+                Font font = slider.getFont().deriveFont(fontSize);
+                while (true && fontSize > 0) {
+                    int availableWidthLeft = leftLabel.getWidth()
+                            - leftLabel.getInsets().left
+                            - leftLabel.getInsets().right;
+                    FontMetrics fm = leftLabel.getFontMetrics(font);
+                    String text = leftLabel.getText();
+                    int textWidth = fm.stringWidth(text);
+                    if (availableWidthLeft > textWidth)
+                    	break;
+                    fontSize -= 0.5;
+                    font = slider.getFont().deriveFont(fontSize);
+                }
                 leftLabel.setFont(font);
                 centreLabel.setFont(font);
                 rightLabel.setFont(font);

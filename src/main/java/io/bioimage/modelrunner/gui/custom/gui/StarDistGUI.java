@@ -43,6 +43,7 @@ public class StarDistGUI extends JPanel {
 	protected PlaceholderTextField customModelPathField;
     protected JButton browseButton;
     protected ThresholdSlider thresholdSlider;
+    protected StarDistOptionalParams optionalParams;
     protected FooterPanel footer;
     
     protected final String CUSTOM_STR = "your custom model";
@@ -74,6 +75,8 @@ public class StarDistGUI extends JPanel {
 
         thresLabel = new JLabel(VAR_NAMES.get(2));
         thresholdSlider = new ThresholdSlider();
+        
+        optionalParams = new StarDistOptionalParams();
 
         // --- Buttons Panel ---
         footer = new FooterPanel();
@@ -86,6 +89,7 @@ public class StarDistGUI extends JPanel {
         add(browseButton);
         add(thresLabel);
         add(thresholdSlider);
+        add(optionalParams);
         
         this.setMinimumSize(MIN_D);
         
@@ -118,7 +122,7 @@ public class StarDistGUI extends JPanel {
                 int rawH = getHeight();
                 int inset = 5;
                 int nParams = VAR_NAMES.size();
-                double nRows = nParams - 0.5;
+                double nRows = nParams - 0.5 + 2.5;
                 int rowH = (int) ((rawH - (inset * nRows)) / nRows);
                 
                 int y = inset;
@@ -140,6 +144,8 @@ public class StarDistGUI extends JPanel {
                 thresLabel.setBounds(inset, y + offsetH2, modelLabelW, nRowH);
                 thresholdSlider.setBounds(inset * 2 + modelLabelW, y, cboxW, rowH * 2);
                 y += (inset + rowH * 2);
+                optionalParams.setBounds(inset, y, rawW - 2 * inset, (int) (rowH * 2.5));
+                y += (inset + rowH * 2.5);
                 int sizeY = rawH - y - inset;
                 footer.setBounds(inset, y, rawW - 2 * inset, sizeY);
             }

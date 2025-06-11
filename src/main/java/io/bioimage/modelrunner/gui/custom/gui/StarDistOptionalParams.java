@@ -19,6 +19,7 @@
  */
 package io.bioimage.modelrunner.gui.custom.gui;
 
+import javax.swing.BorderFactory;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JSpinner;
@@ -38,11 +39,16 @@ public class StarDistOptionalParams extends JPanel {
         setLayout(null);
         SpinnerNumberModel modelL = new SpinnerNumberModel(1., 0., 100., 0.01);
         minPercField= new JSpinner(modelL);
-        minLabel = new JLabel(StarDistGUI.VAR_NAMES.get(2));
+        minLabel = new JLabel(StarDistGUI.VAR_NAMES.get(3));
         // Channel selection
         SpinnerNumberModel modelH = new SpinnerNumberModel(99.8, 0., 100., 0.01);
         maxPercField= new JSpinner(modelH);
-        maxLabel = new JLabel(StarDistGUI.VAR_NAMES.get(3));
+        maxLabel = new JLabel(StarDistGUI.VAR_NAMES.get(4));
+        add(minLabel);
+        add(minPercField);
+        add(maxLabel);
+        add(maxPercField);
+        setBorder(BorderFactory.createTitledBorder("Optional Parameters"));
         organiseComponents();
     }
     
@@ -85,12 +91,11 @@ public class StarDistOptionalParams extends JPanel {
                 int rawW = getWidth();
                 int rawH = getHeight();
                 int inset = 5;
-                int nParams = 2;
-                double nRows = nParams - 0.5;
+                int nRows = 2;
                 int rowH = (int) ((rawH - (inset * nRows)) / nRows);
                 
                 int y = inset;
-                int modelLabelW = (rawW - inset * 3) / 5;
+                int modelLabelW = (rawW - inset * 3) * 4 / 5;
                 
                 int nRowH = (int) Math.max(StarDistGUI.ROW_RATIO * rowH, StarDistGUI.MIN_HEIGHT_ROW);
                 int offsetH = (int) Math.max(Math.floor((rowH - nRowH) / 2), 0);
