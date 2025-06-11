@@ -19,30 +19,19 @@
  */
 package io.bioimage.modelrunner.gui.custom;
 
-import javax.swing.BorderFactory;
-import javax.swing.Box;
-import javax.swing.BoxLayout;
-import javax.swing.JButton;
-import javax.swing.JComboBox;
 import javax.swing.JComponent;
 import javax.swing.JDialog;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
-import javax.swing.JLabel;
 import javax.swing.JOptionPane;
-import javax.swing.JPanel;
-import javax.swing.JProgressBar;
-import javax.swing.JSpinner;
-import javax.swing.JTextField;
-import javax.swing.SpinnerNumberModel;
 import javax.swing.SwingUtilities;
-import javax.swing.border.EmptyBorder;
 import javax.swing.event.PopupMenuEvent;
 import javax.swing.event.PopupMenuListener;
 
 import io.bioimage.modelrunner.exceptions.LoadModelException;
 import io.bioimage.modelrunner.exceptions.RunModelException;
 import io.bioimage.modelrunner.gui.EnvironmentInstaller;
+import io.bioimage.modelrunner.gui.custom.gui.StarDistGUI;
 import io.bioimage.modelrunner.gui.workers.InstallEnvWorker;
 import io.bioimage.modelrunner.model.special.stardist.Stardist2D;
 import io.bioimage.modelrunner.model.special.stardist.StardistAbstract;
@@ -54,21 +43,17 @@ import net.imglib2.type.numeric.RealType;
 import net.imglib2.util.Cast;
 import net.imglib2.view.Views;
 
-import java.awt.BorderLayout;
 import java.awt.Color;
-import java.awt.FlowLayout;
-import java.awt.GridLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.function.Consumer;
 
-public class StardistGUI extends JPanel implements ActionListener {
+public class StarDistPluginUI extends StarDistGUI implements ActionListener {
 
     private static final long serialVersionUID = 5381352117710530216L;
     
@@ -80,108 +65,24 @@ public class StardistGUI extends JPanel implements ActionListener {
     private Runnable cancelCallback;
     Thread workerThread;
     
-	private JComboBox<String> modelComboBox;
-	private JLabel customLabel;
-    private JTextField customModelPathField;
-    private JButton browseButton;
-    private JSpinner minPercField;
-    private JSpinner maxPercField;
-    private JProgressBar bar;
-    private JButton cancelButton, installButton, runButton;
-    
-    private final String CUSTOM_STR = "your custom model";
-    private static List<String> VAR_NAMES = Arrays.asList(new String[] {
-    		"Select a model:", "Custom Model Path:", "Normalization low percentile:", "Normalization high percentile:"
-    });
-    
     private static boolean INSTALLED_WEIGHTS = false;
     
     private static boolean INSTALLED_ENV = false;
 
-    public StardistGUI(ConsumerInterface consumer) {
+    public StarDistPluginUI(ConsumerInterface consumer) {
         // Set a modern-looking border layout with padding
     	this.consumer = consumer;
     	List<JComponent> componentList = new ArrayList<JComponent>();
-        setLayout(new BorderLayout());
-        JPanel mainPanel = new JPanel();
-        mainPanel.setLayout(new BoxLayout(mainPanel, BoxLayout.Y_AXIS));
-        mainPanel.setBorder(new EmptyBorder(15, 15, 15, 15));
-
-        // --- Model Selection Panel ---
-        JPanel modelPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
-        modelPanel.add(new JLabel(VAR_NAMES.get(0)));
-        String[] models = {"StarDist Fluorescence Nuclei Segmentation", "StarDist H&E Nuclei Segmentation", CUSTOM_STR};
-        modelComboBox = new JComboBox<String>(models);
-        modelPanel.add(modelComboBox);
-
-        // Panel for custom model file path
-        JPanel customModelPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
-        customLabel = new JLabel(VAR_NAMES.get(1));
-        customLabel.setEnabled(false);
-        customModelPanel.add(customLabel);
-        customModelPathField = new JTextField(20);
-        customModelPathField.setEnabled(false);
-        customModelPanel.add(customModelPathField);
-        browseButton = new JButton("Browse");
-        browseButton.setEnabled(false);
-        customModelPanel.add(browseButton);
-
-        // --- Optional Parameters Panel ---
-        JPanel parametersPanel = new JPanel(new GridLayout(3, 2, 10, 10));
-        parametersPanel.setBorder(BorderFactory.createTitledBorder("Optional Parameters"));
-        // Diameter input
-        parametersPanel.add(new JLabel(VAR_NAMES.get(2)));
-        SpinnerNumberModel modelL = new SpinnerNumberModel(1., 0., 100., 0.01);
-        minPercField= new JSpinner(modelL);
-        parametersPanel.add(minPercField);
-        // Channel selection
-        parametersPanel.add(new JLabel(VAR_NAMES.get(3)));
-        SpinnerNumberModel modelH = new SpinnerNumberModel(99.8, 0., 100., 0.01);
-        maxPercField= new JSpinner(modelH);
-        parametersPanel.add(maxPercField);
-
-        // --- Buttons Panel ---
-        JPanel footerPanel = new JPanel(new GridLayout(1, 2));
-        footerPanel.setBorder(BorderFactory.createEtchedBorder());
-        JPanel progressPanel = new JPanel(new BorderLayout());
-        progressPanel.setBorder(BorderFactory.createEmptyBorder(10, 5, 10, 5));
-        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
-        buttonPanel.setBorder(BorderFactory.createEtchedBorder());
-        cancelButton = new JButton("Cancel");
-        installButton = new JButton("Install");
-        runButton = new JButton("Run");
-        buttonPanel.add(cancelButton);
-        buttonPanel.add(installButton);
-        buttonPanel.add(runButton);
-        
-        bar = new JProgressBar();
-		bar.setStringPainted(true);
-		bar.setString("");
-        progressPanel.add(bar, BorderLayout.CENTER);
-        footerPanel.add(progressPanel);
-        footerPanel.add(buttonPanel);
-
-        // Add components to main panel
-        mainPanel.add(modelPanel);
-        mainPanel.add(customModelPanel);
-        mainPanel.add(Box.createVerticalStrut(10)); // spacing
-        mainPanel.add(parametersPanel);
-        mainPanel.add(Box.createVerticalStrut(10)); // spacing
-        mainPanel.add(footerPanel);
-        mainPanel.setBorder(BorderFactory.createEmptyBorder());
-
-        // Add main panel to the current panel
-        add(mainPanel, BorderLayout.CENTER);
 
         this.consumer.setVariableNames(VAR_NAMES);
         componentList.add(this.modelComboBox);
         componentList.add(this.customModelPathField);
-        componentList.add(this.minPercField);
-        componentList.add(this.maxPercField);
+        componentList.add(optionalParams.getMinPercField());
+        componentList.add(optionalParams.getMaxPercField());
         this.consumer.setComponents(componentList);
-        this.installButton.addActionListener(this);
-        this.runButton.addActionListener(this);
-        this.cancelButton.addActionListener(this);
+        this.footer.getButtons().getInstallButton().addActionListener(this);
+        this.footer.getButtons().getRunButton().addActionListener(this);
+        this.footer.getButtons().getCancelButton().addActionListener(this);
 
         // Enable when custom selected
         modelComboBox.addPopupMenuListener(new PopupMenuListener() {
@@ -218,7 +119,7 @@ public class StardistGUI extends JPanel implements ActionListener {
             public void run() {
                 JFrame frame = new JFrame("StarDist Plugin");
                 frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-                frame.getContentPane().add(new StardistGUI(null));
+                frame.getContentPane().add(new StarDistPluginUI(null));
                 frame.pack();
                 frame.setLocationRelativeTo(null);
                 frame.setVisible(true);
@@ -230,7 +131,7 @@ public class StardistGUI extends JPanel implements ActionListener {
     public void actionPerformed(ActionEvent e) {
     	if (e.getSource() == browseButton) {
     		browseFiles();
-    	} else if (e.getSource() == this.runButton) {
+    	} else if (e.getSource() == this.footer.getButtons().getRunButton()) {
     		workerThread = new Thread(() -> {
         		try {
     				runStardist();
@@ -238,16 +139,16 @@ public class StardistGUI extends JPanel implements ActionListener {
     			} catch (Exception e1) {
     				e1.printStackTrace();
     				startModelInstallation(false);
-    				SwingUtilities.invokeLater(() -> this.bar.setString("Error running the model"));
+    				SwingUtilities.invokeLater(() -> this.footer.getBar().setString("Error running the model"));
     			}
     		});
     		workerThread.start();
-    	} else if (e.getSource() == this.installButton) {
+    	} else if (e.getSource() == this.footer.getButtons().getInstallButton()) {
     		workerThread = new Thread(() -> {
         		installStardist();
     		});
     		workerThread.start();
-    	} else if (e.getSource() == this.cancelButton) {
+    	} else if (e.getSource() == this.footer.getButtons().getCancelButton()) {
     		cancel();
     	}
     }
@@ -268,8 +169,9 @@ public class StardistGUI extends JPanel implements ActionListener {
     		map.put("model", this.customModelPathField.getText());
     	else
     		map.put("model", modelPath);
-    	map.put("min_percentile", "" + minPercField.getValue());
-    	map.put("max_percentile", "" + maxPercField.getValue());
+    	map.put("prob_thresh", "" + this.thresholdSlider.getSlider().getValue());
+    	map.put("min_percentile", "" + this.optionalParams.getMinPercField().getValue());
+    	map.put("max_percentile", "" + this.optionalParams.getMaxPercField().getValue());
     	this.consumer.notifyParams(map);
     }
     
@@ -287,8 +189,8 @@ public class StardistGUI extends JPanel implements ActionListener {
     	}
     	this.inputTitle = consumer.getFocusedImageName();
     	SwingUtilities.invokeLater(() ->{
-    		this.bar.setIndeterminate(true);
-    		this.bar.setString("Loading model");
+    		this.footer.getBar().setIndeterminate(true);
+    		this.footer.getBar().setString("Loading model");
     	});
     	String selectedModel = (String) this.modelComboBox.getSelectedItem();
     	String modelype = "" + selectedModel;
@@ -313,7 +215,7 @@ public class StardistGUI extends JPanel implements ActionListener {
     	
     	whichLoaded = selectedModel;
     	SwingUtilities.invokeLater(() ->{
-    		this.bar.setString("Running the model");
+    		this.footer.getBar().setString("Running the model");
     	});
     	runStardistOnFramesStack(rai);
     }
@@ -402,7 +304,7 @@ public class StardistGUI extends JPanel implements ActionListener {
     private void installStardist(boolean wwInstalled, boolean envInstalled) {
     	if (wwInstalled && envInstalled)
     		return;
-    	SwingUtilities.invokeLater(() -> this.bar.setString("Installing..."));
+    	SwingUtilities.invokeLater(() -> this.footer.getBar().setString("Installing..."));
     	CountDownLatch latch = !wwInstalled && !envInstalled ? new CountDownLatch(2) : new CountDownLatch(1);
     	if (!wwInstalled)
     		installModelWeights(latch);
@@ -436,11 +338,11 @@ public class StardistGUI extends JPanel implements ActionListener {
     	Consumer<Double> cons = (d) -> {
     		double perc = Math.round(d * 1000) / 10.0d;
     		SwingUtilities.invokeLater(() -> {
-        		this.bar.setValue((int) Math.floor(perc));
-        		this.bar.setString(perc + "% of weights");
+        		this.footer.getBar().setValue((int) Math.floor(perc));
+        		this.footer.getBar().setString(perc + "% of weights");
     		});
     	};
-		SwingUtilities.invokeLater(() -> bar.setIndeterminate(false));
+		SwingUtilities.invokeLater(() -> footer.getBar().setIndeterminate(false));
 		Thread dwnlThread = new Thread(() -> {
 			try {
 				Stardist2D.downloadPretrained((String) modelComboBox.getSelectedItem(), this.consumer.getModelsDir(), cons);
@@ -480,9 +382,9 @@ public class StardistGUI extends JPanel implements ActionListener {
 			if (latch.getCount() != 1)
 				return;
 			SwingUtilities.invokeLater(() ->{
-				if (!bar.isIndeterminate() || (bar.isIndeterminate() && !bar.getString().equals("Installing Python"))) {
-					bar.setIndeterminate(true);
-					bar.setString("Installing Python");
+				if (!footer.getBar().isIndeterminate() || (footer.getBar().isIndeterminate() && !footer.getBar().getString().equals("Installing Python"))) {
+					footer.getBar().setIndeterminate(true);
+					footer.getBar().setString("Installing Python");
 				}
 			});
 		};
@@ -499,18 +401,18 @@ public class StardistGUI extends JPanel implements ActionListener {
     
     private void startModelInstallation(boolean isStarting) {
     	SwingUtilities.invokeLater(() -> {
-        	this.runButton.setEnabled(!isStarting);
-        	this.installButton.setEnabled(!isStarting);
+        	this.footer.getButtons().getRunButton().setEnabled(!isStarting);
+        	this.footer.getButtons().getInstallButton().setEnabled(!isStarting);
         	this.modelComboBox.setEnabled(!isStarting);
-        	this.minPercField.setEnabled(!isStarting);
-        	this.maxPercField.setEnabled(!isStarting);
+        	this.optionalParams.getMinPercField().setEnabled(!isStarting);
+        	this.optionalParams.getMaxPercField().setEnabled(!isStarting);
         	if (isStarting) {
-        		this.bar.setString("Checking stardist installed...");
-        		this.bar.setIndeterminate(true);
+        		this.footer.getBar().setString("Checking stardist installed...");
+        		this.footer.getBar().setIndeterminate(true);
         	} else {
-        		this.bar.setIndeterminate(false);
-		    	this.bar.setValue(0);
-		    	this.bar.setString("");
+        		this.footer.getBar().setIndeterminate(false);
+		    	this.footer.getBar().setValue(0);
+		    	this.footer.getBar().setString("");
         	}
     	});
     }
@@ -518,7 +420,7 @@ public class StardistGUI extends JPanel implements ActionListener {
     private void browseFiles() {
         JFileChooser fileChooser = new JFileChooser();
         fileChooser.setFileSelectionMode(JFileChooser.FILES_ONLY);
-        int option = fileChooser.showOpenDialog(StardistGUI.this);
+        int option = fileChooser.showOpenDialog(StarDistPluginUI.this);
         if (option == JFileChooser.APPROVE_OPTION) {
             customModelPathField.setText(fileChooser.getSelectedFile().getAbsolutePath());
         }

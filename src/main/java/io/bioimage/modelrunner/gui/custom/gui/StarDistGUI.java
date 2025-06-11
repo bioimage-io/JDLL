@@ -47,7 +47,7 @@ public class StarDistGUI extends JPanel {
     protected FooterPanel footer;
     
     protected final String CUSTOM_STR = "your custom model";
-    static List<String> VAR_NAMES = Arrays.asList(new String[] {
+    protected static List<String> VAR_NAMES = Arrays.asList(new String[] {
     		"Select a model:", "Custom Model Path:", "Probability Threshold:", "Normalization low percentile:", "Normalization high percentile:"
     });
     

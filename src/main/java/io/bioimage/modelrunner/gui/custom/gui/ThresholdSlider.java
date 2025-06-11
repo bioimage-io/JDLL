@@ -140,6 +140,14 @@ public class ThresholdSlider extends JPanel {
             }
         });
     }
+    
+    /**
+     * 
+     * @return the slider
+     */
+    public JSlider getSlider() {
+    	return this.slider;
+    }
 
     private void syncFieldToSlider() {
         try {
