@@ -32,6 +32,7 @@ import javax.swing.event.PopupMenuListener;
 import io.bioimage.modelrunner.exceptions.LoadModelException;
 import io.bioimage.modelrunner.exceptions.RunModelException;
 import io.bioimage.modelrunner.gui.EnvironmentInstaller;
+import io.bioimage.modelrunner.gui.custom.gui.CellposeGUI;
 import io.bioimage.modelrunner.gui.workers.InstallEnvWorker;
 import io.bioimage.modelrunner.model.special.cellpose.Cellpose;
 import io.bioimage.modelrunner.tensor.Tensor;
@@ -94,9 +95,9 @@ public class CellposePluginUI extends CellposeGUI implements ActionListener {
         componentList.add(this.diameterField);
         componentList.add(this.check);
         this.consumer.setComponents(componentList);
-        this.footer.buttons.cancelButton.addActionListener(this);
-        this.footer.buttons.installButton.addActionListener(this);
-        this.footer.buttons.runButton.addActionListener(this);
+        this.footer.getButtons().getCancelButton().addActionListener(this);
+        this.footer.getButtons().getInstallButton().addActionListener(this);
+        this.footer.getButtons().getRunButton().addActionListener(this);
         this.browseButton.addActionListener(this);
 
         // Enable when custom selected
@@ -148,7 +149,7 @@ public class CellposePluginUI extends CellposeGUI implements ActionListener {
     public void actionPerformed(ActionEvent e) {
     	if (e.getSource() == browseButton) {
     		browseFiles();
-    	} else if (e.getSource() == this.footer.buttons.runButton) {
+    	} else if (e.getSource() == this.footer.getButtons().getRunButton()) {
     		workerThread = new Thread(() -> {
         		try {
     				runCellpose();
@@ -156,16 +157,16 @@ public class CellposePluginUI extends CellposeGUI implements ActionListener {
     			} catch (Exception e1) {
     				e1.printStackTrace();
     				startModelInstallation(false);
-    				SwingUtilities.invokeLater(() -> this.footer.bar.setString("Error running the model"));
+    				SwingUtilities.invokeLater(() -> this.footer.getBar().setString("Error running the model"));
     			}
     		});
     		workerThread.start();
-    	} else if (e.getSource() == this.footer.buttons.installButton) {
+    	} else if (e.getSource() == this.footer.getButtons().getInstallButton()) {
     		workerThread = new Thread(() -> {
         		installCellpose();
     		});
     		workerThread.start();
-    	} else if (e.getSource() == this.footer.buttons.cancelButton) {
+    	} else if (e.getSource() == this.footer.getButtons().getCancelButton()) {
     		cancel();
     	}
     }
@@ -206,8 +207,8 @@ public class CellposePluginUI extends CellposeGUI implements ActionListener {
     	}
     	this.inputTitle = consumer.getFocusedImageName();
     	SwingUtilities.invokeLater(() ->{
-    		footer.bar.setIndeterminate(true);
-    		footer.bar.setString("Loading model");
+    		footer.getBar().setIndeterminate(true);
+    		footer.getBar().setString("Loading model");
     	});
     	String modelPath = (String) this.modelComboBox.getSelectedItem();
     	if (modelPath.equals(CUSOTM_STR))
@@ -222,7 +223,7 @@ public class CellposePluginUI extends CellposeGUI implements ActionListener {
     	}
     	whichLoaded = modelPath;
     	SwingUtilities.invokeLater(() ->{
-    		footer.bar.setString("Running the model");
+    		footer.getBar().setString("Running the model");
     	});
     	if (diameterField.getText() != null &&!diameterField.getText().equals(""))
     		model.setDiameter(Float.parseFloat(diameterField.getText()));
@@ -324,7 +325,7 @@ public class CellposePluginUI extends CellposeGUI implements ActionListener {
     private void installCellpose(boolean wwInstalled, boolean envInstalled) {
     	if (wwInstalled && envInstalled)
     		return;
-    	SwingUtilities.invokeLater(() -> footer.bar.setString("Installing..."));
+    	SwingUtilities.invokeLater(() -> footer.getBar().setString("Installing..."));
     	CountDownLatch latch = !wwInstalled && !envInstalled ? new CountDownLatch(2) : new CountDownLatch(1);
     	if (!wwInstalled)
     		installModelWeights(latch);
@@ -358,11 +359,11 @@ public class CellposePluginUI extends CellposeGUI implements ActionListener {
     	Consumer<Double> cons = (d) -> {
     		double perc = Math.round(d * 1000) / 10.0d;
     		SwingUtilities.invokeLater(() -> {
-        		footer.bar.setValue((int) Math.floor(perc));
-        		footer.bar.setString(perc + "% of weights");
+        		footer.getBar().setValue((int) Math.floor(perc));
+        		footer.getBar().setString(perc + "% of weights");
     		});
     	};
-    	SwingUtilities.invokeLater(() -> footer.bar.setIndeterminate(false));
+    	SwingUtilities.invokeLater(() -> footer.getBar().setIndeterminate(false));
 		Thread dwnlThread = new Thread(() -> {
 			try {
 				Cellpose.donwloadPretrained((String) modelComboBox.getSelectedItem(), this.consumer.getModelsDir(), cons);
@@ -400,9 +401,9 @@ public class CellposePluginUI extends CellposeGUI implements ActionListener {
 			if (latch.getCount() != 1)
 				return;
 			SwingUtilities.invokeLater(() ->{
-				if (!footer.bar.isIndeterminate() || (footer.bar.isIndeterminate() && !footer.bar.getString().equals("Installing Python"))) {
-					footer.bar.setIndeterminate(true);
-					footer.bar.setString("Installing Python");
+				if (!footer.getBar().isIndeterminate() || (footer.getBar().isIndeterminate() && !footer.getBar().getString().equals("Installing Python"))) {
+					footer.getBar().setIndeterminate(true);
+					footer.getBar().setString("Installing Python");
 				}
 			});
 		};
@@ -419,20 +420,20 @@ public class CellposePluginUI extends CellposeGUI implements ActionListener {
     
     private void startModelInstallation(boolean isStarting) {
     	SwingUtilities.invokeLater(() -> {
-        	footer.buttons.runButton.setEnabled(!isStarting);
-        	footer.buttons.installButton.setEnabled(!isStarting);
+        	footer.getButtons().getRunButton().setEnabled(!isStarting);
+        	footer.getButtons().getInstallButton().setEnabled(!isStarting);
         	modelComboBox.setEnabled(!isStarting);
         	diameterField.setEnabled(!isStarting);
         	cytoCbox.setEnabled(!isStarting);
         	nucleiCbox.setEnabled(!isStarting);
         	check.setEnabled(!isStarting);
         	if (isStarting) {
-        		footer.bar.setString("Checking cellpose installed...");
-        		footer.bar.setIndeterminate(true);
+        		footer.getBar().setString("Checking cellpose installed...");
+        		footer.getBar().setIndeterminate(true);
         	} else {
-        		footer.bar.setIndeterminate(false);
-        		footer.bar.setValue(0);
-        		footer.bar.setString("");
+        		footer.getBar().setIndeterminate(false);
+        		footer.getBar().setValue(0);
+        		footer.getBar().setString("");
         	}
     	});
     }

@@ -17,7 +17,7 @@
  * limitations under the License.
  * #L%
  */
-package io.bioimage.modelrunner.gui.custom;
+package io.bioimage.modelrunner.gui.custom.gui;
 
 import javax.swing.BorderFactory;
 import javax.swing.JFrame;
@@ -48,10 +48,10 @@ public class FooterPanel extends JPanel {
 
         buttons = new ButtonsPanel();
         bar = new JProgressBar();
-		bar.setStringPainted(true);
-		bar.setString("");
-        add(buttons);
-        add(bar);
+		getBar().setStringPainted(true);
+		getBar().setString("");
+        add(getButtons());
+        add(getBar());
         
         this.setMinimumSize(MIN_D);
         
@@ -67,8 +67,8 @@ public class FooterPanel extends JPanel {
                 int rawH = getHeight();
                 int inset = 2;
                 int w = (int) ((rawW - inset) * BUTTON_WRATIO);
-                bar.setBounds(0, inset, w, rawH - 2 * inset);
-                buttons.setBounds(w + inset, 0, w, rawH);
+                getBar().setBounds(0, inset, w, rawH - 2 * inset);
+                getButtons().setBounds(w + inset, 0, w, rawH);
             }
         });
     }
@@ -87,4 +87,20 @@ public class FooterPanel extends JPanel {
             }
         });
     }
+
+    /**
+     * 
+     * @return the buttons pannel
+     */
+	public ButtonsPanel getButtons() {
+		return buttons;
+	}
+
+	/**
+	 * 
+	 * @return the progress bar
+	 */
+	public JProgressBar getBar() {
+		return bar;
+	}
 }

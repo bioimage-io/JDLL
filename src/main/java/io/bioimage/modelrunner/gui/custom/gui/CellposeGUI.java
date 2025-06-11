@@ -17,7 +17,7 @@
  * limitations under the License.
  * #L%
  */
-package io.bioimage.modelrunner.gui.custom;
+package io.bioimage.modelrunner.gui.custom.gui;
 
 import javax.swing.JButton;
 import javax.swing.JCheckBox;

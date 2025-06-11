@@ -17,7 +17,7 @@
  * limitations under the License.
  * #L%
  */
-package io.bioimage.modelrunner.gui.custom;
+package io.bioimage.modelrunner.gui.custom.gui;
 
 import javax.swing.JButton;
 import javax.swing.JFrame;
@@ -48,6 +48,30 @@ public class ButtonsPanel extends JPanel {
         
         organiseComponents();
 
+    }
+    
+    /**
+     * 
+     * @return the run button
+     */
+    public JButton getRunButton() {
+    	return this.runButton;
+    }
+    
+    /**
+     * 
+     * @return the install button
+     */
+    public JButton getInstallButton() {
+    	return this.installButton;
+    }
+    
+    /**
+     * 
+     * @return the cancel button
+     */
+    public JButton getCancelButton() {
+    	return this.cancelButton;
     }
     
     private void organiseComponents() {
