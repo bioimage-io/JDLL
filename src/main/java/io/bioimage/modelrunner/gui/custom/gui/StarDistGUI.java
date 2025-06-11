@@ -20,7 +20,6 @@
 package io.bioimage.modelrunner.gui.custom.gui;
 
 import javax.swing.JButton;
-import javax.swing.JCheckBox;
 import javax.swing.JComboBox;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
@@ -33,46 +32,36 @@ import java.awt.Dimension;
 import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.List;
 
-public class CellposeGUI extends JPanel {
+public class StarDistGUI extends JPanel {
 
     private static final long serialVersionUID = 5381352117710530216L;
     
-    protected JLabel modelLabel, customLabel, cytoplasmLabel, nucleiLabel, diameterLabel;
+    protected JLabel modelLabel, customLabel, thresLabel;
 	protected JComboBox<String> modelComboBox;
 	protected PlaceholderTextField customModelPathField;
     protected JButton browseButton;
-    protected PlaceholderTextField diameterField;
-    protected JComboBox<String> cytoCbox, nucleiCbox;
-    protected JCheckBox check;
+    protected ThresholdSlider thresholdSlider;
     protected FooterPanel footer;
     
     protected final String CUSTOM_STR = "your custom model";
-    protected static final List<String> VAR_NAMES = Arrays.asList(new String[] {
-    		"Select a model:", "Custom Model Path:", "Cytoplasm Color:", "Nuclei Color:", "Diameter:", "Display all outputs"
+    static List<String> VAR_NAMES = Arrays.asList(new String[] {
+    		"Select a model:", "Custom Model Path:", "Probability Threshold:", "Normalization low percentile:", "Normalization high percentile:"
     });
-
-    public static final String[] RGB_LIST = new String[] {"red", "blue", "green"};
-    public static final String[] GRAYSCALE_LIST = new String[] {"gray"};
-    public static final String[] ALL_LIST = new String[] {"gray", "red", "blue", "green"};
-    public static final HashMap<String, Integer> CHANNEL_MAP;
-    static {
-    	CHANNEL_MAP = new HashMap<String, Integer>();
-    	CHANNEL_MAP.put("red", 1);
-    	CHANNEL_MAP.put("blue", 2);
-    	CHANNEL_MAP.put("green", 3);
-    	CHANNEL_MAP.put("gray", 0);
-    }
+    
+    protected static final double ROW_RATIO = 2d / 3d;
+    
+    protected static final int MIN_HEIGHT_ROW = 5;
+    
     private static final Dimension MIN_D = new Dimension(20, 40);
 
-    protected CellposeGUI() {
+    protected StarDistGUI() {
         setLayout(null);
 
         // --- Model Selection Panel ---
         modelLabel = new JLabel(VAR_NAMES.get(0));
-        String[] models = {"cyto3", "cyto2", "cyto", "nuclei", CUSTOM_STR};
+        String[] models = {"StarDist Fluorescence Nuclei Segmentation", "StarDist H&E Nuclei Segmentation", CUSTOM_STR};
         modelComboBox = new JComboBox<String>(models);
 
         // Panel for custom model file path
@@ -83,15 +72,8 @@ public class CellposeGUI extends JPanel {
         browseButton = new JButton("Browse");
         browseButton.setEnabled(false);
 
-        // Channel selection
-        cytoplasmLabel = new JLabel(VAR_NAMES.get(2));
-        nucleiLabel = new JLabel(VAR_NAMES.get(3));
-        cytoCbox = new JComboBox<String>(RGB_LIST);
-        nucleiCbox = new JComboBox<String>(RGB_LIST);
-        diameterLabel = new JLabel(VAR_NAMES.get(4));
-        diameterField = new PlaceholderTextField("optional");
-        check = new JCheckBox(VAR_NAMES.get(5));
-        check.setSelected(false);
+        thresLabel = new JLabel(VAR_NAMES.get(2));
+        thresholdSlider = new ThresholdSlider();
 
         // --- Buttons Panel ---
         footer = new FooterPanel();
@@ -102,13 +84,8 @@ public class CellposeGUI extends JPanel {
         add(customLabel);
         add(customModelPathField);
         add(browseButton);
-        add(cytoplasmLabel);
-        add(cytoCbox);
-        add(nucleiLabel);
-        add(nucleiCbox);
-        add(diameterLabel);
-        add(diameterField);
-        add(check);
+        add(thresLabel);
+        add(thresholdSlider);
         
         this.setMinimumSize(MIN_D);
         
@@ -141,33 +118,30 @@ public class CellposeGUI extends JPanel {
                 int rawH = getHeight();
                 int inset = 5;
                 int nParams = VAR_NAMES.size();
-                int nRows = nParams + 1;
-                int rowH = (rawH - (inset * nRows)) / nRows;
+                double nRows = nParams - 0.5;
+                int rowH = (int) ((rawH - (inset * nRows)) / nRows);
                 
                 int y = inset;
                 int modelLabelW = (rawW - inset * 3) / 5;
-                modelLabel.setBounds(inset, y, modelLabelW, rowH);
+                
+                int nRowH = (int) Math.max(ROW_RATIO * rowH, MIN_HEIGHT_ROW);
+                int offsetH = (int) Math.max(Math.floor((rowH - nRowH) / 2), 0);
+                modelLabel.setBounds(inset, y + offsetH, modelLabelW, nRowH);
                 int cboxW = rawW - inset * 3 - modelLabelW;
-                modelComboBox.setBounds(inset * 2 + modelLabelW, y, cboxW, rowH);
+                modelComboBox.setBounds(inset * 2 + modelLabelW, y + offsetH, cboxW, nRowH);
                 y += (inset + rowH);
                 int browseButtonW = modelLabelW / 1;
                 int textFieldW = rawW - inset * 4 - modelLabelW - browseButtonW;
-                customLabel.setBounds(inset, y, modelLabelW, rowH);
-                customModelPathField.setBounds(inset * 2 + modelLabelW, y, textFieldW, rowH);
-                browseButton.setBounds(inset * 3 + modelLabelW + textFieldW, y, browseButtonW, rowH);
+                customLabel.setBounds(inset, y + offsetH, modelLabelW, nRowH);
+                customModelPathField.setBounds(inset * 2 + modelLabelW, y + offsetH, textFieldW, nRowH);
+                browseButton.setBounds(inset * 3 + modelLabelW + textFieldW, y + offsetH, browseButtonW, nRowH);
                 y += (inset + rowH);
-                cytoplasmLabel.setBounds(inset, y, modelLabelW, rowH);
-                cytoCbox.setBounds(inset * 2 + modelLabelW, y, cboxW, rowH);
-                y += (inset + rowH);
-                nucleiLabel.setBounds(inset, y, modelLabelW, rowH);
-                nucleiCbox.setBounds(inset * 2 + modelLabelW, y, cboxW, rowH);
-                y += (inset + rowH);
-                diameterLabel.setBounds(inset, y, modelLabelW, rowH);
-                diameterField.setBounds(inset * 2 + modelLabelW, y, cboxW, rowH);
-                y += (inset + rowH);
-                check.setBounds(inset, y, rawW - 2 * inset, rowH);
-                y += (inset + rowH);
-                footer.setBounds(inset, y, rawW - 2 * inset, rowH);
+                int offsetH2 = (int) Math.max(Math.floor((rowH * 2 - nRowH) / 2), 0);
+                thresLabel.setBounds(inset, y + offsetH2, modelLabelW, nRowH);
+                thresholdSlider.setBounds(inset * 2 + modelLabelW, y, cboxW, rowH * 2);
+                y += (inset + rowH * 2);
+                int sizeY = rawH - y - inset;
+                footer.setBounds(inset, y, rawW - 2 * inset, sizeY);
             }
         });
     }
@@ -176,9 +150,9 @@ public class CellposeGUI extends JPanel {
     public static void main(String[] args) {
         SwingUtilities.invokeLater(new Runnable() {
             public void run() {
-                JFrame frame = new JFrame("Cellpose Plugin");
+                JFrame frame = new JFrame("StarDist Plugin");
                 frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-                frame.getContentPane().add(new CellposeGUI());
+                frame.getContentPane().add(new StarDistGUI());
                 frame.pack();
                 frame.setLocationRelativeTo(null);
                 frame.setVisible(true);

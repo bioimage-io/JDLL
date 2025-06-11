@@ -109,7 +109,7 @@ public class CellposePluginUI extends CellposeGUI implements ActionListener {
 
             @Override
             public void popupMenuWillBecomeInvisible(PopupMenuEvent e) {
-            	boolean enabled = modelComboBox.getSelectedItem().equals(CUSOTM_STR);
+            	boolean enabled = modelComboBox.getSelectedItem().equals(CUSTOM_STR);
                 customLabel.setEnabled(enabled);
                 customModelPathField.setEnabled(enabled);
                 browseButton.setEnabled(enabled);
@@ -183,7 +183,7 @@ public class CellposePluginUI extends CellposeGUI implements ActionListener {
     private void saveParams() {
     	LinkedHashMap<String, String> map = new LinkedHashMap<String, String>();
     	String modelPath = (String) this.modelComboBox.getSelectedItem();
-    	if (modelPath.equals(CUSOTM_STR))
+    	if (modelPath.equals(CUSTOM_STR))
     		map.put("model", this.customModelPathField.getText());
     	else
     		map.put("model", modelPath);
@@ -211,7 +211,7 @@ public class CellposePluginUI extends CellposeGUI implements ActionListener {
     		footer.getBar().setString("Loading model");
     	});
     	String modelPath = (String) this.modelComboBox.getSelectedItem();
-    	if (modelPath.equals(CUSOTM_STR))
+    	if (modelPath.equals(CUSTOM_STR))
     		modelPath = this.customModelPathField.getText();
     	else
     		modelPath = Cellpose.findPretrainedModelInstalled(modelPath, consumer.getModelsDir());
@@ -340,7 +340,7 @@ public class CellposePluginUI extends CellposeGUI implements ActionListener {
     
     private boolean weightsInstalled() {
     	String model = (String) this.modelComboBox.getSelectedItem();
-    	if (model.equals(CUSOTM_STR)) {
+    	if (model.equals(CUSTOM_STR)) {
     		INSTALLED_WEIGHTS = true;
     		return true;
     	}
