@@ -50,11 +50,11 @@ public class ThresholdSlider extends JPanel {
         super(null);
 
         // 1) Create a slider from 0–100 (we'll map that to 0.0–1.0)
-        slider = new JSlider(0, 100, 50);
+        slider = new JSlider(0, 1000, 500);
         slider.setPaintTicks(true);
         slider.setPaintLabels(true);
-        slider.setMajorTickSpacing(50);    // 0, 50, 100
-        slider.setMinorTickSpacing(25);    // optional finer ticks
+        slider.setMajorTickSpacing(500);    // 0, 50, 100
+        slider.setMinorTickSpacing(250);    // optional finer ticks
 
         // custom labels at 0 -> "0", 50 -> "0.5", 100 -> "1"
         Dictionary<Integer, JLabel> labels = new Hashtable<>();
@@ -64,8 +64,8 @@ public class ThresholdSlider extends JPanel {
         rightLabel = new JLabel("<html><center>1<br>(less detections)</center></html>");
         rightLabel = new JLabel("1 (less detections)");
         labels.put(0, leftLabel);
-        labels.put(50, centreLabel);
-        labels.put(100, rightLabel);
+        labels.put(500, centreLabel);
+        labels.put(1000, rightLabel);
         slider.setLabelTable(labels);
 
         // 2) Create a formatted text field for doubles 0.00–1.00
@@ -75,11 +75,11 @@ public class ThresholdSlider extends JPanel {
         valueField = new JFormattedTextField(fmt);
         valueField.setColumns(4);
         // initialize with the slider’s value
-        valueField.setValue(slider.getValue() / 100.0);
+        valueField.setValue(slider.getValue() / 1000.0);
 
         // When slider moves, update the text field
         slider.addChangeListener(e -> {
-            double val = slider.getValue() / 100.0;
+            double val = slider.getValue() / 1000.0;
             valueField.setValue(val);
         });
 
@@ -156,10 +156,10 @@ public class ThresholdSlider extends JPanel {
             double d = n.doubleValue();
             // clamp between 0 and 1
             d = Math.max(0.0, Math.min(1.0, d));
-            slider.setValue((int) Math.round(d * 100));
+            slider.setValue((int) Math.round(d * 1000));
         } catch (ParseException ex) {
             // if parse fails, just reset the field to the slider's current value
-            valueField.setValue(slider.getValue() / 100.0);
+            valueField.setValue(slider.getValue() / 1000.0);
         }
     }
 

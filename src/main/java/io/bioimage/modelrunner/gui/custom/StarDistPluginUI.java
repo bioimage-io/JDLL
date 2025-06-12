@@ -48,6 +48,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
@@ -61,6 +62,8 @@ public class StarDistPluginUI extends StarDistGUI implements ActionListener {
     private String whichLoaded;
     private StardistAbstract model;
     private String inputTitle;
+    
+    public HashMap<String, Double> threshMap = new HashMap<String, Double>();
     
     private Runnable cancelCallback;
     Thread workerThread;
@@ -177,6 +180,7 @@ public class StarDistPluginUI extends StarDistGUI implements ActionListener {
     
     private < T extends RealType< T > & NativeType< T > > void runStardist() throws IOException, RunModelException, LoadModelException {
     	saveParams();
+    	renewThreshold();
     	startModelInstallation(true);
     	if (!INSTALLED_WEIGHTS || !INSTALLED_ENV)
         	installStardist(weightsInstalled(), (INSTALLED_ENV = StardistAbstract.isInstalled()));
@@ -212,12 +216,23 @@ public class StarDistPluginUI extends StarDistGUI implements ActionListener {
     		throw new IllegalArgumentException();
     	if (!model.isLoaded())
     		model.loadModel();
-    	model.setThreshold((double) (this.thresholdSlider.getSlider().getValue() / 100d));
+    	model.setThreshold((double) (this.thresholdSlider.getSlider().getValue() / 1000d));
     	whichLoaded = selectedModel;
     	SwingUtilities.invokeLater(() ->{
     		this.footer.getBar().setString("Running the model");
     	});
     	runStardistOnFramesStack(rai);
+    }
+    
+    private void renewThreshold() {
+    	double val = this.thresholdSlider.getSlider().getValue() / 1000d;
+    	if (modelComboBox.getSelectedItem().equals("StarDist Fluorescence Nuclei Segmentation")) {
+    		this.thresh1D = val;
+    	} else if (modelComboBox.getSelectedItem().equals("StarDist H&E Nuclei Segmentation")) {
+    		thresh3D = val;
+    	} else {
+    		threshMap.put(this.customModelPathField.getText().trim(), val);
+    	}
     }
     
     private <T extends RealType<T> & NativeType<T>, R extends RealType<R> & NativeType<R>>

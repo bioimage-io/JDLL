@@ -19,6 +19,7 @@
  */
 package io.bioimage.modelrunner.gui.custom.gui;
 
+import javax.swing.DefaultComboBoxModel;
 import javax.swing.JButton;
 import javax.swing.JComboBox;
 import javax.swing.JFrame;
@@ -28,10 +29,15 @@ import javax.swing.SwingUtilities;
 import javax.swing.event.PopupMenuEvent;
 import javax.swing.event.PopupMenuListener;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+
 import java.awt.Dimension;
 import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
+import java.io.File;
+import java.io.IOException;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 
 public class StarDistGUI extends JPanel {
@@ -45,6 +51,12 @@ public class StarDistGUI extends JPanel {
     protected ThresholdSlider thresholdSlider;
     protected StarDistOptionalParams optionalParams;
     protected FooterPanel footer;
+
+    protected Double thresh1D = 0.479071463157368d;
+    protected Double thresh3D = 0.6924782541382084d;
+    protected HashMap<String, Double> threshMap = new HashMap<String, Double>();
+    
+    private static final ObjectMapper MAPPER = new ObjectMapper();
     
     protected final String CUSTOM_STR = "your custom model";
     protected static List<String> VAR_NAMES = Arrays.asList(new String[] {
@@ -63,7 +75,32 @@ public class StarDistGUI extends JPanel {
         // --- Model Selection Panel ---
         modelLabel = new JLabel(VAR_NAMES.get(0));
         String[] models = {"StarDist Fluorescence Nuclei Segmentation", "StarDist H&E Nuclei Segmentation", CUSTOM_STR};
-        modelComboBox = new JComboBox<String>(models);
+        DefaultComboBoxModel<String> model = new DefaultComboBoxModel<String>(models) {
+        	    private static final long serialVersionUID = -1253338659158602375L;
+
+				@Override
+        	    public void setSelectedItem(Object anItem) {
+        	        super.setSelectedItem(anItem);
+        	        if (anItem.equals("StarDist Fluorescence Nuclei Segmentation") && thresh1D != null) {
+        	        	StarDistGUI.this.thresholdSlider.getSlider().setValue((int) (thresh1D * 1000));
+        	        } else if (anItem.equals("StarDist H&E Nuclei Segmentation") && thresh3D != null) {
+        	        	StarDistGUI.this.thresholdSlider.getSlider().setValue((int) (thresh3D * 1000));
+        	        } else if (anItem.equals(CUSTOM_STR) && threshMap.get(customModelPathField.getText().trim()) != null) {
+        	        	thresholdSlider.getSlider().setValue((int) (threshMap.get(customModelPathField.getText().trim()) * 1000));
+        	        } else if (anItem.equals(CUSTOM_STR) && new File(customModelPathField.getText()).isDirectory()
+        	        		&& new File(customModelPathField.getText(), "thresholds.json").isFile()) {
+        	        	try {
+							Double prob = MAPPER.readTree(new File(customModelPathField.getText(), "thresholds.json")).get("prob").asDouble();
+							threshMap.put(customModelPathField.getText().trim(), prob);
+        	        	} catch (IOException e) {
+	        	        	thresholdSlider.getSlider().setValue(500);
+						}
+        	        } else {
+        	        	thresholdSlider.getSlider().setValue(500);
+        	        }
+        	    }
+        	};
+        modelComboBox = new JComboBox<String>(model);
 
         // Panel for custom model file path
         customLabel = new JLabel(VAR_NAMES.get(1));
