@@ -19,6 +19,7 @@
  */
 package io.bioimage.modelrunner.gui.custom.gui;
 
+import javax.swing.ComboBoxModel;
 import javax.swing.DefaultComboBoxModel;
 import javax.swing.JButton;
 import javax.swing.JComboBox;
@@ -75,32 +76,43 @@ public class StarDistGUI extends JPanel {
         // --- Model Selection Panel ---
         modelLabel = new JLabel(VAR_NAMES.get(0));
         String[] models = {"StarDist Fluorescence Nuclei Segmentation", "StarDist H&E Nuclei Segmentation", CUSTOM_STR};
-        DefaultComboBoxModel<String> model = new DefaultComboBoxModel<String>(models) {
-        	    private static final long serialVersionUID = -1253338659158602375L;
+        modelComboBox = new JComboBox<String>(models){
+    	    private static final long serialVersionUID = -1253338659158602375L;
 
-				@Override
-        	    public void setSelectedItem(Object anItem) {
-        	        super.setSelectedItem(anItem);
-        	        if (anItem.equals("StarDist Fluorescence Nuclei Segmentation") && thresh1D != null) {
-        	        	StarDistGUI.this.thresholdSlider.getSlider().setValue((int) (thresh1D * 1000));
-        	        } else if (anItem.equals("StarDist H&E Nuclei Segmentation") && thresh3D != null) {
-        	        	StarDistGUI.this.thresholdSlider.getSlider().setValue((int) (thresh3D * 1000));
-        	        } else if (anItem.equals(CUSTOM_STR) && threshMap.get(customModelPathField.getText().trim()) != null) {
-        	        	thresholdSlider.getSlider().setValue((int) (threshMap.get(customModelPathField.getText().trim()) * 1000));
-        	        } else if (anItem.equals(CUSTOM_STR) && new File(customModelPathField.getText()).isDirectory()
-        	        		&& new File(customModelPathField.getText(), "thresholds.json").isFile()) {
-        	        	try {
-							Double prob = MAPPER.readTree(new File(customModelPathField.getText(), "thresholds.json")).get("prob").asDouble();
-							threshMap.put(customModelPathField.getText().trim(), prob);
-        	        	} catch (IOException e) {
-	        	        	thresholdSlider.getSlider().setValue(500);
-						}
-        	        } else {
+			@Override
+    	    public void setModel(ComboBoxModel<String> aModel) {
+				if (this.dataModel == null) {
+					super.setModel(aModel);
+					return;
+				}
+				Object prevSelected = this.getSelectedItem();
+				super.setModel(aModel);
+				if (!prevSelected.equals(this.getSelectedItem()))
+					this.setSelectedItem(this.getSelectedItem());
+			}
+
+			@Override
+    	    public void setSelectedItem(Object anItem) {
+    	        super.setSelectedItem(anItem);
+    	        if (anItem.equals("StarDist Fluorescence Nuclei Segmentation") && thresh1D != null) {
+    	        	thresholdSlider.getSlider().setValue((int) (thresh1D * 1000));
+    	        } else if (anItem.equals("StarDist H&E Nuclei Segmentation") && thresh3D != null) {
+    	        	StarDistGUI.this.thresholdSlider.getSlider().setValue((int) (thresh3D * 1000));
+    	        } else if (anItem.equals(CUSTOM_STR) && threshMap.get(customModelPathField.getText().trim()) != null) {
+    	        	thresholdSlider.getSlider().setValue((int) (threshMap.get(customModelPathField.getText().trim()) * 1000));
+    	        } else if (anItem.equals(CUSTOM_STR) && new File(customModelPathField.getText()).isDirectory()
+    	        		&& new File(customModelPathField.getText(), "thresholds.json").isFile()) {
+    	        	try {
+						Double prob = MAPPER.readTree(new File(customModelPathField.getText(), "thresholds.json")).get("prob").asDouble();
+						threshMap.put(customModelPathField.getText().trim(), prob);
+    	        	} catch (IOException e) {
         	        	thresholdSlider.getSlider().setValue(500);
-        	        }
-        	    }
-        	};
-        modelComboBox = new JComboBox<String>(model);
+					}
+    	        } else {
+    	        	thresholdSlider.getSlider().setValue(500);
+    	        }
+    	    }
+    	};;
 
         // Panel for custom model file path
         customLabel = new JLabel(VAR_NAMES.get(1));
@@ -112,6 +124,7 @@ public class StarDistGUI extends JPanel {
 
         thresLabel = new JLabel(VAR_NAMES.get(2));
         thresholdSlider = new ThresholdSlider();
+        thresholdSlider.getSlider().setValue((int) (this.thresh1D * 1000));
         
         optionalParams = new StarDistOptionalParams();
 
