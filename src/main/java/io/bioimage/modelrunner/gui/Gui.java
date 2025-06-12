@@ -391,6 +391,7 @@ public class Gui extends JPanel {
             	List<String> inputNames = guiAdapter.getInputImageNames();
             	if (inputNames.size() == 0) {
             		startModelInstallation(false);
+                	SwingUtilities.invokeLater(() -> this.contentPanel.setProgressLabelText("No image open"));
         			return;
             	}
             	List<Tensor<T>> list = guiAdapter.getInputTensors(runner.getDescriptor());
