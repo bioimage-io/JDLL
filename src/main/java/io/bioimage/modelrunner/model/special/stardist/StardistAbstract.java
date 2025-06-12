@@ -32,13 +32,14 @@ import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 import org.apache.commons.compress.archivers.ArchiveException;
-
+import org.apposed.appose.Appose;
 import org.apposed.appose.Environment;
-import org.apposed.appose.mamba.Mamba;
 import org.apposed.appose.Service;
 import org.apposed.appose.Service.Task;
 import org.apposed.appose.Service.TaskStatus;
 import org.apposed.appose.Types;
+import org.apposed.appose.mamba.Mamba;
+
 import io.bioimage.modelrunner.bioimageio.description.ModelDescriptor;
 import io.bioimage.modelrunner.bioimageio.description.ModelDescriptorFactory;
 import io.bioimage.modelrunner.exceptions.LoadModelException;
@@ -286,9 +287,7 @@ public abstract class StardistAbstract extends BaseModel {
 	}	
 	
 	private void createPythonService() throws IOException {
-		Environment env = new Environment() {
-			@Override public String base() { return new Mamba(INSTALLATION_DIR).getEnvsDir() + File.separator + "stardist"; }
-			};
+		Environment env = Appose.build(new File(Mamba.BASE_PATH + File.separator + "envs" + File.separator + "stardist"));
 		python = env.python();
 		python.debug(System.err::println);
 	}
@@ -540,12 +539,13 @@ public abstract class StardistAbstract extends BaseModel {
 	 * @return true if the full python environment is installed or not
 	 */
 	public static boolean isInstalled() {
-		Mamba mamba = new Mamba(INSTALLATION_DIR);
+		// TODO Mamba mamba = new Mamba(INSTALLATION_DIR);
 		try {
-			return mamba.checkAllDependenciesInEnv("stardist", STARDIST_DEPS);
+			// TODO return mamba.checkAllDependenciesInEnv("stardist", STARDIST_DEPS);
 		} catch (Exception e) {
 			return false;
 		}
+		return true;
 	}
 	
 	/**
@@ -555,12 +555,13 @@ public abstract class StardistAbstract extends BaseModel {
 	 * @return true if the full python environment is installed or not
 	 */
 	public static boolean isInstalled(String envPath) {
-		Mamba mamba = new Mamba(INSTALLATION_DIR);
+		// TODO Mamba mamba = new Mamba(INSTALLATION_DIR);
 		try {
-			return mamba.checkAllDependenciesInEnv(envPath, STARDIST_DEPS);
+			// TODO return mamba.checkAllDependenciesInEnv(envPath, STARDIST_DEPS);
 		} catch (Exception e) {
 			return false;
 		}
+		return true;
 	}
 	
 	/**
@@ -604,27 +605,27 @@ public abstract class StardistAbstract extends BaseModel {
 													RuntimeException, 
 													ArchiveException, URISyntaxException {
 		
-		Mamba mamba = new Mamba(INSTALLATION_DIR);
+		// TODO Mamba mamba = new Mamba(INSTALLATION_DIR);
 		if (consumer != null) {
-			mamba.setConsoleOutputConsumer(consumer);
-			mamba.setErrorOutputConsumer(consumer);
+			// TODO mamba.setConsoleOutputConsumer(consumer);
+			// TODO mamba.setErrorOutputConsumer(consumer);
 		}
 		boolean stardistPythonInstalled = false;
 		try {
 			List<String> deps = new ArrayList<String>();
 			for (String dd : STARDIST_DEPS)
 				deps.add(dd.equals("tensorflow-macos<2.11") ? dd.replace("-macos", "") : dd);
-			stardistPythonInstalled = mamba.checkAllDependenciesInEnv("stardist", deps);
+			// TODO stardistPythonInstalled = mamba.checkAllDependenciesInEnv("stardist", deps);
 		} catch (Exception e) {
-			mamba.installMicromamba();
+			// TODO mamba.installMicromamba();
 		}
 		if (!stardistPythonInstalled) {
-			mamba.create("stardist", true, STARDIST_CHANNELS, STARDIST_DEPS.stream()
-					.map(dd -> dd.contains("<") | dd.contains(">") ? "\"" + dd + "\"": dd)
-					.collect(Collectors.toList()));
-			mamba.pipInstallIn("stardist", STARDIST_DEPS_PIP.stream()
-					.map(dd -> (PlatformDetection.isWindows() && (dd.contains("<") | dd.contains(">"))) ? "\"" + dd + "\"": dd)
-					.collect(Collectors.toList()).toArray(new String[STARDIST_DEPS_PIP.size()]));
+			// TODO mamba.create("stardist", true, STARDIST_CHANNELS, STARDIST_DEPS.stream()
+			// TODO .map(dd -> dd.contains("<") | dd.contains(">") ? "\"" + dd + "\"": dd)
+			// TODO .collect(Collectors.toList()));
+			// TODO mamba.pipInstallIn("stardist", STARDIST_DEPS_PIP.stream()
+			// TODO .map(dd -> (PlatformDetection.isWindows() && (dd.contains("<") | dd.contains(">"))) ? "\"" + dd + "\"": dd)
+			// TODO .collect(Collectors.toList()).toArray(new String[STARDIST_DEPS_PIP.size()]));
 		};
 	}
 	

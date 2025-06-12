@@ -29,9 +29,11 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 import org.apache.commons.compress.archivers.ArchiveException;
+import org.apposed.appose.Appose;
 import org.apposed.appose.Environment;
 import org.apposed.appose.Service;
-import org.apposed.appose.mamba.Mamba;
+import org.apposed.appose.Service.Task;
+import org.apposed.appose.Service.TaskStatus;
 
 import io.bioimage.modelrunner.engine.AbstractEngine;
 import io.bioimage.modelrunner.system.PlatformDetection;
@@ -42,7 +44,7 @@ import net.imglib2.type.numeric.RealType;
 
 public class JaxEngine extends AbstractEngine {
 	
-	private Mamba mamba;
+	// TODO private Mamba mamba;
 	
 	private String version;
 	
@@ -114,7 +116,7 @@ public class JaxEngine extends AbstractEngine {
 		if (gpu && !SUPPORTED_JAX_GPU_VERSIONS.contains(version))
 			throw new IllegalArgumentException("The provided JAX version has no GPU support in JDLL: " + version
 					+ ". GPU supported versions are: " + SUPPORTED_JAX_GPU_VERSIONS);
-		mamba = new Mamba();
+		// TODO mamba = new Mamba();
 		this.isPython = isPython;
 		this.version = version;
 	}
@@ -135,7 +137,8 @@ public class JaxEngine extends AbstractEngine {
 	
 	@Override
 	public String getDir() {
-		return mamba.getEnvsDir() + File.separator + toString();
+		// TODO return mamba.getEnvsDir() + File.separator + toString();
+		return "";
 	}
 
 
@@ -170,10 +173,10 @@ public class JaxEngine extends AbstractEngine {
 
 
 	@Override
-	public void install() throws IOException, InterruptedException, MambaInstallException, ArchiveException, URISyntaxException {
-		if (!mamba.checkMambaInstalled()) mamba.installMicromamba();
+	public void install() throws IOException, InterruptedException, ArchiveException, URISyntaxException {
+		// TODO if (!mamba.checkMambaInstalled()) mamba.installMicromamba();
 		
-		mamba.create(getDir(), getSupportedEngineKeys());
+		// TODO mamba.create(getDir(), getSupportedEngineKeys());
 		installed = true;
 	}
 
@@ -184,10 +187,7 @@ public class JaxEngine extends AbstractEngine {
 			throw new IllegalArgumentException("Current engine '" + this.toString() 
 												+ "' is not installed. Please install it first.");
 		if (env == null) {
-			this.env = new Environment() {
-				@Override public String base() { return JaxEngine.this.getDir(); }
-				@Override public boolean useSystemPath() { return false; }
-				};
+			this.env = Appose.build(new File(this.getDir()));
 			python = env.python();
 		}
 		String loadScriptFormatted = String.format(LOAD_SCRIPT_MAP.get(this.version), modelFolder, modelSource);

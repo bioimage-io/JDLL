@@ -29,9 +29,9 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 import org.apache.commons.compress.archivers.ArchiveException;
-
+import org.apposed.appose.Appose;
+import org.apposed.appose.Builder;
 import org.apposed.appose.Environment;
-import org.apposed.appose.mamba.Mamba;
 import org.apposed.appose.Service;
 import org.apposed.appose.Service.Task;
 import org.apposed.appose.Service.TaskStatus;
@@ -44,7 +44,7 @@ import net.imglib2.type.numeric.RealType;
 
 public class PytorchEngine extends AbstractEngine {
 	
-	private Mamba mamba;
+	// TODO private Mamba mamba;
 	
 	private String version;
 	
@@ -114,7 +114,7 @@ public class PytorchEngine extends AbstractEngine {
 		if (gpu && !SUPPORTED_PYTORCH_GPU_VERSIONS.contains(version))
 			throw new IllegalArgumentException("The provided Pytorch version has no GPU support in JDLL: " + version
 					+ ". GPU supported versions are: " + SUPPORTED_PYTORCH_GPU_VERSIONS);
-		mamba = new Mamba();
+		// TODO mamba = new Mamba();
 		this.isPython = isPython;
 		this.version = version;
 	}
@@ -135,7 +135,8 @@ public class PytorchEngine extends AbstractEngine {
 	
 	@Override
 	public String getDir() {
-		return mamba.getEnvsDir() + File.separator + this.toString();
+		// TODO return mamba.getEnvsDir() + File.separator + this.toString();
+		return "";
 	}
 
 
@@ -170,10 +171,10 @@ public class PytorchEngine extends AbstractEngine {
 
 
 	@Override
-	public void install() throws IOException, InterruptedException, MambaInstallException, ArchiveException, URISyntaxException {
-		if (!mamba.checkMambaInstalled()) mamba.installMicromamba();
+	public void install() throws IOException, InterruptedException, ArchiveException, URISyntaxException {
+		// TODO if (!mamba.checkMambaInstalled()) mamba.installMicromamba();
 		
-		mamba.create(getDir(), getSupportedEngineKeys());
+		// TODO mamba.create(getDir(), getSupportedEngineKeys());
 		installed = true;
 	}
 
@@ -183,10 +184,7 @@ public class PytorchEngine extends AbstractEngine {
 			throw new IllegalArgumentException("Current engine '" + this.toString() 
 												+ "' is not installed. Please install it first.");
 		if (env == null) {
-			this.env = new Environment() {
-				@Override public String base() { return PytorchEngine.this.getDir(); }
-				@Override public boolean useSystemPath() { return false; }
-				};
+			this.env = Appose.build(new File(this.getDir()));
 			python = env.python();
 		}
 		String loadScriptFormatted = String.format(LOAD_SCRIPT_MAP.get(this.version), modelFolder, modelSource);

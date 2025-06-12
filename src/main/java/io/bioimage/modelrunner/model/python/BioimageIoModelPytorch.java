@@ -31,7 +31,6 @@ import java.util.Map;
 
 import org.apache.commons.compress.archivers.ArchiveException;
 
-import io.bioimage.modelrunner.apposed.appose.MambaInstallException;
 import io.bioimage.modelrunner.bioimageio.description.ModelDescriptor;
 import io.bioimage.modelrunner.bioimageio.description.ModelDescriptorFactory;
 import io.bioimage.modelrunner.bioimageio.description.weights.ModelWeight;
@@ -113,7 +112,7 @@ public class BioimageIoModelPytorch extends BioimageIoModelPytorchProtected {
 	 * @throws RuntimeException 	nothing
 	 * @throws InterruptedException 	nothing
 	 */
-	public static <T extends NativeType<T> & RealType<T>> void main(String[] args) throws IOException, LoadEngineException, RunModelException, LoadModelException, InterruptedException, RuntimeException, MambaInstallException, ArchiveException, URISyntaxException {
+	public static <T extends NativeType<T> & RealType<T>> void main(String[] args) throws IOException, LoadEngineException, RunModelException, LoadModelException, InterruptedException, RuntimeException, ArchiveException, URISyntaxException {
 		
 		String mm = "/home/carlos/git/deepimagej-plugin/models/OC1 Project 11 Cellpose_24022025_131039";
 		Img<T> im = Cast.unchecked(ArrayImgs.floats(new long[] {1, 1, 1024, 1024}));

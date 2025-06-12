@@ -30,9 +30,8 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 import org.apache.commons.compress.archivers.ArchiveException;
-
+import org.apposed.appose.Appose;
 import org.apposed.appose.Environment;
-import org.apposed.appose.mamba.Mamba;
 import org.apposed.appose.Service;
 import org.apposed.appose.Service.Task;
 import org.apposed.appose.Service.TaskStatus;
@@ -45,7 +44,7 @@ import net.imglib2.type.numeric.RealType;
 
 public class KerasEngine extends AbstractEngine {
 	
-	private Mamba mamba;
+	// TODO private Mamba mamba;
 	
 	private String version;
 	
@@ -126,7 +125,7 @@ public class KerasEngine extends AbstractEngine {
 		if (gpu && !SUPPORTED_KERAS_GPU_VERSIONS.contains(version))
 			throw new IllegalArgumentException("The provided Keras version has no GPU support in JDLL: " + version
 					+ ". GPU supported versions are: " + SUPPORTED_KERAS_GPU_VERSIONS);
-		mamba = new Mamba();
+		// TODO mamba = new Mamba();
 		this.isPython = isPython;
 		this.version = version;
 	}
@@ -166,7 +165,8 @@ public class KerasEngine extends AbstractEngine {
 	
 	@Override
 	public String getDir() {
-		return mamba.getEnvsDir() + File.separator + getFolderName(version, gpu, false);
+		// TODO return mamba.getEnvsDir() + File.separator + getFolderName(version, gpu, false);
+		return "";
 	}
 
 	@Override
@@ -192,18 +192,18 @@ public class KerasEngine extends AbstractEngine {
 			return false;
 		List<String> dependencies = new ArrayList<String>();
 		try {
-			installed = mamba.checkAllDependenciesInEnv(this.getDir(), dependencies);
-		} catch (MambaInstallException e) {
+			// TODO installed = mamba.checkAllDependenciesInEnv(this.getDir(), dependencies);
+		} catch (Exception e) {
 			installed = false;
 		}
 		return installed;
 	}
 
 	@Override
-	public void install() throws IOException, InterruptedException, MambaInstallException, ArchiveException, URISyntaxException {
-		if (!mamba.checkMambaInstalled()) mamba.installMicromamba();
+	public void install() throws IOException, InterruptedException, ArchiveException, URISyntaxException {
+		// TODO if (!mamba.checkMambaInstalled()) mamba.installMicromamba();
 		List<String> dependencies = new ArrayList<String>();
-		mamba.create(getDir(), dependencies.toArray(new String[dependencies.size()]));
+		// TODO mamba.create(getDir(), dependencies.toArray(new String[dependencies.size()]));
 		installed = true;
 	}
 
@@ -213,10 +213,7 @@ public class KerasEngine extends AbstractEngine {
 			throw new IllegalArgumentException("Current engine '" + this.toString() 
 												+ "' is not installed. Please install it first.");
 		if (env == null) {
-			this.env = new Environment() {
-				@Override public String base() { return KerasEngine.this.getDir(); }
-				@Override public boolean useSystemPath() { return false; }
-				};
+			this.env = Appose.build(new File(this.getDir()));
 			python = env.python();
 		}
 		String loadScriptFormatted = String.format(LOAD_SCRIPT_MAP.get(this.version), modelFolder, modelSource);

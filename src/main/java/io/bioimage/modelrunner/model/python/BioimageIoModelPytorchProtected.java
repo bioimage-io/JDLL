@@ -31,7 +31,6 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 
-import org.apposed.appose.mamba.Mamba;
 import io.bioimage.modelrunner.bioimageio.description.ModelDescriptor;
 import io.bioimage.modelrunner.bioimageio.description.TensorSpec;
 import io.bioimage.modelrunner.bioimageio.description.weights.ModelDependencies;
@@ -183,14 +182,15 @@ public class BioimageIoModelPytorchProtected extends DLModelPytorchProtected {
 	 * @return list of dependencies that are missing in the selected env to run the model
 	 */
 	public List<String> findMissingDependencies() {
-		Mamba mamba = new Mamba(new File(envPath).getParentFile().getParentFile().getAbsolutePath());
+		// TODO Mamba mamba = new Mamba(new File(envPath).getParentFile().getParentFile().getAbsolutePath());
 		List<String> reqDeps = ModelDependencies.getDependencies(descriptor, 
 				descriptor.getWeights().getModelWeights(ModelWeight.getPytorchID()));
 		try {
-			return mamba.checkUninstalledDependenciesInEnv(this.envPath, reqDeps);
+			// TODO return mamba.checkUninstalledDependenciesInEnv(this.envPath, reqDeps);
 		} catch (Exception e) {
 			return reqDeps;
 		}
+		return new ArrayList<String>();
 	}
 	
 	/**

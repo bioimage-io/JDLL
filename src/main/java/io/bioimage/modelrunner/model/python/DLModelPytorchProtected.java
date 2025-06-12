@@ -39,13 +39,14 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import org.apache.commons.compress.archivers.ArchiveException;
-
+import org.apposed.appose.Appose;
 import org.apposed.appose.Environment;
-import org.apposed.appose.mamba.Mamba;
 import org.apposed.appose.Service;
 import org.apposed.appose.Service.Task;
 import org.apposed.appose.Service.TaskStatus;
 import org.apposed.appose.Types;
+import org.apposed.appose.mamba.Mamba;
+
 import io.bioimage.modelrunner.bioimageio.tiling.TileInfo;
 import io.bioimage.modelrunner.bioimageio.tiling.TileMaker;
 import io.bioimage.modelrunner.exceptions.LoadModelException;
@@ -290,9 +291,7 @@ public class DLModelPytorchProtected extends BaseModel {
 	}
 	
 	protected void createPythonService() throws IOException {
-		Environment env = new Environment() {
-			@Override public String base() { return envPath; }
-			};
+		Environment env = Appose.build(new File(envPath));
 		python = env.python();
 		python.debug(System.err::println);
 	}
@@ -868,13 +867,14 @@ public class DLModelPytorchProtected extends BaseModel {
 		if (envPath == null)
 			envPath = COMMON_PYTORCH_ENV_NAME;
 		
-		Mamba mamba = new Mamba(INSTALLATION_DIR);
+		// TODO Mamba mamba = new Mamba(INSTALLATION_DIR);
 		try {
-			 boolean inst = mamba.checkAllDependenciesInEnv(envPath, BIAPY_CONDA_DEPS);
+			boolean inst = true;
+			// TODO boolean inst = mamba.checkAllDependenciesInEnv(envPath, BIAPY_CONDA_DEPS);
 			 if (!inst) return inst;
-			 inst = mamba.checkAllDependenciesInEnv(envPath, BIAPY_PIP_DEPS_TORCH);
+			// TODO inst = mamba.checkAllDependenciesInEnv(envPath, BIAPY_PIP_DEPS_TORCH);
 			 if (!inst) return inst;
-			 inst = mamba.checkAllDependenciesInEnv(envPath, BIAPY_PIP_DEPS);
+			// TODO inst = mamba.checkAllDependenciesInEnv(envPath, BIAPY_PIP_DEPS);
 			 if (!inst) return inst;
 		} catch (Exception e) {
 			return false;
@@ -923,30 +923,30 @@ public class DLModelPytorchProtected extends BaseModel {
 													RuntimeException, 
 													ArchiveException, URISyntaxException {
 		
-		Mamba mamba = new Mamba(INSTALLATION_DIR);
+		// TODO Mamba mamba = new Mamba(INSTALLATION_DIR);
 		if (consumer != null) {
-			mamba.setConsoleOutputConsumer(consumer);
-			mamba.setErrorOutputConsumer(consumer);
+			// TODO mamba.setConsoleOutputConsumer(consumer);
+			// TODO mamba.setErrorOutputConsumer(consumer);
 		}
 		boolean biapyPythonInstalled = false;
 		try {
-			biapyPythonInstalled = mamba.checkAllDependenciesInEnv(COMMON_PYTORCH_ENV_NAME, BIAPY_CONDA_DEPS);
-			biapyPythonInstalled = mamba.checkAllDependenciesInEnv(COMMON_PYTORCH_ENV_NAME, BIAPY_PIP_DEPS_TORCH);
-			biapyPythonInstalled = mamba.checkAllDependenciesInEnv(COMMON_PYTORCH_ENV_NAME, BIAPY_PIP_DEPS);
-			if (PlatformDetection.isMacOS() && PlatformDetection.getOSVersion().getMajor() < 14)
-				biapyPythonInstalled = mamba.checkDependencyInEnv(COMMON_PYTORCH_ENV_NAME, "biapy==3.5.10");
-		} catch (MambaInstallException e) {
-			mamba.installMicromamba();
+			// TODO biapyPythonInstalled = mamba.checkAllDependenciesInEnv(COMMON_PYTORCH_ENV_NAME, BIAPY_CONDA_DEPS);
+			// TODO biapyPythonInstalled = mamba.checkAllDependenciesInEnv(COMMON_PYTORCH_ENV_NAME, BIAPY_PIP_DEPS_TORCH);
+			// TODO biapyPythonInstalled = mamba.checkAllDependenciesInEnv(COMMON_PYTORCH_ENV_NAME, BIAPY_PIP_DEPS);
+			// TODO if (PlatformDetection.isMacOS() && PlatformDetection.getOSVersion().getMajor() < 14)
+				// TODO biapyPythonInstalled = mamba.checkDependencyInEnv(COMMON_PYTORCH_ENV_NAME, "biapy==3.5.10");
+		} catch (Exception e) {
+			// TODO mamba.installMicromamba();
 		}
 		if (!biapyPythonInstalled) {
 			// TODO add logging for environment installation
-			mamba.create(COMMON_PYTORCH_ENV_NAME, true, new ArrayList<String>(), BIAPY_CONDA_DEPS);
+			// TODO mamba.create(COMMON_PYTORCH_ENV_NAME, true, new ArrayList<String>(), BIAPY_CONDA_DEPS);
 			ArrayList<String> args = new ArrayList<String>(BIAPY_PIP_ARGS);
 			args.addAll(BIAPY_PIP_DEPS_TORCH);
-			mamba.pipInstallIn(COMMON_PYTORCH_ENV_NAME, args.toArray(new String[args.size()]));
-			mamba.pipInstallIn(COMMON_PYTORCH_ENV_NAME, BIAPY_PIP_DEPS.toArray(new String[BIAPY_PIP_DEPS.size()]));
-			if (PlatformDetection.isMacOS() && PlatformDetection.getOSVersion().getMajor() < 14)
-				mamba.pipInstallIn(COMMON_PYTORCH_ENV_NAME, new String[] {"biapy==3.5.10", "--no-deps"});
+			// TODO mamba.pipInstallIn(COMMON_PYTORCH_ENV_NAME, args.toArray(new String[args.size()]));
+			// TODO mamba.pipInstallIn(COMMON_PYTORCH_ENV_NAME, BIAPY_PIP_DEPS.toArray(new String[BIAPY_PIP_DEPS.size()]));
+			// TODO if (PlatformDetection.isMacOS() && PlatformDetection.getOSVersion().getMajor() < 14)
+				// TODO mamba.pipInstallIn(COMMON_PYTORCH_ENV_NAME, new String[] {"biapy==3.5.10", "--no-deps"});
 		};
 		
 		if (!isInstalled())
