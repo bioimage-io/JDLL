@@ -19,7 +19,6 @@
  */
 package io.bioimage.modelrunner.gui;
 
-import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Font;
@@ -27,27 +26,13 @@ import java.awt.Insets;
 import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
 import java.awt.image.BufferedImage;
-import java.io.File;
-import java.io.IOException;
-import java.net.MalformedURLException;
 import java.net.URL;
-import java.util.List;
-import java.util.Map;
 
 import javax.swing.BorderFactory;
-import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
-import javax.swing.SwingUtilities;
 
-import io.bioimage.modelrunner.bioimageio.description.ModelDescriptor;
-import io.bioimage.modelrunner.exceptions.LoadEngineException;
 import io.bioimage.modelrunner.gui.adapter.GuiAdapter;
-import io.bioimage.modelrunner.gui.adapter.RunnerAdapter;
-import io.bioimage.modelrunner.tensor.Tensor;
-import net.imglib2.RandomAccessibleInterval;
-import net.imglib2.type.NativeType;
-import net.imglib2.type.numeric.RealType;
 
 public class ModelCard extends JPanel {
 
@@ -264,116 +249,5 @@ public class ModelCard extends JPanel {
         	DefaultIcon.drawImOrLogo(imagePath, defaultLogoURL, logoIcon, cardID);
         else
         	DefaultIcon.drawImOrLogo(imagePath, logoIcon, cardID);
-    }
-    
-    public static void main(String[] args) {
-        SwingUtilities.invokeLater(() -> {
-            // 1) Create the frame
-            JFrame frame = new JFrame("Model Card Test");
-            frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-            frame.setSize(300, 400);  // or whatever size you need
-            frame.setLocationRelativeTo(null);
-
-            GuiAdapter adapter = new GuiAdapter () {
-
-				@Override
-				public String getSoftwareName() {
-					return "JOHN DOE";
-				}
-				
-				@Override
-				public Color getHeaderColor() {
-					return Color.gray;
-				}
-
-				@Override
-				public String getSoftwareDescription() {
-					return "The best AI software";
-				}
-
-				@Override
-				public String getIconPath() {
-					return "/home/carlos/git/deep-icy/src/main/resources/deepicy_imgs/icy_logo.png";
-				}
-
-				@Override
-				public String getModelsDir() {
-					return null;
-				}
-
-				@Override
-				public String getEnginesDir() {
-					return null;
-				}
-
-				@Override
-				public RunnerAdapter createRunner(ModelDescriptor descriptor) throws IOException, LoadEngineException {
-					return null;
-				}
-
-				@Override
-				public RunnerAdapter createRunner(ModelDescriptor descriptor, String enginesPath)
-						throws IOException, LoadEngineException {
-					return null;
-				}
-
-				@Override
-				public <T extends RealType<T> & NativeType<T>> void displayRai(RandomAccessibleInterval<T> rai,
-						String axesOrder, String imTitle) {
-					
-				}
-
-				@Override
-				public <T extends RealType<T> & NativeType<T>> List<Tensor<T>> getInputTensors(
-						ModelDescriptor descriptor) {
-					return null;
-				}
-
-				@Override
-				public List<String> getInputImageNames() {
-					return null;
-				}
-
-				@Override
-				public <T extends RealType<T> & NativeType<T>> List<Tensor<T>> convertToInputTensors(
-						Map<String, Object> inputs, ModelDescriptor descriptor) {
-					return null;
-				}
-
-				@Override
-				public Color getTitleColor() {
-					return Color.white;
-				}
-
-				@Override
-				public Color getSubtitleColor() {
-					return Color.white;
-				}
-            	
-            };
-            
-            // 2) Create and configure your card
-            ModelCard card = ModelCard.createModelCard(adapter);
-            try {
-				card.updateCard(
-				    "My Model Name",
-				    "Friendly Nickname",
-				    // try to load an image from resources; fallback to null if missing
-				    new File("/home/carlos/git/deep-icy/src/main/resources/deepicy_imgs/icy_logo.png").toURI().toURL()
-				);
-			} catch (MalformedURLException e) {
-				e.printStackTrace();
-			}
-            // optionally mark unsupported to see the overlay:
-            card.setUnsupported(true);
-
-            // 3) Add to frame (since ModelCardGui uses null layout internally,
-            //    we’ll use BorderLayout here to have it fill the window)
-            frame.getContentPane().setLayout(new BorderLayout());
-            frame.getContentPane().add(card, BorderLayout.CENTER);
-
-            // 4) Show it
-            frame.setVisible(true);
-        });
     }
 }
