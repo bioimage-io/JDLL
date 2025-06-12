@@ -438,7 +438,7 @@ public abstract class StardistAbstract extends BaseModel {
 		
 		code += createEncodeImageScript() + System.lineSeparator();
 		if (this.threshold != null) {
-			code += "model.thresholds()['prob'] = " + threshold + System.lineSeparator();
+			code += String.format("model.thresholds = dict (prob=%s, nms=model.thresholds.nms)", threshold) + System.lineSeparator();
 		}
 		code += RUN_MODEL_CODE + System.lineSeparator();
 		
