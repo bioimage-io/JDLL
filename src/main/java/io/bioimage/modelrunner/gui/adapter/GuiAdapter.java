@@ -133,7 +133,8 @@ public interface GuiAdapter {
 
 	/**
 	 * 
-	 * @return a list of the images open in the consumer software
+	 * @return a list of the images that are going to be used as inputs to the model in the order 
+	 * specified in the {@link ModelDescriptor} specs of the Bioimage.io model.
 	 */
 	public List<String> getInputImageNames();
 	

@@ -373,6 +373,7 @@ public class Gui extends JPanel {
     	runninThread = new Thread(() -> {
         	try {
         		ModelDescriptor model = modelSelectionPanel.getModels().get(currentIndex);
+        		guiAdapter.notifyModelUsed(new File(model.getModelPath()).getAbsolutePath());
             	if (runner == null || runner.isClosed()) {
                 	SwingUtilities.invokeLater(() -> this.contentPanel.setProgressLabelText("Checking deps..."));
                 	if (!installEnvToRun(model) && !model.getModelFamily().equals(ModelDescriptor.STARDIST)) {
@@ -388,6 +389,10 @@ public class Gui extends JPanel {
         			return;
             	SwingUtilities.invokeLater(() -> this.contentPanel.setProgressLabelText("Running the model..."));
             	List<String> inputNames = guiAdapter.getInputImageNames();
+            	if (inputNames.size() == 0) {
+            		startModelInstallation(false);
+        			return;
+            	}
             	List<Tensor<T>> list = guiAdapter.getInputTensors(runner.getDescriptor());
     			List<Tensor<T>> outs = runner.run(list);
     			for (Tensor<T> tt : outs) {
