@@ -19,7 +19,7 @@
  */
 package io.bioimage.modelrunner.gui;
 
-import io.bioimage.modelrunner.apposed.appose.Types;
+import org.apposed.appose.Types;
 import io.bioimage.modelrunner.bioimageio.BioimageioRepo;
 import io.bioimage.modelrunner.bioimageio.description.ModelDescriptor;
 import io.bioimage.modelrunner.bioimageio.description.ModelDescriptorFactory;

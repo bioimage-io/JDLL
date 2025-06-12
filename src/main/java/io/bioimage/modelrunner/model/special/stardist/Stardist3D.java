@@ -29,7 +29,6 @@ import java.util.function.Consumer;
 
 import org.apache.commons.compress.archivers.ArchiveException;
 
-import io.bioimage.modelrunner.apposed.appose.MambaInstallException;
 import io.bioimage.modelrunner.bioimageio.BioimageioDirectConnection;
 import io.bioimage.modelrunner.bioimageio.BioimageioRepo;
 import io.bioimage.modelrunner.bioimageio.description.ModelDescriptor;
@@ -216,7 +215,6 @@ public class Stardist3D extends StardistAbstract {
 	 * @throws IOException nothing
 	 * @throws InterruptedException nothing
 	 * @throws RuntimeException nothing
-	 * @throws MambaInstallException nothing
 	 * @throws LoadEngineException nothing
 	 * @throws RunModelException nothing
 	 * @throws ArchiveException nothing
@@ -224,7 +222,7 @@ public class Stardist3D extends StardistAbstract {
 	 * @throws LoadModelException nothing
 	 */
 	public static void main(String[] args) throws IOException, InterruptedException, 
-													RuntimeException, MambaInstallException, 
+													RuntimeException, 
 													LoadEngineException, 
 													RunModelException, ArchiveException, 
 													URISyntaxException, LoadModelException {

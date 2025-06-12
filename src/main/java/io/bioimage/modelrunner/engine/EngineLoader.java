@@ -33,7 +33,8 @@ import java.util.HashMap;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
-import io.bioimage.modelrunner.apposed.appose.Types;
+import org.apposed.appose.Types;
+
 import io.bioimage.modelrunner.exceptions.LoadEngineException;
 import io.bioimage.modelrunner.versionmanagement.DeepLearningVersion;
 

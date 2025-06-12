@@ -30,7 +30,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
-import io.bioimage.modelrunner.apposed.appose.Types;
+import org.apposed.appose.Types;
 import io.bioimage.modelrunner.bioimageio.description.TransformSpec;
 import io.bioimage.modelrunner.tensor.Tensor;
 import io.bioimage.modelrunner.transformations.BinarizeTransformation;

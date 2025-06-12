@@ -33,13 +33,12 @@ import java.util.stream.Collectors;
 
 import org.apache.commons.compress.archivers.ArchiveException;
 
-import io.bioimage.modelrunner.apposed.appose.Environment;
-import io.bioimage.modelrunner.apposed.appose.Mamba;
-import io.bioimage.modelrunner.apposed.appose.MambaInstallException;
-import io.bioimage.modelrunner.apposed.appose.Service;
-import io.bioimage.modelrunner.apposed.appose.Service.Task;
-import io.bioimage.modelrunner.apposed.appose.Service.TaskStatus;
-import io.bioimage.modelrunner.apposed.appose.Types;
+import org.apposed.appose.Environment;
+import org.apposed.appose.mamba.Mamba;
+import org.apposed.appose.Service;
+import org.apposed.appose.Service.Task;
+import org.apposed.appose.Service.TaskStatus;
+import org.apposed.appose.Types;
 import io.bioimage.modelrunner.bioimageio.description.ModelDescriptor;
 import io.bioimage.modelrunner.bioimageio.description.ModelDescriptorFactory;
 import io.bioimage.modelrunner.exceptions.LoadModelException;
@@ -544,7 +543,7 @@ public abstract class StardistAbstract extends BaseModel {
 		Mamba mamba = new Mamba(INSTALLATION_DIR);
 		try {
 			return mamba.checkAllDependenciesInEnv("stardist", STARDIST_DEPS);
-		} catch (MambaInstallException e) {
+		} catch (Exception e) {
 			return false;
 		}
 	}
@@ -559,7 +558,7 @@ public abstract class StardistAbstract extends BaseModel {
 		Mamba mamba = new Mamba(INSTALLATION_DIR);
 		try {
 			return mamba.checkAllDependenciesInEnv(envPath, STARDIST_DEPS);
-		} catch (MambaInstallException e) {
+		} catch (Exception e) {
 			return false;
 		}
 	}
@@ -579,7 +578,7 @@ public abstract class StardistAbstract extends BaseModel {
 	 * @throws URISyntaxException if the URL to the micromamba installation is not correct
 	 */
 	public static void installRequirements() throws IOException, InterruptedException, 
-													RuntimeException, MambaInstallException, 
+													RuntimeException, 
 													ArchiveException, URISyntaxException {
 		installRequirements(null);
 	}
@@ -602,7 +601,7 @@ public abstract class StardistAbstract extends BaseModel {
 	 * @throws URISyntaxException if the URL to the micromamba installation is not correct
 	 */
 	public static void installRequirements(Consumer<String> consumer) throws IOException, InterruptedException, 
-													RuntimeException, MambaInstallException, 
+													RuntimeException, 
 													ArchiveException, URISyntaxException {
 		
 		Mamba mamba = new Mamba(INSTALLATION_DIR);
@@ -616,7 +615,7 @@ public abstract class StardistAbstract extends BaseModel {
 			for (String dd : STARDIST_DEPS)
 				deps.add(dd.equals("tensorflow-macos<2.11") ? dd.replace("-macos", "") : dd);
 			stardistPythonInstalled = mamba.checkAllDependenciesInEnv("stardist", deps);
-		} catch (MambaInstallException e) {
+		} catch (Exception e) {
 			mamba.installMicromamba();
 		}
 		if (!stardistPythonInstalled) {

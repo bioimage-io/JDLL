@@ -29,13 +29,10 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 import org.apache.commons.compress.archivers.ArchiveException;
+import org.apposed.appose.Environment;
+import org.apposed.appose.Service;
+import org.apposed.appose.mamba.Mamba;
 
-import io.bioimage.modelrunner.apposed.appose.Environment;
-import io.bioimage.modelrunner.apposed.appose.Mamba;
-import io.bioimage.modelrunner.apposed.appose.MambaInstallException;
-import io.bioimage.modelrunner.apposed.appose.Service;
-import io.bioimage.modelrunner.apposed.appose.Service.Task;
-import io.bioimage.modelrunner.apposed.appose.Service.TaskStatus;
 import io.bioimage.modelrunner.engine.AbstractEngine;
 import io.bioimage.modelrunner.system.PlatformDetection;
 import io.bioimage.modelrunner.tensor.Tensor;

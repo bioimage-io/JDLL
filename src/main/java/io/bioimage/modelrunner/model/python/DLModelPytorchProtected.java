@@ -40,15 +40,14 @@ import java.util.stream.IntStream;
 
 import org.apache.commons.compress.archivers.ArchiveException;
 
-import io.bioimage.modelrunner.apposed.appose.Environment;
-import io.bioimage.modelrunner.apposed.appose.Mamba;
-import io.bioimage.modelrunner.apposed.appose.MambaInstallException;
-import io.bioimage.modelrunner.apposed.appose.Service;
-import io.bioimage.modelrunner.apposed.appose.Service.Task;
-import io.bioimage.modelrunner.apposed.appose.Service.TaskStatus;
+import org.apposed.appose.Environment;
+import org.apposed.appose.mamba.Mamba;
+import org.apposed.appose.Service;
+import org.apposed.appose.Service.Task;
+import org.apposed.appose.Service.TaskStatus;
+import org.apposed.appose.Types;
 import io.bioimage.modelrunner.bioimageio.tiling.TileInfo;
 import io.bioimage.modelrunner.bioimageio.tiling.TileMaker;
-import io.bioimage.modelrunner.apposed.appose.Types;
 import io.bioimage.modelrunner.exceptions.LoadModelException;
 import io.bioimage.modelrunner.exceptions.RunModelException;
 import io.bioimage.modelrunner.model.BaseModel;
@@ -877,7 +876,7 @@ public class DLModelPytorchProtected extends BaseModel {
 			 if (!inst) return inst;
 			 inst = mamba.checkAllDependenciesInEnv(envPath, BIAPY_PIP_DEPS);
 			 if (!inst) return inst;
-		} catch (MambaInstallException e) {
+		} catch (Exception e) {
 			return false;
 		}
 		return true;
@@ -898,7 +897,7 @@ public class DLModelPytorchProtected extends BaseModel {
 	 * @throws URISyntaxException if the URL to the micromamba installation is not correct
 	 */
 	public static void installRequirements() throws IOException, InterruptedException, 
-													RuntimeException, MambaInstallException, 
+													RuntimeException, 
 													ArchiveException, URISyntaxException {
 		installRequirements(null);
 	}
@@ -921,7 +920,7 @@ public class DLModelPytorchProtected extends BaseModel {
 	 * @throws URISyntaxException if the URL to the micromamba installation is not correct
 	 */
 	public static void installRequirements(Consumer<String> consumer) throws IOException, InterruptedException, 
-													RuntimeException, MambaInstallException, 
+													RuntimeException, 
 													ArchiveException, URISyntaxException {
 		
 		Mamba mamba = new Mamba(INSTALLATION_DIR);

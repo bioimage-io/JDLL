@@ -26,7 +26,6 @@ import java.util.List;
 
 import org.apache.commons.compress.archivers.ArchiveException;
 
-import io.bioimage.modelrunner.apposed.appose.MambaInstallException;
 import io.bioimage.modelrunner.bioimageio.description.weights.WeightFormat;
 import io.bioimage.modelrunner.tensor.Tensor;
 import net.imglib2.type.NativeType;
@@ -112,7 +111,7 @@ public abstract class AbstractEngine implements AutoCloseable {
 
 	public abstract boolean isInstalled();
 
-	public abstract void install() throws IOException, InterruptedException, MambaInstallException, ArchiveException, URISyntaxException;
+	public abstract void install() throws IOException, InterruptedException, ArchiveException, URISyntaxException;
 
 	public abstract void loadModel(String modelFolder, String modelSource) throws IOException, InterruptedException;
 
