@@ -172,7 +172,7 @@ public class StarDistPluginUI extends StarDistGUI implements ActionListener {
     		map.put("model", this.customModelPathField.getText());
     	else
     		map.put("model", modelPath);
-    	map.put("prob_thresh", "" + this.thresholdSlider.getSlider().getValue());
+    	map.put("prob_thresh", "" + this.thresholdSlider.getSlider().getValue() / 1000d);
     	map.put("min_percentile", "" + this.optionalParams.getMinPercField().getValue());
     	map.put("max_percentile", "" + this.optionalParams.getMaxPercField().getValue());
     	this.consumer.notifyParams(map);

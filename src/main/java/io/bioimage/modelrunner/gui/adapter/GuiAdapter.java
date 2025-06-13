@@ -86,7 +86,7 @@ public interface GuiAdapter {
 	public String getEnginesDir();
 	
 	/**
-	 * Create the {@link Runner} used to run a model
+	 * Create the {@link RunnerAdapter} used to run a model
 	 * @param descriptor
 	 * 	{@link ModelDescriptor} containing information about the model
 	 * @return and object that can be used to run a model
@@ -96,7 +96,7 @@ public interface GuiAdapter {
 	public RunnerAdapter createRunner(ModelDescriptor descriptor) throws IOException, LoadEngineException;
 	
 	/**
-	 * Create the {@link Runner} used to run a model
+	 * Create the {@link RunnerAdapter} used to run a model
 	 * @param descriptor
 	 * 	{@link ModelDescriptor} containing information about the model
 	 * @param enginesPath
