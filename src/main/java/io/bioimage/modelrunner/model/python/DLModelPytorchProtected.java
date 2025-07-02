@@ -158,10 +158,12 @@ public class DLModelPytorchProtected extends BaseModel {
 	static {
 		if (PlatformDetection.isMacOS() 
 				&& (PlatformDetection.getArch().equals(PlatformDetection.ARCH_AARCH64)
-						|| PlatformDetection.isUsingRosseta()))
+						|| PlatformDetection.getArch().equals(PlatformDetection.ARCH_ARM64)
+						|| PlatformDetection.isUsingRosseta())) {
 			BIAPY_PIP_ARGS = new ArrayList<String>();
-		else 
+		} else {
 			BIAPY_PIP_ARGS = Arrays.asList(new String[] {"--index-url", "https://download.pytorch.org/whl/cpu"});
+		}
 	}
 		
 	protected static String INSTALLATION_DIR = Mamba.BASE_PATH;

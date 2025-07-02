@@ -195,6 +195,7 @@ public class Mamba {
 			case "Mac OS X|x86_64|false":  return "osx-64";
 			case "Mac OS X|x86_64|true":  return "osx-arm64";
 			case "Mac OS X|aarch64|false": return "osx-arm64";
+			case "Mac OS X|arm64|false": return "osx-arm64";
 			case "Windows|amd64|false":    return "win-64";
 			default:                 return null;
 		}

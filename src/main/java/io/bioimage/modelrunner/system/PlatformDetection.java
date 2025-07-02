@@ -42,7 +42,8 @@ public class PlatformDetection
     public static final String ARCH_X86_64 = "x86_64";
     public static final String ARCH_S390X = "s390x";
     // Aarch64 and arm64 are equivalent architectures
-    public static final String ARCH_AARCH64 = "aarch64";
+    public static final String ARM64_SYNONYM = "aarch64";
+    public static final String ARCH_AARCH64 = "arm64";
     public static final String ARCH_ARM64 = "arm64";
     public static final Map<String, String> archMap;
 
@@ -112,6 +113,8 @@ public class PlatformDetection
     		return ARCH;
         // resolve architecture
         ARCH = archMap.get(System.getProperty("os.arch"));
+        if (ARCH.equals(ARM64_SYNONYM))
+        	ARCH = ARCH_ARM64;
         if (ARCH == null)
         {
             throw new IllegalArgumentException("Unknown architecture " + System.getProperty("os.arch"));
