@@ -154,7 +154,15 @@ public class DLModelPytorchProtected extends BaseModel {
 					"careamics", "biapy==3.5.10", "appose"});
 	}
 	
-	private static final List<String> BIAPY_PIP_ARGS = Arrays.asList(new String[] {"--index-url", "https://download.pytorch.org/whl/cpu"});
+	private static final List<String> BIAPY_PIP_ARGS;
+	static {
+		if (PlatformDetection.isMacOS() 
+				&& (PlatformDetection.getArch().equals(PlatformDetection.ARCH_AARCH64)
+						|| PlatformDetection.isUsingRosseta()))
+			BIAPY_PIP_ARGS = new ArrayList<String>();
+		else 
+			BIAPY_PIP_ARGS = Arrays.asList(new String[] {"--index-url", "https://download.pytorch.org/whl/cpu"});
+	}
 		
 	protected static String INSTALLATION_DIR = Mamba.BASE_PATH;
 	
