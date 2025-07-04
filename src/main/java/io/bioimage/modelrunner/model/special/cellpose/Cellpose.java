@@ -76,6 +76,8 @@ public class Cellpose extends BioimageIoModelPytorchProtected {
 	
 	private Float diameter;
 	
+	private String setDiameterCode = "";
+	
 	private String rdfString;
 	
 	private boolean is3D = false;
@@ -179,6 +181,7 @@ public class Cellpose extends BioimageIoModelPytorchProtected {
 	 */
 	public void setDiameter(float diameter) {
 		this.diameter = diameter;
+		setDiameterCode = "diameter=" + diameter;
 	}
 	
 	/**
@@ -293,6 +296,9 @@ public class Cellpose extends BioimageIoModelPytorchProtected {
 		String code = String.format(LOAD_MODEL_CODE_ABSTRACT, 
 				//"False", // TODO GPU 
 				this.weightsPath);
+		code += ""
+				+ "diameter = None" + System.lineSeparator()
+				+ "globals()['diameter'] = diameter" + System.lineSeparator();
 		return code;
 	}
 	
@@ -300,19 +306,27 @@ public class Cellpose extends BioimageIoModelPytorchProtected {
 	String createInputsCode(List<RandomAccessibleInterval<T>> inRais, List<String> names) {
 		if (this.isBMZ)
 			return super.createInputsCode(inRais, names);
-		String code = "created_shms = []" + System.lineSeparator();
+		String code = setDiameterCode + System.lineSeparator();
+		setDiameterCode = "";
+		code += "created_shms = []" + System.lineSeparator();
 		code += "try:" + System.lineSeparator();
 		for (int i = 0; i < inRais.size(); i ++) {
 			SharedMemoryArray shma = SharedMemoryArray.createSHMAFromRAI(inRais.get(i), false, false);
 			code += codeToConvertShmaToPython(shma, names.get(i));
 			inShmaList.add(shma);
 		}
-		code += "  print(type(" + names.get(0)  + "))" + System.lineSeparator();
-		code += "  print(" + names.get(0) + ".shape)" + System.lineSeparator();
-		code += "  " + OUTPUT_LIST_KEY + " = " + MODEL_VAR_NAME + ".eval(";
-		for (int i = 0; i < inRais.size(); i ++)
-			code += names.get(i) + ", channels=" + createChannelsArgCode(inRais.get(i)) +", ";
-		code += "diameter=" + createDiamCode() + ")" + System.lineSeparator();;
+		String nameList = "[";
+		String channelList = "[";
+		for (int i = 0; i < inRais.size(); i ++) {
+			nameList += names.get(i) + ", ";
+			channelList += createChannelsArgCode(inRais.get(i)) + ", ";
+		}
+		nameList += "]";
+		channelList += "]";
+		code += createDiamCode(nameList, channelList);
+		code += "  print(diameter)" + System.lineSeparator();
+		code += "  " + OUTPUT_LIST_KEY + " = " + MODEL_VAR_NAME + ".eval(" + nameList + ", channels=" + channelList + ", ";
+		code += "diameter=diameter)" + System.lineSeparator();;
 		String closeEverythingWin = closeSHMWin();
 		code += "  " + closeEverythingWin + System.lineSeparator();
 		code += "except Exception as e:" + System.lineSeparator();
@@ -351,11 +365,19 @@ public class Cellpose extends BioimageIoModelPytorchProtected {
 			+ ", channels=" + Arrays.toString(channels));
 	}
 	
-	protected String createDiamCode() {
-		if (this.diameter  == null)
-			return "None";
-		else
-			return "" + diameter;
+	protected String createDiamCode(String nameList, String channelList) {
+		String code = ""
+				+ "  if diameter is None:" + System.lineSeparator()
+				+ "    from cellpose.models import SizeModel" + System.lineSeparator()
+				+ "    from pathlib import Path" + System.lineSeparator()
+				+ "    p = Path('" + this.modelFolder + "')" + System.lineSeparator()
+				+ "    pretrained_list = [f for f in p.glob(\"size_*.npy\") if f.is_file()]" + System.lineSeparator()
+				+ "    if len(pretrained_list) > 0:" + System.lineSeparator()
+				+ String.format("      sz = SizeModel(pretrained_size=pretrained_list[0], cp_model=%s.cp)", MODEL_VAR_NAME) + System.lineSeparator()
+				+ "      diameter = sz.eval(";
+		
+		code += nameList + ", channels=" + channelList +")[0]" + System.lineSeparator();
+		return code;
 	}
 	
 	/**
