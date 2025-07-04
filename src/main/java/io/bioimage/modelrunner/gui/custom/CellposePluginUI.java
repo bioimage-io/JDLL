@@ -243,6 +243,8 @@ public class CellposePluginUI extends CellposeGUI implements ActionListener {
 		RandomAccessibleInterval<T> output4 = Cast.unchecked(ArrayImgs.floats(new long[] {inDims[0], inDims[1], 3, inDims[3]}));
 		
 		for (int i = 0; i < rai.dimensionsAsLongArray()[3]; i ++) {
+			String msg = "Running the model " + (i + 1) + "/" + rai.dimensionsAsLongArray()[3];
+			SwingUtilities.invokeLater(() -> footer.getBar().setString(msg));
 	    	List<Tensor<R>> inList = new ArrayList<Tensor<R>>();
 	    	Tensor<R> inIm = Tensor.build("input", "xyc", Views.hyperSlice(rai, 3, i));
 	    	inList.add(inIm);

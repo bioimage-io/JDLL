@@ -246,6 +246,8 @@ public class StarDistPluginUI extends StarDistGUI implements ActionListener {
     		outDims = new long[] {inDims[0], inDims[1], 1, inDims[3], inDims[4]};
 		RandomAccessibleInterval<T> outMaskRai = Cast.unchecked(ArrayImgs.floats(outDims));
 		for (int i = 0; i < inDims[inDims.length - 1]; i ++) {
+			String msg = "Running the model " + (i + 1) + "/" + inDims[inDims.length - 1];
+			SwingUtilities.invokeLater(() -> footer.getBar().setString(msg));
 	    	List<Tensor<R>> inList = new ArrayList<Tensor<R>>();
 	    	Tensor<R> inIm = Tensor.build("input", model.is2D() ? "xyc" : "xycz", Views.hyperSlice(rai, inDims.length - 1, i));
 	    	inList.add(inIm);

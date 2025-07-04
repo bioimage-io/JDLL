@@ -235,7 +235,7 @@ public class Stardist2D extends StardistAbstract {
 			modelName = ID_EQUIVALENCE.get(modelName);
 		ModelDescriptor descriptor = BioimageioDirectConnection.selectByID(modelName);
 		if (descriptor == null) {
-			throw new IllegalArgumentException("The model does not correspond to on of the available pretrained StarDist2D models."
+			throw new IllegalArgumentException("The model does not correspond to one of the available pretrained StarDist2D models."
 					+ " To find a list of available cellpose models, please run StarDist2D.getPretrainedList()");
 		}
 		return BioimageioRepo.downloadModel(descriptor, downloadDir, progressConsumer);

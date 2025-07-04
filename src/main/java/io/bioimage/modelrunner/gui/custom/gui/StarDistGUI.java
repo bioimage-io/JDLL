@@ -68,13 +68,17 @@ public class StarDistGUI extends JPanel {
     protected static final int MIN_HEIGHT_ROW = 5;
     
     private static final Dimension MIN_D = new Dimension(20, 40);
+    
+    public static final String DEFAULT_1_CHANNEL_MODEL = "StarDist Fluorescence Nuclei Segmentation";
+    
+    public static final String DEFAULT_3_CHANNEL_MODEL = "StarDist H&E Nuclei Segmentation";
 
     protected StarDistGUI() {
         setLayout(null);
 
         // --- Model Selection Panel ---
         modelLabel = new JLabel(VAR_NAMES.get(0));
-        String[] models = {"StarDist Fluorescence Nuclei Segmentation", "StarDist H&E Nuclei Segmentation", CUSTOM_STR};
+        String[] models = {DEFAULT_1_CHANNEL_MODEL, DEFAULT_3_CHANNEL_MODEL, CUSTOM_STR};
         modelComboBox = new JComboBox<String>(models){
     	    private static final long serialVersionUID = -1253338659158602375L;
 
