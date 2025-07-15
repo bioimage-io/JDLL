@@ -370,7 +370,7 @@ public class Cellpose extends BioimageIoModelPytorchProtected {
 				+ "  if diameter is None:" + System.lineSeparator()
 				+ "    from cellpose.models import SizeModel" + System.lineSeparator()
 				+ "    from pathlib import Path" + System.lineSeparator()
-				+ "    p = Path('" + this.modelFolder + "')" + System.lineSeparator()
+				+ "    p = Path(r'" + this.modelFolder + "')" + System.lineSeparator()
 				+ "    pretrained_list = [f for f in p.glob(\"size_*.npy\") if f.is_file()]" + System.lineSeparator()
 				+ "    if len(pretrained_list) > 0:" + System.lineSeparator()
 				+ String.format("      sz = SizeModel(pretrained_size=pretrained_list[0], cp_model=%s.cp)", MODEL_VAR_NAME) + System.lineSeparator()
