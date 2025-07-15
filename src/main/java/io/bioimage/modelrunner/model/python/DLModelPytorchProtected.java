@@ -310,6 +310,14 @@ public class DLModelPytorchProtected extends BaseModel {
 	
 	/**
 	 * 
+	 * @return the Python service used to run the model
+	 */
+	public Service getPythonSerice() {
+		return this.python;
+	}
+	
+	/**
+	 * 
 	 * @return the path to the Python environment used by the model
 	 */
 	public String getEnvPath() {
@@ -745,7 +753,7 @@ public class DLModelPytorchProtected extends BaseModel {
 		}
 	}
 	
-	private void cleanShm() throws InterruptedException, IOException {
+	protected void cleanShm() throws InterruptedException, IOException {
 		closeShm();
 		if (PlatformDetection.isWindows()) {
 			Task closeSHMTask = python.task(CLEAN_SHM_CODE);
