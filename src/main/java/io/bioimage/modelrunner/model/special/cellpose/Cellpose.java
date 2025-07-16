@@ -76,7 +76,7 @@ public class Cellpose extends BioimageIoModelPytorchProtected {
 	
 	private Float diameter;
 	
-	private String setDiameterCode = "";
+	protected String setDiameterCode = "";
 	
 	private String rdfString;
 	
