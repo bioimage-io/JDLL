@@ -403,10 +403,12 @@ public class Gui extends JPanel {
             			return;
     				guiAdapter.displayRai(tt.getData(), tt.getAxesOrderString(), tt.getName() + "_of_" + inputNames.get(0));
     			}
+        		startModelInstallation(false);
     		} catch (Exception e) {
+        		startModelInstallation(false);
+            	SwingUtilities.invokeLater(() -> this.contentPanel.setProgressLabelText("Error running the model"));
     			e.printStackTrace();
     		}
-    		startModelInstallation(false);
     	});
     	runninThread.start();
     }
@@ -438,10 +440,12 @@ public class Gui extends JPanel {
             			return;
     				guiAdapter.displayRai(tt.getData(), tt.getAxesOrderString(), tt.getName() + "_of_" + inputNames.get(0));
     			}
+        		startModelInstallation(false);
     		} catch (Exception e) {
+        		startModelInstallation(false);
+            	SwingUtilities.invokeLater(() -> this.contentPanel.setProgressLabelText("Error running the model"));
     			e.printStackTrace();
     		}
-    		startModelInstallation(false);
     	});
     	runninThread.start();
     		
@@ -481,6 +485,7 @@ public class Gui extends JPanel {
     	if (this.searchBar.isBarOnLocal() && this.contentPanel.getProgress() != 0) {
     		contentPanel.setProgressBarText("");
     		contentPanel.setDeterminatePorgress(0);
+        	contentPanel.setProgressLabelText("");
     	} else if(!searchBar.isBarOnLocal() && this.contentPanel.getProgress() != 100 
     			&& modelSelectionPanel.getModels().get(currentIndex).isModelInLocalRepo()) {
     		contentPanel.setProgressBarText("100%");
@@ -489,12 +494,14 @@ public class Gui extends JPanel {
     			&& !modelSelectionPanel.getModels().get(currentIndex).isModelInLocalRepo()) {
     		contentPanel.setProgressBarText("");
     		contentPanel.setDeterminatePorgress(0);
+        	contentPanel.setProgressLabelText("");
     	}
     	if (searchBar.isBarOnLocal() 
     			|| (!searchBar.isBarOnLocal() 
     					&& !modelSelectionPanel.getModels().get(currentIndex).isModelInLocalRepo() 
     					&& !contentPanel.getProgressBarText().equals(""))) {
     		contentPanel.setProgressBarText("");
+        	contentPanel.setProgressLabelText("");
     	}
     }
 
