@@ -373,7 +373,7 @@ public class Gui extends JPanel {
     	runninThread = new Thread(() -> {
         	try {
         		ModelDescriptor model = modelSelectionPanel.getModels().get(currentIndex);
-        		guiAdapter.notifyModelUsed(new File(model.getModelPath()).getAbsolutePath());
+        		guiAdapter.notifyModelUsed(model.getNickname());
             	if (runner == null || runner.isClosed()) {
                 	SwingUtilities.invokeLater(() -> this.contentPanel.setProgressLabelText("Checking deps..."));
                 	if (!installEnvToRun(model) && !model.getModelFamily().equals(ModelDescriptor.STARDIST)) {
