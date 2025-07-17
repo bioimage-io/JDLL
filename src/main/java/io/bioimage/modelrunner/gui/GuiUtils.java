@@ -26,7 +26,7 @@ public class GuiUtils {
     	Thread.enumerate(threads);
 
     	for (Thread thread : threads) {
-    	    if (thread.getName().startsWith("AWT-EventQueue")) {
+    	    if (thread.getName().contains("AWT-EventQueue")) {
     	        if (thread.isAlive()) {
     	            return true;
     	        }
