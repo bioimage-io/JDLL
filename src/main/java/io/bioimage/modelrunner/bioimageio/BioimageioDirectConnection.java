@@ -90,7 +90,7 @@ public class BioimageioDirectConnection {
 	 * This method also stores the model IDs of the available models.
 	 * The file is at: {@link #LOCATE}
 	 */
-	private  static void setCollectionsRepo() {
+	private static void setCollectionsRepo() {
 		MODELS_INFO = new ArrayList<Map<String, Object>>();
 		String text = BioimageioRepo.getJSONFromUrl(LOCATE, null);
 		if (text == null) {
