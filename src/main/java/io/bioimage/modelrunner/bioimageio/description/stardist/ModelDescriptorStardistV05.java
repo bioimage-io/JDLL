@@ -129,11 +129,13 @@ public class ModelDescriptorStardistV05 extends ModelDescriptorV05
     		TensorSpec tt = input_tensors.get(i);
     		String testName = tt.getTestTensorName();
     		String newTestName = STARDIST_TEST + "_input_" + i + ".npy";
-    		if (new File(localModelPath + File.separator + newTestName).exists()) {
-	    		setInputTestNpyName(i, newTestName);
-	    		continue;
-    		}
 			try {
+	    		if (new File(localModelPath + File.separator + newTestName).exists()
+	    				// TODO remove the next conditional statement, only here because I added batch size to the stardist axes
+	    				&& DecodeNumpy.loadNpy(this.localModelPath + File.separator + newTestName).dimensionsAsLongArray().length == tt.getAxesOrder().length()) {
+		    		setInputTestNpyName(i, newTestName);
+		    		continue;
+	    		}
 				RandomAccessibleInterval<T> im = DecodeNumpy.loadNpy(this.localModelPath + File.separator + testName);
 				List<Integer> removeDims = removeExtraDims(oldOrdersInp.get(i), tt.getAxesOrder());
 	    		String newImAxesOrder = getNewAxes(oldOrdersInp.get(i), removeDims);
@@ -154,11 +156,13 @@ public class ModelDescriptorStardistV05 extends ModelDescriptorV05
     		TensorSpec tt = input_tensors.get(i);
     		String testName = tt.getTestTensorName();
     		String newTestName = STARDIST_TEST + "_output_" + i + ".npy";
-    		if (new File(localModelPath + File.separator + newTestName).exists()) {
-	    		setOutputTestNpyName(i, newTestName);
-	    		continue;
-    		}
 			try {
+	    		if (new File(localModelPath + File.separator + newTestName).exists()
+					// TODO remove the next conditional statement, only here because I added batch size to the stardist axes
+					&& DecodeNumpy.loadNpy(this.localModelPath + File.separator + newTestName).dimensionsAsLongArray().length == tt.getAxesOrder().length()) {
+		    		setOutputTestNpyName(i, newTestName);
+		    		continue;
+	    		}
 				RandomAccessibleInterval<T> im = DecodeNumpy.loadNpy(this.localModelPath + File.separator + testName);
 				List<Integer> removeDims = removeExtraDims(oldOrdersInp.get(i), tt.getAxesOrder());
 	    		String newImAxesOrder = getNewAxes(oldOrdersInp.get(i), removeDims);
@@ -176,7 +180,7 @@ public class ModelDescriptorStardistV05 extends ModelDescriptorV05
 	private Map<String, Object> reverseAxesShape(TensorSpec tt) {
 		Axes axes = tt.getAxesInfo();
 		boolean is3d = axes.getAxesOrder().contains("z");
-		String nAxesOrder = is3d ? "xyzc" : "xyc";
+		String nAxesOrder = is3d ? "bxyzc" : "bxyc";
 		List<Map<String, Object>> list = new ArrayList<Map<String, Object>>();
 		for (String ax : nAxesOrder.split("")) {
 			Axis axis = axes.getAxesList().stream()

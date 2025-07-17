@@ -399,8 +399,6 @@ public class Gui extends JPanel {
     			for (Tensor<T> tt : outs) {
     				if (!GuiUtils.isEDTAlive())
             			return;
-    				if (!GuiUtils.isEDTAlive())
-            			return;
     				guiAdapter.displayRai(tt.getData(), tt.getAxesOrderString(), tt.getName() + "_of_" + inputNames.get(0));
     			}
         		startModelInstallation(false);
@@ -434,8 +432,6 @@ public class Gui extends JPanel {
     			List<Tensor<T>> outs = runner.runOnTestImages();
             	List<String> inputNames = guiAdapter.getInputImageNames();
     			for (Tensor<T> tt : outs) {
-    				if (!GuiUtils.isEDTAlive())
-            			return;
     				if (!GuiUtils.isEDTAlive())
             			return;
     				guiAdapter.displayRai(tt.getData(), tt.getAxesOrderString(), tt.getName() + "_of_" + inputNames.get(0));

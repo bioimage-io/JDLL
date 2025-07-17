@@ -54,10 +54,14 @@ import io.bioimage.modelrunner.utils.CommonUtils;
 import io.bioimage.modelrunner.utils.Constants;
 import io.bioimage.modelrunner.utils.JSONUtils;
 import net.imglib2.RandomAccessibleInterval;
+import net.imglib2.img.array.ArrayImg;
+import net.imglib2.img.array.ArrayImgFactory;
+import net.imglib2.loops.LoopBuilder;
 import net.imglib2.type.NativeType;
 import net.imglib2.type.numeric.RealType;
 import net.imglib2.util.Cast;
 import net.imglib2.util.Util;
+import net.imglib2.view.Views;
 
 /**
  * Implementation of an API to run Stardist 2D models out of the box with little configuration.
@@ -350,6 +354,15 @@ public abstract class StardistAbstract extends BaseModel {
 		if (inTensors.size() > 1)
 			throw new RunModelException("Stardist needs just one input image");
 		preprocess(inTensors);
+		if (inTensors.get(0).getAxesOrderString().toLowerCase().indexOf("b") != -1) {
+			runBatch(inTensors, outTensors);
+		} else {
+			runNoBatch(inTensors, outTensors);
+		}
+	}
+
+	private <T extends RealType<T> & NativeType<T>, R extends RealType<R> & NativeType<R>> 
+	void runNoBatch( List< Tensor < T > > inTensors, List< Tensor < R > > outTensors ) throws RunModelException {
 		try {
 			Map<String, RandomAccessibleInterval<R>> outputs = run(inTensors.get(0).getData());
 			for (Tensor<R> tensor : outTensors) {
@@ -365,6 +378,20 @@ public abstract class StardistAbstract extends BaseModel {
 			}
 		} catch (IOException | InterruptedException e) {
 			throw new RunModelException(Types.stackTrace(e));
+		}
+	}
+
+	private <T extends RealType<T> & NativeType<T>, R extends RealType<R> & NativeType<R>> 
+	void runBatch( List< Tensor < T > > inTensors, List< Tensor < R > > outTensors ) throws RunModelException {
+		List<Tensor<R>> outputs = runBatch(inTensors);
+		for (Tensor<R> tensor : outTensors) {
+			Tensor<R> entry = outputs.stream()
+					.filter(ee -> tensor.getName().equals(ee.getName())
+							&& Arrays.equals(tensor.getData().dimensionsAsLongArray(), ee.getData().dimensionsAsLongArray()))
+					.findFirst().orElse(null);
+			if (entry != null 
+					&& Arrays.equals(tensor.getData().dimensionsAsLongArray(), entry.getData().dimensionsAsLongArray()))
+				tensor.setData(entry.getData());
 		}
 	}
 	
@@ -395,11 +422,21 @@ public abstract class StardistAbstract extends BaseModel {
 	
 	@Override
 	public <T extends RealType<T> & NativeType<T>, R extends RealType<R> & NativeType<R>> 
-	List<Tensor<T>> run(List<Tensor<R>> inputTensors) 
+	List<Tensor<T>> run(List<Tensor<R>> inputTensors)
 			throws RunModelException {
 		if (inputTensors.size() > 1)
 			throw new RunModelException("Stardist needs just one input image");
 		preprocess(inputTensors);
+		if (inputTensors.get(0).getAxesOrderString().toLowerCase().indexOf("b") != -1) {
+			return runBatch(inputTensors);
+		} else {
+			return runNoBatch(inputTensors);
+		}
+	}
+	
+	private <T extends RealType<T> & NativeType<T>, R extends RealType<R> & NativeType<R>> 
+	List<Tensor<T>> runNoBatch(List<Tensor<R>> inputTensors)
+			throws RunModelException  {
 		try {
 			Map<String, RandomAccessibleInterval<T>> outputs = run(inputTensors.get(0).getData());
 			List<Tensor<T>> outTensors = new ArrayList<Tensor<T>>();
@@ -417,7 +454,7 @@ public abstract class StardistAbstract extends BaseModel {
 					axesOrder = "i";
 				Tensor<T> tt = Tensor.build(entry.getKey(), axesOrder, entry.getValue());
 				// TODO
-				if (tt.getName() != "mask")
+				if (!entry.getKey().equals("mask"))
 					continue;
 				outTensors.add(tt);
 			}
@@ -426,7 +463,75 @@ public abstract class StardistAbstract extends BaseModel {
 			throw new RunModelException(Types.stackTrace(e));
 		}
 	}
+	
+	private <T extends RealType<T> & NativeType<T>, R extends RealType<R> & NativeType<R>> 
+	List<Tensor<T>> runBatch(List<Tensor<R>> inputTensors) 
+			throws RunModelException {
+		int bPos = inputTensors.get(0).getAxesOrderString().indexOf("b");
+		if (bPos != 0)
+			throw new IllegalArgumentException("The Batch Size (b) should always be in the first dimension -> " + inputTensors.get(0).getAxesOrderString());
+		int nBatches = inputTensors.get(0).getShape()[bPos];
+		List<Tensor<T>> outTensors = runBatchPosOne(inputTensors, bPos, nBatches) ;
+		try {
+			for (int n = 1; n < nBatches; n ++ ) {
+				RandomAccessibleInterval<R> data = Views.hyperSlice(inputTensors.get(0).getData(), bPos, n);
+				Map<String, RandomAccessibleInterval<T>> outputs = run(data);
+				for (Entry<String, RandomAccessibleInterval<T>> entry : outputs.entrySet()) {
+					if (entry.getValue() == null)
+						continue;
+					// TODO
+					if (!entry.getKey().equals("mask"))
+						continue;
+					Tensor<T> tensor = outTensors.stream()
+							.filter(ten -> ten.getName().equals(entry.getKey())).findFirst().orElse(null);
+					LoopBuilder.setImages( Views.hyperSlice(tensor.getData(), bPos, n), entry.getValue() )
+						.multiThreaded().forEachPixel( ( i, o ) -> i.set( o ) );
+				}
+			}
+			return outTensors;
+		} catch (IOException | InterruptedException e) {
+			throw new RunModelException(Types.stackTrace(e));
+		}
+	}
 
+	private <T extends RealType<T> & NativeType<T>, R extends RealType<R> & NativeType<R>> 
+	List<Tensor<T>> runBatchPosOne(List<Tensor<R>> inputTensors, int bPos, int nBatches) 
+			throws RunModelException {
+		List<Tensor<T>> outTensors = new ArrayList<Tensor<T>>();
+		try {
+			RandomAccessibleInterval<R> data = Views.hyperSlice(inputTensors.get(0).getData(), bPos, 0);
+			Map<String, RandomAccessibleInterval<T>> outputs = run(data);
+			for (Entry<String, RandomAccessibleInterval<T>> entry : outputs.entrySet()) {
+				if (entry.getValue() == null)
+					continue;
+				String axesOrder = "bxy";
+				if (entry.getValue().dimensionsAsLongArray().length > 2 && this.is2D())
+					axesOrder += "c";
+				else if (entry.getValue().dimensionsAsLongArray().length == 3 && this.is3D())
+					axesOrder += "z";
+				else if (entry.getValue().dimensionsAsLongArray().length > 3 && this.is3D())
+					axesOrder += "zc";
+				else if (entry.getValue().dimensionsAsLongArray().length == 1)
+					axesOrder = "bi";
+				// TODO
+				if (!entry.getKey().equals("mask"))
+					continue;
+				ArrayImgFactory<T> allBatchesOut = new ArrayImgFactory<>(entry.getValue().getType());
+				long[] outDims = new long[1 + entry.getValue().dimensionsAsLongArray().length];
+				outDims[0] = nBatches;
+				for (int i = 1; i < outDims.length; i ++) outDims[i] = entry.getValue().dimensionsAsLongArray()[i - 1];
+				ArrayImg<T, ?> output = allBatchesOut.create(outDims);
+				Tensor<T> tt = Tensor.build(entry.getKey(), axesOrder, output);
+				outTensors.add(tt);
+				LoopBuilder.setImages( Views.hyperSlice(output, bPos, 0), entry.getValue() )
+					.multiThreaded().forEachPixel( ( i, o ) -> i.set( o ) );
+			}
+			return outTensors;
+		} catch (IOException | InterruptedException e) {
+			throw new RunModelException(Types.stackTrace(e));
+		}
+	}
+	
 	public <T extends RealType<T> & NativeType<T>, R extends RealType<R> & NativeType<R>> 
 	Map<String, RandomAccessibleInterval<R>> run(RandomAccessibleInterval<T> img) throws IOException, InterruptedException {
 		checkInput(img);
