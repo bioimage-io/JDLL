@@ -187,6 +187,8 @@ public class CellposePluginUI extends CellposeGUI implements ActionListener {
     		map.put("model", this.customModelPathField.getText());
     	else
     		map.put("model", modelPath);
+    	if (diameterField.getText() != null && !diameterField.getText().equals(""))
+    		map.put("diameter", diameterField.getText());
     	map.put("cyto_color", (String) cytoCbox.getSelectedItem());
     	map.put("nuclei_color", (String) nucleiCbox.getSelectedItem());
     	map.put("display_all", "" + this.check.isSelected());

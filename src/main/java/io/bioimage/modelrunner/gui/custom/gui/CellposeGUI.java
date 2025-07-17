@@ -44,7 +44,7 @@ public class CellposeGUI extends JPanel {
 	protected JComboBox<String> modelComboBox;
 	protected PlaceholderTextField customModelPathField;
     protected JButton browseButton;
-    protected PlaceholderTextField diameterField;
+    protected IntegerTextField diameterField;
     protected JComboBox<String> cytoCbox, nucleiCbox;
     protected JCheckBox check;
     protected FooterPanel footer;
@@ -89,7 +89,7 @@ public class CellposeGUI extends JPanel {
         cytoCbox = new JComboBox<String>(RGB_LIST);
         nucleiCbox = new JComboBox<String>(RGB_LIST);
         diameterLabel = new JLabel(VAR_NAMES.get(4));
-        diameterField = new PlaceholderTextField("optional");
+        diameterField = new IntegerTextField("optional");
         check = new JCheckBox(VAR_NAMES.get(5));
         check.setSelected(false);
 

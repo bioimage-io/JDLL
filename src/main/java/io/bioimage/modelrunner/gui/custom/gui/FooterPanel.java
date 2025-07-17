@@ -19,13 +19,11 @@
  */
 package io.bioimage.modelrunner.gui.custom.gui;
 
-import javax.swing.BorderFactory;
 import javax.swing.JFrame;
 import javax.swing.JPanel;
 import javax.swing.JProgressBar;
 import javax.swing.SwingUtilities;
 
-import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
