@@ -116,8 +116,7 @@ public class CellposePluginUI extends CellposeGUI implements ActionListener {
             }
 
         });
-
-        // You can add additional listeners for the Cancel, Install, and Run buttons here.
+        consumer.updateGUI();
     }
     
     public void setCancelCallback(Runnable cancelCallback) {

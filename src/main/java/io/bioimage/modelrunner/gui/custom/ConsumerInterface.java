@@ -39,6 +39,8 @@ public abstract class ConsumerInterface {
 	
 	public abstract String getModelsDir();
 	
+	public abstract void updateGUI();
+	
 	public abstract void setComponents(List<JComponent> components);
 	
 	public abstract void setVarNames(List<String> componentNames);
