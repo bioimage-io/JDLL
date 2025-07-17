@@ -211,12 +211,11 @@ public class ScaleLinearTransformation extends AbstractTensorTransformation
 		checkRequiredArgs();
 		String selectedAxes = "";
 		for (String ax : input.getAxesOrderString().split("")) {
-			if (axes != null && !axes.toLowerCase().contains(ax.toLowerCase())
-					&& !ax.toLowerCase().equals("b"))
+			if (axes != null && !axes.toLowerCase().contains(ax.toLowerCase()))
 				selectedAxes += ax;
 		}
 		if (axes == null || selectedAxes.equals("") 
-				|| input.getAxesOrderString().replace("b", "").length() == selectedAxes.length()) {
+				|| input.getAxesOrderString().length() == selectedAxes.length()) {
 			if (gainDouble == null)
 				throw new IllegalArgumentException("The 'axes' parameter is not"
 						+ " compatible with the parameters 'gain' and 'offset'."

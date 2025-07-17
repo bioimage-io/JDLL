@@ -183,12 +183,11 @@ public class ScaleRangeTransformation extends AbstractTensorTransformation
 	public < R extends RealType< R > & NativeType< R > > void applyInPlace(Tensor<R> input) {
 		String selectedAxes = "";
 		for (String ax : input.getAxesOrderString().split("")) {
-			if (axes != null && !axes.toLowerCase().contains(ax.toLowerCase())
-					&& !ax.toLowerCase().equals("b"))
+			if (axes != null && !axes.toLowerCase().contains(ax.toLowerCase()))
 				selectedAxes += ax;
 		}
 		if (axes == null || selectedAxes.equals("") 
-				|| input.getAxesOrderString().replace("b", "").length() == selectedAxes.length()) {
+				|| input.getAxesOrderString().length() == selectedAxes.length()) {
 			globalScale(input);
 		} else if (axes.length() > 0) {
 			axesScale(input, selectedAxes);

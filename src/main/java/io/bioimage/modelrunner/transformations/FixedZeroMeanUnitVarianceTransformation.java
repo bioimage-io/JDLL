@@ -231,12 +231,11 @@ public class FixedZeroMeanUnitVarianceTransformation extends AbstractTensorTrans
 		checkRequiredArgs();
 		String selectedAxes = "";
 		for (String ax : input.getAxesOrderString().split("")) {
-			if (axes != null && !axes.toLowerCase().contains(ax.toLowerCase())
-					&& !ax.toLowerCase().equals("b"))
+			if (axes != null && !axes.toLowerCase().contains(ax.toLowerCase()))
 				selectedAxes += ax;
 		}
 		if (mode == Mode.FIXED &&  (axes == null || selectedAxes.equals("") 
-				|| input.getAxesOrderString().replace("b", "").length() == selectedAxes.length())) {
+				|| input.getAxesOrderString().length() == selectedAxes.length())) {
 			if (meanDouble == null && meanArr == null)
 				throw new IllegalArgumentException(FIXED_MODE_ERR);
 			else if (meanDouble == null)
@@ -244,7 +243,7 @@ public class FixedZeroMeanUnitVarianceTransformation extends AbstractTensorTrans
 						+ "cannot be arrays with the introduced 'axes'.");
 			fixedModeGlobalMeanStd(input);
 		} else if (mode != Mode.FIXED && (axes == null || selectedAxes.equals("") 
-				|| input.getAxesOrderString().replace("b", "").length() == selectedAxes.length())) {
+				|| input.getAxesOrderString().length() == selectedAxes.length())) {
 			if (meanDouble != null || meanArr != null)
 				throw new IllegalArgumentException(NOT_FIXED_MODE_ERR);
 			notFixedModeGlobalMeanStd(input);
