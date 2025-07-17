@@ -66,6 +66,7 @@ public class CellposePluginUI extends CellposeGUI implements ActionListener {
     private String whichLoaded;
     private Cellpose model;
     private String inputTitle;
+    private boolean cancelled = false;
     
     private Runnable cancelCallback;
     Thread workerThread;
@@ -154,6 +155,8 @@ public class CellposePluginUI extends CellposeGUI implements ActionListener {
     				runCellpose();
     				startModelInstallation(false);
     			} catch (Exception e1) {
+    				if (cancelled)
+    					return;
     				e1.printStackTrace();
     				startModelInstallation(false);
     				SwingUtilities.invokeLater(() -> this.footer.getBar().setString("Error running the model"));
@@ -171,6 +174,7 @@ public class CellposePluginUI extends CellposeGUI implements ActionListener {
     }
     
     private void cancel() {
+    	cancelled = true;
     	if (workerThread != null && workerThread.isAlive())
     		workerThread.interrupt();
     	if (model != null)
@@ -228,14 +232,15 @@ public class CellposePluginUI extends CellposeGUI implements ActionListener {
     	SwingUtilities.invokeLater(() ->{
     		footer.getBar().setString("Running the model");
     	});
+    	Float diameter = null;
     	if (diameterField.getText() != null &&!diameterField.getText().equals(""))
-    		model.setDiameter(Float.parseFloat(diameterField.getText()));
+    		diameter = Float.parseFloat(diameterField.getText());
     	model.setChannels(new int[] {CHANNEL_MAP.get(cytoCbox.getSelectedItem()), CHANNEL_MAP.get(nucleiCbox.getSelectedItem())});
-    	runCellposeOnFramesStack(rai);
+    	runCellposeOnFramesStack(rai, diameter);
     }
     
     private <T extends RealType<T> & NativeType<T>, R extends RealType<R> & NativeType<R>>
-    void runCellposeOnFramesStack(RandomAccessibleInterval<R> rai) throws RunModelException {
+    void runCellposeOnFramesStack(RandomAccessibleInterval<R> rai, Float diameter) throws RunModelException {
     	rai = addDimsToInput(rai, cytoCbox.getSelectedItem().equals("gray") ? 1 : 3);
     	long[] inDims = rai.dimensionsAsLongArray();
     	long[] outDims = new long[] {inDims[0], inDims[1], inDims[3]};
@@ -266,6 +271,8 @@ public class CellposePluginUI extends CellposeGUI implements ActionListener {
 	    	Tensor<T> dn = Tensor.build("image_dn", "xyc", Views.hyperSlice(output4, 3, i));
 	    	outputList.add(dn);
 	    	
+	    	if (diameter != null)
+	    		model.setDiameter(diameter);
 	    	model.run(inList, outputList);
 		}
     	consumer.display(outMaskRai, "xyb", getOutputName("labels"));
@@ -339,6 +346,8 @@ public class CellposePluginUI extends CellposeGUI implements ActionListener {
     	try {
 			latch.await();
 		} catch (InterruptedException e) {
+			if (cancelled)
+				return;
 			e.printStackTrace();
 		}
     }
@@ -374,6 +383,8 @@ public class CellposePluginUI extends CellposeGUI implements ActionListener {
 				Cellpose.donwloadPretrained((String) modelComboBox.getSelectedItem(), this.consumer.getModelsDir(), cons);
 				INSTALLED_WEIGHTS = true;
 			} catch (IOException | InterruptedException | ExecutionException e) {
+				if (cancelled)
+					return;
 				e.printStackTrace();
 			}
 			latch.countDown();

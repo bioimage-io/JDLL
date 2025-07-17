@@ -62,6 +62,7 @@ public class StarDistPluginUI extends StarDistGUI implements ActionListener {
     private String whichLoaded;
     private StardistAbstract model;
     private String inputTitle;
+    private boolean cancelled = false;
     
     public HashMap<String, Double> threshMap = new HashMap<String, Double>();
     
@@ -139,6 +140,8 @@ public class StarDistPluginUI extends StarDistGUI implements ActionListener {
     				runStardist();
     				startModelInstallation(false);
     			} catch (Exception e1) {
+    		    	if (cancelled)
+    		    		return;
     				e1.printStackTrace();
     				startModelInstallation(false);
     				SwingUtilities.invokeLater(() -> this.footer.getBar().setString("Error running the model"));
@@ -156,6 +159,7 @@ public class StarDistPluginUI extends StarDistGUI implements ActionListener {
     }
     
     private void cancel() {
+    	cancelled = true;
     	if (workerThread != null && workerThread.isAlive())
     		workerThread.interrupt();
     	if (model != null)
@@ -210,6 +214,8 @@ public class StarDistPluginUI extends StarDistGUI implements ActionListener {
 			try {
 				model = Stardist2D.fromPretained(selectedModel, consumer.getModelsDir(), false);
 			} catch (InterruptedException e) {
+		    	if (cancelled)
+		    		return;
 				e.printStackTrace();
 				return;
 			}
@@ -333,6 +339,8 @@ public class StarDistPluginUI extends StarDistGUI implements ActionListener {
     	try {
 			latch.await();
 		} catch (InterruptedException e) {
+	    	if (cancelled)
+	    		return;
 			e.printStackTrace();
 		}
     }
@@ -369,6 +377,8 @@ public class StarDistPluginUI extends StarDistGUI implements ActionListener {
 				INSTALLED_WEIGHTS = true;
 			} catch (IllegalArgumentException e) {
 			} catch (IOException | InterruptedException e) {
+		    	if (cancelled)
+		    		return;
 				e.printStackTrace();
 			}
 			latch.countDown();
