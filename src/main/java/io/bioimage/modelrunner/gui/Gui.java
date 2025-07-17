@@ -127,31 +127,17 @@ public class Gui extends JPanel {
     	DefaultIcon.setIconPath(guiAdapter.getIconPath());
     	INSTALL_INSTRUCTIONS = String.format(INSTALL_INSTRUCTIONS_FORMAT, guiAdapter.getSoftwareName());
         this.guiAdapter = guiAdapter;
-        long tt = System.currentTimeMillis();
         this.modelsDir = guiAdapter.getModelsDir() != null ? guiAdapter.getModelsDir() : new File(MODELS_DEAFULT).getAbsolutePath();
         this.enginesDir = guiAdapter.getEnginesDir() != null ? guiAdapter.getEnginesDir() : new File(ENGINES_DEAFULT).getAbsolutePath();
         loadLocalModels();
-        System.out.println("Model loading: " + (System.currentTimeMillis() - tt));
-        tt = System.currentTimeMillis();
         installEnginesIfNeeded();
-        System.out.println("Engines loading: " + (System.currentTimeMillis() - tt));
-        tt = System.currentTimeMillis();
         setLayout(new GridBagLayout());
-        System.out.println("Set size: " + (System.currentTimeMillis() - tt));
-        tt = System.currentTimeMillis();
 
         // Initialize UI components
         initTitlePanel();
-        System.out.println("Title panel: " + (System.currentTimeMillis() - tt));
-        tt = System.currentTimeMillis();
         initSearchBar();
-        System.out.println("Search bar: " + (System.currentTimeMillis() - tt));
-        tt = System.currentTimeMillis();
         initMainContentPanel();
-        System.out.println("Content panel: " + (System.currentTimeMillis() - tt));
-        tt = System.currentTimeMillis();
         initFooterPanel();
-        System.out.println("Footer: " + (System.currentTimeMillis() - tt));
 
         setVisible(true);
     }
