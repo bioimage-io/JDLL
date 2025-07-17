@@ -182,8 +182,10 @@ public class StarDistPluginUI extends StarDistGUI implements ActionListener {
     	saveParams();
     	renewThreshold();
     	startModelInstallation(true);
-    	if (!INSTALLED_WEIGHTS || !INSTALLED_ENV)
+    	if (!INSTALLED_ENV)
         	installStardist(weightsInstalled(), (INSTALLED_ENV = StardistAbstract.isInstalled()));
+    	else
+        	installStardist(weightsInstalled(), INSTALLED_ENV);
     	if (!INSTALLED_WEIGHTS || !INSTALLED_ENV)
     		return;
     	RandomAccessibleInterval<T> rai = consumer.getFocusedImageAsRai();

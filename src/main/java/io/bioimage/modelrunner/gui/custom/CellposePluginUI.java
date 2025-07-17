@@ -198,8 +198,10 @@ public class CellposePluginUI extends CellposeGUI implements ActionListener {
     private < T extends RealType< T > & NativeType< T > > void runCellpose() throws IOException, RunModelException, LoadModelException {
     	saveParams();
     	startModelInstallation(true);
-    	if (!INSTALLED_WEIGHTS || !INSTALLED_ENV)
+    	if (!INSTALLED_ENV)
     		installCellpose(weightsInstalled(), (INSTALLED_ENV = Cellpose.isInstalled()));
+    	else
+    		installCellpose(weightsInstalled(), INSTALLED_ENV);
     	if (!INSTALLED_WEIGHTS || !INSTALLED_ENV)
     		return;
     	RandomAccessibleInterval<T> rai = consumer.getFocusedImageAsRai();
