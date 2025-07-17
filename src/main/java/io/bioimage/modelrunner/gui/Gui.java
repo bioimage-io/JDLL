@@ -73,6 +73,7 @@ public class Gui extends JPanel {
     private final Object lock = new Object();
     private int nParsedModels;
     private Runnable cancelCallback;
+    private boolean cancelled = false;
 
 	Thread engineInstallThread;
 	Thread trackEngineInstallThread;
@@ -341,6 +342,7 @@ public class Gui extends JPanel {
 
     
     private void cancel() {
+    	cancelled = true;
     	if (cancelCallback != null)
     		cancelCallback.run();
     	this.onClose();
@@ -389,6 +391,8 @@ public class Gui extends JPanel {
     			}
         		startModelInstallation(false);
     		} catch (Exception e) {
+    			if (cancelled)
+    				return;
         		startModelInstallation(false);
             	SwingUtilities.invokeLater(() -> this.contentPanel.setProgressLabelText("Error running the model"));
     			e.printStackTrace();
@@ -424,6 +428,8 @@ public class Gui extends JPanel {
     			}
         		startModelInstallation(false);
     		} catch (Exception e) {
+    			if (cancelled)
+    				return;
         		startModelInstallation(false);
             	SwingUtilities.invokeLater(() -> this.contentPanel.setProgressLabelText("Error running the model"));
     			e.printStackTrace();
@@ -739,6 +745,8 @@ public class Gui extends JPanel {
 				String modelFolder = BioimageioRepo.downloadModel(selectedModel, new File(modelsDir).getAbsolutePath(), progress);
 				selectedModel.addModelPath(Paths.get(modelFolder));
 			} catch (IOException | InterruptedException e) {
+    			if (cancelled)
+    				return;
 				e.printStackTrace();
 			}
 			latch.countDown();
@@ -798,6 +806,8 @@ public class Gui extends JPanel {
 				installerPanel[0] = EnvironmentInstaller.create(worker[0]);
 			});
 		} catch (InvocationTargetException | InterruptedException e) {
+			if (cancelled)
+				return false;
 			throw new RuntimeException(Types.stackTrace(e));
 		}
     	worker[0].execute();
@@ -808,6 +818,8 @@ public class Gui extends JPanel {
     	try {
         	latch.await();
 		} catch (InterruptedException e) {
+			if (cancelled)
+				return false;
 			e.printStackTrace();
 			return false;
 		}
