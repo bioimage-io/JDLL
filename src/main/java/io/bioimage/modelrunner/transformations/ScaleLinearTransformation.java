@@ -222,11 +222,8 @@ public class ScaleLinearTransformation extends AbstractTensorTransformation
 						+ "The parameters gain and offset cannot be arrays with"
 						+ " the given axes parameter provided.");
 			globalScale(input);
-		} else if (axes.length() <= 2 && axes.length() > 0) {
-			axesScale(input, selectedAxes);
 		} else {
-			//TODO allow scaling of more complex structures
-			throw new IllegalArgumentException("At the moment, only allowed scaling of planes.");
+			axesScale(input, selectedAxes);
 		}
 		
 	}

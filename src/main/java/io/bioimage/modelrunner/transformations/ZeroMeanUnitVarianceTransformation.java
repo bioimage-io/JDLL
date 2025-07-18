@@ -240,13 +240,11 @@ public class ZeroMeanUnitVarianceTransformation extends AbstractTensorTransforma
 			if (meanDouble != null || meanArr != null)
 				throw new IllegalArgumentException(NOT_FIXED_MODE_ERR);
 			notFixedModeGlobalMeanStd(input);
-		} else if (mode != Mode.FIXED 
-				&& axes.length() <= 2 && axes.length() > 0) {
+		} else if (mode != Mode.FIXED) {
 			if (meanDouble != null || meanArr != null)
 				throw new IllegalArgumentException(NOT_FIXED_MODE_ERR);
 			notFixedAxesMeanStd(input, selectedAxes);
-		} else if (mode == Mode.FIXED 
-				&& axes.length() <= 2 && axes.length() > 0) {
+		} else if (mode == Mode.FIXED) {
 			if (meanDouble == null && meanArr == null)
 				throw new IllegalArgumentException(FIXED_MODE_ERR);
 			else if (meanDouble != null)
