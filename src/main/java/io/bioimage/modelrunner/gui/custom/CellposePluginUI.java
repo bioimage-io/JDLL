@@ -48,6 +48,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
@@ -58,9 +59,17 @@ public class CellposePluginUI extends CellposeGUI implements ActionListener {
 
     private static final long serialVersionUID = 5381352117710530216L;
     
-    private static boolean INSTALLED_WEIGHTS = false;
-    
     private static boolean INSTALLED_ENV = false;
+    
+    private static HashMap<String, Boolean> INSTALLED_WEIGHTS;
+    
+    static {
+    	INSTALLED_WEIGHTS = new HashMap<String, Boolean>();
+    	INSTALLED_WEIGHTS.put("cyto3", false);
+    	INSTALLED_WEIGHTS.put("cyto2", false);
+    	INSTALLED_WEIGHTS.put("cyto", false);
+    	INSTALLED_WEIGHTS.put("nuclei", false);
+    }
     
     private final ConsumerInterface consumer;
     private String whichLoaded;
@@ -201,11 +210,12 @@ public class CellposePluginUI extends CellposeGUI implements ActionListener {
     private < T extends RealType< T > & NativeType< T > > void runCellpose() throws IOException, RunModelException, LoadModelException {
     	saveParams();
     	startModelInstallation(true);
-    	if (!INSTALLED_ENV)
+    	String modelPath = (String) this.modelComboBox.getSelectedItem();
+    	if (!INSTALLED_ENV && INSTALLED_WEIGHTS.get(modelPath) != null && !INSTALLED_WEIGHTS.get(modelPath))
     		installCellpose(weightsInstalled(), (INSTALLED_ENV = Cellpose.isInstalled()));
-    	else
+    	else if (INSTALLED_WEIGHTS.get(modelPath) == null || !INSTALLED_WEIGHTS.get(modelPath) || !INSTALLED_ENV)
     		installCellpose(weightsInstalled(), INSTALLED_ENV);
-    	if (!INSTALLED_WEIGHTS || !INSTALLED_ENV)
+    	if (INSTALLED_WEIGHTS.get(modelPath) == null || !INSTALLED_WEIGHTS.get(modelPath) || !INSTALLED_ENV)
     		return;
     	RandomAccessibleInterval<T> rai = consumer.getFocusedImageAsRai();
     	if (rai == null) {
@@ -217,7 +227,6 @@ public class CellposePluginUI extends CellposeGUI implements ActionListener {
     		footer.getBar().setIndeterminate(true);
     		footer.getBar().setString("Loading model");
     	});
-    	String modelPath = (String) this.modelComboBox.getSelectedItem();
     	if (modelPath.equals(CUSTOM_STR))
     		modelPath = this.customModelPathField.getText();
     	else
@@ -355,7 +364,6 @@ public class CellposePluginUI extends CellposeGUI implements ActionListener {
     private boolean weightsInstalled() {
     	String model = (String) this.modelComboBox.getSelectedItem();
     	if (model.equals(CUSTOM_STR)) {
-    		INSTALLED_WEIGHTS = true;
     		return true;
     	}
     	try {
@@ -365,7 +373,7 @@ public class CellposePluginUI extends CellposeGUI implements ActionListener {
 		} catch (Exception e) {
 			return false;
 		}
-		INSTALLED_WEIGHTS = true;
+		INSTALLED_WEIGHTS.put(model, true);
     	return true;
     }
     
@@ -381,7 +389,7 @@ public class CellposePluginUI extends CellposeGUI implements ActionListener {
 		Thread dwnlThread = new Thread(() -> {
 			try {
 				Cellpose.donwloadPretrained((String) modelComboBox.getSelectedItem(), this.consumer.getModelsDir(), cons);
-				INSTALLED_WEIGHTS = true;
+				INSTALLED_WEIGHTS.put((String) modelComboBox.getSelectedItem(), true);
 			} catch (IOException | InterruptedException | ExecutionException e) {
 				if (cancelled)
 					return;

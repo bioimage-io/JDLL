@@ -69,9 +69,15 @@ public class StarDistPluginUI extends StarDistGUI implements ActionListener {
     private Runnable cancelCallback;
     Thread workerThread;
     
-    private static boolean INSTALLED_WEIGHTS = false;
-    
     private static boolean INSTALLED_ENV = false;
+    
+    private static HashMap<String, Boolean> INSTALLED_WEIGHTS;
+    
+    static {
+    	INSTALLED_WEIGHTS = new HashMap<String, Boolean>();
+    	INSTALLED_WEIGHTS.put(DEFAULT_1_CHANNEL_MODEL, false);
+    	INSTALLED_WEIGHTS.put(DEFAULT_3_CHANNEL_MODEL, false);
+    }
 
     public StarDistPluginUI(ConsumerInterface consumer) {
         // Set a modern-looking border layout with padding
@@ -185,11 +191,12 @@ public class StarDistPluginUI extends StarDistGUI implements ActionListener {
     	saveParams();
     	renewThreshold();
     	startModelInstallation(true);
-    	if (!INSTALLED_ENV)
+    	String selectedModel = (String) this.modelComboBox.getSelectedItem();
+    	if (!INSTALLED_ENV && INSTALLED_WEIGHTS.get(selectedModel) != null && !INSTALLED_WEIGHTS.get(selectedModel))
         	installStardist(weightsInstalled(), (INSTALLED_ENV = StardistAbstract.isInstalled()));
-    	else
+    	else if (INSTALLED_WEIGHTS.get(selectedModel) == null || !INSTALLED_WEIGHTS.get(selectedModel) || !INSTALLED_ENV)
         	installStardist(weightsInstalled(), INSTALLED_ENV);
-    	if (!INSTALLED_WEIGHTS || !INSTALLED_ENV)
+    	if (INSTALLED_WEIGHTS.get(selectedModel) == null || !INSTALLED_WEIGHTS.get(selectedModel) || !INSTALLED_ENV)
     		return;
     	RandomAccessibleInterval<T> rai = consumer.getFocusedImageAsRai();
     	if (rai == null) {
@@ -201,7 +208,6 @@ public class StarDistPluginUI extends StarDistGUI implements ActionListener {
     		this.footer.getBar().setIndeterminate(true);
     		this.footer.getBar().setString("Loading model");
     	});
-    	String selectedModel = (String) this.modelComboBox.getSelectedItem();
     	String modelype = "" + selectedModel;
     	if (modelype.equals(CUSTOM_STR))
     		selectedModel = customModelPathField.getText();
@@ -348,7 +354,6 @@ public class StarDistPluginUI extends StarDistGUI implements ActionListener {
     private boolean weightsInstalled() {
     	String model = (String) this.modelComboBox.getSelectedItem();
     	if (model.equals(CUSTOM_STR)) {
-    		INSTALLED_WEIGHTS = true;
     		return true;
     	}
     	try {
@@ -358,7 +363,7 @@ public class StarDistPluginUI extends StarDistGUI implements ActionListener {
 		} catch (Exception e) {
 			return false;
 		}
-		INSTALLED_WEIGHTS = true;
+		INSTALLED_WEIGHTS.put(model, true);
     	return true;
     }
     
@@ -374,7 +379,7 @@ public class StarDistPluginUI extends StarDistGUI implements ActionListener {
 		Thread dwnlThread = new Thread(() -> {
 			try {
 				Stardist2D.downloadPretrained((String) modelComboBox.getSelectedItem(), this.consumer.getModelsDir(), cons);
-				INSTALLED_WEIGHTS = true;
+				INSTALLED_WEIGHTS.put((String) modelComboBox.getSelectedItem(), true);
 			} catch (IllegalArgumentException e) {
 			} catch (IOException | InterruptedException e) {
 		    	if (cancelled)
