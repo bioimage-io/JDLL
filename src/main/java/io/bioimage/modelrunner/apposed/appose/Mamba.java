@@ -395,7 +395,8 @@ public class Mamba {
 		URL website = FileDownloader.redirectedURL(new URL(MICROMAMBA_URL));
 		Consumer<Double> micromambaConsumer = (d) -> {
 			d = (double) (Math.round(d * 1000) / 10);
-			customConsoleConsumer.accept("Installing micromamba: " + d + "%");
+			if (customConsoleConsumer != null)
+				customConsoleConsumer.accept("Installing micromamba: " + d + "%");
 		};
 		FileDownloader fd = new FileDownloader(website.toString(), tempFile);
 		fd.setPartialProgressConsumer(micromambaConsumer);
