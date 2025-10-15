@@ -1759,6 +1759,8 @@ public class Mamba {
 			return "torch";
 		else if (dep.equals("opencv-python"))
 			return "cv2";
+		else if (dep.equals("SAM-2"))
+			return "sam2";
 		else if (dep.equals("scikit-image"))
 			return "skimage";
 		else if (dep.equals("scikit-learn"))
