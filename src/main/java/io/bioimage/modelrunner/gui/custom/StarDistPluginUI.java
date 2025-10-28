@@ -354,6 +354,7 @@ public class StarDistPluginUI extends StarDistGUI implements ActionListener {
     private boolean weightsInstalled() {
     	String model = (String) this.modelComboBox.getSelectedItem();
     	if (model.equals(CUSTOM_STR)) {
+    		INSTALLED_WEIGHTS.put(CUSTOM_STR, true);
     		return true;
     	}
     	try {
