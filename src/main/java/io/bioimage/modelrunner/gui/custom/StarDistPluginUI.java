@@ -395,7 +395,8 @@ public class StarDistPluginUI extends StarDistGUI implements ActionListener {
     private void installEnv(CountDownLatch latch) {
     	String msg = "Installation of Python environments might take up to 20 minutes.";
     	String question = "Install Python for StarDist";
-    	if (StardistAbstract.isInstalled() || 
+    	INSTALLED_ENV = StardistAbstract.isInstalled();
+    	if (INSTALLED_ENV || 
     			JOptionPane.showConfirmDialog(null, msg, question, JOptionPane.YES_NO_OPTION) != JOptionPane.YES_OPTION) {
 			latch.countDown();
 			checkModelInstallationFinished(latch);
