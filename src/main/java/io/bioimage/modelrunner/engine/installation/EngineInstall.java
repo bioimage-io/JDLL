@@ -525,9 +525,11 @@ public class EngineInstall {
 		long totalSize = mfdList.stream().mapToLong(m -> m == null ? 0 : m.getTotalSize()).sum();
 		List<Boolean> installedArr = new ArrayList<Boolean>();
 		downloaded = 0;
-		Consumer<Long> consumerLong = (l) -> {
-			consumer.accept( (l + downloaded) / (double) totalSize);
-		};
+		Consumer<Long> consumerLong = (l) -> { };
+		if (consumer != null) {
+		    consumerLong = l -> consumer.accept((l + downloaded) / (double) totalSize);
+		}
+		
 		for (MultiFileDownloader mfd : mfdList) {
 			if (mfd == null) {
 				installedArr.add(false);
