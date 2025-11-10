@@ -533,7 +533,7 @@ public class EngineInstall {
 				installedArr.add(false);
 				continue;
 			}
-			strConsumer.accept(mfd.getFolder().getName());
+			if (strConsumer != null) strConsumer.accept(mfd.getFolder().getName());
 			mfd.setTotalProgressConsumer(consumerLong);
 			try {
 				mfd.download();
