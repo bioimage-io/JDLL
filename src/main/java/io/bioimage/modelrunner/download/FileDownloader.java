@@ -70,7 +70,7 @@ public class FileDownloader {
 	
 	private Long fileSize;
 	
-	private AtomicLong sizeDownloaded = new AtomicLong(0);
+	private final AtomicLong sizeDownloaded = new AtomicLong(0);
 	
     private int lost_conn = 0;
 	
@@ -178,51 +178,71 @@ public class FileDownloader {
 	/**
 	 * Download the file of interest.
 	 * 
-	 * 
 	 * @param parentThread
 	 * 	if not null, whenever this thread is interrupted, the download will stop
 	 * @throws IOException if there is any file related error in the download
 	 * @throws ExecutionException if there is any error with the urls or the conection
 	 */
 	public void download(Thread parentThread) throws IOException, ExecutionException {
+		if (parentThread == null) {
+			parentThread = Thread.currentThread();
+		}
+
 		already = 0;
-		while (lost_conn < MAX_RETRIES && !complete && parentThread.isAlive()) {
+		lost_conn = 0;
+		complete = false;
+		sizeDownloaded.set(0);
+
+		while (lost_conn < MAX_RETRIES && !complete && !parentThread.isInterrupted()) {
 			downloadAttempt(parentThread);
 		}
+
+		if (parentThread.isInterrupted()) {
+			throw new IOException("Download cancelled.");
+		}
+
 		if (!complete) {
 			throw new IOException("Unable to download file after " + MAX_RETRIES + " attempts.");
 		}
 	}
 	
 	private void downloadAttempt(Thread parentThread) throws IOException, ExecutionException {
-		HttpsURLConnection conn = ( HttpsURLConnection ) website.openConnection();
+		HttpsURLConnection conn = (HttpsURLConnection) website.openConnection();
 		conn.setConnectTimeout(STALL_THRES);
 		conn.setReadTimeout(STALL_THRES);
+		conn.setRequestProperty("User-Agent", CommonUtils.getJDLLUserAgent());
+
 		if (already > 0) {
 			conn.setRequestProperty("Range", "bytes=" + already + "-");
         }
+
 		SSLContext sslContext;
 		try {
 			sslContext = getAllTrustingSSLContext();
 		} catch (KeyManagementException | NoSuchAlgorithmException e) {
 			throw new RuntimeException(e);
 		}
-		conn.setSSLSocketFactory( sslContext.getSocketFactory() );
+		conn.setSSLSocketFactory(sslContext.getSocketFactory());
 		
 		try (
 				InputStream str = conn.getInputStream();
 				ReadableByteChannel rbc = Channels.newChannel(str);
-				FileOutputStream fos = new FileOutputStream(file, already != 0 ? true : false);
-				){
+				FileOutputStream fos = new FileOutputStream(file, already != 0);
+			) {
 			performDownload(fos, rbc, parentThread);
 		} catch (SocketTimeoutException ex) {
 			System.err.println("Socket timeout accessing: " + website);
-			lost_conn ++;
+			already = file.length();
+			sizeDownloaded.set(already);
+			if (!parentThread.isInterrupted()) {
+				lost_conn++;
+			}
+		} finally {
+			conn.disconnect();
 		}
 	}
 	
 	private void performDownload(FileOutputStream fos, ReadableByteChannel rbc, Thread parentThread) throws ExecutionException {
-
         ExecutorService downloadExecutor = Executors.newSingleThreadExecutor();
         ScheduledExecutorService monitorExecutor = Executors.newScheduledThreadPool(2);
         this.getOnlineFileSize();
@@ -236,10 +256,11 @@ public class FileDownloader {
         final long[] lastProgress = { already };
 
         Runnable stallDetectionTask = () -> {
-            if (!parentThread.isAlive()) {
+            if (parentThread.isInterrupted()) {
                 downloadFuture.cancel(true);
                 return;
             }
+
             long bytesDownloaded = file.length();
             if (bytesDownloaded == lastProgress[0]) {
                 System.err.println("Connection lost. Time number: " + (lost_conn + 1));
@@ -250,12 +271,14 @@ public class FileDownloader {
         };
 
         Runnable progressPrintTask = () -> {
-            if (!parentThread.isAlive()) {
+            if (parentThread.isInterrupted()) {
                 downloadFuture.cancel(true);
                 return;
             }
+
     		long totalPro = file.length();
     		double partialPro = totalPro / (double) this.fileSize;
+
             if (printProgress)
             	System.out.println(getStringToPrintProgress(file.getName(), partialPro));
             if (totalProgress != null)
@@ -270,15 +293,26 @@ public class FileDownloader {
                 progressPrintTask, 0, PROGRESS_INTER, TimeUnit.MILLISECONDS);
 
         try {
-            // Wait for the download task to complete.
             downloadFuture.get();
             complete = true;
-        } catch (CancellationException | InterruptedException e) {
-            lost_conn ++;
+        } catch (InterruptedException e) {
+            // download() thread was interrupted: preserve the interrupt and stop retrying
+            Thread.currentThread().interrupt();
+            downloadFuture.cancel(true);
+        } catch (CancellationException e) {
+            // cancelled by stall detection or external cancellation
+            if (!parentThread.isInterrupted()) {
+            	lost_conn++;
+            }
         } finally {
+            already = file.length();
+            sizeDownloaded.set(already);
+
             downloadExecutor.shutdownNow();
             monitorExecutor.shutdownNow();
         }
+
+        // Keep same behavior as before: notify current progress after each attempt
         finalProgress();
 	}
 	
@@ -301,22 +335,20 @@ public class FileDownloader {
 	 * @throws IOException if there is any file related error in the download
 	 * @throws ExecutionException if there is any error with the urls or the conection
 	 */
-	public void download() throws IOException, ExecutionException  {
+	public void download() throws IOException, ExecutionException {
 		download(Thread.currentThread());
 	}
 	
 	private void call(ReadableByteChannel rbc, FileOutputStream fos) throws IOException {
 		sizeDownloaded.set(already);
-        while (true) {
+
+        while (!Thread.currentThread().isInterrupted()) {
             long transferred = fos.getChannel().transferFrom(rbc, sizeDownloaded.get(), CHUNK_SIZE);
-            if (transferred == 0) {
+            if (transferred <= 0) {
                 break;
             }
 
-            sizeDownloaded.set(sizeDownloaded.get() + transferred);
-            if (Thread.currentThread().isInterrupted()) {
-                return;
-            }
+            sizeDownloaded.addAndGet(transferred);
         }
     }
 
@@ -330,13 +362,13 @@ public class FileDownloader {
 		HttpsURLConnection conn = null;
 		try {
 			SSLContext sslContext = getAllTrustingSSLContext();
-			conn = ( HttpsURLConnection ) url.openConnection();
-			conn.setSSLSocketFactory( sslContext.getSocketFactory() );
+			conn = (HttpsURLConnection) url.openConnection();
+			conn.setSSLSocketFactory(sslContext.getSocketFactory());
 			conn.setRequestProperty("User-Agent", CommonUtils.getJDLLUserAgent());
 			if (conn.getResponseCode() >= 300 && conn.getResponseCode() <= 308)
 				return getFileSize(redirectedURL(url));
 			if (conn.getResponseCode() != 200)
-				throw new Exception( "Unable to connect to: " + url );
+				throw new Exception("Unable to connect to: " + url);
 			long size = conn.getContentLengthLong();
 			conn.disconnect();
 			return size;
@@ -350,32 +382,23 @@ public class FileDownloader {
 		}
 	}
 
-	private static SSLContext getAllTrustingSSLContext() throws NoSuchAlgorithmException, KeyManagementException
-	{
-		// Create a trust manager that does not validate certificate chains
+	private static SSLContext getAllTrustingSSLContext() throws NoSuchAlgorithmException, KeyManagementException {
 		TrustManager[] trustAllCerts = new TrustManager[] {
-				new X509TrustManager()
-				{
-					public java.security.cert.X509Certificate[] getAcceptedIssuers()
-					{
-						return new X509Certificate[ 0 ];
+				new X509TrustManager() {
+					public java.security.cert.X509Certificate[] getAcceptedIssuers() {
+						return new X509Certificate[0];
 					}
 
-					public void checkClientTrusted( X509Certificate[] certs, String authType )
-					{
-						// Do nothing, since we trust all certificates here
+					public void checkClientTrusted(X509Certificate[] certs, String authType) {
 					}
 
-					public void checkServerTrusted( X509Certificate[] certs, String authType )
-					{
-						// Do nothing, since we trust all certificates here
+					public void checkServerTrusted(X509Certificate[] certs, String authType) {
 					}
 				}
 		};
 
-		// Create a SSLContext with an all-trusting trust manager
-		SSLContext sslContext = SSLContext.getInstance( "SSL" );
-		sslContext.init( null, trustAllCerts, new java.security.SecureRandom() );
+		SSLContext sslContext = SSLContext.getInstance("SSL");
+		sslContext.init(null, trustAllCerts, new java.security.SecureRandom());
 		return sslContext;
 	}
 	
@@ -408,12 +431,15 @@ public class FileDownloader {
 		}
 		if (statusCode < 300 || statusCode > 308)
 			return url;
+
 		String newURL = conn.getHeaderField("Location");
+
 		try {
 			conn.disconnect();
 			return redirectedURL(new URL(newURL));
 		} catch (MalformedURLException ex) {
 		}
+
 		try {
 			conn.disconnect();
 			if (newURL.startsWith("//"))
@@ -422,6 +448,7 @@ public class FileDownloader {
 				throw new MalformedURLException();
 		} catch (MalformedURLException ex) {
 		}
+
         URI uri = url.toURI();
         String scheme = uri.getScheme();
         String host = uri.getHost();
@@ -448,8 +475,8 @@ public class FileDownloader {
 		int n = 30;
 		int nProgressBar = (int) (progress * n);
 		String progressStr = new File(kk).getName() + ": [";
-		for (int i = 0; i < nProgressBar; i ++) progressStr += "#";
-		for (int i = nProgressBar; i < n; i ++) progressStr += ".";
+		for (int i = 0; i < nProgressBar; i++) progressStr += "#";
+		for (int i = nProgressBar; i < n; i++) progressStr += ".";
 		progressStr += "] " + Math.round(progress * 100) + "%";
 		return progressStr;
 	}
