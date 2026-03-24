@@ -59,10 +59,23 @@ public class ImageLoaderWorker extends SwingWorker<ImageIcon, Void> {
 		this.callback = callback;
 	}
 	
+	/**
+	 * Executes main.
+	 *
+	 * @param args the args parameter.
+	 * @throws MalformedURLException if a MalformedURLException occurs while executing this method.
+	 * @throws InterruptedException if the current thread is interrupted while waiting for the operation to finish.
+	 * @throws ExecutionException if a ExecutionException occurs while executing this method.
+	 */
 	public static void main(String[] args) throws MalformedURLException, InterruptedException, ExecutionException {
 		URL url2 = new URL("https://fastly.picsum.photos/id/237/200/300.jpg?hmac=TmmQSbShHz9CdQm0NkEjx1Dyh_Y984R9LpNrpvH2D_U");
 		URL url1 = new URL("https://upload.wikimedia.org/wikipedia/commons/9/94/Ti_cd2708n2l_mcmaster_mz_mit20x.jpg");
 		ImageLoadCallback callback = new ImageLoadCallback() {
+            /**
+             * Executes on image loaded.
+             *
+             * @param icon the icon parameter.
+             */
             @Override
             public void onImageLoaded(ImageIcon icon) {
             		return;
@@ -77,10 +90,25 @@ public class ImageLoaderWorker extends SwingWorker<ImageIcon, Void> {
 	    Thread.sleep(100000);
 	}
 	
+	/**
+	 * Executes create.
+	 *
+	 * @param url the url parameter.
+	 * @param width the width parameter.
+	 * @param height the height parameter.
+	 * @param callback the callback parameter.
+	 * @return the resulting value.
+	 */
 	public static ImageLoaderWorker create(URL url, int width, int height, ImageLoadCallback callback) {
 		return new ImageLoaderWorker(url, width, height, callback);
 	}
 	
+    /**
+     * Executes do in background.
+     *
+     * @return the resulting value.
+     * @throws Exception if the operation fails.
+     */
     @Override
     protected ImageIcon doInBackground() throws Exception {
         connection = url.openConnection();
@@ -100,6 +128,9 @@ public class ImageLoaderWorker extends SwingWorker<ImageIcon, Void> {
         }
     }
 
+    /**
+     * Executes done.
+     */
     @Override
     protected void done() {
         try {
@@ -115,6 +146,11 @@ public class ImageLoaderWorker extends SwingWorker<ImageIcon, Void> {
         }
     }
 
+    /**
+     * Executes cancel background.
+     *
+     * @return true if the operation succeeds; otherwise, false.
+     */
     public boolean cancelBackground() {
         if (connection != null && connection instanceof HttpURLConnection) {
             ((HttpURLConnection) connection).disconnect();
@@ -131,6 +167,14 @@ public class ImageLoaderWorker extends SwingWorker<ImageIcon, Void> {
         }
     }
     
+    /**
+     * Creates scaled icon.
+     *
+     * @param imagePath the imagePath parameter.
+     * @param logoWidth the logoWidth parameter.
+     * @param logoHeight the logoHeight parameter.
+     * @return the resulting value.
+     */
     public static ImageIcon createScaledIcon(URL imagePath, int logoWidth, int logoHeight) {
         if (imagePath == null) {
             return DefaultIcon.getDefaultIcon(logoWidth, logoHeight);
@@ -153,6 +197,14 @@ public class ImageLoaderWorker extends SwingWorker<ImageIcon, Void> {
         }
     }
     
+    /**
+     * Creates scaled icon.
+     *
+     * @param connection the connection parameter.
+     * @param logoWidth the logoWidth parameter.
+     * @param logoHeight the logoHeight parameter.
+     * @return the resulting value.
+     */
     protected ImageIcon createScaledIcon(URLConnection connection, int logoWidth, int logoHeight) {
         if (connection == null) {
             return DefaultIcon.getDefaultIcon(logoWidth, logoHeight);
@@ -210,6 +262,15 @@ public class ImageLoaderWorker extends SwingWorker<ImageIcon, Void> {
         return new ImageIcon(scaledImage);
     }
 
+    /**
+     * Creates scaled static image.
+     *
+     * @param imagePath the imagePath parameter.
+     * @param width the width parameter.
+     * @param height the height parameter.
+     * @return the resulting value.
+     * @throws IOException if an I/O error occurs.
+     */
     public static ImageIcon createScaledStaticImage(URL imagePath, int width, int height) throws IOException {
         BufferedImage originalImage = ImageIO.read(imagePath);
         if (originalImage == null) {

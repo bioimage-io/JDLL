@@ -21,6 +21,11 @@ package io.bioimage.modelrunner.gui;
 
 public class GuiUtils {
 
+    /**
+     * Checks whether edtalive.
+     *
+     * @return true if the operation succeeds; otherwise, false.
+     */
     public static boolean isEDTAlive() {
     	Thread[] threads = new Thread[Thread.activeCount()];
     	Thread.enumerate(threads);

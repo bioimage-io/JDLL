@@ -107,14 +107,29 @@ public class TransformSpec
     	return transform;
     }
     
+    /**
+     * Gets kwargs key.
+     *
+     * @return the resulting string.
+     */
     public static String getKwargsKey() {
     	return KWARGS_KEY;
     }
     
+    /**
+     * Gets transformation name key.
+     *
+     * @return the resulting string.
+     */
     public static String getTransformationNameKey() {
     	return TRANSFORMATION_NAME_KEY;
     }
 
+    /**
+     * Executes to string.
+     *
+     * @return the resulting string.
+     */
     @Override
     public String toString()
     {

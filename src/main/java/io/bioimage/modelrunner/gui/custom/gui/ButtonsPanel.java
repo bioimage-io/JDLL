@@ -35,6 +35,9 @@ public class ButtonsPanel extends JPanel {
     
     private static final double BUTTON_WRATIO = 1d / 3d;
 
+    /**
+     * Creates a new ButtonsPanel.
+     */
     protected ButtonsPanel() {
         setLayout(null);
 
@@ -76,6 +79,11 @@ public class ButtonsPanel extends JPanel {
     
     private void organiseComponents() {
     	addComponentListener(new ComponentAdapter() {
+            /**
+             * Executes component resized.
+             *
+             * @param e the e parameter.
+             */
             @Override
             public void componentResized(ComponentEvent e) {
                 int rawW = getWidth();
@@ -90,8 +98,16 @@ public class ButtonsPanel extends JPanel {
     }
     
     // For demonstration purposes: a main method to show the UI in a JFrame.
+    /**
+     * Executes main.
+     *
+     * @param args the args parameter.
+     */
     public static void main(String[] args) {
         SwingUtilities.invokeLater(new Runnable() {
+            /**
+             * Executes run.
+             */
             public void run() {
                 JFrame frame = new JFrame("Buttons pannel");
                 frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);

@@ -76,6 +76,12 @@ public class Service implements AutoCloseable {
 
 	private Consumer<String> debugListener;
 
+	/**
+	 * Creates a new Service.
+	 *
+	 * @param cwd the cwd parameter.
+	 * @param args the args parameter.
+	 */
 	public Service(File cwd, String... args) {
 		this.cwd = cwd;
 		this.args = args.clone();
@@ -313,6 +319,11 @@ public class Service implements AutoCloseable {
 			tasks.put(uuid, this);
 		}
 
+		/**
+		 * Executes start.
+		 *
+		 * @return the resulting value.
+		 */
 		public synchronized Task start() {
 			if (status != TaskStatus.INITIAL) throw new IllegalStateException();
 			status = TaskStatus.QUEUED;
@@ -337,6 +348,11 @@ public class Service implements AutoCloseable {
 			listeners.add(listener);
 		}
 
+		/**
+		 * Executes wait for.
+		 *
+		 * @throws InterruptedException if the current thread is interrupted while waiting for the operation to finish.
+		 */
 		public synchronized void waitFor() throws InterruptedException {
 			if (status == TaskStatus.INITIAL) start();
 			if (status != TaskStatus.QUEUED && status != TaskStatus.RUNNING) return;
@@ -425,6 +441,11 @@ public class Service implements AutoCloseable {
 			}
 		}
 
+		/**
+		 * Executes to string.
+		 *
+		 * @return the resulting string.
+		 */
 		@Override
 		public String toString() {
 			return String.format("uuid=%s, status=%s, message=%s, current=%d, maximum=%d, error=%s",

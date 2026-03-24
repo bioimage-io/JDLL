@@ -40,15 +40,31 @@ public class AbstractTensorPixelTransformation extends AbstractTensorTransformat
 
 	private DoubleUnitaryOperator dun;
 
+	/**
+	 * Creates a new AbstractTensorPixelTransformation.
+	 *
+	 * @param name the name parameter.
+	 */
 	protected AbstractTensorPixelTransformation( final String name)
 	{
 		super( name );
 	}
 	
+	/**
+	 * Sets double unitary operator.
+	 *
+	 * @param fun the fun parameter.
+	 */
 	protected void setDoubleUnitaryOperator(final DoubleUnitaryOperator fun) {
 		this.dun = fun;
 	}
 
+	/**
+	 * Executes apply.
+	 *
+	 * @param input the input parameter.
+	 * @return the resulting value.
+	 */
 	@Override
 	public < R extends RealType< R > & NativeType< R > > Tensor< FloatType > apply( final Tensor< R > input )
 	{

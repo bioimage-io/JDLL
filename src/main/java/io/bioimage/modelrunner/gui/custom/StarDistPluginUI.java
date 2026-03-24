@@ -79,6 +79,11 @@ public class StarDistPluginUI extends StarDistGUI implements ActionListener {
     	INSTALLED_WEIGHTS.put(DEFAULT_3_CHANNEL_MODEL, false);
     }
 
+    /**
+     * Creates a new StarDistPluginUI.
+     *
+     * @param consumer the consumer parameter.
+     */
     public StarDistPluginUI(ConsumerInterface consumer) {
         // Set a modern-looking border layout with padding
     	this.consumer = consumer;
@@ -96,11 +101,26 @@ public class StarDistPluginUI extends StarDistGUI implements ActionListener {
 
         // Enable when custom selected
         modelComboBox.addPopupMenuListener(new PopupMenuListener() {
+            /**
+             * Executes popup menu will become visible.
+             *
+             * @param e the e parameter.
+             */
             @Override
             public void popupMenuWillBecomeVisible(PopupMenuEvent e) {}
+            /**
+             * Executes popup menu canceled.
+             *
+             * @param e the e parameter.
+             */
             @Override
             public void popupMenuCanceled(PopupMenuEvent e) {}
 
+            /**
+             * Executes popup menu will become invisible.
+             *
+             * @param e the e parameter.
+             */
             @Override
             public void popupMenuWillBecomeInvisible(PopupMenuEvent e) {
             	boolean enabled = modelComboBox.getSelectedItem().equals(CUSTOM_STR);
@@ -113,18 +133,34 @@ public class StarDistPluginUI extends StarDistGUI implements ActionListener {
         consumer.updateGUI();
     }
     
+    /**
+     * Sets cancel callback.
+     *
+     * @param cancelCallback the cancelCallback parameter.
+     */
     public void setCancelCallback(Runnable cancelCallback) {
     	this.cancelCallback = cancelCallback;
     }
     
+    /**
+     * Executes close.
+     */
     public void close() {
     	if (model != null && model.isLoaded())
     		model.close();
     }
 
     // For demonstration purposes: a main method to show the UI in a JFrame.
+    /**
+     * Executes main.
+     *
+     * @param args the args parameter.
+     */
     public static void main(String[] args) {
         SwingUtilities.invokeLater(new Runnable() {
+            /**
+             * Executes run.
+             */
             public void run() {
                 JFrame frame = new JFrame("StarDist Plugin");
                 frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -136,6 +172,11 @@ public class StarDistPluginUI extends StarDistGUI implements ActionListener {
         });
     }
     
+    /**
+     * Executes action performed.
+     *
+     * @param e the e parameter.
+     */
     @Override
     public void actionPerformed(ActionEvent e) {
     	if (e.getSource() == browseButton) {

@@ -45,6 +45,11 @@ public class Header extends JPanel {
     private JProgressBar progressBar;
     private JLabel progressLabel;
 
+    /**
+     * Creates a new Header.
+     *
+     * @param adapter the adapter parameter.
+     */
     public Header(GuiAdapter adapter) {
         super(new BorderLayout());
         setForeground(adapter.getHeaderColor());
@@ -73,6 +78,9 @@ public class Header extends JPanel {
         progressLabel.setOpaque(true);
     }
 	
+	/**
+	 * Sets guistart installation.
+	 */
 	protected void setGUIStartInstallation() {
     	SwingUtilities.invokeLater(() -> {
     		progressBar.setIndeterminate(true);
@@ -85,6 +93,11 @@ public class Header extends JPanel {
     	});
 	}
 	
+	/**
+	 * Creates string consumer.
+	 *
+	 * @return the resulting value.
+	 */
 	public Consumer<String> createStringConsumer(){
 		Consumer<String> consumer = (ss) -> {
 			SwingUtilities.invokeLater(() -> {
@@ -94,6 +107,11 @@ public class Header extends JPanel {
 		return consumer;
 	}
 	
+	/**
+	 * Creates progress consumer.
+	 *
+	 * @return the resulting value.
+	 */
 	public Consumer<Double> createProgressConsumer(){
 		Consumer<Double> consumer = (dd) -> {
 			SwingUtilities.invokeLater(() -> {

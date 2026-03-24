@@ -58,6 +58,18 @@ public class BioimageIoModelPytorchProtected extends DLModelPytorchProtected {
 	 */
 	protected TileCalculator tileCalculator;
 	
+	/**
+	 * Creates a new BioimageIoModelPytorchProtected.
+	 *
+	 * @param modelFile the modelFile parameter.
+	 * @param callable the callable parameter.
+	 * @param importModule the importModule parameter.
+	 * @param weightsPath the weightsPath parameter.
+	 * @param kwargs the kwargs parameter.
+	 * @param descriptor the descriptor parameter.
+	 * @param custom the custom parameter.
+	 * @throws IOException if an I/O error occurs.
+	 */
 	protected BioimageIoModelPytorchProtected(String modelFile, String callable, String importModule, String weightsPath, 
 			Map<String, Object> kwargs, ModelDescriptor descriptor, boolean custom) throws IOException {
 		super(modelFile, callable, importModule, weightsPath, kwargs, custom);
@@ -66,6 +78,17 @@ public class BioimageIoModelPytorchProtected extends DLModelPytorchProtected {
 		this.tileCalculator = TileCalculator.init(descriptor);
 	}
 		
+	/**
+	 * Creates a new BioimageIoModelPytorchProtected.
+	 *
+	 * @param modelFile the modelFile parameter.
+	 * @param callable the callable parameter.
+	 * @param importModule the importModule parameter.
+	 * @param weightsPath the weightsPath parameter.
+	 * @param kwargs the kwargs parameter.
+	 * @param descriptor the descriptor parameter.
+	 * @throws IOException if an I/O error occurs.
+	 */
 	protected BioimageIoModelPytorchProtected(String modelFile, String callable, String importModule, String weightsPath, 
 			Map<String, Object> kwargs, ModelDescriptor descriptor) throws IOException {
 		this(modelFile, callable, importModule, weightsPath, kwargs, descriptor, false);
@@ -146,7 +169,7 @@ public class BioimageIoModelPytorchProtected extends DLModelPytorchProtected {
 	 * 	ImgLib2 data type of the input images
 	 * @param inputTensors
 	 * 	list of the input tensors that are going to be inputed to the model
-	 * @param inputTensors
+	 * @param outputTensors
 	 * 	list of the expected output tensors
 	 * @throws RunModelException if the model has not been previously loaded
 	 * @throws IllegalArgumentException if the model is not a Bioimage.io model or if lacks a Bioimage.io

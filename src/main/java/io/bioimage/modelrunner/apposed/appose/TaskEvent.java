@@ -41,11 +41,22 @@ public class TaskEvent {
 	public final Service.Task task;
 	public final ResponseType responseType;
 
+	/**
+	 * Creates a new TaskEvent.
+	 *
+	 * @param task the task parameter.
+	 * @param responseType the responseType parameter.
+	 */
 	public TaskEvent(Service.Task task, ResponseType responseType) {
 		this.task = task;
 		this.responseType = responseType;
 	}
 
+	/**
+	 * Executes to string.
+	 *
+	 * @return the resulting string.
+	 */
 	@Override
 	public String toString() {
 		return String.format("[%s] %s", responseType, task);

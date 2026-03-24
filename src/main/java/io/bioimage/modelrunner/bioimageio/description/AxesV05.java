@@ -38,6 +38,11 @@ public class AxesV05 implements Axes {
 	
 	private int[] haloArr;
 	
+	/**
+	 * Creates a new AxesV05.
+	 *
+	 * @param axesList the axesList parameter.
+	 */
 	protected AxesV05(List<Object> axesList) {
 		List<Axis> axesListInit = new ArrayList<Axis>();
 		String order = "";
@@ -63,6 +68,11 @@ public class AxesV05 implements Axes {
 		this.stepArr = stepArr; 
 	}
 	
+	/**
+	 * Gets axes order.
+	 *
+	 * @return the resulting string.
+	 */
 	public String getAxesOrder() {
 		return this.axesOrder;
 	}
@@ -74,14 +84,29 @@ public class AxesV05 implements Axes {
 		return axesList;
 	}
 
+	/**
+	 * Gets min tile size arr.
+	 *
+	 * @return the resulting array.
+	 */
 	public int[] getMinTileSizeArr() {
 		return this.minArr;
 	}
 
+	/**
+	 * Gets tile step arr.
+	 *
+	 * @return the resulting array.
+	 */
 	public int[] getTileStepArr() {
 		return this.stepArr;
 	}
 
+	/**
+	 * Gets halo arr.
+	 *
+	 * @return the resulting array.
+	 */
 	public int[] getHaloArr() {
 		haloArr = new int[this.axesList.size()];
 		for (int i = 0; i < this.axesList.size(); i ++)
@@ -89,10 +114,21 @@ public class AxesV05 implements Axes {
 		return this.haloArr;
 	}
 
+	/**
+	 * Gets tile scale arr.
+	 *
+	 * @return the resulting array.
+	 */
 	public double[] getTileScaleArr() {
 		return this.scaleArr;
 	}
 	
+	/**
+	 * Gets axis.
+	 *
+	 * @param abreviation the abreviation parameter.
+	 * @return the resulting value.
+	 */
 	public Axis getAxis(String abreviation) {
 		return axesList.stream().filter(ax -> ax.getAxis().equals(abreviation)).findFirst().orElse(null);
 	}

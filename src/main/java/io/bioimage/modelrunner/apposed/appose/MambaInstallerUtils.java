@@ -115,16 +115,15 @@ public final class MambaInstallerUtils {
         return count;
     }
 	
-	/** Untar an input file into an output file.
-
+	/**
 	 * The output file is created in the output folder, having the same name
-	 * as the input file, minus the '.tar' extension. 
-	 * 
-	 * @param inputFile     the input .tar file
-	 * @param outputDir     the output directory file. 
-	 * @throws IOException reding, writting or creating the target or source files
-	 * @throws FileNotFoundException if the file that needs to be untared is not found
-	 * @throws ArchiveException  if there is any error decompressing the tar file
+	 * as the input file, minus the '.tar' extension.
+	 *
+	 * @param inputFile the inputFile parameter.
+	 * @param outputDir the outputDir parameter.
+	 * @throws FileNotFoundException if a FileNotFoundException occurs while executing this method.
+	 * @throws IOException if an I/O error occurs.
+	 * @throws ArchiveException if a ArchiveException occurs while executing this method.
 	 */
 	public static void unTar(final File inputFile, final File outputDir) throws FileNotFoundException, IOException, ArchiveException {
 

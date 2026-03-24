@@ -52,6 +52,11 @@ public class DefaultIcon {
 
     private static final Map<String, String> DISPLAYED = new ConcurrentHashMap<String, String>();
     
+    /**
+     * Gets immediate loading square logo.
+     *
+     * @return the resulting value.
+     */
     protected static BufferedImage getImmediateLoadingSquareLogo() {
         BufferedImage bi = new BufferedImage(50, 50, BufferedImage.TYPE_INT_ARGB);
         Graphics2D g = bi.createGraphics();
@@ -61,6 +66,11 @@ public class DefaultIcon {
         return bi;
     }
     
+    /**
+     * Gets software logo.
+     *
+     * @return the resulting value.
+     */
     protected static BufferedImage getSoftwareLogo() {
         try {
         	if (DIJ_ICON_PATH == null)
@@ -104,6 +114,13 @@ public class DefaultIcon {
         }
     }
     
+    /**
+     * Executes draw im or logo.
+     *
+     * @param imURL the imURL parameter.
+     * @param panel the panel parameter.
+     * @param panelID the panelID parameter.
+     */
     public static void drawImOrLogo(URL imURL, LogoPanel panel, String panelID) {
     	DISPLAYED.put(panelID, imURL.toExternalForm());
         BufferedImage img = CACHE.get(imURL);
@@ -138,6 +155,14 @@ public class DefaultIcon {
         });
     }
     
+    /**
+     * Executes draw im or logo.
+     *
+     * @param imURL the imURL parameter.
+     * @param logoUrl the logoUrl parameter.
+     * @param panel the panel parameter.
+     * @param panelID the panelID parameter.
+     */
     public static void drawImOrLogo(URL imURL, URL logoUrl, LogoPanel panel, String panelID) {
     	DISPLAYED.put(panelID, imURL.toExternalForm());
         BufferedImage img = CACHE.get(imURL);
@@ -171,6 +196,13 @@ public class DefaultIcon {
         });
     }
     
+    /**
+     * Executes draw im or logo.
+     *
+     * @param imURL the imURL parameter.
+     * @param logoUrl the logoUrl parameter.
+     * @param panel the panel parameter.
+     */
     public static void drawImOrLogo(URL imURL, URL logoUrl, LogoPanel panel) {
         BufferedImage img = CACHE.get(imURL);
         if (img != null) {
@@ -200,6 +232,12 @@ public class DefaultIcon {
         });
     }
     
+    /**
+     * Executes draw logo.
+     *
+     * @param url the url parameter.
+     * @param panel the panel parameter.
+     */
     public static void drawLogo(URL url, LogoPanel panel) {
     	if (url == null) {
         	SwingUtilities.invokeLater(() -> panel.setImage(getImmediateLoadingSquareLogo(), true));
@@ -234,11 +272,23 @@ public class DefaultIcon {
     	SwingUtilities.invokeLater(() -> panel.setImage(getImmediateLoadingSquareLogo(), true));
     }
     
+    /**
+     * Sets icon path.
+     *
+     * @param iconPath the iconPath parameter.
+     */
     protected static void setIconPath(String iconPath) {
     	DIJ_ICON_PATH = iconPath;
     	getSoftwareLogo();
     }
 
+    /**
+     * Gets default icon.
+     *
+     * @param width the width parameter.
+     * @param height the height parameter.
+     * @return the resulting value.
+     */
     public static ImageIcon getDefaultIcon(int width, int height) {
     	if (DIJ_ICON_PATH == null)
     		return null;
@@ -254,6 +304,13 @@ public class DefaultIcon {
     
     
 
+    /**
+     * Gets loading icon.
+     *
+     * @param width the width parameter.
+     * @param height the height parameter.
+     * @return the resulting value.
+     */
     public static ImageIcon getLoadingIcon(int width, int height) {
         Dimension size = new Dimension(width, height);
         
@@ -303,6 +360,13 @@ public class DefaultIcon {
     
     
     // For components that want to update when the exact size is ready
+    /**
+     * Gets loading icon with callback.
+     *
+     * @param width the width parameter.
+     * @param height the height parameter.
+     * @param callback the callback parameter.
+     */
     public static void getLoadingIconWithCallback(int width, int height, Consumer<ImageIcon> callback) {
         ImageIcon immediate = getLoadingIcon(width, height);
         Dimension size = new Dimension(width, height);
@@ -318,6 +382,9 @@ public class DefaultIcon {
         callback.accept(immediate);
     }
     
+    /**
+     * Closes threads.
+     */
     public static void closeThreads() {
     	if (scaleExecutor != null)
     		scaleExecutor.shutdown();

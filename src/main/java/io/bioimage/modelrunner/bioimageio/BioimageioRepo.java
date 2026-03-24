@@ -606,6 +606,12 @@ public class BioimageioRepo {
 		return downloadModel(model, modelsDirectory, consumer);
 	}
 	
+	/**
+	 * Executes str to timestamp.
+	 *
+	 * @param str the str parameter.
+	 * @return the resulting numeric value.
+	 */
 	protected static long strToTimestamp(String str) {
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSSSSS");
         LocalDateTime localDateTime = LocalDateTime.parse(str, formatter);
@@ -656,6 +662,11 @@ public class BioimageioRepo {
 	}
 	
 	
+	/**
+	 * Executes main.
+	 *
+	 * @param args the args parameter.
+	 */
 	public static void main(String[] args) {
 		BioimageioRepo br = new BioimageioRepo();
 		br.listAllModels(false);

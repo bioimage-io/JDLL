@@ -23,12 +23,32 @@ import java.util.List;
 
 public interface Axis {
 	
+	/**
+	 * Gets axis.
+	 *
+	 * @return the resulting string.
+	 */
 	public String getAxis();
 	
+	/**
+	 * Gets min.
+	 *
+	 * @return the resulting numeric value.
+	 */
 	public int getMin();
 	
+	/**
+	 * Gets step.
+	 *
+	 * @return the resulting numeric value.
+	 */
 	public int getStep();
 	
+	/**
+	 * Gets scale.
+	 *
+	 * @return the resulting numeric value.
+	 */
 	public double getScale();
 
 	/**
@@ -46,12 +66,32 @@ public interface Axis {
 	 */
 	public boolean isConcat();
 	
+	/**
+	 * Gets halo.
+	 *
+	 * @return the resulting numeric value.
+	 */
 	public int getHalo();
 	
+	/**
+	 * Gets offset.
+	 *
+	 * @return the resulting numeric value.
+	 */
 	public double getOffset();
 	
+	/**
+	 * Gets reference tensor.
+	 *
+	 * @return the resulting string.
+	 */
 	public String getReferenceTensor();
 	
+	/**
+	 * Gets reference axis.
+	 *
+	 * @return the resulting string.
+	 */
 	public String getReferenceAxis();
 
 }

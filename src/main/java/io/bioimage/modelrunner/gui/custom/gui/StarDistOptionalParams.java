@@ -35,6 +35,9 @@ public class StarDistOptionalParams extends JPanel {
     private JSpinner minPercField, maxPercField;
     private JLabel minLabel, maxLabel;
 
+    /**
+     * Creates a new StarDistOptionalParams.
+     */
     protected StarDistOptionalParams() {
         setLayout(null);
         SpinnerNumberModel modelL = new SpinnerNumberModel(1., 0., 100., 0.01);
@@ -86,6 +89,11 @@ public class StarDistOptionalParams extends JPanel {
     
     private void organiseComponents() {
     	addComponentListener(new ComponentAdapter() {
+            /**
+             * Executes component resized.
+             *
+             * @param e the e parameter.
+             */
             @Override
             public void componentResized(ComponentEvent e) {
                 int rawW = getWidth();

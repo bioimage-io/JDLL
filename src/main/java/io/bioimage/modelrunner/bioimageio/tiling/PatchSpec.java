@@ -125,6 +125,11 @@ public class PatchSpec
         return patchPaddingSize;
     }
 
+    /**
+     * Executes to string.
+     *
+     * @return the resulting string.
+     */
     @Override
     public String toString()
     {

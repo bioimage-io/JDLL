@@ -145,12 +145,10 @@ public class DecodeNumpy {
     
     /**
      * Main method to test the ImgLib2 creation
-     * @param <T>
-     * 	possible ImgLib2 data types of the provided {@link RandomAccessibleInterval}
-     * @param args
-     * 	no args are needed
-     * @throws FileNotFoundException if the numpy array file is not found
-     * @throws IOException if there is any error opening the files
+     *
+     * @param args the args parameter.
+     * @throws FileNotFoundException if a FileNotFoundException occurs while executing this method.
+     * @throws IOException if an I/O error occurs.
      */
     public static < T extends RealType< T > & NativeType< T > > void main(String[] args) throws FileNotFoundException, IOException {
     	//String npy = "C:\\Users\\angel\\OneDrive\\Documentos\\pasteur\\git\\deep-icy\\models\\Arabidopsis Leaf Segmentation_30102023_193340\\test_input.npy";

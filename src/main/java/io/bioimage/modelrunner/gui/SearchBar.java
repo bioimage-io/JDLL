@@ -57,10 +57,18 @@ public class SearchBar extends JPanel {
     double BUTTONS_PERC = 0.4;
     
 
+    /**
+     * Creates a new SearchBar.
+     */
     protected SearchBar() {
     	this(null);
     }
 
+    /**
+     * Creates a new SearchBar.
+     *
+     * @param adapter the adapter parameter.
+     */
     protected SearchBar(GuiAdapter adapter) {
         setLayout(null);
         setBackground(Color.WHITE);
@@ -74,6 +82,11 @@ public class SearchBar extends JPanel {
         else
             DefaultIcon.drawImOrLogo(iconPath, iconPath, bmzLogo);
         bmzLogo.addMouseListener(new MouseAdapter() {
+            /**
+             * Executes mouse clicked.
+             *
+             * @param e the e parameter.
+             */
             @Override
             public void mouseClicked(MouseEvent e) {
                 try {
@@ -115,6 +128,11 @@ public class SearchBar extends JPanel {
     
     private void organiseComponents() {
     	addComponentListener(new ComponentAdapter() {
+            /**
+             * Executes component resized.
+             *
+             * @param e the e parameter.
+             */
             @Override
             public void componentResized(ComponentEvent e) {
                 layoutAll();
@@ -141,6 +159,11 @@ public class SearchBar extends JPanel {
     }
     
 
+    /**
+     * Executes perform search.
+     *
+     * @return the resulting list.
+     */
     protected List<ModelDescriptor> performSearch() {
         String searchText = searchField.getText().trim().toLowerCase();
         return this.bmzModels.stream().filter(mm -> {
@@ -150,10 +173,23 @@ public class SearchBar extends JPanel {
         }).collect(Collectors.toList());
     }
     
+    /**
+     * Executes count bmzmodels.
+     *
+     * @return the resulting numeric value.
+     * @throws InterruptedException if the current thread is interrupted while waiting for the operation to finish.
+     */
     protected int countBMZModels() throws InterruptedException {
     	return countBMZModels(false);
     }
     
+    /**
+     * Executes count bmzmodels.
+     *
+     * @param recount the recount parameter.
+     * @return the resulting numeric value.
+     * @throws InterruptedException if the current thread is interrupted while waiting for the operation to finish.
+     */
     protected int countBMZModels(boolean recount) throws InterruptedException {
     	if (!recount)
     		return nModels;
@@ -162,6 +198,12 @@ public class SearchBar extends JPanel {
     	return nModels;
     }
     
+    /**
+     * Finds bmzmodels.
+     *
+     * @return the resulting list.
+     * @throws InterruptedException if the current thread is interrupted while waiting for the operation to finish.
+     */
     protected List<ModelDescriptor> findBMZModels() throws InterruptedException {
     	bmzModels = new ArrayList<ModelDescriptor>();
     	for (String url : BioimageioRepo.getModelIDs()) {
@@ -173,42 +215,86 @@ public class SearchBar extends JPanel {
     	return bmzModels;
     }
     
+    /**
+     * Finds local models.
+     *
+     * @param dir the dir parameter.
+     */
     protected void findLocalModels(String dir) {
     	bmzModels = ModelDescriptorFactory.getModelsAtLocalRepo(dir);
     }
     
+    /**
+     * Gets bmzmodels.
+     *
+     * @return the resulting list.
+     */
     protected List<ModelDescriptor> getBMZModels() {
     	return this.bmzModels;
     }
     
+    /**
+     * Sets models.
+     *
+     * @param models the models parameter.
+     */
     protected void setModels(List<ModelDescriptor> models) {
     	this.bmzModels = models;
     }
     
+    /**
+     * Checks whether bmzparsing done.
+     *
+     * @return true if the operation succeeds; otherwise, false.
+     */
     protected boolean isBMZPArsingDone() {
     	return nModels == bmzModels.size();
     }
     
+    /**
+     * Executes change button to local.
+     */
     protected void changeButtonToLocal() {
     	this.switchButton.setText(Gui.LOCAL_STR);
     }
     
+    /**
+     * Executes change button to bmz.
+     */
     protected void changeButtonToBMZ() {
     	this.switchButton.setText(Gui.BIOIMAGEIO_STR);
     }
     
+    /**
+     * Checks whether bar on local.
+     *
+     * @return true if the operation succeeds; otherwise, false.
+     */
     protected boolean isBarOnLocal() {
     	return this.switchButton.getText().equals(Gui.BIOIMAGEIO_STR);
     }
     
+    /**
+     * Sets bar enabled.
+     *
+     * @param enabled the enabled parameter.
+     */
     protected void setBarEnabled(boolean enabled) {
     	this.searchButton.setEnabled(enabled);
     	this.switchButton.setEnabled(enabled);
     	this.searchField.setEnabled(enabled);
     }
 
+    /**
+     * Executes main.
+     *
+     * @param args the args parameter.
+     */
     public static void main(String[] args) {
         SwingUtilities.invokeLater(new Runnable() {
+            /**
+             * Executes run.
+             */
             @Override
             public void run() {
                 JFrame frame = new JFrame("Modern Search Bar");

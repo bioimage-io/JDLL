@@ -58,6 +58,11 @@ public class ModelSelectionPanelGui extends JPanel {
     protected static final double MAX_BTN_HEIGHT = 33;
 
 
+	/**
+	 * Creates a new ModelSelectionPanelGui.
+	 *
+	 * @param adapter the adapter parameter.
+	 */
 	protected ModelSelectionPanelGui(GuiAdapter adapter) {
         super(null);
         this.setBackground(new Color(236, 240, 241));
@@ -88,6 +93,11 @@ public class ModelSelectionPanelGui extends JPanel {
     
     private void organiseComponents() {
     	addComponentListener(new ComponentAdapter() {
+            /**
+             * Executes component resized.
+             *
+             * @param e the e parameter.
+             */
             @Override
             public void componentResized(ComponentEvent e) {
                 Insets in = getInsets();
@@ -122,30 +132,52 @@ public class ModelSelectionPanelGui extends JPanel {
         });
     }
     
+    /**
+     * Sets border label.
+     *
+     * @param text the text parameter.
+     */
     protected void setBorderLabel(String text) {
     	lineBorder.setTitle(text);
     	this.validate();
     	this.repaint();
     }
     
+    /**
+     * Sets arrows enabled.
+     *
+     * @param enabled the enabled parameter.
+     */
     protected void setArrowsEnabled(boolean enabled) {
     	nextButton.setEnabled(enabled);
     	prevButton.setEnabled(enabled);
     }
     
+    /**
+     * Sets local border.
+     */
     protected void setLocalBorder() {
     	setBorderLabel(Gui.LOCAL_STR);
     }
 
     
+    /**
+     * Sets bmzborder.
+     */
     protected void setBMZBorder() {
     	setBorderLabel(Gui.BIOIMAGEIO_STR);
     }
     
+    /**
+     * Sets loading.
+     */
     protected void setLoading() {
     	defaultString = Gui.LOADING_STR;
     }
     
+    /**
+     * Sets not found.
+     */
     protected void setNotFound() {
     	defaultString = Gui.NOT_FOUND_STR;
     }

@@ -59,6 +59,11 @@ public class ZipUtils
     public static void unzipFolder(String sourcePath, String targetPath) throws IOException {
     	// Create empty consumer to work with unzipping method method
     	Consumer<Double> progressConsumer = new Consumer<Double>() {
+    		/**
+    		 * Executes accept.
+    		 *
+    		 * @param d the d parameter.
+    		 */
     		@Override
             public void accept(Double d) {
             }

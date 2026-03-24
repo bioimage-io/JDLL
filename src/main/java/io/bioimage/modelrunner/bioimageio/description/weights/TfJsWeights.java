@@ -78,6 +78,8 @@ public class TfJsWeights implements WeightFormat{
 	@Override
 	/**
 	 * {@inheritDoc}
+	 *
+	 * @return the resulting string.
 	 */
 	public String getFramework() {
 		return weightsFormat;
@@ -87,6 +89,8 @@ public class TfJsWeights implements WeightFormat{
 	@Override
 	/**
 	 * {@inheritDoc}
+	 *
+	 * @return the resulting string.
 	 */
 	public String getTrainingVersion() {
 		return trainingVersion;
@@ -124,6 +128,8 @@ public class TfJsWeights implements WeightFormat{
 	@Override
 	/**
 	 * {@inheritDoc}
+	 *
+	 * @return the resulting string.
 	 */
 	public String getSha256() {
 		return sha256;
@@ -145,6 +151,8 @@ public class TfJsWeights implements WeightFormat{
 	@Override
 	/**
 	 * {@inheritDoc}
+	 *
+	 * @return the resulting string.
 	 */
 	public String getSource() {
 		return source;
@@ -167,6 +175,8 @@ public class TfJsWeights implements WeightFormat{
 	@Override
 	/**
 	 * {@inheritDoc}
+	 *
+	 * @return the resulting string.
 	 */
 	public String getParent() {
 		return parent;
@@ -187,6 +197,8 @@ public class TfJsWeights implements WeightFormat{
 	@Override
 	/**
 	 * {@inheritDoc}
+	 *
+	 * @return the resulting value.
 	 */
 	public ModelArchitecture getArchitecture() {
 		return architecture;
@@ -207,6 +219,8 @@ public class TfJsWeights implements WeightFormat{
 	@Override
 	/**
 	 * {@inheritDoc}
+	 *
+	 * @return the resulting value.
 	 */
 	public ModelDependencies getEnvDependencies() {
 		return dependencies;
@@ -225,6 +239,8 @@ public class TfJsWeights implements WeightFormat{
 	@Override
 	/**
 	 * {@inheritDoc}
+	 *
+	 * @return the resulting string.
 	 */
 	public String getSourceFileName() {
 		if (source == null)
@@ -267,6 +283,8 @@ public class TfJsWeights implements WeightFormat{
 	@Override
 	/**
 	 * {@inheritDoc}
+	 *
+	 * @return the resulting string.
 	 */
 	public String getJavaTrainingVersion() {
 		return compatibleVersion;
@@ -282,6 +300,8 @@ public class TfJsWeights implements WeightFormat{
 	@Override
 	/**
 	 * {@inheritDoc}
+	 *
+	 * @return the resulting string.
 	 */
 	public String getClosestSupportedPythonVersion() {
 		return compatibleVersion;

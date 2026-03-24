@@ -38,6 +38,11 @@ import io.bioimage.modelrunner.model.python.DLModelPytorchProtected;
 public class ModelDescriptorV05 extends ModelDescriptor
 {
 
+	/**
+	 * Creates a new ModelDescriptorV05.
+	 *
+	 * @param yamlElements the yamlElements parameter.
+	 */
 	protected ModelDescriptorV05(Map<String, Object> yamlElements)
     {
     	this.yamlElements = yamlElements;
@@ -49,11 +54,21 @@ public class ModelDescriptorV05 extends ModelDescriptor
         	modelID = modelID.substring(0, modelID.indexOf("/") + modelID.substring(modelID.indexOf("/") + 1).indexOf("/") + 1);
     }
 
+	/**
+	 * Gets nickname.
+	 *
+	 * @return the resulting string.
+	 */
 	@Override
 	public String getNickname() {
 		return modelID;
 	}
 
+	/**
+	 * Executes are requirements installed.
+	 *
+	 * @return true if the operation succeeds; otherwise, false.
+	 */
 	@Override
 	public boolean areRequirementsInstalled() {
 		if (this.weights.getAllSuportedWeightNames().size() > 1 
@@ -62,6 +77,11 @@ public class ModelDescriptorV05 extends ModelDescriptor
 		return DLModelPytorchProtected.isInstalled();
 	}
 
+	/**
+	 * Builds attachments.
+	 *
+	 * @return the resulting list.
+	 */
 	@Override
 	protected List<String> buildAttachments() {
 		List<String> strs = new ArrayList<String>();
@@ -82,6 +102,11 @@ public class ModelDescriptorV05 extends ModelDescriptor
 		return strs;
 	}
 
+	/**
+	 * Builds input tensors.
+	 *
+	 * @return the resulting list.
+	 */
 	@Override
 	protected List<TensorSpec> buildInputTensors() {
 		Object object = this.yamlElements.get("inputs");
@@ -98,6 +123,11 @@ public class ModelDescriptorV05 extends ModelDescriptor
         return tensors;
 	}
 
+	/**
+	 * Builds output tensors.
+	 *
+	 * @return the resulting list.
+	 */
 	@Override
 	protected List<TensorSpec> buildOutputTensors() {
 		Object object = this.yamlElements.get("outputs");
@@ -114,6 +144,9 @@ public class ModelDescriptorV05 extends ModelDescriptor
         return tensors;
 	}
 
+	/**
+	 * Executes calculate total input halo.
+	 */
 	@Override
 	protected void calculateTotalInputHalo() {
 		for (TensorSpec out: output_tensors) {
@@ -145,6 +178,11 @@ public class ModelDescriptorV05 extends ModelDescriptor
 		
 	}
 
+	/**
+	 * Finds id.
+	 *
+	 * @return the resulting string.
+	 */
 	@Override
 	protected String findID() {
 		if (yamlElements.get("config") == null && this.config.getSpecMap() != null)
@@ -162,6 +200,9 @@ public class ModelDescriptorV05 extends ModelDescriptor
 
 	@Override
 	// TODO decide whether to keep this or not
+	/**
+	 * Executes add bio engine.
+	 */
 	protected void addBioEngine() {
 		// TODO decide what to do with servers. Probably need permissions / Implement authentication
     	if (getName().equals("cellpose-python")) {
@@ -180,15 +221,32 @@ public class ModelDescriptorV05 extends ModelDescriptor
 		
 	}
 
+	/**
+	 * Gets model family.
+	 *
+	 * @return the resulting string.
+	 */
 	@Override
 	public String getModelFamily() {
 		return ModelDescriptor.BIOIMAGEIO;
 	}
 	
+	/**
+	 * Sets input test npy name.
+	 *
+	 * @param n the n parameter.
+	 * @param newName the newName parameter.
+	 */
 	protected void setInputTestNpyName(int n, String newName) {
 		((TensorSpecV05) input_tensors.get(n)).testTensorName = newName;
 	}
 	
+	/**
+	 * Sets output test npy name.
+	 *
+	 * @param n the n parameter.
+	 * @param newName the newName parameter.
+	 */
 	protected void setOutputTestNpyName(int n, String newName) {
 		((TensorSpecV05) output_tensors.get(n)).testTensorName = newName;
 	}

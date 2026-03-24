@@ -32,11 +32,21 @@ public class PlaceholderTextField extends JTextField {
 	private final String placeholder;
     private final Color placeholderColor;
 
+    /**
+     * Creates a new PlaceholderTextField.
+     *
+     * @param placeholder the placeholder parameter.
+     */
     protected PlaceholderTextField(String placeholder) {
         this.placeholder = placeholder;
         this.placeholderColor = Color.LIGHT_GRAY;
     }
 
+    /**
+     * Executes paint component.
+     *
+     * @param g the g parameter.
+     */
     @Override
     protected void paintComponent(Graphics g) {
         super.paintComponent(g);

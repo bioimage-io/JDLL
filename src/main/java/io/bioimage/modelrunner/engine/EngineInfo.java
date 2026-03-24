@@ -1174,10 +1174,9 @@ public class EngineInfo
 	}
 	
 	/**
-	 * 
-	 * @return the server url where the bioengine is hosted.
-	 * @throws IllegalArgumentException if the method is called when the {@link EngineInfo}
-	 * 	object has not been created for the Bioengine, with the method {@link #defineBioengine(String)}
+	 * Gets server.
+	 *
+	 * @return the resulting string.
 	 */
 	public String getServer() {
 		if (!isBioengine())

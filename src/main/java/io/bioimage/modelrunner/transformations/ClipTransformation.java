@@ -33,12 +33,20 @@ public class ClipTransformation extends AbstractTensorPixelTransformation
 	private Double max;
 	private double eps = Math.pow(10, -6);
 
+	/**
+	 * Creates a new ClipTransformation.
+	 */
 	public ClipTransformation()
 	{
 		super(name);
 		super.setDoubleUnitaryOperator(v -> v >= max ? max.doubleValue() : (v < min ? min.doubleValue() : v));
 	}
 	
+	/**
+	 * Sets eps.
+	 *
+	 * @param eps the eps parameter.
+	 */
 	public void setEps(Object eps) {
 		if (eps instanceof Integer) {
 			this.eps = Double.valueOf((int) eps);
@@ -53,6 +61,11 @@ public class ClipTransformation extends AbstractTensorPixelTransformation
 		}
 	}
 	
+	/**
+	 * Sets min.
+	 *
+	 * @param min the min parameter.
+	 */
 	public void setMin(Object min) {
 		if (min instanceof Integer) {
 			this.min = Double.valueOf((int) min);
@@ -67,6 +80,11 @@ public class ClipTransformation extends AbstractTensorPixelTransformation
 		}
 	}
 	
+	/**
+	 * Sets max.
+	 *
+	 * @param max the max parameter.
+	 */
 	public void setMax(Object max) {
 		if (max instanceof Integer) {
 			this.max = Double.valueOf((int) max);
@@ -81,6 +99,9 @@ public class ClipTransformation extends AbstractTensorPixelTransformation
 		}
 	}
 	
+	/**
+	 * Checks required args.
+	 */
 	public void checkRequiredArgs() {
 		if (min == null) {
 			throw new IllegalArgumentException(String.format(DEFAULT_MISSING_ARG_ERR, name, "min"));
@@ -89,6 +110,12 @@ public class ClipTransformation extends AbstractTensorPixelTransformation
 		}
 	}
 
+	/**
+	 * Executes apply.
+	 *
+	 * @param input the input parameter.
+	 * @return the resulting value.
+	 */
 	public < R extends RealType< R > & NativeType< R > > Tensor< FloatType > apply( final Tensor< R > input )
 	{
 		checkRequiredArgs();

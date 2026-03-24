@@ -46,6 +46,9 @@ public class ThresholdSlider extends JPanel {
     
     private JLabel leftLabel, centreLabel, rightLabel;
 
+    /**
+     * Creates a new ThresholdSlider.
+     */
     public ThresholdSlider() {
         super(null);
 
@@ -100,6 +103,11 @@ public class ThresholdSlider extends JPanel {
     
     private void organiseComponents() {
     	addComponentListener(new ComponentAdapter() {
+            /**
+             * Executes component resized.
+             *
+             * @param e the e parameter.
+             */
             @Override
             public void componentResized(ComponentEvent e) {
                 int rawW = getWidth();
@@ -172,6 +180,11 @@ public class ThresholdSlider extends JPanel {
         frame.setVisible(true);
     }
 
+    /**
+     * Executes main.
+     *
+     * @param args the args parameter.
+     */
     public static void main(String[] args) {
         SwingUtilities.invokeLater(ThresholdSlider::createAndShowGui);
     }

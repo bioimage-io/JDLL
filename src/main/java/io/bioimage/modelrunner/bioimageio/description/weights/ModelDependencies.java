@@ -37,14 +37,31 @@ public class ModelDependencies {
 	
 	private LinkedHashMap<String, Object> kwargs;
 	
+	/**
+	 * Creates a new ModelDependencies.
+	 *
+	 * @param map the map parameter.
+	 */
 	protected ModelDependencies(Map<String, Object> map) {
 		this.envFile = (String) map.get("source");
 	}
 	
+	/**
+	 * Gets source.
+	 *
+	 * @return the resulting string.
+	 */
 	public String getSource() {
 		return envFile;
 	}
 
+	/**
+	 * Gets dependencies.
+	 *
+	 * @param descriptor the descriptor parameter.
+	 * @param weights the weights parameter.
+	 * @return the resulting list.
+	 */
 	public static List<String> getDependencies(ModelDescriptor descriptor, WeightFormat weights) {
 		List<String> deps = new ArrayList<String>();
 		if (weights.getEnvDependencies() == null || weights.getEnvDependencies().getSource() == null)

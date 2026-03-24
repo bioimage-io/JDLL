@@ -43,6 +43,11 @@ import org.apache.commons.compress.archivers.ArchiveException;
 public class Builder {
 	
 
+	/**
+	 * Executes build.
+	 *
+	 * @return the resulting value.
+	 */
 	public Environment build() {
 		String base = baseDir.getPath();
 		boolean useSystemPath = systemPath;
@@ -85,6 +90,11 @@ public class Builder {
 
 	private boolean systemPath;
 
+	/**
+	 * Executes use system path.
+	 *
+	 * @return the resulting value.
+	 */
 	public Builder useSystemPath() {
 		systemPath = true;
 		return this;
@@ -92,6 +102,12 @@ public class Builder {
 
 	private File baseDir;
 
+	/**
+	 * Executes base.
+	 *
+	 * @param directory the directory parameter.
+	 * @return the resulting value.
+	 */
 	public Builder base(File directory) {
 		baseDir = directory;
 		return this;
@@ -101,6 +117,12 @@ public class Builder {
 
 	private File condaEnvironmentYaml;
 
+	/**
+	 * Executes conda.
+	 *
+	 * @param environmentYaml the environmentYaml parameter.
+	 * @return the resulting value.
+	 */
 	public Builder conda(File environmentYaml) {
 		this.condaEnvironmentYaml = environmentYaml;
 		return this;
@@ -111,6 +133,13 @@ public class Builder {
 	private String javaVendor;
 	private String javaVersion;
 
+	/**
+	 * Executes java.
+	 *
+	 * @param vendor the vendor parameter.
+	 * @param version the version parameter.
+	 * @return the resulting value.
+	 */
 	public Builder java(String vendor, String version) {
 		this.javaVendor = vendor;
 		this.javaVersion = version;

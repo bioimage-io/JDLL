@@ -132,6 +132,13 @@ public class TileMaker {
 		return new TileMaker(descriptor, tileInfoList);
 	}
 	
+	/**
+	 * Executes build.
+	 *
+	 * @param inputTiles the inputTiles parameter.
+	 * @param outputTiles the outputTiles parameter.
+	 * @return the resulting value.
+	 */
 	public static TileMaker build(List<TileInfo> inputTiles, List<TileInfo> outputTiles) {
 		return new TileMaker(inputTiles, outputTiles);
 	}
@@ -562,17 +569,13 @@ public class TileMaker {
     }
     
     /**
-     * Same as {@link #getInputInsertionPoints(String, int)}, but instead of returning the coordinates where the tile is 
+     * Same as {@link #getInputInsertionPoints(String, int)}, but instead of returning the coordinates where the tile is
      * cut, it returns the actual tile
-     * @param <T>
-     * 	ImgLib2 data type of the image from where a tile is going to be extracted
-     * @param tensorName
-     * 	name of the tensor that the image represents as per the Bioimage.io rdf.yaml file
-     * @param rai
-     * 	image that represents the tensor of interest
-     * @param n
-     * 	the nth tile to be extracted from the image
-     * @return the wanted tile cut from the image provided
+     *
+     * @param tensorName the tensorName parameter.
+     * @param rai the rai parameter.
+     * @param n the n parameter.
+     * @return the resulting value.
      */
     public <T extends NativeType<T> & RealType<T>> RandomAccessibleInterval<T> getNthTileInput(String tensorName, RandomAccessibleInterval<T> rai, int n) {
     	List<long[]> tiles = this.getTilePostionsInputImage(tensorName);
@@ -590,17 +593,13 @@ public class TileMaker {
     }
     
     /**
-     * Same as {@link #getOutputInsertionPoints(String, int)}, but instead of returning the coordinates where the tile is 
+     * Same as {@link #getOutputInsertionPoints(String, int)}, but instead of returning the coordinates where the tile is
      * cut, it returns the actual tile
-     * @param <T>
-     * 	ImgLib2 data type of the image from where a tile is going to be extracted
-     * @param tensorName
-     * 	name of the tensor that the image represents as per the Bioimage.io rdf.yaml file
-     * @param rai
-     * 	image that represents the tensor of interest
-     * @param n
-     * 	the nth tile to be extracted from the image
-     * @return the wanted tile cut from the image provided
+     *
+     * @param tensorName the tensorName parameter.
+     * @param rai the rai parameter.
+     * @param n the n parameter.
+     * @return the resulting value.
      */
     public <T extends NativeType<T> & RealType<T>> RandomAccessibleInterval<T> getNthTileOutput(String tensorName, RandomAccessibleInterval<T> rai, int n) {
     	List<long[]> tiles = this.getTilePostionsOutputImage(tensorName);
@@ -632,13 +631,10 @@ public class TileMaker {
     
     /**
      * Same as {@link #getNthTileInput(String, RandomAccessibleInterval, int)} but with tensors
-     * @param <T>
-     * 	ImgLib2 data type of the tensor from where a tile is going to be extracted
-     * @param tensor
-     * 	tensor of interest that is going to be tiled. It needs to fulfill the requirements of the Bioimage.io rdf.yaml
-     * @param n
-     * 	the nth tile to be extracted from the image
-     * @return the wanted tensor tile cut from the tensor provided
+     *
+     * @param tensor the tensor parameter.
+     * @param n the n parameter.
+     * @return the resulting value.
      */
     public <T extends NativeType<T> & RealType<T>> Tensor<T> getNthTileInput(Tensor<T> tensor, int n) {
     	if (!tensor.isImage())
@@ -649,13 +645,10 @@ public class TileMaker {
 
     /**
      * Same as {@link #getNthTileOutput(String, RandomAccessibleInterval, int)} but with tensors
-     * @param <T>
-     * 	ImgLib2 data type of the tensor from where a tile is going to be extracted
-     * @param tensor
-     * 	tensor of interest that is going to be tiled. It needs to fulfill the requirements of the Bioimage.io rdf.yaml
-     * @param n
-     * 	the nth tile to be extracted from the image
-     * @return the wanted tensor tile cut from the tensor provided
+     *
+     * @param tensor the tensor parameter.
+     * @param n the n parameter.
+     * @return the resulting value.
      */
     public <T extends NativeType<T> & RealType<T>> Tensor<T> getNthTileOutput(Tensor<T> tensor, int n) {
     	if (!tensor.isImage())

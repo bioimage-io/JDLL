@@ -191,42 +191,37 @@ public class StardistFineTuneJdllOp implements OpInterface {
 	 * can also be modified by with {@link #setBatchSize(int)} and {@link #setLearingRate(float)}.
 	 * By default the batch size is 16 and the learning rate 1e-5.
 	 * To set the number of epochs: {@link #setEpochs(int)}, default is 1.
-	 * 
-	 * Finally in some cases, if we want to fine tune a local model, the model might have 
+	 *
+	 * Finally in some cases, if we want to fine tune a local model, the model might have
 	 * several weight files:
 	 * - stardist
-	 * 	- config.json
-	 * 	- thresholds.json
-	 * 	- stardist_weights.h5
-	 * 	- weights_best.h5
-	 * 	- weights_last.h5
-	 * 
+	 * - config.json
+	 * - thresholds.json
+	 * - stardist_weights.h5
+	 * - weights_best.h5
+	 * - weights_last.h5
+	 *
 	 * If we are interested in fine tuning a stardist model starting from a certain weights file among
 	 * the available ones, use the {@link #setWeightsToFineTune(String)} to provide the name of the
-	 * file of interest. 
-	 * If no specific weight file is designated through the {@link #setWeightsToFineTune(String)} method, 
+	 * file of interest.
+	 * If no specific weight file is designated through the {@link #setWeightsToFineTune(String)} method,
 	 * the system will automatically select and load a weights file containing the substring 'best', if available.
-	 * 
-	 * If there is no weights file containing the substring 'best', the system will automatically select and 
-	 * load the file that comes first in alphabetical order from the available options. 
-	 * 
-	 * If there is only one weights file available, it is not necessary to 
-	 * use {@link #setWeightsToFineTune(String)}. 
-	 * 
+	 *
+	 * If there is no weights file containing the substring 'best', the system will automatically select and
+	 * load the file that comes first in alphabetical order from the available options.
+	 *
+	 * If there is only one weights file available, it is not necessary to
+	 * use {@link #setWeightsToFineTune(String)}.
+	 *
 	 * NOTE THAT weights_best.h5 AND weights_last.h5 WILL ALWAYS BE REWRITTEN AFTER EACH FINE TUNE ITERATION
-	 * 
-	 * @param modelToFineTune
-	 * 	Pre-trained model that is going to be fine tuned on the user's data, it
-	 *  can be either a model existing in the users machine or a model existing in the model
-	 *  zoo. If it is a model existing in the model zoo, it will have to be downloaded first.
-	 * @param newModelDir
-	 * 	directory where the new finetuned model folder will be saved.
-	 * @return a JDLL OP that can be used together with {@link RunMode} to fine tune a StarDist
-	 * 	model on the user's data
-	 * @throws InterruptedException if the thread is unexpectedly stopped
-	 * @throws IOException if there is any error in the copy or read operations that are performed on the model files
-	 * @throws ModelSpecsException if the model rdf.yaml is not correct
-	 * @throws IllegalArgumentException if the model rdf.yaml is not correct
+	 *
+	 * @param modelToFineTune the modelToFineTune parameter.
+	 * @param newModelDir the newModelDir parameter.
+	 * @return the resulting value.
+	 * @throws IOException if an I/O error occurs.
+	 * @throws InterruptedException if the current thread is interrupted while waiting for the operation to finish.
+	 * @throws IllegalArgumentException if any argument is invalid.
+	 * @throws ModelSpecsException if a ModelSpecsException occurs while executing this method.
 	 */
 	public static StardistFineTuneJdllOp finetuneInPlace(String modelToFineTune, String newModelDir) throws IOException, InterruptedException, IllegalArgumentException, ModelSpecsException  {
 		Objects.requireNonNull(modelToFineTune, "modelToFineTune' cannot be null. It should correspond to either a Bioimage.io "
@@ -258,40 +253,36 @@ public class StardistFineTuneJdllOp implements OpInterface {
 	 * can also be modified by with {@link #setBatchSize(int)} and {@link #setLearingRate(float)}.
 	 * By default the batch size is 16 and the learning rate 1e-5.
 	 * To set the number of epochs: {@link #setEpochs(int)}, default is 1.
-	 * 
-	 * Finally in some cases, if we want to fine tune a local model, the model might have 
+	 *
+	 * Finally in some cases, if we want to fine tune a local model, the model might have
 	 * several weight files:
 	 * - stardist
-	 * 	- config.json
-	 * 	- thresholds.json
-	 * 	- stardist_weights.h5
-	 * 	- weights_best.h5
-	 * 	- weights_last.h5
-	 * 
+	 * - config.json
+	 * - thresholds.json
+	 * - stardist_weights.h5
+	 * - weights_best.h5
+	 * - weights_last.h5
+	 *
 	 * If we are interested in fine tuning a stardist model starting from a certain weights file among
 	 * the available ones, use the {@link #setWeightsToFineTune(String)} to provide the name of the
-	 * file of interest. 
-	 * If no specific weight file is designated through the {@link #setWeightsToFineTune(String)} method, 
+	 * file of interest.
+	 * If no specific weight file is designated through the {@link #setWeightsToFineTune(String)} method,
 	 * the system will automatically select and load a weights file containing the substring 'best', if available.
-	 * 
-	 * If there is no weights file containing the substring 'best', the system will automatically select and 
-	 * load the file that comes first in alphabetical order from the available options. 
-	 * 
-	 * If there is only one weights file available, it is not necessary to 
-	 * use {@link #setWeightsToFineTune(String)}. 
-	 * 
+	 *
+	 * If there is no weights file containing the substring 'best', the system will automatically select and
+	 * load the file that comes first in alphabetical order from the available options.
+	 *
+	 * If there is only one weights file available, it is not necessary to
+	 * use {@link #setWeightsToFineTune(String)}.
+	 *
 	 * NOTE THAT weights_best.h5 AND weights_last.h5 WILL ALWAYS BE REWRITTEN AFTER EACH FINE TUNE ITERATION
-	 * 
-	 * @param modelToFineTune
-	 * 	Pre-trained model that is going to be fine tuned on the user's data, it
-	 *  can be either a model existing in the users machine or a model existing in the model
-	 *  zoo. If it is a model existing in the model zoo, it will have to be downloaded first.
-	 * @return a JDLL OP that can be used together with {@link RunMode} to fine tune a StarDist
-	 * 	model on the user's data
-	 * @throws InterruptedException if the thread is unexpectedly stopped
-	 * @throws IOException if there is any error in the copy or read operations that are performed on the model files
-	 * @throws ModelSpecsException if the model rdf.yaml is not correct
-	 * @throws IllegalArgumentException if the model rdf.yaml is not correct
+	 *
+	 * @param modelToFineTune the modelToFineTune parameter.
+	 * @return the resulting value.
+	 * @throws IOException if an I/O error occurs.
+	 * @throws InterruptedException if the current thread is interrupted while waiting for the operation to finish.
+	 * @throws IllegalArgumentException if any argument is invalid.
+	 * @throws ModelSpecsException if a ModelSpecsException occurs while executing this method.
 	 */
 	public static StardistFineTuneJdllOp finetuneInPlace(String modelToFineTune) throws IOException, InterruptedException, IllegalArgumentException, ModelSpecsException {
 		Objects.requireNonNull(modelToFineTune, "modelToFineTune' cannot be null. It should correspond to either a Bioimage.io "
@@ -403,6 +394,8 @@ public class StardistFineTuneJdllOp implements OpInterface {
 	@Override
 	/**
 	 * {@inheritDoc}
+	 *
+	 * @return the resulting string.
 	 */
 	public String getOpPythonFilename() {
 		return STARDIST_OP_FNAME;
@@ -411,6 +404,8 @@ public class StardistFineTuneJdllOp implements OpInterface {
 	@Override
 	/**
 	 * {@inheritDoc}
+	 *
+	 * @return the resulting numeric value.
 	 */
 	public int getNumberOfOutputs() {
 		return N_STARDIST_OUTPUTS;
@@ -419,6 +414,8 @@ public class StardistFineTuneJdllOp implements OpInterface {
 	@Override
 	/**
 	 * {@inheritDoc}
+	 *
+	 * @return true if the operation succeeds; otherwise, false.
 	 */
 	public boolean isOpInstalled() {
 		// TODO Auto-generated method stub
@@ -441,6 +438,8 @@ public class StardistFineTuneJdllOp implements OpInterface {
 	@Override
 	/**
 	 * {@inheritDoc}
+	 *
+	 * @return the resulting value.
 	 */
 	public LinkedHashMap<String, Object> getOpInputs() {
 		inputsMap = new LinkedHashMap<String, Object>();
@@ -477,16 +476,31 @@ public class StardistFineTuneJdllOp implements OpInterface {
 		inputsMap.put(WEIGHTS_TO_FINE_TUNE_KEY, this.weightsToFineTune);
 	}
 
+	/**
+	 * Gets conda env.
+	 *
+	 * @return the resulting string.
+	 */
 	@Override
 	public String getCondaEnv() {
 		return envPath;
 	}
 
+	/**
+	 * Gets method name.
+	 *
+	 * @return the resulting string.
+	 */
 	@Override
 	public String getMethodName() {
 		return OP_METHOD_NAME;
 	}
 
+	/**
+	 * Gets op dir.
+	 *
+	 * @return the resulting string.
+	 */
 	@Override
 	public String getOpDir() {
 		return opFilePath;

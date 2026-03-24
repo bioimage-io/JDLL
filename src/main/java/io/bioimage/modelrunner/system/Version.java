@@ -61,6 +61,12 @@ public class Version
         this.buildMetadata = buildMetadata;
     }
 
+    /**
+     * Executes parse.
+     *
+     * @param version the version parameter.
+     * @return the resulting value.
+     */
     public static Version parse(String version) {
         Matcher m = VERSION_PATTERN.matcher(version);
         if (!m.matches()) {
@@ -75,12 +81,42 @@ public class Version
     }
 
     // Getters
+    /**
+     * Gets major.
+     *
+     * @return the resulting numeric value.
+     */
     public int getMajor()       { return major; }
+    /**
+     * Gets minor.
+     *
+     * @return the resulting numeric value.
+     */
     public int getMinor()       { return minor; }
+    /**
+     * Gets patch.
+     *
+     * @return the resulting numeric value.
+     */
     public int getPatch()       { return patch; }
+    /**
+     * Gets pre release.
+     *
+     * @return the resulting string.
+     */
     public String getPreRelease()    { return preRelease; }
+    /**
+     * Gets build metadata.
+     *
+     * @return the resulting string.
+     */
     public String getBuildMetadata() { return buildMetadata; }
 
+    /**
+     * Executes to string.
+     *
+     * @return the resulting string.
+     */
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();
@@ -91,6 +127,11 @@ public class Version
     }
 
     // Example use
+    /**
+     * Executes main.
+     *
+     * @param args the args parameter.
+     */
     public static void main(String[] args) {
         String[] examples = {
             "1.2.3",

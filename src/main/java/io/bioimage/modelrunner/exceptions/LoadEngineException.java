@@ -38,30 +38,54 @@ public class LoadEngineException extends Exception
 
 	private String nonStaticMsg;
 
+	/**
+	 * Creates a new LoadEngineException.
+	 *
+	 * @param info the info parameter.
+	 */
 	public LoadEngineException( String info )
 	{
 		super( msg + ".\n" + info );
 		this.nonStaticMsg = msg + "\n" + info;
 	}
 
+	/**
+	 * Creates a new LoadEngineException.
+	 *
+	 * @param dir the dir parameter.
+	 * @param info the info parameter.
+	 */
 	public LoadEngineException( File dir, String info )
 	{
 		super( msg + " located at " + dir.getName() + ".\n" + info );
 		this.nonStaticMsg = msg + " located at " + dir.getName() + ".\n" + info;
 	}
 
+	/**
+	 * Creates a new LoadEngineException.
+	 *
+	 * @param dir the dir parameter.
+	 */
 	public LoadEngineException( File dir )
 	{
 		super( msg + " located at " + dir.getName() );
 		this.nonStaticMsg = msg + " located at " + dir.getName();
 	}
 
+	/**
+	 * Creates a new LoadEngineException.
+	 */
 	public LoadEngineException()
 	{
 		super( msg );
 		this.nonStaticMsg = msg;
 	}
 
+	/**
+	 * Executes to string.
+	 *
+	 * @return the resulting string.
+	 */
 	public String toString()
 	{
 		return this.nonStaticMsg;

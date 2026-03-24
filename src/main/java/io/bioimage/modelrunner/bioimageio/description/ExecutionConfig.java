@@ -104,6 +104,11 @@ public class ExecutionConfig
 
     
 
+    /**
+     * Executes to string.
+     *
+     * @return the resulting string.
+     */
     @Override
     public String toString()
     {

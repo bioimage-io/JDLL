@@ -56,6 +56,15 @@ public class IntegerTextField extends PlaceholderTextField {
             return text.matches("-?\\d*");
         }
 
+        /**
+         * Executes insert string.
+         *
+         * @param fb the fb parameter.
+         * @param offs the offs parameter.
+         * @param str the str parameter.
+         * @param a the a parameter.
+         * @throws BadLocationException if a BadLocationException occurs while executing this method.
+         */
         @Override
         public void insertString(FilterBypass fb, int offs, String str, AttributeSet a)
                 throws BadLocationException {
@@ -68,6 +77,16 @@ public class IntegerTextField extends PlaceholderTextField {
             }
         }
 
+        /**
+         * Executes replace.
+         *
+         * @param fb the fb parameter.
+         * @param offs the offs parameter.
+         * @param length the length parameter.
+         * @param str the str parameter.
+         * @param a the a parameter.
+         * @throws BadLocationException if a BadLocationException occurs while executing this method.
+         */
         @Override
         public void replace(FilterBypass fb, int offs, int length, String str, AttributeSet a)
                 throws BadLocationException {
@@ -80,6 +99,14 @@ public class IntegerTextField extends PlaceholderTextField {
             }
         }
 
+        /**
+         * Executes remove.
+         *
+         * @param fb the fb parameter.
+         * @param offs the offs parameter.
+         * @param length the length parameter.
+         * @throws BadLocationException if a BadLocationException occurs while executing this method.
+         */
         @Override
         public void remove(FilterBypass fb, int offs, int length)
                 throws BadLocationException {

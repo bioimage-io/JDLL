@@ -57,6 +57,13 @@ public class TransformationInstance {
 	
 	private final static String RUN_INPLACE_NAME = "applyInPlace";
 	
+	/**
+	 * Creates a new TransformationInstance.
+	 *
+	 * @param transform the transform parameter.
+	 * @throws RuntimeException if the operation cannot be completed successfully.
+	 * @throws IllegalArgumentException if any argument is invalid.
+	 */
 	protected TransformationInstance(TransformSpec transform) throws RuntimeException, IllegalArgumentException {
 		this.name = transform.getName();
 		this.args = transform.getKwargs();

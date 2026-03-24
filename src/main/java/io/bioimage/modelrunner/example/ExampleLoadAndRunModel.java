@@ -53,7 +53,7 @@ import net.imglib2.util.Util;
  * as the downloaded files are not light.
  * This example uses the torchscript/DeepImageJ
  * model <a href=
- * "https://bioimage.io/#/?tags=10.5281%2Fzenodo.6406756&id=10.5281%2Fzenodo.6406756">here</a>.
+ * "https://bioimage.io/#/?tags=10.5281%2Fzenodo.6406756&amp;id=10.5281%2Fzenodo.6406756">here</a>.
  * 
  * @author Carlos Garcia Lopez de Haro
  */

@@ -72,26 +72,55 @@ public abstract class RunnerAdapter implements Closeable {
 	protected abstract <T extends RealType<T> & NativeType<T>>
 	LinkedHashMap<TensorSpec, RandomAccessibleInterval<T>> displayTestInputs(LinkedHashMap<TensorSpec, String> testInputs);
 	
+	/**
+	 * Gets test inputs.
+	 *
+	 * @return the resulting value.
+	 */
 	protected abstract LinkedHashMap<TensorSpec, String> getTestInputs();
 
+	/**
+	 * Creates a new RunnerAdapter.
+	 *
+	 * @param descriptor the descriptor parameter.
+	 */
 	protected RunnerAdapter(ModelDescriptor descriptor) {
 		this.descriptor = descriptor;
 		this.enginesPath = new File("engines").getAbsolutePath();
 		this.classLoader = null;
 	}
 
+	/**
+	 * Creates a new RunnerAdapter.
+	 *
+	 * @param descriptor the descriptor parameter.
+	 * @param classloader the classloader parameter.
+	 */
 	protected RunnerAdapter(ModelDescriptor descriptor, ClassLoader classloader) {
 		this.descriptor = descriptor;
 		this.enginesPath = new File("engines").getAbsolutePath();
 		this.classLoader = classloader;
 	}
 
+	/**
+	 * Creates a new RunnerAdapter.
+	 *
+	 * @param descriptor the descriptor parameter.
+	 * @param enginesPath the enginesPath parameter.
+	 */
 	protected RunnerAdapter(ModelDescriptor descriptor, String enginesPath) {
 		this.descriptor = descriptor;
 		this.enginesPath = enginesPath;
 		this.classLoader = null;
 	}
 
+	/**
+	 * Creates a new RunnerAdapter.
+	 *
+	 * @param descriptor the descriptor parameter.
+	 * @param enginesPath the enginesPath parameter.
+	 * @param classloader the classloader parameter.
+	 */
 	protected RunnerAdapter(ModelDescriptor descriptor, String enginesPath, ClassLoader classloader) {
 		this.descriptor = descriptor;
 		this.enginesPath = enginesPath;
@@ -106,10 +135,21 @@ public abstract class RunnerAdapter implements Closeable {
 		return this.descriptor;
 	}
 	
+	/**
+	 * Executes load.
+	 *
+	 * @throws LoadModelException if a LoadModelException occurs while executing this method.
+	 */
 	public void load() throws LoadModelException {
 		load(true);
 	}
 	
+	/**
+	 * Executes load.
+	 *
+	 * @param installIfMissing the installIfMissing parameter.
+	 * @throws LoadModelException if a LoadModelException occurs while executing this method.
+	 */
 	public void load(boolean installIfMissing) throws LoadModelException {
 		if (closed)
 			throw new RuntimeException("The model has already been closed");
@@ -149,6 +189,11 @@ public abstract class RunnerAdapter implements Closeable {
 				.collect(Collectors.toList());
 	}
 	
+	/**
+	 * Checks whether closed.
+	 *
+	 * @return true if the operation succeeds; otherwise, false.
+	 */
 	public boolean isClosed() {
 		return this.closed;
 	}
@@ -215,12 +260,22 @@ public abstract class RunnerAdapter implements Closeable {
 		}
 	}
 	
+	/**
+	 * Checks whether loaded.
+	 *
+	 * @return true if the operation succeeds; otherwise, false.
+	 */
 	public boolean isLoaded() {
 		if (this.isClosed())
 			return false;
 		return this.loaded;
 	}
 
+	/**
+	 * Executes close.
+	 *
+	 * @throws IOException if an I/O error occurs.
+	 */
 	@Override
 	public void close() throws IOException {
 		model.close();

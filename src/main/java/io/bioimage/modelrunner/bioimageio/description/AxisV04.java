@@ -35,6 +35,17 @@ public class AxisV04 implements Axis {
 	String referenceAxis;
 	
 	
+	/**
+	 * Creates a new AxisV04.
+	 *
+	 * @param abreviation the abreviation parameter.
+	 * @param min the min parameter.
+	 * @param step the step parameter.
+	 * @param halo the halo parameter.
+	 * @param offset the offset parameter.
+	 * @param scale the scale parameter.
+	 * @param ref the ref parameter.
+	 */
 	protected AxisV04(String abreviation, int min, int step, int halo, double offset, double scale, String ref) {
 		this.abreviation = abreviation;
 		this.halo = halo;
@@ -46,18 +57,38 @@ public class AxisV04 implements Axis {
 		this.referenceTensor = ref;
 	}
 	
+	/**
+	 * Gets axis.
+	 *
+	 * @return the resulting string.
+	 */
 	public String getAxis() {
 		return this.abreviation;
 	}
 	
+	/**
+	 * Gets min.
+	 *
+	 * @return the resulting numeric value.
+	 */
 	public int getMin() {
 		return this.min;
 	}
 	
+	/**
+	 * Gets step.
+	 *
+	 * @return the resulting numeric value.
+	 */
 	public int getStep() {
 		return this.step;
 	}
 	
+	/**
+	 * Gets scale.
+	 *
+	 * @return the resulting numeric value.
+	 */
 	public double getScale() {
 		return this.scale;
 	}
@@ -83,18 +114,38 @@ public class AxisV04 implements Axis {
 		return concat;
 	}
 	
+	/**
+	 * Gets halo.
+	 *
+	 * @return the resulting numeric value.
+	 */
 	public int getHalo() {
 		return this.halo;
 	}
 	
+	/**
+	 * Gets offset.
+	 *
+	 * @return the resulting numeric value.
+	 */
 	public double getOffset() {
 		return this.offset;
 	}
 	
+	/**
+	 * Gets reference tensor.
+	 *
+	 * @return the resulting string.
+	 */
 	public String getReferenceTensor() {
 		return this.referenceTensor;
 	}
 	
+	/**
+	 * Gets reference axis.
+	 *
+	 * @return the resulting string.
+	 */
 	public String getReferenceAxis() {
 		return this.referenceAxis;
 	}

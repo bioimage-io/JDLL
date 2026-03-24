@@ -37,35 +37,103 @@ public abstract class ConsumerInterface {
 	
 	protected List<JComponent> componentsGui;
 	
+	/**
+	 * Gets models dir.
+	 *
+	 * @return the resulting string.
+	 */
 	public abstract String getModelsDir();
 	
+	/**
+	 * Updates gui.
+	 */
 	public abstract void updateGUI();
 	
+	/**
+	 * Sets components.
+	 *
+	 * @param components the components parameter.
+	 */
 	public abstract void setComponents(List<JComponent> components);
 	
+	/**
+	 * Sets var names.
+	 *
+	 * @param componentNames the componentNames parameter.
+	 */
 	public abstract void setVarNames(List<String> componentNames);
 	
+	/**
+	 * Executes notify params.
+	 *
+	 * @param args the args parameter.
+	 */
 	public abstract void notifyParams(LinkedHashMap<String, String> args);
 	
+	/**
+	 * Gets focused image.
+	 *
+	 * @return the resulting value.
+	 */
 	public abstract Object getFocusedImage();
 	
+	/**
+	 * Gets focused image name.
+	 *
+	 * @return the resulting string.
+	 */
 	public abstract String getFocusedImageName();
 	
+	/**
+	 * Gets focused image channels.
+	 *
+	 * @return the resulting value.
+	 */
 	public abstract Integer getFocusedImageChannels();
 	
+	/**
+	 * Gets focused image slices.
+	 *
+	 * @return the resulting value.
+	 */
 	public abstract Integer getFocusedImageSlices();
 	
+	/**
+	 * Gets focused image frames.
+	 *
+	 * @return the resulting value.
+	 */
 	public abstract Integer getFocusedImageFrames();
 	
+	/**
+	 * Gets focused image width.
+	 *
+	 * @return the resulting value.
+	 */
 	public abstract Integer getFocusedImageWidth();
 	
+	/**
+	 * Gets focused image height.
+	 *
+	 * @return the resulting value.
+	 */
 	public abstract Integer getFocusedImageHeight();
 
+	/**
+	 * Gets focused image as rai.
+	 *
+	 * @return the resulting value.
+	 */
 	public abstract < T extends RealType< T > & NativeType< T > > RandomAccessibleInterval<T> getFocusedImageAsRai();
 	
 	public abstract < T extends RealType< T > & NativeType< T > > 
 	void display(RandomAccessibleInterval<T> rai, String axes, String name);
 	
+	/**
+	 * Sets variable names.
+	 *
+	 * @param varNames the varNames parameter.
+	 */
 	public void setVariableNames(List<String> varNames) {
 		this.varNames = varNames;
 	}

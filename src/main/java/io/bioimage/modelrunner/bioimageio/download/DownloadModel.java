@@ -152,6 +152,11 @@ public class DownloadModel {
 		String fname = MultiFileDownloader.addTimeStampToFileName(descriptor.getName(), true);
 		this.modelsDir = modelsDir + File.separator + getValidFileName(fname);
     	this.unzippingConsumer = new Consumer<Double>() {
+    		/**
+    		 * Executes accept.
+    		 *
+    		 * @param d the d parameter.
+    		 */
     		@Override
             public void accept(Double d) {
         		unzippingProgress = d;
@@ -160,6 +165,11 @@ public class DownloadModel {
 		retriveDownloadModelLinks();
 	}
 	
+	/**
+	 * Sets progress consumer.
+	 *
+	 * @param consumer the consumer parameter.
+	 */
 	public void setProgressConsumer(Consumer<Double> consumer) {
 		this.consumer = consumer;
 	}

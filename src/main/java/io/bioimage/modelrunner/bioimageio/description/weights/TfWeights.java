@@ -94,6 +94,8 @@ public class TfWeights implements WeightFormat{
 	@Override
 	/**
 	 * {@inheritDoc}
+	 *
+	 * @return the resulting string.
 	 */
 	public String getFramework() {
 		return weightsFormat;
@@ -102,6 +104,8 @@ public class TfWeights implements WeightFormat{
 	@Override
 	/**
 	 * {@inheritDoc}
+	 *
+	 * @return the resulting string.
 	 */
 	public String getTrainingVersion() {
 		return trainingVersion;
@@ -138,6 +142,8 @@ public class TfWeights implements WeightFormat{
 	@Override
 	/**
 	 * {@inheritDoc}
+	 *
+	 * @return the resulting string.
 	 */
 	public String getSha256() {
 		return sha256;
@@ -158,6 +164,8 @@ public class TfWeights implements WeightFormat{
 	@Override
 	/**
 	 * {@inheritDoc}
+	 *
+	 * @return the resulting string.
 	 */
 	public String getSource() {
 		return source;
@@ -176,6 +184,11 @@ public class TfWeights implements WeightFormat{
 		
 	}
 
+	/**
+	 * Gets parent.
+	 *
+	 * @return the resulting string.
+	 */
 	@Override
 	public String getParent() {
 		return parent;
@@ -196,6 +209,8 @@ public class TfWeights implements WeightFormat{
 	@Override
 	/**
 	 * {@inheritDoc}
+	 *
+	 * @return the resulting value.
 	 */
 	public ModelArchitecture getArchitecture() {
 		return architecture;
@@ -216,6 +231,8 @@ public class TfWeights implements WeightFormat{
 	@Override
 	/**
 	 * {@inheritDoc}
+	 *
+	 * @return the resulting value.
 	 */
 	public ModelDependencies getEnvDependencies() {
 		return dependencies;
@@ -234,6 +251,8 @@ public class TfWeights implements WeightFormat{
 	@Override
 	/**
 	 * {@inheritDoc}
+	 *
+	 * @return the resulting string.
 	 */
 	public String getSourceFileName() {
 		if (source == null)
@@ -274,6 +293,8 @@ public class TfWeights implements WeightFormat{
 	@Override
 	/**
 	 * {@inheritDoc}
+	 *
+	 * @return the resulting string.
 	 */
 	public String getJavaTrainingVersion() {
 		return compatibleVersion;
@@ -291,6 +312,8 @@ public class TfWeights implements WeightFormat{
 	@Override
 	/**
 	 * {@inheritDoc}
+	 *
+	 * @return the resulting string.
 	 */
 	public String getClosestSupportedPythonVersion() {
 		if (this.trainingVersion == null)

@@ -44,30 +44,64 @@ public class InstallEnvWorker extends SwingWorker<Boolean, Void> {
     
     private Thread workerThread;
 
+    /**
+     * Creates a new InstallEnvWorker.
+     *
+     * @param descriptor the descriptor parameter.
+     * @param latch the latch parameter.
+     * @param callback the callback parameter.
+     */
     public InstallEnvWorker(ModelDescriptor descriptor, CountDownLatch latch, Consumer<Boolean> callback) {
         this.modelFamily = descriptor.getModelFamily();
         this.latch = latch;
         this.callback = callback;
     }
 
+    /**
+     * Creates a new InstallEnvWorker.
+     *
+     * @param modelFamily the modelFamily parameter.
+     * @param latch the latch parameter.
+     * @param callback the callback parameter.
+     */
     public InstallEnvWorker(String modelFamily, CountDownLatch latch, Consumer<Boolean> callback) {
         this.modelFamily = modelFamily;
         this.latch = latch;
         this.callback = callback;
     }
     
+    /**
+     * Sets consumer.
+     *
+     * @param consumer the consumer parameter.
+     */
     public void setConsumer(Consumer<String> consumer) {
     	this.consumer = consumer;
     }
     
+    /**
+     * Gets model family.
+     *
+     * @return the resulting string.
+     */
     public String getModelFamily() {
     	return this.modelFamily;
     }
 
+    /**
+     * Gets count down latch.
+     *
+     * @return the resulting value.
+     */
     public CountDownLatch getCountDownLatch() {
     	return this.latch;
     }
 
+    /**
+     * Executes do in background.
+     *
+     * @return the resulting value.
+     */
     @Override
     protected Boolean doInBackground() {
     	workerThread = Thread.currentThread();
@@ -88,6 +122,9 @@ public class InstallEnvWorker extends SwingWorker<Boolean, Void> {
         return true;
     }
 
+    /**
+     * Executes done.
+     */
     @Override
     protected void done() {
     	Boolean success = false;
@@ -102,6 +139,9 @@ public class InstallEnvWorker extends SwingWorker<Boolean, Void> {
         }
     }
     
+    /**
+     * Executes stop background.
+     */
     public void stopBackground() {
     	if (workerThread != null && workerThread.isAlive())
     		workerThread.interrupt();

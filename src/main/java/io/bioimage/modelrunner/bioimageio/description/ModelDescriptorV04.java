@@ -41,6 +41,11 @@ public class ModelDescriptorV04 extends ModelDescriptor
 {
 	private String newModelID;
 
+	/**
+	 * Creates a new ModelDescriptorV04.
+	 *
+	 * @param yamlElements the yamlElements parameter.
+	 */
 	protected ModelDescriptorV04(Map<String, Object> yamlElements)
     {
     	this.yamlElements = yamlElements;
@@ -68,11 +73,21 @@ public class ModelDescriptorV04 extends ModelDescriptor
         return this.newModelID;
     }
 
+	/**
+	 * Executes are requirements installed.
+	 *
+	 * @return true if the operation succeeds; otherwise, false.
+	 */
 	@Override
 	public boolean areRequirementsInstalled() {
 		return true;
 	}
 
+	/**
+	 * Builds attachments.
+	 *
+	 * @return the resulting list.
+	 */
 	@Override
 	protected List<String> buildAttachments() {
 		Object att = yamlElements.get("attachments");
@@ -114,6 +129,11 @@ public class ModelDescriptorV04 extends ModelDescriptor
     	return strs;
     }
 
+	/**
+	 * Builds input tensors.
+	 *
+	 * @return the resulting list.
+	 */
 	@Override
 	protected List<TensorSpec> buildInputTensors() {
 		Object list = this.yamlElements.get("inputs");
@@ -129,6 +149,11 @@ public class ModelDescriptorV04 extends ModelDescriptor
         return tensors;
 	}
 
+	/**
+	 * Builds output tensors.
+	 *
+	 * @return the resulting list.
+	 */
 	@Override
 	protected List<TensorSpec> buildOutputTensors() {
 		Object list = this.yamlElements.get("outputs");
@@ -144,6 +169,9 @@ public class ModelDescriptorV04 extends ModelDescriptor
         return tensors;
 	}
 
+	/**
+	 * Executes calculate total input halo.
+	 */
 	@Override
 	protected void calculateTotalInputHalo() {
 		for (TensorSpec out: output_tensors) {
@@ -175,6 +203,11 @@ public class ModelDescriptorV04 extends ModelDescriptor
 		
 	}
 
+	/**
+	 * Finds id.
+	 *
+	 * @return the resulting string.
+	 */
 	@Override
 	protected String findID() {
 		if (yamlElements.get("config") != null && yamlElements.get("config") instanceof Map) {
@@ -190,17 +223,28 @@ public class ModelDescriptorV04 extends ModelDescriptor
     	return (String) yamlElements.get("id");
 	}
 
+	/**
+	 * Executes add bio engine.
+	 */
 	@Override
 	protected void addBioEngine() {
 		// TODO Auto-generated method stub
 		
 	}
 
+	/**
+	 * Gets model family.
+	 *
+	 * @return the resulting string.
+	 */
 	@Override
 	public String getModelFamily() {
 		return ModelDescriptor.BIOIMAGEIO;
 	}
     
+    /**
+     * Executes add sample and test images.
+     */
     protected void addSampleAndTestImages() {
         List<SampleImage> sampleInputs = buildSampleImages((List<?>) yamlElements.get("sample_inputs"));
         List<SampleImage> sampleOutputs = buildSampleImages((List<?>) yamlElements.get("sample_outputs"));
@@ -316,6 +360,12 @@ public class ModelDescriptorV04 extends ModelDescriptor
     	return null;
     }
 	
+	/**
+	 * Sets input test npy name.
+	 *
+	 * @param n the n parameter.
+	 * @param name the name parameter.
+	 */
 	protected void setInputTestNpyName(int n, String name) {
     	TensorSpecV04 tt = (TensorSpecV04) this.input_tensors.get(n);
     	if (this.localModelPath != null)
@@ -323,6 +373,12 @@ public class ModelDescriptorV04 extends ModelDescriptor
     	tt.testTensorName = name;
 	}
 	
+	/**
+	 * Sets output test npy name.
+	 *
+	 * @param n the n parameter.
+	 * @param name the name parameter.
+	 */
 	protected void setOutputTestNpyName(int n, String name) {
     	TensorSpecV04 tt = (TensorSpecV04) this.output_tensors.get(n);
     	if (this.localModelPath != null)

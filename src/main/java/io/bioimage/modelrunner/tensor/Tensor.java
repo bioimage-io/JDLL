@@ -132,17 +132,10 @@ public final class Tensor< T extends RealType< T > & NativeType< T > >
 	/**
 	 * Return a tensor object
 	 *
-	 * @param <T>
-	 * 			  the possible ImgLib2 datatypes that the backend ImgLib2 img can have
-	 * @param tensorName
-	 *            name of the tensor as defined by the model
-	 * @param axes
-	 *            String containing the axes order of the tensor. For example:
-	 *            "bcyx"
-	 * @param data
-	 *            data structure similar to a Numpy array that contains all
-	 *            tensor numbers
-	 * @return the tensor
+	 * @param tensorName the tensorName parameter.
+	 * @param axes the axes parameter.
+	 * @param data the data parameter.
+	 * @return the resulting value.
 	 */
 	public static < T extends RealType< T > & NativeType< T > > Tensor< T > build( final String tensorName, final String axes, final RandomAccessibleInterval< T > data )
 	{
@@ -154,14 +147,9 @@ public final class Tensor< T extends RealType< T > & NativeType< T > >
 	/**
 	 * Creates a tensor without data. The idea is to fill the data later.
 	 *
-	 * @param <T>
-	 * 			  the possible ImgLib2 datatypes that the backend ImgLib2 img can have
-	 * @param tensorName
-	 *            name of the tensor as defined by the model
-	 * @param axes
-	 *            String containing the axes order of the tensor. For example:
-	 *            "bcyx"
-	 * @return the tensor
+	 * @param tensorName the tensorName parameter.
+	 * @param axes the axes parameter.
+	 * @return the resulting value.
 	 */
 	public static < T extends RealType< T > & NativeType< T > > Tensor< T > buildEmptyTensor( final String tensorName, final String axes )
 	{
@@ -289,16 +277,9 @@ public final class Tensor< T extends RealType< T > & NativeType< T > >
 	 * Everything is the same or the new tensor (including the name), except the
 	 * data type of the data
 	 *
-	 * @param <T>
-	 * 			  the possible ImgLib2 datatypes that the backend ImgLib2 img can have
-	 * @param <R>
-	 * 			  the possible ImgLib2 datatypes that the backend ImgLib2 img for the copy tensor
-	 * 				can have
-	 * @param tt
-	 *            tensor where the copy is created from
-	 * @param type
-	 *            data type of the wanted tensor
-	 * @return a copy of the input tensor in the wanted datatype 
+	 * @param tt the tt parameter.
+	 * @param type the type parameter.
+	 * @return the resulting value.
 	 */
 	public static < T extends RealType< T > & NativeType< T >, R extends RealType< R > & NativeType< R > > Tensor< R > createCopyOfTensorInWantedDataType( final Tensor< T > tt, final R type )
 	{
@@ -320,15 +301,9 @@ public final class Tensor< T extends RealType< T > & NativeType< T > >
 	 * Everything is the same or the new tensor (including the name), except the
 	 * data type of the data
 	 *
-	 * @param <T>
-	 * 			  the possible ImgLib2 datatypes that the ImgLib2 img can have
-	 * @param <R>
-	 * 			  the possible ImgLib2 datatypes that the copy ImgLib2 img can have
-	 * @param input
-	 *            tensor where the copy is created from
-	 * @param type
-	 *            data type of the wanted tensor
-	 * @return a copy of the input {@link RandomAccessibleInterval} in the wanted datatype 
+	 * @param input the input parameter.
+	 * @param type the type parameter.
+	 * @return the resulting value.
 	 */
 	public static < T extends RealType< T > & NativeType< T >, R extends RealType< R > & NativeType< R > > RandomAccessibleInterval< R > createCopyOfRaiInWantedDataType( final RandomAccessibleInterval< T > input, final R type )
 	{

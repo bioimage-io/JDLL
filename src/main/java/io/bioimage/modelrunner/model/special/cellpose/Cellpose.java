@@ -145,6 +145,16 @@ public class Cellpose extends BioimageIoModelPytorchProtected {
 	
 	private static final String THREE_CHANNEL_STR = "ch_0, ch_1, ch_3";
 
+	/**
+	 * Creates a new Cellpose.
+	 *
+	 * @param modelFile the modelFile parameter.
+	 * @param callable the callable parameter.
+	 * @param weightsPath the weightsPath parameter.
+	 * @param kwargs the kwargs parameter.
+	 * @param descriptor the descriptor parameter.
+	 * @throws IOException if an I/O error occurs.
+	 */
 	protected Cellpose(String modelFile, String callable, String weightsPath, 
 			Map<String, Object> kwargs, ModelDescriptor descriptor) throws IOException {
 		super(modelFile, callable, null, weightsPath, kwargs, descriptor, true);
@@ -290,6 +300,12 @@ public class Cellpose extends BioimageIoModelPytorchProtected {
 		super.run(checkInputTensors(inputTensors), checkOutputTensors(outputTensors));
 	}
 	
+	/**
+	 * Builds model code.
+	 *
+	 * @return the resulting string.
+	 * @throws IOException if an I/O error occurs.
+	 */
 	protected String buildModelCode() throws IOException {
 		if (this.isBMZ)
 			return super.buildModelCode();
@@ -346,6 +362,12 @@ public class Cellpose extends BioimageIoModelPytorchProtected {
 		return code;
 	}
 	
+	/**
+	 * Creates channels arg code.
+	 *
+	 * @param rai the rai parameter.
+	 * @return the resulting string.
+	 */
 	protected <T extends RealType<T> & NativeType<T>> String createChannelsArgCode(RandomAccessibleInterval<T> rai) {
 		long[] dims = rai.dimensionsAsLongArray();
 		if (channels == null && dims.length == 2)
@@ -365,6 +387,13 @@ public class Cellpose extends BioimageIoModelPytorchProtected {
 			+ ", channels=" + Arrays.toString(channels));
 	}
 	
+	/**
+	 * Creates diam code.
+	 *
+	 * @param nameList the nameList parameter.
+	 * @param channelList the channelList parameter.
+	 * @return the resulting string.
+	 */
 	protected String createDiamCode(String nameList, String channelList) {
 		String code = ""
 				+ "  if diameter is None:" + System.lineSeparator()

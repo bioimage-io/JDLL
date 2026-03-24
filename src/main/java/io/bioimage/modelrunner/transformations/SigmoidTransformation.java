@@ -29,17 +29,31 @@ public class SigmoidTransformation extends AbstractTensorPixelTransformation
 {
 	private static String name = "sigmoid";
 
+	/**
+	 * Creates a new SigmoidTransformation.
+	 */
 	public SigmoidTransformation()
 	{
 		super(name);
 		super.setDoubleUnitaryOperator(v -> ( double ) ( 1. / ( 1. + Math.exp( -v ) ) ));
 	}
 
+	/**
+	 * Executes apply.
+	 *
+	 * @param input the input parameter.
+	 * @return the resulting value.
+	 */
 	public < R extends RealType< R > & NativeType< R > > Tensor< FloatType > apply( final Tensor< R > input )
 	{
 		return super.apply(input);
 	}
 
+	/**
+	 * Executes apply in place.
+	 *
+	 * @param input the input parameter.
+	 */
 	public < R extends RealType< R > & NativeType< R > > void applyInPlace( final Tensor< R > input )
 	{
 		super.applyInPlace(input);

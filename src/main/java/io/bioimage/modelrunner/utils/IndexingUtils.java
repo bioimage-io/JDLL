@@ -54,6 +54,11 @@ public class IndexingUtils
 		return flat;
 	}
 	
+	/**
+	 * Executes main.
+	 *
+	 * @param args the args parameter.
+	 */
 	public static void main(String[] args) {
 		int[] size = new int[] {3, 3, 2};
 		int[] pos0 = new int[] {0, 0, 0};

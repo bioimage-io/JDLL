@@ -48,6 +48,11 @@ import io.bioimage.modelrunner.utils.Constants;
 public class ModelDescriptorCellposeV05 extends ModelDescriptorV05
 {
 
+	/**
+	 * Creates a new ModelDescriptorCellposeV05.
+	 *
+	 * @param yamlElements the yamlElements parameter.
+	 */
 	public ModelDescriptorCellposeV05(Map<String, Object> yamlElements) {
 		super(yamlElements);
 		// TODO Auto-generated constructor stub

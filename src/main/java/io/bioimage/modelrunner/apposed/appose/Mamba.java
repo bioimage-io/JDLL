@@ -451,6 +451,11 @@ public class Mamba {
 		checkMambaInstalled();
 	}
 	
+	/**
+	 * Gets envs dir.
+	 *
+	 * @return the resulting string.
+	 */
 	public String getEnvsDir() {
 		return this.envsdir;
 	}
@@ -544,25 +549,14 @@ public class Mamba {
 
 	/**
 	 * Run {@code conda create} to create a conda environment defined by the input environment yaml file.
-	 * 
-	 * @param envName
-	 *            The environment name to be created. It should not be a path, just the name.
-	 * @param envYaml
-	 *            The environment yaml file containing the information required to build it  
-	 * @param envName
-	 *            The environment name to be created.
-	 * @param isForceCreation
-	 *            Force creation of the environment if {@code true}. If this value
-	 *            is {@code false} and an environment with the specified name
-	 *            already exists, throw an {@link EnvironmentExistsException}.
-	 * @throws IOException
-	 *             If an I/O error occurs.
-	 * @throws InterruptedException
-	 *             If the current thread is interrupted by another thread while it
-	 *             is waiting, then the wait is ended and an InterruptedException is
-	 *             thrown.
-	 * @throws RuntimeException if the process to create the env of the yaml file is not terminated correctly. If there is any error running the commands
-	 * @throws MambaInstallException if Micromamba has not been installed, thus the instance of {@link Mamba} cannot be used
+	 *
+	 * @param envName the envName parameter.
+	 * @param envYaml the envYaml parameter.
+	 * @param isForceCreation the isForceCreation parameter.
+	 * @throws IOException if an I/O error occurs.
+	 * @throws InterruptedException if the current thread is interrupted while waiting for the operation to finish.
+	 * @throws RuntimeException if the operation cannot be completed successfully.
+	 * @throws MambaInstallException if a MambaInstallException occurs while executing this method.
 	 */
 	public void createWithYaml( final String envName, final String envYaml, final boolean isForceCreation) throws IOException, InterruptedException, RuntimeException, MambaInstallException
 	{
@@ -1864,6 +1858,14 @@ public class Mamba {
 		return arg;
 	}
 	
+	/**
+	 * Executes main.
+	 *
+	 * @param args the args parameter.
+	 * @throws IOException if an I/O error occurs.
+	 * @throws InterruptedException if the current thread is interrupted while waiting for the operation to finish.
+	 * @throws MambaInstallException if a MambaInstallException occurs while executing this method.
+	 */
 	public static void main(String[] args) throws IOException, InterruptedException, MambaInstallException {
 		
 		Mamba m = new Mamba("/home/carlos/.local/share/appose/micromamba");

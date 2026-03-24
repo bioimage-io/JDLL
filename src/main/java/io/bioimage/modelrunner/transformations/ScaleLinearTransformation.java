@@ -45,11 +45,19 @@ public class ScaleLinearTransformation extends AbstractTensorTransformation
 	private String axes;
 	private double eps = Math.pow(10, -6);
 
+	/**
+	 * Creates a new ScaleLinearTransformation.
+	 */
 	public ScaleLinearTransformation()
 	{
 		super( name );
 	}
 	
+	/**
+	 * Sets eps.
+	 *
+	 * @param eps the eps parameter.
+	 */
 	public void setEps(Object eps) {
 		if (eps instanceof Integer) {
 			this.eps = Double.valueOf((int) eps);
@@ -64,6 +72,11 @@ public class ScaleLinearTransformation extends AbstractTensorTransformation
 		}
 	}
 	
+	/**
+	 * Sets gain.
+	 *
+	 * @param gain the gain parameter.
+	 */
 	public void setGain(Object gain) {
 		if (gain instanceof Integer) {
 			this.gainDouble = Double.valueOf((int) gain);
@@ -96,6 +109,11 @@ public class ScaleLinearTransformation extends AbstractTensorTransformation
 		}
 	}
 	
+	/**
+	 * Sets offset.
+	 *
+	 * @param offset the offset parameter.
+	 */
 	public void setOffset(Object offset) {
 		if (offset instanceof Integer) {
 			this.offsetDouble = Double.valueOf((int) offset);
@@ -128,6 +146,11 @@ public class ScaleLinearTransformation extends AbstractTensorTransformation
 		}
 	}
 	
+	/**
+	 * Sets axes.
+	 *
+	 * @param axes the axes parameter.
+	 */
 	@SuppressWarnings("unchecked")
 	public void setAxes(Object axes) {
 		if (axes instanceof String && ((String) axes).equals("channel"))
@@ -155,6 +178,11 @@ public class ScaleLinearTransformation extends AbstractTensorTransformation
 					 + ", of a String array or of a List of Strings. The provided argument is " + axes.getClass());
 	}
 	
+	/**
+	 * Sets axis.
+	 *
+	 * @param axes the axes parameter.
+	 */
 	@SuppressWarnings("unchecked")
 	public void setAxis(Object axes) {
 		if (axes instanceof String && ((String) axes).equals("channel"))
@@ -182,6 +210,9 @@ public class ScaleLinearTransformation extends AbstractTensorTransformation
 					 + ", of a String array or of a List of Strings. The provided argument is " + axes.getClass());
 	}
 	
+	/**
+	 * Checks required args.
+	 */
 	public void checkRequiredArgs() {
 		if (offsetDouble == null && offsetArr == null) {
 			throw new IllegalArgumentException(String.format(DEFAULT_MISSING_ARG_ERR, name, "offset"));
@@ -197,6 +228,12 @@ public class ScaleLinearTransformation extends AbstractTensorTransformation
 		}
 	}
 
+	/**
+	 * Executes apply.
+	 *
+	 * @param input the input parameter.
+	 * @return the resulting value.
+	 */
 	@Override
 	public < R extends RealType< R > & NativeType< R > > Tensor< FloatType > apply( final Tensor< R > input )
 	{
@@ -206,6 +243,11 @@ public class ScaleLinearTransformation extends AbstractTensorTransformation
 		return output;
 	}
 
+	/**
+	 * Executes apply in place.
+	 *
+	 * @param input the input parameter.
+	 */
 	@Override
 	public < R extends RealType< R > & NativeType< R > > void applyInPlace(Tensor<R> input) {
 		checkRequiredArgs();

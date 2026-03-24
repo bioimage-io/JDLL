@@ -158,30 +158,72 @@ import java.io.File;
  */
 public class Appose {
 
+	/**
+	 * Executes base.
+	 *
+	 * @param directory the directory parameter.
+	 * @return the resulting value.
+	 */
 	public static Builder base(File directory) {
 		return new Builder().base(directory);
 	}
 
+	/**
+	 * Executes base.
+	 *
+	 * @param directory the directory parameter.
+	 * @return the resulting value.
+	 */
 	public static Builder base(String directory) {
 		return base(new File(directory));
 	}
 
+	/**
+	 * Executes java.
+	 *
+	 * @param vendor the vendor parameter.
+	 * @param version the version parameter.
+	 * @return the resulting value.
+	 */
 	public static Builder java(String vendor, String version) {
 		return new Builder().java(vendor, version);
 	}
 
+	/**
+	 * Executes conda.
+	 *
+	 * @param environmentYaml the environmentYaml parameter.
+	 * @return the resulting value.
+	 */
 	public static Builder conda(File environmentYaml) {
 		return new Builder().conda(environmentYaml);
 	}
 
+	/**
+	 * Executes system.
+	 *
+	 * @return the resulting value.
+	 */
 	public static Environment system() {
 		return system(new File("."));
 	}
 
+	/**
+	 * Executes system.
+	 *
+	 * @param directory the directory parameter.
+	 * @return the resulting value.
+	 */
 	public static Environment system(File directory) {
 		return new Builder().base(directory).useSystemPath().build();
 	}
 
+	/**
+	 * Executes system.
+	 *
+	 * @param directory the directory parameter.
+	 * @return the resulting value.
+	 */
 	public static Environment system(String directory) {
 		return system(new File(directory));
 	}

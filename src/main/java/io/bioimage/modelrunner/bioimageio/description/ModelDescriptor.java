@@ -124,10 +124,25 @@ public abstract class ModelDescriptor {
      */
     public abstract String getModelFamily();
     
+    /**
+     * Builds input tensors.
+     *
+     * @return the resulting list.
+     */
     protected abstract List<TensorSpec> buildInputTensors();
     
+    /**
+     * Builds output tensors.
+     *
+     * @return the resulting list.
+     */
     protected abstract List<TensorSpec> buildOutputTensors();
     
+    /**
+     * Builds attachments.
+     *
+     * @return the resulting list.
+     */
     protected abstract List<String> buildAttachments();
 
     /**
@@ -138,8 +153,16 @@ public abstract class ModelDescriptor {
      */
     protected abstract void calculateTotalInputHalo();
     
+    /**
+     * Finds id.
+     *
+     * @return the resulting string.
+     */
     protected abstract String findID();
     
+    /**
+     * Executes add bio engine.
+     */
     protected abstract void addBioEngine();
     
     /**
@@ -221,6 +244,12 @@ public abstract class ModelDescriptor {
         	addModelPath(new File(localModelPath).toPath());
     }
 
+	/**
+	 * Builds authors.
+	 *
+	 * @param object the object parameter.
+	 * @return the resulting list.
+	 */
 	protected List<Author> buildAuthors(Object object) {
 		List<Author> authors = new ArrayList<>();
     	if (object == null || !(object instanceof List)) {
@@ -238,6 +267,11 @@ public abstract class ModelDescriptor {
         return authors;
 	}
 
+	/**
+	 * Builds cite elements.
+	 *
+	 * @return the resulting list.
+	 */
 	protected List<Cite> buildCiteElements() {
 		Object citeElements = this.yamlElements.get("cite");
         List<Cite> cites = new ArrayList<Cite>();
@@ -256,10 +290,20 @@ public abstract class ModelDescriptor {
 		return cites;
 	}
 
+	/**
+	 * Builds weights.
+	 *
+	 * @return the resulting value.
+	 */
 	protected ModelWeight buildWeights() {
         return ModelWeight.build((Map<String, Object>) this.yamlElements.get("weights"));
 	}
 	
+	/**
+	 * Builds config.
+	 *
+	 * @return the resulting value.
+	 */
 	protected ExecutionConfig buildConfig() {
         return ExecutionConfig.build((Map<String, Object>) this.yamlElements.get("config"));
 	}
@@ -647,6 +691,11 @@ public abstract class ModelDescriptor {
     	return out;
     }
 
+	/**
+	 * Executes to string.
+	 *
+	 * @return the resulting string.
+	 */
 	@Override
     public String toString()
     {

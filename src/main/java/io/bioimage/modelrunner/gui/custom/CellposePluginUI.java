@@ -80,6 +80,11 @@ public class CellposePluginUI extends CellposeGUI implements ActionListener {
     private Runnable cancelCallback;
     Thread workerThread;
 
+    /**
+     * Creates a new CellposePluginUI.
+     *
+     * @param consumer the consumer parameter.
+     */
     public CellposePluginUI(ConsumerInterface consumer) {
         // Set a modern-looking border layout with padding
     	this.consumer = consumer;
@@ -112,11 +117,26 @@ public class CellposePluginUI extends CellposeGUI implements ActionListener {
 
         // Enable when custom selected
         modelComboBox.addPopupMenuListener(new PopupMenuListener() {
+            /**
+             * Executes popup menu will become visible.
+             *
+             * @param e the e parameter.
+             */
             @Override
             public void popupMenuWillBecomeVisible(PopupMenuEvent e) {}
+            /**
+             * Executes popup menu canceled.
+             *
+             * @param e the e parameter.
+             */
             @Override
             public void popupMenuCanceled(PopupMenuEvent e) {}
 
+            /**
+             * Executes popup menu will become invisible.
+             *
+             * @param e the e parameter.
+             */
             @Override
             public void popupMenuWillBecomeInvisible(PopupMenuEvent e) {
             	boolean enabled = modelComboBox.getSelectedItem().equals(CUSTOM_STR);
@@ -129,18 +149,34 @@ public class CellposePluginUI extends CellposeGUI implements ActionListener {
         consumer.updateGUI();
     }
     
+    /**
+     * Sets cancel callback.
+     *
+     * @param cancelCallback the cancelCallback parameter.
+     */
     public void setCancelCallback(Runnable cancelCallback) {
     	this.cancelCallback = cancelCallback;
     }
     
+    /**
+     * Executes close.
+     */
     public void close() {
     	if (model != null && model.isLoaded())
     		model.close();
     }
 
     // For demonstration purposes: a main method to show the UI in a JFrame.
+    /**
+     * Executes main.
+     *
+     * @param args the args parameter.
+     */
     public static void main(String[] args) {
         SwingUtilities.invokeLater(new Runnable() {
+            /**
+             * Executes run.
+             */
             public void run() {
                 JFrame frame = new JFrame("Cellpose Plugin");
                 frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -154,6 +190,11 @@ public class CellposePluginUI extends CellposeGUI implements ActionListener {
         });
     }
     
+    /**
+     * Executes action performed.
+     *
+     * @param e the e parameter.
+     */
     @Override
     public void actionPerformed(ActionEvent e) {
     	if (e.getSource() == browseButton) {

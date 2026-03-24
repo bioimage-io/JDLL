@@ -53,11 +53,23 @@ public class ModelCard extends JPanel {
     protected static final Color UNSUPPORTED_FG_COLOR = Color.black;
 
 
+    /**
+     * Creates a new ModelCard.
+     *
+     * @param adapter the adapter parameter.
+     */
     protected ModelCard(GuiAdapter adapter) {
     	this(adapter, ModelSelectionPanelGui.MAIN_CARD_ID, 1d);
     }
 
 
+    /**
+     * Creates a new ModelCard.
+     *
+     * @param adapter the adapter parameter.
+     * @param cardID the cardID parameter.
+     * @param scale the scale parameter.
+     */
     protected ModelCard(GuiAdapter adapter, String cardID, double scale) {
     	super(null);
 		if (adapter == null)
@@ -97,6 +109,11 @@ public class ModelCard extends JPanel {
     
     private void organiseComponents() {
     	addComponentListener(new ComponentAdapter() {
+            /**
+             * Executes component resized.
+             *
+             * @param e the e parameter.
+             */
             @Override
             public void componentResized(ComponentEvent e) {
                 layoutAll();
@@ -222,16 +239,37 @@ public class ModelCard extends JPanel {
 	    return this.isUnsupported;
 	}
 
+    /**
+     * Creates model card.
+     *
+     * @param adapter the adapter parameter.
+     * @return the resulting value.
+     */
     protected static ModelCard createModelCard(GuiAdapter adapter) {
         ModelCard modelCardPanel = new ModelCard(adapter);
         return modelCardPanel;
     }
 
+    /**
+     * Creates model card.
+     *
+     * @param adapter the adapter parameter.
+     * @param id the id parameter.
+     * @param scale the scale parameter.
+     * @return the resulting value.
+     */
     protected static ModelCard createModelCard(GuiAdapter adapter, String id, double scale) {
         ModelCard modelCardPanel = new ModelCard(adapter, id, scale);
         return modelCardPanel;
     }
 
+    /**
+     * Updates card.
+     *
+     * @param name the name parameter.
+     * @param nickname the nickname parameter.
+     * @param imagePath the imagePath parameter.
+     */
     protected void updateCard(String name, String nickname, URL imagePath) {
         this.nameLabel.setText(name);
         this.nicknameLabel.setText(nickname);
@@ -241,6 +279,14 @@ public class ModelCard extends JPanel {
         	DefaultIcon.drawImOrLogo(imagePath, logoIcon, cardID);
     }
 
+    /**
+     * Updates card.
+     *
+     * @param name the name parameter.
+     * @param nickname the nickname parameter.
+     * @param imagePath the imagePath parameter.
+     * @param supported the supported parameter.
+     */
     protected void updateCard(String name, String nickname, URL imagePath, boolean supported) {
         this.nameLabel.setText(name);
         this.nicknameLabel.setText(nickname);

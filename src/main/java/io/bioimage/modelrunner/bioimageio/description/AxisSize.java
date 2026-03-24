@@ -31,6 +31,11 @@ public class AxisSize {
 	
 	
 	
+	/**
+	 * Creates a new AxisSize.
+	 *
+	 * @param object the object parameter.
+	 */
 	protected AxisSize(Object object) {
 		if (object instanceof Number) {
 			min = (int) object;
@@ -54,22 +59,47 @@ public class AxisSize {
 			ref = (String) map.get("tensor_id");
 	}
 	
+	/**
+	 * Gets min.
+	 *
+	 * @return the resulting numeric value.
+	 */
 	public int getMin() {
 		return this.min;
 	}
 	
+	/**
+	 * Gets step.
+	 *
+	 * @return the resulting numeric value.
+	 */
 	public int getStep() {
 		return this.step;
 	}
 	
+	/**
+	 * Gets offset.
+	 *
+	 * @return the resulting numeric value.
+	 */
 	public double getOffset() {
 		return this.offset;
 	}
 	
+	/**
+	 * Gets reference axis.
+	 *
+	 * @return the resulting string.
+	 */
 	public String getReferenceAxis() {
 		return this.axisID;
 	}
 	
+	/**
+	 * Gets reference tensor.
+	 *
+	 * @return the resulting string.
+	 */
 	public String getReferenceTensor() {
 		return this.ref;
 	}

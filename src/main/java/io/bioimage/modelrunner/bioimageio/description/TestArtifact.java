@@ -171,6 +171,11 @@ public class TestArtifact {
     	return path;
     }
 
+	/**
+	 * Executes to string.
+	 *
+	 * @return the resulting string.
+	 */
 	@Override
     public String toString()
     {
@@ -192,6 +197,11 @@ public class TestArtifact {
 		return allowedExtensions;
 	}
 	
+	/**
+	 * Gets name.
+	 *
+	 * @return the resulting string.
+	 */
 	public String getName() {
 		return filename;
 	}

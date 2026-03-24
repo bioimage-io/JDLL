@@ -42,6 +42,11 @@ public class ModelSelectionPanel extends ModelSelectionPanelGui {
     private List<URL> modelImagePaths;
     private List<ModelDescriptor> models;
 
+	/**
+	 * Creates a new ModelSelectionPanel.
+	 *
+	 * @param adapter the adapter parameter.
+	 */
 	protected ModelSelectionPanel(GuiAdapter adapter) {
         super(adapter);
         this.setBackground(new Color(236, 240, 241));
@@ -73,6 +78,11 @@ public class ModelSelectionPanel extends ModelSelectionPanelGui {
     	}).collect(Collectors.toList());
     }
     
+    /**
+     * Sets models.
+     *
+     * @param models the models parameter.
+     */
     protected void setModels(List<ModelDescriptor> models) {
     	this.models = models;
     	setCardsData();
@@ -82,6 +92,12 @@ public class ModelSelectionPanel extends ModelSelectionPanelGui {
     		SwingUtilities.invokeLater(() -> redrawModelCards(0));
     }
     
+    /**
+     * Sets model at.
+     *
+     * @param model the model parameter.
+     * @param pos the pos parameter.
+     */
     protected void setModelAt(ModelDescriptor model, int pos) {
     	Objects.requireNonNull(model);
     	if (pos > models.size())
@@ -115,6 +131,11 @@ public class ModelSelectionPanel extends ModelSelectionPanelGui {
 		}
     }
     
+    /**
+     * Executes redraw model cards.
+     *
+     * @param currentIndex the currentIndex parameter.
+     */
     protected void redrawModelCards(int currentIndex) {
     	boolean prevSupported = true;
     	boolean mainSupported = true;
@@ -152,18 +173,38 @@ public class ModelSelectionPanel extends ModelSelectionPanelGui {
         return size == 0 ? size : (index % size + size) % size;
     }
     
+    /**
+     * Gets model names.
+     *
+     * @return the resulting list.
+     */
     public List<String> getModelNames() {
     	return this.modelNames;
     }
     
+    /**
+     * Gets model nicknames.
+     *
+     * @return the resulting list.
+     */
     public List<String> getModelNicknames() {
     	return this.modelNicknames;
     }
     
+    /**
+     * Gets cover paths.
+     *
+     * @return the resulting list.
+     */
     public List<URL> getCoverPaths() {
     	return this.modelImagePaths;
     }
     
+    /**
+     * Gets models.
+     *
+     * @return the resulting list.
+     */
     public List<ModelDescriptor> getModels() {
     	return this.models;
     }

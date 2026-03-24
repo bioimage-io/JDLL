@@ -73,6 +73,9 @@ public class StarDistGUI extends JPanel {
     
     public static final String DEFAULT_3_CHANNEL_MODEL = "StarDist H&E Nuclei Segmentation";
 
+    /**
+     * Creates a new StarDistGUI.
+     */
     protected StarDistGUI() {
         setLayout(null);
 
@@ -82,6 +85,11 @@ public class StarDistGUI extends JPanel {
         modelComboBox = new JComboBox<String>(models){
     	    private static final long serialVersionUID = -1253338659158602375L;
 
+			/**
+			 * Sets model.
+			 *
+			 * @param aModel the aModel parameter.
+			 */
 			@Override
     	    public void setModel(ComboBoxModel<String> aModel) {
 				if (this.dataModel == null) {
@@ -94,6 +102,11 @@ public class StarDistGUI extends JPanel {
 					this.setSelectedItem(this.getSelectedItem());
 			}
 
+			/**
+			 * Sets selected item.
+			 *
+			 * @param anItem the anItem parameter.
+			 */
 			@Override
     	    public void setSelectedItem(Object anItem) {
     	        super.setSelectedItem(anItem);
@@ -150,11 +163,26 @@ public class StarDistGUI extends JPanel {
 
         // Enable when custom selected
         modelComboBox.addPopupMenuListener(new PopupMenuListener() {
+            /**
+             * Executes popup menu will become visible.
+             *
+             * @param e the e parameter.
+             */
             @Override
             public void popupMenuWillBecomeVisible(PopupMenuEvent e) {}
+            /**
+             * Executes popup menu canceled.
+             *
+             * @param e the e parameter.
+             */
             @Override
             public void popupMenuCanceled(PopupMenuEvent e) {}
 
+            /**
+             * Executes popup menu will become invisible.
+             *
+             * @param e the e parameter.
+             */
             @Override
             public void popupMenuWillBecomeInvisible(PopupMenuEvent e) {
             	boolean enabled = modelComboBox.getSelectedItem().equals(CUSTOM_STR);
@@ -169,6 +197,11 @@ public class StarDistGUI extends JPanel {
     
     private void organiseComponents() {
     	addComponentListener(new ComponentAdapter() {
+            /**
+             * Executes component resized.
+             *
+             * @param e the e parameter.
+             */
             @Override
             public void componentResized(ComponentEvent e) {
                 int rawW = getWidth();
@@ -206,8 +239,16 @@ public class StarDistGUI extends JPanel {
     }
     
     // For demonstration purposes: a main method to show the UI in a JFrame.
+    /**
+     * Executes main.
+     *
+     * @param args the args parameter.
+     */
     public static void main(String[] args) {
         SwingUtilities.invokeLater(new Runnable() {
+            /**
+             * Executes run.
+             */
             public void run() {
                 JFrame frame = new JFrame("StarDist Plugin");
                 frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);

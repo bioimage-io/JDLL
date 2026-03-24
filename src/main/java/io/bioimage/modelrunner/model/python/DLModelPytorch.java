@@ -37,6 +37,16 @@ import java.util.Map;
  */
 public class DLModelPytorch extends DLModelPytorchProtected {
 	
+	/**
+	 * Creates a new DLModelPytorch.
+	 *
+	 * @param modelFile the modelFile parameter.
+	 * @param callable the callable parameter.
+	 * @param importModule the importModule parameter.
+	 * @param weightsPath the weightsPath parameter.
+	 * @param kwargs the kwargs parameter.
+	 * @throws IOException if an I/O error occurs.
+	 */
 	protected DLModelPytorch(String modelFile, String callable, String importModule, String weightsPath, Map<String, Object> kwargs)
 			throws IOException {
 		super(modelFile, callable, importModule, weightsPath, kwargs);

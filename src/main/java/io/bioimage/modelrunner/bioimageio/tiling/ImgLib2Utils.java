@@ -46,18 +46,11 @@ public final class ImgLib2Utils
     /**
      * Copies values from source to target NDArrays starting at the source offset position as the origin in target NDArrays and taking the given size. This
      * method assumes the target NDArray is already initialized with all the needed space.
-     * 
-     * @param <T>
-     * 	possible data types the ImgLib2 object might have
-     * @param sourceNDArray
-     *        Source data INDArray.
-     * @param targetNDArray
-     *        Target INDArray.
-     * @param sourceOffset
-     *        Position in source sequence to start the copy from. Must be of length 5.
-     * @param paddingBottomRight
-     *        the size of the padding at the bottom or right sides for the special case
-     *        of the last patch at which some extra memory can be saved
+     *
+     * @param sourceNDArray the sourceNDArray parameter.
+     * @param targetNDArray the targetNDArray parameter.
+     * @param sourceOffset the sourceOffset parameter.
+     * @param paddingBottomRight the paddingBottomRight parameter.
      */
     public static < T extends RealType< T > & NativeType< T > > void copyRaiData(RandomAccessibleInterval<T> sourceNDArray, RandomAccessibleInterval<T> targetNDArray, int[] sourceOffset,
             int[] paddingBottomRight) {
@@ -88,18 +81,11 @@ public final class ImgLib2Utils
     /**
      * Takes the {@code INDArray} and adds a mirror on the areas out of the patch (specified by patchStart and patchSize). Boundaries are checked with both
      * the input and the patch sequences. The result is added to the {@code patchSequence}.
-     * 
-     * @param <T>
-     * 	ImgLib2 data types the image might have
-     * @param inputNDArr
-     *        The INDArray the patch was taken from.
-     * @param patchNDArr
-     *        The patch extracted from the input INDArray.
-     * @param newPatchStart
-     *        The patch position in the input INDArray. First array start of the 
-     *        front padding and second array, start of the back.
-     * @param padding
-     *        the padding of the image
+     *
+     * @param inputNDArr the inputNDArr parameter.
+     * @param patchNDArr the patchNDArr parameter.
+     * @param newPatchStart the newPatchStart parameter.
+     * @param padding the padding parameter.
      */
     public static < T extends RealType< T > & NativeType< T > > void addMirrorToPatchRai(RandomAccessibleInterval<T> inputNDArr, RandomAccessibleInterval<T> patchNDArr,
             int[] newPatchStart, int[][] padding) {
@@ -127,21 +113,12 @@ public final class ImgLib2Utils
     /**
      * Uses the {@code patchSequence} to fill the {@code resultSequence} at the {@code resultOffset} position. The copied interval in the patch is given by the
      * {@code patchOffset} and the {@code patchSize}.
-     * 
-     * @param <T>
-     * 	possible ImgLib2 data types the {@link RandomAccessibleInterval} might have
-     * @param resultNDArray
-     *        The sequence where the data is pasted at.
-     * @param patchNDArray
-     *        The sequence where the data is copied from.
-     * @param resultOffset
-     *        The position in the result sequence where the data is pasted.
-     * @param paddingFront
-     *        The position in the patch sequence where the copy starts.
-     * @param areaOfInterestSize
-     *        The length on each axis to be copied from the patch sequence.
-     *        This size only corresponds to the area of interest, the pixels
-     *        corresponding to padding are left out
+     *
+     * @param resultNDArray the resultNDArray parameter.
+     * @param patchNDArray the patchNDArray parameter.
+     * @param resultOffset the resultOffset parameter.
+     * @param paddingFront the paddingFront parameter.
+     * @param areaOfInterestSize the areaOfInterestSize parameter.
      */
     public static < T extends RealType< T > & NativeType< T > > void fillRaiAt(RandomAccessibleInterval<T> resultNDArray, 
     		RandomAccessibleInterval<T> patchNDArray, int[] resultOffset,
@@ -226,12 +203,9 @@ public final class ImgLib2Utils
     /**
      * Creates an array containing the size of the given {@link RandomAccessibleInterval}.
      * It is the same as teh shape
-     * 
-	 * @param <T>
-	 * 	Possible input ImgLib2 data types 
-     * @param s
-     * 	Target NDArray
-     * @return int array with the shape of the NDArray
+     *
+     * @param s the s parameter.
+     * @return the resulting array.
      */
     public static < T extends RealType< T > & NativeType< T > > int[] getRaiSizeArray(RandomAccessibleInterval<T> s)
     {

@@ -28,6 +28,9 @@ public class EnsureDtypeTransformation extends AbstractTensorPixelTransformation
 	
 	private static String name = "ensure_dtype";
 
+	/**
+	 * Creates a new EnsureDtypeTransformation.
+	 */
 	public EnsureDtypeTransformation()
 	{
 		super(name);

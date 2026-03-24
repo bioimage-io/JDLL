@@ -266,11 +266,32 @@ public class DLModelPytorchProtected extends BaseModel {
 	
 	private static final String JDLL_UUID = UUID.randomUUID().toString().replaceAll("-", "_");
 	
+	/**
+	 * Creates a new DLModelPytorchProtected.
+	 *
+	 * @param modelFile the modelFile parameter.
+	 * @param callable the callable parameter.
+	 * @param importModule the importModule parameter.
+	 * @param weightsPath the weightsPath parameter.
+	 * @param kwargs the kwargs parameter.
+	 * @throws IOException if an I/O error occurs.
+	 */
 	protected DLModelPytorchProtected(String modelFile, String callable, String importModule, String weightsPath, 
 			Map<String, Object> kwargs) throws IOException {
 		this(modelFile, callable, importModule, weightsPath, kwargs, false);
 	}
 	
+	/**
+	 * Creates a new DLModelPytorchProtected.
+	 *
+	 * @param modelFile the modelFile parameter.
+	 * @param callable the callable parameter.
+	 * @param importModule the importModule parameter.
+	 * @param weightsPath the weightsPath parameter.
+	 * @param kwargs the kwargs parameter.
+	 * @param customJDLL the customJDLL parameter.
+	 * @throws IOException if an I/O error occurs.
+	 */
 	protected DLModelPytorchProtected(String modelFile, String callable, String importModule, String weightsPath, 
 			Map<String, Object> kwargs, boolean customJDLL) throws IOException {
 		if (!customJDLL && (new File(modelFile).isFile() == false || !modelFile.endsWith(".py")) && importModule == null)
@@ -300,6 +321,11 @@ public class DLModelPytorchProtected extends BaseModel {
 		createPythonService();
 	}
 	
+	/**
+	 * Creates python service.
+	 *
+	 * @throws IOException if an I/O error occurs.
+	 */
 	protected void createPythonService() throws IOException {
 		Environment env = new Environment() {
 			@Override public String base() { return envPath; }
@@ -384,6 +410,11 @@ public class DLModelPytorchProtected extends BaseModel {
 		this.tileCounter = tileCounter;
 	}
 
+	/**
+	 * Loads model.
+	 *
+	 * @throws LoadModelException if a LoadModelException occurs while executing this method.
+	 */
 	@Override
 	public void loadModel() throws LoadModelException {
 		if (loaded)
@@ -418,6 +449,12 @@ public class DLModelPytorchProtected extends BaseModel {
         Files.write(Paths.get(outputPath), Files.readAllBytes(Paths.get(inputPath)));
     }
 	
+	/**
+	 * Builds model code.
+	 *
+	 * @return the resulting string.
+	 * @throws IOException if an I/O error occurs.
+	 */
 	protected String buildModelCode() throws IOException {
 		String addPath = "";
 		String importStr = "";
@@ -532,6 +569,9 @@ public class DLModelPytorchProtected extends BaseModel {
 		return code;
 	}
 
+	/**
+	 * Executes close.
+	 */
 	@Override
 	public void close() {
 		if (!loaded)
@@ -609,6 +649,13 @@ public class DLModelPytorchProtected extends BaseModel {
 		return outRais;
 	}
 	
+	/**
+	 * Creates inputs code.
+	 *
+	 * @param rais the rais parameter.
+	 * @param names the names parameter.
+	 * @return the resulting string.
+	 */
 	protected <T extends RealType<T> & NativeType<T>> String createInputsCode(List<RandomAccessibleInterval<T>> rais, List<String> names) {
 		String code = "created_shms = []" + System.lineSeparator();
 		code += "try:" + System.lineSeparator();
@@ -643,12 +690,22 @@ public class DLModelPytorchProtected extends BaseModel {
 		return code;
 	}
 	
+	/**
+	 * Closes shmwin.
+	 *
+	 * @return the resulting string.
+	 */
 	protected static String closeSHMWin() {
 		if (!PlatformDetection.isWindows())
 			return "";
 		return "[(shm_i.close(), shm_i.unlink()) for shm_i in created_shms]";
 	}
 	
+	/**
+	 * Executes task outputs code.
+	 *
+	 * @return the resulting string.
+	 */
 	protected String taskOutputsCode() {
 		String code = ""
 				+ "task.outputs['" + SHM_NAMES_KEY + "'] = " + SHM_NAMES_KEY + System.lineSeparator()
@@ -753,6 +810,12 @@ public class DLModelPytorchProtected extends BaseModel {
 		}
 	}
 	
+	/**
+	 * Executes clean shm.
+	 *
+	 * @throws InterruptedException if the current thread is interrupted while waiting for the operation to finish.
+	 * @throws IOException if an I/O error occurs.
+	 */
 	protected void cleanShm() throws InterruptedException, IOException {
 		closeShm();
 		if (PlatformDetection.isWindows()) {
@@ -850,6 +913,13 @@ public class DLModelPytorchProtected extends BaseModel {
 		return raiCopy;
 	}
 	
+	/**
+	 * Executes code to convert shma to python.
+	 *
+	 * @param shma the shma parameter.
+	 * @param varName the varName parameter.
+	 * @return the resulting string.
+	 */
 	protected static String codeToConvertShmaToPython(SharedMemoryArray shma, String varName) {
 		String code = "";
 		// This line wants to recreate the original numpy array. Should look like:

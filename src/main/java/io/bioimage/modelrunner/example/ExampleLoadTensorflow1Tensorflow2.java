@@ -48,7 +48,7 @@ import net.imglib2.util.Util;
  * 
  * The models used for this example are:
  * <ul>
- * <li><a href="https://bioimage.io/#/?id=10.5281%2Fzenodo.7261974&type=model&tags=B.%20Sutilist%20bacteria%20segmentation%20-%20Widefield%20microscopy%20-%202D%20UNet">B. Sutilist bacteria segmentation - Widefield microscopy - 2D UNet (TF2)</a></li>
+ * <li><a href="https://bioimage.io/#/?id=10.5281%2Fzenodo.7261974&amp;type=model&amp;tags=B.%20Sutilist%20bacteria%20segmentation%20-%20Widefield%20microscopy%20-%202D%20UNet">B. Sutilist bacteria segmentation - Widefield microscopy - 2D UNet (TF2)</a></li>
  * <li><a href="https://bioimage.io/#/?tags=StarDist%20H%26E%20Nuclei%20Segmentation&amp;id=10.5281%2Fzenodo.6338614">StarDist H&amp;E Nuclei Segmentation (TF1)</a></li>
  * </ul>
  * 

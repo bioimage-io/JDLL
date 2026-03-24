@@ -27,20 +27,42 @@ public class ImageInfo {
 	
 	private final long[] dims;
 	
+	/**
+	 * Creates a new ImageInfo.
+	 *
+	 * @param tensorName the tensorName parameter.
+	 * @param axesOrder the axesOrder parameter.
+	 * @param dims the dims parameter.
+	 */
 	public ImageInfo(String tensorName, String axesOrder, long[] dims) {
 		this.dims = dims;
 		this.name = tensorName;
 		this.axesOrder = axesOrder;
 	}
 	
+	/**
+	 * Gets axes order.
+	 *
+	 * @return the resulting string.
+	 */
 	public String getAxesOrder() {
 		return this.axesOrder;
 	}
 	
+	/**
+	 * Gets tensor name.
+	 *
+	 * @return the resulting string.
+	 */
 	public String getTensorName() {
 		return this.name;
 	}
 	
+	/**
+	 * Gets dimensions.
+	 *
+	 * @return the resulting array.
+	 */
 	public long[] getDimensions() {
 		return this.dims;
 	}

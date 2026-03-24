@@ -321,6 +321,12 @@ public class SharedMemoryArrayMacOS implements SharedMemoryArray
 		}
 	}
 
+	/**
+	 * Executes create.
+	 *
+	 * @param size the size parameter.
+	 * @return the resulting value.
+	 */
 	protected static SharedMemoryArrayMacOS create(int size) {
 		try {
 			return new SharedMemoryArrayMacOS(size, null, null, null, false);
@@ -667,66 +673,82 @@ public class SharedMemoryArrayMacOS implements SharedMemoryArray
         return total;
     }
 
-    /**
-     * {@inheritDoc}
-     */
+	/**
+	 * {@inheritDoc}
+	 *
+	 * @return the resulting string.
+	 */
 	@Override
     public String getName() {
     	return this.memoryName;
     }
 
-    /**
-     * {@inheritDoc}
-     */
+	/**
+	 * {@inheritDoc}
+	 *
+	 * @return the resulting string.
+	 */
 	@Override
     public String getNameForPython() {
     	return this.memoryName.substring("/".length());
     }
 
-    /**
-     * {@inheritDoc}
-     */
+	/**
+	 * {@inheritDoc}
+	 *
+	 * @return the resulting value.
+	 */
 	@Override
     public Pointer getPointer() {
     	return this.pSharedMemory;
     }
 
-    /**
-     * {@inheritDoc}
-     */
+	/**
+	 * {@inheritDoc}
+	 *
+	 * @return the resulting value.
+	 */
 	@Override
     public Object getSharedMemoryBlockID() {
     	return this.shmFd;
     }
 
-    /**
-     * {@inheritDoc}
-     */
+	/**
+	 * {@inheritDoc}
+	 *
+	 * @return the resulting numeric value.
+	 */
 	@Override
     public int getSize() {
     	return this.size;
     }
 
 	@Override
-    /**
-     * {@inheritDoc}
-     */
+	/**
+	 * {@inheritDoc}
+	 *
+	 * @return the resulting string.
+	 */
 	public String getOriginalDataType() {
 		return this.originalDataType;
 	}
 
 	@Override
-    /**
-     * {@inheritDoc}
-     */
+	/**
+	 * {@inheritDoc}
+	 *
+	 * @return the resulting array.
+	 */
 	public long[] getOriginalShape() {
 		return this.originalDims;
 	}
 	
 	@Override
-    /**
-     * {@inheritDoc}
-     */
+	/**
+	 * {@inheritDoc}
+	 *
+	 * @return true if the operation succeeds; otherwise, false.
+	 */
 	public boolean isNumpyFormat() {
 		if (this.isNumpyFormat == null) {
 			findNumpyFormat();
@@ -816,6 +838,8 @@ public class SharedMemoryArrayMacOS implements SharedMemoryArray
     
     /**
      * {@inheritDoc}
+     *
+     * @return the resulting value.
      */
     @Override
     public <T extends RealType<T> & NativeType<T>> RandomAccessibleInterval<T> getSharedRAI() {
@@ -832,6 +856,10 @@ public class SharedMemoryArrayMacOS implements SharedMemoryArray
 
     /**
      * {@inheritDoc}
+     *
+     * @param shape the shape parameter.
+     * @param dataType the dataType parameter.
+     * @return the resulting value.
      */
     @Override
     public <T extends RealType<T> & NativeType<T>> RandomAccessibleInterval<T> getSharedRAI(long[] shape, T dataType) {
@@ -840,6 +868,11 @@ public class SharedMemoryArrayMacOS implements SharedMemoryArray
 
     /**
      * {@inheritDoc}
+     *
+     * @param shape the shape parameter.
+     * @param dataType the dataType parameter.
+     * @param isFortran the isFortran parameter.
+     * @return the resulting value.
      */
     @Override
     public <T extends RealType<T> & NativeType<T>> RandomAccessibleInterval<T> getSharedRAI(long[] shape, T dataType, boolean isFortran) {
@@ -848,6 +881,8 @@ public class SharedMemoryArrayMacOS implements SharedMemoryArray
     
     /**
      * {@inheritDoc}
+     *
+     * @param buffer the buffer parameter.
      */
     @Override
     public void setBuffer(ByteBuffer buffer) {
@@ -867,6 +902,8 @@ public class SharedMemoryArrayMacOS implements SharedMemoryArray
     
     /**
      * {@inheritDoc}
+     *
+     * @return the resulting value.
      */
     @Override
     public ByteBuffer getDataBuffer() {
@@ -876,6 +913,8 @@ public class SharedMemoryArrayMacOS implements SharedMemoryArray
 	@Override
 	/**
 	 * {@inheritDoc}
+	 *
+	 * @return the resulting value.
 	 */
 	public ByteBuffer getDataBufferNoHeader() {
     	int offset = 0;

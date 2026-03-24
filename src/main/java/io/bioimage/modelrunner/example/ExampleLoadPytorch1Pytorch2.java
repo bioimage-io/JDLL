@@ -47,7 +47,7 @@ import net.imglib2.util.Util;
  * 
  * The models used for this example is:
  * <ul>
- * <li><a href="https://bioimage.io/#/?tags=10.5281%2Fzenodo.6406756&id=10.5281%2Fzenodo.6406756t">EnhancerMitochondriaEM2D (both Pt1 and 2)</a></li>
+ * <li><a href="https://bioimage.io/#/?tags=10.5281%2Fzenodo.6406756&amp;id=10.5281%2Fzenodo.6406756t">EnhancerMitochondriaEM2D (both Pt1 and 2)</a></li>
  * </ul>
  * 
  * It also requires the installation of a Pytorch 1 and a Pytorch 2 engine.

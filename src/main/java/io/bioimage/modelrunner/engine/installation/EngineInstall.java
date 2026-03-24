@@ -243,10 +243,20 @@ public class EngineInstall {
 		return manager;
 	}
 	
+	/**
+	 * Sets progres consumer.
+	 *
+	 * @param consumer the consumer parameter.
+	 */
 	public void setProgresConsumer(Consumer<Double> consumer) {
 		this.consumer = consumer;
 	}
 	
+	/**
+	 * Sets engine installed consumer.
+	 *
+	 * @param strConsumer the strConsumer parameter.
+	 */
 	public void setEngineInstalledConsumer(Consumer<String> strConsumer) {
 		this.strConsumer = strConsumer;
 	}
@@ -568,14 +578,12 @@ public class EngineInstall {
 	
 	/**
 	 * Install the engine that should be located in the engine dir specified
-	 * @param engineDir
-	 * 	directory where the specific engine shuold be installed. Regard that this 
-	 * 	is the whole path to the folder, and that the folder name should follow the 
-	 * 	dl-modelrunner naming convention (https://github.com/bioimage-io/model-runner-java#readme)
-	 * @return true if the installation was successful and false otherwise
-	 * @throws InterruptedException if the engine defined does not exist or any of the files is downloaded incorrectly
-	 * @throws IOException if the download is interrupted
-	 * @throws ExecutionException if there is any error in the download
+	 *
+	 * @param engineDir the engineDir parameter.
+	 * @return true if the operation succeeds; otherwise, false.
+	 * @throws IOException if an I/O error occurs.
+	 * @throws InterruptedException if the current thread is interrupted while waiting for the operation to finish.
+	 * @throws ExecutionException if a ExecutionException occurs while executing this method.
 	 */
 	public static boolean installEngineByCompleteName(String engineDir) throws IOException, InterruptedException, ExecutionException {
 		return installEngineByCompleteName(engineDir, null);

@@ -49,12 +49,20 @@ public class ScaleRangeTransformation extends AbstractTensorTransformation
 	private String tensorName;
 	private double eps = Math.pow(10, -6);
 	
+	/**
+	 * Creates a new ScaleRangeTransformation.
+	 */
 	public ScaleRangeTransformation()
 	{
 		super( name );
 		mode = Mode.PER_SAMPLE;
 	}
 	
+	/**
+	 * Sets eps.
+	 *
+	 * @param eps the eps parameter.
+	 */
 	public void setEps(Object eps) {
 		if (eps instanceof Integer) {
 			this.eps = Double.valueOf((int) eps);
@@ -69,6 +77,11 @@ public class ScaleRangeTransformation extends AbstractTensorTransformation
 		}
 	}
 	
+	/**
+	 * Sets min percentile.
+	 *
+	 * @param minPercentile the minPercentile parameter.
+	 */
 	public void setMinPercentile(Object minPercentile) {
 		if (minPercentile instanceof Integer) {
 			this.minPercentile = Double.valueOf((int) minPercentile) / 100;
@@ -83,6 +96,11 @@ public class ScaleRangeTransformation extends AbstractTensorTransformation
 		}
 	}
 	
+	/**
+	 * Sets max percentile.
+	 *
+	 * @param maxPercentile the maxPercentile parameter.
+	 */
 	public void setMaxPercentile(Object maxPercentile) {
 		if (maxPercentile instanceof Integer) {
 			this.maxPercentile = Double.valueOf((int) maxPercentile) / 100;
@@ -97,6 +115,11 @@ public class ScaleRangeTransformation extends AbstractTensorTransformation
 		}
 	}
 	
+	/**
+	 * Sets reference tensor.
+	 *
+	 * @param refTensor the refTensor parameter.
+	 */
 	@SuppressWarnings("unchecked")
 	public void setReferenceTensor(Object refTensor) {
 		// TODO
@@ -109,6 +132,11 @@ public class ScaleRangeTransformation extends AbstractTensorTransformation
 				+ "at https://github.com/bioimage-io/JDLL/issues referencing this model.");
 	}
 	
+	/**
+	 * Sets axes.
+	 *
+	 * @param axes the axes parameter.
+	 */
 	@SuppressWarnings("unchecked")
 	public void setAxes(Object axes) {
 		if (axes instanceof String && ((String) axes).equals("channel"))
@@ -136,6 +164,11 @@ public class ScaleRangeTransformation extends AbstractTensorTransformation
 					 + ", of a String array or of a List of Strings. The provided argument is " + axes.getClass());
 	}
 	
+	/**
+	 * Sets axis.
+	 *
+	 * @param axes the axes parameter.
+	 */
 	@SuppressWarnings("unchecked")
 	public void setAxis(Object axes) {
 		if (axes instanceof String && ((String) axes).equals("channel"))
@@ -163,6 +196,11 @@ public class ScaleRangeTransformation extends AbstractTensorTransformation
 					 + ", of a String array or of a List of Strings. The provided argument is " + axes.getClass());
 	}
 	
+	/**
+	 * Sets tensor name.
+	 *
+	 * @param tensorName the tensorName parameter.
+	 */
 	public void setTensorName(Object tensorName) {
 		if (tensorName instanceof String )
 			this.tensorName = (String) tensorName;
@@ -171,6 +209,12 @@ public class ScaleRangeTransformation extends AbstractTensorTransformation
 					 + ". The provided argument is " + tensorName.getClass());
 	}
 
+	/**
+	 * Executes apply.
+	 *
+	 * @param input the input parameter.
+	 * @return the resulting value.
+	 */
 	@Override
 	public < R extends RealType< R > & NativeType< R > > Tensor< FloatType > apply( final Tensor< R > input )
 	{
@@ -179,6 +223,11 @@ public class ScaleRangeTransformation extends AbstractTensorTransformation
 		return output;
 	}
 
+	/**
+	 * Executes apply in place.
+	 *
+	 * @param input the input parameter.
+	 */
 	@Override
 	public < R extends RealType< R > & NativeType< R > > void applyInPlace(Tensor<R> input) {
 		String selectedAxes = "";
@@ -268,11 +317,19 @@ public class ScaleRangeTransformation extends AbstractTensorTransformation
 		return allPoints;
 	}
 	
+	/**
+	 * Executes main.
+	 *
+	 * @param args the args parameter.
+	 */
 	public static void main(String[] args) {
 		test1();
 		test2();
 	}
 	
+	/**
+	 * Executes test1.
+	 */
 	public static void test1() {
 		float[] arr = new float[9];
 		for (int i = 0; i < arr.length; i ++) {
@@ -285,6 +342,9 @@ public class ScaleRangeTransformation extends AbstractTensorTransformation
 		 System.out.print(true);
 	}
 	
+	/**
+	 * Executes test2.
+	 */
 	public static void test2() {
 		float[] arr = new float[18];
 		for (int i = 0; i < arr.length; i ++) {

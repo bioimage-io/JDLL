@@ -40,6 +40,9 @@ public class FooterPanel extends JPanel {
     
     private static final Dimension MIN_D = new Dimension(20, 10);
 
+    /**
+     * Creates a new FooterPanel.
+     */
     protected FooterPanel() {
         setLayout(null);
         
@@ -59,6 +62,11 @@ public class FooterPanel extends JPanel {
     
     private void organiseComponents() {
     	addComponentListener(new ComponentAdapter() {
+            /**
+             * Executes component resized.
+             *
+             * @param e the e parameter.
+             */
             @Override
             public void componentResized(ComponentEvent e) {
                 int rawW = getWidth();
@@ -72,8 +80,16 @@ public class FooterPanel extends JPanel {
     }
     
     // For demonstration purposes: a main method to show the UI in a JFrame.
+    /**
+     * Executes main.
+     *
+     * @param args the args parameter.
+     */
     public static void main(String[] args) {
         SwingUtilities.invokeLater(new Runnable() {
+            /**
+             * Executes run.
+             */
             public void run() {
                 JFrame frame = new JFrame("Buttons pannel");
                 frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);

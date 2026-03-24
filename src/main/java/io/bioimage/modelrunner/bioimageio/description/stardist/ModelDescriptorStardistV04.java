@@ -57,6 +57,11 @@ public class ModelDescriptorStardistV04 extends ModelDescriptorV04
 	
 	private static final String STARDIST_TEST = "stardist_test";
 
+	/**
+	 * Creates a new ModelDescriptorStardistV04.
+	 *
+	 * @param yamlElements the yamlElements parameter.
+	 */
 	public ModelDescriptorStardistV04(Map<String, Object> yamlElements) {
 		super(yamlElements);
 		this.input_tensors = this.buildInputTensorsStardist();
@@ -66,16 +71,31 @@ public class ModelDescriptorStardistV04 extends ModelDescriptorV04
     	this.modifyTestOutputs();
 	}
 
+	/**
+	 * Executes are requirements installed.
+	 *
+	 * @return true if the operation succeeds; otherwise, false.
+	 */
 	@Override
 	public boolean areRequirementsInstalled() {
 		return StardistAbstract.isInstalled();
 	}
 
+	/**
+	 * Gets model family.
+	 *
+	 * @return the resulting string.
+	 */
 	@Override
 	public String getModelFamily() {
 		return ModelDescriptor.STARDIST;
 	}
 	
+	/**
+	 * Builds input tensors stardist.
+	 *
+	 * @return the resulting list.
+	 */
 	protected List<TensorSpec> buildInputTensorsStardist() {
 		List<Map<String, Object>> tensors = new ArrayList<Map<String, Object>>();
 		for (TensorSpec tt : this.input_tensors) {
@@ -94,6 +114,11 @@ public class ModelDescriptorStardistV04 extends ModelDescriptorV04
 		return super.buildInputTensors();
 	}
 	
+	/**
+	 * Builds output tensors stardist.
+	 *
+	 * @return the resulting list.
+	 */
 	protected List<TensorSpec> buildOutputTensorsStardist() {
 		List<Map<String, Object>> tensors = new ArrayList<Map<String, Object>>();
 		for (TensorSpec tt : this.output_tensors) {
@@ -112,6 +137,9 @@ public class ModelDescriptorStardistV04 extends ModelDescriptorV04
 		return super.buildOutputTensors();
 	}
     
+    /**
+     * Executes modify test inputs.
+     */
     protected <T extends RealType<T> & NativeType<T>> void modifyTestInputs() {
     	if (this.localModelPath == null)
     		return;
@@ -139,6 +167,9 @@ public class ModelDescriptorStardistV04 extends ModelDescriptorV04
     	}
     }
     
+    /**
+     * Executes modify test outputs.
+     */
     protected <T extends RealType<T> & NativeType<T>> void modifyTestOutputs() {
     	if (this.localModelPath == null)
     		return;

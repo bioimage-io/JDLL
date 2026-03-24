@@ -214,10 +214,26 @@ public abstract class StardistAbstract extends BaseModel {
 			+ "    s.unlink()" + System.lineSeparator()
 			+ "    del s" + System.lineSeparator();
 	
+	/**
+	 * Creates imports code.
+	 *
+	 * @return the resulting string.
+	 */
 	protected abstract String createImportsCode();
 	
+	/**
+	 * Checks input.
+	 *
+	 * @param image the image parameter.
+	 */
 	protected abstract <T extends RealType<T> & NativeType<T>>  void checkInput(RandomAccessibleInterval<T> image);
 	
+	/**
+	 * Executes reconstruct mask.
+	 *
+	 * @return the resulting value.
+	 * @throws IOException if an I/O error occurs.
+	 */
 	protected abstract <T extends RealType<T> & NativeType<T>> RandomAccessibleInterval<T> reconstructMask() throws IOException;
 
 	/**
@@ -232,6 +248,14 @@ public abstract class StardistAbstract extends BaseModel {
 	 */
 	public abstract boolean is3D();
 	
+	/**
+	 * Creates a new StardistAbstract.
+	 *
+	 * @param modelName the modelName parameter.
+	 * @param baseDir the baseDir parameter.
+	 * @param config the config parameter.
+	 * @throws IOException if an I/O error occurs.
+	 */
 	protected StardistAbstract(String modelName, String baseDir, Map<String, Object> config) throws IOException {
 		this.name = modelName;
 		this.basedir = baseDir;
@@ -247,6 +271,13 @@ public abstract class StardistAbstract extends BaseModel {
     	createPythonService();
 	}
 	
+	/**
+	 * Creates a new StardistAbstract.
+	 *
+	 * @param modelName the modelName parameter.
+	 * @param baseDir the baseDir parameter.
+	 * @throws IOException if an I/O error occurs.
+	 */
 	protected StardistAbstract(String modelName, String baseDir) throws IOException {
 		this.name = modelName;
 		this.basedir = baseDir;
@@ -263,6 +294,12 @@ public abstract class StardistAbstract extends BaseModel {
     	createPythonService();
 	}
 	
+	/**
+	 * Checks files present.
+	 *
+	 * @param modelDir the modelDir parameter.
+	 * @throws IOException if an I/O error occurs.
+	 */
 	public static void checkFilesPresent(String modelDir) throws IOException {
 		if (new File(modelDir, "config.json").isFile() == false && new File(modelDir, Constants.RDF_FNAME).isFile() == false)
 			throw new IllegalArgumentException("No 'config.json' file found in the model directory");
@@ -274,6 +311,12 @@ public abstract class StardistAbstract extends BaseModel {
 			createThresholdsFromBioimageio(null, modelDir);
 	}
 	
+	/**
+	 * Creates a new StardistAbstract.
+	 *
+	 * @param descriptor the descriptor parameter.
+	 * @throws IOException if an I/O error occurs.
+	 */
 	protected StardistAbstract(ModelDescriptor descriptor) throws IOException {
 		this.descriptor = descriptor;
 		this.name = new File(descriptor.getModelPath()).getName();
@@ -319,10 +362,20 @@ public abstract class StardistAbstract extends BaseModel {
 		python.debug(System.err::println);
 	}
 	
+	/**
+	 * Sets threshold.
+	 *
+	 * @param threshold the threshold parameter.
+	 */
 	public void setThreshold(Double threshold) {
 		this.threshold = threshold;
 	}
 	
+	/**
+	 * Creates encode image script.
+	 *
+	 * @return the resulting string.
+	 */
 	protected String createEncodeImageScript() {
 		String code = "";
 		// This line wants to recreate the original numpy array. Should look like:
@@ -356,10 +409,18 @@ public abstract class StardistAbstract extends BaseModel {
 		}
 	}
 	
+	/**
+	 * Gets nchannels.
+	 *
+	 * @return the resulting numeric value.
+	 */
 	public int getNChannels() {
 		return nChannels;
 	}
 	
+	/**
+	 * Executes close.
+	 */
 	@Override
 	public void close() {
 		if (!loaded)
@@ -417,6 +478,11 @@ public abstract class StardistAbstract extends BaseModel {
 		}
 	}
 	
+	/**
+	 * Loads model.
+	 *
+	 * @throws LoadModelException if a LoadModelException occurs while executing this method.
+	 */
 	@Override
 	public void loadModel() throws LoadModelException {
 		if (closed)
@@ -628,6 +694,13 @@ public abstract class StardistAbstract extends BaseModel {
 		return coordsCopy;
 	}
 	
+	/**
+	 * Executes init.
+	 *
+	 * @param modelDir the modelDir parameter.
+	 * @return the resulting value.
+	 * @throws IOException if an I/O error occurs.
+	 */
 	public static StardistAbstract init(String modelDir) throws IOException {
 		File modelDirFile = new File(modelDir);
 		String modelName = modelDirFile.getName();
@@ -641,6 +714,14 @@ public abstract class StardistAbstract extends BaseModel {
 			return new Stardist2D(modelName, baseDir, configMap);
 	}
 	
+	/**
+	 * Executes init.
+	 *
+	 * @param modelName the modelName parameter.
+	 * @param baseDir the baseDir parameter.
+	 * @return the resulting value.
+	 * @throws IOException if an I/O error occurs.
+	 */
 	public static StardistAbstract init(String modelName, String baseDir) throws IOException {
 		String modelDir = new File(baseDir, modelName).getAbsolutePath();
 		checkFilesPresent(modelDir);
@@ -652,6 +733,13 @@ public abstract class StardistAbstract extends BaseModel {
 			return new Stardist2D(modelName, baseDir, configMap);
 	}
 	
+	/**
+	 * Executes from bioimageio model.
+	 *
+	 * @param descriptor the descriptor parameter.
+	 * @return the resulting value.
+	 * @throws IOException if an I/O error occurs.
+	 */
 	public static StardistAbstract fromBioimageioModel(ModelDescriptor descriptor) throws IOException {
 		if (!descriptor.getConfig().getSpecMap().keySet().contains("stardist"))
 			throw new IllegalArgumentException("This Bioimage.io model does not correspond to a StarDist model.");

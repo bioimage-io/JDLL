@@ -33,6 +33,11 @@ public class ModelArchitecture {
 	
 	private LinkedHashMap<String, Object> kwargs;
 	
+	/**
+	 * Creates a new ModelArchitecture.
+	 *
+	 * @param map the map parameter.
+	 */
 	protected ModelArchitecture(Map<String, Object> map) {
 		kwargs = new LinkedHashMap<String, Object>();
 		if (map.get("callable") != null && map.get("callable") instanceof String)
@@ -47,18 +52,38 @@ public class ModelArchitecture {
 		}
 	}
 	
+	/**
+	 * Gets callable.
+	 *
+	 * @return the resulting string.
+	 */
 	public String getCallable() {
 		return callable;
 	}
 	
+	/**
+	 * Gets import module.
+	 *
+	 * @return the resulting string.
+	 */
 	public String getImportModule() {
 		return importModule;
 	}
 	
+	/**
+	 * Gets source.
+	 *
+	 * @return the resulting string.
+	 */
 	public String getSource() {
 		return source;
 	}
 	
+	/**
+	 * Gets kwargs.
+	 *
+	 * @return the resulting value.
+	 */
 	public Map<String, Object> getKwargs() {
 		return kwargs;
 	}

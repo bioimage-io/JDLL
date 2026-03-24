@@ -33,12 +33,20 @@ public class BinarizeTransformation extends AbstractTensorPixelTransformation
 	private Double eps = Math.pow(10, -6);
 	
 
+	/**
+	 * Creates a new BinarizeTransformation.
+	 */
 	public BinarizeTransformation()
 	{
 		super( name );
 		super.setDoubleUnitaryOperator(v -> ( v >= threshold ) ? 1d : 0d);
 	}
 	
+	/**
+	 * Sets eps.
+	 *
+	 * @param eps the eps parameter.
+	 */
 	public void setEps(Object eps) {
 		if (eps instanceof Integer) {
 			this.eps = Double.valueOf((int) eps);
@@ -53,6 +61,11 @@ public class BinarizeTransformation extends AbstractTensorPixelTransformation
 		}
 	}
 	
+	/**
+	 * Sets threshold.
+	 *
+	 * @param threshold the threshold parameter.
+	 */
 	public void setThreshold(Object threshold) {
 		if (threshold instanceof Integer) {
 			this.threshold = Double.valueOf((int) threshold);
@@ -67,18 +80,32 @@ public class BinarizeTransformation extends AbstractTensorPixelTransformation
 		}
 	}
 	
+	/**
+	 * Checks required args.
+	 */
 	public void checkRequiredArgs() {
 		if (threshold == null) {
 			throw new IllegalArgumentException(String.format(DEFAULT_MISSING_ARG_ERR, name, "threshold"));
 		}
 	}
 
+	/**
+	 * Executes apply.
+	 *
+	 * @param input the input parameter.
+	 * @return the resulting value.
+	 */
 	public < R extends RealType< R > & NativeType< R > > Tensor< FloatType > apply( final Tensor< R > input )
 	{
 		checkRequiredArgs();
 		return super.apply(input);
 	}
 
+	/**
+	 * Executes apply in place.
+	 *
+	 * @param input the input parameter.
+	 */
 	public < R extends RealType< R > & NativeType< R > >  void applyInPlace( final Tensor< R > input )
 	{
 		checkRequiredArgs();

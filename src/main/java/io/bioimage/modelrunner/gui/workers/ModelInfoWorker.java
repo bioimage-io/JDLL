@@ -30,11 +30,23 @@ public class ModelInfoWorker extends SwingWorker<String, Void> {
     private ModelDescriptor model;
     private TextLoadCallback callback;
 
+    /**
+     * Creates a new ModelInfoWorker.
+     *
+     * @param model the model parameter.
+     * @param callback the callback parameter.
+     */
     public ModelInfoWorker(ModelDescriptor model, TextLoadCallback callback) {
         this.model = model;
         this.callback = callback;
     }
 
+    /**
+     * Executes do in background.
+     *
+     * @return the resulting string.
+     * @throws Exception if the operation fails.
+     */
     @Override
     protected String doInBackground() throws Exception {
         // Perform the time-consuming task of generating the info text
@@ -47,6 +59,9 @@ public class ModelInfoWorker extends SwingWorker<String, Void> {
         }
     }
 
+    /**
+     * Executes done.
+     */
     @Override
     protected void done() {
         try {

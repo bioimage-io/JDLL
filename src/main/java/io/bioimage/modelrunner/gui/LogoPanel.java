@@ -44,6 +44,11 @@ public class LogoPanel extends JPanel{
     	setOpaque(false); 
     }
     
+    /**
+     * Executes paint component.
+     *
+     * @param g the g parameter.
+     */
     @Override
     protected void paintComponent(Graphics g) {
         super.paintComponent(g);
@@ -55,6 +60,12 @@ public class LogoPanel extends JPanel{
         }
     }
     
+    /**
+     * Sets image.
+     *
+     * @param image the image parameter.
+     * @param defaultIm the defaultIm parameter.
+     */
     public void setImage(BufferedImage image, boolean defaultIm) {
     	if (!this.isDefault.get() && defaultIm)
     		return;
@@ -65,11 +76,21 @@ public class LogoPanel extends JPanel{
         repaint();
     }
     
+    /**
+     * Gets image.
+     *
+     * @return the resulting value.
+     */
     public BufferedImage getImage() {
     	return this.image;
     }
 
     // listener registration
+    /**
+     * Executes add property change listener.
+     *
+     * @param l the l parameter.
+     */
     public void addPropertyChangeListener(PropertyChangeListener l) {
     	if (pcs != null) {
             pcs.addPropertyChangeListener(l);
@@ -78,6 +99,11 @@ public class LogoPanel extends JPanel{
         }
     }
     
+    /**
+     * Executes remove property change listener.
+     *
+     * @param l the l parameter.
+     */
     public void removePropertyChangeListener(PropertyChangeListener l) {
         pcs.removePropertyChangeListener(l);
     }

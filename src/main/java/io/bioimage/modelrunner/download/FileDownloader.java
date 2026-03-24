@@ -385,13 +385,30 @@ public class FileDownloader {
 	private static SSLContext getAllTrustingSSLContext() throws NoSuchAlgorithmException, KeyManagementException {
 		TrustManager[] trustAllCerts = new TrustManager[] {
 				new X509TrustManager() {
+					/**
+					 * Gets accepted issuers.
+					 *
+					 * @return the resulting array.
+					 */
 					public java.security.cert.X509Certificate[] getAcceptedIssuers() {
 						return new X509Certificate[0];
 					}
 
+					/**
+					 * Checks client trusted.
+					 *
+					 * @param certs the certs parameter.
+					 * @param authType the authType parameter.
+					 */
 					public void checkClientTrusted(X509Certificate[] certs, String authType) {
 					}
 
+					/**
+					 * Checks server trusted.
+					 *
+					 * @param certs the certs parameter.
+					 * @param authType the authType parameter.
+					 */
 					public void checkServerTrusted(X509Certificate[] certs, String authType) {
 					}
 				}

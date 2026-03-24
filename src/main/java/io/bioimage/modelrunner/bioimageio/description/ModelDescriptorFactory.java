@@ -58,12 +58,11 @@ public class ModelDescriptorFactory {
     
     /**
      * Opens the provided file and builds an instance of {@link ModelDescriptor} from it.
-     * 
-     * @param modelFile
-     * 	Model descriptor file.
-     * @return The instance of the model descriptor.
-     * @throws IOException if any of the required files is incorrect or corrupted
-     * @throws FileNotFoundException if any of the required files is missing
+     *
+     * @param modelFile the modelFile parameter.
+     * @return the resulting value.
+     * @throws FileNotFoundException if a FileNotFoundException occurs while executing this method.
+     * @throws IOException if an I/O error occurs.
      */
     public static ModelDescriptor readFromLocalFile(String modelFile) throws FileNotFoundException, IOException
     {
@@ -76,15 +75,12 @@ public class ModelDescriptorFactory {
     
     /**
      * Opens the provided file and builds an instance of {@link ModelDescriptor} from it.
-     * 
-     * @param modelFile
-     * 	Model descriptor file.
-     * @param specialModel
-     * 	whether to read bioimage.io models that can be special models (stardist) as the standard
-     * 	bioimage.io Java model or as special models with their custom specs
-     * @return The instance of the model descriptor.
-     * @throws IOException if any of the required files is incorrect or corrupted
-     * @throws FileNotFoundException if any of the required files is missing
+     *
+     * @param modelFile the modelFile parameter.
+     * @param specialModel the specialModel parameter.
+     * @return the resulting value.
+     * @throws FileNotFoundException if a FileNotFoundException occurs while executing this method.
+     * @throws IOException if an I/O error occurs.
      */
     public static ModelDescriptor readFromLocalFile(String modelFile, boolean specialModel) throws FileNotFoundException, IOException
     {

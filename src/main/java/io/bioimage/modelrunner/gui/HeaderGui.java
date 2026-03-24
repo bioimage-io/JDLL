@@ -41,6 +41,15 @@ public class HeaderGui extends JPanel {
     protected final JProgressBar bar;
     protected final URL logoURL;
     
+    /**
+     * Creates a new HeaderGui.
+     *
+     * @param title the title parameter.
+     * @param subtitle the subtitle parameter.
+     * @param bar the bar parameter.
+     * @param barSubtitle the barSubtitle parameter.
+     * @param logoURL the logoURL parameter.
+     */
     protected HeaderGui(JLabel title, JLabel subtitle, JProgressBar bar, JLabel barSubtitle, URL logoURL) {
     	super(null);
     	this.bar = bar;
@@ -79,6 +88,11 @@ public class HeaderGui extends JPanel {
 
         // 5) On resize, reposition everything
         addComponentListener(new ComponentAdapter() {
+            /**
+             * Executes component resized.
+             *
+             * @param e the e parameter.
+             */
             @Override
             public void componentResized(ComponentEvent e) {
                 Insets in = getInsets();

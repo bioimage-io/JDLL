@@ -94,6 +94,9 @@ public class SharedMemory {
 			throw new UnsupportedOperationException("Unimplemented");
 		}
 
+		/**
+		 * Executes release.
+		 */
 		public void release() {
 			throw new UnsupportedOperationException("Unimplemented");
 		}
@@ -154,6 +157,13 @@ public class SharedMemory {
 	private int mode = 0600;
 	private boolean prepend_leading_slash = USE_POSIX;
 
+	/**
+	 * Creates a new SharedMemory.
+	 *
+	 * @param name the name parameter.
+	 * @param create the create parameter.
+	 * @param size the size parameter.
+	 */
 	public SharedMemory(String name, boolean create, long size) {
 		// NB: Would be great to use LArray for this instead. But it
 		// doesn't support an equivalent of Python's shared_memory:

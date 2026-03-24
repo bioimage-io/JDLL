@@ -60,12 +60,20 @@ public class FixedZeroMeanUnitVarianceTransformation extends AbstractTensorTrans
 	private static String NOT_FIXED_MODE_ERR = "Only the mode 'fixed' requires providing the "
 			+ "'std' and 'mean parameters.";
 
+	/**
+	 * Creates a new FixedZeroMeanUnitVarianceTransformation.
+	 */
 	public FixedZeroMeanUnitVarianceTransformation()
 	{
 		super( name );
 		mode = Mode.FIXED;
 	}
 	
+	/**
+	 * Sets eps.
+	 *
+	 * @param eps the eps parameter.
+	 */
 	public void setEps(Object eps) {
 		if (eps instanceof Integer) {
 			this.eps = Double.valueOf((int) eps);
@@ -80,6 +88,11 @@ public class FixedZeroMeanUnitVarianceTransformation extends AbstractTensorTrans
 		}
 	}
 	
+	/**
+	 * Sets mean.
+	 *
+	 * @param mean the mean parameter.
+	 */
 	public void setMean(Object mean) {
 		if (mean instanceof Integer) {
 			this.meanDouble = Double.valueOf((int) mean);
@@ -112,6 +125,11 @@ public class FixedZeroMeanUnitVarianceTransformation extends AbstractTensorTrans
 		}
 	}
 	
+	/**
+	 * Sets std.
+	 *
+	 * @param std the std parameter.
+	 */
 	public void setStd(Object std) {
 		if (std instanceof Integer) {
 			this.stdDouble = Double.valueOf((int) std);
@@ -143,6 +161,11 @@ public class FixedZeroMeanUnitVarianceTransformation extends AbstractTensorTrans
 		}
 	}
 	
+	/**
+	 * Sets axes.
+	 *
+	 * @param axes the axes parameter.
+	 */
 	@SuppressWarnings("unchecked")
 	public void setAxes(Object axes) {
 		if (axes instanceof String && ((String) axes).equals("channel"))
@@ -170,6 +193,11 @@ public class FixedZeroMeanUnitVarianceTransformation extends AbstractTensorTrans
 					 + ", of a String array or of a List of Strings. The provided argument is " + axes.getClass());
 	}
 	
+	/**
+	 * Sets axis.
+	 *
+	 * @param axes the axes parameter.
+	 */
 	@SuppressWarnings("unchecked")
 	public void setAxis(Object axes) {
 		if (axes instanceof String && ((String) axes).equals("channel"))
@@ -197,6 +225,9 @@ public class FixedZeroMeanUnitVarianceTransformation extends AbstractTensorTrans
 					 + ", of a String array or of a List of Strings. The provided argument is " + axes.getClass());
 	}
 	
+	/**
+	 * Checks required args.
+	 */
 	public void checkRequiredArgs() {
 		if (this.mode == Mode.FIXED && this.meanArr == null && this.meanDouble == null) {
 			throw new IllegalArgumentException(String.format(DEFAULT_MISSING_ARG_ERR, name, "mean")
@@ -216,6 +247,12 @@ public class FixedZeroMeanUnitVarianceTransformation extends AbstractTensorTrans
 		}
 	}
 
+	/**
+	 * Executes apply.
+	 *
+	 * @param input the input parameter.
+	 * @return the resulting value.
+	 */
 	@Override
 	public < R extends RealType< R > & NativeType< R > > Tensor< FloatType > apply( final Tensor< R > input )
 	{
@@ -225,6 +262,11 @@ public class FixedZeroMeanUnitVarianceTransformation extends AbstractTensorTrans
 		return output;
 	}
 
+	/**
+	 * Executes apply in place.
+	 *
+	 * @param input the input parameter.
+	 */
 	@Override
 	public < R extends RealType< R > & NativeType< R > > void applyInPlace( final Tensor< R > input )
 	{
@@ -337,6 +379,12 @@ public class FixedZeroMeanUnitVarianceTransformation extends AbstractTensorTrans
 		zeroMeanUnitVariance(output.getData(), mean, std);
 	}
 
+	/**
+	 * Executes mean std.
+	 *
+	 * @param rai the rai parameter.
+	 * @return the resulting array.
+	 */
 	public static < R extends RealType< R > & NativeType< R > > float[] meanStd( final RandomAccessibleInterval< R > rai )
 	{
 		// Mean.
@@ -383,12 +431,20 @@ public class FixedZeroMeanUnitVarianceTransformation extends AbstractTensorTrans
 		return allPoints;
 	}
 	
+	/**
+	 * Executes main.
+	 *
+	 * @param args the args parameter.
+	 */
 	public static void main(String[] args) {
 		//test1();
 		test2();
 		test3();
 	}
 	
+	/**
+	 * Executes test1.
+	 */
 	public static void test1() {
 		float[] arr = new float[9];
 		for (int i = 0; i < arr.length; i ++) {
@@ -404,6 +460,9 @@ public class FixedZeroMeanUnitVarianceTransformation extends AbstractTensorTrans
 		System.out.print(true);
 	}
 	
+	/**
+	 * Executes test2.
+	 */
 	public static void test2() {
 		float[] arr = new float[18];
 		for (int i = 0; i < arr.length; i ++) {
@@ -418,6 +477,9 @@ public class FixedZeroMeanUnitVarianceTransformation extends AbstractTensorTrans
 		System.out.print(true);
 	}
 	
+	/**
+	 * Executes test3.
+	 */
 	public static void test3() {
 		float[] arr = new float[9];
 		for (int i = 0; i < arr.length; i ++) {

@@ -143,6 +143,11 @@ public class Author
 		this.orcid = orcid;
 	}
 	
+	/**
+	 * Executes to string.
+	 *
+	 * @return the resulting string.
+	 */
 	@Override
     public String toString()
     {

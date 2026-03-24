@@ -64,10 +64,18 @@ public class ContentPanel extends JPanel {
 	
 	private static final long serialVersionUID = -7691139174208436363L;
 
+	/**
+	 * Creates a new ContentPanel.
+	 */
 	protected ContentPanel() {
 		this(null);
 	}
 
+	/**
+	 * Creates a new ContentPanel.
+	 *
+	 * @param adapter the adapter parameter.
+	 */
 	protected ContentPanel(GuiAdapter adapter) {
 		super(null);
 		
@@ -98,6 +106,11 @@ public class ContentPanel extends JPanel {
         modelInfoArea = new JEditorPane("text/html", "Detailed model description...");
         modelInfoArea.setEditable(false);
         modelInfoArea.addHyperlinkListener(new HyperlinkListener() {
+            /**
+             * Executes hyperlink update.
+             *
+             * @param e the e parameter.
+             */
             public void hyperlinkUpdate(HyperlinkEvent e) {
                 if (e.getEventType() == HyperlinkEvent.EventType.ACTIVATED) {
                     try {
@@ -125,6 +138,11 @@ public class ContentPanel extends JPanel {
     
     private void organiseComponents() {
     	addComponentListener(new ComponentAdapter() {
+            /**
+             * Executes component resized.
+             *
+             * @param e the e parameter.
+             */
             @Override
             public void componentResized(ComponentEvent e) {
                 int rawW = getWidth();
@@ -253,18 +271,38 @@ public class ContentPanel extends JPanel {
         });
     }
     
+    /**
+     * Checks whether unsupported.
+     *
+     * @return true if the operation succeeds; otherwise, false.
+     */
     protected boolean isUnsupported() {
     	return this.isUnsupported;
     }
     
+    /**
+     * Sets unsupported.
+     *
+     * @param isUnsupported the isUnsupported parameter.
+     */
     protected void setUnsupported(boolean isUnsupported) {
     	this.isUnsupported = isUnsupported;
     }
 	
+	/**
+	 * Sets icon.
+	 *
+	 * @param im the im parameter.
+	 */
 	protected void setIcon(BufferedImage im) {
 		this.exampleImageLabel.setImage(im, false);
 	}
 	
+	/**
+	 * Sets info.
+	 *
+	 * @param text the text parameter.
+	 */
 	protected void setInfo(String text) {
 		SwingUtilities.invokeLater(() -> {
 			this.modelInfoArea.setText(text);
@@ -288,6 +326,11 @@ public class ContentPanel extends JPanel {
 
 	}
 	
+	/**
+	 * Sets determinate porgress.
+	 *
+	 * @param progress the progress parameter.
+	 */
 	protected void setDeterminatePorgress(int progress) {
 		if (this.progressBar.isIndeterminate())
 			this.progressBar.setIndeterminate(false);
@@ -296,22 +339,47 @@ public class ContentPanel extends JPanel {
 		progressBar.setString(progress + "%");
 	}
 	
+	/**
+	 * Sets progress indeterminate.
+	 *
+	 * @param indeterminate the indeterminate parameter.
+	 */
 	protected void setProgressIndeterminate(boolean indeterminate) {
 		this.progressBar.setIndeterminate(indeterminate);
 	}
 	
+	/**
+	 * Sets progress bar text.
+	 *
+	 * @param text the text parameter.
+	 */
 	protected void setProgressBarText(String text) {
 		this.progressBar.setString(text);
 	}
 	
+	/**
+	 * Gets progress.
+	 *
+	 * @return the resulting numeric value.
+	 */
 	protected int getProgress() {
 		return this.progressBar.getValue();
 	}
 	
+	/**
+	 * Gets progress bar text.
+	 *
+	 * @return the resulting string.
+	 */
 	protected String getProgressBarText() {
 		return this.progressBar.getString();
 	}
 	
+	/**
+	 * Sets progress label text.
+	 *
+	 * @param text the text parameter.
+	 */
 	protected void setProgressLabelText(String text) {
 		text = text == null ? "" : text;
 		this.progressInfoLabel.setText(text);
@@ -319,9 +387,22 @@ public class ContentPanel extends JPanel {
 			this.progressInfoLabel.setVisible(true);
 	}
 
+	/**
+	 * Executes update.
+	 *
+	 * @param modelDescriptor the modelDescriptor parameter.
+	 * @param path the path parameter.
+	 * @param logoWidth the logoWidth parameter.
+	 * @param logoHeight the logoHeight parameter.
+	 */
 	protected void update(ModelDescriptor modelDescriptor, URL path, int logoWidth, int logoHeight) {
     	DefaultIcon.drawImOrLogo(path, defaultLogoURL, exampleImageLabel, ModelSelectionPanelGui.MAIN_CARD_ID);
     	TextLoadCallback callback = new TextLoadCallback() {
+    	    /**
+    	     * Executes on text loaded.
+    	     *
+    	     * @param infoText the infoText parameter.
+    	     */
     	    @Override
     	    public void onTextLoaded(String infoText) {
                 setInfo(infoText);
@@ -333,6 +414,11 @@ public class ContentPanel extends JPanel {
         worker.execute();
 	}
     
+    /**
+     * Executes main.
+     *
+     * @param args the args parameter.
+     */
     public static void main(String[] args) {
         SwingUtilities.invokeLater(() -> {
             // 1) Create the frame

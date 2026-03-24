@@ -124,6 +124,11 @@ public class Gui extends JPanel {
     		+ "Please, install manually or download models from the Bioimage.io.<br><br>"
     		+ "To download models from the Bioimage.io, click on the Bioimage.io button on the top right.";
 
+    /**
+     * Creates a new Gui.
+     *
+     * @param guiAdapter the guiAdapter parameter.
+     */
     public Gui(GuiAdapter guiAdapter) {
     	DefaultIcon.setIconPath(guiAdapter.getIconPath());
     	INSTALL_INSTRUCTIONS = String.format(INSTALL_INSTRUCTIONS_FORMAT, guiAdapter.getSoftwareName());
@@ -214,6 +219,11 @@ public class Gui extends JPanel {
         searchBar.switchButton.addActionListener(ee -> switchBtnClicked());
         searchBar.searchButton.addActionListener(ee -> searchModels());
         searchBar.searchField.addKeyListener(new KeyAdapter() {
+            /**
+             * Executes key pressed.
+             *
+             * @param e the e parameter.
+             */
             @Override
             public void keyPressed(KeyEvent e) {
                 if (e.getKeyCode() == KeyEvent.VK_ENTER)
@@ -510,6 +520,11 @@ public class Gui extends JPanel {
         button.setBorder(BorderFactory.createEmptyBorder(10, 20, 10, 20));
     }
     
+    /**
+     * Sets models.
+     *
+     * @param models the models parameter.
+     */
     public void setModels(List<ModelDescriptor> models) {
     	if (models.size() == 0)
     		models = createArrayOfNulls(1);
@@ -518,6 +533,11 @@ public class Gui extends JPanel {
     	setModelsInGui(models);
     }
     
+    /**
+     * Sets models in gui.
+     *
+     * @param models the models parameter.
+     */
     protected void setModelsInGui(List<ModelDescriptor> models) {
     	currentIndex = 0;
     	this.modelSelectionPanel.setModels(models);
@@ -541,6 +561,12 @@ public class Gui extends JPanel {
     	}
     }
     
+    /**
+     * Sets model in gui at.
+     *
+     * @param model the model parameter.
+     * @param pos the pos parameter.
+     */
     protected void setModelInGuiAt(ModelDescriptor model, int pos) {
     	this.modelSelectionPanel.setModelAt(model, pos);
     	synchronized (lock) {
@@ -560,6 +586,9 @@ public class Gui extends JPanel {
     	this.setModelsInGui(models);
     }
     
+    /**
+     * Executes switch btn clicked.
+     */
     protected void switchBtnClicked() {
     	closeModelWhenChanging();
     	if (this.searchBar.isBarOnLocal()) {
@@ -580,6 +609,9 @@ public class Gui extends JPanel {
     }
     
     
+    /**
+     * Executes clicked bmz.
+     */
     protected void clickedBMZ() {
     	ArrayList<ModelDescriptor> newModels = createArrayOfNulls(3);
     	this.searchBar.setBarEnabled(false);
@@ -656,6 +688,9 @@ public class Gui extends JPanel {
     	return newModels;
     }
     
+    /**
+     * Executes clicked local.
+     */
     protected void clickedLocal() {
     	modelSelectionPanel.setLoading();
     	ArrayList<ModelDescriptor> newModels = createArrayOfNulls(3);
@@ -826,6 +861,9 @@ public class Gui extends JPanel {
     	return true;
     }
     
+    /**
+     * Executes on close.
+     */
     public void onClose() {
     	DefaultIcon.closeThreads();
     	if (dwnlThread != null && this.dwnlThread.isAlive())
@@ -850,6 +888,11 @@ public class Gui extends JPanel {
     		this.runninThread.interrupt();
     }
     
+    /**
+     * Sets cancel callback.
+     *
+     * @param callback the callback parameter.
+     */
     public void setCancelCallback(Runnable callback) {
     	this.cancelCallback = callback;
     }

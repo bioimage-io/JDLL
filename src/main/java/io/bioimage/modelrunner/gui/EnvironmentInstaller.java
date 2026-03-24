@@ -112,12 +112,22 @@ public class EnvironmentInstaller extends JPanel {
 
         // Enable dragging of the window
         addMouseListener(new MouseAdapter() {
+            /**
+             * Executes mouse pressed.
+             *
+             * @param e the e parameter.
+             */
             public void mousePressed(MouseEvent e) {
                 initialClick = e.getPoint();
             }
         });
 
         addMouseMotionListener(new MouseMotionAdapter() {
+            /**
+             * Executes mouse dragged.
+             *
+             * @param e the e parameter.
+             */
             public void mouseDragged(MouseEvent e) {
                 // Get the new location of the window
                 int x = e.getXOnScreen() - initialClick.x;
@@ -127,15 +137,29 @@ public class EnvironmentInstaller extends JPanel {
         });
     }
     
+    /**
+     * Executes create.
+     *
+     * @param worker the worker parameter.
+     * @return the resulting value.
+     */
     public static EnvironmentInstaller create(InstallEnvWorker worker) {
         EnvironmentInstaller installer = new EnvironmentInstaller(worker);
         return installer;
     }
     
+    /**
+     * Gets consumer.
+     *
+     * @return the resulting value.
+     */
     public Consumer<String> getConsumer(){
     	return consumer;
     }
     
+    /**
+     * Executes cancel installation.
+     */
     public void cancelInstallation() {
         worker.stopBackground();
         // Close the installation window
@@ -145,6 +169,11 @@ public class EnvironmentInstaller extends JPanel {
         }
     }
 
+    /**
+     * Executes add to frame.
+     *
+     * @param parentFrame the parentFrame parameter.
+     */
     public void addToFrame(JDialog parentFrame) {
     	// Create the installer panel and show it in a floating window
         //frame.setTitle("Installing " + descriptor.getName());
@@ -156,6 +185,11 @@ public class EnvironmentInstaller extends JPanel {
 
         // Handle closing via the red X by adding a window listener to the JDialog
     	parentFrame.addWindowListener(new WindowAdapter() {
+            /**
+             * Executes window closing.
+             *
+             * @param e the e parameter.
+             */
             @Override
             public void windowClosing(WindowEvent e) {
                 cancelInstallation(); // Call cancelInstallation when window is closed
@@ -166,6 +200,12 @@ public class EnvironmentInstaller extends JPanel {
     }
 
 	// Method to append text with a specific color to the JEditorPane
+    /**
+     * Updates text.
+     *
+     * @param text the text parameter.
+     * @param color the color parameter.
+     */
     public void updateText(String text, Color color) {
     	text = text.trim();
     	if (text.equals("") || text.equals(null))

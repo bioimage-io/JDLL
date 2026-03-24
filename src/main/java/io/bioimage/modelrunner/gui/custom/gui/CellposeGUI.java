@@ -67,6 +67,9 @@ public class CellposeGUI extends JPanel {
     }
     private static final Dimension MIN_D = new Dimension(20, 40);
 
+    /**
+     * Creates a new CellposeGUI.
+     */
     protected CellposeGUI() {
         setLayout(null);
 
@@ -116,11 +119,26 @@ public class CellposeGUI extends JPanel {
 
         // Enable when custom selected
         modelComboBox.addPopupMenuListener(new PopupMenuListener() {
+            /**
+             * Executes popup menu will become visible.
+             *
+             * @param e the e parameter.
+             */
             @Override
             public void popupMenuWillBecomeVisible(PopupMenuEvent e) {}
+            /**
+             * Executes popup menu canceled.
+             *
+             * @param e the e parameter.
+             */
             @Override
             public void popupMenuCanceled(PopupMenuEvent e) {}
 
+            /**
+             * Executes popup menu will become invisible.
+             *
+             * @param e the e parameter.
+             */
             @Override
             public void popupMenuWillBecomeInvisible(PopupMenuEvent e) {
             	boolean enabled = modelComboBox.getSelectedItem().equals(CUSTOM_STR);
@@ -135,6 +153,11 @@ public class CellposeGUI extends JPanel {
     
     private void organiseComponents() {
     	addComponentListener(new ComponentAdapter() {
+            /**
+             * Executes component resized.
+             *
+             * @param e the e parameter.
+             */
             @Override
             public void componentResized(ComponentEvent e) {
                 int rawW = getWidth();
@@ -173,8 +196,16 @@ public class CellposeGUI extends JPanel {
     }
     
     // For demonstration purposes: a main method to show the UI in a JFrame.
+    /**
+     * Executes main.
+     *
+     * @param args the args parameter.
+     */
     public static void main(String[] args) {
         SwingUtilities.invokeLater(new Runnable() {
+            /**
+             * Executes run.
+             */
             public void run() {
                 JFrame frame = new JFrame("Cellpose Plugin");
                 frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);

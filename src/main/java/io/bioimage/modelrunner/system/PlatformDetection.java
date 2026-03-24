@@ -134,12 +134,22 @@ public class PlatformDetection
         return ARCH;
     }
     
+    /**
+     * Checks whether using rosseta.
+     *
+     * @return true if the operation succeeds; otherwise, false.
+     */
     public static boolean isUsingRosseta() {
     	if (ARCH == null)
     		getArch();
     	return ROSETTA;
     }
 
+    /**
+     * Executes to string.
+     *
+     * @return the resulting string.
+     */
     @Override
     public String toString()
     {
@@ -150,14 +160,29 @@ public class PlatformDetection
         return OS + "-" + ARCH;
     }
     
+    /**
+     * Checks whether windows.
+     *
+     * @return true if the operation succeeds; otherwise, false.
+     */
     public static boolean isWindows() {
     	return getOs().equals(PlatformDetection.OS_WINDOWS);
     }
     
+    /**
+     * Checks whether linux.
+     *
+     * @return true if the operation succeeds; otherwise, false.
+     */
     public static boolean isLinux() {
     	return getOs().equals(PlatformDetection.OS_LINUX);
     }
     
+    /**
+     * Checks whether mac os.
+     *
+     * @return true if the operation succeeds; otherwise, false.
+     */
     public static boolean isMacOS() {
     	return getOs().equals(PlatformDetection.OS_OSX);
     }
@@ -189,6 +214,11 @@ public class PlatformDetection
 	    return text;
 	}
 	
+	/**
+	 * Gets osversion.
+	 *
+	 * @return the resulting value.
+	 */
 	public static Version getOSVersion() {
 		return Version.parse(System.getProperty("os.version"));
 	}
@@ -211,6 +241,11 @@ public class PlatformDetection
 	    return JAVA_VERSION;
 	}
 	
+	/**
+	 * Executes main.
+	 *
+	 * @param args the args parameter.
+	 */
 	public static void main(String[] args) {
 		System.out.println(System.getProperty("os.version"));
 	}

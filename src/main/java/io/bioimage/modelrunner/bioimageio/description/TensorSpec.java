@@ -32,33 +32,108 @@ public interface TensorSpec {
 	
 
     
+    /**
+     * Gets name.
+     *
+     * @return the resulting string.
+     */
     public String getName();
 
+    /**
+     * Gets description.
+     *
+     * @return the resulting string.
+     */
     public String getDescription();
     
+    /**
+     * Gets preprocessing.
+     *
+     * @return the resulting list.
+     */
     public List<TransformSpec> getPreprocessing();
     
+    /**
+     * Gets postprocessing.
+     *
+     * @return the resulting list.
+     */
     public List<TransformSpec> getPostprocessing();
     
+    /**
+     * Gets axes order.
+     *
+     * @return the resulting string.
+     */
     public String getAxesOrder();
     
+    /**
+     * Gets sample tensor name.
+     *
+     * @return the resulting string.
+     */
     public String getSampleTensorName();
     
+    /**
+     * Gets test tensor name.
+     *
+     * @return the resulting string.
+     */
     public String getTestTensorName();
     
+    /**
+     * Gets min tile size arr.
+     *
+     * @return the resulting array.
+     */
     public int[] getMinTileSizeArr();
     
+    /**
+     * Gets tile step arr.
+     *
+     * @return the resulting array.
+     */
     public int[] getTileStepArr();
     
+    /**
+     * Gets halo arr.
+     *
+     * @return the resulting array.
+     */
     public int[] getHaloArr();
     
+    /**
+     * Gets tile scale arr.
+     *
+     * @return the resulting array.
+     */
     public double[] getTileScaleArr();
     
+    /**
+     * Gets axes info.
+     *
+     * @return the resulting value.
+     */
     public Axes getAxesInfo();
     
+    /**
+     * Gets data type.
+     *
+     * @return the resulting string.
+     */
     public String getDataType();
     
+    /**
+     * Checks whether image.
+     *
+     * @return true if the operation succeeds; otherwise, false.
+     */
     public boolean isImage();
     
+    /**
+     * Gets pixel size unit.
+     *
+     * @return the resulting string.
+     */
     public String getPixelSizeUnit();
 }

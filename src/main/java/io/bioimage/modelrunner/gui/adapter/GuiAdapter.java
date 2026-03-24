@@ -110,24 +110,18 @@ public interface GuiAdapter {
 	/**
 	 * This method should contain the code to convert a {@link RandomAccessibleInterval} into the consumer software
 	 * image object and display it
-	 * @param <T>
-	 * 	data type of the image
-	 * @param rai
-	 * 	the image to be displayed
-	 * @param axesOrder
-	 * 	the axes order of the {@link RandomAccessibleInterval}
-	 * @param imTitle
-	 * 	the title of the image
+	 *
+	 * @param rai the rai parameter.
+	 * @param axesOrder the axesOrder parameter.
+	 * @param imTitle the imTitle parameter.
 	 */
 	public <T extends RealType<T> & NativeType<T>> void displayRai(RandomAccessibleInterval<T> rai, String axesOrder, String imTitle);
 
 	/**
 	 * Get the input tensors as described in the {@link ModelDescriptor}
-	 * @param <T>
-	 * 	the ImgLib2 data type of the {@link Tensor}
-	 * @param descriptor
-	 * 	the {@link ModelDescriptor} containing the Bioimage.io specs of the model
-	 * @return the tensors as they are required by the model
+	 *
+	 * @param descriptor the descriptor parameter.
+	 * @return the resulting list.
 	 */
 	public <T extends RealType<T> & NativeType<T>> List<Tensor<T>> getInputTensors(ModelDescriptor descriptor);
 
@@ -140,14 +134,10 @@ public interface GuiAdapter {
 	
 	/**
 	 * Convert a map containing the consumer software image objects into the tensors required for a model
-	 * @param <T>
-	 * 	the ImgLib2 data type of the tensors
-	 * @param inputs
-	 * 	a map containing the name of the tensors with its corresponding consumer software image object that needs to
-	 * 	be converted into a tensor
-	 * @param descriptor
-	 * 	the {@link ModelDescriptor} that contains Bioiamgeio.io information about the model
-	 * @return the tensors required by the model
+	 *
+	 * @param inputs the inputs parameter.
+	 * @param descriptor the descriptor parameter.
+	 * @return the resulting list.
 	 */
 	public <T extends RealType<T> & NativeType<T>> List<Tensor<T>> convertToInputTensors(Map<String, Object> inputs, ModelDescriptor descriptor);
 

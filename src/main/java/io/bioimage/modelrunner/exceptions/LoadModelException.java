@@ -39,24 +39,43 @@ public class LoadModelException extends Exception
 	 */
 	private static String defaultMsg = "Error loading a Deep Learning model.";
 
+	/**
+	 * Creates a new LoadModelException.
+	 *
+	 * @param ex the ex parameter.
+	 */
 	public LoadModelException( String ex )
 	{
 		super( defaultMsg + System.lineSeparator() + ex );
 		this.ex = defaultMsg + System.lineSeparator() + ex;
 	}
 
+	/**
+	 * Creates a new LoadModelException.
+	 *
+	 * @param msg the msg parameter.
+	 * @param ex the ex parameter.
+	 */
 	public LoadModelException( String msg, String ex )
 	{
 		super( msg + System.lineSeparator() + ex );
 		this.ex = msg + System.lineSeparator() + ex;
 	}
 	
+	/**
+	 * Creates a new LoadModelException.
+	 */
 	public LoadModelException()
 	{
 		super( defaultMsg );
 		this.ex = defaultMsg;
 	}
 
+	/**
+	 * Executes to string.
+	 *
+	 * @return the resulting string.
+	 */
 	public String toString()
 	{
 		return this.ex;

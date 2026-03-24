@@ -80,6 +80,8 @@ public class GenericOp implements OpInterface {
 	@Override
 	/**
 	 * {@inheritDoc}
+	 *
+	 * @return the resulting string.
 	 */
 	public String getOpPythonFilename() {
 		return new File(this.opFilePath).getName();
@@ -88,6 +90,8 @@ public class GenericOp implements OpInterface {
 	@Override
 	/**
 	 * {@inheritDoc}
+	 *
+	 * @return the resulting numeric value.
 	 */
 	public int getNumberOfOutputs() {
 		return nOutputs;
@@ -104,6 +108,8 @@ public class GenericOp implements OpInterface {
 	@Override
 	/**
 	 * {@inheritDoc}
+	 *
+	 * @return the resulting value.
 	 */
 	public LinkedHashMap<String, Object> getOpInputs() {
 		return this.inputsMap;
@@ -112,6 +118,8 @@ public class GenericOp implements OpInterface {
 	@Override
 	/**
 	 * {@inheritDoc}
+	 *
+	 * @return the resulting string.
 	 */
 	public String getCondaEnv() {
 		return envPath;
@@ -120,6 +128,8 @@ public class GenericOp implements OpInterface {
 	@Override
 	/**
 	 * {@inheritDoc}
+	 *
+	 * @return the resulting string.
 	 */
 	public String getMethodName() {
 		return this.methodName;
@@ -128,6 +138,8 @@ public class GenericOp implements OpInterface {
 	@Override
 	/**
 	 * {@inheritDoc}
+	 *
+	 * @return the resulting string.
 	 */
 	public String getOpDir() {
 		return new File(opFilePath).getParent();
@@ -136,6 +148,8 @@ public class GenericOp implements OpInterface {
 	@Override
 	/**
 	 * {@inheritDoc}
+	 *
+	 * @return true if the operation succeeds; otherwise, false.
 	 */
 	public boolean isOpInstalled() {
 		// TODO maybe remove this method? Make the check at installOp?

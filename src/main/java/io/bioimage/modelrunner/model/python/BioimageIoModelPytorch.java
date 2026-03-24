@@ -58,6 +58,17 @@ import net.imglib2.util.Cast;
  */
 public class BioimageIoModelPytorch extends BioimageIoModelPytorchProtected {
 	
+	/**
+	 * Creates a new BioimageIoModelPytorch.
+	 *
+	 * @param modelFile the modelFile parameter.
+	 * @param callable the callable parameter.
+	 * @param importModule the importModule parameter.
+	 * @param weightsPath the weightsPath parameter.
+	 * @param kwargs the kwargs parameter.
+	 * @param descriptor the descriptor parameter.
+	 * @throws IOException if an I/O error occurs.
+	 */
 	protected BioimageIoModelPytorch(String modelFile, String callable, String importModule, String weightsPath, Map<String, Object> kwargs,
 			ModelDescriptor descriptor) throws IOException {
 		super(modelFile, callable, importModule, weightsPath, kwargs, descriptor);
@@ -98,20 +109,18 @@ public class BioimageIoModelPytorch extends BioimageIoModelPytorchProtected {
 	}
 	
 	/**
-	 * 
-	 * @param <T>
-	 * 	nothing
-	 * @param args
-	 * 	nothing
-	 * @throws IOException	nothing
-	 * @throws LoadEngineException	nothing
-	 * @throws RunModelException	nothing
-	 * @throws LoadModelException	nothing
-	 * @throws URISyntaxException 	nothing
-	 * @throws ArchiveException 	nothing
-	 * @throws MambaInstallException 	nothing
-	 * @throws RuntimeException 	nothing
-	 * @throws InterruptedException 	nothing
+	 * Executes main.
+	 *
+	 * @param args the args parameter.
+	 * @throws IOException if an I/O error occurs.
+	 * @throws LoadEngineException if a LoadEngineException occurs while executing this method.
+	 * @throws RunModelException if a RunModelException occurs while executing this method.
+	 * @throws LoadModelException if a LoadModelException occurs while executing this method.
+	 * @throws InterruptedException if the current thread is interrupted while waiting for the operation to finish.
+	 * @throws RuntimeException if the operation cannot be completed successfully.
+	 * @throws MambaInstallException if a MambaInstallException occurs while executing this method.
+	 * @throws ArchiveException if a ArchiveException occurs while executing this method.
+	 * @throws URISyntaxException if a URISyntaxException occurs while executing this method.
 	 */
 	public static <T extends NativeType<T> & RealType<T>> void main(String[] args) throws IOException, LoadEngineException, RunModelException, LoadModelException, InterruptedException, RuntimeException, MambaInstallException, ArchiveException, URISyntaxException {
 		

@@ -172,6 +172,11 @@ public class SampleImage {
     	return path;
     }
 
+	/**
+	 * Executes to string.
+	 *
+	 * @return the resulting string.
+	 */
 	@Override
     public String toString()
     {
@@ -193,6 +198,11 @@ public class SampleImage {
 		return allowedExtensions;
 	}
 	
+	/**
+	 * Gets name.
+	 *
+	 * @return the resulting string.
+	 */
 	public String getName() {
 		return this.filename;
 	}

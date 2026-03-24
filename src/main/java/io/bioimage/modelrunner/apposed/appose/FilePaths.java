@@ -57,6 +57,13 @@ public final class FilePaths {
 		}
 	}
 
+	/**
+	 * Finds exe.
+	 *
+	 * @param dirs the dirs parameter.
+	 * @param exes the exes parameter.
+	 * @return the resulting value.
+	 */
 	public static File findExe(List<String> dirs, List<String> exes) {
 		for (String exe : exes) {
 			File exeFile = new File(exe);

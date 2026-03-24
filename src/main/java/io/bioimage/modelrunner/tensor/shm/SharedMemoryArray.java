@@ -515,13 +515,10 @@ public interface SharedMemoryArray extends Closeable {
 	 * Get the number of bytes that is required to store the data in an nd array of a certain data type.
 	 * The size of only the array in the corresponding data type, with no header.
 	 * For example a [2, 3] float32 array would be 2 * 3 * 4 bytes (per float32 number) = 24 bytes
-	 * @param <T>
-     * 	possible ImgLib2 data types of the provided {@link RandomAccessibleInterval}
-	 * @param shape
-	 * 	shape of the array
-	 * @param type
-	 * 	ImgLib2 data type of the array
-	 * @return the number of bytes needed to store the nd array
+	 *
+	 * @param shape the shape parameter.
+	 * @param type the type parameter.
+	 * @return the resulting numeric value.
 	 */
 	public static <T extends RealType<T> & NativeType<T>> int getArrayByteSize(long[] shape, T type) {
 		return getArrayByteSize(shape, type, false, false);
@@ -529,17 +526,12 @@ public interface SharedMemoryArray extends Closeable {
     
 	/**
 	 * Get the number of bytes that is required to store the data in an nd array of a certain data type
-	 * @param <T>
-     * 	possible ImgLib2 data types of the provided {@link RandomAccessibleInterval}
-	 * @param shape
-	 * 	shape of the array
-	 * @param type
-	 * 	ImgLib2 data type of the array
-	 * @param isNpy
-	 * 	whether the array is stored with a Numpy npy header at the beginning
-	 * @param isFortran
-	 * 	whether the array is stored as fortran or not. Only relevant for this method if the aisNpy argument is true
-	 * @return the number of bytes needed to store the nd array
+	 *
+	 * @param shape the shape parameter.
+	 * @param type the type parameter.
+	 * @param isNpy the isNpy parameter.
+	 * @param isFortran the isFortran parameter.
+	 * @return the resulting numeric value.
 	 */
 	public static <T extends RealType<T> & NativeType<T>> int getArrayByteSize(long[] shape, T type, boolean isNpy, boolean isFortran) {
 		int noByteSize = 1;
@@ -614,60 +606,49 @@ public interface SharedMemoryArray extends Closeable {
     /**
      * Retrieve the {@link RandomAccessibleInterval} defined in the shared memory segment.
      * This method references the shared memory segment, thus every change in the {@link RandomAccessibleInterval}
-     * will be reflected in the shared memory segment. 
+     * will be reflected in the shared memory segment.
      * This method assumes that the shape and data type have already been defined or that the shared memory segment
      * contains a header at the beginning with he info on how to reconstruct the nd array (saved as Numpy npy) format.
      * If that is not the case use {@link #getSharedRAI(long[], RealType)}.
-     * 
-     * IMPORTANT: once the shared memory segment is closed ({@link #close()}, trying to copy or manipulate the 
+     *
+     * IMPORTANT: once the shared memory segment is closed ({@link #close()}, trying to copy or manipulate the
      * data in the {@link RandomAccessibleInterval} might result in a segmentation error. If you want to close the
      * shared memory segment and keep the {@link RandomAccessibleInterval}, copy it into a new standard one (not backed by a shared memory segment).
-     * 
-     * @param <T>
-     * 	possible ImgLib2 data types of the retrieved {@link RandomAccessibleInterval}
-     * @return the randomAccessible interval that is defined in the shared memory segment
+     *
+     * @return the resulting value.
      */
     public <T extends RealType<T> & NativeType<T>> RandomAccessibleInterval<T> getSharedRAI();
 
     /**
      * Retrieve the {@link RandomAccessibleInterval} defined in the shared memory segment.
      * This method references the shared memory segment, thus every change in the {@link RandomAccessibleInterval}
-     * will be reflected in the shared memory segment. 
+     * will be reflected in the shared memory segment.
      * Unless defined differently using {@link #create(long[], RealType, boolean, boolean)} or {@link #readOrCreate(String, long[], RealType, boolean, boolean)}
      * this method assumes that the data is saved in c-order. To change it use {@link #getSharedRAI(long[], RealType, boolean)}
-     * 
-     * IMPORTANT: once the shared memory segment is closed ({@link #close()}, trying to copy or manipulate the 
+     *
+     * IMPORTANT: once the shared memory segment is closed ({@link #close()}, trying to copy or manipulate the
      * data in the {@link RandomAccessibleInterval} might result in a segmentation error. If you want to close the
      * shared memory segment and keep the {@link RandomAccessibleInterval}, copy it into a new standard one (not backed by a shared memory segment).
-     * 
-     * @param <T>
-     * 	possible ImgLib2 data types of the retrieved {@link RandomAccessibleInterval}
-	 * @param shape
-	 * 	shape (array dimensions) into which the flat array of the shared memory segment will be reconstructed
-	 * @param dataType
-	 * 	the data type into which the bytes in the shared memory region will be converted
-     * @return the randomAccessible interval that is defined in the shared memory segment
+     *
+     * @param shape the shape parameter.
+     * @param dataType the dataType parameter.
+     * @return the resulting value.
      */
     public <T extends RealType<T> & NativeType<T>> RandomAccessibleInterval<T> getSharedRAI(long[] shape, T dataType);
 
     /**
      * Retrieve the {@link RandomAccessibleInterval} defined in the shared memory segment.
      * This method references the shared memory segment, thus every change in the {@link RandomAccessibleInterval}
-     * will be reflected in the shared memory segment. 
-     * 
-     * IMPORTANT: once the shared memory segment is closed ({@link #close()}, trying to copy or manipulate the 
+     * will be reflected in the shared memory segment.
+     *
+     * IMPORTANT: once the shared memory segment is closed ({@link #close()}, trying to copy or manipulate the
      * data in the {@link RandomAccessibleInterval} might result in a segmentation error. If you want to close the
      * shared memory segment and keep the {@link RandomAccessibleInterval}, copy it into a new standard one (not backed by a shared memory segment).
-     * 
-     * @param <T>
-     * 	possible ImgLib2 data types of the retrieved {@link RandomAccessibleInterval}
-	 * @param shape
-	 * 	shape (array dimensions) into which the flat array of the shared memory segment will be reconstructed
-	 * @param dataType
-	 * 	the data type into which the bytes in the shared memory region will be converted
-	 * @param isFortran
-	 * 	whether the nd array has been flattened using fortran order or not (c-order)
-     * @return the randomAccessible interval that is defined in the shared memory segment
+     *
+     * @param shape the shape parameter.
+     * @param dataType the dataType parameter.
+     * @param isFortran the isFortran parameter.
+     * @return the resulting value.
      */
     public <T extends RealType<T> & NativeType<T>> RandomAccessibleInterval<T> getSharedRAI(long[] shape, T dataType, boolean isFortran);
     

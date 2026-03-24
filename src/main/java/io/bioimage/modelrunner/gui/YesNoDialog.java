@@ -26,6 +26,13 @@ import javax.swing.SwingUtilities;
 
 public class YesNoDialog {
 	
+    /**
+     * Executes ask question.
+     *
+     * @param title the title parameter.
+     * @param message the message parameter.
+     * @return true if the operation succeeds; otherwise, false.
+     */
     public static boolean askQuestion(String title, String message) {
         // Show the Yes/No dialog
     	if (SwingUtilities.isEventDispatchThread()) {

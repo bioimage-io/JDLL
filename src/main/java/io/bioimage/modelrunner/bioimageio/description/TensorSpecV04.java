@@ -120,75 +120,160 @@ public class TensorSpecV04 implements TensorSpec {
         	this.dataType = (String) tensorSpecMap.get("data_type");
     }
     
+    /**
+     * Sets sample tensor.
+     *
+     * @param sampleTensorName the sampleTensorName parameter.
+     */
     protected void setSampleTensor(String sampleTensorName) {
     	this.sampleTensorName = sampleTensorName;
     }
     
+    /**
+     * Sets test tensor.
+     *
+     * @param testTensorName the testTensorName parameter.
+     */
     protected void setTestTensor(String testTensorName) {
     	this.testTensorName = testTensorName;
     }
     
+    /**
+     * Gets name.
+     *
+     * @return the resulting string.
+     */
     public String getName() {
     	return this.id;
     }
     
+    /**
+     * Gets description.
+     *
+     * @return the resulting string.
+     */
     public String getDescription() {
     	return this.description;
     }
     
+    /**
+     * Gets preprocessing.
+     *
+     * @return the resulting list.
+     */
     public List<TransformSpec> getPreprocessing(){
     	if (!this.input)
     		return new ArrayList<TransformSpec>();
     	return this.preprocessing;
     }
     
+    /**
+     * Gets postprocessing.
+     *
+     * @return the resulting list.
+     */
     public List<TransformSpec> getPostprocessing(){
     	if (this.input)
     		return new ArrayList<TransformSpec>();
     	return this.postprocessing;
     }
     
+    /**
+     * Gets axes order.
+     *
+     * @return the resulting string.
+     */
     public String getAxesOrder() {
     	return this.axes.getAxesOrder();
     }
     
+    /**
+     * Gets sample tensor name.
+     *
+     * @return the resulting string.
+     */
     public String getSampleTensorName() {
     	return this.sampleTensorName;
     }
     
+    /**
+     * Gets test tensor name.
+     *
+     * @return the resulting string.
+     */
     public String getTestTensorName() {
     	return this.testTensorName;
     }
     
+    /**
+     * Gets min tile size arr.
+     *
+     * @return the resulting array.
+     */
     public int[] getMinTileSizeArr() {
     	return this.axes.getMinTileSizeArr();
     }
     
+    /**
+     * Gets tile step arr.
+     *
+     * @return the resulting array.
+     */
     public int[] getTileStepArr() {
     	return this.axes.getTileStepArr();
     }
     
+    /**
+     * Gets tile scale arr.
+     *
+     * @return the resulting array.
+     */
     public double[] getTileScaleArr() {
     	return this.axes.getTileScaleArr();
     }
     
+    /**
+     * Gets axes info.
+     *
+     * @return the resulting value.
+     */
     public Axes getAxesInfo() {
     	return this.axes;
     }
     
+    /**
+     * Gets data type.
+     *
+     * @return the resulting string.
+     */
     public String getDataType() {
     	return dataType;
     }
     
+    /**
+     * Gets pixel size unit.
+     *
+     * @return the resulting string.
+     */
     public String getPixelSizeUnit() {
     	return unit;
     }
 
+	/**
+	 * Gets halo arr.
+	 *
+	 * @return the resulting array.
+	 */
 	@Override
 	public int[] getHaloArr() {
 		return this.axes.getHaloArr();
 	}
 
+	/**
+	 * Checks whether image.
+	 *
+	 * @return true if the operation succeeds; otherwise, false.
+	 */
 	@Override
 	public boolean isImage() {
 		if (axes.getAxesOrder().contains("x") && axes.getAxesOrder().contains("y"))

@@ -73,6 +73,14 @@ public class Stardist2D extends StardistAbstract {
 		ID_EQUIVALENCE.put("StarDist Fluorescence Nuclei Segmentation", "fearless-crab");
 	}
 	
+	/**
+	 * Creates a new Stardist2D.
+	 *
+	 * @param modelName the modelName parameter.
+	 * @param baseDir the baseDir parameter.
+	 * @param config the config parameter.
+	 * @throws IOException if an I/O error occurs.
+	 */
 	protected Stardist2D(String modelName, String baseDir, Map<String, Object> config) throws IOException {
 		super(modelName, baseDir, config);
 		this.scaleRangeAxes = "xyc";
@@ -96,12 +104,22 @@ public class Stardist2D extends StardistAbstract {
 		this.scaleRangeAxes = "xyc";
 	}
 
+	/**
+	 * Creates imports code.
+	 *
+	 * @return the resulting string.
+	 */
 	@Override
 	protected String createImportsCode() {
 		return String.format(LOAD_MODEL_CODE_ABSTRACT, MODULE_NAME, MODULE_NAME, 
 				MODULE_NAME, MODULE_NAME, MODULE_NAME, this.name, this.basedir);
 	}
 
+	/**
+	 * Checks input.
+	 *
+	 * @param image the image parameter.
+	 */
 	@Override
 	protected <T extends RealType<T> & NativeType<T>>  void checkInput(RandomAccessibleInterval<T> image) {
 		if (image.dimensionsAsLongArray().length == 2 && this.nChannels != 1)
@@ -114,6 +132,12 @@ public class Stardist2D extends StardistAbstract {
 			throw new IllegalArgumentException("Stardist2D model requires an image with dimensions XYC.");
 	}
 	
+	/**
+	 * Executes reconstruct mask.
+	 *
+	 * @return the resulting value.
+	 * @throws IOException if an I/O error occurs.
+	 */
 	@Override
 	protected <T extends RealType<T> & NativeType<T>> RandomAccessibleInterval<T> reconstructMask() throws IOException {
 		// TODO I do not understand why is complaining when the types align perfectly
@@ -134,11 +158,21 @@ public class Stardist2D extends StardistAbstract {
 		return maskCopy;
 	}
 
+	/**
+	 * Checks whether 2 d.
+	 *
+	 * @return true if the operation succeeds; otherwise, false.
+	 */
 	@Override
 	public boolean is2D() {
 		return true;
 	}
 
+	/**
+	 * Checks whether 3 d.
+	 *
+	 * @return true if the operation succeeds; otherwise, false.
+	 */
 	@Override
 	public boolean is3D() {
 		return false;
@@ -216,11 +250,31 @@ public class Stardist2D extends StardistAbstract {
 		}
 	}
 	
+	/**
+	 * Downloads pretrained.
+	 *
+	 * @param modelName the modelName parameter.
+	 * @param downloadDir the downloadDir parameter.
+	 * @return the resulting string.
+	 * @throws ExecutionException if a ExecutionException occurs while executing this method.
+	 * @throws InterruptedException if the current thread is interrupted while waiting for the operation to finish.
+	 * @throws IOException if an I/O error occurs.
+	 */
 	public static String downloadPretrained(String modelName, String downloadDir) 
 			throws ExecutionException, InterruptedException, IOException {
 		return downloadPretrained(modelName, downloadDir, null);
 	}
 	
+	/**
+	 * Downloads pretrained.
+	 *
+	 * @param modelName the modelName parameter.
+	 * @param downloadDir the downloadDir parameter.
+	 * @param progressConsumer the progressConsumer parameter.
+	 * @return the resulting string.
+	 * @throws InterruptedException if the current thread is interrupted while waiting for the operation to finish.
+	 * @throws IOException if an I/O error occurs.
+	 */
 	public static String downloadPretrained(String modelName, String downloadDir, Consumer<Double> progressConsumer) throws InterruptedException, IOException {
 		if (!PRETRAINED_EQUIVALENCE.keySet().contains(modelName))
 			return downloadPretrainedBioimageio(modelName, downloadDir, progressConsumer);

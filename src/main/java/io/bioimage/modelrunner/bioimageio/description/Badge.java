@@ -105,6 +105,11 @@ public class Badge
 		this.url = url;
 	}
 
+	/**
+	 * Executes to string.
+	 *
+	 * @return the resulting string.
+	 */
 	@Override
     public String toString()
     {
