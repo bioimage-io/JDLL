@@ -460,10 +460,9 @@ public class Mamba {
 	 *             If the current thread is interrupted by another thread while it
 	 *             is waiting, then the wait is ended and an InterruptedException is
 	 *             thrown.
-	 * @throws ArchiveException if there is any error decompressing
 	 * @throws URISyntaxException  if there is any error with the micromamba url
 	 */
-	public void installMicromamba() throws IOException, InterruptedException, ArchiveException, URISyntaxException {
+	public void installMicromamba() throws IOException, InterruptedException, URISyntaxException {
 		checkMambaInstalled();
 		if (installed) return;
 		decompressMicromamba(downloadMicromamba());
