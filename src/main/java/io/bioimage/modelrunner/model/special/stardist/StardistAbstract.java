@@ -48,6 +48,7 @@ import io.bioimage.modelrunner.model.BaseModel;
 import io.bioimage.modelrunner.model.processing.Processing;
 import io.bioimage.modelrunner.system.PlatformDetection;
 import io.bioimage.modelrunner.tensor.Tensor;
+import io.bioimage.modelrunner.tensor.Utils;
 import io.bioimage.modelrunner.tensor.shm.SharedMemoryArray;
 import io.bioimage.modelrunner.transformations.ScaleRangeTransformation;
 import io.bioimage.modelrunner.utils.CommonUtils;
@@ -81,6 +82,8 @@ public abstract class StardistAbstract extends BaseModel {
 	protected Double threshold = null;
 	
 	protected final int nChannels;
+	
+	protected final String axes;
 	
 	protected Map<String, Object> config;
 	
@@ -235,6 +238,12 @@ public abstract class StardistAbstract extends BaseModel {
 		modelDir = new File(baseDir, modelName).getAbsolutePath();
 		checkFilesPresent(modelDir);
 		this.nChannels = ((Number) config.get("n_channel_in")).intValue();
+		if (config.get("axes") != null)
+			this.axes = ((String) config.get("axes")).toLowerCase();
+		else if (this.is2D())
+			this.axes = "yxc";
+		else
+			this.axes = "zyxc";
     	createPythonService();
 	}
 	
@@ -245,6 +254,12 @@ public abstract class StardistAbstract extends BaseModel {
 		checkFilesPresent(modelDir);
 		config = JSONUtils.load(new File(modelDir, "config.json").getAbsolutePath());
 		this.nChannels = ((Number) config.get("n_channel_in")).intValue();
+		if (config.get("axes") != null)
+			this.axes = ((String) config.get("axes")).toLowerCase();
+		else if (this.is2D())
+			this.axes = "yxc";
+		else
+			this.axes = "zyxc";
     	createPythonService();
 	}
 	
@@ -270,6 +285,12 @@ public abstract class StardistAbstract extends BaseModel {
 			createThresholdsFromBioimageio(descriptor, modelDir);
 		config = JSONUtils.load(new File(modelDir, "config.json").getAbsolutePath());
 		this.nChannels = ((Number) config.get("n_channel_in")).intValue();
+		if (config.get("axes") != null)
+			this.axes = ((String) config.get("axes")).toLowerCase();
+		else if (this.is2D())
+			this.axes = "yxc";
+		else
+			this.axes = "zyxc";
     	createPythonService();
 	}
 	
@@ -364,7 +385,8 @@ public abstract class StardistAbstract extends BaseModel {
 	private <T extends RealType<T> & NativeType<T>, R extends RealType<R> & NativeType<R>> 
 	void runNoBatch( List< Tensor < T > > inTensors, List< Tensor < R > > outTensors ) throws RunModelException {
 		try {
-			Map<String, RandomAccessibleInterval<R>> outputs = run(inTensors.get(0).getData());
+			RandomAccessibleInterval<T> in = Utils.convertToAxesOrder(inTensors.get(0).getData(), inTensors.get(0).getAxesOrderString(), this.axes);
+			Map<String, RandomAccessibleInterval<R>> outputs = run(in);
 			for (Tensor<R> tensor : outTensors) {
 				Entry<String, RandomAccessibleInterval<R>> entry = outputs.entrySet().stream()
 						.filter(ee -> tensor.getName().equals(ee.getKey())

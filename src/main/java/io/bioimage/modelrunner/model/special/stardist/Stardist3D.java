@@ -98,7 +98,7 @@ public class Stardist3D extends StardistAbstract {
 			throw new IllegalArgumentException("Stardist3D needs an image with four dimensions: XYZC");
 		else if (image.dimensionsAsLongArray().length != 4 && this.nChannels != 1)
 			throw new IllegalArgumentException("Stardist3D needs an image with four dimensions: XYZC");
-		else if (image.dimensionsAsLongArray().length == 4 && image.dimensionsAsLongArray()[3] != nChannels)
+		else if (image.dimensionsAsLongArray().length == 4 && image.dimensionsAsLongArray()[2] != nChannels)
 			throw new IllegalArgumentException("This Stardist3D model requires " + nChannels + " channels.");
 		else if (image.dimensionsAsLongArray().length > 4 || image.dimensionsAsLongArray().length < 2)
 			throw new IllegalArgumentException("Stardist3D model requires an image with dimensions XYZC.");
@@ -229,7 +229,7 @@ public class Stardist3D extends StardistAbstract {
 													RunModelException, ArchiveException, 
 													URISyntaxException, LoadModelException {
 		Stardist3D.installRequirements();
-		Stardist3D model = Stardist3D.fromPretained("StarDist Plant Nuclei 3D ResNet", false);
+		StardistAbstract model = StardistAbstract.init("/home/carlos/git/deepimagej-plugin/models/model_confocal");
 
 		RandomAccessibleInterval<FloatType> img = ArrayImgs.floats(new long[] {116, 120, 66});
 		
