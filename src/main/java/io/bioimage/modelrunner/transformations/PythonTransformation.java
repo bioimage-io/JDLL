@@ -361,7 +361,7 @@ public class PythonTransformation extends AbstractTensorTransformation
 	{
 		try {
 			checkArgs();
-		} catch (IOException | InterruptedException | ArchiveException | URISyntaxException | RuntimeException | MambaInstallException e) {
+		} catch (IOException | InterruptedException | URISyntaxException | RuntimeException | MambaInstallException e) {
 			e.printStackTrace();
 			return Cast.unchecked(input);
 		}

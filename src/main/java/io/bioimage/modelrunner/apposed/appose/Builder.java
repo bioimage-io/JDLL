@@ -33,8 +33,6 @@ import java.io.File;
 import java.io.IOException;
 import java.net.URISyntaxException;
 
-import org.apache.commons.compress.archivers.ArchiveException;
-
 //TODO remove once appose project is released with the needed changes
 //TODO remove once appose project is released with the needed changes
 //TODO remove once appose project is released with the needed changes
@@ -71,8 +69,6 @@ public class Builder {
 		} catch (IOException e) {
 			throw new RuntimeException(e);
 		} catch (InterruptedException e) {
-			throw new RuntimeException(e);
-		} catch (ArchiveException e) {
 			throw new RuntimeException(e);
 		} catch (URISyntaxException e) {
 			throw new RuntimeException(e);
