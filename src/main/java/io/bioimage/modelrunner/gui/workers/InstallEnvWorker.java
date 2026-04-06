@@ -27,7 +27,6 @@ import java.util.function.Consumer;
 
 import javax.swing.SwingWorker;
 
-import io.bioimage.modelrunner.apposed.appose.MambaInstallException;
 import io.bioimage.modelrunner.bioimageio.description.ModelDescriptor;
 import io.bioimage.modelrunner.model.python.DLModelPytorch;
 import io.bioimage.modelrunner.model.special.cellpose.Cellpose;
@@ -110,7 +109,7 @@ public class InstallEnvWorker extends SwingWorker<Boolean, Void> {
             	Cellpose.installRequirements(consumer);
             } else if (modelFamily.toLowerCase().equals(ModelDescriptor.BIOIMAGEIO))
             	DLModelPytorch.installRequirements(consumer);
-		} catch (IOException | RuntimeException | MambaInstallException | URISyntaxException e) {
+		} catch (IOException | RuntimeException | URISyntaxException e) {
 			e.printStackTrace();
 			return false;
 		} catch (InterruptedException e) {

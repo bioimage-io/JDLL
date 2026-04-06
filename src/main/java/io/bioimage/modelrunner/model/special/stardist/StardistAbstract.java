@@ -33,13 +33,6 @@ import java.util.stream.Collectors;
 
 import org.apache.commons.compress.archivers.ArchiveException;
 
-import io.bioimage.modelrunner.apposed.appose.Environment;
-import io.bioimage.modelrunner.apposed.appose.Mamba;
-import io.bioimage.modelrunner.apposed.appose.MambaInstallException;
-import io.bioimage.modelrunner.apposed.appose.Service;
-import io.bioimage.modelrunner.apposed.appose.Service.Task;
-import io.bioimage.modelrunner.apposed.appose.Service.TaskStatus;
-import io.bioimage.modelrunner.apposed.appose.Types;
 import io.bioimage.modelrunner.bioimageio.description.ModelDescriptor;
 import io.bioimage.modelrunner.bioimageio.description.ModelDescriptorFactory;
 import io.bioimage.modelrunner.exceptions.LoadModelException;
@@ -789,13 +782,12 @@ public abstract class StardistAbstract extends BaseModel {
 	 * @throws IOException if there is any error downloading the DL engine or installing the micromamba environment
 	 * @throws InterruptedException if the installation is stopped
 	 * @throws RuntimeException if there is any unexpected error in the micromamba environment installation
-	 * @throws MambaInstallException if there is any error downloading or installing micromamba
 	 * @throws ArchiveException if there is any error decompressing the micromamba installer
 	 * @throws URISyntaxException if the URL to the micromamba installation is not correct
 	 */
 	public static void installRequirements() throws IOException, InterruptedException, 
-													RuntimeException, MambaInstallException, 
-													ArchiveException, URISyntaxException {
+													RuntimeException, ArchiveException,
+													URISyntaxException {
 		installRequirements(null);
 	}
 	
@@ -812,13 +804,12 @@ public abstract class StardistAbstract extends BaseModel {
 	 * @throws IOException if there is any error downloading the DL engine or installing the micromamba environment
 	 * @throws InterruptedException if the installation is stopped
 	 * @throws RuntimeException if there is any unexpected error in the micromamba environment installation
-	 * @throws MambaInstallException if there is any error downloading or installing micromamba
 	 * @throws ArchiveException if there is any error decompressing the micromamba installer
 	 * @throws URISyntaxException if the URL to the micromamba installation is not correct
 	 */
 	public static void installRequirements(Consumer<String> consumer) throws IOException, InterruptedException, 
-													RuntimeException, MambaInstallException, 
-													ArchiveException, URISyntaxException {
+													RuntimeException, URISyntaxException, 
+													ArchiveException  {
 		
 		Mamba mamba = new Mamba(INSTALLATION_DIR);
 		if (consumer != null) {
