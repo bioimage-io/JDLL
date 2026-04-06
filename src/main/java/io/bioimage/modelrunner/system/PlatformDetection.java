@@ -2,7 +2,7 @@
  * #%L
  * Use deep learning frameworks from Java in an agnostic and isolated way.
  * %%
- * Copyright (C) 2022 - 2024 Institut Pasteur and BioImage.IO developers.
+ * Copyright (C) 2022 - 2026 Institut Pasteur and BioImage.IO developers.
  * %%
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -42,7 +42,8 @@ public class PlatformDetection
     public static final String ARCH_X86_64 = "x86_64";
     public static final String ARCH_S390X = "s390x";
     // Aarch64 and arm64 are equivalent architectures
-    public static final String ARCH_AARCH64 = "aarch64";
+    public static final String ARM64_SYNONYM = "aarch64";
+    public static final String ARCH_AARCH64 = "arm64";
     public static final String ARCH_ARM64 = "arm64";
     public static final Map<String, String> archMap;
 
@@ -112,6 +113,8 @@ public class PlatformDetection
     		return ARCH;
         // resolve architecture
         ARCH = archMap.get(System.getProperty("os.arch"));
+        if (ARCH.equals(ARM64_SYNONYM))
+        	ARCH = ARCH_ARM64;
         if (ARCH == null)
         {
             throw new IllegalArgumentException("Unknown architecture " + System.getProperty("os.arch"));
@@ -131,12 +134,22 @@ public class PlatformDetection
         return ARCH;
     }
     
+    /**
+     * Checks whether using rosseta.
+     *
+     * @return true if the operation succeeds; otherwise, false.
+     */
     public static boolean isUsingRosseta() {
     	if (ARCH == null)
     		getArch();
     	return ROSETTA;
     }
 
+    /**
+     * Executes to string.
+     *
+     * @return the resulting string.
+     */
     @Override
     public String toString()
     {
@@ -147,34 +160,31 @@ public class PlatformDetection
         return OS + "-" + ARCH;
     }
     
+    /**
+     * Checks whether windows.
+     *
+     * @return true if the operation succeeds; otherwise, false.
+     */
     public static boolean isWindows() {
     	return getOs().equals(PlatformDetection.OS_WINDOWS);
     }
     
+    /**
+     * Checks whether linux.
+     *
+     * @return true if the operation succeeds; otherwise, false.
+     */
     public static boolean isLinux() {
     	return getOs().equals(PlatformDetection.OS_LINUX);
     }
     
+    /**
+     * Checks whether mac os.
+     *
+     * @return true if the operation succeeds; otherwise, false.
+     */
     public static boolean isMacOS() {
     	return getOs().equals(PlatformDetection.OS_OSX);
-    }
-    
-    private static String getPythonArchDetectionCommand() {
-    	return PYTHON_ARCH_DETECTION_COMMAND;
-    }
-    
-    private static String executeUnameM() {
-    	if (UNAME_M != null)
-    		return UNAME_M;
-    	Process proc;
-		try {
-			proc = Runtime.getRuntime().exec(
-					new String[] {"bash", "-c", "uname -m"});
-			UNAME_M = archMap.get(waitProcessExecutionAndGetOutputText(proc));
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
-		return UNAME_M;
     }
 	
     private static String waitProcessExecutionAndGetOutputText(Process proc) throws IOException {
@@ -205,6 +215,15 @@ public class PlatformDetection
 	}
 	
 	/**
+	 * Gets osversion.
+	 *
+	 * @return the resulting value.
+	 */
+	public static Version getOSVersion() {
+		return Version.parse(System.getProperty("os.version"));
+	}
+	
+	/**
 	 * Get the major Java version the program is currently running on
 	 * @return the major Java version the program is running on
 	 */
@@ -220,5 +239,14 @@ public class PlatformDetection
 	    } 
 	    JAVA_VERSION = Integer.parseInt(version);
 	    return JAVA_VERSION;
+	}
+	
+	/**
+	 * Executes main.
+	 *
+	 * @param args the args parameter.
+	 */
+	public static void main(String[] args) {
+		System.out.println(System.getProperty("os.version"));
 	}
 }

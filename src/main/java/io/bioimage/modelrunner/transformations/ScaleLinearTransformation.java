@@ -2,7 +2,7 @@
  * #%L
  * Use deep learning frameworks from Java in an agnostic and isolated way.
  * %%
- * Copyright (C) 2022 - 2024 Institut Pasteur and BioImage.IO developers.
+ * Copyright (C) 2022 - 2026 Institut Pasteur and BioImage.IO developers.
  * %%
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -45,11 +45,19 @@ public class ScaleLinearTransformation extends AbstractTensorTransformation
 	private String axes;
 	private double eps = Math.pow(10, -6);
 
+	/**
+	 * Creates a new ScaleLinearTransformation.
+	 */
 	public ScaleLinearTransformation()
 	{
 		super( name );
 	}
 	
+	/**
+	 * Sets eps.
+	 *
+	 * @param eps the eps parameter.
+	 */
 	public void setEps(Object eps) {
 		if (eps instanceof Integer) {
 			this.eps = Double.valueOf((int) eps);
@@ -64,6 +72,11 @@ public class ScaleLinearTransformation extends AbstractTensorTransformation
 		}
 	}
 	
+	/**
+	 * Sets gain.
+	 *
+	 * @param gain the gain parameter.
+	 */
 	public void setGain(Object gain) {
 		if (gain instanceof Integer) {
 			this.gainDouble = Double.valueOf((int) gain);
@@ -96,6 +109,11 @@ public class ScaleLinearTransformation extends AbstractTensorTransformation
 		}
 	}
 	
+	/**
+	 * Sets offset.
+	 *
+	 * @param offset the offset parameter.
+	 */
 	public void setOffset(Object offset) {
 		if (offset instanceof Integer) {
 			this.offsetDouble = Double.valueOf((int) offset);
@@ -128,9 +146,16 @@ public class ScaleLinearTransformation extends AbstractTensorTransformation
 		}
 	}
 	
+	/**
+	 * Sets axes.
+	 *
+	 * @param axes the axes parameter.
+	 */
 	@SuppressWarnings("unchecked")
 	public void setAxes(Object axes) {
-		if (axes instanceof String )
+		if (axes instanceof String && ((String) axes).equals("channel"))
+			this.axes = "c";
+		else if (axes instanceof String)
 			this.axes = (String) axes;
 		else if (axes instanceof List) {
 			this.axes = "";
@@ -153,6 +178,41 @@ public class ScaleLinearTransformation extends AbstractTensorTransformation
 					 + ", of a String array or of a List of Strings. The provided argument is " + axes.getClass());
 	}
 	
+	/**
+	 * Sets axis.
+	 *
+	 * @param axes the axes parameter.
+	 */
+	@SuppressWarnings("unchecked")
+	public void setAxis(Object axes) {
+		if (axes instanceof String && ((String) axes).equals("channel"))
+			this.axes = "c";
+		else if (axes instanceof String)
+			this.axes = (String) axes;
+		else if (axes instanceof List) {
+			this.axes = "";
+			for (Object ax : (List<Object>) axes) {
+				if (!(ax instanceof String))
+					throw new IllegalArgumentException("JDLL does not currently support this axes format. Please "
+							+ "write an issue attaching the rdf.yaml file at: " + Constants.ISSUES_LINK);
+				ax = ax.equals("channel") ? "c" : ax;
+				this.axes += ax;
+			}
+		} else if (axes instanceof String[]) {
+			String[] axesArr = (String[]) axes;
+			this.axes = "";
+			for (String ax : axesArr) {
+				ax = ax.equals("channel") ? "c" : ax;
+				this.axes += ax;
+			}
+		} else
+			throw new IllegalArgumentException("'axes' parameter has to be an instance of " + String.class
+					 + ", of a String array or of a List of Strings. The provided argument is " + axes.getClass());
+	}
+	
+	/**
+	 * Checks required args.
+	 */
 	public void checkRequiredArgs() {
 		if (offsetDouble == null && offsetArr == null) {
 			throw new IllegalArgumentException(String.format(DEFAULT_MISSING_ARG_ERR, name, "offset"));
@@ -168,6 +228,12 @@ public class ScaleLinearTransformation extends AbstractTensorTransformation
 		}
 	}
 
+	/**
+	 * Executes apply.
+	 *
+	 * @param input the input parameter.
+	 * @return the resulting value.
+	 */
 	@Override
 	public < R extends RealType< R > & NativeType< R > > Tensor< FloatType > apply( final Tensor< R > input )
 	{
@@ -177,28 +243,29 @@ public class ScaleLinearTransformation extends AbstractTensorTransformation
 		return output;
 	}
 
+	/**
+	 * Executes apply in place.
+	 *
+	 * @param input the input parameter.
+	 */
 	@Override
 	public < R extends RealType< R > & NativeType< R > > void applyInPlace(Tensor<R> input) {
 		checkRequiredArgs();
 		String selectedAxes = "";
 		for (String ax : input.getAxesOrderString().split("")) {
-			if (axes != null && !axes.toLowerCase().contains(ax.toLowerCase())
-					&& !ax.toLowerCase().equals("b"))
+			if (axes != null && !axes.toLowerCase().contains(ax.toLowerCase()))
 				selectedAxes += ax;
 		}
 		if (axes == null || selectedAxes.equals("") 
-				|| input.getAxesOrderString().replace("b", "").length() == selectedAxes.length()) {
+				|| input.getAxesOrderString().length() == selectedAxes.length()) {
 			if (gainDouble == null)
 				throw new IllegalArgumentException("The 'axes' parameter is not"
 						+ " compatible with the parameters 'gain' and 'offset'."
 						+ "The parameters gain and offset cannot be arrays with"
 						+ " the given axes parameter provided.");
 			globalScale(input);
-		} else if (axes.length() <= 2 && axes.length() > 0) {
-			axesScale(input, selectedAxes);
 		} else {
-			//TODO allow scaling of more complex structures
-			throw new IllegalArgumentException("At the moment, only allowed scaling of planes.");
+			axesScale(input, selectedAxes);
 		}
 		
 	}

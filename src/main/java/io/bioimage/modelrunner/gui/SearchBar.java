@@ -1,11 +1,29 @@
+/*-
+ * #%L
+ * Use deep learning frameworks from Java in an agnostic and isolated way.
+ * %%
+ * Copyright (C) 2022 - 2026 Institut Pasteur and BioImage.IO developers.
+ * %%
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ * 
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ * 
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ * #L%
+ */
 package io.bioimage.modelrunner.gui;
 
-import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Desktop;
-import java.awt.Dimension;
 import java.awt.Font;
-import java.awt.GridLayout;
+import java.awt.event.ComponentAdapter;
+import java.awt.event.ComponentEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.net.URL;
@@ -14,55 +32,61 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import javax.swing.BorderFactory;
-import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JFrame;
-import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JTextField;
 import javax.swing.SwingUtilities;
 
-import io.bioimage.modelrunner.gui.workers.ImageLoaderWorker;
 import io.bioimage.modelrunner.bioimageio.BioimageioRepo;
 import io.bioimage.modelrunner.bioimageio.description.ModelDescriptor;
 import io.bioimage.modelrunner.bioimageio.description.ModelDescriptorFactory;
+import io.bioimage.modelrunner.gui.adapter.GuiAdapter;
 import io.bioimage.modelrunner.utils.Constants;
 
 public class SearchBar extends JPanel {
     private static final long serialVersionUID = -1741389221668683293L;
     protected JTextField searchField;
+    protected LogoPanel bmzLogo;
 	protected JButton searchButton;
     protected JButton switchButton;
-    private long parentHeight;
-    private long parentWidth;
     private List<ModelDescriptor> bmzModels;
     private int nModels;
-    private static final double H_RATIO = 1;
-    private static final double V_RATIO = 0.05;
-    private static final double ICON_VRATIO = 1.0;
-    private static final double ICON_HRATIO = 0.05;
-    private static final double SEARCH_VRATIO = 1.0;
-    private static final double SEARCH_HRATIO = 0.15;
-    private static final double SWITCH_VRATIO = 1.0;
-    private static final double SWITCH_HRATIO = 0.15;
-    protected static final String SEARCH_ICON_PATH = "dij_imgs/search_logo.png";
+    protected static final String SEARCH_ICON_PATH = "jdll_icons/search_logo.png";
+    
+    double BUTTONS_PERC = 0.4;
     
 
-    protected SearchBar(long parentWidth, long parentHeight) {
-    	this.parentHeight = parentHeight;
-    	this.parentWidth = parentWidth;
-        setLayout(new BorderLayout());
-        setPreferredSize(new Dimension((int) (parentWidth * H_RATIO), (int) (parentHeight * V_RATIO)));
+    /**
+     * Creates a new SearchBar.
+     */
+    protected SearchBar() {
+    	this(null);
+    }
+
+    /**
+     * Creates a new SearchBar.
+     *
+     * @param adapter the adapter parameter.
+     */
+    protected SearchBar(GuiAdapter adapter) {
+        setLayout(null);
         setBackground(Color.WHITE);
         setBorder(BorderFactory.createLineBorder(Color.LIGHT_GRAY, 1, true));
 
         // Create the search icon
         URL iconPath = getClass().getClassLoader().getResource(SEARCH_ICON_PATH);
-        int iconH = (int) (parentHeight * V_RATIO * ICON_VRATIO);
-        int iconW = (int) (parentWidth * H_RATIO * ICON_HRATIO);
-        ImageIcon scaledImage = ImageLoaderWorker.createScaledIcon(iconPath, iconW, iconH);
-        JLabel iconLabel = new JLabel(scaledImage);
-        iconLabel.addMouseListener(new MouseAdapter() {
+        bmzLogo = new LogoPanel();
+        if (adapter != null)
+            DefaultIcon.drawImOrLogo(Header.class.getClassLoader().getResource(adapter.getIconPath()), iconPath, bmzLogo);
+        else
+            DefaultIcon.drawImOrLogo(iconPath, iconPath, bmzLogo);
+        bmzLogo.addMouseListener(new MouseAdapter() {
+            /**
+             * Executes mouse clicked.
+             *
+             * @param e the e parameter.
+             */
             @Override
             public void mouseClicked(MouseEvent e) {
                 try {
@@ -72,7 +96,7 @@ public class SearchBar extends JPanel {
                 }
             }
         });
-        iconLabel.setBorder(BorderFactory.createEmptyBorder(0, 0, 0, 0));
+        bmzLogo.setBorder(BorderFactory.createEmptyBorder(0, 0, 0, 0));
 
         // Create the search field
         searchField = new JTextField();
@@ -81,9 +105,6 @@ public class SearchBar extends JPanel {
 
         // Create the search button
         searchButton = new JButton("Search");
-        int searchH = (int) (parentHeight * V_RATIO * SEARCH_VRATIO);
-        int searchW = (int) (parentWidth * H_RATIO * SEARCH_HRATIO);
-        searchButton.setPreferredSize(new Dimension(searchW, searchH));
         searchButton.setBackground(new Color(0, 120, 215));
         searchButton.setForeground(Color.WHITE);
         searchButton.setFocusPainted(false);
@@ -91,39 +112,84 @@ public class SearchBar extends JPanel {
 
         // Create the switch button
         switchButton = new JButton(Gui.BIOIMAGEIO_STR);
-        int switchH = (int) (parentHeight * V_RATIO * SWITCH_VRATIO);
-        int switchW = (int) (parentWidth * H_RATIO * SWITCH_HRATIO);
-        switchButton.setPreferredSize(new Dimension(switchW, switchH));
         switchButton.setBackground(new Color(255, 140, 0));
         switchButton.setForeground(Color.BLACK);
         switchButton.setFocusPainted(false);
         switchButton.setBorder(BorderFactory.createEmptyBorder(5, 10, 5, 10));
         
-        JPanel wrapperPanel = new JPanel(new GridLayout(1, 2));
-        wrapperPanel.add(searchButton);
-        wrapperPanel.add(switchButton);
 
-        // Add components to the panel
-        add(iconLabel, BorderLayout.WEST);
-        add(searchField, BorderLayout.CENTER);
-        //add(searchButton, BorderLayout.EAST);
-        add(wrapperPanel, BorderLayout.EAST);
-
+        add(bmzLogo);
+        add(searchField);
+        add(searchButton);
+        add(switchButton);
+        
+        organiseComponents();
     }
+    
+    private void organiseComponents() {
+    	addComponentListener(new ComponentAdapter() {
+            /**
+             * Executes component resized.
+             *
+             * @param e the e parameter.
+             */
+            @Override
+            public void componentResized(ComponentEvent e) {
+                layoutAll();
+            }
+        });
+    }
+    
+    private void layoutAll() {
+        int W = getWidth();
+        int H = getHeight();
+                
+        this.bmzLogo.setBounds(0, 0, H, H);
+        int searchW = (int) ((W - H) * (1 - BUTTONS_PERC));  
 
+        this.searchField.setBounds(H, 0, searchW, H);
+        int buttonW = (int) (0.5 * (W - H) * BUTTONS_PERC);  
+        this.searchButton.setBounds(H + searchW, 0, buttonW, H);
+        this.switchButton.setBounds(W - buttonW, 0, buttonW, H);
+        
+        
+
+        //nameLabel.setFont(nameLabel.getFont().deriveFont(Font.BOLD, (float) (16 * scale)));
+        //nicknameLabel.setFont(nicknameLabel.getFont().deriveFont(Font.PLAIN, (float) (14 * scale)));
+    }
+    
+
+    /**
+     * Executes perform search.
+     *
+     * @return the resulting list.
+     */
     protected List<ModelDescriptor> performSearch() {
-        String searchText = searchField.getText().trim();
+        String searchText = searchField.getText().trim().toLowerCase();
         return this.bmzModels.stream().filter(mm -> {
         	if (mm == null) return false;
-        	return mm.getName().contains(searchText) || mm.getDescription().contains(searchText)
-        			|| mm.getNickname().contains(searchText) || mm.getTags().contains(searchText);
+        	return mm.getName().toLowerCase().contains(searchText) || mm.getDescription().toLowerCase().contains(searchText)
+        			|| mm.getNickname().toLowerCase().contains(searchText) || mm.getTags().contains(searchText);
         }).collect(Collectors.toList());
     }
     
+    /**
+     * Executes count bmzmodels.
+     *
+     * @return the resulting numeric value.
+     * @throws InterruptedException if the current thread is interrupted while waiting for the operation to finish.
+     */
     protected int countBMZModels() throws InterruptedException {
     	return countBMZModels(false);
     }
     
+    /**
+     * Executes count bmzmodels.
+     *
+     * @param recount the recount parameter.
+     * @return the resulting numeric value.
+     * @throws InterruptedException if the current thread is interrupted while waiting for the operation to finish.
+     */
     protected int countBMZModels(boolean recount) throws InterruptedException {
     	if (!recount)
     		return nModels;
@@ -132,6 +198,12 @@ public class SearchBar extends JPanel {
     	return nModels;
     }
     
+    /**
+     * Finds bmzmodels.
+     *
+     * @return the resulting list.
+     * @throws InterruptedException if the current thread is interrupted while waiting for the operation to finish.
+     */
     protected List<ModelDescriptor> findBMZModels() throws InterruptedException {
     	bmzModels = new ArrayList<ModelDescriptor>();
     	for (String url : BioimageioRepo.getModelIDs()) {
@@ -143,47 +215,91 @@ public class SearchBar extends JPanel {
     	return bmzModels;
     }
     
+    /**
+     * Finds local models.
+     *
+     * @param dir the dir parameter.
+     */
     protected void findLocalModels(String dir) {
     	bmzModels = ModelDescriptorFactory.getModelsAtLocalRepo(dir);
     }
     
+    /**
+     * Gets bmzmodels.
+     *
+     * @return the resulting list.
+     */
     protected List<ModelDescriptor> getBMZModels() {
     	return this.bmzModels;
     }
     
+    /**
+     * Sets models.
+     *
+     * @param models the models parameter.
+     */
     protected void setModels(List<ModelDescriptor> models) {
     	this.bmzModels = models;
     }
     
+    /**
+     * Checks whether bmzparsing done.
+     *
+     * @return true if the operation succeeds; otherwise, false.
+     */
     protected boolean isBMZPArsingDone() {
     	return nModels == bmzModels.size();
     }
     
+    /**
+     * Executes change button to local.
+     */
     protected void changeButtonToLocal() {
     	this.switchButton.setText(Gui.LOCAL_STR);
     }
     
+    /**
+     * Executes change button to bmz.
+     */
     protected void changeButtonToBMZ() {
     	this.switchButton.setText(Gui.BIOIMAGEIO_STR);
     }
     
+    /**
+     * Checks whether bar on local.
+     *
+     * @return true if the operation succeeds; otherwise, false.
+     */
     protected boolean isBarOnLocal() {
     	return this.switchButton.getText().equals(Gui.BIOIMAGEIO_STR);
     }
     
+    /**
+     * Sets bar enabled.
+     *
+     * @param enabled the enabled parameter.
+     */
     protected void setBarEnabled(boolean enabled) {
     	this.searchButton.setEnabled(enabled);
     	this.switchButton.setEnabled(enabled);
     	this.searchField.setEnabled(enabled);
     }
 
+    /**
+     * Executes main.
+     *
+     * @param args the args parameter.
+     */
     public static void main(String[] args) {
         SwingUtilities.invokeLater(new Runnable() {
+            /**
+             * Executes run.
+             */
             @Override
             public void run() {
                 JFrame frame = new JFrame("Modern Search Bar");
                 frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-                frame.getContentPane().add(new SearchBar(600, 800));
+                frame.getContentPane().add(new SearchBar());
                 frame.pack();
                 frame.setLocationRelativeTo(null);
                 frame.setVisible(true);

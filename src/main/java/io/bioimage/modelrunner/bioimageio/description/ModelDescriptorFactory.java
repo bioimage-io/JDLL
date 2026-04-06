@@ -2,7 +2,7 @@
  * #%L
  * Use deep learning frameworks from Java in an agnostic and isolated way.
  * %%
- * Copyright (C) 2022 - 2024 Institut Pasteur and BioImage.IO developers.
+ * Copyright (C) 2022 - 2026 Institut Pasteur and BioImage.IO developers.
  * %%
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -58,12 +58,11 @@ public class ModelDescriptorFactory {
     
     /**
      * Opens the provided file and builds an instance of {@link ModelDescriptor} from it.
-     * 
-     * @param modelFile
-     * 	Model descriptor file.
-     * @return The instance of the model descriptor.
-     * @throws IOException if any of the required files is incorrect or corrupted
-     * @throws FileNotFoundException if any of the required files is missing
+     *
+     * @param modelFile the modelFile parameter.
+     * @return the resulting value.
+     * @throws FileNotFoundException if a FileNotFoundException occurs while executing this method.
+     * @throws IOException if an I/O error occurs.
      */
     public static ModelDescriptor readFromLocalFile(String modelFile) throws FileNotFoundException, IOException
     {
@@ -72,6 +71,24 @@ public class ModelDescriptorFactory {
     	// TODO yamlElements.put(modelPathKey, new File(modelFile).getParent());
     	yamlElements.put("modelPath", new File(modelFile).getParentFile().getAbsolutePath());
         return fromMap(yamlElements);
+    }
+    
+    /**
+     * Opens the provided file and builds an instance of {@link ModelDescriptor} from it.
+     *
+     * @param modelFile the modelFile parameter.
+     * @param specialModel the specialModel parameter.
+     * @return the resulting value.
+     * @throws FileNotFoundException if a FileNotFoundException occurs while executing this method.
+     * @throws IOException if an I/O error occurs.
+     */
+    public static ModelDescriptor readFromLocalFile(String modelFile, boolean specialModel) throws FileNotFoundException, IOException
+    {
+    	Map<String, Object> yamlElements = YAMLUtils.load(modelFile);
+        // TODO yamlElements.put(fromLocalKey, true);
+    	// TODO yamlElements.put(modelPathKey, new File(modelFile).getParent());
+    	yamlElements.put("modelPath", new File(modelFile).getParentFile().getAbsolutePath());
+        return fromMap(yamlElements, specialModel);
     }
     
     /**
@@ -90,7 +107,7 @@ public class ModelDescriptorFactory {
 
     private static ModelDescriptor fromMap(Map<String,Object> yamlElements)
     {
-    	return fromMap(yamlElements, false);
+    	return fromMap(yamlElements, true);
     }
 
     private static ModelDescriptor fromMap(Map<String,Object> yamlElements, boolean specialModel)
@@ -163,16 +180,6 @@ public class ModelDescriptorFactory {
 				return null;
 			}
 			}).filter(mm -> mm != null).collect(Collectors.toList());
-	}
-
-	/**
-	 * Get the models at the local repo.
-	 * The default local repo is the 'models' folder in the directory where the program is being executed
-	 * 
-	 * @return a list of the {@link ModelDescriptor}s of the available models
-	 */
-	public static List<ModelDescriptor> getModelsAtLocalRepo() {
-		return getModelsAtLocalRepo(new File("models").getAbsolutePath());
 	}
     
     /**

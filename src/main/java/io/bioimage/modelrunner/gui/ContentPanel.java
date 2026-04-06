@@ -1,96 +1,116 @@
+/*-
+ * #%L
+ * Use deep learning frameworks from Java in an agnostic and isolated way.
+ * %%
+ * Copyright (C) 2022 - 2026 Institut Pasteur and BioImage.IO developers.
+ * %%
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ * 
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ * 
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ * #L%
+ */
 package io.bioimage.modelrunner.gui;
 
-import java.awt.CardLayout;
+import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Desktop;
 import java.awt.Dimension;
 import java.awt.Font;
-import java.awt.GridBagConstraints;
-import java.awt.GridBagLayout;
-import java.awt.GridLayout;
-import java.awt.Insets;
-import java.io.File;
+import java.awt.event.ComponentAdapter;
+import java.awt.event.ComponentEvent;
+import java.awt.image.BufferedImage;
 import java.net.URL;
 
-import javax.swing.Icon;
-import javax.swing.ImageIcon;
+import javax.swing.BorderFactory;
 import javax.swing.JEditorPane;
+import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JProgressBar;
 import javax.swing.JScrollPane;
-import javax.swing.border.EmptyBorder;
+import javax.swing.SwingUtilities;
 import javax.swing.event.HyperlinkEvent;
 import javax.swing.event.HyperlinkListener;
 
-import io.bioimage.modelrunner.gui.workers.ImageLoaderWorker;
-import io.bioimage.modelrunner.gui.workers.ImageLoaderWorker.ImageLoadCallback;
+import io.bioimage.modelrunner.gui.adapter.GuiAdapter;
 import io.bioimage.modelrunner.gui.workers.ModelInfoWorker;
 import io.bioimage.modelrunner.gui.workers.ModelInfoWorker.TextLoadCallback;
 import io.bioimage.modelrunner.bioimageio.description.ModelDescriptor;
 
 public class ContentPanel extends JPanel {
 	
-	private JLabel exampleImageLabel;
+	private final URL defaultLogoURL;
+	private boolean isUnsupported = false;
+	
+	private LogoPanel exampleImageLabel;
+	private JLabel exampleTitleLabel;
+	private JLabel unsupportedLabel;
+	protected JLabel infoTitleLabel;
     private JEditorPane modelInfoArea;
     private JProgressBar progressBar;
 	private JLabel progressInfoLabel;
-	private JPanel progressLabelPanel;
-	private JPanel progressPanel;
 	private JScrollPane infoScrollPane;
-	private CardLayout progressLabelLayout;
-    private ImageLoaderWorker imageWorker;
-    private final long parentHeight;
-    private final long parentWidth;
 
-	private final static double MODEL_VRATIO = 0.4;
-	private final static double PROGRESS_VRATIO = 0.2;
-	private final static double INFO_VRATIO = 0.7;
+	private final static double BAR_RATIO = 0.05;
+	private final static double LABEL_RATIO = 0.05;
 	
 	private static final long serialVersionUID = -7691139174208436363L;
 
-	protected ContentPanel(int parentWidth, int parentHeight) {
-		super(new GridLayout(1, 2));
-        this.parentWidth = parentWidth;
-        this.parentHeight= parentHeight;
-        this.setBorder(new EmptyBorder(5, 5, 5, 15));
-        this.setBackground(Color.WHITE);
-        this.setPreferredSize(new Dimension(parentWidth, (int) (parentHeight * MODEL_VRATIO)));
+	/**
+	 * Creates a new ContentPanel.
+	 */
+	protected ContentPanel() {
+		this(null);
+	}
 
-        // Example Image Panel
-        JPanel exampleImagePanel = new JPanel(new GridBagLayout());
-        exampleImagePanel.setBackground(Color.WHITE);
+	/**
+	 * Creates a new ContentPanel.
+	 *
+	 * @param adapter the adapter parameter.
+	 */
+	protected ContentPanel(GuiAdapter adapter) {
+		super(null);
+		
+		if (adapter == null) {
+			defaultLogoURL = null;
+		} else {
+			defaultLogoURL = ContentPanel.class.getClassLoader().getResource(adapter.getIconPath());
+		}
+		
 
-        JLabel exampleTitleLabel = new JLabel("Cover Image", JLabel.CENTER);
-        exampleTitleLabel.setFont(new Font("SansSerif", Font.BOLD, 18));
+        this.unsupportedLabel = new JLabel(ModelCard.UNSUPPORTED_TEXT, JLabel.CENTER);
+        this.unsupportedLabel.setFont(new Font("SansSerif", Font.BOLD, (int) (16)));
+        this.unsupportedLabel.setForeground(ModelCard.UNSUPPORTED_FG_COLOR);
+        this.unsupportedLabel.setBackground(ModelCard.UNSUPPORTED_BG_COLOR);
+        this.unsupportedLabel.setOpaque(true);
+        this.unsupportedLabel.setBorder(BorderFactory.createEtchedBorder());
+        this.unsupportedLabel.setVisible(true);
+
+        exampleTitleLabel = new JLabel("Cover Image");
+        exampleTitleLabel.setFont(new Font("SansSerif", Font.BOLD, 24));
 
         // Calculate dimensions for the logo based on the main interface size
-        int logoHeight = (int) (parentHeight * 0.3);
-        int logoWidth = parentWidth / 3;
-        ImageIcon logoIcon = DefaultIcon.getDefaultIcon(logoWidth, logoHeight);
-        exampleImageLabel = new JLabel(logoIcon, JLabel.CENTER);
-        
-        GridBagConstraints gbc = new GridBagConstraints();
-        gbc.gridx = 0;
-        gbc.gridy = 0;
-        gbc.fill = GridBagConstraints.BOTH;
-        gbc.weighty = 1;
-        exampleImagePanel.add(exampleTitleLabel, gbc);
-        gbc.gridy = 1;
-        gbc.fill = GridBagConstraints.BOTH;
-        gbc.weighty = 10;
-        exampleImagePanel.add(exampleImageLabel, gbc);
+        exampleImageLabel = new LogoPanel();
 
-        // Model Info Panel
-        JPanel modelInfoPanel = new JPanel(new GridBagLayout());
-        modelInfoPanel.setBackground(Color.WHITE);
-
-        JLabel infoTitleLabel = new JLabel("Model Information", JLabel.CENTER);
+        infoTitleLabel = new JLabel("Model Information");
         infoTitleLabel.setFont(new Font("SansSerif", Font.BOLD, 18));
 
         modelInfoArea = new JEditorPane("text/html", "Detailed model description...");
         modelInfoArea.setEditable(false);
         modelInfoArea.addHyperlinkListener(new HyperlinkListener() {
+            /**
+             * Executes hyperlink update.
+             *
+             * @param e the e parameter.
+             */
             public void hyperlinkUpdate(HyperlinkEvent e) {
                 if (e.getEventType() == HyperlinkEvent.EventType.ACTIVATED) {
                     try {
@@ -101,125 +121,290 @@ public class ContentPanel extends JPanel {
                 }
             }
         });
-        modelInfoArea.setPreferredSize(new Dimension(0, (int) (INFO_VRATIO * MODEL_VRATIO * this.parentHeight)));
         infoScrollPane = new JScrollPane(modelInfoArea);
-        infoScrollPane.setMinimumSize(new Dimension(0, (int) (INFO_VRATIO * MODEL_VRATIO * this.parentHeight)));
 
-        gbc.gridx = 0;
-        gbc.weightx = 1.0;
-        gbc.gridwidth = GridBagConstraints.REMAINDER;
-        gbc.fill = GridBagConstraints.BOTH;
-        
-        gbc.gridy = 0;
-        gbc.weighty = 1;
-        modelInfoPanel.add(infoTitleLabel, gbc);
-        gbc.gridy = 1;
-        gbc.weighty = 10;
-        gbc.fill = GridBagConstraints.BOTH;
-        modelInfoPanel.add(infoScrollPane, gbc);
-        gbc.gridy = 2;
-        gbc.weighty = 0;
-        gbc.fill = GridBagConstraints.HORIZONTAL;
         createProgressBar();
-        modelInfoPanel.add(progressPanel, gbc);
 
-        this.add(exampleImagePanel);
-        this.add(modelInfoPanel);
+        add(unsupportedLabel);
+        add(exampleImageLabel);
+        add(exampleTitleLabel);
+        add(infoTitleLabel);
+        add(progressBar);
+        add(progressInfoLabel);
+        add(infoScrollPane);
+        hookImageListener();
+        organiseComponents();
+	}
+    
+    private void organiseComponents() {
+    	addComponentListener(new ComponentAdapter() {
+            /**
+             * Executes component resized.
+             *
+             * @param e the e parameter.
+             */
+            @Override
+            public void componentResized(ComponentEvent e) {
+                int rawW = getWidth();
+                int rawH = getHeight();
+                
+                int inset = 4;
+                
+                int xRight = inset + rawW / 2;
+                
+                int spaceX = rawW / 2 - inset * 2;
+                
+                leftSideGUI(rawH, rawW, spaceX, inset);
+                rightSideGUI(rawH, rawW, inset, spaceX, xRight);
+            }
+        });
+    }
+    
+    private void rightSideGUI(int rawH, int rawW, int inset, int spaceX, int xRight) {
+        Dimension rightLabelSize = infoTitleLabel.getPreferredSize();
+        int labelPosX = Math.max(xRight, 3 * rawW / 4 - rightLabelSize.width / 2);
+        int labelW = Math.max(1, Math.min(rightLabelSize.width, rawW / 2 + spaceX +  2 * inset - labelPosX));
+        infoTitleLabel.setBounds(labelPosX, inset, labelW, rightLabelSize.height);
+
+        double barHeight = Math.max(1, rawH * BAR_RATIO);
+        double strHeight = Math.max(1, rawH * LABEL_RATIO);
+        
+        int barInset = 2;
+        
+        double hPanel = rawH - barInset - 4 * inset - barHeight - strHeight - rightLabelSize.height;
+        double wPanel = rawW / 2 - inset * 2;
+        int posY = 2 * inset + rightLabelSize.height;
+        
+
+        wPanel = Math.max(1, wPanel);
+        hPanel = Math.max(1, hPanel);
+        barHeight = Math.max(5, barHeight);
+        strHeight = Math.max(1, strHeight);
+        
+        infoScrollPane.setBounds(xRight, posY, (int) wPanel, (int) hPanel);
+        posY += hPanel + inset;
+        progressBar.setBounds(xRight, posY, (int) wPanel, (int) barHeight);
+        posY += barHeight + barInset;
+        progressInfoLabel.setBounds(xRight, posY, (int) wPanel, (int) strHeight);        
+    }
+    
+    private void leftSideGUI(int H, int W, int spaceX, int inset) {
+
+        int xLeft = inset;
+        Dimension leftLabelSize = exampleTitleLabel.getPreferredSize();
+        int labelPosX = Math.max(xLeft, W / 4 - leftLabelSize.width / 2);
+        int titleW = Math.min(leftLabelSize.width, spaceX + inset - labelPosX);
+        titleW = Math.max(1, titleW);
+        exampleTitleLabel.setBounds(labelPosX, inset, titleW, leftLabelSize.height);
+        
+        BufferedImage im = exampleImageLabel.getImage();
+        int imH, imW;
+        if (im == null) {
+        	imH = exampleImageLabel.getPreferredSize().height;
+        	imW = exampleImageLabel.getPreferredSize().width;
+        } else {
+            imH = im.getHeight();
+            imW = im.getWidth();
+        }
+        
+        double newW, newH;
+        int posx, posY;
+        double ratio = imH / (double) imW;
+        if (ratio > 1) {
+        	newH = H - inset * 3 - leftLabelSize.height;
+        	newW = newH / ratio;
+            posY = leftLabelSize.height + inset * 2;
+            posx = (int) (inset + spaceX / 2 - newW / 2);
+            if (posx < 0) {
+        		newW = spaceX;
+                newH = newW * ratio;
+                posx = inset;
+                posY = (int) ((H - 3 * inset - leftLabelSize.height) / 2 + 2 * inset + leftLabelSize.height - newH / 2);
+            }
+        } else {
+            newW = spaceX;
+            newH = newW * ratio;
+            posx = inset;
+            posY = (int) ((H - 3 * inset - leftLabelSize.height) / 2 + 2 * inset + leftLabelSize.height - newH / 2);
+        	if (posY < 2 * inset + leftLabelSize.height) {
+            	newH = H - inset * 3 - leftLabelSize.height;
+            	newW = newH / ratio;
+                posY = leftLabelSize.height + inset * 2;
+                posx = (int) (inset + spaceX / 2 - newW / 2);
+        	}
+        }
+        newW = Math.max(1, newW);
+        newH = Math.max(1, newH);
+        exampleImageLabel.setBounds(posx, posY, (int) newW, (int) newH);
+        
+
+
+        
+        unsupportedLabel.setFont(unsupportedLabel.getFont().deriveFont(Font.BOLD, (float) (16)));
+        
+        int labelW = (int) newW;
+        if (newW > 5) {
+        	labelW = labelW - 4;
+        }
+        int labelY = posY;
+        int labelH = (int) newH;
+        if (newH > 15) {
+        	labelH = (int) (newH / 3);
+        	labelY += ((int) (newH / 2)) - (int) (labelH / 2);
+        }
+        unsupportedLabel.setBounds(xLeft, labelY, spaceX, labelH);
+        unsupportedLabel.setVisible(isUnsupported);
+    }
+    
+    private void hookImageListener() {
+    	exampleImageLabel.addPropertyChangeListener(evt -> {
+            if ("image".equals(evt.getPropertyName())) {
+                int rawW = getWidth();
+                int rawH = getHeight();
+                
+                int inset = 4;
+                
+                int spaceX = rawW / 2 - inset * 2;
+                
+                leftSideGUI(rawH, rawW, spaceX, inset);
+            }
+        });
+    }
+    
+    /**
+     * Checks whether unsupported.
+     *
+     * @return true if the operation succeeds; otherwise, false.
+     */
+    protected boolean isUnsupported() {
+    	return this.isUnsupported;
+    }
+    
+    /**
+     * Sets unsupported.
+     *
+     * @param isUnsupported the isUnsupported parameter.
+     */
+    protected void setUnsupported(boolean isUnsupported) {
+    	this.isUnsupported = isUnsupported;
+    }
+	
+	/**
+	 * Sets icon.
+	 *
+	 * @param im the im parameter.
+	 */
+	protected void setIcon(BufferedImage im) {
+		this.exampleImageLabel.setImage(im, false);
 	}
 	
-	protected void setIcon(Icon icon) {
-		this.exampleImageLabel.setIcon(icon);
-	}
-	
+	/**
+	 * Sets info.
+	 *
+	 * @param text the text parameter.
+	 */
 	protected void setInfo(String text) {
-		this.modelInfoArea.setText(text);
-		modelInfoArea.setCaretPosition(0);
+		SwingUtilities.invokeLater(() -> {
+			this.modelInfoArea.setText(text);
+			modelInfoArea.setCaretPosition(0);
+		});
 	}
 	
 	private void createProgressBar() {
         // Create progress bar
         progressBar = new JProgressBar(0, 100);
         progressBar.setStringPainted(false);
-        progressBar.setPreferredSize(new Dimension((int) infoScrollPane.getPreferredSize().getWidth(), 
-        											(int) (parentHeight * PROGRESS_VRATIO)));
         progressBar.setBackground(Color.LIGHT_GRAY);
         progressBar.setVisible(true);
         progressBar.setForeground(new Color(46, 204, 113)); // Modern green color
 
         // Create progress label
         progressInfoLabel = new JLabel("Example text");
+        progressInfoLabel.setVisible(false);
         progressInfoLabel.setForeground(Color.black);
         progressInfoLabel.setFont(new Font("SansSerif", Font.ITALIC, 14));
 
-        // Panel to hold progress bar and label
-        progressPanel = new JPanel(new GridBagLayout());
-        progressPanel.setOpaque(false);
-
-        GridBagConstraints progressBarGbc = new GridBagConstraints();
-        progressBarGbc.gridx = 0;
-        progressBarGbc.weightx = 1;
-        progressBarGbc.insets = new Insets(2, 2, 2, 2);
-        progressBarGbc.fill = GridBagConstraints.BOTH;
-        
-
-        progressBarGbc.gridy = 0;
-        progressPanel.add(progressBar, progressBarGbc);
-        
-
-        progressBarGbc.gridy = 1;
-        progressLabelPanel = new JPanel();
-        progressLabelLayout = new CardLayout();
-        progressLabelPanel.setLayout(progressLabelLayout);
-        progressLabelPanel.add(progressInfoLabel, "visible");
-        progressLabelPanel.add(new JPanel(), "invisible");
-        progressLabelLayout.show(progressLabelPanel, "invisible");
-        progressPanel.add(progressLabelPanel, progressBarGbc);
 	}
 	
+	/**
+	 * Sets determinate porgress.
+	 *
+	 * @param progress the progress parameter.
+	 */
 	protected void setDeterminatePorgress(int progress) {
+		if (this.progressBar.isIndeterminate())
+			this.progressBar.setIndeterminate(false);
 		this.progressBar.setValue(progress);
 		progressBar.setStringPainted(true);
 		progressBar.setString(progress + "%");
 	}
 	
+	/**
+	 * Sets progress indeterminate.
+	 *
+	 * @param indeterminate the indeterminate parameter.
+	 */
 	protected void setProgressIndeterminate(boolean indeterminate) {
 		this.progressBar.setIndeterminate(indeterminate);
 	}
 	
+	/**
+	 * Sets progress bar text.
+	 *
+	 * @param text the text parameter.
+	 */
 	protected void setProgressBarText(String text) {
 		this.progressBar.setString(text);
 	}
 	
+	/**
+	 * Gets progress.
+	 *
+	 * @return the resulting numeric value.
+	 */
 	protected int getProgress() {
 		return this.progressBar.getValue();
 	}
 	
+	/**
+	 * Gets progress bar text.
+	 *
+	 * @return the resulting string.
+	 */
 	protected String getProgressBarText() {
 		return this.progressBar.getString();
 	}
 	
+	/**
+	 * Sets progress label text.
+	 *
+	 * @param text the text parameter.
+	 */
 	protected void setProgressLabelText(String text) {
-		if (text == null || text.equals("")) {
-			progressLabelLayout.show(progressLabelPanel, "invisible");
-			return;
-		}
+		text = text == null ? "" : text;
 		this.progressInfoLabel.setText(text);
-		progressLabelLayout.show(progressLabelPanel, "visible");
+		if (!this.progressInfoLabel.isVisible())
+			this.progressInfoLabel.setVisible(true);
 	}
 
+	/**
+	 * Executes update.
+	 *
+	 * @param modelDescriptor the modelDescriptor parameter.
+	 * @param path the path parameter.
+	 * @param logoWidth the logoWidth parameter.
+	 * @param logoHeight the logoHeight parameter.
+	 */
 	protected void update(ModelDescriptor modelDescriptor, URL path, int logoWidth, int logoHeight) {
-    	DefaultIcon.getLoadingIconWithCallback(logoWidth, logoHeight, icon -> {
-    		setIcon(icon);
-            revalidate();
-            repaint();
-        });
-    	ModelSelectionPanel.ICONS_DISPLAYED.put("main", path);
+    	DefaultIcon.drawImOrLogo(path, defaultLogoURL, exampleImageLabel, ModelSelectionPanelGui.MAIN_CARD_ID);
     	TextLoadCallback callback = new TextLoadCallback() {
+    	    /**
+    	     * Executes on text loaded.
+    	     *
+    	     * @param infoText the infoText parameter.
+    	     */
     	    @Override
     	    public void onTextLoaded(String infoText) {
-    	        if (!ModelSelectionPanel.ICONS_DISPLAYED.get("main").equals(path)) {
-    	            return;
-    	        }
                 setInfo(infoText);
     	        revalidate();
     	        repaint();
@@ -227,20 +412,31 @@ public class ContentPanel extends JPanel {
     	};
         ModelInfoWorker worker = new ModelInfoWorker(modelDescriptor, callback);
         worker.execute();
-        if (imageWorker != null && !imageWorker.isDone())
-        	imageWorker.cancelBackground();
-
-    	ImageLoadCallback imageCallback = new ImageLoadCallback() {
-            @Override
-            public void onImageLoaded(ImageIcon icon) {
-            	if (ModelSelectionPanel.ICONS_DISPLAYED.get("main") != path)
-            		return;
-            	setIcon(icon);
-            	revalidate();
-            	repaint();
-            }
-        };
-        imageWorker = ImageLoaderWorker.create(path, logoWidth, logoHeight, imageCallback);
-        imageWorker.execute();
 	}
+    
+    /**
+     * Executes main.
+     *
+     * @param args the args parameter.
+     */
+    public static void main(String[] args) {
+        SwingUtilities.invokeLater(() -> {
+            // 1) Create the frame
+            JFrame frame = new JFrame("Content Test");
+            frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+            frame.setSize(300, 400);  // or whatever size you need
+            frame.setLocationRelativeTo(null);
+
+            // 2) Create and configure your card
+            ContentPanel card = new ContentPanel();
+
+            // 3) Add to frame (since ModelCardGui uses null layout internally,
+            //    we’ll use BorderLayout here to have it fill the window)
+            frame.getContentPane().setLayout(new BorderLayout());
+            frame.getContentPane().add(card, BorderLayout.CENTER);
+
+            // 4) Show it
+            frame.setVisible(true);
+        });
+    }
 }

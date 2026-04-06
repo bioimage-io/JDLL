@@ -2,7 +2,7 @@
  * #%L
  * Use deep learning frameworks from Java in an agnostic and isolated way.
  * %%
- * Copyright (C) 2022 - 2024 Institut Pasteur and BioImage.IO developers.
+ * Copyright (C) 2022 - 2026 Institut Pasteur and BioImage.IO developers.
  * %%
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -133,17 +133,14 @@ public class EngineLoader extends ClassLoader
 	/**
 	 * Returns the ClassLoader of the corresponding Deep Learning framework
 	 * (engine)
-	 * 
-	 * @param classloader
-	 *            parent ClassLoader of the wanted ClassLoader
-	 * @param engineInfo
-	 *            the path to the directory where all the JARs needed to load
-	 *            the corresponding Deep Learning framework (engine) are stored
-	 * @return the ClassLoader corresponding to the wanted Deep Learning version
-	 * @throws MalformedURLException if the JAR files are not well defined in the .json file
-	 * @throws IOException if there is any error finding the engines in the system
-	 * @throws IllegalStateException if any of the engines has been incorrectly modified
-	 * @throws LoadEngineException if there is any error loading the engines
+	 *
+	 * @param classloader the classloader parameter.
+	 * @param engineInfo the engineInfo parameter.
+	 * @return the resulting value.
+	 * @throws MalformedURLException if a MalformedURLException occurs while executing this method.
+	 * @throws IllegalStateException if a IllegalStateException occurs while executing this method.
+	 * @throws LoadEngineException if a LoadEngineException occurs while executing this method.
+	 * @throws IOException if an I/O error occurs.
 	 */
 	public static EngineLoader createEngine( ClassLoader classloader, EngineInfo engineInfo ) throws MalformedURLException, IllegalStateException, LoadEngineException, IOException
 	{
@@ -330,6 +327,9 @@ public class EngineLoader extends ClassLoader
 	 * Close the created ClassLoader
 	 */
 	// TODO is it necessary??
+	/**
+	 * Executes close.
+	 */
 	public void close()
 	{
 		engineInstance.closeModel();

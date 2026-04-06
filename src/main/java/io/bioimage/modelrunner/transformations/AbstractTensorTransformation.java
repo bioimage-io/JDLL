@@ -2,7 +2,7 @@
  * #%L
  * Use deep learning frameworks from Java in an agnostic and isolated way.
  * %%
- * Copyright (C) 2022 - 2024 Institut Pasteur and BioImage.IO developers.
+ * Copyright (C) 2022 - 2026 Institut Pasteur and BioImage.IO developers.
  * %%
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -37,23 +37,44 @@ public abstract class AbstractTensorTransformation extends TensorTransformation
 	protected static String DEFAULT_MISSING_ARG_ERR = "Cannot execute %s BioImage.io transformation because '%s' "
 			+ "parameter was not set.";
 
+	/**
+	 * Creates a new AbstractTensorTransformation.
+	 *
+	 * @param name the name parameter.
+	 */
 	protected AbstractTensorTransformation( final String name )
 	{
 		this.name = name;
 	}
 
+	/**
+	 * Gets name.
+	 *
+	 * @return the resulting string.
+	 */
 	@Override
 	public String getName()
 	{
 		return name;
 	}
 
+	/**
+	 * Gets mode.
+	 *
+	 * @return the resulting value.
+	 */
 	@Override
 	public Mode getMode()
 	{
 		return mode;
 	}
 
+	/**
+	 * Executes make output.
+	 *
+	 * @param input the input parameter.
+	 * @return the resulting value.
+	 */
 	protected < R extends RealType< R > & NativeType< R > > Tensor< FloatType > makeOutput( final Tensor< R > input )
 	{
 		final ImgFactory< FloatType > factory = Util.getArrayOrCellImgFactory( input.getData(), new FloatType() );

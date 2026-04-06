@@ -2,7 +2,7 @@
  * #%L
  * Use deep learning frameworks from Java in an agnostic and isolated way.
  * %%
- * Copyright (C) 2022 - 2024 Institut Pasteur and BioImage.IO developers.
+ * Copyright (C) 2022 - 2026 Institut Pasteur and BioImage.IO developers.
  * %%
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -48,6 +48,11 @@ import io.bioimage.modelrunner.utils.Constants;
 public class ModelDescriptorCellposeV05 extends ModelDescriptorV05
 {
 
+	/**
+	 * Creates a new ModelDescriptorCellposeV05.
+	 *
+	 * @param yamlElements the yamlElements parameter.
+	 */
 	public ModelDescriptorCellposeV05(Map<String, Object> yamlElements) {
 		super(yamlElements);
 		// TODO Auto-generated constructor stub

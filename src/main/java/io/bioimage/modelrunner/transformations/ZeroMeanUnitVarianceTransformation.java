@@ -2,7 +2,7 @@
  * #%L
  * Use deep learning frameworks from Java in an agnostic and isolated way.
  * %%
- * Copyright (C) 2022 - 2024 Institut Pasteur and BioImage.IO developers.
+ * Copyright (C) 2022 - 2026 Institut Pasteur and BioImage.IO developers.
  * %%
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -53,12 +53,20 @@ public class ZeroMeanUnitVarianceTransformation extends AbstractTensorTransforma
 	private static String NOT_FIXED_MODE_ERR = "Only the mode 'fixed' requires providing the "
 			+ "'std' and 'mean parameters.";
 
+	/**
+	 * Creates a new ZeroMeanUnitVarianceTransformation.
+	 */
 	public ZeroMeanUnitVarianceTransformation()
 	{
 		super( name );
 		mode = Mode.PER_SAMPLE;
 	}
 	
+	/**
+	 * Sets eps.
+	 *
+	 * @param eps the eps parameter.
+	 */
 	public void setEps(Object eps) {
 		if (eps instanceof Integer) {
 			this.eps = Double.valueOf((int) eps);
@@ -73,6 +81,11 @@ public class ZeroMeanUnitVarianceTransformation extends AbstractTensorTransforma
 		}
 	}
 	
+	/**
+	 * Sets mean.
+	 *
+	 * @param mean the mean parameter.
+	 */
 	public void setMean(Object mean) {
 		if (mean instanceof Integer) {
 			this.meanDouble = Double.valueOf((int) mean);
@@ -105,6 +118,11 @@ public class ZeroMeanUnitVarianceTransformation extends AbstractTensorTransforma
 		}
 	}
 	
+	/**
+	 * Sets std.
+	 *
+	 * @param std the std parameter.
+	 */
 	public void setStd(Object std) {
 		if (std instanceof Integer) {
 			this.stdDouble = Double.valueOf((int) std);
@@ -136,9 +154,16 @@ public class ZeroMeanUnitVarianceTransformation extends AbstractTensorTransforma
 		}
 	}
 	
+	/**
+	 * Sets axes.
+	 *
+	 * @param axes the axes parameter.
+	 */
 	@SuppressWarnings("unchecked")
 	public void setAxes(Object axes) {
-		if (axes instanceof String )
+		if (axes instanceof String && ((String) axes).equals("channel"))
+			this.axes = "c";
+		else if (axes instanceof String)
 			this.axes = (String) axes;
 		else if (axes instanceof List) {
 			this.axes = "";
@@ -161,6 +186,41 @@ public class ZeroMeanUnitVarianceTransformation extends AbstractTensorTransforma
 					 + ", of a String array or of a List of Strings. The provided argument is " + axes.getClass());
 	}
 	
+	/**
+	 * Sets axis.
+	 *
+	 * @param axes the axes parameter.
+	 */
+	@SuppressWarnings("unchecked")
+	public void setAxis(Object axes) {
+		if (axes instanceof String && ((String) axes).equals("channel"))
+			this.axes = "c";
+		else if (axes instanceof String)
+			this.axes = (String) axes;
+		else if (axes instanceof List) {
+			this.axes = "";
+			for (Object ax : (List<Object>) axes) {
+				if (!(ax instanceof String))
+					throw new IllegalArgumentException("JDLL does not currently support this axes format. Please "
+							+ "write an issue attaching the rdf.yaml file at: " + Constants.ISSUES_LINK);
+				ax = ax.equals("channel") ? "c" : ax;
+				this.axes += ax;
+			}
+		} else if (axes instanceof String[]) {
+			String[] axesArr = (String[]) axes;
+			this.axes = "";
+			for (String ax : axesArr) {
+				ax = ax.equals("channel") ? "c" : ax;
+				this.axes += ax;
+			}
+		} else
+			throw new IllegalArgumentException("'axes' parameter has to be an instance of " + String.class
+					 + ", of a String array or of a List of Strings. The provided argument is " + axes.getClass());
+	}
+	
+	/**
+	 * Checks required args.
+	 */
 	public void checkRequiredArgs() {
 		if (this.mode == Mode.FIXED && this.meanArr == null && this.meanDouble == null) {
 			throw new IllegalArgumentException(String.format(DEFAULT_MISSING_ARG_ERR, name, "mean")
@@ -180,6 +240,12 @@ public class ZeroMeanUnitVarianceTransformation extends AbstractTensorTransforma
 		}
 	}
 
+	/**
+	 * Executes apply.
+	 *
+	 * @param input the input parameter.
+	 * @return the resulting value.
+	 */
 	@Override
 	public < R extends RealType< R > & NativeType< R > > Tensor< FloatType > apply( final Tensor< R > input )
 	{
@@ -189,18 +255,22 @@ public class ZeroMeanUnitVarianceTransformation extends AbstractTensorTransforma
 		return output;
 	}
 
+	/**
+	 * Executes apply in place.
+	 *
+	 * @param input the input parameter.
+	 */
 	@Override
 	public < R extends RealType< R > & NativeType< R > > void applyInPlace( final Tensor< R > input )
 	{
 		checkRequiredArgs();
 		String selectedAxes = "";
 		for (String ax : input.getAxesOrderString().split("")) {
-			if (axes != null && !axes.toLowerCase().contains(ax.toLowerCase())
-					&& !ax.toLowerCase().equals("b"))
+			if (axes != null && !axes.toLowerCase().contains(ax.toLowerCase()))
 				selectedAxes += ax;
 		}
 		if (mode == Mode.FIXED &&  (axes == null || selectedAxes.equals("") 
-				|| input.getAxesOrderString().replace("b", "").length() == selectedAxes.length())) {
+				|| input.getAxesOrderString().length() == selectedAxes.length())) {
 			if (meanDouble == null && meanArr == null)
 				throw new IllegalArgumentException(FIXED_MODE_ERR);
 			else if (meanDouble == null)
@@ -208,17 +278,15 @@ public class ZeroMeanUnitVarianceTransformation extends AbstractTensorTransforma
 						+ "cannot be arrays with the introduced 'axes'.");
 			fixedModeGlobalMeanStd(input);
 		} else if (mode != Mode.FIXED && (axes == null || selectedAxes.equals("") 
-				|| input.getAxesOrderString().replace("b", "").length() == selectedAxes.length())) {
+				|| input.getAxesOrderString().length() == selectedAxes.length())) {
 			if (meanDouble != null || meanArr != null)
 				throw new IllegalArgumentException(NOT_FIXED_MODE_ERR);
 			notFixedModeGlobalMeanStd(input);
-		} else if (mode != Mode.FIXED 
-				&& axes.length() <= 2 && axes.length() > 0) {
+		} else if (mode != Mode.FIXED) {
 			if (meanDouble != null || meanArr != null)
 				throw new IllegalArgumentException(NOT_FIXED_MODE_ERR);
 			notFixedAxesMeanStd(input, selectedAxes);
-		} else if (mode == Mode.FIXED 
-				&& axes.length() <= 2 && axes.length() > 0) {
+		} else if (mode == Mode.FIXED) {
 			if (meanDouble == null && meanArr == null)
 				throw new IllegalArgumentException(FIXED_MODE_ERR);
 			else if (meanDouble != null)
@@ -302,6 +370,12 @@ public class ZeroMeanUnitVarianceTransformation extends AbstractTensorTransforma
 		zeroMeanUnitVariance(output.getData(), mean, std);
 	}
 
+	/**
+	 * Executes mean std.
+	 *
+	 * @param rai the rai parameter.
+	 * @return the resulting array.
+	 */
 	public static < R extends RealType< R > & NativeType< R > > float[] meanStd( final RandomAccessibleInterval< R > rai )
 	{
 		// Mean.
@@ -348,12 +422,20 @@ public class ZeroMeanUnitVarianceTransformation extends AbstractTensorTransforma
 		return allPoints;
 	}
 	
+	/**
+	 * Executes main.
+	 *
+	 * @param args the args parameter.
+	 */
 	public static void main(String[] args) {
 		//test1();
 		test2();
 		test3();
 	}
 	
+	/**
+	 * Executes test1.
+	 */
 	public static void test1() {
 		float[] arr = new float[9];
 		for (int i = 0; i < arr.length; i ++) {
@@ -369,6 +451,9 @@ public class ZeroMeanUnitVarianceTransformation extends AbstractTensorTransforma
 		System.out.print(true);
 	}
 	
+	/**
+	 * Executes test2.
+	 */
 	public static void test2() {
 		float[] arr = new float[18];
 		for (int i = 0; i < arr.length; i ++) {
@@ -383,6 +468,9 @@ public class ZeroMeanUnitVarianceTransformation extends AbstractTensorTransforma
 		System.out.print(true);
 	}
 	
+	/**
+	 * Executes test3.
+	 */
 	public static void test3() {
 		float[] arr = new float[9];
 		for (int i = 0; i < arr.length; i ++) {

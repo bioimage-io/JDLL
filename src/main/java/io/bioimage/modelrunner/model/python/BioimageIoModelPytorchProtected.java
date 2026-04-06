@@ -2,7 +2,7 @@
  * #%L
  * Use deep learning frameworks from Java in an agnostic and isolated way.
  * %%
- * Copyright (C) 2022 - 2024 Institut Pasteur and BioImage.IO developers.
+ * Copyright (C) 2022 - 2026 Institut Pasteur and BioImage.IO developers.
  * %%
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -47,7 +47,6 @@ import io.bioimage.modelrunner.tensor.Tensor;
 import io.bioimage.modelrunner.utils.CommonUtils;
 import net.imglib2.type.NativeType;
 import net.imglib2.type.numeric.RealType;
-import net.imglib2.type.numeric.real.FloatType;
 
 public class BioimageIoModelPytorchProtected extends DLModelPytorchProtected {
 	/**
@@ -59,17 +58,40 @@ public class BioimageIoModelPytorchProtected extends DLModelPytorchProtected {
 	 */
 	protected TileCalculator tileCalculator;
 	
-	protected BioimageIoModelPytorchProtected(String modelFile, String callable, String weightsPath, 
+	/**
+	 * Creates a new BioimageIoModelPytorchProtected.
+	 *
+	 * @param modelFile the modelFile parameter.
+	 * @param callable the callable parameter.
+	 * @param importModule the importModule parameter.
+	 * @param weightsPath the weightsPath parameter.
+	 * @param kwargs the kwargs parameter.
+	 * @param descriptor the descriptor parameter.
+	 * @param custom the custom parameter.
+	 * @throws IOException if an I/O error occurs.
+	 */
+	protected BioimageIoModelPytorchProtected(String modelFile, String callable, String importModule, String weightsPath, 
 			Map<String, Object> kwargs, ModelDescriptor descriptor, boolean custom) throws IOException {
-		super(modelFile, callable, weightsPath, kwargs, custom);
+		super(modelFile, callable, importModule, weightsPath, kwargs, custom);
 		this.tiling = true;
 		this.descriptor = descriptor;
 		this.tileCalculator = TileCalculator.init(descriptor);
 	}
 		
-	protected BioimageIoModelPytorchProtected(String modelFile, String callable, String weightsPath, 
+	/**
+	 * Creates a new BioimageIoModelPytorchProtected.
+	 *
+	 * @param modelFile the modelFile parameter.
+	 * @param callable the callable parameter.
+	 * @param importModule the importModule parameter.
+	 * @param weightsPath the weightsPath parameter.
+	 * @param kwargs the kwargs parameter.
+	 * @param descriptor the descriptor parameter.
+	 * @throws IOException if an I/O error occurs.
+	 */
+	protected BioimageIoModelPytorchProtected(String modelFile, String callable, String importModule, String weightsPath, 
 			Map<String, Object> kwargs, ModelDescriptor descriptor) throws IOException {
-		this(modelFile, callable, weightsPath, kwargs, descriptor, false);
+		this(modelFile, callable, importModule, weightsPath, kwargs, descriptor, false);
 	}
 	
 	/**
@@ -134,7 +156,25 @@ public class BioimageIoModelPytorchProtected extends DLModelPytorchProtected {
 		runTiling(inputTensors, outputTensors, tiles);
 		return processing.postprocess(outputTensors, true);
 	}
-
+	
+	/**
+	 * Run a Bioimage.io model and execute the tiling strategy in one go.
+	 * The model needs to have been previously loaded with {@link #loadModel()}.
+	 * This method does not execute pre- or post-processing, they
+	 * need to be executed independently before or after
+	 * 
+	 * @param <T>
+	 * 	ImgLib2 data type of the output images
+	 * @param <R>
+	 * 	ImgLib2 data type of the input images
+	 * @param inputTensors
+	 * 	list of the input tensors that are going to be inputed to the model
+	 * @param outputTensors
+	 * 	list of the expected output tensors
+	 * @throws RunModelException if the model has not been previously loaded
+	 * @throws IllegalArgumentException if the model is not a Bioimage.io model or if lacks a Bioimage.io
+	 *  rdf.yaml specs file in the model folder. 
+	 */
 	public <T extends RealType<T> & NativeType<T>, R extends RealType<R> & NativeType<R>> 
 	void run(List<Tensor<T>> inputTensors, List<Tensor<R>> outputTensors) throws RunModelException {
 		if (!this.isLoaded())
@@ -153,7 +193,7 @@ public class BioimageIoModelPytorchProtected extends DLModelPytorchProtected {
 			long[] expectedSize = maker.getOutputImageSize(tt.getName());
 			if (expectedSize == null) {
 				throw new IllegalArgumentException("Tensor '" + tt.getName() + "' is missing in the outputs.");
-			} else if (!tt.isEmpty() && Arrays.equals(expectedSize, tt.getData().dimensionsAsLongArray())) {
+			} else if (!tt.isEmpty() && !Arrays.equals(expectedSize, tt.getData().dimensionsAsLongArray())) {
 				throw new IllegalArgumentException("Tensor '" + tt.getName() + "' size is different than the expected size"
 						+ " as defined by the rdf.yaml: " + Arrays.toString(tt.getData().dimensionsAsLongArray()) 
 						+ " vs " + Arrays.toString(expectedSize) + ".");
@@ -162,6 +202,10 @@ public class BioimageIoModelPytorchProtected extends DLModelPytorchProtected {
 		runBMZ(inputTensors, outputTensors, maker);
 	}
 	
+	/**
+	 * Find which of the dependencies required in the env of the model are missing
+	 * @return list of dependencies that are missing in the selected env to run the model
+	 */
 	public List<String> findMissingDependencies() {
 		Mamba mamba = new Mamba(new File(envPath).getParentFile().getParentFile().getAbsolutePath());
 		List<String> reqDeps = ModelDependencies.getDependencies(descriptor, 
@@ -173,6 +217,10 @@ public class BioimageIoModelPytorchProtected extends DLModelPytorchProtected {
 		}
 	}
 	
+	/**
+	 * 
+	 * @return whether all the dependencies requried to run the model are installed or not
+	 */
 	public boolean allDependenciesInstalled() {
 		return findMissingDependencies().size() == 0;
 	}

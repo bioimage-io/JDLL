@@ -2,7 +2,7 @@
  * #%L
  * Use deep learning frameworks from Java in an agnostic and isolated way.
  * %%
- * Copyright (C) 2022 - 2024 Institut Pasteur and BioImage.IO developers.
+ * Copyright (C) 2022 - 2026 Institut Pasteur and BioImage.IO developers.
  * %%
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -44,6 +44,12 @@ public class AxesV04 implements Axes {
 	
 	private String reference;
 	
+	/**
+	 * Creates a new AxesV04.
+	 *
+	 * @param tensorSpecMap the tensorSpecMap parameter.
+	 * @param isInput the isInput parameter.
+	 */
 	protected AxesV04(Map<String, Object> tensorSpecMap, boolean isInput) {
 		axesOrder = (String) tensorSpecMap.get("axes");
 		if (axesOrder == null)
@@ -109,6 +115,11 @@ public class AxesV04 implements Axes {
 		
 	}
 	
+	/**
+	 * Gets axes order.
+	 *
+	 * @return the resulting string.
+	 */
 	public String getAxesOrder() {
 		return this.axesOrder;
 	}
@@ -120,22 +131,47 @@ public class AxesV04 implements Axes {
 		return axesList;
 	}
 
+	/**
+	 * Gets min tile size arr.
+	 *
+	 * @return the resulting array.
+	 */
 	public int[] getMinTileSizeArr() {
 		return this.minArr;
 	}
 
+	/**
+	 * Gets tile step arr.
+	 *
+	 * @return the resulting array.
+	 */
 	public int[] getTileStepArr() {
 		return this.stepArr;
 	}
 
+	/**
+	 * Gets tile scale arr.
+	 *
+	 * @return the resulting array.
+	 */
 	public double[] getTileScaleArr() {
 		return this.scaleArr;
 	}
 
+	/**
+	 * Gets offset arr.
+	 *
+	 * @return the resulting array.
+	 */
 	public double[] getOffsetArr() {
 		return this.offsetArr;
 	}
 
+	/**
+	 * Gets halo arr.
+	 *
+	 * @return the resulting array.
+	 */
 	public int[] getHaloArr() {
 		haloArr = new int[this.axesList.size()];
 		for (int i = 0; i < this.axesList.size(); i ++)
@@ -143,6 +179,12 @@ public class AxesV04 implements Axes {
 		return this.haloArr;
 	}
 	
+	/**
+	 * Gets axis.
+	 *
+	 * @param abreviation the abreviation parameter.
+	 * @return the resulting value.
+	 */
 	public Axis getAxis(String abreviation) {
 		return axesList.stream().filter(ax -> ax.getAxis().equals(abreviation)).findFirst().orElse(null);
 	}

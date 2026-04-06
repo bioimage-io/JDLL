@@ -2,7 +2,7 @@
  * #%L
  * Use deep learning frameworks from Java in an agnostic and isolated way.
  * %%
- * Copyright (C) 2022 - 2024 Institut Pasteur and BioImage.IO developers.
+ * Copyright (C) 2022 - 2026 Institut Pasteur and BioImage.IO developers.
  * %%
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -111,21 +111,15 @@ public class DLModelJava extends BaseModel
 	/**
 	 * Construct the object model with all the needed information to load a
 	 * model and make inference
-	 * 
-	 * @param engineInfo
-	 *            informaton needed about the model
-	 * @param modelFolder
-	 *            directory where of the model folder
-	 * @param modelSource
-	 *            name of the actual model file (.pt for torchscript)
-	 * @param classLoader
-	 *            parent ClassLoader of the engine (can be null)
-	 * @throws LoadEngineException
-	 *             if there is an error finding the Deep LEarningn interface
-	 *             that connects with the DL libraries
-	 * @throws MalformedURLException if the JAR files are not well defined in the .json file
-	 * @throws IOException if there is any error finding the engines in the system
-	 * @throws IllegalStateException if any of the engines has been incorrectly modified
+	 *
+	 * @param engineInfo the engineInfo parameter.
+	 * @param modelFolder the modelFolder parameter.
+	 * @param modelSource the modelSource parameter.
+	 * @param classLoader the classLoader parameter.
+	 * @throws LoadEngineException if a LoadEngineException occurs while executing this method.
+	 * @throws MalformedURLException if a MalformedURLException occurs while executing this method.
+	 * @throws IllegalStateException if a IllegalStateException occurs while executing this method.
+	 * @throws IOException if an I/O error occurs.
 	 */
 	protected DLModelJava(EngineInfo engineInfo, String modelFolder, String modelSource, ClassLoader classLoader )
 			throws LoadEngineException, MalformedURLException, IllegalStateException, IOException
@@ -320,10 +314,20 @@ public class DLModelJava extends BaseModel
 		return outs;
 	}
 	
+	/**
+	 * Checks whether tiling.
+	 *
+	 * @return true if the operation succeeds; otherwise, false.
+	 */
 	public boolean isTiling() {
 		return this.tiling;
 	}
 	
+	/**
+	 * Sets tiling.
+	 *
+	 * @param doTiling the doTiling parameter.
+	 */
 	public void setTiling(boolean doTiling) {
 		this.tiling = doTiling;
 	}
@@ -419,24 +423,15 @@ public class DLModelJava extends BaseModel
 	/**
 	 * Creates a DeepLearning model {@link BioimageIoModelJava} from the wanted Deep Learning
 	 * framework (engine)
-	 * 
-	 * @param modelFolder
-	 *            String path to the folder where all the components of the
-	 *            model are stored
-	 * @param modelSource
-	 *            String path to the actual model file. In Pytorch is the path
-	 *            to a .pt file and for Tf it is the same as the modelFolder
-	 * @param engineInfo
-	 *            all the information needed to load the classes of a Deep
-	 *            Learning framework (engine)
-	 * @return the Model that is going to be used to make inference
-	 * @throws LoadEngineException
-	 *             if there is an error finding the Deep LEarningn interface
-	 *             that connects with the DL libraries
-	 * @throws MalformedURLException if the JAR files are not well defined in the .json file
-	 * @throws IOException if there is any error finding the engines in the system
-	 * @throws IllegalStateException if any of the engines has been incorrectly modified
-	 * @throws LoadEngineException if there is any error loading the engines
+	 *
+	 * @param modelFolder the modelFolder parameter.
+	 * @param modelSource the modelSource parameter.
+	 * @param engineInfo the engineInfo parameter.
+	 * @return the resulting value.
+	 * @throws LoadEngineException if a LoadEngineException occurs while executing this method.
+	 * @throws MalformedURLException if a MalformedURLException occurs while executing this method.
+	 * @throws IllegalStateException if a IllegalStateException occurs while executing this method.
+	 * @throws IOException if an I/O error occurs.
 	 */
 	public static DLModelJava createModel( String modelFolder, String modelSource, EngineInfo engineInfo )
 			throws LoadEngineException, MalformedURLException, IllegalStateException, IOException
@@ -461,33 +456,16 @@ public class DLModelJava extends BaseModel
 	/**
 	 * Creates a DeepLearning model {@link BioimageIoModelJava} from the wanted Deep Learning
 	 * framework (engine)
-	 * 
-	 * @param modelFolder
-	 *            String path to the folder where all the components of the
-	 *            model are stored
-	 * @param modelSource
-	 *            String path to the actual model file. In Pytorch is the path
-	 *            to a .pt file and for Tf it is the same as the modelFolder
-	 * @param engineInfo
-	 *            all the information needed to load the classes of a Deep
-	 *            Learning framework (engine)
-	 * @param classLoader
-	 * 	Parent ClassLoader of the engine(can be null). Almost the same method as 
-	 *  Model.createDeepLearningModel( String modelFolder, String modelSource, EngineInfo engineInfo). 
-	 *  The only difference is that this method can choose the parent ClassLoader for the engine. 
-	 *  JDLL creates a separate ChildFirst-ParentLast CustomClassLoader for each of the 
-	 *  engines loaded to avoid conflicts between them. In order to have access to the 
-	 *  classes of the main ClassLoader the ChildFirst-ParentLast CustomClassLoader needs a parent. 
-	 *  If no classloader argument is provided the parent ClassLoader will be the Thread's 
-	 *  context ClassLoader (Thread.currentThread().getContextClassLoader()).
-	 *  
-	 *  The classloader argument is usually not needed, but for some softwares 
-	 *  such as Icy, that have a custom management of ClassLoaders it is necessary.
-	 * @return the Model that is going to be used to make inference
-	 * @throws LoadEngineException if there is any error loading the DL framework
-	 * @throws IOException if there is any error finding the engines in the system
-	 * @throws IllegalStateException if any of the installed DL engines have been manipulated incorrectly
-	 * @throws MalformedURLException if the JAR files are not well defined in the .json file
+	 *
+	 * @param modelFolder the modelFolder parameter.
+	 * @param modelSource the modelSource parameter.
+	 * @param engineInfo the engineInfo parameter.
+	 * @param classLoader the classLoader parameter.
+	 * @return the resulting value.
+	 * @throws LoadEngineException if a LoadEngineException occurs while executing this method.
+	 * @throws MalformedURLException if a MalformedURLException occurs while executing this method.
+	 * @throws IllegalStateException if a IllegalStateException occurs while executing this method.
+	 * @throws IOException if an I/O error occurs.
 	 */
 	public static DLModelJava createModel( String modelFolder, String modelSource, EngineInfo engineInfo,
 			ClassLoader classLoader ) throws LoadEngineException, MalformedURLException, IllegalStateException, IOException
@@ -511,15 +489,12 @@ public class DLModelJava extends BaseModel
 
 	/**
 	 * Sets the classloader containing the Deep Learning engine
-	 * 
-	 * @param classLoader
-	 *            parent ClassLoader of the engine (can be null)
-	 * @throws LoadEngineException
-	 *             if there is an error finding the Deep LEarningn interface
-	 *             that connects with the DL libraries
-	 * @throws MalformedURLException if the JAR files are not well defined in the .json file
-	 * @throws IOException if there is any error finding the engines in the system
-	 * @throws IllegalStateException if any of the engines has been incorrectly modified
+	 *
+	 * @param classLoader the classLoader parameter.
+	 * @throws LoadEngineException if a LoadEngineException occurs while executing this method.
+	 * @throws MalformedURLException if a MalformedURLException occurs while executing this method.
+	 * @throws IllegalStateException if a IllegalStateException occurs while executing this method.
+	 * @throws IOException if an I/O error occurs.
 	 */
 	protected void setEngineClassLoader( ClassLoader classLoader ) throws LoadEngineException, MalformedURLException, IllegalStateException, IOException
 	{

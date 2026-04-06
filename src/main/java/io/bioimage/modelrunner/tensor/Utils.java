@@ -2,7 +2,7 @@
  * #%L
  * Use deep learning frameworks from Java in an agnostic and isolated way.
  * %%
- * Copyright (C) 2022 - 2024 Institut Pasteur and BioImage.IO developers.
+ * Copyright (C) 2022 - 2026 Institut Pasteur and BioImage.IO developers.
  * %%
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,6 +22,7 @@ package io.bioimage.modelrunner.tensor;
 
 import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.transform.integer.MixedTransform;
+import net.imglib2.type.NativeType;
 import net.imglib2.type.numeric.NumericType;
 import net.imglib2.type.numeric.RealType;
 import net.imglib2.util.Intervals;
@@ -89,5 +90,43 @@ public final class Utils
         MixedTransform t = new MixedTransform(n, n);
         t.setComponentMapping(invOrderChange);
         return Views.interval(new MixedTransformView<>(rai, t), min, max);
+	}
+	
+	public static <T extends RealType<T> & NativeType<T>>
+	RandomAccessibleInterval<T> convertToAxesOrder(RandomAccessibleInterval<T> rai, String axesOrder, String targetAxesOrder) {
+		int ogLength = axesOrder.length();
+		for (int i = ogLength - 1; i >= 0; i --) {
+			if (targetAxesOrder.indexOf(axesOrder.split("")[i]) != -1)
+				continue;
+			axesOrder = axesOrder.substring(0, i) + axesOrder.substring(i + 1, axesOrder.length());
+			rai = Views.hyperSlice(rai, i, 0);
+		}
+		String newImAxesOrder = addExtraDims(axesOrder, targetAxesOrder);
+		for (int i = 0; i < (newImAxesOrder.length() - axesOrder.length()); i ++)
+			rai = Views.addDimension(rai, 0, 0);
+		rai = transposeToAxesOrder(rai, newImAxesOrder, targetAxesOrder);
+		return rai;
+	}
+	
+	private static <T extends RealType<T> & NativeType<T>>
+	RandomAccessibleInterval<T> transposeToAxesOrder(RandomAccessibleInterval<T> rai, String ogAxes, String targetAxes) {
+		int[] transformation = new int[ogAxes.length()];
+		int c = 0;
+		for (String ss : targetAxes.split("")) {
+			transformation[c ++] = ogAxes.indexOf(ss);
+		}
+		return Utils.rearangeAxes(rai, transformation);
+	}
+	
+	private static <T extends RealType<T> & NativeType<T>>
+	String addExtraDims(String ogAxes, String targetAxes) {
+		ogAxes = ogAxes.toLowerCase().replace("t", "b");
+		targetAxes = targetAxes.toLowerCase().replace("t", "b");
+		for (String ax : targetAxes.split("")) {
+			if (ogAxes.contains(ax))
+				continue;
+			ogAxes += ax;
+		}
+		return ogAxes;
 	}
 }

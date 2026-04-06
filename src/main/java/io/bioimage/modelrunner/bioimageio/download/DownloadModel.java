@@ -2,7 +2,7 @@
  * #%L
  * Use deep learning frameworks from Java in an agnostic and isolated way.
  * %%
- * Copyright (C) 2022 - 2024 Institut Pasteur and BioImage.IO developers.
+ * Copyright (C) 2022 - 2026 Institut Pasteur and BioImage.IO developers.
  * %%
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -152,6 +152,11 @@ public class DownloadModel {
 		String fname = MultiFileDownloader.addTimeStampToFileName(descriptor.getName(), true);
 		this.modelsDir = modelsDir + File.separator + getValidFileName(fname);
     	this.unzippingConsumer = new Consumer<Double>() {
+    		/**
+    		 * Executes accept.
+    		 *
+    		 * @param d the d parameter.
+    		 */
     		@Override
             public void accept(Double d) {
         		unzippingProgress = d;
@@ -160,6 +165,11 @@ public class DownloadModel {
 		retriveDownloadModelLinks();
 	}
 	
+	/**
+	 * Sets progress consumer.
+	 *
+	 * @param consumer the consumer parameter.
+	 */
 	public void setProgressConsumer(Consumer<Double> consumer) {
 		this.consumer = consumer;
 	}
@@ -465,7 +475,7 @@ public class DownloadModel {
 					.findFirst().get().getSource();
 			try {
 				source = FileDownloader.getFileNameFromURLString(source);
-			} catch (Exception ex) {}
+			} catch (Exception | Error ex) {}
 			System.out.println("Unzipping model...");
 			unzippingConsumer.accept(0.);
 			ZipUtils.unzipFolder(this.modelsDir + File.separator + source, this.modelsDir,

@@ -1,3 +1,22 @@
+/*-
+ * #%L
+ * Use deep learning frameworks from Java in an agnostic and isolated way.
+ * %%
+ * Copyright (C) 2022 - 2026 Institut Pasteur and BioImage.IO developers.
+ * %%
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ * 
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ * 
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ * #L%
+ */
 /*******************************************************************************
  * Copyright (C) 2021, Ko Sugawara
  * All rights reserved.
@@ -188,13 +207,15 @@ public class Mamba {
 		String osName = System.getProperty("os.name");
 		if (osName.startsWith("Windows")) osName = "Windows";
 		String osArch = System.getProperty("os.arch");
-		switch (osName + "|" + osArch) {
-			case "Linux|amd64":      return "linux-64";
-			case "Linux|aarch64":    return "linux-aarch64";
-			case "Linux|ppc64le":    return "linux-ppc64le";
-			case "Mac OS X|x86_64":  return "osx-64";
-			case "Mac OS X|aarch64": return "osx-arm64";
-			case "Windows|amd64":    return "win-64";
+		switch (osName + "|" + osArch + "|" + PlatformDetection.isUsingRosseta()) {
+			case "Linux|amd64|false":      return "linux-64";
+			case "Linux|aarch64|false":    return "linux-aarch64";
+			case "Linux|ppc64le|false":    return "linux-ppc64le";
+			case "Mac OS X|x86_64|false":  return "osx-64";
+			case "Mac OS X|x86_64|true":  return "osx-arm64";
+			case "Mac OS X|aarch64|false": return "osx-arm64";
+			case "Mac OS X|arm64|false": return "osx-arm64";
+			case "Windows|amd64|false":    return "win-64";
 			default:                 return null;
 		}
 	}
@@ -368,13 +389,33 @@ public class Mamba {
 		this.customErrorConsumer = custom;
 	}
 	
+	private File tempDirMacos(String filename) throws IOException, URISyntaxException {
+		
+        File tempFile = new File(BASE_PATH, filename);
+        File parent = tempFile.getParentFile();
+        if (!parent.exists()) {
+            parent.mkdirs();
+        }
+        boolean created = tempFile.createNewFile();
+        if (!created) {
+            throw new IOException("Failed to create temp file: " + tempFile.getAbsolutePath());
+        }
+        tempFile.deleteOnExit();
+		return tempFile;
+	}
+	
 	private File downloadMicromamba() throws IOException, URISyntaxException {
-		final File tempFile = File.createTempFile( "micromamba", ".tar.bz2" );
+		final File tempFile;
+		if (PlatformDetection.isMacOS())
+			tempFile = tempDirMacos("micromamba-" + UUID.randomUUID() + ".tar.bz2");
+		else
+			tempFile = File.createTempFile( "micromamba", ".tar.bz2" );
 		tempFile.deleteOnExit();
 		URL website = FileDownloader.redirectedURL(new URL(MICROMAMBA_URL));
 		Consumer<Double> micromambaConsumer = (d) -> {
 			d = (double) (Math.round(d * 1000) / 10);
-			customConsoleConsumer.accept("Installing micromamba: " + d + "%");
+			if (customConsoleConsumer != null)
+				customConsoleConsumer.accept("Installing micromamba: " + d + "%");
 		};
 		FileDownloader fd = new FileDownloader(website.toString(), tempFile);
 		fd.setPartialProgressConsumer(micromambaConsumer);
@@ -390,8 +431,12 @@ public class Mamba {
 	}
 	
 	private void decompressMicromamba(final File tempFile) 
-				throws FileNotFoundException, IOException, ArchiveException, InterruptedException {
-		final File tempTarFile = File.createTempFile( "micromamba", ".tar" );
+				throws FileNotFoundException, IOException, ArchiveException, InterruptedException, URISyntaxException {
+		final File tempTarFile;
+		if (PlatformDetection.isMacOS())
+			tempTarFile = tempDirMacos("micromamba-" + UUID.randomUUID() + ".tar");
+		else
+			tempTarFile = File.createTempFile( "micromamba", ".tar" );
 		tempTarFile.deleteOnExit();
 		MambaInstallerUtils.unBZip2(tempFile, tempTarFile);
 		File mambaBaseDir = new File(rootdir);
@@ -415,16 +460,20 @@ public class Mamba {
 	 *             If the current thread is interrupted by another thread while it
 	 *             is waiting, then the wait is ended and an InterruptedException is
 	 *             thrown.
-	 * @throws ArchiveException if there is any error decompressing
 	 * @throws URISyntaxException  if there is any error with the micromamba url
 	 */
-	public void installMicromamba() throws IOException, InterruptedException, ArchiveException, URISyntaxException {
+	public void installMicromamba() throws IOException, InterruptedException, URISyntaxException {
 		checkMambaInstalled();
 		if (installed) return;
 		decompressMicromamba(downloadMicromamba());
 		checkMambaInstalled();
 	}
 	
+	/**
+	 * Gets envs dir.
+	 *
+	 * @return the resulting string.
+	 */
 	public String getEnvsDir() {
 		return this.envsdir;
 	}
@@ -518,25 +567,14 @@ public class Mamba {
 
 	/**
 	 * Run {@code conda create} to create a conda environment defined by the input environment yaml file.
-	 * 
-	 * @param envName
-	 *            The environment name to be created. It should not be a path, just the name.
-	 * @param envYaml
-	 *            The environment yaml file containing the information required to build it  
-	 * @param envName
-	 *            The environment name to be created.
-	 * @param isForceCreation
-	 *            Force creation of the environment if {@code true}. If this value
-	 *            is {@code false} and an environment with the specified name
-	 *            already exists, throw an {@link EnvironmentExistsException}.
-	 * @throws IOException
-	 *             If an I/O error occurs.
-	 * @throws InterruptedException
-	 *             If the current thread is interrupted by another thread while it
-	 *             is waiting, then the wait is ended and an InterruptedException is
-	 *             thrown.
-	 * @throws RuntimeException if the process to create the env of the yaml file is not terminated correctly. If there is any error running the commands
-	 * @throws MambaInstallException if Micromamba has not been installed, thus the instance of {@link Mamba} cannot be used
+	 *
+	 * @param envName the envName parameter.
+	 * @param envYaml the envYaml parameter.
+	 * @param isForceCreation the isForceCreation parameter.
+	 * @throws IOException if an I/O error occurs.
+	 * @throws InterruptedException if the current thread is interrupted while waiting for the operation to finish.
+	 * @throws RuntimeException if the operation cannot be completed successfully.
+	 * @throws MambaInstallException if a MambaInstallException occurs while executing this method.
 	 */
 	public void createWithYaml( final String envName, final String envYaml, final boolean isForceCreation) throws IOException, InterruptedException, RuntimeException, MambaInstallException
 	{
@@ -991,15 +1029,18 @@ public class Mamba {
 		if ( PlatformDetection.isWindows() )
 		{
 			final Map< String, String > envs = builder.environment();
-			envs.put( "Path", envDir + ";" + envs.get( "Path" ) );
+			envs.keySet().removeIf(key ->
+			     key.equalsIgnoreCase("PATH")
+			  || key.equalsIgnoreCase("PYTHONPATH")
+			  || key.equalsIgnoreCase("PYTHONHOME")
+			);
+			envs.put( "Path", envDir + ";");
 			envs.put( "Path", Paths.get( envDir, "Scripts" ).toString() + ";" + envs.get( "Path" ) );
 			envs.put( "Path", Paths.get( envDir, "Library" ).toString() + ";" + envs.get( "Path" ) );
 			envs.put( "Path", Paths.get( envDir, "Library", "Bin" ).toString() + ";" + envs.get( "Path" ) );
 		}
 		// TODO find way to get env vars in micromamba builder.environment().putAll( getEnvironmentVariables( envName ) );
 		runPythonIn(builder.command( cmd ), this.consoleConsumer, this.errConsumer);
-		// TODO remove if ( builder.command( cmd ).start().waitFor() != 0 )
-		// TODO remove    throw new RuntimeException("Error executing the following command: " + builder.command());
 	}
 
 	/**
@@ -1038,19 +1079,48 @@ public class Mamba {
 		
 		
 		final ProcessBuilder builder = new ProcessBuilder().directory( envFile );
-		builder.inheritIO();
 		if ( PlatformDetection.isWindows() )
 		{
 			final Map< String, String > envs = builder.environment();
+			envs.keySet().removeIf(key ->
+			     key.equalsIgnoreCase("PATH")
+			  || key.equalsIgnoreCase("PYTHONPATH")
+			  || key.equalsIgnoreCase("PYTHONHOME")
+			);
 			final String envDir = envFile.getAbsolutePath();
-			envs.put( "Path", envDir + ";" + envs.get( "Path" ) );
+			envs.put( "Path", envDir + ";");
 			envs.put( "Path", Paths.get( envDir, "Scripts" ).toString() + ";" + envs.get( "Path" ) );
 			envs.put( "Path", Paths.get( envDir, "Library" ).toString() + ";" + envs.get( "Path" ) );
 			envs.put( "Path", Paths.get( envDir, "Library", "Bin" ).toString() + ";" + envs.get( "Path" ) );
 		}
-		// TODO find way to get env vars in micromamba builder.environment().putAll( getEnvironmentVariables( envName ) );
-		if ( builder.command( cmd ).start().waitFor() != 0 )
+
+        Process p = builder.command( cmd ).start();
+        Thread reader = new Thread(() -> {
+        	try (
+        			BufferedReader or = new BufferedReader(new InputStreamReader(p.getInputStream()));
+        			BufferedReader er = new BufferedReader(new InputStreamReader(p.getErrorStream()));
+        			) {
+        		String line = null;
+        		String errLine = null;
+        		while ((line = or.readLine()) != null || (errLine = er.readLine()) != null ) {
+        			if (line != null) System.out.println(line);
+        			if (errLine != null) System.out.println(errLine);
+        		}
+        	}  catch (IOException e) {
+        		e.printStackTrace();
+        	}
+        }, "stdout-stderr-reader");
+        reader.setDaemon(true);
+        reader.start();
+
+        int exitCode = p.waitFor();
+        reader.join();  // wait for final log lines
+        if (exitCode != 0)
+        	throw new RuntimeException("Error executing the following command: " + builder.command());
+        /**
+        if ( builder.command( cmd ).start().waitFor() != 0 )
 			throw new RuntimeException("Error executing the following command: " + builder.command());
+			*/
 	}
 	
 	private static void runPythonIn(ProcessBuilder builder, Consumer<String> consumerOut, Consumer<String> consumerErr) throws RuntimeException, IOException, InterruptedException, MambaInstallException
@@ -1642,7 +1712,6 @@ public class Mamba {
 			return false;
 		else if (!envFile.isDirectory())
 			envFile = envFile2;
-		dependency = resolveAliases(dependency);
 		if (dependency.trim().equals("python")) return checkPythonInstallation(envDir, minversion, maxversion, strictlyBiggerOrSmaller);
 		String checkDepCode;
 		if (minversion != null && maxversion != null && minversion.equals(maxversion)) {
@@ -1651,47 +1720,43 @@ public class Mamba {
 					+ "from packaging import version as vv; "
 					+ "pkg = '%s'; wanted_v = '%s'; "
 					+ "spec = importlib.util.find_spec(pkg); "
-					+ "vv_og = vv.parse(version(pkg)); "
-					+ "vv_nw = vv.parse(wanted_v); "
+					+ "vv_og = vv.parse(vv.parse(version('%s')).base_version); "
+					+ "vv_nw = vv.parse(vv.parse(wanted_v).base_version); "
 					+ "sys.exit(1) if spec is None else None; "
-					+ "sys.exit(1) if vv_og.major != vv_nw.major else None; "
-					+ "sys.exit(1) if vv_og.minor != vv_nw.minor else None; "
-					+ "sys.exit(1) if vv_og.micro != vv_nw.micro else None; "
+					+ "sys.exit(1) if vv_og != vv_nw else None; "
 					+ "sys.exit(0);";
-			checkDepCode = String.format(checkDepCode, dependency, maxversion);
+			checkDepCode = String.format(checkDepCode, resolveAliases(dependency), maxversion, dependency);
 		} else if (minversion == null && maxversion == null) {
 			checkDepCode = "import importlib.util, sys; sys.exit(0) if importlib.util.find_spec('%s') else sys.exit(1)";
-			checkDepCode = String.format(checkDepCode, dependency);
+			checkDepCode = String.format(checkDepCode, resolveAliases(dependency));
 		} else if (maxversion == null) {
 			checkDepCode = "import importlib.util, sys; "
 					+ "from importlib.metadata import version; "
 					+ "from packaging import version as vv; "
 					+ "pkg = '%s'; desired_version = '%s'; "
 					+ "spec = importlib.util.find_spec(pkg); "
-					+ "curr_v = vv.parse(version(pkg)); "
-					+ "curr_v_str = str(curr_v.major) + '.' + str(curr_v.minor) + '.' + str(curr_v.micro); "
-					+ "sys.exit(0) if spec and vv.parse(curr_v_str) %s vv.parse(desired_version) else sys.exit(1)";
-			checkDepCode = String.format(checkDepCode, dependency, minversion, strictlyBiggerOrSmaller ? ">" : ">=");
+					+ "curr_v = vv.parse(vv.parse(version('%s')).base_version); "
+					+ "sys.exit(0) if spec and curr_v %s vv.parse(vv.parse(desired_version).base_version) else sys.exit(1)";
+			checkDepCode = String.format(checkDepCode, resolveAliases(dependency), minversion, dependency, strictlyBiggerOrSmaller ? ">" : ">=");
 		} else if (minversion == null) {
 			checkDepCode = "import importlib.util, sys; "
 					+ "from importlib.metadata import version; "
 					+ "from packaging import version as vv; "
 					+ "pkg = '%s'; desired_version = '%s'; "
 					+ "spec = importlib.util.find_spec(pkg); "
-					+ "curr_v = vv.parse(version(pkg)); "
-					+ "curr_v_str = str(curr_v.major) + '.' + str(curr_v.minor) + '.' + str(curr_v.micro); "
-					+ "sys.exit(0) if spec and vv.parse(curr_v_str) %s vv.parse(desired_version) else sys.exit(1)";
-			checkDepCode = String.format(checkDepCode, dependency, maxversion, strictlyBiggerOrSmaller ? "<" : "<=");
+					+ "curr_v = vv.parse(vv.parse(version('%s')).base_version); "
+					+ "sys.exit(0) if spec and curr_v %s vv.parse(vv.parse(desired_version).base_version) else sys.exit(1)";
+			checkDepCode = String.format(checkDepCode, resolveAliases(dependency), maxversion, dependency, strictlyBiggerOrSmaller ? "<" : "<=");
 		} else {
 			checkDepCode = "import importlib.util, sys; "
 					+ "from importlib.metadata import version; "
 					+ "from packaging import version as vv; "
 					+ "pkg = '%s'; min_v = '%s'; max_v = '%s'; "
 					+ "spec = importlib.util.find_spec(pkg); "
-					+ "curr_v = vv.parse(version(pkg)); "
-					+ "curr_v_str = str(curr_v.major) + '.' + str(curr_v.minor) + '.' + str(curr_v.micro); "
-					+ "sys.exit(0) if spec and vv.parse(curr_v_str) %s vv.parse(min_v) and vv.parse(curr_v_str) %s vv.parse(max_v) else sys.exit(1)";
-			checkDepCode = String.format(checkDepCode, dependency, minversion, maxversion, strictlyBiggerOrSmaller ? ">" : ">=", strictlyBiggerOrSmaller ? "<" : "<=");
+					+ "curr_v = vv.parse(vv.parse(version('%s')).base_version); "
+					+ "sys.exit(0) if spec and curr_v %s vv.parse(vv.parse(min_v).base_version) and curr_v %s vv.parse(vv.parse(max_v).base_version) else sys.exit(1)";
+			checkDepCode = String.format(checkDepCode, resolveAliases(dependency), minversion, maxversion, dependency,
+					strictlyBiggerOrSmaller ? ">" : ">=", strictlyBiggerOrSmaller ? "<" : "<=");
 		}
 		try {
 			runPythonIn(envFile, "-c", checkDepCode);
@@ -1704,6 +1769,14 @@ public class Mamba {
 	private static String resolveAliases(String dep) {
 		if (dep.equals("pytorch"))
 			return "torch";
+		else if (dep.equals("opencv-python"))
+			return "cv2";
+		else if (dep.equals("SAM-2"))
+			return "sam2";
+		else if (dep.equals("scikit-image"))
+			return "skimage";
+		else if (dep.equals("scikit-learn"))
+			return "sklearn";
 		return dep.replace("-", "_");
 	}
 	
@@ -1803,10 +1876,18 @@ public class Mamba {
 		return arg;
 	}
 	
+	/**
+	 * Executes main.
+	 *
+	 * @param args the args parameter.
+	 * @throws IOException if an I/O error occurs.
+	 * @throws InterruptedException if the current thread is interrupted while waiting for the operation to finish.
+	 * @throws MambaInstallException if a MambaInstallException occurs while executing this method.
+	 */
 	public static void main(String[] args) throws IOException, InterruptedException, MambaInstallException {
 		
-		Mamba m = new Mamba("/home/carlos/git/SAMJ-IJ/appose_x86_64");
-		boolean aa = m.checkDependencyInEnv("sam2", "torch >=2.3.9, <=3.0.0");
+		Mamba m = new Mamba("/home/carlos/.local/share/appose/micromamba");
+		boolean aa = m.checkDependencyInEnv("biapy", "h5py>=3.9.0");
 		System.out.println(aa);
 	}
 	

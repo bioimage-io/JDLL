@@ -2,7 +2,7 @@
  * #%L
  * Use deep learning frameworks from Java in an agnostic and isolated way.
  * %%
- * Copyright (C) 2022 - 2024 Institut Pasteur and BioImage.IO developers.
+ * Copyright (C) 2022 - 2026 Institut Pasteur and BioImage.IO developers.
  * %%
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -43,11 +43,8 @@ public abstract class TensorTransformation
 	 * and axis ordering that of the input, and write the transformation results
 	 * in it.
 	 *
-	 * @param <R>
-	 *            the pixel type of the input tensor.
-	 * @param input
-	 *            the input tensor.
-	 * @return a new tensor with <code>float</code> pixels.
+	 * @param input the input parameter.
+	 * @return the resulting value.
 	 */
 	public abstract < R extends RealType< R > & NativeType< R > > Tensor< FloatType > apply( Tensor< R > input );
 
@@ -55,10 +52,7 @@ public abstract class TensorTransformation
 	 * Applies this transformation to the specified input tensor, and overwrites
 	 * it with the results. The input tensor must of type <code>float</code>.
 	 *
-	 * @param <R>
-	 * 	ImgLib2 data type of the input tensor
-	 * @param input
-	 *            the input tensor.
+	 * @param input the input parameter.
 	 */
 	public abstract < R extends RealType< R > & NativeType< R > > void applyInPlace( Tensor< R > input );
 
@@ -69,6 +63,11 @@ public abstract class TensorTransformation
 	 */
 	public abstract String getName();
 	
+	/**
+	 * Sets mode.
+	 *
+	 * @param mode the mode parameter.
+	 */
 	public void setMode(Object mode) {
 		if (mode instanceof String )
 			this.mode = Mode.valueOf(((String) mode).toUpperCase());
@@ -79,6 +78,11 @@ public abstract class TensorTransformation
 					+ " or " + Mode.class + ". The provided argument is an instance of: " + mode.getClass());
 	}
 
+	/**
+	 * Gets mode.
+	 *
+	 * @return the resulting value.
+	 */
 	public abstract Mode getMode();
 
 	/**
@@ -98,6 +102,11 @@ public abstract class TensorTransformation
 			this.name = name;
 		}
 
+		/**
+		 * Executes to string.
+		 *
+		 * @return the resulting string.
+		 */
 		@Override
 		public String toString()
 		{

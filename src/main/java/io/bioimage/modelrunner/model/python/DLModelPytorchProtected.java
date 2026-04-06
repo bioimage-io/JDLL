@@ -2,7 +2,7 @@
  * #%L
  * Use deep learning frameworks from Java in an agnostic and isolated way.
  * %%
- * Copyright (C) 2022 - 2024 Institut Pasteur and BioImage.IO developers.
+ * Copyright (C) 2022 - 2026 Institut Pasteur and BioImage.IO developers.
  * %%
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,6 +25,8 @@ package io.bioimage.modelrunner.model.python;
 import java.io.File;
 import java.io.IOException;
 import java.net.URISyntaxException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedHashMap;
@@ -62,11 +64,17 @@ import net.imglib2.type.numeric.real.FloatType;
 import net.imglib2.util.Cast;
 import net.imglib2.util.Util;
 
+/**
+ * Class that defines the methods required to load a Python Pytorch model in Java and make inference
+ * @author Carlos Garcia
+ */
 public class DLModelPytorchProtected extends BaseModel {
 	
 	protected final String modelFile;
 	
 	protected final String callable;
+	
+	protected final String importModule;
 	
 	protected final String weightsPath;
 	
@@ -106,16 +114,57 @@ public class DLModelPytorchProtected extends BaseModel {
 	
 	public static final String COMMON_PYTORCH_ENV_NAME = "biapy";
 	
+	protected static final boolean IS_ARM = PlatformDetection.isMacOS() 
+			&& (PlatformDetection.getArch().equals(PlatformDetection.ARCH_ARM64) || PlatformDetection.isUsingRosseta());
+	
 	private static final List<String> BIAPY_CONDA_DEPS = Arrays.asList(new String[] {"python=3.10"});
 	
-	private static final List<String> BIAPY_PIP_DEPS_TORCH = Arrays.asList(new String[] {"torch==2.4.0", 
-			"torchvision==0.19.0", "torchaudio==2.4.0"});
+	private static final List<String> BIAPY_PIP_DEPS_TORCH;
+	static {
+		if (PlatformDetection.isMacOS()
+				&& PlatformDetection.getArch().equals(PlatformDetection.ARCH_X86_64) && !PlatformDetection.isUsingRosseta())
+			BIAPY_PIP_DEPS_TORCH = Arrays.asList(new String[] {"torch==2.2.2", 
+					"torchvision==0.17.2", "torchaudio==2.2.2"});
+		else if (PlatformDetection.isWindows())
+			BIAPY_PIP_DEPS_TORCH = Arrays.asList(new String[] {"torch==2.4.1", 
+					"torchvision==0.19.1", "torchaudio==2.4.1"});
+		else
+			BIAPY_PIP_DEPS_TORCH = Arrays.asList(new String[] {"torch==2.4.0", 
+					"torchvision==0.19.0", "torchaudio==2.4.0"});
+	}
 	
-	private static final List<String> BIAPY_PIP_DEPS = Arrays.asList(new String[] {"timm==1.0.14", "pytorch-msssim==1.0.0", 
-			"torchmetrics==1.4.3", "cellpose==3.1.1.1", "scipy==1.15.2", "torch-fidelity==0.3.0",
-			"biapy==3.5.10", "appose"});
+	private static final List<String> BIAPY_PIP_DEPS;
+	static {
+		if (PlatformDetection.isWindows())
+			BIAPY_PIP_DEPS = Arrays.asList(new String[] {"timm==1.0.14",
+					"pytorch-msssim==1.0.0", "torchmetrics==1.4.3", "cellpose==3.1.1.1", "scipy==1.15.2", "torch-fidelity==0.3.0",
+					"careamics", "biapy==3.5.10", "appose"});
+		else if (PlatformDetection.isMacOS() && PlatformDetection.getOSVersion().getMajor() < 14)
+			BIAPY_PIP_DEPS = Arrays.asList(new String[] {"timm==1.0.14",
+					"pytorch-msssim==1.0.0", "torchmetrics==1.4.3", "cellpose==3.1.1.1", "torch-fidelity==0.3.0",
+					"careamics", "pooch>=1.8.1", "numpy<2", "imagecodecs>=2024.1.1", "bioimageio.core==0.7.0",
+					"h5py>=3.9.0","torchinfo>=1.8.0", "pandas>=1.5.3", "xarray==2025.1.2",
+					"fill-voids>=2.0.6", "edt>=2.3.2", "tqdm>=4.66.1", "yacs>=0.1.8", "zarr>=2.16.1",
+					"pydot>=1.4.2", "matplotlib>=3.7.1", "imgaug>=0.4.0", "scipy==1.15.2",
+					"tensorboardX>=2.6.2.2", "scikit-learn>=1.4.0", "opencv-python>=4.8.0.76", "scikit-image>=0.21.0",
+					"appose"});
+		else
+			BIAPY_PIP_DEPS = Arrays.asList(new String[] {"timm==1.0.14",
+					"pytorch-msssim==1.0.0", "torchmetrics==1.4.3", "cellpose==3.1.1.1", "scipy==1.15.2", "torch-fidelity==0.3.0",
+					"careamics", "biapy==3.5.10", "appose"});
+	}
 	
-	private static final List<String> BIAPY_PIP_ARGS = Arrays.asList(new String[] {"--index-url", "https://download.pytorch.org/whl/cpu"});
+	private static final List<String> BIAPY_PIP_ARGS;
+	static {
+		if (PlatformDetection.isMacOS() 
+				&& (PlatformDetection.getArch().equals(PlatformDetection.ARCH_AARCH64)
+						|| PlatformDetection.getArch().equals(PlatformDetection.ARCH_ARM64)
+						|| PlatformDetection.isUsingRosseta())) {
+			BIAPY_PIP_ARGS = new ArrayList<String>();
+		} else {
+			BIAPY_PIP_ARGS = Arrays.asList(new String[] {"--index-url", "https://download.pytorch.org/whl/cpu"});
+		}
+	}
 		
 	protected static String INSTALLATION_DIR = Mamba.BASE_PATH;
 	
@@ -134,8 +183,10 @@ public class DLModelPytorchProtected extends BaseModel {
 			+ "if 'shared_memory' not in globals().keys():" + System.lineSeparator()
 			+ "  from multiprocessing import shared_memory" + System.lineSeparator()
 			+ "  globals()['shared_memory'] = shared_memory" + System.lineSeparator()
-			+ "sys.path.append(os.path.abspath('%s'))" + System.lineSeparator()
-			+ "from %s import %s" + System.lineSeparator();
+			+ "%s" + System.lineSeparator()
+			+ "%s" + System.lineSeparator()
+			+ "if '%s' not in globals().keys():" + System.lineSeparator()
+			+ "  globals()['%s'] = %s" + System.lineSeparator();
 	
 	protected static final String OUTPUT_LIST_KEY = "out_list" + UUID.randomUUID().toString().replace("-", "_");
 	
@@ -146,10 +197,9 @@ public class DLModelPytorchProtected extends BaseModel {
 	protected static final String DTYPES_KEY = "dtypes_" + UUID.randomUUID().toString().replace("-", "_");
 	
 	protected static final String DIMS_KEY = "dims_" + UUID.randomUUID().toString().replace("-", "_");
-	
+		
 	protected static final String RECOVER_OUTPUTS_CODE = ""
-			+ "def handle_output_list(out_list):" + System.lineSeparator()
-			+ "  for outs_i in out_list:" + System.lineSeparator()
+			+ "def handle_output(outs_i):" + System.lineSeparator()
 			+ "    if type(outs_i) == np.ndarray:" + System.lineSeparator()
 			+ "      shm = shared_memory.SharedMemory(create=True, size=outs_i.nbytes)" + System.lineSeparator()
 			+ "      sh_np_array = np.ndarray(outs_i.shape, dtype=outs_i.dtype, buffer=shm.buf)" + System.lineSeparator()
@@ -162,13 +212,15 @@ public class DLModelPytorchProtected extends BaseModel {
 			+ "      if 'torch' not in globals().keys():" + System.lineSeparator()
 			+ "        import torch" + System.lineSeparator()
 			+ "        globals()['torch'] = torch" + System.lineSeparator()
+			+ "      else:" + System.lineSeparator()
+			+ "        torch = globals()['torch']" + System.lineSeparator()
 			+ "      shm = shared_memory.SharedMemory(create=True, size=outs_i.numel() * outs_i.element_size())" + System.lineSeparator()
-			+ "      np_arr = np.ndarray(outs_i.shape, dtype=outs_i.dtype.name, buffer=shm.buf)" + System.lineSeparator()
+			+ "      np_arr = np.ndarray(outs_i.shape, dtype=str(outs_i.dtype).split('.')[-1], buffer=shm.buf)" + System.lineSeparator()
 			+ "      tensor_np_view = torch.from_numpy(np_arr)" + System.lineSeparator()
 			+ "      tensor_np_view.copy_(outs_i)" + System.lineSeparator()
 			+ "      " + SHMS_KEY + ".append(shm)" + System.lineSeparator()
 			+ "      " + SHM_NAMES_KEY + ".append(shm.name)" + System.lineSeparator()
-			+ "      " + DTYPES_KEY + ".append(outs_i.dtype.name)" + System.lineSeparator()
+			+ "      " + DTYPES_KEY + ".append(str(outs_i.dtype).split('.')[-1])" + System.lineSeparator()
 			+ "      " + DIMS_KEY + ".append(outs_i.shape)" + System.lineSeparator()
 			+ "    elif type(outs_i) == int:" + System.lineSeparator()
 			+ "      shm = shared_memory.SharedMemory(create=True, size=8)" + System.lineSeparator()
@@ -190,9 +242,18 @@ public class DLModelPytorchProtected extends BaseModel {
 			+ "      task.update('output type : ' + str(type(outs_i)) + ' not supported. "
 			+ "Only supported output types are: np.ndarray, torch.tensor, int and float, "
 			+ "or a list or tuple of any of those.')" + System.lineSeparator()
+			+ System.lineSeparator()
+			+ System.lineSeparator()
+			+ "def handle_output_list(out_list):" + System.lineSeparator()
+			+ "  if type(out_list) == tuple or type(out_list) == list:" + System.lineSeparator()
+			+ "    for outs_i in out_list:" + System.lineSeparator()
+			+ "      handle_output(outs_i)" + System.lineSeparator()
+			+ "  else:" + System.lineSeparator()
+			+ "    handle_output(out_list)" + System.lineSeparator()
 			+ "" + System.lineSeparator()
 			+ "" + System.lineSeparator()
 			+ "globals()['handle_output_list'] = handle_output_list" + System.lineSeparator()
+			+ "globals()['handle_output'] = handle_output" + System.lineSeparator()
 			+ "" + System.lineSeparator()
 			+ "" + System.lineSeparator();
 
@@ -203,14 +264,37 @@ public class DLModelPytorchProtected extends BaseModel {
 			+ "    s.unlink()" + System.lineSeparator()
 			+ "    del s" + System.lineSeparator();
 	
-	protected DLModelPytorchProtected(String modelFile, String callable, String weightsPath, 
+	private static final String JDLL_UUID = UUID.randomUUID().toString().replaceAll("-", "_");
+	
+	/**
+	 * Creates a new DLModelPytorchProtected.
+	 *
+	 * @param modelFile the modelFile parameter.
+	 * @param callable the callable parameter.
+	 * @param importModule the importModule parameter.
+	 * @param weightsPath the weightsPath parameter.
+	 * @param kwargs the kwargs parameter.
+	 * @throws IOException if an I/O error occurs.
+	 */
+	protected DLModelPytorchProtected(String modelFile, String callable, String importModule, String weightsPath, 
 			Map<String, Object> kwargs) throws IOException {
-		this(modelFile, callable, weightsPath, kwargs, false);
+		this(modelFile, callable, importModule, weightsPath, kwargs, false);
 	}
 	
-	protected DLModelPytorchProtected(String modelFile, String callable, String weightsPath, 
+	/**
+	 * Creates a new DLModelPytorchProtected.
+	 *
+	 * @param modelFile the modelFile parameter.
+	 * @param callable the callable parameter.
+	 * @param importModule the importModule parameter.
+	 * @param weightsPath the weightsPath parameter.
+	 * @param kwargs the kwargs parameter.
+	 * @param customJDLL the customJDLL parameter.
+	 * @throws IOException if an I/O error occurs.
+	 */
+	protected DLModelPytorchProtected(String modelFile, String callable, String importModule, String weightsPath, 
 			Map<String, Object> kwargs, boolean customJDLL) throws IOException {
-		if (!customJDLL && (new File(modelFile).isFile() == false || !modelFile.endsWith(".py")))
+		if (!customJDLL && (new File(modelFile).isFile() == false || !modelFile.endsWith(".py")) && importModule == null)
 			throw new IllegalArgumentException("The model file does not correspond to an existing .py file.");
 		if (new File(weightsPath).isFile() == false 
 				|| (!customJDLL 
@@ -219,16 +303,29 @@ public class DLModelPytorchProtected extends BaseModel {
 				)
 			throw new IllegalArgumentException("The weights file does not correspond to an existing .pt/.pth file.");
 		this.callable = callable;
-		if (!customJDLL || (modelFile != null && new File(modelFile).isFile()))
+		if (!customJDLL && (modelFile != null && new File(modelFile).isFile()))
 			this.modelFile = new File(modelFile).getAbsolutePath();
 		else 
 			this.modelFile = null;
+		if (!customJDLL && importModule != null)
+			this.importModule = importModule;
+		else 
+			this.importModule = null;
+		if (new File(weightsPath).isFile())
+			this.modelFolder = new File(weightsPath).getParentFile().getAbsolutePath();
+		else if (new File(modelFile).isFile())
+			this.modelFolder = new File(modelFile).getParentFile().getAbsolutePath();
 		this.weightsPath = new File(weightsPath).getAbsolutePath();
 		this.kwargs = kwargs;
 		this.envPath = INSTALLATION_DIR + File.separator + "envs" + File.separator + COMMON_PYTORCH_ENV_NAME;
 		createPythonService();
 	}
 	
+	/**
+	 * Creates python service.
+	 *
+	 * @throws IOException if an I/O error occurs.
+	 */
 	protected void createPythonService() throws IOException {
 		Environment env = new Environment() {
 			@Override public String base() { return envPath; }
@@ -237,20 +334,48 @@ public class DLModelPytorchProtected extends BaseModel {
 		python.debug(System.err::println);
 	}
 	
+	/**
+	 * 
+	 * @return the Python service used to run the model
+	 */
+	public Service getPythonSerice() {
+		return this.python;
+	}
+	
+	/**
+	 * 
+	 * @return the path to the Python environment used by the model
+	 */
 	public String getEnvPath() {
 		return this.envPath;
 	}
 	
+	/**
+	 * Set the path to the environment that we want to use to run the model
+	 * @param envPath
+	 * 	path to the environment we want to use to run the model
+	 * @throws IOException if there is any error connecting to the Python env
+	 */
 	public void setCustomEnvPath(String envPath) throws IOException {
 		this.envPath = envPath;
 		this.python.close();
 		createPythonService();
 	}
 	
+	/**
+	 * 
+	 * @return whether the image is going to be processed in tiles or not
+	 */
 	public boolean isTiling() {
 		return this.tiling;
 	}
 	
+	/**
+	 * Se whether we want to process the image in tiles or just all in one pass. This is usually 
+	 * for the models coming from the Bioimage.io
+	 * @param doTiling
+	 * 	whether to do tiling on inference or not. Usually skip this unless the model comes from the Bioimage.io
+	 */
 	public void setTiling(boolean doTiling) {
 		this.tiling = doTiling;
 	}
@@ -285,18 +410,22 @@ public class DLModelPytorchProtected extends BaseModel {
 		this.tileCounter = tileCounter;
 	}
 
+	/**
+	 * Loads model.
+	 *
+	 * @throws LoadModelException if a LoadModelException occurs while executing this method.
+	 */
 	@Override
 	public void loadModel() throws LoadModelException {
 		if (loaded)
 			return;
 		if (closed)
 			throw new RuntimeException("Cannot load model after it has been closed");
-		String code = buildModelCode();
-		
-		code += RECOVER_OUTPUTS_CODE;
 
 		Task task;
 		try {
+			String code = buildModelCode();
+			code += RECOVER_OUTPUTS_CODE;
 			task = python.task(code);
 			task.waitFor();
 			if (task.status == TaskStatus.CANCELED)
@@ -310,26 +439,112 @@ public class DLModelPytorchProtected extends BaseModel {
 		}
 		loaded = true;
 	}
+
+    /**
+     * Copies the file from `inputPath` to `outputPath`, replacing every '+' with 'JDLL'.
+     */
+    private static void copyAndReplace(String inputPath, String outputPath) throws IOException {
+    	if (new File(outputPath).isFile())
+    		return;
+        Files.write(Paths.get(outputPath), Files.readAllBytes(Paths.get(inputPath)));
+    }
 	
-	protected String buildModelCode() {
-		String moduleName = new File(modelFile).getName();
-		moduleName = moduleName.substring(0, moduleName.length() - 3);
-		String code = String.format(LOAD_MODEL_CODE_ABSTRACT, 
-				new File(modelFile).getParentFile().getAbsolutePath(), 
-				moduleName, callable);
-		
-		code += ""
+	/**
+	 * Builds model code.
+	 *
+	 * @return the resulting string.
+	 * @throws IOException if an I/O error occurs.
+	 */
+	protected String buildModelCode() throws IOException {
+		String addPath = "";
+		String importStr = "";
+		String code = ""
+				+ "device = 'cpu'" + System.lineSeparator()
 				+ "if 'torch' not in globals().keys():" + System.lineSeparator()
 				+ "  import torch" + System.lineSeparator()
-				+ "  globals()['torch'] = torch" + System.lineSeparator();
+				+ "  globals()['torch'] = torch" + System.lineSeparator()
+				+ (!IS_ARM ? "" 
+						: "  if torch.backends.mps.is_built() and torch.backends.mps.is_available():" + System.lineSeparator()
+						+ "    device = 'mps'" + System.lineSeparator());
+		if (modelFile != null) {
+			String moduleName = new File(modelFile).getName();
+			moduleName = moduleName.substring(0, moduleName.length() - 3);
+			if (moduleName.contains("+")) {
+				String newModelFile = modelFile.replaceAll("\\+", JDLL_UUID);
+				copyAndReplace(modelFile, newModelFile);
+				moduleName = new File(newModelFile).getName();
+				moduleName = moduleName.substring(0, moduleName.length() - 3);
+				addPath = String.format("sys.path.append(os.path.abspath(r'%s'))", new File(newModelFile).getParentFile().getAbsolutePath());
+				importStr = String.format("from %s import %s", moduleName, callable);
+			} else {
+				addPath = String.format("sys.path.append(os.path.abspath(r'%s'))", new File(modelFile).getParentFile().getAbsolutePath());
+				importStr = String.format("from %s import %s", moduleName, callable);
+			}
+		} else {
+			importStr = String.format("from %s import %s", this.importModule, callable);
+		}
+		code += String.format(LOAD_MODEL_CODE_ABSTRACT, addPath, importStr, callable, callable, callable);
+		
 		code += MODEL_VAR_NAME + "=" + callable + "(" + codeForKwargs()  + ")" + System.lineSeparator();
+		code += "if any(isinstance(m, torch.nn.ConvTranspose3d) for m in " + MODEL_VAR_NAME + ".modules()):" + System.lineSeparator();
+		code += "  device = 'cpu'" + System.lineSeparator();
+		code += "globals()['device'] = device" + System.lineSeparator();
+		code += MODEL_VAR_NAME + ".to(device)" + System.lineSeparator();
 		code += "try:" + System.lineSeparator()
 				+ "  " + MODEL_VAR_NAME + ".load_state_dict("
-				+ "torch.load('" + this.weightsPath + "', map_location=" + MODEL_VAR_NAME  + ".device))" + System.lineSeparator()
+				+ "torch.load(r'" + this.weightsPath + "', map_location=" + MODEL_VAR_NAME  + ".device))" + System.lineSeparator()
 				+ "except:" + System.lineSeparator()
 				+ "  " + MODEL_VAR_NAME + ".load_state_dict("
-				+ "torch.load('" + this.weightsPath + "', map_location=torch.device('cpu')))" + System.lineSeparator();
+				+ "torch.load(r'" + this.weightsPath + "', map_location=torch.device(device)))" + System.lineSeparator();
 		code += "globals()['" + MODEL_VAR_NAME + "'] = " + MODEL_VAR_NAME + System.lineSeparator();
+		return code;
+	}
+	
+	private String codeForKwargsList(List<Object> list) {
+		String code = "[";
+		for (Object codeVal : list) {
+			if (codeVal == null)
+				code += "None";
+			else if ((codeVal instanceof Boolean && (Boolean) codeVal) || codeVal.equals("true"))
+				code += "True";
+			else if ((codeVal instanceof Boolean && !((Boolean) codeVal)) || codeVal.equals("false"))
+				code += "False";
+			else if (codeVal instanceof String)
+				code += "\"" + codeVal + "\"";
+			else if (codeVal instanceof List)
+				code += codeForKwargsList((List<Object>) codeVal);
+			else if (codeVal instanceof Map)
+				code += codeForKwargsMap((Map<String, Object>) codeVal);
+			else
+				code += codeVal;
+			code += ",";
+		}
+		code += "]";
+		return code;
+	}
+	
+	private String codeForKwargsMap(Map<String, Object> map) {
+		String code = "{";
+		for (Entry<String, Object> entry : map.entrySet()) {
+			Object codeVal = entry.getValue();
+			code += "'" + entry.getKey() + "':";
+			if (codeVal == null)
+				code += "None";
+			else if ((codeVal instanceof Boolean && (Boolean) codeVal) || codeVal.equals("true"))
+				code += "True";
+			else if ((codeVal instanceof Boolean && !((Boolean) codeVal)) || codeVal.equals("false"))
+				code += "False";
+			else if (codeVal instanceof String)
+				code += "\"" + codeVal + "\"";
+			else if (codeVal instanceof List)
+				code += codeForKwargsList((List<Object>) codeVal);
+			else if (codeVal instanceof Map)
+				code += codeForKwargsMap((Map<String, Object>) codeVal);
+			else
+				code += codeVal;
+			code += ",";
+		}
+		code += "}";
 		return code;
 	}
 	
@@ -343,11 +558,20 @@ public class DLModelPytorchProtected extends BaseModel {
 				codeVal = "True";
 			else if ((codeVal instanceof Boolean && !((Boolean) codeVal)) || codeVal.equals("false"))
 				codeVal = "False";
+			else if (codeVal instanceof String)
+				codeVal = "\"" + codeVal + "\"";
+			else if (codeVal instanceof List)
+				codeVal = codeForKwargsList((List<Object>) codeVal);
+			else if (codeVal instanceof Map)
+				codeVal = codeForKwargsMap((Map<String, Object>) codeVal);
 			code += ee.getKey() + "=" + codeVal + ",";
 		}
 		return code;
 	}
 
+	/**
+	 * Executes close.
+	 */
 	@Override
 	public void close() {
 		if (!loaded)
@@ -425,34 +649,63 @@ public class DLModelPytorchProtected extends BaseModel {
 		return outRais;
 	}
 	
+	/**
+	 * Creates inputs code.
+	 *
+	 * @param rais the rais parameter.
+	 * @param names the names parameter.
+	 * @return the resulting string.
+	 */
 	protected <T extends RealType<T> & NativeType<T>> String createInputsCode(List<RandomAccessibleInterval<T>> rais, List<String> names) {
-		String code = "";
+		String code = "created_shms = []" + System.lineSeparator();
+		code += "try:" + System.lineSeparator();
 		for (int i = 0; i < rais.size(); i ++) {
-			SharedMemoryArray shma = SharedMemoryArray.createSHMAFromRAI(rais.get(i));
+			SharedMemoryArray shma = SharedMemoryArray.createSHMAFromRAI(rais.get(i), false, false);
 			code += codeToConvertShmaToPython(shma, names.get(i));
 			inShmaList.add(shma);
 		}
-		code += "print(type(input_torch))" + System.lineSeparator();
-		code += "print(input_torch.shape)" + System.lineSeparator();
-		code += OUTPUT_LIST_KEY + " = " + MODEL_VAR_NAME + "(";
+		code += "  " + MODEL_VAR_NAME + ".eval()" + System.lineSeparator();
+		code += "  with torch.no_grad():" + System.lineSeparator();
+		code += "    " + OUTPUT_LIST_KEY + " = " + MODEL_VAR_NAME + "(";
 		for (int i = 0; i < rais.size(); i ++)
-			code += names.get(i) + ", ";
+			code += "torch.from_numpy(" + names.get(i) + ").to(device), ";
 		code = code.substring(0, code.length() - 2);
 		code += ")" + System.lineSeparator();
 		code += ""
-				+ SHMS_KEY + " = []" + System.lineSeparator()
-				+ SHM_NAMES_KEY + " = []" + System.lineSeparator()
-				+ DTYPES_KEY + " = []" + System.lineSeparator()
-				+ DIMS_KEY + " = []" + System.lineSeparator()
-				+ "globals()['" + SHMS_KEY + "'] = " + SHMS_KEY + System.lineSeparator()
-				+ "globals()['" + SHM_NAMES_KEY + "'] = " + SHM_NAMES_KEY + System.lineSeparator()
-				+ "globals()['" + DTYPES_KEY + "'] = " + DTYPES_KEY + System.lineSeparator()
-				+ "globals()['" + DIMS_KEY + "'] = " + DIMS_KEY + System.lineSeparator();
-		code += "handle_output_list(" + OUTPUT_LIST_KEY + ")" + System.lineSeparator();
+				+ "  " + SHMS_KEY + " = []" + System.lineSeparator()
+				+ "  " + SHM_NAMES_KEY + " = []" + System.lineSeparator()
+				+ "  " + DTYPES_KEY + " = []" + System.lineSeparator()
+				+ "  " + DIMS_KEY + " = []" + System.lineSeparator()
+				+ "  " + "globals()['" + SHMS_KEY + "'] = " + SHMS_KEY + System.lineSeparator()
+				+ "  " + "globals()['" + SHM_NAMES_KEY + "'] = " + SHM_NAMES_KEY + System.lineSeparator()
+				+ "  " + "globals()['" + DTYPES_KEY + "'] = " + DTYPES_KEY + System.lineSeparator()
+				+ "  " + "globals()['" + DIMS_KEY + "'] = " + DIMS_KEY + System.lineSeparator();
+		code += "  " + "handle_output_list(" + OUTPUT_LIST_KEY + ")" + System.lineSeparator();
+		String closeEverythingWin = closeSHMWin();
+		code += "  " + closeEverythingWin + System.lineSeparator();
+		code += "except Exception as e:" + System.lineSeparator();
+		code += "  " + closeEverythingWin + System.lineSeparator();
+		code += "  raise e" + System.lineSeparator();
 		code += taskOutputsCode();
 		return code;
 	}
 	
+	/**
+	 * Closes shmwin.
+	 *
+	 * @return the resulting string.
+	 */
+	protected static String closeSHMWin() {
+		if (!PlatformDetection.isWindows())
+			return "";
+		return "[(shm_i.close(), shm_i.unlink()) for shm_i in created_shms]";
+	}
+	
+	/**
+	 * Executes task outputs code.
+	 *
+	 * @return the resulting string.
+	 */
 	protected String taskOutputsCode() {
 		String code = ""
 				+ "task.outputs['" + SHM_NAMES_KEY + "'] = " + SHM_NAMES_KEY + System.lineSeparator()
@@ -557,7 +810,13 @@ public class DLModelPytorchProtected extends BaseModel {
 		}
 	}
 	
-	private void cleanShm() throws InterruptedException, IOException {
+	/**
+	 * Executes clean shm.
+	 *
+	 * @throws InterruptedException if the current thread is interrupted while waiting for the operation to finish.
+	 * @throws IOException if an I/O error occurs.
+	 */
+	protected void cleanShm() throws InterruptedException, IOException {
 		closeShm();
 		if (PlatformDetection.isWindows()) {
 			Task closeSHMTask = python.task(CLEAN_SHM_CODE);
@@ -648,37 +907,35 @@ public class DLModelPytorchProtected extends BaseModel {
 		RandomAccessibleInterval<T> rai = shm.getSharedRAI();
 		RandomAccessibleInterval<T> raiCopy = Tensor.createCopyOfRaiInWantedDataType(Cast.unchecked(rai), 
 				Util.getTypeFromInterval(Cast.unchecked(rai)));
-		
+
 		shm.close();
 		
 		return raiCopy;
 	}
 	
+	/**
+	 * Executes code to convert shma to python.
+	 *
+	 * @param shma the shma parameter.
+	 * @param varName the varName parameter.
+	 * @return the resulting string.
+	 */
 	protected static String codeToConvertShmaToPython(SharedMemoryArray shma, String varName) {
 		String code = "";
 		// This line wants to recreate the original numpy array. Should look like:
 		// input0_appose_shm = shared_memory.SharedMemory(name=input0)
 		// input0 = np.ndarray(size, dtype="float64", buffer=input0_appose_shm.buf).reshape([64, 64])
-		code += varName + "_shm = shared_memory.SharedMemory(name='"
+		code += "  " + varName + "_shm = shared_memory.SharedMemory(name='"
 							+ shma.getNameForPython() + "', size=" + shma.getSize() 
 							+ ")" + System.lineSeparator();
+		code += "  " + "created_shms.append(" + varName + "_shm)" + System.lineSeparator();
 		long nElems = 1;
 		for (long elem : shma.getOriginalShape()) nElems *= elem;
-		code += varName + " = np.ndarray(" + nElems  + ", dtype='" + CommonUtils.getDataTypeFromRAI(Cast.unchecked(shma.getSharedRAI()))
+		code += "  " + varName + " = np.ndarray(" + nElems  + ", dtype='" + CommonUtils.getDataTypeFromRAI(Cast.unchecked(shma.getSharedRAI()))
 			  + "', buffer=" + varName +"_shm.buf).reshape([";
 		for (int i = 0; i < shma.getOriginalShape().length; i ++)
 			code += shma.getOriginalShape()[i] + ", ";
 		code += "])" + System.lineSeparator();
-		/**
-		code += "try:" + System.lineSeparator();
-		code += "  " + varName + " = torch.from_numpy(" + varName + "_np).to(" + MODEL_VAR_NAME + ".device)" + System.lineSeparator();
-		code += "except:" + System.lineSeparator();
-		code += "  " + varName + " = torch.from_numpy(" + varName + "_np).to(torch.device('cpu'))" + System.lineSeparator();
-		*/
-		code += ""
-			+ "if os.name == 'nt':" + System.lineSeparator()
-			+ "  im_shm.close()" + System.lineSeparator()
-			+ "  im_shm.unlink()" + System.lineSeparator();
 		return code;
 	}
 	
@@ -691,7 +948,9 @@ public class DLModelPytorchProtected extends BaseModel {
 	}
 	
 	/**
-	 * Check whether everything that is needed for Stardist 2D is installed or not
+	 * Check whether everything that is needed for a Pytorch model is installed or not
+	 * @param envPath
+	 * 	path to the environment of interest
 	 * @return true if the full python environment is installed or not
 	 */
 	public static boolean isInstalled(String envPath) {
@@ -702,7 +961,9 @@ public class DLModelPytorchProtected extends BaseModel {
 		try {
 			 boolean inst = mamba.checkAllDependenciesInEnv(envPath, BIAPY_CONDA_DEPS);
 			 if (!inst) return inst;
-			inst = mamba.checkAllDependenciesInEnv(envPath, BIAPY_PIP_DEPS);
+			 inst = mamba.checkAllDependenciesInEnv(envPath, BIAPY_PIP_DEPS_TORCH);
+			 if (!inst) return inst;
+			 inst = mamba.checkAllDependenciesInEnv(envPath, BIAPY_PIP_DEPS);
 			 if (!inst) return inst;
 		} catch (MambaInstallException e) {
 			return false;
@@ -759,7 +1020,10 @@ public class DLModelPytorchProtected extends BaseModel {
 		boolean biapyPythonInstalled = false;
 		try {
 			biapyPythonInstalled = mamba.checkAllDependenciesInEnv(COMMON_PYTORCH_ENV_NAME, BIAPY_CONDA_DEPS);
+			biapyPythonInstalled = mamba.checkAllDependenciesInEnv(COMMON_PYTORCH_ENV_NAME, BIAPY_PIP_DEPS_TORCH);
 			biapyPythonInstalled = mamba.checkAllDependenciesInEnv(COMMON_PYTORCH_ENV_NAME, BIAPY_PIP_DEPS);
+			if (PlatformDetection.isMacOS() && PlatformDetection.getOSVersion().getMajor() < 14)
+				biapyPythonInstalled = mamba.checkDependencyInEnv(COMMON_PYTORCH_ENV_NAME, "biapy==3.5.10");
 		} catch (MambaInstallException e) {
 			mamba.installMicromamba();
 		}
@@ -770,7 +1034,13 @@ public class DLModelPytorchProtected extends BaseModel {
 			args.addAll(BIAPY_PIP_DEPS_TORCH);
 			mamba.pipInstallIn(COMMON_PYTORCH_ENV_NAME, args.toArray(new String[args.size()]));
 			mamba.pipInstallIn(COMMON_PYTORCH_ENV_NAME, BIAPY_PIP_DEPS.toArray(new String[BIAPY_PIP_DEPS.size()]));
+			if (PlatformDetection.isMacOS() && PlatformDetection.getOSVersion().getMajor() < 14)
+				mamba.pipInstallIn(COMMON_PYTORCH_ENV_NAME, new String[] {"biapy==3.5.10", "--no-deps"});
 		};
+		
+		if (!isInstalled())
+			throw new RuntimeException("Not all the requried packages were installed correctly. Please try again."
+					+ " If the error persists, please post an issue at: https://github.com/bioimage-io/JDLL/issues");
 	}
 	
 	/**

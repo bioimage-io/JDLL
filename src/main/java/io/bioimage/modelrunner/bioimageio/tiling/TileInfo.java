@@ -2,7 +2,7 @@
  * #%L
  * Use deep learning frameworks from Java in an agnostic and isolated way.
  * %%
- * Copyright (C) 2022 - 2024 Institut Pasteur and BioImage.IO developers.
+ * Copyright (C) 2022 - 2026 Institut Pasteur and BioImage.IO developers.
  * %%
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -49,6 +49,16 @@ public class TileInfo {
 		this.halo = new long[imAxesOrder.length()];
 	}
 	
+	/**
+	 * Executes build.
+	 *
+	 * @param tensorName the tensorName parameter.
+	 * @param imDims the imDims parameter.
+	 * @param imAxesOrder the imAxesOrder parameter.
+	 * @param proposedTileDims the proposedTileDims parameter.
+	 * @param tileAxesOrder the tileAxesOrder parameter.
+	 * @return the resulting value.
+	 */
 	public static TileInfo build(String tensorName, long[] imDims, String imAxesOrder, long[] proposedTileDims, String tileAxesOrder) {
 		return new TileInfo(tensorName, imDims, imAxesOrder, proposedTileDims, tileAxesOrder);
 	}

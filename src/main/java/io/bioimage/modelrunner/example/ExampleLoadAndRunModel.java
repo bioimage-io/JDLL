@@ -2,7 +2,7 @@
  * #%L
  * Use deep learning frameworks from Java in an agnostic and isolated way.
  * %%
- * Copyright (C) 2022 - 2024 Institut Pasteur and BioImage.IO developers.
+ * Copyright (C) 2022 - 2026 Institut Pasteur and BioImage.IO developers.
  * %%
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -53,7 +53,7 @@ import net.imglib2.util.Util;
  * as the downloaded files are not light.
  * This example uses the torchscript/DeepImageJ
  * model <a href=
- * "https://bioimage.io/#/?tags=10.5281%2Fzenodo.6406756&id=10.5281%2Fzenodo.6406756">here</a>.
+ * "https://bioimage.io/#/?tags=10.5281%2Fzenodo.6406756&amp;id=10.5281%2Fzenodo.6406756">here</a>.
  * 
  * @author Carlos Garcia Lopez de Haro
  */

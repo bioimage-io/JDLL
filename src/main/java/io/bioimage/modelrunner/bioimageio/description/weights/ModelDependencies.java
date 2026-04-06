@@ -2,7 +2,7 @@
  * #%L
  * Use deep learning frameworks from Java in an agnostic and isolated way.
  * %%
- * Copyright (C) 2022 - 2024 Institut Pasteur and BioImage.IO developers.
+ * Copyright (C) 2022 - 2026 Institut Pasteur and BioImage.IO developers.
  * %%
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,7 +22,6 @@ package io.bioimage.modelrunner.bioimageio.description.weights;
 
 import java.io.File;
 import java.io.IOException;
-import java.net.URL;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -38,14 +37,31 @@ public class ModelDependencies {
 	
 	private LinkedHashMap<String, Object> kwargs;
 	
+	/**
+	 * Creates a new ModelDependencies.
+	 *
+	 * @param map the map parameter.
+	 */
 	protected ModelDependencies(Map<String, Object> map) {
 		this.envFile = (String) map.get("source");
 	}
 	
+	/**
+	 * Gets source.
+	 *
+	 * @return the resulting string.
+	 */
 	public String getSource() {
 		return envFile;
 	}
 
+	/**
+	 * Gets dependencies.
+	 *
+	 * @param descriptor the descriptor parameter.
+	 * @param weights the weights parameter.
+	 * @return the resulting list.
+	 */
 	public static List<String> getDependencies(ModelDescriptor descriptor, WeightFormat weights) {
 		List<String> deps = new ArrayList<String>();
 		if (weights.getEnvDependencies() == null || weights.getEnvDependencies().getSource() == null)
@@ -62,7 +78,7 @@ public class ModelDependencies {
 			Map<String,Object> map = YAMLUtils.loadFromString(stringRDF);
 			if (map.get("dependencies") != null && map.get("dependencies") instanceof List)
 				return dependenciesMapToList((List<Object>) map.get("dependencies"));
-		} catch (InterruptedException | IOException e) {
+		} catch (IOException e) {
 			return deps;
 		}
 		return deps;

@@ -2,7 +2,7 @@
  * #%L
  * Use deep learning frameworks from Java in an agnostic and isolated way.
  * %%
- * Copyright (C) 2022 - 2024 Institut Pasteur and BioImage.IO developers.
+ * Copyright (C) 2022 - 2026 Institut Pasteur and BioImage.IO developers.
  * %%
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,6 +31,11 @@ public class AxisSize {
 	
 	
 	
+	/**
+	 * Creates a new AxisSize.
+	 *
+	 * @param object the object parameter.
+	 */
 	protected AxisSize(Object object) {
 		if (object instanceof Number) {
 			min = (int) object;
@@ -54,22 +59,47 @@ public class AxisSize {
 			ref = (String) map.get("tensor_id");
 	}
 	
+	/**
+	 * Gets min.
+	 *
+	 * @return the resulting numeric value.
+	 */
 	public int getMin() {
 		return this.min;
 	}
 	
+	/**
+	 * Gets step.
+	 *
+	 * @return the resulting numeric value.
+	 */
 	public int getStep() {
 		return this.step;
 	}
 	
+	/**
+	 * Gets offset.
+	 *
+	 * @return the resulting numeric value.
+	 */
 	public double getOffset() {
 		return this.offset;
 	}
 	
+	/**
+	 * Gets reference axis.
+	 *
+	 * @return the resulting string.
+	 */
 	public String getReferenceAxis() {
 		return this.axisID;
 	}
 	
+	/**
+	 * Gets reference tensor.
+	 *
+	 * @return the resulting string.
+	 */
 	public String getReferenceTensor() {
 		return this.ref;
 	}

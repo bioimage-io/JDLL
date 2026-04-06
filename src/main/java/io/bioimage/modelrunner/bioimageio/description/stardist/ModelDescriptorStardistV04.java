@@ -2,7 +2,7 @@
  * #%L
  * Use deep learning frameworks from Java in an agnostic and isolated way.
  * %%
- * Copyright (C) 2022 - 2024 Institut Pasteur and BioImage.IO developers.
+ * Copyright (C) 2022 - 2026 Institut Pasteur and BioImage.IO developers.
  * %%
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -57,6 +57,11 @@ public class ModelDescriptorStardistV04 extends ModelDescriptorV04
 	
 	private static final String STARDIST_TEST = "stardist_test";
 
+	/**
+	 * Creates a new ModelDescriptorStardistV04.
+	 *
+	 * @param yamlElements the yamlElements parameter.
+	 */
 	public ModelDescriptorStardistV04(Map<String, Object> yamlElements) {
 		super(yamlElements);
 		this.input_tensors = this.buildInputTensorsStardist();
@@ -66,16 +71,31 @@ public class ModelDescriptorStardistV04 extends ModelDescriptorV04
     	this.modifyTestOutputs();
 	}
 
+	/**
+	 * Executes are requirements installed.
+	 *
+	 * @return true if the operation succeeds; otherwise, false.
+	 */
 	@Override
 	public boolean areRequirementsInstalled() {
 		return StardistAbstract.isInstalled();
 	}
 
+	/**
+	 * Gets model family.
+	 *
+	 * @return the resulting string.
+	 */
 	@Override
 	public String getModelFamily() {
 		return ModelDescriptor.STARDIST;
 	}
 	
+	/**
+	 * Builds input tensors stardist.
+	 *
+	 * @return the resulting list.
+	 */
 	protected List<TensorSpec> buildInputTensorsStardist() {
 		List<Map<String, Object>> tensors = new ArrayList<Map<String, Object>>();
 		for (TensorSpec tt : this.input_tensors) {
@@ -94,6 +114,11 @@ public class ModelDescriptorStardistV04 extends ModelDescriptorV04
 		return super.buildInputTensors();
 	}
 	
+	/**
+	 * Builds output tensors stardist.
+	 *
+	 * @return the resulting list.
+	 */
 	protected List<TensorSpec> buildOutputTensorsStardist() {
 		List<Map<String, Object>> tensors = new ArrayList<Map<String, Object>>();
 		for (TensorSpec tt : this.output_tensors) {
@@ -112,6 +137,9 @@ public class ModelDescriptorStardistV04 extends ModelDescriptorV04
 		return super.buildOutputTensors();
 	}
     
+    /**
+     * Executes modify test inputs.
+     */
     protected <T extends RealType<T> & NativeType<T>> void modifyTestInputs() {
     	if (this.localModelPath == null)
     		return;
@@ -119,11 +147,13 @@ public class ModelDescriptorStardistV04 extends ModelDescriptorV04
     		TensorSpec tt = input_tensors.get(i);
     		String testName = tt.getTestTensorName();
     		String newTestName = STARDIST_TEST + "_input_" + i + ".npy";
-    		if (new File(localModelPath + File.separator + newTestName).exists()) {
-	    		setInputTestNpyName(i, newTestName);
-	    		continue;
-    		}
 			try {
+	    		if (new File(localModelPath + File.separator + newTestName).exists()
+						// TODO remove the next conditional statement, only here because I added batch size to the stardist axes
+						&& DecodeNumpy.loadNpy(this.localModelPath + File.separator + newTestName).dimensionsAsLongArray().length == tt.getAxesOrder().length()) {
+		    		setInputTestNpyName(i, newTestName);
+		    		continue;
+	    		}
 				RandomAccessibleInterval<T> im = DecodeNumpy.loadNpy(this.localModelPath + File.separator + testName);
 	    		List<Integer> removeDims = removeExtraDims(oldOrdersInp.get(i), tt.getAxesOrder());
 	    		String newImAxesOrder = getNewAxes(oldOrdersInp.get(i), removeDims);
@@ -137,6 +167,9 @@ public class ModelDescriptorStardistV04 extends ModelDescriptorV04
     	}
     }
     
+    /**
+     * Executes modify test outputs.
+     */
     protected <T extends RealType<T> & NativeType<T>> void modifyTestOutputs() {
     	if (this.localModelPath == null)
     		return;
@@ -144,11 +177,13 @@ public class ModelDescriptorStardistV04 extends ModelDescriptorV04
     		TensorSpec tt = output_tensors.get(i);
     		String testName = tt.getTestTensorName();
     		String newTestName = STARDIST_TEST + "_output_" + i + ".npy";
-    		if (new File(localModelPath + File.separator + newTestName).exists()) {
-	    		setOutputTestNpyName(i, newTestName);
-	    		continue;
-    		}
 			try {
+	    		if (new File(localModelPath + File.separator + newTestName).exists()
+						// TODO remove the next conditional statement, only here because I added batch size to the stardist axes
+						&& DecodeNumpy.loadNpy(this.localModelPath + File.separator + newTestName).dimensionsAsLongArray().length == tt.getAxesOrder().length()) {
+		    		setOutputTestNpyName(i, newTestName);
+		    		continue;
+	    		}
 				RandomAccessibleInterval<T> im = DecodeNumpy.loadNpy(this.localModelPath + File.separator + testName);
 	    		List<Integer> removeDims = removeExtraDims(oldOrdersInp.get(i), tt.getAxesOrder());
 	    		String newImAxesOrder = getNewAxes(oldOrdersInp.get(i), removeDims);
@@ -166,7 +201,7 @@ public class ModelDescriptorStardistV04 extends ModelDescriptorV04
 	private Map<String, Object> reverseAxesShape(TensorSpec tt) {
 		Axes axes = tt.getAxesInfo();
 		boolean is3d = axes.getAxesOrder().contains("z");
-		String nAxesOrder = is3d ? "xyzc" : "xyc";
+		String nAxesOrder = is3d ? "bxyzc" : "bxyc";
 		Map<String, Object> shape = new HashMap<String, Object>();
 		List<Double> scale = new ArrayList<Double>();
 		for (int i = 0; i < nAxesOrder.length(); i ++) scale.add(1d);
@@ -183,7 +218,10 @@ public class ModelDescriptorStardistV04 extends ModelDescriptorV04
 				continue;
 			scale.set(c, axis.getScale());
 			minArr.set(c, axis.getMin());
-			stepArr.set(c, axis.getStep());
+			if (ax.equals("b"))
+				stepArr.set(c, 1);
+			else
+				stepArr.set(c, axis.getStep());
 			haloArr.set(c, axis.getHalo());
 			offsetArr.set(c, axis.getOffset());
 			c ++;

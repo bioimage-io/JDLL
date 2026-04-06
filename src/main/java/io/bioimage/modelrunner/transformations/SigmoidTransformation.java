@@ -2,7 +2,7 @@
  * #%L
  * Use deep learning frameworks from Java in an agnostic and isolated way.
  * %%
- * Copyright (C) 2022 - 2024 Institut Pasteur and BioImage.IO developers.
+ * Copyright (C) 2022 - 2026 Institut Pasteur and BioImage.IO developers.
  * %%
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,17 +29,31 @@ public class SigmoidTransformation extends AbstractTensorPixelTransformation
 {
 	private static String name = "sigmoid";
 
+	/**
+	 * Creates a new SigmoidTransformation.
+	 */
 	public SigmoidTransformation()
 	{
 		super(name);
 		super.setDoubleUnitaryOperator(v -> ( double ) ( 1. / ( 1. + Math.exp( -v ) ) ));
 	}
 
+	/**
+	 * Executes apply.
+	 *
+	 * @param input the input parameter.
+	 * @return the resulting value.
+	 */
 	public < R extends RealType< R > & NativeType< R > > Tensor< FloatType > apply( final Tensor< R > input )
 	{
 		return super.apply(input);
 	}
 
+	/**
+	 * Executes apply in place.
+	 *
+	 * @param input the input parameter.
+	 */
 	public < R extends RealType< R > & NativeType< R > > void applyInPlace( final Tensor< R > input )
 	{
 		super.applyInPlace(input);

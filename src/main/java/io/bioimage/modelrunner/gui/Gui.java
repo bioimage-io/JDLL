@@ -1,5 +1,25 @@
+/*-
+ * #%L
+ * Use deep learning frameworks from Java in an agnostic and isolated way.
+ * %%
+ * Copyright (C) 2022 - 2026 Institut Pasteur and BioImage.IO developers.
+ * %%
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ * 
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ * 
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ * #L%
+ */
 package io.bioimage.modelrunner.gui;
 
+import io.bioimage.modelrunner.apposed.appose.Types;
 import io.bioimage.modelrunner.bioimageio.BioimageioRepo;
 import io.bioimage.modelrunner.bioimageio.description.ModelDescriptor;
 import io.bioimage.modelrunner.bioimageio.description.ModelDescriptorFactory;
@@ -9,15 +29,18 @@ import io.bioimage.modelrunner.tensor.Tensor;
 import net.imglib2.type.NativeType;
 import net.imglib2.type.numeric.RealType;
 
-import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Dimension;
-import java.awt.FlowLayout;
 import java.awt.Font;
+import java.awt.GridBagConstraints;
+import java.awt.GridBagLayout;
+import java.awt.GridLayout;
+import java.awt.Insets;
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
 import java.io.File;
 import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
 import java.net.URL;
 import java.nio.file.Paths;
 
@@ -34,6 +57,7 @@ import io.bioimage.modelrunner.gui.adapter.GuiAdapter;
 import io.bioimage.modelrunner.gui.adapter.RunnerAdapter;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.function.Consumer;
@@ -48,6 +72,8 @@ public class Gui extends JPanel {
 	private final String enginesDir;
     private final Object lock = new Object();
     private int nParsedModels;
+    private Runnable cancelCallback;
+    private boolean cancelled = false;
 
 	Thread engineInstallThread;
 	Thread trackEngineInstallThread;
@@ -65,10 +91,6 @@ public class Gui extends JPanel {
     private JButton runButton;
     private JButton runOnTestButton;
     private JButton cancelButton;
-    private Layout layout = Layout.createVertical(LAYOUT_WEIGHTS);
-
-    private static final double FOOTER_VRATIO = 0.06;
-    private static final double[] LAYOUT_WEIGHTS = new double[] {0.1, 0.05, 0.8, 0.05};
 
     protected static final String LOADING_STR = "loading...";
     protected static final String NOT_FOUND_STR = "no models found";
@@ -81,6 +103,17 @@ public class Gui extends JPanel {
     private static final String MODELS_DEAFULT = "models";
     private static final String ENGINES_DEAFULT = "engines";
     
+    protected static final List<String> UNSUPPORTED_MODELS = Arrays.asList(
+            "idealistic-rat",
+            "diplomatic-bug", "resourceful-lizard", "famous-fish", "happy-elephant",
+            "affectionate-cow", "faithful-chicken", "humorous-crab", "noisy-ox",
+            "greedy-whale", "efficient-chipmunk",
+    		// TODO check cellpose 3d (philosophical-panda)
+            "philosophical-panda", "amiable-crocodile",
+            // TODO fix the HPA models
+            "loyal-parrot", "conscientious-seashell", "straightforward-crocodile", "polite-pig"
+        );
+    
     private final static String INSTALL_INSTRUCTIONS_FORMAT = ""
     		+ "No models found at: %s" + File.separator + "models<br><br>"
     		+ "Please, install manually or download models from the Bioimage.io.<br><br>"
@@ -91,36 +124,26 @@ public class Gui extends JPanel {
     		+ "Please, install manually or download models from the Bioimage.io.<br><br>"
     		+ "To download models from the Bioimage.io, click on the Bioimage.io button on the top right.";
 
+    /**
+     * Creates a new Gui.
+     *
+     * @param guiAdapter the guiAdapter parameter.
+     */
     public Gui(GuiAdapter guiAdapter) {
     	DefaultIcon.setIconPath(guiAdapter.getIconPath());
     	INSTALL_INSTRUCTIONS = String.format(INSTALL_INSTRUCTIONS_FORMAT, guiAdapter.getSoftwareName());
         this.guiAdapter = guiAdapter;
-        long tt = System.currentTimeMillis();
         this.modelsDir = guiAdapter.getModelsDir() != null ? guiAdapter.getModelsDir() : new File(MODELS_DEAFULT).getAbsolutePath();
         this.enginesDir = guiAdapter.getEnginesDir() != null ? guiAdapter.getEnginesDir() : new File(ENGINES_DEAFULT).getAbsolutePath();
         loadLocalModels();
-        System.out.println("Model loading: " + (System.currentTimeMillis() - tt));
-        tt = System.currentTimeMillis();
         installEnginesIfNeeded();
-        System.out.println("Engines loading: " + (System.currentTimeMillis() - tt));
-        tt = System.currentTimeMillis();
-        setSize(800, 900);
-        setLayout(layout);
-        System.out.println("Set size: " + (System.currentTimeMillis() - tt));
-        tt = System.currentTimeMillis();
+        setLayout(new GridBagLayout());
 
         // Initialize UI components
         initTitlePanel();
-        System.out.println("Title panel: " + (System.currentTimeMillis() - tt));
-        tt = System.currentTimeMillis();
         initSearchBar();
-        System.out.println("Search bar: " + (System.currentTimeMillis() - tt));
-        tt = System.currentTimeMillis();
         initMainContentPanel();
-        System.out.println("Content panel: " + (System.currentTimeMillis() - tt));
-        tt = System.currentTimeMillis();
         initFooterPanel();
-        System.out.println("Footer: " + (System.currentTimeMillis() - tt));
 
         setVisible(true);
     }
@@ -175,114 +198,164 @@ public class Gui extends JPanel {
     }
 
     private void initTitlePanel() {
-    	titlePanel = new Header(this.guiAdapter.getSoftwareName(), this.guiAdapter.getSoftwareDescription(), this.getWidth(), this.getHeight());
-        add(titlePanel, layout.get(0));
+    	titlePanel = new Header(this.guiAdapter);
+    	titlePanel.setPreferredSize(new Dimension(0, 0));
+    	titlePanel.setMinimumSize(new Dimension(0, 0));
+    	GridBagConstraints gbc = new GridBagConstraints();
+        gbc.gridx      = 0;
+        gbc.gridwidth  = 1;
+        gbc.fill       = GridBagConstraints.BOTH;
+        gbc.weightx    = 1.0;
+        gbc.gridy     = 0;
+        gbc.weighty   = 0.1;   
+        this.add(titlePanel, gbc);
     }
 
     private void initSearchBar() {
         // Set up the title panel
-        searchBar = new SearchBar(this.getWidth(), this.getHeight());
-        add(searchBar, layout.get(1));
+        searchBar = new SearchBar();
+        searchBar.setPreferredSize(new Dimension(0, 0));
+        searchBar.setMinimumSize(new Dimension(0, 0));
         searchBar.switchButton.addActionListener(ee -> switchBtnClicked());
         searchBar.searchButton.addActionListener(ee -> searchModels());
         searchBar.searchField.addKeyListener(new KeyAdapter() {
+            /**
+             * Executes key pressed.
+             *
+             * @param e the e parameter.
+             */
             @Override
             public void keyPressed(KeyEvent e) {
                 if (e.getKeyCode() == KeyEvent.VK_ENTER)
                 	searchModels();
             }
         });
+    	GridBagConstraints gbc = new GridBagConstraints();
+        gbc.gridx      = 0;
+        gbc.gridwidth  = 1;
+        gbc.fill       = GridBagConstraints.BOTH;
+        gbc.weightx    = 1.0;
+        gbc.gridy     = 1;
+        gbc.weighty   = 0.06;
+        this.add(searchBar, gbc);
     }
 
     private void initMainContentPanel() {
         // Create a main content panel with vertical BoxLayout
-        JPanel mainContentPanel = new JPanel();
-        Layout mainPanelLayout = Layout.createVertical(new double[] {0.45, 0.55});
-        mainContentPanel.setLayout(mainPanelLayout);
-        mainContentPanel.setBackground(Color.WHITE);
+        JPanel mainContentPanel = new JPanel(new GridLayout(2, 1));
+        mainContentPanel.setPreferredSize(new Dimension(0, 0));
+        mainContentPanel.setMinimumSize(new Dimension(0, 0));
 
         // Add the model selection panel and content panel to the main content panel
-        this.modelSelectionPanel = new ModelSelectionPanel(this.getWidth(), this.getHeight());
-        mainContentPanel.add(this.modelSelectionPanel, mainPanelLayout.get(0));
-        contentPanel = new ContentPanel(this.getWidth(), this.getHeight());
-        mainContentPanel.add(contentPanel, mainPanelLayout.get(1));
-
-        // Add the main content panel to the frame's CENTER region
-        add(mainContentPanel, layout.get(2));
+        this.modelSelectionPanel = new ModelSelectionPanel(this.guiAdapter);
+        mainContentPanel.add(this.modelSelectionPanel);
+        contentPanel = new ContentPanel(this.guiAdapter);
+        mainContentPanel.add(contentPanel);
         
         modelSelectionPanel.prevButton.addActionListener(e -> updateCarousel(-1));
         modelSelectionPanel.nextButton.addActionListener(e -> updateCarousel(1));
+        // Add the main content panel to the frame's CENTER region
+    	GridBagConstraints gbc = new GridBagConstraints();
+        gbc.gridx      = 0;
+        gbc.gridwidth  = 1;
+        gbc.fill       = GridBagConstraints.BOTH;
+        gbc.weightx    = 1.0;
+        gbc.gridy     = 2;
+        gbc.weighty   = 0.83;   
+        add(mainContentPanel, gbc);
     }
-
+    
     private void initFooterPanel() {
-        footerPanel = new JPanel(new BorderLayout());
+        // ───────────────────────────────────────────────────────────────
+        // 1) Footer container with GridBagLayout
+        footerPanel = new JPanel(new GridBagLayout());
+        footerPanel.setPreferredSize(new Dimension(0, 0));
+        footerPanel.setMinimumSize(new Dimension(0, 0));
         footerPanel.setBackground(new Color(45, 62, 80));
         footerPanel.setBorder(new EmptyBorder(10, 5, 10, 5));
-        footerPanel.setPreferredSize(new Dimension(this.getWidth(), (int) (this.getHeight() * FOOTER_VRATIO)));
 
-        JPanel runButtonPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 20, 0));
-        runButtonPanel.setBackground(new Color(45, 62, 80));
-
+        // ───────────────────────────────────────────────────────────────
+        // 2) Create & style the three buttons
         runOnTestButton = new JButton(RUN_ON_TEST_STR);
         runOnTestButton.addActionListener(e -> runTestOrInstall());
+        styleButton(runOnTestButton, "blue");
+
         runButton = new JButton(RUN_STR);
         runButton.addActionListener(e -> runModel());
+        styleButton(runButton, "blue");
+
         cancelButton = new JButton(CANCEL_STR);
         cancelButton.addActionListener(e -> cancel());
-
-        styleButton(runOnTestButton, "blue");
-        styleButton(runButton, "blue");
         styleButton(cancelButton, "red");
 
-        runButtonPanel.add(cancelButton);
-        runButtonPanel.add(runOnTestButton);
-        runButtonPanel.add(runButton);
+        // ───────────────────────────────────────────────────────────────
+        // 3) runButtonPanel with GridBagLayout so we can weight each button
+        JPanel runButtonPanel = new JPanel(new GridBagLayout());
+        runButtonPanel.setBackground(new Color(45, 62, 80));
+        GridBagConstraints rbGbc = new GridBagConstraints();
+        rbGbc.gridy   = 0;
+        rbGbc.fill    = GridBagConstraints.BOTH;
+        rbGbc.insets  = new Insets(0, 5, 0, 5);
 
-        JLabel copyrightLabel = new JLabel("© 2024 " + guiAdapter.getSoftwareName() + " and JDLL");
+        // Cancel button: weightx = 0 so it's only as wide as it needs to be
+        rbGbc.gridx   = 0;
+        rbGbc.weightx = 0.2;
+        runButtonPanel.add(cancelButton, rbGbc);
+
+        // Run on Test: weightx = 0.5, takes half of remaining space
+        rbGbc.gridx   = 1;
+        rbGbc.weightx = 0.4;
+        runButtonPanel.add(runOnTestButton, rbGbc);
+
+        // Run: weightx = 0.5, takes the other half of remaining space
+        rbGbc.gridx   = 2;
+        rbGbc.weightx = 0.4;
+        runButtonPanel.add(runButton, rbGbc);
+
+        // ───────────────────────────────────────────────────────────────
+        // 4) Copyright label
+        JLabel copyrightLabel = new JLabel(
+            "© 2025 " + guiAdapter.getSoftwareName() + " and JDLL"
+        );
         copyrightLabel.setFont(new Font("SansSerif", Font.PLAIN, 12));
         copyrightLabel.setForeground(Color.WHITE);
 
-        footerPanel.add(runButtonPanel, BorderLayout.EAST);
-        footerPanel.add(copyrightLabel, BorderLayout.WEST);
+        // ───────────────────────────────────────────────────────────────
+        // 5) Lay out label vs runButtonPanel in footerPanel
+        GridBagConstraints fGbc = new GridBagConstraints();
+        fGbc.gridy  = 0;
+        fGbc.fill   = GridBagConstraints.BOTH;
+        fGbc.insets = new Insets(0, 0, 0, 0);
 
-        add(footerPanel, layout.get(3));
+        // Column 0: label takes 40% of width
+        fGbc.gridx   = 0;
+        fGbc.weightx = 0.4;
+        footerPanel.add(copyrightLabel, fGbc);
+
+        // Column 1: runButtonPanel takes 60% of width
+        fGbc.gridx   = 1;
+        fGbc.weightx = 0.6;
+        footerPanel.add(runButtonPanel, fGbc);
+
+        // ───────────────────────────────────────────────────────────────
+        // 6) Finally, add footerPanel into your main GridBagLayout at row 3
+        GridBagConstraints mainGbc = new GridBagConstraints();
+        mainGbc.gridx     = 0;
+        mainGbc.gridy     = 3;
+        mainGbc.gridwidth = 1;
+        mainGbc.fill      = GridBagConstraints.BOTH;
+        mainGbc.weightx   = 1.0;
+        mainGbc.weighty   = 0.06;
+        this.add(footerPanel, mainGbc);
     }
+
+
     
     private void cancel() {
+    	cancelled = true;
+    	if (cancelCallback != null)
+    		cancelCallback.run();
     	this.onClose();
-    }
-    
-    private <T extends RealType<T> & NativeType<T>> void runModel() {
-    	SwingUtilities.invokeLater(() -> this.contentPanel.setProgressIndeterminate(true));
-    	runninThread = new Thread(() -> {
-        	try {
-            	if (runner == null || runner.isClosed()) {
-                	SwingUtilities.invokeLater(() -> this.contentPanel.setProgressLabelText("Loading model..."));
-            		runner = guiAdapter.createRunner(this.modelSelectionPanel.getModels().get(currentIndex));
-            	}
-        		if (!runner.isLoaded() && GuiUtils.isEDTAlive())
-        			runner.load();
-        		else if (!GuiUtils.isEDTAlive())
-        			return;
-            	SwingUtilities.invokeLater(() -> this.contentPanel.setProgressLabelText("Running the model..."));
-            	List<Tensor<T>> list = guiAdapter.getInputTensors(runner.getDescriptor());
-    			List<Tensor<T>> outs = runner.run(list);
-    			for (Tensor<T> tt : outs) {
-    				if (!GuiUtils.isEDTAlive())
-            			return;
-    				if (!GuiUtils.isEDTAlive())
-            			return;
-    				guiAdapter.displayRai(tt.getData(), tt.getAxesOrderString());
-    			}
-    		} catch (Exception e) {
-    			e.printStackTrace();
-    		}
-        	SwingUtilities.invokeLater(() -> {
-        		this.contentPanel.setProgressLabelText("");
-        		this.contentPanel.setProgressIndeterminate(false);
-        	});
-    	});
-    	runninThread.start();
     }
     
     private void runTestOrInstall() {
@@ -293,34 +366,84 @@ public class Gui extends JPanel {
     	}
     }
     
-    private <T extends RealType<T> & NativeType<T>> void runModelOnTestImage() {
-    	SwingUtilities.invokeLater(() -> this.contentPanel.setProgressIndeterminate(true));
+    private <T extends RealType<T> & NativeType<T>> void runModel() {
+		startModelInstallation(true, "Preparing...");
     	runninThread = new Thread(() -> {
         	try {
+        		ModelDescriptor model = modelSelectionPanel.getModels().get(currentIndex);
+        		guiAdapter.notifyModelUsed(model.getNickname());
             	if (runner == null || runner.isClosed()) {
+                	SwingUtilities.invokeLater(() -> this.contentPanel.setProgressLabelText("Checking deps..."));
+                	if (!installEnvToRun(model) && !model.getModelFamily().equals(ModelDescriptor.STARDIST)) {
+                		startModelInstallation(false);
+            			return;
+            		}
                 	SwingUtilities.invokeLater(() -> this.contentPanel.setProgressLabelText("Loading model..."));
-            		runner = guiAdapter.createRunner(this.modelSelectionPanel.getModels().get(currentIndex));
+            		runner = guiAdapter.createRunner(model, this.enginesDir);
             	}
         		if (!runner.isLoaded() && GuiUtils.isEDTAlive())
-        			runner.load();
+        			runner.load(false);
+        		else if (!GuiUtils.isEDTAlive())
+        			return;
+            	SwingUtilities.invokeLater(() -> this.contentPanel.setProgressLabelText("Running the model..."));
+            	List<String> inputNames = guiAdapter.getInputImageNames();
+            	if (inputNames.size() == 0) {
+            		startModelInstallation(false);
+                	SwingUtilities.invokeLater(() -> this.contentPanel.setProgressLabelText("No image open"));
+        			return;
+            	}
+            	List<Tensor<T>> list = guiAdapter.getInputTensors(runner.getDescriptor());
+    			List<Tensor<T>> outs = runner.run(list);
+    			for (Tensor<T> tt : outs) {
+    				if (!GuiUtils.isEDTAlive())
+            			return;
+    				guiAdapter.displayRai(tt.getData(), tt.getAxesOrderString(), tt.getName() + "_of_" + inputNames.get(0));
+    			}
+        		startModelInstallation(false);
+    		} catch (Exception e) {
+    			if (cancelled)
+    				return;
+        		startModelInstallation(false);
+            	SwingUtilities.invokeLater(() -> this.contentPanel.setProgressLabelText("Error running the model"));
+    			e.printStackTrace();
+    		}
+    	});
+    	runninThread.start();
+    }
+    
+    private <T extends RealType<T> & NativeType<T>> void runModelOnTestImage() {
+		startModelInstallation(true, "Preparing...");
+    	runninThread = new Thread(() -> {
+        	try {
+        		ModelDescriptor model = modelSelectionPanel.getModels().get(currentIndex);
+            	if (runner == null || runner.isClosed()) {
+            		if (!installEnvToRun(model) && !model.getModelFamily().equals(ModelDescriptor.STARDIST)) {
+                		startModelInstallation(false);
+            			return;
+            		}
+                	SwingUtilities.invokeLater(() -> this.contentPanel.setProgressLabelText("Loading model..."));
+            		runner = guiAdapter.createRunner(model, this.enginesDir);
+            	}
+        		if (!runner.isLoaded() && GuiUtils.isEDTAlive())
+        			runner.load(false);
         		else if (!GuiUtils.isEDTAlive())
         			return;
             	SwingUtilities.invokeLater(() -> this.contentPanel.setProgressLabelText("Running the model..."));
     			List<Tensor<T>> outs = runner.runOnTestImages();
+            	List<String> inputNames = guiAdapter.getInputImageNames();
     			for (Tensor<T> tt : outs) {
     				if (!GuiUtils.isEDTAlive())
             			return;
-    				if (!GuiUtils.isEDTAlive())
-            			return;
-    				guiAdapter.displayRai(tt.getData(), tt.getAxesOrderString());
+    				guiAdapter.displayRai(tt.getData(), tt.getAxesOrderString(), tt.getName() + "_of_" + inputNames.get(0));
     			}
+        		startModelInstallation(false);
     		} catch (Exception e) {
+    			if (cancelled)
+    				return;
+        		startModelInstallation(false);
+            	SwingUtilities.invokeLater(() -> this.contentPanel.setProgressLabelText("Error running the model"));
     			e.printStackTrace();
     		}
-        	SwingUtilities.invokeLater(() -> {
-        		this.contentPanel.setProgressLabelText("");
-        		this.contentPanel.setProgressIndeterminate(false);
-        	});
     	});
     	runninThread.start();
     		
@@ -338,7 +461,19 @@ public class Gui extends JPanel {
             int logoHeight = (int) (getHeight() * 0.3);
             int logoWidth = getWidth() / 3;
         	URL coverPath = modelSelectionPanel.getCoverPaths().get(currentIndex);
-            contentPanel.update(modelSelectionPanel.getModels().get(currentIndex), coverPath, logoWidth, logoHeight);
+        	boolean supported = true;
+        	if (modelSelectionPanel.getModels().get(currentIndex) != null
+        			&& modelSelectionPanel.getModels().get(currentIndex).getModelFamily().equals(ModelDescriptor.BIOIMAGEIO)) {
+        		supported = modelSelectionPanel.getModels().get(currentIndex).getWeights().getAllSuportedWeightNames().size() != 0;
+	            if (UNSUPPORTED_MODELS.contains(modelSelectionPanel.getModels().get(currentIndex).getNickname()))
+	            	supported = false;
+        	}
+        	contentPanel.setUnsupported(!supported);
+        	contentPanel.update(modelSelectionPanel.getModels().get(currentIndex), coverPath, logoWidth, logoHeight);
+        	if (this.searchBar.isBarOnLocal()) {
+        		this.runOnTestButton.setEnabled(supported);
+        		this.runButton.setEnabled(supported);
+        	}
     	}
     }
     
@@ -348,6 +483,7 @@ public class Gui extends JPanel {
     	if (this.searchBar.isBarOnLocal() && this.contentPanel.getProgress() != 0) {
     		contentPanel.setProgressBarText("");
     		contentPanel.setDeterminatePorgress(0);
+        	contentPanel.setProgressLabelText("");
     	} else if(!searchBar.isBarOnLocal() && this.contentPanel.getProgress() != 100 
     			&& modelSelectionPanel.getModels().get(currentIndex).isModelInLocalRepo()) {
     		contentPanel.setProgressBarText("100%");
@@ -356,12 +492,14 @@ public class Gui extends JPanel {
     			&& !modelSelectionPanel.getModels().get(currentIndex).isModelInLocalRepo()) {
     		contentPanel.setProgressBarText("");
     		contentPanel.setDeterminatePorgress(0);
+        	contentPanel.setProgressLabelText("");
     	}
     	if (searchBar.isBarOnLocal() 
     			|| (!searchBar.isBarOnLocal() 
     					&& !modelSelectionPanel.getModels().get(currentIndex).isModelInLocalRepo() 
     					&& !contentPanel.getProgressBarText().equals(""))) {
     		contentPanel.setProgressBarText("");
+        	contentPanel.setProgressLabelText("");
     	}
     }
 
@@ -382,6 +520,11 @@ public class Gui extends JPanel {
         button.setBorder(BorderFactory.createEmptyBorder(10, 20, 10, 20));
     }
     
+    /**
+     * Sets models.
+     *
+     * @param models the models parameter.
+     */
     public void setModels(List<ModelDescriptor> models) {
     	if (models.size() == 0)
     		models = createArrayOfNulls(1);
@@ -390,6 +533,11 @@ public class Gui extends JPanel {
     	setModelsInGui(models);
     }
     
+    /**
+     * Sets models in gui.
+     *
+     * @param models the models parameter.
+     */
     protected void setModelsInGui(List<ModelDescriptor> models) {
     	currentIndex = 0;
     	this.modelSelectionPanel.setModels(models);
@@ -398,9 +546,27 @@ public class Gui extends JPanel {
         int logoHeight = (int) (getHeight() * 0.3);
         int logoWidth = getWidth() / 3;
     	URL coverPath = modelSelectionPanel.getCoverPaths().get(currentIndex);
-        contentPanel.update(modelSelectionPanel.getModels().get(currentIndex), coverPath, logoWidth, logoHeight);
+    	boolean supported = true;
+    	if (modelSelectionPanel.getModels().get(currentIndex) != null
+    			&& modelSelectionPanel.getModels().get(currentIndex).getModelFamily().equals(ModelDescriptor.BIOIMAGEIO)) {
+    		supported = modelSelectionPanel.getModels().get(currentIndex).getWeights().getAllSuportedWeightNames().size() != 0;
+	    	if (UNSUPPORTED_MODELS.contains(modelSelectionPanel.getModels().get(currentIndex).getNickname()))
+	        	supported = false;
+    	}
+        contentPanel.setUnsupported(!supported);
+    	contentPanel.update(modelSelectionPanel.getModels().get(currentIndex), coverPath, logoWidth, logoHeight);
+    	if (this.searchBar.isBarOnLocal()) {
+    		this.runOnTestButton.setEnabled(supported);
+    		this.runButton.setEnabled(supported);
+    	}
     }
     
+    /**
+     * Sets model in gui at.
+     *
+     * @param model the model parameter.
+     * @param pos the pos parameter.
+     */
     protected void setModelInGuiAt(ModelDescriptor model, int pos) {
     	this.modelSelectionPanel.setModelAt(model, pos);
     	synchronized (lock) {
@@ -420,6 +586,9 @@ public class Gui extends JPanel {
     	this.setModelsInGui(models);
     }
     
+    /**
+     * Executes switch btn clicked.
+     */
     protected void switchBtnClicked() {
     	closeModelWhenChanging();
     	if (this.searchBar.isBarOnLocal()) {
@@ -440,6 +609,9 @@ public class Gui extends JPanel {
     }
     
     
+    /**
+     * Executes clicked bmz.
+     */
     protected void clickedBMZ() {
     	ArrayList<ModelDescriptor> newModels = createArrayOfNulls(3);
     	this.searchBar.setBarEnabled(false);
@@ -516,6 +688,9 @@ public class Gui extends JPanel {
     	return newModels;
     }
     
+    /**
+     * Executes clicked local.
+     */
     protected void clickedLocal() {
     	modelSelectionPanel.setLoading();
     	ArrayList<ModelDescriptor> newModels = createArrayOfNulls(3);
@@ -556,9 +731,9 @@ public class Gui extends JPanel {
             	this.contentPanel.setProgressBarText("");
             	this.contentPanel.setProgressLabelText("");
             	this.searchBar.setBarEnabled(true);
-            	this.runOnTestButton.setEnabled(true);
+            	this.runOnTestButton.setEnabled(!contentPanel.isUnsupported());
             	this.modelSelectionPanel.setArrowsEnabled(true);
-            	this.runButton.setEnabled(true);
+            	this.runButton.setEnabled(!contentPanel.isUnsupported());
         	});
     	});
     	
@@ -567,12 +742,18 @@ public class Gui extends JPanel {
     }
     
     private void startModelInstallation(boolean isStarting) {
+    	startModelInstallation(isStarting, "Installing...");
+    }
+    
+    private void startModelInstallation(boolean isStarting, String str) {
     	SwingUtilities.invokeLater(() -> {
         	this.runOnTestButton.setEnabled(!isStarting);
+        	this.runButton.setEnabled(!isStarting);
         	this.searchBar.setBarEnabled(!isStarting);
         	this.modelSelectionPanel.setArrowsEnabled(!isStarting);
+	    	this.contentPanel.setProgressIndeterminate(isStarting);
         	if (isStarting)
-        		this.contentPanel.setProgressLabelText("Installing ...");
+        		this.contentPanel.setProgressLabelText(str);
         	else
 		    	this.contentPanel.setProgressLabelText("");
     	});
@@ -586,7 +767,11 @@ public class Gui extends JPanel {
     private void installSelectedModel() {
     	ModelDescriptor selectedModel = modelSelectionPanel.getModels().get(this.currentIndex);
     	Consumer<Double> progress = (c) -> {
-			SwingUtilities.invokeLater(() -> contentPanel.setDeterminatePorgress((int) (c * 100)));
+			SwingUtilities.invokeLater(() -> {
+				double pr = Math.round(c * 10000) / 100d;
+				contentPanel.setDeterminatePorgress((int) pr);
+				contentPanel.setProgressBarText("" + pr + "%");
+			});
     	};
     	startModelInstallation(true);
     	CountDownLatch latch = new CountDownLatch(2);
@@ -595,6 +780,8 @@ public class Gui extends JPanel {
 				String modelFolder = BioimageioRepo.downloadModel(selectedModel, new File(modelsDir).getAbsolutePath(), progress);
 				selectedModel.addModelPath(Paths.get(modelFolder));
 			} catch (IOException | InterruptedException e) {
+    			if (cancelled)
+    				return;
 				e.printStackTrace();
 			}
 			latch.countDown();
@@ -615,7 +802,7 @@ public class Gui extends JPanel {
 		JDialog installerFrame = new JDialog();
 		installerFrame.setTitle("Installing " + descriptor.getName());
 		installerFrame.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
-    	Runnable callback = () -> {
+    	Consumer<Boolean> callback = (bool) -> {
     		checkModelInstallationFinished(latch);
     		if (installerFrame.isVisible())
     			installerFrame.dispose();
@@ -627,6 +814,56 @@ public class Gui extends JPanel {
     	installerFrame.setSize(600, 300);
     }
     
+    private boolean installEnvToRun(ModelDescriptor descriptor) {
+    	String msg = "The selected model requries Python to run end to end. "
+    			+ "Python installation might take up to 20 minutes depending on your computer";
+    	String question = String.format("Install %s Python", descriptor.getModelFamily());
+    	if (descriptor.areRequirementsInstalled()) {
+    		return true;
+    	}
+    	if (!YesNoDialog.askQuestion(question, msg)) {
+    		return false;
+    	}
+		JDialog[] installerFrame = new JDialog[1];
+		InstallEnvWorker[] worker = new InstallEnvWorker[1];
+		EnvironmentInstaller[] installerPanel = new EnvironmentInstaller[1];
+    	CountDownLatch latch = new CountDownLatch(1);
+    	Consumer<Boolean> callback = (bool) -> {
+    		if (installerFrame[0].isVisible())
+    			installerFrame[0].dispose();
+    	};
+		try {
+			SwingUtilities.invokeAndWait(() -> {
+				installerFrame[0] = new JDialog();
+				installerFrame[0].setTitle("Installing " + descriptor.getName());
+				installerFrame[0].setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
+		    	worker[0] = new InstallEnvWorker(descriptor, latch, callback);
+				installerPanel[0] = EnvironmentInstaller.create(worker[0]);
+			});
+		} catch (InvocationTargetException | InterruptedException e) {
+			if (cancelled)
+				return false;
+			throw new RuntimeException(Types.stackTrace(e));
+		}
+    	worker[0].execute();
+    	SwingUtilities.invokeLater(() -> {
+    		installerPanel[0].addToFrame(installerFrame[0]);
+        	installerFrame[0].setSize(600, 300);
+    	});
+    	try {
+        	latch.await();
+		} catch (InterruptedException e) {
+			if (cancelled)
+				return false;
+			e.printStackTrace();
+			return false;
+		}
+    	return true;
+    }
+    
+    /**
+     * Executes on close.
+     */
     public void onClose() {
     	DefaultIcon.closeThreads();
     	if (dwnlThread != null && this.dwnlThread.isAlive())
@@ -649,5 +886,14 @@ public class Gui extends JPanel {
     	}
     	if (runninThread != null && this.runninThread.isAlive())
     		this.runninThread.interrupt();
+    }
+    
+    /**
+     * Sets cancel callback.
+     *
+     * @param callback the callback parameter.
+     */
+    public void setCancelCallback(Runnable callback) {
+    	this.cancelCallback = callback;
     }
 }

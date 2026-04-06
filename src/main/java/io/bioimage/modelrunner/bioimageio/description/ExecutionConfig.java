@@ -2,7 +2,7 @@
  * #%L
  * Use deep learning frameworks from Java in an agnostic and isolated way.
  * %%
- * Copyright (C) 2022 - 2024 Institut Pasteur and BioImage.IO developers.
+ * Copyright (C) 2022 - 2026 Institut Pasteur and BioImage.IO developers.
  * %%
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@
  */
 package io.bioimage.modelrunner.bioimageio.description;
 
+import java.util.HashMap;
 import java.util.Map;
 
 import io.bioimage.modelrunner.bioimageio.description.deepimagej.DeepImageJExecutionConfig;
@@ -30,6 +31,8 @@ import io.bioimage.modelrunner.bioimageio.description.deepimagej.DeepImageJExecu
  */
 public class ExecutionConfig
 {
+	
+	protected static int FRIEND_COUNT = 0;
 
     /**
      * Creates an execution configuration instance with the config element map from the yaml file.
@@ -40,8 +43,12 @@ public class ExecutionConfig
      */
     public static ExecutionConfig build(Map<String, Object> yamlFieldElements)
     {
-        if (yamlFieldElements == null)
-            return null;
+        if (yamlFieldElements == null) {
+        	yamlFieldElements = new HashMap<String, Object>();
+        	Map<String, String> bmzConfig = new HashMap<String, String>();
+        	bmzConfig.put("nickname", "friend-" + (FRIEND_COUNT ++));
+        	yamlFieldElements.put("bioimageio", bmzConfig);
+        }
 
         ExecutionConfig config = new ExecutionConfig();
         config.specMap = yamlFieldElements;
@@ -97,6 +104,11 @@ public class ExecutionConfig
 
     
 
+    /**
+     * Executes to string.
+     *
+     * @return the resulting string.
+     */
     @Override
     public String toString()
     {

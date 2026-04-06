@@ -2,7 +2,7 @@
  * #%L
  * Use deep learning frameworks from Java in an agnostic and isolated way.
  * %%
- * Copyright (C) 2022 - 2024 Institut Pasteur and BioImage.IO developers.
+ * Copyright (C) 2022 - 2026 Institut Pasteur and BioImage.IO developers.
  * %%
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -57,6 +57,13 @@ public class TransformationInstance {
 	
 	private final static String RUN_INPLACE_NAME = "applyInPlace";
 	
+	/**
+	 * Creates a new TransformationInstance.
+	 *
+	 * @param transform the transform parameter.
+	 * @throws RuntimeException if the operation cannot be completed successfully.
+	 * @throws IllegalArgumentException if any argument is invalid.
+	 */
 	protected TransformationInstance(TransformSpec transform) throws RuntimeException, IllegalArgumentException {
 		this.name = transform.getName();
 		this.args = transform.getKwargs();
@@ -217,7 +224,8 @@ public class TransformationInstance {
 				| NoSuchMethodException | SecurityException e) {
 			throw new RuntimeException(Types.stackTrace(e));
 		}
-
+		if (args == null)
+			return;
 		for (String kk : args.keySet()) {
 			setArg(kk);
 		}

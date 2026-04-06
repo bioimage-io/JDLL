@@ -2,7 +2,7 @@
  * #%L
  * Use deep learning frameworks from Java in an agnostic and isolated way.
  * %%
- * Copyright (C) 2022 - 2024 Institut Pasteur and BioImage.IO developers.
+ * Copyright (C) 2022 - 2026 Institut Pasteur and BioImage.IO developers.
  * %%
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -68,11 +68,9 @@ public class CommonUtils {
 	/**
 	 * Get the ImgLib2 datatype from a String datatype.
 	 * String data types are "int8", "uint8", "int16", "uint16", "int32", "uint32", "int64", "float32", "float64"
-	 * @param <T>
-	 * 	what the possible ImgLib2 data types have to extend
-	 * @param dataType
-	 * 	the String data type of interest
-	 * @return the ImgLib2 data type referred by the string
+	 *
+	 * @param dataType the dataType parameter.
+	 * @return the resulting value.
 	 */
 	public static <T extends RealType<T> & NativeType<T>> T getImgLib2DataType(String dataType) {
 		T type;
@@ -169,6 +167,11 @@ public class CommonUtils {
 		}
 	}
 	
+	/**
+	 * Gets time.
+	 *
+	 * @return the resulting string.
+	 */
 	public static String getTime() {
 		if (cal == null)
 			cal = Calendar.getInstance();
@@ -177,6 +180,13 @@ public class CommonUtils {
 		return dateString;
 	}
 	
+	/**
+	 * Executes int32 overflows.
+	 *
+	 * @param arr the arr parameter.
+	 * @param bytesPerValue the bytesPerValue parameter.
+	 * @return true if the operation succeeds; otherwise, false.
+	 */
 	public static boolean int32Overflows(int[] arr, int bytesPerValue) {
 		double div = Integer.MAX_VALUE / bytesPerValue;
 		for (int a : arr)
@@ -186,6 +196,13 @@ public class CommonUtils {
 		return false;
 	}
 	
+	/**
+	 * Executes int32 overflows.
+	 *
+	 * @param arr the arr parameter.
+	 * @param bytesPerValue the bytesPerValue parameter.
+	 * @return true if the operation succeeds; otherwise, false.
+	 */
 	public static boolean int32Overflows(long[] arr, int bytesPerValue) {
 		double div = Integer.MAX_VALUE / bytesPerValue;
 		for (long a : arr)
@@ -195,6 +212,13 @@ public class CommonUtils {
 		return false;
 	}
 	
+	/**
+	 * Executes int64 overflows.
+	 *
+	 * @param arr the arr parameter.
+	 * @param bytesPerValue the bytesPerValue parameter.
+	 * @return true if the operation succeeds; otherwise, false.
+	 */
 	public static boolean int64Overflows(int[] arr, int bytesPerValue) {
 		double div = Long.MAX_VALUE / bytesPerValue;
 		for (int a : arr)
@@ -204,6 +228,13 @@ public class CommonUtils {
 		return false;
 	}
 	
+	/**
+	 * Executes int64 overflows.
+	 *
+	 * @param arr the arr parameter.
+	 * @param bytesPerValue the bytesPerValue parameter.
+	 * @return true if the operation succeeds; otherwise, false.
+	 */
 	public static boolean int64Overflows(long[] arr, int bytesPerValue) {
 		double div = Long.MAX_VALUE / bytesPerValue;
 		for (long a : arr)
@@ -213,6 +244,11 @@ public class CommonUtils {
 		return false;
 	}
 	
+	/**
+	 * Executes main.
+	 *
+	 * @param args the args parameter.
+	 */
 	public static void main(String[] args) {
 		System.out.println(getTime());
 	}

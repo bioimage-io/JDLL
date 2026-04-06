@@ -2,7 +2,7 @@
  * #%L
  * Use deep learning frameworks from Java in an agnostic and isolated way.
  * %%
- * Copyright (C) 2022 - 2024 Institut Pasteur and BioImage.IO developers.
+ * Copyright (C) 2022 - 2026 Institut Pasteur and BioImage.IO developers.
  * %%
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -80,21 +80,15 @@ public class BioimageIoModelJava extends DLModelJava
 	/**
 	 * Construct the object model with all the needed information to load a
 	 * model and make inference
-	 * 
-	 * @param engineInfo
-	 *            informaton needed about the model
-	 * @param modelFolder
-	 *            directory where of the model folder
-	 * @param modelSource
-	 *            name of the actual model file (.pt for torchscript)
-	 * @param classLoader
-	 *            parent ClassLoader of the engine (can be null)
-	 * @throws LoadEngineException
-	 *             if there is an error finding the Deep LEarningn interface
-	 *             that connects with the DL libraries
-	 * @throws MalformedURLException if the JAR files are not well defined in the .json file
-	 * @throws IOException if there is any error finding the engines in the system
-	 * @throws IllegalStateException if any of the engines has been incorrectly modified
+	 *
+	 * @param engineInfo the engineInfo parameter.
+	 * @param modelFolder the modelFolder parameter.
+	 * @param modelSource the modelSource parameter.
+	 * @param classLoader the classLoader parameter.
+	 * @throws LoadEngineException if a LoadEngineException occurs while executing this method.
+	 * @throws MalformedURLException if a MalformedURLException occurs while executing this method.
+	 * @throws IllegalStateException if a IllegalStateException occurs while executing this method.
+	 * @throws IOException if an I/O error occurs.
 	 */
 	protected BioimageIoModelJava( EngineInfo engineInfo, String modelFolder, String modelSource, ClassLoader classLoader )
 			throws LoadEngineException, MalformedURLException, IllegalStateException, IOException
@@ -243,29 +237,16 @@ public class BioimageIoModelJava extends DLModelJava
 	 * rdf.yaml file
 	 * To successfully create a Bioiamge.io model, it is required that there is installed
 	 * at least one of the exact engines needed to load at least one of the weight formats
-	 * in the exact version supported by the model. 
+	 * in the exact version supported by the model.
 	 * Major and minor versions need to be the same (Tensorflow 2.7 != Tensorflow 2.4).
-	 * 
-	 * @param bmzModelFolder
-	 * 	folder where the bioimage.io model is located (parent folder of the rdf.yaml file)
-	 * @param enginesFolder
-	 * 	directory where all the engine (DL framework) folders are downloaded
-	 * @param classloader
-	 * 	Parent ClassLoader of the engine (can be null). Almost the same method as 
-	 *  Model.createBioimageioModel( String bmzModelFolder, String enginesFolder ). 
-	 *  The only difference is that this method can choose the parent ClassLoader for the engine. 
-	 *  JDLL creates a separate ChildFirst-ParentLast CustomClassLoader for each of the 
-	 *  engines loaded to avoid conflicts between them. In order to have access to the 
-	 *  classes of the main ClassLoader the ChildFirst-ParentLast CustomClassLoader needs a parent. 
-	 *  If no classloader argument is provided the parent ClassLoader will be the Thread's 
-	 *  context ClassLoader (Thread.currentThread().getContextClassLoader()).
-	 *  The classloader argument can be null.
-	 *  The classloader argument is usually not needed, but for some softwares 
-	 *  such as Icy, that have a custom management of ClassLoaders it is necessary.
-	 * @return a model ready to be loaded
-	 * @throws LoadEngineException if there is any error loading the DL framework
-	 * @throws IOException if there is any error finding the engines in the system
-	 * @throws IllegalStateException if any of the installed DL engines have been manipulated incorrectly
+	 *
+	 * @param bmzModelFolder the bmzModelFolder parameter.
+	 * @param enginesFolder the enginesFolder parameter.
+	 * @param classloader the classloader parameter.
+	 * @return the resulting value.
+	 * @throws IOException if an I/O error occurs.
+	 * @throws IllegalStateException if a IllegalStateException occurs while executing this method.
+	 * @throws LoadEngineException if a LoadEngineException occurs while executing this method.
 	 */
 	public static BioimageIoModelJava createBioimageioModelWithExactWeigths(String bmzModelFolder, 
 			String enginesFolder, ClassLoader classloader)
@@ -389,15 +370,13 @@ public class BioimageIoModelJava extends DLModelJava
 	}
 	
 	/**
-	 * 
-	 * @param <T>
-	 * 	nothing
-	 * @param args
-	 * 	nothing
-	 * @throws IOException	nothing
-	 * @throws LoadEngineException	nothing
-	 * @throws RunModelException	nothing
-	 * @throws LoadModelException	nothing
+	 * Executes main.
+	 *
+	 * @param args the args parameter.
+	 * @throws IOException if an I/O error occurs.
+	 * @throws LoadEngineException if a LoadEngineException occurs while executing this method.
+	 * @throws RunModelException if a RunModelException occurs while executing this method.
+	 * @throws LoadModelException if a LoadModelException occurs while executing this method.
 	 */
 	public static <T extends NativeType<T> & RealType<T>> void main(String[] args) throws IOException, LoadEngineException, RunModelException, LoadModelException {
 		
@@ -425,13 +404,13 @@ public class BioimageIoModelJava extends DLModelJava
 	}
 	
 	/**
-	 * Get the {@link ModelDescriptor} instance that contains the specs defined in the 
+	 * Get the {@link ModelDescriptor} instance that contains the specs defined in the
 	 * Bioimage.io rdf.yaml specs file.
 	 * If the model does not contain a specs file, the methods returns null
-	 * @return the {@link ModelDescriptor} instance that contains the specs defined in the 
-	 * 	Bioimage.io rdf.yaml specs file.
-	 * @throws IOException if any of the required files is corrupt or missing
-	 * @throws FileNotFoundException if any of the files required is not found
+	 *
+	 * @return the resulting value.
+	 * @throws FileNotFoundException if a FileNotFoundException occurs while executing this method.
+	 * @throws IOException if an I/O error occurs.
 	 */
 	public ModelDescriptor getBioimageioSpecs() throws FileNotFoundException, IOException {
 		if (descriptor == null && new File(modelFolder + File.separator + Constants.RDF_FNAME).isFile()) {

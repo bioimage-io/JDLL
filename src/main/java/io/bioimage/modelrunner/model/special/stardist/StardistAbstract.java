@@ -2,7 +2,7 @@
  * #%L
  * Use deep learning frameworks from Java in an agnostic and isolated way.
  * %%
- * Copyright (C) 2022 - 2024 Institut Pasteur and BioImage.IO developers.
+ * Copyright (C) 2022 - 2026 Institut Pasteur and BioImage.IO developers.
  * %%
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -48,16 +48,21 @@ import io.bioimage.modelrunner.model.BaseModel;
 import io.bioimage.modelrunner.model.processing.Processing;
 import io.bioimage.modelrunner.system.PlatformDetection;
 import io.bioimage.modelrunner.tensor.Tensor;
+import io.bioimage.modelrunner.tensor.Utils;
 import io.bioimage.modelrunner.tensor.shm.SharedMemoryArray;
 import io.bioimage.modelrunner.transformations.ScaleRangeTransformation;
 import io.bioimage.modelrunner.utils.CommonUtils;
 import io.bioimage.modelrunner.utils.Constants;
 import io.bioimage.modelrunner.utils.JSONUtils;
 import net.imglib2.RandomAccessibleInterval;
+import net.imglib2.img.array.ArrayImg;
+import net.imglib2.img.array.ArrayImgFactory;
+import net.imglib2.loops.LoopBuilder;
 import net.imglib2.type.NativeType;
 import net.imglib2.type.numeric.RealType;
 import net.imglib2.util.Cast;
 import net.imglib2.util.Util;
+import net.imglib2.view.Views;
 
 /**
  * Implementation of an API to run Stardist 2D models out of the box with little configuration.
@@ -74,7 +79,11 @@ public abstract class StardistAbstract extends BaseModel {
 	
 	protected final String basedir;
 	
+	protected Double threshold = null;
+	
 	protected final int nChannels;
+	
+	protected final String axes;
 	
 	protected Map<String, Object> config;
 	
@@ -111,7 +120,14 @@ public abstract class StardistAbstract extends BaseModel {
 	
 	private static final List<String> STARDIST_DEPS = Arrays.asList(new String[] {"python=3.10", "stardist", "numpy", "appose"});
 	
-	private static final List<String> STARDIST_DEPS_PIP = Arrays.asList(new String[] {"tensorflow<2.11"});
+	private static final List<String> STARDIST_DEPS_PIP;
+	static {
+		if (PlatformDetection.isMacOS() 
+				&& (PlatformDetection.getArch().equals(PlatformDetection.ARCH_ARM64) || PlatformDetection.isUsingRosseta()))
+			STARDIST_DEPS_PIP = Arrays.asList(new String[] {"tensorflow-macos<2.11"});
+		else
+			STARDIST_DEPS_PIP = Arrays.asList(new String[] {"tensorflow<2.11"});
+	}
 	
 	private static final List<String> STARDIST_CHANNELS = Arrays.asList(new String[] {"conda-forge", "default"});
 
@@ -198,10 +214,26 @@ public abstract class StardistAbstract extends BaseModel {
 			+ "    s.unlink()" + System.lineSeparator()
 			+ "    del s" + System.lineSeparator();
 	
+	/**
+	 * Creates imports code.
+	 *
+	 * @return the resulting string.
+	 */
 	protected abstract String createImportsCode();
 	
+	/**
+	 * Checks input.
+	 *
+	 * @param image the image parameter.
+	 */
 	protected abstract <T extends RealType<T> & NativeType<T>>  void checkInput(RandomAccessibleInterval<T> image);
 	
+	/**
+	 * Executes reconstruct mask.
+	 *
+	 * @return the resulting value.
+	 * @throws IOException if an I/O error occurs.
+	 */
 	protected abstract <T extends RealType<T> & NativeType<T>> RandomAccessibleInterval<T> reconstructMask() throws IOException;
 
 	/**
@@ -216,15 +248,36 @@ public abstract class StardistAbstract extends BaseModel {
 	 */
 	public abstract boolean is3D();
 	
+	/**
+	 * Creates a new StardistAbstract.
+	 *
+	 * @param modelName the modelName parameter.
+	 * @param baseDir the baseDir parameter.
+	 * @param config the config parameter.
+	 * @throws IOException if an I/O error occurs.
+	 */
 	protected StardistAbstract(String modelName, String baseDir, Map<String, Object> config) throws IOException {
 		this.name = modelName;
 		this.basedir = baseDir;
 		modelDir = new File(baseDir, modelName).getAbsolutePath();
 		checkFilesPresent(modelDir);
 		this.nChannels = ((Number) config.get("n_channel_in")).intValue();
+		if (config.get("axes") != null)
+			this.axes = ((String) config.get("axes")).toLowerCase();
+		else if (this.is2D())
+			this.axes = "yxc";
+		else
+			this.axes = "zyxc";
     	createPythonService();
 	}
 	
+	/**
+	 * Creates a new StardistAbstract.
+	 *
+	 * @param modelName the modelName parameter.
+	 * @param baseDir the baseDir parameter.
+	 * @throws IOException if an I/O error occurs.
+	 */
 	protected StardistAbstract(String modelName, String baseDir) throws IOException {
 		this.name = modelName;
 		this.basedir = baseDir;
@@ -232,9 +285,21 @@ public abstract class StardistAbstract extends BaseModel {
 		checkFilesPresent(modelDir);
 		config = JSONUtils.load(new File(modelDir, "config.json").getAbsolutePath());
 		this.nChannels = ((Number) config.get("n_channel_in")).intValue();
+		if (config.get("axes") != null)
+			this.axes = ((String) config.get("axes")).toLowerCase();
+		else if (this.is2D())
+			this.axes = "yxc";
+		else
+			this.axes = "zyxc";
     	createPythonService();
 	}
 	
+	/**
+	 * Checks files present.
+	 *
+	 * @param modelDir the modelDir parameter.
+	 * @throws IOException if an I/O error occurs.
+	 */
 	public static void checkFilesPresent(String modelDir) throws IOException {
 		if (new File(modelDir, "config.json").isFile() == false && new File(modelDir, Constants.RDF_FNAME).isFile() == false)
 			throw new IllegalArgumentException("No 'config.json' file found in the model directory");
@@ -246,6 +311,12 @@ public abstract class StardistAbstract extends BaseModel {
 			createThresholdsFromBioimageio(null, modelDir);
 	}
 	
+	/**
+	 * Creates a new StardistAbstract.
+	 *
+	 * @param descriptor the descriptor parameter.
+	 * @throws IOException if an I/O error occurs.
+	 */
 	protected StardistAbstract(ModelDescriptor descriptor) throws IOException {
 		this.descriptor = descriptor;
 		this.name = new File(descriptor.getModelPath()).getName();
@@ -257,6 +328,12 @@ public abstract class StardistAbstract extends BaseModel {
 			createThresholdsFromBioimageio(descriptor, modelDir);
 		config = JSONUtils.load(new File(modelDir, "config.json").getAbsolutePath());
 		this.nChannels = ((Number) config.get("n_channel_in")).intValue();
+		if (config.get("axes") != null)
+			this.axes = ((String) config.get("axes")).toLowerCase();
+		else if (this.is2D())
+			this.axes = "yxc";
+		else
+			this.axes = "zyxc";
     	createPythonService();
 	}
 	
@@ -285,6 +362,20 @@ public abstract class StardistAbstract extends BaseModel {
 		python.debug(System.err::println);
 	}
 	
+	/**
+	 * Sets threshold.
+	 *
+	 * @param threshold the threshold parameter.
+	 */
+	public void setThreshold(Double threshold) {
+		this.threshold = threshold;
+	}
+	
+	/**
+	 * Creates encode image script.
+	 *
+	 * @return the resulting string.
+	 */
 	protected String createEncodeImageScript() {
 		String code = "";
 		// This line wants to recreate the original numpy array. Should look like:
@@ -311,7 +402,6 @@ public abstract class StardistAbstract extends BaseModel {
 			inputs.set(0, inputsProcessed.get(0));
 		} else {
 			ScaleRangeTransformation transform = new ScaleRangeTransformation();
-			transform.setAxes(transform);
 			transform.setMaxPercentile(scaleRangeMaxPercentile);
 			transform.setMinPercentile(scaleRangeMinPercentile);
 			transform.setAxes(scaleRangeAxes);
@@ -319,6 +409,18 @@ public abstract class StardistAbstract extends BaseModel {
 		}
 	}
 	
+	/**
+	 * Gets nchannels.
+	 *
+	 * @return the resulting numeric value.
+	 */
+	public int getNChannels() {
+		return nChannels;
+	}
+	
+	/**
+	 * Executes close.
+	 */
 	@Override
 	public void close() {
 		if (!loaded)
@@ -334,8 +436,18 @@ public abstract class StardistAbstract extends BaseModel {
 		if (inTensors.size() > 1)
 			throw new RunModelException("Stardist needs just one input image");
 		preprocess(inTensors);
+		if (inTensors.get(0).getAxesOrderString().toLowerCase().indexOf("b") != -1) {
+			runBatch(inTensors, outTensors);
+		} else {
+			runNoBatch(inTensors, outTensors);
+		}
+	}
+
+	private <T extends RealType<T> & NativeType<T>, R extends RealType<R> & NativeType<R>> 
+	void runNoBatch( List< Tensor < T > > inTensors, List< Tensor < R > > outTensors ) throws RunModelException {
 		try {
-			Map<String, RandomAccessibleInterval<R>> outputs = run(inTensors.get(0).getData());
+			RandomAccessibleInterval<T> in = Utils.convertToAxesOrder(inTensors.get(0).getData(), inTensors.get(0).getAxesOrderString(), this.axes);
+			Map<String, RandomAccessibleInterval<R>> outputs = run(in);
 			for (Tensor<R> tensor : outTensors) {
 				Entry<String, RandomAccessibleInterval<R>> entry = outputs.entrySet().stream()
 						.filter(ee -> tensor.getName().equals(ee.getKey())
@@ -351,7 +463,26 @@ public abstract class StardistAbstract extends BaseModel {
 			throw new RunModelException(Types.stackTrace(e));
 		}
 	}
+
+	private <T extends RealType<T> & NativeType<T>, R extends RealType<R> & NativeType<R>> 
+	void runBatch( List< Tensor < T > > inTensors, List< Tensor < R > > outTensors ) throws RunModelException {
+		List<Tensor<R>> outputs = runBatch(inTensors);
+		for (Tensor<R> tensor : outTensors) {
+			Tensor<R> entry = outputs.stream()
+					.filter(ee -> tensor.getName().equals(ee.getName())
+							&& Arrays.equals(tensor.getData().dimensionsAsLongArray(), ee.getData().dimensionsAsLongArray()))
+					.findFirst().orElse(null);
+			if (entry != null 
+					&& Arrays.equals(tensor.getData().dimensionsAsLongArray(), entry.getData().dimensionsAsLongArray()))
+				tensor.setData(entry.getData());
+		}
+	}
 	
+	/**
+	 * Loads model.
+	 *
+	 * @throws LoadModelException if a LoadModelException occurs while executing this method.
+	 */
 	@Override
 	public void loadModel() throws LoadModelException {
 		if (closed)
@@ -379,11 +510,21 @@ public abstract class StardistAbstract extends BaseModel {
 	
 	@Override
 	public <T extends RealType<T> & NativeType<T>, R extends RealType<R> & NativeType<R>> 
-	List<Tensor<T>> run(List<Tensor<R>> inputTensors) 
+	List<Tensor<T>> run(List<Tensor<R>> inputTensors)
 			throws RunModelException {
 		if (inputTensors.size() > 1)
 			throw new RunModelException("Stardist needs just one input image");
 		preprocess(inputTensors);
+		if (inputTensors.get(0).getAxesOrderString().toLowerCase().indexOf("b") != -1) {
+			return runBatch(inputTensors);
+		} else {
+			return runNoBatch(inputTensors);
+		}
+	}
+	
+	private <T extends RealType<T> & NativeType<T>, R extends RealType<R> & NativeType<R>> 
+	List<Tensor<T>> runNoBatch(List<Tensor<R>> inputTensors)
+			throws RunModelException  {
 		try {
 			Map<String, RandomAccessibleInterval<T>> outputs = run(inputTensors.get(0).getData());
 			List<Tensor<T>> outTensors = new ArrayList<Tensor<T>>();
@@ -401,7 +542,7 @@ public abstract class StardistAbstract extends BaseModel {
 					axesOrder = "i";
 				Tensor<T> tt = Tensor.build(entry.getKey(), axesOrder, entry.getValue());
 				// TODO
-				if (tt.getName() != "mask")
+				if (!entry.getKey().equals("mask"))
 					continue;
 				outTensors.add(tt);
 			}
@@ -410,7 +551,75 @@ public abstract class StardistAbstract extends BaseModel {
 			throw new RunModelException(Types.stackTrace(e));
 		}
 	}
+	
+	private <T extends RealType<T> & NativeType<T>, R extends RealType<R> & NativeType<R>> 
+	List<Tensor<T>> runBatch(List<Tensor<R>> inputTensors) 
+			throws RunModelException {
+		int bPos = inputTensors.get(0).getAxesOrderString().indexOf("b");
+		if (bPos != 0)
+			throw new IllegalArgumentException("The Batch Size (b) should always be in the first dimension -> " + inputTensors.get(0).getAxesOrderString());
+		int nBatches = inputTensors.get(0).getShape()[bPos];
+		List<Tensor<T>> outTensors = runBatchPosOne(inputTensors, bPos, nBatches) ;
+		try {
+			for (int n = 1; n < nBatches; n ++ ) {
+				RandomAccessibleInterval<R> data = Views.hyperSlice(inputTensors.get(0).getData(), bPos, n);
+				Map<String, RandomAccessibleInterval<T>> outputs = run(data);
+				for (Entry<String, RandomAccessibleInterval<T>> entry : outputs.entrySet()) {
+					if (entry.getValue() == null)
+						continue;
+					// TODO
+					if (!entry.getKey().equals("mask"))
+						continue;
+					Tensor<T> tensor = outTensors.stream()
+							.filter(ten -> ten.getName().equals(entry.getKey())).findFirst().orElse(null);
+					LoopBuilder.setImages( Views.hyperSlice(tensor.getData(), bPos, n), entry.getValue() )
+						.multiThreaded().forEachPixel( ( i, o ) -> i.set( o ) );
+				}
+			}
+			return outTensors;
+		} catch (IOException | InterruptedException e) {
+			throw new RunModelException(Types.stackTrace(e));
+		}
+	}
 
+	private <T extends RealType<T> & NativeType<T>, R extends RealType<R> & NativeType<R>> 
+	List<Tensor<T>> runBatchPosOne(List<Tensor<R>> inputTensors, int bPos, int nBatches) 
+			throws RunModelException {
+		List<Tensor<T>> outTensors = new ArrayList<Tensor<T>>();
+		try {
+			RandomAccessibleInterval<R> data = Views.hyperSlice(inputTensors.get(0).getData(), bPos, 0);
+			Map<String, RandomAccessibleInterval<T>> outputs = run(data);
+			for (Entry<String, RandomAccessibleInterval<T>> entry : outputs.entrySet()) {
+				if (entry.getValue() == null)
+					continue;
+				String axesOrder = "bxy";
+				if (entry.getValue().dimensionsAsLongArray().length > 2 && this.is2D())
+					axesOrder += "c";
+				else if (entry.getValue().dimensionsAsLongArray().length == 3 && this.is3D())
+					axesOrder += "z";
+				else if (entry.getValue().dimensionsAsLongArray().length > 3 && this.is3D())
+					axesOrder += "zc";
+				else if (entry.getValue().dimensionsAsLongArray().length == 1)
+					axesOrder = "bi";
+				// TODO
+				if (!entry.getKey().equals("mask"))
+					continue;
+				ArrayImgFactory<T> allBatchesOut = new ArrayImgFactory<>(entry.getValue().getType());
+				long[] outDims = new long[1 + entry.getValue().dimensionsAsLongArray().length];
+				outDims[0] = nBatches;
+				for (int i = 1; i < outDims.length; i ++) outDims[i] = entry.getValue().dimensionsAsLongArray()[i - 1];
+				ArrayImg<T, ?> output = allBatchesOut.create(outDims);
+				Tensor<T> tt = Tensor.build(entry.getKey(), axesOrder, output);
+				outTensors.add(tt);
+				LoopBuilder.setImages( Views.hyperSlice(output, bPos, 0), entry.getValue() )
+					.multiThreaded().forEachPixel( ( i, o ) -> i.set( o ) );
+			}
+			return outTensors;
+		} catch (IOException | InterruptedException e) {
+			throw new RunModelException(Types.stackTrace(e));
+		}
+	}
+	
 	public <T extends RealType<T> & NativeType<T>, R extends RealType<R> & NativeType<R>> 
 	Map<String, RandomAccessibleInterval<R>> run(RandomAccessibleInterval<T> img) throws IOException, InterruptedException {
 		checkInput(img);
@@ -421,6 +630,9 @@ public abstract class StardistAbstract extends BaseModel {
 		}
 		
 		code += createEncodeImageScript() + System.lineSeparator();
+		if (this.threshold != null) {
+			code += String.format("model.thresholds = dict (prob=%s, nms=model.thresholds.nms)", threshold) + System.lineSeparator();
+		}
 		code += RUN_MODEL_CODE + System.lineSeparator();
 		
 		Task task = python.task(code);
@@ -482,6 +694,13 @@ public abstract class StardistAbstract extends BaseModel {
 		return coordsCopy;
 	}
 	
+	/**
+	 * Executes init.
+	 *
+	 * @param modelDir the modelDir parameter.
+	 * @return the resulting value.
+	 * @throws IOException if an I/O error occurs.
+	 */
 	public static StardistAbstract init(String modelDir) throws IOException {
 		File modelDirFile = new File(modelDir);
 		String modelName = modelDirFile.getName();
@@ -495,6 +714,14 @@ public abstract class StardistAbstract extends BaseModel {
 			return new Stardist2D(modelName, baseDir, configMap);
 	}
 	
+	/**
+	 * Executes init.
+	 *
+	 * @param modelName the modelName parameter.
+	 * @param baseDir the baseDir parameter.
+	 * @return the resulting value.
+	 * @throws IOException if an I/O error occurs.
+	 */
 	public static StardistAbstract init(String modelName, String baseDir) throws IOException {
 		String modelDir = new File(baseDir, modelName).getAbsolutePath();
 		checkFilesPresent(modelDir);
@@ -506,6 +733,13 @@ public abstract class StardistAbstract extends BaseModel {
 			return new Stardist2D(modelName, baseDir, configMap);
 	}
 	
+	/**
+	 * Executes from bioimageio model.
+	 *
+	 * @param descriptor the descriptor parameter.
+	 * @return the resulting value.
+	 * @throws IOException if an I/O error occurs.
+	 */
 	public static StardistAbstract fromBioimageioModel(ModelDescriptor descriptor) throws IOException {
 		if (!descriptor.getConfig().getSpecMap().keySet().contains("stardist"))
 			throw new IllegalArgumentException("This Bioimage.io model does not correspond to a StarDist model.");
@@ -593,8 +827,9 @@ public abstract class StardistAbstract extends BaseModel {
 		}
 		boolean stardistPythonInstalled = false;
 		try {
-			List<String> deps = new ArrayList<String>(STARDIST_DEPS);
-			deps.addAll(STARDIST_DEPS_PIP);
+			List<String> deps = new ArrayList<String>();
+			for (String dd : STARDIST_DEPS)
+				deps.add(dd.equals("tensorflow-macos<2.11") ? dd.replace("-macos", "") : dd);
 			stardistPythonInstalled = mamba.checkAllDependenciesInEnv("stardist", deps);
 		} catch (MambaInstallException e) {
 			mamba.installMicromamba();
@@ -604,7 +839,7 @@ public abstract class StardistAbstract extends BaseModel {
 					.map(dd -> dd.contains("<") | dd.contains(">") ? "\"" + dd + "\"": dd)
 					.collect(Collectors.toList()));
 			mamba.pipInstallIn("stardist", STARDIST_DEPS_PIP.stream()
-					.map(dd -> dd.contains("<") | dd.contains(">") ? "\"" + dd + "\"": dd)
+					.map(dd -> (PlatformDetection.isWindows() && (dd.contains("<") | dd.contains(">"))) ? "\"" + dd + "\"": dd)
 					.collect(Collectors.toList()).toArray(new String[STARDIST_DEPS_PIP.size()]));
 		};
 	}

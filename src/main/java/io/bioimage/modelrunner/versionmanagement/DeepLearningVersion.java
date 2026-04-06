@@ -2,7 +2,7 @@
  * #%L
  * Use deep learning frameworks from Java in an agnostic and isolated way.
  * %%
- * Copyright (C) 2022 - 2024 Institut Pasteur and BioImage.IO developers.
+ * Copyright (C) 2022 - 2026 Institut Pasteur and BioImage.IO developers.
  * %%
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -401,6 +401,8 @@ public class DeepLearningVersion
 
     /**
      * The string representation is {@code "TensorFlowVersion[version=x, tensorFlowVersion=y, os=z, mode=u, jars=[...]"}.
+     *
+     * @return the resulting string.
      */
     @Override
     public String toString()
@@ -410,6 +412,11 @@ public class DeepLearningVersion
                 + ", rosetta=" + rosetta+ ", minJavaVersion=" + minJavaVersion + "]";
     }
 
+    /**
+     * Executes hash code.
+     *
+     * @return the resulting numeric value.
+     */
     @Override
     public int hashCode()
     {
@@ -425,6 +432,12 @@ public class DeepLearningVersion
         return result;
     }
 
+    /**
+     * Executes equals.
+     *
+     * @param obj the obj parameter.
+     * @return true if the operation succeeds; otherwise, false.
+     */
     @Override
     public boolean equals(Object obj)
     {

@@ -2,7 +2,7 @@
  * #%L
  * Use deep learning frameworks from Java in an agnostic and isolated way.
  * %%
- * Copyright (C) 2022 - 2024 Institut Pasteur and BioImage.IO developers.
+ * Copyright (C) 2022 - 2026 Institut Pasteur and BioImage.IO developers.
  * %%
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -109,11 +109,19 @@ public class PythonTransformation extends AbstractTensorTransformation
 		kwargs.put("nms_thresh", 0.3);
 	}
 
+	/**
+	 * Creates a new PythonTransformation.
+	 */
 	public PythonTransformation()
 	{
 		super(NAME);
 	}
 	
+	/**
+	 * Sets install.
+	 *
+	 * @param install the install parameter.
+	 */
 	public void setInstall(Object install) {
 		if (install instanceof Boolean) {
 			this.install = ((Boolean) install).booleanValue();
@@ -126,6 +134,11 @@ public class PythonTransformation extends AbstractTensorTransformation
 		}
 	}
 	
+	/**
+	 * Sets env yaml file path.
+	 *
+	 * @param envYamlFilePath the envYamlFilePath parameter.
+	 */
 	public void setEnvYamlFilePath(Object envYamlFilePath) {
 		if (envYamlFilePath instanceof String) {
 			this.envYamlFilePath = (String) envYamlFilePath;
@@ -136,6 +149,11 @@ public class PythonTransformation extends AbstractTensorTransformation
 		}
 	}
 	
+	/**
+	 * Sets mamba path.
+	 *
+	 * @param mambaDir the mambaDir parameter.
+	 */
 	public void setMambaPath(Object mambaDir) {
 		if (mambaDir instanceof String) {
 			this.mambaPath = (String) mambaDir;
@@ -146,6 +164,11 @@ public class PythonTransformation extends AbstractTensorTransformation
 		}
 	}
 	
+	/**
+	 * Sets env path.
+	 *
+	 * @param envDir the envDir parameter.
+	 */
 	public void setEnvPath(Object envDir) {
 		if (envDir instanceof String) {
 			this.envPath = (String) envDir;
@@ -156,6 +179,11 @@ public class PythonTransformation extends AbstractTensorTransformation
 		}
 	}
 	
+	/**
+	 * Sets script file path.
+	 *
+	 * @param scriptFilePath the scriptFilePath parameter.
+	 */
 	public void setScriptFilePath(Object scriptFilePath) {
 		if (scriptFilePath instanceof String) {
 			this.scriptFilePath = (String) scriptFilePath;
@@ -166,6 +194,11 @@ public class PythonTransformation extends AbstractTensorTransformation
 		}
 	}
 	
+	/**
+	 * Sets env yaml.
+	 *
+	 * @param envYaml the envYaml parameter.
+	 */
 	public void setEnvYaml(Object envYaml) {
 		if (envYaml instanceof String) {
 			this.envYaml = new File(String.valueOf(envYaml)).getAbsolutePath();
@@ -176,6 +209,11 @@ public class PythonTransformation extends AbstractTensorTransformation
 		}
 	}
 	
+	/**
+	 * Sets script.
+	 *
+	 * @param script the script parameter.
+	 */
 	public void setScript(Object script) {
 		if (script instanceof String) {
 			this.script = new File(String.valueOf(script)).getAbsolutePath();
@@ -186,6 +224,11 @@ public class PythonTransformation extends AbstractTensorTransformation
 		}
 	}
 	
+	/**
+	 * Sets method.
+	 *
+	 * @param method the method parameter.
+	 */
 	public void setMethod(Object method) {
 		if (method instanceof String) {
 			this.method = String.valueOf(method);
@@ -196,6 +239,11 @@ public class PythonTransformation extends AbstractTensorTransformation
 		}
 	}
 	
+	/**
+	 * Sets noutputs.
+	 *
+	 * @param nOutputs the nOutputs parameter.
+	 */
 	public void setNOutputs(Object nOutputs) {
 		if (Number.class.isAssignableFrom(nOutputs.getClass()) 
 				|| (nOutputs.getClass().isPrimitive() && !String.class.isAssignableFrom(nOutputs.getClass())) ) {
@@ -206,6 +254,11 @@ public class PythonTransformation extends AbstractTensorTransformation
 		}
 	}
 	
+	/**
+	 * Sets kwargs.
+	 *
+	 * @param kwargs the kwargs parameter.
+	 */
 	public void setKwargs(Object kwargs) {
 		if (kwargs == null) {
 			this.kwargs = new LinkedHashMap<String, Object>();
@@ -298,11 +351,17 @@ public class PythonTransformation extends AbstractTensorTransformation
 			installEnv();
 	}
 
+	/**
+	 * Executes apply.
+	 *
+	 * @param input the input parameter.
+	 * @return the resulting value.
+	 */
 	public < R extends RealType< R > & NativeType< R > > Tensor<FloatType> apply( final Tensor< R > input )
 	{
 		try {
 			checkArgs();
-		} catch (IOException | InterruptedException | ArchiveException | URISyntaxException | RuntimeException | MambaInstallException e) {
+		} catch (IOException | InterruptedException | URISyntaxException | RuntimeException | MambaInstallException e) {
 			e.printStackTrace();
 			return Cast.unchecked(input);
 		}
@@ -336,10 +395,22 @@ public class PythonTransformation extends AbstractTensorTransformation
 		return Tensor.build("output", axes, outImg);
 	}
 
+	/**
+	 * Executes apply in place.
+	 *
+	 * @param input the input parameter.
+	 */
 	public < R extends RealType< R > & NativeType< R > > void applyInPlace( final Tensor< R > input )
 	{
 	}
 	
+	/**
+	 * Executes main.
+	 *
+	 * @param args the args parameter.
+	 * @throws FileNotFoundException if a FileNotFoundException occurs while executing this method.
+	 * @throws IOException if an I/O error occurs.
+	 */
 	public static void main(String[] args) throws FileNotFoundException, IOException {
 		PythonTransformation pt = new PythonTransformation();
 		//RandomAccessibleInterval<FloatType> img = ArrayImgs.floats(new long[] {1, 1024, 1024, 33});
@@ -350,13 +421,36 @@ public class PythonTransformation extends AbstractTensorTransformation
 		System.out.println();
 	}
 	
+	/**
+	 * Installs mamba.
+	 *
+	 * @throws IOException if an I/O error occurs.
+	 * @throws InterruptedException if the current thread is interrupted while waiting for the operation to finish.
+	 * @throws ArchiveException if a ArchiveException occurs while executing this method.
+	 * @throws URISyntaxException if a URISyntaxException occurs while executing this method.
+	 * @throws MambaInstallException if a MambaInstallException occurs while executing this method.
+	 */
 	public void installMamba() throws IOException, InterruptedException, ArchiveException, URISyntaxException, MambaInstallException {
-		this.mambaPath = new File("appose_" + PlatformDetection.getArch()).getAbsolutePath();
+		this.mambaPath = new File("appose_"
+				+ ((!PlatformDetection.isMacOS() || !PlatformDetection.isUsingRosseta()) ? PlatformDetection.getArch()
+						: PlatformDetection.ARCH_ARM64 )).getAbsolutePath();
 		new Mamba(mambaPath);
 	}
 	
+	/**
+	 * Installs mamba.
+	 *
+	 * @param dir the dir parameter.
+	 * @throws IOException if an I/O error occurs.
+	 * @throws InterruptedException if the current thread is interrupted while waiting for the operation to finish.
+	 * @throws ArchiveException if a ArchiveException occurs while executing this method.
+	 * @throws URISyntaxException if a URISyntaxException occurs while executing this method.
+	 * @throws MambaInstallException if a MambaInstallException occurs while executing this method.
+	 */
 	public static void installMamba(String dir) throws IOException, InterruptedException, ArchiveException, URISyntaxException, MambaInstallException {
-		String mambaDir = new File(dir + File.separator + "appose_" + PlatformDetection.getArch()).getAbsolutePath();
+		String mambaDir = new File(dir + File.separator + "appose_"
+				+ ((!PlatformDetection.isMacOS() || !PlatformDetection.isUsingRosseta()) ? PlatformDetection.getArch()
+						: PlatformDetection.ARCH_ARM64 )).getAbsolutePath();
 		new Mamba(mambaDir);
 	}
 	

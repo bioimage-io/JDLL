@@ -2,7 +2,7 @@
  * #%L
  * Use deep learning frameworks from Java in an agnostic and isolated way.
  * %%
- * Copyright (C) 2022 - 2024 Institut Pasteur and BioImage.IO developers.
+ * Copyright (C) 2022 - 2026 Institut Pasteur and BioImage.IO developers.
  * %%
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -94,6 +94,8 @@ public class TfWeights implements WeightFormat{
 	@Override
 	/**
 	 * {@inheritDoc}
+	 *
+	 * @return the resulting string.
 	 */
 	public String getFramework() {
 		return weightsFormat;
@@ -102,6 +104,8 @@ public class TfWeights implements WeightFormat{
 	@Override
 	/**
 	 * {@inheritDoc}
+	 *
+	 * @return the resulting string.
 	 */
 	public String getTrainingVersion() {
 		return trainingVersion;
@@ -138,6 +142,8 @@ public class TfWeights implements WeightFormat{
 	@Override
 	/**
 	 * {@inheritDoc}
+	 *
+	 * @return the resulting string.
 	 */
 	public String getSha256() {
 		return sha256;
@@ -158,6 +164,8 @@ public class TfWeights implements WeightFormat{
 	@Override
 	/**
 	 * {@inheritDoc}
+	 *
+	 * @return the resulting string.
 	 */
 	public String getSource() {
 		return source;
@@ -176,6 +184,11 @@ public class TfWeights implements WeightFormat{
 		
 	}
 
+	/**
+	 * Gets parent.
+	 *
+	 * @return the resulting string.
+	 */
 	@Override
 	public String getParent() {
 		return parent;
@@ -196,6 +209,8 @@ public class TfWeights implements WeightFormat{
 	@Override
 	/**
 	 * {@inheritDoc}
+	 *
+	 * @return the resulting value.
 	 */
 	public ModelArchitecture getArchitecture() {
 		return architecture;
@@ -216,6 +231,8 @@ public class TfWeights implements WeightFormat{
 	@Override
 	/**
 	 * {@inheritDoc}
+	 *
+	 * @return the resulting value.
 	 */
 	public ModelDependencies getEnvDependencies() {
 		return dependencies;
@@ -234,6 +251,8 @@ public class TfWeights implements WeightFormat{
 	@Override
 	/**
 	 * {@inheritDoc}
+	 *
+	 * @return the resulting string.
 	 */
 	public String getSourceFileName() {
 		if (source == null)
@@ -274,6 +293,8 @@ public class TfWeights implements WeightFormat{
 	@Override
 	/**
 	 * {@inheritDoc}
+	 *
+	 * @return the resulting string.
 	 */
 	public String getJavaTrainingVersion() {
 		return compatibleVersion;
@@ -291,6 +312,8 @@ public class TfWeights implements WeightFormat{
 	@Override
 	/**
 	 * {@inheritDoc}
+	 *
+	 * @return the resulting string.
 	 */
 	public String getClosestSupportedPythonVersion() {
 		if (this.trainingVersion == null)

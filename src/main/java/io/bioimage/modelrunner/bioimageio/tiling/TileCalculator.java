@@ -2,7 +2,7 @@
  * #%L
  * Use deep learning frameworks from Java in an agnostic and isolated way.
  * %%
- * Copyright (C) 2022 - 2024 Institut Pasteur and BioImage.IO developers.
+ * Copyright (C) 2022 - 2026 Institut Pasteur and BioImage.IO developers.
  * %%
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -44,6 +44,12 @@ public class TileCalculator {
 		this.descriptor = descriptor;
 	}
 
+	/**
+	 * Executes init.
+	 *
+	 * @param descriptor the descriptor parameter.
+	 * @return the resulting value.
+	 */
 	public static TileCalculator init(ModelDescriptor descriptor) {
 		return new TileCalculator(descriptor);
 	}
@@ -87,6 +93,12 @@ public class TileCalculator {
 		return patch;
 	}
 	
+	/**
+	 * Gets optimal tile size.
+	 *
+	 * @param inputInfo the inputInfo parameter.
+	 * @return the resulting list.
+	 */
 	public List<TileInfo> getOptimalTileSize(List<ImageInfo> inputInfo) {
 		boolean tiling = this.descriptor.isTilingAllowed();
 		List<TileInfo> firstIterationInputs = new ArrayList<TileInfo>();
@@ -222,10 +234,25 @@ public class TileCalculator {
 		return null;
 	}
 	
+	/**
+	 * Gets tiles for npixels.
+	 *
+	 * @param tensorName the tensorName parameter.
+	 * @param dims the dims parameter.
+	 * @param inputAxesOrder the inputAxesOrder parameter.
+	 */
 	public void getTilesForNPixels(String tensorName, long[] dims, String inputAxesOrder) {
 		
 	}
 	
+	/**
+	 * Gets for ntiles.
+	 *
+	 * @param nTiles the nTiles parameter.
+	 * @param tensorName the tensorName parameter.
+	 * @param dims the dims parameter.
+	 * @param inputAxesOrder the inputAxesOrder parameter.
+	 */
 	public void getForNTiles(int nTiles, String tensorName, long[] dims, String inputAxesOrder) {
 		
 	}

@@ -2,7 +2,7 @@
  * #%L
  * Use deep learning frameworks from Java in an agnostic and isolated way.
  * %%
- * Copyright (C) 2022 - 2024 Institut Pasteur and BioImage.IO developers.
+ * Copyright (C) 2022 - 2026 Institut Pasteur and BioImage.IO developers.
  * %%
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@
  */
 package io.bioimage.modelrunner.tensor.shm;
 
+import java.io.File;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
@@ -204,6 +205,8 @@ public class SharedMemoryArrayLinux implements SharedMemoryArray {
 	 */
     private SharedMemoryArrayLinux(String name, int size, String dtype, long[] shape, Boolean isNumpy, boolean isFortran) throws FileAlreadyExistsException
     {
+    	if (!name.startsWith(File.separator))
+			name = File.separator + name;
     	this.originalDataType = dtype;
     	this.originalDims = shape;
     	this.size = size;
@@ -343,6 +346,12 @@ public class SharedMemoryArrayLinux implements SharedMemoryArray {
 		}
 	}
 
+	/**
+	 * Executes create.
+	 *
+	 * @param size the size parameter.
+	 * @return the resulting value.
+	 */
 	protected static SharedMemoryArrayLinux create(int size) {
 		try {
 			return new SharedMemoryArrayLinux(size, null, null, null, false);
@@ -707,68 +716,84 @@ public class SharedMemoryArrayLinux implements SharedMemoryArray {
         return total;
     }
     
-    /**
-     * {@inheritDoc}
-     */
+	/**
+	 * {@inheritDoc}
+	 *
+	 * @return the resulting string.
+	 */
 	@Override
     public String getName() {
     	return this.memoryName;
     }
     
-    /**
-     * {@inheritDoc}
-     */
+	/**
+	 * {@inheritDoc}
+	 *
+	 * @return the resulting string.
+	 */
 	@Override
     public String getNameForPython() {
     	return this.memoryName.substring("/".length());
     }
     
-    /**
-     * {@inheritDoc}
-     */
+	/**
+	 * {@inheritDoc}
+	 *
+	 * @return the resulting value.
+	 */
 	@Override
     public Pointer getPointer() {
     	return this.pSharedMemory;
     }
 
-    /**
-     * {@inheritDoc}
-     */
+	/**
+	 * {@inheritDoc}
+	 *
+	 * @return the resulting value.
+	 */
 	@Override
     public Object getSharedMemoryBlockID() {
     	return this.shmFd;
     }
     
-    /**
-     * {@inheritDoc}
-     */
+	/**
+	 * {@inheritDoc}
+	 *
+	 * @return the resulting numeric value.
+	 */
 	@Override
     public int getSize() {
     	return this.size;
     }
 
 	@Override
-    /**
-     * {@inheritDoc}
-     */
+	/**
+	 * {@inheritDoc}
+	 *
+	 * @return the resulting string.
+	 */
 	public String getOriginalDataType() {
 		if (originalDataType == null && this.isNumpyFormat) findNumpyFormat();
 		return this.originalDataType;
 	}
 
 	@Override
-    /**
-     * {@inheritDoc}
-     */
+	/**
+	 * {@inheritDoc}
+	 *
+	 * @return the resulting array.
+	 */
 	public long[] getOriginalShape() {
 		if (originalDims == null && this.isNumpyFormat) findNumpyFormat();
 		return this.originalDims;
 	}
 	
 	@Override
-    /**
-     * {@inheritDoc}
-     */
+	/**
+	 * {@inheritDoc}
+	 *
+	 * @return true if the operation succeeds; otherwise, false.
+	 */
 	public boolean isNumpyFormat() {
 		if (this.isNumpyFormat == null) {
 			findNumpyFormat();
@@ -871,6 +896,8 @@ public class SharedMemoryArrayLinux implements SharedMemoryArray {
     
     /**
      * {@inheritDoc}
+     *
+     * @return the resulting value.
      */
     @Override
     public <T extends RealType<T> & NativeType<T>> RandomAccessibleInterval<T> getSharedRAI() {
@@ -887,6 +914,10 @@ public class SharedMemoryArrayLinux implements SharedMemoryArray {
 
     /**
      * {@inheritDoc}
+     *
+     * @param shape the shape parameter.
+     * @param dataType the dataType parameter.
+     * @return the resulting value.
      */
     @Override
     public <T extends RealType<T> & NativeType<T>> RandomAccessibleInterval<T> getSharedRAI(long[] shape, T dataType) {
@@ -895,6 +926,11 @@ public class SharedMemoryArrayLinux implements SharedMemoryArray {
 
     /**
      * {@inheritDoc}
+     *
+     * @param shape the shape parameter.
+     * @param dataType the dataType parameter.
+     * @param isFortran the isFortran parameter.
+     * @return the resulting value.
      */
     @Override
     public <T extends RealType<T> & NativeType<T>> RandomAccessibleInterval<T> getSharedRAI(long[] shape, T dataType, boolean isFortran) {
@@ -903,6 +939,8 @@ public class SharedMemoryArrayLinux implements SharedMemoryArray {
     
     /**
      * {@inheritDoc}
+     *
+     * @param buffer the buffer parameter.
      */
     @Override
     public void setBuffer(ByteBuffer buffer) {
@@ -922,6 +960,8 @@ public class SharedMemoryArrayLinux implements SharedMemoryArray {
     
     /**
      * {@inheritDoc}
+     *
+     * @return the resulting value.
      */
     @Override
     public ByteBuffer getDataBuffer() {
@@ -931,6 +971,8 @@ public class SharedMemoryArrayLinux implements SharedMemoryArray {
 	@Override
 	/**
 	 * {@inheritDoc}
+	 *
+	 * @return the resulting value.
 	 */
 	public ByteBuffer getDataBufferNoHeader() {
     	int offset = 0;

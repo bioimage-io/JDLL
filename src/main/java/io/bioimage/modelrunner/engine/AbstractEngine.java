@@ -2,7 +2,7 @@
  * #%L
  * Use deep learning frameworks from Java in an agnostic and isolated way.
  * %%
- * Copyright (C) 2022 - 2024 Institut Pasteur and BioImage.IO developers.
+ * Copyright (C) 2022 - 2026 Institut Pasteur and BioImage.IO developers.
  * %%
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -42,11 +42,26 @@ public abstract class AbstractEngine implements AutoCloseable {
 			EngineInfo.getBioimageioPytorchKey(), EngineInfo.getPytorchKey(), EngineInfo.getOnnxKey(), EngineInfo.getKerasKey(),
 			EngineInfo.getBioimageioKerasKey(), PYTORCH_STATE_DIC_KEY, JAX_KEY};
 	
+	/**
+	 * Initializes the engine.
+	 *
+	 * @param ww the ww parameter.
+	 * @return the resulting value.
+	 */
 	public static AbstractEngine initialize(WeightFormat ww) {
 		return null;
 	}
 	
 	
+	/**
+	 * Initializes the engine.
+	 *
+	 * @param name the name parameter.
+	 * @param version the version parameter.
+	 * @param gpu the gpu parameter.
+	 * @param isPython the isPython parameter.
+	 * @return the resulting value.
+	 */
 	public static AbstractEngine initialize(String name, String version, boolean gpu, boolean isPython) {
 		/** TODO
 		if (!isSupported(name)) throw new IllegalArgumentException("Name provided is not on the list of supported engine keys: "
@@ -67,11 +82,26 @@ public abstract class AbstractEngine implements AutoCloseable {
 		return null;
 	}
 	
+	/**
+	 * Initializes similar.
+	 *
+	 * @param ww the ww parameter.
+	 * @return the resulting value.
+	 */
 	public static AbstractEngine initializeSimilar(WeightFormat ww) {
 		return null;
 	}
 	
 	
+	/**
+	 * Initializes similar.
+	 *
+	 * @param name the name parameter.
+	 * @param version the version parameter.
+	 * @param gpu the gpu parameter.
+	 * @param isPython the isPython parameter.
+	 * @return the resulting value.
+	 */
 	public static AbstractEngine initializeSimilar(String name, String version, Boolean gpu, Boolean isPython) {
 		/** TODO
 		if (!isSupported(name)) throw new IllegalArgumentException("Name provided is not on the list of supported engine keys: "
@@ -92,32 +122,105 @@ public abstract class AbstractEngine implements AutoCloseable {
 		return null;
 	}
 	
+	/**
+	 * Checks whether supported.
+	 *
+	 * @param name the name parameter.
+	 * @return true if the operation succeeds; otherwise, false.
+	 */
 	public static boolean isSupported(String name) {
 		return Arrays.stream(SUPPORTED_ENGINE_NAMES).filter(kk -> name.equals(kk)).findFirst().orElse(null) != null;
 	}
 	
+	/**
+	 * Gets supported engine keys.
+	 *
+	 * @return the resulting array.
+	 */
 	public static String[] getSupportedEngineKeys() {
 		return SUPPORTED_ENGINE_NAMES;
 	}
 	
+	/**
+	 * Gets name.
+	 *
+	 * @return the resulting string.
+	 */
 	public abstract String getName();
 	
+	/**
+	 * Checks whether python.
+	 *
+	 * @return true if the operation succeeds; otherwise, false.
+	 */
 	public abstract boolean isPython();
 	
+	/**
+	 * Gets version.
+	 *
+	 * @return the resulting string.
+	 */
 	public abstract String getVersion();
 	
+	/**
+	 * Executes supports gpu.
+	 *
+	 * @return true if the operation succeeds; otherwise, false.
+	 */
 	public abstract boolean supportsGPU();
 
+	/**
+	 * Gets dir.
+	 *
+	 * @return the resulting string.
+	 */
 	public abstract String getDir();
 
+	/**
+	 * Checks whether installed.
+	 *
+	 * @return true if the operation succeeds; otherwise, false.
+	 */
 	public abstract boolean isInstalled();
 
+	/**
+	 * Executes install.
+	 *
+	 * @throws IOException if an I/O error occurs.
+	 * @throws InterruptedException if the current thread is interrupted while waiting for the operation to finish.
+	 * @throws MambaInstallException if a MambaInstallException occurs while executing this method.
+	 * @throws ArchiveException if a ArchiveException occurs while executing this method.
+	 * @throws URISyntaxException if a URISyntaxException occurs while executing this method.
+	 */
 	public abstract void install() throws IOException, InterruptedException, MambaInstallException, ArchiveException, URISyntaxException;
 
+	/**
+	 * Loads model.
+	 *
+	 * @param modelFolder the modelFolder parameter.
+	 * @param modelSource the modelSource parameter.
+	 * @throws IOException if an I/O error occurs.
+	 * @throws InterruptedException if the current thread is interrupted while waiting for the operation to finish.
+	 */
 	public abstract void loadModel(String modelFolder, String modelSource) throws IOException, InterruptedException;
 
+	/**
+	 * Executes unload model.
+	 *
+	 * @throws IOException if an I/O error occurs.
+	 * @throws InterruptedException if the current thread is interrupted while waiting for the operation to finish.
+	 */
 	public abstract void unloadModel() throws IOException, InterruptedException;
 	
+	/**
+	 * Checks whether model loaded.
+	 *
+	 * @param modelFolder the modelFolder parameter.
+	 * @param modelSource the modelSource parameter.
+	 * @return true if the operation succeeds; otherwise, false.
+	 * @throws IOException if an I/O error occurs.
+	 * @throws InterruptedException if the current thread is interrupted while waiting for the operation to finish.
+	 */
 	public abstract boolean isModelLoaded(String modelFolder, String modelSource) throws IOException, InterruptedException;
 	
 	public abstract <T extends RealType<T> & NativeType<T>> 

@@ -2,7 +2,7 @@
  * #%L
  * Use deep learning frameworks from Java in an agnostic and isolated way.
  * %%
- * Copyright (C) 2022 - 2024 Institut Pasteur and BioImage.IO developers.
+ * Copyright (C) 2022 - 2026 Institut Pasteur and BioImage.IO developers.
  * %%
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,6 +24,8 @@ import java.util.List;
 import java.util.Map;
 
 import io.bioimage.modelrunner.bioimageio.BioimageioRepo;
+import io.bioimage.modelrunner.bioimageio.description.weights.ModelWeight;
+import io.bioimage.modelrunner.model.python.DLModelPytorchProtected;
 
 
 /**
@@ -36,6 +38,11 @@ import io.bioimage.modelrunner.bioimageio.BioimageioRepo;
 public class ModelDescriptorV05 extends ModelDescriptor
 {
 
+	/**
+	 * Creates a new ModelDescriptorV05.
+	 *
+	 * @param yamlElements the yamlElements parameter.
+	 */
 	protected ModelDescriptorV05(Map<String, Object> yamlElements)
     {
     	this.yamlElements = yamlElements;
@@ -47,16 +54,34 @@ public class ModelDescriptorV05 extends ModelDescriptor
         	modelID = modelID.substring(0, modelID.indexOf("/") + modelID.substring(modelID.indexOf("/") + 1).indexOf("/") + 1);
     }
 
+	/**
+	 * Gets nickname.
+	 *
+	 * @return the resulting string.
+	 */
 	@Override
 	public String getNickname() {
 		return modelID;
 	}
 
+	/**
+	 * Executes are requirements installed.
+	 *
+	 * @return true if the operation succeeds; otherwise, false.
+	 */
 	@Override
 	public boolean areRequirementsInstalled() {
-		return true;
+		if (this.weights.getAllSuportedWeightNames().size() > 1 
+				|| !this.weights.getAllSuportedWeightNames().get(0).equals(ModelWeight.getPytorchID()))
+			return true;
+		return DLModelPytorchProtected.isInstalled();
 	}
 
+	/**
+	 * Builds attachments.
+	 *
+	 * @return the resulting list.
+	 */
 	@Override
 	protected List<String> buildAttachments() {
 		List<String> strs = new ArrayList<String>();
@@ -77,6 +102,11 @@ public class ModelDescriptorV05 extends ModelDescriptor
 		return strs;
 	}
 
+	/**
+	 * Builds input tensors.
+	 *
+	 * @return the resulting list.
+	 */
 	@Override
 	protected List<TensorSpec> buildInputTensors() {
 		Object object = this.yamlElements.get("inputs");
@@ -93,6 +123,11 @@ public class ModelDescriptorV05 extends ModelDescriptor
         return tensors;
 	}
 
+	/**
+	 * Builds output tensors.
+	 *
+	 * @return the resulting list.
+	 */
 	@Override
 	protected List<TensorSpec> buildOutputTensors() {
 		Object object = this.yamlElements.get("outputs");
@@ -109,6 +144,9 @@ public class ModelDescriptorV05 extends ModelDescriptor
         return tensors;
 	}
 
+	/**
+	 * Executes calculate total input halo.
+	 */
 	@Override
 	protected void calculateTotalInputHalo() {
 		for (TensorSpec out: output_tensors) {
@@ -140,8 +178,15 @@ public class ModelDescriptorV05 extends ModelDescriptor
 		
 	}
 
+	/**
+	 * Finds id.
+	 *
+	 * @return the resulting string.
+	 */
 	@Override
 	protected String findID() {
+		if (yamlElements.get("config") == null && this.config.getSpecMap() != null)
+			yamlElements.put("config", this.config.getSpecMap());
 		if (yamlElements.get("config") != null && yamlElements.get("config") instanceof Map) {
     		Map<String, Object> configMap = (Map<String, Object>) yamlElements.get("config");
     		if (configMap.get("bioimageio") != null && configMap.get("bioimageio") instanceof Map) {
@@ -155,6 +200,9 @@ public class ModelDescriptorV05 extends ModelDescriptor
 
 	@Override
 	// TODO decide whether to keep this or not
+	/**
+	 * Executes add bio engine.
+	 */
 	protected void addBioEngine() {
 		// TODO decide what to do with servers. Probably need permissions / Implement authentication
     	if (getName().equals("cellpose-python")) {
@@ -173,15 +221,32 @@ public class ModelDescriptorV05 extends ModelDescriptor
 		
 	}
 
+	/**
+	 * Gets model family.
+	 *
+	 * @return the resulting string.
+	 */
 	@Override
 	public String getModelFamily() {
 		return ModelDescriptor.BIOIMAGEIO;
 	}
 	
+	/**
+	 * Sets input test npy name.
+	 *
+	 * @param n the n parameter.
+	 * @param newName the newName parameter.
+	 */
 	protected void setInputTestNpyName(int n, String newName) {
 		((TensorSpecV05) input_tensors.get(n)).testTensorName = newName;
 	}
 	
+	/**
+	 * Sets output test npy name.
+	 *
+	 * @param n the n parameter.
+	 * @param newName the newName parameter.
+	 */
 	protected void setOutputTestNpyName(int n, String newName) {
 		((TensorSpecV05) output_tensors.get(n)).testTensorName = newName;
 	}

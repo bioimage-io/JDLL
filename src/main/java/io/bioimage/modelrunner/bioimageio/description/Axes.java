@@ -2,7 +2,7 @@
  * #%L
  * Use deep learning frameworks from Java in an agnostic and isolated way.
  * %%
- * Copyright (C) 2022 - 2024 Institut Pasteur and BioImage.IO developers.
+ * Copyright (C) 2022 - 2026 Institut Pasteur and BioImage.IO developers.
  * %%
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,6 +24,11 @@ import java.util.List;
 
 public interface Axes {
 	
+	/**
+	 * Gets axes order.
+	 *
+	 * @return the resulting string.
+	 */
 	public String getAxesOrder();
 
 	/**
@@ -31,14 +36,40 @@ public interface Axes {
 	 */
 	public List<Axis> getAxesList();
 
+	/**
+	 * Gets min tile size arr.
+	 *
+	 * @return the resulting array.
+	 */
 	public int[] getMinTileSizeArr();
 
+	/**
+	 * Gets tile step arr.
+	 *
+	 * @return the resulting array.
+	 */
 	public int[] getTileStepArr();
 
+	/**
+	 * Gets tile scale arr.
+	 *
+	 * @return the resulting array.
+	 */
 	public double[] getTileScaleArr();
 	
+	/**
+	 * Gets halo arr.
+	 *
+	 * @return the resulting array.
+	 */
 	public int[] getHaloArr();
 	
+	/**
+	 * Gets axis.
+	 *
+	 * @param abreviation the abreviation parameter.
+	 * @return the resulting value.
+	 */
 	public Axis getAxis(String abreviation);
 
 }

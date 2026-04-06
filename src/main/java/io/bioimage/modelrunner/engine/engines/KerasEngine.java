@@ -2,7 +2,7 @@
  * #%L
  * Use deep learning frameworks from Java in an agnostic and isolated way.
  * %%
- * Copyright (C) 2022 - 2024 Institut Pasteur and BioImage.IO developers.
+ * Copyright (C) 2022 - 2026 Institut Pasteur and BioImage.IO developers.
  * %%
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -133,10 +133,26 @@ public class KerasEngine extends AbstractEngine {
 	}
 
 	
+	/**
+	 * Initializes ialize.
+	 *
+	 * @param version the version parameter.
+	 * @param gpu the gpu parameter.
+	 * @param isPython the isPython parameter.
+	 * @return the resulting value.
+	 */
 	public static KerasEngine initialize(String version, boolean gpu, boolean isPython) {
 		return new KerasEngine(version, gpu, isPython);
 	}
 	
+	/**
+	 * Gets folder name.
+	 *
+	 * @param version the version parameter.
+	 * @param gpu the gpu parameter.
+	 * @param isPython the isPython parameter.
+	 * @return the resulting string.
+	 */
 	public static String getFolderName(String version, boolean gpu, boolean isPython) {
 		if (!isPython) 
 			throw new IllegalArgumentException("JDLL only has support for Keras through a Python engine.");
@@ -149,6 +165,11 @@ public class KerasEngine extends AbstractEngine {
 		return NAME + "_" + version + (gpu ? "_gpu" : "");
 	}
 	
+	/**
+	 * Gets installed versions.
+	 *
+	 * @return the resulting list.
+	 */
 	public static List<KerasEngine> getInstalledVersions() {
 		List<KerasEngine> cpus = SUPPORTED_KERAS_VERSION_NUMBERS.stream()
 				.map(str -> new KerasEngine(str, false, true))
@@ -160,31 +181,61 @@ public class KerasEngine extends AbstractEngine {
 		return cpus;
 	}
 	
+	/**
+	 * Gets name.
+	 *
+	 * @return the resulting string.
+	 */
 	@Override
 	public String getName() {
 		return NAME;
 	}
 	
+	/**
+	 * Gets dir.
+	 *
+	 * @return the resulting string.
+	 */
 	@Override
 	public String getDir() {
 		return mamba.getEnvsDir() + File.separator + getFolderName(version, gpu, false);
 	}
 
+	/**
+	 * Checks whether python.
+	 *
+	 * @return true if the operation succeeds; otherwise, false.
+	 */
 	@Override
 	public boolean isPython() {
 		return isPython;
 	}
 
+	/**
+	 * Gets version.
+	 *
+	 * @return the resulting string.
+	 */
 	@Override
 	public String getVersion() {
 		return version;
 	}
 
+	/**
+	 * Executes supports gpu.
+	 *
+	 * @return true if the operation succeeds; otherwise, false.
+	 */
 	@Override
 	public boolean supportsGPU() {
 		return gpu;
 	}
 
+	/**
+	 * Checks whether installed.
+	 *
+	 * @return true if the operation succeeds; otherwise, false.
+	 */
 	@Override
 	public boolean isInstalled() {
 		if (installed != null)
@@ -200,6 +251,15 @@ public class KerasEngine extends AbstractEngine {
 		return installed;
 	}
 
+	/**
+	 * Executes install.
+	 *
+	 * @throws IOException if an I/O error occurs.
+	 * @throws InterruptedException if the current thread is interrupted while waiting for the operation to finish.
+	 * @throws MambaInstallException if a MambaInstallException occurs while executing this method.
+	 * @throws ArchiveException if a ArchiveException occurs while executing this method.
+	 * @throws URISyntaxException if a URISyntaxException occurs while executing this method.
+	 */
 	@Override
 	public void install() throws IOException, InterruptedException, MambaInstallException, ArchiveException, URISyntaxException {
 		if (!mamba.checkMambaInstalled()) mamba.installMicromamba();
@@ -208,6 +268,14 @@ public class KerasEngine extends AbstractEngine {
 		installed = true;
 	}
 
+	/**
+	 * Loads model.
+	 *
+	 * @param modelFolder the modelFolder parameter.
+	 * @param modelSource the modelSource parameter.
+	 * @throws IOException if an I/O error occurs.
+	 * @throws InterruptedException if the current thread is interrupted while waiting for the operation to finish.
+	 */
 	@Override
 	public void loadModel(String modelFolder, String modelSource) throws IOException, InterruptedException {
 		if (!this.isInstalled())
@@ -228,6 +296,15 @@ public class KerasEngine extends AbstractEngine {
 		throw new RuntimeException("Error loading the model. " + task.error);
 	}
 
+	/**
+	 * Checks whether model loaded.
+	 *
+	 * @param modelFolder the modelFolder parameter.
+	 * @param modelSource the modelSource parameter.
+	 * @return true if the operation succeeds; otherwise, false.
+	 * @throws IOException if an I/O error occurs.
+	 * @throws InterruptedException if the current thread is interrupted while waiting for the operation to finish.
+	 */
 	@Override
 	public boolean isModelLoaded(String modelFolder, String modelSource) throws IOException, InterruptedException {
 		if (python == null)
@@ -240,6 +317,14 @@ public class KerasEngine extends AbstractEngine {
 		throw new RuntimeException("Error unloading the model. " + task.error);	
 	}
 
+	/**
+	 * Runs model.
+	 *
+	 * @param inputTensors the inputTensors parameter.
+	 * @param outputTensors the outputTensors parameter.
+	 * @throws IOException if an I/O error occurs.
+	 * @throws InterruptedException if the current thread is interrupted while waiting for the operation to finish.
+	 */
 	@Override
 	public <T extends RealType<T> & NativeType<T>> void runModel(List<Tensor<T>> inputTensors, List<Tensor<T>> outputTensors)
 			throws IOException, InterruptedException {
@@ -274,6 +359,12 @@ public class KerasEngine extends AbstractEngine {
 		String retrieveOutputsScriptFormatted = String.format(RUN_SCRIPT_MAP.get(this.version));
 	}
 	
+	/**
+	 * Executes unload model.
+	 *
+	 * @throws IOException if an I/O error occurs.
+	 * @throws InterruptedException if the current thread is interrupted while waiting for the operation to finish.
+	 */
 	@Override
 	public void unloadModel() throws IOException, InterruptedException {
 		if (python == null)
@@ -286,6 +377,11 @@ public class KerasEngine extends AbstractEngine {
 		throw new RuntimeException("Error unloading the model. " + task.error);		
 	}
 
+	/**
+	 * Executes close.
+	 *
+	 * @throws Exception if the operation fails.
+	 */
 	@Override
 	public void close() throws Exception {
 		if (this.env == null && this.python == null)
@@ -297,6 +393,11 @@ public class KerasEngine extends AbstractEngine {
 		
 	}
 	
+	/**
+	 * Executes to string.
+	 *
+	 * @return the resulting string.
+	 */
 	@Override
 	public String toString() {
 		return NAME + "_" + version + (gpu ? "_gpu" : "");

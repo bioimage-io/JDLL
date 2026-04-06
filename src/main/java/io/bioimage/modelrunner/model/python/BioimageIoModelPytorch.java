@@ -2,7 +2,7 @@
  * #%L
  * Use deep learning frameworks from Java in an agnostic and isolated way.
  * %%
- * Copyright (C) 2022 - 2024 Institut Pasteur and BioImage.IO developers.
+ * Copyright (C) 2022 - 2026 Institut Pasteur and BioImage.IO developers.
  * %%
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -48,13 +48,40 @@ import net.imglib2.type.NativeType;
 import net.imglib2.type.numeric.RealType;
 import net.imglib2.util.Cast;
 
+/**
+ * Class that contains the methods to use a Pytorch model from JDLL using the Bioimage.io model format.
+ * The model should be compatible with the default environment (Biapy environment) or the environmemt
+ * preferred.
+ * 
+ * The Bioimage.io model must have weights in the 'pytroch_state_dict' format
+ * 
+ */
 public class BioimageIoModelPytorch extends BioimageIoModelPytorchProtected {
 	
-	protected BioimageIoModelPytorch(String modelFile, String callable, String weightsPath, Map<String, Object> kwargs,
+	/**
+	 * Creates a new BioimageIoModelPytorch.
+	 *
+	 * @param modelFile the modelFile parameter.
+	 * @param callable the callable parameter.
+	 * @param importModule the importModule parameter.
+	 * @param weightsPath the weightsPath parameter.
+	 * @param kwargs the kwargs parameter.
+	 * @param descriptor the descriptor parameter.
+	 * @throws IOException if an I/O error occurs.
+	 */
+	protected BioimageIoModelPytorch(String modelFile, String callable, String importModule, String weightsPath, Map<String, Object> kwargs,
 			ModelDescriptor descriptor) throws IOException {
-		super(modelFile, callable, weightsPath, kwargs, descriptor);
+		super(modelFile, callable, importModule, weightsPath, kwargs, descriptor);
 	}
 
+	/**
+	 * Create a Bioaimge.io Pytorch model that can be run from JDLL.
+	 * The model should have weights in the 'pytroch_state_dict' format
+	 * @param descriptor
+	 * 	the Bioimage.io {@link ModelDescriptor}
+	 * @return a model from the Bioaimge.io that can be run in Pytorch.
+	 * @throws IOException if there is any error connecting with Python
+	 */
 	public static BioimageIoModelPytorch create(ModelDescriptor descriptor) throws IOException {
 		if (descriptor.getWeights().getModelWeights(ModelWeight.getPytorchID()) == null)
 			throw new IllegalArgumentException("The model provided does not have weights in the required format, "
@@ -62,30 +89,38 @@ public class BioimageIoModelPytorch extends BioimageIoModelPytorchProtected {
 		WeightFormat pytorchWeights = descriptor.getWeights().getModelWeights(ModelWeight.getPytorchID());
 		String modelFile = descriptor.getModelPath() +  File.separator + pytorchWeights.getArchitecture().getSource();
 		String callable = pytorchWeights.getArchitecture().getCallable();
+		String importModule = pytorchWeights.getArchitecture().getImportModule();
 		String weightsFile = descriptor.getModelPath() +  File.separator + pytorchWeights.getSource();
 		Map<String, Object> kwargs = pytorchWeights.getArchitecture().getKwargs();
-		return new BioimageIoModelPytorch(modelFile, callable, weightsFile, kwargs, descriptor);
+		return new BioimageIoModelPytorch(modelFile, callable, importModule, weightsFile, kwargs, descriptor);
 	}
-	
+
+
+	/**
+	 * Create a Bioaimge.io Pytorch model that can be run from JDLL.
+	 * The model should have weights in the 'pytroch_state_dict' format
+	 * @param modelPath
+	 * 	path to the Bioimage.io model
+	 * @return a model from the Bioaimge.io that can be run in Pytorch.
+	 * @throws IOException if there is any error connecting with Python
+	 */
 	public static BioimageIoModelPytorch create(String modelPath) throws IOException {
 		return create(ModelDescriptorFactory.readFromLocalFile(modelPath + File.separator + Constants.RDF_FNAME));
 	}
 	
 	/**
-	 * 
-	 * @param <T>
-	 * 	nothing
-	 * @param args
-	 * 	nothing
-	 * @throws IOException	nothing
-	 * @throws LoadEngineException	nothing
-	 * @throws RunModelException	nothing
-	 * @throws LoadModelException	nothing
-	 * @throws URISyntaxException 
-	 * @throws ArchiveException 
-	 * @throws MambaInstallException 
-	 * @throws RuntimeException 
-	 * @throws InterruptedException 
+	 * Executes main.
+	 *
+	 * @param args the args parameter.
+	 * @throws IOException if an I/O error occurs.
+	 * @throws LoadEngineException if a LoadEngineException occurs while executing this method.
+	 * @throws RunModelException if a RunModelException occurs while executing this method.
+	 * @throws LoadModelException if a LoadModelException occurs while executing this method.
+	 * @throws InterruptedException if the current thread is interrupted while waiting for the operation to finish.
+	 * @throws RuntimeException if the operation cannot be completed successfully.
+	 * @throws MambaInstallException if a MambaInstallException occurs while executing this method.
+	 * @throws ArchiveException if a ArchiveException occurs while executing this method.
+	 * @throws URISyntaxException if a URISyntaxException occurs while executing this method.
 	 */
 	public static <T extends NativeType<T> & RealType<T>> void main(String[] args) throws IOException, LoadEngineException, RunModelException, LoadModelException, InterruptedException, RuntimeException, MambaInstallException, ArchiveException, URISyntaxException {
 		

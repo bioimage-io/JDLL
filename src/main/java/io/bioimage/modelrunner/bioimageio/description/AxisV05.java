@@ -2,7 +2,7 @@
  * #%L
  * Use deep learning frameworks from Java in an agnostic and isolated way.
  * %%
- * Copyright (C) 2022 - 2024 Institut Pasteur and BioImage.IO developers.
+ * Copyright (C) 2022 - 2026 Institut Pasteur and BioImage.IO developers.
  * %%
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -37,6 +37,11 @@ public class AxisV05 implements Axis{
 	private Map<String, Object> originalDescription; 
 	
 	
+	/**
+	 * Creates a new AxisV05.
+	 *
+	 * @param map the map parameter.
+	 */
 	protected AxisV05(Map<String, Object> map) {
 		originalDescription = map;
 		this.id = (String) map.get("id");
@@ -76,20 +81,40 @@ public class AxisV05 implements Axis{
 			this.abreviation = this.id;
 	}
 	
+	/**
+	 * Gets axis.
+	 *
+	 * @return the resulting string.
+	 */
 	public String getAxis() {
 		return this.abreviation;
 	}
 	
+	/**
+	 * Gets min.
+	 *
+	 * @return the resulting numeric value.
+	 */
 	public int getMin() {
 		if (this.abreviation .equals("c"))
 			return this.channelNames != null ? this.channelNames.size() : 1;
 		return this.size.getMin();
 	}
 	
+	/**
+	 * Gets step.
+	 *
+	 * @return the resulting numeric value.
+	 */
 	public int getStep() {
 		return this.size.getStep();
 	}
 	
+	/**
+	 * Gets scale.
+	 *
+	 * @return the resulting numeric value.
+	 */
 	public double getScale() {
 		return this.scale;
 	}
@@ -115,18 +140,38 @@ public class AxisV05 implements Axis{
 		return concat;
 	}
 	
+	/**
+	 * Gets halo.
+	 *
+	 * @return the resulting numeric value.
+	 */
 	public int getHalo() {
 		return this.halo;
 	}
 	
+	/**
+	 * Gets offset.
+	 *
+	 * @return the resulting numeric value.
+	 */
 	public double getOffset() {
 		return this.size.getOffset();
 	}
 	
+	/**
+	 * Gets reference tensor.
+	 *
+	 * @return the resulting string.
+	 */
 	public String getReferenceTensor() {
 		return this.size.getReferenceTensor();
 	}
 	
+	/**
+	 * Gets reference axis.
+	 *
+	 * @return the resulting string.
+	 */
 	public String getReferenceAxis() {
 		return this.size.getReferenceAxis();
 	}

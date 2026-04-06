@@ -2,7 +2,7 @@
  * #%L
  * Use deep learning frameworks from Java in an agnostic and isolated way.
  * %%
- * Copyright (C) 2022 - 2024 Institut Pasteur and BioImage.IO developers.
+ * Copyright (C) 2022 - 2026 Institut Pasteur and BioImage.IO developers.
  * %%
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,20 +27,42 @@ public class ImageInfo {
 	
 	private final long[] dims;
 	
+	/**
+	 * Creates a new ImageInfo.
+	 *
+	 * @param tensorName the tensorName parameter.
+	 * @param axesOrder the axesOrder parameter.
+	 * @param dims the dims parameter.
+	 */
 	public ImageInfo(String tensorName, String axesOrder, long[] dims) {
 		this.dims = dims;
 		this.name = tensorName;
 		this.axesOrder = axesOrder;
 	}
 	
+	/**
+	 * Gets axes order.
+	 *
+	 * @return the resulting string.
+	 */
 	public String getAxesOrder() {
 		return this.axesOrder;
 	}
 	
+	/**
+	 * Gets tensor name.
+	 *
+	 * @return the resulting string.
+	 */
 	public String getTensorName() {
 		return this.name;
 	}
 	
+	/**
+	 * Gets dimensions.
+	 *
+	 * @return the resulting array.
+	 */
 	public long[] getDimensions() {
 		return this.dims;
 	}

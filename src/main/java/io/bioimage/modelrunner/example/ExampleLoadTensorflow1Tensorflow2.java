@@ -2,7 +2,7 @@
  * #%L
  * Use deep learning frameworks from Java in an agnostic and isolated way.
  * %%
- * Copyright (C) 2022 - 2024 Institut Pasteur and BioImage.IO developers.
+ * Copyright (C) 2022 - 2026 Institut Pasteur and BioImage.IO developers.
  * %%
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -48,7 +48,7 @@ import net.imglib2.util.Util;
  * 
  * The models used for this example are:
  * <ul>
- * <li><a href="https://bioimage.io/#/?id=10.5281%2Fzenodo.7261974&type=model&tags=B.%20Sutilist%20bacteria%20segmentation%20-%20Widefield%20microscopy%20-%202D%20UNet">B. Sutilist bacteria segmentation - Widefield microscopy - 2D UNet (TF2)</a></li>
+ * <li><a href="https://bioimage.io/#/?id=10.5281%2Fzenodo.7261974&amp;type=model&amp;tags=B.%20Sutilist%20bacteria%20segmentation%20-%20Widefield%20microscopy%20-%202D%20UNet">B. Sutilist bacteria segmentation - Widefield microscopy - 2D UNet (TF2)</a></li>
  * <li><a href="https://bioimage.io/#/?tags=StarDist%20H%26E%20Nuclei%20Segmentation&amp;id=10.5281%2Fzenodo.6338614">StarDist H&amp;E Nuclei Segmentation (TF1)</a></li>
  * </ul>
  * 

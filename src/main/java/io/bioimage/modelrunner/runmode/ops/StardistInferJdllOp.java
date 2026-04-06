@@ -2,7 +2,7 @@
  * #%L
  * Use deep learning frameworks from Java in an agnostic and isolated way.
  * %%
- * Copyright (C) 2022 - 2024 Institut Pasteur and BioImage.IO developers.
+ * Copyright (C) 2022 - 2026 Institut Pasteur and BioImage.IO developers.
  * %%
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -132,10 +132,8 @@ public class StardistInferJdllOp implements OpInterface {
 	
 	/**
 	 * Set the input on which the selected stardist mdoel is going to be run
-	 * @param <T>
-     * 	possible ImgLib2 data types of the provided {@link Tensor}
-	 * @param tensor
-	 * 	input on which the stardist model is going to be run
+	 *
+	 * @param tensor the tensor parameter.
 	 */
 	public < T extends RealType< T > & NativeType< T > > void setInputTensor(Tensor<T> tensor) {
 		inputTensor = tensor;
@@ -144,6 +142,8 @@ public class StardistInferJdllOp implements OpInterface {
 	@Override
 	/**
 	 * {@inheritDoc}
+	 *
+	 * @return the resulting string.
 	 */
 	public String getOpPythonFilename() {
 		return STARDIST_OP_FNAME;
@@ -152,6 +152,8 @@ public class StardistInferJdllOp implements OpInterface {
 	@Override
 	/**
 	 * {@inheritDoc}
+	 *
+	 * @return the resulting numeric value.
 	 */
 	public int getNumberOfOutputs() {
 		return N_STARDIST_OUTPUTS;
@@ -173,6 +175,8 @@ public class StardistInferJdllOp implements OpInterface {
 	@Override
 	/**
 	 * {@inheritDoc}
+	 *
+	 * @return the resulting value.
 	 */
 	public LinkedHashMap<String, Object> getOpInputs() {
 		Objects.requireNonNull(modelName, "The model of interest needs to be defined first.");
@@ -187,6 +191,8 @@ public class StardistInferJdllOp implements OpInterface {
 	@Override
 	/**
 	 * {@inheritDoc}
+	 *
+	 * @return the resulting string.
 	 */
 	public String getCondaEnv() {
 		return envPath;
@@ -195,6 +201,8 @@ public class StardistInferJdllOp implements OpInterface {
 	@Override
 	/**
 	 * {@inheritDoc}
+	 *
+	 * @return the resulting string.
 	 */
 	public String getMethodName() {
 		return OP_METHOD_NAME;
@@ -203,6 +211,8 @@ public class StardistInferJdllOp implements OpInterface {
 	@Override
 	/**
 	 * {@inheritDoc}
+	 *
+	 * @return the resulting string.
 	 */
 	public String getOpDir() {
 		return opFilePath;
@@ -211,6 +221,8 @@ public class StardistInferJdllOp implements OpInterface {
 	@Override
 	/**
 	 * {@inheritDoc}
+	 *
+	 * @return true if the operation succeeds; otherwise, false.
 	 */
 	public boolean isOpInstalled() {
 		// TODO maybe remove this method? Make the check at installOp?

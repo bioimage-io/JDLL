@@ -2,7 +2,7 @@
  * #%L
  * Use deep learning frameworks from Java in an agnostic and isolated way.
  * %%
- * Copyright (C) 2022 - 2024 Institut Pasteur and BioImage.IO developers.
+ * Copyright (C) 2022 - 2026 Institut Pasteur and BioImage.IO developers.
  * %%
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,16 +21,16 @@ package io.bioimage.modelrunner.versionmanagement;
 
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
+import java.lang.reflect.Type;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
 import com.google.gson.Gson;
-import com.google.gson.internal.LinkedTreeMap;
 import com.google.gson.reflect.TypeToken;
-import java.lang.reflect.Type;
 
 /**
  * Class to create an object that contains all the information about a Deep
@@ -56,7 +56,7 @@ public class SupportedVersions
 	 * HashMap containing all the versions supported for a specific engine and
 	 * their corresponding Java versions
 	 */
-	private LinkedTreeMap< String, Object > versionsDic;
+	private Map< String, Object > versionsDic;
 
 	/**
 	 * Set of Strings where each entry corresponds to a supported Deep Learning
@@ -94,7 +94,7 @@ public class SupportedVersions
 	{
 		engine = AvailableEngines.getSupportedFrameworkTag(engine);
     	if (engine == null) 
-    		this.versionsDic = new LinkedTreeMap<String, Object>();
+    		this.versionsDic = new HashMap<String, Object>();
     	else
     		this.versionsDic = getSupportedVersionsForEngine( engine );
     	if (versionsDic == null)
@@ -139,14 +139,14 @@ public class SupportedVersions
 	 * @return a hashmap containing the json file with the all supported
 	 *         versions
 	 */
-	public static HashMap< String, Object > readVersionsJson()
+	public static Map< String, Object > readVersionsJson()
 	{
 		BufferedReader br = new BufferedReader( new InputStreamReader(
 				SupportedVersions.class.getClassLoader().getResourceAsStream( "supportedVersions.json" ) ) );
 		Gson g = new Gson();
 		// Create the type that we want to read from the json file
-		Type mapType = new TypeToken< HashMap< String, Object > >(){}.getType();
-		HashMap< String, Object > supportedVersions = g.fromJson( br, mapType );
+		Type mapType = new TypeToken< Map< String, Object > >(){}.getType();
+		Map< String, Object > supportedVersions = g.fromJson( br, mapType );
 		return supportedVersions;
 	}
 
@@ -159,12 +159,12 @@ public class SupportedVersions
 	 * @return a HashMap containing all the supported versions for a Deep
 	 *         Learning framework
 	 */
-	public static LinkedTreeMap< String, Object > getSupportedVersionsForEngine( String engine )
+	public static Map< String, Object > getSupportedVersionsForEngine( String engine )
 	{
 		if (ALL_VERSIONS == null)
-			ALL_VERSIONS = readVersionsJson();
+			ALL_VERSIONS = new HashMap< String, Object >( readVersionsJson() );
 		engine = AvailableEngines.getSupportedFrameworkTag(engine);
-		LinkedTreeMap< String, Object > engineVersions = ( LinkedTreeMap< String, Object > ) ALL_VERSIONS.get( engine );
+		Map< String, Object > engineVersions = ( Map< String, Object > ) ALL_VERSIONS.get( engine );
 		return engineVersions;
 	}
 
@@ -230,11 +230,11 @@ public class SupportedVersions
 	 *            list of all supported versions
 	 * @return get the Java version for a specific Pyrhon version
 	 */
-	private static String getJavaVersionFromVersionJSON( String version, LinkedTreeMap< String, Object > allVersions )
+	private static String getJavaVersionFromVersionJSON( String version, Map< String, Object > allVersions )
 	{
 		if (version == null)
 			return null;
-		LinkedTreeMap< String, String > versionJSON = ( LinkedTreeMap< String, String > ) allVersions.get( version );
+		Map< String, String > versionJSON = ( Map< String, String > ) allVersions.get( version );
 		return versionJSON.get( javaVersionsKey );
 	}
 

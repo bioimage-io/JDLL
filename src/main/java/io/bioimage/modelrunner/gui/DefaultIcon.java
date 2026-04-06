@@ -1,3 +1,22 @@
+/*-
+ * #%L
+ * Use deep learning frameworks from Java in an agnostic and isolated way.
+ * %%
+ * Copyright (C) 2022 - 2026 Institut Pasteur and BioImage.IO developers.
+ * %%
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ * 
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ * 
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ * #L%
+ */
 package io.bioimage.modelrunner.gui;
 
 import java.awt.Color;
@@ -21,62 +40,277 @@ import javax.swing.SwingUtilities;
 public class DefaultIcon {
 
 	protected static String DIJ_ICON_PATH;
-    
+
     private static final Map<Dimension, CompletableFuture<ImageIcon>> PENDING_ICONS = new ConcurrentHashMap<>();
     private static Map<Dimension, ImageIcon> ICONS_CACHE = new ConcurrentHashMap<>();
-    private static final ExecutorService scaleExecutor = Executors.newFixedThreadPool(2);
-    // Approach 2: Cache single BufferedImage
+    private static final Map<URL, CompletableFuture<BufferedImage>> PENDING = new ConcurrentHashMap<>();
+    private static Map<URL, BufferedImage> CACHE = new ConcurrentHashMap<>();
+    private static ExecutorService scaleExecutor = Executors.newFixedThreadPool(2);
     private static BufferedImage MASTER_IMAGE;
+    private static String MASTER_PATH;
+    
 
+    private static final Map<String, String> DISPLAYED = new ConcurrentHashMap<String, String>();
     
-    // Initialize the loading icon once when the class is loaded
-    static {
-        initializeMasterImage();
+    /**
+     * Gets immediate loading square logo.
+     *
+     * @return the resulting value.
+     */
+    protected static BufferedImage getImmediateLoadingSquareLogo() {
+        BufferedImage bi = new BufferedImage(50, 50, BufferedImage.TYPE_INT_ARGB);
+        Graphics2D g = bi.createGraphics();
+        g.setColor(Color.GRAY);
+        g.drawString("Loading...", 5, 25);
+        g.dispose();
+        return bi;
     }
     
-    protected static void setIconPath(String iconPath) {
-    	DIJ_ICON_PATH = iconPath;
-    	initializeMasterImage();
-    }
-    
-    protected static void initializeMasterImage() {
+    /**
+     * Gets software logo.
+     *
+     * @return the resulting value.
+     */
+    protected static BufferedImage getSoftwareLogo() {
         try {
         	if (DIJ_ICON_PATH == null)
         		throw new IOException();
+        	if (MASTER_IMAGE != null && DIJ_ICON_PATH.equals(MASTER_PATH))
+        		return MASTER_IMAGE;
             URL defaultIconUrl = DefaultIcon.class.getClassLoader().getResource(DIJ_ICON_PATH);
             if (defaultIconUrl == null) {
                 throw new IOException();
             }
-            MASTER_IMAGE = ImageIO.read(defaultIconUrl);
-        } catch (IOException e) {
-            // Fallback to creating a simple buffered image
-            BufferedImage bi = new BufferedImage(50, 50, BufferedImage.TYPE_INT_ARGB);
-            Graphics2D g = bi.createGraphics();
-            g.setColor(Color.GRAY);
-            g.drawString("Loading...", 5, 25);
-            g.dispose();
-            MASTER_IMAGE = bi;
+            BufferedImage cached = CACHE.get(defaultIconUrl);
+            if (cached != null) {
+                return cached;
+            }
+            
+            if (scaleExecutor.isShutdown())
+            	scaleExecutor = Executors.newFixedThreadPool(2);
+            
+            // Check if already being processed
+            CompletableFuture<BufferedImage> pending = PENDING.get(defaultIconUrl);
+            if (pending == null) {
+                // Start new scaling operation
+                pending = CompletableFuture.supplyAsync(() -> {
+                    try {
+						MASTER_IMAGE = ImageIO.read(defaultIconUrl);
+						CACHE.put(defaultIconUrl, MASTER_IMAGE);
+	                    MASTER_PATH = DIJ_ICON_PATH;
+					} catch (IOException e) {
+						e.printStackTrace();
+						MASTER_IMAGE = getImmediateLoadingSquareLogo();
+					}
+                    PENDING.remove(defaultIconUrl);
+                    return MASTER_IMAGE;
+                }, scaleExecutor);
+                PENDING.put(defaultIconUrl, pending);
+            }
+            return getImmediateLoadingSquareLogo();
+        } catch (Exception ex) {
+        	ex.printStackTrace();
+        	return getImmediateLoadingSquareLogo();
         }
     }
+    
+    /**
+     * Executes draw im or logo.
+     *
+     * @param imURL the imURL parameter.
+     * @param panel the panel parameter.
+     * @param panelID the panelID parameter.
+     */
+    public static void drawImOrLogo(URL imURL, LogoPanel panel, String panelID) {
+    	DISPLAYED.put(panelID, imURL.toExternalForm());
+        BufferedImage img = CACHE.get(imURL);
+        if (img != null && DISPLAYED.get(panelID).equals(imURL.toExternalForm())) {
+        	SwingUtilities.invokeLater(() -> panel.setImage(img, false));
+        	return;
+        };
 
+        if (scaleExecutor.isShutdown())
+        	scaleExecutor = Executors.newFixedThreadPool(2);
+        PENDING.computeIfAbsent(imURL, u ->
+          CompletableFuture.supplyAsync(() -> {
+            	try {
+	              	BufferedImage loaded = ImageIO.read(u);
+	              	CACHE.put(u, loaded);
+	              	return loaded;
+              } catch(Exception | Error e) {
+            	  e.printStackTrace();
+            	  return getImmediateLoadingSquareLogo();
+              }
+            }, scaleExecutor)
+        );
+        PENDING.get(imURL)
+        .whenComplete((bi,err)-> {
+        	PENDING.remove(imURL);
+    		SwingUtilities.invokeLater(() -> {
+    			if (DISPLAYED.get(panelID).equals(imURL.toExternalForm()))
+            		panel.setImage(bi, false);
+    			else
+    				System.out.println("discarded " + imURL + " at " + panelID);
+    		});
+        });
+    }
+    
+    /**
+     * Executes draw im or logo.
+     *
+     * @param imURL the imURL parameter.
+     * @param logoUrl the logoUrl parameter.
+     * @param panel the panel parameter.
+     * @param panelID the panelID parameter.
+     */
+    public static void drawImOrLogo(URL imURL, URL logoUrl, LogoPanel panel, String panelID) {
+    	DISPLAYED.put(panelID, imURL.toExternalForm());
+        BufferedImage img = CACHE.get(imURL);
+        if (img != null && DISPLAYED.get(panelID).equals(imURL.toExternalForm())) {
+        	SwingUtilities.invokeLater(() -> panel.setImage(img, false));
+        	return;
+        };
+        drawLogo(logoUrl, panel);
+
+        if (scaleExecutor.isShutdown())
+        	scaleExecutor = Executors.newFixedThreadPool(2);
+        PENDING.computeIfAbsent(imURL, u ->
+          CompletableFuture.supplyAsync(() -> {
+            	try {
+	              	BufferedImage loaded = ImageIO.read(u);
+	              	CACHE.put(u, loaded);
+	              	return loaded;
+              } catch(Exception | Error e) {
+            	  e.printStackTrace();
+            	  return getImmediateLoadingSquareLogo();
+              }
+            }, scaleExecutor)
+        );
+        PENDING.get(imURL)
+        .whenComplete((bi,err)-> {
+        	PENDING.remove(imURL);
+    		SwingUtilities.invokeLater(() -> {
+    			if (DISPLAYED.get(panelID).equals(imURL.toExternalForm()))
+            		panel.setImage(bi, false);
+    		});
+        });
+    }
+    
+    /**
+     * Executes draw im or logo.
+     *
+     * @param imURL the imURL parameter.
+     * @param logoUrl the logoUrl parameter.
+     * @param panel the panel parameter.
+     */
+    public static void drawImOrLogo(URL imURL, URL logoUrl, LogoPanel panel) {
+        BufferedImage img = CACHE.get(imURL);
+        if (img != null) {
+        	SwingUtilities.invokeLater(() -> panel.setImage(img, false));
+        	return;
+        };
+        drawLogo(logoUrl, panel);
+
+        if (scaleExecutor.isShutdown())
+        	scaleExecutor = Executors.newFixedThreadPool(2);
+        PENDING.computeIfAbsent(imURL, u ->
+          CompletableFuture.supplyAsync(() -> {
+            	try {
+	              	BufferedImage loaded = ImageIO.read(u);
+	              	CACHE.put(u, loaded);
+	              	return loaded;
+              } catch(Exception | Error e) {
+            	  e.printStackTrace();
+            	  return getImmediateLoadingSquareLogo();
+              }
+            }, scaleExecutor)
+        );
+        PENDING.get(imURL)
+        .whenComplete((bi,err)-> {
+        	PENDING.remove(imURL);
+        	SwingUtilities.invokeLater(() -> panel.setImage(bi, false));
+        });
+    }
+    
+    /**
+     * Executes draw logo.
+     *
+     * @param url the url parameter.
+     * @param panel the panel parameter.
+     */
+    public static void drawLogo(URL url, LogoPanel panel) {
+    	if (url == null) {
+        	SwingUtilities.invokeLater(() -> panel.setImage(getImmediateLoadingSquareLogo(), true));
+        	return;
+    	}
+        BufferedImage img = CACHE.get(url);
+        if (img != null) {
+        	SwingUtilities.invokeLater(() -> panel.setImage(img, false));
+        	return;
+        };
+
+
+        if (scaleExecutor.isShutdown())
+        	scaleExecutor = Executors.newFixedThreadPool(2);
+        PENDING.computeIfAbsent(url, u ->
+          CompletableFuture.supplyAsync(() -> {
+            	try {
+	              	BufferedImage loaded = ImageIO.read(u);
+	              	CACHE.put(u, loaded);
+	              	return loaded;
+              } catch(Exception | Error e) {
+            	  e.printStackTrace();
+            	  return getImmediateLoadingSquareLogo();
+              }
+            }, scaleExecutor)
+        );
+        PENDING.get(url)
+        .whenComplete((bi,err)-> {
+        	PENDING.remove(url);
+        	SwingUtilities.invokeLater(() -> panel.setImage(bi, false));
+        });
+    	SwingUtilities.invokeLater(() -> panel.setImage(getImmediateLoadingSquareLogo(), true));
+    }
+    
+    /**
+     * Sets icon path.
+     *
+     * @param iconPath the iconPath parameter.
+     */
+    protected static void setIconPath(String iconPath) {
+    	DIJ_ICON_PATH = iconPath;
+    	getSoftwareLogo();
+    }
+
+    /**
+     * Gets default icon.
+     *
+     * @param width the width parameter.
+     * @param height the height parameter.
+     * @return the resulting value.
+     */
     public static ImageIcon getDefaultIcon(int width, int height) {
-        try {
-        	if (DIJ_ICON_PATH == null)
-        		return null;
-            URL defaultIconUrl = Gui.class.getClassLoader().getResource(DIJ_ICON_PATH);
-            if (defaultIconUrl == null) {
-                return null;
-            }
-            BufferedImage defaultImage = ImageIO.read(defaultIconUrl);
-            Image scaledDefaultImage = defaultImage.getScaledInstance(width, height, Image.SCALE_FAST);
-            return new ImageIcon(scaledDefaultImage);
-        } catch (IOException e) {
+    	if (DIJ_ICON_PATH == null)
+    		return null;
+        URL defaultIconUrl = Gui.class.getClassLoader().getResource(DIJ_ICON_PATH);
+        if (defaultIconUrl == null) {
             return null;
         }
+        // TODO remove BufferedImage defaultImage = ImageIO.read(defaultIconUrl);
+        // TODO remove Image scaledDefaultImage = defaultImage.getScaledInstance(width, height, Image.SCALE_FAST);
+        Image scaledDefaultImage = MASTER_IMAGE.getScaledInstance(width, height, Image.SCALE_FAST);
+        return new ImageIcon(scaledDefaultImage);
     }
     
     
 
+    /**
+     * Gets loading icon.
+     *
+     * @param width the width parameter.
+     * @param height the height parameter.
+     * @return the resulting value.
+     */
     public static ImageIcon getLoadingIcon(int width, int height) {
         Dimension size = new Dimension(width, height);
         
@@ -100,7 +334,6 @@ public class DefaultIcon {
             PENDING_ICONS.put(size, pending);
         }
         
-        // Return immediately with nearest size while scaling happens
         return createTransparentIcon(width, height);
     }
     
@@ -127,6 +360,13 @@ public class DefaultIcon {
     
     
     // For components that want to update when the exact size is ready
+    /**
+     * Gets loading icon with callback.
+     *
+     * @param width the width parameter.
+     * @param height the height parameter.
+     * @param callback the callback parameter.
+     */
     public static void getLoadingIconWithCallback(int width, int height, Consumer<ImageIcon> callback) {
         ImageIcon immediate = getLoadingIcon(width, height);
         Dimension size = new Dimension(width, height);
@@ -142,6 +382,9 @@ public class DefaultIcon {
         callback.accept(immediate);
     }
     
+    /**
+     * Closes threads.
+     */
     public static void closeThreads() {
     	if (scaleExecutor != null)
     		scaleExecutor.shutdown();

@@ -2,7 +2,7 @@
  * #%L
  * Use deep learning frameworks from Java in an agnostic and isolated way.
  * %%
- * Copyright (C) 2022 - 2024 Institut Pasteur and BioImage.IO developers.
+ * Copyright (C) 2022 - 2026 Institut Pasteur and BioImage.IO developers.
  * %%
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,6 +22,7 @@ package io.bioimage.modelrunner.model.special.stardist;
 import java.io.File;
 import java.io.IOException;
 import java.net.URISyntaxException;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
 import java.util.function.Consumer;
@@ -29,6 +30,7 @@ import java.util.function.Consumer;
 import org.apache.commons.compress.archivers.ArchiveException;
 
 import io.bioimage.modelrunner.apposed.appose.MambaInstallException;
+import io.bioimage.modelrunner.bioimageio.BioimageioDirectConnection;
 import io.bioimage.modelrunner.bioimageio.BioimageioRepo;
 import io.bioimage.modelrunner.bioimageio.description.ModelDescriptor;
 import io.bioimage.modelrunner.bioimageio.description.ModelDescriptorFactory;
@@ -55,9 +57,23 @@ public class Stardist3D extends StardistAbstract {
 	
 	private static String MODULE_NAME = "StarDist3D";
 	
+	private static final Map<String, String> ID_EQUIVALENCE;
+	static {
+		ID_EQUIVALENCE = new HashMap<String, String>();
+		ID_EQUIVALENCE.put("StarDist Plant Nuclei 3D ResNet", "modest-octopus");
+	}
+	
+	/**
+	 * Creates a new Stardist3D.
+	 *
+	 * @param modelName the modelName parameter.
+	 * @param baseDir the baseDir parameter.
+	 * @param config the config parameter.
+	 * @throws IOException if an I/O error occurs.
+	 */
 	protected Stardist3D(String modelName, String baseDir, Map<String, Object> config) throws IOException {
 		super(modelName, baseDir, config);
-		this.scaleRangeAxes = "xyzc";
+		this.scaleRangeAxes = "zyxc";
 	}
 	
 	private Stardist3D(String modelName, String baseDir) throws IOException {
@@ -78,19 +94,29 @@ public class Stardist3D extends StardistAbstract {
 		this.scaleRangeAxes = "xyzc";
 	}
 
+	/**
+	 * Creates imports code.
+	 *
+	 * @return the resulting string.
+	 */
 	@Override
 	protected String createImportsCode() {
 		return String.format(LOAD_MODEL_CODE_ABSTRACT, MODULE_NAME, MODULE_NAME, 
 				MODULE_NAME, MODULE_NAME, MODULE_NAME, this.name, this.basedir);
 	}
 
+	/**
+	 * Checks input.
+	 *
+	 * @param image the image parameter.
+	 */
 	@Override
 	protected <T extends RealType<T> & NativeType<T>>  void checkInput(RandomAccessibleInterval<T> image) {
 		if (image.dimensionsAsLongArray().length == 3 && this.nChannels != 1)
 			throw new IllegalArgumentException("Stardist3D needs an image with four dimensions: XYZC");
 		else if (image.dimensionsAsLongArray().length != 4 && this.nChannels != 1)
 			throw new IllegalArgumentException("Stardist3D needs an image with four dimensions: XYZC");
-		else if (image.dimensionsAsLongArray().length == 4 && image.dimensionsAsLongArray()[3] != nChannels)
+		else if (image.dimensionsAsLongArray().length == 4 && image.dimensionsAsLongArray()[2] != nChannels)
 			throw new IllegalArgumentException("This Stardist3D model requires " + nChannels + " channels.");
 		else if (image.dimensionsAsLongArray().length > 4 || image.dimensionsAsLongArray().length < 2)
 			throw new IllegalArgumentException("Stardist3D model requires an image with dimensions XYZC.");
@@ -98,6 +124,12 @@ public class Stardist3D extends StardistAbstract {
 	
 
 	
+	/**
+	 * Executes reconstruct mask.
+	 *
+	 * @return the resulting value.
+	 * @throws IOException if an I/O error occurs.
+	 */
 	@Override
 	protected <T extends RealType<T> & NativeType<T>> RandomAccessibleInterval<T> reconstructMask() throws IOException {
 		// TODO I do not understand why is complaining when the types align perfectly
@@ -107,11 +139,21 @@ public class Stardist3D extends StardistAbstract {
 		return maskCopy;
 	}
 
+	/**
+	 * Checks whether 2 d.
+	 *
+	 * @return true if the operation succeeds; otherwise, false.
+	 */
 	@Override
 	public boolean is2D() {
 		return false;
 	}
 
+	/**
+	 * Checks whether 3 d.
+	 *
+	 * @return true if the operation succeeds; otherwise, false.
+	 */
 	@Override
 	public boolean is3D() {
 		return true;
@@ -164,35 +206,54 @@ public class Stardist3D extends StardistAbstract {
 	public static Stardist3D fromPretained(String pretrainedModel, String installDir, boolean install) throws IOException, 
 																					InterruptedException {
 		if (pretrainedModel.equals("StarDist Plant Nuclei 3D ResNet") && !install) {
-			ModelDescriptor md = ModelDescriptorFactory.getModelsAtLocalRepo().stream()
+			ModelDescriptor md = ModelDescriptorFactory.getModelsAtLocalRepo(installDir).stream()
 					.filter(mm ->mm.getName().equals(pretrainedModel)).findFirst().orElse(null);
 			if (md != null) return new Stardist3D(md);
 			return null;
 		} else if (pretrainedModel.equals("StarDist Plant Nuclei 3D ResNet")) {
-			String path = BioimageioRepo.connect().downloadByName("StarDist Plant Nuclei 3D ResNet", installDir);
+			String path = BioimageioRepo.downloadModel(BioimageioDirectConnection.selectByID("modest-octopus"), installDir);
 			return Stardist3D.fromBioimageioModel(ModelDescriptorFactory.readFromLocalFile(path));
 		} else {
 			throw new IllegalArgumentException("There is no Stardist3D model called: " + pretrainedModel);
 		}
 	}
 	
-	public static String donwloadPretrained(String modelName, String downloadDir) 
+	/**
+	 * Downloads pretrained.
+	 *
+	 * @param modelName the modelName parameter.
+	 * @param downloadDir the downloadDir parameter.
+	 * @return the resulting string.
+	 * @throws ExecutionException if a ExecutionException occurs while executing this method.
+	 * @throws InterruptedException if the current thread is interrupted while waiting for the operation to finish.
+	 * @throws IOException if an I/O error occurs.
+	 */
+	public static String downloadPretrained(String modelName, String downloadDir) 
 			throws ExecutionException, InterruptedException, IOException {
-		return donwloadPretrained(modelName, downloadDir, null);
+		return downloadPretrained(modelName, downloadDir, null);
 	}
 	
-	public static String donwloadPretrained(String modelName, String downloadDir, Consumer<Double> progressConsumer) throws InterruptedException, IOException {
-		return donwloadPretrainedBioimageio(modelName, downloadDir, progressConsumer);
+	/**
+	 * Downloads pretrained.
+	 *
+	 * @param modelName the modelName parameter.
+	 * @param downloadDir the downloadDir parameter.
+	 * @param progressConsumer the progressConsumer parameter.
+	 * @return the resulting string.
+	 * @throws InterruptedException if the current thread is interrupted while waiting for the operation to finish.
+	 * @throws IOException if an I/O error occurs.
+	 */
+	public static String downloadPretrained(String modelName, String downloadDir, Consumer<Double> progressConsumer) throws InterruptedException, IOException {
+		return downloadPretrainedBioimageio(modelName, downloadDir, progressConsumer);
 	}
 	
-	private static String donwloadPretrainedBioimageio(String modelName, String downloadDir, Consumer<Double> progressConsumer) 
+	private static String downloadPretrainedBioimageio(String modelName, String downloadDir, Consumer<Double> progressConsumer) 
 			throws InterruptedException, IOException {
 		
-		BioimageioRepo br = BioimageioRepo.connect();
 
-		ModelDescriptor descriptor = br.selectByName(modelName);
-		if (descriptor == null)
-			descriptor = br.selectByID(modelName);
+		if (ID_EQUIVALENCE.get(modelName) != null)
+			modelName = ID_EQUIVALENCE.get(modelName);
+		ModelDescriptor descriptor = BioimageioDirectConnection.selectByID(modelName);
 		if (descriptor == null) {
 			throw new IllegalArgumentException("The model does not correspond to on of the available pretrained StarDist3D models."
 					+ " To find a list of available cellpose models, please run StarDist3D.getPretrainedList()");
@@ -222,7 +283,7 @@ public class Stardist3D extends StardistAbstract {
 													RunModelException, ArchiveException, 
 													URISyntaxException, LoadModelException {
 		Stardist3D.installRequirements();
-		Stardist3D model = Stardist3D.fromPretained("StarDist Plant Nuclei 3D ResNet", false);
+		StardistAbstract model = StardistAbstract.init("/home/carlos/git/deepimagej-plugin/models/model_confocal");
 
 		RandomAccessibleInterval<FloatType> img = ArrayImgs.floats(new long[] {116, 120, 66});
 		

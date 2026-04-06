@@ -2,7 +2,7 @@
  * #%L
  * Use deep learning frameworks from Java in an agnostic and isolated way.
  * %%
- * Copyright (C) 2022 - 2024 Institut Pasteur and BioImage.IO developers.
+ * Copyright (C) 2022 - 2026 Institut Pasteur and BioImage.IO developers.
  * %%
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -57,6 +57,13 @@ public final class FilePaths {
 		}
 	}
 
+	/**
+	 * Finds exe.
+	 *
+	 * @param dirs the dirs parameter.
+	 * @param exes the exes parameter.
+	 * @return the resulting value.
+	 */
 	public static File findExe(List<String> dirs, List<String> exes) {
 		for (String exe : exes) {
 			File exeFile = new File(exe);

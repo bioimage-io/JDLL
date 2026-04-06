@@ -2,7 +2,7 @@
  * #%L
  * Use deep learning frameworks from Java in an agnostic and isolated way.
  * %%
- * Copyright (C) 2022 - 2024 Institut Pasteur and BioImage.IO developers.
+ * Copyright (C) 2022 - 2026 Institut Pasteur and BioImage.IO developers.
  * %%
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -38,30 +38,54 @@ public class LoadEngineException extends Exception
 
 	private String nonStaticMsg;
 
+	/**
+	 * Creates a new LoadEngineException.
+	 *
+	 * @param info the info parameter.
+	 */
 	public LoadEngineException( String info )
 	{
 		super( msg + ".\n" + info );
 		this.nonStaticMsg = msg + "\n" + info;
 	}
 
+	/**
+	 * Creates a new LoadEngineException.
+	 *
+	 * @param dir the dir parameter.
+	 * @param info the info parameter.
+	 */
 	public LoadEngineException( File dir, String info )
 	{
 		super( msg + " located at " + dir.getName() + ".\n" + info );
 		this.nonStaticMsg = msg + " located at " + dir.getName() + ".\n" + info;
 	}
 
+	/**
+	 * Creates a new LoadEngineException.
+	 *
+	 * @param dir the dir parameter.
+	 */
 	public LoadEngineException( File dir )
 	{
 		super( msg + " located at " + dir.getName() );
 		this.nonStaticMsg = msg + " located at " + dir.getName();
 	}
 
+	/**
+	 * Creates a new LoadEngineException.
+	 */
 	public LoadEngineException()
 	{
 		super( msg );
 		this.nonStaticMsg = msg;
 	}
 
+	/**
+	 * Executes to string.
+	 *
+	 * @return the resulting string.
+	 */
 	public String toString()
 	{
 		return this.nonStaticMsg;

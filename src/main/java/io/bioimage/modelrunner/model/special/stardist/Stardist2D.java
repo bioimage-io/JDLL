@@ -2,7 +2,7 @@
  * #%L
  * Use deep learning frameworks from Java in an agnostic and isolated way.
  * %%
- * Copyright (C) 2022 - 2024 Institut Pasteur and BioImage.IO developers.
+ * Copyright (C) 2022 - 2026 Institut Pasteur and BioImage.IO developers.
  * %%
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,6 +30,7 @@ import java.util.function.Consumer;
 import org.apache.commons.compress.archivers.ArchiveException;
 
 import io.bioimage.modelrunner.apposed.appose.MambaInstallException;
+import io.bioimage.modelrunner.bioimageio.BioimageioDirectConnection;
 import io.bioimage.modelrunner.bioimageio.BioimageioRepo;
 import io.bioimage.modelrunner.bioimageio.description.ModelDescriptor;
 import io.bioimage.modelrunner.bioimageio.description.ModelDescriptorFactory;
@@ -65,6 +66,21 @@ public class Stardist2D extends StardistAbstract {
 		PRETRAINED_EQUIVALENCE.put("2D_versatile_fluo", "StarDist Fluorescence Nuclei Segmentation");
 	}
 	
+	private static final Map<String, String> ID_EQUIVALENCE;
+	static {
+		ID_EQUIVALENCE = new HashMap<String, String>();
+		ID_EQUIVALENCE.put("StarDist H&E Nuclei Segmentation", "chatty-frog");
+		ID_EQUIVALENCE.put("StarDist Fluorescence Nuclei Segmentation", "fearless-crab");
+	}
+	
+	/**
+	 * Creates a new Stardist2D.
+	 *
+	 * @param modelName the modelName parameter.
+	 * @param baseDir the baseDir parameter.
+	 * @param config the config parameter.
+	 * @throws IOException if an I/O error occurs.
+	 */
 	protected Stardist2D(String modelName, String baseDir, Map<String, Object> config) throws IOException {
 		super(modelName, baseDir, config);
 		this.scaleRangeAxes = "xyc";
@@ -88,12 +104,22 @@ public class Stardist2D extends StardistAbstract {
 		this.scaleRangeAxes = "xyc";
 	}
 
+	/**
+	 * Creates imports code.
+	 *
+	 * @return the resulting string.
+	 */
 	@Override
 	protected String createImportsCode() {
 		return String.format(LOAD_MODEL_CODE_ABSTRACT, MODULE_NAME, MODULE_NAME, 
 				MODULE_NAME, MODULE_NAME, MODULE_NAME, this.name, this.basedir);
 	}
 
+	/**
+	 * Checks input.
+	 *
+	 * @param image the image parameter.
+	 */
 	@Override
 	protected <T extends RealType<T> & NativeType<T>>  void checkInput(RandomAccessibleInterval<T> image) {
 		if (image.dimensionsAsLongArray().length == 2 && this.nChannels != 1)
@@ -106,6 +132,12 @@ public class Stardist2D extends StardistAbstract {
 			throw new IllegalArgumentException("Stardist2D model requires an image with dimensions XYC.");
 	}
 	
+	/**
+	 * Executes reconstruct mask.
+	 *
+	 * @return the resulting value.
+	 * @throws IOException if an I/O error occurs.
+	 */
 	@Override
 	protected <T extends RealType<T> & NativeType<T>> RandomAccessibleInterval<T> reconstructMask() throws IOException {
 		// TODO I do not understand why is complaining when the types align perfectly
@@ -126,11 +158,21 @@ public class Stardist2D extends StardistAbstract {
 		return maskCopy;
 	}
 
+	/**
+	 * Checks whether 2 d.
+	 *
+	 * @return true if the operation succeeds; otherwise, false.
+	 */
 	@Override
 	public boolean is2D() {
 		return true;
 	}
 
+	/**
+	 * Checks whether 3 d.
+	 *
+	 * @return true if the operation succeeds; otherwise, false.
+	 */
 	@Override
 	public boolean is3D() {
 		return false;
@@ -185,51 +227,69 @@ public class Stardist2D extends StardistAbstract {
 																					InterruptedException {
 		if ((pretrainedModel.equals("StarDist H&E Nuclei Segmentation")
 				|| pretrainedModel.equals("2D_versatile_he")) && !install) {
-			ModelDescriptor md = ModelDescriptorFactory.getModelsAtLocalRepo().stream()
+			ModelDescriptor md = ModelDescriptorFactory.getModelsAtLocalRepo(installDir).stream()
 					.filter(mm ->mm.getName().equals("StarDist H&E Nuclei Segmentation")).findFirst().orElse(null);
 			if (md != null) return new Stardist2D(md);
 			return null;
 		} else if (pretrainedModel.equals("StarDist H&E Nuclei Segmentation")
 				|| pretrainedModel.equals("2D_versatile_he")) {
-			String path = BioimageioRepo.connect().downloadByName("StarDist H&E Nuclei Segmentation", installDir);
+			String path = BioimageioRepo.downloadModel(BioimageioDirectConnection.selectByID("chatty-frog"), installDir);
 			return Stardist2D.fromBioimageioModel(ModelDescriptorFactory.readFromLocalFile(path));
 		} else if ((pretrainedModel.equals("StarDist Fluorescence Nuclei Segmentation")
 				|| pretrainedModel.equals("2D_versatile_fluo")) && !install) {
-			ModelDescriptor md = ModelDescriptorFactory.getModelsAtLocalRepo().stream()
+			ModelDescriptor md = ModelDescriptorFactory.getModelsAtLocalRepo(installDir).stream()
 					.filter(mm ->mm.getName().equals("StarDist Fluorescence Nuclei Segmentation")).findFirst().orElse(null);
 			if (md != null) return new Stardist2D(md);
 			return null;
 		} else if (pretrainedModel.equals("StarDist Fluorescence Nuclei Segmentation")
 				|| pretrainedModel.equals("2D_versatile_fluo")) {
-			String path = BioimageioRepo.connect().downloadByName("StarDist Fluorescence Nuclei Segmentation", installDir);
+			String path = BioimageioRepo.downloadModel(BioimageioDirectConnection.selectByID("fearless-crab"), installDir);
 			return Stardist2D.fromBioimageioModel(ModelDescriptorFactory.readFromLocalFile(path));
 		} else {
 			throw new IllegalArgumentException("There is no Stardist2D model called: " + pretrainedModel);
 		}
 	}
 	
-	public static String donwloadPretrained(String modelName, String downloadDir) 
+	/**
+	 * Downloads pretrained.
+	 *
+	 * @param modelName the modelName parameter.
+	 * @param downloadDir the downloadDir parameter.
+	 * @return the resulting string.
+	 * @throws ExecutionException if a ExecutionException occurs while executing this method.
+	 * @throws InterruptedException if the current thread is interrupted while waiting for the operation to finish.
+	 * @throws IOException if an I/O error occurs.
+	 */
+	public static String downloadPretrained(String modelName, String downloadDir) 
 			throws ExecutionException, InterruptedException, IOException {
-		return donwloadPretrained(modelName, downloadDir, null);
+		return downloadPretrained(modelName, downloadDir, null);
 	}
 	
-	public static String donwloadPretrained(String modelName, String downloadDir, Consumer<Double> progressConsumer) throws InterruptedException, IOException {
+	/**
+	 * Downloads pretrained.
+	 *
+	 * @param modelName the modelName parameter.
+	 * @param downloadDir the downloadDir parameter.
+	 * @param progressConsumer the progressConsumer parameter.
+	 * @return the resulting string.
+	 * @throws InterruptedException if the current thread is interrupted while waiting for the operation to finish.
+	 * @throws IOException if an I/O error occurs.
+	 */
+	public static String downloadPretrained(String modelName, String downloadDir, Consumer<Double> progressConsumer) throws InterruptedException, IOException {
 		if (!PRETRAINED_EQUIVALENCE.keySet().contains(modelName))
-			return donwloadPretrainedBioimageio(modelName, downloadDir, progressConsumer);
+			return downloadPretrainedBioimageio(modelName, downloadDir, progressConsumer);
 		else
-			return donwloadPretrainedBioimageio(PRETRAINED_EQUIVALENCE.get(modelName), downloadDir, progressConsumer);
+			return downloadPretrainedBioimageio(PRETRAINED_EQUIVALENCE.get(modelName), downloadDir, progressConsumer);
 	}
 	
-	private static String donwloadPretrainedBioimageio(String modelName, String downloadDir, Consumer<Double> progressConsumer) 
+	private static String downloadPretrainedBioimageio(String modelName, String downloadDir, Consumer<Double> progressConsumer) 
 			throws InterruptedException, IOException {
 		
-		BioimageioRepo br = BioimageioRepo.connect();
-
-		ModelDescriptor descriptor = br.selectByName(modelName);
-		if (descriptor == null)
-			descriptor = br.selectByID(modelName);
+		if (ID_EQUIVALENCE.get(modelName) != null)
+			modelName = ID_EQUIVALENCE.get(modelName);
+		ModelDescriptor descriptor = BioimageioDirectConnection.selectByID(modelName);
 		if (descriptor == null) {
-			throw new IllegalArgumentException("The model does not correspond to on of the available pretrained StarDist2D models."
+			throw new IllegalArgumentException("The model does not correspond to one of the available pretrained StarDist2D models."
 					+ " To find a list of available cellpose models, please run StarDist2D.getPretrainedList()");
 		}
 		return BioimageioRepo.downloadModel(descriptor, downloadDir, progressConsumer);

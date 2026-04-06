@@ -1,128 +1,55 @@
+/*-
+ * #%L
+ * Use deep learning frameworks from Java in an agnostic and isolated way.
+ * %%
+ * Copyright (C) 2022 - 2026 Institut Pasteur and BioImage.IO developers.
+ * %%
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ * 
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ * 
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ * #L%
+ */
 package io.bioimage.modelrunner.gui;
 
 import java.awt.Color;
-import java.awt.Dimension;
-import java.awt.FlowLayout;
-import java.awt.Font;
-import java.awt.GridBagConstraints;
-import java.awt.GridBagLayout;
 import java.io.File;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
-import javax.swing.BorderFactory;
-import javax.swing.JButton;
-import javax.swing.JPanel;
 import javax.swing.SwingUtilities;
-import javax.swing.border.Border;
-import javax.swing.border.TitledBorder;
 
 import io.bioimage.modelrunner.bioimageio.description.ModelDescriptor;
+import io.bioimage.modelrunner.gui.adapter.GuiAdapter;
 
-public class ModelSelectionPanel extends JPanel {
+public class ModelSelectionPanel extends ModelSelectionPanelGui {
 
 	private static final long serialVersionUID = 6264134076603842497L;
-	
-    private final long parentHeight;
-    private final long parentWidth;
-    private String defaultString = Gui.LOADING_STR;
-    private JPanel modelCarouselPanel;
-    private ModelCard prevModelPanel;
-    private ModelCard selectedModelPanel;
-    private ModelCard nextModelPanel;
-    protected JButton nextButton;
-    protected JButton prevButton;
-    private TitledBorder lineBorder;
     
 
     private List<String> modelNames;
     private List<String> modelNicknames;
     private List<URL> modelImagePaths;
     private List<ModelDescriptor> models;
-	
-	protected static Map<String, URL> ICONS_DISPLAYED = new ConcurrentHashMap<>();
-	
-	private static final String PREV_ICON = "prev";
-	private static final String MAIN_ICON = "main";
-	private static final String NEXT_ICON = "next";
 
-    private static final double CARD_VRATIO = 0.8;
-    private static final double CARD_HRATIO = 0.33;
-    private static final double CARR_VRATIO = 0.95;
-    private static final double SELECTION_PANE_VRATIO = 0.35;
-    private static final double ARROWS_VRATIO = 0.05;
-    protected static final double MAIN_CARD_RT = 1;
-    protected static final double SECOND_CARD_RT = 0.8;
-
-	protected ModelSelectionPanel(int parentWidth, int parentHeight) {
-        super(new GridBagLayout());
-        this.parentWidth = parentWidth;
-        this.parentHeight= parentHeight;
+	/**
+	 * Creates a new ModelSelectionPanel.
+	 *
+	 * @param adapter the adapter parameter.
+	 */
+	protected ModelSelectionPanel(GuiAdapter adapter) {
+        super(adapter);
         this.setBackground(new Color(236, 240, 241));
-        lineBorder = BorderFactory.createTitledBorder(BorderFactory.createLineBorder(Color.gray, 2, true), 
-        		Gui.LOCAL_STR);
-        Border paddingBorder = BorderFactory.createEmptyBorder(2, 2, 2, 2);
-        this.setBorder(BorderFactory.createCompoundBorder(paddingBorder,lineBorder));
-        this.setPreferredSize(new Dimension(parentWidth, (int) (parentHeight * SELECTION_PANE_VRATIO)));
-
-        modelCarouselPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 5, 0));
-        modelCarouselPanel.setBackground(new Color(236, 240, 241));
-        modelCarouselPanel.setPreferredSize(new Dimension(parentWidth, (int) (parentHeight * SELECTION_PANE_VRATIO * CARR_VRATIO)));
-        
-        int cardHeight = (int) (this.parentHeight * SELECTION_PANE_VRATIO * CARD_VRATIO);
-        int cardWidth = (int) (parentWidth * CARD_HRATIO);
-        prevModelPanel = ModelCard.createModelCard(cardWidth, cardHeight, SECOND_CARD_RT);
-        prevModelPanel.setOptionalID(PREV_ICON);
-        selectedModelPanel = ModelCard.createModelCard(cardWidth, cardHeight, MAIN_CARD_RT);
-        selectedModelPanel.setOptionalID(MAIN_ICON);
-        nextModelPanel = ModelCard.createModelCard(cardWidth, cardHeight, SECOND_CARD_RT);
-        nextModelPanel.setOptionalID(NEXT_ICON);
-
-        modelCarouselPanel.add(prevModelPanel);
-        modelCarouselPanel.add(selectedModelPanel);
-        modelCarouselPanel.add(nextModelPanel);
-
-        int btnWidth = (int) (this.parentWidth / 2);
-        int btnHeight = (int) (this.parentHeight * SELECTION_PANE_VRATIO * ARROWS_VRATIO);
-        prevButton = new JButton("◀");
-        prevButton.setFont(new Font("SansSerif", Font.BOLD, 10));
-        prevButton.setPreferredSize(new Dimension(btnWidth, btnHeight));
-
-        nextButton = new JButton("▶");
-        nextButton.setFont(new Font("SansSerif", Font.BOLD, 10));
-        nextButton.setPreferredSize(new Dimension(btnWidth, btnHeight));
-
-        JPanel navigationPanel = new JPanel(new GridBagLayout());
-        GridBagConstraints gbcb = new GridBagConstraints();
-        gbcb.gridy = 0;
-        gbcb.weightx = 1;
-        gbcb.weighty = 1;
-        gbcb.fill = GridBagConstraints.HORIZONTAL;
-        
-        navigationPanel.setPreferredSize(new Dimension(parentWidth, btnHeight));
-        navigationPanel.setBackground(new Color(236, 240, 241));
-        gbcb.gridx = 0;
-        navigationPanel.add(prevButton, gbcb);
-        gbcb.gridx = 1;
-        navigationPanel.add(nextButton, gbcb);
-
-        GridBagConstraints gbc = new GridBagConstraints();
-        gbc.gridx = 0;
-        gbc.weightx = 1;
-        gbc.fill = GridBagConstraints.BOTH;
-        gbc.ipady = 10;
-        
-        gbc.gridy = 0;
-        gbc.weighty = 20;
-        this.add(modelCarouselPanel, gbc);
-        gbc.gridy = 1;
-        gbc.weighty = 0;
-        this.add(navigationPanel, gbc);
 	}
     
     private void setCardsData() {
@@ -151,6 +78,11 @@ public class ModelSelectionPanel extends JPanel {
     	}).collect(Collectors.toList());
     }
     
+    /**
+     * Sets models.
+     *
+     * @param models the models parameter.
+     */
     protected void setModels(List<ModelDescriptor> models) {
     	this.models = models;
     	setCardsData();
@@ -160,6 +92,12 @@ public class ModelSelectionPanel extends JPanel {
     		SwingUtilities.invokeLater(() -> redrawModelCards(0));
     }
     
+    /**
+     * Sets model at.
+     *
+     * @param model the model parameter.
+     * @param pos the pos parameter.
+     */
     protected void setModelAt(ModelDescriptor model, int pos) {
     	Objects.requireNonNull(model);
     	if (pos > models.size())
@@ -193,42 +131,41 @@ public class ModelSelectionPanel extends JPanel {
 		}
     }
     
+    /**
+     * Executes redraw model cards.
+     *
+     * @param currentIndex the currentIndex parameter.
+     */
     protected void redrawModelCards(int currentIndex) {
-    	ICONS_DISPLAYED.put(PREV_ICON, modelImagePaths.get(getWrappedIndex(currentIndex - 1)));
+    	boolean prevSupported = true;
+    	boolean mainSupported = true;
+    	boolean nextSupported = true;
+    	int prevInd = getWrappedIndex(currentIndex - 1);
+    	int nextInd = getWrappedIndex(currentIndex + 1);
+    	if (models.get(prevInd) != null
+    			&& models.get(prevInd).getModelFamily().equals(ModelDescriptor.BIOIMAGEIO))
+    		prevSupported = !Gui.UNSUPPORTED_MODELS.contains(models.get(prevInd).getNickname()) 
+    					&& (models.get(prevInd).getWeights().getAllSuportedWeightNames().size() != 0);
+    	if (models.get(currentIndex) != null
+    			&& models.get(currentIndex).getModelFamily().equals(ModelDescriptor.BIOIMAGEIO))
+    		mainSupported = !Gui.UNSUPPORTED_MODELS.contains(models.get(currentIndex).getNickname()) 
+					&& models.get(currentIndex).getWeights().getAllSuportedWeightNames().size() != 0;
+    	if (models.get(getWrappedIndex(currentIndex + 1)) != null
+    			&& models.get(nextInd).getModelFamily().equals(ModelDescriptor.BIOIMAGEIO))
+    		nextSupported = !Gui.UNSUPPORTED_MODELS.contains(models.get(nextInd).getNickname()) 
+					&& models.get(nextInd).getWeights().getAllSuportedWeightNames().size() != 0;
         prevModelPanel.updateCard(modelNames.get(getWrappedIndex(currentIndex - 1)),
                 modelNicknames.get(getWrappedIndex(currentIndex - 1)),
-                modelImagePaths.get(getWrappedIndex(currentIndex - 1)));
-    	ICONS_DISPLAYED.put(MAIN_ICON, modelImagePaths.get(getWrappedIndex(currentIndex)));
+                modelImagePaths.get(getWrappedIndex(currentIndex - 1)),
+                prevSupported);
         selectedModelPanel.updateCard(modelNames.get(currentIndex),
                 modelNicknames.get(currentIndex),
-                modelImagePaths.get(currentIndex));
-    	ICONS_DISPLAYED.put(NEXT_ICON, modelImagePaths.get(getWrappedIndex(currentIndex + 1)));
+                modelImagePaths.get(currentIndex),
+                mainSupported);
         nextModelPanel.updateCard(modelNames.get(getWrappedIndex(currentIndex + 1)),
                 modelNicknames.get(getWrappedIndex(currentIndex + 1)),
-                modelImagePaths.get(getWrappedIndex(currentIndex + 1)));
-
-        modelCarouselPanel.revalidate();
-        modelCarouselPanel.repaint();
-    }
-    
-    protected void setBorderLabel(String text) {
-    	lineBorder.setTitle(text);
-    	this.validate();
-    	this.repaint();
-    }
-    
-    protected void setArrowsEnabled(boolean enabled) {
-    	nextButton.setEnabled(enabled);
-    	prevButton.setEnabled(enabled);
-    }
-    
-    protected void setLocalBorder() {
-    	setBorderLabel(Gui.LOCAL_STR);
-    }
-
-    
-    protected void setBMZBorder() {
-    	setBorderLabel(Gui.BIOIMAGEIO_STR);
+                modelImagePaths.get(getWrappedIndex(currentIndex + 1)),
+                nextSupported);
     }
 
     private int getWrappedIndex(int index) {
@@ -236,27 +173,39 @@ public class ModelSelectionPanel extends JPanel {
         return size == 0 ? size : (index % size + size) % size;
     }
     
+    /**
+     * Gets model names.
+     *
+     * @return the resulting list.
+     */
     public List<String> getModelNames() {
     	return this.modelNames;
     }
     
+    /**
+     * Gets model nicknames.
+     *
+     * @return the resulting list.
+     */
     public List<String> getModelNicknames() {
     	return this.modelNicknames;
     }
     
+    /**
+     * Gets cover paths.
+     *
+     * @return the resulting list.
+     */
     public List<URL> getCoverPaths() {
     	return this.modelImagePaths;
     }
     
+    /**
+     * Gets models.
+     *
+     * @return the resulting list.
+     */
     public List<ModelDescriptor> getModels() {
     	return this.models;
-    }
-    
-    protected void setLoading() {
-    	defaultString = Gui.LOADING_STR;
-    }
-    
-    protected void setNotFound() {
-    	defaultString = Gui.NOT_FOUND_STR;
     }
 }

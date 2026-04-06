@@ -2,7 +2,7 @@
  * #%L
  * Use deep learning frameworks from Java in an agnostic and isolated way.
  * %%
- * Copyright (C) 2022 - 2024 Institut Pasteur and BioImage.IO developers.
+ * Copyright (C) 2022 - 2026 Institut Pasteur and BioImage.IO developers.
  * %%
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -48,10 +48,23 @@ public class MultiFileDownloader {
 	
 	private Consumer<Double> partialProgress;
 	
+	/**
+	 * Creates a new MultiFileDownloader.
+	 *
+	 * @param urls the urls parameter.
+	 * @param folder the folder parameter.
+	 */
 	public MultiFileDownloader(List<URL> urls, File folder) {
 		this(urls, folder, Thread.currentThread());
 	}
 	
+	/**
+	 * Creates a new MultiFileDownloader.
+	 *
+	 * @param urls the urls parameter.
+	 * @param folder the folder parameter.
+	 * @param thread the thread parameter.
+	 */
 	public MultiFileDownloader(List<URL> urls, File folder, Thread thread) {
 		this.urls = urls;
 		this.folder = folder;
@@ -76,26 +89,57 @@ public class MultiFileDownloader {
 		this.totalSize = size;
 	}
 	
+	/**
+	 * Gets folder.
+	 *
+	 * @return the resulting value.
+	 */
 	public File getFolder() {
 		return this.folder;
 	}
 	
+	/**
+	 * Gets total size.
+	 *
+	 * @return the resulting numeric value.
+	 */
 	public long getTotalSize() {
 		return this.totalSize;
 	}
 	
+	/**
+	 * Gets downloaded bytes.
+	 *
+	 * @return the resulting numeric value.
+	 */
 	public long getDownloadedBytes() {
 		return this.progressSize.get();
 	}
 	
+	/**
+	 * Sets total progress consumer.
+	 *
+	 * @param totalProgress the totalProgress parameter.
+	 */
 	public void setTotalProgressConsumer(Consumer<Long> totalProgress) {
 		this.totalProgress = totalProgress;
 	}
 	
+	/**
+	 * Sets partial progress consumer.
+	 *
+	 * @param partialProgress the partialProgress parameter.
+	 */
 	public void setPartialProgressConsumer(Consumer<Double> partialProgress) {
 		this.partialProgress = partialProgress;
 	}
 	
+	/**
+	 * Executes download.
+	 *
+	 * @throws ExecutionException if a ExecutionException occurs while executing this method.
+	 * @throws InterruptedException if the current thread is interrupted while waiting for the operation to finish.
+	 */
 	public void download() throws ExecutionException, InterruptedException {
         ExecutorService downloadExecutor = Executors.newFixedThreadPool(3);
         ScheduledExecutorService monitorExecutor = Executors.newScheduledThreadPool(1);

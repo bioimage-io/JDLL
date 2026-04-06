@@ -2,7 +2,7 @@
  * #%L
  * Use deep learning frameworks from Java in an agnostic and isolated way.
  * %%
- * Copyright (C) 2022 - 2024 Institut Pasteur and BioImage.IO developers.
+ * Copyright (C) 2022 - 2026 Institut Pasteur and BioImage.IO developers.
  * %%
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -1174,10 +1174,9 @@ public class EngineInfo
 	}
 	
 	/**
-	 * 
-	 * @return the server url where the bioengine is hosted.
-	 * @throws IllegalArgumentException if the method is called when the {@link EngineInfo}
-	 * 	object has not been created for the Bioengine, with the method {@link #defineBioengine(String)}
+	 * Gets server.
+	 *
+	 * @return the resulting string.
 	 */
 	public String getServer() {
 		if (!isBioengine())

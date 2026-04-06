@@ -2,7 +2,7 @@
  * #%L
  * Use deep learning frameworks from Java in an agnostic and isolated way.
  * %%
- * Copyright (C) 2022 - 2024 Institut Pasteur and BioImage.IO developers.
+ * Copyright (C) 2022 - 2026 Institut Pasteur and BioImage.IO developers.
  * %%
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -66,13 +66,18 @@ public class ParentLastURLClassLoader extends URLClassLoader {
 		}
 
 	    @Override
-	    /**
-	     * {@inheritDoc}
-	     * 
-	     * For the parent-last classloader, first, if the class is already loaded, just recovers
-	     * it, and if it has to laod it, it tries first to load the class from the JARs,
-	     * and if it is not possible, it falls back to the parent classloader
-	     */
+		/**
+		 * {@inheritDoc}
+		 *
+		 * For the parent-last classloader, first, if the class is already loaded, just recovers
+		 * it, and if it has to laod it, it tries first to load the class from the JARs,
+		 * and if it is not possible, it falls back to the parent classloader
+		 *
+		 * @param name the name parameter.
+		 * @param resolve the resolve parameter.
+		 * @return the resulting value.
+		 * @throws ClassNotFoundException if a ClassNotFoundException occurs while executing this method.
+		 */
 		protected synchronized Class<?> loadClass(String name, boolean resolve)
 				throws ClassNotFoundException {
 			// First, check if the class has already been loaded
@@ -135,8 +140,11 @@ public class ParentLastURLClassLoader extends URLClassLoader {
 		@Override
 		/**
 		 * {@inheritDoc}
-		 * 
+		 *
 		 * The child classloader resource has a bigger priority
+		 *
+		 * @param name the name parameter.
+		 * @return the resulting value.
 		 */
 		public URL getResource(String name) {
 			URL url = findResource(name);
@@ -151,9 +159,13 @@ public class ParentLastURLClassLoader extends URLClassLoader {
 	    
 	    /**
 	     * {@inheritDoc}
-	     * 
+	     *
 	     * This custom classloader checks first if the resources can be found in any of the
 	     * urls provided in the constructor
+	     *
+	     * @param name the name parameter.
+	     * @return the resulting value.
+	     * @throws IOException if an I/O error occurs.
 	     */
 	    @Override
 		public Enumeration<URL> getResources(String name) throws IOException {
@@ -188,10 +200,20 @@ public class ParentLastURLClassLoader extends URLClassLoader {
 			return new Enumeration<URL>() {
 				Iterator<URL> iter = urls.iterator();
 
+				/**
+				 * Executes has more elements.
+				 *
+				 * @return true if the operation succeeds; otherwise, false.
+				 */
 				public boolean hasMoreElements() {
 					return iter.hasNext();
 				}
 
+				/**
+				 * Executes next element.
+				 *
+				 * @return the resulting value.
+				 */
 				public URL nextElement() {
 					return iter.next();
 				}

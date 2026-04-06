@@ -1,29 +1,20 @@
 /*-
  * #%L
- * Appose: multi-language interprocess cooperation with shared memory.
+ * Use deep learning frameworks from Java in an agnostic and isolated way.
  * %%
- * Copyright (C) 2023 Appose developers.
+ * Copyright (C) 2022 - 2026 Institut Pasteur and BioImage.IO developers.
  * %%
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are met:
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  * 
- * 1. Redistributions of source code must retain the above copyright notice,
- *    this list of conditions and the following disclaimer.
- * 2. Redistributions in binary form must reproduce the above copyright notice,
- *    this list of conditions and the following disclaimer in the documentation
- *    and/or other materials provided with the distribution.
+ *      http://www.apache.org/licenses/LICENSE-2.0
  * 
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
- * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDERS OR CONTRIBUTORS BE
- * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
- * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
- * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
- * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
- * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- * POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  * #L%
  */
 
@@ -42,6 +33,8 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
+
+import io.bioimage.modelrunner.system.PlatformDetection;
 
 
 //TODO remove once appose project is released with the needed changes
@@ -74,6 +67,12 @@ public class Service implements AutoCloseable {
 
 	private Consumer<String> debugListener;
 
+	/**
+	 * Creates a new Service.
+	 *
+	 * @param cwd the cwd parameter.
+	 * @param args the args parameter.
+	 */
 	public Service(File cwd, String... args) {
 		this.cwd = cwd;
 		this.args = args.clone();
@@ -115,6 +114,15 @@ public class Service implements AutoCloseable {
 
 		String prefix = "Appose-Service-" + serviceID;
 		ProcessBuilder pb = new ProcessBuilder(args).directory(cwd);
+		pb.environment().keySet().removeIf(key ->
+		     key.equalsIgnoreCase("PATH")
+		  || key.equalsIgnoreCase("PYTHONPATH")
+		  || key.equalsIgnoreCase("PYTHONHOME")
+		);
+		pb.environment().put("PATH", "");
+		pb.environment().put("PYTHONHOME", "");
+		if (PlatformDetection.isMacOS() && PlatformDetection.getArch().equals(PlatformDetection.ARCH_ARM64))
+			pb.environment().put("PYTORCH_ENABLE_MPS_FALLBACK", "1");
 		envMap.entrySet().stream().forEach(ee -> {
 			if (ee.getValue() == null && pb.environment().get(ee.getKey()) != null)
 				pb.environment().remove(ee.getKey());
@@ -302,6 +310,11 @@ public class Service implements AutoCloseable {
 			tasks.put(uuid, this);
 		}
 
+		/**
+		 * Executes start.
+		 *
+		 * @return the resulting value.
+		 */
 		public synchronized Task start() {
 			if (status != TaskStatus.INITIAL) throw new IllegalStateException();
 			status = TaskStatus.QUEUED;
@@ -326,6 +339,11 @@ public class Service implements AutoCloseable {
 			listeners.add(listener);
 		}
 
+		/**
+		 * Executes wait for.
+		 *
+		 * @throws InterruptedException if the current thread is interrupted while waiting for the operation to finish.
+		 */
 		public synchronized void waitFor() throws InterruptedException {
 			if (status == TaskStatus.INITIAL) start();
 			if (status != TaskStatus.QUEUED && status != TaskStatus.RUNNING) return;
@@ -414,6 +432,11 @@ public class Service implements AutoCloseable {
 			}
 		}
 
+		/**
+		 * Executes to string.
+		 *
+		 * @return the resulting string.
+		 */
 		@Override
 		public String toString() {
 			return String.format("uuid=%s, status=%s, message=%s, current=%d, maximum=%d, error=%s",

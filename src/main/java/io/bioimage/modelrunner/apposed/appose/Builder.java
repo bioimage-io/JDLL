@@ -1,29 +1,20 @@
 /*-
  * #%L
- * Appose: multi-language interprocess cooperation with shared memory.
+ * Use deep learning frameworks from Java in an agnostic and isolated way.
  * %%
- * Copyright (C) 2023 Appose developers.
+ * Copyright (C) 2022 - 2026 Institut Pasteur and BioImage.IO developers.
  * %%
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are met:
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  * 
- * 1. Redistributions of source code must retain the above copyright notice,
- *    this list of conditions and the following disclaimer.
- * 2. Redistributions in binary form must reproduce the above copyright notice,
- *    this list of conditions and the following disclaimer in the documentation
- *    and/or other materials provided with the distribution.
+ *      http://www.apache.org/licenses/LICENSE-2.0
  * 
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
- * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDERS OR CONTRIBUTORS BE
- * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
- * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
- * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
- * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
- * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- * POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  * #L%
  */
 
@@ -33,8 +24,6 @@ import java.io.File;
 import java.io.IOException;
 import java.net.URISyntaxException;
 
-import org.apache.commons.compress.archivers.ArchiveException;
-
 //TODO remove once appose project is released with the needed changes
 //TODO remove once appose project is released with the needed changes
 //TODO remove once appose project is released with the needed changes
@@ -43,6 +32,11 @@ import org.apache.commons.compress.archivers.ArchiveException;
 public class Builder {
 	
 
+	/**
+	 * Executes build.
+	 *
+	 * @return the resulting value.
+	 */
 	public Environment build() {
 		String base = baseDir.getPath();
 		boolean useSystemPath = systemPath;
@@ -67,8 +61,6 @@ public class Builder {
 			throw new RuntimeException(e);
 		} catch (InterruptedException e) {
 			throw new RuntimeException(e);
-		} catch (ArchiveException e) {
-			throw new RuntimeException(e);
 		} catch (URISyntaxException e) {
 			throw new RuntimeException(e);
 		} catch (MambaInstallException e) {
@@ -85,6 +77,11 @@ public class Builder {
 
 	private boolean systemPath;
 
+	/**
+	 * Executes use system path.
+	 *
+	 * @return the resulting value.
+	 */
 	public Builder useSystemPath() {
 		systemPath = true;
 		return this;
@@ -92,6 +89,12 @@ public class Builder {
 
 	private File baseDir;
 
+	/**
+	 * Executes base.
+	 *
+	 * @param directory the directory parameter.
+	 * @return the resulting value.
+	 */
 	public Builder base(File directory) {
 		baseDir = directory;
 		return this;
@@ -101,6 +104,12 @@ public class Builder {
 
 	private File condaEnvironmentYaml;
 
+	/**
+	 * Executes conda.
+	 *
+	 * @param environmentYaml the environmentYaml parameter.
+	 * @return the resulting value.
+	 */
 	public Builder conda(File environmentYaml) {
 		this.condaEnvironmentYaml = environmentYaml;
 		return this;
@@ -111,6 +120,13 @@ public class Builder {
 	private String javaVendor;
 	private String javaVersion;
 
+	/**
+	 * Executes java.
+	 *
+	 * @param vendor the vendor parameter.
+	 * @param version the version parameter.
+	 * @return the resulting value.
+	 */
 	public Builder java(String vendor, String version) {
 		this.javaVendor = vendor;
 		this.javaVersion = version;

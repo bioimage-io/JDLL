@@ -2,7 +2,7 @@
  * #%L
  * Use deep learning frameworks from Java in an agnostic and isolated way.
  * %%
- * Copyright (C) 2022 - 2024 Institut Pasteur and BioImage.IO developers.
+ * Copyright (C) 2022 - 2026 Institut Pasteur and BioImage.IO developers.
  * %%
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -107,14 +107,29 @@ public class TransformSpec
     	return transform;
     }
     
+    /**
+     * Gets kwargs key.
+     *
+     * @return the resulting string.
+     */
     public static String getKwargsKey() {
     	return KWARGS_KEY;
     }
     
+    /**
+     * Gets transformation name key.
+     *
+     * @return the resulting string.
+     */
     public static String getTransformationNameKey() {
     	return TRANSFORMATION_NAME_KEY;
     }
 
+    /**
+     * Executes to string.
+     *
+     * @return the resulting string.
+     */
     @Override
     public String toString()
     {

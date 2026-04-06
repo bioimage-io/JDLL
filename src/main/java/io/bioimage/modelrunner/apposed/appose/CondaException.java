@@ -2,7 +2,7 @@
  * #%L
  * Use deep learning frameworks from Java in an agnostic and isolated way.
  * %%
- * Copyright (C) 2022 - 2024 Institut Pasteur and BioImage.IO developers.
+ * Copyright (C) 2022 - 2026 Institut Pasteur and BioImage.IO developers.
  * %%
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -66,7 +66,7 @@ public class CondaException
 		 *            {@link #getMessage()} method).
 		 * @param cause
 		 *            the cause (which is saved for later retrieval by the
-		 *            {@link #getCause()} method). (A <tt>null</tt> value is permitted,
+		 *            {@link #getCause()} method). (A {@code null} value is permitted,
 		 *            and indicates that the cause is nonexistent or unknown.)
 		 * @since 1.4
 		 */
@@ -77,14 +77,14 @@ public class CondaException
 
 		/**
 		 * Constructs a new exception with the specified cause and a detail message of
-		 * <tt>(cause==null ? null : cause.toString())</tt> (which typically contains
-		 * the class and detail message of <tt>cause</tt>). This constructor is useful
+		 * {@code (cause==null ? null : cause.toString())} (which typically contains
+		 * the class and detail message of {@code cause}). This constructor is useful
 		 * for exceptions that are little more than wrappers for other throwables (for
 		 * example, {@link java.security.PrivilegedActionException}).
 		 *
 		 * @param cause
 		 *            the cause (which is saved for later retrieval by the
-		 *            {@link #getCause()} method). (A <tt>null</tt> value is permitted,
+		 *            {@link #getCause()} method). (A {@code null} value is permitted,
 		 *            and indicates that the cause is nonexistent or unknown.)
 		 * @since 1.4
 		 */
