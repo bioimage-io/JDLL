@@ -138,12 +138,11 @@
 			<groupId>net.java.dev.jna</groupId>
 			<artifactId>jna</artifactId>
 		</dependency>
-		<!-- APPOSE DEPS-->
 		<dependency>
-		    <groupId>org.apache.commons</groupId>
-		    <artifactId>commons-compress</artifactId>
-		</dependency>
-		<!-- APPOSE DEPS-->
+	    	<groupId>org.apposed</groupId>
+	    	<artifactId>appose</artifactId>
+	    	<version>0.8.0</version>
+	  	</dependency>
 	</dependencies>
 	<build>
   		<resources>
