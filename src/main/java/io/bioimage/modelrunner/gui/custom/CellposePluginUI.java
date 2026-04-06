@@ -29,6 +29,8 @@ import javax.swing.SwingUtilities;
 import javax.swing.event.PopupMenuEvent;
 import javax.swing.event.PopupMenuListener;
 
+import org.apposed.appose.BuildException;
+
 import io.bioimage.modelrunner.exceptions.LoadModelException;
 import io.bioimage.modelrunner.exceptions.RunModelException;
 import io.bioimage.modelrunner.gui.EnvironmentInstaller;
@@ -248,7 +250,7 @@ public class CellposePluginUI extends CellposeGUI implements ActionListener {
     	this.consumer.notifyParams(map);
     }
     
-    private < T extends RealType< T > & NativeType< T > > void runCellpose() throws IOException, RunModelException, LoadModelException {
+    private < T extends RealType< T > & NativeType< T > > void runCellpose() throws RunModelException, LoadModelException, BuildException, IOException {
     	saveParams();
     	startModelInstallation(true);
     	String modelPath = (String) this.modelComboBox.getSelectedItem();

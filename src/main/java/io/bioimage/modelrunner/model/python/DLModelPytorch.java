@@ -22,9 +22,10 @@
  */
 package io.bioimage.modelrunner.model.python;
 
-import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
+
+import org.apposed.appose.BuildException;
 
 /**
  * Class that contains the methods to use a Pytorch model from JDLL.
@@ -45,10 +46,10 @@ public class DLModelPytorch extends DLModelPytorchProtected {
 	 * @param importModule the importModule parameter.
 	 * @param weightsPath the weightsPath parameter.
 	 * @param kwargs the kwargs parameter.
-	 * @throws IOException if an I/O error occurs.
+	 * @throws BuildException  if there is any error building the environment
 	 */
 	protected DLModelPytorch(String modelFile, String callable, String importModule, String weightsPath, Map<String, Object> kwargs)
-			throws IOException {
+			throws BuildException {
 		super(modelFile, callable, importModule, weightsPath, kwargs);
 	}
 
@@ -64,10 +65,10 @@ public class DLModelPytorch extends DLModelPytorchProtected {
 	 * @param modelPath
 	 * 	path to the Pytorch weights
 	 * @return a Java class that can do inference using a Python Pytorch model
-	 * @throws IOException if there is any error trying to run Python from Java
+	 * @throws BuildException if there is any error trying to run Python from Java
 	 */
 	public static DLModelPytorch create(String modelClass, String callable, String importModule, 
-			String modelPath) throws IOException {
+			String modelPath) throws BuildException {
 		return create(modelClass, callable, importModule, modelPath, new HashMap<String, Object>());
 	}
 
@@ -85,10 +86,10 @@ public class DLModelPytorch extends DLModelPytorchProtected {
 	 * @param kwargs
 	 * 	other kwargs that might be needed to instantiate the model
 	 * @return a Java class that can do inference using a Python Pytorch model
-	 * @throws IOException if there is any error trying to run Python from Java
+	 * @throws BuildException if there is any error building the environment
 	 */
 	public static DLModelPytorch create(String modelClass, String callable, String importModule, 
-			String modelPath, Map<String, Object> kwargs) throws IOException {
+			String modelPath, Map<String, Object> kwargs) throws BuildException {
 		return new DLModelPytorch(modelClass, callable, importModule, modelPath, kwargs);
 	}
 }

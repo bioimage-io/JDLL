@@ -30,8 +30,8 @@ import java.util.List;
 import java.util.Map;
 
 import org.apache.commons.compress.archivers.ArchiveException;
+import org.apposed.appose.BuildException;
 
-import io.bioimage.modelrunner.apposed.appose.MambaInstallException;
 import io.bioimage.modelrunner.bioimageio.description.ModelDescriptor;
 import io.bioimage.modelrunner.bioimageio.description.ModelDescriptorFactory;
 import io.bioimage.modelrunner.bioimageio.description.weights.ModelWeight;
@@ -67,10 +67,10 @@ public class BioimageIoModelPytorch extends BioimageIoModelPytorchProtected {
 	 * @param weightsPath the weightsPath parameter.
 	 * @param kwargs the kwargs parameter.
 	 * @param descriptor the descriptor parameter.
-	 * @throws IOException if an I/O error occurs.
+	 * @throws BuildException if there is any error building the environment
 	 */
 	protected BioimageIoModelPytorch(String modelFile, String callable, String importModule, String weightsPath, Map<String, Object> kwargs,
-			ModelDescriptor descriptor) throws IOException {
+			ModelDescriptor descriptor) throws BuildException {
 		super(modelFile, callable, importModule, weightsPath, kwargs, descriptor);
 	}
 
@@ -80,9 +80,9 @@ public class BioimageIoModelPytorch extends BioimageIoModelPytorchProtected {
 	 * @param descriptor
 	 * 	the Bioimage.io {@link ModelDescriptor}
 	 * @return a model from the Bioaimge.io that can be run in Pytorch.
-	 * @throws IOException if there is any error connecting with Python
+	 * @throws BuildException if there is any error building the environment
 	 */
-	public static BioimageIoModelPytorch create(ModelDescriptor descriptor) throws IOException {
+	public static BioimageIoModelPytorch create(ModelDescriptor descriptor) throws BuildException {
 		if (descriptor.getWeights().getModelWeights(ModelWeight.getPytorchID()) == null)
 			throw new IllegalArgumentException("The model provided does not have weights in the required format, "
 					+ ModelWeight.getPytorchID() + ".");
@@ -102,9 +102,10 @@ public class BioimageIoModelPytorch extends BioimageIoModelPytorchProtected {
 	 * @param modelPath
 	 * 	path to the Bioimage.io model
 	 * @return a model from the Bioaimge.io that can be run in Pytorch.
-	 * @throws IOException if there is any error connecting with Python
+	 * @throws IOException if there is any error reading the yaml file
+	 * @throws BuildException if there is any error building the environment
 	 */
-	public static BioimageIoModelPytorch create(String modelPath) throws IOException {
+	public static BioimageIoModelPytorch create(String modelPath) throws IOException, BuildException {
 		return create(ModelDescriptorFactory.readFromLocalFile(modelPath + File.separator + Constants.RDF_FNAME));
 	}
 	
@@ -121,8 +122,9 @@ public class BioimageIoModelPytorch extends BioimageIoModelPytorchProtected {
 	 * @throws MambaInstallException if a MambaInstallException occurs while executing this method.
 	 * @throws ArchiveException if a ArchiveException occurs while executing this method.
 	 * @throws URISyntaxException if a URISyntaxException occurs while executing this method.
+	 * @throws BuildException if there is any error building the environment
 	 */
-	public static <T extends NativeType<T> & RealType<T>> void main(String[] args) throws IOException, LoadEngineException, RunModelException, LoadModelException, InterruptedException, RuntimeException, MambaInstallException, ArchiveException, URISyntaxException {
+	public static <T extends NativeType<T> & RealType<T>> void main(String[] args) throws IOException, LoadEngineException, RunModelException, LoadModelException, InterruptedException, RuntimeException, ArchiveException, URISyntaxException, BuildException {
 		
 		String mm = "/home/carlos/git/deepimagej-plugin/models/OC1 Project 11 Cellpose_24022025_131039";
 		Img<T> im = Cast.unchecked(ArrayImgs.floats(new long[] {1, 1, 1024, 1024}));

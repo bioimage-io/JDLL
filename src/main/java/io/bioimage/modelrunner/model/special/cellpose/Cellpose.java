@@ -37,6 +37,8 @@ import java.util.function.Consumer;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
+import org.apposed.appose.BuildException;
+
 import io.bioimage.modelrunner.bioimageio.BioimageioRepo;
 import io.bioimage.modelrunner.bioimageio.description.ModelDescriptor;
 import io.bioimage.modelrunner.bioimageio.description.ModelDescriptorFactory;
@@ -154,9 +156,10 @@ public class Cellpose extends BioimageIoModelPytorchProtected {
 	 * @param kwargs the kwargs parameter.
 	 * @param descriptor the descriptor parameter.
 	 * @throws IOException if an I/O error occurs.
+	 * @throws BuildException if there is any error building the environment
 	 */
 	protected Cellpose(String modelFile, String callable, String weightsPath, 
-			Map<String, Object> kwargs, ModelDescriptor descriptor) throws IOException {
+			Map<String, Object> kwargs, ModelDescriptor descriptor) throws BuildException, IOException {
 		super(modelFile, callable, null, weightsPath, kwargs, descriptor, true);
     	createPythonService();
 	}
@@ -415,8 +418,9 @@ public class Cellpose extends BioimageIoModelPytorchProtected {
 	 * 	path to the weights of a pretrained cellpose model
 	 * @return an instance of a Stardist2D model ready to be used
      * @throws IOException If there's an I/O error.
+	 * @throws BuildException if there is any error building the environment
 	 */
-	public static Cellpose init(String weightsPath) throws IOException {
+	public static Cellpose init(String weightsPath) throws IOException, BuildException {
 		File wFile = new File(weightsPath);
 		if (wFile.isDirectory() && new File(wFile, Constants.RDF_FNAME).isFile())
 			return init(ModelDescriptorFactory.readFromLocalFile(new File(wFile, Constants.RDF_FNAME).getAbsolutePath()));
@@ -443,8 +447,9 @@ public class Cellpose extends BioimageIoModelPytorchProtected {
 	 * 	the bioimage.io model descriptor
 	 * @return an instance of a Stardist2D model ready to be used
      * @throws IOException If there's an I/O error.
+	 * @throws BuildException if there is any error building the environment
 	 */
-	public static Cellpose init(ModelDescriptor descriptor) throws IOException {
+	public static Cellpose init(ModelDescriptor descriptor) throws IOException, BuildException {
 		if (descriptor.getTags().stream().filter(tt -> tt.toLowerCase().equals("cellpose")).findFirst().orElse(null) == null
 				&& !descriptor.getName().toLowerCase().contains("cellpose"))
 			throw new RuntimeException("This model does not seem to be a cellpose model from the Bioimage.io");
@@ -472,8 +477,9 @@ public class Cellpose extends BioimageIoModelPytorchProtected {
 	 * @throws IOException if there is any error downloading the model, in the case it is needed
 	 * @throws InterruptedException if the download of the model is stopped
 	 * @throws ExecutionException if there is an error downloading the model
+	 * @throws BuildException if there is any error building the environment
 	 */
-	public static Cellpose fromPretained(String pretrainedModel, boolean install) throws IOException, InterruptedException, ExecutionException {
+	public static Cellpose fromPretained(String pretrainedModel, boolean install) throws IOException, InterruptedException, ExecutionException, BuildException {
 		return fromPretained(pretrainedModel, new File("models").getAbsolutePath(), install);
 	}
 	
@@ -490,9 +496,10 @@ public class Cellpose extends BioimageIoModelPytorchProtected {
 	 * @throws IOException if there is any error downloading the model, in the case it is needed
 	 * @throws InterruptedException if the download of the model is stopped
 	 * @throws ExecutionException if there is an error downloading the model
+	 * @throws BuildException if there is any error building the environment
 	 */
 	public static Cellpose fromPretained(String pretrainedModel, String modelsDir, boolean install) throws IOException, 
-																					InterruptedException, ExecutionException {
+																					InterruptedException, ExecutionException, BuildException {
 		if (PRETRAINED_CELLPOSE_MODELS.contains(pretrainedModel) && !install) {
 			String weightsPath = fileIsCellpose(pretrainedModel, modelsDir);
 			if (weightsPath != null) return init(weightsPath);
@@ -717,9 +724,10 @@ public class Cellpose extends BioimageIoModelPytorchProtected {
 	 * @throws ExecutionException exception
 	 * @throws LoadModelException exception
 	 * @throws RunModelException exception
+	 * @throws BuildException if there is any error launching the python process
 	 */
 	public static <T extends RealType<T> & NativeType<T>>
-	void main(String[] args) throws IOException, InterruptedException, ExecutionException, LoadModelException, RunModelException {
+	void main(String[] args) throws IOException, InterruptedException, ExecutionException, LoadModelException, RunModelException, BuildException {
 		Cellpose model = Cellpose.fromPretained("cyto2", false);
 		model.loadModel();
 		ArrayImg<FloatType, FloatArray> rai = ArrayImgs.floats(new long[] {512, 512, 3});

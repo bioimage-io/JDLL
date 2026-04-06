@@ -30,9 +30,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import org.apposed.appose.BuildException;
 
-import io.bioimage.modelrunner.apposed.appose.Mamba;
-import io.bioimage.modelrunner.apposed.appose.MambaInstallException;
 import io.bioimage.modelrunner.bioimageio.description.ModelDescriptor;
 import io.bioimage.modelrunner.bioimageio.description.TensorSpec;
 import io.bioimage.modelrunner.bioimageio.description.weights.ModelDependencies;
@@ -69,9 +68,10 @@ public class BioimageIoModelPytorchProtected extends DLModelPytorchProtected {
 	 * @param descriptor the descriptor parameter.
 	 * @param custom the custom parameter.
 	 * @throws IOException if an I/O error occurs.
+	 * @throws BuildException if there is any error building the environment
 	 */
 	protected BioimageIoModelPytorchProtected(String modelFile, String callable, String importModule, String weightsPath, 
-			Map<String, Object> kwargs, ModelDescriptor descriptor, boolean custom) throws IOException {
+			Map<String, Object> kwargs, ModelDescriptor descriptor, boolean custom) throws BuildException {
 		super(modelFile, callable, importModule, weightsPath, kwargs, custom);
 		this.tiling = true;
 		this.descriptor = descriptor;
@@ -87,10 +87,10 @@ public class BioimageIoModelPytorchProtected extends DLModelPytorchProtected {
 	 * @param weightsPath the weightsPath parameter.
 	 * @param kwargs the kwargs parameter.
 	 * @param descriptor the descriptor parameter.
-	 * @throws IOException if an I/O error occurs.
+	 * @throws BuildException if there is any error building the environmnet
 	 */
 	protected BioimageIoModelPytorchProtected(String modelFile, String callable, String importModule, String weightsPath, 
-			Map<String, Object> kwargs, ModelDescriptor descriptor) throws IOException {
+			Map<String, Object> kwargs, ModelDescriptor descriptor) throws BuildException {
 		this(modelFile, callable, importModule, weightsPath, kwargs, descriptor, false);
 	}
 	

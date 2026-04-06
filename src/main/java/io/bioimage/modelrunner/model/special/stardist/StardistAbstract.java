@@ -32,6 +32,7 @@ import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 import org.apache.commons.compress.archivers.ArchiveException;
+import org.apposed.appose.Service;
 
 import io.bioimage.modelrunner.bioimageio.description.ModelDescriptor;
 import io.bioimage.modelrunner.bioimageio.description.ModelDescriptorFactory;
@@ -807,8 +808,7 @@ public abstract class StardistAbstract extends BaseModel {
 	 * @throws ArchiveException if there is any error decompressing the micromamba installer
 	 * @throws URISyntaxException if the URL to the micromamba installation is not correct
 	 */
-	public static void installRequirements(Consumer<String> consumer) throws IOException, InterruptedException, 
-													RuntimeException, URISyntaxException, 
+	public static void installRequirements(Consumer<String> consumer) throws IOException, InterruptedException,
 													ArchiveException  {
 		
 		Mamba mamba = new Mamba(INSTALLATION_DIR);

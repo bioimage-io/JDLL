@@ -39,16 +39,19 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import org.apache.commons.compress.archivers.ArchiveException;
+import org.apposed.appose.Appose;
+import org.apposed.appose.BuildException;
+import org.apposed.appose.Environment;
+import org.apposed.appose.Service;
+import org.apposed.appose.Service.Task;
+import org.apposed.appose.Service.TaskStatus;
+import org.apposed.appose.TaskException;
+import org.apposed.appose.builder.PixiBuilder;
+import org.apposed.appose.util.Environments;
+import org.apposed.appose.util.Messages;
 
-import io.bioimage.modelrunner.apposed.appose.Environment;
-import io.bioimage.modelrunner.apposed.appose.Mamba;
-import io.bioimage.modelrunner.apposed.appose.MambaInstallException;
-import io.bioimage.modelrunner.apposed.appose.Service;
-import io.bioimage.modelrunner.apposed.appose.Service.Task;
-import io.bioimage.modelrunner.apposed.appose.Service.TaskStatus;
 import io.bioimage.modelrunner.bioimageio.tiling.TileInfo;
 import io.bioimage.modelrunner.bioimageio.tiling.TileMaker;
-import io.bioimage.modelrunner.apposed.appose.Types;
 import io.bioimage.modelrunner.exceptions.LoadModelException;
 import io.bioimage.modelrunner.exceptions.RunModelException;
 import io.bioimage.modelrunner.model.BaseModel;
@@ -84,6 +87,8 @@ public class DLModelPytorchProtected extends BaseModel {
 	
 	private Service python;
 	
+	private String selectedEnvironment;
+	
 	protected List<SharedMemoryArray> inShmaList = new ArrayList<SharedMemoryArray>();
 		
 	private List<String> outShmNames;
@@ -111,6 +116,8 @@ public class DLModelPytorchProtected extends BaseModel {
 	 * tiles the input images are going to be separated
 	 */
 	protected TilingConsumer tileCounter;
+	
+	private static final String DEFAULT_ENV_VARIANT = "default";
 	
 	public static final String COMMON_PYTORCH_ENV_NAME = "biapy";
 	
@@ -166,7 +173,7 @@ public class DLModelPytorchProtected extends BaseModel {
 		}
 	}
 		
-	protected static String INSTALLATION_DIR = Mamba.BASE_PATH;
+	protected static String INSTALLATION_DIR = Environments.apposeEnvsDir();
 	
 	protected static final String MODEL_VAR_NAME = "model_" + UUID.randomUUID().toString().replace("-", "_");
 
@@ -274,10 +281,10 @@ public class DLModelPytorchProtected extends BaseModel {
 	 * @param importModule the importModule parameter.
 	 * @param weightsPath the weightsPath parameter.
 	 * @param kwargs the kwargs parameter.
-	 * @throws IOException if an I/O error occurs.
+	 * @throws IOException if there is an error building the environment.
 	 */
 	protected DLModelPytorchProtected(String modelFile, String callable, String importModule, String weightsPath, 
-			Map<String, Object> kwargs) throws IOException {
+			Map<String, Object> kwargs) throws BuildException {
 		this(modelFile, callable, importModule, weightsPath, kwargs, false);
 	}
 	
@@ -290,10 +297,10 @@ public class DLModelPytorchProtected extends BaseModel {
 	 * @param weightsPath the weightsPath parameter.
 	 * @param kwargs the kwargs parameter.
 	 * @param customJDLL the customJDLL parameter.
-	 * @throws IOException if an I/O error occurs.
+	 * @throws BuildException if there is an error building the environment.
 	 */
 	protected DLModelPytorchProtected(String modelFile, String callable, String importModule, String weightsPath, 
-			Map<String, Object> kwargs, boolean customJDLL) throws IOException {
+			Map<String, Object> kwargs, boolean customJDLL) throws BuildException {
 		if (!customJDLL && (new File(modelFile).isFile() == false || !modelFile.endsWith(".py")) && importModule == null)
 			throw new IllegalArgumentException("The model file does not correspond to an existing .py file.");
 		if (new File(weightsPath).isFile() == false 
@@ -318,18 +325,20 @@ public class DLModelPytorchProtected extends BaseModel {
 		this.weightsPath = new File(weightsPath).getAbsolutePath();
 		this.kwargs = kwargs;
 		this.envPath = INSTALLATION_DIR + File.separator + "envs" + File.separator + COMMON_PYTORCH_ENV_NAME;
+		if (false) // TODO 
+			selectedEnvironment = "cuda";
+		else
+			selectedEnvironment = DEFAULT_ENV_VARIANT;
 		createPythonService();
 	}
 	
 	/**
 	 * Creates python service.
+	 * @throws BuildException if there is any error building the environment
 	 *
-	 * @throws IOException if an I/O error occurs.
 	 */
-	protected void createPythonService() throws IOException {
-		Environment env = new Environment() {
-			@Override public String base() { return envPath; }
-			};
+	protected void createPythonService() throws BuildException {
+		Environment env = Appose.pixi().environment(selectedEnvironment).wrap(new File(INSTALLATION_DIR, COMMON_PYTORCH_ENV_NAME));;
 		python = env.python();
 		python.debug(System.err::println);
 	}
@@ -356,7 +365,7 @@ public class DLModelPytorchProtected extends BaseModel {
 	 * 	path to the environment we want to use to run the model
 	 * @throws IOException if there is any error connecting to the Python env
 	 */
-	public void setCustomEnvPath(String envPath) throws IOException {
+	public void setCustomEnvPath(String envPath) throws BuildException {
 		this.envPath = envPath;
 		this.python.close();
 		createPythonService();
@@ -435,7 +444,7 @@ public class DLModelPytorchProtected extends BaseModel {
 			else if (task.status == TaskStatus.CRASHED)
 				throw new RuntimeException(task.error);
 		} catch (IOException | InterruptedException e) {
-			throw new LoadModelException(Types.stackTrace(e));
+			throw new LoadModelException(Messages.stackTrace(e));
 		}
 		loaded = true;
 	}
@@ -613,9 +622,9 @@ public class DLModelPytorchProtected extends BaseModel {
 			try {
 				cleanShm();
 			} catch (InterruptedException | IOException e1) {
-				throw new RunModelException(Types.stackTrace(e1));
+				throw new RunModelException(Messages.stackTrace(e1));
 			}
-			throw new RunModelException(Types.stackTrace(e));
+			throw new RunModelException(Messages.stackTrace(e));
 		}
 		return outMap;
 	}
@@ -815,8 +824,9 @@ public class DLModelPytorchProtected extends BaseModel {
 	 *
 	 * @throws InterruptedException if the current thread is interrupted while waiting for the operation to finish.
 	 * @throws IOException if an I/O error occurs.
+	 * @throws TaskException if there is any error runnning the close memory taks
 	 */
-	protected void cleanShm() throws InterruptedException, IOException {
+	protected void cleanShm() throws InterruptedException, IOException, TaskException {
 		closeShm();
 		if (PlatformDetection.isWindows()) {
 			Task closeSHMTask = python.task(CLEAN_SHM_CODE);

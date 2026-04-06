@@ -30,7 +30,8 @@ import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 import org.apache.commons.compress.archivers.ArchiveException;
-import org.apposed.appose.util.Types;
+import org.apposed.appose.BuildException;
+import org.apposed.appose.util.Messages;
 
 import io.bioimage.modelrunner.bioimageio.description.ModelDescriptor;
 import io.bioimage.modelrunner.bioimageio.description.ModelDescriptorFactory;
@@ -158,7 +159,7 @@ public abstract class RunnerAdapter implements Closeable {
 			else
 				this.initWithEnginesClassLoader(installIfMissing);
 		} catch (Exception ex) {
-			throw new LoadModelException(Types.stackTrace(ex));
+			throw new LoadModelException(Messages.stackTrace(ex));
 		}
 		this.model.loadModel();
 		this.loaded = true;
@@ -197,7 +198,7 @@ public abstract class RunnerAdapter implements Closeable {
 		return this.closed;
 	}
 	
-	private void initWithEnginesPath(boolean install) throws IOException, LoadEngineException, InterruptedException, RuntimeException, ArchiveException, URISyntaxException {
+	private void initWithEnginesPath(boolean install) throws IOException, LoadEngineException, InterruptedException, RuntimeException, BuildException {
 		List<String> wList = descriptor.getWeights().getAllSuportedWeightNames();
 		if (descriptor.getModelFamily().equals(ModelDescriptor.STARDIST)) {
 			boolean installed = StardistAbstract.isInstalled();
@@ -228,7 +229,7 @@ public abstract class RunnerAdapter implements Closeable {
 		}
 	}
 	
-	private void initWithEnginesClassLoader(boolean install) throws LoadEngineException, IOException, InterruptedException, RuntimeException, ArchiveException, URISyntaxException {
+	private void initWithEnginesClassLoader(boolean install) throws LoadEngineException, IOException, InterruptedException, RuntimeException, BuildException {
 		List<String> wList = descriptor.getWeights().getAllSuportedWeightNames();
 		if (descriptor.getModelFamily().equals(ModelDescriptor.STARDIST)) {
 			boolean installed = StardistAbstract.isInstalled();

@@ -52,7 +52,7 @@ import javax.swing.JPanel;
 import javax.swing.SwingUtilities;
 import javax.swing.border.EmptyBorder;
 
-import org.apposed.appose.util.Types;
+import org.apposed.appose.util.Messages;
 
 import io.bioimage.modelrunner.gui.adapter.GuiAdapter;
 import io.bioimage.modelrunner.gui.adapter.RunnerAdapter;
@@ -844,7 +844,7 @@ public class Gui extends JPanel {
 		} catch (InvocationTargetException | InterruptedException e) {
 			if (cancelled)
 				return false;
-			throw new RuntimeException(Types.stackTrace(e));
+			throw new RuntimeException(Messages.stackTrace(e));
 		}
     	worker[0].execute();
     	SwingUtilities.invokeLater(() -> {

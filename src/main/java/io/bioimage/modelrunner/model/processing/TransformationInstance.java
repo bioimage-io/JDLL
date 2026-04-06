@@ -30,7 +30,8 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
-import io.bioimage.modelrunner.apposed.appose.Types;
+import org.apposed.appose.util.Messages;
+
 import io.bioimage.modelrunner.bioimageio.description.TransformSpec;
 import io.bioimage.modelrunner.tensor.Tensor;
 import io.bioimage.modelrunner.transformations.BinarizeTransformation;
@@ -165,7 +166,7 @@ public class TransformationInstance {
 	        }
 		} catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException 
 				| NoSuchMethodException | SecurityException e) {
-			throw new RuntimeException(Types.stackTrace(e));
+			throw new RuntimeException(Messages.stackTrace(e));
 		}
 	}
 	
@@ -185,7 +186,7 @@ public class TransformationInstance {
 		try {
 			this.cls = getClass().getClassLoader().loadClass(clsName);
 		} catch (ClassNotFoundException e) {
-			throw new RuntimeException(Types.stackTrace(e));
+			throw new RuntimeException(Messages.stackTrace(e));
 		}
 	}
 	
@@ -222,7 +223,7 @@ public class TransformationInstance {
 			this.instance = this.cls.getConstructor().newInstance();
 		} catch (InstantiationException | IllegalAccessException | IllegalArgumentException | InvocationTargetException
 				| NoSuchMethodException | SecurityException e) {
-			throw new RuntimeException(Types.stackTrace(e));
+			throw new RuntimeException(Messages.stackTrace(e));
 		}
 		if (args == null)
 			return;
@@ -247,7 +248,7 @@ public class TransformationInstance {
 		try {
 			mm.invoke(instance, this.args.get(argName));
 		} catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
-			throw new RuntimeException(Types.stackTrace(e));
+			throw new RuntimeException(Messages.stackTrace(e));
 		}	
 	}
 	
