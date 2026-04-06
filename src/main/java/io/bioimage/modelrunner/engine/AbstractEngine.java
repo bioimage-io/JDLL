@@ -26,7 +26,6 @@ import java.util.List;
 
 import org.apache.commons.compress.archivers.ArchiveException;
 
-import io.bioimage.modelrunner.apposed.appose.MambaInstallException;
 import io.bioimage.modelrunner.bioimageio.description.weights.WeightFormat;
 import io.bioimage.modelrunner.tensor.Tensor;
 import net.imglib2.type.NativeType;
@@ -187,12 +186,11 @@ public abstract class AbstractEngine implements AutoCloseable {
 	 * Executes install.
 	 *
 	 * @throws IOException if an I/O error occurs.
-	 * @throws InterruptedException if the current thread is interrupted while waiting for the operation to finish.
 	 * @throws MambaInstallException if a MambaInstallException occurs while executing this method.
 	 * @throws ArchiveException if a ArchiveException occurs while executing this method.
 	 * @throws URISyntaxException if a URISyntaxException occurs while executing this method.
 	 */
-	public abstract void install() throws IOException, InterruptedException, MambaInstallException, ArchiveException, URISyntaxException;
+	public abstract void install() throws IOException, InterruptedException, ArchiveException, URISyntaxException;
 
 	/**
 	 * Loads model.

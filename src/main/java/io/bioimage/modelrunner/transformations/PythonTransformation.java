@@ -33,8 +33,6 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 import org.apache.commons.compress.archivers.ArchiveException;
-import io.bioimage.modelrunner.apposed.appose.Mamba;
-import io.bioimage.modelrunner.apposed.appose.MambaInstallException;
 import io.bioimage.modelrunner.numpy.DecodeNumpy;
 import io.bioimage.modelrunner.runmode.RunMode;
 import io.bioimage.modelrunner.runmode.ops.GenericOp;
@@ -290,10 +288,9 @@ public class PythonTransformation extends AbstractTensorTransformation
 	 * @throws InterruptedException
 	 * @throws ArchiveException
 	 * @throws URISyntaxException
-	 * @throws MambaInstallException 
 	 * @throws RuntimeException 
 	 */
-	private void checkArgs() throws IOException, InterruptedException, ArchiveException, URISyntaxException, RuntimeException, MambaInstallException {
+	private void checkArgs() throws IOException, InterruptedException, ArchiveException, URISyntaxException, RuntimeException {
 		//Check that the path to the script of interest is correct
 		if (!(new File(script).isFile()) && !(new File(this.scriptFilePath).exists()))
 			throw new IllegalArgumentException();
