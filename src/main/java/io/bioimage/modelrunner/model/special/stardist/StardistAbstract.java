@@ -28,7 +28,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.function.Consumer;
-import java.util.stream.Collectors;
 
 import org.apposed.appose.Appose;
 import org.apposed.appose.BuildException;
@@ -36,7 +35,9 @@ import org.apposed.appose.Environment;
 import org.apposed.appose.Service;
 import org.apposed.appose.Service.Task;
 import org.apposed.appose.Service.TaskStatus;
+import org.apposed.appose.builder.PixiBuilder;
 import org.apposed.appose.TaskException;
+import org.apposed.appose.Builder.ProgressConsumer;
 import org.apposed.appose.util.Environments;
 import org.apposed.appose.util.Messages;
 
@@ -46,7 +47,6 @@ import io.bioimage.modelrunner.exceptions.LoadModelException;
 import io.bioimage.modelrunner.exceptions.RunModelException;
 import io.bioimage.modelrunner.model.BaseModel;
 import io.bioimage.modelrunner.model.processing.Processing;
-import io.bioimage.modelrunner.model.python.DLModelPytorch;
 import io.bioimage.modelrunner.system.PlatformDetection;
 import io.bioimage.modelrunner.tensor.Tensor;
 import io.bioimage.modelrunner.tensor.Utils;
@@ -761,28 +761,9 @@ public abstract class StardistAbstract extends BaseModel {
 	 * Check whether everything that is needed for Stardist 2D is installed or not
 	 * @return true if the full python environment is installed or not
 	 */
-	public static boolean isInstalled() {
-		Mamba mamba = new Mamba(INSTALLATION_DIR);
-		try {
-			return mamba.checkAllDependenciesInEnv("stardist", STARDIST_DEPS);
-		} catch (MambaInstallException e) {
-			return false;
-		}
-	}
-	
-	/**
-	 * Check whether everything that is needed for Stardist 2D is installed or not
-	 * @param envPath
-	 * 	path to the directory where the StarDist env is installed
-	 * @return true if the full python environment is installed or not
-	 */
-	public static boolean isInstalled(String envPath) {
-		Mamba mamba = new Mamba(INSTALLATION_DIR);
-		try {
-			return mamba.checkAllDependenciesInEnv(envPath, STARDIST_DEPS);
-		} catch (MambaInstallException e) {
-			return false;
-		}
+	public boolean isInstalled() {
+		// TODO
+		return false;
 	}
 	
 	/**
@@ -792,12 +773,10 @@ public abstract class StardistAbstract extends BaseModel {
 	 * 
 	 * If anything is not installed, this method also installs it
 	 * 
-	 * @throws IOException if there is any error downloading the DL engine or installing the micromamba environment
 	 * @throws InterruptedException if the installation is stopped
-	 * @throws RuntimeException if there is any unexpected error in the micromamba environment installation
+	 * @throws BuildException 
 	 */
-	public static void installRequirements() throws IOException, InterruptedException, 
-													RuntimeException {
+	public void installRequirements() throws InterruptedException, BuildException {
 		installRequirements(null);
 	}
 	
@@ -811,18 +790,42 @@ public abstract class StardistAbstract extends BaseModel {
 	 * @param consumer
 	 * 	String consumer that reads the installation log
 	 * 
-	 * @throws IOException if there is any error downloading the DL engine or installing the micromamba environment
 	 * @throws InterruptedException if the installation is stopped
-	 * @throws RuntimeException if there is any unexpected error in the micromamba environment installation
+	 * @throws BuildException 
 	 */
-	public static void installRequirements(Consumer<String> consumer) throws IOException, InterruptedException {
+	public void installRequirements(Consumer<String> consumer) throws InterruptedException, BuildException {
 		
-		Mamba mamba = new Mamba(INSTALLATION_DIR);
-		if (consumer != null) {
-			mamba.setConsoleOutputConsumer(consumer);
-			mamba.setErrorOutputConsumer(consumer);
-		}
-		boolean stardistPythonInstalled = false;
+		PixiBuilder pixi = Appose.pixi().content("");
+	    if (consumer != null)
+	    	pixi.subscribeOutput(consumer);
+	    if (consumer != null)
+	    	pixi.subscribeError(consumer);
+	    if (consumer != null) {
+	    	ProgressConsumer progress = (title, current, maximum) -> {
+                double pct = (maximum <= 0) ? 0.0 : (100.0 * current / maximum);
+                String label = (title == null || title.trim().isEmpty()) ? "Downloading" : title;
+                consumer.accept(label + ": " + String.format(java.util.Locale.US, "%.1f", pct) + "%");
+            };
+	    	pixi.subscribeProgress(progress);
+	    }
+		boolean stardistPythonInstalled = checkDepsInstalled();
+		if (!stardistPythonInstalled) {
+			/*
+			mamba.create("stardist", true, STARDIST_CHANNELS, STARDIST_DEPS.stream()
+					.map(dd -> dd.contains("<") | dd.contains(">") ? "\"" + dd + "\"": dd)
+					.collect(Collectors.toList()));
+			mamba.pipInstallIn("stardist", STARDIST_DEPS_PIP.stream()
+					.map(dd -> (PlatformDetection.isWindows() && (dd.contains("<") | dd.contains(">"))) ? "\"" + dd + "\"": dd)
+					.collect(Collectors.toList()).toArray(new String[STARDIST_DEPS_PIP.size()]));
+					*/
+		    pixi.environment(this.envString).build();
+		};
+	}
+	
+	private boolean checkDepsInstalled() {
+		//TODO
+		/*
+		 * 
 		try {
 			List<String> deps = new ArrayList<String>();
 			for (String dd : STARDIST_DEPS)
@@ -831,14 +834,8 @@ public abstract class StardistAbstract extends BaseModel {
 		} catch (MambaInstallException e) {
 			mamba.installMicromamba();
 		}
-		if (!stardistPythonInstalled) {
-			mamba.create("stardist", true, STARDIST_CHANNELS, STARDIST_DEPS.stream()
-					.map(dd -> dd.contains("<") | dd.contains(">") ? "\"" + dd + "\"": dd)
-					.collect(Collectors.toList()));
-			mamba.pipInstallIn("stardist", STARDIST_DEPS_PIP.stream()
-					.map(dd -> (PlatformDetection.isWindows() && (dd.contains("<") | dd.contains(">"))) ? "\"" + dd + "\"": dd)
-					.collect(Collectors.toList()).toArray(new String[STARDIST_DEPS_PIP.size()]));
-		};
+		 */
+		return false;
 	}
 	
 	/**

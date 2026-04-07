@@ -284,8 +284,8 @@ public class Stardist3D extends StardistAbstract {
 													RuntimeException, BuildException, 
 													LoadEngineException, TaskException, 
 													RunModelException, LoadModelException {
-		Stardist3D.installRequirements();
 		StardistAbstract model = StardistAbstract.init("/home/carlos/git/deepimagej-plugin/models/model_confocal");
+		model.installRequirements();
 
 		RandomAccessibleInterval<FloatType> img = ArrayImgs.floats(new long[] {116, 120, 66});
 		

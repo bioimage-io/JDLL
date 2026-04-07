@@ -318,8 +318,8 @@ public class Stardist2D extends StardistAbstract {
 													RuntimeException, 
 													LoadEngineException, 
 													RunModelException, LoadModelException, BuildException, TaskException {
-		Stardist2D.installRequirements();
 		Stardist2D model = Stardist2D.fromPretained("2D_versatile_fluo", false);
+		model.installRequirements();
 		
 		RandomAccessibleInterval<FloatType> img = ArrayImgs.floats(new long[] {512, 512});
 		
