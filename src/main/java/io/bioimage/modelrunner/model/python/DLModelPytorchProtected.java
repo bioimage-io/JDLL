@@ -37,7 +37,6 @@ import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-import org.apache.commons.compress.archivers.ArchiveException;
 import org.apposed.appose.Appose;
 import org.apposed.appose.BuildException;
 import org.apposed.appose.Environment;
@@ -45,6 +44,7 @@ import org.apposed.appose.Service;
 import org.apposed.appose.Service.Task;
 import org.apposed.appose.Service.TaskStatus;
 import org.apposed.appose.TaskException;
+import org.apposed.appose.Builder.ProgressConsumer;
 import org.apposed.appose.builder.PixiBuilder;
 import org.apposed.appose.util.Environments;
 import org.apposed.appose.util.Messages;
@@ -977,13 +977,10 @@ public class DLModelPytorchProtected extends BaseModel {
 	 * 
 	 * If anything is not installed, this method also installs it
 	 * 
-	 * @throws IOException if there is any error downloading the DL engine or installing the micromamba environment
 	 * @throws InterruptedException if the installation is stopped
-	 * @throws RuntimeException if there is any unexpected error in the micromamba environment installation
-	 * @throws ArchiveException if there is any error decompressing the micromamba installer
+	 * @throws BuildException 
 	 */
-	public static void installRequirements() throws IOException, InterruptedException, 
-													RuntimeException {
+	public void installRequirements() throws InterruptedException, BuildException {
 		installRequirements(null);
 	}
 	
@@ -1000,17 +997,27 @@ public class DLModelPytorchProtected extends BaseModel {
 	 * @throws IOException if there is any error downloading the DL engine or installing the micromamba environment
 	 * @throws InterruptedException if the installation is stopped
 	 * @throws RuntimeException if there is any unexpected error in the micromamba environment installation
-	 * @throws ArchiveException if there is any error decompressing the micromamba installer
+	 * @throws BuildException 
 	 */
-	public static void installRequirements(Consumer<String> consumer) throws IOException, InterruptedException, 
-													RuntimeException {
+	public void installRequirements(Consumer<String> consumer) throws InterruptedException, 
+													BuildException {
 		
-		Mamba mamba = new Mamba(INSTALLATION_DIR);
-		if (consumer != null) {
-			mamba.setConsoleOutputConsumer(consumer);
-			mamba.setErrorOutputConsumer(consumer);
-		}
-		boolean biapyPythonInstalled = false;
+		PixiBuilder pixi = Appose.pixi().content("");
+	    if (consumer != null)
+	    	pixi.subscribeOutput(consumer);
+	    if (consumer != null)
+	    	pixi.subscribeError(consumer);
+	    if (consumer != null) {
+	    	ProgressConsumer progress = (title, current, maximum) -> {
+                double pct = (maximum <= 0) ? 0.0 : (100.0 * current / maximum);
+                String label = (title == null || title.trim().isEmpty()) ? "Downloading" : title;
+                consumer.accept(label + ": " + String.format(java.util.Locale.US, "%.1f", pct) + "%");
+            };
+	    	pixi.subscribeProgress(progress);
+	    }
+	    
+		boolean biapyPythonInstalled = checkDepsInstalled();
+		/*
 		try {
 			biapyPythonInstalled = mamba.checkAllDependenciesInEnv(COMMON_PYTORCH_ENV_NAME, BIAPY_CONDA_DEPS);
 			biapyPythonInstalled = mamba.checkAllDependenciesInEnv(COMMON_PYTORCH_ENV_NAME, BIAPY_PIP_DEPS_TORCH);
@@ -1020,7 +1027,9 @@ public class DLModelPytorchProtected extends BaseModel {
 		} catch (MambaInstallException e) {
 			mamba.installMicromamba();
 		}
+		*/
 		if (!biapyPythonInstalled) {
+			/*
 			// TODO add logging for environment installation
 			mamba.create(COMMON_PYTORCH_ENV_NAME, true, new ArrayList<String>(), BIAPY_CONDA_DEPS);
 			ArrayList<String> args = new ArrayList<String>(BIAPY_PIP_ARGS);
@@ -1029,11 +1038,18 @@ public class DLModelPytorchProtected extends BaseModel {
 			mamba.pipInstallIn(COMMON_PYTORCH_ENV_NAME, BIAPY_PIP_DEPS.toArray(new String[BIAPY_PIP_DEPS.size()]));
 			if (PlatformDetection.isMacOS() && PlatformDetection.getOSVersion().getMajor() < 14)
 				mamba.pipInstallIn(COMMON_PYTORCH_ENV_NAME, new String[] {"biapy==3.5.10", "--no-deps"});
+			*/
+		    pixi.environment(selectedEnvironment).build();
 		};
 		
 		if (!isInstalled())
 			throw new RuntimeException("Not all the requried packages were installed correctly. Please try again."
 					+ " If the error persists, please post an issue at: https://github.com/bioimage-io/JDLL/issues");
+	}
+	
+	private boolean checkDepsInstalled() {
+		//TODO
+		return false;
 	}
 	
 	/**
