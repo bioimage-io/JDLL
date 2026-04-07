@@ -29,14 +29,16 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 import org.apache.commons.compress.archivers.ArchiveException;
+import org.apposed.appose.Appose;
+import org.apposed.appose.BuildException;
+import org.apposed.appose.Environment;
+import org.apposed.appose.Service;
+import org.apposed.appose.Service.Task;
+import org.apposed.appose.Service.TaskStatus;
+import org.apposed.appose.TaskException;
 
-import io.bioimage.modelrunner.apposed.appose.Environment;
-import io.bioimage.modelrunner.apposed.appose.Mamba;
-import io.bioimage.modelrunner.apposed.appose.MambaInstallException;
-import io.bioimage.modelrunner.apposed.appose.Service;
-import io.bioimage.modelrunner.apposed.appose.Service.Task;
-import io.bioimage.modelrunner.apposed.appose.Service.TaskStatus;
 import io.bioimage.modelrunner.engine.AbstractEngine;
+import io.bioimage.modelrunner.model.python.DLModelPytorch;
 import io.bioimage.modelrunner.system.PlatformDetection;
 import io.bioimage.modelrunner.tensor.Tensor;
 import io.bioimage.modelrunner.tensor.shm.SharedMemoryArray;
@@ -45,7 +47,6 @@ import net.imglib2.type.numeric.RealType;
 
 public class PytorchEngine extends AbstractEngine {
 	
-	private Mamba mamba;
 	
 	private String version;
 	
@@ -58,6 +59,8 @@ public class PytorchEngine extends AbstractEngine {
 	private Environment env;
 	
 	private Service python;
+	
+	private String envString;
 	
 	public static final String NAME = "pytorch";
 
@@ -115,9 +118,12 @@ public class PytorchEngine extends AbstractEngine {
 		if (gpu && !SUPPORTED_PYTORCH_GPU_VERSIONS.contains(version))
 			throw new IllegalArgumentException("The provided Pytorch version has no GPU support in JDLL: " + version
 					+ ". GPU supported versions are: " + SUPPORTED_PYTORCH_GPU_VERSIONS);
-		mamba = new Mamba();
 		this.isPython = isPython;
 		this.version = version;
+		if (false)
+			this.envString = "cuda";
+		else
+			this.envString = DLModelPytorch.COMMON_PYTORCH_ENV_NAME;
 	}
 
 	
@@ -159,7 +165,7 @@ public class PytorchEngine extends AbstractEngine {
 	 */
 	@Override
 	public String getDir() {
-		return mamba.getEnvsDir() + File.separator + this.toString();
+		return new File(DLModelPytorch.getInstallationDir(), DLModelPytorch.COMMON_PYTORCH_ENV_NAME).toString();
 	}
 
 
@@ -218,15 +224,11 @@ public class PytorchEngine extends AbstractEngine {
 	 *
 	 * @throws IOException if an I/O error occurs.
 	 * @throws InterruptedException if the current thread is interrupted while waiting for the operation to finish.
-	 * @throws MambaInstallException if a MambaInstallException occurs while executing this method.
 	 * @throws ArchiveException if a ArchiveException occurs while executing this method.
 	 * @throws URISyntaxException if a URISyntaxException occurs while executing this method.
 	 */
 	@Override
-	public void install() throws IOException, InterruptedException, MambaInstallException, ArchiveException, URISyntaxException {
-		if (!mamba.checkMambaInstalled()) mamba.installMicromamba();
-		
-		mamba.create(getDir(), getSupportedEngineKeys());
+	public void install() {
 		installed = true;
 	}
 
@@ -237,17 +239,15 @@ public class PytorchEngine extends AbstractEngine {
 	 * @param modelSource the modelSource parameter.
 	 * @throws IOException if an I/O error occurs.
 	 * @throws InterruptedException if the current thread is interrupted while waiting for the operation to finish.
+	 * @throws BuildException 
 	 */
 	@Override
-	public void loadModel(String modelFolder, String modelSource) throws IOException, InterruptedException {
+	public void loadModel(String modelFolder, String modelSource) throws InterruptedException, BuildException, TaskException {
 		if (!this.isInstalled())
 			throw new IllegalArgumentException("Current engine '" + this.toString() 
 												+ "' is not installed. Please install it first.");
 		if (env == null) {
-			this.env = new Environment() {
-				@Override public String base() { return PytorchEngine.this.getDir(); }
-				@Override public boolean useSystemPath() { return false; }
-				};
+			this.env = Appose.pixi().environment(envString).wrap(new File(getDir()));
 			python = env.python();
 		}
 		String loadScriptFormatted = String.format(LOAD_SCRIPT_MAP.get(this.version), modelFolder, modelSource);
@@ -264,11 +264,11 @@ public class PytorchEngine extends AbstractEngine {
 	 * @param modelFolder the modelFolder parameter.
 	 * @param modelSource the modelSource parameter.
 	 * @return true if the operation succeeds; otherwise, false.
-	 * @throws IOException if an I/O error occurs.
 	 * @throws InterruptedException if the current thread is interrupted while waiting for the operation to finish.
+	 * @throws TaskException if there is any error running a task
 	 */
 	@Override
-	public boolean isModelLoaded(String modelFolder, String modelSource) throws IOException, InterruptedException {
+	public boolean isModelLoaded(String modelFolder, String modelSource) throws InterruptedException, TaskException {
 		if (python == null)
 			return false;
 		String loadScriptFormatted = String.format(IS_MODEL_LOADED_SCRIPT_MAP.get(this.version));
@@ -284,12 +284,12 @@ public class PytorchEngine extends AbstractEngine {
 	 *
 	 * @param inputTensors the inputTensors parameter.
 	 * @param outputTensors the outputTensors parameter.
-	 * @throws IOException if an I/O error occurs.
+	 * @throws TaskException if thre is an error running the model in python
 	 * @throws InterruptedException if the current thread is interrupted while waiting for the operation to finish.
 	 */
 	@Override
 	public <T extends RealType<T> & NativeType<T>> void runModel(List<Tensor<T>> inputTensors, List<Tensor<T>> outputTensors)
-			throws IOException, InterruptedException {
+			throws TaskException, InterruptedException {
 		if (python == null)
 			throw new RuntimeException("Python Keras engine has not been loaded yet.");
 		List<SharedMemoryArray> inputShms = inputTensors.stream()
@@ -324,11 +324,11 @@ public class PytorchEngine extends AbstractEngine {
 	/**
 	 * Executes unload model.
 	 *
-	 * @throws IOException if an I/O error occurs.
+	 * @throws TaskException if there is an error unloading the model
 	 * @throws InterruptedException if the current thread is interrupted while waiting for the operation to finish.
 	 */
 	@Override
-	public void unloadModel() throws IOException, InterruptedException {
+	public void unloadModel() throws TaskException, InterruptedException {
 		if (python == null)
 			return;
 		String loadScriptFormatted = String.format(UNLOAD_SCRIPT_MAP.get(this.version));

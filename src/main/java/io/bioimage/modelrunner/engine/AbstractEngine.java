@@ -25,6 +25,8 @@ import java.util.Arrays;
 import java.util.List;
 
 import org.apache.commons.compress.archivers.ArchiveException;
+import org.apposed.appose.BuildException;
+import org.apposed.appose.TaskException;
 
 import io.bioimage.modelrunner.bioimageio.description.weights.WeightFormat;
 import io.bioimage.modelrunner.tensor.Tensor;
@@ -197,18 +199,17 @@ public abstract class AbstractEngine implements AutoCloseable {
 	 *
 	 * @param modelFolder the modelFolder parameter.
 	 * @param modelSource the modelSource parameter.
-	 * @throws IOException if an I/O error occurs.
 	 * @throws InterruptedException if the current thread is interrupted while waiting for the operation to finish.
 	 */
-	public abstract void loadModel(String modelFolder, String modelSource) throws IOException, InterruptedException;
+	public abstract void loadModel(String modelFolder, String modelSource) throws InterruptedException, TaskException, BuildException;
 
 	/**
 	 * Executes unload model.
 	 *
-	 * @throws IOException if an I/O error occurs.
+	 * @throws TaskException if there is an error unloading the model
 	 * @throws InterruptedException if the current thread is interrupted while waiting for the operation to finish.
 	 */
-	public abstract void unloadModel() throws IOException, InterruptedException;
+	public abstract void unloadModel() throws TaskException, InterruptedException;
 	
 	/**
 	 * Checks whether model loaded.
@@ -216,12 +217,12 @@ public abstract class AbstractEngine implements AutoCloseable {
 	 * @param modelFolder the modelFolder parameter.
 	 * @param modelSource the modelSource parameter.
 	 * @return true if the operation succeeds; otherwise, false.
-	 * @throws IOException if an I/O error occurs.
+	 * @throws TaskException if an error trying to get the model occurs
 	 * @throws InterruptedException if the current thread is interrupted while waiting for the operation to finish.
 	 */
-	public abstract boolean isModelLoaded(String modelFolder, String modelSource) throws IOException, InterruptedException;
+	public abstract boolean isModelLoaded(String modelFolder, String modelSource) throws TaskException, InterruptedException;
 	
 	public abstract <T extends RealType<T> & NativeType<T>> 
-	void runModel(List<Tensor<T>> inputTensors, List<Tensor<T>> outputTensors) throws IOException, InterruptedException;
+	void runModel(List<Tensor<T>> inputTensors, List<Tensor<T>> outputTensors) throws TaskException, InterruptedException;
 	
 }
