@@ -20,7 +20,6 @@
 package io.bioimage.modelrunner.gui.workers;
 
 import java.io.IOException;
-import java.net.URISyntaxException;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.function.Consumer;
@@ -109,7 +108,7 @@ public class InstallEnvWorker extends SwingWorker<Boolean, Void> {
             	Cellpose.installRequirements(consumer);
             } else if (modelFamily.toLowerCase().equals(ModelDescriptor.BIOIMAGEIO))
             	DLModelPytorch.installRequirements(consumer);
-		} catch (IOException | RuntimeException | URISyntaxException e) {
+		} catch (IOException | RuntimeException e) {
 			e.printStackTrace();
 			return false;
 		} catch (InterruptedException e) {

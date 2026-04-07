@@ -21,7 +21,6 @@ package io.bioimage.modelrunner.model.special.stardist;
 
 import java.io.File;
 import java.io.IOException;
-import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedHashMap;
@@ -31,8 +30,15 @@ import java.util.Map.Entry;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
-import org.apache.commons.compress.archivers.ArchiveException;
+import org.apposed.appose.Appose;
+import org.apposed.appose.BuildException;
+import org.apposed.appose.Environment;
 import org.apposed.appose.Service;
+import org.apposed.appose.Service.Task;
+import org.apposed.appose.Service.TaskStatus;
+import org.apposed.appose.TaskException;
+import org.apposed.appose.util.Environments;
+import org.apposed.appose.util.Messages;
 
 import io.bioimage.modelrunner.bioimageio.description.ModelDescriptor;
 import io.bioimage.modelrunner.bioimageio.description.ModelDescriptorFactory;
@@ -40,6 +46,7 @@ import io.bioimage.modelrunner.exceptions.LoadModelException;
 import io.bioimage.modelrunner.exceptions.RunModelException;
 import io.bioimage.modelrunner.model.BaseModel;
 import io.bioimage.modelrunner.model.processing.Processing;
+import io.bioimage.modelrunner.model.python.DLModelPytorch;
 import io.bioimage.modelrunner.system.PlatformDetection;
 import io.bioimage.modelrunner.tensor.Tensor;
 import io.bioimage.modelrunner.tensor.Utils;
@@ -72,6 +79,8 @@ public abstract class StardistAbstract extends BaseModel {
 	protected final String name;
 	
 	protected final String basedir;
+	
+	protected String envString = "default";
 	
 	protected Double threshold = null;
 	
@@ -110,7 +119,7 @@ public abstract class StardistAbstract extends BaseModel {
 	 */
 	public String scaleRangeAxes = null;
 	
-	private static String INSTALLATION_DIR = Mamba.BASE_PATH;
+	private static String INSTALLATION_DIR = Environments.apposeEnvsDir();
 	
 	private static final List<String> STARDIST_DEPS = Arrays.asList(new String[] {"python=3.10", "stardist", "numpy", "appose"});
 	
@@ -122,9 +131,6 @@ public abstract class StardistAbstract extends BaseModel {
 		else
 			STARDIST_DEPS_PIP = Arrays.asList(new String[] {"tensorflow<2.11"});
 	}
-	
-	private static final List<String> STARDIST_CHANNELS = Arrays.asList(new String[] {"conda-forge", "default"});
-
 	
 	private static final String OUTPUT_MASK_KEY = "mask";
 	
@@ -228,7 +234,7 @@ public abstract class StardistAbstract extends BaseModel {
 	 * @return the resulting value.
 	 * @throws IOException if an I/O error occurs.
 	 */
-	protected abstract <T extends RealType<T> & NativeType<T>> RandomAccessibleInterval<T> reconstructMask() throws IOException;
+	protected abstract <T extends RealType<T> & NativeType<T>> RandomAccessibleInterval<T> reconstructMask() throws TaskException;
 
 	/**
 	 * 
@@ -249,8 +255,9 @@ public abstract class StardistAbstract extends BaseModel {
 	 * @param baseDir the baseDir parameter.
 	 * @param config the config parameter.
 	 * @throws IOException if an I/O error occurs.
+	 * @throws BuildException 
 	 */
-	protected StardistAbstract(String modelName, String baseDir, Map<String, Object> config) throws IOException {
+	protected StardistAbstract(String modelName, String baseDir, Map<String, Object> config) throws IOException, BuildException {
 		this.name = modelName;
 		this.basedir = baseDir;
 		modelDir = new File(baseDir, modelName).getAbsolutePath();
@@ -271,8 +278,9 @@ public abstract class StardistAbstract extends BaseModel {
 	 * @param modelName the modelName parameter.
 	 * @param baseDir the baseDir parameter.
 	 * @throws IOException if an I/O error occurs.
+	 * @throws BuildException 
 	 */
-	protected StardistAbstract(String modelName, String baseDir) throws IOException {
+	protected StardistAbstract(String modelName, String baseDir) throws IOException, BuildException {
 		this.name = modelName;
 		this.basedir = baseDir;
 		modelDir = new File(baseDir, modelName).getAbsolutePath();
@@ -310,8 +318,9 @@ public abstract class StardistAbstract extends BaseModel {
 	 *
 	 * @param descriptor the descriptor parameter.
 	 * @throws IOException if an I/O error occurs.
+	 * @throws BuildException 
 	 */
-	protected StardistAbstract(ModelDescriptor descriptor) throws IOException {
+	protected StardistAbstract(ModelDescriptor descriptor) throws IOException, BuildException {
 		this.descriptor = descriptor;
 		this.name = new File(descriptor.getModelPath()).getName();
 		this.basedir = new File(descriptor.getModelPath()).getParentFile().getAbsolutePath();
@@ -348,10 +357,10 @@ public abstract class StardistAbstract extends BaseModel {
     	JSONUtils.writeJSONFile(new File(modelDir, "thresholds.json").getAbsolutePath(), stardistThres);
 	}	
 	
-	private void createPythonService() throws IOException {
-		Environment env = new Environment() {
-			@Override public String base() { return new Mamba(INSTALLATION_DIR).getEnvsDir() + File.separator + "stardist"; }
-			};
+	private void createPythonService() throws BuildException {
+		if (false)
+			envString = "gpu";
+		Environment env = Appose.pixi().environment(envString).wrap(new File(INSTALLATION_DIR, "stardist"));
 		python = env.python();
 		python.debug(System.err::println);
 	}
@@ -453,8 +462,8 @@ public abstract class StardistAbstract extends BaseModel {
 				else if (entry != null)
 					tensor.setData(entry.getValue());
 			}
-		} catch (IOException | InterruptedException e) {
-			throw new RunModelException(Types.stackTrace(e));
+		} catch (TaskException | InterruptedException | IOException e) {
+			throw new RunModelException(Messages.stackTrace(e));
 		}
 	}
 
@@ -497,8 +506,8 @@ public abstract class StardistAbstract extends BaseModel {
 			else if (task.status == TaskStatus.CRASHED)
 				throw new RuntimeException(task.error);
 			loaded = true;
-		} catch (IOException | InterruptedException e) {
-			throw new LoadModelException(Types.stackTrace(e));
+		} catch (InterruptedException | TaskException e) {
+			throw new LoadModelException(Messages.stackTrace(e));
 		}
 	}
 	
@@ -541,8 +550,8 @@ public abstract class StardistAbstract extends BaseModel {
 				outTensors.add(tt);
 			}
 			return outTensors;
-		} catch (IOException | InterruptedException e) {
-			throw new RunModelException(Types.stackTrace(e));
+		} catch (TaskException | InterruptedException | IOException e) {
+			throw new RunModelException(Messages.stackTrace(e));
 		}
 	}
 	
@@ -571,8 +580,8 @@ public abstract class StardistAbstract extends BaseModel {
 				}
 			}
 			return outTensors;
-		} catch (IOException | InterruptedException e) {
-			throw new RunModelException(Types.stackTrace(e));
+		} catch (TaskException | InterruptedException | IOException e) {
+			throw new RunModelException(Messages.stackTrace(e));
 		}
 	}
 
@@ -609,13 +618,13 @@ public abstract class StardistAbstract extends BaseModel {
 					.multiThreaded().forEachPixel( ( i, o ) -> i.set( o ) );
 			}
 			return outTensors;
-		} catch (IOException | InterruptedException e) {
-			throw new RunModelException(Types.stackTrace(e));
+		} catch (TaskException | InterruptedException | IOException e) {
+			throw new RunModelException(Messages.stackTrace(e));
 		}
 	}
 	
 	public <T extends RealType<T> & NativeType<T>, R extends RealType<R> & NativeType<R>> 
-	Map<String, RandomAccessibleInterval<R>> run(RandomAccessibleInterval<T> img) throws IOException, InterruptedException {
+	Map<String, RandomAccessibleInterval<R>> run(RandomAccessibleInterval<T> img) throws InterruptedException, TaskException, IOException {
 		checkInput(img);
 		shma = SharedMemoryArray.createSHMAFromRAI(img, false, false);
 		String code = "";
@@ -645,7 +654,7 @@ public abstract class StardistAbstract extends BaseModel {
 	
 	private <T extends RealType<T> & NativeType<T>> 
 	Map<String, RandomAccessibleInterval<T>> reconstructOutputs(Task task) 
-			throws IOException, InterruptedException {
+			throws TaskException, InterruptedException, IOException {
 		
 		Map<String, RandomAccessibleInterval<T>> outs = new LinkedHashMap<String, RandomAccessibleInterval<T>>();
 		outs.put(OUTPUT_MASK_KEY, reconstructMask());
@@ -694,8 +703,9 @@ public abstract class StardistAbstract extends BaseModel {
 	 * @param modelDir the modelDir parameter.
 	 * @return the resulting value.
 	 * @throws IOException if an I/O error occurs.
+	 * @throws BuildException 
 	 */
-	public static StardistAbstract init(String modelDir) throws IOException {
+	public static StardistAbstract init(String modelDir) throws IOException, BuildException {
 		File modelDirFile = new File(modelDir);
 		String modelName = modelDirFile.getName();
 		String baseDir = modelDirFile.getParentFile().getAbsolutePath();
@@ -715,8 +725,9 @@ public abstract class StardistAbstract extends BaseModel {
 	 * @param baseDir the baseDir parameter.
 	 * @return the resulting value.
 	 * @throws IOException if an I/O error occurs.
+	 * @throws BuildException 
 	 */
-	public static StardistAbstract init(String modelName, String baseDir) throws IOException {
+	public static StardistAbstract init(String modelName, String baseDir) throws IOException, BuildException {
 		String modelDir = new File(baseDir, modelName).getAbsolutePath();
 		checkFilesPresent(modelDir);
 		Map<String, Object> configMap = JSONUtils.load(new File(modelDir, "config.json").getAbsolutePath());
@@ -733,8 +744,9 @@ public abstract class StardistAbstract extends BaseModel {
 	 * @param descriptor the descriptor parameter.
 	 * @return the resulting value.
 	 * @throws IOException if an I/O error occurs.
+	 * @throws BuildException 
 	 */
-	public static StardistAbstract fromBioimageioModel(ModelDescriptor descriptor) throws IOException {
+	public static StardistAbstract fromBioimageioModel(ModelDescriptor descriptor) throws IOException, BuildException {
 		if (!descriptor.getConfig().getSpecMap().keySet().contains("stardist"))
 			throw new IllegalArgumentException("This Bioimage.io model does not correspond to a StarDist model.");
 		if (!descriptor.getModelFamily().equals(ModelDescriptor.STARDIST))
@@ -783,12 +795,9 @@ public abstract class StardistAbstract extends BaseModel {
 	 * @throws IOException if there is any error downloading the DL engine or installing the micromamba environment
 	 * @throws InterruptedException if the installation is stopped
 	 * @throws RuntimeException if there is any unexpected error in the micromamba environment installation
-	 * @throws ArchiveException if there is any error decompressing the micromamba installer
-	 * @throws URISyntaxException if the URL to the micromamba installation is not correct
 	 */
 	public static void installRequirements() throws IOException, InterruptedException, 
-													RuntimeException, ArchiveException,
-													URISyntaxException {
+													RuntimeException {
 		installRequirements(null);
 	}
 	
@@ -805,11 +814,8 @@ public abstract class StardistAbstract extends BaseModel {
 	 * @throws IOException if there is any error downloading the DL engine or installing the micromamba environment
 	 * @throws InterruptedException if the installation is stopped
 	 * @throws RuntimeException if there is any unexpected error in the micromamba environment installation
-	 * @throws ArchiveException if there is any error decompressing the micromamba installer
-	 * @throws URISyntaxException if the URL to the micromamba installation is not correct
 	 */
-	public static void installRequirements(Consumer<String> consumer) throws IOException, InterruptedException,
-													ArchiveException  {
+	public static void installRequirements(Consumer<String> consumer) throws IOException, InterruptedException {
 		
 		Mamba mamba = new Mamba(INSTALLATION_DIR);
 		if (consumer != null) {

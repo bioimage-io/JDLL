@@ -23,13 +23,11 @@ import java.io.Closeable;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.net.URISyntaxException;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
-import org.apache.commons.compress.archivers.ArchiveException;
 import org.apposed.appose.BuildException;
 import org.apposed.appose.util.Messages;
 

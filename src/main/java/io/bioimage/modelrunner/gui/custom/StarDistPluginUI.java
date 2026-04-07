@@ -28,6 +28,8 @@ import javax.swing.SwingUtilities;
 import javax.swing.event.PopupMenuEvent;
 import javax.swing.event.PopupMenuListener;
 
+import org.apposed.appose.BuildException;
+
 import io.bioimage.modelrunner.exceptions.LoadModelException;
 import io.bioimage.modelrunner.exceptions.RunModelException;
 import io.bioimage.modelrunner.gui.EnvironmentInstaller;
@@ -228,7 +230,7 @@ public class StarDistPluginUI extends StarDistGUI implements ActionListener {
     	this.consumer.notifyParams(map);
     }
     
-    private < T extends RealType< T > & NativeType< T > > void runStardist() throws IOException, RunModelException, LoadModelException {
+    private < T extends RealType< T > & NativeType< T > > void runStardist() throws IOException, RunModelException, LoadModelException, BuildException {
     	saveParams();
     	renewThreshold();
     	startModelInstallation(true);

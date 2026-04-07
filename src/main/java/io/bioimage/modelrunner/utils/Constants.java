@@ -22,8 +22,6 @@ package io.bioimage.modelrunner.utils;
 import java.io.InputStream;
 import java.util.Properties;
 
-import io.bioimage.modelrunner.transformations.PythonTransformation;
-
 /**
  * Class that contains important constants for the software
  * @author Carlos Garcia Lopez de Haro
@@ -48,10 +46,6 @@ public class Constants {
 	 * Zenodo domain
 	 */
 	public static final String ZENODO_DOMAIN = "https://zenodo.org/";
-	/**
-	 * Name of the pre- or post-processing that requires using Python
-	 */
-	public static final String PYTHON_PROCESSING_NAME = PythonTransformation.NAME;
 	
 	public static final String JDLL_VERSION = getVersion();
 	

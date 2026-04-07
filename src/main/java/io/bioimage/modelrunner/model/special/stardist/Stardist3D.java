@@ -21,15 +21,14 @@ package io.bioimage.modelrunner.model.special.stardist;
 
 import java.io.File;
 import java.io.IOException;
-import java.net.URISyntaxException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
 import java.util.function.Consumer;
 
-import org.apache.commons.compress.archivers.ArchiveException;
+import org.apposed.appose.BuildException;
+import org.apposed.appose.TaskException;
 
-import io.bioimage.modelrunner.apposed.appose.MambaInstallException;
 import io.bioimage.modelrunner.bioimageio.BioimageioDirectConnection;
 import io.bioimage.modelrunner.bioimageio.BioimageioRepo;
 import io.bioimage.modelrunner.bioimageio.description.ModelDescriptor;
@@ -70,13 +69,14 @@ public class Stardist3D extends StardistAbstract {
 	 * @param baseDir the baseDir parameter.
 	 * @param config the config parameter.
 	 * @throws IOException if an I/O error occurs.
+	 * @throws BuildException 
 	 */
-	protected Stardist3D(String modelName, String baseDir, Map<String, Object> config) throws IOException {
+	protected Stardist3D(String modelName, String baseDir, Map<String, Object> config) throws IOException, BuildException {
 		super(modelName, baseDir, config);
 		this.scaleRangeAxes = "zyxc";
 	}
 	
-	private Stardist3D(String modelName, String baseDir) throws IOException {
+	private Stardist3D(String modelName, String baseDir) throws IOException, BuildException {
 		super(modelName, baseDir);
 		String axes = ((String) config.get("axes")).toUpperCase();
 		if (!axes.contains("Z"))
@@ -85,7 +85,7 @@ public class Stardist3D extends StardistAbstract {
 		this.scaleRangeAxes = "xyzc";
 	}
 	
-	private Stardist3D(ModelDescriptor descriptor) throws IOException {
+	private Stardist3D(ModelDescriptor descriptor) throws IOException, BuildException {
 		super(descriptor);
 		String axes = ((String) config.get("axes")).toUpperCase();
 		if (!axes.contains("Z"))
@@ -131,7 +131,7 @@ public class Stardist3D extends StardistAbstract {
 	 * @throws IOException if an I/O error occurs.
 	 */
 	@Override
-	protected <T extends RealType<T> & NativeType<T>> RandomAccessibleInterval<T> reconstructMask() throws IOException {
+	protected <T extends RealType<T> & NativeType<T>> RandomAccessibleInterval<T> reconstructMask() {
 		// TODO I do not understand why is complaining when the types align perfectly
 		RandomAccessibleInterval<T> maskCopy = Tensor.createCopyOfRaiInWantedDataType(Cast.unchecked(shma.getSharedRAI()), 
 				Util.getTypeFromInterval(Cast.unchecked(shma.getSharedRAI())));
@@ -165,8 +165,9 @@ public class Stardist3D extends StardistAbstract {
 	 * 	the bioimage.io model descriptor
 	 * @return an instance of a Stardist2D model ready to be used     * @throws FileNotFoundException If the model file is not found.
      * @throws IOException If there's an I/O error.
+	 * @throws BuildException 
 	 */
-	public static Stardist3D fromBioimageioModel(ModelDescriptor descriptor) throws IOException {
+	public static Stardist3D fromBioimageioModel(ModelDescriptor descriptor) throws IOException, BuildException {
 		if (!descriptor.getConfig().getSpecMap().keySet().contains("stardist"))
 			throw new IllegalArgumentException("This Bioimage.io model does not correspond to a StarDist model.");
 		if (!descriptor.getModelFamily().equals(ModelDescriptor.STARDIST))
@@ -186,8 +187,9 @@ public class Stardist3D extends StardistAbstract {
 	 * @return an instance of a pretrained Stardist2D model ready to be used
 	 * @throws IOException if there is any error downloading the model, in the case it is needed
 	 * @throws InterruptedException if the download of the model is stopped
+	 * @throws BuildException 
 	 */
-	public static Stardist3D fromPretained(String pretrainedModel, boolean install) throws IOException, InterruptedException {
+	public static Stardist3D fromPretained(String pretrainedModel, boolean install) throws IOException, InterruptedException, BuildException {
 		return fromPretained(pretrainedModel, new File("models").getAbsolutePath(), install);
 	}
 	
@@ -202,9 +204,10 @@ public class Stardist3D extends StardistAbstract {
 	 * @return an instance of a pretrained Stardist3D model ready to be used
 	 * @throws IOException if there is any error downloading the model, in the case it is needed
 	 * @throws InterruptedException if the download of the model is stopped
+	 * @throws BuildException 
 	 */
 	public static Stardist3D fromPretained(String pretrainedModel, String installDir, boolean install) throws IOException, 
-																					InterruptedException {
+																					InterruptedException, BuildException {
 		if (pretrainedModel.equals("StarDist Plant Nuclei 3D ResNet") && !install) {
 			ModelDescriptor md = ModelDescriptorFactory.getModelsAtLocalRepo(installDir).stream()
 					.filter(mm ->mm.getName().equals(pretrainedModel)).findFirst().orElse(null);
@@ -273,15 +276,14 @@ public class Stardist3D extends StardistAbstract {
 	 * @throws MambaInstallException nothing
 	 * @throws LoadEngineException nothing
 	 * @throws RunModelException nothing
-	 * @throws ArchiveException nothing
-	 * @throws URISyntaxException nothing
 	 * @throws LoadModelException nothing
+	 * @throws BuildException 
+	 * @throws TaskException 
 	 */
 	public static void main(String[] args) throws IOException, InterruptedException, 
-													RuntimeException, MambaInstallException, 
-													LoadEngineException, 
-													RunModelException, ArchiveException, 
-													URISyntaxException, LoadModelException {
+													RuntimeException, BuildException, 
+													LoadEngineException, TaskException, 
+													RunModelException, LoadModelException {
 		Stardist3D.installRequirements();
 		StardistAbstract model = StardistAbstract.init("/home/carlos/git/deepimagej-plugin/models/model_confocal");
 

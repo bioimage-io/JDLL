@@ -19,7 +19,6 @@
  */
 package io.bioimage.modelrunner.tensor.shm;
 
-import java.io.Closeable;
 import java.io.File;
 import java.nio.ByteBuffer;
 import java.nio.file.FileAlreadyExistsException;
@@ -56,7 +55,7 @@ import net.imglib2.type.numeric.real.FloatType;
  * 
  * @author Carlos Garcia Lopez de Haro
  */
-public interface SharedMemoryArray extends Closeable {
+public interface SharedMemoryArray extends AutoCloseable {
 
 	/**
 	 * Constant to specify that the shared memory segment that is going to be open is only for 
@@ -680,4 +679,7 @@ public interface SharedMemoryArray extends Closeable {
 	 * of bytes corresponding to the values of the array, no header
      */
     public boolean isNumpyFormat();
+    
+    @Override
+    void close();
 }

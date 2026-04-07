@@ -24,7 +24,6 @@ package io.bioimage.modelrunner.model.python;
 
 import java.io.File;
 import java.io.IOException;
-import java.net.URISyntaxException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -443,7 +442,7 @@ public class DLModelPytorchProtected extends BaseModel {
 				throw new RuntimeException(task.error);
 			else if (task.status == TaskStatus.CRASHED)
 				throw new RuntimeException(task.error);
-		} catch (IOException | InterruptedException e) {
+		} catch (IOException | InterruptedException | TaskException e) {
 			throw new LoadModelException(Messages.stackTrace(e));
 		}
 		loaded = true;
@@ -618,10 +617,10 @@ public class DLModelPytorchProtected extends BaseModel {
 			loaded = true;
 			outMap = reconstructOutputs(task);
 			cleanShm();
-		} catch (IOException | InterruptedException e) {
+		} catch (InterruptedException | TaskException | IOException e) {
 			try {
 				cleanShm();
-			} catch (InterruptedException | IOException e1) {
+			} catch (InterruptedException | TaskException e1) {
 				throw new RunModelException(Messages.stackTrace(e1));
 			}
 			throw new RunModelException(Messages.stackTrace(e));
@@ -813,7 +812,7 @@ public class DLModelPytorchProtected extends BaseModel {
 		}
 	}
 	
-	private void closeShm() throws IOException {
+	private void closeShm() {
 		for (SharedMemoryArray shm : inShmaList) {
 			shm.close();
 		}
@@ -826,7 +825,7 @@ public class DLModelPytorchProtected extends BaseModel {
 	 * @throws IOException if an I/O error occurs.
 	 * @throws TaskException if there is any error runnning the close memory taks
 	 */
-	protected void cleanShm() throws InterruptedException, IOException, TaskException {
+	protected void cleanShm() throws InterruptedException, TaskException {
 		closeShm();
 		if (PlatformDetection.isWindows()) {
 			Task closeSHMTask = python.task(CLEAN_SHM_CODE);
@@ -967,17 +966,7 @@ public class DLModelPytorchProtected extends BaseModel {
 		if (envPath == null)
 			envPath = COMMON_PYTORCH_ENV_NAME;
 		
-		Mamba mamba = new Mamba(INSTALLATION_DIR);
-		try {
-			 boolean inst = mamba.checkAllDependenciesInEnv(envPath, BIAPY_CONDA_DEPS);
-			 if (!inst) return inst;
-			 inst = mamba.checkAllDependenciesInEnv(envPath, BIAPY_PIP_DEPS_TORCH);
-			 if (!inst) return inst;
-			 inst = mamba.checkAllDependenciesInEnv(envPath, BIAPY_PIP_DEPS);
-			 if (!inst) return inst;
-		} catch (MambaInstallException e) {
-			return false;
-		}
+		//TODO TODO
 		return true;
 	}
 	
@@ -992,11 +981,9 @@ public class DLModelPytorchProtected extends BaseModel {
 	 * @throws InterruptedException if the installation is stopped
 	 * @throws RuntimeException if there is any unexpected error in the micromamba environment installation
 	 * @throws ArchiveException if there is any error decompressing the micromamba installer
-	 * @throws URISyntaxException if the URL to the micromamba installation is not correct
 	 */
 	public static void installRequirements() throws IOException, InterruptedException, 
-													RuntimeException, URISyntaxException, 
-													ArchiveException {
+													RuntimeException {
 		installRequirements(null);
 	}
 	
@@ -1014,11 +1001,9 @@ public class DLModelPytorchProtected extends BaseModel {
 	 * @throws InterruptedException if the installation is stopped
 	 * @throws RuntimeException if there is any unexpected error in the micromamba environment installation
 	 * @throws ArchiveException if there is any error decompressing the micromamba installer
-	 * @throws URISyntaxException if the URL to the micromamba installation is not correct
 	 */
 	public static void installRequirements(Consumer<String> consumer) throws IOException, InterruptedException, 
-													RuntimeException, URISyntaxException, 
-													ArchiveException {
+													RuntimeException {
 		
 		Mamba mamba = new Mamba(INSTALLATION_DIR);
 		if (consumer != null) {
