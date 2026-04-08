@@ -1,6 +1,9 @@
 package io.bioimage.modelrunner.model.python.envs;
 
+import java.io.File;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
@@ -11,10 +14,9 @@ import org.apposed.appose.Appose;
 import org.apposed.appose.BuildException;
 import org.apposed.appose.Environment;
 import org.apposed.appose.Service;
-import org.apposed.appose.Service.Task;
-import org.apposed.appose.Service.TaskStatus;
 import org.apposed.appose.Builder.ProgressConsumer;
 import org.apposed.appose.builder.PixiBuilder;
+import org.apposed.appose.tool.Pixi;
 
 /**
  * Centralized environment planning, installation and validation logic for the
@@ -28,20 +30,66 @@ public final class PixiEnvironmentManager {
 
     /**
      * Checks whether the environment described by the given spec appears to be
-     * fully installed.
+     * installed.
+     *
+     * <p>This method verifies only that:
+     * <ul>
+     *   <li>the environment directory exists,</li>
+     *   <li>one of the expected manifest files exists,</li>
+     *   <li>the first manifest found in the order {@code pixi.toml},
+     *       {@code pyproject.toml}, {@code environment.yml} matches the expected
+     *       content from the spec,</li>
+     *   <li>and Pixi is installed.</li>
+     * </ul>
+     *
+     * <p>It does <strong>not</strong> validate that the actual environment contents
+     * still match the manifest. If the environment was modified after creation,
+     * this method may still return {@code true}.</p>
      *
      * @param spec
      *     the resolved environment specification
-     * @return {@code true} if the expected dependencies are installed,
-     *     {@code false} otherwise
-     * @throws BuildException 
-     *     if the Pixi environment cannot be built or a required follow-up step fails
+     * @return {@code true} if the environment directory and manifest look valid for
+     *     the given spec, {@code false} otherwise
      */
-    public static boolean isInstalled(final PixiEnvironmentSpec spec) throws BuildException {
+    public static boolean isInstalled(final PixiEnvironmentSpec spec) {
         Objects.requireNonNull(spec, "spec");
 
-        Environment env = Appose.pixi().content(spec.getPixiTomlContent()).environment(spec.getSelectedEnvironment()).build();
-        return false;
+        final File envDir = spec.getEnvironmentDirectory();
+        if (!envDir.isDirectory()) {
+            return false;
+        }
+
+        final File[] candidateFiles = new File[] {
+            new File(envDir, "pixi.toml"),
+            new File(envDir, "pyproject.toml"),
+            new File(envDir, "environment.yml")
+        };
+
+        File manifestFile = null;
+        for (File candidate : candidateFiles) {
+            if (candidate.isFile()) {
+                manifestFile = candidate;
+                break;
+            }
+        }
+
+        if (manifestFile == null) {
+            return false;
+        }
+
+        final String fileContent;
+        try {
+            fileContent = new String(
+                Files.readAllBytes(manifestFile.toPath()), StandardCharsets.UTF_8);
+        } catch (IOException e) {
+            return false;
+        }
+
+        if (!spec.getPixiTomlContent().equals(fileContent)) {
+            return false;
+        }
+
+        return new Pixi().isInstalled();
     }
 
     /**
@@ -112,18 +160,5 @@ public final class PixiEnvironmentManager {
             consumer.accept(label + ": " + String.format(Locale.US, "%.1f", pct) + "%");
         };
         pixi.subscribeProgress(progress);
-    }
-
-    private static void ensureTaskSucceeded(final Task task, final String defaultMessage) throws BuildException {
-        if (task.status == TaskStatus.COMPLETE) {
-            return;
-        }
-        if (task.status == TaskStatus.CANCELED) {
-            throw new BuildException(defaultMessage + " Task canceled.");
-        }
-        if (task.status == TaskStatus.FAILED || task.status == TaskStatus.CRASHED) {
-            throw new BuildException(defaultMessage + " " + task.error);
-        }
-        throw new BuildException(defaultMessage + " Unexpected task status: " + task.status);
     }
 }
