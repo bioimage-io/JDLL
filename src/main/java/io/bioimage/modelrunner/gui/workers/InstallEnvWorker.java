@@ -28,6 +28,7 @@ import javax.swing.SwingWorker;
 
 import io.bioimage.modelrunner.bioimageio.description.ModelDescriptor;
 import io.bioimage.modelrunner.model.python.DLModelPytorch;
+import io.bioimage.modelrunner.model.python.envs.PixiEnvironmentManager;
 import io.bioimage.modelrunner.model.special.cellpose.Cellpose;
 import io.bioimage.modelrunner.model.special.stardist.StardistAbstract;
 
@@ -107,7 +108,7 @@ public class InstallEnvWorker extends SwingWorker<Boolean, Void> {
             } else if (modelFamily.toLowerCase().equals(ModelDescriptor.CELLPOSE)) {
             	Cellpose.installRequirements(consumer);
             } else if (modelFamily.toLowerCase().equals(ModelDescriptor.BIOIMAGEIO))
-            	DLModelPytorch.installRequirements(consumer);
+            	PixiEnvironmentManager.installRequirements(DLModelPytorch.resolvePytorchEnv(), consumer);
 		} catch (IOException | RuntimeException e) {
 			e.printStackTrace();
 			return false;

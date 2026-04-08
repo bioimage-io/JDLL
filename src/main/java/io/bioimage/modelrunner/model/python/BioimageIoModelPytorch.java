@@ -132,7 +132,6 @@ public class BioimageIoModelPytorch extends BioimageIoModelPytorchProtected {
 		l.add(Tensor.build("input", "bcyx", im));
 		//BioimageIoModelPytorch.installRequirements();
 		BioimageIoModelPytorch model = create(mm);
-		List<String> missing = model.findMissingDependencies();
 		model.loadModel();
 		TileInfo tile = TileInfo.build(l.get(0).getName(), new long[] {1, 1, 512, 512}, 
 				l.get(0).getAxesOrderString(), new long[] {1, 1, 512, 512}, l.get(0).getAxesOrderString());

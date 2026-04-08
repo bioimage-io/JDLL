@@ -22,7 +22,6 @@
  */
 package io.bioimage.modelrunner.model.python;
 
-import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -34,8 +33,6 @@ import org.apposed.appose.BuildException;
 
 import io.bioimage.modelrunner.bioimageio.description.ModelDescriptor;
 import io.bioimage.modelrunner.bioimageio.description.TensorSpec;
-import io.bioimage.modelrunner.bioimageio.description.weights.ModelDependencies;
-import io.bioimage.modelrunner.bioimageio.description.weights.ModelWeight;
 import io.bioimage.modelrunner.bioimageio.tiling.ImageInfo;
 import io.bioimage.modelrunner.bioimageio.tiling.TileCalculator;
 import io.bioimage.modelrunner.bioimageio.tiling.TileInfo;
@@ -200,29 +197,6 @@ public class BioimageIoModelPytorchProtected extends DLModelPytorchProtected {
 			}
 		}
 		runBMZ(inputTensors, outputTensors, maker);
-	}
-	
-	/**
-	 * Find which of the dependencies required in the env of the model are missing
-	 * @return list of dependencies that are missing in the selected env to run the model
-	 */
-	public List<String> findMissingDependencies() {
-		Mamba mamba = new Mamba(new File(envPath).getParentFile().getParentFile().getAbsolutePath());
-		List<String> reqDeps = ModelDependencies.getDependencies(descriptor, 
-				descriptor.getWeights().getModelWeights(ModelWeight.getPytorchID()));
-		try {
-			return mamba.checkUninstalledDependenciesInEnv(this.envPath, reqDeps);
-		} catch (MambaInstallException e) {
-			return reqDeps;
-		}
-	}
-	
-	/**
-	 * 
-	 * @return whether all the dependencies requried to run the model are installed or not
-	 */
-	public boolean allDependenciesInstalled() {
-		return findMissingDependencies().size() == 0;
 	}
 
 }
