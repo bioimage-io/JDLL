@@ -1,14 +1,19 @@
 package io.bioimage.modelrunner.model.python;
 
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Map.Entry;
 import java.util.UUID;
 import java.util.function.Consumer;
@@ -32,7 +37,8 @@ import io.bioimage.modelrunner.exceptions.RunModelException;
 import io.bioimage.modelrunner.model.BaseModel;
 import io.bioimage.modelrunner.model.java.DLModelJava.TilingConsumer;
 import io.bioimage.modelrunner.model.python.envs.PytorchEnvironmentManager;
-import io.bioimage.modelrunner.model.python.envs.PytorchEnvironmentSpec;
+import io.bioimage.modelrunner.model.python.envs.PixiEnvironmentSpec;
+import io.bioimage.modelrunner.system.GpuCompatibility;
 import io.bioimage.modelrunner.system.PlatformDetection;
 import io.bioimage.modelrunner.tensor.Tensor;
 import io.bioimage.modelrunner.tensor.shm.SharedMemoryArray;
@@ -66,7 +72,7 @@ public class DLModelPytorchProtected extends BaseModel {
 
     private Service python;
 
-    private final PytorchEnvironmentSpec environmentSpec;
+    private final PixiEnvironmentSpec environmentSpec;
 
     protected List<SharedMemoryArray> inShmaList = new ArrayList<SharedMemoryArray>();
 
@@ -97,7 +103,12 @@ public class DLModelPytorchProtected extends BaseModel {
      */
     protected TilingConsumer tileCounter;
 
-    public static final String COMMON_PYTORCH_ENV_NAME = PytorchEnvironmentManager.COMMON_PYTORCH_ENV_NAME;
+    /**
+     * Default environment directory name.
+     */
+    public static final String COMMON_PYTORCH_ENV_NAME = "biapy";
+
+    private static final String PIXI_TEMPLATE_RESOURCE = "/biapy-pixi.toml";
 
     protected static final boolean IS_ARM = PlatformDetection.isMacOS()
             && (PlatformDetection.getArch().equals(PlatformDetection.ARCH_ARM64)
@@ -271,7 +282,7 @@ public class DLModelPytorchProtected extends BaseModel {
         this.weightsPath = new File(weightsPath).getAbsolutePath();
         this.kwargs = kwargs;
 
-        this.environmentSpec = PytorchEnvironmentManager.resolve(INSTALLATION_DIR, COMMON_PYTORCH_ENV_NAME);
+        this.environmentSpec = resolvePytorchEnv();
         this.envPath = environmentSpec.getEnvironmentDirectory().getAbsolutePath();
 
         createPythonService();
@@ -955,8 +966,7 @@ public class DLModelPytorchProtected extends BaseModel {
      */
     public static boolean isInstalled() {
         try {
-            final PytorchEnvironmentSpec spec =
-                    PytorchEnvironmentManager.resolve(INSTALLATION_DIR, COMMON_PYTORCH_ENV_NAME);
+            final PixiEnvironmentSpec spec = resolvePytorchEnv();
             return PytorchEnvironmentManager.isInstalled(spec);
         } catch (BuildException e) {
             return false;
@@ -973,8 +983,7 @@ public class DLModelPytorchProtected extends BaseModel {
      */
     public static boolean isInstalled(final String installationDir) {
         try {
-            final PytorchEnvironmentSpec spec =
-                    PytorchEnvironmentManager.resolve(installationDir, COMMON_PYTORCH_ENV_NAME);
+            final PixiEnvironmentSpec spec = resolvePytorchEnv();
             return PytorchEnvironmentManager.isInstalled(spec);
         } catch (BuildException e) {
             return false;
@@ -1031,8 +1040,7 @@ public class DLModelPytorchProtected extends BaseModel {
      */
     public static void installDefaultRequirements(final Consumer<String> consumer)
             throws InterruptedException, BuildException {
-        final PytorchEnvironmentSpec spec =
-                PytorchEnvironmentManager.resolve(INSTALLATION_DIR, COMMON_PYTORCH_ENV_NAME);
+        final PixiEnvironmentSpec spec = resolvePytorchEnv();
         PytorchEnvironmentManager.installRequirements(spec, consumer);
 
         if (!isInstalled()) {
@@ -1056,6 +1064,124 @@ public class DLModelPytorchProtected extends BaseModel {
      */
     public static String getInstallationDir() {
         return INSTALLATION_DIR;
+    }
+
+    /**
+     * Resolves the environment specification for the current machine.
+     *
+     * @param installationDir
+     *     the base directory where the environment should live
+     * @param environmentDirectoryName
+     *     the directory name to use for the environment
+     * @return the resolved environment specification
+     * @throws BuildException
+     *     if the pixi.toml template cannot be loaded
+     */
+    public static PixiEnvironmentSpec resolvePytorchEnv() throws BuildException {
+
+        final String pixiTemplate = readClasspathResourceAsString(PIXI_TEMPLATE_RESOURCE);
+        final String cudaVersion = GpuCompatibility.pickCudaVersion(CUDA_COMPAT_VERSIONS);
+
+        final String pixiTomlContent;
+        final String selectedEnvironment;
+        final boolean installBiapyNoDeps;
+
+        if (cudaVersion == null) {
+            pixiTomlContent = String.format(Locale.ROOT, pixiTemplate, COMMON_PYTORCH_ENV_NAME, "", "", "", "");
+
+            if (PlatformDetection.isLinux()) {
+                selectedEnvironment = "linux-x86_64-no-cuda";
+                installBiapyNoDeps = false;
+            } else if (PlatformDetection.isWindows()) {
+                selectedEnvironment = "win-x86_64-no-cuda";
+                installBiapyNoDeps = false;
+            } else if (isMacArmOrRosetta() && isLegacyMacOs()) {
+                selectedEnvironment = "macos-arm64-legacy";
+                installBiapyNoDeps = true;
+            } else if (isMacArmOrRosetta()) {
+                selectedEnvironment = "macos-arm64";
+                installBiapyNoDeps = false;
+            } else if (PlatformDetection.isMacOS() && !isMacArmOrRosetta() && isLegacyMacOs()) {
+                selectedEnvironment = "macos-x86_64-legacy";
+                installBiapyNoDeps = true;
+            } else {
+                selectedEnvironment = "macos-x86_64";
+                installBiapyNoDeps = false;
+            }
+        } else {
+            final String compactCuda = cudaVersion.replace(".", "");
+            pixiTomlContent = String.format(
+                    Locale.ROOT,
+                    pixiTemplate, COMMON_PYTORCH_ENV_NAME,
+                    compactCuda, compactCuda, compactCuda, compactCuda
+            );
+            if (PlatformDetection.isLinux()) {
+                selectedEnvironment = "linux-x86_64-cuda";
+            } else {
+                selectedEnvironment = "win-x86_64-cuda";
+            }
+            installBiapyNoDeps = false;
+        }
+
+        final File environmentDirectory = new File(Environments.apposeEnvsDir(), COMMON_PYTORCH_ENV_NAME);
+        return new PixiEnvironmentSpec(
+                selectedEnvironment,
+                pixiTomlContent,
+                environmentDirectory,
+                installBiapyNoDeps
+        );
+    }
+
+    private static boolean isLegacyMacOs() {
+        return PlatformDetection.isMacOS() && PlatformDetection.getOSVersion().getMajor() < 14;
+    }
+
+    private static boolean isMacArmOrRosetta() {
+        return PlatformDetection.isMacOS()
+                && (PlatformDetection.ARCH_ARM64.equals(PlatformDetection.getArch())
+                || PlatformDetection.ARCH_AARCH64.equals(PlatformDetection.getArch())
+                || PlatformDetection.isUsingRosseta());
+    }
+
+    /**
+     * Reads a classpath resource fully as UTF-8 text.
+     *
+     * @param absoluteResourcePath
+     *     absolute classpath resource path
+     * @return the resource contents as UTF-8 text
+     * @throws BuildException
+     *     if the resource cannot be found or read
+     */
+    private static String readClasspathResourceAsString(final String absoluteResourcePath) throws BuildException {
+        Objects.requireNonNull(absoluteResourcePath, "absoluteResourcePath");
+
+        try (InputStream is = PytorchEnvironmentManager.class.getResourceAsStream(absoluteResourcePath)) {
+            if (is == null) {
+                throw new BuildException("Required resource not found on classpath: " + absoluteResourcePath);
+            }
+            return new String(readAllBytesJava8(is), StandardCharsets.UTF_8);
+        } catch (IOException e) {
+            throw new BuildException("Failed to read resource: " + absoluteResourcePath, e);
+        }
+    }
+
+    /**
+     * Java 8-compatible {@link InputStream} to byte array helper.
+     *
+     * @param is
+     *     input stream to read
+     * @return all bytes from the input stream
+     * @throws IOException
+     *     if reading fails
+     */
+    private static byte[] readAllBytesJava8(final InputStream is) throws IOException {
+        final ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        final byte[] buffer = new byte[8192];
+        int len;
+        while ((len = is.read(buffer)) != -1) {
+            baos.write(buffer, 0, len);
+        }
+        return baos.toByteArray();
     }
 
     private static void ensureTaskSucceeded(final Task task) {

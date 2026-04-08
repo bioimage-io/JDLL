@@ -7,7 +7,7 @@ import java.util.Objects;
  * Immutable description of the Python environment that should be used for
  * PyTorch model execution on the current machine.
  */
-public final class PytorchEnvironmentSpec {
+public final class PixiEnvironmentSpec {
 
     private final String selectedEnvironment;
     private final String pixiTomlContent;
@@ -27,7 +27,7 @@ public final class PytorchEnvironmentSpec {
      *     whether a follow-up {@code pip install biapy==3.5.10 --no-deps}
      *     step is required after Pixi installs the environment
      */
-    public PytorchEnvironmentSpec(
+    public PixiEnvironmentSpec(
             final String selectedEnvironment,
             final String pixiTomlContent,
             final File environmentDirectory,
@@ -36,6 +36,26 @@ public final class PytorchEnvironmentSpec {
         this.pixiTomlContent = Objects.requireNonNull(pixiTomlContent, "pixiTomlContent");
         this.environmentDirectory = Objects.requireNonNull(environmentDirectory, "environmentDirectory");
         this.installBiapyNoDeps = installBiapyNoDeps;
+    }
+
+    /**
+     * Creates a new immutable environment specification.
+     *
+     * @param selectedEnvironment
+     *     the Pixi environment name to use
+     * @param pixiTomlContent
+     *     the fully rendered pixi.toml content used to build the environment
+     * @param environmentDirectory
+     *     the directory where the environment is expected to live
+     */
+    public PixiEnvironmentSpec(
+            final String selectedEnvironment,
+            final String pixiTomlContent,
+            final File environmentDirectory) {
+        this.selectedEnvironment = Objects.requireNonNull(selectedEnvironment, "selectedEnvironment");
+        this.pixiTomlContent = Objects.requireNonNull(pixiTomlContent, "pixiTomlContent");
+        this.environmentDirectory = Objects.requireNonNull(environmentDirectory, "environmentDirectory");
+        this.installBiapyNoDeps = false;
     }
 
     /**
