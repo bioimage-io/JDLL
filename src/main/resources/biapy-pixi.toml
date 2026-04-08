@@ -82,7 +82,6 @@ platforms = ["win-64"]
 [feature.win-no-cuda.pypi-dependencies]
 torch = { version = "==2.4.1", index = "https://download.pytorch.org/whl/cpu" }
 torchvision = { version = "==0.19.1", index = "https://download.pytorch.org/whl/cpu" }
-torchaudio = { version = "==2.4.1", index = "https://download.pytorch.org/whl/cpu" }
 
 # Windows CUDA (same Java version family, but CUDA wheel index for the CUDA env)
 [feature.win-cuda]
@@ -91,7 +90,6 @@ system-requirements = { cuda = "12.4" }
 [feature.win-cuda.pypi-dependencies]
 torch = { version = "==2.4.1", index = "https://download.pytorch.org/whl/cu124" }
 torchvision = { version = "==0.19.1", index = "https://download.pytorch.org/whl/cu124" }
-torchaudio = { version = "==2.4.1", index = "https://download.pytorch.org/whl/cu124" }
 
 # Linux x86_64 CPU (Java: non-Windows, non-native-Intel-mac branch -> torch 2.4.0, CPU index)
 [feature.linux-x86_64-no-cuda]
@@ -99,7 +97,6 @@ platforms = ["linux-64"]
 [feature.linux-x86_64-no-cuda.pypi-dependencies]
 torch = { version = "==2.4.0", index = "https://download.pytorch.org/whl/cpu" }
 torchvision = { version = "==0.19.0", index = "https://download.pytorch.org/whl/cpu" }
-torchaudio = { version = "==2.4.0", index = "https://download.pytorch.org/whl/cpu" }
 
 # Linux x86_64 CUDA (same Java version family, but CUDA wheel index for the CUDA env)
 [feature.linux-x86_64-cuda]
@@ -108,7 +105,6 @@ system-requirements = { cuda = "12.4" }
 [feature.linux-x86_64-cuda.pypi-dependencies]
 torch = { version = "==2.4.0", index = "https://download.pytorch.org/whl/cu124" }
 torchvision = { version = "==0.19.0", index = "https://download.pytorch.org/whl/cu124" }
-torchaudio = { version = "==2.4.0", index = "https://download.pytorch.org/whl/cu124" }
 
 # macOS x86_64 native Intel only (Java special branch: !Rosetta -> torch 2.2.2 + CPU index)
 # If you are on Apple Silicon, use the macos-arm64 envs instead.
@@ -117,7 +113,6 @@ platforms = ["osx-64"]
 [feature.macos-x86_64-torch.pypi-dependencies]
 torch = { version = "==2.2.2", index = "https://download.pytorch.org/whl/cpu" }
 torchvision = { version = "==0.17.2", index = "https://download.pytorch.org/whl/cpu" }
-torchaudio = { version = "==2.2.2", index = "https://download.pytorch.org/whl/cpu" }
 
 # macOS arm64 / Apple Silicon (Java: macOS arm64 or Rosetta -> torch 2.4.0 with no explicit index)
 [feature.macos-arm64-torch]
@@ -125,7 +120,6 @@ platforms = ["osx-arm64"]
 [feature.macos-arm64-torch.pypi-dependencies]
 torch = "==2.4.0"
 torchvision = "==0.19.0"
-torchaudio = "==2.4.0"
 
 # -----------------------------------------------------------------------------
 # Tasks
@@ -135,7 +129,7 @@ cmd = "python"
 
 [tasks.check-gpu]
 cmd = '''
-python -c "import platform, torch, torchvision, torchaudio; print('Torch:', torch.__version__); print('Torchvision:', torchvision.__version__); print('Torchaudio:', torchaudio.__version__); print('CUDA available:', torch.cuda.is_available()); print('CUDA runtime:', torch.version.cuda); print('Platform:', platform.platform())"
+python -c "import platform, torch, torchvision; print('Torch:', torch.__version__); print('Torchvision:', torchvision.__version__); print('CUDA available:', torch.cuda.is_available()); print('CUDA runtime:', torch.version.cuda); print('Platform:', platform.platform())"
 '''
 
 # Windows CPU: scrub CUDA from PATH for tasks
@@ -157,7 +151,7 @@ $clean = ($env:PATH -split ';' | Where-Object { $_ -notmatch 'CUDA\\v[0-9]+' }) 
 $env:PATH = $clean;
 $env:CUDA_HOME='';
 $env:CUDA_PATH='';
-python -c \"import platform, torch, torchvision, torchaudio; print('Torch:', torch.__version__); print('Torchvision:', torchvision.__version__); print('Torchaudio:', torchaudio.__version__); print('CUDA available:', torch.cuda.is_available()); print('CUDA runtime:', torch.version.cuda); print('Platform:', platform.platform())\"
+python -c \"import platform, torch, torchvision; print('Torch:', torch.__version__); print('Torchvision:', torchvision.__version__); print('CUDA available:', torch.cuda.is_available()); print('CUDA runtime:', torch.version.cuda); print('Platform:', platform.platform())\"
 "
 '''
 
