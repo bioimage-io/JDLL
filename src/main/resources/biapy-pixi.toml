@@ -77,19 +77,18 @@ install-biapy-no-deps = "python -m pip install --no-deps biapy==3.5.10"
 # -----------------------------------------------------------------------------
 
 # Windows CPU (Java: BIAPY_PIP_DEPS_TORCH -> torch 2.4.1, CPU index)
-[feature.win-no-cuda]
+[feature.win-x86_64-no-cuda]
 platforms = ["win-64"]
-[feature.win-no-cuda.pypi-dependencies]
+[feature.win-x86_64-no-cuda.pypi-dependencies]
 torch = { version = "==2.4.1", index = "https://download.pytorch.org/whl/cpu" }
 torchvision = { version = "==0.19.1", index = "https://download.pytorch.org/whl/cpu" }
 
 # Windows CUDA (same Java version family, but CUDA wheel index for the CUDA env)
-[feature.win-cuda]
+[feature.win-x86_64-cuda]
 platforms = ["win-64"]
-system-requirements = { cuda = "12.4" }
-[feature.win-cuda.pypi-dependencies]
-torch = { version = "==2.4.1", index = "https://download.pytorch.org/whl/cu124" }
-torchvision = { version = "==0.19.1", index = "https://download.pytorch.org/whl/cu124" }
+[feature.win-x86_64-cuda.pypi-dependencies]
+torch = { version = "==2.4.1", index = "https://download.pytorch.org/whl/cu%s" }
+torchvision = { version = "==0.19.1", index = "https://download.pytorch.org/whl/cu%s" }
 
 # Linux x86_64 CPU (Java: non-Windows, non-native-Intel-mac branch -> torch 2.4.0, CPU index)
 [feature.linux-x86_64-no-cuda]
@@ -101,10 +100,9 @@ torchvision = { version = "==0.19.0", index = "https://download.pytorch.org/whl/
 # Linux x86_64 CUDA (same Java version family, but CUDA wheel index for the CUDA env)
 [feature.linux-x86_64-cuda]
 platforms = ["linux-64"]
-system-requirements = { cuda = "12.4" }
 [feature.linux-x86_64-cuda.pypi-dependencies]
-torch = { version = "==2.4.0", index = "https://download.pytorch.org/whl/cu124" }
-torchvision = { version = "==0.19.0", index = "https://download.pytorch.org/whl/cu124" }
+torch = { version = "==2.4.0", index = "https://download.pytorch.org/whl/cu%s" }
+torchvision = { version = "==0.19.0", index = "https://download.pytorch.org/whl/cu%s" }
 
 # macOS x86_64 native Intel only (Java special branch: !Rosetta -> torch 2.2.2 + CPU index)
 # If you are on Apple Silicon, use the macos-arm64 envs instead.
@@ -133,7 +131,7 @@ python -c "import platform, torch, torchvision; print('Torch:', torch.__version_
 '''
 
 # Windows CPU: scrub CUDA from PATH for tasks
-[feature.win-no-cuda.tasks.python]
+[feature.win-x86_64-no-cuda.tasks.python]
 cmd = '''
 powershell -NoProfile -Command "
 $clean = ($env:PATH -split ';' | Where-Object { $_ -notmatch 'CUDA\\v[0-9]+' }) -join ';';
@@ -144,7 +142,7 @@ python
 "
 '''
 
-[feature.win-no-cuda.tasks.check-gpu]
+[feature.win-x86_64-no-cuda.tasks.check-gpu]
 cmd = '''
 powershell -NoProfile -Command "
 $clean = ($env:PATH -split ';' | Where-Object { $_ -notmatch 'CUDA\\v[0-9]+' }) -join ';';
@@ -159,8 +157,8 @@ python -c \"import platform, torch, torchvision; print('Torch:', torch.__version
 # Environments
 # -----------------------------------------------------------------------------
 [environments]
-win-no-cuda = ["standard-packages", "win-no-cuda"]
-win-cuda = ["standard-packages", "win-cuda"]
+win-x86_64-no-cuda = ["standard-packages", "win-x86_64-no-cuda"]
+win-x86_64-cuda = ["standard-packages", "win-x86_64-cuda"]
 linux-x86_64-no-cuda = ["standard-packages", "linux-x86_64-no-cuda"]
 linux-x86_64-cuda = ["standard-packages", "linux-x86_64-cuda"]
 

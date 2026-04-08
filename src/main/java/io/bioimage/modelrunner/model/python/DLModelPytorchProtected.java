@@ -22,15 +22,20 @@
  */
 package io.bioimage.modelrunner.model.python;
 
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Map.Entry;
 import java.util.UUID;
 import java.util.function.Consumer;
@@ -55,6 +60,7 @@ import io.bioimage.modelrunner.exceptions.LoadModelException;
 import io.bioimage.modelrunner.exceptions.RunModelException;
 import io.bioimage.modelrunner.model.BaseModel;
 import io.bioimage.modelrunner.model.java.DLModelJava.TilingConsumer;
+import io.bioimage.modelrunner.system.GpuCompatibility;
 import io.bioimage.modelrunner.system.PlatformDetection;
 import io.bioimage.modelrunner.tensor.Tensor;
 import io.bioimage.modelrunner.tensor.shm.SharedMemoryArray;
@@ -88,6 +94,8 @@ public class DLModelPytorchProtected extends BaseModel {
 	
 	private String selectedEnvironment;
 	
+	private final String pixiTomlContent;
+	
 	protected List<SharedMemoryArray> inShmaList = new ArrayList<SharedMemoryArray>();
 		
 	private List<String> outShmNames;
@@ -116,61 +124,10 @@ public class DLModelPytorchProtected extends BaseModel {
 	 */
 	protected TilingConsumer tileCounter;
 	
-	private static final String DEFAULT_ENV_VARIANT = "default";
-	
 	public static final String COMMON_PYTORCH_ENV_NAME = "biapy";
 	
 	protected static final boolean IS_ARM = PlatformDetection.isMacOS() 
 			&& (PlatformDetection.getArch().equals(PlatformDetection.ARCH_ARM64) || PlatformDetection.isUsingRosseta());
-	
-	private static final List<String> BIAPY_CONDA_DEPS = Arrays.asList(new String[] {"python=3.10"});
-	
-	private static final List<String> BIAPY_PIP_DEPS_TORCH;
-	static {
-		if (PlatformDetection.isMacOS()
-				&& PlatformDetection.getArch().equals(PlatformDetection.ARCH_X86_64) && !PlatformDetection.isUsingRosseta())
-			BIAPY_PIP_DEPS_TORCH = Arrays.asList(new String[] {"torch==2.2.2", 
-					"torchvision==0.17.2", "torchaudio==2.2.2"});
-		else if (PlatformDetection.isWindows())
-			BIAPY_PIP_DEPS_TORCH = Arrays.asList(new String[] {"torch==2.4.1", 
-					"torchvision==0.19.1", "torchaudio==2.4.1"});
-		else
-			BIAPY_PIP_DEPS_TORCH = Arrays.asList(new String[] {"torch==2.4.0", 
-					"torchvision==0.19.0", "torchaudio==2.4.0"});
-	}
-	
-	private static final List<String> BIAPY_PIP_DEPS;
-	static {
-		if (PlatformDetection.isWindows())
-			BIAPY_PIP_DEPS = Arrays.asList(new String[] {"timm==1.0.14",
-					"pytorch-msssim==1.0.0", "torchmetrics==1.4.3", "cellpose==3.1.1.1", "scipy==1.15.2", "torch-fidelity==0.3.0",
-					"careamics", "biapy==3.5.10", "appose"});
-		else if (PlatformDetection.isMacOS() && PlatformDetection.getOSVersion().getMajor() < 14)
-			BIAPY_PIP_DEPS = Arrays.asList(new String[] {"timm==1.0.14",
-					"pytorch-msssim==1.0.0", "torchmetrics==1.4.3", "cellpose==3.1.1.1", "torch-fidelity==0.3.0",
-					"careamics", "pooch>=1.8.1", "numpy<2", "imagecodecs>=2024.1.1", "bioimageio.core==0.7.0",
-					"h5py>=3.9.0","torchinfo>=1.8.0", "pandas>=1.5.3", "xarray==2025.1.2",
-					"fill-voids>=2.0.6", "edt>=2.3.2", "tqdm>=4.66.1", "yacs>=0.1.8", "zarr>=2.16.1",
-					"pydot>=1.4.2", "matplotlib>=3.7.1", "imgaug>=0.4.0", "scipy==1.15.2",
-					"tensorboardX>=2.6.2.2", "scikit-learn>=1.4.0", "opencv-python>=4.8.0.76", "scikit-image>=0.21.0",
-					"appose"});
-		else
-			BIAPY_PIP_DEPS = Arrays.asList(new String[] {"timm==1.0.14",
-					"pytorch-msssim==1.0.0", "torchmetrics==1.4.3", "cellpose==3.1.1.1", "scipy==1.15.2", "torch-fidelity==0.3.0",
-					"careamics", "biapy==3.5.10", "appose"});
-	}
-	
-	private static final List<String> BIAPY_PIP_ARGS;
-	static {
-		if (PlatformDetection.isMacOS() 
-				&& (PlatformDetection.getArch().equals(PlatformDetection.ARCH_AARCH64)
-						|| PlatformDetection.getArch().equals(PlatformDetection.ARCH_ARM64)
-						|| PlatformDetection.isUsingRosseta())) {
-			BIAPY_PIP_ARGS = new ArrayList<String>();
-		} else {
-			BIAPY_PIP_ARGS = Arrays.asList(new String[] {"--index-url", "https://download.pytorch.org/whl/cpu"});
-		}
-	}
 		
 	protected static String INSTALLATION_DIR = Environments.apposeEnvsDir();
 	
@@ -324,10 +281,45 @@ public class DLModelPytorchProtected extends BaseModel {
 		this.weightsPath = new File(weightsPath).getAbsolutePath();
 		this.kwargs = kwargs;
 		this.envPath = INSTALLATION_DIR + File.separator + "envs" + File.separator + COMMON_PYTORCH_ENV_NAME;
-		if (false) // TODO 
-			selectedEnvironment = "cuda";
-		else
-			selectedEnvironment = DEFAULT_ENV_VARIANT;
+		
+		final String pixiTemplate = readClasspathResourceAsString("/pixi.toml");
+	    final String cudaVersion = GpuCompatibility.pickCudaVersion(null);
+
+	    if (cudaVersion == null) {
+		    pixiTomlContent = String.format(
+		            Locale.ROOT,
+		            pixiTemplate,
+		            "", "", "", ""
+		    );
+		    if (PlatformDetection.isLinux()) 
+		    	selectedEnvironment = "linux-x86_64-no-cuda";
+		    else if (PlatformDetection.isWindows())
+		    	selectedEnvironment = "win-x86_64-no-cuda";
+		    else if (PlatformDetection.isMacOS()
+		    		&& (PlatformDetection.ARCH_ARM64.equals(PlatformDetection.getArch())
+		    				|| PlatformDetection.isUsingRosseta())
+		    		&& PlatformDetection.getOSVersion().getMajor() < 14) 
+		    	selectedEnvironment = "macos-arm64-legacy";
+		    else if (PlatformDetection.isMacOS()
+		    		&& (PlatformDetection.ARCH_ARM64.equals(PlatformDetection.getArch())
+		    				|| PlatformDetection.isUsingRosseta())) 
+		    	selectedEnvironment = "macos-arm64";
+		    else if (PlatformDetection.isMacOS()
+		    		&& !PlatformDetection.ARCH_ARM64.equals(PlatformDetection.getArch())
+		    		&& !PlatformDetection.isUsingRosseta()
+		    		&& PlatformDetection.getOSVersion().getMajor() < 14) 
+		    	selectedEnvironment = "macos-x86_64-legacy";
+		    else
+		    	selectedEnvironment = "macos-x86_64";
+	    } else {
+	    	pixiTomlContent = String.format(
+		            Locale.ROOT,
+		            pixiTemplate, cudaVersion.replace(".", ""), cudaVersion.replace(".", ""),
+		            cudaVersion.replace(".", ""), cudaVersion.replace(".", "")
+		    );
+		    if (PlatformDetection.isLinux()) selectedEnvironment = "linux-x86_64-cuda";
+		    else selectedEnvironment = "win-x86_64-cuda";
+	    }
 		createPythonService();
 	}
 	
@@ -994,15 +986,13 @@ public class DLModelPytorchProtected extends BaseModel {
 	 * @param consumer
 	 * 	String consumer that reads the installation log
 	 * 
-	 * @throws IOException if there is any error downloading the DL engine or installing the micromamba environment
 	 * @throws InterruptedException if the installation is stopped
-	 * @throws RuntimeException if there is any unexpected error in the micromamba environment installation
-	 * @throws BuildException 
+	 * @throws BuildException if there is any error building the environment or installing dependencies
 	 */
 	public void installRequirements(Consumer<String> consumer) throws InterruptedException, 
 													BuildException {
 		
-		PixiBuilder pixi = Appose.pixi().content("");
+		PixiBuilder pixi = Appose.pixi().content(pixiTomlContent);
 	    if (consumer != null)
 	    	pixi.subscribeOutput(consumer);
 	    if (consumer != null)
@@ -1017,6 +1007,29 @@ public class DLModelPytorchProtected extends BaseModel {
 	    }
 	    
 		boolean biapyPythonInstalled = checkDepsInstalled();
+		if (!biapyPythonInstalled) {
+		    Environment env = pixi.environment(selectedEnvironment).build();
+		    if (PlatformDetection.isMacOS() && PlatformDetection.getOSVersion().getMajor() < 14)
+		    	installBiapyNoDeps(env);
+		};
+		
+		if (!isInstalled())
+			throw new RuntimeException("Not all the requried packages were installed correctly. Please try again."
+					+ " If the error persists, please post an issue at: https://github.com/bioimage-io/JDLL/issues");
+	}
+	
+    public static void installBiapyNoDeps(Environment env) {
+		List<String> pythonExes = Arrays.asList("python", "python3", "python.exe");
+        try {
+			Service serv = env.service(pythonExes, "-m", "pip", "install", "biapy==3.5.10", "--no-deps").start();
+			serv.waitFor();
+		} catch (InterruptedException | IOException e) {
+			e.printStackTrace();
+		}
+        
+    }
+	
+	private boolean checkDepsInstalled() {
 		/*
 		try {
 			biapyPythonInstalled = mamba.checkAllDependenciesInEnv(COMMON_PYTORCH_ENV_NAME, BIAPY_CONDA_DEPS);
@@ -1028,26 +1041,6 @@ public class DLModelPytorchProtected extends BaseModel {
 			mamba.installMicromamba();
 		}
 		*/
-		if (!biapyPythonInstalled) {
-			/*
-			// TODO add logging for environment installation
-			mamba.create(COMMON_PYTORCH_ENV_NAME, true, new ArrayList<String>(), BIAPY_CONDA_DEPS);
-			ArrayList<String> args = new ArrayList<String>(BIAPY_PIP_ARGS);
-			args.addAll(BIAPY_PIP_DEPS_TORCH);
-			mamba.pipInstallIn(COMMON_PYTORCH_ENV_NAME, args.toArray(new String[args.size()]));
-			mamba.pipInstallIn(COMMON_PYTORCH_ENV_NAME, BIAPY_PIP_DEPS.toArray(new String[BIAPY_PIP_DEPS.size()]));
-			if (PlatformDetection.isMacOS() && PlatformDetection.getOSVersion().getMajor() < 14)
-				mamba.pipInstallIn(COMMON_PYTORCH_ENV_NAME, new String[] {"biapy==3.5.10", "--no-deps"});
-			*/
-		    pixi.environment(selectedEnvironment).build();
-		};
-		
-		if (!isInstalled())
-			throw new RuntimeException("Not all the requried packages were installed correctly. Please try again."
-					+ " If the error persists, please post an issue at: https://github.com/bioimage-io/JDLL/issues");
-	}
-	
-	private boolean checkDepsInstalled() {
 		//TODO
 		return false;
 	}
@@ -1067,6 +1060,36 @@ public class DLModelPytorchProtected extends BaseModel {
 	 */
 	public static String getInstallationDir() {
 		return INSTALLATION_DIR;
+	}
+	
+	/**
+	 * Reads a classpath resource fully as UTF-8 text.
+	 * Wraps IO/resource errors as BuildException so callers don't need to handle IOException.
+	 */
+	private static String readClasspathResourceAsString(String absoluteResourcePath) throws BuildException {
+	    Objects.requireNonNull(absoluteResourcePath, "absoluteResourcePath");
+
+	    try (InputStream is = DLModelPytorchProtected.class.getResourceAsStream(absoluteResourcePath)) {
+	        if (is == null) {
+	            throw new BuildException("Required resource not found on classpath: " + absoluteResourcePath);
+	        }
+	        return new String(readAllBytesJava8(is), StandardCharsets.UTF_8);
+	    } catch (IOException e) {
+	        throw new BuildException("Failed to read resource: " + absoluteResourcePath, e);
+	    }
+	}
+
+	/**
+	 * Java 8-compatible InputStream -> byte[].
+	 */
+	private static byte[] readAllBytesJava8(InputStream is) throws IOException {
+	    ByteArrayOutputStream baos = new ByteArrayOutputStream();
+	    byte[] buffer = new byte[8192];
+	    int len;
+	    while ((len = is.read(buffer)) != -1) {
+	        baos.write(buffer, 0, len);
+	    }
+	    return baos.toByteArray();
 	}
 
 }
