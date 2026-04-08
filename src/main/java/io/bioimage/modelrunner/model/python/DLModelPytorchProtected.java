@@ -976,23 +976,6 @@ public class DLModelPytorchProtected extends BaseModel {
     }
 
     /**
-     * Checks whether the protected PyTorch environment is installed in the given
-     * installation directory.
-     *
-     * @param installationDir
-     *     the base installation directory to check
-     * @return {@code true} if the environment appears to be fully installed
-     */
-    public static boolean isInstalled(final String installationDir) {
-        try {
-            final PixiEnvironmentSpec spec = resolvePytorchEnv();
-            return PixiEnvironmentManager.isInstalled(spec);
-        } catch (BuildException e) {
-            return false;
-        }
-    }
-
-    /**
      * Installs the requirements for the current model instance.
      *
      * @throws InterruptedException if installation is interrupted
@@ -1130,7 +1113,7 @@ public class DLModelPytorchProtected extends BaseModel {
                 selectedEnvironment,
                 pixiTomlContent,
                 environmentDirectory,
-                Arrays.asList("biapy==3.5.10")
+                installBiapyNoDeps ? Arrays.asList("biapy==3.5.10") : null
         );
     }
 
