@@ -89,9 +89,6 @@ public final class PytorchEnvironmentManager {
         if (!installed) {
             final Environment env = pixi.environment(spec.getSelectedEnvironment()).build();
 
-            if (spec.isInstallBiapyNoDeps()) {
-                installBiapyNoDeps(env);
-            }
         }
     }
 
@@ -171,7 +168,7 @@ public final class PytorchEnvironmentManager {
         // Torch / torchvision versions
         addTorchRequirements(spec, exact);
 
-        if (spec.isInstallBiapyNoDeps()) {
+        if (true) {
             // Legacy macOS branch
             exact.put("timm", "1.0.14");
             exact.put("pytorch-msssim", "1.0.0");
@@ -266,7 +263,7 @@ public final class PytorchEnvironmentManager {
         code.append("        problems.append(name + ' not installed')").append(System.lineSeparator());
 
         // Legacy macOS also constrained numpy<2 in the original Java logic.
-        if (spec.isInstallBiapyNoDeps()) {
+        if (true) {
             code.append("try:").append(System.lineSeparator());
             code.append("    numpy_found = version('numpy')").append(System.lineSeparator());
             code.append("    if Version(numpy_found) >= Version('2'):").append(System.lineSeparator());

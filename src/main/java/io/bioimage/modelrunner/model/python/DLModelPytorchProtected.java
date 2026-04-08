@@ -36,7 +36,7 @@ import io.bioimage.modelrunner.exceptions.LoadModelException;
 import io.bioimage.modelrunner.exceptions.RunModelException;
 import io.bioimage.modelrunner.model.BaseModel;
 import io.bioimage.modelrunner.model.java.DLModelJava.TilingConsumer;
-import io.bioimage.modelrunner.model.python.envs.PytorchEnvironmentManager;
+import io.bioimage.modelrunner.model.python.envs.PixiEnvironmentManager;
 import io.bioimage.modelrunner.model.python.envs.PixiEnvironmentSpec;
 import io.bioimage.modelrunner.system.GpuCompatibility;
 import io.bioimage.modelrunner.system.PlatformDetection;
@@ -109,6 +109,8 @@ public class DLModelPytorchProtected extends BaseModel {
     public static final String COMMON_PYTORCH_ENV_NAME = "biapy";
 
     private static final String PIXI_TEMPLATE_RESOURCE = "/biapy-pixi.toml";
+    
+    private static final List<String> CUDA_COMPAT_VERSIONS = new ArrayList<>(Arrays.asList("12.4", "12.1", "11.8"));
 
     protected static final boolean IS_ARM = PlatformDetection.isMacOS()
             && (PlatformDetection.getArch().equals(PlatformDetection.ARCH_ARM64)
@@ -967,7 +969,7 @@ public class DLModelPytorchProtected extends BaseModel {
     public static boolean isInstalled() {
         try {
             final PixiEnvironmentSpec spec = resolvePytorchEnv();
-            return PytorchEnvironmentManager.isInstalled(spec);
+            return PixiEnvironmentManager.isInstalled(spec);
         } catch (BuildException e) {
             return false;
         }
@@ -984,7 +986,7 @@ public class DLModelPytorchProtected extends BaseModel {
     public static boolean isInstalled(final String installationDir) {
         try {
             final PixiEnvironmentSpec spec = resolvePytorchEnv();
-            return PytorchEnvironmentManager.isInstalled(spec);
+            return PixiEnvironmentManager.isInstalled(spec);
         } catch (BuildException e) {
             return false;
         }
@@ -1010,7 +1012,7 @@ public class DLModelPytorchProtected extends BaseModel {
      */
     public void installRequirements(final Consumer<String> consumer)
             throws InterruptedException, BuildException {
-        PytorchEnvironmentManager.installRequirements(environmentSpec, consumer);
+        PixiEnvironmentManager.installRequirements(environmentSpec, consumer);
 
         if (!isInstalled()) {
             throw new RuntimeException("Not all the required packages were installed correctly. Please try again."
@@ -1041,7 +1043,7 @@ public class DLModelPytorchProtected extends BaseModel {
     public static void installDefaultRequirements(final Consumer<String> consumer)
             throws InterruptedException, BuildException {
         final PixiEnvironmentSpec spec = resolvePytorchEnv();
-        PytorchEnvironmentManager.installRequirements(spec, consumer);
+        PixiEnvironmentManager.installRequirements(spec, consumer);
 
         if (!isInstalled()) {
             throw new RuntimeException("Not all the required packages were installed correctly. Please try again."
@@ -1128,7 +1130,7 @@ public class DLModelPytorchProtected extends BaseModel {
                 selectedEnvironment,
                 pixiTomlContent,
                 environmentDirectory,
-                installBiapyNoDeps
+                Arrays.asList("biapy==3.5.10")
         );
     }
 
@@ -1155,7 +1157,7 @@ public class DLModelPytorchProtected extends BaseModel {
     private static String readClasspathResourceAsString(final String absoluteResourcePath) throws BuildException {
         Objects.requireNonNull(absoluteResourcePath, "absoluteResourcePath");
 
-        try (InputStream is = PytorchEnvironmentManager.class.getResourceAsStream(absoluteResourcePath)) {
+        try (InputStream is = PixiEnvironmentManager.class.getResourceAsStream(absoluteResourcePath)) {
             if (is == null) {
                 throw new BuildException("Required resource not found on classpath: " + absoluteResourcePath);
             }
