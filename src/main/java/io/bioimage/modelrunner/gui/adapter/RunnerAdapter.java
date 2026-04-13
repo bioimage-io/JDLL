@@ -43,7 +43,9 @@ import io.bioimage.modelrunner.exceptions.RunModelException;
 import io.bioimage.modelrunner.model.BaseModel;
 import io.bioimage.modelrunner.model.java.BioimageIoModelJava;
 import io.bioimage.modelrunner.model.python.BioimageIoModelPytorch;
+import io.bioimage.modelrunner.model.python.DLModelPytorch;
 import io.bioimage.modelrunner.model.python.DLModelPytorchProtected;
+import io.bioimage.modelrunner.model.python.envs.PixiEnvironmentManager;
 import io.bioimage.modelrunner.model.special.stardist.Stardist2D;
 import io.bioimage.modelrunner.model.special.stardist.StardistAbstract;
 import io.bioimage.modelrunner.tensor.Tensor;
@@ -220,7 +222,7 @@ public abstract class RunnerAdapter implements Closeable {
 			model = BioimageIoModelJava.createBioimageioModel(descriptor.getModelPath(), enginesPath);
 		} else if (descriptor.getModelFamily().equals(ModelDescriptor.BIOIMAGEIO)) {
 			if (install && !DLModelPytorchProtected.isInstalled())
-				DLModelPytorchProtected.installRequirements();
+            	PixiEnvironmentManager.installRequirements(DLModelPytorch.resolvePytorchEnv(), null);
 			model = BioimageIoModelPytorch.create(descriptor);
 		} else {
 			throw new IllegalArgumentException("Model not supported");
@@ -251,7 +253,7 @@ public abstract class RunnerAdapter implements Closeable {
 			model = BioimageIoModelJava.createBioimageioModel(descriptor.getModelPath(), enginesPath, this.classLoader);
 		} else if (descriptor.getModelFamily().equals(ModelDescriptor.BIOIMAGEIO)) {
 			if (install && !DLModelPytorchProtected.isInstalled())
-				DLModelPytorchProtected.installRequirements();
+            	PixiEnvironmentManager.installRequirements(DLModelPytorch.resolvePytorchEnv(), null);
 			model = BioimageIoModelPytorch.create(descriptor);
 		} else {
 			throw new IllegalArgumentException("Model not supported");

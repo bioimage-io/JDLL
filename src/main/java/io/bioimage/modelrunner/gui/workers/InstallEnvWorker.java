@@ -106,7 +106,7 @@ public class InstallEnvWorker extends SwingWorker<Boolean, Void> {
             if (modelFamily.toLowerCase().equals(ModelDescriptor.STARDIST)) {
             	StardistAbstract.installRequirements(consumer);
             } else if (modelFamily.toLowerCase().equals(ModelDescriptor.CELLPOSE)) {
-            	Cellpose.installRequirements(consumer);
+            	PixiEnvironmentManager.installRequirements(DLModelPytorch.resolvePytorchEnv(), consumer);
             } else if (modelFamily.toLowerCase().equals(ModelDescriptor.BIOIMAGEIO))
             	PixiEnvironmentManager.installRequirements(DLModelPytorch.resolvePytorchEnv(), consumer);
 		} catch (IOException | RuntimeException e) {
