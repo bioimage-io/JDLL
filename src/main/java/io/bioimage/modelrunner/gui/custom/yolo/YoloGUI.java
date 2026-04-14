@@ -17,15 +17,27 @@
  * limitations under the License.
  * #L%
  */
-package io.bioimage.modelrunner.gui.yolo;
+package io.bioimage.modelrunner.gui.custom.yolo;
 
+import java.awt.Color;
+import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 
 import javax.swing.JFrame;
 import javax.swing.JPanel;
 import javax.swing.JTabbedPane;
 import javax.swing.SwingUtilities;
+
+import io.bioimage.modelrunner.bioimageio.description.ModelDescriptor;
+import io.bioimage.modelrunner.exceptions.LoadEngineException;
+import io.bioimage.modelrunner.gui.adapter.GuiAdapter;
+import io.bioimage.modelrunner.gui.adapter.RunnerAdapter;
+import io.bioimage.modelrunner.tensor.Tensor;
+import net.imglib2.RandomAccessibleInterval;
+import net.imglib2.type.NativeType;
+import net.imglib2.type.numeric.RealType;
 
 public class YoloGUI extends JPanel {
 
@@ -43,14 +55,15 @@ public class YoloGUI extends JPanel {
             "[Pretrained] YOLO11x");
 
     protected final JTabbedPane tabs = new JTabbedPane();
-    protected final YoloTitlePanel titlePanel = new YoloTitlePanel();
+    protected final YoloTitlePanel titlePanel;
     protected final YoloInferencePanel inferencePanel = new YoloInferencePanel();
     protected final YoloTrainPanel trainPanel = new YoloTrainPanel();
 
-    protected YoloGUI() {
+    protected YoloGUI(GuiAdapter adapter) {
         setLayout(null);
         setOpaque(true);
         setBackground(YoloUiUtils.PANEL_BG);
+        this.titlePanel = new YoloTitlePanel(adapter);
         inferencePanel.getModelSelectionPanel().setModels(DEFAULT_MODELS);
         tabs.addTab("Inference", inferencePanel);
         tabs.addTab("Train", trainPanel);
@@ -80,12 +93,102 @@ public class YoloGUI extends JPanel {
     }
 
     public static void main(String[] args) {
+    	
+    	GuiAdapter adapter = new GuiAdapter() {
+
+			@Override
+			public String getSoftwareName() {
+				return "JDLL";
+			}
+
+			@Override
+			public String getSoftwareDescription() {
+				return "";
+			}
+
+			@Override
+			public Color getTitleColor() {
+				return new Color(200, 100, 100);
+			}
+
+			@Override
+			public Color getSubtitleColor() {
+				return null;
+			}
+
+			@Override
+			public Color getHeaderColor() {
+				return null;
+			}
+
+			@Override
+			public String getIconPath() {
+				return null;
+			}
+
+			@Override
+			public String getModelsDir() {
+				return null;
+			}
+
+			@Override
+			public String getEnginesDir() {
+				return null;
+			}
+
+			@Override
+			public RunnerAdapter createRunner(ModelDescriptor descriptor) throws IOException, LoadEngineException {
+				// TODO Auto-generated method stub
+				return null;
+			}
+
+			@Override
+			public RunnerAdapter createRunner(ModelDescriptor descriptor, String enginesPath)
+					throws IOException, LoadEngineException {
+				// TODO Auto-generated method stub
+				return null;
+			}
+
+			@Override
+			public <T extends RealType<T> & NativeType<T>> void displayRai(RandomAccessibleInterval<T> rai,
+					String axesOrder, String imTitle) {
+				// TODO Auto-generated method stub
+				
+			}
+
+			@Override
+			public <T extends RealType<T> & NativeType<T>> List<Tensor<T>> getInputTensors(ModelDescriptor descriptor) {
+				// TODO Auto-generated method stub
+				return null;
+			}
+
+			@Override
+			public List<String> getInputImageNames() {
+				// TODO Auto-generated method stub
+				return null;
+			}
+
+			@Override
+			public <T extends RealType<T> & NativeType<T>> List<Tensor<T>> convertToInputTensors(
+					Map<String, Object> inputs, ModelDescriptor descriptor) {
+				// TODO Auto-generated method stub
+				return null;
+			}
+
+			@Override
+			public void notifyModelUsed(String modelAbsPath) {
+				// TODO Auto-generated method stub
+				
+			}
+    		
+    	};
+    	
         SwingUtilities.invokeLater(new Runnable() {
             @Override
             public void run() {
                 JFrame frame = new JFrame("YOLO Plugin");
                 frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-                frame.getContentPane().add(new YoloGUI());
+                frame.getContentPane().add(new YoloGUI(adapter));
                 frame.setSize(900, 900);
                 frame.setLocationRelativeTo(null);
                 frame.setVisible(true);

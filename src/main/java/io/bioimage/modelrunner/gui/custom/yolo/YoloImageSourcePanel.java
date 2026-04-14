@@ -17,7 +17,7 @@
  * limitations under the License.
  * #L%
  */
-package io.bioimage.modelrunner.gui.yolo;
+package io.bioimage.modelrunner.gui.custom.yolo;
 
 import java.awt.datatransfer.DataFlavor;
 import java.io.File;

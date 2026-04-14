@@ -17,7 +17,7 @@
  * limitations under the License.
  * #L%
  */
-package io.bioimage.modelrunner.gui.yolo;
+package io.bioimage.modelrunner.gui.custom.yolo;
 
 import java.awt.Color;
 import java.awt.Font;
@@ -29,14 +29,17 @@ import java.awt.RenderingHints;
 
 import javax.swing.JPanel;
 
+import io.bioimage.modelrunner.gui.adapter.GuiAdapter;
+
 public class YoloTitlePanel extends JPanel {
 
     private static final long serialVersionUID = -7112374297834023910L;
 
-    private static final String LEFT_TEXT = "deepImagej";
+    private final String softwareName;
+    private final Color softwareColor;
+
     private static final String RIGHT_TEXT = "YOLO";
 
-    private static final Color LEFT_COLOR = new Color(110, 38, 14);
     private static final Color RIGHT_COLOR = Color.BLACK;
     private static final Color BG_COLOR = Color.LIGHT_GRAY;
 
@@ -46,7 +49,9 @@ public class YoloTitlePanel extends JPanel {
     private static final double HORIZONTAL_PADDING_RATIO = 0.04;
     private static final double VERTICAL_PADDING_RATIO = 0.14;
 
-    protected YoloTitlePanel() {
+    protected YoloTitlePanel(GuiAdapter adapter) {
+    	this.softwareName = adapter.getSoftwareName();
+    	softwareColor = adapter.getTitleColor();
         setOpaque(true);
         setBackground(BG_COLOR);
     }
@@ -71,15 +76,15 @@ public class YoloTitlePanel extends JPanel {
         FontMetrics fm = g2.getFontMetrics();
 
         int gap = Math.max(2, (int) Math.round(drawW * GAP_RATIO));
-        int leftW = fm.stringWidth(LEFT_TEXT);
+        int leftW = fm.stringWidth(softwareName);
         int rightW = fm.stringWidth(RIGHT_TEXT);
         int totalW = leftW + gap + rightW;
 
         int startX = in.left + (availableW - totalW) / 2;
         int baseline = in.top + (availableH - fm.getHeight()) / 2 + fm.getAscent();
 
-        g2.setColor(LEFT_COLOR);
-        g2.drawString(LEFT_TEXT, startX, baseline);
+        g2.setColor(softwareColor);
+        g2.drawString(softwareName, startX, baseline);
         g2.setColor(RIGHT_COLOR);
         g2.drawString(RIGHT_TEXT, startX + leftW + gap, baseline);
         g2.dispose();
@@ -111,7 +116,7 @@ public class YoloTitlePanel extends JPanel {
     private boolean fits(Graphics2D g2, Font font, int targetW, int targetH) {
         FontMetrics fm = g2.getFontMetrics(font);
         int gap = Math.max(2, (int) Math.round(targetW * GAP_RATIO));
-        int totalW = fm.stringWidth(LEFT_TEXT) + gap + fm.stringWidth(RIGHT_TEXT);
+        int totalW = fm.stringWidth(softwareName) + gap + fm.stringWidth(RIGHT_TEXT);
         return totalW <= targetW && fm.getHeight() <= targetH;
     }
 }
