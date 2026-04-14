@@ -34,7 +34,7 @@ public class YoloInferencePanel extends JPanel {
     protected static final double DISPLAY_MIN_HEIGHT_RATIO = 0.4;
     protected static final double DISPLAY_MAX_HEIGHT_RATIO = 0.5;
     protected static final double LOG_WIDTH_RATIO = 0.95;
-    protected static final double LOG_HEIGHT_RATIO = 0.15;
+    protected static final double DISPLAY_BASE_HEIGHT_RATIO = 0.45;
     protected static final double HELP_WIDTH_RATIO = 0.045;
     protected static final double DRAW_LABEL_RATIO = 0.56;
     protected static final double DRAW_BUTTON_RATIO = 0.14;
@@ -43,6 +43,7 @@ public class YoloInferencePanel extends JPanel {
     protected static final double ROW_UNIT_DRAW = 1.2;
     protected static final double ROW_UNIT_ACTION = 1.0;
     protected static final double ROW_UNIT_WARNING = 1.3;
+    protected static final double ROW_UNIT_LOG = 1.6;
 
     protected final YoloModelSelectionPanel modelSelectionPanel = new YoloModelSelectionPanel();
     protected final YoloImageSourcePanel imageSourcePanel = new YoloImageSourcePanel();
@@ -85,19 +86,30 @@ public class YoloInferencePanel extends JPanel {
         int x = OUTER_PAD;
         int y = OUTER_PAD;
 
-        int logH = Math.max(22, (int) Math.round(h * LOG_HEIGHT_RATIO));
         int extraBottomGap = Math.max(0, (int) Math.round(rowGap * BOTTOM_GAP_EXTRA_RATIO));
-        int displayTargetW = Math.max(1, (int) Math.round(innerW * DISPLAY_WIDTH_RATIO));
+        int totalAvailH = Math.max(8, h - 2 * OUTER_PAD - extraBottomGap - 6 * rowGap);
+        int previewBaseH = Math.max(1, (int) Math.round(h * DISPLAY_BASE_HEIGHT_RATIO));
+        int controlsAvailH = Math.max(4, totalAvailH - previewBaseH);
+        double totalUnits = ROW_UNIT_MODEL + ROW_UNIT_SOURCE + ROW_UNIT_DRAW + ROW_UNIT_LOG + ROW_UNIT_ACTION + ROW_UNIT_WARNING;
+        int rowUnitPx = Math.max(1, (int) Math.floor(controlsAvailH / totalUnits));
+
+        int maxControlH = Math.max(1, YoloUiUtils.controlHeightForFontSize(YoloUiUtils.MAX_CONTROL_FONT_SIZE));
+        int maxSourceH = maxControlH * 2;
+        int maxLogH = maxControlH * 3;
+        int maxWarningH = maxControlH * 2;
+
+        int modelH = Math.max(1, Math.min(maxControlH, (int) Math.round(rowUnitPx * ROW_UNIT_MODEL)));
+        int sourceH = Math.max(1, Math.min(maxSourceH, modelH * 2));
+        int drawH = Math.max(1, Math.min(maxControlH, (int) Math.round(rowUnitPx * ROW_UNIT_DRAW)));
+        int logH = Math.max(1, Math.min(maxLogH, (int) Math.round(rowUnitPx * ROW_UNIT_LOG)));
+        int actionH = Math.max(1, Math.min(maxControlH, (int) Math.round(rowUnitPx * ROW_UNIT_ACTION)));
+        int warningH = Math.max(18, Math.min(maxWarningH, (int) Math.round(rowUnitPx * ROW_UNIT_WARNING)));
+
+        int previewH = Math.max(1, totalAvailH - modelH - sourceH - drawH - logH - actionH - warningH);
         int displayMinH = Math.max(1, (int) Math.round(h * DISPLAY_MIN_HEIGHT_RATIO));
         int displayMaxH = Math.max(displayMinH, (int) Math.round(h * DISPLAY_MAX_HEIGHT_RATIO));
-        int displaySize = Math.max(displayMinH, Math.min(displayTargetW, displayMaxH));
-        int remainingForRows = Math.max(4, h - 2 * OUTER_PAD - extraBottomGap - logH - displaySize - 5 * rowGap);
-        int rowUnitPx = Math.max(1, (int) Math.floor(remainingForRows / (ROW_UNIT_MODEL + ROW_UNIT_SOURCE + ROW_UNIT_DRAW + ROW_UNIT_ACTION + ROW_UNIT_WARNING)));
-        int modelH = Math.max(1, (int) Math.round(rowUnitPx * ROW_UNIT_MODEL));
-        int sourceH = modelH * 2;
-        int drawH = Math.max(1, (int) Math.round(rowUnitPx * ROW_UNIT_DRAW));
-        int warningH = Math.max(18, (int) Math.round(rowUnitPx * ROW_UNIT_WARNING));
-        int actionH = Math.max(1, Math.max(remainingForRows - modelH - sourceH - drawH - warningH, (int) Math.round(rowUnitPx * ROW_UNIT_ACTION)));
+        previewH = Math.max(displayMinH, previewH);
+        previewH = Math.min(displayMaxH, previewH);
 
         modelSelectionPanel.setBounds(x, y, innerW, modelH);
         y += modelH + rowGap;
@@ -105,9 +117,10 @@ public class YoloInferencePanel extends JPanel {
         imageSourcePanel.setBounds(x, y, innerW, sourceH);
         y += sourceH + rowGap;
 
-        int displayX = x + (innerW - displaySize) / 2;
-        imageDisplayPanel.setBounds(displayX, y, displaySize, displaySize);
-        y += displaySize + rowGap;
+        int logW = Math.max(1, (int) Math.round(innerW * LOG_WIDTH_RATIO));
+        int logX = x + (innerW - logW) / 2;
+        imageDisplayPanel.setBounds(logX, y, logW, previewH);
+        y += previewH + rowGap;
 
         int drawLabelW = (int) Math.round(innerW * DRAW_LABEL_RATIO);
         int drawBtnW = (int) Math.round(innerW * DRAW_BUTTON_RATIO);
@@ -125,8 +138,6 @@ public class YoloInferencePanel extends JPanel {
         helpLabel.setBounds(rowX + Math.max(0, (helpW - helpSize) / 2), y + Math.max(0, (drawH - helpSize) / 2), helpSize, helpSize);
         y += drawH + rowGap;
 
-        int logW = Math.max(1, (int) Math.round(innerW * LOG_WIDTH_RATIO));
-        int logX = x + (innerW - logW) / 2;
         logPanel.setBounds(logX, y, logW, logH);
         y += logH + rowGap;
 

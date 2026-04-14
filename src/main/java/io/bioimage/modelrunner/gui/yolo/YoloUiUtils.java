@@ -39,6 +39,8 @@ public final class YoloUiUtils {
     private static final String FULL_TEXT_KEY = "yolo.fullText";
 
     public static final int MIN_FONT_SIZE = 9;
+    public static final int MAX_CONTROL_FONT_SIZE = 15;
+    public static final double CONTROL_FONT_HEIGHT_RATIO = 0.56;
     public static final Color PANEL_BG = new Color(248, 249, 252);
     public static final Color INPUT_BG = Color.WHITE;
     public static final Color INPUT_BORDER = new Color(205, 210, 221);
@@ -121,8 +123,13 @@ public final class YoloUiUtils {
     }
 
     private static Font buildFont(Font baseFont, int height) {
-        int size = Math.max(MIN_FONT_SIZE, (int) Math.floor(height * 0.56));
+        int size = Math.max(MIN_FONT_SIZE, (int) Math.floor(height * CONTROL_FONT_HEIGHT_RATIO));
+        size = Math.min(MAX_CONTROL_FONT_SIZE, size);
         return baseFont.deriveFont((float) size);
+    }
+
+    public static int controlHeightForFontSize(int fontSize) {
+        return (int) Math.ceil(fontSize / CONTROL_FONT_HEIGHT_RATIO);
     }
 
     private static String ellipsize(JComponent component, String fullText, int width) {
