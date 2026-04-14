@@ -21,13 +21,12 @@ package io.bioimage.modelrunner.gui.custom.yolo;
 
 import java.awt.datatransfer.DataFlavor;
 import java.io.File;
+import java.util.ArrayList;
 import java.util.List;
 
 import javax.swing.ButtonGroup;
-import javax.swing.DefaultComboBoxModel;
 import javax.swing.JButton;
 import javax.swing.JComboBox;
-import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JRadioButton;
 import javax.swing.TransferHandler;
@@ -47,7 +46,8 @@ public class YoloImageSourcePanel extends JPanel {
     protected final JRadioButton openImagesRadio = new JRadioButton();
     protected final JRadioButton systemImagesRadio = new JRadioButton();
 
-    protected final JComboBox<String> openImagesComboBox = new JComboBox<String>();
+    protected final JComboBox<YoloImageSelectionEntry> openImagesComboBox =
+            new JComboBox<YoloImageSelectionEntry>(new YoloOpenImageComboBoxModel());
     protected final JButton previousImageButton = new JButton("<");
     protected final JButton nextImageButton = new JButton(">");
     protected final JButton focusButton = new JButton("Focus");
@@ -66,7 +66,7 @@ public class YoloImageSourcePanel extends JPanel {
         group.add(systemImagesRadio);
 
         systemPathField.setTransferHandler(new FileDropHandler(systemPathField));
-        openImagesComboBox.setModel(new DefaultComboBoxModel<String>());
+        openImagesComboBox.setRenderer(new YoloOpenImageComboBoxRenderer());
         YoloUiUtils.styleInput(openImagesComboBox);
         YoloUiUtils.styleInput(systemPathField);
         YoloUiUtils.styleFlatSecondaryButton(previousImageButton);
@@ -138,8 +138,16 @@ public class YoloImageSourcePanel extends JPanel {
         systemImagesRadio.setOpaque(false);
     }
 
-    public void setOpenImages(List<String> names) {
-        openImagesComboBox.setModel(new DefaultComboBoxModel<String>(names.toArray(new String[0])));
+    public void setOpenImages(List<YoloImageSelectionEntry> entries) {
+        ((YoloOpenImageComboBoxModel) openImagesComboBox.getModel()).setEntries(entries);
+    }
+
+    public void setOpenImageTitles(List<String> names) {
+        List<YoloImageSelectionEntry> entries = new ArrayList<YoloImageSelectionEntry>();
+        for (int i = 0; i < names.size(); i++) {
+            entries.add(new YoloImageSelectionEntry(Integer.toString(i), names.get(i), null));
+        }
+        setOpenImages(entries);
     }
 
     public void updateEnabledState() {
@@ -164,7 +172,7 @@ public class YoloImageSourcePanel extends JPanel {
         return systemImagesRadio;
     }
 
-    public JComboBox<String> getOpenImagesComboBox() {
+    public JComboBox<YoloImageSelectionEntry> getOpenImagesComboBox() {
         return openImagesComboBox;
     }
 
