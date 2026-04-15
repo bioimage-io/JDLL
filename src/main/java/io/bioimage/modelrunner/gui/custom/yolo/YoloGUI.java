@@ -25,10 +25,12 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
+import javax.swing.BorderFactory;
 import javax.swing.JFrame;
 import javax.swing.JPanel;
 import javax.swing.JTabbedPane;
 import javax.swing.SwingUtilities;
+import javax.swing.plaf.basic.BasicTabbedPaneUI;
 
 import io.bioimage.modelrunner.bioimageio.description.ModelDescriptor;
 import io.bioimage.modelrunner.exceptions.LoadEngineException;
@@ -65,6 +67,10 @@ public class YoloGUI extends JPanel {
         setBackground(YoloUiUtils.PANEL_BG);
         this.titlePanel = new YoloTitlePanel(adapter);
         inferencePanel.getModelSelectionPanel().setModels(DEFAULT_MODELS);
+        tabs.setBorder(BorderFactory.createEmptyBorder());
+        tabs.setOpaque(true);
+        tabs.setBackground(YoloUiUtils.PANEL_BG);
+        tabs.setUI(new FlatTabbedPaneUI());
         tabs.addTab("Inference", inferencePanel);
         tabs.addTab("Train", trainPanel);
         add(titlePanel);
@@ -90,6 +96,18 @@ public class YoloGUI extends JPanel {
 
     public YoloTrainPanel getTrainPanel() {
         return trainPanel;
+    }
+
+    private static class FlatTabbedPaneUI extends BasicTabbedPaneUI {
+
+        @Override
+        protected void paintContentBorder(java.awt.Graphics g, int tabPlacement, int selectedIndex) {
+        }
+
+        @Override
+        protected void paintFocusIndicator(java.awt.Graphics g, int tabPlacement, java.awt.Rectangle[] rects,
+                int tabIndex, java.awt.Rectangle iconRect, java.awt.Rectangle textRect, boolean isSelected) {
+        }
     }
 
     public static void main(String[] args) {
