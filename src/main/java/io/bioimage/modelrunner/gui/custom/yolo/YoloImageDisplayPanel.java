@@ -141,6 +141,18 @@ public class YoloImageDisplayPanel extends JPanel {
         return new ArrayList<Rectangle2D.Double>(boxes);
     }
 
+    public void clearImage() {
+        this.rai = null;
+        this.previewImage = null;
+        this.title = null;
+        this.zoom = 1.0;
+        this.dragStartScreen = null;
+        this.activeBox = null;
+        this.imageDrawArea = new Rectangle();
+        this.boxes.clear();
+        repaint();
+    }
+
     public <T extends RealType<T> & NativeType<T>> void setImage(RandomAccessibleInterval<T> rai, String title) {
         this.rai = rai;
         this.title = title;
