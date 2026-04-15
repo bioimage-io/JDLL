@@ -20,6 +20,7 @@
 package io.bioimage.modelrunner.gui.custom.yolo;
 
 import java.util.List;
+import java.util.Set;
 
 import javax.swing.DefaultComboBoxModel;
 
@@ -40,4 +41,28 @@ public class YoloOpenImageComboBoxModel extends DefaultComboBoxModel<YoloImageSe
             setSelectedItem(getElementAt(0));
         }
     }
+    
+    public int getIndexById(String id) {
+        if (id == null) {
+            return -1;
+        }
+        for (int i = 0; i < getSize(); i++) {
+            YoloImageSelectionEntry entry = getElementAt(i);
+            if (id.equals(entry.getId())) {
+                return i;
+            }
+        }
+        return -1;
+    }
+    
+    public void retainIds(Set<String> ids) {
+        for (int i = getSize() - 1; i >= 0; i--) {
+            YoloImageSelectionEntry entry = getElementAt(i);
+            if (!ids.contains(entry.getId())) {
+                removeElementAt(i);
+            }
+        }
+    }
+
+
 }
