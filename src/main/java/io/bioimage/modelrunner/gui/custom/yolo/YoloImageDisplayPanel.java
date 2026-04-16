@@ -62,7 +62,13 @@ public class YoloImageDisplayPanel extends JPanel {
     private double zoom = 1.0;
     private boolean drawEnabled;
     private Rectangle imageDrawArea = new Rectangle();
+    private Rectangle currentImageRect = new Rectangle();
+    private double panX;
+    private double panY;
     private Point dragStartScreen;
+    private Point panStartScreen;
+    private double panStartX;
+    private double panStartY;
     private Rectangle2D.Double activeBox;
     private final List<Rectangle2D.Double> boxes = new ArrayList<Rectangle2D.Double>();
 
@@ -75,7 +81,13 @@ public class YoloImageDisplayPanel extends JPanel {
         MouseAdapter mouseAdapter = new MouseAdapter() {
             @Override
             public void mousePressed(MouseEvent e) {
-                if (!drawEnabled || previewImage == null || !imageDrawArea.contains(e.getPoint())) {
+                if (previewImage == null || !currentImageRect.contains(e.getPoint())) {
+                    return;
+                }
+                if (!drawEnabled) {
+                    panStartScreen = e.getPoint();
+                    panStartX = panX;
+                    panStartY = panY;
                     return;
                 }
                 dragStartScreen = e.getPoint();
@@ -85,7 +97,20 @@ public class YoloImageDisplayPanel extends JPanel {
 
             @Override
             public void mouseDragged(MouseEvent e) {
-                if (!drawEnabled || dragStartScreen == null || previewImage == null) {
+                if (previewImage == null) {
+                    return;
+                }
+                if (!drawEnabled) {
+                    if (panStartScreen == null) {
+                        return;
+                    }
+                    panX = panStartX + e.getX() - panStartScreen.x;
+                    panY = panStartY + e.getY() - panStartScreen.y;
+                    currentImageRect = computeCurrentImageRect(computeImageDrawArea());
+                    repaint();
+                    return;
+                }
+                if (dragStartScreen == null) {
                     return;
                 }
                 activeBox = toImageRectangle(dragStartScreen, e.getPoint());
@@ -94,7 +119,12 @@ public class YoloImageDisplayPanel extends JPanel {
 
             @Override
             public void mouseReleased(MouseEvent e) {
-                if (!drawEnabled || dragStartScreen == null || activeBox == null) {
+                if (!drawEnabled) {
+                    panStartScreen = null;
+                    repaint();
+                    return;
+                }
+                if (dragStartScreen == null || activeBox == null) {
                     dragStartScreen = null;
                     activeBox = null;
                     repaint();
@@ -113,8 +143,20 @@ public class YoloImageDisplayPanel extends JPanel {
                 if (!e.isControlDown()) {
                     return;
                 }
+                if (previewImage == null) {
+                    return;
+                }
+                imageDrawArea = computeImageDrawArea();
+                Rectangle oldRect = computeCurrentImageRect(imageDrawArea);
+                double imageX = previewImage.getWidth() / 2.0;
+                double imageY = previewImage.getHeight() / 2.0;
+                if (oldRect.width > 0 && oldRect.height > 0 && oldRect.contains(e.getPoint())) {
+                    imageX = (e.getX() - oldRect.x) * previewImage.getWidth() / (double) oldRect.width;
+                    imageY = (e.getY() - oldRect.y) * previewImage.getHeight() / (double) oldRect.height;
+                }
                 double nextZoom = e.getWheelRotation() < 0 ? zoom * ZOOM_STEP : zoom / ZOOM_STEP;
                 zoom = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, nextZoom));
+                updatePanForAnchor(e.getPoint(), imageX, imageY);
                 repaint();
             }
         };
@@ -146,9 +188,13 @@ public class YoloImageDisplayPanel extends JPanel {
         this.previewImage = null;
         this.title = null;
         this.zoom = 1.0;
+        this.panX = 0.0;
+        this.panY = 0.0;
         this.dragStartScreen = null;
+        this.panStartScreen = null;
         this.activeBox = null;
         this.imageDrawArea = new Rectangle();
+        this.currentImageRect = new Rectangle();
         this.boxes.clear();
         repaint();
     }
@@ -158,6 +204,9 @@ public class YoloImageDisplayPanel extends JPanel {
         this.title = title;
         this.previewImage = buildPreview(rai);
         this.zoom = 1.0;
+        this.panX = 0.0;
+        this.panY = 0.0;
+        this.panStartScreen = null;
         clearBoxes();
         repaint();
     }
@@ -179,21 +228,17 @@ public class YoloImageDisplayPanel extends JPanel {
         }
 
         imageDrawArea = computeImageDrawArea();
-        g2.setColor(Color.WHITE);
-        g2.fillRect(imageDrawArea.x, imageDrawArea.y, imageDrawArea.width, imageDrawArea.height);
-
-        int drawnW = (int) Math.round(imageDrawArea.width * zoom);
-        int drawnH = (int) Math.round(imageDrawArea.height * zoom);
-        int x = imageDrawArea.x - Math.max(0, (drawnW - imageDrawArea.width) / 2);
-        int y = imageDrawArea.y - Math.max(0, (drawnH - imageDrawArea.height) / 2);
+        currentImageRect = computeCurrentImageRect(imageDrawArea);
+        int drawnW = currentImageRect.width;
+        int drawnH = currentImageRect.height;
+        int x = currentImageRect.x;
+        int y = currentImageRect.y;
 
         g2.setClip(imageDrawArea);
         g2.drawImage(previewImage, x, y, drawnW, drawnH, null);
         drawBoxes(g2, x, y, drawnW, drawnH);
         g2.setClip(null);
 
-        g2.setColor(Color.GRAY);
-        g2.drawRect(imageDrawArea.x, imageDrawArea.y, imageDrawArea.width, imageDrawArea.height);
         if (title != null && !title.isEmpty()) {
             g2.setColor(HELP_TEXT);
             g2.drawString(title, imageDrawArea.x + 6, imageDrawArea.y + 16);
@@ -232,8 +277,51 @@ public class YoloImageDisplayPanel extends JPanel {
         return new Rectangle(x, y, drawW, drawH);
     }
 
+    private Rectangle computeCurrentImageRect(Rectangle area) {
+        int drawnW = Math.max(1, (int) Math.round(area.width * zoom));
+        int drawnH = Math.max(1, (int) Math.round(area.height * zoom));
+        int centeredX = area.x + (area.width - drawnW) / 2;
+        int centeredY = area.y + (area.height - drawnH) / 2;
+        int x = centeredX + (int) Math.round(panX);
+        int y = centeredY + (int) Math.round(panY);
+
+        if (drawnW <= area.width) {
+            x = centeredX;
+            panX = 0.0;
+        } else {
+            int minX = area.x + area.width - drawnW;
+            int maxX = area.x;
+            x = Math.max(minX, Math.min(maxX, x));
+            panX = x - centeredX;
+        }
+        if (drawnH <= area.height) {
+            y = centeredY;
+            panY = 0.0;
+        } else {
+            int minY = area.y + area.height - drawnH;
+            int maxY = area.y;
+            y = Math.max(minY, Math.min(maxY, y));
+            panY = y - centeredY;
+        }
+        return new Rectangle(x, y, drawnW, drawnH);
+    }
+
+    private void updatePanForAnchor(Point anchorPoint, double imageX, double imageY) {
+        Rectangle area = computeImageDrawArea();
+        int drawnW = Math.max(1, (int) Math.round(area.width * zoom));
+        int drawnH = Math.max(1, (int) Math.round(area.height * zoom));
+        int centeredX = area.x + (area.width - drawnW) / 2;
+        int centeredY = area.y + (area.height - drawnH) / 2;
+
+        double targetX = anchorPoint.x - imageX * drawnW / (double) previewImage.getWidth();
+        double targetY = anchorPoint.y - imageY * drawnH / (double) previewImage.getHeight();
+        panX = targetX - centeredX;
+        panY = targetY - centeredY;
+        currentImageRect = computeCurrentImageRect(area);
+    }
+
     private Rectangle2D.Double toImageRectangle(Point start, Point end) {
-        Rectangle area = imageDrawArea;
+        Rectangle area = currentImageRect;
         int minX = Math.max(area.x, Math.min(start.x, end.x));
         int minY = Math.max(area.y, Math.min(start.y, end.y));
         int maxX = Math.min(area.x + area.width, Math.max(start.x, end.x));

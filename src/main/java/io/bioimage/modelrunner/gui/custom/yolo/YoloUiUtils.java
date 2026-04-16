@@ -61,6 +61,11 @@ public final class YoloUiUtils {
         styleFlatButton(button, SECONDARY_BUTTON_BG, SECONDARY_BUTTON_FG);
     }
 
+    public static void styleToggleButton(AbstractButton button, boolean selected) {
+        styleFlatButton(button, selected ? PRIMARY_BUTTON_BG : SECONDARY_BUTTON_BG, PRIMARY_BUTTON_FG);
+        button.setSelected(selected);
+    }
+
     public static void styleFlatButton(AbstractButton button, Color bg, Color fg) {
         button.setOpaque(true);
         button.setContentAreaFilled(true);

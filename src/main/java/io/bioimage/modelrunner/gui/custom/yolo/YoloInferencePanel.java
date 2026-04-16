@@ -62,8 +62,10 @@ public class YoloInferencePanel extends JPanel {
         setOpaque(true);
         setBackground(YoloUiUtils.PANEL_BG);
         YoloUiUtils.alignLabel(drawLabel);
-        YoloUiUtils.styleFlatSecondaryButton(drawButton);
+        YoloUiUtils.styleToggleButton(drawButton, false);
         YoloUiUtils.styleFlatSecondaryButton(refreshButton);
+        drawButton.addActionListener(e -> setDrawModeEnabled(!drawButton.isSelected()));
+        refreshButton.addActionListener(e -> imageDisplayPanel.clearBoxes());
         add(modelSelectionPanel);
         add(imageSourcePanel);
         add(imageDisplayPanel);
@@ -75,6 +77,11 @@ public class YoloInferencePanel extends JPanel {
         add(actionPanel);
         warningLabel.setForeground(new java.awt.Color(170, 35, 35));
         add(warningLabel);
+    }
+
+    public void setDrawModeEnabled(boolean enabled) {
+        imageDisplayPanel.setDrawEnabled(enabled);
+        YoloUiUtils.styleToggleButton(drawButton, enabled);
     }
 
     @Override
