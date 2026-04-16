@@ -86,6 +86,7 @@ public class YOLOPluginUI extends YoloGUI implements ActionListener {
         this.consumer.setVariableNames(null);
         componentList.add(this.inferencePanel.getModelSelectionPanel().getModelComboBox());
         componentList.add(this.inferencePanel.getImageSourcePanel().getOpenImagesComboBox());
+        componentList.add(this.inferencePanel.getImageSourcePanel().getFocusButton());
         componentList.add(this.inferencePanel.getImageDisplayPanel());
         this.consumer.setComponents(componentList);
         this.inferencePanel.getDrawButton().addActionListener(this);
