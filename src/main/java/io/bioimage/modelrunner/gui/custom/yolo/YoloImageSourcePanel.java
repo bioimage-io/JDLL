@@ -75,6 +75,8 @@ public class YoloImageSourcePanel extends JPanel {
         YoloUiUtils.styleFlatSecondaryButton(browseButton);
         openImagesHelpIcon.setToolTipText("Select an already open image, move through the open-image list, or bring the selected image into focus.");
         systemPathHelpIcon.setToolTipText("Provide an image or folder from the file system. Drag and drop is supported.");
+        previousImageButton.addActionListener(e -> selectRelativeOpenImage(-1));
+        nextImageButton.addActionListener(e -> selectRelativeOpenImage(1));
 
         add(openImagesRadio);
         add(openImagesComboBox);
@@ -91,6 +93,20 @@ public class YoloImageSourcePanel extends JPanel {
         openImagesRadio.addActionListener(e -> updateEnabledState());
         systemImagesRadio.addActionListener(e -> updateEnabledState());
         updateEnabledState();
+    }
+
+    private void selectRelativeOpenImage(int step) {
+        int count = openImagesComboBox.getItemCount();
+        if (count <= 1) {
+            return;
+        }
+        int selectedIndex = openImagesComboBox.getSelectedIndex();
+        if (selectedIndex < 0) {
+            openImagesComboBox.setSelectedIndex(0);
+            return;
+        }
+        int nextIndex = (selectedIndex + step + count) % count;
+        openImagesComboBox.setSelectedIndex(nextIndex);
     }
 
     @Override
