@@ -45,7 +45,8 @@ public final class YoloUiUtils {
     public static final Color INPUT_BG = Color.WHITE;
     public static final Color INPUT_BORDER = new Color(205, 210, 221);
     public static final Color PRIMARY_BUTTON_BG = new Color(164, 201, 255);
-    public static final Color PRIMARY_BUTTON_FG = Color.BLACK;
+    public static final Color PRIMARY_BUTTON_FG = Color.white;
+    public static final Color TOGGLE_ACTIVE_BUTTON_BG = new Color(8, 26, 65);
     public static final Color SECONDARY_BUTTON_BG = new Color(223, 228, 237);
     public static final Color SECONDARY_BUTTON_FG = Color.BLACK;
     public static final Border INPUT_LINE_BORDER = BorderFactory.createLineBorder(INPUT_BORDER);
@@ -62,7 +63,8 @@ public final class YoloUiUtils {
     }
 
     public static void styleToggleButton(AbstractButton button, boolean selected) {
-        styleFlatButton(button, selected ? PRIMARY_BUTTON_BG : SECONDARY_BUTTON_BG, PRIMARY_BUTTON_FG);
+        styleFlatButton(button, selected ? TOGGLE_ACTIVE_BUTTON_BG : SECONDARY_BUTTON_BG,
+        		selected ? PRIMARY_BUTTON_FG : SECONDARY_BUTTON_FG);
         button.setSelected(selected);
     }
 

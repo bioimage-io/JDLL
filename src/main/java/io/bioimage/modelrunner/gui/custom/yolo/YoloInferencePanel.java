@@ -19,6 +19,10 @@
  */
 package io.bioimage.modelrunner.gui.custom.yolo;
 
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
+import javax.swing.event.ListDataEvent;
+import javax.swing.event.ListDataListener;
 import javax.swing.JButton;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
@@ -66,6 +70,41 @@ public class YoloInferencePanel extends JPanel {
         YoloUiUtils.styleFlatSecondaryButton(refreshButton);
         drawButton.addActionListener(e -> setDrawModeEnabled(!drawButton.isSelected()));
         refreshButton.addActionListener(e -> imageDisplayPanel.clearBoxes());
+        imageSourcePanel.getOpenImagesComboBox().addActionListener(e -> updateImageActionState());
+        imageSourcePanel.getOpenImagesRadio().addActionListener(e -> updateImageActionState());
+        imageSourcePanel.getSystemImagesRadio().addActionListener(e -> updateImageActionState());
+        imageSourcePanel.getSystemPathField().getDocument().addDocumentListener(new DocumentListener() {
+            @Override
+            public void insertUpdate(DocumentEvent e) {
+                updateImageActionState();
+            }
+
+            @Override
+            public void removeUpdate(DocumentEvent e) {
+                updateImageActionState();
+            }
+
+            @Override
+            public void changedUpdate(DocumentEvent e) {
+                updateImageActionState();
+            }
+        });
+        imageSourcePanel.getOpenImagesComboBox().getModel().addListDataListener(new ListDataListener() {
+            @Override
+            public void intervalAdded(ListDataEvent e) {
+                updateImageActionState();
+            }
+
+            @Override
+            public void intervalRemoved(ListDataEvent e) {
+                updateImageActionState();
+            }
+
+            @Override
+            public void contentsChanged(ListDataEvent e) {
+                updateImageActionState();
+            }
+        });
         add(modelSelectionPanel);
         add(imageSourcePanel);
         add(imageDisplayPanel);
@@ -77,11 +116,26 @@ public class YoloInferencePanel extends JPanel {
         add(actionPanel);
         warningLabel.setForeground(new java.awt.Color(170, 35, 35));
         add(warningLabel);
+        updateImageActionState();
     }
 
     public void setDrawModeEnabled(boolean enabled) {
         imageDisplayPanel.setDrawEnabled(enabled);
         YoloUiUtils.styleToggleButton(drawButton, enabled);
+    }
+
+    public void updateImageActionState() {
+        imageSourcePanel.updateEnabledState();
+        boolean hasValidSource = imageSourcePanel.hasValidSelectedSource();
+        boolean hasValidOpenImage = imageSourcePanel.getOpenImagesRadio().isSelected()
+                && imageSourcePanel.hasValidOpenImageSelection();
+        actionPanel.getRunButton().setEnabled(hasValidSource);
+        drawButton.setEnabled(hasValidSource);
+        refreshButton.setEnabled(hasValidSource);
+        imageSourcePanel.getFocusButton().setEnabled(hasValidOpenImage);
+        if (!hasValidSource && drawButton.isSelected()) {
+            setDrawModeEnabled(false);
+        }
     }
 
     @Override

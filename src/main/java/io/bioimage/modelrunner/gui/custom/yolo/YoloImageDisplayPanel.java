@@ -21,6 +21,8 @@ package io.bioimage.modelrunner.gui.custom.yolo;
 
 import java.awt.BasicStroke;
 import java.awt.Color;
+import java.awt.Font;
+import java.awt.FontMetrics;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.Point;
@@ -34,7 +36,9 @@ import java.awt.image.BufferedImage;
 import java.util.ArrayList;
 import java.util.List;
 
+import javax.swing.JButton;
 import javax.swing.JPanel;
+import javax.swing.Timer;
 import javax.swing.border.LineBorder;
 
 import net.imglib2.RandomAccess;
@@ -55,11 +59,23 @@ public class YoloImageDisplayPanel extends JPanel {
     private static final Color ACTIVE_BOX_COLOR = new Color(255, 166, 0);
     private static final Color EMPTY_BG = new Color(245, 245, 245);
     private static final Color HELP_TEXT = new Color(110, 110, 110);
+    private static final int VIEW_PAD = 4;
+    private static final double OVERLAY_BUTTON_SIZE_RATIO = 0.09;
+    private static final int OVERLAY_BUTTON_MIN = 18;
+    private static final int OVERLAY_BUTTON_MAX = 30;
+    private static final String EXPAND_SYMBOL = "\u2199\u2197";
+    private static final String CONTRACT_SYMBOL = "\u2197\u2199";
+    private static final int HINT_HOLD_MS = 1500;
+    private static final int HINT_FADE_MS = 1500;
+    private static final int HINT_TIMER_DELAY_MS = 40;
+    private static final String DEFAULT_HINT_LINE_1 = "Ctrl + wheel for zooming in/out";
+    private static final String DEFAULT_HINT_LINE_2 = "Click and move the mouse for panning";
 
     private RandomAccessibleInterval<?> rai;
     private BufferedImage previewImage;
     private String title;
     private double zoom = 1.0;
+    private boolean expandedToFill;
     private boolean drawEnabled;
     private Rectangle imageDrawArea = new Rectangle();
     private Rectangle currentImageRect = new Rectangle();
@@ -71,12 +87,23 @@ public class YoloImageDisplayPanel extends JPanel {
     private double panStartY;
     private Rectangle2D.Double activeBox;
     private final List<Rectangle2D.Double> boxes = new ArrayList<Rectangle2D.Double>();
+    private final JButton expandButton = new JButton(EXPAND_SYMBOL);
+    private final Timer hintFadeTimer;
+    private long hintShownAt;
+    private float hintAlpha;
 
     protected YoloImageDisplayPanel() {
+        setLayout(null);
         setBorder(new LineBorder(Color.GRAY));
         setBackground(YoloUiUtils.INPUT_BG);
         setOpaque(true);
-        setToolTipText("Zoom in/out with Ctrl + mouse wheel");
+        updateToolTip();
+        YoloUiUtils.styleFlatSecondaryButton(expandButton);
+        expandButton.setToolTipText("Expand image to fill preview");
+        expandButton.addActionListener(e -> setExpandedToFill(!expandedToFill));
+        add(expandButton);
+        hintFadeTimer = new Timer(HINT_TIMER_DELAY_MS, e -> updateHintAlpha());
+        hintFadeTimer.setRepeats(true);
 
         MouseAdapter mouseAdapter = new MouseAdapter() {
             @Override
@@ -167,6 +194,7 @@ public class YoloImageDisplayPanel extends JPanel {
 
     public void setDrawEnabled(boolean drawEnabled) {
         this.drawEnabled = drawEnabled;
+        updateToolTip();
     }
 
     public boolean isDrawEnabled() {
@@ -188,6 +216,7 @@ public class YoloImageDisplayPanel extends JPanel {
         this.previewImage = null;
         this.title = null;
         this.zoom = 1.0;
+        this.expandedToFill = false;
         this.panX = 0.0;
         this.panY = 0.0;
         this.dragStartScreen = null;
@@ -196,6 +225,8 @@ public class YoloImageDisplayPanel extends JPanel {
         this.imageDrawArea = new Rectangle();
         this.currentImageRect = new Rectangle();
         this.boxes.clear();
+        this.hintAlpha = 0.0f;
+        this.hintFadeTimer.stop();
         repaint();
     }
 
@@ -204,11 +235,47 @@ public class YoloImageDisplayPanel extends JPanel {
         this.title = title;
         this.previewImage = buildPreview(rai);
         this.zoom = 1.0;
+        this.expandedToFill = false;
         this.panX = 0.0;
         this.panY = 0.0;
         this.panStartScreen = null;
         clearBoxes();
+        updateExpandButtonState();
+        showDefaultHint();
         repaint();
+    }
+
+    public void setExpandedToFill(boolean expandedToFill) {
+        this.expandedToFill = expandedToFill;
+        this.panX = 0.0;
+        this.panY = 0.0;
+        updateExpandButtonState();
+        repaint();
+    }
+
+    public boolean isExpandedToFill() {
+        return expandedToFill;
+    }
+
+    private void updateToolTip() {
+        String dragHelp = drawEnabled
+                ? "Click and move the mouse to draw rectangle"
+                : "Click and move the mouse for panning";
+        setToolTipText("<html>Ctrl + wheel for zooming in/out<br>" + dragHelp + "</html>");
+    }
+
+    private void updateExpandButtonState() {
+        expandButton.setText(expandedToFill ? CONTRACT_SYMBOL : EXPAND_SYMBOL);
+        expandButton.setToolTipText(expandedToFill ? "Contract image to fit preview" : "Expand image to fill preview");
+    }
+
+    @Override
+    public void doLayout() {
+        int size = Math.max(OVERLAY_BUTTON_MIN,
+                Math.min(OVERLAY_BUTTON_MAX, (int) Math.round(Math.min(getWidth(), getHeight()) * OVERLAY_BUTTON_SIZE_RATIO)));
+        expandButton.setBounds(getWidth() - VIEW_PAD - size, VIEW_PAD, size, size);
+        expandButton.setFont(expandButton.getFont().deriveFont((float) Math.max(YoloUiUtils.MIN_FONT_SIZE,
+                Math.min(YoloUiUtils.MAX_CONTROL_FONT_SIZE - 2, size * 0.42f))));
     }
 
     @Override
@@ -243,7 +310,66 @@ public class YoloImageDisplayPanel extends JPanel {
             g2.setColor(HELP_TEXT);
             g2.drawString(title, imageDrawArea.x + 6, imageDrawArea.y + 16);
         }
+        paintHintOverlay(g2);
         g2.dispose();
+    }
+
+    private void showDefaultHint() {
+        hintShownAt = System.currentTimeMillis();
+        hintAlpha = 1.0f;
+        hintFadeTimer.restart();
+    }
+
+    private void updateHintAlpha() {
+        long elapsed = System.currentTimeMillis() - hintShownAt;
+        if (elapsed <= HINT_HOLD_MS) {
+            hintAlpha = 1.0f;
+        } else {
+            float fadeProgress = (elapsed - HINT_HOLD_MS) / (float) HINT_FADE_MS;
+            hintAlpha = Math.max(0.0f, 1.0f - fadeProgress);
+        }
+        if (hintAlpha <= 0.0f) {
+            hintFadeTimer.stop();
+        }
+        repaint();
+    }
+
+    private void paintHintOverlay(Graphics2D g2) {
+        if (hintAlpha <= 0.0f || previewImage == null) {
+            return;
+        }
+        Graphics2D overlay = (Graphics2D) g2.create();
+        overlay.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
+        overlay.setComposite(java.awt.AlphaComposite.getInstance(java.awt.AlphaComposite.SRC_OVER, hintAlpha));
+        int fontSize = Math.max(11, Math.min(16, getHeight() / 20));
+        Font font = overlay.getFont().deriveFont(Font.BOLD, (float) fontSize);
+        overlay.setFont(font);
+        FontMetrics fm = overlay.getFontMetrics();
+        int textW = Math.max(fm.stringWidth(DEFAULT_HINT_LINE_1), fm.stringWidth(DEFAULT_HINT_LINE_2));
+        int padX = 16;
+        int padY = 10;
+        int lineGap = 4;
+        int lineH = fm.getHeight();
+        int boxW = textW + 2 * padX;
+        int boxH = 2 * lineH + lineGap + 2 * padY;
+        int boxX = (getWidth() - boxW) / 2;
+        int boxY = (getHeight() - boxH) / 2;
+
+        overlay.setColor(new Color(255, 255, 255, 210));
+        overlay.fillRoundRect(boxX, boxY, boxW, boxH, 14, 14);
+        overlay.setColor(new Color(120, 128, 144, 180));
+        overlay.drawRoundRect(boxX, boxY, boxW, boxH, 14, 14);
+        overlay.setColor(new Color(70, 78, 98));
+        drawCenteredOverlayLine(overlay, DEFAULT_HINT_LINE_1, boxX, boxY + padY, boxW, lineH);
+        drawCenteredOverlayLine(overlay, DEFAULT_HINT_LINE_2, boxX, boxY + padY + lineH + lineGap, boxW, lineH);
+        overlay.dispose();
+    }
+
+    private static void drawCenteredOverlayLine(Graphics2D g2, String text, int x, int y, int width, int height) {
+        FontMetrics fm = g2.getFontMetrics();
+        int tx = x + (width - fm.stringWidth(text)) / 2;
+        int ty = y + ((height - fm.getHeight()) / 2) + fm.getAscent();
+        g2.drawString(text, tx, ty);
     }
 
     private void drawBoxes(Graphics2D g2, int drawX, int drawY, int drawW, int drawH) {
@@ -263,23 +389,15 @@ public class YoloImageDisplayPanel extends JPanel {
     }
 
     private Rectangle computeImageDrawArea() {
-        int panelW = Math.max(1, getWidth() - 8);
-        int panelH = Math.max(1, getHeight() - 8);
-        double imgRatio = previewImage.getWidth() / (double) previewImage.getHeight();
-        int drawW = panelW;
-        int drawH = (int) Math.round(drawW / imgRatio);
-        if (drawH > panelH) {
-            drawH = panelH;
-            drawW = (int) Math.round(drawH * imgRatio);
-        }
-        int x = (getWidth() - drawW) / 2;
-        int y = (getHeight() - drawH) / 2;
-        return new Rectangle(x, y, drawW, drawH);
+        int panelW = Math.max(1, getWidth() - 2 * VIEW_PAD);
+        int panelH = Math.max(1, getHeight() - 2 * VIEW_PAD);
+        return new Rectangle((getWidth() - panelW) / 2, (getHeight() - panelH) / 2, panelW, panelH);
     }
 
     private Rectangle computeCurrentImageRect(Rectangle area) {
-        int drawnW = Math.max(1, (int) Math.round(area.width * zoom));
-        int drawnH = Math.max(1, (int) Math.round(area.height * zoom));
+        Rectangle baseRect = computeBaseImageRect(area);
+        int drawnW = Math.max(1, (int) Math.round(baseRect.width * zoom));
+        int drawnH = Math.max(1, (int) Math.round(baseRect.height * zoom));
         int centeredX = area.x + (area.width - drawnW) / 2;
         int centeredY = area.y + (area.height - drawnH) / 2;
         int x = centeredX + (int) Math.round(panX);
@@ -304,6 +422,30 @@ public class YoloImageDisplayPanel extends JPanel {
             panY = y - centeredY;
         }
         return new Rectangle(x, y, drawnW, drawnH);
+    }
+
+    private Rectangle computeBaseImageRect(Rectangle area) {
+        double imgRatio = previewImage.getWidth() / (double) previewImage.getHeight();
+        int drawW;
+        int drawH;
+        if (!expandedToFill) {
+            drawW = area.width;
+            drawH = (int) Math.round(drawW / imgRatio);
+            if (drawH > area.height) {
+                drawH = area.height;
+                drawW = (int) Math.round(drawH * imgRatio);
+            }
+        } else {
+            drawW = area.width;
+            drawH = (int) Math.round(drawW / imgRatio);
+            if (drawH < area.height) {
+                drawH = area.height;
+                drawW = (int) Math.round(drawH * imgRatio);
+            }
+        }
+        int x = area.x + (area.width - drawW) / 2;
+        int y = area.y + (area.height - drawH) / 2;
+        return new Rectangle(x, y, Math.max(1, drawW), Math.max(1, drawH));
     }
 
     private void updatePanForAnchor(Point anchorPoint, double imageX, double imageY) {

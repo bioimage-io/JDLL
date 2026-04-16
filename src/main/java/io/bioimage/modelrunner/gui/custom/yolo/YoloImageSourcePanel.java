@@ -152,16 +152,34 @@ public class YoloImageSourcePanel extends JPanel {
 
     public void updateEnabledState() {
         boolean openSelected = openImagesRadio.isSelected();
+        boolean hasOpenImage = hasValidOpenImageSelection();
         openImagesComboBox.setEnabled(openSelected);
-        previousImageButton.setEnabled(openSelected);
-        nextImageButton.setEnabled(openSelected);
-        focusButton.setEnabled(openSelected);
+        previousImageButton.setEnabled(openSelected && hasOpenImage);
+        nextImageButton.setEnabled(openSelected && hasOpenImage);
+        focusButton.setEnabled(openSelected && hasOpenImage);
         openImagesHelpIcon.setEnabled(openSelected);
 
         boolean systemSelected = systemImagesRadio.isSelected();
         systemPathField.setEnabled(systemSelected);
         browseButton.setEnabled(systemSelected);
         systemPathHelpIcon.setEnabled(systemSelected);
+    }
+
+    public boolean hasValidOpenImageSelection() {
+        return openImagesComboBox.getSelectedItem() instanceof YoloImageSelectionEntry;
+    }
+
+    public boolean hasValidSystemPathSelection() {
+        String path = systemPathField.getText();
+        if (path == null || path.trim().isEmpty()) {
+            return false;
+        }
+        File file = new File(path.trim());
+        return file.exists() && (file.isFile() || file.isDirectory());
+    }
+
+    public boolean hasValidSelectedSource() {
+        return openImagesRadio.isSelected() ? hasValidOpenImageSelection() : hasValidSystemPathSelection();
     }
 
     public JRadioButton getOpenImagesRadio() {
