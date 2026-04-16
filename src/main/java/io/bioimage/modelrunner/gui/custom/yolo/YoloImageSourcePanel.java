@@ -153,9 +153,10 @@ public class YoloImageSourcePanel extends JPanel {
     public void updateEnabledState() {
         boolean openSelected = openImagesRadio.isSelected();
         boolean hasOpenImage = hasValidOpenImageSelection();
+        boolean hasMultipleOpenImages = openImagesComboBox.getItemCount() > 1;
         openImagesComboBox.setEnabled(openSelected);
-        previousImageButton.setEnabled(openSelected && hasOpenImage);
-        nextImageButton.setEnabled(openSelected && hasOpenImage);
+        previousImageButton.setEnabled(openSelected && hasOpenImage && hasMultipleOpenImages);
+        nextImageButton.setEnabled(openSelected && hasOpenImage && hasMultipleOpenImages);
         focusButton.setEnabled(openSelected && hasOpenImage);
         openImagesHelpIcon.setEnabled(openSelected);
 
