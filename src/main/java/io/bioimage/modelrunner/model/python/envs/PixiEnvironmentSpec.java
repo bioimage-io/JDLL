@@ -36,7 +36,10 @@ public final class PixiEnvironmentSpec {
         this.selectedEnvironment = Objects.requireNonNull(selectedEnvironment, "selectedEnvironment");
         this.pixiTomlContent = Objects.requireNonNull(pixiTomlContent, "pixiTomlContent");
         this.environmentDirectory = Objects.requireNonNull(environmentDirectory, "environmentDirectory");
-        this.manualNoDeps = manualNoDeps;
+        if (manualNoDeps == null)
+        	this.manualNoDeps = new ArrayList<String>();
+        else
+        	this.manualNoDeps = manualNoDeps;
     }
 
     /**

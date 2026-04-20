@@ -1,0 +1,66 @@
+[workspace]
+name = "%s"
+channels = ["https://prefix.dev/conda-forge"]
+platforms = ["linux-64"]
+
+# Global environment isolation
+# Applies to `pixi shell` activation + all `pixi run` tasks.
+[activation.env]
+CUDA_HOME = ""
+CUDA_PATH = ""
+CUDA_ROOT = ""
+LD_LIBRARY_PATH = ""
+DYLD_LIBRARY_PATH = ""
+PYTHONPATH = ""
+
+[dependencies]
+python = "==3.10"
+pip = "*"
+
+# -----------------------------------------------------------------------------
+# Shared package set used by Windows, Linux, and macOS >= 14.
+# Mirrors BIAPY_PIP_DEPS in the Java code for the non-legacy branches.
+# -----------------------------------------------------------------------------
+[feature.standard-packages.pypi-dependencies]
+timm = "==1.0.14"
+pytorch-msssim = "==1.0.0"
+torchmetrics = "==1.4.3"
+cellpose = "==3.1.1.1"
+scipy = "==1.15.2"
+torch-fidelity = "==0.3.0"
+careamics = "*"
+biapy = "==3.5.10"
+ultralytics = "==8.4.40"
+appose = "*"
+
+
+# Linux x86-64 CPU (Java: non-Windows, non-native-Intel-mac branch -> torch 2.4.0, CPU index)
+[feature.linux-x86-64-no-cuda]
+platforms = ["linux-64"]
+[feature.linux-x86-64-no-cuda.pypi-dependencies]
+torch = { version = "==2.4.0", index = "https://download.pytorch.org/whl/cpu" }
+torchvision = { version = "==0.19.0", index = "https://download.pytorch.org/whl/cpu" }
+
+# Linux x86-64 CUDA (same Java version family, but CUDA wheel index for the CUDA env)
+[feature.linux-x86-64-cuda]
+platforms = ["linux-64"]
+[feature.linux-x86-64-cuda.pypi-dependencies]
+torch = { version = "==2.4.0", index = "https://download.pytorch.org/whl/cu%s" }
+torchvision = { version = "==0.19.0", index = "https://download.pytorch.org/whl/cu%s" }
+# -----------------------------------------------------------------------------
+# Tasks
+# -----------------------------------------------------------------------------
+[tasks.python]
+cmd = "python"
+
+[tasks.check-gpu]
+cmd = '''
+python -c "import platform, torch, torchvision; print('Torch:', torch.__version__); print('Torchvision:', torchvision.__version__); print('CUDA available:', torch.cuda.is_available()); print('CUDA runtime:', torch.version.cuda); print('Platform:', platform.platform())"
+'''
+
+# -----------------------------------------------------------------------------
+# Environments
+# -----------------------------------------------------------------------------
+[environments]
+linux-x86-64-no-cuda = ["standard-packages", "linux-x86-64-no-cuda"]
+linux-x86-64-cuda = ["standard-packages", "linux-x86-64-cuda"]

@@ -1,0 +1,108 @@
+[workspace]
+name = "%s"
+channels = ["https://prefix.dev/conda-forge"]
+platforms = ["osx-arm64"]
+
+# Global environment isolation
+# Applies to `pixi shell` activation + all `pixi run` tasks.
+[activation.env]
+CUDA_HOME = ""
+CUDA_PATH = ""
+CUDA_ROOT = ""
+LD_LIBRARY_PATH = ""
+DYLD_LIBRARY_PATH = ""
+PYTHONPATH = ""
+
+[dependencies]
+python = "==3.10"
+pip = "*"
+
+# -----------------------------------------------------------------------------
+# Shared package set used by Windows, Linux, and macOS >= 14.
+# Mirrors BIAPY_PIP_DEPS in the Java code for the non-legacy branches.
+# -----------------------------------------------------------------------------
+[feature.standard-packages.pypi-dependencies]
+timm = "==1.0.14"
+pytorch-msssim = "==1.0.0"
+torchmetrics = "==1.4.3"
+cellpose = "==3.1.1.1"
+scipy = "==1.15.2"
+torch-fidelity = "==0.3.0"
+careamics = "*"
+biapy = "==3.5.10"
+ultralytics = "==8.4.40"
+appose = "*"
+
+# -----------------------------------------------------------------------------
+# macOS < 14 package set.
+# Mirrors the special BIAPY_PIP_DEPS branch for old macOS.
+# NOTE: biapy is intentionally NOT listed here because the Java code installs it
+# separately with `--no-deps` after the rest of the packages are installed.
+# -----------------------------------------------------------------------------
+[feature.macos-legacy-packages.pypi-dependencies]
+timm = "==1.0.14"
+pytorch-msssim = "==1.0.0"
+torchmetrics = "==1.4.3"
+cellpose = "==3.1.1.1"
+torch-fidelity = "==0.3.0"
+careamics = "*"
+pooch = ">=1.8.1"
+numpy = "<2"
+"bioimageio.core" = "==0.7.0"
+imagecodecs = ">=2024.1.1"
+h5py = ">=3.9.0"
+torchinfo = ">=1.8.0"
+pandas = ">=1.5.3"
+xarray = "==2025.1.2"
+fill-voids = ">=2.0.6"
+edt = ">=2.3.2"
+tqdm = ">=4.66.1"
+yacs = ">=0.1.8"
+zarr = ">=2.16.1"
+pydot = ">=1.4.2"
+matplotlib = ">=3.7.1"
+imgaug = ">=0.4.0"
+scipy = "==1.15.2"
+"tensorboardX" = ">=2.6.2.2"
+scikit-learn = ">=1.4.0"
+opencv-python = ">=4.8.0.76"
+scikit-image = ">=0.21.0"
+appose = "*"
+
+[feature.macos-legacy-packages.tasks]
+# Run this once after `pixi install` / first solve in a legacy macOS env.
+install-biapy-no-deps = "python -m pip install --no-deps biapy==3.5.10"
+
+
+# macOS arm64 / Apple Silicon (Java: macOS arm64 or Rosetta -> torch 2.4.0 with no explicit index)
+[feature.macos-arm64-torch]
+platforms = ["osx-arm64"]
+[feature.macos-arm64-torch.pypi-dependencies]
+torch = "==2.4.0"
+torchvision = "==0.19.0"
+
+# -----------------------------------------------------------------------------
+# Tasks
+# -----------------------------------------------------------------------------
+[tasks.python]
+cmd = "python"
+
+[tasks.check-gpu]
+cmd = '''
+python -c "import platform, torch, torchvision; print('Torch:', torch.__version__); print('Torchvision:', torchvision.__version__); print('CUDA available:', torch.cuda.is_available()); print('CUDA runtime:', torch.version.cuda); print('Platform:', platform.platform())"
+'''
+
+
+# -----------------------------------------------------------------------------
+# Environments
+# -----------------------------------------------------------------------------
+[environments]
+# Standard macOS envs correspond to the Java non-legacy path (macOS >= 14).
+macos-arm64 = ["standard-packages", "macos-arm64-torch"]
+
+# Legacy macOS envs reproduce the Java macOS < 14 package list.
+# After install, run:
+#   pixi run -e macos-x86-64-legacy install-biapy-no-deps
+# or
+#   pixi run -e macos-arm64-legacy install-biapy-no-deps
+macos-arm64-legacy = ["macos-legacy-packages", "macos-arm64-torch"]

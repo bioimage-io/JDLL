@@ -19,40 +19,22 @@
  */
 package io.bioimage.modelrunner.model.special.yolo;
 
-import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
-import java.net.MalformedURLException;
-import java.net.URL;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Paths;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
-import java.util.function.Consumer;
-import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 
 import org.apposed.appose.BuildException;
 
-import io.bioimage.modelrunner.bioimageio.BioimageioRepo;
-import io.bioimage.modelrunner.bioimageio.description.ModelDescriptor;
-import io.bioimage.modelrunner.bioimageio.description.ModelDescriptorFactory;
-import io.bioimage.modelrunner.bioimageio.description.weights.ModelWeight;
-import io.bioimage.modelrunner.bioimageio.description.weights.WeightFormat;
-import io.bioimage.modelrunner.bioimageio.tiling.TileCalculator;
-import io.bioimage.modelrunner.download.MultiFileDownloader;
 import io.bioimage.modelrunner.exceptions.LoadModelException;
 import io.bioimage.modelrunner.exceptions.RunModelException;
-import io.bioimage.modelrunner.model.python.BioimageIoModelPytorchProtected;
-import io.bioimage.modelrunner.model.python.DLModelPytorch;
+import io.bioimage.modelrunner.model.python.DLModelPytorchProtected;
+import io.bioimage.modelrunner.system.PlatformDetection;
 import io.bioimage.modelrunner.tensor.Tensor;
 import io.bioimage.modelrunner.tensor.shm.SharedMemoryArray;
-import io.bioimage.modelrunner.utils.Constants;
 import net.imglib2.FinalInterval;
 import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.img.array.ArrayImg;
@@ -65,12 +47,12 @@ import net.imglib2.view.IntervalView;
 import net.imglib2.view.Views;
 
 /**
- * Implementation of an API to run Cellpose models out of the box with little configuration.
+ * Implementation of an API to run YOLO models out of the box with little configuration.
  * 
  *
  *@author Carlos Garcia
  */
-public class Yolo extends DLModelPytorch {
+public class Yolo extends DLModelPytorchProtected {
 		
 							
 	private static final Map<String, Long> PRETRAINED_YOLO_MODELS;
@@ -82,32 +64,33 @@ public class Yolo extends DLModelPytorch {
 	}
 	
 	protected static final String LOAD_MODEL_CODE_ABSTRACT = ""
-			+ "if 'os' not in globals().keys():" + System.lineSeparator()
-			+ "  import os" + System.lineSeparator()
-			+ "  globals()['os'] = os" + System.lineSeparator()
-			+ "if 'shared_memory' not in globals().keys():" + System.lineSeparator()
-			+ "  from multiprocessing import shared_memory" + System.lineSeparator()
-			+ "  globals()['shared_memory'] = shared_memory" + System.lineSeparator()
-			+ "gpu_available = False" + System.lineSeparator() // TODO GPU
-			+ ((IS_ARM) 
-					? "" 
-					: "from torch.backends import mps" + System.lineSeparator()
-					+ "if mps.is_built() and mps.is_available():" + System.lineSeparator()
-					+ "  gpu_available = True" + System.lineSeparator())
-			+ MODEL_VAR_NAME + " = denoise.CellposeDenoiseModel(gpu=gpu_available, pretrained_model=r'%s')" + System.lineSeparator()
-			+ "globals()['" + MODEL_VAR_NAME + "'] = " + MODEL_VAR_NAME + System.lineSeparator();
+			+ "from multiprocessing import shared_memory" + System.lineSeparator()
+			+ "import os" + System.lineSeparator()
+			+ "import torch" + System.lineSeparator()
+			+ "device = 'cpu'" + System.lineSeparator()
+			+ "if %s and torch.cuda.is_available():" + System.lineSeparator()
+			+ "  device = 'cuda'" + System.lineSeparator()
+			+ "elif %s:" + System.lineSeparator()
+			+ "  from torch.backends import mps" + System.lineSeparator()
+			+ "  if mps.is_built() and mps.is_available():" + System.lineSeparator()
+			+ "    device = 'mps'" + System.lineSeparator()
+			+ "from ultralytics import YOLO" + System.lineSeparator()
+			+ MODEL_VAR_NAME + " = YOLO(r'%s')" + System.lineSeparator()
+			+ "task.export(shared_memory=shared_memory)" + System.lineSeparator()
+			+ "task.export(YOLO=YOLO)" + System.lineSeparator()
+			+ "task.export(torch=torch)" + System.lineSeparator()
+			+ "task.export(os=os)" + System.lineSeparator()
+			+ "task.export(device=device)" + System.lineSeparator()
+			+ "task.export(" + MODEL_VAR_NAME + "=" + MODEL_VAR_NAME +")" + System.lineSeparator();
 
 	/**
 	 * Creates a new YOLO model.
 	 *
 	 * @param weightsPath the weightsPath parameter.
-	 * @throws IOException if an I/O error occurs.
 	 * @throws BuildException if there is any error building the environment
 	 */
-	protected Yolo(String weightsPath) throws BuildException, IOException {
-		super(null, null, null, weightsPath, new HashMap<String, Object>());
-    	createPythonService();
-		python.init("import numpy as np" + System.lineSeparator());
+	protected Yolo(String weightsPath) throws BuildException {
+		super(null, null, null, weightsPath, new HashMap<String, Object>(), true);
 	}
 	
 	// TODO add 3D
@@ -186,9 +169,7 @@ public class Yolo extends DLModelPytorch {
 	 * @throws IOException if an I/O error occurs.
 	 */
 	protected String buildModelCode() throws IOException {
-		String code = String.format(LOAD_MODEL_CODE_ABSTRACT, 
-				//"False", // TODO GPU 
-				this.weightsPath);
+		String code = String.format(LOAD_MODEL_CODE_ABSTRACT, "True", "True", weightsPath);
 		return code;
 	}
 	
@@ -203,16 +184,11 @@ public class Yolo extends DLModelPytorch {
 			inShmaList.add(shma);
 		}
 		String nameList = "[";
-		String channelList = "[";
 		for (int i = 0; i < inRais.size(); i ++) {
 			nameList += names.get(i) + ", ";
-			//channelList += createChannelsArgCode(inRais.get(i)) + ", ";
 		}
 		nameList += "]";
-		channelList += "]";
-		code += "  print(diameter)" + System.lineSeparator();
-		code += "  " + OUTPUT_LIST_KEY + " = " + MODEL_VAR_NAME + ".eval(" + nameList + ", channels=" + channelList + ", ";
-		code += "diameter=diameter)" + System.lineSeparator();;
+		code += "  " + OUTPUT_LIST_KEY + " = " + MODEL_VAR_NAME + "(" + nameList + ", device=device)" + System.lineSeparator();;
 		String closeEverythingWin = closeSHMWin();
 		code += "  " + closeEverythingWin + System.lineSeparator();
 		code += "except Exception as e:" + System.lineSeparator();
@@ -265,6 +241,7 @@ public class Yolo extends DLModelPytorch {
 	public static <T extends RealType<T> & NativeType<T>>
 	void main(String[] args) throws IOException, InterruptedException, ExecutionException, LoadModelException, RunModelException, BuildException {
 		Yolo model = Yolo.init("/home/carlos/git/JDLL/models/yolo/yolo26n.pt");
+		model.installRequirements();
 		model.loadModel();
 		ArrayImg<FloatType, FloatArray> rai = ArrayImgs.floats(new long[] {512, 512, 3});
 		List<RandomAccessibleInterval<FloatType>> rais = new ArrayList<RandomAccessibleInterval<FloatType>>();
