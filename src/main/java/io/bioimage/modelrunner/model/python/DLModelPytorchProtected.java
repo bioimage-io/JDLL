@@ -70,7 +70,7 @@ public class DLModelPytorchProtected extends BaseModel {
 
     protected String envPath;
 
-    private Service python;
+    protected Service python;
 
     private final PixiEnvironmentSpec environmentSpec;
 

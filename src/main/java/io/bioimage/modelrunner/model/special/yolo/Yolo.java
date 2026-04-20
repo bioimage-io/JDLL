@@ -82,12 +82,6 @@ public class Yolo extends DLModelPytorch {
 	}
 	
 	protected static final String LOAD_MODEL_CODE_ABSTRACT = ""
-			+ "if 'denoise' not in globals().keys():" + System.lineSeparator()
-			+ "  from cellpose import denoise" + System.lineSeparator()
-			+ "  globals()['denoise'] = denoise" + System.lineSeparator()
-			+ "if 'np' not in globals().keys():" + System.lineSeparator()
-			+ "  import numpy as np" + System.lineSeparator()
-			+ "  globals()['np'] = np" + System.lineSeparator()
 			+ "if 'os' not in globals().keys():" + System.lineSeparator()
 			+ "  import os" + System.lineSeparator()
 			+ "  globals()['os'] = os" + System.lineSeparator()
@@ -104,20 +98,16 @@ public class Yolo extends DLModelPytorch {
 			+ "globals()['" + MODEL_VAR_NAME + "'] = " + MODEL_VAR_NAME + System.lineSeparator();
 
 	/**
-	 * Creates a new Cellpose.
+	 * Creates a new YOLO model.
 	 *
-	 * @param modelFile the modelFile parameter.
-	 * @param callable the callable parameter.
 	 * @param weightsPath the weightsPath parameter.
-	 * @param kwargs the kwargs parameter.
-	 * @param descriptor the descriptor parameter.
 	 * @throws IOException if an I/O error occurs.
 	 * @throws BuildException if there is any error building the environment
 	 */
-	protected Yolo(String modelFile, String callable, String weightsPath, 
-			Map<String, Object> kwargs) throws BuildException, IOException {
-		super(weightsPath, weightsPath, weightsPath, weightsPath, kwargs);
+	protected Yolo(String weightsPath) throws BuildException, IOException {
+		super(null, null, null, weightsPath, new HashMap<String, Object>());
     	createPythonService();
+		python.init("import numpy as np" + System.lineSeparator());
 	}
 	
 	// TODO add 3D
@@ -216,11 +206,10 @@ public class Yolo extends DLModelPytorch {
 		String channelList = "[";
 		for (int i = 0; i < inRais.size(); i ++) {
 			nameList += names.get(i) + ", ";
-			channelList += createChannelsArgCode(inRais.get(i)) + ", ";
+			//channelList += createChannelsArgCode(inRais.get(i)) + ", ";
 		}
 		nameList += "]";
 		channelList += "]";
-		code += createDiamCode(nameList, channelList);
 		code += "  print(diameter)" + System.lineSeparator();
 		code += "  " + OUTPUT_LIST_KEY + " = " + MODEL_VAR_NAME + ".eval(" + nameList + ", channels=" + channelList + ", ";
 		code += "diameter=diameter)" + System.lineSeparator();;
@@ -253,63 +242,10 @@ public class Yolo extends DLModelPytorch {
 	 */
 	public static Yolo init(String weightsPath) throws IOException, BuildException {
 		File wFile = new File(weightsPath);
-		if (wFile.isDirectory() && new File(wFile, Constants.RDF_FNAME).isFile())
-			return init(ModelDescriptorFactory.readFromLocalFile(new File(wFile, Constants.RDF_FNAME).getAbsolutePath()));
 		if (!wFile.isFile())
 			throw new IllegalArgumentException("The path provided does not correspond to an existing file: " + weightsPath);		        
-        Yolo cellpose = new Yolo(null, null, weightsPath, null);
+        Yolo cellpose = new Yolo(weightsPath);
 		return cellpose;
-	}
-	
-	/**
-	 * Initialize one of the "official" pretrained Stardist 2D models.
-	 * By default, the model will be installed in the "models" folder inside the application
-	 * @param pretrainedModel
-	 * 	the name of the pretrained model. 
-	 * @param install
-	 * 	whether to force the download or to try to look if the model has already been installed before
-	 * @return an instance of a pretrained Stardist2D model ready to be used
-	 * @throws IOException if there is any error downloading the model, in the case it is needed
-	 * @throws InterruptedException if the download of the model is stopped
-	 * @throws ExecutionException if there is an error downloading the model
-	 * @throws BuildException if there is any error building the environment
-	 */
-	public static Yolo fromPretained(String pretrainedModel, boolean install) throws IOException, InterruptedException, ExecutionException, BuildException {
-		return fromPretained(pretrainedModel, new File("models").getAbsolutePath(), install);
-	}
-	
-	/**
-	 * Initialize one of the "official" pretrained cellpose ("cyto2", "cyto3"...) models or
-	 * those available in the bioimage.io
-	 * @param pretrainedModel
-	 * 	the name of the pretrained model.
-	 * @param modelsDir
-	 * 	the directory where the model wants to be installed
-	 * @param install
-	 * 	whether to force the installation or to try to look if the model has already been installed before
-	 * @return an instance of a pretrained Stardist2D model ready to be used
-	 * @throws IOException if there is any error downloading the model, in the case it is needed
-	 * @throws InterruptedException if the download of the model is stopped
-	 * @throws ExecutionException if there is an error downloading the model
-	 * @throws BuildException if there is any error building the environment
-	 */
-	public static Yolo fromPretained(String pretrainedModel, String modelsDir, boolean install) throws IOException, 
-																					InterruptedException, ExecutionException, BuildException {
-		return null;
-	}
-	
-	/**
-	 * Finds whether a pretrained Cellpose model is installed in the wanted directory
-	 * 
-	 * @param modelName
-	 * 	the name of the model, it can be either the name of one of the official Cellpose models (cyto, cyto2, cyto3...)
-	 * 	or a path to the weigths
-	 * @param modelsDir
-	 * 	the directory where we want to know whether the model is installed or not
-	 * @return the path to the model if if exists, null otherwise
-	 */
-	public static String findPretrainedModelInstalled(String modelName, String modelsDir) {
-		return null;
 	}
 	
 	
@@ -328,7 +264,7 @@ public class Yolo extends DLModelPytorch {
 	 */
 	public static <T extends RealType<T> & NativeType<T>>
 	void main(String[] args) throws IOException, InterruptedException, ExecutionException, LoadModelException, RunModelException, BuildException {
-		Yolo model = Yolo.fromPretained("cyto2", false);
+		Yolo model = Yolo.init("/home/carlos/git/JDLL/models/yolo/yolo26n.pt");
 		model.loadModel();
 		ArrayImg<FloatType, FloatArray> rai = ArrayImgs.floats(new long[] {512, 512, 3});
 		List<RandomAccessibleInterval<FloatType>> rais = new ArrayList<RandomAccessibleInterval<FloatType>>();
