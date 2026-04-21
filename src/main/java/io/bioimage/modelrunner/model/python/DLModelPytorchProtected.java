@@ -616,14 +616,72 @@ public class DLModelPytorchProtected extends BaseModel {
      * @throws RunModelException if model execution fails
      */
     public <T extends RealType<T> & NativeType<T>, R extends RealType<R> & NativeType<R>>
-    List<RandomAccessibleInterval<R>> inference(final List<RandomAccessibleInterval<T>> inputs)
+    List<Tensor<R>> inference(final Tensor<T>... inputs) {
+    	List<List<Tensor<T>>> inputBatches = new ArrayList<List<Tensor<T>>>();
+    	for (Tensor<T> inp : inputs) {
+    		List<Tensor<T>> inpList = new ArrayList<Tensor<T>>();
+    		inpList.add(inp);
+    		inputBatches.add(inpList);
+    	}
+    	List<List<Tensor<R>>> batchedOuts = backboneBatchInference(inputBatches);
+    	return batchedOuts.get(0);
+    }
+
+    /**
+     * Runs inference directly on a list of input images.
+     *
+     * @param <T> input data type
+     * @param <R> output data type
+     * @param inputs input images
+     * @return output images
+     * @throws RunModelException if model execution fails
+     */
+    public <T extends RealType<T> & NativeType<T>, R extends RealType<R> & NativeType<R>>
+    List<List<Tensor<R>>> inferenceBatch(final List<Tensor<T>>... batchedInputs)
             throws RunModelException {
+    	return backboneBatchInference(Arrays.asList(batchedInputs));
+    }
+    
+    private <T extends RealType<T> & NativeType<T>, R extends RealType<R> & NativeType<R>>
+    List<List<Tensor<R>>> backboneBatchInference(final List<List<Tensor<T>>> batchedInputs) {
 
         if (!loaded) {
             throw new RuntimeException("Please load the model first.");
         }
+        int batchInd = 0;
+        int imsInBatch = batchedInputs.get(0).size();
+        for (List<Tensor<T>> batch : batchedInputs) {
+        	if (batch.size() != imsInBatch)
+        		throw new IllegalArgumentException("All batches must have the same number of tensors. Batch of input 0 has "
+        				+ imsInBatch +  " and batch of input " + batchInd + " has " + batch.size());
+        	String name = batch.get(0).getName();
+        	for (int i = 1; i < batch.size(); i ++) {
+        		String nName = batch.get(i).getName();
+        		if (nName.equals(name))
+        			throw new IllegalArgumentException("All tensors of a batch should be named equally. For batch " + batchInd
+        					+ "at least two different names where found: " + name + " (pos 0) and " + nName + " (pos" + i + ")");
+        	}
+        	batchInd ++;
+        }
+        
+        List<List<Tensor<R>>> outputs = new ArrayList<List<Tensor<R>>>();
+        for (int i = 0; i < batchedInputs.get(0).size(); i ++) {
+        	List<Tensor<T>> inputs = new ArrayList<Tensor<T>>();
+        	for (int j = 0; j < batchedInputs.size(); j ++) {
+        		inputs.add(batchedInputs.get(j).get(i));
+        	}
+        	List<List<Tensor<R>>> aa = backboneSingleInference(inputs);
+        	for (int k = 0; k < aa.size(); k ++) {
+        		if ()
+        	}
+        }
+        return outRais;
+    }
+    
+    private <T extends RealType<T> & NativeType<T>, R extends RealType<R> & NativeType<R>>
+    List<List<Tensor<R>>> backboneSingleInference(final List<Tensor<T>> inputs) {
 
-        final List<String> names = IntStream.range(0, inputs.size())
+        final List<String> names = IntStream.range(0, batchedInputs.size())
                 .mapToObj(i -> "var_" + UUID.randomUUID().toString().replace("-", "_"))
                 .collect(Collectors.toList());
 
@@ -634,8 +692,10 @@ public class DLModelPytorchProtected extends BaseModel {
         for (Entry<String, RandomAccessibleInterval<R>> ee : map.entrySet()) {
             outRais.add(ee.getValue());
         }
-        return outRais;
+    	return null;
     }
+    
+    
 
     /**
      * Creates the Python code required to transfer inputs through shared memory.

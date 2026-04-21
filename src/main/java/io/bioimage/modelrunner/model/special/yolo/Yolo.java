@@ -32,7 +32,6 @@ import org.apposed.appose.BuildException;
 import io.bioimage.modelrunner.exceptions.LoadModelException;
 import io.bioimage.modelrunner.exceptions.RunModelException;
 import io.bioimage.modelrunner.model.python.DLModelPytorchProtected;
-import io.bioimage.modelrunner.system.PlatformDetection;
 import io.bioimage.modelrunner.tensor.Tensor;
 import io.bioimage.modelrunner.tensor.shm.SharedMemoryArray;
 import net.imglib2.FinalInterval;
@@ -203,7 +202,15 @@ public class Yolo extends DLModelPytorchProtected {
 				+ "globals()['" + SHM_NAMES_KEY + "'] = " + SHM_NAMES_KEY + System.lineSeparator()
 				+ "globals()['" + DTYPES_KEY + "'] = " + DTYPES_KEY + System.lineSeparator()
 				+ "globals()['" + DIMS_KEY + "'] = " + DIMS_KEY + System.lineSeparator();
-		code += "handle_output_list(" + OUTPUT_LIST_KEY + ")" + System.lineSeparator();
+		code += "print(" + OUTPUT_LIST_KEY + "[0].boxes)" + System.lineSeparator();
+		code += "print(len(" + OUTPUT_LIST_KEY + "))" + System.lineSeparator();
+		code += "bboxes_outputs = np.array(len())" + System.lineSeparator();
+		code += "for r in " + OUTPUT_LIST_KEY + ":" + System.lineSeparator()
+				+ "  for box, conf, cl in zip(r.xyxy, r.conf, r.cls):" + System.lineSeparator()
+				+ "    " + System.lineSeparator()
+				+ "" + System.lineSeparator()
+				+ "" + System.lineSeparator()
+				+ "" + System.lineSeparator();
 		code += taskOutputsCode();
 		return code;
 	}
