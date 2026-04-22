@@ -579,10 +579,7 @@ public class DLModelPytorchProtected extends BaseModel {
         final List<String> names = inTensors.stream()
                 .map(tt -> tt.getName() + "_np")
                 .collect(Collectors.toList());
-        final List<RandomAccessibleInterval<T>> rais = inTensors.stream()
-                .map(Tensor::getData)
-                .collect(Collectors.toList());
-        return executeCode(createInputsCode(rais, names));
+        return executeCode(createInputsCode(inTensors, names));
     }
 
     private <T extends RealType<T> & NativeType<T>, R extends RealType<R> & NativeType<R>>
@@ -616,7 +613,7 @@ public class DLModelPytorchProtected extends BaseModel {
      * @throws RunModelException if model execution fails
      */
     public <T extends RealType<T> & NativeType<T>, R extends RealType<R> & NativeType<R>>
-    List<Tensor<R>> inference(final Tensor<T>... inputs) {
+    List<Tensor<R>> inference(final Tensor<T>... inputs) throws RunModelException {
     	List<List<Tensor<T>>> inputBatches = new ArrayList<List<Tensor<T>>>();
     	for (Tensor<T> inp : inputs) {
     		List<Tensor<T>> inpList = new ArrayList<Tensor<T>>();
@@ -643,7 +640,7 @@ public class DLModelPytorchProtected extends BaseModel {
     }
     
     private <T extends RealType<T> & NativeType<T>, R extends RealType<R> & NativeType<R>>
-    List<List<Tensor<R>>> backboneBatchInference(final List<List<Tensor<T>>> batchedInputs) {
+    List<List<Tensor<R>>> backboneBatchInference(final List<List<Tensor<T>>> batchedInputs) throws RunModelException {
 
         if (!loaded) {
             throw new RuntimeException("Please load the model first.");
@@ -670,18 +667,20 @@ public class DLModelPytorchProtected extends BaseModel {
         	for (int j = 0; j < batchedInputs.size(); j ++) {
         		inputs.add(batchedInputs.get(j).get(i));
         	}
-        	List<List<Tensor<R>>> aa = backboneSingleInference(inputs);
+        	List<Tensor<R>> aa = backboneSingleInference(inputs);
         	for (int k = 0; k < aa.size(); k ++) {
-        		if ()
+        		if (outputs.size() < k +1)
+        			outputs.add(new ArrayList<Tensor<R>>());
+        		outputs.get(k).add(aa.get(k));
         	}
         }
-        return outRais;
+        return outputs;
     }
     
     private <T extends RealType<T> & NativeType<T>, R extends RealType<R> & NativeType<R>>
-    List<List<Tensor<R>>> backboneSingleInference(final List<Tensor<T>> inputs) {
+    List<Tensor<R>> backboneSingleInference(final List<Tensor<T>> inputs) throws RunModelException {
 
-        final List<String> names = IntStream.range(0, batchedInputs.size())
+        final List<String> names = IntStream.range(0, inputs.size())
                 .mapToObj(i -> "var_" + UUID.randomUUID().toString().replace("-", "_"))
                 .collect(Collectors.toList());
 
@@ -706,12 +705,12 @@ public class DLModelPytorchProtected extends BaseModel {
      * @return the resulting Python code
      */
     protected <T extends RealType<T> & NativeType<T>> String createInputsCode(
-            final List<RandomAccessibleInterval<T>> rais,
+            final List<Tensor<T>> rais,
             final List<String> names) {
         String code = "created_shms = []" + System.lineSeparator();
         code += "try:" + System.lineSeparator();
         for (int i = 0; i < rais.size(); i++) {
-            final SharedMemoryArray shma = SharedMemoryArray.createSHMAFromRAI(rais.get(i), false, false);
+            final SharedMemoryArray shma = SharedMemoryArray.createSHMAFromRAI(rais.get(i).getData(), false, false);
             code += codeToConvertShmaToPython(shma, names.get(i));
             inShmaList.add(shma);
         }

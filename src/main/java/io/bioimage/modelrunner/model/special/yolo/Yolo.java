@@ -22,6 +22,8 @@ package io.bioimage.modelrunner.model.special.yolo;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -245,19 +247,19 @@ public class Yolo extends DLModelPytorchProtected {
 	 * @throws RunModelException exception
 	 * @throws BuildException if there is any error launching the python process
 	 */
-	public static <T extends RealType<T> & NativeType<T>>
+	public static <R extends RealType<R> & NativeType<R>, T extends RealType<T> & NativeType<T>>
 	void main(String[] args) throws IOException, InterruptedException, ExecutionException, LoadModelException, RunModelException, BuildException {
 		Yolo model = Yolo.init("/home/carlos/git/JDLL/models/yolo/yolo26n.pt");
 		model.installRequirements();
 		model.loadModel();
 		ArrayImg<FloatType, FloatArray> rai = ArrayImgs.floats(new long[] {512, 512, 3});
-		List<RandomAccessibleInterval<FloatType>> rais = new ArrayList<RandomAccessibleInterval<FloatType>>();
-		rais.add(rai);
 		long tt = System.currentTimeMillis();
-		List<RandomAccessibleInterval<T>> res = model.inference(rais);
+		Tensor<FloatType> tensor = Tensor.build("input", "xyc", rai);
+		List<Tensor<T>> res = model.inference(tensor);
 		System.out.println(System.currentTimeMillis() - tt);
 		tt = System.currentTimeMillis();
-		List<RandomAccessibleInterval<T>> rees = model.inference(rais);
+		
+		List<List<Tensor<R>>> rees = model.inferenceBatch(Arrays.asList(tensor));
 		System.out.println(System.currentTimeMillis() - tt);
 		model.close();
 		System.out.println(false);
