@@ -34,6 +34,7 @@ import org.apposed.appose.BuildException;
 import io.bioimage.modelrunner.exceptions.LoadModelException;
 import io.bioimage.modelrunner.exceptions.RunModelException;
 import io.bioimage.modelrunner.model.python.DLModelPytorchProtected;
+import io.bioimage.modelrunner.model.python.methods.ConvertDims;
 import io.bioimage.modelrunner.tensor.Tensor;
 import io.bioimage.modelrunner.tensor.shm.SharedMemoryArray;
 import net.imglib2.FinalInterval;
@@ -175,21 +176,21 @@ public class Yolo extends DLModelPytorchProtected {
 	}
 	
 	protected <T extends RealType<T> & NativeType<T>> 
-	String createInputsCode(List<RandomAccessibleInterval<T>> inRais, List<String> names) {
+	String createInputsCode(List<Tensor<T>> inRais, List<String> names) {
 		String code = "";
+		code += ConvertDims.getMethodDeclaration() + System.lineSeparator();
 		code += "created_shms = []" + System.lineSeparator();
 		code += "try:" + System.lineSeparator();
 		for (int i = 0; i < inRais.size(); i ++) {
-			SharedMemoryArray shma = SharedMemoryArray.createSHMAFromRAI(inRais.get(i), false, false);
+			SharedMemoryArray shma = SharedMemoryArray.createSHMAFromRAI(inRais.get(i).getData(), false, false);
 			code += codeToConvertShmaToPython(shma, names.get(i));
 			inShmaList.add(shma);
+			code += "  print(" + names.get(i) + ".shape)" + System.lineSeparator();
+			code += "  " + names.get(i) + "_torch = " + ConvertDims.getMethodName() + "(" + names.get(i)
+			+ ", '" + inRais.get(i).getAxesOrderString().toLowerCase() + "',device=device)" + System.lineSeparator();
+			code += "  print(" + names.get(i) + "_torch.shape)" + System.lineSeparator();
 		}
-		String nameList = "[";
-		for (int i = 0; i < inRais.size(); i ++) {
-			nameList += names.get(i) + ", ";
-		}
-		nameList += "]";
-		code += "  " + OUTPUT_LIST_KEY + " = " + MODEL_VAR_NAME + "(" + nameList + ", device=device)" + System.lineSeparator();;
+		code += "  " + OUTPUT_LIST_KEY + " = " + MODEL_VAR_NAME + "(" + names.get(0) + "_torch, device=device)" + System.lineSeparator();;
 		String closeEverythingWin = closeSHMWin();
 		code += "  " + closeEverythingWin + System.lineSeparator();
 		code += "except Exception as e:" + System.lineSeparator();
@@ -200,18 +201,28 @@ public class Yolo extends DLModelPytorchProtected {
 				+ SHM_NAMES_KEY + " = []" + System.lineSeparator()
 				+ DTYPES_KEY + " = []" + System.lineSeparator()
 				+ DIMS_KEY + " = []" + System.lineSeparator()
-				+ "globals()['" + SHMS_KEY + "'] = " + SHMS_KEY + System.lineSeparator()
-				+ "globals()['" + SHM_NAMES_KEY + "'] = " + SHM_NAMES_KEY + System.lineSeparator()
-				+ "globals()['" + DTYPES_KEY + "'] = " + DTYPES_KEY + System.lineSeparator()
-				+ "globals()['" + DIMS_KEY + "'] = " + DIMS_KEY + System.lineSeparator();
+				+ "task.export(" + SHMS_KEY + " = " + SHMS_KEY + ")" + System.lineSeparator()
+				+ "task.export(" + SHM_NAMES_KEY + " = " + SHM_NAMES_KEY + ")" + System.lineSeparator()
+				+ "task.export(" + DTYPES_KEY + " = " + DTYPES_KEY + ")" + System.lineSeparator()
+				+ "task.export(" + DIMS_KEY + " = " + DIMS_KEY + ")" + System.lineSeparator();
 		code += "print(" + OUTPUT_LIST_KEY + "[0].boxes)" + System.lineSeparator();
-		code += "print(len(" + OUTPUT_LIST_KEY + "))" + System.lineSeparator();
-		code += "bboxes_outputs = np.array(len())" + System.lineSeparator();
-		code += "for r in " + OUTPUT_LIST_KEY + ":" + System.lineSeparator()
-				+ "  for box, conf, cl in zip(r.xyxy, r.conf, r.cls):" + System.lineSeparator()
-				+ "    " + System.lineSeparator()
-				+ "" + System.lineSeparator()
-				+ "" + System.lineSeparator()
+		code += "max_box = max([(0 if r.boxes is None else len(r.boxes)) for r in " + OUTPUT_LIST_KEY + "])" + System.lineSeparator();
+		code += "max_box = max([1, max_box])" + System.lineSeparator();
+		code += "shm = shared_memory.SharedMemory(create=True, size=len(" + OUTPUT_LIST_KEY + ") * max_box * 6 * 4)" + System.lineSeparator();
+		code += "box_tensor = np.ndarray((len(" + OUTPUT_LIST_KEY + "), max_box, 6), dtype='float32', buffer=shm.buf)" + System.lineSeparator();
+		code += "box_tensor.fill(0)" + System.lineSeparator();
+		code += "" + SHMS_KEY + ".append(shm)" + System.lineSeparator();
+		code += "" + SHM_NAMES_KEY + ".append(shm.name)" + System.lineSeparator();
+		code += "" + DTYPES_KEY + ".append(str(box_tensor.dtype))" + System.lineSeparator();
+		code += "" + DIMS_KEY + ".append(box_tensor.shape)" + System.lineSeparator();
+		code += "for i_r, r in enumerate(" + OUTPUT_LIST_KEY + "):" + System.lineSeparator()
+				+ "  boxes = r.boxes.xyxy.detach().cpu().numpy()" + System.lineSeparator()
+				+ "  confs = r.boxes.conf.detach().cpu().numpy()" + System.lineSeparator()
+				+ "  clss = r.boxes.cls.detach().cpu().numpy()" + System.lineSeparator()
+				+ "  for i_b, (box, conf, cl) in enumerate(zip(boxes, confs, clss)):" + System.lineSeparator()
+				+ "    box_tensor[i_r, i_b, :4] = box" + System.lineSeparator()
+				+ "    box_tensor[i_r, i_b, 4] = conf" + System.lineSeparator()
+				+ "    box_tensor[i_r, i_b, 5] = cl" + System.lineSeparator()
 				+ "" + System.lineSeparator();
 		code += taskOutputsCode();
 		return code;
@@ -252,9 +263,9 @@ public class Yolo extends DLModelPytorchProtected {
 		Yolo model = Yolo.init("/home/carlos/git/JDLL/models/yolo/yolo26n.pt");
 		model.installRequirements();
 		model.loadModel();
-		ArrayImg<FloatType, FloatArray> rai = ArrayImgs.floats(new long[] {512, 512, 3});
+		ArrayImg<FloatType, FloatArray> rai = ArrayImgs.floats(new long[] {2, 512, 512, 3});
 		long tt = System.currentTimeMillis();
-		Tensor<FloatType> tensor = Tensor.build("input", "xyc", rai);
+		Tensor<FloatType> tensor = Tensor.build("input", "bxyc", rai);
 		List<Tensor<T>> res = model.inference(tensor);
 		System.out.println(System.currentTimeMillis() - tt);
 		tt = System.currentTimeMillis();

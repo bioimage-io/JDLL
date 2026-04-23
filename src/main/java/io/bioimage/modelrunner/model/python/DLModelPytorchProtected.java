@@ -81,6 +81,8 @@ public class DLModelPytorchProtected extends BaseModel {
 
     private List<String> outShmDTypes;
 
+    private List<String> outAxes;
+
     private List<long[]> outShmDims;
 
     /**
@@ -691,7 +693,14 @@ public class DLModelPytorchProtected extends BaseModel {
         for (Entry<String, RandomAccessibleInterval<R>> ee : map.entrySet()) {
             outRais.add(ee.getValue());
         }
-    	return null;
+        // TODO TODO
+        outAxes = Arrays.asList("bic");
+        //outAxes.add("bic");
+        List<Tensor<R>> outTensors = new ArrayList<Tensor<R>>();
+        for (int i = 0; i < outRais.size(); i ++) {
+        	outTensors.add(Tensor.build("output_" + i, outAxes.get(i), outRais.get(i)));
+        }
+    	return outTensors;
     }
     
     
