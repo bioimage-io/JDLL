@@ -72,14 +72,6 @@ public class YoloModelSelectionPanel extends JPanel {
         YoloUiUtils.applyResponsiveText(browseButton, buttonW - 8, h);
     }
 
-    public void setModels(List<String> models) {
-        LinkedHashMap<String, String> mappedModels = new LinkedHashMap<String, String>();
-        for (String model : models) {
-            mappedModels.put(model, model);
-        }
-        setModels(mappedModels);
-    }
-
     public void setModels(LinkedHashMap<String, String> models) {
         DefaultComboBoxModel<YoloModelSelectionEntry> comboModel =
                 new DefaultComboBoxModel<YoloModelSelectionEntry>();

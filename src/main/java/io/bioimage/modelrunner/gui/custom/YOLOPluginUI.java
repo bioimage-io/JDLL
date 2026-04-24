@@ -52,16 +52,6 @@ public class YOLOPluginUI extends YoloGUI implements ActionListener {
     
     private static boolean INSTALLED_ENV = false;
     
-    private static HashMap<String, Boolean> INSTALLED_WEIGHTS;
-    
-    static {
-    	INSTALLED_WEIGHTS = new HashMap<String, Boolean>();
-    	INSTALLED_WEIGHTS.put("cyto3", false);
-    	INSTALLED_WEIGHTS.put("cyto2", false);
-    	INSTALLED_WEIGHTS.put("cyto", false);
-    	INSTALLED_WEIGHTS.put("nuclei", false);
-    }
-    
     private final ConsumerInterface consumer;
     private String whichLoaded;
     private Yolo model;
