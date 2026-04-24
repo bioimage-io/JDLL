@@ -41,9 +41,12 @@ import net.imglib2.view.Views;
 
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.Arrays;
+import java.util.Comparator;
+import java.util.LinkedHashMap;
 import java.util.List;
 
 public class YOLOPluginUI extends YoloGUI implements ActionListener {
@@ -51,6 +54,13 @@ public class YOLOPluginUI extends YoloGUI implements ActionListener {
     private static final long serialVersionUID = 5381352117710530216L;
     
     private static boolean INSTALLED_ENV = false;
+    private static final String YOLO_MODELS_SUBDIR = "yolo";
+    private static final String YOLO_WEIGHTS_EXTENSION = ".pt";
+    private static final String[][] PRETRAINED_MODELS = new String[][] {
+            {"YOLO26n", "yolo26n.pt"},
+            {"YOLO26m", "yolo26m.pt"},
+            {"YOLO26x", "yolo26x.pt"}
+    };
     
     private final ConsumerInterface consumer;
     private String whichLoaded;
@@ -72,7 +82,7 @@ public class YOLOPluginUI extends YoloGUI implements ActionListener {
     	this.consumer = consumer;
     	List<JComponent> componentList = new ArrayList<JComponent>();
 
-
+    	this.inferencePanel.getModelSelectionPanel().setModels(buildYoloModelEntries());
         this.consumer.setVariableNames(null);
         componentList.add(this.inferencePanel.getModelSelectionPanel().getModelComboBox());
         componentList.add(this.inferencePanel.getImageSourcePanel().getOpenImagesComboBox());
@@ -84,6 +94,44 @@ public class YOLOPluginUI extends YoloGUI implements ActionListener {
         this.inferencePanel.getActionPanel().getCancelButton().addActionListener(this);
         this.inferencePanel.getActionPanel().getRunButton().addActionListener(this);
         consumer.updateGUI();
+    }
+
+    private LinkedHashMap<String, String> buildYoloModelEntries() {
+        LinkedHashMap<String, String> models = new LinkedHashMap<String, String>();
+        String modelsDir = consumer == null ? null : consumer.getModelsDir();
+        File yoloDir = modelsDir == null ? new File(YOLO_MODELS_SUBDIR) : new File(modelsDir, YOLO_MODELS_SUBDIR);
+
+        for (String[] pretrained : PRETRAINED_MODELS) {
+            models.put("[Pretrained] " + pretrained[0], new File(yoloDir, pretrained[1]).getAbsolutePath());
+        }
+
+        File[] customModels = yoloDir.listFiles(file -> file.isFile()
+                && file.getName().toLowerCase().endsWith(YOLO_WEIGHTS_EXTENSION)
+                && !isPretrainedWeightsFile(file.getName()));
+        if (customModels == null) {
+            return models;
+        }
+        Arrays.sort(customModels, Comparator.comparing(File::getName, String.CASE_INSENSITIVE_ORDER));
+        for (File modelFile : customModels) {
+            models.put("[Custom] " + removeWeightsExtension(modelFile.getName()), modelFile.getAbsolutePath());
+        }
+        return models;
+    }
+
+    private static boolean isPretrainedWeightsFile(String fileName) {
+        for (String[] pretrained : PRETRAINED_MODELS) {
+            if (pretrained[1].equalsIgnoreCase(fileName)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private static String removeWeightsExtension(String fileName) {
+        if (fileName.toLowerCase().endsWith(YOLO_WEIGHTS_EXTENSION)) {
+            return fileName.substring(0, fileName.length() - YOLO_WEIGHTS_EXTENSION.length());
+        }
+        return fileName;
     }
     
     /**

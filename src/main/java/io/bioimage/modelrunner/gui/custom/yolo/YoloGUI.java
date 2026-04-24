@@ -21,7 +21,6 @@ package io.bioimage.modelrunner.gui.custom.yolo;
 
 import java.awt.Color;
 import java.io.IOException;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
@@ -49,13 +48,6 @@ public class YoloGUI extends JPanel {
     protected static final int TITLE_GAP = 6;
     protected static final double TITLE_HEIGHT_RATIO = 0.065;
 
-    protected static final List<String> DEFAULT_MODELS = Arrays.asList(
-            "[Pretrained] YOLO11n",
-            "[Pretrained] YOLO11s",
-            "[Pretrained] YOLO11m",
-            "[Pretrained] YOLO11l",
-            "[Pretrained] YOLO11x");
-
     protected final JTabbedPane tabs = new JTabbedPane();
     protected final YoloTitlePanel titlePanel;
     protected final YoloInferencePanel inferencePanel = new YoloInferencePanel();
@@ -66,7 +58,6 @@ public class YoloGUI extends JPanel {
         setOpaque(true);
         setBackground(YoloUiUtils.PANEL_BG);
         this.titlePanel = new YoloTitlePanel(adapter);
-        inferencePanel.getModelSelectionPanel().setModels(DEFAULT_MODELS);
         tabs.setBorder(BorderFactory.createEmptyBorder());
         tabs.setOpaque(true);
         tabs.setBackground(YoloUiUtils.PANEL_BG);
