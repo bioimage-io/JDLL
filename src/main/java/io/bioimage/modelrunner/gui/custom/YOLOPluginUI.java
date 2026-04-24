@@ -30,7 +30,7 @@ import io.bioimage.modelrunner.exceptions.LoadModelException;
 import io.bioimage.modelrunner.exceptions.RunModelException;
 import io.bioimage.modelrunner.gui.adapter.GuiAdapter;
 import io.bioimage.modelrunner.gui.custom.yolo.YoloGUI;
-import io.bioimage.modelrunner.model.special.cellpose.Cellpose;
+import io.bioimage.modelrunner.model.special.yolo.Yolo;
 import io.bioimage.modelrunner.tensor.Tensor;
 import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.img.array.ArrayImgs;
@@ -64,7 +64,7 @@ public class YOLOPluginUI extends YoloGUI implements ActionListener {
     
     private final ConsumerInterface consumer;
     private String whichLoaded;
-    private Cellpose model;
+    private Yolo model;
     private String inputTitle;
     private boolean cancelled = false;
     
@@ -125,7 +125,7 @@ public class YOLOPluginUI extends YoloGUI implements ActionListener {
              * Executes run.
              */
             public void run() {
-                JFrame frame = new JFrame("Cellpose Plugin");
+                JFrame frame = new JFrame("Yolo Plugin");
                 frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
                 frame.getContentPane().add(new YOLOPluginUI(null, null));
                 frame.pack();
@@ -176,7 +176,7 @@ public class YOLOPluginUI extends YoloGUI implements ActionListener {
     
     private < T extends RealType< T > & NativeType< T > > void runYOLO() throws RunModelException, LoadModelException, BuildException, IOException {
     	saveParams();
-    	String modelPath = (String) this.inferencePanel.getModelSelectionPanel().getModelComboBox().getSelectedItem();
+    	String modelPath = this.inferencePanel.getModelSelectionPanel().getSelectedModelValue();
     	RandomAccessibleInterval<T> rai = consumer.getFocusedImageAsRai();
     	if (rai == null) {
     		JOptionPane.showMessageDialog(null, "Please open an image", "No image open", JOptionPane.ERROR_MESSAGE);
@@ -186,7 +186,7 @@ public class YOLOPluginUI extends YoloGUI implements ActionListener {
     	if (whichLoaded != null && !whichLoaded.equals(modelPath))
     		model.close();
     	if (model == null || !model.isLoaded()) {
-    		model = Cellpose.init(modelPath);
+    		model = Yolo.init(modelPath);
     		model.loadModel();
     	}
     	whichLoaded = modelPath;
@@ -197,39 +197,10 @@ public class YOLOPluginUI extends YoloGUI implements ActionListener {
     private <T extends RealType<T> & NativeType<T>, R extends RealType<R> & NativeType<R>>
     void runYOLOOnFramesStack(RandomAccessibleInterval<R> rai, Float diameter) throws RunModelException {
     	rai = addDimsToInput(rai, rai.dimensionsAsLongArray().length > 2  && rai.dimensionsAsLongArray()[2] == 3 ? 3 : 1);
-    	long[] inDims = rai.dimensionsAsLongArray();
-    	long[] outDims = new long[] {inDims[0], inDims[1], inDims[3]};
-		RandomAccessibleInterval<T> outMaskRai = Cast.unchecked(ArrayImgs.unsignedShorts(outDims));
-		RandomAccessibleInterval<T> output1 = Cast.unchecked(ArrayImgs.unsignedBytes(new long[] {inDims[0], inDims[1], 3, inDims[3]}));
-		RandomAccessibleInterval<T> output2 = Cast.unchecked(ArrayImgs.floats(new long[] {2, inDims[0], inDims[1], inDims[3]}));
-		RandomAccessibleInterval<T> output3 = Cast.unchecked(ArrayImgs.floats(new long[] {inDims[0], inDims[1], inDims[3]}));
-		RandomAccessibleInterval<T> output4 = Cast.unchecked(ArrayImgs.floats(new long[] {inDims[0], inDims[1], 3, inDims[3]}));
-		
-		for (int i = 0; i < rai.dimensionsAsLongArray()[3]; i ++) {
-			String msg = "Running the model " + (i + 1) + "/" + rai.dimensionsAsLongArray()[3];
-	    	List<Tensor<R>> inList = new ArrayList<Tensor<R>>();
-	    	Tensor<R> inIm = Tensor.build("input", "xyc", Views.hyperSlice(rai, 3, i));
-	    	inList.add(inIm);
-	    	
-	    	List<Tensor<T>> outputList = new ArrayList<Tensor<T>>();
-	    	Tensor<T> outMask = Tensor.build("labels", "xy", Views.hyperSlice(outMaskRai, 2, i));
-	    	outputList.add(outMask);
-	    	Tensor<T> flows0 = Tensor.build("flows_0", "xyc", Views.hyperSlice(output1, 3, i));
-	    	outputList.add(flows0);
-	    	Tensor<T> flows1 = Tensor.build("flows_1", "cxy", Views.hyperSlice(output2, 3, i));
-	    	outputList.add(flows1);
-	    	Tensor<T> flows2 = Tensor.build("flows_2", "xy", Views.hyperSlice(output3, 2, i));
-	    	outputList.add(flows2);
-	    	Tensor<T> st = Tensor.buildEmptyTensor("styles", "i");
-	    	outputList.add(st);
-	    	Tensor<T> dn = Tensor.build("image_dn", "xyc", Views.hyperSlice(output4, 3, i));
-	    	outputList.add(dn);
-	    	
-	    	if (diameter != null)
-	    		model.setDiameter(diameter);
-	    	model.run(inList, outputList);
-		}
-    	consumer.display(outMaskRai, "xyb", getOutputName("labels"));
+    	
+    	List<Tensor<R>> outTensor = model.inference(Tensor.build("input", "bxy", rai));
+    	
+    	consumer.display(outTensor.get(0).getData(), "xyb", getOutputName("labels"));
     }
     
     private static <R extends RealType<R> & NativeType<R>>

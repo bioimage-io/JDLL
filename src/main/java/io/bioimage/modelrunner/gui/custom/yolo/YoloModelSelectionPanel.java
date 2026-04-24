@@ -21,7 +21,9 @@ package io.bioimage.modelrunner.gui.custom.yolo;
 
 import java.awt.datatransfer.DataFlavor;
 import java.io.File;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 import javax.swing.DefaultComboBoxModel;
 import javax.swing.JButton;
@@ -39,7 +41,7 @@ public class YoloModelSelectionPanel extends JPanel {
     private static final double BUTTON_WIDTH_RATIO = 0.14;
 
     protected final JLabel modelLabel = new JLabel("YOLO model");
-    protected final JComboBox<String> modelComboBox = new JComboBox<String>();
+    protected final JComboBox<YoloModelSelectionEntry> modelComboBox = new JComboBox<YoloModelSelectionEntry>();
     protected final JButton browseButton = new JButton("Browse");
 
     protected YoloModelSelectionPanel() {
@@ -71,10 +73,35 @@ public class YoloModelSelectionPanel extends JPanel {
     }
 
     public void setModels(List<String> models) {
-        modelComboBox.setModel(new DefaultComboBoxModel<String>(models.toArray(new String[0])));
+        LinkedHashMap<String, String> mappedModels = new LinkedHashMap<String, String>();
+        for (String model : models) {
+            mappedModels.put(model, model);
+        }
+        setModels(mappedModels);
     }
 
-    public JComboBox<String> getModelComboBox() {
+    public void setModels(LinkedHashMap<String, String> models) {
+        DefaultComboBoxModel<YoloModelSelectionEntry> comboModel =
+                new DefaultComboBoxModel<YoloModelSelectionEntry>();
+        if (models != null) {
+            for (Map.Entry<String, String> entry : models.entrySet()) {
+                comboModel.addElement(new YoloModelSelectionEntry(entry.getKey(), entry.getValue()));
+            }
+        }
+        modelComboBox.setModel(comboModel);
+    }
+
+    public String getSelectedModelKey() {
+        YoloModelSelectionEntry selected = (YoloModelSelectionEntry) modelComboBox.getSelectedItem();
+        return selected == null ? null : selected.getKey();
+    }
+
+    public String getSelectedModelValue() {
+        YoloModelSelectionEntry selected = (YoloModelSelectionEntry) modelComboBox.getSelectedItem();
+        return selected == null ? null : selected.getValue();
+    }
+
+    public JComboBox<YoloModelSelectionEntry> getModelComboBox() {
         return modelComboBox;
     }
 
@@ -99,21 +126,33 @@ public class YoloModelSelectionPanel extends JPanel {
                     return false;
                 }
                 String path = files.get(0).getAbsolutePath();
-                DefaultComboBoxModel<String> model = (DefaultComboBoxModel<String>) modelComboBox.getModel();
+                DefaultComboBoxModel<YoloModelSelectionEntry> model =
+                        (DefaultComboBoxModel<YoloModelSelectionEntry>) modelComboBox.getModel();
                 boolean found = false;
                 for (int i = 0; i < model.getSize(); i++) {
-                    if (path.equals(model.getElementAt(i))) {
+                    if (path.equals(model.getElementAt(i).getValue())) {
                         found = true;
                         break;
                     }
                 }
                 if (!found) {
-                    model.addElement(path);
+                    model.addElement(new YoloModelSelectionEntry(path, path));
                 }
-                modelComboBox.setSelectedItem(path);
+                selectModelValue(path);
                 return true;
             } catch (Exception e) {
                 return false;
+            }
+        }
+    }
+
+    private void selectModelValue(String value) {
+        DefaultComboBoxModel<YoloModelSelectionEntry> model =
+                (DefaultComboBoxModel<YoloModelSelectionEntry>) modelComboBox.getModel();
+        for (int i = 0; i < model.getSize(); i++) {
+            if (value.equals(model.getElementAt(i).getValue())) {
+                modelComboBox.setSelectedIndex(i);
+                return;
             }
         }
     }
