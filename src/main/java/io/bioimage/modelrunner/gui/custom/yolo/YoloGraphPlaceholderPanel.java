@@ -23,6 +23,8 @@ import java.awt.Color;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.RenderingHints;
+import java.util.ArrayList;
+import java.util.List;
 
 import javax.swing.JPanel;
 import javax.swing.border.LineBorder;
@@ -32,12 +34,26 @@ public class YoloGraphPlaceholderPanel extends JPanel {
     private static final long serialVersionUID = -5079977598122379171L;
 
     private final String title;
+    private final List<Double> values = new ArrayList<Double>();
 
     public YoloGraphPlaceholderPanel(String title) {
         this.title = title;
         setOpaque(true);
         setBackground(Color.WHITE);
         setBorder(new LineBorder(new Color(205, 210, 221)));
+    }
+
+    public void addValue(Double value) {
+        if (value == null || value.isNaN() || value.isInfinite()) {
+            return;
+        }
+        values.add(value);
+        repaint();
+    }
+
+    public void clearValues() {
+        values.clear();
+        repaint();
     }
 
     @Override
@@ -53,11 +69,37 @@ public class YoloGraphPlaceholderPanel extends JPanel {
         g2.drawLine(left, bottom, right, bottom);
         g2.drawLine(left, top, left, bottom);
         g2.setColor(new Color(164, 201, 255));
-        int[] xs = new int[] {left + 8, left + (right - left) / 3, left + (right - left) * 2 / 3, right - 8};
-        int[] ys = new int[] {bottom - 12, bottom - 50, bottom - 34, top + 18};
-        g2.drawPolyline(xs, ys, xs.length);
+        if (values.size() > 1) {
+            drawValues(g2, left, top, right, bottom);
+        } else {
+            int[] xs = new int[] {left + 8, left + (right - left) / 3, left + (right - left) * 2 / 3, right - 8};
+            int[] ys = new int[] {bottom - 12, bottom - 50, bottom - 34, top + 18};
+            g2.drawPolyline(xs, ys, xs.length);
+        }
         g2.setColor(new Color(90, 98, 115));
         YoloUiUtils.drawCenteredString(g2, title, 0, 0, getWidth(), Math.max(20, getHeight() / 6), new Color(70, 78, 98));
         g2.dispose();
+    }
+
+    private void drawValues(Graphics2D g2, int left, int top, int right, int bottom) {
+        double min = Double.POSITIVE_INFINITY;
+        double max = Double.NEGATIVE_INFINITY;
+        for (Double value : values) {
+            min = Math.min(min, value);
+            max = Math.max(max, value);
+        }
+        if (max == min) {
+            max = min + 1.0;
+        }
+        int n = values.size();
+        int[] xs = new int[n];
+        int[] ys = new int[n];
+        for (int i = 0; i < n; i++) {
+            double xRatio = n == 1 ? 0.0 : (double) i / (double) (n - 1);
+            double yRatio = (values.get(i) - min) / (max - min);
+            xs[i] = left + (int) Math.round(xRatio * (right - left));
+            ys[i] = bottom - (int) Math.round(yRatio * (bottom - top));
+        }
+        g2.drawPolyline(xs, ys, n);
     }
 }

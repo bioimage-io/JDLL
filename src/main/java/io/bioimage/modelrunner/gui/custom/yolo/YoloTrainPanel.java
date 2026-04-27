@@ -111,6 +111,7 @@ public class YoloTrainPanel extends JPanel {
         lossButton.addActionListener(e -> showGraph("loss"));
         metricButton.addActionListener(e -> showGraph("metric"));
         validationPreviewButton.addActionListener(e -> showGraph("validationPreview"));
+        datasetBrowseButton.addActionListener(e -> browseDatasetYaml());
         baseModelBrowseButton.addActionListener(e -> browseBaseModel());
 
         add(modelNameLabel);
@@ -143,6 +144,19 @@ public class YoloTrainPanel extends JPanel {
         boolean fineTune = fineTuneRadio.isSelected();
         baseModelComboBox.setEnabled(fineTune);
         baseModelBrowseButton.setEnabled(fineTune);
+    }
+
+    private void browseDatasetYaml() {
+        JFileChooser chooser = new JFileChooser();
+        chooser.setFileSelectionMode(JFileChooser.FILES_ONLY);
+        chooser.setFileFilter(new FileNameExtensionFilter("YOLO dataset YAML (*.yaml, *.yml)", "yaml", "yml"));
+        if (chooser.showOpenDialog(this) != JFileChooser.APPROVE_OPTION) {
+            return;
+        }
+        File selected = chooser.getSelectedFile();
+        if (selected != null) {
+            datasetField.setText(selected.getAbsolutePath());
+        }
     }
 
     private void browseBaseModel() {
@@ -324,5 +338,17 @@ public class YoloTrainPanel extends JPanel {
 
     public JButton getValidationPreviewButton() {
         return validationPreviewButton;
+    }
+
+    public YoloGraphPlaceholderPanel getLossGraphPanel() {
+        return lossGraphPanel;
+    }
+
+    public YoloGraphPlaceholderPanel getMetricGraphPanel() {
+        return metricGraphPanel;
+    }
+
+    public YoloValidationPreviewPanel getValidationPreviewPanel() {
+        return validationPreviewPanel;
     }
 }

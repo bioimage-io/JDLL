@@ -24,15 +24,24 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
+import java.util.function.Consumer;
 
+import org.apposed.appose.Appose;
 import org.apposed.appose.BuildException;
+import org.apposed.appose.Environment;
+import org.apposed.appose.Service;
+import org.apposed.appose.Service.Task;
+import org.apposed.appose.TaskEvent;
+import org.apposed.appose.TaskException;
 
 import io.bioimage.modelrunner.exceptions.LoadModelException;
 import io.bioimage.modelrunner.exceptions.RunModelException;
+import io.bioimage.modelrunner.model.python.envs.PixiEnvironmentSpec;
 import io.bioimage.modelrunner.model.python.DLModelPytorchProtected;
 import io.bioimage.modelrunner.model.python.methods.ConvertDims;
 import io.bioimage.modelrunner.model.python.methods.LetterboxPreprocessing;
@@ -233,6 +242,179 @@ public class Yolo extends DLModelPytorchProtected {
 				+ "box_tensor = " + UndoLetterboxProcessingBoundingBoxes.getMethodName() + "(box_tensor, meta)" + System.lineSeparator();
 		code += taskOutputsCode();
 		return code;
+	}
+
+	public static void train(int epochs, String baseModelPath, String datasetYamlPath, String outputWeightsPath,
+			int imageSize, int previewEpochPeriod,
+			Consumer<YoloTrainingProgress> progressConsumer,
+			Consumer<YoloValidationPreview> previewConsumer,
+			Consumer<String> logConsumer)
+			throws IOException, BuildException, InterruptedException, TaskException {
+		validateTrainingArguments(epochs, datasetYamlPath, outputWeightsPath, imageSize);
+		File outputFile = new File(outputWeightsPath);
+		File outputDir = outputFile.getParentFile();
+		if (outputDir != null && !outputDir.isDirectory() && !outputDir.mkdirs()) {
+			throw new IOException("Could not create YOLO output directory: " + outputDir.getAbsolutePath());
+		}
+
+		PixiEnvironmentSpec envSpec = resolvePytorchEnv();
+		Environment env = Appose.pixi()
+				.environment(envSpec.getSelectedEnvironment())
+				.wrap(envSpec.getEnvironmentDirectory());
+		Service python = env.python();
+		if (logConsumer != null) {
+			python.debug(logConsumer);
+		}
+		try {
+			Task task = python.task(buildTrainingCode(epochs, baseModelPath, datasetYamlPath,
+					outputWeightsPath, imageSize, previewEpochPeriod));
+			task.listen(event -> handleTrainingEvent(event, progressConsumer, previewConsumer, logConsumer));
+			task.waitFor();
+		} finally {
+			if (python.isAlive()) {
+				python.close();
+			}
+		}
+	}
+
+	private static void validateTrainingArguments(int epochs, String datasetYamlPath,
+			String outputWeightsPath, int imageSize) {
+		if (epochs <= 0) {
+			throw new IllegalArgumentException("The number of epochs must be greater than zero.");
+		}
+		if (imageSize <= 0) {
+			throw new IllegalArgumentException("The YOLO image size must be greater than zero.");
+		}
+		if (datasetYamlPath == null || !new File(datasetYamlPath).isFile()) {
+			throw new IllegalArgumentException("The YOLO dataset must point to an existing data.yaml file: "
+					+ datasetYamlPath);
+		}
+		if (outputWeightsPath == null || outputWeightsPath.trim().isEmpty()) {
+			throw new IllegalArgumentException("The output weights path cannot be empty.");
+		}
+	}
+
+	private static String buildTrainingCode(int epochs, String baseModelPath, String datasetYamlPath,
+			String outputWeightsPath, int imageSize, int previewEpochPeriod) {
+		String modelSource = baseModelPath == null || baseModelPath.trim().isEmpty()
+				? "yolo26n.yaml"
+				: new File(baseModelPath).getAbsolutePath();
+		File outputFile = new File(outputWeightsPath);
+		File outputDir = outputFile.getParentFile();
+		String project = outputDir == null ? new File(".").getAbsolutePath() : outputDir.getAbsolutePath();
+		String runName = outputFile.getName();
+		if (runName.toLowerCase().endsWith(".pt")) {
+			runName = runName.substring(0, runName.length() - 3);
+		}
+		String nl = System.lineSeparator();
+		return ""
+				+ "import os, shutil" + nl
+				+ "from ultralytics import YOLO" + nl
+				+ "model_source = r'" + py(modelSource) + "'" + nl
+				+ "dataset_yaml = r'" + py(new File(datasetYamlPath).getAbsolutePath()) + "'" + nl
+				+ "output_weights = r'" + py(outputFile.getAbsolutePath()) + "'" + nl
+				+ "project = r'" + py(project) + "'" + nl
+				+ "run_name = r'" + py(runName) + "'" + nl
+				+ "epochs = " + epochs + nl
+				+ "imgsz = " + imageSize + nl
+				+ "preview_epoch_period = " + Math.max(1, previewEpochPeriod) + nl
+				+ "def _scalar(value):" + nl
+				+ "  try:" + nl
+				+ "    if hasattr(value, 'detach'):" + nl
+				+ "      value = value.detach().cpu()" + nl
+				+ "    if hasattr(value, 'item'):" + nl
+				+ "      value = value.item()" + nl
+				+ "    return float(value)" + nl
+				+ "  except Exception:" + nl
+				+ "    return None" + nl
+				+ "def _clean_dict(values):" + nl
+				+ "  out = {}" + nl
+				+ "  if values is None:" + nl
+				+ "    return out" + nl
+				+ "  for k, v in dict(values).items():" + nl
+				+ "    sv = _scalar(v)" + nl
+				+ "    if sv is not None:" + nl
+				+ "      out[str(k)] = sv" + nl
+				+ "  return out" + nl
+				+ "def _losses(trainer):" + nl
+				+ "  try:" + nl
+				+ "    return _clean_dict(trainer.label_loss_items(trainer.tloss, prefix='train'))" + nl
+				+ "  except Exception:" + nl
+				+ "    return {}" + nl
+				+ "def _metrics(trainer):" + nl
+				+ "  try:" + nl
+				+ "    return _clean_dict(getattr(trainer, 'metrics', {}))" + nl
+				+ "  except Exception:" + nl
+				+ "    return {}" + nl
+				+ "def _emit_progress(trainer):" + nl
+				+ "  epoch = int(getattr(trainer, 'epoch', 0)) + 1" + nl
+				+ "  info = {'type': 'progress', 'epoch': epoch, 'total_epochs': epochs, 'losses': _losses(trainer), 'metrics': _metrics(trainer)}" + nl
+				+ "  task.update(message='YOLO training epoch %d/%d' % (epoch, epochs), current=epoch, maximum=epochs, info=info)" + nl
+				+ "def _emit_preview(trainer):" + nl
+				+ "  epoch = int(getattr(trainer, 'epoch', 0)) + 1" + nl
+				+ "  if epoch % preview_epoch_period != 0 and epoch != epochs:" + nl
+				+ "    return" + nl
+				+ "  checkpoint = str(getattr(trainer, 'best', '') or getattr(trainer, 'last', '') or '')" + nl
+				+ "  task.update(message='YOLO checkpoint available', current=epoch, maximum=epochs, info={'type': 'preview', 'epoch': epoch, 'checkpoint': checkpoint})" + nl
+				+ "model = YOLO(model_source)" + nl
+				+ "model.add_callback('on_fit_epoch_end', _emit_progress)" + nl
+				+ "model.add_callback('on_model_save', _emit_preview)" + nl
+				+ "results = model.train(data=dataset_yaml, epochs=epochs, imgsz=imgsz, project=project, name=run_name, exist_ok=True)" + nl
+				+ "trainer = getattr(model, 'trainer', None)" + nl
+				+ "best = str(getattr(trainer, 'best', '') if trainer is not None else '')" + nl
+				+ "last = str(getattr(trainer, 'last', '') if trainer is not None else '')" + nl
+				+ "source = best if best and os.path.isfile(best) else last" + nl
+				+ "if not source or not os.path.isfile(source):" + nl
+				+ "  raise RuntimeError('Could not find YOLO training checkpoint to save.')" + nl
+				+ "os.makedirs(os.path.dirname(output_weights), exist_ok=True)" + nl
+				+ "shutil.copy2(source, output_weights)" + nl
+				+ "task.export(result=output_weights)" + nl;
+	}
+
+	private static void handleTrainingEvent(TaskEvent event,
+			Consumer<YoloTrainingProgress> progressConsumer,
+			Consumer<YoloValidationPreview> previewConsumer,
+			Consumer<String> logConsumer) {
+		if (event.message != null && logConsumer != null) {
+			logConsumer.accept(event.message);
+		}
+		if (event.info == null) {
+			return;
+		}
+		Object type = event.info.get("type");
+		if ("progress".equals(type) && progressConsumer != null) {
+			progressConsumer.accept(new YoloTrainingProgress(
+					asInt(event.info.get("epoch"), (int) event.current),
+					asInt(event.info.get("total_epochs"), (int) event.maximum),
+					asDoubleMap(event.info.get("losses")),
+					asDoubleMap(event.info.get("metrics"))));
+		} else if ("preview".equals(type) && previewConsumer != null) {
+			Object checkpoint = event.info.get("checkpoint");
+			previewConsumer.accept(new YoloValidationPreview(
+					asInt(event.info.get("epoch"), (int) event.current),
+					checkpoint == null ? null : checkpoint.toString()));
+		}
+	}
+
+	private static int asInt(Object value, int fallback) {
+		return value instanceof Number ? ((Number) value).intValue() : fallback;
+	}
+
+	private static Map<String, Double> asDoubleMap(Object value) {
+		Map<String, Double> result = new LinkedHashMap<String, Double>();
+		if (!(value instanceof Map)) {
+			return result;
+		}
+		for (Map.Entry<?, ?> entry : ((Map<?, ?>) value).entrySet()) {
+			if (entry.getKey() != null && entry.getValue() instanceof Number) {
+				result.put(entry.getKey().toString(), ((Number) entry.getValue()).doubleValue());
+			}
+		}
+		return result;
+	}
+
+	private static String py(String path) {
+		return path.replace("\\", "\\\\").replace("'", "\\'");
 	}
 	
 	/**
