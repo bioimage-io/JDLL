@@ -105,10 +105,18 @@ public class FileDownloader {
 	 * @throws MalformedURLException if the provided url is not valid
 	 */
 	public FileDownloader(String url, File file, boolean printProgress) throws MalformedURLException {
-		this.website = new URL(url);
+		this.name = getFileNameFromURLString(url);
+		this.website = resolveRedirectedURL(new URL(url));
 		this.file = file;
 		this.printProgress = printProgress;
-		this.name = getFileNameFromURLString(url);
+	}
+
+	private static URL resolveRedirectedURL(URL url) throws MalformedURLException {
+		try {
+			return redirectedURL(url);
+		} catch (URISyntaxException e) {
+			return url;
+		}
 	}
 
 	/**
@@ -348,15 +356,15 @@ public class FileDownloader {
 	
 	private void call(ReadableByteChannel rbc, FileOutputStream fos) throws IOException {
 		sizeDownloaded.set(already);
+		InputStream input = Channels.newInputStream(rbc);
+		byte[] buffer = new byte[(int) CHUNK_SIZE];
 
-        while (!Thread.currentThread().isInterrupted()) {
-            long transferred = fos.getChannel().transferFrom(rbc, sizeDownloaded.get(), CHUNK_SIZE);
-            if (transferred <= 0) {
-                break;
-            }
-
-            sizeDownloaded.addAndGet(transferred);
+        int read;
+        while (!Thread.currentThread().isInterrupted() && (read = input.read(buffer)) != -1) {
+            fos.write(buffer, 0, read);
+            sizeDownloaded.addAndGet(read);
         }
+        fos.flush();
     }
 
 	/**
