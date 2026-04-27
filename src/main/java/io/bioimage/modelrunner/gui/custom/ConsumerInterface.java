@@ -24,6 +24,7 @@ import java.util.List;
 
 import javax.swing.JComponent;
 
+import io.bioimage.modelrunner.model.detection.Detection;
 import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.type.NativeType;
 import net.imglib2.type.numeric.RealType;
@@ -129,8 +130,7 @@ public abstract class ConsumerInterface {
 	public abstract < T extends RealType< T > & NativeType< T > > 
 	void displayImage(RandomAccessibleInterval<T> rai, String axes, String name);
 	
-	public abstract < T extends RealType< T > & NativeType< T > > 
-	void displayDetections(RandomAccessibleInterval<T> rai, String axes, String name);
+	public abstract void displayDetections(List<Detection> detections);
 	
 	/**
 	 * Sets variable names.

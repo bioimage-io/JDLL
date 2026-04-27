@@ -700,8 +700,6 @@ public class DLModelPytorchProtected extends BaseModel {
     	return outTensors;
     }
     
-    
-
     /**
      * Creates the Python code required to transfer inputs through shared memory.
      *

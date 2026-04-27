@@ -33,6 +33,7 @@ import io.bioimage.modelrunner.exceptions.LoadModelException;
 import io.bioimage.modelrunner.exceptions.RunModelException;
 import io.bioimage.modelrunner.gui.adapter.GuiAdapter;
 import io.bioimage.modelrunner.gui.custom.yolo.YoloGUI;
+import io.bioimage.modelrunner.model.detection.Detection;
 import io.bioimage.modelrunner.model.python.DLModelPytorch;
 import io.bioimage.modelrunner.model.python.envs.PixiEnvironmentManager;
 import io.bioimage.modelrunner.model.python.envs.PixiEnvironmentSpec;
@@ -257,7 +258,7 @@ public class YOLOPluginUI extends YoloGUI implements ActionListener {
     	
     	List<Tensor<R>> outTensor = model.inference(Tensor.build("input", "xycb", rai));
     	
-    	consumer.displayDetections(outTensor.get(0).getData(), "xyb", getOutputName("labels"));
+    	consumer.displayDetections(Detection.fromBN6Tensor(outTensor.get(0)));
     }
     
     private static <R extends RealType<R> & NativeType<R>>
