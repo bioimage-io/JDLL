@@ -25,18 +25,22 @@ import javax.swing.JOptionPane;
 import javax.swing.SwingUtilities;
 
 import org.apposed.appose.BuildException;
+import org.apposed.appose.builder.PixiBuilderFactory;
+import org.apposed.appose.tool.Pixi;
 
+import io.bioimage.modelrunner.download.FileDownloader;
 import io.bioimage.modelrunner.exceptions.LoadModelException;
 import io.bioimage.modelrunner.exceptions.RunModelException;
 import io.bioimage.modelrunner.gui.adapter.GuiAdapter;
 import io.bioimage.modelrunner.gui.custom.yolo.YoloGUI;
+import io.bioimage.modelrunner.model.python.DLModelPytorch;
+import io.bioimage.modelrunner.model.python.envs.PixiEnvironmentManager;
+import io.bioimage.modelrunner.model.python.envs.PixiEnvironmentSpec;
 import io.bioimage.modelrunner.model.special.yolo.Yolo;
 import io.bioimage.modelrunner.tensor.Tensor;
 import net.imglib2.RandomAccessibleInterval;
-import net.imglib2.img.array.ArrayImgs;
 import net.imglib2.type.NativeType;
 import net.imglib2.type.numeric.RealType;
-import net.imglib2.util.Cast;
 import net.imglib2.view.Views;
 
 import java.awt.event.ActionEvent;
@@ -46,21 +50,35 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutionException;
+import java.util.function.Consumer;
 
 public class YOLOPluginUI extends YoloGUI implements ActionListener {
 
     private static final long serialVersionUID = 5381352117710530216L;
     
-    private static boolean INSTALLED_ENV = false;
     private static final String YOLO_MODELS_SUBDIR = "yolo";
     private static final String YOLO_WEIGHTS_EXTENSION = ".pt";
+    private static final String PRERAINED_URL_FORMAT = "https://github.com/ultralytics/assets/releases/download/v8.4.0/%s";
     private static final String[][] PRETRAINED_MODELS = new String[][] {
             {"YOLO26n", "yolo26n.pt"},
             {"YOLO26m", "yolo26m.pt"},
             {"YOLO26x", "yolo26x.pt"}
     };
+    
+    private static final HashMap<String, Long> YOLO_PRETRAINED_SIZE;
+    static {
+    	YOLO_PRETRAINED_SIZE = new HashMap<String, Long>();
+    	YOLO_PRETRAINED_SIZE.put("yolo26n.pt", 5_544_453L);
+    	YOLO_PRETRAINED_SIZE.put("yolo26m.pt", 44_255_705L);
+    	YOLO_PRETRAINED_SIZE.put("yolo26x.pt", 118_667_365L);
+    }
+    
+    private static final String ENV_NAME = DLModelPytorch.COMMON_PYTORCH_ENV_NAME;
     
     private final ConsumerInterface consumer;
     private String whichLoaded;
@@ -224,6 +242,7 @@ public class YOLOPluginUI extends YoloGUI implements ActionListener {
     	if (whichLoaded != null && !whichLoaded.equals(modelPath))
     		model.close();
     	if (model == null || !model.isLoaded()) {
+    		installIfNeeded(modelPath);
     		model = Yolo.init(modelPath);
     		model.loadModel();
     	}
@@ -278,5 +297,78 @@ public class YOLOPluginUI extends YoloGUI implements ActionListener {
     		noExtension = inputTitle;
     	String extension = ".tif";
     	return noExtension + "_" + tensorName + extension;
+    }
+    
+    private boolean isModelInstalled(String modelPath) {
+    	return new File(modelPath).isFile() 
+    			&& YOLO_PRETRAINED_SIZE.get(new File(modelPath).getName()) == new File(modelPath).length();
+    }
+    
+    private boolean isEnvInstalled() {
+		PixiBuilderFactory builder = new PixiBuilderFactory();
+		return builder.canWrap(new File(Pixi.BASE_PATH, ENV_NAME));
+    }
+    
+    private void installIfNeeded(String modelPath) {
+    	boolean wwInstalled = isModelInstalled(modelPath);
+    	boolean envInstalled = isEnvInstalled();
+    	if (envInstalled && wwInstalled)
+    		return;
+    	CountDownLatch latch = !wwInstalled && !envInstalled ? new CountDownLatch(2) : new CountDownLatch(1);
+    	if (!wwInstalled)
+    		installModelWeights(modelPath, latch);
+    	if (!envInstalled)
+    		installEnv(latch);
+    	try {
+			latch.await();
+		} catch (InterruptedException e) {
+	    	if (cancelled)
+	    		return;
+			e.printStackTrace();
+		}
+    }
+    
+    private void installModelWeights(String modelPath, CountDownLatch latch) {
+    	String modelName = new File(modelPath).getName();
+    	String downloadURL = String.format(PRERAINED_URL_FORMAT, new File(modelPath).getName());
+    	Consumer<Double> cons = (d) -> {
+    		double perc = Math.round(d * 1000) / 10.0d;
+    		SwingUtilities.invokeLater(() -> {
+        		YOLOPluginUI.this.inferencePanel.getLogPanel().appendHtml("Downloading " + modelName + " weigths: " + perc + "%");
+    		});
+    	};
+    	Thread thread = Thread.currentThread();
+		Thread dwnlThread = new Thread(() -> {
+			try {
+				FileDownloader fd = new FileDownloader(downloadURL, new File(modelPath), false);
+				fd.setPartialProgressConsumer(cons);
+				fd.download(thread);
+				if (!isModelInstalled(modelPath))
+					throw new IOException("Model not found or incorrect byte size: " + modelPath);
+			} catch (IOException | ExecutionException e) {
+		    	if (cancelled)
+		    		return;
+				e.printStackTrace();
+			}
+			latch.countDown();
+		});
+		dwnlThread.start();
+    }
+    
+    private void installEnv(CountDownLatch latch) {
+    	PixiEnvironmentSpec env = DLModelPytorch.resolvePytorchEnv();
+    	Consumer<String> cons = (str) -> {
+    		YOLOPluginUI.this.inferencePanel.getLogPanel().appendHtml(str);
+    	};
+    	Thread thr = new Thread(() -> {
+			try {
+				PixiEnvironmentManager.installRequirements(env, cons);
+			} catch (InterruptedException e) {
+			} catch (BuildException e) {
+				e.printStackTrace();
+			}
+			latch.countDown();
+    	});
+    	thr.start();
     }
 }
