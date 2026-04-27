@@ -31,6 +31,9 @@ import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.channels.Channels;
 import java.nio.channels.ReadableByteChannel;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
 import java.security.cert.X509Certificate;
@@ -223,6 +226,10 @@ public class FileDownloader {
 			throw new RuntimeException(e);
 		}
 		conn.setSSLSocketFactory(sslContext.getSocketFactory());
+		
+	    Path parent = Paths.get(file.getAbsolutePath()).getParent();
+	    if (parent != null && !parent.toFile().exists())
+	        Files.createDirectories(parent);
 		
 		try (
 				InputStream str = conn.getInputStream();

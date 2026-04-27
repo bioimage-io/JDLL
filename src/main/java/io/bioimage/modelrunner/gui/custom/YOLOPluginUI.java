@@ -360,15 +360,12 @@ public class YOLOPluginUI extends YoloGUI implements ActionListener {
     	Consumer<String> cons = (str) -> {
     		YOLOPluginUI.this.inferencePanel.getLogPanel().appendHtml(str);
     	};
-    	Thread thr = new Thread(() -> {
-			try {
-				PixiEnvironmentManager.installRequirements(env, cons);
-			} catch (InterruptedException e) {
-			} catch (BuildException e) {
-				e.printStackTrace();
-			}
-			latch.countDown();
-    	});
-    	thr.start();
+		try {
+			PixiEnvironmentManager.installRequirements(env, cons);
+		} catch (InterruptedException e) {
+		} catch (BuildException e) {
+			e.printStackTrace();
+		}
+		latch.countDown();
     }
 }
