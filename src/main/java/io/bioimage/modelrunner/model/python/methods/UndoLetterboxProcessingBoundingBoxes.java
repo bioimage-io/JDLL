@@ -11,7 +11,7 @@ public class UndoLetterboxProcessingBoundingBoxes {
 			+ "import torch" + System.lineSeparator()
 			+ "" + System.lineSeparator()
 			+ "" + System.lineSeparator()
-			+ "def " + METHOD_NAME + "(boxes, meta, *, clip: bool = True, copy: bool = True):" + System.lineSeparator()
+			+ "def " + METHOD_NAME + "(boxes, meta, *, clip: bool = True, copy: bool = False):" + System.lineSeparator()
 			+ "    \"\"\"" + System.lineSeparator()
 			+ "    Undo YOLO letterbox preprocessing on BN6 detections." + System.lineSeparator()
 			+ "" + System.lineSeparator()

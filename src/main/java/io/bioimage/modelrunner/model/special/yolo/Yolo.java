@@ -35,6 +35,8 @@ import io.bioimage.modelrunner.exceptions.LoadModelException;
 import io.bioimage.modelrunner.exceptions.RunModelException;
 import io.bioimage.modelrunner.model.python.DLModelPytorchProtected;
 import io.bioimage.modelrunner.model.python.methods.ConvertDims;
+import io.bioimage.modelrunner.model.python.methods.LetterboxPreprocessing;
+import io.bioimage.modelrunner.model.python.methods.UndoLetterboxProcessingBoundingBoxes;
 import io.bioimage.modelrunner.tensor.Tensor;
 import io.bioimage.modelrunner.tensor.shm.SharedMemoryArray;
 import net.imglib2.FinalInterval;
@@ -179,6 +181,8 @@ public class Yolo extends DLModelPytorchProtected {
 	String createInputsCode(List<Tensor<T>> inRais, List<String> names) {
 		String code = "";
 		code += ConvertDims.getMethodDeclaration() + System.lineSeparator();
+		code += LetterboxPreprocessing.getMethodDeclaration() + System.lineSeparator();
+		code += UndoLetterboxProcessingBoundingBoxes.getMethodDeclaration() + System.lineSeparator();
 		code += "created_shms = []" + System.lineSeparator();
 		code += "try:" + System.lineSeparator();
 		for (int i = 0; i < inRais.size(); i ++) {
@@ -186,8 +190,9 @@ public class Yolo extends DLModelPytorchProtected {
 			code += codeToConvertShmaToPython(shma, names.get(i));
 			inShmaList.add(shma);
 			code += "  print(" + names.get(i) + ".shape)" + System.lineSeparator();
-			code += "  " + names.get(i) + "_torch = " + ConvertDims.getMethodName() + "(" + names.get(i)
-			+ ", '" + inRais.get(i).getAxesOrderString().toLowerCase() + "',device=device)" + System.lineSeparator();
+			code += "  " + names.get(i) + "_torch, meta = " + LetterboxPreprocessing.getMethodName() 
+			+ "(" + ConvertDims.getMethodName() + "(" + names.get(i)
+			+ ", '" + inRais.get(i).getAxesOrderString().toLowerCase() + "',device=device))" + System.lineSeparator();
 			code += "  print(" + names.get(i) + "_torch.shape)" + System.lineSeparator();
 		}
 		code += "  " + OUTPUT_LIST_KEY + " = " + MODEL_VAR_NAME + "(" + names.get(0) + "_torch, device=device)" + System.lineSeparator();;
@@ -223,7 +228,9 @@ public class Yolo extends DLModelPytorchProtected {
 				+ "    box_tensor[i_r, i_b, :4] = box" + System.lineSeparator()
 				+ "    box_tensor[i_r, i_b, 4] = conf" + System.lineSeparator()
 				+ "    box_tensor[i_r, i_b, 5] = cl" + System.lineSeparator()
-				+ "" + System.lineSeparator();
+				+ ""
+				+ ""
+				+ "box_tensor = " + UndoLetterboxProcessingBoundingBoxes.getMethodName() + "(box_tensor, meta)" + System.lineSeparator();
 		code += taskOutputsCode();
 		return code;
 	}

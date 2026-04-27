@@ -314,7 +314,7 @@ public class StarDistPluginUI extends StarDistGUI implements ActionListener {
 	    	
 	    	model.run(inList, outputList);
 		}
-    	consumer.display(outMaskRai, model.is2D() ? "xycb" : "xyczb", getOutputName("mask"));
+    	consumer.displayImage(outMaskRai, model.is2D() ? "xycb" : "xyczb", getOutputName("mask"));
     }
     
     private static <R extends RealType<R> & NativeType<R>>

@@ -127,7 +127,10 @@ public abstract class ConsumerInterface {
 	public abstract < T extends RealType< T > & NativeType< T > > RandomAccessibleInterval<T> getFocusedImageAsRai();
 	
 	public abstract < T extends RealType< T > & NativeType< T > > 
-	void display(RandomAccessibleInterval<T> rai, String axes, String name);
+	void displayImage(RandomAccessibleInterval<T> rai, String axes, String name);
+	
+	public abstract < T extends RealType< T > & NativeType< T > > 
+	void displayDetections(RandomAccessibleInterval<T> rai, String axes, String name);
 	
 	/**
 	 * Sets variable names.

@@ -257,7 +257,7 @@ public class YOLOPluginUI extends YoloGUI implements ActionListener {
     	
     	List<Tensor<R>> outTensor = model.inference(Tensor.build("input", "xycb", rai));
     	
-    	consumer.display(outTensor.get(0).getData(), "xyb", getOutputName("labels"));
+    	consumer.displayDetections(outTensor.get(0).getData(), "xyb", getOutputName("labels"));
     }
     
     private static <R extends RealType<R> & NativeType<R>>

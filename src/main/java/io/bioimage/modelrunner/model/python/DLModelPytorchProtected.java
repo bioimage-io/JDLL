@@ -688,17 +688,14 @@ public class DLModelPytorchProtected extends BaseModel {
 
         final String code = createInputsCode(inputs, names);
         final Map<String, RandomAccessibleInterval<R>> map = executeCode(code);
-
-        final List<RandomAccessibleInterval<R>> outRais = new ArrayList<RandomAccessibleInterval<R>>();
-        for (Entry<String, RandomAccessibleInterval<R>> ee : map.entrySet()) {
-            outRais.add(ee.getValue());
-        }
         // TODO TODO
         outAxes = Arrays.asList("bic");
         //outAxes.add("bic");
         List<Tensor<R>> outTensors = new ArrayList<Tensor<R>>();
-        for (int i = 0; i < outRais.size(); i ++) {
-        	outTensors.add(Tensor.build("output_" + i, outAxes.get(i), outRais.get(i)));
+        int i = 0;
+        for (Entry<String, RandomAccessibleInterval<R>> ee : map.entrySet()) {
+        	outTensors.add(Tensor.build("output_" + i, outAxes.get(i), ee.getValue()));
+        	i ++;
         }
     	return outTensors;
     }

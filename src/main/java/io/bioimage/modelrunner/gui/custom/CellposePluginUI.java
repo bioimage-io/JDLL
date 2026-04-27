@@ -327,13 +327,13 @@ public class CellposePluginUI extends CellposeGUI implements ActionListener {
 	    		model.setDiameter(diameter);
 	    	model.run(inList, outputList);
 		}
-    	consumer.display(outMaskRai, "xyb", getOutputName("labels"));
+    	consumer.displayImage(outMaskRai, "xyb", getOutputName("labels"));
     	if (!check.isSelected())
     		return;
-    	consumer.display(output1, "xycb", getOutputName("flows_0"));
-    	consumer.display(output2, "cxyb", getOutputName("flows_1"));
-    	consumer.display(output3, "xyb", getOutputName("flows_2"));
-    	consumer.display(output4, "xycb", getOutputName("image_dn"));
+    	consumer.displayImage(output1, "xycb", getOutputName("flows_0"));
+    	consumer.displayImage(output2, "cxyb", getOutputName("flows_1"));
+    	consumer.displayImage(output3, "xyb", getOutputName("flows_2"));
+    	consumer.displayImage(output4, "xycb", getOutputName("image_dn"));
     }
     
     private static <R extends RealType<R> & NativeType<R>>
