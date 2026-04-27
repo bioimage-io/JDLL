@@ -20,12 +20,19 @@
 package io.bioimage.modelrunner.gui.custom.yolo;
 
 import java.awt.CardLayout;
+import java.io.File;
+import java.util.LinkedHashMap;
+import java.util.Map;
 
 import javax.swing.ButtonGroup;
+import javax.swing.DefaultComboBoxModel;
 import javax.swing.JButton;
+import javax.swing.JComboBox;
+import javax.swing.JFileChooser;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JRadioButton;
+import javax.swing.filechooser.FileNameExtensionFilter;
 
 public class YoloTrainPanel extends JPanel {
 
@@ -55,7 +62,7 @@ public class YoloTrainPanel extends JPanel {
     protected final JButton datasetBrowseButton = new JButton("Browse");
 
     protected final JRadioButton fineTuneRadio = new JRadioButton("Fine tune", true);
-    protected final YoloPlaceholderTextField baseModelField = new YoloPlaceholderTextField("base model to fine tune from");
+    protected final JComboBox<YoloModelSelectionEntry> baseModelComboBox = new JComboBox<YoloModelSelectionEntry>();
     protected final JButton baseModelBrowseButton = new JButton("Browse");
 
     protected final JRadioButton scratchRadio = new JRadioButton("Train from scratch");
@@ -86,7 +93,8 @@ public class YoloTrainPanel extends JPanel {
 
         YoloUiUtils.styleInput(modelNameField);
         YoloUiUtils.styleInput(datasetField);
-        YoloUiUtils.styleInput(baseModelField);
+        baseModelComboBox.setEditable(true);
+        YoloUiUtils.styleInput(baseModelComboBox);
         YoloUiUtils.styleInput(epochsField);
 
         YoloUiUtils.styleFlatSecondaryButton(datasetBrowseButton);
@@ -103,6 +111,7 @@ public class YoloTrainPanel extends JPanel {
         lossButton.addActionListener(e -> showGraph("loss"));
         metricButton.addActionListener(e -> showGraph("metric"));
         validationPreviewButton.addActionListener(e -> showGraph("validationPreview"));
+        baseModelBrowseButton.addActionListener(e -> browseBaseModel());
 
         add(modelNameLabel);
         add(modelNameField);
@@ -110,7 +119,7 @@ public class YoloTrainPanel extends JPanel {
         add(datasetField);
         add(datasetBrowseButton);
         add(fineTuneRadio);
-        add(baseModelField);
+        add(baseModelComboBox);
         add(baseModelBrowseButton);
         add(scratchRadio);
         add(epochsLabel);
@@ -132,8 +141,21 @@ public class YoloTrainPanel extends JPanel {
 
     private void updateMode() {
         boolean fineTune = fineTuneRadio.isSelected();
-        baseModelField.setEnabled(fineTune);
+        baseModelComboBox.setEnabled(fineTune);
         baseModelBrowseButton.setEnabled(fineTune);
+    }
+
+    private void browseBaseModel() {
+        JFileChooser chooser = new JFileChooser();
+        chooser.setFileSelectionMode(JFileChooser.FILES_ONLY);
+        chooser.setFileFilter(new FileNameExtensionFilter("YOLO weights (*.pt)", "pt"));
+        if (chooser.showOpenDialog(this) != JFileChooser.APPROVE_OPTION) {
+            return;
+        }
+        File selected = chooser.getSelectedFile();
+        if (selected != null) {
+            setSelectedBaseModelValue(selected.getAbsolutePath());
+        }
     }
 
     @Override
@@ -184,7 +206,7 @@ public class YoloTrainPanel extends JPanel {
 
         int baseFieldW = Math.max(1, innerW - radioW - browseW - 2 * gap);
         fineTuneRadio.setBounds(x, y, radioW, row3H);
-        baseModelField.setBounds(x + radioW + gap, y, baseFieldW, row3H);
+        baseModelComboBox.setBounds(x + radioW + gap, y, baseFieldW, row3H);
         baseModelBrowseButton.setBounds(x + radioW + baseFieldW + 2 * gap, y, browseW, row3H);
         y += row3H + gap;
 
@@ -210,7 +232,7 @@ public class YoloTrainPanel extends JPanel {
         YoloUiUtils.applyResponsiveFont(datasetField, row2H);
         YoloUiUtils.applyResponsiveText(datasetBrowseButton, browseW - 8, row2H);
         YoloUiUtils.applyResponsiveFont(fineTuneRadio, row3H);
-        YoloUiUtils.applyResponsiveFont(baseModelField, row3H);
+        YoloUiUtils.applyResponsiveFont(baseModelComboBox, row3H);
         YoloUiUtils.applyResponsiveText(baseModelBrowseButton, browseW - 8, row3H);
         YoloUiUtils.applyResponsiveFont(scratchRadio, row4H);
         YoloUiUtils.applyResponsiveText(epochsLabel, labelW - 4, row5H);
@@ -236,8 +258,44 @@ public class YoloTrainPanel extends JPanel {
         return fineTuneRadio;
     }
 
-    public YoloPlaceholderTextField getBaseModelField() {
-        return baseModelField;
+    public JComboBox<YoloModelSelectionEntry> getBaseModelComboBox() {
+        return baseModelComboBox;
+    }
+
+    public void setBaseModels(LinkedHashMap<String, String> models) {
+        DefaultComboBoxModel<YoloModelSelectionEntry> comboModel =
+                new DefaultComboBoxModel<YoloModelSelectionEntry>();
+        if (models != null) {
+            for (Map.Entry<String, String> entry : models.entrySet()) {
+                comboModel.addElement(new YoloModelSelectionEntry(entry.getKey(), entry.getValue()));
+            }
+        }
+        baseModelComboBox.setModel(comboModel);
+    }
+
+    public String getSelectedBaseModelValue() {
+        Object selected = baseModelComboBox.getSelectedItem();
+        if (selected instanceof YoloModelSelectionEntry) {
+            return ((YoloModelSelectionEntry) selected).getValue();
+        }
+        Object editorItem = baseModelComboBox.getEditor().getItem();
+        return editorItem == null ? null : editorItem.toString().trim();
+    }
+
+    public void setSelectedBaseModelValue(String value) {
+        if (value == null) {
+            baseModelComboBox.setSelectedItem(null);
+            return;
+        }
+        DefaultComboBoxModel<YoloModelSelectionEntry> model =
+                (DefaultComboBoxModel<YoloModelSelectionEntry>) baseModelComboBox.getModel();
+        for (int i = 0; i < model.getSize(); i++) {
+            if (value.equals(model.getElementAt(i).getValue())) {
+                baseModelComboBox.setSelectedIndex(i);
+                return;
+            }
+        }
+        baseModelComboBox.setSelectedItem(value);
     }
 
     public JButton getBaseModelBrowseButton() {

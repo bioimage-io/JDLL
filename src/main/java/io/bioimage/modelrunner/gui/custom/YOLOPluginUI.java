@@ -101,7 +101,9 @@ public class YOLOPluginUI extends YoloGUI implements ActionListener {
     	this.consumer = consumer;
     	List<JComponent> componentList = new ArrayList<JComponent>();
 
-    	this.inferencePanel.getModelSelectionPanel().setModels(buildYoloModelEntries());
+    	LinkedHashMap<String, String> yoloModelEntries = buildYoloModelEntries();
+    	this.inferencePanel.getModelSelectionPanel().setModels(yoloModelEntries);
+    	this.trainPanel.setBaseModels(yoloModelEntries);
         this.consumer.setVariableNames(null);
         componentList.add(this.inferencePanel.getModelSelectionPanel().getModelComboBox());
         componentList.add(this.inferencePanel.getImageSourcePanel().getOpenImagesComboBox());
