@@ -1,0 +1,107 @@
+package io.bioimage.modelrunner.model.python.methods;
+
+import java.util.UUID;
+
+public class UndoLetterboxProcessing {
+	
+	private static final String METHOD_NAME = "undo_letterbox_preprocessing_" + UUID.randomUUID().toString().replace("-", "_");
+	
+	private static final String METHOD_DECLARATION = ""
+			+ "import torch" + System.lineSeparator()
+			+ "import torch.nn.functional as F" + System.lineSeparator()
+			+ "" + System.lineSeparator()
+			+ "" + System.lineSeparator()
+			+ "def " + METHOD_NAME + "(" + System.lineSeparator()
+			+ "    x: torch.Tensor," + System.lineSeparator()
+			+ "    meta: dict," + System.lineSeparator()
+			+ "    *," + System.lineSeparator()
+			+ "    contiguous: bool = True," + System.lineSeparator()
+			+ "):" + System.lineSeparator()
+			+ "    \"\"\"" + System.lineSeparator()
+			+ "    Undo yolo_letterbox_torch() on an image tensor." + System.lineSeparator()
+			+ "" + System.lineSeparator()
+			+ "    Parameters" + System.lineSeparator()
+			+ "    ----------" + System.lineSeparator()
+			+ "    x : torch.Tensor" + System.lineSeparator()
+			+ "        Letterboxed tensor in either:" + System.lineSeparator()
+			+ "        - BCYX  -> shape (B, C, Y, X)" + System.lineSeparator()
+			+ "        - BCZYX -> shape (B, C, Z, Y, X)" + System.lineSeparator()
+			+ "" + System.lineSeparator()
+			+ "    meta : dict" + System.lineSeparator()
+			+ "        Metadata returned by yolo_letterbox_torch(), containing:" + System.lineSeparator()
+			+ "        - \"pad\": (top, bottom, left, right)" + System.lineSeparator()
+			+ "        - \"original_hw\": (orig_y, orig_x)" + System.lineSeparator()
+			+ "" + System.lineSeparator()
+			+ "    Returns" + System.lineSeparator()
+			+ "    -------" + System.lineSeparator()
+			+ "    torch.Tensor" + System.lineSeparator()
+			+ "        Tensor resized back to the original spatial size, with the same rank" + System.lineSeparator()
+			+ "        (4D or 5D) as the input." + System.lineSeparator()
+			+ "    \"\"\"" + System.lineSeparator()
+			+ "    if not isinstance(x, torch.Tensor):" + System.lineSeparator()
+			+ "        x = torch.as_tensor(x)" + System.lineSeparator()
+			+ "" + System.lineSeparator()
+			+ "    if x.ndim not in (4, 5):" + System.lineSeparator()
+			+ "        raise ValueError(" + System.lineSeparator()
+			+ "            f\"Input tensor must be BCYX (4D) or BCZYX (5D), got shape {tuple(x.shape)}\"" + System.lineSeparator()
+			+ "        )" + System.lineSeparator()
+			+ "" + System.lineSeparator()
+			+ "    if \"pad\" not in meta or \"original_hw\" not in meta:" + System.lineSeparator()
+			+ "        raise ValueError(\"meta must contain 'pad' and 'original_hw'\")" + System.lineSeparator()
+			+ "" + System.lineSeparator()
+			+ "    top, bottom, left, right = meta[\"pad\"]" + System.lineSeparator()
+			+ "    orig_y, orig_x = meta[\"original_hw\"]" + System.lineSeparator()
+			+ "" + System.lineSeparator()
+			+ "    if min(top, bottom, left, right) < 0:" + System.lineSeparator()
+			+ "        raise ValueError(f\"Invalid pad values: {meta['pad']}\")" + System.lineSeparator()
+			+ "" + System.lineSeparator()
+			+ "    if orig_y < 1 or orig_x < 1:" + System.lineSeparator()
+			+ "        raise ValueError(f\"Invalid original_hw: {meta['original_hw']}\")" + System.lineSeparator()
+			+ "" + System.lineSeparator()
+			+ "    if x.ndim == 4:  # BCYX" + System.lineSeparator()
+			+ "        y1 = top" + System.lineSeparator()
+			+ "        y2 = x.shape[-2] - bottom" + System.lineSeparator()
+			+ "        x1 = left" + System.lineSeparator()
+			+ "        x2 = x.shape[-1] - right" + System.lineSeparator()
+			+ "" + System.lineSeparator()
+			+ "        if y1 >= y2 or x1 >= x2:" + System.lineSeparator()
+			+ "            raise ValueError(" + System.lineSeparator()
+			+ "                f\"Padding {meta['pad']} is incompatible with tensor shape {tuple(x.shape)}\"" + System.lineSeparator()
+			+ "            )" + System.lineSeparator()
+			+ "" + System.lineSeparator()
+			+ "        x_out = x[..., y1:y2, x1:x2]" + System.lineSeparator()
+			+ "        x_out = F.interpolate(x_out, size=(orig_y, orig_x), mode=\"bilinear\", align_corners=False)" + System.lineSeparator()
+			+ "" + System.lineSeparator()
+			+ "    else:  # BCZYX" + System.lineSeparator()
+			+ "        b, c, z, _, _ = x.shape" + System.lineSeparator()
+			+ "" + System.lineSeparator()
+			+ "        y1 = top" + System.lineSeparator()
+			+ "        y2 = x.shape[-2] - bottom" + System.lineSeparator()
+			+ "        x1 = left" + System.lineSeparator()
+			+ "        x2 = x.shape[-1] - right" + System.lineSeparator()
+			+ "" + System.lineSeparator()
+			+ "        if y1 >= y2 or x1 >= x2:" + System.lineSeparator()
+			+ "            raise ValueError(" + System.lineSeparator()
+			+ "                f\"Padding {meta['pad']} is incompatible with tensor shape {tuple(x.shape)}\"" + System.lineSeparator()
+			+ "            )" + System.lineSeparator()
+			+ "" + System.lineSeparator()
+			+ "        x_work = x[..., y1:y2, x1:x2]              # BCZYX" + System.lineSeparator()
+			+ "        x_work = x_work.permute(0, 2, 1, 3, 4)     # BZCYX" + System.lineSeparator()
+			+ "        x_work = x_work.reshape(b * z, c, y2 - y1, x2 - x1)" + System.lineSeparator()
+			+ "        x_work = F.interpolate(x_work, size=(orig_y, orig_x), mode=\"bilinear\", align_corners=False)" + System.lineSeparator()
+			+ "        x_out = x_work.reshape(b, z, c, orig_y, orig_x).permute(0, 2, 1, 3, 4)" + System.lineSeparator()
+			+ "" + System.lineSeparator()
+			+ "    if contiguous:" + System.lineSeparator()
+			+ "        x_out = x_out.contiguous()" + System.lineSeparator()
+			+ "" + System.lineSeparator()
+			+ "    return x_out";
+	
+	public static String getMethodName() {
+		return METHOD_NAME;
+	}
+	
+	public static String getMethodDeclaration() {
+		return METHOD_DECLARATION;
+	}
+
+}

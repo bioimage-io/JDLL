@@ -255,7 +255,7 @@ public class YOLOPluginUI extends YoloGUI implements ActionListener {
     void runYOLOOnFramesStack(RandomAccessibleInterval<R> rai, Float diameter) throws RunModelException {
     	rai = addDimsToInput(rai, rai.dimensionsAsLongArray().length > 2  && rai.dimensionsAsLongArray()[2] == 3 ? 3 : 1);
     	
-    	List<Tensor<R>> outTensor = model.inference(Tensor.build("input", "bxy", rai));
+    	List<Tensor<R>> outTensor = model.inference(Tensor.build("input", "xycb", rai));
     	
     	consumer.display(outTensor.get(0).getData(), "xyb", getOutputName("labels"));
     }
