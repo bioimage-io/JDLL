@@ -40,7 +40,7 @@ public class YoloGraphPlaceholderPanel extends JPanel {
 
     private static final int PAD = 12;
     private static final int TOP_INFO_H = 24;
-    private static final int LEGEND_H = 22;
+    private static final int STATUS_H = 24;
     private static final int Y_TICKS = 4;
     private static final Color AXIS_COLOR = new Color(132, 142, 160);
     private static final Color GRID_COLOR = new Color(229, 233, 241);
@@ -124,13 +124,13 @@ public class YoloGraphPlaceholderPanel extends JPanel {
         int left = Math.max(44, getWidth() / 10);
         int top = PAD + TOP_INFO_H;
         int right = Math.max(left + 40, getWidth() - PAD);
-        int bottom = Math.max(top + 40, getHeight() - PAD - LEGEND_H);
+        int bottom = Math.max(top + 40, getHeight() - PAD - statusHeight());
         PlotRange range = buildRange();
 
         drawTopInfo(g2, left, right);
         drawGridAndAxes(g2, left, top, right, bottom, range);
         drawSeries(g2, left, top, right, bottom, range);
-        drawLegend(g2, left, bottom + 5, right);
+        drawLegend(g2, left, top, right);
         g2.dispose();
     }
 
@@ -167,9 +167,10 @@ public class YoloGraphPlaceholderPanel extends JPanel {
 
         if (trainingActive) {
             String leftLabel = "elapsed " + formatElapsed(elapsedMillis);
-            drawXLabel(g2, leftLabel, left, bottom + fm.getAscent() + 4);
+            int statusY = bottom + (statusHeight() + fm.getAscent()) / 2;
+            drawXLabel(g2, leftLabel, left, statusY);
             String rightLabel = buildStepStatus();
-            drawXLabel(g2, rightLabel, right - fm.stringWidth(rightLabel), bottom + fm.getAscent() + 4);
+            drawXLabel(g2, rightLabel, right - fm.stringWidth(rightLabel), statusY);
         }
     }
 
@@ -202,10 +203,19 @@ public class YoloGraphPlaceholderPanel extends JPanel {
         }
     }
 
-    private void drawLegend(Graphics2D g2, int left, int y, int right) {
+    private void drawLegend(Graphics2D g2, int left, int top, int right) {
         FontMetrics fm = g2.getFontMetrics();
-        int x = left;
-        for (Series s : series.values()) {
+        List<Series> visibleSeries = visibleSeries();
+        if (visibleSeries.isEmpty()) {
+            return;
+        }
+        int totalW = 0;
+        for (Series s : visibleSeries) {
+            totalW += 26 + fm.stringWidth(s.name);
+        }
+        int x = Math.max(left, right - totalW);
+        int y = top + 4;
+        for (Series s : visibleSeries) {
             int labelW = fm.stringWidth(s.name);
             if (x + 18 + labelW > right) {
                 break;
@@ -273,7 +283,16 @@ public class YoloGraphPlaceholderPanel extends JPanel {
 
     private void setDefaultSeries() {
         series.put("Training", new Series("Training", TRAIN_COLOR));
-        series.put("Validation", new Series("Validation", VALIDATION_COLOR));
+    }
+
+    private List<Series> visibleSeries() {
+        List<Series> visible = new ArrayList<Series>();
+        for (Series s : series.values()) {
+            if (!s.points.isEmpty()) {
+                visible.add(s);
+            }
+        }
+        return visible;
     }
 
     private String buildStepStatus() {
@@ -282,6 +301,10 @@ public class YoloGraphPlaceholderPanel extends JPanel {
             status += "  " + String.format("%.2f", secondsPerStep) + " s/step";
         }
         return status;
+    }
+
+    private int statusHeight() {
+        return trainingActive ? STATUS_H : 0;
     }
 
     private static String formatElapsed(long elapsedMillis) {
