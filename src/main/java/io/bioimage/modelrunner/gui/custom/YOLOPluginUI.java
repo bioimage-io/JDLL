@@ -197,8 +197,16 @@ public class YOLOPluginUI extends YoloGUI implements ActionListener {
     			});
     			trainingService.train(config,
     					progress -> SwingUtilities.invokeLater(() -> {
-    						trainPanel.getLossGraphPanel().addValue(progress.getPrimaryLoss());
-    						trainPanel.getMetricGraphPanel().addValue(progress.getPrimaryMetric());
+    						trainPanel.getLossGraphPanel().addTrainValue(
+    								firstKey(progress.getLosses(), "loss"),
+    								progress.getStep(),
+    								progress.getEpoch(),
+    								progress.getPrimaryLoss());
+    						trainPanel.getMetricGraphPanel().addValidationValue(
+    								firstKey(progress.getMetrics(), "metric"),
+    								progress.getStep(),
+    								progress.getEpoch(),
+    								progress.getPrimaryMetric());
     					}),
     					preview -> SwingUtilities.invokeLater(() ->
     							logConsumer.accept("Validation preview checkpoint: " + preview.getCheckpointPath())),
@@ -231,5 +239,9 @@ public class YOLOPluginUI extends YoloGUI implements ActionListener {
     		inferencePanel.getModelSelectionPanel().setModels(yoloModelEntries);
     		trainPanel.setBaseModels(yoloModelEntries);
     	});
+    }
+
+    private static String firstKey(java.util.Map<String, Double> values, String fallback) {
+    	return values == null || values.isEmpty() ? fallback : values.keySet().iterator().next();
     }
 }

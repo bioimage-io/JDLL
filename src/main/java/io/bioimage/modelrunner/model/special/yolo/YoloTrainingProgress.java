@@ -26,13 +26,20 @@ import java.util.Map;
 public final class YoloTrainingProgress {
 
     private final int epoch;
+    private final int step;
     private final int totalEpochs;
     private final Map<String, Double> losses;
     private final Map<String, Double> metrics;
 
     public YoloTrainingProgress(int epoch, int totalEpochs,
             Map<String, Double> losses, Map<String, Double> metrics) {
+        this(epoch, epoch, totalEpochs, losses, metrics);
+    }
+
+    public YoloTrainingProgress(int epoch, int step, int totalEpochs,
+            Map<String, Double> losses, Map<String, Double> metrics) {
         this.epoch = epoch;
+        this.step = step;
         this.totalEpochs = totalEpochs;
         this.losses = immutableCopy(losses);
         this.metrics = immutableCopy(metrics);
@@ -40,6 +47,10 @@ public final class YoloTrainingProgress {
 
     public int getEpoch() {
         return epoch;
+    }
+
+    public int getStep() {
+        return step;
     }
 
     public int getTotalEpochs() {
