@@ -51,6 +51,11 @@ public class YoloGraphPlaceholderPanel extends JPanel {
     private final String fallbackTitle;
     private final LinkedHashMap<String, Series> series = new LinkedHashMap<String, Series>();
     private String selectedMetricName;
+    private boolean trainingActive;
+    private int currentStep;
+    private int totalSteps;
+    private long elapsedMillis;
+    private double secondsPerStep = Double.NaN;
 
     public YoloGraphPlaceholderPanel(String title) {
         this.fallbackTitle = title;
@@ -90,7 +95,22 @@ public class YoloGraphPlaceholderPanel extends JPanel {
     public void clearValues() {
         series.clear();
         selectedMetricName = null;
+        trainingActive = false;
+        currentStep = 0;
+        totalSteps = 0;
+        elapsedMillis = 0L;
+        secondsPerStep = Double.NaN;
         setDefaultSeries();
+        repaint();
+    }
+
+    public void setTrainingStatus(boolean active, int currentStep, int totalSteps,
+            long elapsedMillis, double secondsPerStep) {
+        this.trainingActive = active;
+        this.currentStep = Math.max(0, currentStep);
+        this.totalSteps = Math.max(0, totalSteps);
+        this.elapsedMillis = Math.max(0L, elapsedMillis);
+        this.secondsPerStep = secondsPerStep;
         repaint();
     }
 
@@ -145,9 +165,12 @@ public class YoloGraphPlaceholderPanel extends JPanel {
         g2.drawLine(left, bottom, right, bottom);
         g2.drawLine(left, top, left, bottom);
 
-        drawXLabel(g2, "step " + range.minStep + " / epoch " + range.minEpoch, left, bottom + fm.getAscent() + 4);
-        String rightLabel = "step " + range.maxStep + " / epoch " + range.maxEpoch;
-        drawXLabel(g2, rightLabel, right - fm.stringWidth(rightLabel), bottom + fm.getAscent() + 4);
+        if (trainingActive) {
+            String leftLabel = "elapsed " + formatElapsed(elapsedMillis);
+            drawXLabel(g2, leftLabel, left, bottom + fm.getAscent() + 4);
+            String rightLabel = buildStepStatus();
+            drawXLabel(g2, rightLabel, right - fm.stringWidth(rightLabel), bottom + fm.getAscent() + 4);
+        }
     }
 
     private void drawXLabel(Graphics2D g2, String label, int x, int y) {
@@ -217,7 +240,7 @@ public class YoloGraphPlaceholderPanel extends JPanel {
         }
         if (!range.hasValues) {
             range.accept(new Point(1, 1, 0.0));
-            range.accept(new Point(2, 2, 1.0));
+            range.accept(new Point(Math.max(2, totalSteps), 1, 1.0));
         }
         if (range.maxY == range.minY) {
             range.maxY = range.minY + 1.0;
@@ -251,6 +274,22 @@ public class YoloGraphPlaceholderPanel extends JPanel {
     private void setDefaultSeries() {
         series.put("Training", new Series("Training", TRAIN_COLOR));
         series.put("Validation", new Series("Validation", VALIDATION_COLOR));
+    }
+
+    private String buildStepStatus() {
+        String status = "step " + currentStep + "/" + totalSteps;
+        if (!Double.isNaN(secondsPerStep) && !Double.isInfinite(secondsPerStep)) {
+            status += "  " + String.format("%.2f", secondsPerStep) + " s/step";
+        }
+        return status;
+    }
+
+    private static String formatElapsed(long elapsedMillis) {
+        long totalSeconds = elapsedMillis / 1000L;
+        long hours = totalSeconds / 3600L;
+        long minutes = (totalSeconds % 3600L) / 60L;
+        long seconds = totalSeconds % 60L;
+        return String.format("%02d:%02d:%02d", hours, minutes, seconds);
     }
 
     private static final class Series {

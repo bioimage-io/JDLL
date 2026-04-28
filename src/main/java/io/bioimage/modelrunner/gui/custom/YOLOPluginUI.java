@@ -23,6 +23,7 @@ import javax.swing.JComponent;
 import javax.swing.JFrame;
 import javax.swing.JOptionPane;
 import javax.swing.SwingUtilities;
+import javax.swing.Timer;
 
 import org.apposed.appose.BuildException;
 
@@ -57,6 +58,13 @@ public class YOLOPluginUI extends YoloGUI implements ActionListener {
     private final YoloInferenceService inferenceService = new YoloInferenceService(installer);
     private final YoloTrainingService trainingService = new YoloTrainingService(installer);
     private boolean cancelled = false;
+    private Timer trainingTimer;
+    private long trainingStartMillis;
+    private long lastProgressMillis;
+    private int lastProgressStep;
+    private int currentTrainingStep;
+    private int totalTrainingSteps;
+    private double currentSecondsPerStep = Double.NaN;
     
     private Runnable cancelCallback;
     Thread workerThread;
@@ -89,6 +97,8 @@ public class YOLOPluginUI extends YoloGUI implements ActionListener {
         this.inferencePanel.getRefreshButton().addActionListener(this);
         this.inferencePanel.getActionPanel().getCancelButton().addActionListener(this);
         this.inferencePanel.getActionPanel().getRunButton().addActionListener(this);
+        this.trainPanel.getTrainActionPanel().getCancelButton().addActionListener(this);
+        this.trainPanel.getTrainActionPanel().getRunButton().addActionListener(this);
         consumer.updateGUI();
     }
 
@@ -153,6 +163,10 @@ public class YOLOPluginUI extends YoloGUI implements ActionListener {
     		workerThread.start();
     	} else if (e.getSource() == this.inferencePanel.getActionPanel().getCancelButton()) {
     		cancel();
+    	} else if (e.getSource() == this.trainPanel.getTrainActionPanel().getRunButton()) {
+    		trainYOLO();
+    	} else if (e.getSource() == this.trainPanel.getTrainActionPanel().getCancelButton()) {
+    		cancel();
     	}
     }
     
@@ -161,6 +175,7 @@ public class YOLOPluginUI extends YoloGUI implements ActionListener {
     	if (workerThread != null && workerThread.isAlive())
     		workerThread.interrupt();
     	inferenceService.close();
+    	finishTrainingUiState();
     	if (cancelCallback != null)
     		cancelCallback.run();
     }
@@ -185,28 +200,24 @@ public class YOLOPluginUI extends YoloGUI implements ActionListener {
     }
 
     public void trainYOLO() {
+    	if (!trainPanel.validateTrainingFields()) {
+    		return;
+    	}
     	cancelled = false;
+    	startTrainingUiState();
     	workerThread = new Thread(() -> {
     		try {
     			YoloTrainingConfig config = readTrainingConfig();
     			Consumer<String> logConsumer = str -> SwingUtilities.invokeLater(() ->
     					YOLOPluginUI.this.inferencePanel.getLogPanel().appendHtml(str));
-    			SwingUtilities.invokeLater(() -> {
-    				trainPanel.getLossGraphPanel().clearValues();
-    				trainPanel.getMetricGraphPanel().clearValues();
-    			});
     			trainingService.train(config,
     					progress -> SwingUtilities.invokeLater(() -> {
+    						updateTrainingProgressState(progress.getStep(), progress.getTotalSteps());
     						trainPanel.getLossGraphPanel().addTrainValue(
     								firstKey(progress.getLosses(), "loss"),
     								progress.getStep(),
     								progress.getEpoch(),
     								progress.getPrimaryLoss());
-    						trainPanel.getMetricGraphPanel().addValidationValue(
-    								firstKey(progress.getMetrics(), "metric"),
-    								progress.getStep(),
-    								progress.getEpoch(),
-    								progress.getPrimaryMetric());
     					}),
     					preview -> SwingUtilities.invokeLater(() ->
     							logConsumer.accept("Validation preview checkpoint: " + preview.getCheckpointPath())),
@@ -216,9 +227,60 @@ public class YOLOPluginUI extends YoloGUI implements ActionListener {
     			if (!cancelled) {
     				e.printStackTrace();
     			}
+    		} finally {
+    			SwingUtilities.invokeLater(() -> finishTrainingUiState());
     		}
     	});
     	workerThread.start();
+    }
+
+    private void startTrainingUiState() {
+    	trainingStartMillis = System.currentTimeMillis();
+    	lastProgressMillis = trainingStartMillis;
+    	lastProgressStep = 0;
+    	currentTrainingStep = 0;
+    	totalTrainingSteps = 0;
+    	currentSecondsPerStep = Double.NaN;
+    	trainPanel.setTrainingRunning(true);
+    	tabs.setEnabledAt(0, false);
+    	trainPanel.getLossGraphPanel().clearValues();
+    	trainPanel.getMetricGraphPanel().clearValues();
+    	trainPanel.getLossGraphPanel().setTrainingStatus(true, 0, 0, 0L, Double.NaN);
+    	trainPanel.getMetricGraphPanel().setTrainingStatus(true, 0, 0, 0L, Double.NaN);
+    	if (trainingTimer != null) {
+    		trainingTimer.stop();
+    	}
+    	trainingTimer = new Timer(1000, e -> updateTrainingGraphStatus());
+    	trainingTimer.start();
+    }
+
+    private void finishTrainingUiState() {
+    	if (trainingTimer != null) {
+    		trainingTimer.stop();
+    		trainingTimer = null;
+    	}
+    	trainPanel.setTrainingRunning(false);
+    	tabs.setEnabledAt(0, true);
+    }
+
+    private void updateTrainingProgressState(int step, int totalSteps) {
+    	long now = System.currentTimeMillis();
+    	if (totalSteps > 0) {
+    		totalTrainingSteps = totalSteps;
+    	}
+    	if (step > lastProgressStep) {
+    		currentSecondsPerStep = (now - lastProgressMillis) / 1000.0d / (step - lastProgressStep);
+    		lastProgressMillis = now;
+    		lastProgressStep = step;
+    	}
+    	currentTrainingStep = Math.max(currentTrainingStep, step);
+    	updateTrainingGraphStatus();
+    }
+
+    private void updateTrainingGraphStatus() {
+    	long elapsed = Math.max(0L, System.currentTimeMillis() - trainingStartMillis);
+    	trainPanel.getLossGraphPanel().setTrainingStatus(true, currentTrainingStep, totalTrainingSteps, elapsed, currentSecondsPerStep);
+    	trainPanel.getMetricGraphPanel().setTrainingStatus(true, currentTrainingStep, totalTrainingSteps, elapsed, currentSecondsPerStep);
     }
 
     private YoloTrainingConfig readTrainingConfig() {

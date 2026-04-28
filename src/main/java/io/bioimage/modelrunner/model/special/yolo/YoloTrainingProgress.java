@@ -28,19 +28,26 @@ public final class YoloTrainingProgress {
     private final int epoch;
     private final int step;
     private final int totalEpochs;
+    private final int totalSteps;
     private final Map<String, Double> losses;
     private final Map<String, Double> metrics;
 
     public YoloTrainingProgress(int epoch, int totalEpochs,
             Map<String, Double> losses, Map<String, Double> metrics) {
-        this(epoch, epoch, totalEpochs, losses, metrics);
+        this(epoch, epoch, totalEpochs, totalEpochs, losses, metrics);
     }
 
     public YoloTrainingProgress(int epoch, int step, int totalEpochs,
             Map<String, Double> losses, Map<String, Double> metrics) {
+        this(epoch, step, totalEpochs, totalEpochs, losses, metrics);
+    }
+
+    public YoloTrainingProgress(int epoch, int step, int totalEpochs, int totalSteps,
+            Map<String, Double> losses, Map<String, Double> metrics) {
         this.epoch = epoch;
         this.step = step;
         this.totalEpochs = totalEpochs;
+        this.totalSteps = totalSteps;
         this.losses = immutableCopy(losses);
         this.metrics = immutableCopy(metrics);
     }
@@ -55,6 +62,10 @@ public final class YoloTrainingProgress {
 
     public int getTotalEpochs() {
         return totalEpochs;
+    }
+
+    public int getTotalSteps() {
+        return totalSteps;
     }
 
     public Map<String, Double> getLosses() {

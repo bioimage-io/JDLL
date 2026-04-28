@@ -35,6 +35,7 @@ import org.apposed.appose.Appose;
 import org.apposed.appose.BuildException;
 import org.apposed.appose.Environment;
 import org.apposed.appose.Service;
+import org.apposed.appose.Service.ResponseType;
 import org.apposed.appose.Service.Task;
 import org.apposed.appose.TaskEvent;
 import org.apposed.appose.TaskException;
@@ -318,6 +319,7 @@ public class Yolo extends DLModelPytorchProtected {
 				+ "epochs = " + epochs + nl
 				+ "imgsz = " + imageSize + nl
 				+ "preview_epoch_period = " + Math.max(1, previewEpochPeriod) + nl
+				+ "state = {'step': 0, 'total_steps': 0}" + nl
 				+ "def _scalar(value):" + nl
 				+ "  try:" + nl
 				+ "    if hasattr(value, 'detach'):" + nl
@@ -346,10 +348,26 @@ public class Yolo extends DLModelPytorchProtected {
 				+ "    return _clean_dict(getattr(trainer, 'metrics', {}))" + nl
 				+ "  except Exception:" + nl
 				+ "    return {}" + nl
-				+ "def _emit_progress(trainer):" + nl
+				+ "def _emit_train_start(trainer):" + nl
+				+ "  try:" + nl
+				+ "    nb = len(trainer.train_loader)" + nl
+				+ "  except Exception:" + nl
+				+ "    nb = 0" + nl
+				+ "  state['total_steps'] = int(getattr(trainer, 'epochs', epochs)) * int(nb)" + nl
+				+ "  info = {'type': 'progress', 'epoch': 0, 'step': 0, 'total_epochs': epochs, 'total_steps': state['total_steps'], 'losses': {}, 'metrics': {}}" + nl
+				+ "  task.update(message='YOLO training started', current=0, maximum=state['total_steps'], info=info)" + nl
+				+ "def _emit_step_progress(trainer, every=50):" + nl
+				+ "  state['step'] += 1" + nl
+				+ "  if state['step'] % every != 0 and state['step'] != state.get('total_steps', 0):" + nl
+				+ "    return" + nl
 				+ "  epoch = int(getattr(trainer, 'epoch', 0)) + 1" + nl
-				+ "  info = {'type': 'progress', 'epoch': epoch, 'total_epochs': epochs, 'losses': _losses(trainer), 'metrics': _metrics(trainer)}" + nl
-				+ "  task.update(message='YOLO training epoch %d/%d' % (epoch, epochs), current=epoch, maximum=epochs, info=info)" + nl
+				+ "  total_steps = state.get('total_steps', 0)" + nl
+				+ "  info = {'type': 'progress', 'epoch': epoch, 'step': state['step'], 'total_epochs': epochs, 'total_steps': total_steps, 'losses': _losses(trainer), 'metrics': {}}" + nl
+				+ "  task.update(message='YOLO training step %d/%d' % (state['step'], total_steps), current=state['step'], maximum=total_steps, info=info)" + nl
+				+ "def _emit_epoch_progress(trainer):" + nl
+				+ "  epoch = int(getattr(trainer, 'epoch', 0)) + 1" + nl
+				+ "  info = {'type': 'progress', 'epoch': epoch, 'step': state['step'], 'total_epochs': epochs, 'total_steps': state.get('total_steps', 0), 'losses': _losses(trainer), 'metrics': _metrics(trainer)}" + nl
+				+ "  task.update(message='YOLO training epoch %d/%d' % (epoch, epochs), current=state['step'], maximum=state.get('total_steps', 0), info=info)" + nl
 				+ "def _emit_preview(trainer):" + nl
 				+ "  epoch = int(getattr(trainer, 'epoch', 0)) + 1" + nl
 				+ "  if epoch % preview_epoch_period != 0 and epoch != epochs:" + nl
@@ -357,7 +375,9 @@ public class Yolo extends DLModelPytorchProtected {
 				+ "  checkpoint = str(getattr(trainer, 'best', '') or getattr(trainer, 'last', '') or '')" + nl
 				+ "  task.update(message='YOLO checkpoint available', current=epoch, maximum=epochs, info={'type': 'preview', 'epoch': epoch, 'checkpoint': checkpoint})" + nl
 				+ "model = YOLO(model_source)" + nl
-				+ "model.add_callback('on_fit_epoch_end', _emit_progress)" + nl
+				+ "model.add_callback('on_train_start', _emit_train_start)" + nl
+				+ "model.add_callback('on_train_batch_end', _emit_step_progress)" + nl
+				+ "model.add_callback('on_fit_epoch_end', _emit_epoch_progress)" + nl
 				+ "model.add_callback('on_model_save', _emit_preview)" + nl
 				+ "results = model.train(data=dataset_yaml, epochs=epochs, imgsz=imgsz, project=project, name=run_name, exist_ok=True)" + nl
 				+ "trainer = getattr(model, 'trainer', None)" + nl
@@ -378,14 +398,16 @@ public class Yolo extends DLModelPytorchProtected {
 		if (event.message != null && logConsumer != null) {
 			logConsumer.accept(event.message);
 		}
-		if (event.info == null) {
+		if (!event.responseType.equals(ResponseType.UPDATE) || event.info == null) {
 			return;
 		}
 		Object type = event.info.get("type");
 		if ("progress".equals(type) && progressConsumer != null) {
 			progressConsumer.accept(new YoloTrainingProgress(
 					asInt(event.info.get("epoch"), (int) event.current),
-					asInt(event.info.get("total_epochs"), (int) event.maximum),
+					asInt(event.info.get("step"), (int) event.current),
+					asInt(event.info.get("total_epochs"), 0),
+					asInt(event.info.get("total_steps"), (int) event.maximum),
 					asDoubleMap(event.info.get("losses")),
 					asDoubleMap(event.info.get("metrics"))));
 		} else if ("preview".equals(type) && previewConsumer != null) {

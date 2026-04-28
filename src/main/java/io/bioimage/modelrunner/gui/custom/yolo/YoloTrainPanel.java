@@ -20,18 +20,29 @@
 package io.bioimage.modelrunner.gui.custom.yolo;
 
 import java.awt.CardLayout;
+import java.awt.Color;
+import java.awt.datatransfer.DataFlavor;
 import java.io.File;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.regex.Pattern;
+import java.util.stream.Stream;
 
 import javax.swing.ButtonGroup;
 import javax.swing.DefaultComboBoxModel;
 import javax.swing.JButton;
 import javax.swing.JComboBox;
 import javax.swing.JFileChooser;
+import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JRadioButton;
+import javax.swing.JTextField;
+import javax.swing.TransferHandler;
 import javax.swing.filechooser.FileNameExtensionFilter;
 
 public class YoloTrainPanel extends JPanel {
@@ -42,6 +53,7 @@ public class YoloTrainPanel extends JPanel {
     protected static final int ROW_GAP = 6;
     protected static final double GRAPH_WIDTH_RATIO = 0.9;
     protected static final double GRAPH_HEIGHT_RATIO = 0.4;
+    protected static final double TRAIN_ACTION_HEIGHT_RATIO = 0.1;
     protected static final double LABEL_WIDTH_RATIO = 0.24;
     protected static final double BROWSE_WIDTH_RATIO = 0.14;
     protected static final double RADIO_WIDTH_RATIO = 0.16;
@@ -69,6 +81,7 @@ public class YoloTrainPanel extends JPanel {
 
     protected final JLabel epochsLabel = new JLabel("Epochs");
     protected final YoloIntegerTextField epochsField = new YoloIntegerTextField("100");
+    protected final JLabel epochsErrorLabel = new JLabel();
 
     protected final JButton lossButton = new JButton("Loss");
     protected final JButton metricButton = new JButton("Metric");
@@ -77,6 +90,11 @@ public class YoloTrainPanel extends JPanel {
     protected final YoloGraphPlaceholderPanel lossGraphPanel = new YoloGraphPlaceholderPanel("Loss");
     protected final YoloGraphPlaceholderPanel metricGraphPanel = new YoloGraphPlaceholderPanel("Metric");
     protected final YoloValidationPreviewPanel validationPreviewPanel = new YoloValidationPreviewPanel();
+    protected final YoloActionPanel trainActionPanel = new YoloActionPanel();
+    private boolean trainingRunning;
+
+    private static final Color ERROR_FG = new Color(255, 0, 0, 170);
+    private static final Pattern INVALID_MODEL_NAME_CHARS = Pattern.compile("[\\\\/:*?\"<>|]");
 
     protected YoloTrainPanel() {
         setLayout(null);
@@ -90,18 +108,25 @@ public class YoloTrainPanel extends JPanel {
         YoloUiUtils.alignLabel(modelNameLabel);
         YoloUiUtils.alignLabel(datasetLabel);
         YoloUiUtils.alignLabel(epochsLabel);
+        styleErrorLabel(epochsErrorLabel);
 
         YoloUiUtils.styleInput(modelNameField);
         YoloUiUtils.styleInput(datasetField);
         baseModelComboBox.setEditable(true);
         YoloUiUtils.styleInput(baseModelComboBox);
         YoloUiUtils.styleInput(epochsField);
+        datasetField.setTransferHandler(new PathDropHandler(path -> datasetField.setText(path)));
+        TransferHandler baseModelDropHandler = new PathDropHandler(this::setSelectedBaseModelValue);
+        baseModelComboBox.setTransferHandler(baseModelDropHandler);
+        ((JComponent) baseModelComboBox.getEditor().getEditorComponent()).setTransferHandler(baseModelDropHandler);
 
         YoloUiUtils.styleFlatSecondaryButton(datasetBrowseButton);
         YoloUiUtils.styleFlatSecondaryButton(baseModelBrowseButton);
         YoloUiUtils.styleFlatSecondaryButton(lossButton);
         YoloUiUtils.styleFlatSecondaryButton(metricButton);
         YoloUiUtils.styleFlatSecondaryButton(validationPreviewButton);
+        trainActionPanel.getRunButton().setText("Train");
+        trainActionPanel.getCancelButton().setEnabled(false);
 
         graphCardPanel.setOpaque(false);
         graphCardPanel.add(lossGraphPanel, "loss");
@@ -125,10 +150,12 @@ public class YoloTrainPanel extends JPanel {
         add(scratchRadio);
         add(epochsLabel);
         add(epochsField);
+        add(epochsErrorLabel);
         add(lossButton);
         add(metricButton);
         add(validationPreviewButton);
         add(graphCardPanel);
+        add(trainActionPanel);
 
         updateMode();
         fineTuneRadio.addActionListener(e -> updateMode());
@@ -140,10 +167,28 @@ public class YoloTrainPanel extends JPanel {
         layout.show(graphCardPanel, name);
     }
 
+    private static void styleErrorLabel(JLabel label) {
+        label.setForeground(ERROR_FG);
+        label.setText("");
+    }
+
     private void updateMode() {
         boolean fineTune = fineTuneRadio.isSelected();
-        baseModelComboBox.setEnabled(fineTune);
-        baseModelBrowseButton.setEnabled(fineTune);
+        baseModelComboBox.setEnabled(!trainingRunning && fineTune);
+        baseModelBrowseButton.setEnabled(!trainingRunning && fineTune);
+    }
+
+    public void setTrainingRunning(boolean running) {
+        this.trainingRunning = running;
+        modelNameField.setEnabled(!running);
+        datasetField.setEnabled(!running);
+        datasetBrowseButton.setEnabled(!running);
+        fineTuneRadio.setEnabled(!running);
+        scratchRadio.setEnabled(!running);
+        epochsField.setEnabled(!running);
+        trainActionPanel.getRunButton().setEnabled(!running);
+        trainActionPanel.getCancelButton().setEnabled(running);
+        updateMode();
     }
 
     private void browseDatasetYaml() {
@@ -179,13 +224,15 @@ public class YoloTrainPanel extends JPanel {
         int gap = Math.max(2, Math.min(ROW_GAP, h / 90));
         int innerW = Math.max(0, w - 2 * OUTER_PAD);
         int graphW = Math.max(1, (int) Math.round(innerW * GRAPH_WIDTH_RATIO));
-        int graphBaseH = Math.max(1, (int) Math.round(h * GRAPH_HEIGHT_RATIO));
+        int maxControlH = Math.max(1, YoloUiUtils.controlHeightForFontSize(YoloUiUtils.MAX_CONTROL_FONT_SIZE));
+        int actionH = Math.max(1, Math.min(maxControlH, (int) Math.round(h * TRAIN_ACTION_HEIGHT_RATIO)));
+        int actionGap = gap;
+        int graphBaseH = Math.max(1, (int) Math.round(h * GRAPH_HEIGHT_RATIO) - actionH - actionGap);
 
-        int topAreaH = Math.max(1, h - 2 * OUTER_PAD - graphBaseH - gap);
+        int topAreaH = Math.max(1, h - 2 * OUTER_PAD - graphBaseH - actionH - actionGap - gap);
         double rowUnits = TOP_ROW_UNITS + DATASET_ROW_UNITS + TUNE_ROW_UNITS + SCRATCH_ROW_UNITS + EPOCH_ROW_UNITS + SWITCH_ROW_UNITS;
         int rowUnitPx = Math.max(1, (int) Math.floor((topAreaH - 5 * gap) / rowUnits));
 
-        int maxControlH = Math.max(1, YoloUiUtils.controlHeightForFontSize(YoloUiUtils.MAX_CONTROL_FONT_SIZE));
         int compactControlH = Math.max(1, maxControlH - 2);
         int row1H = Math.max(1, Math.min(compactControlH, (int) Math.round(rowUnitPx * TOP_ROW_UNITS)));
         int row2H = Math.max(1, Math.min(compactControlH, (int) Math.round(rowUnitPx * DATASET_ROW_UNITS)));
@@ -196,7 +243,7 @@ public class YoloTrainPanel extends JPanel {
                 topAreaH - row1H - row2H - row3H - row4H - row5H - 5 * gap,
                 (int) Math.round(rowUnitPx * SWITCH_ROW_UNITS))));
         int usedControlsH = row1H + row2H + row3H + row4H + row5H + row6H + 5 * gap;
-        int graphH = Math.max(graphBaseH, h - 2 * OUTER_PAD - usedControlsH);
+        int graphH = Math.max(1, Math.max(graphBaseH, h - 2 * OUTER_PAD - usedControlsH - actionH - actionGap));
 
         int labelW = (int) Math.round(innerW * LABEL_WIDTH_RATIO);
         int browseW = (int) Math.round(innerW * BROWSE_WIDTH_RATIO);
@@ -209,7 +256,7 @@ public class YoloTrainPanel extends JPanel {
         int y = OUTER_PAD;
 
         modelNameLabel.setBounds(x, y, labelW, row1H);
-        modelNameField.setBounds(x + labelW + gap, y, fieldW - labelW, row1H);
+        modelNameField.setBounds(x + labelW + gap, y, fieldW, row1H);
         y += row1H + gap;
 
         int datasetFieldW = Math.max(1, innerW - labelW - browseW - 2 * gap);
@@ -229,6 +276,8 @@ public class YoloTrainPanel extends JPanel {
 
         epochsLabel.setBounds(x, y, labelW, row5H);
         epochsField.setBounds(x + labelW + gap, y, epochsW, row5H);
+        int epochsErrorX = x + labelW + epochsW + 2 * gap;
+        epochsErrorLabel.setBounds(epochsErrorX, y, Math.max(1, x + innerW - epochsErrorX), row5H);
         y += row5H + gap;
 
         int totalSwitchW = 3 * switchBtnW + 2 * gap;
@@ -238,7 +287,11 @@ public class YoloTrainPanel extends JPanel {
         validationPreviewButton.setBounds(metricButton.getX() + switchBtnW + gap, y, switchBtnW, row6H);
 
         int graphX = x + (innerW - graphW) / 2;
-        graphCardPanel.setBounds(graphX, h - OUTER_PAD - graphH, graphW, graphH);
+        int actionW = graphW;
+        int actionX = graphX;
+        int actionY = h - OUTER_PAD - actionH;
+        graphCardPanel.setBounds(graphX, actionY - actionGap - graphH, graphW, graphH);
+        trainActionPanel.setBounds(actionX, actionY, actionW, actionH);
 
         YoloUiUtils.applyResponsiveText(modelNameLabel, labelW - 4, row1H);
         YoloUiUtils.applyResponsiveFont(modelNameField, row1H);
@@ -251,13 +304,191 @@ public class YoloTrainPanel extends JPanel {
         YoloUiUtils.applyResponsiveFont(scratchRadio, row4H);
         YoloUiUtils.applyResponsiveText(epochsLabel, labelW - 4, row5H);
         YoloUiUtils.applyResponsiveFont(epochsField, row5H);
+        epochsErrorLabel.setFont(epochsLabel.getFont());
         YoloUiUtils.applyResponsiveText(lossButton, switchBtnW - 8, row6H);
         YoloUiUtils.applyResponsiveText(metricButton, switchBtnW - 8, row6H);
         YoloUiUtils.applyResponsiveText(validationPreviewButton, switchBtnW - 8, row6H);
+        trainActionPanel.doLayout();
     }
 
     public YoloPlaceholderTextField getModelNameField() {
         return modelNameField;
+    }
+
+    public boolean validateTrainingFields() {
+        clearTrainingErrors();
+        boolean valid = true;
+
+        String modelName = modelNameField.getText() == null ? "" : modelNameField.getText().trim();
+        if (!isValidModelFileName(modelName)) {
+            modelNameField.setText("");
+            modelNameField.setErrorPlaceholder("Please enter a valid model name");
+            valid = false;
+        }
+
+        File datasetYaml = resolveDatasetYaml(datasetField.getText());
+        if (datasetYaml == null || !isYoloDatasetYaml(datasetYaml)) {
+            datasetField.setText("");
+            datasetField.setErrorPlaceholder("Please select a valid YOLO dataset");
+            valid = false;
+        } else {
+            datasetField.setText(datasetYaml.getAbsolutePath());
+        }
+
+        if (!isValidEpochs()) {
+            epochsErrorLabel.setText("Please enter epochs > 0");
+            valid = false;
+        }
+
+        if (fineTuneRadio.isSelected() && !isValidFineTuneBaseModel()) {
+            setComboBoxErrorPlaceholder(baseModelComboBox, "Please select a valid .pt model");
+            valid = false;
+        }
+
+        revalidate();
+        repaint();
+        return valid;
+    }
+
+    public void clearTrainingErrors() {
+        modelNameField.clearErrorPlaceholder();
+        datasetField.clearErrorPlaceholder();
+        setComboBoxErrorPlaceholder(baseModelComboBox, null);
+        epochsErrorLabel.setText("");
+    }
+
+    private static void setComboBoxErrorPlaceholder(JComboBox<?> comboBox, String message) {
+        JComponent editor = (JComponent) comboBox.getEditor().getEditorComponent();
+        if (editor instanceof JTextField) {
+            JTextField field = (JTextField) editor;
+            if (message != null) {
+                comboBox.setSelectedItem(null);
+                field.setText(message);
+            }
+            field.setForeground(message == null ? Color.BLACK : ERROR_FG);
+            field.repaint();
+        }
+        comboBox.repaint();
+    }
+
+    private boolean isValidModelFileName(String modelName) {
+        if (modelName == null || modelName.trim().isEmpty()) {
+            return false;
+        }
+        String cleanName = modelName.trim();
+        if (cleanName.toLowerCase().endsWith(YoloModelRegistry.YOLO_WEIGHTS_EXTENSION)) {
+            cleanName = cleanName.substring(0, cleanName.length() - YoloModelRegistry.YOLO_WEIGHTS_EXTENSION.length());
+        }
+        return !cleanName.isEmpty()
+                && !cleanName.equals(".")
+                && !cleanName.equals("..")
+                && !cleanName.contains("..")
+                && !INVALID_MODEL_NAME_CHARS.matcher(cleanName).find();
+    }
+
+    private boolean isValidEpochs() {
+        try {
+            return Integer.parseInt(epochsField.getText().trim()) > 0;
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    private boolean isValidFineTuneBaseModel() {
+        String baseModel = getSelectedBaseModelValue();
+        if (baseModelComboBox.getSelectedItem() instanceof YoloModelSelectionEntry) {
+            return baseModel != null && baseModel.toLowerCase().endsWith(YoloModelRegistry.YOLO_WEIGHTS_EXTENSION);
+        }
+        return baseModel != null
+                && baseModel.toLowerCase().endsWith(YoloModelRegistry.YOLO_WEIGHTS_EXTENSION)
+                && new File(baseModel).isFile();
+    }
+
+    private static File resolveDatasetYaml(String datasetPath) {
+        if (datasetPath == null || datasetPath.trim().isEmpty()) {
+            return null;
+        }
+        File path = new File(datasetPath.trim());
+        if (path.isFile() && isYamlFile(path)) {
+            return path;
+        }
+        if (!path.isDirectory()) {
+            return null;
+        }
+        File directYaml = firstExisting(path, "data.yaml", "data.yml", "dataset.yaml", "dataset.yml");
+        if (directYaml != null) {
+            return directYaml;
+        }
+        try (Stream<java.nio.file.Path> stream = Files.walk(path.toPath(), 3)) {
+            return stream
+                    .filter(p -> Files.isRegularFile(p) && isYamlFile(p.toFile()))
+                    .map(java.nio.file.Path::toFile)
+                    .filter(YoloTrainPanel::isYoloDatasetYaml)
+                    .findFirst()
+                    .orElse(null);
+        } catch (IOException e) {
+            return null;
+        }
+    }
+
+    private static File firstExisting(File dir, String... names) {
+        for (String name : names) {
+            File candidate = new File(dir, name);
+            if (candidate.isFile()) {
+                return candidate;
+            }
+        }
+        return null;
+    }
+
+    private static boolean isYamlFile(File file) {
+        String name = file.getName().toLowerCase();
+        return name.endsWith(".yaml") || name.endsWith(".yml");
+    }
+
+    private static boolean isYoloDatasetYaml(File file) {
+        try {
+            String content = new String(Files.readAllBytes(file.toPath()), StandardCharsets.UTF_8).toLowerCase();
+            return hasYamlKey(content, "train")
+                    && (hasYamlKey(content, "val") || hasYamlKey(content, "validation"))
+                    && hasYamlKey(content, "names");
+        } catch (IOException e) {
+            return false;
+        }
+    }
+
+    private static boolean hasYamlKey(String content, String key) {
+        return Pattern.compile("(?m)^\\s*" + Pattern.quote(key) + "\\s*:").matcher(content).find();
+    }
+
+    private static class PathDropHandler extends TransferHandler {
+        private static final long serialVersionUID = 2448864258216265787L;
+
+        private final java.util.function.Consumer<String> pathConsumer;
+
+        private PathDropHandler(java.util.function.Consumer<String> pathConsumer) {
+            this.pathConsumer = pathConsumer;
+        }
+
+        @Override
+        public boolean canImport(TransferSupport support) {
+            return support.isDataFlavorSupported(DataFlavor.javaFileListFlavor);
+        }
+
+        @Override
+        public boolean importData(TransferSupport support) {
+            try {
+                @SuppressWarnings("unchecked")
+                List<File> files = (List<File>) support.getTransferable().getTransferData(DataFlavor.javaFileListFlavor);
+                if (files == null || files.isEmpty()) {
+                    return false;
+                }
+                pathConsumer.accept(files.get(0).getAbsolutePath());
+                return true;
+            } catch (Exception e) {
+                return false;
+            }
+        }
     }
 
     public YoloPlaceholderTextField getDatasetField() {
@@ -350,5 +581,9 @@ public class YoloTrainPanel extends JPanel {
 
     public YoloValidationPreviewPanel getValidationPreviewPanel() {
         return validationPreviewPanel;
+    }
+
+    public YoloActionPanel getTrainActionPanel() {
+        return trainActionPanel;
     }
 }

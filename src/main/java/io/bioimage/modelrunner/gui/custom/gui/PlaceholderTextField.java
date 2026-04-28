@@ -29,8 +29,8 @@ import javax.swing.JTextField;
 
 public class PlaceholderTextField extends JTextField {
     private static final long serialVersionUID = 5112778641734509160L;
-	private final String placeholder;
-    private final Color placeholderColor;
+	protected final String placeholder;
+    protected final Color placeholderColor;
 
     /**
      * Creates a new PlaceholderTextField.
@@ -53,14 +53,22 @@ public class PlaceholderTextField extends JTextField {
 
         if (getText().isEmpty()) {
             Graphics2D g2 = (Graphics2D) g.create();
-            g2.setColor(placeholderColor);
+            g2.setColor(getPlaceholderColor());
             Insets ins = getInsets();
             FontMetrics fm = g2.getFontMetrics();
             int x = ins.left;
             // Vertically center the text:
             int y = (getHeight() + fm.getAscent() - fm.getDescent()) / 2;
-            g2.drawString(placeholder, x, y);
+            g2.drawString(getPlaceholder(), x, y);
             g2.dispose();
         }
+    }
+
+    protected String getPlaceholder() {
+        return placeholder;
+    }
+
+    protected Color getPlaceholderColor() {
+        return placeholderColor;
     }
 }

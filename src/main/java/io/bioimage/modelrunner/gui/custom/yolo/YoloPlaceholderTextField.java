@@ -19,13 +19,35 @@
  */
 package io.bioimage.modelrunner.gui.custom.yolo;
 
+import java.awt.Color;
+
 import io.bioimage.modelrunner.gui.custom.gui.PlaceholderTextField;
 
 public class YoloPlaceholderTextField extends PlaceholderTextField {
 
     private static final long serialVersionUID = -8360733596129789812L;
 
+    private String errorPlaceholder;
+
     public YoloPlaceholderTextField(String placeholder) {
         super(placeholder);
+    }
+
+    public void setErrorPlaceholder(String errorPlaceholder) {
+        this.errorPlaceholder = errorPlaceholder;
+        repaint();
+    }
+
+    public void clearErrorPlaceholder() {
+        setErrorPlaceholder(null);
+    }
+
+    protected String getPlaceholder() {
+        return errorPlaceholder == null ? super.getPlaceholder() : errorPlaceholder;
+    }
+
+    @Override
+    protected Color getPlaceholderColor() {
+        return errorPlaceholder == null ? super.getPlaceholderColor() : new Color(255, 0, 0, 150);
     }
 }
