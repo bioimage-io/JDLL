@@ -309,17 +309,26 @@ public class Yolo extends DLModelPytorchProtected {
 		}
 		String nl = System.lineSeparator();
 		return ""
-				+ "import os, shutil" + nl
+				+ "import contextlib, os, shutil, sys" + nl
+				+ "_appose_stdout = sys.stdout" + nl
 				+ "from ultralytics import YOLO" + nl
 				+ "model_source = r'" + py(modelSource) + "'" + nl
 				+ "dataset_yaml = r'" + py(new File(datasetYamlPath).getAbsolutePath()) + "'" + nl
 				+ "output_weights = r'" + py(outputFile.getAbsolutePath()) + "'" + nl
 				+ "project = r'" + py(project) + "'" + nl
 				+ "run_name = r'" + py(runName) + "'" + nl
+				+ "yolo_log_path = os.path.join(project, run_name + '.training.log')" + nl
 				+ "epochs = " + epochs + nl
 				+ "imgsz = " + imageSize + nl
 				+ "preview_epoch_period = " + Math.max(1, previewEpochPeriod) + nl
 				+ "state = {'step': 0, 'total_steps': 0}" + nl
+				+ "def _task_update(**kwargs):" + nl
+				+ "  current_stdout = sys.stdout" + nl
+				+ "  try:" + nl
+				+ "    sys.stdout = _appose_stdout" + nl
+				+ "    task.update(**kwargs)" + nl
+				+ "  finally:" + nl
+				+ "    sys.stdout = current_stdout" + nl
 				+ "def _scalar(value):" + nl
 				+ "  try:" + nl
 				+ "    if hasattr(value, 'detach'):" + nl
@@ -355,7 +364,7 @@ public class Yolo extends DLModelPytorchProtected {
 				+ "    nb = 0" + nl
 				+ "  state['total_steps'] = int(getattr(trainer, 'epochs', epochs)) * int(nb)" + nl
 				+ "  info = {'type': 'progress', 'epoch': 0, 'step': 0, 'total_epochs': epochs, 'total_steps': state['total_steps'], 'losses': {}, 'metrics': {}}" + nl
-				+ "  task.update(message='YOLO training started', current=0, maximum=state['total_steps'], info=info)" + nl
+				+ "  _task_update(message='YOLO training started', current=0, maximum=state['total_steps'], info=info)" + nl
 				+ "def _emit_step_progress(trainer, every=50):" + nl
 				+ "  state['step'] += 1" + nl
 				+ "  if state['step'] % every != 0 and state['step'] != state.get('total_steps', 0):" + nl
@@ -363,23 +372,25 @@ public class Yolo extends DLModelPytorchProtected {
 				+ "  epoch = int(getattr(trainer, 'epoch', 0)) + 1" + nl
 				+ "  total_steps = state.get('total_steps', 0)" + nl
 				+ "  info = {'type': 'progress', 'epoch': epoch, 'step': state['step'], 'total_epochs': epochs, 'total_steps': total_steps, 'losses': _losses(trainer), 'metrics': {}}" + nl
-				+ "  task.update(message='YOLO training step %d/%d' % (state['step'], total_steps), current=state['step'], maximum=total_steps, info=info)" + nl
+				+ "  _task_update(message='YOLO training step %d/%d' % (state['step'], total_steps), current=state['step'], maximum=total_steps, info=info)" + nl
 				+ "def _emit_epoch_progress(trainer):" + nl
 				+ "  epoch = int(getattr(trainer, 'epoch', 0)) + 1" + nl
 				+ "  info = {'type': 'progress', 'epoch': epoch, 'step': state['step'], 'total_epochs': epochs, 'total_steps': state.get('total_steps', 0), 'losses': _losses(trainer), 'metrics': _metrics(trainer)}" + nl
-				+ "  task.update(message='YOLO training epoch %d/%d' % (epoch, epochs), current=state['step'], maximum=state.get('total_steps', 0), info=info)" + nl
+				+ "  _task_update(message='YOLO training epoch %d/%d' % (epoch, epochs), current=state['step'], maximum=state.get('total_steps', 0), info=info)" + nl
 				+ "def _emit_preview(trainer):" + nl
 				+ "  epoch = int(getattr(trainer, 'epoch', 0)) + 1" + nl
 				+ "  if epoch % preview_epoch_period != 0 and epoch != epochs:" + nl
 				+ "    return" + nl
 				+ "  checkpoint = str(getattr(trainer, 'best', '') or getattr(trainer, 'last', '') or '')" + nl
-				+ "  task.update(message='YOLO checkpoint available', current=epoch, maximum=epochs, info={'type': 'preview', 'epoch': epoch, 'checkpoint': checkpoint})" + nl
+				+ "  _task_update(message='YOLO checkpoint available', current=epoch, maximum=epochs, info={'type': 'preview', 'epoch': epoch, 'checkpoint': checkpoint})" + nl
 				+ "model = YOLO(model_source)" + nl
 				+ "model.add_callback('on_train_start', _emit_train_start)" + nl
 				+ "model.add_callback('on_train_batch_end', _emit_step_progress)" + nl
 				+ "model.add_callback('on_fit_epoch_end', _emit_epoch_progress)" + nl
 				+ "model.add_callback('on_model_save', _emit_preview)" + nl
-				+ "results = model.train(data=dataset_yaml, epochs=epochs, imgsz=imgsz, project=project, name=run_name, exist_ok=True)" + nl
+				+ "os.makedirs(project, exist_ok=True)" + nl
+				+ "with open(yolo_log_path, 'a', encoding='utf-8') as yolo_log, contextlib.redirect_stdout(yolo_log):" + nl
+				+ "  results = model.train(data=dataset_yaml, epochs=epochs, imgsz=imgsz, project=project, name=run_name, exist_ok=True, verbose=False, plots=False)" + nl
 				+ "trainer = getattr(model, 'trainer', None)" + nl
 				+ "best = str(getattr(trainer, 'best', '') if trainer is not None else '')" + nl
 				+ "last = str(getattr(trainer, 'last', '') if trainer is not None else '')" + nl

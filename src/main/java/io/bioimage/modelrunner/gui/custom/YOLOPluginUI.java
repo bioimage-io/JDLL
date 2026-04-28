@@ -208,8 +208,10 @@ public class YOLOPluginUI extends YoloGUI implements ActionListener {
     	workerThread = new Thread(() -> {
     		try {
     			YoloTrainingConfig config = readTrainingConfig();
-    			Consumer<String> logConsumer = str -> SwingUtilities.invokeLater(() ->
-    					YOLOPluginUI.this.inferencePanel.getLogPanel().appendHtml(str));
+    			Consumer<String> logConsumer = str -> SwingUtilities.invokeLater(() ->{
+					YOLOPluginUI.this.inferencePanel.getLogPanel().appendHtml(str);
+					System.err.println(str);
+    			});
     			trainingService.train(config,
     					progress -> SwingUtilities.invokeLater(() -> {
     						updateTrainingProgressState(progress.getStep(), progress.getTotalSteps());
