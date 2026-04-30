@@ -16,3 +16,6 @@
 *.swp
 
 prep.sh
+
+# local design notes
+/docs/appose/
