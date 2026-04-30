@@ -40,8 +40,10 @@ public class YoloGraphPlaceholderPanel extends JPanel {
 
     private static final int PAD = 12;
     private static final int TOP_INFO_H = 24;
-    private static final int STATUS_H = 24;
+    private static final int X_AXIS_LABEL_H = 26;
+    private static final int STATUS_H = 26;
     private static final int Y_TICKS = 4;
+    private static final int X_TICKS = 3;
     private static final Color AXIS_COLOR = new Color(132, 142, 160);
     private static final Color GRID_COLOR = new Color(229, 233, 241);
     private static final Color TEXT_COLOR = new Color(70, 78, 98);
@@ -54,6 +56,8 @@ public class YoloGraphPlaceholderPanel extends JPanel {
     private boolean trainingActive;
     private int currentStep;
     private int totalSteps;
+    private int currentEpoch;
+    private int totalEpochs;
     private long elapsedMillis;
     private double secondsPerStep = Double.NaN;
 
@@ -98,6 +102,8 @@ public class YoloGraphPlaceholderPanel extends JPanel {
         trainingActive = false;
         currentStep = 0;
         totalSteps = 0;
+        currentEpoch = 0;
+        totalEpochs = 0;
         elapsedMillis = 0L;
         secondsPerStep = Double.NaN;
         setDefaultSeries();
@@ -106,9 +112,23 @@ public class YoloGraphPlaceholderPanel extends JPanel {
 
     public void setTrainingStatus(boolean active, int currentStep, int totalSteps,
             long elapsedMillis, double secondsPerStep) {
+        setTrainingStatus(active, currentStep, totalSteps, currentEpoch, totalEpochs, elapsedMillis, secondsPerStep);
+    }
+
+    public void setTrainingStatus(boolean active, int currentStep, int totalSteps,
+            int totalEpochs, long elapsedMillis, double secondsPerStep) {
+        setTrainingStatus(active, currentStep, totalSteps,
+                deriveCurrentEpoch(currentStep, totalSteps, totalEpochs),
+                totalEpochs, elapsedMillis, secondsPerStep);
+    }
+
+    public void setTrainingStatus(boolean active, int currentStep, int totalSteps,
+            int currentEpoch, int totalEpochs, long elapsedMillis, double secondsPerStep) {
         this.trainingActive = active;
         this.currentStep = Math.max(0, currentStep);
         this.totalSteps = Math.max(0, totalSteps);
+        this.currentEpoch = Math.max(0, currentEpoch);
+        this.totalEpochs = Math.max(0, totalEpochs);
         this.elapsedMillis = Math.max(0L, elapsedMillis);
         this.secondsPerStep = secondsPerStep;
         repaint();
@@ -138,14 +158,16 @@ public class YoloGraphPlaceholderPanel extends JPanel {
         g2.setColor(TEXT_COLOR);
         FontMetrics fm = g2.getFontMetrics();
         String metric = selectedMetricName == null ? fallbackTitle : selectedMetricName;
-        g2.drawString(metric, left, PAD + fm.getAscent());
 
         Point latest = latestPoint();
+        String value = "";
         if (latest != null) {
-            String value = String.format("%.4g", latest.value);
+            value = String.format("%.4g", latest.value);
             int x = right - fm.stringWidth(value);
             g2.drawString(value, x, PAD + fm.getAscent());
         }
+        int availableMetricW = Math.max(1, right - left - fm.stringWidth(value) - 12);
+        g2.drawString(ellipsize(metric, fm, availableMetricW), left, PAD + fm.getAscent());
     }
 
     private void drawGridAndAxes(Graphics2D g2, int left, int top, int right, int bottom, PlotRange range) {
@@ -164,13 +186,45 @@ public class YoloGraphPlaceholderPanel extends JPanel {
         g2.setColor(AXIS_COLOR);
         g2.drawLine(left, bottom, right, bottom);
         g2.drawLine(left, top, left, bottom);
+        drawXTickLabels(g2, left, bottom, right, range);
 
         if (trainingActive) {
             String leftLabel = "elapsed " + formatElapsed(elapsedMillis);
-            int statusY = bottom + (statusHeight() + fm.getAscent()) / 2;
+            int statusY = bottom + X_AXIS_LABEL_H + (STATUS_H + fm.getAscent()) / 2 - 2;
             drawXLabel(g2, leftLabel, left, statusY);
-            String rightLabel = buildStepStatus();
-            drawXLabel(g2, rightLabel, right - fm.stringWidth(rightLabel), statusY);
+            String epochLabel = buildEpochStatus();
+            drawXLabel(g2, epochLabel, left + Math.max(0, (right - left - fm.stringWidth(epochLabel)) / 2), statusY);
+            String stepLabel = buildStepStatus();
+            drawXLabel(g2, stepLabel, right - fm.stringWidth(stepLabel), statusY);
+        }
+    }
+
+    private void drawXTickLabels(Graphics2D g2, int left, int bottom, int right, PlotRange range) {
+        if (!range.hasValues || (valuesCount() == 0 && totalSteps <= 0)) {
+            return;
+        }
+        FontMetrics fm = g2.getFontMetrics();
+        int y1 = bottom + fm.getAscent() + 3;
+        int y2 = y1 + fm.getAscent() + 1;
+        int previousEnd = Integer.MIN_VALUE;
+        int denominator = Math.max(1, X_TICKS - 1);
+        for (int i = 0; i < X_TICKS; i++) {
+            int step = range.minStep + (int) Math.round((range.maxStep - range.minStep) * ((double) i / denominator));
+            int epoch = epochForStep(step);
+            int x = xFor(step, left, right, range);
+            String stepText = "step " + step;
+            String epochText = epoch <= 0 ? "" : "epoch " + epoch;
+            int labelW = Math.max(fm.stringWidth(stepText), fm.stringWidth(epochText));
+            int labelX = Math.max(left, Math.min(right - labelW, x - labelW / 2));
+            if (labelX <= previousEnd + 6) {
+                continue;
+            }
+            g2.setColor(TEXT_COLOR);
+            g2.drawString(stepText, labelX, y1);
+            if (!epochText.isEmpty()) {
+                g2.drawString(epochText, labelX, y2);
+            }
+            previousEnd = labelX + labelW;
         }
     }
 
@@ -261,6 +315,25 @@ public class YoloGraphPlaceholderPanel extends JPanel {
         return range;
     }
 
+    private int epochForStep(int step) {
+        Point nearest = null;
+        int nearestDistance = Integer.MAX_VALUE;
+        for (Series s : series.values()) {
+            for (Point p : s.points) {
+                int distance = Math.abs(p.step - step);
+                if (nearest == null || distance < nearestDistance) {
+                    nearest = p;
+                    nearestDistance = distance;
+                }
+            }
+        }
+        if (nearest != null) {
+            return nearest.epoch;
+        }
+        int derived = deriveCurrentEpoch(step, totalSteps, totalEpochs);
+        return derived > 0 ? derived : currentEpoch;
+    }
+
     private Point latestPoint() {
         Point latest = null;
         for (Series s : series.values()) {
@@ -303,8 +376,12 @@ public class YoloGraphPlaceholderPanel extends JPanel {
         return status;
     }
 
+    private String buildEpochStatus() {
+        return "epoch " + currentEpoch + "/" + totalEpochs;
+    }
+
     private int statusHeight() {
-        return trainingActive ? STATUS_H : 0;
+        return X_AXIS_LABEL_H + (trainingActive ? STATUS_H : 0);
     }
 
     private static String formatElapsed(long elapsedMillis) {
@@ -313,6 +390,30 @@ public class YoloGraphPlaceholderPanel extends JPanel {
         long minutes = (totalSeconds % 3600L) / 60L;
         long seconds = totalSeconds % 60L;
         return String.format("%02d:%02d:%02d", hours, minutes, seconds);
+    }
+
+    private static int deriveCurrentEpoch(int currentStep, int totalSteps, int totalEpochs) {
+        if (currentStep <= 0 || totalSteps <= 0 || totalEpochs <= 0) {
+            return 0;
+        }
+        int epoch = (int) Math.ceil((double) currentStep * totalEpochs / totalSteps);
+        return Math.max(1, Math.min(totalEpochs, epoch));
+    }
+
+    private static String ellipsize(String text, FontMetrics fm, int maxWidth) {
+        if (text == null || fm.stringWidth(text) <= maxWidth) {
+            return text;
+        }
+        String suffix = "...";
+        int suffixW = fm.stringWidth(suffix);
+        if (suffixW >= maxWidth) {
+            return suffix;
+        }
+        int end = text.length();
+        while (end > 0 && fm.stringWidth(text.substring(0, end)) + suffixW > maxWidth) {
+            end--;
+        }
+        return text.substring(0, end) + suffix;
     }
 
     private static final class Series {

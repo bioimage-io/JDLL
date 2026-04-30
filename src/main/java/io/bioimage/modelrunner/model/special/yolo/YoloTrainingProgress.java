@@ -25,6 +25,20 @@ import java.util.Map;
 
 public final class YoloTrainingProgress {
 
+    public static final String TRAIN_BOX_LOSS = "train/box_loss";
+    public static final String TRAIN_CLS_LOSS = "train/cls_loss";
+    public static final String TRAIN_DFL_LOSS = "train/dfl_loss";
+    public static final String VAL_BOX_LOSS = "val/box_loss";
+    public static final String VAL_CLS_LOSS = "val/cls_loss";
+    public static final String VAL_DFL_LOSS = "val/dfl_loss";
+    public static final String MAP50_95 = "metrics/mAP50-95(B)";
+    public static final String MAP50 = "metrics/mAP50(B)";
+    public static final String PRECISION = "metrics/precision(B)";
+    public static final String RECALL = "metrics/recall(B)";
+    public static final String YOLO_TOTAL_LOSS_LABEL =
+            "YOLO loss = box_loss + cls_loss + dfl_loss";
+    public static final String PRIMARY_DETECTION_METRIC_LABEL = "mAP50-95(B)";
+
     private final int epoch;
     private final int step;
     private final int totalEpochs;
@@ -84,6 +98,34 @@ public final class YoloTrainingProgress {
         return firstValue(metrics);
     }
 
+    public Double getTrainingTotalLoss() {
+        return sumPresent(losses, TRAIN_BOX_LOSS, TRAIN_CLS_LOSS, TRAIN_DFL_LOSS);
+    }
+
+    public Double getValidationTotalLoss() {
+        return sumPresent(metrics, VAL_BOX_LOSS, VAL_CLS_LOSS, VAL_DFL_LOSS);
+    }
+
+    public Double getPrimaryDetectionMetric() {
+        return firstPresent(metrics, MAP50_95, MAP50, PRECISION, RECALL);
+    }
+
+    public String getPrimaryDetectionMetricName() {
+        if (metrics.containsKey(MAP50_95)) {
+            return PRIMARY_DETECTION_METRIC_LABEL;
+        }
+        if (metrics.containsKey(MAP50)) {
+            return "mAP50(B)";
+        }
+        if (metrics.containsKey(PRECISION)) {
+            return "Precision(B)";
+        }
+        if (metrics.containsKey(RECALL)) {
+            return "Recall(B)";
+        }
+        return metrics.isEmpty() ? "Metric" : metrics.keySet().iterator().next();
+    }
+
     private static Map<String, Double> immutableCopy(Map<String, Double> map) {
         if (map == null || map.isEmpty()) {
             return Collections.emptyMap();
@@ -93,5 +135,32 @@ public final class YoloTrainingProgress {
 
     private static Double firstValue(Map<String, Double> map) {
         return map.isEmpty() ? null : map.values().iterator().next();
+    }
+
+    private static Double firstPresent(Map<String, Double> map, String... keys) {
+        for (String key : keys) {
+            Double value = map.get(key);
+            if (isFinite(value)) {
+                return value;
+            }
+        }
+        return null;
+    }
+
+    private static Double sumPresent(Map<String, Double> map, String... keys) {
+        double sum = 0.0d;
+        int count = 0;
+        for (String key : keys) {
+            Double value = map.get(key);
+            if (isFinite(value)) {
+                sum += value.doubleValue();
+                count++;
+            }
+        }
+        return count == 0 ? null : sum;
+    }
+
+    private static boolean isFinite(Double value) {
+        return value != null && !value.isNaN() && !value.isInfinite();
     }
 }
