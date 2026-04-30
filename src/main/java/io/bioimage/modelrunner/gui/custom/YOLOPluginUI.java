@@ -209,7 +209,7 @@ public class YOLOPluginUI extends YoloGUI implements ActionListener {
     		try {
     			YoloTrainingConfig config = readTrainingConfig();
     			Consumer<String> logConsumer = str -> SwingUtilities.invokeLater(() ->{
-					YOLOPluginUI.this.inferencePanel.getLogPanel().appendHtml(str);
+					// TODO YOLOPluginUI.this.inferencePanel.getLogPanel().appendHtml(str);
 					System.err.println(str);
     			});
     			trainingService.train(config,
