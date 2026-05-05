@@ -256,6 +256,10 @@ public class YoloImageDisplayPanel extends JPanel {
     }
 
     public void setBufferedImage(BufferedImage image, String title) {
+        setBufferedImage(image, title, true);
+    }
+
+    public void setBufferedImage(BufferedImage image, String title, boolean showHint) {
         this.rai = null;
         this.title = title;
         this.previewImage = image;
@@ -271,7 +275,7 @@ public class YoloImageDisplayPanel extends JPanel {
         this.boxColor = BOX_COLOR;
         updateToolTip();
         updateExpandButtonState();
-        if (image != null) {
+        if (image != null && showHint) {
             showDefaultHint();
         }
         repaint();

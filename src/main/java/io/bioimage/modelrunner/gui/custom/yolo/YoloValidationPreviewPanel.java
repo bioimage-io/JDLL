@@ -52,7 +52,7 @@ public class YoloValidationPreviewPanel extends JPanel {
     private static final int ARROW_BUTTON_MIN_SIZE = 20;
     private static final int ARROW_BUTTON_MAX_SIZE = 32;
     private static final int STATUS_MAX_HEIGHT = 28;
-    private static final Color PREDICTION_BOX_COLOR = new Color(232, 72, 72);
+    private static final Color PREDICTION_BOX_COLOR = new Color(80, 220, 120);
     private static final String PREVIOUS_SYMBOL = "\u25C0";
     private static final String NEXT_SYMBOL = "\u25B6";
     private static final String WAITING_MESSAGE = "Validation examples available after the first epoch finishes";
@@ -110,14 +110,17 @@ public class YoloValidationPreviewPanel extends JPanel {
         try {
             JsonObject root = readJson(jsonPath.trim());
             List<PreviewSample> loaded = parseSamples(root);
+            String selectedPath = getSelectedImagePath();
+            int selectedIndex = currentIndex;
             samples.clear();
             samples.addAll(loaded);
             previewEpoch = getInt(root, "epoch", previewEpoch);
-            currentIndex = 0;
             if (samples.isEmpty()) {
+                currentIndex = 0;
                 imagePanel.setEmptyMessage(WAITING_MESSAGE);
                 imagePanel.clearImage();
             } else {
+                currentIndex = selectUpdatedIndex(selectedPath, selectedIndex, samples);
                 showSample(currentIndex);
             }
             updateStatusLabel();
@@ -187,7 +190,7 @@ public class YoloValidationPreviewPanel extends JPanel {
             if (image == null) {
                 throw new IOException("Unsupported image format: " + sample.imagePath);
             }
-            imagePanel.setBufferedImage(image, sample.title);
+            imagePanel.setBufferedImage(image, sample.title, false);
             imagePanel.setReadOnlyBoxes(sample.boxes, PREDICTION_BOX_COLOR);
         } catch (IOException e) {
             imagePanel.setEmptyMessage(ERROR_MESSAGE);
@@ -201,6 +204,27 @@ public class YoloValidationPreviewPanel extends JPanel {
         boolean enabled = samples.size() > 1;
         previousButton.setEnabled(enabled);
         nextButton.setEnabled(enabled);
+    }
+
+    private String getSelectedImagePath() {
+        if (samples.isEmpty() || currentIndex < 0 || currentIndex >= samples.size()) {
+            return null;
+        }
+        return samples.get(currentIndex).imagePath;
+    }
+
+    private static int selectUpdatedIndex(String selectedPath, int selectedIndex, List<PreviewSample> samples) {
+        if (samples == null || samples.isEmpty()) {
+            return 0;
+        }
+        if (selectedPath != null) {
+            for (int i = 0; i < samples.size(); i++) {
+                if (selectedPath.equals(samples.get(i).imagePath)) {
+                    return i;
+                }
+            }
+        }
+        return Math.max(0, Math.min(selectedIndex, samples.size() - 1));
     }
 
     private void updateStatusLabel() {
