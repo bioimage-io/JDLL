@@ -44,7 +44,9 @@ import net.imglib2.type.numeric.RealType;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.IOException;
+import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.Deque;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
@@ -65,9 +67,9 @@ public class YOLOPluginUI extends YoloGUI implements ActionListener {
     private int lastProgressStep;
     private int currentTrainingStep;
     private int totalTrainingSteps;
-    private int currentTrainingEpoch;
     private int totalTrainingEpochs;
     private double currentSecondsPerStep = Double.NaN;
+    private final Deque<Double> secondsPerStepSamples = new ArrayDeque<Double>();
     
     private Runnable cancelCallback;
     Thread workerThread;
@@ -240,9 +242,9 @@ public class YOLOPluginUI extends YoloGUI implements ActionListener {
         lastProgressStep = 0;
         currentTrainingStep = 0;
         totalTrainingSteps = 0;
-        currentTrainingEpoch = 0;
         totalTrainingEpochs = 0;
         currentSecondsPerStep = Double.NaN;
+        secondsPerStepSamples.clear();
         trainPanel.setTrainingRunning(true);
         tabs.setEnabledAt(0, false);
         trainPanel.getLossGraphPanel().clearValues();
@@ -299,11 +301,10 @@ public class YOLOPluginUI extends YoloGUI implements ActionListener {
     }
 
     private void updateTrainingProgressState(YoloTrainingProgress progress) {
-        updateTrainingProgressState(progress.getStep(), progress.getTotalSteps(),
-                progress.getEpoch(), progress.getTotalEpochs());
+        updateTrainingProgressState(progress.getStep(), progress.getTotalSteps(), progress.getTotalEpochs());
     }
 
-    private void updateTrainingProgressState(int step, int totalSteps, int epoch, int totalEpochs) {
+    private void updateTrainingProgressState(int step, int totalSteps, int totalEpochs) {
         long now = System.currentTimeMillis();
         if (totalSteps > 0) {
             totalTrainingSteps = totalSteps;
@@ -312,13 +313,27 @@ public class YOLOPluginUI extends YoloGUI implements ActionListener {
             totalTrainingEpochs = totalEpochs;
         }
         if (step > lastProgressStep) {
-            currentSecondsPerStep = (now - lastProgressMillis) / 1000.0d / (step - lastProgressStep);
+            addSecondsPerStepSample((now - lastProgressMillis) / 1000.0d / (step - lastProgressStep));
             lastProgressMillis = now;
             lastProgressStep = step;
         }
         currentTrainingStep = Math.max(currentTrainingStep, step);
-        currentTrainingEpoch = Math.max(currentTrainingEpoch, epoch);
         updateTrainingGraphStatus();
+    }
+
+    private void addSecondsPerStepSample(double secondsPerStep) {
+        if (Double.isNaN(secondsPerStep) || Double.isInfinite(secondsPerStep) || secondsPerStep <= 0.0d) {
+            return;
+        }
+        secondsPerStepSamples.addLast(secondsPerStep);
+        while (secondsPerStepSamples.size() > 3) {
+            secondsPerStepSamples.removeFirst();
+        }
+        double sum = 0.0d;
+        for (Double sample : secondsPerStepSamples) {
+            sum += sample.doubleValue();
+        }
+        currentSecondsPerStep = sum / secondsPerStepSamples.size();
     }
 
     private void updateTrainingGraphStatus() {

@@ -40,10 +40,12 @@ public class YoloGraphPlaceholderPanel extends JPanel {
 
     private static final int PAD = 12;
     private static final int TOP_INFO_H = 24;
-    private static final int X_AXIS_LABEL_H = 26;
-    private static final int STATUS_H = 26;
+    private static final int X_AXIS_LABEL_H = 22;
+    private static final int STATUS_GAP_H = 14;
+    private static final int STATUS_H = 36;
     private static final int Y_TICKS = 4;
     private static final int X_TICKS = 3;
+    private static final int X_TICK_MARK_H = 5;
     private static final Color AXIS_COLOR = new Color(132, 142, 160);
     private static final Color GRID_COLOR = new Color(229, 233, 241);
     private static final Color TEXT_COLOR = new Color(70, 78, 98);
@@ -189,13 +191,7 @@ public class YoloGraphPlaceholderPanel extends JPanel {
         drawXTickLabels(g2, left, bottom, right, range);
 
         if (trainingActive) {
-            String leftLabel = "elapsed " + formatElapsed(elapsedMillis);
-            int statusY = bottom + X_AXIS_LABEL_H + (STATUS_H + fm.getAscent()) / 2 - 2;
-            drawXLabel(g2, leftLabel, left, statusY);
-            String epochLabel = buildEpochStatus();
-            drawXLabel(g2, epochLabel, left + Math.max(0, (right - left - fm.stringWidth(epochLabel)) / 2), statusY);
-            String stepLabel = buildStepStatus();
-            drawXLabel(g2, stepLabel, right - fm.stringWidth(stepLabel), statusY);
+            drawTrainingStatus(g2, left, bottom + X_AXIS_LABEL_H + STATUS_GAP_H, right);
         }
     }
 
@@ -204,33 +200,56 @@ public class YoloGraphPlaceholderPanel extends JPanel {
             return;
         }
         FontMetrics fm = g2.getFontMetrics();
-        int y1 = bottom + fm.getAscent() + 3;
-        int y2 = y1 + fm.getAscent() + 1;
+        int y = bottom + Math.max(2, fm.getHeight() / 4) + fm.getAscent();
         int previousEnd = Integer.MIN_VALUE;
         int denominator = Math.max(1, X_TICKS - 1);
         for (int i = 0; i < X_TICKS; i++) {
             int step = range.minStep + (int) Math.round((range.maxStep - range.minStep) * ((double) i / denominator));
             int epoch = epochForStep(step);
             int x = xFor(step, left, right, range);
-            String stepText = "step " + step;
-            String epochText = epoch <= 0 ? "" : "epoch " + epoch;
-            int labelW = Math.max(fm.stringWidth(stepText), fm.stringWidth(epochText));
+            if (i > 0) {
+                g2.setColor(AXIS_COLOR);
+                g2.drawLine(x, bottom - X_TICK_MARK_H, x, bottom + X_TICK_MARK_H);
+            }
+            String label = epoch <= 0 ? "it " + step : "it " + step + " | ep " + epoch;
+            int labelW = fm.stringWidth(label);
             int labelX = Math.max(left, Math.min(right - labelW, x - labelW / 2));
             if (labelX <= previousEnd + 6) {
                 continue;
             }
             g2.setColor(TEXT_COLOR);
-            g2.drawString(stepText, labelX, y1);
-            if (!epochText.isEmpty()) {
-                g2.drawString(epochText, labelX, y2);
-            }
+            g2.drawString(label, labelX, y);
             previousEnd = labelX + labelW;
         }
     }
 
-    private void drawXLabel(Graphics2D g2, String label, int x, int y) {
+    private void drawTrainingStatus(Graphics2D g2, int left, int top, int right) {
+        FontMetrics fm = g2.getFontMetrics();
+        int width = Math.max(1, right - left);
+        int colW = Math.max(1, width / 3);
+        int rowGap = Math.max(2, fm.getHeight() / 4);
+        int row1 = top + fm.getAscent();
+        int row2 = row1 + fm.getHeight() + rowGap;
+        int singleRow = row1 + (row2 - row1) / 2;
+
+        drawCenteredXLabel(g2, "elapsed " + formatElapsed(elapsedMillis),
+                left, colW, singleRow);
+        drawCenteredXLabel(g2, buildStepOnlyStatus(),
+                left + colW, colW, row1);
+        drawCenteredXLabel(g2, buildEpochStatus(),
+                left + colW, colW, row2);
+        drawCenteredXLabel(g2, buildSecondsPerStepStatus(),
+                left + 2 * colW, width - 2 * colW, row1);
+        drawCenteredXLabel(g2, buildEpochRemainingStatus(),
+                left + 2 * colW, width - 2 * colW, row2);
+    }
+
+    private void drawCenteredXLabel(Graphics2D g2, String label, int x, int width, int y) {
         g2.setColor(TEXT_COLOR);
-        g2.drawString(label, x, y);
+        FontMetrics fm = g2.getFontMetrics();
+        String visibleLabel = ellipsize(label, fm, Math.max(1, width - 4));
+        int labelX = x + Math.max(0, (width - fm.stringWidth(visibleLabel)) / 2);
+        g2.drawString(visibleLabel, labelX, y);
     }
 
     private void drawSeries(Graphics2D g2, int left, int top, int right, int bottom, PlotRange range) {
@@ -368,20 +387,42 @@ public class YoloGraphPlaceholderPanel extends JPanel {
         return visible;
     }
 
-    private String buildStepStatus() {
-        String status = "step " + currentStep + "/" + totalSteps;
-        if (!Double.isNaN(secondsPerStep) && !Double.isInfinite(secondsPerStep)) {
-            status += "  " + String.format("%.2f", secondsPerStep) + " s/step";
-        }
-        return status;
+    private String buildStepOnlyStatus() {
+        return "iteration (it) " + currentStep + "/" + totalSteps;
     }
 
     private String buildEpochStatus() {
-        return "epoch " + currentEpoch + "/" + totalEpochs;
+        return "epoch (ep) " + currentEpoch + "/" + totalEpochs;
+    }
+
+    private String buildSecondsPerStepStatus() {
+        if (!isFinite(secondsPerStep)) {
+            return "-- s/it";
+        }
+        return String.format("%.2f s/it", secondsPerStep);
+    }
+
+    private String buildEpochRemainingStatus() {
+        if (!isFinite(secondsPerStep)) {
+            return "epoch ETA --:--:--";
+        }
+        int remainingSteps = remainingStepsInCurrentEpoch();
+        if (remainingSteps < 0) {
+            return "epoch ETA --:--:--";
+        }
+        return "epoch ETA " + formatElapsed(Math.round(remainingSteps * secondsPerStep * 1000.0d));
+    }
+
+    private int remainingStepsInCurrentEpoch() {
+        if (currentStep < 0 || totalSteps <= 0 || totalEpochs <= 0 || currentEpoch <= 0) {
+            return -1;
+        }
+        int epochEndStep = (int) Math.ceil((double) currentEpoch * totalSteps / totalEpochs);
+        return Math.max(0, epochEndStep - currentStep);
     }
 
     private int statusHeight() {
-        return X_AXIS_LABEL_H + (trainingActive ? STATUS_H : 0);
+        return X_AXIS_LABEL_H + (trainingActive ? STATUS_GAP_H + STATUS_H : 0);
     }
 
     private static String formatElapsed(long elapsedMillis) {
@@ -398,6 +439,10 @@ public class YoloGraphPlaceholderPanel extends JPanel {
         }
         int epoch = (int) Math.ceil((double) currentStep * totalEpochs / totalSteps);
         return Math.max(1, Math.min(totalEpochs, epoch));
+    }
+
+    private static boolean isFinite(double value) {
+        return !Double.isNaN(value) && !Double.isInfinite(value);
     }
 
     private static String ellipsize(String text, FontMetrics fm, int maxWidth) {
