@@ -70,6 +70,7 @@ public class Yolo extends DLModelPytorchProtected {
 		
 							
 	private static final Map<String, Long> PRETRAINED_YOLO_MODELS;
+	private static final double VALIDATION_PREVIEW_CONFIDENCE = 0.25d;
 	static {
 		PRETRAINED_YOLO_MODELS = new HashMap<String, Long>();
 		PRETRAINED_YOLO_MODELS.put("YOLO26n", 5_544_453L);
@@ -309,7 +310,7 @@ public class Yolo extends DLModelPytorchProtected {
 		}
 		String nl = System.lineSeparator();
 		return ""
-				+ "import contextlib, logging, os, shutil, sys" + nl
+				+ "import contextlib, json, logging, os, random, shutil, sys" + nl
 				+ "_appose_stdout = sys.stdout" + nl
 				+ "from ultralytics import YOLO" + nl
 				+ "from ultralytics.utils import LOGGER" + nl
@@ -318,8 +319,14 @@ public class Yolo extends DLModelPytorchProtected {
 				+ "output_weights = r'" + py(outputFile.getAbsolutePath()) + "'" + nl
 				+ "project = r'" + py(project) + "'" + nl
 				+ "run_name = r'" + py(runName) + "'" + nl
-				+ "yolo_log_path = os.path.join(project, run_name, 'training.log')" + nl
 				+ "os.makedirs(project, exist_ok=True)" + nl
+				+ "run_dir = os.path.join(project, run_name)" + nl
+				+ "preview_dir = os.path.join(run_dir, 'validation_preview')" + nl
+				+ "preview_json_path = os.path.join(preview_dir, 'latest.json')" + nl
+				+ "preview_manifest_path = os.path.join(preview_dir, 'manifest.json')" + nl
+				+ "os.makedirs(run_dir, exist_ok=True)" + nl
+				+ "os.makedirs(preview_dir, exist_ok=True)" + nl
+				+ "yolo_log_path = os.path.join(run_dir, 'training.log')" + nl
 				+ "_yolo_log_handler = logging.FileHandler(yolo_log_path, mode='a', encoding='utf-8')" + nl
 				+ "_yolo_log_handler.setFormatter(logging.Formatter('%(message)s'))" + nl
 				+ "LOGGER.handlers = []" + nl
@@ -329,7 +336,9 @@ public class Yolo extends DLModelPytorchProtected {
 				+ "epochs = " + epochs + nl
 				+ "imgsz = " + imageSize + nl
 				+ "preview_epoch_period = " + Math.max(1, previewEpochPeriod) + nl
-				+ "state = {'step': 0, 'total_steps': 0}" + nl
+				+ "preview_sample_count = 100" + nl
+				+ "preview_confidence = " + VALIDATION_PREVIEW_CONFIDENCE + nl
+				+ "state = {'step': 0, 'total_steps': 0, 'preview_paths': set(), 'preview_order': [], 'preview_results': {}, 'preview_epoch': 0, 'capture_preview': False}" + nl
 				+ "def _task_update(**kwargs):" + nl
 				+ "  current_stdout = sys.stdout" + nl
 				+ "  try:" + nl
@@ -386,17 +395,90 @@ public class Yolo extends DLModelPytorchProtected {
 				+ "  epoch = int(getattr(trainer, 'epoch', 0)) + 1" + nl
 				+ "  info = {'type': 'progress', 'epoch': epoch, 'step': state['step'], 'total_epochs': epochs, 'total_steps': state.get('total_steps', 0), 'losses': _losses(trainer), 'metrics': _metrics(trainer)}" + nl
 				+ "  _task_update(message='YOLO training epoch %d/%d' % (epoch, epochs), current=state['step'], maximum=state.get('total_steps', 0), info=info)" + nl
-				+ "def _emit_preview(trainer):" + nl
+				+ "def _capture_epoch(epoch):" + nl
+				+ "  return epoch % preview_epoch_period == 0 or epoch == epochs" + nl
+				+ "def _prepare_preview_epoch(trainer):" + nl
 				+ "  epoch = int(getattr(trainer, 'epoch', 0)) + 1" + nl
-				+ "  if epoch % preview_epoch_period != 0 and epoch != epochs:" + nl
+				+ "  state['preview_epoch'] = epoch" + nl
+				+ "  state['capture_preview'] = bool(_capture_epoch(epoch))" + nl
+				+ "  state['preview_results'] = {}" + nl
+				+ "def _ensure_preview_sample(validator):" + nl
+				+ "  if state.get('preview_order'):" + nl
+				+ "    return state['preview_paths']" + nl
+				+ "  dataset = getattr(getattr(validator, 'dataloader', None), 'dataset', None)" + nl
+				+ "  files = [str(x) for x in getattr(dataset, 'im_files', [])]" + nl
+				+ "  if len(files) > preview_sample_count:" + nl
+				+ "    files = random.sample(files, preview_sample_count)" + nl
+				+ "  state['preview_order'] = files" + nl
+				+ "  state['preview_paths'] = set(files)" + nl
+				+ "  with open(preview_manifest_path, 'w', encoding='utf-8') as f:" + nl
+				+ "    json.dump({'images': files}, f)" + nl
+				+ "  return state['preview_paths']" + nl
+				+ "def _preview_class_name(validator, cls_id):" + nl
+				+ "  names = getattr(validator, 'names', {})" + nl
+				+ "  try:" + nl
+				+ "    cls_id = int(cls_id)" + nl
+				+ "    if isinstance(names, dict):" + nl
+				+ "      return str(names.get(cls_id, cls_id))" + nl
+				+ "    return str(names[cls_id])" + nl
+				+ "  except Exception:" + nl
+				+ "    return str(cls_id)" + nl
+				+ "def _capture_preview_predictions(validator, preds, batch):" + nl
+				+ "  if not state.get('capture_preview'):" + nl
 				+ "    return" + nl
-				+ "  checkpoint = str(getattr(trainer, 'best', '') or getattr(trainer, 'last', '') or '')" + nl
-				+ "  _task_update(message='YOLO checkpoint available', current=epoch, maximum=epochs, info={'type': 'preview', 'epoch': epoch, 'checkpoint': checkpoint})" + nl
+				+ "  try:" + nl
+				+ "    selected = _ensure_preview_sample(validator)" + nl
+				+ "    if not selected:" + nl
+				+ "      return" + nl
+				+ "    for si, pred in enumerate(preds):" + nl
+				+ "      path = str(batch['im_file'][si])" + nl
+				+ "      if path not in selected:" + nl
+				+ "        continue" + nl
+				+ "      pbatch = validator._prepare_batch(si, batch)" + nl
+				+ "      predn = validator._prepare_pred(pred)" + nl
+				+ "      predn = validator.scale_preds(predn, pbatch)" + nl
+				+ "      bboxes = predn['bboxes'].detach().float().cpu().tolist()" + nl
+				+ "      confs = predn['conf'].detach().float().cpu().tolist()" + nl
+				+ "      clss = predn['cls'].detach().float().cpu().tolist()" + nl
+				+ "      boxes = []" + nl
+				+ "      for box, conf, cls_id in zip(bboxes, confs, clss):" + nl
+				+ "        if float(conf) < preview_confidence:" + nl
+				+ "          continue" + nl
+				+ "        boxes.append({'xyxy': [float(x) for x in box], 'confidence': float(conf), 'class_id': int(cls_id), 'class_name': _preview_class_name(validator, cls_id)})" + nl
+				+ "      state['preview_results'][path] = {'path': path, 'boxes': boxes}" + nl
+				+ "  except Exception:" + nl
+				+ "    return" + nl
+				+ "def _on_val_start(validator):" + nl
+				+ "  _ensure_preview_sample(validator)" + nl
+				+ "  if getattr(validator, '_deepimagej_preview_wrapped', False):" + nl
+				+ "    return" + nl
+				+ "  original_update_metrics = validator.update_metrics" + nl
+				+ "  def _deepimagej_update_metrics(preds, batch):" + nl
+				+ "    result = original_update_metrics(preds, batch)" + nl
+				+ "    _capture_preview_predictions(validator, preds, batch)" + nl
+				+ "    return result" + nl
+				+ "  validator.update_metrics = _deepimagej_update_metrics" + nl
+				+ "  validator._deepimagej_preview_wrapped = True" + nl
+				+ "def _emit_preview_results(validator):" + nl
+				+ "  if not state.get('capture_preview'):" + nl
+				+ "    return" + nl
+				+ "  images = []" + nl
+				+ "  for path in state.get('preview_order', []):" + nl
+				+ "    images.append(state.get('preview_results', {}).get(path, {'path': path, 'boxes': []}))" + nl
+				+ "  payload = {'epoch': int(state.get('preview_epoch', 0)), 'confidence_threshold': preview_confidence, 'images': images}" + nl
+				+ "  epoch_preview_path = os.path.join(preview_dir, 'epoch_%04d.json' % payload['epoch'])" + nl
+				+ "  for path in (epoch_preview_path, preview_json_path):" + nl
+				+ "    with open(path, 'w', encoding='utf-8') as f:" + nl
+				+ "      json.dump(payload, f)" + nl
+				+ "  _task_update(message='YOLO validation preview epoch %d' % payload['epoch'], current=payload['epoch'], maximum=epochs, info={'type': 'preview', 'epoch': payload['epoch'], 'preview_path': epoch_preview_path})" + nl
+				+ "  state['capture_preview'] = False" + nl
 				+ "model = YOLO(model_source)" + nl
 				+ "model.add_callback('on_train_start', _emit_train_start)" + nl
 				+ "model.add_callback('on_train_batch_end', _emit_step_progress)" + nl
+				+ "model.add_callback('on_train_epoch_end', _prepare_preview_epoch)" + nl
+				+ "model.add_callback('on_val_start', _on_val_start)" + nl
+				+ "model.add_callback('on_val_end', _emit_preview_results)" + nl
 				+ "model.add_callback('on_fit_epoch_end', _emit_epoch_progress)" + nl
-				+ "model.add_callback('on_model_save', _emit_preview)" + nl
 				+ "with open(yolo_log_path, 'a', encoding='utf-8') as yolo_log, contextlib.redirect_stdout(yolo_log), contextlib.redirect_stderr(yolo_log):" + nl
 				+ "  results = model.train(data=dataset_yaml, epochs=epochs, imgsz=imgsz, project=project, name=run_name, exist_ok=True, verbose=False, plots=False, workers=0)" + nl
 				+ "trainer = getattr(model, 'trainer', None)" + nl
@@ -431,9 +513,11 @@ public class Yolo extends DLModelPytorchProtected {
 					asDoubleMap(event.info.get("metrics"))));
 		} else if ("preview".equals(type) && previewConsumer != null) {
 			Object checkpoint = event.info.get("checkpoint");
+			Object previewPath = event.info.get("preview_path");
 			previewConsumer.accept(new YoloValidationPreview(
 					asInt(event.info.get("epoch"), (int) event.current),
-					checkpoint == null ? null : checkpoint.toString()));
+					checkpoint == null ? null : checkpoint.toString(),
+					previewPath == null ? null : previewPath.toString()));
 		}
 	}
 

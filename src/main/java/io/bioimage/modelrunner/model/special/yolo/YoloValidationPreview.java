@@ -23,10 +23,16 @@ public final class YoloValidationPreview {
 
     private final int epoch;
     private final String checkpointPath;
+    private final String previewJsonPath;
 
     public YoloValidationPreview(int epoch, String checkpointPath) {
+        this(epoch, checkpointPath, null);
+    }
+
+    public YoloValidationPreview(int epoch, String checkpointPath, String previewJsonPath) {
         this.epoch = epoch;
         this.checkpointPath = checkpointPath;
+        this.previewJsonPath = previewJsonPath;
     }
 
     public int getEpoch() {
@@ -35,5 +41,9 @@ public final class YoloValidationPreview {
 
     public String getCheckpointPath() {
         return checkpointPath;
+    }
+
+    public String getPreviewJsonPath() {
+        return previewJsonPath;
     }
 }

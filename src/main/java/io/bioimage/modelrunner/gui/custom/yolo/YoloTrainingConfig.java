@@ -24,7 +24,7 @@ import java.io.File;
 public final class YoloTrainingConfig {
 
     public static final int DEFAULT_IMAGE_SIZE = 640;
-    public static final int DEFAULT_PREVIEW_EPOCH_PERIOD = 5;
+    public static final int DEFAULT_PREVIEW_EPOCH_PERIOD = 1;
 
     private final String modelName;
     private final String datasetYamlPath;

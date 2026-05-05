@@ -221,8 +221,13 @@ public class YOLOPluginUI extends YoloGUI implements ActionListener {
                         progress -> SwingUtilities.invokeLater(() -> {
                             handleTrainingProgress(progress);
                         }),
-                        preview -> SwingUtilities.invokeLater(() ->
-                                logConsumer.accept("Validation preview checkpoint: " + preview.getCheckpointPath())),
+                        preview -> SwingUtilities.invokeLater(() -> {
+                            if (preview.getPreviewJsonPath() != null) {
+                                trainPanel.getValidationPreviewPanel().loadPreview(preview.getPreviewJsonPath());
+                                logConsumer.accept("Validation preview epoch " + preview.getEpoch()
+                                        + ": " + preview.getPreviewJsonPath());
+                            }
+                        }),
                         logConsumer);
                 refreshYoloModels();
             } catch (Exception e) {
@@ -251,6 +256,8 @@ public class YOLOPluginUI extends YoloGUI implements ActionListener {
         trainPanel.getMetricGraphPanel().clearValues();
         trainPanel.getLossGraphPanel().setTrainingStatus(true, 0, 0, 0, 0L, Double.NaN);
         trainPanel.getMetricGraphPanel().setTrainingStatus(true, 0, 0, 0, 0L, Double.NaN);
+        trainPanel.getValidationPreviewPanel().clearPreview();
+        trainPanel.getValidationPreviewPanel().setTrainingStatus(true, 0, 0, 0, 0L, Double.NaN);
         if (trainingTimer != null) {
             trainingTimer.stop();
         }
@@ -269,6 +276,8 @@ public class YOLOPluginUI extends YoloGUI implements ActionListener {
         trainPanel.getLossGraphPanel().setTrainingStatus(false, currentTrainingStep, totalTrainingSteps,
                 totalTrainingEpochs, elapsed, currentSecondsPerStep);
         trainPanel.getMetricGraphPanel().setTrainingStatus(false, currentTrainingStep, totalTrainingSteps,
+                totalTrainingEpochs, elapsed, currentSecondsPerStep);
+        trainPanel.getValidationPreviewPanel().setTrainingStatus(false, currentTrainingStep, totalTrainingSteps,
                 totalTrainingEpochs, elapsed, currentSecondsPerStep);
     }
 
@@ -341,6 +350,8 @@ public class YOLOPluginUI extends YoloGUI implements ActionListener {
         trainPanel.getLossGraphPanel().setTrainingStatus(true, currentTrainingStep, totalTrainingSteps,
                 totalTrainingEpochs, elapsed, currentSecondsPerStep);
         trainPanel.getMetricGraphPanel().setTrainingStatus(true, currentTrainingStep, totalTrainingSteps,
+                totalTrainingEpochs, elapsed, currentSecondsPerStep);
+        trainPanel.getValidationPreviewPanel().setTrainingStatus(true, currentTrainingStep, totalTrainingSteps,
                 totalTrainingEpochs, elapsed, currentSecondsPerStep);
     }
 

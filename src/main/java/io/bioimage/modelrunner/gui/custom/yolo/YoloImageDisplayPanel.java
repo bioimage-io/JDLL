@@ -87,6 +87,8 @@ public class YoloImageDisplayPanel extends JPanel {
     private double panStartY;
     private Rectangle2D.Double activeBox;
     private final List<Rectangle2D.Double> boxes = new ArrayList<Rectangle2D.Double>();
+    private String emptyMessage = "Preview will appear here";
+    private Color boxColor = BOX_COLOR;
     private final JButton expandButton = new JButton(EXPAND_SYMBOL);
     private final Timer hintFadeTimer;
     private long hintShownAt;
@@ -230,6 +232,13 @@ public class YoloImageDisplayPanel extends JPanel {
         repaint();
     }
 
+    public void setEmptyMessage(String emptyMessage) {
+        this.emptyMessage = emptyMessage == null || emptyMessage.trim().isEmpty()
+                ? "Preview will appear here"
+                : emptyMessage.trim();
+        repaint();
+    }
+
     public <T extends RealType<T> & NativeType<T>> void setImage(RandomAccessibleInterval<T> rai, String title) {
         this.rai = rai;
         this.title = title;
@@ -239,9 +248,43 @@ public class YoloImageDisplayPanel extends JPanel {
         this.panX = 0.0;
         this.panY = 0.0;
         this.panStartScreen = null;
+        this.boxColor = BOX_COLOR;
         clearBoxes();
         updateExpandButtonState();
         showDefaultHint();
+        repaint();
+    }
+
+    public void setBufferedImage(BufferedImage image, String title) {
+        this.rai = null;
+        this.title = title;
+        this.previewImage = image;
+        this.zoom = 1.0;
+        this.expandedToFill = false;
+        this.drawEnabled = false;
+        this.panX = 0.0;
+        this.panY = 0.0;
+        this.dragStartScreen = null;
+        this.panStartScreen = null;
+        this.activeBox = null;
+        this.boxes.clear();
+        this.boxColor = BOX_COLOR;
+        updateToolTip();
+        updateExpandButtonState();
+        if (image != null) {
+            showDefaultHint();
+        }
+        repaint();
+    }
+
+    public void setReadOnlyBoxes(List<Rectangle2D.Double> boxes, Color color) {
+        this.drawEnabled = false;
+        this.boxes.clear();
+        if (boxes != null) {
+            this.boxes.addAll(boxes);
+        }
+        this.boxColor = color == null ? BOX_COLOR : color;
+        updateToolTip();
         repaint();
     }
 
@@ -289,7 +332,7 @@ public class YoloImageDisplayPanel extends JPanel {
             g2.setColor(EMPTY_BG);
             g2.fillRect(0, 0, getWidth(), getHeight());
             g2.setColor(HELP_TEXT);
-            g2.drawString("Preview will appear here", Math.max(12, getWidth() / 2 - 55), getHeight() / 2);
+            drawCenteredMessage(g2, emptyMessage);
             g2.dispose();
             return;
         }
@@ -372,12 +415,24 @@ public class YoloImageDisplayPanel extends JPanel {
         g2.drawString(text, tx, ty);
     }
 
+    private static void drawCenteredMessage(Graphics2D g2, String text) {
+        FontMetrics fm = g2.getFontMetrics();
+        Rectangle clip = g2.getClipBounds();
+        if (clip == null) {
+            return;
+        }
+        String message = text == null ? "" : text;
+        int tx = clip.x + Math.max(8, (clip.width - fm.stringWidth(message)) / 2);
+        int ty = clip.y + Math.max(fm.getAscent(), (clip.height - fm.getHeight()) / 2 + fm.getAscent());
+        g2.drawString(message, tx, ty);
+    }
+
     private void drawBoxes(Graphics2D g2, int drawX, int drawY, int drawW, int drawH) {
         double sx = drawW / (double) previewImage.getWidth();
         double sy = drawH / (double) previewImage.getHeight();
 
         g2.setStroke(new BasicStroke(BOX_STROKE));
-        g2.setColor(BOX_COLOR);
+        g2.setColor(boxColor);
         for (Rectangle2D.Double box : boxes) {
             g2.draw(new Rectangle2D.Double(drawX + box.x * sx, drawY + box.y * sy, box.width * sx, box.height * sy));
         }
