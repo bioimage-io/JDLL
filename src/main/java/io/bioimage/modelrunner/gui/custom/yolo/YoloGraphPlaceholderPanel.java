@@ -21,17 +21,24 @@ package io.bioimage.modelrunner.gui.custom.yolo;
 
 import java.awt.BasicStroke;
 import java.awt.Color;
+import java.awt.Cursor;
 import java.awt.FontMetrics;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
+import java.awt.Rectangle;
 import java.awt.RenderingHints;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
+import java.awt.event.MouseWheelEvent;
 import java.awt.geom.Ellipse2D;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+import javax.swing.JButton;
 import javax.swing.JPanel;
+import javax.swing.SwingUtilities;
 import javax.swing.border.LineBorder;
 
 public class YoloGraphPlaceholderPanel extends JPanel {
@@ -46,6 +53,14 @@ public class YoloGraphPlaceholderPanel extends JPanel {
     private static final int Y_TICKS = 4;
     private static final int X_TICKS = 3;
     private static final int X_TICK_MARK_H = 5;
+    private static final double ZOOM_FACTOR = 0.82;
+    private static final double MIN_VISIBLE_STEP_SPAN = 2.0;
+    private static final double FULL_VIEW_TOLERANCE = 0.999;
+    private static final double OVERLAY_BUTTON_SIZE_RATIO = 0.06;
+    private static final int OVERLAY_BUTTON_MIN = 14;
+    private static final int OVERLAY_BUTTON_MAX = 22;
+    private static final int OVERLAY_BUTTON_PAD = 3;
+    private static final String RESET_VIEW_SYMBOL = "\u2199\u2197";
     private static final Color AXIS_COLOR = new Color(132, 142, 160);
     private static final Color GRID_COLOR = new Color(229, 233, 241);
     private static final Color TEXT_COLOR = new Color(70, 78, 98);
@@ -54,6 +69,7 @@ public class YoloGraphPlaceholderPanel extends JPanel {
 
     private final String fallbackTitle;
     private final LinkedHashMap<String, Series> series = new LinkedHashMap<String, Series>();
+    private final JButton resetViewButton = new JButton(RESET_VIEW_SYMBOL);
     private String selectedMetricName;
     private boolean trainingActive;
     private int currentStep;
@@ -62,12 +78,25 @@ public class YoloGraphPlaceholderPanel extends JPanel {
     private int totalEpochs;
     private long elapsedMillis;
     private double secondsPerStep = Double.NaN;
+    private Double viewMinStep;
+    private Double viewMaxStep;
+    private boolean panning;
+    private int panStartX;
+    private double panStartMinStep;
+    private double panStartMaxStep;
 
     public YoloGraphPlaceholderPanel(String title) {
         this.fallbackTitle = title;
+        setLayout(null);
         setOpaque(true);
         setBackground(Color.WHITE);
         setBorder(new LineBorder(new Color(205, 210, 221)));
+        YoloUiUtils.styleFlatSecondaryButton(resetViewButton);
+        resetViewButton.setToolTipText("Reset graph view");
+        resetViewButton.addActionListener(e -> resetView());
+        add(resetViewButton);
+        setToolTipText("<html>Ctrl + wheel to zoom the x-axis<br>Drag the graph to pan while zoomed</html>");
+        installMouseControls();
         setDefaultSeries();
     }
 
@@ -108,6 +137,7 @@ public class YoloGraphPlaceholderPanel extends JPanel {
         totalEpochs = 0;
         elapsedMillis = 0L;
         secondsPerStep = Double.NaN;
+        resetView();
         setDefaultSeries();
         repaint();
     }
@@ -137,16 +167,26 @@ public class YoloGraphPlaceholderPanel extends JPanel {
     }
 
     @Override
+    public void doLayout() {
+        int size = Math.max(OVERLAY_BUTTON_MIN,
+                Math.min(OVERLAY_BUTTON_MAX, (int) Math.round(Math.min(getWidth(), getHeight()) * OVERLAY_BUTTON_SIZE_RATIO)));
+        resetViewButton.setBounds(OVERLAY_BUTTON_PAD, OVERLAY_BUTTON_PAD, size, size);
+        resetViewButton.setFont(resetViewButton.getFont().deriveFont((float) Math.max(YoloUiUtils.MIN_FONT_SIZE,
+                Math.min(YoloUiUtils.MAX_CONTROL_FONT_SIZE - 2, size * 0.42f))));
+    }
+
+    @Override
     protected void paintComponent(Graphics g) {
         super.paintComponent(g);
         Graphics2D g2 = (Graphics2D) g.create();
         g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
         g2.setFont(getFont().deriveFont((float) Math.max(YoloUiUtils.MIN_FONT_SIZE, Math.min(12, getHeight() / 13))));
 
-        int left = Math.max(44, getWidth() / 10);
-        int top = PAD + TOP_INFO_H;
-        int right = Math.max(left + 40, getWidth() - PAD);
-        int bottom = Math.max(top + 40, getHeight() - PAD - statusHeight());
+        Rectangle plotArea = computePlotArea();
+        int left = plotArea.x;
+        int top = plotArea.y;
+        int right = plotArea.x + plotArea.width;
+        int bottom = plotArea.y + plotArea.height;
         PlotRange range = buildRange();
 
         drawTopInfo(g2, left, right);
@@ -204,7 +244,7 @@ public class YoloGraphPlaceholderPanel extends JPanel {
         int previousEnd = Integer.MIN_VALUE;
         int denominator = Math.max(1, X_TICKS - 1);
         for (int i = 0; i < X_TICKS; i++) {
-            int step = range.minStep + (int) Math.round((range.maxStep - range.minStep) * ((double) i / denominator));
+            int step = (int) Math.round(range.minStep + (range.maxStep - range.minStep) * ((double) i / denominator));
             int epoch = epochForStep(step);
             int x = xFor(step, left, right, range);
             if (i > 0) {
@@ -253,27 +293,62 @@ public class YoloGraphPlaceholderPanel extends JPanel {
     }
 
     private void drawSeries(Graphics2D g2, int left, int top, int right, int bottom, PlotRange range) {
-        g2.setStroke(new BasicStroke(2f));
+        Graphics2D plotGraphics = (Graphics2D) g2.create();
+        plotGraphics.setClip(left, top, Math.max(1, right - left), Math.max(1, bottom - top));
+        plotGraphics.setStroke(new BasicStroke(2f));
         for (Series s : series.values()) {
             if (s.points.isEmpty()) {
                 continue;
             }
-            int n = s.points.size();
+            List<Point> pointsToDraw = pointsForDrawing(s, range);
+            int n = pointsToDraw.size();
+            if (n == 0) {
+                continue;
+            }
             int[] xs = new int[n];
             int[] ys = new int[n];
+            int visibleCount = 0;
             for (int i = 0; i < n; i++) {
-                Point p = s.points.get(i);
-                xs[i] = xFor(p.step, left, right, range);
-                ys[i] = yFor(p.value, top, bottom, range);
+                Point p = pointsToDraw.get(i);
+                xs[visibleCount] = xFor(p.step, left, right, range);
+                ys[visibleCount] = yFor(p.value, top, bottom, range);
+                visibleCount++;
             }
-            g2.setColor(s.color);
-            if (n > 1) {
-                g2.drawPolyline(xs, ys, n);
+            plotGraphics.setColor(s.color);
+            if (visibleCount > 1) {
+                plotGraphics.drawPolyline(xs, ys, visibleCount);
             }
-            for (int i = 0; i < n; i++) {
-                g2.fill(new Ellipse2D.Double(xs[i] - 2, ys[i] - 2, 4, 4));
+            for (int i = 0; i < visibleCount; i++) {
+                plotGraphics.fill(new Ellipse2D.Double(xs[i] - 2, ys[i] - 2, 4, 4));
             }
         }
+        plotGraphics.dispose();
+    }
+
+    private List<Point> pointsForDrawing(Series series, PlotRange range) {
+        List<Point> points = new ArrayList<Point>();
+        Point before = null;
+        Point after = null;
+        for (Point p : series.points) {
+            if (p.step < range.minStep) {
+                if (before == null || p.step > before.step) {
+                    before = p;
+                }
+            } else if (p.step > range.maxStep) {
+                if (after == null || p.step < after.step) {
+                    after = p;
+                }
+            } else {
+                points.add(p);
+            }
+        }
+        if (before != null) {
+            points.add(0, before);
+        }
+        if (after != null) {
+            points.add(after);
+        }
+        return points;
     }
 
     private void drawLegend(Graphics2D g2, int left, int top, int right) {
@@ -305,7 +380,7 @@ public class YoloGraphPlaceholderPanel extends JPanel {
         if (range.maxStep == range.minStep) {
             return left;
         }
-        double ratio = (double) (step - range.minStep) / (double) (range.maxStep - range.minStep);
+        double ratio = (step - range.minStep) / (range.maxStep - range.minStep);
         return left + (int) Math.round(ratio * (right - left));
     }
 
@@ -315,6 +390,31 @@ public class YoloGraphPlaceholderPanel extends JPanel {
     }
 
     private PlotRange buildRange() {
+        PlotRange fullRange = buildFullRange();
+        PlotRange range = new PlotRange();
+        double minStep = isDefaultView() ? fullRange.minStep : viewMinStep.doubleValue();
+        double maxStep = isDefaultView() ? fullRange.maxStep : viewMaxStep.doubleValue();
+        range.hasValues = true;
+        range.minStep = minStep;
+        range.maxStep = Math.max(minStep + 1.0d, maxStep);
+        for (Series s : series.values()) {
+            for (Point p : s.points) {
+                if (range.containsStep(p.step)) {
+                    range.acceptY(p);
+                }
+            }
+        }
+        if (!isFinite(range.minY) || !isFinite(range.maxY)) {
+            range.minY = fullRange.minY;
+            range.maxY = fullRange.maxY;
+            range.minEpoch = fullRange.minEpoch;
+            range.maxEpoch = fullRange.maxEpoch;
+        }
+        padYRange(range);
+        return range;
+    }
+
+    private PlotRange buildFullRange() {
         PlotRange range = new PlotRange();
         for (Series s : series.values()) {
             for (Point p : s.points) {
@@ -325,13 +425,21 @@ public class YoloGraphPlaceholderPanel extends JPanel {
             range.accept(new Point(1, 1, 0.0));
             range.accept(new Point(Math.max(2, totalSteps), 1, 1.0));
         }
+        padYRange(range);
+        return range;
+    }
+
+    private void padYRange(PlotRange range) {
+        if (!isFinite(range.minY) || !isFinite(range.maxY)) {
+            range.minY = 0.0d;
+            range.maxY = 1.0d;
+        }
         if (range.maxY == range.minY) {
             range.maxY = range.minY + 1.0;
         }
         double pad = (range.maxY - range.minY) * 0.08;
         range.minY -= pad;
         range.maxY += pad;
-        return range;
     }
 
     private int epochForStep(int step) {
@@ -357,6 +465,9 @@ public class YoloGraphPlaceholderPanel extends JPanel {
         Point latest = null;
         for (Series s : series.values()) {
             for (Point p : s.points) {
+                if (!isDefaultView() && (p.step < viewMinStep.doubleValue() || p.step > viewMaxStep.doubleValue())) {
+                    continue;
+                }
                 if (latest == null || p.step >= latest.step) {
                     latest = p;
                 }
@@ -425,6 +536,147 @@ public class YoloGraphPlaceholderPanel extends JPanel {
         return X_AXIS_LABEL_H + (trainingActive ? STATUS_GAP_H + STATUS_H : 0);
     }
 
+    private void installMouseControls() {
+        MouseAdapter adapter = new MouseAdapter() {
+            @Override
+            public void mousePressed(MouseEvent e) {
+                if (!SwingUtilities.isLeftMouseButton(e) || isDefaultView() || !computePlotArea().contains(e.getPoint())) {
+                    return;
+                }
+                panning = true;
+                panStartX = e.getX();
+                panStartMinStep = viewMinStep.doubleValue();
+                panStartMaxStep = viewMaxStep.doubleValue();
+                setCursor(Cursor.getPredefinedCursor(Cursor.MOVE_CURSOR));
+            }
+
+            @Override
+            public void mouseDragged(MouseEvent e) {
+                if (!panning) {
+                    return;
+                }
+                Rectangle plotArea = computePlotArea();
+                if (plotArea.width <= 0) {
+                    return;
+                }
+                double span = panStartMaxStep - panStartMinStep;
+                double stepDelta = -(e.getX() - panStartX) * span / plotArea.width;
+                setViewRange(panStartMinStep + stepDelta, panStartMaxStep + stepDelta);
+            }
+
+            @Override
+            public void mouseReleased(MouseEvent e) {
+                stopPanning();
+            }
+
+            @Override
+            public void mouseExited(MouseEvent e) {
+                if (!panning) {
+                    setCursor(Cursor.getDefaultCursor());
+                }
+            }
+
+            @Override
+            public void mouseWheelMoved(MouseWheelEvent e) {
+                if (!e.isControlDown() || !computePlotArea().contains(e.getPoint())) {
+                    return;
+                }
+                zoomAt(e.getX(), e.getWheelRotation());
+                e.consume();
+            }
+        };
+        addMouseListener(adapter);
+        addMouseMotionListener(adapter);
+        addMouseWheelListener(adapter);
+    }
+
+    private void stopPanning() {
+        if (!panning) {
+            return;
+        }
+        panning = false;
+        setCursor(Cursor.getDefaultCursor());
+    }
+
+    private Rectangle computePlotArea() {
+        int left = Math.max(44, getWidth() / 10);
+        int top = PAD + TOP_INFO_H;
+        int right = Math.max(left + 40, getWidth() - PAD);
+        int bottom = Math.max(top + 40, getHeight() - PAD - statusHeight());
+        return new Rectangle(left, top, Math.max(1, right - left), Math.max(1, bottom - top));
+    }
+
+    private void zoomAt(int mouseX, int wheelRotation) {
+        if (wheelRotation == 0) {
+            return;
+        }
+        PlotRange fullRange = buildFullRange();
+        if (fullRange.maxStep <= fullRange.minStep) {
+            return;
+        }
+        double currentMin = isDefaultView() ? fullRange.minStep : viewMinStep.doubleValue();
+        double currentMax = isDefaultView() ? fullRange.maxStep : viewMaxStep.doubleValue();
+        Rectangle plotArea = computePlotArea();
+        double anchorRatio = clamp((mouseX - plotArea.x) / (double) Math.max(1, plotArea.width), 0.0d, 1.0d);
+        double currentSpan = Math.max(1.0d, currentMax - currentMin);
+        double factor = wheelRotation < 0
+                ? Math.pow(ZOOM_FACTOR, -wheelRotation)
+                : Math.pow(1.0d / ZOOM_FACTOR, wheelRotation);
+        double nextSpan = currentSpan * factor;
+        double anchorStep = currentMin + anchorRatio * currentSpan;
+        double nextMin = anchorStep - anchorRatio * nextSpan;
+        double nextMax = nextMin + nextSpan;
+        setViewRange(nextMin, nextMax);
+    }
+
+    private void setViewRange(double minStep, double maxStep) {
+        PlotRange fullRange = buildFullRange();
+        double fullMin = fullRange.minStep;
+        double fullMax = fullRange.maxStep;
+        double fullSpan = fullMax - fullMin;
+        if (fullSpan <= 0.0d) {
+            resetView();
+            return;
+        }
+        double span = Math.max(maxStep - minStep, Math.min(MIN_VISIBLE_STEP_SPAN, fullSpan));
+        span = Math.min(span, fullSpan);
+        double center = (minStep + maxStep) / 2.0d;
+        minStep = center - span / 2.0d;
+        maxStep = center + span / 2.0d;
+        if (span >= fullSpan * FULL_VIEW_TOLERANCE) {
+            resetView();
+            return;
+        }
+        if (minStep < fullMin) {
+            maxStep += fullMin - minStep;
+            minStep = fullMin;
+        }
+        if (maxStep > fullMax) {
+            minStep -= maxStep - fullMax;
+            maxStep = fullMax;
+        }
+        minStep = Math.max(fullMin, minStep);
+        maxStep = Math.min(fullMax, maxStep);
+        if (maxStep - minStep >= fullSpan * FULL_VIEW_TOLERANCE) {
+            resetView();
+            return;
+        }
+        viewMinStep = Double.valueOf(minStep);
+        viewMaxStep = Double.valueOf(maxStep);
+        repaint();
+    }
+
+    private void resetView() {
+        viewMinStep = null;
+        viewMaxStep = null;
+        stopPanning();
+        repaint();
+    }
+
+    private boolean isDefaultView() {
+        return viewMinStep == null || viewMaxStep == null;
+    }
+
     private static String formatElapsed(long elapsedMillis) {
         long totalSeconds = elapsedMillis / 1000L;
         long hours = totalSeconds / 3600L;
@@ -443,6 +695,10 @@ public class YoloGraphPlaceholderPanel extends JPanel {
 
     private static boolean isFinite(double value) {
         return !Double.isNaN(value) && !Double.isInfinite(value);
+    }
+
+    private static double clamp(double value, double min, double max) {
+        return Math.max(min, Math.min(max, value));
     }
 
     private static String ellipsize(String text, FontMetrics fm, int maxWidth) {
@@ -486,8 +742,8 @@ public class YoloGraphPlaceholderPanel extends JPanel {
 
     private static final class PlotRange {
         private boolean hasValues;
-        private int minStep = Integer.MAX_VALUE;
-        private int maxStep = Integer.MIN_VALUE;
+        private double minStep = Double.POSITIVE_INFINITY;
+        private double maxStep = Double.NEGATIVE_INFINITY;
         private int minEpoch = Integer.MAX_VALUE;
         private int maxEpoch = Integer.MIN_VALUE;
         private double minY = Double.POSITIVE_INFINITY;
@@ -497,10 +753,18 @@ public class YoloGraphPlaceholderPanel extends JPanel {
             hasValues = true;
             minStep = Math.min(minStep, p.step);
             maxStep = Math.max(maxStep, p.step);
+            acceptY(p);
+        }
+
+        private void acceptY(Point p) {
             minEpoch = Math.min(minEpoch, p.epoch);
             maxEpoch = Math.max(maxEpoch, p.epoch);
             minY = Math.min(minY, p.value);
             maxY = Math.max(maxY, p.value);
+        }
+
+        private boolean containsStep(int step) {
+            return step >= minStep && step <= maxStep;
         }
     }
 }
