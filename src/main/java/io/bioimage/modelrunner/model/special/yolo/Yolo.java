@@ -318,7 +318,7 @@ public class Yolo extends DLModelPytorchProtected {
 				+ "output_weights = r'" + py(outputFile.getAbsolutePath()) + "'" + nl
 				+ "project = r'" + py(project) + "'" + nl
 				+ "run_name = r'" + py(runName) + "'" + nl
-				+ "yolo_log_path = os.path.join(project, run_name + '.training.log')" + nl
+				+ "yolo_log_path = os.path.join(project, run_name, 'training.log')" + nl
 				+ "os.makedirs(project, exist_ok=True)" + nl
 				+ "_yolo_log_handler = logging.FileHandler(yolo_log_path, mode='a', encoding='utf-8')" + nl
 				+ "_yolo_log_handler.setFormatter(logging.Formatter('%(message)s'))" + nl
