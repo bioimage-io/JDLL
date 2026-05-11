@@ -21,6 +21,7 @@ package io.bioimage.modelrunner.gui.custom.yolo;
 
 import java.awt.CardLayout;
 import java.awt.Color;
+import java.awt.FontMetrics;
 import java.awt.datatransfer.DataFlavor;
 import java.io.File;
 import java.io.IOException;
@@ -57,6 +58,8 @@ public class YoloTrainPanel extends JPanel {
     protected static final double LABEL_WIDTH_RATIO = 0.24;
     protected static final double BROWSE_WIDTH_RATIO = 0.14;
     protected static final double RADIO_WIDTH_RATIO = 0.16;
+    protected static final double SCRATCH_RADIO_WIDTH_RATIO = 0.24;
+    protected static final int SCRATCH_COMBO_EXTRA_WIDTH = 42;
     protected static final double EPOCH_WIDTH_RATIO = 0.18;
     protected static final double SWITCH_BUTTON_WIDTH_RATIO = 0.16;
     protected static final double TOP_ROW_UNITS = 1.0;
@@ -78,6 +81,8 @@ public class YoloTrainPanel extends JPanel {
     protected final JButton baseModelBrowseButton = new JButton("Browse");
 
     protected final JRadioButton scratchRadio = new JRadioButton("Train from scratch");
+    protected final JComboBox<YoloModelSelectionEntry> scratchArchitectureComboBox =
+            new JComboBox<YoloModelSelectionEntry>();
 
     protected final JLabel epochsLabel = new JLabel("Epochs");
     protected final YoloIntegerTextField epochsField = new YoloIntegerTextField("100");
@@ -114,6 +119,9 @@ public class YoloTrainPanel extends JPanel {
         YoloUiUtils.styleInput(datasetField);
         baseModelComboBox.setEditable(true);
         YoloUiUtils.styleInput(baseModelComboBox);
+        scratchArchitectureComboBox.setEditable(false);
+        YoloUiUtils.styleInput(scratchArchitectureComboBox);
+        setScratchArchitectures(YoloModelRegistry.buildScratchArchitectureEntries());
         YoloUiUtils.styleInput(epochsField);
         datasetField.setTransferHandler(new PathDropHandler(path -> datasetField.setText(path)));
         TransferHandler baseModelDropHandler = new PathDropHandler(this::setSelectedBaseModelValue);
@@ -148,6 +156,7 @@ public class YoloTrainPanel extends JPanel {
         add(baseModelComboBox);
         add(baseModelBrowseButton);
         add(scratchRadio);
+        add(scratchArchitectureComboBox);
         add(epochsLabel);
         add(epochsField);
         add(epochsErrorLabel);
@@ -176,6 +185,7 @@ public class YoloTrainPanel extends JPanel {
         boolean fineTune = fineTuneRadio.isSelected();
         baseModelComboBox.setEnabled(!trainingRunning && fineTune);
         baseModelBrowseButton.setEnabled(!trainingRunning && fineTune);
+        scratchArchitectureComboBox.setEnabled(!trainingRunning && !fineTune);
     }
 
     public void setTrainingRunning(boolean running) {
@@ -185,6 +195,7 @@ public class YoloTrainPanel extends JPanel {
         datasetBrowseButton.setEnabled(!running);
         fineTuneRadio.setEnabled(!running);
         scratchRadio.setEnabled(!running);
+        scratchArchitectureComboBox.setEnabled(!running && scratchRadio.isSelected());
         epochsField.setEnabled(!running);
         trainActionPanel.getRunButton().setEnabled(!running);
         trainActionPanel.getCancelButton().setEnabled(running);
@@ -271,7 +282,11 @@ public class YoloTrainPanel extends JPanel {
         baseModelBrowseButton.setBounds(x + radioW + baseFieldW + 2 * gap, y, browseW, row3H);
         y += row3H + gap;
 
-        scratchRadio.setBounds(x, y, innerW, row4H);
+        int scratchRadioW = Math.max(radioW, (int) Math.round(innerW * SCRATCH_RADIO_WIDTH_RATIO));
+        int scratchFieldW = Math.max(1, Math.min(preferredComboWidth(scratchArchitectureComboBox),
+                innerW - scratchRadioW - gap));
+        scratchRadio.setBounds(x, y, scratchRadioW, row4H);
+        scratchArchitectureComboBox.setBounds(x + scratchRadioW + gap, y, scratchFieldW, row4H);
         y += row4H + gap;
 
         epochsLabel.setBounds(x, y, labelW, row5H);
@@ -298,10 +313,11 @@ public class YoloTrainPanel extends JPanel {
         YoloUiUtils.applyResponsiveText(datasetLabel, labelW - 4, row2H);
         YoloUiUtils.applyResponsiveFont(datasetField, row2H);
         YoloUiUtils.applyResponsiveText(datasetBrowseButton, browseW - 8, row2H);
-        YoloUiUtils.applyResponsiveFont(fineTuneRadio, row3H);
+        YoloUiUtils.applyResponsiveText(fineTuneRadio, radioW - 4, row3H);
         YoloUiUtils.applyResponsiveFont(baseModelComboBox, row3H);
         YoloUiUtils.applyResponsiveText(baseModelBrowseButton, browseW - 8, row3H);
-        YoloUiUtils.applyResponsiveFont(scratchRadio, row4H);
+        YoloUiUtils.applyResponsiveText(scratchRadio, scratchRadioW - 4, row4H);
+        YoloUiUtils.applyResponsiveFont(scratchArchitectureComboBox, row4H);
         YoloUiUtils.applyResponsiveText(epochsLabel, labelW - 4, row5H);
         YoloUiUtils.applyResponsiveFont(epochsField, row5H);
         epochsErrorLabel.setFont(epochsLabel.getFont());
@@ -309,6 +325,18 @@ public class YoloTrainPanel extends JPanel {
         YoloUiUtils.applyResponsiveText(metricButton, switchBtnW - 8, row6H);
         YoloUiUtils.applyResponsiveText(validationPreviewButton, switchBtnW - 8, row6H);
         trainActionPanel.doLayout();
+    }
+
+    private static int preferredComboWidth(JComboBox<YoloModelSelectionEntry> comboBox) {
+        FontMetrics fm = comboBox.getFontMetrics(comboBox.getFont());
+        int width = 1;
+        for (int i = 0; i < comboBox.getItemCount(); i++) {
+            YoloModelSelectionEntry entry = comboBox.getItemAt(i);
+            if (entry != null) {
+                width = Math.max(width, fm.stringWidth(entry.toString()) + SCRATCH_COMBO_EXTRA_WIDTH);
+            }
+        }
+        return width;
     }
 
     public YoloPlaceholderTextField getModelNameField() {
@@ -342,6 +370,9 @@ public class YoloTrainPanel extends JPanel {
 
         if (fineTuneRadio.isSelected() && !isValidFineTuneBaseModel()) {
             setComboBoxErrorPlaceholder(baseModelComboBox, "Please select a valid .pt model");
+            valid = false;
+        }
+        if (scratchRadio.isSelected() && !isValidScratchArchitecture()) {
             valid = false;
         }
 
@@ -402,6 +433,10 @@ public class YoloTrainPanel extends JPanel {
         return baseModel != null
                 && baseModel.toLowerCase().endsWith(YoloModelRegistry.YOLO_WEIGHTS_EXTENSION)
                 && new File(baseModel).isFile();
+    }
+
+    private boolean isValidScratchArchitecture() {
+        return YoloModelRegistry.isKnownScratchArchitecture(getSelectedScratchArchitectureValue());
     }
 
     private static File resolveDatasetYaml(String datasetPath) {
@@ -549,6 +584,29 @@ public class YoloTrainPanel extends JPanel {
 
     public JRadioButton getScratchRadio() {
         return scratchRadio;
+    }
+
+    public JComboBox<YoloModelSelectionEntry> getScratchArchitectureComboBox() {
+        return scratchArchitectureComboBox;
+    }
+
+    public void setScratchArchitectures(LinkedHashMap<String, String> architectures) {
+        DefaultComboBoxModel<YoloModelSelectionEntry> comboModel =
+                new DefaultComboBoxModel<YoloModelSelectionEntry>();
+        if (architectures != null) {
+            for (Map.Entry<String, String> entry : architectures.entrySet()) {
+                comboModel.addElement(new YoloModelSelectionEntry(entry.getKey(), entry.getValue()));
+            }
+        }
+        scratchArchitectureComboBox.setModel(comboModel);
+    }
+
+    public String getSelectedScratchArchitectureValue() {
+        Object selected = scratchArchitectureComboBox.getSelectedItem();
+        if (selected instanceof YoloModelSelectionEntry) {
+            return ((YoloModelSelectionEntry) selected).getValue();
+        }
+        return selected == null ? null : selected.toString().trim();
     }
 
     public YoloIntegerTextField getEpochsField() {

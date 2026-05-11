@@ -51,7 +51,8 @@ public class YoloTrainingService {
         if (config.isFineTune() && !installer.isModelInstalled(config.getBaseModelPath())) {
             installer.installModelWeights(config.getBaseModelPath(), logConsumer);
         }
-        Yolo.train(config.getEpochs(), config.getBaseModelPath(), config.getDatasetYamlPath(),
+        Yolo.train(config.getEpochs(), config.getBaseModelPath(), config.getScratchArchitecture(),
+                config.getDatasetYamlPath(),
                 config.getOutputWeightsPath(), config.getImageSize(), config.getPreviewEpochPeriod(),
                 progressConsumer, previewConsumer, logConsumer);
     }
@@ -88,6 +89,9 @@ public class YoloTrainingService {
         }
         if (config.isFineTune() && (config.getBaseModelPath() == null || config.getBaseModelPath().trim().isEmpty())) {
             throw new IllegalArgumentException("Please select a base YOLO model for fine tuning.");
+        }
+        if (!config.isFineTune() && !YoloModelRegistry.isKnownScratchArchitecture(config.getScratchArchitecture())) {
+            throw new IllegalArgumentException("Please select a valid YOLO architecture for training from scratch.");
         }
     }
 }

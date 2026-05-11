@@ -71,6 +71,13 @@ public class Yolo extends DLModelPytorchProtected {
 							
 	private static final Map<String, Long> PRETRAINED_YOLO_MODELS;
 	private static final double VALIDATION_PREVIEW_CONFIDENCE = 0.25d;
+	private static final String DEFAULT_SCRATCH_ARCHITECTURE = "yolo26n.yaml";
+	private static final List<String> SCRATCH_ARCHITECTURES = Collections.unmodifiableList(Arrays.asList(
+			"yolo26n.yaml",
+			"yolo26s.yaml",
+			"yolo26m.yaml",
+			"yolo26l.yaml",
+			"yolo26x.yaml"));
 	static {
 		PRETRAINED_YOLO_MODELS = new HashMap<String, Long>();
 		PRETRAINED_YOLO_MODELS.put("YOLO26n", 5_544_453L);
@@ -252,7 +259,19 @@ public class Yolo extends DLModelPytorchProtected {
 			Consumer<YoloValidationPreview> previewConsumer,
 			Consumer<String> logConsumer)
 			throws IOException, BuildException, InterruptedException, TaskException {
+		train(epochs, baseModelPath, DEFAULT_SCRATCH_ARCHITECTURE, datasetYamlPath, outputWeightsPath,
+				imageSize, previewEpochPeriod, progressConsumer, previewConsumer, logConsumer);
+	}
+
+	public static void train(int epochs, String baseModelPath, String scratchArchitecture,
+			String datasetYamlPath, String outputWeightsPath,
+			int imageSize, int previewEpochPeriod,
+			Consumer<YoloTrainingProgress> progressConsumer,
+			Consumer<YoloValidationPreview> previewConsumer,
+			Consumer<String> logConsumer)
+			throws IOException, BuildException, InterruptedException, TaskException {
 		validateTrainingArguments(epochs, datasetYamlPath, outputWeightsPath, imageSize);
+		String normalizedScratchArchitecture = normalizeScratchArchitecture(scratchArchitecture);
 		File outputFile = new File(outputWeightsPath);
 		File outputDir = outputFile.getParentFile();
 		if (outputDir != null && !outputDir.isDirectory() && !outputDir.mkdirs()) {
@@ -268,7 +287,8 @@ public class Yolo extends DLModelPytorchProtected {
 			python.debug(logConsumer);
 		}
 		try {
-			Task task = python.task(buildTrainingCode(epochs, baseModelPath, datasetYamlPath,
+			Task task = python.task(buildTrainingCode(epochs, baseModelPath, normalizedScratchArchitecture,
+					datasetYamlPath,
 					outputWeightsPath, imageSize, previewEpochPeriod));
 			task.listen(event -> handleTrainingEvent(event, progressConsumer, previewConsumer, logConsumer));
 			task.waitFor();
@@ -296,10 +316,23 @@ public class Yolo extends DLModelPytorchProtected {
 		}
 	}
 
-	private static String buildTrainingCode(int epochs, String baseModelPath, String datasetYamlPath,
+	private static String normalizeScratchArchitecture(String scratchArchitecture) {
+		String architecture = scratchArchitecture == null || scratchArchitecture.trim().isEmpty()
+				? DEFAULT_SCRATCH_ARCHITECTURE
+				: scratchArchitecture.trim();
+		for (String supported : SCRATCH_ARCHITECTURES) {
+			if (supported.equalsIgnoreCase(architecture)) {
+				return supported;
+			}
+		}
+		throw new IllegalArgumentException("Unsupported YOLO architecture for training from scratch: " + architecture);
+	}
+
+	private static String buildTrainingCode(int epochs, String baseModelPath, String scratchArchitecture,
+			String datasetYamlPath,
 			String outputWeightsPath, int imageSize, int previewEpochPeriod) {
 		String modelSource = baseModelPath == null || baseModelPath.trim().isEmpty()
-				? "yolo26n.yaml"
+				? scratchArchitecture
 				: new File(baseModelPath).getAbsolutePath();
 		File outputFile = new File(outputWeightsPath);
 		File outputDir = outputFile.getParentFile();

@@ -32,17 +32,20 @@ public final class YoloTrainingConfig {
     private final int imageSize;
     private final boolean fineTune;
     private final String baseModelPath;
+    private final String scratchArchitecture;
     private final String outputWeightsPath;
     private final int previewEpochPeriod;
 
     public YoloTrainingConfig(String modelName, String datasetYamlPath, int epochs, int imageSize,
-            boolean fineTune, String baseModelPath, String outputWeightsPath, int previewEpochPeriod) {
+            boolean fineTune, String baseModelPath, String scratchArchitecture,
+            String outputWeightsPath, int previewEpochPeriod) {
         this.modelName = modelName;
         this.datasetYamlPath = datasetYamlPath;
         this.epochs = epochs;
         this.imageSize = imageSize;
         this.fineTune = fineTune;
         this.baseModelPath = baseModelPath;
+        this.scratchArchitecture = scratchArchitecture;
         this.outputWeightsPath = outputWeightsPath;
         this.previewEpochPeriod = previewEpochPeriod;
     }
@@ -71,6 +74,10 @@ public final class YoloTrainingConfig {
         return baseModelPath;
     }
 
+    public String getScratchArchitecture() {
+        return scratchArchitecture;
+    }
+
     public String getOutputWeightsPath() {
         return outputWeightsPath;
     }
@@ -80,14 +87,15 @@ public final class YoloTrainingConfig {
     }
 
     public static YoloTrainingConfig fromUi(String modelName, String datasetPath, int epochs,
-            boolean fineTune, String baseModelPath, String modelsDir) {
+            boolean fineTune, String baseModelPath, String scratchArchitecture, String modelsDir) {
         String normalizedName = normalizeModelName(modelName);
         File yoloDir = modelsDir == null
                 ? new File(YoloModelRegistry.YOLO_MODELS_SUBDIR)
                 : new File(modelsDir, YoloModelRegistry.YOLO_MODELS_SUBDIR);
         File output = new File(yoloDir, normalizedName + YoloModelRegistry.YOLO_WEIGHTS_EXTENSION);
         return new YoloTrainingConfig(normalizedName, datasetPath, epochs, DEFAULT_IMAGE_SIZE,
-                fineTune, fineTune ? baseModelPath : null, output.getAbsolutePath(), DEFAULT_PREVIEW_EPOCH_PERIOD);
+                fineTune, fineTune ? baseModelPath : null, fineTune ? null : scratchArchitecture,
+                output.getAbsolutePath(), DEFAULT_PREVIEW_EPOCH_PERIOD);
     }
 
     private static String normalizeModelName(String modelName) {

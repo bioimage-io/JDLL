@@ -30,12 +30,20 @@ public final class YoloModelRegistry {
 
     public static final String YOLO_MODELS_SUBDIR = "yolo";
     public static final String YOLO_WEIGHTS_EXTENSION = ".pt";
+    public static final String YOLO_ARCHITECTURE_EXTENSION = ".yaml";
     public static final String PRETRAINED_URL_FORMAT = "https://github.com/ultralytics/assets/releases/download/v8.4.0/%s";
 
     private static final String[][] PRETRAINED_MODELS = new String[][] {
             {"YOLO26n", "yolo26n.pt"},
             {"YOLO26m", "yolo26m.pt"},
             {"YOLO26x", "yolo26x.pt"}
+    };
+    private static final String[][] SCRATCH_ARCHITECTURES = new String[][] {
+            {"Small (YOLO26n)", "yolo26n.yaml"},
+            {"Medium-small (YOLO26s)", "yolo26s.yaml"},
+            {"Medium (YOLO26m)", "yolo26m.yaml"},
+            {"Medium-big (YOLO26l)", "yolo26l.yaml"},
+            {"Big (YOLO26x)", "yolo26x.yaml"}
     };
 
     private static final Map<String, Long> PRETRAINED_WEIGHTS_SIZE;
@@ -67,6 +75,26 @@ public final class YoloModelRegistry {
             models.put("[Custom] " + removeWeightsExtension(modelFile.getName()), modelFile.getAbsolutePath());
         }
         return models;
+    }
+
+    public static LinkedHashMap<String, String> buildScratchArchitectureEntries() {
+        LinkedHashMap<String, String> architectures = new LinkedHashMap<String, String>();
+        for (String[] architecture : SCRATCH_ARCHITECTURES) {
+            architectures.put(architecture[0], architecture[1]);
+        }
+        return architectures;
+    }
+
+    public static boolean isKnownScratchArchitecture(String architecture) {
+        if (architecture == null) {
+            return false;
+        }
+        for (String[] candidate : SCRATCH_ARCHITECTURES) {
+            if (candidate[1].equalsIgnoreCase(architecture.trim())) {
+                return true;
+            }
+        }
+        return false;
     }
 
     public static boolean isPretrainedWeightsFile(String fileName) {

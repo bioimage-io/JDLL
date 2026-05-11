@@ -363,6 +363,7 @@ public class YOLOPluginUI extends YoloGUI implements ActionListener {
     			Integer.parseInt(trainPanel.getEpochsField().getText().trim()),
     			trainPanel.getFineTuneRadio().isSelected(),
     			trainPanel.getSelectedBaseModelValue(),
+            trainPanel.getSelectedScratchArchitectureValue(),
     			modelsDir);
     }
 
