@@ -230,7 +230,7 @@ public class YOLOPluginUI extends YoloGUI implements ActionListener {
                         }),
                         logConsumer);
                 refreshYoloModels();
-            } catch (Exception e) {
+            } catch (Exception | Error e) {
                 if (!cancelled) {
                     e.printStackTrace();
                 }

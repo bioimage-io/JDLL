@@ -89,6 +89,7 @@ public class YoloImageDisplayPanel extends JPanel {
     private final List<Rectangle2D.Double> boxes = new ArrayList<Rectangle2D.Double>();
     private String emptyMessage = "Preview will appear here";
     private Color boxColor = BOX_COLOR;
+    private Color titleColor = HELP_TEXT;
     private final JButton expandButton = new JButton(EXPAND_SYMBOL);
     private final Timer hintFadeTimer;
     private long hintShownAt;
@@ -249,6 +250,7 @@ public class YoloImageDisplayPanel extends JPanel {
         this.panY = 0.0;
         this.panStartScreen = null;
         this.boxColor = BOX_COLOR;
+        this.titleColor = HELP_TEXT;
         clearBoxes();
         updateExpandButtonState();
         showDefaultHint();
@@ -273,6 +275,7 @@ public class YoloImageDisplayPanel extends JPanel {
         this.activeBox = null;
         this.boxes.clear();
         this.boxColor = BOX_COLOR;
+        this.titleColor = HELP_TEXT;
         updateToolTip();
         updateExpandButtonState();
         if (image != null && showHint) {
@@ -289,6 +292,16 @@ public class YoloImageDisplayPanel extends JPanel {
         }
         this.boxColor = color == null ? BOX_COLOR : color;
         updateToolTip();
+        repaint();
+    }
+
+    public void setTitleColor(Color color) {
+        this.titleColor = color == null ? HELP_TEXT : color;
+        repaint();
+    }
+
+    public void setTitle(String title) {
+        this.title = title;
         repaint();
     }
 
@@ -354,7 +367,7 @@ public class YoloImageDisplayPanel extends JPanel {
         g2.setClip(null);
 
         if (title != null && !title.isEmpty()) {
-            g2.setColor(HELP_TEXT);
+            g2.setColor(titleColor);
             g2.drawString(title, imageDrawArea.x + 6, imageDrawArea.y + 16);
         }
         paintHintOverlay(g2);

@@ -55,8 +55,16 @@ public class YoloValidationPreviewPanel extends JPanel {
     private static final int ARROW_BUTTON_MIN_HEIGHT = 13;
     private static final int ARROW_BUTTON_MAX_HEIGHT = 21;
     private static final int STATUS_H = 36;
-    private static final Color PREDICTION_BOX_COLOR = new Color(80, 220, 120);
+    private static final int COLOR_BUTTON_MIN_SIZE = 14;
+    private static final int COLOR_BUTTON_MAX_SIZE = 22;
+    private static final int COLOR_BUTTON_PAD = 4;
+    private static final int COLOR_BUTTON_RIGHT_OFFSET = 36;
+    private static final Color GREEN_BOX_COLOR = new Color(80, 220, 120);
+    private static final Color DARK_BOX_COLOR = new Color(92, 0, 38);
+    private static final Color GREEN_TITLE_COLOR = new Color(232, 236, 240);
+    private static final Color DARK_TITLE_COLOR = new Color(22, 24, 30);
     private static final Color TEXT_COLOR = new Color(70, 78, 98);
+    private static final String COLOR_SYMBOL = "\u25A0";
     private static final String PREVIOUS_SYMBOL = "\u25C0";
     private static final String NEXT_SYMBOL = "\u25B6";
     private static final String WAITING_MESSAGE = "Validation examples available after the first epoch finishes";
@@ -66,6 +74,8 @@ public class YoloValidationPreviewPanel extends JPanel {
     private final TrainingStatusPanel statusPanel = new TrainingStatusPanel();
     private final JButton previousButton = new JButton(PREVIOUS_SYMBOL);
     private final JButton nextButton = new JButton(NEXT_SYMBOL);
+    private final JButton greenColorButton = new JButton(COLOR_SYMBOL);
+    private final JButton darkColorButton = new JButton(COLOR_SYMBOL);
     private final List<PreviewSample> samples = new ArrayList<PreviewSample>();
 
     private int currentIndex;
@@ -76,6 +86,7 @@ public class YoloValidationPreviewPanel extends JPanel {
     private int totalEpochs;
     private long elapsedMillis;
     private double secondsPerIteration = Double.NaN;
+    private Color selectedBoxColor = GREEN_BOX_COLOR;
 
     public YoloValidationPreviewPanel() {
         setLayout(null);
@@ -87,13 +98,21 @@ public class YoloValidationPreviewPanel extends JPanel {
         statusPanel.setOpaque(false);
         YoloUiUtils.styleFlatSecondaryButton(previousButton);
         YoloUiUtils.styleFlatSecondaryButton(nextButton);
+        setupColorButton(greenColorButton, GREEN_BOX_COLOR);
+        setupColorButton(darkColorButton, DARK_BOX_COLOR);
         previousButton.addActionListener(e -> showSample(currentIndex - 1));
         nextButton.addActionListener(e -> showSample(currentIndex + 1));
+        greenColorButton.addActionListener(e -> setSelectedBoxColor(GREEN_BOX_COLOR));
+        darkColorButton.addActionListener(e -> setSelectedBoxColor(DARK_BOX_COLOR));
 
         add(imagePanel);
         add(statusPanel);
         add(previousButton);
         add(nextButton);
+        imagePanel.add(greenColorButton);
+        imagePanel.add(darkColorButton);
+        imagePanel.setComponentZOrder(greenColorButton, 0);
+        imagePanel.setComponentZOrder(darkColorButton, 0);
         clearPreview();
     }
 
@@ -101,6 +120,8 @@ public class YoloValidationPreviewPanel extends JPanel {
         samples.clear();
         currentIndex = 0;
         previewEpoch = 0;
+        selectedBoxColor = GREEN_BOX_COLOR;
+        updateColorButtons();
         imagePanel.setEmptyMessage(WAITING_MESSAGE);
         imagePanel.clearImage();
         updateStatusPanel();
@@ -163,6 +184,15 @@ public class YoloValidationPreviewPanel extends JPanel {
         int y = OUTER_PAD;
 
         imagePanel.setBounds(OUTER_PAD, y, innerW, imageH);
+        int colorSize = Math.max(COLOR_BUTTON_MIN_SIZE,
+                Math.min(COLOR_BUTTON_MAX_SIZE, Math.min(w, h) / 14));
+        int colorX = innerW - COLOR_BUTTON_RIGHT_OFFSET - colorSize;
+        colorX = Math.max(COLOR_BUTTON_PAD, colorX);
+        int colorY = COLOR_BUTTON_PAD;
+        greenColorButton.setBounds(colorX, colorY, colorSize, colorSize);
+        darkColorButton.setBounds(colorX, colorY + colorSize, colorSize, colorSize);
+        imagePanel.setComponentZOrder(greenColorButton, 0);
+        imagePanel.setComponentZOrder(darkColorButton, 0);
         y += imageH + VIEWER_TO_ARROWS_GAP;
 
         int leftArrowW = innerW / 2;
@@ -174,6 +204,10 @@ public class YoloValidationPreviewPanel extends JPanel {
 
         YoloUiUtils.applyResponsiveText(previousButton, leftArrowW - 4, arrowH);
         YoloUiUtils.applyResponsiveText(nextButton, innerW - leftArrowW - 4, arrowH);
+        greenColorButton.setFont(greenColorButton.getFont().deriveFont((float) Math.max(YoloUiUtils.MIN_FONT_SIZE,
+                Math.min(YoloUiUtils.MAX_CONTROL_FONT_SIZE, colorSize * 0.62f))));
+        darkColorButton.setFont(darkColorButton.getFont().deriveFont((float) Math.max(YoloUiUtils.MIN_FONT_SIZE,
+                Math.min(YoloUiUtils.MAX_CONTROL_FONT_SIZE, colorSize * 0.62f))));
     }
 
     private void showSample(int requestedIndex) {
@@ -190,8 +224,9 @@ public class YoloValidationPreviewPanel extends JPanel {
             if (image == null) {
                 throw new IOException("Unsupported image format: " + sample.imagePath);
             }
-            imagePanel.setBufferedImage(image, sample.title, false);
-            imagePanel.setReadOnlyBoxes(sample.boxes, PREDICTION_BOX_COLOR);
+            imagePanel.setBufferedImage(image, buildImageTitle(sample), false);
+            imagePanel.setReadOnlyBoxes(sample.boxes, selectedBoxColor);
+            imagePanel.setTitleColor(titleColorForSelectedBoxColor());
         } catch (IOException e) {
             imagePanel.setEmptyMessage(ERROR_MESSAGE);
             imagePanel.clearImage();
@@ -204,6 +239,67 @@ public class YoloValidationPreviewPanel extends JPanel {
         boolean enabled = samples.size() > 1;
         previousButton.setEnabled(enabled);
         nextButton.setEnabled(enabled);
+        greenColorButton.setVisible(true);
+        darkColorButton.setVisible(true);
+        greenColorButton.setEnabled(true);
+        darkColorButton.setEnabled(true);
+        repaintColorButtons();
+    }
+
+    private void setSelectedBoxColor(Color color) {
+        selectedBoxColor = color == null ? GREEN_BOX_COLOR : color;
+        updateColorButtons();
+        if (!samples.isEmpty()) {
+            PreviewSample sample = samples.get(currentIndex);
+            imagePanel.setTitle(buildImageTitle(sample));
+            imagePanel.setTitleColor(titleColorForSelectedBoxColor());
+            imagePanel.setReadOnlyBoxes(sample.boxes, selectedBoxColor);
+        }
+    }
+
+    private void updateColorButtons() {
+        markColorButton(greenColorButton, GREEN_BOX_COLOR.equals(selectedBoxColor));
+        markColorButton(darkColorButton, DARK_BOX_COLOR.equals(selectedBoxColor));
+    }
+
+    private static void setupColorButton(JButton button, Color color) {
+        YoloUiUtils.styleFlatSecondaryButton(button);
+        button.setForeground(color);
+        button.setToolTipText("Use " + colorName(color) + " validation boxes");
+        button.setFocusPainted(false);
+        button.setMargin(new java.awt.Insets(0, 0, 0, 0));
+        button.setIconTextGap(0);
+        button.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
+        button.setVerticalAlignment(javax.swing.SwingConstants.CENTER);
+        button.setHorizontalTextPosition(javax.swing.SwingConstants.CENTER);
+        button.setVerticalTextPosition(javax.swing.SwingConstants.CENTER);
+    }
+
+    private static void markColorButton(JButton button, boolean selected) {
+        button.setBorder(selected
+                ? javax.swing.BorderFactory.createLineBorder(Color.BLACK, 2)
+                : YoloUiUtils.BUTTON_BORDER);
+        button.setVisible(true);
+        button.setEnabled(true);
+        button.repaint();
+    }
+
+    private void repaintColorButtons() {
+        greenColorButton.repaint();
+        darkColorButton.repaint();
+        imagePanel.repaint();
+    }
+
+    private static String colorName(Color color) {
+        return DARK_BOX_COLOR.equals(color) ? "dark red" : "green";
+    }
+
+    private Color titleColorForSelectedBoxColor() {
+        return DARK_BOX_COLOR.equals(selectedBoxColor) ? DARK_TITLE_COLOR : GREEN_TITLE_COLOR;
+    }
+
+    private String buildImageTitle(PreviewSample sample) {
+        return sample.title + " --- " + (currentIndex + 1) + "/" + samples.size();
     }
 
     private String getSelectedImagePath() {
