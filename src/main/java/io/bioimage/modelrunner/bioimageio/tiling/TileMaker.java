@@ -143,6 +143,21 @@ public class TileMaker {
 		return new TileMaker(inputTiles, outputTiles);
 	}
 	
+	/**
+	 * Executes build.
+	 *
+	 * @param inputTiles the inputTiles parameter.
+	 * @return the resulting value.
+	 */
+	public static TileMaker build(List<TileInfo> inputTiles) {
+		int[] count = new int[1];
+		List<TileInfo> out = inputTiles.stream()
+				.map(inf -> TileInfo.build("output_" + (count[0]++), inf.getImageDims(), inf.getImageAxesOrder(),
+						inf.getTileDims(), inf.getTileAxesOrder()))
+				.collect(Collectors.toList());
+		return new TileMaker(inputTiles, out);
+	}
+
 	private void validate() {
 		checkAllTensorsDefined();
 		validateTileVsImageSize();

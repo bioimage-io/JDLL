@@ -43,6 +43,7 @@ import net.imglib2.type.numeric.RealType;
 
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.geom.Rectangle2D;
 import java.io.IOException;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
@@ -199,6 +200,8 @@ public class YOLOPluginUI extends YoloGUI implements ActionListener {
     		JOptionPane.showMessageDialog(null, "Please open an image", "No image open", JOptionPane.ERROR_MESSAGE);
     		return;
     	}
+        List<Rectangle2D.Double> boxes = inferencePanel.getImageDisplayPanel().getBoxes();
+        inferenceService.manageTiling(boxes);
     	Consumer<String> logConsumer = str -> SwingUtilities.invokeLater(() ->
     			YOLOPluginUI.this.inferencePanel.getLogPanel().appendHtml(str));
     	consumer.displayDetections(inferenceService.run(modelPath, rai, logConsumer));
