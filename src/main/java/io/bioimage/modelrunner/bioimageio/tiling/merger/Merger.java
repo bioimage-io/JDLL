@@ -21,178 +21,101 @@ package io.bioimage.modelrunner.bioimageio.tiling.merger;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.List;
 
-import io.bioimage.modelrunner.model.detection.Detection;
-import io.bioimage.modelrunner.tensor.Tensor;
-import net.imglib2.type.NativeType;
-import net.imglib2.type.numeric.RealType;
-import net.imglib2.util.Cast;
-
 /**
- * Merges object detections produced from overlapping spatial tiles.
+ * Base class for merging outputs produced by tiled inference.
  * <p>
- * The merger shifts tile-local boxes back into full-image coordinates, clips
- * them to image bounds and removes duplicated detections with class-aware NMS.
+ * The base class deliberately does not use ImgLib2 generic bounds. A merger can
+ * combine detections, dense tensors, classifications or any future semantic
+ * output. Subclasses decide the tile output type {@code I} and final merged
+ * output type {@code O}.
+ *
+ * @param <I> per-tile output type accepted by this merger
+ * @param <O> final merged output type returned by this merger
  */
-public abstract class Merger {
+public abstract class Merger<I, O> {
 
     protected static final int X1 = 0;
     protected static final int Y1 = 1;
     protected static final int X2 = 2;
-    private static final int Y2 = 3;
+    protected static final int Y2 = 3;
     protected static final int WINDOW_LENGTH = 4;
 
-    protected final long[] outputImageSize;
+    private final long[] outputWindow;
+    private final List<TileOutput<I>> tileOutputs = new ArrayList<TileOutput<I>>();
 
-    protected List<Tensor> tileDetections = new ArrayList<Tensor>();
+    protected Merger(final long[] outputWindow) {
+        this.outputWindow = copyWindow(outputWindow, "Output window");
+    }
 
+    public final void addTileOutput(final I output, final long[] tileWindow) {
+        tileOutputs.add(new TileOutput<I>(output, tileWindow));
+    }
 
-    public static final double DEFAULT_NMS_IOU_THRESHOLD = 0.5d;
+    public final O merge() {
+        return merge(Collections.unmodifiableList(tileOutputs));
+    }
 
-    protected Merger(long[] outputSize) {
-        if (outputSize == null || outputSize.length < WINDOW_LENGTH) {
-            throw new IllegalArgumentException("Output image size must be [x1, y1, x2, y2].");
+    protected abstract O merge(List<TileOutput<I>> tileOutputs);
+
+    protected final long[] getOutputWindow() {
+        return outputWindow.clone();
+    }
+
+    protected final long outputWidth() {
+        return outputWindow[X2] - outputWindow[X1];
+    }
+
+    protected final long outputHeight() {
+        return outputWindow[Y2] - outputWindow[Y1];
+    }
+
+    protected final long tileOffsetX(final long[] tileWindow) {
+        validateWindow(tileWindow, "Tile window");
+        return tileWindow[X1] - outputWindow[X1];
+    }
+
+    protected final long tileOffsetY(final long[] tileWindow) {
+        validateWindow(tileWindow, "Tile window");
+        return tileWindow[Y1] - outputWindow[Y1];
+    }
+
+    protected static long[] copyWindow(final long[] window, final String name) {
+        validateWindow(window, name);
+        return window.clone();
+    }
+
+    protected static void validateWindow(final long[] window, final String name) {
+        if (window == null || window.length < WINDOW_LENGTH) {
+            throw new IllegalArgumentException(name + " must be [x1, y1, x2, y2].");
         }
-        outputImageSize = outputSize;
-    }
-
-    public <T extends RealType<T> & NativeType<T>>
-    void addTileDetections(List<Tensor<T>> detections, long[] tilePos) {
-        tileDetections.add(new TileDetections(detections, tilePos));
-    }
-
-    public List<Detection> merge() {
-        return merge(DEFAULT_NMS_IOU_THRESHOLD);
-    }
-
-    public List<Detection> merge(final double nmsIouThreshold) {
-        if (tileDetections == null || tileDetections.isEmpty()) {
-            return Collections.emptyList();
+        if (window[X2] <= window[X1] || window[Y2] <= window[Y1]) {
+            throw new IllegalArgumentException(name + " has invalid limits: ["
+                    + window[X1] + ", " + window[Y1] + ", " + window[X2] + ", " + window[Y2] + "].");
         }
-        final List<Detection> shifted = new ArrayList<Detection>();
-        for (TileDetections tile : tileDetections) {
-            if (tile == null || tile.getDetections().isEmpty()) {
-                continue;
-            }
-            for (Detection detection : tile.getDetections()) {
-                Detection global = toGlobalDetection(detection, tile.getTilePosition());
-                if (global != null) {
-                    shifted.add(global);
-                }
-            }
-        }
-        return classAwareNms(shifted, nmsIouThreshold);
     }
 
-    private Detection toGlobalDetection(final Detection detection, final long[] window) {
-        if (detection == null || window == null || !isValid(detection)) {
-            return null;
-        }
-        if (window.length < WINDOW_LENGTH) {
-            throw new IllegalArgumentException("Tile window must be [x1, y1, x2, y2].");
-        }
-        long w = this.outputImageSize[X2] - this.outputImageSize[X1];
-        long h = this.outputImageSize[Y2] - this.outputImageSize[Y1];
-        long offsetX = window[X1] - this.outputImageSize[X1];
-        long offsetY = window[Y1] - this.outputImageSize[Y1];
-        double x1 = clip(detection.getX1() + offsetX, 0.0d, w);
-        double y1 = clip(detection.getY1() + offsetY, 0.0d, h);
-        double x2 = clip(detection.getX2() + offsetX, 0.0d, w);
-        double y2 = clip(detection.getY2() + offsetY, 0.0d, h);
-        if (x2 <= x1 || y2 <= y1) {
-            return null;
-        }
-        return new Detection(detection.getParentName(), detection.getBatchIndex(), x1, y1, x2, y2,
-                detection.getConfidence(), detection.getClassId());
-    }
-
-    private static List<Detection> classAwareNms(final List<Detection> detections,
-            final double iouThreshold) {
-        if (detections.isEmpty()) {
-            return Collections.emptyList();
-        }
-        final double threshold = Double.isFinite(iouThreshold) && iouThreshold >= 0.0d
-                ? iouThreshold
-                : DEFAULT_NMS_IOU_THRESHOLD;
-        final List<Detection> sorted = new ArrayList<Detection>(detections);
-        sorted.sort(Comparator.comparingDouble(Detection::getConfidence).reversed());
-
-        final List<Detection> kept = new ArrayList<Detection>();
-        for (Detection candidate : sorted) {
-            boolean duplicate = false;
-            for (Detection selected : kept) {
-                if (sameNmsGroup(candidate, selected) && iou(candidate, selected) > threshold) {
-                    duplicate = true;
-                    break;
-                }
-            }
-            if (!duplicate) {
-                kept.add(candidate);
-            }
-        }
-        return kept;
-    }
-
-    private static boolean sameNmsGroup(final Detection a, final Detection b) {
-        return a.getBatchIndex() == b.getBatchIndex() && a.getClassId() == b.getClassId();
-    }
-
-    private static double iou(final Detection a, final Detection b) {
-        double x1 = Math.max(a.getX1(), b.getX1());
-        double y1 = Math.max(a.getY1(), b.getY1());
-        double x2 = Math.min(a.getX2(), b.getX2());
-        double y2 = Math.min(a.getY2(), b.getY2());
-        double intersection = area(x1, y1, x2, y2);
-        if (intersection <= 0.0d) {
-            return 0.0d;
-        }
-        double union = area(a.getX1(), a.getY1(), a.getX2(), a.getY2())
-                + area(b.getX1(), b.getY1(), b.getX2(), b.getY2())
-                - intersection;
-        return union <= 0.0d ? 0.0d : intersection / union;
-    }
-
-    private static double area(final double x1, final double y1, final double x2, final double y2) {
-        return Math.max(0.0d, x2 - x1) * Math.max(0.0d, y2 - y1);
-    }
-
-    private static boolean isValid(final Detection detection) {
-        return Double.isFinite(detection.getX1())
-                && Double.isFinite(detection.getY1())
-                && Double.isFinite(detection.getX2())
-                && Double.isFinite(detection.getY2())
-                && Double.isFinite(detection.getConfidence())
-                && detection.getX2() > detection.getX1()
-                && detection.getY2() > detection.getY1();
-    }
-
-    private static double clip(final double value, final double min, final double max) {
+    protected static double clip(final double value, final double min, final double max) {
         return Math.max(min, Math.min(max, value));
     }
 
-    private static final class TileDetections {
+    protected static final class TileOutput<I> {
 
+        private final I output;
         private final long[] tileWindow;
-        private final List<Tensor<?>> detections;
 
-        public TileDetections(final List<Tensor<?>> detections, long[] tileWindow) {
-            if (tileWindow == null) {
-                throw new IllegalArgumentException("Tile window cannot be null.");
-            }
-            this.tileWindow = tileWindow;
-            this.detections = detections == null
-                    ? Collections.<Tensor<?>>emptyList()
-                    : Collections.unmodifiableList(new ArrayList<Tensor<?>>(detections));
+        private TileOutput(final I output, final long[] tileWindow) {
+            this.output = output;
+            this.tileWindow = copyWindow(tileWindow, "Tile window");
         }
 
-        public long[] getTilePosition() {
-            return tileWindow;
+        public I getOutput() {
+            return output;
         }
 
-        public <T extends RealType<T> & NativeType<T>> List<Tensor<T>> getDetections() {
-            return Cast.unchecked(detections);
+        public long[] getTileWindow() {
+            return tileWindow.clone();
         }
     }
 }
