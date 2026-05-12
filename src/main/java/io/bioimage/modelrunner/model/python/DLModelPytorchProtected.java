@@ -618,7 +618,7 @@ public class DLModelPytorchProtected extends BaseModel {
     List<Tensor<R>> inference(final Tensor<T>... inputs) throws RunModelException {
     	TileMaker maker = createTileMaker();
     	maker.getTilePostionsOutputImage(CLEAN_SHM_CODE);
-    	maker.getOutputImageSize(CLEAN_SHM_CODE)
+    	maker.getOutputImageSize(CLEAN_SHM_CODE);
     	List<List<Tensor<T>>> inputBatches = new ArrayList<List<Tensor<T>>>();
     	for (Tensor<T> inp : inputs) {
     		List<Tensor<T>> inpList = new ArrayList<Tensor<T>>();

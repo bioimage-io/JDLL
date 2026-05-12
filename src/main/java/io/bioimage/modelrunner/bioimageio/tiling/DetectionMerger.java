@@ -33,19 +33,28 @@ import io.bioimage.modelrunner.model.detection.Detection;
  * them to image bounds and removes duplicated detections with class-aware NMS.
  */
 public final class DetectionMerger {
-	
-	private final long[] outputImageSize;
-	
-	private List<TileDetections> tileDetections = new ArrayList<TileDetections>();
+
+    private static final int X1 = 0;
+    private static final int Y1 = 1;
+    private static final int X2 = 2;
+    private static final int Y2 = 3;
+    private static final int WINDOW_LENGTH = 4;
+
+    private final long[] outputImageSize;
+
+    private List<TileDetections> tileDetections = new ArrayList<TileDetections>();
 
     public static final double DEFAULT_NMS_IOU_THRESHOLD = 0.5d;
 
     public DetectionMerger(long[] outputSize) {
-    	outputImageSize = outputSize;
+        if (outputSize == null || outputSize.length < WINDOW_LENGTH) {
+            throw new IllegalArgumentException("Output image size must be [x1, y1, x2, y2].");
+        }
+        outputImageSize = outputSize;
     }
-    
+
     public void addTileDetections(List<Detection> detections, long[] tilePos) {
-    	tileDetections.add(new TileDetections(detections, tilePos));
+        tileDetections.add(new TileDetections(detections, tilePos));
     }
 
     public List<Detection> merge() {
@@ -75,14 +84,17 @@ public final class DetectionMerger {
         if (detection == null || window == null || !isValid(detection)) {
             return null;
         }
-        long w = this.outputImageSize[2] - this.outputImageSize[0];
-        long h = this.outputImageSize[3] - this.outputImageSize[1];
-        long tw = window[2] - window[0];
-        long th = window[3] - window[1];
-        double x1 = clip(detection.getX1() + tw, 0.0d, w);
-        double y1 = clip(detection.getY1() + th, 0.0d, h);
-        double x2 = clip(detection.getX2() + tw, 0.0d, w);
-        double y2 = clip(detection.getY2() + th, 0.0d, h);
+        if (window.length < WINDOW_LENGTH) {
+            throw new IllegalArgumentException("Tile window must be [x1, y1, x2, y2].");
+        }
+        long w = this.outputImageSize[X2] - this.outputImageSize[X1];
+        long h = this.outputImageSize[Y2] - this.outputImageSize[Y1];
+        long offsetX = window[X1] - this.outputImageSize[X1];
+        long offsetY = window[Y1] - this.outputImageSize[Y1];
+        double x1 = clip(detection.getX1() + offsetX, 0.0d, w);
+        double y1 = clip(detection.getY1() + offsetY, 0.0d, h);
+        double x2 = clip(detection.getX2() + offsetX, 0.0d, w);
+        double y2 = clip(detection.getY2() + offsetY, 0.0d, h);
         if (x2 <= x1 || y2 <= y1) {
             return null;
         }
