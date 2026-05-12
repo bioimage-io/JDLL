@@ -851,16 +851,6 @@ public class DLModelPytorchProtected extends BaseModel {
     void run(final List<Tensor<T>> inTensors, final List<Tensor<R>> outTensors) throws RunModelException {
         if (!this.isLoaded()) {
             throw new RunModelException("Please first load the model.");
-        }
-        if (!this.tiling) {
-            this.runNoTiles(inTensors, outTensors);
-            return;
-        }
-        if (this.isTiling() && (inputTiles != null || this.inputTiles.size() == 0)) {
-            throw new UnsupportedOperationException("Tiling is set to 'true' but the input tiles are not well defined");
-        } else if (this.isTiling() && (this.outputTiles == null || this.outputTiles.size() == 0)) {
-            throw new UnsupportedOperationException("Tiling is set to 'true' but the output tiles are not well defined");
-        }
 
         final TileMaker tiles = TileMaker.build(inputTiles, outputTiles);
         for (int i = 0; i < tiles.getNumberOfTiles(); i++) {
@@ -893,7 +883,7 @@ public class DLModelPytorchProtected extends BaseModel {
     }
 
     protected <T extends RealType<T> & NativeType<T>, R extends RealType<R> & NativeType<R>>
-    void runNoTiles(final List<Tensor<T>> inTensors, final List<Tensor<R>> outTensors) throws RunModelException {
+    void runNoTiles(final List<Tensor<T>> inTensors, final List<Tensor<R>> 20.) throws RunModelException {
         final Map<String, RandomAccessibleInterval<R>> outMap = predictForInputTensors(inTensors);
         int c = 0;
         for (Entry<String, RandomAccessibleInterval<R>> ee : outMap.entrySet()) {

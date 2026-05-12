@@ -17,7 +17,7 @@
  * limitations under the License.
  * #L%
  */
-package io.bioimage.modelrunner.bioimageio.tiling.merger;
+package io.bioimage.modelrunner.model.tiling.merger;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -32,7 +32,7 @@ import io.bioimage.modelrunner.model.detection.Detection;
  * The merger shifts tile-local boxes back into full-image coordinates, clips
  * them to image bounds and removes duplicated detections with class-aware NMS.
  */
-public final class NoTileMerger {
+public final class DetectionMerger {
 
     private static final int X1 = 0;
     private static final int Y1 = 1;
@@ -46,7 +46,7 @@ public final class NoTileMerger {
 
     public static final double DEFAULT_NMS_IOU_THRESHOLD = 0.5d;
 
-    public NoTileMerger(long[] outputSize) {
+    public DetectionMerger(long[] outputSize) {
         if (outputSize == null || outputSize.length < WINDOW_LENGTH) {
             throw new IllegalArgumentException("Output image size must be [x1, y1, x2, y2].");
         }
