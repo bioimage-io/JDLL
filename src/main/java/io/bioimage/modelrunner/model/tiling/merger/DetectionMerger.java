@@ -32,9 +32,13 @@ import io.bioimage.modelrunner.model.tiling.TileInfo;
 import io.bioimage.modelrunner.model.tiling.TileMaker;
 import io.bioimage.modelrunner.tensor.Tensor;
 import net.imglib2.FinalInterval;
+import net.imglib2.RandomAccess;
 import net.imglib2.RandomAccessibleInterval;
+import net.imglib2.img.Img;
+import net.imglib2.img.array.ArrayImgFactory;
 import net.imglib2.type.NativeType;
 import net.imglib2.type.numeric.RealType;
+import net.imglib2.util.Util;
 import net.imglib2.view.Views;
 
 /**
@@ -47,7 +51,7 @@ import net.imglib2.view.Views;
  * NMS.
  */
 public final class DetectionMerger<T extends RealType<T> & NativeType<T>, R extends RealType<R> & NativeType<R>>
-        extends Merger<Tensor<T>, Detection> {
+        extends Merger<Tensor<T>, Tensor<R>> {
 
     public static final double DEFAULT_NMS_IOU_THRESHOLD = 0.5d;
     public static final double DEFAULT_MIN_OBJECT_IMAGE_AREA_RATIO = 0.001d;
@@ -73,7 +77,8 @@ public final class DetectionMerger<T extends RealType<T> & NativeType<T>, R exte
     private List<long[]> referenceWindows = Collections.emptyList();
     private long[] referenceWindow;
     private List<List<Detection>> detectionsByPatch = Collections.emptyList();
-    private List<Detection> reconstructed = Collections.emptyList();
+    private List<Tensor<R>> reconstructed = Collections.emptyList();
+    private Tensor<R> outputPrototype;
     private boolean reconstructedValid;
 
     public DetectionMerger(final TileMaker tileMaker) {
@@ -140,6 +145,7 @@ public final class DetectionMerger<T extends RealType<T> & NativeType<T>, R exte
             detectionsByPatch.add(null);
         }
         this.reconstructed = Collections.emptyList();
+        this.outputPrototype = null;
         this.reconstructedValid = false;
         this.configured = true;
         this.digested = referenceWindows.isEmpty();
@@ -172,40 +178,26 @@ public final class DetectionMerger<T extends RealType<T> & NativeType<T>, R exte
     }
 
     @Override
-    public void digest(final int patchNumber, final List<Detection> outputs) {
+    public void digest(final int patchNumber, final List<Tensor<R>> outputs) {
         requireConfigured();
         patchNumberValid(patchNumber);
-        detectionsByPatch.set(patchNumber, immutableCopy(outputs));
+        detectionsByPatch.set(patchNumber, decodeBicOutputs(outputs));
         reconstructed = Collections.emptyList();
         reconstructedValid = false;
         digested = allPatchesDigested();
     }
 
-    public void digestTensors(final int patchNumber, final List<Tensor<R>> outputs) {
-        digest(patchNumber, decodeBicOutputs(outputs));
-    }
-
     @Override
-    public List<Detection> getReconstructed() {
+    public List<Tensor<R>> getReconstructed() {
         requireConfigured();
         requireDigested();
         if (reconstructedValid) {
             return reconstructed;
         }
-        final List<Detection> shifted = new ArrayList<Detection>();
-        for (int i = 0; i < detectionsByPatch.size(); i++) {
-            final List<Detection> detections = detectionsByPatch.get(i);
-            if (detections == null || detections.isEmpty()) {
-                continue;
-            }
-            for (Detection detection : detections) {
-                final Detection global = toGlobalDetection(detection, referenceWindows.get(i));
-                if (global != null) {
-                    shifted.add(global);
-                }
-            }
-        }
-        reconstructed = immutableCopy(classAwareNms(shifted, nmsIouThreshold));
+        final List<Detection> mergedDetections = mergeDetections();
+        reconstructed = outputPrototype == null
+                ? Collections.<Tensor<R>>emptyList()
+                : Collections.singletonList(toBicTensor(mergedDetections));
         reconstructedValid = true;
         return reconstructed;
     }
@@ -357,9 +349,77 @@ public final class DetectionMerger<T extends RealType<T> & NativeType<T>, R exte
             if (output == null || !"bic".equals(output.getAxesOrderString())) {
                 continue;
             }
+            if (outputPrototype == null) {
+                outputPrototype = output;
+            }
             detections.addAll(Detection.fromBN6Tensor(output));
         }
         return immutableCopy(detections);
+    }
+
+    private List<Detection> mergeDetections() {
+        final List<Detection> shifted = new ArrayList<Detection>();
+        for (int i = 0; i < detectionsByPatch.size(); i++) {
+            final List<Detection> detections = detectionsByPatch.get(i);
+            if (detections == null || detections.isEmpty()) {
+                continue;
+            }
+            for (Detection detection : detections) {
+                final Detection global = toGlobalDetection(detection, referenceWindows.get(i));
+                if (global != null) {
+                    shifted.add(global);
+                }
+            }
+        }
+        return classAwareNms(shifted, nmsIouThreshold);
+    }
+
+    private Tensor<R> toBicTensor(final List<Detection> detections) {
+        final int batchCount = Math.max(1, maxBatchIndex(detections) + 1);
+        final int instances = Math.max(1, maxInstancesPerBatch(detections, batchCount));
+        final R dtype = Util.getTypeFromInterval(outputPrototype.getData()).copy();
+        final Img<R> data = new ArrayImgFactory<R>(dtype).create(new long[] { batchCount, instances, 6 });
+        final int[] positionByBatch = new int[batchCount];
+        final RandomAccess<R> access = data.randomAccess();
+        for (Detection detection : detections) {
+            final int batch = detection.getBatchIndex();
+            final int instance = positionByBatch[batch]++;
+            setDetectionValue(access, batch, instance, 0, detection.getX1());
+            setDetectionValue(access, batch, instance, 1, detection.getY1());
+            setDetectionValue(access, batch, instance, 2, detection.getX2());
+            setDetectionValue(access, batch, instance, 3, detection.getY2());
+            setDetectionValue(access, batch, instance, 4, detection.getConfidence());
+            setDetectionValue(access, batch, instance, 5, detection.getClassId());
+        }
+        return Tensor.build(outputPrototype.getName(), "bic", data);
+    }
+
+    private static <R extends RealType<R> & NativeType<R>> void setDetectionValue(final RandomAccess<R> access,
+            final int batch, final int instance, final int column, final double value) {
+        access.setPosition(batch, 0);
+        access.setPosition(instance, 1);
+        access.setPosition(column, 2);
+        access.get().setReal(value);
+    }
+
+    private static int maxBatchIndex(final List<Detection> detections) {
+        int maxBatchIndex = 0;
+        for (Detection detection : detections) {
+            maxBatchIndex = Math.max(maxBatchIndex, detection.getBatchIndex());
+        }
+        return maxBatchIndex;
+    }
+
+    private static int maxInstancesPerBatch(final List<Detection> detections, final int batchCount) {
+        final int[] counts = new int[batchCount];
+        for (Detection detection : detections) {
+            counts[detection.getBatchIndex()]++;
+        }
+        int max = 0;
+        for (int count : counts) {
+            max = Math.max(max, count);
+        }
+        return max;
     }
 
     private Detection toGlobalDetection(final Detection detection, final long[] window) {

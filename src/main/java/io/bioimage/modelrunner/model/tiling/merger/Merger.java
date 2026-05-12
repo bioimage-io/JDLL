@@ -23,18 +23,19 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+import io.bioimage.modelrunner.tensor.Tensor;
+
 /**
  * Base class for merging outputs produced by tiled inference.
  * <p>
- * The base class deliberately does not use ImgLib2 generic bounds. A merger can
- * prepare input patches and reconstruct detections, dense tensors,
- * classifications or any future semantic output. Subclasses decide the model
- * input type {@code I} and reconstructed output type {@code O}.
+ * The base class is tensor-based so all mergers can be used by the same model
+ * inference loop. Subclasses decide how patch outputs are combined inside the
+ * returned tensors.
  *
  * @param <I> model input type handled by this merger
  * @param <O> model output type reconstructed by this merger
  */
-public abstract class Merger<I, O> {
+public abstract class Merger<I extends Tensor<?>, O extends Tensor<?>> {
 
     protected static final int X1 = 0;
     protected static final int Y1 = 1;
