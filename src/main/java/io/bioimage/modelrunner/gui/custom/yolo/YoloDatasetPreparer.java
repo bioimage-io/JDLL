@@ -115,7 +115,7 @@ final class YoloDatasetPreparer {
         }
         if (trainSplit != null && !trainSplit.samples.isEmpty()) {
             File generatedYaml = createGeneratedYoloDataset(input.getName(), modelName, modelsDir,
-                    inferNames(trainSplit.samples), trainSplit.samples, Collections.<YoloSample>emptyList(),
+                    inferNamesFromLabelFiles(trainSplit.samples), trainSplit.samples, Collections.<YoloSample>emptyList(),
                     true, logConsumer);
             log(logConsumer, "Generated train/validation YOLO dataset: " + generatedYaml.getAbsolutePath());
             return generatedYaml;
@@ -171,12 +171,12 @@ final class YoloDatasetPreparer {
         File yamlDir = yaml.getParentFile() == null ? new File(".") : yaml.getParentFile();
         File root = yamlDir;
         String pathValue = keys.get("path");
-        if (pathValue != null && !pathValue.trim().isEmpty()) {
+        if (pathValue != null && !pathValue.trim().isEmpty() && resolvePath(yamlDir, pathValue).exists()) {
             root = resolvePath(yamlDir, pathValue);
         }
-        SplitData train = collectYoloSplit("train", resolvePath(root, keys.get("train")));
+        SplitData train = collectYoloSplit("train", resolvePath(root, keys.get("train")), false);
         String valValue = keys.containsKey("val") ? keys.get("val") : keys.get("validation");
-        SplitData val = collectYoloSplit("val", resolvePath(root, valValue));
+        SplitData val = collectYoloSplit("val", resolvePath(root, valValue), false);
         return new YamlDataset(yaml, keys, train, val, parseNames(keys.get("names")));
     }
 
@@ -263,21 +263,21 @@ final class YoloDatasetPreparer {
         return file.isAbsolute() ? file : new File(base, clean);
     }
 
-    private static SplitData collectYoloSplit(String name, File splitPath) throws IOException {
+    private static SplitData collectYoloSplit(String name, File splitPath, boolean parseBoxes) throws IOException {
         if (splitPath == null || !splitPath.exists()) {
             return null;
         }
         if (splitPath.isFile()) {
-            return collectYoloSplitFromList(name, splitPath);
+            return collectYoloSplitFromList(name, splitPath, parseBoxes);
         }
         SplitLayout layout = inferSplitLayout(splitPath);
         if (layout == null) {
             return null;
         }
-        return collectYoloSplit(name, layout.imageRoot, layout.labelRoot);
+        return collectYoloSplit(name, layout.imageRoot, layout.labelRoot, parseBoxes);
     }
 
-    private static SplitData collectYoloSplitFromList(String name, File listFile) throws IOException {
+    private static SplitData collectYoloSplitFromList(String name, File listFile, boolean parseBoxes) throws IOException {
         List<YoloSample> samples = new ArrayList<YoloSample>();
         File base = listFile.getParentFile() == null ? new File(".") : listFile.getParentFile();
         try (BufferedReader reader = Files.newBufferedReader(listFile.toPath(), StandardCharsets.UTF_8)) {
@@ -290,7 +290,7 @@ final class YoloDatasetPreparer {
                 File image = resolvePath(base, clean);
                 File label = labelForImagePath(image);
                 if (image.isFile() && label != null && label.isFile()) {
-                    YoloSample sample = readYoloSample(image, label);
+                    YoloSample sample = readYoloSample(image, label, parseBoxes);
                     if (sample != null) {
                         samples.add(sample);
                     }
@@ -359,7 +359,7 @@ final class YoloDatasetPreparer {
 
     private static SplitData findYoloSplit(File root, String splitName) throws IOException {
         for (SplitLayout layout : candidateSplitLayouts(root, splitName)) {
-            SplitData split = collectYoloSplit(splitName, layout.imageRoot, layout.labelRoot);
+            SplitData split = collectYoloSplit(splitName, layout.imageRoot, layout.labelRoot, false);
             if (split != null && !split.samples.isEmpty()) {
                 return split;
             }
@@ -376,7 +376,8 @@ final class YoloDatasetPreparer {
         return layouts;
     }
 
-    private static SplitData collectYoloSplit(String name, File imageRoot, File labelRoot) throws IOException {
+    private static SplitData collectYoloSplit(String name, File imageRoot, File labelRoot, boolean parseBoxes)
+            throws IOException {
         if (imageRoot == null || labelRoot == null || !imageRoot.isDirectory() || !labelRoot.isDirectory()) {
             return null;
         }
@@ -388,7 +389,7 @@ final class YoloDatasetPreparer {
             if (!label.isFile()) {
                 continue;
             }
-            YoloSample sample = readYoloSample(image, label);
+            YoloSample sample = readYoloSample(image, label, parseBoxes);
             if (sample != null) {
                 samples.add(sample);
             }
@@ -396,7 +397,10 @@ final class YoloDatasetPreparer {
         return samples.isEmpty() ? null : new SplitData(name, imageRoot, labelRoot, samples);
     }
 
-    private static YoloSample readYoloSample(File image, File label) throws IOException {
+    private static YoloSample readYoloSample(File image, File label, boolean parseBoxes) throws IOException {
+        if (!parseBoxes) {
+            return new YoloSample(image, label, -1, -1, Collections.<Box>emptyList());
+        }
         ImageSize size = readImageSize(image);
         if (size == null) {
             return null;
@@ -440,7 +444,7 @@ final class YoloDatasetPreparer {
 
     private static File writeFolderYaml(File root, SplitData train, SplitData val) throws IOException {
         File yaml = uniqueYamlFile(root);
-        List<String> names = inferNames(train.samples, val.samples);
+        List<String> names = inferNamesFromLabelFiles(train.samples, val.samples);
         writeYaml(yaml, root, pathRelativeTo(root, train.imageRoot), pathRelativeTo(root, val.imageRoot), names);
         return yaml;
     }
@@ -462,11 +466,58 @@ final class YoloDatasetPreparer {
             List<String> names, List<YoloSample> trainSamples, List<YoloSample> valSamples,
             boolean splitTrainSamples, Consumer<String> logConsumer) throws IOException {
         File root = createUniqueGeneratedRoot(sourceName, modelName, modelsDir);
-        List<GeneratedSample> trainGenerated = toGeneratedSamples(trainSamples);
-        List<GeneratedSample> valGenerated = toGeneratedSamples(valSamples);
-        writeGeneratedDataset(root, names.isEmpty() ? inferNames(trainSamples, valSamples) : names,
-                trainGenerated, valGenerated, splitTrainSamples, logConsumer);
+        writeLinkedYoloDataset(root,
+                names == null || names.isEmpty() ? inferNamesFromLabelFiles(trainSamples, valSamples) : names,
+                trainSamples, valSamples, splitTrainSamples, logConsumer);
         return new File(root, GENERATED_YAML_NAME);
+    }
+
+    private static void writeLinkedYoloDataset(File root, List<String> names,
+            List<YoloSample> trainSamples, List<YoloSample> valSamples,
+            boolean splitTrainSamples, Consumer<String> logConsumer) throws IOException {
+        if (splitTrainSamples) {
+            List<YoloSample> all = new ArrayList<YoloSample>(trainSamples);
+            Collections.shuffle(all, new Random(SPLIT_SEED));
+            int trainCount = splitIndex(all.size());
+            trainSamples = new ArrayList<YoloSample>(all.subList(0, trainCount));
+            valSamples = new ArrayList<YoloSample>(all.subList(trainCount, all.size()));
+        }
+        if (trainSamples.isEmpty() || valSamples.isEmpty()) {
+            throw new IllegalArgumentException("Could not create non-empty train and validation splits.");
+        }
+
+        File trainImages = new File(root, "images/train");
+        File valImages = new File(root, "images/val");
+        File trainLabels = new File(root, "labels/train");
+        File valLabels = new File(root, "labels/val");
+        Files.createDirectories(trainImages.toPath());
+        Files.createDirectories(valImages.toPath());
+        Files.createDirectories(trainLabels.toPath());
+        Files.createDirectories(valLabels.toPath());
+
+        sortYoloSamples(trainSamples);
+        sortYoloSamples(valSamples);
+        writeLinkedSamples(trainSamples, trainImages, trainLabels);
+        writeLinkedSamples(valSamples, valImages, valLabels);
+        writeYaml(new File(root, GENERATED_YAML_NAME), root, "images/train", "images/val", names);
+        log(logConsumer, "Prepared " + trainSamples.size() + " training and " + valSamples.size()
+                + " validation YOLO samples.");
+    }
+
+    private static void sortYoloSamples(List<YoloSample> samples) {
+        Collections.sort(samples, Comparator.comparing(sample -> sample.image.getAbsolutePath()));
+    }
+
+    private static void writeLinkedSamples(List<YoloSample> samples, File imageDir, File labelDir)
+            throws IOException {
+        int index = 0;
+        for (YoloSample sample : samples) {
+            String stem = safeFileName(removeExtension(sample.image.getName())) + "_" + String.format("%05d", index++);
+            File imageOut = new File(imageDir, stem + extensionOrDefault(sample.image, ".png"));
+            File labelOut = new File(labelDir, stem + ".txt");
+            linkOrCopy(sample.image.toPath(), imageOut.toPath());
+            linkOrCopy(sample.label.toPath(), labelOut.toPath());
+        }
     }
 
     private static File createGeneratedMaskDataset(String sourceName, String modelName, String modelsDir,
@@ -888,16 +939,14 @@ final class YoloDatasetPreparer {
     }
 
     @SafeVarargs
-    private static List<String> inferNames(List<YoloSample>... sampleLists) {
+    private static List<String> inferNamesFromLabelFiles(List<YoloSample>... sampleLists) {
         int maxClass = -1;
         for (List<YoloSample> samples : sampleLists) {
             if (samples == null) {
                 continue;
             }
             for (YoloSample sample : samples) {
-                for (Box box : sample.boxes) {
-                    maxClass = Math.max(maxClass, box.classId);
-                }
+                maxClass = Math.max(maxClass, maxClassId(sample.label));
             }
         }
         if (maxClass < 0) {
@@ -908,6 +957,34 @@ final class YoloDatasetPreparer {
             names.add("class_" + i);
         }
         return names;
+    }
+
+    private static int maxClassId(File labelFile) {
+        if (labelFile == null || !labelFile.isFile()) {
+            return -1;
+        }
+        int maxClass = -1;
+        try (BufferedReader reader = Files.newBufferedReader(labelFile.toPath(), StandardCharsets.UTF_8)) {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                String clean = line.trim();
+                if (clean.isEmpty() || clean.startsWith("#")) {
+                    continue;
+                }
+                String[] parts = clean.split("\\s+");
+                if (parts.length == 0) {
+                    continue;
+                }
+                try {
+                    maxClass = Math.max(maxClass, Integer.parseInt(parts[0]));
+                } catch (NumberFormatException e) {
+                    // Ignore malformed label rows.
+                }
+            }
+        } catch (IOException e) {
+            return maxClass;
+        }
+        return maxClass;
     }
 
     private static String pathRelativeTo(File root, File child) {
@@ -1001,7 +1078,7 @@ final class YoloDatasetPreparer {
         }
 
         private List<String> namesOrInferred() {
-            return names == null || names.isEmpty() ? inferNames(train.samples) : names;
+            return names == null || names.isEmpty() ? inferNamesFromLabelFiles(train.samples) : names;
         }
 
         private String sourceName() {
