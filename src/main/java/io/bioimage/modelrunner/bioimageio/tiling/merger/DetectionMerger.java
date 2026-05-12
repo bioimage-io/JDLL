@@ -17,7 +17,7 @@
  * limitations under the License.
  * #L%
  */
-package io.bioimage.modelrunner.bioimageio.tiling;
+package io.bioimage.modelrunner.bioimageio.tiling.merger;
 
 import java.util.ArrayList;
 import java.util.Collections;

@@ -94,6 +94,12 @@ public class DLModelPytorchProtected extends BaseModel {
      * List containing the desired tiling strategy for each of the output tensors.
      */
     protected List<TileInfo> outputTiles;
+    
+    /**
+     * object that defines the way tiles are arranged in the image, if necessary. By default, tehre are no tiles,
+     * specific tiling configurations should be defined in classes that inherit from here
+     */
+    protected TileMaker tileMaker;
 
     /**
      * Whether to do tiling or not when doing inference.
@@ -679,18 +685,35 @@ public class DLModelPytorchProtected extends BaseModel {
         return outputs;
     }
     
+    protected void getTileMaker() {
+    	this.tileMaker = null;
+    }
+    
+    protected <T extends RealType<T> & NativeType<T>>
+    void createOutputMerger(final List<Tensor<T>> inputs) {
+    }
+    
+    protected  <T extends RealType<T> & NativeType<T>>
+    void addOutput(List<Tensor<T>>  outputs, long[] patchPos) {
+    	
+    }
+    
+    protected <T extends RealType<T> & NativeType<T>> List<Tensor<T>> getMergedOutputs() {
+    	return null;
+    }
+    
     private <T extends RealType<T> & NativeType<T>, R extends RealType<R> & NativeType<R>>
     List<Tensor<R>> backboneSingleInference(final List<Tensor<T>> inputs) throws RunModelException {
     	
-    	TileMaker maker = getTileMaker();
+    	getTileMaker();
     	
     	createOutputMerger(inputs);
     	
     	List<Tensor<T>> tiledInputs = new ArrayList<Tensor<T>>();
-    	for (int i = 0; i < maker.getNumberOfTiles(); i ++) {
-    		tiledInputs.add(maker.getNthTileInput(inputs.get(i), i));
+    	for (int i = 0; i < tileMaker.getNumberOfTiles(); i ++) {
+    		tiledInputs.add(tileMaker.getNthTileInput(inputs.get(i), i));
     		List<Tensor<R>> tiledOutputs = backboneSingleInferenceTile(tiledInputs);
-    		addOutput(tiledOutputs, maker.getOutputTileSize(this.outputTiles.get(i).getName()));
+    		addOutput(tiledOutputs, tileMaker.getOutputTileSize(this.outputTiles.get(i).getName()));
     	}
     	return getMergedOutputs();
     }
