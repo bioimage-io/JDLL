@@ -32,11 +32,11 @@ import net.imglib2.type.numeric.RealType;
  * A no-tile inference run should produce exactly one output tensor for the
  * complete input. This merger returns that tensor unchanged.
  */
-public final class NoTileMerger<T extends RealType<T> & NativeType<T>>
-		extends Merger<Tensor<T>, Tensor<T>> {
+public final class NoTileMerger<T extends RealType<T> & NativeType<T>, R extends RealType<R> & NativeType<R>>
+		extends Merger<Tensor<T>, Tensor<R>> {
 
 	private List<Tensor<T>> inputs = Collections.emptyList();
-	private List<Tensor<T>> reconstructed = Collections.emptyList();
+	private List<Tensor<R>> reconstructed = Collections.emptyList();
 
 	public NoTileMerger() {
 		super();
@@ -62,7 +62,7 @@ public final class NoTileMerger<T extends RealType<T> & NativeType<T>>
 	}
 
 	@Override
-	public void digest(final int patchNumber, final List<Tensor<T>> outputs) {
+	public void digest(final int patchNumber, final List<Tensor<R>> outputs) {
 		requireConfigured();
 		patchNumberValid(patchNumber);
 		reconstructed = outputs;
@@ -70,7 +70,7 @@ public final class NoTileMerger<T extends RealType<T> & NativeType<T>>
 	}
 
 	@Override
-	public List<Tensor<T>> getReconstructed() {
+	public List<Tensor<R>> getReconstructed() {
 		requireConfigured();
 		requireDigested();
 		return reconstructed;

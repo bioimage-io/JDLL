@@ -121,7 +121,7 @@ public abstract class Merger<I, O> {
 
 	protected void patchNumberValid(final int patchNumber) {
 		if (patchNumber < 0 || patchNumber >= this.getNPatches()) {
-			throw new IllegalArgumentException(String.format("Patch should be >=0 and <%s", "" + this.getNPatches()));
+			throw new IllegalArgumentException("Patch should be >=0 and <" + this.getNPatches());
 		}
 	}
 

@@ -39,6 +39,8 @@ import io.bioimage.modelrunner.model.BaseModel;
 import io.bioimage.modelrunner.model.java.DLModelJava.TilingConsumer;
 import io.bioimage.modelrunner.model.python.envs.PixiEnvironmentManager;
 import io.bioimage.modelrunner.model.python.envs.PixiEnvironmentSpec;
+import io.bioimage.modelrunner.model.tiling.merger.Merger;
+import io.bioimage.modelrunner.model.tiling.merger.NoTileMerger;
 import io.bioimage.modelrunner.system.GpuCompatibility;
 import io.bioimage.modelrunner.system.PlatformDetection;
 import io.bioimage.modelrunner.tensor.Tensor;
@@ -94,17 +96,6 @@ public class DLModelPytorchProtected extends BaseModel {
      * List containing the desired tiling strategy for each of the output tensors.
      */
     protected List<TileInfo> outputTiles;
-    
-    /**
-     * object that defines the way tiles are arranged in the image, if necessary. By default, tehre are no tiles,
-     * specific tiling configurations should be defined in classes that inherit from here
-     */
-    protected TileMaker tileMaker;
-
-    /**
-     * Whether to do tiling or not when doing inference.
-     */
-    protected boolean tiling = false;
 
     /**
      * Consumer used to inform the current tile being processed and in how many
@@ -345,37 +336,6 @@ public class DLModelPytorchProtected extends BaseModel {
      */
     public String getSelectedEnvironment() {
         return environmentSpec.getSelectedEnvironment();
-    }
-
-    /**
-     * @return whether the image is going to be processed in tiles or not
-     */
-    public boolean isTiling() {
-        return this.tiling;
-    }
-
-    /**
-     * Sets whether images should be processed in tiles or in one pass.
-     *
-     * @param doTiling
-     *     whether to do tiling on inference
-     */
-    public void setTiling(final boolean doTiling) {
-        this.tiling = doTiling;
-    }
-
-    /**
-     * Sets the wanted tile specifications for each input and output tensor.
-     *
-     * @param inputTiles
-     *     the specifications of how each input image can be tiled
-     * @param outputTiles
-     *     the specifications of how each output image will be tiled
-     */
-    public void setTileInfo(final List<TileInfo> inputTiles, final List<TileInfo> outputTiles) {
-        this.inputTiles = inputTiles;
-        this.outputTiles = outputTiles;
-        this.tiling = true;
     }
 
     /**
@@ -685,37 +645,22 @@ public class DLModelPytorchProtected extends BaseModel {
         return outputs;
     }
     
-    protected void getTileMaker() {
-    	this.tileMaker = null;
-    }
-    
-    protected <T extends RealType<T> & NativeType<T>>
-    void createOutputMerger(final List<Tensor<T>> inputs) {
-    }
-    
-    protected  <T extends RealType<T> & NativeType<T>>
-    void addOutput(List<Tensor<T>>  outputs, long[] patchPos) {
-    	
-    }
-    
-    protected <T extends RealType<T> & NativeType<T>> List<Tensor<T>> getMergedOutputs() {
-    	return null;
+    protected <T extends RealType<T> & NativeType<T>, R extends RealType<R> & NativeType<R>>
+    Merger<Tensor<T>, Tensor<R>>  getTileMaker(final List<Tensor<T>> inputs) {
+    	Merger<Tensor<T>, Tensor<R>> merger = new NoTileMerger();
+    	return merger;
     }
     
     private <T extends RealType<T> & NativeType<T>, R extends RealType<R> & NativeType<R>>
     List<Tensor<R>> backboneSingleInference(final List<Tensor<T>> inputs) throws RunModelException {
     	
-    	getTileMaker();
+    	Merger<Tensor<T>, Tensor<R>> merger = getTileMaker(inputs);
     	
-    	createOutputMerger(inputs);
-    	
-    	List<Tensor<T>> tiledInputs = new ArrayList<Tensor<T>>();
-    	for (int i = 0; i < tileMaker.getNumberOfTiles(); i ++) {
-    		tiledInputs.add(tileMaker.getNthTileInput(inputs.get(i), i));
-    		List<Tensor<R>> tiledOutputs = backboneSingleInferenceTile(tiledInputs);
-    		addOutput(tiledOutputs, tileMaker.getOutputTileSize(this.outputTiles.get(i).getName()));
+    	for (int i = 0; i < merger.getNPatches(); i ++) {
+    		List<Tensor<R>> tiledOutputs = backboneSingleInferenceTile(merger.get(i));
+    		merger.digest(i, tiledOutputs);
     	}
-    	return getMergedOutputs();
+    	return merger.getReconstructed();
     }
     
     private <T extends RealType<T> & NativeType<T>, R extends RealType<R> & NativeType<R>>
@@ -814,18 +759,6 @@ public class DLModelPytorchProtected extends BaseModel {
     List<Tensor<T>> run(final List<Tensor<R>> inputTensors) throws RunModelException {
         if (!this.isLoaded()) {
             throw new RunModelException("Please first load the model.");
-        }
-        if (!this.tiling) {
-            throw new UnsupportedOperationException("Cannot run a DLModel if no information about the outputs is provided."
-                    + " Either try with 'run( List< Tensor < T > > inTensors, List< Tensor < R > > outTensors )'"
-                    + " or set the tiling information with 'setTileInfo(List<TileInfo> inputTiles, List<TileInfo> outputTiles)'."
-                    + " Another option is to run simple inference over an ImgLib2 RandomAccessibleInterval with"
-                    + " 'inference(List<RandomAccessibleInteral<T>> input)'");
-        }
-        if (this.isTiling() && (inputTiles != null || this.inputTiles.size() == 0)) {
-            throw new UnsupportedOperationException("Tiling is set to 'true' but the input tiles are not well defined");
-        } else if (this.isTiling() && (this.outputTiles == null || this.outputTiles.size() == 0)) {
-            throw new UnsupportedOperationException("Tiling is set to 'true' but the output tiles are not well defined");
         }
 
         final TileMaker maker = TileMaker.build(inputTiles, outputTiles);
