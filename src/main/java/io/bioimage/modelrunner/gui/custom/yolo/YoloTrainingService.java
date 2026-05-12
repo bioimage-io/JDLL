@@ -45,6 +45,8 @@ public class YoloTrainingService {
             Consumer<String> logConsumer)
             throws IOException, ExecutionException, InterruptedException, BuildException, TaskException {
         validate(config);
+        File datasetYaml = YoloDatasetPreparer.prepare(config.getDatasetYamlPath(), config.getModelName(),
+                config.getModelsDir(), logConsumer);
         if (!installer.isEnvironmentInstalled()) {
             installer.installEnvironment(logConsumer);
         }
@@ -52,7 +54,7 @@ public class YoloTrainingService {
             installer.installModelWeights(config.getBaseModelPath(), logConsumer);
         }
         Yolo.train(config.getEpochs(), config.getBaseModelPath(), config.getScratchArchitecture(),
-                config.getDatasetYamlPath(),
+                datasetYaml.getAbsolutePath(),
                 config.getOutputWeightsPath(), config.getImageSize(), config.getPreviewEpochPeriod(),
                 progressConsumer, previewConsumer, logConsumer);
     }
@@ -69,16 +71,11 @@ public class YoloTrainingService {
             throw new IllegalArgumentException("The YOLO model name cannot contain path separators or '..'.");
         }
         if (config.getDatasetYamlPath() == null || config.getDatasetYamlPath().trim().isEmpty()) {
-            throw new IllegalArgumentException("Please provide the YOLO dataset data.yaml path.");
+            throw new IllegalArgumentException("Please provide the YOLO training dataset path.");
         }
-        File datasetYaml = new File(config.getDatasetYamlPath());
-        if (!datasetYaml.isFile()) {
-            throw new IllegalArgumentException("The training dataset must point to an existing YOLO data.yaml file: "
-                    + config.getDatasetYamlPath());
-        }
-        String yamlName = datasetYaml.getName().toLowerCase();
-        if (!yamlName.endsWith(".yaml") && !yamlName.endsWith(".yml")) {
-            throw new IllegalArgumentException("The training dataset must be a YOLO YAML file: "
+        File dataset = new File(config.getDatasetYamlPath());
+        if (!dataset.exists()) {
+            throw new IllegalArgumentException("The training dataset path does not exist: "
                     + config.getDatasetYamlPath());
         }
         if (config.getEpochs() <= 0) {

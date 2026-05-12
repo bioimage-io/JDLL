@@ -33,12 +33,13 @@ public final class YoloTrainingConfig {
     private final boolean fineTune;
     private final String baseModelPath;
     private final String scratchArchitecture;
+    private final String modelsDir;
     private final String outputWeightsPath;
     private final int previewEpochPeriod;
 
     public YoloTrainingConfig(String modelName, String datasetYamlPath, int epochs, int imageSize,
             boolean fineTune, String baseModelPath, String scratchArchitecture,
-            String outputWeightsPath, int previewEpochPeriod) {
+            String modelsDir, String outputWeightsPath, int previewEpochPeriod) {
         this.modelName = modelName;
         this.datasetYamlPath = datasetYamlPath;
         this.epochs = epochs;
@@ -46,6 +47,7 @@ public final class YoloTrainingConfig {
         this.fineTune = fineTune;
         this.baseModelPath = baseModelPath;
         this.scratchArchitecture = scratchArchitecture;
+        this.modelsDir = modelsDir;
         this.outputWeightsPath = outputWeightsPath;
         this.previewEpochPeriod = previewEpochPeriod;
     }
@@ -78,6 +80,10 @@ public final class YoloTrainingConfig {
         return scratchArchitecture;
     }
 
+    public String getModelsDir() {
+        return modelsDir;
+    }
+
     public String getOutputWeightsPath() {
         return outputWeightsPath;
     }
@@ -95,7 +101,7 @@ public final class YoloTrainingConfig {
         File output = new File(yoloDir, normalizedName + YoloModelRegistry.YOLO_WEIGHTS_EXTENSION);
         return new YoloTrainingConfig(normalizedName, datasetPath, epochs, DEFAULT_IMAGE_SIZE,
                 fineTune, fineTune ? baseModelPath : null, fineTune ? null : scratchArchitecture,
-                output.getAbsolutePath(), DEFAULT_PREVIEW_EPOCH_PERIOD);
+                modelsDir, output.getAbsolutePath(), DEFAULT_PREVIEW_EPOCH_PERIOD);
     }
 
     private static String normalizeModelName(String modelName) {

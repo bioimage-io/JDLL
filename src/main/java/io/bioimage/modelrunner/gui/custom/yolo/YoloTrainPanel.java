@@ -24,14 +24,10 @@ import java.awt.Color;
 import java.awt.FontMetrics;
 import java.awt.datatransfer.DataFlavor;
 import java.io.File;
-import java.io.IOException;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
-import java.util.stream.Stream;
 
 import javax.swing.ButtonGroup;
 import javax.swing.DefaultComboBoxModel;
@@ -204,8 +200,7 @@ public class YoloTrainPanel extends JPanel {
 
     private void browseDatasetYaml() {
         JFileChooser chooser = new JFileChooser();
-        chooser.setFileSelectionMode(JFileChooser.FILES_ONLY);
-        chooser.setFileFilter(new FileNameExtensionFilter("YOLO dataset YAML (*.yaml, *.yml)", "yaml", "yml"));
+        chooser.setFileSelectionMode(JFileChooser.FILES_AND_DIRECTORIES);
         if (chooser.showOpenDialog(this) != JFileChooser.APPROVE_OPTION) {
             return;
         }
@@ -354,13 +349,13 @@ public class YoloTrainPanel extends JPanel {
             valid = false;
         }
 
-        File datasetYaml = resolveDatasetYaml(datasetField.getText());
-        if (datasetYaml == null || !isYoloDatasetYaml(datasetYaml)) {
+        File datasetPath = datasetField.getText() == null ? null : new File(datasetField.getText().trim());
+        if (datasetPath == null || !datasetPath.exists()) {
             datasetField.setText("");
-            datasetField.setErrorPlaceholder("Please select a valid YOLO dataset");
+            datasetField.setErrorPlaceholder("Please select an existing dataset path");
             valid = false;
         } else {
-            datasetField.setText(datasetYaml.getAbsolutePath());
+            datasetField.setText(datasetPath.getAbsolutePath());
         }
 
         if (!isValidEpochs()) {
@@ -437,63 +432,6 @@ public class YoloTrainPanel extends JPanel {
 
     private boolean isValidScratchArchitecture() {
         return YoloModelRegistry.isKnownScratchArchitecture(getSelectedScratchArchitectureValue());
-    }
-
-    private static File resolveDatasetYaml(String datasetPath) {
-        if (datasetPath == null || datasetPath.trim().isEmpty()) {
-            return null;
-        }
-        File path = new File(datasetPath.trim());
-        if (path.isFile() && isYamlFile(path)) {
-            return path;
-        }
-        if (!path.isDirectory()) {
-            return null;
-        }
-        File directYaml = firstExisting(path, "data.yaml", "data.yml", "dataset.yaml", "dataset.yml");
-        if (directYaml != null) {
-            return directYaml;
-        }
-        try (Stream<java.nio.file.Path> stream = Files.walk(path.toPath(), 3)) {
-            return stream
-                    .filter(p -> Files.isRegularFile(p) && isYamlFile(p.toFile()))
-                    .map(java.nio.file.Path::toFile)
-                    .filter(YoloTrainPanel::isYoloDatasetYaml)
-                    .findFirst()
-                    .orElse(null);
-        } catch (IOException e) {
-            return null;
-        }
-    }
-
-    private static File firstExisting(File dir, String... names) {
-        for (String name : names) {
-            File candidate = new File(dir, name);
-            if (candidate.isFile()) {
-                return candidate;
-            }
-        }
-        return null;
-    }
-
-    private static boolean isYamlFile(File file) {
-        String name = file.getName().toLowerCase();
-        return name.endsWith(".yaml") || name.endsWith(".yml");
-    }
-
-    private static boolean isYoloDatasetYaml(File file) {
-        try {
-            String content = new String(Files.readAllBytes(file.toPath()), StandardCharsets.UTF_8).toLowerCase();
-            return hasYamlKey(content, "train")
-                    && (hasYamlKey(content, "val") || hasYamlKey(content, "validation"))
-                    && hasYamlKey(content, "names");
-        } catch (IOException e) {
-            return false;
-        }
-    }
-
-    private static boolean hasYamlKey(String content, String key) {
-        return Pattern.compile("(?m)^\\s*" + Pattern.quote(key) + "\\s*:").matcher(content).find();
     }
 
     private static class PathDropHandler extends TransferHandler {
