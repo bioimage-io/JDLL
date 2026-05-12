@@ -201,7 +201,7 @@ public class YOLOPluginUI extends YoloGUI implements ActionListener {
     		return;
     	}
         List<Rectangle2D.Double> boxes = inferencePanel.getImageDisplayPanel().getBoxes();
-        inferenceService.manageTiling(boxes);
+        inferenceService.setObjectSize(boxes);
     	Consumer<String> logConsumer = str -> SwingUtilities.invokeLater(() ->
     			YOLOPluginUI.this.inferencePanel.getLogPanel().appendHtml(str));
     	consumer.displayDetections(inferenceService.run(modelPath, rai, logConsumer));

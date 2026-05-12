@@ -19,6 +19,7 @@
  */
 package io.bioimage.modelrunner.model.special.yolo;
 
+import java.awt.Rectangle;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -47,6 +48,9 @@ import io.bioimage.modelrunner.model.python.DLModelPytorchProtected;
 import io.bioimage.modelrunner.model.python.methods.ConvertDims;
 import io.bioimage.modelrunner.model.python.methods.LetterboxPreprocessing;
 import io.bioimage.modelrunner.model.python.methods.UndoLetterboxProcessingBoundingBoxes;
+import io.bioimage.modelrunner.model.tiling.merger.DetectionMerger;
+import io.bioimage.modelrunner.model.tiling.merger.Merger;
+import io.bioimage.modelrunner.model.tiling.merger.NoTileMerger;
 import io.bioimage.modelrunner.tensor.Tensor;
 import io.bioimage.modelrunner.tensor.shm.SharedMemoryArray;
 import net.imglib2.FinalInterval;
@@ -67,6 +71,8 @@ import net.imglib2.view.Views;
  *@author Carlos Garcia
  */
 public class Yolo extends DLModelPytorchProtected {
+	
+	private Rectangle objectSize;
 		
 							
 	private static final Map<String, Long> PRETRAINED_YOLO_MODELS;
@@ -590,6 +596,17 @@ public class Yolo extends DLModelPytorchProtected {
         Yolo cellpose = new Yolo(weightsPath);
 		return cellpose;
 	}
+
+	public void setObjectSize(Rectangle size) {
+		this.objectSize = size;
+	}
+
+    @Override
+    protected <T extends RealType<T> & NativeType<T>, R extends RealType<R> & NativeType<R>>
+    Merger<Tensor<T>, Tensor<R>> getTileMaker(final List<Tensor<T>> inputs) {
+        Merger<Tensor<T>, Tensor<R>> merger = new DetectionMerger<T, R>(objectSize);
+        return merger;
+    }
 	
 	
 	/**

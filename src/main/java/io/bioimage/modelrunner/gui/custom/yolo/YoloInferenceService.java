@@ -19,6 +19,8 @@
  */
 package io.bioimage.modelrunner.gui.custom.yolo;
 
+import java.awt.Rectangle;
+import java.awt.geom.Rectangle2D.Double;
 import java.io.IOException;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
@@ -112,4 +114,11 @@ public class YoloInferenceService {
             throw new IllegalArgumentException("Unsupported dimensions for YOLO model.");
         }
     }
+
+	public void setObjectSize(List<Rectangle.Double> boxes) {
+		if (boxes != null && boxes.size() > 0)
+			this.model.setObjectSize(boxes.get(0).getBounds());
+		else
+			this.model.setObjectSize(null);
+	}
 }

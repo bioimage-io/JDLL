@@ -29,7 +29,7 @@ import java.util.List;
  * The base class deliberately does not use ImgLib2 generic bounds. A merger can
  * prepare input patches and reconstruct detections, dense tensors,
  * classifications or any future semantic output. Subclasses decide the model
- * input type {@code I} and output type {@code O}.
+ * input type {@code I} and reconstructed output type {@code O}.
  *
  * @param <I> model input type handled by this merger
  * @param <O> model output type reconstructed by this merger
@@ -45,14 +45,8 @@ public abstract class Merger<I, O> {
     
     protected boolean configured;
     protected boolean digested;
-    private final long[] outputWindow;
 
     protected Merger() {
-        this.outputWindow = null;
-    }
-
-    protected Merger(final long[] outputWindow) {
-        this.outputWindow = copyWindow(outputWindow, "Output window");
     }
 
     /**
@@ -124,39 +118,6 @@ public abstract class Merger<I, O> {
 			throw new IllegalArgumentException("Patch should be >=0 and <" + this.getNPatches());
 		}
 	}
-
-    protected final long[] getOutputWindow() {
-        requireOutputWindow();
-        return outputWindow.clone();
-    }
-
-    protected final long outputWidth() {
-        requireOutputWindow();
-        return outputWindow[X2] - outputWindow[X1];
-    }
-
-    protected final long outputHeight() {
-        requireOutputWindow();
-        return outputWindow[Y2] - outputWindow[Y1];
-    }
-
-    protected final long tileOffsetX(final long[] tileWindow) {
-        requireOutputWindow();
-        validateWindow(tileWindow, "Tile window");
-        return tileWindow[X1] - outputWindow[X1];
-    }
-
-    protected final long tileOffsetY(final long[] tileWindow) {
-        requireOutputWindow();
-        validateWindow(tileWindow, "Tile window");
-        return tileWindow[Y1] - outputWindow[Y1];
-    }
-
-    private void requireOutputWindow() {
-        if (outputWindow == null) {
-            throw new IllegalStateException(getClass().getSimpleName() + " was not configured with an output window.");
-        }
-    }
 
     protected static long[] copyWindow(final long[] window, final String name) {
         validateWindow(window, name);

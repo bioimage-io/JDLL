@@ -39,6 +39,7 @@ import io.bioimage.modelrunner.model.BaseModel;
 import io.bioimage.modelrunner.model.java.DLModelJava.TilingConsumer;
 import io.bioimage.modelrunner.model.python.envs.PixiEnvironmentManager;
 import io.bioimage.modelrunner.model.python.envs.PixiEnvironmentSpec;
+import io.bioimage.modelrunner.model.tiling.merger.DetectionMerger;
 import io.bioimage.modelrunner.model.tiling.merger.Merger;
 import io.bioimage.modelrunner.model.tiling.merger.NoTileMerger;
 import io.bioimage.modelrunner.system.GpuCompatibility;
@@ -60,7 +61,7 @@ import net.imglib2.util.Util;
  * @author Carlos Garcia
  */
 public class DLModelPytorchProtected extends BaseModel {
-
+	
     protected final String modelFile;
 
     protected final String callable;
@@ -646,15 +647,15 @@ public class DLModelPytorchProtected extends BaseModel {
     }
     
     protected <T extends RealType<T> & NativeType<T>, R extends RealType<R> & NativeType<R>>
-    Merger<Tensor<T>, Tensor<R>>  getTileMaker(final List<Tensor<T>> inputs) {
-    	Merger<Tensor<T>, Tensor<R>> merger = new NoTileMerger();
-    	return merger;
+    Merger<Tensor<T>, Tensor<R>> getTileMaker(final List<Tensor<T>> inputs) {
+        Merger<Tensor<T>, Tensor<R>> merger = new NoTileMerger<T, R>();
+        return merger;
     }
     
     private <T extends RealType<T> & NativeType<T>, R extends RealType<R> & NativeType<R>>
     List<Tensor<R>> backboneSingleInference(final List<Tensor<T>> inputs) throws RunModelException {
     	
-    	Merger<Tensor<T>, Tensor<R>> merger = getTileMaker(inputs);
+        Merger<Tensor<T>, Tensor<R>> merger = getTileMaker(inputs);
     	
     	for (int i = 0; i < merger.getNPatches(); i ++) {
     		List<Tensor<R>> tiledOutputs = backboneSingleInferenceTile(merger.get(i));
@@ -784,6 +785,7 @@ public class DLModelPytorchProtected extends BaseModel {
     void run(final List<Tensor<T>> inTensors, final List<Tensor<R>> outTensors) throws RunModelException {
         if (!this.isLoaded()) {
             throw new RunModelException("Please first load the model.");
+        }
 
         final TileMaker tiles = TileMaker.build(inputTiles, outputTiles);
         for (int i = 0; i < tiles.getNumberOfTiles(); i++) {
@@ -816,7 +818,7 @@ public class DLModelPytorchProtected extends BaseModel {
     }
 
     protected <T extends RealType<T> & NativeType<T>, R extends RealType<R> & NativeType<R>>
-    void runNoTiles(final List<Tensor<T>> inTensors, final List<Tensor<R>> 20.) throws RunModelException {
+    void runNoTiles(final List<Tensor<T>> inTensors, final List<Tensor<R>> outTensors) throws RunModelException {
         final Map<String, RandomAccessibleInterval<R>> outMap = predictForInputTensors(inTensors);
         int c = 0;
         for (Entry<String, RandomAccessibleInterval<R>> ee : outMap.entrySet()) {
