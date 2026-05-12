@@ -616,9 +616,6 @@ public class DLModelPytorchProtected extends BaseModel {
      */
     public <T extends RealType<T> & NativeType<T>, R extends RealType<R> & NativeType<R>>
     List<Tensor<R>> inference(final Tensor<T>... inputs) throws RunModelException {
-    	TileMaker maker = createTileMaker();
-    	maker.getTilePostionsOutputImage(CLEAN_SHM_CODE);
-    	maker.getOutputImageSize(CLEAN_SHM_CODE);
     	List<List<Tensor<T>>> inputBatches = new ArrayList<List<Tensor<T>>>();
     	for (Tensor<T> inp : inputs) {
     		List<Tensor<T>> inpList = new ArrayList<Tensor<T>>();
@@ -684,6 +681,22 @@ public class DLModelPytorchProtected extends BaseModel {
     
     private <T extends RealType<T> & NativeType<T>, R extends RealType<R> & NativeType<R>>
     List<Tensor<R>> backboneSingleInference(final List<Tensor<T>> inputs) throws RunModelException {
+    	
+    	TileMaker maker = getTileMaker();
+    	
+    	createOutputMerger(inputs);
+    	
+    	List<Tensor<T>> tiledInputs = new ArrayList<Tensor<T>>();
+    	for (int i = 0; i < maker.getNumberOfTiles(); i ++) {
+    		tiledInputs.add(maker.getNthTileInput(inputs.get(i), i));
+    		List<Tensor<R>> tiledOutputs = backboneSingleInferenceTile(tiledInputs);
+    		addOutput(tiledOutputs, maker.getOutputTileSize(this.outputTiles.get(i).getName()));
+    	}
+    	return getMergedOutputs();
+    }
+    
+    private <T extends RealType<T> & NativeType<T>, R extends RealType<R> & NativeType<R>>
+    List<Tensor<R>> backboneSingleInferenceTile(final List<Tensor<T>> inputs) throws RunModelException {
 
         final List<String> names = IntStream.range(0, inputs.size())
                 .mapToObj(i -> "var_" + UUID.randomUUID().toString().replace("-", "_"))
