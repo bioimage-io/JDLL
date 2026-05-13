@@ -36,6 +36,7 @@ import io.bioimage.modelrunner.gui.custom.yolo.YoloInstaller;
 import io.bioimage.modelrunner.gui.custom.yolo.YoloModelRegistry;
 import io.bioimage.modelrunner.gui.custom.yolo.YoloTrainingConfig;
 import io.bioimage.modelrunner.gui.custom.yolo.YoloTrainingService;
+import io.bioimage.modelrunner.model.detection.Detection;
 import io.bioimage.modelrunner.model.special.yolo.YoloTrainingProgress;
 import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.type.NativeType;
@@ -204,7 +205,27 @@ public class YOLOPluginUI extends YoloGUI implements ActionListener {
         inferenceService.setObjectSize(boxes);
     	Consumer<String> logConsumer = str -> SwingUtilities.invokeLater(() ->
     			YOLOPluginUI.this.inferencePanel.getLogPanel().appendHtml(str));
-    	consumer.displayDetections(inferenceService.run(modelPath, rai, logConsumer));
+        startInferenceLogTimer();
+        List<Detection> detections;
+        try {
+            detections = inferenceService.run(modelPath, rai, logConsumer);
+        } finally {
+            SwingUtilities.invokeLater(() -> YOLOPluginUI.this.inferencePanel.getLogPanel().stopRunTimer());
+        }
+        consumer.displayDetections(detections);
+    }
+
+    private void startInferenceLogTimer() {
+        Runnable start = () -> YOLOPluginUI.this.inferencePanel.getLogPanel().startRunTimer();
+        if (SwingUtilities.isEventDispatchThread()) {
+            start.run();
+            return;
+        }
+        try {
+            SwingUtilities.invokeAndWait(start);
+        } catch (Exception e) {
+            SwingUtilities.invokeLater(start);
+        }
     }
 
     public void trainYOLO() {

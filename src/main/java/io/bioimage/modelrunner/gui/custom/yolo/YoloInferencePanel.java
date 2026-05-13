@@ -24,6 +24,7 @@ import javax.swing.event.DocumentListener;
 import javax.swing.event.ListDataEvent;
 import javax.swing.event.ListDataListener;
 import javax.swing.JButton;
+import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 
@@ -33,7 +34,7 @@ public class YoloInferencePanel extends JPanel {
 
     protected static final int OUTER_PAD = 8;
     protected static final int ROW_GAP = 8;
-    protected static final double BOTTOM_GAP_EXTRA_RATIO = 0.5;
+    protected static final double BOTTOM_GAP_EXTRA_RATIO = 1.0 / 24.0;
     protected static final double DISPLAY_WIDTH_RATIO = 0.95;
     protected static final double DISPLAY_MIN_HEIGHT_RATIO = 0.4;
     protected static final double DISPLAY_MAX_HEIGHT_RATIO = 0.5;
@@ -44,10 +45,11 @@ public class YoloInferencePanel extends JPanel {
     protected static final double DRAW_BUTTON_RATIO = 0.14;
     protected static final double ROW_UNIT_MODEL = 1.3;
     protected static final double ROW_UNIT_SOURCE = 2.0;
-    protected static final double ROW_UNIT_DRAW = 1.2;
+    protected static final double ROW_UNIT_DRAW = 0.81;
     protected static final double ROW_UNIT_ACTION = 1.0;
     protected static final double ROW_UNIT_WARNING = 1.3;
-    protected static final double ROW_UNIT_LOG = 1.6;
+    protected static final double ROW_UNIT_LOG = 2.94;
+    protected static final int DRAW_ROW_FONT_BOOST = 2;
 
     protected final YoloModelSelectionPanel modelSelectionPanel = new YoloModelSelectionPanel();
     protected final YoloImageSourcePanel imageSourcePanel = new YoloImageSourcePanel();
@@ -68,6 +70,8 @@ public class YoloInferencePanel extends JPanel {
         YoloUiUtils.alignLabel(drawLabel);
         YoloUiUtils.styleToggleButton(drawButton, false);
         YoloUiUtils.styleFlatSecondaryButton(refreshButton);
+        drawButton.setMargin(new java.awt.Insets(1, 6, 1, 6));
+        refreshButton.setMargin(new java.awt.Insets(1, 4, 1, 4));
         drawButton.addActionListener(e -> setDrawModeEnabled(!drawButton.isSelected()));
         refreshButton.addActionListener(e -> imageDisplayPanel.clearBoxes());
         imageSourcePanel.getOpenImagesComboBox().addActionListener(e -> updateImageActionState());
@@ -143,12 +147,15 @@ public class YoloInferencePanel extends JPanel {
         int w = Math.max(0, getWidth());
         int h = Math.max(0, getHeight());
         int rowGap = Math.max(2, Math.min(ROW_GAP, h / 70));
+        int previewToDrawGap = Math.max(1, rowGap / 2);
+        int drawToLogGap = previewToDrawGap;
         int innerW = Math.max(0, w - 2 * OUTER_PAD);
         int x = OUTER_PAD;
         int y = OUTER_PAD;
 
         int extraBottomGap = Math.max(0, (int) Math.round(rowGap * BOTTOM_GAP_EXTRA_RATIO));
-        int totalAvailH = Math.max(8, h - 2 * OUTER_PAD - extraBottomGap - 6 * rowGap);
+        int totalGapH = 4 * rowGap + previewToDrawGap + drawToLogGap;
+        int totalAvailH = Math.max(8, h - 2 * OUTER_PAD - extraBottomGap - totalGapH);
         int previewBaseH = Math.max(1, (int) Math.round(h * DISPLAY_BASE_HEIGHT_RATIO));
         int controlsAvailH = Math.max(4, totalAvailH - previewBaseH);
         double totalUnits = ROW_UNIT_MODEL + ROW_UNIT_SOURCE + ROW_UNIT_DRAW + ROW_UNIT_LOG + ROW_UNIT_ACTION + ROW_UNIT_WARNING;
@@ -156,12 +163,13 @@ public class YoloInferencePanel extends JPanel {
 
         int maxControlH = Math.max(1, YoloUiUtils.controlHeightForFontSize(YoloUiUtils.MAX_CONTROL_FONT_SIZE));
         int maxSourceH = maxControlH * 2;
-        int maxLogH = maxControlH * 3;
+        int maxDrawH = Math.max(1, (int) Math.round(maxControlH * 0.75));
+        int maxLogH = Math.max(1, (int) Math.round(maxControlH * 5.5));
         int maxWarningH = maxControlH * 2;
 
         int modelH = Math.max(1, Math.min(maxControlH, (int) Math.round(rowUnitPx * ROW_UNIT_MODEL)));
         int sourceH = Math.max(1, Math.min(maxSourceH, modelH * 2));
-        int drawH = Math.max(1, Math.min(maxControlH, (int) Math.round(rowUnitPx * ROW_UNIT_DRAW)));
+        int drawH = Math.max(1, Math.min(maxDrawH, (int) Math.round(rowUnitPx * ROW_UNIT_DRAW)));
         int logH = Math.max(1, Math.min(maxLogH, (int) Math.round(rowUnitPx * ROW_UNIT_LOG)));
         int actionH = Math.max(1, Math.min(maxControlH, (int) Math.round(rowUnitPx * ROW_UNIT_ACTION)));
         int warningH = Math.max(18, Math.min(maxWarningH, (int) Math.round(rowUnitPx * ROW_UNIT_WARNING)));
@@ -172,6 +180,13 @@ public class YoloInferencePanel extends JPanel {
         previewH = Math.max(displayMinH, previewH);
         previewH = Math.min(displayMaxH, previewH);
 
+        int usedH = modelH + sourceH + previewH + drawH + logH + actionH + warningH + totalGapH;
+        int bottomGap = Math.max(0, h - OUTER_PAD - usedH);
+        int reclaimedBottomGap = bottomGap - Math.max(0, bottomGap / 3);
+        int drawBonus = reclaimedBottomGap / 2;
+        drawH += drawBonus;
+        drawToLogGap += reclaimedBottomGap - drawBonus;
+
         modelSelectionPanel.setBounds(x, y, innerW, modelH);
         y += modelH + rowGap;
 
@@ -181,7 +196,7 @@ public class YoloInferencePanel extends JPanel {
         int logW = Math.max(1, (int) Math.round(innerW * LOG_WIDTH_RATIO));
         int logX = x + (innerW - logW) / 2;
         imageDisplayPanel.setBounds(logX, y, logW, previewH);
-        y += previewH + rowGap;
+        y += previewH + previewToDrawGap;
 
         int drawLabelW = (int) Math.round(innerW * DRAW_LABEL_RATIO);
         int drawBtnW = (int) Math.round(innerW * DRAW_BUTTON_RATIO);
@@ -197,7 +212,7 @@ public class YoloInferencePanel extends JPanel {
         rowX += refreshW + rowGap;
         int helpSize = Math.max(12, Math.min(helpW, drawH));
         helpLabel.setBounds(rowX + Math.max(0, (helpW - helpSize) / 2), y + Math.max(0, (drawH - helpSize) / 2), helpSize, helpSize);
-        y += drawH + rowGap;
+        y += drawH + drawToLogGap;
 
         logPanel.setBounds(logX, y, logW, logH);
         y += logH + rowGap;
@@ -209,7 +224,16 @@ public class YoloInferencePanel extends JPanel {
         YoloUiUtils.applyResponsiveText(drawLabel, drawLabelW - 4, drawH);
         YoloUiUtils.applyResponsiveText(drawButton, drawBtnW - 8, drawH);
         YoloUiUtils.applyResponsiveText(refreshButton, refreshW - 8, drawH);
+        boostDrawRowFont(drawLabel);
+        boostDrawRowFont(drawButton);
+        boostDrawRowFont(refreshButton);
         warningLabel.setFont(actionPanel.getRunButton().getFont().deriveFont(Math.max((float) YoloUiUtils.MIN_FONT_SIZE, actionPanel.getRunButton().getFont().getSize2D() * 0.78f)));
+    }
+
+    private static void boostDrawRowFont(JComponent component) {
+        float fontSize = Math.min(YoloUiUtils.MAX_CONTROL_FONT_SIZE,
+                component.getFont().getSize2D() + DRAW_ROW_FONT_BOOST);
+        component.setFont(component.getFont().deriveFont(fontSize));
     }
 
     public YoloModelSelectionPanel getModelSelectionPanel() {
