@@ -36,6 +36,7 @@ import io.bioimage.modelrunner.bioimageio.tiling.TileMaker;
 import io.bioimage.modelrunner.exceptions.LoadModelException;
 import io.bioimage.modelrunner.exceptions.RunModelException;
 import io.bioimage.modelrunner.model.BaseModel;
+import io.bioimage.modelrunner.model.InferenceProgress;
 import io.bioimage.modelrunner.model.java.DLModelJava.TilingConsumer;
 import io.bioimage.modelrunner.model.python.envs.PixiEnvironmentManager;
 import io.bioimage.modelrunner.model.python.envs.PixiEnvironmentSpec;
@@ -102,6 +103,11 @@ public class DLModelPytorchProtected extends BaseModel {
      * tiles the input images are going to be separated.
      */
     protected TilingConsumer tileCounter;
+
+    /**
+     * Consumer used to report structured inference progress events.
+     */
+    protected Consumer<InferenceProgress> inferenceProgressConsumer;
 
     /**
      * Default environment directory name.
@@ -359,6 +365,41 @@ public class DLModelPytorchProtected extends BaseModel {
     }
 
     /**
+     * Sets a consumer used to receive structured inference progress events.
+     *
+     * @param consumer
+     *     consumer called as inference advances
+     */
+    public void setInferenceProgressConsumer(final Consumer<InferenceProgress> consumer) {
+        this.inferenceProgressConsumer = consumer;
+    }
+
+    /**
+     * @return the configured structured inference progress consumer, or null
+     */
+    public Consumer<InferenceProgress> getInferenceProgressConsumer() {
+        return inferenceProgressConsumer;
+    }
+
+    /**
+     * Emits a structured inference progress event. Progress reporting must not
+     * affect inference execution.
+     *
+     * @param progress
+     *     progress event
+     */
+    protected void emitProgress(final InferenceProgress progress) {
+        if (inferenceProgressConsumer == null || progress == null) {
+            return;
+        }
+        try {
+            inferenceProgressConsumer.accept(progress);
+        } catch (RuntimeException e) {
+            // Progress listeners are observational and should not break model execution.
+        }
+    }
+
+    /**
      * Loads the model into the Python service.
      *
      * @throws LoadModelException if the model cannot be loaded
@@ -377,11 +418,13 @@ public class DLModelPytorchProtected extends BaseModel {
         }
 
         try {
+            emitProgress(InferenceProgress.modelLoading(weightsPath));
             String code = buildModelCode();
             code += RECOVER_OUTPUTS_CODE;
             final Task task = python.task(code);
             task.waitFor();
             ensureTaskSucceeded(task);
+            emitProgress(InferenceProgress.modelLoaded(weightsPath));
         } catch (IOException | InterruptedException | TaskException e) {
             throw new LoadModelException(Messages.stackTrace(e));
         }
@@ -663,18 +706,26 @@ public class DLModelPytorchProtected extends BaseModel {
     
     private <T extends RealType<T> & NativeType<T>, R extends RealType<R> & NativeType<R>>
     List<Tensor<R>> backboneSingleInference(final List<Tensor<T>> inputs) throws RunModelException {
-    	
+
         Merger<Tensor<T>, Tensor<R>> merger = getTileMaker(inputs);
-        if (tileCounter == null)
-        	tileCounter = new TilingConsumer();
-    	
-        tileCounter.acceptTotal((long) merger.getNPatches());
-    	for (int i = 0; i < merger.getNPatches(); i ++) {
-    		List<Tensor<R>> tiledOutputs = backboneSingleInferenceTile(merger.get(i));
-    		merger.digest(i, tiledOutputs);
-    		tileCounter.acceptProgress((long) i);
-    	}
-    	return merger.getReconstructed();
+        if (tileCounter == null) {
+            tileCounter = new TilingConsumer();
+        }
+
+        int nPatches = merger.getNPatches();
+        tileCounter.acceptTotal((long) nPatches);
+        emitProgress(InferenceProgress.inferenceStart(nPatches));
+        for (int i = 0; i < nPatches; i ++) {
+            emitProgress(InferenceProgress.patchStart(i + 1, nPatches));
+            List<Tensor<R>> tiledOutputs = backboneSingleInferenceTile(merger.get(i));
+            merger.digest(i, tiledOutputs);
+            tileCounter.acceptProgress((long) (i + 1));
+            emitProgress(InferenceProgress.patchEnd(i + 1, nPatches));
+        }
+        emitProgress(InferenceProgress.mergeStart());
+        List<Tensor<R>> reconstructed = merger.getReconstructed();
+        emitProgress(InferenceProgress.inferenceEnd());
+        return reconstructed;
     }
     
     private <T extends RealType<T> & NativeType<T>, R extends RealType<R> & NativeType<R>>

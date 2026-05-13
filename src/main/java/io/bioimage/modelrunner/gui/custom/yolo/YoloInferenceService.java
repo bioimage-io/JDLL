@@ -29,6 +29,7 @@ import org.apposed.appose.BuildException;
 
 import io.bioimage.modelrunner.exceptions.LoadModelException;
 import io.bioimage.modelrunner.exceptions.RunModelException;
+import io.bioimage.modelrunner.model.InferenceProgress;
 import io.bioimage.modelrunner.model.detection.Detection;
 import io.bioimage.modelrunner.model.special.yolo.Yolo;
 import io.bioimage.modelrunner.tensor.Tensor;
@@ -53,6 +54,7 @@ public class YoloInferenceService {
             throws RunModelException, LoadModelException, BuildException, IOException,
             ExecutionException, InterruptedException {
         ensureLoaded(modelPath, logConsumer);
+        configureProgressLogging(logConsumer);
         model.setObjectSize(size);
         return runLoadedModel(rai);
     }
@@ -73,10 +75,49 @@ public class YoloInferenceService {
         if (model == null || !model.isLoaded()) {
             installer.installIfNeeded(modelPath, logConsumer);
             model = Yolo.init(modelPath);
-            logConsumer.accept("Loading model...");
+            configureProgressLogging(logConsumer);
             model.loadModel();
-            logConsumer.accept("Model loaded!");
             loadedModelPath = modelPath;
+        }
+    }
+
+    private void configureProgressLogging(Consumer<String> logConsumer) {
+        if (model == null) {
+            return;
+        }
+        if (logConsumer == null) {
+            model.setInferenceProgressConsumer(null);
+            return;
+        }
+        model.setInferenceProgressConsumer(progress -> appendProgressLog(progress, logConsumer));
+    }
+
+    private static void appendProgressLog(InferenceProgress progress, Consumer<String> logConsumer) {
+        if (progress == null || logConsumer == null) {
+            return;
+        }
+        switch (progress.getPhase()) {
+            case MODEL_LOADING:
+                logConsumer.accept("Loading model: " + progress.getDetail());
+                break;
+            case MODEL_LOADED:
+                logConsumer.accept("Model loaded.");
+                break;
+            case INFERENCE_START:
+                logConsumer.accept("Starting inference on " + progress.getTotalPatches() + " patch(es).");
+                break;
+            case PATCH_START:
+                logConsumer.accept("Processing patch " + progress.getPatchIndex()
+                        + " / " + progress.getTotalPatches() + ".");
+                break;
+            case MERGE_START:
+                logConsumer.accept("Merging patch predictions.");
+                break;
+            case INFERENCE_END:
+                logConsumer.accept("Inference finished.");
+                break;
+            default:
+                break;
         }
     }
 
