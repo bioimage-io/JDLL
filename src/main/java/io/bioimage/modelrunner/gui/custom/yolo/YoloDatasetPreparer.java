@@ -583,14 +583,6 @@ final class YoloDatasetPreparer {
         return trainCount;
     }
 
-    private static List<GeneratedSample> toGeneratedSamples(List<YoloSample> samples) {
-        List<GeneratedSample> generated = new ArrayList<GeneratedSample>();
-        for (YoloSample sample : samples) {
-            generated.addAll(buildGeneratedSamples(sample.image, sample.width, sample.height, sample.boxes));
-        }
-        return generated;
-    }
-
     private static List<GeneratedSample> toGeneratedSamplesFromMasks(List<MaskSample> samples) {
         List<GeneratedSample> generated = new ArrayList<GeneratedSample>();
         for (MaskSample sample : samples) {
@@ -711,10 +703,6 @@ final class YoloDatasetPreparer {
 
     private static int randomIntInclusive(Random random, int min, int max) {
         return min + random.nextInt(max - min + 1);
-    }
-
-    private static int clamp(int value, int min, int max) {
-        return Math.max(min, Math.min(max, value));
     }
 
     private static void writeSamples(List<GeneratedSample> samples, File imageDir, File labelDir)
@@ -1134,15 +1122,11 @@ final class YoloDatasetPreparer {
     }
 
     private static final class SplitData {
-        private final String name;
         private final File imageRoot;
-        private final File labelRoot;
         private final List<YoloSample> samples;
 
         private SplitData(String name, File imageRoot, File labelRoot, List<YoloSample> samples) {
-            this.name = name;
             this.imageRoot = imageRoot;
-            this.labelRoot = labelRoot;
             this.samples = samples;
         }
     }
@@ -1160,16 +1144,10 @@ final class YoloDatasetPreparer {
     private static final class YoloSample {
         private final File image;
         private final File label;
-        private final int width;
-        private final int height;
-        private final List<Box> boxes;
 
         private YoloSample(File image, File label, int width, int height, List<Box> boxes) {
             this.image = image;
             this.label = label;
-            this.width = width;
-            this.height = height;
-            this.boxes = boxes;
         }
     }
 
