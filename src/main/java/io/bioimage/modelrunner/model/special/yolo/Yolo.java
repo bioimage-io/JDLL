@@ -209,9 +209,9 @@ public class Yolo extends DLModelPytorchProtected {
 			code += UndoLetterboxProcessingBoundingBoxes.getMethodDeclaration() + System.lineSeparator();
 			code += "created_shms = []" + System.lineSeparator();
 			code += "try:" + System.lineSeparator();
-			resetInputTransferScales();
+			List<SharedMemoryArray> shmas = createSharedMemoryArraysForInputs(inRais);
 			for (int i = 0; i < inRais.size(); i ++) {
-				SharedMemoryArray shma = createSharedMemoryArrayForInput(inRais.get(i));
+				SharedMemoryArray shma = shmas.get(i);
 				code += codeToConvertShmaToPython(shma, names.get(i));
 				inShmaList.add(shma);
 				code += "  print(" + names.get(i) + ".shape)" + System.lineSeparator();

@@ -830,9 +830,9 @@ public class DLModelPytorchProtected extends BaseModel {
             final List<String> names) {
         String code = "created_shms = []" + System.lineSeparator();
         code += "try:" + System.lineSeparator();
-        resetInputTransferScales();
+        final List<SharedMemoryArray> shmas = createSharedMemoryArraysForInputs(rais);
         for (int i = 0; i < rais.size(); i++) {
-            final SharedMemoryArray shma = createSharedMemoryArrayForInput(rais.get(i));
+            final SharedMemoryArray shma = shmas.get(i);
             code += codeToConvertShmaToPython(shma, names.get(i));
             inShmaList.add(shma);
         }
@@ -869,14 +869,49 @@ public class DLModelPytorchProtected extends BaseModel {
     }
 
     protected <T extends RealType<T> & NativeType<T>>
-    SharedMemoryArray createSharedMemoryArrayForInput(final Tensor<T> tensor) {
-        final InputTransfer<T> transfer = prepareInputForSharedMemory(tensor);
-        inputTransferScales.add(transfer.scale);
-        return SharedMemoryArray.createSHMAFromRAI(transfer.data, false, false);
+    List<SharedMemoryArray> createSharedMemoryArraysForInputs(final List<Tensor<T>> tensors) {
+        resetInputTransferScales();
+        final long sharedXySubsampling = requiredXySubsampling(tensors);
+        final List<SharedMemoryArray> shmas = new ArrayList<SharedMemoryArray>();
+        for (Tensor<T> tensor : tensors) {
+            final InputTransfer<T> transfer = prepareInputForSharedMemory(tensor, sharedXySubsampling);
+            inputTransferScales.add(transfer.scale);
+            shmas.add(SharedMemoryArray.createSHMAFromRAI(transfer.data, false, false));
+        }
+        return shmas;
     }
 
     private <T extends RealType<T> & NativeType<T>>
-    InputTransfer<T> prepareInputForSharedMemory(final Tensor<T> tensor) {
+    long requiredXySubsampling(final List<Tensor<T>> tensors) {
+        long sharedXySubsampling = 1L;
+        for (Tensor<T> tensor : tensors) {
+            sharedXySubsampling = Math.max(sharedXySubsampling, requiredXySubsampling(tensor));
+        }
+        return sharedXySubsampling;
+    }
+
+    private <T extends RealType<T> & NativeType<T>>
+    long requiredXySubsampling(final Tensor<T> tensor) {
+        final RandomAccessibleInterval<T> data = tensor.getData();
+        final String axes = tensor.getAxesOrderString();
+        final long[] dims = data.dimensionsAsLongArray();
+        final int xAxis = axisIndex(axes, 'x');
+        final int yAxis = axisIndex(axes, 'y');
+        if (xAxis < 0 || yAxis < 0) {
+            return 1L;
+        }
+
+        final int zAxis = axisIndex(axes, 'z');
+        final double xSize = dims[xAxis];
+        final double ySize = dims[yAxis];
+        final double zSize = zAxis >= 0 ? dims[zAxis] : 1.0d;
+        final double imageSize = xSize * ySize * zSize;
+        final double maximumSize = maxSharedMemoryPixelCount;
+        return Math.max(1L, (long) Math.ceil(Math.sqrt(imageSize / maximumSize)));
+    }
+
+    private <T extends RealType<T> & NativeType<T>>
+    InputTransfer<T> prepareInputForSharedMemory(final Tensor<T> tensor, final long xySubsampling) {
         final RandomAccessibleInterval<T> data = tensor.getData();
         final String axes = tensor.getAxesOrderString();
         final long[] dims = data.dimensionsAsLongArray();
@@ -886,13 +921,6 @@ public class DLModelPytorchProtected extends BaseModel {
             return new InputTransfer<T>(data, InputTransferScale.noImage(axes, dims));
         }
 
-        final int zAxis = axisIndex(axes, 'z');
-        final double xSize = dims[xAxis];
-        final double ySize = dims[yAxis];
-        final double zSize = zAxis >= 0 ? dims[zAxis] : 1.0d;
-        final double imageSize = xSize * ySize * zSize;
-        final double maximumSize = maxSharedMemoryPixelCount;
-        final long xySubsampling = Math.max(1L, (long) Math.ceil(Math.sqrt(imageSize / maximumSize)));
         if (xySubsampling <= 1L) {
             return new InputTransfer<T>(data, InputTransferScale.identity(axes, dims, xAxis, yAxis));
         }
