@@ -614,7 +614,11 @@ public class DLModelPytorchProtected extends BaseModel {
             outMap = reconstructOutputs(task);
             cleanShm();
         } catch (InterruptedException | TaskException | IOException e) {
-            try {
+        	if (e instanceof TaskException 
+        			&& Messages.stackTrace(e).startsWith("org.apposed.appose.TaskException: Task failed: thread death")) {
+        		return executeCode(code);
+        	}
+        	try {
                 cleanShm();
             } catch (InterruptedException | TaskException e1) {
                 throw new RunModelException(Messages.stackTrace(e1));
