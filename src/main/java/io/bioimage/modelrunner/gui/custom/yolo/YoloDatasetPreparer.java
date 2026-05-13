@@ -59,14 +59,16 @@ final class YoloDatasetPreparer {
     private static final double SMALL_OBJECT_IMAGE_AREA_RATIO = 0.001;
     private static final double TARGET_OBJECT_TILE_AREA_RATIO = 0.01;
     private static final int MIN_OBJECT_VISIBILITY_PX = 64;
-    private static final int MAX_REPETITIONS_PER_OBJECT = 3;
+    private static final int MIN_INSTANCE_MASK_AREA_PX = 5;
     private static final String DEFAULT_CLASS_NAME = "object";
     private static final String GENERATED_YAML_NAME = "data.yaml";
 
     private static final Set<String> IMAGE_EXTENSIONS = new HashSet<String>();
+    private static final Set<String> IMAGE_SUFFIXES = new HashSet<String>();
     private static final Set<String> MASK_SUFFIXES = new HashSet<String>();
     static {
         Collections.addAll(IMAGE_EXTENSIONS, ".jpg", ".jpeg", ".png", ".bmp", ".tif", ".tiff");
+        Collections.addAll(IMAGE_SUFFIXES, "_img", "_image", "_sample", "_images", "_imgs", "_samples");
         Collections.addAll(MASK_SUFFIXES, "_mask", "_masks", "_label", "_labels");
     }
 
@@ -121,7 +123,7 @@ final class YoloDatasetPreparer {
             return generatedYaml;
         }
 
-        List<MaskSample> trainMasks = findMaskSamples(input, "train");
+        List<MaskSample> trainMasks = firstNonEmpty(findMaskSamples(input, ""), findMaskSamples(input, "train"));
         List<MaskSample> valMasks = firstNonEmpty(findMaskSamples(input, "val"),
                 findMaskSamples(input, "validation"),
                 findMaskSamples(input, "valid"));
@@ -604,7 +606,7 @@ final class YoloDatasetPreparer {
         List<Box> largeBoxes = new ArrayList<Box>();
         List<Box> smallBoxes = new ArrayList<Box>();
         for (Box box : boxes) {
-            if (box.area() < SMALL_OBJECT_IMAGE_AREA_RATIO * imageArea) {
+            if (box.area() < SMALL_OBJECT_IMAGE_AREA_RATIO * imageArea && box.area() > MIN_INSTANCE_MASK_AREA_PX) {
                 smallBoxes.add(box);
             } else {
                 largeBoxes.add(box);
@@ -617,17 +619,14 @@ final class YoloDatasetPreparer {
         if (!largeBoxes.isEmpty()) {
             generated.add(GeneratedSample.full(image, width, height, largeBoxes));
         }
-        Map<Integer, Integer> repetitions = new HashMap<Integer, Integer>();
+        Set<Integer> coveredSmallObjects = new HashSet<Integer>();
         for (Box target : smallBoxes) {
-            if (count(repetitions, target.objectIndex) >= MAX_REPETITIONS_PER_OBJECT) {
+            if (coveredSmallObjects.contains(target.objectIndex)) {
                 continue;
             }
             Rectangle crop = cropAround(target, width, height);
             List<Box> cropBoxes = new ArrayList<Box>();
             for (Box candidate : smallBoxes) {
-                if (count(repetitions, candidate.objectIndex) >= MAX_REPETITIONS_PER_OBJECT) {
-                    continue;
-                }
                 if (candidate.fullyInside(crop)) {
                     cropBoxes.add(candidate.relativeTo(crop));
                 }
@@ -636,43 +635,64 @@ final class YoloDatasetPreparer {
                 cropBoxes.add(target.relativeTo(crop));
             }
             for (Box cropBox : cropBoxes) {
-                repetitions.put(cropBox.objectIndex, count(repetitions, cropBox.objectIndex) + 1);
+                coveredSmallObjects.add(cropBox.objectIndex);
             }
             generated.add(GeneratedSample.crop(image, crop, cropBoxes));
         }
         return generated;
     }
 
-    private static int count(Map<Integer, Integer> map, int key) {
-        Integer value = map.get(key);
-        return value == null ? 0 : value.intValue();
-    }
+    private static Rectangle cropAround(
+            Box box,
+            int imageWidth,
+            int imageHeight
+    ) {
+        Random random = new Random(63);
+        double targetArea = Math.max(
+                box.area() / TARGET_OBJECT_TILE_AREA_RATIO,
+                MIN_OBJECT_VISIBILITY_PX * (double) MIN_OBJECT_VISIBILITY_PX
+        );
 
-    private static Rectangle cropAround(Box box, int imageWidth, int imageHeight) {
-        double targetArea = Math.max(box.area() / TARGET_OBJECT_TILE_AREA_RATIO,
-                MIN_OBJECT_VISIBILITY_PX * (double) MIN_OBJECT_VISIBILITY_PX);
         int side = (int) Math.ceil(Math.sqrt(targetArea));
         side = Math.max(side, (int) Math.ceil(Math.max(box.width(), box.height())));
         side = Math.max(1, side);
+
         int cropW = Math.min(imageWidth, side);
         int cropH = Math.min(imageHeight, side);
-        int x = (int) Math.round((box.x1 + box.x2) / 2.0 - cropW / 2.0);
-        int y = (int) Math.round((box.y1 + box.y2) / 2.0 - cropH / 2.0);
-        x = clamp(x, 0, Math.max(0, imageWidth - cropW));
-        y = clamp(y, 0, Math.max(0, imageHeight - cropH));
-        if (box.x1 < x) {
-            x = Math.max(0, (int) Math.floor(box.x1));
+
+        int imageMinX = 0;
+        int imageMinY = 0;
+        int imageMaxX = Math.max(0, imageWidth - cropW);
+        int imageMaxY = Math.max(0, imageHeight - cropH);
+
+        // Crop must start early enough to include box.x1,
+        // but late enough that box.x2 is still inside the crop.
+        int objectMinX = (int) Math.ceil(box.x2 - cropW);
+        int objectMaxX = (int) Math.floor(box.x1);
+
+        int objectMinY = (int) Math.ceil(box.y2 - cropH);
+        int objectMaxY = (int) Math.floor(box.y1);
+
+        int minX = Math.max(imageMinX, objectMinX);
+        int maxX = Math.min(imageMaxX, objectMaxX);
+
+        int minY = Math.max(imageMinY, objectMinY);
+        int maxY = Math.min(imageMaxY, objectMaxY);
+
+        if (minX > maxX || minY > maxY) {
+            throw new IllegalArgumentException(
+                    "Cannot create crop: object does not fit inside crop or is outside image bounds"
+            );
         }
-        if (box.y1 < y) {
-            y = Math.max(0, (int) Math.floor(box.y1));
-        }
-        if (box.x2 > x + cropW) {
-            x = Math.min(Math.max(0, imageWidth - cropW), (int) Math.ceil(box.x2 - cropW));
-        }
-        if (box.y2 > y + cropH) {
-            y = Math.min(Math.max(0, imageHeight - cropH), (int) Math.ceil(box.y2 - cropH));
-        }
+
+        int x = randomIntInclusive(random, minX, maxX);
+        int y = randomIntInclusive(random, minY, maxY);
+
         return new Rectangle(x, y, cropW, cropH);
+    }
+
+    private static int randomIntInclusive(Random random, int min, int max) {
+        return min + random.nextInt(max - min + 1);
     }
 
     private static int clamp(int value, int min, int max) {
@@ -780,7 +800,6 @@ final class YoloDatasetPreparer {
             String core = maskCore(stem);
             if (core == null) {
                 images.put(normalizeImageCore(stem), file);
-                images.put(stem, file);
             } else {
                 masks.put(core, file);
             }
@@ -797,7 +816,12 @@ final class YoloDatasetPreparer {
     }
 
     private static String normalizeImageCore(String stem) {
-        return stem.endsWith("_image") ? stem.substring(0, stem.length() - "_image".length()) : stem;
+        for (String suffix : IMAGE_SUFFIXES) {
+            if (stem.endsWith(suffix)) {
+                return stem.substring(0, stem.length() - suffix.length());
+            }
+        }
+        return stem;
     }
 
     private static String maskCore(String stem) {
