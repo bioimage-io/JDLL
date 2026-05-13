@@ -33,6 +33,7 @@ public final class InferenceProgress {
         INFERENCE_START,
         PATCH_START,
         PATCH_END,
+        TASK_RETRY,
         MERGE_START,
         INFERENCE_END
     }
@@ -68,6 +69,10 @@ public final class InferenceProgress {
 
     public static InferenceProgress patchEnd(final int patchIndex, final int totalPatches) {
         return new InferenceProgress(Phase.PATCH_END, patchIndex, totalPatches, null);
+    }
+
+    public static InferenceProgress taskRetry(final String detail) {
+        return new InferenceProgress(Phase.TASK_RETRY, -1, -1, detail);
     }
 
     public static InferenceProgress mergeStart() {

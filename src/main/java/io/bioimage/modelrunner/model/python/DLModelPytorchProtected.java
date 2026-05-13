@@ -114,6 +114,8 @@ public class DLModelPytorchProtected extends BaseModel {
      */
     public static final String COMMON_PYTORCH_ENV_NAME = "biapy";
 
+    private static final int MAX_TRANSIENT_TASK_RETRIES = 3;
+
     private static final String PIXI_TEMPLATE_RESOURCE = "tomls/biapy-pixi-%s.toml";
     
     private static final HashMap<String, String> TOML_SUFFIX = new HashMap<String, String>();
@@ -605,27 +607,53 @@ public class DLModelPytorchProtected extends BaseModel {
 
     private <T extends RealType<T> & NativeType<T>, R extends RealType<R> & NativeType<R>>
     Map<String, RandomAccessibleInterval<R>> executeCode(final String code) throws RunModelException {
-        Map<String, RandomAccessibleInterval<R>> outMap;
-        try {
-            final Task task = python.task(code);
-            task.waitFor();
-            ensureTaskSucceeded(task);
-            loaded = true;
-            outMap = reconstructOutputs(task);
-            cleanShm();
-        } catch (InterruptedException | TaskException | IOException e) {
-        	if (e instanceof TaskException 
-        			&& Messages.stackTrace(e).startsWith("org.apposed.appose.TaskException: Task failed: thread death")) {
-        		return executeCode(code);
-        	}
-        	try {
+        Throwable lastFailure = null;
+        for (int attempt = 0; attempt <= MAX_TRANSIENT_TASK_RETRIES; attempt ++) {
+            try {
+                final Task task = python.task(code);
+                task.waitFor();
+                ensureTaskSucceeded(task);
+                loaded = true;
+                Map<String, RandomAccessibleInterval<R>> outMap = reconstructOutputs(task);
                 cleanShm();
-            } catch (InterruptedException | TaskException e1) {
-                throw new RunModelException(Messages.stackTrace(e1));
+                return outMap;
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                cleanShmAfterFailure(e);
+                lastFailure = e;
+            } catch (TaskException | IOException e) {
+                lastFailure = e;
+                if (isApposeThreadDeath(e) && attempt < MAX_TRANSIENT_TASK_RETRIES) {
+                    emitProgress(InferenceProgress.taskRetry("Appose thread death during inference; retrying task "
+                            + (attempt + 1) + "/" + MAX_TRANSIENT_TASK_RETRIES + "."));
+                    continue;
+                }
+                cleanShmAfterFailure(e);
             }
-            throw new RunModelException(Messages.stackTrace(e));
         }
-        return outMap;
+        throw new RunModelException(lastFailure == null
+                ? "Model execution failed."
+                : Messages.stackTrace(lastFailure));
+    }
+
+    private void cleanShmAfterFailure(final Throwable original) throws RunModelException {
+        try {
+            cleanShm();
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new RunModelException(Messages.stackTrace(original) + System.lineSeparator()
+                    + "Additionally interrupted while cleaning shared memory:"
+                    + System.lineSeparator() + Messages.stackTrace(e));
+        } catch (TaskException e) {
+            throw new RunModelException(Messages.stackTrace(original) + System.lineSeparator()
+                    + "Additionally failed to clean shared memory:"
+                    + System.lineSeparator() + Messages.stackTrace(e));
+        }
+    }
+
+    private static boolean isApposeThreadDeath(final Throwable failure) {
+        String trace = Messages.stackTrace(failure);
+        return trace != null && trace.toLowerCase(Locale.ROOT).startsWith("org.apposed.appose.TaskException: task failed: thread death".toLowerCase());
     }
 
     /**

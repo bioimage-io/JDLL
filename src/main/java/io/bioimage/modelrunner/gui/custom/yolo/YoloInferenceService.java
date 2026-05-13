@@ -111,6 +111,9 @@ public class YoloInferenceService {
             case PATCH_START:
                 logConsumer.accept(patchProgressBar(progress.getPatchIndex(), progress.getTotalPatches()));
                 break;
+            case TASK_RETRY:
+                logConsumer.accept(progress.getDetail());
+                break;
             case MERGE_START:
                 logConsumer.accept("Merging patch predictions.");
                 break;
@@ -175,5 +178,7 @@ public class YoloInferenceService {
 	public void setObjectSize(List<Rectangle.Double> boxes) {
 		if (boxes != null && boxes.size() > 0)
 			size = boxes.get(0).getBounds();
+		else
+			size = null;
 	}
 }
