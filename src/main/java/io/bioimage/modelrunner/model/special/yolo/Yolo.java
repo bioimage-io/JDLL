@@ -202,20 +202,21 @@ public class Yolo extends DLModelPytorchProtected {
 	}
 	
 	protected <T extends RealType<T> & NativeType<T>> 
-	String createInputsCode(List<Tensor<T>> inRais, List<String> names) {
-		String code = "";
-		code += ConvertDims.getMethodDeclaration() + System.lineSeparator();
-		code += LetterboxPreprocessing.getMethodDeclaration() + System.lineSeparator();
-		code += UndoLetterboxProcessingBoundingBoxes.getMethodDeclaration() + System.lineSeparator();
-		code += "created_shms = []" + System.lineSeparator();
-		code += "try:" + System.lineSeparator();
-		for (int i = 0; i < inRais.size(); i ++) {
-			SharedMemoryArray shma = SharedMemoryArray.createSHMAFromRAI(inRais.get(i).getData(), false, false);
-			code += codeToConvertShmaToPython(shma, names.get(i));
-			inShmaList.add(shma);
-			code += "  print(" + names.get(i) + ".shape)" + System.lineSeparator();
-			code += "  " + names.get(i) + "_torch, meta = " + LetterboxPreprocessing.getMethodName() 
-			+ "(" + ConvertDims.getMethodName() + "(" + names.get(i)
+		String createInputsCode(List<Tensor<T>> inRais, List<String> names) {
+			String code = "";
+			code += ConvertDims.getMethodDeclaration() + System.lineSeparator();
+			code += LetterboxPreprocessing.getMethodDeclaration() + System.lineSeparator();
+			code += UndoLetterboxProcessingBoundingBoxes.getMethodDeclaration() + System.lineSeparator();
+			code += "created_shms = []" + System.lineSeparator();
+			code += "try:" + System.lineSeparator();
+			resetInputTransferScales();
+			for (int i = 0; i < inRais.size(); i ++) {
+				SharedMemoryArray shma = createSharedMemoryArrayForInput(inRais.get(i));
+				code += codeToConvertShmaToPython(shma, names.get(i));
+				inShmaList.add(shma);
+				code += "  print(" + names.get(i) + ".shape)" + System.lineSeparator();
+				code += "  " + names.get(i) + "_torch, meta = " + LetterboxPreprocessing.getMethodName()
+				+ "(" + ConvertDims.getMethodName() + "(" + names.get(i)
 			+ ", '" + inRais.get(i).getAxesOrderString().toLowerCase() + "',device=device))" + System.lineSeparator();
 			code += "  print(" + names.get(i) + "_torch.shape)" + System.lineSeparator();
 		}

@@ -47,12 +47,17 @@ import io.bioimage.modelrunner.system.PlatformDetection;
 import io.bioimage.modelrunner.tensor.Tensor;
 import io.bioimage.modelrunner.tensor.shm.SharedMemoryArray;
 import io.bioimage.modelrunner.utils.CommonUtils;
+import net.imglib2.Cursor;
+import net.imglib2.RandomAccess;
 import net.imglib2.RandomAccessibleInterval;
+import net.imglib2.img.Img;
+import net.imglib2.img.array.ArrayImgFactory;
 import net.imglib2.type.NativeType;
 import net.imglib2.type.numeric.RealType;
 import net.imglib2.type.numeric.real.FloatType;
 import net.imglib2.util.Cast;
 import net.imglib2.util.Util;
+import net.imglib2.view.Views;
 
 /**
  * Class that defines the methods required to load a Python PyTorch model and
@@ -108,6 +113,16 @@ public class DLModelPytorchProtected extends BaseModel {
      * Consumer used to report structured inference progress events.
      */
     protected Consumer<InferenceProgress> inferenceProgressConsumer;
+
+    /**
+     * Maximum number of pixels copied to shared memory for one image tensor.
+     */
+    protected long maxSharedMemoryPixelCount = 512L * 512L * 32L;
+
+    /**
+     * Scale metadata from the most recent input transfer.
+     */
+    private List<InputTransferScale> inputTransferScales = new ArrayList<InputTransferScale>();
 
     /**
      * Default environment directory name.
@@ -381,6 +396,26 @@ public class DLModelPytorchProtected extends BaseModel {
      */
     public Consumer<InferenceProgress> getInferenceProgressConsumer() {
         return inferenceProgressConsumer;
+    }
+
+    /**
+     * @return maximum pixel count copied to shared memory for one image tensor
+     */
+    public long getMaxSharedMemoryPixelCount() {
+        return maxSharedMemoryPixelCount;
+    }
+
+    /**
+     * Sets the maximum pixel count copied to shared memory for one image tensor.
+     *
+     * @param maxSharedMemoryPixelCount
+     *     positive maximum pixel count
+     */
+    public void setMaxSharedMemoryPixelCount(final long maxSharedMemoryPixelCount) {
+        if (maxSharedMemoryPixelCount <= 0) {
+            throw new IllegalArgumentException("Maximum shared-memory image pixel count must be positive.");
+        }
+        this.maxSharedMemoryPixelCount = maxSharedMemoryPixelCount;
     }
 
     /**
@@ -775,7 +810,8 @@ public class DLModelPytorchProtected extends BaseModel {
         List<Tensor<R>> outTensors = new ArrayList<Tensor<R>>();
         int i = 0;
         for (Entry<String, RandomAccessibleInterval<R>> ee : map.entrySet()) {
-        	outTensors.add(Tensor.build("output_" + i, outAxes.get(i), ee.getValue()));
+            outTensors.add(Tensor.build("output_" + i, outAxes.get(i),
+                    restoreOutputScale(ee.getValue(), outAxes.get(i))));
         	i ++;
         }
     	return outTensors;
@@ -794,8 +830,9 @@ public class DLModelPytorchProtected extends BaseModel {
             final List<String> names) {
         String code = "created_shms = []" + System.lineSeparator();
         code += "try:" + System.lineSeparator();
+        resetInputTransferScales();
         for (int i = 0; i < rais.size(); i++) {
-            final SharedMemoryArray shma = SharedMemoryArray.createSHMAFromRAI(rais.get(i).getData(), false, false);
+            final SharedMemoryArray shma = createSharedMemoryArrayForInput(rais.get(i));
             code += codeToConvertShmaToPython(shma, names.get(i));
             inShmaList.add(shma);
         }
@@ -825,6 +862,169 @@ public class DLModelPytorchProtected extends BaseModel {
         code += "  raise e" + System.lineSeparator();
         code += taskOutputsCode();
         return code;
+    }
+
+    protected void resetInputTransferScales() {
+        inputTransferScales = new ArrayList<InputTransferScale>();
+    }
+
+    protected <T extends RealType<T> & NativeType<T>>
+    SharedMemoryArray createSharedMemoryArrayForInput(final Tensor<T> tensor) {
+        final InputTransfer<T> transfer = prepareInputForSharedMemory(tensor);
+        inputTransferScales.add(transfer.scale);
+        return SharedMemoryArray.createSHMAFromRAI(transfer.data, false, false);
+    }
+
+    private <T extends RealType<T> & NativeType<T>>
+    InputTransfer<T> prepareInputForSharedMemory(final Tensor<T> tensor) {
+        final RandomAccessibleInterval<T> data = tensor.getData();
+        final String axes = tensor.getAxesOrderString();
+        final long[] dims = data.dimensionsAsLongArray();
+        final int xAxis = axisIndex(axes, 'x');
+        final int yAxis = axisIndex(axes, 'y');
+        if (xAxis < 0 || yAxis < 0) {
+            return new InputTransfer<T>(data, InputTransferScale.noImage(axes, dims));
+        }
+
+        final int zAxis = axisIndex(axes, 'z');
+        final double xSize = dims[xAxis];
+        final double ySize = dims[yAxis];
+        final double zSize = zAxis >= 0 ? dims[zAxis] : 1.0d;
+        final double imageSize = xSize * ySize * zSize;
+        final double maximumSize = maxSharedMemoryPixelCount;
+        final long xySubsampling = Math.max(1L, (long) Math.ceil(Math.sqrt(imageSize / maximumSize)));
+        if (xySubsampling <= 1L) {
+            return new InputTransfer<T>(data, InputTransferScale.identity(axes, dims, xAxis, yAxis));
+        }
+
+        final long[] subsampling = new long[dims.length];
+        Arrays.fill(subsampling, 1L);
+        subsampling[xAxis] = xySubsampling;
+        subsampling[yAxis] = xySubsampling;
+        final RandomAccessibleInterval<T> subsampled = Views.subsample(data, subsampling);
+        return new InputTransfer<T>(subsampled, InputTransferScale.scaled(axes, dims,
+                subsampled.dimensionsAsLongArray(), xAxis, yAxis, xySubsampling));
+    }
+
+    private <R extends RealType<R> & NativeType<R>>
+    RandomAccessibleInterval<R> restoreOutputScale(final RandomAccessibleInterval<R> output, final String axes) {
+        final InputTransferScale scale = referenceInputTransferScale();
+        if (!scale.isScaled() || output == null || axes == null) {
+            return output;
+        }
+        if ("bic".equals(axes)) {
+            return restoreBicOutputScale(output, axes, scale);
+        }
+        if (axisIndex(axes, 'x') >= 0 && axisIndex(axes, 'y') >= 0) {
+            return restoreImageOutputScale(output, axes, scale);
+        }
+        return output;
+    }
+
+    private <R extends RealType<R> & NativeType<R>>
+    RandomAccessibleInterval<R> restoreImageOutputScale(final RandomAccessibleInterval<R> output,
+            final String axes, final InputTransferScale scale) {
+        final int xAxis = axisIndex(axes, 'x');
+        final int yAxis = axisIndex(axes, 'y');
+        final long[] sourceDims = output.dimensionsAsLongArray();
+        if (xAxis < 0 || yAxis < 0
+                || sourceDims[xAxis] != scale.scaledX()
+                || sourceDims[yAxis] != scale.scaledY()) {
+            return output;
+        }
+
+        final long[] targetDims = sourceDims.clone();
+        targetDims[xAxis] = scale.originalX();
+        targetDims[yAxis] = scale.originalY();
+        final Img<R> restored = new ArrayImgFactory<R>(Util.getTypeFromInterval(output)).create(targetDims);
+        final Cursor<R> cursor = restored.localizingCursor();
+        final RandomAccess<R> sourceAccess = output.randomAccess();
+        final long[] targetPosition = new long[targetDims.length];
+        final long[] sourcePosition = new long[sourceDims.length];
+        while (cursor.hasNext()) {
+            cursor.fwd();
+            cursor.localize(targetPosition);
+            System.arraycopy(targetPosition, 0, sourcePosition, 0, sourcePosition.length);
+            sourcePosition[xAxis] = Math.min(sourceDims[xAxis] - 1L,
+                    (long) Math.floor(targetPosition[xAxis] * scale.scaledX() / (double) scale.originalX()));
+            sourcePosition[yAxis] = Math.min(sourceDims[yAxis] - 1L,
+                    (long) Math.floor(targetPosition[yAxis] * scale.scaledY() / (double) scale.originalY()));
+            sourceAccess.setPosition(sourcePosition);
+            cursor.get().set(sourceAccess.get());
+        }
+        return restored;
+    }
+
+    private <R extends RealType<R> & NativeType<R>>
+    RandomAccessibleInterval<R> restoreBicOutputScale(final RandomAccessibleInterval<R> output,
+            final String axes, final InputTransferScale scale) {
+        final int cAxis = axisIndex(axes, 'c');
+        final long[] dims = output.dimensionsAsLongArray();
+        if (cAxis < 0 || dims[cAxis] < 4 || !bicCoordinatesFitScaledImage(output, cAxis, scale)) {
+            return output;
+        }
+
+        final Img<R> restored = new ArrayImgFactory<R>(Util.getTypeFromInterval(output)).create(dims);
+        final Cursor<R> sourceCursor = output.localizingCursor();
+        final RandomAccess<R> targetAccess = restored.randomAccess();
+        final long[] position = new long[dims.length];
+        while (sourceCursor.hasNext()) {
+            sourceCursor.fwd();
+            sourceCursor.localize(position);
+            targetAccess.setPosition(position);
+            final long column = position[cAxis];
+            final double value = sourceCursor.get().getRealDouble();
+            if (column == 0L || column == 2L) {
+                targetAccess.get().setReal(value * scale.xRatio());
+            } else if (column == 1L || column == 3L) {
+                targetAccess.get().setReal(value * scale.yRatio());
+            } else {
+                targetAccess.get().set(sourceCursor.get());
+            }
+        }
+        return restored;
+    }
+
+    private <R extends RealType<R> & NativeType<R>>
+    boolean bicCoordinatesFitScaledImage(final RandomAccessibleInterval<R> output,
+            final int cAxis, final InputTransferScale scale) {
+        double maxX = Double.NEGATIVE_INFINITY;
+        double maxY = Double.NEGATIVE_INFINITY;
+        double maxCoordinate = Double.NEGATIVE_INFINITY;
+        final Cursor<R> cursor = output.localizingCursor();
+        final long[] position = new long[output.numDimensions()];
+        while (cursor.hasNext()) {
+            cursor.fwd();
+            cursor.localize(position);
+            final long column = position[cAxis];
+            if (column < 0L || column > 3L) {
+                continue;
+            }
+            final double value = cursor.get().getRealDouble();
+            maxCoordinate = Math.max(maxCoordinate, value);
+            if (column == 0L || column == 2L) {
+                maxX = Math.max(maxX, value);
+            } else {
+                maxY = Math.max(maxY, value);
+            }
+        }
+        if (maxCoordinate <= 1.0d) {
+            return false;
+        }
+        return maxX <= scale.scaledX() + 1.0d && maxY <= scale.scaledY() + 1.0d;
+    }
+
+    private InputTransferScale referenceInputTransferScale() {
+        for (InputTransferScale scale : inputTransferScales) {
+            if (scale.hasXY()) {
+                return scale;
+            }
+        }
+        return InputTransferScale.noImage("", new long[0]);
+    }
+
+    private static int axisIndex(final String axes, final char axis) {
+        return axes == null ? -1 : axes.toLowerCase(Locale.ROOT).indexOf(Character.toLowerCase(axis));
     }
 
     /**
@@ -933,6 +1133,83 @@ public class DLModelPytorchProtected extends BaseModel {
             shm.close();
         }
         inShmaList.clear();
+    }
+
+    private static final class InputTransfer<T extends RealType<T> & NativeType<T>> {
+        private final RandomAccessibleInterval<T> data;
+        private final InputTransferScale scale;
+
+        private InputTransfer(final RandomAccessibleInterval<T> data, final InputTransferScale scale) {
+            this.data = data;
+            this.scale = scale;
+        }
+    }
+
+    private static final class InputTransferScale {
+        private final String axes;
+        private final long[] originalDims;
+        private final long[] scaledDims;
+        private final int xAxis;
+        private final int yAxis;
+        private final long xySubsampling;
+        private final boolean hasXY;
+
+        private InputTransferScale(final String axes, final long[] originalDims, final long[] scaledDims,
+                final int xAxis, final int yAxis, final long xySubsampling, final boolean hasXY) {
+            this.axes = axes;
+            this.originalDims = originalDims == null ? new long[0] : originalDims.clone();
+            this.scaledDims = scaledDims == null ? new long[0] : scaledDims.clone();
+            this.xAxis = xAxis;
+            this.yAxis = yAxis;
+            this.xySubsampling = xySubsampling;
+            this.hasXY = hasXY;
+        }
+
+        private static InputTransferScale noImage(final String axes, final long[] dims) {
+            return new InputTransferScale(axes, dims, dims, -1, -1, 1L, false);
+        }
+
+        private static InputTransferScale identity(final String axes, final long[] dims,
+                final int xAxis, final int yAxis) {
+            return new InputTransferScale(axes, dims, dims, xAxis, yAxis, 1L, true);
+        }
+
+        private static InputTransferScale scaled(final String axes, final long[] originalDims,
+                final long[] scaledDims, final int xAxis, final int yAxis, final long xySubsampling) {
+            return new InputTransferScale(axes, originalDims, scaledDims, xAxis, yAxis, xySubsampling, true);
+        }
+
+        private boolean hasXY() {
+            return hasXY;
+        }
+
+        private boolean isScaled() {
+            return hasXY && xySubsampling > 1L;
+        }
+
+        private long originalX() {
+            return originalDims[xAxis];
+        }
+
+        private long originalY() {
+            return originalDims[yAxis];
+        }
+
+        private long scaledX() {
+            return scaledDims[xAxis];
+        }
+
+        private long scaledY() {
+            return scaledDims[yAxis];
+        }
+
+        private double xRatio() {
+            return originalX() / (double) scaledX();
+        }
+
+        private double yRatio() {
+            return originalY() / (double) scaledY();
+        }
     }
 
     /**
