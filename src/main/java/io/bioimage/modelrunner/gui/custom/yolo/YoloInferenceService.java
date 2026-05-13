@@ -20,7 +20,6 @@
 package io.bioimage.modelrunner.gui.custom.yolo;
 
 import java.awt.Rectangle;
-import java.awt.geom.Rectangle2D.Double;
 import java.io.IOException;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
@@ -43,6 +42,7 @@ public class YoloInferenceService {
     private final YoloInstaller installer;
     private String loadedModelPath;
     private Yolo model;
+    private Rectangle size = null;
 
     public YoloInferenceService(YoloInstaller installer) {
         this.installer = installer;
@@ -53,6 +53,7 @@ public class YoloInferenceService {
             throws RunModelException, LoadModelException, BuildException, IOException,
             ExecutionException, InterruptedException {
         ensureLoaded(modelPath, logConsumer);
+        model.setObjectSize(size);
         return runLoadedModel(rai);
     }
 
@@ -72,7 +73,9 @@ public class YoloInferenceService {
         if (model == null || !model.isLoaded()) {
             installer.installIfNeeded(modelPath, logConsumer);
             model = Yolo.init(modelPath);
+            logConsumer.accept("Loading model...");
             model.loadModel();
+            logConsumer.accept("Model loaded!");
             loadedModelPath = modelPath;
         }
     }
@@ -117,8 +120,6 @@ public class YoloInferenceService {
 
 	public void setObjectSize(List<Rectangle.Double> boxes) {
 		if (boxes != null && boxes.size() > 0)
-			this.model.setObjectSize(boxes.get(0).getBounds());
-		else
-			this.model.setObjectSize(null);
+			size = boxes.get(0).getBounds();
 	}
 }

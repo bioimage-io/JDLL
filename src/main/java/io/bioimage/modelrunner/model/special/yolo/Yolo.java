@@ -74,10 +74,10 @@ public class Yolo extends DLModelPytorchProtected {
 	
 	private Rectangle objectSize;
 		
-							
 	private static final Map<String, Long> PRETRAINED_YOLO_MODELS;
 	private static final double VALIDATION_PREVIEW_CONFIDENCE = 0.25d;
 	private static final String DEFAULT_SCRATCH_ARCHITECTURE = "yolo26n.yaml";
+	private static final int DEFAULT_TRAIN_BATCH_SIZE = 16;
 	private static final List<String> SCRATCH_ARCHITECTURES = Collections.unmodifiableList(Arrays.asList(
 			"yolo26n.yaml",
 			"yolo26s.yaml",
@@ -374,6 +374,7 @@ public class Yolo extends DLModelPytorchProtected {
 				+ "LOGGER.setLevel(logging.INFO)" + nl
 				+ "epochs = " + epochs + nl
 				+ "imgsz = " + imageSize + nl
+				+ "batch_size = " + DEFAULT_TRAIN_BATCH_SIZE + nl
 				+ "preview_epoch_period = " + Math.max(1, previewEpochPeriod) + nl
 				+ "preview_sample_count = 100" + nl
 				+ "preview_confidence = " + VALIDATION_PREVIEW_CONFIDENCE + nl
@@ -519,7 +520,7 @@ public class Yolo extends DLModelPytorchProtected {
 				+ "model.add_callback('on_val_end', _emit_preview_results)" + nl
 				+ "model.add_callback('on_fit_epoch_end', _emit_epoch_progress)" + nl
 				+ "with open(yolo_log_path, 'a', encoding='utf-8') as yolo_log, contextlib.redirect_stdout(yolo_log), contextlib.redirect_stderr(yolo_log):" + nl
-				+ "  results = model.train(data=dataset_yaml, epochs=epochs, imgsz=imgsz, project=project, name=run_name, exist_ok=True, verbose=False, plots=False, workers=0)" + nl
+				+ "  results = model.train(data=dataset_yaml, epochs=epochs, imgsz=imgsz, batch=batch_size, project=project, name=run_name, exist_ok=True, verbose=False, plots=False, workers=0)" + nl
 				+ "trainer = getattr(model, 'trainer', None)" + nl
 				+ "best = str(getattr(trainer, 'best', '') if trainer is not None else '')" + nl
 				+ "last = str(getattr(trainer, 'last', '') if trainer is not None else '')" + nl
@@ -605,6 +606,7 @@ public class Yolo extends DLModelPytorchProtected {
     protected <T extends RealType<T> & NativeType<T>, R extends RealType<R> & NativeType<R>>
     Merger<Tensor<T>, Tensor<R>> getTileMaker(final List<Tensor<T>> inputs) {
         Merger<Tensor<T>, Tensor<R>> merger = new DetectionMerger<T, R>(objectSize);
+        merger.configure(inputs);
         return merger;
     }
 	

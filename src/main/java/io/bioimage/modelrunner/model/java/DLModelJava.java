@@ -522,11 +522,11 @@ public class DLModelJava extends BaseModel
 		/**
 		 * Total tiles needed to process
 		 */
-		private Long totalTiles;
+		private Long totalTiles = 0l;
 		/**
 		 * Already processed tiles
 		 */
-		private Long tilesProcessed;
+		private Long tilesProcessed = 0l;
 		
 		/**
 		 * Set the total numer of tiles that need to be processed

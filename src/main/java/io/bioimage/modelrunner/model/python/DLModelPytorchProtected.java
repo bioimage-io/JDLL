@@ -39,7 +39,6 @@ import io.bioimage.modelrunner.model.BaseModel;
 import io.bioimage.modelrunner.model.java.DLModelJava.TilingConsumer;
 import io.bioimage.modelrunner.model.python.envs.PixiEnvironmentManager;
 import io.bioimage.modelrunner.model.python.envs.PixiEnvironmentSpec;
-import io.bioimage.modelrunner.model.tiling.merger.DetectionMerger;
 import io.bioimage.modelrunner.model.tiling.merger.Merger;
 import io.bioimage.modelrunner.model.tiling.merger.NoTileMerger;
 import io.bioimage.modelrunner.system.GpuCompatibility;
@@ -296,6 +295,8 @@ public class DLModelPytorchProtected extends BaseModel {
 
         this.environmentSpec = resolvePytorchEnv();
         this.envPath = environmentSpec.getEnvironmentDirectory().getAbsolutePath();
+        
+        this.tileCounter = new TilingConsumer();
     }
 
     /**
@@ -347,6 +348,14 @@ public class DLModelPytorchProtected extends BaseModel {
      */
     public void setTilingCounter(final TilingConsumer tileCounter) {
         this.tileCounter = tileCounter;
+    }
+    
+    /**
+     * 
+     * @return an object that can be used to track the progress processing tiles
+     */
+    public TilingConsumer getTilingCounter() {
+    	return this.tileCounter;
     }
 
     /**
@@ -656,10 +665,14 @@ public class DLModelPytorchProtected extends BaseModel {
     List<Tensor<R>> backboneSingleInference(final List<Tensor<T>> inputs) throws RunModelException {
     	
         Merger<Tensor<T>, Tensor<R>> merger = getTileMaker(inputs);
+        if (tileCounter == null)
+        	tileCounter = new TilingConsumer();
     	
+        tileCounter.acceptTotal((long) merger.getNPatches());
     	for (int i = 0; i < merger.getNPatches(); i ++) {
     		List<Tensor<R>> tiledOutputs = backboneSingleInferenceTile(merger.get(i));
     		merger.digest(i, tiledOutputs);
+    		tileCounter.acceptProgress((long) i);
     	}
     	return merger.getReconstructed();
     }
