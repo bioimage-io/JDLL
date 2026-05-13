@@ -22,6 +22,8 @@ package io.bioimage.modelrunner.gui.custom.yolo;
 import java.awt.Color;
 import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
+import java.time.LocalTime;
+import java.time.format.DateTimeFormatter;
 
 import javax.swing.JEditorPane;
 import javax.swing.JPanel;
@@ -33,6 +35,7 @@ public class YoloHtmlLogPanel extends JPanel {
     private static final long serialVersionUID = 2996134269810557663L;
 
     private static final int PAD = 2;
+    private static final DateTimeFormatter TIME_FORMATTER = DateTimeFormatter.ofPattern("HH:mm:ss");
 
     protected final JEditorPane editorPane = new JEditorPane();
     protected final JScrollPane scrollPane = new JScrollPane(editorPane);
@@ -70,12 +73,18 @@ public class YoloHtmlLogPanel extends JPanel {
         String text = editorPane.getText();
         int idx = text.lastIndexOf("</body>");
         if (idx < 0) {
-            setHtml(htmlFragment);
+            setHtml(wrapLogLine(htmlFragment));
             return;
         }
-        String updated = text.substring(0, idx) + htmlFragment + text.substring(idx);
+        String updated = text.substring(0, idx) + wrapLogLine(htmlFragment) + text.substring(idx);
         editorPane.setText(updated);
         editorPane.setCaretPosition(editorPane.getDocument().getLength());
+    }
+
+    private static String wrapLogLine(String htmlFragment) {
+        String message = htmlFragment == null ? "" : htmlFragment;
+        return "<span style='color:#666;'>[" + LocalTime.now().format(TIME_FORMATTER) + "]</span> "
+                + message + "<br/>";
     }
 
     public JEditorPane getEditorPane() {

@@ -40,6 +40,8 @@ import net.imglib2.view.Views;
 
 public class YoloInferenceService {
 
+    private static final int PATCH_PROGRESS_BAR_WIDTH = 20;
+
     private final YoloInstaller installer;
     private String loadedModelPath;
     private Yolo model;
@@ -107,8 +109,7 @@ public class YoloInferenceService {
                 logConsumer.accept("Starting inference on " + progress.getTotalPatches() + " patch(es).");
                 break;
             case PATCH_START:
-                logConsumer.accept("Processing patch " + progress.getPatchIndex()
-                        + " / " + progress.getTotalPatches() + ".");
+                logConsumer.accept(patchProgressBar(progress.getPatchIndex(), progress.getTotalPatches()));
                 break;
             case MERGE_START:
                 logConsumer.accept("Merging patch predictions.");
@@ -119,6 +120,18 @@ public class YoloInferenceService {
             default:
                 break;
         }
+    }
+
+    private static String patchProgressBar(int patchIndex, int totalPatches) {
+        int safeTotal = Math.max(1, totalPatches);
+        int safePatch = Math.max(0, Math.min(patchIndex, safeTotal));
+        int hashes = (int) Math.floor((safePatch / (double) safeTotal) * PATCH_PROGRESS_BAR_WIDTH);
+        StringBuilder builder = new StringBuilder(PATCH_PROGRESS_BAR_WIDTH + 16);
+        for (int i = 0; i < PATCH_PROGRESS_BAR_WIDTH; i++) {
+            builder.append(i < hashes ? '#' : '.');
+        }
+        builder.append(' ').append(safePatch).append('/').append(safeTotal);
+        return builder.toString();
     }
 
     private <T extends RealType<T> & NativeType<T>>
