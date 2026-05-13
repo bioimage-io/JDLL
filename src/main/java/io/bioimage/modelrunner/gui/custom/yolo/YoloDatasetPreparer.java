@@ -58,8 +58,10 @@ final class YoloDatasetPreparer {
     private static final double TRAIN_FRACTION = 0.8;
     private static final double SMALL_OBJECT_IMAGE_AREA_RATIO = 0.001;
     private static final double TARGET_OBJECT_TILE_AREA_RATIO = 0.01;
+    private static final double MIN_OBJECT_CROP_OVERLAP_RATIO = 0.3;
+    private static final double MAX_OBJECT_CROP_AREA_RATIO = 0.9;
     private static final int MIN_OBJECT_VISIBILITY_PX = 64;
-    private static final int MIN_INSTANCE_MASK_AREA_PX = 5;
+    private static final int MIN_INSTANCE_MASK_AREA_PX = 10;
     private static final String DEFAULT_CLASS_NAME = "object";
     private static final String GENERATED_YAML_NAME = "data.yaml";
 
@@ -603,17 +605,25 @@ final class YoloDatasetPreparer {
             return generated;
         }
         double imageArea = Math.max(1.0, width * (double) height);
+        List<Box> validBoxes = new ArrayList<Box>();
         List<Box> largeBoxes = new ArrayList<Box>();
         List<Box> smallBoxes = new ArrayList<Box>();
         for (Box box : boxes) {
-            if (box.area() < SMALL_OBJECT_IMAGE_AREA_RATIO * imageArea && box.area() > MIN_INSTANCE_MASK_AREA_PX) {
+            if (box.area() < MIN_INSTANCE_MASK_AREA_PX) {
+                continue;
+            }
+            validBoxes.add(box);
+            if (box.area() < SMALL_OBJECT_IMAGE_AREA_RATIO * imageArea) {
                 smallBoxes.add(box);
             } else {
                 largeBoxes.add(box);
             }
         }
+        if (validBoxes.isEmpty()) {
+            return generated;
+        }
         if (smallBoxes.isEmpty()) {
-            generated.add(GeneratedSample.full(image, width, height, boxes));
+            generated.add(GeneratedSample.full(image, width, height, validBoxes));
             return generated;
         }
         if (!largeBoxes.isEmpty()) {
@@ -626,8 +636,8 @@ final class YoloDatasetPreparer {
             }
             Rectangle crop = cropAround(target, width, height);
             List<Box> cropBoxes = new ArrayList<Box>();
-            for (Box candidate : smallBoxes) {
-                if (candidate.fullyInside(crop)) {
+            for (Box candidate : validBoxes) {
+                if (shouldIncludeInCrop(candidate, crop, smallBoxes.contains(candidate))) {
                     cropBoxes.add(candidate.relativeTo(crop));
                 }
             }
@@ -640,6 +650,14 @@ final class YoloDatasetPreparer {
             generated.add(GeneratedSample.crop(image, crop, cropBoxes));
         }
         return generated;
+    }
+
+    private static boolean shouldIncludeInCrop(Box box, Rectangle crop, boolean requireFullContainment) {
+        if (requireFullContainment && !box.fullyInside(crop)) {
+            return false;
+        }
+        return box.areaInside(crop) >= MIN_OBJECT_CROP_OVERLAP_RATIO * box.area()
+                && box.area() < MAX_OBJECT_CROP_AREA_RATIO * crop.width * (double) crop.height;
     }
 
     private static Rectangle cropAround(
@@ -1240,6 +1258,16 @@ final class YoloDatasetPreparer {
             return x1 >= rectangle.x && y1 >= rectangle.y
                     && x2 <= rectangle.x + rectangle.width
                     && y2 <= rectangle.y + rectangle.height;
+        }
+
+        private double areaInside(Rectangle rectangle) {
+            double overlapX1 = Math.max(x1, rectangle.x);
+            double overlapY1 = Math.max(y1, rectangle.y);
+            double overlapX2 = Math.min(x2, rectangle.x + rectangle.width);
+            double overlapY2 = Math.min(y2, rectangle.y + rectangle.height);
+            double overlapWidth = Math.max(0.0, overlapX2 - overlapX1);
+            double overlapHeight = Math.max(0.0, overlapY2 - overlapY1);
+            return overlapWidth * overlapHeight;
         }
 
         private Box relativeTo(Rectangle rectangle) {
