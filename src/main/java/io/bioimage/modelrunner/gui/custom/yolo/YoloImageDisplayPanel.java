@@ -85,6 +85,9 @@ public class YoloImageDisplayPanel extends JPanel {
     private Point panStartScreen;
     private double panStartX;
     private double panStartY;
+    private Point zoomAnchorScreen;
+    private double zoomAnchorImageX;
+    private double zoomAnchorImageY;
     private Rectangle2D.Double activeBox;
     private final List<Rectangle2D.Double> boxes = new ArrayList<Rectangle2D.Double>();
     private String emptyMessage = "Preview will appear here";
@@ -111,6 +114,7 @@ public class YoloImageDisplayPanel extends JPanel {
         MouseAdapter mouseAdapter = new MouseAdapter() {
             @Override
             public void mousePressed(MouseEvent e) {
+                clearZoomAnchor();
                 if (previewImage == null || !currentImageRect.contains(e.getPoint())) {
                     return;
                 }
@@ -127,6 +131,7 @@ public class YoloImageDisplayPanel extends JPanel {
 
             @Override
             public void mouseDragged(MouseEvent e) {
+                clearZoomAnchor();
                 if (previewImage == null) {
                     return;
                 }
@@ -149,6 +154,7 @@ public class YoloImageDisplayPanel extends JPanel {
 
             @Override
             public void mouseReleased(MouseEvent e) {
+                clearZoomAnchor();
                 if (!drawEnabled) {
                     panStartScreen = null;
                     repaint();
@@ -176,18 +182,21 @@ public class YoloImageDisplayPanel extends JPanel {
                 if (previewImage == null) {
                     return;
                 }
+                e.consume();
                 imageDrawArea = computeImageDrawArea();
                 Rectangle oldRect = computeCurrentImageRect(imageDrawArea);
-                double imageX = previewImage.getWidth() / 2.0;
-                double imageY = previewImage.getHeight() / 2.0;
-                if (oldRect.width > 0 && oldRect.height > 0 && oldRect.contains(e.getPoint())) {
-                    imageX = (e.getX() - oldRect.x) * previewImage.getWidth() / (double) oldRect.width;
-                    imageY = (e.getY() - oldRect.y) * previewImage.getHeight() / (double) oldRect.height;
-                }
+                updateZoomAnchorIfNeeded(e.getPoint(), oldRect);
                 double nextZoom = e.getWheelRotation() < 0 ? zoom * ZOOM_STEP : zoom / ZOOM_STEP;
                 zoom = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, nextZoom));
-                updatePanForAnchor(e.getPoint(), imageX, imageY);
+                positionImagePointAtScreenPoint(zoomAnchorImageX, zoomAnchorImageY, zoomAnchorScreen);
                 repaint();
+            }
+
+            @Override
+            public void mouseMoved(MouseEvent e) {
+                if (zoomAnchorScreen != null && !zoomAnchorScreen.equals(e.getPoint())) {
+                    clearZoomAnchor();
+                }
             }
         };
         addMouseListener(mouseAdapter);
@@ -197,6 +206,7 @@ public class YoloImageDisplayPanel extends JPanel {
 
     public void setDrawEnabled(boolean drawEnabled) {
         this.drawEnabled = drawEnabled;
+        clearZoomAnchor();
         updateToolTip();
     }
 
@@ -224,6 +234,7 @@ public class YoloImageDisplayPanel extends JPanel {
         this.panY = 0.0;
         this.dragStartScreen = null;
         this.panStartScreen = null;
+        clearZoomAnchor();
         this.activeBox = null;
         this.imageDrawArea = new Rectangle();
         this.currentImageRect = new Rectangle();
@@ -249,6 +260,7 @@ public class YoloImageDisplayPanel extends JPanel {
         this.panX = 0.0;
         this.panY = 0.0;
         this.panStartScreen = null;
+        clearZoomAnchor();
         this.boxColor = BOX_COLOR;
         this.titleColor = HELP_TEXT;
         clearBoxes();
@@ -272,6 +284,7 @@ public class YoloImageDisplayPanel extends JPanel {
         this.panY = 0.0;
         this.dragStartScreen = null;
         this.panStartScreen = null;
+        clearZoomAnchor();
         this.activeBox = null;
         this.boxes.clear();
         this.boxColor = BOX_COLOR;
@@ -309,6 +322,7 @@ public class YoloImageDisplayPanel extends JPanel {
         this.expandedToFill = expandedToFill;
         this.panX = 0.0;
         this.panY = 0.0;
+        clearZoomAnchor();
         updateExpandButtonState();
         repaint();
     }
@@ -520,18 +534,36 @@ public class YoloImageDisplayPanel extends JPanel {
         return new Rectangle(x, y, Math.max(1, drawW), Math.max(1, drawH));
     }
 
-    private void updatePanForAnchor(Point anchorPoint, double imageX, double imageY) {
+    private void positionImagePointAtScreenPoint(double imageX, double imageY, Point screenPoint) {
         Rectangle area = computeImageDrawArea();
-        int drawnW = Math.max(1, (int) Math.round(area.width * zoom));
-        int drawnH = Math.max(1, (int) Math.round(area.height * zoom));
+        Rectangle baseRect = computeBaseImageRect(area);
+        int drawnW = Math.max(1, (int) Math.round(baseRect.width * zoom));
+        int drawnH = Math.max(1, (int) Math.round(baseRect.height * zoom));
         int centeredX = area.x + (area.width - drawnW) / 2;
         int centeredY = area.y + (area.height - drawnH) / 2;
 
-        double targetX = anchorPoint.x - imageX * drawnW / (double) previewImage.getWidth();
-        double targetY = anchorPoint.y - imageY * drawnH / (double) previewImage.getHeight();
+        double targetX = screenPoint.x - imageX * drawnW / (double) previewImage.getWidth();
+        double targetY = screenPoint.y - imageY * drawnH / (double) previewImage.getHeight();
         panX = targetX - centeredX;
         panY = targetY - centeredY;
         currentImageRect = computeCurrentImageRect(area);
+    }
+
+    private void updateZoomAnchorIfNeeded(Point screenPoint, Rectangle imageRect) {
+        if (zoomAnchorScreen != null && zoomAnchorScreen.equals(screenPoint)) {
+            return;
+        }
+        zoomAnchorScreen = new Point(screenPoint);
+        zoomAnchorImageX = previewImage.getWidth() / 2.0;
+        zoomAnchorImageY = previewImage.getHeight() / 2.0;
+        if (imageRect.width > 0 && imageRect.height > 0 && imageRect.contains(screenPoint)) {
+            zoomAnchorImageX = (screenPoint.x - imageRect.x) * previewImage.getWidth() / (double) imageRect.width;
+            zoomAnchorImageY = (screenPoint.y - imageRect.y) * previewImage.getHeight() / (double) imageRect.height;
+        }
+    }
+
+    private void clearZoomAnchor() {
+        zoomAnchorScreen = null;
     }
 
     private Rectangle2D.Double toImageRectangle(Point start, Point end) {
