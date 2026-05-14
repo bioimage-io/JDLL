@@ -24,6 +24,8 @@ import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+import java.util.List;
 
 import javax.swing.JEditorPane;
 import javax.swing.JPanel;
@@ -37,6 +39,7 @@ public class YoloHtmlLogPanel extends JPanel {
     private static final long serialVersionUID = 2996134269810557663L;
 
     private static final int PAD = 2;
+    private static final int MAX_LOG_LINES = 250;
     private static final DateTimeFormatter TIME_FORMATTER = DateTimeFormatter.ofPattern("HH:mm:ss");
     private static final String EMPTY_HTML = "<html><body style='font-family:sans-serif;font-size:11px;'></body></html>";
 
@@ -44,6 +47,7 @@ public class YoloHtmlLogPanel extends JPanel {
     protected final JScrollPane scrollPane = new JScrollPane(editorPane);
     private final TitledBorder elapsedBorder = new TitledBorder(new LineBorder(Color.GRAY), "0.0s",
             TitledBorder.LEFT, TitledBorder.TOP);
+    private final List<String> logLines = new ArrayList<String>();
     private final Timer elapsedTimer;
     private long startNanos;
 
@@ -92,24 +96,35 @@ public class YoloHtmlLogPanel extends JPanel {
     }
 
     public void clearLog() {
+        logLines.clear();
         setHtml(EMPTY_HTML);
     }
 
     public void setHtml(String html) {
+        if (!EMPTY_HTML.equals(html)) {
+            logLines.clear();
+        }
         editorPane.setText(html);
         editorPane.setCaretPosition(0);
     }
 
     public void appendHtml(String htmlFragment) {
-        String text = editorPane.getText();
-        int idx = text.lastIndexOf("</body>");
-        if (idx < 0) {
-            setHtml(wrapLogLine(htmlFragment));
-            return;
+        logLines.add(wrapLogLine(htmlFragment));
+        while (logLines.size() > MAX_LOG_LINES) {
+            logLines.remove(0);
         }
-        String updated = text.substring(0, idx) + wrapLogLine(htmlFragment) + text.substring(idx);
-        editorPane.setText(updated);
+        editorPane.setText(buildHtml());
         editorPane.setCaretPosition(editorPane.getDocument().getLength());
+    }
+
+    private String buildHtml() {
+        StringBuilder builder = new StringBuilder(EMPTY_HTML.length() + logLines.size() * 80);
+        builder.append("<html><body style='font-family:sans-serif;font-size:11px;'>");
+        for (String line : logLines) {
+            builder.append(line);
+        }
+        builder.append("</body></html>");
+        return builder.toString();
     }
 
     private static String wrapLogLine(String htmlFragment) {

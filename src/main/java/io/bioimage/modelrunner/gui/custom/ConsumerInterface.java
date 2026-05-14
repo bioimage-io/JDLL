@@ -21,6 +21,7 @@ package io.bioimage.modelrunner.gui.custom;
 
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 import javax.swing.JComponent;
 
@@ -131,6 +132,10 @@ public abstract class ConsumerInterface {
 	void displayImage(RandomAccessibleInterval<T> rai, String axes, String name);
 	
 	public abstract void displayDetections(List<Detection> detections);
+
+	public void saveDetections(Map<String, List<Detection>> detectionsByImagePath) {
+		// Optional hook for host applications to persist ROIs from file-system inference.
+	}
 	
 	/**
 	 * Sets variable names.

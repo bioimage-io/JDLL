@@ -55,8 +55,27 @@ public class YoloInferenceService {
     List<Detection> run(String modelPath, RandomAccessibleInterval<T> rai, Consumer<String> logConsumer)
             throws RunModelException, LoadModelException, BuildException, IOException,
             ExecutionException, InterruptedException {
-        ensureLoaded(modelPath, logConsumer);
-        configureProgressLogging(logConsumer);
+        return run(modelPath, rai, logConsumer, true);
+    }
+
+    public <T extends RealType<T> & NativeType<T>>
+    List<Detection> run(String modelPath, RandomAccessibleInterval<T> rai, Consumer<String> logConsumer,
+            boolean usePatchProgressBar)
+            throws RunModelException, LoadModelException, BuildException, IOException,
+            ExecutionException, InterruptedException {
+        ensureLoaded(modelPath, logConsumer, usePatchProgressBar);
+        configureProgressLogging(logConsumer, usePatchProgressBar);
+        model.setObjectSize(size);
+        return runLoadedModel(rai);
+    }
+
+    public <T extends RealType<T> & NativeType<T>>
+    List<Detection> runWithProgress(String modelPath, RandomAccessibleInterval<T> rai,
+            Consumer<InferenceProgress> progressConsumer)
+            throws RunModelException, LoadModelException, BuildException, IOException,
+            ExecutionException, InterruptedException {
+        ensureLoaded(modelPath, null, progressConsumer);
+        configureInferenceProgressLogging(progressConsumer);
         model.setObjectSize(size);
         return runLoadedModel(rai);
     }
@@ -69,7 +88,14 @@ public class YoloInferenceService {
         loadedModelPath = null;
     }
 
-    private void ensureLoaded(String modelPath, Consumer<String> logConsumer)
+    private void ensureLoaded(String modelPath, Consumer<String> logConsumer, boolean usePatchProgressBar)
+            throws BuildException, IOException, LoadModelException, ExecutionException, InterruptedException {
+        ensureLoaded(modelPath, logConsumer,
+                progress -> appendProgressLog(progress, logConsumer, usePatchProgressBar));
+    }
+
+    private void ensureLoaded(String modelPath, Consumer<String> logConsumer,
+            Consumer<InferenceProgress> progressConsumer)
             throws BuildException, IOException, LoadModelException, ExecutionException, InterruptedException {
         if (loadedModelPath != null && !loadedModelPath.equals(modelPath)) {
             close();
@@ -77,24 +103,29 @@ public class YoloInferenceService {
         if (model == null || !model.isLoaded()) {
             installer.installIfNeeded(modelPath, logConsumer);
             model = Yolo.init(modelPath);
-            configureProgressLogging(logConsumer);
+            configureInferenceProgressLogging(progressConsumer);
             model.loadModel();
             loadedModelPath = modelPath;
         }
     }
 
-    private void configureProgressLogging(Consumer<String> logConsumer) {
+    private void configureProgressLogging(Consumer<String> logConsumer, boolean usePatchProgressBar) {
+        configureInferenceProgressLogging(progress -> appendProgressLog(progress, logConsumer, usePatchProgressBar));
+    }
+
+    private void configureInferenceProgressLogging(Consumer<InferenceProgress> progressConsumer) {
         if (model == null) {
             return;
         }
-        if (logConsumer == null) {
+        if (progressConsumer == null) {
             model.setInferenceProgressConsumer(null);
             return;
         }
-        model.setInferenceProgressConsumer(progress -> appendProgressLog(progress, logConsumer));
+        model.setInferenceProgressConsumer(progressConsumer);
     }
 
-    private static void appendProgressLog(InferenceProgress progress, Consumer<String> logConsumer) {
+    private static void appendProgressLog(InferenceProgress progress, Consumer<String> logConsumer,
+            boolean usePatchProgressBar) {
         if (progress == null || logConsumer == null) {
             return;
         }
@@ -109,7 +140,9 @@ public class YoloInferenceService {
                 logConsumer.accept("Starting inference on " + progress.getTotalPatches() + " patch(es).");
                 break;
             case PATCH_START:
-                logConsumer.accept(patchProgressBar(progress.getPatchIndex(), progress.getTotalPatches()));
+                logConsumer.accept(usePatchProgressBar
+                        ? patchProgressBar(progress.getPatchIndex(), progress.getTotalPatches())
+                        : patchProgressText(progress.getPatchIndex(), progress.getTotalPatches()));
                 break;
             case TASK_RETRY:
                 logConsumer.accept(progress.getDetail());
@@ -135,6 +168,12 @@ public class YoloInferenceService {
         }
         builder.append(' ').append(safePatch).append('/').append(safeTotal);
         return builder.toString();
+    }
+
+    private static String patchProgressText(int patchIndex, int totalPatches) {
+        int safeTotal = Math.max(1, totalPatches);
+        int safePatch = Math.max(0, Math.min(patchIndex, safeTotal));
+        return "Patch " + safePatch + "/" + safeTotal;
     }
 
     private <T extends RealType<T> & NativeType<T>>

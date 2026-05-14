@@ -33,6 +33,8 @@ import io.bioimage.modelrunner.exceptions.LoadModelException;
 import io.bioimage.modelrunner.exceptions.RunModelException;
 import io.bioimage.modelrunner.gui.adapter.GuiAdapter;
 import io.bioimage.modelrunner.gui.custom.yolo.YoloGUI;
+import io.bioimage.modelrunner.gui.custom.yolo.YoloDetectionCsvWriter;
+import io.bioimage.modelrunner.gui.custom.yolo.YoloDetectionGeoJsonWriter;
 import io.bioimage.modelrunner.gui.custom.yolo.YoloImageFiles;
 import io.bioimage.modelrunner.gui.custom.yolo.YoloImageSourcePanel;
 import io.bioimage.modelrunner.gui.custom.yolo.YoloInferenceService;
@@ -40,6 +42,7 @@ import io.bioimage.modelrunner.gui.custom.yolo.YoloInstaller;
 import io.bioimage.modelrunner.gui.custom.yolo.YoloModelRegistry;
 import io.bioimage.modelrunner.gui.custom.yolo.YoloTrainingConfig;
 import io.bioimage.modelrunner.gui.custom.yolo.YoloTrainingService;
+import io.bioimage.modelrunner.model.InferenceProgress;
 import io.bioimage.modelrunner.model.detection.Detection;
 import io.bioimage.modelrunner.model.special.yolo.YoloTrainingProgress;
 import net.imglib2.RandomAccessibleInterval;
@@ -58,8 +61,10 @@ import java.io.IOException;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Deque;
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ExecutionException;
 import java.util.function.Consumer;
 
@@ -74,7 +79,6 @@ public class YOLOPluginUI extends YoloGUI implements ActionListener {
     private static final String INVALID_IMAGE_MESSAGE = "Please provide a valid image file";
     private static final String EMPTY_FOLDER_MESSAGE = "Folder does not contain valid images";
     private static final Color PREVIEW_ERROR_COLOR = new Color(210, 40, 40);
-    private static final Color DETECTION_PREVIEW_COLOR = new Color(80, 220, 120);
 
     private final ConsumerInterface consumer;
     private final YoloInstaller installer = new YoloInstaller();
@@ -90,6 +94,7 @@ public class YOLOPluginUI extends YoloGUI implements ActionListener {
     private int totalTrainingEpochs;
     private double currentSecondsPerStep = Double.NaN;
     private final Deque<Double> secondsPerStepSamples = new ArrayDeque<Double>();
+    private File selectedSystemPath;
     private File selectedSystemImageFile;
     
     private Runnable cancelCallback;
@@ -161,6 +166,7 @@ public class YOLOPluginUI extends YoloGUI implements ActionListener {
     }
 
     private void showSystemPathPrompt() {
+        selectedSystemPath = null;
         selectedSystemImageFile = null;
         inferencePanel.getImageSourcePanel().setSystemPathSelectionConfirmed(false);
         inferencePanel.getImageDisplayPanel().setEmptyMessage(SYSTEM_PREVIEW_PROMPT);
@@ -169,6 +175,7 @@ public class YOLOPluginUI extends YoloGUI implements ActionListener {
     }
 
     private void showOpenImageSource() {
+        selectedSystemPath = null;
         selectedSystemImageFile = null;
         inferencePanel.getImageSourcePanel().setSystemPathSelectionConfirmed(false);
         inferencePanel.getImageDisplayPanel().setEmptyMessage(DEFAULT_PREVIEW_MESSAGE);
@@ -207,6 +214,7 @@ public class YOLOPluginUI extends YoloGUI implements ActionListener {
     }
 
     private void updateSystemPathPreview(File path) {
+        selectedSystemPath = null;
         selectedSystemImageFile = null;
         inferencePanel.getImageSourcePanel().setSystemPathSelectionConfirmed(false);
         if (path == null) {
@@ -221,6 +229,7 @@ public class YOLOPluginUI extends YoloGUI implements ActionListener {
                 inferencePanel.updateImageActionState();
                 return;
             }
+            selectedSystemPath = path;
             showSystemPreviewImage(previewImage);
             return;
         }
@@ -229,6 +238,7 @@ public class YOLOPluginUI extends YoloGUI implements ActionListener {
             inferencePanel.updateImageActionState();
             return;
         }
+        selectedSystemPath = path;
         showSystemPreviewImage(path);
     }
 
@@ -238,6 +248,7 @@ public class YOLOPluginUI extends YoloGUI implements ActionListener {
             selectedSystemImageFile = imageFile;
             inferencePanel.getImageSourcePanel().setSystemPathSelectionConfirmed(true);
         } catch (IOException e) {
+            selectedSystemPath = null;
             selectedSystemImageFile = null;
             inferencePanel.getImageSourcePanel().setSystemPathSelectionConfirmed(false);
             showPreviewError(INVALID_IMAGE_MESSAGE);
@@ -353,9 +364,11 @@ public class YOLOPluginUI extends YoloGUI implements ActionListener {
     private void runYOLOOnSystemImage(String modelPath)
             throws RunModelException, LoadModelException, BuildException, IOException,
             ExecutionException, InterruptedException {
-        if (selectedSystemImageFile == null || !YoloImageFiles.canReadImage(selectedSystemImageFile)) {
+        File source = selectedSystemPath == null ? selectedSystemImageFile : selectedSystemPath;
+        List<File> images = systemInferenceImages(source);
+        if (images.isEmpty()) {
             SwingUtilities.invokeLater(() -> {
-                showPreviewError(INVALID_IMAGE_MESSAGE);
+                showPreviewError(source != null && source.isDirectory() ? EMPTY_FOLDER_MESSAGE : INVALID_IMAGE_MESSAGE);
                 inferencePanel.updateImageActionState();
             });
             return;
@@ -365,19 +378,70 @@ public class YOLOPluginUI extends YoloGUI implements ActionListener {
         Consumer<String> logConsumer = str -> SwingUtilities.invokeLater(() ->
                 YOLOPluginUI.this.inferencePanel.getLogPanel().appendHtml(str));
         startInferenceLogTimer();
-        logConsumer.accept("Running filesystem image: " + selectedSystemImageFile.getAbsolutePath());
-        List<Detection> detections;
+        logConsumer.accept("Starting inference on " + images.size() + " image(s).");
+        Map<String, List<Detection>> detectionsByImage = new LinkedHashMap<String, List<Detection>>();
+        File outputCsv = YoloDetectionCsvWriter.outputFileFor(source);
         try {
-            RandomAccessibleInterval<UnsignedByteType> rai = readImageFileAsRai(selectedSystemImageFile);
-            detections = inferenceService.run(modelPath, rai, logConsumer);
+            for (int i = 0; i < images.size(); i++) {
+                if (cancelled || Thread.currentThread().isInterrupted()) {
+                    break;
+                }
+                File imageFile = images.get(i);
+                final int imageIndex = i + 1;
+                final int totalImages = images.size();
+                final boolean[] emittedPatchProgress = new boolean[] {false};
+                try {
+                    RandomAccessibleInterval<UnsignedByteType> rai = readImageFileAsRai(imageFile);
+                    List<Detection> detections = inferenceService.runWithProgress(modelPath, rai, progress -> {
+                        if (progress == null) {
+                            return;
+                        }
+                        if (progress.getPhase() == InferenceProgress.Phase.MODEL_LOADING) {
+                            logConsumer.accept("Loading model: " + progress.getDetail());
+                        } else if (progress.getPhase() == InferenceProgress.Phase.MODEL_LOADED) {
+                            logConsumer.accept("Model loaded.");
+                        } else if (progress.getPhase() == InferenceProgress.Phase.PATCH_END
+                                && progress.getTotalPatches() > 1) {
+                            emittedPatchProgress[0] = true;
+                            logConsumer.accept(imageProgressBar(imageIndex, totalImages,
+                                    progress.getPatchIndex(), progress.getTotalPatches()));
+                        } else if (progress.getPhase() == InferenceProgress.Phase.TASK_RETRY) {
+                            logConsumer.accept(progress.getDetail());
+                        }
+                    });
+                    detectionsByImage.put(imageFile.getAbsolutePath(), detections);
+                    if (!emittedPatchProgress[0]) {
+                        logConsumer.accept(imageProgressBar(imageIndex, totalImages));
+                    }
+                } catch (IOException e) {
+                    logConsumer.accept("Skipping unreadable image " + imageIndex + "/" + totalImages);
+                    detectionsByImage.put(imageFile.getAbsolutePath(), Collections.emptyList());
+                }
+            }
         } finally {
             SwingUtilities.invokeLater(() -> YOLOPluginUI.this.inferencePanel.getLogPanel().stopRunTimer());
         }
-        List<Rectangle2D.Double> detectionBoxes = detectionsToBoxes(detections);
-        SwingUtilities.invokeLater(() -> {
-            inferencePanel.setDrawModeEnabled(false);
-            inferencePanel.getImageDisplayPanel().setReadOnlyBoxes(detectionBoxes, DETECTION_PREVIEW_COLOR);
-        });
+        if (cancelled || Thread.currentThread().isInterrupted()) {
+            return;
+        }
+        YoloDetectionCsvWriter.write(outputCsv, detectionsByImage);
+        List<File> geoJsonFiles = YoloDetectionGeoJsonWriter.write(detectionsByImage);
+        consumer.saveDetections(detectionsByImage);
+        logConsumer.accept("Saved predictions: " + outputCsv.getAbsolutePath());
+        logConsumer.accept("Saved GeoJSON predictions for " + geoJsonFiles.size() + " image(s).");
+    }
+
+    private static List<File> systemInferenceImages(File source) {
+        if (source == null) {
+            return Collections.emptyList();
+        }
+        if (source.isDirectory()) {
+            return YoloImageFiles.readableImagesInDirectory(source);
+        }
+        if (YoloImageFiles.canReadImage(source)) {
+            return Collections.singletonList(source);
+        }
+        return Collections.emptyList();
     }
 
     private static RandomAccessibleInterval<UnsignedByteType> readImageFileAsRai(File imageFile) throws IOException {
@@ -400,21 +464,31 @@ public class YOLOPluginUI extends YoloGUI implements ActionListener {
         return ArrayImgs.unsignedBytes(pixels, width, height, 3);
     }
 
-    private static List<Rectangle2D.Double> detectionsToBoxes(List<Detection> detections) {
-        List<Rectangle2D.Double> boxes = new ArrayList<Rectangle2D.Double>();
-        if (detections == null) {
-            return boxes;
+    private static String imageProgressBar(int imageIndex, int totalImages) {
+        return imageProgressBar(imageIndex, totalImages, 0, 0);
+    }
+
+    private static String imageProgressBar(int imageIndex, int totalImages, int patchIndex, int totalPatches) {
+        int safeTotal = Math.max(1, totalImages);
+        int safeIndex = Math.max(0, Math.min(imageIndex, safeTotal));
+        int safePatch = Math.max(0, Math.min(patchIndex, Math.max(0, totalPatches)));
+        int safeTotalPatches = Math.max(1, totalPatches);
+        double completedImages = safeIndex;
+        boolean hasPatchProgress = safePatch > 0 && totalPatches > 1;
+        if (hasPatchProgress) {
+            completedImages = Math.max(0, safeIndex - 1) + safePatch / (double) safeTotalPatches;
         }
-        for (Detection detection : detections) {
-            double x1 = detection.getX1();
-            double y1 = detection.getY1();
-            double width = Math.max(0.0, detection.getX2() - x1);
-            double height = Math.max(0.0, detection.getY2() - y1);
-            if (width > 0.0 && height > 0.0) {
-                boxes.add(new Rectangle2D.Double(x1, y1, width, height));
-            }
+        int hashes = (int) Math.floor((completedImages / (double) safeTotal) * 20.0);
+        StringBuilder builder = new StringBuilder(32);
+        for (int i = 0; i < 20; i++) {
+            builder.append(i < hashes ? '#' : '.');
         }
-        return boxes;
+        builder.append(" Image ").append(safeIndex);
+        if (hasPatchProgress) {
+            builder.append('.').append(safePatch);
+        }
+        builder.append('/').append(safeTotal);
+        return builder.toString();
     }
 
     private void startInferenceLogTimer() {
