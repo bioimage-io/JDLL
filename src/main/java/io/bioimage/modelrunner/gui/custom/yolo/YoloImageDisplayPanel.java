@@ -35,9 +35,12 @@ import java.awt.geom.Rectangle2D;
 import java.awt.image.BufferedImage;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CancellationException;
+import java.util.concurrent.ExecutionException;
 
 import javax.swing.JButton;
 import javax.swing.JPanel;
+import javax.swing.SwingWorker;
 import javax.swing.Timer;
 import javax.swing.border.LineBorder;
 
@@ -52,8 +55,8 @@ public class YoloImageDisplayPanel extends JPanel {
     private static final long serialVersionUID = 2304277744020621731L;
 
     private static final double MIN_ZOOM = 0.2;
-    private static final double MAX_ZOOM = 16.0;
     private static final double ZOOM_STEP = 1.1;
+    private static final double MIN_VISIBLE_SOURCE_SIZE = 64.0;
     private static final int BOX_STROKE = 2;
     private static final Color BOX_COLOR = new Color(80, 220, 120);
     private static final Color ACTIVE_BOX_COLOR = new Color(255, 166, 0);
@@ -68,11 +71,19 @@ public class YoloImageDisplayPanel extends JPanel {
     private static final int HINT_HOLD_MS = 1500;
     private static final int HINT_FADE_MS = 1500;
     private static final int HINT_TIMER_DELAY_MS = 40;
+    private static final int MAX_RENDER_SIDE = 1024;
+    private static final int MAX_RENDER_PIXELS = MAX_RENDER_SIDE * MAX_RENDER_SIDE;
+    private static final int RANGE_SAMPLE_BUDGET = 65536;
     private static final String DEFAULT_HINT_LINE_1 = "Ctrl + wheel for zooming in/out";
     private static final String DEFAULT_HINT_LINE_2 = "Click and move the mouse for panning";
 
-    private RandomAccessibleInterval<?> rai;
-    private BufferedImage previewImage;
+    private PreviewSource previewSource;
+    private BufferedImage renderedViewport;
+    private RenderRequest renderedRequest;
+    private RenderRequest pendingRequest;
+    private SwingWorker<RenderResult, Void> renderWorker;
+    private long sourceVersion;
+    private long renderVersion;
     private String title;
     private double zoom = 1.0;
     private boolean expandedToFill;
@@ -115,7 +126,8 @@ public class YoloImageDisplayPanel extends JPanel {
             @Override
             public void mousePressed(MouseEvent e) {
                 clearZoomAnchor();
-                if (previewImage == null || !currentImageRect.contains(e.getPoint())) {
+                updateCurrentImageRect();
+                if (previewSource == null || !currentImageRect.contains(e.getPoint())) {
                     return;
                 }
                 if (!drawEnabled) {
@@ -132,7 +144,7 @@ public class YoloImageDisplayPanel extends JPanel {
             @Override
             public void mouseDragged(MouseEvent e) {
                 clearZoomAnchor();
-                if (previewImage == null) {
+                if (previewSource == null) {
                     return;
                 }
                 if (!drawEnabled) {
@@ -179,7 +191,7 @@ public class YoloImageDisplayPanel extends JPanel {
                 if (!e.isControlDown()) {
                     return;
                 }
-                if (previewImage == null) {
+                if (previewSource == null) {
                     return;
                 }
                 e.consume();
@@ -187,7 +199,7 @@ public class YoloImageDisplayPanel extends JPanel {
                 Rectangle oldRect = computeCurrentImageRect(imageDrawArea);
                 updateZoomAnchorIfNeeded(e.getPoint(), oldRect);
                 double nextZoom = e.getWheelRotation() < 0 ? zoom * ZOOM_STEP : zoom / ZOOM_STEP;
-                zoom = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, nextZoom));
+                zoom = clampZoom(nextZoom, imageDrawArea);
                 positionImagePointAtScreenPoint(zoomAnchorImageX, zoomAnchorImageY, zoomAnchorScreen);
                 repaint();
             }
@@ -225,8 +237,9 @@ public class YoloImageDisplayPanel extends JPanel {
     }
 
     public void clearImage() {
-        this.rai = null;
-        this.previewImage = null;
+        cancelRenderWorker();
+        this.previewSource = null;
+        clearRenderedViewport();
         this.title = null;
         this.zoom = 1.0;
         this.expandedToFill = false;
@@ -252,9 +265,11 @@ public class YoloImageDisplayPanel extends JPanel {
     }
 
     public <T extends RealType<T> & NativeType<T>> void setImage(RandomAccessibleInterval<T> rai, String title) {
-        this.rai = rai;
+        cancelRenderWorker();
+        this.previewSource = rai == null ? null : new RaiPreviewSource<T>(rai);
+        clearRenderedViewport();
+        this.sourceVersion++;
         this.title = title;
-        this.previewImage = buildPreview(rai);
         this.zoom = 1.0;
         this.expandedToFill = false;
         this.panX = 0.0;
@@ -274,9 +289,11 @@ public class YoloImageDisplayPanel extends JPanel {
     }
 
     public void setBufferedImage(BufferedImage image, String title, boolean showHint) {
-        this.rai = null;
+        cancelRenderWorker();
+        this.previewSource = image == null ? null : new BufferedImagePreviewSource(image);
+        clearRenderedViewport();
+        this.sourceVersion++;
         this.title = title;
-        this.previewImage = image;
         this.zoom = 1.0;
         this.expandedToFill = false;
         this.drawEnabled = false;
@@ -320,9 +337,12 @@ public class YoloImageDisplayPanel extends JPanel {
 
     public void setExpandedToFill(boolean expandedToFill) {
         this.expandedToFill = expandedToFill;
+        this.zoom = 1.0;
         this.panX = 0.0;
         this.panY = 0.0;
         clearZoomAnchor();
+        cancelRenderWorker();
+        clearRenderedViewport();
         updateExpandButtonState();
         repaint();
     }
@@ -359,7 +379,7 @@ public class YoloImageDisplayPanel extends JPanel {
         g2.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR);
         g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 
-        if (previewImage == null) {
+        if (previewSource == null) {
             g2.setColor(EMPTY_BG);
             g2.fillRect(0, 0, getWidth(), getHeight());
             g2.setColor(HELP_TEXT);
@@ -370,14 +390,22 @@ public class YoloImageDisplayPanel extends JPanel {
 
         imageDrawArea = computeImageDrawArea();
         currentImageRect = computeCurrentImageRect(imageDrawArea);
-        int drawnW = currentImageRect.width;
-        int drawnH = currentImageRect.height;
-        int x = currentImageRect.x;
-        int y = currentImageRect.y;
+        RenderGeometry renderGeometry = computeRenderGeometry(imageDrawArea, currentImageRect);
 
         g2.setClip(imageDrawArea);
-        g2.drawImage(previewImage, x, y, drawnW, drawnH, null);
-        drawBoxes(g2, x, y, drawnW, drawnH);
+        g2.setColor(EMPTY_BG);
+        g2.fillRect(imageDrawArea.x, imageDrawArea.y, imageDrawArea.width, imageDrawArea.height);
+        if (renderGeometry != null) {
+            requestRender(renderGeometry.request);
+            if (renderGeometry.request.equals(renderedRequest) && renderedViewport != null) {
+                Rectangle screen = renderGeometry.screenRect;
+                g2.drawImage(renderedViewport, screen.x, screen.y, screen.width, screen.height, null);
+            } else {
+                g2.setColor(HELP_TEXT);
+                drawCenteredMessage(g2, "Rendering preview...");
+            }
+        }
+        drawBoxes(g2, currentImageRect.x, currentImageRect.y, currentImageRect.width, currentImageRect.height);
         g2.setClip(null);
 
         if (title != null && !title.isEmpty()) {
@@ -409,7 +437,7 @@ public class YoloImageDisplayPanel extends JPanel {
     }
 
     private void paintHintOverlay(Graphics2D g2) {
-        if (hintAlpha <= 0.0f || previewImage == null) {
+        if (hintAlpha <= 0.0f || previewSource == null) {
             return;
         }
         Graphics2D overlay = (Graphics2D) g2.create();
@@ -459,8 +487,8 @@ public class YoloImageDisplayPanel extends JPanel {
     }
 
     private void drawBoxes(Graphics2D g2, int drawX, int drawY, int drawW, int drawH) {
-        double sx = drawW / (double) previewImage.getWidth();
-        double sy = drawH / (double) previewImage.getHeight();
+        double sx = drawW / (double) previewSource.width();
+        double sy = drawH / (double) previewSource.height();
 
         g2.setStroke(new BasicStroke(BOX_STROKE));
         g2.setColor(boxColor);
@@ -511,7 +539,7 @@ public class YoloImageDisplayPanel extends JPanel {
     }
 
     private Rectangle computeBaseImageRect(Rectangle area) {
-        double imgRatio = previewImage.getWidth() / (double) previewImage.getHeight();
+        double imgRatio = previewSource.width() / (double) previewSource.height();
         int drawW;
         int drawH;
         if (!expandedToFill) {
@@ -534,6 +562,54 @@ public class YoloImageDisplayPanel extends JPanel {
         return new Rectangle(x, y, Math.max(1, drawW), Math.max(1, drawH));
     }
 
+    private void updateCurrentImageRect() {
+        if (previewSource == null) {
+            currentImageRect = new Rectangle();
+            return;
+        }
+        imageDrawArea = computeImageDrawArea();
+        currentImageRect = computeCurrentImageRect(imageDrawArea);
+    }
+
+    private RenderGeometry computeRenderGeometry(Rectangle drawArea, Rectangle imageRect) {
+        if (previewSource == null || imageRect.width <= 0 || imageRect.height <= 0) {
+            return null;
+        }
+        Rectangle visibleScreen = imageRect.intersection(drawArea);
+        if (visibleScreen.width <= 0 || visibleScreen.height <= 0) {
+            return null;
+        }
+
+        double sourceX = (visibleScreen.x - imageRect.x) * previewSource.width() / (double) imageRect.width;
+        double sourceY = (visibleScreen.y - imageRect.y) * previewSource.height() / (double) imageRect.height;
+        double sourceW = visibleScreen.width * previewSource.width() / (double) imageRect.width;
+        double sourceH = visibleScreen.height * previewSource.height() / (double) imageRect.height;
+        Rectangle2D.Double sourceRect = clampSourceRect(sourceX, sourceY, sourceW, sourceH);
+        if (sourceRect.width <= 0.0 || sourceRect.height <= 0.0) {
+            return null;
+        }
+
+        int targetW = Math.max(1, Math.min(MAX_RENDER_SIDE, visibleScreen.width));
+        int targetH = Math.max(1, Math.min(MAX_RENDER_SIDE, visibleScreen.height));
+        double pixelCount = targetW * (double) targetH;
+        if (pixelCount > MAX_RENDER_PIXELS) {
+            double scale = Math.sqrt(MAX_RENDER_PIXELS / pixelCount);
+            targetW = Math.max(1, (int) Math.floor(targetW * scale));
+            targetH = Math.max(1, (int) Math.floor(targetH * scale));
+        }
+
+        RenderRequest request = new RenderRequest(sourceVersion, sourceRect, targetW, targetH);
+        return new RenderGeometry(visibleScreen, request);
+    }
+
+    private Rectangle2D.Double clampSourceRect(double x, double y, double width, double height) {
+        double x1 = Math.max(0.0, Math.min(previewSource.width(), x));
+        double y1 = Math.max(0.0, Math.min(previewSource.height(), y));
+        double x2 = Math.max(0.0, Math.min(previewSource.width(), x + width));
+        double y2 = Math.max(0.0, Math.min(previewSource.height(), y + height));
+        return new Rectangle2D.Double(x1, y1, Math.max(0.0, x2 - x1), Math.max(0.0, y2 - y1));
+    }
+
     private void positionImagePointAtScreenPoint(double imageX, double imageY, Point screenPoint) {
         Rectangle area = computeImageDrawArea();
         Rectangle baseRect = computeBaseImageRect(area);
@@ -542,11 +618,24 @@ public class YoloImageDisplayPanel extends JPanel {
         int centeredX = area.x + (area.width - drawnW) / 2;
         int centeredY = area.y + (area.height - drawnH) / 2;
 
-        double targetX = screenPoint.x - imageX * drawnW / (double) previewImage.getWidth();
-        double targetY = screenPoint.y - imageY * drawnH / (double) previewImage.getHeight();
+        double targetX = screenPoint.x - imageX * drawnW / (double) previewSource.width();
+        double targetY = screenPoint.y - imageY * drawnH / (double) previewSource.height();
         panX = targetX - centeredX;
         panY = targetY - centeredY;
         currentImageRect = computeCurrentImageRect(area);
+    }
+
+    private double clampZoom(double requestedZoom, Rectangle area) {
+        if (previewSource == null) {
+            return 1.0;
+        }
+        Rectangle baseRect = computeBaseImageRect(area);
+        double minVisibleByWidth = previewSource.width() * area.width
+                / (double) Math.max(1, baseRect.width) / MIN_VISIBLE_SOURCE_SIZE;
+        double minVisibleByHeight = previewSource.height() * area.height
+                / (double) Math.max(1, baseRect.height) / MIN_VISIBLE_SOURCE_SIZE;
+        double maxZoom = Math.max(1.0, Math.min(minVisibleByWidth, minVisibleByHeight));
+        return Math.max(MIN_ZOOM, Math.min(maxZoom, requestedZoom));
     }
 
     private void updateZoomAnchorIfNeeded(Point screenPoint, Rectangle imageRect) {
@@ -554,16 +643,76 @@ public class YoloImageDisplayPanel extends JPanel {
             return;
         }
         zoomAnchorScreen = new Point(screenPoint);
-        zoomAnchorImageX = previewImage.getWidth() / 2.0;
-        zoomAnchorImageY = previewImage.getHeight() / 2.0;
+        zoomAnchorImageX = previewSource.width() / 2.0;
+        zoomAnchorImageY = previewSource.height() / 2.0;
         if (imageRect.width > 0 && imageRect.height > 0 && imageRect.contains(screenPoint)) {
-            zoomAnchorImageX = (screenPoint.x - imageRect.x) * previewImage.getWidth() / (double) imageRect.width;
-            zoomAnchorImageY = (screenPoint.y - imageRect.y) * previewImage.getHeight() / (double) imageRect.height;
+            zoomAnchorImageX = (screenPoint.x - imageRect.x) * previewSource.width() / (double) imageRect.width;
+            zoomAnchorImageY = (screenPoint.y - imageRect.y) * previewSource.height() / (double) imageRect.height;
         }
     }
 
     private void clearZoomAnchor() {
         zoomAnchorScreen = null;
+    }
+
+    private void clearRenderedViewport() {
+        renderedViewport = null;
+        renderedRequest = null;
+        pendingRequest = null;
+    }
+
+    private void cancelRenderWorker() {
+        renderVersion++;
+        if (renderWorker != null && !renderWorker.isDone()) {
+            renderWorker.cancel(true);
+        }
+        renderWorker = null;
+    }
+
+    private void requestRender(RenderRequest request) {
+        if (request == null || previewSource == null) {
+            return;
+        }
+        if (request.equals(renderedRequest) || request.equals(pendingRequest)) {
+            return;
+        }
+        cancelRenderWorker();
+        pendingRequest = request;
+        final long workerVersion = renderVersion;
+        final PreviewSource source = previewSource;
+        final RenderRequest workerRequest = request;
+        renderWorker = new SwingWorker<RenderResult, Void>() {
+            @Override
+            protected RenderResult doInBackground() {
+                BufferedImage image = source.render(workerRequest.sourceRect, workerRequest.targetW,
+                        workerRequest.targetH, () -> isCancelled() || workerVersion != renderVersion);
+                return image == null ? null : new RenderResult(workerRequest, image);
+            }
+
+            @Override
+            protected void done() {
+                if (isCancelled() || workerVersion != renderVersion) {
+                    return;
+                }
+                try {
+                    RenderResult result = get();
+                    if (result == null || !result.request.equals(pendingRequest)) {
+                        return;
+                    }
+                    renderedViewport = result.image;
+                    renderedRequest = result.request;
+                    pendingRequest = null;
+                    repaint();
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                } catch (CancellationException | ExecutionException e) {
+                    if (workerVersion == renderVersion) {
+                        pendingRequest = null;
+                    }
+                }
+            }
+        };
+        renderWorker.execute();
     }
 
     private Rectangle2D.Double toImageRectangle(Point start, Point end) {
@@ -577,99 +726,257 @@ public class YoloImageDisplayPanel extends JPanel {
         double relX2 = (maxX - area.x) / (double) area.width;
         double relY2 = (maxY - area.y) / (double) area.height;
         return new Rectangle2D.Double(
-                relX1 * previewImage.getWidth(),
-                relY1 * previewImage.getHeight(),
-                Math.max(0, (relX2 - relX1) * previewImage.getWidth()),
-                Math.max(0, (relY2 - relY1) * previewImage.getHeight()));
-    }
-
-    private static <T extends RealType<T> & NativeType<T>> BufferedImage buildPreview(RandomAccessibleInterval<T> source) {
-        RandomAccessibleInterval<T> rai = source;
-        while (rai.numDimensions() > 3) {
-            rai = Views.hyperSlice(rai, rai.numDimensions() - 1, 0);
-        }
-        if (rai.numDimensions() == 3 && rai.dimension(2) != 3 && rai.dimension(2) != 4) {
-            rai = Views.hyperSlice(rai, 2, 0);
-        }
-        if (rai.numDimensions() == 2) {
-            return buildGrayPreview(rai);
-        } else if (rai.numDimensions() == 3) {
-            return buildColorPreview(rai);
-        }
-        return new BufferedImage(1, 1, BufferedImage.TYPE_INT_RGB);
-    }
-
-    private static <T extends RealType<T> & NativeType<T>> BufferedImage buildGrayPreview(RandomAccessibleInterval<T> rai) {
-        int width = (int) rai.dimension(0);
-        int height = (int) rai.dimension(1);
-        BufferedImage image = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
-        double[] range = findRange(rai);
-        double min = range[0];
-        double max = range[1];
-        if (max <= min) {
-            max = min + 1;
-        }
-        RandomAccess<T> access = rai.randomAccess();
-        for (int y = 0; y < height; y++) {
-            for (int x = 0; x < width; x++) {
-                access.setPosition(x, 0);
-                access.setPosition(y, 1);
-                int v = scaleToByte(access.get().getRealDouble(), min, max);
-                int rgb = (v << 16) | (v << 8) | v;
-                image.setRGB(x, y, rgb);
-            }
-        }
-        return image;
-    }
-
-    private static <T extends RealType<T> & NativeType<T>> BufferedImage buildColorPreview(RandomAccessibleInterval<T> rai) {
-        int width = (int) rai.dimension(0);
-        int height = (int) rai.dimension(1);
-        int channels = (int) rai.dimension(2);
-        BufferedImage image = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
-        double[] range = findRange(rai);
-        double min = range[0];
-        double max = range[1];
-        if (max <= min) {
-            max = min + 1;
-        }
-        RandomAccess<T> access = rai.randomAccess();
-        for (int y = 0; y < height; y++) {
-            for (int x = 0; x < width; x++) {
-                int[] rgb = new int[] {0, 0, 0};
-                for (int c = 0; c < Math.min(3, channels); c++) {
-                    access.setPosition(x, 0);
-                    access.setPosition(y, 1);
-                    access.setPosition(c, 2);
-                    rgb[c] = scaleToByte(access.get().getRealDouble(), min, max);
-                }
-                image.setRGB(x, y, (rgb[0] << 16) | (rgb[1] << 8) | rgb[2]);
-            }
-        }
-        return image;
-    }
-
-    private static <T extends RealType<T> & NativeType<T>> double[] findRange(RandomAccessibleInterval<T> rai) {
-        double min = Double.POSITIVE_INFINITY;
-        double max = Double.NEGATIVE_INFINITY;
-        for (T value : Views.iterable(rai)) {
-            double v = value.getRealDouble();
-            if (v < min) {
-                min = v;
-            }
-            if (v > max) {
-                max = v;
-            }
-        }
-        if (!Double.isFinite(min) || !Double.isFinite(max)) {
-            return new double[] {0, 1};
-        }
-        return new double[] {min, max};
+                relX1 * previewSource.width(),
+                relY1 * previewSource.height(),
+                Math.max(0, (relX2 - relX1) * previewSource.width()),
+                Math.max(0, (relY2 - relY1) * previewSource.height()));
     }
 
     private static int scaleToByte(double value, double min, double max) {
         double norm = (value - min) / (max - min);
         norm = Math.max(0, Math.min(1, norm));
         return (int) Math.round(norm * 255.0);
+    }
+
+    private static int clamp(int value, int min, int max) {
+        return Math.max(min, Math.min(max, value));
+    }
+
+    private interface RenderAbortCheck {
+        boolean shouldAbort();
+    }
+
+    private interface PreviewSource {
+        int width();
+
+        int height();
+
+        BufferedImage render(Rectangle2D.Double sourceRect, int targetW, int targetH, RenderAbortCheck abortCheck);
+    }
+
+    private static final class BufferedImagePreviewSource implements PreviewSource {
+        private final BufferedImage image;
+
+        private BufferedImagePreviewSource(BufferedImage image) {
+            this.image = image;
+        }
+
+        @Override
+        public int width() {
+            return image.getWidth();
+        }
+
+        @Override
+        public int height() {
+            return image.getHeight();
+        }
+
+        @Override
+        public BufferedImage render(Rectangle2D.Double sourceRect, int targetW, int targetH,
+                RenderAbortCheck abortCheck) {
+            if (abortCheck.shouldAbort()) {
+                return null;
+            }
+            BufferedImage out = new BufferedImage(targetW, targetH, BufferedImage.TYPE_INT_RGB);
+            Graphics2D g2 = out.createGraphics();
+            g2.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR);
+            int sx1 = clamp((int) Math.floor(sourceRect.x), 0, image.getWidth() - 1);
+            int sy1 = clamp((int) Math.floor(sourceRect.y), 0, image.getHeight() - 1);
+            int sx2 = clamp((int) Math.ceil(sourceRect.x + sourceRect.width), sx1 + 1, image.getWidth());
+            int sy2 = clamp((int) Math.ceil(sourceRect.y + sourceRect.height), sy1 + 1, image.getHeight());
+            g2.drawImage(image, 0, 0, targetW, targetH, sx1, sy1, sx2, sy2, null);
+            g2.dispose();
+            return out;
+        }
+    }
+
+    private static final class RaiPreviewSource<T extends RealType<T> & NativeType<T>> implements PreviewSource {
+        private final RandomAccessibleInterval<T> rai;
+        private final long minX;
+        private final long minY;
+        private final long minC;
+        private final int width;
+        private final int height;
+        private final int channels;
+        private double minValue = 0.0;
+        private double maxValue = 1.0;
+        private boolean rangeReady;
+
+        private RaiPreviewSource(RandomAccessibleInterval<T> source) {
+            RandomAccessibleInterval<T> view = source;
+            while (view.numDimensions() > 3) {
+                view = Views.hyperSlice(view, view.numDimensions() - 1, view.min(view.numDimensions() - 1));
+            }
+            if (view.numDimensions() == 3 && view.dimension(2) != 3 && view.dimension(2) != 4) {
+                view = Views.hyperSlice(view, 2, view.min(2));
+            }
+            this.rai = view;
+            this.minX = view.min(0);
+            this.minY = view.min(1);
+            this.minC = view.numDimensions() > 2 ? view.min(2) : 0L;
+            this.width = Math.max(1, (int) Math.min(Integer.MAX_VALUE, view.dimension(0)));
+            this.height = Math.max(1, (int) Math.min(Integer.MAX_VALUE, view.dimension(1)));
+            this.channels = view.numDimensions() > 2 ? Math.max(1, (int) Math.min(4, view.dimension(2))) : 1;
+        }
+
+        @Override
+        public int width() {
+            return width;
+        }
+
+        @Override
+        public int height() {
+            return height;
+        }
+
+        @Override
+        public BufferedImage render(Rectangle2D.Double sourceRect, int targetW, int targetH,
+                RenderAbortCheck abortCheck) {
+            if (!ensureRange(abortCheck)) {
+                return null;
+            }
+            BufferedImage out = new BufferedImage(targetW, targetH, BufferedImage.TYPE_INT_RGB);
+            RandomAccess<T> access = rai.randomAccess();
+            for (int y = 0; y < targetH; y++) {
+                if (abortCheck.shouldAbort()) {
+                    return null;
+                }
+                long sourceY = minY + sourceCoordinate(sourceRect.y, sourceRect.height, y, targetH, height);
+                for (int x = 0; x < targetW; x++) {
+                    long sourceX = minX + sourceCoordinate(sourceRect.x, sourceRect.width, x, targetW, width);
+                    access.setPosition(sourceX, 0);
+                    access.setPosition(sourceY, 1);
+                    if (channels == 1) {
+                        int v = scaleToByte(access.get().getRealDouble(), minValue, maxValue);
+                        out.setRGB(x, y, (v << 16) | (v << 8) | v);
+                    } else {
+                        int[] rgb = new int[] {0, 0, 0};
+                        for (int c = 0; c < Math.min(3, channels); c++) {
+                            access.setPosition(minC + c, 2);
+                            rgb[c] = scaleToByte(access.get().getRealDouble(), minValue, maxValue);
+                        }
+                        out.setRGB(x, y, (rgb[0] << 16) | (rgb[1] << 8) | rgb[2]);
+                    }
+                }
+            }
+            return out;
+        }
+
+        private boolean ensureRange(RenderAbortCheck abortCheck) {
+            if (rangeReady) {
+                return true;
+            }
+            double[] range = estimateRange(rai, abortCheck);
+            if (range == null) {
+                return false;
+            }
+            minValue = range[0];
+            maxValue = range[1] <= range[0] ? range[0] + 1.0 : range[1];
+            rangeReady = true;
+            return true;
+        }
+
+        private static long sourceCoordinate(double origin, double size, int targetIndex, int targetSize,
+                int sourceLimit) {
+            double source = origin + (targetIndex + 0.5) * size / Math.max(1, targetSize);
+            return Math.max(0L, Math.min(sourceLimit - 1L, (long) Math.floor(source)));
+        }
+
+        private static <T extends RealType<T> & NativeType<T>> double[] estimateRange(
+                RandomAccessibleInterval<T> rai, RenderAbortCheck abortCheck) {
+            double min = Double.POSITIVE_INFINITY;
+            double max = Double.NEGATIVE_INFINITY;
+            int width = Math.max(1, (int) Math.min(Integer.MAX_VALUE, rai.dimension(0)));
+            int height = Math.max(1, (int) Math.min(Integer.MAX_VALUE, rai.dimension(1)));
+            int channels = rai.numDimensions() > 2 ? Math.max(1, (int) Math.min(3, rai.dimension(2))) : 1;
+            int step = Math.max(1, (int) Math.ceil(Math.sqrt(width * (double) height / RANGE_SAMPLE_BUDGET)));
+            RandomAccess<T> access = rai.randomAccess();
+            for (int y = 0; y < height; y += step) {
+                if (abortCheck.shouldAbort()) {
+                    return null;
+                }
+                for (int x = 0; x < width; x += step) {
+                    access.setPosition(rai.min(0) + x, 0);
+                    access.setPosition(rai.min(1) + y, 1);
+                    for (int c = 0; c < channels; c++) {
+                        if (rai.numDimensions() > 2) {
+                            access.setPosition(rai.min(2) + c, 2);
+                        }
+                        double value = access.get().getRealDouble();
+                        min = Math.min(min, value);
+                        max = Math.max(max, value);
+                    }
+                }
+            }
+            if (!Double.isFinite(min) || !Double.isFinite(max)) {
+                return new double[] {0.0, 1.0};
+            }
+            return new double[] {min, max};
+        }
+    }
+
+    private static final class RenderGeometry {
+        private final Rectangle screenRect;
+        private final RenderRequest request;
+
+        private RenderGeometry(Rectangle screenRect, RenderRequest request) {
+            this.screenRect = screenRect;
+            this.request = request;
+        }
+    }
+
+    private static final class RenderRequest {
+        private final long sourceVersion;
+        private final Rectangle2D.Double sourceRect;
+        private final int targetW;
+        private final int targetH;
+
+        private RenderRequest(long sourceVersion, Rectangle2D.Double sourceRect, int targetW, int targetH) {
+            this.sourceVersion = sourceVersion;
+            this.sourceRect = sourceRect;
+            this.targetW = targetW;
+            this.targetH = targetH;
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+            if (!(obj instanceof RenderRequest)) {
+                return false;
+            }
+            RenderRequest other = (RenderRequest) obj;
+            return sourceVersion == other.sourceVersion
+                    && targetW == other.targetW
+                    && targetH == other.targetH
+                    && Double.compare(sourceRect.x, other.sourceRect.x) == 0
+                    && Double.compare(sourceRect.y, other.sourceRect.y) == 0
+                    && Double.compare(sourceRect.width, other.sourceRect.width) == 0
+                    && Double.compare(sourceRect.height, other.sourceRect.height) == 0;
+        }
+
+        @Override
+        public int hashCode() {
+            int result = Long.hashCode(sourceVersion);
+            long bits = Double.doubleToLongBits(sourceRect.x);
+            result = 31 * result + Long.hashCode(bits);
+            bits = Double.doubleToLongBits(sourceRect.y);
+            result = 31 * result + Long.hashCode(bits);
+            bits = Double.doubleToLongBits(sourceRect.width);
+            result = 31 * result + Long.hashCode(bits);
+            bits = Double.doubleToLongBits(sourceRect.height);
+            result = 31 * result + Long.hashCode(bits);
+            result = 31 * result + targetW;
+            result = 31 * result + targetH;
+            return result;
+        }
+    }
+
+    private static final class RenderResult {
+        private final RenderRequest request;
+        private final BufferedImage image;
+
+        private RenderResult(RenderRequest request, BufferedImage image) {
+            this.request = request;
+            this.image = image;
+        }
     }
 }
