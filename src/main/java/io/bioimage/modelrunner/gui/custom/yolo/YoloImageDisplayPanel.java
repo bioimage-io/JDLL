@@ -82,8 +82,11 @@ public class YoloImageDisplayPanel extends JPanel {
     private RenderRequest renderedRequest;
     private RenderRequest pendingRequest;
     private SwingWorker<RenderResult, Void> renderWorker;
+    private BufferedImage overviewImage;
+    private SwingWorker<BufferedImage, Void> overviewWorker;
     private long sourceVersion;
     private long renderVersion;
+    private long overviewVersion;
     private String title;
     private double zoom = 1.0;
     private boolean expandedToFill;
@@ -238,8 +241,10 @@ public class YoloImageDisplayPanel extends JPanel {
 
     public void clearImage() {
         cancelRenderWorker();
+        cancelOverviewWorker();
         this.previewSource = null;
         clearRenderedViewport();
+        clearOverview();
         this.title = null;
         this.zoom = 1.0;
         this.expandedToFill = false;
@@ -266,9 +271,12 @@ public class YoloImageDisplayPanel extends JPanel {
 
     public <T extends RealType<T> & NativeType<T>> void setImage(RandomAccessibleInterval<T> rai, String title) {
         cancelRenderWorker();
+        cancelOverviewWorker();
         this.previewSource = rai == null ? null : new RaiPreviewSource<T>(rai);
         clearRenderedViewport();
+        clearOverview();
         this.sourceVersion++;
+        requestOverviewRender();
         this.title = title;
         this.zoom = 1.0;
         this.expandedToFill = false;
@@ -290,9 +298,12 @@ public class YoloImageDisplayPanel extends JPanel {
 
     public void setBufferedImage(BufferedImage image, String title, boolean showHint) {
         cancelRenderWorker();
+        cancelOverviewWorker();
         this.previewSource = image == null ? null : new BufferedImagePreviewSource(image);
         clearRenderedViewport();
+        clearOverview();
         this.sourceVersion++;
+        requestOverviewRender();
         this.title = title;
         this.zoom = 1.0;
         this.expandedToFill = false;
@@ -400,9 +411,12 @@ public class YoloImageDisplayPanel extends JPanel {
             if (renderGeometry.request.equals(renderedRequest) && renderedViewport != null) {
                 Rectangle screen = renderGeometry.screenRect;
                 g2.drawImage(renderedViewport, screen.x, screen.y, screen.width, screen.height, null);
-            } else {
+            } else if (!drawOverviewFallback(g2, renderGeometry)) {
+                requestOverviewRender();
                 g2.setColor(HELP_TEXT);
                 drawCenteredMessage(g2, "Rendering preview...");
+            } else {
+                requestOverviewRender();
             }
         }
         drawBoxes(g2, currentImageRect.x, currentImageRect.y, currentImageRect.width, currentImageRect.height);
@@ -661,12 +675,92 @@ public class YoloImageDisplayPanel extends JPanel {
         pendingRequest = null;
     }
 
+    private void clearOverview() {
+        overviewImage = null;
+    }
+
     private void cancelRenderWorker() {
         renderVersion++;
         if (renderWorker != null && !renderWorker.isDone()) {
             renderWorker.cancel(true);
         }
         renderWorker = null;
+    }
+
+    private void cancelOverviewWorker() {
+        overviewVersion++;
+        if (overviewWorker != null && !overviewWorker.isDone()) {
+            overviewWorker.cancel(true);
+        }
+        overviewWorker = null;
+    }
+
+    private boolean drawOverviewFallback(Graphics2D g2, RenderGeometry geometry) {
+        if (overviewImage == null || geometry == null || previewSource == null) {
+            return false;
+        }
+        Rectangle screen = geometry.screenRect;
+        Rectangle2D.Double source = geometry.request.sourceRect;
+        int sx1 = clamp((int) Math.floor(source.x * overviewImage.getWidth() / previewSource.width()),
+                0, overviewImage.getWidth() - 1);
+        int sy1 = clamp((int) Math.floor(source.y * overviewImage.getHeight() / previewSource.height()),
+                0, overviewImage.getHeight() - 1);
+        int sx2 = clamp((int) Math.ceil((source.x + source.width) * overviewImage.getWidth() / previewSource.width()),
+                sx1 + 1, overviewImage.getWidth());
+        int sy2 = clamp((int) Math.ceil((source.y + source.height) * overviewImage.getHeight() / previewSource.height()),
+                sy1 + 1, overviewImage.getHeight());
+        g2.drawImage(overviewImage, screen.x, screen.y, screen.x + screen.width, screen.y + screen.height,
+                sx1, sy1, sx2, sy2, null);
+        return true;
+    }
+
+    private void requestOverviewRender() {
+        if (previewSource == null || overviewImage != null
+                || (overviewWorker != null && !overviewWorker.isDone())) {
+            return;
+        }
+        final PreviewSource source = previewSource;
+        final long sourceSnapshot = sourceVersion;
+        final long workerVersion = overviewVersion;
+        final int[] size = overviewSize(source.width(), source.height());
+        overviewWorker = new SwingWorker<BufferedImage, Void>() {
+            @Override
+            protected BufferedImage doInBackground() {
+                return source.render(new Rectangle2D.Double(0.0, 0.0, source.width(), source.height()),
+                        size[0], size[1], () -> isCancelled() || workerVersion != overviewVersion
+                                || sourceSnapshot != sourceVersion);
+            }
+
+            @Override
+            protected void done() {
+                if (isCancelled() || workerVersion != overviewVersion || sourceSnapshot != sourceVersion
+                        || source != previewSource) {
+                    return;
+                }
+                try {
+                    overviewImage = get();
+                    repaint();
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                } catch (CancellationException | ExecutionException e) {
+                    // Exact viewport rendering still works if the overview cannot be built.
+                }
+            }
+        };
+        overviewWorker.execute();
+    }
+
+    private static int[] overviewSize(int sourceW, int sourceH) {
+        double scale = Math.min(1.0, MAX_RENDER_SIDE / (double) Math.max(sourceW, sourceH));
+        int targetW = Math.max(1, (int) Math.round(sourceW * scale));
+        int targetH = Math.max(1, (int) Math.round(sourceH * scale));
+        double pixelCount = targetW * (double) targetH;
+        if (pixelCount > MAX_RENDER_PIXELS) {
+            scale *= Math.sqrt(MAX_RENDER_PIXELS / pixelCount);
+            targetW = Math.max(1, (int) Math.floor(sourceW * scale));
+            targetH = Math.max(1, (int) Math.floor(sourceH * scale));
+        }
+        return new int[] {targetW, targetH};
     }
 
     private void requestRender(RenderRequest request) {
@@ -862,7 +956,7 @@ public class YoloImageDisplayPanel extends JPanel {
             return out;
         }
 
-        private boolean ensureRange(RenderAbortCheck abortCheck) {
+        private synchronized boolean ensureRange(RenderAbortCheck abortCheck) {
             if (rangeReady) {
                 return true;
             }
