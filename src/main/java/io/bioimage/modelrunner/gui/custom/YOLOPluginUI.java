@@ -20,10 +20,12 @@
 package io.bioimage.modelrunner.gui.custom;
 
 import javax.swing.JComponent;
+import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JOptionPane;
 import javax.swing.SwingUtilities;
 import javax.swing.Timer;
+import javax.imageio.ImageIO;
 
 import org.apposed.appose.BuildException;
 
@@ -31,6 +33,8 @@ import io.bioimage.modelrunner.exceptions.LoadModelException;
 import io.bioimage.modelrunner.exceptions.RunModelException;
 import io.bioimage.modelrunner.gui.adapter.GuiAdapter;
 import io.bioimage.modelrunner.gui.custom.yolo.YoloGUI;
+import io.bioimage.modelrunner.gui.custom.yolo.YoloImageFiles;
+import io.bioimage.modelrunner.gui.custom.yolo.YoloImageSourcePanel;
 import io.bioimage.modelrunner.gui.custom.yolo.YoloInferenceService;
 import io.bioimage.modelrunner.gui.custom.yolo.YoloInstaller;
 import io.bioimage.modelrunner.gui.custom.yolo.YoloModelRegistry;
@@ -42,9 +46,14 @@ import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.type.NativeType;
 import net.imglib2.type.numeric.RealType;
 
+import java.awt.Color;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.FocusAdapter;
+import java.awt.event.FocusEvent;
 import java.awt.geom.Rectangle2D;
+import java.awt.image.BufferedImage;
+import java.io.File;
 import java.io.IOException;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
@@ -54,9 +63,18 @@ import java.util.List;
 import java.util.concurrent.ExecutionException;
 import java.util.function.Consumer;
 
+import net.imglib2.img.array.ArrayImgs;
+import net.imglib2.type.numeric.integer.UnsignedByteType;
+
 public class YOLOPluginUI extends YoloGUI implements ActionListener {
 
     private static final long serialVersionUID = 5381352117710530216L;
+    private static final String DEFAULT_PREVIEW_MESSAGE = "Preview will appear here";
+    private static final String SYSTEM_PREVIEW_PROMPT = "Please select an image/folder from the file system";
+    private static final String INVALID_IMAGE_MESSAGE = "Please provide a valid image file";
+    private static final String EMPTY_FOLDER_MESSAGE = "Folder does not contain valid images";
+    private static final Color PREVIEW_ERROR_COLOR = new Color(210, 40, 40);
+    private static final Color DETECTION_PREVIEW_COLOR = new Color(80, 220, 120);
 
     private final ConsumerInterface consumer;
     private final YoloInstaller installer = new YoloInstaller();
@@ -72,6 +90,7 @@ public class YOLOPluginUI extends YoloGUI implements ActionListener {
     private int totalTrainingEpochs;
     private double currentSecondsPerStep = Double.NaN;
     private final Deque<Double> secondsPerStepSamples = new ArrayDeque<Double>();
+    private File selectedSystemImageFile;
     
     private Runnable cancelCallback;
     Thread workerThread;
@@ -106,6 +125,7 @@ public class YOLOPluginUI extends YoloGUI implements ActionListener {
         this.inferencePanel.getActionPanel().getRunButton().addActionListener(this);
         this.trainPanel.getTrainActionPanel().getCancelButton().addActionListener(this);
         this.trainPanel.getTrainActionPanel().getRunButton().addActionListener(this);
+        installInferenceSourceListeners();
         consumer.updateGUI();
     }
 
@@ -123,6 +143,111 @@ public class YOLOPluginUI extends YoloGUI implements ActionListener {
      */
     public void close() {
     	inferenceService.close();
+    }
+
+    private void installInferenceSourceListeners() {
+        YoloImageSourcePanel sourcePanel = inferencePanel.getImageSourcePanel();
+        sourcePanel.getSystemImagesRadio().addActionListener(e -> showSystemPathPrompt());
+        sourcePanel.getOpenImagesRadio().addActionListener(e -> showOpenImageSource());
+        sourcePanel.getSystemPathField().addActionListener(e -> updateSystemPathPreviewFromField());
+        sourcePanel.getSystemPathField().addFocusListener(new FocusAdapter() {
+            @Override
+            public void focusLost(FocusEvent e) {
+                updateSystemPathPreviewFromField();
+            }
+        });
+        sourcePanel.setSystemPathDropConsumer(file -> updateSystemPathPreview(file));
+        sourcePanel.getBrowseButton().addActionListener(e -> browseSystemImagePath());
+    }
+
+    private void showSystemPathPrompt() {
+        selectedSystemImageFile = null;
+        inferencePanel.getImageSourcePanel().setSystemPathSelectionConfirmed(false);
+        inferencePanel.getImageDisplayPanel().setEmptyMessage(SYSTEM_PREVIEW_PROMPT);
+        inferencePanel.getImageDisplayPanel().clearImage();
+        inferencePanel.updateImageActionState();
+    }
+
+    private void showOpenImageSource() {
+        selectedSystemImageFile = null;
+        inferencePanel.getImageSourcePanel().setSystemPathSelectionConfirmed(false);
+        inferencePanel.getImageDisplayPanel().setEmptyMessage(DEFAULT_PREVIEW_MESSAGE);
+        if (consumer != null) {
+            consumer.updateGUI();
+        } else {
+            inferencePanel.getImageDisplayPanel().clearImage();
+        }
+        inferencePanel.updateImageActionState();
+    }
+
+    private void browseSystemImagePath() {
+        JFileChooser chooser = new JFileChooser();
+        chooser.setFileSelectionMode(JFileChooser.FILES_AND_DIRECTORIES);
+        chooser.setAcceptAllFileFilterUsed(true);
+        int result = chooser.showOpenDialog(this);
+        if (result != JFileChooser.APPROVE_OPTION) {
+            return;
+        }
+        File selected = chooser.getSelectedFile();
+        inferencePanel.getImageSourcePanel().getSystemImagesRadio().setSelected(true);
+        inferencePanel.getImageSourcePanel().getSystemPathField().setText(selected.getAbsolutePath());
+        updateSystemPathPreview(selected);
+    }
+
+    private void updateSystemPathPreviewFromField() {
+        if (!inferencePanel.getImageSourcePanel().getSystemImagesRadio().isSelected()) {
+            return;
+        }
+        String text = inferencePanel.getImageSourcePanel().getSystemPathField().getText();
+        if (text == null || text.trim().isEmpty()) {
+            showSystemPathPrompt();
+            return;
+        }
+        updateSystemPathPreview(new File(text.trim()));
+    }
+
+    private void updateSystemPathPreview(File path) {
+        selectedSystemImageFile = null;
+        inferencePanel.getImageSourcePanel().setSystemPathSelectionConfirmed(false);
+        if (path == null) {
+            showPreviewError(INVALID_IMAGE_MESSAGE);
+            inferencePanel.updateImageActionState();
+            return;
+        }
+        if (path.isDirectory()) {
+            File previewImage = YoloImageFiles.previewImageInDirectory(path);
+            if (previewImage == null) {
+                showPreviewError(EMPTY_FOLDER_MESSAGE);
+                inferencePanel.updateImageActionState();
+                return;
+            }
+            showSystemPreviewImage(previewImage);
+            return;
+        }
+        if (!YoloImageFiles.canReadImage(path)) {
+            showPreviewError(INVALID_IMAGE_MESSAGE);
+            inferencePanel.updateImageActionState();
+            return;
+        }
+        showSystemPreviewImage(path);
+    }
+
+    private void showSystemPreviewImage(File imageFile) {
+        try {
+            inferencePanel.getImageDisplayPanel().setImageFile(imageFile, imageFile.getName(), true);
+            selectedSystemImageFile = imageFile;
+            inferencePanel.getImageSourcePanel().setSystemPathSelectionConfirmed(true);
+        } catch (IOException e) {
+            selectedSystemImageFile = null;
+            inferencePanel.getImageSourcePanel().setSystemPathSelectionConfirmed(false);
+            showPreviewError(INVALID_IMAGE_MESSAGE);
+        }
+        inferencePanel.updateImageActionState();
+    }
+
+    private void showPreviewError(String message) {
+        inferencePanel.getImageDisplayPanel().setEmptyMessage(message, PREVIEW_ERROR_COLOR);
+        inferencePanel.getImageDisplayPanel().clearImage();
     }
 
     // For demonstration purposes: a main method to show the UI in a JFrame.
@@ -191,11 +316,21 @@ public class YOLOPluginUI extends YoloGUI implements ActionListener {
     	this.consumer.notifyParams(null);
     }
     
-    private < T extends RealType< T > & NativeType< T > > void runYOLO()
+    private void runYOLO()
     		throws RunModelException, LoadModelException, BuildException, IOException,
     		ExecutionException, InterruptedException {
     	saveParams();
     	String modelPath = this.inferencePanel.getModelSelectionPanel().getSelectedModelValue();
+    	if (this.inferencePanel.getImageSourcePanel().getSystemImagesRadio().isSelected()) {
+    		runYOLOOnSystemImage(modelPath);
+    		return;
+    	}
+    	runYOLOOnOpenImage(modelPath);
+    }
+
+    private < T extends RealType< T > & NativeType< T > > void runYOLOOnOpenImage(String modelPath)
+            throws RunModelException, LoadModelException, BuildException, IOException,
+            ExecutionException, InterruptedException {
     	RandomAccessibleInterval<T> rai = consumer.getFocusedImageAsRai();
     	if (rai == null) {
     		JOptionPane.showMessageDialog(null, "Please open an image", "No image open", JOptionPane.ERROR_MESSAGE);
@@ -213,6 +348,73 @@ public class YOLOPluginUI extends YoloGUI implements ActionListener {
             SwingUtilities.invokeLater(() -> YOLOPluginUI.this.inferencePanel.getLogPanel().stopRunTimer());
         }
         consumer.displayDetections(detections);
+    }
+
+    private void runYOLOOnSystemImage(String modelPath)
+            throws RunModelException, LoadModelException, BuildException, IOException,
+            ExecutionException, InterruptedException {
+        if (selectedSystemImageFile == null || !YoloImageFiles.canReadImage(selectedSystemImageFile)) {
+            SwingUtilities.invokeLater(() -> {
+                showPreviewError(INVALID_IMAGE_MESSAGE);
+                inferencePanel.updateImageActionState();
+            });
+            return;
+        }
+        List<Rectangle2D.Double> boxes = inferencePanel.getImageDisplayPanel().getBoxes();
+        inferenceService.setObjectSize(boxes);
+        Consumer<String> logConsumer = str -> SwingUtilities.invokeLater(() ->
+                YOLOPluginUI.this.inferencePanel.getLogPanel().appendHtml(str));
+        startInferenceLogTimer();
+        logConsumer.accept("Running filesystem image: " + selectedSystemImageFile.getAbsolutePath());
+        List<Detection> detections;
+        try {
+            RandomAccessibleInterval<UnsignedByteType> rai = readImageFileAsRai(selectedSystemImageFile);
+            detections = inferenceService.run(modelPath, rai, logConsumer);
+        } finally {
+            SwingUtilities.invokeLater(() -> YOLOPluginUI.this.inferencePanel.getLogPanel().stopRunTimer());
+        }
+        List<Rectangle2D.Double> detectionBoxes = detectionsToBoxes(detections);
+        SwingUtilities.invokeLater(() -> {
+            inferencePanel.setDrawModeEnabled(false);
+            inferencePanel.getImageDisplayPanel().setReadOnlyBoxes(detectionBoxes, DETECTION_PREVIEW_COLOR);
+        });
+    }
+
+    private static RandomAccessibleInterval<UnsignedByteType> readImageFileAsRai(File imageFile) throws IOException {
+        BufferedImage image = ImageIO.read(imageFile);
+        if (image == null) {
+            throw new IOException("Unsupported image file: " + imageFile);
+        }
+        int width = image.getWidth();
+        int height = image.getHeight();
+        byte[] pixels = new byte[width * height * 3];
+        int offset = 0;
+        for (int y = 0; y < height; y++) {
+            for (int x = 0; x < width; x++) {
+                int rgb = image.getRGB(x, y);
+                pixels[offset++] = (byte) ((rgb >> 16) & 0xff);
+                pixels[offset++] = (byte) ((rgb >> 8) & 0xff);
+                pixels[offset++] = (byte) (rgb & 0xff);
+            }
+        }
+        return ArrayImgs.unsignedBytes(pixels, width, height, 3);
+    }
+
+    private static List<Rectangle2D.Double> detectionsToBoxes(List<Detection> detections) {
+        List<Rectangle2D.Double> boxes = new ArrayList<Rectangle2D.Double>();
+        if (detections == null) {
+            return boxes;
+        }
+        for (Detection detection : detections) {
+            double x1 = detection.getX1();
+            double y1 = detection.getY1();
+            double width = Math.max(0.0, detection.getX2() - x1);
+            double height = Math.max(0.0, detection.getY2() - y1);
+            if (width > 0.0 && height > 0.0) {
+                boxes.add(new Rectangle2D.Double(x1, y1, width, height));
+            }
+        }
+        return boxes;
     }
 
     private void startInferenceLogTimer() {

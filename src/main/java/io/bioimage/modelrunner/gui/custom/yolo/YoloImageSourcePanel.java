@@ -23,6 +23,7 @@ import java.awt.datatransfer.DataFlavor;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Consumer;
 
 import javax.swing.ButtonGroup;
 import javax.swing.JButton;
@@ -30,6 +31,8 @@ import javax.swing.JComboBox;
 import javax.swing.JPanel;
 import javax.swing.JRadioButton;
 import javax.swing.TransferHandler;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
 
 public class YoloImageSourcePanel extends JPanel {
 
@@ -56,6 +59,8 @@ public class YoloImageSourcePanel extends JPanel {
     protected final YoloPlaceholderTextField systemPathField = new YoloPlaceholderTextField("path to an image or folder");
     protected final JButton browseButton = new JButton("Browse");
     protected final YoloHelpIcon systemPathHelpIcon = new YoloHelpIcon();
+    private final FileDropHandler systemPathDropHandler;
+    private boolean systemPathSelectionConfirmed;
 
     protected YoloImageSourcePanel() {
         setLayout(null);
@@ -65,7 +70,8 @@ public class YoloImageSourcePanel extends JPanel {
         group.add(openImagesRadio);
         group.add(systemImagesRadio);
 
-        systemPathField.setTransferHandler(new FileDropHandler(systemPathField));
+        systemPathDropHandler = new FileDropHandler(systemPathField);
+        systemPathField.setTransferHandler(systemPathDropHandler);
         openImagesComboBox.setRenderer(new YoloOpenImageComboBoxRenderer());
         YoloUiUtils.styleInput(openImagesComboBox);
         YoloUiUtils.styleInput(systemPathField);
@@ -92,7 +98,27 @@ public class YoloImageSourcePanel extends JPanel {
 
         openImagesRadio.addActionListener(e -> updateEnabledState());
         systemImagesRadio.addActionListener(e -> updateEnabledState());
+        systemPathField.getDocument().addDocumentListener(new DocumentListener() {
+            @Override
+            public void insertUpdate(DocumentEvent e) {
+                invalidateSystemPathSelection();
+            }
+
+            @Override
+            public void removeUpdate(DocumentEvent e) {
+                invalidateSystemPathSelection();
+            }
+
+            @Override
+            public void changedUpdate(DocumentEvent e) {
+                invalidateSystemPathSelection();
+            }
+        });
         updateEnabledState();
+    }
+
+    private void invalidateSystemPathSelection() {
+        systemPathSelectionConfirmed = false;
     }
 
     private void selectRelativeOpenImage(int step) {
@@ -187,12 +213,15 @@ public class YoloImageSourcePanel extends JPanel {
     }
 
     public boolean hasValidSystemPathSelection() {
+        if (!systemPathSelectionConfirmed) {
+            return false;
+        }
         String path = systemPathField.getText();
         if (path == null || path.trim().isEmpty()) {
             return false;
         }
         File file = new File(path.trim());
-        return file.exists() && (file.isFile() || file.isDirectory());
+        return YoloImageFiles.isValidDroppedPath(file);
     }
 
     public boolean hasValidSelectedSource() {
@@ -231,12 +260,26 @@ public class YoloImageSourcePanel extends JPanel {
         return focusButton;
     }
 
+    public void setSystemPathDropConsumer(Consumer<File> dropConsumer) {
+        systemPathDropHandler.setDropConsumer(dropConsumer);
+    }
+
+    public void setSystemPathSelectionConfirmed(boolean confirmed) {
+        systemPathSelectionConfirmed = confirmed;
+        updateEnabledState();
+    }
+
     private static class FileDropHandler extends TransferHandler {
         private static final long serialVersionUID = -4079793236252082911L;
         private final YoloPlaceholderTextField field;
+        private Consumer<File> dropConsumer;
 
         FileDropHandler(YoloPlaceholderTextField field) {
             this.field = field;
+        }
+
+        private void setDropConsumer(Consumer<File> dropConsumer) {
+            this.dropConsumer = dropConsumer;
         }
 
         @Override
@@ -252,7 +295,11 @@ public class YoloImageSourcePanel extends JPanel {
                 if (files == null || files.isEmpty()) {
                     return false;
                 }
-                field.setText(files.get(0).getAbsolutePath());
+                File file = files.get(0);
+                field.setText(file.getAbsolutePath());
+                if (dropConsumer != null) {
+                    dropConsumer.accept(file);
+                }
                 return true;
             } catch (Exception ex) {
                 return false;

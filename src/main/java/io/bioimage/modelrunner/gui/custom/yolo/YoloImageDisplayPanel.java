@@ -33,11 +33,18 @@ import java.awt.event.MouseEvent;
 import java.awt.event.MouseWheelEvent;
 import java.awt.geom.Rectangle2D;
 import java.awt.image.BufferedImage;
+import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.ExecutionException;
 
+import javax.imageio.ImageIO;
+import javax.imageio.ImageReadParam;
+import javax.imageio.ImageReader;
+import javax.imageio.stream.ImageInputStream;
 import javax.swing.JButton;
 import javax.swing.JPanel;
 import javax.swing.SwingWorker;
@@ -105,6 +112,7 @@ public class YoloImageDisplayPanel extends JPanel {
     private Rectangle2D.Double activeBox;
     private final List<Rectangle2D.Double> boxes = new ArrayList<Rectangle2D.Double>();
     private String emptyMessage = "Preview will appear here";
+    private Color emptyMessageColor = HELP_TEXT;
     private Color boxColor = BOX_COLOR;
     private Color titleColor = HELP_TEXT;
     private final JButton expandButton = new JButton(EXPAND_SYMBOL);
@@ -263,9 +271,14 @@ public class YoloImageDisplayPanel extends JPanel {
     }
 
     public void setEmptyMessage(String emptyMessage) {
+        setEmptyMessage(emptyMessage, HELP_TEXT);
+    }
+
+    public void setEmptyMessage(String emptyMessage, Color color) {
         this.emptyMessage = emptyMessage == null || emptyMessage.trim().isEmpty()
                 ? "Preview will appear here"
                 : emptyMessage.trim();
+        this.emptyMessageColor = color == null ? HELP_TEXT : color;
         repaint();
     }
 
@@ -286,6 +299,7 @@ public class YoloImageDisplayPanel extends JPanel {
         clearZoomAnchor();
         this.boxColor = BOX_COLOR;
         this.titleColor = HELP_TEXT;
+        this.emptyMessageColor = HELP_TEXT;
         clearBoxes();
         updateExpandButtonState();
         showDefaultHint();
@@ -294,6 +308,36 @@ public class YoloImageDisplayPanel extends JPanel {
 
     public void setBufferedImage(BufferedImage image, String title) {
         setBufferedImage(image, title, true);
+    }
+
+    public void setImageFile(File imageFile, String title, boolean showHint) throws IOException {
+        cancelRenderWorker();
+        cancelOverviewWorker();
+        this.previewSource = imageFile == null ? null : new FilePreviewSource(imageFile);
+        clearRenderedViewport();
+        clearOverview();
+        this.sourceVersion++;
+        requestOverviewRender();
+        this.title = title;
+        this.zoom = 1.0;
+        this.expandedToFill = false;
+        this.drawEnabled = false;
+        this.panX = 0.0;
+        this.panY = 0.0;
+        this.dragStartScreen = null;
+        this.panStartScreen = null;
+        clearZoomAnchor();
+        this.activeBox = null;
+        this.boxes.clear();
+        this.boxColor = BOX_COLOR;
+        this.titleColor = HELP_TEXT;
+        this.emptyMessageColor = HELP_TEXT;
+        updateToolTip();
+        updateExpandButtonState();
+        if (imageFile != null && showHint) {
+            showDefaultHint();
+        }
+        repaint();
     }
 
     public void setBufferedImage(BufferedImage image, String title, boolean showHint) {
@@ -317,6 +361,7 @@ public class YoloImageDisplayPanel extends JPanel {
         this.boxes.clear();
         this.boxColor = BOX_COLOR;
         this.titleColor = HELP_TEXT;
+        this.emptyMessageColor = HELP_TEXT;
         updateToolTip();
         updateExpandButtonState();
         if (image != null && showHint) {
@@ -393,7 +438,7 @@ public class YoloImageDisplayPanel extends JPanel {
         if (previewSource == null) {
             g2.setColor(EMPTY_BG);
             g2.fillRect(0, 0, getWidth(), getHeight());
-            g2.setColor(HELP_TEXT);
+            g2.setColor(emptyMessageColor);
             drawCenteredMessage(g2, emptyMessage);
             g2.dispose();
             return;
@@ -881,6 +926,117 @@ public class YoloImageDisplayPanel extends JPanel {
             g2.drawImage(image, 0, 0, targetW, targetH, sx1, sy1, sx2, sy2, null);
             g2.dispose();
             return out;
+        }
+    }
+
+    private static final class FilePreviewSource implements PreviewSource {
+        private final File file;
+        private final int width;
+        private final int height;
+
+        private FilePreviewSource(File file) throws IOException {
+            this.file = file;
+            ReaderHandle handle = openReader(file);
+            try {
+                this.width = Math.max(1, handle.reader.getWidth(0));
+                this.height = Math.max(1, handle.reader.getHeight(0));
+            } finally {
+                handle.close();
+            }
+        }
+
+        @Override
+        public int width() {
+            return width;
+        }
+
+        @Override
+        public int height() {
+            return height;
+        }
+
+        @Override
+        public BufferedImage render(Rectangle2D.Double sourceRect, int targetW, int targetH,
+                RenderAbortCheck abortCheck) {
+            if (abortCheck.shouldAbort()) {
+                return null;
+            }
+            ReaderHandle handle = null;
+            try {
+                handle = openReader(file);
+                ImageReadParam param = handle.reader.getDefaultReadParam();
+                int sx1 = clamp((int) Math.floor(sourceRect.x), 0, width - 1);
+                int sy1 = clamp((int) Math.floor(sourceRect.y), 0, height - 1);
+                int sx2 = clamp((int) Math.ceil(sourceRect.x + sourceRect.width), sx1 + 1, width);
+                int sy2 = clamp((int) Math.ceil(sourceRect.y + sourceRect.height), sy1 + 1, height);
+                int sourceW = Math.max(1, sx2 - sx1);
+                int sourceH = Math.max(1, sy2 - sy1);
+                param.setSourceRegion(new Rectangle(sx1, sy1, sourceW, sourceH));
+                int subsampleX = Math.max(1, (int) Math.floor(sourceW / (double) Math.max(1, targetW)));
+                int subsampleY = Math.max(1, (int) Math.floor(sourceH / (double) Math.max(1, targetH)));
+                param.setSourceSubsampling(subsampleX, subsampleY, 0, 0);
+                if (abortCheck.shouldAbort()) {
+                    return null;
+                }
+                BufferedImage read = handle.reader.read(0, param);
+                if (abortCheck.shouldAbort() || read == null) {
+                    return null;
+                }
+                if (read.getWidth() == targetW && read.getHeight() == targetH
+                        && read.getType() == BufferedImage.TYPE_INT_RGB) {
+                    return read;
+                }
+                BufferedImage out = new BufferedImage(targetW, targetH, BufferedImage.TYPE_INT_RGB);
+                Graphics2D g2 = out.createGraphics();
+                g2.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR);
+                g2.drawImage(read, 0, 0, targetW, targetH, null);
+                g2.dispose();
+                return out;
+            } catch (IOException e) {
+                return null;
+            } finally {
+                if (handle != null) {
+                    handle.close();
+                }
+            }
+        }
+
+        private static ReaderHandle openReader(File file) throws IOException {
+            ImageInputStream stream = ImageIO.createImageInputStream(file);
+            if (stream == null) {
+                throw new IOException("Could not open image stream: " + file);
+            }
+            Iterator<ImageReader> readers = ImageIO.getImageReaders(stream);
+            if (!readers.hasNext()) {
+                try {
+                    stream.close();
+                } catch (IOException e) {
+                    // Ignore cleanup failure before throwing the real validation error.
+                }
+                throw new IOException("Unsupported image format: " + file);
+            }
+            ImageReader reader = readers.next();
+            reader.setInput(stream, true, true);
+            return new ReaderHandle(reader, stream);
+        }
+
+        private static final class ReaderHandle {
+            private final ImageReader reader;
+            private final ImageInputStream stream;
+
+            private ReaderHandle(ImageReader reader, ImageInputStream stream) {
+                this.reader = reader;
+                this.stream = stream;
+            }
+
+            private void close() {
+                reader.dispose();
+                try {
+                    stream.close();
+                } catch (IOException e) {
+                    // Ignore preview cleanup errors.
+                }
+            }
         }
     }
 
