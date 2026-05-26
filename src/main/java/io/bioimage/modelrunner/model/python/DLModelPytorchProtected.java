@@ -81,7 +81,7 @@ public class DLModelPytorchProtected extends BaseModel {
 
     protected Service python;
 
-    private final PixiEnvironmentSpec environmentSpec;
+    protected final PixiEnvironmentSpec environmentSpec;
 
     protected List<SharedMemoryArray> inShmaList = new ArrayList<SharedMemoryArray>();
 
@@ -1567,7 +1567,7 @@ public class DLModelPytorchProtected extends BaseModel {
      * @throws RuntimeException
      *     if the resource cannot be found or read
      */
-    private static String readClasspathResourceAsString(final String absoluteResourcePath) {
+    protected static String readClasspathResourceAsString(final String absoluteResourcePath) {
         Objects.requireNonNull(absoluteResourcePath, "absoluteResourcePath");
 
         try (InputStream is = PixiEnvironmentManager.class.getClassLoader().getResourceAsStream(absoluteResourcePath)) {
