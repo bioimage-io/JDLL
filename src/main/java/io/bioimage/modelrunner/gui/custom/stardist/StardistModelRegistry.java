@@ -28,7 +28,7 @@ import java.util.Map;
 
 public final class StardistModelRegistry {
 
-    public static final String STARDIST_MODELS_SUBDIR = "yolo";
+    public static final String STARDIST_MODELS_SUBDIR = "stardist";
     public static final String STARDIST_WEIGHTS_EXTENSION = ".mpk";
     public static final String STARDIST_ARCHITECTURE_EXTENSION = ".json";
     public static final String PRETRAINED_URL_FORMAT = "https://github.com/ultralytics/assets/releases/download/v8.4.0/%s";
@@ -65,15 +65,17 @@ public final class StardistModelRegistry {
 
     public static LinkedHashMap<String, String> buildModelEntries(String modelsDir) {
         LinkedHashMap<String, String> models = new LinkedHashMap<String, String>();
-        File yoloDir = modelsDir == null ? new File(STARDIST_MODELS_SUBDIR) : new File(modelsDir, STARDIST_MODELS_SUBDIR);
+        File stardistDir = modelsDir == null ? new File(STARDIST_MODELS_SUBDIR) : new File(modelsDir, STARDIST_MODELS_SUBDIR);
 
         for (String[] pretrained : PRETRAINED_MODELS) {
-            models.put("[Pretrained] " + pretrained[0], new File(yoloDir, pretrained[1]).getAbsolutePath());
+            models.put("[Pretrained] " + pretrained[0], new File(stardistDir, pretrained[1]).getAbsolutePath());
         }
 
-        File[] customModels = yoloDir.listFiles(file -> file.isFile()
-                && file.getName().toLowerCase().endsWith(STARDIST_WEIGHTS_EXTENSION)
-                && !isPretrainedWeightsFile(file.getName()));
+        File[] customModels = stardistDir.listFiles(file ->
+                (file.isDirectory() && isModelDirectory(file))
+                || (file.isFile()
+                        && file.getName().toLowerCase().endsWith(STARDIST_WEIGHTS_EXTENSION)
+                        && !isPretrainedWeightsFile(file.getName())));
         if (customModels == null) {
             return models;
         }
@@ -117,6 +119,9 @@ public final class StardistModelRegistry {
             return false;
         }
         File modelFile = new File(modelPath);
+        if (modelFile.isDirectory()) {
+            return isModelDirectory(modelFile);
+        }
         if (!modelFile.isFile()) {
             return false;
         }
@@ -137,5 +142,9 @@ public final class StardistModelRegistry {
             return fileName.substring(0, fileName.length() - STARDIST_WEIGHTS_EXTENSION.length());
         }
         return fileName;
+    }
+
+    private static boolean isModelDirectory(File file) {
+        return new File(file, "config.json").isFile();
     }
 }

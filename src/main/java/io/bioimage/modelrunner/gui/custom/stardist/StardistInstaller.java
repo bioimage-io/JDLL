@@ -28,6 +28,8 @@ import org.apposed.appose.BuildException;
 
 import io.bioimage.modelrunner.download.FileDownloader;
 import io.bioimage.modelrunner.gui.custom.interfaces.ModelInstaller;
+import io.bioimage.modelrunner.model.python.envs.PixiEnvironmentManager;
+import io.bioimage.modelrunner.model.python.envs.PixiEnvironmentSpec;
 import io.bioimage.modelrunner.model.special.stardist.StardistAbstract;
 
 public class StardistInstaller  implements ModelInstaller {
@@ -51,19 +53,20 @@ public class StardistInstaller  implements ModelInstaller {
     }
 
     public void installEnvironment(Consumer<String> logConsumer) throws InterruptedException, BuildException {
-        StardistAbstract.installCellcastRequirements(logConsumer);
+        PixiEnvironmentSpec spec = StardistAbstract.resolvePytorchEnv();
+        PixiEnvironmentManager.installRequirements(spec, (str) -> {System.out.println(str);});
     }
 
     public void installModelWeights(String modelPath, Consumer<String> logConsumer)
             throws IOException, ExecutionException, InterruptedException {
         if (!StardistModelRegistry.canDownload(modelPath)) {
-            throw new IOException("YOLO weights are not installed and cannot be downloaded automatically: " + modelPath);
+            throw new IOException("StarDist weights are not installed and cannot be downloaded automatically: " + modelPath);
         }
 
         File modelFile = new File(modelPath);
         File parent = modelFile.getParentFile();
         if (parent != null && !parent.isDirectory() && !parent.mkdirs()) {
-            throw new IOException("Could not create YOLO model directory: " + parent.getAbsolutePath());
+            throw new IOException("Could not create StarDist model directory: " + parent.getAbsolutePath());
         }
 
         String modelName = modelFile.getName();

@@ -36,12 +36,18 @@ public class StardistTrainPanel extends BaseTrainPanel {
 	protected StardistTrainPanel() {
     	super();
         setScratchArchitectures(StardistModelRegistry.buildScratchArchitectureEntries());
+        scratchRadio.setSelected(true);
+        fineTuneRadio.setText("Fine tune (soon)");
+        fineTuneRadio.setEnabled(false);
+        baseModelComboBox.setEnabled(false);
+        baseModelBrowseButton.setEnabled(false);
+        scratchArchitectureComboBox.setEnabled(true);
     }
 
     protected void browseBaseModel() {
         JFileChooser chooser = new JFileChooser();
         chooser.setFileSelectionMode(JFileChooser.FILES_ONLY);
-        chooser.setFileFilter(new FileNameExtensionFilter("StarDist weights (*.mkp)", "mkp"));
+        chooser.setFileFilter(new FileNameExtensionFilter("StarDist weights (*.mpk)", "mpk"));
         if (chooser.showOpenDialog(this) != JFileChooser.APPROVE_OPTION) {
             return;
         }
@@ -69,15 +75,26 @@ public class StardistTrainPanel extends BaseTrainPanel {
     protected boolean isValidFineTuneBaseModel() {
         String baseModel = getSelectedBaseModelValue();
         if (baseModelComboBox.getSelectedItem() instanceof YoloModelSelectionEntry) {
-            return baseModel != null && baseModel.toLowerCase().endsWith(StardistModelRegistry.STARDIST_WEIGHTS_EXTENSION);
+            return baseModel != null
+                    && (baseModel.toLowerCase().endsWith(StardistModelRegistry.STARDIST_WEIGHTS_EXTENSION)
+                    || new File(baseModel).isDirectory());
         }
         return baseModel != null
-                && baseModel.toLowerCase().endsWith(StardistModelRegistry.STARDIST_WEIGHTS_EXTENSION)
-                && new File(baseModel).isFile();
+                && (baseModel.toLowerCase().endsWith(StardistModelRegistry.STARDIST_WEIGHTS_EXTENSION)
+                || new File(baseModel).isDirectory())
+                && new File(baseModel).exists();
     }
 
     protected boolean isValidScratchArchitecture() {
         return StardistModelRegistry.isKnownScratchArchitecture(getSelectedScratchArchitectureValue());
+    }
+
+    @Override
+    public void setTrainingRunning(boolean running) {
+        super.setTrainingRunning(running);
+        fineTuneRadio.setEnabled(false);
+        baseModelComboBox.setEnabled(false);
+        baseModelBrowseButton.setEnabled(false);
     }
 
     public void setBaseModels(LinkedHashMap<String, String> models) {

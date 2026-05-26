@@ -32,19 +32,16 @@ import org.apposed.appose.BuildException;
 import io.bioimage.modelrunner.exceptions.LoadModelException;
 import io.bioimage.modelrunner.exceptions.RunModelException;
 import io.bioimage.modelrunner.gui.adapter.GuiAdapter;
-import io.bioimage.modelrunner.gui.custom.yolo.YoloGUI;
+import io.bioimage.modelrunner.gui.custom.stardist.StardistInferenceService;
 import io.bioimage.modelrunner.gui.custom.stardist.StardistInstaller;
 import io.bioimage.modelrunner.gui.custom.stardist.StardistModelRegistry;
+import io.bioimage.modelrunner.gui.custom.stardist.StardistTrainingConfig;
+import io.bioimage.modelrunner.gui.custom.stardist.StardistTrainingService;
 import io.bioimage.modelrunner.gui.custom.yolo.StardistGUI;
 import io.bioimage.modelrunner.gui.custom.yolo.YoloDetectionCsvWriter;
 import io.bioimage.modelrunner.gui.custom.yolo.YoloDetectionGeoJsonWriter;
 import io.bioimage.modelrunner.gui.custom.yolo.YoloImageFiles;
 import io.bioimage.modelrunner.gui.custom.yolo.YoloImageSourcePanel;
-import io.bioimage.modelrunner.gui.custom.yolo.YoloInferenceService;
-import io.bioimage.modelrunner.gui.custom.yolo.YoloInstaller;
-import io.bioimage.modelrunner.gui.custom.yolo.YoloModelRegistry;
-import io.bioimage.modelrunner.gui.custom.yolo.YoloTrainingConfig;
-import io.bioimage.modelrunner.gui.custom.yolo.YoloTrainingService;
 import io.bioimage.modelrunner.model.InferenceProgress;
 import io.bioimage.modelrunner.model.detection.Detection;
 import io.bioimage.modelrunner.model.special.stardist.StardistTrainingProgress;
@@ -85,8 +82,8 @@ public class StarDistPluginUI extends StardistGUI implements ActionListener {
 
     private final ConsumerInterface consumer;
     private final StardistInstaller installer = new StardistInstaller();
-    private final YoloInferenceService inferenceService = new YoloInferenceService(installer);
-    private final YoloTrainingService trainingService = new YoloTrainingService(installer);
+    private final StardistInferenceService inferenceService = new StardistInferenceService(installer);
+    private final StardistTrainingService trainingService = new StardistTrainingService(installer);
     private boolean cancelled = false;
     private Timer trainingTimer;
     private long trainingStartMillis;
@@ -115,9 +112,9 @@ public class StarDistPluginUI extends StardistGUI implements ActionListener {
     	List<JComponent> componentList = new ArrayList<JComponent>();
 
     	String modelsDir = consumer == null ? null : consumer.getModelsDir();
-    	LinkedHashMap<String, String> yoloModelEntries = StardistModelRegistry.buildModelEntries(modelsDir);
-    	this.inferencePanel.getModelSelectionPanel().setModels(yoloModelEntries);
-    	this.trainPanel.setBaseModels(yoloModelEntries);
+    	LinkedHashMap<String, String> stardistModelEntries = StardistModelRegistry.buildModelEntries(modelsDir);
+    	this.inferencePanel.getModelSelectionPanel().setModels(stardistModelEntries);
+    	this.trainPanel.setBaseModels(stardistModelEntries);
         if (this.consumer == null) {
             return;
         }
@@ -299,7 +296,7 @@ public class StarDistPluginUI extends StardistGUI implements ActionListener {
     		cancelled = false;
     		workerThread = new Thread(() -> {
         		try {
-        			runYOLO();
+        			runStardist();
     			} catch (Exception e1) {
     				if (cancelled)
     					return;
@@ -310,7 +307,7 @@ public class StarDistPluginUI extends StardistGUI implements ActionListener {
     	} else if (e.getSource() == this.inferencePanel.getActionPanel().getCancelButton()) {
     		cancel();
     	} else if (e.getSource() == this.trainPanel.getTrainActionPanel().getRunButton()) {
-    		trainYOLO();
+    		trainStardist();
     	} else if (e.getSource() == this.trainPanel.getTrainActionPanel().getCancelButton()) {
     		cancel();
     	}
@@ -330,19 +327,19 @@ public class StarDistPluginUI extends StardistGUI implements ActionListener {
     	this.consumer.notifyParams(null);
     }
     
-    private void runYOLO()
+    private void runStardist()
     		throws RunModelException, LoadModelException, BuildException, IOException,
     		ExecutionException, InterruptedException {
     	saveParams();
     	String modelPath = this.inferencePanel.getModelSelectionPanel().getSelectedModelValue();
     	if (this.inferencePanel.getImageSourcePanel().getSystemImagesRadio().isSelected()) {
-    		runYOLOOnSystemImage(modelPath);
+    		runStardistOnSystemImage(modelPath);
     		return;
     	}
-    	runYOLOOnOpenImage(modelPath);
+    	runStardistOnOpenImage(modelPath);
     }
 
-    private < T extends RealType< T > & NativeType< T > > void runYOLOOnOpenImage(String modelPath)
+    private < T extends RealType< T > & NativeType< T > > void runStardistOnOpenImage(String modelPath)
             throws RunModelException, LoadModelException, BuildException, IOException,
             ExecutionException, InterruptedException {
     	RandomAccessibleInterval<T> rai = consumer.getFocusedImageAsRai();
@@ -364,7 +361,7 @@ public class StarDistPluginUI extends StardistGUI implements ActionListener {
         consumer.displayDetections(detections);
     }
 
-    private void runYOLOOnSystemImage(String modelPath)
+    private void runStardistOnSystemImage(String modelPath)
             throws RunModelException, LoadModelException, BuildException, IOException,
             ExecutionException, InterruptedException {
         File source = selectedSystemPath == null ? selectedSystemImageFile : selectedSystemPath;
@@ -507,7 +504,7 @@ public class StarDistPluginUI extends StardistGUI implements ActionListener {
         }
     }
 
-    public void trainYOLO() {
+    public void trainStardist() {
         if (!trainPanel.validateTrainingFields()) {
             return;
         }
@@ -515,7 +512,7 @@ public class StarDistPluginUI extends StardistGUI implements ActionListener {
         startTrainingUiState();
         workerThread = new Thread(() -> {
             try {
-                YoloTrainingConfig config = readTrainingConfig();
+                StardistTrainingConfig config = readTrainingConfig();
                 Consumer<String> logConsumer = str -> SwingUtilities.invokeLater(() -> {
                     System.err.println(str);
                 });
@@ -531,7 +528,7 @@ public class StarDistPluginUI extends StardistGUI implements ActionListener {
                             }
                         }),
                         logConsumer);
-                refreshYoloModels();
+                refreshStardistModels();
             } catch (Exception | Error e) {
                 if (!cancelled) {
                     e.printStackTrace();
@@ -601,10 +598,10 @@ public class StarDistPluginUI extends StardistGUI implements ActionListener {
                     progress.getEpoch(),
                     validationLoss);
         }
-        Double metric = progress.getPrimaryDetectionMetric();
+        Double metric = progress.getLearningRate();
         if (metric != null) {
             trainPanel.getMetricGraphPanel().addValidationValue(
-                    progress.getPrimaryDetectionMetricName(),
+                    StardistTrainingProgress.LEARNING_RATE,
                     progress.getStep(),
                     progress.getEpoch(),
                     metric);
@@ -657,9 +654,9 @@ public class StarDistPluginUI extends StardistGUI implements ActionListener {
                 totalTrainingEpochs, elapsed, currentSecondsPerStep);
     }
 
-    private YoloTrainingConfig readTrainingConfig() {
+    private StardistTrainingConfig readTrainingConfig() {
     	String modelsDir = consumer == null ? null : consumer.getModelsDir();
-    	return YoloTrainingConfig.fromUi(
+    	return StardistTrainingConfig.fromUi(
     			trainPanel.getModelNameField().getText(),
     			trainPanel.getDatasetField().getText(),
     			Integer.parseInt(trainPanel.getEpochsField().getText().trim()),
@@ -669,12 +666,12 @@ public class StarDistPluginUI extends StardistGUI implements ActionListener {
     			modelsDir);
     }
 
-    private void refreshYoloModels() {
+    private void refreshStardistModels() {
     	String modelsDir = consumer == null ? null : consumer.getModelsDir();
-    	LinkedHashMap<String, String> yoloModelEntries = StardistModelRegistry.buildModelEntries(modelsDir);
+    	LinkedHashMap<String, String> stardistModelEntries = StardistModelRegistry.buildModelEntries(modelsDir);
     	SwingUtilities.invokeLater(() -> {
-    		inferencePanel.getModelSelectionPanel().setModels(yoloModelEntries);
-    		trainPanel.setBaseModels(yoloModelEntries);
+    		inferencePanel.getModelSelectionPanel().setModels(stardistModelEntries);
+    		trainPanel.setBaseModels(stardistModelEntries);
     	});
     }
 

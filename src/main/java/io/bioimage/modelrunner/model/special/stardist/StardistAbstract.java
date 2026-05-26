@@ -786,9 +786,9 @@ public abstract class StardistAbstract extends DLModelPytorchProtected {
 	private static void validateTrainingArguments(String dataDir, String gtDir,
 			String outputDir, double validFraction, Map<String, Object> config) {
 		if (dataDir == null || !new File(dataDir).isDirectory()) {
-			throw new IllegalArgumentException("The StarDist image data directory does not exist: " + dataDir);
+			throw new IllegalArgumentException("The StarDist dataset directory does not exist: " + dataDir);
 		}
-		if (gtDir == null || !new File(gtDir).isDirectory()) {
+		if (gtDir != null && !gtDir.trim().isEmpty() && !new File(gtDir).isDirectory()) {
 			throw new IllegalArgumentException("The StarDist ground-truth directory does not exist: " + gtDir);
 		}
 		if (outputDir == null || outputDir.trim().isEmpty()) {
@@ -810,6 +810,9 @@ public abstract class StardistAbstract extends DLModelPytorchProtected {
 			boolean gpu, String imageChannels, String labelColorMode, double validFraction,
 			Map<String, Object> config) {
 		String nl = System.lineSeparator();
+		boolean hasGtDir = gtDir != null && !gtDir.trim().isEmpty();
+		String gtDirCode = hasGtDir ? "gt_dir = r'" + py(new File(gtDir).getAbsolutePath()) + "'" + nl : "";
+		String gtDirArgument = hasGtDir ? "gt_dir=gt_dir, " : "";
 		String safeImageChannels = imageChannels == null || imageChannels.trim().isEmpty()
 				? "grayscale" : imageChannels.trim();
 		String safeLabelColorMode = labelColorMode == null || labelColorMode.trim().isEmpty()
@@ -820,8 +823,8 @@ public abstract class StardistAbstract extends DLModelPytorchProtected {
 				+ "import numpy as np" + nl
 				+ "_appose_stdout = sys.stdout" + nl
 				+ "import cellcast.training.stardist_2d as train" + nl
-				+ "data_dir = r'" + py(dataDir) + "'" + nl
-				+ "gt_dir = r'" + py(gtDir) + "'" + nl
+				+ "data_dir = r'" + py(new File(dataDir).getAbsolutePath()) + "'" + nl
+				+ gtDirCode
 				+ "output_dir = Path(r'" + py(new File(outputDir).getAbsolutePath()) + "')" + nl
 				+ "preview_dir = output_dir / 'previews'" + nl
 				+ "preview_manifest_path = preview_dir / 'latest.json'" + nl
@@ -880,7 +883,7 @@ public abstract class StardistAbstract extends DLModelPytorchProtected {
 				+ "        json.dump(manifest, f)" + nl
 				+ "    _task_update(message='StarDist validation preview epoch %d' % epoch, current=epoch, maximum=state['total_epochs'], info={'type': 'preview', 'epoch': epoch, 'preview_path': str(epoch_manifest_path)})" + nl
 				+ "with open(stardist_log_path, 'a', encoding='utf-8') as stardist_log, contextlib.redirect_stdout(stardist_log), contextlib.redirect_stderr(stardist_log):" + nl
-				+ "  result = train.train_stardist_2d_folder(data_dir=data_dir, gt_dir=gt_dir, output_dir=str(output_dir), gpu=" + (gpu ? "True" : "False") + ", image_channels='" + py(safeImageChannels) + "', label_color_mode='" + py(safeLabelColorMode) + "', valid_fraction=" + validFraction + ", config=config, on_train_begin=on_train_begin, on_step_end=on_step_end, on_validation_end=on_validation_end)" + nl
+				+ "  result = train.train_stardist_2d_folder(data_dir=data_dir, " + gtDirArgument + "output_dir=str(output_dir), gpu=" + (gpu ? "True" : "False") + ", image_channels='" + py(safeImageChannels) + "', label_color_mode='" + py(safeLabelColorMode) + "', valid_fraction=" + validFraction + ", config=config, on_train_begin=on_train_begin, on_step_end=on_step_end, on_validation_end=on_validation_end)" + nl
 				+ "task.output(result=str(result.get('output_dir', str(output_dir))))" + nl;
 	}
 

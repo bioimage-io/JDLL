@@ -337,9 +337,9 @@ public abstract class BaseTrainPanel extends JPanel {
         }
 
         File datasetPath = datasetField.getText() == null ? null : new File(datasetField.getText().trim());
-        if (datasetPath == null || !datasetPath.exists()) {
+        if (datasetPath == null || !isValidDatasetPath(datasetPath)) {
             datasetField.setText("");
-            datasetField.setErrorPlaceholder("Please select an existing dataset path");
+            datasetField.setErrorPlaceholder(invalidDatasetMessage());
             valid = false;
         } else {
             datasetField.setText(datasetPath.getAbsolutePath());
@@ -351,7 +351,7 @@ public abstract class BaseTrainPanel extends JPanel {
         }
 
         if (fineTuneRadio.isSelected() && !isValidFineTuneBaseModel()) {
-            setComboBoxErrorPlaceholder(baseModelComboBox, "Please select a valid .pt model");
+            setComboBoxErrorPlaceholder(baseModelComboBox, "Please select a valid base model");
             valid = false;
         }
         if (scratchRadio.isSelected() && !isValidScratchArchitecture()) {
@@ -385,6 +385,14 @@ public abstract class BaseTrainPanel extends JPanel {
     }
 
     protected abstract boolean isValidModelFileName(String modelName);
+
+    protected boolean isValidDatasetPath(File datasetPath) {
+        return datasetPath != null && datasetPath.exists();
+    }
+
+    protected String invalidDatasetMessage() {
+        return "Please select an existing dataset path";
+    }
 
     private boolean isValidEpochs() {
         try {
