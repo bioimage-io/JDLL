@@ -28,13 +28,14 @@ import javax.swing.JFileChooser;
 import javax.swing.filechooser.FileNameExtensionFilter;
 
 import io.bioimage.modelrunner.gui.custom.stardist.StardistModelRegistry;
+import io.bioimage.modelrunner.gui.custom.stardist.StardistValidationPreviewPanel;
 
 public class StardistTrainPanel extends BaseTrainPanel {
     
     private static final long serialVersionUID = 3944729402784309789L;
 
-	protected StardistTrainPanel() {
-    	super();
+    protected StardistTrainPanel() {
+    	super(new StardistValidationPreviewPanel());
         setScratchArchitectures(StardistModelRegistry.buildScratchArchitectureEntries());
         scratchRadio.setSelected(true);
         fineTuneRadio.setText("Fine tune (soon)");
@@ -106,5 +107,10 @@ public class StardistTrainPanel extends BaseTrainPanel {
             }
         }
         baseModelComboBox.setModel(comboModel);
+    }
+
+    @Override
+    public StardistValidationPreviewPanel getValidationPreviewPanel() {
+        return (StardistValidationPreviewPanel) super.getValidationPreviewPanel();
     }
 }

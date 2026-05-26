@@ -17,14 +17,13 @@
  * limitations under the License.
  * #L%
  */
-package io.bioimage.modelrunner.gui.custom.yolo;
+package io.bioimage.modelrunner.gui.custom.stardist;
 
 import java.awt.Color;
 import java.awt.FontMetrics;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.RenderingHints;
-import java.awt.geom.Rectangle2D;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
@@ -35,7 +34,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-import javax.imageio.ImageIO;
 import javax.swing.JButton;
 import javax.swing.JPanel;
 import javax.swing.border.LineBorder;
@@ -45,9 +43,17 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 
-public class YoloValidationPreviewPanel extends JPanel implements TrainingValidationPreview {
+import io.bioimage.modelrunner.gui.custom.yolo.TrainingValidationPreview;
+import io.bioimage.modelrunner.gui.custom.yolo.YoloImageDisplayPanel;
+import io.bioimage.modelrunner.gui.custom.yolo.YoloUiUtils;
+import io.bioimage.modelrunner.numpy.DecodeNumpy;
+import net.imglib2.RandomAccess;
+import net.imglib2.RandomAccessibleInterval;
+import net.imglib2.type.numeric.RealType;
 
-    private static final long serialVersionUID = -4978636324362880905L;
+public class StardistValidationPreviewPanel extends JPanel implements TrainingValidationPreview {
+
+    private static final long serialVersionUID = -849272014619012798L;
 
     private static final int OUTER_PAD = 6;
     private static final int VIEWER_TO_ARROWS_GAP = 2;
@@ -55,27 +61,18 @@ public class YoloValidationPreviewPanel extends JPanel implements TrainingValida
     private static final int ARROW_BUTTON_MIN_HEIGHT = 13;
     private static final int ARROW_BUTTON_MAX_HEIGHT = 21;
     private static final int STATUS_H = 36;
-    private static final int COLOR_BUTTON_MIN_SIZE = 14;
-    private static final int COLOR_BUTTON_MAX_SIZE = 22;
-    private static final int COLOR_BUTTON_PAD = 4;
-    private static final int COLOR_BUTTON_RIGHT_OFFSET = 36;
-    private static final Color GREEN_BOX_COLOR = new Color(80, 220, 120);
-    private static final Color DARK_BOX_COLOR = new Color(92, 0, 38);
-    private static final Color GREEN_TITLE_COLOR = new Color(232, 236, 240);
-    private static final Color DARK_TITLE_COLOR = new Color(22, 24, 30);
     private static final Color TEXT_COLOR = new Color(70, 78, 98);
-    private static final String COLOR_SYMBOL = "\u25A0";
+    private static final Color GT_COLOR = new Color(80, 220, 120);
+    private static final Color PREDICTION_COLOR = new Color(230, 44, 140);
     private static final String PREVIOUS_SYMBOL = "\u25C0";
     private static final String NEXT_SYMBOL = "\u25B6";
     private static final String WAITING_MESSAGE = "Validation examples available after the first epoch finishes";
-    private static final String ERROR_MESSAGE = "Could not load validation preview";
+    private static final String ERROR_MESSAGE = "Could not load StarDist validation preview";
 
-    private final YoloImageDisplayPanel imagePanel = new YoloImageDisplayPanel();
+    private final YoloImageDisplayPanel imagePanel = new PreviewImagePanel();
     private final TrainingStatusPanel statusPanel = new TrainingStatusPanel();
     private final JButton previousButton = new JButton(PREVIOUS_SYMBOL);
     private final JButton nextButton = new JButton(NEXT_SYMBOL);
-    private final JButton greenColorButton = new JButton(COLOR_SYMBOL);
-    private final JButton darkColorButton = new JButton(COLOR_SYMBOL);
     private final List<PreviewSample> samples = new ArrayList<PreviewSample>();
 
     private int currentIndex;
@@ -86,9 +83,8 @@ public class YoloValidationPreviewPanel extends JPanel implements TrainingValida
     private int totalEpochs;
     private long elapsedMillis;
     private double secondsPerIteration = Double.NaN;
-    private Color selectedBoxColor = GREEN_BOX_COLOR;
 
-    public YoloValidationPreviewPanel() {
+    public StardistValidationPreviewPanel() {
         setLayout(null);
         setOpaque(true);
         setBackground(Color.WHITE);
@@ -98,36 +94,28 @@ public class YoloValidationPreviewPanel extends JPanel implements TrainingValida
         statusPanel.setOpaque(false);
         YoloUiUtils.styleFlatSecondaryButton(previousButton);
         YoloUiUtils.styleFlatSecondaryButton(nextButton);
-        setupColorButton(greenColorButton, GREEN_BOX_COLOR);
-        setupColorButton(darkColorButton, DARK_BOX_COLOR);
         previousButton.addActionListener(e -> showSample(currentIndex - 1));
         nextButton.addActionListener(e -> showSample(currentIndex + 1));
-        greenColorButton.addActionListener(e -> setSelectedBoxColor(GREEN_BOX_COLOR));
-        darkColorButton.addActionListener(e -> setSelectedBoxColor(DARK_BOX_COLOR));
 
         add(imagePanel);
-        add(statusPanel);
         add(previousButton);
         add(nextButton);
-        imagePanel.add(greenColorButton);
-        imagePanel.add(darkColorButton);
-        imagePanel.setComponentZOrder(greenColorButton, 0);
-        imagePanel.setComponentZOrder(darkColorButton, 0);
+        add(statusPanel);
         clearPreview();
     }
 
+    @Override
     public void clearPreview() {
         samples.clear();
         currentIndex = 0;
         previewEpoch = 0;
-        selectedBoxColor = GREEN_BOX_COLOR;
-        updateColorButtons();
         imagePanel.setEmptyMessage(WAITING_MESSAGE);
         imagePanel.clearImage();
         updateStatusPanel();
         updateButtons();
     }
 
+    @Override
     public void loadPreview(String jsonPath) {
         if (jsonPath == null || jsonPath.trim().isEmpty()) {
             return;
@@ -135,7 +123,7 @@ public class YoloValidationPreviewPanel extends JPanel implements TrainingValida
         try {
             JsonObject root = readJson(jsonPath.trim());
             List<PreviewSample> loaded = parseSamples(root);
-            String selectedPath = getSelectedImagePath();
+            String selectedImage = getSelectedImagePath();
             int selectedIndex = currentIndex;
             samples.clear();
             samples.addAll(loaded);
@@ -145,20 +133,21 @@ public class YoloValidationPreviewPanel extends JPanel implements TrainingValida
                 imagePanel.setEmptyMessage(WAITING_MESSAGE);
                 imagePanel.clearImage();
             } else {
-                currentIndex = selectUpdatedIndex(selectedPath, selectedIndex, samples);
+                currentIndex = selectUpdatedIndex(selectedImage, selectedIndex, samples);
                 showSample(currentIndex);
             }
             updateStatusPanel();
             updateButtons();
         } catch (Exception e) {
             samples.clear();
-            imagePanel.setEmptyMessage(ERROR_MESSAGE);
+            imagePanel.setEmptyMessage(ERROR_MESSAGE, new Color(180, 30, 30));
             imagePanel.clearImage();
             updateStatusPanel();
             updateButtons();
         }
     }
 
+    @Override
     public void setTrainingStatus(boolean active, int currentStep, int totalSteps,
             int totalEpochs, long elapsedMillis, double secondsPerIteration) {
         this.trainingActive = active;
@@ -184,15 +173,6 @@ public class YoloValidationPreviewPanel extends JPanel implements TrainingValida
         int y = OUTER_PAD;
 
         imagePanel.setBounds(OUTER_PAD, y, innerW, imageH);
-        int colorSize = Math.max(COLOR_BUTTON_MIN_SIZE,
-                Math.min(COLOR_BUTTON_MAX_SIZE, Math.min(w, h) / 14));
-        int colorX = innerW - COLOR_BUTTON_RIGHT_OFFSET - colorSize;
-        colorX = Math.max(COLOR_BUTTON_PAD, colorX);
-        int colorY = COLOR_BUTTON_PAD;
-        greenColorButton.setBounds(colorX, colorY, colorSize, colorSize);
-        darkColorButton.setBounds(colorX, colorY + colorSize, colorSize, colorSize);
-        imagePanel.setComponentZOrder(greenColorButton, 0);
-        imagePanel.setComponentZOrder(darkColorButton, 0);
         y += imageH + VIEWER_TO_ARROWS_GAP;
 
         int leftArrowW = innerW / 2;
@@ -204,10 +184,6 @@ public class YoloValidationPreviewPanel extends JPanel implements TrainingValida
 
         YoloUiUtils.applyResponsiveText(previousButton, leftArrowW - 4, arrowH);
         YoloUiUtils.applyResponsiveText(nextButton, innerW - leftArrowW - 4, arrowH);
-        greenColorButton.setFont(greenColorButton.getFont().deriveFont((float) Math.max(YoloUiUtils.MIN_FONT_SIZE,
-                Math.min(YoloUiUtils.MAX_CONTROL_FONT_SIZE, colorSize * 0.62f))));
-        darkColorButton.setFont(darkColorButton.getFont().deriveFont((float) Math.max(YoloUiUtils.MIN_FONT_SIZE,
-                Math.min(YoloUiUtils.MAX_CONTROL_FONT_SIZE, colorSize * 0.62f))));
     }
 
     private void showSample(int requestedIndex) {
@@ -220,86 +196,37 @@ public class YoloValidationPreviewPanel extends JPanel implements TrainingValida
         currentIndex = wrap(requestedIndex, samples.size());
         PreviewSample sample = samples.get(currentIndex);
         try {
-            BufferedImage image = ImageIO.read(new File(sample.imagePath));
-            if (image == null) {
-                throw new IOException("Unsupported image format: " + sample.imagePath);
-            }
+            BufferedImage image = buildOverlay(sample);
             imagePanel.setBufferedImage(image, buildImageTitle(sample), false);
-            imagePanel.setReadOnlyBoxes(sample.boxes, selectedBoxColor);
-            imagePanel.setTitleColor(titleColorForSelectedBoxColor());
-        } catch (IOException e) {
-            imagePanel.setEmptyMessage(ERROR_MESSAGE);
+            imagePanel.setTitleColor(Color.WHITE);
+        } catch (Exception e) {
+            imagePanel.setEmptyMessage(ERROR_MESSAGE, new Color(180, 30, 30));
             imagePanel.clearImage();
         }
         updateStatusPanel();
         updateButtons();
     }
 
+    private BufferedImage buildOverlay(PreviewSample sample) throws IOException {
+        BufferedImage image = toBufferedImage(DecodeNumpy.loadNpy(sample.imagePath));
+        if (sample.labelPath != null) {
+            drawMaskContours(image, DecodeNumpy.loadNpy(sample.labelPath), GT_COLOR);
+        }
+        if (sample.predictionPath != null) {
+            drawMaskContours(image, DecodeNumpy.loadNpy(sample.predictionPath), PREDICTION_COLOR);
+        }
+        return image;
+    }
+
     private void updateButtons() {
         boolean enabled = samples.size() > 1;
         previousButton.setEnabled(enabled);
         nextButton.setEnabled(enabled);
-        greenColorButton.setVisible(true);
-        darkColorButton.setVisible(true);
-        greenColorButton.setEnabled(true);
-        darkColorButton.setEnabled(true);
-        repaintColorButtons();
-    }
-
-    private void setSelectedBoxColor(Color color) {
-        selectedBoxColor = color == null ? GREEN_BOX_COLOR : color;
-        updateColorButtons();
-        if (!samples.isEmpty()) {
-            PreviewSample sample = samples.get(currentIndex);
-            imagePanel.setTitle(buildImageTitle(sample));
-            imagePanel.setTitleColor(titleColorForSelectedBoxColor());
-            imagePanel.setReadOnlyBoxes(sample.boxes, selectedBoxColor);
-        }
-    }
-
-    private void updateColorButtons() {
-        markColorButton(greenColorButton, GREEN_BOX_COLOR.equals(selectedBoxColor));
-        markColorButton(darkColorButton, DARK_BOX_COLOR.equals(selectedBoxColor));
-    }
-
-    private static void setupColorButton(JButton button, Color color) {
-        YoloUiUtils.styleFlatSecondaryButton(button);
-        button.setForeground(color);
-        button.setToolTipText("Use " + colorName(color) + " validation boxes");
-        button.setFocusPainted(false);
-        button.setMargin(new java.awt.Insets(0, 0, 0, 0));
-        button.setIconTextGap(0);
-        button.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
-        button.setVerticalAlignment(javax.swing.SwingConstants.CENTER);
-        button.setHorizontalTextPosition(javax.swing.SwingConstants.CENTER);
-        button.setVerticalTextPosition(javax.swing.SwingConstants.CENTER);
-    }
-
-    private static void markColorButton(JButton button, boolean selected) {
-        button.setBorder(selected
-                ? javax.swing.BorderFactory.createLineBorder(Color.BLACK, 2)
-                : YoloUiUtils.BUTTON_BORDER);
-        button.setVisible(true);
-        button.setEnabled(true);
-        button.repaint();
-    }
-
-    private void repaintColorButtons() {
-        greenColorButton.repaint();
-        darkColorButton.repaint();
-        imagePanel.repaint();
-    }
-
-    private static String colorName(Color color) {
-        return DARK_BOX_COLOR.equals(color) ? "dark red" : "green";
-    }
-
-    private Color titleColorForSelectedBoxColor() {
-        return DARK_BOX_COLOR.equals(selectedBoxColor) ? DARK_TITLE_COLOR : GREEN_TITLE_COLOR;
     }
 
     private String buildImageTitle(PreviewSample sample) {
-        return sample.title + " --- " + (currentIndex + 1) + "/" + samples.size();
+        return sample.title + " --- " + (currentIndex + 1) + "/" + samples.size()
+                + " | GT green | prediction magenta";
     }
 
     private String getSelectedImagePath() {
@@ -307,6 +234,45 @@ public class YoloValidationPreviewPanel extends JPanel implements TrainingValida
             return null;
         }
         return samples.get(currentIndex).imagePath;
+    }
+
+    private void updateStatusPanel() {
+        statusPanel.repaint();
+    }
+
+    private static JsonObject readJson(String jsonPath) throws IOException {
+        String content = new String(Files.readAllBytes(Paths.get(jsonPath)), StandardCharsets.UTF_8);
+        return JsonParser.parseString(content).getAsJsonObject();
+    }
+
+    private static List<PreviewSample> parseSamples(JsonObject root) {
+        JsonArray array = root == null ? null : root.getAsJsonArray("samples");
+        if (array == null || array.size() == 0) {
+            return Collections.emptyList();
+        }
+        List<PreviewSample> result = new ArrayList<PreviewSample>();
+        for (JsonElement element : array) {
+            if (!element.isJsonObject()) {
+                continue;
+            }
+            JsonObject sample = element.getAsJsonObject();
+            String imagePath = getExistingPath(sample, "image_path");
+            if (imagePath == null) {
+                continue;
+            }
+            result.add(new PreviewSample(
+                    imagePath,
+                    getExistingPath(sample, "label_path"),
+                    getExistingPath(sample, "prediction_path"),
+                    getExistingPath(sample, "prob_path"),
+                    "epoch " + getInt(root, "epoch", 0)));
+        }
+        return result;
+    }
+
+    private static String getExistingPath(JsonObject object, String key) {
+        String path = getString(object, key);
+        return path == null || !new File(path).isFile() ? null : path;
     }
 
     private static int selectUpdatedIndex(String selectedPath, int selectedIndex, List<PreviewSample> samples) {
@@ -323,67 +289,134 @@ public class YoloValidationPreviewPanel extends JPanel implements TrainingValida
         return Math.max(0, Math.min(selectedIndex, samples.size() - 1));
     }
 
-    private void updateStatusPanel() {
-        statusPanel.repaint();
+    private static BufferedImage toBufferedImage(RandomAccessibleInterval<?> rai) {
+        if (rai == null || rai.numDimensions() < 2) {
+            throw new IllegalArgumentException("StarDist preview image must have at least two dimensions.");
+        }
+        ImageLayout layout = ImageLayout.from(rai);
+        double[] range = valueRange(rai, layout);
+        BufferedImage image = new BufferedImage(layout.width, layout.height, BufferedImage.TYPE_INT_RGB);
+        RandomAccess<?> access = rai.randomAccess();
+        long[] position = new long[rai.numDimensions()];
+        for (int y = 0; y < layout.height; y++) {
+            for (int x = 0; x < layout.width; x++) {
+                int r = channelToByte(access, position, layout, x, y, 0, range);
+                int g = layout.channels > 1 ? channelToByte(access, position, layout, x, y, 1, range) : r;
+                int b = layout.channels > 2 ? channelToByte(access, position, layout, x, y, 2, range) : r;
+                image.setRGB(x, y, (r << 16) | (g << 8) | b);
+            }
+        }
+        return image;
     }
 
-    private static JsonObject readJson(String jsonPath) throws IOException {
-        String content = new String(Files.readAllBytes(Paths.get(jsonPath)), StandardCharsets.UTF_8);
-        return JsonParser.parseString(content).getAsJsonObject();
+    private static double[] valueRange(RandomAccessibleInterval<?> rai, ImageLayout layout) {
+        RandomAccess<?> access = rai.randomAccess();
+        long[] position = new long[rai.numDimensions()];
+        double min = Double.POSITIVE_INFINITY;
+        double max = Double.NEGATIVE_INFINITY;
+        for (int y = 0; y < layout.height; y++) {
+            for (int x = 0; x < layout.width; x++) {
+                for (int c = 0; c < layout.channels; c++) {
+                    double value = imageValue(access, position, layout, x, y, c);
+                    if (Double.isFinite(value)) {
+                        min = Math.min(min, value);
+                        max = Math.max(max, value);
+                    }
+                }
+            }
+        }
+        if (!Double.isFinite(min) || !Double.isFinite(max) || max <= min) {
+            return new double[] {0.0d, 1.0d};
+        }
+        return new double[] {min, max};
     }
 
-    private static List<PreviewSample> parseSamples(JsonObject root) {
-        JsonArray images = root == null ? null : root.getAsJsonArray("images");
-        if (images == null || images.size() == 0) {
-            return Collections.emptyList();
-        }
-        List<PreviewSample> result = new ArrayList<PreviewSample>();
-        for (JsonElement element : images) {
-            if (!element.isJsonObject()) {
-                continue;
-            }
-            JsonObject image = element.getAsJsonObject();
-            String path = getString(image, "path");
-            if (path == null || path.trim().isEmpty()) {
-                continue;
-            }
-            result.add(new PreviewSample(
-                    path,
-                    new File(path).getName(),
-                    parseBoxes(image.getAsJsonArray("boxes"))));
-        }
-        return result;
+    private static int channelToByte(RandomAccess<?> access, long[] position, ImageLayout layout,
+            int x, int y, int channel, double[] range) {
+        double value = imageValue(access, position, layout, x, y, channel);
+        double normalized = (value - range[0]) / (range[1] - range[0]);
+        int byteValue = (int) Math.round(Math.max(0.0d, Math.min(1.0d, normalized)) * 255.0d);
+        return Math.max(0, Math.min(255, byteValue));
     }
 
-    private static List<Rectangle2D.Double> parseBoxes(JsonArray boxArray) {
-        List<Rectangle2D.Double> result = new ArrayList<Rectangle2D.Double>();
-        if (boxArray == null) {
-            return result;
+    private static double imageValue(RandomAccess<?> access, long[] position, ImageLayout layout,
+            int x, int y, int channel) {
+        for (int d = 0; d < position.length; d++) {
+            position[d] = 0;
         }
-        for (JsonElement element : boxArray) {
-            if (!element.isJsonObject()) {
-                continue;
-            }
-            JsonObject box = element.getAsJsonObject();
-            JsonArray xyxy = box.getAsJsonArray("xyxy");
-            if (xyxy == null || xyxy.size() < 4) {
-                continue;
-            }
-            double x1 = getDouble(xyxy.get(0), Double.NaN);
-            double y1 = getDouble(xyxy.get(1), Double.NaN);
-            double x2 = getDouble(xyxy.get(2), Double.NaN);
-            double y2 = getDouble(xyxy.get(3), Double.NaN);
-            if (!isFinite(x1) || !isFinite(y1) || !isFinite(x2) || !isFinite(y2)) {
-                continue;
-            }
-            double w = Math.max(0.0d, x2 - x1);
-            double h = Math.max(0.0d, y2 - y1);
-            if (w <= 0.0d || h <= 0.0d) {
-                continue;
-            }
-            result.add(new Rectangle2D.Double(x1, y1, w, h));
+        position[layout.xDim] = x;
+        position[layout.yDim] = y;
+        if (layout.channelDim >= 0) {
+            position[layout.channelDim] = Math.min(channel, layout.channels - 1);
         }
-        return result;
+        return realValue(access, position);
+    }
+
+    private static void drawMaskContours(BufferedImage image, RandomAccessibleInterval<?> mask, Color color) {
+        if (mask == null || mask.numDimensions() < 2) {
+            return;
+        }
+        MaskLayout layout = MaskLayout.from(mask);
+        RandomAccess<?> access = mask.randomAccess();
+        long[] position = new long[mask.numDimensions()];
+        int thickness = Math.max(1, Math.min(image.getWidth(), image.getHeight()) / 250);
+        for (int y = 0; y < layout.height; y++) {
+            for (int x = 0; x < layout.width; x++) {
+                double value = maskValue(access, position, layout, x, y);
+                if (value <= 0.0d || !isContour(access, position, layout, x, y, value)) {
+                    continue;
+                }
+                int imageX = Math.max(0, Math.min(image.getWidth() - 1,
+                        (int) Math.round((x + 0.5d) * image.getWidth() / layout.width - 0.5d)));
+                int imageY = Math.max(0, Math.min(image.getHeight() - 1,
+                        (int) Math.round((y + 0.5d) * image.getHeight() / layout.height - 0.5d)));
+                paintSquare(image, imageX, imageY, thickness, color);
+            }
+        }
+    }
+
+    private static boolean isContour(RandomAccess<?> access, long[] position, MaskLayout layout,
+            int x, int y, double value) {
+        if (x == 0 || y == 0 || x == layout.width - 1 || y == layout.height - 1) {
+            return true;
+        }
+        return maskValue(access, position, layout, x - 1, y) != value
+                || maskValue(access, position, layout, x + 1, y) != value
+                || maskValue(access, position, layout, x, y - 1) != value
+                || maskValue(access, position, layout, x, y + 1) != value;
+    }
+
+    private static double maskValue(RandomAccess<?> access, long[] position, MaskLayout layout, int x, int y) {
+        for (int d = 0; d < position.length; d++) {
+            position[d] = 0;
+        }
+        position[layout.xDim] = x;
+        position[layout.yDim] = y;
+        return realValue(access, position);
+    }
+
+    private static double realValue(RandomAccess<?> access, long[] position) {
+        access.setPosition(position);
+        Object value = access.get();
+        return value instanceof RealType ? ((RealType<?>) value).getRealDouble() : 0.0d;
+    }
+
+    private static void paintSquare(BufferedImage image, int centerX, int centerY, int radius, Color color) {
+        for (int y = Math.max(0, centerY - radius); y <= Math.min(image.getHeight() - 1, centerY + radius); y++) {
+            for (int x = Math.max(0, centerX - radius); x <= Math.min(image.getWidth() - 1, centerX + radius); x++) {
+                image.setRGB(x, y, blend(image.getRGB(x, y), color, 0.82d));
+            }
+        }
+    }
+
+    private static int blend(int rgb, Color color, double alpha) {
+        int r = (rgb >> 16) & 0xff;
+        int g = (rgb >> 8) & 0xff;
+        int b = rgb & 0xff;
+        int nr = (int) Math.round(r * (1.0d - alpha) + color.getRed() * alpha);
+        int ng = (int) Math.round(g * (1.0d - alpha) + color.getGreen() * alpha);
+        int nb = (int) Math.round(b * (1.0d - alpha) + color.getBlue() * alpha);
+        return (nr << 16) | (ng << 8) | nb;
     }
 
     private static int wrap(int index, int size) {
@@ -411,17 +444,6 @@ public class YoloValidationPreviewPanel extends JPanel implements TrainingValida
         }
     }
 
-    private static double getDouble(JsonElement element, double fallback) {
-        if (element == null || element.isJsonNull()) {
-            return fallback;
-        }
-        try {
-            return element.getAsDouble();
-        } catch (Exception e) {
-            return fallback;
-        }
-    }
-
     private static boolean isFinite(double value) {
         return !Double.isNaN(value) && !Double.isInfinite(value);
     }
@@ -432,6 +454,76 @@ public class YoloValidationPreviewPanel extends JPanel implements TrainingValida
         long minutes = (totalSeconds % 3600L) / 60L;
         long seconds = totalSeconds % 60L;
         return String.format("%02d:%02d:%02d", hours, minutes, seconds);
+    }
+
+    private static final class PreviewImagePanel extends YoloImageDisplayPanel {
+
+        private static final long serialVersionUID = -7590216692430039386L;
+
+        private PreviewImagePanel() {
+            super();
+        }
+    }
+
+    private static final class ImageLayout {
+        private final int xDim;
+        private final int yDim;
+        private final int channelDim;
+        private final int width;
+        private final int height;
+        private final int channels;
+
+        private ImageLayout(int xDim, int yDim, int channelDim, int width, int height, int channels) {
+            this.xDim = xDim;
+            this.yDim = yDim;
+            this.channelDim = channelDim;
+            this.width = width;
+            this.height = height;
+            this.channels = channels;
+        }
+
+        private static ImageLayout from(RandomAccessibleInterval<?> rai) {
+            if (rai.numDimensions() == 2) {
+                return new ImageLayout(1, 0, -1, safeInt(rai.dimension(1)), safeInt(rai.dimension(0)), 1);
+            }
+            if (rai.dimension(0) <= 4 && rai.dimension(1) > 4 && rai.dimension(2) > 4) {
+                return new ImageLayout(2, 1, 0, safeInt(rai.dimension(2)),
+                        safeInt(rai.dimension(1)), safeInt(rai.dimension(0)));
+            }
+            if (rai.dimension(2) <= 4 && rai.dimension(0) > 4 && rai.dimension(1) > 4) {
+                return new ImageLayout(1, 0, 2, safeInt(rai.dimension(1)),
+                        safeInt(rai.dimension(0)), safeInt(rai.dimension(2)));
+            }
+            return new ImageLayout(1, 0, -1, safeInt(rai.dimension(1)), safeInt(rai.dimension(0)), 1);
+        }
+    }
+
+    private static final class MaskLayout {
+        private final int xDim;
+        private final int yDim;
+        private final int width;
+        private final int height;
+
+        private MaskLayout(int xDim, int yDim, int width, int height) {
+            this.xDim = xDim;
+            this.yDim = yDim;
+            this.width = width;
+            this.height = height;
+        }
+
+        private static MaskLayout from(RandomAccessibleInterval<?> rai) {
+            if (rai.numDimensions() >= 3 && rai.dimension(0) == 1) {
+                return new MaskLayout(2, 1, safeInt(rai.dimension(2)), safeInt(rai.dimension(1)));
+            }
+            if (rai.numDimensions() >= 3 && rai.dimension(2) == 1) {
+                return new MaskLayout(1, 0, safeInt(rai.dimension(1)), safeInt(rai.dimension(0)));
+            }
+            return new MaskLayout(1, 0, safeInt(rai.dimension(1)), safeInt(rai.dimension(0)));
+        }
+    }
+
+    private static int safeInt(long value) {
+        return (int) Math.max(1L, Math.min(Integer.MAX_VALUE, value));
     }
 
     private final class TrainingStatusPanel extends JPanel {
@@ -543,13 +635,19 @@ public class YoloValidationPreviewPanel extends JPanel implements TrainingValida
 
     private static final class PreviewSample {
         private final String imagePath;
+        private final String labelPath;
+        private final String predictionPath;
+        @SuppressWarnings("unused")
+        private final String probPath;
         private final String title;
-        private final List<Rectangle2D.Double> boxes;
 
-        private PreviewSample(String imagePath, String title, List<Rectangle2D.Double> boxes) {
+        private PreviewSample(String imagePath, String labelPath, String predictionPath,
+                String probPath, String title) {
             this.imagePath = imagePath;
+            this.labelPath = labelPath;
+            this.predictionPath = predictionPath;
+            this.probPath = probPath;
             this.title = title;
-            this.boxes = boxes == null ? Collections.<Rectangle2D.Double>emptyList() : boxes;
         }
     }
 }

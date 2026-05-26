@@ -767,7 +767,7 @@ public abstract class StardistAbstract extends DLModelPytorchProtected {
 		config.put("epochs", epochs);
 		config.put("steps_per_epoch", 100);
 		config.put("validation_steps", 10);
-		config.put("validation_preview_count", 2);
+		config.put("validation_preview_count", 20);
 		config.put("learning_rate", 0.0003d);
 		config.put("foreground_probability", 0.9d);
 		config.put("background_reg", 1e-4d);
@@ -849,6 +849,11 @@ public abstract class StardistAbstract extends DLModelPytorchProtected {
 				+ "    return None" + nl
 				+ "def _clean(values):" + nl
 				+ "  return {str(k): float(v) for k, v in dict(values).items() if _scalar(v) is not None}" + nl
+				+ "def _atomic_npy_save(path, array):" + nl
+				+ "  tmp_path = str(path) + '.tmp'" + nl
+				+ "  with open(tmp_path, 'wb') as f:" + nl
+				+ "    np.save(f, array)" + nl
+				+ "  os.replace(tmp_path, path)" + nl
 				+ "def on_train_begin(plan):" + nl
 				+ "  state['total_steps'] = int(plan.get('total_steps') or state['total_steps'])" + nl
 				+ "  state['total_epochs'] = int(plan.get('epochs') or state['total_epochs'])" + nl
@@ -868,20 +873,36 @@ public abstract class StardistAbstract extends DLModelPytorchProtected {
 				+ "  metrics = _clean({'learning_rate': event.get('learning_rate')})" + nl
 				+ "  info = {'type': 'progress', 'epoch': epoch, 'step': step, 'total_epochs': state['total_epochs'], 'total_steps': state['total_steps'], 'losses': losses, 'metrics': metrics}" + nl
 				+ "  _task_update(message='StarDist epoch %d/%d' % (epoch, state['total_epochs']), current=step, maximum=state['total_steps'], info=info)" + nl
-				+ "  previews = []" + nl
-				+ "  for i, preview in enumerate(event.get('previews', [])):" + nl
-				+ "    pred_path = preview_dir / ('epoch_%03d_preview_%d_prediction.npy' % (epoch, i))" + nl
-				+ "    prob_path = preview_dir / ('epoch_%03d_preview_%d_prob.npy' % (epoch, i))" + nl
-				+ "    np.save(pred_path, preview['prediction'])" + nl
-				+ "    np.save(prob_path, preview['prob'])" + nl
-				+ "    previews.append({'prediction_path': str(pred_path), 'prob_path': str(prob_path)})" + nl
-				+ "  if previews:" + nl
-				+ "    manifest = {'epoch': epoch, 'previews': previews}" + nl
-				+ "    epoch_manifest_path = preview_dir / ('epoch_%03d_preview.json' % epoch)" + nl
-				+ "    for path in (preview_manifest_path, epoch_manifest_path):" + nl
-				+ "      with open(path, 'w', encoding='utf-8') as f:" + nl
-				+ "        json.dump(manifest, f)" + nl
-				+ "    _task_update(message='StarDist validation preview epoch %d' % epoch, current=epoch, maximum=state['total_epochs'], info={'type': 'preview', 'epoch': epoch, 'preview_path': str(epoch_manifest_path)})" + nl
+				+ "  samples = []" + nl
+				+ "  for i, preview in enumerate(event.get('previews', [])[:20]):" + nl
+				+ "    image_path = preview_dir / ('preview_%03d_image.npy' % i)" + nl
+				+ "    label_path = preview_dir / ('preview_%03d_label.npy' % i)" + nl
+				+ "    pred_path = preview_dir / ('preview_%03d_prediction.npy' % i)" + nl
+				+ "    prob_path = preview_dir / ('preview_%03d_prob.npy' % i)" + nl
+				+ "    sample = {'index': i}" + nl
+				+ "    image = preview.get('image')" + nl
+				+ "    label = preview.get('labels', preview.get('label'))" + nl
+				+ "    prediction = preview.get('prediction')" + nl
+				+ "    prob = preview.get('prob')" + nl
+				+ "    if image is not None:" + nl
+				+ "      _atomic_npy_save(image_path, image)" + nl
+				+ "      sample['image_path'] = str(image_path)" + nl
+				+ "    if label is not None:" + nl
+				+ "      _atomic_npy_save(label_path, label)" + nl
+				+ "      sample['label_path'] = str(label_path)" + nl
+				+ "    if prediction is not None:" + nl
+				+ "      _atomic_npy_save(pred_path, prediction)" + nl
+				+ "      sample['prediction_path'] = str(pred_path)" + nl
+				+ "    if prob is not None:" + nl
+				+ "      _atomic_npy_save(prob_path, prob)" + nl
+				+ "      sample['prob_path'] = str(prob_path)" + nl
+				+ "    if 'image_path' in sample and 'prediction_path' in sample:" + nl
+				+ "      samples.append(sample)" + nl
+				+ "  if samples:" + nl
+				+ "    manifest = {'epoch': epoch, 'samples': samples}" + nl
+				+ "    with open(preview_manifest_path, 'w', encoding='utf-8') as f:" + nl
+				+ "      json.dump(manifest, f)" + nl
+				+ "    _task_update(message='StarDist validation preview epoch %d' % epoch, current=epoch, maximum=state['total_epochs'], info={'type': 'preview', 'epoch': epoch, 'preview_path': str(preview_manifest_path)})" + nl
 				+ "with open(stardist_log_path, 'a', encoding='utf-8') as stardist_log, contextlib.redirect_stdout(stardist_log), contextlib.redirect_stderr(stardist_log):" + nl
 				+ "  result = train.train_stardist_2d_folder(data_dir=data_dir, " + gtDirArgument + "output_dir=str(output_dir), gpu=" + (gpu ? "True" : "False") + ", image_channels='" + py(safeImageChannels) + "', label_color_mode='" + py(safeLabelColorMode) + "', valid_fraction=" + validFraction + ", config=config, on_train_begin=on_train_begin, on_step_end=on_step_end, on_validation_end=on_validation_end)" + nl
 				+ "task.output(result=str(result.get('output_dir', str(output_dir))))" + nl;

@@ -89,7 +89,7 @@ public abstract class BaseTrainPanel extends JPanel {
     protected final JPanel graphCardPanel = new JPanel(new CardLayout());
     protected final YoloGraphPlaceholderPanel lossGraphPanel = new YoloGraphPlaceholderPanel("Loss");
     protected final YoloGraphPlaceholderPanel metricGraphPanel = new YoloGraphPlaceholderPanel("Metric");
-    protected final YoloValidationPreviewPanel validationPreviewPanel = new YoloValidationPreviewPanel();
+    protected final TrainingValidationPreview validationPreviewPanel;
     protected final YoloActionPanel trainActionPanel = new YoloActionPanel();
     private boolean trainingRunning;
 
@@ -97,9 +97,17 @@ public abstract class BaseTrainPanel extends JPanel {
     protected static final Pattern INVALID_MODEL_NAME_CHARS = Pattern.compile("[\\\\/:*?\"<>|]");
 
     protected BaseTrainPanel() {
+        this(new YoloValidationPreviewPanel());
+    }
+
+    protected BaseTrainPanel(TrainingValidationPreview validationPreviewPanel) {
         setLayout(null);
         setOpaque(true);
         setBackground(YoloUiUtils.PANEL_BG);
+        if (!(validationPreviewPanel instanceof JPanel)) {
+            throw new IllegalArgumentException("Validation preview must also be a Swing panel.");
+        }
+        this.validationPreviewPanel = validationPreviewPanel;
 
         ButtonGroup group = new ButtonGroup();
         group.add(fineTuneRadio);
@@ -133,7 +141,7 @@ public abstract class BaseTrainPanel extends JPanel {
         graphCardPanel.setOpaque(false);
         graphCardPanel.add(lossGraphPanel, "loss");
         graphCardPanel.add(metricGraphPanel, "metric");
-        graphCardPanel.add(validationPreviewPanel, "validationPreview");
+        graphCardPanel.add((JPanel) validationPreviewPanel, "validationPreview");
 
         lossButton.addActionListener(e -> showGraph("loss"));
         metricButton.addActionListener(e -> showGraph("metric"));
@@ -538,7 +546,7 @@ public abstract class BaseTrainPanel extends JPanel {
         return metricGraphPanel;
     }
 
-    public YoloValidationPreviewPanel getValidationPreviewPanel() {
+    public TrainingValidationPreview getValidationPreviewPanel() {
         return validationPreviewPanel;
     }
 
