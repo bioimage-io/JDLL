@@ -29,6 +29,7 @@ import org.apposed.appose.BuildException;
 
 import io.bioimage.modelrunner.exceptions.LoadModelException;
 import io.bioimage.modelrunner.exceptions.RunModelException;
+import io.bioimage.modelrunner.gui.custom.interfaces.ModelInstaller;
 import io.bioimage.modelrunner.model.InferenceProgress;
 import io.bioimage.modelrunner.model.detection.Detection;
 import io.bioimage.modelrunner.model.special.yolo.Yolo;
@@ -42,12 +43,12 @@ public class YoloInferenceService {
 
     private static final int PATCH_PROGRESS_BAR_WIDTH = 20;
 
-    private final YoloInstaller installer;
+    private final ModelInstaller installer;
     private String loadedModelPath;
     private Yolo model;
     private Rectangle size = null;
 
-    public YoloInferenceService(YoloInstaller installer) {
+    public YoloInferenceService(ModelInstaller installer) {
         this.installer = installer;
     }
 

@@ -27,15 +27,16 @@ import java.util.function.Consumer;
 import org.apposed.appose.BuildException;
 import org.apposed.appose.TaskException;
 
+import io.bioimage.modelrunner.gui.custom.interfaces.ModelInstaller;
 import io.bioimage.modelrunner.model.special.yolo.Yolo;
 import io.bioimage.modelrunner.model.special.yolo.YoloTrainingProgress;
 import io.bioimage.modelrunner.model.special.yolo.YoloValidationPreview;
 
 public class YoloTrainingService {
 
-    private final YoloInstaller installer;
+    private final ModelInstaller installer;
 
-    public YoloTrainingService(YoloInstaller installer) {
+    public YoloTrainingService(ModelInstaller installer) {
         this.installer = installer;
     }
 

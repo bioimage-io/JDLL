@@ -29,11 +29,12 @@ import org.apposed.appose.builder.PixiBuilderFactory;
 import org.apposed.appose.tool.Pixi;
 
 import io.bioimage.modelrunner.download.FileDownloader;
+import io.bioimage.modelrunner.gui.custom.interfaces.ModelInstaller;
 import io.bioimage.modelrunner.model.python.DLModelPytorch;
 import io.bioimage.modelrunner.model.python.envs.PixiEnvironmentManager;
 import io.bioimage.modelrunner.model.python.envs.PixiEnvironmentSpec;
 
-public class YoloInstaller {
+public class YoloInstaller implements ModelInstaller {
 
     private static final String ENV_NAME = DLModelPytorch.COMMON_PYTORCH_ENV_NAME;
 
