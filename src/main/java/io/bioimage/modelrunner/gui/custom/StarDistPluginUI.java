@@ -47,7 +47,7 @@ import io.bioimage.modelrunner.gui.custom.yolo.YoloTrainingConfig;
 import io.bioimage.modelrunner.gui.custom.yolo.YoloTrainingService;
 import io.bioimage.modelrunner.model.InferenceProgress;
 import io.bioimage.modelrunner.model.detection.Detection;
-import io.bioimage.modelrunner.model.special.yolo.YoloTrainingProgress;
+import io.bioimage.modelrunner.model.special.stardist.StardistTrainingProgress;
 import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.type.NativeType;
 import net.imglib2.type.numeric.RealType;
@@ -583,12 +583,12 @@ public class StarDistPluginUI extends StardistGUI implements ActionListener {
                 totalTrainingEpochs, elapsed, currentSecondsPerStep);
     }
 
-    private void handleTrainingProgress(YoloTrainingProgress progress) {
+    private void handleTrainingProgress(StardistTrainingProgress progress) {
         updateTrainingProgressState(progress);
         Double trainLoss = progress.getTrainingTotalLoss();
         if (trainLoss != null) {
             trainPanel.getLossGraphPanel().addTrainValue(
-                    YoloTrainingProgress.YOLO_TOTAL_LOSS_LABEL,
+            		StardistTrainingProgress.STARDIST_TOTAL_LOSS_LABEL,
                     progress.getStep(),
                     progress.getEpoch(),
                     trainLoss);
@@ -596,7 +596,7 @@ public class StarDistPluginUI extends StardistGUI implements ActionListener {
         Double validationLoss = progress.getValidationTotalLoss();
         if (validationLoss != null) {
             trainPanel.getLossGraphPanel().addValidationValue(
-                    YoloTrainingProgress.YOLO_TOTAL_LOSS_LABEL,
+            		StardistTrainingProgress.STARDIST_TOTAL_LOSS_LABEL,
                     progress.getStep(),
                     progress.getEpoch(),
                     validationLoss);
@@ -611,7 +611,7 @@ public class StarDistPluginUI extends StardistGUI implements ActionListener {
         }
     }
 
-    private void updateTrainingProgressState(YoloTrainingProgress progress) {
+    private void updateTrainingProgressState(StardistTrainingProgress progress) {
         updateTrainingProgressState(progress.getStep(), progress.getTotalSteps(), progress.getTotalEpochs());
     }
 
@@ -671,7 +671,7 @@ public class StarDistPluginUI extends StardistGUI implements ActionListener {
 
     private void refreshYoloModels() {
     	String modelsDir = consumer == null ? null : consumer.getModelsDir();
-    	LinkedHashMap<String, String> yoloModelEntries = YoloModelRegistry.buildModelEntries(modelsDir);
+    	LinkedHashMap<String, String> yoloModelEntries = StardistModelRegistry.buildModelEntries(modelsDir);
     	SwingUtilities.invokeLater(() -> {
     		inferencePanel.getModelSelectionPanel().setModels(yoloModelEntries);
     		trainPanel.setBaseModels(yoloModelEntries);
