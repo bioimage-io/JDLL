@@ -1,0 +1,20 @@
+[workspace]
+name = "%s"
+channels = ["conda-forge"]
+platforms = ["linux-64", "osx-64", "osx-arm64", "win-64"]
+requires-pixi = ">=0.40"
+
+[dependencies]
+python = ">=3.10,<3.13"
+pip = "*"
+numpy = "==2.4.6"
+tifffile = "==2026.5.15"
+
+[pypi-dependencies]
+cellcast = { path = "%s" }
+
+[tasks]
+train-cpu = { cmd = "python scripts/train_stardist.py --cpu"}
+train-gpu = { cmd = "python scripts/train_stardist.py --gpu"}
+predict-cpu = { cmd = "python scripts/predict_stardist.py --cpu"}
+predict-gpu = { cmd = "python scripts/predict_stardist.py --gpu"}
