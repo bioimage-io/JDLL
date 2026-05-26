@@ -20,121 +20,122 @@
 package io.bioimage.modelrunner.gui.custom;
 
 import javax.swing.JComponent;
-import javax.swing.JDialog;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JOptionPane;
 import javax.swing.SwingUtilities;
-import javax.swing.event.PopupMenuEvent;
-import javax.swing.event.PopupMenuListener;
+import javax.swing.Timer;
+import javax.imageio.ImageIO;
 
 import org.apposed.appose.BuildException;
 
 import io.bioimage.modelrunner.exceptions.LoadModelException;
 import io.bioimage.modelrunner.exceptions.RunModelException;
-import io.bioimage.modelrunner.gui.EnvironmentInstaller;
-import io.bioimage.modelrunner.gui.custom.gui.StarDistGUI;
-import io.bioimage.modelrunner.gui.workers.InstallEnvWorker;
-import io.bioimage.modelrunner.model.special.stardist.Stardist2D;
-import io.bioimage.modelrunner.model.special.stardist.StardistAbstract;
-import io.bioimage.modelrunner.tensor.Tensor;
+import io.bioimage.modelrunner.gui.adapter.GuiAdapter;
+import io.bioimage.modelrunner.gui.custom.yolo.YoloGUI;
+import io.bioimage.modelrunner.gui.custom.stardist.StardistInstaller;
+import io.bioimage.modelrunner.gui.custom.stardist.StardistModelRegistry;
+import io.bioimage.modelrunner.gui.custom.yolo.YoloDetectionCsvWriter;
+import io.bioimage.modelrunner.gui.custom.yolo.YoloDetectionGeoJsonWriter;
+import io.bioimage.modelrunner.gui.custom.yolo.YoloImageFiles;
+import io.bioimage.modelrunner.gui.custom.yolo.YoloImageSourcePanel;
+import io.bioimage.modelrunner.gui.custom.yolo.YoloInferenceService;
+import io.bioimage.modelrunner.gui.custom.yolo.YoloInstaller;
+import io.bioimage.modelrunner.gui.custom.yolo.YoloModelRegistry;
+import io.bioimage.modelrunner.gui.custom.yolo.YoloTrainingConfig;
+import io.bioimage.modelrunner.gui.custom.yolo.YoloTrainingService;
+import io.bioimage.modelrunner.model.InferenceProgress;
+import io.bioimage.modelrunner.model.detection.Detection;
+import io.bioimage.modelrunner.model.special.yolo.YoloTrainingProgress;
 import net.imglib2.RandomAccessibleInterval;
-import net.imglib2.img.array.ArrayImgs;
 import net.imglib2.type.NativeType;
 import net.imglib2.type.numeric.RealType;
-import net.imglib2.util.Cast;
-import net.imglib2.view.Views;
 
 import java.awt.Color;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.FocusAdapter;
+import java.awt.event.FocusEvent;
+import java.awt.geom.Rectangle2D;
+import java.awt.image.BufferedImage;
+import java.io.File;
 import java.io.IOException;
+import java.util.ArrayDeque;
 import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.Deque;
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.concurrent.CountDownLatch;
+import java.util.Map;
+import java.util.concurrent.ExecutionException;
 import java.util.function.Consumer;
 
-public class StarDistPluginUI extends StarDistGUI implements ActionListener {
+import net.imglib2.img.array.ArrayImgs;
+import net.imglib2.type.numeric.integer.UnsignedByteType;
 
-    private static final long serialVersionUID = 5381352117710530216L;
-    
+public class StarDistPluginUI extends YoloGUI implements ActionListener {
+
+    private static final long serialVersionUID = 5754022448277417301L;
+	private static final String DEFAULT_PREVIEW_MESSAGE = "Preview will appear here";
+    private static final String SYSTEM_PREVIEW_PROMPT = "Please select an image/folder from the file system";
+    private static final String INVALID_IMAGE_MESSAGE = "Please provide a valid image file";
+    private static final String EMPTY_FOLDER_MESSAGE = "Folder does not contain valid images";
+    private static final Color PREVIEW_ERROR_COLOR = new Color(210, 40, 40);
+
     private final ConsumerInterface consumer;
-    private String whichLoaded;
-    private StardistAbstract model;
-    private String inputTitle;
+    private final StardistInstaller installer = new StardistInstaller();
+    private final YoloInferenceService inferenceService = new YoloInferenceService(installer);
+    private final YoloTrainingService trainingService = new YoloTrainingService(installer);
     private boolean cancelled = false;
-    
-    public HashMap<String, Double> threshMap = new HashMap<String, Double>();
+    private Timer trainingTimer;
+    private long trainingStartMillis;
+    private long lastProgressMillis;
+    private int lastProgressStep;
+    private int currentTrainingStep;
+    private int totalTrainingSteps;
+    private int totalTrainingEpochs;
+    private double currentSecondsPerStep = Double.NaN;
+    private final Deque<Double> secondsPerStepSamples = new ArrayDeque<Double>();
+    private File selectedSystemPath;
+    private File selectedSystemImageFile;
     
     private Runnable cancelCallback;
     Thread workerThread;
-    
-    private static boolean INSTALLED_ENV = false;
-    
-    private static HashMap<String, Boolean> INSTALLED_WEIGHTS;
-    
-    static {
-    	INSTALLED_WEIGHTS = new HashMap<String, Boolean>();
-    	INSTALLED_WEIGHTS.put(DEFAULT_1_CHANNEL_MODEL, false);
-    	INSTALLED_WEIGHTS.put(DEFAULT_3_CHANNEL_MODEL, false);
-    }
 
     /**
-     * Creates a new StarDistPluginUI.
+     * Creates a new CellposePluginUI.
      *
      * @param consumer the consumer parameter.
      */
-    public StarDistPluginUI(ConsumerInterface consumer) {
+    public StarDistPluginUI(ConsumerInterface consumer, GuiAdapter adapter) {
+    	super(adapter);
         // Set a modern-looking border layout with padding
     	this.consumer = consumer;
     	List<JComponent> componentList = new ArrayList<JComponent>();
 
-        this.consumer.setVariableNames(VAR_NAMES);
-        componentList.add(this.modelComboBox);
-        componentList.add(this.customModelPathField);
-        componentList.add(optionalParams.getMinPercField());
-        componentList.add(optionalParams.getMaxPercField());
+    	String modelsDir = consumer == null ? null : consumer.getModelsDir();
+    	LinkedHashMap<String, String> yoloModelEntries = StardistModelRegistry.buildModelEntries(modelsDir);
+    	this.inferencePanel.getModelSelectionPanel().setModels(yoloModelEntries);
+    	this.trainPanel.setBaseModels(yoloModelEntries);
+        if (this.consumer == null) {
+            return;
+        }
+        this.consumer.setVariableNames(null);
+        componentList.add(this.inferencePanel.getModelSelectionPanel().getModelComboBox());
+        componentList.add(this.inferencePanel.getImageSourcePanel().getOpenImagesComboBox());
+        componentList.add(this.inferencePanel.getImageSourcePanel().getFocusButton());
+        componentList.add(this.inferencePanel.getImageDisplayPanel());
         this.consumer.setComponents(componentList);
-        this.footer.getButtons().getInstallButton().addActionListener(this);
-        this.footer.getButtons().getRunButton().addActionListener(this);
-        this.footer.getButtons().getCancelButton().addActionListener(this);
-
-        // Enable when custom selected
-        modelComboBox.addPopupMenuListener(new PopupMenuListener() {
-            /**
-             * Executes popup menu will become visible.
-             *
-             * @param e the e parameter.
-             */
-            @Override
-            public void popupMenuWillBecomeVisible(PopupMenuEvent e) {}
-            /**
-             * Executes popup menu canceled.
-             *
-             * @param e the e parameter.
-             */
-            @Override
-            public void popupMenuCanceled(PopupMenuEvent e) {}
-
-            /**
-             * Executes popup menu will become invisible.
-             *
-             * @param e the e parameter.
-             */
-            @Override
-            public void popupMenuWillBecomeInvisible(PopupMenuEvent e) {
-            	boolean enabled = modelComboBox.getSelectedItem().equals(CUSTOM_STR);
-                customLabel.setEnabled(enabled);
-                customModelPathField.setEnabled(enabled);
-                browseButton.setEnabled(enabled);
-            }
-
-        });
+        this.inferencePanel.getDrawButton().addActionListener(this);
+        this.inferencePanel.getRefreshButton().addActionListener(this);
+        this.inferencePanel.getActionPanel().getCancelButton().addActionListener(this);
+        this.inferencePanel.getActionPanel().getRunButton().addActionListener(this);
+        this.trainPanel.getTrainActionPanel().getCancelButton().addActionListener(this);
+        this.trainPanel.getTrainActionPanel().getRunButton().addActionListener(this);
+        installInferenceSourceListeners();
         consumer.updateGUI();
     }
-    
+
     /**
      * Sets cancel callback.
      *
@@ -148,8 +149,118 @@ public class StarDistPluginUI extends StarDistGUI implements ActionListener {
      * Executes close.
      */
     public void close() {
-    	if (model != null && model.isLoaded())
-    		model.close();
+    	inferenceService.close();
+    }
+
+    private void installInferenceSourceListeners() {
+        YoloImageSourcePanel sourcePanel = inferencePanel.getImageSourcePanel();
+        sourcePanel.getSystemImagesRadio().addActionListener(e -> showSystemPathPrompt());
+        sourcePanel.getOpenImagesRadio().addActionListener(e -> showOpenImageSource());
+        sourcePanel.getSystemPathField().addActionListener(e -> updateSystemPathPreviewFromField());
+        sourcePanel.getSystemPathField().addFocusListener(new FocusAdapter() {
+            @Override
+            public void focusLost(FocusEvent e) {
+                updateSystemPathPreviewFromField();
+            }
+        });
+        sourcePanel.setSystemPathDropConsumer(file -> updateSystemPathPreview(file));
+        sourcePanel.getBrowseButton().addActionListener(e -> browseSystemImagePath());
+    }
+
+    private void showSystemPathPrompt() {
+        selectedSystemPath = null;
+        selectedSystemImageFile = null;
+        inferencePanel.getImageSourcePanel().setSystemPathSelectionConfirmed(false);
+        inferencePanel.getImageDisplayPanel().setEmptyMessage(SYSTEM_PREVIEW_PROMPT);
+        inferencePanel.getImageDisplayPanel().clearImage();
+        inferencePanel.updateImageActionState();
+    }
+
+    private void showOpenImageSource() {
+        selectedSystemPath = null;
+        selectedSystemImageFile = null;
+        inferencePanel.getImageSourcePanel().setSystemPathSelectionConfirmed(false);
+        inferencePanel.getImageDisplayPanel().setEmptyMessage(DEFAULT_PREVIEW_MESSAGE);
+        if (consumer != null) {
+            consumer.updateGUI();
+        } else {
+            inferencePanel.getImageDisplayPanel().clearImage();
+        }
+        inferencePanel.updateImageActionState();
+    }
+
+    private void browseSystemImagePath() {
+        JFileChooser chooser = new JFileChooser();
+        chooser.setFileSelectionMode(JFileChooser.FILES_AND_DIRECTORIES);
+        chooser.setAcceptAllFileFilterUsed(true);
+        int result = chooser.showOpenDialog(this);
+        if (result != JFileChooser.APPROVE_OPTION) {
+            return;
+        }
+        File selected = chooser.getSelectedFile();
+        inferencePanel.getImageSourcePanel().getSystemImagesRadio().setSelected(true);
+        inferencePanel.getImageSourcePanel().getSystemPathField().setText(selected.getAbsolutePath());
+        updateSystemPathPreview(selected);
+    }
+
+    private void updateSystemPathPreviewFromField() {
+        if (!inferencePanel.getImageSourcePanel().getSystemImagesRadio().isSelected()) {
+            return;
+        }
+        String text = inferencePanel.getImageSourcePanel().getSystemPathField().getText();
+        if (text == null || text.trim().isEmpty()) {
+            showSystemPathPrompt();
+            return;
+        }
+        updateSystemPathPreview(new File(text.trim()));
+    }
+
+    private void updateSystemPathPreview(File path) {
+        selectedSystemPath = null;
+        selectedSystemImageFile = null;
+        inferencePanel.getImageSourcePanel().setSystemPathSelectionConfirmed(false);
+        if (path == null) {
+            showPreviewError(INVALID_IMAGE_MESSAGE);
+            inferencePanel.updateImageActionState();
+            return;
+        }
+        if (path.isDirectory()) {
+            File previewImage = YoloImageFiles.previewImageInDirectory(path);
+            if (previewImage == null) {
+                showPreviewError(EMPTY_FOLDER_MESSAGE);
+                inferencePanel.updateImageActionState();
+                return;
+            }
+            selectedSystemPath = path;
+            showSystemPreviewImage(previewImage);
+            return;
+        }
+        if (!YoloImageFiles.canReadImage(path)) {
+            showPreviewError(INVALID_IMAGE_MESSAGE);
+            inferencePanel.updateImageActionState();
+            return;
+        }
+        selectedSystemPath = path;
+        showSystemPreviewImage(path);
+    }
+
+    private void showSystemPreviewImage(File imageFile) {
+        try {
+            inferencePanel.getImageDisplayPanel().setImageFile(imageFile, imageFile.getName(), true);
+            selectedSystemImageFile = imageFile;
+            inferencePanel.getImageSourcePanel().setSystemPathSelectionConfirmed(true);
+        } catch (IOException e) {
+            selectedSystemPath = null;
+            selectedSystemImageFile = null;
+            inferencePanel.getImageSourcePanel().setSystemPathSelectionConfirmed(false);
+            showPreviewError(INVALID_IMAGE_MESSAGE);
+        }
+        inferencePanel.updateImageActionState();
+    }
+
+    private void showPreviewError(String message) {
+        inferencePanel.getImageDisplayPanel().setEmptyMessage(message, PREVIEW_ERROR_COLOR);
+        inferencePanel.getImageDisplayPanel().clearImage();
     }
 
     // For demonstration purposes: a main method to show the UI in a JFrame.
@@ -164,12 +275,14 @@ public class StarDistPluginUI extends StarDistGUI implements ActionListener {
              * Executes run.
              */
             public void run() {
-                JFrame frame = new JFrame("StarDist Plugin");
+                JFrame frame = new JFrame("Yolo Plugin");
                 frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-                frame.getContentPane().add(new StarDistPluginUI(null));
+                frame.getContentPane().add(new StarDistPluginUI(null, null));
                 frame.pack();
                 frame.setLocationRelativeTo(null);
                 frame.setVisible(true);
+                frame.setResizable(true);
+                frame.setSize(400, 200);
             }
         });
     }
@@ -181,28 +294,23 @@ public class StarDistPluginUI extends StarDistGUI implements ActionListener {
      */
     @Override
     public void actionPerformed(ActionEvent e) {
-    	if (e.getSource() == browseButton) {
-    		browseFiles();
-    	} else if (e.getSource() == this.footer.getButtons().getRunButton()) {
+    	if (e.getSource() == this.inferencePanel.getActionPanel().getRunButton()) {
+    		cancelled = false;
     		workerThread = new Thread(() -> {
         		try {
-    				runStardist();
-    				startModelInstallation(false);
+        			runYOLO();
     			} catch (Exception e1) {
-    		    	if (cancelled)
-    		    		return;
+    				if (cancelled)
+    					return;
     				e1.printStackTrace();
-    				startModelInstallation(false);
-    				SwingUtilities.invokeLater(() -> this.footer.getBar().setString("Error running the model"));
     			}
     		});
     		workerThread.start();
-    	} else if (e.getSource() == this.footer.getButtons().getInstallButton()) {
-    		workerThread = new Thread(() -> {
-        		installStardist();
-    		});
-    		workerThread.start();
-    	} else if (e.getSource() == this.footer.getButtons().getCancelButton()) {
+    	} else if (e.getSource() == this.inferencePanel.getActionPanel().getCancelButton()) {
+    		cancel();
+    	} else if (e.getSource() == this.trainPanel.getTrainActionPanel().getRunButton()) {
+    		trainYOLO();
+    	} else if (e.getSource() == this.trainPanel.getTrainActionPanel().getCancelButton()) {
     		cancel();
     	}
     }
@@ -211,298 +319,362 @@ public class StarDistPluginUI extends StarDistGUI implements ActionListener {
     	cancelled = true;
     	if (workerThread != null && workerThread.isAlive())
     		workerThread.interrupt();
-    	if (model != null)
-    		model.close();
+    	inferenceService.close();
+    	finishTrainingUiState();
     	if (cancelCallback != null)
     		cancelCallback.run();
     }
     
     private void saveParams() {
-    	LinkedHashMap<String, String> map = new LinkedHashMap<String, String>();
-    	String modelPath = (String) this.modelComboBox.getSelectedItem();
-    	if (modelPath.equals(CUSTOM_STR))
-    		map.put("model", this.customModelPathField.getText());
-    	else
-    		map.put("model", modelPath);
-    	map.put("prob_thresh", "" + this.thresholdSlider.getSlider().getValue() / 1000d);
-    	map.put("min_percentile", "" + this.optionalParams.getMinPercField().getValue());
-    	map.put("max_percentile", "" + this.optionalParams.getMaxPercField().getValue());
-    	this.consumer.notifyParams(map);
+    	this.consumer.notifyParams(null);
     }
     
-    private < T extends RealType< T > & NativeType< T > > void runStardist() throws IOException, RunModelException, LoadModelException, BuildException {
+    private void runYOLO()
+    		throws RunModelException, LoadModelException, BuildException, IOException,
+    		ExecutionException, InterruptedException {
     	saveParams();
-    	renewThreshold();
-    	startModelInstallation(true);
-    	String selectedModel = (String) this.modelComboBox.getSelectedItem();
-    	if (!INSTALLED_ENV && INSTALLED_WEIGHTS.get(selectedModel) != null && !INSTALLED_WEIGHTS.get(selectedModel))
-        	installStardist(weightsInstalled(), (INSTALLED_ENV = StardistAbstract.isInstalled()));
-    	else if (INSTALLED_WEIGHTS.get(selectedModel) == null || !INSTALLED_WEIGHTS.get(selectedModel) || !INSTALLED_ENV)
-        	installStardist(weightsInstalled(), INSTALLED_ENV);
-    	if (INSTALLED_WEIGHTS.get(selectedModel) == null || !INSTALLED_WEIGHTS.get(selectedModel) || !INSTALLED_ENV)
+    	String modelPath = this.inferencePanel.getModelSelectionPanel().getSelectedModelValue();
+    	if (this.inferencePanel.getImageSourcePanel().getSystemImagesRadio().isSelected()) {
+    		runYOLOOnSystemImage(modelPath);
     		return;
+    	}
+    	runYOLOOnOpenImage(modelPath);
+    }
+
+    private < T extends RealType< T > & NativeType< T > > void runYOLOOnOpenImage(String modelPath)
+            throws RunModelException, LoadModelException, BuildException, IOException,
+            ExecutionException, InterruptedException {
     	RandomAccessibleInterval<T> rai = consumer.getFocusedImageAsRai();
     	if (rai == null) {
     		JOptionPane.showMessageDialog(null, "Please open an image", "No image open", JOptionPane.ERROR_MESSAGE);
     		return;
     	}
-    	this.inputTitle = consumer.getFocusedImageName();
-    	SwingUtilities.invokeLater(() ->{
-    		this.footer.getBar().setIndeterminate(true);
-    		this.footer.getBar().setString("Loading model");
-    	});
-    	String modelype = "" + selectedModel;
-    	if (modelype.equals(CUSTOM_STR))
-    		selectedModel = customModelPathField.getText();
-    	
-    	if (modelype.equals(CUSTOM_STR) 
-    			&& (whichLoaded == null || model == null || model.isClosed() || !whichLoaded.equals(selectedModel)))
-    		model = StardistAbstract.init(selectedModel);
-    	else if (!modelype.equals(CUSTOM_STR) 
-    			&& (whichLoaded == null || model == null || model.isClosed() || !whichLoaded.equals(selectedModel))) {
-			try {
-				model = Stardist2D.fromPretained(selectedModel, consumer.getModelsDir(), false);
-			} catch (InterruptedException e) {
-		    	if (cancelled)
-		    		return;
-				e.printStackTrace();
-				return;
-			}
-    	} else if (model == null)
-    		throw new IllegalArgumentException();
-    	if (!model.isLoaded())
-    		model.loadModel();
-    	model.setThreshold((double) (this.thresholdSlider.getSlider().getValue() / 1000d));
-    	whichLoaded = selectedModel;
-    	SwingUtilities.invokeLater(() ->{
-    		this.footer.getBar().setString("Running the model");
-    	});
-    	runStardistOnFramesStack(rai);
+        List<Rectangle2D.Double> boxes = inferencePanel.getImageDisplayPanel().getBoxes();
+        inferenceService.setObjectSize(boxes);
+    	Consumer<String> logConsumer = str -> SwingUtilities.invokeLater(() ->
+    			StarDistPluginUI.this.inferencePanel.getLogPanel().appendHtml(str));
+        startInferenceLogTimer();
+        List<Detection> detections;
+        try {
+            detections = inferenceService.run(modelPath, rai, logConsumer);
+        } finally {
+            SwingUtilities.invokeLater(() -> StarDistPluginUI.this.inferencePanel.getLogPanel().stopRunTimer());
+        }
+        consumer.displayDetections(detections);
     }
-    
-    private void renewThreshold() {
-    	double val = this.thresholdSlider.getSlider().getValue() / 1000d;
-    	if (modelComboBox.getSelectedItem().equals("StarDist Fluorescence Nuclei Segmentation")) {
-    		this.thresh1D = val;
-    	} else if (modelComboBox.getSelectedItem().equals("StarDist H&E Nuclei Segmentation")) {
-    		thresh3D = val;
-    	} else {
-    		threshMap.put(this.customModelPathField.getText().trim(), val);
-    	}
+
+    private void runYOLOOnSystemImage(String modelPath)
+            throws RunModelException, LoadModelException, BuildException, IOException,
+            ExecutionException, InterruptedException {
+        File source = selectedSystemPath == null ? selectedSystemImageFile : selectedSystemPath;
+        List<File> images = systemInferenceImages(source);
+        if (images.isEmpty()) {
+            SwingUtilities.invokeLater(() -> {
+                showPreviewError(source != null && source.isDirectory() ? EMPTY_FOLDER_MESSAGE : INVALID_IMAGE_MESSAGE);
+                inferencePanel.updateImageActionState();
+            });
+            return;
+        }
+        List<Rectangle2D.Double> boxes = inferencePanel.getImageDisplayPanel().getBoxes();
+        inferenceService.setObjectSize(boxes);
+        Consumer<String> logConsumer = str -> SwingUtilities.invokeLater(() ->
+                StarDistPluginUI.this.inferencePanel.getLogPanel().appendHtml(str));
+        startInferenceLogTimer();
+        logConsumer.accept("Starting inference on " + images.size() + " image(s).");
+        Map<String, List<Detection>> detectionsByImage = new LinkedHashMap<String, List<Detection>>();
+        File outputCsv = YoloDetectionCsvWriter.outputFileFor(source);
+        try {
+            for (int i = 0; i < images.size(); i++) {
+                if (cancelled || Thread.currentThread().isInterrupted()) {
+                    break;
+                }
+                File imageFile = images.get(i);
+                final int imageIndex = i + 1;
+                final int totalImages = images.size();
+                final boolean[] emittedPatchProgress = new boolean[] {false};
+                try {
+                    RandomAccessibleInterval<UnsignedByteType> rai = readImageFileAsRai(imageFile);
+                    List<Detection> detections = inferenceService.runWithProgress(modelPath, rai, progress -> {
+                        if (progress == null) {
+                            return;
+                        }
+                        if (progress.getPhase() == InferenceProgress.Phase.MODEL_LOADING) {
+                            logConsumer.accept("Loading model: " + progress.getDetail());
+                        } else if (progress.getPhase() == InferenceProgress.Phase.MODEL_LOADED) {
+                            logConsumer.accept("Model loaded.");
+                        } else if (progress.getPhase() == InferenceProgress.Phase.PATCH_END
+                                && progress.getTotalPatches() > 1) {
+                            emittedPatchProgress[0] = true;
+                            logConsumer.accept(imageProgressBar(imageIndex, totalImages,
+                                    progress.getPatchIndex(), progress.getTotalPatches()));
+                        } else if (progress.getPhase() == InferenceProgress.Phase.TASK_RETRY) {
+                            logConsumer.accept(progress.getDetail());
+                        }
+                    });
+                    detectionsByImage.put(imageFile.getAbsolutePath(), detections);
+                    if (!emittedPatchProgress[0]) {
+                        logConsumer.accept(imageProgressBar(imageIndex, totalImages));
+                    }
+                } catch (IOException e) {
+                    logConsumer.accept("Skipping unreadable image " + imageIndex + "/" + totalImages);
+                    detectionsByImage.put(imageFile.getAbsolutePath(), Collections.emptyList());
+                }
+            }
+        } finally {
+            SwingUtilities.invokeLater(() -> StarDistPluginUI.this.inferencePanel.getLogPanel().stopRunTimer());
+        }
+        if (cancelled || Thread.currentThread().isInterrupted()) {
+            return;
+        }
+        YoloDetectionCsvWriter.write(outputCsv, detectionsByImage);
+        List<File> geoJsonFiles = YoloDetectionGeoJsonWriter.write(detectionsByImage);
+        consumer.saveDetections(detectionsByImage);
+        logConsumer.accept("Saved predictions: " + outputCsv.getAbsolutePath());
+        logConsumer.accept("Saved GeoJSON predictions for " + geoJsonFiles.size() + " image(s).");
     }
-    
-    private <T extends RealType<T> & NativeType<T>, R extends RealType<R> & NativeType<R>>
-    void runStardistOnFramesStack(RandomAccessibleInterval<R> rai) throws RunModelException {
-    	rai = addDimsToInput(rai, model);
-    	long[] inDims = rai.dimensionsAsLongArray();
-    	long[] outDims;
-    	if (model.is2D())
-    		outDims = new long[] {inDims[0], inDims[1], 1, inDims[3]};
-    	else
-    		outDims = new long[] {inDims[0], inDims[1], 1, inDims[3], inDims[4]};
-		RandomAccessibleInterval<T> outMaskRai = Cast.unchecked(ArrayImgs.floats(outDims));
-		for (int i = 0; i < inDims[inDims.length - 1]; i ++) {
-			String msg = "Running the model " + (i + 1) + "/" + inDims[inDims.length - 1];
-			SwingUtilities.invokeLater(() -> footer.getBar().setString(msg));
-	    	List<Tensor<R>> inList = new ArrayList<Tensor<R>>();
-	    	Tensor<R> inIm = Tensor.build("input", model.is2D() ? "xyc" : "xycz", Views.hyperSlice(rai, inDims.length - 1, i));
-	    	inList.add(inIm);
-	    	
-	    	List<Tensor<T>> outputList = new ArrayList<Tensor<T>>();
-	    	Tensor<T> outMask = Tensor.build("mask", model.is2D() ? "xyc" : "xycz", Views.hyperSlice(outMaskRai, outDims.length - 1, i));
-	    	outputList.add(outMask);
-	    	
-	    	model.run(inList, outputList);
-		}
-    	consumer.displayImage(outMaskRai, model.is2D() ? "xycb" : "xyczb", getOutputName("mask"));
+
+    private static List<File> systemInferenceImages(File source) {
+        if (source == null) {
+            return Collections.emptyList();
+        }
+        if (source.isDirectory()) {
+            return YoloImageFiles.readableImagesInDirectory(source);
+        }
+        if (YoloImageFiles.canReadImage(source)) {
+            return Collections.singletonList(source);
+        }
+        return Collections.emptyList();
     }
-    
-    private static <R extends RealType<R> & NativeType<R>>
-    RandomAccessibleInterval<R> addDimsToInput(RandomAccessibleInterval<R> rai, StardistAbstract model) {
-    	int nChannels = model.getNChannels();
-    	boolean is2d = model.is2D();
-    	long[] dims = rai.dimensionsAsLongArray();
-    	if (dims.length == 2 && nChannels == 1 && is2d)
-    		return Views.addDimension(Views.addDimension(rai, 0, 0), 0, 0);
-    	else if (dims.length == 3 && dims[2] == nChannels && is2d)
-    		return Views.addDimension(rai, 0, 0);
-    	else if (dims.length == 4 && dims[2] == nChannels && is2d)
-    		return rai;
-    	else if (dims.length == 5 && dims[2] == nChannels && is2d && dims[4] > 1)
-    		return Views.hyperSlice(rai, 3, 0);
-    	else if (dims.length == 5 && dims[2] == nChannels && is2d && dims[4] == 1)
-    		return Views.hyperSlice(rai, 4, 0);
-    	else if (dims.length == 3 && dims[2] != nChannels && nChannels == 1 && !is2d) {
-    		rai = Views.permute(Views.addDimension(rai, 0, 0), 2, 3);
-    		return Views.addDimension(rai, 0, 0);
-    	} else if (dims.length == 4 && dims[2] != nChannels && nChannels == 1 && !is2d)
-    		return Views.permute(Views.permute(Views.addDimension(rai, 0, 0), 3, 4), 2, 3);
-    	else if (dims.length == 4 && dims[2] == nChannels && !is2d)
-    		return Views.addDimension(rai, 0, 0);
-    	else if (dims.length == 5 && dims[2] == nChannels && !is2d)
-    		return rai;
-    	else if (dims.length == 3 && dims[2] != nChannels && is2d)
-    		throw new IllegalArgumentException(String.format("Number of channels required for this model is: %s."
-    				+ " The number of channels (third dimension) in the image provided: %s.", nChannels, dims[2]));
-    	else if (dims.length == 3 && dims[2] != nChannels && is2d)
-    		throw new IllegalArgumentException(String.format("Number of channels required for this model is: %s."
-    				+ " The number of channels (third dimension) in the image provided: %s.", nChannels, dims[2]));
-    	else if (dims.length == 2 && nChannels > 1)
-    		throw new IllegalArgumentException(String.format("Model requires %s channels", nChannels));
-    	else if (dims.length == 2 && !is2d)
-    		throw new IllegalArgumentException("Model is 3d, 2d image provided");
-    	else
-    		throw new IllegalArgumentException(
-    				String.format("Unsupported dimensions for %s model with %s channels. Dimension order should be (X, Y, C, Z, B or T)"
-    						, is2d ? "2D" : "3D", nChannels));
+
+    private static RandomAccessibleInterval<UnsignedByteType> readImageFileAsRai(File imageFile) throws IOException {
+        BufferedImage image = ImageIO.read(imageFile);
+        if (image == null) {
+            throw new IOException("Unsupported image file: " + imageFile);
+        }
+        int width = image.getWidth();
+        int height = image.getHeight();
+        byte[] pixels = new byte[width * height * 3];
+        int offset = 0;
+        for (int y = 0; y < height; y++) {
+            for (int x = 0; x < width; x++) {
+                int rgb = image.getRGB(x, y);
+                pixels[offset++] = (byte) ((rgb >> 16) & 0xff);
+                pixels[offset++] = (byte) ((rgb >> 8) & 0xff);
+                pixels[offset++] = (byte) (rgb & 0xff);
+            }
+        }
+        return ArrayImgs.unsignedBytes(pixels, width, height, 3);
     }
-    
-    private String getOutputName(String tensorName) {
-    	int index = inputTitle.lastIndexOf(".");
-    	index = index == -1 ? inputTitle.length() : index;
-    	String noExtension = inputTitle.substring(0, index);
-    	String extension = ".tif";
-    	return noExtension + "_" + tensorName + extension;
+
+    private static String imageProgressBar(int imageIndex, int totalImages) {
+        return imageProgressBar(imageIndex, totalImages, 0, 0);
     }
-    
-    private void installStardist() {
-    	startModelInstallation(true);
-    	boolean envInstalled = StardistAbstract.isInstalled();
-    	boolean wwInstalled = weightsInstalled();
-    	if (envInstalled && wwInstalled) {
-        	startModelInstallation(false);
-    		return;
-    	}
-    	installStardist(wwInstalled, envInstalled);
+
+    private static String imageProgressBar(int imageIndex, int totalImages, int patchIndex, int totalPatches) {
+        int safeTotal = Math.max(1, totalImages);
+        int safeIndex = Math.max(0, Math.min(imageIndex, safeTotal));
+        int safePatch = Math.max(0, Math.min(patchIndex, Math.max(0, totalPatches)));
+        int safeTotalPatches = Math.max(1, totalPatches);
+        double completedImages = safeIndex;
+        boolean hasPatchProgress = safePatch > 0 && totalPatches > 1;
+        if (hasPatchProgress) {
+            completedImages = Math.max(0, safeIndex - 1) + safePatch / (double) safeTotalPatches;
+        }
+        int hashes = (int) Math.floor((completedImages / (double) safeTotal) * 20.0);
+        StringBuilder builder = new StringBuilder(32);
+        for (int i = 0; i < 20; i++) {
+            builder.append(i < hashes ? '#' : '.');
+        }
+        builder.append(" Image ").append(safeIndex);
+        if (hasPatchProgress) {
+            builder.append('.').append(safePatch);
+        }
+        builder.append('/').append(safeTotal);
+        return builder.toString();
     }
-    
-    private void installStardist(boolean wwInstalled, boolean envInstalled) {
-    	if (wwInstalled && envInstalled)
-    		return;
-    	SwingUtilities.invokeLater(() -> this.footer.getBar().setString("Installing..."));
-    	CountDownLatch latch = !wwInstalled && !envInstalled ? new CountDownLatch(2) : new CountDownLatch(1);
-    	if (!wwInstalled)
-    		installModelWeights(latch);
-    	if (!envInstalled)
-    		installEnv(latch);
-    	try {
-			latch.await();
-		} catch (InterruptedException e) {
-	    	if (cancelled)
-	    		return;
-			e.printStackTrace();
-		}
-    }
-    
-    private boolean weightsInstalled() {
-    	String model = (String) this.modelComboBox.getSelectedItem();
-    	if (model.equals(CUSTOM_STR)) {
-    		INSTALLED_WEIGHTS.put(CUSTOM_STR, true);
-    		return true;
-    	}
-    	try {
-			Stardist2D pretrained = Stardist2D.fromPretained(model, consumer.getModelsDir(), false);
-			if (pretrained == null)
-				return false;
-		} catch (Exception e) {
-			return false;
-		}
-		INSTALLED_WEIGHTS.put(model, true);
-    	return true;
-    }
-    
-    private void installModelWeights(CountDownLatch latch) {
-    	Consumer<Double> cons = (d) -> {
-    		double perc = Math.round(d * 1000) / 10.0d;
-    		SwingUtilities.invokeLater(() -> {
-        		this.footer.getBar().setValue((int) Math.floor(perc));
-        		this.footer.getBar().setString(perc + "% of weights");
-    		});
-    	};
-		SwingUtilities.invokeLater(() -> footer.getBar().setIndeterminate(false));
-		Thread dwnlThread = new Thread(() -> {
-			try {
-				Stardist2D.downloadPretrained((String) modelComboBox.getSelectedItem(), this.consumer.getModelsDir(), cons);
-				INSTALLED_WEIGHTS.put((String) modelComboBox.getSelectedItem(), true);
-			} catch (IllegalArgumentException e) {
-			} catch (IOException | InterruptedException e) {
-		    	if (cancelled)
-		    		return;
-				e.printStackTrace();
-			}
-			latch.countDown();
-			checkModelInstallationFinished(latch);
-		});
-		dwnlThread.start();
-    }
-    
-    private void installEnv(CountDownLatch latch) {
-    	String msg = "Installation of Python environments might take up to 20 minutes.";
-    	String question = "Install Python for StarDist";
-    	INSTALLED_ENV = StardistAbstract.isInstalled();
-    	if (INSTALLED_ENV || 
-    			JOptionPane.showConfirmDialog(null, msg, question, JOptionPane.YES_NO_OPTION) != JOptionPane.YES_OPTION) {
-			latch.countDown();
-			checkModelInstallationFinished(latch);
-    		return;
-    	}
-		JDialog installerFrame = new JDialog();
-		installerFrame.setTitle("Installing StarDist");
-		installerFrame.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
-    	Consumer<Boolean> callback = (bool) -> {
-    		INSTALLED_ENV = bool;
-    		checkModelInstallationFinished(latch);
-    		if (installerFrame.isVisible())
-    			installerFrame.dispose();
-    	};
-    	InstallEnvWorker worker = new InstallEnvWorker("StarDist", latch, callback);
-		EnvironmentInstaller installerPanel = EnvironmentInstaller.create(worker);
-		Consumer<String> cons = (s) ->{
-			installerPanel.updateText(s, Color.black);
-			if (latch.getCount() != 1)
-				return;
-			SwingUtilities.invokeLater(() ->{
-				if (!footer.getBar().isIndeterminate() || (footer.getBar().isIndeterminate() && !footer.getBar().getString().equals("Installing Python"))) {
-					footer.getBar().setIndeterminate(true);
-					footer.getBar().setString("Installing Python");
-				}
-			});
-		};
-		worker.setConsumer(cons);
-    	worker.execute();
-		installerPanel.addToFrame(installerFrame);
-    	installerFrame.setSize(600, 300);
-    }
-    
-    private void checkModelInstallationFinished(CountDownLatch latch) {
-    	if (latch.getCount() == 0)
-    		startModelInstallation(false);
-    }
-    
-    private void startModelInstallation(boolean isStarting) {
-    	SwingUtilities.invokeLater(() -> {
-        	this.footer.getButtons().getRunButton().setEnabled(!isStarting);
-        	this.footer.getButtons().getInstallButton().setEnabled(!isStarting);
-        	this.modelComboBox.setEnabled(!isStarting);
-        	this.optionalParams.getMinPercField().setEnabled(!isStarting);
-        	this.optionalParams.getMaxPercField().setEnabled(!isStarting);
-        	if (isStarting) {
-        		this.footer.getBar().setString("Checking stardist installed...");
-        		this.footer.getBar().setIndeterminate(true);
-        	} else {
-        		this.footer.getBar().setIndeterminate(false);
-		    	this.footer.getBar().setValue(0);
-		    	this.footer.getBar().setString("");
-        	}
-    	});
-    }
-    
-    private void browseFiles() {
-        JFileChooser fileChooser = new JFileChooser();
-        fileChooser.setFileSelectionMode(JFileChooser.FILES_ONLY);
-        int option = fileChooser.showOpenDialog(StarDistPluginUI.this);
-        if (option == JFileChooser.APPROVE_OPTION) {
-            customModelPathField.setText(fileChooser.getSelectedFile().getAbsolutePath());
+
+    private void startInferenceLogTimer() {
+        Runnable start = () -> StarDistPluginUI.this.inferencePanel.getLogPanel().startRunTimer();
+        if (SwingUtilities.isEventDispatchThread()) {
+            start.run();
+            return;
+        }
+        try {
+            SwingUtilities.invokeAndWait(start);
+        } catch (Exception e) {
+            SwingUtilities.invokeLater(start);
         }
     }
+
+    public void trainYOLO() {
+        if (!trainPanel.validateTrainingFields()) {
+            return;
+        }
+        cancelled = false;
+        startTrainingUiState();
+        workerThread = new Thread(() -> {
+            try {
+                YoloTrainingConfig config = readTrainingConfig();
+                Consumer<String> logConsumer = str -> SwingUtilities.invokeLater(() -> {
+                    System.err.println(str);
+                });
+                trainingService.train(config,
+                        progress -> SwingUtilities.invokeLater(() -> {
+                            handleTrainingProgress(progress);
+                        }),
+                        preview -> SwingUtilities.invokeLater(() -> {
+                            if (preview.getPreviewJsonPath() != null) {
+                                trainPanel.getValidationPreviewPanel().loadPreview(preview.getPreviewJsonPath());
+                                logConsumer.accept("Validation preview epoch " + preview.getEpoch()
+                                        + ": " + preview.getPreviewJsonPath());
+                            }
+                        }),
+                        logConsumer);
+                refreshYoloModels();
+            } catch (Exception | Error e) {
+                if (!cancelled) {
+                    e.printStackTrace();
+                }
+            } finally {
+                SwingUtilities.invokeLater(() -> finishTrainingUiState());
+            }
+        });
+        workerThread.start();
+    }
+
+    private void startTrainingUiState() {
+        trainingStartMillis = System.currentTimeMillis();
+        lastProgressMillis = trainingStartMillis;
+        lastProgressStep = 0;
+        currentTrainingStep = 0;
+        totalTrainingSteps = 0;
+        totalTrainingEpochs = 0;
+        currentSecondsPerStep = Double.NaN;
+        secondsPerStepSamples.clear();
+        trainPanel.setTrainingRunning(true);
+        tabs.setEnabledAt(0, false);
+        trainPanel.getLossGraphPanel().clearValues();
+        trainPanel.getMetricGraphPanel().clearValues();
+        trainPanel.getLossGraphPanel().setTrainingStatus(true, 0, 0, 0, 0L, Double.NaN);
+        trainPanel.getMetricGraphPanel().setTrainingStatus(true, 0, 0, 0, 0L, Double.NaN);
+        trainPanel.getValidationPreviewPanel().clearPreview();
+        trainPanel.getValidationPreviewPanel().setTrainingStatus(true, 0, 0, 0, 0L, Double.NaN);
+        if (trainingTimer != null) {
+            trainingTimer.stop();
+        }
+        trainingTimer = new Timer(1000, e -> updateTrainingGraphStatus());
+        trainingTimer.start();
+    }
+
+    private void finishTrainingUiState() {
+        if (trainingTimer != null) {
+            trainingTimer.stop();
+            trainingTimer = null;
+        }
+        trainPanel.setTrainingRunning(false);
+        tabs.setEnabledAt(0, true);
+        long elapsed = Math.max(0L, System.currentTimeMillis() - trainingStartMillis);
+        trainPanel.getLossGraphPanel().setTrainingStatus(false, currentTrainingStep, totalTrainingSteps,
+                totalTrainingEpochs, elapsed, currentSecondsPerStep);
+        trainPanel.getMetricGraphPanel().setTrainingStatus(false, currentTrainingStep, totalTrainingSteps,
+                totalTrainingEpochs, elapsed, currentSecondsPerStep);
+        trainPanel.getValidationPreviewPanel().setTrainingStatus(false, currentTrainingStep, totalTrainingSteps,
+                totalTrainingEpochs, elapsed, currentSecondsPerStep);
+    }
+
+    private void handleTrainingProgress(YoloTrainingProgress progress) {
+        updateTrainingProgressState(progress);
+        Double trainLoss = progress.getTrainingTotalLoss();
+        if (trainLoss != null) {
+            trainPanel.getLossGraphPanel().addTrainValue(
+                    YoloTrainingProgress.YOLO_TOTAL_LOSS_LABEL,
+                    progress.getStep(),
+                    progress.getEpoch(),
+                    trainLoss);
+        }
+        Double validationLoss = progress.getValidationTotalLoss();
+        if (validationLoss != null) {
+            trainPanel.getLossGraphPanel().addValidationValue(
+                    YoloTrainingProgress.YOLO_TOTAL_LOSS_LABEL,
+                    progress.getStep(),
+                    progress.getEpoch(),
+                    validationLoss);
+        }
+        Double metric = progress.getPrimaryDetectionMetric();
+        if (metric != null) {
+            trainPanel.getMetricGraphPanel().addValidationValue(
+                    progress.getPrimaryDetectionMetricName(),
+                    progress.getStep(),
+                    progress.getEpoch(),
+                    metric);
+        }
+    }
+
+    private void updateTrainingProgressState(YoloTrainingProgress progress) {
+        updateTrainingProgressState(progress.getStep(), progress.getTotalSteps(), progress.getTotalEpochs());
+    }
+
+    private void updateTrainingProgressState(int step, int totalSteps, int totalEpochs) {
+        long now = System.currentTimeMillis();
+        if (totalSteps > 0) {
+            totalTrainingSteps = totalSteps;
+        }
+        if (totalEpochs > 0) {
+            totalTrainingEpochs = totalEpochs;
+        }
+        if (step > lastProgressStep) {
+            addSecondsPerStepSample((now - lastProgressMillis) / 1000.0d / (step - lastProgressStep));
+            lastProgressMillis = now;
+            lastProgressStep = step;
+        }
+        currentTrainingStep = Math.max(currentTrainingStep, step);
+        updateTrainingGraphStatus();
+    }
+
+    private void addSecondsPerStepSample(double secondsPerStep) {
+        if (Double.isNaN(secondsPerStep) || Double.isInfinite(secondsPerStep) || secondsPerStep <= 0.0d) {
+            return;
+        }
+        secondsPerStepSamples.addLast(secondsPerStep);
+        while (secondsPerStepSamples.size() > 3) {
+            secondsPerStepSamples.removeFirst();
+        }
+        double sum = 0.0d;
+        for (Double sample : secondsPerStepSamples) {
+            sum += sample.doubleValue();
+        }
+        currentSecondsPerStep = sum / secondsPerStepSamples.size();
+    }
+
+    private void updateTrainingGraphStatus() {
+        long elapsed = Math.max(0L, System.currentTimeMillis() - trainingStartMillis);
+        trainPanel.getLossGraphPanel().setTrainingStatus(true, currentTrainingStep, totalTrainingSteps,
+                totalTrainingEpochs, elapsed, currentSecondsPerStep);
+        trainPanel.getMetricGraphPanel().setTrainingStatus(true, currentTrainingStep, totalTrainingSteps,
+                totalTrainingEpochs, elapsed, currentSecondsPerStep);
+        trainPanel.getValidationPreviewPanel().setTrainingStatus(true, currentTrainingStep, totalTrainingSteps,
+                totalTrainingEpochs, elapsed, currentSecondsPerStep);
+    }
+
+    private YoloTrainingConfig readTrainingConfig() {
+    	String modelsDir = consumer == null ? null : consumer.getModelsDir();
+    	return YoloTrainingConfig.fromUi(
+    			trainPanel.getModelNameField().getText(),
+    			trainPanel.getDatasetField().getText(),
+    			Integer.parseInt(trainPanel.getEpochsField().getText().trim()),
+    			trainPanel.getFineTuneRadio().isSelected(),
+    			trainPanel.getSelectedBaseModelValue(),
+            trainPanel.getSelectedScratchArchitectureValue(),
+    			modelsDir);
+    }
+
+    private void refreshYoloModels() {
+    	String modelsDir = consumer == null ? null : consumer.getModelsDir();
+    	LinkedHashMap<String, String> yoloModelEntries = YoloModelRegistry.buildModelEntries(modelsDir);
+    	SwingUtilities.invokeLater(() -> {
+    		inferencePanel.getModelSelectionPanel().setModels(yoloModelEntries);
+    		trainPanel.setBaseModels(yoloModelEntries);
+    	});
+    }
+
 }
