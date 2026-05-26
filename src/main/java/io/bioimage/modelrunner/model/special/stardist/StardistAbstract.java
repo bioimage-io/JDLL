@@ -137,7 +137,9 @@ public abstract class StardistAbstract extends DLModelPytorchProtected {
 
 	private static final String CELLCAST_WHEEL_RESOURCE_DIR = "wheels/cellcast";
 
-	private static final String CELLCAST_TEMP_DIR_NAME = "jdll-cellcast-wheels";
+	private static final String JDLL_CACHE_DIR_NAME = "jdll";
+
+	private static final String WHEELS_CACHE_DIR_NAME = "wheels";
 	
 	private static final String OUTPUT_MASK_KEY = "mask";
 	
@@ -308,10 +310,10 @@ public abstract class StardistAbstract extends DLModelPytorchProtected {
      * @return the resolved environment specification
      */
     public static PixiEnvironmentSpec resolvePytorchEnv() {
-        final File cellcastWheel = extractCellcastWheelToTemp();
+        final File cellcastWheel = resolveCellcastWheelInCache();
         final String pixiTemplate = readClasspathResourceAsString(PIXI_TOML);
         final String pixiTomlContent = String.format(Locale.ROOT, pixiTemplate,
-                COMMON_CELLCAST_ENV_NAME, toPixiPath(cellcastWheel));
+                COMMON_CELLCAST_ENV_NAME, currentPixiPlatform(), toPixiPath(cellcastWheel));
 
         final String selectedEnvironment = "default";
 
@@ -324,27 +326,53 @@ public abstract class StardistAbstract extends DLModelPytorchProtected {
         );
     }
 
-    private static File extractCellcastWheelToTemp() {
+    private static File resolveCellcastWheelInCache() {
         final String resourcePath = selectCellcastWheelResource();
         final String wheelName = resourcePath.substring(resourcePath.lastIndexOf('/') + 1);
-        final File tempDir = new File(System.getProperty("java.io.tmpdir"), CELLCAST_TEMP_DIR_NAME);
-        final File tempWheel = new File(tempDir, wheelName);
+        final File wheelsDir = new File(userCacheDir(), WHEELS_CACHE_DIR_NAME);
+        final File cachedWheel = new File(wheelsDir, wheelName);
 
-        if (!tempDir.isDirectory() && !tempDir.mkdirs()) {
-            throw new RuntimeException("Could not create temporary CellCast wheel directory: "
-                    + tempDir.getAbsolutePath());
+        if (cachedWheel.isFile() && cachedWheel.length() > 0) {
+            return cachedWheel;
+        }
+
+        if (!wheelsDir.isDirectory() && !wheelsDir.mkdirs()) {
+            throw new RuntimeException("Could not create CellCast wheel cache directory: "
+                    + wheelsDir.getAbsolutePath());
         }
 
         try (InputStream is = StardistAbstract.class.getClassLoader().getResourceAsStream(resourcePath)) {
             if (is == null) {
                 throw new RuntimeException("Required CellCast wheel resource not found: " + resourcePath);
             }
-            Files.copy(is, tempWheel.toPath(), StandardCopyOption.REPLACE_EXISTING);
+            Files.copy(is, cachedWheel.toPath(), StandardCopyOption.REPLACE_EXISTING);
         } catch (IOException e) {
-            throw new RuntimeException("Could not extract CellCast wheel to: "
-                    + tempWheel.getAbsolutePath(), e);
+            throw new RuntimeException("Could not cache CellCast wheel to: "
+                    + cachedWheel.getAbsolutePath(), e);
         }
-        return tempWheel;
+        return cachedWheel;
+    }
+
+    private static File userCacheDir() {
+        final String base;
+        if (PlatformDetection.isWindows()) {
+            String localAppData = System.getenv("LOCALAPPDATA");
+            if (localAppData != null && !localAppData.trim().isEmpty()) {
+                base = localAppData;
+            } else {
+                base = new File(System.getProperty("user.home"), "AppData" + File.separator + "Local").getAbsolutePath();
+            }
+        } else if (PlatformDetection.isMacOS()) {
+            base = new File(System.getProperty("user.home"), "Library" + File.separator + "Caches").getAbsolutePath();
+        } else {
+            String xdgCache = System.getenv("XDG_CACHE_HOME");
+            if (xdgCache != null && !xdgCache.trim().isEmpty()) {
+                base = xdgCache;
+            } else {
+                base = new File(System.getProperty("user.home"), ".cache").getAbsolutePath();
+            }
+        }
+        return new File(base, JDLL_CACHE_DIR_NAME);
     }
 
     private static String selectCellcastWheelResource() {
@@ -359,7 +387,7 @@ public abstract class StardistAbstract extends DLModelPytorchProtected {
                 throw new RuntimeException("Unsupported Linux architecture for CellCast: " + arch);
             }
         } else if (PlatformDetection.isMacOS()) {
-            if (PlatformDetection.ARCH_X86_64.equals(arch) && !PlatformDetection.isUsingRosseta()) {
+            if (PlatformDetection.ARCH_X86_64.equals(arch) || PlatformDetection.isUsingRosseta()) {
                 wheelName = "cellcast-0.2.1.dev0-cp37-abi3-macosx_10_12_x86_64.whl";
             } else if (PlatformDetection.ARCH_ARM64.equals(arch) || PlatformDetection.ARCH_AARCH64.equals(arch)) {
                 wheelName = "cellcast-0.2.1.dev0-cp37-abi3-macosx_11_0_arm64.whl";
@@ -378,39 +406,31 @@ public abstract class StardistAbstract extends DLModelPytorchProtected {
         return CELLCAST_WHEEL_RESOURCE_DIR + "/" + wheelName;
     }
 
+    private static String currentPixiPlatform() {
+        final String arch = PlatformDetection.getArch();
+        if (PlatformDetection.isLinux()) {
+            if (PlatformDetection.ARCH_X86_64.equals(arch)) {
+                return "linux-64";
+            }
+            if (PlatformDetection.ARCH_ARM64.equals(arch) || PlatformDetection.ARCH_AARCH64.equals(arch)) {
+                return "linux-aarch64";
+            }
+        } else if (PlatformDetection.isMacOS()) {
+            if ((PlatformDetection.ARCH_ARM64.equals(arch)
+                    || PlatformDetection.ARCH_AARCH64.equals(arch))
+                    && !PlatformDetection.isUsingRosseta()) {
+                return "osx-arm64";
+            }
+            return "osx-64";
+        } else if (PlatformDetection.isWindows() && PlatformDetection.ARCH_X86_64.equals(arch)) {
+            return "win-64";
+        }
+        throw new RuntimeException("Unsupported Pixi platform for CellCast: "
+                + PlatformDetection.getOs() + "-" + arch);
+    }
+
     private static String toPixiPath(File file) {
         return file.getAbsolutePath().replace('\\', '/');
-    }
-
-    public static void deleteTemporaryFiles() {
-        File file;
-        try {
-            file = cellcastWheelTempFile();
-        } catch (RuntimeException e) {
-            return;
-        }
-        if (file == null || !file.isFile()) {
-            return;
-        }
-        try {
-            Files.delete(file.toPath());
-            File parent = file.getParentFile();
-            if (parent != null && parent.isDirectory()) {
-                String[] children = parent.list();
-                if (children != null && children.length == 0) {
-                    Files.delete(parent.toPath());
-                }
-            }
-        } catch (IOException e) {
-            // Temporary install artifacts should not make an otherwise valid
-            // environment unusable.
-        }
-    }
-
-    private static File cellcastWheelTempFile() {
-        final String resourcePath = selectCellcastWheelResource();
-        final String wheelName = resourcePath.substring(resourcePath.lastIndexOf('/') + 1);
-        return new File(new File(System.getProperty("java.io.tmpdir"), CELLCAST_TEMP_DIR_NAME), wheelName);
     }
 	
 	/**
@@ -735,7 +755,6 @@ public abstract class StardistAbstract extends DLModelPytorchProtected {
 			if (python.isAlive()) {
 				python.close();
 			}
-			deleteTemporaryFiles();
 		}
 	}
 
@@ -1000,18 +1019,11 @@ public abstract class StardistAbstract extends DLModelPytorchProtected {
             return PixiEnvironmentManager.isInstalled(spec);
         } catch (Exception e) {
             return false;
-        } finally {
-            deleteTemporaryFiles();
         }
-    }
-
-    public static void installCellcastRequirements(Consumer<String> consumer) throws InterruptedException, BuildException {
-        PixiEnvironmentSpec spec = resolvePytorchEnv();
-        PixiEnvironmentManager.installRequirements(spec, consumer);
-        deleteTemporaryFiles();
     }
     
     public static void main(String[] args) throws InterruptedException, BuildException {
-    	installCellcastRequirements((str) -> {System.out.println(str);});
+        PixiEnvironmentSpec spec = resolvePytorchEnv();
+        PixiEnvironmentManager.installRequirements(spec, (str) -> {System.out.println(str);});
     }
 }

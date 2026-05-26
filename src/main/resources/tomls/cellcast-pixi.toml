@@ -1,7 +1,7 @@
 [workspace]
 name = "%s"
 channels = ["conda-forge"]
-platforms = ["linux-64", "osx-64", "osx-arm64", "win-64"]
+platforms = ["%s"]
 requires-pixi = ">=0.40"
 
 [dependencies]
@@ -9,6 +9,7 @@ python = ">=3.10,<3.13"
 pip = "*"
 numpy = "==2.4.6"
 tifffile = "==2026.5.15"
+appose = "*"
 
 [pypi-dependencies]
 cellcast = { path = "%s" }
