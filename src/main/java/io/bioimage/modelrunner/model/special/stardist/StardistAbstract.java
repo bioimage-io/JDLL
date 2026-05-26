@@ -21,10 +21,16 @@ package io.bioimage.modelrunner.model.special.stardist;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
+import java.lang.reflect.Array;
+import java.nio.file.Files;
+import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.function.Consumer;
@@ -33,8 +39,10 @@ import org.apposed.appose.Appose;
 import org.apposed.appose.BuildException;
 import org.apposed.appose.Environment;
 import org.apposed.appose.Service;
+import org.apposed.appose.Service.ResponseType;
 import org.apposed.appose.Service.Task;
 import org.apposed.appose.Service.TaskStatus;
+import org.apposed.appose.TaskEvent;
 import org.apposed.appose.builder.PixiBuilder;
 import org.apposed.appose.TaskException;
 import org.apposed.appose.Builder.ProgressConsumer;
@@ -47,6 +55,10 @@ import io.bioimage.modelrunner.exceptions.LoadModelException;
 import io.bioimage.modelrunner.exceptions.RunModelException;
 import io.bioimage.modelrunner.model.BaseModel;
 import io.bioimage.modelrunner.model.processing.Processing;
+import io.bioimage.modelrunner.model.python.DLModelPytorchProtected;
+import io.bioimage.modelrunner.model.python.envs.PixiEnvironmentManager;
+import io.bioimage.modelrunner.model.python.envs.PixiEnvironmentSpec;
+import io.bioimage.modelrunner.system.GpuCompatibility;
 import io.bioimage.modelrunner.system.PlatformDetection;
 import io.bioimage.modelrunner.tensor.Tensor;
 import io.bioimage.modelrunner.tensor.Utils;
@@ -72,7 +84,7 @@ import net.imglib2.view.Views;
  *
  *@author Carlos Garcia
  */
-public abstract class StardistAbstract extends BaseModel {
+public abstract class StardistAbstract extends DLModelPytorchProtected {
 	
 	private final String modelDir;
 	
@@ -118,19 +130,14 @@ public abstract class StardistAbstract extends BaseModel {
 	 * 
 	 */
 	public String scaleRangeAxes = null;
+		
+	private static final String PIXI_TOML = "tomls/cellcast-pixi.toml";
 	
-	private static String INSTALLATION_DIR = Environments.apposeEnvsDir();
-	
-	private static final List<String> STARDIST_DEPS = Arrays.asList(new String[] {"python=3.10", "stardist", "numpy", "appose"});
-	
-	private static final List<String> STARDIST_DEPS_PIP;
-	static {
-		if (PlatformDetection.isMacOS() 
-				&& (PlatformDetection.getArch().equals(PlatformDetection.ARCH_ARM64) || PlatformDetection.isUsingRosseta()))
-			STARDIST_DEPS_PIP = Arrays.asList(new String[] {"tensorflow-macos<2.11"});
-		else
-			STARDIST_DEPS_PIP = Arrays.asList(new String[] {"tensorflow<2.11"});
-	}
+	private static final String COMMON_CELLCAST_ENV_NAME = "cellcast-jdll";
+
+	private static final String CELLCAST_WHEEL_RESOURCE_DIR = "wheels/cellcast";
+
+	private static final String CELLCAST_TEMP_DIR_NAME = "jdll-cellcast-wheels";
 	
 	private static final String OUTPUT_MASK_KEY = "mask";
 	
@@ -234,7 +241,7 @@ public abstract class StardistAbstract extends BaseModel {
 	 * @return the resulting value.
 	 * @throws IOException if an I/O error occurs.
 	 */
-	protected abstract <T extends RealType<T> & NativeType<T>> RandomAccessibleInterval<T> reconstructMask() throws TaskException;
+	protected abstract <T extends RealType<T> & NativeType<T>> RandomAccessibleInterval<T> reconstructMask();
 
 	/**
 	 * 
@@ -257,43 +264,21 @@ public abstract class StardistAbstract extends BaseModel {
 	 * @throws IOException if an I/O error occurs.
 	 * @throws BuildException 
 	 */
-	protected StardistAbstract(String modelName, String baseDir, Map<String, Object> config) throws IOException, BuildException {
+	protected StardistAbstract(String modelName, String baseDir, Map<String, Object> config) throws BuildException, IOException {
+		super(null, null, null, new File(baseDir, modelName).getAbsolutePath(), new HashMap<String, Object>(), true);
 		this.name = modelName;
 		this.basedir = baseDir;
-		modelDir = new File(baseDir, modelName).getAbsolutePath();
+		this.modelDir = new File(baseDir, modelName).getAbsolutePath();
 		checkFilesPresent(modelDir);
+		this.config = config;
 		this.nChannels = ((Number) config.get("n_channel_in")).intValue();
-		if (config.get("axes") != null)
-			this.axes = ((String) config.get("axes")).toLowerCase();
-		else if (this.is2D())
-			this.axes = "yxc";
-		else
-			this.axes = "zyxc";
-    	createPythonService();
+		this.axes = inferAxes(config);
 	}
-	
-	/**
-	 * Creates a new StardistAbstract.
-	 *
-	 * @param modelName the modelName parameter.
-	 * @param baseDir the baseDir parameter.
-	 * @throws IOException if an I/O error occurs.
-	 * @throws BuildException 
-	 */
-	protected StardistAbstract(String modelName, String baseDir) throws IOException, BuildException {
-		this.name = modelName;
-		this.basedir = baseDir;
-		modelDir = new File(baseDir, modelName).getAbsolutePath();
-		checkFilesPresent(modelDir);
-		config = JSONUtils.load(new File(modelDir, "config.json").getAbsolutePath());
-		this.nChannels = ((Number) config.get("n_channel_in")).intValue();
+
+	private String inferAxes(Map<String, Object> config) {
 		if (config.get("axes") != null)
-			this.axes = ((String) config.get("axes")).toLowerCase();
-		else if (this.is2D())
-			this.axes = "yxc";
-		else
-			this.axes = "zyxc";
-    	createPythonService();
+			return ((String) config.get("axes")).toLowerCase();
+		return this.is2D() ? "yxc" : "zyxc";
 	}
 	
 	/**
@@ -305,65 +290,128 @@ public abstract class StardistAbstract extends BaseModel {
 	public static void checkFilesPresent(String modelDir) throws IOException {
 		if (new File(modelDir, "config.json").isFile() == false && new File(modelDir, Constants.RDF_FNAME).isFile() == false)
 			throw new IllegalArgumentException("No 'config.json' file found in the model directory");
-		else if (new File(modelDir, "config.json").isFile() == false)
-			createConfigFromBioimageio(null, modelDir);
+		//else if (new File(modelDir, "config.json").isFile() == false)
+		//	createConfigFromBioimageio(null, modelDir);
 		if (new File(modelDir, "thresholds.json").isFile() == false && new File(modelDir, Constants.RDF_FNAME).isFile() == false)
 			throw new IllegalArgumentException("No 'thresholds.json' file found in the model directory");
-		else if (new File(modelDir, "thresholds.json").isFile() == false)
-			createThresholdsFromBioimageio(null, modelDir);
-	}
-	
-	/**
-	 * Creates a new StardistAbstract.
-	 *
-	 * @param descriptor the descriptor parameter.
-	 * @throws IOException if an I/O error occurs.
-	 * @throws BuildException 
-	 */
-	protected StardistAbstract(ModelDescriptor descriptor) throws IOException, BuildException {
-		this.descriptor = descriptor;
-		this.name = new File(descriptor.getModelPath()).getName();
-		this.basedir = new File(descriptor.getModelPath()).getParentFile().getAbsolutePath();
-		modelDir = descriptor.getModelPath();
-		if (new File(modelDir, "config.json").isFile() == false)
-			createConfigFromBioimageio(descriptor, modelDir);
-		if (new File(modelDir, "thresholds.json").isFile() == false)
-			createThresholdsFromBioimageio(descriptor, modelDir);
-		config = JSONUtils.load(new File(modelDir, "config.json").getAbsolutePath());
-		this.nChannels = ((Number) config.get("n_channel_in")).intValue();
-		if (config.get("axes") != null)
-			this.axes = ((String) config.get("axes")).toLowerCase();
-		else if (this.is2D())
-			this.axes = "yxc";
-		else
-			this.axes = "zyxc";
-    	createPythonService();
-	}
-	
-	@SuppressWarnings("unchecked")
-	private static  void createConfigFromBioimageio(ModelDescriptor descriptor, String modelDir) throws IOException {
-		if (descriptor == null)
-			descriptor = ModelDescriptorFactory.readFromLocalFile(modelDir + File.separator + Constants.RDF_FNAME);
-    	Map<String, Object> stardistMap = (Map<String, Object>) descriptor.getConfig().getSpecMap().get("stardist");
-    	Map<String, Object> stardistConfig = (Map<String, Object>) stardistMap.get("config");
-    	JSONUtils.writeJSONFile(new File(modelDir, "config.json").getAbsolutePath(), stardistConfig);
+		//else if (new File(modelDir, "thresholds.json").isFile() == false)
+		//	createThresholdsFromBioimageio(null, modelDir);
 	}	
-	
-	private static void createThresholdsFromBioimageio(ModelDescriptor descriptor, String modelDir) throws IOException {
-		if (descriptor == null)
-			descriptor = ModelDescriptorFactory.readFromLocalFile(modelDir + File.separator + Constants.RDF_FNAME);
-    	Map<String, Object> stardistMap = (Map<String, Object>) descriptor.getConfig().getSpecMap().get("stardist");
-    	Map<String, Object> stardistThres = (Map<String, Object>) stardistMap.get("thresholds");
-    	JSONUtils.writeJSONFile(new File(modelDir, "thresholds.json").getAbsolutePath(), stardistThres);
-	}	
-	
-	private void createPythonService() throws BuildException {
-		if (false)
-			envString = "gpu";
-		Environment env = Appose.pixi().environment(envString).wrap(new File(INSTALLATION_DIR, "stardist"));
-		python = env.python();
-		python.debug(System.err::println);
-	}
+
+    /**
+     * Resolves the environment specification for the current machine.
+     *
+     * @param installationDir
+     *     the base directory where the environment should live
+     * @param environmentDirectoryName
+     *     the directory name to use for the environment
+     * @return the resolved environment specification
+     */
+    public static PixiEnvironmentSpec resolvePytorchEnv() {
+        final File cellcastWheel = extractCellcastWheelToTemp();
+        final String pixiTemplate = readClasspathResourceAsString(PIXI_TOML);
+        final String pixiTomlContent = String.format(Locale.ROOT, pixiTemplate,
+                COMMON_CELLCAST_ENV_NAME, toPixiPath(cellcastWheel));
+
+        final String selectedEnvironment = "default";
+
+        final File environmentDirectory = new File(Environments.apposeEnvsDir(), COMMON_CELLCAST_ENV_NAME);
+        return new PixiEnvironmentSpec(
+                selectedEnvironment,
+                pixiTomlContent,
+                environmentDirectory,
+                new ArrayList<String>()
+        );
+    }
+
+    private static File extractCellcastWheelToTemp() {
+        final String resourcePath = selectCellcastWheelResource();
+        final String wheelName = resourcePath.substring(resourcePath.lastIndexOf('/') + 1);
+        final File tempDir = new File(System.getProperty("java.io.tmpdir"), CELLCAST_TEMP_DIR_NAME);
+        final File tempWheel = new File(tempDir, wheelName);
+
+        if (!tempDir.isDirectory() && !tempDir.mkdirs()) {
+            throw new RuntimeException("Could not create temporary CellCast wheel directory: "
+                    + tempDir.getAbsolutePath());
+        }
+
+        try (InputStream is = StardistAbstract.class.getClassLoader().getResourceAsStream(resourcePath)) {
+            if (is == null) {
+                throw new RuntimeException("Required CellCast wheel resource not found: " + resourcePath);
+            }
+            Files.copy(is, tempWheel.toPath(), StandardCopyOption.REPLACE_EXISTING);
+        } catch (IOException e) {
+            throw new RuntimeException("Could not extract CellCast wheel to: "
+                    + tempWheel.getAbsolutePath(), e);
+        }
+        return tempWheel;
+    }
+
+    private static String selectCellcastWheelResource() {
+        final String wheelName;
+        final String arch = PlatformDetection.getArch();
+        if (PlatformDetection.isLinux()) {
+            if (PlatformDetection.ARCH_X86_64.equals(arch)) {
+                wheelName = "cellcast-0.2.1.dev0-cp37-abi3-manylinux_2_17_x86_64.manylinux2014_x86_64.whl";
+            } else if (PlatformDetection.ARCH_ARM64.equals(arch) || PlatformDetection.ARCH_AARCH64.equals(arch)) {
+                wheelName = "cellcast-0.2.1.dev0-cp37-abi3-manylinux_2_28_aarch64.whl";
+            } else {
+                throw new RuntimeException("Unsupported Linux architecture for CellCast: " + arch);
+            }
+        } else if (PlatformDetection.isMacOS()) {
+            if (PlatformDetection.ARCH_X86_64.equals(arch) && !PlatformDetection.isUsingRosseta()) {
+                wheelName = "cellcast-0.2.1.dev0-cp37-abi3-macosx_10_12_x86_64.whl";
+            } else if (PlatformDetection.ARCH_ARM64.equals(arch) || PlatformDetection.ARCH_AARCH64.equals(arch)) {
+                wheelName = "cellcast-0.2.1.dev0-cp37-abi3-macosx_11_0_arm64.whl";
+            } else {
+                throw new RuntimeException("Unsupported macOS architecture for CellCast: " + arch);
+            }
+        } else if (PlatformDetection.isWindows()) {
+            if (PlatformDetection.ARCH_X86_64.equals(arch)) {
+                wheelName = "cellcast-0.2.1.dev0-cp37-abi3-win_amd64.whl";
+            } else {
+                throw new RuntimeException("Unsupported Windows architecture for CellCast: " + arch);
+            }
+        } else {
+            throw new RuntimeException("Unsupported operating system for CellCast: " + PlatformDetection.getOs());
+        }
+        return CELLCAST_WHEEL_RESOURCE_DIR + "/" + wheelName;
+    }
+
+    private static String toPixiPath(File file) {
+        return file.getAbsolutePath().replace('\\', '/');
+    }
+
+    public static void deleteTemporaryFiles() {
+        File file;
+        try {
+            file = cellcastWheelTempFile();
+        } catch (RuntimeException e) {
+            return;
+        }
+        if (file == null || !file.isFile()) {
+            return;
+        }
+        try {
+            Files.delete(file.toPath());
+            File parent = file.getParentFile();
+            if (parent != null && parent.isDirectory()) {
+                String[] children = parent.list();
+                if (children != null && children.length == 0) {
+                    Files.delete(parent.toPath());
+                }
+            }
+        } catch (IOException e) {
+            // Temporary install artifacts should not make an otherwise valid
+            // environment unusable.
+        }
+    }
+
+    private static File cellcastWheelTempFile() {
+        final String resourcePath = selectCellcastWheelResource();
+        final String wheelName = resourcePath.substring(resourcePath.lastIndexOf('/') + 1);
+        return new File(new File(System.getProperty("java.io.tmpdir"), CELLCAST_TEMP_DIR_NAME), wheelName);
+    }
 	
 	/**
 	 * Sets threshold.
@@ -436,49 +484,6 @@ public abstract class StardistAbstract extends BaseModel {
 	@Override
 	public <T extends RealType<T> & NativeType<T>, R extends RealType<R> & NativeType<R>> 
 	void run( List< Tensor < T > > inTensors, List< Tensor < R > > outTensors ) throws RunModelException {
-		if (inTensors.size() > 1)
-			throw new RunModelException("Stardist needs just one input image");
-		preprocess(inTensors);
-		if (inTensors.get(0).getAxesOrderString().toLowerCase().indexOf("b") != -1) {
-			runBatch(inTensors, outTensors);
-		} else {
-			runNoBatch(inTensors, outTensors);
-		}
-	}
-
-	private <T extends RealType<T> & NativeType<T>, R extends RealType<R> & NativeType<R>> 
-	void runNoBatch( List< Tensor < T > > inTensors, List< Tensor < R > > outTensors ) throws RunModelException {
-		try {
-			RandomAccessibleInterval<T> in = Utils.convertToAxesOrder(inTensors.get(0).getData(), inTensors.get(0).getAxesOrderString(), this.axes);
-			Map<String, RandomAccessibleInterval<R>> outputs = run(in);
-			for (Tensor<R> tensor : outTensors) {
-				Entry<String, RandomAccessibleInterval<R>> entry = outputs.entrySet().stream()
-						.filter(ee -> tensor.getName().equals(ee.getKey())
-								&& Arrays.equals(tensor.getData().dimensionsAsLongArray(), ee.getValue().dimensionsAsLongArray()))
-						.findFirst().orElse(null);
-				if (entry == null 
-						&& Arrays.equals(tensor.getData().dimensionsAsLongArray(), outputs.get(OUTPUT_MASK_KEY).dimensionsAsLongArray()))
-					tensor.setData(outputs.get(OUTPUT_MASK_KEY));
-				else if (entry != null)
-					tensor.setData(entry.getValue());
-			}
-		} catch (TaskException | InterruptedException | IOException e) {
-			throw new RunModelException(Messages.stackTrace(e));
-		}
-	}
-
-	private <T extends RealType<T> & NativeType<T>, R extends RealType<R> & NativeType<R>> 
-	void runBatch( List< Tensor < T > > inTensors, List< Tensor < R > > outTensors ) throws RunModelException {
-		List<Tensor<R>> outputs = runBatch(inTensors);
-		for (Tensor<R> tensor : outTensors) {
-			Tensor<R> entry = outputs.stream()
-					.filter(ee -> tensor.getName().equals(ee.getName())
-							&& Arrays.equals(tensor.getData().dimensionsAsLongArray(), ee.getData().dimensionsAsLongArray()))
-					.findFirst().orElse(null);
-			if (entry != null 
-					&& Arrays.equals(tensor.getData().dimensionsAsLongArray(), entry.getData().dimensionsAsLongArray()))
-				tensor.setData(entry.getData());
-		}
 	}
 	
 	/**
@@ -515,14 +520,7 @@ public abstract class StardistAbstract extends BaseModel {
 	public <T extends RealType<T> & NativeType<T>, R extends RealType<R> & NativeType<R>> 
 	List<Tensor<T>> run(List<Tensor<R>> inputTensors)
 			throws RunModelException {
-		if (inputTensors.size() > 1)
-			throw new RunModelException("Stardist needs just one input image");
-		preprocess(inputTensors);
-		if (inputTensors.get(0).getAxesOrderString().toLowerCase().indexOf("b") != -1) {
-			return runBatch(inputTensors);
-		} else {
-			return runNoBatch(inputTensors);
-		}
+		return null;
 	}
 	
 	private <T extends RealType<T> & NativeType<T>, R extends RealType<R> & NativeType<R>> 
@@ -652,9 +650,9 @@ public abstract class StardistAbstract extends BaseModel {
 		return reconstructOutputs(task);
 	}
 	
-	private <T extends RealType<T> & NativeType<T>> 
+	protected <T extends RealType<T> & NativeType<T>> 
 	Map<String, RandomAccessibleInterval<T>> reconstructOutputs(Task task) 
-			throws TaskException, InterruptedException, IOException {
+			throws IOException {
 		
 		Map<String, RandomAccessibleInterval<T>> outs = new LinkedHashMap<String, RandomAccessibleInterval<T>>();
 		outs.put(OUTPUT_MASK_KEY, reconstructMask());
@@ -667,7 +665,7 @@ public abstract class StardistAbstract extends BaseModel {
 		
 		if (PlatformDetection.isWindows()) {
 			Task closeSHMTask = python.task(CLOSE_SHM_CODE);
-			closeSHMTask.waitFor();
+			// TODO closeSHMTask.waitFor();
 		}
 		return outs;
 	}
@@ -696,6 +694,278 @@ public abstract class StardistAbstract extends BaseModel {
 		
 		return coordsCopy;
 	}
+
+	public static void train(int epochs, String dataDir, String gtDir, String outputDir,
+			Consumer<StardistTrainingProgress> progressConsumer,
+			Consumer<StardistValidationPreview> previewConsumer,
+			Consumer<String> logConsumer)
+			throws IOException, BuildException, InterruptedException, TaskException {
+		Map<String, Object> config = defaultTrainingConfig(epochs);
+		train(dataDir, gtDir, outputDir, true, "grayscale", "grayscale", 0.15d,
+				config, progressConsumer, previewConsumer, logConsumer);
+	}
+
+	public static void train(String dataDir, String gtDir, String outputDir,
+			boolean gpu, String imageChannels, String labelColorMode, double validFraction,
+			Map<String, Object> config,
+			Consumer<StardistTrainingProgress> progressConsumer,
+			Consumer<StardistValidationPreview> previewConsumer,
+			Consumer<String> logConsumer)
+			throws IOException, BuildException, InterruptedException, TaskException {
+		validateTrainingArguments(dataDir, gtDir, outputDir, validFraction, config);
+		File output = new File(outputDir);
+		if (!output.isDirectory() && !output.mkdirs()) {
+			throw new IOException("Could not create StarDist output directory: " + output.getAbsolutePath());
+		}
+
+		PixiEnvironmentSpec envSpec = resolvePytorchEnv();
+		Environment env = Appose.pixi()
+				.environment(envSpec.getSelectedEnvironment())
+				.wrap(envSpec.getEnvironmentDirectory());
+		Service python = env.python();
+		if (logConsumer != null) {
+			python.debug(logConsumer);
+		}
+		try {
+			Task task = python.task(buildTrainingCode(dataDir, gtDir, outputDir, gpu,
+					imageChannels, labelColorMode, validFraction, config));
+			task.listen(event -> handleTrainingEvent(event, progressConsumer, previewConsumer, logConsumer));
+			task.waitFor();
+		} finally {
+			if (python.isAlive()) {
+				python.close();
+			}
+			deleteTemporaryFiles();
+		}
+	}
+
+	public static Map<String, Object> defaultTrainingConfig(int epochs) {
+		Map<String, Object> config = new LinkedHashMap<String, Object>();
+		config.put("n_rays", 32);
+		config.put("grid", Arrays.asList(1, 1));
+		config.put("patch_size", Arrays.asList(256, 256));
+		config.put("batch_size", 4);
+		config.put("epochs", epochs);
+		config.put("steps_per_epoch", 100);
+		config.put("validation_steps", 10);
+		config.put("validation_preview_count", 2);
+		config.put("learning_rate", 0.0003d);
+		config.put("foreground_probability", 0.9d);
+		config.put("background_reg", 1e-4d);
+		config.put("loss_prob_weight", 1.0d);
+		config.put("loss_dist_weight", 0.2d);
+		config.put("lr_schedule", "reduce_on_plateau");
+		config.put("lr_factor", 0.5d);
+		config.put("lr_patience", 40);
+		config.put("lr_min_delta", 0.0d);
+		config.put("normalization", "percentile");
+		config.put("normalization_percentiles", Arrays.asList(1.0d, 99.8d));
+		config.put("seed", 42);
+		return config;
+	}
+
+	private static void validateTrainingArguments(String dataDir, String gtDir,
+			String outputDir, double validFraction, Map<String, Object> config) {
+		if (dataDir == null || !new File(dataDir).isDirectory()) {
+			throw new IllegalArgumentException("The StarDist image data directory does not exist: " + dataDir);
+		}
+		if (gtDir == null || !new File(gtDir).isDirectory()) {
+			throw new IllegalArgumentException("The StarDist ground-truth directory does not exist: " + gtDir);
+		}
+		if (outputDir == null || outputDir.trim().isEmpty()) {
+			throw new IllegalArgumentException("The StarDist output directory cannot be empty.");
+		}
+		if (validFraction < 0.0d || validFraction >= 1.0d) {
+			throw new IllegalArgumentException("The StarDist validation fraction must be in [0, 1).");
+		}
+		if (config == null || config.isEmpty()) {
+			throw new IllegalArgumentException("The StarDist training config cannot be empty.");
+		}
+		Object epochs = config.get("epochs");
+		if (!(epochs instanceof Number) || ((Number) epochs).intValue() <= 0) {
+			throw new IllegalArgumentException("The StarDist config must define epochs > 0.");
+		}
+	}
+
+	public static String buildTrainingCode(String dataDir, String gtDir, String outputDir,
+			boolean gpu, String imageChannels, String labelColorMode, double validFraction,
+			Map<String, Object> config) {
+		String nl = System.lineSeparator();
+		String safeImageChannels = imageChannels == null || imageChannels.trim().isEmpty()
+				? "grayscale" : imageChannels.trim();
+		String safeLabelColorMode = labelColorMode == null || labelColorMode.trim().isEmpty()
+				? "grayscale" : labelColorMode.trim();
+		return ""
+				+ "import contextlib, json, os, sys" + nl
+				+ "from pathlib import Path" + nl
+				+ "import numpy as np" + nl
+				+ "_appose_stdout = sys.stdout" + nl
+				+ "import cellcast.training.stardist_2d as train" + nl
+				+ "data_dir = r'" + py(dataDir) + "'" + nl
+				+ "gt_dir = r'" + py(gtDir) + "'" + nl
+				+ "output_dir = Path(r'" + py(new File(outputDir).getAbsolutePath()) + "')" + nl
+				+ "preview_dir = output_dir / 'previews'" + nl
+				+ "preview_manifest_path = preview_dir / 'latest.json'" + nl
+				+ "output_dir.mkdir(parents=True, exist_ok=True)" + nl
+				+ "preview_dir.mkdir(parents=True, exist_ok=True)" + nl
+				+ "stardist_log_path = output_dir / 'training.log'" + nl
+				+ "config = json.loads(r'''" + toJson(config) + "''')" + nl
+				+ "state = {'total_steps': int(config.get('epochs', 0)) * int(config.get('steps_per_epoch', 0)), 'total_epochs': int(config.get('epochs', 0))}" + nl
+				+ "def _task_update(**kwargs):" + nl
+				+ "  current_stdout = sys.stdout" + nl
+				+ "  try:" + nl
+				+ "    sys.stdout = _appose_stdout" + nl
+				+ "    task.update(**kwargs)" + nl
+				+ "  finally:" + nl
+				+ "    sys.stdout = current_stdout" + nl
+				+ "def _scalar(value):" + nl
+				+ "  try:" + nl
+				+ "    if value is None:" + nl
+				+ "      return None" + nl
+				+ "    return float(value)" + nl
+				+ "  except Exception:" + nl
+				+ "    return None" + nl
+				+ "def _clean(values):" + nl
+				+ "  return {str(k): float(v) for k, v in dict(values).items() if _scalar(v) is not None}" + nl
+				+ "def on_train_begin(plan):" + nl
+				+ "  state['total_steps'] = int(plan.get('total_steps') or state['total_steps'])" + nl
+				+ "  state['total_epochs'] = int(plan.get('epochs') or state['total_epochs'])" + nl
+				+ "  info = {'type': 'progress', 'epoch': 0, 'step': 0, 'total_epochs': state['total_epochs'], 'total_steps': state['total_steps'], 'losses': {}, 'metrics': _clean({'batch_size': plan.get('batch_size'), 'train_samples': plan.get('train_samples'), 'valid_samples': plan.get('valid_samples')})}" + nl
+				+ "  _task_update(message='StarDist training started', current=0, maximum=state['total_steps'], info=info)" + nl
+				+ "def on_step_end(step):" + nl
+				+ "  global_step = int(step.get('global_step', 0))" + nl
+				+ "  epoch = int(step.get('epoch', 0))" + nl
+				+ "  losses = _clean({'train/total_loss': step.get('loss_total'), 'train/prob_loss': step.get('loss_prob'), 'train/dist_loss': step.get('loss_dist')})" + nl
+				+ "  metrics = _clean({'learning_rate': step.get('learning_rate')})" + nl
+				+ "  info = {'type': 'progress', 'epoch': epoch, 'step': global_step, 'total_epochs': state['total_epochs'], 'total_steps': state['total_steps'], 'losses': losses, 'metrics': metrics}" + nl
+				+ "  _task_update(message='StarDist training step %d/%d' % (global_step, state['total_steps']), current=global_step, maximum=state['total_steps'], info=info)" + nl
+				+ "def on_validation_end(event):" + nl
+				+ "  epoch = int(event.get('epoch', 0))" + nl
+				+ "  step = min(state['total_steps'], epoch * int(config.get('steps_per_epoch', 1)))" + nl
+				+ "  losses = _clean({'train/total_loss': event.get('train_total'), 'val/total_loss': event.get('valid_total')})" + nl
+				+ "  metrics = _clean({'learning_rate': event.get('learning_rate')})" + nl
+				+ "  info = {'type': 'progress', 'epoch': epoch, 'step': step, 'total_epochs': state['total_epochs'], 'total_steps': state['total_steps'], 'losses': losses, 'metrics': metrics}" + nl
+				+ "  _task_update(message='StarDist epoch %d/%d' % (epoch, state['total_epochs']), current=step, maximum=state['total_steps'], info=info)" + nl
+				+ "  previews = []" + nl
+				+ "  for i, preview in enumerate(event.get('previews', [])):" + nl
+				+ "    pred_path = preview_dir / ('epoch_%03d_preview_%d_prediction.npy' % (epoch, i))" + nl
+				+ "    prob_path = preview_dir / ('epoch_%03d_preview_%d_prob.npy' % (epoch, i))" + nl
+				+ "    np.save(pred_path, preview['prediction'])" + nl
+				+ "    np.save(prob_path, preview['prob'])" + nl
+				+ "    previews.append({'prediction_path': str(pred_path), 'prob_path': str(prob_path)})" + nl
+				+ "  if previews:" + nl
+				+ "    manifest = {'epoch': epoch, 'previews': previews}" + nl
+				+ "    epoch_manifest_path = preview_dir / ('epoch_%03d_preview.json' % epoch)" + nl
+				+ "    for path in (preview_manifest_path, epoch_manifest_path):" + nl
+				+ "      with open(path, 'w', encoding='utf-8') as f:" + nl
+				+ "        json.dump(manifest, f)" + nl
+				+ "    _task_update(message='StarDist validation preview epoch %d' % epoch, current=epoch, maximum=state['total_epochs'], info={'type': 'preview', 'epoch': epoch, 'preview_path': str(epoch_manifest_path)})" + nl
+				+ "with open(stardist_log_path, 'a', encoding='utf-8') as stardist_log, contextlib.redirect_stdout(stardist_log), contextlib.redirect_stderr(stardist_log):" + nl
+				+ "  result = train.train_stardist_2d_folder(data_dir=data_dir, gt_dir=gt_dir, output_dir=str(output_dir), gpu=" + (gpu ? "True" : "False") + ", image_channels='" + py(safeImageChannels) + "', label_color_mode='" + py(safeLabelColorMode) + "', valid_fraction=" + validFraction + ", config=config, on_train_begin=on_train_begin, on_step_end=on_step_end, on_validation_end=on_validation_end)" + nl
+				+ "task.output(result=str(result.get('output_dir', str(output_dir))))" + nl;
+	}
+
+	private static void handleTrainingEvent(TaskEvent event,
+			Consumer<StardistTrainingProgress> progressConsumer,
+			Consumer<StardistValidationPreview> previewConsumer,
+			Consumer<String> logConsumer) {
+		if (event.message != null && logConsumer != null) {
+			logConsumer.accept(event.message);
+		}
+		if (!event.responseType.equals(ResponseType.UPDATE) || event.info == null) {
+			return;
+		}
+		Object type = event.info.get("type");
+		if ("progress".equals(type) && progressConsumer != null) {
+			progressConsumer.accept(new StardistTrainingProgress(
+					asInt(event.info.get("epoch"), (int) event.current),
+					asInt(event.info.get("step"), (int) event.current),
+					asInt(event.info.get("total_epochs"), 0),
+					asInt(event.info.get("total_steps"), (int) event.maximum),
+					asDoubleMap(event.info.get("losses")),
+					asDoubleMap(event.info.get("metrics"))));
+		} else if ("preview".equals(type) && previewConsumer != null) {
+			Object previewPath = event.info.get("preview_path");
+			previewConsumer.accept(new StardistValidationPreview(
+					asInt(event.info.get("epoch"), (int) event.current),
+					previewPath == null ? null : previewPath.toString()));
+		}
+	}
+
+	private static int asInt(Object value, int fallback) {
+		return value instanceof Number ? ((Number) value).intValue() : fallback;
+	}
+
+	private static Map<String, Double> asDoubleMap(Object value) {
+		Map<String, Double> result = new LinkedHashMap<String, Double>();
+		if (!(value instanceof Map)) {
+			return result;
+		}
+		for (Map.Entry<?, ?> entry : ((Map<?, ?>) value).entrySet()) {
+			if (entry.getKey() != null && entry.getValue() instanceof Number) {
+				result.put(entry.getKey().toString(), ((Number) entry.getValue()).doubleValue());
+			}
+		}
+		return result;
+	}
+
+	private static String py(String path) {
+		return path == null ? "" : path.replace("\\", "\\\\").replace("'", "\\'");
+	}
+
+	private static String toJson(Object value) {
+		if (value == null) {
+			return "null";
+		}
+		if (value instanceof String) {
+			return "\"" + ((String) value).replace("\\", "\\\\").replace("\"", "\\\"") + "\"";
+		}
+		if (value instanceof Boolean || value instanceof Number) {
+			if (value instanceof Double && !Double.isFinite(((Double) value).doubleValue())) {
+				return "null";
+			}
+			if (value instanceof Float && !Float.isFinite(((Float) value).floatValue())) {
+				return "null";
+			}
+			return String.format(Locale.ROOT, "%s", value);
+		}
+		if (value instanceof Map) {
+			StringBuilder builder = new StringBuilder("{");
+			boolean first = true;
+			for (Map.Entry<?, ?> entry : ((Map<?, ?>) value).entrySet()) {
+				if (!first) {
+					builder.append(',');
+				}
+				first = false;
+				builder.append(toJson(String.valueOf(entry.getKey()))).append(':').append(toJson(entry.getValue()));
+			}
+			return builder.append('}').toString();
+		}
+		if (value instanceof Iterable) {
+			StringBuilder builder = new StringBuilder("[");
+			boolean first = true;
+			for (Object item : (Iterable<?>) value) {
+				if (!first) {
+					builder.append(',');
+				}
+				first = false;
+				builder.append(toJson(item));
+			}
+			return builder.append(']').toString();
+		}
+		if (value.getClass().isArray()) {
+			StringBuilder builder = new StringBuilder("[");
+			int length = Array.getLength(value);
+			for (int i = 0; i < length; i++) {
+				if (i > 0) {
+					builder.append(',');
+				}
+				builder.append(toJson(Array.get(value, i)));
+			}
+			return builder.append(']').toString();
+		}
+		return toJson(String.valueOf(value));
+	}
 	
 	/**
 	 * Executes init.
@@ -717,141 +987,31 @@ public abstract class StardistAbstract extends BaseModel {
 		else
 			return new Stardist2D(modelName, baseDir, configMap);
 	}
-	
-	/**
-	 * Executes init.
-	 *
-	 * @param modelName the modelName parameter.
-	 * @param baseDir the baseDir parameter.
-	 * @return the resulting value.
-	 * @throws IOException if an I/O error occurs.
-	 * @throws BuildException 
-	 */
-	public static StardistAbstract init(String modelName, String baseDir) throws IOException, BuildException {
-		String modelDir = new File(baseDir, modelName).getAbsolutePath();
-		checkFilesPresent(modelDir);
-		Map<String, Object> configMap = JSONUtils.load(new File(modelDir, "config.json").getAbsolutePath());
-		String axes = ((String) configMap.get("axes")).toUpperCase();
-		if (axes.contains("Z"))
-			return new Stardist3D(modelName, baseDir, configMap);
-		else
-			return new Stardist2D(modelName, baseDir, configMap);
-	}
-	
-	/**
-	 * Executes from bioimageio model.
-	 *
-	 * @param descriptor the descriptor parameter.
-	 * @return the resulting value.
-	 * @throws IOException if an I/O error occurs.
-	 * @throws BuildException 
-	 */
-	public static StardistAbstract fromBioimageioModel(ModelDescriptor descriptor) throws IOException, BuildException {
-		if (!descriptor.getConfig().getSpecMap().keySet().contains("stardist"))
-			throw new IllegalArgumentException("This Bioimage.io model does not correspond to a StarDist model.");
-		if (!descriptor.getModelFamily().equals(ModelDescriptor.STARDIST))
-			throw new RuntimeException("Please first install StarDist with 'StardistAbstract.installRequirements()'");
-		if (descriptor.getInputTensors().get(0).getAxesOrder().contains("z"))
-			return Stardist3D.fromBioimageioModel(descriptor);
-		else 
-			return Stardist2D.fromBioimageioModel(descriptor);
-	}
-	
-	/**
-	 * Check whether everything that is needed for Stardist 2D is installed or not
-	 * @return true if the full python environment is installed or not
-	 */
-	public boolean isInstalled() {
-		// TODO
-		return false;
-	}
-	
-	/**
-	 * Check whether the requirements needed to run Stardist are satisfied or not.
-	 * First checks if the corresponding Java DL engine is installed or not, then checks
-	 * if the Python environment needed for Stardist post processing is fine too.
-	 * 
-	 * If anything is not installed, this method also installs it
-	 * 
-	 * @throws InterruptedException if the installation is stopped
-	 * @throws BuildException 
-	 */
-	public void installRequirements() throws InterruptedException, BuildException {
-		installRequirements(null);
-	}
-	
-	/**
-	 * Check whether the requirements needed to run Stardist are satisfied or not.
-	 * First checks if the corresponding Java DL engine is installed or not, then checks
-	 * if the Python environment needed for Stardist post processing is fine too.
-	 * 
-	 * If anything is not installed, this method also installs it
-	 * 
-	 * @param consumer
-	 * 	String consumer that reads the installation log
-	 * 
-	 * @throws InterruptedException if the installation is stopped
-	 * @throws BuildException 
-	 */
-	public void installRequirements(Consumer<String> consumer) throws InterruptedException, BuildException {
-		
-		PixiBuilder pixi = Appose.pixi().content("");
-	    if (consumer != null)
-	    	pixi.subscribeOutput(consumer);
-	    if (consumer != null)
-	    	pixi.subscribeError(consumer);
-	    if (consumer != null) {
-	    	ProgressConsumer progress = (title, current, maximum) -> {
-                double pct = (maximum <= 0) ? 0.0 : (100.0 * current / maximum);
-                String label = (title == null || title.trim().isEmpty()) ? "Downloading" : title;
-                consumer.accept(label + ": " + String.format(java.util.Locale.US, "%.1f", pct) + "%");
-            };
-	    	pixi.subscribeProgress(progress);
-	    }
-		boolean stardistPythonInstalled = checkDepsInstalled();
-		if (!stardistPythonInstalled) {
-			/*
-			mamba.create("stardist", true, STARDIST_CHANNELS, STARDIST_DEPS.stream()
-					.map(dd -> dd.contains("<") | dd.contains(">") ? "\"" + dd + "\"": dd)
-					.collect(Collectors.toList()));
-			mamba.pipInstallIn("stardist", STARDIST_DEPS_PIP.stream()
-					.map(dd -> (PlatformDetection.isWindows() && (dd.contains("<") | dd.contains(">"))) ? "\"" + dd + "\"": dd)
-					.collect(Collectors.toList()).toArray(new String[STARDIST_DEPS_PIP.size()]));
-					*/
-		    pixi.environment(this.envString).build();
-		};
-	}
-	
-	private boolean checkDepsInstalled() {
-		//TODO
-		/*
-		 * 
-		try {
-			List<String> deps = new ArrayList<String>();
-			for (String dd : STARDIST_DEPS)
-				deps.add(dd.equals("tensorflow-macos<2.11") ? dd.replace("-macos", "") : dd);
-			stardistPythonInstalled = mamba.checkAllDependenciesInEnv("stardist", deps);
-		} catch (MambaInstallException e) {
-			mamba.installMicromamba();
-		}
-		 */
-		return false;
-	}
-	
-	/**
-	 * Set the directory where the StarDist Python environment will be installed
-	 * @param installationDir
-	 * 	directory where the StarDist Python environment will be created
-	 */
-	public static void setInstallationDir(String installationDir) {
-		INSTALLATION_DIR = installationDir;
-	}
-	
-	/**
-	 * 
-	 * @return the directory where the StarDist Python environment will be created
-	 */
-	public static String getInstallationDir() {
-		return INSTALLATION_DIR;
-	}
+
+    /**
+     * Checks whether the default protected PyTorch environment is installed.
+     *
+     * @return {@code true} if the environment appears to be fully installed
+     */
+    public static boolean isInstalled() {
+        PixiEnvironmentSpec spec = null;
+        try {
+            spec = resolvePytorchEnv();
+            return PixiEnvironmentManager.isInstalled(spec);
+        } catch (Exception e) {
+            return false;
+        } finally {
+            deleteTemporaryFiles();
+        }
+    }
+
+    public static void installCellcastRequirements(Consumer<String> consumer) throws InterruptedException, BuildException {
+        PixiEnvironmentSpec spec = resolvePytorchEnv();
+        PixiEnvironmentManager.installRequirements(spec, consumer);
+        deleteTemporaryFiles();
+    }
+    
+    public static void main(String[] args) throws InterruptedException, BuildException {
+    	installCellcastRequirements((str) -> {System.out.println(str);});
+    }
 }
