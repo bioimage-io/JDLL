@@ -28,44 +28,51 @@ import java.util.Map;
 
 public final class StardistModelRegistry {
 
-    public static final String YOLO_MODELS_SUBDIR = "yolo";
-    public static final String YOLO_WEIGHTS_EXTENSION = ".pt";
-    public static final String YOLO_ARCHITECTURE_EXTENSION = ".yaml";
+    public static final String STARDIST_MODELS_SUBDIR = "yolo";
+    public static final String STARDIST_WEIGHTS_EXTENSION = ".mpk";
+    public static final String STARDIST_ARCHITECTURE_EXTENSION = ".json";
     public static final String PRETRAINED_URL_FORMAT = "https://github.com/ultralytics/assets/releases/download/v8.4.0/%s";
 
     private static final String[][] PRETRAINED_MODELS = new String[][] {
-            {"YOLO26n", "yolo26n.pt"},
-            {"YOLO26m", "yolo26m.pt"},
-            {"YOLO26x", "yolo26x.pt"}
+        {"gray_small", "gray_small.mpk"},
+        {"gray_medium", "gray_medium.mpk"},
+        {"gray_big", "gray_big.mpk"},
+        {"color_small", "color_small.mpk"},
+        {"color_medium", "color_medium.mpk"},
+        {"color_big", "color_big.mpk"},
     };
     private static final String[][] SCRATCH_ARCHITECTURES = new String[][] {
-            {"Small (YOLO26n)", "yolo26n.yaml"},
-            {"Medium-small (YOLO26s)", "yolo26s.yaml"},
-            {"Medium (YOLO26m)", "yolo26m.yaml"},
-            {"Medium-big (YOLO26l)", "yolo26l.yaml"},
-            {"Big (YOLO26x)", "yolo26x.yaml"}
+        {"gray_small", "gray_small.json"},
+        {"gray_medium", "gray_medium.json"},
+        {"gray_big", "gray_big.json"},
+        {"color_small", "color_small.json"},
+        {"color_medium", "color_medium.json"},
+        {"color_big", "color_big.json"},
     };
 
     private static final Map<String, Long> PRETRAINED_WEIGHTS_SIZE;
     static {
         PRETRAINED_WEIGHTS_SIZE = new HashMap<String, Long>();
-        PRETRAINED_WEIGHTS_SIZE.put("yolo26n.pt", 5_544_453L);
-        PRETRAINED_WEIGHTS_SIZE.put("yolo26m.pt", 44_255_705L);
-        PRETRAINED_WEIGHTS_SIZE.put("yolo26x.pt", 118_667_365L);
+        PRETRAINED_WEIGHTS_SIZE.put("gray_small.mpk", 5_544_453L);
+        PRETRAINED_WEIGHTS_SIZE.put("gray_medium.mpk", 5_544_453L);
+        PRETRAINED_WEIGHTS_SIZE.put("gray_big.mpk", 5_544_453L);
+        PRETRAINED_WEIGHTS_SIZE.put("color_small.mpk", 5_544_453L);
+        PRETRAINED_WEIGHTS_SIZE.put("color_medium.mpk", 5_544_453L);
+        PRETRAINED_WEIGHTS_SIZE.put("color_big.mpk", 5_544_453L);
     }
 
     private StardistModelRegistry() {}
 
     public static LinkedHashMap<String, String> buildModelEntries(String modelsDir) {
         LinkedHashMap<String, String> models = new LinkedHashMap<String, String>();
-        File yoloDir = modelsDir == null ? new File(YOLO_MODELS_SUBDIR) : new File(modelsDir, YOLO_MODELS_SUBDIR);
+        File yoloDir = modelsDir == null ? new File(STARDIST_MODELS_SUBDIR) : new File(modelsDir, STARDIST_MODELS_SUBDIR);
 
         for (String[] pretrained : PRETRAINED_MODELS) {
             models.put("[Pretrained] " + pretrained[0], new File(yoloDir, pretrained[1]).getAbsolutePath());
         }
 
         File[] customModels = yoloDir.listFiles(file -> file.isFile()
-                && file.getName().toLowerCase().endsWith(YOLO_WEIGHTS_EXTENSION)
+                && file.getName().toLowerCase().endsWith(STARDIST_WEIGHTS_EXTENSION)
                 && !isPretrainedWeightsFile(file.getName()));
         if (customModels == null) {
             return models;
@@ -126,8 +133,8 @@ public final class StardistModelRegistry {
     }
 
     private static String removeWeightsExtension(String fileName) {
-        if (fileName.toLowerCase().endsWith(YOLO_WEIGHTS_EXTENSION)) {
-            return fileName.substring(0, fileName.length() - YOLO_WEIGHTS_EXTENSION.length());
+        if (fileName.toLowerCase().endsWith(STARDIST_WEIGHTS_EXTENSION)) {
+            return fileName.substring(0, fileName.length() - STARDIST_WEIGHTS_EXTENSION.length());
         }
         return fileName;
     }

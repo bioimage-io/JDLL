@@ -40,7 +40,7 @@ import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.type.NativeType;
 import net.imglib2.type.numeric.RealType;
 
-public class YoloGUI extends JPanel {
+public class StardistGUI extends JPanel {
 
     private static final long serialVersionUID = -7095114274286067822L;
 
@@ -50,14 +50,14 @@ public class YoloGUI extends JPanel {
 
     protected final JTabbedPane tabs = new JTabbedPane();
     protected final YoloTitlePanel titlePanel;
-    protected final YoloInferencePanel inferencePanel = new YoloInferencePanel();
-    protected final BaseTrainPanel trainPanel = new YoloTrainPanel();
+    protected final YoloInferencePanel inferencePanel = new YoloInferencePanel(false);
+    protected final StardistTrainPanel trainPanel = new StardistTrainPanel();
 
-    protected YoloGUI(GuiAdapter adapter) {
+    protected StardistGUI(GuiAdapter adapter) {
         setLayout(null);
         setOpaque(true);
         setBackground(YoloUiUtils.PANEL_BG);
-        this.titlePanel = new YoloTitlePanel(adapter);
+        this.titlePanel = new YoloTitlePanel("StarDist", adapter);
         tabs.setBorder(BorderFactory.createEmptyBorder());
         tabs.setOpaque(true);
         tabs.setBackground(YoloUiUtils.PANEL_BG);
@@ -85,7 +85,7 @@ public class YoloGUI extends JPanel {
         return inferencePanel;
     }
 
-    public BaseTrainPanel getTrainPanel() {
+    public StardistTrainPanel getTrainPanel() {
         return trainPanel;
     }
 
@@ -197,7 +197,7 @@ public class YoloGUI extends JPanel {
             public void run() {
                 JFrame frame = new JFrame("YOLO Plugin");
                 frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-                frame.getContentPane().add(new YoloGUI(adapter));
+                frame.getContentPane().add(new StardistGUI(adapter));
                 frame.setSize(900, 900);
                 frame.setLocationRelativeTo(null);
                 frame.setVisible(true);

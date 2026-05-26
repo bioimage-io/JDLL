@@ -64,6 +64,10 @@ public class YoloInferencePanel extends JPanel {
             "<html><div style='text-align:center;'>&#9888; YOLO is optional third-party software, installed separately, and governed by its own license terms. See documentation for details.</div></html>");
 
     protected YoloInferencePanel() {
+    	this(true);
+    }
+    
+    protected YoloInferencePanel(boolean disclaimer) {
         setLayout(null);
         setOpaque(true);
         setBackground(YoloUiUtils.PANEL_BG);
@@ -119,7 +123,8 @@ public class YoloInferencePanel extends JPanel {
         add(logPanel);
         add(actionPanel);
         warningLabel.setForeground(new java.awt.Color(170, 35, 35));
-        add(warningLabel);
+        if (disclaimer)
+        	add(warningLabel);
         updateImageActionState();
     }
 

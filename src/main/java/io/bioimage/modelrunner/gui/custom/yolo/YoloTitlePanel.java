@@ -38,7 +38,9 @@ public class YoloTitlePanel extends JPanel {
     private final String softwareName;
     private final Color softwareColor;
 
-    private static final String RIGHT_TEXT = "YOLO";
+    private final String rightText;
+
+    private static final String RIGHT_TEXT_DEFAULT = "YOLO";
 
     private static final Color RIGHT_COLOR = Color.BLACK;
     private static final Color BG_COLOR = Color.LIGHT_GRAY;
@@ -49,7 +51,16 @@ public class YoloTitlePanel extends JPanel {
     private static final double HORIZONTAL_PADDING_RATIO = 0.04;
     private static final double VERTICAL_PADDING_RATIO = 0.14;
 
+    protected YoloTitlePanel(String rightString, GuiAdapter adapter) {
+    	this.rightText = rightString;
+    	this.softwareName = adapter.getSoftwareName();
+    	softwareColor = adapter.getTitleColor();
+        setOpaque(true);
+        setBackground(BG_COLOR);
+    }
+
     protected YoloTitlePanel(GuiAdapter adapter) {
+    	this.rightText = RIGHT_TEXT_DEFAULT;
     	this.softwareName = adapter.getSoftwareName();
     	softwareColor = adapter.getTitleColor();
         setOpaque(true);
@@ -77,7 +88,7 @@ public class YoloTitlePanel extends JPanel {
 
         int gap = Math.max(2, (int) Math.round(drawW * GAP_RATIO));
         int leftW = fm.stringWidth(softwareName);
-        int rightW = fm.stringWidth(RIGHT_TEXT);
+        int rightW = fm.stringWidth(rightText);
         int totalW = leftW + gap + rightW;
 
         int startX = in.left + (availableW - totalW) / 2;
@@ -86,7 +97,7 @@ public class YoloTitlePanel extends JPanel {
         g2.setColor(softwareColor);
         g2.drawString(softwareName, startX, baseline);
         g2.setColor(RIGHT_COLOR);
-        g2.drawString(RIGHT_TEXT, startX + leftW + gap, baseline);
+        g2.drawString(rightText, startX + leftW + gap, baseline);
         g2.dispose();
     }
 
@@ -116,7 +127,7 @@ public class YoloTitlePanel extends JPanel {
     private boolean fits(Graphics2D g2, Font font, int targetW, int targetH) {
         FontMetrics fm = g2.getFontMetrics(font);
         int gap = Math.max(2, (int) Math.round(targetW * GAP_RATIO));
-        int totalW = fm.stringWidth(softwareName) + gap + fm.stringWidth(RIGHT_TEXT);
+        int totalW = fm.stringWidth(softwareName) + gap + fm.stringWidth(rightText);
         return totalW <= targetW && fm.getHeight() <= targetH;
     }
 }

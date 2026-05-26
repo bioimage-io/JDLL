@@ -27,19 +27,21 @@ import javax.swing.DefaultComboBoxModel;
 import javax.swing.JFileChooser;
 import javax.swing.filechooser.FileNameExtensionFilter;
 
-public class YoloTrainPanel extends BaseTrainPanel {
+import io.bioimage.modelrunner.gui.custom.stardist.StardistModelRegistry;
 
-    private static final long serialVersionUID = -655892851236294330L;
+public class StardistTrainPanel extends BaseTrainPanel {
     
-    protected YoloTrainPanel() {
+    private static final long serialVersionUID = 3944729402784309789L;
+
+	protected StardistTrainPanel() {
     	super();
-        setScratchArchitectures(YoloModelRegistry.buildScratchArchitectureEntries());
+        setScratchArchitectures(StardistModelRegistry.buildScratchArchitectureEntries());
     }
 
     protected void browseBaseModel() {
         JFileChooser chooser = new JFileChooser();
         chooser.setFileSelectionMode(JFileChooser.FILES_ONLY);
-        chooser.setFileFilter(new FileNameExtensionFilter("YOLO weights (*.pt)", "pt"));
+        chooser.setFileFilter(new FileNameExtensionFilter("StarDist weights (*.mkp)", "mkp"));
         if (chooser.showOpenDialog(this) != JFileChooser.APPROVE_OPTION) {
             return;
         }
@@ -54,8 +56,8 @@ public class YoloTrainPanel extends BaseTrainPanel {
             return false;
         }
         String cleanName = modelName.trim();
-        if (cleanName.toLowerCase().endsWith(YoloModelRegistry.YOLO_WEIGHTS_EXTENSION)) {
-            cleanName = cleanName.substring(0, cleanName.length() - YoloModelRegistry.YOLO_WEIGHTS_EXTENSION.length());
+        if (cleanName.toLowerCase().endsWith(StardistModelRegistry.STARDIST_WEIGHTS_EXTENSION)) {
+            cleanName = cleanName.substring(0, cleanName.length() - StardistModelRegistry.STARDIST_WEIGHTS_EXTENSION.length());
         }
         return !cleanName.isEmpty()
                 && !cleanName.equals(".")
@@ -67,15 +69,15 @@ public class YoloTrainPanel extends BaseTrainPanel {
     protected boolean isValidFineTuneBaseModel() {
         String baseModel = getSelectedBaseModelValue();
         if (baseModelComboBox.getSelectedItem() instanceof YoloModelSelectionEntry) {
-            return baseModel != null && baseModel.toLowerCase().endsWith(YoloModelRegistry.YOLO_WEIGHTS_EXTENSION);
+            return baseModel != null && baseModel.toLowerCase().endsWith(StardistModelRegistry.STARDIST_WEIGHTS_EXTENSION);
         }
         return baseModel != null
-                && baseModel.toLowerCase().endsWith(YoloModelRegistry.YOLO_WEIGHTS_EXTENSION)
+                && baseModel.toLowerCase().endsWith(StardistModelRegistry.STARDIST_WEIGHTS_EXTENSION)
                 && new File(baseModel).isFile();
     }
 
     protected boolean isValidScratchArchitecture() {
-        return YoloModelRegistry.isKnownScratchArchitecture(getSelectedScratchArchitectureValue());
+        return StardistModelRegistry.isKnownScratchArchitecture(getSelectedScratchArchitectureValue());
     }
 
     public void setBaseModels(LinkedHashMap<String, String> models) {

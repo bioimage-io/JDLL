@@ -35,6 +35,7 @@ import io.bioimage.modelrunner.gui.adapter.GuiAdapter;
 import io.bioimage.modelrunner.gui.custom.yolo.YoloGUI;
 import io.bioimage.modelrunner.gui.custom.stardist.StardistInstaller;
 import io.bioimage.modelrunner.gui.custom.stardist.StardistModelRegistry;
+import io.bioimage.modelrunner.gui.custom.yolo.StardistGUI;
 import io.bioimage.modelrunner.gui.custom.yolo.YoloDetectionCsvWriter;
 import io.bioimage.modelrunner.gui.custom.yolo.YoloDetectionGeoJsonWriter;
 import io.bioimage.modelrunner.gui.custom.yolo.YoloImageFiles;
@@ -73,7 +74,7 @@ import java.util.function.Consumer;
 import net.imglib2.img.array.ArrayImgs;
 import net.imglib2.type.numeric.integer.UnsignedByteType;
 
-public class StarDistPluginUI extends YoloGUI implements ActionListener {
+public class StarDistPluginUI extends StardistGUI implements ActionListener {
 
     private static final long serialVersionUID = 5754022448277417301L;
 	private static final String DEFAULT_PREVIEW_MESSAGE = "Preview will appear here";
