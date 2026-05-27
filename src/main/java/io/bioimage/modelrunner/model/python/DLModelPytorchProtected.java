@@ -771,6 +771,7 @@ public class DLModelPytorchProtected extends BaseModel {
     protected <T extends RealType<T> & NativeType<T>, R extends RealType<R> & NativeType<R>>
     Merger<Tensor<T>, Tensor<R>> getTileMaker(final List<Tensor<T>> inputs) {
         Merger<Tensor<T>, Tensor<R>> merger = new NoTileMerger<T, R>();
+        merger.configure(inputs);
         return merger;
     }
     

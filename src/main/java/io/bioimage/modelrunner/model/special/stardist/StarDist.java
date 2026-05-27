@@ -46,6 +46,9 @@ import io.bioimage.modelrunner.model.python.DLModelPytorchProtected;
 import io.bioimage.modelrunner.model.python.envs.PixiEnvironmentManager;
 import io.bioimage.modelrunner.model.python.envs.PixiEnvironmentResolver;
 import io.bioimage.modelrunner.model.python.envs.PixiEnvironmentSpec;
+import io.bioimage.modelrunner.model.python.methods.ConvertDims;
+import io.bioimage.modelrunner.model.python.methods.LetterboxPreprocessing;
+import io.bioimage.modelrunner.model.python.methods.UndoLetterboxProcessingBoundingBoxes;
 import io.bioimage.modelrunner.model.special.common.TrainingCodeUtils;
 import io.bioimage.modelrunner.system.PlatformDetection;
 import io.bioimage.modelrunner.tensor.Tensor;
@@ -53,8 +56,10 @@ import io.bioimage.modelrunner.tensor.shm.SharedMemoryArray;
 import io.bioimage.modelrunner.utils.CommonUtils;
 import io.bioimage.modelrunner.utils.JSONUtils;
 import net.imglib2.RandomAccessibleInterval;
+import net.imglib2.img.array.ArrayImgs;
 import net.imglib2.type.NativeType;
 import net.imglib2.type.numeric.RealType;
+import net.imglib2.type.numeric.real.FloatType;
 import net.imglib2.util.Cast;
 import net.imglib2.util.Util;
 import net.imglib2.view.IntervalView;
@@ -93,50 +98,6 @@ public final class StarDist extends DLModelPytorchProtected {
 			+ "  task.export(train=train)" + System.lineSeparator()
 			+ "model = train.load_stardist_2d(source=%s, config=%s, gpu=%s)" + System.lineSeparator()
 			+ "task.export(model=model)" + System.lineSeparator();
-
-	private static final String RUN_MODEL_CODE = ""
-			+ "output = model.predict_instances(im, return_predict=False)" + System.lineSeparator()
-			+ "if type(output) == np.ndarray:" + System.lineSeparator()
-			+ "  im[:] = output" + System.lineSeparator()
-			+ "  if os.name == 'nt':" + System.lineSeparator()
-			+ "    im_shm.close()" + System.lineSeparator()
-			+ "    im_shm.unlink()" + System.lineSeparator()
-			+ "if type(output) != list and type(output) != tuple:" + System.lineSeparator()
-			+ "  raise TypeError('StarDist output should be a list or tuple.')" + System.lineSeparator()
-			+ "if type(output[0]) != np.ndarray:" + System.lineSeparator()
-			+ "  raise TypeError('The first StarDist output should be a np.ndarray.')" + System.lineSeparator()
-			+ "if len(im.shape) == 3 and len(output[0].shape) == 2:" + System.lineSeparator()
-			+ "  im[:, :, 0] = output[0]" + System.lineSeparator()
-			+ "elif len(im.shape) == 4 and len(output[0].shape) == 3:" + System.lineSeparator()
-			+ "  im[:, :, :, 0] = output[0]" + System.lineSeparator()
-			+ "else:" + System.lineSeparator()
-			+ "  im[:] = output[0]" + System.lineSeparator()
-			+ "details = output[1] if len(output) > 1 else {}" + System.lineSeparator()
-			+ "if type(details) != dict:" + System.lineSeparator()
-			+ "  raise TypeError('If StarDist returns metadata, it must be a dict.')" + System.lineSeparator()
-			+ "task.outputs['" + KEYS_KEY + "'] = list(details.keys())" + System.lineSeparator()
-			+ "shm_list = []" + System.lineSeparator()
-			+ "np_list = []" + System.lineSeparator()
-			+ "for kk, vv in details.items():" + System.lineSeparator()
-			+ "  if type(vv) != np.ndarray:" + System.lineSeparator()
-			+ "    task.update('Output ' + kk + ' is not a np.ndarray. Only np.ndarrays supported.')" + System.lineSeparator()
-			+ "    continue" + System.lineSeparator()
-			+ "  if vv.nbytes == 0:" + System.lineSeparator()
-			+ "    task.outputs[kk] = None" + System.lineSeparator()
-			+ "  else:" + System.lineSeparator()
-			+ "    task.outputs[kk + '" + SHAPE_KEY + "'] = vv.shape" + System.lineSeparator()
-			+ "    task.outputs[kk + '" + DTYPE_KEY + "'] = str(vv.dtype)" + System.lineSeparator()
-			+ "    shm = shared_memory.SharedMemory(create=True, size=vv.nbytes)" + System.lineSeparator()
-			+ "    task.outputs[kk + '" + SHM_NAME_KEY + "'] = shm.name" + System.lineSeparator()
-			+ "    shm_list.append(shm)" + System.lineSeparator()
-			+ "    aa = np.ndarray(vv.shape, dtype=vv.dtype, buffer=shm.buf)" + System.lineSeparator()
-			+ "    aa[:] = vv" + System.lineSeparator()
-			+ "    np_list.append(aa)" + System.lineSeparator()
-			+ "globals()['shm_list'] = shm_list" + System.lineSeparator()
-			+ "globals()['np_list'] = np_list" + System.lineSeparator()
-			+ "if os.name == 'nt':" + System.lineSeparator()
-			+ "  im_shm.close()" + System.lineSeparator()
-			+ "  im_shm.unlink()" + System.lineSeparator();
 
 	private static final String CLOSE_SHM_CODE = ""
 			+ "if 'np_list' in globals().keys():" + System.lineSeparator()
@@ -249,53 +210,6 @@ public final class StarDist extends DLModelPytorchProtected {
 		return inferenceProgressConsumer;
 	}
 
-	@Override
-	public void close() {
-		if (!loaded) {
-			return;
-		}
-		python.close();
-		loaded = false;
-		closed = true;
-	}
-
-	@Override
-	public <T extends RealType<T> & NativeType<T>, R extends RealType<R> & NativeType<R>>
-	void run(List<Tensor<T>> inTensors, List<Tensor<R>> outTensors) throws RunModelException {
-		throw new RunModelException("StarDist currently exposes RandomAccessibleInterval inference.");
-	}
-
-	@Override
-	public <T extends RealType<T> & NativeType<T>, R extends RealType<R> & NativeType<R>>
-	List<Tensor<T>> run(List<Tensor<R>> inputTensors) throws RunModelException {
-		throw new RunModelException("StarDist currently exposes RandomAccessibleInterval inference.");
-	}
-
-	public <T extends RealType<T> & NativeType<T>, R extends RealType<R> & NativeType<R>>
-	Map<String, RandomAccessibleInterval<R>> run(RandomAccessibleInterval<T> img)
-			throws InterruptedException, TaskException, IOException {
-		if (!loaded || python == null) {
-			try {
-				loadModel();
-			} catch (LoadModelException e) {
-				throw new IOException("Could not load StarDist model before inference.", e);
-			}
-		}
-		checkInput(img);
-		shma = SharedMemoryArray.createSHMAFromRAI(img, false, false);
-		String code = createEncodeImageScript() + System.lineSeparator();
-		if (this.threshold != null) {
-			code += String.format("model.thresholds = dict(prob=%s, nms=model.thresholds.nms)", threshold)
-					+ System.lineSeparator();
-		}
-		code += RUN_MODEL_CODE + System.lineSeparator();
-
-		Task task = python.task(code);
-		task.waitFor();
-		ensureTaskSucceeded(task);
-		return reconstructOutputs(task);
-	}
-
 	public void trainWithOptions(String dataDir, String gtDir, String outputDir,
 			boolean gpu, String imageChannels, String labelColorMode, double validFraction,
 			Map<String, Object> trainingConfig,
@@ -332,28 +246,66 @@ public final class StarDist extends DLModelPytorchProtected {
 		return String.format(LOAD_MODEL_CODE_2D, source, configStr, gpu);
 	}
 
-	private <T extends RealType<T> & NativeType<T>> void checkInput(RandomAccessibleInterval<T> image) {
-		long[] dims = image.dimensionsAsLongArray();
-		if (is2D()) {
-			if (dims.length == 2 && nChannels == 1) {
-				return;
-			}
-			if (dims.length == 3 && dims[2] == nChannels) {
-				return;
-			}
-			throw new IllegalArgumentException("StarDist 2D expects XY or XYC input with "
-					+ nChannels + " channel(s).");
+	@Override
+	protected <T extends RealType<T> & NativeType<T>> 
+		String createInputsCode(List<Tensor<T>> inRais, List<String> names) {
+			String code = "";
+			code += ConvertDims.getMethodDeclaration() + System.lineSeparator();
+			code += LetterboxPreprocessing.getMethodDeclaration() + System.lineSeparator();
+			code += UndoLetterboxProcessingBoundingBoxes.getMethodDeclaration() + System.lineSeparator();
+			code += "created_shms = []" + System.lineSeparator();
+			code += "try:" + System.lineSeparator();
+			List<SharedMemoryArray> shmas = createSharedMemoryArraysForInputs(inRais);
+			for (int i = 0; i < inRais.size(); i ++) {
+				SharedMemoryArray shma = shmas.get(i);
+				code += codeToConvertShmaToPython(shma, names.get(i));
+				inShmaList.add(shma);
+				code += "  print(" + names.get(i) + ".shape)" + System.lineSeparator();
+				code += "  " + names.get(i) + "_torch, meta = " + LetterboxPreprocessing.getMethodName()
+				+ "(" + ConvertDims.getMethodName() + "(" + names.get(i)
+			+ ", '" + inRais.get(i).getAxesOrderString().toLowerCase() + "',device=device))" + System.lineSeparator();
+			code += "  print(" + names.get(i) + "_torch.shape)" + System.lineSeparator();
 		}
-		if (dims.length == 3 && nChannels == 1) {
-			return;
-		}
-		if (dims.length == 4 && dims[3] == nChannels) {
-			return;
-		}
-		throw new IllegalArgumentException("StarDist 3D expects XYZ or XYZC input with "
-				+ nChannels + " channel(s).");
+		code += "  " + OUTPUT_LIST_KEY + " = " + MODEL_VAR_NAME + "(" + names.get(0) + "_torch, device=device)" + System.lineSeparator();;
+		String closeEverythingWin = closeSHMWin();
+		code += "  " + closeEverythingWin + System.lineSeparator();
+		code += "except Exception as e:" + System.lineSeparator();
+		code += "  " + closeEverythingWin + System.lineSeparator();
+		code += "  raise e" + System.lineSeparator();
+		code += ""
+				+ SHMS_KEY + " = []" + System.lineSeparator()
+				+ SHM_NAMES_KEY + " = []" + System.lineSeparator()
+				+ DTYPES_KEY + " = []" + System.lineSeparator()
+				+ DIMS_KEY + " = []" + System.lineSeparator()
+				+ "task.export(" + SHMS_KEY + " = " + SHMS_KEY + ")" + System.lineSeparator()
+				+ "task.export(" + SHM_NAMES_KEY + " = " + SHM_NAMES_KEY + ")" + System.lineSeparator()
+				+ "task.export(" + DTYPES_KEY + " = " + DTYPES_KEY + ")" + System.lineSeparator()
+				+ "task.export(" + DIMS_KEY + " = " + DIMS_KEY + ")" + System.lineSeparator();
+		code += "print(" + OUTPUT_LIST_KEY + "[0].boxes)" + System.lineSeparator();
+		code += "max_box = max([(0 if r.boxes is None else len(r.boxes)) for r in " + OUTPUT_LIST_KEY + "])" + System.lineSeparator();
+		code += "max_box = max([1, max_box])" + System.lineSeparator();
+		code += "shm = shared_memory.SharedMemory(create=True, size=len(" + OUTPUT_LIST_KEY + ") * max_box * 6 * 4)" + System.lineSeparator();
+		code += "box_tensor = np.ndarray((len(" + OUTPUT_LIST_KEY + "), max_box, 6), dtype='float32', buffer=shm.buf)" + System.lineSeparator();
+		code += "box_tensor.fill(0)" + System.lineSeparator();
+		code += "" + SHMS_KEY + ".append(shm)" + System.lineSeparator();
+		code += "" + SHM_NAMES_KEY + ".append(shm.name)" + System.lineSeparator();
+		code += "" + DTYPES_KEY + ".append(str(box_tensor.dtype))" + System.lineSeparator();
+		code += "" + DIMS_KEY + ".append(box_tensor.shape)" + System.lineSeparator();
+		code += "for i_r, r in enumerate(" + OUTPUT_LIST_KEY + "):" + System.lineSeparator()
+				+ "  boxes = r.boxes.xyxy.detach().cpu().numpy()" + System.lineSeparator()
+				+ "  confs = r.boxes.conf.detach().cpu().numpy()" + System.lineSeparator()
+				+ "  clss = r.boxes.cls.detach().cpu().numpy()" + System.lineSeparator()
+				+ "  for i_b, (box, conf, cl) in enumerate(zip(boxes, confs, clss)):" + System.lineSeparator()
+				+ "    box_tensor[i_r, i_b, :4] = box" + System.lineSeparator()
+				+ "    box_tensor[i_r, i_b, 4] = conf" + System.lineSeparator()
+				+ "    box_tensor[i_r, i_b, 5] = cl" + System.lineSeparator()
+				+ ""
+				+ ""
+				+ "box_tensor = " + UndoLetterboxProcessingBoundingBoxes.getMethodName() + "(box_tensor, meta)" + System.lineSeparator();
+		code += taskOutputsCode();
+		return code;
 	}
-
+	
 	private <T extends RealType<T> & NativeType<T>> RandomAccessibleInterval<T> reconstructMask() {
 		RandomAccessibleInterval<T> mask = shma.getSharedRAI();
 		RandomAccessibleInterval<T> maskCopy;
@@ -369,25 +321,6 @@ public final class StarDist extends DLModelPytorchProtected {
 		}
 		shma.close();
 		return maskCopy;
-	}
-
-	private String createEncodeImageScript() {
-		String code = "";
-		code += "im_shm = shared_memory.SharedMemory(name='"
-				+ shma.getNameForPython() + "', size=" + shma.getSize()
-				+ ")" + System.lineSeparator();
-		long nElems = 1;
-		for (long elem : shma.getOriginalShape()) {
-			nElems *= elem;
-		}
-		code += "im = np.ndarray(" + nElems + ", dtype='"
-				+ CommonUtils.getDataTypeFromRAI(Cast.unchecked(shma.getSharedRAI()))
-				+ "', buffer=im_shm.buf).reshape([";
-		for (int i = 0; i < shma.getOriginalShape().length; i++) {
-			code += shma.getOriginalShape()[i] + ", ";
-		}
-		code += "])" + System.lineSeparator();
-		return code;
 	}
 
 	protected <T extends RealType<T> & NativeType<T>>
@@ -429,15 +362,6 @@ public final class StarDist extends DLModelPytorchProtected {
 		return copy;
 	}
 
-	private static void ensureTaskSucceeded(Task task) {
-		if (task.status == TaskStatus.CANCELED) {
-			throw new RuntimeException("Task canceled");
-		}
-		if (task.status == TaskStatus.FAILED || task.status == TaskStatus.CRASHED) {
-			throw new RuntimeException(task.error);
-		}
-	}
-
 	private static File resolveModelIdentityFile(String modelPath) {
 		if (modelPath == null || modelPath.trim().isEmpty()) {
 			throw new IllegalArgumentException("StarDist model path cannot be empty.");
@@ -468,21 +392,6 @@ public final class StarDist extends DLModelPytorchProtected {
 		}
 		java.nio.file.Path mpk = StardistModelRegistry.findMpk(modelPath.getAbsolutePath());
 		return mpk == null ? null : mpk.toFile();
-	}
-
-	private static File createPlaceholderModelFile(String modelName) throws IOException {
-		File cacheDir = new File(PixiEnvironmentResolver.userCacheDir("jdll"),
-				"stardist" + File.separator + "placeholders");
-		if (!cacheDir.isDirectory() && !cacheDir.mkdirs()) {
-			throw new IOException("Could not create StarDist placeholder directory: "
-					+ cacheDir.getAbsolutePath());
-		}
-		String safeName = modelName == null ? "stardist" : modelName.replaceAll("[^A-Za-z0-9._-]", "_");
-		File marker = new File(cacheDir, safeName + ".placeholder");
-		if (!marker.isFile() && !marker.createNewFile()) {
-			throw new IOException("Could not create StarDist placeholder file: " + marker.getAbsolutePath());
-		}
-		return marker;
 	}
 
 	private static Map<String, Object> loadModelConfig(String modelPath) throws IOException {
@@ -558,20 +467,6 @@ public final class StarDist extends DLModelPytorchProtected {
 			return PixiEnvironmentManager.isInstalled(resolvePytorchEnv());
 		} catch (Exception e) {
 			return false;
-		}
-	}
-
-	public static void installDefaultRequirements() throws InterruptedException, BuildException {
-		installDefaultRequirements(null);
-	}
-
-	public static void installDefaultRequirements(Consumer<String> consumer)
-			throws InterruptedException, BuildException {
-		PixiEnvironmentSpec spec = resolvePytorchEnv();
-		PixiEnvironmentManager.installRequirements(spec, consumer == null ? s -> { } : consumer);
-		if (!isInstalled()) {
-			throw new RuntimeException("Not all the required packages were installed correctly. Please try again."
-					+ " If the error persists, please post an issue at: https://github.com/bioimage-io/JDLL/issues");
 		}
 	}
 
@@ -821,7 +716,13 @@ public final class StarDist extends DLModelPytorchProtected {
 	public static void main(String[] args) throws IOException, BuildException, LoadModelException, RunModelException {
 		String path = "/home/carlos/git/deep-icy/models/stardist/hundred";
 		try (StarDist model = StarDist.fromFile(path)) {
-			model.inference(null);
+			Tensor<FloatType> tensor = Tensor.build(
+					"input",
+					"bcyx",
+					ArrayImgs.floats(new float[1 * 1 * 512 * 512], 1, 1, 512, 512)
+				);
+
+			model.inference(tensor);
 		}
 	}
 }
