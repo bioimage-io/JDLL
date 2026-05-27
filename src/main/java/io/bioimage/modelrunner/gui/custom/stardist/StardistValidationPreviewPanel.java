@@ -63,6 +63,8 @@ public class StardistValidationPreviewPanel extends YoloValidationPreviewPanel {
     private static final int STATUS_H = 36;
     private static final Color TEXT_COLOR = new Color(70, 78, 98);
     private static final Color PREDICTION_COLOR = new Color(230, 44, 140);
+    private static final Color PROBABILITY_COLOR = new Color(255, 180, 0);
+    private static final double PROBABILITY_OVERLAY_ALPHA = 0.68d;
     private static final String PREVIOUS_SYMBOL = "\u25C0";
     private static final String NEXT_SYMBOL = "\u25B6";
     private static final String WAITING_MESSAGE = "Validation examples available after the first epoch finishes";
@@ -82,6 +84,7 @@ public class StardistValidationPreviewPanel extends YoloValidationPreviewPanel {
     private int totalEpochs;
     private long elapsedMillis;
     private double secondsPerIteration = Double.NaN;
+    private boolean currentSampleUsesProbabilityOverlay;
 
     public StardistValidationPreviewPanel() {
         removeAll();
@@ -202,10 +205,12 @@ public class StardistValidationPreviewPanel extends YoloValidationPreviewPanel {
         currentIndex = wrap(requestedIndex, samples.size());
         PreviewSample sample = samples.get(currentIndex);
         try {
+            currentSampleUsesProbabilityOverlay = false;
             BufferedImage image = buildOverlay(sample);
             imagePanel.setBufferedImage(image, buildImageTitle(sample), false);
             imagePanel.setTitleColor(Color.WHITE);
         } catch (Exception e) {
+            currentSampleUsesProbabilityOverlay = false;
             imagePanel.setEmptyMessage(ERROR_MESSAGE, new Color(180, 30, 30));
             imagePanel.clearImage();
         }
@@ -215,8 +220,17 @@ public class StardistValidationPreviewPanel extends YoloValidationPreviewPanel {
 
     private BufferedImage buildOverlay(PreviewSample sample) throws IOException {
         BufferedImage image = toBufferedImage(DecodeNumpy.loadNpy(sample.imagePath));
+        boolean hasPrediction = false;
         if (sample.predictionPath != null) {
-            drawMaskContours(image, DecodeNumpy.loadNpy(sample.predictionPath), PREDICTION_COLOR);
+            RandomAccessibleInterval<?> prediction = DecodeNumpy.loadNpy(sample.predictionPath);
+            hasPrediction = hasPositiveValues(prediction);
+            if (hasPrediction) {
+                drawMaskContours(image, prediction, PREDICTION_COLOR);
+            }
+        }
+        if (!hasPrediction && sample.probPath != null) {
+            drawProbabilityOverlay(image, DecodeNumpy.loadNpy(sample.probPath), PROBABILITY_COLOR);
+            currentSampleUsesProbabilityOverlay = true;
         }
         return image;
     }
@@ -229,7 +243,7 @@ public class StardistValidationPreviewPanel extends YoloValidationPreviewPanel {
 
     private String buildImageTitle(PreviewSample sample) {
         return sample.title + " --- " + (currentIndex + 1) + "/" + samples.size()
-                + " | prediction magenta";
+                + (currentSampleUsesProbabilityOverlay ? " | probability orange" : " | prediction magenta");
     }
 
     private String getSelectedImagePath() {
@@ -376,6 +390,68 @@ public class StardistValidationPreviewPanel extends YoloValidationPreviewPanel {
                 paintSquare(image, imageX, imageY, thickness, color);
             }
         }
+    }
+
+    private static void drawProbabilityOverlay(BufferedImage image, RandomAccessibleInterval<?> probability, Color color) {
+        if (probability == null || probability.numDimensions() < 2) {
+            return;
+        }
+        MaskLayout layout = MaskLayout.from(probability);
+        RandomAccess<?> access = probability.randomAccess();
+        long[] position = new long[probability.numDimensions()];
+        double[] range = probabilityRange(access, position, layout);
+        if (range[1] <= range[0]) {
+            return;
+        }
+        for (int y = 0; y < image.getHeight(); y++) {
+            int sourceY = Math.max(0, Math.min(layout.height - 1,
+                    (int) Math.floor(y * layout.height / (double) image.getHeight())));
+            for (int x = 0; x < image.getWidth(); x++) {
+                int sourceX = Math.max(0, Math.min(layout.width - 1,
+                        (int) Math.floor(x * layout.width / (double) image.getWidth())));
+                double value = maskValue(access, position, layout, sourceX, sourceY);
+                double normalized = Math.max(0.0d, Math.min(1.0d, (value - range[0]) / (range[1] - range[0])));
+                if (normalized <= 0.05d) {
+                    continue;
+                }
+                image.setRGB(x, y, blend(image.getRGB(x, y), color, normalized * PROBABILITY_OVERLAY_ALPHA));
+            }
+        }
+    }
+
+    private static double[] probabilityRange(RandomAccess<?> access, long[] position, MaskLayout layout) {
+        double min = Double.POSITIVE_INFINITY;
+        double max = Double.NEGATIVE_INFINITY;
+        for (int y = 0; y < layout.height; y++) {
+            for (int x = 0; x < layout.width; x++) {
+                double value = maskValue(access, position, layout, x, y);
+                if (Double.isFinite(value)) {
+                    min = Math.min(min, value);
+                    max = Math.max(max, value);
+                }
+            }
+        }
+        if (!Double.isFinite(min) || !Double.isFinite(max)) {
+            return new double[] {0.0d, 0.0d};
+        }
+        return new double[] {min, max};
+    }
+
+    private static boolean hasPositiveValues(RandomAccessibleInterval<?> mask) {
+        if (mask == null || mask.numDimensions() < 2) {
+            return false;
+        }
+        MaskLayout layout = MaskLayout.from(mask);
+        RandomAccess<?> access = mask.randomAccess();
+        long[] position = new long[mask.numDimensions()];
+        for (int y = 0; y < layout.height; y++) {
+            for (int x = 0; x < layout.width; x++) {
+                if (maskValue(access, position, layout, x, y) > 0.0d) {
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 
     private static boolean isContour(RandomAccess<?> access, long[] position, MaskLayout layout,
