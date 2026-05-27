@@ -463,6 +463,8 @@ public class DLModelPytorchProtected extends BaseModel {
             ensureTaskSucceeded(task);
             emitProgress(InferenceProgress.modelLoaded(weightsPath));
         } catch (IOException | InterruptedException | TaskException e) {
+        	python.close();
+        	python = null;
             throw new LoadModelException(Messages.stackTrace(e));
         }
 

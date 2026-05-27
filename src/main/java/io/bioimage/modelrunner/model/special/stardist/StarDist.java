@@ -820,8 +820,8 @@ public final class StarDist extends DLModelPytorchProtected {
 	
 	public static void main(String[] args) throws IOException, BuildException, LoadModelException, RunModelException {
 		String path = "/home/carlos/git/deep-icy/models/stardist/hundred";
-		StarDist model = StarDist.fromFile(path);
-		model.loadModel();
-		model.inference(null);
+		try (StarDist model = StarDist.fromFile(path)) {
+			model.inference(null);
+		}
 	}
 }
