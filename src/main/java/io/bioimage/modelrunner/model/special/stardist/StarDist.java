@@ -326,9 +326,9 @@ public final class StarDist extends DLModelPytorchProtected {
 
 	@Override
 	protected String buildModelCode() {
-		String gpu = "'True'"; // TODO
+		String gpu = "True"; // TODO
 		String source = mpkPath != null ? "r'" + mpkPath + "'" : "None";
-		String configStr = TrainingCodeUtils.toJson(config);
+		String configStr = TrainingCodeUtils.toJson(config).replace("null", "None").replace("true", "True").replace("false", "False");
 		return String.format(LOAD_MODEL_CODE_2D, source, configStr, gpu);
 	}
 

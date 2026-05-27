@@ -29,6 +29,8 @@ import java.util.List;
 import java.util.Map;
 
 import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import com.google.gson.ToNumberPolicy;
 import com.google.gson.reflect.TypeToken;
 
 /**
@@ -50,15 +52,16 @@ public class JSONUtils
      * @throws IOException
      *         If the file cannot be read.
      */
-    public static Map<String, Object> load(String jsonFile) throws FileNotFoundException, IOException
-    {
-    	try (FileReader reader = new FileReader(jsonFile)) {
-            Gson gson = new Gson();
-            Type mapType = new TypeToken<Map<String, Object>>() {}.getType();
-            Map<String, Object> dataMap = gson.fromJson(reader, mapType);
-            return dataMap;
-        }
-    }
+	public static Map<String, Object> load(String jsonFile) throws FileNotFoundException, IOException {
+	    try (FileReader reader = new FileReader(jsonFile)) {
+	        Gson gson = new GsonBuilder()
+	                .setObjectToNumberStrategy(ToNumberPolicy.LONG_OR_DOUBLE)
+	                .create();
+
+	        Type mapType = new TypeToken<Map<String, Object>>() {}.getType();
+	        return gson.fromJson(reader, mapType);
+	    }
+	}
 
     /**
      * Converts a list of objects into an array of strings.
