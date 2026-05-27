@@ -203,7 +203,7 @@ public abstract class RunnerAdapter implements Closeable {
 		if (descriptor.getModelFamily().equals(ModelDescriptor.STARDIST)) {
 			boolean installed = StardistAbstract.isInstalled();
 			if (install && !installed)
-				StardistAbstract.installRequirements();
+				StardistAbstract.installDefaultRequirements();
 			else if (!installed) {
 				descriptor = ModelDescriptorFactory.readFromLocalFile(descriptor.getModelPath() + File.separator + Constants.RDF_FNAME, false);
 				initWithEnginesPath(install);
@@ -234,7 +234,7 @@ public abstract class RunnerAdapter implements Closeable {
 		if (descriptor.getModelFamily().equals(ModelDescriptor.STARDIST)) {
 			boolean installed = StardistAbstract.isInstalled();
 			if (install && !installed)
-				StardistAbstract.installRequirements();
+				StardistAbstract.installDefaultRequirements();
 			else if (!installed) {
 				descriptor = ModelDescriptorFactory.readFromLocalFile(descriptor.getModelPath() + File.separator + Constants.RDF_FNAME, false);
 				initWithEnginesPath(install);

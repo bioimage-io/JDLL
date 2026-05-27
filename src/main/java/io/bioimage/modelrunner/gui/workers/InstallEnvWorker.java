@@ -19,12 +19,13 @@
  */
 package io.bioimage.modelrunner.gui.workers;
 
-import java.io.IOException;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.function.Consumer;
 
 import javax.swing.SwingWorker;
+
+import org.apposed.appose.BuildException;
 
 import io.bioimage.modelrunner.bioimageio.description.ModelDescriptor;
 import io.bioimage.modelrunner.model.python.DLModelPytorch;
@@ -104,12 +105,12 @@ public class InstallEnvWorker extends SwingWorker<Boolean, Void> {
     	workerThread = Thread.currentThread();
     	try {
             if (modelFamily.toLowerCase().equals(ModelDescriptor.STARDIST)) {
-            	StardistAbstract.installRequirements(consumer);
+                StardistAbstract.installDefaultRequirements(consumer);
             } else if (modelFamily.toLowerCase().equals(ModelDescriptor.CELLPOSE)) {
             	PixiEnvironmentManager.installRequirements(DLModelPytorch.resolvePytorchEnv(), consumer);
             } else if (modelFamily.toLowerCase().equals(ModelDescriptor.BIOIMAGEIO))
             	PixiEnvironmentManager.installRequirements(DLModelPytorch.resolvePytorchEnv(), consumer);
-		} catch (IOException | RuntimeException e) {
+		} catch (BuildException | RuntimeException e) {
 			e.printStackTrace();
 			return false;
 		} catch (InterruptedException e) {
