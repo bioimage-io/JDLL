@@ -695,7 +695,7 @@ public class TileMaker {
 			long[] dims = getOutputImageSize(tt.getName());
 			outputTensors.add((Tensor<T>) Tensor.buildBlankTensor(tt.getName(), 
 																	tt.getImageAxesOrder(), 
-																	dims, T dtype));
+																	dims, dtype));
 		}
 		return outputTensors;
 	}

@@ -24,6 +24,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import io.bioimage.modelrunner.model.detection.Detection;
 import io.bioimage.modelrunner.model.tiling.TileInfo;
@@ -82,11 +83,7 @@ extends Merger<Tensor<T>, Tensor<R>> {
         this.referenceWindow = new long[] { 0, 0, reference.width(), reference.height() };
         this.referenceWindows = createReferenceWindows(reference);
 
-        this.reconstructed = Collections.emptyList();
-        reconstructed.add((Tensor<T>) Tensor.buildBlankTensor("probs", 
-        														tileMaker.axesorder, 
-																tileMaker.getOutputImageSize("probs"), 
-																(T) CommonUtils.getImgLib2DataType(tt.getDataType())));
+        this.reconstructed = tileMaker.createOutputTensors((R) new net.imglib2.type.numeric.real.FloatType(0.0f));
         this.outputPrototype = null;
         this.reconstructedValid = false;
         this.configured = true;
@@ -110,24 +107,19 @@ extends Merger<Tensor<T>, Tensor<R>> {
     public void digest(final int patchNumber, final List<Tensor<R>> outputs) {
         requireConfigured();
         patchNumberValid(patchNumber);
-        tilemaker.
+        for (int i = 0; i < outputs.size(); i ++) {
+        	tileMaker.getNthTileOutput(reconstructed.get(0), patchNumber) = outputs.get(i);
+        }
+                
         reconstructed = Collections.emptyList();
         reconstructedValid = false;
-        digested = allPatchesDigested();
+        digested = patchNumber + 1 == this.getNPatches();
     }
 
     @Override
     public List<Tensor<R>> getReconstructed() {
         requireConfigured();
         requireDigested();
-        if (reconstructedValid) {
-            return reconstructed;
-        }
-        final List<Detection> mergedDetections = mergeDetections();
-        reconstructed = outputPrototype == null
-                ? Collections.<Tensor<R>>emptyList()
-                : Collections.singletonList(toBicTensor(mergedDetections));
-        reconstructedValid = true;
         return reconstructed;
     }
 
