@@ -96,8 +96,8 @@ public final class StarDist extends DLModelPytorchProtected {
 			+ "if 'train' not in globals().keys():" + System.lineSeparator()
 			+ "  import cellcast.training.stardist_2d as train" + System.lineSeparator()
 			+ "  task.export(train=train)" + System.lineSeparator()
-			+ "model = train.load_stardist_2d(source=%s, config=%s, gpu=%s)" + System.lineSeparator()
-			+ "task.export(model=model)" + System.lineSeparator();
+			+ MODEL_VAR_NAME + " = train.load_stardist_2d(source=%s, config=%s, gpu=%s)" + System.lineSeparator()
+			+ "task.export(" + MODEL_VAR_NAME + "=" + MODEL_VAR_NAME + ")" + System.lineSeparator();
 
 	private static final String CLOSE_SHM_CODE = ""
 			+ "if 'np_list' in globals().keys():" + System.lineSeparator()
@@ -251,8 +251,6 @@ public final class StarDist extends DLModelPytorchProtected {
 		String createInputsCode(List<Tensor<T>> inRais, List<String> names) {
 			String code = "";
 			code += ConvertDims.getMethodDeclaration() + System.lineSeparator();
-			code += LetterboxPreprocessing.getMethodDeclaration() + System.lineSeparator();
-			code += UndoLetterboxProcessingBoundingBoxes.getMethodDeclaration() + System.lineSeparator();
 			code += "created_shms = []" + System.lineSeparator();
 			code += "try:" + System.lineSeparator();
 			List<SharedMemoryArray> shmas = createSharedMemoryArraysForInputs(inRais);
@@ -261,49 +259,27 @@ public final class StarDist extends DLModelPytorchProtected {
 				code += codeToConvertShmaToPython(shma, names.get(i));
 				inShmaList.add(shma);
 				code += "  print(" + names.get(i) + ".shape)" + System.lineSeparator();
-				code += "  " + names.get(i) + "_torch, meta = " + LetterboxPreprocessing.getMethodName()
-				+ "(" + ConvertDims.getMethodName() + "(" + names.get(i)
-			+ ", '" + inRais.get(i).getAxesOrderString().toLowerCase() + "',device=device))" + System.lineSeparator();
-			code += "  print(" + names.get(i) + "_torch.shape)" + System.lineSeparator();
-		}
-		code += "  " + OUTPUT_LIST_KEY + " = " + MODEL_VAR_NAME + "(" + names.get(0) + "_torch, device=device)" + System.lineSeparator();;
-		String closeEverythingWin = closeSHMWin();
-		code += "  " + closeEverythingWin + System.lineSeparator();
-		code += "except Exception as e:" + System.lineSeparator();
-		code += "  " + closeEverythingWin + System.lineSeparator();
-		code += "  raise e" + System.lineSeparator();
-		code += ""
-				+ SHMS_KEY + " = []" + System.lineSeparator()
-				+ SHM_NAMES_KEY + " = []" + System.lineSeparator()
-				+ DTYPES_KEY + " = []" + System.lineSeparator()
-				+ DIMS_KEY + " = []" + System.lineSeparator()
-				+ "task.export(" + SHMS_KEY + " = " + SHMS_KEY + ")" + System.lineSeparator()
-				+ "task.export(" + SHM_NAMES_KEY + " = " + SHM_NAMES_KEY + ")" + System.lineSeparator()
-				+ "task.export(" + DTYPES_KEY + " = " + DTYPES_KEY + ")" + System.lineSeparator()
-				+ "task.export(" + DIMS_KEY + " = " + DIMS_KEY + ")" + System.lineSeparator();
-		code += "print(" + OUTPUT_LIST_KEY + "[0].boxes)" + System.lineSeparator();
-		code += "max_box = max([(0 if r.boxes is None else len(r.boxes)) for r in " + OUTPUT_LIST_KEY + "])" + System.lineSeparator();
-		code += "max_box = max([1, max_box])" + System.lineSeparator();
-		code += "shm = shared_memory.SharedMemory(create=True, size=len(" + OUTPUT_LIST_KEY + ") * max_box * 6 * 4)" + System.lineSeparator();
-		code += "box_tensor = np.ndarray((len(" + OUTPUT_LIST_KEY + "), max_box, 6), dtype='float32', buffer=shm.buf)" + System.lineSeparator();
-		code += "box_tensor.fill(0)" + System.lineSeparator();
-		code += "" + SHMS_KEY + ".append(shm)" + System.lineSeparator();
-		code += "" + SHM_NAMES_KEY + ".append(shm.name)" + System.lineSeparator();
-		code += "" + DTYPES_KEY + ".append(str(box_tensor.dtype))" + System.lineSeparator();
-		code += "" + DIMS_KEY + ".append(box_tensor.shape)" + System.lineSeparator();
-		code += "for i_r, r in enumerate(" + OUTPUT_LIST_KEY + "):" + System.lineSeparator()
-				+ "  boxes = r.boxes.xyxy.detach().cpu().numpy()" + System.lineSeparator()
-				+ "  confs = r.boxes.conf.detach().cpu().numpy()" + System.lineSeparator()
-				+ "  clss = r.boxes.cls.detach().cpu().numpy()" + System.lineSeparator()
-				+ "  for i_b, (box, conf, cl) in enumerate(zip(boxes, confs, clss)):" + System.lineSeparator()
-				+ "    box_tensor[i_r, i_b, :4] = box" + System.lineSeparator()
-				+ "    box_tensor[i_r, i_b, 4] = conf" + System.lineSeparator()
-				+ "    box_tensor[i_r, i_b, 5] = cl" + System.lineSeparator()
-				+ ""
-				+ ""
-				+ "box_tensor = " + UndoLetterboxProcessingBoundingBoxes.getMethodName() + "(box_tensor, meta)" + System.lineSeparator();
-		code += taskOutputsCode();
-		return code;
+				code += "  " + names.get(i) + " = " + ConvertDims.getMethodName() + "(" + names.get(i)
+				+ ", '" + inRais.get(i).getAxesOrderString().toLowerCase() + "',device='cpu', output_type='numpy')" + System.lineSeparator();
+				code += "  print(" + names.get(i) + ".shape)" + System.lineSeparator();
+			}
+			code += "  " + OUTPUT_LIST_KEY + " = " + MODEL_VAR_NAME + "(" + names.get(0) + ")" + System.lineSeparator();;
+			code += "  " + SHMS_KEY + " = []" + System.lineSeparator();
+			code += "  " + SHM_NAMES_KEY + " = []" + System.lineSeparator();
+			code += "  " + DTYPES_KEY + " = []" + System.lineSeparator();
+			code += "  " + DIMS_KEY + " = []" + System.lineSeparator();
+			code += "  " + "task.export(" + SHMS_KEY + " = " + SHMS_KEY + ")" + System.lineSeparator();
+			code += "  " + "task.export(" + SHM_NAMES_KEY + " = " + SHM_NAMES_KEY + ")" + System.lineSeparator();
+			code += "  " + "task.export(" + DTYPES_KEY + " = " + DTYPES_KEY + ")" + System.lineSeparator();
+			code += "  " + "task.export(" + DIMS_KEY + " = " + DIMS_KEY + ")" + System.lineSeparator();
+	        code += "  " + "handle_output_list(" + OUTPUT_LIST_KEY + ")" + System.lineSeparator();
+			code += "  " + closeSHMWin() + System.lineSeparator();
+			code += "except Exception as e:" + System.lineSeparator();
+			code += "  " + closeSHMWin() + System.lineSeparator();
+			code += "  raise e" + System.lineSeparator();
+			code += "print(" + OUTPUT_LIST_KEY + ".shape)" + System.lineSeparator();
+			code += taskOutputsCode();
+			return code;
 	}
 	
 	private <T extends RealType<T> & NativeType<T>> RandomAccessibleInterval<T> reconstructMask() {
