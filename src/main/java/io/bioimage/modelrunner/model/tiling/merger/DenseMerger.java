@@ -29,6 +29,7 @@ import io.bioimage.modelrunner.model.detection.Detection;
 import io.bioimage.modelrunner.model.tiling.TileInfo;
 import io.bioimage.modelrunner.model.tiling.TileMaker;
 import io.bioimage.modelrunner.tensor.Tensor;
+import io.bioimage.modelrunner.utils.CommonUtils;
 import net.imglib2.type.NativeType;
 import net.imglib2.type.numeric.RealType;
 
@@ -82,6 +83,10 @@ extends Merger<Tensor<T>, Tensor<R>> {
         this.referenceWindows = createReferenceWindows(reference);
 
         this.reconstructed = Collections.emptyList();
+        reconstructed.add((Tensor<T>) Tensor.buildBlankTensor("probs", 
+        														tileMaker.axesorder, 
+																tileMaker.getOutputImageSize("probs"), 
+																(T) CommonUtils.getImgLib2DataType(tt.getDataType())));
         this.outputPrototype = null;
         this.reconstructedValid = false;
         this.configured = true;
@@ -105,7 +110,7 @@ extends Merger<Tensor<T>, Tensor<R>> {
     public void digest(final int patchNumber, final List<Tensor<R>> outputs) {
         requireConfigured();
         patchNumberValid(patchNumber);
-        detectionsByPatch.set(patchNumber, decodeBicOutputs(outputs));
+        tilemaker.
         reconstructed = Collections.emptyList();
         reconstructedValid = false;
         digested = allPatchesDigested();
