@@ -31,6 +31,8 @@ import io.bioimage.modelrunner.model.tiling.TileInfo;
 import io.bioimage.modelrunner.model.tiling.TileMaker;
 import io.bioimage.modelrunner.tensor.Tensor;
 import io.bioimage.modelrunner.utils.CommonUtils;
+import net.imglib2.RandomAccessibleInterval;
+import net.imglib2.loops.LoopBuilder;
 import net.imglib2.type.NativeType;
 import net.imglib2.type.numeric.RealType;
 
@@ -107,11 +109,14 @@ extends Merger<Tensor<T>, Tensor<R>> {
     public void digest(final int patchNumber, final List<Tensor<R>> outputs) {
         requireConfigured();
         patchNumberValid(patchNumber);
-        for (int i = 0; i < outputs.size(); i ++) {
-        	tileMaker.getNthTileOutput(reconstructed.get(0), patchNumber) = outputs.get(i);
+        if (outputs == null || outputs.size() != reconstructed.size()) {
+            throw new IllegalArgumentException("DenseMerger expected " + reconstructed.size()
+                    + " output tensor(s), got " + (outputs == null ? 0 : outputs.size()) + ".");
         }
-                
-        reconstructed = Collections.emptyList();
+        for (int i = 0; i < outputs.size(); i++) {
+            copyPatchIntoReconstruction(outputs.get(i), reconstructed.get(i), patchNumber);
+        }
+
         reconstructedValid = false;
         digested = patchNumber + 1 == this.getNPatches();
     }
@@ -121,6 +126,18 @@ extends Merger<Tensor<T>, Tensor<R>> {
         requireConfigured();
         requireDigested();
         return reconstructed;
+    }
+
+    private void copyPatchIntoReconstruction(final Tensor<R> patchOutput,
+            final Tensor<R> fullOutput, final int patchNumber) {
+        if (patchOutput == null || fullOutput == null) {
+            throw new IllegalArgumentException("DenseMerger cannot digest null output tensors.");
+        }
+        final RandomAccessibleInterval<R> source = patchOutput.getData();
+        final RandomAccessibleInterval<R> target = tileMaker.getNthTileOutput(fullOutput, patchNumber).getData();
+        LoopBuilder.setImages(source, target)
+                .multiThreaded()
+                .forEachPixel((src, dst) -> dst.set(src));
     }
 
     private List<InputImage> findImageInputs(final List<Tensor<T>> inputs) {
