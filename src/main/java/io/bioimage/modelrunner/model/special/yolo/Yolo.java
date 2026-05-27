@@ -530,7 +530,7 @@ public class Yolo extends DLModelPytorchProtected {
 				+ "  raise RuntimeError('Could not find YOLO training checkpoint to save.')" + nl
 				+ "os.makedirs(os.path.dirname(output_weights), exist_ok=True)" + nl
 				+ "shutil.copy2(source, output_weights)" + nl
-				+ "task.output(result=output_weights)" + nl;
+				+ "task.outputs(result=output_weights)" + nl;
 	}
 
 	private static void handleTrainingEvent(TaskEvent event,

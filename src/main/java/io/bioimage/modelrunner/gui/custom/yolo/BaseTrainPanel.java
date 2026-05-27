@@ -89,7 +89,7 @@ public abstract class BaseTrainPanel extends JPanel {
     protected final JPanel graphCardPanel = new JPanel(new CardLayout());
     protected final YoloGraphPlaceholderPanel lossGraphPanel = new YoloGraphPlaceholderPanel("Loss");
     protected final YoloGraphPlaceholderPanel metricGraphPanel = new YoloGraphPlaceholderPanel("Metric");
-    protected final TrainingValidationPreview validationPreviewPanel;
+    protected final YoloValidationPreviewPanel validationPreviewPanel;
     protected final YoloActionPanel trainActionPanel = new YoloActionPanel();
     private boolean trainingRunning;
 
@@ -100,13 +100,10 @@ public abstract class BaseTrainPanel extends JPanel {
         this(new YoloValidationPreviewPanel());
     }
 
-    protected BaseTrainPanel(TrainingValidationPreview validationPreviewPanel) {
+    protected BaseTrainPanel(YoloValidationPreviewPanel validationPreviewPanel) {
         setLayout(null);
         setOpaque(true);
         setBackground(YoloUiUtils.PANEL_BG);
-        if (!(validationPreviewPanel instanceof JPanel)) {
-            throw new IllegalArgumentException("Validation preview must also be a Swing panel.");
-        }
         this.validationPreviewPanel = validationPreviewPanel;
 
         ButtonGroup group = new ButtonGroup();
@@ -141,7 +138,7 @@ public abstract class BaseTrainPanel extends JPanel {
         graphCardPanel.setOpaque(false);
         graphCardPanel.add(lossGraphPanel, "loss");
         graphCardPanel.add(metricGraphPanel, "metric");
-        graphCardPanel.add((JPanel) validationPreviewPanel, "validationPreview");
+        graphCardPanel.add(validationPreviewPanel, "validationPreview");
 
         lossButton.addActionListener(e -> showGraph("loss"));
         metricButton.addActionListener(e -> showGraph("metric"));
@@ -546,7 +543,7 @@ public abstract class BaseTrainPanel extends JPanel {
         return metricGraphPanel;
     }
 
-    public TrainingValidationPreview getValidationPreviewPanel() {
+    public YoloValidationPreviewPanel getValidationPreviewPanel() {
         return validationPreviewPanel;
     }
 

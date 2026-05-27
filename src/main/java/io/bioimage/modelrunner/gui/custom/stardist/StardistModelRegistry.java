@@ -20,11 +20,17 @@
 package io.bioimage.modelrunner.gui.custom.stardist;
 
 import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Optional;
+import java.util.stream.Stream;
 
 public final class StardistModelRegistry {
 
@@ -81,7 +87,7 @@ public final class StardistModelRegistry {
         }
         Arrays.sort(customModels, Comparator.comparing(File::getName, String.CASE_INSENSITIVE_ORDER));
         for (File modelFile : customModels) {
-            models.put("[Custom] " + removeWeightsExtension(modelFile.getName()), modelFile.getAbsolutePath());
+            models.put("[Custom] " + removeWeightsExtension(modelFile.getName()), findMpk(modelFile.getAbsolutePath()).toString());
         }
         return models;
     }
@@ -145,6 +151,17 @@ public final class StardistModelRegistry {
     }
 
     private static boolean isModelDirectory(File file) {
-        return new File(file, "config.json").isFile();
+        return new File(file, "config.json").isFile() && findMpk(file.getAbsolutePath()) != null;
+    }
+    
+    public static Path findMpk(String dir) {
+        try (Stream<Path> files = Files.list(Paths.get(dir))) {
+            return files
+                    .filter(Files::isRegularFile)
+                    .filter(p -> p.getFileName().toString().matches("(?i).*\\.mpk$"))
+                    .findFirst().orElse(null);
+        } catch (IOException e) {
+			return null;
+		}
     }
 }

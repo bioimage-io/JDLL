@@ -43,15 +43,15 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 
-import io.bioimage.modelrunner.gui.custom.yolo.TrainingValidationPreview;
 import io.bioimage.modelrunner.gui.custom.yolo.YoloImageDisplayPanel;
+import io.bioimage.modelrunner.gui.custom.yolo.YoloValidationPreviewPanel;
 import io.bioimage.modelrunner.gui.custom.yolo.YoloUiUtils;
 import io.bioimage.modelrunner.numpy.DecodeNumpy;
 import net.imglib2.RandomAccess;
 import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.type.numeric.RealType;
 
-public class StardistValidationPreviewPanel extends JPanel implements TrainingValidationPreview {
+public class StardistValidationPreviewPanel extends YoloValidationPreviewPanel {
 
     private static final long serialVersionUID = -849272014619012798L;
 
@@ -62,7 +62,6 @@ public class StardistValidationPreviewPanel extends JPanel implements TrainingVa
     private static final int ARROW_BUTTON_MAX_HEIGHT = 21;
     private static final int STATUS_H = 36;
     private static final Color TEXT_COLOR = new Color(70, 78, 98);
-    private static final Color GT_COLOR = new Color(80, 220, 120);
     private static final Color PREDICTION_COLOR = new Color(230, 44, 140);
     private static final String PREVIOUS_SYMBOL = "\u25C0";
     private static final String NEXT_SYMBOL = "\u25B6";
@@ -85,6 +84,7 @@ public class StardistValidationPreviewPanel extends JPanel implements TrainingVa
     private double secondsPerIteration = Double.NaN;
 
     public StardistValidationPreviewPanel() {
+        removeAll();
         setLayout(null);
         setOpaque(true);
         setBackground(Color.WHITE);
@@ -106,6 +106,9 @@ public class StardistValidationPreviewPanel extends JPanel implements TrainingVa
 
     @Override
     public void clearPreview() {
+        if (samples == null) {
+            return;
+        }
         samples.clear();
         currentIndex = 0;
         previewEpoch = 0;
@@ -117,6 +120,9 @@ public class StardistValidationPreviewPanel extends JPanel implements TrainingVa
 
     @Override
     public void loadPreview(String jsonPath) {
+        if (samples == null) {
+            return;
+        }
         if (jsonPath == null || jsonPath.trim().isEmpty()) {
             return;
         }
@@ -209,9 +215,6 @@ public class StardistValidationPreviewPanel extends JPanel implements TrainingVa
 
     private BufferedImage buildOverlay(PreviewSample sample) throws IOException {
         BufferedImage image = toBufferedImage(DecodeNumpy.loadNpy(sample.imagePath));
-        if (sample.labelPath != null) {
-            drawMaskContours(image, DecodeNumpy.loadNpy(sample.labelPath), GT_COLOR);
-        }
         if (sample.predictionPath != null) {
             drawMaskContours(image, DecodeNumpy.loadNpy(sample.predictionPath), PREDICTION_COLOR);
         }
@@ -226,7 +229,7 @@ public class StardistValidationPreviewPanel extends JPanel implements TrainingVa
 
     private String buildImageTitle(PreviewSample sample) {
         return sample.title + " --- " + (currentIndex + 1) + "/" + samples.size()
-                + " | GT green | prediction magenta";
+                + " | prediction magenta";
     }
 
     private String getSelectedImagePath() {

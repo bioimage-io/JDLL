@@ -271,7 +271,6 @@ public abstract class StardistAbstract extends DLModelPytorchProtected {
 		this.name = modelName;
 		this.basedir = baseDir;
 		this.modelDir = new File(baseDir, modelName).getAbsolutePath();
-		checkFilesPresent(modelDir);
 		this.config = config;
 		this.nChannels = ((Number) config.get("n_channel_in")).intValue();
 		this.axes = inferAxes(config);
@@ -289,7 +288,7 @@ public abstract class StardistAbstract extends DLModelPytorchProtected {
 	 * @param modelDir the modelDir parameter.
 	 * @throws IOException if an I/O error occurs.
 	 */
-	public static void checkFilesPresent(String modelDir) throws IOException {
+	private static void checkFilesPresent(String modelDir) throws IOException {
 		if (new File(modelDir, "config.json").isFile() == false && new File(modelDir, Constants.RDF_FNAME).isFile() == false)
 			throw new IllegalArgumentException("No 'config.json' file found in the model directory");
 		//else if (new File(modelDir, "config.json").isFile() == false)
@@ -743,6 +742,7 @@ public abstract class StardistAbstract extends DLModelPytorchProtected {
 				.environment(envSpec.getSelectedEnvironment())
 				.wrap(envSpec.getEnvironmentDirectory());
 		Service python = env.python();
+		python.init("import numpy as np");
 		if (logConsumer != null) {
 			python.debug(logConsumer);
 		}
@@ -761,7 +761,7 @@ public abstract class StardistAbstract extends DLModelPytorchProtected {
 	public static Map<String, Object> defaultTrainingConfig(int epochs) {
 		Map<String, Object> config = new LinkedHashMap<String, Object>();
 		config.put("n_rays", 32);
-		config.put("grid", Arrays.asList(1, 1));
+		config.put("grid", Arrays.asList(2, 2));
 		config.put("patch_size", Arrays.asList(256, 256));
 		config.put("batch_size", 4);
 		config.put("epochs", epochs);
@@ -888,10 +888,10 @@ public abstract class StardistAbstract extends DLModelPytorchProtected {
 				+ "      _atomic_npy_save(image_path, image)" + nl
 				+ "      sample['image_path'] = str(image_path)" + nl
 				+ "    if label is not None:" + nl
-				+ "      _atomic_npy_save(label_path, label)" + nl
+				+ "      _atomic_npy_save(label_path, np.asarray(label, dtype=np.int32))" + nl
 				+ "      sample['label_path'] = str(label_path)" + nl
 				+ "    if prediction is not None:" + nl
-				+ "      _atomic_npy_save(pred_path, prediction)" + nl
+				+ "      _atomic_npy_save(pred_path, np.asarray(prediction, dtype=np.int32))" + nl
 				+ "      sample['prediction_path'] = str(pred_path)" + nl
 				+ "    if prob is not None:" + nl
 				+ "      _atomic_npy_save(prob_path, prob)" + nl
@@ -905,7 +905,8 @@ public abstract class StardistAbstract extends DLModelPytorchProtected {
 				+ "    _task_update(message='StarDist validation preview epoch %d' % epoch, current=epoch, maximum=state['total_epochs'], info={'type': 'preview', 'epoch': epoch, 'preview_path': str(preview_manifest_path)})" + nl
 				+ "with open(stardist_log_path, 'a', encoding='utf-8') as stardist_log, contextlib.redirect_stdout(stardist_log), contextlib.redirect_stderr(stardist_log):" + nl
 				+ "  result = train.train_stardist_2d_folder(data_dir=data_dir, " + gtDirArgument + "output_dir=str(output_dir), gpu=" + (gpu ? "True" : "False") + ", image_channels='" + py(safeImageChannels) + "', label_color_mode='" + py(safeLabelColorMode) + "', valid_fraction=" + validFraction + ", config=config, on_train_begin=on_train_begin, on_step_end=on_step_end, on_validation_end=on_validation_end)" + nl
-				+ "task.output(result=str(result.get('output_dir', str(output_dir))))" + nl;
+				//+ "result = train.train_stardist_2d_folder(data_dir=data_dir, " + gtDirArgument + "output_dir=str(output_dir), gpu=" + (gpu ? "True" : "False") + ", image_channels='" + py(safeImageChannels) + "', label_color_mode='" + py(safeLabelColorMode) + "', valid_fraction=" + validFraction + ", config=config, on_train_begin=on_train_begin, on_step_end=on_step_end, on_validation_end=on_validation_end)" + nl
+				+ "task.outputs(result=str(result.get('output_dir', str(output_dir))))" + nl;
 	}
 
 	private static void handleTrainingEvent(TaskEvent event,
@@ -1022,8 +1023,8 @@ public abstract class StardistAbstract extends DLModelPytorchProtected {
 		File modelDirFile = new File(modelDir);
 		String modelName = modelDirFile.getName();
 		String baseDir = modelDirFile.getParentFile().getAbsolutePath();
-		checkFilesPresent(modelDir);
-		Map<String, Object> configMap = JSONUtils.load(new File(modelDir, "config.json").getAbsolutePath());
+		//checkFilesPresent(modelDir);
+		Map<String, Object> configMap = JSONUtils.load(new File(baseDir, "config.json").getAbsolutePath());
 		String axes = ((String) configMap.get("axes")).toUpperCase();
 		if (axes.contains("Z"))
 			return new Stardist3D(modelName, baseDir, configMap);
