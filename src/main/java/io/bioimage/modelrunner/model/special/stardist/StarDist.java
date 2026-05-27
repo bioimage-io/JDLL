@@ -260,7 +260,8 @@ public final class StarDist extends DLModelPytorchProtected {
 				inShmaList.add(shma);
 				code += "  print(" + names.get(i) + ".shape)" + System.lineSeparator();
 				code += "  " + names.get(i) + " = " + ConvertDims.getMethodName() + "(" + names.get(i)
-				+ ", '" + inRais.get(i).getAxesOrderString().toLowerCase() + "',device='cpu', output_type='numpy')" + System.lineSeparator();
+				+ ", '" + inRais.get(i).getAxesOrderString().toLowerCase()
+				+ "', output_type='numpy', contiguous=False)" + System.lineSeparator();
 				code += "  print(" + names.get(i) + ".shape)" + System.lineSeparator();
 			}
 			code += "  " + OUTPUT_LIST_KEY + " = " + MODEL_VAR_NAME + "(" + names.get(0) + ")" + System.lineSeparator();;
