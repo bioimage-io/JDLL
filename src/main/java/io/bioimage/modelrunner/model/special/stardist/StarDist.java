@@ -21,6 +21,7 @@ package io.bioimage.modelrunner.model.special.stardist;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -50,6 +51,11 @@ import io.bioimage.modelrunner.model.python.methods.ConvertDims;
 import io.bioimage.modelrunner.model.python.methods.LetterboxPreprocessing;
 import io.bioimage.modelrunner.model.python.methods.UndoLetterboxProcessingBoundingBoxes;
 import io.bioimage.modelrunner.model.special.common.TrainingCodeUtils;
+import io.bioimage.modelrunner.model.tiling.TileInfo;
+import io.bioimage.modelrunner.model.tiling.TileMaker;
+import io.bioimage.modelrunner.model.tiling.merger.DenseMerger;
+import io.bioimage.modelrunner.model.tiling.merger.DetectionMerger;
+import io.bioimage.modelrunner.model.tiling.merger.Merger;
 import io.bioimage.modelrunner.system.PlatformDetection;
 import io.bioimage.modelrunner.tensor.Tensor;
 import io.bioimage.modelrunner.tensor.shm.SharedMemoryArray;
@@ -237,6 +243,30 @@ public final class StarDist extends DLModelPytorchProtected {
 			throws IOException, BuildException, InterruptedException, TaskException {
 		train(dataDir, null, outputDir, epochs, progressConsumer, previewConsumer, logConsumer);
 	}
+
+    @Override
+    protected <T extends RealType<T> & NativeType<T>, R extends RealType<R> & NativeType<R>>
+    Merger<Tensor<T>, Tensor<R>> getTileMaker(final List<Tensor<T>> inputs) {
+    	List<TileInfo> inputInfo = new ArrayList<TileInfo>();
+    	for (Tensor<T> inp : inputs) {
+    		TileInfo tileInfo = TileInfo.build(inp.getName(), inp.getData().dimensionsAsLongArray(), 
+    				inp.getAxesOrderString(), new long[] {5L, 6L}, "");
+    		inputInfo.add(tileInfo);
+    	}
+    	List<TileInfo> outputInfo = new ArrayList<TileInfo>();
+    	TileInfo probsOutput = TileInfo.build("probs", null, CLOSE_SHM_CODE, null, CELLCAST_WHEEL_RESOURCE_DIR);
+    	probsOutput.setHalo(null, CELLCAST_WHEEL_RESOURCE_DIR);
+    	TileInfo distOutput = TileInfo.build("dists", null, CLOSE_SHM_CODE, null, CELLCAST_WHEEL_RESOURCE_DIR);
+    	distOutput.setHalo(null, CELLCAST_WHEEL_RESOURCE_DIR);
+    	
+    	outputInfo.add(probsOutput);
+    	outputInfo.add(probsOutput);
+    	
+    	TileMaker tileMaker = TileMaker.build(inputInfo, outputInfo);
+    	DenseMerger<T, R> merger = new DenseMerger<T, R>(tileMaker);
+        merger.configure(inputs);
+        return merger;
+    }
 
 	@Override
 	protected String buildModelCode() {

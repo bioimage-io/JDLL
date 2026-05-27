@@ -32,6 +32,7 @@ import io.bioimage.modelrunner.bioimageio.description.Axis;
 import io.bioimage.modelrunner.bioimageio.description.ModelDescriptor;
 import io.bioimage.modelrunner.bioimageio.description.TensorSpec;
 import io.bioimage.modelrunner.tensor.Tensor;
+import io.bioimage.modelrunner.utils.CommonUtils;
 import io.bioimage.modelrunner.utils.Constants;
 import io.bioimage.modelrunner.utils.IndexingUtils;
 import net.imglib2.FinalInterval;
@@ -687,6 +688,17 @@ public class TileMaker {
     				+ "'" + tensorName + "'.");
     	return tile.getImageDims();
     }
+	
+	public <T extends RealType<T> & NativeType<T>> List<Tensor<T>> createOutputTensors(T dtype) {
+		List<Tensor<T>> outputTensors = new ArrayList<Tensor<T>>();
+		for (TileInfo tt : this.outputTileInfo) {
+			long[] dims = getOutputImageSize(tt.getName());
+			outputTensors.add((Tensor<T>) Tensor.buildBlankTensor(tt.getName(), 
+																	tt.getImageAxesOrder(), 
+																	dims, T dtype));
+		}
+		return outputTensors;
+	}
     
     /**
      * Convert the array following given axes order into

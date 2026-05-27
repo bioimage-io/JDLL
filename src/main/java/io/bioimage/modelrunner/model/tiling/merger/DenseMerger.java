@@ -19,12 +19,18 @@
  */
 package io.bioimage.modelrunner.model.tiling.merger;
 
+import java.awt.Rectangle;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 
 import io.bioimage.modelrunner.model.detection.Detection;
+import io.bioimage.modelrunner.model.tiling.TileInfo;
+import io.bioimage.modelrunner.model.tiling.TileMaker;
+import io.bioimage.modelrunner.tensor.Tensor;
+import net.imglib2.type.NativeType;
+import net.imglib2.type.numeric.RealType;
 
 /**
  * Merges object detections produced from overlapping spatial tiles.
@@ -32,7 +38,21 @@ import io.bioimage.modelrunner.model.detection.Detection;
  * The merger shifts tile-local boxes back into full-image coordinates, clips
  * them to image bounds and removes duplicated detections with class-aware NMS.
  */
-public final class DenseMerger {
+public final class DenseMerger<T extends RealType<T> & NativeType<T>, R extends RealType<R> & NativeType<R>>
+extends Merger<Tensor<T>, Tensor<R>> {
+	
+	private final TileMaker tileMaker;
+    private long[] sizeArray;
+
+    private float tileOverlap = 0.15f;
+
+    private List<Tensor<T>> inputs = Collections.emptyList();
+    private List<InputImage> imageInputs = Collections.emptyList();
+    private List<long[]> referenceWindows = Collections.emptyList();
+    private long[] referenceWindow;
+    private List<Tensor<R>> reconstructed = Collections.emptyList();
+    private Tensor<R> outputPrototype;
+    private boolean reconstructedValid;
 
     private static final int X1 = 0;
     private static final int Y1 = 1;
@@ -40,153 +60,154 @@ public final class DenseMerger {
     private static final int Y2 = 3;
     private static final int WINDOW_LENGTH = 4;
 
-    private final long[] outputImageSize;
-
-    private List<TileDetections> tileDetections = new ArrayList<TileDetections>();
 
     public static final double DEFAULT_NMS_IOU_THRESHOLD = 0.5d;
 
-    public DenseMerger(long[] outputSize) {
-        if (outputSize == null || outputSize.length < WINDOW_LENGTH) {
-            throw new IllegalArgumentException("Output image size must be [x1, y1, x2, y2].");
+    public DenseMerger(final TileMaker tileMaker) {
+        if (tileMaker == null) {
+            throw new IllegalArgumentException("TileMaker cannot be null.");
         }
-        outputImageSize = outputSize;
+        this.tileMaker = tileMaker;
     }
 
-    public void addTileDetections(List<Detection> detections, long[] tilePos) {
-        tileDetections.add(new TileDetections(detections, tilePos));
+    @Override
+    public void configure(final List<Tensor<T>> inputs) {
+        this.inputs = inputs == null ? Collections.<Tensor<T>>emptyList() : inputs;
+        this.imageInputs = findImageInputs(this.inputs);
+        if (imageInputs.isEmpty()) {
+            throw new IllegalArgumentException("DetectionMerger needs at least one input tensor with x and y axes.");
+        }
+        final InputImage reference = imageInputs.get(0);
+        this.referenceWindow = new long[] { 0, 0, reference.width(), reference.height() };
+        this.referenceWindows = createReferenceWindows(reference);
+
+        this.reconstructed = Collections.emptyList();
+        this.outputPrototype = null;
+        this.reconstructedValid = false;
+        this.configured = true;
+        this.digested = referenceWindows.isEmpty();
     }
 
-    public List<Detection> merge() {
-        return merge(DEFAULT_NMS_IOU_THRESHOLD);
+	@Override
+	public List<Tensor<T>> get(int patchNumber) {
+        requireConfigured();
+        patchNumberValid(patchNumber);
+        return getTileMakerPatch(patchNumber);
+	}
+
+	@Override
+	public int getNPatches() {
+        requireConfigured();
+        return referenceWindows.size();
+	}
+
+    @Override
+    public void digest(final int patchNumber, final List<Tensor<R>> outputs) {
+        requireConfigured();
+        patchNumberValid(patchNumber);
+        detectionsByPatch.set(patchNumber, decodeBicOutputs(outputs));
+        reconstructed = Collections.emptyList();
+        reconstructedValid = false;
+        digested = allPatchesDigested();
     }
 
-    public List<Detection> merge(final double nmsIouThreshold) {
-        if (tileDetections == null || tileDetections.isEmpty()) {
+    @Override
+    public List<Tensor<R>> getReconstructed() {
+        requireConfigured();
+        requireDigested();
+        if (reconstructedValid) {
+            return reconstructed;
+        }
+        final List<Detection> mergedDetections = mergeDetections();
+        reconstructed = outputPrototype == null
+                ? Collections.<Tensor<R>>emptyList()
+                : Collections.singletonList(toBicTensor(mergedDetections));
+        reconstructedValid = true;
+        return reconstructed;
+    }
+
+    private List<InputImage> findImageInputs(final List<Tensor<T>> inputs) {
+        if (inputs == null || inputs.isEmpty()) {
             return Collections.emptyList();
         }
-        final List<Detection> shifted = new ArrayList<Detection>();
-        for (TileDetections tile : tileDetections) {
-            if (tile == null || tile.getDetections().isEmpty()) {
-                continue;
-            }
-            for (Detection detection : tile.getDetections()) {
-                Detection global = toGlobalDetection(detection, tile.getTilePosition());
-                if (global != null) {
-                    shifted.add(global);
-                }
+        final List<InputImage> imageInputs = new ArrayList<InputImage>();
+        for (Tensor<T> input : inputs) {
+            if (hasXY(input)) {
+                imageInputs.add(new InputImage(input));
             }
         }
-        return classAwareNms(shifted, nmsIouThreshold);
+        return Collections.unmodifiableList(imageInputs);
     }
 
-    private Detection toGlobalDetection(final Detection detection, final long[] window) {
-        if (detection == null || window == null || !isValid(detection)) {
-            return null;
-        }
-        if (window.length < WINDOW_LENGTH) {
-            throw new IllegalArgumentException("Tile window must be [x1, y1, x2, y2].");
-        }
-        long w = this.outputImageSize[X2] - this.outputImageSize[X1];
-        long h = this.outputImageSize[Y2] - this.outputImageSize[Y1];
-        long offsetX = window[X1] - this.outputImageSize[X1];
-        long offsetY = window[Y1] - this.outputImageSize[Y1];
-        double x1 = clip(detection.getX1() + offsetX, 0.0d, w);
-        double y1 = clip(detection.getY1() + offsetY, 0.0d, h);
-        double x2 = clip(detection.getX2() + offsetX, 0.0d, w);
-        double y2 = clip(detection.getY2() + offsetY, 0.0d, h);
-        if (x2 <= x1 || y2 <= y1) {
-            return null;
-        }
-        return new Detection(detection.getParentName(), detection.getBatchIndex(), x1, y1, x2, y2,
-                detection.getConfidence(), detection.getClassId());
+    private List<long[]> createReferenceWindows(final InputImage reference) {
+        return createTileMakerWindows(reference);
     }
 
-    private static List<Detection> classAwareNms(final List<Detection> detections,
-            final double iouThreshold) {
-        if (detections.isEmpty()) {
-            return Collections.emptyList();
+    private List<long[]> createTileMakerWindows(final InputImage reference) {
+        final List<long[]> positions = tileMaker.getTilePostionsInputImage(reference.tensor.getName());
+        final long[] tileSize = tileMaker.getInputTileSize(reference.tensor.getName());
+        final List<long[]> windows = new ArrayList<long[]>(positions.size());
+        for (long[] position : positions) {
+            windows.add(toXyxyWindow(position, tileSize, reference.axes));
         }
-        final double threshold = Double.isFinite(iouThreshold) && iouThreshold >= 0.0d
-                ? iouThreshold
-                : DEFAULT_NMS_IOU_THRESHOLD;
-        final List<Detection> sorted = new ArrayList<Detection>(detections);
-        sorted.sort(Comparator.comparingDouble(Detection::getConfidence).reversed());
+        return Collections.unmodifiableList(windows);
+    }
 
-        final List<Detection> kept = new ArrayList<Detection>();
-        for (Detection candidate : sorted) {
-            boolean duplicate = false;
-            for (Detection selected : kept) {
-                if (sameNmsGroup(candidate, selected) && iou(candidate, selected) > threshold) {
-                    duplicate = true;
-                    break;
-                }
-            }
-            if (!duplicate) {
-                kept.add(candidate);
+    private List<Tensor<T>> getTileMakerPatch(final int patchNumber) {
+        final List<Tensor<T>> patch = new ArrayList<Tensor<T>>(inputs.size());
+        for (Tensor<T> input : inputs) {
+            if (hasXY(input)) {
+                patch.add(tileMaker.getNthTileInput(input, patchNumber));
+            } else {
+                patch.add(input);
             }
         }
-        return kept;
+        return patch;
     }
 
-    private static boolean sameNmsGroup(final Detection a, final Detection b) {
-        return a.getBatchIndex() == b.getBatchIndex() && a.getClassId() == b.getClassId();
+    private static <T extends RealType<T> & NativeType<T>> boolean hasXY(final Tensor<T> tensor) {
+        return tensor != null
+                && tensor.getAxesOrderString().indexOf('x') >= 0
+                && tensor.getAxesOrderString().indexOf('y') >= 0;
     }
 
-    private static double iou(final Detection a, final Detection b) {
-        double x1 = Math.max(a.getX1(), b.getX1());
-        double y1 = Math.max(a.getY1(), b.getY1());
-        double x2 = Math.min(a.getX2(), b.getX2());
-        double y2 = Math.min(a.getY2(), b.getY2());
-        double intersection = area(x1, y1, x2, y2);
-        if (intersection <= 0.0d) {
-            return 0.0d;
+    private static long[] toXyxyWindow(final long[] tilePosition, final long[] tileSize, final String axes) {
+        final int x = axes.indexOf('x');
+        final int y = axes.indexOf('y');
+        if (x < 0 || y < 0 || tilePosition == null || tileSize == null
+                || tilePosition.length <= Math.max(x, y) || tileSize.length <= Math.max(x, y)) {
+            throw new IllegalArgumentException("Tile position and size must contain x and y dimensions.");
         }
-        double union = area(a.getX1(), a.getY1(), a.getX2(), a.getY2())
-                + area(b.getX1(), b.getY1(), b.getX2(), b.getY2())
-                - intersection;
-        return union <= 0.0d ? 0.0d : intersection / union;
+        return new long[] {
+                tilePosition[x],
+                tilePosition[y],
+                tilePosition[x] + tileSize[x],
+                tilePosition[y] + tileSize[y]
+        };
     }
 
-    private static double area(final double x1, final double y1, final double x2, final double y2) {
-        return Math.max(0.0d, x2 - x1) * Math.max(0.0d, y2 - y1);
-    }
+    private final class InputImage {
 
-    private static boolean isValid(final Detection detection) {
-        return Double.isFinite(detection.getX1())
-                && Double.isFinite(detection.getY1())
-                && Double.isFinite(detection.getX2())
-                && Double.isFinite(detection.getY2())
-                && Double.isFinite(detection.getConfidence())
-                && detection.getX2() > detection.getX1()
-                && detection.getY2() > detection.getY1();
-    }
+        private final Tensor<T> tensor;
+        private final String axes;
+        private final int xAxis;
+        private final int yAxis;
+        private final long[] dims;
 
-    private static double clip(final double value, final double min, final double max) {
-        return Math.max(min, Math.min(max, value));
-    }
-
-    private static final class TileDetections {
-
-        private final long[] tileWindow;
-        private final List<Detection> detections;
-
-        public TileDetections(final List<Detection> detections, long[] tileWindow) {
-            if (tileWindow == null) {
-                throw new IllegalArgumentException("Tile window cannot be null.");
-            }
-            this.tileWindow = tileWindow;
-            this.detections = detections == null
-                    ? Collections.<Detection>emptyList()
-                    : Collections.unmodifiableList(new ArrayList<Detection>(detections));
+        private InputImage(final Tensor<T> tensor) {
+            this.tensor = tensor;
+            this.axes = tensor.getAxesOrderString();
+            this.xAxis = axes.indexOf('x');
+            this.yAxis = axes.indexOf('y');
+            this.dims = tensor.getData().dimensionsAsLongArray();
         }
 
-        public long[] getTilePosition() {
-            return tileWindow;
+        private long width() {
+            return dims[xAxis];
         }
 
-        public List<Detection> getDetections() {
-            return detections;
+        private long height() {
+            return dims[yAxis];
         }
     }
 }
