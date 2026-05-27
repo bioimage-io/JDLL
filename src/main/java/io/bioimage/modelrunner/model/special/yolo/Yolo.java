@@ -25,7 +25,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.LinkedHashMap;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -51,6 +50,7 @@ import io.bioimage.modelrunner.model.python.methods.UndoLetterboxProcessingBound
 import io.bioimage.modelrunner.model.tiling.merger.DetectionMerger;
 import io.bioimage.modelrunner.model.tiling.merger.Merger;
 import io.bioimage.modelrunner.model.tiling.merger.NoTileMerger;
+import io.bioimage.modelrunner.model.special.common.TrainingCodeUtils;
 import io.bioimage.modelrunner.tensor.Tensor;
 import io.bioimage.modelrunner.tensor.shm.SharedMemoryArray;
 import net.imglib2.FinalInterval;
@@ -351,14 +351,14 @@ public class Yolo extends DLModelPytorchProtected {
 		String nl = System.lineSeparator();
 		return ""
 				+ "import contextlib, json, logging, os, random, shutil, sys" + nl
-				+ "_appose_stdout = sys.stdout" + nl
+				+ TrainingCodeUtils.apposeStdoutCapture()
 				+ "from ultralytics import YOLO" + nl
 				+ "from ultralytics.utils import LOGGER" + nl
-				+ "model_source = r'" + py(modelSource) + "'" + nl
-				+ "dataset_yaml = r'" + py(new File(datasetYamlPath).getAbsolutePath()) + "'" + nl
-				+ "output_weights = r'" + py(outputFile.getAbsolutePath()) + "'" + nl
-				+ "project = r'" + py(project) + "'" + nl
-				+ "run_name = r'" + py(runName) + "'" + nl
+				+ "model_source = r'" + TrainingCodeUtils.py(modelSource) + "'" + nl
+				+ "dataset_yaml = r'" + TrainingCodeUtils.py(new File(datasetYamlPath).getAbsolutePath()) + "'" + nl
+				+ "output_weights = r'" + TrainingCodeUtils.py(outputFile.getAbsolutePath()) + "'" + nl
+				+ "project = r'" + TrainingCodeUtils.py(project) + "'" + nl
+				+ "run_name = r'" + TrainingCodeUtils.py(runName) + "'" + nl
 				+ "os.makedirs(project, exist_ok=True)" + nl
 				+ "run_dir = os.path.join(project, run_name)" + nl
 				+ "preview_dir = os.path.join(run_dir, 'validation_preview')" + nl
@@ -380,32 +380,9 @@ public class Yolo extends DLModelPytorchProtected {
 				+ "preview_sample_count = 100" + nl
 				+ "preview_confidence = " + VALIDATION_PREVIEW_CONFIDENCE + nl
 				+ "state = {'step': 0, 'total_steps': 0, 'preview_paths': set(), 'preview_order': [], 'preview_results': {}, 'preview_epoch': 0, 'capture_preview': False}" + nl
-				+ "def _task_update(**kwargs):" + nl
-				+ "  current_stdout = sys.stdout" + nl
-				+ "  try:" + nl
-				+ "    sys.stdout = _appose_stdout" + nl
-				+ "    task.update(**kwargs)" + nl
-				//+ "    task.update('looooooooooooooooool')" + nl
-				+ "  finally:" + nl
-				+ "    sys.stdout = current_stdout" + nl
-				+ "def _scalar(value):" + nl
-				+ "  try:" + nl
-				+ "    if hasattr(value, 'detach'):" + nl
-				+ "      value = value.detach().cpu()" + nl
-				+ "    if hasattr(value, 'item'):" + nl
-				+ "      value = value.item()" + nl
-				+ "    return float(value)" + nl
-				+ "  except Exception:" + nl
-				+ "    return None" + nl
-				+ "def _clean_dict(values):" + nl
-				+ "  out = {}" + nl
-				+ "  if values is None:" + nl
-				+ "    return out" + nl
-				+ "  for k, v in dict(values).items():" + nl
-				+ "    sv = _scalar(v)" + nl
-				+ "    if sv is not None:" + nl
-				+ "      out[str(k)] = sv" + nl
-				+ "  return out" + nl
+				+ TrainingCodeUtils.taskUpdateFunction("_task_update")
+				+ TrainingCodeUtils.scalarFunction("_scalar", true)
+				+ TrainingCodeUtils.cleanDictFunction("_clean_dict", "_scalar")
 				+ "def _losses(trainer):" + nl
 				+ "  try:" + nl
 				+ "    return _clean_dict(trainer.label_loss_items(trainer.tloss, prefix='train'))" + nl
@@ -546,41 +523,20 @@ public class Yolo extends DLModelPytorchProtected {
 		Object type = event.info.get("type");
 		if ("progress".equals(type) && progressConsumer != null) {
 			progressConsumer.accept(new YoloTrainingProgress(
-					asInt(event.info.get("epoch"), (int) event.current),
-					asInt(event.info.get("step"), (int) event.current),
-					asInt(event.info.get("total_epochs"), 0),
-					asInt(event.info.get("total_steps"), (int) event.maximum),
-					asDoubleMap(event.info.get("losses")),
-					asDoubleMap(event.info.get("metrics"))));
+					TrainingCodeUtils.asInt(event.info.get("epoch"), (int) event.current),
+					TrainingCodeUtils.asInt(event.info.get("step"), (int) event.current),
+					TrainingCodeUtils.asInt(event.info.get("total_epochs"), 0),
+					TrainingCodeUtils.asInt(event.info.get("total_steps"), (int) event.maximum),
+					TrainingCodeUtils.asDoubleMap(event.info.get("losses")),
+					TrainingCodeUtils.asDoubleMap(event.info.get("metrics"))));
 		} else if ("preview".equals(type) && previewConsumer != null) {
 			Object checkpoint = event.info.get("checkpoint");
 			Object previewPath = event.info.get("preview_path");
 			previewConsumer.accept(new YoloValidationPreview(
-					asInt(event.info.get("epoch"), (int) event.current),
+					TrainingCodeUtils.asInt(event.info.get("epoch"), (int) event.current),
 					checkpoint == null ? null : checkpoint.toString(),
 					previewPath == null ? null : previewPath.toString()));
 		}
-	}
-
-	private static int asInt(Object value, int fallback) {
-		return value instanceof Number ? ((Number) value).intValue() : fallback;
-	}
-
-	private static Map<String, Double> asDoubleMap(Object value) {
-		Map<String, Double> result = new LinkedHashMap<String, Double>();
-		if (!(value instanceof Map)) {
-			return result;
-		}
-		for (Map.Entry<?, ?> entry : ((Map<?, ?>) value).entrySet()) {
-			if (entry.getKey() != null && entry.getValue() instanceof Number) {
-				result.put(entry.getKey().toString(), ((Number) entry.getValue()).doubleValue());
-			}
-		}
-		return result;
-	}
-
-	private static String py(String path) {
-		return path.replace("\\", "\\\\").replace("'", "\\'");
 	}
 	
 	/**

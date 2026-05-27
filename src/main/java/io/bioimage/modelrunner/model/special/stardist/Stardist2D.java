@@ -81,26 +81,8 @@ public class Stardist2D extends StardistAbstract {
 	 * @throws IOException if an I/O error occurs.
 	 * @throws BuildException 
 	 */
-	protected Stardist2D(String modelName, String baseDir, Map<String, Object> config) throws IOException, BuildException {
-		super(modelName, baseDir, config);
-		this.scaleRangeAxes = "xyc";
-	}
-	
-	private Stardist2D(String modelName, String baseDir) throws IOException, BuildException {
-		super(modelName, baseDir);
-		String axes = ((String) config.get("axes")).toUpperCase();
-		if (axes.contains("Z"))
-			throw new IllegalArgumentException("Trying to instantiate a StarDist3D model."
-					+ " Please use Stardist3D instead of Stardist2D.");
-		this.scaleRangeAxes = "xyc";
-	}
-	
-	private Stardist2D(ModelDescriptor descriptor) throws IOException, BuildException {
-		super(descriptor);
-		String axes = ((String) config.get("axes")).toUpperCase();
-		if (axes.contains("Z"))
-			throw new IllegalArgumentException("Trying to instantiate a StarDist3D model."
-					+ " Please use Stardist3D instead of Stardist2D.");
+	protected Stardist2D(String modelPath, Map<String, Object> configMap) throws IOException, BuildException {
+		super(modelPath, configMap);
 		this.scaleRangeAxes = "xyc";
 	}
 
@@ -179,81 +161,6 @@ public class Stardist2D extends StardistAbstract {
 	}
 	
 	/**
-	 * Initialize a Stardist2D using the format of the Bioiamge.io model zoo.
-	 * @param descriptor
-	 * 	the bioimage.io model descriptor
-	 * @return an instance of a Stardist2D model ready to be used
-     * @throws IOException If there's an I/O error.
-	 * @throws BuildException 
-	 */
-	public static Stardist2D fromBioimageioModel(ModelDescriptor descriptor) throws IOException, BuildException {
-		if (!descriptor.getConfig().getSpecMap().keySet().contains("stardist"))
-			throw new IllegalArgumentException("This Bioimage.io model does not correspond to a StarDist model.");
-		if (!descriptor.getModelFamily().equals(ModelDescriptor.STARDIST))
-			throw new RuntimeException("Please first install StarDist with 'StardistAbstract.installRequirements()'");
-		if (descriptor.getInputTensors().get(0).getAxesOrder().contains("z"))
-			throw new IllegalArgumentException("This StarDist model is 3D");
-		return new Stardist2D(descriptor);
-	}
-	
-	/**
-	 * Initialize one of the "official" pretrained Stardist 2D models.
-	 * By default, the model will be installed in the "models" folder inside the application
-	 * @param pretrainedModel
-	 * 	the name of the pretrained model. 
-	 * @param install
-	 * 	whether to force the download or to try to look if the model has already been installed before
-	 * @return an instance of a pretrained Stardist2D model ready to be used
-	 * @throws IOException if there is any error downloading the model, in the case it is needed
-	 * @throws InterruptedException if the download of the model is stopped
-	 * @throws BuildException 
-	 */
-	public static Stardist2D fromPretained(String pretrainedModel, boolean install) throws IOException, InterruptedException, BuildException {
-		return fromPretained(pretrainedModel, new File("models").getAbsolutePath(), install);
-	}
-	
-	/**
-	 * TODO add support for 2D_paper_dsb2018
-	 * Initialize one of the "official" pretrained Stardist 2D models
-	 * @param pretrainedModel
-	 * 	the name of the pretrained model.
-	 * @param installDir
-	 * 	the directory where the model wants to be installed
-	 * @param install
-	 * 	whether to force the installation or to try to look if the model has already been installed before
-	 * @return an instance of a pretrained Stardist2D model ready to be used
-	 * @throws IOException if there is any error downloading the model, in the case it is needed
-	 * @throws InterruptedException if the download of the model is stopped
-	 * @throws BuildException 
-	 */
-	public static Stardist2D fromPretained(String pretrainedModel, String installDir, boolean install) throws IOException, 
-																					InterruptedException, BuildException {
-		if ((pretrainedModel.equals("StarDist H&E Nuclei Segmentation")
-				|| pretrainedModel.equals("2D_versatile_he")) && !install) {
-			ModelDescriptor md = ModelDescriptorFactory.getModelsAtLocalRepo(installDir).stream()
-					.filter(mm ->mm.getName().equals("StarDist H&E Nuclei Segmentation")).findFirst().orElse(null);
-			if (md != null) return new Stardist2D(md);
-			return null;
-		} else if (pretrainedModel.equals("StarDist H&E Nuclei Segmentation")
-				|| pretrainedModel.equals("2D_versatile_he")) {
-			String path = BioimageioRepo.downloadModel(BioimageioDirectConnection.selectByID("chatty-frog"), installDir);
-			return Stardist2D.fromBioimageioModel(ModelDescriptorFactory.readFromLocalFile(path));
-		} else if ((pretrainedModel.equals("StarDist Fluorescence Nuclei Segmentation")
-				|| pretrainedModel.equals("2D_versatile_fluo")) && !install) {
-			ModelDescriptor md = ModelDescriptorFactory.getModelsAtLocalRepo(installDir).stream()
-					.filter(mm ->mm.getName().equals("StarDist Fluorescence Nuclei Segmentation")).findFirst().orElse(null);
-			if (md != null) return new Stardist2D(md);
-			return null;
-		} else if (pretrainedModel.equals("StarDist Fluorescence Nuclei Segmentation")
-				|| pretrainedModel.equals("2D_versatile_fluo")) {
-			String path = BioimageioRepo.downloadModel(BioimageioDirectConnection.selectByID("fearless-crab"), installDir);
-			return Stardist2D.fromBioimageioModel(ModelDescriptorFactory.readFromLocalFile(path));
-		} else {
-			throw new IllegalArgumentException("There is no Stardist2D model called: " + pretrainedModel);
-		}
-	}
-	
-	/**
 	 * Downloads pretrained.
 	 *
 	 * @param modelName the modelName parameter.
@@ -296,35 +203,5 @@ public class Stardist2D extends StardistAbstract {
 					+ " To find a list of available cellpose models, please run StarDist2D.getPretrainedList()");
 		}
 		return BioimageioRepo.downloadModel(descriptor, downloadDir, progressConsumer);
-	}
-	
-	
-	
-	/**
-	 * Main method to check functionality
-	 * @param args
-	 * 	nothing
-	 * @throws IOException nothing
-	 * @throws InterruptedException nothing
-	 * @throws RuntimeException nothing
-	 * @throws MambaInstallException nothing
-	 * @throws LoadEngineException nothing
-	 * @throws RunModelException nothing
-	 * @throws LoadModelException nothing
-	 * @throws BuildException 
-	 * @throws TaskException 
-	 */
-	public static void main(String[] args) throws IOException, InterruptedException, 
-													RuntimeException, 
-													LoadEngineException, 
-													RunModelException, LoadModelException, BuildException, TaskException {
-		Stardist2D model = Stardist2D.fromPretained("2D_versatile_fluo", false);
-		model.installRequirements();
-		
-		RandomAccessibleInterval<FloatType> img = ArrayImgs.floats(new long[] {512, 512});
-		
-		Map<String, RandomAccessibleInterval<FloatType>> res = model.run(img);
-		model.close();
-		System.out.println(true);
 	}
 }

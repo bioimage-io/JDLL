@@ -21,16 +21,11 @@ package io.bioimage.modelrunner.model.special.stardist;
 
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
-import java.lang.reflect.Array;
-import java.nio.file.Files;
-import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.function.Consumer;
@@ -43,21 +38,19 @@ import org.apposed.appose.Service.ResponseType;
 import org.apposed.appose.Service.Task;
 import org.apposed.appose.Service.TaskStatus;
 import org.apposed.appose.TaskEvent;
-import org.apposed.appose.builder.PixiBuilder;
 import org.apposed.appose.TaskException;
-import org.apposed.appose.Builder.ProgressConsumer;
-import org.apposed.appose.util.Environments;
 import org.apposed.appose.util.Messages;
 
 import io.bioimage.modelrunner.bioimageio.description.ModelDescriptor;
-import io.bioimage.modelrunner.bioimageio.description.ModelDescriptorFactory;
 import io.bioimage.modelrunner.exceptions.LoadModelException;
 import io.bioimage.modelrunner.exceptions.RunModelException;
-import io.bioimage.modelrunner.model.BaseModel;
+import io.bioimage.modelrunner.gui.custom.stardist.StardistModelRegistry;
 import io.bioimage.modelrunner.model.processing.Processing;
 import io.bioimage.modelrunner.model.python.DLModelPytorchProtected;
+import io.bioimage.modelrunner.model.python.envs.PixiEnvironmentResolver;
 import io.bioimage.modelrunner.model.python.envs.PixiEnvironmentManager;
 import io.bioimage.modelrunner.model.python.envs.PixiEnvironmentSpec;
+import io.bioimage.modelrunner.model.special.common.TrainingCodeUtils;
 import io.bioimage.modelrunner.system.GpuCompatibility;
 import io.bioimage.modelrunner.system.PlatformDetection;
 import io.bioimage.modelrunner.tensor.Tensor;
@@ -88,17 +81,15 @@ public abstract class StardistAbstract extends DLModelPytorchProtected {
 	
 	private final String modelDir;
 	
-	protected final String name;
+	private final String mpkPath;
 	
-	protected final String basedir;
+	protected final String name;
 	
 	protected String envString = "default";
 	
 	protected Double threshold = null;
 	
 	protected final int nChannels;
-	
-	protected final String axes;
 	
 	protected Map<String, Object> config;
 	
@@ -136,8 +127,6 @@ public abstract class StardistAbstract extends DLModelPytorchProtected {
 	private static final String COMMON_CELLCAST_ENV_NAME = "cellcast-jdll";
 
 	private static final String CELLCAST_WHEEL_RESOURCE_DIR = "wheels/cellcast";
-
-	private static final String JDLL_CACHE_DIR_NAME = "jdll";
 
 	private static final String WHEELS_CACHE_DIR_NAME = "wheels";
 	
@@ -266,170 +255,43 @@ public abstract class StardistAbstract extends DLModelPytorchProtected {
 	 * @throws IOException if an I/O error occurs.
 	 * @throws BuildException 
 	 */
-	protected StardistAbstract(String modelName, String baseDir, Map<String, Object> config) throws BuildException, IOException {
-		super(null, null, null, new File(baseDir, modelName).getAbsolutePath(), new HashMap<String, Object>(), true);
-		this.name = modelName;
-		this.basedir = baseDir;
-		this.modelDir = new File(baseDir, modelName).getAbsolutePath();
-		this.config = config;
+	protected StardistAbstract(String modelPath, Map<String, Object> configMap) throws BuildException, IOException {
+		super(null, null, null, new File(modelPath).getAbsolutePath(), new HashMap<String, Object>(), true);
+		String mpkPath = StardistModelRegistry.findMpk(modelPath).toAbsolutePath().toString();
+		if (modelPath.endsWith(StardistModelRegistry.STARDIST_WEIGHTS_EXTENSION)) {
+			this.modelDir = new File(modelPath).getParentFile().getAbsolutePath();
+			this.mpkPath = new File(modelPath).getAbsolutePath();
+		} else if (mpkPath != null) {
+			this.modelDir = new File(modelPath).getAbsolutePath();
+			this.mpkPath = new File(mpkPath).getAbsolutePath();
+		} else {
+			throw new IllegalArgumentException("Path provided is not a StarDist .mpk model");
+		}
+		this.name = new File(modelDir).getName();
+		this.config = configMap;
 		this.nChannels = ((Number) config.get("n_channel_in")).intValue();
-		this.axes = inferAxes(config);
 	}
-
-	private String inferAxes(Map<String, Object> config) {
-		if (config.get("axes") != null)
-			return ((String) config.get("axes")).toLowerCase();
-		return this.is2D() ? "yxc" : "zyxc";
-	}
-	
-	/**
-	 * Checks files present.
-	 *
-	 * @param modelDir the modelDir parameter.
-	 * @throws IOException if an I/O error occurs.
-	 */
-	private static void checkFilesPresent(String modelDir) throws IOException {
-		if (new File(modelDir, "config.json").isFile() == false && new File(modelDir, Constants.RDF_FNAME).isFile() == false)
-			throw new IllegalArgumentException("No 'config.json' file found in the model directory");
-		//else if (new File(modelDir, "config.json").isFile() == false)
-		//	createConfigFromBioimageio(null, modelDir);
-		if (new File(modelDir, "thresholds.json").isFile() == false && new File(modelDir, Constants.RDF_FNAME).isFile() == false)
-			throw new IllegalArgumentException("No 'thresholds.json' file found in the model directory");
-		//else if (new File(modelDir, "thresholds.json").isFile() == false)
-		//	createThresholdsFromBioimageio(null, modelDir);
-	}	
 
     /**
      * Resolves the environment specification for the current machine.
+     * The CellCast wheel is copied from the jar into a persistent user cache so
+     * Pixi can reference it through a stable filesystem path.
      *
-     * @param installationDir
-     *     the base directory where the environment should live
-     * @param environmentDirectoryName
-     *     the directory name to use for the environment
      * @return the resolved environment specification
      */
     public static PixiEnvironmentSpec resolvePytorchEnv() {
-        final File cellcastWheel = resolveCellcastWheelInCache();
-        final String pixiTemplate = readClasspathResourceAsString(PIXI_TOML);
-        final String pixiTomlContent = String.format(Locale.ROOT, pixiTemplate,
-                COMMON_CELLCAST_ENV_NAME, currentPixiPlatform(), toPixiPath(cellcastWheel));
-
-        final String selectedEnvironment = "default";
-
-        final File environmentDirectory = new File(Environments.apposeEnvsDir(), COMMON_CELLCAST_ENV_NAME);
-        return new PixiEnvironmentSpec(
-                selectedEnvironment,
-                pixiTomlContent,
-                environmentDirectory,
-                new ArrayList<String>()
-        );
-    }
-
-    private static File resolveCellcastWheelInCache() {
-        final String resourcePath = selectCellcastWheelResource();
-        final String wheelName = resourcePath.substring(resourcePath.lastIndexOf('/') + 1);
-        final File wheelsDir = new File(userCacheDir(), WHEELS_CACHE_DIR_NAME);
-        final File cachedWheel = new File(wheelsDir, wheelName);
-
-        if (cachedWheel.isFile() && cachedWheel.length() > 0) {
-            return cachedWheel;
-        }
-
-        if (!wheelsDir.isDirectory() && !wheelsDir.mkdirs()) {
-            throw new RuntimeException("Could not create CellCast wheel cache directory: "
-                    + wheelsDir.getAbsolutePath());
-        }
-
-        try (InputStream is = StardistAbstract.class.getClassLoader().getResourceAsStream(resourcePath)) {
-            if (is == null) {
-                throw new RuntimeException("Required CellCast wheel resource not found: " + resourcePath);
-            }
-            Files.copy(is, cachedWheel.toPath(), StandardCopyOption.REPLACE_EXISTING);
-        } catch (IOException e) {
-            throw new RuntimeException("Could not cache CellCast wheel to: "
-                    + cachedWheel.getAbsolutePath(), e);
-        }
-        return cachedWheel;
-    }
-
-    private static File userCacheDir() {
-        final String base;
-        if (PlatformDetection.isWindows()) {
-            String localAppData = System.getenv("LOCALAPPDATA");
-            if (localAppData != null && !localAppData.trim().isEmpty()) {
-                base = localAppData;
-            } else {
-                base = new File(System.getProperty("user.home"), "AppData" + File.separator + "Local").getAbsolutePath();
-            }
-        } else if (PlatformDetection.isMacOS()) {
-            base = new File(System.getProperty("user.home"), "Library" + File.separator + "Caches").getAbsolutePath();
-        } else {
-            String xdgCache = System.getenv("XDG_CACHE_HOME");
-            if (xdgCache != null && !xdgCache.trim().isEmpty()) {
-                base = xdgCache;
-            } else {
-                base = new File(System.getProperty("user.home"), ".cache").getAbsolutePath();
-            }
-        }
-        return new File(base, JDLL_CACHE_DIR_NAME);
-    }
-
-    private static String selectCellcastWheelResource() {
-        final String wheelName;
-        final String arch = PlatformDetection.getArch();
-        if (PlatformDetection.isLinux()) {
-            if (PlatformDetection.ARCH_X86_64.equals(arch)) {
-                wheelName = "cellcast-0.2.1.dev0-cp37-abi3-manylinux_2_17_x86_64.manylinux2014_x86_64.whl";
-            } else if (PlatformDetection.ARCH_ARM64.equals(arch) || PlatformDetection.ARCH_AARCH64.equals(arch)) {
-                wheelName = "cellcast-0.2.1.dev0-cp37-abi3-manylinux_2_28_aarch64.whl";
-            } else {
-                throw new RuntimeException("Unsupported Linux architecture for CellCast: " + arch);
-            }
-        } else if (PlatformDetection.isMacOS()) {
-            if (PlatformDetection.ARCH_X86_64.equals(arch) || PlatformDetection.isUsingRosseta()) {
-                wheelName = "cellcast-0.2.1.dev0-cp37-abi3-macosx_10_12_x86_64.whl";
-            } else if (PlatformDetection.ARCH_ARM64.equals(arch) || PlatformDetection.ARCH_AARCH64.equals(arch)) {
-                wheelName = "cellcast-0.2.1.dev0-cp37-abi3-macosx_11_0_arm64.whl";
-            } else {
-                throw new RuntimeException("Unsupported macOS architecture for CellCast: " + arch);
-            }
-        } else if (PlatformDetection.isWindows()) {
-            if (PlatformDetection.ARCH_X86_64.equals(arch)) {
-                wheelName = "cellcast-0.2.1.dev0-cp37-abi3-win_amd64.whl";
-            } else {
-                throw new RuntimeException("Unsupported Windows architecture for CellCast: " + arch);
-            }
-        } else {
-            throw new RuntimeException("Unsupported operating system for CellCast: " + PlatformDetection.getOs());
-        }
-        return CELLCAST_WHEEL_RESOURCE_DIR + "/" + wheelName;
-    }
-
-    private static String currentPixiPlatform() {
-        final String arch = PlatformDetection.getArch();
-        if (PlatformDetection.isLinux()) {
-            if (PlatformDetection.ARCH_X86_64.equals(arch)) {
-                return "linux-64";
-            }
-            if (PlatformDetection.ARCH_ARM64.equals(arch) || PlatformDetection.ARCH_AARCH64.equals(arch)) {
-                return "linux-aarch64";
-            }
-        } else if (PlatformDetection.isMacOS()) {
-            if ((PlatformDetection.ARCH_ARM64.equals(arch)
-                    || PlatformDetection.ARCH_AARCH64.equals(arch))
-                    && !PlatformDetection.isUsingRosseta()) {
-                return "osx-arm64";
-            }
-            return "osx-64";
-        } else if (PlatformDetection.isWindows() && PlatformDetection.ARCH_X86_64.equals(arch)) {
-            return "win-64";
-        }
-        throw new RuntimeException("Unsupported Pixi platform for CellCast: "
-                + PlatformDetection.getOs() + "-" + arch);
-    }
-
-    private static String toPixiPath(File file) {
-        return file.getAbsolutePath().replace('\\', '/');
+    	String wheelResource = PixiEnvironmentResolver.selectResourceByCurrentPlatform(
+    			CELLCAST_WHEEL_RESOURCE_DIR + "/cellcast-0.2.1.dev0-cp37-abi3-manylinux_2_17_x86_64.manylinux2014_x86_64.whl",
+    			CELLCAST_WHEEL_RESOURCE_DIR + "/cellcast-0.2.1.dev0-cp37-abi3-manylinux_2_28_aarch64.whl",
+    			CELLCAST_WHEEL_RESOURCE_DIR + "/cellcast-0.2.1.dev0-cp37-abi3-macosx_10_12_x86_64.whl",
+    			CELLCAST_WHEEL_RESOURCE_DIR + "/cellcast-0.2.1.dev0-cp37-abi3-macosx_11_0_arm64.whl",
+    			CELLCAST_WHEEL_RESOURCE_DIR + "/cellcast-0.2.1.dev0-cp37-abi3-win_amd64.whl",
+    			"CellCast");
+        File cellcastWheel = PixiEnvironmentResolver.cacheClasspathResource(wheelResource, WHEELS_CACHE_DIR_NAME);
+        return PixiEnvironmentResolver.fromTemplate(COMMON_CELLCAST_ENV_NAME, PIXI_TOML,
+                COMMON_CELLCAST_ENV_NAME,
+                PixiEnvironmentResolver.currentPixiPlatform(),
+                PixiEnvironmentResolver.toPixiPath(cellcastWheel));
     }
 	
 	/**
@@ -542,131 +404,9 @@ public abstract class StardistAbstract extends DLModelPytorchProtected {
 		return null;
 	}
 	
-	private <T extends RealType<T> & NativeType<T>, R extends RealType<R> & NativeType<R>> 
-	List<Tensor<T>> runNoBatch(List<Tensor<R>> inputTensors)
-			throws RunModelException  {
-		try {
-			Map<String, RandomAccessibleInterval<T>> outputs = run(inputTensors.get(0).getData());
-			List<Tensor<T>> outTensors = new ArrayList<Tensor<T>>();
-			for (Entry<String, RandomAccessibleInterval<T>> entry : outputs.entrySet()) {
-				if (entry.getValue() == null)
-					continue;
-				String axesOrder = "xy";
-				if (entry.getValue().dimensionsAsLongArray().length > 2 && this.is2D())
-					axesOrder += "c";
-				else if (entry.getValue().dimensionsAsLongArray().length == 3 && this.is3D())
-					axesOrder += "z";
-				else if (entry.getValue().dimensionsAsLongArray().length > 3 && this.is3D())
-					axesOrder += "zc";
-				else if (entry.getValue().dimensionsAsLongArray().length == 1)
-					axesOrder = "i";
-				Tensor<T> tt = Tensor.build(entry.getKey(), axesOrder, entry.getValue());
-				// TODO
-				if (!entry.getKey().equals("mask"))
-					continue;
-				outTensors.add(tt);
-			}
-			return outTensors;
-		} catch (TaskException | InterruptedException | IOException e) {
-			throw new RunModelException(Messages.stackTrace(e));
-		}
-	}
-	
-	private <T extends RealType<T> & NativeType<T>, R extends RealType<R> & NativeType<R>> 
-	List<Tensor<T>> runBatch(List<Tensor<R>> inputTensors) 
-			throws RunModelException {
-		int bPos = inputTensors.get(0).getAxesOrderString().indexOf("b");
-		if (bPos != 0)
-			throw new IllegalArgumentException("The Batch Size (b) should always be in the first dimension -> " + inputTensors.get(0).getAxesOrderString());
-		int nBatches = inputTensors.get(0).getShape()[bPos];
-		List<Tensor<T>> outTensors = runBatchPosOne(inputTensors, bPos, nBatches) ;
-		try {
-			for (int n = 1; n < nBatches; n ++ ) {
-				RandomAccessibleInterval<R> data = Views.hyperSlice(inputTensors.get(0).getData(), bPos, n);
-				Map<String, RandomAccessibleInterval<T>> outputs = run(data);
-				for (Entry<String, RandomAccessibleInterval<T>> entry : outputs.entrySet()) {
-					if (entry.getValue() == null)
-						continue;
-					// TODO
-					if (!entry.getKey().equals("mask"))
-						continue;
-					Tensor<T> tensor = outTensors.stream()
-							.filter(ten -> ten.getName().equals(entry.getKey())).findFirst().orElse(null);
-					LoopBuilder.setImages( Views.hyperSlice(tensor.getData(), bPos, n), entry.getValue() )
-						.multiThreaded().forEachPixel( ( i, o ) -> i.set( o ) );
-				}
-			}
-			return outTensors;
-		} catch (TaskException | InterruptedException | IOException e) {
-			throw new RunModelException(Messages.stackTrace(e));
-		}
-	}
-
-	private <T extends RealType<T> & NativeType<T>, R extends RealType<R> & NativeType<R>> 
-	List<Tensor<T>> runBatchPosOne(List<Tensor<R>> inputTensors, int bPos, int nBatches) 
-			throws RunModelException {
-		List<Tensor<T>> outTensors = new ArrayList<Tensor<T>>();
-		try {
-			RandomAccessibleInterval<R> data = Views.hyperSlice(inputTensors.get(0).getData(), bPos, 0);
-			Map<String, RandomAccessibleInterval<T>> outputs = run(data);
-			for (Entry<String, RandomAccessibleInterval<T>> entry : outputs.entrySet()) {
-				if (entry.getValue() == null)
-					continue;
-				String axesOrder = "bxy";
-				if (entry.getValue().dimensionsAsLongArray().length > 2 && this.is2D())
-					axesOrder += "c";
-				else if (entry.getValue().dimensionsAsLongArray().length == 3 && this.is3D())
-					axesOrder += "z";
-				else if (entry.getValue().dimensionsAsLongArray().length > 3 && this.is3D())
-					axesOrder += "zc";
-				else if (entry.getValue().dimensionsAsLongArray().length == 1)
-					axesOrder = "bi";
-				// TODO
-				if (!entry.getKey().equals("mask"))
-					continue;
-				ArrayImgFactory<T> allBatchesOut = new ArrayImgFactory<>(entry.getValue().getType());
-				long[] outDims = new long[1 + entry.getValue().dimensionsAsLongArray().length];
-				outDims[0] = nBatches;
-				for (int i = 1; i < outDims.length; i ++) outDims[i] = entry.getValue().dimensionsAsLongArray()[i - 1];
-				ArrayImg<T, ?> output = allBatchesOut.create(outDims);
-				Tensor<T> tt = Tensor.build(entry.getKey(), axesOrder, output);
-				outTensors.add(tt);
-				LoopBuilder.setImages( Views.hyperSlice(output, bPos, 0), entry.getValue() )
-					.multiThreaded().forEachPixel( ( i, o ) -> i.set( o ) );
-			}
-			return outTensors;
-		} catch (TaskException | InterruptedException | IOException e) {
-			throw new RunModelException(Messages.stackTrace(e));
-		}
-	}
-	
 	public <T extends RealType<T> & NativeType<T>, R extends RealType<R> & NativeType<R>> 
 	Map<String, RandomAccessibleInterval<R>> run(RandomAccessibleInterval<T> img) throws InterruptedException, TaskException, IOException {
-		checkInput(img);
-		shma = SharedMemoryArray.createSHMAFromRAI(img, false, false);
-		String code = "";
-		if (!loaded) {
-			code += createImportsCode() + System.lineSeparator();
-		}
-		
-		code += createEncodeImageScript() + System.lineSeparator();
-		if (this.threshold != null) {
-			code += String.format("model.thresholds = dict (prob=%s, nms=model.thresholds.nms)", threshold) + System.lineSeparator();
-		}
-		code += RUN_MODEL_CODE + System.lineSeparator();
-		
-		Task task = python.task(code);
-		task.waitFor();
-		if (task.status == TaskStatus.CANCELED)
-			throw new RuntimeException("Task canceled");
-		else if (task.status == TaskStatus.FAILED)
-			throw new RuntimeException(task.error);
-		else if (task.status == TaskStatus.CRASHED)
-			throw new RuntimeException(task.error);
-		loaded = true;
-		
-		
-		return reconstructOutputs(task);
+		return null;
 	}
 	
 	protected <T extends RealType<T> & NativeType<T>> 
@@ -811,7 +551,7 @@ public abstract class StardistAbstract extends DLModelPytorchProtected {
 			Map<String, Object> config) {
 		String nl = System.lineSeparator();
 		boolean hasGtDir = gtDir != null && !gtDir.trim().isEmpty();
-		String gtDirCode = hasGtDir ? "gt_dir = r'" + py(new File(gtDir).getAbsolutePath()) + "'" + nl : "";
+		String gtDirCode = hasGtDir ? "gt_dir = r'" + TrainingCodeUtils.py(new File(gtDir).getAbsolutePath()) + "'" + nl : "";
 		String gtDirArgument = hasGtDir ? "gt_dir=gt_dir, " : "";
 		String safeImageChannels = imageChannels == null || imageChannels.trim().isEmpty()
 				? "grayscale" : imageChannels.trim();
@@ -821,34 +561,21 @@ public abstract class StardistAbstract extends DLModelPytorchProtected {
 				+ "import contextlib, json, os, sys" + nl
 				+ "from pathlib import Path" + nl
 				+ "import numpy as np" + nl
-				+ "_appose_stdout = sys.stdout" + nl
+				+ TrainingCodeUtils.apposeStdoutCapture()
 				+ "import cellcast.training.stardist_2d as train" + nl
-				+ "data_dir = r'" + py(new File(dataDir).getAbsolutePath()) + "'" + nl
+				+ "data_dir = r'" + TrainingCodeUtils.py(new File(dataDir).getAbsolutePath()) + "'" + nl
 				+ gtDirCode
-				+ "output_dir = Path(r'" + py(new File(outputDir).getAbsolutePath()) + "')" + nl
+				+ "output_dir = Path(r'" + TrainingCodeUtils.py(new File(outputDir).getAbsolutePath()) + "')" + nl
 				+ "preview_dir = output_dir / 'previews'" + nl
 				+ "preview_manifest_path = preview_dir / 'latest.json'" + nl
 				+ "output_dir.mkdir(parents=True, exist_ok=True)" + nl
 				+ "preview_dir.mkdir(parents=True, exist_ok=True)" + nl
 				+ "stardist_log_path = output_dir / 'training.log'" + nl
-				+ "config = json.loads(r'''" + toJson(config) + "''')" + nl
+				+ "config = json.loads(r'''" + TrainingCodeUtils.toJson(config) + "''')" + nl
 				+ "state = {'total_steps': int(config.get('epochs', 0)) * int(config.get('steps_per_epoch', 0)), 'total_epochs': int(config.get('epochs', 0))}" + nl
-				+ "def _task_update(**kwargs):" + nl
-				+ "  current_stdout = sys.stdout" + nl
-				+ "  try:" + nl
-				+ "    sys.stdout = _appose_stdout" + nl
-				+ "    task.update(**kwargs)" + nl
-				+ "  finally:" + nl
-				+ "    sys.stdout = current_stdout" + nl
-				+ "def _scalar(value):" + nl
-				+ "  try:" + nl
-				+ "    if value is None:" + nl
-				+ "      return None" + nl
-				+ "    return float(value)" + nl
-				+ "  except Exception:" + nl
-				+ "    return None" + nl
-				+ "def _clean(values):" + nl
-				+ "  return {str(k): float(v) for k, v in dict(values).items() if _scalar(v) is not None}" + nl
+				+ TrainingCodeUtils.taskUpdateFunction("_task_update")
+				+ TrainingCodeUtils.scalarFunction("_scalar", false)
+				+ TrainingCodeUtils.cleanDictFunction("_clean", "_scalar")
 				+ "def _atomic_npy_save(path, array):" + nl
 				+ "  tmp_path = str(path) + '.tmp'" + nl
 				+ "  with open(tmp_path, 'wb') as f:" + nl
@@ -904,8 +631,7 @@ public abstract class StardistAbstract extends DLModelPytorchProtected {
 				+ "      json.dump(manifest, f)" + nl
 				+ "    _task_update(message='StarDist validation preview epoch %d' % epoch, current=epoch, maximum=state['total_epochs'], info={'type': 'preview', 'epoch': epoch, 'preview_path': str(preview_manifest_path)})" + nl
 				+ "with open(stardist_log_path, 'a', encoding='utf-8') as stardist_log, contextlib.redirect_stdout(stardist_log), contextlib.redirect_stderr(stardist_log):" + nl
-				+ "  result = train.train_stardist_2d_folder(data_dir=data_dir, " + gtDirArgument + "output_dir=str(output_dir), gpu=" + (gpu ? "True" : "False") + ", image_channels='" + py(safeImageChannels) + "', label_color_mode='" + py(safeLabelColorMode) + "', valid_fraction=" + validFraction + ", config=config, on_train_begin=on_train_begin, on_step_end=on_step_end, on_validation_end=on_validation_end)" + nl
-				//+ "result = train.train_stardist_2d_folder(data_dir=data_dir, " + gtDirArgument + "output_dir=str(output_dir), gpu=" + (gpu ? "True" : "False") + ", image_channels='" + py(safeImageChannels) + "', label_color_mode='" + py(safeLabelColorMode) + "', valid_fraction=" + validFraction + ", config=config, on_train_begin=on_train_begin, on_step_end=on_step_end, on_validation_end=on_validation_end)" + nl
+				+ "  result = train.train_stardist_2d_folder(data_dir=data_dir, " + gtDirArgument + "output_dir=str(output_dir), gpu=" + (gpu ? "True" : "False") + ", image_channels='" + TrainingCodeUtils.py(safeImageChannels) + "', label_color_mode='" + TrainingCodeUtils.py(safeLabelColorMode) + "', valid_fraction=" + validFraction + ", config=config, on_train_begin=on_train_begin, on_step_end=on_step_end, on_validation_end=on_validation_end)" + nl
 				+ "task.outputs(result=str(result.get('output_dir', str(output_dir))))" + nl;
 	}
 
@@ -922,93 +648,18 @@ public abstract class StardistAbstract extends DLModelPytorchProtected {
 		Object type = event.info.get("type");
 		if ("progress".equals(type) && progressConsumer != null) {
 			progressConsumer.accept(new StardistTrainingProgress(
-					asInt(event.info.get("epoch"), (int) event.current),
-					asInt(event.info.get("step"), (int) event.current),
-					asInt(event.info.get("total_epochs"), 0),
-					asInt(event.info.get("total_steps"), (int) event.maximum),
-					asDoubleMap(event.info.get("losses")),
-					asDoubleMap(event.info.get("metrics"))));
+					TrainingCodeUtils.asInt(event.info.get("epoch"), (int) event.current),
+					TrainingCodeUtils.asInt(event.info.get("step"), (int) event.current),
+					TrainingCodeUtils.asInt(event.info.get("total_epochs"), 0),
+					TrainingCodeUtils.asInt(event.info.get("total_steps"), (int) event.maximum),
+					TrainingCodeUtils.asDoubleMap(event.info.get("losses")),
+					TrainingCodeUtils.asDoubleMap(event.info.get("metrics"))));
 		} else if ("preview".equals(type) && previewConsumer != null) {
 			Object previewPath = event.info.get("preview_path");
 			previewConsumer.accept(new StardistValidationPreview(
-					asInt(event.info.get("epoch"), (int) event.current),
+					TrainingCodeUtils.asInt(event.info.get("epoch"), (int) event.current),
 					previewPath == null ? null : previewPath.toString()));
 		}
-	}
-
-	private static int asInt(Object value, int fallback) {
-		return value instanceof Number ? ((Number) value).intValue() : fallback;
-	}
-
-	private static Map<String, Double> asDoubleMap(Object value) {
-		Map<String, Double> result = new LinkedHashMap<String, Double>();
-		if (!(value instanceof Map)) {
-			return result;
-		}
-		for (Map.Entry<?, ?> entry : ((Map<?, ?>) value).entrySet()) {
-			if (entry.getKey() != null && entry.getValue() instanceof Number) {
-				result.put(entry.getKey().toString(), ((Number) entry.getValue()).doubleValue());
-			}
-		}
-		return result;
-	}
-
-	private static String py(String path) {
-		return path == null ? "" : path.replace("\\", "\\\\").replace("'", "\\'");
-	}
-
-	private static String toJson(Object value) {
-		if (value == null) {
-			return "null";
-		}
-		if (value instanceof String) {
-			return "\"" + ((String) value).replace("\\", "\\\\").replace("\"", "\\\"") + "\"";
-		}
-		if (value instanceof Boolean || value instanceof Number) {
-			if (value instanceof Double && !Double.isFinite(((Double) value).doubleValue())) {
-				return "null";
-			}
-			if (value instanceof Float && !Float.isFinite(((Float) value).floatValue())) {
-				return "null";
-			}
-			return String.format(Locale.ROOT, "%s", value);
-		}
-		if (value instanceof Map) {
-			StringBuilder builder = new StringBuilder("{");
-			boolean first = true;
-			for (Map.Entry<?, ?> entry : ((Map<?, ?>) value).entrySet()) {
-				if (!first) {
-					builder.append(',');
-				}
-				first = false;
-				builder.append(toJson(String.valueOf(entry.getKey()))).append(':').append(toJson(entry.getValue()));
-			}
-			return builder.append('}').toString();
-		}
-		if (value instanceof Iterable) {
-			StringBuilder builder = new StringBuilder("[");
-			boolean first = true;
-			for (Object item : (Iterable<?>) value) {
-				if (!first) {
-					builder.append(',');
-				}
-				first = false;
-				builder.append(toJson(item));
-			}
-			return builder.append(']').toString();
-		}
-		if (value.getClass().isArray()) {
-			StringBuilder builder = new StringBuilder("[");
-			int length = Array.getLength(value);
-			for (int i = 0; i < length; i++) {
-				if (i > 0) {
-					builder.append(',');
-				}
-				builder.append(toJson(Array.get(value, i)));
-			}
-			return builder.append(']').toString();
-		}
-		return toJson(String.valueOf(value));
 	}
 	
 	/**
@@ -1019,8 +670,8 @@ public abstract class StardistAbstract extends DLModelPytorchProtected {
 	 * @throws IOException if an I/O error occurs.
 	 * @throws BuildException 
 	 */
-	public static StardistAbstract init(String modelDir) throws IOException, BuildException {
-		File modelDirFile = new File(modelDir);
+	public static StardistAbstract init(String modelPath) throws IOException, BuildException {
+		File modelDirFile = new File(modelPath);
 		String modelName = modelDirFile.getName();
 		String baseDir = modelDirFile.getParentFile().getAbsolutePath();
 		//checkFilesPresent(modelDir);
@@ -1029,7 +680,7 @@ public abstract class StardistAbstract extends DLModelPytorchProtected {
 		if (axes.contains("Z"))
 			return new Stardist3D(modelName, baseDir, configMap);
 		else
-			return new Stardist2D(modelName, baseDir, configMap);
+			return new Stardist2D(modelPath, configMap);
 	}
 
     /**
