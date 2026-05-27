@@ -41,7 +41,6 @@ import org.apposed.appose.util.Messages;
 import io.bioimage.modelrunner.exceptions.LoadModelException;
 import io.bioimage.modelrunner.exceptions.RunModelException;
 import io.bioimage.modelrunner.gui.custom.stardist.StardistModelRegistry;
-import io.bioimage.modelrunner.model.BaseModel;
 import io.bioimage.modelrunner.model.InferenceProgress;
 import io.bioimage.modelrunner.model.python.DLModelPytorchProtected;
 import io.bioimage.modelrunner.model.python.envs.PixiEnvironmentManager;
@@ -71,11 +70,6 @@ public final class StarDist extends DLModelPytorchProtected {
 		THREE_D
 	}
 
-	private static final String MODULE_2D = "StarDist2D";
-	private static final String MODULE_3D = "StarDist3D";
-	private static final String CONFIG_2D = "Config2D";
-	private static final String CONFIG_3D = "Config3D";
-
 	private static final String PIXI_TOML = "tomls/cellcast-pixi.toml";
 	private static final String COMMON_CELLCAST_ENV_NAME = "cellcast-jdll";
 	private static final String CELLCAST_WHEEL_RESOURCE_DIR = "wheels/cellcast";
@@ -87,22 +81,18 @@ public final class StarDist extends DLModelPytorchProtected {
 	private static final String SHAPE_KEY = "_shape";
 	private static final String KEYS_KEY = "keys";
 
-	private static final String LOAD_MODEL_CODE = ""
-			+ "if '%s' not in globals().keys():" + System.lineSeparator()
-			+ "  from stardist.models import %s" + System.lineSeparator()
-			+ "  globals()['%s'] = %s" + System.lineSeparator()
-			+ "if 'np' not in globals().keys():" + System.lineSeparator()
-			+ "  import numpy as np" + System.lineSeparator()
-			+ "  globals()['np'] = np" + System.lineSeparator()
+	private static final String LOAD_MODEL_CODE_2D = ""
 			+ "if 'os' not in globals().keys():" + System.lineSeparator()
 			+ "  import os" + System.lineSeparator()
-			+ "  globals()['os'] = os" + System.lineSeparator()
+			+ "  task.export(os=os)" + System.lineSeparator()
 			+ "if 'shared_memory' not in globals().keys():" + System.lineSeparator()
 			+ "  from multiprocessing import shared_memory" + System.lineSeparator()
-			+ "  globals()['shared_memory'] = shared_memory" + System.lineSeparator()
-			+ "os.environ[\"CUDA_VISIBLE_DEVICES\"] = \"-1\"" + System.lineSeparator()
-			+ "model = %s(None, name='%s', basedir=r\"%s\")" + System.lineSeparator()
-			+ "globals()['model'] = model" + System.lineSeparator();
+			+ "  task.export(shared_memory=shared_memory)" + System.lineSeparator()
+			+ "if 'train' not in globals().keys():" + System.lineSeparator()
+			+ "  import cellcast.training.stardist_2d as train" + System.lineSeparator()
+			+ "  task.export(train=train)" + System.lineSeparator()
+			+ "model = train.load_stardist_2d(source=%s, config=%s, gpu=%s)" + System.lineSeparator()
+			+ "task.export(model=model)" + System.lineSeparator();
 
 	private static final String RUN_MODEL_CODE = ""
 			+ "output = model.predict_instances(im, return_predict=False)" + System.lineSeparator()
@@ -157,11 +147,9 @@ public final class StarDist extends DLModelPytorchProtected {
 			+ "    s.unlink()" + System.lineSeparator()
 			+ "    del s" + System.lineSeparator();
 
-	private final String name;
-	private final String basedir;
+	private final String mpkPath;
 	private final int nChannels;
 	private final Dimensionality dimensionality;
-	private final PixiEnvironmentSpec environmentSpec;
 	private final Map<String, Object> config;
 
 	private Service python;
@@ -169,26 +157,22 @@ public final class StarDist extends DLModelPytorchProtected {
 	private Double threshold = null;
 	private Consumer<InferenceProgress> inferenceProgressConsumer;
 
-	private StarDist(String modelPath, Map<String, Object> config,
+	private StarDist(String modelIdentity, Map<String, Object> config,
 			Dimensionality dimensionality) throws IOException {
-		super(modelPath, modelPath, modelPath, modelPath, config);
-		File modelIdentity = resolveModelIdentityFile(modelPath);
-		File modelDir = modelIdentity.isFile() ? modelIdentity.getParentFile() : modelIdentity;
-		this.name = modelDir.getName();
-		this.basedir = modelDir.getParentFile() == null
-				? new File(".").getAbsolutePath()
-				: modelDir.getParentFile().getAbsolutePath();
+		super(modelIdentity, modelIdentity, modelIdentity, modelIdentity, config, true);
+		modelFolder = new File(modelIdentity).getParentFile().getAbsolutePath();
+		this.mpkPath = modelIdentity;
 		this.config = normalizedConfig(config);
 		this.nChannels = inferNChannels(this.config);
 		this.dimensionality = dimensionality;
 		this.environmentSpec = resolvePytorchEnv();
-		this.modelFolder = modelDir.getAbsolutePath();
 	}
 
 	public static StarDist fromFile(String modelPath)
 			throws IOException, BuildException, LoadModelException {
 		Map<String, Object> config = loadModelConfig(modelPath);
-		StarDist model = new StarDist(modelPath, config, inferDimensionality(config));
+		String modelIdentity = resolveModelIdentityFile(modelPath).getAbsolutePath();
+		StarDist model = new StarDist(modelIdentity, config, inferDimensionality(config));
 		model.loadModel();
 		return model;
 	}
@@ -266,35 +250,6 @@ public final class StarDist extends DLModelPytorchProtected {
 	}
 
 	@Override
-	public void loadModel() throws LoadModelException {
-		if (closed) {
-			throw new RuntimeException("Cannot load model after it has been closed");
-		}
-		if (loaded) {
-			return;
-		}
-		if (python == null) {
-			try {
-				Environment env = Appose.pixi()
-						.environment(environmentSpec.getSelectedEnvironment())
-						.wrap(environmentSpec.getEnvironmentDirectory());
-				python = env.python();
-				python.init("import numpy as np" + System.lineSeparator());
-			} catch (Exception e) {
-				throw new LoadModelException(Messages.stackTrace(e));
-			}
-		}
-		try {
-			Task task = python.task(createImportsCode());
-			task.waitFor();
-			ensureTaskSucceeded(task);
-			loaded = true;
-		} catch (InterruptedException | TaskException e) {
-			throw new LoadModelException(Messages.stackTrace(e));
-		}
-	}
-
-	@Override
 	public void close() {
 		if (!loaded) {
 			return;
@@ -369,38 +324,12 @@ public final class StarDist extends DLModelPytorchProtected {
 		train(dataDir, null, outputDir, epochs, progressConsumer, previewConsumer, logConsumer);
 	}
 
-	private String createImportsCode() {
-		/* TODO
-			String module = is2D() ? MODULE_2D : MODULE_3D;
-			return String.format(LOAD_MODEL_CODE, module, module,
-					module, module, module, this.name, this.basedir);
-					*/
-		return createModelFromConfigCode();
-	}
-
-	private String createModelFromConfigCode() {
-		String nl = System.lineSeparator();
-		String module = is2D() ? MODULE_2D : MODULE_3D;
-		String configClass = is2D() ? CONFIG_2D : CONFIG_3D;
-		return ""
-				+ "import inspect, json, os" + nl
-				+ "if 'np' not in globals().keys():" + nl
-				+ "  import numpy as np" + nl
-				+ "  globals()['np'] = np" + nl
-				+ "if 'shared_memory' not in globals().keys():" + nl
-				+ "  from multiprocessing import shared_memory" + nl
-				+ "  globals()['shared_memory'] = shared_memory" + nl
-				+ "from stardist.models import " + module + ", " + configClass + nl
-				+ "_config_dict = json.loads(r'''" + TrainingCodeUtils.toJson(config) + "''')" + nl
-				+ "_config_dict.pop('axes', None)" + nl
-				+ "try:" + nl
-				+ "  _config = " + configClass + "(**_config_dict)" + nl
-				+ "except TypeError:" + nl
-				+ "  _allowed = set(inspect.signature(" + configClass + ".__init__).parameters.keys())" + nl
-				+ "  _allowed.discard('self')" + nl
-				+ "  _config = " + configClass + "(**{k: v for k, v in _config_dict.items() if k in _allowed})" + nl
-				+ "model = " + module + "(_config, name='" + TrainingCodeUtils.py(name) + "', basedir=None)" + nl
-				+ "globals()['model'] = model" + nl;
+	@Override
+	protected String buildModelCode() {
+		String gpu = "'True'"; // TODO
+		String source = mpkPath != null ? "r'" + mpkPath + "'" : "None";
+		String configStr = TrainingCodeUtils.toJson(config);
+		return String.format(LOAD_MODEL_CODE_2D, source, configStr, gpu);
 	}
 
 	private <T extends RealType<T> & NativeType<T>> void checkInput(RandomAccessibleInterval<T> image) {

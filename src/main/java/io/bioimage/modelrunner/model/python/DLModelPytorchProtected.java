@@ -81,7 +81,7 @@ public class DLModelPytorchProtected extends BaseModel {
 
     protected Service python;
 
-    protected final PixiEnvironmentSpec environmentSpec;
+    protected PixiEnvironmentSpec environmentSpec;
 
     protected List<SharedMemoryArray> inShmaList = new ArrayList<SharedMemoryArray>();
 
