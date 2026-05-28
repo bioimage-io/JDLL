@@ -659,6 +659,7 @@ public class DLModelPytorchProtected extends BaseModel {
                 Thread.currentThread().interrupt();
                 cleanShmAfterFailure(e);
                 lastFailure = e;
+                break;
             } catch (TaskException | IOException e) {
                 lastFailure = e;
                 if (isApposeThreadDeath(e) && attempt < MAX_TRANSIENT_TASK_RETRIES) {
@@ -667,6 +668,7 @@ public class DLModelPytorchProtected extends BaseModel {
                     continue;
                 }
                 cleanShmAfterFailure(e);
+                break;
             }
         }
         throw new RunModelException(lastFailure == null

@@ -463,7 +463,7 @@ public final class StarDist extends DLModelPytorchProtected {
 				+ "', output_type='numpy', contiguous=False)" + System.lineSeparator();
 				code += "  print(" + names.get(i) + ".shape)" + System.lineSeparator();
 			}
-			code += "  " + OUTPUT_LIST_KEY + " = " + MODEL_VAR_NAME + "(" + names.get(0) + ")" + System.lineSeparator();;
+			code += "  " + OUTPUT_LIST_KEY + " = " + MODEL_VAR_NAME + ".predict(" + names.get(0) + ")" + System.lineSeparator();;
 			code += "  " + SHMS_KEY + " = []" + System.lineSeparator();
 			code += "  " + SHM_NAMES_KEY + " = []" + System.lineSeparator();
 			code += "  " + DTYPES_KEY + " = []" + System.lineSeparator();
@@ -917,8 +917,9 @@ public final class StarDist extends DLModelPytorchProtected {
 		return value == null ? config.get(fallback) : value;
 	}
 	
-	public static void main(String[] args) throws IOException, BuildException, LoadModelException, RunModelException {
+	public static void main(String[] args) throws IOException, BuildException, LoadModelException, RunModelException, InterruptedException {
 		String path = "/home/carlos/git/deep-icy/models/stardist/hundred";
+        PixiEnvironmentManager.installRequirements(StarDist.resolvePytorchEnv(), (str) -> {System.out.println(str);});
 		try (StarDist model = StarDist.fromFile(path, null)) {
 			Tensor<FloatType> tensor = Tensor.build(
 					"input",
