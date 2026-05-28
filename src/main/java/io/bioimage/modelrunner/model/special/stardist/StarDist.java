@@ -395,8 +395,8 @@ public final class StarDist extends DLModelPytorchProtected {
 		long[] tileDims = imageDims.clone();
 		int xAxis = axisIndex(axes, 'x');
 		int yAxis = axisIndex(axes, 'y');
-		tileDims[xAxis] = Math.min(DEFAULT_DENSE_TILE_XY, imageDims[xAxis]);
-		tileDims[yAxis] = Math.min(DEFAULT_DENSE_TILE_XY, imageDims[yAxis]);
+		tileDims[xAxis] = Math.min(DEFAULT_DENSE_TILE_XY, imageDims[xAxis] * 3);
+		tileDims[yAxis] = Math.min(DEFAULT_DENSE_TILE_XY, imageDims[yAxis] * 3);
 		return TileInfo.build(input.getName(), imageDims, axes, tileDims, axes);
 	}
 
@@ -406,8 +406,8 @@ public final class StarDist extends DLModelPytorchProtected {
 		long batch = axisSizeOrDefault(inputDims, axes, 'b', 1L);
 		long y = axisSize(inputDims, axes, 'y');
 		long x = axisSize(inputDims, axes, 'x');
-		long tileY = Math.min(DEFAULT_DENSE_TILE_XY, y);
-		long tileX = Math.min(DEFAULT_DENSE_TILE_XY, x);
+		long tileY = Math.min(DEFAULT_DENSE_TILE_XY, y * 3);
+		long tileX = Math.min(DEFAULT_DENSE_TILE_XY, x * 3);
 		int gridY = grid(0);
 		int gridX = grid(1);
 		int nRays = configInt("n_rays", 32);
