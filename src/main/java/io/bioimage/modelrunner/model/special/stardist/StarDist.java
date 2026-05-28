@@ -305,7 +305,7 @@ public final class StarDist extends DLModelPytorchProtected {
 				inShmaList.add(shma);
 			}
 			code += "  " + probName + " = " + ConvertDims.getMethodName() + "(" + probName
-					+ ", 'bcyx', out_order='yx', output_type='numpy', contiguous=False)" + System.lineSeparator();
+					+ ", 'bcyx', out_order='yx', n_channels=1, output_type='numpy', contiguous=False)" + System.lineSeparator();
 			code += "  " + distName + " = " + ConvertDims.getMethodName() + "(" + distName
 					+ ", 'bcyx', out_order='yxc', n_channels=" + configInt("n_rays", 32)
 					+ ", output_type='numpy', contiguous=False)" + System.lineSeparator();
@@ -317,11 +317,11 @@ public final class StarDist extends DLModelPytorchProtected {
 			code += "  " + SHM_NAMES_KEY + " = []" + System.lineSeparator();
 			code += "  " + DTYPES_KEY + " = []" + System.lineSeparator();
 			code += "  " + DIMS_KEY + " = []" + System.lineSeparator();
-			code += "  globals()['" + SHMS_KEY + "'] = " + SHMS_KEY + System.lineSeparator();
-			code += "  globals()['" + SHM_NAMES_KEY + "'] = " + SHM_NAMES_KEY + System.lineSeparator();
-			code += "  globals()['" + DTYPES_KEY + "'] = " + DTYPES_KEY + System.lineSeparator();
-			code += "  globals()['" + DIMS_KEY + "'] = " + DIMS_KEY + System.lineSeparator();
-			code += "  handle_output_list(labels.astype(np.int32, copy=False))" + System.lineSeparator();
+			code += "  task.export(" + SHMS_KEY + "=" + SHMS_KEY + ")" + System.lineSeparator();
+			code += "  task.export(" + SHM_NAMES_KEY + "=" + SHM_NAMES_KEY + ")" + System.lineSeparator();
+			code += "  task.export(" + DTYPES_KEY + "=" + DTYPES_KEY + ")" + System.lineSeparator();
+			code += "  task.export(" + DIMS_KEY + "=" + DIMS_KEY + ")" + System.lineSeparator();
+			code += "  handle_output(labels.astype(np.int32, copy=False))" + System.lineSeparator();
 			code += "  " + closeSHMWin() + System.lineSeparator();
 			code += "except Exception as e:" + System.lineSeparator();
 			code += "  " + closeSHMWin() + System.lineSeparator();
@@ -460,7 +460,7 @@ public final class StarDist extends DLModelPytorchProtected {
 				code += "  print(" + names.get(i) + ".shape)" + System.lineSeparator();
 				code += "  " + names.get(i) + " = " + ConvertDims.getMethodName() + "(" + names.get(i)
 				+ ", '" + inRais.get(i).getAxesOrderString().toLowerCase()
-				+ "', output_type='numpy', contiguous=False)" + System.lineSeparator();
+				+ "', output_type='numpy', contiguous=False, n_channels=1)" + System.lineSeparator();
 				code += "  print(" + names.get(i) + ".shape)" + System.lineSeparator();
 			}
 			code += "  " + OUTPUT_LIST_KEY + " = " + MODEL_VAR_NAME + ".predict(" + names.get(0) + ")" + System.lineSeparator();;
@@ -472,7 +472,7 @@ public final class StarDist extends DLModelPytorchProtected {
 			code += "  " + "task.export(" + SHM_NAMES_KEY + " = " + SHM_NAMES_KEY + ")" + System.lineSeparator();
 			code += "  " + "task.export(" + DTYPES_KEY + " = " + DTYPES_KEY + ")" + System.lineSeparator();
 			code += "  " + "task.export(" + DIMS_KEY + " = " + DIMS_KEY + ")" + System.lineSeparator();
-	        code += "  " + "handle_output_list(" + OUTPUT_LIST_KEY + ")" + System.lineSeparator();
+	        code += "  " + "handle_output(" + OUTPUT_LIST_KEY + ")" + System.lineSeparator();
 			code += "  " + closeSHMWin() + System.lineSeparator();
 			code += "except Exception as e:" + System.lineSeparator();
 			code += "  " + closeSHMWin() + System.lineSeparator();

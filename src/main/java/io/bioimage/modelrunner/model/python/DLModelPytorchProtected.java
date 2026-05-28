@@ -181,6 +181,14 @@ public class DLModelPytorchProtected extends BaseModel {
     protected static final String DIMS_KEY = "dims_" + UUID.randomUUID().toString().replace("-", "_");
 
     protected static final String RECOVER_OUTPUTS_CODE = ""
+			+ SHMS_KEY + " = []" + System.lineSeparator()
+			+ SHM_NAMES_KEY + " = []" + System.lineSeparator()
+			+ DTYPES_KEY + " = []" + System.lineSeparator()
+			+ DIMS_KEY + " = []" + System.lineSeparator()
+			+ "task.export(" + SHMS_KEY + "=" + SHMS_KEY + ")" + System.lineSeparator()
+			+ "task.export(" + SHM_NAMES_KEY + "=" + SHM_NAMES_KEY + ")" + System.lineSeparator()
+			+ "task.export(" + DTYPES_KEY + "=" + DTYPES_KEY + ")" + System.lineSeparator()
+			+ "task.export(" + DIMS_KEY + "=" + DIMS_KEY + ")" + System.lineSeparator()
             + "def handle_output(outs_i):" + System.lineSeparator()
             + "    if type(outs_i) == np.ndarray:" + System.lineSeparator()
             + "      shm = shared_memory.SharedMemory(create=True, size=outs_i.nbytes)" + System.lineSeparator()
@@ -234,8 +242,8 @@ public class DLModelPytorchProtected extends BaseModel {
             + "    handle_output(out_list)" + System.lineSeparator()
             + System.lineSeparator()
             + System.lineSeparator()
-            + "globals()['handle_output_list'] = handle_output_list" + System.lineSeparator()
-            + "globals()['handle_output'] = handle_output" + System.lineSeparator()
+            + "task.export(handle_output_list=handle_output_list)" + System.lineSeparator()
+            + "task.export(handle_output=handle_output)" + System.lineSeparator()
             + System.lineSeparator()
             + System.lineSeparator();
 
