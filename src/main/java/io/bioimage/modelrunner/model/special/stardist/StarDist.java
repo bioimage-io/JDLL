@@ -91,6 +91,9 @@ public final class StarDist extends DLModelPytorchProtected {
 	private static final String DTYPE_KEY = "_dtype";
 	private static final String SHAPE_KEY = "_shape";
 	private static final String KEYS_KEY = "keys";
+	private static final long DEFAULT_DENSE_TILE_XY = 512L;
+	private static final long DEFAULT_DENSE_OUTPUT_HALO_XY = 96L;
+	private static final String DENSE_OUTPUT_AXES = "bcyx";
 
 	private static final String LOAD_MODEL_CODE_2D = ""
 			+ "if 'os' not in globals().keys():" + System.lineSeparator()
@@ -244,46 +247,129 @@ public final class StarDist extends DLModelPytorchProtected {
 		train(dataDir, null, outputDir, epochs, progressConsumer, previewConsumer, logConsumer);
 	}
 
-    @Override
-    protected <T extends RealType<T> & NativeType<T>, R extends RealType<R> & NativeType<R>>
-    Merger<Tensor<T>, Tensor<R>> getTileMaker(final List<Tensor<T>> inputs) {
-    	List<TileInfo> inputInfo = new ArrayList<TileInfo>();
-    	int nChannels = ...;
-    	int gridX = ;
-    	int gridY = ;
-    	int patchSize = ;
-    	int nRays = ;
-    	for (Tensor<T> inp : inputs) {
-    		TileInfo tileInfo = TileInfo.build(inp.getName(), inp.getData().dimensionsAsLongArray(), 
-    				inp.getAxesOrderString(), new long[] {1L, nChannels, 512L, 512L}, inp.getAxesOrderString());
-    		inputInfo.add(tileInfo);
-    	}
-    	long[] inputDims = inputs.get(0).getData().dimensionsAsLongArray();
-    	long[] outputDims = new long[4];
-    	outputDims[0] += inputDims[0]; outputDims[1] += inputDims[1];
-    	outputDims[2] = (long) Math.ceil(inputDims[2] / (double) gridY);
-    	outputDims[3] = (long) Math.ceil(inputDims[3] / (double) gridX);
-    	List<TileInfo> outputInfo = new ArrayList<TileInfo>();
-    	TileInfo probsOutput = TileInfo.build("probs", outputDims, "bcyx",
-    			new long[] {1L, nChannels, (long) Math.ceil(512 / gridY), (long) Math.ceil(512 / gridX)}, "bcyx");
-    	probsOutput.setHalo(new long[] {0L, 0L, (long) Math.ceil(96 / gridY), (long) Math.ceil(96 / gridX)}, "bcyx");
-
-    	long[] rayDims = new long[4];
-    	rayDims[0] += inputDims[0]; rayDims[1] += nRays;
-    	rayDims[2] = (long) Math.ceil(inputDims[2] / (double) gridY);
-    	rayDims[3] = (long) Math.ceil(inputDims[3] / (double) gridX);
-    	TileInfo distOutput = TileInfo.build("dists", rayDims, "bcyx",
-    			new long[] {1L, nRays, (long) Math.ceil(512 / gridY), (long) Math.ceil(512 / gridX)}, "bcyx");
-    	probsOutput.setHalo(new long[] {0L, 0L, (long) Math.ceil(96 / gridY), (long) Math.ceil(96 / gridX)}, "bcyx");
-    	
-    	outputInfo.add(probsOutput);
-    	outputInfo.add(probsOutput);
-    	
-    	TileMaker tileMaker = TileMaker.build(inputInfo, outputInfo);
+	@Override
+	protected <T extends RealType<T> & NativeType<T>, R extends RealType<R> & NativeType<R>>
+	Merger<Tensor<T>, Tensor<R>> getTileMaker(final List<Tensor<T>> inputs) {
+		if (inputs == null || inputs.isEmpty()) {
+			throw new IllegalArgumentException("StarDist tiling needs at least one input tensor.");
+		}
+		List<TileInfo> inputInfo = new ArrayList<TileInfo>();
+		Tensor<T> referenceInput = null;
+		for (Tensor<T> input : inputs) {
+			if (!hasSpatialAxes(input)) {
+				continue;
+			}
+			if (referenceInput == null) {
+				referenceInput = input;
+			}
+			inputInfo.add(createInputTileInfo(input));
+		}
+		if (referenceInput == null) {
+			throw new IllegalArgumentException("StarDist tiling needs one input tensor with x and y axes.");
+		}
+		TileMaker tileMaker = TileMaker.build(inputInfo, createDenseOutputTileInfo(referenceInput));
     	DenseMerger<T, R> merger = new DenseMerger<T, R>(tileMaker);
         merger.configure(inputs);
         return merger;
-    }
+	}
+
+	private static <T extends RealType<T> & NativeType<T>> boolean hasSpatialAxes(final Tensor<T> tensor) {
+		if (tensor == null || tensor.getAxesOrderString() == null) {
+			return false;
+		}
+		String axes = tensor.getAxesOrderString().toLowerCase();
+		return axes.indexOf('x') >= 0 && axes.indexOf('y') >= 0;
+	}
+
+	private static <T extends RealType<T> & NativeType<T>> TileInfo createInputTileInfo(final Tensor<T> input) {
+		String axes = input.getAxesOrderString().toLowerCase();
+		long[] imageDims = input.getData().dimensionsAsLongArray();
+		long[] tileDims = imageDims.clone();
+		int xAxis = axisIndex(axes, 'x');
+		int yAxis = axisIndex(axes, 'y');
+		tileDims[xAxis] = Math.min(DEFAULT_DENSE_TILE_XY, imageDims[xAxis]);
+		tileDims[yAxis] = Math.min(DEFAULT_DENSE_TILE_XY, imageDims[yAxis]);
+		return TileInfo.build(input.getName(), imageDims, axes, tileDims, axes);
+	}
+
+	private <T extends RealType<T> & NativeType<T>> List<TileInfo> createDenseOutputTileInfo(final Tensor<T> reference) {
+		String axes = reference.getAxesOrderString().toLowerCase();
+		long[] inputDims = reference.getData().dimensionsAsLongArray();
+		long batch = axisSizeOrDefault(inputDims, axes, 'b', 1L);
+		long y = axisSize(inputDims, axes, 'y');
+		long x = axisSize(inputDims, axes, 'x');
+		long tileY = Math.min(DEFAULT_DENSE_TILE_XY, y);
+		long tileX = Math.min(DEFAULT_DENSE_TILE_XY, x);
+		int gridY = grid(0);
+		int gridX = grid(1);
+		int nRays = configInt("n_rays", 32);
+		long outputTileY = ceilDiv(tileY, gridY);
+		long outputTileX = ceilDiv(tileX, gridX);
+		long haloY = safeOutputHalo(outputTileY, gridY);
+		long haloX = safeOutputHalo(outputTileX, gridX);
+
+		List<TileInfo> outputInfo = new ArrayList<TileInfo>();
+		TileInfo prob = TileInfo.build("prob",
+				new long[] {batch, 1L, ceilDiv(y, gridY), ceilDiv(x, gridX)},
+				DENSE_OUTPUT_AXES,
+				new long[] {1L, 1L, outputTileY, outputTileX},
+				DENSE_OUTPUT_AXES);
+		prob.setHalo(new long[] {0L, 0L, haloY, haloX}, DENSE_OUTPUT_AXES);
+
+		TileInfo dist = TileInfo.build("dist",
+				new long[] {batch, nRays, ceilDiv(y, gridY), ceilDiv(x, gridX)},
+				DENSE_OUTPUT_AXES,
+				new long[] {1L, nRays, outputTileY, outputTileX},
+				DENSE_OUTPUT_AXES);
+		dist.setHalo(new long[] {0L, 0L, haloY, haloX}, DENSE_OUTPUT_AXES);
+
+		outputInfo.add(prob);
+		outputInfo.add(dist);
+		return outputInfo;
+	}
+
+	private int grid(final int xyIndex) {
+		Object value = config.get("grid");
+		if (value instanceof List<?>) {
+			List<?> grid = (List<?>) value;
+			if (grid.size() > xyIndex && grid.get(xyIndex) instanceof Number) {
+				return Math.max(1, ((Number) grid.get(xyIndex)).intValue());
+			}
+		}
+		return 1;
+	}
+
+	private int configInt(final String key, final int defaultValue) {
+		Object value = config.get(key);
+		return value instanceof Number ? ((Number) value).intValue() : defaultValue;
+	}
+
+	private static int axisIndex(final String axes, final char axis) {
+		int index = axes.indexOf(axis);
+		if (index < 0) {
+			throw new IllegalArgumentException("Axes '" + axes + "' do not contain axis '" + axis + "'.");
+		}
+		return index;
+	}
+
+	private static long axisSize(final long[] dims, final String axes, final char axis) {
+		return dims[axisIndex(axes, axis)];
+	}
+
+	private static long axisSizeOrDefault(final long[] dims, final String axes, final char axis,
+			final long defaultValue) {
+		int index = axes.indexOf(axis);
+		return index < 0 ? defaultValue : dims[index];
+	}
+
+	private static long ceilDiv(final long value, final int divisor) {
+		return (long) Math.ceil(value / (double) Math.max(1, divisor));
+	}
+
+	private static long safeOutputHalo(final long outputTileSize, final int grid) {
+		long requested = ceilDiv(DEFAULT_DENSE_OUTPUT_HALO_XY, grid);
+		return Math.min(requested, Math.max(0L, (outputTileSize - 1L) / 2L));
+	}
 
 	@Override
 	protected String buildModelCode() {
