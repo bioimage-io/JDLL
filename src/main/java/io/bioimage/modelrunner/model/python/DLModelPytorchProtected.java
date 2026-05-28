@@ -657,7 +657,6 @@ public class DLModelPytorchProtected extends BaseModel {
             try {
                 final Task task = python.task(code);
                 python.debug((str) -> {});
-                python.debug(System.err::println);
                 task.waitFor();
                 ensureTaskSucceeded(task);
                 loaded = true;
