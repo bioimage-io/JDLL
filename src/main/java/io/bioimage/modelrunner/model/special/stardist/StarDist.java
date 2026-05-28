@@ -73,10 +73,8 @@ public final class StarDist extends DLModelPytorchProtected {
 		THREE_D
 	}
 
-	private static final String PIXI_TOML = "tomls/cellcast-pixi.toml";
-	private static final String COMMON_CELLCAST_ENV_NAME = "cellcast-jdll";
-	private static final String CELLCAST_WHEEL_RESOURCE_DIR = "wheels/cellcast";
-	private static final String WHEELS_CACHE_DIR_NAME = "wheels";
+	private static final String PIXI_TOML = "tomls/stardist-pixi.toml";
+	private static final String COMMON_STARDIST_ENV_NAME = "stardist-jdll";
 
 	private static final long DEFAULT_DENSE_TILE_XY = 512L;
 	private static final long DEFAULT_DENSE_OUTPUT_HALO_XY = 96L;
@@ -86,13 +84,34 @@ public final class StarDist extends DLModelPytorchProtected {
 			+ "if 'os' not in globals().keys():" + System.lineSeparator()
 			+ "  import os" + System.lineSeparator()
 			+ "  task.export(os=os)" + System.lineSeparator()
+			+ "if 'contextlib' not in globals().keys():" + System.lineSeparator()
+			+ "  import contextlib" + System.lineSeparator()
+			+ "  task.export(contextlib=contextlib)" + System.lineSeparator()
 			+ "if 'shared_memory' not in globals().keys():" + System.lineSeparator()
 			+ "  from multiprocessing import shared_memory" + System.lineSeparator()
 			+ "  task.export(shared_memory=shared_memory)" + System.lineSeparator()
-			+ "if 'train' not in globals().keys():" + System.lineSeparator()
-			+ "  import cellcast.training.stardist_2d as train" + System.lineSeparator()
-			+ "  task.export(train=train)" + System.lineSeparator()
-			+ MODEL_VAR_NAME + " = train.load_stardist_2d(source=%s, config=%s, gpu=%s)" + System.lineSeparator()
+			+ "if 'StarDist2D' not in globals().keys():" + System.lineSeparator()
+			+ "  from stardist.models import StarDist2D, Config2D" + System.lineSeparator()
+			+ "  from stardist.nms import non_maximum_suppression" + System.lineSeparator()
+			+ "  from stardist.geometry import polygons_to_label" + System.lineSeparator()
+			+ "  task.export(StarDist2D=StarDist2D)" + System.lineSeparator()
+			+ "  task.export(Config2D=Config2D)" + System.lineSeparator()
+			+ "  task.export(non_maximum_suppression=non_maximum_suppression)" + System.lineSeparator()
+			+ "  task.export(polygons_to_label=polygons_to_label)" + System.lineSeparator()
+			+ "def _jdll_stardist_config(values):" + System.lineSeparator()
+			+ "  values = dict(values or {})" + System.lineSeparator()
+			+ "  return Config2D(**values)" + System.lineSeparator()
+			+ "def _jdll_load_stardist(source, config):" + System.lineSeparator()
+			+ "  if source is None:" + System.lineSeparator()
+			+ "    return StarDist2D(_jdll_stardist_config(config), name=None, basedir=None)" + System.lineSeparator()
+			+ "  source = os.path.abspath(source)" + System.lineSeparator()
+			+ "  model_dir = source if os.path.isdir(source) else os.path.dirname(source)" + System.lineSeparator()
+			+ "  model = StarDist2D(None, name=os.path.basename(model_dir), basedir=os.path.dirname(model_dir))" + System.lineSeparator()
+			+ "  if os.path.isfile(source) and source.lower().endswith('.h5'):" + System.lineSeparator()
+			+ "    model.keras_model.load_weights(source)" + System.lineSeparator()
+			+ "  return model" + System.lineSeparator()
+			+ "with open(os.devnull, 'w') as _stardist_quiet, contextlib.redirect_stdout(_stardist_quiet), contextlib.redirect_stderr(_stardist_quiet):" + System.lineSeparator()
+			+ "  " + MODEL_VAR_NAME + " = _jdll_load_stardist(%s, %s)" + System.lineSeparator()
 			+ "task.export(" + MODEL_VAR_NAME + "=" + MODEL_VAR_NAME + ")" + System.lineSeparator();
 
 	private final String mpkPath;
@@ -104,7 +123,9 @@ public final class StarDist extends DLModelPytorchProtected {
 	private StarDist(String modelIdentity, Map<String, Object> config,
 			Dimensionality dimensionality, Consumer<InferenceProgress> inferenceProgressConsumer) throws IOException {
 		super(modelIdentity, modelIdentity, modelIdentity, modelIdentity, config, true);
-		modelFolder = new File(modelIdentity).getParentFile().getAbsolutePath();
+		File identityFile = new File(modelIdentity);
+		File parent = identityFile.getParentFile();
+		modelFolder = parent == null ? identityFile.getAbsoluteFile().getParent() : parent.getAbsolutePath();
 		this.mpkPath = modelIdentity;
 		this.config = normalizedConfig(config);
 		this.nChannels = inferNChannels(this.config);
@@ -269,10 +290,12 @@ public final class StarDist extends DLModelPytorchProtected {
 			code += "  " + distName + " = " + ConvertDims.getMethodName() + "(" + distName
 					+ ", 'byxc', out_order='yxc', n_channels=" + configInt("n_rays", 32)
 					+ ", output_type='numpy', contiguous=False)" + System.lineSeparator();
-			code += "  labels = train.nms_stardist_2d(" + probName + ", " + distName
-					+ ", grid=" + MODEL_VAR_NAME + ".grid, image_shape=(" + imageHeight + ", " + imageWidth + "), "
-					+ "prob_threshold=" + MODEL_VAR_NAME + ".prob_threshold, "
-					+ "nms_threshold=" + MODEL_VAR_NAME + ".nms_threshold)" + System.lineSeparator();
+			code += "  points, probi, disti = non_maximum_suppression(" + distName + ", " + probName
+					+ ", grid=" + MODEL_VAR_NAME + ".config.grid, "
+					+ "prob_thresh=" + MODEL_VAR_NAME + ".thresholds.prob, "
+					+ "nms_thresh=" + MODEL_VAR_NAME + ".thresholds.nms, verbose=False)" + System.lineSeparator();
+			code += "  labels = polygons_to_label(disti, points, prob=probi, shape=("
+					+ imageHeight + ", " + imageWidth + "))" + System.lineSeparator();
 			code += "  " + SHMS_KEY + ".clear()" + System.lineSeparator();
 			code += "  " + SHM_NAMES_KEY + ".clear()" + System.lineSeparator();
 			code += "  " + DTYPES_KEY + ".clear()" + System.lineSeparator();
@@ -493,7 +516,7 @@ public final class StarDist extends DLModelPytorchProtected {
 	@Override
 	protected String buildModelCode() {
 		String gpu = "True"; // TODO
-		String source = mpkPath != null ? "r'" + mpkPath + "'" : "None";
+		String source = mpkPath != null && new File(mpkPath).exists() ? "r'" + mpkPath + "'" : "None";
 		String configStr = TrainingCodeUtils.toJson(config).replace("null", "None").replace("true", "True").replace("false", "False");
 		return String.format(LOAD_MODEL_CODE_2D, source, configStr, gpu);
 	}
@@ -513,10 +536,13 @@ public final class StarDist extends DLModelPytorchProtected {
 				code += "  print(" + names.get(i) + ".shape)" + System.lineSeparator();
 				code += "  " + names.get(i) + " = " + ConvertDims.getMethodName() + "(" + names.get(i)
 				+ ", '" + inRais.get(i).getAxesOrderString().toLowerCase()
-				+ "', output_type='numpy', contiguous=False, n_channels=1)" + System.lineSeparator();
+				+ "', out_order='yxc', output_type='numpy', contiguous=False, n_channels="
+				+ nChannels + ")" + System.lineSeparator();
 				code += "  print(" + names.get(i) + ".shape)" + System.lineSeparator();
 			}
-			code += "  " + OUTPUT_LIST_KEY + " = " + MODEL_VAR_NAME + ".predict_raw(" + names.get(0) + ", normalization=False)" + System.lineSeparator();;
+			code += "  _prob, _dist = " + MODEL_VAR_NAME + ".predict("
+					+ names.get(0) + ", axes='YXC', normalizer=None, n_tiles=None, show_tile_progress=False)" + System.lineSeparator();
+			code += "  " + OUTPUT_LIST_KEY + " = [np.expand_dims(_prob, 0), np.expand_dims(_dist, 0)]" + System.lineSeparator();
 			code += "  " + SHMS_KEY + ".clear()" + System.lineSeparator();
 			code += "  " + SHM_NAMES_KEY + ".clear()" + System.lineSeparator();
 			code += "  " + DTYPES_KEY + ".clear()" + System.lineSeparator();
@@ -540,27 +566,26 @@ public final class StarDist extends DLModelPytorchProtected {
 			return file.getAbsoluteFile();
 		}
 		if (file.isDirectory()) {
-			File mpk = findMpkFile(file);
-			if (mpk != null) {
-				return mpk.getAbsoluteFile();
+			File modelFile = findModelFile(file);
+			if (modelFile != null) {
+				return modelFile.getAbsoluteFile();
 			}
 		}
-		throw new IllegalArgumentException("Path provided does not point to a StarDist .mpk model: " + modelPath);
+		throw new IllegalArgumentException("Path provided does not point to a StarDist model: " + modelPath);
 	}
 
-	private static File findMpkFile(File modelPath) {
+	private static File findModelFile(File modelPath) {
 		if (modelPath == null) {
 			return null;
 		}
-		if (modelPath.isFile()
-				&& modelPath.getName().toLowerCase().endsWith(StardistModelRegistry.STARDIST_WEIGHTS_EXTENSION)) {
+		if (modelPath.isFile()) {
 			return modelPath;
 		}
 		if (!modelPath.isDirectory()) {
 			return null;
 		}
-		java.nio.file.Path mpk = StardistModelRegistry.findMpk(modelPath.getAbsolutePath());
-		return mpk == null ? null : mpk.toFile();
+		java.nio.file.Path modelFile = StardistModelRegistry.findModelFile(modelPath.getAbsolutePath());
+		return modelFile == null ? null : modelFile.toFile();
 	}
 
 	private static Map<String, Object> loadModelConfig(String modelPath) throws IOException {
@@ -617,18 +642,7 @@ public final class StarDist extends DLModelPytorchProtected {
 	}
 
 	public static PixiEnvironmentSpec resolvePytorchEnv() {
-		String wheelResource = PixiEnvironmentResolver.selectResourceByCurrentPlatform(
-				CELLCAST_WHEEL_RESOURCE_DIR + "/cellcast-0.2.1.dev0-cp37-abi3-manylinux_2_17_x86_64.manylinux2014_x86_64.whl",
-				CELLCAST_WHEEL_RESOURCE_DIR + "/cellcast-0.2.1.dev0-cp37-abi3-manylinux_2_28_aarch64.whl",
-				CELLCAST_WHEEL_RESOURCE_DIR + "/cellcast-0.2.1.dev0-cp37-abi3-macosx_10_12_x86_64.whl",
-				CELLCAST_WHEEL_RESOURCE_DIR + "/cellcast-0.2.1.dev0-cp37-abi3-macosx_11_0_arm64.whl",
-				CELLCAST_WHEEL_RESOURCE_DIR + "/cellcast-0.2.1.dev0-cp37-abi3-win_amd64.whl",
-				"CellCast");
-		File cellcastWheel = PixiEnvironmentResolver.cacheClasspathResource(wheelResource, WHEELS_CACHE_DIR_NAME);
-		return PixiEnvironmentResolver.fromTemplate(COMMON_CELLCAST_ENV_NAME, PIXI_TOML,
-				COMMON_CELLCAST_ENV_NAME,
-				PixiEnvironmentResolver.currentPixiPlatform(),
-				PixiEnvironmentResolver.toPixiPath(cellcastWheel));
+		return PixiEnvironmentResolver.fromTemplate(COMMON_STARDIST_ENV_NAME, PIXI_TOML);
 	}
 
 	public static boolean isInstalled() {
@@ -764,17 +778,23 @@ public final class StarDist extends DLModelPytorchProtected {
 		String nl = System.lineSeparator();
 		boolean hasGtDir = gtDir != null && !gtDir.trim().isEmpty();
 		String gtDirCode = hasGtDir ? "gt_dir = r'" + TrainingCodeUtils.py(new File(gtDir).getAbsolutePath()) + "'" + nl : "";
-		String gtDirArgument = hasGtDir ? "gt_dir=gt_dir, " : "";
 		String safeImageChannels = imageChannels == null || imageChannels.trim().isEmpty()
 				? "grayscale" : imageChannels.trim();
-		String safeLabelColorMode = labelColorMode == null || labelColorMode.trim().isEmpty()
-				? "grayscale" : labelColorMode.trim();
 		return ""
-				+ "import contextlib, json, os, sys" + nl
+				+ "import contextlib, json, os, random, sys" + nl
 				+ "from pathlib import Path" + nl
 				+ "import numpy as np" + nl
 				+ TrainingCodeUtils.apposeStdoutCapture()
-				+ "import cellcast.training.stardist_2d as train" + nl
+				+ "from csbdeep.utils import normalize" + nl
+				+ "from stardist.models import Config2D, StarDist2D" + nl
+				+ "try:" + nl
+				+ "  from tensorflow.keras.callbacks import Callback" + nl
+				+ "except Exception:" + nl
+				+ "  from keras.callbacks import Callback" + nl
+				+ "try:" + nl
+				+ "  from tifffile import imread" + nl
+				+ "except Exception:" + nl
+				+ "  from imageio.v3 import imread" + nl
 				+ "data_dir = r'" + TrainingCodeUtils.py(new File(dataDir).getAbsolutePath()) + "'" + nl
 				+ gtDirCode
 				+ "output_dir = Path(r'" + TrainingCodeUtils.py(new File(outputDir).getAbsolutePath()) + "')" + nl
@@ -784,15 +804,15 @@ public final class StarDist extends DLModelPytorchProtected {
 				+ "preview_dir.mkdir(parents=True, exist_ok=True)" + nl
 				+ "stardist_log_path = output_dir / 'training.log'" + nl
 				+ "config = json.loads(r'''" + TrainingCodeUtils.toJson(config) + "''')" + nl
-				+ "_aliases = {'epochs': 'train_epochs', 'steps_per_epoch': 'train_steps_per_epoch', 'patch_size': 'train_patch_size', 'batch_size': 'train_batch_size', 'learning_rate': 'train_learning_rate', 'foreground_probability': 'train_foreground_only', 'background_reg': 'train_background_reg', 'loss_prob_weight': None, 'loss_dist_weight': None}" + nl
-				+ "for _old, _new in list(_aliases.items()):" + nl
-				+ "  if _new and _new in config and _old not in config:" + nl
-				+ "    config[_old] = config[_new]" + nl
-				+ "if 'loss_prob_weight' not in config and 'train_loss_weights' in config:" + nl
-				+ "  config['loss_prob_weight'] = config['train_loss_weights'][0]" + nl
-				+ "if 'loss_dist_weight' not in config and 'train_loss_weights' in config and len(config['train_loss_weights']) > 1:" + nl
-				+ "  config['loss_dist_weight'] = config['train_loss_weights'][1]" + nl
-				+ "state = {'total_steps': int(config.get('epochs', 0)) * int(config.get('steps_per_epoch', 0)), 'total_epochs': int(config.get('epochs', 0))}" + nl
+				+ "config.pop('validation_preview_count', None)" + nl
+				+ "config['use_gpu'] = False" + nl
+				+ "if '" + TrainingCodeUtils.py(safeImageChannels).toLowerCase() + "' == 'rgb':" + nl
+				+ "  config['axes'] = 'YXC'" + nl
+				+ "  config['n_channel_in'] = 3" + nl
+				+ "else:" + nl
+				+ "  config.setdefault('axes', 'YXC')" + nl
+				+ "  config.setdefault('n_channel_in', 1)" + nl
+				+ "state = {'total_steps': int(config.get('train_epochs', 0)) * int(config.get('train_steps_per_epoch', 0)), 'total_epochs': int(config.get('train_epochs', 0))}" + nl
 				+ TrainingCodeUtils.taskUpdateFunction("_task_update")
 				+ TrainingCodeUtils.scalarFunction("_scalar", false)
 				+ TrainingCodeUtils.cleanDictFunction("_clean", "_scalar")
@@ -801,53 +821,143 @@ public final class StarDist extends DLModelPytorchProtected {
 				+ "  with open(tmp_path, 'wb') as f:" + nl
 				+ "    np.save(f, array)" + nl
 				+ "  os.replace(tmp_path, path)" + nl
-				+ "def on_train_begin(plan):" + nl
-				+ "  state['total_steps'] = int(plan.get('total_steps') or state['total_steps'])" + nl
-				+ "  state['total_epochs'] = int(plan.get('epochs') or state['total_epochs'])" + nl
-				+ "  info = {'type': 'progress', 'epoch': 0, 'step': 0, 'total_epochs': state['total_epochs'], 'total_steps': state['total_steps'], 'losses': {}, 'metrics': _clean({'batch_size': plan.get('batch_size'), 'train_samples': plan.get('train_samples'), 'valid_samples': plan.get('valid_samples')})}" + nl
-				+ "  _task_update(message='StarDist training started', current=0, maximum=state['total_steps'], info=info)" + nl
-				+ "def on_step_end(step):" + nl
-				+ "  global_step = int(step.get('global_step', 0))" + nl
-				+ "  epoch = int(step.get('epoch', 0))" + nl
-				+ "  losses = _clean({'train/total_loss': step.get('loss_total'), 'train/prob_loss': step.get('loss_prob'), 'train/dist_loss': step.get('loss_dist')})" + nl
-				+ "  metrics = _clean({'learning_rate': step.get('learning_rate')})" + nl
-				+ "  info = {'type': 'progress', 'epoch': epoch, 'step': global_step, 'total_epochs': state['total_epochs'], 'total_steps': state['total_steps'], 'losses': losses, 'metrics': metrics}" + nl
-				+ "  _task_update(message='StarDist training step %d/%d' % (global_step, state['total_steps']), current=global_step, maximum=state['total_steps'], info=info)" + nl
-				+ "def on_validation_end(event):" + nl
-				+ "  epoch = int(event.get('epoch', 0))" + nl
-				+ "  step = min(state['total_steps'], epoch * int(config.get('steps_per_epoch', 1)))" + nl
-				+ "  losses = _clean({'train/total_loss': event.get('train_total'), 'val/total_loss': event.get('valid_total')})" + nl
-				+ "  metrics = _clean({'learning_rate': event.get('learning_rate')})" + nl
-				+ "  info = {'type': 'progress', 'epoch': epoch, 'step': step, 'total_epochs': state['total_epochs'], 'total_steps': state['total_steps'], 'losses': losses, 'metrics': metrics}" + nl
-				+ "  _task_update(message='StarDist epoch %d/%d' % (epoch, state['total_epochs']), current=step, maximum=state['total_steps'], info=info)" + nl
+				+ "IMAGE_EXTS = {'.tif', '.tiff', '.png', '.jpg', '.jpeg'}" + nl
+				+ "MASK_DIRS = ('masks', 'mask', 'labels', 'label', 'gt')" + nl
+				+ "IMAGE_DIRS = ('images', 'image', 'imgs', 'img', 'data')" + nl
+				+ "def _files(folder):" + nl
+				+ "  return sorted([p for p in Path(folder).iterdir() if p.is_file() and p.suffix.lower() in IMAGE_EXTS])" + nl
+				+ "def _subdir(parent, names):" + nl
+				+ "  for name in names:" + nl
+				+ "    p = Path(parent) / name" + nl
+				+ "    if p.is_dir():" + nl
+				+ "      return p" + nl
+				+ "  return Path(parent)" + nl
+				+ "def _mask_key(path):" + nl
+				+ "  stem = path.stem" + nl
+				+ "  for suffix in ('_mask', '_masks', '_label', '_labels'):" + nl
+				+ "    if stem.lower().endswith(suffix):" + nl
+				+ "      return stem[:-len(suffix)]" + nl
+				+ "  return stem" + nl
+				+ "def _pairs(image_folder, mask_folder):" + nl
+				+ "  masks = {_mask_key(p): p for p in _files(mask_folder)}" + nl
+				+ "  out = []" + nl
+				+ "  for img in _files(image_folder):" + nl
+				+ "    key = img.stem[:-6] if img.stem.lower().endswith('_image') else img.stem" + nl
+				+ "    if key in masks:" + nl
+				+ "      out.append((img, masks[key]))" + nl
+				+ "  return out" + nl
+				+ "def _split_pairs(folder):" + nl
+				+ "  return _pairs(_subdir(folder, IMAGE_DIRS), _subdir(folder, MASK_DIRS))" + nl
+				+ "def _load_pairs(pairs):" + nl
+				+ "  X, Y = [], []" + nl
+				+ "  axes = str(config.get('axes', 'YXC')).upper()" + nl
+				+ "  n_channels = int(config.get('n_channel_in', 1))" + nl
+				+ "  for img_path, mask_path in pairs:" + nl
+				+ "    x = np.asarray(imread(str(img_path)))" + nl
+				+ "    y = np.asarray(imread(str(mask_path))).astype(np.int32, copy=False)" + nl
+				+ "    if y.ndim > 2:" + nl
+				+ "      y = y[..., 0]" + nl
+				+ "    if n_channels == 1:" + nl
+				+ "      if x.ndim == 3:" + nl
+				+ "        x = x[..., 0]" + nl
+				+ "      if 'C' in axes:" + nl
+				+ "        x = x[..., None]" + nl
+				+ "    elif x.ndim == 2:" + nl
+				+ "      x = np.repeat(x[..., None], n_channels, axis=-1)" + nl
+				+ "    elif x.shape[-1] != n_channels:" + nl
+				+ "      x = x[..., :n_channels]" + nl
+				+ "    norm_axis = (0, 1) if x.ndim == 3 else (0, 1)" + nl
+				+ "    X.append(normalize(x, 1, 99.8, axis=norm_axis).astype(np.float32, copy=False))" + nl
+				+ "    Y.append(y)" + nl
+				+ "  return X, Y" + nl
+				+ "def _dataset():" + nl
+				+ "  root = Path(data_dir)" + nl
+				+ "  if 'gt_dir' in globals():" + nl
+				+ "    pairs = _pairs(root, Path(gt_dir))" + nl
+				+ "    random.Random(42).shuffle(pairs)" + nl
+				+ "    n_val = max(1, int(round(len(pairs) * " + validFraction + "))) if len(pairs) > 1 else 0" + nl
+				+ "    return pairs[n_val:], pairs[:n_val]" + nl
+				+ "  train_dir = root / 'train'" + nl
+				+ "  val_dir = root / 'val'" + nl
+				+ "  if not val_dir.is_dir():" + nl
+				+ "    val_dir = root / 'validation'" + nl
+				+ "  if train_dir.is_dir():" + nl
+				+ "    train_pairs = _split_pairs(train_dir)" + nl
+				+ "    val_pairs = _split_pairs(val_dir) if val_dir.is_dir() else []" + nl
+				+ "  else:" + nl
+				+ "    train_pairs = _split_pairs(root)" + nl
+				+ "    val_pairs = []" + nl
+				+ "  if not val_pairs:" + nl
+				+ "    random.Random(42).shuffle(train_pairs)" + nl
+				+ "    n_val = max(1, int(round(len(train_pairs) * " + validFraction + "))) if len(train_pairs) > 1 else 0" + nl
+				+ "    val_pairs = train_pairs[:n_val]" + nl
+				+ "    train_pairs = train_pairs[n_val:]" + nl
+				+ "  if not train_pairs or not val_pairs:" + nl
+				+ "    raise ValueError('Could not find matching StarDist training/validation image-mask pairs in ' + data_dir)" + nl
+				+ "  return train_pairs, val_pairs" + nl
+				+ "class JDLLProgressCallback(Callback):" + nl
+				+ "  def __init__(self, model_ref, X_val):" + nl
+				+ "    super().__init__()" + nl
+				+ "    self.model_ref = model_ref" + nl
+				+ "    self.X_val = X_val" + nl
+				+ "    self.global_step = 0" + nl
+				+ "  def _lr(self):" + nl
+				+ "    try:" + nl
+				+ "      return float(self.model.optimizer.learning_rate.numpy())" + nl
+				+ "    except Exception:" + nl
+				+ "      return None" + nl
+				+ "  def on_train_begin(self, logs=None):" + nl
+				+ "    info = {'type': 'progress', 'epoch': 0, 'step': 0, 'total_epochs': state['total_epochs'], 'total_steps': state['total_steps'], 'losses': {}, 'metrics': {}}" + nl
+				+ "    _task_update(message='StarDist training started', current=0, maximum=state['total_steps'], info=info)" + nl
+				+ "  def on_train_batch_end(self, batch, logs=None):" + nl
+				+ "    logs = logs or {}" + nl
+				+ "    self.global_step += 1" + nl
+				+ "    epoch = int((self.global_step - 1) // max(1, int(config.get('train_steps_per_epoch', 1))) + 1)" + nl
+				+ "    losses = _clean({'train/total_loss': logs.get('loss'), 'train/prob_loss': logs.get('prob_loss'), 'train/dist_loss': logs.get('dist_loss')})" + nl
+				+ "    metrics = _clean({'learning_rate': self._lr()})" + nl
+				+ "    info = {'type': 'progress', 'epoch': epoch, 'step': self.global_step, 'total_epochs': state['total_epochs'], 'total_steps': state['total_steps'], 'losses': losses, 'metrics': metrics}" + nl
+				+ "    _task_update(message='StarDist training step %d/%d' % (self.global_step, state['total_steps']), current=self.global_step, maximum=state['total_steps'], info=info)" + nl
+				+ "  def on_epoch_end(self, epoch, logs=None):" + nl
+				+ "    logs = logs or {}" + nl
+				+ "    current_epoch = int(epoch) + 1" + nl
+				+ "    step = min(state['total_steps'], current_epoch * int(config.get('train_steps_per_epoch', 1)))" + nl
+				+ "    losses = _clean({'train/total_loss': logs.get('loss'), 'val/total_loss': logs.get('val_loss')})" + nl
+				+ "    metrics = _clean({'learning_rate': self._lr()})" + nl
+				+ "    info = {'type': 'progress', 'epoch': current_epoch, 'step': step, 'total_epochs': state['total_epochs'], 'total_steps': state['total_steps'], 'losses': losses, 'metrics': metrics}" + nl
+				+ "    _task_update(message='StarDist epoch %d/%d' % (current_epoch, state['total_epochs']), current=step, maximum=state['total_steps'], info=info)" + nl
 				+ "  samples = []" + nl
-				+ "  for i, preview in enumerate(event.get('previews', [])[:20]):" + nl
+				+ "  for i, image in enumerate(self.X_val[:20]):" + nl
 				+ "    image_path = preview_dir / ('preview_%03d_image.npy' % i)" + nl
 				+ "    pred_path = preview_dir / ('preview_%03d_prediction.npy' % i)" + nl
 				+ "    prob_path = preview_dir / ('preview_%03d_prob.npy' % i)" + nl
 				+ "    sample = {'index': i}" + nl
-				+ "    image = preview.get('image')" + nl
-				+ "    prediction = preview.get('prediction')" + nl
-				+ "    prob = preview.get('prob')" + nl
-				+ "    if image is not None:" + nl
-				+ "      _atomic_npy_save(image_path, image)" + nl
-				+ "      sample['image_path'] = str(image_path)" + nl
-				+ "    if prediction is not None:" + nl
+				+ "    _atomic_npy_save(image_path, image)" + nl
+				+ "    sample['image_path'] = str(image_path)" + nl
+				+ "    try:" + nl
+				+ "      prediction, details = self.model_ref.predict_instances(image, axes=str(config.get('axes', 'YXC')), normalizer=None, n_tiles=None, show_tile_progress=False)" + nl
 				+ "      _atomic_npy_save(pred_path, np.asarray(prediction, dtype=np.int32))" + nl
 				+ "      sample['prediction_path'] = str(pred_path)" + nl
-				+ "    if prob is not None:" + nl
+				+ "      prob, _dist = self.model_ref.predict(image, axes=str(config.get('axes', 'YXC')), normalizer=None, n_tiles=None, show_tile_progress=False)" + nl
 				+ "      _atomic_npy_save(prob_path, prob)" + nl
 				+ "      sample['prob_path'] = str(prob_path)" + nl
-				+ "    if 'image_path' in sample and ('prediction_path' in sample or 'prob_path' in sample):" + nl
-				+ "      samples.append(sample)" + nl
+				+ "    except Exception:" + nl
+				+ "      pass" + nl
+				+ "    samples.append(sample)" + nl
 				+ "  if samples:" + nl
-				+ "    manifest = {'epoch': epoch, 'samples': samples}" + nl
+				+ "    manifest = {'epoch': current_epoch, 'samples': samples}" + nl
 				+ "    with open(preview_manifest_path, 'w', encoding='utf-8') as f:" + nl
 				+ "      json.dump(manifest, f)" + nl
-				+ "    _task_update(message='StarDist validation preview epoch %d' % epoch, current=epoch, maximum=state['total_epochs'], info={'type': 'preview', 'epoch': epoch, 'preview_path': str(preview_manifest_path)})" + nl
+				+ "    _task_update(message='StarDist validation preview epoch %d' % current_epoch, current=current_epoch, maximum=state['total_epochs'], info={'type': 'preview', 'epoch': current_epoch, 'preview_path': str(preview_manifest_path)})" + nl
+				+ "train_pairs, val_pairs = _dataset()" + nl
+				+ "X_train, Y_train = _load_pairs(train_pairs)" + nl
+				+ "X_val, Y_val = _load_pairs(val_pairs)" + nl
 				+ "with open(stardist_log_path, 'a', encoding='utf-8') as stardist_log, contextlib.redirect_stdout(stardist_log), contextlib.redirect_stderr(stardist_log):" + nl
-				+ "  result = train.train_stardist_2d_folder(data_dir=data_dir, " + gtDirArgument + "output_dir=str(output_dir), gpu=" + (gpu ? "True" : "False") + ", image_channels='" + TrainingCodeUtils.py(safeImageChannels) + "', label_color_mode='" + TrainingCodeUtils.py(safeLabelColorMode) + "', valid_fraction=" + validFraction + ", config=config, on_train_begin=on_train_begin, on_step_end=on_step_end, on_validation_end=on_validation_end)" + nl
-				+ "task.output(result=str(result.get('output_dir', str(output_dir))))" + nl;
+				+ "  model_config = Config2D(**config)" + nl
+				+ "  model = StarDist2D(model_config, name=output_dir.name, basedir=str(output_dir.parent))" + nl
+				+ "  model.prepare_for_training()" + nl
+				+ "  model.callbacks.append(JDLLProgressCallback(model, X_val))" + nl
+				+ "  history = model.train(X_train, Y_train, validation_data=(X_val, Y_val), epochs=int(config.get('train_epochs', 1)), steps_per_epoch=int(config.get('train_steps_per_epoch', 100)), workers=0)" + nl
+				+ "task.output(result=str(output_dir))" + nl;
 	}
 
 	private static void handleTrainingEvent(TaskEvent event,

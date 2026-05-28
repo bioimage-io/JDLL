@@ -63,7 +63,7 @@ cudnn       = "8.1.*"
 
 # Activation only when the 'cuda' feature is part of the active environment:
 [feature.cuda.target.win-64.activation.env]
-PATH = "%CONDA_PREFIX%\\Library\\bin;%PATH%"
+PATH = "%%CONDA_PREFIX%%\\Library\\bin;%%PATH%%"
 
 [feature.cuda.target.linux-64.activation.env]
 LD_LIBRARY_PATH = "$CONDA_PREFIX/lib:${LD_LIBRARY_PATH:-}"

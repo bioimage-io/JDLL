@@ -36,6 +36,7 @@ public final class StardistModelRegistry {
 
     public static final String STARDIST_MODELS_SUBDIR = "stardist";
     public static final String STARDIST_WEIGHTS_EXTENSION = ".mpk";
+    public static final String STARDIST_KERAS_WEIGHTS_EXTENSION = ".h5";
     public static final String STARDIST_ARCHITECTURE_EXTENSION = ".json";
     public static final String PRETRAINED_URL_FORMAT = "https://github.com/ultralytics/assets/releases/download/v8.4.0/%s";
 
@@ -80,14 +81,14 @@ public final class StardistModelRegistry {
         File[] customModels = stardistDir.listFiles(file ->
                 (file.isDirectory() && isModelDirectory(file))
                 || (file.isFile()
-                        && file.getName().toLowerCase().endsWith(STARDIST_WEIGHTS_EXTENSION)
+                        && isWeightsFile(file.getName())
                         && !isPretrainedWeightsFile(file.getName())));
         if (customModels == null) {
             return models;
         }
         Arrays.sort(customModels, Comparator.comparing(File::getName, String.CASE_INSENSITIVE_ORDER));
         for (File modelFile : customModels) {
-            models.put("[Custom] " + removeWeightsExtension(modelFile.getName()), findMpk(modelFile.getAbsolutePath()).toString());
+            models.put("[Custom] " + removeWeightsExtension(modelFile.getName()), findModelFile(modelFile.getAbsolutePath()).toString());
         }
         return models;
     }
@@ -147,21 +148,53 @@ public final class StardistModelRegistry {
         if (fileName.toLowerCase().endsWith(STARDIST_WEIGHTS_EXTENSION)) {
             return fileName.substring(0, fileName.length() - STARDIST_WEIGHTS_EXTENSION.length());
         }
+        if (fileName.toLowerCase().endsWith(STARDIST_KERAS_WEIGHTS_EXTENSION)) {
+            return fileName.substring(0, fileName.length() - STARDIST_KERAS_WEIGHTS_EXTENSION.length());
+        }
         return fileName;
     }
 
     private static boolean isModelDirectory(File file) {
-        return new File(file, "config.json").isFile() && findMpk(file.getAbsolutePath()) != null;
+        return new File(file, "config.json").isFile() && findModelFile(file.getAbsolutePath()) != null;
     }
     
     public static Path findMpk(String dir) {
+        return findModelFile(dir);
+    }
+
+    public static Path findModelFile(String dir) {
         try (Stream<Path> files = Files.list(Paths.get(dir))) {
             return files
                     .filter(Files::isRegularFile)
-                    .filter(p -> p.getFileName().toString().matches("(?i).*\\.mpk$"))
+                    .filter(p -> isWeightsFile(p.getFileName().toString()))
+                    .sorted(Comparator.comparingInt(StardistModelRegistry::weightsPriority)
+                            .thenComparing(p -> p.getFileName().toString(), String.CASE_INSENSITIVE_ORDER))
                     .findFirst().orElse(null);
         } catch (IOException e) {
 			return null;
 		}
+    }
+
+    private static int weightsPriority(Path path) {
+        String name = path.getFileName().toString().toLowerCase();
+        if ("weights_best.h5".equals(name)) {
+            return 0;
+        }
+        if ("weights_last.h5".equals(name)) {
+            return 1;
+        }
+        if (name.endsWith(STARDIST_KERAS_WEIGHTS_EXTENSION)) {
+            return 2;
+        }
+        return 3;
+    }
+
+    private static boolean isWeightsFile(String fileName) {
+        if (fileName == null) {
+            return false;
+        }
+        String lower = fileName.toLowerCase();
+        return lower.endsWith(STARDIST_WEIGHTS_EXTENSION)
+                || lower.endsWith(STARDIST_KERAS_WEIGHTS_EXTENSION);
     }
 }
