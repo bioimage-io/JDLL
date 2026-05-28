@@ -53,6 +53,7 @@ import io.bioimage.modelrunner.model.tiling.merger.DenseMerger;
 import io.bioimage.modelrunner.model.tiling.merger.Merger;
 import io.bioimage.modelrunner.tensor.Tensor;
 import io.bioimage.modelrunner.tensor.shm.SharedMemoryArray;
+import io.bioimage.modelrunner.transformations.ScaleRangeTransformation;
 import io.bioimage.modelrunner.utils.JSONUtils;
 import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.img.array.ArrayImgs;
@@ -250,6 +251,16 @@ public final class StarDist extends DLModelPytorchProtected {
 		long imageHeight = axisSize(referenceDims, referenceAxes, 'y');
 		long imageWidth = axisSize(referenceDims, referenceAxes, 'x');
 		merger.addCallback(reconstructed -> runStardistNms(reconstructed, imageHeight, imageWidth));
+		
+		
+		String configAxes = ;
+		double maxPer = ;
+		double minPer = ;
+		ScaleRangeTransformation transform = new ScaleRangeTransformation();
+		transform.setAxes(configAxes);
+		transform.setMaxPercentile(maxPer);
+		transform.setMinPercentile(minPer);
+		transform.applyInPlace(inputs.get(0));
 		return merger;
 	}
 
@@ -439,7 +450,7 @@ public final class StarDist extends DLModelPytorchProtected {
 				+ "', output_type='numpy', contiguous=False, n_channels=1)" + System.lineSeparator();
 				code += "  print(" + names.get(i) + ".shape)" + System.lineSeparator();
 			}
-			code += "  " + OUTPUT_LIST_KEY + " = " + MODEL_VAR_NAME + ".predict(" + names.get(0) + ")" + System.lineSeparator();;
+			code += "  " + OUTPUT_LIST_KEY + " = " + MODEL_VAR_NAME + ".predict_raw(" + names.get(0) + ", normalization=False)" + System.lineSeparator();;
 			code += "  " + SHMS_KEY + ".clear()" + System.lineSeparator();
 			code += "  " + SHM_NAMES_KEY + ".clear()" + System.lineSeparator();
 			code += "  " + DTYPES_KEY + ".clear()" + System.lineSeparator();
@@ -562,34 +573,6 @@ public final class StarDist extends DLModelPytorchProtected {
 			return false;
 		}
 	}
-
-    /**
-     * Installs the requirements for the current model instance.
-     *
-     * @throws InterruptedException if installation is interrupted
-     * @throws BuildException if installation fails
-     */
-    public void installRequirements() throws InterruptedException, BuildException {
-        installRequirements(null);
-    }
-
-    /**
-     * Installs the requirements for the current model instance.
-     *
-     * @param consumer
-     *     optional consumer receiving installation logs and progress
-     * @throws InterruptedException if installation is interrupted
-     * @throws BuildException if installation fails
-     */
-    public void installRequirements(final Consumer<String> consumer)
-            throws InterruptedException, BuildException {
-        PixiEnvironmentManager.installRequirements(environmentSpec, consumer);
-
-        if (!isInstalled()) {
-            throw new RuntimeException("Not all the required packages were installed correctly. Please try again."
-                    + " If the error persists, please post an issue at: https://github.com/bioimage-io/JDLL/issues");
-        }
-    }
 
 	public static void train(int epochs, String dataDir, String gtDir, String outputDir,
 			Consumer<StardistTrainingProgress> progressConsumer,
