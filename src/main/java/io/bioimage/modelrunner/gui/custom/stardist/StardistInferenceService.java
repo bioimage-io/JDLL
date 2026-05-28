@@ -31,7 +31,6 @@ import io.bioimage.modelrunner.exceptions.LoadModelException;
 import io.bioimage.modelrunner.exceptions.RunModelException;
 import io.bioimage.modelrunner.gui.custom.interfaces.ModelInstaller;
 import io.bioimage.modelrunner.model.InferenceProgress;
-import io.bioimage.modelrunner.model.detection.Detection;
 import io.bioimage.modelrunner.model.special.stardist.StarDist;
 import io.bioimage.modelrunner.tensor.Tensor;
 import net.imglib2.RandomAccessibleInterval;
@@ -52,15 +51,15 @@ public class StardistInferenceService {
         this.installer = installer;
     }
 
-    public <T extends RealType<T> & NativeType<T>>
-    List<Detection> run(String modelPath, RandomAccessibleInterval<T> rai, Consumer<String> logConsumer)
+    public <T extends RealType<T> & NativeType<T>, R extends RealType<R> & NativeType<R>>
+    List<Tensor<R>> run(String modelPath, RandomAccessibleInterval<T> rai, Consumer<String> logConsumer)
             throws RunModelException, LoadModelException, BuildException, IOException,
             ExecutionException, InterruptedException {
         return run(modelPath, rai, logConsumer, true);
     }
 
-    public <T extends RealType<T> & NativeType<T>>
-    List<Detection> run(String modelPath, RandomAccessibleInterval<T> rai, Consumer<String> logConsumer,
+    public <T extends RealType<T> & NativeType<T>, R extends RealType<R> & NativeType<R>>
+    List<Tensor<R>> run(String modelPath, RandomAccessibleInterval<T> rai, Consumer<String> logConsumer,
             boolean usePatchProgressBar)
             throws RunModelException, LoadModelException, BuildException, IOException,
             ExecutionException, InterruptedException {
@@ -70,8 +69,8 @@ public class StardistInferenceService {
         return runLoadedModel(rai);
     }
 
-    public <T extends RealType<T> & NativeType<T>>
-    List<Detection> runWithProgress(String modelPath, RandomAccessibleInterval<T> rai,
+    public <T extends RealType<T> & NativeType<T>, R extends RealType<R> & NativeType<R>>
+    List<Tensor<R>> runWithProgress(String modelPath, RandomAccessibleInterval<T> rai,
             Consumer<InferenceProgress> progressConsumer)
             throws RunModelException, LoadModelException, BuildException, IOException,
             ExecutionException, InterruptedException {
@@ -163,12 +162,12 @@ public class StardistInferenceService {
         return "Patch " + safePatch + "/" + safeTotal;
     }
 
-    private <T extends RealType<T> & NativeType<T>>
-    List<Detection> runLoadedModel(RandomAccessibleInterval<T> rai) throws RunModelException {
+    private <T extends RealType<T> & NativeType<T>, R extends RealType<R> & NativeType<R>>
+    List<Tensor<R>> runLoadedModel(RandomAccessibleInterval<T> rai) throws RunModelException {
         RandomAccessibleInterval<T> input = addDimsToInput(rai,
                 rai.dimensionsAsLongArray().length > 2 && rai.dimensionsAsLongArray()[2] == 3 ? 3 : 1);
-        List<Tensor<T>> outTensor = model.inference(Tensor.build("input", "xycb", input));
-        return Detection.fromBN6Tensor(outTensor.get(0));
+        List<Tensor<R>> outTensor = model.inference(Tensor.build("input", "xycb", input));
+        return outTensor;
     }
 
     private static <R extends RealType<R> & NativeType<R>>

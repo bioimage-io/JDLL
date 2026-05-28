@@ -45,6 +45,7 @@ import io.bioimage.modelrunner.gui.custom.yolo.YoloImageSourcePanel;
 import io.bioimage.modelrunner.model.InferenceProgress;
 import io.bioimage.modelrunner.model.detection.Detection;
 import io.bioimage.modelrunner.model.special.stardist.StardistTrainingProgress;
+import io.bioimage.modelrunner.tensor.Tensor;
 import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.type.NativeType;
 import net.imglib2.type.numeric.RealType;
@@ -352,13 +353,12 @@ public class StarDistPluginUI extends StardistGUI implements ActionListener {
     	Consumer<String> logConsumer = str -> SwingUtilities.invokeLater(() ->
     			StarDistPluginUI.this.inferencePanel.getLogPanel().appendHtml(str));
         startInferenceLogTimer();
-        List<Detection> detections;
         try {
-            detections = inferenceService.run(modelPath, rai, logConsumer);
+            List<Tensor<T>> detections = inferenceService.run(modelPath, rai, logConsumer);
+            consumer.displayImage(detections.get(0).getData(), detections.get(0).getAxesOrderString(), detections.get(0).getName());
         } finally {
             SwingUtilities.invokeLater(() -> StarDistPluginUI.this.inferencePanel.getLogPanel().stopRunTimer());
         }
-        consumer.displayDetections(detections);
     }
 
     private void runStardistOnSystemImage(String modelPath)

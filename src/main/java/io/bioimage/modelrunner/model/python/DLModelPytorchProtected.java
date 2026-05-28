@@ -141,7 +141,7 @@ public class DLModelPytorchProtected extends BaseModel {
     	TOML_SUFFIX.put(PlatformDetection.OS_OSX + PlatformDetection.ARCH_AARCH64 + "true", "mac-x86");
     	TOML_SUFFIX.put(PlatformDetection.OS_LINUX + PlatformDetection.ARCH_AARCH64 + "false", "mac-arm");
     }
-    
+
     private static final List<String> CUDA_COMPAT_VERSIONS = new ArrayList<>(Arrays.asList("12.4", "12.1", "11.8"));
 
     protected static final boolean IS_ARM = PlatformDetection.isMacOS()
@@ -726,6 +726,10 @@ public class DLModelPytorchProtected extends BaseModel {
     	return batchedOuts.get(0);
     }
 
+    protected String getOutputTensorAxes(int outputCount) {
+		return "bcyx";
+	}
+
     /**
      * Runs inference directly on a list of input images.
      *
@@ -833,12 +837,12 @@ public class DLModelPytorchProtected extends BaseModel {
     protected List<String> getOutputAxes(final int outputCount) {
         final List<String> axes = new ArrayList<String>(outputCount);
         for (int i = 0; i < outputCount; i ++) {
-            axes.add("bic");
+            axes.add(getOutputTensorAxes(i));
         }
         return axes;
     }
-    
-    /**
+
+	/**
      * Creates the Python code required to transfer inputs through shared memory.
      *
      * @param rais the input images
