@@ -1429,34 +1429,6 @@ public class DLModelPytorchProtected extends BaseModel {
     }
 
     /**
-     * Installs the requirements for the current model instance.
-     *
-     * @throws InterruptedException if installation is interrupted
-     * @throws BuildException if installation fails
-     */
-    public void installRequirements() throws InterruptedException, BuildException {
-        installRequirements(null);
-    }
-
-    /**
-     * Installs the requirements for the current model instance.
-     *
-     * @param consumer
-     *     optional consumer receiving installation logs and progress
-     * @throws InterruptedException if installation is interrupted
-     * @throws BuildException if installation fails
-     */
-    public void installRequirements(final Consumer<String> consumer)
-            throws InterruptedException, BuildException {
-        PixiEnvironmentManager.installRequirements(environmentSpec, consumer);
-
-        if (!isInstalled()) {
-            throw new RuntimeException("Not all the required packages were installed correctly. Please try again."
-                    + " If the error persists, please post an issue at: https://github.com/bioimage-io/JDLL/issues");
-        }
-    }
-
-    /**
      * Sets the directory where the Python environment will be installed.
      *
      * @param installationDir
