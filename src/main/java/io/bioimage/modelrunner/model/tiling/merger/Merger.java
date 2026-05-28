@@ -24,6 +24,8 @@ import java.util.Collections;
 import java.util.List;
 
 import io.bioimage.modelrunner.tensor.Tensor;
+import net.imglib2.type.NativeType;
+import net.imglib2.type.numeric.RealType;
 
 /**
  * Base class for merging outputs produced by tiled inference.
@@ -140,5 +142,97 @@ public abstract class Merger<I extends Tensor<?>, O extends Tensor<?>> {
             return Collections.emptyList();
         }
         return Collections.unmodifiableList(new ArrayList<E>(values));
+    }
+
+    protected static <T extends RealType<T> & NativeType<T>> List<InputImage<T>> findImageInputs(
+            final List<Tensor<T>> inputs) {
+        if (inputs == null || inputs.isEmpty()) {
+            return Collections.emptyList();
+        }
+        final List<InputImage<T>> imageInputs = new ArrayList<InputImage<T>>();
+        for (Tensor<T> input : inputs) {
+            if (hasXY(input)) {
+                imageInputs.add(new InputImage<T>(input));
+            }
+        }
+        return Collections.unmodifiableList(imageInputs);
+    }
+
+    protected static <T extends RealType<T> & NativeType<T>> boolean hasXY(final Tensor<T> tensor) {
+        return tensor != null
+                && tensor.getAxesOrderString().indexOf('x') >= 0
+                && tensor.getAxesOrderString().indexOf('y') >= 0;
+    }
+
+    protected static long axisSize(final long[] dims, final String axes, final char axis) {
+        if (dims == null || axes == null) {
+            throw new IllegalArgumentException("Dimensions and axes cannot be null.");
+        }
+        final int index = axes.indexOf(axis);
+        if (index < 0 || index >= dims.length) {
+            throw new IllegalArgumentException("Axes '" + axes + "' do not contain axis '" + axis + "'.");
+        }
+        return dims[index];
+    }
+
+    protected static long[] toXyxyWindow(final long[] tilePosition, final long[] tileSize, final String axes) {
+        final int x = axes.indexOf('x');
+        final int y = axes.indexOf('y');
+        if (x < 0 || y < 0 || tilePosition == null || tileSize == null
+                || tilePosition.length <= Math.max(x, y) || tileSize.length <= Math.max(x, y)) {
+            throw new IllegalArgumentException("Tile position and size must contain x and y dimensions.");
+        }
+        return new long[] {
+                tilePosition[x],
+                tilePosition[y],
+                tilePosition[x] + tileSize[x],
+                tilePosition[y] + tileSize[y]
+        };
+    }
+
+    protected static long[] scaleWindow(final long[] referenceWindow, final InputImage<?> reference,
+            final InputImage<?> target) {
+        if (reference == target) {
+            return referenceWindow.clone();
+        }
+        return new long[] {
+                scale(referenceWindow[X1], reference.width(), target.width()),
+                scale(referenceWindow[Y1], reference.height(), target.height()),
+                scale(referenceWindow[X2], reference.width(), target.width()),
+                scale(referenceWindow[Y2], reference.height(), target.height())
+        };
+    }
+
+    protected static long scale(final long value, final long sourceSize, final long targetSize) {
+        return clip(Math.round(value * (targetSize / (double) sourceSize)), 0L, targetSize);
+    }
+
+    protected static long clip(final long value, final long min, final long max) {
+        return Math.max(min, Math.min(max, value));
+    }
+
+    protected static final class InputImage<T extends RealType<T> & NativeType<T>> {
+
+        protected final Tensor<T> tensor;
+        protected final String axes;
+        protected final int xAxis;
+        protected final int yAxis;
+        protected final long[] dims;
+
+        protected InputImage(final Tensor<T> tensor) {
+            this.tensor = tensor;
+            this.axes = tensor.getAxesOrderString();
+            this.xAxis = axes.indexOf('x');
+            this.yAxis = axes.indexOf('y');
+            this.dims = tensor.getData().dimensionsAsLongArray();
+        }
+
+        protected long width() {
+            return dims[xAxis];
+        }
+
+        protected long height() {
+            return dims[yAxis];
+        }
     }
 }

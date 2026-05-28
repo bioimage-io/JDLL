@@ -248,16 +248,33 @@ public final class StarDist extends DLModelPytorchProtected {
     protected <T extends RealType<T> & NativeType<T>, R extends RealType<R> & NativeType<R>>
     Merger<Tensor<T>, Tensor<R>> getTileMaker(final List<Tensor<T>> inputs) {
     	List<TileInfo> inputInfo = new ArrayList<TileInfo>();
+    	int nChannels = ...;
+    	int gridX = ;
+    	int gridY = ;
+    	int patchSize = ;
+    	int nRays = ;
     	for (Tensor<T> inp : inputs) {
     		TileInfo tileInfo = TileInfo.build(inp.getName(), inp.getData().dimensionsAsLongArray(), 
-    				inp.getAxesOrderString(), new long[] {5L, 6L}, "");
+    				inp.getAxesOrderString(), new long[] {1L, nChannels, 512L, 512L}, inp.getAxesOrderString());
     		inputInfo.add(tileInfo);
     	}
+    	long[] inputDims = inputs.get(0).getData().dimensionsAsLongArray();
+    	long[] outputDims = new long[4];
+    	outputDims[0] += inputDims[0]; outputDims[1] += inputDims[1];
+    	outputDims[2] = (long) Math.ceil(inputDims[2] / (double) gridY);
+    	outputDims[3] = (long) Math.ceil(inputDims[3] / (double) gridX);
     	List<TileInfo> outputInfo = new ArrayList<TileInfo>();
-    	TileInfo probsOutput = TileInfo.build("probs", null, CLOSE_SHM_CODE, null, CELLCAST_WHEEL_RESOURCE_DIR);
-    	probsOutput.setHalo(null, CELLCAST_WHEEL_RESOURCE_DIR);
-    	TileInfo distOutput = TileInfo.build("dists", null, CLOSE_SHM_CODE, null, CELLCAST_WHEEL_RESOURCE_DIR);
-    	distOutput.setHalo(null, CELLCAST_WHEEL_RESOURCE_DIR);
+    	TileInfo probsOutput = TileInfo.build("probs", outputDims, "bcyx",
+    			new long[] {1L, nChannels, (long) Math.ceil(512 / gridY), (long) Math.ceil(512 / gridX)}, "bcyx");
+    	probsOutput.setHalo(new long[] {0L, 0L, (long) Math.ceil(96 / gridY), (long) Math.ceil(96 / gridX)}, "bcyx");
+
+    	long[] rayDims = new long[4];
+    	rayDims[0] += inputDims[0]; rayDims[1] += nRays;
+    	rayDims[2] = (long) Math.ceil(inputDims[2] / (double) gridY);
+    	rayDims[3] = (long) Math.ceil(inputDims[3] / (double) gridX);
+    	TileInfo distOutput = TileInfo.build("dists", rayDims, "bcyx",
+    			new long[] {1L, nRays, (long) Math.ceil(512 / gridY), (long) Math.ceil(512 / gridX)}, "bcyx");
+    	probsOutput.setHalo(new long[] {0L, 0L, (long) Math.ceil(96 / gridY), (long) Math.ceil(96 / gridX)}, "bcyx");
     	
     	outputInfo.add(probsOutput);
     	outputInfo.add(probsOutput);

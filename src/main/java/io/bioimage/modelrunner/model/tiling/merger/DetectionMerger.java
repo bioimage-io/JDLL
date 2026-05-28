@@ -73,7 +73,7 @@ public final class DetectionMerger<T extends RealType<T> & NativeType<T>, R exte
     private double nmsIouThreshold = DEFAULT_NMS_IOU_THRESHOLD;
 
     private List<Tensor<T>> inputs = Collections.emptyList();
-    private List<InputImage> imageInputs = Collections.emptyList();
+    private List<InputImage<T>> imageInputs = Collections.emptyList();
     private List<long[]> referenceWindows = Collections.emptyList();
     private long[] referenceWindow;
     private List<List<Detection>> detectionsByPatch = Collections.emptyList();
@@ -137,7 +137,7 @@ public final class DetectionMerger<T extends RealType<T> & NativeType<T>, R exte
         if (imageInputs.isEmpty()) {
             throw new IllegalArgumentException("DetectionMerger needs at least one input tensor with x and y axes.");
         }
-        final InputImage reference = imageInputs.get(0);
+        final InputImage<T> reference = imageInputs.get(0);
         this.referenceWindow = new long[] { 0, 0, reference.width(), reference.height() };
         this.referenceWindows = createReferenceWindows(reference);
         this.detectionsByPatch = new ArrayList<List<Detection>>(referenceWindows.size());
@@ -161,7 +161,7 @@ public final class DetectionMerger<T extends RealType<T> & NativeType<T>, R exte
         final long[] referenceTileWindow = referenceWindows.get(patchNumber);
         final List<Tensor<T>> patch = new ArrayList<Tensor<T>>(inputs.size());
         for (Tensor<T> input : inputs) {
-            final InputImage imageInput = findImageInput(input);
+            final InputImage<T> imageInput = findImageInput(input);
             if (imageInput == null) {
                 patch.add(input);
             } else {
@@ -214,7 +214,7 @@ public final class DetectionMerger<T extends RealType<T> & NativeType<T>, R exte
         return patch;
     }
 
-    private List<long[]> createReferenceWindows(final InputImage reference) {
+    private List<long[]> createReferenceWindows(final InputImage<T> reference) {
         if (mode == Mode.TILE_MAKER) {
             return createTileMakerWindows(reference);
         } else if (mode == Mode.PATCH_SIZES) {
@@ -229,7 +229,7 @@ public final class DetectionMerger<T extends RealType<T> & NativeType<T>, R exte
         return createObjectSizeWindows(reference);
     }
 
-    private List<long[]> createTileMakerWindows(final InputImage reference) {
+    private List<long[]> createTileMakerWindows(final InputImage<T> reference) {
         final List<long[]> positions = tileMaker.getTilePostionsInputImage(reference.tensor.getName());
         final long[] tileSize = tileMaker.getInputTileSize(reference.tensor.getName());
         final List<long[]> windows = new ArrayList<long[]>(positions.size());
@@ -239,7 +239,7 @@ public final class DetectionMerger<T extends RealType<T> & NativeType<T>, R exte
         return Collections.unmodifiableList(windows);
     }
 
-    private List<long[]> createPatchSizeWindows(final InputImage reference) {
+    private List<long[]> createPatchSizeWindows(final InputImage<T> reference) {
         validatePatchSizes();
         final TileInfo referencePatch = patchSizeFor(reference.tensor.getName());
         final long[] tileSize = referencePatch.getTileDims();
@@ -248,7 +248,7 @@ public final class DetectionMerger<T extends RealType<T> & NativeType<T>, R exte
                 axisSize(tileSize, tileAxes, 'y'));
     }
 
-    private List<long[]> createObjectSizeWindows(final InputImage reference) {
+    private List<long[]> createObjectSizeWindows(final InputImage<T> reference) {
         final long objectWidth = Math.max(1L, sizeArray[X2] - sizeArray[X1]);
         final long objectHeight = Math.max(1L, sizeArray[Y2] - sizeArray[Y1]);
         final double objectArea = objectWidth * (double) objectHeight;
@@ -304,7 +304,7 @@ public final class DetectionMerger<T extends RealType<T> & NativeType<T>, R exte
                     + " TileInfo objects for " + imageInputs.size() + " image inputs.");
         }
         final Map<String, TileInfo> byName = patchSizeMap();
-        for (InputImage imageInput : imageInputs) {
+        for (InputImage<T> imageInput : imageInputs) {
             final TileInfo info = byName.get(imageInput.tensor.getName());
             if (info == null) {
                 throw new IllegalArgumentException("Missing TileInfo for image tensor '"
@@ -330,7 +330,7 @@ public final class DetectionMerger<T extends RealType<T> & NativeType<T>, R exte
         return info;
     }
 
-    private void validateTileInfoMatchesInput(final TileInfo info, final InputImage input) {
+    private void validateTileInfoMatchesInput(final TileInfo info, final InputImage<T> input) {
         if (axisSize(info.getImageDims(), info.getImageAxesOrder(), 'x') != input.width()
                 || axisSize(info.getImageDims(), info.getImageAxesOrder(), 'y') != input.height()) {
             throw new IllegalArgumentException("TileInfo image size for '" + info.getName()
@@ -438,7 +438,7 @@ public final class DetectionMerger<T extends RealType<T> & NativeType<T>, R exte
                 detection.getConfidence(), detection.getClassId());
     }
 
-    private Tensor<T> extractPatch(final InputImage imageInput, final long[] window) {
+    private Tensor<T> extractPatch(final InputImage<T> imageInput, final long[] window) {
         final RandomAccessibleInterval<T> data = imageInput.tensor.getData();
         final long[] min = new long[data.numDimensions()];
         final long[] max = new long[data.numDimensions()];
@@ -456,79 +456,13 @@ public final class DetectionMerger<T extends RealType<T> & NativeType<T>, R exte
         return Tensor.build(imageInput.tensor.getName(), imageInput.axes, patch);
     }
 
-    private InputImage findImageInput(final Tensor<T> tensor) {
-        for (InputImage input : imageInputs) {
+    private InputImage<T> findImageInput(final Tensor<T> tensor) {
+        for (InputImage<T> input : imageInputs) {
             if (input.tensor == tensor) {
                 return input;
             }
         }
         return null;
-    }
-
-    private List<InputImage> findImageInputs(final List<Tensor<T>> inputs) {
-        if (inputs == null || inputs.isEmpty()) {
-            return Collections.emptyList();
-        }
-        final List<InputImage> imageInputs = new ArrayList<InputImage>();
-        for (Tensor<T> input : inputs) {
-            if (hasXY(input)) {
-                imageInputs.add(new InputImage(input));
-            }
-        }
-        return Collections.unmodifiableList(imageInputs);
-    }
-
-    private static <T extends RealType<T> & NativeType<T>> boolean hasXY(final Tensor<T> tensor) {
-        return tensor != null
-                && tensor.getAxesOrderString().indexOf('x') >= 0
-                && tensor.getAxesOrderString().indexOf('y') >= 0;
-    }
-
-    private long[] scaleWindow(final long[] referenceWindow, final InputImage reference,
-            final InputImage target) {
-        if (reference == target) {
-            return referenceWindow.clone();
-        }
-        return new long[] {
-                scale(referenceWindow[X1], reference.width(), target.width()),
-                scale(referenceWindow[Y1], reference.height(), target.height()),
-                scale(referenceWindow[X2], reference.width(), target.width()),
-                scale(referenceWindow[Y2], reference.height(), target.height())
-        };
-    }
-
-    private static long scale(final long value, final long sourceSize, final long targetSize) {
-        return clip(Math.round(value * (targetSize / (double) sourceSize)), 0L, targetSize);
-    }
-
-    private static long clip(final long value, final long min, final long max) {
-        return Math.max(min, Math.min(max, value));
-    }
-
-    private static long axisSize(final long[] dims, final String axes, final char axis) {
-        if (dims == null || axes == null) {
-            throw new IllegalArgumentException("Dimensions and axes cannot be null.");
-        }
-        final int index = axes.indexOf(axis);
-        if (index < 0 || index >= dims.length) {
-            throw new IllegalArgumentException("Axes '" + axes + "' do not contain axis '" + axis + "'.");
-        }
-        return dims[index];
-    }
-
-    private static long[] toXyxyWindow(final long[] tilePosition, final long[] tileSize, final String axes) {
-        final int x = axes.indexOf('x');
-        final int y = axes.indexOf('y');
-        if (x < 0 || y < 0 || tilePosition == null || tileSize == null
-                || tilePosition.length <= Math.max(x, y) || tileSize.length <= Math.max(x, y)) {
-            throw new IllegalArgumentException("Tile position and size must contain x and y dimensions.");
-        }
-        return new long[] {
-                tilePosition[x],
-                tilePosition[y],
-                tilePosition[x] + tileSize[x],
-                tilePosition[y] + tileSize[y]
-        };
     }
 
     private static long[] toWindow(final Rectangle rectangle) {
@@ -619,28 +553,4 @@ public final class DetectionMerger<T extends RealType<T> & NativeType<T>, R exte
         }
     }
 
-    private final class InputImage {
-
-        private final Tensor<T> tensor;
-        private final String axes;
-        private final int xAxis;
-        private final int yAxis;
-        private final long[] dims;
-
-        private InputImage(final Tensor<T> tensor) {
-            this.tensor = tensor;
-            this.axes = tensor.getAxesOrderString();
-            this.xAxis = axes.indexOf('x');
-            this.yAxis = axes.indexOf('y');
-            this.dims = tensor.getData().dimensionsAsLongArray();
-        }
-
-        private long width() {
-            return dims[xAxis];
-        }
-
-        private long height() {
-            return dims[yAxis];
-        }
-    }
 }

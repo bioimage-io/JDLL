@@ -19,53 +19,32 @@
  */
 package io.bioimage.modelrunner.model.tiling.merger;
 
-import java.awt.Rectangle;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.List;
-import java.util.stream.Collectors;
 
-import io.bioimage.modelrunner.model.detection.Detection;
-import io.bioimage.modelrunner.model.tiling.TileInfo;
 import io.bioimage.modelrunner.model.tiling.TileMaker;
 import io.bioimage.modelrunner.tensor.Tensor;
-import io.bioimage.modelrunner.utils.CommonUtils;
 import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.loops.LoopBuilder;
 import net.imglib2.type.NativeType;
 import net.imglib2.type.numeric.RealType;
 
 /**
- * Merges object detections produced from overlapping spatial tiles.
+ * Merges dense tensor outputs produced from spatial tiles.
  * <p>
- * The merger shifts tile-local boxes back into full-image coordinates, clips
- * them to image bounds and removes duplicated detections with class-aware NMS.
+ * Each patch output is copied into the corresponding region of a preallocated
+ * full-size output tensor.
  */
 public final class DenseMerger<T extends RealType<T> & NativeType<T>, R extends RealType<R> & NativeType<R>>
 extends Merger<Tensor<T>, Tensor<R>> {
 	
 	private final TileMaker tileMaker;
-    private long[] sizeArray;
-
-    private float tileOverlap = 0.15f;
 
     private List<Tensor<T>> inputs = Collections.emptyList();
-    private List<InputImage> imageInputs = Collections.emptyList();
+    private List<InputImage<T>> imageInputs = Collections.emptyList();
     private List<long[]> referenceWindows = Collections.emptyList();
-    private long[] referenceWindow;
     private List<Tensor<R>> reconstructed = Collections.emptyList();
-    private Tensor<R> outputPrototype;
-    private boolean reconstructedValid;
-
-    private static final int X1 = 0;
-    private static final int Y1 = 1;
-    private static final int X2 = 2;
-    private static final int Y2 = 3;
-    private static final int WINDOW_LENGTH = 4;
-
-
-    public static final double DEFAULT_NMS_IOU_THRESHOLD = 0.5d;
 
     public DenseMerger(final TileMaker tileMaker) {
         if (tileMaker == null) {
@@ -79,15 +58,12 @@ extends Merger<Tensor<T>, Tensor<R>> {
         this.inputs = inputs == null ? Collections.<Tensor<T>>emptyList() : inputs;
         this.imageInputs = findImageInputs(this.inputs);
         if (imageInputs.isEmpty()) {
-            throw new IllegalArgumentException("DetectionMerger needs at least one input tensor with x and y axes.");
+            throw new IllegalArgumentException("DenseMerger needs at least one input tensor with x and y axes.");
         }
-        final InputImage reference = imageInputs.get(0);
-        this.referenceWindow = new long[] { 0, 0, reference.width(), reference.height() };
+        final InputImage<T> reference = imageInputs.get(0);
         this.referenceWindows = createReferenceWindows(reference);
 
         this.reconstructed = tileMaker.createOutputTensors((R) new net.imglib2.type.numeric.real.FloatType(0.0f));
-        this.outputPrototype = null;
-        this.reconstructedValid = false;
         this.configured = true;
         this.digested = referenceWindows.isEmpty();
     }
@@ -116,8 +92,6 @@ extends Merger<Tensor<T>, Tensor<R>> {
         for (int i = 0; i < outputs.size(); i++) {
             copyPatchIntoReconstruction(outputs.get(i), reconstructed.get(i), patchNumber);
         }
-
-        reconstructedValid = false;
         digested = patchNumber + 1 == this.getNPatches();
     }
 
@@ -140,24 +114,11 @@ extends Merger<Tensor<T>, Tensor<R>> {
                 .forEachPixel((src, dst) -> dst.set(src));
     }
 
-    private List<InputImage> findImageInputs(final List<Tensor<T>> inputs) {
-        if (inputs == null || inputs.isEmpty()) {
-            return Collections.emptyList();
-        }
-        final List<InputImage> imageInputs = new ArrayList<InputImage>();
-        for (Tensor<T> input : inputs) {
-            if (hasXY(input)) {
-                imageInputs.add(new InputImage(input));
-            }
-        }
-        return Collections.unmodifiableList(imageInputs);
-    }
-
-    private List<long[]> createReferenceWindows(final InputImage reference) {
+    private List<long[]> createReferenceWindows(final InputImage<T> reference) {
         return createTileMakerWindows(reference);
     }
 
-    private List<long[]> createTileMakerWindows(final InputImage reference) {
+    private List<long[]> createTileMakerWindows(final InputImage<T> reference) {
         final List<long[]> positions = tileMaker.getTilePostionsInputImage(reference.tensor.getName());
         final long[] tileSize = tileMaker.getInputTileSize(reference.tensor.getName());
         final List<long[]> windows = new ArrayList<long[]>(positions.size());
@@ -179,49 +140,4 @@ extends Merger<Tensor<T>, Tensor<R>> {
         return patch;
     }
 
-    private static <T extends RealType<T> & NativeType<T>> boolean hasXY(final Tensor<T> tensor) {
-        return tensor != null
-                && tensor.getAxesOrderString().indexOf('x') >= 0
-                && tensor.getAxesOrderString().indexOf('y') >= 0;
-    }
-
-    private static long[] toXyxyWindow(final long[] tilePosition, final long[] tileSize, final String axes) {
-        final int x = axes.indexOf('x');
-        final int y = axes.indexOf('y');
-        if (x < 0 || y < 0 || tilePosition == null || tileSize == null
-                || tilePosition.length <= Math.max(x, y) || tileSize.length <= Math.max(x, y)) {
-            throw new IllegalArgumentException("Tile position and size must contain x and y dimensions.");
-        }
-        return new long[] {
-                tilePosition[x],
-                tilePosition[y],
-                tilePosition[x] + tileSize[x],
-                tilePosition[y] + tileSize[y]
-        };
-    }
-
-    private final class InputImage {
-
-        private final Tensor<T> tensor;
-        private final String axes;
-        private final int xAxis;
-        private final int yAxis;
-        private final long[] dims;
-
-        private InputImage(final Tensor<T> tensor) {
-            this.tensor = tensor;
-            this.axes = tensor.getAxesOrderString();
-            this.xAxis = axes.indexOf('x');
-            this.yAxis = axes.indexOf('y');
-            this.dims = tensor.getData().dimensionsAsLongArray();
-        }
-
-        private long width() {
-            return dims[xAxis];
-        }
-
-        private long height() {
-            return dims[yAxis];
-        }
-    }
 }
