@@ -22,6 +22,7 @@ package io.bioimage.modelrunner.model.tiling.merger;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.function.Function;
 
 import io.bioimage.modelrunner.tensor.Tensor;
 import net.imglib2.type.NativeType;
@@ -48,6 +49,9 @@ public abstract class Merger<I extends Tensor<?>, O extends Tensor<?>> {
     
     protected boolean configured;
     protected boolean digested;
+    private final List<Function<List<O>, List<O>>> reconstructionCallbacks =
+            new ArrayList<Function<List<O>, List<O>>>();
+    private boolean callbacksApplied;
 
     protected Merger() {
     }
@@ -87,6 +91,14 @@ public abstract class Merger<I extends Tensor<?>, O extends Tensor<?>> {
     public abstract void digest(int patchNumber, List<O> outputs);
 
     /**
+     * Adds a callback that is run once on the reconstructed outputs before they
+     * are returned by {@link #getReconstructed()}.
+     *
+     * @param callback transformation to apply to reconstructed outputs
+     */
+    public abstract void addCallback(Function<List<O>, List<O>> callback);
+
+    /**
      * Convenience overload for single-output models.
      *
      * @param patchNumber zero-based patch index that produced {@code output}
@@ -103,6 +115,33 @@ public abstract class Merger<I extends Tensor<?>, O extends Tensor<?>> {
      * @return reconstructed model outputs
      */
     public abstract List<O> getReconstructed();
+
+    protected void registerCallback(final Function<List<O>, List<O>> callback) {
+        if (callback == null) {
+            throw new IllegalArgumentException("Reconstruction callback cannot be null.");
+        }
+        reconstructionCallbacks.add(callback);
+        callbacksApplied = false;
+    }
+
+    protected List<O> applyReconstructionCallbacks(final List<O> reconstructed) {
+        if (callbacksApplied || reconstructionCallbacks.isEmpty()) {
+            return reconstructed;
+        }
+        List<O> current = reconstructed;
+        for (Function<List<O>, List<O>> callback : reconstructionCallbacks) {
+            current = callback.apply(current);
+            if (current == null) {
+                current = Collections.emptyList();
+            }
+        }
+        callbacksApplied = true;
+        return current;
+    }
+
+    protected void resetReconstructionCallbacks() {
+        callbacksApplied = false;
+    }
 
 	protected void requireConfigured() {
 		if (!configured) {

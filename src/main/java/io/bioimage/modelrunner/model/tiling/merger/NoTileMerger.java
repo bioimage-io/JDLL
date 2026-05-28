@@ -21,6 +21,7 @@ package io.bioimage.modelrunner.model.tiling.merger;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.function.Function;
 
 import io.bioimage.modelrunner.tensor.Tensor;
 import net.imglib2.type.NativeType;
@@ -67,12 +68,19 @@ public final class NoTileMerger<T extends RealType<T> & NativeType<T>, R extends
 		patchNumberValid(patchNumber);
 		reconstructed = outputs;
 		digested = true;
+		resetReconstructionCallbacks();
+	}
+
+	@Override
+	public void addCallback(final Function<List<Tensor<R>>, List<Tensor<R>>> callback) {
+		registerCallback(callback);
 	}
 
 	@Override
 	public List<Tensor<R>> getReconstructed() {
 		requireConfigured();
 		requireDigested();
+		reconstructed = applyReconstructionCallbacks(reconstructed);
 		return reconstructed;
 	}
 }

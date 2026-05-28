@@ -642,7 +642,7 @@ public class DLModelPytorchProtected extends BaseModel {
         return executeCode(createInputsCode(inTensors, names));
     }
 
-    private <T extends RealType<T> & NativeType<T>, R extends RealType<R> & NativeType<R>>
+    protected <T extends RealType<T> & NativeType<T>, R extends RealType<R> & NativeType<R>>
     Map<String, RandomAccessibleInterval<R>> executeCode(final String code) throws RunModelException {
         Throwable lastFailure = null;
         for (int attempt = 0; attempt <= MAX_TRANSIENT_TASK_RETRIES; attempt ++) {
@@ -808,9 +808,7 @@ public class DLModelPytorchProtected extends BaseModel {
 
         final String code = createInputsCode(inputs, names);
         final Map<String, RandomAccessibleInterval<R>> map = executeCode(code);
-        // TODO TODO
-        outAxes = Arrays.asList("bic");
-        //outAxes.add("bic");
+        outAxes = getOutputAxes(map.size());
         List<Tensor<R>> outTensors = new ArrayList<Tensor<R>>();
         int i = 0;
         for (Entry<String, RandomAccessibleInterval<R>> ee : map.entrySet()) {
@@ -819,6 +817,14 @@ public class DLModelPytorchProtected extends BaseModel {
         	i ++;
         }
     	return outTensors;
+    }
+
+    protected List<String> getOutputAxes(final int outputCount) {
+        final List<String> axes = new ArrayList<String>(outputCount);
+        for (int i = 0; i < outputCount; i ++) {
+            axes.add("bic");
+        }
+        return axes;
     }
     
     /**

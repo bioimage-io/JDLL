@@ -26,6 +26,7 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Function;
 
 import io.bioimage.modelrunner.model.detection.Detection;
 import io.bioimage.modelrunner.model.tiling.TileInfo;
@@ -149,6 +150,7 @@ public final class DetectionMerger<T extends RealType<T> & NativeType<T>, R exte
         this.reconstructedValid = false;
         this.configured = true;
         this.digested = referenceWindows.isEmpty();
+        resetReconstructionCallbacks();
     }
 
     @Override
@@ -185,6 +187,12 @@ public final class DetectionMerger<T extends RealType<T> & NativeType<T>, R exte
         reconstructed = Collections.emptyList();
         reconstructedValid = false;
         digested = allPatchesDigested();
+        resetReconstructionCallbacks();
+    }
+
+    @Override
+    public void addCallback(final Function<List<Tensor<R>>, List<Tensor<R>>> callback) {
+        registerCallback(callback);
     }
 
     @Override
@@ -198,6 +206,7 @@ public final class DetectionMerger<T extends RealType<T> & NativeType<T>, R exte
         reconstructed = outputPrototype == null
                 ? Collections.<Tensor<R>>emptyList()
                 : Collections.singletonList(toBicTensor(mergedDetections));
+        reconstructed = applyReconstructionCallbacks(reconstructed);
         reconstructedValid = true;
         return reconstructed;
     }

@@ -22,6 +22,7 @@ package io.bioimage.modelrunner.model.tiling.merger;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.function.Function;
 
 import io.bioimage.modelrunner.model.tiling.TileMaker;
 import io.bioimage.modelrunner.tensor.Tensor;
@@ -66,6 +67,7 @@ extends Merger<Tensor<T>, Tensor<R>> {
         this.reconstructed = tileMaker.createOutputTensors((R) new net.imglib2.type.numeric.real.FloatType(0.0f));
         this.configured = true;
         this.digested = referenceWindows.isEmpty();
+        resetReconstructionCallbacks();
     }
 
 	@Override
@@ -93,12 +95,19 @@ extends Merger<Tensor<T>, Tensor<R>> {
             copyPatchIntoReconstruction(outputs.get(i), reconstructed.get(i), patchNumber);
         }
         digested = patchNumber + 1 == this.getNPatches();
+        resetReconstructionCallbacks();
+    }
+
+    @Override
+    public void addCallback(final Function<List<Tensor<R>>, List<Tensor<R>>> callback) {
+        registerCallback(callback);
     }
 
     @Override
     public List<Tensor<R>> getReconstructed() {
         requireConfigured();
         requireDigested();
+        reconstructed = applyReconstructionCallbacks(reconstructed);
         return reconstructed;
     }
 

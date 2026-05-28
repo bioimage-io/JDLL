@@ -268,9 +268,75 @@ public final class StarDist extends DLModelPytorchProtected {
 			throw new IllegalArgumentException("StarDist tiling needs one input tensor with x and y axes.");
 		}
 		TileMaker tileMaker = TileMaker.build(inputInfo, createDenseOutputTileInfo(referenceInput));
-    	DenseMerger<T, R> merger = new DenseMerger<T, R>(tileMaker);
-        merger.configure(inputs);
-        return merger;
+		DenseMerger<T, R> merger = new DenseMerger<T, R>(tileMaker);
+		String referenceAxes = referenceInput.getAxesOrderString().toLowerCase();
+		long[] referenceDims = referenceInput.getData().dimensionsAsLongArray();
+		long imageHeight = axisSize(referenceDims, referenceAxes, 'y');
+		long imageWidth = axisSize(referenceDims, referenceAxes, 'x');
+		merger.addCallback(reconstructed -> runStardistNms(reconstructed, imageHeight, imageWidth));
+		return merger;
+	}
+
+	@Override
+	protected List<String> getOutputAxes(final int outputCount) {
+		if (outputCount == 2) {
+			return Arrays.asList(DENSE_OUTPUT_AXES, DENSE_OUTPUT_AXES);
+		}
+		if (outputCount == 1) {
+			return Arrays.asList("yx");
+		}
+		return super.getOutputAxes(outputCount);
+	}
+
+	private <R extends RealType<R> & NativeType<R>> List<Tensor<R>> runStardistNms(
+			final List<Tensor<R>> reconstructed, final long imageHeight, final long imageWidth) {
+		if (reconstructed == null || reconstructed.size() < 2) {
+			return reconstructed;
+		}
+		try {
+			String probName = "prob_" + java.util.UUID.randomUUID().toString().replace("-", "_");
+			String distName = "dist_" + java.util.UUID.randomUUID().toString().replace("-", "_");
+			List<String> names = Arrays.asList(probName, distName);
+			String code = ConvertDims.getMethodDeclaration() + System.lineSeparator();
+			code += "created_shms = []" + System.lineSeparator();
+			code += "try:" + System.lineSeparator();
+			for (int i = 0; i < 2; i ++) {
+				SharedMemoryArray shma = SharedMemoryArray.createSHMAFromRAI(reconstructed.get(i).getData(), false, false);
+				code += codeToConvertShmaToPython(shma, names.get(i));
+				inShmaList.add(shma);
+			}
+			code += "  " + probName + " = " + ConvertDims.getMethodName() + "(" + probName
+					+ ", 'bcyx', out_order='yx', output_type='numpy', contiguous=False)" + System.lineSeparator();
+			code += "  " + distName + " = " + ConvertDims.getMethodName() + "(" + distName
+					+ ", 'bcyx', out_order='yxc', n_channels=" + configInt("n_rays", 32)
+					+ ", output_type='numpy', contiguous=False)" + System.lineSeparator();
+			code += "  labels = train.nms_stardist_2d(" + probName + ", " + distName
+					+ ", grid=" + MODEL_VAR_NAME + ".grid, image_shape=(" + imageHeight + ", " + imageWidth + "), "
+					+ "prob_threshold=" + MODEL_VAR_NAME + ".prob_threshold, "
+					+ "nms_threshold=" + MODEL_VAR_NAME + ".nms_threshold)" + System.lineSeparator();
+			code += "  " + SHMS_KEY + " = []" + System.lineSeparator();
+			code += "  " + SHM_NAMES_KEY + " = []" + System.lineSeparator();
+			code += "  " + DTYPES_KEY + " = []" + System.lineSeparator();
+			code += "  " + DIMS_KEY + " = []" + System.lineSeparator();
+			code += "  globals()['" + SHMS_KEY + "'] = " + SHMS_KEY + System.lineSeparator();
+			code += "  globals()['" + SHM_NAMES_KEY + "'] = " + SHM_NAMES_KEY + System.lineSeparator();
+			code += "  globals()['" + DTYPES_KEY + "'] = " + DTYPES_KEY + System.lineSeparator();
+			code += "  globals()['" + DIMS_KEY + "'] = " + DIMS_KEY + System.lineSeparator();
+			code += "  handle_output_list(labels.astype(np.int32, copy=False))" + System.lineSeparator();
+			code += "  " + closeSHMWin() + System.lineSeparator();
+			code += "except Exception as e:" + System.lineSeparator();
+			code += "  " + closeSHMWin() + System.lineSeparator();
+			code += "  raise e" + System.lineSeparator();
+			code += taskOutputsCode();
+			Map<String, RandomAccessibleInterval<R>> labels = executeCode(code);
+			if (labels.isEmpty()) {
+				return reconstructed;
+			}
+			RandomAccessibleInterval<R> labelImage = labels.values().iterator().next();
+			return Arrays.asList(Tensor.build("labels", "yx", Cast.unchecked(labelImage)));
+		} catch (RunModelException e) {
+			throw new IllegalStateException("StarDist NMS failed after dense tile reconstruction.", e);
+		}
 	}
 
 	private static <T extends RealType<T> & NativeType<T>> boolean hasSpatialAxes(final Tensor<T> tensor) {
