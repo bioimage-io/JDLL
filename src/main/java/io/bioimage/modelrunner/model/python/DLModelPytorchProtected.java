@@ -657,6 +657,7 @@ public class DLModelPytorchProtected extends BaseModel {
             try {
                 final Task task = python.task(code);
                 python.debug((str) -> {});
+                python.debug(System.err::println);
                 task.waitFor();
                 ensureTaskSucceeded(task);
                 loaded = true;
@@ -1094,6 +1095,9 @@ public class DLModelPytorchProtected extends BaseModel {
      */
     protected String taskOutputsCode() {
         return ""
+                + "print(" + SHM_NAMES_KEY + ")" + System.lineSeparator()
+                + "print(" + DTYPES_KEY + ")" + System.lineSeparator()
+                + "print(" + DIMS_KEY + ")" + System.lineSeparator()
                 + "task.outputs['" + SHM_NAMES_KEY + "'] = " + SHM_NAMES_KEY + System.lineSeparator()
                 + "task.outputs['" + DTYPES_KEY + "'] = " + DTYPES_KEY + System.lineSeparator()
                 + "task.outputs['" + DIMS_KEY + "'] = " + DIMS_KEY + System.lineSeparator();

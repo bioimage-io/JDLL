@@ -34,10 +34,8 @@ import org.apposed.appose.Environment;
 import org.apposed.appose.Service;
 import org.apposed.appose.Service.ResponseType;
 import org.apposed.appose.Service.Task;
-import org.apposed.appose.Service.TaskStatus;
 import org.apposed.appose.TaskEvent;
 import org.apposed.appose.TaskException;
-import org.apposed.appose.util.Messages;
 
 import io.bioimage.modelrunner.exceptions.LoadModelException;
 import io.bioimage.modelrunner.exceptions.RunModelException;
@@ -53,10 +51,8 @@ import io.bioimage.modelrunner.model.tiling.TileInfo;
 import io.bioimage.modelrunner.model.tiling.TileMaker;
 import io.bioimage.modelrunner.model.tiling.merger.DenseMerger;
 import io.bioimage.modelrunner.model.tiling.merger.Merger;
-import io.bioimage.modelrunner.system.PlatformDetection;
 import io.bioimage.modelrunner.tensor.Tensor;
 import io.bioimage.modelrunner.tensor.shm.SharedMemoryArray;
-import io.bioimage.modelrunner.utils.CommonUtils;
 import io.bioimage.modelrunner.utils.JSONUtils;
 import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.img.array.ArrayImgs;
@@ -64,9 +60,6 @@ import net.imglib2.type.NativeType;
 import net.imglib2.type.numeric.RealType;
 import net.imglib2.type.numeric.real.FloatType;
 import net.imglib2.util.Cast;
-import net.imglib2.util.Util;
-import net.imglib2.view.IntervalView;
-import net.imglib2.view.Views;
 
 /**
  * Unified StarDist model entry point.
@@ -83,11 +76,6 @@ public final class StarDist extends DLModelPytorchProtected {
 	private static final String CELLCAST_WHEEL_RESOURCE_DIR = "wheels/cellcast";
 	private static final String WHEELS_CACHE_DIR_NAME = "wheels";
 
-	private static final String OUTPUT_MASK_KEY = "mask";
-	private static final String SHM_NAME_KEY = "_shm_name";
-	private static final String DTYPE_KEY = "_dtype";
-	private static final String SHAPE_KEY = "_shape";
-	private static final String KEYS_KEY = "keys";
 	private static final long DEFAULT_DENSE_TILE_XY = 512L;
 	private static final long DEFAULT_DENSE_OUTPUT_HALO_XY = 96L;
 	private static final String DENSE_OUTPUT_AXES = "bcyx";
@@ -105,22 +93,11 @@ public final class StarDist extends DLModelPytorchProtected {
 			+ MODEL_VAR_NAME + " = train.load_stardist_2d(source=%s, config=%s, gpu=%s)" + System.lineSeparator()
 			+ "task.export(" + MODEL_VAR_NAME + "=" + MODEL_VAR_NAME + ")" + System.lineSeparator();
 
-	private static final String CLOSE_SHM_CODE = ""
-			+ "if 'np_list' in globals().keys():" + System.lineSeparator()
-			+ "  for a in np_list:" + System.lineSeparator()
-			+ "    del a" + System.lineSeparator()
-			+ "if 'shm_list' in globals().keys():" + System.lineSeparator()
-			+ "  for s in shm_list:" + System.lineSeparator()
-			+ "    s.unlink()" + System.lineSeparator()
-			+ "    del s" + System.lineSeparator();
-
 	private final String mpkPath;
 	private final int nChannels;
 	private final Dimensionality dimensionality;
 	private final Map<String, Object> config;
 
-	private Service python;
-	private SharedMemoryArray shma;
 	private Double threshold = null;
 	private Consumer<InferenceProgress> inferenceProgressConsumer;
 
@@ -317,7 +294,6 @@ public final class StarDist extends DLModelPytorchProtected {
 			code += "  " + SHM_NAMES_KEY + " = []" + System.lineSeparator();
 			code += "  " + DTYPES_KEY + " = []" + System.lineSeparator();
 			code += "  " + DIMS_KEY + " = []" + System.lineSeparator();
-			code += "  task.export(" + SHMS_KEY + "=" + SHMS_KEY + ")" + System.lineSeparator();
 			code += "  task.export(" + SHM_NAMES_KEY + "=" + SHM_NAMES_KEY + ")" + System.lineSeparator();
 			code += "  task.export(" + DTYPES_KEY + "=" + DTYPES_KEY + ")" + System.lineSeparator();
 			code += "  task.export(" + DIMS_KEY + "=" + DIMS_KEY + ")" + System.lineSeparator();
@@ -464,14 +440,11 @@ public final class StarDist extends DLModelPytorchProtected {
 				code += "  print(" + names.get(i) + ".shape)" + System.lineSeparator();
 			}
 			code += "  " + OUTPUT_LIST_KEY + " = " + MODEL_VAR_NAME + ".predict(" + names.get(0) + ")" + System.lineSeparator();;
-			code += "  " + SHMS_KEY + " = []" + System.lineSeparator();
-			code += "  " + SHM_NAMES_KEY + " = []" + System.lineSeparator();
-			code += "  " + DTYPES_KEY + " = []" + System.lineSeparator();
-			code += "  " + DIMS_KEY + " = []" + System.lineSeparator();
+			code += "  " + SHMS_KEY + ".clear()" + System.lineSeparator();
+			code += "  " + SHM_NAMES_KEY + ".clear()" + System.lineSeparator();
+			code += "  " + DTYPES_KEY + ".clear()" + System.lineSeparator();
+			code += "  " + DIMS_KEY + ".clear()" + System.lineSeparator();
 			code += "  " + "task.export(" + SHMS_KEY + " = " + SHMS_KEY + ")" + System.lineSeparator();
-			code += "  " + "task.export(" + SHM_NAMES_KEY + " = " + SHM_NAMES_KEY + ")" + System.lineSeparator();
-			code += "  " + "task.export(" + DTYPES_KEY + " = " + DTYPES_KEY + ")" + System.lineSeparator();
-			code += "  " + "task.export(" + DIMS_KEY + " = " + DIMS_KEY + ")" + System.lineSeparator();
 	        code += "  " + "handle_output(" + OUTPUT_LIST_KEY + ")" + System.lineSeparator();
 			code += "  " + closeSHMWin() + System.lineSeparator();
 			code += "except Exception as e:" + System.lineSeparator();
@@ -480,62 +453,6 @@ public final class StarDist extends DLModelPytorchProtected {
 			code += "print(" + OUTPUT_LIST_KEY + ".shape)" + System.lineSeparator();
 			code += taskOutputsCode();
 			return code;
-	}
-	
-	private <T extends RealType<T> & NativeType<T>> RandomAccessibleInterval<T> reconstructMask() {
-		RandomAccessibleInterval<T> mask = shma.getSharedRAI();
-		RandomAccessibleInterval<T> maskCopy;
-		if (is2D() && nChannels > 1 && mask.dimensionsAsLongArray().length > 2) {
-			long[] maxPos = mask.maxAsLongArray();
-			maxPos[2] = 0;
-			IntervalView<T> maskInterval = Views.interval(mask, mask.minAsLongArray(), maxPos);
-			maskCopy = Tensor.createCopyOfRaiInWantedDataType(Cast.unchecked(maskInterval),
-					Util.getTypeFromInterval(Cast.unchecked(shma.getSharedRAI())));
-		} else {
-			maskCopy = Tensor.createCopyOfRaiInWantedDataType(Cast.unchecked(mask),
-					Util.getTypeFromInterval(Cast.unchecked(shma.getSharedRAI())));
-		}
-		shma.close();
-		return maskCopy;
-	}
-
-	protected <T extends RealType<T> & NativeType<T>>
-	Map<String, RandomAccessibleInterval<T>> reconstructOutputs(Task task)
-			throws IOException {
-		Map<String, RandomAccessibleInterval<T>> outs = new LinkedHashMap<String, RandomAccessibleInterval<T>>();
-		outs.put(OUTPUT_MASK_KEY, reconstructMask());
-
-		if (task.outputs.get(KEYS_KEY) != null) {
-			for (String kk : (List<String>) task.outputs.get(KEYS_KEY)) {
-				outs.put(kk, reconstruct(task, kk));
-			}
-		}
-
-		if (PlatformDetection.isWindows()) {
-			python.task(CLOSE_SHM_CODE);
-		}
-		return outs;
-	}
-
-	private <T extends RealType<T> & NativeType<T>>
-	RandomAccessibleInterval<T> reconstruct(Task task, String key) throws IOException {
-		String shmName = (String) task.outputs.get(key + SHM_NAME_KEY);
-		String dtype = (String) task.outputs.get(key + DTYPE_KEY);
-		List<Number> shape = (List<Number>) task.outputs.get(key + SHAPE_KEY);
-		if (shape == null) {
-			return null;
-		}
-		long[] dims = new long[shape.size()];
-		for (int i = 0; i < dims.length; i++) {
-			dims[i] = shape.get(i).longValue();
-		}
-		SharedMemoryArray shmOut = SharedMemoryArray.readOrCreate(shmName, dims,
-				Cast.unchecked(CommonUtils.getImgLib2DataType(dtype)), false, false);
-		RandomAccessibleInterval<T> rai = shmOut.getSharedRAI();
-		RandomAccessibleInterval<T> copy = Tensor.createCopyOfRaiInWantedDataType(Cast.unchecked(rai),
-				Util.getTypeFromInterval(Cast.unchecked(rai)));
-		shmOut.close();
-		return copy;
 	}
 
 	private static File resolveModelIdentityFile(String modelPath) {
