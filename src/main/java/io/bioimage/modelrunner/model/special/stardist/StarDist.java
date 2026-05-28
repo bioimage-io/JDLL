@@ -57,15 +57,10 @@ import io.bioimage.modelrunner.transformations.ScaleRangeTransformation;
 import io.bioimage.modelrunner.utils.JSONUtils;
 import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.img.array.ArrayImgs;
-import net.imglib2.img.array.ArrayImgFactory;
-import net.imglib2.loops.LoopBuilder;
 import net.imglib2.type.NativeType;
 import net.imglib2.type.numeric.IntegerType;
 import net.imglib2.type.numeric.RealType;
-import net.imglib2.type.numeric.integer.IntType;
-import net.imglib2.type.numeric.integer.UnsignedShortType;
 import net.imglib2.type.numeric.real.FloatType;
-import net.imglib2.util.Intervals;
 import net.imglib2.util.Util;
 
 /**
@@ -291,7 +286,7 @@ public final class StarDist extends DLModelPytorchProtected {
 			code += "  " + SHM_NAMES_KEY + ".clear()" + System.lineSeparator();
 			code += "  " + DTYPES_KEY + ".clear()" + System.lineSeparator();
 			code += "  " + DIMS_KEY + ".clear()" + System.lineSeparator();
-			code += "  handle_output(labels.astype(np.uint16, copy=False))" + System.lineSeparator();
+			code += "  handle_output(labels.astype(np.float32, copy=False))" + System.lineSeparator();
 			code += "  " + closeSHMWin() + System.lineSeparator();
 			code += "except Exception as e:" + System.lineSeparator();
 			code += "  " + closeSHMWin() + System.lineSeparator();
