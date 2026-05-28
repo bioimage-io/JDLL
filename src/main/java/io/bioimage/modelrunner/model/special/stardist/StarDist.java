@@ -101,8 +101,6 @@ public final class StarDist extends DLModelPytorchProtected {
 	private final Map<String, Object> config;
 
 	private Double threshold = null;
-	private Consumer<InferenceProgress> inferenceProgressConsumer;
-
 	private StarDist(String modelIdentity, Map<String, Object> config,
 			Dimensionality dimensionality, Consumer<InferenceProgress> inferenceProgressConsumer) throws IOException {
 		super(modelIdentity, modelIdentity, modelIdentity, modelIdentity, config, true);
@@ -112,7 +110,7 @@ public final class StarDist extends DLModelPytorchProtected {
 		this.nChannels = inferNChannels(this.config);
 		this.dimensionality = dimensionality;
 		this.environmentSpec = resolvePytorchEnv();
-		this.inferenceProgressConsumer = inferenceProgressConsumer;
+		super.setInferenceProgressConsumer(inferenceProgressConsumer);
 	}
 
 	public static StarDist fromFile(String modelPath, Consumer<InferenceProgress> inferenceProgressConsumer)
@@ -188,13 +186,6 @@ public final class StarDist extends DLModelPytorchProtected {
 		this.threshold = threshold;
 	}
 
-	public void setInferenceProgressConsumer(Consumer<InferenceProgress> consumer) {
-		this.inferenceProgressConsumer = consumer;
-	}
-
-	public Consumer<InferenceProgress> getInferenceProgressConsumer() {
-		return inferenceProgressConsumer;
-	}
 
 	public void trainWithOptions(String dataDir, String gtDir, String outputDir,
 			boolean gpu, String imageChannels, String labelColorMode, double validFraction,
