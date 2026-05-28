@@ -89,9 +89,12 @@ public final class PixiEnvironmentResolver {
 				throw new RuntimeException("Required resource not found on classpath: " + resourcePath);
 			}
 			byte[] content = readAllBytesJava8(is);
-			String fileName = contentAddressedFileName(
-					resourcePath.substring(resourcePath.lastIndexOf('/') + 1), content);
-			File cachedFile = new File(cacheDir, fileName);
+			String fileName = resourcePath.substring(resourcePath.lastIndexOf('/') + 1);
+			File contentCacheDir = new File(cacheDir, sha256Hex(content).substring(0, 12));
+			if (!contentCacheDir.isDirectory() && !contentCacheDir.mkdirs()) {
+				throw new RuntimeException("Could not create cache directory: " + contentCacheDir.getAbsolutePath());
+			}
+			File cachedFile = new File(contentCacheDir, fileName);
 			if (cachedFile.isFile() && cachedFile.length() == content.length) {
 				return cachedFile;
 			}
@@ -100,15 +103,6 @@ public final class PixiEnvironmentResolver {
 		} catch (IOException e) {
 			throw new RuntimeException("Could not cache classpath resource: " + resourcePath, e);
 		}
-	}
-
-	private static String contentAddressedFileName(String fileName, byte[] content) {
-		String digest = sha256Hex(content).substring(0, 12);
-		int dot = fileName.lastIndexOf('.');
-		if (dot <= 0) {
-			return fileName + "-" + digest;
-		}
-		return fileName.substring(0, dot) + "-" + digest + fileName.substring(dot);
 	}
 
 	private static String sha256Hex(byte[] content) {
