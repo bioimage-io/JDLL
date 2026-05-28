@@ -25,7 +25,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
-import java.nio.file.StandardCopyOption;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.Locale;
 import java.util.Objects;
@@ -79,12 +80,7 @@ public final class PixiEnvironmentResolver {
 		Objects.requireNonNull(resourcePath, "resourcePath");
 		Objects.requireNonNull(cacheSubdirName, "cacheSubdirName");
 
-		String fileName = resourcePath.substring(resourcePath.lastIndexOf('/') + 1);
 		File cacheDir = new File(userCacheDir(JDLL_CACHE_DIR_NAME), cacheSubdirName);
-		File cachedFile = new File(cacheDir, fileName);
-		if (cachedFile.isFile() && cachedFile.length() > 0) {
-			return cachedFile;
-		}
 		if (!cacheDir.isDirectory() && !cacheDir.mkdirs()) {
 			throw new RuntimeException("Could not create cache directory: " + cacheDir.getAbsolutePath());
 		}
@@ -92,12 +88,41 @@ public final class PixiEnvironmentResolver {
 			if (is == null) {
 				throw new RuntimeException("Required resource not found on classpath: " + resourcePath);
 			}
-			Files.copy(is, cachedFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
+			byte[] content = readAllBytesJava8(is);
+			String fileName = contentAddressedFileName(
+					resourcePath.substring(resourcePath.lastIndexOf('/') + 1), content);
+			File cachedFile = new File(cacheDir, fileName);
+			if (cachedFile.isFile() && cachedFile.length() == content.length) {
+				return cachedFile;
+			}
+			Files.write(cachedFile.toPath(), content);
+			return cachedFile;
 		} catch (IOException e) {
-			throw new RuntimeException("Could not cache classpath resource to: "
-					+ cachedFile.getAbsolutePath(), e);
+			throw new RuntimeException("Could not cache classpath resource: " + resourcePath, e);
 		}
-		return cachedFile;
+	}
+
+	private static String contentAddressedFileName(String fileName, byte[] content) {
+		String digest = sha256Hex(content).substring(0, 12);
+		int dot = fileName.lastIndexOf('.');
+		if (dot <= 0) {
+			return fileName + "-" + digest;
+		}
+		return fileName.substring(0, dot) + "-" + digest + fileName.substring(dot);
+	}
+
+	private static String sha256Hex(byte[] content) {
+		try {
+			MessageDigest digest = MessageDigest.getInstance("SHA-256");
+			byte[] hash = digest.digest(content);
+			StringBuilder hex = new StringBuilder(hash.length * 2);
+			for (byte b : hash) {
+				hex.append(String.format(Locale.ROOT, "%02x", b & 0xff));
+			}
+			return hex.toString();
+		} catch (NoSuchAlgorithmException e) {
+			throw new RuntimeException("SHA-256 is not available.", e);
+		}
 	}
 
 	/**
