@@ -57,10 +57,16 @@ import io.bioimage.modelrunner.transformations.ScaleRangeTransformation;
 import io.bioimage.modelrunner.utils.JSONUtils;
 import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.img.array.ArrayImgs;
+import net.imglib2.img.array.ArrayImgFactory;
+import net.imglib2.loops.LoopBuilder;
 import net.imglib2.type.NativeType;
+import net.imglib2.type.numeric.IntegerType;
 import net.imglib2.type.numeric.RealType;
+import net.imglib2.type.numeric.integer.IntType;
 import net.imglib2.type.numeric.real.FloatType;
 import net.imglib2.util.Cast;
+import net.imglib2.util.Intervals;
+import net.imglib2.util.Util;
 
 /**
  * Unified StarDist model entry point.
@@ -79,7 +85,7 @@ public final class StarDist extends DLModelPytorchProtected {
 
 	private static final long DEFAULT_DENSE_TILE_XY = 512L;
 	private static final long DEFAULT_DENSE_OUTPUT_HALO_XY = 96L;
-	private static final String DENSE_OUTPUT_AXES = "bcyx";
+	private static final String DENSE_OUTPUT_AXES = "byxc";
 
 	private static final String LOAD_MODEL_CODE_2D = ""
 			+ "if 'os' not in globals().keys():" + System.lineSeparator()
@@ -245,34 +251,14 @@ public final class StarDist extends DLModelPytorchProtected {
 		}
 		TileMaker tileMaker = TileMaker.build(inputInfo, createDenseOutputTileInfo(referenceInput));
 		DenseMerger<T, R> merger = new DenseMerger<T, R>(tileMaker);
-		merger.configure(inputs);
 		String referenceAxes = referenceInput.getAxesOrderString().toLowerCase();
 		long[] referenceDims = referenceInput.getData().dimensionsAsLongArray();
 		long imageHeight = axisSize(referenceDims, referenceAxes, 'y');
 		long imageWidth = axisSize(referenceDims, referenceAxes, 'x');
 		merger.addCallback(reconstructed -> runStardistNms(reconstructed, imageHeight, imageWidth));
-		
-		
-		String configAxes = ;
-		double maxPer = ;
-		double minPer = ;
-		ScaleRangeTransformation transform = new ScaleRangeTransformation();
-		transform.setAxes(configAxes);
-		transform.setMaxPercentile(maxPer);
-		transform.setMinPercentile(minPer);
-		transform.applyInPlace(inputs.get(0));
+		applyInputNormalization(inputs);
+		merger.configure(inputs);
 		return merger;
-	}
-
-	@Override
-	protected List<String> getOutputAxes(final int outputCount) {
-		if (outputCount == 2) {
-			return Arrays.asList(DENSE_OUTPUT_AXES, DENSE_OUTPUT_AXES);
-		}
-		if (outputCount == 1) {
-			return Arrays.asList("yx");
-		}
-		return super.getOutputAxes(outputCount);
 	}
 
 	private <R extends RealType<R> & NativeType<R>> List<Tensor<R>> runStardistNms(
@@ -293,21 +279,18 @@ public final class StarDist extends DLModelPytorchProtected {
 				inShmaList.add(shma);
 			}
 			code += "  " + probName + " = " + ConvertDims.getMethodName() + "(" + probName
-					+ ", 'bcyx', out_order='yx', n_channels=1, output_type='numpy', contiguous=False)" + System.lineSeparator();
+					+ ", 'byx', out_order='yx', n_channels=1, output_type='numpy', contiguous=False)" + System.lineSeparator();
 			code += "  " + distName + " = " + ConvertDims.getMethodName() + "(" + distName
-					+ ", 'bcyx', out_order='yxc', n_channels=" + configInt("n_rays", 32)
+					+ ", 'byxc', out_order='yxc', n_channels=" + configInt("n_rays", 32)
 					+ ", output_type='numpy', contiguous=False)" + System.lineSeparator();
 			code += "  labels = train.nms_stardist_2d(" + probName + ", " + distName
 					+ ", grid=" + MODEL_VAR_NAME + ".grid, image_shape=(" + imageHeight + ", " + imageWidth + "), "
 					+ "prob_threshold=" + MODEL_VAR_NAME + ".prob_threshold, "
 					+ "nms_threshold=" + MODEL_VAR_NAME + ".nms_threshold)" + System.lineSeparator();
-			code += "  " + SHMS_KEY + " = []" + System.lineSeparator();
-			code += "  " + SHM_NAMES_KEY + " = []" + System.lineSeparator();
-			code += "  " + DTYPES_KEY + " = []" + System.lineSeparator();
-			code += "  " + DIMS_KEY + " = []" + System.lineSeparator();
-			code += "  task.export(" + SHM_NAMES_KEY + "=" + SHM_NAMES_KEY + ")" + System.lineSeparator();
-			code += "  task.export(" + DTYPES_KEY + "=" + DTYPES_KEY + ")" + System.lineSeparator();
-			code += "  task.export(" + DIMS_KEY + "=" + DIMS_KEY + ")" + System.lineSeparator();
+			code += "  " + SHMS_KEY + ".clear()" + System.lineSeparator();
+			code += "  " + SHM_NAMES_KEY + ".clear()" + System.lineSeparator();
+			code += "  " + DTYPES_KEY + ".clear()" + System.lineSeparator();
+			code += "  " + DIMS_KEY + ".clear()" + System.lineSeparator();
 			code += "  handle_output(labels.astype(np.int32, copy=False))" + System.lineSeparator();
 			code += "  " + closeSHMWin() + System.lineSeparator();
 			code += "except Exception as e:" + System.lineSeparator();
@@ -319,10 +302,21 @@ public final class StarDist extends DLModelPytorchProtected {
 				return reconstructed;
 			}
 			RandomAccessibleInterval<R> labelImage = labels.values().iterator().next();
-			return Arrays.asList(Tensor.build("labels", "yx", Cast.unchecked(labelImage)));
+			return Arrays.asList(Tensor.build("labels", "yx", Cast.unchecked(toStableIntImage(labelImage))));
 		} catch (RunModelException e) {
 			throw new IllegalStateException("StarDist NMS failed after dense tile reconstruction.", e);
 		}
+	}
+
+	private static <R extends RealType<R> & NativeType<R>> RandomAccessibleInterval<IntType> toStableIntImage(
+			final RandomAccessibleInterval<R> source) {
+		RandomAccessibleInterval<IntType> copy = new ArrayImgFactory<IntType>(new IntType())
+				.create(source.dimensionsAsLongArray());
+		boolean useMultiThreading = Intervals.numElements(copy) >= 20_000;
+		LoopBuilder.setImages(source, copy)
+				.multiThreaded(useMultiThreading)
+				.forEachPixel((src, dst) -> dst.setInteger((int) Math.round(src.getRealDouble())));
+		return copy;
 	}
 
 	private static <T extends RealType<T> & NativeType<T>> boolean hasSpatialAxes(final Tensor<T> tensor) {
@@ -331,6 +325,92 @@ public final class StarDist extends DLModelPytorchProtected {
 		}
 		String axes = tensor.getAxesOrderString().toLowerCase();
 		return axes.indexOf('x') >= 0 && axes.indexOf('y') >= 0;
+	}
+
+	private <T extends RealType<T> & NativeType<T>> void applyInputNormalization(final List<Tensor<T>> inputs) {
+		if (!normalizationEnabled()) {
+			return;
+		}
+		ScaleRangeTransformation transform = new ScaleRangeTransformation();
+		transform.setAxes(normalizationAxes());
+		transform.setMinPercentile(normalizationMinPercentile());
+		transform.setMaxPercentile(normalizationMaxPercentile());
+		for (int i = 0; i < inputs.size(); i ++) {
+			Tensor<T> input = inputs.get(i);
+			if (hasSpatialAxes(input)) {
+				applyNormalization(transform, inputs, i);
+			}
+		}
+	}
+
+	@SuppressWarnings({ "unchecked", "rawtypes" })
+	private static <T extends RealType<T> & NativeType<T>> void applyNormalization(
+			final ScaleRangeTransformation transform, final List<Tensor<T>> inputs, final int index) {
+		Tensor<T> input = inputs.get(index);
+		if (Util.getTypeFromInterval(input.getData()) instanceof IntegerType) {
+			inputs.set(index, (Tensor<T>) (Tensor) transform.apply(input));
+		} else {
+			transform.applyInPlace(input);
+		}
+	}
+
+	private boolean normalizationEnabled() {
+		Object value = firstPresent(config, "normalization", "normalize");
+		if (value == null) {
+			return true;
+		}
+		if (value instanceof Boolean) {
+			return ((Boolean) value).booleanValue();
+		}
+		String text = value.toString().trim().toLowerCase();
+		return !("false".equals(text) || "none".equals(text) || "no".equals(text) || "off".equals(text));
+	}
+
+	private Object normalizationAxes() {
+		Object axes = firstPresent(config, "normalization_axes", "axis_norm");
+		if (axes instanceof List<?>) {
+			List<?> list = (List<?>) axes;
+			if (!list.isEmpty() && list.get(0) instanceof Number) {
+				String modelAxes = inferAxes(config, false);
+				StringBuilder converted = new StringBuilder();
+				for (Object axis : list) {
+					int index = ((Number) axis).intValue();
+					if (index >= 0 && index < modelAxes.length()) {
+						converted.append(modelAxes.charAt(index));
+					}
+				}
+				return converted.length() == 0 ? "yx" : converted.toString();
+			}
+		}
+		return axes == null ? "yx" : axes;
+	}
+
+	private double normalizationMinPercentile() {
+		Object percentiles = config.get("normalization_percentiles");
+		if (percentiles instanceof List<?> && !((List<?>) percentiles).isEmpty()) {
+			return asDouble(((List<?>) percentiles).get(0), 1.0d);
+		}
+		Object value = firstPresent(config, "normalization_pmin", "normalization_min_percentile");
+		return asDouble(value == null ? config.get("pmin") : value, 1.0d);
+	}
+
+	private double normalizationMaxPercentile() {
+		Object percentiles = config.get("normalization_percentiles");
+		if (percentiles instanceof List<?> && ((List<?>) percentiles).size() > 1) {
+			return asDouble(((List<?>) percentiles).get(1), 99.8d);
+		}
+		Object value = firstPresent(config, "normalization_pmax", "normalization_max_percentile");
+		return asDouble(value == null ? config.get("pmax") : value, 99.8d);
+	}
+
+	private static double asDouble(final Object value, final double defaultValue) {
+		if (value instanceof Number) {
+			return ((Number) value).doubleValue();
+		}
+		if (value instanceof String && !((String) value).trim().isEmpty()) {
+			return Double.parseDouble(((String) value).trim());
+		}
+		return defaultValue;
 	}
 
 	private static <T extends RealType<T> & NativeType<T>> TileInfo createInputTileInfo(final Tensor<T> input) {
@@ -361,19 +441,19 @@ public final class StarDist extends DLModelPytorchProtected {
 		long haloX = safeOutputHalo(outputTileX, gridX);
 
 		List<TileInfo> outputInfo = new ArrayList<TileInfo>();
-		TileInfo prob = TileInfo.build("prob",
-				new long[] {batch, 1L, ceilDiv(y, gridY), ceilDiv(x, gridX)},
-				DENSE_OUTPUT_AXES,
-				new long[] {1L, 1L, outputTileY, outputTileX},
-				DENSE_OUTPUT_AXES);
-		prob.setHalo(new long[] {0L, 0L, haloY, haloX}, DENSE_OUTPUT_AXES);
+		TileInfo prob = TileInfo.build("output_0",
+				new long[] {batch, ceilDiv(y, gridY), ceilDiv(x, gridX)},
+				"byx",
+				new long[] {1L, outputTileY, outputTileX},
+				"byx");
+		prob.setHalo(new long[] {0L, haloY, haloX}, "byx");
 
-		TileInfo dist = TileInfo.build("dist",
-				new long[] {batch, nRays, ceilDiv(y, gridY), ceilDiv(x, gridX)},
+		TileInfo dist = TileInfo.build("output_1",
+				new long[] {batch, ceilDiv(y, gridY), ceilDiv(x, gridX), nRays},
 				DENSE_OUTPUT_AXES,
-				new long[] {1L, nRays, outputTileY, outputTileX},
+				new long[] {1L, outputTileY, outputTileX, nRays},
 				DENSE_OUTPUT_AXES);
-		dist.setHalo(new long[] {0L, 0L, haloY, haloX}, DENSE_OUTPUT_AXES);
+		dist.setHalo(new long[] {0L, haloY, haloX, 0L}, DENSE_OUTPUT_AXES);
 
 		outputInfo.add(prob);
 		outputInfo.add(dist);
@@ -425,6 +505,16 @@ public final class StarDist extends DLModelPytorchProtected {
 	}
 
 	@Override
+    protected String getOutputTensorAxes(int outputCount) {
+		if (outputCount == 0)
+			return "byx";
+		else if (outputCount == 1)
+			return "byxc";
+		else
+			throw new IllegalArgumentException("StarDist only has 2 outputs, more than 3 have been provided.");
+	}
+
+	@Override
 	protected String buildModelCode() {
 		String gpu = "True"; // TODO
 		String source = mpkPath != null ? "r'" + mpkPath + "'" : "None";
@@ -456,12 +546,11 @@ public final class StarDist extends DLModelPytorchProtected {
 			code += "  " + DTYPES_KEY + ".clear()" + System.lineSeparator();
 			code += "  " + DIMS_KEY + ".clear()" + System.lineSeparator();
 			code += "  " + "task.export(" + SHMS_KEY + " = " + SHMS_KEY + ")" + System.lineSeparator();
-	        code += "  " + "handle_output(" + OUTPUT_LIST_KEY + ")" + System.lineSeparator();
+	        code += "  " + "handle_output_list(" + OUTPUT_LIST_KEY + ")" + System.lineSeparator();
 			code += "  " + closeSHMWin() + System.lineSeparator();
 			code += "except Exception as e:" + System.lineSeparator();
 			code += "  " + closeSHMWin() + System.lineSeparator();
 			code += "  raise e" + System.lineSeparator();
-			code += "print(" + OUTPUT_LIST_KEY + ".shape)" + System.lineSeparator();
 			code += taskOutputsCode();
 			return code;
 	}
