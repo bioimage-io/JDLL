@@ -30,12 +30,12 @@ import io.bioimage.modelrunner.download.FileDownloader;
 import io.bioimage.modelrunner.gui.custom.interfaces.ModelInstaller;
 import io.bioimage.modelrunner.model.python.envs.PixiEnvironmentManager;
 import io.bioimage.modelrunner.model.python.envs.PixiEnvironmentSpec;
-import io.bioimage.modelrunner.model.special.stardist.StardistAbstract;
+import io.bioimage.modelrunner.model.special.stardist.StarDist;
 
 public class StardistInstaller  implements ModelInstaller {
 
     public boolean isEnvironmentInstalled() {
-        return StardistAbstract.isInstalled();
+        return StarDist.isInstalled();
     }
 
     public boolean isModelInstalled(String modelPath) {
@@ -53,7 +53,7 @@ public class StardistInstaller  implements ModelInstaller {
     }
 
     public void installEnvironment(Consumer<String> logConsumer) throws InterruptedException, BuildException {
-        PixiEnvironmentSpec spec = StardistAbstract.resolvePytorchEnv();
+        PixiEnvironmentSpec spec = StarDist.resolvePytorchEnv();
         PixiEnvironmentManager.installRequirements(spec, (str) -> {System.out.println(str);});
     }
 

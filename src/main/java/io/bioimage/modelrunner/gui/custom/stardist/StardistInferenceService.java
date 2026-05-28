@@ -32,8 +32,7 @@ import io.bioimage.modelrunner.exceptions.RunModelException;
 import io.bioimage.modelrunner.gui.custom.interfaces.ModelInstaller;
 import io.bioimage.modelrunner.model.InferenceProgress;
 import io.bioimage.modelrunner.model.detection.Detection;
-import io.bioimage.modelrunner.model.special.stardist.StardistAbstract;
-import io.bioimage.modelrunner.model.special.yolo.Yolo;
+import io.bioimage.modelrunner.model.special.stardist.StarDist;
 import io.bioimage.modelrunner.tensor.Tensor;
 import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.type.NativeType;
@@ -46,7 +45,7 @@ public class StardistInferenceService {
 
     private final ModelInstaller installer;
     private String loadedModelPath;
-    private StardistAbstract model;
+    private StarDist model;
     private Rectangle size = null;
 
     public StardistInferenceService(ModelInstaller installer) {
@@ -77,7 +76,6 @@ public class StardistInferenceService {
             throws RunModelException, LoadModelException, BuildException, IOException,
             ExecutionException, InterruptedException {
         ensureLoaded(modelPath, null, progressConsumer);
-        configureInferenceProgressLogging(progressConsumer);
         //model.setObjectSize(size);
         return runLoadedModel(rai);
     }
@@ -104,26 +102,13 @@ public class StardistInferenceService {
         }
         if (model == null || !model.isLoaded()) {
             installer.installIfNeeded(modelPath, logConsumer);
-            model = StardistAbstract.init(modelPath);
-            configureInferenceProgressLogging(progressConsumer);
-            model.loadModel();
+            model = StarDist.fromFile(modelPath, progressConsumer);
             loadedModelPath = modelPath;
         }
     }
 
     private void configureProgressLogging(Consumer<String> logConsumer, boolean usePatchProgressBar) {
-        configureInferenceProgressLogging(progress -> appendProgressLog(progress, logConsumer, usePatchProgressBar));
-    }
-
-    private void configureInferenceProgressLogging(Consumer<InferenceProgress> progressConsumer) {
-        if (model == null) {
-            return;
-        }
-        if (progressConsumer == null) {
-            model.setInferenceProgressConsumer(null);
-            return;
-        }
-        model.setInferenceProgressConsumer(progressConsumer);
+        model.setInferenceProgressConsumer(progress -> appendProgressLog(progress, logConsumer, usePatchProgressBar));
     }
 
     private static void appendProgressLog(InferenceProgress progress, Consumer<String> logConsumer,

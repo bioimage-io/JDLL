@@ -29,7 +29,7 @@ import org.apposed.appose.BuildException;
 import org.apposed.appose.TaskException;
 
 import io.bioimage.modelrunner.gui.custom.interfaces.ModelInstaller;
-import io.bioimage.modelrunner.model.special.stardist.StardistAbstract;
+import io.bioimage.modelrunner.model.special.stardist.StarDist;
 import io.bioimage.modelrunner.model.special.stardist.StardistTrainingProgress;
 import io.bioimage.modelrunner.model.special.stardist.StardistValidationPreview;
 
@@ -56,9 +56,9 @@ public class StardistTrainingService {
             throw new IllegalArgumentException("StarDist fine tuning is not wired yet. Use train from scratch.");
         }
 
-        Map<String, Object> trainingConfig = StardistAbstract.defaultTrainingConfig(config.getEpochs());
+        Map<String, Object> trainingConfig = StarDist.defaultTrainingConfig(config.getEpochs());
         applyArchitectureDefaults(trainingConfig, config.getScratchArchitecture());
-        StardistAbstract.train(datasetRoot.getAbsolutePath(), null,
+        StarDist.train(datasetRoot.getAbsolutePath(), null,
                 config.getOutputModelDir(), config.isGpu(), config.getImageChannels(),
                 config.getLabelColorMode(), config.getValidFraction(), trainingConfig,
                 progressConsumer, previewConsumer, logConsumer);
