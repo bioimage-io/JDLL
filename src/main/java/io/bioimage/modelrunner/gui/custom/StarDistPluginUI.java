@@ -361,7 +361,7 @@ public class StarDistPluginUI extends StardistGUI implements ActionListener {
         }
     }
 
-    private void runStardistOnSystemImage(String modelPath)
+    private < T extends RealType< T > & NativeType< T > > void runStardistOnSystemImage(String modelPath)
             throws RunModelException, LoadModelException, BuildException, IOException,
             ExecutionException, InterruptedException {
         File source = selectedSystemPath == null ? selectedSystemImageFile : selectedSystemPath;
@@ -379,7 +379,7 @@ public class StarDistPluginUI extends StardistGUI implements ActionListener {
                 StarDistPluginUI.this.inferencePanel.getLogPanel().appendHtml(str));
         startInferenceLogTimer();
         logConsumer.accept("Starting inference on " + images.size() + " image(s).");
-        Map<String, List<Detection>> detectionsByImage = new LinkedHashMap<String, List<Detection>>();
+        Map<String, List<Tensor<T>>> detectionsByImage = new LinkedHashMap<String, List<Tensor<T>>>();
         File outputCsv = YoloDetectionCsvWriter.outputFileFor(source);
         try {
             for (int i = 0; i < images.size(); i++) {
@@ -392,7 +392,7 @@ public class StarDistPluginUI extends StardistGUI implements ActionListener {
                 final boolean[] emittedPatchProgress = new boolean[] {false};
                 try {
                     RandomAccessibleInterval<UnsignedByteType> rai = readImageFileAsRai(imageFile);
-                    List<Detection> detections = inferenceService.runWithProgress(modelPath, rai, progress -> {
+                    List<Tensor<T>> detections = inferenceService.runWithProgress(modelPath, rai, progress -> {
                         if (progress == null) {
                             return;
                         }
@@ -424,11 +424,13 @@ public class StarDistPluginUI extends StardistGUI implements ActionListener {
         if (cancelled || Thread.currentThread().isInterrupted()) {
             return;
         }
+        /* TODO
         YoloDetectionCsvWriter.write(outputCsv, detectionsByImage);
         List<File> geoJsonFiles = YoloDetectionGeoJsonWriter.write(detectionsByImage);
         consumer.saveDetections(detectionsByImage);
         logConsumer.accept("Saved predictions: " + outputCsv.getAbsolutePath());
         logConsumer.accept("Saved GeoJSON predictions for " + geoJsonFiles.size() + " image(s).");
+        */
     }
 
     private static List<File> systemInferenceImages(File source) {

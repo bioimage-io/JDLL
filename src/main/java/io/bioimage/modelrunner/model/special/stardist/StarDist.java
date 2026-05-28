@@ -63,8 +63,8 @@ import net.imglib2.type.NativeType;
 import net.imglib2.type.numeric.IntegerType;
 import net.imglib2.type.numeric.RealType;
 import net.imglib2.type.numeric.integer.IntType;
+import net.imglib2.type.numeric.integer.UnsignedShortType;
 import net.imglib2.type.numeric.real.FloatType;
-import net.imglib2.util.Cast;
 import net.imglib2.util.Intervals;
 import net.imglib2.util.Util;
 
@@ -291,7 +291,7 @@ public final class StarDist extends DLModelPytorchProtected {
 			code += "  " + SHM_NAMES_KEY + ".clear()" + System.lineSeparator();
 			code += "  " + DTYPES_KEY + ".clear()" + System.lineSeparator();
 			code += "  " + DIMS_KEY + ".clear()" + System.lineSeparator();
-			code += "  handle_output(labels.astype(np.int32, copy=False))" + System.lineSeparator();
+			code += "  handle_output(labels.astype(np.uint16, copy=False))" + System.lineSeparator();
 			code += "  " + closeSHMWin() + System.lineSeparator();
 			code += "except Exception as e:" + System.lineSeparator();
 			code += "  " + closeSHMWin() + System.lineSeparator();
@@ -302,21 +302,11 @@ public final class StarDist extends DLModelPytorchProtected {
 				return reconstructed;
 			}
 			RandomAccessibleInterval<R> labelImage = labels.values().iterator().next();
-			return Arrays.asList(Tensor.build("labels", "yx", Cast.unchecked(toStableIntImage(labelImage))));
+			//return Arrays.asList(Tensor.build("labels", "yx", Cast.unchecked(toStableIntImage(labelImage))));
+			return Arrays.asList(Tensor.build("labels", "yx", labelImage));
 		} catch (RunModelException e) {
 			throw new IllegalStateException("StarDist NMS failed after dense tile reconstruction.", e);
 		}
-	}
-
-	private static <R extends RealType<R> & NativeType<R>> RandomAccessibleInterval<IntType> toStableIntImage(
-			final RandomAccessibleInterval<R> source) {
-		RandomAccessibleInterval<IntType> copy = new ArrayImgFactory<IntType>(new IntType())
-				.create(source.dimensionsAsLongArray());
-		boolean useMultiThreading = Intervals.numElements(copy) >= 20_000;
-		LoopBuilder.setImages(source, copy)
-				.multiThreaded(useMultiThreading)
-				.forEachPixel((src, dst) -> dst.setInteger((int) Math.round(src.getRealDouble())));
-		return copy;
 	}
 
 	private static <T extends RealType<T> & NativeType<T>> boolean hasSpatialAxes(final Tensor<T> tensor) {
