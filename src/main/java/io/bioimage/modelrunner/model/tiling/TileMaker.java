@@ -21,12 +21,14 @@ package io.bioimage.modelrunner.model.tiling;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.LongStream;
+import java.util.stream.Stream;
 
 import io.bioimage.modelrunner.bioimageio.description.Axis;
 import io.bioimage.modelrunner.bioimageio.description.ModelDescriptor;
@@ -75,12 +77,13 @@ public class TileMaker {
 		this.inputTileInfo = inputTiles;
 		this.outputTileInfo = outputTiles;
 		this.descriptor = null;
+		List<TileInfo> combined = Stream.of(outputTiles, inputTiles).flatMap(List::stream).collect(Collectors.toList());;
+		TileInfo.adaptHalos(combined);
 		for (TileInfo tile : inputTileInfo) {
 			PatchSpec patch = createPatch(tile);
 			input.put(tile.getName(), patch);
 			inputGrid.put(tile.getName(), TileGrid.create(patch));
 		}
-		TileInfo.adaptHalos(outputTileInfo);
 		for (TileInfo tile : outputTileInfo) {
 			PatchSpec patch = createPatch(tile);
 			output.put(tile.getName(), patch);
@@ -95,8 +98,11 @@ public class TileMaker {
     	int[][] paddingSize = new int[2][tileSize.length];
         // REgard that the input halo represents the output halo + offset 
         // and must be divisible by 0.5. 
-        long[] halo = arrayToWantedAxesOrderAddZeros(tile.getHalo(), 
-    			tile.getHaloAxesOrder(), tile.getTileAxesOrder());
+        long[] halo;
+        if (!Arrays.stream(tile.getHalo()).allMatch(x -> x == 0))
+            halo = arrayToWantedAxesOrderAddZeros(tile.getHalo(), tile.getHaloAxesOrder(), tile.getTileAxesOrder());
+        else
+        	halo = tile.getHalo();
     	// In the case that padding is asymmetrical, the left upper padding has the extra pixel
         for (int i = 0; i < halo.length; i ++) {paddingSize[0][i] = (int) halo[i];}
         // In the case that padding is asymmetrical, the right bottom padding has one pixel less

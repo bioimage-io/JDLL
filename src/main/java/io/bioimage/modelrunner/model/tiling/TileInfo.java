@@ -47,6 +47,7 @@ public class TileInfo {
 		this.proposedTileDims = proposedTileDims;
 		this.tileAxesOrder = tileAxesOrder;
 		this.halo = new long[imAxesOrder.length()];
+		this.haloAxesOrder = imAxesOrder;
 	}
 	
 	/**
@@ -181,6 +182,7 @@ public class TileInfo {
 					else if (nh > hh)
 						tile.halo[c] = (long) nh;
 				}
+				c ++;
 			}
 		}
 	}

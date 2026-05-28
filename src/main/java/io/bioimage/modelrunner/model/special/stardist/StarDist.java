@@ -48,13 +48,10 @@ import io.bioimage.modelrunner.model.python.envs.PixiEnvironmentManager;
 import io.bioimage.modelrunner.model.python.envs.PixiEnvironmentResolver;
 import io.bioimage.modelrunner.model.python.envs.PixiEnvironmentSpec;
 import io.bioimage.modelrunner.model.python.methods.ConvertDims;
-import io.bioimage.modelrunner.model.python.methods.LetterboxPreprocessing;
-import io.bioimage.modelrunner.model.python.methods.UndoLetterboxProcessingBoundingBoxes;
 import io.bioimage.modelrunner.model.special.common.TrainingCodeUtils;
 import io.bioimage.modelrunner.model.tiling.TileInfo;
 import io.bioimage.modelrunner.model.tiling.TileMaker;
 import io.bioimage.modelrunner.model.tiling.merger.DenseMerger;
-import io.bioimage.modelrunner.model.tiling.merger.DetectionMerger;
 import io.bioimage.modelrunner.model.tiling.merger.Merger;
 import io.bioimage.modelrunner.system.PlatformDetection;
 import io.bioimage.modelrunner.tensor.Tensor;
@@ -128,7 +125,7 @@ public final class StarDist extends DLModelPytorchProtected {
 	private Consumer<InferenceProgress> inferenceProgressConsumer;
 
 	private StarDist(String modelIdentity, Map<String, Object> config,
-			Dimensionality dimensionality) throws IOException {
+			Dimensionality dimensionality, Consumer<InferenceProgress> inferenceProgressConsumer) throws IOException {
 		super(modelIdentity, modelIdentity, modelIdentity, modelIdentity, config, true);
 		modelFolder = new File(modelIdentity).getParentFile().getAbsolutePath();
 		this.mpkPath = modelIdentity;
@@ -136,53 +133,54 @@ public final class StarDist extends DLModelPytorchProtected {
 		this.nChannels = inferNChannels(this.config);
 		this.dimensionality = dimensionality;
 		this.environmentSpec = resolvePytorchEnv();
+		this.inferenceProgressConsumer = inferenceProgressConsumer;
 	}
 
-	public static StarDist fromFile(String modelPath)
+	public static StarDist fromFile(String modelPath, Consumer<InferenceProgress> inferenceProgressConsumer)
 			throws IOException, BuildException, LoadModelException {
 		Map<String, Object> config = loadModelConfig(modelPath);
 		String modelIdentity = resolveModelIdentityFile(modelPath).getAbsolutePath();
-		StarDist model = new StarDist(modelIdentity, config, inferDimensionality(config));
+		StarDist model = new StarDist(modelIdentity, config, inferDimensionality(config), inferenceProgressConsumer);
 		model.loadModel();
 		return model;
 	}
 
-	public static StarDist fromConfigJson(String configJsonPath)
+	public static StarDist fromConfigJson(String configJsonPath, Consumer<InferenceProgress> inferenceProgressConsumer)
 			throws IOException, BuildException, LoadModelException {
 		if (configJsonPath == null || !new File(configJsonPath).isFile()) {
 			throw new IllegalArgumentException("StarDist config JSON does not exist: " + configJsonPath);
 		}
-		return fromConfig(JSONUtils.load(configJsonPath));
+		return fromConfig(JSONUtils.load(configJsonPath), inferenceProgressConsumer);
 	}
 
-	public static StarDist fromConfig(Map<String, Object> config)
+	public static StarDist fromConfig(Map<String, Object> config, Consumer<InferenceProgress> inferenceProgressConsumer)
 			throws IOException, BuildException, LoadModelException {
 		Map<String, Object> normalized = normalizedConfig(config);
 		StarDist model = new StarDist("stardist-config", normalized,
-				inferDimensionality(normalized));
+				inferDimensionality(normalized), inferenceProgressConsumer);
 		model.loadModel();
 		return model;
 	}
 
-	public static StarDist fromDefault()
+	public static StarDist fromDefault(Consumer<InferenceProgress> inferenceProgressConsumer)
 			throws IOException, BuildException, LoadModelException {
-		return fromDefault2D();
+		return fromDefault2D(inferenceProgressConsumer);
 	}
 
-	public static StarDist fromDefault2D()
+	public static StarDist fromDefault2D(Consumer<InferenceProgress> inferenceProgressConsumer)
 			throws IOException, BuildException, LoadModelException {
 		Map<String, Object> config = defaultModelConfig2D();
 		StarDist model = new StarDist("stardist-default-2d", config,
-				Dimensionality.TWO_D);
+				Dimensionality.TWO_D, inferenceProgressConsumer);
 		model.loadModel();
 		return model;
 	}
 
-	public static StarDist fromDefault3D()
+	public static StarDist fromDefault3D(Consumer<InferenceProgress> inferenceProgressConsumer)
 			throws IOException, BuildException, LoadModelException {
 		Map<String, Object> config = defaultModelConfig3D();
 		StarDist model = new StarDist("stardist-default-3d", config,
-				Dimensionality.THREE_D);
+				Dimensionality.THREE_D, inferenceProgressConsumer);
 		model.loadModel();
 		return model;
 	}
@@ -269,6 +267,7 @@ public final class StarDist extends DLModelPytorchProtected {
 		}
 		TileMaker tileMaker = TileMaker.build(inputInfo, createDenseOutputTileInfo(referenceInput));
 		DenseMerger<T, R> merger = new DenseMerger<T, R>(tileMaker);
+		merger.configure(inputs);
 		String referenceAxes = referenceInput.getAxesOrderString().toLowerCase();
 		long[] referenceDims = referenceInput.getData().dimensionsAsLongArray();
 		long imageHeight = axisSize(referenceDims, referenceAxes, 'y');
@@ -391,6 +390,7 @@ public final class StarDist extends DLModelPytorchProtected {
 
 		outputInfo.add(prob);
 		outputInfo.add(dist);
+		TileInfo.adaptHalos(outputInfo);
 		return outputInfo;
 	}
 
@@ -646,6 +646,34 @@ public final class StarDist extends DLModelPytorchProtected {
 		}
 	}
 
+    /**
+     * Installs the requirements for the current model instance.
+     *
+     * @throws InterruptedException if installation is interrupted
+     * @throws BuildException if installation fails
+     */
+    public void installRequirements() throws InterruptedException, BuildException {
+        installRequirements(null);
+    }
+
+    /**
+     * Installs the requirements for the current model instance.
+     *
+     * @param consumer
+     *     optional consumer receiving installation logs and progress
+     * @throws InterruptedException if installation is interrupted
+     * @throws BuildException if installation fails
+     */
+    public void installRequirements(final Consumer<String> consumer)
+            throws InterruptedException, BuildException {
+        PixiEnvironmentManager.installRequirements(environmentSpec, consumer);
+
+        if (!isInstalled()) {
+            throw new RuntimeException("Not all the required packages were installed correctly. Please try again."
+                    + " If the error persists, please post an issue at: https://github.com/bioimage-io/JDLL/issues");
+        }
+    }
+
 	public static void train(int epochs, String dataDir, String gtDir, String outputDir,
 			Consumer<StardistTrainingProgress> progressConsumer,
 			Consumer<StardistValidationPreview> previewConsumer,
@@ -891,7 +919,7 @@ public final class StarDist extends DLModelPytorchProtected {
 	
 	public static void main(String[] args) throws IOException, BuildException, LoadModelException, RunModelException {
 		String path = "/home/carlos/git/deep-icy/models/stardist/hundred";
-		try (StarDist model = StarDist.fromFile(path)) {
+		try (StarDist model = StarDist.fromFile(path, null)) {
 			Tensor<FloatType> tensor = Tensor.build(
 					"input",
 					"bcyx",
