@@ -187,14 +187,8 @@ public class DLModelPytorchProtected extends BaseModel {
 
     protected static final String RECOVER_OUTPUTS_CODE = ""
 			+ SHMS_KEY + " = []" + System.lineSeparator()
-			+ SHM_NAMES_KEY + " = []" + System.lineSeparator()
-			+ DTYPES_KEY + " = []" + System.lineSeparator()
-			+ DIMS_KEY + " = []" + System.lineSeparator()
 			+ "created_shms = []" + System.lineSeparator()
 			+ "task.export(" + SHMS_KEY + "=" + SHMS_KEY + ")" + System.lineSeparator()
-			+ "task.export(" + SHM_NAMES_KEY + "=" + SHM_NAMES_KEY + ")" + System.lineSeparator()
-			+ "task.export(" + DTYPES_KEY + "=" + DTYPES_KEY + ")" + System.lineSeparator()
-			+ "task.export(" + DIMS_KEY + "=" + DIMS_KEY + ")" + System.lineSeparator()
 			+ "task.export(created_shms=created_shms)" + System.lineSeparator()
             + "def handle_output(outs_i, shms_key, shms_names, dtypes, dims):" + System.lineSeparator()
             + "    if type(outs_i) == np.ndarray:" + System.lineSeparator()
@@ -255,6 +249,7 @@ public class DLModelPytorchProtected extends BaseModel {
             + System.lineSeparator();
 
     private static final String CLEAN_SHM_CODE = ""
+    		+ "print(len(" + SHMS_KEY + "))" + System.lineSeparator()
             + "for s in " + SHMS_KEY + ":" + System.lineSeparator()
             + "    s.close()" + System.lineSeparator()
             + "    try:" + System.lineSeparator()
@@ -262,9 +257,7 @@ public class DLModelPytorchProtected extends BaseModel {
             + "    except FileNotFoundError:" + System.lineSeparator()
             + "        pass" + System.lineSeparator()
             + SHMS_KEY + ".clear()" + System.lineSeparator()
-            + SHM_NAMES_KEY + ".clear()" + System.lineSeparator()
-            + DTYPES_KEY + ".clear()" + System.lineSeparator()
-            + DIMS_KEY + ".clear()" + System.lineSeparator();
+            + "created_shms.clear()" + System.lineSeparator();
 
     private static final String JDLL_UUID = UUID.randomUUID().toString().replaceAll("-", "_");
 
@@ -882,6 +875,9 @@ public class DLModelPytorchProtected extends BaseModel {
             final List<String> names) {
         String code = "created_shms.clear()" + System.lineSeparator();
         code += "task.outputs.clear()" + System.lineSeparator();
+        code += SHM_NAMES_KEY + " = []" + System.lineSeparator();
+        code += DTYPES_KEY + " = []" + System.lineSeparator();
+        code += DIMS_KEY + " = []" + System.lineSeparator();
         code += "try:" + System.lineSeparator();
         final List<SharedMemoryArray> shmas = createSharedMemoryArraysForInputs(rais);
         for (int i = 0; i < rais.size(); i++) {
@@ -897,15 +893,6 @@ public class DLModelPytorchProtected extends BaseModel {
         }
         code = code.substring(0, code.length() - 2);
         code += ")" + System.lineSeparator();
-        code += ""
-                + "  " + SHMS_KEY + " = []" + System.lineSeparator()
-                + "  " + SHM_NAMES_KEY + " = []" + System.lineSeparator()
-                + "  " + DTYPES_KEY + " = []" + System.lineSeparator()
-                + "  " + DIMS_KEY + " = []" + System.lineSeparator()
-                + "  " + "globals()['" + SHMS_KEY + "'] = " + SHMS_KEY + System.lineSeparator()
-                + "  " + "globals()['" + SHM_NAMES_KEY + "'] = " + SHM_NAMES_KEY + System.lineSeparator()
-                + "  " + "globals()['" + DTYPES_KEY + "'] = " + DTYPES_KEY + System.lineSeparator()
-                + "  " + "globals()['" + DIMS_KEY + "'] = " + DIMS_KEY + System.lineSeparator();
         code += "  ";
         code += String.format("handle_output_list(%s, %s, %s, %s, %s)", OUTPUT_LIST_KEY,
         		SHMS_KEY, SHM_NAMES_KEY, DTYPES_KEY, DIMS_KEY)  + System.lineSeparator();
@@ -1130,9 +1117,9 @@ public class DLModelPytorchProtected extends BaseModel {
      */
     protected String taskOutputsCode() {
         return ""
-                + "task.outputs['" + SHM_NAMES_KEY + "'] = " + SHM_NAMES_KEY + System.lineSeparator()
-                + "task.outputs['" + DTYPES_KEY + "'] = " + DTYPES_KEY + System.lineSeparator()
-                + "task.outputs['" + DIMS_KEY + "'] = " + DIMS_KEY + System.lineSeparator();
+                + "task.outputs['" + SHM_NAMES_KEY + "'] = list(" + SHM_NAMES_KEY + ")" + System.lineSeparator()
+                + "task.outputs['" + DTYPES_KEY + "'] = list(" + DTYPES_KEY + ")" + System.lineSeparator()
+                + "task.outputs['" + DIMS_KEY + "'] = list(" + DIMS_KEY + ")" + System.lineSeparator();
     }
 
     @Override
@@ -1320,8 +1307,10 @@ public class DLModelPytorchProtected extends BaseModel {
      * @throws TaskException if the cleanup task fails
      */
     protected void threadDeathCleanUp() throws InterruptedException, TaskException {
+    	python.debug((str) -> {System.out.println(str);});
         final Task closeSHMTask = python.task(CLEAN_SHM_CODE);
         closeSHMTask.waitFor();
+    	python.debug((str) -> {});
         if (closeSHMTask.status == TaskStatus.FAILED || closeSHMTask.status == TaskStatus.CRASHED) {
             throw new TaskException("Unable to clean/close the opened shared memory arrays", closeSHMTask);
         }

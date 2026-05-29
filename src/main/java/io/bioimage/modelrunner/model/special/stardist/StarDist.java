@@ -336,6 +336,10 @@ public final class StarDist extends DLModelPytorchProtected {
 			List<String> names = Arrays.asList(probName, distName);
 			String code = ConvertDims.getMethodDeclaration() + System.lineSeparator();
 			code += "created_shms.clear()" + System.lineSeparator();
+			code += "task.outputs.clear()" + System.lineSeparator();
+			code += SHM_NAMES_KEY + " = []" + System.lineSeparator();
+			code += DTYPES_KEY + " = []" + System.lineSeparator();
+			code += DIMS_KEY + " = []" + System.lineSeparator();
 			code += "try:" + System.lineSeparator();
 			for (int i = 0; i < 2; i ++) {
 				SharedMemoryArray shma = SharedMemoryArray.createSHMAFromRAI(reconstructed.get(i).getData(), false, false);
@@ -353,10 +357,6 @@ public final class StarDist extends DLModelPytorchProtected {
 					+ "nms_thresh=" + MODEL_VAR_NAME + ".thresholds.nms, verbose=False)" + System.lineSeparator();
 			code += "  labels = polygons_to_label(disti, points, prob=probi, shape=("
 					+ imageHeight + ", " + imageWidth + "))" + System.lineSeparator();
-			code += "  " + SHMS_KEY + ".clear()" + System.lineSeparator();
-			code += "  " + SHM_NAMES_KEY + ".clear()" + System.lineSeparator();
-			code += "  " + DTYPES_KEY + ".clear()" + System.lineSeparator();
-			code += "  " + DIMS_KEY + ".clear()" + System.lineSeparator();
 			// TODO remove code += "  handle_output(labels.astype(np.float32, copy=False))" + System.lineSeparator();
 	        code += String.format("  handle_output(labels.astype(np.float32, copy=False), %s, %s, %s, %s)",
 	        		SHMS_KEY, SHM_NAMES_KEY, DTYPES_KEY, DIMS_KEY)  + System.lineSeparator();
@@ -586,6 +586,9 @@ public final class StarDist extends DLModelPytorchProtected {
 			code += ConvertDims.getMethodDeclaration() + System.lineSeparator();
 			code += "created_shms.clear()" + System.lineSeparator();
 	        code += "task.outputs.clear()" + System.lineSeparator();
+			code += SHM_NAMES_KEY + " = []" + System.lineSeparator();
+			code += DTYPES_KEY + " = []" + System.lineSeparator();
+			code += DIMS_KEY + " = []" + System.lineSeparator();
 			code += "try:" + System.lineSeparator();
 			List<SharedMemoryArray> shmas = createSharedMemoryArraysForInputs(inRais);
 			for (int i = 0; i < inRais.size(); i ++) {
@@ -601,10 +604,6 @@ public final class StarDist extends DLModelPytorchProtected {
 			code += "    _prob, _dist = " + MODEL_VAR_NAME + ".predict("
 					+ names.get(0) + ", axes='YXC', normalizer=None, n_tiles=None, show_tile_progress=False)" + System.lineSeparator();
 			code += "  " + OUTPUT_LIST_KEY + " = [np.expand_dims(_prob, 0), np.expand_dims(_dist, 0)]" + System.lineSeparator();
-			code += "  " + SHMS_KEY + ".clear()" + System.lineSeparator();
-			code += "  " + SHM_NAMES_KEY + ".clear()" + System.lineSeparator();
-			code += "  " + DTYPES_KEY + ".clear()" + System.lineSeparator();
-			code += "  " + DIMS_KEY + ".clear()" + System.lineSeparator();
 	        // TODO remove code += "  " + "handle_output_list(" + OUTPUT_LIST_KEY + ")" + System.lineSeparator();
 	        code += String.format("  handle_output_list(%s, %s, %s, %s, %s)", OUTPUT_LIST_KEY,
 	        		SHMS_KEY, SHM_NAMES_KEY, DTYPES_KEY, DIMS_KEY)  + System.lineSeparator();
