@@ -589,12 +589,10 @@ public final class StarDist extends DLModelPytorchProtected {
 				SharedMemoryArray shma = shmas.get(i);
 				code += codeToConvertShmaToPython(shma, names.get(i));
 				inShmaList.add(shma);
-				code += "  print(" + names.get(i) + ".shape)" + System.lineSeparator();
 				code += "  " + names.get(i) + " = " + ConvertDims.getMethodName() + "(" + names.get(i)
 				+ ", '" + inRais.get(i).getAxesOrderString().toLowerCase()
 				+ "', out_order='yxc', output_type='numpy', contiguous=False, n_channels="
 				+ nChannels + ")" + System.lineSeparator();
-				code += "  print(" + names.get(i) + ".shape)" + System.lineSeparator();
 			}
 			code += "  with tf.device(_jdll_tf_device):" + System.lineSeparator();
 			code += "    _prob, _dist = " + MODEL_VAR_NAME + ".predict("
@@ -604,7 +602,6 @@ public final class StarDist extends DLModelPytorchProtected {
 			code += "  " + SHM_NAMES_KEY + ".clear()" + System.lineSeparator();
 			code += "  " + DTYPES_KEY + ".clear()" + System.lineSeparator();
 			code += "  " + DIMS_KEY + ".clear()" + System.lineSeparator();
-			code += "  " + "task.export(" + SHMS_KEY + " = " + SHMS_KEY + ")" + System.lineSeparator();
 	        code += "  " + "handle_output_list(" + OUTPUT_LIST_KEY + ")" + System.lineSeparator();
 			code += "  " + closeSHMWin() + System.lineSeparator();
 			code += "except Exception as e:" + System.lineSeparator();
