@@ -51,7 +51,7 @@ LD_LIBRARY_PATH = "$CONDA_PREFIX/lib:${LD_LIBRARY_PATH:-}"
 
 [feature.linux-x86-64-cuda.tasks.python]
 cmd = '''
-sh -lc 'LD_LIBRARY_PATH="$CONDA_PREFIX/lib:${LD_LIBRARY_PATH:-}" python'
+sh -lc 'LD_LIBRARY_PATH="$CONDA_PREFIX/lib:${LD_LIBRARY_PATH:-}" exec python "$@"' sh
 '''
 
 [feature.linux-x86-64-cuda.tasks.check-gpu]
@@ -94,7 +94,7 @@ PATH = "%%CONDA_PREFIX%%\\Library\\bin;%%PATH%%"
 cmd = '''
 powershell -NoProfile -Command "
 $env:PATH = \"$env:CONDA_PREFIX\\Library\\bin;$env:PATH\";
-python
+python $args
 "
 '''
 
