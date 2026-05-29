@@ -824,16 +824,7 @@ public class DLModelPytorchProtected extends BaseModel {
 
         final String code = createInputsCode(inputs, names);
         final Map<String, RandomAccessibleInterval<R>> map = executeCode(code);
-        try {
         outAxes = getOutputAxes(map.size());
-        } catch (Exception ex) {
-        	for (Entry<String, RandomAccessibleInterval<R>> entry : map.entrySet()) {
-        		System.out.println(entry.getKey());
-        		for (long l : entry.getValue().dimensionsAsLongArray()) {
-        			System.out.println(l);
-        		}
-        	}
-        }
         List<Tensor<R>> outTensors = new ArrayList<Tensor<R>>();
         int i = 0;
         for (Entry<String, RandomAccessibleInterval<R>> ee : map.entrySet()) {
