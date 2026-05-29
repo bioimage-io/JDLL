@@ -113,6 +113,11 @@ public class DLModelPytorchProtected extends BaseModel {
      * Consumer used to report structured inference progress events.
      */
     protected Consumer<InferenceProgress> inferenceProgressConsumer;
+    
+    /**
+     * Device where the model will run
+     */
+	protected final String device;
 
     /**
      * Maximum number of pixels copied to shared memory for one image tensor.
@@ -274,7 +279,7 @@ public class DLModelPytorchProtected extends BaseModel {
             final String importModule,
             final String weightsPath,
             final Map<String, Object> kwargs) {
-        this(modelFile, callable, importModule, weightsPath, kwargs, false);
+        this(modelFile, callable, importModule, weightsPath, kwargs, false, null);
     }
 
     /**
@@ -294,7 +299,8 @@ public class DLModelPytorchProtected extends BaseModel {
             final String importModule,
             final String weightsPath,
             final Map<String, Object> kwargs,
-            final boolean customJDLL) {
+            final boolean customJDLL, 
+            String device) {
 
         if (!customJDLL && (new File(modelFile).isFile() == false || !modelFile.endsWith(".py")) && importModule == null) {
             throw new IllegalArgumentException("The model file does not correspond to an existing .py file.");
@@ -330,6 +336,9 @@ public class DLModelPytorchProtected extends BaseModel {
         this.envPath = environmentSpec.getEnvironmentDirectory().getAbsolutePath();
         
         this.tileCounter = new TilingConsumer();
+		if (device == null || device != "cuda" || device != "mps")
+			device = "cpu";
+		this.device = device;
     }
 
     /**

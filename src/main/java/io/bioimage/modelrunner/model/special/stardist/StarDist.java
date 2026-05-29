@@ -124,8 +124,8 @@ public final class StarDist extends DLModelPytorchProtected {
 
 	private Double threshold = null;
 	private StarDist(String modelIdentity, Map<String, Object> config,
-			Dimensionality dimensionality, Consumer<InferenceProgress> inferenceProgressConsumer) throws IOException {
-		super(modelIdentity, modelIdentity, modelIdentity, modelIdentity, config, true);
+			Dimensionality dimensionality, Consumer<InferenceProgress> inferenceProgressConsumer, String device) throws IOException {
+		super(modelIdentity, modelIdentity, modelIdentity, modelIdentity, config, true, device);
 		File identityFile = new File(modelIdentity);
 		File parent = identityFile.getParentFile();
 		modelFolder = parent == null ? identityFile.getAbsoluteFile().getParent() : parent.getAbsolutePath();
@@ -139,6 +139,11 @@ public final class StarDist extends DLModelPytorchProtected {
 
 	public static StarDist fromFile(String modelPath, Consumer<InferenceProgress> inferenceProgressConsumer)
 			throws IOException, BuildException, LoadModelException {
+		return fromFile(modelPath, inferenceProgressConsumer, null);
+	}
+
+	public static StarDist fromFile(String modelPath, Consumer<InferenceProgress> inferenceProgressConsumer, String device)
+			throws IOException, BuildException, LoadModelException {
 		Map<String, Object> config = loadModelConfig(modelPath);
 		String modelIdentity = resolveModelIdentityFile(modelPath).getAbsolutePath();
 		StarDist model = new StarDist(modelIdentity, config, inferDimensionality(config), inferenceProgressConsumer);
@@ -148,6 +153,11 @@ public final class StarDist extends DLModelPytorchProtected {
 
 	public static StarDist fromConfigJson(String configJsonPath, Consumer<InferenceProgress> inferenceProgressConsumer)
 			throws IOException, BuildException, LoadModelException {
+		return fromConfigJson(configJsonPath, inferenceProgressConsumer, null);
+	}
+
+	public static StarDist fromConfigJson(String configJsonPath, Consumer<InferenceProgress> inferenceProgressConsumer, String device)
+			throws IOException, BuildException, LoadModelException {
 		if (configJsonPath == null || !new File(configJsonPath).isFile()) {
 			throw new IllegalArgumentException("StarDist config JSON does not exist: " + configJsonPath);
 		}
@@ -155,6 +165,11 @@ public final class StarDist extends DLModelPytorchProtected {
 	}
 
 	public static StarDist fromConfig(Map<String, Object> config, Consumer<InferenceProgress> inferenceProgressConsumer)
+			throws IOException, BuildException, LoadModelException {
+		return fromConfig(config, inferenceProgressConsumer, null);
+	}
+
+	public static StarDist fromConfig(Map<String, Object> config, Consumer<InferenceProgress> inferenceProgressConsumer, String device)
 			throws IOException, BuildException, LoadModelException {
 		Map<String, Object> normalized = normalizedConfig(config);
 		StarDist model = new StarDist("stardist-config", normalized,
@@ -164,6 +179,11 @@ public final class StarDist extends DLModelPytorchProtected {
 	}
 
 	public static StarDist fromDefault(Consumer<InferenceProgress> inferenceProgressConsumer)
+			throws IOException, BuildException, LoadModelException {
+		return fromDefault(inferenceProgressConsumer, null);
+	}
+
+	public static StarDist fromDefault(Consumer<InferenceProgress> inferenceProgressConsumer, String device)
 			throws IOException, BuildException, LoadModelException {
 		return fromDefault2D(inferenceProgressConsumer);
 	}
@@ -518,7 +538,7 @@ public final class StarDist extends DLModelPytorchProtected {
 
 	@Override
 	protected String buildModelCode() {
-		String gpu = "True"; // TODO
+		String gpu = this.device == "cuda" ? "True" : "cpu";
 		String source = mpkPath != null && new File(mpkPath).exists() ? "r'" + mpkPath + "'" : "None";
 		String configStr = TrainingCodeUtils.toJson(config).replace("null", "None").replace("true", "True").replace("false", "False");
 		return String.format(LOAD_MODEL_CODE_2D, source, configStr, gpu);
