@@ -649,18 +649,6 @@ public class DLModelPytorchProtected extends BaseModel {
         closed = true;
     }
 
-    private <T extends RealType<T> & NativeType<T>, R extends RealType<R> & NativeType<R>>
-    Map<String, RandomAccessibleInterval<R>> predictForInputTensors(final List<Tensor<T>> inTensors)
-            throws RunModelException {
-        if (!loaded) {
-            throw new RuntimeException("Please load the model first.");
-        }
-        final List<String> names = inTensors.stream()
-                .map(tt -> tt.getName() + "_np")
-                .collect(Collectors.toList());
-        return executeCode(createInputsCode(inTensors, names));
-    }
-
     protected <T extends RealType<T> & NativeType<T>, R extends RealType<R> & NativeType<R>>
     Map<String, RandomAccessibleInterval<R>> executeCode(final String code) throws RunModelException {
         Throwable lastFailure = null;
