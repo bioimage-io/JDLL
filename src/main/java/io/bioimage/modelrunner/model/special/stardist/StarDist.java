@@ -278,7 +278,7 @@ public final class StarDist extends DLModelPytorchProtected {
 			String distName = "dist_" + java.util.UUID.randomUUID().toString().replace("-", "_");
 			List<String> names = Arrays.asList(probName, distName);
 			String code = ConvertDims.getMethodDeclaration() + System.lineSeparator();
-			code += "created_shms = []" + System.lineSeparator();
+			code += "created_shms.clear()" + System.lineSeparator();
 			code += "try:" + System.lineSeparator();
 			for (int i = 0; i < 2; i ++) {
 				SharedMemoryArray shma = SharedMemoryArray.createSHMAFromRAI(reconstructed.get(i).getData(), false, false);
@@ -526,7 +526,7 @@ public final class StarDist extends DLModelPytorchProtected {
 		String createInputsCode(List<Tensor<T>> inRais, List<String> names) {
 			String code = "";
 			code += ConvertDims.getMethodDeclaration() + System.lineSeparator();
-			code += "created_shms = []" + System.lineSeparator();
+			code += "created_shms.clear()" + System.lineSeparator();
 			code += "try:" + System.lineSeparator();
 			List<SharedMemoryArray> shmas = createSharedMemoryArraysForInputs(inRais);
 			for (int i = 0; i < inRais.size(); i ++) {

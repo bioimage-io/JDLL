@@ -185,10 +185,12 @@ public class DLModelPytorchProtected extends BaseModel {
 			+ SHM_NAMES_KEY + " = []" + System.lineSeparator()
 			+ DTYPES_KEY + " = []" + System.lineSeparator()
 			+ DIMS_KEY + " = []" + System.lineSeparator()
+			+ "created_shms = []" + System.lineSeparator()
 			+ "task.export(" + SHMS_KEY + "=" + SHMS_KEY + ")" + System.lineSeparator()
 			+ "task.export(" + SHM_NAMES_KEY + "=" + SHM_NAMES_KEY + ")" + System.lineSeparator()
 			+ "task.export(" + DTYPES_KEY + "=" + DTYPES_KEY + ")" + System.lineSeparator()
 			+ "task.export(" + DIMS_KEY + "=" + DIMS_KEY + ")" + System.lineSeparator()
+			+ "task.export(created_shms=created_shms)" + System.lineSeparator()
             + "def handle_output(outs_i):" + System.lineSeparator()
             + "    if type(outs_i) == np.ndarray:" + System.lineSeparator()
             + "      shm = shared_memory.SharedMemory(create=True, size=outs_i.nbytes)" + System.lineSeparator()
@@ -822,7 +824,16 @@ public class DLModelPytorchProtected extends BaseModel {
 
         final String code = createInputsCode(inputs, names);
         final Map<String, RandomAccessibleInterval<R>> map = executeCode(code);
+        try {
         outAxes = getOutputAxes(map.size());
+        } catch (Exception ex) {
+        	for (Entry<String, RandomAccessibleInterval<R>> entry : map.entrySet()) {
+        		System.out.println(entry.getKey());
+        		for (long l : entry.getValue().dimensionsAsLongArray()) {
+        			System.out.println(l);
+        		}
+        	}
+        }
         List<Tensor<R>> outTensors = new ArrayList<Tensor<R>>();
         int i = 0;
         for (Entry<String, RandomAccessibleInterval<R>> ee : map.entrySet()) {
@@ -852,7 +863,7 @@ public class DLModelPytorchProtected extends BaseModel {
     protected <T extends RealType<T> & NativeType<T>> String createInputsCode(
             final List<Tensor<T>> rais,
             final List<String> names) {
-        String code = "created_shms = []" + System.lineSeparator();
+        String code = "created_shms.clear()" + System.lineSeparator();
         code += "try:" + System.lineSeparator();
         final List<SharedMemoryArray> shmas = createSharedMemoryArraysForInputs(rais);
         for (int i = 0; i < rais.size(); i++) {

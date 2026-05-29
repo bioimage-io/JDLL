@@ -22,7 +22,6 @@ package io.bioimage.modelrunner.model.special.yolo;
 import java.awt.Rectangle;
 import java.io.File;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
@@ -205,7 +204,7 @@ public class Yolo extends DLModelPytorchProtected {
 			code += ConvertDims.getMethodDeclaration() + System.lineSeparator();
 			code += LetterboxPreprocessing.getMethodDeclaration() + System.lineSeparator();
 			code += UndoLetterboxProcessingBoundingBoxes.getMethodDeclaration() + System.lineSeparator();
-			code += "created_shms = []" + System.lineSeparator();
+			code += "created_shms.clear()" + System.lineSeparator();
 			code += "try:" + System.lineSeparator();
 			List<SharedMemoryArray> shmas = createSharedMemoryArraysForInputs(inRais);
 			for (int i = 0; i < inRais.size(); i ++) {
@@ -582,7 +581,6 @@ public class Yolo extends DLModelPytorchProtected {
 	public static <R extends RealType<R> & NativeType<R>, T extends RealType<T> & NativeType<T>>
 	void main(String[] args) throws IOException, InterruptedException, ExecutionException, LoadModelException, RunModelException, BuildException {
 		Yolo model = Yolo.init("/home/carlos/git/JDLL/models/yolo/yolo26n.pt");
-		model.installRequirements();
 		model.loadModel();
 		ArrayImg<FloatType, FloatArray> rai = ArrayImgs.floats(new long[] {2, 512, 512, 3});
 		long tt = System.currentTimeMillis();
