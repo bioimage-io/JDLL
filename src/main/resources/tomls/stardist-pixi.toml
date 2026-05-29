@@ -1,105 +1,138 @@
 [workspace]
 name = "%s"
 version = "0.0.0.dev0"
-description = "StarDist-based segmentation. In 3D."
-authors = ["Curtis Rueden"]
-channels = ["conda-forge"]
-platforms = ["osx-arm64", "osx-64", "linux-64", "win-64"]
+description = "StarDist-based segmentation."
+authors = ["Curtis Rueden", "Carlos Garcia"]
+channels = ["https://prefix.dev/conda-forge", "nvidia"]
+platforms = ["osx-arm64", "osx-64", "linux-64", "linux-aarch64", "win-64"]
+
+# Global environment isolation.
+[activation.env]
+CUDA_HOME = ""
+CUDA_PATH = ""
+CUDA_ROOT = ""
+LD_LIBRARY_PATH = ""
+DYLD_LIBRARY_PATH = ""
+PYTHONPATH = ""
 
 [dependencies]
 python = "==3.10"
 appose = "==0.11.0"
 numpy = "<2"
-scipy = "*"
+scipy = "==1.15.2"
 pip = "*"
 setuptools = "<81"
 
 [pypi-dependencies]
 stardist = "==0.9.1"
-csbdeep = "*"
-ndv = { extras = ["qt"] }
-pygfx = "<0.13.0"
+csbdeep = "==0.8.2"
 
-[target.osx-64.dependencies]
-python = "*"
+# -----------------------------------------------------------------------------
+# Linux x86-64
+# -----------------------------------------------------------------------------
+[feature.linux-x86-64-no-cuda]
+platforms = ["linux-64"]
 
-[target.osx-arm64.dependencies]
-python = "*"
-
-# PyPI deps common per-OS:
-[target.win-64.pypi-dependencies]
+[feature.linux-x86-64-no-cuda.pypi-dependencies]
 tensorflow = "==2.10.1"
 
-[target.linux-64.pypi-dependencies]
+[feature.linux-x86-64-cuda]
+platforms = ["linux-64"]
+
+[feature.linux-x86-64-cuda.dependencies]
+cudatoolkit = "11.2.*"
+cudnn = "8.1.*"
+
+[feature.linux-x86-64-cuda.pypi-dependencies]
 tensorflow = "==2.10.1"
 
-[target.osx-64.pypi-dependencies]
-tensorflow = "*"                 # latest CPU TF for Intel mac
-
-[target.osx-arm64.pypi-dependencies]
-tensorflow-macos = "*"           # latest TF for Apple Silicon
-tensorflow-metal = "*"           # Metal plugin
-
-
-
-# ---------------- Macos no metal - ONLY APPLE SILICON ----------------
-[feature.nometal]
-channels = ["conda-forge"]
-
-[feature.nometal.target.osx-arm64.pypi-dependencies]
-tensorflow = "*"     
-
-
-
-# ---------------- CUDA feature (Windows/Linux only) ----------------
-[feature.cuda]
-channels = ["nvidia", "conda-forge"]   # optional; inherits from workspace
-
-[feature.cuda.target.win-64.dependencies]
-cudatoolkit = "11.2.*"
-cudnn       = "8.1.*"
-
-[feature.cuda.target.linux-64.dependencies]
-cudatoolkit = "11.2.*"
-cudnn       = "8.1.*"
-
-# Activation only when the 'cuda' feature is part of the active environment:
-[feature.cuda.target.win-64.activation.env]
-PATH = "%%CONDA_PREFIX%%\\Library\\bin;%%PATH%%"
-
-[feature.cuda.target.linux-64.activation.env]
+[feature.linux-x86-64-cuda.activation.env]
 LD_LIBRARY_PATH = "$CONDA_PREFIX/lib:${LD_LIBRARY_PATH:-}"
 
+# -----------------------------------------------------------------------------
+# Linux arm64/aarch64: CPU only for now.
+# -----------------------------------------------------------------------------
+[feature.linux-aarch64]
+platforms = ["linux-aarch64"]
 
+[feature.linux-aarch64.pypi-dependencies]
+tensorflow = "*"
 
-# Dev feature
-[feature.dev.dependencies]
-pytest = "*"
-ruff   = "*"
+# -----------------------------------------------------------------------------
+# Windows x86-64 native. No WSL branch.
+# -----------------------------------------------------------------------------
+[feature.win-x86-64-no-cuda]
+platforms = ["win-64"]
 
-[feature.dev.pypi-dependencies]
-build = "*"
-validate-pyproject = { extras = ["all"] }
+[feature.win-x86-64-no-cuda.pypi-dependencies]
+tensorflow = "==2.10.1"
 
-# ---------------- TASKS (cmd holds the whole command line) ---------------- #
-[tasks]
-# Main application
-start = "python src/main.py"
+[feature.win-x86-64-cuda]
+platforms = ["win-64"]
 
-# Development tasks
-lint = "ruff check --fix && ruff format"
-test = "pytest -v -p no:faulthandler tests"
-validate = "validate-pyproject pyproject.toml"
-dist = "python -m build"
+[feature.win-x86-64-cuda.dependencies]
+cudatoolkit = "11.2.*"
+cudnn = "8.1.*"
 
-# Combined tasks
-check = {depends-on = ["validate", "lint"]}
+[feature.win-x86-64-cuda.pypi-dependencies]
+tensorflow = "==2.10.1"
 
-# ---------------- ENVIRONMENTS ---------------- #
+[feature.win-x86-64-cuda.activation.env]
+PATH = "%CONDA_PREFIX%\\Library\\bin;%PATH%"
 
+# Windows CPU: scrub CUDA from PATH for tasks.
+[feature.win-x86-64-no-cuda.tasks.python]
+cmd = '''
+powershell -NoProfile -Command "
+$clean = ($env:PATH -split ';' | Where-Object { $_ -notmatch 'CUDA\\v[0-9]+' }) -join ';';
+$env:PATH = $clean;
+$env:CUDA_HOME='';
+$env:CUDA_PATH='';
+python
+"
+'''
+
+# -----------------------------------------------------------------------------
+# macOS
+# -----------------------------------------------------------------------------
+[feature.macos-x86-64]
+platforms = ["osx-64"]
+
+[feature.macos-x86-64.dependencies]
+python = "*"
+
+[feature.macos-x86-64.pypi-dependencies]
+tensorflow = "*"
+
+[feature.macos-arm64]
+platforms = ["osx-arm64"]
+
+[feature.macos-arm64.dependencies]
+python = "*"
+
+[feature.macos-arm64.pypi-dependencies]
+tensorflow-macos = "*"
+tensorflow-metal = "*"
+
+# -----------------------------------------------------------------------------
+# Tasks
+# -----------------------------------------------------------------------------
+[tasks.python]
+cmd = "python"
+
+[tasks.check-gpu]
+cmd = '''
+python -c "import platform, tensorflow as tf; print('TensorFlow:', tf.__version__); print('GPUs:', tf.config.list_physical_devices('GPU')); print('Platform:', platform.platform())"
+'''
+
+# -----------------------------------------------------------------------------
+# Environments
+# -----------------------------------------------------------------------------
 [environments]
-default = { solve-group = "default" }
-cuda    = { features = ["cuda"], solve-group = "default" }
-nometal    = { features = ["nometal"], solve-group = "default" }
-dev     = { features = ["dev"],  solve-group = "default" }
-cuda-dev= { features = ["cuda","dev"], solve-group = "default" }
+linux-x86-64-no-cuda = ["linux-x86-64-no-cuda"]
+linux-x86-64-cuda = ["linux-x86-64-cuda"]
+linux-aarch64 = ["linux-aarch64"]
+win-x86-64-no-cuda = ["win-x86-64-no-cuda"]
+win-x86-64-cuda = ["win-x86-64-cuda"]
+macos-x86-64 = ["macos-x86-64"]
+macos-arm64 = ["macos-arm64"]

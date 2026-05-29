@@ -53,6 +53,8 @@ import io.bioimage.modelrunner.model.tiling.merger.DenseMerger;
 import io.bioimage.modelrunner.model.tiling.merger.Merger;
 import io.bioimage.modelrunner.tensor.Tensor;
 import io.bioimage.modelrunner.tensor.shm.SharedMemoryArray;
+import io.bioimage.modelrunner.system.GpuCompatibility;
+import io.bioimage.modelrunner.system.PlatformDetection;
 import io.bioimage.modelrunner.transformations.ScaleRangeTransformation;
 import io.bioimage.modelrunner.utils.JSONUtils;
 import net.imglib2.RandomAccessibleInterval;
@@ -75,6 +77,7 @@ public final class StarDist extends DLModelPytorchProtected {
 
 	private static final String PIXI_TOML = "tomls/stardist-pixi.toml";
 	private static final String COMMON_STARDIST_ENV_NAME = "stardist-jdll";
+	private static final String STARDIST_CUDA_VERSION = "11.2";
 
 	private static final long DEFAULT_DENSE_TILE_XY = 512L;
 	private static final long DEFAULT_DENSE_OUTPUT_HALO_XY = 96L;
@@ -642,7 +645,41 @@ public final class StarDist extends DLModelPytorchProtected {
 	}
 
 	public static PixiEnvironmentSpec resolvePytorchEnv() {
-		return PixiEnvironmentResolver.fromTemplate(COMMON_STARDIST_ENV_NAME, PIXI_TOML);
+		String pixiTomlContent = String.format(java.util.Locale.ROOT,
+				PixiEnvironmentResolver.readClasspathResourceAsString(PIXI_TOML),
+				COMMON_STARDIST_ENV_NAME);
+		String selectedEnvironment = resolveStardistEnvironmentName();
+		return new PixiEnvironmentSpec(selectedEnvironment, pixiTomlContent,
+				new File(org.apposed.appose.util.Environments.apposeEnvsDir(), COMMON_STARDIST_ENV_NAME),
+				new ArrayList<String>());
+	}
+
+	private static String resolveStardistEnvironmentName() {
+		String arch = PlatformDetection.getArch();
+		if (PlatformDetection.isLinux()) {
+			if (PlatformDetection.ARCH_X86_64.equals(arch)) {
+				return GpuCompatibility.canInstallCudaInEnv(STARDIST_CUDA_VERSION)
+						? "linux-x86-64-cuda"
+						: "linux-x86-64-no-cuda";
+			}
+			if (PlatformDetection.ARCH_ARM64.equals(arch) || PlatformDetection.ARCH_AARCH64.equals(arch)) {
+				return "linux-aarch64";
+			}
+		}
+		if (PlatformDetection.isWindows() && PlatformDetection.ARCH_X86_64.equals(arch)) {
+			return GpuCompatibility.canInstallCudaInEnv(STARDIST_CUDA_VERSION)
+					? "win-x86-64-cuda"
+					: "win-x86-64-no-cuda";
+		}
+		if (PlatformDetection.isMacOS()) {
+			if ((PlatformDetection.ARCH_ARM64.equals(arch) || PlatformDetection.ARCH_AARCH64.equals(arch))
+					&& !PlatformDetection.isUsingRosseta()) {
+				return "macos-arm64";
+			}
+			return "macos-x86-64";
+		}
+		throw new RuntimeException("Unsupported platform for StarDist: "
+				+ PlatformDetection.getOs() + "-" + arch);
 	}
 
 	public static boolean isInstalled() {

@@ -20,7 +20,10 @@
 package io.bioimage.modelrunner.gui.custom.yolo;
 
 import javax.swing.JCheckBox;
+import javax.swing.SwingUtilities;
+import java.util.function.Supplier;
 
+import io.bioimage.modelrunner.model.python.DLModelPytorchProtected;
 import io.bioimage.modelrunner.system.PlatformDetection;
 
 final class YoloAccelerationCheckBox extends JCheckBox {
@@ -28,16 +31,57 @@ final class YoloAccelerationCheckBox extends JCheckBox {
     private static final long serialVersionUID = 7698477740479444473L;
 
     YoloAccelerationCheckBox() {
-        super(accelerationName() + " acceleration", true);
+        this(() -> DLModelPytorchProtected.resolvePytorchEnv()
+                .getSelectedEnvironment()
+                .toLowerCase()
+                .contains("cuda"));
+    }
+
+    YoloAccelerationCheckBox(Supplier<Boolean> cudaAvailabilityCheck) {
+        super(accelerationName() + " acceleration", false);
         setOpaque(true);
         setBackground(YoloUiUtils.PANEL_BG);
         setForeground(YoloUiUtils.SECONDARY_BUTTON_FG);
         setFocusPainted(false);
         setToolTipText("Enable hardware acceleration when available; falls back to CPU if unavailable.");
+        configureInitialAvailability(cudaAvailabilityCheck);
     }
 
     private static String accelerationName() {
         return isAppleSilicon() ? "MPS" : "CUDA";
+    }
+
+    private void configureInitialAvailability(Supplier<Boolean> cudaAvailabilityCheck) {
+        setSelected(false);
+        if (isAppleSilicon()) {
+            setEnabled(true);
+            setVisible(true);
+            return;
+        }
+        if (PlatformDetection.isMacOS()) {
+            setEnabled(false);
+            setVisible(false);
+            return;
+        }
+        setEnabled(false);
+        setVisible(true);
+        Thread cudaCheck = new Thread(() -> {
+            boolean cudaAvailable = false;
+            try {
+                cudaAvailable = Boolean.TRUE.equals(cudaAvailabilityCheck.get());
+            } catch (Exception e) {
+                cudaAvailable = false;
+            }
+            final boolean enabled = cudaAvailable;
+            SwingUtilities.invokeLater(() -> {
+                setEnabled(enabled);
+                setSelected(false);
+                setVisible(true);
+                repaint();
+            });
+        }, "jdll-cuda-compatibility-check");
+        cudaCheck.setDaemon(true);
+        cudaCheck.start();
     }
 
     private static boolean isAppleSilicon() {

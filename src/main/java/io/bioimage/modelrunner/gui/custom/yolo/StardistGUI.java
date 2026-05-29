@@ -37,6 +37,7 @@ import io.bioimage.modelrunner.bioimageio.description.ModelDescriptor;
 import io.bioimage.modelrunner.exceptions.LoadEngineException;
 import io.bioimage.modelrunner.gui.adapter.GuiAdapter;
 import io.bioimage.modelrunner.gui.adapter.RunnerAdapter;
+import io.bioimage.modelrunner.model.special.stardist.StarDist;
 import io.bioimage.modelrunner.tensor.Tensor;
 import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.type.NativeType;
@@ -54,7 +55,8 @@ public class StardistGUI extends JPanel {
     protected final YoloTitlePanel titlePanel;
     protected final YoloInferencePanel inferencePanel = new YoloInferencePanel(false);
     protected final StardistTrainPanel trainPanel = new StardistTrainPanel();
-    protected final YoloAccelerationCheckBox accelerationCheckBox = new YoloAccelerationCheckBox();
+    protected final YoloAccelerationCheckBox accelerationCheckBox = new YoloAccelerationCheckBox(
+            () -> StarDist.resolvePytorchEnv().getSelectedEnvironment().toLowerCase().contains("cuda"));
 
     protected StardistGUI(GuiAdapter adapter) {
         setLayout(null);
