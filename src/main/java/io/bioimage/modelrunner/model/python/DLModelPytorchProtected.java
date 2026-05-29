@@ -257,6 +257,12 @@ public class DLModelPytorchProtected extends BaseModel {
             + "    except FileNotFoundError:" + System.lineSeparator()
             + "        pass" + System.lineSeparator()
             + SHMS_KEY + ".clear()" + System.lineSeparator()
+            + "for s in created_shms:" + System.lineSeparator()
+            + "    s.close()" + System.lineSeparator()
+            + "    try:" + System.lineSeparator()
+            + "        s.unlink()" + System.lineSeparator()
+            + "    except FileNotFoundError:" + System.lineSeparator()
+            + "        pass" + System.lineSeparator()
             + "created_shms.clear()" + System.lineSeparator();
 
     private static final String JDLL_UUID = UUID.randomUUID().toString().replaceAll("-", "_");
