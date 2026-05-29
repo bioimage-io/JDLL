@@ -691,7 +691,15 @@ public class DLModelPytorchProtected extends BaseModel {
                 ensureTaskSucceeded(task);
                 loaded = true;
                 Map<String, RandomAccessibleInterval<R>> outMap = reconstructOutputs(task);
-                cleanShm();
+                try {
+                	cleanShm();
+                } catch (TaskException e) {
+                	if (isApposeThreadDeath(e)) {
+                        emitProgress(InferenceProgress.taskRetry("Appose thread death during shared-memory cleanup after inference."));
+                	} else {
+                        throw new RunModelException("Exception happened while cleaning shared memory: " +  Messages.stackTrace(lastFailure));
+                	}
+                }
                 return outMap;
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
