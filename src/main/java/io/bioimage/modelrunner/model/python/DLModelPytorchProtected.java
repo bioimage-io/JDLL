@@ -671,10 +671,9 @@ public class DLModelPytorchProtected extends BaseModel {
      */
     @Override
     public void close() {
-        if (!loaded) {
-            return;
+        if (python != null && python.isAlive()) {
+            python.close();
         }
-        python.close();
         loaded = false;
         closed = true;
     }

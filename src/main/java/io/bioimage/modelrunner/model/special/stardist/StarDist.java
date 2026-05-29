@@ -78,6 +78,7 @@ public final class StarDist extends DLModelPytorchProtected {
 	private static final String PIXI_TOML = "tomls/stardist-pixi.toml";
 	private static final String COMMON_STARDIST_ENV_NAME = "stardist-jdll";
 	private static final String STARDIST_CUDA_VERSION = "11.2";
+	public static final String JDLL_CANCEL_SIGNAL_CONFIG_KEY = "_jdll_cancel_signal_path";
 
 	private static final long DEFAULT_DENSE_TILE_XY = 512L;
 	private static final long DEFAULT_DENSE_OUTPUT_HALO_XY = 96L;
@@ -749,6 +750,18 @@ public final class StarDist extends DLModelPytorchProtected {
 			Consumer<StardistValidationPreview> previewConsumer,
 			Consumer<String> logConsumer)
 			throws IOException, BuildException, InterruptedException, TaskException {
+		train(dataDir, gtDir, outputDir, gpu, imageChannels, labelColorMode, validFraction,
+				config, progressConsumer, previewConsumer, logConsumer, null);
+	}
+
+	public static void train(String dataDir, String gtDir, String outputDir,
+			boolean gpu, String imageChannels, String labelColorMode, double validFraction,
+			Map<String, Object> config,
+			Consumer<StardistTrainingProgress> progressConsumer,
+			Consumer<StardistValidationPreview> previewConsumer,
+			Consumer<String> logConsumer,
+			Consumer<Service> serviceConsumer)
+			throws IOException, BuildException, InterruptedException, TaskException {
 		validateTrainingArguments(dataDir, gtDir, outputDir, validFraction, config);
 		File output = new File(outputDir);
 		if (!output.isDirectory() && !output.mkdirs()) {
@@ -760,6 +773,9 @@ public final class StarDist extends DLModelPytorchProtected {
 				.environment(envSpec.getSelectedEnvironment())
 				.wrap(envSpec.getEnvironmentDirectory());
 		Service python = env.python();
+		if (serviceConsumer != null) {
+			serviceConsumer.accept(python);
+		}
 		python.init("import numpy as np");
 		if (logConsumer != null) {
 			python.debug(logConsumer);
@@ -772,6 +788,9 @@ public final class StarDist extends DLModelPytorchProtected {
 		} finally {
 			if (python.isAlive()) {
 				python.close();
+			}
+			if (serviceConsumer != null) {
+				serviceConsumer.accept(null);
 			}
 		}
 	}
@@ -884,6 +903,7 @@ public final class StarDist extends DLModelPytorchProtected {
 				+ "preview_dir.mkdir(parents=True, exist_ok=True)" + nl
 				+ "stardist_log_path = output_dir / 'training.log'" + nl
 				+ "config = json.loads(r'''" + TrainingCodeUtils.toJson(config) + "''')" + nl
+				+ "cancel_signal_path = str(config.pop('" + JDLL_CANCEL_SIGNAL_CONFIG_KEY + "', '') or '')" + nl
 				+ "preview_count = int(config.pop('validation_preview_count', 20))" + nl
 				+ "log_every_n_steps = 10" + nl
 				+ "config['use_gpu'] = False" + nl
@@ -902,6 +922,8 @@ public final class StarDist extends DLModelPytorchProtected {
 				+ "  with open(tmp_path, 'wb') as f:" + nl
 				+ "    np.save(f, array)" + nl
 				+ "  os.replace(tmp_path, path)" + nl
+				+ "def _cancel_requested():" + nl
+				+ "  return bool(cancel_signal_path) and os.path.exists(cancel_signal_path)" + nl
 				+ "IMAGE_EXTS = {'.tif', '.tiff', '.png', '.jpg', '.jpeg'}" + nl
 				+ "MASK_DIRS = ('masks', 'mask', 'labels', 'label', 'gt')" + nl
 				+ "IMAGE_DIRS = ('images', 'image', 'imgs', 'img', 'data')" + nl
@@ -1000,6 +1022,10 @@ public final class StarDist extends DLModelPytorchProtected {
 				+ "    _task_update(message='StarDist training step %d/%d' % (self.global_step, state['total_steps']), current=self.global_step, maximum=state['total_steps'], info=info)" + nl
 				+ "    if self.global_step == 1 or self.global_step % log_every_n_steps == 0:" + nl
 				+ "      print('step %05d/%d epoch=%d/%d loss=%s prob=%s dist=%s lr=%s' % (self.global_step, state['total_steps'], epoch, state['total_epochs'], logs.get('loss'), logs.get('prob_loss'), logs.get('dist_loss'), self._lr()), flush=True)" + nl
+				+ "    if _cancel_requested():" + nl
+				+ "      print('StarDist training cancellation requested; stopping after current batch.', flush=True)" + nl
+				+ "      _task_update(message='StarDist training cancellation requested', current=self.global_step, maximum=state['total_steps'], info=info)" + nl
+				+ "      self.model.stop_training = True" + nl
 				+ "  def on_epoch_end(self, epoch, logs=None):" + nl
 				+ "    logs = logs or {}" + nl
 				+ "    current_epoch = int(epoch) + 1" + nl
@@ -1041,6 +1067,10 @@ public final class StarDist extends DLModelPytorchProtected {
 				+ "  model.prepare_for_training()" + nl
 				+ "  model.callbacks.append(JDLLProgressCallback(model, X_val))" + nl
 				+ "  history = model.train(X_train, Y_train, validation_data=(X_val, Y_val), epochs=int(config.get('train_epochs', 1)), steps_per_epoch=int(config.get('train_steps_per_epoch', 100)), workers=0)" + nl
+				+ "  try:" + nl
+				+ "    model.keras_model.save_weights(str(output_dir / str(config.get('train_checkpoint_last', 'weights_last.h5'))))" + nl
+				+ "  except Exception:" + nl
+				+ "    pass" + nl
 				+ "task.output(result=str(output_dir))" + nl;
 	}
 
