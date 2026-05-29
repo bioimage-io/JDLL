@@ -154,24 +154,16 @@ public class Yolo extends DLModelPytorchProtected {
 			code += LetterboxPreprocessing.getMethodDeclaration() + System.lineSeparator();
 			code += UndoLetterboxProcessingBoundingBoxes.getMethodDeclaration() + System.lineSeparator();
 			code += "created_shms.clear()" + System.lineSeparator();
-			code += "try:" + System.lineSeparator();
 			List<SharedMemoryArray> shmas = createSharedMemoryArraysForInputs(inRais);
 			for (int i = 0; i < inRais.size(); i ++) {
 				SharedMemoryArray shma = shmas.get(i);
 				code += codeToConvertShmaToPython(shma, names.get(i));
 				inShmaList.add(shma);
-				code += "  print(" + names.get(i) + ".shape)" + System.lineSeparator();
-				code += "  " + names.get(i) + "_torch, meta = " + LetterboxPreprocessing.getMethodName()
+				code += names.get(i) + "_torch, meta = " + LetterboxPreprocessing.getMethodName()
 				+ "(" + ConvertDims.getMethodName() + "(" + names.get(i)
 			+ ", '" + inRais.get(i).getAxesOrderString().toLowerCase() + "',device=device))" + System.lineSeparator();
-			code += "  print(" + names.get(i) + "_torch.shape)" + System.lineSeparator();
 		}
-		code += "  " + OUTPUT_LIST_KEY + " = " + MODEL_VAR_NAME + "(" + names.get(0) + "_torch, device=device)" + System.lineSeparator();;
-		String closeEverythingWin = closeSHMWin();
-		code += "  " + closeEverythingWin + System.lineSeparator();
-		code += "except Exception as e:" + System.lineSeparator();
-		code += "  " + closeEverythingWin + System.lineSeparator();
-		code += "  raise e" + System.lineSeparator();
+		code += OUTPUT_LIST_KEY + " = " + MODEL_VAR_NAME + "(" + names.get(0) + "_torch, device=device)" + System.lineSeparator();;
 		code += ""
 				+ SHMS_KEY + " = []" + System.lineSeparator()
 				+ SHM_NAMES_KEY + " = []" + System.lineSeparator()

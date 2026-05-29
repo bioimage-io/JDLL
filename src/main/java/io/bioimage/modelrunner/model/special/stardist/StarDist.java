@@ -340,30 +340,24 @@ public final class StarDist extends DLModelPytorchProtected {
 			code += SHM_NAMES_KEY + " = []" + System.lineSeparator();
 			code += DTYPES_KEY + " = []" + System.lineSeparator();
 			code += DIMS_KEY + " = []" + System.lineSeparator();
-			code += "try:" + System.lineSeparator();
 			for (int i = 0; i < 2; i ++) {
 				SharedMemoryArray shma = SharedMemoryArray.createSHMAFromRAI(reconstructed.get(i).getData(), false, false);
 				code += codeToConvertShmaToPython(shma, names.get(i));
 				inShmaList.add(shma);
 			}
-			code += "  " + probName + " = " + ConvertDims.getMethodName() + "(" + probName
+			code += probName + " = " + ConvertDims.getMethodName() + "(" + probName
 					+ ", 'byx', out_order='yx', n_channels=1, output_type='numpy', contiguous=False)" + System.lineSeparator();
-			code += "  " + distName + " = " + ConvertDims.getMethodName() + "(" + distName
+			code += distName + " = " + ConvertDims.getMethodName() + "(" + distName
 					+ ", 'byxc', out_order='yxc', n_channels=" + configInt("n_rays", 32)
 					+ ", output_type='numpy', contiguous=False)" + System.lineSeparator();
-			code += "  points, probi, disti = non_maximum_suppression(" + distName + ", " + probName
+			code += "points, probi, disti = non_maximum_suppression(" + distName + ", " + probName
 					+ ", grid=" + MODEL_VAR_NAME + ".config.grid, "
 					+ "prob_thresh=" + MODEL_VAR_NAME + ".thresholds.prob, "
 					+ "nms_thresh=" + MODEL_VAR_NAME + ".thresholds.nms, verbose=False)" + System.lineSeparator();
-			code += "  labels = polygons_to_label(disti, points, prob=probi, shape=("
+			code += "labels = polygons_to_label(disti, points, prob=probi, shape=("
 					+ imageHeight + ", " + imageWidth + "))" + System.lineSeparator();
-			// TODO remove code += "  handle_output(labels.astype(np.float32, copy=False))" + System.lineSeparator();
-	        code += String.format("  handle_output(labels.astype(np.float32, copy=False), %s, %s, %s, %s)",
+	        code += String.format("handle_output(labels.astype(np.float32, copy=False), %s, %s, %s, %s)",
 	        		SHMS_KEY, SHM_NAMES_KEY, DTYPES_KEY, DIMS_KEY)  + System.lineSeparator();
-			code += "  " + closeSHMWin() + System.lineSeparator();
-			code += "except Exception as e:" + System.lineSeparator();
-			code += "  " + closeSHMWin() + System.lineSeparator();
-			code += "  raise e" + System.lineSeparator();
 			code += taskOutputsCode();
 			Map<String, RandomAccessibleInterval<R>> labels = executeCode(code);
 			if (labels.isEmpty()) {
@@ -589,28 +583,22 @@ public final class StarDist extends DLModelPytorchProtected {
 			code += SHM_NAMES_KEY + " = []" + System.lineSeparator();
 			code += DTYPES_KEY + " = []" + System.lineSeparator();
 			code += DIMS_KEY + " = []" + System.lineSeparator();
-			code += "try:" + System.lineSeparator();
 			List<SharedMemoryArray> shmas = createSharedMemoryArraysForInputs(inRais);
 			for (int i = 0; i < inRais.size(); i ++) {
 				SharedMemoryArray shma = shmas.get(i);
 				code += codeToConvertShmaToPython(shma, names.get(i));
 				inShmaList.add(shma);
-				code += "  " + names.get(i) + " = " + ConvertDims.getMethodName() + "(" + names.get(i)
+				code += names.get(i) + " = " + ConvertDims.getMethodName() + "(" + names.get(i)
 				+ ", '" + inRais.get(i).getAxesOrderString().toLowerCase()
 				+ "', out_order='yxc', output_type='numpy', contiguous=False, n_channels="
 				+ nChannels + ")" + System.lineSeparator();
 			}
-			code += "  with tf.device(_jdll_tf_device):" + System.lineSeparator();
+			code += "with tf.device(_jdll_tf_device):" + System.lineSeparator();
 			code += "    _prob, _dist = " + MODEL_VAR_NAME + ".predict("
 					+ names.get(0) + ", axes='YXC', normalizer=None, n_tiles=None, show_tile_progress=False)" + System.lineSeparator();
-			code += "  " + OUTPUT_LIST_KEY + " = [np.expand_dims(_prob, 0), np.expand_dims(_dist, 0)]" + System.lineSeparator();
-	        // TODO remove code += "  " + "handle_output_list(" + OUTPUT_LIST_KEY + ")" + System.lineSeparator();
-	        code += String.format("  handle_output_list(%s, %s, %s, %s, %s)", OUTPUT_LIST_KEY,
+			code += OUTPUT_LIST_KEY + " = [np.expand_dims(_prob, 0), np.expand_dims(_dist, 0)]" + System.lineSeparator();
+	        code += String.format("handle_output_list(%s, %s, %s, %s, %s)", OUTPUT_LIST_KEY,
 	        		SHMS_KEY, SHM_NAMES_KEY, DTYPES_KEY, DIMS_KEY)  + System.lineSeparator();
-			code += "  " + closeSHMWin() + System.lineSeparator();
-			code += "except Exception as e:" + System.lineSeparator();
-			code += "  " + closeSHMWin() + System.lineSeparator();
-			code += "  raise e" + System.lineSeparator();
 			code += taskOutputsCode();
 			return code;
 	}

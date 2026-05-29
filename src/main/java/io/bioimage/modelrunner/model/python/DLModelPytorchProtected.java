@@ -866,30 +866,22 @@ public class DLModelPytorchProtected extends BaseModel {
         code += SHM_NAMES_KEY + " = []" + System.lineSeparator();
         code += DTYPES_KEY + " = []" + System.lineSeparator();
         code += DIMS_KEY + " = []" + System.lineSeparator();
-        code += "try:" + System.lineSeparator();
         final List<SharedMemoryArray> shmas = createSharedMemoryArraysForInputs(rais);
         for (int i = 0; i < rais.size(); i++) {
             final SharedMemoryArray shma = shmas.get(i);
             code += codeToConvertShmaToPython(shma, names.get(i));
             inShmaList.add(shma);
         }
-        code += "  " + MODEL_VAR_NAME + ".eval()" + System.lineSeparator();
-        code += "  with torch.no_grad():" + System.lineSeparator();
-        code += "    " + OUTPUT_LIST_KEY + " = " + MODEL_VAR_NAME + "(";
+        code += MODEL_VAR_NAME + ".eval()" + System.lineSeparator();
+        code += "with torch.no_grad():" + System.lineSeparator();
+        code += OUTPUT_LIST_KEY + " = " + MODEL_VAR_NAME + "(";
         for (int i = 0; i < rais.size(); i++) {
             code += "torch.from_numpy(" + names.get(i) + ").to(device), ";
         }
         code = code.substring(0, code.length() - 2);
         code += ")" + System.lineSeparator();
-        code += "  ";
         code += String.format("handle_output_list(%s, %s, %s, %s, %s)", OUTPUT_LIST_KEY,
         		SHMS_KEY, SHM_NAMES_KEY, DTYPES_KEY, DIMS_KEY)  + System.lineSeparator();
-
-        final String closeEverythingWin = closeSHMWin();
-        code += "  " + closeEverythingWin + System.lineSeparator();
-        code += "except Exception as e:" + System.lineSeparator();
-        code += "  " + closeEverythingWin + System.lineSeparator();
-        code += "  raise e" + System.lineSeparator();
         code += taskOutputsCode();
         return code;
     }
@@ -1083,19 +1075,6 @@ public class DLModelPytorchProtected extends BaseModel {
 
     private static int axisIndex(final String axes, final char axis) {
         return axes == null ? -1 : axes.toLowerCase(Locale.ROOT).indexOf(Character.toLowerCase(axis));
-    }
-
-    /**
-     * Returns the Windows-only cleanup snippet for shared memory.
-     *
-     * @return the resulting Python code
-     */
-    protected static String closeSHMWin() {
-        if (!PlatformDetection.isWindows()) {
-            return "";
-        }
-        String code = "[(shm_i.close(), shm_i.unlink()) for shm_i in created_shms]" + System.lineSeparator();
-        return code;
     }
 
     /**
@@ -1358,17 +1337,17 @@ public class DLModelPytorchProtected extends BaseModel {
      */
     protected static String codeToConvertShmaToPython(final SharedMemoryArray shma, final String varName) {
         String code = "";
-        code += "  " + varName + "_shm = shared_memory.SharedMemory(name='"
+        code += varName + "_shm = shared_memory.SharedMemory(name='"
                 + shma.getNameForPython() + "', size=" + shma.getSize() + ")"
                 + System.lineSeparator();
-        code += "  " + "created_shms.append(" + varName + "_shm)" + System.lineSeparator();
+        code += "created_shms.append(" + varName + "_shm)" + System.lineSeparator();
 
         long nElems = 1;
         for (long elem : shma.getOriginalShape()) {
             nElems *= elem;
         }
 
-        code += "  " + varName + " = np.ndarray(" + nElems + ", dtype='"
+        code += varName + " = np.ndarray(" + nElems + ", dtype='"
                 + CommonUtils.getDataTypeFromRAI(Cast.unchecked(shma.getSharedRAI()))
                 + "', buffer=" + varName + "_shm.buf).reshape([";
         for (int i = 0; i < shma.getOriginalShape().length; i++) {
