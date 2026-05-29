@@ -583,6 +583,7 @@ public final class StarDist extends DLModelPytorchProtected {
 			String code = "";
 			code += ConvertDims.getMethodDeclaration() + System.lineSeparator();
 			code += "created_shms.clear()" + System.lineSeparator();
+	        code += "task.outputs.clear()" + System.lineSeparator();
 			code += "try:" + System.lineSeparator();
 			List<SharedMemoryArray> shmas = createSharedMemoryArraysForInputs(inRais);
 			for (int i = 0; i < inRais.size(); i ++) {

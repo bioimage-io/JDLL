@@ -255,8 +255,7 @@ public class DLModelPytorchProtected extends BaseModel {
             + System.lineSeparator();
 
     private static final String CLEAN_SHM_CODE = ""
-            + "if '" + SHMS_KEY + "' in globals().keys():" + System.lineSeparator()
-            + "  for s in " + SHMS_KEY + ":" + System.lineSeparator()
+            + "for s in " + SHMS_KEY + ":" + System.lineSeparator()
             + "    s.close()" + System.lineSeparator()
             + "    s.unlink()" + System.lineSeparator()
             + "    del s" + System.lineSeparator();
@@ -686,6 +685,11 @@ public class DLModelPytorchProtected extends BaseModel {
                 if (isApposeThreadDeath(e) && attempt < MAX_TRANSIENT_TASK_RETRIES) {
                     emitProgress(InferenceProgress.taskRetry("Appose thread death during inference; retrying task "
                             + (attempt + 1) + "/" + MAX_TRANSIENT_TASK_RETRIES + "."));
+                    try {
+						this.threadDeathCleanUp();
+					} catch (InterruptedException | TaskException e1) {
+				        throw new RunModelException(Messages.stackTrace(e1));
+					}
                     continue;
                 }
                 cleanShmAfterFailure(e);
@@ -866,6 +870,7 @@ public class DLModelPytorchProtected extends BaseModel {
             final List<Tensor<T>> rais,
             final List<String> names) {
         String code = "created_shms.clear()" + System.lineSeparator();
+        code += "task.outputs.clear()" + System.lineSeparator();
         code += "try:" + System.lineSeparator();
         final List<SharedMemoryArray> shmas = createSharedMemoryArraysForInputs(rais);
         for (int i = 0; i < rais.size(); i++) {
@@ -1101,7 +1106,8 @@ public class DLModelPytorchProtected extends BaseModel {
         if (!PlatformDetection.isWindows()) {
             return "";
         }
-        return "[(shm_i.close(), shm_i.unlink()) for shm_i in created_shms]";
+        String code = "[(shm_i.close(), shm_i.unlink()) for shm_i in created_shms]" + System.lineSeparator();
+        return code;
     }
 
     /**
@@ -1111,9 +1117,6 @@ public class DLModelPytorchProtected extends BaseModel {
      */
     protected String taskOutputsCode() {
         return ""
-                + "print(" + SHM_NAMES_KEY + ")" + System.lineSeparator()
-                + "print(" + DTYPES_KEY + ")" + System.lineSeparator()
-                + "print(" + DIMS_KEY + ")" + System.lineSeparator()
                 + "task.outputs['" + SHM_NAMES_KEY + "'] = " + SHM_NAMES_KEY + System.lineSeparator()
                 + "task.outputs['" + DTYPES_KEY + "'] = " + DTYPES_KEY + System.lineSeparator()
                 + "task.outputs['" + DIMS_KEY + "'] = " + DIMS_KEY + System.lineSeparator();
@@ -1294,6 +1297,20 @@ public class DLModelPytorchProtected extends BaseModel {
             if (closeSHMTask.status == TaskStatus.FAILED || closeSHMTask.status == TaskStatus.CRASHED) {
                 throw new TaskException("Unable to clean/close the opened shared memory arrays", closeSHMTask);
             }
+        }
+    }
+
+    /**
+     * Cleans the shared memory resources that might have left open during thread death.
+     *
+     * @throws InterruptedException if interrupted while waiting for cleanup
+     * @throws TaskException if the cleanup task fails
+     */
+    protected void threadDeathCleanUp() throws InterruptedException, TaskException {
+        final Task closeSHMTask = python.task(CLEAN_SHM_CODE);
+        closeSHMTask.waitFor();
+        if (closeSHMTask.status == TaskStatus.FAILED || closeSHMTask.status == TaskStatus.CRASHED) {
+            throw new TaskException("Unable to clean/close the opened shared memory arrays", closeSHMTask);
         }
     }
 
