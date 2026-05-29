@@ -66,7 +66,7 @@ public final class StardistModelRegistry {
         }
 
         File[] customModels = stardistDir.listFiles(file ->
-                (file.isDirectory() && isModelDirectory(file) && models.containsValue(file.getAbsolutePath())));
+                (file.isDirectory() && isModelDirectory(file) && !models.containsValue(findModelFile(file.getAbsolutePath()).toString())));
         if (customModels == null) {
             return models;
         }

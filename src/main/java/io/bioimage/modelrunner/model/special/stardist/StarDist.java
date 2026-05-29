@@ -712,7 +712,7 @@ public final class StarDist extends DLModelPytorchProtected {
 		config.put("train_learning_rate", 0.0003d);
 		config.put("train_batch_size", 4);
 		config.put("train_n_val_patches", null);
-		config.put("train_tensorboard", true);
+		config.put("train_tensorboard", false);
 		config.put("train_reduce_lr", reduceLrConfig());
 		config.put("use_gpu", false);
 		config.put("validation_preview_count", 20);
@@ -805,6 +805,7 @@ public final class StarDist extends DLModelPytorchProtected {
 				+ "stardist_log_path = output_dir / 'training.log'" + nl
 				+ "config = json.loads(r'''" + TrainingCodeUtils.toJson(config) + "''')" + nl
 				+ "preview_count = int(config.pop('validation_preview_count', 20))" + nl
+				+ "log_every_n_steps = 10" + nl
 				+ "config['use_gpu'] = False" + nl
 				+ "if '" + TrainingCodeUtils.py(safeImageChannels).toLowerCase() + "' == 'rgb':" + nl
 				+ "  config['axes'] = 'YXC'" + nl
@@ -917,6 +918,8 @@ public final class StarDist extends DLModelPytorchProtected {
 				+ "    metrics = _clean({'learning_rate': self._lr()})" + nl
 				+ "    info = {'type': 'progress', 'epoch': epoch, 'step': self.global_step, 'total_epochs': state['total_epochs'], 'total_steps': state['total_steps'], 'losses': losses, 'metrics': metrics}" + nl
 				+ "    _task_update(message='StarDist training step %d/%d' % (self.global_step, state['total_steps']), current=self.global_step, maximum=state['total_steps'], info=info)" + nl
+				+ "    if self.global_step == 1 or self.global_step % log_every_n_steps == 0:" + nl
+				+ "      print('step %05d/%d epoch=%d/%d loss=%s prob=%s dist=%s lr=%s' % (self.global_step, state['total_steps'], epoch, state['total_epochs'], logs.get('loss'), logs.get('prob_loss'), logs.get('dist_loss'), self._lr()), flush=True)" + nl
 				+ "  def on_epoch_end(self, epoch, logs=None):" + nl
 				+ "    logs = logs or {}" + nl
 				+ "    current_epoch = int(epoch) + 1" + nl
@@ -925,6 +928,7 @@ public final class StarDist extends DLModelPytorchProtected {
 				+ "    metrics = _clean({'learning_rate': self._lr()})" + nl
 				+ "    info = {'type': 'progress', 'epoch': current_epoch, 'step': step, 'total_epochs': state['total_epochs'], 'total_steps': state['total_steps'], 'losses': losses, 'metrics': metrics}" + nl
 				+ "    _task_update(message='StarDist epoch %d/%d' % (current_epoch, state['total_epochs']), current=step, maximum=state['total_steps'], info=info)" + nl
+				+ "    print('epoch %03d/%d step=%d/%d loss=%s val_loss=%s lr=%s' % (current_epoch, state['total_epochs'], step, state['total_steps'], logs.get('loss'), logs.get('val_loss'), self._lr()), flush=True)" + nl
 				+ "    samples = []" + nl
 				+ "    for i, image in enumerate(self.X_val[:preview_count]):" + nl
 				+ "      image_path = preview_dir / ('preview_%03d_image.npy' % i)" + nl
