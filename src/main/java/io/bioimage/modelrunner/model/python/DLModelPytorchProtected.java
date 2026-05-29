@@ -248,7 +248,17 @@ public class DLModelPytorchProtected extends BaseModel {
             + System.lineSeparator()
             + System.lineSeparator();
 
-    private static final String CLEAN_SHM_CODE = ""
+    private static final String CLEAN_SHM_CODE_THREAD_DEATH = ""
+    		+ "print(len(" + SHMS_KEY + "))" + System.lineSeparator()
+            + "for s in " + SHMS_KEY + ":" + System.lineSeparator()
+            + "    s.close()" + System.lineSeparator()
+            + "    try:" + System.lineSeparator()
+            + "        s.unlink()" + System.lineSeparator()
+            + "    except FileNotFoundError:" + System.lineSeparator()
+            + "        pass" + System.lineSeparator()
+            + SHMS_KEY + ".clear()" + System.lineSeparator();
+
+    private static final String CLEAN_SHM_CODE_WINDOWS = ""
     		+ "print(len(" + SHMS_KEY + "))" + System.lineSeparator()
             + "for s in " + SHMS_KEY + ":" + System.lineSeparator()
             + "    s.close()" + System.lineSeparator()
@@ -262,6 +272,20 @@ public class DLModelPytorchProtected extends BaseModel {
             + "    try:" + System.lineSeparator()
             + "        s.unlink()" + System.lineSeparator()
             + "    except FileNotFoundError:" + System.lineSeparator()
+            + "        pass" + System.lineSeparator()
+            + "created_shms.clear()" + System.lineSeparator();
+
+    private static final String CLEAN_SHM_CODE_POSIX = ""
+            + "for s in list(" + SHMS_KEY + "):" + System.lineSeparator()
+            + "    try:" + System.lineSeparator()
+            + "        s.close()" + System.lineSeparator()
+            + "    except Exception:" + System.lineSeparator()
+            + "        pass" + System.lineSeparator()
+            + SHMS_KEY + ".clear()" + System.lineSeparator()
+            + "for s in list(created_shms):" + System.lineSeparator()
+            + "    try:" + System.lineSeparator()
+            + "        s.close()" + System.lineSeparator()
+            + "    except Exception:" + System.lineSeparator()
             + "        pass" + System.lineSeparator()
             + "created_shms.clear()" + System.lineSeparator();
 
@@ -1199,12 +1223,13 @@ public class DLModelPytorchProtected extends BaseModel {
      */
     protected void cleanShm() throws InterruptedException, TaskException {
         closeShm();
-        if (PlatformDetection.isWindows()) {
-            final Task closeSHMTask = python.task(CLEAN_SHM_CODE);
-            closeSHMTask.waitFor();
-            if (closeSHMTask.status == TaskStatus.FAILED || closeSHMTask.status == TaskStatus.CRASHED) {
-                throw new TaskException("Unable to clean/close the opened shared memory arrays", closeSHMTask);
-            }
+        final String cleanupCode = PlatformDetection.isWindows()
+                ? CLEAN_SHM_CODE_WINDOWS
+                : CLEAN_SHM_CODE_POSIX;
+        final Task closeSHMTask = python.task(cleanupCode);
+        closeSHMTask.waitFor();
+        if (closeSHMTask.status == TaskStatus.FAILED || closeSHMTask.status == TaskStatus.CRASHED) {
+            throw new TaskException("Unable to clean/close the opened shared memory arrays", closeSHMTask);
         }
     }
 
@@ -1216,7 +1241,7 @@ public class DLModelPytorchProtected extends BaseModel {
      */
     protected void threadDeathCleanUp() throws InterruptedException, TaskException {
     	python.debug((str) -> {System.out.println(str);});
-        final Task closeSHMTask = python.task(CLEAN_SHM_CODE);
+        final Task closeSHMTask = python.task(CLEAN_SHM_CODE_THREAD_DEATH);
         closeSHMTask.waitFor();
     	python.debug((str) -> {});
         if (closeSHMTask.status == TaskStatus.FAILED || closeSHMTask.status == TaskStatus.CRASHED) {
