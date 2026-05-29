@@ -61,7 +61,7 @@ public final class PixiEnvironmentResolver {
 	 */
 	public static PixiEnvironmentSpec fromTemplate(String environmentDirectoryName,
 			String tomlResource, Object... args) {
-		String pixiTomlContent = String.format(Locale.ROOT, readClasspathResourceAsString(tomlResource), args);
+		String pixiTomlContent = String.format(Locale.ROOT, readClasspathResourceAsString(tomlResource), environmentDirectoryName, args);
 		File environmentDirectory = new File(Environments.apposeEnvsDir(), environmentDirectoryName);
 		return new PixiEnvironmentSpec(DEFAULT_SELECTED_ENVIRONMENT, pixiTomlContent,
 				environmentDirectory, new ArrayList<String>());

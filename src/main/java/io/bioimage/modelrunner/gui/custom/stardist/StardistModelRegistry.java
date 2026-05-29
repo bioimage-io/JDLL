@@ -51,8 +51,8 @@ public final class StardistModelRegistry {
     private static final Map<String, Long> PRETRAINED_WEIGHTS_SIZE;
     static {
         PRETRAINED_WEIGHTS_SIZE = new HashMap<String, Long>();
-        PRETRAINED_WEIGHTS_SIZE.put("2D_versatile_fluo" + File.separator + "weights_best.h5", 5_544_453L);
-        PRETRAINED_WEIGHTS_SIZE.put("2D_versatile_he" + File.separator + "weights_best.h5", 5_544_453L);
+        PRETRAINED_WEIGHTS_SIZE.put("2D_versatile_fluo" + File.separator + "weights_best.h5", 5771480L);
+        PRETRAINED_WEIGHTS_SIZE.put("2D_versatile_he" + File.separator + "weights_best.h5", 5774704L);
     }
 
     private StardistModelRegistry() {}
@@ -66,10 +66,7 @@ public final class StardistModelRegistry {
         }
 
         File[] customModels = stardistDir.listFiles(file ->
-                (file.isDirectory() && isModelDirectory(file))
-                || (file.isFile()
-                        && isWeightsFile(file.getName())
-                        && !isPretrainedWeightsFile(file.getName())));
+                (file.isDirectory() && isModelDirectory(file) && models.containsValue(file.getAbsolutePath())));
         if (customModels == null) {
             return models;
         }
@@ -119,7 +116,8 @@ public final class StardistModelRegistry {
         if (!modelFile.isFile()) {
             return false;
         }
-        Long expectedSize = expectedPretrainedSize(modelFile.getName());
+        String modelAndFile = modelFile.getParentFile().getName() + File.separator + modelFile.getName();
+        Long expectedSize = expectedPretrainedSize(modelAndFile);
         return expectedSize == null || expectedSize.longValue() == modelFile.length();
     }
 

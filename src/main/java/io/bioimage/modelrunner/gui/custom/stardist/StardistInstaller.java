@@ -31,6 +31,7 @@ import io.bioimage.modelrunner.gui.custom.interfaces.ModelInstaller;
 import io.bioimage.modelrunner.model.python.envs.PixiEnvironmentManager;
 import io.bioimage.modelrunner.model.python.envs.PixiEnvironmentSpec;
 import io.bioimage.modelrunner.model.special.stardist.StarDist;
+import io.bioimage.modelrunner.utils.ZipUtils;
 
 public class StardistInstaller  implements ModelInstaller {
 
@@ -70,7 +71,7 @@ public class StardistInstaller  implements ModelInstaller {
         }
 
         String modelName = modelFile.getParentFile().getName();
-        File zipFile = new File(parent.getAbsolutePath(), "python_" + modelName + ".zip");
+        File zipFile = new File(parent.getAbsolutePath(), modelName + ".zip");
         FileDownloader downloader = new FileDownloader(StardistModelRegistry.downloadUrl(modelName), zipFile, false);
         downloader.setPartialProgressConsumer(progress -> {
             if (logConsumer != null) {
@@ -79,6 +80,16 @@ public class StardistInstaller  implements ModelInstaller {
             }
         });
         downloader.download(Thread.currentThread());
+        if (logConsumer != null) {
+            logConsumer.accept("Unzipping " + modelName + " weights.");
+        }
+        File modelFolder = new File(parent.getAbsolutePath(), modelName);
+        ZipUtils.unzipFolder(zipFile.getAbsolutePath(), modelFolder.getAbsolutePath(), progress -> {
+            if (logConsumer != null) {
+                double percent = Math.round(progress * 1000) / 10.0d;
+                logConsumer.accept("Unzipping " + modelName + " weights: " + percent + "%");
+            }
+        });
 
         if (!isModelInstalled(modelPath)) {
             throw new IOException("Model not found or incorrect byte size: " + modelPath);

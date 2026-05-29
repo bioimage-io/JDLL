@@ -1,5 +1,5 @@
 [workspace]
-name = "starfun3d"
+name = "%s"
 version = "0.0.0.dev0"
 description = "StarDist-based segmentation. In 3D."
 authors = ["Curtis Rueden"]
@@ -8,6 +8,7 @@ platforms = ["osx-arm64", "osx-64", "linux-64", "win-64"]
 
 [dependencies]
 python = "==3.10"
+appose = "==0.11.0"
 numpy = "<2"
 scipy = "*"
 pip = "*"
