@@ -1122,19 +1122,6 @@ public class DLModelPytorchProtected extends BaseModel {
                 + "task.outputs['" + DIMS_KEY + "'] = list(" + DIMS_KEY + ")" + System.lineSeparator();
     }
 
-    @Override
-    public <T extends RealType<T> & NativeType<T>, R extends RealType<R> & NativeType<R>>
-    List<Tensor<T>> run(final List<Tensor<R>> inputTensors) throws RunModelException {
-        if (!this.isLoaded()) {
-            throw new RunModelException("Please first load the model.");
-        }
-
-        final TileMaker maker = TileMaker.build(inputTiles, outputTiles);
-        final List<Tensor<T>> outTensors = createOutputTensors();
-        runTiling(inputTensors, outTensors, maker);
-        return outTensors;
-    }
-
     private <T extends RealType<T> & NativeType<T>> List<Tensor<T>> createOutputTensors() {
         final List<Tensor<T>> outputTensors = new ArrayList<Tensor<T>>();
         for (TileInfo tt : this.outputTiles) {
@@ -1145,58 +1132,6 @@ public class DLModelPytorchProtected extends BaseModel {
                     (T) new FloatType()));
         }
         return outputTensors;
-    }
-
-    @Override
-    public <T extends RealType<T> & NativeType<T>, R extends RealType<R> & NativeType<R>>
-    void run(final List<Tensor<T>> inTensors, final List<Tensor<R>> outTensors) throws RunModelException {
-        if (!this.isLoaded()) {
-            throw new RunModelException("Please first load the model.");
-        }
-
-        final TileMaker tiles = TileMaker.build(inputTiles, outputTiles);
-        for (int i = 0; i < tiles.getNumberOfTiles(); i++) {
-            final Tensor<R> tt = outTensors.get(i);
-            final long[] expectedSize = tiles.getOutputImageSize(tt.getName());
-            if (expectedSize == null) {
-                throw new IllegalArgumentException("Tensor '" + tt.getName() + "' is missing in the outputs.");
-            } else if (!tt.isEmpty() && Arrays.equals(expectedSize, tt.getData().dimensionsAsLongArray())) {
-                throw new IllegalArgumentException("Tensor '" + tt.getName() + "' size is different than the expected size"
-                        + " defined for the output image: " + Arrays.toString(tt.getData().dimensionsAsLongArray())
-                        + " vs " + Arrays.toString(expectedSize) + ".");
-            }
-        }
-        runTiling(inTensors, outTensors, tiles);
-    }
-
-    protected <T extends RealType<T> & NativeType<T>, R extends RealType<R> & NativeType<R>>
-    void runTiling(final List<Tensor<R>> inputTensors, final List<Tensor<T>> outputTensors, final TileMaker tiles)
-            throws RunModelException {
-        for (int i = 0; i < tiles.getNumberOfTiles(); i++) {
-            final int nTile = 0 + i;
-            final List<Tensor<R>> inputTiles = inputTensors.stream()
-                    .map(tt -> tiles.getNthTileInput(tt, nTile))
-                    .collect(Collectors.toList());
-            final List<Tensor<T>> outputTiles = outputTensors.stream()
-                    .map(tt -> tiles.getNthTileOutput(tt, nTile))
-                    .collect(Collectors.toList());
-            runNoTiles(inputTiles, outputTiles);
-        }
-    }
-
-    protected <T extends RealType<T> & NativeType<T>, R extends RealType<R> & NativeType<R>>
-    void runNoTiles(final List<Tensor<T>> inTensors, final List<Tensor<R>> outTensors) throws RunModelException {
-        final Map<String, RandomAccessibleInterval<R>> outMap = predictForInputTensors(inTensors);
-        int c = 0;
-        for (Entry<String, RandomAccessibleInterval<R>> ee : outMap.entrySet()) {
-            final RandomAccessibleInterval<R> rai = ee.getValue();
-            try {
-                outTensors.get(c).setData(rai);
-                c++;
-            } catch (Exception ex) {
-                // Preserve original behavior.
-            }
-        }
     }
 
     private void closeShm() {

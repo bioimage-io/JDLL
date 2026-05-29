@@ -136,57 +136,6 @@ public class Yolo extends DLModelPytorchProtected {
 		return inputTensors;
 	}
 	
-	protected <T extends RealType<T> & NativeType<T>> 
-	List<Tensor<T>> checkOutputTensors(List<Tensor<T>> outputTensors) {
-		// TODO 
-		return outputTensors;
-	}
-	
-	/**
-	 * Run a Bioimage.io model and execute the tiling strategy in one go.
-	 * The model needs to have been previously loaded with {@link #loadModel()}.
-	 * This method does not execute pre- or post-processing, they
-	 * need to be executed independently before or after
-	 * 
-	 * @param <T>
-	 * 	ImgLib2 data type of the output images
-	 * @param <R>
-	 * 	ImgLib2 data type of the input images
-	 * @param inputTensors
-	 * 	list of the input tensors that are going to be inputed to the model
-	 * @return the resulting tensors 
-	 * @throws RunModelException if the model has not been previously loaded
-	 * @throws IllegalArgumentException if the model is not a Bioimage.io model or if lacks a Bioimage.io
-	 *  rdf.yaml specs file in the model folder. 
-	 */
-	public <T extends RealType<T> & NativeType<T>, R extends RealType<R> & NativeType<R>> 
-	List<Tensor<T>> run(List<Tensor<R>> inputTensors) throws RunModelException {
-		return super.run(checkInputTensors(inputTensors));
-	}
-
-	/**
-	 * Run a Bioimage.io model and execute the tiling strategy in one go.
-	 * The model needs to have been previously loaded with {@link #loadModel()}.
-	 * This method does not execute pre- or post-processing, they
-	 * need to be executed independently before or after
-	 * 
-	 * @param <T>
-	 * 	ImgLib2 data type of the output images
-	 * @param <R>
-	 * 	ImgLib2 data type of the input images
-	 * @param inputTensors
-	 * 	list of the input tensors that are going to be inputed to the model
-	 * @param outputTensors
-	 * 	list of output tensors that are expected to be returned by the model
-	 * @throws RunModelException if the model has not been previously loaded
-	 * @throws IllegalArgumentException if the model is not a Bioimage.io model or if lacks a Bioimage.io
-	 *  rdf.yaml specs file in the model folder. 
-	 */
-	public <T extends RealType<T> & NativeType<T>, R extends RealType<R> & NativeType<R>> 
-	void run(List<Tensor<T>> inputTensors, List<Tensor<R>> outputTensors) throws RunModelException {
-		super.run(checkInputTensors(inputTensors), checkOutputTensors(outputTensors));
-	}
-	
 	/**
 	 * Builds model code.
 	 *

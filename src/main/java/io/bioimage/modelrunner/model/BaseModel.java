@@ -72,45 +72,6 @@ public abstract class BaseModel implements Closeable
 	public abstract void close();
 
 	/**
-	 * Method that calls the ClassLoader with the corresponding JARs of the Deep
-	 * Learning framework (engine) loaded to run inference on the tensors. The
-	 * method returns the corresponding output tensors
-	 * 
-	 * @param <T>
-	 * 	ImgLib2 data type of the input tensors
-	 * @param <R>
-	 * 	ImgLib2 data type of the output tensors, it can be the same as in the input
-	 * @param inTensors
-	 *            input tensors containing all the tensor data
-	 * @param outTensors
-	 *            expected output tensors. Their backend data will be rewritten with the result of the inference
-	 * @throws RunModelException
-	 *             if the is any problem running the model
-	 */
-	public abstract <T extends RealType<T> & NativeType<T>, R extends RealType<R> & NativeType<R>> 
-	void run( List< Tensor < T > > inTensors, List< Tensor < R > > outTensors ) throws RunModelException;
-	
-	/**
-	 * Run a Bioimage.io model and execute the tiling strategy in one go.
-	 * The model needs to have been previously loaded with {@link #loadModel()}.
-	 * This method does not execute pre- or post-processing, they
-	 * need to be executed independently before or after
-	 * 
-	 * @param <T>
-	 * 	ImgLib2 data type of the output images
-	 * @param <R>
-	 * 	ImgLib2 data type of the input images
-	 * @param inputTensors
-	 * 	list of the input tensors that are going to be inputed to the model
-	 * @return the resulting tensors 
-	 * @throws RunModelException if the model has not been previously loaded
-	 *  rdf.yaml specs file in the model folder. 
-	 */
-	public abstract <T extends RealType<T> & NativeType<T>, R extends RealType<R> & NativeType<R>> 
-	List<Tensor<T>> run(List<Tensor<R>> inputTensors) 
-			throws RunModelException;
-
-	/**
 	 * Get the folder where this model is located
 	 * 
 	 * @return the folder where this model is located
