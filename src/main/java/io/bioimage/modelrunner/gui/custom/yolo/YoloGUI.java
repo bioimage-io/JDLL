@@ -20,6 +20,7 @@
 package io.bioimage.modelrunner.gui.custom.yolo;
 
 import java.awt.Color;
+import java.awt.Graphics;
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
@@ -64,6 +65,7 @@ public class YoloGUI extends JPanel {
         tabs.setUI(new FlatTabbedPaneUI());
         tabs.addTab("Inference", inferencePanel);
         tabs.addTab("Train", trainPanel);
+        tabs.addChangeListener(e -> tabs.repaint());
         add(titlePanel);
         add(tabs);
     }
@@ -90,6 +92,13 @@ public class YoloGUI extends JPanel {
     }
 
     private static class FlatTabbedPaneUI extends BasicTabbedPaneUI {
+
+        @Override
+        protected void paintTabBackground(Graphics g, int tabPlacement, int tabIndex,
+                int x, int y, int w, int h, boolean isSelected) {
+            g.setColor(isSelected ? YoloUiUtils.PANEL_BG : YoloUiUtils.PRIMARY_BUTTON_BG);
+            g.fillRect(x, y, w, h);
+        }
 
         @Override
         protected void paintContentBorder(java.awt.Graphics g, int tabPlacement, int selectedIndex) {
