@@ -78,7 +78,7 @@ cudnn = "8.1.*"
 tensorflow = "==2.10.1"
 
 [feature.win-x86-64-cuda.activation.env]
-PATH = "%CONDA_PREFIX%\\Library\\bin;%PATH%"
+PATH = "%%CONDA_PREFIX%%\\Library\\bin;%%PATH%%"
 
 # Windows CPU: scrub CUDA from PATH for tasks.
 [feature.win-x86-64-no-cuda.tasks.python]
