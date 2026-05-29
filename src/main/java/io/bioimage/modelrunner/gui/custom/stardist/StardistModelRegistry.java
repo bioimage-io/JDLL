@@ -29,43 +29,30 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
-import java.util.Optional;
 import java.util.stream.Stream;
 
 public final class StardistModelRegistry {
 
     public static final String STARDIST_MODELS_SUBDIR = "stardist";
-    public static final String STARDIST_WEIGHTS_EXTENSION = ".mpk";
     public static final String STARDIST_KERAS_WEIGHTS_EXTENSION = ".h5";
     public static final String STARDIST_ARCHITECTURE_EXTENSION = ".json";
-    public static final String PRETRAINED_URL_FORMAT = "https://github.com/ultralytics/assets/releases/download/v8.4.0/%s";
+    public static final String PRETRAINED_URL_FORMAT = "https://github.com/stardist/stardist-models/releases/download/v0.1/python_%s.zip";
 
     private static final String[][] PRETRAINED_MODELS = new String[][] {
-        {"gray_small", "gray_small.mpk"},
-        {"gray_medium", "gray_medium.mpk"},
-        {"gray_big", "gray_big.mpk"},
-        {"color_small", "color_small.mpk"},
-        {"color_medium", "color_medium.mpk"},
-        {"color_big", "color_big.mpk"},
+        {"2D_versatile_fluo", "2D_versatile_fluo" + File.separator + "weights_best.h5"},
+        {"2D_versatile_he", "2D_versatile_he" + File.separator + "weights_best.h5"},
     };
     private static final String[][] SCRATCH_ARCHITECTURES = new String[][] {
-        {"gray_small", "gray_small.json"},
-        {"gray_medium", "gray_medium.json"},
-        {"gray_big", "gray_big.json"},
-        {"color_small", "color_small.json"},
-        {"color_medium", "color_medium.json"},
-        {"color_big", "color_big.json"},
+        {"small", "gray_small.json"},
+        {"medium", "gray_medium.json"},
+        {"big", "gray_big.json"},
     };
 
     private static final Map<String, Long> PRETRAINED_WEIGHTS_SIZE;
     static {
         PRETRAINED_WEIGHTS_SIZE = new HashMap<String, Long>();
-        PRETRAINED_WEIGHTS_SIZE.put("gray_small.mpk", 5_544_453L);
-        PRETRAINED_WEIGHTS_SIZE.put("gray_medium.mpk", 5_544_453L);
-        PRETRAINED_WEIGHTS_SIZE.put("gray_big.mpk", 5_544_453L);
-        PRETRAINED_WEIGHTS_SIZE.put("color_small.mpk", 5_544_453L);
-        PRETRAINED_WEIGHTS_SIZE.put("color_medium.mpk", 5_544_453L);
-        PRETRAINED_WEIGHTS_SIZE.put("color_big.mpk", 5_544_453L);
+        PRETRAINED_WEIGHTS_SIZE.put("2D_versatile_fluo" + File.separator + "weights_best.h5", 5_544_453L);
+        PRETRAINED_WEIGHTS_SIZE.put("2D_versatile_he" + File.separator + "weights_best.h5", 5_544_453L);
     }
 
     private StardistModelRegistry() {}
@@ -118,7 +105,7 @@ public final class StardistModelRegistry {
     }
 
     public static Long expectedPretrainedSize(String fileName) {
-        return fileName == null ? null : PRETRAINED_WEIGHTS_SIZE.get(fileName.toLowerCase());
+        return fileName == null ? null : PRETRAINED_WEIGHTS_SIZE.get(fileName);
     }
 
     public static boolean isInstalled(String modelPath) {
@@ -137,7 +124,8 @@ public final class StardistModelRegistry {
     }
 
     public static boolean canDownload(String modelPath) {
-        return modelPath != null && expectedPretrainedSize(new File(modelPath).getName()) != null;
+    	String folderAndFile = new File(modelPath).getParentFile().getName() + File.separator + new File(modelPath).getName();
+        return modelPath != null && expectedPretrainedSize(folderAndFile) != null;
     }
 
     public static String downloadUrl(String modelPath) {
@@ -145,9 +133,6 @@ public final class StardistModelRegistry {
     }
 
     private static String removeWeightsExtension(String fileName) {
-        if (fileName.toLowerCase().endsWith(STARDIST_WEIGHTS_EXTENSION)) {
-            return fileName.substring(0, fileName.length() - STARDIST_WEIGHTS_EXTENSION.length());
-        }
         if (fileName.toLowerCase().endsWith(STARDIST_KERAS_WEIGHTS_EXTENSION)) {
             return fileName.substring(0, fileName.length() - STARDIST_KERAS_WEIGHTS_EXTENSION.length());
         }
@@ -194,7 +179,6 @@ public final class StardistModelRegistry {
             return false;
         }
         String lower = fileName.toLowerCase();
-        return lower.endsWith(STARDIST_WEIGHTS_EXTENSION)
-                || lower.endsWith(STARDIST_KERAS_WEIGHTS_EXTENSION);
+        return lower.endsWith(STARDIST_KERAS_WEIGHTS_EXTENSION);
     }
 }

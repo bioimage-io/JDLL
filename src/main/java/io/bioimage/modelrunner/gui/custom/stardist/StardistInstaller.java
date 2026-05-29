@@ -64,13 +64,14 @@ public class StardistInstaller  implements ModelInstaller {
         }
 
         File modelFile = new File(modelPath);
-        File parent = modelFile.getParentFile();
+        File parent = modelFile.getParentFile().getParentFile();
         if (parent != null && !parent.isDirectory() && !parent.mkdirs()) {
             throw new IOException("Could not create StarDist model directory: " + parent.getAbsolutePath());
         }
 
-        String modelName = modelFile.getName();
-        FileDownloader downloader = new FileDownloader(StardistModelRegistry.downloadUrl(modelPath), modelFile, false);
+        String modelName = modelFile.getParentFile().getName();
+        File zipFile = new File(parent.getAbsolutePath(), "python_" + modelName + ".zip");
+        FileDownloader downloader = new FileDownloader(StardistModelRegistry.downloadUrl(modelName), zipFile, false);
         downloader.setPartialProgressConsumer(progress -> {
             if (logConsumer != null) {
                 double percent = Math.round(progress * 1000) / 10.0d;
