@@ -123,8 +123,8 @@ public final class StardistTrainingConfig {
             return "";
         }
         String name = modelName.trim();
-        if (name.toLowerCase().endsWith(StardistModelRegistry.STARDIST_WEIGHTS_EXTENSION)) {
-            name = name.substring(0, name.length() - StardistModelRegistry.STARDIST_WEIGHTS_EXTENSION.length());
+        if (name.toLowerCase().endsWith(StardistModelRegistry.STARDIST_KERAS_WEIGHTS_EXTENSION)) {
+            name = name.substring(0, name.length() - StardistModelRegistry.STARDIST_KERAS_WEIGHTS_EXTENSION.length());
         }
         return name;
     }

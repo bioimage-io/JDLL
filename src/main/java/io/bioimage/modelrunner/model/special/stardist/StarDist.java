@@ -804,7 +804,7 @@ public final class StarDist extends DLModelPytorchProtected {
 				+ "preview_dir.mkdir(parents=True, exist_ok=True)" + nl
 				+ "stardist_log_path = output_dir / 'training.log'" + nl
 				+ "config = json.loads(r'''" + TrainingCodeUtils.toJson(config) + "''')" + nl
-				+ "config.pop('validation_preview_count', None)" + nl
+				+ "preview_count = int(config.pop('validation_preview_count', 20))" + nl
 				+ "config['use_gpu'] = False" + nl
 				+ "if '" + TrainingCodeUtils.py(safeImageChannels).toLowerCase() + "' == 'rgb':" + nl
 				+ "  config['axes'] = 'YXC'" + nl
@@ -925,29 +925,29 @@ public final class StarDist extends DLModelPytorchProtected {
 				+ "    metrics = _clean({'learning_rate': self._lr()})" + nl
 				+ "    info = {'type': 'progress', 'epoch': current_epoch, 'step': step, 'total_epochs': state['total_epochs'], 'total_steps': state['total_steps'], 'losses': losses, 'metrics': metrics}" + nl
 				+ "    _task_update(message='StarDist epoch %d/%d' % (current_epoch, state['total_epochs']), current=step, maximum=state['total_steps'], info=info)" + nl
-				+ "  samples = []" + nl
-				+ "  for i, image in enumerate(self.X_val[:20]):" + nl
-				+ "    image_path = preview_dir / ('preview_%03d_image.npy' % i)" + nl
-				+ "    pred_path = preview_dir / ('preview_%03d_prediction.npy' % i)" + nl
-				+ "    prob_path = preview_dir / ('preview_%03d_prob.npy' % i)" + nl
-				+ "    sample = {'index': i}" + nl
-				+ "    _atomic_npy_save(image_path, image)" + nl
-				+ "    sample['image_path'] = str(image_path)" + nl
-				+ "    try:" + nl
-				+ "      prediction, details = self.model_ref.predict_instances(image, axes=str(config.get('axes', 'YXC')), normalizer=None, n_tiles=None, show_tile_progress=False)" + nl
-				+ "      _atomic_npy_save(pred_path, np.asarray(prediction, dtype=np.int32))" + nl
-				+ "      sample['prediction_path'] = str(pred_path)" + nl
-				+ "      prob, _dist = self.model_ref.predict(image, axes=str(config.get('axes', 'YXC')), normalizer=None, n_tiles=None, show_tile_progress=False)" + nl
-				+ "      _atomic_npy_save(prob_path, prob)" + nl
-				+ "      sample['prob_path'] = str(prob_path)" + nl
-				+ "    except Exception:" + nl
-				+ "      pass" + nl
-				+ "    samples.append(sample)" + nl
-				+ "  if samples:" + nl
-				+ "    manifest = {'epoch': current_epoch, 'samples': samples}" + nl
-				+ "    with open(preview_manifest_path, 'w', encoding='utf-8') as f:" + nl
-				+ "      json.dump(manifest, f)" + nl
-				+ "    _task_update(message='StarDist validation preview epoch %d' % current_epoch, current=current_epoch, maximum=state['total_epochs'], info={'type': 'preview', 'epoch': current_epoch, 'preview_path': str(preview_manifest_path)})" + nl
+				+ "    samples = []" + nl
+				+ "    for i, image in enumerate(self.X_val[:preview_count]):" + nl
+				+ "      image_path = preview_dir / ('preview_%03d_image.npy' % i)" + nl
+				+ "      pred_path = preview_dir / ('preview_%03d_prediction.npy' % i)" + nl
+				+ "      prob_path = preview_dir / ('preview_%03d_prob.npy' % i)" + nl
+				+ "      sample = {'index': i}" + nl
+				+ "      _atomic_npy_save(image_path, image)" + nl
+				+ "      sample['image_path'] = str(image_path)" + nl
+				+ "      try:" + nl
+				+ "        prediction, details = self.model_ref.predict_instances(image, axes=str(config.get('axes', 'YXC')), normalizer=None, n_tiles=None, show_tile_progress=False)" + nl
+				+ "        _atomic_npy_save(pred_path, np.asarray(prediction, dtype=np.int32))" + nl
+				+ "        sample['prediction_path'] = str(pred_path)" + nl
+				+ "        prob, _dist = self.model_ref.predict(image, axes=str(config.get('axes', 'YXC')), normalizer=None, n_tiles=None, show_tile_progress=False)" + nl
+				+ "        _atomic_npy_save(prob_path, prob)" + nl
+				+ "        sample['prob_path'] = str(prob_path)" + nl
+				+ "      except Exception:" + nl
+				+ "        pass" + nl
+				+ "      samples.append(sample)" + nl
+				+ "    if samples:" + nl
+				+ "      manifest = {'epoch': current_epoch, 'samples': samples}" + nl
+				+ "      with open(preview_manifest_path, 'w', encoding='utf-8') as f:" + nl
+				+ "        json.dump(manifest, f)" + nl
+				+ "      _task_update(message='StarDist validation preview epoch %d' % current_epoch, current=current_epoch, maximum=state['total_epochs'], info={'type': 'preview', 'epoch': current_epoch, 'preview_path': str(preview_manifest_path)})" + nl
 				+ "train_pairs, val_pairs = _dataset()" + nl
 				+ "X_train, Y_train = _load_pairs(train_pairs)" + nl
 				+ "X_val, Y_val = _load_pairs(val_pairs)" + nl

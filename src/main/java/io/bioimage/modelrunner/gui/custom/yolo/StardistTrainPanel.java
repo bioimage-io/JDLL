@@ -63,8 +63,8 @@ public class StardistTrainPanel extends BaseTrainPanel {
             return false;
         }
         String cleanName = modelName.trim();
-        if (cleanName.toLowerCase().endsWith(StardistModelRegistry.STARDIST_WEIGHTS_EXTENSION)) {
-            cleanName = cleanName.substring(0, cleanName.length() - StardistModelRegistry.STARDIST_WEIGHTS_EXTENSION.length());
+        if (cleanName.toLowerCase().endsWith(StardistModelRegistry.STARDIST_KERAS_WEIGHTS_EXTENSION)) {
+            cleanName = cleanName.substring(0, cleanName.length() - StardistModelRegistry.STARDIST_KERAS_WEIGHTS_EXTENSION.length());
         }
         return !cleanName.isEmpty()
                 && !cleanName.equals(".")
@@ -77,11 +77,11 @@ public class StardistTrainPanel extends BaseTrainPanel {
         String baseModel = getSelectedBaseModelValue();
         if (baseModelComboBox.getSelectedItem() instanceof YoloModelSelectionEntry) {
             return baseModel != null
-                    && (baseModel.toLowerCase().endsWith(StardistModelRegistry.STARDIST_WEIGHTS_EXTENSION)
+                    && (baseModel.toLowerCase().endsWith(StardistModelRegistry.STARDIST_KERAS_WEIGHTS_EXTENSION)
                     || new File(baseModel).isDirectory());
         }
         return baseModel != null
-                && (baseModel.toLowerCase().endsWith(StardistModelRegistry.STARDIST_WEIGHTS_EXTENSION)
+                && (baseModel.toLowerCase().endsWith(StardistModelRegistry.STARDIST_KERAS_WEIGHTS_EXTENSION)
                 || new File(baseModel).isDirectory())
                 && new File(baseModel).exists();
     }

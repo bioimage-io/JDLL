@@ -100,11 +100,11 @@ public class StardistTrainingService {
         }
         String arch = architecture.toLowerCase();
         if (arch.contains("small")) {
-            trainingConfig.put("patch_size", java.util.Arrays.asList(192, 192));
-            trainingConfig.put("batch_size", 8);
+            trainingConfig.put("train_patch_size", java.util.Arrays.asList(192, 192));
+            trainingConfig.put("train_batch_size", 8);
         } else if (arch.contains("big")) {
-            trainingConfig.put("patch_size", java.util.Arrays.asList(384, 384));
-            trainingConfig.put("batch_size", 2);
+            trainingConfig.put("train_patch_size", java.util.Arrays.asList(384, 384));
+            trainingConfig.put("train_batch_size", 2);
             trainingConfig.put("n_rays", 64);
         }
     }
