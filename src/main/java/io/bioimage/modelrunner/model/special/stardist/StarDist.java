@@ -357,7 +357,9 @@ public final class StarDist extends DLModelPytorchProtected {
 			code += "  " + SHM_NAMES_KEY + ".clear()" + System.lineSeparator();
 			code += "  " + DTYPES_KEY + ".clear()" + System.lineSeparator();
 			code += "  " + DIMS_KEY + ".clear()" + System.lineSeparator();
-			code += "  handle_output(labels.astype(np.float32, copy=False))" + System.lineSeparator();
+			// TODO remove code += "  handle_output(labels.astype(np.float32, copy=False))" + System.lineSeparator();
+	        code += String.format("  handle_output(labels.astype(np.float32, copy=False), %s, %s, %s, %s)",
+	        		SHMS_KEY, SHM_NAMES_KEY, DTYPES_KEY, DIMS_KEY)  + System.lineSeparator();
 			code += "  " + closeSHMWin() + System.lineSeparator();
 			code += "except Exception as e:" + System.lineSeparator();
 			code += "  " + closeSHMWin() + System.lineSeparator();
@@ -603,7 +605,9 @@ public final class StarDist extends DLModelPytorchProtected {
 			code += "  " + SHM_NAMES_KEY + ".clear()" + System.lineSeparator();
 			code += "  " + DTYPES_KEY + ".clear()" + System.lineSeparator();
 			code += "  " + DIMS_KEY + ".clear()" + System.lineSeparator();
-	        code += "  " + "handle_output_list(" + OUTPUT_LIST_KEY + ")" + System.lineSeparator();
+	        // TODO remove code += "  " + "handle_output_list(" + OUTPUT_LIST_KEY + ")" + System.lineSeparator();
+	        code += String.format("  handle_output_list(%s, %s, %s, %s, %s)", OUTPUT_LIST_KEY,
+	        		SHMS_KEY, SHM_NAMES_KEY, DTYPES_KEY, DIMS_KEY)  + System.lineSeparator();
 			code += "  " + closeSHMWin() + System.lineSeparator();
 			code += "except Exception as e:" + System.lineSeparator();
 			code += "  " + closeSHMWin() + System.lineSeparator();
@@ -1086,7 +1090,7 @@ public final class StarDist extends DLModelPytorchProtected {
 	}
 	
 	public static void main(String[] args) throws IOException, BuildException, LoadModelException, RunModelException, InterruptedException {
-		String path = "/home/carlos/git/deep-icy/models/stardist/hundred";
+		String path = "/home/carlos/git/deep-icy/models/stardist/kkeras";
         PixiEnvironmentManager.installRequirements(StarDist.resolvePytorchEnv(), (str) -> {System.out.println(str);});
 		try (StarDist model = StarDist.fromFile(path, null)) {
 			Tensor<FloatType> tensor = Tensor.build(

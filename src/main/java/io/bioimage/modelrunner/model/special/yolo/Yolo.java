@@ -115,7 +115,7 @@ public class Yolo extends DLModelPytorchProtected {
 	 * @throws BuildException if there is any error building the environment
 	 */
 	protected Yolo(String weightsPath) throws BuildException {
-		super(null, null, null, weightsPath, new HashMap<String, Object>(), true);
+		super(null, null, null, weightsPath, new HashMap<String, Object>(), true, null);
 	}
 	
 	// TODO add 3D

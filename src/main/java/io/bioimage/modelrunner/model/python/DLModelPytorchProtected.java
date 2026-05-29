@@ -196,15 +196,15 @@ public class DLModelPytorchProtected extends BaseModel {
 			+ "task.export(" + DTYPES_KEY + "=" + DTYPES_KEY + ")" + System.lineSeparator()
 			+ "task.export(" + DIMS_KEY + "=" + DIMS_KEY + ")" + System.lineSeparator()
 			+ "task.export(created_shms=created_shms)" + System.lineSeparator()
-            + "def handle_output(outs_i):" + System.lineSeparator()
+            + "def handle_output(outs_i, shms_key, shms_names, dtypes, dims):" + System.lineSeparator()
             + "    if type(outs_i) == np.ndarray:" + System.lineSeparator()
             + "      shm = shared_memory.SharedMemory(create=True, size=outs_i.nbytes)" + System.lineSeparator()
             + "      sh_np_array = np.ndarray(outs_i.shape, dtype=outs_i.dtype, buffer=shm.buf)" + System.lineSeparator()
             + "      np.copyto(sh_np_array, outs_i)" + System.lineSeparator()
-            + "      " + SHMS_KEY + ".append(shm)" + System.lineSeparator()
-            + "      " + SHM_NAMES_KEY + ".append(shm.name)" + System.lineSeparator()
-            + "      " + DTYPES_KEY + ".append(str(outs_i.dtype))" + System.lineSeparator()
-            + "      " + DIMS_KEY + ".append(outs_i.shape)" + System.lineSeparator()
+            + "      shms_key.append(shm)" + System.lineSeparator()
+            + "      shms_names.append(shm.name)" + System.lineSeparator()
+            + "      dtypes.append(str(outs_i.dtype))" + System.lineSeparator()
+            + "      dims.append(outs_i.shape)" + System.lineSeparator()
             + "    elif str(type(outs_i)) == \"<class 'torch.Tensor'>\":" + System.lineSeparator()
             + "      if 'torch' not in globals().keys():" + System.lineSeparator()
             + "        import torch" + System.lineSeparator()
@@ -215,38 +215,38 @@ public class DLModelPytorchProtected extends BaseModel {
             + "      np_arr = np.ndarray(outs_i.shape, dtype=str(outs_i.dtype).split('.')[-1], buffer=shm.buf)" + System.lineSeparator()
             + "      tensor_np_view = torch.from_numpy(np_arr)" + System.lineSeparator()
             + "      tensor_np_view.copy_(outs_i)" + System.lineSeparator()
-            + "      " + SHMS_KEY + ".append(shm)" + System.lineSeparator()
-            + "      " + SHM_NAMES_KEY + ".append(shm.name)" + System.lineSeparator()
-            + "      " + DTYPES_KEY + ".append(str(outs_i.dtype).split('.')[-1])" + System.lineSeparator()
-            + "      " + DIMS_KEY + ".append(outs_i.shape)" + System.lineSeparator()
+            + "      shms_key.append(shm)" + System.lineSeparator()
+            + "      shms_names.append(shm.name)" + System.lineSeparator()
+            + "      dtypes.append(str(outs_i.dtype).split('.')[-1])" + System.lineSeparator()
+            + "      dims.append(outs_i.shape)" + System.lineSeparator()
             + "    elif type(outs_i) == int:" + System.lineSeparator()
             + "      shm = shared_memory.SharedMemory(create=True, size=8)" + System.lineSeparator()
             + "      shm.buf[:8] = outs_i.to_bytes(8, byteorder='little', signed=True)" + System.lineSeparator()
-            + "      " + SHMS_KEY + ".append(shm)" + System.lineSeparator()
-            + "      " + SHM_NAMES_KEY + ".append(shm.name)" + System.lineSeparator()
-            + "      " + DTYPES_KEY + ".append('int64')" + System.lineSeparator()
-            + "      " + DIMS_KEY + ".append((1))" + System.lineSeparator()
+            + "      shms_key.append(shm)" + System.lineSeparator()
+            + "      shms_names.append(shm.name)" + System.lineSeparator()
+            + "      dtypes.append('int64')" + System.lineSeparator()
+            + "      dims.append((1))" + System.lineSeparator()
             + "    elif type(outs_i) == float:" + System.lineSeparator()
             + "      shm = shared_memory.SharedMemory(create=True, size=8)" + System.lineSeparator()
             + "      shm.buf[:8] = outs_i.to_bytes(8, byteorder='little', signed=True)" + System.lineSeparator()
-            + "      " + SHMS_KEY + ".append(shm)" + System.lineSeparator()
-            + "      " + SHM_NAMES_KEY + ".append(shm.name)" + System.lineSeparator()
-            + "      " + DTYPES_KEY + ".append('float64')" + System.lineSeparator()
-            + "      " + DIMS_KEY + ".append((1))" + System.lineSeparator()
+            + "      shms_key.append(shm)" + System.lineSeparator()
+            + "      shms_names.append(shm.name)" + System.lineSeparator()
+            + "      dtypes.append('float64')" + System.lineSeparator()
+            + "      dims.append((1))" + System.lineSeparator()
             + "    elif type(outs_i) == tuple or type(outs_i) == list:" + System.lineSeparator()
-            + "      handle_output_list(outs_i)" + System.lineSeparator()
+            + "      handle_output_list(outs_i, shms_key, shms_names, dtypes, dims)" + System.lineSeparator()
             + "    else:" + System.lineSeparator()
             + "      task.update('output type : ' + str(type(outs_i)) + ' not supported. "
             + "Only supported output types are: np.ndarray, torch.tensor, int and float, "
             + "or a list or tuple of any of those.')" + System.lineSeparator()
             + System.lineSeparator()
             + System.lineSeparator()
-            + "def handle_output_list(out_list):" + System.lineSeparator()
+            + "def handle_output_list(out_list, shms_key, shms_names, dtypes, dims):" + System.lineSeparator()
             + "  if type(out_list) == tuple or type(out_list) == list:" + System.lineSeparator()
             + "    for outs_i in out_list:" + System.lineSeparator()
-            + "      handle_output(outs_i)" + System.lineSeparator()
+            + "      handle_output(outs_i, shms_key, shms_names, dtypes, dims)" + System.lineSeparator()
             + "  else:" + System.lineSeparator()
-            + "    handle_output(out_list)" + System.lineSeparator()
+            + "    handle_output(out_list, shms_key, shms_names, dtypes, dims)" + System.lineSeparator()
             + System.lineSeparator()
             + System.lineSeparator()
             + "task.export(handle_output_list=handle_output_list)" + System.lineSeparator()
@@ -257,8 +257,14 @@ public class DLModelPytorchProtected extends BaseModel {
     private static final String CLEAN_SHM_CODE = ""
             + "for s in " + SHMS_KEY + ":" + System.lineSeparator()
             + "    s.close()" + System.lineSeparator()
-            + "    s.unlink()" + System.lineSeparator()
-            + "    del s" + System.lineSeparator();
+            + "    try:" + System.lineSeparator()
+            + "        s.unlink()" + System.lineSeparator()
+            + "    except FileNotFoundError:" + System.lineSeparator()
+            + "        pass" + System.lineSeparator()
+            + SHMS_KEY + ".clear()" + System.lineSeparator()
+            + SHM_NAMES_KEY + ".clear()" + System.lineSeparator()
+            + DTYPES_KEY + ".clear()" + System.lineSeparator()
+            + DIMS_KEY + ".clear()" + System.lineSeparator();
 
     private static final String JDLL_UUID = UUID.randomUUID().toString().replaceAll("-", "_");
 
@@ -666,8 +672,9 @@ public class DLModelPytorchProtected extends BaseModel {
     Map<String, RandomAccessibleInterval<R>> executeCode(final String code) throws RunModelException {
         Throwable lastFailure = null;
         for (int attempt = 0; attempt <= MAX_TRANSIENT_TASK_RETRIES; attempt ++) {
+        	Task task = null;
             try {
-                final Task task = python.task(code);
+                task = python.task(code);
                 python.debug((str) -> {});
                 task.waitFor();
                 ensureTaskSucceeded(task);
@@ -685,6 +692,8 @@ public class DLModelPytorchProtected extends BaseModel {
                 if (isApposeThreadDeath(e) && attempt < MAX_TRANSIENT_TASK_RETRIES) {
                     emitProgress(InferenceProgress.taskRetry("Appose thread death during inference; retrying task "
                             + (attempt + 1) + "/" + MAX_TRANSIENT_TASK_RETRIES + "."));
+                    System.out.println("HEREEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE");
+                    System.err.println(Messages.encode(task.outputs));
                     try {
 						this.threadDeathCleanUp();
 					} catch (InterruptedException | TaskException e1) {
@@ -839,6 +848,8 @@ public class DLModelPytorchProtected extends BaseModel {
 
         final String code = createInputsCode(inputs, names);
         final Map<String, RandomAccessibleInterval<R>> map = executeCode(code);
+        if (map.entrySet().size() > 2)
+        	System.out.println();
         outAxes = getOutputAxes(map.size());
         List<Tensor<R>> outTensors = new ArrayList<Tensor<R>>();
         int i = 0;
@@ -895,7 +906,9 @@ public class DLModelPytorchProtected extends BaseModel {
                 + "  " + "globals()['" + SHM_NAMES_KEY + "'] = " + SHM_NAMES_KEY + System.lineSeparator()
                 + "  " + "globals()['" + DTYPES_KEY + "'] = " + DTYPES_KEY + System.lineSeparator()
                 + "  " + "globals()['" + DIMS_KEY + "'] = " + DIMS_KEY + System.lineSeparator();
-        code += "  " + "handle_output_list(" + OUTPUT_LIST_KEY + ")" + System.lineSeparator();
+        code += "  ";
+        code += String.format("handle_output_list(%s, %s, %s, %s, %s)", OUTPUT_LIST_KEY,
+        		SHMS_KEY, SHM_NAMES_KEY, DTYPES_KEY, DIMS_KEY)  + System.lineSeparator();
 
         final String closeEverythingWin = closeSHMWin();
         code += "  " + closeEverythingWin + System.lineSeparator();
@@ -1338,6 +1351,8 @@ public class DLModelPytorchProtected extends BaseModel {
             throw new RuntimeException("Unexpected type for '" + SHM_NAMES_KEY + "'.");
         }
         final List<?> list = (List<?>) task.outputs.get(SHM_NAMES_KEY);
+        if (list.size() >2)
+        	System.out.println("");
         for (Object elem : list) {
             if (!(elem instanceof String)) {
                 throw new RuntimeException("Unexpected type for element of '" + SHM_NAMES_KEY + "' list.");
@@ -1352,6 +1367,8 @@ public class DLModelPytorchProtected extends BaseModel {
             throw new RuntimeException("Unexpected type for '" + DTYPES_KEY + "'.");
         }
         final List<?> list = (List<?>) task.outputs.get(DTYPES_KEY);
+        if (list.size() > 2)
+        	System.out.println("");
         for (Object elem : list) {
             if (!(elem instanceof String)) {
                 throw new RuntimeException("Unexpected type for element of '" + DTYPES_KEY + "' list.");
@@ -1366,6 +1383,8 @@ public class DLModelPytorchProtected extends BaseModel {
             throw new RuntimeException("Unexpected type for '" + DIMS_KEY + "'.");
         }
         final List<?> list = (List<?>) task.outputs.get(DIMS_KEY);
+        if (list.size() > 2)
+        	System.out.println("");
         for (Object elem : list) {
             if (!(elem instanceof Object[]) && !(elem instanceof List)) {
                 throw new RuntimeException("Unexpected type for element of '" + DIMS_KEY + "' list.");
