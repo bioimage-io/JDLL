@@ -336,9 +336,11 @@ public class DLModelPytorchProtected extends BaseModel {
         this.envPath = environmentSpec.getEnvironmentDirectory().getAbsolutePath();
         
         this.tileCounter = new TilingConsumer();
-		if (device == null || device != "cuda" || device != "mps")
-			device = "cpu";
-		this.device = device;
+		String normalizedDevice = device == null ? "cpu" : device.trim().toLowerCase(Locale.ROOT);
+		if (!"cuda".equals(normalizedDevice) && !"mps".equals(normalizedDevice)) {
+			normalizedDevice = "cpu";
+		}
+		this.device = normalizedDevice;
     }
 
     /**

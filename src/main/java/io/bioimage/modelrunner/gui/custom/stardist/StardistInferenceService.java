@@ -44,6 +44,7 @@ public class StardistInferenceService {
 
     private final ModelInstaller installer;
     private String loadedModelPath;
+    private String loadedDevice;
     private StarDist model;
     private Rectangle size = null;
 
@@ -55,7 +56,7 @@ public class StardistInferenceService {
     List<Tensor<R>> run(String modelPath, RandomAccessibleInterval<T> rai, Consumer<String> logConsumer)
             throws RunModelException, LoadModelException, BuildException, IOException,
             ExecutionException, InterruptedException {
-        return run(modelPath, rai, logConsumer, true);
+        return run(modelPath, rai, logConsumer, true, "cpu");
     }
 
     public <T extends RealType<T> & NativeType<T>, R extends RealType<R> & NativeType<R>>
@@ -63,7 +64,15 @@ public class StardistInferenceService {
             boolean usePatchProgressBar)
             throws RunModelException, LoadModelException, BuildException, IOException,
             ExecutionException, InterruptedException {
-        ensureLoaded(modelPath, logConsumer, usePatchProgressBar);
+        return run(modelPath, rai, logConsumer, usePatchProgressBar, "cpu");
+    }
+
+    public <T extends RealType<T> & NativeType<T>, R extends RealType<R> & NativeType<R>>
+    List<Tensor<R>> run(String modelPath, RandomAccessibleInterval<T> rai, Consumer<String> logConsumer,
+            boolean usePatchProgressBar, String device)
+            throws RunModelException, LoadModelException, BuildException, IOException,
+            ExecutionException, InterruptedException {
+        ensureLoaded(modelPath, normalizeDevice(device), logConsumer, usePatchProgressBar);
         configureProgressLogging(logConsumer, usePatchProgressBar);
         //model.setObjectSize(size);
         return runLoadedModel(rai);
@@ -74,7 +83,15 @@ public class StardistInferenceService {
             Consumer<InferenceProgress> progressConsumer)
             throws RunModelException, LoadModelException, BuildException, IOException,
             ExecutionException, InterruptedException {
-        ensureLoaded(modelPath, null, progressConsumer);
+        return runWithProgress(modelPath, rai, progressConsumer, "cpu");
+    }
+
+    public <T extends RealType<T> & NativeType<T>, R extends RealType<R> & NativeType<R>>
+    List<Tensor<R>> runWithProgress(String modelPath, RandomAccessibleInterval<T> rai,
+            Consumer<InferenceProgress> progressConsumer, String device)
+            throws RunModelException, LoadModelException, BuildException, IOException,
+            ExecutionException, InterruptedException {
+        ensureLoaded(modelPath, normalizeDevice(device), null, progressConsumer);
         //model.setObjectSize(size);
         return runLoadedModel(rai);
     }
@@ -85,25 +102,35 @@ public class StardistInferenceService {
         }
         model = null;
         loadedModelPath = null;
+        loadedDevice = null;
     }
 
-    private void ensureLoaded(String modelPath, Consumer<String> logConsumer, boolean usePatchProgressBar)
+    private void ensureLoaded(String modelPath, String device, Consumer<String> logConsumer, boolean usePatchProgressBar)
             throws BuildException, IOException, LoadModelException, ExecutionException, InterruptedException {
-        ensureLoaded(modelPath, logConsumer,
+        ensureLoaded(modelPath, device, logConsumer,
                 progress -> appendProgressLog(progress, logConsumer, usePatchProgressBar));
     }
 
-    private void ensureLoaded(String modelPath, Consumer<String> logConsumer,
+    private void ensureLoaded(String modelPath, String device, Consumer<String> logConsumer,
             Consumer<InferenceProgress> progressConsumer)
             throws BuildException, IOException, LoadModelException, ExecutionException, InterruptedException {
-        if (loadedModelPath != null && !loadedModelPath.equals(modelPath)) {
+        if (loadedModelPath != null && (!loadedModelPath.equals(modelPath) || !device.equals(loadedDevice))) {
             close();
         }
         if (model == null || !model.isLoaded()) {
             installer.installIfNeeded(modelPath, logConsumer);
-            model = StarDist.fromFile(modelPath, progressConsumer);
+            model = StarDist.fromFile(modelPath, progressConsumer, device);
             loadedModelPath = modelPath;
+            loadedDevice = device;
         }
+    }
+
+    private static String normalizeDevice(String device) {
+        if (device == null) {
+            return "cpu";
+        }
+        String normalized = device.trim().toLowerCase();
+        return "cuda".equals(normalized) || "mps".equals(normalized) ? normalized : "cpu";
     }
 
     private void configureProgressLogging(Consumer<String> logConsumer, boolean usePatchProgressBar) {

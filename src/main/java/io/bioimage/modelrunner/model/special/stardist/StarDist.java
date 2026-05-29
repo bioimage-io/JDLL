@@ -93,6 +93,29 @@ public final class StarDist extends DLModelPytorchProtected {
 			+ "if 'shared_memory' not in globals().keys():" + System.lineSeparator()
 			+ "  from multiprocessing import shared_memory" + System.lineSeparator()
 			+ "  task.export(shared_memory=shared_memory)" + System.lineSeparator()
+			+ "if 'tf' not in globals().keys():" + System.lineSeparator()
+			+ "  import tensorflow as tf" + System.lineSeparator()
+			+ "  task.export(tf=tf)" + System.lineSeparator()
+			+ "_jdll_requested_device = '%s'" + System.lineSeparator()
+			+ "_jdll_tf_device = '/CPU:0'" + System.lineSeparator()
+			+ "try:" + System.lineSeparator()
+			+ "  if _jdll_requested_device == 'cpu':" + System.lineSeparator()
+			+ "    try:" + System.lineSeparator()
+			+ "      tf.config.set_visible_devices([], 'GPU')" + System.lineSeparator()
+			+ "    except Exception:" + System.lineSeparator()
+			+ "      pass" + System.lineSeparator()
+			+ "  elif _jdll_requested_device in ('cuda', 'mps', 'gpu'):" + System.lineSeparator()
+			+ "    _jdll_gpus = tf.config.list_physical_devices('GPU')" + System.lineSeparator()
+			+ "    if _jdll_gpus:" + System.lineSeparator()
+			+ "      for _jdll_gpu in _jdll_gpus:" + System.lineSeparator()
+			+ "        try:" + System.lineSeparator()
+			+ "          tf.config.experimental.set_memory_growth(_jdll_gpu, True)" + System.lineSeparator()
+			+ "        except Exception:" + System.lineSeparator()
+			+ "          pass" + System.lineSeparator()
+			+ "      _jdll_tf_device = '/GPU:0'" + System.lineSeparator()
+			+ "except Exception:" + System.lineSeparator()
+			+ "  _jdll_tf_device = '/CPU:0'" + System.lineSeparator()
+			+ "task.export(_jdll_tf_device=_jdll_tf_device)" + System.lineSeparator()
 			+ "if 'StarDist2D' not in globals().keys():" + System.lineSeparator()
 			+ "  from stardist.models import StarDist2D, Config2D" + System.lineSeparator()
 			+ "  from stardist.nms import non_maximum_suppression" + System.lineSeparator()
@@ -114,7 +137,8 @@ public final class StarDist extends DLModelPytorchProtected {
 			+ "    model.keras_model.load_weights(source)" + System.lineSeparator()
 			+ "  return model" + System.lineSeparator()
 			+ "with open(os.devnull, 'w') as _stardist_quiet, contextlib.redirect_stdout(_stardist_quiet), contextlib.redirect_stderr(_stardist_quiet):" + System.lineSeparator()
-			+ "  " + MODEL_VAR_NAME + " = _jdll_load_stardist(%s, %s)" + System.lineSeparator()
+			+ "  with tf.device(_jdll_tf_device):" + System.lineSeparator()
+			+ "    " + MODEL_VAR_NAME + " = _jdll_load_stardist(%s, %s)" + System.lineSeparator()
 			+ "task.export(" + MODEL_VAR_NAME + "=" + MODEL_VAR_NAME + ")" + System.lineSeparator();
 
 	private final String mpkPath;
@@ -146,7 +170,7 @@ public final class StarDist extends DLModelPytorchProtected {
 			throws IOException, BuildException, LoadModelException {
 		Map<String, Object> config = loadModelConfig(modelPath);
 		String modelIdentity = resolveModelIdentityFile(modelPath).getAbsolutePath();
-		StarDist model = new StarDist(modelIdentity, config, inferDimensionality(config), inferenceProgressConsumer);
+		StarDist model = new StarDist(modelIdentity, config, inferDimensionality(config), inferenceProgressConsumer, device);
 		model.loadModel();
 		return model;
 	}
@@ -161,7 +185,7 @@ public final class StarDist extends DLModelPytorchProtected {
 		if (configJsonPath == null || !new File(configJsonPath).isFile()) {
 			throw new IllegalArgumentException("StarDist config JSON does not exist: " + configJsonPath);
 		}
-		return fromConfig(JSONUtils.load(configJsonPath), inferenceProgressConsumer);
+		return fromConfig(JSONUtils.load(configJsonPath), inferenceProgressConsumer, device);
 	}
 
 	public static StarDist fromConfig(Map<String, Object> config, Consumer<InferenceProgress> inferenceProgressConsumer)
@@ -173,7 +197,7 @@ public final class StarDist extends DLModelPytorchProtected {
 			throws IOException, BuildException, LoadModelException {
 		Map<String, Object> normalized = normalizedConfig(config);
 		StarDist model = new StarDist("stardist-config", normalized,
-				inferDimensionality(normalized), inferenceProgressConsumer);
+				inferDimensionality(normalized), inferenceProgressConsumer, device);
 		model.loadModel();
 		return model;
 	}
@@ -185,23 +209,33 @@ public final class StarDist extends DLModelPytorchProtected {
 
 	public static StarDist fromDefault(Consumer<InferenceProgress> inferenceProgressConsumer, String device)
 			throws IOException, BuildException, LoadModelException {
-		return fromDefault2D(inferenceProgressConsumer);
+		return fromDefault2D(inferenceProgressConsumer, device);
 	}
 
 	public static StarDist fromDefault2D(Consumer<InferenceProgress> inferenceProgressConsumer)
 			throws IOException, BuildException, LoadModelException {
+		return fromDefault2D(inferenceProgressConsumer, null);
+	}
+
+	public static StarDist fromDefault2D(Consumer<InferenceProgress> inferenceProgressConsumer, String device)
+			throws IOException, BuildException, LoadModelException {
 		Map<String, Object> config = defaultModelConfig2D();
 		StarDist model = new StarDist("stardist-default-2d", config,
-				Dimensionality.TWO_D, inferenceProgressConsumer);
+				Dimensionality.TWO_D, inferenceProgressConsumer, device);
 		model.loadModel();
 		return model;
 	}
 
 	public static StarDist fromDefault3D(Consumer<InferenceProgress> inferenceProgressConsumer)
 			throws IOException, BuildException, LoadModelException {
+		return fromDefault3D(inferenceProgressConsumer, null);
+	}
+
+	public static StarDist fromDefault3D(Consumer<InferenceProgress> inferenceProgressConsumer, String device)
+			throws IOException, BuildException, LoadModelException {
 		Map<String, Object> config = defaultModelConfig3D();
 		StarDist model = new StarDist("stardist-default-3d", config,
-				Dimensionality.THREE_D, inferenceProgressConsumer);
+				Dimensionality.THREE_D, inferenceProgressConsumer, device);
 		model.loadModel();
 		return model;
 	}
@@ -538,10 +572,9 @@ public final class StarDist extends DLModelPytorchProtected {
 
 	@Override
 	protected String buildModelCode() {
-		String gpu = this.device == "cuda" ? "True" : "cpu";
 		String source = mpkPath != null && new File(mpkPath).exists() ? "r'" + mpkPath + "'" : "None";
 		String configStr = TrainingCodeUtils.toJson(config).replace("null", "None").replace("true", "True").replace("false", "False");
-		return String.format(LOAD_MODEL_CODE_2D, source, configStr, gpu);
+		return String.format(LOAD_MODEL_CODE_2D, device, source, configStr);
 	}
 
 	@Override
@@ -563,7 +596,8 @@ public final class StarDist extends DLModelPytorchProtected {
 				+ nChannels + ")" + System.lineSeparator();
 				code += "  print(" + names.get(i) + ".shape)" + System.lineSeparator();
 			}
-			code += "  _prob, _dist = " + MODEL_VAR_NAME + ".predict("
+			code += "  with tf.device(_jdll_tf_device):" + System.lineSeparator();
+			code += "    _prob, _dist = " + MODEL_VAR_NAME + ".predict("
 					+ names.get(0) + ", axes='YXC', normalizer=None, n_tiles=None, show_tile_progress=False)" + System.lineSeparator();
 			code += "  " + OUTPUT_LIST_KEY + " = [np.expand_dims(_prob, 0), np.expand_dims(_dist, 0)]" + System.lineSeparator();
 			code += "  " + SHMS_KEY + ".clear()" + System.lineSeparator();

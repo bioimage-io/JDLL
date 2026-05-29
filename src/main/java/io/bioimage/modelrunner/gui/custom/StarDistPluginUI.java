@@ -354,7 +354,8 @@ public class StarDistPluginUI extends StardistGUI implements ActionListener {
     			StarDistPluginUI.this.inferencePanel.getLogPanel().appendHtml(str));
         startInferenceLogTimer();
         try {
-            List<Tensor<T>> detections = inferenceService.run(modelPath, rai, logConsumer);
+            List<Tensor<T>> detections = inferenceService.run(modelPath, rai, logConsumer, true,
+                    selectedInferenceDevice());
             consumer.displayImage(detections.get(0).getData(), detections.get(0).getAxesOrderString(), detections.get(0).getName());
         } finally {
             SwingUtilities.invokeLater(() -> StarDistPluginUI.this.inferencePanel.getLogPanel().stopRunTimer());
@@ -408,7 +409,7 @@ public class StarDistPluginUI extends StardistGUI implements ActionListener {
                         } else if (progress.getPhase() == InferenceProgress.Phase.TASK_RETRY) {
                             logConsumer.accept(progress.getDetail());
                         }
-                    });
+                    }, selectedInferenceDevice());
                     detectionsByImage.put(imageFile.getAbsolutePath(), detections);
                     if (!emittedPatchProgress[0]) {
                         logConsumer.accept(imageProgressBar(imageIndex, totalImages));
@@ -431,6 +432,14 @@ public class StarDistPluginUI extends StardistGUI implements ActionListener {
         logConsumer.accept("Saved predictions: " + outputCsv.getAbsolutePath());
         logConsumer.accept("Saved GeoJSON predictions for " + geoJsonFiles.size() + " image(s).");
         */
+    }
+
+    private String selectedInferenceDevice() {
+        if (!isAccelerationEnabled()) {
+            return "cpu";
+        }
+        String label = getAccelerationCheckBox().getText();
+        return label != null && label.toLowerCase().contains("mps") ? "mps" : "cuda";
     }
 
     private static List<File> systemInferenceImages(File source) {
