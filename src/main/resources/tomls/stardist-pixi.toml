@@ -12,6 +12,7 @@ appose = "==0.11.0"
 numpy = "<2"
 scipy = "*"
 pip = "*"
+setuptools = "*"
 
 [pypi-dependencies]
 stardist = "==0.9.1"
