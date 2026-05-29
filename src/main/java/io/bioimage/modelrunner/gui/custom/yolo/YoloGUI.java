@@ -27,6 +27,7 @@ import java.util.Map;
 
 import javax.swing.BorderFactory;
 import javax.swing.JFrame;
+import javax.swing.JCheckBox;
 import javax.swing.JPanel;
 import javax.swing.JTabbedPane;
 import javax.swing.SwingUtilities;
@@ -53,6 +54,7 @@ public class YoloGUI extends JPanel {
     protected final YoloTitlePanel titlePanel;
     protected final YoloInferencePanel inferencePanel = new YoloInferencePanel();
     protected final BaseTrainPanel trainPanel = new YoloTrainPanel();
+    protected final YoloAccelerationCheckBox accelerationCheckBox = new YoloAccelerationCheckBox();
 
     protected YoloGUI(GuiAdapter adapter) {
         setLayout(null);
@@ -68,6 +70,8 @@ public class YoloGUI extends JPanel {
         tabs.addChangeListener(e -> tabs.repaint());
         add(titlePanel);
         add(tabs);
+        add(accelerationCheckBox);
+        setComponentZOrder(accelerationCheckBox, 0);
     }
 
     @Override
@@ -77,6 +81,12 @@ public class YoloGUI extends JPanel {
         int tabsY = TAB_PAD + titleH + TITLE_GAP;
         tabs.setBounds(TAB_PAD, tabsY, Math.max(0, getWidth() - TAB_PAD * 2), Math.max(0, getHeight() - tabsY - TAB_PAD));
         YoloUiUtils.applyResponsiveFont(tabs, tabs.getBounds().height > 0 ? tabs.getBounds().height / 26 : YoloUiUtils.MIN_FONT_SIZE);
+        layoutAccelerationCheckBox(tabsY);
+    }
+
+    @Override
+    public boolean isOptimizedDrawingEnabled() {
+        return false;
     }
 
     public JTabbedPane getTabs() {
@@ -89,6 +99,28 @@ public class YoloGUI extends JPanel {
 
     public BaseTrainPanel getTrainPanel() {
         return trainPanel;
+    }
+
+    public JCheckBox getAccelerationCheckBox() {
+        return accelerationCheckBox;
+    }
+
+    public boolean isAccelerationEnabled() {
+        return accelerationCheckBox.isSelected();
+    }
+
+    private void layoutAccelerationCheckBox(int tabsY) {
+        int tabHeaderH = Math.max(YoloUiUtils.controlHeightForFontSize(tabs.getFont().getSize()) + 4,
+                tabs.getFont().getSize() + 12);
+        int h = Math.max(18, tabHeaderH - 6);
+        int preferredW = accelerationCheckBox.getPreferredSize().width + 12;
+        int maxW = Math.max(0, tabs.getWidth() / 2);
+        int w = Math.min(Math.max(116, preferredW), maxW);
+        int x = TAB_PAD + tabs.getWidth() - w - 8;
+        int y = tabsY + Math.max(2, (tabHeaderH - h) / 2);
+        accelerationCheckBox.setBounds(Math.max(TAB_PAD, x), y, w, h);
+        YoloUiUtils.applyResponsiveText(accelerationCheckBox, w, h);
+        accelerationCheckBox.repaint();
     }
 
     private static class FlatTabbedPaneUI extends BasicTabbedPaneUI {
