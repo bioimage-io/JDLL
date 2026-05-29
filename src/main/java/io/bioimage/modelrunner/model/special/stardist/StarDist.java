@@ -672,8 +672,8 @@ public final class StarDist extends DLModelPytorchProtected {
 					: "win-x86-64-no-cuda";
 		}
 		if (PlatformDetection.isMacOS()) {
-			if ((PlatformDetection.ARCH_ARM64.equals(arch) || PlatformDetection.ARCH_AARCH64.equals(arch))
-					&& !PlatformDetection.isUsingRosseta()) {
+			if (PlatformDetection.ARCH_ARM64.equals(arch) || PlatformDetection.ARCH_AARCH64.equals(arch)
+					|| PlatformDetection.isUsingRosseta()) {
 				return "macos-arm64";
 			}
 			return "macos-x86-64";

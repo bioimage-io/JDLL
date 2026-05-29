@@ -49,6 +49,16 @@ tensorflow = "==2.10.1"
 [feature.linux-x86-64-cuda.activation.env]
 LD_LIBRARY_PATH = "$CONDA_PREFIX/lib:${LD_LIBRARY_PATH:-}"
 
+[feature.linux-x86-64-cuda.tasks.python]
+cmd = '''
+sh -lc 'LD_LIBRARY_PATH="$CONDA_PREFIX/lib:${LD_LIBRARY_PATH:-}" python'
+'''
+
+[feature.linux-x86-64-cuda.tasks.check-gpu]
+cmd = '''
+sh -lc 'LD_LIBRARY_PATH="$CONDA_PREFIX/lib:${LD_LIBRARY_PATH:-}" python -c "import platform, tensorflow as tf; print(\"TensorFlow:\", tf.__version__); print(\"GPUs:\", tf.config.list_physical_devices(\"GPU\")); print(\"Platform:\", platform.platform())"'
+'''
+
 # -----------------------------------------------------------------------------
 # Linux arm64/aarch64: CPU only for now.
 # -----------------------------------------------------------------------------
@@ -79,6 +89,22 @@ tensorflow = "==2.10.1"
 
 [feature.win-x86-64-cuda.activation.env]
 PATH = "%%CONDA_PREFIX%%\\Library\\bin;%%PATH%%"
+
+[feature.win-x86-64-cuda.tasks.python]
+cmd = '''
+powershell -NoProfile -Command "
+$env:PATH = \"$env:CONDA_PREFIX\\Library\\bin;$env:PATH\";
+python
+"
+'''
+
+[feature.win-x86-64-cuda.tasks.check-gpu]
+cmd = '''
+powershell -NoProfile -Command "
+$env:PATH = \"$env:CONDA_PREFIX\\Library\\bin;$env:PATH\";
+python -c \"import platform, tensorflow as tf; print('TensorFlow:', tf.__version__); print('GPUs:', tf.config.list_physical_devices('GPU')); print('Platform:', platform.platform())\"
+"
+'''
 
 # Windows CPU: scrub CUDA from PATH for tasks.
 [feature.win-x86-64-no-cuda.tasks.python]
