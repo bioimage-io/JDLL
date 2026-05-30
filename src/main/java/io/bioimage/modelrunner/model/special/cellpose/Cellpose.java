@@ -243,6 +243,39 @@ public class Cellpose extends BioimageIoModelPytorchProtected {
 		return outputTensors;
 	}
 
+	@Override
+	public <T extends RealType<T> & NativeType<T>, R extends RealType<R> & NativeType<R>>
+	List<Tensor<R>> inference(final Tensor<T>... inputs) throws RunModelException {
+		List<Tensor<T>> inputTensors = prepareInputTensors(new ArrayList<Tensor<T>>(Arrays.asList(inputs)));
+		return super.inference(inputTensors.toArray(Arrays.copyOf(inputs, inputTensors.size())));
+	}
+
+	@Override
+	public <T extends RealType<T> & NativeType<T>, R extends RealType<R> & NativeType<R>>
+	List<List<Tensor<R>>> inferenceBatch(final List<Tensor<T>>... batchedInputs) throws RunModelException {
+		if (isBMZ)
+			return super.inferenceBatch(batchedInputs);
+		if (batchedInputs.length != 1)
+			throw new IllegalArgumentException("Cellpose only supports one input tensor.");
+		List<Tensor<T>> preparedBatch = new ArrayList<Tensor<T>>();
+		for (Tensor<T> input : batchedInputs[0]) {
+			List<Tensor<T>> inputTensors = new ArrayList<Tensor<T>>();
+			inputTensors.add(input);
+			preparedBatch.add(prepareInputTensors(inputTensors).get(0));
+		}
+		return super.inferenceBatch(preparedBatch);
+	}
+
+	private <T extends RealType<T> & NativeType<T>>
+	List<Tensor<T>> prepareInputTensors(List<Tensor<T>> inputTensors) {
+		if (isBMZ)
+			return inputTensors;
+		inputTensors = checkInputTensors(inputTensors);
+		if (descriptor == null)
+			createCustomDescriptor(inputTensors);
+		return inputTensors;
+	}
+
 	private <R extends RealType<R> & NativeType<R>>
 	void createCustomDescriptor(List<Tensor<R>> inputTensors) {
 		int nChannels = 1;
