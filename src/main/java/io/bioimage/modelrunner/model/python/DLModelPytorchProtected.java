@@ -543,13 +543,20 @@ public class DLModelPytorchProtected extends BaseModel {
         String addPath = "";
         String importStr = "";
         String code = ""
-                + "device = 'cpu'" + System.lineSeparator()
                 + "if 'torch' not in globals().keys():" + System.lineSeparator()
                 + "  import torch" + System.lineSeparator()
                 + "  task.export(torch=torch)" + System.lineSeparator()
-                + (!IS_ARM ? ""
-                : "  if torch.backends.mps.is_built() and torch.backends.mps.is_available():" + System.lineSeparator()
-                + "    device = 'mps'" + System.lineSeparator());
+                + "_jdll_requested_device = '" + device + "'" + System.lineSeparator()
+                + "device = torch.device('cpu')" + System.lineSeparator()
+                + "try:" + System.lineSeparator()
+                + "  if _jdll_requested_device == 'cuda' and torch.cuda.is_available():" + System.lineSeparator()
+                + "    device = torch.device('cuda')" + System.lineSeparator()
+                + "  elif _jdll_requested_device == 'mps':" + System.lineSeparator()
+                + "    if hasattr(torch.backends, 'mps') and torch.backends.mps.is_built() and torch.backends.mps.is_available():" + System.lineSeparator()
+                + "      device = torch.device('mps')" + System.lineSeparator()
+                + "except Exception:" + System.lineSeparator()
+                + "  device = torch.device('cpu')" + System.lineSeparator()
+                + "task.export(device=device)" + System.lineSeparator();
 
         if (modelFile != null) {
             String moduleName = new File(modelFile).getName();
@@ -578,7 +585,8 @@ public class DLModelPytorchProtected extends BaseModel {
         code += MODEL_VAR_NAME + "=" + callable + "(" + codeForKwargs() + ")" + System.lineSeparator();
         code += "if any(isinstance(m, torch.nn.ConvTranspose3d) for m in "
                 + MODEL_VAR_NAME + ".modules()):" + System.lineSeparator();
-        code += "  device = 'cpu'" + System.lineSeparator();
+        code += "  device = torch.device('cpu')" + System.lineSeparator();
+        code += "  task.export(device=device)" + System.lineSeparator();
         code += MODEL_VAR_NAME + ".to(device)" + System.lineSeparator();
         code += "try:" + System.lineSeparator()
                 + "  " + MODEL_VAR_NAME + ".load_state_dict("
@@ -586,7 +594,7 @@ public class DLModelPytorchProtected extends BaseModel {
                 + System.lineSeparator()
                 + "except:" + System.lineSeparator()
                 + "  " + MODEL_VAR_NAME + ".load_state_dict("
-                + "torch.load(r'" + this.weightsPath + "', map_location=torch.device(device)))"
+                + "torch.load(r'" + this.weightsPath + "', map_location=device))"
                 + System.lineSeparator();
         code += "task.export(" + MODEL_VAR_NAME + "=" + MODEL_VAR_NAME + ")" + System.lineSeparator();
         return code;

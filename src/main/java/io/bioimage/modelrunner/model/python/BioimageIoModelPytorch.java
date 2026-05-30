@@ -95,6 +95,10 @@ public class BioimageIoModelPytorch extends BioimageIoModelPytorchProtected {
 		return new BioimageIoModelPytorch(modelFile, callable, importModule, weightsFile, kwargs, descriptor, device);
 	}
 
+	public static BioimageIoModelPytorch create(ModelDescriptor descriptor) throws BuildException {
+		return create(descriptor, "cpu");
+	}
+
 
 	/**
 	 * Create a Bioaimge.io Pytorch model that can be run from JDLL.
@@ -107,6 +111,10 @@ public class BioimageIoModelPytorch extends BioimageIoModelPytorchProtected {
 	 */
 	public static BioimageIoModelPytorch create(String modelPath, String device) throws IOException, BuildException {
 		return create(ModelDescriptorFactory.readFromLocalFile(modelPath + File.separator + Constants.RDF_FNAME), device);
+	}
+
+	public static BioimageIoModelPytorch create(String modelPath) throws IOException, BuildException {
+		return create(modelPath, "cpu");
 	}
 	
 	/**

@@ -7,9 +7,9 @@
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *      http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -36,34 +36,37 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 
+import io.bioimage.modelrunner.model.python.DLModelPytorchProtected;
+import io.bioimage.modelrunner.system.PlatformDetection;
+
 public class CellposeGUI extends JPanel {
 
     private static final long serialVersionUID = 5381352117710530216L;
-    
+
     protected JLabel modelLabel, customLabel, cytoplasmLabel, nucleiLabel, diameterLabel;
 	protected JComboBox<String> modelComboBox;
 	protected PlaceholderTextField customModelPathField;
     protected JButton browseButton;
-    protected IntegerTextField diameterField;
-    protected JComboBox<String> cytoCbox, nucleiCbox;
-    protected JCheckBox check;
-    protected FooterPanel footer;
-    
+	    protected IntegerTextField diameterField;
+	    protected JComboBox<String> cytoCbox, nucleiCbox;
+	    protected JCheckBox check, accelerationCheckBox;
+	    protected FooterPanel footer;
+
     protected final String CUSTOM_STR = "your custom model";
-    protected static final List<String> VAR_NAMES = Arrays.asList(new String[] {
-    		"Select a model:", "Custom Model Path:", "Cytoplasm Color:", "Nuclei Color:", "Diameter:", "Display all outputs"
-    });
+	    protected static final List<String> VAR_NAMES = Arrays.asList(new String[] {
+			"Select a model:", "Custom Model Path:", "Cytoplasm Color:", "Nuclei Color:", "Diameter:", "Hardware acceleration", "Display all outputs"
+	    });
 
     public static final String[] RGB_LIST = new String[] {"red", "blue", "green"};
     public static final String[] GRAYSCALE_LIST = new String[] {"gray"};
     public static final String[] ALL_LIST = new String[] {"gray", "red", "blue", "green"};
     public static final HashMap<String, Integer> CHANNEL_MAP;
     static {
-    	CHANNEL_MAP = new HashMap<String, Integer>();
-    	CHANNEL_MAP.put("red", 1);
-    	CHANNEL_MAP.put("blue", 2);
-    	CHANNEL_MAP.put("green", 3);
-    	CHANNEL_MAP.put("gray", 0);
+	CHANNEL_MAP = new HashMap<String, Integer>();
+	CHANNEL_MAP.put("red", 1);
+	CHANNEL_MAP.put("blue", 2);
+	CHANNEL_MAP.put("green", 3);
+	CHANNEL_MAP.put("gray", 0);
     }
     private static final Dimension MIN_D = new Dimension(20, 40);
 
@@ -91,10 +94,13 @@ public class CellposeGUI extends JPanel {
         nucleiLabel = new JLabel(VAR_NAMES.get(3));
         cytoCbox = new JComboBox<String>(RGB_LIST);
         nucleiCbox = new JComboBox<String>(RGB_LIST);
-        diameterLabel = new JLabel(VAR_NAMES.get(4));
-        diameterField = new IntegerTextField("optional");
-        check = new JCheckBox(VAR_NAMES.get(5));
-        check.setSelected(false);
+	        diameterLabel = new JLabel(VAR_NAMES.get(4));
+	        diameterField = new IntegerTextField("optional");
+	        accelerationCheckBox = new JCheckBox(accelerationName() + " acceleration");
+	        accelerationCheckBox.setSelected(false);
+	        configureAccelerationAvailability();
+	        check = new JCheckBox(VAR_NAMES.get(6));
+	        check.setSelected(false);
 
         // --- Buttons Panel ---
         footer = new FooterPanel();
@@ -108,13 +114,14 @@ public class CellposeGUI extends JPanel {
         add(cytoplasmLabel);
         add(cytoCbox);
         add(nucleiLabel);
-        add(nucleiCbox);
-        add(diameterLabel);
-        add(diameterField);
-        add(check);
-        
+	        add(nucleiCbox);
+	        add(diameterLabel);
+	        add(diameterField);
+	        add(accelerationCheckBox);
+	        add(check);
+
         this.setMinimumSize(MIN_D);
-        
+
         organiseComponents();
 
         // Enable when custom selected
@@ -141,7 +148,7 @@ public class CellposeGUI extends JPanel {
              */
             @Override
             public void popupMenuWillBecomeInvisible(PopupMenuEvent e) {
-            	boolean enabled = modelComboBox.getSelectedItem().equals(CUSTOM_STR);
+	boolean enabled = modelComboBox.getSelectedItem().equals(CUSTOM_STR);
                 customLabel.setEnabled(enabled);
                 customModelPathField.setEnabled(enabled);
                 browseButton.setEnabled(enabled);
@@ -150,9 +157,9 @@ public class CellposeGUI extends JPanel {
         });
 
     }
-    
+
     private void organiseComponents() {
-    	addComponentListener(new ComponentAdapter() {
+	addComponentListener(new ComponentAdapter() {
             /**
              * Executes component resized.
              *
@@ -166,7 +173,7 @@ public class CellposeGUI extends JPanel {
                 int nParams = VAR_NAMES.size();
                 int nRows = nParams + 1;
                 int rowH = (rawH - (inset * nRows)) / nRows;
-                
+
                 int y = inset;
                 int modelLabelW = (rawW - inset * 3) / 5;
                 modelLabel.setBounds(inset, y, modelLabelW, rowH);
@@ -185,16 +192,18 @@ public class CellposeGUI extends JPanel {
                 nucleiLabel.setBounds(inset, y, modelLabelW, rowH);
                 nucleiCbox.setBounds(inset * 2 + modelLabelW, y, cboxW, rowH);
                 y += (inset + rowH);
-                diameterLabel.setBounds(inset, y, modelLabelW, rowH);
-                diameterField.setBounds(inset * 2 + modelLabelW, y, cboxW, rowH);
-                y += (inset + rowH);
-                check.setBounds(inset, y, rawW - 2 * inset, rowH);
-                y += (inset + rowH);
-                footer.setBounds(inset, y, rawW - 2 * inset, rowH);
+	                diameterLabel.setBounds(inset, y, modelLabelW, rowH);
+	                diameterField.setBounds(inset * 2 + modelLabelW, y, cboxW, rowH);
+	                y += (inset + rowH);
+	                accelerationCheckBox.setBounds(inset, y, rawW - 2 * inset, rowH);
+	                y += (inset + rowH);
+	                check.setBounds(inset, y, rawW - 2 * inset, rowH);
+	                y += (inset + rowH);
+	                footer.setBounds(inset, y, rawW - 2 * inset, rowH);
             }
         });
     }
-    
+
     // For demonstration purposes: a main method to show the UI in a JFrame.
     /**
      * Executes main.
@@ -216,5 +225,58 @@ public class CellposeGUI extends JPanel {
                 frame.setSize(60, 100);
             }
         });
-    }
-}
+	    }
+
+	    public JCheckBox getAccelerationCheckBox() {
+		return accelerationCheckBox;
+	    }
+
+	    public boolean isAccelerationEnabled() {
+		return accelerationCheckBox.isVisible()
+				&& accelerationCheckBox.isEnabled()
+				&& accelerationCheckBox.isSelected();
+	    }
+
+	    private static String accelerationName() {
+		return isAppleSilicon() ? "MPS" : "CUDA";
+	    }
+
+	    private void configureAccelerationAvailability() {
+		accelerationCheckBox.setEnabled(false);
+		if (isAppleSilicon()) {
+			accelerationCheckBox.setEnabled(true);
+			accelerationCheckBox.setVisible(true);
+			return;
+		}
+		if (PlatformDetection.isMacOS()) {
+			accelerationCheckBox.setVisible(false);
+			return;
+		}
+		accelerationCheckBox.setVisible(true);
+		Thread cudaCheck = new Thread(() -> {
+			boolean cudaAvailable = false;
+			try {
+				cudaAvailable = DLModelPytorchProtected.resolvePytorchEnv()
+						.getSelectedEnvironment()
+						.toLowerCase()
+						.contains("cuda");
+			} catch (Exception e) {
+				cudaAvailable = false;
+			}
+			final boolean enabled = cudaAvailable;
+			SwingUtilities.invokeLater(() -> {
+				accelerationCheckBox.setEnabled(enabled);
+				accelerationCheckBox.setSelected(false);
+				accelerationCheckBox.repaint();
+			});
+		}, "jdll-cellpose-cuda-compatibility-check");
+		cudaCheck.setDaemon(true);
+		cudaCheck.start();
+	    }
+
+	    private static boolean isAppleSilicon() {
+		return PlatformDetection.isMacOS()
+				&& (PlatformDetection.ARCH_ARM64.equals(PlatformDetection.getArch())
+				|| PlatformDetection.isUsingRosseta());
+	    }
+	}
