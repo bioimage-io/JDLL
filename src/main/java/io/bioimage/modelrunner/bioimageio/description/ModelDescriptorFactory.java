@@ -36,7 +36,7 @@ import io.bioimage.modelrunner.bioimageio.description.cellpose.ModelDescriptorCe
 import io.bioimage.modelrunner.bioimageio.description.stardist.ModelDescriptorStardistV04;
 import io.bioimage.modelrunner.bioimageio.description.stardist.ModelDescriptorStardistV05;
 import io.bioimage.modelrunner.model.special.cellpose.Cellpose;
-import io.bioimage.modelrunner.model.special.stardist.StardistAbstract;
+import io.bioimage.modelrunner.model.special.stardist.StarDist;
 import io.bioimage.modelrunner.utils.Constants;
 import io.bioimage.modelrunner.utils.YAMLUtils;
 
@@ -112,7 +112,7 @@ public class ModelDescriptorFactory {
 
     private static ModelDescriptor fromMap(Map<String,Object> yamlElements, boolean specialModel)
     {
-    	if (isStardist(yamlElements) && (StardistAbstract.isInstalled() || specialModel)) {
+    	if (isStardist(yamlElements) && (StarDist.isInstalled() || specialModel)) {
     		return fromStardistMap(yamlElements);
     	} else if (isCellpose(yamlElements) && (Cellpose.isInstalled() || specialModel)) {
     		return fromCellposeMap(yamlElements);
