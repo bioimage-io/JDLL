@@ -36,7 +36,7 @@ import io.bioimage.modelrunner.model.special.yolo.YoloValidationPreview;
 
 public class YoloTrainingService {
 
-    private static final long CANCEL_FALLBACK_TIMEOUT_MS = 1500L;
+    private static final long CANCEL_FALLBACK_TIMEOUT_MS = 250L;
 
     private final ModelInstaller installer;
     private File cancelSignalFile;
@@ -162,8 +162,10 @@ public class YoloTrainingService {
                 return;
             }
             synchronized (YoloTrainingService.this) {
-                if (runningPython == python && python.isAlive()) {
-                    runningPython = null;
+                if (python.isAlive()) {
+                    if (runningPython == python) {
+                        runningPython = null;
+                    }
                     python.kill();
                 }
             }

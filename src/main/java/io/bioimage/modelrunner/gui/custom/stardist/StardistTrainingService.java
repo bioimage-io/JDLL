@@ -38,7 +38,7 @@ import io.bioimage.modelrunner.model.special.stardist.StardistValidationPreview;
 
 public class StardistTrainingService {
 
-    private static final long CANCEL_FALLBACK_TIMEOUT_MS = 1500L;
+    private static final long CANCEL_FALLBACK_TIMEOUT_MS = 250L;
 
     private final ModelInstaller installer;
     private File cancelSignalFile;
@@ -177,8 +177,10 @@ public class StardistTrainingService {
                 return;
             }
             synchronized (StardistTrainingService.this) {
-                if (runningPython == python && python.isAlive()) {
-                    runningPython = null;
+                if (python.isAlive()) {
+                    if (runningPython == python) {
+                        runningPython = null;
+                    }
                     python.kill();
                 }
             }

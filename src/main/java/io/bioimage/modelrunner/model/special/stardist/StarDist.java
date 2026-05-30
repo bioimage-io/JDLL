@@ -1148,7 +1148,7 @@ public final class StarDist extends DLModelPytorchProtected {
 				+ "    model.keras_model.save_weights(str(output_dir / str(config.get('train_checkpoint_last', 'weights_last.h5'))))" + nl
 				+ "  except Exception:" + nl
 				+ "    pass" + nl
-				+ "task.outputs(result=str(output_dir))" + nl;
+				+ "task.outputs['result'] = str(output_dir)" + nl;
 	}
 
 	private static void handleTrainingEvent(TaskEvent event,

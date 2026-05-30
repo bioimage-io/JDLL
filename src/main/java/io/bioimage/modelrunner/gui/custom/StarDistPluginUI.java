@@ -83,12 +83,13 @@ public class StarDistPluginUI extends StardistGUI implements ActionListener {
     private static final String INVALID_IMAGE_MESSAGE = "Please provide a valid image file";
     private static final String EMPTY_FOLDER_MESSAGE = "Folder does not contain valid images";
     private static final Color PREVIEW_ERROR_COLOR = new Color(210, 40, 40);
+    private static final String APPOSE_STREAM_CLOSED = "java.io.IOException: Stream closed";
 
     private final ConsumerInterface consumer;
     private final StardistInstaller installer = new StardistInstaller();
     private final StardistInferenceService inferenceService = new StardistInferenceService(installer);
     private final StardistTrainingService trainingService = new StardistTrainingService(installer);
-    private boolean cancelled = false;
+    private volatile boolean cancelled = false;
     private Timer trainingTimer;
     private long trainingStartMillis;
     private long lastProgressMillis;
@@ -595,14 +596,26 @@ public class StarDistPluginUI extends StardistGUI implements ActionListener {
         workerThread = new Thread(() -> {
             try {
                 StardistTrainingConfig config = readTrainingConfig();
-                Consumer<String> logConsumer = str -> SwingUtilities.invokeLater(() -> {
-                    System.err.println(str);
-                });
+                Consumer<String> logConsumer = str -> {
+                    if (trainingRunId != trainingUiRunId) {
+                        return;
+                    }
+                    if (cancelled && isExpectedApposeStreamClosed(str)) {
+                        return;
+                    }
+                    SwingUtilities.invokeLater(() -> System.err.println(str));
+                };
                 trainingService.train(config,
                         progress -> SwingUtilities.invokeLater(() -> {
+                            if (trainingRunId != trainingUiRunId) {
+                                return;
+                            }
                             handleTrainingProgress(progress);
                         }),
                         preview -> SwingUtilities.invokeLater(() -> {
+                            if (trainingRunId != trainingUiRunId) {
+                                return;
+                            }
                             if (preview.getPreviewJsonPath() != null) {
                                 trainPanel.getValidationPreviewPanel().loadPreview(preview.getPreviewJsonPath());
                                 logConsumer.accept("Validation preview epoch " + preview.getEpoch()
@@ -610,9 +623,11 @@ public class StarDistPluginUI extends StardistGUI implements ActionListener {
                             }
                         }),
                         logConsumer);
-                refreshStardistModels();
+                if (trainingRunId == trainingUiRunId) {
+                    refreshStardistModels();
+                }
             } catch (Exception | Error e) {
-                if (!cancelled) {
+                if (trainingRunId == trainingUiRunId && !cancelled) {
                     e.printStackTrace();
                 }
             } finally {
@@ -672,6 +687,13 @@ public class StarDistPluginUI extends StardistGUI implements ActionListener {
         long runId = trainingUiRunId;
         finishTrainingUiState(runId);
         trainingUiRunId++;
+    }
+
+    private static boolean isExpectedApposeStreamClosed(String str) {
+        return str != null
+                && str.contains(APPOSE_STREAM_CLOSED)
+                && str.contains("org.apposed.appose.Service.")
+                && (str.contains("stdoutLoop") || str.contains("stderrLoop"));
     }
 
     private void handleTrainingProgress(StardistTrainingProgress progress) {
