@@ -160,20 +160,20 @@ public class DLModelPytorchProtected extends BaseModel {
     protected static final String LOAD_MODEL_CODE_ABSTRACT = ""
             + "if 'sys' not in globals().keys():" + System.lineSeparator()
             + "  import sys" + System.lineSeparator()
-            + "  globals()['sys'] = sys" + System.lineSeparator()
+            + "  task.export(sys=sys)" + System.lineSeparator()
             + "if 'np' not in globals().keys():" + System.lineSeparator()
             + "  import numpy as np" + System.lineSeparator()
-            + "  globals()['np'] = np" + System.lineSeparator()
+            + "  task.export(np=np)" + System.lineSeparator()
             + "if 'os' not in globals().keys():" + System.lineSeparator()
             + "  import os" + System.lineSeparator()
-            + "  globals()['os'] = os" + System.lineSeparator()
+            + "  task.export(os=os)" + System.lineSeparator()
             + "if 'shared_memory' not in globals().keys():" + System.lineSeparator()
             + "  from multiprocessing import shared_memory" + System.lineSeparator()
-            + "  globals()['shared_memory'] = shared_memory" + System.lineSeparator()
+            + "  task.export(shared_memory=shared_memory)" + System.lineSeparator()
             + "%s" + System.lineSeparator()
             + "%s" + System.lineSeparator()
             + "if '%s' not in globals().keys():" + System.lineSeparator()
-            + "  globals()['%s'] = %s" + System.lineSeparator();
+            + "  task.export(%s=%s)" + System.lineSeparator();
 
     protected static final String OUTPUT_LIST_KEY = "out_list" + UUID.randomUUID().toString().replace("-", "_");
 
@@ -202,9 +202,7 @@ public class DLModelPytorchProtected extends BaseModel {
             + "    elif str(type(outs_i)) == \"<class 'torch.Tensor'>\":" + System.lineSeparator()
             + "      if 'torch' not in globals().keys():" + System.lineSeparator()
             + "        import torch" + System.lineSeparator()
-            + "        globals()['torch'] = torch" + System.lineSeparator()
-            + "      else:" + System.lineSeparator()
-            + "        torch = globals()['torch']" + System.lineSeparator()
+            + "        task.export(torch=torch)" + System.lineSeparator()
             + "      shm = shared_memory.SharedMemory(create=True, size=outs_i.numel() * outs_i.element_size())" + System.lineSeparator()
             + "      np_arr = np.ndarray(outs_i.shape, dtype=str(outs_i.dtype).split('.')[-1], buffer=shm.buf)" + System.lineSeparator()
             + "      tensor_np_view = torch.from_numpy(np_arr)" + System.lineSeparator()
@@ -547,7 +545,7 @@ public class DLModelPytorchProtected extends BaseModel {
                 + "device = 'cpu'" + System.lineSeparator()
                 + "if 'torch' not in globals().keys():" + System.lineSeparator()
                 + "  import torch" + System.lineSeparator()
-                + "  globals()['torch'] = torch" + System.lineSeparator()
+                + "  task.export(torch=torch)" + System.lineSeparator()
                 + (!IS_ARM ? ""
                 : "  if torch.backends.mps.is_built() and torch.backends.mps.is_available():" + System.lineSeparator()
                 + "    device = 'mps'" + System.lineSeparator());
@@ -580,7 +578,6 @@ public class DLModelPytorchProtected extends BaseModel {
         code += "if any(isinstance(m, torch.nn.ConvTranspose3d) for m in "
                 + MODEL_VAR_NAME + ".modules()):" + System.lineSeparator();
         code += "  device = 'cpu'" + System.lineSeparator();
-        code += "globals()['device'] = device" + System.lineSeparator();
         code += MODEL_VAR_NAME + ".to(device)" + System.lineSeparator();
         code += "try:" + System.lineSeparator()
                 + "  " + MODEL_VAR_NAME + ".load_state_dict("
@@ -590,7 +587,7 @@ public class DLModelPytorchProtected extends BaseModel {
                 + "  " + MODEL_VAR_NAME + ".load_state_dict("
                 + "torch.load(r'" + this.weightsPath + "', map_location=torch.device(device)))"
                 + System.lineSeparator();
-        code += "globals()['" + MODEL_VAR_NAME + "'] = " + MODEL_VAR_NAME + System.lineSeparator();
+        code += "task.export(" + MODEL_VAR_NAME + "=" + MODEL_VAR_NAME + ")" + System.lineSeparator();
         return code;
     }
 
