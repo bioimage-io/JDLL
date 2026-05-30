@@ -45,6 +45,7 @@ public class YoloInferenceService {
 
     private final ModelInstaller installer;
     private String loadedModelPath;
+    private String loadedDevice;
     private Yolo model;
     private Rectangle size = null;
 
@@ -64,7 +65,15 @@ public class YoloInferenceService {
             boolean usePatchProgressBar)
             throws RunModelException, LoadModelException, BuildException, IOException,
             ExecutionException, InterruptedException {
-        ensureLoaded(modelPath, logConsumer, usePatchProgressBar);
+        return run(modelPath, rai, logConsumer, usePatchProgressBar, "cpu");
+    }
+
+    public <T extends RealType<T> & NativeType<T>>
+    List<Detection> run(String modelPath, RandomAccessibleInterval<T> rai, Consumer<String> logConsumer,
+            boolean usePatchProgressBar, String device)
+            throws RunModelException, LoadModelException, BuildException, IOException,
+            ExecutionException, InterruptedException {
+        ensureLoaded(modelPath, normalizeDevice(device), logConsumer, usePatchProgressBar);
         configureProgressLogging(logConsumer, usePatchProgressBar);
         model.setObjectSize(size);
         return runLoadedModel(rai);
@@ -75,7 +84,15 @@ public class YoloInferenceService {
             Consumer<InferenceProgress> progressConsumer)
             throws RunModelException, LoadModelException, BuildException, IOException,
             ExecutionException, InterruptedException {
-        ensureLoaded(modelPath, null, progressConsumer);
+        return runWithProgress(modelPath, rai, progressConsumer, "cpu");
+    }
+
+    public <T extends RealType<T> & NativeType<T>>
+    List<Detection> runWithProgress(String modelPath, RandomAccessibleInterval<T> rai,
+            Consumer<InferenceProgress> progressConsumer, String device)
+            throws RunModelException, LoadModelException, BuildException, IOException,
+            ExecutionException, InterruptedException {
+        ensureLoaded(modelPath, normalizeDevice(device), null, progressConsumer);
         configureInferenceProgressLogging(progressConsumer);
         model.setObjectSize(size);
         return runLoadedModel(rai);
@@ -87,27 +104,37 @@ public class YoloInferenceService {
         }
         model = null;
         loadedModelPath = null;
+        loadedDevice = null;
     }
 
-    private void ensureLoaded(String modelPath, Consumer<String> logConsumer, boolean usePatchProgressBar)
+    private void ensureLoaded(String modelPath, String device, Consumer<String> logConsumer, boolean usePatchProgressBar)
             throws BuildException, IOException, LoadModelException, ExecutionException, InterruptedException {
-        ensureLoaded(modelPath, logConsumer,
+        ensureLoaded(modelPath, device, logConsumer,
                 progress -> appendProgressLog(progress, logConsumer, usePatchProgressBar));
     }
 
-    private void ensureLoaded(String modelPath, Consumer<String> logConsumer,
+    private void ensureLoaded(String modelPath, String device, Consumer<String> logConsumer,
             Consumer<InferenceProgress> progressConsumer)
             throws BuildException, IOException, LoadModelException, ExecutionException, InterruptedException {
-        if (loadedModelPath != null && !loadedModelPath.equals(modelPath)) {
+        if (loadedModelPath != null && (!loadedModelPath.equals(modelPath) || !device.equals(loadedDevice))) {
             close();
         }
         if (model == null || !model.isLoaded()) {
             installer.installIfNeeded(modelPath, logConsumer);
-            model = Yolo.init(modelPath);
+            model = Yolo.init(modelPath, device);
             configureInferenceProgressLogging(progressConsumer);
             model.loadModel();
             loadedModelPath = modelPath;
+            loadedDevice = device;
         }
+    }
+
+    private static String normalizeDevice(String device) {
+        if (device == null) {
+            return "cpu";
+        }
+        String normalized = device.trim().toLowerCase();
+        return "cuda".equals(normalized) || "mps".equals(normalized) ? normalized : "cpu";
     }
 
     private void configureProgressLogging(Consumer<String> logConsumer, boolean usePatchProgressBar) {

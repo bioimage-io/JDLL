@@ -50,10 +50,13 @@ import net.imglib2.type.NativeType;
 import net.imglib2.type.numeric.RealType;
 
 import java.awt.Color;
+import java.awt.Window;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.FocusAdapter;
 import java.awt.event.FocusEvent;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
 import java.awt.geom.Rectangle2D;
 import java.awt.image.BufferedImage;
 import java.io.File;
@@ -96,6 +99,9 @@ public class YOLOPluginUI extends YoloGUI implements ActionListener {
     private final Deque<Double> secondsPerStepSamples = new ArrayDeque<Double>();
     private File selectedSystemPath;
     private File selectedSystemImageFile;
+    private volatile boolean inferenceRunning;
+    private volatile boolean trainingRunning;
+    private boolean windowCloseHookInstalled;
     
     private Runnable cancelCallback;
     Thread workerThread;
@@ -131,6 +137,7 @@ public class YOLOPluginUI extends YoloGUI implements ActionListener {
         this.trainPanel.getTrainActionPanel().getCancelButton().addActionListener(this);
         this.trainPanel.getTrainActionPanel().getRunButton().addActionListener(this);
         installInferenceSourceListeners();
+        installTabLifecycleListener();
         consumer.updateGUI();
     }
 
@@ -147,7 +154,22 @@ public class YOLOPluginUI extends YoloGUI implements ActionListener {
      * Executes close.
      */
     public void close() {
+        cancelled = true;
+        trainingService.close();
     	inferenceService.close();
+        if (workerThread != null && workerThread.isAlive()) {
+            workerThread.interrupt();
+        }
+        if (trainingTimer != null) {
+            trainingTimer.stop();
+            trainingTimer = null;
+        }
+    }
+
+    @Override
+    public void addNotify() {
+        super.addNotify();
+        installWindowCloseHook();
     }
 
     private void installInferenceSourceListeners() {
@@ -163,6 +185,41 @@ public class YOLOPluginUI extends YoloGUI implements ActionListener {
         });
         sourcePanel.setSystemPathDropConsumer(file -> updateSystemPathPreview(file));
         sourcePanel.getBrowseButton().addActionListener(e -> browseSystemImagePath());
+    }
+
+    private void installTabLifecycleListener() {
+        tabs.addChangeListener(e -> {
+            if (tabs.getSelectedIndex() == 0) {
+                if (trainingRunning) {
+                    trainingService.requestCancel();
+                }
+                inferenceService.close();
+            } else if (tabs.getSelectedIndex() == 1) {
+                inferenceService.close();
+            }
+        });
+    }
+
+    private void installWindowCloseHook() {
+        if (windowCloseHookInstalled) {
+            return;
+        }
+        Window window = SwingUtilities.getWindowAncestor(this);
+        if (window == null) {
+            return;
+        }
+        window.addWindowListener(new WindowAdapter() {
+            @Override
+            public void windowClosing(WindowEvent e) {
+                close();
+            }
+
+            @Override
+            public void windowClosed(WindowEvent e) {
+                close();
+            }
+        });
+        windowCloseHookInstalled = true;
     }
 
     private void showSystemPathPrompt() {
@@ -296,11 +353,14 @@ public class YOLOPluginUI extends YoloGUI implements ActionListener {
     		cancelled = false;
     		workerThread = new Thread(() -> {
         		try {
+                    inferenceRunning = true;
         			runYOLO();
     			} catch (Exception e1) {
     				if (cancelled)
     					return;
     				e1.printStackTrace();
+    			} finally {
+                    inferenceRunning = false;
     			}
     		});
     		workerThread.start();
@@ -315,10 +375,19 @@ public class YOLOPluginUI extends YoloGUI implements ActionListener {
     
     private void cancel() {
     	cancelled = true;
-    	if (workerThread != null && workerThread.isAlive())
+        if (trainingRunning) {
+            trainingService.requestCancel();
+            if (cancelCallback != null) {
+                cancelCallback.run();
+            }
+            return;
+        }
+    	if (workerThread != null && workerThread.isAlive()) {
     		workerThread.interrupt();
-    	inferenceService.close();
-    	finishTrainingUiState();
+        }
+        if (inferenceRunning) {
+    	    inferenceService.close();
+        }
     	if (cancelCallback != null)
     		cancelCallback.run();
     }
@@ -354,7 +423,7 @@ public class YOLOPluginUI extends YoloGUI implements ActionListener {
         startInferenceLogTimer();
         List<Detection> detections;
         try {
-            detections = inferenceService.run(modelPath, rai, logConsumer);
+            detections = inferenceService.run(modelPath, rai, logConsumer, true, selectedInferenceDevice());
         } finally {
             SwingUtilities.invokeLater(() -> YOLOPluginUI.this.inferencePanel.getLogPanel().stopRunTimer());
         }
@@ -408,7 +477,7 @@ public class YOLOPluginUI extends YoloGUI implements ActionListener {
                         } else if (progress.getPhase() == InferenceProgress.Phase.TASK_RETRY) {
                             logConsumer.accept(progress.getDetail());
                         }
-                    });
+                    }, selectedInferenceDevice());
                     detectionsByImage.put(imageFile.getAbsolutePath(), detections);
                     if (!emittedPatchProgress[0]) {
                         logConsumer.accept(imageProgressBar(imageIndex, totalImages));
@@ -429,6 +498,14 @@ public class YOLOPluginUI extends YoloGUI implements ActionListener {
         consumer.saveDetections(detectionsByImage);
         logConsumer.accept("Saved predictions: " + outputCsv.getAbsolutePath());
         logConsumer.accept("Saved GeoJSON predictions for " + geoJsonFiles.size() + " image(s).");
+    }
+
+    private String selectedInferenceDevice() {
+        if (!isAccelerationEnabled()) {
+            return "cpu";
+        }
+        String label = getAccelerationCheckBox().getText();
+        return label != null && label.toLowerCase().contains("mps") ? "mps" : "cuda";
     }
 
     private static List<File> systemInferenceImages(File source) {
@@ -508,6 +585,7 @@ public class YOLOPluginUI extends YoloGUI implements ActionListener {
         if (!trainPanel.validateTrainingFields()) {
             return;
         }
+        inferenceService.close();
         cancelled = false;
         startTrainingUiState();
         workerThread = new Thread(() -> {
@@ -549,8 +627,8 @@ public class YOLOPluginUI extends YoloGUI implements ActionListener {
         totalTrainingEpochs = 0;
         currentSecondsPerStep = Double.NaN;
         secondsPerStepSamples.clear();
+        trainingRunning = true;
         trainPanel.setTrainingRunning(true);
-        tabs.setEnabledAt(0, false);
         trainPanel.getLossGraphPanel().clearValues();
         trainPanel.getMetricGraphPanel().clearValues();
         trainPanel.getLossGraphPanel().setTrainingStatus(true, 0, 0, 0, 0L, Double.NaN);
@@ -570,6 +648,7 @@ public class YOLOPluginUI extends YoloGUI implements ActionListener {
             trainingTimer = null;
         }
         trainPanel.setTrainingRunning(false);
+        trainingRunning = false;
         tabs.setEnabledAt(0, true);
         long elapsed = Math.max(0L, System.currentTimeMillis() - trainingStartMillis);
         trainPanel.getLossGraphPanel().setTrainingStatus(false, currentTrainingStep, totalTrainingSteps,

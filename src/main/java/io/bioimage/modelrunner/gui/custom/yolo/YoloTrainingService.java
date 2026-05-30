@@ -21,10 +21,12 @@ package io.bioimage.modelrunner.gui.custom.yolo;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
 import java.util.concurrent.ExecutionException;
 import java.util.function.Consumer;
 
 import org.apposed.appose.BuildException;
+import org.apposed.appose.Service;
 import org.apposed.appose.TaskException;
 
 import io.bioimage.modelrunner.gui.custom.interfaces.ModelInstaller;
@@ -35,6 +37,9 @@ import io.bioimage.modelrunner.model.special.yolo.YoloValidationPreview;
 public class YoloTrainingService {
 
     private final ModelInstaller installer;
+    private File cancelSignalFile;
+    private boolean cancelRequested;
+    private Service runningPython;
 
     public YoloTrainingService(ModelInstaller installer) {
         this.installer = installer;
@@ -54,10 +59,35 @@ public class YoloTrainingService {
         if (config.isFineTune() && !installer.isModelInstalled(config.getBaseModelPath())) {
             installer.installModelWeights(config.getBaseModelPath(), logConsumer);
         }
-        Yolo.train(config.getEpochs(), config.getBaseModelPath(), config.getScratchArchitecture(),
-                datasetYaml.getAbsolutePath(),
-                config.getOutputWeightsPath(), config.getImageSize(), config.getPreviewEpochPeriod(),
-                progressConsumer, previewConsumer, logConsumer);
+        File cancelFile = beginCancelSignal();
+        try {
+            Yolo.train(config.getEpochs(), config.getBaseModelPath(), config.getScratchArchitecture(),
+                    datasetYaml.getAbsolutePath(),
+                    config.getOutputWeightsPath(), config.getImageSize(), config.getPreviewEpochPeriod(),
+                    progressConsumer, previewConsumer, logConsumer, cancelFile.getAbsolutePath(), this::setRunningPython);
+        } finally {
+            finishCancelSignal(cancelFile);
+        }
+    }
+
+    public synchronized void requestCancel() {
+        cancelRequested = true;
+        if (cancelSignalFile == null) {
+            return;
+        }
+        try {
+            cancelSignalFile.createNewFile();
+        } catch (IOException e) {
+            // If the signal cannot be written, the running task will finish normally.
+        }
+    }
+
+    public void close() {
+        requestCancel();
+        Service python = runningPython;
+        if (python != null && python.isAlive()) {
+            python.close();
+        }
     }
 
     private static void validate(YoloTrainingConfig config) {
@@ -91,5 +121,33 @@ public class YoloTrainingService {
         if (!config.isFineTune() && !YoloModelRegistry.isKnownScratchArchitecture(config.getScratchArchitecture())) {
             throw new IllegalArgumentException("Please select a valid YOLO architecture for training from scratch.");
         }
+    }
+
+    private synchronized File beginCancelSignal() throws IOException {
+        cancelRequested = false;
+        File signal = File.createTempFile("jdll-yolo-cancel-", ".flag");
+        Files.deleteIfExists(signal.toPath());
+        signal.deleteOnExit();
+        cancelSignalFile = signal;
+        return signal;
+    }
+
+    private synchronized void finishCancelSignal(File signal) {
+        if (cancelSignalFile == signal) {
+            cancelSignalFile = null;
+        }
+        cancelRequested = false;
+        if (signal == null) {
+            return;
+        }
+        try {
+            Files.deleteIfExists(signal.toPath());
+        } catch (IOException e) {
+            // Best-effort cleanup of an out-of-process cancellation signal.
+        }
+    }
+
+    private synchronized void setRunningPython(Service python) {
+        runningPython = python;
     }
 }
