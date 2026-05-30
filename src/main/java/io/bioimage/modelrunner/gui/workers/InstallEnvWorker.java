@@ -30,8 +30,7 @@ import org.apposed.appose.BuildException;
 import io.bioimage.modelrunner.bioimageio.description.ModelDescriptor;
 import io.bioimage.modelrunner.model.python.DLModelPytorch;
 import io.bioimage.modelrunner.model.python.envs.PixiEnvironmentManager;
-import io.bioimage.modelrunner.model.special.cellpose.Cellpose;
-import io.bioimage.modelrunner.model.special.stardist.StardistAbstract;
+import io.bioimage.modelrunner.model.special.stardist.StarDist;
 
 public class InstallEnvWorker extends SwingWorker<Boolean, Void> {
 
@@ -105,7 +104,7 @@ public class InstallEnvWorker extends SwingWorker<Boolean, Void> {
     	workerThread = Thread.currentThread();
     	try {
             if (modelFamily.toLowerCase().equals(ModelDescriptor.STARDIST)) {
-                StardistAbstract.installDefaultRequirements(consumer);
+            	PixiEnvironmentManager.installRequirements(StarDist.resolvePytorchEnv(), consumer);
             } else if (modelFamily.toLowerCase().equals(ModelDescriptor.CELLPOSE)) {
             	PixiEnvironmentManager.installRequirements(DLModelPytorch.resolvePytorchEnv(), consumer);
             } else if (modelFamily.toLowerCase().equals(ModelDescriptor.BIOIMAGEIO))

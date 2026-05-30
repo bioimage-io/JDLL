@@ -46,8 +46,7 @@ import io.bioimage.modelrunner.model.python.BioimageIoModelPytorch;
 import io.bioimage.modelrunner.model.python.DLModelPytorch;
 import io.bioimage.modelrunner.model.python.DLModelPytorchProtected;
 import io.bioimage.modelrunner.model.python.envs.PixiEnvironmentManager;
-import io.bioimage.modelrunner.model.special.stardist.Stardist2D;
-import io.bioimage.modelrunner.model.special.stardist.StardistAbstract;
+import io.bioimage.modelrunner.model.special.stardist.StarDist;
 import io.bioimage.modelrunner.tensor.Tensor;
 import io.bioimage.modelrunner.utils.Constants;
 import net.imglib2.RandomAccessibleInterval;
@@ -201,9 +200,9 @@ public abstract class RunnerAdapter implements Closeable {
 	private void initWithEnginesPath(boolean install) throws IOException, LoadEngineException, InterruptedException, RuntimeException, BuildException {
 		List<String> wList = descriptor.getWeights().getAllSuportedWeightNames();
 		if (descriptor.getModelFamily().equals(ModelDescriptor.STARDIST)) {
-			boolean installed = StardistAbstract.isInstalled();
+			boolean installed = StarDist.isInstalled();
 			if (install && !installed)
-				StardistAbstract.installDefaultRequirements();
+				PixiEnvironmentManager.installRequirements(StarDist.resolvePytorchEnv(), null);
 			else if (!installed) {
 				descriptor = ModelDescriptorFactory.readFromLocalFile(descriptor.getModelPath() + File.separator + Constants.RDF_FNAME, false);
 				initWithEnginesPath(install);
@@ -232,9 +231,9 @@ public abstract class RunnerAdapter implements Closeable {
 	private void initWithEnginesClassLoader(boolean install) throws LoadEngineException, IOException, InterruptedException, RuntimeException, BuildException {
 		List<String> wList = descriptor.getWeights().getAllSuportedWeightNames();
 		if (descriptor.getModelFamily().equals(ModelDescriptor.STARDIST)) {
-			boolean installed = StardistAbstract.isInstalled();
+			boolean installed = StarDist.isInstalled();
 			if (install && !installed)
-				StardistAbstract.installDefaultRequirements();
+				PixiEnvironmentManager.installRequirements(StarDist.resolvePytorchEnv(), null);
 			else if (!installed) {
 				descriptor = ModelDescriptorFactory.readFromLocalFile(descriptor.getModelPath() + File.separator + Constants.RDF_FNAME, false);
 				initWithEnginesPath(install);
