@@ -118,16 +118,16 @@ public class Cellpose extends BioimageIoModelPytorchProtected {
 	protected static final String LOAD_MODEL_CODE_ABSTRACT = ""
 			+ "if 'denoise' not in globals().keys():" + System.lineSeparator()
 			+ "  from cellpose import denoise" + System.lineSeparator()
-			+ "  globals()['denoise'] = denoise" + System.lineSeparator()
+			+ "  task.export(denoise=denoise)" + System.lineSeparator()
 			+ "if 'np' not in globals().keys():" + System.lineSeparator()
 			+ "  import numpy as np" + System.lineSeparator()
-			+ "  globals()['np'] = np" + System.lineSeparator()
+			+ "  task.export(np=np)" + System.lineSeparator()
 			+ "if 'os' not in globals().keys():" + System.lineSeparator()
 			+ "  import os" + System.lineSeparator()
-			+ "  globals()['os'] = os" + System.lineSeparator()
+			+ "  task.export(os=os)" + System.lineSeparator()
 			+ "if 'shared_memory' not in globals().keys():" + System.lineSeparator()
 			+ "  from multiprocessing import shared_memory" + System.lineSeparator()
-			+ "  globals()['shared_memory'] = shared_memory" + System.lineSeparator()
+			+ "  task.export(shared_memory=shared_memory)" + System.lineSeparator()
 			+ "gpu_available = False" + System.lineSeparator() // TODO GPU
 			+ ((IS_ARM) 
 					? "" 
@@ -135,7 +135,7 @@ public class Cellpose extends BioimageIoModelPytorchProtected {
 					+ "if mps.is_built() and mps.is_available():" + System.lineSeparator()
 					+ "  gpu_available = True" + System.lineSeparator())
 			+ MODEL_VAR_NAME + " = denoise.CellposeDenoiseModel(gpu=gpu_available, pretrained_model=r'%s')" + System.lineSeparator()
-			+ "globals()['" + MODEL_VAR_NAME + "'] = " + MODEL_VAR_NAME + System.lineSeparator();
+			+ "task.export(" + MODEL_VAR_NAME + "=" + MODEL_VAR_NAME +")" + System.lineSeparator();
 	
 	protected static final String PATH_TO_RDF = "special_models/cellpose/rdf.yaml";
 	
@@ -269,7 +269,7 @@ public class Cellpose extends BioimageIoModelPytorchProtected {
 				this.weightsPath);
 		code += ""
 				+ "diameter = None" + System.lineSeparator()
-				+ "globals()['diameter'] = diameter" + System.lineSeparator();
+				+ "task.export(diameter=diameter)" + System.lineSeparator();
 		return code;
 	}
 	
@@ -279,8 +279,11 @@ public class Cellpose extends BioimageIoModelPytorchProtected {
 			return super.createInputsCode(inRais, names);
 		String code = setDiameterCode + System.lineSeparator();
 		setDiameterCode = "";
-		code += "created_shms = []" + System.lineSeparator();
-		code += "try:" + System.lineSeparator();
+		code += "created_shms.clear()" + System.lineSeparator();
+        code += "task.outputs.clear()" + System.lineSeparator();
+		code += SHM_NAMES_KEY + " = []" + System.lineSeparator();
+		code += DTYPES_KEY + " = []" + System.lineSeparator();
+		code += DIMS_KEY + " = []" + System.lineSeparator();
 		for (int i = 0; i < inRais.size(); i ++) {
 			SharedMemoryArray shma = SharedMemoryArray.createSHMAFromRAI(inRais.get(i).getData(), false, false);
 			code += codeToConvertShmaToPython(shma, names.get(i));
@@ -297,16 +300,8 @@ public class Cellpose extends BioimageIoModelPytorchProtected {
 		code += createDiamCode(nameList, channelList);
 		code += OUTPUT_LIST_KEY + " = " + MODEL_VAR_NAME + ".eval(" + nameList + ", channels=" + channelList + ", ";
 		code += "diameter=diameter)" + System.lineSeparator();
-		code += ""
-				+ SHMS_KEY + " = []" + System.lineSeparator()
-				+ SHM_NAMES_KEY + " = []" + System.lineSeparator()
-				+ DTYPES_KEY + " = []" + System.lineSeparator()
-				+ DIMS_KEY + " = []" + System.lineSeparator()
-				+ "globals()['" + SHMS_KEY + "'] = " + SHMS_KEY + System.lineSeparator()
-				+ "globals()['" + SHM_NAMES_KEY + "'] = " + SHM_NAMES_KEY + System.lineSeparator()
-				+ "globals()['" + DTYPES_KEY + "'] = " + DTYPES_KEY + System.lineSeparator()
-				+ "globals()['" + DIMS_KEY + "'] = " + DIMS_KEY + System.lineSeparator();
-		code += "handle_output_list(" + OUTPUT_LIST_KEY + ")" + System.lineSeparator();
+        code += String.format("handle_output_list(%s, %s, %s, %s, %s)", OUTPUT_LIST_KEY,
+        		SHMS_KEY, SHM_NAMES_KEY, DTYPES_KEY, DIMS_KEY)  + System.lineSeparator();
 		code += taskOutputsCode();
 		return code;
 	}
