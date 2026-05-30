@@ -70,8 +70,8 @@ public class BioimageIoModelPytorch extends BioimageIoModelPytorchProtected {
 	 * @throws BuildException if there is any error building the environment
 	 */
 	protected BioimageIoModelPytorch(String modelFile, String callable, String importModule, String weightsPath, Map<String, Object> kwargs,
-			ModelDescriptor descriptor) throws BuildException {
-		super(modelFile, callable, importModule, weightsPath, kwargs, descriptor);
+			ModelDescriptor descriptor, String device) throws BuildException {
+		super(modelFile, callable, importModule, weightsPath, kwargs, descriptor, device);
 	}
 
 	/**
@@ -82,7 +82,7 @@ public class BioimageIoModelPytorch extends BioimageIoModelPytorchProtected {
 	 * @return a model from the Bioaimge.io that can be run in Pytorch.
 	 * @throws BuildException if there is any error building the environment
 	 */
-	public static BioimageIoModelPytorch create(ModelDescriptor descriptor) throws BuildException {
+	public static BioimageIoModelPytorch create(ModelDescriptor descriptor, String device) throws BuildException {
 		if (descriptor.getWeights().getModelWeights(ModelWeight.getPytorchID()) == null)
 			throw new IllegalArgumentException("The model provided does not have weights in the required format, "
 					+ ModelWeight.getPytorchID() + ".");
@@ -92,7 +92,7 @@ public class BioimageIoModelPytorch extends BioimageIoModelPytorchProtected {
 		String importModule = pytorchWeights.getArchitecture().getImportModule();
 		String weightsFile = descriptor.getModelPath() +  File.separator + pytorchWeights.getSource();
 		Map<String, Object> kwargs = pytorchWeights.getArchitecture().getKwargs();
-		return new BioimageIoModelPytorch(modelFile, callable, importModule, weightsFile, kwargs, descriptor);
+		return new BioimageIoModelPytorch(modelFile, callable, importModule, weightsFile, kwargs, descriptor, device);
 	}
 
 
@@ -105,8 +105,8 @@ public class BioimageIoModelPytorch extends BioimageIoModelPytorchProtected {
 	 * @throws IOException if there is any error reading the yaml file
 	 * @throws BuildException if there is any error building the environment
 	 */
-	public static BioimageIoModelPytorch create(String modelPath) throws IOException, BuildException {
-		return create(ModelDescriptorFactory.readFromLocalFile(modelPath + File.separator + Constants.RDF_FNAME));
+	public static BioimageIoModelPytorch create(String modelPath, String device) throws IOException, BuildException {
+		return create(ModelDescriptorFactory.readFromLocalFile(modelPath + File.separator + Constants.RDF_FNAME), device);
 	}
 	
 	/**
@@ -131,13 +131,12 @@ public class BioimageIoModelPytorch extends BioimageIoModelPytorchProtected {
 		List<Tensor<T>> l = new ArrayList<Tensor<T>>();
 		l.add(Tensor.build("input", "bcyx", im));
 		//BioimageIoModelPytorch.installRequirements();
-		BioimageIoModelPytorch model = create(mm);
+		BioimageIoModelPytorch model = create(mm, "cpu");
 		model.loadModel();
 		TileInfo tile = TileInfo.build(l.get(0).getName(), new long[] {1, 1, 512, 512}, 
 				l.get(0).getAxesOrderString(), new long[] {1, 1, 512, 512}, l.get(0).getAxesOrderString());
 		List<TileInfo> tileList = new ArrayList<TileInfo>();
 		tileList.add(tile);
-		model.run(l);
 		System.out.println(false);
 		
 	}

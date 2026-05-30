@@ -44,7 +44,7 @@ import io.bioimage.modelrunner.bioimageio.description.ModelDescriptor;
 import io.bioimage.modelrunner.bioimageio.description.ModelDescriptorFactory;
 import io.bioimage.modelrunner.bioimageio.description.weights.ModelWeight;
 import io.bioimage.modelrunner.bioimageio.description.weights.WeightFormat;
-import io.bioimage.modelrunner.bioimageio.tiling.TileCalculator;
+import io.bioimage.modelrunner.model.tiling.TileCalculator;
 import io.bioimage.modelrunner.download.MultiFileDownloader;
 import io.bioimage.modelrunner.exceptions.LoadModelException;
 import io.bioimage.modelrunner.exceptions.RunModelException;
@@ -159,8 +159,8 @@ public class Cellpose extends BioimageIoModelPytorchProtected {
 	 * @throws BuildException if there is any error building the environment
 	 */
 	protected Cellpose(String modelFile, String callable, String weightsPath, 
-			Map<String, Object> kwargs, ModelDescriptor descriptor) throws BuildException, IOException {
-		super(modelFile, callable, null, weightsPath, kwargs, descriptor, true);
+			Map<String, Object> kwargs, ModelDescriptor descriptor, String device) throws BuildException, IOException {
+		super(modelFile, callable, null, weightsPath, kwargs, descriptor, true, device);
 	}
 	
 	/**
@@ -253,53 +253,6 @@ public class Cellpose extends BioimageIoModelPytorchProtected {
 		this.descriptor = ModelDescriptorFactory.readFromYamlTextString(adaptedRdfString);
 		descriptor.addModelPath(Paths.get(new File(this.weightsPath).getParentFile().getAbsolutePath()));
 		this.tileCalculator = TileCalculator.init(descriptor);
-	}
-	
-	/**
-	 * Run a Bioimage.io model and execute the tiling strategy in one go.
-	 * The model needs to have been previously loaded with {@link #loadModel()}.
-	 * This method does not execute pre- or post-processing, they
-	 * need to be executed independently before or after
-	 * 
-	 * @param <T>
-	 * 	ImgLib2 data type of the output images
-	 * @param <R>
-	 * 	ImgLib2 data type of the input images
-	 * @param inputTensors
-	 * 	list of the input tensors that are going to be inputed to the model
-	 * @return the resulting tensors 
-	 * @throws RunModelException if the model has not been previously loaded
-	 * @throws IllegalArgumentException if the model is not a Bioimage.io model or if lacks a Bioimage.io
-	 *  rdf.yaml specs file in the model folder. 
-	 */
-	public <T extends RealType<T> & NativeType<T>, R extends RealType<R> & NativeType<R>> 
-	List<Tensor<T>> run(List<Tensor<R>> inputTensors) throws RunModelException {
-		createCustomDescriptor(inputTensors);
-		return super.run(checkInputTensors(inputTensors));
-	}
-
-	/**
-	 * Run a Bioimage.io model and execute the tiling strategy in one go.
-	 * The model needs to have been previously loaded with {@link #loadModel()}.
-	 * This method does not execute pre- or post-processing, they
-	 * need to be executed independently before or after
-	 * 
-	 * @param <T>
-	 * 	ImgLib2 data type of the output images
-	 * @param <R>
-	 * 	ImgLib2 data type of the input images
-	 * @param inputTensors
-	 * 	list of the input tensors that are going to be inputed to the model
-	 * @param outputTensors
-	 * 	list of output tensors that are expected to be returned by the model
-	 * @throws RunModelException if the model has not been previously loaded
-	 * @throws IllegalArgumentException if the model is not a Bioimage.io model or if lacks a Bioimage.io
-	 *  rdf.yaml specs file in the model folder. 
-	 */
-	public <T extends RealType<T> & NativeType<T>, R extends RealType<R> & NativeType<R>> 
-	void run(List<Tensor<T>> inputTensors, List<Tensor<R>> outputTensors) throws RunModelException {
-		createCustomDescriptor(inputTensors);
-		super.run(checkInputTensors(inputTensors), checkOutputTensors(outputTensors));
 	}
 	
 	/**
@@ -413,13 +366,13 @@ public class Cellpose extends BioimageIoModelPytorchProtected {
      * @throws IOException If there's an I/O error.
 	 * @throws BuildException if there is any error building the environment
 	 */
-	public static Cellpose init(String weightsPath) throws IOException, BuildException {
+	public static Cellpose init(String weightsPath, String device) throws IOException, BuildException {
 		File wFile = new File(weightsPath);
 		if (wFile.isDirectory() && new File(wFile, Constants.RDF_FNAME).isFile())
-			return init(ModelDescriptorFactory.readFromLocalFile(new File(wFile, Constants.RDF_FNAME).getAbsolutePath()));
+			return init(ModelDescriptorFactory.readFromLocalFile(new File(wFile, Constants.RDF_FNAME).getAbsolutePath()), device);
 		if (!wFile.isFile())
 			throw new IllegalArgumentException("The path provided does not correspond to an existing file: " + weightsPath);		        
-        Cellpose cellpose = new Cellpose(null, null, weightsPath, null, null);
+        Cellpose cellpose = new Cellpose(null, null, weightsPath, null, null, device);
 		try (InputStream in = RDF_URL.openStream();
 		     ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
 
@@ -442,7 +395,7 @@ public class Cellpose extends BioimageIoModelPytorchProtected {
      * @throws IOException If there's an I/O error.
 	 * @throws BuildException if there is any error building the environment
 	 */
-	public static Cellpose init(ModelDescriptor descriptor) throws IOException, BuildException {
+	public static Cellpose init(ModelDescriptor descriptor, String device) throws IOException, BuildException {
 		if (descriptor.getTags().stream().filter(tt -> tt.toLowerCase().equals("cellpose")).findFirst().orElse(null) == null
 				&& !descriptor.getName().toLowerCase().contains("cellpose"))
 			throw new RuntimeException("This model does not seem to be a cellpose model from the Bioimage.io");
@@ -454,7 +407,7 @@ public class Cellpose extends BioimageIoModelPytorchProtected {
 		String callable = pytorchWeights.getArchitecture().getCallable();
 		String weightsFile = descriptor.getModelPath() +  File.separator + pytorchWeights.getSource();
 		Map<String, Object> kwargs = pytorchWeights.getArchitecture().getKwargs();
-		Cellpose model =  new Cellpose(modelFile, callable, weightsFile, kwargs, descriptor);
+		Cellpose model =  new Cellpose(modelFile, callable, weightsFile, kwargs, descriptor, device);
 		model.isBMZ = true;
 		return model;
 	}
@@ -472,8 +425,8 @@ public class Cellpose extends BioimageIoModelPytorchProtected {
 	 * @throws ExecutionException if there is an error downloading the model
 	 * @throws BuildException if there is any error building the environment
 	 */
-	public static Cellpose fromPretained(String pretrainedModel, boolean install) throws IOException, InterruptedException, ExecutionException, BuildException {
-		return fromPretained(pretrainedModel, new File("models").getAbsolutePath(), install);
+	public static Cellpose fromPretained(String pretrainedModel, boolean install, String device) throws IOException, InterruptedException, ExecutionException, BuildException {
+		return fromPretained(pretrainedModel, new File("models").getAbsolutePath(), install, device);
 	}
 	
 	/**
@@ -491,15 +444,15 @@ public class Cellpose extends BioimageIoModelPytorchProtected {
 	 * @throws ExecutionException if there is an error downloading the model
 	 * @throws BuildException if there is any error building the environment
 	 */
-	public static Cellpose fromPretained(String pretrainedModel, String modelsDir, boolean install) throws IOException, 
+	public static Cellpose fromPretained(String pretrainedModel, String modelsDir, boolean install, String device) throws IOException, 
 																					InterruptedException, ExecutionException, BuildException {
 		if (PRETRAINED_CELLPOSE_MODELS.contains(pretrainedModel) && !install) {
 			String weightsPath = fileIsCellpose(pretrainedModel, modelsDir);
-			if (weightsPath != null) return init(weightsPath);
+			if (weightsPath != null) return init(weightsPath, device);
 			return null;
 		} else if (PRETRAINED_CELLPOSE_MODELS.contains(pretrainedModel)) {
 			String path = donwloadPretrainedOfficial(pretrainedModel, modelsDir, null);
-			return init(path);
+			return init(path, device);
 		}
 		if (!install) {
 			List<ModelDescriptor> localModels = ModelDescriptorFactory.getModelsAtLocalRepo(modelsDir);
@@ -508,7 +461,7 @@ public class Cellpose extends BioimageIoModelPytorchProtected {
 							|| md.getName().toLowerCase().equals(pretrainedModel.toLowerCase()))
 					.findFirst().orElse(null);
 			if (model != null)
-				return Cellpose.init(model);
+				return Cellpose.init(model, device);
 			else 
 				return null;
 		}
@@ -522,7 +475,7 @@ public class Cellpose extends BioimageIoModelPytorchProtected {
 					+ " To find a list of available cellpose models, please run Cellpose.getPretrainedList()");
 		String path = BioimageioRepo.downloadModel(descriptor, modelsDir);
 		descriptor.addModelPath(Paths.get(path));
-		return Cellpose.init(descriptor);
+		return Cellpose.init(descriptor.buildInfo(), device);
 	}
 	
 	/**
@@ -721,13 +674,11 @@ public class Cellpose extends BioimageIoModelPytorchProtected {
 	 */
 	public static <T extends RealType<T> & NativeType<T>>
 	void main(String[] args) throws IOException, InterruptedException, ExecutionException, LoadModelException, RunModelException, BuildException {
-		Cellpose model = Cellpose.fromPretained("cyto2", false);
+		Cellpose model = Cellpose.fromPretained("cyto2", true, "cpu");
 		model.loadModel();
 		ArrayImg<FloatType, FloatArray> rai = ArrayImgs.floats(new long[] {512, 512, 3});
-		List<RandomAccessibleInterval<FloatType>> rais = new ArrayList<RandomAccessibleInterval<FloatType>>();
-		rais.add(rai);
 		long tt = System.currentTimeMillis();
-		List<RandomAccessibleInterval<T>> res = model.inference(rais);
+		List<Tensor<T>> res = model.inference(Tensor.build("input", "xyc", rai));
 		System.out.println(System.currentTimeMillis() - tt);
 		model.close();
 		System.out.println(false);
