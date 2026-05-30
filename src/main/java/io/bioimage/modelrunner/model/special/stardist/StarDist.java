@@ -803,7 +803,7 @@ public final class StarDist extends DLModelPytorchProtected {
 		}
 		python.init("import numpy as np");
 		if (logConsumer != null) {
-			python.debug(logConsumer);
+			python.debug(line -> TrainingCodeUtils.logTrainingDebug(line, logConsumer));
 		}
 		try {
 			Task task = python.task(buildTrainingCode(dataDir, gtDir, outputDir, normalizedDevice,
@@ -973,7 +973,9 @@ public final class StarDist extends DLModelPytorchProtected {
 				+ "config = json.loads(r'''" + TrainingCodeUtils.toJson(config) + "''')" + nl
 				+ "cancel_signal_path = r'" + TrainingCodeUtils.py(cancelSignalPath == null ? "" : cancelSignalPath) + "'" + nl
 				+ "preview_count = int(config.pop('validation_preview_count', 20))" + nl
-				+ "log_every_n_steps = 10" + nl
+				+ "is_accelerated = _jdll_requested_device != 'cpu'" + nl
+				+ "progress_every_n_steps = 5 if is_accelerated else 1" + nl
+				+ "log_every_n_steps = 50 if is_accelerated else 10" + nl
 				+ "# StarDist use_gpu enables gputools/OpenCL preprocessing, not TensorFlow CUDA." + nl
 				+ "config['use_gpu'] = False" + nl
 				+ "if '" + TrainingCodeUtils.py(safeImageChannels).toLowerCase() + "' == 'rgb':" + nl
@@ -1085,11 +1087,17 @@ public final class StarDist extends DLModelPytorchProtected {
 				+ "    logs = logs or {}" + nl
 				+ "    self.global_step += 1" + nl
 				+ "    epoch = int((self.global_step - 1) // max(1, int(config.get('train_steps_per_epoch', 1))) + 1)" + nl
-				+ "    losses = _clean({'train/total_loss': logs.get('loss'), 'train/prob_loss': logs.get('prob_loss'), 'train/dist_loss': logs.get('dist_loss')})" + nl
-				+ "    metrics = _clean({'learning_rate': self._lr()})" + nl
-				+ "    info = {'type': 'progress', 'epoch': epoch, 'step': self.global_step, 'total_epochs': state['total_epochs'], 'total_steps': state['total_steps'], 'losses': losses, 'metrics': metrics}" + nl
-				+ "    _task_update(message='StarDist training step %d/%d' % (self.global_step, state['total_steps']), current=self.global_step, maximum=state['total_steps'], info=info)" + nl
-				+ "    if self.global_step == 1 or self.global_step % log_every_n_steps == 0:" + nl
+				+ "    should_update = self.global_step == 1 or self.global_step % progress_every_n_steps == 0 or self.global_step == state['total_steps']" + nl
+				+ "    should_log = self.global_step == 1 or self.global_step % log_every_n_steps == 0 or self.global_step == state['total_steps']" + nl
+				+ "    if should_update:" + nl
+				+ "      losses = _clean({'train/total_loss': logs.get('loss'), 'train/prob_loss': logs.get('prob_loss'), 'train/dist_loss': logs.get('dist_loss')})" + nl
+				+ "      metrics = _clean({'learning_rate': self._lr()})" + nl
+				+ "      info = {'type': 'progress', 'epoch': epoch, 'step': self.global_step, 'total_epochs': state['total_epochs'], 'total_steps': state['total_steps'], 'losses': losses, 'metrics': metrics}" + nl
+				+ "      kwargs = {'current': self.global_step, 'maximum': state['total_steps'], 'info': info}" + nl
+				+ "      if should_log:" + nl
+				+ "        kwargs['message'] = 'StarDist training step %d/%d' % (self.global_step, state['total_steps'])" + nl
+				+ "      _task_update(**kwargs)" + nl
+				+ "    if should_log:" + nl
 				+ "      print('step %05d/%d epoch=%d/%d loss=%s prob=%s dist=%s lr=%s' % (self.global_step, state['total_steps'], epoch, state['total_epochs'], logs.get('loss'), logs.get('prob_loss'), logs.get('dist_loss'), self._lr()), flush=True)" + nl
 				+ "    if _cancel_requested():" + nl
 				+ "      try:" + nl

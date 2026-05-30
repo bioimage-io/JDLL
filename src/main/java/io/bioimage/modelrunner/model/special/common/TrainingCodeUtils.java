@@ -23,6 +23,7 @@ import java.lang.reflect.Array;
 import java.util.LinkedHashMap;
 import java.util.Locale;
 import java.util.Map;
+import java.util.function.Consumer;
 
 /**
  * Shared helpers for model-specific training code that is executed through Appose.
@@ -31,6 +32,25 @@ public final class TrainingCodeUtils {
 
 	private TrainingCodeUtils() {
 		// Utility class.
+	}
+
+	/**
+	 * Forwards Appose debug lines except raw task updates, which are already handled through task listeners.
+	 *
+	 * @param line
+	 * 	debug line
+	 * @param logConsumer
+	 * 	log consumer
+	 */
+	public static void logTrainingDebug(String line, Consumer<String> logConsumer) {
+		if (logConsumer == null || isTaskUpdateDebugLine(line)) {
+			return;
+		}
+		logConsumer.accept(line);
+	}
+
+	private static boolean isTaskUpdateDebugLine(String line) {
+		return line != null && line.contains("\"responseType\":\"UPDATE\"");
 	}
 
 	/**

@@ -272,7 +272,7 @@ public class Yolo extends DLModelPytorchProtected {
 			serviceConsumer.accept(python);
 		}
 		if (logConsumer != null) {
-			python.debug(logConsumer);
+			python.debug(line -> TrainingCodeUtils.logTrainingDebug(line, logConsumer));
 		}
 		try {
 			Task task = python.task(buildTrainingCode(epochs, baseModelPath, normalizedScratchArchitecture,
@@ -392,6 +392,9 @@ public class Yolo extends DLModelPytorchProtected {
 				+ "cancel_signal_path = r'" + TrainingCodeUtils.py(cancelSignalPath == null ? "" : cancelSignalPath) + "'" + nl
 				+ "requested_device = '" + TrainingCodeUtils.py(normalizedDevice) + "'" + nl
 				+ "train_device = 0 if requested_device == 'cuda' else requested_device" + nl
+				+ "is_accelerated = requested_device != 'cpu'" + nl
+				+ "progress_every_n_steps = 5 if is_accelerated else 1" + nl
+				+ "log_every_n_steps = 50 if is_accelerated else 10" + nl
 				+ "state = {'step': 0, 'total_steps': 0, 'preview_paths': set(), 'preview_order': [], 'preview_results': {}, 'preview_epoch': 0, 'capture_preview': False}" + nl
 				+ TrainingCodeUtils.taskUpdateFunction("_task_update")
 				+ TrainingCodeUtils.scalarFunction("_scalar", true)
@@ -429,16 +432,24 @@ public class Yolo extends DLModelPytorchProtected {
 				+ "  state['total_steps'] = int(getattr(trainer, 'epochs', epochs)) * int(nb)" + nl
 				+ "  info = {'type': 'progress', 'epoch': 0, 'step': 0, 'total_epochs': epochs, 'total_steps': state['total_steps'], 'losses': {}, 'metrics': {}}" + nl
 				+ "  _task_update(message='YOLO training started', current=0, maximum=state['total_steps'], info=info)" + nl
-				+ "def _emit_step_progress(trainer, every=5):" + nl
+				+ "def _emit_step_progress(trainer):" + nl
 				+ "  state['step'] += 1" + nl
 				+ "  if _cancel_requested():" + nl
 				+ "    _request_stop(trainer)" + nl
-				+ "  if state['step'] % every != 0 and state['step'] != state.get('total_steps', 0):" + nl
+				+ "  total_steps = state.get('total_steps', 0)" + nl
+				+ "  should_update = state['step'] == 1 or state['step'] % progress_every_n_steps == 0 or state['step'] == total_steps" + nl
+				+ "  should_log = state['step'] == 1 or state['step'] % log_every_n_steps == 0 or state['step'] == total_steps" + nl
+				+ "  if not should_update:" + nl
 				+ "    return" + nl
 				+ "  epoch = int(getattr(trainer, 'epoch', 0)) + 1" + nl
-				+ "  total_steps = state.get('total_steps', 0)" + nl
-				+ "  info = {'type': 'progress', 'epoch': epoch, 'step': state['step'], 'total_epochs': epochs, 'total_steps': total_steps, 'losses': _losses(trainer), 'metrics': {}}" + nl
-				+ "  _task_update(message='YOLO training step %d/%d' % (state['step'], total_steps), current=state['step'], maximum=total_steps, info=info)" + nl
+				+ "  losses = _losses(trainer)" + nl
+				+ "  info = {'type': 'progress', 'epoch': epoch, 'step': state['step'], 'total_epochs': epochs, 'total_steps': total_steps, 'losses': losses, 'metrics': {}}" + nl
+				+ "  kwargs = {'current': state['step'], 'maximum': total_steps, 'info': info}" + nl
+				+ "  if should_log:" + nl
+				+ "    kwargs['message'] = 'YOLO training step %d/%d' % (state['step'], total_steps)" + nl
+				+ "  _task_update(**kwargs)" + nl
+				+ "  if should_log:" + nl
+				+ "    print('step %05d/%d epoch=%d/%d losses=%s' % (state['step'], total_steps, epoch, epochs, losses), flush=True)" + nl
 				+ "def _emit_epoch_progress(trainer):" + nl
 				+ "  if _cancel_requested():" + nl
 				+ "    _request_stop(trainer)" + nl
