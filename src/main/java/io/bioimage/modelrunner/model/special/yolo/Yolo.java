@@ -227,7 +227,7 @@ public class Yolo extends DLModelPytorchProtected {
 			Consumer<String> logConsumer)
 			throws IOException, BuildException, InterruptedException, TaskException {
 		train(epochs, baseModelPath, scratchArchitecture, datasetYamlPath, outputWeightsPath, imageSize,
-				previewEpochPeriod, progressConsumer, previewConsumer, logConsumer, null, null);
+				previewEpochPeriod, progressConsumer, previewConsumer, logConsumer, "cpu", null, null);
 	}
 
 	public static void train(int epochs, String baseModelPath, String scratchArchitecture,
@@ -239,8 +239,24 @@ public class Yolo extends DLModelPytorchProtected {
 			String cancelSignalPath,
 			Consumer<Service> serviceConsumer)
 			throws IOException, BuildException, InterruptedException, TaskException {
+		train(epochs, baseModelPath, scratchArchitecture, datasetYamlPath, outputWeightsPath, imageSize,
+				previewEpochPeriod, progressConsumer, previewConsumer, logConsumer, "cpu", cancelSignalPath,
+				serviceConsumer);
+	}
+
+	public static void train(int epochs, String baseModelPath, String scratchArchitecture,
+			String datasetYamlPath, String outputWeightsPath,
+			int imageSize, int previewEpochPeriod,
+			Consumer<YoloTrainingProgress> progressConsumer,
+			Consumer<YoloValidationPreview> previewConsumer,
+			Consumer<String> logConsumer,
+			String device,
+			String cancelSignalPath,
+			Consumer<Service> serviceConsumer)
+			throws IOException, BuildException, InterruptedException, TaskException {
 		validateTrainingArguments(epochs, datasetYamlPath, outputWeightsPath, imageSize);
 		String normalizedScratchArchitecture = normalizeScratchArchitecture(scratchArchitecture);
+		String normalizedDevice = normalizeDevice(device);
 		File outputFile = new File(outputWeightsPath);
 		File outputDir = outputFile.getParentFile();
 		if (outputDir != null && !outputDir.isDirectory() && !outputDir.mkdirs()) {
@@ -261,7 +277,7 @@ public class Yolo extends DLModelPytorchProtected {
 		try {
 			Task task = python.task(buildTrainingCode(epochs, baseModelPath, normalizedScratchArchitecture,
 					datasetYamlPath,
-					outputWeightsPath, imageSize, previewEpochPeriod, cancelSignalPath));
+					outputWeightsPath, imageSize, previewEpochPeriod, cancelSignalPath, normalizedDevice));
 			task.listen(event -> handleTrainingEvent(event, progressConsumer, previewConsumer, logConsumer));
 			task.waitFor();
 		} finally {
@@ -303,19 +319,35 @@ public class Yolo extends DLModelPytorchProtected {
 		throw new IllegalArgumentException("Unsupported YOLO architecture for training from scratch: " + architecture);
 	}
 
+	private static String normalizeDevice(String device) {
+		if (device == null) {
+			return "cpu";
+		}
+		String normalized = device.trim().toLowerCase();
+		return "cuda".equals(normalized) || "mps".equals(normalized) ? normalized : "cpu";
+	}
+
 	private static String buildTrainingCode(int epochs, String baseModelPath, String scratchArchitecture,
 			String datasetYamlPath,
 			String outputWeightsPath, int imageSize, int previewEpochPeriod) {
 		return buildTrainingCode(epochs, baseModelPath, scratchArchitecture, datasetYamlPath, outputWeightsPath,
-				imageSize, previewEpochPeriod, null);
+				imageSize, previewEpochPeriod, null, "cpu");
 	}
 
 	private static String buildTrainingCode(int epochs, String baseModelPath, String scratchArchitecture,
 			String datasetYamlPath,
 			String outputWeightsPath, int imageSize, int previewEpochPeriod, String cancelSignalPath) {
+		return buildTrainingCode(epochs, baseModelPath, scratchArchitecture, datasetYamlPath, outputWeightsPath,
+				imageSize, previewEpochPeriod, cancelSignalPath, "cpu");
+	}
+
+	private static String buildTrainingCode(int epochs, String baseModelPath, String scratchArchitecture,
+			String datasetYamlPath,
+			String outputWeightsPath, int imageSize, int previewEpochPeriod, String cancelSignalPath, String device) {
 		String modelSource = baseModelPath == null || baseModelPath.trim().isEmpty()
 				? scratchArchitecture
 				: new File(baseModelPath).getAbsolutePath();
+		String normalizedDevice = normalizeDevice(device);
 		File outputFile = new File(outputWeightsPath);
 		File outputDir = outputFile.getParentFile();
 		String runName = outputFile.getName();
@@ -358,6 +390,8 @@ public class Yolo extends DLModelPytorchProtected {
 				+ "preview_sample_count = 100" + nl
 				+ "preview_confidence = " + VALIDATION_PREVIEW_CONFIDENCE + nl
 				+ "cancel_signal_path = r'" + TrainingCodeUtils.py(cancelSignalPath == null ? "" : cancelSignalPath) + "'" + nl
+				+ "requested_device = '" + TrainingCodeUtils.py(normalizedDevice) + "'" + nl
+				+ "train_device = 0 if requested_device == 'cuda' else requested_device" + nl
 				+ "state = {'step': 0, 'total_steps': 0, 'preview_paths': set(), 'preview_order': [], 'preview_results': {}, 'preview_epoch': 0, 'capture_preview': False}" + nl
 				+ TrainingCodeUtils.taskUpdateFunction("_task_update")
 				+ TrainingCodeUtils.scalarFunction("_scalar", true)
@@ -496,7 +530,7 @@ public class Yolo extends DLModelPytorchProtected {
 				+ "model.add_callback('on_val_end', _emit_preview_results)" + nl
 				+ "model.add_callback('on_fit_epoch_end', _emit_epoch_progress)" + nl
 				+ "with open(yolo_log_path, 'a', encoding='utf-8') as yolo_log, contextlib.redirect_stdout(yolo_log), contextlib.redirect_stderr(yolo_log):" + nl
-				+ "  results = model.train(data=dataset_yaml, epochs=epochs, imgsz=imgsz, batch=batch_size, project=project, name=run_name, exist_ok=True, verbose=False, plots=False, workers=0)" + nl
+				+ "  results = model.train(data=dataset_yaml, epochs=epochs, imgsz=imgsz, batch=batch_size, project=project, name=run_name, exist_ok=True, verbose=False, plots=False, workers=0, device=train_device)" + nl
 				+ "trainer = getattr(model, 'trainer', None)" + nl
 				+ "best = str(getattr(trainer, 'best', '') if trainer is not None else '')" + nl
 				+ "last = str(getattr(trainer, 'last', '') if trainer is not None else '')" + nl

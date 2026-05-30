@@ -63,7 +63,7 @@ public class StardistTrainingService {
                 new LinkedHashMap<String, Object>(StarDist.defaultTrainingConfig(config.getEpochs()));
         applyArchitectureDefaults(trainingConfig, config.getScratchArchitecture());
         StarDist.train(datasetRoot.getAbsolutePath(), null,
-                config.getOutputModelDir(), config.isGpu(), config.getImageChannels(),
+                config.getOutputModelDir(), config.getDevice(), config.getImageChannels(),
                 config.getLabelColorMode(), config.getValidFraction(), trainingConfig,
                 progressConsumer, previewConsumer, logConsumer, this::setRunningPython);
     }

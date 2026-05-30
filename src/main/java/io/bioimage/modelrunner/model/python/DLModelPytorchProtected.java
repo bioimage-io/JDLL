@@ -81,6 +81,10 @@ public class DLModelPytorchProtected extends BaseModel {
 
     protected Service python;
 
+    private volatile Task currentTask;
+
+    private volatile boolean inferenceCancellationRequested;
+
     protected PixiEnvironmentSpec environmentSpec;
 
     protected List<SharedMemoryArray> inShmaList = new ArrayList<SharedMemoryArray>();
@@ -665,11 +669,26 @@ public class DLModelPytorchProtected extends BaseModel {
      */
     @Override
     public void close() {
+        cancelCurrentInference();
         if (python != null && python.isAlive()) {
             python.close();
         }
         loaded = false;
         closed = true;
+    }
+
+    public void cancelCurrentInference() {
+        inferenceCancellationRequested = true;
+        Task task = currentTask;
+        if (task != null) {
+            task.cancel();
+        }
+    }
+
+    private void throwIfInferenceCancelled() throws RunModelException {
+        if (inferenceCancellationRequested || Thread.currentThread().isInterrupted()) {
+            throw new RunModelException("Inference cancelled.");
+        }
     }
 
     protected <T extends RealType<T> & NativeType<T>, R extends RealType<R> & NativeType<R>>
@@ -678,9 +697,12 @@ public class DLModelPytorchProtected extends BaseModel {
         for (int attempt = 0; attempt <= MAX_TRANSIENT_TASK_RETRIES; attempt ++) {
         	Task task = null;
             try {
+                throwIfInferenceCancelled();
                 task = python.task(code);
+                currentTask = task;
                 python.debug((str) -> {});
                 task.waitFor();
+                throwIfInferenceCancelled();
                 ensureTaskSucceeded(task);
                 loaded = true;
                 Map<String, RandomAccessibleInterval<R>> outMap = reconstructOutputs(task);
@@ -695,6 +717,9 @@ public class DLModelPytorchProtected extends BaseModel {
                 }
                 return outMap;
             } catch (InterruptedException e) {
+                if (task != null) {
+                    task.cancel();
+                }
                 Thread.currentThread().interrupt();
                 cleanShmAfterFailure(e);
                 lastFailure = e;
@@ -715,6 +740,10 @@ public class DLModelPytorchProtected extends BaseModel {
                 }
                 cleanShmAfterFailure(e);
                 break;
+            } finally {
+                if (currentTask == task) {
+                    currentTask = null;
+                }
             }
         }
         throw new RunModelException(lastFailure == null
@@ -753,6 +782,7 @@ public class DLModelPytorchProtected extends BaseModel {
      */
     public <T extends RealType<T> & NativeType<T>, R extends RealType<R> & NativeType<R>>
     List<Tensor<R>> inference(final Tensor<T>... inputs) throws RunModelException {
+        inferenceCancellationRequested = false;
     	List<List<Tensor<T>>> inputBatches = new ArrayList<List<Tensor<T>>>();
     	for (Tensor<T> inp : inputs) {
     		List<Tensor<T>> inpList = new ArrayList<Tensor<T>>();
@@ -779,6 +809,7 @@ public class DLModelPytorchProtected extends BaseModel {
     public <T extends RealType<T> & NativeType<T>, R extends RealType<R> & NativeType<R>>
     List<List<Tensor<R>>> inferenceBatch(final List<Tensor<T>>... batchedInputs)
             throws RunModelException {
+        inferenceCancellationRequested = false;
     	return backboneBatchInference(Arrays.asList(batchedInputs));
     }
     
@@ -806,6 +837,7 @@ public class DLModelPytorchProtected extends BaseModel {
         
         List<List<Tensor<R>>> outputs = new ArrayList<List<Tensor<R>>>();
         for (int i = 0; i < batchedInputs.get(0).size(); i ++) {
+            throwIfInferenceCancelled();
         	List<Tensor<T>> inputs = new ArrayList<Tensor<T>>();
         	for (int j = 0; j < batchedInputs.size(); j ++) {
         		inputs.add(batchedInputs.get(j).get(i));
@@ -830,6 +862,7 @@ public class DLModelPytorchProtected extends BaseModel {
     private <T extends RealType<T> & NativeType<T>, R extends RealType<R> & NativeType<R>>
     List<Tensor<R>> backboneSingleInference(final List<Tensor<T>> inputs) throws RunModelException {
 
+        throwIfInferenceCancelled();
         Merger<Tensor<T>, Tensor<R>> merger = getTileMaker(inputs);
         if (tileCounter == null) {
             tileCounter = new TilingConsumer();
@@ -839,14 +872,18 @@ public class DLModelPytorchProtected extends BaseModel {
         tileCounter.acceptTotal((long) nPatches);
         emitProgress(InferenceProgress.inferenceStart(nPatches));
         for (int i = 0; i < nPatches; i ++) {
+            throwIfInferenceCancelled();
             emitProgress(InferenceProgress.patchStart(i + 1, nPatches));
             List<Tensor<R>> tiledOutputs = backboneSingleInferenceTile(merger.get(i));
+            throwIfInferenceCancelled();
             merger.digest(i, tiledOutputs);
             tileCounter.acceptProgress((long) (i + 1));
             emitProgress(InferenceProgress.patchEnd(i + 1, nPatches));
         }
+        throwIfInferenceCancelled();
         emitProgress(InferenceProgress.mergeStart());
         List<Tensor<R>> reconstructed = merger.getReconstructed();
+        throwIfInferenceCancelled();
         emitProgress(InferenceProgress.inferenceEnd());
         return reconstructed;
     }
@@ -854,12 +891,14 @@ public class DLModelPytorchProtected extends BaseModel {
     private <T extends RealType<T> & NativeType<T>, R extends RealType<R> & NativeType<R>>
     List<Tensor<R>> backboneSingleInferenceTile(final List<Tensor<T>> inputs) throws RunModelException {
 
+        throwIfInferenceCancelled();
         final List<String> names = IntStream.range(0, inputs.size())
                 .mapToObj(i -> "var_" + UUID.randomUUID().toString().replace("-", "_"))
                 .collect(Collectors.toList());
 
         final String code = createInputsCode(inputs, names);
         final Map<String, RandomAccessibleInterval<R>> map = executeCode(code);
+        throwIfInferenceCancelled();
         if (map.entrySet().size() > 2)
         	System.out.println();
         outAxes = getOutputAxes(map.size());

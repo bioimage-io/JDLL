@@ -107,6 +107,12 @@ public class YoloInferenceService {
         loadedDevice = null;
     }
 
+    public void cancelCurrentInference() {
+        if (model != null) {
+            model.cancelCurrentInference();
+        }
+    }
+
     private void ensureLoaded(String modelPath, String device, Consumer<String> logConsumer, boolean usePatchProgressBar)
             throws BuildException, IOException, LoadModelException, ExecutionException, InterruptedException {
         ensureLoaded(modelPath, device, logConsumer,

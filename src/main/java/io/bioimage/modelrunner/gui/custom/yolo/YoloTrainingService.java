@@ -64,7 +64,8 @@ public class YoloTrainingService {
             Yolo.train(config.getEpochs(), config.getBaseModelPath(), config.getScratchArchitecture(),
                     datasetYaml.getAbsolutePath(),
                     config.getOutputWeightsPath(), config.getImageSize(), config.getPreviewEpochPeriod(),
-                    progressConsumer, previewConsumer, logConsumer, cancelFile.getAbsolutePath(), this::setRunningPython);
+                    progressConsumer, previewConsumer, logConsumer, config.getDevice(),
+                    cancelFile.getAbsolutePath(), this::setRunningPython);
         } finally {
             finishCancelSignal(cancelFile);
         }
@@ -72,22 +73,21 @@ public class YoloTrainingService {
 
     public synchronized void requestCancel() {
         cancelRequested = true;
-        if (cancelSignalFile == null) {
-            return;
+        if (cancelSignalFile != null) {
+            try {
+                cancelSignalFile.createNewFile();
+            } catch (IOException e) {
+                // If the signal cannot be written, close the worker process below.
+            }
         }
-        try {
-            cancelSignalFile.createNewFile();
-        } catch (IOException e) {
-            // If the signal cannot be written, the running task will finish normally.
+        Service python = runningPython;
+        if (python != null && python.isAlive()) {
+            python.close();
         }
     }
 
     public void close() {
         requestCancel();
-        Service python = runningPython;
-        if (python != null && python.isAlive()) {
-            python.close();
-        }
     }
 
     private static void validate(YoloTrainingConfig config) {

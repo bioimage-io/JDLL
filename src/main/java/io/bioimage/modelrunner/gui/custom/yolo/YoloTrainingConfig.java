@@ -36,10 +36,18 @@ public final class YoloTrainingConfig {
     private final String modelsDir;
     private final String outputWeightsPath;
     private final int previewEpochPeriod;
+    private final String device;
 
     public YoloTrainingConfig(String modelName, String datasetYamlPath, int epochs, int imageSize,
             boolean fineTune, String baseModelPath, String scratchArchitecture,
             String modelsDir, String outputWeightsPath, int previewEpochPeriod) {
+        this(modelName, datasetYamlPath, epochs, imageSize, fineTune, baseModelPath, scratchArchitecture,
+                modelsDir, outputWeightsPath, previewEpochPeriod, "cpu");
+    }
+
+    public YoloTrainingConfig(String modelName, String datasetYamlPath, int epochs, int imageSize,
+            boolean fineTune, String baseModelPath, String scratchArchitecture,
+            String modelsDir, String outputWeightsPath, int previewEpochPeriod, String device) {
         this.modelName = modelName;
         this.datasetYamlPath = datasetYamlPath;
         this.epochs = epochs;
@@ -50,6 +58,7 @@ public final class YoloTrainingConfig {
         this.modelsDir = modelsDir;
         this.outputWeightsPath = outputWeightsPath;
         this.previewEpochPeriod = previewEpochPeriod;
+        this.device = normalizeDevice(device);
     }
 
     public String getModelName() {
@@ -92,8 +101,17 @@ public final class YoloTrainingConfig {
         return previewEpochPeriod;
     }
 
+    public String getDevice() {
+        return device;
+    }
+
     public static YoloTrainingConfig fromUi(String modelName, String datasetPath, int epochs,
             boolean fineTune, String baseModelPath, String scratchArchitecture, String modelsDir) {
+        return fromUi(modelName, datasetPath, epochs, fineTune, baseModelPath, scratchArchitecture, modelsDir, "cpu");
+    }
+
+    public static YoloTrainingConfig fromUi(String modelName, String datasetPath, int epochs,
+            boolean fineTune, String baseModelPath, String scratchArchitecture, String modelsDir, String device) {
         String normalizedName = normalizeModelName(modelName);
         File yoloDir = modelsDir == null
                 ? new File(YoloModelRegistry.YOLO_MODELS_SUBDIR)
@@ -102,7 +120,7 @@ public final class YoloTrainingConfig {
                 normalizedName + YoloModelRegistry.YOLO_WEIGHTS_EXTENSION);
         return new YoloTrainingConfig(normalizedName, datasetPath, epochs, DEFAULT_IMAGE_SIZE,
                 fineTune, fineTune ? baseModelPath : null, fineTune ? null : scratchArchitecture,
-                modelsDir, output.getAbsolutePath(), DEFAULT_PREVIEW_EPOCH_PERIOD);
+                modelsDir, output.getAbsolutePath(), DEFAULT_PREVIEW_EPOCH_PERIOD, device);
     }
 
     private static String normalizeModelName(String modelName) {
@@ -114,5 +132,13 @@ public final class YoloTrainingConfig {
             name = name.substring(0, name.length() - YoloModelRegistry.YOLO_WEIGHTS_EXTENSION.length());
         }
         return name;
+    }
+
+    private static String normalizeDevice(String device) {
+        if (device == null) {
+            return "cpu";
+        }
+        String normalized = device.trim().toLowerCase();
+        return "cuda".equals(normalized) || "mps".equals(normalized) ? normalized : "cpu";
     }
 }

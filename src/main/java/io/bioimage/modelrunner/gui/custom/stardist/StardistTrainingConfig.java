@@ -23,7 +23,6 @@ import java.io.File;
 
 public final class StardistTrainingConfig {
 
-    public static final boolean DEFAULT_GPU = true;
     public static final String DEFAULT_LABEL_COLOR_MODE = "grayscale";
     public static final double DEFAULT_VALID_FRACTION = 0.15d;
 
@@ -36,12 +35,21 @@ public final class StardistTrainingConfig {
     private final String modelsDir;
     private final String outputModelDir;
     private final boolean gpu;
+    private final String device;
     private final String labelColorMode;
     private final double validFraction;
 
     public StardistTrainingConfig(String modelName, String datasetPath, int epochs,
             boolean fineTune, String baseModelPath, String scratchArchitecture,
             String modelsDir, String outputModelDir, boolean gpu, String labelColorMode,
+            double validFraction) {
+        this(modelName, datasetPath, epochs, fineTune, baseModelPath, scratchArchitecture, modelsDir,
+                outputModelDir, gpu ? "cuda" : "cpu", labelColorMode, validFraction);
+    }
+
+    public StardistTrainingConfig(String modelName, String datasetPath, int epochs,
+            boolean fineTune, String baseModelPath, String scratchArchitecture,
+            String modelsDir, String outputModelDir, String device, String labelColorMode,
             double validFraction) {
         this.modelName = modelName;
         this.datasetPath = datasetPath;
@@ -51,7 +59,8 @@ public final class StardistTrainingConfig {
         this.scratchArchitecture = scratchArchitecture;
         this.modelsDir = modelsDir;
         this.outputModelDir = outputModelDir;
-        this.gpu = gpu;
+        this.device = normalizeDevice(device);
+        this.gpu = !"cpu".equals(this.device);
         this.labelColorMode = labelColorMode;
         this.validFraction = validFraction;
     }
@@ -92,6 +101,10 @@ public final class StardistTrainingConfig {
         return gpu;
     }
 
+    public String getDevice() {
+        return device;
+    }
+
     public String getLabelColorMode() {
         return labelColorMode;
     }
@@ -107,6 +120,11 @@ public final class StardistTrainingConfig {
 
     public static StardistTrainingConfig fromUi(String modelName, String datasetPath, int epochs,
             boolean fineTune, String baseModelPath, String scratchArchitecture, String modelsDir) {
+        return fromUi(modelName, datasetPath, epochs, fineTune, baseModelPath, scratchArchitecture, modelsDir, "cpu");
+    }
+
+    public static StardistTrainingConfig fromUi(String modelName, String datasetPath, int epochs,
+            boolean fineTune, String baseModelPath, String scratchArchitecture, String modelsDir, String device) {
         String normalizedName = normalizeModelName(modelName);
         File stardistDir = modelsDir == null
                 ? new File(StardistModelRegistry.STARDIST_MODELS_SUBDIR)
@@ -114,7 +132,7 @@ public final class StardistTrainingConfig {
         File output = new File(stardistDir, normalizedName);
         return new StardistTrainingConfig(normalizedName, datasetPath, epochs,
                 fineTune, fineTune ? baseModelPath : null, fineTune ? null : scratchArchitecture,
-                modelsDir, output.getAbsolutePath(), DEFAULT_GPU, DEFAULT_LABEL_COLOR_MODE,
+                modelsDir, output.getAbsolutePath(), device, DEFAULT_LABEL_COLOR_MODE,
                 DEFAULT_VALID_FRACTION);
     }
 
@@ -127,5 +145,13 @@ public final class StardistTrainingConfig {
             name = name.substring(0, name.length() - StardistModelRegistry.STARDIST_KERAS_WEIGHTS_EXTENSION.length());
         }
         return name;
+    }
+
+    private static String normalizeDevice(String device) {
+        if (device == null) {
+            return "cpu";
+        }
+        String normalized = device.trim().toLowerCase();
+        return "cuda".equals(normalized) || "mps".equals(normalized) ? normalized : "cpu";
     }
 }

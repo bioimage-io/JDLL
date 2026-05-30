@@ -749,7 +749,7 @@ public final class StarDist extends DLModelPytorchProtected {
 			Consumer<StardistValidationPreview> previewConsumer,
 			Consumer<String> logConsumer)
 			throws IOException, BuildException, InterruptedException, TaskException {
-		train(dataDir, gtDir, outputDir, gpu, imageChannels, labelColorMode, validFraction,
+		train(dataDir, gtDir, outputDir, gpu ? "cuda" : "cpu", imageChannels, labelColorMode, validFraction,
 				config, progressConsumer, previewConsumer, logConsumer, null);
 	}
 
@@ -761,7 +761,20 @@ public final class StarDist extends DLModelPytorchProtected {
 			Consumer<String> logConsumer,
 			Consumer<Service> serviceConsumer)
 			throws IOException, BuildException, InterruptedException, TaskException {
+		train(dataDir, gtDir, outputDir, gpu ? "cuda" : "cpu", imageChannels, labelColorMode, validFraction,
+				config, progressConsumer, previewConsumer, logConsumer, serviceConsumer);
+	}
+
+	public static void train(String dataDir, String gtDir, String outputDir,
+			String device, String imageChannels, String labelColorMode, double validFraction,
+			Map<String, Object> config,
+			Consumer<StardistTrainingProgress> progressConsumer,
+			Consumer<StardistValidationPreview> previewConsumer,
+			Consumer<String> logConsumer,
+			Consumer<Service> serviceConsumer)
+			throws IOException, BuildException, InterruptedException, TaskException {
 		validateTrainingArguments(dataDir, gtDir, outputDir, validFraction, config);
+		String normalizedDevice = normalizeDevice(device);
 		File output = new File(outputDir);
 		if (!output.isDirectory() && !output.mkdirs()) {
 			throw new IOException("Could not create StarDist output directory: " + output.getAbsolutePath());
@@ -780,7 +793,7 @@ public final class StarDist extends DLModelPytorchProtected {
 			python.debug(logConsumer);
 		}
 		try {
-			Task task = python.task(buildTrainingCode(dataDir, gtDir, outputDir, gpu,
+			Task task = python.task(buildTrainingCode(dataDir, gtDir, outputDir, normalizedDevice,
 					imageChannels, labelColorMode, validFraction, config));
 			task.listen(event -> handleTrainingEvent(event, progressConsumer, previewConsumer, logConsumer));
 			task.waitFor();
@@ -847,6 +860,14 @@ public final class StarDist extends DLModelPytorchProtected {
 		return config;
 	}
 
+	private static String normalizeDevice(String device) {
+		if (device == null) {
+			return "cpu";
+		}
+		String normalized = device.trim().toLowerCase();
+		return "cuda".equals(normalized) || "mps".equals(normalized) ? normalized : "cpu";
+	}
+
 	private static void validateTrainingArguments(String dataDir, String gtDir,
 			String outputDir, double validFraction, Map<String, Object> config) {
 		if (dataDir == null || !new File(dataDir).isDirectory()) {
@@ -873,16 +894,44 @@ public final class StarDist extends DLModelPytorchProtected {
 	public static String buildTrainingCode(String dataDir, String gtDir, String outputDir,
 			boolean gpu, String imageChannels, String labelColorMode, double validFraction,
 			Map<String, Object> config) {
+		return buildTrainingCode(dataDir, gtDir, outputDir, gpu ? "cuda" : "cpu",
+				imageChannels, labelColorMode, validFraction, config);
+	}
+
+	public static String buildTrainingCode(String dataDir, String gtDir, String outputDir,
+			String device, String imageChannels, String labelColorMode, double validFraction,
+			Map<String, Object> config) {
 		String nl = System.lineSeparator();
 		boolean hasGtDir = gtDir != null && !gtDir.trim().isEmpty();
 		String gtDirCode = hasGtDir ? "gt_dir = r'" + TrainingCodeUtils.py(new File(gtDir).getAbsolutePath()) + "'" + nl : "";
 		String safeImageChannels = imageChannels == null || imageChannels.trim().isEmpty()
 				? "grayscale" : imageChannels.trim();
+		String normalizedDevice = normalizeDevice(device);
 		return ""
 				+ "import contextlib, json, os, random, sys" + nl
 				+ "from pathlib import Path" + nl
 				+ "import numpy as np" + nl
 				+ TrainingCodeUtils.apposeStdoutCapture()
+				+ "import tensorflow as tf" + nl
+				+ "_jdll_requested_device = '" + TrainingCodeUtils.py(normalizedDevice) + "'" + nl
+				+ "_jdll_tf_device = '/CPU:0'" + nl
+				+ "try:" + nl
+				+ "  if _jdll_requested_device == 'cpu':" + nl
+				+ "    try:" + nl
+				+ "      tf.config.set_visible_devices([], 'GPU')" + nl
+				+ "    except Exception:" + nl
+				+ "      pass" + nl
+				+ "  elif _jdll_requested_device in ('cuda', 'mps', 'gpu'):" + nl
+				+ "    _jdll_gpus = tf.config.list_physical_devices('GPU')" + nl
+				+ "    if _jdll_gpus:" + nl
+				+ "      for _jdll_gpu in _jdll_gpus:" + nl
+				+ "        try:" + nl
+				+ "          tf.config.experimental.set_memory_growth(_jdll_gpu, True)" + nl
+				+ "        except Exception:" + nl
+				+ "          pass" + nl
+				+ "      _jdll_tf_device = '/GPU:0'" + nl
+				+ "except Exception:" + nl
+				+ "  _jdll_tf_device = '/CPU:0'" + nl
 				+ "from csbdeep.utils import normalize" + nl
 				+ "from stardist.models import Config2D, StarDist2D" + nl
 				+ "try:" + nl
@@ -904,7 +953,7 @@ public final class StarDist extends DLModelPytorchProtected {
 				+ "config = json.loads(r'''" + TrainingCodeUtils.toJson(config) + "''')" + nl
 				+ "preview_count = int(config.pop('validation_preview_count', 20))" + nl
 				+ "log_every_n_steps = 10" + nl
-				+ "config['use_gpu'] = False" + nl
+				+ "config['use_gpu'] = _jdll_tf_device == '/GPU:0'" + nl
 				+ "if '" + TrainingCodeUtils.py(safeImageChannels).toLowerCase() + "' == 'rgb':" + nl
 				+ "  config['axes'] = 'YXC'" + nl
 				+ "  config['n_channel_in'] = 3" + nl
@@ -1053,7 +1102,7 @@ public final class StarDist extends DLModelPytorchProtected {
 				+ "train_pairs, val_pairs = _dataset()" + nl
 				+ "X_train, Y_train = _load_pairs(train_pairs)" + nl
 				+ "X_val, Y_val = _load_pairs(val_pairs)" + nl
-				+ "with open(stardist_log_path, 'a', encoding='utf-8') as stardist_log, contextlib.redirect_stdout(stardist_log), contextlib.redirect_stderr(stardist_log):" + nl
+				+ "with open(stardist_log_path, 'a', encoding='utf-8') as stardist_log, contextlib.redirect_stdout(stardist_log), contextlib.redirect_stderr(stardist_log), tf.device(_jdll_tf_device):" + nl
 				+ "  model_config = Config2D(**config)" + nl
 				+ "  model = StarDist2D(model_config, name=output_dir.name, basedir=str(output_dir.parent))" + nl
 				+ "  model.prepare_for_training()" + nl

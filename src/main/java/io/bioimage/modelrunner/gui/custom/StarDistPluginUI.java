@@ -377,17 +377,19 @@ public class StarDistPluginUI extends StardistGUI implements ActionListener {
     private void cancel() {
     	cancelled = true;
         if (trainingRunning) {
-            trainingService.requestCancel();
+            trainingService.close();
+            if (workerThread != null && workerThread.isAlive()) {
+                workerThread.interrupt();
+            }
             if (cancelCallback != null) {
                 cancelCallback.run();
             }
             return;
         }
-    	if (workerThread != null && workerThread.isAlive()) {
-    		workerThread.interrupt();
-        }
         if (inferenceRunning) {
-    	    inferenceService.close();
+            inferenceService.cancelCurrentInference();
+        } else if (workerThread != null && workerThread.isAlive()) {
+    		workerThread.interrupt();
         }
     	if (cancelCallback != null)
     		cancelCallback.run();
@@ -743,9 +745,14 @@ public class StarDistPluginUI extends StardistGUI implements ActionListener {
     			trainPanel.getDatasetField().getText(),
     			Integer.parseInt(trainPanel.getEpochsField().getText().trim()),
     			trainPanel.getFineTuneRadio().isSelected(),
-    			trainPanel.getSelectedBaseModelValue(),
+            trainPanel.getSelectedBaseModelValue(),
             trainPanel.getSelectedScratchArchitectureValue(),
-    			modelsDir);
+    			modelsDir,
+                selectedTrainingDevice());
+    }
+
+    private String selectedTrainingDevice() {
+        return selectedInferenceDevice();
     }
 
     private void refreshStardistModels() {
