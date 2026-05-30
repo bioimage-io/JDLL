@@ -21,6 +21,7 @@ package io.bioimage.modelrunner.gui.custom.stardist;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
@@ -37,7 +38,10 @@ import io.bioimage.modelrunner.model.special.stardist.StardistValidationPreview;
 
 public class StardistTrainingService {
 
+    private static final long CANCEL_FALLBACK_TIMEOUT_MS = 1500L;
+
     private final ModelInstaller installer;
+    private File cancelSignalFile;
     private Service runningPython;
 
     public StardistTrainingService(ModelInstaller installer) {
@@ -62,18 +66,27 @@ public class StardistTrainingService {
         Map<String, Object> trainingConfig =
                 new LinkedHashMap<String, Object>(StarDist.defaultTrainingConfig(config.getEpochs()));
         applyArchitectureDefaults(trainingConfig, config.getScratchArchitecture());
-        StarDist.train(datasetRoot.getAbsolutePath(), null,
-                config.getOutputModelDir(), config.getDevice(), config.getImageChannels(),
-                config.getLabelColorMode(), config.getValidFraction(), trainingConfig,
-                progressConsumer, previewConsumer, logConsumer, this::setRunningPython);
+        File cancelFile = beginCancelSignal();
+        try {
+            StarDist.train(datasetRoot.getAbsolutePath(), null,
+                    config.getOutputModelDir(), config.getDevice(), config.getImageChannels(),
+                    config.getLabelColorMode(), config.getValidFraction(), trainingConfig,
+                    progressConsumer, previewConsumer, logConsumer, cancelFile.getAbsolutePath(), this::setRunningPython);
+        } finally {
+            finishCancelSignal(cancelFile);
+        }
     }
 
     public synchronized void requestCancel() {
-        Service python = runningPython;
-        runningPython = null;
-        if (python != null && python.isAlive()) {
-            python.kill();
+        if (cancelSignalFile != null) {
+            try {
+                cancelSignalFile.createNewFile();
+            } catch (IOException e) {
+                killRunningPython();
+                return;
+            }
         }
+        killRunningPythonIfStillAliveLater();
     }
 
     public void close() {
@@ -127,5 +140,58 @@ public class StardistTrainingService {
 
     private synchronized void setRunningPython(Service python) {
         runningPython = python;
+    }
+
+    private synchronized File beginCancelSignal() throws IOException {
+        File signal = File.createTempFile("jdll-stardist-cancel-", ".flag");
+        Files.deleteIfExists(signal.toPath());
+        signal.deleteOnExit();
+        cancelSignalFile = signal;
+        return signal;
+    }
+
+    private synchronized void finishCancelSignal(File signal) {
+        if (cancelSignalFile == signal) {
+            cancelSignalFile = null;
+        }
+        if (signal == null) {
+            return;
+        }
+        try {
+            Files.deleteIfExists(signal.toPath());
+        } catch (IOException e) {
+            // Best-effort cleanup of an out-of-process cancellation signal.
+        }
+    }
+
+    private void killRunningPythonIfStillAliveLater() {
+        Service python = runningPython;
+        if (python == null) {
+            return;
+        }
+        Thread fallback = new Thread(() -> {
+            try {
+                Thread.sleep(CANCEL_FALLBACK_TIMEOUT_MS);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                return;
+            }
+            synchronized (StardistTrainingService.this) {
+                if (runningPython == python && python.isAlive()) {
+                    runningPython = null;
+                    python.kill();
+                }
+            }
+        }, "stardist-training-cancel-fallback");
+        fallback.setDaemon(true);
+        fallback.start();
+    }
+
+    private synchronized void killRunningPython() {
+        Service python = runningPython;
+        runningPython = null;
+        if (python != null && python.isAlive()) {
+            python.kill();
+        }
     }
 }

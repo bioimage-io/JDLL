@@ -773,6 +773,19 @@ public final class StarDist extends DLModelPytorchProtected {
 			Consumer<String> logConsumer,
 			Consumer<Service> serviceConsumer)
 			throws IOException, BuildException, InterruptedException, TaskException {
+		train(dataDir, gtDir, outputDir, device, imageChannels, labelColorMode, validFraction,
+				config, progressConsumer, previewConsumer, logConsumer, null, serviceConsumer);
+	}
+
+	public static void train(String dataDir, String gtDir, String outputDir,
+			String device, String imageChannels, String labelColorMode, double validFraction,
+			Map<String, Object> config,
+			Consumer<StardistTrainingProgress> progressConsumer,
+			Consumer<StardistValidationPreview> previewConsumer,
+			Consumer<String> logConsumer,
+			String cancelSignalPath,
+			Consumer<Service> serviceConsumer)
+			throws IOException, BuildException, InterruptedException, TaskException {
 		validateTrainingArguments(dataDir, gtDir, outputDir, validFraction, config);
 		String normalizedDevice = normalizeDevice(device);
 		File output = new File(outputDir);
@@ -794,7 +807,7 @@ public final class StarDist extends DLModelPytorchProtected {
 		}
 		try {
 			Task task = python.task(buildTrainingCode(dataDir, gtDir, outputDir, normalizedDevice,
-					imageChannels, labelColorMode, validFraction, config));
+					imageChannels, labelColorMode, validFraction, config, cancelSignalPath));
 			task.listen(event -> handleTrainingEvent(event, progressConsumer, previewConsumer, logConsumer));
 			task.waitFor();
 		} finally {
@@ -901,6 +914,13 @@ public final class StarDist extends DLModelPytorchProtected {
 	public static String buildTrainingCode(String dataDir, String gtDir, String outputDir,
 			String device, String imageChannels, String labelColorMode, double validFraction,
 			Map<String, Object> config) {
+		return buildTrainingCode(dataDir, gtDir, outputDir, device, imageChannels, labelColorMode,
+				validFraction, config, null);
+	}
+
+	public static String buildTrainingCode(String dataDir, String gtDir, String outputDir,
+			String device, String imageChannels, String labelColorMode, double validFraction,
+			Map<String, Object> config, String cancelSignalPath) {
 		String nl = System.lineSeparator();
 		boolean hasGtDir = gtDir != null && !gtDir.trim().isEmpty();
 		String gtDirCode = hasGtDir ? "gt_dir = r'" + TrainingCodeUtils.py(new File(gtDir).getAbsolutePath()) + "'" + nl : "";
@@ -951,6 +971,7 @@ public final class StarDist extends DLModelPytorchProtected {
 				+ "preview_dir.mkdir(parents=True, exist_ok=True)" + nl
 				+ "stardist_log_path = output_dir / 'training.log'" + nl
 				+ "config = json.loads(r'''" + TrainingCodeUtils.toJson(config) + "''')" + nl
+				+ "cancel_signal_path = r'" + TrainingCodeUtils.py(cancelSignalPath == null ? "" : cancelSignalPath) + "'" + nl
 				+ "preview_count = int(config.pop('validation_preview_count', 20))" + nl
 				+ "log_every_n_steps = 10" + nl
 				+ "# StarDist use_gpu enables gputools/OpenCL preprocessing, not TensorFlow CUDA." + nl
@@ -965,6 +986,8 @@ public final class StarDist extends DLModelPytorchProtected {
 				+ TrainingCodeUtils.taskUpdateFunction("_task_update")
 				+ TrainingCodeUtils.scalarFunction("_scalar", false)
 				+ TrainingCodeUtils.cleanDictFunction("_clean", "_scalar")
+				+ "def _cancel_requested():" + nl
+				+ "  return bool(cancel_signal_path) and os.path.exists(cancel_signal_path)" + nl
 				+ "def _atomic_npy_save(path, array):" + nl
 				+ "  tmp_path = str(path) + '.tmp'" + nl
 				+ "  with open(tmp_path, 'wb') as f:" + nl
@@ -1068,6 +1091,12 @@ public final class StarDist extends DLModelPytorchProtected {
 				+ "    _task_update(message='StarDist training step %d/%d' % (self.global_step, state['total_steps']), current=self.global_step, maximum=state['total_steps'], info=info)" + nl
 				+ "    if self.global_step == 1 or self.global_step % log_every_n_steps == 0:" + nl
 				+ "      print('step %05d/%d epoch=%d/%d loss=%s prob=%s dist=%s lr=%s' % (self.global_step, state['total_steps'], epoch, state['total_epochs'], logs.get('loss'), logs.get('prob_loss'), logs.get('dist_loss'), self._lr()), flush=True)" + nl
+				+ "    if _cancel_requested():" + nl
+				+ "      try:" + nl
+				+ "        self.model.stop_training = True" + nl
+				+ "      except Exception:" + nl
+				+ "        pass" + nl
+				+ "      _task_update(message='StarDist training cancellation requested', current=self.global_step, maximum=state['total_steps'], info={'type': 'cancelled', 'epoch': epoch, 'step': self.global_step})" + nl
 				+ "  def on_epoch_end(self, epoch, logs=None):" + nl
 				+ "    logs = logs or {}" + nl
 				+ "    current_epoch = int(epoch) + 1" + nl
@@ -1077,6 +1106,12 @@ public final class StarDist extends DLModelPytorchProtected {
 				+ "    info = {'type': 'progress', 'epoch': current_epoch, 'step': step, 'total_epochs': state['total_epochs'], 'total_steps': state['total_steps'], 'losses': losses, 'metrics': metrics}" + nl
 				+ "    _task_update(message='StarDist epoch %d/%d' % (current_epoch, state['total_epochs']), current=step, maximum=state['total_steps'], info=info)" + nl
 				+ "    print('epoch %03d/%d step=%d/%d loss=%s val_loss=%s lr=%s' % (current_epoch, state['total_epochs'], step, state['total_steps'], logs.get('loss'), logs.get('val_loss'), self._lr()), flush=True)" + nl
+				+ "    if _cancel_requested():" + nl
+				+ "      try:" + nl
+				+ "        self.model.stop_training = True" + nl
+				+ "      except Exception:" + nl
+				+ "        pass" + nl
+				+ "      return" + nl
 				+ "    samples = []" + nl
 				+ "    for i, image in enumerate(self.X_val[:preview_count]):" + nl
 				+ "      image_path = preview_dir / ('preview_%03d_image.npy' % i)" + nl

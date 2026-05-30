@@ -102,6 +102,7 @@ public class StarDistPluginUI extends StardistGUI implements ActionListener {
     private File selectedSystemImageFile;
     private volatile boolean inferenceRunning;
     private volatile boolean trainingRunning;
+    private long trainingUiRunId;
     private boolean windowCloseHookInstalled;
     
     private Runnable cancelCallback;
@@ -378,6 +379,7 @@ public class StarDistPluginUI extends StardistGUI implements ActionListener {
     	cancelled = true;
         if (trainingRunning) {
             trainingService.close();
+            finishCancelledTrainingUiState();
             if (cancelCallback != null) {
                 cancelCallback.run();
             }
@@ -589,7 +591,7 @@ public class StarDistPluginUI extends StardistGUI implements ActionListener {
         }
         cancelled = false;
         inferenceService.close();
-        startTrainingUiState();
+        final long trainingRunId = startTrainingUiState();
         workerThread = new Thread(() -> {
             try {
                 StardistTrainingConfig config = readTrainingConfig();
@@ -614,13 +616,14 @@ public class StarDistPluginUI extends StardistGUI implements ActionListener {
                     e.printStackTrace();
                 }
             } finally {
-                SwingUtilities.invokeLater(() -> finishTrainingUiState());
+                SwingUtilities.invokeLater(() -> finishTrainingUiState(trainingRunId));
             }
         });
         workerThread.start();
     }
 
-    private void startTrainingUiState() {
+    private long startTrainingUiState() {
+        long runId = ++trainingUiRunId;
         trainingStartMillis = System.currentTimeMillis();
         lastProgressMillis = trainingStartMillis;
         lastProgressStep = 0;
@@ -642,9 +645,13 @@ public class StarDistPluginUI extends StardistGUI implements ActionListener {
         }
         trainingTimer = new Timer(1000, e -> updateTrainingGraphStatus());
         trainingTimer.start();
+        return runId;
     }
 
-    private void finishTrainingUiState() {
+    private void finishTrainingUiState(long runId) {
+        if (runId != trainingUiRunId) {
+            return;
+        }
         if (trainingTimer != null) {
             trainingTimer.stop();
             trainingTimer = null;
@@ -659,6 +666,12 @@ public class StarDistPluginUI extends StardistGUI implements ActionListener {
                 totalTrainingEpochs, elapsed, currentSecondsPerStep);
         trainPanel.getValidationPreviewPanel().setTrainingStatus(false, currentTrainingStep, totalTrainingSteps,
                 totalTrainingEpochs, elapsed, currentSecondsPerStep);
+    }
+
+    private void finishCancelledTrainingUiState() {
+        long runId = trainingUiRunId;
+        finishTrainingUiState(runId);
+        trainingUiRunId++;
     }
 
     private void handleTrainingProgress(StardistTrainingProgress progress) {

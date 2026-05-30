@@ -36,6 +36,8 @@ import io.bioimage.modelrunner.model.special.yolo.YoloValidationPreview;
 
 public class YoloTrainingService {
 
+    private static final long CANCEL_FALLBACK_TIMEOUT_MS = 1500L;
+
     private final ModelInstaller installer;
     private File cancelSignalFile;
     private Service runningPython;
@@ -71,10 +73,16 @@ public class YoloTrainingService {
     }
 
     public synchronized void requestCancel() {
-        Service python = runningPython;
-        runningPython = null;
-        if (python != null && python.isAlive()) {
-            python.kill();
+        if (cancelSignalFile != null) {
+            try {
+                cancelSignalFile.createNewFile();
+            } catch (IOException e) {
+                killRunningPython();
+                return;
+            }
+            killRunningPythonIfStillAliveLater();
+        } else {
+            killRunningPython();
         }
     }
 
@@ -139,5 +147,36 @@ public class YoloTrainingService {
 
     private synchronized void setRunningPython(Service python) {
         runningPython = python;
+    }
+
+    private void killRunningPythonIfStillAliveLater() {
+        Service python = runningPython;
+        if (python == null) {
+            return;
+        }
+        Thread fallback = new Thread(() -> {
+            try {
+                Thread.sleep(CANCEL_FALLBACK_TIMEOUT_MS);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                return;
+            }
+            synchronized (YoloTrainingService.this) {
+                if (runningPython == python && python.isAlive()) {
+                    runningPython = null;
+                    python.kill();
+                }
+            }
+        }, "yolo-training-cancel-fallback");
+        fallback.setDaemon(true);
+        fallback.start();
+    }
+
+    private synchronized void killRunningPython() {
+        Service python = runningPython;
+        runningPython = null;
+        if (python != null && python.isAlive()) {
+            python.kill();
+        }
     }
 }

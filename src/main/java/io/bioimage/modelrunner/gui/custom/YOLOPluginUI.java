@@ -101,6 +101,7 @@ public class YOLOPluginUI extends YoloGUI implements ActionListener {
     private File selectedSystemImageFile;
     private volatile boolean inferenceRunning;
     private volatile boolean trainingRunning;
+    private long trainingUiRunId;
     private boolean windowCloseHookInstalled;
     
     private Runnable cancelCallback;
@@ -377,6 +378,7 @@ public class YOLOPluginUI extends YoloGUI implements ActionListener {
     	cancelled = true;
         if (trainingRunning) {
             trainingService.close();
+            finishCancelledTrainingUiState();
             if (cancelCallback != null) {
                 cancelCallback.run();
             }
@@ -586,7 +588,7 @@ public class YOLOPluginUI extends YoloGUI implements ActionListener {
         }
         inferenceService.close();
         cancelled = false;
-        startTrainingUiState();
+        final long trainingRunId = startTrainingUiState();
         workerThread = new Thread(() -> {
             try {
                 YoloTrainingConfig config = readTrainingConfig();
@@ -611,13 +613,14 @@ public class YOLOPluginUI extends YoloGUI implements ActionListener {
                     e.printStackTrace();
                 }
             } finally {
-                SwingUtilities.invokeLater(() -> finishTrainingUiState());
+                SwingUtilities.invokeLater(() -> finishTrainingUiState(trainingRunId));
             }
         });
         workerThread.start();
     }
 
-    private void startTrainingUiState() {
+    private long startTrainingUiState() {
+        long runId = ++trainingUiRunId;
         trainingStartMillis = System.currentTimeMillis();
         lastProgressMillis = trainingStartMillis;
         lastProgressStep = 0;
@@ -639,9 +642,13 @@ public class YOLOPluginUI extends YoloGUI implements ActionListener {
         }
         trainingTimer = new Timer(1000, e -> updateTrainingGraphStatus());
         trainingTimer.start();
+        return runId;
     }
 
-    private void finishTrainingUiState() {
+    private void finishTrainingUiState(long runId) {
+        if (runId != trainingUiRunId) {
+            return;
+        }
         if (trainingTimer != null) {
             trainingTimer.stop();
             trainingTimer = null;
@@ -656,6 +663,12 @@ public class YOLOPluginUI extends YoloGUI implements ActionListener {
                 totalTrainingEpochs, elapsed, currentSecondsPerStep);
         trainPanel.getValidationPreviewPanel().setTrainingStatus(false, currentTrainingStep, totalTrainingSteps,
                 totalTrainingEpochs, elapsed, currentSecondsPerStep);
+    }
+
+    private void finishCancelledTrainingUiState() {
+        long runId = trainingUiRunId;
+        finishTrainingUiState(runId);
+        trainingUiRunId++;
     }
 
     private void handleTrainingProgress(YoloTrainingProgress progress) {
