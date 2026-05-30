@@ -70,8 +70,9 @@ public class StardistTrainingService {
 
     public synchronized void requestCancel() {
         Service python = runningPython;
+        runningPython = null;
         if (python != null && python.isAlive()) {
-            python.close();
+            python.kill();
         }
     }
 

@@ -38,7 +38,6 @@ public class YoloTrainingService {
 
     private final ModelInstaller installer;
     private File cancelSignalFile;
-    private boolean cancelRequested;
     private Service runningPython;
 
     public YoloTrainingService(ModelInstaller installer) {
@@ -72,17 +71,10 @@ public class YoloTrainingService {
     }
 
     public synchronized void requestCancel() {
-        cancelRequested = true;
-        if (cancelSignalFile != null) {
-            try {
-                cancelSignalFile.createNewFile();
-            } catch (IOException e) {
-                // If the signal cannot be written, close the worker process below.
-            }
-        }
         Service python = runningPython;
+        runningPython = null;
         if (python != null && python.isAlive()) {
-            python.close();
+            python.kill();
         }
     }
 
@@ -124,7 +116,6 @@ public class YoloTrainingService {
     }
 
     private synchronized File beginCancelSignal() throws IOException {
-        cancelRequested = false;
         File signal = File.createTempFile("jdll-yolo-cancel-", ".flag");
         Files.deleteIfExists(signal.toPath());
         signal.deleteOnExit();
@@ -136,7 +127,6 @@ public class YoloTrainingService {
         if (cancelSignalFile == signal) {
             cancelSignalFile = null;
         }
-        cancelRequested = false;
         if (signal == null) {
             return;
         }

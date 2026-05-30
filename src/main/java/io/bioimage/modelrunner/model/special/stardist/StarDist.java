@@ -953,7 +953,8 @@ public final class StarDist extends DLModelPytorchProtected {
 				+ "config = json.loads(r'''" + TrainingCodeUtils.toJson(config) + "''')" + nl
 				+ "preview_count = int(config.pop('validation_preview_count', 20))" + nl
 				+ "log_every_n_steps = 10" + nl
-				+ "config['use_gpu'] = _jdll_tf_device == '/GPU:0'" + nl
+				+ "# StarDist use_gpu enables gputools/OpenCL preprocessing, not TensorFlow CUDA." + nl
+				+ "config['use_gpu'] = False" + nl
 				+ "if '" + TrainingCodeUtils.py(safeImageChannels).toLowerCase() + "' == 'rgb':" + nl
 				+ "  config['axes'] = 'YXC'" + nl
 				+ "  config['n_channel_in'] = 3" + nl

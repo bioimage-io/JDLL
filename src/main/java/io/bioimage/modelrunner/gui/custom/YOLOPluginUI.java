@@ -377,9 +377,6 @@ public class YOLOPluginUI extends YoloGUI implements ActionListener {
     	cancelled = true;
         if (trainingRunning) {
             trainingService.close();
-            if (workerThread != null && workerThread.isAlive()) {
-                workerThread.interrupt();
-            }
             if (cancelCallback != null) {
                 cancelCallback.run();
             }

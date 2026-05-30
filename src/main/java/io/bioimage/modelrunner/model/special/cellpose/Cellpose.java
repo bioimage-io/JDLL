@@ -161,7 +161,6 @@ public class Cellpose extends BioimageIoModelPytorchProtected {
 	protected Cellpose(String modelFile, String callable, String weightsPath, 
 			Map<String, Object> kwargs, ModelDescriptor descriptor) throws BuildException, IOException {
 		super(modelFile, callable, null, weightsPath, kwargs, descriptor, true);
-    	createPythonService();
 	}
 	
 	/**
@@ -322,7 +321,7 @@ public class Cellpose extends BioimageIoModelPytorchProtected {
 	}
 	
 	protected <T extends RealType<T> & NativeType<T>> 
-	String createInputsCode(List<RandomAccessibleInterval<T>> inRais, List<String> names) {
+	String createInputsCode(List<Tensor<T>> inRais, List<String> names) {
 		if (this.isBMZ)
 			return super.createInputsCode(inRais, names);
 		String code = setDiameterCode + System.lineSeparator();
@@ -330,7 +329,7 @@ public class Cellpose extends BioimageIoModelPytorchProtected {
 		code += "created_shms = []" + System.lineSeparator();
 		code += "try:" + System.lineSeparator();
 		for (int i = 0; i < inRais.size(); i ++) {
-			SharedMemoryArray shma = SharedMemoryArray.createSHMAFromRAI(inRais.get(i), false, false);
+			SharedMemoryArray shma = SharedMemoryArray.createSHMAFromRAI(inRais.get(i).getData(), false, false);
 			code += codeToConvertShmaToPython(shma, names.get(i));
 			inShmaList.add(shma);
 		}
@@ -338,19 +337,13 @@ public class Cellpose extends BioimageIoModelPytorchProtected {
 		String channelList = "[";
 		for (int i = 0; i < inRais.size(); i ++) {
 			nameList += names.get(i) + ", ";
-			channelList += createChannelsArgCode(inRais.get(i)) + ", ";
+			channelList += createChannelsArgCode(inRais.get(i).getData()) + ", ";
 		}
 		nameList += "]";
 		channelList += "]";
 		code += createDiamCode(nameList, channelList);
-		code += "  print(diameter)" + System.lineSeparator();
-		code += "  " + OUTPUT_LIST_KEY + " = " + MODEL_VAR_NAME + ".eval(" + nameList + ", channels=" + channelList + ", ";
-		code += "diameter=diameter)" + System.lineSeparator();;
-		String closeEverythingWin = closeSHMWin();
-		code += "  " + closeEverythingWin + System.lineSeparator();
-		code += "except Exception as e:" + System.lineSeparator();
-		code += "  " + closeEverythingWin + System.lineSeparator();
-		code += "  raise e" + System.lineSeparator();
+		code += OUTPUT_LIST_KEY + " = " + MODEL_VAR_NAME + ".eval(" + nameList + ", channels=" + channelList + ", ";
+		code += "diameter=diameter)" + System.lineSeparator();
 		code += ""
 				+ SHMS_KEY + " = []" + System.lineSeparator()
 				+ SHM_NAMES_KEY + " = []" + System.lineSeparator()
@@ -735,9 +728,6 @@ public class Cellpose extends BioimageIoModelPytorchProtected {
 		rais.add(rai);
 		long tt = System.currentTimeMillis();
 		List<RandomAccessibleInterval<T>> res = model.inference(rais);
-		System.out.println(System.currentTimeMillis() - tt);
-		tt = System.currentTimeMillis();
-		List<RandomAccessibleInterval<T>> rees = model.inference(rais);
 		System.out.println(System.currentTimeMillis() - tt);
 		model.close();
 		System.out.println(false);

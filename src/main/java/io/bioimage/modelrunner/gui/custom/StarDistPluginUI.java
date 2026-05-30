@@ -378,9 +378,6 @@ public class StarDistPluginUI extends StardistGUI implements ActionListener {
     	cancelled = true;
         if (trainingRunning) {
             trainingService.close();
-            if (workerThread != null && workerThread.isAlive()) {
-                workerThread.interrupt();
-            }
             if (cancelCallback != null) {
                 cancelCallback.run();
             }
