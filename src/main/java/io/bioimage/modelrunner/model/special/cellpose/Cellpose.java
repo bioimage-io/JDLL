@@ -451,24 +451,23 @@ public class Cellpose extends BioimageIoModelPytorchProtected {
 	}
 
 	/**
-	 * Initialize one of the "official" pretrained Stardist 2D models.
+	 * Initialize one of the official pretrained Cellpose models.
 	 * By default, the model will be installed in the "models" folder inside the application
 	 * @param pretrainedModel
 	 * 	the name of the pretrained model.
-	 * @param install
-	 * 	whether to force the download or to try to look if the model has already been installed before
-	 * @return an instance of a pretrained Stardist2D model ready to be used
+	 * @return an instance of a pretrained Cellpose model ready to be used
 	 * @throws IOException if there is any error downloading the model, in the case it is needed
 	 * @throws InterruptedException if the download of the model is stopped
 	 * @throws ExecutionException if there is an error downloading the model
 	 * @throws BuildException if there is any error building the environment
 	 */
-	public static Cellpose fromPretained(String pretrainedModel, boolean install, String device) throws IOException, InterruptedException, ExecutionException, BuildException {
-		return fromPretained(pretrainedModel, new File("models").getAbsolutePath(), install, device);
+	public static Cellpose fromPretained(String pretrainedModel) throws IOException, InterruptedException, ExecutionException, BuildException {
+		return fromPretained(pretrainedModel, new File("models").getAbsolutePath(), "cpu");
 	}
 
-	public static Cellpose fromPretained(String pretrainedModel, boolean install) throws IOException, InterruptedException, ExecutionException, BuildException {
-		return fromPretained(pretrainedModel, install, "cpu");
+	public static Cellpose fromPretained(String pretrainedModel, String modelsDir) throws IOException,
+																							InterruptedException, ExecutionException, BuildException {
+		return fromPretained(pretrainedModel, modelsDir, "cpu");
 	}
 
 	/**
@@ -478,35 +477,28 @@ public class Cellpose extends BioimageIoModelPytorchProtected {
 	 * 	the name of the pretrained model.
 	 * @param modelsDir
 	 * 	the directory where the model wants to be installed
-	 * @param install
-	 * 	whether to force the installation or to try to look if the model has already been installed before
-	 * @return an instance of a pretrained Stardist2D model ready to be used
+	 * @return an instance of a pretrained Cellpose model ready to be used
 	 * @throws IOException if there is any error downloading the model, in the case it is needed
 	 * @throws InterruptedException if the download of the model is stopped
 	 * @throws ExecutionException if there is an error downloading the model
 	 * @throws BuildException if there is any error building the environment
 	 */
-	public static Cellpose fromPretained(String pretrainedModel, String modelsDir, boolean install, String device) throws IOException,
+	public static Cellpose fromPretained(String pretrainedModel, String modelsDir, String device) throws IOException,
 																						InterruptedException, ExecutionException, BuildException {
-		if (PRETRAINED_CELLPOSE_MODELS.contains(pretrainedModel) && !install) {
+		if (PRETRAINED_CELLPOSE_MODELS.contains(pretrainedModel)) {
 			String weightsPath = fileIsCellpose(pretrainedModel, modelsDir);
-			if (weightsPath != null) return init(weightsPath, device);
-			return null;
-		} else if (PRETRAINED_CELLPOSE_MODELS.contains(pretrainedModel)) {
-			String path = donwloadPretrainedOfficial(pretrainedModel, modelsDir, null);
-			return init(path, device);
+			if (weightsPath == null)
+				weightsPath = donwloadPretrainedOfficial(pretrainedModel, modelsDir, null);
+			return init(weightsPath, device);
 		}
-		if (!install) {
-			List<ModelDescriptor> localModels = ModelDescriptorFactory.getModelsAtLocalRepo(modelsDir);
-			ModelDescriptor model = localModels.stream()
-					.filter(md -> md.getModelID().equals(pretrainedModel)
-							|| md.getName().toLowerCase().equals(pretrainedModel.toLowerCase()))
-					.findFirst().orElse(null);
-			if (model != null)
-				return Cellpose.init(model, device);
-			else
-				return null;
-		}
+
+		List<ModelDescriptor> localModels = ModelDescriptorFactory.getModelsAtLocalRepo(modelsDir);
+		ModelDescriptor model = localModels.stream()
+				.filter(md -> md.getModelID().equals(pretrainedModel)
+						|| md.getName().toLowerCase().equals(pretrainedModel.toLowerCase()))
+				.findFirst().orElse(null);
+		if (model != null)
+			return Cellpose.init(model, device);
 
 		BioimageioRepo br = BioimageioRepo.connect();
 		ModelDescriptor descriptor = br.selectByName(pretrainedModel);
@@ -518,11 +510,6 @@ public class Cellpose extends BioimageIoModelPytorchProtected {
 		String path = BioimageioRepo.downloadModel(descriptor, modelsDir);
 		descriptor.addModelPath(Paths.get(path));
 		return Cellpose.init(descriptor.buildInfo(), device);
-	}
-
-	public static Cellpose fromPretained(String pretrainedModel, String modelsDir, boolean install) throws IOException,
-																						InterruptedException, ExecutionException, BuildException {
-		return fromPretained(pretrainedModel, modelsDir, install, "cpu");
 	}
 
 	/**
@@ -721,7 +708,7 @@ public class Cellpose extends BioimageIoModelPytorchProtected {
 	 */
 	public static <T extends RealType<T> & NativeType<T>>
 	void main(String[] args) throws IOException, InterruptedException, ExecutionException, LoadModelException, RunModelException, BuildException {
-		Cellpose model = Cellpose.fromPretained("cyto2", true, "cpu");
+		Cellpose model = Cellpose.fromPretained("cyto2", new File("models").getAbsolutePath(), "cpu");
 		model.loadModel();
 		ArrayImg<FloatType, FloatArray> rai = ArrayImgs.floats(new long[] {512, 512, 3});
 		long tt = System.currentTimeMillis();

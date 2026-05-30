@@ -73,10 +73,10 @@ public class CellposePluginUI extends CellposeGUI implements ActionListener {
 	INSTALLED_WEIGHTS.put("nuclei", false);
     }
 
-	    private final ConsumerInterface consumer;
-	    private String whichLoaded;
-	    private String whichLoadedDevice;
-	    private Cellpose model;
+    private final ConsumerInterface consumer;
+    private String whichLoaded;
+    private String whichLoadedDevice;
+    private Cellpose model;
     private String inputTitle;
     private boolean cancelled = false;
 
