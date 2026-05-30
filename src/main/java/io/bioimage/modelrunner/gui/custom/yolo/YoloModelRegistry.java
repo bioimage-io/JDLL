@@ -34,9 +34,9 @@ public final class YoloModelRegistry {
     public static final String PRETRAINED_URL_FORMAT = "https://github.com/ultralytics/assets/releases/download/v8.4.0/%s";
 
     private static final String[][] PRETRAINED_MODELS = new String[][] {
-            {"YOLO26n", "yolo26n.pt"},
-            {"YOLO26m", "yolo26m.pt"},
-            {"YOLO26x", "yolo26x.pt"}
+            {"YOLO26n", "YOLO26n" + File.separator + "yolo26n.pt"},
+            {"YOLO26m", "YOLO26m" + File.separator + "yolo26m.pt"},
+            {"YOLO26x", "YOLO26x" + File.separator + "yolo26x.pt"}
     };
     private static final String[][] SCRATCH_ARCHITECTURES = new String[][] {
             {"Small (YOLO26n)", "yolo26n.yaml"},
@@ -52,6 +52,9 @@ public final class YoloModelRegistry {
         PRETRAINED_WEIGHTS_SIZE.put("yolo26n.pt", 5_544_453L);
         PRETRAINED_WEIGHTS_SIZE.put("yolo26m.pt", 44_255_705L);
         PRETRAINED_WEIGHTS_SIZE.put("yolo26x.pt", 118_667_365L);
+        PRETRAINED_WEIGHTS_SIZE.put("yolo26n/yolo26n.pt", 5_544_453L);
+        PRETRAINED_WEIGHTS_SIZE.put("yolo26m/yolo26m.pt", 44_255_705L);
+        PRETRAINED_WEIGHTS_SIZE.put("yolo26x/yolo26x.pt", 118_667_365L);
     }
 
     private YoloModelRegistry() {}
@@ -62,6 +65,17 @@ public final class YoloModelRegistry {
 
         for (String[] pretrained : PRETRAINED_MODELS) {
             models.put("[Pretrained] " + pretrained[0], new File(yoloDir, pretrained[1]).getAbsolutePath());
+        }
+
+        File[] customModelDirs = yoloDir.listFiles(file -> file.isDirectory()
+                && isModelDirectory(file)
+                && !isPretrainedModelDirectory(file));
+        if (customModelDirs != null) {
+            Arrays.sort(customModelDirs, Comparator.comparing(File::getName, String.CASE_INSENSITIVE_ORDER));
+            for (File modelDir : customModelDirs) {
+                File modelFile = findModelFile(modelDir);
+                models.put("[Custom] " + modelDir.getName(), modelFile.getAbsolutePath());
+            }
         }
 
         File[] customModels = yoloDir.listFiles(file -> file.isFile()
@@ -102,7 +116,7 @@ public final class YoloModelRegistry {
     }
 
     public static Long expectedPretrainedSize(String fileName) {
-        return fileName == null ? null : PRETRAINED_WEIGHTS_SIZE.get(fileName.toLowerCase());
+        return fileName == null ? null : PRETRAINED_WEIGHTS_SIZE.get(normalizePretrainedKey(fileName));
     }
 
     public static boolean isInstalled(String modelPath) {
@@ -113,12 +127,20 @@ public final class YoloModelRegistry {
         if (!modelFile.isFile()) {
             return false;
         }
-        Long expectedSize = expectedPretrainedSize(modelFile.getName());
+        Long expectedSize = expectedPretrainedSize(pretrainedLookupKey(modelFile));
+        if (expectedSize == null) {
+            expectedSize = expectedPretrainedSize(modelFile.getName());
+        }
         return expectedSize == null || expectedSize.longValue() == modelFile.length();
     }
 
     public static boolean canDownload(String modelPath) {
-        return modelPath != null && expectedPretrainedSize(new File(modelPath).getName()) != null;
+        if (modelPath == null) {
+            return false;
+        }
+        File modelFile = new File(modelPath);
+        return expectedPretrainedSize(pretrainedLookupKey(modelFile)) != null
+                || expectedPretrainedSize(modelFile.getName()) != null;
     }
 
     public static String downloadUrl(String modelPath) {
@@ -130,5 +152,43 @@ public final class YoloModelRegistry {
             return fileName.substring(0, fileName.length() - YOLO_WEIGHTS_EXTENSION.length());
         }
         return fileName;
+    }
+
+    private static boolean isModelDirectory(File file) {
+        return findModelFile(file) != null;
+    }
+
+    private static boolean isPretrainedModelDirectory(File file) {
+        File modelFile = findModelFile(file);
+        return modelFile != null && expectedPretrainedSize(pretrainedLookupKey(modelFile)) != null;
+    }
+
+    private static File findModelFile(File dir) {
+        if (dir == null || !dir.isDirectory()) {
+            return null;
+        }
+        File namedWeights = new File(dir, dir.getName() + YOLO_WEIGHTS_EXTENSION);
+        if (namedWeights.isFile()) {
+            return namedWeights;
+        }
+        File[] weights = dir.listFiles(file -> file.isFile()
+                && file.getName().toLowerCase().endsWith(YOLO_WEIGHTS_EXTENSION));
+        if (weights == null || weights.length == 0) {
+            return null;
+        }
+        Arrays.sort(weights, Comparator.comparing(File::getName, String.CASE_INSENSITIVE_ORDER));
+        return weights[0];
+    }
+
+    private static String pretrainedLookupKey(File modelFile) {
+        File parent = modelFile == null ? null : modelFile.getParentFile();
+        if (modelFile == null || parent == null) {
+            return "";
+        }
+        return normalizePretrainedKey(parent.getName() + "/" + modelFile.getName());
+    }
+
+    private static String normalizePretrainedKey(String key) {
+        return key == null ? null : key.replace('\\', '/').toLowerCase();
     }
 }

@@ -98,7 +98,8 @@ public final class YoloTrainingConfig {
         File yoloDir = modelsDir == null
                 ? new File(YoloModelRegistry.YOLO_MODELS_SUBDIR)
                 : new File(modelsDir, YoloModelRegistry.YOLO_MODELS_SUBDIR);
-        File output = new File(yoloDir, normalizedName + YoloModelRegistry.YOLO_WEIGHTS_EXTENSION);
+        File output = new File(new File(yoloDir, normalizedName),
+                normalizedName + YoloModelRegistry.YOLO_WEIGHTS_EXTENSION);
         return new YoloTrainingConfig(normalizedName, datasetPath, epochs, DEFAULT_IMAGE_SIZE,
                 fineTune, fineTune ? baseModelPath : null, fineTune ? null : scratchArchitecture,
                 modelsDir, output.getAbsolutePath(), DEFAULT_PREVIEW_EPOCH_PERIOD);

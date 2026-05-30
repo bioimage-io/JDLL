@@ -314,10 +314,13 @@ public class Yolo extends DLModelPytorchProtected {
 				: new File(baseModelPath).getAbsolutePath();
 		File outputFile = new File(outputWeightsPath);
 		File outputDir = outputFile.getParentFile();
-		String project = outputDir == null ? new File(".").getAbsolutePath() : outputDir.getAbsolutePath();
 		String runName = outputFile.getName();
 		if (runName.toLowerCase().endsWith(".pt")) {
 			runName = runName.substring(0, runName.length() - 3);
+		}
+		String project = outputDir == null ? new File(".").getAbsolutePath() : outputDir.getAbsolutePath();
+		if (outputDir != null && outputDir.getParentFile() != null && outputDir.getName().equals(runName)) {
+			project = outputDir.getParentFile().getAbsolutePath();
 		}
 		String nl = System.lineSeparator();
 		return ""
