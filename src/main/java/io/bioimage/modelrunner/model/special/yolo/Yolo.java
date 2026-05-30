@@ -139,6 +139,10 @@ public class Yolo extends DLModelPytorchProtected {
 			throw new IllegalArgumentException("Only 1 and 3 channel images supported. The provided input has " + dims[2]);
 		return inputTensors;
 	}
+
+    protected String getOutputTensorAxes(int outputCount) {
+		return "bic";
+	}
 	
 	/**
 	 * Builds model code.
