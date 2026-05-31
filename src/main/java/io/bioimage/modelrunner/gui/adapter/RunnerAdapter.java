@@ -170,7 +170,7 @@ public abstract class RunnerAdapter implements Closeable {
 			throw new RuntimeException("The model has already been closed");
 		if (!this.model.isLoaded())
 			throw new RuntimeException("Please first load the model");
-		return model.run(inputTensors);
+		return model.inference(toTensorArray(inputTensors));
 	}
 	
 	public <T extends RealType<T> & NativeType<T>, R extends RealType<R> & NativeType<R>> 
@@ -178,7 +178,12 @@ public abstract class RunnerAdapter implements Closeable {
 		LinkedHashMap<TensorSpec, String> testInputs = getTestInputs();
 		LinkedHashMap<TensorSpec, RandomAccessibleInterval<T>> inputRais = displayTestInputs(testInputs);
 		List<Tensor<T>> inputTensors = createTestTensorList(inputRais);
-		return model.run(inputTensors);
+		return model.inference(toTensorArray(inputTensors));
+	}
+
+	@SuppressWarnings("unchecked")
+	private static <T extends RealType<T> & NativeType<T>> Tensor<T>[] toTensorArray(List<Tensor<T>> tensors) {
+		return tensors.toArray(new Tensor[0]);
 	}
 	
 	private  <T extends RealType<T> & NativeType<T>> 
@@ -197,7 +202,8 @@ public abstract class RunnerAdapter implements Closeable {
 		return this.closed;
 	}
 	
-	private void initWithEnginesPath(boolean install) throws IOException, LoadEngineException, InterruptedException, RuntimeException, BuildException {
+	private void initWithEnginesPath(boolean install) throws IOException, LoadEngineException, LoadModelException,
+			InterruptedException, RuntimeException, BuildException {
 		List<String> wList = descriptor.getWeights().getAllSuportedWeightNames();
 		if (descriptor.getModelFamily().equals(ModelDescriptor.STARDIST)) {
 			boolean installed = StarDist.isInstalled();
@@ -208,7 +214,7 @@ public abstract class RunnerAdapter implements Closeable {
 				initWithEnginesPath(install);
 				return;
 			}
-			model = Stardist2D.fromBioimageioModel(descriptor);
+			model = StarDist.fromFile(descriptor.getModelPath(), null);
 		} else if (descriptor.getModelFamily().equals(ModelDescriptor.BIOIMAGEIO)
 				&& !(wList.size() == 1 && wList.contains(ModelWeight.getPytorchID()))) {
 			if (install) {
@@ -228,7 +234,8 @@ public abstract class RunnerAdapter implements Closeable {
 		}
 	}
 	
-	private void initWithEnginesClassLoader(boolean install) throws LoadEngineException, IOException, InterruptedException, RuntimeException, BuildException {
+	private void initWithEnginesClassLoader(boolean install) throws LoadEngineException, LoadModelException, IOException,
+			InterruptedException, RuntimeException, BuildException {
 		List<String> wList = descriptor.getWeights().getAllSuportedWeightNames();
 		if (descriptor.getModelFamily().equals(ModelDescriptor.STARDIST)) {
 			boolean installed = StarDist.isInstalled();
@@ -239,7 +246,7 @@ public abstract class RunnerAdapter implements Closeable {
 				initWithEnginesPath(install);
 				return;
 			}
-			model = Stardist2D.fromBioimageioModel(descriptor);
+			model = StarDist.fromFile(descriptor.getModelPath(), null);
 		} else if (descriptor.getModelFamily().equals(ModelDescriptor.BIOIMAGEIO)
 				&& !(wList.size() == 1 && wList.contains(ModelWeight.getPytorchID()))) {
 			if (install) {
