@@ -35,6 +35,8 @@ import io.bioimage.modelrunner.utils.ZipUtils;
 
 public class StardistInstaller  implements ModelInstaller {
 
+    private static final long PROGRESS_LOG_INTERVAL_MS = 100L;
+
     /**
      * Returns whether environment installed.
      *
@@ -110,26 +112,46 @@ public class StardistInstaller  implements ModelInstaller {
         String modelName = modelFile.getParentFile().getName();
         File zipFile = new File(parent.getAbsolutePath(), modelName + ".zip");
         FileDownloader downloader = new FileDownloader(StardistModelRegistry.downloadUrl(modelName), zipFile, false);
-        downloader.setPartialProgressConsumer(progress -> {
-            if (logConsumer != null) {
-                double percent = Math.round(progress * 1000) / 10.0d;
-                logConsumer.accept("Downloading " + modelName + " weights: " + percent + "%");
-            }
-        });
+        Consumer<Double> downloadProgress =
+                throttledProgressLogger("Downloading " + modelName + " weights", logConsumer);
+        downloader.setPartialProgressConsumer(downloadProgress);
         downloader.download(Thread.currentThread());
+        downloadProgress.accept(1.0d);
         if (logConsumer != null) {
             logConsumer.accept("Unzipping " + modelName + " weights.");
         }
         File modelFolder = new File(parent.getAbsolutePath(), modelName);
-        ZipUtils.unzipFolder(zipFile.getAbsolutePath(), modelFolder.getAbsolutePath(), progress -> {
-            if (logConsumer != null) {
-                double percent = Math.round(progress * 1000) / 10.0d;
-                logConsumer.accept("Unzipping " + modelName + " weights: " + percent + "%");
-            }
-        });
+        Consumer<Double> unzipProgress =
+                throttledProgressLogger("Unzipping " + modelName + " weights", logConsumer);
+        ZipUtils.unzipFolder(zipFile.getAbsolutePath(), modelFolder.getAbsolutePath(), unzipProgress);
+        unzipProgress.accept(1.0d);
 
         if (!isModelInstalled(modelPath)) {
             throw new IOException("Model not found or incorrect byte size: " + modelPath);
         }
+    }
+
+    private static Consumer<Double> throttledProgressLogger(String prefix, Consumer<String> logConsumer) {
+        final double[] lastPercent = { -1.0d };
+        final long[] lastUpdateMillis = { 0L };
+        return progress -> {
+            if (logConsumer == null || progress == null) {
+                return;
+            }
+            double boundedProgress = Math.max(0.0d, Math.min(1.0d, progress.doubleValue()));
+            double percent = Math.round(boundedProgress * 100.0d);
+            if (percent == lastPercent[0]) {
+                return;
+            }
+            long now = System.currentTimeMillis();
+            if (percent < 100.0d
+                    && lastUpdateMillis[0] > 0L
+                    && now - lastUpdateMillis[0] < PROGRESS_LOG_INTERVAL_MS) {
+                return;
+            }
+            lastPercent[0] = percent;
+            lastUpdateMillis[0] = now;
+            logConsumer.accept(prefix + ": " + (int) percent + "%");
+        };
     }
 }

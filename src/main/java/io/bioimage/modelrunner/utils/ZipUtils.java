@@ -44,7 +44,7 @@ import java.util.zip.ZipInputStream;
 public class ZipUtils
 {
 	
-	private static final int BUFFER_SIZE = 8192;
+	private static final int BUFFER_SIZE = 1024 * 1024;
 	
 	/**
 	 * Unzip a zip file into the wanted path. This method does not track progress.
