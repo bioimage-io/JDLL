@@ -31,4 +31,5 @@ for engine in engines["versions"]:
 		
 		
 with open(target_file, "w") as ff:
-	json.dump(jar_dict, ff)
+	json.dump(jar_dict, ff, indent="\t", sort_keys=True)
+	ff.write("\n")

@@ -7,11 +7,14 @@ on:
   pull_request:
   workflow_dispatch:
 
+env:
+  JAR_SIZES_PATH: src/main/resources/jar_sizes.json
+
 permissions:
   contents: write
 
 jobs:
-  update-engine-versions:
+  update-engine-metadata:
     runs-on: ubuntu-latest
 
     steps:
@@ -28,19 +31,25 @@ jobs:
       - name: Update engine jar URLs
         run: python .github/update_available_dl_versions.py
 
+      - name: Install jar size dependencies
+        run: python -m pip install requests
+
+      - name: Update jar sizes
+        run: python .github/get_jars_sizes.py "${JAR_SIZES_PATH}"
+
       - name: Check pull request is up to date
         if: github.event_name == 'pull_request'
-        run: git diff --exit-code src/main/resources/availableDLVersions.json
+        run: git diff --exit-code src/main/resources/availableDLVersions.json "${JAR_SIZES_PATH}"
 
       - name: Commit and push updates
-        if: github.event_name == 'push'
+        if: github.event_name != 'pull_request'
         run: |
           git config user.name "github-actions"
           git config user.email "github-actions@github.com"
 
-          if [ -n "$(git status --porcelain src/main/resources/availableDLVersions.json)" ]; then
-            git add src/main/resources/availableDLVersions.json
-            git commit -m "Update DL engine versions"
+          if [ -n "$(git status --porcelain src/main/resources/availableDLVersions.json "${JAR_SIZES_PATH}")" ]; then
+            git add src/main/resources/availableDLVersions.json "${JAR_SIZES_PATH}"
+            git commit -m "Update DL engine metadata"
             git push
           else
             echo "No changes to commit."
