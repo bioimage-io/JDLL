@@ -64,8 +64,8 @@ public class CellposeGUI extends JPanel {
     static {
 	CHANNEL_MAP = new HashMap<String, Integer>();
 	CHANNEL_MAP.put("red", 1);
-	CHANNEL_MAP.put("blue", 2);
-	CHANNEL_MAP.put("green", 3);
+	CHANNEL_MAP.put("green", 2);
+	CHANNEL_MAP.put("blue", 3);
 	CHANNEL_MAP.put("gray", 0);
     }
     private static final Dimension MIN_D = new Dimension(20, 40);
