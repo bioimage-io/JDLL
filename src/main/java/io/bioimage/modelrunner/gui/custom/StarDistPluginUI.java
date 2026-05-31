@@ -38,14 +38,12 @@ import io.bioimage.modelrunner.gui.custom.stardist.StardistModelRegistry;
 import io.bioimage.modelrunner.gui.custom.stardist.StardistTrainingConfig;
 import io.bioimage.modelrunner.gui.custom.stardist.StardistTrainingService;
 import io.bioimage.modelrunner.gui.custom.yolo.StardistGUI;
-import io.bioimage.modelrunner.gui.custom.yolo.YoloDetectionCsvWriter;
-import io.bioimage.modelrunner.gui.custom.yolo.YoloDetectionGeoJsonWriter;
 import io.bioimage.modelrunner.gui.custom.yolo.YoloImageFiles;
 import io.bioimage.modelrunner.gui.custom.yolo.YoloImageSourcePanel;
 import io.bioimage.modelrunner.model.InferenceProgress;
-import io.bioimage.modelrunner.model.detection.Detection;
 import io.bioimage.modelrunner.model.special.stardist.StardistTrainingProgress;
 import io.bioimage.modelrunner.tensor.Tensor;
+import net.imglib2.RandomAccess;
 import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.type.NativeType;
 import net.imglib2.type.numeric.RealType;
@@ -60,6 +58,7 @@ import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.awt.geom.Rectangle2D;
 import java.awt.image.BufferedImage;
+import java.awt.image.WritableRaster;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayDeque;
@@ -68,7 +67,6 @@ import java.util.Deque;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.ExecutionException;
 import java.util.function.Consumer;
 
@@ -84,6 +82,7 @@ public class StarDistPluginUI extends StardistGUI implements ActionListener {
     private static final String EMPTY_FOLDER_MESSAGE = "Folder does not contain valid images";
     private static final Color PREVIEW_ERROR_COLOR = new Color(210, 40, 40);
     private static final String APPOSE_STREAM_CLOSED = "java.io.IOException: Stream closed";
+    private static final String STARDIST_MASK_SUFFIX = "_stardist_labels";
 
     private final ConsumerInterface consumer;
     private final StardistInstaller installer = new StardistInstaller();
@@ -470,8 +469,7 @@ public class StarDistPluginUI extends StardistGUI implements ActionListener {
                 StarDistPluginUI.this.inferencePanel.getLogPanel().appendHtml(str));
         startInferenceLogTimer();
         logConsumer.accept("Starting inference on " + images.size() + " image(s).");
-        Map<String, List<Tensor<T>>> detectionsByImage = new LinkedHashMap<String, List<Tensor<T>>>();
-        File outputCsv = YoloDetectionCsvWriter.outputFileFor(source);
+        int savedMasks = 0;
         try {
             for (int i = 0; i < images.size(); i++) {
                 if (cancelled || Thread.currentThread().isInterrupted()) {
@@ -483,7 +481,7 @@ public class StarDistPluginUI extends StardistGUI implements ActionListener {
                 final boolean[] emittedPatchProgress = new boolean[] {false};
                 try {
                     RandomAccessibleInterval<UnsignedByteType> rai = readImageFileAsRai(imageFile);
-                    List<Tensor<T>> detections = inferenceService.runWithProgress(modelPath, rai, progress -> {
+                    List<Tensor<T>> outputs = inferenceService.runWithProgress(modelPath, rai, progress -> {
                         if (progress == null) {
                             return;
                         }
@@ -500,13 +498,18 @@ public class StarDistPluginUI extends StardistGUI implements ActionListener {
                             logConsumer.accept(progress.getDetail());
                         }
                     }, selectedInferenceDevice());
-                    detectionsByImage.put(imageFile.getAbsolutePath(), detections);
+                    if (outputs.isEmpty()) {
+                        throw new IOException("StarDist did not return a labels image for " + imageFile.getName());
+                    }
+                    File outputMask = maskOutputFileFor(imageFile);
+                    writeLabelMask(outputs.get(0), outputMask);
+                    savedMasks++;
+                    logConsumer.accept("Saved labels: " + outputMask.getAbsolutePath());
                     if (!emittedPatchProgress[0]) {
                         logConsumer.accept(imageProgressBar(imageIndex, totalImages));
                     }
                 } catch (IOException e) {
-                    logConsumer.accept("Skipping unreadable image " + imageIndex + "/" + totalImages);
-                    detectionsByImage.put(imageFile.getAbsolutePath(), Collections.emptyList());
+                    logConsumer.accept("Skipping image " + imageIndex + "/" + totalImages + ": " + e.getMessage());
                 }
             }
         } finally {
@@ -515,13 +518,7 @@ public class StarDistPluginUI extends StardistGUI implements ActionListener {
         if (cancelled || Thread.currentThread().isInterrupted()) {
             return;
         }
-        /* TODO
-        YoloDetectionCsvWriter.write(outputCsv, detectionsByImage);
-        List<File> geoJsonFiles = YoloDetectionGeoJsonWriter.write(detectionsByImage);
-        consumer.saveDetections(detectionsByImage);
-        logConsumer.accept("Saved predictions: " + outputCsv.getAbsolutePath());
-        logConsumer.accept("Saved GeoJSON predictions for " + geoJsonFiles.size() + " image(s).");
-        */
+        logConsumer.accept("Saved StarDist label masks for " + savedMasks + " image(s).");
     }
 
     private String selectedInferenceDevice() {
@@ -563,6 +560,74 @@ public class StarDistPluginUI extends StardistGUI implements ActionListener {
             }
         }
         return ArrayImgs.unsignedBytes(pixels, width, height, 3);
+    }
+
+    private static File maskOutputFileFor(File imageFile) {
+        String fileName = imageFile.getName();
+        int dot = fileName.lastIndexOf('.');
+        String baseName = dot > 0 ? fileName.substring(0, dot) : fileName;
+        String extension = outputMaskExtension(fileName);
+        File parent = imageFile.getParentFile();
+        return new File(parent == null ? new File(".") : parent, baseName + STARDIST_MASK_SUFFIX + "." + extension);
+    }
+
+    private static String outputMaskExtension(String fileName) {
+        String lower = fileName == null ? "" : fileName.toLowerCase();
+        return lower.endsWith(".tif") || lower.endsWith(".tiff") ? "tif" : "png";
+    }
+
+    private static <T extends RealType<T> & NativeType<T>> void writeLabelMask(Tensor<T> tensor, File outputFile)
+            throws IOException {
+        RandomAccessibleInterval<T> labels = tensor.getData();
+        String axes = tensor.getAxesOrderString();
+        BufferedImage image = labelMaskImage(labels, axes);
+        String format = imageIoFormat(outputFile.getName());
+        if (!ImageIO.write(image, format, outputFile)) {
+            throw new IOException("No ImageIO writer available for " + format + " masks.");
+        }
+    }
+
+    private static String imageIoFormat(String fileName) {
+        return "tif".equals(outputMaskExtension(fileName)) ? "TIFF" : "png";
+    }
+
+    private static <T extends RealType<T> & NativeType<T>>
+    BufferedImage labelMaskImage(RandomAccessibleInterval<T> labels, String axes) {
+        long[] dims = labels.dimensionsAsLongArray();
+        int xAxis = axisIndex(axes, 'x', dims.length, dims.length > 1 ? 1 : 0);
+        int yAxis = axisIndex(axes, 'y', dims.length, 0);
+        int width = Math.toIntExact(dims[xAxis]);
+        int height = Math.toIntExact(dims[yAxis]);
+        BufferedImage image = new BufferedImage(width, height, BufferedImage.TYPE_USHORT_GRAY);
+        WritableRaster raster = image.getRaster();
+        RandomAccess<T> access = labels.randomAccess();
+        long[] position = new long[dims.length];
+        for (int y = 0; y < height; y++) {
+            position[yAxis] = y;
+            for (int x = 0; x < width; x++) {
+                position[xAxis] = x;
+                access.setPosition(position);
+                raster.setSample(x, y, 0, toUnsignedShortLabel(access.get().getRealDouble()));
+            }
+        }
+        return image;
+    }
+
+    private static int axisIndex(String axes, char axis, int dimensions, int fallback) {
+        if (axes != null) {
+            int index = axes.toLowerCase().indexOf(axis);
+            if (index >= 0 && index < dimensions) {
+                return index;
+            }
+        }
+        return Math.max(0, Math.min(fallback, dimensions - 1));
+    }
+
+    private static int toUnsignedShortLabel(double value) {
+        if (!Double.isFinite(value) || value <= 0) {
+            return 0;
+        }
+        return (int) Math.min(65535, Math.round(value));
     }
 
     private static String imageProgressBar(int imageIndex, int totalImages) {
