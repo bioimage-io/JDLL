@@ -44,9 +44,14 @@ torchvision = { version = "==0.19.0", index = "https://download.pytorch.org/whl/
 # Linux x86-64 CUDA (same Java version family, but CUDA wheel index for the CUDA env)
 [feature.linux-x86-64-cuda]
 platforms = ["linux-64"]
+
+[feature.linux-x86-64-cuda.pypi-options]
+extra-index-urls = ["https://download.pytorch.org/whl/cu%s"]
+index-strategy = "unsafe-best-match"
+
 [feature.linux-x86-64-cuda.pypi-dependencies]
-torch = { version = "==2.4.0", index = "https://download.pytorch.org/whl/cu%s" }
-torchvision = { version = "==0.19.0", index = "https://download.pytorch.org/whl/cu%s" }
+torch = "==2.4.0"
+torchvision = "==0.19.0"
 # -----------------------------------------------------------------------------
 # Tasks
 # -----------------------------------------------------------------------------
