@@ -77,6 +77,15 @@ extends Merger<Tensor<T>, Tensor<R>> {
         return getTileMakerPatch(patchNumber);
 	}
 
+	public List<Tensor<R>> getOutput(int patchNumber) {
+		List<Tensor<R>> outTiles = new ArrayList<>();
+		for (Tensor<R> tt : this.reconstructed) {
+			 Tensor<R> target = tileMaker.getNthTileOutput(tt, patchNumber);
+			 outTiles.add(target);
+		}
+        return outTiles;
+	}
+
 	@Override
 	public int getNPatches() {
         requireConfigured();

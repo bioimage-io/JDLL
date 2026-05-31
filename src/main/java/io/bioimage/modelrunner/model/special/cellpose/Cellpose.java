@@ -237,12 +237,6 @@ public class Cellpose extends BioimageIoModelPytorchProtected {
 		return inputTensors;
 	}
 
-	protected <T extends RealType<T> & NativeType<T>>
-	List<Tensor<T>> checkOutputTensors(List<Tensor<T>> outputTensors) {
-		// TODO
-		return outputTensors;
-	}
-
 	@Override
 	public <T extends RealType<T> & NativeType<T>, R extends RealType<R> & NativeType<R>>
 	List<Tensor<R>> inference(final Tensor<T>... inputs) throws RunModelException {
@@ -352,13 +346,6 @@ public class Cellpose extends BioimageIoModelPytorchProtected {
 				SHMS_KEY, SHM_NAMES_KEY, DTYPES_KEY, DIMS_KEY)  + System.lineSeparator();
 		code += taskOutputsCode();
 		return code;
-	}
-
-	@Override
-	protected String getOutputTensorAxes(int outputCount) {
-		if (descriptor.getOutputTensors().size() <= outputCount)
-			throw new IllegalArgumentException("Cellpose only has 6 outputs.");
-		return this.descriptor.getOutputTensors().get(outputCount).getAxesOrder();
 	}
 
 	/**

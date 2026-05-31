@@ -17,7 +17,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Map.Entry;
 import java.util.UUID;
-import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -31,7 +30,6 @@ import org.apposed.appose.TaskException;
 import org.apposed.appose.util.Environments;
 import org.apposed.appose.util.Messages;
 
-import io.bioimage.modelrunner.bioimageio.tiling.TileInfo;
 import io.bioimage.modelrunner.exceptions.LoadModelException;
 import io.bioimage.modelrunner.exceptions.RunModelException;
 import io.bioimage.modelrunner.model.BaseModel;
@@ -39,8 +37,6 @@ import io.bioimage.modelrunner.model.InferenceProgress;
 import io.bioimage.modelrunner.model.java.DLModelJava.TilingConsumer;
 import io.bioimage.modelrunner.model.python.envs.PixiEnvironmentManager;
 import io.bioimage.modelrunner.model.python.envs.PixiEnvironmentSpec;
-import io.bioimage.modelrunner.model.tiling.merger.Merger;
-import io.bioimage.modelrunner.model.tiling.merger.NoTileMerger;
 import io.bioimage.modelrunner.system.GpuCompatibility;
 import io.bioimage.modelrunner.system.PlatformDetection;
 import io.bioimage.modelrunner.tensor.Tensor;
@@ -53,7 +49,6 @@ import net.imglib2.img.Img;
 import net.imglib2.img.array.ArrayImgFactory;
 import net.imglib2.type.NativeType;
 import net.imglib2.type.numeric.RealType;
-import net.imglib2.type.numeric.real.FloatType;
 import net.imglib2.util.Cast;
 import net.imglib2.util.Util;
 import net.imglib2.view.Views;
@@ -82,8 +77,6 @@ public class DLModelPytorchProtected extends BaseModel {
 
     private volatile Task currentTask;
 
-    private volatile boolean inferenceCancellationRequested;
-
     protected PixiEnvironmentSpec environmentSpec;
 
     protected List<SharedMemoryArray> inShmaList = new ArrayList<SharedMemoryArray>();
@@ -92,30 +85,9 @@ public class DLModelPytorchProtected extends BaseModel {
 
     private List<String> outShmDTypes;
 
-    private List<String> outAxes;
-
     private List<long[]> outShmDims;
 
-    /**
-     * List containing the desired tiling strategy for each of the input tensors.
-     */
-    protected List<TileInfo> inputTiles;
-
-    /**
-     * List containing the desired tiling strategy for each of the output tensors.
-     */
-    protected List<TileInfo> outputTiles;
-
-    /**
-     * Consumer used to inform the current tile being processed and in how many
-     * tiles the input images are going to be separated.
-     */
-    protected TilingConsumer tileCounter;
-
-    /**
-     * Consumer used to report structured inference progress events.
-     */
-    protected Consumer<InferenceProgress> inferenceProgressConsumer;
+    private List<String> outAxes;
     
     /**
      * Device where the model will run
@@ -409,41 +381,6 @@ public class DLModelPytorchProtected extends BaseModel {
     }
 
     /**
-     * Sets a consumer used to track tile execution progress.
-     *
-     * @param tileCounter
-     *     consumer used to track tile inference
-     */
-    public void setTilingCounter(final TilingConsumer tileCounter) {
-        this.tileCounter = tileCounter;
-    }
-    
-    /**
-     * 
-     * @return an object that can be used to track the progress processing tiles
-     */
-    public TilingConsumer getTilingCounter() {
-    	return this.tileCounter;
-    }
-
-    /**
-     * Sets a consumer used to receive structured inference progress events.
-     *
-     * @param consumer
-     *     consumer called as inference advances
-     */
-    public void setInferenceProgressConsumer(final Consumer<InferenceProgress> consumer) {
-        this.inferenceProgressConsumer = consumer;
-    }
-
-    /**
-     * @return the configured structured inference progress consumer, or null
-     */
-    public Consumer<InferenceProgress> getInferenceProgressConsumer() {
-        return inferenceProgressConsumer;
-    }
-
-    /**
      * @return maximum pixel count copied to shared memory for one image tensor
      */
     public long getMaxSharedMemoryPixelCount() {
@@ -461,24 +398,6 @@ public class DLModelPytorchProtected extends BaseModel {
             throw new IllegalArgumentException("Maximum shared-memory image pixel count must be positive.");
         }
         this.maxSharedMemoryPixelCount = maxSharedMemoryPixelCount;
-    }
-
-    /**
-     * Emits a structured inference progress event. Progress reporting must not
-     * affect inference execution.
-     *
-     * @param progress
-     *     progress event
-     */
-    protected void emitProgress(final InferenceProgress progress) {
-        if (inferenceProgressConsumer == null || progress == null) {
-            return;
-        }
-        try {
-            inferenceProgressConsumer.accept(progress);
-        } catch (RuntimeException e) {
-            // Progress listeners are observational and should not break model execution.
-        }
     }
 
     /**
@@ -669,6 +588,14 @@ public class DLModelPytorchProtected extends BaseModel {
         return code;
     }
 
+    public void cancelCurrentInference() {
+        inferenceCancellationRequested = true;
+        Task task = currentTask;
+        if (task != null) {
+            task.cancel();
+        }
+    }
+
     /**
      * Closes the Python service.
      */
@@ -682,18 +609,27 @@ public class DLModelPytorchProtected extends BaseModel {
         closed = true;
     }
 
-    public void cancelCurrentInference() {
-        inferenceCancellationRequested = true;
-        Task task = currentTask;
-        if (task != null) {
-            task.cancel();
-        }
-    }
+    @Override
+    protected <T extends RealType<T> & NativeType<T>, R extends RealType<R> & NativeType<R>>
+    List<Tensor<R>> backboneSingleInferenceTile(final List<Tensor<T>> inputs) throws RunModelException {
 
-    private void throwIfInferenceCancelled() throws RunModelException {
-        if (inferenceCancellationRequested || Thread.currentThread().isInterrupted()) {
-            throw new RunModelException("Inference cancelled.");
+        throwIfInferenceCancelled();
+        final List<String> names = IntStream.range(0, inputs.size())
+                .mapToObj(i -> "var_" + UUID.randomUUID().toString().replace("-", "_"))
+                .collect(Collectors.toList());
+
+        final String code = createInputsCode(inputs, names);
+        final Map<String, RandomAccessibleInterval<R>> map = executeCode(code);
+        throwIfInferenceCancelled();
+        outAxes = getOutputAxes(map.size());
+        List<Tensor<R>> outTensors = new ArrayList<Tensor<R>>();
+        int i = 0;
+        for (Entry<String, RandomAccessibleInterval<R>> ee : map.entrySet()) {
+            outTensors.add(Tensor.build("output_" + i, outAxes.get(i),
+                    restoreOutputScale(ee.getValue(), outAxes.get(i))));
+        	i ++;
         }
+    	return outTensors;
     }
 
     protected <T extends RealType<T> & NativeType<T>, R extends RealType<R> & NativeType<R>>
@@ -772,157 +708,6 @@ public class DLModelPytorchProtected extends BaseModel {
     private static boolean isApposeThreadDeath(final Throwable failure) {
         String trace = Messages.stackTrace(failure);
         return trace != null && trace.toLowerCase(Locale.ROOT).startsWith("org.apposed.appose.TaskException: task failed: thread death".toLowerCase());
-    }
-
-    /**
-     * Runs inference directly on a list of input images.
-     *
-     * @param <T> input data type
-     * @param <R> output data type
-     * @param inputs input images
-     * @return output images
-     * @throws RunModelException if model execution fails
-     */
-    public <T extends RealType<T> & NativeType<T>, R extends RealType<R> & NativeType<R>>
-    List<Tensor<R>> inference(final Tensor<T>... inputs) throws RunModelException {
-        inferenceCancellationRequested = false;
-    	List<List<Tensor<T>>> inputBatches = new ArrayList<List<Tensor<T>>>();
-    	for (Tensor<T> inp : inputs) {
-    		List<Tensor<T>> inpList = new ArrayList<Tensor<T>>();
-    		inpList.add(inp);
-    		inputBatches.add(inpList);
-    	}
-    	List<List<Tensor<R>>> batchedOuts = backboneBatchInference(inputBatches);
-    	List<Tensor<R>> singleOutput = new ArrayList<>();
-    	for (List<Tensor<R>>batched : batchedOuts) {
-    		singleOutput.add(batched.get(0));
-    	}
-    	return singleOutput;
-    }
-
-    protected String getOutputTensorAxes(int outputCount) {
-		return "bcyx";
-	}
-
-    /**
-     * Runs inference directly on a list of input images.
-     *
-     * @param <T> input data type
-     * @param <R> output data type
-     * @param inputs input images
-     * @return output images
-     * @throws RunModelException if model execution fails
-     */
-    public <T extends RealType<T> & NativeType<T>, R extends RealType<R> & NativeType<R>>
-    List<List<Tensor<R>>> inferenceBatch(final List<Tensor<T>>... batchedInputs)
-            throws RunModelException {
-        inferenceCancellationRequested = false;
-    	return backboneBatchInference(Arrays.asList(batchedInputs));
-    }
-    
-    private <T extends RealType<T> & NativeType<T>, R extends RealType<R> & NativeType<R>>
-    List<List<Tensor<R>>> backboneBatchInference(final List<List<Tensor<T>>> batchedInputs) throws RunModelException {
-
-        if (!loaded) {
-            throw new RuntimeException("Please load the model first.");
-        }
-        int batchInd = 0;
-        int imsInBatch = batchedInputs.get(0).size();
-        for (List<Tensor<T>> batch : batchedInputs) {
-        	if (batch.size() != imsInBatch)
-        		throw new IllegalArgumentException("All batches must have the same number of tensors. Batch of input 0 has "
-        				+ imsInBatch +  " and batch of input " + batchInd + " has " + batch.size());
-        	String name = batch.get(0).getName();
-        	for (int i = 1; i < batch.size(); i ++) {
-        		String nName = batch.get(i).getName();
-        		if (nName.equals(name))
-        			throw new IllegalArgumentException("All tensors of a batch should be named equally. For batch " + batchInd
-        					+ "at least two different names where found: " + name + " (pos 0) and " + nName + " (pos" + i + ")");
-        	}
-        	batchInd ++;
-        }
-        
-        List<List<Tensor<R>>> outputs = new ArrayList<List<Tensor<R>>>();
-        for (int i = 0; i < batchedInputs.get(0).size(); i ++) {
-            throwIfInferenceCancelled();
-        	List<Tensor<T>> inputs = new ArrayList<Tensor<T>>();
-        	for (int j = 0; j < batchedInputs.size(); j ++) {
-        		inputs.add(batchedInputs.get(j).get(i));
-        	}
-        	List<Tensor<R>> aa = backboneSingleInference(inputs);
-        	for (int k = 0; k < aa.size(); k ++) {
-        		if (outputs.size() < k +1)
-        			outputs.add(new ArrayList<Tensor<R>>());
-        		outputs.get(k).add(aa.get(k));
-        	}
-        }
-        return outputs;
-    }
-    
-    protected <T extends RealType<T> & NativeType<T>, R extends RealType<R> & NativeType<R>>
-    Merger<Tensor<T>, Tensor<R>> getTileMaker(final List<Tensor<T>> inputs) {
-        Merger<Tensor<T>, Tensor<R>> merger = new NoTileMerger<T, R>();
-        merger.configure(inputs);
-        return merger;
-    }
-    
-    private <T extends RealType<T> & NativeType<T>, R extends RealType<R> & NativeType<R>>
-    List<Tensor<R>> backboneSingleInference(final List<Tensor<T>> inputs) throws RunModelException {
-
-        throwIfInferenceCancelled();
-        Merger<Tensor<T>, Tensor<R>> merger = getTileMaker(inputs);
-        if (tileCounter == null) {
-            tileCounter = new TilingConsumer();
-        }
-
-        int nPatches = merger.getNPatches();
-        tileCounter.acceptTotal((long) nPatches);
-        emitProgress(InferenceProgress.inferenceStart(nPatches));
-        for (int i = 0; i < nPatches; i ++) {
-            throwIfInferenceCancelled();
-            emitProgress(InferenceProgress.patchStart(i + 1, nPatches));
-            List<Tensor<R>> tiledOutputs = backboneSingleInferenceTile(merger.get(i));
-            throwIfInferenceCancelled();
-            merger.digest(i, tiledOutputs);
-            tileCounter.acceptProgress((long) (i + 1));
-            emitProgress(InferenceProgress.patchEnd(i + 1, nPatches));
-        }
-        throwIfInferenceCancelled();
-        emitProgress(InferenceProgress.mergeStart());
-        List<Tensor<R>> reconstructed = merger.getReconstructed();
-        throwIfInferenceCancelled();
-        emitProgress(InferenceProgress.inferenceEnd());
-        return reconstructed;
-    }
-    
-    private <T extends RealType<T> & NativeType<T>, R extends RealType<R> & NativeType<R>>
-    List<Tensor<R>> backboneSingleInferenceTile(final List<Tensor<T>> inputs) throws RunModelException {
-
-        throwIfInferenceCancelled();
-        final List<String> names = IntStream.range(0, inputs.size())
-                .mapToObj(i -> "var_" + UUID.randomUUID().toString().replace("-", "_"))
-                .collect(Collectors.toList());
-
-        final String code = createInputsCode(inputs, names);
-        final Map<String, RandomAccessibleInterval<R>> map = executeCode(code);
-        throwIfInferenceCancelled();
-        outAxes = getOutputAxes(map.size());
-        List<Tensor<R>> outTensors = new ArrayList<Tensor<R>>();
-        int i = 0;
-        for (Entry<String, RandomAccessibleInterval<R>> ee : map.entrySet()) {
-            outTensors.add(Tensor.build("output_" + i, outAxes.get(i),
-                    restoreOutputScale(ee.getValue(), outAxes.get(i))));
-        	i ++;
-        }
-    	return outTensors;
-    }
-
-    protected List<String> getOutputAxes(final int outputCount) {
-        final List<String> axes = new ArrayList<String>(outputCount);
-        for (int i = 0; i < outputCount; i ++) {
-            axes.add(getOutputTensorAxes(i));
-        }
-        return axes;
     }
 
 	/**
@@ -1162,18 +947,6 @@ public class DLModelPytorchProtected extends BaseModel {
                 + "task.outputs['" + SHM_NAMES_KEY + "'] = list(" + SHM_NAMES_KEY + ")" + System.lineSeparator()
                 + "task.outputs['" + DTYPES_KEY + "'] = list(" + DTYPES_KEY + ")" + System.lineSeparator()
                 + "task.outputs['" + DIMS_KEY + "'] = list(" + DIMS_KEY + ")" + System.lineSeparator();
-    }
-
-    private <T extends RealType<T> & NativeType<T>> List<Tensor<T>> createOutputTensors() {
-        final List<Tensor<T>> outputTensors = new ArrayList<Tensor<T>>();
-        for (TileInfo tt : this.outputTiles) {
-            outputTensors.add((Tensor<T>) Tensor.buildBlankTensor(
-                    tt.getName(),
-                    tt.getImageAxesOrder(),
-                    tt.getImageDims(),
-                    (T) new FloatType()));
-        }
-        return outputTensors;
     }
 
     private void closeShm() {

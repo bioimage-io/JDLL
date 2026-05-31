@@ -88,6 +88,13 @@ public class BioimageIoModelPytorchProtected extends DLModelPytorchProtected {
 	}
 
 	@Override
+	protected String getOutputTensorAxes(int outputCount) {
+		if (descriptor.getOutputTensors().size() <= outputCount)
+			throw new IllegalArgumentException("Cellpose only has 6 outputs.");
+		return this.descriptor.getOutputTensors().get(outputCount).getAxesOrder();
+	}
+
+	@Override
 	protected <T extends RealType<T> & NativeType<T>, R extends RealType<R> & NativeType<R>>
 	Merger<Tensor<T>, Tensor<R>> getTileMaker(final List<Tensor<T>> inputs) {
 

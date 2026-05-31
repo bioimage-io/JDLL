@@ -170,85 +170,6 @@ public class DLModelJava extends BaseModel
 		closed = true;
 	}
 
-	@Override
-	/**
-	 * Method that calls the ClassLoader with the corresponding JARs of the Deep
-	 * Learning framework (engine) loaded to run inference on the tensors. The
-	 * method returns the corresponding output tensors
-	 * 
-	 * @param <T>
-	 * 	ImgLib2 data type of the input tensors
-	 * @param <R>
-	 * 	ImgLib2 data type of the output tensors, it can be the same as in the input
-	 * @param inTensors
-	 *            input tensors containing all the tensor data
-	 * @param outTensors
-	 *            expected output tensors. Their backend data will be rewritten with the result of the inference
-	 * @throws RunModelException
-	 *             if the is any problem running the model
-	 */
-	public <T extends RealType<T> & NativeType<T>, R extends RealType<R> & NativeType<R>> 
-	void run( List< Tensor < T > > inTensors, List< Tensor < R > > outTensors ) throws RunModelException
-	{
-		if (!this.isLoaded())
-			throw new RunModelException("Please first load the model.");
-		if (!this.tiling) {
-			this.runNoTiles(inTensors, outTensors);
-			return;
-		}
-		if (this.isTiling() && (inputTiles != null || this.inputTiles.size() == 0))
-			throw new UnsupportedOperationException("Tiling is set to 'true' but the input tiles are not well defined");
-		else if (this.isTiling() && (this.outputTiles == null || this.outputTiles.size() == 0))
-			throw new UnsupportedOperationException("Tiling is set to 'true' but the output tiles are not well defined");
-		TileMaker tiles = TileMaker.build(inputTiles, outputTiles);
-		for (int i = 0; i < tiles.getNumberOfTiles(); i ++) {
-			Tensor<R> tt = outTensors.get(i);
-			long[] expectedSize = tiles.getOutputImageSize(tt.getName());
-			if (expectedSize == null) {
-				throw new IllegalArgumentException("Tensor '" + tt.getName() + "' is missing in the outputs.");
-			} else if (!tt.isEmpty() && Arrays.equals(expectedSize, tt.getData().dimensionsAsLongArray())) {
-				throw new IllegalArgumentException("Tensor '" + tt.getName() + "' size is different than the expected size"
-						+ " defined for the output image: " + Arrays.toString(tt.getData().dimensionsAsLongArray()) 
-						+ " vs " + Arrays.toString(expectedSize) + ".");
-			}
-		}
-		runTiling(inTensors, outTensors, tiles);
-	}
-
-	@Override
-	public <T extends RealType<T> & NativeType<T>, R extends RealType<R> & NativeType<R>> 
-	List<Tensor<T>> run(List<Tensor<R>> inputTensors) throws RunModelException {
-		if (!this.isLoaded())
-			throw new RunModelException("Please first load the model.");
-		if (!this.tiling) {
-			throw new UnsupportedOperationException("Cannot run a DLModel if no information about the outputs is provided."
-					+ " Either try with 'run( List< Tensor < T > > inTensors, List< Tensor < R > > outTensors )'"
-					+ " or set the tiling information with 'setTileInfo(List<TileInfo> inputTiles, List<TileInfo> outputTiles)'."
-					+ " Another option is to run simple inference over an ImgLib2 RandomAccessibleInterval with"
-					+ " 'inference(List<RandomAccessibleInteral<T>> input)'");
-		}
-		if (this.isTiling() && (inputTiles != null || this.inputTiles.size() == 0))
-			throw new UnsupportedOperationException("Tiling is set to 'true' but the input tiles are not well defined");
-		else if (this.isTiling() && (this.outputTiles == null || this.outputTiles.size() == 0))
-			throw new UnsupportedOperationException("Tiling is set to 'true' but the output tiles are not well defined");
-		
-		TileMaker maker = TileMaker.build(inputTiles, outputTiles);
-		List<Tensor<T>> outTensors = createOutputTensors();
-		runTiling(inputTensors, outTensors, maker);
-		return outTensors;
-	}
-	
-	private <T extends RealType<T> & NativeType<T>> List<Tensor<T>> createOutputTensors() {
-		List<Tensor<T>> outputTensors = new ArrayList<Tensor<T>>();
-		for (TileInfo tt : this.outputTiles) {
-			outputTensors.add((Tensor<T>) Tensor.buildBlankTensor(tt.getName(), 
-																	tt.getImageAxesOrder(), 
-																	tt.getImageDims(), 
-																	(T) new FloatType()));
-		}
-		return outputTensors;
-	}
-
 	/**
 	 * Run a model on the input tensors and get the output tensors. This just does inference,
 	 * no tiling, pre-processing, post-processing or anything else.
@@ -265,7 +186,7 @@ public class DLModelJava extends BaseModel
 	 *             if the is any problem running the model
 	 */
 	protected <T extends RealType<T> & NativeType<T>, R extends RealType<R> & NativeType<R>> 
-	void runNoTiles( List< Tensor < T > > inTensors, List< Tensor < R > > outTensors ) throws RunModelException
+	List< Tensor < R > > backboneSingleInferenceTile( List< Tensor < T > > inTensors) throws RunModelException
 	{
 		DeepLearningEngineInterface engineInstance = engineClassLoader.getEngineInstance();
 		engineClassLoader.setEngineClassLoader();
@@ -276,42 +197,9 @@ public class DLModelJava extends BaseModel
 			else
 				inTensorsFloat.add(Tensor.createCopyOfTensorInWantedDataType( tt, new FloatType() ));
 		}
-		engineInstance.run( inTensorsFloat, outTensors );
+		engineInstance.run( inTensorsFloat, null );
 		engineClassLoader.setBaseClassLoader();
-	}
-	
-	protected <T extends RealType<T> & NativeType<T>, R extends RealType<R> & NativeType<R>> 
-	void runTiling(List<Tensor<R>> inputTensors, List<Tensor<T>> outputTensors, TileMaker tiles) throws RunModelException {
-		for (int i = 0; i < tiles.getNumberOfTiles(); i ++) {
-			int nTile = 0 + i;
-			List<Tensor<R>> inputTiles = inputTensors.stream()
-					.map(tt -> tiles.getNthTileInput(tt, nTile)).collect(Collectors.toList());
-			List<Tensor<T>> outputTiles = outputTensors.stream()
-					.map(tt -> tiles.getNthTileOutput(tt, nTile)).collect(Collectors.toList());
-			runNoTiles(inputTiles, outputTiles);
-		}
-	}
-	
-	/**
-	 * Simply run inference on the images provided. If the dimensions, number, data type or other
-	 * characteristic of the tensor is not correct, an exception will be thrown.
-	 * @param <T>
-	 * 	input data type
-	 * @param <R>
-	 * 	ouptut data type
-	 * @param inputs
-	 * 	the list of {@link RandomAccessibleInterval} that will be used as inputs
-	 * @return a list of {@link RandomAccessibleInterval} that has been outputed by the model
-	 * @throws RunModelException
-	 *             if there is an error in the execution of the model
-	 */
-	public <T extends RealType<T> & NativeType<T>, R extends RealType<R> & NativeType<R>>
-	List<RandomAccessibleInterval<R>> inference(List<RandomAccessibleInterval<T>> inputs) throws RunModelException {
-		DeepLearningEngineInterface engineInstance = engineClassLoader.getEngineInstance();
-		engineClassLoader.setEngineClassLoader();
-		List<RandomAccessibleInterval<R>> outs = engineInstance.inference( inputs);
-		engineClassLoader.setBaseClassLoader();
-		return outs;
+		return null;
 	}
 	
 	/**
