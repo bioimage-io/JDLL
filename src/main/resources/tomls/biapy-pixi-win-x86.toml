@@ -33,41 +33,6 @@ biapy = "==3.5.10"
 ultralytics = "==8.4.40"
 appose = "*"
 
-# -----------------------------------------------------------------------------
-# macOS < 14 package set.
-# Mirrors the special BIAPY_PIP_DEPS branch for old macOS.
-# NOTE: biapy is intentionally NOT listed here because the Java code installs it
-# separately with `--no-deps` after the rest of the packages are installed.
-# -----------------------------------------------------------------------------
-[feature.macos-legacy-packages.pypi-dependencies]
-timm = "==1.0.14"
-pytorch-msssim = "==1.0.0"
-torchmetrics = "==1.4.3"
-cellpose = "==3.1.1.1"
-torch-fidelity = "==0.3.0"
-careamics = "*"
-pooch = ">=1.8.1"
-numpy = "<2"
-"bioimageio.core" = "==0.7.0"
-imagecodecs = ">=2024.1.1"
-h5py = ">=3.9.0"
-torchinfo = ">=1.8.0"
-pandas = ">=1.5.3"
-xarray = "==2025.1.2"
-fill-voids = ">=2.0.6"
-edt = ">=2.3.2"
-tqdm = ">=4.66.1"
-yacs = ">=0.1.8"
-zarr = ">=2.16.1"
-pydot = ">=1.4.2"
-matplotlib = ">=3.7.1"
-imgaug = ">=0.4.0"
-scipy = "==1.15.2"
-"tensorboardX" = ">=2.6.2.2"
-scikit-learn = ">=1.4.0"
-opencv-python = ">=4.8.0.76"
-scikit-image = ">=0.21.0"
-appose = "*"
 
 # Windows CPU (Java: BIAPY_PIP_DEPS_TORCH -> torch 2.4.1, CPU index)
 [feature.win-x86-64-no-cuda]
