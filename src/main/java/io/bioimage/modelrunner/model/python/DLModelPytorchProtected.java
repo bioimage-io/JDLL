@@ -124,6 +124,8 @@ public class DLModelPytorchProtected extends BaseModel {
 
     private static final List<String> CUDA_COMPAT_VERSIONS = new ArrayList<>(Arrays.asList("12.4", "12.1", "11.8"));
 
+    private static final String DEFAULT_CUDA_WHEEL_INDEX_VERSION = CUDA_COMPAT_VERSIONS.get(0).replace(".", "");
+
     protected static final boolean IS_ARM = PlatformDetection.isMacOS()
             && (PlatformDetection.getArch().equals(PlatformDetection.ARCH_ARM64)
             || PlatformDetection.isUsingRosseta());
@@ -327,8 +329,6 @@ public class DLModelPytorchProtected extends BaseModel {
         this.weightsPath = new File(weightsPath).getAbsolutePath();
         this.kwargs = kwargs;
 
-        this.environmentSpec = resolvePytorchEnv();
-        this.envPath = environmentSpec.getEnvironmentDirectory().getAbsolutePath();
         
         this.tileCounter = new TilingConsumer();
 		String normalizedDevice = device == null ? "cpu" : device.trim().toLowerCase(Locale.ROOT);
@@ -347,6 +347,10 @@ public class DLModelPytorchProtected extends BaseModel {
         final Environment env;
 
         try {
+        	if (environmentSpec == null) {
+                this.environmentSpec = resolvePytorchEnv();
+                this.envPath = environmentSpec.getEnvironmentDirectory().getAbsolutePath();
+        	}
 	        env = Appose.pixi()
 	                .environment(environmentSpec.getSelectedEnvironment())
 	                .wrap(environmentSpec.getEnvironmentDirectory());
@@ -369,6 +373,10 @@ public class DLModelPytorchProtected extends BaseModel {
      * @return the path to the Python environment used by the model
      */
     public String getEnvPath() {
+    	if (envPath == null) {
+            this.environmentSpec = resolvePytorchEnv();
+            this.envPath = environmentSpec.getEnvironmentDirectory().getAbsolutePath();
+    	}
         return this.envPath;
     }
 
@@ -376,6 +384,10 @@ public class DLModelPytorchProtected extends BaseModel {
      * @return the resolved Pixi environment name for the current machine
      */
     public String getSelectedEnvironment() {
+    	if (environmentSpec == null) {
+            this.environmentSpec = resolvePytorchEnv();
+            this.envPath = environmentSpec.getEnvironmentDirectory().getAbsolutePath();
+    	}
         return environmentSpec.getSelectedEnvironment();
     }
 
@@ -1280,10 +1292,11 @@ public class DLModelPytorchProtected extends BaseModel {
         final boolean installBiapyNoDeps;
 
         if (cudaVersion == null) {
-        	if (!PlatformDetection.isMacOS())
-        		pixiTomlContent = String.format(Locale.ROOT, pixiTemplate, COMMON_PYTORCH_ENV_NAME, "", "");
-        	else
-        		pixiTomlContent = String.format(Locale.ROOT, pixiTemplate, COMMON_PYTORCH_ENV_NAME);
+            if (!PlatformDetection.isMacOS())
+                pixiTomlContent = String.format(Locale.ROOT, pixiTemplate, COMMON_PYTORCH_ENV_NAME,
+                        DEFAULT_CUDA_WHEEL_INDEX_VERSION, DEFAULT_CUDA_WHEEL_INDEX_VERSION);
+            else
+                pixiTomlContent = String.format(Locale.ROOT, pixiTemplate, COMMON_PYTORCH_ENV_NAME);
 
             if (PlatformDetection.isLinux()) {
                 selectedEnvironment = "linux-x86-64-no-cuda";
