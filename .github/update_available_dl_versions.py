@@ -4,7 +4,10 @@
 from __future__ import annotations
 
 import argparse
+import datetime as dt
+import email.utils
 import json
+import os
 import re
 import sys
 import urllib.error
@@ -67,6 +70,34 @@ class ResolvedJar:
     published_at: str
 
 
+def timestamp_from_last_modified(url: str, timeout: int) -> str:
+    if url.startswith("file://"):
+        path = urllib.request.url2pathname(url[len("file://"):])
+        return dt.datetime.fromtimestamp(os.path.getmtime(path), tz=dt.timezone.utc).strftime("%Y%m%d%H%M%S")
+
+    request = urllib.request.Request(
+        url,
+        headers={"User-Agent": "jdll-engine-version-updater"},
+        method="HEAD",
+    )
+    try:
+        with urllib.request.urlopen(request, timeout=timeout) as response:
+            last_modified = response.headers.get("Last-Modified")
+    except urllib.error.HTTPError as exc:
+        if exc.code != 405:
+            raise RuntimeError(f"HTTP {exc.code} fetching {url}") from exc
+        request = urllib.request.Request(url, headers={"User-Agent": "jdll-engine-version-updater"})
+        with urllib.request.urlopen(request, timeout=timeout) as response:
+            last_modified = response.headers.get("Last-Modified")
+    except urllib.error.URLError as exc:
+        raise RuntimeError(f"Failed to fetch {url}: {exc.reason}") from exc
+
+    if not last_modified:
+        raise RuntimeError(f"No Last-Modified header for {url}")
+    parsed = email.utils.parsedate_to_datetime(last_modified)
+    return parsed.astimezone(dt.timezone.utc).strftime("%Y%m%d%H%M%S")
+
+
 def declared_versions(metadata: ET.Element) -> list[str]:
     versions = [node.text.strip() for node in metadata.findall("versioning/versions/version") if node.text]
     if not versions:
@@ -97,9 +128,9 @@ def snapshot_jar(snapshot_metadata: ET.Element, artifact: str) -> ResolvedJar:
     raise RuntimeError(f"Could not determine latest snapshot jar version for {artifact}")
 
 
-def release_jar(metadata: ET.Element, version: str) -> ResolvedJar:
-    updated = text(metadata, "versioning/lastUpdated") or "0"
-    return ResolvedJar(jar_version=version, published_at=updated)
+def release_jar(artifact_path: str, artifact: str, version: str, timeout: int) -> ResolvedJar:
+    jar_url = f"{artifact_path}/{version}/{artifact}-{version}.jar"
+    return ResolvedJar(jar_version=version, published_at=timestamp_from_last_modified(jar_url, timeout))
 
 
 def latest_engine_version(repository: str, artifact: str, timeout: int) -> EngineVersion:
@@ -108,11 +139,11 @@ def latest_engine_version(repository: str, artifact: str, timeout: int) -> Engin
     candidates: list[EngineVersion] = []
 
     for version in declared_versions(metadata):
-        version_metadata = fetch_xml(f"{artifact_path}/{version}/maven-metadata.xml", timeout)
         if version.endswith("-SNAPSHOT"):
+            version_metadata = fetch_xml(f"{artifact_path}/{version}/maven-metadata.xml", timeout)
             resolved = snapshot_jar(version_metadata, artifact)
         else:
-            resolved = release_jar(version_metadata, version)
+            resolved = release_jar(artifact_path, artifact, version, timeout)
         jar_url = f"{artifact_path}/{version}/{artifact}-{resolved.jar_version}.jar"
         candidates.append(
             EngineVersion(
