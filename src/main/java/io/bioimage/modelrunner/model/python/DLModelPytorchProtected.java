@@ -248,7 +248,6 @@ public class DLModelPytorchProtected extends BaseModel {
             + System.lineSeparator();
 
     private static final String CLEAN_SHM_CODE_THREAD_DEATH = ""
-    		+ "print(len(" + SHMS_KEY + "))" + System.lineSeparator()
             + "for s in " + SHMS_KEY + ":" + System.lineSeparator()
             + "    s.close()" + System.lineSeparator()
             + "    try:" + System.lineSeparator()
@@ -258,7 +257,6 @@ public class DLModelPytorchProtected extends BaseModel {
             + SHMS_KEY + ".clear()" + System.lineSeparator();
 
     private static final String CLEAN_SHM_CODE_WINDOWS = ""
-    		+ "print(len(" + SHMS_KEY + "))" + System.lineSeparator()
             + "for s in " + SHMS_KEY + ":" + System.lineSeparator()
             + "    s.close()" + System.lineSeparator()
             + "    try:" + System.lineSeparator()
@@ -737,8 +735,6 @@ public class DLModelPytorchProtected extends BaseModel {
                 if (isApposeThreadDeath(e) && attempt < MAX_TRANSIENT_TASK_RETRIES) {
                     emitProgress(InferenceProgress.taskRetry("Appose thread death during inference; retrying task "
                             + (attempt + 1) + "/" + MAX_TRANSIENT_TASK_RETRIES + "."));
-                    System.out.println("HEREEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE");
-                    System.err.println(Messages.encode(task.outputs));
                     try {
 						this.threadDeathCleanUp();
 					} catch (InterruptedException | TaskException e1) {
@@ -907,8 +903,6 @@ public class DLModelPytorchProtected extends BaseModel {
         final String code = createInputsCode(inputs, names);
         final Map<String, RandomAccessibleInterval<R>> map = executeCode(code);
         throwIfInferenceCancelled();
-        if (map.entrySet().size() > 2)
-        	System.out.println();
         outAxes = getOutputAxes(map.size());
         List<Tensor<R>> outTensors = new ArrayList<Tensor<R>>();
         int i = 0;
@@ -1288,10 +1282,8 @@ public class DLModelPytorchProtected extends BaseModel {
      * @throws TaskException if the cleanup task fails
      */
     protected void threadDeathCleanUp() throws InterruptedException, TaskException {
-    	python.debug((str) -> {System.out.println(str);});
         final Task closeSHMTask = python.task(CLEAN_SHM_CODE_THREAD_DEATH);
         closeSHMTask.waitFor();
-    	python.debug((str) -> {});
         if (closeSHMTask.status == TaskStatus.FAILED || closeSHMTask.status == TaskStatus.CRASHED) {
             throw new TaskException("Unable to clean/close the opened shared memory arrays", closeSHMTask);
         }
@@ -1321,8 +1313,6 @@ public class DLModelPytorchProtected extends BaseModel {
             throw new RuntimeException("Unexpected type for '" + SHM_NAMES_KEY + "'.");
         }
         final List<?> list = (List<?>) task.outputs.get(SHM_NAMES_KEY);
-        if (list.size() >2)
-        	System.out.println("");
         for (Object elem : list) {
             if (!(elem instanceof String)) {
                 throw new RuntimeException("Unexpected type for element of '" + SHM_NAMES_KEY + "' list.");
@@ -1337,8 +1327,6 @@ public class DLModelPytorchProtected extends BaseModel {
             throw new RuntimeException("Unexpected type for '" + DTYPES_KEY + "'.");
         }
         final List<?> list = (List<?>) task.outputs.get(DTYPES_KEY);
-        if (list.size() > 2)
-        	System.out.println("");
         for (Object elem : list) {
             if (!(elem instanceof String)) {
                 throw new RuntimeException("Unexpected type for element of '" + DTYPES_KEY + "' list.");
@@ -1353,8 +1341,6 @@ public class DLModelPytorchProtected extends BaseModel {
             throw new RuntimeException("Unexpected type for '" + DIMS_KEY + "'.");
         }
         final List<?> list = (List<?>) task.outputs.get(DIMS_KEY);
-        if (list.size() > 2)
-        	System.out.println("");
         for (Object elem : list) {
             if (!(elem instanceof Object[]) && !(elem instanceof List)) {
                 throw new RuntimeException("Unexpected type for element of '" + DIMS_KEY + "' list.");

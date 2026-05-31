@@ -698,6 +698,10 @@ public class TileMaker {
 	public <T extends RealType<T> & NativeType<T>> List<Tensor<T>> createOutputTensors(T dtype) {
 		List<Tensor<T>> outputTensors = new ArrayList<Tensor<T>>();
 		for (TileInfo tt : this.outputTileInfo) {
+			if (this.descriptor != null) {
+				String strDtype = descriptor.findOutputTensor(tt.getName()).getDataType();
+				dtype = CommonUtils.getImgLib2DataType(strDtype);
+			}
 			long[] dims = getOutputImageSize(tt.getName());
 			outputTensors.add((Tensor<T>) Tensor.buildBlankTensor(tt.getName(), 
 																	tt.getImageAxesOrder(), 
