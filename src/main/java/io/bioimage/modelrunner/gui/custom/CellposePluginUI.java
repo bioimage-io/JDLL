@@ -493,6 +493,7 @@ public class CellposePluginUI extends CellposeGUI implements ActionListener {
 			cytoCbox.setEnabled(!isStarting);
 			nucleiCbox.setEnabled(!isStarting);
 			check.setEnabled(!isStarting);
+			accelerationCheckBox.setEnabled(!isStarting);
 			if (isStarting) {
 				footer.getBar().setString("Checking cellpose installed...");
 				footer.getBar().setIndeterminate(true);

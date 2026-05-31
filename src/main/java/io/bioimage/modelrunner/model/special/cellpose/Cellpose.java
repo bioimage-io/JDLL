@@ -246,45 +246,45 @@ public class Cellpose extends BioimageIoModelPytorchProtected {
 	@Override
 	public <T extends RealType<T> & NativeType<T>, R extends RealType<R> & NativeType<R>>
 	List<Tensor<R>> inference(final Tensor<T>... inputs) throws RunModelException {
-		List<Tensor<T>> inputTensors = prepareInputTensors(new ArrayList<Tensor<T>>(Arrays.asList(inputs)));
-		return super.inference(inputTensors.toArray(Arrays.copyOf(inputs, inputTensors.size())));
+		if (inputs.length > 1)
+			throw new IllegalArgumentException(String.format("Cellpose has 1 positional arguemnt, %s were given", inputs.length));
+		createCustomDescriptor(inputs[0]);
+		return super.inference(inputs);
 	}
 
 	@Override
 	public <T extends RealType<T> & NativeType<T>, R extends RealType<R> & NativeType<R>>
 	List<List<Tensor<R>>> inferenceBatch(final List<Tensor<T>>... batchedInputs) throws RunModelException {
-		if (isBMZ)
-			return super.inferenceBatch(batchedInputs);
-		if (batchedInputs.length != 1)
-			throw new IllegalArgumentException("Cellpose only supports one input tensor.");
-		List<Tensor<T>> preparedBatch = new ArrayList<Tensor<T>>();
-		for (Tensor<T> input : batchedInputs[0]) {
-			List<Tensor<T>> inputTensors = new ArrayList<Tensor<T>>();
-			inputTensors.add(input);
-			preparedBatch.add(prepareInputTensors(inputTensors).get(0));
+		if (batchedInputs.length > 1)
+			throw new IllegalArgumentException(String.format("Cellpose has 1 positional arguemnt, %s were given", batchedInputs.length));
+		List<List<Tensor<R>>> outs = new ArrayList<>();
+		for (Tensor<T> singleInput : batchedInputs[0]) {
+			List<Tensor<R>> singleOuts = super.inference(singleInput);
+			if (outs.size() == 0) {
+				for (Tensor<R> singleOut : singleOuts) {
+					List<Tensor<R>> nBatch = new ArrayList<>();
+					outs.add(nBatch);
+				}
+			}
+			int c = 0;
+			for (Tensor<R> singleOut : singleOuts) {
+				List<Tensor<R>> nBatch = new ArrayList<>();
+				nBatch.add(singleOut);
+				outs.get(c ++).add(singleOut);
+			}
 		}
-		return super.inferenceBatch(preparedBatch);
-	}
-
-	private <T extends RealType<T> & NativeType<T>>
-	List<Tensor<T>> prepareInputTensors(List<Tensor<T>> inputTensors) {
-		if (isBMZ)
-			return inputTensors;
-		inputTensors = checkInputTensors(inputTensors);
-		if (descriptor == null)
-			createCustomDescriptor(inputTensors);
-		return inputTensors;
+		return outs;
 	}
 
 	private <R extends RealType<R> & NativeType<R>>
-	void createCustomDescriptor(List<Tensor<R>> inputTensors) {
+	void createCustomDescriptor(Tensor<R> inputTensors) {
 		int nChannels = 1;
-		String axesOrder = inputTensors.get(0).getAxesOrderString().toLowerCase();
+		String axesOrder = inputTensors.getAxesOrderString().toLowerCase();
 		if (axesOrder.contains("c")
-				&& inputTensors.get(0).getData().dimensionsAsLongArray()[axesOrder.indexOf("c")] == 3)
+				&& inputTensors.getData().dimensionsAsLongArray()[axesOrder.indexOf("c")] == 3)
 			nChannels = 3;
 		else if (axesOrder.contains("c")
-				&& inputTensors.get(0).getData().dimensionsAsLongArray()[axesOrder.indexOf("c")] != 1)
+				&& inputTensors.getData().dimensionsAsLongArray()[axesOrder.indexOf("c")] != 1)
 			throw new IllegalArgumentException("Inputs to cellpose model can only have either 1 or 3 channels.");
 		String adaptedRdfString;
 		String weightsName = new File(this.weightsPath).getName();
@@ -717,12 +717,12 @@ public class Cellpose extends BioimageIoModelPytorchProtected {
         String regex = "^" + Pattern.quote(keyword) + "_\\d{8}_\\d{6}$";
         Pattern pattern = Pattern.compile(regex);
         if (new File(folderPath).isDirectory() == false)
-	return new ArrayList<String>();
-        return Arrays.stream(new File(folderPath).listFiles())
-		.filter(File::isDirectory)
-		.filter(ff -> pattern.matcher(ff.getName()).matches())
-		.map(ff -> ff.getAbsolutePath())
-		.collect(Collectors.toList());
+		return new ArrayList<String>();
+	        return Arrays.stream(new File(folderPath).listFiles())
+			.filter(File::isDirectory)
+			.filter(ff -> pattern.matcher(ff.getName()).matches())
+			.map(ff -> ff.getAbsolutePath())
+			.collect(Collectors.toList());
     }
 
 
