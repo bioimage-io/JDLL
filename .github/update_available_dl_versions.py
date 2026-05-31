@@ -32,6 +32,7 @@ ENGINE_ARTIFACTS = (
 class EngineVersion:
     artifact: str
     version: str
+    published_at: str
     jar_url: str
 
 
@@ -60,45 +61,69 @@ def repository_path(repository: str, artifact: str) -> str:
     return f"{repository.rstrip('/')}/io/bioimage/{artifact}"
 
 
-def latest_declared_version(metadata: ET.Element) -> str:
-    latest = text(metadata, "versioning/latest")
-    if latest:
-        return latest
+@dataclass(frozen=True)
+class ResolvedJar:
+    jar_version: str
+    published_at: str
+
+
+def declared_versions(metadata: ET.Element) -> list[str]:
     versions = [node.text.strip() for node in metadata.findall("versioning/versions/version") if node.text]
     if not versions:
         raise RuntimeError("Maven metadata does not declare any versions")
-    return versions[-1]
+    return versions
 
 
-def snapshot_jar_version(snapshot_metadata: ET.Element, artifact: str) -> str:
+def snapshot_jar(snapshot_metadata: ET.Element, artifact: str) -> ResolvedJar:
     for node in snapshot_metadata.findall("versioning/snapshotVersions/snapshotVersion"):
         extension = text(node, "extension")
         classifier = text(node, "classifier")
         value = text(node, "value")
+        updated = text(node, "updated")
         if extension == "jar" and classifier is None and value:
-            return value
+            if not updated:
+                raise RuntimeError(f"Snapshot jar metadata for {artifact} does not declare updated timestamp")
+            return ResolvedJar(jar_version=value, published_at=updated)
 
     timestamp = text(snapshot_metadata, "versioning/snapshot/timestamp")
     build_number = text(snapshot_metadata, "versioning/snapshot/buildNumber")
     version = text(snapshot_metadata, "version")
     if timestamp and build_number and version and version.endswith("-SNAPSHOT"):
-        return f"{version[:-9]}-{timestamp}-{build_number}"
+        return ResolvedJar(
+            jar_version=f"{version[:-9]}-{timestamp}-{build_number}",
+            published_at=timestamp.replace(".", ""),
+        )
 
     raise RuntimeError(f"Could not determine latest snapshot jar version for {artifact}")
+
+
+def release_jar(metadata: ET.Element, version: str) -> ResolvedJar:
+    updated = text(metadata, "versioning/lastUpdated") or "0"
+    return ResolvedJar(jar_version=version, published_at=updated)
 
 
 def latest_engine_version(repository: str, artifact: str, timeout: int) -> EngineVersion:
     artifact_path = repository_path(repository, artifact)
     metadata = fetch_xml(f"{artifact_path}/maven-metadata.xml", timeout)
-    version = latest_declared_version(metadata)
+    candidates: list[EngineVersion] = []
 
-    jar_version = version
-    if version.endswith("-SNAPSHOT"):
-        snapshot_metadata = fetch_xml(f"{artifact_path}/{version}/maven-metadata.xml", timeout)
-        jar_version = snapshot_jar_version(snapshot_metadata, artifact)
+    for version in declared_versions(metadata):
+        version_metadata = fetch_xml(f"{artifact_path}/{version}/maven-metadata.xml", timeout)
+        if version.endswith("-SNAPSHOT"):
+            resolved = snapshot_jar(version_metadata, artifact)
+        else:
+            resolved = release_jar(version_metadata, version)
+        jar_url = f"{artifact_path}/{version}/{artifact}-{resolved.jar_version}.jar"
+        candidates.append(
+            EngineVersion(
+                artifact=artifact,
+                version=version,
+                published_at=resolved.published_at,
+                jar_url=jar_url,
+            )
+        )
 
-    jar_url = f"{artifact_path}/{version}/{artifact}-{jar_version}.jar"
-    return EngineVersion(artifact=artifact, version=version, jar_url=jar_url)
+    return max(candidates, key=lambda candidate: candidate.published_at)
 
 
 def replace_engine_urls(json_path: Path, versions: dict[str, EngineVersion]) -> bool:
