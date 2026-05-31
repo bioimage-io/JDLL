@@ -233,7 +233,6 @@ public class CellposeGUI extends JPanel {
 
 	    public boolean isAccelerationEnabled() {
 		return accelerationCheckBox.isVisible()
-				&& accelerationCheckBox.isEnabled()
 				&& accelerationCheckBox.isSelected();
 	    }
 
