@@ -103,7 +103,7 @@ public final class StarDistCellcast extends DLModelPytorchProtected {
 	private Double threshold = null;
 	private StarDistCellcast(String modelIdentity, Map<String, Object> config,
 			Dimensionality dimensionality, Consumer<InferenceProgress> inferenceProgressConsumer) throws IOException {
-		super(modelIdentity, modelIdentity, modelIdentity, modelIdentity, config, true);
+		super(modelIdentity, modelIdentity, modelIdentity, modelIdentity, config, true, null);
 		modelFolder = new File(modelIdentity).getParentFile().getAbsolutePath();
 		this.mpkPath = modelIdentity;
 		this.config = normalizedConfig(config);
@@ -278,9 +278,7 @@ public final class StarDistCellcast extends DLModelPytorchProtected {
 			code += "  " + DTYPES_KEY + ".clear()" + System.lineSeparator();
 			code += "  " + DIMS_KEY + ".clear()" + System.lineSeparator();
 			code += "  handle_output(labels.astype(np.float32, copy=False))" + System.lineSeparator();
-			code += "  " + closeSHMWin() + System.lineSeparator();
 			code += "except Exception as e:" + System.lineSeparator();
-			code += "  " + closeSHMWin() + System.lineSeparator();
 			code += "  raise e" + System.lineSeparator();
 			code += taskOutputsCode();
 			Map<String, RandomAccessibleInterval<R>> labels = executeCode(code);
@@ -523,9 +521,7 @@ public final class StarDistCellcast extends DLModelPytorchProtected {
 			code += "  " + DIMS_KEY + ".clear()" + System.lineSeparator();
 			code += "  " + "task.export(" + SHMS_KEY + " = " + SHMS_KEY + ")" + System.lineSeparator();
 	        code += "  " + "handle_output_list(" + OUTPUT_LIST_KEY + ")" + System.lineSeparator();
-			code += "  " + closeSHMWin() + System.lineSeparator();
 			code += "except Exception as e:" + System.lineSeparator();
-			code += "  " + closeSHMWin() + System.lineSeparator();
 			code += "  raise e" + System.lineSeparator();
 			code += taskOutputsCode();
 			return code;
@@ -553,7 +549,7 @@ public final class StarDistCellcast extends DLModelPytorchProtected {
 			return null;
 		}
 		if (modelPath.isFile()
-				&& modelPath.getName().toLowerCase().endsWith(StardistModelRegistry.STARDIST_WEIGHTS_EXTENSION)) {
+				/* TODO && modelPath.getName().toLowerCase().endsWith(StardistModelRegistry.STARDIST_WEIGHTS_EXTENSION)*/) {
 			return modelPath;
 		}
 		if (!modelPath.isDirectory()) {
