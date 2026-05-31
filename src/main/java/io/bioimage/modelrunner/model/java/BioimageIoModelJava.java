@@ -27,30 +27,27 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
-import io.bioimage.modelrunner.bioimageio.tiling.ImageInfo;
-import io.bioimage.modelrunner.bioimageio.tiling.TileCalculator;
 import io.bioimage.modelrunner.bioimageio.description.ModelDescriptor;
 import io.bioimage.modelrunner.bioimageio.description.ModelDescriptorFactory;
-import io.bioimage.modelrunner.bioimageio.description.TensorSpec;
 import io.bioimage.modelrunner.bioimageio.description.weights.ModelWeight;
 import io.bioimage.modelrunner.bioimageio.description.weights.WeightFormat;
-import io.bioimage.modelrunner.bioimageio.tiling.TileInfo;
-import io.bioimage.modelrunner.bioimageio.tiling.TileMaker;
 import io.bioimage.modelrunner.engine.DeepLearningEngineInterface;
 import io.bioimage.modelrunner.engine.EngineInfo;
 import io.bioimage.modelrunner.exceptions.LoadEngineException;
 import io.bioimage.modelrunner.exceptions.LoadModelException;
 import io.bioimage.modelrunner.exceptions.RunModelException;
 import io.bioimage.modelrunner.model.processing.Processing;
+import io.bioimage.modelrunner.model.tiling.ImageInfo;
+import io.bioimage.modelrunner.model.tiling.TileCalculator;
+import io.bioimage.modelrunner.model.tiling.TileInfo;
+import io.bioimage.modelrunner.model.tiling.TileMaker;
 import io.bioimage.modelrunner.model.tiling.merger.DenseMerger;
 import io.bioimage.modelrunner.model.tiling.merger.Merger;
 import io.bioimage.modelrunner.tensor.Tensor;
-import io.bioimage.modelrunner.utils.CommonUtils;
 import io.bioimage.modelrunner.utils.Constants;
 import io.bioimage.modelrunner.versionmanagement.InstalledEngines;
 import net.imglib2.img.Img;
@@ -80,7 +77,8 @@ public class BioimageIoModelJava extends DLModelJava
 	 * Calculates the tile sizes depending on the model specs
 	 */
 	protected TileCalculator tileCalculator;
-	private DenseMerger<?, ?> merger;
+	@SuppressWarnings("rawtypes")
+	private DenseMerger merger;
 
 	/**
 	 * Construct the object model with all the needed information to load a
@@ -295,9 +293,17 @@ public class BioimageIoModelJava extends DLModelJava
 			else
 				inTensorsFloat.add(Tensor.createCopyOfTensorInWantedDataType( tt, new FloatType() ));
 		}
-		engineInstance.run( inTensorsFloat, this.merger.getOutput(getTilingCounter().getTilesProcessed().intValue()) );
+		List<Tensor<R>> outTensors = getOutputTile(getTilingCounter().getTilesProcessed().intValue());
+		engineInstance.run(inTensorsFloat, outTensors);
 		engineClassLoader.setBaseClassLoader();
-		return null;
+		return outTensors;
+	}
+
+	@SuppressWarnings("unchecked")
+	private <R extends RealType<R> & NativeType<R>> List<Tensor<R>> getOutputTile(int patchNumber) {
+		if (this.merger == null)
+			throw new IllegalStateException("Bioimage.io Java output merger has not been configured.");
+		return (List<Tensor<R>>) this.merger.getOutput(patchNumber);
 	}
 
 	@Override
@@ -317,7 +323,8 @@ public class BioimageIoModelJava extends DLModelJava
 		this.tileCalculator = TileCalculator.init(descriptor);
 		List<TileInfo> inputTiles = tileCalculator.getOptimalTileSize(imageInfos);
 		TileMaker tileMaker = TileMaker.build(descriptor, inputTiles);		
-		merger = new DenseMerger<T, R>(tileMaker);
+		DenseMerger<T, R> merger = new DenseMerger<T, R>(tileMaker);
+		this.merger = merger;
 
 		Processing processing = Processing.init(descriptor);
 		processing.preprocess(inputs, true);		
