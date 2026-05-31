@@ -36,12 +36,10 @@ public class FileUtils {
     
 	/**
 	 * Copy one folder into another folder creating the necessary subfolders
-	 * 
-	 * @param src
-	 * 	folder to be copied
-	 * @param dest
-	 * 	destination folder
-	 * @throws IOException if there is any error copying the contents of the folder
+	 *
+	 * @param src the src.
+	 * @param dest the dest.
+	 * @throws IOException if an I/O error occurs.
 	 */
     public static void copyFolder(Path src, Path dest) throws IOException {
         // If the directory does not exist, create it

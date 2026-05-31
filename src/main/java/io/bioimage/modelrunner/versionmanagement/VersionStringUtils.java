@@ -57,22 +57,18 @@ public class VersionStringUtils {
 		System.out.print(aa);
 	}
 
-	/** TODO clean a little bit the code
+	/**
 	 * Return an ordered list of the most compatible engine versions to the engine version of interest.
 	 * We define compatible engines as those of the same DL framework whose major version is the same.
 	 * Pytorch 1.13.1 and 1.9.0 are compatible but Tensorflow 1.15.0 and Tensorflow 2.3.0 are not.
-	 * 
-	 * The criteria to order the list is first being a bigger version (1.15 is more compatible with 1.25 than 
+	 *
+	 * The criteria to order the list is first being a bigger version (1.15 is more compatible with 1.25 than
 	 * with 1.13) and then distance (1.15 is more compatible with 1.16 than with 1.25).
-	 * 
-	 * @param version
-	 * 	the version of interest
-	 * @param versionList
-	 * 	list of all the versions that are installed
-	 * @param engine
-	 * 	Deep Learning framework (tensorflow, pytorch, onnx...) as defined with the engine tag 
-	 * at https://raw.githubusercontent.com/bioimage-io/model-runner-java/main/src/main/resources/availableDLVersions.json
-	 * @return a list ordered from more compatible to less compatible
+	 *
+	 * @param version the version.
+	 * @param versionList the version list.
+	 * @param engine the engine.
+	 * @return the compatible engine versions in order.
 	 */
 	public static List<String> getCompatibleEngineVersionsInOrder(String version, List<String> versionList, String engine) {
 		List<String> vs = new ArrayList<String>();
@@ -113,19 +109,16 @@ public class VersionStringUtils {
 		return posList;
 	}
 
-	/** TODO clean a little bit the code
+	/**
 	 * Return the most convenient engine version to load the model trained with
-	 * the version specified in the yaml file. The most convenient is either the 
-	 * actual training version, the closest higher version existing or in the case 
+	 * the version specified in the yaml file. The most convenient is either the
+	 * actual training version, the closest higher version existing or in the case
 	 * only one version is downloaded, the only one downloaded.
-	 * @param version
-	 * 	the version of interest
-	 * @param versionList
-	 * 	list of all the versions that are installed
-	 * @param engine
-	 * 	Deep Learning framework (tensorflow, pytorch, onnx...) as defined with the engine tag 
-	 * at https://raw.githubusercontent.com/bioimage-io/model-runner-java/main/src/main/resources/availableDLVersions.json
-	 * @return the most convenient version
+	 *
+	 * @param version the version.
+	 * @param versionList the version list.
+	 * @param engine the engine.
+	 * @return the most compatible engine version.
 	 */
 	public static String getMostCompatibleEngineVersion(String version, List<String> versionList, String engine) {
 		if (version == null || versionList == null || versionList.size() == 0) {
@@ -216,11 +209,10 @@ public class VersionStringUtils {
 	
 	/**
 	 * This method checks if two different Strings represent the same version
-	 * @param v1
-	 * 	one version
-	 * @param v2
-	 * 	another version
-	 * @return true if the versions are the same and false otherwise
+	 *
+	 * @param v1 the v1.
+	 * @param v2 the v2.
+	 * @return true if are they the same version; false otherwise.
 	 */
 	public static boolean areTheyTheSameVersion(String v1, String v2) {
 		if (v1 == null || v2 == null)
@@ -232,13 +224,11 @@ public class VersionStringUtils {
 	
 	/**
 	 * This method checks if two different Strings represent the same version
-	 * @param v1
-	 * 	one version
-	 * @param v2
-	 * 	another version
-	 * @param point
-	 * 	until which point the comparison should be made
-	 * @return true if the versions are the same and false otherwise
+	 *
+	 * @param v1 the v1.
+	 * @param v2 the v2.
+	 * @param point the point.
+	 * @return true if are they the same version until point; false otherwise.
 	 */
 	public static boolean areTheyTheSameVersionUntilPoint(String v1, String v2, int point) {
 		if (v1 == null || v2 == null)
@@ -273,11 +263,10 @@ public class VersionStringUtils {
 	/**
 	 * MEthod that makes uniform the number of points accross a version list by adding ".0"
 	 * the needed times to the end of each version
-	 * @param versionList
-	 * 	the list with versions
-	 * @param nPoints
-	 * 	the target number of points per version
-	 * @return a list of versions where each version has at least the wanted amount of points
+	 *
+	 * @param versionList the version list.
+	 * @param nPoints the n points.
+	 * @return the resulting list.
 	 */
 	public static List<String> uniformVersionList(List<String> versionList, int nPoints){
 		for (int i = 0; i < versionList.size(); i ++) {
@@ -311,11 +300,10 @@ public class VersionStringUtils {
 	
 	/**
 	 * Count number of occurences of a String in another String
-	 * @param str
-	 * 	the String where the occurences are counted
-	 * @param occurence
-	 * 	the String that we need to look for in the other String
-	 * @return number of times that one String appears in the other
+	 *
+	 * @param str the str.
+	 * @param occurence the occurence.
+	 * @return the resulting int.
 	 */
 	public static int countNumberOfOccurences(String str, String occurence) {
 		return str.length() - str.replace(occurence, "").length();
@@ -396,10 +384,9 @@ public class VersionStringUtils {
 	 * Convert an String version identifier into an integer version identifier.
 	 * The integer obtained always has 3 figures. For example 1, 1.0 and 1.0.0 are
 	 * all converted to 100, 2.2 to 220 and 2.2.3 to 223
-	 * @param version
-	 * 	the version string
-	 * @return the version written in integer format. If the version is not a number,
-	 * 	-1 is returned
+	 *
+	 * @param version the version.
+	 * @return the resulting int.
 	 */
 	public static int convertVersionIntoInteger(String version) {
 		if (version == null || version.toLowerCase().contains("unknown"))

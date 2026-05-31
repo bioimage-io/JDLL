@@ -33,11 +33,19 @@ public class YoloHelpIcon extends JPanel {
     private static final Color BG = new Color(230, 238, 250);
     private static final Color FG = new Color(58, 91, 160);
 
+    /**
+     * Creates a new YoloHelpIcon instance.
+     */
     protected YoloHelpIcon() {
         setOpaque(false);
         setToolTipText("Use Ctrl + mouse wheel to zoom the preview.");
     }
 
+    /**
+     * Performs paint component.
+     *
+     * @param g the g.
+     */
     @Override
     protected void paintComponent(Graphics g) {
         super.paintComponent(g);

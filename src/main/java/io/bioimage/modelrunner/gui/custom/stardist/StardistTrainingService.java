@@ -44,10 +44,28 @@ public class StardistTrainingService {
     private File cancelSignalFile;
     private Service runningPython;
 
+    /**
+     * Creates a new StardistTrainingService instance.
+     *
+     * @param installer the installer.
+     */
     public StardistTrainingService(ModelInstaller installer) {
         this.installer = installer;
     }
 
+    /**
+     * Runs model training.
+     *
+     * @param config the config.
+     * @param progressConsumer the progress consumer callback.
+     * @param previewConsumer the preview consumer callback.
+     * @param logConsumer the log consumer callback.
+     * @throws IOException if an I/O error occurs.
+     * @throws ExecutionException if an asynchronous operation fails.
+     * @throws InterruptedException if the current thread is interrupted.
+     * @throws BuildException if the Python environment or service cannot be built.
+     * @throws TaskException if task occurs.
+     */
     public void train(StardistTrainingConfig config,
             Consumer<StardistTrainingProgress> progressConsumer,
             Consumer<StardistValidationPreview> previewConsumer,
@@ -77,6 +95,9 @@ public class StardistTrainingService {
         }
     }
 
+    /**
+     * Performs request cancel.
+     */
     public synchronized void requestCancel() {
         if (cancelSignalFile != null) {
             try {
@@ -89,10 +110,19 @@ public class StardistTrainingService {
         killRunningPythonIfStillAliveLater();
     }
 
+    /**
+     * Closes resources held by this object.
+     */
     public void close() {
         requestCancel();
     }
 
+    /**
+     * Returns whether valid dataset path.
+     *
+     * @param datasetPath the dataset path.
+     * @return true if valid dataset path; false otherwise.
+     */
     public static boolean isValidDatasetPath(File datasetPath) {
         return datasetPath != null && datasetPath.isDirectory() && datasetPath.canRead();
     }

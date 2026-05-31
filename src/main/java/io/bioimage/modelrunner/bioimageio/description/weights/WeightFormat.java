@@ -116,8 +116,8 @@ public interface WeightFormat {
 	
 	/**
 	 * Method to set whether the engine used for this weights supports GPU or not
-	 * @param support
-	 * 	whether the engine support GPU or not
+	 *
+	 * @param support the support.
 	 */
 	public void supportGPU(boolean support);
 	

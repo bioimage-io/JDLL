@@ -147,9 +147,9 @@ public class BioimageioDirectConnection {
 	 * Return the {@link ModelDescriptor} for the model defined by the modelID
 	 * (field 'id' in the rdf.yaml) introduced as a parameter.
 	 * By default retrieves teh latest version.
-	 * @param modelID
-	 * 	unique ID for each Bioimage.io model
-	 * @return the {@link ModelDescriptor} of the model
+	 *
+	 * @param modelID the model ID.
+	 * @return the resulting model descriptor.
 	 */
 	public static ModelDescriptor selectByID(String modelID) {
 		return selectByID(modelID, "latest");
@@ -158,11 +158,10 @@ public class BioimageioDirectConnection {
 	/**
 	 * Return the {@link ModelDescriptor} for the model defined by the modelID
 	 * (field 'id' in the rdf.yaml) introduced as a parameter.
-	 * @param modelID
-	 * 	unique ID for each Bioimage.io model
-	 * @param version
-	 * 	version that we want to retrieve ('latest' for latest version)
-	 * @return the {@link ModelDescriptor} of the model
+	 *
+	 * @param modelID the model ID.
+	 * @param version the version.
+	 * @return the resulting model descriptor.
 	 */
 	public static ModelDescriptor selectByID(String modelID, String version) {
 		Objects.requireNonNull(modelID, "ID should be non null");

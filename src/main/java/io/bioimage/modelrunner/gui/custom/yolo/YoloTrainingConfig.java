@@ -38,6 +38,20 @@ public final class YoloTrainingConfig {
     private final int previewEpochPeriod;
     private final String device;
 
+    /**
+     * Creates a new YoloTrainingConfig instance.
+     *
+     * @param modelName the model name.
+     * @param datasetYamlPath the dataset YAML path.
+     * @param epochs the epochs.
+     * @param imageSize the image size.
+     * @param fineTune the fine tune.
+     * @param baseModelPath the base model path.
+     * @param scratchArchitecture the scratch architecture.
+     * @param modelsDir the models directory.
+     * @param outputWeightsPath the output weights path.
+     * @param previewEpochPeriod the preview epoch period.
+     */
     public YoloTrainingConfig(String modelName, String datasetYamlPath, int epochs, int imageSize,
             boolean fineTune, String baseModelPath, String scratchArchitecture,
             String modelsDir, String outputWeightsPath, int previewEpochPeriod) {
@@ -45,6 +59,21 @@ public final class YoloTrainingConfig {
                 modelsDir, outputWeightsPath, previewEpochPeriod, "cpu");
     }
 
+    /**
+     * Creates a new YoloTrainingConfig instance.
+     *
+     * @param modelName the model name.
+     * @param datasetYamlPath the dataset YAML path.
+     * @param epochs the epochs.
+     * @param imageSize the image size.
+     * @param fineTune the fine tune.
+     * @param baseModelPath the base model path.
+     * @param scratchArchitecture the scratch architecture.
+     * @param modelsDir the models directory.
+     * @param outputWeightsPath the output weights path.
+     * @param previewEpochPeriod the preview epoch period.
+     * @param device the device.
+     */
     public YoloTrainingConfig(String modelName, String datasetYamlPath, int epochs, int imageSize,
             boolean fineTune, String baseModelPath, String scratchArchitecture,
             String modelsDir, String outputWeightsPath, int previewEpochPeriod, String device) {
@@ -61,55 +90,135 @@ public final class YoloTrainingConfig {
         this.device = normalizeDevice(device);
     }
 
+    /**
+     * Returns the model name.
+     *
+     * @return the model name.
+     */
     public String getModelName() {
         return modelName;
     }
 
+    /**
+     * Returns the dataset YAML path.
+     *
+     * @return the dataset YAML path.
+     */
     public String getDatasetYamlPath() {
         return datasetYamlPath;
     }
 
+    /**
+     * Returns the epochs.
+     *
+     * @return the epochs.
+     */
     public int getEpochs() {
         return epochs;
     }
 
+    /**
+     * Returns the image size.
+     *
+     * @return the image size.
+     */
     public int getImageSize() {
         return imageSize;
     }
 
+    /**
+     * Returns whether fine tune.
+     *
+     * @return true if fine tune; false otherwise.
+     */
     public boolean isFineTune() {
         return fineTune;
     }
 
+    /**
+     * Returns the base model path.
+     *
+     * @return the base model path.
+     */
     public String getBaseModelPath() {
         return baseModelPath;
     }
 
+    /**
+     * Returns the scratch architecture.
+     *
+     * @return the scratch architecture.
+     */
     public String getScratchArchitecture() {
         return scratchArchitecture;
     }
 
+    /**
+     * Returns the models directory.
+     *
+     * @return the models directory.
+     */
     public String getModelsDir() {
         return modelsDir;
     }
 
+    /**
+     * Returns the output weights path.
+     *
+     * @return the output weights path.
+     */
     public String getOutputWeightsPath() {
         return outputWeightsPath;
     }
 
+    /**
+     * Returns the preview epoch period.
+     *
+     * @return the preview epoch period.
+     */
     public int getPreviewEpochPeriod() {
         return previewEpochPeriod;
     }
 
+    /**
+     * Returns the device.
+     *
+     * @return the device.
+     */
     public String getDevice() {
         return device;
     }
 
+    /**
+     * Creates a YoloTrainingConfig from the ui.
+     *
+     * @param modelName the model name.
+     * @param datasetPath the dataset path.
+     * @param epochs the epochs.
+     * @param fineTune the fine tune.
+     * @param baseModelPath the base model path.
+     * @param scratchArchitecture the scratch architecture.
+     * @param modelsDir the models directory.
+     * @return the created yolo training config.
+     */
     public static YoloTrainingConfig fromUi(String modelName, String datasetPath, int epochs,
             boolean fineTune, String baseModelPath, String scratchArchitecture, String modelsDir) {
         return fromUi(modelName, datasetPath, epochs, fineTune, baseModelPath, scratchArchitecture, modelsDir, "cpu");
     }
 
+    /**
+     * Creates a YoloTrainingConfig from the ui.
+     *
+     * @param modelName the model name.
+     * @param datasetPath the dataset path.
+     * @param epochs the epochs.
+     * @param fineTune the fine tune.
+     * @param baseModelPath the base model path.
+     * @param scratchArchitecture the scratch architecture.
+     * @param modelsDir the models directory.
+     * @param device the device.
+     * @return the created yolo training config.
+     */
     public static YoloTrainingConfig fromUi(String modelName, String datasetPath, int epochs,
             boolean fineTune, String baseModelPath, String scratchArchitecture, String modelsDir, String device) {
         String normalizedName = normalizeModelName(modelName);

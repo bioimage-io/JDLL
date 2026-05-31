@@ -34,9 +34,8 @@ public class RunModelException extends Exception
 	 * Constructor that transports exceptions that happened in the Deep Learning
 	 * engine interface into the Deep LEarning manager inside which is being run
 	 * inside the main program
-	 * 
-	 * @param msg
-	 *            the message of the original exception
+	 *
+	 * @param msg the msg.
 	 */
 	public RunModelException( String msg )
 	{
@@ -46,11 +45,9 @@ public class RunModelException extends Exception
 	/**
 	 * Exception when the number of tensors expected is not the same as the
 	 * number of tensors outputted by the model
-	 * 
-	 * @param nOutputTensors
-	 *            number of tensors outputted by the model
-	 * @param nExpectedTensors
-	 *            number of tensors expected
+	 *
+	 * @param nOutputTensors the n output tensors.
+	 * @param nExpectedTensors the n expected tensors.
 	 */
 	public RunModelException( int nOutputTensors, int nExpectedTensors )
 	{

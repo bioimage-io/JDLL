@@ -111,7 +111,8 @@ public class YOLOPluginUI extends YoloGUI implements ActionListener {
     /**
      * Creates a new CellposePluginUI.
      *
-     * @param consumer the consumer parameter.
+     * @param consumer the consumer callback.
+     * @param adapter the adapter.
      */
     public YOLOPluginUI(ConsumerInterface consumer, GuiAdapter adapter) {
     	super(adapter);
@@ -168,6 +169,9 @@ public class YOLOPluginUI extends YoloGUI implements ActionListener {
         }
     }
 
+    /**
+     * Performs add notify.
+     */
     @Override
     public void addNotify() {
         super.addNotify();
@@ -180,6 +184,11 @@ public class YOLOPluginUI extends YoloGUI implements ActionListener {
         sourcePanel.getOpenImagesRadio().addActionListener(e -> showOpenImageSource());
         sourcePanel.getSystemPathField().addActionListener(e -> updateSystemPathPreviewFromField());
         sourcePanel.getSystemPathField().addFocusListener(new FocusAdapter() {
+            /**
+             * Performs focus lost.
+             *
+             * @param e the e.
+             */
             @Override
             public void focusLost(FocusEvent e) {
                 updateSystemPathPreviewFromField();
@@ -211,11 +220,21 @@ public class YOLOPluginUI extends YoloGUI implements ActionListener {
             return;
         }
         window.addWindowListener(new WindowAdapter() {
+            /**
+             * Performs window closing.
+             *
+             * @param e the e.
+             */
             @Override
             public void windowClosing(WindowEvent e) {
                 close();
             }
 
+            /**
+             * Performs window closed.
+             *
+             * @param e the e.
+             */
             @Override
             public void windowClosed(WindowEvent e) {
                 close();
@@ -583,6 +602,9 @@ public class YOLOPluginUI extends YoloGUI implements ActionListener {
         }
     }
 
+    /**
+     * Runs model training.
+     */
     public void trainYOLO() {
         if (!trainPanel.validateTrainingFields()) {
             return;

@@ -113,9 +113,9 @@ public class AvailableEngines
     /**
      * Remove the python repeated versions from the list of versions. There
      * can be several JAva versions that reproduce the same Python version
-     * @param versions
-     * 	original list of versions that might contain repeated Python versions
-     * @return list of versions without repeated Python versions
+     *
+     * @param versions the versions.
+     * @return the resulting list.
      */
     public static List<DeepLearningVersion> removeRepeatedPythonVersions(List<DeepLearningVersion> versions) {
     	List<DeepLearningVersion> nVersions = new ArrayList<DeepLearningVersion>();
@@ -138,11 +138,9 @@ public class AvailableEngines
     /**
      * Creates an instance containing only Deep Learning versions compatible with
      * the current system and current Java version for the engine of interest
-     * 
-     * @param framework
-     * 	engine name as specified by the bioimage.io, defined at
-     * 	https://github.com/bioimage-io/spec-bioimage-io/blob/gh-pages/weight_formats_spec_0_4.md
-     * @return a list of available versions for the current OS and the framework wanted.
+     *
+     * @param framework the framework.
+     * @return the resulting list.
      */
     public static List<DeepLearningVersion> filterByFrameworkForOS(String framework) {
     	String searchEngine = AvailableEngines.getSupportedFrameworkTag(framework);
@@ -165,10 +163,9 @@ public class AvailableEngines
     /**
      * Return a list of all the Python framework versions of the corresponding engine
      * that can be installed in the current OS and Java version
-     * 
-     * @param framework
-     * 	the engine of interest
-     * @return the list of deep learning versions for the given engine
+     *
+     * @param framework the framework.
+     * @return the framework python versions for OS.
      */
     public static List<String> getFrameworkPythonVersionsForOs(String framework) {
     	String searchEngine = AvailableEngines.getSupportedFrameworkTag(framework);
@@ -215,9 +212,8 @@ public class AvailableEngines
 
     /**
      * Sets the list of versions available in this instance.
-     * 
-     * @param versions
-     *        The versions to be available in this instance.
+     *
+     * @param versions the versions.
      */
     public void setVersions(List<DeepLearningVersion> versions)
     {
@@ -230,31 +226,26 @@ public class AvailableEngines
      * If any of the arguments is set to null, it will be ignored in the filtering.
      * For example, if gpu = null, the method will return true if the engine exists
      * even if it only exists for gpu, only for cpu or it exists for both.
-     * 
-     * 
-     * 
+     *
+     *
+     *
      * Note that this method looks at the framework versions specified at:
      * https://github.com/bioimage-io/JDLL/blob/main/src/main/resources/supportedVersions.json
-     * 
+     *
      * This file contains all the versions for each framework supported by JDLL.
      * Note that several of the python versions point to a single Java API version. This
      * happens because not every Python version has an exact Java APi made for it. HOwever,
      * the Java API is made with enough flexibility so that is compatible with the previous
-     * Python versions that do not have an API. 
+     * Python versions that do not have an API.
      * BEcause of this, for some versions such as Tensorflow 2.8, the version that will be
      * retrieved by this method will be Tensorflow 2.10.1. The API created for Tensorflow 2.10.1
      * is completely capable of running Tensorflow 2.8.
-     * 
-     * 
-     * @param framework
-	 * 	DL framework as specified by the Bioimage.io model zoo ()https://github.com/bioimage-io/spec-bioimage-io/blob/gh-pages/weight_formats_spec_0_4.md)
-	 * @param version
-	 * 	the version of the framework
-	 * @param cpu
-	 * 	whether the engine supports cpu or not
-	 * @param gpu
-	 * 	whether the engine supports gpu or not
-     * @return true if the engine exists and false otherwise
+     *
+     * @param framework the framework.
+     * @param version the version.
+     * @param cpu the CPU.
+     * @param gpu whether to use GPU.
+     * @return true if engine supported in OS; false otherwise.
      */
     public static boolean isEngineSupportedInOS(String framework, String version, 
     		Boolean cpu, Boolean gpu) {
@@ -290,35 +281,29 @@ public class AvailableEngines
     }
     
     /**
-     * Retrieve the available Deep Learning engines for the current OS and Java version 
+     * Retrieve the available Deep Learning engines for the current OS and Java version
      * using the parameters that define an engine.
      * The null input arguments are ignored during the filtering. For example
-     * if the version argument is null, all the versions compatible wiht the 
+     * if the version argument is null, all the versions compatible wiht the
      * rest of arguments will be retrieved.
-     * 
+     *
      * Note that this method looks at the framework versions specified at:
      * https://github.com/bioimage-io/JDLL/blob/main/src/main/resources/supportedVersions.json
-     * 
+     *
      * This file contains all the versions for each framework supported by JDLL.
      * Note that several of the python versions point to a single Java API version. This
      * happens because not every Python version has an exact Java APi made for it. HOwever,
      * the Java API is made with enough flexibility so that is compatible with the previous
-     * Python versions that do not have an API. 
+     * Python versions that do not have an API.
      * BEcause of this, for some versions such as Tensorflow 2.8, the version that will be
      * retrieved by this method will be Tensorflow 2.10.1. The API created for Tensorflow 2.10.1
      * is completely capable of running Tensorflow 2.8.
-     * 
-     * 
-     * @param framework
-     * 	Deep Learning framework (tensorflow, pytorch, onnx...)
-     * @param version
-     * 	the version of the DL framework
-     * @param cpu
-     * 	whether the engine supports cpu or not
-     * @param gpu
-     * 	whether the engine supports GPU or not
-     * @return a list of {@link DeepLearningVersion} objects that satisfy the
-     * 	specified params
+     *
+     * @param framework the framework.
+     * @param version the version.
+     * @param cpu the CPU.
+     * @param gpu whether to use GPU.
+     * @return the engines for OS by params.
      */
     public static List<DeepLearningVersion> getEnginesForOsByParams(String framework, 
     		String version, Boolean cpu, Boolean gpu) {
@@ -355,10 +340,10 @@ public class AvailableEngines
      * MEthod to get the correct engine tag to parse the engine files.
      * If it receives the engine name given by the BioImage.io (torchscript, tensorflow_saved_model...)
      * it produces the names specified in the resources files (pytorch, tensorflow...).
-     * If it receives the later it does nothing 
-     * @param framework
-     * 	an engine tag
-     * @return the correct engine tag format to parse the files at resources
+     * If it receives the later it does nothing
+     *
+     * @param framework the framework.
+     * @return the supported framework tag.
      */
     public static String getSupportedFrameworkTag(String framework) {
     	if (framework == null)

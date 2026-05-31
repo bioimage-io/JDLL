@@ -56,10 +56,8 @@ public class TorchscriptWeights implements WeightFormat{
 
 	/**
 	 * Crate an object that specifies Torchscript weights
-	 * 
-	 * @param weights
-	 * 	part of the yaml file that contains exclusively the 
-	 * 	information refering to the Torchscript weights
+	 *
+	 * @param weights the weights.
 	 */
 	public TorchscriptWeights(Map<String, Object> weights) {
 		weightsFormat = ModelWeight.getTorchscriptID();
@@ -93,6 +91,11 @@ public class TorchscriptWeights implements WeightFormat{
 		setCompatibleVersion();
 	}
 	
+	/**
+	 * Returns the framework.
+	 *
+	 * @return the framework.
+	 */
 	@Override
 	/**
 	 * {@inheritDoc}
@@ -103,6 +106,11 @@ public class TorchscriptWeights implements WeightFormat{
 		return weightsFormat;
 	}
 
+	/**
+	 * Returns the training version.
+	 *
+	 * @return the training version.
+	 */
 	@Override
 	/**
 	 * {@inheritDoc}
@@ -117,8 +125,7 @@ public class TorchscriptWeights implements WeightFormat{
 	 * Set the training version for the weights
 	 * specified in the yaml if it exists
 	 *
-	 * @param v
-	 * 	training version of the weights
+	 * @param v the v.
 	 */
 	public void setTrainingVersion(Object v) {
 		if (v instanceof String && !((String)v).contains("+")
@@ -143,6 +150,11 @@ public class TorchscriptWeights implements WeightFormat{
 		
 	}
 	
+	/**
+	 * Returns the sha256.
+	 *
+	 * @return the sha256.
+	 */
 	@Override
 	/**
 	 * {@inheritDoc}
@@ -156,8 +168,7 @@ public class TorchscriptWeights implements WeightFormat{
 	/**
 	 * Set the SHA256 of the model from the parameters in the yaml
 	 *
-	 * @param s
-	 * 	SHA256 of the model
+	 * @param s the s.
 	 */
 	public void setSha256(Object s) {
 		if (s instanceof String)
@@ -165,6 +176,11 @@ public class TorchscriptWeights implements WeightFormat{
 		
 	}
 	
+	/**
+	 * Returns the source.
+	 *
+	 * @return the source.
+	 */
 	@Override
 	/**
 	 * {@inheritDoc}
@@ -178,9 +194,7 @@ public class TorchscriptWeights implements WeightFormat{
 	/**
 	 * Set the source of the model from the parameters in the yaml
 	 *
-	 * @param s
-	 * 	string from the yaml file containing the source, return only the
-	 * 	name of the file inside the folder, not the whole path
+	 * @param s the s.
 	 */
 	public void setSource(Object s) {
 		if (s instanceof String)
@@ -188,6 +202,11 @@ public class TorchscriptWeights implements WeightFormat{
 		
 	}
 	
+	/**
+	 * Returns the parent.
+	 *
+	 * @return the parent.
+	 */
 	@Override
 	/**
 	 * {@inheritDoc}
@@ -200,8 +219,8 @@ public class TorchscriptWeights implements WeightFormat{
 	
 	/**
 	 * Set the parent of the weights in the case they exist
-	 * @param parent
-	 * 	parent weights of the model
+	 *
+	 * @param parent the parent.
 	 */
 	public void setParent(Object parent) {
 		if (parent instanceof String)
@@ -210,6 +229,11 @@ public class TorchscriptWeights implements WeightFormat{
 
 	private ModelArchitecture architecture;
 	
+	/**
+	 * Returns the architecture.
+	 *
+	 * @return the architecture.
+	 */
 	@Override
 	/**
 	 * {@inheritDoc}
@@ -232,6 +256,11 @@ public class TorchscriptWeights implements WeightFormat{
 
 	private ModelDependencies dependencies;
 	
+	/**
+	 * Returns the environment dependencies.
+	 *
+	 * @return the environment dependencies.
+	 */
 	@Override
 	/**
 	 * {@inheritDoc}
@@ -252,6 +281,11 @@ public class TorchscriptWeights implements WeightFormat{
 			this.dependencies = new ModelDependencies((Map<String, Object>) dependencies);
 	}
 
+	/**
+	 * Returns the source file name.
+	 *
+	 * @return the source file name.
+	 */
 	@Override
 	/**
 	 * {@inheritDoc}
@@ -275,8 +309,8 @@ public class TorchscriptWeights implements WeightFormat{
 	/**
 	 * {@inheritDoc}
 	 * Method to set whether the engine used for this weights supports GPU or not
-	 * @param support
-	 * 	whether the engine for the weights supports GPu or not
+	 *
+	 * @param support the support.
 	 */
 	@Override
 	public void supportGPU(boolean support) {
@@ -293,6 +327,11 @@ public class TorchscriptWeights implements WeightFormat{
 		return gpu;
 	}
 
+	/**
+	 * Returns the java training version.
+	 *
+	 * @return the java training version.
+	 */
 	@Override
 	/**
 	 * {@inheritDoc}
@@ -312,6 +351,11 @@ public class TorchscriptWeights implements WeightFormat{
 		compatibleVersion = SupportedVersions.getJavaVersionForPythonVersion("pytorch", trainingVersion);
 	}
 	
+	/**
+	 * Returns the closest supported python version.
+	 *
+	 * @return the closest supported python version.
+	 */
 	@Override
 	/**
 	 * {@inheritDoc}

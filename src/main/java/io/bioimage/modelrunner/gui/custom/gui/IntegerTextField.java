@@ -35,8 +35,8 @@ public class IntegerTextField extends PlaceholderTextField {
 
     /**
      * Text field that only allows integers who shows a placeholder text as information
-     * @param placeholder
-     * 	text shown in a different color as information
+     *
+     * @param placeholder the placeholder.
      */
     public IntegerTextField(String placeholder) {
         super(placeholder);

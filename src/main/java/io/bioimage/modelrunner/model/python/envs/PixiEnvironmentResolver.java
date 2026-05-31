@@ -51,13 +51,10 @@ public final class PixiEnvironmentResolver {
 	/**
 	 * Renders a classpath Pixi template using {@link String#format(Locale, String, Object...)}.
 	 *
-	 * @param environmentDirectoryName
-	 * 	name of the directory under the Appose environment directory
-	 * @param tomlResource
-	 * 	classpath resource containing the Pixi template
-	 * @param args
-	 * 	template arguments
-	 * @return resolved Pixi environment spec
+	 * @param environmentDirectoryName the environment directory name.
+	 * @param tomlResource the toml resource.
+	 * @param args command-line arguments.
+	 * @return the created pixi environment spec.
 	 */
 	public static PixiEnvironmentSpec fromTemplate(String environmentDirectoryName,
 			String tomlResource, Object... args) {
@@ -70,11 +67,9 @@ public final class PixiEnvironmentResolver {
 	/**
 	 * Caches a classpath resource under the user JDLL cache directory.
 	 *
-	 * @param resourcePath
-	 * 	classpath resource path
-	 * @param cacheSubdirName
-	 * 	subdirectory under the JDLL cache directory
-	 * @return cached file
+	 * @param resourcePath the resource path.
+	 * @param cacheSubdirName the cache subdir name.
+	 * @return the resulting file.
 	 */
 	public static File cacheClasspathResource(String resourcePath, String cacheSubdirName) {
 		Objects.requireNonNull(resourcePath, "resourcePath");
@@ -122,9 +117,8 @@ public final class PixiEnvironmentResolver {
 	/**
 	 * Reads a classpath resource as UTF-8 text.
 	 *
-	 * @param resourcePath
-	 * 	classpath resource path
-	 * @return resource contents
+	 * @param resourcePath the resource path.
+	 * @return the resulting string.
 	 */
 	public static String readClasspathResourceAsString(String resourcePath) {
 		Objects.requireNonNull(resourcePath, "resourcePath");
@@ -141,19 +135,13 @@ public final class PixiEnvironmentResolver {
 	/**
 	 * Selects one resource path for the current OS and architecture.
 	 *
-	 * @param linuxX86
-	 * 	resource for Linux x86_64
-	 * @param linuxArm
-	 * 	resource for Linux arm64/aarch64
-	 * @param macX86
-	 * 	resource for macOS x86_64/Rosetta
-	 * @param macArm
-	 * 	resource for macOS arm64/aarch64
-	 * @param winX86
-	 * 	resource for Windows x86_64
-	 * @param description
-	 * 	human-readable resource description for errors
-	 * @return selected resource path
+	 * @param linuxX86 the linux x86.
+	 * @param linuxArm the linux arm.
+	 * @param macX86 the mac x86.
+	 * @param macArm the mac arm.
+	 * @param winX86 the win x86.
+	 * @param description the description.
+	 * @return the resulting string.
 	 */
 	public static String selectResourceByCurrentPlatform(String linuxX86, String linuxArm,
 			String macX86, String macArm, String winX86, String description) {
@@ -207,9 +195,8 @@ public final class PixiEnvironmentResolver {
 	/**
 	 * Converts a local file path to a Pixi-friendly path string.
 	 *
-	 * @param file
-	 * 	file to format
-	 * @return absolute path using forward slashes
+	 * @param file the file.
+	 * @return the resulting string.
 	 */
 	public static String toPixiPath(File file) {
 		return file.getAbsolutePath().replace('\\', '/');
@@ -218,9 +205,8 @@ public final class PixiEnvironmentResolver {
 	/**
 	 * Returns the per-user cache directory for the given application subfolder.
 	 *
-	 * @param appSubdir
-	 * 	application cache subdirectory name
-	 * @return cache directory
+	 * @param appSubdir the app subdir.
+	 * @return the resulting file.
 	 */
 	public static File userCacheDir(String appSubdir) {
 		String base;

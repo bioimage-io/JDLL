@@ -39,10 +39,8 @@ public class KerasWeights implements WeightFormat {
 
 	/**
 	 * Crate an object that specifies Keras weights
-	 * 
-	 * @param weights
-	 * 	part of the yaml file that contains exclusively the 
-	 * 	information referring to the Keras weights
+	 *
+	 * @param weights the weights.
 	 */
 	public KerasWeights(Map<String, Object> weights) {
 		weightsFormat = ModelWeight.getKerasID();
@@ -75,6 +73,11 @@ public class KerasWeights implements WeightFormat {
 	}
 
 	private String weightsFormat;
+	/**
+	 * Returns the framework.
+	 *
+	 * @return the framework.
+	 */
 	@Override
 	/**
 	 * {@inheritDoc}
@@ -86,6 +89,11 @@ public class KerasWeights implements WeightFormat {
 	}
 
 	private String trainingVersion;
+	/**
+	 * Returns the training version.
+	 *
+	 * @return the training version.
+	 */
 	@Override
 	/**
 	 * {@inheritDoc}
@@ -100,8 +108,7 @@ public class KerasWeights implements WeightFormat {
 	 * Set the training version for the weights
 	 * specified in the yaml if it exists
 	 *
-	 * @param v
-	 * 	training version of the weights
+	 * @param v the v.
 	 */
 	public void setTrainingVersion(Object v) {
 		if (v instanceof String && !((String)v).contains("+")
@@ -125,6 +132,11 @@ public class KerasWeights implements WeightFormat {
 	}
 
 	private String sha256;
+	/**
+	 * Returns the sha256.
+	 *
+	 * @return the sha256.
+	 */
 	@Override
 	/**
 	 * {@inheritDoc}
@@ -138,8 +150,7 @@ public class KerasWeights implements WeightFormat {
 	/**
 	 * Set the SHA256 of the model from the parameters in the yaml
 	 *
-	 * @param s
-	 * 	SHA256 of the model
+	 * @param s the s.
 	 */
 	public void setSha256(Object s) {
 		if (s instanceof String)
@@ -148,6 +159,11 @@ public class KerasWeights implements WeightFormat {
 	}
 
 	private String source;
+	/**
+	 * Returns the source.
+	 *
+	 * @return the source.
+	 */
 	@Override
 	/**
 	 * {@inheritDoc}
@@ -161,9 +177,7 @@ public class KerasWeights implements WeightFormat {
 	/**
 	 * Set the source of the model from the parameters in the yaml
 	 *
-	 * @param s
-	 * 	string from the yaml file containing the source, return only the
-	 * 	name of the file inside the folder, not the whole path
+	 * @param s the s.
 	 */
 	public void setSource(Object s) {
 		if (s instanceof String)
@@ -172,6 +186,11 @@ public class KerasWeights implements WeightFormat {
 	}
 
 	private String parent;
+	/**
+	 * Returns the parent.
+	 *
+	 * @return the parent.
+	 */
 	@Override
 	/**
 	 * {@inheritDoc}
@@ -184,8 +203,8 @@ public class KerasWeights implements WeightFormat {
 	
 	/**
 	 * Set the parent of the weights in the case they exist
-	 * @param parent
-	 * 	parent weights of the model
+	 *
+	 * @param parent the parent.
 	 */
 	public void setParent(Object parent) {
 		if (parent instanceof String)
@@ -194,6 +213,11 @@ public class KerasWeights implements WeightFormat {
 
 	private ModelArchitecture architecture;
 	
+	/**
+	 * Returns the architecture.
+	 *
+	 * @return the architecture.
+	 */
 	@Override
 	/**
 	 * {@inheritDoc}
@@ -216,6 +240,11 @@ public class KerasWeights implements WeightFormat {
 
 	private ModelDependencies dependencies;
 	
+	/**
+	 * Returns the environment dependencies.
+	 *
+	 * @return the environment dependencies.
+	 */
 	@Override
 	/**
 	 * {@inheritDoc}
@@ -236,6 +265,11 @@ public class KerasWeights implements WeightFormat {
 			this.dependencies = new ModelDependencies((Map<String, Object>) dependencies);
 	}
 
+	/**
+	 * Returns the source file name.
+	 *
+	 * @return the source file name.
+	 */
 	@Override
 	/**
 	 * {@inheritDoc}
@@ -280,6 +314,11 @@ public class KerasWeights implements WeightFormat {
 
 
 	private String compatibleVersion;
+	/**
+	 * Returns the java training version.
+	 *
+	 * @return the java training version.
+	 */
 	@Override
 	/**
 	 * {@inheritDoc}
@@ -297,6 +336,11 @@ public class KerasWeights implements WeightFormat {
 		this.compatibleVersion = trainingVersion;
 	}
 
+	/**
+	 * Returns the closest supported python version.
+	 *
+	 * @return the closest supported python version.
+	 */
 	@Override
 	/**
 	 * {@inheritDoc}

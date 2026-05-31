@@ -128,12 +128,10 @@ public class TileMaker {
 	
 	/**
 	 * Create the {@link TileMaker} object that will handle tiling of the images of interest for a wanted model.
-	 * @param descriptor
-	 * 	Bioimage.io rdf.yaml specs file of the model of interest
-	 * @param tileInfoList
-	 * 	list of {@link TileInfo} objects. Each of them should refer to one the input tensors of the model of 
-	 * 	interest, by the name used in the Bioimage.io specs file.
-	 * @return an instance of {@link TileMaker} that handles tiling for the images and model of interest.
+	 *
+	 * @param descriptor the descriptor.
+	 * @param tileInfoList the tile info list.
+	 * @return the created tile maker.
 	 */
 	public static TileMaker build(ModelDescriptor descriptor, List<TileInfo> tileInfoList) {
 		return new TileMaker(descriptor, tileInfoList);
@@ -462,12 +460,11 @@ public class TileMaker {
     }
 	
     /**
-     * Get the positions in the input image from where the tile number {@code nTile} is going to be cut 
+     * Get the positions in the input image from where the tile number {@code nTile} is going to be cut
      * for input tensor named {@code tensorName}
-     * @param tensorName
-     * 	name of the tensor as per the Bioimage.io rdf.yaml file
-     * @param nTile
-     * 	the nth tile for which we want the information, should be smaller than the number of total tiles
+     *
+     * @param tensorName the tensor name.
+     * @param nTile the n tile.
      */
 	public void getInputInsertionPoints(String tensorName, int nTile) {
     	TileInfo tile = this.inputTileInfo.stream().filter(t -> t.getName().equals(tensorName)).findFirst().orElse(null);
@@ -476,12 +473,11 @@ public class TileMaker {
 	}
 	
     /**
-     * Get the positions in the output image where the tile number {@code nTile} is going to be inserted 
+     * Get the positions in the output image where the tile number {@code nTile} is going to be inserted
      * for output named {@code tensorName}
-     * @param tensorName
-     * 	name of the tensor as per the Bioimage.io rdf.yaml file
-     * @param nTile
-     * 	the nth tile for which we want the information, should be smaller than the number of total tiles
+     *
+     * @param tensorName the tensor name.
+     * @param nTile the n tile.
      */
 	public void getOutputInsertionPoints(String tensorName, int nTile) {
     	TileInfo tile = this.outputTileInfo.stream().filter(t -> t.getName().equals(tensorName)).findFirst().orElse(null);
@@ -509,9 +505,9 @@ public class TileMaker {
     
     /**
      * Return the size of the tiles for the wanted input tensor
-     * @param tensorName
-     * 	name of the tensor as per the Bioimage.io rdf.yaml file
-     * @return the size of the tiles for the wanted input tensor
+     *
+     * @param tensorName the tensor name.
+     * @return the input tile size.
      */
     public long[] getInputTileSize(String tensorName) {
     	TileInfo tile = this.inputTileInfo.stream().filter(t -> t.getName().equals(tensorName)).findFirst().orElse(null);
@@ -522,9 +518,9 @@ public class TileMaker {
     
     /**
      * Return the size of the tiles for the wanted output tensor
-     * @param tensorName
-     * 	name of the tensor as per the Bioimage.io rdf.yaml file
-     * @return the size of the tiles for the wanted output tensor
+     *
+     * @param tensorName the tensor name.
+     * @return the output tile size.
      */
     public long[] getOutputTileSize(String tensorName) {
     	TileInfo tile = this.outputTileInfo.stream().filter(t -> t.getName().equals(tensorName)).findFirst().orElse(null);
@@ -535,9 +531,9 @@ public class TileMaker {
 
     /**
      * Return the size of the Region Of Interest of the tiles for the wanted input tensor
-     * @param tensorName
-     * 	name of the tensor as per the Bioimage.io rdf.yaml file
-     * @return the size of the Region Of Interest of the tiles for the wanted input tensor
+     *
+     * @param tensorName the tensor name.
+     * @return the input roi size.
      */
     public int[] getInputRoiSize(String tensorName) {
     	TileInfo tile = this.inputTileInfo.stream().filter(t -> t.getName().equals(tensorName)).findFirst().orElse(null);
@@ -548,9 +544,9 @@ public class TileMaker {
 
     /**
      * Return the size of the Region Of Interest of the tiles for the wanted output tensor
-     * @param tensorName
-     * 	name of the tensor as per the Bioimage.io rdf.yaml file
-     * @return the size of the Region Of Interest of the tiles for the wanted output tensor
+     *
+     * @param tensorName the tensor name.
+     * @return the output roi size.
      */
     public int[] getOutputRoiSize(String tensorName) {
     	TileInfo tile = this.outputTileInfo.stream().filter(t -> t.getName().equals(tensorName)).findFirst().orElse(null);
@@ -561,11 +557,9 @@ public class TileMaker {
     
     /**
      * Same as {@link #getInputInsertionPoints(String, int)} but returning a list for every tile.
-     * @param tensorName
-     * 	name of the tensor as per the Bioimage.io rdf.yaml file
-     * @return the position of the closest corner to the center for each of the tiles  with 
-     * respect to the original image of the tensor.
-     * The positions might be negative as the image that is going to be processed might have padding on the edges
+     *
+     * @param tensorName the tensor name.
+     * @return the tile postions input image.
      */
     public List<long[]> getTilePostionsInputImage(String tensorName) {
     	TileInfo tile = this.inputTileInfo.stream().filter(t -> t.getName().equals(tensorName)).findFirst().orElse(null);
@@ -575,13 +569,10 @@ public class TileMaker {
     }
     
     /**
-     * 
      * Same as {@link #getOutputInsertionPoints(String, int)} but returning a list for every tile.
-     * @param tensorName
-     * 	name of the tensor as per the Bioimage.io rdf.yaml file
-     * @return the position of the closest corner to the center for each of the tiles  with 
-     * respect to the original image of the tensor.
-     * The positions might be negative as the image that is going to be processed might have padding on the edges
+     *
+     * @param tensorName the tensor name.
+     * @return the tile postions output image.
      */
     public List<long[]> getTilePostionsOutputImage(String tensorName) {
     	TileInfo tile = this.outputTileInfo.stream().filter(t -> t.getName().equals(tensorName)).findFirst().orElse(null);
@@ -594,10 +585,11 @@ public class TileMaker {
      * Same as {@link #getInputInsertionPoints(String, int)}, but instead of returning the coordinates where the tile is
      * cut, it returns the actual tile
      *
-     * @param tensorName the tensorName parameter.
-     * @param rai the rai parameter.
-     * @param n the n parameter.
-     * @return the resulting value.
+     * @param <T> the T type parameter.
+     * @param tensorName the tensor name.
+     * @param rai the RAI.
+     * @param n the n.
+     * @return the nth tile input.
      */
     public <T extends NativeType<T> & RealType<T>> RandomAccessibleInterval<T> getNthTileInput(String tensorName, RandomAccessibleInterval<T> rai, int n) {
     	List<long[]> tiles = this.getTilePostionsInputImage(tensorName);
@@ -618,10 +610,11 @@ public class TileMaker {
      * Same as {@link #getOutputInsertionPoints(String, int)}, but instead of returning the coordinates where the tile is
      * cut, it returns the actual tile
      *
-     * @param tensorName the tensorName parameter.
-     * @param rai the rai parameter.
-     * @param n the n parameter.
-     * @return the resulting value.
+     * @param <T> the T type parameter.
+     * @param tensorName the tensor name.
+     * @param rai the RAI.
+     * @param n the n.
+     * @return the nth tile output.
      */
     public <T extends NativeType<T> & RealType<T>> RandomAccessibleInterval<T> getNthTileOutput(String tensorName, RandomAccessibleInterval<T> rai, int n) {
     	List<long[]> tiles = this.getTilePostionsOutputImage(tensorName);
@@ -654,9 +647,10 @@ public class TileMaker {
     /**
      * Same as {@link #getNthTileInput(String, RandomAccessibleInterval, int)} but with tensors
      *
-     * @param tensor the tensor parameter.
-     * @param n the n parameter.
-     * @return the resulting value.
+     * @param <T> the T type parameter.
+     * @param tensor the tensor.
+     * @param n the n.
+     * @return the nth tile input.
      */
     public <T extends NativeType<T> & RealType<T>> Tensor<T> getNthTileInput(Tensor<T> tensor, int n) {
     	if (!tensor.isImage())
@@ -668,9 +662,10 @@ public class TileMaker {
     /**
      * Same as {@link #getNthTileOutput(String, RandomAccessibleInterval, int)} but with tensors
      *
-     * @param tensor the tensor parameter.
-     * @param n the n parameter.
-     * @return the resulting value.
+     * @param <T> the T type parameter.
+     * @param tensor the tensor.
+     * @param n the n.
+     * @return the nth tile output.
      */
     public <T extends NativeType<T> & RealType<T>> Tensor<T> getNthTileOutput(Tensor<T> tensor, int n) {
     	if (!tensor.isImage())
@@ -682,9 +677,9 @@ public class TileMaker {
     /**
      * REturn the size that the output image will have, as per the Bioimage.io specs, given the input image size
      * provided in the List of {@link TileInfo} at {@link #build(ModelDescriptor, List)}
-     * @param tensorName
-     * 	name of the tensor of interest as per the Bioiamge.io rdf.yaml file 
-     * @return the final output size of the image of interest
+     *
+     * @param tensorName the tensor name.
+     * @return the output image size.
      */
     public long[] getOutputImageSize(String tensorName) {
     	TileInfo tile = this.outputTileInfo.stream()
@@ -695,6 +690,13 @@ public class TileMaker {
     	return tile.getImageDims();
     }
 	
+	/**
+	 * Creates the output tensors.
+	 *
+	 * @param <T> the T type parameter.
+	 * @param dtype the data type.
+	 * @return the created list.
+	 */
 	public <T extends RealType<T> & NativeType<T>> List<Tensor<T>> createOutputTensors(T dtype) {
 		List<Tensor<T>> outputTensors = new ArrayList<Tensor<T>>();
 		for (TileInfo tt : this.outputTileInfo) {
@@ -712,15 +714,13 @@ public class TileMaker {
     
     /**
      * Convert the array following given axes order into
-     *  another int[] which follows the target axes order
-     *  The newly added components will be ones.
-     * @param size
-     * 	original array following the original axes order
-     * @param orginalAxes
-     * 	axes order of the original array
-     * @param targetAxes
-     * 	axes order of the target array
-     * @return a size array in the order of the tensor of interest
+     * another int[] which follows the target axes order
+     * The newly added components will be ones.
+     *
+     * @param size the size.
+     * @param orginalAxes the orginal axes.
+     * @param targetAxes the target axes.
+     * @return the resulting long.
      */
     public static long[] arrayToWantedAxesOrderAddOnes(long[] size, String orginalAxes, String targetAxes) {
     	orginalAxes = orginalAxes.toLowerCase();
@@ -739,15 +739,13 @@ public class TileMaker {
     
     /**
      * Convert the array following given axes order into
-     *  another int[] which follows the target axes order
-     *  The newly added components will be ones.
-     * @param size
-     * 	original array following the original axes order
-     * @param orginalAxes
-     * 	axes order of the original array
-     * @param targetAxes
-     * 	axes order of the target array
-     * @return a size array in the order of the tensor of interest
+     * another int[] which follows the target axes order
+     * The newly added components will be ones.
+     *
+     * @param size the size.
+     * @param orginalAxes the orginal axes.
+     * @param targetAxes the target axes.
+     * @return the resulting int.
      */
     public static int[] arrayToWantedAxesOrderAddOnes(int[] size, String orginalAxes, String targetAxes) {
     	orginalAxes = orginalAxes.toLowerCase();
@@ -766,15 +764,13 @@ public class TileMaker {
     
     /**
      * Convert the array following given axes order into
-     *  another float[] which follows the target axes order
-     *  The newly added components will be ones.
-     * @param size
-     * 	original array following the original axes order
-     * @param orginalAxes
-     * 	axes order of the original array
-     * @param targetAxes
-     * 	axes order of the target array
-     * @return a size array in the order of the tensor of interest
+     * another float[] which follows the target axes order
+     * The newly added components will be ones.
+     *
+     * @param size the size.
+     * @param orginalAxes the orginal axes.
+     * @param targetAxes the target axes.
+     * @return the resulting float.
      */
     public static float[] arrayToWantedAxesOrderAddOnes(float[] size, String orginalAxes, String targetAxes) {
     	orginalAxes = orginalAxes.toLowerCase();
@@ -793,15 +789,13 @@ public class TileMaker {
     
     /**
      * Convert the array following given axes order into
-     *  another float[] which follows the target axes order.
-     *  The newly added components will be zeros.
-     * @param size
-     * 	original array following the original axes order
-     * @param orginalAxes
-     * 	axes order of the original array
-     * @param targetAxes
-     * 	axes order of the target array
-     * @return a size array in the order of the tensor of interest
+     * another float[] which follows the target axes order.
+     * The newly added components will be zeros.
+     *
+     * @param size the size.
+     * @param orginalAxes the orginal axes.
+     * @param targetAxes the target axes.
+     * @return the resulting float.
      */
     public static float[] arrayToWantedAxesOrderAddZeros(float[] size, String orginalAxes, String targetAxes) {
     	orginalAxes = orginalAxes.toLowerCase();
@@ -818,15 +812,13 @@ public class TileMaker {
     
     /**
      * Convert the array following given axes order into
-     *  another int[] which follows the target axes order.
-     *  The newly added components will be zeros.
-     * @param size
-     * 	original array following the original axes order
-     * @param orginalAxes
-     * 	axes order of the original array
-     * @param targetAxes
-     * 	axes order of the target array
-     * @return a size array in the order of the tensor of interest
+     * another int[] which follows the target axes order.
+     * The newly added components will be zeros.
+     *
+     * @param size the size.
+     * @param orginalAxes the orginal axes.
+     * @param targetAxes the target axes.
+     * @return the resulting long.
      */
     public static long[] arrayToWantedAxesOrderAddZeros(long[] size, String orginalAxes, String targetAxes) {
     	orginalAxes = orginalAxes.toLowerCase();
@@ -843,15 +835,13 @@ public class TileMaker {
     
     /**
      * Convert the array following given axes order into
-     *  another int[] which follows the target axes order.
-     *  The newly added components will be zeros.
-     * @param size
-     * 	original array following the original axes order
-     * @param orginalAxes
-     * 	axes order of the original array
-     * @param targetAxes
-     * 	axes order of the target array
-     * @return a size array in the order of the tensor of interest
+     * another int[] which follows the target axes order.
+     * The newly added components will be zeros.
+     *
+     * @param size the size.
+     * @param orginalAxes the orginal axes.
+     * @param targetAxes the target axes.
+     * @return the resulting int.
      */
     public static int[] arrayToWantedAxesOrderAddZeros(int[] size, String orginalAxes, String targetAxes) {
     	orginalAxes = orginalAxes.toLowerCase();

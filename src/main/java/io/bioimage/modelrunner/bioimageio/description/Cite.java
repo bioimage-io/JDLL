@@ -32,14 +32,11 @@ public class Cite
 {
     /**
      * Creates a {@link Cite} instance with the text and DOI.
-     * 
-     * @param text
-     *        The citation text.
-     * @param doi
-     *        The DOI url. It can be null.
-     * @param url
-     *        url useful for the citation. It can be null.
-     * @return The creates instance.
+     *
+     * @param text the text.
+     * @param doi the doi.
+     * @param url the URL.
+     * @return the created cite.
      */
     public static Cite build(String text, String doi, String url)
     {
@@ -72,9 +69,8 @@ public class Cite
 
     /**
      * Sets the citation text.
-     * 
-     * @param text
-     *        Citation text.
+     *
+     * @param text the text.
      */
     public void setText(String text)
     {
@@ -91,9 +87,8 @@ public class Cite
 
     /**
      * Sets the citation DOI url.
-     * 
-     * @param doi
-     *        DOI url.
+     *
+     * @param doi the doi.
      */
     public void setDoi(URL doi)
     {

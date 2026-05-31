@@ -212,8 +212,9 @@ public class ScaleRangeTransformation extends AbstractTensorTransformation
 	/**
 	 * Executes apply.
 	 *
-	 * @param input the input parameter.
-	 * @return the resulting value.
+	 * @param <R> the R type parameter.
+	 * @param input the input to process.
+	 * @return the resulting tensor.
 	 */
 	@Override
 	public < R extends RealType< R > & NativeType< R > > Tensor< FloatType > apply( final Tensor< R > input )
@@ -226,7 +227,8 @@ public class ScaleRangeTransformation extends AbstractTensorTransformation
 	/**
 	 * Executes apply in place.
 	 *
-	 * @param input the input parameter.
+	 * @param <R> the R type parameter.
+	 * @param input the input to process.
 	 */
 	@Override
 	public < R extends RealType< R > & NativeType< R > > void applyInPlace(Tensor<R> input) {
@@ -360,6 +362,14 @@ public class ScaleRangeTransformation extends AbstractTensorTransformation
 		 System.out.print(true);
 	}
 	
+	/**
+	 * Performs scale range.
+	 *
+	 * @param <R> the R type parameter.
+	 * @param rai the RAI.
+	 * @param maxPercentileVal the max percentile val.
+	 * @param minPercentileVal the min percentile val.
+	 */
 	public < R extends RealType< R > & NativeType< R > > 
 	void scaleRange(RandomAccessibleInterval<R> rai, double maxPercentileVal, double minPercentileVal) {
 		double diff = maxPercentileVal - minPercentileVal;

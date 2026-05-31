@@ -102,10 +102,20 @@ public class UndoLetterboxProcessingBoundingBoxes {
 			+ "" + System.lineSeparator()
 			+ "    return out";
 	
+	/**
+	 * Returns the method name.
+	 *
+	 * @return the method name.
+	 */
 	public static String getMethodName() {
 		return METHOD_NAME;
 	}
 	
+	/**
+	 * Returns the method declaration.
+	 *
+	 * @return the method declaration.
+	 */
 	public static String getMethodDeclaration() {
 		return METHOD_DECLARATION;
 	}

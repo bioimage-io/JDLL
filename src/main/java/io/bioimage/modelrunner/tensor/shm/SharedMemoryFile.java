@@ -39,14 +39,12 @@ public final class SharedMemoryFile
 {
 	/**
 	 * Create a .npy Numpy file from a {@link RandomAccessibleInterval}
-	 * @param <T>
-	 * 	the ImgLib2 data type of the {@link RandomAccessibleInterval}
-	 * @param fileDir
-	 * 	file path to the .npy file that is going to be created
-	 * @param rai
-	 * 	the {@link RandomAccessibleInterval} of interest
-	 * @throws FileNotFoundException if the parent directory where the file wants to be created does not exist
-	 * @throws IOException if there is any error creating the file
+	 *
+	 * @param <T> the T type parameter.
+	 * @param fileDir the file directory.
+	 * @param rai the RAI.
+	 * @throws FileNotFoundException if the requested file cannot be found.
+	 * @throws IOException if an I/O error occurs.
 	 */
 	public static <T extends RealType<T> & NativeType<T>> 
 	void buildFileFromRai(String fileDir, RandomAccessibleInterval<T> rai) throws FileNotFoundException, IOException {
@@ -55,13 +53,12 @@ public final class SharedMemoryFile
 	
 	/**
 	 * Read a {@link RandomAccessibleInterval} from a .npy Numpy file created to share between processes
-	 * @param <T>
-	 * 	the ImgLib2 data type of the {@link RandomAccessibleInterval}
-	 * @param fileName
-	 * 	name of the .npy file that contains a {@link RandomAccessibleInterval}
-	 * @return a {@link RandomAccessibleInterval}
-	 * @throws FileNotFoundException if the file is not found
-	 * @throws IOException if there is any error reading the file
+	 *
+	 * @param <T> the T type parameter.
+	 * @param fileName the file name.
+	 * @return the created random accessible interval.
+	 * @throws FileNotFoundException if the requested file cannot be found.
+	 * @throws IOException if an I/O error occurs.
 	 */
 	public static <T extends RealType<T> & NativeType<T>> 
 	RandomAccessibleInterval<T> buildRaiFromFile(String fileName) throws FileNotFoundException, IOException {

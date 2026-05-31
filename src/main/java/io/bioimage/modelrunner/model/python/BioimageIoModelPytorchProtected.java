@@ -54,15 +54,15 @@ public class BioimageIoModelPytorchProtected extends DLModelPytorchProtected {
 	/**
 	 * Creates a new BioimageIoModelPytorchProtected.
 	 *
-	 * @param modelFile the modelFile parameter.
-	 * @param callable the callable parameter.
-	 * @param importModule the importModule parameter.
-	 * @param weightsPath the weightsPath parameter.
-	 * @param kwargs the kwargs parameter.
-	 * @param descriptor the descriptor parameter.
-	 * @param custom the custom parameter.
-	 * @throws IOException if an I/O error occurs.
-	 * @throws BuildException if there is any error building the environment
+	 * @param modelFile the model file.
+	 * @param callable the callable.
+	 * @param importModule the import module.
+	 * @param weightsPath the weights path.
+	 * @param kwargs the kwargs.
+	 * @param descriptor the descriptor.
+	 * @param custom the custom.
+	 * @param device the device.
+	 * @throws BuildException if the Python environment or service cannot be built.
 	 */
 	protected BioimageIoModelPytorchProtected(String modelFile, String callable, String importModule, String weightsPath, 
 			Map<String, Object> kwargs, ModelDescriptor descriptor, boolean custom, String device) throws BuildException {
@@ -74,19 +74,26 @@ public class BioimageIoModelPytorchProtected extends DLModelPytorchProtected {
 	/**
 	 * Creates a new BioimageIoModelPytorchProtected.
 	 *
-	 * @param modelFile the modelFile parameter.
-	 * @param callable the callable parameter.
-	 * @param importModule the importModule parameter.
-	 * @param weightsPath the weightsPath parameter.
-	 * @param kwargs the kwargs parameter.
-	 * @param descriptor the descriptor parameter.
-	 * @throws BuildException if there is any error building the environmnet
+	 * @param modelFile the model file.
+	 * @param callable the callable.
+	 * @param importModule the import module.
+	 * @param weightsPath the weights path.
+	 * @param kwargs the kwargs.
+	 * @param descriptor the descriptor.
+	 * @param device the device.
+	 * @throws BuildException if the Python environment or service cannot be built.
 	 */
 	protected BioimageIoModelPytorchProtected(String modelFile, String callable, String importModule, String weightsPath, 
 			Map<String, Object> kwargs, ModelDescriptor descriptor, String device) throws BuildException {
 		this(modelFile, callable, importModule, weightsPath, kwargs, descriptor, false, device);
 	}
 
+	/**
+	 * Returns the output tensor axes.
+	 *
+	 * @param outputCount the output count.
+	 * @return the output tensor axes.
+	 */
 	@Override
 	protected String getOutputTensorAxes(int outputCount) {
 		if (descriptor.getOutputTensors().size() <= outputCount)
@@ -94,6 +101,14 @@ public class BioimageIoModelPytorchProtected extends DLModelPytorchProtected {
 		return this.descriptor.getOutputTensors().get(outputCount).getAxesOrder();
 	}
 
+	/**
+	 * Returns the tile maker.
+	 *
+	 * @param <T> the T type parameter.
+	 * @param <R> the R type parameter.
+	 * @param inputs the inputs to process.
+	 * @return the tile maker.
+	 */
 	@Override
 	protected <T extends RealType<T> & NativeType<T>, R extends RealType<R> & NativeType<R>>
 	Merger<Tensor<T>, Tensor<R>> getTileMaker(final List<Tensor<T>> inputs) {

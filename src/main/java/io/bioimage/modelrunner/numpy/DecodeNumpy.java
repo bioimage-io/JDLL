@@ -146,8 +146,9 @@ public class DecodeNumpy {
     /**
      * Main method to test the ImgLib2 creation
      *
-     * @param args the args parameter.
-     * @throws FileNotFoundException if a FileNotFoundException occurs while executing this method.
+     * @param <T> the T type parameter.
+     * @param args command-line arguments.
+     * @throws FileNotFoundException if the requested file cannot be found.
      * @throws IOException if an I/O error occurs.
      */
     public static < T extends RealType< T > & NativeType< T > > void main(String[] args) throws FileNotFoundException, IOException {
@@ -160,15 +161,14 @@ public class DecodeNumpy {
     }
     
     /**
-     * Method that retreives an ImgLib2 image from a numpy array stored in the file specified by 
+     * Method that retreives an ImgLib2 image from a numpy array stored in the file specified by
      * the argument
-     * @param <T>
-     * 	possible data types that the ImgLib2 image can have
-     * @param path
-     * 	path to the file where the .npy file containing the numpy array is stored
-     * @return an ImgLib2 image with the same datatype, shape and data that the numpy array
-     * @throws FileNotFoundException if the numpy file is not found
-     * @throws IOException if there is any error opening the numpy file
+     *
+     * @param <T> the T type parameter.
+     * @param path the path.
+     * @return the resulting random accessible interval.
+     * @throws FileNotFoundException if the requested file cannot be found.
+     * @throws IOException if an I/O error occurs.
      */
     public static < T extends RealType< T > & NativeType< T > > 
 								RandomAccessibleInterval<T> loadNpy(String path) throws FileNotFoundException, IOException{
@@ -353,10 +353,10 @@ public class DecodeNumpy {
     /**
      * Get a String representing a datatype explicitly from the String that numpy uses to
      * name datatypes
-     * @param npDtype
-     * 	datatype defined per Numpy
-     * @return a String defining the datatype in a explicit manner
-     * @throws IllegalArgumentException if the String provided is not a numpy datatype
+     *
+     * @param npDtype the np data type.
+     * @return the data type.
+     * @throws IllegalArgumentException if an argument is invalid.
      */
     public static String getDataType(String npDtype) throws IllegalArgumentException {
     	if (npDtype.equals("i1") || npDtype.equals("b") || npDtype.equals("c"))
@@ -397,12 +397,11 @@ public class DecodeNumpy {
     /**
      * Get a String representing a datatype explicitly from the String that numpy uses to
      * name datatypes
-	 * @param <T>
-     * 	possible ImgLib2 data types 
-     * @param type
-     * 	ImgLib2 possible data type
-     * @return a String defining the datatype in a explicit manner
-     * @throws IllegalArgumentException if the String provided is not a numpy datatype
+     *
+     * @param <T> the T type parameter.
+     * @param type the type.
+     * @return the data type.
+     * @throws IllegalArgumentException if an argument is invalid.
      */
     public static  <T extends RealType<T> & NativeType<T>> 
     String getDataType(T type) throws IllegalArgumentException {
@@ -559,13 +558,11 @@ public class DecodeNumpy {
     
     /**
      * Find the byte size that the Numpy format needs to save a N-dimensional array of the wanted data type
-     * @param <T>
-     * 	possible ImgLib2 datatypes of the {@link RandomAccessibleInterval}
-     * @param rai
-     * 	the n-dimensional array of interest
-     * @param fortranOrder
-     * 	whether the array is in fortran order or not
-     * @return a long value specifying the number of bytes it would take to store the nd-array in Numpy format
+     *
+     * @param <T> the T type parameter.
+     * @param rai the RAI.
+     * @param fortranOrder the fortran order.
+     * @return the resulting long.
      */
     public static < T extends RealType< T > & NativeType< T > >
     long calculateNpyStyleByteArrayLength(RandomAccessibleInterval<T> rai, boolean fortranOrder) {
@@ -608,15 +605,12 @@ public class DecodeNumpy {
     /**
      * Find the byte size that the Numpy npy format needs to save a N-dimensional array of the wanted data type
      * and dimensions
-     * @param <T>
-     * 	possible ImgLib2 datatypes of the {@link RandomAccessibleInterval}
-     * @param shape
-     * 	the dimensions of the nd array
-     * @param datatype
-     * 	the data type of the nd array
-     * @param fortranOrder
-     * 	whether the array is going to be saved on fortan order or not
-     * @return a long value specifying the number of bytes it would take to store the nd-array in Numpy npy format
+     *
+     * @param <T> the T type parameter.
+     * @param shape the shape.
+     * @param datatype the datatype.
+     * @param fortranOrder the fortran order.
+     * @return the resulting long.
      */
     public static < T extends RealType< T > & NativeType< T > >
     long calculateNpyStyleByteArrayLength(long[] shape, T datatype, boolean fortranOrder) {
@@ -661,12 +655,10 @@ public class DecodeNumpy {
      * to create .npy files. The array craeted is always c order, not fortran order.
      * The byte array created contains the flattened data of the {@link RandomAccessibleInterval} plus
      * information of the shape, data type, fortran order and byte order
-     * @param <T>
-     * 	possible ImgLib2 data types of the provided {@link RandomAccessibleInterval}
-     * @param rai
-     * 	the {@link RandomAccessibleInterval} of interest (an n-dimensional array) that is going to be
-     * 	converted into the byte array
-     * @return a byte array containing all the info to recreate it. An array in the format of Numpy .npy
+     *
+     * @param <T> the T type parameter.
+     * @param rai the RAI.
+     * @return the created byte.
      */
     public static < T extends RealType< T > & NativeType< T > >  byte[]
     createNumpyStyleByteArray(RandomAccessibleInterval<T> rai) {
@@ -757,15 +749,12 @@ public class DecodeNumpy {
     /**
      * Method that saves a {@link RandomAccessibleInterval} nd array to a .npy Numpy readable file.
      * The array is always saved as 'c' order.
-     * @param <T>
-     * 	possible ImgLib2 data types of the provided {@link RandomAccessibleInterval}
-     * @param filePath
-     * 	path where the file will be saved
-     * @param rai
-     * 	the {@link RandomAccessibleInterval} of interest (an n-dimensional array) that is going to be
-     * 	converted into the byte array
-     * @throws FileNotFoundException if the file path provided is invalid
-     * @throws IOException if there is any error saving the file
+     *
+     * @param <T> the T type parameter.
+     * @param filePath the file path.
+     * @param rai the RAI.
+     * @throws FileNotFoundException if the requested file cannot be found.
+     * @throws IOException if an I/O error occurs.
      */
     public static < T extends RealType< T > & NativeType< T > > 
     void saveNpy(String filePath, RandomAccessibleInterval<T> rai) throws FileNotFoundException, IOException {

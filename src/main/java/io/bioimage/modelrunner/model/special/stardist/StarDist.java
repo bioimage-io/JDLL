@@ -161,11 +161,32 @@ public final class StarDist extends DLModelPytorchProtected {
 		super.setInferenceProgressConsumer(inferenceProgressConsumer);
 	}
 
+	/**
+	 * Creates a StarDist from the file.
+	 *
+	 * @param modelPath the model path.
+	 * @param inferenceProgressConsumer the inference progress consumer callback.
+	 * @return the created star dist.
+	 * @throws IOException if an I/O error occurs.
+	 * @throws BuildException if the Python environment or service cannot be built.
+	 * @throws LoadModelException if the model cannot be loaded.
+	 */
 	public static StarDist fromFile(String modelPath, Consumer<InferenceProgress> inferenceProgressConsumer)
 			throws IOException, BuildException, LoadModelException {
 		return fromFile(modelPath, inferenceProgressConsumer, null);
 	}
 
+	/**
+	 * Creates a StarDist from the file.
+	 *
+	 * @param modelPath the model path.
+	 * @param inferenceProgressConsumer the inference progress consumer callback.
+	 * @param device the device.
+	 * @return the created star dist.
+	 * @throws IOException if an I/O error occurs.
+	 * @throws BuildException if the Python environment or service cannot be built.
+	 * @throws LoadModelException if the model cannot be loaded.
+	 */
 	public static StarDist fromFile(String modelPath, Consumer<InferenceProgress> inferenceProgressConsumer, String device)
 			throws IOException, BuildException, LoadModelException {
 		Map<String, Object> config = loadModelConfig(modelPath);
@@ -175,11 +196,32 @@ public final class StarDist extends DLModelPytorchProtected {
 		return model;
 	}
 
+	/**
+	 * Creates a StarDist from the config JSON.
+	 *
+	 * @param configJsonPath the config JSON path.
+	 * @param inferenceProgressConsumer the inference progress consumer callback.
+	 * @return the created star dist.
+	 * @throws IOException if an I/O error occurs.
+	 * @throws BuildException if the Python environment or service cannot be built.
+	 * @throws LoadModelException if the model cannot be loaded.
+	 */
 	public static StarDist fromConfigJson(String configJsonPath, Consumer<InferenceProgress> inferenceProgressConsumer)
 			throws IOException, BuildException, LoadModelException {
 		return fromConfigJson(configJsonPath, inferenceProgressConsumer, null);
 	}
 
+	/**
+	 * Creates a StarDist from the config JSON.
+	 *
+	 * @param configJsonPath the config JSON path.
+	 * @param inferenceProgressConsumer the inference progress consumer callback.
+	 * @param device the device.
+	 * @return the created star dist.
+	 * @throws IOException if an I/O error occurs.
+	 * @throws BuildException if the Python environment or service cannot be built.
+	 * @throws LoadModelException if the model cannot be loaded.
+	 */
 	public static StarDist fromConfigJson(String configJsonPath, Consumer<InferenceProgress> inferenceProgressConsumer, String device)
 			throws IOException, BuildException, LoadModelException {
 		if (configJsonPath == null || !new File(configJsonPath).isFile()) {
@@ -188,11 +230,32 @@ public final class StarDist extends DLModelPytorchProtected {
 		return fromConfig(JSONUtils.load(configJsonPath), inferenceProgressConsumer, device);
 	}
 
+	/**
+	 * Creates a StarDist from the config.
+	 *
+	 * @param config the config.
+	 * @param inferenceProgressConsumer the inference progress consumer callback.
+	 * @return the created star dist.
+	 * @throws IOException if an I/O error occurs.
+	 * @throws BuildException if the Python environment or service cannot be built.
+	 * @throws LoadModelException if the model cannot be loaded.
+	 */
 	public static StarDist fromConfig(Map<String, Object> config, Consumer<InferenceProgress> inferenceProgressConsumer)
 			throws IOException, BuildException, LoadModelException {
 		return fromConfig(config, inferenceProgressConsumer, null);
 	}
 
+	/**
+	 * Creates a StarDist from the config.
+	 *
+	 * @param config the config.
+	 * @param inferenceProgressConsumer the inference progress consumer callback.
+	 * @param device the device.
+	 * @return the created star dist.
+	 * @throws IOException if an I/O error occurs.
+	 * @throws BuildException if the Python environment or service cannot be built.
+	 * @throws LoadModelException if the model cannot be loaded.
+	 */
 	public static StarDist fromConfig(Map<String, Object> config, Consumer<InferenceProgress> inferenceProgressConsumer, String device)
 			throws IOException, BuildException, LoadModelException {
 		Map<String, Object> normalized = normalizedConfig(config);
@@ -202,21 +265,59 @@ public final class StarDist extends DLModelPytorchProtected {
 		return model;
 	}
 
+	/**
+	 * Creates a StarDist from the default.
+	 *
+	 * @param inferenceProgressConsumer the inference progress consumer callback.
+	 * @return the created star dist.
+	 * @throws IOException if an I/O error occurs.
+	 * @throws BuildException if the Python environment or service cannot be built.
+	 * @throws LoadModelException if the model cannot be loaded.
+	 */
 	public static StarDist fromDefault(Consumer<InferenceProgress> inferenceProgressConsumer)
 			throws IOException, BuildException, LoadModelException {
 		return fromDefault(inferenceProgressConsumer, null);
 	}
 
+	/**
+	 * Creates a StarDist from the default.
+	 *
+	 * @param inferenceProgressConsumer the inference progress consumer callback.
+	 * @param device the device.
+	 * @return the created star dist.
+	 * @throws IOException if an I/O error occurs.
+	 * @throws BuildException if the Python environment or service cannot be built.
+	 * @throws LoadModelException if the model cannot be loaded.
+	 */
 	public static StarDist fromDefault(Consumer<InferenceProgress> inferenceProgressConsumer, String device)
 			throws IOException, BuildException, LoadModelException {
 		return fromDefault2D(inferenceProgressConsumer, device);
 	}
 
+	/**
+	 * Creates a StarDist from the default2 d.
+	 *
+	 * @param inferenceProgressConsumer the inference progress consumer callback.
+	 * @return the created star dist.
+	 * @throws IOException if an I/O error occurs.
+	 * @throws BuildException if the Python environment or service cannot be built.
+	 * @throws LoadModelException if the model cannot be loaded.
+	 */
 	public static StarDist fromDefault2D(Consumer<InferenceProgress> inferenceProgressConsumer)
 			throws IOException, BuildException, LoadModelException {
 		return fromDefault2D(inferenceProgressConsumer, null);
 	}
 
+	/**
+	 * Creates a StarDist from the default2 d.
+	 *
+	 * @param inferenceProgressConsumer the inference progress consumer callback.
+	 * @param device the device.
+	 * @return the created star dist.
+	 * @throws IOException if an I/O error occurs.
+	 * @throws BuildException if the Python environment or service cannot be built.
+	 * @throws LoadModelException if the model cannot be loaded.
+	 */
 	public static StarDist fromDefault2D(Consumer<InferenceProgress> inferenceProgressConsumer, String device)
 			throws IOException, BuildException, LoadModelException {
 		Map<String, Object> config = defaultModelConfig2D();
@@ -226,11 +327,30 @@ public final class StarDist extends DLModelPytorchProtected {
 		return model;
 	}
 
+	/**
+	 * Creates a StarDist from the default3 d.
+	 *
+	 * @param inferenceProgressConsumer the inference progress consumer callback.
+	 * @return the created star dist.
+	 * @throws IOException if an I/O error occurs.
+	 * @throws BuildException if the Python environment or service cannot be built.
+	 * @throws LoadModelException if the model cannot be loaded.
+	 */
 	public static StarDist fromDefault3D(Consumer<InferenceProgress> inferenceProgressConsumer)
 			throws IOException, BuildException, LoadModelException {
 		return fromDefault3D(inferenceProgressConsumer, null);
 	}
 
+	/**
+	 * Creates a StarDist from the default3 d.
+	 *
+	 * @param inferenceProgressConsumer the inference progress consumer callback.
+	 * @param device the device.
+	 * @return the created star dist.
+	 * @throws IOException if an I/O error occurs.
+	 * @throws BuildException if the Python environment or service cannot be built.
+	 * @throws LoadModelException if the model cannot be loaded.
+	 */
 	public static StarDist fromDefault3D(Consumer<InferenceProgress> inferenceProgressConsumer, String device)
 			throws IOException, BuildException, LoadModelException {
 		Map<String, Object> config = defaultModelConfig3D();
@@ -240,31 +360,80 @@ public final class StarDist extends DLModelPytorchProtected {
 		return model;
 	}
 
+	/**
+	 * Returns the dimensionality.
+	 *
+	 * @return the dimensionality.
+	 */
 	public Dimensionality getDimensionality() {
 		return dimensionality;
 	}
 
+	/**
+	 * Returns the config.
+	 *
+	 * @return the config.
+	 */
 	public Map<String, Object> getConfig() {
 		return new LinkedHashMap<String, Object>(config);
 	}
 
+	/**
+	 * Returns whether is2 d.
+	 *
+	 * @return true if is2 d; false otherwise.
+	 */
 	public boolean is2D() {
 		return dimensionality == Dimensionality.TWO_D;
 	}
 
+	/**
+	 * Returns whether is3 d.
+	 *
+	 * @return true if is3 d; false otherwise.
+	 */
 	public boolean is3D() {
 		return dimensionality == Dimensionality.THREE_D;
 	}
 
+	/**
+	 * Returns the n channels.
+	 *
+	 * @return the n channels.
+	 */
 	public int getNChannels() {
 		return nChannels;
 	}
 
+	/**
+	 * Sets the threshold.
+	 *
+	 * @param threshold the threshold.
+	 */
 	public void setThreshold(Double threshold) {
 		this.threshold = threshold;
 	}
 
 
+	/**
+	 * Runs model training.
+	 *
+	 * @param dataDir the data directory.
+	 * @param gtDir the ground-truth directory.
+	 * @param outputDir the output directory.
+	 * @param gpu whether to use GPU.
+	 * @param imageChannels the image channels.
+	 * @param labelColorMode the label color mode.
+	 * @param validFraction the valid fraction.
+	 * @param trainingConfig the training config.
+	 * @param progressConsumer the progress consumer callback.
+	 * @param previewConsumer the preview consumer callback.
+	 * @param logConsumer the log consumer callback.
+	 * @throws IOException if an I/O error occurs.
+	 * @throws BuildException if the Python environment or service cannot be built.
+	 * @throws InterruptedException if the current thread is interrupted.
+	 * @throws TaskException if task occurs.
+	 */
 	public void trainWithOptions(String dataDir, String gtDir, String outputDir,
 			boolean gpu, String imageChannels, String labelColorMode, double validFraction,
 			Map<String, Object> trainingConfig,
@@ -276,6 +445,21 @@ public final class StarDist extends DLModelPytorchProtected {
 				validFraction, trainingConfig, progressConsumer, previewConsumer, logConsumer);
 	}
 
+	/**
+	 * Runs model training.
+	 *
+	 * @param dataDir the data directory.
+	 * @param gtDir the ground-truth directory.
+	 * @param outputDir the output directory.
+	 * @param epochs the epochs.
+	 * @param progressConsumer the progress consumer callback.
+	 * @param previewConsumer the preview consumer callback.
+	 * @param logConsumer the log consumer callback.
+	 * @throws IOException if an I/O error occurs.
+	 * @throws BuildException if the Python environment or service cannot be built.
+	 * @throws InterruptedException if the current thread is interrupted.
+	 * @throws TaskException if task occurs.
+	 */
 	public void train(String dataDir, String gtDir, String outputDir, int epochs,
 			Consumer<StardistTrainingProgress> progressConsumer,
 			Consumer<StardistValidationPreview> previewConsumer,
@@ -285,6 +469,20 @@ public final class StarDist extends DLModelPytorchProtected {
 				defaultTrainingConfig(epochs), progressConsumer, previewConsumer, logConsumer);
 	}
 
+	/**
+	 * Runs model training.
+	 *
+	 * @param dataDir the data directory.
+	 * @param outputDir the output directory.
+	 * @param epochs the epochs.
+	 * @param progressConsumer the progress consumer callback.
+	 * @param previewConsumer the preview consumer callback.
+	 * @param logConsumer the log consumer callback.
+	 * @throws IOException if an I/O error occurs.
+	 * @throws BuildException if the Python environment or service cannot be built.
+	 * @throws InterruptedException if the current thread is interrupted.
+	 * @throws TaskException if task occurs.
+	 */
 	public void train(String dataDir, String outputDir, int epochs,
 			Consumer<StardistTrainingProgress> progressConsumer,
 			Consumer<StardistValidationPreview> previewConsumer,
@@ -293,6 +491,14 @@ public final class StarDist extends DLModelPytorchProtected {
 		train(dataDir, null, outputDir, epochs, progressConsumer, previewConsumer, logConsumer);
 	}
 
+	/**
+	 * Returns the tile maker.
+	 *
+	 * @param <T> the T type parameter.
+	 * @param <R> the R type parameter.
+	 * @param inputs the inputs to process.
+	 * @return the tile maker.
+	 */
 	@Override
 	protected <T extends RealType<T> & NativeType<T>, R extends RealType<R> & NativeType<R>>
 	Merger<Tensor<T>, Tensor<R>> getTileMaker(final List<Tensor<T>> inputs) {
@@ -556,6 +762,12 @@ public final class StarDist extends DLModelPytorchProtected {
 		return Math.min(requested, Math.max(0L, (outputTileSize - 1L) / 2L));
 	}
 
+	/**
+	 * Returns the output tensor axes.
+	 *
+	 * @param outputCount the output count.
+	 * @return the output tensor axes.
+	 */
 	@Override
     protected String getOutputTensorAxes(int outputCount) {
 		if (outputCount == 0)
@@ -566,6 +778,11 @@ public final class StarDist extends DLModelPytorchProtected {
 			throw new IllegalArgumentException("StarDist only has 2 outputs, more than 3 have been provided.");
 	}
 
+	/**
+	 * Builds the model code.
+	 *
+	 * @return the created string.
+	 */
 	@Override
 	protected String buildModelCode() {
 		String source = mpkPath != null && new File(mpkPath).exists() ? "r'" + mpkPath + "'" : "None";
@@ -573,6 +790,14 @@ public final class StarDist extends DLModelPytorchProtected {
 		return String.format(LOAD_MODEL_CODE_2D, device, source, configStr);
 	}
 
+	/**
+	 * Creates the inputs code.
+	 *
+	 * @param <T> the T type parameter.
+	 * @param inRais the in RAIs.
+	 * @param names the names.
+	 * @return the created string.
+	 */
 	@Override
 	protected <T extends RealType<T> & NativeType<T>> 
 		String createInputsCode(List<Tensor<T>> inRais, List<String> names) {
@@ -687,6 +912,11 @@ public final class StarDist extends DLModelPytorchProtected {
 		return inferAxes(config, false).indexOf('z') >= 0 ? Dimensionality.THREE_D : Dimensionality.TWO_D;
 	}
 
+	/**
+	 * Returns the result of resolve pytorch environment.
+	 *
+	 * @return the resulting pixi environment spec.
+	 */
 	public static PixiEnvironmentSpec resolvePytorchEnv() {
 		String pixiTomlContent = String.format(java.util.Locale.ROOT,
 				PixiEnvironmentResolver.readClasspathResourceAsString(PIXI_TOML),
@@ -725,6 +955,11 @@ public final class StarDist extends DLModelPytorchProtected {
 				+ PlatformDetection.getOs() + "-" + arch);
 	}
 
+	/**
+	 * Returns whether installed.
+	 *
+	 * @return true if installed; false otherwise.
+	 */
 	public static boolean isInstalled() {
 		try {
 			return PixiEnvironmentManager.isInstalled(resolvePytorchEnv());
@@ -733,6 +968,21 @@ public final class StarDist extends DLModelPytorchProtected {
 		}
 	}
 
+	/**
+	 * Runs model training.
+	 *
+	 * @param epochs the epochs.
+	 * @param dataDir the data directory.
+	 * @param gtDir the ground-truth directory.
+	 * @param outputDir the output directory.
+	 * @param progressConsumer the progress consumer callback.
+	 * @param previewConsumer the preview consumer callback.
+	 * @param logConsumer the log consumer callback.
+	 * @throws IOException if an I/O error occurs.
+	 * @throws BuildException if the Python environment or service cannot be built.
+	 * @throws InterruptedException if the current thread is interrupted.
+	 * @throws TaskException if task occurs.
+	 */
 	public static void train(int epochs, String dataDir, String gtDir, String outputDir,
 			Consumer<StardistTrainingProgress> progressConsumer,
 			Consumer<StardistValidationPreview> previewConsumer,
@@ -742,6 +992,25 @@ public final class StarDist extends DLModelPytorchProtected {
 				defaultTrainingConfig(epochs), progressConsumer, previewConsumer, logConsumer);
 	}
 
+	/**
+	 * Runs model training.
+	 *
+	 * @param dataDir the data directory.
+	 * @param gtDir the ground-truth directory.
+	 * @param outputDir the output directory.
+	 * @param gpu whether to use GPU.
+	 * @param imageChannels the image channels.
+	 * @param labelColorMode the label color mode.
+	 * @param validFraction the valid fraction.
+	 * @param config the config.
+	 * @param progressConsumer the progress consumer callback.
+	 * @param previewConsumer the preview consumer callback.
+	 * @param logConsumer the log consumer callback.
+	 * @throws IOException if an I/O error occurs.
+	 * @throws BuildException if the Python environment or service cannot be built.
+	 * @throws InterruptedException if the current thread is interrupted.
+	 * @throws TaskException if task occurs.
+	 */
 	public static void train(String dataDir, String gtDir, String outputDir,
 			boolean gpu, String imageChannels, String labelColorMode, double validFraction,
 			Map<String, Object> config,
@@ -753,6 +1022,26 @@ public final class StarDist extends DLModelPytorchProtected {
 				config, progressConsumer, previewConsumer, logConsumer, null);
 	}
 
+	/**
+	 * Runs model training.
+	 *
+	 * @param dataDir the data directory.
+	 * @param gtDir the ground-truth directory.
+	 * @param outputDir the output directory.
+	 * @param gpu whether to use GPU.
+	 * @param imageChannels the image channels.
+	 * @param labelColorMode the label color mode.
+	 * @param validFraction the valid fraction.
+	 * @param config the config.
+	 * @param progressConsumer the progress consumer callback.
+	 * @param previewConsumer the preview consumer callback.
+	 * @param logConsumer the log consumer callback.
+	 * @param serviceConsumer the service consumer callback.
+	 * @throws IOException if an I/O error occurs.
+	 * @throws BuildException if the Python environment or service cannot be built.
+	 * @throws InterruptedException if the current thread is interrupted.
+	 * @throws TaskException if task occurs.
+	 */
 	public static void train(String dataDir, String gtDir, String outputDir,
 			boolean gpu, String imageChannels, String labelColorMode, double validFraction,
 			Map<String, Object> config,
@@ -765,6 +1054,26 @@ public final class StarDist extends DLModelPytorchProtected {
 				config, progressConsumer, previewConsumer, logConsumer, serviceConsumer);
 	}
 
+	/**
+	 * Runs model training.
+	 *
+	 * @param dataDir the data directory.
+	 * @param gtDir the ground-truth directory.
+	 * @param outputDir the output directory.
+	 * @param device the device.
+	 * @param imageChannels the image channels.
+	 * @param labelColorMode the label color mode.
+	 * @param validFraction the valid fraction.
+	 * @param config the config.
+	 * @param progressConsumer the progress consumer callback.
+	 * @param previewConsumer the preview consumer callback.
+	 * @param logConsumer the log consumer callback.
+	 * @param serviceConsumer the service consumer callback.
+	 * @throws IOException if an I/O error occurs.
+	 * @throws BuildException if the Python environment or service cannot be built.
+	 * @throws InterruptedException if the current thread is interrupted.
+	 * @throws TaskException if task occurs.
+	 */
 	public static void train(String dataDir, String gtDir, String outputDir,
 			String device, String imageChannels, String labelColorMode, double validFraction,
 			Map<String, Object> config,
@@ -777,6 +1086,27 @@ public final class StarDist extends DLModelPytorchProtected {
 				config, progressConsumer, previewConsumer, logConsumer, null, serviceConsumer);
 	}
 
+	/**
+	 * Runs model training.
+	 *
+	 * @param dataDir the data directory.
+	 * @param gtDir the ground-truth directory.
+	 * @param outputDir the output directory.
+	 * @param device the device.
+	 * @param imageChannels the image channels.
+	 * @param labelColorMode the label color mode.
+	 * @param validFraction the valid fraction.
+	 * @param config the config.
+	 * @param progressConsumer the progress consumer callback.
+	 * @param previewConsumer the preview consumer callback.
+	 * @param logConsumer the log consumer callback.
+	 * @param cancelSignalPath the cancel signal path.
+	 * @param serviceConsumer the service consumer callback.
+	 * @throws IOException if an I/O error occurs.
+	 * @throws BuildException if the Python environment or service cannot be built.
+	 * @throws InterruptedException if the current thread is interrupted.
+	 * @throws TaskException if task occurs.
+	 */
 	public static void train(String dataDir, String gtDir, String outputDir,
 			String device, String imageChannels, String labelColorMode, double validFraction,
 			Map<String, Object> config,
@@ -820,6 +1150,12 @@ public final class StarDist extends DLModelPytorchProtected {
 		}
 	}
 
+	/**
+	 * Returns the result of default training config.
+	 *
+	 * @param epochs the epochs.
+	 * @return the resulting map.
+	 */
 	public static Map<String, Object> defaultTrainingConfig(int epochs) {
 		Map<String, Object> config = defaultModelConfig2D();
 		config.put("train_shape_completion", false);
@@ -843,6 +1179,11 @@ public final class StarDist extends DLModelPytorchProtected {
 		return config;
 	}
 
+	/**
+	 * Returns the result of default model config2 d.
+	 *
+	 * @return the resulting map.
+	 */
 	public static Map<String, Object> defaultModelConfig2D() {
 		Map<String, Object> config = new LinkedHashMap<String, Object>();
 		config.put("axes", "YXC");
@@ -853,6 +1194,11 @@ public final class StarDist extends DLModelPytorchProtected {
 		return config;
 	}
 
+	/**
+	 * Returns the result of default model config3 d.
+	 *
+	 * @return the resulting map.
+	 */
 	public static Map<String, Object> defaultModelConfig3D() {
 		Map<String, Object> config = new LinkedHashMap<String, Object>();
 		config.put("axes", "ZYXC");
@@ -904,6 +1250,19 @@ public final class StarDist extends DLModelPytorchProtected {
 		}
 	}
 
+	/**
+	 * Builds the training code.
+	 *
+	 * @param dataDir the data directory.
+	 * @param gtDir the ground-truth directory.
+	 * @param outputDir the output directory.
+	 * @param gpu whether to use GPU.
+	 * @param imageChannels the image channels.
+	 * @param labelColorMode the label color mode.
+	 * @param validFraction the valid fraction.
+	 * @param config the config.
+	 * @return the created string.
+	 */
 	public static String buildTrainingCode(String dataDir, String gtDir, String outputDir,
 			boolean gpu, String imageChannels, String labelColorMode, double validFraction,
 			Map<String, Object> config) {
@@ -911,6 +1270,19 @@ public final class StarDist extends DLModelPytorchProtected {
 				imageChannels, labelColorMode, validFraction, config);
 	}
 
+	/**
+	 * Builds the training code.
+	 *
+	 * @param dataDir the data directory.
+	 * @param gtDir the ground-truth directory.
+	 * @param outputDir the output directory.
+	 * @param device the device.
+	 * @param imageChannels the image channels.
+	 * @param labelColorMode the label color mode.
+	 * @param validFraction the valid fraction.
+	 * @param config the config.
+	 * @return the created string.
+	 */
 	public static String buildTrainingCode(String dataDir, String gtDir, String outputDir,
 			String device, String imageChannels, String labelColorMode, double validFraction,
 			Map<String, Object> config) {
@@ -918,6 +1290,20 @@ public final class StarDist extends DLModelPytorchProtected {
 				validFraction, config, null);
 	}
 
+	/**
+	 * Builds the training code.
+	 *
+	 * @param dataDir the data directory.
+	 * @param gtDir the ground-truth directory.
+	 * @param outputDir the output directory.
+	 * @param device the device.
+	 * @param imageChannels the image channels.
+	 * @param labelColorMode the label color mode.
+	 * @param validFraction the valid fraction.
+	 * @param config the config.
+	 * @param cancelSignalPath the cancel signal path.
+	 * @return the created string.
+	 */
 	public static String buildTrainingCode(String dataDir, String gtDir, String outputDir,
 			String device, String imageChannels, String labelColorMode, double validFraction,
 			Map<String, Object> config, String cancelSignalPath) {
@@ -1191,6 +1577,16 @@ public final class StarDist extends DLModelPytorchProtected {
 		return value == null ? config.get(fallback) : value;
 	}
 	
+	/**
+	 * Runs this class from the command line.
+	 *
+	 * @param args command-line arguments.
+	 * @throws IOException if an I/O error occurs.
+	 * @throws BuildException if the Python environment or service cannot be built.
+	 * @throws LoadModelException if the model cannot be loaded.
+	 * @throws RunModelException if model inference cannot be run.
+	 * @throws InterruptedException if the current thread is interrupted.
+	 */
 	public static void main(String[] args) throws IOException, BuildException, LoadModelException, RunModelException, InterruptedException {
 		String path = "/home/carlos/git/deep-icy/models/stardist/kkeras";
         PixiEnvironmentManager.installRequirements(StarDist.resolvePytorchEnv(), (str) -> {System.out.println(str);});

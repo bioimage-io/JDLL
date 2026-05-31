@@ -67,11 +67,10 @@ public class ExampleDownloadEngine {
 	 * Test method to check the download of an engine.
 	 * First the download of the required engines for a mdoel will be tested and then
 	 * an engine will be installed on its own, providing some parameters
-	 * @param args
-	 * 	there are no args in this method
-	 * @throws IOException if there is any error related to finding the model or its files
-	 * 	on the internet
-	 * @throws InterruptedException if the thread is stopped while the model is being downloaded
+	 *
+	 * @param args command-line arguments.
+	 * @throws IOException if an I/O error occurs.
+	 * @throws InterruptedException if the current thread is interrupted.
 	 */
 	public static void main(String[] args) throws IOException, InterruptedException {
 		// Create a consumer that gets live information about the download.

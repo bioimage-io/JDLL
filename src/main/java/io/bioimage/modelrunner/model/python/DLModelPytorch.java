@@ -55,17 +55,13 @@ public class DLModelPytorch extends DLModelPytorchProtected {
 
 	/**
 	 * Create a Pytorch model that can run from Java
-	 * @param modelClass
-	 * 	file where the class of the model is defined. It the class can be imported this param can be null as long as the 
-	 * 	module from which the class can be imported is defined at 'importModule'
-	 * @param callable
-	 * 	class of the model
-	 * @param importModule
-	 * 	module from where the model class is imported. It can be null it we provide a file that contains the class
-	 * @param modelPath
-	 * 	path to the Pytorch weights
-	 * @return a Java class that can do inference using a Python Pytorch model
-	 * @throws BuildException if there is any error trying to run Python from Java
+	 *
+	 * @param modelClass the model class.
+	 * @param callable the callable.
+	 * @param importModule the import module.
+	 * @param modelPath the model path.
+	 * @return the created dl model pytorch.
+	 * @throws BuildException if the Python environment or service cannot be built.
 	 */
 	public static DLModelPytorch create(String modelClass, String callable, String importModule, 
 			String modelPath) throws BuildException {
@@ -74,19 +70,14 @@ public class DLModelPytorch extends DLModelPytorchProtected {
 
 	/**
 	 * Create a Pytorch model that can run from Java
-	 * @param modelClass
-	 * 	file where the class of the model is defined. It the class can be imported this param can be null as long as the 
-	 * 	module from which the class can be imported is defined at 'importModule'
-	 * @param callable
-	 * 	class of the model
-	 * @param importModule
-	 * 	module from where the model class is imported. It can be null it we provide a file that contains the class
-	 * @param modelPath
-	 * 	path to the Pytorch weights
-	 * @param kwargs
-	 * 	other kwargs that might be needed to instantiate the model
-	 * @return a Java class that can do inference using a Python Pytorch model
-	 * @throws BuildException if there is any error building the environment
+	 *
+	 * @param modelClass the model class.
+	 * @param callable the callable.
+	 * @param importModule the import module.
+	 * @param modelPath the model path.
+	 * @param kwargs the kwargs.
+	 * @return the created dl model pytorch.
+	 * @throws BuildException if the Python environment or service cannot be built.
 	 */
 	public static DLModelPytorch create(String modelClass, String callable, String importModule, 
 			String modelPath, Map<String, Object> kwargs) throws BuildException {

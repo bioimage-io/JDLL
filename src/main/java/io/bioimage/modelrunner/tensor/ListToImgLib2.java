@@ -60,26 +60,15 @@ public final class ListToImgLib2 {
     /**
      * Creates a {@link Tensor} from the information stored in a {@link List} given the shape of the tensor,
      * its axes, the data type and the name
-     * 
-     * @param <T>
-     * 	the type of the generated tensor
-     * @param array
-     * 	{@link List} object containing the flat data of the tensor. The data type should be either the same as
-     * 	provided in the 'dtype' argument ({@link Byte}, {@link Short}, {@link Integer}, {@link Long},
-     * 	{@link Float}, {@link Double}). The List can also be of type {@link Byte} and the argument 'dtype' can be any type
-     * 	as longg as the bytes of the list encode the corresponding data type. For example if the dtype is 'int32' there should
-     * 	be 4 times more elements than what is required by the shape because each 4 bytes corresponds to one int32 value.
-     * @param shape
-     * 	{@link List} containing the shape of the tensor that wants to be created from the flat array
-     * @param axes
-     * 	String containing the axes order. Which dimension correspond to which axes
-     * @param dtype 
-     * 	data type of the tensor that is going to be reconstructed from the flat data array
-     * @param name
-     * 	name of the tensor
-     * @return the reconstructed tensor
-     * @throws IllegalArgumentException if the data type defined by the argument 'dtype' is not supported
-     * 	or if the data type of the components in the List of the  'array' argument is not valid
+     *
+     * @param <T> the T type parameter.
+     * @param array the array.
+     * @param shape the shape.
+     * @param axes the axes.
+     * @param dtype the data type.
+     * @param name the name.
+     * @return the created tensor.
+     * @throws IllegalArgumentException if an argument is invalid.
      */
     @SuppressWarnings("unchecked")
     public static < T extends RealType< T > & NativeType< T > > Tensor<T> 
@@ -93,11 +82,12 @@ public final class ListToImgLib2 {
      * Creates a {@link RandomAccessibleInterval} from the information stored in a {@link List} given the shape of the RAI
      * and the data type
      *
-     * @param array the array parameter.
-     * @param shape the shape parameter.
-     * @param dtype the dtype parameter.
-     * @return the resulting value.
-     * @throws IllegalArgumentException if any argument is invalid.
+     * @param <T> the T type parameter.
+     * @param array the array.
+     * @param shape the shape.
+     * @param dtype the data type.
+     * @return the created random accessible interval.
+     * @throws IllegalArgumentException if an argument is invalid.
      */
     @SuppressWarnings("unchecked")
     public static < T extends RealType< T > & NativeType< T > > RandomAccessibleInterval<T> build(List<?> array, List<Integer> shape, String dtype) throws IllegalArgumentException

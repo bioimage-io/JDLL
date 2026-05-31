@@ -37,10 +37,8 @@ public final class TrainingCodeUtils {
 	/**
 	 * Forwards Appose debug lines except raw task updates, which are already handled through task listeners.
 	 *
-	 * @param line
-	 * 	debug line
-	 * @param logConsumer
-	 * 	log consumer
+	 * @param line the line.
+	 * @param logConsumer the log consumer callback.
 	 */
 	public static void logTrainingDebug(String line, Consumer<String> logConsumer) {
 		if (logConsumer == null || isTaskUpdateDebugLine(line)) {
@@ -56,11 +54,9 @@ public final class TrainingCodeUtils {
 	/**
 	 * Converts a numeric event value to an int.
 	 *
-	 * @param value
-	 * 	event value
-	 * @param fallback
-	 * 	fallback if the value is not numeric
-	 * @return int value
+	 * @param value the value.
+	 * @param fallback the fallback.
+	 * @return the resulting int.
 	 */
 	public static int asInt(Object value, int fallback) {
 		return value instanceof Number ? ((Number) value).intValue() : fallback;
@@ -69,9 +65,8 @@ public final class TrainingCodeUtils {
 	/**
 	 * Converts a protocol object into an ordered double map.
 	 *
-	 * @param value
-	 * 	event value
-	 * @return numeric map
+	 * @param value the value.
+	 * @return the resulting map.
 	 */
 	public static Map<String, Double> asDoubleMap(Object value) {
 		Map<String, Double> result = new LinkedHashMap<String, Double>();
@@ -89,9 +84,8 @@ public final class TrainingCodeUtils {
 	/**
 	 * Escapes a Java string for insertion inside a Python raw string literal delimited by single quotes.
 	 *
-	 * @param value
-	 * 	string to escape
-	 * @return escaped string
+	 * @param value the value.
+	 * @return the resulting string.
 	 */
 	public static String py(String value) {
 		return value == null ? "" : value.replace("\\", "\\\\").replace("'", "\\'");
@@ -100,9 +94,8 @@ public final class TrainingCodeUtils {
 	/**
 	 * Minimal JSON encoder for the simple config structures used in generated training scripts.
 	 *
-	 * @param value
-	 * 	value to encode
-	 * @return JSON string
+	 * @param value the value.
+	 * @return the resulting string.
 	 */
 	public static String toJson(Object value) {
 		if (value == null) {
@@ -170,9 +163,8 @@ public final class TrainingCodeUtils {
 	/**
 	 * Emits an Appose-safe {@code task.update} wrapper that temporarily restores Appose stdout.
 	 *
-	 * @param functionName
-	 * 	Python function name
-	 * @return Python source
+	 * @param functionName the function name.
+	 * @return the resulting string.
 	 */
 	public static String taskUpdateFunction(String functionName) {
 		String nl = System.lineSeparator();
@@ -189,11 +181,9 @@ public final class TrainingCodeUtils {
 	/**
 	 * Emits a Python scalar converter for training callbacks.
 	 *
-	 * @param functionName
-	 * 	Python function name
-	 * @param detachTensor
-	 * 	whether to detach PyTorch-like tensors before conversion
-	 * @return Python source
+	 * @param functionName the function name.
+	 * @param detachTensor the detach tensor.
+	 * @return the resulting string.
 	 */
 	public static String scalarFunction(String functionName, boolean detachTensor) {
 		String nl = System.lineSeparator();
@@ -216,11 +206,9 @@ public final class TrainingCodeUtils {
 	/**
 	 * Emits a Python dict cleaner that keeps only scalar numeric values.
 	 *
-	 * @param functionName
-	 * 	Python function name
-	 * @param scalarFunctionName
-	 * 	scalar helper function name
-	 * @return Python source
+	 * @param functionName the function name.
+	 * @param scalarFunctionName the scalar function name.
+	 * @return the resulting string.
 	 */
 	public static String cleanDictFunction(String functionName, String scalarFunctionName) {
 		String nl = System.lineSeparator();

@@ -451,10 +451,9 @@ public abstract class ModelDescriptor {
 
     /**
      * Searches for an input tensor with the given name.
-     * 
-     * @param name
-     *        Name of the tensor.
-     * @return The tensor with the provided name. null is returned if no tensor is found or if the input tensors list is not initialized.
+     *
+     * @param name the name.
+     * @return the resulting tensor spec.
      */
     public TensorSpec findInputTensor(String name)
     {
@@ -470,10 +469,9 @@ public abstract class ModelDescriptor {
 
     /**
      * Searches for an output tensor with the given name.
-     * 
-     * @param name
-     *        Name of the tensor.
-     * @return The tensor with the provided name. null is returned if no tensor is found or if the output tensors list is not initialized.
+     *
+     * @param name the name.
+     * @return the resulting tensor spec.
      */
     public TensorSpec findOutputTensor(String name)
     {
@@ -489,12 +487,10 @@ public abstract class ModelDescriptor {
 
     /**
      * Searches for an input tensor with the given name in the given list.
-     * 
-     * @param name
-     *        Name of the tensor.
-     * @param tts
-     * 		  list of tensors where to look for the wanted name
-     * @return The tensor with the provided name. null is returned if no tensor is found or if the input tensors list is not initialized.
+     *
+     * @param name the name.
+     * @param tts the tts.
+     * @return the resulting tensor spec.
      */
     public static TensorSpec findTensorInList(String name, List<TensorSpec> tts)
     {
@@ -605,8 +601,8 @@ public abstract class ModelDescriptor {
 	
 	/**
 	 * Set the model path for the model if it is installed locally
-	 * @param modelBasePath
-	 * 	the path to the bioimage.io model
+	 *
+	 * @param modelBasePath the model base path.
 	 */
 	public void addModelPath(Path modelBasePath) {
 		this.localModelPath = modelBasePath.toFile().getAbsolutePath();

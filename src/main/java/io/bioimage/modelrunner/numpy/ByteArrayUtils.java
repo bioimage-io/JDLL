@@ -26,11 +26,11 @@ public class ByteArrayUtils {
 
 	
 	/**
-	 * Converts byte array into a signed integer 16 bit array stored in 
+	 * Converts byte array into a signed integer 16 bit array stored in
 	 * a buffer.
-	 * @param arr
-	 * 	the byte array
-	 * @return a integer 16 buffer containing the wanted data
+	 *
+	 * @param arr the arr.
+	 * @return the resulting short.
 	 */
 	public static short[] toInt16(byte[] arr) {
 		return toInt16(arr, ByteOrder.LITTLE_ENDIAN);
@@ -38,13 +38,12 @@ public class ByteArrayUtils {
 
 		
 	/**
-	 * Converts byte array into a signed integer 16 bit array stored in 
+	 * Converts byte array into a signed integer 16 bit array stored in
 	 * a buffer.
-	 * @param arr
-	 * 	the byte array
-	 * @param byteOrder
-	 * 	the order of the bytes in the array, LittleEndian or BigEndian
-	 * @return a integer 16 buffer containing the wanted data
+	 *
+	 * @param arr the arr.
+	 * @param byteOrder the byte order.
+	 * @return the resulting short.
 	 */
 	public static short[] toInt16(byte[] arr, ByteOrder byteOrder) {
 		short[] int16 = new short[arr.length / 2];
@@ -58,24 +57,23 @@ public class ByteArrayUtils {
 	}
 	
 	/**
-	 * Converts byte array into a signed integer 32 bit array stored in 
+	 * Converts byte array into a signed integer 32 bit array stored in
 	 * a buffer.
-	 * @param arr
-	 * 	the byte array
-	 * @return a int array containing the wanted data
+	 *
+	 * @param arr the arr.
+	 * @return the resulting int.
 	 */
 	public static int[] toUInt8(byte[] arr) {
 		return toUInt8(arr, ByteOrder.LITTLE_ENDIAN);
 	}
 			
 	/**
-	 * Converts byte array into a signed integer 32 bit array stored in 
+	 * Converts byte array into a signed integer 32 bit array stored in
 	 * a buffer.
-	 * @param arr
-	 * 	the byte array
-	 * @param byteOrder
-	 * 	the order of the bytes in the array, LittleEndian or BigEndian
-	 * @return a int array containing the wanted data
+	 *
+	 * @param arr the arr.
+	 * @param byteOrder the byte order.
+	 * @return the resulting int.
 	 */
 	public static int[] toUInt8(byte[] arr, ByteOrder byteOrder) {
 		int[] int32 = new int[arr.length];
@@ -89,25 +87,24 @@ public class ByteArrayUtils {
 	}
 	
 	/**
-	* Converts byte array into a signed integer 32 bit array stored in 
-	* a buffer.
-	* @param arr
-	* 	the byte array
-	* @return a int array containing the wanted data
-	*/
+	 * Converts byte array into a signed integer 32 bit array stored in
+	 * a buffer.
+	 *
+	 * @param arr the arr.
+	 * @return the resulting int.
+	 */
 	public static int[] toInt32(byte[] arr) {
 		return toInt32(arr, ByteOrder.LITTLE_ENDIAN);
 	}
 		
 	/**
-	* Converts byte array into a signed integer 32 bit array stored in 
-	* a buffer.
-	* @param arr
-	* 	the byte array
-	 * @param byteOrder
-	 * 	the order of the bytes in the array, LittleEndian or BigEndian
-	* @return a int array containing the wanted data
-	*/
+	 * Converts byte array into a signed integer 32 bit array stored in
+	 * a buffer.
+	 *
+	 * @param arr the arr.
+	 * @param byteOrder the byte order.
+	 * @return the resulting int.
+	 */
 	public static int[] toInt32(byte[] arr, ByteOrder byteOrder) {
 		int[] int32 = new int[arr.length / 4];
 		for ( int i = 0; i < arr.length / 4; i ++) {
@@ -122,30 +119,29 @@ public class ByteArrayUtils {
 	}
 	
 	/**
-	 * Converts byte array into a unsigned integer 32 bit array stored in 
+	 * Converts byte array into a unsigned integer 32 bit array stored in
 	 * a buffer.
-	 *  However, as this data type does not exist in Java, the values are stored
+	 * However, as this data type does not exist in Java, the values are stored
 	 * in an long (int64) array containing the values that would correspond to
 	 * an uin32 array
-	 * @param arr
-	 * 	the byte array
-	 * @return an long array containing the wanted data
+	 *
+	 * @param arr the arr.
+	 * @return the resulting long.
 	 */
 	public static long[] toUInt32(byte[] arr) {
 		return toUInt32(arr, ByteOrder.LITTLE_ENDIAN);
 	}
 	
 	/**
-	 * Converts byte array into a unsigned integer 32 bit array stored in 
+	 * Converts byte array into a unsigned integer 32 bit array stored in
 	 * a buffer.
-	 *  However, as this data type does not exist in Java, the values are stored
+	 * However, as this data type does not exist in Java, the values are stored
 	 * in an long (int64) array containing the values that would correspond to
 	 * an uin32 array
-	 * @param arr
-	 * 	the byte array
-	 * @param byteOrder
-	 * 	the order of the bytes in the array, LittleEndian or BigEndian
-	 * @return an long array containing the wanted data
+	 *
+	 * @param arr the arr.
+	 * @param byteOrder the byte order.
+	 * @return the resulting long.
 	 */
 	public static long[] toUInt32(byte[] arr, ByteOrder byteOrder) {
 		long[] uint32 = new long[arr.length / 4];
@@ -165,30 +161,29 @@ public class ByteArrayUtils {
 	}
 	
 	/**
-	 * Converts byte array into a unsigned integer 16 bit array stored in 
+	 * Converts byte array into a unsigned integer 16 bit array stored in
 	 * a buffer.
-	 *  However, as this data type does not exist in Java, the values are stored
+	 * However, as this data type does not exist in Java, the values are stored
 	 * in an int32 array containing the values that would correspond to
 	 * an uin16 array
-	 * @param arr
-	 * 	the byte array
-	 * @return an int array containing the wanted data
+	 *
+	 * @param arr the arr.
+	 * @return the resulting int.
 	 */
 	public static int[] toUInt16(byte[] arr) {
 		return toUInt16(arr, ByteOrder.LITTLE_ENDIAN);
 	}
 	
 	/**
-	 * Converts byte array into a unsigned integer 16 bit array stored in 
+	 * Converts byte array into a unsigned integer 16 bit array stored in
 	 * a buffer.
-	 *  However, as this data type does not exist in Java, the values are stored
+	 * However, as this data type does not exist in Java, the values are stored
 	 * in an int32 array containing the values that would correspond to
 	 * an uin16 array
-	 * @param arr
-	 * 	the byte array
-	 * @param byteOrder
-	 * 	the order of the bytes in the array, LittleEndian or BigEndian
-	 * @return an int array containing the wanted data
+	 *
+	 * @param arr the arr.
+	 * @param byteOrder the byte order.
+	 * @return the resulting int.
 	 */
 	public static int[] toUInt16(byte[] arr, ByteOrder byteOrder) {
 		int[] int16 = new int[arr.length / 2];
@@ -206,24 +201,23 @@ public class ByteArrayUtils {
 	}
 	
 	/**
-	 * Converts byte array into a signed float 32 bit array stored in 
+	 * Converts byte array into a signed float 32 bit array stored in
 	 * a buffer.
-	 * @param arr
-	 * 	the byte array
-	 * @return a float arr containing the wanted data
+	 *
+	 * @param arr the arr.
+	 * @return the resulting float.
 	 */
 	public static float[] toFloat32(byte[] arr) {
 		return toFloat32(arr, ByteOrder.LITTLE_ENDIAN);
 	}
 	
 	/**
-	 * Converts byte array into a signed float 32 bit array stored in 
+	 * Converts byte array into a signed float 32 bit array stored in
 	 * a buffer.
-	 * @param arr
-	 * 	the byte array
-	 * @param byteOrder
-	 * 	the order of the bytes in the array, LittleEndian or BigEndian
-	 * @return a float arr containing the wanted data
+	 *
+	 * @param arr the arr.
+	 * @param byteOrder the byte order.
+	 * @return the resulting float.
 	 */
 	public static float[] toFloat32(byte[] arr, ByteOrder byteOrder) {
 		float[] float32 = new float[arr.length / 4];
@@ -239,24 +233,23 @@ public class ByteArrayUtils {
 	}
 	
 	/**
-	 * Converts byte array into a signed float 64 bit array stored in 
+	 * Converts byte array into a signed float 64 bit array stored in
 	 * a buffer.
-	 * @param arr
-	 * 	the byte array
-	 * @return a double arr containing the wanted data
+	 *
+	 * @param arr the arr.
+	 * @return the resulting double.
 	 */
 	public static double[] toFloat64(byte[] arr) {
 		return toFloat64(arr, ByteOrder.LITTLE_ENDIAN);
 	}
 	
 	/**
-	 * Converts byte array into a signed float 64 bit array stored in 
+	 * Converts byte array into a signed float 64 bit array stored in
 	 * a buffer.
-	 * @param arr
-	 * 	the byte array
-	 * @param byteOrder
-	 * 	the order of the bytes in the array, LittleEndian or BigEndian
-	 * @return a double arr containing the wanted data
+	 *
+	 * @param arr the arr.
+	 * @param byteOrder the byte order.
+	 * @return the resulting double.
 	 */
 	public static double[] toFloat64(byte[] arr, ByteOrder byteOrder) {
 		double[] dd = new double[arr.length / 8];
@@ -276,24 +269,23 @@ public class ByteArrayUtils {
 	}
 	
 	/**
-	 * Converts byte array into a signed float 64 bit array stored in 
+	 * Converts byte array into a signed float 64 bit array stored in
 	 * a buffer.
-	 * @param arr
-	 * 	the byte array
-	 * @return a long arr containing the wanted data
+	 *
+	 * @param arr the arr.
+	 * @return the resulting long.
 	 */
 	public static long[] toInt64(byte[] arr) {
 		return toInt64(arr, ByteOrder.LITTLE_ENDIAN);
 	}
 	
 	/**
-	 * Converts byte array into a signed float 64 bit array stored in 
+	 * Converts byte array into a signed float 64 bit array stored in
 	 * a buffer.
-	 * @param arr
-	 * 	the byte array
-	 * @param byteOrder
-	 * 	the order of the bytes in the array, LittleEndian or BigEndian
-	 * @return a long arr containing the wanted data
+	 *
+	 * @param arr the arr.
+	 * @param byteOrder the byte order.
+	 * @return the resulting long.
 	 */
 	public static long[] toInt64(byte[] arr, ByteOrder byteOrder) {
 		long[] dd = new long[arr.length / 8];
@@ -314,11 +306,10 @@ public class ByteArrayUtils {
 	
 	/**
 	 * Converts byte array into a boolean array
-	 * @param arr
-	 * 	the byte array
-	 * @param byteOrder
-	 * 	the order of the bytes in the array, LittleEndian or BigEndian
-	 * @return a long boolean containing the wanted data
+	 *
+	 * @param arr the arr.
+	 * @param byteOrder the byte order.
+	 * @return the resulting boolean.
 	 */
 	public static boolean[] toBoolean(byte[] arr, ByteOrder byteOrder) {
 		return toBoolean(arr);
@@ -326,9 +317,9 @@ public class ByteArrayUtils {
 	
 	/**
 	 * Converts byte array into a boolean array
-	 * @param arr
-	 * 	the byte array
-	 * @return a long boolean containing the wanted data
+	 *
+	 * @param arr the arr.
+	 * @return the resulting boolean.
 	 */
 	public static boolean[] toBoolean(byte[] arr) {
 		boolean[] dd = new boolean[arr.length];

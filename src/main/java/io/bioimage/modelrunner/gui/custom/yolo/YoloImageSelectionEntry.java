@@ -25,24 +25,51 @@ public class YoloImageSelectionEntry {
     private final String title;
     private final Object image;
 
+    /**
+     * Creates a new YoloImageSelectionEntry instance.
+     *
+     * @param id the ID.
+     * @param title the title.
+     * @param image the image.
+     */
     public YoloImageSelectionEntry(String id, String title, Object image) {
         this.id = id;
         this.title = title;
         this.image = image;
     }
 
+    /**
+     * Returns the ID.
+     *
+     * @return the ID.
+     */
     public String getId() {
         return id;
     }
 
+    /**
+     * Returns the title.
+     *
+     * @return the title.
+     */
     public String getTitle() {
         return title;
     }
 
+    /**
+     * Returns the image.
+     *
+     * @return the image.
+     */
     public Object getImage() {
         return image;
     }
 
+    /**
+     * Returns a string representation of this object.
+     *
+     * @return the string representation.
+     */
     @Override
     public String toString() {
         return title;

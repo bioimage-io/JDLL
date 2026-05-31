@@ -41,10 +41,9 @@ public class TransformSpec
 	
     /**
      * Builds a transformation specification from the provided element map.
-     * 
-     * @param transformSpecMap
-     *        Element map.
-     * @return The transformation specification instance.
+     *
+     * @param transformSpecMap the transform spec map.
+     * @return the created transform spec.
      */
     public static TransformSpec build(Map<String, Object> transformSpecMap)
     {
@@ -94,9 +93,9 @@ public class TransformSpec
     
     /**
      * Create a {@link TransformSpec} object from a DIJ transformation
-     * @param dij
-     * 	the DIj transformation
-     * @return the DIJ trnasformation as {@link TransformSpec}
+     *
+     * @param dij the dij.
+     * @return the created transform spec.
      */
     public static TransformSpec createTransformForDIJ(DeepImageJProcessing dij) {
     	Map<String, Object> transformSpecs = new HashMap<String, Object>();

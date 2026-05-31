@@ -53,6 +53,9 @@ public abstract class Merger<I extends Tensor<?>, O extends Tensor<?>> {
             new ArrayList<Function<List<O>, List<O>>>();
     private boolean callbacksApplied;
 
+    /**
+     * Creates a new Merger instance.
+     */
     protected Merger() {
     }
 
@@ -116,6 +119,11 @@ public abstract class Merger<I extends Tensor<?>, O extends Tensor<?>> {
      */
     public abstract List<O> getReconstructed();
 
+    /**
+     * Performs register callback.
+     *
+     * @param callback the callback to notify.
+     */
     protected void registerCallback(final Function<List<O>, List<O>> callback) {
         if (callback == null) {
             throw new IllegalArgumentException("Reconstruction callback cannot be null.");
@@ -124,6 +132,12 @@ public abstract class Merger<I extends Tensor<?>, O extends Tensor<?>> {
         callbacksApplied = false;
     }
 
+    /**
+     * Returns the result of apply reconstruction callbacks.
+     *
+     * @param reconstructed the reconstructed.
+     * @return the resulting list.
+     */
     protected List<O> applyReconstructionCallbacks(final List<O> reconstructed) {
         if (callbacksApplied || reconstructionCallbacks.isEmpty()) {
             return reconstructed;
@@ -139,33 +153,60 @@ public abstract class Merger<I extends Tensor<?>, O extends Tensor<?>> {
         return current;
     }
 
+    /**
+     * Performs reset reconstruction callbacks.
+     */
     protected void resetReconstructionCallbacks() {
         callbacksApplied = false;
     }
 
+	/**
+	 * Performs require configured.
+	 */
 	protected void requireConfigured() {
 		if (!configured) {
 			throw new IllegalStateException(getClass().getSimpleName() + " must be configured before use.");
 		}
 	}
 
+	/**
+	 * Performs require digested.
+	 */
 	protected void requireDigested() {
 		if (!digested) {
 			throw new IllegalStateException("Merger cannot reconstruct outputs before digesting a patch.");
 		}
 	}
 
+	/**
+	 * Performs patch number valid.
+	 *
+	 * @param patchNumber the patch number.
+	 */
 	protected void patchNumberValid(final int patchNumber) {
 		if (patchNumber < 0 || patchNumber >= this.getNPatches()) {
 			throw new IllegalArgumentException("Patch should be >=0 and <" + this.getNPatches());
 		}
 	}
 
+    /**
+     * Returns the result of copy window.
+     *
+     * @param window the window.
+     * @param name the name.
+     * @return the resulting long.
+     */
     protected static long[] copyWindow(final long[] window, final String name) {
         validateWindow(window, name);
         return window.clone();
     }
 
+    /**
+     * Performs validate window.
+     *
+     * @param window the window.
+     * @param name the name.
+     */
     protected static void validateWindow(final long[] window, final String name) {
         if (window == null || window.length < WINDOW_LENGTH) {
             throw new IllegalArgumentException(name + " must be [x1, y1, x2, y2].");
@@ -176,6 +217,13 @@ public abstract class Merger<I extends Tensor<?>, O extends Tensor<?>> {
         }
     }
 
+    /**
+     * Returns the result of immutable copy.
+     *
+     * @param <E> the E type parameter.
+     * @param values the values.
+     * @return the resulting list.
+     */
     protected static <E> List<E> immutableCopy(final List<E> values) {
         if (values == null) {
             return Collections.emptyList();
@@ -183,6 +231,13 @@ public abstract class Merger<I extends Tensor<?>, O extends Tensor<?>> {
         return Collections.unmodifiableList(new ArrayList<E>(values));
     }
 
+    /**
+     * Returns the result of find image inputs.
+     *
+     * @param <T> the T type parameter.
+     * @param inputs the inputs to process.
+     * @return the resulting list.
+     */
     protected static <T extends RealType<T> & NativeType<T>> List<InputImage<T>> findImageInputs(
             final List<Tensor<T>> inputs) {
         if (inputs == null || inputs.isEmpty()) {
@@ -197,12 +252,27 @@ public abstract class Merger<I extends Tensor<?>, O extends Tensor<?>> {
         return Collections.unmodifiableList(imageInputs);
     }
 
+    /**
+     * Returns whether has XY.
+     *
+     * @param <T> the T type parameter.
+     * @param tensor the tensor.
+     * @return true if has XY; false otherwise.
+     */
     protected static <T extends RealType<T> & NativeType<T>> boolean hasXY(final Tensor<T> tensor) {
         return tensor != null
                 && tensor.getAxesOrderString().indexOf('x') >= 0
                 && tensor.getAxesOrderString().indexOf('y') >= 0;
     }
 
+    /**
+     * Returns the result of axis size.
+     *
+     * @param dims the dimensions.
+     * @param axes the axes.
+     * @param axis the axis.
+     * @return the resulting long.
+     */
     protected static long axisSize(final long[] dims, final String axes, final char axis) {
         if (dims == null || axes == null) {
             throw new IllegalArgumentException("Dimensions and axes cannot be null.");
@@ -214,6 +284,14 @@ public abstract class Merger<I extends Tensor<?>, O extends Tensor<?>> {
         return dims[index];
     }
 
+    /**
+     * Returns the result of to XYXY window.
+     *
+     * @param tilePosition the tile position.
+     * @param tileSize the tile size.
+     * @param axes the axes.
+     * @return the resulting long.
+     */
     protected static long[] toXyxyWindow(final long[] tilePosition, final long[] tileSize, final String axes) {
         final int x = axes.indexOf('x');
         final int y = axes.indexOf('y');
@@ -229,6 +307,14 @@ public abstract class Merger<I extends Tensor<?>, O extends Tensor<?>> {
         };
     }
 
+    /**
+     * Returns the result of scale window.
+     *
+     * @param referenceWindow the reference window.
+     * @param reference the reference.
+     * @param target the target.
+     * @return the resulting long.
+     */
     protected static long[] scaleWindow(final long[] referenceWindow, final InputImage<?> reference,
             final InputImage<?> target) {
         if (reference == target) {
@@ -242,10 +328,26 @@ public abstract class Merger<I extends Tensor<?>, O extends Tensor<?>> {
         };
     }
 
+    /**
+     * Returns the result of scale.
+     *
+     * @param value the value.
+     * @param sourceSize the source size.
+     * @param targetSize the target size.
+     * @return the resulting long.
+     */
     protected static long scale(final long value, final long sourceSize, final long targetSize) {
         return clip(Math.round(value * (targetSize / (double) sourceSize)), 0L, targetSize);
     }
 
+    /**
+     * Returns the result of clip.
+     *
+     * @param value the value.
+     * @param min the min.
+     * @param max the max.
+     * @return the resulting long.
+     */
     protected static long clip(final long value, final long min, final long max) {
         return Math.max(min, Math.min(max, value));
     }
@@ -258,6 +360,11 @@ public abstract class Merger<I extends Tensor<?>, O extends Tensor<?>> {
         protected final int yAxis;
         protected final long[] dims;
 
+        /**
+         * Creates a new InputImage instance.
+         *
+         * @param tensor the tensor.
+         */
         protected InputImage(final Tensor<T> tensor) {
             this.tensor = tensor;
             this.axes = tensor.getAxesOrderString();
@@ -266,10 +373,20 @@ public abstract class Merger<I extends Tensor<?>, O extends Tensor<?>> {
             this.dims = tensor.getData().dimensionsAsLongArray();
         }
 
+        /**
+         * Returns the result of width.
+         *
+         * @return the resulting long.
+         */
         protected long width() {
             return dims[xAxis];
         }
 
+        /**
+         * Returns the result of height.
+         *
+         * @return the resulting long.
+         */
         protected long height() {
             return dims[yAxis];
         }

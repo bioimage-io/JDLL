@@ -195,11 +195,10 @@ public class MultiFileDownloader {
 	
 	/**
 	 * Add the timestamp to the String given
-	 * @param str
-	 * 	String to add the time stamp
-	 * @param isDir
-	 * 	whether the file name represents a directory or not
-	 * @return string with the timestamp
+	 *
+	 * @param str the str.
+	 * @param isDir the is directory.
+	 * @return the resulting string.
 	 */
 	public static String addTimeStampToFileName(String str, boolean isDir) {
 		// Add timestamp to the model name. 

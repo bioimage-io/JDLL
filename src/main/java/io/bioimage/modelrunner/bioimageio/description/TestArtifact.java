@@ -59,10 +59,9 @@ public class TestArtifact {
 	
     /**
      * Creates a {@link TestArtifact} instance.
-     * 
-     * @param sampleInputUrl
-     * 	String specified in the yaml file as a sample input or output
-     * @return The creates instance.
+     *
+     * @param sampleInputUrl the sample input URL.
+     * @return the created test artifact.
      */
     public static TestArtifact build(String sampleInputUrl)
     {
@@ -136,8 +135,8 @@ public class TestArtifact {
     
     /**
      * Add the local model path to the sample images to know where these images are
-     * @param p
-     * 	the path to the local model folder
+     *
+     * @param p the p.
      */
     public void addLocalModelPath(Path p) {
     	if (!p.toFile().exists())

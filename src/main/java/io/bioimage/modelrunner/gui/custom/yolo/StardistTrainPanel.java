@@ -34,6 +34,9 @@ public class StardistTrainPanel extends BaseTrainPanel {
     
     private static final long serialVersionUID = 3944729402784309789L;
 
+    /**
+     * Creates a new StardistTrainPanel instance.
+     */
     protected StardistTrainPanel() {
     	super(new StardistValidationPreviewPanel());
         setScratchArchitectures(StardistModelRegistry.buildScratchArchitectureEntries());
@@ -45,6 +48,9 @@ public class StardistTrainPanel extends BaseTrainPanel {
         scratchArchitectureComboBox.setEnabled(true);
     }
 
+    /**
+     * Performs browse base model.
+     */
     protected void browseBaseModel() {
         JFileChooser chooser = new JFileChooser();
         chooser.setFileSelectionMode(JFileChooser.FILES_ONLY);
@@ -58,6 +64,12 @@ public class StardistTrainPanel extends BaseTrainPanel {
         }
     }
 
+    /**
+     * Returns whether valid model file name.
+     *
+     * @param modelName the model name.
+     * @return true if valid model file name; false otherwise.
+     */
     protected boolean isValidModelFileName(String modelName) {
         if (modelName == null || modelName.trim().isEmpty()) {
             return false;
@@ -73,6 +85,11 @@ public class StardistTrainPanel extends BaseTrainPanel {
                 && !INVALID_MODEL_NAME_CHARS.matcher(cleanName).find();
     }
 
+    /**
+     * Returns whether valid fine tune base model.
+     *
+     * @return true if valid fine tune base model; false otherwise.
+     */
     protected boolean isValidFineTuneBaseModel() {
         String baseModel = getSelectedBaseModelValue();
         if (baseModelComboBox.getSelectedItem() instanceof YoloModelSelectionEntry) {
@@ -86,10 +103,20 @@ public class StardistTrainPanel extends BaseTrainPanel {
                 && new File(baseModel).exists();
     }
 
+    /**
+     * Returns whether valid scratch architecture.
+     *
+     * @return true if valid scratch architecture; false otherwise.
+     */
     protected boolean isValidScratchArchitecture() {
         return StardistModelRegistry.isKnownScratchArchitecture(getSelectedScratchArchitectureValue());
     }
 
+    /**
+     * Sets the training running.
+     *
+     * @param running the running.
+     */
     @Override
     public void setTrainingRunning(boolean running) {
         super.setTrainingRunning(running);
@@ -98,6 +125,11 @@ public class StardistTrainPanel extends BaseTrainPanel {
         baseModelBrowseButton.setEnabled(false);
     }
 
+    /**
+     * Sets the base models.
+     *
+     * @param models the models.
+     */
     public void setBaseModels(LinkedHashMap<String, String> models) {
         DefaultComboBoxModel<YoloModelSelectionEntry> comboModel =
                 new DefaultComboBoxModel<YoloModelSelectionEntry>();
@@ -109,6 +141,11 @@ public class StardistTrainPanel extends BaseTrainPanel {
         baseModelComboBox.setModel(comboModel);
     }
 
+    /**
+     * Returns the validation preview panel.
+     *
+     * @return the validation preview panel.
+     */
     @Override
     public StardistValidationPreviewPanel getValidationPreviewPanel() {
         return (StardistValidationPreviewPanel) super.getValidationPreviewPanel();

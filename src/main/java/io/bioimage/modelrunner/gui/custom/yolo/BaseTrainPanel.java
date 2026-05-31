@@ -96,10 +96,18 @@ public abstract class BaseTrainPanel extends JPanel {
     protected static final Color ERROR_FG = new Color(255, 0, 0, 170);
     protected static final Pattern INVALID_MODEL_NAME_CHARS = Pattern.compile("[\\\\/:*?\"<>|]");
 
+    /**
+     * Creates a new BaseTrainPanel instance.
+     */
     protected BaseTrainPanel() {
         this(new YoloValidationPreviewPanel());
     }
 
+    /**
+     * Creates a new BaseTrainPanel instance.
+     *
+     * @param validationPreviewPanel the validation preview panel.
+     */
     protected BaseTrainPanel(YoloValidationPreviewPanel validationPreviewPanel) {
         setLayout(null);
         setOpaque(true);
@@ -187,6 +195,11 @@ public abstract class BaseTrainPanel extends JPanel {
         scratchArchitectureComboBox.setEnabled(!trainingRunning && !fineTune);
     }
 
+    /**
+     * Sets the training running.
+     *
+     * @param running the running.
+     */
     public void setTrainingRunning(boolean running) {
         this.trainingRunning = running;
         modelNameField.setEnabled(!running);
@@ -201,6 +214,9 @@ public abstract class BaseTrainPanel extends JPanel {
         updateMode();
     }
 
+	/**
+	 * Performs browse dataset.
+	 */
 	protected void browseDataset() {
         JFileChooser chooser = new JFileChooser();
         chooser.setFileSelectionMode(JFileChooser.FILES_AND_DIRECTORIES);
@@ -213,8 +229,14 @@ public abstract class BaseTrainPanel extends JPanel {
         }
     }
 
+    /**
+     * Performs browse base model.
+     */
     protected abstract void browseBaseModel();
 
+    /**
+     * Performs do layout.
+     */
     @Override
     public void doLayout() {
         int w = Math.max(0, getWidth());
@@ -326,10 +348,20 @@ public abstract class BaseTrainPanel extends JPanel {
         return width;
     }
 
+    /**
+     * Returns the model name field.
+     *
+     * @return the model name field.
+     */
     public YoloPlaceholderTextField getModelNameField() {
         return modelNameField;
     }
 
+    /**
+     * Returns whether validate training fields.
+     *
+     * @return true if validate training fields; false otherwise.
+     */
     public boolean validateTrainingFields() {
         clearTrainingErrors();
         boolean valid = true;
@@ -368,6 +400,9 @@ public abstract class BaseTrainPanel extends JPanel {
         return valid;
     }
 
+    /**
+     * Performs clear training errors.
+     */
     public void clearTrainingErrors() {
         modelNameField.clearErrorPlaceholder();
         datasetField.clearErrorPlaceholder();
@@ -389,12 +424,29 @@ public abstract class BaseTrainPanel extends JPanel {
         comboBox.repaint();
     }
 
+    /**
+     * Returns whether valid model file name.
+     *
+     * @param modelName the model name.
+     * @return true if valid model file name; false otherwise.
+     */
     protected abstract boolean isValidModelFileName(String modelName);
 
+    /**
+     * Returns whether valid dataset path.
+     *
+     * @param datasetPath the dataset path.
+     * @return true if valid dataset path; false otherwise.
+     */
     protected boolean isValidDatasetPath(File datasetPath) {
         return datasetPath != null && datasetPath.exists();
     }
 
+    /**
+     * Returns the result of invalid dataset message.
+     *
+     * @return the resulting string.
+     */
     protected String invalidDatasetMessage() {
         return "Please select an existing dataset path";
     }
@@ -407,8 +459,18 @@ public abstract class BaseTrainPanel extends JPanel {
         }
     }
 
+    /**
+     * Returns whether valid fine tune base model.
+     *
+     * @return true if valid fine tune base model; false otherwise.
+     */
     protected abstract boolean isValidFineTuneBaseModel();
 
+    /**
+     * Returns whether valid scratch architecture.
+     *
+     * @return true if valid scratch architecture; false otherwise.
+     */
     protected abstract boolean isValidScratchArchitecture();
 
     private static class PathDropHandler extends TransferHandler {
@@ -420,11 +482,23 @@ public abstract class BaseTrainPanel extends JPanel {
             this.pathConsumer = pathConsumer;
         }
 
+        /**
+         * Returns whether can import.
+         *
+         * @param support the support.
+         * @return true if can import; false otherwise.
+         */
         @Override
         public boolean canImport(TransferSupport support) {
             return support.isDataFlavorSupported(DataFlavor.javaFileListFlavor);
         }
 
+        /**
+         * Returns whether import data.
+         *
+         * @param support the support.
+         * @return true if import data; false otherwise.
+         */
         @Override
         public boolean importData(TransferSupport support) {
             try {
@@ -441,24 +515,54 @@ public abstract class BaseTrainPanel extends JPanel {
         }
     }
 
+    /**
+     * Returns the dataset field.
+     *
+     * @return the dataset field.
+     */
     public YoloPlaceholderTextField getDatasetField() {
         return datasetField;
     }
 
+    /**
+     * Returns the dataset browse button.
+     *
+     * @return the dataset browse button.
+     */
     public JButton getDatasetBrowseButton() {
         return datasetBrowseButton;
     }
 
+    /**
+     * Returns the fine tune radio.
+     *
+     * @return the fine tune radio.
+     */
     public JRadioButton getFineTuneRadio() {
         return fineTuneRadio;
     }
 
+    /**
+     * Returns the base model combo box.
+     *
+     * @return the base model combo box.
+     */
     public JComboBox<YoloModelSelectionEntry> getBaseModelComboBox() {
         return baseModelComboBox;
     }
 
+    /**
+     * Sets the base models.
+     *
+     * @param models the models.
+     */
     public abstract void setBaseModels(LinkedHashMap<String, String> models);
 
+    /**
+     * Returns the selected base model value.
+     *
+     * @return the selected base model value.
+     */
     public String getSelectedBaseModelValue() {
         Object selected = baseModelComboBox.getSelectedItem();
         if (selected instanceof YoloModelSelectionEntry) {
@@ -468,6 +572,11 @@ public abstract class BaseTrainPanel extends JPanel {
         return editorItem == null ? null : editorItem.toString().trim();
     }
 
+    /**
+     * Sets the selected base model value.
+     *
+     * @param value the value.
+     */
     public void setSelectedBaseModelValue(String value) {
         if (value == null) {
             baseModelComboBox.setSelectedItem(null);
@@ -484,18 +593,38 @@ public abstract class BaseTrainPanel extends JPanel {
         baseModelComboBox.setSelectedItem(value);
     }
 
+    /**
+     * Returns the base model browse button.
+     *
+     * @return the base model browse button.
+     */
     public JButton getBaseModelBrowseButton() {
         return baseModelBrowseButton;
     }
 
+    /**
+     * Returns the scratch radio.
+     *
+     * @return the scratch radio.
+     */
     public JRadioButton getScratchRadio() {
         return scratchRadio;
     }
 
+    /**
+     * Returns the scratch architecture combo box.
+     *
+     * @return the scratch architecture combo box.
+     */
     public JComboBox<YoloModelSelectionEntry> getScratchArchitectureComboBox() {
         return scratchArchitectureComboBox;
     }
 
+    /**
+     * Sets the scratch architectures.
+     *
+     * @param architectures the architectures.
+     */
     public void setScratchArchitectures(LinkedHashMap<String, String> architectures) {
         DefaultComboBoxModel<YoloModelSelectionEntry> comboModel =
                 new DefaultComboBoxModel<YoloModelSelectionEntry>();
@@ -507,6 +636,11 @@ public abstract class BaseTrainPanel extends JPanel {
         scratchArchitectureComboBox.setModel(comboModel);
     }
 
+    /**
+     * Returns the selected scratch architecture value.
+     *
+     * @return the selected scratch architecture value.
+     */
     public String getSelectedScratchArchitectureValue() {
         Object selected = scratchArchitectureComboBox.getSelectedItem();
         if (selected instanceof YoloModelSelectionEntry) {
@@ -515,38 +649,83 @@ public abstract class BaseTrainPanel extends JPanel {
         return selected == null ? null : selected.toString().trim();
     }
 
+    /**
+     * Returns the epochs field.
+     *
+     * @return the epochs field.
+     */
     public YoloIntegerTextField getEpochsField() {
         return epochsField;
     }
 
+    /**
+     * Returns the graph card panel.
+     *
+     * @return the graph card panel.
+     */
     public JPanel getGraphCardPanel() {
         return graphCardPanel;
     }
 
+    /**
+     * Returns the loss button.
+     *
+     * @return the loss button.
+     */
     public JButton getLossButton() {
         return lossButton;
     }
 
+    /**
+     * Returns the metric button.
+     *
+     * @return the metric button.
+     */
     public JButton getMetricButton() {
         return metricButton;
     }
 
+    /**
+     * Returns the validation preview button.
+     *
+     * @return the validation preview button.
+     */
     public JButton getValidationPreviewButton() {
         return validationPreviewButton;
     }
 
+    /**
+     * Returns the loss graph panel.
+     *
+     * @return the loss graph panel.
+     */
     public YoloGraphPlaceholderPanel getLossGraphPanel() {
         return lossGraphPanel;
     }
 
+    /**
+     * Returns the metric graph panel.
+     *
+     * @return the metric graph panel.
+     */
     public YoloGraphPlaceholderPanel getMetricGraphPanel() {
         return metricGraphPanel;
     }
 
+    /**
+     * Returns the validation preview panel.
+     *
+     * @return the validation preview panel.
+     */
     public YoloValidationPreviewPanel getValidationPreviewPanel() {
         return validationPreviewPanel;
     }
 
+    /**
+     * Returns the train action panel.
+     *
+     * @return the train action panel.
+     */
     public YoloActionPanel getTrainActionPanel() {
         return trainActionPanel;
     }

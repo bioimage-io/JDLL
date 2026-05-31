@@ -120,6 +120,9 @@ public class YoloImageDisplayPanel extends JPanel {
     private long hintShownAt;
     private float hintAlpha;
 
+    /**
+     * Creates a new YoloImageDisplayPanel instance.
+     */
     protected YoloImageDisplayPanel() {
         setLayout(null);
         setBorder(new LineBorder(Color.GRAY));
@@ -134,6 +137,11 @@ public class YoloImageDisplayPanel extends JPanel {
         hintFadeTimer.setRepeats(true);
 
         MouseAdapter mouseAdapter = new MouseAdapter() {
+            /**
+             * Performs mouse pressed.
+             *
+             * @param e the e.
+             */
             @Override
             public void mousePressed(MouseEvent e) {
                 clearZoomAnchor();
@@ -152,6 +160,11 @@ public class YoloImageDisplayPanel extends JPanel {
                 repaint();
             }
 
+            /**
+             * Performs mouse dragged.
+             *
+             * @param e the e.
+             */
             @Override
             public void mouseDragged(MouseEvent e) {
                 clearZoomAnchor();
@@ -175,6 +188,11 @@ public class YoloImageDisplayPanel extends JPanel {
                 repaint();
             }
 
+            /**
+             * Performs mouse released.
+             *
+             * @param e the e.
+             */
             @Override
             public void mouseReleased(MouseEvent e) {
                 clearZoomAnchor();
@@ -197,6 +215,11 @@ public class YoloImageDisplayPanel extends JPanel {
                 repaint();
             }
 
+            /**
+             * Performs mouse wheel moved.
+             *
+             * @param e the e.
+             */
             @Override
             public void mouseWheelMoved(MouseWheelEvent e) {
                 if (!e.isControlDown()) {
@@ -215,6 +238,11 @@ public class YoloImageDisplayPanel extends JPanel {
                 repaint();
             }
 
+            /**
+             * Performs mouse moved.
+             *
+             * @param e the e.
+             */
             @Override
             public void mouseMoved(MouseEvent e) {
                 if (zoomAnchorScreen != null && !zoomAnchorScreen.equals(e.getPoint())) {
@@ -227,26 +255,47 @@ public class YoloImageDisplayPanel extends JPanel {
         addMouseWheelListener(mouseAdapter);
     }
 
+    /**
+     * Sets the draw enabled.
+     *
+     * @param drawEnabled the draw enabled.
+     */
     public void setDrawEnabled(boolean drawEnabled) {
         this.drawEnabled = drawEnabled;
         clearZoomAnchor();
         updateToolTip();
     }
 
+    /**
+     * Returns whether draw enabled.
+     *
+     * @return true if draw enabled; false otherwise.
+     */
     public boolean isDrawEnabled() {
         return drawEnabled;
     }
 
+    /**
+     * Performs clear boxes.
+     */
     public void clearBoxes() {
         boxes.clear();
         activeBox = null;
         repaint();
     }
 
+    /**
+     * Returns the boxes.
+     *
+     * @return the boxes.
+     */
     public List<Rectangle2D.Double> getBoxes() {
         return new ArrayList<Rectangle2D.Double>(boxes);
     }
 
+    /**
+     * Performs clear image.
+     */
     public void clearImage() {
         cancelRenderWorker();
         cancelOverviewWorker();
@@ -270,10 +319,21 @@ public class YoloImageDisplayPanel extends JPanel {
         repaint();
     }
 
+    /**
+     * Sets the empty message.
+     *
+     * @param emptyMessage the empty message.
+     */
     public void setEmptyMessage(String emptyMessage) {
         setEmptyMessage(emptyMessage, HELP_TEXT);
     }
 
+    /**
+     * Sets the empty message.
+     *
+     * @param emptyMessage the empty message.
+     * @param color the color.
+     */
     public void setEmptyMessage(String emptyMessage, Color color) {
         this.emptyMessage = emptyMessage == null || emptyMessage.trim().isEmpty()
                 ? "Preview will appear here"
@@ -282,6 +342,13 @@ public class YoloImageDisplayPanel extends JPanel {
         repaint();
     }
 
+    /**
+     * Sets the image.
+     *
+     * @param <T> the T type parameter.
+     * @param rai the RAI.
+     * @param title the title.
+     */
     public <T extends RealType<T> & NativeType<T>> void setImage(RandomAccessibleInterval<T> rai, String title) {
         cancelRenderWorker();
         cancelOverviewWorker();
@@ -306,10 +373,24 @@ public class YoloImageDisplayPanel extends JPanel {
         repaint();
     }
 
+    /**
+     * Sets the buffered image.
+     *
+     * @param image the image.
+     * @param title the title.
+     */
     public void setBufferedImage(BufferedImage image, String title) {
         setBufferedImage(image, title, true);
     }
 
+    /**
+     * Sets the image file.
+     *
+     * @param imageFile the image file.
+     * @param title the title.
+     * @param showHint the show hint.
+     * @throws IOException if an I/O error occurs.
+     */
     public void setImageFile(File imageFile, String title, boolean showHint) throws IOException {
         cancelRenderWorker();
         cancelOverviewWorker();
@@ -340,6 +421,13 @@ public class YoloImageDisplayPanel extends JPanel {
         repaint();
     }
 
+    /**
+     * Sets the buffered image.
+     *
+     * @param image the image.
+     * @param title the title.
+     * @param showHint the show hint.
+     */
     public void setBufferedImage(BufferedImage image, String title, boolean showHint) {
         cancelRenderWorker();
         cancelOverviewWorker();
@@ -370,6 +458,12 @@ public class YoloImageDisplayPanel extends JPanel {
         repaint();
     }
 
+    /**
+     * Sets the read only boxes.
+     *
+     * @param boxes the boxes.
+     * @param color the color.
+     */
     public void setReadOnlyBoxes(List<Rectangle2D.Double> boxes, Color color) {
         this.drawEnabled = false;
         this.boxes.clear();
@@ -381,16 +475,31 @@ public class YoloImageDisplayPanel extends JPanel {
         repaint();
     }
 
+    /**
+     * Sets the title color.
+     *
+     * @param color the color.
+     */
     public void setTitleColor(Color color) {
         this.titleColor = color == null ? HELP_TEXT : color;
         repaint();
     }
 
+    /**
+     * Sets the title.
+     *
+     * @param title the title.
+     */
     public void setTitle(String title) {
         this.title = title;
         repaint();
     }
 
+    /**
+     * Sets the expanded to fill.
+     *
+     * @param expandedToFill the expanded to fill.
+     */
     public void setExpandedToFill(boolean expandedToFill) {
         this.expandedToFill = expandedToFill;
         this.zoom = 1.0;
@@ -403,6 +512,11 @@ public class YoloImageDisplayPanel extends JPanel {
         repaint();
     }
 
+    /**
+     * Returns whether expanded to fill.
+     *
+     * @return true if expanded to fill; false otherwise.
+     */
     public boolean isExpandedToFill() {
         return expandedToFill;
     }
@@ -419,6 +533,9 @@ public class YoloImageDisplayPanel extends JPanel {
         expandButton.setToolTipText(expandedToFill ? "Contract image to fit preview" : "Expand image to fill preview");
     }
 
+    /**
+     * Performs do layout.
+     */
     @Override
     public void doLayout() {
         int size = Math.max(OVERLAY_BUTTON_MIN,
@@ -428,6 +545,11 @@ public class YoloImageDisplayPanel extends JPanel {
                 Math.min(YoloUiUtils.MAX_CONTROL_FONT_SIZE - 2, size * 0.42f))));
     }
 
+    /**
+     * Performs paint component.
+     *
+     * @param g the g.
+     */
     @Override
     protected void paintComponent(Graphics g) {
         super.paintComponent(g);
@@ -769,6 +891,11 @@ public class YoloImageDisplayPanel extends JPanel {
         final long workerVersion = overviewVersion;
         final int[] size = overviewSize(source.width(), source.height());
         overviewWorker = new SwingWorker<BufferedImage, Void>() {
+            /**
+             * Returns the result of do in background.
+             *
+             * @return the resulting buffered image.
+             */
             @Override
             protected BufferedImage doInBackground() {
                 return source.render(new Rectangle2D.Double(0.0, 0.0, source.width(), source.height()),
@@ -776,6 +903,9 @@ public class YoloImageDisplayPanel extends JPanel {
                                 || sourceSnapshot != sourceVersion);
             }
 
+            /**
+             * Performs done.
+             */
             @Override
             protected void done() {
                 if (isCancelled() || workerVersion != overviewVersion || sourceSnapshot != sourceVersion
@@ -821,6 +951,11 @@ public class YoloImageDisplayPanel extends JPanel {
         final PreviewSource source = previewSource;
         final RenderRequest workerRequest = request;
         renderWorker = new SwingWorker<RenderResult, Void>() {
+            /**
+             * Returns the result of do in background.
+             *
+             * @return the resulting render result.
+             */
             @Override
             protected RenderResult doInBackground() {
                 BufferedImage image = source.render(workerRequest.sourceRect, workerRequest.targetW,
@@ -828,6 +963,9 @@ public class YoloImageDisplayPanel extends JPanel {
                 return image == null ? null : new RenderResult(workerRequest, image);
             }
 
+            /**
+             * Performs done.
+             */
             @Override
             protected void done() {
                 if (isCancelled() || workerVersion != renderVersion) {
@@ -882,14 +1020,38 @@ public class YoloImageDisplayPanel extends JPanel {
     }
 
     private interface RenderAbortCheck {
+        /**
+         * Returns whether rendering should abort.
+         *
+         * @return true if the operation should abort; false otherwise.
+         */
         boolean shouldAbort();
     }
 
     private interface PreviewSource {
+        /**
+         * Returns the preview width.
+         *
+         * @return the width.
+         */
         int width();
 
+        /**
+         * Returns the preview height.
+         *
+         * @return the height.
+         */
         int height();
 
+        /**
+         * Renders a preview image.
+         *
+         * @param sourceRect the source rect.
+         * @param targetW the target width.
+         * @param targetH the target height.
+         * @param abortCheck the abort check callback.
+         * @return the rendered image.
+         */
         BufferedImage render(Rectangle2D.Double sourceRect, int targetW, int targetH, RenderAbortCheck abortCheck);
     }
 
@@ -900,16 +1062,35 @@ public class YoloImageDisplayPanel extends JPanel {
             this.image = image;
         }
 
+        /**
+         * Returns the result of width.
+         *
+         * @return the resulting int.
+         */
         @Override
         public int width() {
             return image.getWidth();
         }
 
+        /**
+         * Returns the result of height.
+         *
+         * @return the resulting int.
+         */
         @Override
         public int height() {
             return image.getHeight();
         }
 
+        /**
+         * Returns the result of render.
+         *
+         * @param sourceRect the source rect.
+         * @param targetW the target w.
+         * @param targetH the target h.
+         * @param abortCheck the abort check.
+         * @return the resulting buffered image.
+         */
         @Override
         public BufferedImage render(Rectangle2D.Double sourceRect, int targetW, int targetH,
                 RenderAbortCheck abortCheck) {
@@ -945,16 +1126,35 @@ public class YoloImageDisplayPanel extends JPanel {
             }
         }
 
+        /**
+         * Returns the result of width.
+         *
+         * @return the resulting int.
+         */
         @Override
         public int width() {
             return width;
         }
 
+        /**
+         * Returns the result of height.
+         *
+         * @return the resulting int.
+         */
         @Override
         public int height() {
             return height;
         }
 
+        /**
+         * Returns the result of render.
+         *
+         * @param sourceRect the source rect.
+         * @param targetW the target w.
+         * @param targetH the target h.
+         * @param abortCheck the abort check.
+         * @return the resulting buffered image.
+         */
         @Override
         public BufferedImage render(Rectangle2D.Double sourceRect, int targetW, int targetH,
                 RenderAbortCheck abortCheck) {
@@ -1069,16 +1269,35 @@ public class YoloImageDisplayPanel extends JPanel {
             this.channels = view.numDimensions() > 2 ? Math.max(1, (int) Math.min(4, view.dimension(2))) : 1;
         }
 
+        /**
+         * Returns the result of width.
+         *
+         * @return the resulting int.
+         */
         @Override
         public int width() {
             return width;
         }
 
+        /**
+         * Returns the result of height.
+         *
+         * @return the resulting int.
+         */
         @Override
         public int height() {
             return height;
         }
 
+        /**
+         * Returns the result of render.
+         *
+         * @param sourceRect the source rect.
+         * @param targetW the target w.
+         * @param targetH the target h.
+         * @param abortCheck the abort check.
+         * @return the resulting buffered image.
+         */
         @Override
         public BufferedImage render(Rectangle2D.Double sourceRect, int targetW, int targetH,
                 RenderAbortCheck abortCheck) {
@@ -1188,6 +1407,12 @@ public class YoloImageDisplayPanel extends JPanel {
             this.targetH = targetH;
         }
 
+        /**
+         * Returns whether equals.
+         *
+         * @param obj the obj.
+         * @return true if equals; false otherwise.
+         */
         @Override
         public boolean equals(Object obj) {
             if (!(obj instanceof RenderRequest)) {
@@ -1203,6 +1428,11 @@ public class YoloImageDisplayPanel extends JPanel {
                     && Double.compare(sourceRect.height, other.sourceRect.height) == 0;
         }
 
+        /**
+         * Returns the result of hash code.
+         *
+         * @return the resulting int.
+         */
         @Override
         public int hashCode() {
             int result = Long.hashCode(sourceVersion);

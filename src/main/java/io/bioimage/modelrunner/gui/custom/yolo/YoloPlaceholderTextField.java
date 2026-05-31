@@ -29,23 +29,46 @@ public class YoloPlaceholderTextField extends PlaceholderTextField {
 
     private String errorPlaceholder;
 
+    /**
+     * Creates a new YoloPlaceholderTextField instance.
+     *
+     * @param placeholder the placeholder.
+     */
     public YoloPlaceholderTextField(String placeholder) {
         super(placeholder);
     }
 
+    /**
+     * Sets the error placeholder.
+     *
+     * @param errorPlaceholder the error placeholder.
+     */
     public void setErrorPlaceholder(String errorPlaceholder) {
         this.errorPlaceholder = errorPlaceholder;
         repaint();
     }
 
+    /**
+     * Performs clear error placeholder.
+     */
     public void clearErrorPlaceholder() {
         setErrorPlaceholder(null);
     }
 
+    /**
+     * Returns the placeholder.
+     *
+     * @return the placeholder.
+     */
     protected String getPlaceholder() {
         return errorPlaceholder == null ? super.getPlaceholder() : errorPlaceholder;
     }
 
+    /**
+     * Returns the placeholder color.
+     *
+     * @return the placeholder color.
+     */
     @Override
     protected Color getPlaceholderColor() {
         return errorPlaceholder == null ? super.getPlaceholderColor() : new Color(255, 0, 0, 150);

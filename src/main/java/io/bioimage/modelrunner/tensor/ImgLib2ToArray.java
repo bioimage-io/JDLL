@@ -55,9 +55,10 @@ public final class ImgLib2ToArray
      * Gets the {@link Tensor} data into a Java flat array of the corresponding
      * primitive type with C-ordering
      *
-     * @param tensor the tensor parameter.
-     * @return the resulting value.
-     * @throws IllegalArgumentException if any argument is invalid.
+     * @param <T> the T type parameter.
+     * @param tensor the tensor.
+     * @return the created object.
+     * @throws IllegalArgumentException if an argument is invalid.
      */
     public static < T extends RealType< T > & NativeType< T > > Object build(Tensor<T> tensor) throws IllegalArgumentException
     {
@@ -70,9 +71,10 @@ public final class ImgLib2ToArray
      * Gets the {@link RandomAccessibleInterval} data into a Java flat array of the corresponding
      * primitive type with C-ordering
      *
-     * @param rai the rai parameter.
-     * @return the resulting value.
-     * @throws IllegalArgumentException if any argument is invalid.
+     * @param <T> the T type parameter.
+     * @param rai the RAI.
+     * @return the created object.
+     * @throws IllegalArgumentException if an argument is invalid.
      */
     public static < T extends RealType< T > & NativeType< T > > Object build(RandomAccessibleInterval<T> rai) throws IllegalArgumentException
     {

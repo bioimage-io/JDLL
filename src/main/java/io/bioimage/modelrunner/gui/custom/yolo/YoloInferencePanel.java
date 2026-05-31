@@ -63,10 +63,18 @@ public class YoloInferencePanel extends JPanel {
     protected final JLabel warningLabel = new JLabel(
             "<html><div style='text-align:center;'>&#9888; YOLO is optional third-party software, installed separately, and governed by its own license terms. See documentation for details.</div></html>");
 
+    /**
+     * Creates a new YoloInferencePanel instance.
+     */
     protected YoloInferencePanel() {
     	this(true);
     }
     
+    /**
+     * Creates a new YoloInferencePanel instance.
+     *
+     * @param disclaimer the disclaimer.
+     */
     protected YoloInferencePanel(boolean disclaimer) {
         setLayout(null);
         setOpaque(true);
@@ -82,32 +90,62 @@ public class YoloInferencePanel extends JPanel {
         imageSourcePanel.getOpenImagesRadio().addActionListener(e -> updateImageActionState());
         imageSourcePanel.getSystemImagesRadio().addActionListener(e -> updateImageActionState());
         imageSourcePanel.getSystemPathField().getDocument().addDocumentListener(new DocumentListener() {
+            /**
+             * Performs insert update.
+             *
+             * @param e the e.
+             */
             @Override
             public void insertUpdate(DocumentEvent e) {
                 updateImageActionState();
             }
 
+            /**
+             * Performs remove update.
+             *
+             * @param e the e.
+             */
             @Override
             public void removeUpdate(DocumentEvent e) {
                 updateImageActionState();
             }
 
+            /**
+             * Performs changed update.
+             *
+             * @param e the e.
+             */
             @Override
             public void changedUpdate(DocumentEvent e) {
                 updateImageActionState();
             }
         });
         imageSourcePanel.getOpenImagesComboBox().getModel().addListDataListener(new ListDataListener() {
+            /**
+             * Performs interval added.
+             *
+             * @param e the e.
+             */
             @Override
             public void intervalAdded(ListDataEvent e) {
                 updateImageActionState();
             }
 
+            /**
+             * Performs interval removed.
+             *
+             * @param e the e.
+             */
             @Override
             public void intervalRemoved(ListDataEvent e) {
                 updateImageActionState();
             }
 
+            /**
+             * Performs contents changed.
+             *
+             * @param e the e.
+             */
             @Override
             public void contentsChanged(ListDataEvent e) {
                 updateImageActionState();
@@ -128,11 +166,19 @@ public class YoloInferencePanel extends JPanel {
         updateImageActionState();
     }
 
+    /**
+     * Sets the draw mode enabled.
+     *
+     * @param enabled the enabled.
+     */
     public void setDrawModeEnabled(boolean enabled) {
         imageDisplayPanel.setDrawEnabled(enabled);
         YoloUiUtils.styleToggleButton(drawButton, enabled);
     }
 
+    /**
+     * Performs update image action state.
+     */
     public void updateImageActionState() {
         imageSourcePanel.updateEnabledState();
         boolean hasValidSource = imageSourcePanel.hasValidSelectedSource();
@@ -147,6 +193,9 @@ public class YoloInferencePanel extends JPanel {
         }
     }
 
+    /**
+     * Performs do layout.
+     */
     @Override
     public void doLayout() {
         int w = Math.max(0, getWidth());
@@ -241,30 +290,65 @@ public class YoloInferencePanel extends JPanel {
         component.setFont(component.getFont().deriveFont(fontSize));
     }
 
+    /**
+     * Returns the model selection panel.
+     *
+     * @return the model selection panel.
+     */
     public YoloModelSelectionPanel getModelSelectionPanel() {
         return modelSelectionPanel;
     }
 
+    /**
+     * Returns the image source panel.
+     *
+     * @return the image source panel.
+     */
     public YoloImageSourcePanel getImageSourcePanel() {
         return imageSourcePanel;
     }
 
+    /**
+     * Returns the image display panel.
+     *
+     * @return the image display panel.
+     */
     public YoloImageDisplayPanel getImageDisplayPanel() {
         return imageDisplayPanel;
     }
 
+    /**
+     * Returns the draw button.
+     *
+     * @return the draw button.
+     */
     public JButton getDrawButton() {
         return drawButton;
     }
 
+    /**
+     * Returns the refresh button.
+     *
+     * @return the refresh button.
+     */
     public JButton getRefreshButton() {
         return refreshButton;
     }
 
+    /**
+     * Returns the log panel.
+     *
+     * @return the log panel.
+     */
     public YoloHtmlLogPanel getLogPanel() {
         return logPanel;
     }
 
+    /**
+     * Returns the action panel.
+     *
+     * @return the action panel.
+     */
     public YoloActionPanel getActionPanel() {
         return actionPanel;
     }

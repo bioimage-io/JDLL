@@ -231,8 +231,9 @@ public class ScaleLinearTransformation extends AbstractTensorTransformation
 	/**
 	 * Executes apply.
 	 *
-	 * @param input the input parameter.
-	 * @return the resulting value.
+	 * @param <R> the R type parameter.
+	 * @param input the input to process.
+	 * @return the resulting tensor.
 	 */
 	@Override
 	public < R extends RealType< R > & NativeType< R > > Tensor< FloatType > apply( final Tensor< R > input )
@@ -246,7 +247,8 @@ public class ScaleLinearTransformation extends AbstractTensorTransformation
 	/**
 	 * Executes apply in place.
 	 *
-	 * @param input the input parameter.
+	 * @param <R> the R type parameter.
+	 * @param input the input to process.
 	 */
 	@Override
 	public < R extends RealType< R > & NativeType< R > > void applyInPlace(Tensor<R> input) {
@@ -321,6 +323,14 @@ public class ScaleLinearTransformation extends AbstractTensorTransformation
 		return allPoints;
 	}
 	
+	/**
+	 * Performs scale linear.
+	 *
+	 * @param <R> the R type parameter.
+	 * @param rai the RAI.
+	 * @param gain the gain.
+	 * @param offset the offset.
+	 */
 	public < R extends RealType< R > & NativeType< R > > 
 	void scaleLinear(RandomAccessibleInterval<R> rai, double gain, double offset) {
 

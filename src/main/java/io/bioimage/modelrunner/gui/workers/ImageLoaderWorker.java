@@ -160,6 +160,11 @@ public class ImageLoaderWorker extends SwingWorker<ImageIcon, Void> {
 
     @FunctionalInterface
     public interface ImageLoadCallback {
+        /**
+         * Handles a loaded image icon.
+         *
+         * @param icon the icon.
+         */
         void onImageLoaded(ImageIcon icon);
         
         default void onImageLoadFailed(Exception e) {

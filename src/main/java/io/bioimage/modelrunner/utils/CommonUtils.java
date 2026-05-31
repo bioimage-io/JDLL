@@ -53,10 +53,10 @@ public class CommonUtils {
 	
 	/**
 	 * Gets the filename of the file in an URL from the url String
-	 * @param str
-	 * 	the URL string
-	 * @return the file name of the file in the URL
-	 * @throws MalformedURLException if the String does not correspond to an URL
+	 *
+	 * @param str the str.
+	 * @return the file name from URL string.
+	 * @throws MalformedURLException if a URL is malformed.
 	 */
 	public static String getFileNameFromURLString(String str) throws MalformedURLException {
 		if (str.startsWith(Constants.ZENODO_DOMAIN) && str.endsWith(Constants.ZENODO_ANNOYING_SUFFIX))
@@ -69,8 +69,9 @@ public class CommonUtils {
 	 * Get the ImgLib2 datatype from a String datatype.
 	 * String data types are "int8", "uint8", "int16", "uint16", "int32", "uint32", "int64", "float32", "float64"
 	 *
-	 * @param dataType the dataType parameter.
-	 * @return the resulting value.
+	 * @param <T> the T type parameter.
+	 * @param dataType the data type.
+	 * @return the image lib2 data type.
 	 */
 	public static <T extends RealType<T> & NativeType<T>> T getImgLib2DataType(String dataType) {
 		T type;
@@ -101,11 +102,10 @@ public class CommonUtils {
 	/**
 	 * Get a the String name of an ImgLib2 {@link RandomAccessibleInterval}
 	 * String data types are "int8", "uint8", "int16", "uint16", "int32", "uint32", "int64", "float32", "float64"
-	 * @param <T>
-	 * 	what the possible ImgLib2 data types have to extend
-	 * @param rai
-	 * 	the image from which the data type will be retrieved
-	 * @return a String containing the data type of the {@link RandomAccessibleInterval}
+	 *
+	 * @param <T> the T type parameter.
+	 * @param rai the RAI.
+	 * @return the data type from RAI.
 	 */
 	public static <T extends RealType<T> & NativeType<T>>
 	String getDataTypeFromRAI(RandomAccessibleInterval<T> rai) {
@@ -136,11 +136,10 @@ public class CommonUtils {
 	/**
 	 * Get a the String name of an ImgLib2 {@link T} type
 	 * String data types are "int8", "uint8", "int16", "uint16", "int32", "uint32", "int64", "float32", "float64"
-	 * @param <T>
-	 * 	what the possible ImgLib2 data types have to extend
-	 * @param type
-	 * 	the ImgLib2 type.
-	 * @return a String representing the data type represented by the argument 'type'
+	 *
+	 * @param <T> the T type parameter.
+	 * @param type the type.
+	 * @return the data type.
 	 */
 	public static <T extends RealType<T> & NativeType<T>>
 	String getDataType(T type) {

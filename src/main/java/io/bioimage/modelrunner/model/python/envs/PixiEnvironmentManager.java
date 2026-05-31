@@ -34,22 +34,20 @@ public final class PixiEnvironmentManager {
      *
      * <p>This method verifies only that:
      * <ul>
-     *   <li>the environment directory exists,</li>
-     *   <li>one of the expected manifest files exists,</li>
-     *   <li>the first manifest found in the order {@code pixi.toml},
-     *       {@code pyproject.toml}, {@code environment.yml} matches the expected
-     *       content from the spec,</li>
-     *   <li>and Pixi is installed.</li>
+     * <li>the environment directory exists,</li>
+     * <li>one of the expected manifest files exists,</li>
+     * <li>the first manifest found in the order {@code pixi.toml},
+     * {@code pyproject.toml}, {@code environment.yml} matches the expected
+     * content from the spec,</li>
+     * <li>and Pixi is installed.</li>
      * </ul>
      *
      * <p>It does <strong>not</strong> validate that the actual environment contents
      * still match the manifest. If the environment was modified after creation,
      * this method may still return {@code true}.</p>
      *
-     * @param spec
-     *     the resolved environment specification
-     * @return {@code true} if the environment directory and manifest look valid for
-     *     the given spec, {@code false} otherwise
+     * @param spec the spec.
+     * @return true if installed; false otherwise.
      */
     public static boolean isInstalled(final PixiEnvironmentSpec spec) {
         Objects.requireNonNull(spec, "spec");
@@ -95,14 +93,10 @@ public final class PixiEnvironmentManager {
     /**
      * Ensures the environment described by the given specification is installed.
      *
-     * @param spec
-     *     the resolved environment specification
-     * @param consumer
-     *     optional consumer for stdout, stderr and progress updates
-     * @throws InterruptedException
-     *     if installation is interrupted
-     * @throws BuildException
-     *     if the Pixi environment cannot be built or a required follow-up step fails
+     * @param spec the spec.
+     * @param consumer the consumer callback.
+     * @throws InterruptedException if the current thread is interrupted.
+     * @throws BuildException if the Python environment or service cannot be built.
      */
     public static void installRequirements(
             final PixiEnvironmentSpec spec,

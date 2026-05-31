@@ -274,9 +274,9 @@ public class ModelDescriptorV04 extends ModelDescriptor
     /**
      * REturns a list of {@link SampleImage} of the sample images that are packed in the model
      * folder as tifs and that are specified in the rdf.yaml file
-     * @param coverElements
-     * 	data from the yaml
-     * @return the list of {@link SampleImage} with the sample images data
+     *
+     * @param coverElements the cover elements.
+     * @return the created list.
      */
     protected static List<SampleImage> buildSampleImages(Object coverElements)
     {
@@ -298,9 +298,9 @@ public class ModelDescriptorV04 extends ModelDescriptor
     /**
      * REturns a list of {@link TestArtifact} of the npy artifacts that are packed in the model
      * folder as input and output test objects
-     * @param coverElements
-     * 	data from the yaml
-     * @return the list of {@link TestArtifact} with the sample images data
+     *
+     * @param coverElements the cover elements.
+     * @return the created list.
      */
     protected static List<TestArtifact> buildTestArtifacts(Object coverElements)
     {

@@ -112,7 +112,8 @@ public class StarDistPluginUI extends StardistGUI implements ActionListener {
     /**
      * Creates a new CellposePluginUI.
      *
-     * @param consumer the consumer parameter.
+     * @param consumer the consumer callback.
+     * @param adapter the adapter.
      */
     public StarDistPluginUI(ConsumerInterface consumer, GuiAdapter adapter) {
     	super(adapter);
@@ -169,6 +170,9 @@ public class StarDistPluginUI extends StardistGUI implements ActionListener {
         }
     }
 
+    /**
+     * Performs add notify.
+     */
     @Override
     public void addNotify() {
         super.addNotify();
@@ -181,6 +185,11 @@ public class StarDistPluginUI extends StardistGUI implements ActionListener {
         sourcePanel.getOpenImagesRadio().addActionListener(e -> showOpenImageSource());
         sourcePanel.getSystemPathField().addActionListener(e -> updateSystemPathPreviewFromField());
         sourcePanel.getSystemPathField().addFocusListener(new FocusAdapter() {
+            /**
+             * Performs focus lost.
+             *
+             * @param e the e.
+             */
             @Override
             public void focusLost(FocusEvent e) {
                 updateSystemPathPreviewFromField();
@@ -212,11 +221,21 @@ public class StarDistPluginUI extends StardistGUI implements ActionListener {
             return;
         }
         window.addWindowListener(new WindowAdapter() {
+            /**
+             * Performs window closing.
+             *
+             * @param e the e.
+             */
             @Override
             public void windowClosing(WindowEvent e) {
                 close();
             }
 
+            /**
+             * Performs window closed.
+             *
+             * @param e the e.
+             */
             @Override
             public void windowClosed(WindowEvent e) {
                 close();
@@ -586,6 +605,9 @@ public class StarDistPluginUI extends StardistGUI implements ActionListener {
         }
     }
 
+    /**
+     * Runs model training.
+     */
     public void trainStardist() {
         if (!trainPanel.validateTrainingFields()) {
             return;

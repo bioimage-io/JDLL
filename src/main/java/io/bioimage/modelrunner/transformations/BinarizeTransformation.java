@@ -92,8 +92,9 @@ public class BinarizeTransformation extends AbstractTensorPixelTransformation
 	/**
 	 * Executes apply.
 	 *
-	 * @param input the input parameter.
-	 * @return the resulting value.
+	 * @param <R> the R type parameter.
+	 * @param input the input to process.
+	 * @return the resulting tensor.
 	 */
 	public < R extends RealType< R > & NativeType< R > > Tensor< FloatType > apply( final Tensor< R > input )
 	{
@@ -104,7 +105,8 @@ public class BinarizeTransformation extends AbstractTensorPixelTransformation
 	/**
 	 * Executes apply in place.
 	 *
-	 * @param input the input parameter.
+	 * @param <R> the R type parameter.
+	 * @param input the input to process.
 	 */
 	public < R extends RealType< R > & NativeType< R > >  void applyInPlace( final Tensor< R > input )
 	{

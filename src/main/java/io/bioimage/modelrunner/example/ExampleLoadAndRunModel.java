@@ -64,16 +64,13 @@ public class ExampleLoadAndRunModel {
 	private static final String MODELS_DIR = new File(CWD, "models").getAbsolutePath();
 
 	/**
-	 * 
-	 * @param <T>
-	 * 	ImgLib2 input data type
-	 * @param <R>
-	 * 	ImgLib2 output data type, can be the same as the input
-	 * @param args
-	 * 	main args, in this case nothing is needed
-	 * @throws LoadEngineException if the engine fails to load the model
-	 * @throws Exception if there is any error downloading the engines or the models
-	 * 	or running the model
+	 * Runs this class from the command line.
+	 *
+	 * @param <T> the T type parameter.
+	 * @param <R> the R type parameter.
+	 * @param args command-line arguments.
+	 * @throws LoadEngineException if the engine cannot be loaded.
+	 * @throws Exception if  occurs.
 	 */
 	public static <T extends RealType<T> & NativeType<T>, R extends RealType<R> & NativeType<R>> 
 	void main(String[] args) throws LoadEngineException, Exception {
@@ -149,16 +146,13 @@ public class ExampleLoadAndRunModel {
 	/**
 	 * Downloads the engine defined by the framework and engineVersion
 	 * arguments that is supported on the CPU
-	 * @param framework
-	 * 	DL framework of interest
-	 * @param engineVersion
-	 * 	version of the DL framework of interest
-	 * @param enginesDir
-	 * 	directory where the engine is going to be installed
-	 * @throws IOException if the engine is not installed correctly or no
-	 * 	engine with the criteria is found
-	 * @throws InterruptedException if the engine download is interrupted
-	 * @throws ExecutionException if there si any error during the installation
+	 *
+	 * @param framework the framework.
+	 * @param engineVersion the engine version.
+	 * @param enginesDir the engines directory.
+	 * @throws IOException if an I/O error occurs.
+	 * @throws InterruptedException if the current thread is interrupted.
+	 * @throws ExecutionException if an asynchronous operation fails.
 	 */
 	public static void downloadCPUEngine(String framework, String engineVersion,
 			String enginesDir) throws IOException, InterruptedException, ExecutionException {
@@ -175,15 +169,12 @@ public class ExampleLoadAndRunModel {
 	/**
 	 * Download a model from the Bioimage.io repository selecting it by its full
 	 * name. The model is downloaded into the wanted directory.
-	 * 
-	 * @param bmzModelName
-	 * 	name of the model of interest
-	 * @param modelsDir
-	 * 	directory where the model is downloaded
-	 * @return the path to the model downloaded. The path its model folder.
-	 * @throws IOException if there is any error downloading the model or
-	 * 	it does not exist
-	 * @throws InterruptedException if the download is interrupted
+	 *
+	 * @param bmzModelName the BMZ model name.
+	 * @param modelsDir the models directory.
+	 * @return the resulting string.
+	 * @throws IOException if an I/O error occurs.
+	 * @throws InterruptedException if the current thread is interrupted.
 	 */
 	public static String downloadBMZModel(String bmzModelName, String modelsDir) throws IOException, InterruptedException {
 		// Create an instance of the BioimageRepo object
@@ -193,17 +184,13 @@ public class ExampleLoadAndRunModel {
 	
 	/**
 	 * Method that creates the {@link EngineInfo} object.
-	 * @param engine
-	 * 	tag of the Deep Learning framework as definde in the bioimage.io
-	 * @param engineVersion
-	 * 	version of the Deep LEarning framework
-	 * @param enginesDir
-	 * 	directory where all the Deep Learning frameworks are installed
-	 * @param cpu
-	 * 	whether the engine is supported by CPU or not
-	 * @param gpu
-	 * 	whether the engine is supported by GPU or not
-	 * @return an {@link EngineInfo} object to load a DL model
+	 *
+	 * @param engine the engine.
+	 * @param engineVersion the engine version.
+	 * @param enginesDir the engines directory.
+	 * @param cpu the CPU.
+	 * @param gpu whether to use GPU.
+	 * @return the created engine info.
 	 */
 	public static EngineInfo createEngineInfo(String engine, String engineVersion, 
 			String enginesDir, boolean cpu, boolean gpu) {
@@ -212,16 +199,13 @@ public class ExampleLoadAndRunModel {
 	
 	/**
 	 * Load the wanted model
-	 * @param modelFolder
-	 * 	path to the model folder downloaded
-	 * @param modelSource
-	 * 	local path to the source file of the model
-	 * @param engineInfo
-	 * 	Object containing the needed info about the Deep Learning 
-	 * 	framework compatible with the wanted model
-	 * @return a loaded DL model
-	 * @throws LoadEngineException if there is any error loading the model
-	 * @throws Exception if anything fails loading the model
+	 *
+	 * @param modelFolder the model folder.
+	 * @param modelSource the model source.
+	 * @param engineInfo the engine info.
+	 * @return the resulting dl model java.
+	 * @throws LoadEngineException if the engine cannot be loaded.
+	 * @throws Exception if  occurs.
 	 */
 	public static DLModelJava loadModel(String modelFolder, String modelSource, EngineInfo engineInfo) throws LoadEngineException, Exception {
 		

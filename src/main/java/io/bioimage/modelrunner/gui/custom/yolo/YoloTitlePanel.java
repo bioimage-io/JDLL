@@ -51,6 +51,12 @@ public class YoloTitlePanel extends JPanel {
     private static final double HORIZONTAL_PADDING_RATIO = 0.04;
     private static final double VERTICAL_PADDING_RATIO = 0.14;
 
+    /**
+     * Creates a new YoloTitlePanel instance.
+     *
+     * @param rightString the right string.
+     * @param adapter the adapter.
+     */
     protected YoloTitlePanel(String rightString, GuiAdapter adapter) {
     	this.rightText = rightString;
     	this.softwareName = adapter.getSoftwareName();
@@ -59,6 +65,11 @@ public class YoloTitlePanel extends JPanel {
         setBackground(BG_COLOR);
     }
 
+    /**
+     * Creates a new YoloTitlePanel instance.
+     *
+     * @param adapter the adapter.
+     */
     protected YoloTitlePanel(GuiAdapter adapter) {
     	this.rightText = RIGHT_TEXT_DEFAULT;
     	this.softwareName = adapter.getSoftwareName();
@@ -67,6 +78,11 @@ public class YoloTitlePanel extends JPanel {
         setBackground(BG_COLOR);
     }
 
+    /**
+     * Performs paint component.
+     *
+     * @param g the g.
+     */
     @Override
     protected void paintComponent(Graphics g) {
         super.paintComponent(g);

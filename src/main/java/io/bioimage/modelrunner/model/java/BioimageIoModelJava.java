@@ -107,24 +107,12 @@ public class BioimageIoModelJava extends DLModelJava
 	 * To successfully create a Bioiamge.io model, it is required that there is installed
 	 * at least one of the engines needed to load at least one of the weight formats
 	 * supported by the model. Only the major version needs to be the same (Tensorflow 1 != Tensorflow 2).
-	 * 
-	 * @param bmzModelFolder
-	 * 	folder where the bioimage.io model is located (parent folder of the rdf.yaml file)
-	 * @param classloader
-	 * 	Parent ClassLoader of the engine (can be null). Almost the same method as 
-	 *  Model.createBioimageioModel( String bmzModelFolder, String enginesFolder ). 
-	 *  The only difference is that this method can choose the parent ClassLoader for the engine. 
-	 *  JDLL creates a separate ChildFirst-ParentLast CustomClassLoader for each of the 
-	 *  engines loaded to avoid conflicts between them. In order to have access to the 
-	 *  classes of the main ClassLoader the ChildFirst-ParentLast CustomClassLoader needs a parent. 
-	 *  If no classloader argument is provided the parent ClassLoader will be the Thread's 
-	 *  context ClassLoader (Thread.currentThread().getContextClassLoader()).
-	 *  
-	 *  The classloader argument is usually not needed, but for some softwares 
-	 *  such as Icy, that have a custom management of ClassLoaders it is necessary.
-	 * @return a model ready to be loaded
-	 * @throws LoadEngineException if there is any error loading the DL framework
-	 * @throws IOException if there is any error finding the engines in the system
+	 *
+	 * @param bmzModelFolder the BMZ model folder.
+	 * @param classloader the classloader.
+	 * @return the created bioimage I/O model java.
+	 * @throws LoadEngineException if the engine cannot be loaded.
+	 * @throws IOException if an I/O error occurs.
 	 */
 	public static BioimageIoModelJava createBioimageioModel(String bmzModelFolder, ClassLoader classloader)
 			throws LoadEngineException, IOException {
@@ -138,12 +126,11 @@ public class BioimageIoModelJava extends DLModelJava
 	 * To successfully create a Bioiamge.io model, it is required that there is installed
 	 * at least one of the engines needed to load at least one of the weight formats
 	 * supported by the model. Only the major version needs to be the same (Tensorflow 1 != Tensorflow 2).
-	 * 
-	 * @param bmzModelFolder
-	 * 	folder where the bioimage.io model is located (parent folder of the rdf.yaml file)
-	 * @return a model ready to be loaded
-	 * @throws LoadEngineException if there is any error loading the DL framework
-	 * @throws IOException if there is any error finding the engines in the system
+	 *
+	 * @param bmzModelFolder the BMZ model folder.
+	 * @return the created bioimage I/O model java.
+	 * @throws LoadEngineException if the engine cannot be loaded.
+	 * @throws IOException if an I/O error occurs.
 	 */
 	public static BioimageIoModelJava createBioimageioModel(String bmzModelFolder)
 			throws LoadEngineException, IOException {
@@ -157,14 +144,12 @@ public class BioimageIoModelJava extends DLModelJava
 	 * To successfully create a Bioiamge.io model, it is required that there is installed
 	 * at least one of the engines needed to load at least one of the weight formats
 	 * supported by the model. Only the major version needs to be the same (Tensorflow 1 != Tensorflow 2).
-	 * 
-	 * @param bmzModelFolder
-	 * 	folder where the bioimage.io model is located (parent folder of the rdf.yaml file)
-	 * @param enginesFolder
-	 * 	directory where all the engine (DL framework) folders are downloaded
-	 * @return a model ready to be loaded
-	 * @throws LoadEngineException if there is any error loading the DL framework
-	 * @throws IOException if there is any error finding the engines in the system
+	 *
+	 * @param bmzModelFolder the BMZ model folder.
+	 * @param enginesFolder the engines folder.
+	 * @return the created bioimage I/O model java.
+	 * @throws LoadEngineException if the engine cannot be loaded.
+	 * @throws IOException if an I/O error occurs.
 	 */
 	public static BioimageIoModelJava createBioimageioModel(String bmzModelFolder, String enginesFolder) 
 			throws LoadEngineException, IOException {
@@ -178,26 +163,13 @@ public class BioimageIoModelJava extends DLModelJava
 	 * To successfully create a Bioiamge.io model, it is required that there is installed
 	 * at least one of the engines needed to load at least one of the weight formats
 	 * supported by the model. Only the major version needs to be the same (Tensorflow 1 != Tensorflow 2).
-	 * 
-	 * @param bmzModelFolder
-	 * 	folder where the bioimage.io model is located (parent folder of the rdf.yaml file)
-	 * @param enginesFolder
-	 * 	directory where all the engine (DL framework) folders are downloaded
-	 * @param classloader
-	 * 	Parent ClassLoader of the engine (can be null). Almost the same method as 
-	 *  Model.createBioimageioModel( String bmzModelFolder, String enginesFolder ). 
-	 *  The only difference is that this method can choose the parent ClassLoader for the engine. 
-	 *  JDLL creates a separate ChildFirst-ParentLast CustomClassLoader for each of the 
-	 *  engines loaded to avoid conflicts between them. In order to have access to the 
-	 *  classes of the main ClassLoader the ChildFirst-ParentLast CustomClassLoader needs a parent. 
-	 *  If no classloader argument is provided the parent ClassLoader will be the Thread's 
-	 *  context ClassLoader (Thread.currentThread().getContextClassLoader()).
-	 *  
-	 *  The classloader argument is usually not needed, but for some softwares 
-	 *  such as Icy, that have a custom management of ClassLoaders it is necessary.
-	 * @return a model ready to be loaded
-	 * @throws LoadEngineException if there is any error loading the DL framework
-	 * @throws IOException if there is any error finding the engines in the system
+	 *
+	 * @param bmzModelFolder the BMZ model folder.
+	 * @param enginesFolder the engines folder.
+	 * @param classloader the classloader.
+	 * @return the created bioimage I/O model java.
+	 * @throws LoadEngineException if the engine cannot be loaded.
+	 * @throws IOException if an I/O error occurs.
 	 */
 	public static BioimageIoModelJava createBioimageioModel(String bmzModelFolder, String enginesFolder, ClassLoader classloader) 
 			throws LoadEngineException, IOException {
@@ -281,6 +253,15 @@ public class BioimageIoModelJava extends DLModelJava
 		model.tileCalculator = TileCalculator.init(descriptor);
 		return model;
 	}
+	/**
+	 * Returns the result of backbone single inference tile.
+	 *
+	 * @param <T> the T type parameter.
+	 * @param <R> the R type parameter.
+	 * @param inTensors the in tensors.
+	 * @return the resulting list.
+	 * @throws RunModelException if model inference cannot be run.
+	 */
 	protected <T extends RealType<T> & NativeType<T>, R extends RealType<R> & NativeType<R>> 
 	List< Tensor < R > > backboneSingleInferenceTile( List< Tensor < T > > inTensors) throws RunModelException
 	{
@@ -306,6 +287,12 @@ public class BioimageIoModelJava extends DLModelJava
 		return (List<Tensor<R>>) this.merger.getOutput(patchNumber);
 	}
 
+	/**
+	 * Returns the output tensor axes.
+	 *
+	 * @param outputCount the output count.
+	 * @return the output tensor axes.
+	 */
 	@Override
 	protected String getOutputTensorAxes(int outputCount) {
 		if (descriptor.getOutputTensors().size() <= outputCount)
@@ -313,6 +300,14 @@ public class BioimageIoModelJava extends DLModelJava
 		return this.descriptor.getOutputTensors().get(outputCount).getAxesOrder();
 	}
 
+	/**
+	 * Returns the tile maker.
+	 *
+	 * @param <T> the T type parameter.
+	 * @param <R> the R type parameter.
+	 * @param inputs the inputs to process.
+	 * @return the tile maker.
+	 */
 	@Override
 	protected <T extends RealType<T> & NativeType<T>, R extends RealType<R> & NativeType<R>>
 	Merger<Tensor<T>, Tensor<R>> getTileMaker(final List<Tensor<T>> inputs) {
@@ -337,11 +332,12 @@ public class BioimageIoModelJava extends DLModelJava
 	/**
 	 * Executes main.
 	 *
-	 * @param args the args parameter.
+	 * @param <T> the T type parameter.
+	 * @param args command-line arguments.
 	 * @throws IOException if an I/O error occurs.
-	 * @throws LoadEngineException if a LoadEngineException occurs while executing this method.
-	 * @throws RunModelException if a RunModelException occurs while executing this method.
-	 * @throws LoadModelException if a LoadModelException occurs while executing this method.
+	 * @throws LoadEngineException if the engine cannot be loaded.
+	 * @throws RunModelException if model inference cannot be run.
+	 * @throws LoadModelException if the model cannot be loaded.
 	 */
 	public static <T extends NativeType<T> & RealType<T>> void main(String[] args) throws IOException, LoadEngineException, RunModelException, LoadModelException {
 		

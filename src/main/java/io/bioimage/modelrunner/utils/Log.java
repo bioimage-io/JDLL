@@ -42,11 +42,9 @@ public class Log {
 	/**
 	 * Write the wanted string to a Consumer to communicate with the main interface.
 	 * It also prints the message on the terminal
-	 * @param consumer
-	 * 	consumer to communicate with the main code. This parameter can be null and 
-	 * 	then the log will only be displayed on the terminal.
-	 * @param str
-	 * 	String to communicate
+	 *
+	 * @param consumer the consumer callback.
+	 * @param str the str.
 	 */
 	public static void addProgressAndShowInTerminal(Consumer<String> consumer, String str) {
 		addProgressAndShowInTerminal(consumer, str, false);
@@ -55,13 +53,10 @@ public class Log {
 	/**
 	 * Write the wanted string to a Consumer to communicate with the main interface.
 	 * It also prints the message on the terminal
-	 * @param consumer
-	 * 	consumer to communicate with the main code. This parameter can be null and 
-	 * 	then the log will only be displayed on the terminal.
-	 * @param str
-	 * 	String to communicate
-	 * @param addTime
-	 * 	whether to specify the time along with the message or not
+	 *
+	 * @param consumer the consumer callback.
+	 * @param str the str.
+	 * @param addTime the add time.
 	 */
 	public static void addProgressAndShowInTerminal(Consumer<String> consumer, String str, boolean addTime) {
 		if (addTime)
@@ -75,10 +70,9 @@ public class Log {
 	
 	/**
 	 * Write the wanted string to a Consumer to communicate with the main interface.
-	 * @param consumer
-	 * 	consumer to communicate with the main code
-	 * @param str
-	 * 	String to communicate
+	 *
+	 * @param consumer the consumer callback.
+	 * @param str the str.
 	 */
 	public static void addProgress(Consumer<String> consumer, String str) {
 		addProgress(consumer, str, false);
@@ -86,12 +80,10 @@ public class Log {
 	
 	/**
 	 * Write the wanted string to a Consumer to communicate with the main interface.
-	 * @param consumer
-	 * 	consumer to communicate with the main code
-	 * @param str
-	 * 	String to communicate
-	 * @param addTime
-	 * 	whether to specify the time along with the message or not
+	 *
+	 * @param consumer the consumer callback.
+	 * @param str the str.
+	 * @param addTime the add time.
 	 */
 	public static void addProgress(Consumer<String> consumer, String str, boolean addTime) {
 		if (consumer == null)

@@ -56,11 +56,10 @@ public class ExampleDownloadModel {
 	
 	/**
 	 * Test method to check the download of models
-	 * @param args
-	 * 	there are no args in this method
-	 * @throws IOException if there is any error related to finding the model or its files
-	 * 	on the internet
-	 * @throws InterruptedException if the thread is stopped while the model is being downloaded
+	 *
+	 * @param args command-line arguments.
+	 * @throws IOException if an I/O error occurs.
+	 * @throws InterruptedException if the current thread is interrupted.
 	 */
 	public static void main(String[] args) throws IOException, InterruptedException {
 		// Create an instance of the BioimageRepo object

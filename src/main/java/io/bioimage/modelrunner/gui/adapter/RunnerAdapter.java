@@ -68,6 +68,13 @@ public abstract class RunnerAdapter implements Closeable {
 	protected boolean loaded = false;
 
 	
+	/**
+	 * Returns the result of display test inputs.
+	 *
+	 * @param <T> the T type parameter.
+	 * @param testInputs the test inputs.
+	 * @return the resulting linked hash map.
+	 */
 	protected abstract <T extends RealType<T> & NativeType<T>>
 	LinkedHashMap<TensorSpec, RandomAccessibleInterval<T>> displayTestInputs(LinkedHashMap<TensorSpec, String> testInputs);
 	
@@ -164,6 +171,17 @@ public abstract class RunnerAdapter implements Closeable {
 		this.loaded = true;
 	}
 	
+	/**
+	 * Runs the run.
+	 *
+	 * @param <T> the T type parameter.
+	 * @param <R> the R type parameter.
+	 * @param inputTensors the input tensors to process.
+	 * @return the resulting list.
+	 * @throws FileNotFoundException if the requested file cannot be found.
+	 * @throws RunModelException if model inference cannot be run.
+	 * @throws IOException if an I/O error occurs.
+	 */
 	public <T extends RealType<T> & NativeType<T>, R extends RealType<R> & NativeType<R>> 
 	List<Tensor<R>> run(List<Tensor<T>> inputTensors) throws FileNotFoundException, RunModelException, IOException {
 		if (closed)
@@ -173,6 +191,17 @@ public abstract class RunnerAdapter implements Closeable {
 		return model.inference(toTensorArray(inputTensors));
 	}
 	
+	/**
+	 * Runs the run on test images.
+	 *
+	 * @param <T> the T type parameter.
+	 * @param <R> the R type parameter.
+	 * @return the resulting list.
+	 * @throws FileNotFoundException if the requested file cannot be found.
+	 * @throws ModelSpecsException if the model specification is invalid.
+	 * @throws RunModelException if model inference cannot be run.
+	 * @throws IOException if an I/O error occurs.
+	 */
 	public <T extends RealType<T> & NativeType<T>, R extends RealType<R> & NativeType<R>> 
 	List<Tensor<R>> runOnTestImages() throws FileNotFoundException, ModelSpecsException, RunModelException, IOException {
 		LinkedHashMap<TensorSpec, String> testInputs = getTestInputs();

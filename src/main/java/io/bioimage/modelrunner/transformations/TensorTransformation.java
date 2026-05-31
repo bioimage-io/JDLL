@@ -43,8 +43,9 @@ public abstract class TensorTransformation
 	 * and axis ordering that of the input, and write the transformation results
 	 * in it.
 	 *
-	 * @param input the input parameter.
-	 * @return the resulting value.
+	 * @param <R> the R type parameter.
+	 * @param input the input to process.
+	 * @return the resulting tensor.
 	 */
 	public abstract < R extends RealType< R > & NativeType< R > > Tensor< FloatType > apply( Tensor< R > input );
 
@@ -52,7 +53,8 @@ public abstract class TensorTransformation
 	 * Applies this transformation to the specified input tensor, and overwrites
 	 * it with the results. The input tensor must of type <code>float</code>.
 	 *
-	 * @param input the input parameter.
+	 * @param <R> the R type parameter.
+	 * @param input the input to process.
 	 */
 	public abstract < R extends RealType< R > & NativeType< R > > void applyInPlace( Tensor< R > input );
 

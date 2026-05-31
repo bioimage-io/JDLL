@@ -74,6 +74,11 @@ public class ModelInfoWorker extends SwingWorker<String, Void> {
 
     @FunctionalInterface
     public interface TextLoadCallback {
+        /**
+         * Handles loaded text.
+         *
+         * @param text the text.
+         */
         void onTextLoaded(String text);
         
         default void onTextLoadFailed(Exception e) {

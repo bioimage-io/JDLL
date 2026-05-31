@@ -25,6 +25,11 @@ public class YoloIntegerTextField extends IntegerTextField {
 
     private static final long serialVersionUID = 3971057673179320112L;
 
+    /**
+     * Creates a new YoloIntegerTextField instance.
+     *
+     * @param placeholder the placeholder.
+     */
     public YoloIntegerTextField(String placeholder) {
         super(placeholder);
     }

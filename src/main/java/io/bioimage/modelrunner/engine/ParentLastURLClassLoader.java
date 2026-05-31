@@ -55,16 +55,23 @@ public class ParentLastURLClassLoader extends URLClassLoader {
 
     /**
      * Create a child-first/parent-last URLClassLoader
-     * @param urls
-     * 	the URLS to be included in the classpath of the new classloader
-     * @param parent
-     * 	parent classloader
+     *
+     * @param urls the URLs.
+     * @param parent the parent.
      */
 		public ParentLastURLClassLoader(URL[] urls, ClassLoader parent) {
 			super(urls, null);
 			helper = parent;
 		}
 
+	    /**
+	     * Loads the load class.
+	     *
+	     * @param name the name.
+	     * @param resolve the resolve.
+	     * @return the resulting class.
+	     * @throws ClassNotFoundException if class not found occurs.
+	     */
 	    @Override
 		/**
 		 * {@inheritDoc}
@@ -137,6 +144,12 @@ public class ParentLastURLClassLoader extends URLClassLoader {
 			return c;
 		}
 
+		/**
+		 * Returns the resource.
+		 *
+		 * @param name the name.
+		 * @return the resource.
+		 */
 		@Override
 		/**
 		 * {@inheritDoc}
@@ -223,9 +236,9 @@ public class ParentLastURLClassLoader extends URLClassLoader {
 	    /**
 	     * REturn the resource specified by the name.
 	     * The child resource has a bigger priority
-	     * @param name
-	     * 	name of the resource
-	     * @return input stream containing teh resource
+	     *
+	     * @param name the name.
+	     * @return the resource as stream.
 	     */
 		public InputStream getResourceAsStream(String name) {
 			URL url = getResource(name);

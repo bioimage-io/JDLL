@@ -262,12 +262,11 @@ public class DLModelPytorchProtected extends BaseModel {
     /**
      * Creates a new DLModelPytorchProtected.
      *
-     * @param modelFile the modelFile parameter
-     * @param callable the callable parameter
-     * @param importModule the importModule parameter
-     * @param weightsPath the weightsPath parameter
-     * @param kwargs the kwargs parameter
-     * @throws BuildException if there is an error building or opening the environment
+     * @param modelFile the model file.
+     * @param callable the callable.
+     * @param importModule the import module.
+     * @param weightsPath the weights path.
+     * @param kwargs the kwargs.
      */
     protected DLModelPytorchProtected(
             final String modelFile,
@@ -281,13 +280,13 @@ public class DLModelPytorchProtected extends BaseModel {
     /**
      * Creates a new DLModelPytorchProtected.
      *
-     * @param modelFile the modelFile parameter
-     * @param callable the callable parameter
-     * @param importModule the importModule parameter
-     * @param weightsPath the weightsPath parameter
-     * @param kwargs the kwargs parameter
-     * @param customJDLL the customJDLL parameter
-     * @throws BuildException if there is an error building or opening the environment
+     * @param modelFile the model file.
+     * @param callable the callable.
+     * @param importModule the import module.
+     * @param weightsPath the weights path.
+     * @param kwargs the kwargs.
+     * @param customJDLL the custom JDLL.
+     * @param device the device.
      */
     protected DLModelPytorchProtected(
             final String modelFile,
@@ -342,7 +341,7 @@ public class DLModelPytorchProtected extends BaseModel {
     /**
      * Creates the Python service used to run the model.
      *
-     * @throws BuildException if the environment cannot be opened
+     * @throws LoadModelException if the model cannot be loaded.
      */
     protected void createPythonService() throws LoadModelException {
         final Environment env;
@@ -390,8 +389,7 @@ public class DLModelPytorchProtected extends BaseModel {
     /**
      * Sets the maximum pixel count copied to shared memory for one image tensor.
      *
-     * @param maxSharedMemoryPixelCount
-     *     positive maximum pixel count
+     * @param maxSharedMemoryPixelCount the max shared memory pixel count.
      */
     public void setMaxSharedMemoryPixelCount(final long maxSharedMemoryPixelCount) {
         if (maxSharedMemoryPixelCount <= 0) {
@@ -588,6 +586,9 @@ public class DLModelPytorchProtected extends BaseModel {
         return code;
     }
 
+    /**
+     * Performs cancel current inference.
+     */
     public void cancelCurrentInference() {
         inferenceCancellationRequested = true;
         Task task = currentTask;
@@ -609,6 +610,15 @@ public class DLModelPytorchProtected extends BaseModel {
         closed = true;
     }
 
+    /**
+     * Returns the result of backbone single inference tile.
+     *
+     * @param <T> the T type parameter.
+     * @param <R> the R type parameter.
+     * @param inputs the inputs to process.
+     * @return the resulting list.
+     * @throws RunModelException if model inference cannot be run.
+     */
     @Override
     protected <T extends RealType<T> & NativeType<T>, R extends RealType<R> & NativeType<R>>
     List<Tensor<R>> backboneSingleInferenceTile(final List<Tensor<T>> inputs) throws RunModelException {
@@ -632,6 +642,15 @@ public class DLModelPytorchProtected extends BaseModel {
     	return outTensors;
     }
 
+    /**
+     * Returns the result of execute code.
+     *
+     * @param <T> the T type parameter.
+     * @param <R> the R type parameter.
+     * @param code the code.
+     * @return the resulting map.
+     * @throws RunModelException if model inference cannot be run.
+     */
     protected <T extends RealType<T> & NativeType<T>, R extends RealType<R> & NativeType<R>>
     Map<String, RandomAccessibleInterval<R>> executeCode(final String code) throws RunModelException {
         Throwable lastFailure = null;
@@ -746,10 +765,20 @@ public class DLModelPytorchProtected extends BaseModel {
         return code;
     }
 
+    /**
+     * Performs reset input transfer scales.
+     */
     protected void resetInputTransferScales() {
         inputTransferScales = new ArrayList<InputTransferScale>();
     }
 
+    /**
+     * Creates the shared memory arrays for inputs.
+     *
+     * @param <T> the T type parameter.
+     * @param tensors the tensors.
+     * @return the created list.
+     */
     protected <T extends RealType<T> & NativeType<T>>
     List<SharedMemoryArray> createSharedMemoryArraysForInputs(final List<Tensor<T>> tensors) {
         resetInputTransferScales();
@@ -1065,6 +1094,14 @@ public class DLModelPytorchProtected extends BaseModel {
         }
     }
 
+    /**
+     * Returns the result of reconstruct outputs.
+     *
+     * @param <T> the T type parameter.
+     * @param task the task.
+     * @return the resulting map.
+     * @throws IOException if an I/O error occurs.
+     */
     protected <T extends RealType<T> & NativeType<T>>
     Map<String, RandomAccessibleInterval<T>> reconstructOutputs(final Task task) throws IOException {
         buildOutShmList(task);
@@ -1215,8 +1252,7 @@ public class DLModelPytorchProtected extends BaseModel {
     /**
      * Sets the directory where the Python environment will be installed.
      *
-     * @param installationDir
-     *     directory where the Python environment will be created
+     * @param installationDir the installation directory.
      */
     public static void setInstallationDir(final String installationDir) {
         INSTALLATION_DIR = installationDir;
@@ -1232,11 +1268,7 @@ public class DLModelPytorchProtected extends BaseModel {
     /**
      * Resolves the environment specification for the current machine.
      *
-     * @param installationDir
-     *     the base directory where the environment should live
-     * @param environmentDirectoryName
-     *     the directory name to use for the environment
-     * @return the resolved environment specification
+     * @return the resulting pixi environment spec.
      */
     public static PixiEnvironmentSpec resolvePytorchEnv() {
     	String suffix = TOML_SUFFIX.get(PlatformDetection.getOs() + PlatformDetection.getArch() + PlatformDetection.isUsingRosseta());
@@ -1309,11 +1341,8 @@ public class DLModelPytorchProtected extends BaseModel {
     /**
      * Reads a classpath resource fully as UTF-8 text.
      *
-     * @param absoluteResourcePath
-     *     absolute classpath resource path
-     * @return the resource contents as UTF-8 text
-     * @throws RuntimeException
-     *     if the resource cannot be found or read
+     * @param absoluteResourcePath the absolute resource path.
+     * @return the resulting string.
      */
     protected static String readClasspathResourceAsString(final String absoluteResourcePath) {
         Objects.requireNonNull(absoluteResourcePath, "absoluteResourcePath");

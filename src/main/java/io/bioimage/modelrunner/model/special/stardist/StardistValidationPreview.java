@@ -24,15 +24,31 @@ public final class StardistValidationPreview {
 	private final int epoch;
 	private final String previewJsonPath;
 
+	/**
+	 * Creates a new StardistValidationPreview instance.
+	 *
+	 * @param epoch the epoch.
+	 * @param previewJsonPath the preview JSON path.
+	 */
 	public StardistValidationPreview(int epoch, String previewJsonPath) {
 		this.epoch = epoch;
 		this.previewJsonPath = previewJsonPath;
 	}
 
+	/**
+	 * Returns the epoch.
+	 *
+	 * @return the epoch.
+	 */
 	public int getEpoch() {
 		return epoch;
 	}
 
+	/**
+	 * Returns the preview JSON path.
+	 *
+	 * @return the preview JSON path.
+	 */
 	public String getPreviewJsonPath() {
 		return previewJsonPath;
 	}

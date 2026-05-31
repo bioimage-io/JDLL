@@ -227,10 +227,20 @@ public class CellposeGUI extends JPanel {
         });
 	    }
 
+	    /**
+	     * Returns the acceleration check box.
+	     *
+	     * @return the acceleration check box.
+	     */
 	    public JCheckBox getAccelerationCheckBox() {
 		return accelerationCheckBox;
 	    }
 
+	    /**
+	     * Returns whether acceleration enabled.
+	     *
+	     * @return true if acceleration enabled; false otherwise.
+	     */
 	    public boolean isAccelerationEnabled() {
 		return accelerationCheckBox.isVisible()
 				&& accelerationCheckBox.isSelected();

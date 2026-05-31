@@ -47,10 +47,11 @@ public final class ImgLib2Utils
      * Copies values from source to target NDArrays starting at the source offset position as the origin in target NDArrays and taking the given size. This
      * method assumes the target NDArray is already initialized with all the needed space.
      *
-     * @param sourceNDArray the sourceNDArray parameter.
-     * @param targetNDArray the targetNDArray parameter.
-     * @param sourceOffset the sourceOffset parameter.
-     * @param paddingBottomRight the paddingBottomRight parameter.
+     * @param <T> the T type parameter.
+     * @param sourceNDArray the source n-dimensional array.
+     * @param targetNDArray the target n-dimensional array.
+     * @param sourceOffset the source offset.
+     * @param paddingBottomRight the padding bottom right.
      */
     public static < T extends RealType< T > & NativeType< T > > void copyRaiData(RandomAccessibleInterval<T> sourceNDArray, RandomAccessibleInterval<T> targetNDArray, int[] sourceOffset,
             int[] paddingBottomRight) {
@@ -82,10 +83,11 @@ public final class ImgLib2Utils
      * Takes the {@code INDArray} and adds a mirror on the areas out of the patch (specified by patchStart and patchSize). Boundaries are checked with both
      * the input and the patch sequences. The result is added to the {@code patchSequence}.
      *
-     * @param inputNDArr the inputNDArr parameter.
-     * @param patchNDArr the patchNDArr parameter.
-     * @param newPatchStart the newPatchStart parameter.
-     * @param padding the padding parameter.
+     * @param <T> the T type parameter.
+     * @param inputNDArr the input n-dimensional arr.
+     * @param patchNDArr the patch n-dimensional arr.
+     * @param newPatchStart the new patch start.
+     * @param padding the padding.
      */
     public static < T extends RealType< T > & NativeType< T > > void addMirrorToPatchRai(RandomAccessibleInterval<T> inputNDArr, RandomAccessibleInterval<T> patchNDArr,
             int[] newPatchStart, int[][] padding) {
@@ -114,11 +116,12 @@ public final class ImgLib2Utils
      * Uses the {@code patchSequence} to fill the {@code resultSequence} at the {@code resultOffset} position. The copied interval in the patch is given by the
      * {@code patchOffset} and the {@code patchSize}.
      *
-     * @param resultNDArray the resultNDArray parameter.
-     * @param patchNDArray the patchNDArray parameter.
-     * @param resultOffset the resultOffset parameter.
-     * @param paddingFront the paddingFront parameter.
-     * @param areaOfInterestSize the areaOfInterestSize parameter.
+     * @param <T> the T type parameter.
+     * @param resultNDArray the result n-dimensional array.
+     * @param patchNDArray the patch n-dimensional array.
+     * @param resultOffset the result offset.
+     * @param paddingFront the padding front.
+     * @param areaOfInterestSize the area of interest size.
      */
     public static < T extends RealType< T > & NativeType< T > > void fillRaiAt(RandomAccessibleInterval<T> resultNDArray, 
     		RandomAccessibleInterval<T> patchNDArray, int[] resultOffset,
@@ -155,11 +158,10 @@ public final class ImgLib2Utils
 	
 	/**
 	 * Obtain a flat index position from a multidimensional index position
-	 * @param ind
-	 * 	the multidimensional indexes
-	 * @param size
-	 * 	size of the tensor
-	 * @return the index of the position as if it was a flat array
+	 *
+	 * @param ind the ind.
+	 * @param size the size.
+	 * @return the resulting int.
 	 */
 	public static int multidimensionalIntoFlatIndex(int[] ind, int[] size){
 		int flat = 0;
@@ -175,9 +177,9 @@ public final class ImgLib2Utils
 	/**
 	 * Create a copy of the int array but with 5 dimension. The difference in dimensions
 	 * is compensated by 0s
-	 * @param arr
-	 * 	the array to be extended
-	 * @return array extended with zeros
+	 *
+	 * @param arr the arr.
+	 * @return the resulting int.
 	 */
 	public static int[] to5DFillWith0(int[] arr) {
 		int[] nArr = new int[5];
@@ -189,9 +191,9 @@ public final class ImgLib2Utils
 	/**
 	 * Create a copy of the int array but with 5 dimension. The difference in dimensions
 	 * is compensated by 1s
-	 * @param arr
-	 * 	the array to be extended
-	 * @return array extended with ones
+	 *
+	 * @param arr the arr.
+	 * @return the resulting int.
 	 */
 	public static int[] to5DFillWith1(int[] arr) {
 		int[] nArr = new int[] {1, 1, 1, 1, 1};
@@ -204,8 +206,9 @@ public final class ImgLib2Utils
      * Creates an array containing the size of the given {@link RandomAccessibleInterval}.
      * It is the same as teh shape
      *
-     * @param s the s parameter.
-     * @return the resulting array.
+     * @param <T> the T type parameter.
+     * @param s the s.
+     * @return the RAI size array.
      */
     public static < T extends RealType< T > & NativeType< T > > int[] getRaiSizeArray(RandomAccessibleInterval<T> s)
     {

@@ -44,6 +44,9 @@ public class YoloModelSelectionPanel extends JPanel {
     protected final JComboBox<YoloModelSelectionEntry> modelComboBox = new JComboBox<YoloModelSelectionEntry>();
     protected final JButton browseButton = new JButton("Browse");
 
+    /**
+     * Creates a new YoloModelSelectionPanel instance.
+     */
     protected YoloModelSelectionPanel() {
         setLayout(null);
         setOpaque(false);
@@ -57,6 +60,9 @@ public class YoloModelSelectionPanel extends JPanel {
         add(browseButton);
     }
 
+    /**
+     * Performs do layout.
+     */
     @Override
     public void doLayout() {
         int w = Math.max(0, getWidth());
@@ -72,6 +78,11 @@ public class YoloModelSelectionPanel extends JPanel {
         YoloUiUtils.applyResponsiveText(browseButton, buttonW - 8, h);
     }
 
+    /**
+     * Sets the models.
+     *
+     * @param models the models.
+     */
     public void setModels(LinkedHashMap<String, String> models) {
         DefaultComboBoxModel<YoloModelSelectionEntry> comboModel =
                 new DefaultComboBoxModel<YoloModelSelectionEntry>();
@@ -83,20 +94,40 @@ public class YoloModelSelectionPanel extends JPanel {
         modelComboBox.setModel(comboModel);
     }
 
+    /**
+     * Returns the selected model key.
+     *
+     * @return the selected model key.
+     */
     public String getSelectedModelKey() {
         YoloModelSelectionEntry selected = (YoloModelSelectionEntry) modelComboBox.getSelectedItem();
         return selected == null ? null : selected.getKey();
     }
 
+    /**
+     * Returns the selected model value.
+     *
+     * @return the selected model value.
+     */
     public String getSelectedModelValue() {
         YoloModelSelectionEntry selected = (YoloModelSelectionEntry) modelComboBox.getSelectedItem();
         return selected == null ? null : selected.getValue();
     }
 
+    /**
+     * Returns the model combo box.
+     *
+     * @return the model combo box.
+     */
     public JComboBox<YoloModelSelectionEntry> getModelComboBox() {
         return modelComboBox;
     }
 
+    /**
+     * Returns the browse button.
+     *
+     * @return the browse button.
+     */
     public JButton getBrowseButton() {
         return browseButton;
     }
@@ -104,11 +135,23 @@ public class YoloModelSelectionPanel extends JPanel {
     private class ModelDropHandler extends TransferHandler {
         private static final long serialVersionUID = 3472435032725300446L;
 
+        /**
+         * Returns whether can import.
+         *
+         * @param support the support.
+         * @return true if can import; false otherwise.
+         */
         @Override
         public boolean canImport(TransferSupport support) {
             return support.isDataFlavorSupported(DataFlavor.javaFileListFlavor);
         }
 
+        /**
+         * Returns whether import data.
+         *
+         * @param support the support.
+         * @return true if import data; false otherwise.
+         */
         @Override
         public boolean importData(TransferSupport support) {
             try {

@@ -87,23 +87,22 @@ public interface GuiAdapter {
 	
 	/**
 	 * Create the {@link RunnerAdapter} used to run a model
-	 * @param descriptor
-	 * 	{@link ModelDescriptor} containing information about the model
-	 * @return and object that can be used to run a model
-	 * @throws IOException if there is any error related to engine installation for Python models
-	 * @throws LoadEngineException if there is any error loading an engine or model
+	 *
+	 * @param descriptor the descriptor.
+	 * @return the created runner adapter.
+	 * @throws IOException if an I/O error occurs.
+	 * @throws LoadEngineException if the engine cannot be loaded.
 	 */
 	public RunnerAdapter createRunner(ModelDescriptor descriptor) throws IOException, LoadEngineException;
 	
 	/**
 	 * Create the {@link RunnerAdapter} used to run a model
-	 * @param descriptor
-	 * 	{@link ModelDescriptor} containing information about the model
-	 * @param enginesPath
-	 * 	path to the Java engines installation folder
-	 * @return and object that can be used to run a model
-	 * @throws IOException if there is any error related to engine installation for Python models
-	 * @throws LoadEngineException if there is any error loading an engine or model
+	 *
+	 * @param descriptor the descriptor.
+	 * @param enginesPath the engines path.
+	 * @return the created runner adapter.
+	 * @throws IOException if an I/O error occurs.
+	 * @throws LoadEngineException if the engine cannot be loaded.
 	 */
 	public RunnerAdapter createRunner(ModelDescriptor descriptor, String enginesPath) throws IOException, LoadEngineException;
 	
@@ -111,17 +110,19 @@ public interface GuiAdapter {
 	 * This method should contain the code to convert a {@link RandomAccessibleInterval} into the consumer software
 	 * image object and display it
 	 *
-	 * @param rai the rai parameter.
-	 * @param axesOrder the axesOrder parameter.
-	 * @param imTitle the imTitle parameter.
+	 * @param <T> the T type parameter.
+	 * @param rai the RAI.
+	 * @param axesOrder the axes order.
+	 * @param imTitle the image title.
 	 */
 	public <T extends RealType<T> & NativeType<T>> void displayRai(RandomAccessibleInterval<T> rai, String axesOrder, String imTitle);
 
 	/**
 	 * Get the input tensors as described in the {@link ModelDescriptor}
 	 *
-	 * @param descriptor the descriptor parameter.
-	 * @return the resulting list.
+	 * @param <T> the T type parameter.
+	 * @param descriptor the descriptor.
+	 * @return the input tensors.
 	 */
 	public <T extends RealType<T> & NativeType<T>> List<Tensor<T>> getInputTensors(ModelDescriptor descriptor);
 
@@ -135,16 +136,17 @@ public interface GuiAdapter {
 	/**
 	 * Convert a map containing the consumer software image objects into the tensors required for a model
 	 *
-	 * @param inputs the inputs parameter.
-	 * @param descriptor the descriptor parameter.
+	 * @param <T> the T type parameter.
+	 * @param inputs the inputs to process.
+	 * @param descriptor the descriptor.
 	 * @return the resulting list.
 	 */
 	public <T extends RealType<T> & NativeType<T>> List<Tensor<T>> convertToInputTensors(Map<String, Object> inputs, ModelDescriptor descriptor);
 
 	/**
 	 * Notify to the consumer software which model has been run
-	 * @param modelAbsPath
-	 * 	the absolute path of the model that has been run
+	 *
+	 * @param modelAbsPath the model abs path.
 	 */
 	public void notifyModelUsed(String modelAbsPath);
 }

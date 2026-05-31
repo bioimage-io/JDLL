@@ -33,15 +33,12 @@ public interface DeepLearningEngineInterface
 	/**
 	 * Simply run inference on the images provided. If the dimensions, number, data type or other
 	 * characteristic of the tensor is not correct, an exception will be thrown.
-	 * @param <T>
-	 * 	input data type
-	 * @param <R>
-	 * 	ouptut data type
-	 * @param inputs
-	 * 	the list of {@link RandomAccessibleInterval} that will be used as inputs
-	 * @return a list of {@link RandomAccessibleInterval} that has been outputed by the model
-	 * @throws RunModelException
-	 *             if there is an error in the execution of the model
+	 *
+	 * @param <T> the T type parameter.
+	 * @param <R> the R type parameter.
+	 * @param inputs the inputs to process.
+	 * @return the resulting list.
+	 * @throws RunModelException if model inference cannot be run.
 	 */
 	public <T extends RealType<T> & NativeType<T>, R extends RealType<R> & NativeType<R>>
 	List<RandomAccessibleInterval<R>> inference(List<RandomAccessibleInterval<T>> inputs) throws RunModelException;
@@ -50,17 +47,12 @@ public interface DeepLearningEngineInterface
 	 * Method that the interface implements to make inference. In the class that
 	 * implements the interface, the code to run the model on the tensors should
 	 * go here.
-	 * 
-	 * @param <T>
-	 * 	ImgLib2 data type of the inputs
-	 * @param <R>
-	 * 	ImgLib2 data type of the outputs, both can be the same
-	 * @param inputTensors
-	 *            list containing the input tensors
-	 * @param outputTensors
-	 *            list containing only the information about output tensors
-	 * @throws RunModelException
-	 *             if there is an error in the execution of the model
+	 *
+	 * @param <T> the T type parameter.
+	 * @param <R> the R type parameter.
+	 * @param inputTensors the input tensors to process.
+	 * @param outputTensors the output tensors to populate.
+	 * @throws RunModelException if model inference cannot be run.
 	 */
 	public <T extends RealType<T> & NativeType<T>, R extends RealType<R> & NativeType<R>>
 	void run( List< Tensor  < T > > inputTensors, List< Tensor  < R > > outputTensors ) throws RunModelException;
@@ -69,16 +61,10 @@ public interface DeepLearningEngineInterface
 	 * Load the model with the corresponding engine on the particular
 	 * independent ClassLoader. This is done to be able to load the model only
 	 * one time and use it several times.
-	 * 
-	 * @param modelFolder
-	 *            String path to the folder where all the components of the
-	 *            model are stored
-	 * @param modelSource
-	 *            String path to the actual model file. In Pytorch is the path
-	 *            to a .pt file and for Tf it is the same as the modelFolder
-	 * @throws LoadModelException
-	 *             if there is any problem loading the model, and the model
-	 *             cannot be loaded
+	 *
+	 * @param modelFolder the model folder.
+	 * @param modelSource the model source.
+	 * @throws LoadModelException if the model cannot be loaded.
 	 */
 	public void loadModel( String modelFolder, String modelSource ) throws LoadModelException;
 

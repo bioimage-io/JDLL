@@ -40,6 +40,18 @@ public final class Detection {
     private final double confidence;
     private final int classId;
 
+    /**
+     * Creates a new Detection instance.
+     *
+     * @param parentName the parent name.
+     * @param batchIndex the batch index.
+     * @param x1 the x1.
+     * @param y1 the y1.
+     * @param x2 the x2.
+     * @param y2 the y2.
+     * @param confidence the confidence.
+     * @param classId the class ID.
+     */
     public Detection(String parentName, int batchIndex, double x1, double y1, double x2, double y2,
             double confidence, int classId) {
         this.parentName = parentName;
@@ -52,34 +64,74 @@ public final class Detection {
         this.classId = classId;
     }
 
+    /**
+     * Returns the parent name.
+     *
+     * @return the parent name.
+     */
     public String getParentName() {
         return parentName;
     }
 
+    /**
+     * Returns the batch index.
+     *
+     * @return the batch index.
+     */
     public int getBatchIndex() {
         return batchIndex;
     }
 
+    /**
+     * Returns the x1.
+     *
+     * @return the x1.
+     */
     public double getX1() {
         return x1;
     }
 
+    /**
+     * Returns the y1.
+     *
+     * @return the y1.
+     */
     public double getY1() {
         return y1;
     }
 
+    /**
+     * Returns the x2.
+     *
+     * @return the x2.
+     */
     public double getX2() {
         return x2;
     }
 
+    /**
+     * Returns the y2.
+     *
+     * @return the y2.
+     */
     public double getY2() {
         return y2;
     }
 
+    /**
+     * Returns the confidence.
+     *
+     * @return the confidence.
+     */
     public double getConfidence() {
         return confidence;
     }
 
+    /**
+     * Returns the class ID.
+     *
+     * @return the class ID.
+     */
     public int getClassId() {
         return classId;
     }

@@ -133,6 +133,11 @@ public class DLModelJava extends BaseModel
 		setEngineClassLoader( classLoader );
 	}
 
+	/**
+	 * Loads the load model.
+	 *
+	 * @throws LoadModelException if the model cannot be loaded.
+	 */
 	@Override
 	/**
 	 * Load the model wanted to make inference into the particular ClassLoader
@@ -150,6 +155,9 @@ public class DLModelJava extends BaseModel
 		loaded = true;
 	}
 
+	/**
+	 * Closes resources held by this object.
+	 */
 	@Override
 	/**
 	 * Close the Deep LEarning model in the ClassLoader where the Deep Learning
@@ -173,17 +181,12 @@ public class DLModelJava extends BaseModel
 	/**
 	 * Run a model on the input tensors and get the output tensors. This just does inference,
 	 * no tiling, pre-processing, post-processing or anything else.
-	 * 
-	 * @param <T>
-	 * 	ImgLib2 data type of the input tensors
-	 * @param <R>
-	 * 	ImgLib2 data type of the output tensors, it can be the same as in the input
-	 * @param inTensors
-	 *            input tensors containing all the tensor data
-	 * @param outTensors
-	 *            expected output tensors. Their backend data will be rewritten with the result of the inference
-	 * @throws RunModelException
-	 *             if the is any problem running the model
+	 *
+	 * @param <T> the T type parameter.
+	 * @param <R> the R type parameter.
+	 * @param inTensors the in tensors.
+	 * @return the resulting list.
+	 * @throws RunModelException if model inference cannot be run.
 	 */
 	protected <T extends RealType<T> & NativeType<T>, R extends RealType<R> & NativeType<R>> 
 	List< Tensor < R > > backboneSingleInferenceTile( List< Tensor < T > > inTensors) throws RunModelException
@@ -225,13 +228,11 @@ public class DLModelJava extends BaseModel
 	 * If this is not set, the model will process every input in just one run.
 	 * however, if this is set, the model will always do tiling when running following
 	 * this specifications
-	 * 
+	 *
 	 * If this is called, automatically sets {@link #tiling} to true
-	 * 
-	 * @param inputTiles
-	 * 	the specifications of how each of the input images can be tiled
-	 * @param outputTiles
-	 * 	the specifications of how each of the output images will be tiled
+	 *
+	 * @param inputTiles the input tiles.
+	 * @param outputTiles the output tiles.
 	 */
 	public void setTileInfo(List<TileInfo> inputTiles, List<TileInfo> outputTiles) {
 		this.inputTiles = inputTiles;
@@ -241,10 +242,10 @@ public class DLModelJava extends BaseModel
 	
 	/**
 	 * Set a consumer that can be used to get the number of tiles
-	 * in which the input images will be separated and 
+	 * in which the input images will be separated and
 	 * the tile that is being processed
-	 * @param tileCounter
-	 * 	{@link TilingConsumer} used to track the inference of tiles
+	 *
+	 * @param tileCounter the tile counter.
 	 */
 	public void setTilingCounter(TilingConsumer tileCounter) {
 		this.tileCounter = tileCounter;
@@ -418,8 +419,8 @@ public class DLModelJava extends BaseModel
 		
 		/**
 		 * Set the total numer of tiles that need to be processed
-		 * @param totalTiles
-		 * 	Total tiles that need to be processed
+		 *
+		 * @param totalTiles the total tiles.
 		 */
 	    public void acceptTotal(Long totalTiles) {
 	        this.totalTiles = totalTiles;
@@ -427,8 +428,8 @@ public class DLModelJava extends BaseModel
 	    
 	    /**
 	     * Set the current number of tiles that have already been processed
-	     * @param tilesProcessed
-	     * 	The current number of tiles that have already been processed
+	     *
+	     * @param tilesProcessed the tiles processed.
 	     */
 	    public void acceptProgress(Long tilesProcessed) {
 	        this.tilesProcessed = tilesProcessed;

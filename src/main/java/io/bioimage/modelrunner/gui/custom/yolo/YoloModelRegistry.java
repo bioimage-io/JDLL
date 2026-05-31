@@ -59,6 +59,12 @@ public final class YoloModelRegistry {
 
     private YoloModelRegistry() {}
 
+    /**
+     * Builds the model entries.
+     *
+     * @param modelsDir the models directory.
+     * @return the created linked hash map.
+     */
     public static LinkedHashMap<String, String> buildModelEntries(String modelsDir) {
         LinkedHashMap<String, String> models = new LinkedHashMap<String, String>();
         File yoloDir = modelsDir == null ? new File(YOLO_MODELS_SUBDIR) : new File(modelsDir, YOLO_MODELS_SUBDIR);
@@ -91,6 +97,11 @@ public final class YoloModelRegistry {
         return models;
     }
 
+    /**
+     * Builds the scratch architecture entries.
+     *
+     * @return the created linked hash map.
+     */
     public static LinkedHashMap<String, String> buildScratchArchitectureEntries() {
         LinkedHashMap<String, String> architectures = new LinkedHashMap<String, String>();
         for (String[] architecture : SCRATCH_ARCHITECTURES) {
@@ -99,6 +110,12 @@ public final class YoloModelRegistry {
         return architectures;
     }
 
+    /**
+     * Returns whether known scratch architecture.
+     *
+     * @param architecture the architecture.
+     * @return true if known scratch architecture; false otherwise.
+     */
     public static boolean isKnownScratchArchitecture(String architecture) {
         if (architecture == null) {
             return false;
@@ -111,14 +128,32 @@ public final class YoloModelRegistry {
         return false;
     }
 
+    /**
+     * Returns whether pretrained weights file.
+     *
+     * @param fileName the file name.
+     * @return true if pretrained weights file; false otherwise.
+     */
     public static boolean isPretrainedWeightsFile(String fileName) {
         return expectedPretrainedSize(fileName) != null;
     }
 
+    /**
+     * Returns the result of expected pretrained size.
+     *
+     * @param fileName the file name.
+     * @return the resulting long.
+     */
     public static Long expectedPretrainedSize(String fileName) {
         return fileName == null ? null : PRETRAINED_WEIGHTS_SIZE.get(normalizePretrainedKey(fileName));
     }
 
+    /**
+     * Returns whether installed.
+     *
+     * @param modelPath the model path.
+     * @return true if installed; false otherwise.
+     */
     public static boolean isInstalled(String modelPath) {
         if (modelPath == null) {
             return false;
@@ -134,6 +169,12 @@ public final class YoloModelRegistry {
         return expectedSize == null || expectedSize.longValue() == modelFile.length();
     }
 
+    /**
+     * Returns whether can download.
+     *
+     * @param modelPath the model path.
+     * @return true if can download; false otherwise.
+     */
     public static boolean canDownload(String modelPath) {
         if (modelPath == null) {
             return false;
@@ -143,6 +184,12 @@ public final class YoloModelRegistry {
                 || expectedPretrainedSize(modelFile.getName()) != null;
     }
 
+    /**
+     * Returns the result of download URL.
+     *
+     * @param modelPath the model path.
+     * @return the resulting string.
+     */
     public static String downloadUrl(String modelPath) {
         return String.format(PRETRAINED_URL_FORMAT, new File(modelPath).getName());
     }

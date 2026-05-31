@@ -62,6 +62,9 @@ public class YoloImageSourcePanel extends JPanel {
     private final FileDropHandler systemPathDropHandler;
     private boolean systemPathSelectionConfirmed;
 
+    /**
+     * Creates a new YoloImageSourcePanel instance.
+     */
     protected YoloImageSourcePanel() {
         setLayout(null);
         setOpaque(false);
@@ -99,16 +102,31 @@ public class YoloImageSourcePanel extends JPanel {
         openImagesRadio.addActionListener(e -> updateEnabledState());
         systemImagesRadio.addActionListener(e -> updateEnabledState());
         systemPathField.getDocument().addDocumentListener(new DocumentListener() {
+            /**
+             * Performs insert update.
+             *
+             * @param e the e.
+             */
             @Override
             public void insertUpdate(DocumentEvent e) {
                 invalidateSystemPathSelection();
             }
 
+            /**
+             * Performs remove update.
+             *
+             * @param e the e.
+             */
             @Override
             public void removeUpdate(DocumentEvent e) {
                 invalidateSystemPathSelection();
             }
 
+            /**
+             * Performs changed update.
+             *
+             * @param e the e.
+             */
             @Override
             public void changedUpdate(DocumentEvent e) {
                 invalidateSystemPathSelection();
@@ -135,6 +153,9 @@ public class YoloImageSourcePanel extends JPanel {
         openImagesComboBox.setSelectedIndex(nextIndex);
     }
 
+    /**
+     * Performs do layout.
+     */
     @Override
     public void doLayout() {
         int w = Math.max(0, getWidth());
@@ -180,10 +201,20 @@ public class YoloImageSourcePanel extends JPanel {
         systemImagesRadio.setOpaque(false);
     }
 
+    /**
+     * Sets the open images.
+     *
+     * @param entries the entries.
+     */
     public void setOpenImages(List<YoloImageSelectionEntry> entries) {
         ((YoloOpenImageComboBoxModel) openImagesComboBox.getModel()).setEntries(entries);
     }
 
+    /**
+     * Sets the open image titles.
+     *
+     * @param names the names.
+     */
     public void setOpenImageTitles(List<String> names) {
         List<YoloImageSelectionEntry> entries = new ArrayList<YoloImageSelectionEntry>();
         for (int i = 0; i < names.size(); i++) {
@@ -192,6 +223,9 @@ public class YoloImageSourcePanel extends JPanel {
         setOpenImages(entries);
     }
 
+    /**
+     * Performs update enabled state.
+     */
     public void updateEnabledState() {
         boolean openSelected = openImagesRadio.isSelected();
         boolean hasOpenImage = hasValidOpenImageSelection();
@@ -208,10 +242,20 @@ public class YoloImageSourcePanel extends JPanel {
         systemPathHelpIcon.setEnabled(systemSelected);
     }
 
+    /**
+     * Returns whether has valid open image selection.
+     *
+     * @return true if has valid open image selection; false otherwise.
+     */
     public boolean hasValidOpenImageSelection() {
         return openImagesComboBox.getSelectedItem() instanceof YoloImageSelectionEntry;
     }
 
+    /**
+     * Returns whether has valid system path selection.
+     *
+     * @return true if has valid system path selection; false otherwise.
+     */
     public boolean hasValidSystemPathSelection() {
         if (!systemPathSelectionConfirmed) {
             return false;
@@ -224,46 +268,101 @@ public class YoloImageSourcePanel extends JPanel {
         return YoloImageFiles.isValidDroppedPath(file);
     }
 
+    /**
+     * Returns whether has valid selected source.
+     *
+     * @return true if has valid selected source; false otherwise.
+     */
     public boolean hasValidSelectedSource() {
         return openImagesRadio.isSelected() ? hasValidOpenImageSelection() : hasValidSystemPathSelection();
     }
 
+    /**
+     * Returns the open images radio.
+     *
+     * @return the open images radio.
+     */
     public JRadioButton getOpenImagesRadio() {
         return openImagesRadio;
     }
 
+    /**
+     * Returns the system images radio.
+     *
+     * @return the system images radio.
+     */
     public JRadioButton getSystemImagesRadio() {
         return systemImagesRadio;
     }
 
+    /**
+     * Returns the open images combo box.
+     *
+     * @return the open images combo box.
+     */
     public JComboBox<YoloImageSelectionEntry> getOpenImagesComboBox() {
         return openImagesComboBox;
     }
 
+    /**
+     * Returns the system path field.
+     *
+     * @return the system path field.
+     */
     public YoloPlaceholderTextField getSystemPathField() {
         return systemPathField;
     }
 
+    /**
+     * Returns the browse button.
+     *
+     * @return the browse button.
+     */
     public JButton getBrowseButton() {
         return browseButton;
     }
 
+    /**
+     * Returns the previous image button.
+     *
+     * @return the previous image button.
+     */
     public JButton getPreviousImageButton() {
         return previousImageButton;
     }
 
+    /**
+     * Returns the next image button.
+     *
+     * @return the next image button.
+     */
     public JButton getNextImageButton() {
         return nextImageButton;
     }
 
+    /**
+     * Returns the focus button.
+     *
+     * @return the focus button.
+     */
     public JButton getFocusButton() {
         return focusButton;
     }
 
+    /**
+     * Sets the system path drop consumer.
+     *
+     * @param dropConsumer the drop consumer callback.
+     */
     public void setSystemPathDropConsumer(Consumer<File> dropConsumer) {
         systemPathDropHandler.setDropConsumer(dropConsumer);
     }
 
+    /**
+     * Sets the system path selection confirmed.
+     *
+     * @param confirmed the confirmed.
+     */
     public void setSystemPathSelectionConfirmed(boolean confirmed) {
         systemPathSelectionConfirmed = confirmed;
         updateEnabledState();
@@ -282,11 +381,23 @@ public class YoloImageSourcePanel extends JPanel {
             this.dropConsumer = dropConsumer;
         }
 
+        /**
+         * Returns whether can import.
+         *
+         * @param support the support.
+         * @return true if can import; false otherwise.
+         */
         @Override
         public boolean canImport(TransferSupport support) {
             return support.isDataFlavorSupported(DataFlavor.javaFileListFlavor);
         }
 
+        /**
+         * Returns whether import data.
+         *
+         * @param support the support.
+         * @return true if import data; false otherwise.
+         */
         @Override
         public boolean importData(TransferSupport support) {
             try {

@@ -124,15 +124,34 @@ public abstract class ConsumerInterface {
 	/**
 	 * Gets focused image as rai.
 	 *
-	 * @return the resulting value.
+	 * @param <T> the T type parameter.
+	 * @return the focused image as RAI.
 	 */
 	public abstract < T extends RealType< T > & NativeType< T > > RandomAccessibleInterval<T> getFocusedImageAsRai();
 	
+	/**
+	 * Performs display image.
+	 *
+	 * @param <T> the T type parameter.
+	 * @param rai the RAI.
+	 * @param axes the axes.
+	 * @param name the name.
+	 */
 	public abstract < T extends RealType< T > & NativeType< T > > 
 	void displayImage(RandomAccessibleInterval<T> rai, String axes, String name);
 	
+	/**
+	 * Performs display detections.
+	 *
+	 * @param detections the detections.
+	 */
 	public abstract void displayDetections(List<Detection> detections);
 
+	/**
+	 * Performs save detections.
+	 *
+	 * @param detectionsByImagePath the detections by image path.
+	 */
 	public void saveDetections(Map<String, List<Detection>> detectionsByImagePath) {
 		// Optional hook for host applications to persist ROIs from file-system inference.
 	}

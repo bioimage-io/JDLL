@@ -57,10 +57,9 @@ public class DeepImageJExecutionConfig
 
     /**
      * Creates an execution configuration information instance from the element map.
-     * 
-     * @param yamlMap
-     *        The element map.
-     * @return The execution configuration instance.
+     *
+     * @param yamlMap the YAML map.
+     * @return the created deep image j execution config.
      */
     public static DeepImageJExecutionConfig build(Map<String, Object> yamlMap)
     {

@@ -247,13 +247,10 @@ public class EngineInfo
 
 	/**
 	 * Set the parameters to launch the wanted Bioengine instance.
-	 * 
-	 * @param serverURL
-	 * 	server where the instance of the Bioengine we want to connect to is hosted
-	 * @return an object containing all the information needed to launch a Deep
-	 * 	learning framework in the bioengine
-	 * @throws IllegalArgumentException if an engine that cannot be loaded together with the wanted engine
-	 * 	has already been loaded
+	 *
+	 * @param serverURL the server URL.
+	 * @return the resulting engine info.
+	 * @throws IllegalArgumentException if an argument is invalid.
 	 */
 	public static EngineInfo defineBioengine(String serverURL ) throws IllegalArgumentException
 	{	
@@ -265,41 +262,33 @@ public class EngineInfo
 	/**
 	 * Set the parameters to launch the wanted Deep Learning framework (engine)
 	 * and load DL models.
-	 * 
-	 * In this case neither CPU, nor GPU compatibility are not defined. The method will try to 
+	 *
+	 * In this case neither CPU, nor GPU compatibility are not defined. The method will try to
 	 * find an engine compatible with CPU and GPU, but they are not required.
-	 * 
+	 *
 	 * If the engine specified is not installed, the method will return null.
 	 * The engine of interest needs to be installed first.
 	 * A good way to check whether the engine of interest exists or not
 	 * is: {@link InstalledEngines#checkEngineWithArgsInstalledForOS(String, String, Boolean, Boolean, String)}
-	 * 
-     * 
-     * Note that this method looks at the framework versions specified at:
-     * https://github.com/bioimage-io/JDLL/blob/main/src/main/resources/supportedVersions.json
-     * 
-     * This file contains all the versions for each framework supported by JDLL.
-     * Note that several of the Python versions point to a single Java API version. This
-     * happens because not every Python version has an exact Java APi made for it. HOwever,
-     * the Java API is made with enough flexibility so that is compatible with the previous
-     * Python versions that do not have an API. 
-     * BEcause of this, when setting, for example, version Tensorflow 2.8, any version that uses the same
-     * Java API and that is installed will be allowed to be used. Thus for Tensorflow 2.8, 
-     * Tensorflow 2.10.1 will be used as both are completely compatible.
-     * 
-	 * 
-	 * @param framework
-	 *            name of the Deep Learning framework (engine). For example:
-	 *            Pytorch, Tensorflow....
-	 * @param version
-	 *            version of the training Deep Learning framework (engine)
-	 * @param jarsDirectory
-	 *            directory where the folder containing the JARs needed to
-	 *            launch the corresponding engine are located
-	 * @return an object containing all the information needed to launch a Deep
-	 *         learning framework or null if the wanted version engine is not installed
-	 * @throws IllegalArgumentException if an engine that cannot be loaded together with the wanted engine
-	 * 	has already been loaded
+	 *
+	 *
+	 * Note that this method looks at the framework versions specified at:
+	 * https://github.com/bioimage-io/JDLL/blob/main/src/main/resources/supportedVersions.json
+	 *
+	 * This file contains all the versions for each framework supported by JDLL.
+	 * Note that several of the Python versions point to a single Java API version. This
+	 * happens because not every Python version has an exact Java APi made for it. HOwever,
+	 * the Java API is made with enough flexibility so that is compatible with the previous
+	 * Python versions that do not have an API.
+	 * BEcause of this, when setting, for example, version Tensorflow 2.8, any version that uses the same
+	 * Java API and that is installed will be allowed to be used. Thus for Tensorflow 2.8,
+	 * Tensorflow 2.10.1 will be used as both are completely compatible.
+	 *
+	 * @param framework the framework.
+	 * @param version the version.
+	 * @param jarsDirectory the jars directory.
+	 * @return the resulting engine info.
+	 * @throws IllegalArgumentException if an argument is invalid.
 	 */
 	public static EngineInfo defineDLEngine( String framework, String version, String jarsDirectory ) throws IllegalArgumentException
 	{
@@ -338,43 +327,34 @@ public class EngineInfo
 	/**
 	 * Set the parameters to launch the wanted Deep Learning framework (engine)
 	 * and load DL models.
-	 * 
-	 * In this case CPU compatibility is not defined. The method will try to 
+	 *
+	 * In this case CPU compatibility is not defined. The method will try to
 	 * find an engine compatible with CPU but it is not required.
-	 * 
+	 *
 	 * If the engine specified is not installed, the method will return null.
 	 * The engine of interest needs to be installed first.
 	 * A good way to check whether the engine of interest exists or not
 	 * is: {@link InstalledEngines#checkEngineWithArgsInstalledForOS(String, String, Boolean, Boolean, String)}
-	 * 
-     * 
-     * Note that this method looks at the framework versions specified at:
-     * https://github.com/bioimage-io/JDLL/blob/main/src/main/resources/supportedVersions.json
-     * 
-     * This file contains all the versions for each framework supported by JDLL.
-     * Note that several of the Python versions point to a single Java API version. This
-     * happens because not every Python version has an exact Java APi made for it. HOwever,
-     * the Java API is made with enough flexibility so that is compatible with the previous
-     * Python versions that do not have an API. 
-     * BEcause of this, when setting, for example, version Tensorflow 2.8, any version that uses the same
-     * Java API and that is installed will be allowed to be used. Thus for Tensorflow 2.8, 
-     * Tensorflow 2.10.1 will be used as both are completely compatible.
-     * 
-	 * 
-	 * @param framework
-	 *            name of the Deep Learning framework (engine). For example:
-	 *            Pytorch, Tensorflow....
-	 * @param version
-	 *            version of the training Deep Learning framework (engine)
-	 * @param gpu
-	 *            whether the engine can use GPU or not
-	 * @param jarsDirectory
-	 *            directory where the folder containing the JARs needed to
-	 *            launch the corresponding engine are located
-	 * @return an object containing all the information needed to launch a Deep
-	 *         learning framework or null if the wanted version engine is not installed
-	 * @throws IllegalArgumentException if an engine that cannot be loaded together with the wanted engine
-	 * 	has already been loaded
+	 *
+	 *
+	 * Note that this method looks at the framework versions specified at:
+	 * https://github.com/bioimage-io/JDLL/blob/main/src/main/resources/supportedVersions.json
+	 *
+	 * This file contains all the versions for each framework supported by JDLL.
+	 * Note that several of the Python versions point to a single Java API version. This
+	 * happens because not every Python version has an exact Java APi made for it. HOwever,
+	 * the Java API is made with enough flexibility so that is compatible with the previous
+	 * Python versions that do not have an API.
+	 * BEcause of this, when setting, for example, version Tensorflow 2.8, any version that uses the same
+	 * Java API and that is installed will be allowed to be used. Thus for Tensorflow 2.8,
+	 * Tensorflow 2.10.1 will be used as both are completely compatible.
+	 *
+	 * @param framework the framework.
+	 * @param version the version.
+	 * @param gpu whether to use GPU.
+	 * @param jarsDirectory the jars directory.
+	 * @return the resulting engine info.
+	 * @throws IllegalArgumentException if an argument is invalid.
 	 */
 	public static EngineInfo defineDLEngine( String framework, String version, boolean gpu, String jarsDirectory )
 												throws IllegalArgumentException
@@ -401,42 +381,32 @@ public class EngineInfo
 	/**
 	 * Set the parameters to launch the wanted Deep Learning framework (engine)
 	 * and load DL models.
-	 * 
+	 *
 	 * If the engine specified is not installed, the method will return null.
 	 * The engine of interest needs to be installed first.
 	 * A good way to check whether the engine of interest exists or not
 	 * is: {@link InstalledEngines#checkEngineWithArgsInstalledForOS(String, String, Boolean, Boolean, String)}
-	 * 
-     * 
-     * Note that this method looks at the framework versions specified at:
-     * https://github.com/bioimage-io/JDLL/blob/main/src/main/resources/supportedVersions.json
-     * 
-     * This file contains all the versions for each framework supported by JDLL.
-     * Note that several of the Python versions point to a single Java API version. This
-     * happens because not every Python version has an exact Java APi made for it. HOwever,
-     * the Java API is made with enough flexibility so that is compatible with the previous
-     * Python versions that do not have an API. 
-     * BEcause of this, when setting, for example, version Tensorflow 2.8, any version that uses the same
-     * Java API and that is installed will be allowed to be used. Thus for Tensorflow 2.8, 
-     * Tensorflow 2.10.1 will be used as both are completely compatible.
-     * 
-	 * 
-	 * @param framework
-	 *            name of the Deep Learning framework (engine). For example:
-	 *            Pytorch, Tensorflow....
-	 * @param version
-	 *            version of the training Deep Learning framework (engine)
-	 * @param cpu
-	 *            whether the engine can use CPU or not
-	 * @param gpu
-	 *            whether the engine can use GPU or not
-	 * @param jarsDirectory
-	 *            directory where the folder containing the JARs needed to
-	 *            launch the corresponding engine are located
-	 * @return an object containing all the information needed to launch a Deep
-	 *         learning framework or null if the wanted version engine is not installed
-	 * @throws IllegalArgumentException if an engine that cannot be loaded together with the wanted engine
-	 * 	has already been loaded
+	 *
+	 *
+	 * Note that this method looks at the framework versions specified at:
+	 * https://github.com/bioimage-io/JDLL/blob/main/src/main/resources/supportedVersions.json
+	 *
+	 * This file contains all the versions for each framework supported by JDLL.
+	 * Note that several of the Python versions point to a single Java API version. This
+	 * happens because not every Python version has an exact Java APi made for it. HOwever,
+	 * the Java API is made with enough flexibility so that is compatible with the previous
+	 * Python versions that do not have an API.
+	 * BEcause of this, when setting, for example, version Tensorflow 2.8, any version that uses the same
+	 * Java API and that is installed will be allowed to be used. Thus for Tensorflow 2.8,
+	 * Tensorflow 2.10.1 will be used as both are completely compatible.
+	 *
+	 * @param framework the framework.
+	 * @param version the version.
+	 * @param cpu the CPU.
+	 * @param gpu whether to use GPU.
+	 * @param jarsDirectory the jars directory.
+	 * @return the resulting engine info.
+	 * @throws IllegalArgumentException if an argument is invalid.
 	 */
 	public static EngineInfo defineDLEngine( String framework, String version, boolean cpu,
 			boolean gpu, String jarsDirectory ) throws IllegalArgumentException
@@ -463,24 +433,19 @@ public class EngineInfo
 	/**
 	 * Set the parameters to launch the wanted Deep Learning framework (engine)
 	 * and load models.
-	 * 
-	 * In this case neither CPU, nor GPU compatibility are not defined. The method will try to 
+	 *
+	 * In this case neither CPU, nor GPU compatibility are not defined. The method will try to
 	 * find an engine compatible with CPU and GPU, but they are not required.
-	 * 
+	 *
 	 * If the engine specified is not installed, the method will return null.
 	 * The engine of interest needs to be installed first.
 	 * A good way to check whether the engine of interest exists or not
 	 * is: {@link InstalledEngines#checkEngineWithArgsInstalledForOS(String, String, Boolean, Boolean, String)}
-	 * 
-	 * @param framework
-	 *            name of the Deep Learning framework (engine). For example:
-	 *            Pytorch, Tensorflow....
-	 * @param version
-	 *            version of the training Deep Learning framework (engine)
-	 * @return an object containing all the information needed to launch a Deep
-	 *         learning framework or null if the wanted version engine is not installed
-	 * @throws IllegalArgumentException if an engine that cannot be loaded together with the wanted engine
-	 * 	has already been loaded
+	 *
+	 * @param framework the framework.
+	 * @param version the version.
+	 * @return the resulting engine info.
+	 * @throws IllegalArgumentException if an argument is invalid.
 	 */
 	public static EngineInfo defineDLEngine( String framework, String version ) throws IllegalArgumentException
 	{
@@ -491,40 +456,33 @@ public class EngineInfo
 	/**
 	 * Set the parameters to launch the wanted Deep Learning framework (engine)
 	 * and load DL models.
-	 * 
-	 * In this case CPU compatibility is not defined. The method will try to 
+	 *
+	 * In this case CPU compatibility is not defined. The method will try to
 	 * find an engine compatible with CPU but it is not required.
-	 * 
+	 *
 	 * If the engine specified is not installed, the method will return null.
 	 * The engine of interest needs to be installed first.
 	 * A good way to check whether the engine of interest exists or not
 	 * is: {@link InstalledEngines#checkEngineWithArgsInstalledForOS(String, String, Boolean, Boolean, String)}
-	 * 
-     * 
-     * Note that this method looks at the framework versions specified at:
-     * https://github.com/bioimage-io/JDLL/blob/main/src/main/resources/supportedVersions.json
-     * 
-     * This file contains all the versions for each framework supported by JDLL.
-     * Note that several of the Python versions point to a single Java API version. This
-     * happens because not every Python version has an exact Java APi made for it. HOwever,
-     * the Java API is made with enough flexibility so that is compatible with the previous
-     * Python versions that do not have an API. 
-     * BEcause of this, when setting, for example, version Tensorflow 2.8, any version that uses the same
-     * Java API and that is installed will be allowed to be used. Thus for Tensorflow 2.8, 
-     * Tensorflow 2.10.1 will be used as both are completely compatible.
-     * 
-	 * 
-	 * @param framework
-	 *            name of the Deep Learning framework (engine). For example:
-	 *            Pytorch, Tensorflow....
-	 * @param version
-	 *            version of the training Deep Learning framework (engine)
-	 * @param gpu
-	 *            whether the engine can use GPU or not
-	 * @return an object containing all the information needed to launch a Deep
-	 *         learning framework or null if the wanted version engine is not installed
-	 * @throws IllegalArgumentException if an engine that cannot be loaded together with the wanted engine
-	 * 	has already been loaded
+	 *
+	 *
+	 * Note that this method looks at the framework versions specified at:
+	 * https://github.com/bioimage-io/JDLL/blob/main/src/main/resources/supportedVersions.json
+	 *
+	 * This file contains all the versions for each framework supported by JDLL.
+	 * Note that several of the Python versions point to a single Java API version. This
+	 * happens because not every Python version has an exact Java APi made for it. HOwever,
+	 * the Java API is made with enough flexibility so that is compatible with the previous
+	 * Python versions that do not have an API.
+	 * BEcause of this, when setting, for example, version Tensorflow 2.8, any version that uses the same
+	 * Java API and that is installed will be allowed to be used. Thus for Tensorflow 2.8,
+	 * Tensorflow 2.10.1 will be used as both are completely compatible.
+	 *
+	 * @param framework the framework.
+	 * @param version the version.
+	 * @param gpu whether to use GPU.
+	 * @return the resulting engine info.
+	 * @throws IllegalArgumentException if an argument is invalid.
 	 */
 	public static EngineInfo defineDLEngine( String framework, String version, boolean gpu ) throws IllegalArgumentException
 	{
@@ -551,25 +509,18 @@ public class EngineInfo
 	/**
 	 * Set the parameters to launch the wanted Deep Learning framework (engine)
 	 * and load models
-	 * 
+	 *
 	 * If the engine specified is not installed, the method will return null.
 	 * The engine of interest needs to be installed first.
 	 * A good way to check whether the engine of interest exists or not
 	 * is: {@link InstalledEngines#checkEngineWithArgsInstalledForOS(String, String, Boolean, Boolean, String)}
-	 * 
-	 * @param framework
-	 *            name of the Deep Learning framework (engine). For example:
-	 *            Pytorch, Tensorflow....
-	 * @param version
-	 *            version of the training Deep Learning framework (engine)
-	 * @param cpu
-	 *            whether the engine can use CPU or not
-	 * @param gpu
-	 *            whether the engine can use GPU or not
-	 * @return an object containing all the information needed to launch a Deep
-	 *         learning framework or null if the wanted version engine is not installed
-	 * @throws IllegalArgumentException if an engine that cannot be loaded together with the wanted engine
-	 * 	has already been loaded
+	 *
+	 * @param framework the framework.
+	 * @param version the version.
+	 * @param cpu the CPU.
+	 * @param gpu whether to use GPU.
+	 * @return the resulting engine info.
+	 * @throws IllegalArgumentException if an argument is invalid.
 	 */
 	public static EngineInfo defineDLEngine( String framework, String version, 
 			boolean cpu, boolean gpu ) throws IllegalArgumentException
@@ -640,41 +591,34 @@ public class EngineInfo
 	/**
 	 * Set the parameters to launch the wanted Deep Learning framework (engine)
 	 * and load DL models.
-	 * 
-	 * In this method, the version defined is orientative to some extent. 
+	 *
+	 * In this method, the version defined is orientative to some extent.
 	 * If the version provided in the arguments is not installed, and there is another
-	 * installed version of the same framework which has the same major version 
-	 * (for example pytorch 1.13 and pytorch 1.9), the version installed will be loaded 
+	 * installed version of the same framework which has the same major version
+	 * (for example pytorch 1.13 and pytorch 1.9), the version installed will be loaded
 	 * directly instead of requiring the installation of the original version.
-	 * 
-	 * Also, for Pytorch if there is already another engine of the same framework, 
-	 * same major version (same as before) but different overall version, 
+	 *
+	 * Also, for Pytorch if there is already another engine of the same framework,
+	 * same major version (same as before) but different overall version,
 	 * the previously loaded version will be used. This is because loading different versions
 	 * of the Pytorch native libraries produce conflicts.
-	 * 
-	 *  Regard, that this method looks for engines compatible with CPU at least,
-	 *  thus GPU support is not guaranteed.
-	 *  
-	 *  The method {@link #defineCompatibleDLEngineGPU(String, String, String)} does
-	 *  the same but requiring GPU support.
-	 *  
-	 *  To know if the EngineInfo object has support for GPU, call {@link #isGPU()}
-	 *  and if it returns false, and you want GPU support 
-	 *  install the engine with GPU support if available.
-	 * 
-	 * @param framework
-	 *            name of the Deep Learning framework (engine). For example:
-	 *            Pytorch, Tensorflow....
-	 * @param version
-	 *            version of the training Deep Learning framework (engine)
-	 * @param jarsDirectory
-	 *            directory where the folder containing the JARs needed to
-	 *            launch the corresponding engine are located
-	 * @return an object containing all the information needed to launch a Deep
-	 *         learning framework or null if the engine of interest is not installed
-	 * @throws IOException if the engines directory does not exist
-	 * @throws IllegalArgumentException if an engine that cannot be loaded together with the wanted engine
-	 * 	has already been loaded
+	 *
+	 * Regard, that this method looks for engines compatible with CPU at least,
+	 * thus GPU support is not guaranteed.
+	 *
+	 * The method {@link #defineCompatibleDLEngineGPU(String, String, String)} does
+	 * the same but requiring GPU support.
+	 *
+	 * To know if the EngineInfo object has support for GPU, call {@link #isGPU()}
+	 * and if it returns false, and you want GPU support
+	 * install the engine with GPU support if available.
+	 *
+	 * @param framework the framework.
+	 * @param version the version.
+	 * @param jarsDirectory the jars directory.
+	 * @return the resulting engine info.
+	 * @throws IOException if an I/O error occurs.
+	 * @throws IllegalArgumentException if an argument is invalid.
 	 */
 	public static EngineInfo defineCompatibleDLEngineCPU( String framework, String version, 
 			String jarsDirectory ) throws IOException, IllegalArgumentException 
@@ -695,38 +639,29 @@ public class EngineInfo
 	 * Set the parameters to launch the wanted Deep Learning framework (engine) compatible with GPU
 	 * and load DL models.
 	 * in the program.
-	 * 
-	 * In this method, the version defined is orientative to some extent. 
+	 *
+	 * In this method, the version defined is orientative to some extent.
 	 * If the version provided in the arguments is not installed, and there is another
-	 * installed version of the same framework which has the same major version 
-	 * (for example pytorch 1.13 and pytorch 1.9), the version installed will be loaded 
+	 * installed version of the same framework which has the same major version
+	 * (for example pytorch 1.13 and pytorch 1.9), the version installed will be loaded
 	 * directly instead of requiring the installation of the original version.
-	 * 
-	 * TODO if the engine already loaded supports GPU and we are askig for 
+	 *
+	 * TODO if the engine already loaded supports GPU and we are askig for
 	 * TODO GPU support off, this should fail. Same thing for method that requires GPU
 	 * TODO below
-	 * 
-	 * Also, for Pytorch if there is already another engine of the same framework, 
-	 * same major version (same as before) but different overall version, 
+	 *
+	 * Also, for Pytorch if there is already another engine of the same framework,
+	 * same major version (same as before) but different overall version,
 	 * the previously loaded version will be used. This is because loading different versions
 	 * of the Pytorch native libraries produce conflicts.
-	 * 
-	 * @param framework
-	 *            name of the Deep Learning framework (engine). For example:
-	 *            Pytorch, Tensorflow....
-	 * @param version
-	 *            version of the training Deep Learning framework (engine)
-	 * @param cpu
-	 * 			  whether the engine has to support cpu or not
-	 * @param gpu
-	 * 			  whether the engine has to support gpu or not
-	 * @param jarsDirectory
-	 *            directory where the folder containing the JARs needed to
-	 *            launch the corresponding engine are located
-	 * @return an object containing all the information needed to launch a Deep
-	 *         learning framework or null if the engine of interest is not installed
-	 * @throws IllegalArgumentException if an engine that cannot be loaded together with the wanted engine
-	 * 	has already been loaded
+	 *
+	 * @param framework the framework.
+	 * @param version the version.
+	 * @param cpu the CPU.
+	 * @param gpu whether to use GPU.
+	 * @param jarsDirectory the jars directory.
+	 * @return the resulting engine info.
+	 * @throws IllegalArgumentException if an argument is invalid.
 	 */
 	public static EngineInfo defineCompatibleDLEngine( String framework, String version,
 			boolean cpu, boolean gpu, String jarsDirectory ) throws IllegalArgumentException
@@ -752,37 +687,30 @@ public class EngineInfo
 	 * Set the parameters to launch the wanted Deep Learning framework (engine) compatible with GPU
 	 * and load DL models.
 	 * in the program.
-	 * 
-	 * In this method, the version defined is orientative to some extent. 
+	 *
+	 * In this method, the version defined is orientative to some extent.
 	 * If the version provided in the arguments is not installed, and there is another
-	 * installed version of the same framework which has the same major version 
-	 * (for example pytorch 1.13 and pytorch 1.9), the version installed will be loaded 
+	 * installed version of the same framework which has the same major version
+	 * (for example pytorch 1.13 and pytorch 1.9), the version installed will be loaded
 	 * directly instead of requiring the installation of the original version.
-	 * 
-	 * Also, for Pytorch if there is already another engine of the same framework, 
-	 * same major version (same as before) but different overall version, 
+	 *
+	 * Also, for Pytorch if there is already another engine of the same framework,
+	 * same major version (same as before) but different overall version,
 	 * the previously loaded version will be used. This is because loading different versions
 	 * of the Pytorch native libraries produce conflicts.
-	 * 
-	 *  Regard, that this method looks for engines compatible with GPU specifically,
-	 *  thus CPU support is not guaranteed.
-	 *  
-	 *  To know if the EngineInfo object has support for CPU, call {@link #isCPU()}
-	 *  and if it returns false, and you want CPU support 
-	 *  install the engine with CPU support if available.
-	 * 
-	 * @param framework
-	 *            name of the Deep Learning framework (engine). For example:
-	 *            Pytorch, Tensorflow....
-	 * @param version
-	 *            version of the training Deep Learning framework (engine)
-	 * @param jarsDirectory
-	 *            directory where the folder containing the JARs needed to
-	 *            launch the corresponding engine are located
-	 * @return an object containing all the information needed to launch a Deep
-	 *         learning framework or null if the engine of interest is not installed
-	 * @throws IllegalArgumentException if an engine that cannot be loaded together with the wanted engine
-	 * 	has already been loaded
+	 *
+	 * Regard, that this method looks for engines compatible with GPU specifically,
+	 * thus CPU support is not guaranteed.
+	 *
+	 * To know if the EngineInfo object has support for CPU, call {@link #isCPU()}
+	 * and if it returns false, and you want CPU support
+	 * install the engine with CPU support if available.
+	 *
+	 * @param framework the framework.
+	 * @param version the version.
+	 * @param jarsDirectory the jars directory.
+	 * @return the resulting engine info.
+	 * @throws IllegalArgumentException if an argument is invalid.
 	 */
 	public static EngineInfo defineCompatibleDLEngineGPU( String framework, String version, 
 			String jarsDirectory ) throws IllegalArgumentException
@@ -808,19 +736,16 @@ public class EngineInfo
 	
 	/**
 	 * Create an {@link EngineInfo} object from an specific weigth definition of the rdf.yaml file
-	 * This method assumes that the directory where the engine folders are downloaded to is 
+	 * This method assumes that the directory where the engine folders are downloaded to is
 	 * a directory called "engines" inside the application folder of the main program.
-	 * 
+	 *
 	 * The version of the weights does not need to match exactly the version of the
 	 * engine installed to enable loading Pytorch 1.11.0 models with Pytorch 1.13.1
-	 * 
-	 * @param weight
-	 * 	the weights of a model for a specific single engine (DL framework)
-	 * @return the {@link EngineInfo} object if there are compatible installed engines or null
-	 * 	if they do not exist
-	 * @throws IOException if the engines directory does not exist
-	 * @throws IllegalArgumentException if an engine that cannot be loaded together with the wanted engine
-	 * 	has already been loaded
+	 *
+	 * @param weight the weight.
+	 * @return the resulting engine info.
+	 * @throws IOException if an I/O error occurs.
+	 * @throws IllegalArgumentException if an argument is invalid.
 	 */
 	public static EngineInfo defineCompatibleDLEngineWithRdfYamlWeights(WeightFormat weight) 
 			throws IOException, IllegalArgumentException {
@@ -829,19 +754,15 @@ public class EngineInfo
 	
 	/**
 	 * Create an {@link EngineInfo} object from an specific weigth definition of the rdf.yaml file
-	 * 
+	 *
 	 * The version of the weights does not need to match exactly the version of the
 	 * engine installed to enable loading Pytorch 1.11.0 models with Pytorch 1.13.1
-	 * 
-	 * @param weight
-	 * 	the weights of a model for a specific single engine (DL framework)
-	 * @param enginesDir
-	 * 	directory where all the engine folders are downloaded
-	 * @return the {@link EngineInfo} object if there are compatible installed engines or null
-	 * 	if they do not exist
-	 * @throws IOException if the engines directory does not exist
-	 * @throws IllegalArgumentException if an engine that cannot be loaded together with the wanted engine
-	 * 	has already been loaded
+	 *
+	 * @param weight the weight.
+	 * @param enginesDir the engines directory.
+	 * @return the resulting engine info.
+	 * @throws IOException if an I/O error occurs.
+	 * @throws IllegalArgumentException if an argument is invalid.
 	 */
 	public static EngineInfo defineCompatibleDLEngineWithRdfYamlWeights(WeightFormat weight, 
 			String enginesDir) throws IOException, IllegalArgumentException {
@@ -861,20 +782,17 @@ public class EngineInfo
 	
 	/**
 	 * Create an {@link EngineInfo} object from an specific weigth definition of the rdf.yaml file
-	 * This method assumes that the directory where the engine folders are downloaded to is 
+	 * This method assumes that the directory where the engine folders are downloaded to is
 	 * a directory called "engines" inside the application folder of the main program.
-	 * 
+	 *
 	 * The version of the weights needs to match exactly the version of the
 	 * engine installed. The major and minor versions need to match.
 	 * Only Pytorch 1.11 can be used to load Pytorch 1.11
-	 * 
-	 * @param weight
-	 * 	the weights of a model for a specific single engine (DL framework)
-	 * @return the {@link EngineInfo} object if there are compatible installed engines or null
-	 * 	if they do not exist
-	 * @throws IOException if the engines directory does not exist
-	 * @throws IllegalArgumentException if an engine that cannot be loaded together with the wanted engine
-	 * 	has already been loaded
+	 *
+	 * @param weight the weight.
+	 * @return the resulting engine info.
+	 * @throws IOException if an I/O error occurs.
+	 * @throws IllegalArgumentException if an argument is invalid.
 	 */
 	public static EngineInfo defineExactDLEngineWithRdfYamlWeights(WeightFormat weight)
 			throws IOException, IllegalArgumentException {
@@ -883,34 +801,29 @@ public class EngineInfo
 	
 	/**
 	 * Create an {@link EngineInfo} object from an specific weigth definition of the rdf.yaml file
-	 * 
+	 *
 	 * The version of the weights needs to match exactly the version of the
 	 * engine installed. The major and minor versions need to match.
 	 * Only Pytorch 1.11 can be used to load Pytorch 1.11
-	 * 
-     * 
-     * Note that this method looks at the framework versions specified at:
-     * https://github.com/bioimage-io/JDLL/blob/main/src/main/resources/supportedVersions.json
-     * 
-     * This file contains all the versions for each framework supported by JDLL.
-     * Note that several of the Python versions point to a single Java API version. This
-     * happens because not every Python version has an exact Java APi made for it. HOwever,
-     * the Java API is made with enough flexibility so that is compatible with the previous
-     * Python versions that do not have an API. 
-     * BEcause of this, when setting, for example, version Tensorflow 2.8, any version that uses the same
-     * Java API and that is installed will be allowed to be used. Thus for Tensorflow 2.8, 
-     * Tensorflow 2.10.1 will be used as both are completely compatible.
-     * 
-     * 
-	 * @param weight
-	 * 	the weights of a model for a specific single engine (DL framework)
-	 * @param enginesDir
-	 * 	directory where all the engine folders are downloaded
-	 * @return the {@link EngineInfo} object if there are compatible installed engines or null
-	 * 	if they do not exist
-	 * @throws IOException if the engines directory does not exist
-	 * @throws IllegalArgumentException if an engine that cannot be loaded together with the wanted engine
-	 * 	has already been loaded
+	 *
+	 *
+	 * Note that this method looks at the framework versions specified at:
+	 * https://github.com/bioimage-io/JDLL/blob/main/src/main/resources/supportedVersions.json
+	 *
+	 * This file contains all the versions for each framework supported by JDLL.
+	 * Note that several of the Python versions point to a single Java API version. This
+	 * happens because not every Python version has an exact Java APi made for it. HOwever,
+	 * the Java API is made with enough flexibility so that is compatible with the previous
+	 * Python versions that do not have an API.
+	 * BEcause of this, when setting, for example, version Tensorflow 2.8, any version that uses the same
+	 * Java API and that is installed will be allowed to be used. Thus for Tensorflow 2.8,
+	 * Tensorflow 2.10.1 will be used as both are completely compatible.
+	 *
+	 * @param weight the weight.
+	 * @param enginesDir the engines directory.
+	 * @return the resulting engine info.
+	 * @throws IOException if an I/O error occurs.
+	 * @throws IllegalArgumentException if an argument is invalid.
 	 */
 	public static EngineInfo defineExactDLEngineWithRdfYamlWeights(WeightFormat weight,
 			String enginesDir) throws IOException, IllegalArgumentException {
@@ -1005,11 +918,9 @@ public class EngineInfo
 	/**
 	 * Set the tags needed to load a Tensorflow model. These fields are useless
 	 * for other models
-	 * 
-	 * @param tag
-	 *            tad used to open a Tf model
-	 * @param sigDef
-	 *            signature definition used to open a tf model
+	 *
+	 * @param tag the tag.
+	 * @param sigDef the sig def.
 	 */
 	public void setTags( String tag, String sigDef )
 	{
@@ -1098,15 +1009,11 @@ public class EngineInfo
 	/**
 	 * REturns which versions have been already been loaded to avoid errors of
 	 * overlapping versions
-	 * 
-	 * @param framework
-	 *            the Deep Learning framework of interest
-	 * @param version
-	 *            the Deep LEarning version of interest
-	 * @return the loaded version of the selected engine or null if no version
-	 *         has been loaded
-	 * @throws IllegalArgumentException
-	 *             if the engine is not supported yet
+	 *
+	 * @param framework the framework.
+	 * @param version the version.
+	 * @return the loaded versions.
+	 * @throws IllegalArgumentException if an argument is invalid.
 	 */
 	public static String getLoadedVersions( String framework, String version ) throws IllegalArgumentException
 	{
@@ -1188,9 +1095,8 @@ public class EngineInfo
 	/**
 	 * Set in a static manner the {@link #STATIC_JARS_DIRECTORY} if it is not
 	 * going to change during the execution of the program
-	 * 
-	 * @param jarsDirectory
-	 *            the permanent jars directory
+	 *
+	 * @param jarsDirectory the jars directory.
 	 */
 	public static void setStaticJarsDirectory( String jarsDirectory )
 	{

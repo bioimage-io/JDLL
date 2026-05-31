@@ -67,10 +67,28 @@ public interface MacosHelpers extends Library {
     }
 
     // Declare methods corresponding to the native functions
+    /**
+     * Creates a native shared memory block.
+     *
+     * @param name the name.
+     * @param size the size.
+     * @return the native status code.
+     */
     int create_shared_memory(String name, int size);
     
+    /**
+     * Unlinks a native shared memory block.
+     *
+     * @param name the name.
+     */
     void unlink_shared_memory(String name);
     
+    /**
+     * Returns the size of a native shared memory block.
+     *
+     * @param fd the file descriptor.
+     * @return the native result value.
+     */
     long get_shared_memory_size(int fd);
 }
 

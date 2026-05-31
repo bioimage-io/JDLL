@@ -31,18 +31,13 @@ public class Author
     /**
      * Creates a {@link Author} instance with the text and DOI.
      * All the fields are optional
-     * 
-	 * @param affiliation
-	 * 	affiliation of the author
-	 * @param email
-	 * 	email of the author
-	 * @param githubUser
-	 * 	github user of the author
-	 * @param name
-	 * 	name of the author
-	 * @param orcid
-	 * 	orcid of the author
-     * @return The creates instance.
+     *
+     * @param affiliation the affiliation.
+     * @param email the email.
+     * @param githubUser the github user.
+     * @param name the name.
+     * @param orcid the orcid.
+     * @return the created author.
      */
     public static Author build(String affiliation, String email,
     						String githubUser, String name, String orcid)
@@ -72,9 +67,8 @@ public class Author
 
     /**
      * Sets the affiliation
-     * 
-     * @param affiliation
-     *        affiliation of the author.
+     *
+     * @param affiliation the affiliation.
      */
     public void setText(String affiliation)
     {
@@ -91,9 +85,8 @@ public class Author
 
     /**
      * Sets the email of the author
-     * 
-     * @param email
-     *        email of the author.
+     *
+     * @param email the email.
      */
     public void setDoi(String email)
     {
@@ -108,8 +101,9 @@ public class Author
 	}
 
 	/**
-	 * @param githubUser 
-	 * 	the githubUser of the author
+	 * Sets the github user.
+	 *
+	 * @param githubUser the github user.
 	 */
 	public void setGithubUser(String githubUser) {
 		this.githubUser = githubUser;

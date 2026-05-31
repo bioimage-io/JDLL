@@ -42,10 +42,28 @@ public class YoloTrainingService {
     private File cancelSignalFile;
     private Service runningPython;
 
+    /**
+     * Creates a new YoloTrainingService instance.
+     *
+     * @param installer the installer.
+     */
     public YoloTrainingService(ModelInstaller installer) {
         this.installer = installer;
     }
 
+    /**
+     * Runs model training.
+     *
+     * @param config the config.
+     * @param progressConsumer the progress consumer callback.
+     * @param previewConsumer the preview consumer callback.
+     * @param logConsumer the log consumer callback.
+     * @throws IOException if an I/O error occurs.
+     * @throws ExecutionException if an asynchronous operation fails.
+     * @throws InterruptedException if the current thread is interrupted.
+     * @throws BuildException if the Python environment or service cannot be built.
+     * @throws TaskException if task occurs.
+     */
     public void train(YoloTrainingConfig config,
             Consumer<YoloTrainingProgress> progressConsumer,
             Consumer<YoloValidationPreview> previewConsumer,
@@ -72,6 +90,9 @@ public class YoloTrainingService {
         }
     }
 
+    /**
+     * Performs request cancel.
+     */
     public synchronized void requestCancel() {
         if (cancelSignalFile != null) {
             try {
@@ -86,6 +107,9 @@ public class YoloTrainingService {
         }
     }
 
+    /**
+     * Closes resources held by this object.
+     */
     public void close() {
         requestCancel();
     }

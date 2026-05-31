@@ -149,6 +149,8 @@ public class ModelDescriptorStardistV05 extends ModelDescriptorV05
     
     /**
      * Executes modify test inputs.
+     *
+     * @param <T> the T type parameter.
      */
     protected <T extends RealType<T> & NativeType<T>> void modifyTestInputs() {
     	if (this.localModelPath == null)
@@ -179,6 +181,8 @@ public class ModelDescriptorStardistV05 extends ModelDescriptorV05
     
     /**
      * Executes modify test outputs.
+     *
+     * @param <T> the T type parameter.
      */
     protected <T extends RealType<T> & NativeType<T>> void modifyTestOutputs() {
     	if (this.localModelPath == null)

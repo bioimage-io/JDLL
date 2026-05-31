@@ -39,6 +39,21 @@ public final class StardistTrainingConfig {
     private final String labelColorMode;
     private final double validFraction;
 
+    /**
+     * Creates a new StardistTrainingConfig instance.
+     *
+     * @param modelName the model name.
+     * @param datasetPath the dataset path.
+     * @param epochs the epochs.
+     * @param fineTune the fine tune.
+     * @param baseModelPath the base model path.
+     * @param scratchArchitecture the scratch architecture.
+     * @param modelsDir the models directory.
+     * @param outputModelDir the output model directory.
+     * @param gpu whether to use GPU.
+     * @param labelColorMode the label color mode.
+     * @param validFraction the valid fraction.
+     */
     public StardistTrainingConfig(String modelName, String datasetPath, int epochs,
             boolean fineTune, String baseModelPath, String scratchArchitecture,
             String modelsDir, String outputModelDir, boolean gpu, String labelColorMode,
@@ -47,6 +62,21 @@ public final class StardistTrainingConfig {
                 outputModelDir, gpu ? "cuda" : "cpu", labelColorMode, validFraction);
     }
 
+    /**
+     * Creates a new StardistTrainingConfig instance.
+     *
+     * @param modelName the model name.
+     * @param datasetPath the dataset path.
+     * @param epochs the epochs.
+     * @param fineTune the fine tune.
+     * @param baseModelPath the base model path.
+     * @param scratchArchitecture the scratch architecture.
+     * @param modelsDir the models directory.
+     * @param outputModelDir the output model directory.
+     * @param device the device.
+     * @param labelColorMode the label color mode.
+     * @param validFraction the valid fraction.
+     */
     public StardistTrainingConfig(String modelName, String datasetPath, int epochs,
             boolean fineTune, String baseModelPath, String scratchArchitecture,
             String modelsDir, String outputModelDir, String device, String labelColorMode,
@@ -65,64 +95,154 @@ public final class StardistTrainingConfig {
         this.validFraction = validFraction;
     }
 
+    /**
+     * Returns the model name.
+     *
+     * @return the model name.
+     */
     public String getModelName() {
         return modelName;
     }
 
+    /**
+     * Returns the dataset path.
+     *
+     * @return the dataset path.
+     */
     public String getDatasetPath() {
         return datasetPath;
     }
 
+    /**
+     * Returns the epochs.
+     *
+     * @return the epochs.
+     */
     public int getEpochs() {
         return epochs;
     }
 
+    /**
+     * Returns whether fine tune.
+     *
+     * @return true if fine tune; false otherwise.
+     */
     public boolean isFineTune() {
         return fineTune;
     }
 
+    /**
+     * Returns the base model path.
+     *
+     * @return the base model path.
+     */
     public String getBaseModelPath() {
         return baseModelPath;
     }
 
+    /**
+     * Returns the scratch architecture.
+     *
+     * @return the scratch architecture.
+     */
     public String getScratchArchitecture() {
         return scratchArchitecture;
     }
 
+    /**
+     * Returns the models directory.
+     *
+     * @return the models directory.
+     */
     public String getModelsDir() {
         return modelsDir;
     }
 
+    /**
+     * Returns the output model directory.
+     *
+     * @return the output model directory.
+     */
     public String getOutputModelDir() {
         return outputModelDir;
     }
 
+    /**
+     * Returns whether GPU.
+     *
+     * @return true if GPU; false otherwise.
+     */
     public boolean isGpu() {
         return gpu;
     }
 
+    /**
+     * Returns the device.
+     *
+     * @return the device.
+     */
     public String getDevice() {
         return device;
     }
 
+    /**
+     * Returns the label color mode.
+     *
+     * @return the label color mode.
+     */
     public String getLabelColorMode() {
         return labelColorMode;
     }
 
+    /**
+     * Returns the valid fraction.
+     *
+     * @return the valid fraction.
+     */
     public double getValidFraction() {
         return validFraction;
     }
 
+    /**
+     * Returns the image channels.
+     *
+     * @return the image channels.
+     */
     public String getImageChannels() {
         String architecture = scratchArchitecture == null ? "" : scratchArchitecture.toLowerCase();
         return architecture.startsWith("color") ? "rgb" : "grayscale";
     }
 
+    /**
+     * Creates a StardistTrainingConfig from the ui.
+     *
+     * @param modelName the model name.
+     * @param datasetPath the dataset path.
+     * @param epochs the epochs.
+     * @param fineTune the fine tune.
+     * @param baseModelPath the base model path.
+     * @param scratchArchitecture the scratch architecture.
+     * @param modelsDir the models directory.
+     * @return the created stardist training config.
+     */
     public static StardistTrainingConfig fromUi(String modelName, String datasetPath, int epochs,
             boolean fineTune, String baseModelPath, String scratchArchitecture, String modelsDir) {
         return fromUi(modelName, datasetPath, epochs, fineTune, baseModelPath, scratchArchitecture, modelsDir, "cpu");
     }
 
+    /**
+     * Creates a StardistTrainingConfig from the ui.
+     *
+     * @param modelName the model name.
+     * @param datasetPath the dataset path.
+     * @param epochs the epochs.
+     * @param fineTune the fine tune.
+     * @param baseModelPath the base model path.
+     * @param scratchArchitecture the scratch architecture.
+     * @param modelsDir the models directory.
+     * @param device the device.
+     * @return the created stardist training config.
+     */
     public static StardistTrainingConfig fromUi(String modelName, String datasetPath, int epochs,
             boolean fineTune, String baseModelPath, String scratchArchitecture, String modelsDir, String device) {
         String normalizedName = normalizeModelName(modelName);

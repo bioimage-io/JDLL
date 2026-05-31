@@ -58,6 +58,11 @@ public class StardistGUI extends JPanel {
     protected final YoloAccelerationCheckBox accelerationCheckBox = new YoloAccelerationCheckBox(
             () -> StarDist.resolvePytorchEnv().getSelectedEnvironment().toLowerCase().contains("cuda"));
 
+    /**
+     * Creates a new StardistGUI instance.
+     *
+     * @param adapter the adapter.
+     */
     protected StardistGUI(GuiAdapter adapter) {
         setLayout(null);
         setOpaque(true);
@@ -76,6 +81,9 @@ public class StardistGUI extends JPanel {
         setComponentZOrder(accelerationCheckBox, 0);
     }
 
+    /**
+     * Performs do layout.
+     */
     @Override
     public void doLayout() {
         int titleH = Math.max(40, (int) Math.round(getHeight() * TITLE_HEIGHT_RATIO));
@@ -86,27 +94,57 @@ public class StardistGUI extends JPanel {
         layoutAccelerationCheckBox(tabsY);
     }
 
+    /**
+     * Returns whether optimized drawing enabled.
+     *
+     * @return true if optimized drawing enabled; false otherwise.
+     */
     @Override
     public boolean isOptimizedDrawingEnabled() {
         return false;
     }
 
+    /**
+     * Returns the tabs.
+     *
+     * @return the tabs.
+     */
     public JTabbedPane getTabs() {
         return tabs;
     }
 
+    /**
+     * Returns the inference panel.
+     *
+     * @return the inference panel.
+     */
     public YoloInferencePanel getInferencePanel() {
         return inferencePanel;
     }
 
+    /**
+     * Returns the train panel.
+     *
+     * @return the train panel.
+     */
     public StardistTrainPanel getTrainPanel() {
         return trainPanel;
     }
 
+    /**
+     * Returns the acceleration check box.
+     *
+     * @return the acceleration check box.
+     */
     public JCheckBox getAccelerationCheckBox() {
         return accelerationCheckBox;
     }
 
+    /**
+     * Returns whether acceleration enabled.
+     *
+     * @return true if acceleration enabled; false otherwise.
+     */
     public boolean isAccelerationEnabled() {
         return accelerationCheckBox.isSelected();
     }
@@ -127,6 +165,18 @@ public class StardistGUI extends JPanel {
 
     private static class FlatTabbedPaneUI extends BasicTabbedPaneUI {
 
+        /**
+         * Performs paint tab background.
+         *
+         * @param g the g.
+         * @param tabPlacement the tab placement.
+         * @param tabIndex the tab index.
+         * @param x the x.
+         * @param y the y.
+         * @param w the w.
+         * @param h the h.
+         * @param isSelected whether to use is selected.
+         */
         @Override
         protected void paintTabBackground(Graphics g, int tabPlacement, int tabIndex,
                 int x, int y, int w, int h, boolean isSelected) {
@@ -134,66 +184,146 @@ public class StardistGUI extends JPanel {
             g.fillRect(x, y, w, h);
         }
 
+        /**
+         * Performs paint content border.
+         *
+         * @param g the g.
+         * @param tabPlacement the tab placement.
+         * @param selectedIndex the selected index.
+         */
         @Override
         protected void paintContentBorder(java.awt.Graphics g, int tabPlacement, int selectedIndex) {
         }
 
+        /**
+         * Performs paint focus indicator.
+         *
+         * @param g the g.
+         * @param tabPlacement the tab placement.
+         * @param rects the rects.
+         * @param tabIndex the tab index.
+         * @param iconRect the icon rect.
+         * @param textRect the text rect.
+         * @param isSelected whether to use is selected.
+         */
         @Override
         protected void paintFocusIndicator(java.awt.Graphics g, int tabPlacement, java.awt.Rectangle[] rects,
                 int tabIndex, java.awt.Rectangle iconRect, java.awt.Rectangle textRect, boolean isSelected) {
         }
     }
 
+    /**
+     * Runs this class from the command line.
+     *
+     * @param args command-line arguments.
+     */
     public static void main(String[] args) {
     	
     	GuiAdapter adapter = new GuiAdapter() {
 
+			/**
+			 * Returns the software name.
+			 *
+			 * @return the software name.
+			 */
 			@Override
 			public String getSoftwareName() {
 				return "JDLL";
 			}
 
+			/**
+			 * Returns the software description.
+			 *
+			 * @return the software description.
+			 */
 			@Override
 			public String getSoftwareDescription() {
 				return "";
 			}
 
+			/**
+			 * Returns the title color.
+			 *
+			 * @return the title color.
+			 */
 			@Override
 			public Color getTitleColor() {
 				return new Color(200, 100, 100);
 			}
 
+			/**
+			 * Returns the subtitle color.
+			 *
+			 * @return the subtitle color.
+			 */
 			@Override
 			public Color getSubtitleColor() {
 				return null;
 			}
 
+			/**
+			 * Returns the header color.
+			 *
+			 * @return the header color.
+			 */
 			@Override
 			public Color getHeaderColor() {
 				return null;
 			}
 
+			/**
+			 * Returns the icon path.
+			 *
+			 * @return the icon path.
+			 */
 			@Override
 			public String getIconPath() {
 				return null;
 			}
 
+			/**
+			 * Returns the models directory.
+			 *
+			 * @return the models directory.
+			 */
 			@Override
 			public String getModelsDir() {
 				return null;
 			}
 
+			/**
+			 * Returns the engines directory.
+			 *
+			 * @return the engines directory.
+			 */
 			@Override
 			public String getEnginesDir() {
 				return null;
 			}
 
+			/**
+			 * Creates the runner.
+			 *
+			 * @param descriptor the descriptor.
+			 * @return the created runner adapter.
+			 * @throws IOException if an I/O error occurs.
+			 * @throws LoadEngineException if the engine cannot be loaded.
+			 */
 			@Override
 			public RunnerAdapter createRunner(ModelDescriptor descriptor) throws IOException, LoadEngineException {
 				// TODO Auto-generated method stub
 				return null;
 			}
 
+			/**
+			 * Creates the runner.
+			 *
+			 * @param descriptor the descriptor.
+			 * @param enginesPath the engines path.
+			 * @return the created runner adapter.
+			 * @throws IOException if an I/O error occurs.
+			 * @throws LoadEngineException if the engine cannot be loaded.
+			 */
 			@Override
 			public RunnerAdapter createRunner(ModelDescriptor descriptor, String enginesPath)
 					throws IOException, LoadEngineException {
@@ -201,6 +331,14 @@ public class StardistGUI extends JPanel {
 				return null;
 			}
 
+			/**
+			 * Performs display RAI.
+			 *
+			 * @param <T> the T type parameter.
+			 * @param rai the RAI.
+			 * @param axesOrder the axes order.
+			 * @param imTitle the image title.
+			 */
 			@Override
 			public <T extends RealType<T> & NativeType<T>> void displayRai(RandomAccessibleInterval<T> rai,
 					String axesOrder, String imTitle) {
@@ -208,18 +346,38 @@ public class StardistGUI extends JPanel {
 				
 			}
 
+			/**
+			 * Returns the input tensors.
+			 *
+			 * @param <T> the T type parameter.
+			 * @param descriptor the descriptor.
+			 * @return the input tensors.
+			 */
 			@Override
 			public <T extends RealType<T> & NativeType<T>> List<Tensor<T>> getInputTensors(ModelDescriptor descriptor) {
 				// TODO Auto-generated method stub
 				return null;
 			}
 
+			/**
+			 * Returns the input image names.
+			 *
+			 * @return the input image names.
+			 */
 			@Override
 			public List<String> getInputImageNames() {
 				// TODO Auto-generated method stub
 				return null;
 			}
 
+			/**
+			 * Returns the result of convert to input tensors.
+			 *
+			 * @param <T> the T type parameter.
+			 * @param inputs the inputs to process.
+			 * @param descriptor the descriptor.
+			 * @return the resulting list.
+			 */
 			@Override
 			public <T extends RealType<T> & NativeType<T>> List<Tensor<T>> convertToInputTensors(
 					Map<String, Object> inputs, ModelDescriptor descriptor) {
@@ -227,6 +385,11 @@ public class StardistGUI extends JPanel {
 				return null;
 			}
 
+			/**
+			 * Performs notify model used.
+			 *
+			 * @param modelAbsPath the model abs path.
+			 */
 			@Override
 			public void notifyModelUsed(String modelAbsPath) {
 				// TODO Auto-generated method stub
@@ -236,6 +399,9 @@ public class StardistGUI extends JPanel {
     	};
     	
         SwingUtilities.invokeLater(new Runnable() {
+            /**
+             * Runs the run.
+             */
             @Override
             public void run() {
                 JFrame frame = new JFrame("YOLO Plugin");

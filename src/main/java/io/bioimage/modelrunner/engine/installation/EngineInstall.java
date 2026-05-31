@@ -210,32 +210,30 @@ public class EngineInstall {
 	
 	/**
 	 * Creates an {@link EngineInstall} object to check if the required engines are installed.
-	 * 
+	 *
 	 * In order to reduce repetition and to reduce the number of deps downloaded
 	 * by the user when deepImageJ is installed, a selection of engines is created.
 	 * There are some of the engines that are the same for every operating system,
 	 * for example TF1 and Pytorch.
 	 * To reduce the number of deps donwloaded, the TF1 and Pytorch engines are
 	 * installed as for example:
-	 *  - "tensorflow-1.15.0-1.15.0" + {@link #GENERAL_KEYWORD}
+	 * - "tensorflow-1.15.0-1.15.0" + {@link #GENERAL_KEYWORD}
 	 * Just one of the above folder is downloaded for all the OS.
 	 * If it was not done like this, as the Fiji update site does not recognise the
 	 * OS of the user, the three following engines would be required:
-	 *  - "tensorflow-1.15.0-1.15.0-windows-x86_64-cpu-gpu"
-	 *  - "tensorflow-1.15.0-1.15.0-linux-x86_64-cpu-gpu"
-	 *  - "tensorflow-1.15.0-1.15.0-macos-x86_64-cpu"
+	 * - "tensorflow-1.15.0-1.15.0-windows-x86_64-cpu-gpu"
+	 * - "tensorflow-1.15.0-1.15.0-linux-x86_64-cpu-gpu"
+	 * - "tensorflow-1.15.0-1.15.0-macos-x86_64-cpu"
 	 * however, the 3 engines would contain exactly the same deps.
 	 * This is the reason why we make the workaround to download a single
 	 * engine for certain engines and then rename it follwoing the corresponding
 	 * convention
-	 * 
+	 *
 	 * Regard, that for certain engines, downloading all the OS depending engines
-	 * is necessary, as the dependencies vary from one system to another. 
-	 * 
-	 * @param dir
-	 * 	directory where the basic engines will be checked and installed if missing
-	 * 
-	 * @return a manager to handle the installation of basic engines
+	 * is necessary, as the dependencies vary from one system to another.
+	 *
+	 * @param dir the directory.
+	 * @return the created engine install.
 	 */
 	public static EngineInstall createInstaller(String dir) {
 		EngineInstall manager =  new EngineInstall();
@@ -591,16 +589,13 @@ public class EngineInstall {
 	
 	/**
 	 * Install the engine that should be located in the engine dir specified
-	 * @param engineDir
-	 * 	directory where the specific engine shuold be installed. Regard that this 
-	 * 	is the whole path to the folder, and that the folder name should follow the 
-	 * 	dl-modelrunner naming convention (https://github.com/bioimage-io/model-runner-java#readme)
-	 * @param consumer
-	 * 	consumer used to communicate the progress made donwloading files. It can be null
-	 * @return true if the installation was successful and false otherwise
-	 * @throws IOException if the engine does not exist or the download of any of the files fails
-	 * @throws InterruptedException if the download is interrupted
-	 * @throws ExecutionException if there is any error in the download
+	 *
+	 * @param engineDir the engine directory.
+	 * @param consumer the consumer callback.
+	 * @return true if install engine by complete name; false otherwise.
+	 * @throws IOException if an I/O error occurs.
+	 * @throws InterruptedException if the current thread is interrupted.
+	 * @throws ExecutionException if an asynchronous operation fails.
 	 */
 	public static boolean installEngineByCompleteName(String engineDir,
 			Consumer< Double> consumer) throws IOException, InterruptedException, ExecutionException {
@@ -622,16 +617,15 @@ public class EngineInstall {
 	
 	/**
 	 * Install the DL engine corresponding to the weights provided.
-	 * 
+	 *
 	 * The DL engine is downloaded automatically into a directory called "models"
 	 * inside the application folder.
-	 * 
-	 * @param ww
-	 * 	{@link WeightFormat} object containing the weights as in the yaml file
-	 * @return true if the DL engine was installed or false otherwise
-	 * @throws IOException if there is any error creating the folder for the engine
-	 * @throws InterruptedException if the thread of the download is interrumpted abruptly
-	 * @throws ExecutionException if anything happens with the installation
+	 *
+	 * @param ww the ww.
+	 * @return true if install engine for weights; false otherwise.
+	 * @throws IOException if an I/O error occurs.
+	 * @throws InterruptedException if the current thread is interrupted.
+	 * @throws ExecutionException if an asynchronous operation fails.
 	 */
 	public static boolean installEngineForWeights(WeightFormat ww) throws IOException, InterruptedException, ExecutionException {
 		return installEngineForWeightsInDir(ww, InstalledEngines.getEnginesDir(), null);
@@ -639,18 +633,16 @@ public class EngineInstall {
 	
 	/**
 	 * Install the DL engine corresponding to the weights provided.
-	 * 
+	 *
 	 * The DL engine is downloaded automatically into a directory called "models"
 	 * inside the application folder.
-	 * 
-	 * @param ww
-	 * 	{@link WeightFormat} object containing the weights as in the yaml file
-	 * @param consumer
-	 * 	consumer used to keep track of the process of download of the weights
-	 * @return true if the DL engine was installed or false otherwise
-	 * @throws IOException if there is any error creating the folder for the engine
-	 * @throws InterruptedException if the thread of the download is interrumpted abruptly
-	 * @throws ExecutionException if anything happens with the installation
+	 *
+	 * @param ww the ww.
+	 * @param consumer the consumer callback.
+	 * @return true if install engine for weights; false otherwise.
+	 * @throws IOException if an I/O error occurs.
+	 * @throws InterruptedException if the current thread is interrupted.
+	 * @throws ExecutionException if an asynchronous operation fails.
 	 */
 	public static boolean installEngineForWeights(WeightFormat ww, 
 			Consumer<Double> consumer) throws IOException, InterruptedException, ExecutionException {
@@ -659,17 +651,15 @@ public class EngineInstall {
 
 	/**
 	 * Install the DL engine corresponding to the weights provided.
-	 * 
+	 *
 	 * The DL engine is downloaded automatically into a directory provided.
-	 * 
-	 * @param ww
-	 * 	{@link WeightFormat} object containing the weights as in the yaml file
-	 * @param enginesDir
-	 * 	directory where the engine is installed
-	 * @return true if the DL engine was installed or false otherwise
-	 * @throws IOException if there is any error creating the folder for the engine
-	 * @throws InterruptedException if the thread of the download is interrumpted abruptly
-	 * @throws ExecutionException if anything happens with the installatio
+	 *
+	 * @param ww the ww.
+	 * @param enginesDir the engines directory.
+	 * @return true if install engine for weights in directory; false otherwise.
+	 * @throws IOException if an I/O error occurs.
+	 * @throws InterruptedException if the current thread is interrupted.
+	 * @throws ExecutionException if an asynchronous operation fails.
 	 */
 	public static boolean installEngineForWeightsInDir(WeightFormat ww, String enginesDir) throws IOException, InterruptedException, ExecutionException {
 		return installEngineForWeightsInDir(ww, enginesDir, null);
@@ -678,19 +668,16 @@ public class EngineInstall {
 
 	/**
 	 * Install the DL engine corresponding to the weights provided.
-	 * 
+	 *
 	 * The DL engine is downloaded automatically into a directory provided.
-	 * 
-	 * @param ww
-	 * 	{@link WeightFormat} object containing the weights as in the yaml file
-	 * @param enginesDir
-	 * 	directory where the engine is installed
-	 * @param consumer
-	 * 	consumer used to keep track of the process of download of the weights
-	 * @return true if the DL engine was installed or false otherwise
-	 * @throws IOException if there is any error creating the folder for the engine
-	 * @throws InterruptedException if the thread of the download is interrupted abruptly
-	 * @throws ExecutionException if there is any error in the download
+	 *
+	 * @param ww the ww.
+	 * @param enginesDir the engines directory.
+	 * @param consumer the consumer callback.
+	 * @return true if install engine for weights in directory; false otherwise.
+	 * @throws IOException if an I/O error occurs.
+	 * @throws InterruptedException if the current thread is interrupted.
+	 * @throws ExecutionException if an asynchronous operation fails.
 	 */
 	public static boolean installEngineForWeightsInDir(WeightFormat ww, String enginesDir, 
 			Consumer<Double> consumer) throws IOException, InterruptedException, ExecutionException {
@@ -720,15 +707,13 @@ public class EngineInstall {
 	/**
 	 * Install all the engines specified by all the weights specified in the
 	 * model rdf.yaml
-	 * 
+	 *
 	 * The DL engine is downloaded automatically into a directory called "models"
 	 * inside the application folder.
-	 * 
-	 * @param descriptor
-	 * 	{@link ModelDescriptor} object containing the information from the rdf.yaml
-	 * @return true if at least one DL engine of the model weights defined in the rdf.yaml is
-	 * 	successfully installed
-	 * @throws IOException if there is any error creating the folder for the engine
+	 *
+	 * @param descriptor the descriptor.
+	 * @return true if install engines for model; false otherwise.
+	 * @throws IOException if an I/O error occurs.
 	 */
 	public static boolean installEnginesForModel(ModelDescriptor descriptor) throws IOException {
 		return installEnginesForModelInDir(descriptor, InstalledEngines.getEnginesDir());
@@ -737,18 +722,14 @@ public class EngineInstall {
 	/**
 	 * Install all the engines specified by all the weights specified in the
 	 * model rdf.yaml
-	 * 
+	 *
 	 * The DL engine is downloaded automatically into a directory called "models"
 	 * inside the application folder.
-	 * 
-	 * @param descriptor
-	 * 	{@link ModelDescriptor} object containing the information from the rdf.yaml
-	 * 	successfully installed
-	 * @param consumer
-	 * 	consumer used to keep track of the process of download of the weights
-	 * @return true if at least one DL engine of the model weights defined in the rdf.yaml is
-	 * 	successfully installed
-	 * @throws IOException if there is any error creating the folder for the engine
+	 *
+	 * @param descriptor the descriptor.
+	 * @param consumer the consumer callback.
+	 * @return true if install engines for model; false otherwise.
+	 * @throws IOException if an I/O error occurs.
 	 */
 	public static boolean installEnginesForModel(ModelDescriptor descriptor, 
 			Consumer<Double> consumer) throws IOException {
@@ -758,17 +739,13 @@ public class EngineInstall {
 	/**
 	 * Install all the engines specified by all the weights specified in the
 	 * model rdf.yaml
-	 * 
+	 *
 	 * The DL engine is downloaded automatically into a directory provided.
-	 * 
-	 * @param descriptor
-	 * 	{@link ModelDescriptor} object containing the information from the rdf.yaml
-	 * 	successfully installed
-	 * @param enginesDir
-	 * 	directory where the engine is installed
-	 * @return true if at least one DL engine of the model weights defined in the rdf.yaml is
-	 * 	successfully installed
-	 * @throws IOException if there is any error creating the folder for the engine
+	 *
+	 * @param descriptor the descriptor.
+	 * @param enginesDir the engines directory.
+	 * @return true if install engines for model in directory; false otherwise.
+	 * @throws IOException if an I/O error occurs.
 	 */
 	public static boolean installEnginesForModelInDir(ModelDescriptor descriptor, String enginesDir) throws IOException {
 		return installEnginesForModelInDir(descriptor, enginesDir, null);
@@ -777,19 +754,14 @@ public class EngineInstall {
 	/**
 	 * Install all the engines specified by all the weights specified in the
 	 * model rdf.yaml
-	 * 
+	 *
 	 * The DL engine is downloaded automatically into a directory provided.
-	 * 
-	 * @param descriptor
-	 * 	{@link ModelDescriptor} object containing the information from the rdf.yaml
-	 * 	successfully installed
-	 * @param enginesDir
-	 * 	directory where the engine is installed
-	 * @param consumer
-	 * 	consumer used to keep track of the process of download of the weights
-	 * @return true if at least one DL engine of the model weights defined in the rdf.yaml is
-	 * 	successfully installed
-	 * @throws IOException if there is any error creating the folder for the engine
+	 *
+	 * @param descriptor the descriptor.
+	 * @param enginesDir the engines directory.
+	 * @param consumer the consumer callback.
+	 * @return true if install engines for model in directory; false otherwise.
+	 * @throws IOException if an I/O error occurs.
 	 */
 	public static boolean installEnginesForModelInDir(ModelDescriptor descriptor, String enginesDir,
 			Consumer<Double> consumer) throws IOException {
@@ -811,16 +783,14 @@ public class EngineInstall {
 	 * Install the DL engines corresponding to the weights defined in the yaml.rdf
 	 * file corresponding to the modelID provided. The modelId is the field 'id' in
 	 * the rdf.yaml
-	 * 
+	 *
 	 * The DL engine is downloaded automatically into a directory called "models"
 	 * inside the application folder.
-	 * 
-	 * @param modelID
-	 * 	ID of the model as defined in the rdf.yaml file
-	 * @return true if at least one DL engine of the model weights defined in the rdf.yaml is
-	 * 	successfully installed
-	 * @throws IOException if there is any error creating the folder for the engine
-	 * @throws InterruptedException if the thread is interrupted while trying to connect to the Bioimage.io
+	 *
+	 * @param modelID the model ID.
+	 * @return true if install engines for model by ID; false otherwise.
+	 * @throws IOException if an I/O error occurs.
+	 * @throws InterruptedException if the current thread is interrupted.
 	 */
 	public static boolean installEnginesForModelByID(String modelID) throws IOException, InterruptedException {
 		return installEnginesForModelByIDInDir(modelID, InstalledEngines.getEnginesDir(), null);
@@ -830,18 +800,15 @@ public class EngineInstall {
 	 * Install the DL engines corresponding to the weights defined in the yaml.rdf
 	 * file corresponding to the modelID provided. The modelId is the field 'id' in
 	 * the rdf.yaml
-	 * 
+	 *
 	 * The DL engine is downloaded automatically into a directory called "models"
 	 * inside the application folder.
-	 * 
-	 * @param modelID
-	 * 	ID of the model as defined in the rdf.yaml file
-	 * @param consumer
-	 * 	consumer used to keep track of the process of download of the weights
-	 * @return true if at least one DL engine of the model weights defined in the rdf.yaml is
-	 * 	successfully installed
-	 * @throws IOException if there is any error creating the folder for the engine
-	 * @throws InterruptedException if the thread is interrupted while trying to connect to the Bioimage.io
+	 *
+	 * @param modelID the model ID.
+	 * @param consumer the consumer callback.
+	 * @return true if install engines for model by ID; false otherwise.
+	 * @throws IOException if an I/O error occurs.
+	 * @throws InterruptedException if the current thread is interrupted.
 	 */
 	public static boolean installEnginesForModelByID(String modelID, 
 			Consumer<Double> consumer) throws IOException, InterruptedException {
@@ -852,17 +819,14 @@ public class EngineInstall {
 	 * Install the DL engines corresponding to the weights defined in the yaml.rdf
 	 * file corresponding to the modelID provided. The modelId is the field 'id' in
 	 * the rdf.yaml
-	 * 
+	 *
 	 * The DL engine is downloaded automatically into a directory provided.
-	 * 
-	 * @param modelID
-	 * 	ID of the model as defined in the rdf.yaml file
-	 * @param enginesDir
-	 *  directory where the engines are installed
-	 * @return true if at least one DL engine of the model weights defined in the rdf.yaml is
-	 * 	successfully installed
-	 * @throws IOException if there is any error creating the folder for the engine
-	 * @throws InterruptedException if the thread is interrupted while trying to connect to the Bioimage.io
+	 *
+	 * @param modelID the model ID.
+	 * @param enginesDir the engines directory.
+	 * @return true if install engines for model by ID in directory; false otherwise.
+	 * @throws IOException if an I/O error occurs.
+	 * @throws InterruptedException if the current thread is interrupted.
 	 */
 	public static boolean installEnginesForModelByIDInDir(String modelID, String enginesDir) throws IOException, InterruptedException {
 		return installEnginesForModelByIDInDir(modelID, enginesDir, null);
@@ -872,19 +836,15 @@ public class EngineInstall {
 	 * Install the DL engines corresponding to the weights defined in the yaml.rdf
 	 * file corresponding to the modelID provided. The modelId is the field 'id' in
 	 * the rdf.yaml
-	 * 
+	 *
 	 * The DL engine is downloaded automatically into a directory provided.
-	 * 
-	 * @param modelID
-	 * 	ID of the model as defined in the rdf.yaml file
-	 * @param enginesDir
-	 *  directory where the engines are installed
-	 * @param consumer
-	 * 	consumer used to keep track of the process of download of the weights
-	 * @return true if at least one DL engine of the model weights defined in the rdf.yaml is
-	 * 	successfully installed
-	 * @throws IOException if there is any error creating the folder for the engine
-	 * @throws InterruptedException if the thread is interrupted while trying to connect to the Bioimage.io
+	 *
+	 * @param modelID the model ID.
+	 * @param enginesDir the engines directory.
+	 * @param consumer the consumer callback.
+	 * @return true if install engines for model by ID in directory; false otherwise.
+	 * @throws IOException if an I/O error occurs.
+	 * @throws InterruptedException if the current thread is interrupted.
 	 */
 	public static boolean installEnginesForModelByIDInDir(String modelID, String enginesDir, 
 			Consumer<Double> consumer) throws IOException, InterruptedException {
@@ -896,18 +856,16 @@ public class EngineInstall {
 	
 	/**
 	 * Install the DL engines corresponding to the weights defined in the yaml.rdf
-	 * file corresponding to the model name provided. The model name is the field 
+	 * file corresponding to the model name provided. The model name is the field
 	 * 'name' in the rdf.yaml
-	 * 
+	 *
 	 * The DL engine is downloaded automatically into a directory called "models"
 	 * inside the application folder.
-	 * 
-	 * @param modelName
-	 * 	model name as defined in the rdf.yaml file
-	 * @return true if at least one DL engine of the model weights defined in the rdf.yaml is
-	 * 	successfully installed
-	 * @throws IOException if there is any error creating the folder for the engine
-	 * @throws InterruptedException if the thread is interrupted while trying to connect to the Bioimage.io
+	 *
+	 * @param modelName the model name.
+	 * @return true if install engines for model by name; false otherwise.
+	 * @throws IOException if an I/O error occurs.
+	 * @throws InterruptedException if the current thread is interrupted.
 	 */
 	public static boolean installEnginesForModelByName(String modelName) throws IOException, InterruptedException {
 		return installEnginesForModelByNameinDir(modelName, InstalledEngines.getEnginesDir(), null);
@@ -915,20 +873,17 @@ public class EngineInstall {
 	
 	/**
 	 * Install the DL engines corresponding to the weights defined in the yaml.rdf
-	 * file corresponding to the model name provided. The model name is the field 
+	 * file corresponding to the model name provided. The model name is the field
 	 * 'name' in the rdf.yaml
-	 * 
+	 *
 	 * The DL engine is downloaded automatically into a directory called "models"
 	 * inside the application folder.
-	 * 
-	 * @param modelName
-	 * 	model name as defined in the rdf.yaml file
-	 * @param consumer
-	 * 	consumer used to keep track of the process of download of the weights
-	 * @return true if at least one DL engine of the model weights defined in the rdf.yaml is
-	 * 	successfully installed
-	 * @throws IOException if there is any error creating the folder for the engine
-	 * @throws InterruptedException if the thread is interrupted while trying to connect to the Bioimage.io
+	 *
+	 * @param modelName the model name.
+	 * @param consumer the consumer callback.
+	 * @return true if install engines for model by name; false otherwise.
+	 * @throws IOException if an I/O error occurs.
+	 * @throws InterruptedException if the current thread is interrupted.
 	 */
 	public static boolean installEnginesForModelByName(String modelName, 
 			Consumer<Double> consumer) throws IOException, InterruptedException {
@@ -937,19 +892,16 @@ public class EngineInstall {
 
 	/**
 	 * Install the DL engines corresponding to the weights defined in the yaml.rdf
-	 * file corresponding to the model name provided. The model name is the field 
+	 * file corresponding to the model name provided. The model name is the field
 	 * 'name' in the rdf.yaml
-	 * 
+	 *
 	 * The DL engine is downloaded automatically into a directory provided.
-	 * 
-	 * @param modelName
-	 * 	model name as defined in the rdf.yaml file
-	 * @param enginesDir
-	 * 	dir where the engines will be installed
-	 * @return true if at least one DL engine of the model weights defined in the rdf.yaml is
-	 * 	successfully installed
-	 * @throws IOException if there is any error creating the folder for the engine
-	 * @throws InterruptedException if the thread is interrupted while trying to connect to the Bioimage.io
+	 *
+	 * @param modelName the model name.
+	 * @param enginesDir the engines directory.
+	 * @return true if install engines for model by namein directory; false otherwise.
+	 * @throws IOException if an I/O error occurs.
+	 * @throws InterruptedException if the current thread is interrupted.
 	 */
 	public static boolean installEnginesForModelByNameinDir(String modelName, String enginesDir) throws IOException, InterruptedException {
 		return installEnginesForModelByNameinDir(modelName, enginesDir, null);
@@ -957,21 +909,17 @@ public class EngineInstall {
 
 	/**
 	 * Install the DL engines corresponding to the weights defined in the yaml.rdf
-	 * file corresponding to the model name provided. The model name is the field 
+	 * file corresponding to the model name provided. The model name is the field
 	 * 'name' in the rdf.yaml
-	 * 
+	 *
 	 * The DL engine is downloaded automatically into a directory provided.
-	 * 
-	 * @param modelName
-	 * 	model name as defined in the rdf.yaml file
-	 * @param enginesDir
-	 * 	dir where the engines will be installed
-	 * @param consumer
-	 * 	consumer used to keep track of the process of download of the weights
-	 * @return true if at least one DL engine of the model weights defined in the rdf.yaml is
-	 * 	successfully installed
-	 * @throws IOException if there is any error creating the folder for the engine
-	 * @throws InterruptedException if the thread is interrupted while trying to connect to the Bioimage.io
+	 *
+	 * @param modelName the model name.
+	 * @param enginesDir the engines directory.
+	 * @param consumer the consumer callback.
+	 * @return true if install engines for model by namein directory; false otherwise.
+	 * @throws IOException if an I/O error occurs.
+	 * @throws InterruptedException if the current thread is interrupted.
 	 */
 	public static boolean installEnginesForModelByNameinDir(String modelName, String enginesDir, 
 			Consumer<Double> consumer) throws IOException, InterruptedException {
@@ -983,19 +931,17 @@ public class EngineInstall {
 	
 	/**
 	 * Install the DL engine corresponding to the weights of the Bioimage.io
-	 * model contained in the provided folder. The engines are read from the 
+	 * model contained in the provided folder. The engines are read from the
 	 * model rdf.yaml file
-	 * 
+	 *
 	 * The DL engine is downloaded automatically into a directory called "models"
 	 * inside the application folder.
-	 * 
-	 * @param modelFolder
-	 * 	folder containing a Bioimage.io model with a valid rdf.yaml
-	 * @return true if at least one DL engine of the model weights defined in the rdf.yaml is
-	 * 	successfully installed
-	 * @throws FileNotFoundException if the rdf.yaml specs file does not exist
-	 * @throws ModelSpecsException if there is any error with the rdf.yaml file
-	 * @throws IOException if there is any error creating the folder for the engine or downloading the jar files
+	 *
+	 * @param modelFolder the model folder.
+	 * @return true if install engines for model in folder; false otherwise.
+	 * @throws FileNotFoundException if the requested file cannot be found.
+	 * @throws ModelSpecsException if the model specification is invalid.
+	 * @throws IOException if an I/O error occurs.
 	 */
 	public static boolean installEnginesForModelInFolder(String modelFolder) throws FileNotFoundException, ModelSpecsException, IOException {
 		return installEnginesinDirForModelInFolder(modelFolder, InstalledEngines.getEnginesDir(), null);
@@ -1003,21 +949,18 @@ public class EngineInstall {
 	
 	/**
 	 * Install the DL engine corresponding to the weights of the Bioimage.io
-	 * model contained in the provided folder. The engines are read from the 
+	 * model contained in the provided folder. The engines are read from the
 	 * model rdf.yaml file
-	 * 
+	 *
 	 * The DL engine is downloaded automatically into a directory called "models"
 	 * inside the application folder.
-	 * 
-	 * @param modelFolder
-	 * 	folder containing a Bioimage.io model with a valid rdf.yaml
-	 * @param consumer
-	 * 	consumer used to keep track of the process of download of the weights
-	 * @return true if at least one DL engine of the model weights defined in the rdf.yaml is
-	 * 	successfully installed
-	 * @throws FileNotFoundException if the rdf.yaml specs file does not exist
-	 * @throws ModelSpecsException if there is any error with the rdf.yaml file
-	 * @throws IOException if there is any error creating the folder for the engine or downloading the jar files
+	 *
+	 * @param modelFolder the model folder.
+	 * @param consumer the consumer callback.
+	 * @return true if install engines for model in folder; false otherwise.
+	 * @throws FileNotFoundException if the requested file cannot be found.
+	 * @throws ModelSpecsException if the model specification is invalid.
+	 * @throws IOException if an I/O error occurs.
 	 */
 	public static boolean installEnginesForModelInFolder(String modelFolder, 
 			Consumer<Double> consumer) throws FileNotFoundException, ModelSpecsException, IOException {
@@ -1026,20 +969,17 @@ public class EngineInstall {
 	
 	/**
 	 * Install the DL engine corresponding to the weights of the Bioimage.io
-	 * model contained in the provided folder. The engines are read from the 
+	 * model contained in the provided folder. The engines are read from the
 	 * model rdf.yaml file
-	 * 
+	 *
 	 * The DL engine is downloaded automatically into a directory provided.
-	 * 
-	 * @param modelFolder
-	 * 	folder containing a Bioimage.io model with a valid rdf.yaml
-	 * @param enginesDir
-	 * 	directory where the engines will be installed
-	 * @return true if at least one DL engine of the model weights defined in the rdf.yaml is
-	 * 	successfully installed
-	 * @throws FileNotFoundException if the rdf.yaml specs file does not exist
-	 * @throws ModelSpecsException if there is any error with the rdf.yaml file
-	 * @throws IOException if there is any error creating the folder for the engine or downloading the jar files
+	 *
+	 * @param modelFolder the model folder.
+	 * @param enginesDir the engines directory.
+	 * @return true if install enginesin directory for model in folder; false otherwise.
+	 * @throws FileNotFoundException if the requested file cannot be found.
+	 * @throws ModelSpecsException if the model specification is invalid.
+	 * @throws IOException if an I/O error occurs.
 	 */
 	public static boolean installEnginesinDirForModelInFolder(String modelFolder, String enginesDir) throws FileNotFoundException, ModelSpecsException, IOException {
 		return installEnginesinDirForModelInFolder(modelFolder, enginesDir, null);
@@ -1047,22 +987,18 @@ public class EngineInstall {
 	
 	/**
 	 * Install the DL engine corresponding to the weights of the Bioimage.io
-	 * model contained in the provided folder. The engines are read from the 
+	 * model contained in the provided folder. The engines are read from the
 	 * model rdf.yaml file
-	 * 
+	 *
 	 * The DL engine is downloaded automatically into a directory provided.
-	 * 
-	 * @param modelFolder
-	 * 	folder containing a Bioimage.io model with a valid rdf.yaml
-	 * @param enginesDir
-	 * 	directory where the engines will be installed
-	 * @param consumer
-	 * 	consumer used to keep track of the process of download of the weights
-	 * @return true if at least one DL engine of the model weights defined in the rdf.yaml is
-	 * 	successfully installed
-	 * @throws FileNotFoundException if the rdf.yaml specs file does not exist
-	 * @throws ModelSpecsException if there is any error with the rdf.yaml file
-	 * @throws IOException if there is any error creating the folder for the engine or downloading the jar files
+	 *
+	 * @param modelFolder the model folder.
+	 * @param enginesDir the engines directory.
+	 * @param consumer the consumer callback.
+	 * @return true if install enginesin directory for model in folder; false otherwise.
+	 * @throws FileNotFoundException if the requested file cannot be found.
+	 * @throws ModelSpecsException if the model specification is invalid.
+	 * @throws IOException if an I/O error occurs.
 	 */
 	public static boolean installEnginesinDirForModelInFolder(String modelFolder, String enginesDir, 
 			Consumer<Double> consumer) 
@@ -1076,11 +1012,11 @@ public class EngineInstall {
 	
 	/**
 	 * Install the engine specified by the {@link DeepLearningVersion} object
-	 * @param engine
-	 * 	the {@link DeepLearningVersion} object specifying the wanted engine
-	 * @throws IOException if there is any error downloading the engine
-	 * @throws InterruptedException if the main thread is interrumpted abruptly while downloading
-	 * @throws ExecutionException if there is any error in the download
+	 *
+	 * @param engine the engine.
+	 * @throws IOException if an I/O error occurs.
+	 * @throws InterruptedException if the current thread is interrupted.
+	 * @throws ExecutionException if an asynchronous operation fails.
 	 */
 	public static void installEngine(DeepLearningVersion engine) throws IOException, InterruptedException, ExecutionException {
 		installEngine(engine, null);
@@ -1088,13 +1024,12 @@ public class EngineInstall {
 	
 	/**
 	 * Install the engine specified by the {@link DeepLearningVersion} object
-	 * @param engine
-	 * 	the {@link DeepLearningVersion} object specifying the wanted engine
-	 * @param consumer
-	 * 	consumer used to communicate the progress made donwloading files
-	 * @throws IOException if there is any error downloading the engine
-	 * @throws InterruptedException if the main thread is interrumpted abruptly while downloading
-	 * @throws ExecutionException if there is any error in the download
+	 *
+	 * @param engine the engine.
+	 * @param consumer the consumer callback.
+	 * @throws IOException if an I/O error occurs.
+	 * @throws InterruptedException if the current thread is interrupted.
+	 * @throws ExecutionException if an asynchronous operation fails.
 	 */
 	public static void installEngine(DeepLearningVersion engine, 
 			Consumer<Double> consumer) throws IOException, InterruptedException, ExecutionException {
@@ -1103,15 +1038,12 @@ public class EngineInstall {
 	
 	/**
 	 * Install the engine specified by the {@link DeepLearningVersion} object
-	 * @param engine
-	 * 	the {@link DeepLearningVersion} object specifying the wanted engine
-	 * @param engineDir
-	 * 	directory where the engines are downloaded. Inside the dir specififed the 
-	 * 	corresponding folder for the engine will be created, which will contain the 
-	 * 	files needed to run the engine
-	 * @throws IOException if there is any error downloading the engine
-	 * @throws InterruptedException if the main thread is interrumped abruptly while downloading
-	 * @throws ExecutionException if there is any error in the download
+	 *
+	 * @param engine the engine.
+	 * @param engineDir the engine directory.
+	 * @throws IOException if an I/O error occurs.
+	 * @throws InterruptedException if the current thread is interrupted.
+	 * @throws ExecutionException if an asynchronous operation fails.
 	 */
 	public static void installEngineInDir(DeepLearningVersion engine, String engineDir) throws IOException, InterruptedException, ExecutionException {
 		installEngineInDir(engine, engineDir, null);
@@ -1119,17 +1051,13 @@ public class EngineInstall {
 	
 	/**
 	 * Install the engine specified by the {@link DeepLearningVersion} object
-	 * @param engine
-	 * 	the {@link DeepLearningVersion} object specifying the wanted engine
-	 * @param engineDir
-	 * 	directory where the engines are downloaded. Inside the dir specififed the 
-	 * 	corresponding folder for the engine will be created, which will contain the 
-	 * 	files needed to run the engine
-	 * @param consumer
-	 * 	consumer used to communicate the progress made donwloading files
-	 * @throws IOException if there is any error downloading the engine
-	 * @throws InterruptedException if the main thread is interrumped abruptly while downloading
-	 * @throws ExecutionException if there is any error in the donwload
+	 *
+	 * @param engine the engine.
+	 * @param engineDir the engine directory.
+	 * @param consumer the consumer callback.
+	 * @throws IOException if an I/O error occurs.
+	 * @throws InterruptedException if the current thread is interrupted.
+	 * @throws ExecutionException if an asynchronous operation fails.
 	 */
 	public static void installEngineInDir(DeepLearningVersion engine, String engineDir, 
 			Consumer<Double> consumer) throws IOException, InterruptedException, ExecutionException {
@@ -1154,17 +1082,14 @@ public class EngineInstall {
 	 * Install the engine specified by the arguments of the method
 	 * The engine will be installed in the default engines directory, which is the
 	 * folder named 'engines' inside the application directory
-	 * @param framework
-	 * 	DL framework as specified by the Bioimage.io model zoo ()https://github.com/bioimage-io/spec-bioimage-io/blob/gh-pages/weight_formats_spec_0_4.md)
-	 * @param version
-	 * 	the version of the framework
-	 * @param cpu
-	 * 	whether the engine supports cpu or not
-	 * @param gpu
-	 * 	whether the engine supports gpu or not
-	 * @throws IOException if there is any error downloading the engine
-	 * @throws InterruptedException if the main thread is interrupted abruptly while downloading
-	 * @throws ExecutionException if there is any error in the download
+	 *
+	 * @param framework the framework.
+	 * @param version the version.
+	 * @param cpu the CPU.
+	 * @param gpu whether to use GPU.
+	 * @throws IOException if an I/O error occurs.
+	 * @throws InterruptedException if the current thread is interrupted.
+	 * @throws ExecutionException if an asynchronous operation fails.
 	 */
 	public static void installEngineWithArgs(String framework, String version, boolean cpu, boolean gpu) throws IOException, InterruptedException, ExecutionException {
 		installEngineWithArgsInDir(framework, version, cpu, gpu, ENGINES_DIR, null);
@@ -1174,19 +1099,15 @@ public class EngineInstall {
 	 * Install the engine specified by the arguments of the method
 	 * The engine will be installed in the provided directory
 	 * folder named 'engines' inside the application directory
-	 * @param framework
-	 * 	DL framework as specified by the Bioimage.io model zoo ()https://github.com/bioimage-io/spec-bioimage-io/blob/gh-pages/weight_formats_spec_0_4.md)
-	 * @param version
-	 * 	the version of the framework
-	 * @param cpu
-	 * 	whether the engine supports cpu or not
-	 * @param gpu
-	 * 	whether the engine supports gpu or not
-	 * @param dir
-	 * 	directory where the engine will be installed
-	 * @throws IOException if tehre is any error downloading the engine
-	 * @throws InterruptedException if the main thread is interrumped abruptly while downloading
-	 * @throws ExecutionException if there is any error in the download
+	 *
+	 * @param framework the framework.
+	 * @param version the version.
+	 * @param cpu the CPU.
+	 * @param gpu whether to use GPU.
+	 * @param dir the directory.
+	 * @throws IOException if an I/O error occurs.
+	 * @throws InterruptedException if the current thread is interrupted.
+	 * @throws ExecutionException if an asynchronous operation fails.
 	 */
 	public static void installEngineWithArgsInDir(String framework, String version, 
 			boolean cpu, boolean gpu, String dir) throws IOException, InterruptedException, ExecutionException {
@@ -1197,19 +1118,15 @@ public class EngineInstall {
 	 * Install the engine specified by the arguments of the method.
 	 * The engine will be installed in the default engines directory, which is the
 	 * folder named 'engines' inside the application directory
-	 * @param framework
-	 * 	DL framework as specified by the Bioimage.io model zoo ()https://github.com/bioimage-io/spec-bioimage-io/blob/gh-pages/weight_formats_spec_0_4.md)
-	 * @param version
-	 * 	the version of the framework
-	 * @param cpu
-	 * 	whether the engine supports cpu or not
-	 * @param gpu
-	 * 	whether the engine supports gpu or not
-	 * @param consumer
-	 * 	consumer used to communicate the progress made donwloading files
-	 * @throws IOException if tehre is any error downloading the engine
-	 * @throws InterruptedException if the main thread is interrumped abruptly while downloading
-	 * @throws ExecutionException if there is any error in the download
+	 *
+	 * @param framework the framework.
+	 * @param version the version.
+	 * @param cpu the CPU.
+	 * @param gpu whether to use GPU.
+	 * @param consumer the consumer callback.
+	 * @throws IOException if an I/O error occurs.
+	 * @throws InterruptedException if the current thread is interrupted.
+	 * @throws ExecutionException if an asynchronous operation fails.
 	 */
 	public static void installEngineWithArgs(String framework, String version, 
 			boolean cpu, boolean gpu, Consumer<Double> consumer) throws IOException, InterruptedException, ExecutionException {
@@ -1218,21 +1135,16 @@ public class EngineInstall {
 	
 	/**
 	 * Install the engine specified by the arguments of the method in the wanted folder
-	 * @param framework
-	 * 	DL framework as specified by the Bioimage.io model zoo ()https://github.com/bioimage-io/spec-bioimage-io/blob/gh-pages/weight_formats_spec_0_4.md)
-	 * @param version
-	 * 	the version of the framework
-	 * @param cpu
-	 * 	whether the engine supports cpu or not
-	 * @param gpu
-	 * 	whether the engine supports gpu or not
-	 * @param dir
-	 * 	folder where the engine will be installed
-	 * @param consumer
-	 * 	consumer used to communicate the progress made donwloading files
-	 * @throws IOException if tehre is any error downloading the engine
-	 * @throws InterruptedException if the main thread is interrumped abruptly while downloading
-	 * @throws ExecutionException if there is any error in the download
+	 *
+	 * @param framework the framework.
+	 * @param version the version.
+	 * @param cpu the CPU.
+	 * @param gpu whether to use GPU.
+	 * @param dir the directory.
+	 * @param consumer the consumer callback.
+	 * @throws IOException if an I/O error occurs.
+	 * @throws InterruptedException if the current thread is interrupted.
+	 * @throws ExecutionException if an asynchronous operation fails.
 	 */
 	public static void installEngineWithArgsInDir(String framework, String version, 
 			boolean cpu, boolean gpu, String dir,
@@ -1263,15 +1175,12 @@ public class EngineInstall {
     
     /**
      * Check if an engine is supported by the dl-modelrunner or not
-     * @param framework
-	 * 	DL framework as specified by the Bioimage.io model zoo ()https://github.com/bioimage-io/spec-bioimage-io/blob/gh-pages/weight_formats_spec_0_4.md)
-	 * @param version
-	 * 	the version of the framework
-	 * @param cpu
-	 * 	whether the engine supports cpu or not
-	 * @param gpu
-	 * 	whether the engine supports gpu or not
-     * @return true if the engine exists and false otherwise
+     *
+     * @param framework the framework.
+     * @param version the version.
+     * @param cpu the CPU.
+     * @param gpu whether to use GPU.
+     * @return true if engine supported; false otherwise.
      */
     public static boolean isEngineSupported(String framework, String version, boolean cpu, boolean gpu) {
     	if (ENGINES_MAP.get(framework) != null)

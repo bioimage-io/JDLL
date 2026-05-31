@@ -21,10 +21,28 @@ package io.bioimage.modelrunner.gui.custom.yolo;
 
 public interface TrainingValidationPreview {
 
+    /**
+     * Clears the validation preview.
+     */
     void clearPreview();
 
+    /**
+     * Loads a validation preview.
+     *
+     * @param jsonPath the JSON path.
+     */
     void loadPreview(String jsonPath);
 
+    /**
+     * Sets the training status display.
+     *
+     * @param active whether training is active.
+     * @param currentStep the current step.
+     * @param totalSteps the total steps.
+     * @param totalEpochs the total epochs.
+     * @param elapsedMillis the elapsed millis.
+     * @param secondsPerIteration the seconds per iteration.
+     */
     void setTrainingStatus(boolean active, int currentStep, int totalSteps,
             int totalEpochs, long elapsedMillis, double secondsPerIteration);
 }

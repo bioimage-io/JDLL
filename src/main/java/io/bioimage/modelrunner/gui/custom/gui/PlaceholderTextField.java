@@ -64,10 +64,20 @@ public class PlaceholderTextField extends JTextField {
         }
     }
 
+    /**
+     * Returns the placeholder.
+     *
+     * @return the placeholder.
+     */
     protected String getPlaceholder() {
         return placeholder;
     }
 
+    /**
+     * Returns the placeholder color.
+     *
+     * @return the placeholder color.
+     */
     protected Color getPlaceholderColor() {
         return placeholderColor;
     }

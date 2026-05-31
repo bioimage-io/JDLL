@@ -43,14 +43,11 @@ public class JSONUtils
 
     /**
      * Reads the provided json file and loads it into a map of string keys and object values.
-     * 
-     * @param jsonFile
-     *        The target json file.
-     * @return The map loaded with the json elements.
-     * @throws FileNotFoundException
-     *         If the file cannot be found.
-     * @throws IOException
-     *         If the file cannot be read.
+     *
+     * @param jsonFile the JSON file.
+     * @return the resulting map.
+     * @throws FileNotFoundException if the requested file cannot be found.
+     * @throws IOException if an I/O error occurs.
      */
 	public static Map<String, Object> load(String jsonFile) throws FileNotFoundException, IOException {
 	    try (FileReader reader = new FileReader(jsonFile)) {
@@ -65,10 +62,9 @@ public class JSONUtils
 
     /**
      * Converts a list of objects into an array of strings.
-     * 
-     * @param list
-     *        The target list.
-     * @return The array of strings.
+     *
+     * @param list the list.
+     * @return the resulting string.
      */
     public static String[] castListToStringArray(List<?> list)
     {
@@ -83,10 +79,9 @@ public class JSONUtils
 
     /**
      * Converts a list of objects into an array of integers.
-     * 
-     * @param list
-     *        The target list.
-     * @return The array of integers.
+     *
+     * @param list the list.
+     * @return the resulting int.
      */
     public static int[] castListToIntArray(List<?> list)
     {
@@ -101,10 +96,9 @@ public class JSONUtils
 
     /**
      * Converts a list of objects into an array of doubles.
-     * 
-     * @param list
-     *        The target list.
-     * @return The array of doubles.
+     *
+     * @param list the list.
+     * @return the resulting double.
      */
     public static double[] castListToDoubleArray(List<?> list)
     {
@@ -126,10 +120,9 @@ public class JSONUtils
 
     /**
      * Converts a list of objects into an array of floats.
-     * 
-     * @param list
-     *        The target list.
-     * @return The array of floats.
+     *
+     * @param list the list.
+     * @return the resulting float.
      */
     public static float[] castListToFloatArray(List<?> list)
     {
@@ -167,11 +160,10 @@ public class JSONUtils
 
     /**
      * Method that writes a Map&lt;String, Object&gt; into a JSON file in the path defined
-     * @param filePath
-     * 	path to the json file that will be created
-     * @param data
-     * 	data to be written into the json file
-     * @throws IOException if there is any problem writting the json file
+     *
+     * @param filePath the file path.
+     * @param data the data.
+     * @throws IOException if an I/O error occurs.
      */
     public static void writeJSONFile(String filePath, Map<String, Object> data) throws IOException {
     	Gson gson = new Gson();

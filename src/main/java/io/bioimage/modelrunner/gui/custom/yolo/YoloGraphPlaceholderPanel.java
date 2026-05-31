@@ -84,6 +84,11 @@ public class YoloGraphPlaceholderPanel extends JPanel {
     private double panStartMinStep;
     private double panStartMaxStep;
 
+    /**
+     * Creates a new YoloGraphPlaceholderPanel instance.
+     *
+     * @param title the title.
+     */
     public YoloGraphPlaceholderPanel(String title) {
         this.fallbackTitle = title;
         setLayout(null);
@@ -99,18 +104,49 @@ public class YoloGraphPlaceholderPanel extends JPanel {
         setDefaultSeries();
     }
 
+    /**
+     * Performs add value.
+     *
+     * @param value the value.
+     */
     public void addValue(Double value) {
         addTrainValue(fallbackTitle, valuesCount() + 1, valuesCount() + 1, value);
     }
 
+    /**
+     * Performs add train value.
+     *
+     * @param metricName the metric name.
+     * @param step the step.
+     * @param epoch the epoch.
+     * @param value the value.
+     */
     public void addTrainValue(String metricName, int step, int epoch, Double value) {
         addValue("Training", metricName, step, epoch, value, TRAIN_COLOR);
     }
 
+    /**
+     * Performs add validation value.
+     *
+     * @param metricName the metric name.
+     * @param step the step.
+     * @param epoch the epoch.
+     * @param value the value.
+     */
     public void addValidationValue(String metricName, int step, int epoch, Double value) {
         addValue("Validation", metricName, step, epoch, value, VALIDATION_COLOR);
     }
 
+    /**
+     * Performs add value.
+     *
+     * @param seriesName the series name.
+     * @param metricName the metric name.
+     * @param step the step.
+     * @param epoch the epoch.
+     * @param value the value.
+     * @param color the color.
+     */
     public void addValue(String seriesName, String metricName, int step, int epoch, Double value, Color color) {
         if (value == null || value.isNaN() || value.isInfinite()) {
             return;
@@ -126,6 +162,9 @@ public class YoloGraphPlaceholderPanel extends JPanel {
         repaint();
     }
 
+    /**
+     * Performs clear values.
+     */
     public void clearValues() {
         series.clear();
         selectedMetricName = null;
@@ -141,11 +180,30 @@ public class YoloGraphPlaceholderPanel extends JPanel {
         repaint();
     }
 
+    /**
+     * Sets the training status.
+     *
+     * @param active the active.
+     * @param currentStep the current step.
+     * @param totalSteps the total steps.
+     * @param elapsedMillis the elapsed millis.
+     * @param secondsPerStep the seconds per step.
+     */
     public void setTrainingStatus(boolean active, int currentStep, int totalSteps,
             long elapsedMillis, double secondsPerStep) {
         setTrainingStatus(active, currentStep, totalSteps, currentEpoch, totalEpochs, elapsedMillis, secondsPerStep);
     }
 
+    /**
+     * Sets the training status.
+     *
+     * @param active the active.
+     * @param currentStep the current step.
+     * @param totalSteps the total steps.
+     * @param totalEpochs the total epochs.
+     * @param elapsedMillis the elapsed millis.
+     * @param secondsPerStep the seconds per step.
+     */
     public void setTrainingStatus(boolean active, int currentStep, int totalSteps,
             int totalEpochs, long elapsedMillis, double secondsPerStep) {
         setTrainingStatus(active, currentStep, totalSteps,
@@ -153,6 +211,17 @@ public class YoloGraphPlaceholderPanel extends JPanel {
                 totalEpochs, elapsedMillis, secondsPerStep);
     }
 
+    /**
+     * Sets the training status.
+     *
+     * @param active the active.
+     * @param currentStep the current step.
+     * @param totalSteps the total steps.
+     * @param currentEpoch the current epoch.
+     * @param totalEpochs the total epochs.
+     * @param elapsedMillis the elapsed millis.
+     * @param secondsPerStep the seconds per step.
+     */
     public void setTrainingStatus(boolean active, int currentStep, int totalSteps,
             int currentEpoch, int totalEpochs, long elapsedMillis, double secondsPerStep) {
         this.trainingActive = active;
@@ -165,6 +234,9 @@ public class YoloGraphPlaceholderPanel extends JPanel {
         repaint();
     }
 
+    /**
+     * Performs do layout.
+     */
     @Override
     public void doLayout() {
         int size = Math.max(OVERLAY_BUTTON_MIN,
@@ -174,6 +246,11 @@ public class YoloGraphPlaceholderPanel extends JPanel {
                 Math.min(YoloUiUtils.MAX_CONTROL_FONT_SIZE - 2, size * 0.42f))));
     }
 
+    /**
+     * Performs paint component.
+     *
+     * @param g the g.
+     */
     @Override
     protected void paintComponent(Graphics g) {
         super.paintComponent(g);
@@ -537,6 +614,11 @@ public class YoloGraphPlaceholderPanel extends JPanel {
 
     private void installMouseControls() {
         MouseAdapter adapter = new MouseAdapter() {
+            /**
+             * Performs mouse pressed.
+             *
+             * @param e the e.
+             */
             @Override
             public void mousePressed(MouseEvent e) {
                 if (!SwingUtilities.isLeftMouseButton(e) || isDefaultView() || !computePlotArea().contains(e.getPoint())) {
@@ -549,6 +631,11 @@ public class YoloGraphPlaceholderPanel extends JPanel {
                 setCursor(Cursor.getPredefinedCursor(Cursor.MOVE_CURSOR));
             }
 
+            /**
+             * Performs mouse dragged.
+             *
+             * @param e the e.
+             */
             @Override
             public void mouseDragged(MouseEvent e) {
                 if (!panning) {
@@ -563,11 +650,21 @@ public class YoloGraphPlaceholderPanel extends JPanel {
                 setViewRange(panStartMinStep + stepDelta, panStartMaxStep + stepDelta);
             }
 
+            /**
+             * Performs mouse released.
+             *
+             * @param e the e.
+             */
             @Override
             public void mouseReleased(MouseEvent e) {
                 stopPanning();
             }
 
+            /**
+             * Performs mouse exited.
+             *
+             * @param e the e.
+             */
             @Override
             public void mouseExited(MouseEvent e) {
                 if (!panning) {
@@ -575,6 +672,11 @@ public class YoloGraphPlaceholderPanel extends JPanel {
                 }
             }
 
+            /**
+             * Performs mouse wheel moved.
+             *
+             * @param e the e.
+             */
             @Override
             public void mouseWheelMoved(MouseWheelEvent e) {
                 if (!e.isControlDown() || !computePlotArea().contains(e.getPoint())) {

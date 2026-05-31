@@ -72,8 +72,9 @@ public abstract class AbstractTensorTransformation extends TensorTransformation
 	/**
 	 * Executes make output.
 	 *
-	 * @param input the input parameter.
-	 * @return the resulting value.
+	 * @param <R> the R type parameter.
+	 * @param input the input to process.
+	 * @return the resulting tensor.
 	 */
 	protected < R extends RealType< R > & NativeType< R > > Tensor< FloatType > makeOutput( final Tensor< R > input )
 	{

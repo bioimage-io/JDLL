@@ -121,14 +121,29 @@ public class CellposePluginUI extends CellposeGUI implements ActionListener {
 
 		modelComboBox.addPopupMenuListener(new PopupMenuListener() {
 
+			/**
+			 * Performs popup menu will become visible.
+			 *
+			 * @param e the e.
+			 */
 			@Override
 			public void popupMenuWillBecomeVisible(PopupMenuEvent e) {
 			}
 
+			/**
+			 * Performs popup menu canceled.
+			 *
+			 * @param e the e.
+			 */
 			@Override
 			public void popupMenuCanceled(PopupMenuEvent e) {
 			}
 
+			/**
+			 * Performs popup menu will become invisible.
+			 *
+			 * @param e the e.
+			 */
 			@Override
 			public void popupMenuWillBecomeInvisible(PopupMenuEvent e) {
 				boolean enabled = modelComboBox.getSelectedItem().equals(CUSTOM_STR);
@@ -157,9 +172,17 @@ public class CellposePluginUI extends CellposeGUI implements ActionListener {
 			model.close();
 	}
 
+	/**
+	 * Runs this class from the command line.
+	 *
+	 * @param args command-line arguments.
+	 */
 	public static void main(String[] args) {
 		SwingUtilities.invokeLater(new Runnable() {
 
+			/**
+			 * Runs the run.
+			 */
 			@Override
 			public void run() {
 				JFrame frame = new JFrame("Cellpose Plugin");
@@ -174,6 +197,11 @@ public class CellposePluginUI extends CellposeGUI implements ActionListener {
 		});
 	}
 
+	/**
+	 * Performs action performed.
+	 *
+	 * @param e the e.
+	 */
 	@Override
 	public void actionPerformed(ActionEvent e) {
 		if (e.getSource() == browseButton) {

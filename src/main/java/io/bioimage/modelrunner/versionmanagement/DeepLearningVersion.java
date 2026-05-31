@@ -60,12 +60,11 @@ public class DeepLearningVersion
      * where the first word means the engine, the next version number is the python version
      * number, the next version number is the Java JAr version number, then it comes the
      * operating system and then either cpu, gpu or mkl
-     * @param engineDir
-     * 	the engine folder 
-     * @return a {@link #DeepLearningVersion()}
-     * @throws IOException if the engine name does not follow the naming convention or the file does not exist
-     * @throws IllegalStateException if there are two engine names sharing the same properties. This should be impossible,
-     * 	and implies that the user has manipulated wrongly the engines
+     *
+     * @param engineDir the engine directory.
+     * @return the created deep learning version.
+     * @throws IOException if an I/O error occurs.
+     * @throws IllegalStateException if the object is not in the expected state.
      */
     public static DeepLearningVersion fromFile(File engineDir) throws IOException, IllegalStateException {
     	DeepLearningVersion dlVersion =  new DeepLearningVersion();
@@ -145,9 +144,9 @@ public class DeepLearningVersion
     /**
      * Check whether the provided file path corresponds to a JAR that can be found
      * in the particular DL engine
-     * @param jarDir
-     * 	path to the JAR of interest
-     * @return true if it belongs or false otherwise
+     *
+     * @param jarDir the jar directory.
+     * @return true if does jar belong to engine; false otherwise.
      */
     public boolean doesJarBelongToEngine(String jarDir) {
     	File jarFile = new File(jarDir);
@@ -334,11 +333,11 @@ public class DeepLearningVersion
     }
     
     /**
-     * REturn true if the Java version of the object instance is 
+     * REturn true if the Java version of the object instance is
      * bigger than the Java version of the input DeepLearningVersion
-     * @param vv
-     * 	version to be compared with
-     * @return true if the instance Java version is bigger
+     *
+     * @param vv the vv.
+     * @return true if java version bigger; false otherwise.
      */
     public boolean isJavaVersionBigger(DeepLearningVersion vv) {
     	int result = stringVersionComparator(getVersion(), vv.getVersion());
@@ -349,11 +348,11 @@ public class DeepLearningVersion
     }
     
     /**
-     * REturn true if the Python version of the object instance is 
+     * REturn true if the Python version of the object instance is
      * bigger than the Python version of the input DeepLearningVersion
-     * @param vv
-     * 	version to be compared with
-     * @return true if the instance Python version is bigger
+     *
+     * @param vv the vv.
+     * @return true if python version bigger; false otherwise.
      */
     public boolean isPythonVersionBigger(DeepLearningVersion vv) {
     	int result = stringVersionComparator(getPythonVersion(), vv.getPythonVersion());
@@ -364,16 +363,14 @@ public class DeepLearningVersion
     }
     
     /**
-     * This method compares to versions expressed as Strings. Returns 
+     * This method compares to versions expressed as Strings. Returns
      * -1 if the first version is bigger, 1 if the second argument is
      * bigger or 0 if the versions are equal.
      * Examples: 2.1 &gt; 2.0; 3.1.2 &lt; 3.2; 3.1.2 &gt; 3.1
-     * @param v1
-     * 	first version
-     * @param v2
-     * 	second version
-     * @return -1 if the first version is bigger, 1 if the second argument is
-     * bigger or 0 if the versions are equal.
+     *
+     * @param v1 the v1.
+     * @param v2 the v2.
+     * @return the resulting int.
      */
     public static int stringVersionComparator(String v1, String v2) {
     	if (v1 == null && v2 == null) 

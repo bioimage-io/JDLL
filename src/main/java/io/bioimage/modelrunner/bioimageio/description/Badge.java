@@ -31,14 +31,11 @@ public class Badge
 {
     /**
      * Creates a {@link Badge} instance.
-     * 
-     * @param label
-     * 	label of the badge, e.g. 'Open in Colab' 
-     * @param icon
-     * 	optional String e.g. 'https://colab.research.google.com/assets/colab-badge.svg'
-     * @param url
-     * 	e.g. 'https://colab.research.google.com/github/HenriquesLab/ZeroCostDL4Mic/blob/master/Colab_notebooks/U-net_2D_ZeroCostDL4Mic.ipynb' 
-     * @return The creates instance.
+     *
+     * @param label the label.
+     * @param icon the icon.
+     * @param url the URL.
+     * @return the created badge.
      */
     public static Badge build(String label, String icon, String url)
     {
@@ -63,9 +60,8 @@ public class Badge
 
     /**
      * Sets the label of the badge
-     * 
-     * @param label
-     *        label of the badge.
+     *
+     * @param label the label.
      */
     public void setText(String label)
     {
@@ -82,9 +78,8 @@ public class Badge
 
     /**
      * Sets the icon url as a String
-     * 
-     * @param icon
-     * 	icon url as a String
+     *
+     * @param icon the icon.
      */
     public void setIcon(String icon)
     {

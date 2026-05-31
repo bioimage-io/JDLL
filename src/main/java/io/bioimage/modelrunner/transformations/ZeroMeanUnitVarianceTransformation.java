@@ -243,8 +243,9 @@ public class ZeroMeanUnitVarianceTransformation extends AbstractTensorTransforma
 	/**
 	 * Executes apply.
 	 *
-	 * @param input the input parameter.
-	 * @return the resulting value.
+	 * @param <R> the R type parameter.
+	 * @param input the input to process.
+	 * @return the resulting tensor.
 	 */
 	@Override
 	public < R extends RealType< R > & NativeType< R > > Tensor< FloatType > apply( final Tensor< R > input )
@@ -258,7 +259,8 @@ public class ZeroMeanUnitVarianceTransformation extends AbstractTensorTransforma
 	/**
 	 * Executes apply in place.
 	 *
-	 * @param input the input parameter.
+	 * @param <R> the R type parameter.
+	 * @param input the input to process.
 	 */
 	@Override
 	public < R extends RealType< R > & NativeType< R > > void applyInPlace( final Tensor< R > input )
@@ -373,8 +375,9 @@ public class ZeroMeanUnitVarianceTransformation extends AbstractTensorTransforma
 	/**
 	 * Executes mean std.
 	 *
-	 * @param rai the rai parameter.
-	 * @return the resulting array.
+	 * @param <R> the R type parameter.
+	 * @param rai the RAI.
+	 * @return the resulting float.
 	 */
 	public static < R extends RealType< R > & NativeType< R > > float[] meanStd( final RandomAccessibleInterval< R > rai )
 	{
@@ -487,6 +490,14 @@ public class ZeroMeanUnitVarianceTransformation extends AbstractTensorTransforma
 		System.out.print(true);
 	}
 	
+	/**
+	 * Performs zero mean unit variance.
+	 *
+	 * @param <R> the R type parameter.
+	 * @param rai the RAI.
+	 * @param mean the mean.
+	 * @param std the std.
+	 */
 	public < R extends RealType< R > & NativeType< R > > 
 	void zeroMeanUnitVariance(RandomAccessibleInterval<R> rai, double mean, double std) {
         R type = Util.getTypeFromInterval(rai);

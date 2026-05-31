@@ -49,10 +49,30 @@ public class YoloInferenceService {
     private Yolo model;
     private Rectangle size = null;
 
+    /**
+     * Creates a new YoloInferenceService instance.
+     *
+     * @param installer the installer.
+     */
     public YoloInferenceService(ModelInstaller installer) {
         this.installer = installer;
     }
 
+    /**
+     * Runs the run.
+     *
+     * @param <T> the T type parameter.
+     * @param modelPath the model path.
+     * @param rai the RAI.
+     * @param logConsumer the log consumer callback.
+     * @return the resulting list.
+     * @throws RunModelException if model inference cannot be run.
+     * @throws LoadModelException if the model cannot be loaded.
+     * @throws BuildException if the Python environment or service cannot be built.
+     * @throws IOException if an I/O error occurs.
+     * @throws ExecutionException if an asynchronous operation fails.
+     * @throws InterruptedException if the current thread is interrupted.
+     */
     public <T extends RealType<T> & NativeType<T>>
     List<Detection> run(String modelPath, RandomAccessibleInterval<T> rai, Consumer<String> logConsumer)
             throws RunModelException, LoadModelException, BuildException, IOException,
@@ -60,6 +80,22 @@ public class YoloInferenceService {
         return run(modelPath, rai, logConsumer, true);
     }
 
+    /**
+     * Runs the run.
+     *
+     * @param <T> the T type parameter.
+     * @param modelPath the model path.
+     * @param rai the RAI.
+     * @param logConsumer the log consumer callback.
+     * @param usePatchProgressBar the use patch progress bar.
+     * @return the resulting list.
+     * @throws RunModelException if model inference cannot be run.
+     * @throws LoadModelException if the model cannot be loaded.
+     * @throws BuildException if the Python environment or service cannot be built.
+     * @throws IOException if an I/O error occurs.
+     * @throws ExecutionException if an asynchronous operation fails.
+     * @throws InterruptedException if the current thread is interrupted.
+     */
     public <T extends RealType<T> & NativeType<T>>
     List<Detection> run(String modelPath, RandomAccessibleInterval<T> rai, Consumer<String> logConsumer,
             boolean usePatchProgressBar)
@@ -68,6 +104,23 @@ public class YoloInferenceService {
         return run(modelPath, rai, logConsumer, usePatchProgressBar, "cpu");
     }
 
+    /**
+     * Runs the run.
+     *
+     * @param <T> the T type parameter.
+     * @param modelPath the model path.
+     * @param rai the RAI.
+     * @param logConsumer the log consumer callback.
+     * @param usePatchProgressBar the use patch progress bar.
+     * @param device the device.
+     * @return the resulting list.
+     * @throws RunModelException if model inference cannot be run.
+     * @throws LoadModelException if the model cannot be loaded.
+     * @throws BuildException if the Python environment or service cannot be built.
+     * @throws IOException if an I/O error occurs.
+     * @throws ExecutionException if an asynchronous operation fails.
+     * @throws InterruptedException if the current thread is interrupted.
+     */
     public <T extends RealType<T> & NativeType<T>>
     List<Detection> run(String modelPath, RandomAccessibleInterval<T> rai, Consumer<String> logConsumer,
             boolean usePatchProgressBar, String device)
@@ -79,6 +132,21 @@ public class YoloInferenceService {
         return runLoadedModel(rai);
     }
 
+    /**
+     * Runs the run with progress.
+     *
+     * @param <T> the T type parameter.
+     * @param modelPath the model path.
+     * @param rai the RAI.
+     * @param progressConsumer the progress consumer callback.
+     * @return the resulting list.
+     * @throws RunModelException if model inference cannot be run.
+     * @throws LoadModelException if the model cannot be loaded.
+     * @throws BuildException if the Python environment or service cannot be built.
+     * @throws IOException if an I/O error occurs.
+     * @throws ExecutionException if an asynchronous operation fails.
+     * @throws InterruptedException if the current thread is interrupted.
+     */
     public <T extends RealType<T> & NativeType<T>>
     List<Detection> runWithProgress(String modelPath, RandomAccessibleInterval<T> rai,
             Consumer<InferenceProgress> progressConsumer)
@@ -87,6 +155,22 @@ public class YoloInferenceService {
         return runWithProgress(modelPath, rai, progressConsumer, "cpu");
     }
 
+    /**
+     * Runs the run with progress.
+     *
+     * @param <T> the T type parameter.
+     * @param modelPath the model path.
+     * @param rai the RAI.
+     * @param progressConsumer the progress consumer callback.
+     * @param device the device.
+     * @return the resulting list.
+     * @throws RunModelException if model inference cannot be run.
+     * @throws LoadModelException if the model cannot be loaded.
+     * @throws BuildException if the Python environment or service cannot be built.
+     * @throws IOException if an I/O error occurs.
+     * @throws ExecutionException if an asynchronous operation fails.
+     * @throws InterruptedException if the current thread is interrupted.
+     */
     public <T extends RealType<T> & NativeType<T>>
     List<Detection> runWithProgress(String modelPath, RandomAccessibleInterval<T> rai,
             Consumer<InferenceProgress> progressConsumer, String device)
@@ -98,6 +182,9 @@ public class YoloInferenceService {
         return runLoadedModel(rai);
     }
 
+    /**
+     * Closes resources held by this object.
+     */
     public void close() {
         if (model != null && model.isLoaded()) {
             model.close();
@@ -107,6 +194,9 @@ public class YoloInferenceService {
         loadedDevice = null;
     }
 
+    /**
+     * Performs cancel current inference.
+     */
     public void cancelCurrentInference() {
         if (model != null) {
             model.cancelCurrentInference();
@@ -248,6 +338,11 @@ public class YoloInferenceService {
         }
     }
 
+	/**
+	 * Sets the object size.
+	 *
+	 * @param boxes the boxes.
+	 */
 	public void setObjectSize(List<Rectangle.Double> boxes) {
 		if (boxes != null && boxes.size() > 0)
 			size = boxes.get(0).getBounds();

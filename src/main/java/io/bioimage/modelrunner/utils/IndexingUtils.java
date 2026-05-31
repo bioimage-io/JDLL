@@ -34,12 +34,10 @@ public class IndexingUtils
 
 	/**
 	 * Obtain a flat index position from a multidimensional index position, assumes row major (C-order)
-	 * 
-	 * @param ind
-	 *            the multidimensional indexes
-	 * @param size
-	 *            size of the tensor
-	 * @return the index of the position as if it was a flat array
+	 *
+	 * @param ind the ind.
+	 * @param size the size.
+	 * @return the resulting int.
 	 */
 	public static int multidimensionalIntoFlatIndex( int[] ind, int[] size )
 	{
@@ -81,12 +79,10 @@ public class IndexingUtils
 
 	/**
 	 * Obtain a flat index position from a multidimensional index position, assumes row major (C-order)
-	 * 
-	 * @param ind
-	 *            the multidimensional indexes
-	 * @param size
-	 *            size of the tensor
-	 * @return the index of the position as if it was a flat array
+	 *
+	 * @param ind the ind.
+	 * @param size the size.
+	 * @return the resulting int.
 	 */
 	public static int multidimensionalIntoFlatIndex( long[] ind, long[] size )
 	{
@@ -103,12 +99,10 @@ public class IndexingUtils
 
 	/**
 	 * Obtain the multidimensional position corresponding to a flat position in an nd array
-	 * 
-	 * @param flat
-	 * 			  flat position in an nd-array, assumes row major (C-order)
-	 * @param size
-	 *            size of the tensor
-	 * @return the multidimensional indexes
+	 *
+	 * @param flat the flat.
+	 * @param size the size.
+	 * @return the resulting long.
 	 */
 	public static long[] flatIntoMultidimensionalIndex( long flat, long[] size )
 	{
@@ -127,12 +121,10 @@ public class IndexingUtils
 
 	/**
 	 * Obtain the multidimensional position corresponding to a flat position in an nd array
-	 * 
-	 * @param flat
-	 * 			  flat position in an nd-array, assumes row major (C-order)
-	 * @param size
-	 *            size of the tensor
-	 * @return the multidimensional indexes
+	 *
+	 * @param flat the flat.
+	 * @param size the size.
+	 * @return the resulting int.
 	 */
 	public static int[] flatIntoMultidimensionalIndex( int flat, int[] size )
 	{

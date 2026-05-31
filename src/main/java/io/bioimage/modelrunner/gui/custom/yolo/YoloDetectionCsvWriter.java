@@ -36,6 +36,12 @@ public final class YoloDetectionCsvWriter {
 
     private YoloDetectionCsvWriter() {}
 
+    /**
+     * Returns the result of output file for.
+     *
+     * @param source the source.
+     * @return the resulting file.
+     */
     public static File outputFileFor(File source) {
         File base = source == null ? new File(".") : source;
         File parent = base.getParentFile();
@@ -49,6 +55,13 @@ public final class YoloDetectionCsvWriter {
         return new File(parent, name + SUFFIX);
     }
 
+    /**
+     * Performs write.
+     *
+     * @param outputFile the output file.
+     * @param detectionsByImagePath the detections by image path.
+     * @throws IOException if an I/O error occurs.
+     */
     public static void write(File outputFile, Map<String, List<Detection>> detectionsByImagePath) throws IOException {
         File parent = outputFile.getParentFile();
         if (parent != null) {

@@ -153,7 +153,7 @@ public final class GpuCompatibility {
     /**
      * @return Returns the NVIDIA driver version in NVIDIA-style "535.129.03" when possible.
      * - Linux: parses /proc/driver/nvidia/version
-     * - Windows: converts WMI DriverVersion like "31.0.15.3114" -> "531.14" (best-effort)
+     * - Windows: converts WMI DriverVersion like "31.0.15.3114" -&gt; "531.14" (best-effort)
      * - macOS: empty (not supported)
      */
     public static Optional<String> getNvidiaDriverVersion() {
@@ -210,8 +210,10 @@ public final class GpuCompatibility {
     }
 
     /**
-     * @return whether the current driver is compatible with the requested CUDA Toolkit version (e.g., "12.1").
-     * Uses a built-in table of minimum required drivers for Linux and Windows (NVIDIA release notes).
+     * Returns whether driver compatible with CUDA.
+     *
+     * @param cudaVersion the CUDA version.
+     * @return true if driver compatible with CUDA; false otherwise.
      */
     public static boolean isDriverCompatibleWithCuda(String cudaVersion) {
         Os os = Os.detect();
@@ -240,14 +242,10 @@ public final class GpuCompatibility {
     }
 
     /**
-     * @return whether the wanted CUDA version can be installed in an environment or not
-     * Full "can I install CUDA X.Y in an environment and run it here?" gate:
-     * - NVIDIA GPU present
-     * - drivers installed
-     * - CUDA Driver API present (libcuda / nvcuda.dll)
-     * - driver version meets the minimum for the requested toolkit version
+     * Returns whether can install CUDA in environment.
      *
-     * Note: This checks host capability only. It does not install anything.
+     * @param cudaVersion the CUDA version.
+     * @return true if can install CUDA in environment; false otherwise.
      */
     public static boolean canInstallCudaInEnv(String cudaVersion) {
         Os os = Os.detect();
@@ -298,10 +296,8 @@ public final class GpuCompatibility {
      * {@code GpuCompatibility.canInstallCudaInEnv(String)} returns {@code true}
      * is returned.</p>
      *
-     * @param compatibleCudas
-     *     the list of compatible CUDA versions to evaluate, in priority order
-     * @return the first installable CUDA version, or {@code null} if none of the
-     *     provided versions can be installed
+     * @param compatibleCudas the compatible cudas.
+     * @return the resulting string.
      */
     public static String pickCudaVersion(List<String> compatibleCudas) {
         for (String cv : compatibleCudas) {
@@ -356,12 +352,23 @@ public final class GpuCompatibility {
             return Optional.of(new Version(a, b, c));
         }
 
+        /**
+         * Compares this object with another value.
+         *
+         * @param o the o.
+         * @return a negative integer, zero, or a positive integer according to the comparison result.
+         */
         @Override public int compareTo(Version o) {
             if (major != o.major) return Integer.compare(major, o.major);
             if (minor != o.minor) return Integer.compare(minor, o.minor);
             return Integer.compare(patch, o.patch);
         }
 
+        /**
+         * Returns a string representation of this object.
+         *
+         * @return the string representation.
+         */
         @Override public String toString() { return major + "." + minor + "." + patch; }
     }
 

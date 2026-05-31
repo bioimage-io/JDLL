@@ -120,19 +120,17 @@ public class TileInfo {
 	 * on up to the third pixel on each side of the plane XY, these pixels will be discarded and replaced
 	 * by others using tiling.
 	 * The halo should only be specified for the outputs.
-	 * 
+	 *
 	 * If the model requires tensors of dimensions "bcyx", the halo argument should be something like: {0, 0, 3, 3}.
-	 * 
+	 *
 	 * In this case, a total of 6 pixels (3 per side) is removed
-	 * 
-	 * The halo should never be bigger than half of the 
-	 * 
+	 *
+	 * The halo should never be bigger than half of the
+	 *
 	 * Both argument should have the same length.
-	 * 
-	 * @param halo
-	 * 	number of pixels per dimension per edge to remove
-	 * @param haloAxesOrder
-	 * 	axes order of the specified halo
+	 *
+	 * @param halo the halo.
+	 * @param haloAxesOrder the halo axes order.
 	 */
 	public void setHalo(long[] halo, String haloAxesOrder) {
 		if (halo.length != haloAxesOrder.length())
@@ -149,8 +147,8 @@ public class TileInfo {
 	/**
 	 * If the model has several outputs with different halos each. For each tiles calculates the halo
 	 * that allows every output to be processed with the same number of tiles
-	 * @param tiles
-	 * 	the tiles of interest. The halo value will be modified inplace after running the method
+	 *
+	 * @param tiles the tiles.
 	 */
 	public static void adaptHalos(List<TileInfo> tiles) {
 		String axesOrder = "";

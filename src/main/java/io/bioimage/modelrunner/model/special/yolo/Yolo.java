@@ -118,11 +118,25 @@ public class Yolo extends DLModelPytorchProtected {
 		this(weightsPath, "cpu");
 	}
 
+	/**
+	 * Creates a new Yolo instance.
+	 *
+	 * @param weightsPath the weights path.
+	 * @param device the device.
+	 * @throws BuildException if the Python environment or service cannot be built.
+	 */
 	protected Yolo(String weightsPath, String device) throws BuildException {
 		super(null, null, null, weightsPath, new HashMap<String, Object>(), true, device);
 	}
 	
 	// TODO add 3D
+	/**
+	 * Returns the result of check input tensors.
+	 *
+	 * @param <R> the R type parameter.
+	 * @param inputTensors the input tensors to process.
+	 * @return the resulting list.
+	 */
 	protected <R extends RealType<R> & NativeType<R>> 
 	List<Tensor<R>> checkInputTensors(List<Tensor<R>> inputTensors) {
 		if (inputTensors.size() > 1)
@@ -140,6 +154,12 @@ public class Yolo extends DLModelPytorchProtected {
 		return inputTensors;
 	}
 
+    /**
+     * Returns the output tensor axes.
+     *
+     * @param outputCount the output count.
+     * @return the output tensor axes.
+     */
     protected String getOutputTensorAxes(int outputCount) {
 		return "bic";
 	}
@@ -158,6 +178,14 @@ public class Yolo extends DLModelPytorchProtected {
 		return code;
 	}
 	
+	/**
+	 * Creates the inputs code.
+	 *
+	 * @param <T> the T type parameter.
+	 * @param inRais the in RAIs.
+	 * @param names the names.
+	 * @return the created string.
+	 */
 	protected <T extends RealType<T> & NativeType<T>> 
 		String createInputsCode(List<Tensor<T>> inRais, List<String> names) {
 			String code = "";
@@ -209,6 +237,23 @@ public class Yolo extends DLModelPytorchProtected {
 		return code;
 	}
 
+	/**
+	 * Runs model training.
+	 *
+	 * @param epochs the epochs.
+	 * @param baseModelPath the base model path.
+	 * @param datasetYamlPath the dataset YAML path.
+	 * @param outputWeightsPath the output weights path.
+	 * @param imageSize the image size.
+	 * @param previewEpochPeriod the preview epoch period.
+	 * @param progressConsumer the progress consumer callback.
+	 * @param previewConsumer the preview consumer callback.
+	 * @param logConsumer the log consumer callback.
+	 * @throws IOException if an I/O error occurs.
+	 * @throws BuildException if the Python environment or service cannot be built.
+	 * @throws InterruptedException if the current thread is interrupted.
+	 * @throws TaskException if task occurs.
+	 */
 	public static void train(int epochs, String baseModelPath, String datasetYamlPath, String outputWeightsPath,
 			int imageSize, int previewEpochPeriod,
 			Consumer<YoloTrainingProgress> progressConsumer,
@@ -219,6 +264,24 @@ public class Yolo extends DLModelPytorchProtected {
 				imageSize, previewEpochPeriod, progressConsumer, previewConsumer, logConsumer);
 	}
 
+	/**
+	 * Runs model training.
+	 *
+	 * @param epochs the epochs.
+	 * @param baseModelPath the base model path.
+	 * @param scratchArchitecture the scratch architecture.
+	 * @param datasetYamlPath the dataset YAML path.
+	 * @param outputWeightsPath the output weights path.
+	 * @param imageSize the image size.
+	 * @param previewEpochPeriod the preview epoch period.
+	 * @param progressConsumer the progress consumer callback.
+	 * @param previewConsumer the preview consumer callback.
+	 * @param logConsumer the log consumer callback.
+	 * @throws IOException if an I/O error occurs.
+	 * @throws BuildException if the Python environment or service cannot be built.
+	 * @throws InterruptedException if the current thread is interrupted.
+	 * @throws TaskException if task occurs.
+	 */
 	public static void train(int epochs, String baseModelPath, String scratchArchitecture,
 			String datasetYamlPath, String outputWeightsPath,
 			int imageSize, int previewEpochPeriod,
@@ -230,6 +293,26 @@ public class Yolo extends DLModelPytorchProtected {
 				previewEpochPeriod, progressConsumer, previewConsumer, logConsumer, "cpu", null, null);
 	}
 
+	/**
+	 * Runs model training.
+	 *
+	 * @param epochs the epochs.
+	 * @param baseModelPath the base model path.
+	 * @param scratchArchitecture the scratch architecture.
+	 * @param datasetYamlPath the dataset YAML path.
+	 * @param outputWeightsPath the output weights path.
+	 * @param imageSize the image size.
+	 * @param previewEpochPeriod the preview epoch period.
+	 * @param progressConsumer the progress consumer callback.
+	 * @param previewConsumer the preview consumer callback.
+	 * @param logConsumer the log consumer callback.
+	 * @param cancelSignalPath the cancel signal path.
+	 * @param serviceConsumer the service consumer callback.
+	 * @throws IOException if an I/O error occurs.
+	 * @throws BuildException if the Python environment or service cannot be built.
+	 * @throws InterruptedException if the current thread is interrupted.
+	 * @throws TaskException if task occurs.
+	 */
 	public static void train(int epochs, String baseModelPath, String scratchArchitecture,
 			String datasetYamlPath, String outputWeightsPath,
 			int imageSize, int previewEpochPeriod,
@@ -244,6 +327,27 @@ public class Yolo extends DLModelPytorchProtected {
 				serviceConsumer);
 	}
 
+	/**
+	 * Runs model training.
+	 *
+	 * @param epochs the epochs.
+	 * @param baseModelPath the base model path.
+	 * @param scratchArchitecture the scratch architecture.
+	 * @param datasetYamlPath the dataset YAML path.
+	 * @param outputWeightsPath the output weights path.
+	 * @param imageSize the image size.
+	 * @param previewEpochPeriod the preview epoch period.
+	 * @param progressConsumer the progress consumer callback.
+	 * @param previewConsumer the preview consumer callback.
+	 * @param logConsumer the log consumer callback.
+	 * @param device the device.
+	 * @param cancelSignalPath the cancel signal path.
+	 * @param serviceConsumer the service consumer callback.
+	 * @throws IOException if an I/O error occurs.
+	 * @throws BuildException if the Python environment or service cannot be built.
+	 * @throws InterruptedException if the current thread is interrupted.
+	 * @throws TaskException if task occurs.
+	 */
 	public static void train(int epochs, String baseModelPath, String scratchArchitecture,
 			String datasetYamlPath, String outputWeightsPath,
 			int imageSize, int previewEpochPeriod,
@@ -584,16 +688,25 @@ public class Yolo extends DLModelPytorchProtected {
 	
 	/**
 	 * Initialize a Cellpose model with the path to the model weigths.
-	 * @param weightsPath
-	 * 	path to the weights of a pretrained cellpose model
-	 * @return an instance of a Stardist2D model ready to be used
-     * @throws IOException If there's an I/O error.
-	 * @throws BuildException if there is any error building the environment
+	 *
+	 * @param weightsPath the weights path.
+	 * @return the resulting yolo.
+	 * @throws IOException if an I/O error occurs.
+	 * @throws BuildException if the Python environment or service cannot be built.
 	 */
 	public static Yolo init(String weightsPath) throws IOException, BuildException {
 		return init(weightsPath, "cpu");
 	}
 
+	/**
+	 * Initializes the yolo.
+	 *
+	 * @param weightsPath the weights path.
+	 * @param device the device.
+	 * @return the resulting yolo.
+	 * @throws IOException if an I/O error occurs.
+	 * @throws BuildException if the Python environment or service cannot be built.
+	 */
 	public static Yolo init(String weightsPath, String device) throws IOException, BuildException {
 		File wFile = new File(weightsPath);
 		if (!wFile.isFile())
@@ -602,10 +715,23 @@ public class Yolo extends DLModelPytorchProtected {
 		return cellpose;
 	}
 
+	/**
+	 * Sets the object size.
+	 *
+	 * @param size the size.
+	 */
 	public void setObjectSize(Rectangle size) {
 		this.objectSize = size;
 	}
 
+    /**
+     * Returns the tile maker.
+     *
+     * @param <T> the T type parameter.
+     * @param <R> the R type parameter.
+     * @param inputs the inputs to process.
+     * @return the tile maker.
+     */
     @Override
     protected <T extends RealType<T> & NativeType<T>, R extends RealType<R> & NativeType<R>>
     Merger<Tensor<T>, Tensor<R>> getTileMaker(final List<Tensor<T>> inputs) {
@@ -617,16 +743,16 @@ public class Yolo extends DLModelPytorchProtected {
 	
 	/**
 	 * Example code that shows how to run a model with cellpose
-	 * @param <T>
-	 * 	method param
-	 * @param args
-	 * 	method param
-	 * @throws IOException exception
-	 * @throws InterruptedException exception
-	 * @throws ExecutionException exception
-	 * @throws LoadModelException exception
-	 * @throws RunModelException exception
-	 * @throws BuildException if there is any error launching the python process
+	 *
+	 * @param <R> the R type parameter.
+	 * @param <T> the T type parameter.
+	 * @param args command-line arguments.
+	 * @throws IOException if an I/O error occurs.
+	 * @throws InterruptedException if the current thread is interrupted.
+	 * @throws ExecutionException if an asynchronous operation fails.
+	 * @throws LoadModelException if the model cannot be loaded.
+	 * @throws RunModelException if model inference cannot be run.
+	 * @throws BuildException if the Python environment or service cannot be built.
 	 */
 	public static <R extends RealType<R> & NativeType<R>, T extends RealType<T> & NativeType<T>>
 	void main(String[] args) throws IOException, InterruptedException, ExecutionException, LoadModelException, RunModelException, BuildException {

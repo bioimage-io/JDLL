@@ -86,6 +86,9 @@ public class StardistValidationPreviewPanel extends YoloValidationPreviewPanel {
     private double secondsPerIteration = Double.NaN;
     private boolean currentSampleUsesProbabilityOverlay;
 
+    /**
+     * Creates a new StardistValidationPreviewPanel instance.
+     */
     public StardistValidationPreviewPanel() {
         removeAll();
         setLayout(null);
@@ -107,6 +110,9 @@ public class StardistValidationPreviewPanel extends YoloValidationPreviewPanel {
         clearPreview();
     }
 
+    /**
+     * Performs clear preview.
+     */
     @Override
     public void clearPreview() {
         if (samples == null) {
@@ -121,6 +127,11 @@ public class StardistValidationPreviewPanel extends YoloValidationPreviewPanel {
         updateButtons();
     }
 
+    /**
+     * Loads the load preview.
+     *
+     * @param jsonPath the JSON path.
+     */
     @Override
     public void loadPreview(String jsonPath) {
         if (samples == null) {
@@ -156,6 +167,16 @@ public class StardistValidationPreviewPanel extends YoloValidationPreviewPanel {
         }
     }
 
+    /**
+     * Sets the training status.
+     *
+     * @param active the active.
+     * @param currentStep the current step.
+     * @param totalSteps the total steps.
+     * @param totalEpochs the total epochs.
+     * @param elapsedMillis the elapsed millis.
+     * @param secondsPerIteration the seconds per iteration.
+     */
     @Override
     public void setTrainingStatus(boolean active, int currentStep, int totalSteps,
             int totalEpochs, long elapsedMillis, double secondsPerIteration) {
@@ -168,6 +189,9 @@ public class StardistValidationPreviewPanel extends YoloValidationPreviewPanel {
         updateStatusPanel();
     }
 
+    /**
+     * Performs do layout.
+     */
     @Override
     public void doLayout() {
         int w = Math.max(0, getWidth());
@@ -609,6 +633,11 @@ public class StardistValidationPreviewPanel extends YoloValidationPreviewPanel {
 
         private static final long serialVersionUID = 8312362540460559408L;
 
+        /**
+         * Performs paint component.
+         *
+         * @param g the g.
+         */
         @Override
         protected void paintComponent(Graphics g) {
             super.paintComponent(g);

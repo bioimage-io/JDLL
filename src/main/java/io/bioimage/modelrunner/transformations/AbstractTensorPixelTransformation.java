@@ -62,8 +62,9 @@ public class AbstractTensorPixelTransformation extends AbstractTensorTransformat
 	/**
 	 * Executes apply.
 	 *
-	 * @param input the input parameter.
-	 * @return the resulting value.
+	 * @param <R> the R type parameter.
+	 * @param input the input to process.
+	 * @return the resulting tensor.
 	 */
 	@Override
 	public < R extends RealType< R > & NativeType< R > > Tensor< FloatType > apply( final Tensor< R > input )
@@ -73,6 +74,12 @@ public class AbstractTensorPixelTransformation extends AbstractTensorTransformat
 		return output;
 	}
 
+	/**
+	 * Performs apply in place.
+	 *
+	 * @param <R> the R type parameter.
+	 * @param input the input to process.
+	 */
 	@Override
 	public < R extends RealType< R > & NativeType< R > >
 	void applyInPlace( final Tensor< R > input )
@@ -93,6 +100,12 @@ public class AbstractTensorPixelTransformation extends AbstractTensorTransformat
 	@FunctionalInterface
 	public interface DoubleUnitaryOperator
 	{
+		/**
+		 * Applies the operator to a value.
+		 *
+		 * @param in the in.
+		 * @return the transformed value.
+		 */
 		double applyAs( double in );
 	}
 }

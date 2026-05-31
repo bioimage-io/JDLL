@@ -67,11 +67,9 @@ public class TensorSpecV05 implements TensorSpec {
 
     /**
      * Builds the tensor specification instance from the tensor map and an input flag.
-     * 
-     * @param tensorSpecMap
-     *        The map of elements describing the tensor.
-     * @param input
-     *        Whether it is an input (true) or an output (false) tensor.
+     *
+     * @param tensorSpecMap the tensor spec map.
+     * @param input the input to process.
      */
     protected TensorSpecV05(Map<String, Object> tensorSpecMap, boolean input)
     {

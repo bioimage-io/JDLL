@@ -65,10 +65,10 @@ public class SupportedVersions
 	private Set< String > versionSet;
 	
 	/**
-	 * Method to test which are the versions that should ver returned in every 
+	 * Method to test which are the versions that should ver returned in every
 	 * case
-	 * @param args
-	 * 	not used
+	 *
+	 * @param args command-line arguments.
 	 */
 	public static void main(String[] args) {
 		String vv = getClosestSupportedPythonVersion("tensorflow", "2.13.0");
@@ -86,9 +86,8 @@ public class SupportedVersions
 	 * Class to find the version of Deep Learning framework (engine) equivalent
 	 * or compatible with the one used to train the model. This is done because
 	 * sometimes APIs for different languages are named differently
-	 * 
-	 * @param engine
-	 *            Deep Learning framework which is going to be loaded
+	 *
+	 * @param engine the engine.
 	 */
 	public SupportedVersions( String engine )
 	{
@@ -106,10 +105,9 @@ public class SupportedVersions
 	/**
 	 * Finds the closest supported version by JDLL for the wanted
 	 * Deep Learning framework version wanted
-	 * @param version
-	 * 	version in Python of the Deep Learning framework selected
-	 * @return the version in Python closest to the provided one for 
-	 * 	the Deep LEarning framework selected
+	 *
+	 * @param version the version.
+	 * @return the closest supported python version.
 	 */
 	public String getClosestSupportedPythonVersion(String version) {
 		return findVersionInJSON( version, versionSet );
@@ -118,11 +116,9 @@ public class SupportedVersions
 	/**
 	 * Find the corresponding version of the API to run a Deep Learning
 	 * framework in Java.
-	 * 
-	 * @param version
-	 *            version of the Deep Learning framework (engine) used to create
-	 *            the model
-	 * @return the corresponding Java version
+	 *
+	 * @param version the version.
+	 * @return the corresponding java version.
 	 */
 	public String getCorrespondingJavaVersion( String version )
 	{
@@ -153,11 +149,9 @@ public class SupportedVersions
 	/**
 	 * Get the supported versions for an specific Deep Learning framework
 	 * (engine)
-	 * 
-	 * @param engine
-	 *            the Deep Learning framework we want
-	 * @return a HashMap containing all the supported versions for a Deep
-	 *         Learning framework
+	 *
+	 * @param engine the engine.
+	 * @return the supported versions for engine.
 	 */
 	public static Map< String, Object > getSupportedVersionsForEngine( String engine )
 	{
@@ -251,11 +245,10 @@ public class SupportedVersions
 	
 	/**
 	 * Find the Java engine version that is compatible with the Python engine version provided
-	 * @param engine
-	 * 	the engine of interest
-	 * @param version
-	 * 	the python version of interest
-	 * @return the python version of interest or null if it does not exist
+	 *
+	 * @param engine the engine.
+	 * @param version the version.
+	 * @return the java version for python version.
 	 */
 	public static String getJavaVersionForPythonVersion(String engine, String version) {
 		SupportedVersions sv = new SupportedVersions(engine);
@@ -265,12 +258,10 @@ public class SupportedVersions
 	/**
 	 * Finds the closest supported version by JDLL for the wanted
 	 * Deep Learning framework version wanted
-	 * @param engine
-	 * 	Deep LEarning frameework of interest
-	 * @param version
-	 * 	version in Python of the Deep Learning framework selected
-	 * @return the version in Python closest to the provided one for 
-	 * 	the Deep LEarning framework selected
+	 *
+	 * @param engine the engine.
+	 * @param version the version.
+	 * @return the closest supported python version.
 	 */
 	public static String getClosestSupportedPythonVersion(String engine, String version) {
 		SupportedVersions sv = new SupportedVersions(engine);

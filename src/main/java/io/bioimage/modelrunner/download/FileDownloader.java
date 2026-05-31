@@ -95,14 +95,11 @@ public class FileDownloader {
 	
 	/**
 	 * Create an instance of an object that can download the file at the wanted url in the wanted file
-	 * 
-	 * @param url
-	 * 	the url where the file of interest is
-	 * @param file
-	 * 	file into which the contents of the url are going to be copied
-	 * @param printProgress
-	 * 	whether to print to the terminal the progress of the download or not
-	 * @throws MalformedURLException if the provided url is not valid
+	 *
+	 * @param url the URL.
+	 * @param file the file.
+	 * @param printProgress the print progress.
+	 * @throws MalformedURLException if a URL is malformed.
 	 */
 	public FileDownloader(String url, File file, boolean printProgress) throws MalformedURLException {
 		this.name = getFileNameFromURLString(url);
@@ -122,12 +119,10 @@ public class FileDownloader {
 	/**
 	 * Create an instance of an object that can download the file at the wanted url in the wanted file.
 	 * By default the progress of the file download is printed to the terminal.
-	 * 
-	 * @param url
-	 * 	the url where the file of interest is
-	 * @param file
-	 * 	file into which the contents of the url are going to be copied
-	 * @throws MalformedURLException if the provided url is not valid
+	 *
+	 * @param url the URL.
+	 * @param file the file.
+	 * @throws MalformedURLException if a URL is malformed.
 	 */
 	public FileDownloader(String url, File file) throws MalformedURLException {
 		this(url, file, true);
@@ -135,8 +130,8 @@ public class FileDownloader {
 	
 	/**
 	 * Set a consumer that will receive the number of bytes that have been downloaded
-	 * @param totalProgress
-	 * 	consumer that will receive the number of bytes that have been downloaded
+	 *
+	 * @param totalProgress the total progress.
 	 */
 	public void setTotalProgressConsumer(Consumer<Long> totalProgress) {
 		this.totalProgress = totalProgress;
@@ -144,8 +139,8 @@ public class FileDownloader {
 	
 	/**
 	 * Set a consumer that will receive the percentage of the bytes out of the total that have been downloaded
-	 * @param partialProgress
-	 * 	consumer that will receive the percentage of the bytes out of the total that have been downloaded
+	 *
+	 * @param partialProgress the partial progress.
 	 */
 	public void setPartialProgressConsumer(Consumer<Double> partialProgress) {
 		this.partialProgress = partialProgress;
@@ -188,11 +183,10 @@ public class FileDownloader {
 	
 	/**
 	 * Download the file of interest.
-	 * 
-	 * @param parentThread
-	 * 	if not null, whenever this thread is interrupted, the download will stop
-	 * @throws IOException if there is any file related error in the download
-	 * @throws ExecutionException if there is any error with the urls or the conection
+	 *
+	 * @param parentThread the parent thread.
+	 * @throws IOException if an I/O error occurs.
+	 * @throws ExecutionException if an asynchronous operation fails.
 	 */
 	public void download(Thread parentThread) throws IOException, ExecutionException {
 		if (parentThread == null) {
@@ -369,9 +363,9 @@ public class FileDownloader {
 
 	/**
 	 * Get the size of the file stored in the given URL
-	 * @param url
-	 * 	url where the file is stored
-	 * @return the size of the file
+	 *
+	 * @param url the URL.
+	 * @return the file size.
 	 */
 	public static long getFileSize(URL url) {
 		HttpsURLConnection conn = null;
@@ -435,21 +429,21 @@ public class FileDownloader {
 	}
 	
 	/**
-	 * This method should be used when we get the following response codes from 
+	 * This method should be used when we get the following response codes from
 	 * a {@link HttpURLConnection}:
 	 * - {@link HttpURLConnection#HTTP_MOVED_TEMP}
 	 * - {@link HttpURLConnection#HTTP_MOVED_PERM}
 	 * - {@link HttpURLConnection#HTTP_SEE_OTHER}
-	 * 
+	 *
 	 * If that is not the response code or the connection does not work, the url
 	 * returned will be the same as the provided.
 	 * If the method is used corretly, it will return the URL to which the original URL
 	 * has been redirected
-	 * @param url
-	 * 	original url. Connecting to that url must give a 301, 302 or 303 response code
-	 * @return the redirected url
-	 * @throws MalformedURLException if the url is invalid
-	 * @throws URISyntaxException if the url is invalid
+	 *
+	 * @param url the URL.
+	 * @return the resulting URL.
+	 * @throws MalformedURLException if a URL is malformed.
+	 * @throws URISyntaxException if URI syntax occurs.
 	 */
 	public static URL redirectedURL(URL url) throws MalformedURLException, URISyntaxException {
 		int statusCode;
@@ -491,10 +485,10 @@ public class FileDownloader {
 	
 	/**
 	 * Gets the filename of the file in an URL from the url String
-	 * @param str
-	 * 	the URL string
-	 * @return the file name of the file in the URL
-	 * @throws MalformedURLException if the String does not correspond to an URL
+	 *
+	 * @param str the str.
+	 * @return the file name from URL string.
+	 * @throws MalformedURLException if a URL is malformed.
 	 */
 	public static String getFileNameFromURLString(String str) throws MalformedURLException {
 		if (str.startsWith(Constants.ZENODO_DOMAIN) && str.endsWith(Constants.ZENODO_ANNOYING_SUFFIX))

@@ -41,6 +41,12 @@ public final class YoloImageFiles {
 
     private YoloImageFiles() {}
 
+    /**
+     * Returns whether has supported image extension.
+     *
+     * @param file the file.
+     * @return true if has supported image extension; false otherwise.
+     */
     public static boolean hasSupportedImageExtension(File file) {
         if (file == null || !file.isFile()) {
             return false;
@@ -54,6 +60,12 @@ public final class YoloImageFiles {
         return false;
     }
 
+    /**
+     * Returns whether can read image.
+     *
+     * @param file the file.
+     * @return true if can read image; false otherwise.
+     */
     public static boolean canReadImage(File file) {
         if (!hasSupportedImageExtension(file)) {
             return false;
@@ -79,6 +91,12 @@ public final class YoloImageFiles {
         }
     }
 
+    /**
+     * Returns the result of readable images in directory.
+     *
+     * @param directory the directory.
+     * @return the resulting list.
+     */
     public static List<File> readableImagesInDirectory(File directory) {
         if (directory == null || !directory.isDirectory()) {
             return Collections.emptyList();
@@ -97,11 +115,23 @@ public final class YoloImageFiles {
         return readable;
     }
 
+    /**
+     * Returns the result of preview image in directory.
+     *
+     * @param directory the directory.
+     * @return the resulting file.
+     */
     public static File previewImageInDirectory(File directory) {
         List<File> images = readableImagesInDirectory(directory);
         return images.isEmpty() ? null : images.get(images.size() / 2);
     }
 
+    /**
+     * Returns whether valid dropped path.
+     *
+     * @param file the file.
+     * @return true if valid dropped path; false otherwise.
+     */
     public static boolean isValidDroppedPath(File file) {
         if (file == null) {
             return false;
@@ -112,6 +142,11 @@ public final class YoloImageFiles {
         return canReadImage(file);
     }
 
+    /**
+     * Returns the result of supported extensions.
+     *
+     * @return the resulting set.
+     */
     public static Set<String> supportedExtensions() {
         return Collections.unmodifiableSet(IMAGE_EXTENSIONS);
     }

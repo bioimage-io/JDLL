@@ -28,10 +28,18 @@ public class YoloOpenImageComboBoxModel extends DefaultComboBoxModel<YoloImageSe
 
     private static final long serialVersionUID = 8586150079690419881L;
 
+    /**
+     * Creates a new YoloOpenImageComboBoxModel instance.
+     */
     public YoloOpenImageComboBoxModel() {
         super();
     }
 
+    /**
+     * Sets the entries.
+     *
+     * @param entries the entries.
+     */
     public void setEntries(List<YoloImageSelectionEntry> entries) {
         removeAllElements();
         for (YoloImageSelectionEntry entry : entries) {
@@ -42,6 +50,12 @@ public class YoloOpenImageComboBoxModel extends DefaultComboBoxModel<YoloImageSe
         }
     }
     
+    /**
+     * Returns the index by ID.
+     *
+     * @param id the ID.
+     * @return the index by ID.
+     */
     public int getIndexById(String id) {
         if (id == null) {
             return -1;
@@ -55,6 +69,11 @@ public class YoloOpenImageComboBoxModel extends DefaultComboBoxModel<YoloImageSe
         return -1;
     }
     
+    /**
+     * Performs retain IDs.
+     *
+     * @param ids the IDs.
+     */
     public void retainIds(Set<String> ids) {
         for (int i = getSize() - 1; i >= 0; i--) {
             YoloImageSelectionEntry entry = getElementAt(i);

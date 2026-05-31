@@ -47,6 +47,11 @@ extends Merger<Tensor<T>, Tensor<R>> {
     private List<long[]> referenceWindows = Collections.emptyList();
     private List<Tensor<R>> reconstructed = Collections.emptyList();
 
+    /**
+     * Creates a new DenseMerger instance.
+     *
+     * @param tileMaker the tile maker.
+     */
     public DenseMerger(final TileMaker tileMaker) {
         if (tileMaker == null) {
             throw new IllegalArgumentException("TileMaker cannot be null.");
@@ -54,6 +59,11 @@ extends Merger<Tensor<T>, Tensor<R>> {
         this.tileMaker = tileMaker;
     }
 
+    /**
+     * Performs configure.
+     *
+     * @param inputs the inputs to process.
+     */
     @Override
     public void configure(final List<Tensor<T>> inputs) {
         this.inputs = inputs == null ? Collections.<Tensor<T>>emptyList() : inputs;
@@ -70,6 +80,12 @@ extends Merger<Tensor<T>, Tensor<R>> {
         resetReconstructionCallbacks();
     }
 
+	/**
+	 * Returns the result of get.
+	 *
+	 * @param patchNumber the patch number.
+	 * @return the resulting list.
+	 */
 	@Override
 	public List<Tensor<T>> get(int patchNumber) {
         requireConfigured();
@@ -77,6 +93,12 @@ extends Merger<Tensor<T>, Tensor<R>> {
         return getTileMakerPatch(patchNumber);
 	}
 
+	/**
+	 * Returns the output.
+	 *
+	 * @param patchNumber the patch number.
+	 * @return the output.
+	 */
 	public List<Tensor<R>> getOutput(int patchNumber) {
 		List<Tensor<R>> outTiles = new ArrayList<>();
 		for (Tensor<R> tt : this.reconstructed) {
@@ -86,12 +108,23 @@ extends Merger<Tensor<T>, Tensor<R>> {
         return outTiles;
 	}
 
+	/**
+	 * Returns the n patches.
+	 *
+	 * @return the n patches.
+	 */
 	@Override
 	public int getNPatches() {
         requireConfigured();
         return referenceWindows.size();
 	}
 
+    /**
+     * Performs digest.
+     *
+     * @param patchNumber the patch number.
+     * @param outputs the outputs to populate.
+     */
     @Override
     public void digest(final int patchNumber, final List<Tensor<R>> outputs) {
         requireConfigured();
@@ -107,11 +140,21 @@ extends Merger<Tensor<T>, Tensor<R>> {
         resetReconstructionCallbacks();
     }
 
+    /**
+     * Performs add callback.
+     *
+     * @param callback the callback to notify.
+     */
     @Override
     public void addCallback(final Function<List<Tensor<R>>, List<Tensor<R>>> callback) {
         registerCallback(callback);
     }
 
+    /**
+     * Returns the reconstructed.
+     *
+     * @return the reconstructed.
+     */
     @Override
     public List<Tensor<R>> getReconstructed() {
         requireConfigured();

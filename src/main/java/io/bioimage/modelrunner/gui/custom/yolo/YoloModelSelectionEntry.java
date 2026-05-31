@@ -24,19 +24,40 @@ public final class YoloModelSelectionEntry {
     private final String key;
     private final String value;
 
+    /**
+     * Creates a new YoloModelSelectionEntry instance.
+     *
+     * @param key the key.
+     * @param value the value.
+     */
     public YoloModelSelectionEntry(String key, String value) {
         this.key = key;
         this.value = value;
     }
 
+    /**
+     * Returns the key.
+     *
+     * @return the key.
+     */
     public String getKey() {
         return key;
     }
 
+    /**
+     * Returns the value.
+     *
+     * @return the value.
+     */
     public String getValue() {
         return value;
     }
 
+    /**
+     * Returns a string representation of this object.
+     *
+     * @return the string representation.
+     */
     @Override
     public String toString() {
         return key;

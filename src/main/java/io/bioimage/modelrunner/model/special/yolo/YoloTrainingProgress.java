@@ -46,16 +46,43 @@ public final class YoloTrainingProgress {
     private final Map<String, Double> losses;
     private final Map<String, Double> metrics;
 
+    /**
+     * Creates a new YoloTrainingProgress instance.
+     *
+     * @param epoch the epoch.
+     * @param totalEpochs the total epochs.
+     * @param losses the losses.
+     * @param metrics the metrics.
+     */
     public YoloTrainingProgress(int epoch, int totalEpochs,
             Map<String, Double> losses, Map<String, Double> metrics) {
         this(epoch, epoch, totalEpochs, totalEpochs, losses, metrics);
     }
 
+    /**
+     * Creates a new YoloTrainingProgress instance.
+     *
+     * @param epoch the epoch.
+     * @param step the step.
+     * @param totalEpochs the total epochs.
+     * @param losses the losses.
+     * @param metrics the metrics.
+     */
     public YoloTrainingProgress(int epoch, int step, int totalEpochs,
             Map<String, Double> losses, Map<String, Double> metrics) {
         this(epoch, step, totalEpochs, totalEpochs, losses, metrics);
     }
 
+    /**
+     * Creates a new YoloTrainingProgress instance.
+     *
+     * @param epoch the epoch.
+     * @param step the step.
+     * @param totalEpochs the total epochs.
+     * @param totalSteps the total steps.
+     * @param losses the losses.
+     * @param metrics the metrics.
+     */
     public YoloTrainingProgress(int epoch, int step, int totalEpochs, int totalSteps,
             Map<String, Double> losses, Map<String, Double> metrics) {
         this.epoch = epoch;
@@ -66,50 +93,110 @@ public final class YoloTrainingProgress {
         this.metrics = immutableCopy(metrics);
     }
 
+    /**
+     * Returns the epoch.
+     *
+     * @return the epoch.
+     */
     public int getEpoch() {
         return epoch;
     }
 
+    /**
+     * Returns the step.
+     *
+     * @return the step.
+     */
     public int getStep() {
         return step;
     }
 
+    /**
+     * Returns the total epochs.
+     *
+     * @return the total epochs.
+     */
     public int getTotalEpochs() {
         return totalEpochs;
     }
 
+    /**
+     * Returns the total steps.
+     *
+     * @return the total steps.
+     */
     public int getTotalSteps() {
         return totalSteps;
     }
 
+    /**
+     * Returns the losses.
+     *
+     * @return the losses.
+     */
     public Map<String, Double> getLosses() {
         return losses;
     }
 
+    /**
+     * Returns the metrics.
+     *
+     * @return the metrics.
+     */
     public Map<String, Double> getMetrics() {
         return metrics;
     }
 
+    /**
+     * Returns the primary loss.
+     *
+     * @return the primary loss.
+     */
     public Double getPrimaryLoss() {
         return firstValue(losses);
     }
 
+    /**
+     * Returns the primary metric.
+     *
+     * @return the primary metric.
+     */
     public Double getPrimaryMetric() {
         return firstValue(metrics);
     }
 
+    /**
+     * Returns the training total loss.
+     *
+     * @return the training total loss.
+     */
     public Double getTrainingTotalLoss() {
         return sumPresent(losses, TRAIN_BOX_LOSS, TRAIN_CLS_LOSS, TRAIN_DFL_LOSS);
     }
 
+    /**
+     * Returns the validation total loss.
+     *
+     * @return the validation total loss.
+     */
     public Double getValidationTotalLoss() {
         return sumPresent(metrics, VAL_BOX_LOSS, VAL_CLS_LOSS, VAL_DFL_LOSS);
     }
 
+    /**
+     * Returns the primary detection metric.
+     *
+     * @return the primary detection metric.
+     */
     public Double getPrimaryDetectionMetric() {
         return firstPresent(metrics, MAP50_95, MAP50, PRECISION, RECALL);
     }
 
+    /**
+     * Returns the primary detection metric name.
+     *
+     * @return the primary detection metric name.
+     */
     public String getPrimaryDetectionMetricName() {
         if (metrics.containsKey(MAP50_95)) {
             return PRIMARY_DETECTION_METRIC_LABEL;

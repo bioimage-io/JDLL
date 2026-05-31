@@ -61,13 +61,14 @@ public class BioimageIoModelPytorch extends BioimageIoModelPytorchProtected {
 	/**
 	 * Creates a new BioimageIoModelPytorch.
 	 *
-	 * @param modelFile the modelFile parameter.
-	 * @param callable the callable parameter.
-	 * @param importModule the importModule parameter.
-	 * @param weightsPath the weightsPath parameter.
-	 * @param kwargs the kwargs parameter.
-	 * @param descriptor the descriptor parameter.
-	 * @throws BuildException if there is any error building the environment
+	 * @param modelFile the model file.
+	 * @param callable the callable.
+	 * @param importModule the import module.
+	 * @param weightsPath the weights path.
+	 * @param kwargs the kwargs.
+	 * @param descriptor the descriptor.
+	 * @param device the device.
+	 * @throws BuildException if the Python environment or service cannot be built.
 	 */
 	protected BioimageIoModelPytorch(String modelFile, String callable, String importModule, String weightsPath, Map<String, Object> kwargs,
 			ModelDescriptor descriptor, String device) throws BuildException {
@@ -77,10 +78,11 @@ public class BioimageIoModelPytorch extends BioimageIoModelPytorchProtected {
 	/**
 	 * Create a Bioaimge.io Pytorch model that can be run from JDLL.
 	 * The model should have weights in the 'pytroch_state_dict' format
-	 * @param descriptor
-	 * 	the Bioimage.io {@link ModelDescriptor}
-	 * @return a model from the Bioaimge.io that can be run in Pytorch.
-	 * @throws BuildException if there is any error building the environment
+	 *
+	 * @param descriptor the descriptor.
+	 * @param device the device.
+	 * @return the created bioimage I/O model pytorch.
+	 * @throws BuildException if the Python environment or service cannot be built.
 	 */
 	public static BioimageIoModelPytorch create(ModelDescriptor descriptor, String device) throws BuildException {
 		if (descriptor.getWeights().getModelWeights(ModelWeight.getPytorchID()) == null)
@@ -95,6 +97,13 @@ public class BioimageIoModelPytorch extends BioimageIoModelPytorchProtected {
 		return new BioimageIoModelPytorch(modelFile, callable, importModule, weightsFile, kwargs, descriptor, device);
 	}
 
+	/**
+	 * Returns the result of create.
+	 *
+	 * @param descriptor the descriptor.
+	 * @return the created bioimage I/O model pytorch.
+	 * @throws BuildException if the Python environment or service cannot be built.
+	 */
 	public static BioimageIoModelPytorch create(ModelDescriptor descriptor) throws BuildException {
 		return create(descriptor, "cpu");
 	}
@@ -103,16 +112,25 @@ public class BioimageIoModelPytorch extends BioimageIoModelPytorchProtected {
 	/**
 	 * Create a Bioaimge.io Pytorch model that can be run from JDLL.
 	 * The model should have weights in the 'pytroch_state_dict' format
-	 * @param modelPath
-	 * 	path to the Bioimage.io model
-	 * @return a model from the Bioaimge.io that can be run in Pytorch.
-	 * @throws IOException if there is any error reading the yaml file
-	 * @throws BuildException if there is any error building the environment
+	 *
+	 * @param modelPath the model path.
+	 * @param device the device.
+	 * @return the created bioimage I/O model pytorch.
+	 * @throws IOException if an I/O error occurs.
+	 * @throws BuildException if the Python environment or service cannot be built.
 	 */
 	public static BioimageIoModelPytorch create(String modelPath, String device) throws IOException, BuildException {
 		return create(ModelDescriptorFactory.readFromLocalFile(modelPath + File.separator + Constants.RDF_FNAME), device);
 	}
 
+	/**
+	 * Returns the result of create.
+	 *
+	 * @param modelPath the model path.
+	 * @return the created bioimage I/O model pytorch.
+	 * @throws IOException if an I/O error occurs.
+	 * @throws BuildException if the Python environment or service cannot be built.
+	 */
 	public static BioimageIoModelPytorch create(String modelPath) throws IOException, BuildException {
 		return create(modelPath, "cpu");
 	}
@@ -120,17 +138,17 @@ public class BioimageIoModelPytorch extends BioimageIoModelPytorchProtected {
 	/**
 	 * Executes main.
 	 *
-	 * @param args the args parameter.
+	 * @param <T> the T type parameter.
+	 * @param args command-line arguments.
 	 * @throws IOException if an I/O error occurs.
-	 * @throws LoadEngineException if a LoadEngineException occurs while executing this method.
-	 * @throws RunModelException if a RunModelException occurs while executing this method.
-	 * @throws LoadModelException if a LoadModelException occurs while executing this method.
-	 * @throws InterruptedException if the current thread is interrupted while waiting for the operation to finish.
-	 * @throws RuntimeException if the operation cannot be completed successfully.
-	 * @throws MambaInstallException if a MambaInstallException occurs while executing this method.
-	 * @throws ArchiveException if a ArchiveException occurs while executing this method.
-	 * @throws URISyntaxException if a URISyntaxException occurs while executing this method.
-	 * @throws BuildException if there is any error building the environment
+	 * @throws LoadEngineException if the engine cannot be loaded.
+	 * @throws RunModelException if model inference cannot be run.
+	 * @throws LoadModelException if the model cannot be loaded.
+	 * @throws InterruptedException if the current thread is interrupted.
+	 * @throws RuntimeException if the operation fails at runtime.
+	 * @throws ArchiveException if archive occurs.
+	 * @throws URISyntaxException if URI syntax occurs.
+	 * @throws BuildException if the Python environment or service cannot be built.
 	 */
 	public static <T extends NativeType<T> & RealType<T>> void main(String[] args) throws IOException, LoadEngineException, RunModelException, LoadModelException, InterruptedException, RuntimeException, ArchiveException, URISyntaxException, BuildException {
 		

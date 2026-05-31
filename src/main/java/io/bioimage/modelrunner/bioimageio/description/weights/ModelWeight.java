@@ -66,10 +66,9 @@ public class ModelWeight
     private static String bioengineIdentifier = "bioengine";
     /**
      * Builds a weight information element from the element map.
-     * 
-     * @param yamlFieldElements
-     *        The element map.
-     * @return The model weight information instance.
+     *
+     * @param yamlFieldElements the YAML field elements.
+     * @return the created model weight.
      */
     public static ModelWeight build(Map<String, Object> yamlFieldElements)
     {
@@ -108,9 +107,9 @@ public class ModelWeight
     /**
      * Get the weight object for the weight identifier provided. If it does not exist or the model
      * does not have weights in the wanted format, the method will return null
-     * @param weightID
-     * 	the identifier for the model weights. 
-     * @return the weights in the wanted format if they are available
+     *
+     * @param weightID the weight ID.
+     * @return the model weights.
      */
     public WeightFormat getModelWeights(String weightID) {
     	if (this.weightsDic.get(weightID) != null)
@@ -122,14 +121,13 @@ public class ModelWeight
     }
 
 	/**
-     * Return the corresponding weight format
-     * @param weightsFormat
-     * 	the tag corresponding to a particular engine
-     * @param version
-     * 	the version of interest
-     * @return a {@link WeightFormat} object that contains the info of some weights
-     * @throws IllegalArgumentException if the set of wanted weights is not supported by JDLL
-     */
+	 * Return the corresponding weight format
+	 *
+	 * @param weightsFormat the weights format.
+	 * @param version the version.
+	 * @return the supported weight object.
+	 * @throws IllegalArgumentException if an argument is invalid.
+	 */
     public WeightFormat getSupportedWeightObject(String weightsFormat, String version) throws IllegalArgumentException
     {
     	if (weightsFormat.equals(getBioengineID()))
@@ -215,14 +213,12 @@ public class ModelWeight
 
 	/**
 	 * Sets the Deep Learning framework of the weights of the
-	 * model selected. 
+	 * model selected.
 	 * For models that contain several sets of weights
 	 * from different frameworks in the
-	 * 
-	 * @param weightFormat
-	 *  the format (framework) of the weights 
-	 *  @param version
-	 *  the version of the weight format in Python
+	 *
+	 * @param weightFormat the weight format.
+	 * @param version the version.
 	 */
 	public void setSelectedWeightsFormat(String weightFormat, String version) {
 		if (weightFormat.startsWith(kerasIdentifier)) {

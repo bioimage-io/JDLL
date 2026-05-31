@@ -175,12 +175,11 @@ public class DownloadModel {
 	}
 	
 	/**
-	 * If the Sting contains any forbidden character, this method substitutes them 
+	 * If the Sting contains any forbidden character, this method substitutes them
 	 * by "_"
-	 * @param fileName
-	 * 	filename to be validated
-	 * @return a valid filename, if the input does not contain any forbidden character 
-	 * 	it will be the same, if it does contain them, they will be replaced by "_"
+	 *
+	 * @param fileName the file name.
+	 * @return the valid file name.
 	 */
 	public static String getValidFileName(String fileName) {
         Pattern pattern = Pattern.compile("[\\\\/:*?\"<>|]");
@@ -200,11 +199,10 @@ public class DownloadModel {
 
 	/**
 	 * Build a constructor that contains all the info and is able to download a BioImage.io model
-	 * @param descriptor
-	 * 	information about the model from the rdf.yaml
-	 * @param modelsDir
-	 * 	directory where the model will be downloaded
-	 * @return object that can be handles the download of all the files needed for a model
+	 *
+	 * @param descriptor the descriptor.
+	 * @param modelsDir the models directory.
+	 * @return the created download model.
 	 */
 	public static DownloadModel build(ModelDescriptor descriptor, String modelsDir) {
 		return new DownloadModel(descriptor, modelsDir);
@@ -212,9 +210,9 @@ public class DownloadModel {
 
 	/**
 	 * Build a constructor that contains all the info and is able to download a BioImage.io model
-	 * @param descriptor
-	 * 	information about the model from the rdf.yaml
-	 * @return object that can be handles the download of all the files needed for a model
+	 *
+	 * @param descriptor the descriptor.
+	 * @return the created download model.
 	 */
 	public static DownloadModel build(ModelDescriptor descriptor) {
 		return new DownloadModel(descriptor, new File("models").getAbsolutePath());
@@ -377,9 +375,9 @@ public class DownloadModel {
 	
 	/**
 	 * Check if a String contains a valid URL
-	 * @param str
-	 * 	str that might contain an URL
-	 * @return true if the String corresponds to an URL and false otherwise
+	 *
+	 * @param str the str.
+	 * @return true if URL is valid; false otherwise.
 	 */
 	public static boolean checkURL(String str) {
 		try {
@@ -403,9 +401,9 @@ public class DownloadModel {
 	
 	/**
 	 * Add the timestamp to the String given
-	 * @param str
-	 * 	String to add the time stamp
-	 * @return string with the timestamp
+	 *
+	 * @param str the str.
+	 * @return the resulting string.
 	 */
 	public static String addTimeStampToFileName(String str) {
 		// Add timestamp to the model name. 
@@ -439,11 +437,11 @@ public class DownloadModel {
 	/**
 	 * Download a model downloading one by one all the files that should be inside
 	 * the model folder into a created folder inside the models repo
-	 * @param parentThread
-	 * 	reference thread for the download. If it is stopped the download will stop too.
-	 * @throws IOException if there is any error creating the folder or downloading the files
-	 * @throws InterruptedException if the thread was stopped by the user
-	 * @throws ExecutionException if anything in the download goes wrong
+	 *
+	 * @param parentThread the parent thread.
+	 * @throws IOException if an I/O error occurs.
+	 * @throws InterruptedException if the current thread is interrupted.
+	 * @throws ExecutionException if an asynchronous operation fails.
 	 */
 	public void downloadModel(Thread parentThread) throws IOException, InterruptedException, ExecutionException {
 		File folder = new File(modelsDir);
@@ -485,12 +483,12 @@ public class DownloadModel {
 	}
 
 	/**
-	 * Get the final size of the downloadable model by getting the size of 
+	 * Get the final size of the downloadable model by getting the size of
 	 * all the links that are going to be downloaded
-	 * @param recalculate
-	 * 	whether to recalculate the file size or not
-	 * @return the total size to be downloaded in bytes
-	 * @throws MalformedURLException if any of the urls for the files in the rdf.yaml is not correct
+	 *
+	 * @param recalculate whether to use recalculate.
+	 * @return the model size file by file.
+	 * @throws MalformedURLException if a URL is malformed.
 	 */
 	public LinkedHashMap<String, Long> getModelSizeFileByFile(boolean recalculate) throws MalformedURLException {
 		if (map != null && !recalculate) {

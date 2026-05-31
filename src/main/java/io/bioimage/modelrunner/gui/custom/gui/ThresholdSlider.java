@@ -89,6 +89,11 @@ public class ThresholdSlider extends JPanel {
         // When the user edits the text field, update the slider
         valueField.addActionListener(e -> syncFieldToSlider());
         valueField.addFocusListener(new FocusAdapter() {
+            /**
+             * Performs focus lost.
+             *
+             * @param e the e.
+             */
             @Override public void focusLost(FocusEvent e) {
                 syncFieldToSlider();
             }

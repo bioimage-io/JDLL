@@ -133,36 +133,29 @@ public class SharedMemoryArrayWin implements SharedMemoryArray
 	 * This method creates a shared memory segment with the wanted name. The byte size is defined by the
 	 * 'size' argument, but it has to be coherent with 'shape', 'dtype' and 'isNumpy' arguments.
 	 * If a memory segment with the provided name already exists, it is wrapped, with read and write permissions.
-	 * 
+	 *
 	 * The byte size of the shared memory segment cannot be modified.
-	 * 
+	 *
 	 * If a shared memory segment already exists in the location of the name provided, but the size required by the
 	 * shape and data type is not the same as the size of the existing shared memory segment, an exception will
 	 * be thrown.
 	 * For example if a shared memory segment of size 1024 has been created at "shm_example" and we try:
-	 * 		
-	 * 		SharedMemoryArrayWin("shm_example", 4096, "float32", new long[]{1024}, false, false);
-	 * 
+	 *
+	 * SharedMemoryArrayWin("shm_example", 4096, "float32", new long[]{1024}, false, false);
+	 *
 	 * An exception will be thrown because the required number of bytes is 1024 * 4 (4 bytes per float) = 4096 bytes &gt; 1024 bytes
-	 * 
-	 * 
+	 *
+	 *
 	 * It is useful to allocate in advance the space that a certain {@link RandomAccessibleInterval}
 	 * will need. The image can then reference this shared memory region.
 	 * An instance of {@link SharedMemoryArray} is created that helps managing the shared memory data.
-	 * 
-	 * @param size
-	 * 	the byte size of the shared memory segment
-	 * @param dtype
-	 * 	the data type of the nd array that is written from the shared memory segment
-	 * @param shape
-	 * 	the dimensions of the nd array that is written from the shared memory segment
-	 * @param isNumpy
-	 * 	whether an nd array is saved to the shared memory segment in Numpy npy format, that is with a header at the 
-	 * 	beginning that increases the byte size
-	 * @param isFortran
-	 * 	whether nd arrays are stored with fortran order or not (c-order)
-	 * @throws FileAlreadyExistsException if a shared memory array with the same name exists and its byte size
-	 *                                    does not match the specified shape and datatype
+	 *
+	 * @param size the size.
+	 * @param dtype the data type.
+	 * @param shape the shape.
+	 * @param isNumpy whether to use is numpy.
+	 * @param isFortran whether to use is fortran.
+	 * @throws FileAlreadyExistsException if file already exists occurs.
 	 */
 	protected SharedMemoryArrayWin(int size, String dtype, long[] shape, Boolean isNumpy, boolean isFortran) throws FileAlreadyExistsException
     {
@@ -173,38 +166,30 @@ public class SharedMemoryArrayWin implements SharedMemoryArray
 	 * This method creates (or retrieves if it already exists) a shared memory segment with the wanted name. The byte size is defined by the
 	 * 'size' argument, but it has to be coherent with 'shape', 'dtype' and 'isNumpy' arguments.
 	 * If a memory segment with the provided name already exists, it is wrapped, with read and write permissions.
-	 * 
+	 *
 	 * The byte size of the shared memory segment cannot be modified.
-	 * 
+	 *
 	 * If a shared memory segment already exists in the location of the name provided, but the size required by the
 	 * shape and data type is not the same as the size of the existing shared memory segment, an exception will
 	 * be thrown.
 	 * For example if a shared memory segment of size 1024 has been created at "shm_example" and we try:
-	 * 		
-	 * 		SharedMemoryArrayWin("shm_example", 4096, "float32", new long[]{1024}, false, false);
-	 * 
+	 *
+	 * SharedMemoryArrayWin("shm_example", 4096, "float32", new long[]{1024}, false, false);
+	 *
 	 * An exception will be thrown because the required number of bytes is 1024 * 4 (4 bytes per float) = 4096 bytes &gt; 1024 bytes
-	 * 
-	 * 
+	 *
+	 *
 	 * It is useful to allocate in advance the space that a certain {@link RandomAccessibleInterval}
 	 * will need. The image can then reference this shared memory region.
 	 * An instance of {@link SharedMemoryArray} is created that helps managing the shared memory data.
-	 * 
-	 * @param name
-	 * 	name of the file name that is going to be used to identify the shared memory segment
-	 * @param size
-	 * 	the byte size of the shared memory segment
-	 * @param dtype
-	 * 	the data type of the nd array that is written from the shared memory segment
-	 * @param shape
-	 * 	the dimensions of the nd array that is written from the shared memory segment
-	 * @param isNumpy
-	 * 	whether an nd array is saved to the shared memory segment in Numpy npy format, that is with a header at the 
-	 * 	beginning that increases the byte size
-	 * @param isFortran
-	 * 	whether nd arrays are stored with fortran order or not (c-order)
-	 * @throws FileAlreadyExistsException if a shared memory array with the same name exists and its byte size
-	 *                                    does not match the specified shape and datatype
+	 *
+	 * @param name the name.
+	 * @param size the size.
+	 * @param dtype the data type.
+	 * @param shape the shape.
+	 * @param isNumpy whether to use is numpy.
+	 * @param isFortran whether to use is fortran.
+	 * @throws FileAlreadyExistsException if file already exists occurs.
 	 */
 	protected SharedMemoryArrayWin(String name, int size, String dtype, long[] shape, Boolean isNumpy, boolean isFortran) throws FileAlreadyExistsException
     {
@@ -299,9 +284,9 @@ public class SharedMemoryArrayWin implements SharedMemoryArray
     
     /**
      * MEthod to find the size of an already created shared memory segment
-     * @param memoryName
-     * 	the name of the shared memory segment
-     * @return the size in bytes of the shared memory segment
+     *
+     * @param memoryName the memory name.
+     * @return the shared memory size.
      */
     protected static long getSHMSize(String memoryName) {
     	SharedMemoryArray.checkMemorySegmentName(memoryName);
@@ -345,16 +330,49 @@ public class SharedMemoryArrayWin implements SharedMemoryArray
 		this.memoryName = name;
 	}
 
+	/**
+	 * Returns the result of read or create.
+	 *
+	 * @param <T> the T type parameter.
+	 * @param name the name.
+	 * @param size the size.
+	 * @param shape the shape.
+	 * @param strDType the str d type.
+	 * @param isNumpy whether to use is numpy.
+	 * @param isFortran whether to use is fortran.
+	 * @return the resulting shared memory array win.
+	 * @throws FileAlreadyExistsException if file already exists occurs.
+	 */
 	protected static <T extends RealType<T> & NativeType<T>>
 	SharedMemoryArrayWin readOrCreate(String name, int size, long[] shape, String strDType, Boolean isNumpy, boolean isFortran) throws FileAlreadyExistsException {
 		return new SharedMemoryArrayWin(name, size, strDType, shape, isNumpy, isFortran);
 	}
 
+	/**
+	 * Returns the result of read or create.
+	 *
+	 * @param <T> the T type parameter.
+	 * @param name the name.
+	 * @param size the size.
+	 * @return the resulting shared memory array win.
+	 * @throws FileAlreadyExistsException if file already exists occurs.
+	 */
 	protected static <T extends RealType<T> & NativeType<T>>
 	SharedMemoryArrayWin readOrCreate(String name, int size) throws FileAlreadyExistsException {
 		return new SharedMemoryArrayWin(name, size, null, null, null, false);
 	}
 
+	/**
+	 * Returns the result of create.
+	 *
+	 * @param <T> the T type parameter.
+	 * @param size the size.
+	 * @param shape the shape.
+	 * @param strDType the str d type.
+	 * @param isNumpy whether to use is numpy.
+	 * @param isFortran whether to use is fortran.
+	 * @return the created shared memory array win.
+	 */
 	protected static <T extends RealType<T> & NativeType<T>>
 	SharedMemoryArrayWin create(int size, long[] shape, String strDType, Boolean isNumpy, boolean isFortran) {
 		try {
@@ -378,6 +396,17 @@ public class SharedMemoryArrayWin implements SharedMemoryArray
 		}
 	}
 
+    /**
+     * Creates the shma from RAI.
+     *
+     * @param <T> the T type parameter.
+     * @param name the name.
+     * @param rai the RAI.
+     * @param isFortranOrder whether to use is fortran order.
+     * @param isNumpy whether to use is numpy.
+     * @return the created shared memory array win.
+     * @throws FileAlreadyExistsException if file already exists occurs.
+     */
     protected static <T extends RealType<T> & NativeType<T>> 
     SharedMemoryArrayWin createSHMAFromRAI(String name, RandomAccessibleInterval<T> rai, boolean isFortranOrder, boolean isNumpy) throws FileAlreadyExistsException
     {
@@ -447,10 +476,10 @@ public class SharedMemoryArrayWin implements SharedMemoryArray
     }
     
     /**
-     * Retrive an existing Shared memory segment and wrap it into a {@link SharedMemoryArrayLinux} 
-     * @param memoryName
-     * 	the name of the segment
-     * @return the {@link SharedMemoryArrayLinux}  pointing to the shared memory segment
+     * Retrive an existing Shared memory segment and wrap it into a {@link SharedMemoryArrayLinux}
+     *
+     * @param memoryName the memory name.
+     * @return the resulting shared memory array win.
      */
     protected static SharedMemoryArrayWin read(String memoryName) {
 		if (!memoryName.startsWith("Local" + File.separator) && !memoryName.startsWith("Global" + File.separator))
@@ -781,6 +810,11 @@ public class SharedMemoryArrayWin implements SharedMemoryArray
     	return this.size;
     }
 
+	/**
+	 * Returns the original data type.
+	 *
+	 * @return the original data type.
+	 */
 	@Override
 	/**
 	 * {@inheritDoc}
@@ -791,6 +825,11 @@ public class SharedMemoryArrayWin implements SharedMemoryArray
 		return this.originalDataType;
 	}
 
+	/**
+	 * Returns the original shape.
+	 *
+	 * @return the original shape.
+	 */
 	@Override
 	/**
 	 * {@inheritDoc}
@@ -801,6 +840,11 @@ public class SharedMemoryArrayWin implements SharedMemoryArray
 		return this.originalDims;
 	}
 	
+	/**
+	 * Returns whether numpy format.
+	 *
+	 * @return true if numpy format; false otherwise.
+	 */
 	@Override
 	/**
 	 * {@inheritDoc}
@@ -814,6 +858,9 @@ public class SharedMemoryArrayWin implements SharedMemoryArray
 		return this.isNumpyFormat;
 	}
 
+	/**
+	 * Closes resources held by this object.
+	 */
 	@Override
 	/**
 	 * {@inheritDoc}
@@ -889,7 +936,8 @@ public class SharedMemoryArrayWin implements SharedMemoryArray
     /**
      * {@inheritDoc}
      *
-     * @return the resulting value.
+     * @param <T> the T type parameter.
+     * @return the shared RAI.
      */
     @Override
     public <T extends RealType<T> & NativeType<T>> RandomAccessibleInterval<T> getSharedRAI() {
@@ -907,9 +955,10 @@ public class SharedMemoryArrayWin implements SharedMemoryArray
     /**
      * {@inheritDoc}
      *
-     * @param shape the shape parameter.
-     * @param dataType the dataType parameter.
-     * @return the resulting value.
+     * @param <T> the T type parameter.
+     * @param shape the shape.
+     * @param dataType the data type.
+     * @return the shared RAI.
      */
     @Override
     public <T extends RealType<T> & NativeType<T>> RandomAccessibleInterval<T> getSharedRAI(long[] shape, T dataType) {
@@ -919,10 +968,11 @@ public class SharedMemoryArrayWin implements SharedMemoryArray
     /**
      * {@inheritDoc}
      *
-     * @param shape the shape parameter.
-     * @param dataType the dataType parameter.
-     * @param isFortran the isFortran parameter.
-     * @return the resulting value.
+     * @param <T> the T type parameter.
+     * @param shape the shape.
+     * @param dataType the data type.
+     * @param isFortran whether to use is fortran.
+     * @return the shared RAI.
      */
     @Override
     public <T extends RealType<T> & NativeType<T>> RandomAccessibleInterval<T> getSharedRAI(long[] shape, T dataType, boolean isFortran) {
@@ -964,6 +1014,11 @@ public class SharedMemoryArrayWin implements SharedMemoryArray
     	return mappedPointer.getByteBuffer(0, len);
     }
 
+	/**
+	 * Returns the data buffer no header.
+	 *
+	 * @return the data buffer no header.
+	 */
 	@Override
 	/**
 	 * {@inheritDoc}
@@ -990,6 +1045,12 @@ public class SharedMemoryArrayWin implements SharedMemoryArray
 	}
 
 	// TODO support boolean
+	/**
+	 * Builds the image lib2 from numpy like shma.
+	 *
+	 * @param <T> the T type parameter.
+	 * @return the created random accessible interval.
+	 */
 	protected <T extends RealType<T> & NativeType<T>>
 	RandomAccessibleInterval<T> buildImgLib2FromNumpyLikeSHMA() {
 		int offset = 0;
@@ -1159,12 +1220,11 @@ public class SharedMemoryArrayWin implements SharedMemoryArray
 	}
 	
 	/**
-	 * Windows shared memory persists until every reference to it from every process 
+	 * Windows shared memory persists until every reference to it from every process
 	 * unlinks it. Is not the same as in Unix systems where just one reference to unlink unlinks it
 	 * completely and no othere process can come and use it anymore
-	 * 
-	 * @param args
-	 * 	random
+	 *
+	 * @param args command-line arguments.
 	 */
 	public static void main(String[] args) {
 		WinNT.HANDLE hMapFile = Kernel32.INSTANCE.OpenFileMapping( WinNT.FILE_MAP_READ, false, "Local\\wnsm_89f5c80c");

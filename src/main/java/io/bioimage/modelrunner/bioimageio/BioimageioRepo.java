@@ -137,12 +137,11 @@ public class BioimageioRepo {
 	}
 	
 	/**
-	 * Create an instance of {@link BioimageioRepo}. This instance can be used to retrieve 
+	 * Create an instance of {@link BioimageioRepo}. This instance can be used to retrieve
 	 * information about the models i the Bioimage.io repository and handle their download.
-	 * @param consumer
-	 * 	a String consumer that will record all the info about the access to the models in the
-	 * 	bioimage.io
-	 * @return an instance of the {@link BioimageioRepo}
+	 *
+	 * @param consumer the consumer callback.
+	 * @return the resulting bioimageio repo.
 	 */
 	public static BioimageioRepo connect(Consumer<String> consumer) {
 		return new BioimageioRepo(consumer);
@@ -162,15 +161,13 @@ public class BioimageioRepo {
 	 * at the Bioimage.io model repository.
 	 * The models are specified at: {@link #LOCATE}.
 	 * Once the method has been called, the list of models is not refreshed (that means
-	 * the method does not check the list of Bioimage.io models and returns what 
+	 * the method does not check the list of Bioimage.io models and returns what
 	 * was obtained with the first call) unless the method {@link #refresh()}
 	 * is used, {@link #refresh()} actually calls again this method to retrieve the list from zero,
 	 * if not the same list as the one retrieved for the first time calling the method is used..
-	 * @param verbose
-	 * 	whether to print in the terminal and send that printed information in the consumer (if it 
-	 * 	exists) or not
-	 * @return an object containing the URL location of the model as key and the {@link ModelDescriptor}
-	 * 	with the yaml file information in the value
+	 *
+	 * @param verbose the verbose.
+	 * @return the resulting map.
 	 */
 	public Map<String, ModelDescriptor> listAllModels(boolean verbose) {
 		if (MODELS != null && MODELS.entrySet().size() > 0)
@@ -278,14 +275,13 @@ public class BioimageioRepo {
 	 * Retrieve the {@link ModelDescriptor} for the rdf.yaml whose URL
 	 * has been provided.
 	 * If the URL does not exist, or does not point to a valid rdf.yaml file,
-	 * the method will return null. 
+	 * the method will return null.
 	 * Regard that the only URLs that will be valid are the ones defined in the
 	 * field 'rdf_source' of the rdf.yaml file and that the URLs have to point
 	 * to the *raw* github file.
-	 * @param rdfSource
-	 * 	URL pointing to the rdf.yaml file of interest
-	 * @return the {@link ModelDescriptor} from the rdf.yaml of interest or null
-	 * if the URL does not point to a valid URL
+	 *
+	 * @param rdfSource the RDF source.
+	 * @return the resulting model descriptor.
 	 */
 	public static ModelDescriptor retreiveDescriptorFromURL(String rdfSource) {
 		ModelDescriptor descriptor = null;
@@ -304,9 +300,9 @@ public class BioimageioRepo {
 
 	/**
 	 * Method used to read a yaml or json file from a server as a raw string
-	 * @param url
-	 * 	String url of the file
-	 * @return a String representation of the file. It is null if the file was not accessed
+	 *
+	 * @param url the URL.
+	 * @return the JSON from URL.
 	 */
 	public static String getJSONFromUrl(String url) {
 		return getJSONFromUrl(url, null);
@@ -314,11 +310,10 @@ public class BioimageioRepo {
 
 	/**
 	 * Method used to read a yaml or json file from a server as a raw string
-	 * @param url
-	 * 	String url of the file
-	 * @param consumer
-	 * 	object to communicate with the main interface
-	 * @return a String representation of the file. It is null if the file was not accessed
+	 *
+	 * @param url the URL.
+	 * @param consumer the consumer callback.
+	 * @return the JSON from URL.
 	 */
 	protected static String getJSONFromUrl(String url, Consumer<String> consumer) {
 
@@ -361,9 +356,9 @@ public class BioimageioRepo {
 	/**
 	 * Create {@link Path} from Url String. This method removes the http:// or https://
 	 * at the begining because in windows machines it caused errors creating Paths
-	 * @param downloadUrl
-	 * 	String url of the model of interest
-	 * @return the path to the String url
+	 *
+	 * @param downloadUrl the download URL.
+	 * @return the created path.
 	 */
 	public static Path createPathFromURLString(String downloadUrl) {
 		Path path;
@@ -397,9 +392,9 @@ public class BioimageioRepo {
 	
 	/**
 	 * Check whether a model is available on the Bioengine or not by providing its id
-	 * @param id
-	 * 	id of the model of interest
-	 * @return true if it is available or false otherwise
+	 *
+	 * @param id the ID.
+	 * @return true if model on the bioengine by ID; false otherwise.
 	 */
 	public static boolean isModelOnTheBioengineById(String id) {
 		// TODO remove return BioEngineAvailableModels.isModelSupportedInBioengine(id);
@@ -409,9 +404,9 @@ public class BioimageioRepo {
 	/**
 	 * Return the {@link ModelDescriptor} for the model defined by the modelID
 	 * (field 'id' in the rdf.yaml) introduced as a parameter.
-	 * @param modelID
-	 * 	unique ID for each Bioimage.io model
-	 * @return the {@link ModelDescriptor} of the model
+	 *
+	 * @param modelID the model ID.
+	 * @return the resulting model descriptor.
 	 */
 	public ModelDescriptor selectByID(String modelID) {
 		Objects.requireNonNull(modelID, "Argument 'modelID' cannot be null.");
@@ -435,9 +430,9 @@ public class BioimageioRepo {
 	/**
 	 * Return the {@link ModelDescriptor} for the model defined by the name
 	 * (field 'name' in the rdf.yaml) introduced as a parameter.
-	 * @param name
-	 * 	unique name for each Bioimage.io model
-	 * @return the {@link ModelDescriptor} of the model
+	 *
+	 * @param name the name.
+	 * @return the resulting model descriptor.
 	 */
 	public ModelDescriptor selectByName(String name) {
 		Objects.requireNonNull(name, "Argument 'name' cannot be null.");
@@ -452,18 +447,14 @@ public class BioimageioRepo {
 	/**
 	 * Download the model in the Bioimage.io defined by the {@link ModelDescriptor}
 	 * provided as a parameter.
-	 * This method launches one thread for the download of the files of the model and 
-	 * another thread to track the progress download. 
-	 * 
-	 * @param descriptor
-	 * 	the {@link ModelDescriptor} of the model that wants to be downloaded
-	 * @param modelsDirectory
-	 * 	the folder where the model is going to be downloaded. Regard that the model
-	 * 	is a folder too. So if the argument provided is "C:\\users\\carlos\\models",
-	 * 	the model path will then be: "C:\\users\\carlos\\models\\model_name_date string""
-	 * @return the path to the model that was just installed. 
-	 * @throws IOException	if there is any error downloading the files from the URLs provided
-	 * @throws InterruptedException	if the download or tracking threads are interrupted abruptly
+	 * This method launches one thread for the download of the files of the model and
+	 * another thread to track the progress download.
+	 *
+	 * @param descriptor the descriptor.
+	 * @param modelsDirectory the models directory.
+	 * @return the resulting string.
+	 * @throws IOException if an I/O error occurs.
+	 * @throws InterruptedException if the current thread is interrupted.
 	 */
 	public static String downloadModel(ModelDescriptor descriptor, String modelsDirectory) 
 			throws IOException, InterruptedException {
@@ -473,20 +464,15 @@ public class BioimageioRepo {
 	/**
 	 * Download the model in the Bioimage.io defined by the {@link ModelDescriptor}
 	 * provided as a parameter.
-	 * This method launches one thread for the download of the files of the model and 
-	 * another thread to track the progress download. 
-	 * 
-	 * @param descriptor
-	 * 	the {@link ModelDescriptor} of the model that wants to be downloaded
-	 * @param modelsDirectory
-	 * 	the folder where the model is going to be downloaded. Regard that the model
-	 * 	is a folder too. So if the argument provided is "C:\\users\\carlos\\models",
-	 * 	the model path will then be: "C:\\users\\carlos\\models\\model_name_date string""
-	 * @param consumer
-	 * 	a consumer to track the progress of the model download.
-	 * @return the path to the model that was just installed. 
-	 * @throws IOException	if there is any error downloading the files from the URLs provided
-	 * @throws InterruptedException	if the download or tracking threads are interrupted abruptly
+	 * This method launches one thread for the download of the files of the model and
+	 * another thread to track the progress download.
+	 *
+	 * @param descriptor the descriptor.
+	 * @param modelsDirectory the models directory.
+	 * @param consumer the consumer callback.
+	 * @return the resulting string.
+	 * @throws IOException if an I/O error occurs.
+	 * @throws InterruptedException if the current thread is interrupted.
 	 */
 	public static String downloadModel(ModelDescriptor descriptor, String modelsDirectory, 
 			Consumer<Double> consumer) throws IOException, InterruptedException {
@@ -503,19 +489,15 @@ public class BioimageioRepo {
 	/**
 	 * Download the model in the Bioimage.io whose id (field 'id' in the
 	 * rdf.yaml file) corresponds to the first parameter given
-	 * 
-	 * This method launches one thread for the download of the files of the model and 
-	 * another thread to track the progress download. 
-	 * 
-	 * @param id
-	 * 	the id of the model of interest. This is the field 'id' of the model descriptor
-	 * @param modelsDirectory
-	 * 	the folder where the model is going to be downloaded. Regard that the model
-	 * 	is a folder too. So if the argument provided is "C:\\users\\carlos\\models",
-	 * 	the model path will then be: "C:\\users\\carlos\\models\\model_name_date string""
-	 * @return the path to the model that was just installed. 
-	 * @throws IOException	if there is any error downloading the files from the URLs provided
-	 * @throws InterruptedException	if the download or tracking threads are interrupted abruptly
+	 *
+	 * This method launches one thread for the download of the files of the model and
+	 * another thread to track the progress download.
+	 *
+	 * @param id the ID.
+	 * @param modelsDirectory the models directory.
+	 * @return the resulting string.
+	 * @throws IOException if an I/O error occurs.
+	 * @throws InterruptedException if the current thread is interrupted.
 	 */
 	public String  downloadModelByID(String id, String modelsDirectory) throws IOException, InterruptedException {
 		ModelDescriptor model = selectByID(id);
@@ -528,21 +510,16 @@ public class BioimageioRepo {
 	/**
 	 * Download the model in the Bioimage.io whose id (field 'id' in the
 	 * rdf.yaml file) corresponds to the first parameter given
-	 * 
-	 * This method launches one thread for the download of the files of the model and 
-	 * another thread to track the progress download. 
-	 * 
-	 * @param id
-	 * 	the id of the model of interest. This is the field 'id' of the model descriptor
-	 * @param modelsDirectory
-	 * 	the folder where the model is going to be downloaded. Regard that the model
-	 * 	is a folder too. So if the argument provided is "C:\\users\\carlos\\models",
-	 * 	the model path will then be: "C:\\users\\carlos\\models\\model_name_date string""
-	 * @param consumer
-	 * 	a consumer to track the progress of the model download.
-	 * @return the path to the model that was just installed. 
-	 * @throws IOException	if there is any error downloading the files from the URLs provided
-	 * @throws InterruptedException	if the download or tracking threads are interrupted abruptly
+	 *
+	 * This method launches one thread for the download of the files of the model and
+	 * another thread to track the progress download.
+	 *
+	 * @param id the ID.
+	 * @param modelsDirectory the models directory.
+	 * @param consumer the consumer callback.
+	 * @return the resulting string.
+	 * @throws IOException if an I/O error occurs.
+	 * @throws InterruptedException if the current thread is interrupted.
 	 */
 	public String downloadModelByID(String id, String modelsDirectory, 
 			Consumer<Double> consumer) throws IOException, InterruptedException {
@@ -556,19 +533,15 @@ public class BioimageioRepo {
 	/**
 	 * Download the model in the Bioimage.io whose name (field 'name' in the
 	 * rdf.yaml file) corresponds to the first parameter given
-	 * 
-	 * This method launches one thread for the download of the files of the model and 
-	 * another thread to track the progress download. 
-	 * 
-	 * @param name
-	 * 	the name of the model of interest. This is the field 'name' of the model descriptor
-	 * @param modelsDirectory
-	 * 	the folder where the model is going to be downloaded. Regard that the model
-	 * 	is a folder too. So if the argument provided is "C:\\users\\carlos\\models",
-	 * 	the model path will then be: "C:\\users\\carlos\\models\\model_name_date string""
-	 * @return the path to the model that was just installed. 
-	 * @throws IOException	if there is any error downloading the files from the URLs provided
-	 * @throws InterruptedException	if the download or tracking threads are interrupted abruptly
+	 *
+	 * This method launches one thread for the download of the files of the model and
+	 * another thread to track the progress download.
+	 *
+	 * @param name the name.
+	 * @param modelsDirectory the models directory.
+	 * @return the resulting string.
+	 * @throws IOException if an I/O error occurs.
+	 * @throws InterruptedException if the current thread is interrupted.
 	 */
 	public String downloadByName(String name, String modelsDirectory) throws IOException, InterruptedException {
 		ModelDescriptor model = selectByName(name);
@@ -581,21 +554,16 @@ public class BioimageioRepo {
 	/**
 	 * Download the model in the Bioimage.io whose name (field 'name' in the
 	 * rdf.yaml file) corresponds to the first parameter given
-	 * 
-	 * This method launches one thread for the download of the files of the model and 
-	 * another thread to track the progress download. 
-	 * 
-	 * @param name
-	 * 	the name of the model of interest. This is the field 'name' of the model descriptor
-	 * @param modelsDirectory
-	 * 	the folder where the model is going to be downloaded. Regard that the model
-	 * 	is a folder too. So if the argument provided is "C:\\users\\carlos\\models",
-	 * 	the model path will then be: "C:\\users\\carlos\\models\\model_name_date string""
-	 * @param consumer
-	 * 	a consumer to track the progress of the model download.
-	 * @return the path to the model that was just installed. 
-	 * @throws IOException	if there is any error downloading the files from the URLs provided
-	 * @throws InterruptedException	if the download or tracking threads are interrupted abruptly
+	 *
+	 * This method launches one thread for the download of the files of the model and
+	 * another thread to track the progress download.
+	 *
+	 * @param name the name.
+	 * @param modelsDirectory the models directory.
+	 * @param consumer the consumer callback.
+	 * @return the resulting string.
+	 * @throws IOException if an I/O error occurs.
+	 * @throws InterruptedException if the current thread is interrupted.
 	 */
 	public String downloadByName(String name, String modelsDirectory, 
 			Consumer<Double> consumer) throws IOException, InterruptedException {
@@ -623,9 +591,9 @@ public class BioimageioRepo {
 	/**
 	 * Get the where the model files are stored for a model id. If there are seeral versions, it returns
 	 * the url for the latest
-	 * @param id
-	 * 	unique identifier of the model, can be either the nickname or id, depending on the specs version
-	 * @return the url where all the model files are
+	 *
+	 * @param id the ID.
+	 * @return the model URL.
 	 */
 	public static String getModelURL(String id) {
 		return getModelRdfUrl(id, null);
@@ -634,11 +602,10 @@ public class BioimageioRepo {
 	
 	/**
 	 * Get the where the model files are stored for a model id and version
-	 * @param id
-	 * 	unique identifier of the model, can be either the nickname or id, depending on the specs version
-	 * @param version
-	 * 	version of the model
-	 * @return the url where all the model files are
+	 *
+	 * @param id the ID.
+	 * @param version the version.
+	 * @return the model RDF URL.
 	 */
 	public static String getModelRdfUrl(String id, String version) {
 		if (MODELS_INFO == null || MODELS_INFO.get(id) == null) {

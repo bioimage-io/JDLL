@@ -25,24 +25,52 @@ public final class YoloValidationPreview {
     private final String checkpointPath;
     private final String previewJsonPath;
 
+    /**
+     * Creates a new YoloValidationPreview instance.
+     *
+     * @param epoch the epoch.
+     * @param checkpointPath the checkpoint path.
+     */
     public YoloValidationPreview(int epoch, String checkpointPath) {
         this(epoch, checkpointPath, null);
     }
 
+    /**
+     * Creates a new YoloValidationPreview instance.
+     *
+     * @param epoch the epoch.
+     * @param checkpointPath the checkpoint path.
+     * @param previewJsonPath the preview JSON path.
+     */
     public YoloValidationPreview(int epoch, String checkpointPath, String previewJsonPath) {
         this.epoch = epoch;
         this.checkpointPath = checkpointPath;
         this.previewJsonPath = previewJsonPath;
     }
 
+    /**
+     * Returns the epoch.
+     *
+     * @return the epoch.
+     */
     public int getEpoch() {
         return epoch;
     }
 
+    /**
+     * Returns the checkpoint path.
+     *
+     * @return the checkpoint path.
+     */
     public String getCheckpointPath() {
         return checkpointPath;
     }
 
+    /**
+     * Returns the preview JSON path.
+     *
+     * @return the preview JSON path.
+     */
     public String getPreviewJsonPath() {
         return previewJsonPath;
     }

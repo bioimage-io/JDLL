@@ -31,11 +31,17 @@ public class YoloTrainPanel extends BaseTrainPanel {
 
     private static final long serialVersionUID = -655892851236294330L;
     
+    /**
+     * Creates a new YoloTrainPanel instance.
+     */
     protected YoloTrainPanel() {
     	super();
         setScratchArchitectures(YoloModelRegistry.buildScratchArchitectureEntries());
     }
 
+    /**
+     * Performs browse base model.
+     */
     protected void browseBaseModel() {
         JFileChooser chooser = new JFileChooser();
         chooser.setFileSelectionMode(JFileChooser.FILES_ONLY);
@@ -49,6 +55,12 @@ public class YoloTrainPanel extends BaseTrainPanel {
         }
     }
 
+    /**
+     * Returns whether valid model file name.
+     *
+     * @param modelName the model name.
+     * @return true if valid model file name; false otherwise.
+     */
     protected boolean isValidModelFileName(String modelName) {
         if (modelName == null || modelName.trim().isEmpty()) {
             return false;
@@ -64,6 +76,11 @@ public class YoloTrainPanel extends BaseTrainPanel {
                 && !INVALID_MODEL_NAME_CHARS.matcher(cleanName).find();
     }
 
+    /**
+     * Returns whether valid fine tune base model.
+     *
+     * @return true if valid fine tune base model; false otherwise.
+     */
     protected boolean isValidFineTuneBaseModel() {
         String baseModel = getSelectedBaseModelValue();
         if (baseModelComboBox.getSelectedItem() instanceof YoloModelSelectionEntry) {
@@ -74,10 +91,20 @@ public class YoloTrainPanel extends BaseTrainPanel {
                 && new File(baseModel).isFile();
     }
 
+    /**
+     * Returns whether valid scratch architecture.
+     *
+     * @return true if valid scratch architecture; false otherwise.
+     */
     protected boolean isValidScratchArchitecture() {
         return YoloModelRegistry.isKnownScratchArchitecture(getSelectedScratchArchitectureValue());
     }
 
+    /**
+     * Sets the base models.
+     *
+     * @param models the models.
+     */
     public void setBaseModels(LinkedHashMap<String, String> models) {
         DefaultComboBoxModel<YoloModelSelectionEntry> comboModel =
                 new DefaultComboBoxModel<YoloModelSelectionEntry>();

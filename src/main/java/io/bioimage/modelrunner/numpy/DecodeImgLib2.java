@@ -38,12 +38,26 @@ import net.imglib2.view.IntervalView;
 public class DecodeImgLib2 {
 
 	
+	/**
+	 * Returns the result of tensor data to byte array.
+	 *
+	 * @param <T> the T type parameter.
+	 * @param tensor the tensor.
+	 * @return the resulting byte.
+	 */
 	public static  < T extends RealType< T > & NativeType< T > >
 				byte[] tensorDataToByteArray(Tensor<T> tensor) {
 		return imglib2ToByteArray(tensor.getData());
 	}
 
 	
+	/**
+	 * Returns the result of imglib2 to byte array.
+	 *
+	 * @param <T> the T type parameter.
+	 * @param rai the RAI.
+	 * @return the resulting byte.
+	 */
 	public static < T extends RealType< T > & NativeType< T > >
 				byte[] imglib2ToByteArray(RandomAccessibleInterval<T> rai) {
     	if (Util.getTypeFromInterval(rai) instanceof ByteType) {

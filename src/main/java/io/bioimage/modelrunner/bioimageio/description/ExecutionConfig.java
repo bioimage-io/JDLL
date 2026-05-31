@@ -36,10 +36,9 @@ public class ExecutionConfig
 
     /**
      * Creates an execution configuration instance with the config element map from the yaml file.
-     * 
-     * @param yamlFieldElements
-     *        The config map.
-     * @return The execution configuration instance.
+     *
+     * @param yamlFieldElements the YAML field elements.
+     * @return the created execution config.
      */
     public static ExecutionConfig build(Map<String, Object> yamlFieldElements)
     {

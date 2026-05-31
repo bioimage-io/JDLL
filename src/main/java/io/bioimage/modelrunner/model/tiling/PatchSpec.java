@@ -54,19 +54,13 @@ public class PatchSpec
 
     /**
      * Creates a patch size specification.
-     * 
-      * @param tensorName
-     *        Name of the tensor .
-     * @param patchInputSize
-     *        Input patch size. The patch taken from the input sequence including the halo.
-     * @param patchGridSize
-     *        The patch grid size. The number of patches in each axis used to cover the entire sequence. It should be computed from the output patch and input
-     *        sequence sizes.
-     * @param patchPaddingSize
-     *        The padding size used on each patch.
-     * @param nonTiledTensorDims
-     * 		  The original size of the image/tensor that is going to be tiled
-     * @return The create patch specification.
+     *
+     * @param tensorName the tensor name.
+     * @param patchInputSize the patch input size.
+     * @param patchGridSize the patch grid size.
+     * @param patchPaddingSize the patch padding size.
+     * @param nonTiledTensorDims the non tiled tensor dimensions.
+     * @return the created patch spec.
      */
     protected static PatchSpec create(String tensorName, long[] patchInputSize, int[] patchGridSize, 
     		int[][] patchPaddingSize, long[] nonTiledTensorDims)

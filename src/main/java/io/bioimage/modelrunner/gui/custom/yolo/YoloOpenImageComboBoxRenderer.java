@@ -28,6 +28,16 @@ public class YoloOpenImageComboBoxRenderer extends DefaultListCellRenderer {
 
     private static final long serialVersionUID = -8937462309363217710L;
 
+    /**
+     * Returns the list cell renderer component.
+     *
+     * @param list the list.
+     * @param value the value.
+     * @param index the index.
+     * @param isSelected whether to use is selected.
+     * @param cellHasFocus the cell has focus.
+     * @return the list cell renderer component.
+     */
     @Override
     public Component getListCellRendererComponent(JList<?> list, Object value, int index, boolean isSelected,
             boolean cellHasFocus) {

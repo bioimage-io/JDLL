@@ -140,10 +140,20 @@ public class LetterboxPreprocessing {
 			+ "" + System.lineSeparator()
 			+ "    return x_out, meta";
 	
+	/**
+	 * Returns the method name.
+	 *
+	 * @return the method name.
+	 */
 	public static String getMethodName() {
 		return METHOD_NAME;
 	}
 	
+	/**
+	 * Returns the method declaration.
+	 *
+	 * @return the method declaration.
+	 */
 	public static String getMethodDeclaration() {
 		return METHOD_DECLARATION;
 	}

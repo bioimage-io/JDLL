@@ -51,6 +51,9 @@ public class YoloHtmlLogPanel extends JPanel {
     private final Timer elapsedTimer;
     private long startNanos;
 
+    /**
+     * Creates a new YoloHtmlLogPanel instance.
+     */
     protected YoloHtmlLogPanel() {
         setLayout(null);
         setBorder(elapsedBorder);
@@ -63,6 +66,11 @@ public class YoloHtmlLogPanel extends JPanel {
         elapsedTimer = new Timer(100, e -> updateElapsedTitle());
         add(scrollPane);
         addComponentListener(new ComponentAdapter() {
+            /**
+             * Performs component resized.
+             *
+             * @param e the e.
+             */
             @Override
             public void componentResized(ComponentEvent e) {
                 doLayout();
@@ -70,6 +78,9 @@ public class YoloHtmlLogPanel extends JPanel {
         });
     }
 
+    /**
+     * Performs do layout.
+     */
     @Override
     public void doLayout() {
         java.awt.Insets insets = getInsets();
@@ -81,6 +92,9 @@ public class YoloHtmlLogPanel extends JPanel {
         editorPane.setFont(editorPane.getFont().deriveFont((float) Math.max(YoloUiUtils.MIN_FONT_SIZE, (int) Math.floor(getHeight() * 0.08))));
     }
 
+    /**
+     * Performs start run timer.
+     */
     public void startRunTimer() {
         clearLog();
         startNanos = System.nanoTime();
@@ -88,6 +102,9 @@ public class YoloHtmlLogPanel extends JPanel {
         elapsedTimer.restart();
     }
 
+    /**
+     * Performs stop run timer.
+     */
     public void stopRunTimer() {
         if (elapsedTimer.isRunning()) {
             elapsedTimer.stop();
@@ -95,11 +112,19 @@ public class YoloHtmlLogPanel extends JPanel {
         updateElapsedTitle();
     }
 
+    /**
+     * Performs clear log.
+     */
     public void clearLog() {
         logLines.clear();
         setHtml(EMPTY_HTML);
     }
 
+    /**
+     * Sets the HTML.
+     *
+     * @param html the HTML.
+     */
     public void setHtml(String html) {
         if (!EMPTY_HTML.equals(html)) {
             logLines.clear();
@@ -108,6 +133,11 @@ public class YoloHtmlLogPanel extends JPanel {
         editorPane.setCaretPosition(0);
     }
 
+    /**
+     * Performs append HTML.
+     *
+     * @param htmlFragment the HTML fragment.
+     */
     public void appendHtml(String htmlFragment) {
         logLines.add(wrapLogLine(htmlFragment));
         while (logLines.size() > MAX_LOG_LINES) {
@@ -146,6 +176,11 @@ public class YoloHtmlLogPanel extends JPanel {
         repaint();
     }
 
+    /**
+     * Returns the editor pane.
+     *
+     * @return the editor pane.
+     */
     public JEditorPane getEditorPane() {
         return editorPane;
     }

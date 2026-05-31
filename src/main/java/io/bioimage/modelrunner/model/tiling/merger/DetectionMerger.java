@@ -82,6 +82,11 @@ public final class DetectionMerger<T extends RealType<T> & NativeType<T>, R exte
     private Tensor<R> outputPrototype;
     private boolean reconstructedValid;
 
+    /**
+     * Creates a new DetectionMerger instance.
+     *
+     * @param tileMaker the tile maker.
+     */
     public DetectionMerger(final TileMaker tileMaker) {
         if (tileMaker == null) {
             throw new IllegalArgumentException("TileMaker cannot be null.");
@@ -92,6 +97,11 @@ public final class DetectionMerger<T extends RealType<T> & NativeType<T>, R exte
         this.objectRectangle = null;
     }
 
+    /**
+     * Creates a new DetectionMerger instance.
+     *
+     * @param patchSizes the patch sizes.
+     */
     public DetectionMerger(final List<TileInfo> patchSizes) {
         if (patchSizes == null || patchSizes.isEmpty()) {
             throw new IllegalArgumentException("Patch sizes cannot be null or empty.");
@@ -102,6 +112,11 @@ public final class DetectionMerger<T extends RealType<T> & NativeType<T>, R exte
         this.objectRectangle = null;
     }
 
+    /**
+     * Creates a new DetectionMerger instance.
+     *
+     * @param objectRectangle the object rectangle.
+     */
     public DetectionMerger(final Rectangle objectRectangle) {
         this.mode = Mode.OBJECT_SIZE;
         this.tileMaker = null;
@@ -109,6 +124,12 @@ public final class DetectionMerger<T extends RealType<T> & NativeType<T>, R exte
         this.objectRectangle = objectRectangle;
     }
 
+    /**
+     * Sets the tile overlap.
+     *
+     * @param tileOverlap the tile overlap.
+     * @return the resulting detection merger.
+     */
     public DetectionMerger<T, R> setTileOverlap(final float tileOverlap) {
         if (!Float.isFinite(tileOverlap) || tileOverlap < 0.0f || tileOverlap >= 1.0f) {
             throw new IllegalArgumentException("Tile overlap must be >= 0 and < 1.");
@@ -118,6 +139,12 @@ public final class DetectionMerger<T extends RealType<T> & NativeType<T>, R exte
         return this;
     }
 
+    /**
+     * Sets the NMS IoU threshold.
+     *
+     * @param nmsIouThreshold the NMS IoU threshold.
+     * @return the resulting detection merger.
+     */
     public DetectionMerger<T, R> setNmsIouThreshold(final double nmsIouThreshold) {
         if (!Double.isFinite(nmsIouThreshold) || nmsIouThreshold < 0.0d) {
             throw new IllegalArgumentException("NMS IoU threshold must be finite and >= 0.");
@@ -127,10 +154,21 @@ public final class DetectionMerger<T extends RealType<T> & NativeType<T>, R exte
         return this;
     }
 
+    /**
+     * Sets the NMS threshold.
+     *
+     * @param nmsIouThreshold the NMS IoU threshold.
+     * @return the resulting detection merger.
+     */
     public DetectionMerger<T, R> setNmsThreshold(final double nmsIouThreshold) {
         return setNmsIouThreshold(nmsIouThreshold);
     }
 
+    /**
+     * Performs configure.
+     *
+     * @param inputs the inputs to process.
+     */
     @Override
     public void configure(final List<Tensor<T>> inputs) {
         this.inputs = inputs == null ? Collections.<Tensor<T>>emptyList() : inputs;
@@ -153,6 +191,12 @@ public final class DetectionMerger<T extends RealType<T> & NativeType<T>, R exte
         resetReconstructionCallbacks();
     }
 
+    /**
+     * Returns the result of get.
+     *
+     * @param patchNumber the patch number.
+     * @return the resulting list.
+     */
     @Override
     public List<Tensor<T>> get(final int patchNumber) {
         requireConfigured();
@@ -173,12 +217,23 @@ public final class DetectionMerger<T extends RealType<T> & NativeType<T>, R exte
         return patch;
     }
 
+    /**
+     * Returns the n patches.
+     *
+     * @return the n patches.
+     */
     @Override
     public int getNPatches() {
         requireConfigured();
         return referenceWindows.size();
     }
 
+    /**
+     * Performs digest.
+     *
+     * @param patchNumber the patch number.
+     * @param outputs the outputs to populate.
+     */
     @Override
     public void digest(final int patchNumber, final List<Tensor<R>> outputs) {
         requireConfigured();
@@ -190,11 +245,21 @@ public final class DetectionMerger<T extends RealType<T> & NativeType<T>, R exte
         resetReconstructionCallbacks();
     }
 
+    /**
+     * Performs add callback.
+     *
+     * @param callback the callback to notify.
+     */
     @Override
     public void addCallback(final Function<List<Tensor<R>>, List<Tensor<R>>> callback) {
         registerCallback(callback);
     }
 
+    /**
+     * Returns the reconstructed.
+     *
+     * @return the reconstructed.
+     */
     @Override
     public List<Tensor<R>> getReconstructed() {
         requireConfigured();

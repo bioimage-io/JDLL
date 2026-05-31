@@ -74,13 +74,11 @@ public class TransformationInstance {
 	/**
 	 * Create a {@link TransformationInstance} from a {@link TransformSpec} created from a valid rdf.yaml Bioimage.io
 	 * spec file
-	 * @param transform
-	 * 	{@link TransformSpec} object from an rd.yaml file
-	 * @return the {@link TransformationInstance}
-	 * @throws RuntimeException if there is any error because the transformation defined by {@link TransformSpec} is not
-	 * 	valid or not yet supported
-	 * @throws IllegalArgumentException if there is any error because the transformation defined by {@link TransformSpec} is not
-	 * 	valid or not yet supported
+	 *
+	 * @param transform the transform.
+	 * @return the created transformation instance.
+	 * @throws RuntimeException if the operation fails at runtime.
+	 * @throws IllegalArgumentException if an argument is invalid.
 	 */
 	public static TransformationInstance create(TransformSpec transform) throws RuntimeException, IllegalArgumentException {
 		return new TransformationInstance(transform);
@@ -88,19 +86,16 @@ public class TransformationInstance {
 	
 	/**
 	 * Run the defined transformation on the input {@link Tensor} of interest.
-	 * This method creates a new object for the output tensor, so at the end, 
+	 * This method creates a new object for the output tensor, so at the end,
 	 * there is one object for the input and another for the output.
-	 * If you want to do the transfromation in-place (modify the input tensor 
+	 * If you want to do the transfromation in-place (modify the input tensor
 	 * instead of creating another one) use {@link #run(Tensor, boolean)}
-	 * 
-	 * @param <T>
-	 * 	ImgLib2 data type of the input tensor
-	 * @param <R>
-	 * 	ImgLib2 data type of the resulting output tensor
-	 * @param tensor
-	 * 	the input tensor to be processed
-	 * @return the output tensor
-	 * @throws RuntimeException if there is any error running the transformation
+	 *
+	 * @param <T> the T type parameter.
+	 * @param <R> the R type parameter.
+	 * @param tensor the tensor.
+	 * @return the resulting list.
+	 * @throws RuntimeException if the operation fails at runtime.
 	 */
 	public <T extends RealType<T> & NativeType<T>, R extends RealType<R> & NativeType<R>>
 	List<Tensor<R>> run(Tensor<T> tensor) throws RuntimeException {
@@ -109,19 +104,13 @@ public class TransformationInstance {
 	
 	/**
 	 * Run the defined transformation on the input {@link Tensor} of interest.
-	 * 
-	 * @param <T>
-	 * 	ImgLib2 data type of the input tensor
-	 * @param <R>
-	 * 	ImgLib2 data type of the resulting output tensor
-	 * @param tensor
-	 * 	the input tensor to be processed
-	 * @param inplace
-	 * 	whether to apply the transformation to the input object and modify it or 
-	 * 	to create a separate tensor as the output and do the modifications there.
-	 * 	With inplace=false, two separate tensors exist after the method is done.
-	 * @return the output tensor
-	 * @throws RuntimeException if there is any error running the transformation
+	 *
+	 * @param <T> the T type parameter.
+	 * @param <R> the R type parameter.
+	 * @param tensor the tensor.
+	 * @param inplace the inplace.
+	 * @return the resulting list.
+	 * @throws RuntimeException if the operation fails at runtime.
 	 */
 	public <T extends RealType<T> & NativeType<T>, R extends RealType<R> & NativeType<R>>
 	List<Tensor<R>> run(Tensor<T> tensor, boolean inplace) throws RuntimeException {
@@ -206,9 +195,9 @@ public class TransformationInstance {
 	/**
 	 * Method used to convert Strings in using snake case (snake_case) into camel
 	 * case with the first letter as upper case (CamelCase)
-	 * @param str
-	 * 	the String to be converted
-	 * @return String converted into camel case with first upper
+	 *
+	 * @param str the str.
+	 * @return the resulting string.
 	 */
 	public static String snakeCaseToCamelCaseFirstCap(String str) {
 		while(str.contains("_")) {

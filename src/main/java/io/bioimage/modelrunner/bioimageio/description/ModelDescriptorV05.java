@@ -198,6 +198,9 @@ public class ModelDescriptorV05 extends ModelDescriptor
     	return (String) yamlElements.get("id");
 	}
 
+	/**
+	 * Performs add bio engine.
+	 */
 	@Override
 	// TODO decide whether to keep this or not
 	/**

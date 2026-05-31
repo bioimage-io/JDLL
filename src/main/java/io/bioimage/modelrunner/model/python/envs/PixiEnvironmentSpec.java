@@ -19,14 +19,10 @@ public final class PixiEnvironmentSpec {
     /**
      * Creates a new immutable environment specification.
      *
-     * @param selectedEnvironment
-     *     the Pixi environment name to use
-     * @param pixiTomlContent
-     *     the fully rendered pixi.toml content used to build the environment
-     * @param environmentDirectory
-     *     the directory where the environment is expected to live
-     * @param manualNoDeps
-     *     a list of deps installed with no deps. For example{@code pip install biapy==3.5.10 --no-deps}
+     * @param selectedEnvironment the selected environment.
+     * @param pixiTomlContent the pixi toml content.
+     * @param environmentDirectory the environment directory.
+     * @param manualNoDeps the manual no deps.
      */
     public PixiEnvironmentSpec(
             final String selectedEnvironment,
@@ -45,12 +41,9 @@ public final class PixiEnvironmentSpec {
     /**
      * Creates a new immutable environment specification.
      *
-     * @param selectedEnvironment
-     *     the Pixi environment name to use
-     * @param pixiTomlContent
-     *     the fully rendered pixi.toml content used to build the environment
-     * @param environmentDirectory
-     *     the directory where the environment is expected to live
+     * @param selectedEnvironment the selected environment.
+     * @param pixiTomlContent the pixi toml content.
+     * @param environmentDirectory the environment directory.
      */
     public PixiEnvironmentSpec(
             final String selectedEnvironment,

@@ -101,12 +101,11 @@ public class Processing {
     
     /**
      * Initializes and returns a new Processing object.
-     * 
-     * @param descriptor
-     *  The {@link ModelDescriptor} object created from the Bioimage.io rdf spec file containing model information.
-     * @return A new {@link Processing} object.
-     * @throws IllegalArgumentException If there's an issue with the model descriptor.
-     * @throws RuntimeException If there's an error during initialization.
+     *
+     * @param descriptor the descriptor.
+     * @return the resulting processing.
+     * @throws IllegalArgumentException if an argument is invalid.
+     * @throws RuntimeException if the operation fails at runtime.
      */
 	public static Processing init(ModelDescriptor descriptor) throws IllegalArgumentException, RuntimeException {
 		return new Processing(descriptor);
@@ -115,17 +114,14 @@ public class Processing {
     /**
      * Applies preprocessing to a list of tensors.
      * If the tensors do not correspond to the input tensors of the model, nothing happens to them.
-     * 
-     * The method output is a separate list of tensors. In order to apply the 
+     *
+     * The method output is a separate list of tensors. In order to apply the
      * pre-processing in-place, use {@link #preprocess(List, boolean)}.
-     * 
-     * @param <T>
-     *  The type of the input tensor elements.
-     * @param <R>
-     *  The type of the output tensor elements.
-     * @param tensorList
-     *  The list of tensors to preprocess.
-     * @return A list of preprocessed tensors.
+     *
+     * @param <T> the T type parameter.
+     * @param <R> the R type parameter.
+     * @param tensorList the tensor list.
+     * @return the resulting list.
      */
 	public <T extends RealType<T> & NativeType<T>, R extends RealType<R> & NativeType<R>>
 	List<Tensor<R>> preprocess(List<Tensor<T>> tensorList){
@@ -179,17 +175,14 @@ public class Processing {
     /**
      * Applies postprocessing to a list of tensors.
      * If the tensors do not correspond to the output tensors of the model, nothing happens to them.
-     * 
-     * The method output is a separate list of tensors. In order to apply the 
+     *
+     * The method output is a separate list of tensors. In order to apply the
      * pre-processing in-place, use {@link #postprocess(List, boolean)}.
-     * 
-     * @param <T>
-     *  The type of the input tensor elements.
-     * @param <R>
-     *  The type of the output tensor elements.
-     * @param tensorList
-     *  The list of tensors to postprocess.
-     * @return A list of postprocessed tensors.
+     *
+     * @param <T> the T type parameter.
+     * @param <R> the R type parameter.
+     * @param tensorList the tensor list.
+     * @return the resulting list.
      */
 	public <T extends RealType<T> & NativeType<T>, R extends RealType<R> & NativeType<R>>
 	List<Tensor<R>> postprocess(List<Tensor<T>> tensorList){

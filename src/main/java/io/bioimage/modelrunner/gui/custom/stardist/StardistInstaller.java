@@ -35,14 +35,35 @@ import io.bioimage.modelrunner.utils.ZipUtils;
 
 public class StardistInstaller  implements ModelInstaller {
 
+    /**
+     * Returns whether environment installed.
+     *
+     * @return true if environment installed; false otherwise.
+     */
     public boolean isEnvironmentInstalled() {
         return StarDist.isInstalled();
     }
 
+    /**
+     * Returns whether model installed.
+     *
+     * @param modelPath the model path.
+     * @return true if model installed; false otherwise.
+     */
     public boolean isModelInstalled(String modelPath) {
         return StardistModelRegistry.isInstalled(modelPath);
     }
 
+    /**
+     * Performs install if needed.
+     *
+     * @param modelPath the model path.
+     * @param logConsumer the log consumer callback.
+     * @throws IOException if an I/O error occurs.
+     * @throws ExecutionException if an asynchronous operation fails.
+     * @throws InterruptedException if the current thread is interrupted.
+     * @throws BuildException if the Python environment or service cannot be built.
+     */
     public void installIfNeeded(String modelPath, Consumer<String> logConsumer)
             throws IOException, ExecutionException, InterruptedException, BuildException {
         if (!isEnvironmentInstalled()) {
@@ -53,11 +74,27 @@ public class StardistInstaller  implements ModelInstaller {
         }
     }
 
+    /**
+     * Performs install environment.
+     *
+     * @param logConsumer the log consumer callback.
+     * @throws InterruptedException if the current thread is interrupted.
+     * @throws BuildException if the Python environment or service cannot be built.
+     */
     public void installEnvironment(Consumer<String> logConsumer) throws InterruptedException, BuildException {
         PixiEnvironmentSpec spec = StarDist.resolvePytorchEnv();
         PixiEnvironmentManager.installRequirements(spec, (str) -> {System.out.println(str);});
     }
 
+    /**
+     * Performs install model weights.
+     *
+     * @param modelPath the model path.
+     * @param logConsumer the log consumer callback.
+     * @throws IOException if an I/O error occurs.
+     * @throws ExecutionException if an asynchronous operation fails.
+     * @throws InterruptedException if the current thread is interrupted.
+     */
     public void installModelWeights(String modelPath, Consumer<String> logConsumer)
             throws IOException, ExecutionException, InterruptedException {
         if (!StardistModelRegistry.canDownload(modelPath)) {

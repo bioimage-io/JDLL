@@ -88,6 +88,9 @@ public class YoloValidationPreviewPanel extends JPanel implements TrainingValida
     private double secondsPerIteration = Double.NaN;
     private Color selectedBoxColor = GREEN_BOX_COLOR;
 
+    /**
+     * Creates a new YoloValidationPreviewPanel instance.
+     */
     public YoloValidationPreviewPanel() {
         setLayout(null);
         setOpaque(true);
@@ -116,6 +119,9 @@ public class YoloValidationPreviewPanel extends JPanel implements TrainingValida
         clearPreview();
     }
 
+    /**
+     * Performs clear preview.
+     */
     public void clearPreview() {
         samples.clear();
         currentIndex = 0;
@@ -128,6 +134,11 @@ public class YoloValidationPreviewPanel extends JPanel implements TrainingValida
         updateButtons();
     }
 
+    /**
+     * Loads the load preview.
+     *
+     * @param jsonPath the JSON path.
+     */
     public void loadPreview(String jsonPath) {
         if (jsonPath == null || jsonPath.trim().isEmpty()) {
             return;
@@ -159,6 +170,16 @@ public class YoloValidationPreviewPanel extends JPanel implements TrainingValida
         }
     }
 
+    /**
+     * Sets the training status.
+     *
+     * @param active the active.
+     * @param currentStep the current step.
+     * @param totalSteps the total steps.
+     * @param totalEpochs the total epochs.
+     * @param elapsedMillis the elapsed millis.
+     * @param secondsPerIteration the seconds per iteration.
+     */
     public void setTrainingStatus(boolean active, int currentStep, int totalSteps,
             int totalEpochs, long elapsedMillis, double secondsPerIteration) {
         this.trainingActive = active;
@@ -170,6 +191,9 @@ public class YoloValidationPreviewPanel extends JPanel implements TrainingValida
         updateStatusPanel();
     }
 
+    /**
+     * Performs do layout.
+     */
     @Override
     public void doLayout() {
         int w = Math.max(0, getWidth());
@@ -438,6 +462,11 @@ public class YoloValidationPreviewPanel extends JPanel implements TrainingValida
 
         private static final long serialVersionUID = 8312362540460559408L;
 
+        /**
+         * Performs paint component.
+         *
+         * @param g the g.
+         */
         @Override
         protected void paintComponent(Graphics g) {
             super.paintComponent(g);

@@ -58,9 +58,9 @@ public class DeepImageJProcessing {
 	
 	/**
 	 * Build the DIJ processing object
-	 * @param prediction
-	 * 	map from the rdf.yaml containing the info about DIJ processing
-	 * @return the object with the needed processing
+	 *
+	 * @param prediction the prediction.
+	 * @return the created deep image j processing.
 	 */
 	public static DeepImageJProcessing build(Object prediction) {
 		DeepImageJProcessing dijProcessing = new DeepImageJProcessing();

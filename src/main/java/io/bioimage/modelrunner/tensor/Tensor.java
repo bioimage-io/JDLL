@@ -132,10 +132,11 @@ public final class Tensor< T extends RealType< T > & NativeType< T > >
 	/**
 	 * Return a tensor object
 	 *
-	 * @param tensorName the tensorName parameter.
-	 * @param axes the axes parameter.
-	 * @param data the data parameter.
-	 * @return the resulting value.
+	 * @param <T> the T type parameter.
+	 * @param tensorName the tensor name.
+	 * @param axes the axes.
+	 * @param data the data.
+	 * @return the created tensor.
 	 */
 	public static < T extends RealType< T > & NativeType< T > > Tensor< T > build( final String tensorName, final String axes, final RandomAccessibleInterval< T > data )
 	{
@@ -147,9 +148,10 @@ public final class Tensor< T extends RealType< T > & NativeType< T > >
 	/**
 	 * Creates a tensor without data. The idea is to fill the data later.
 	 *
-	 * @param tensorName the tensorName parameter.
-	 * @param axes the axes parameter.
-	 * @return the resulting value.
+	 * @param <T> the T type parameter.
+	 * @param tensorName the tensor name.
+	 * @param axes the axes.
+	 * @return the created tensor.
 	 */
 	public static < T extends RealType< T > & NativeType< T > > Tensor< T > buildEmptyTensor( final String tensorName, final String axes )
 	{
@@ -160,18 +162,12 @@ public final class Tensor< T extends RealType< T > & NativeType< T > >
 	 * Creates a tensor without data. However, the memory that this tensor will consume is already
 	 * allocated during its creation
 	 *
-	 * @param <T>
-	 * 			  the possible ImgLib2 datatypes that the input backend ImgLib2 img can have
-	 * @param tensorName
-	 *            name of the tensor as defined by the model
-	 * @param axes
-	 *            String containing the axes order of the tensor. For example:
-	 *            "bcyx"
-	 * @param shape
-	 * 			  Shape of the tensor
-	 * @param dtype
-	 * 			  data type of the tensor
-	 * @return the tensor
+	 * @param <T> the T type parameter.
+	 * @param tensorName the tensor name.
+	 * @param axes the axes.
+	 * @param shape the shape.
+	 * @param dtype the data type.
+	 * @return the created tensor.
 	 */
 	public static  < T extends RealType< T > & NativeType< T > > 
 								Tensor< T > buildBlankTensor( final String tensorName, 
@@ -190,8 +186,7 @@ public final class Tensor< T extends RealType< T > & NativeType< T > >
 	 * The {@link RandomAccessibleInterval} needs to be of the same data type,
 	 * shape and size as the tensor data.
 	 *
-	 * @param data
-	 *            the numbers of the tensor in a Numpy array like structure
+	 * @param data the data.
 	 */
 	public void setData( final RandomAccessibleInterval< T > data )
 	{
@@ -246,11 +241,9 @@ public final class Tensor< T extends RealType< T > & NativeType< T > >
 	}
 
 	/**
-	 * Copy from the backend of a tensor 
+	 * Copy from the backend of a tensor
 	 *
-	 * @param source
-	 *            the tensor whose backend is going to be copied. Must be of the
-	 *            same type than this tensor.
+	 * @param source the source.
 	 */
 	public void copyTensorBackend( final Tensor< T > source )
 	{
@@ -262,9 +255,7 @@ public final class Tensor< T extends RealType< T > & NativeType< T > >
 	/**
 	 * Copy the NDArray backend of a tensor
 	 *
-	 * @param source
-	 *            the tensor whose backend is going to be copied. Must be of the
-	 *            same type than this tensor.
+	 * @param source the source.
 	 */
 	public void copyRAITensorBackend( final Tensor< T > source )
 	{
@@ -277,9 +268,11 @@ public final class Tensor< T extends RealType< T > & NativeType< T > >
 	 * Everything is the same or the new tensor (including the name), except the
 	 * data type of the data
 	 *
-	 * @param tt the tt parameter.
-	 * @param type the type parameter.
-	 * @return the resulting value.
+	 * @param <T> the T type parameter.
+	 * @param <R> the R type parameter.
+	 * @param tt the tt.
+	 * @param type the type.
+	 * @return the created tensor.
 	 */
 	public static < T extends RealType< T > & NativeType< T >, R extends RealType< R > & NativeType< R > > Tensor< R > createCopyOfTensorInWantedDataType( final Tensor< T > tt, final R type )
 	{
@@ -301,9 +294,11 @@ public final class Tensor< T extends RealType< T > & NativeType< T > >
 	 * Everything is the same or the new tensor (including the name), except the
 	 * data type of the data
 	 *
-	 * @param input the input parameter.
-	 * @param type the type parameter.
-	 * @return the resulting value.
+	 * @param <T> the T type parameter.
+	 * @param <R> the R type parameter.
+	 * @param input the input to process.
+	 * @param type the type.
+	 * @return the created random accessible interval.
 	 */
 	public static < T extends RealType< T > & NativeType< T >, R extends RealType< R > & NativeType< R > > RandomAccessibleInterval< R > createCopyOfRaiInWantedDataType( final RandomAccessibleInterval< T > input, final R type )
 	{
@@ -360,13 +355,10 @@ public final class Tensor< T extends RealType< T > & NativeType< T > >
 	/**
 	 * Retrieve tensor with the wanted name from a list of tensors
 	 *
-	 * @param <T>
-	 * 			  the possible ImgLib2 datatypes that the ImgLib2 img that correspond to each tensor can have
-	 * @param lTensors
-	 *            list of tensors
-	 * @param name
-	 *            name of the tensor of interest
-	 * @return the tensor of interest
+	 * @param <T> the T type parameter.
+	 * @param lTensors the l tensors.
+	 * @param name the name.
+	 * @return the tensor by name from list.
 	 */
 	public static <T extends NativeType<T> & RealType<T>> 
 	Tensor<T> getTensorByNameFromList( final List<Tensor<T>> lTensors, final String name )
@@ -399,11 +391,9 @@ public final class Tensor< T extends RealType< T > & NativeType< T > >
 	 * Convert the String representation of the axes order into an int array
 	 * representation, easier to handle by the program
 	 *
-	 * @param dimOrder
-	 *            String representation of the axes
-	 * @return the int[] representation of the axes
-	 * @throws IllegalArgumentException
-	 *             if the String representation contains repeated axes
+	 * @param dimOrder the dim order.
+	 * @return the resulting int.
+	 * @throws IllegalArgumentException if an argument is invalid.
 	 */
 	public static int[] convertToTensorDimOrder( String dimOrder ) throws IllegalArgumentException
 	{
@@ -524,8 +514,7 @@ public final class Tensor< T extends RealType< T > & NativeType< T > >
 	/**
 	 * Set whether the tensor represents an image or not
 	 *
-	 * @param isImage
-	 *            if the tensor is an image or not
+	 * @param isImage whether to use is image.
 	 */
 	public void setIsImage( final boolean isImage )
 	{

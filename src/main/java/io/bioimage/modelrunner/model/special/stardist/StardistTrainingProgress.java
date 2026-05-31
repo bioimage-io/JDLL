@@ -40,6 +40,16 @@ public final class StardistTrainingProgress {
 	private final Map<String, Double> losses;
 	private final Map<String, Double> metrics;
 
+	/**
+	 * Creates a new StardistTrainingProgress instance.
+	 *
+	 * @param epoch the epoch.
+	 * @param step the step.
+	 * @param totalEpochs the total epochs.
+	 * @param totalSteps the total steps.
+	 * @param losses the losses.
+	 * @param metrics the metrics.
+	 */
 	public StardistTrainingProgress(int epoch, int step, int totalEpochs, int totalSteps,
 			Map<String, Double> losses, Map<String, Double> metrics) {
 		this.epoch = epoch;
@@ -50,38 +60,83 @@ public final class StardistTrainingProgress {
 		this.metrics = immutableCopy(metrics);
 	}
 
+	/**
+	 * Returns the epoch.
+	 *
+	 * @return the epoch.
+	 */
 	public int getEpoch() {
 		return epoch;
 	}
 
+	/**
+	 * Returns the step.
+	 *
+	 * @return the step.
+	 */
 	public int getStep() {
 		return step;
 	}
 
+	/**
+	 * Returns the total epochs.
+	 *
+	 * @return the total epochs.
+	 */
 	public int getTotalEpochs() {
 		return totalEpochs;
 	}
 
+	/**
+	 * Returns the total steps.
+	 *
+	 * @return the total steps.
+	 */
 	public int getTotalSteps() {
 		return totalSteps;
 	}
 
+	/**
+	 * Returns the losses.
+	 *
+	 * @return the losses.
+	 */
 	public Map<String, Double> getLosses() {
 		return losses;
 	}
 
+	/**
+	 * Returns the metrics.
+	 *
+	 * @return the metrics.
+	 */
 	public Map<String, Double> getMetrics() {
 		return metrics;
 	}
 
+	/**
+	 * Returns the training total loss.
+	 *
+	 * @return the training total loss.
+	 */
 	public Double getTrainingTotalLoss() {
 		return firstPresent(losses, TRAIN_TOTAL_LOSS);
 	}
 
+	/**
+	 * Returns the validation total loss.
+	 *
+	 * @return the validation total loss.
+	 */
 	public Double getValidationTotalLoss() {
 		return firstPresent(losses, VAL_TOTAL_LOSS);
 	}
 
+	/**
+	 * Returns the learning rate.
+	 *
+	 * @return the learning rate.
+	 */
 	public Double getLearningRate() {
 		return firstPresent(metrics, LEARNING_RATE);
 	}

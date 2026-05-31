@@ -39,10 +39,18 @@ public final class NoTileMerger<T extends RealType<T> & NativeType<T>, R extends
 	private List<Tensor<T>> inputs = Collections.emptyList();
 	private List<Tensor<R>> reconstructed = Collections.emptyList();
 
+	/**
+	 * Creates a new NoTileMerger instance.
+	 */
 	public NoTileMerger() {
 		super();
 	}
 
+	/**
+	 * Performs configure.
+	 *
+	 * @param inputs the inputs to process.
+	 */
 	@Override
 	public void configure(final List<Tensor<T>> inputs) {
 		this.inputs = inputs;
@@ -50,6 +58,12 @@ public final class NoTileMerger<T extends RealType<T> & NativeType<T>, R extends
 		this.digested = false;
 	}
 
+	/**
+	 * Returns the result of get.
+	 *
+	 * @param patchNumber the patch number.
+	 * @return the resulting list.
+	 */
 	@Override
 	public List<Tensor<T>> get(final int patchNumber) {
 		requireConfigured();
@@ -57,11 +71,22 @@ public final class NoTileMerger<T extends RealType<T> & NativeType<T>, R extends
 		return inputs;
 	}
 
+	/**
+	 * Returns the n patches.
+	 *
+	 * @return the n patches.
+	 */
 	@Override
 	public int getNPatches() {
 		return 1;
 	}
 
+	/**
+	 * Performs digest.
+	 *
+	 * @param patchNumber the patch number.
+	 * @param outputs the outputs to populate.
+	 */
 	@Override
 	public void digest(final int patchNumber, final List<Tensor<R>> outputs) {
 		requireConfigured();
@@ -71,11 +96,21 @@ public final class NoTileMerger<T extends RealType<T> & NativeType<T>, R extends
 		resetReconstructionCallbacks();
 	}
 
+	/**
+	 * Performs add callback.
+	 *
+	 * @param callback the callback to notify.
+	 */
 	@Override
 	public void addCallback(final Function<List<Tensor<R>>, List<Tensor<R>>> callback) {
 		registerCallback(callback);
 	}
 
+	/**
+	 * Returns the reconstructed.
+	 *
+	 * @return the reconstructed.
+	 */
 	@Override
 	public List<Tensor<R>> getReconstructed() {
 		requireConfigured();

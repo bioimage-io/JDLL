@@ -79,10 +79,10 @@ public class ExampleLoadAndRunAllBmzModels {
 	}
 
 	/**
-	 * 
-	 * @param args
-	 * 	main args, in this case nothing is needed
-	 * @throws InterruptedException if the thread is interrupted
+	 * Runs this class from the command line.
+	 *
+	 * @param args command-line arguments.
+	 * @throws InterruptedException if the current thread is interrupted.
 	 */
 	public static void main(String[] args) throws InterruptedException {
 		List<String> modelsWithErrors = new ArrayList<String>();
@@ -118,15 +118,12 @@ public class ExampleLoadAndRunAllBmzModels {
 	}
 	/**
 	 * Load and run any model provided
-	 * @param <T>
-	 * 	ImgLib2 input data type
-	 * @param <R>
-	 * 	ImgLib2 output data type, can be the same as the input
-	 * @param modelFolder
-	 * 	the paht to the model folder
-	 * @param descriptor
-	 * 	descriptor containing the rdf.yaml information
-	 * @throws Exception if any error occurs
+	 *
+	 * @param <T> the T type parameter.
+	 * @param <R> the R type parameter.
+	 * @param modelFolder the model folder.
+	 * @param descriptor the descriptor.
+	 * @throws Exception if  occurs.
 	 */
 	public static <T extends RealType<T> & NativeType<T>, R extends RealType<R> & NativeType<R>>
 	void loadAndRunModel(String modelFolder, ModelDescriptor descriptor) throws Exception {

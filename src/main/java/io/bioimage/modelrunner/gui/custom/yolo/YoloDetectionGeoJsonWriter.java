@@ -37,6 +37,13 @@ public final class YoloDetectionGeoJsonWriter {
 
     private YoloDetectionGeoJsonWriter() {}
 
+    /**
+     * Returns the result of write.
+     *
+     * @param detectionsByImagePath the detections by image path.
+     * @return the resulting list.
+     * @throws IOException if an I/O error occurs.
+     */
     public static List<File> write(Map<String, List<Detection>> detectionsByImagePath) throws IOException {
         List<File> files = new ArrayList<File>();
         for (Map.Entry<String, List<Detection>> entry : detectionsByImagePath.entrySet()) {
@@ -47,6 +54,12 @@ public final class YoloDetectionGeoJsonWriter {
         return files;
     }
 
+    /**
+     * Returns the result of output file for.
+     *
+     * @param imageFile the image file.
+     * @return the resulting file.
+     */
     public static File outputFileFor(File imageFile) {
         File parent = imageFile == null ? null : imageFile.getParentFile();
         if (parent == null) {
@@ -59,6 +72,14 @@ public final class YoloDetectionGeoJsonWriter {
         return new File(parent, name + EXTENSION);
     }
 
+    /**
+     * Performs write.
+     *
+     * @param outputFile the output file.
+     * @param imagePath the image path.
+     * @param detections the detections.
+     * @throws IOException if an I/O error occurs.
+     */
     public static void write(File outputFile, String imagePath, List<Detection> detections) throws IOException {
         File parent = outputFile.getParentFile();
         if (parent != null) {

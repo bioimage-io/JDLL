@@ -48,13 +48,12 @@ public class ZipUtils
 	
 	/**
 	 * Unzip a zip file into the wanted path. This method does not track progress.
-	 * In order to track progress, please use a consumer 
+	 * In order to track progress, please use a consumer
 	 * with {@link #unzipFolder(String, String, Consumer)}
-	 * @param sourcePath
-	 * 	path to the zip file
-	 * @param targetPath
-	 * 	path to the file where everything will be extracted
-	 * @throws IOException if there is any error extracting the files
+	 *
+	 * @param sourcePath the source path.
+	 * @param targetPath the target path.
+	 * @throws IOException if an I/O error occurs.
 	 */
     public static void unzipFolder(String sourcePath, String targetPath) throws IOException {
     	// Create empty consumer to work with unzipping method method
@@ -72,15 +71,13 @@ public class ZipUtils
     }
 	
 	/**
-	 * Unzip a zip file into the wanted path. TRack the progress being made using 
+	 * Unzip a zip file into the wanted path. TRack the progress being made using
 	 * a {@link Consumer}
-	 * @param sourcePath
-	 * 	path to the zip file
-	 * @param targetPath
-	 * 	path to the file where everything will be extracted
-	 * @param consumer
-	 * 	track the unzipping of the files
-	 * @throws IOException if there is any error extracting the files
+	 *
+	 * @param sourcePath the source path.
+	 * @param targetPath the target path.
+	 * @param consumer the consumer callback.
+	 * @throws IOException if an I/O error occurs.
 	 */
     public static void unzipFolder(String sourcePath, String targetPath, Consumer<Double> consumer) throws IOException {
  	    
@@ -126,10 +123,10 @@ public class ZipUtils
     
     /**
      * Calculate the uncompressed size of a .zip file
-     * @param zipFile
-     * 	the zip file of interest
-     * @return the size in bytes if the zip file was to be uncompressed
-     * @throws IOException if there is any error finding the size
+     *
+     * @param zipFile the zip file.
+     * @return the uncompressed size.
+     * @throws IOException if an I/O error occurs.
      */
     public static long getUncompressedSize(File zipFile) throws IOException {
     	return getUncompressedSize(zipFile, Thread.currentThread());
@@ -137,12 +134,11 @@ public class ZipUtils
     
     /**
      * Calculate the uncompressed size of a .zip file
-     * @param zipFile
-     * 	the zip file of interest
-     * @param parentThread
-     * 	thread from where this operation is being launched
-     * @return the size in bytes if the zip file was to be uncompressed
-     * @throws IOException if there is any error finding the size
+     *
+     * @param zipFile the zip file.
+     * @param parentThread the parent thread.
+     * @return the uncompressed size.
+     * @throws IOException if an I/O error occurs.
      */
     public static long getUncompressedSize(File zipFile, Thread parentThread) throws IOException {
         long totalSize = 0;

@@ -34,6 +34,9 @@ public class YoloActionPanel extends JPanel {
     protected final JButton cancelButton = new JButton("Cancel");
     protected final JButton runButton = new JButton("Infer");
 
+    /**
+     * Creates a new YoloActionPanel instance.
+     */
     protected YoloActionPanel() {
         setLayout(null);
         setOpaque(false);
@@ -42,6 +45,11 @@ public class YoloActionPanel extends JPanel {
         add(cancelButton);
         add(runButton);
         addComponentListener(new ComponentAdapter() {
+            /**
+             * Performs component resized.
+             *
+             * @param e the e.
+             */
             @Override
             public void componentResized(ComponentEvent e) {
                 doLayout();
@@ -49,6 +57,9 @@ public class YoloActionPanel extends JPanel {
         });
     }
 
+    /**
+     * Performs do layout.
+     */
     @Override
     public void doLayout() {
         int w = Math.max(0, getWidth());
@@ -61,10 +72,20 @@ public class YoloActionPanel extends JPanel {
         YoloUiUtils.applyResponsiveText(runButton, runW - 8, h);
     }
 
+    /**
+     * Returns the cancel button.
+     *
+     * @return the cancel button.
+     */
     public JButton getCancelButton() {
         return cancelButton;
     }
 
+    /**
+     * Returns the run button.
+     *
+     * @return the run button.
+     */
     public JButton getRunButton() {
         return runButton;
     }

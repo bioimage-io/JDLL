@@ -40,11 +40,10 @@ public final class Utils
 	 * Method that transposes every dimension of a {@link RandomAccessibleInterval}.
 	 * If a {@link RandomAccessibleInterval} with {3, 256, 512} dimensions is provided,
 	 * it will be converted into one of {512, 256, 3}
-	 * @param <T>
-	 * 	possible data types of the {@link RandomAccessibleInterval}
-	 * @param rai
-	 * 	{@link RandomAccessibleInterval} to be transposed
-	 * @return the transposed {@link RandomAccessibleInterval}
+	 *
+	 * @param <T> the T type parameter.
+	 * @param rai the RAI.
+	 * @return the resulting random accessible interval.
 	 */
 	public static <T extends NumericType<T> & RealType<T>> 
 	RandomAccessibleInterval<T> transpose(RandomAccessibleInterval<T> rai){
@@ -66,15 +65,13 @@ public final class Utils
 	/**
 	 * Method that rearanges the dimensions on the {@link RandomAccessibleInterval}
 	 * to the order provided in the 'orderChange' parameter.
-	 * For example, for an array of {512, 256, 3, 1}, and orderChange = [3, 0, 2, 1] the 
+	 * For example, for an array of {512, 256, 3, 1}, and orderChange = [3, 0, 2, 1] the
 	 * resulting array would be have the following dimensions [1, 512, 3, 256]
-	 * @param <T>
-	 * 	possible data types of the {@link RandomAccessibleInterval}
-	 * @param rai
-	 * 	{@link RandomAccessibleInterval} to be re-aranged
-	 * @param orderChange
-	 * 	the way to re-arange the new array
-	 * @return the transposed {@link RandomAccessibleInterval}
+	 *
+	 * @param <T> the T type parameter.
+	 * @param rai the RAI.
+	 * @param orderChange the order change.
+	 * @return the resulting random accessible interval.
 	 */
 	public static <T extends NumericType<T> & RealType<T>> 
 	RandomAccessibleInterval<T> rearangeAxes(RandomAccessibleInterval<T> rai, int[] orderChange){
@@ -92,6 +89,15 @@ public final class Utils
         return Views.interval(new MixedTransformView<>(rai, t), min, max);
 	}
 	
+	/**
+	 * Returns the result of convert to axes order.
+	 *
+	 * @param <T> the T type parameter.
+	 * @param rai the RAI.
+	 * @param axesOrder the axes order.
+	 * @param targetAxesOrder the target axes order.
+	 * @return the resulting random accessible interval.
+	 */
 	public static <T extends RealType<T> & NativeType<T>>
 	RandomAccessibleInterval<T> convertToAxesOrder(RandomAccessibleInterval<T> rai, String axesOrder, String targetAxesOrder) {
 		int ogLength = axesOrder.length();

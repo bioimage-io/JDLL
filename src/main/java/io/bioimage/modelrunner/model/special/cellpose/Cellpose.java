@@ -161,13 +161,14 @@ public class Cellpose extends BioimageIoModelPytorchProtected {
 	/**
 	 * Creates a new Cellpose.
 	 *
-	 * @param modelFile the modelFile parameter.
-	 * @param callable the callable parameter.
-	 * @param weightsPath the weightsPath parameter.
-	 * @param kwargs the kwargs parameter.
-	 * @param descriptor the descriptor parameter.
+	 * @param modelFile the model file.
+	 * @param callable the callable.
+	 * @param weightsPath the weights path.
+	 * @param kwargs the kwargs.
+	 * @param descriptor the descriptor.
+	 * @param device the device.
+	 * @throws BuildException if the Python environment or service cannot be built.
 	 * @throws IOException if an I/O error occurs.
-	 * @throws BuildException if there is any error building the environment
 	 */
 	protected Cellpose(String modelFile, String callable, String weightsPath,
 			Map<String, Object> kwargs, ModelDescriptor descriptor, String device) throws BuildException, IOException {
@@ -180,8 +181,7 @@ public class Cellpose extends BioimageIoModelPytorchProtected {
 	 * For RGB images: R=1, G=2, B=3, the first value is the channel where cytoplasm is and the second the nuclei.
 	 * If green cyto and red nuclei: [2, 1]
 	 *
-	 * @param channels
-	 * 	channels paramter for cellpose
+	 * @param channels the channels.
 	 */
 	public void setChannels(int[] channels) {
 		/**
@@ -199,8 +199,8 @@ public class Cellpose extends BioimageIoModelPytorchProtected {
 	 * Set the mean diameter of the cells in the image. If not set and the diameter model (an .npy file) is
 	 * present in the same folder as the Cellpose model, the diameter is calculated on the fly, if not set and
 	 * the duameter model is not present, it is set to the default value (30).
-	 * @param diameter
-	 * 	the mean diameter of cells in the image
+	 *
+	 * @param diameter the diameter.
 	 */
 	public void setDiameter(float diameter) {
 		this.diameter = diameter;
@@ -221,6 +221,13 @@ public class Cellpose extends BioimageIoModelPytorchProtected {
 	}
 
 	// TODO add 3D
+	/**
+	 * Returns the result of check input tensors.
+	 *
+	 * @param <R> the R type parameter.
+	 * @param inputTensors the input tensors to process.
+	 * @return the resulting list.
+	 */
 	protected <R extends RealType<R> & NativeType<R>>
 	List<Tensor<R>> checkInputTensors(List<Tensor<R>> inputTensors) {
 		if (inputTensors.size() > 1)
@@ -237,6 +244,15 @@ public class Cellpose extends BioimageIoModelPytorchProtected {
 		return inputTensors;
 	}
 
+	/**
+	 * Returns the result of inference.
+	 *
+	 * @param <T> the T type parameter.
+	 * @param <R> the R type parameter.
+	 * @param inputs the inputs to process.
+	 * @return the resulting list.
+	 * @throws RunModelException if model inference cannot be run.
+	 */
 	@Override
 	public <T extends RealType<T> & NativeType<T>, R extends RealType<R> & NativeType<R>>
 	List<Tensor<R>> inference(final Tensor<T>... inputs) throws RunModelException {
@@ -246,6 +262,15 @@ public class Cellpose extends BioimageIoModelPytorchProtected {
 		return super.inference(inputs);
 	}
 
+	/**
+	 * Returns the result of inference batch.
+	 *
+	 * @param <T> the T type parameter.
+	 * @param <R> the R type parameter.
+	 * @param batchedInputs the batched inputs to process.
+	 * @return the resulting list.
+	 * @throws RunModelException if model inference cannot be run.
+	 */
 	@Override
 	public <T extends RealType<T> & NativeType<T>, R extends RealType<R> & NativeType<R>>
 	List<List<Tensor<R>>> inferenceBatch(final List<Tensor<T>>... batchedInputs) throws RunModelException {
@@ -310,6 +335,14 @@ public class Cellpose extends BioimageIoModelPytorchProtected {
 		return code;
 	}
 
+	/**
+	 * Creates the inputs code.
+	 *
+	 * @param <T> the T type parameter.
+	 * @param inRais the in RAIs.
+	 * @param names the names.
+	 * @return the created string.
+	 */
 	protected <T extends RealType<T> & NativeType<T>>
 	String createInputsCode(List<Tensor<T>> inRais, List<String> names) {
 		if (this.isBMZ)
@@ -351,8 +384,9 @@ public class Cellpose extends BioimageIoModelPytorchProtected {
 	/**
 	 * Creates channels arg code.
 	 *
-	 * @param rai the rai parameter.
-	 * @return the resulting string.
+	 * @param <T> the T type parameter.
+	 * @param rai the RAI.
+	 * @return the created string.
 	 */
 	protected <T extends RealType<T> & NativeType<T>> String createChannelsArgCode(RandomAccessibleInterval<T> rai) {
 		long[] dims = rai.dimensionsAsLongArray();
@@ -397,11 +431,12 @@ public class Cellpose extends BioimageIoModelPytorchProtected {
 
 	/**
 	 * Initialize a Cellpose model with the path to the model weigths.
-	 * @param weightsPath
-	 * 	path to the weights of a pretrained cellpose model
-	 * @return an instance of a Stardist2D model ready to be used
-     * @throws IOException If there's an I/O error.
-	 * @throws BuildException if there is any error building the environment
+	 *
+	 * @param weightsPath the weights path.
+	 * @param device the device.
+	 * @return the resulting cellpose.
+	 * @throws IOException if an I/O error occurs.
+	 * @throws BuildException if the Python environment or service cannot be built.
 	 */
 	public static Cellpose init(String weightsPath, String device) throws IOException, BuildException {
 		File wFile = new File(weightsPath);
@@ -424,17 +459,26 @@ public class Cellpose extends BioimageIoModelPytorchProtected {
 		return cellpose;
 	}
 
+	/**
+	 * Initializes the cellpose.
+	 *
+	 * @param weightsPath the weights path.
+	 * @return the resulting cellpose.
+	 * @throws IOException if an I/O error occurs.
+	 * @throws BuildException if the Python environment or service cannot be built.
+	 */
 	public static Cellpose init(String weightsPath) throws IOException, BuildException {
 		return init(weightsPath, "cpu");
 	}
 
 	/**
 	 * Initialize a Stardist2D using the format of the Bioiamge.io model zoo.
-	 * @param descriptor
-	 * 	the bioimage.io model descriptor
-	 * @return an instance of a Stardist2D model ready to be used
-     * @throws IOException If there's an I/O error.
-	 * @throws BuildException if there is any error building the environment
+	 *
+	 * @param descriptor the descriptor.
+	 * @param device the device.
+	 * @return the resulting cellpose.
+	 * @throws IOException if an I/O error occurs.
+	 * @throws BuildException if the Python environment or service cannot be built.
 	 */
 	public static Cellpose init(ModelDescriptor descriptor, String device) throws IOException, BuildException {
 		if (descriptor.getTags().stream().filter(tt -> tt.toLowerCase().equals("cellpose")).findFirst().orElse(null) == null
@@ -453,6 +497,14 @@ public class Cellpose extends BioimageIoModelPytorchProtected {
 		return model;
 	}
 
+	/**
+	 * Initializes the cellpose.
+	 *
+	 * @param descriptor the descriptor.
+	 * @return the resulting cellpose.
+	 * @throws IOException if an I/O error occurs.
+	 * @throws BuildException if the Python environment or service cannot be built.
+	 */
 	public static Cellpose init(ModelDescriptor descriptor) throws IOException, BuildException {
 		return init(descriptor, "cpu");
 	}
@@ -460,18 +512,29 @@ public class Cellpose extends BioimageIoModelPytorchProtected {
 	/**
 	 * Initialize one of the official pretrained Cellpose models.
 	 * By default, the model will be installed in the "models" folder inside the application
-	 * @param pretrainedModel
-	 * 	the name of the pretrained model.
-	 * @return an instance of a pretrained Cellpose model ready to be used
-	 * @throws IOException if there is any error downloading the model, in the case it is needed
-	 * @throws InterruptedException if the download of the model is stopped
-	 * @throws ExecutionException if there is an error downloading the model
-	 * @throws BuildException if there is any error building the environment
+	 *
+	 * @param pretrainedModel the pretrained model.
+	 * @return the created cellpose.
+	 * @throws IOException if an I/O error occurs.
+	 * @throws InterruptedException if the current thread is interrupted.
+	 * @throws ExecutionException if an asynchronous operation fails.
+	 * @throws BuildException if the Python environment or service cannot be built.
 	 */
 	public static Cellpose fromPretained(String pretrainedModel) throws IOException, InterruptedException, ExecutionException, BuildException {
 		return fromPretained(pretrainedModel, new File("models").getAbsolutePath(), "cpu");
 	}
 
+	/**
+	 * Creates a Cellpose from the pretained.
+	 *
+	 * @param pretrainedModel the pretrained model.
+	 * @param modelsDir the models directory.
+	 * @return the created cellpose.
+	 * @throws IOException if an I/O error occurs.
+	 * @throws InterruptedException if the current thread is interrupted.
+	 * @throws ExecutionException if an asynchronous operation fails.
+	 * @throws BuildException if the Python environment or service cannot be built.
+	 */
 	public static Cellpose fromPretained(String pretrainedModel, String modelsDir) throws IOException,
 																							InterruptedException, ExecutionException, BuildException {
 		return fromPretained(pretrainedModel, modelsDir, "cpu");
@@ -480,15 +543,15 @@ public class Cellpose extends BioimageIoModelPytorchProtected {
 	/**
 	 * Initialize one of the "official" pretrained cellpose ("cyto2", "cyto3"...) models or
 	 * those available in the bioimage.io
-	 * @param pretrainedModel
-	 * 	the name of the pretrained model.
-	 * @param modelsDir
-	 * 	the directory where the model wants to be installed
-	 * @return an instance of a pretrained Cellpose model ready to be used
-	 * @throws IOException if there is any error downloading the model, in the case it is needed
-	 * @throws InterruptedException if the download of the model is stopped
-	 * @throws ExecutionException if there is an error downloading the model
-	 * @throws BuildException if there is any error building the environment
+	 *
+	 * @param pretrainedModel the pretrained model.
+	 * @param modelsDir the models directory.
+	 * @param device the device.
+	 * @return the created cellpose.
+	 * @throws IOException if an I/O error occurs.
+	 * @throws InterruptedException if the current thread is interrupted.
+	 * @throws ExecutionException if an asynchronous operation fails.
+	 * @throws BuildException if the Python environment or service cannot be built.
 	 */
 	public static Cellpose fromPretained(String pretrainedModel, String modelsDir, String device) throws IOException,
 																						InterruptedException, ExecutionException, BuildException {
@@ -522,12 +585,9 @@ public class Cellpose extends BioimageIoModelPytorchProtected {
 	/**
 	 * Finds whether a pretrained Cellpose model is installed in the wanted directory
 	 *
-	 * @param modelName
-	 * 	the name of the model, it can be either the name of one of the official Cellpose models (cyto, cyto2, cyto3...)
-	 * 	or a path to the weigths
-	 * @param modelsDir
-	 * 	the directory where we want to know whether the model is installed or not
-	 * @return the path to the model if if exists, null otherwise
+	 * @param modelName the model name.
+	 * @param modelsDir the models directory.
+	 * @return the resulting string.
 	 */
 	public static String findPretrainedModelInstalled(String modelName, String modelsDir) {
 		if (modelName.endsWith(".pth"))
@@ -553,12 +613,10 @@ public class Cellpose extends BioimageIoModelPytorchProtected {
 	 * subfolders that might contain the model. It only checks two levels of subfolders.
 	 *
 	 * We can also provide the full path to the cellpose model
-	 * @param pretrainedModel
-	 * 	a String referring to a Cellpose model that might exist in our local computer or not. It can be the full path
-	 * 	to our model or just the name of the pretrained cellpose model (cyto, cyto2, cyto3....)
-	 * @param modelsDir
-	 * 	the directory where we will look for a cellpose model if the whole path to the model is not given
-	 * @return the full path to a Cellpose model if it exists or null if it does not exists in the paths specified
+	 *
+	 * @param pretrainedModel the pretrained model.
+	 * @param modelsDir the models directory.
+	 * @return the resulting string.
 	 */
 	public static String fileIsCellpose(String pretrainedModel, String modelsDir) {
 		File pretrainedFile = new File(pretrainedModel);
@@ -612,14 +670,12 @@ public class Cellpose extends BioimageIoModelPytorchProtected {
 	 * Cellpose releases (cyto, cyto2, cyto3 or nuclei) and Cellpose variants available
 	 * in the Bioimge.io model zoo.
 	 *
-	 * @param modelName
-	 * 	name of the pretrained cellpose model (cyto, cyto2, cyto3 or nuclei for official Cellpose releases)
-	 * @param downloadDir
-	 * 	directory where the model is going to be downloaded
-	 * @return the folder of the model downloaded
-	 * @throws ExecutionException if there is any error downloading the model
-	 * @throws InterruptedException if the download is interrupted
-	 * @throws IOException if there is any error writing the downloaded files
+	 * @param modelName the model name.
+	 * @param downloadDir the download directory.
+	 * @return the resulting string.
+	 * @throws ExecutionException if an asynchronous operation fails.
+	 * @throws InterruptedException if the current thread is interrupted.
+	 * @throws IOException if an I/O error occurs.
 	 */
 	public static String donwloadPretrained(String modelName, String downloadDir)
 			throws ExecutionException, InterruptedException, IOException {
@@ -631,16 +687,13 @@ public class Cellpose extends BioimageIoModelPytorchProtected {
 	 * Cellpose releases (cyto, cyto2, cyto3 or nuclei) and Cellpose variants available
 	 * in the Bioimge.io model zoo.
 	 *
-	 * @param modelName
-	 * 	name of the pretrained cellpose model (cyto, cyto2, cyto3 or nuclei for official Cellpose releases)
-	 * @param downloadDir
-	 * 	directory where the model is going to be downloaded
-	 * @param progressConsumer
-	 * 	consumer that will notify the download progress
-	 * @return the folder of the model downloaded
-	 * @throws ExecutionException if there is any error downloading the model
-	 * @throws InterruptedException if the download is interrupted
-	 * @throws IOException if there is any error writing the downloaded files
+	 * @param modelName the model name.
+	 * @param downloadDir the download directory.
+	 * @param progressConsumer the progress consumer callback.
+	 * @return the resulting string.
+	 * @throws ExecutionException if an asynchronous operation fails.
+	 * @throws InterruptedException if the current thread is interrupted.
+	 * @throws IOException if an I/O error occurs.
 	 */
 	public static String donwloadPretrained(String modelName, String downloadDir, Consumer<Double> progressConsumer)
 			throws ExecutionException, InterruptedException, IOException {
@@ -702,16 +755,15 @@ public class Cellpose extends BioimageIoModelPytorchProtected {
 
 	/**
 	 * Example code that shows how to run a model with cellpose
-	 * @param <T>
-	 * 	method param
-	 * @param args
-	 * 	method param
-	 * @throws IOException exception
-	 * @throws InterruptedException exception
-	 * @throws ExecutionException exception
-	 * @throws LoadModelException exception
-	 * @throws RunModelException exception
-	 * @throws BuildException if there is any error launching the python process
+	 *
+	 * @param <T> the T type parameter.
+	 * @param args command-line arguments.
+	 * @throws IOException if an I/O error occurs.
+	 * @throws InterruptedException if the current thread is interrupted.
+	 * @throws ExecutionException if an asynchronous operation fails.
+	 * @throws LoadModelException if the model cannot be loaded.
+	 * @throws RunModelException if model inference cannot be run.
+	 * @throws BuildException if the Python environment or service cannot be built.
 	 */
 	public static <T extends RealType<T> & NativeType<T>>
 	void main(String[] args) throws IOException, InterruptedException, ExecutionException, LoadModelException, RunModelException, BuildException {

@@ -74,12 +74,9 @@ public class TileGrid
     
     /**
      * Calculate the positions of each of the tiles that are going to be used to process the whole image.
-     * 
-     * @param tileSpecs
-     * 	instance of {@link PatchSpec} that contains the info about the size of the original image, and the 
-     * 	size of the tiles that are going to be used
-     * @return an instance of {@link TileGrid} that contains the information about where the tiles need to be 
-     * 	positioned with respect to the original image
+     *
+     * @param tileSpecs the tile specs.
+     * @return the created tile grid.
      */
     protected static TileGrid create(PatchSpec tileSpecs)
     {

@@ -30,8 +30,8 @@ public class ModelSpecsException extends Exception
 	
 	/**
 	 * Constructor for every exception related to reading the Bioimage.io rdf.yaml specs file
-	 * @param message
-	 * 	the message that wants to be passed as the exception info.
+	 *
+	 * @param message the message.
 	 */
 	public ModelSpecsException(String message) {
         super(message);

@@ -93,10 +93,9 @@ public class ModelDescriptorFactory {
     
     /**
      * Reads a yaml text String and builds an instance of {@link ModelDescriptorFactory} from it.
-     * 
-     * @param yamlText
-     * 	text read from a yaml file that contains an rdf.yaml file
-     * @return The instance of the model descriptor.
+     *
+     * @param yamlText the YAML text.
+     * @return the resulting model descriptor.
      */
     public static ModelDescriptor readFromYamlTextString(String yamlText)
     {
@@ -159,9 +158,9 @@ public class ModelDescriptorFactory {
 
 	/**
 	 * Get the models at the local repo defined by the argument local repo
-	 * @param localRepo
-	 * 	String containing the path the directory that contains the model folders
-	 * @return a list of the {@link ModelDescriptor}s of the available models
+	 *
+	 * @param localRepo the local repo.
+	 * @return the models at local repo.
 	 */
 	public static List<ModelDescriptor> getModelsAtLocalRepo(String localRepo) {
 		File repoFile = new File(localRepo);
@@ -184,11 +183,9 @@ public class ModelDescriptorFactory {
     
     /**
      * Method that checks if a String corresponds to an URL
-     * 
-     * @param str
-     * 	the string that should be possible to convert into URL
-     * @return the original string if it does correspond to an URL
-     * 	or null if it does not
+     *
+     * @param str the str.
+     * @return the resulting string.
      */
     protected static String checkUrl(String str) {
 		try {
@@ -202,9 +199,9 @@ public class ModelDescriptorFactory {
     /**
      * REturns a {@code List<String>} of data from the yaml file that is supposed
      * to correspond to an URI.
-     * @param coverElements
-     * 	data from the yaml
-     * @return the {@code List<String>}with the URI data
+     *
+     * @param coverElements the cover elements.
+     * @return the created list.
      */
     protected static List<String> buildUrlElements(Object coverElements)
     {
@@ -226,9 +223,9 @@ public class ModelDescriptorFactory {
     
     /**
      * Check whether the Map corresponds to the yaml file of a Stardist model
-     * @param yamlElements
-     * 	a Map containing the contents of an rdf.yaml file
-     * @return true if the model corresponds to Stardist and false otherwise
+     *
+     * @param yamlElements the YAML elements.
+     * @return true if stardist; false otherwise.
      */
     public static boolean isStardist(Map<String,Object> yamlElements) {
     	boolean nameCheck = (yamlElements.get("name") != null) && (yamlElements.get("name") instanceof String) 
@@ -240,9 +237,9 @@ public class ModelDescriptorFactory {
     
     /**
      * Check whether the Map corresponds to the yaml file of a cellpose model
-     * @param yamlElements
-     * 	a Map containing the contents of an rdf.yaml file
-     * @return true if the model corresponds to cellpose and false otherwise
+     *
+     * @param yamlElements the YAML elements.
+     * @return true if cellpose; false otherwise.
      */
     public static boolean isCellpose(Map<String,Object> yamlElements) {
     	return false;

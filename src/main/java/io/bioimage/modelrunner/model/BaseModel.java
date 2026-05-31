@@ -85,9 +85,8 @@ public abstract class BaseModel implements Closeable
 	/**
 	 * Load the model wanted to make inference into the particular ClassLoader
 	 * created to run a specific Deep Learning framework (engine)
-	 * 
-	 * @throws LoadModelException
-	 *             if the model was not loaded
+	 *
+	 * @throws LoadModelException if the model cannot be loaded.
 	 */
 	public abstract void loadModel() throws LoadModelException;
 
@@ -98,6 +97,15 @@ public abstract class BaseModel implements Closeable
 	@Override
 	public abstract void close();
     
+    /**
+     * Returns the result of backbone single inference tile.
+     *
+     * @param <T> the T type parameter.
+     * @param <R> the R type parameter.
+     * @param inputs the inputs to process.
+     * @return the resulting list.
+     * @throws RunModelException if model inference cannot be run.
+     */
     protected abstract <T extends RealType<T> & NativeType<T>, R extends RealType<R> & NativeType<R>>
     List<Tensor<R>> backboneSingleInferenceTile(final List<Tensor<T>> inputs) throws RunModelException;
 
@@ -130,8 +138,7 @@ public abstract class BaseModel implements Closeable
     /**
      * Sets a consumer used to track tile execution progress.
      *
-     * @param tileCounter
-     *     consumer used to track tile inference
+     * @param tileCounter the tile counter.
      */
     public void setTilingCounter(final TilingConsumer tileCounter) {
         this.tileCounter = tileCounter;
@@ -148,8 +155,7 @@ public abstract class BaseModel implements Closeable
     /**
      * Sets a consumer used to receive structured inference progress events.
      *
-     * @param consumer
-     *     consumer called as inference advances
+     * @param consumer the consumer callback.
      */
     public void setInferenceProgressConsumer(final Consumer<InferenceProgress> consumer) {
         this.inferenceProgressConsumer = consumer;
@@ -188,6 +194,12 @@ public abstract class BaseModel implements Closeable
     	return singleOutput;
     }
 
+    /**
+     * Returns the output tensor axes.
+     *
+     * @param outputCount the output count.
+     * @return the output tensor axes.
+     */
     protected String getOutputTensorAxes(int outputCount) {
 		return "bcyx";
 	}
@@ -196,8 +208,7 @@ public abstract class BaseModel implements Closeable
      * Emits a structured inference progress event. Progress reporting must not
      * affect inference execution.
      *
-     * @param progress
-     *     progress event
+     * @param progress the progress.
      */
     protected void emitProgress(final InferenceProgress progress) {
         if (inferenceProgressConsumer == null || progress == null) {
@@ -210,6 +221,11 @@ public abstract class BaseModel implements Closeable
         }
     }
 
+    /**
+     * Performs throw if inference cancelled.
+     *
+     * @throws RunModelException if model inference cannot be run.
+     */
     protected void throwIfInferenceCancelled() throws RunModelException {
         if (inferenceCancellationRequested || Thread.currentThread().isInterrupted()) {
             throw new RunModelException("Inference cancelled.");
@@ -219,11 +235,11 @@ public abstract class BaseModel implements Closeable
     /**
      * Runs inference directly on a list of input images.
      *
-     * @param <T> input data type
-     * @param <R> output data type
-     * @param inputs input images
-     * @return output images
-     * @throws RunModelException if model execution fails
+     * @param <T> the T type parameter.
+     * @param <R> the R type parameter.
+     * @param batchedInputs the batched inputs to process.
+     * @return the resulting list.
+     * @throws RunModelException if model inference cannot be run.
      */
     public <T extends RealType<T> & NativeType<T>, R extends RealType<R> & NativeType<R>>
     List<List<Tensor<R>>> inferenceBatch(final List<Tensor<T>>... batchedInputs)
@@ -271,6 +287,14 @@ public abstract class BaseModel implements Closeable
         return outputs;
     }
     
+    /**
+     * Returns the tile maker.
+     *
+     * @param <T> the T type parameter.
+     * @param <R> the R type parameter.
+     * @param inputs the inputs to process.
+     * @return the tile maker.
+     */
     protected <T extends RealType<T> & NativeType<T>, R extends RealType<R> & NativeType<R>>
     Merger<Tensor<T>, Tensor<R>> getTileMaker(final List<Tensor<T>> inputs) {
         Merger<Tensor<T>, Tensor<R>> merger = new NoTileMerger<T, R>();
@@ -307,6 +331,12 @@ public abstract class BaseModel implements Closeable
         return reconstructed;
     }
 
+    /**
+     * Returns the output axes.
+     *
+     * @param outputCount the output count.
+     * @return the output axes.
+     */
     protected List<String> getOutputAxes(final int outputCount) {
         final List<String> axes = new ArrayList<String>(outputCount);
         for (int i = 0; i < outputCount; i ++) {

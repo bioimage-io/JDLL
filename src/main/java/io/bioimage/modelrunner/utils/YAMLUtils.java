@@ -42,14 +42,11 @@ public class YAMLUtils
 
     /**
      * Reads the provided yaml file and loads it into a map of string keys and object values.
-     * 
-     * @param yamlFile
-     *        The target yaml file.
-     * @return The map loaded with the yaml elements.
-     * @throws FileNotFoundException
-     *         If the file cannot be found.
-     * @throws IOException
-     *         If the file cannot be read.
+     *
+     * @param yamlFile the YAML file.
+     * @return the resulting map.
+     * @throws FileNotFoundException if the requested file cannot be found.
+     * @throws IOException if an I/O error occurs.
      */
     public static Map<String, Object> load(String yamlFile) throws FileNotFoundException, IOException
     {
@@ -64,10 +61,9 @@ public class YAMLUtils
 
     /**
      * Reads the provided yaml String and loads it into a map of string keys and object values.
-     * 
-     * @param yamlString
-     *        The String yaml file.
-     * @return The map loaded with the yaml elements.
+     *
+     * @param yamlString the YAML string.
+     * @return the resulting map.
      */
     public static Map<String, Object> loadFromString(String yamlString)
     {
@@ -78,10 +74,9 @@ public class YAMLUtils
 
     /**
      * Converts a list of objects into an array of strings.
-     * 
-     * @param list
-     *        The target list.
-     * @return The array of strings.
+     *
+     * @param list the list.
+     * @return the resulting string.
      */
     public static String[] castListToStringArray(List<?> list)
     {
@@ -96,10 +91,9 @@ public class YAMLUtils
 
     /**
      * Converts a list of objects into an array of integers.
-     * 
-     * @param list
-     *        The target list.
-     * @return The array of integers.
+     *
+     * @param list the list.
+     * @return the resulting int.
      */
     public static int[] castListToIntArray(List<?> list)
     {
@@ -114,10 +108,9 @@ public class YAMLUtils
 
     /**
      * Converts a list of objects into an array of doubles.
-     * 
-     * @param list
-     *        The target list.
-     * @return The array of doubles.
+     *
+     * @param list the list.
+     * @return the resulting double.
      */
     public static double[] castListToDoubleArray(List<?> list)
     {
@@ -139,10 +132,9 @@ public class YAMLUtils
 
     /**
      * Converts a list of objects into an array of floats.
-     * 
-     * @param list
-     *        The target list.
-     * @return The array of floats.
+     *
+     * @param list the list.
+     * @return the resulting float.
      */
     public static float[] castListToFloatArray(List<?> list)
     {
@@ -180,11 +172,10 @@ public class YAMLUtils
 
     /**
      * Method that writes a Map&lt;String, Object&gt; into a YAML file in the path defined
-     * @param filePath
-     * 	path to the yaml file that will be created
-     * @param data
-     * 	data to be written into the yaml file
-     * @throws IOException if there is any problem writting the yaml file
+     *
+     * @param filePath the file path.
+     * @param data the data.
+     * @throws IOException if an I/O error occurs.
      */
     public static void writeYamlFile(String filePath, Object data) throws IOException {
     	DumperOptions options = new DumperOptions();
