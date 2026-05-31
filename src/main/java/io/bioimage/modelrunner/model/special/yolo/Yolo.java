@@ -41,6 +41,7 @@ import org.apposed.appose.TaskException;
 
 import io.bioimage.modelrunner.exceptions.LoadModelException;
 import io.bioimage.modelrunner.exceptions.RunModelException;
+import io.bioimage.modelrunner.model.python.ApposeTaskUtils;
 import io.bioimage.modelrunner.model.python.envs.PixiEnvironmentSpec;
 import io.bioimage.modelrunner.model.python.DLModelPytorchProtected;
 import io.bioimage.modelrunner.model.python.methods.ConvertDims;
@@ -379,11 +380,11 @@ public class Yolo extends DLModelPytorchProtected {
 			python.debug(line -> TrainingCodeUtils.logTrainingDebug(line, logConsumer));
 		}
 		try {
-			Task task = python.task(buildTrainingCode(epochs, baseModelPath, normalizedScratchArchitecture,
+			Task task = ApposeTaskUtils.task(python, buildTrainingCode(epochs, baseModelPath, normalizedScratchArchitecture,
 					datasetYamlPath,
 					outputWeightsPath, imageSize, previewEpochPeriod, cancelSignalPath, normalizedDevice));
 			task.listen(event -> handleTrainingEvent(event, progressConsumer, previewConsumer, logConsumer));
-			task.waitFor();
+			ApposeTaskUtils.waitFor(task);
 		} finally {
 			if (python.isAlive()) {
 				python.close();

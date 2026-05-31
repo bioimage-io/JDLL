@@ -420,8 +420,8 @@ public class DLModelPytorchProtected extends BaseModel {
             emitProgress(InferenceProgress.modelLoading(weightsPath));
             String code = buildModelCode();
             code += RECOVER_OUTPUTS_CODE;
-            final Task task = python.task(code);
-            task.waitFor();
+            final Task task = ApposeTaskUtils.task(python, code);
+            ApposeTaskUtils.waitFor(task);
             ensureTaskSucceeded(task);
             emitProgress(InferenceProgress.modelLoaded(weightsPath));
         } catch (IOException | InterruptedException | TaskException e) {
@@ -658,10 +658,10 @@ public class DLModelPytorchProtected extends BaseModel {
         	Task task = null;
             try {
                 throwIfInferenceCancelled();
-                task = python.task(code);
+                task = ApposeTaskUtils.task(python, code);
                 currentTask = task;
                 python.debug((str) -> {});
-                task.waitFor();
+                ApposeTaskUtils.waitFor(task);
                 throwIfInferenceCancelled();
                 ensureTaskSucceeded(task);
                 loaded = true;
@@ -1073,8 +1073,8 @@ public class DLModelPytorchProtected extends BaseModel {
         final String cleanupCode = PlatformDetection.isWindows()
                 ? CLEAN_SHM_CODE_WINDOWS
                 : CLEAN_SHM_CODE_POSIX;
-        final Task closeSHMTask = python.task(cleanupCode);
-        closeSHMTask.waitFor();
+        final Task closeSHMTask = ApposeTaskUtils.task(python, cleanupCode);
+        ApposeTaskUtils.waitFor(closeSHMTask);
         if (closeSHMTask.status == TaskStatus.FAILED || closeSHMTask.status == TaskStatus.CRASHED) {
             throw new TaskException("Unable to clean/close the opened shared memory arrays", closeSHMTask);
         }
@@ -1087,8 +1087,8 @@ public class DLModelPytorchProtected extends BaseModel {
      * @throws TaskException if the cleanup task fails
      */
     protected void threadDeathCleanUp() throws InterruptedException, TaskException {
-        final Task closeSHMTask = python.task(CLEAN_SHM_CODE_THREAD_DEATH);
-        closeSHMTask.waitFor();
+        final Task closeSHMTask = ApposeTaskUtils.task(python, CLEAN_SHM_CODE_THREAD_DEATH);
+        ApposeTaskUtils.waitFor(closeSHMTask);
         if (closeSHMTask.status == TaskStatus.FAILED || closeSHMTask.status == TaskStatus.CRASHED) {
             throw new TaskException("Unable to clean/close the opened shared memory arrays", closeSHMTask);
         }

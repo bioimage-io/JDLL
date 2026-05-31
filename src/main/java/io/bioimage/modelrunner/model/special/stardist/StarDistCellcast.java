@@ -41,6 +41,7 @@ import io.bioimage.modelrunner.exceptions.LoadModelException;
 import io.bioimage.modelrunner.exceptions.RunModelException;
 import io.bioimage.modelrunner.gui.custom.stardist.StardistModelRegistry;
 import io.bioimage.modelrunner.model.InferenceProgress;
+import io.bioimage.modelrunner.model.python.ApposeTaskUtils;
 import io.bioimage.modelrunner.model.python.DLModelPytorchProtected;
 import io.bioimage.modelrunner.model.python.envs.PixiEnvironmentManager;
 import io.bioimage.modelrunner.model.python.envs.PixiEnvironmentResolver;
@@ -873,10 +874,10 @@ public final class StarDistCellcast extends DLModelPytorchProtected {
 			python.debug(logConsumer);
 		}
 		try {
-			Task task = python.task(buildTrainingCode(dataDir, gtDir, outputDir, gpu,
+			Task task = ApposeTaskUtils.task(python, buildTrainingCode(dataDir, gtDir, outputDir, gpu,
 					imageChannels, labelColorMode, validFraction, config));
 			task.listen(event -> handleTrainingEvent(event, progressConsumer, previewConsumer, logConsumer));
-			task.waitFor();
+			ApposeTaskUtils.waitFor(task);
 		} finally {
 			if (python.isAlive()) {
 				python.close();
