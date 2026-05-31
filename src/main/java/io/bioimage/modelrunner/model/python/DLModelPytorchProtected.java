@@ -118,8 +118,8 @@ public class DLModelPytorchProtected extends BaseModel {
     	TOML_SUFFIX.put(PlatformDetection.OS_LINUX + PlatformDetection.ARCH_X86_64 + "false", "lin-x86");
     	TOML_SUFFIX.put(PlatformDetection.OS_WINDOWS + PlatformDetection.ARCH_X86_64 + "false", "win-x86");
     	TOML_SUFFIX.put(PlatformDetection.OS_OSX + PlatformDetection.ARCH_X86_64 + "false", "mac-x86");
-    	TOML_SUFFIX.put(PlatformDetection.OS_OSX + PlatformDetection.ARCH_AARCH64 + "true", "mac-x86");
-    	TOML_SUFFIX.put(PlatformDetection.OS_LINUX + PlatformDetection.ARCH_AARCH64 + "false", "mac-arm");
+    	TOML_SUFFIX.put(PlatformDetection.OS_OSX + PlatformDetection.ARCH_X86_64 + "true", "mac-arm");
+    	TOML_SUFFIX.put(PlatformDetection.OS_OSX + PlatformDetection.ARCH_AARCH64 + "false", "mac-arm");
     }
 
     private static final List<String> CUDA_COMPAT_VERSIONS = new ArrayList<>(Arrays.asList("12.4", "12.1", "11.8"));
@@ -1283,9 +1283,11 @@ public class DLModelPytorchProtected extends BaseModel {
      * @return the resulting pixi environment spec.
      */
     public static PixiEnvironmentSpec resolvePytorchEnv() {
+    	System.err.println(PlatformDetection.getOs() + PlatformDetection.getArch() + PlatformDetection.isUsingRosseta());
     	String suffix = TOML_SUFFIX.get(PlatformDetection.getOs() + PlatformDetection.getArch() + PlatformDetection.isUsingRosseta());
         final String pixiTemplate = readClasspathResourceAsString(String.format(PIXI_TEMPLATE_RESOURCE, suffix));
         final String cudaVersion = GpuCompatibility.pickCudaVersion(CUDA_COMPAT_VERSIONS);
+        System.err.println(cudaVersion);
 
         final String pixiTomlContent;
         final String selectedEnvironment;
