@@ -134,7 +134,7 @@ public class ExampleLoadAndRunAllBmzModels {
 			model.loadModel();
 			List<Tensor<FloatType>> inputs = createInputs(descriptor);
 			List<Tensor<FloatType>> outputs = createOutputs(descriptor);
-			model.run(inputs, outputs);
+			outputs = model.inference(inputs.get(0));
 			for (Tensor<FloatType> tt : outputs) {
 				if (tt.isEmpty())
 					throw new Exception(descriptor.getName() + ": Output tensor is empty");

@@ -154,7 +154,7 @@ public class ExampleLoadTensorflow1Tensorflow2 {
 			// Run the model on the input tensors. THe output tensors 
 			// will be rewritten with the result of the execution
 			System.out.println(Util.average(Util.asDoubleArray(outputs.get(0).getData())));
-			model.run(inputs, outputs);
+			outputs = model.inference(inputs.get(0));
 			System.out.println(Util.average(Util.asDoubleArray(outputs.get(0).getData())));
 			// The result is stored in the list of tensors "outputs"
 			model.close();
@@ -227,7 +227,7 @@ public class ExampleLoadTensorflow1Tensorflow2 {
 			// Run the model on the input tensors. THe output tensors 
 			// will be rewritten with the result of the execution
 			System.out.println(Util.average(Util.asDoubleArray(outputs.get(0).getData())));
-			model.run(inputs, outputs);
+			outputs = model.inference(inputs.get(0));
 			System.out.println(Util.average(Util.asDoubleArray(outputs.get(0).getData())));
 			// The result is stored in the list of tensors "outputs"
 			model.close();
