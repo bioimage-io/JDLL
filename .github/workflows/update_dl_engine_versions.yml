@@ -1,0 +1,47 @@
+name: Update DL engine versions
+
+on:
+  push:
+    branches:
+      - "**"
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  update-engine-versions:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Update engine jar URLs
+        run: python .github/update_available_dl_versions.py
+
+      - name: Check pull request is up to date
+        if: github.event_name == 'pull_request'
+        run: git diff --exit-code src/main/resources/availableDLVersions.json
+
+      - name: Commit and push updates
+        if: github.event_name == 'push'
+        run: |
+          git config user.name "github-actions"
+          git config user.email "github-actions@github.com"
+
+          if [ -n "$(git status --porcelain src/main/resources/availableDLVersions.json)" ]; then
+            git add src/main/resources/availableDLVersions.json
+            git commit -m "Update DL engine versions"
+            git push
+          else
+            echo "No changes to commit."
+          fi
