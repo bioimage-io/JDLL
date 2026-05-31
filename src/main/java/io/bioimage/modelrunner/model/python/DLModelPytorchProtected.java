@@ -32,7 +32,6 @@ import org.apposed.appose.util.Environments;
 import org.apposed.appose.util.Messages;
 
 import io.bioimage.modelrunner.bioimageio.tiling.TileInfo;
-import io.bioimage.modelrunner.bioimageio.tiling.TileMaker;
 import io.bioimage.modelrunner.exceptions.LoadModelException;
 import io.bioimage.modelrunner.exceptions.RunModelException;
 import io.bioimage.modelrunner.model.BaseModel;
@@ -794,7 +793,11 @@ public class DLModelPytorchProtected extends BaseModel {
     		inputBatches.add(inpList);
     	}
     	List<List<Tensor<R>>> batchedOuts = backboneBatchInference(inputBatches);
-    	return batchedOuts.get(0);
+    	List<Tensor<R>> singleOutput = new ArrayList<>();
+    	for (List<Tensor<R>>batched : batchedOuts) {
+    		singleOutput.add(batched.get(0));
+    	}
+    	return singleOutput;
     }
 
     protected String getOutputTensorAxes(int outputCount) {

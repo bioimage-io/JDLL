@@ -356,22 +356,9 @@ public class Cellpose extends BioimageIoModelPytorchProtected {
 
 	@Override
 	protected String getOutputTensorAxes(int outputCount) {
-		switch (outputCount) {
-		case 0:
-			return "xy";
-		case 1:
-			return "xyc";
-		case 2:
-			return "cxy";
-		case 3:
-			return "xy";
-		case 4:
-			return "i";
-		case 5:
-			return "xyc";
-		default:
+		if (descriptor.getOutputTensors().size() <= outputCount)
 			throw new IllegalArgumentException("Cellpose only has 6 outputs.");
-		}
+		return this.descriptor.getOutputTensors().get(outputCount).getAxesOrder();
 	}
 
 	/**
