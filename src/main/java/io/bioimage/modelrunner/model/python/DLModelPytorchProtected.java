@@ -115,16 +115,14 @@ public class DLModelPytorchProtected extends BaseModel {
     
     private static final HashMap<String, String> TOML_SUFFIX = new HashMap<String, String>();
     static {
-    	TOML_SUFFIX.put(PlatformDetection.OS_LINUX + PlatformDetection.ARCH_X86_64 + "false", "lin-x86");
-    	TOML_SUFFIX.put(PlatformDetection.OS_WINDOWS + PlatformDetection.ARCH_X86_64 + "false", "win-x86");
-    	TOML_SUFFIX.put(PlatformDetection.OS_OSX + PlatformDetection.ARCH_X86_64 + "false", "mac-x86");
-    	TOML_SUFFIX.put(PlatformDetection.OS_OSX + PlatformDetection.ARCH_X86_64 + "true", "mac-arm");
-    	TOML_SUFFIX.put(PlatformDetection.OS_OSX + PlatformDetection.ARCH_AARCH64 + "false", "mac-arm");
+        TOML_SUFFIX.put(PlatformDetection.OS_LINUX + PlatformDetection.ARCH_X86_64 + "false", "lin-x86-no-cuda");
+        TOML_SUFFIX.put(PlatformDetection.OS_WINDOWS + PlatformDetection.ARCH_X86_64 + "false", "win-x86-no-cuda");
+        TOML_SUFFIX.put(PlatformDetection.OS_OSX + PlatformDetection.ARCH_X86_64 + "false", "mac-x86");
+        TOML_SUFFIX.put(PlatformDetection.OS_OSX + PlatformDetection.ARCH_X86_64 + "true", "mac-arm");
+        TOML_SUFFIX.put(PlatformDetection.OS_OSX + PlatformDetection.ARCH_AARCH64 + "false", "mac-arm");
     }
 
     private static final List<String> CUDA_COMPAT_VERSIONS = new ArrayList<>(Arrays.asList("12.4", "12.1", "11.8"));
-
-    private static final String DEFAULT_CUDA_WHEEL_INDEX_VERSION = CUDA_COMPAT_VERSIONS.get(0).replace(".", "");
 
     protected static final boolean IS_ARM = PlatformDetection.isMacOS()
             && (PlatformDetection.getArch().equals(PlatformDetection.ARCH_ARM64)
@@ -605,7 +603,7 @@ public class DLModelPytorchProtected extends BaseModel {
         inferenceCancellationRequested = true;
         Task task = currentTask;
         if (task != null) {
-            task.cancel();
+            ApposeTaskUtils.cancel(task);
         }
     }
 
@@ -690,7 +688,7 @@ public class DLModelPytorchProtected extends BaseModel {
                 return outMap;
             } catch (InterruptedException e) {
                 if (task != null) {
-                    task.cancel();
+                    ApposeTaskUtils.cancel(task);
                 }
                 Thread.currentThread().interrupt();
                 cleanShmAfterFailure(e);
@@ -1283,23 +1281,13 @@ public class DLModelPytorchProtected extends BaseModel {
      * @return the resulting pixi environment spec.
      */
     public static PixiEnvironmentSpec resolvePytorchEnv() {
-    	System.err.println(PlatformDetection.getOs() + PlatformDetection.getArch() + PlatformDetection.isUsingRosseta());
     	String suffix = TOML_SUFFIX.get(PlatformDetection.getOs() + PlatformDetection.getArch() + PlatformDetection.isUsingRosseta());
-        final String pixiTemplate = readClasspathResourceAsString(String.format(PIXI_TEMPLATE_RESOURCE, suffix));
         final String cudaVersion = GpuCompatibility.pickCudaVersion(CUDA_COMPAT_VERSIONS);
-        System.err.println(cudaVersion);
 
-        final String pixiTomlContent;
         final String selectedEnvironment;
         final boolean installBiapyNoDeps;
 
         if (cudaVersion == null) {
-            if (!PlatformDetection.isMacOS())
-                pixiTomlContent = String.format(Locale.ROOT, pixiTemplate, COMMON_PYTORCH_ENV_NAME,
-                        DEFAULT_CUDA_WHEEL_INDEX_VERSION, DEFAULT_CUDA_WHEEL_INDEX_VERSION);
-            else
-                pixiTomlContent = String.format(Locale.ROOT, pixiTemplate, COMMON_PYTORCH_ENV_NAME);
-
             if (PlatformDetection.isLinux()) {
                 selectedEnvironment = "linux-x86-64-no-cuda";
                 installBiapyNoDeps = false;
@@ -1320,11 +1308,6 @@ public class DLModelPytorchProtected extends BaseModel {
                 installBiapyNoDeps = false;
             }
         } else {
-            final String compactCuda = cudaVersion.replace(".", "");
-        	if (!PlatformDetection.isMacOS())
-                pixiTomlContent = String.format(Locale.ROOT, pixiTemplate, COMMON_PYTORCH_ENV_NAME, compactCuda, compactCuda);
-        	else
-        		pixiTomlContent = String.format(Locale.ROOT, pixiTemplate, COMMON_PYTORCH_ENV_NAME);
             if (PlatformDetection.isLinux()) {
                 selectedEnvironment = "linux-x86-64-cuda";
             } else {
@@ -1333,6 +1316,12 @@ public class DLModelPytorchProtected extends BaseModel {
             installBiapyNoDeps = false;
         }
 
+        suffix = tomlSuffixForEnvironment(suffix, selectedEnvironment);
+        final String pixiTemplate = readClasspathResourceAsString(String.format(PIXI_TEMPLATE_RESOURCE, suffix));
+        final String pixiTomlContent = cudaVersion == null
+                ? String.format(Locale.ROOT, pixiTemplate, COMMON_PYTORCH_ENV_NAME)
+                : String.format(Locale.ROOT, pixiTemplate, COMMON_PYTORCH_ENV_NAME, cudaVersion.replace(".", ""));
+
         final File environmentDirectory = new File(Environments.apposeEnvsDir(), COMMON_PYTORCH_ENV_NAME);
         return new PixiEnvironmentSpec(
                 selectedEnvironment,
@@ -1340,6 +1329,18 @@ public class DLModelPytorchProtected extends BaseModel {
                 environmentDirectory,
                 installBiapyNoDeps ? Arrays.asList("biapy==3.5.10") : new ArrayList<String>()
         );
+    }
+
+    private static String tomlSuffixForEnvironment(String fallbackSuffix, String selectedEnvironment) {
+        if ("macos-arm64-legacy".equals(selectedEnvironment))
+            return "mac-arm-legacy";
+        if ("macos-x86-64-legacy".equals(selectedEnvironment))
+            return "mac-x86-legacy";
+        if ("linux-x86-64-cuda".equals(selectedEnvironment))
+            return "lin-x86-cuda";
+        if ("win-x86-64-cuda".equals(selectedEnvironment))
+            return "win-x86-cuda";
+        return fallbackSuffix;
     }
 
     private static boolean isLegacyMacOs() {

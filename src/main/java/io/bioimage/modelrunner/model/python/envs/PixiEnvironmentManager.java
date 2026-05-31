@@ -133,7 +133,7 @@ public final class PixiEnvironmentManager {
     private static void installNoDeps(final Environment env, final String pckge) throws BuildException {
 		List<String> pythonExes = Arrays.asList("python", "python3", "python.exe");
         try {
-			Service serv = env.service(pythonExes, "-m", "pip", "install", "biapy==3.5.10", "--no-deps").start();
+			Service serv = env.service(pythonExes, "-m", "pip", "install", pckge, "--no-deps").start();
 			serv.waitFor();
 		} catch (InterruptedException | IOException e) {
 			throw new BuildException(e);
