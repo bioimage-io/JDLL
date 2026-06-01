@@ -112,10 +112,10 @@ public class DLModelPytorchProtected extends BaseModel {
     private static final String PIXI_TEMPLATE_RESOURCE = "tomls/biapy-pixi-%s.toml";
 
     private static final String DEFAULT_PIXI_ENVIRONMENT = "default";
-    private static final String BIAPY_LINUX_X86_NO_CUDA_ENV_NAME = "biapy-lin-x86-no-cuda";
-    private static final String BIAPY_LINUX_X86_CUDA_ENV_NAME = "biapy-lin-x86-cuda";
-    private static final String BIAPY_WINDOWS_X86_NO_CUDA_ENV_NAME = "biapy-win-x86-no-cuda";
-    private static final String BIAPY_WINDOWS_X86_CUDA_ENV_NAME = "biapy-win-x86-cuda";
+    private static final String BIAPY_LINUX_X86_NO_CUDA_PROJECT_NAME = "biapy-lin-x86-no-cuda";
+    private static final String BIAPY_LINUX_X86_CUDA_PROJECT_NAME = "biapy-lin-x86-cuda";
+    private static final String BIAPY_WINDOWS_X86_NO_CUDA_PROJECT_NAME = "biapy-win-x86-no-cuda";
+    private static final String BIAPY_WINDOWS_X86_CUDA_PROJECT_NAME = "biapy-win-x86-cuda";
 
     private static final List<String> CUDA_COMPAT_VERSIONS = new ArrayList<>(Arrays.asList("12.4", "12.1", "11.8"));
 
@@ -1271,7 +1271,7 @@ public class DLModelPytorchProtected extends BaseModel {
         final String pixiTomlContent;
         final String selectedEnvironment;
         final boolean installBiapyNoDeps;
-        final String environmentName;
+        final String projectName;
 
         if (PlatformDetection.isLinux()) {
             if (!PlatformDetection.ARCH_X86_64.equals(PlatformDetection.getArch())) {
@@ -1280,12 +1280,12 @@ public class DLModelPytorchProtected extends BaseModel {
             selectedEnvironment = DEFAULT_PIXI_ENVIRONMENT;
             installBiapyNoDeps = false;
             if (cudaVersion == null) {
-                environmentName = BIAPY_LINUX_X86_NO_CUDA_ENV_NAME;
-                pixiTomlContent = renderBiaPyPixiToml("lin-x86-no-cuda", environmentName);
+                projectName = BIAPY_LINUX_X86_NO_CUDA_PROJECT_NAME;
+                pixiTomlContent = renderBiaPyPixiToml("lin-x86-no-cuda", projectName);
             } else {
                 final String compactCuda = cudaVersion.replace(".", "");
-                environmentName = BIAPY_LINUX_X86_CUDA_ENV_NAME;
-                pixiTomlContent = renderBiaPyPixiToml("lin-x86-cuda", environmentName, compactCuda, compactCuda);
+                projectName = BIAPY_LINUX_X86_CUDA_PROJECT_NAME;
+                pixiTomlContent = renderBiaPyPixiToml("lin-x86-cuda", projectName, compactCuda, compactCuda);
             }
         } else if (PlatformDetection.isWindows()) {
             if (!PlatformDetection.ARCH_X86_64.equals(PlatformDetection.getArch())) {
@@ -1294,16 +1294,16 @@ public class DLModelPytorchProtected extends BaseModel {
             selectedEnvironment = DEFAULT_PIXI_ENVIRONMENT;
             installBiapyNoDeps = false;
             if (cudaVersion == null) {
-                environmentName = BIAPY_WINDOWS_X86_NO_CUDA_ENV_NAME;
-                pixiTomlContent = renderBiaPyPixiToml("win-x86-no-cuda", environmentName);
+                projectName = BIAPY_WINDOWS_X86_NO_CUDA_PROJECT_NAME;
+                pixiTomlContent = renderBiaPyPixiToml("win-x86-no-cuda", projectName);
             } else {
                 final String compactCuda = cudaVersion.replace(".", "");
-                environmentName = BIAPY_WINDOWS_X86_CUDA_ENV_NAME;
-                pixiTomlContent = renderBiaPyPixiToml("win-x86-cuda", environmentName, compactCuda, compactCuda);
+                projectName = BIAPY_WINDOWS_X86_CUDA_PROJECT_NAME;
+                pixiTomlContent = renderBiaPyPixiToml("win-x86-cuda", projectName, compactCuda, compactCuda);
             }
         } else if (PlatformDetection.isMacOS()) {
-            environmentName = COMMON_PYTORCH_ENV_NAME;
-            pixiTomlContent = renderBiaPyPixiToml(resolveMacPixiTomlSuffix(), environmentName);
+            projectName = COMMON_PYTORCH_ENV_NAME;
+            pixiTomlContent = renderBiaPyPixiToml(resolveMacPixiTomlSuffix(), projectName);
             if (isMacArmOrRosetta() && isLegacyMacOs()) {
                 selectedEnvironment = "macos-arm64-legacy";
                 installBiapyNoDeps = true;
@@ -1322,7 +1322,7 @@ public class DLModelPytorchProtected extends BaseModel {
                     + PlatformDetection.getOs() + "-" + PlatformDetection.getArch());
         }
 
-        final File environmentDirectory = new File(Environments.apposeEnvsDir(), environmentName);
+        final File environmentDirectory = new File(Environments.apposeEnvsDir(), projectName);
         return new PixiEnvironmentSpec(
                 selectedEnvironment,
                 pixiTomlContent,
