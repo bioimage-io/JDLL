@@ -25,8 +25,6 @@ import java.util.concurrent.ExecutionException;
 import java.util.function.Consumer;
 
 import org.apposed.appose.BuildException;
-import org.apposed.appose.builder.PixiBuilderFactory;
-import org.apposed.appose.tool.Pixi;
 
 import io.bioimage.modelrunner.download.FileDownloader;
 import io.bioimage.modelrunner.gui.custom.interfaces.ModelInstaller;
@@ -36,7 +34,6 @@ import io.bioimage.modelrunner.model.python.envs.PixiEnvironmentSpec;
 
 public class YoloInstaller implements ModelInstaller {
 
-    private static final String ENV_NAME = DLModelPytorch.COMMON_PYTORCH_ENV_NAME;
     private static final long PROGRESS_UPDATE_INTERVAL_MILLIS = 50L;
 
     /**
@@ -45,8 +42,7 @@ public class YoloInstaller implements ModelInstaller {
      * @return true if environment installed; false otherwise.
      */
     public boolean isEnvironmentInstalled() {
-        PixiBuilderFactory builder = new PixiBuilderFactory();
-        return builder.canWrap(new File(Pixi.BASE_PATH, ENV_NAME));
+        return PixiEnvironmentManager.isInstalled(DLModelPytorch.resolvePytorchEnv());
     }
 
     /**

@@ -23,9 +23,9 @@ jobs:
         include:
           - id: linux-x86-64-no-cuda
             runner: ubuntu-24.04
-            template: src/main/resources/tomls/biapy-pixi-lin-x86.toml
-            environment: linux-x86-64-no-cuda
-            format_args: '["biapy", "", ""]'
+            template: src/main/resources/tomls/biapy-pixi-lin-x86-no-cuda.toml
+            environment: default
+            format_args: '["biapy-lin-x86-no-cuda"]'
 
           - id: linux-aarch64-no-cuda
             runner: ubuntu-24.04-arm
@@ -42,9 +42,9 @@ jobs:
 
           - id: windows-x86-64-no-cuda
             runner: windows-2022
-            template: src/main/resources/tomls/biapy-pixi-win-x86.toml
-            environment: win-x86-64-no-cuda
-            format_args: '["biapy", "", ""]'
+            template: src/main/resources/tomls/biapy-pixi-win-x86-no-cuda.toml
+            environment: default
+            format_args: '["biapy-win-x86-no-cuda"]'
 
     env:
       PIXI_VERSION: v0.58.0
@@ -75,13 +75,14 @@ jobs:
               print(f"::error::{os.environ['UNSUPPORTED_REASON']}")
               raise SystemExit(1)
 
+          format_args = json.loads(os.environ["FORMAT_ARGS"])
           appose_envs_dir = Path(os.environ["RUNNER_TEMP"]) / "appose-envs"
-          env_dir = appose_envs_dir / "biapy"
+          env_dir = appose_envs_dir / format_args[0]
           env_dir.mkdir(parents=True, exist_ok=True)
           manifest = env_dir / "pixi.toml"
 
           content = Path(template).read_text(encoding="utf-8")
-          rendered = content % tuple(json.loads(os.environ["FORMAT_ARGS"]))
+          rendered = content % tuple(format_args)
           manifest.write_text(rendered, encoding="utf-8")
 
           with open(os.environ["GITHUB_ENV"], "a", encoding="utf-8") as github_env:
@@ -185,5 +186,5 @@ jobs:
           name: rendered-${{ matrix.id }}
           if-no-files-found: ignore
           path: |
-            ${{ runner.temp }}/appose-envs/biapy/pixi.toml
-            ${{ runner.temp }}/appose-envs/biapy/pixi.lock
+            ${{ runner.temp }}/appose-envs/*/pixi.toml
+            ${{ runner.temp }}/appose-envs/*/pixi.lock
