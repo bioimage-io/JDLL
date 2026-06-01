@@ -36,6 +36,7 @@ import io.bioimage.modelrunner.gui.custom.yolo.YoloGUI;
 import io.bioimage.modelrunner.gui.custom.yolo.YoloDetectionCsvWriter;
 import io.bioimage.modelrunner.gui.custom.yolo.YoloDetectionGeoJsonWriter;
 import io.bioimage.modelrunner.gui.custom.yolo.YoloImageFiles;
+import io.bioimage.modelrunner.gui.custom.yolo.YoloImageSelectionEntry;
 import io.bioimage.modelrunner.gui.custom.yolo.YoloImageSourcePanel;
 import io.bioimage.modelrunner.gui.custom.yolo.YoloInferenceService;
 import io.bioimage.modelrunner.gui.custom.yolo.YoloInstaller;
@@ -433,11 +434,13 @@ public class YOLOPluginUI extends YoloGUI implements ActionListener {
             throws RunModelException, LoadModelException, BuildException, IOException,
             ExecutionException, InterruptedException {
     	consumer.notifyParams(null);
-    	RandomAccessibleInterval<T> rai = consumer.getFocusedImageAsRai();
-    	if (rai == null) {
+    	// TODO remove RandomAccessibleInterval<T> rai = consumer.getFocusedImageAsRai();
+    	Object objIm =((YoloImageSelectionEntry) inferencePanel.getImageSourcePanel().getOpenImagesComboBox().getSelectedItem()).getImage();
+    	if (objIm == null) {
     		JOptionPane.showMessageDialog(null, "Please open an image", "No image open", JOptionPane.ERROR_MESSAGE);
     		return;
     	}
+    	RandomAccessibleInterval<T> rai = this.consumer.convertIntoRai(objIm);
         List<Rectangle2D.Double> boxes = inferencePanel.getImageDisplayPanel().getBoxes();
         inferenceService.setObjectSize(boxes);
     	Consumer<String> logConsumer = str -> SwingUtilities.invokeLater(() ->

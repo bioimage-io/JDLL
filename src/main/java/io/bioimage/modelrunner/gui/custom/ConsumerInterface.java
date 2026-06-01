@@ -164,4 +164,6 @@ public abstract class ConsumerInterface {
 	public void setVariableNames(List<String> varNames) {
 		this.varNames = varNames;
 	}
+
+	protected abstract < T extends RealType< T > & NativeType< T > > RandomAccessibleInterval<T> convertIntoRai(Object objIm);
 }

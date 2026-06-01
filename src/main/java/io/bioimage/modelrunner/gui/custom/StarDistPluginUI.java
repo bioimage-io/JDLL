@@ -39,6 +39,7 @@ import io.bioimage.modelrunner.gui.custom.stardist.StardistTrainingConfig;
 import io.bioimage.modelrunner.gui.custom.stardist.StardistTrainingService;
 import io.bioimage.modelrunner.gui.custom.yolo.StardistGUI;
 import io.bioimage.modelrunner.gui.custom.yolo.YoloImageFiles;
+import io.bioimage.modelrunner.gui.custom.yolo.YoloImageSelectionEntry;
 import io.bioimage.modelrunner.gui.custom.yolo.YoloImageSourcePanel;
 import io.bioimage.modelrunner.model.InferenceProgress;
 import io.bioimage.modelrunner.model.special.stardist.StardistTrainingProgress;
@@ -432,11 +433,13 @@ public class StarDistPluginUI extends StardistGUI implements ActionListener {
     private < T extends RealType< T > & NativeType< T > > void runStardistOnOpenImage(String modelPath)
             throws RunModelException, LoadModelException, BuildException, IOException,
             ExecutionException, InterruptedException {
-    	RandomAccessibleInterval<T> rai = consumer.getFocusedImageAsRai();
-    	if (rai == null) {
+    	// TODO remove RandomAccessibleInterval<T> rai = consumer.getFocusedImageAsRai();
+    	Object objIm =((YoloImageSelectionEntry) inferencePanel.getImageSourcePanel().getOpenImagesComboBox().getSelectedItem()).getImage();
+    	if (objIm == null) {
     		JOptionPane.showMessageDialog(null, "Please open an image", "No image open", JOptionPane.ERROR_MESSAGE);
     		return;
     	}
+    	RandomAccessibleInterval<T> rai = this.consumer.convertIntoRai(objIm);
         List<Rectangle2D.Double> boxes = inferencePanel.getImageDisplayPanel().getBoxes();
         inferenceService.setObjectSize(boxes);
     	Consumer<String> logConsumer = str -> SwingUtilities.invokeLater(() ->
