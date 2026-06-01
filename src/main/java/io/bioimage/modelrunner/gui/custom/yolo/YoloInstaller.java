@@ -37,6 +37,7 @@ import io.bioimage.modelrunner.model.python.envs.PixiEnvironmentSpec;
 public class YoloInstaller implements ModelInstaller {
 
     private static final String ENV_NAME = DLModelPytorch.COMMON_PYTORCH_ENV_NAME;
+    private static final long PROGRESS_UPDATE_INTERVAL_MILLIS = 50L;
 
     /**
      * Returns whether environment installed.
@@ -104,6 +105,7 @@ public class YoloInstaller implements ModelInstaller {
         if (!YoloModelRegistry.canDownload(modelPath)) {
             throw new IOException("YOLO weights are not installed and cannot be downloaded automatically: " + modelPath);
         }
+        ThrottledLogConsumer progressLog = new ThrottledLogConsumer(logConsumer, PROGRESS_UPDATE_INTERVAL_MILLIS);
 
         File modelFile = new File(modelPath);
         File parent = modelFile.getParentFile();
@@ -114,15 +116,51 @@ public class YoloInstaller implements ModelInstaller {
         String modelName = modelFile.getName();
         FileDownloader downloader = new FileDownloader(YoloModelRegistry.downloadUrl(modelPath), modelFile, false);
         downloader.setPartialProgressConsumer(progress -> {
-            if (logConsumer != null) {
-                double percent = Math.round(progress * 1000) / 10.0d;
-                logConsumer.accept("Downloading " + modelName + " weights: " + percent + "%");
-            }
+            double percent = roundedPercent(progress);
+            progressLog.accept("Downloading " + modelName + " weights: " + percent + "%");
         });
         downloader.download(Thread.currentThread());
+        progressLog.acceptNow("Downloading " + modelName + " weights: 100.0%");
 
         if (!isModelInstalled(modelPath)) {
             throw new IOException("Model not found or incorrect byte size: " + modelPath);
+        }
+    }
+
+    private static double roundedPercent(double progress) {
+        double bounded = Math.max(0.0d, Math.min(1.0d, progress));
+        return Math.round(bounded * 1000) / 10.0d;
+    }
+
+    private static final class ThrottledLogConsumer {
+
+        private final Consumer<String> delegate;
+        private final long minIntervalMillis;
+        private long lastUpdateMillis;
+
+        private ThrottledLogConsumer(Consumer<String> delegate, long minIntervalMillis) {
+            this.delegate = delegate;
+            this.minIntervalMillis = minIntervalMillis;
+        }
+
+        private void accept(String message) {
+            if (delegate == null) {
+                return;
+            }
+            long now = System.currentTimeMillis();
+            if (now - lastUpdateMillis < minIntervalMillis) {
+                return;
+            }
+            lastUpdateMillis = now;
+            delegate.accept(message);
+        }
+
+        private void acceptNow(String message) {
+            if (delegate == null) {
+                return;
+            }
+            lastUpdateMillis = System.currentTimeMillis();
+            delegate.accept(message);
         }
     }
 }
