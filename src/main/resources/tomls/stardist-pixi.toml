@@ -88,6 +88,9 @@ cudnn = "8.1.*"
 tensorflow = "==2.10.1"
 
 [feature.win-x86-64-cuda.activation.env]
+CUDA_HOME = "%%CONDA_PREFIX%%\\Library"
+CUDA_PATH = "%%CONDA_PREFIX%%\\Library"
+CUDA_ROOT = "%%CONDA_PREFIX%%\\Library"
 PATH = "%%CONDA_PREFIX%%\\Library\\bin;%%PATH%%"
 
 [feature.win-x86-64-cuda.tasks.check-gpu]
