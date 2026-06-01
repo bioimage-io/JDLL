@@ -34,15 +34,7 @@ torch = { version = "==2.4.1", index = "https://download.pytorch.org/whl/cpu" }
 torchvision = { version = "==0.19.1", index = "https://download.pytorch.org/whl/cpu" }
 
 [tasks.python]
-cmd = '''
-powershell -NoProfile -Command "
-$clean = ($env:PATH -split ';' | Where-Object { $_ -notmatch 'CUDA\\v[0-9]+' }) -join ';';
-$env:PATH = $clean;
-$env:CUDA_HOME='';
-$env:CUDA_PATH='';
-python
-"
-'''
+cmd = "python"
 
 [tasks.check-gpu]
 cmd = '''
