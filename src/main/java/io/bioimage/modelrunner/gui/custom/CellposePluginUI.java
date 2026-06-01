@@ -209,6 +209,7 @@ public class CellposePluginUI extends CellposeGUI implements ActionListener {
 		} else if (e.getSource() == this.footer.getButtons().getRunButton()) {
 			cancelled = false;
 			workerThread = new Thread(() -> {
+		    	consumer.notifyParams(null);
 				try {
 					runCellpose();
 					startModelInstallation(false);

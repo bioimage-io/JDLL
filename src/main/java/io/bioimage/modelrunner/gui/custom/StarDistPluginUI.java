@@ -454,6 +454,7 @@ public class StarDistPluginUI extends StardistGUI implements ActionListener {
     private < T extends RealType< T > & NativeType< T > > void runStardistOnSystemImage(String modelPath)
             throws RunModelException, LoadModelException, BuildException, IOException,
             ExecutionException, InterruptedException {
+    	consumer.notifyParams(null);
         File source = selectedSystemPath == null ? selectedSystemImageFile : selectedSystemPath;
         List<File> images = systemInferenceImages(source);
         if (images.isEmpty()) {
