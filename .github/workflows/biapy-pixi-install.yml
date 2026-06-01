@@ -27,13 +27,6 @@ jobs:
             environment: default
             format_args: '["biapy-lin-x86-no-cuda"]'
 
-          - id: linux-aarch64-no-cuda
-            runner: ubuntu-24.04-arm
-            template: ""
-            environment: ""
-            format_args: "[]"
-            unsupported_reason: "BiaPy has no Linux aarch64/arm64 manifest or resolver branch; only Linux x86-64 is currently supported."
-
           - id: macos-arm64
             runner: macos-14
             template: src/main/resources/tomls/biapy-pixi-mac-arm.toml
@@ -63,7 +56,6 @@ jobs:
           FORMAT_ARGS: ${{ matrix.format_args }}
           PIXI_ENVIRONMENT: ${{ matrix.environment }}
           TEMPLATE: ${{ matrix.template }}
-          UNSUPPORTED_REASON: ${{ matrix.unsupported_reason }}
         shell: python
         run: |
           import json
@@ -71,10 +63,6 @@ jobs:
           from pathlib import Path
 
           template = os.environ["TEMPLATE"]
-          if not template:
-              print(f"::error::{os.environ['UNSUPPORTED_REASON']}")
-              raise SystemExit(1)
-
           format_args = json.loads(os.environ["FORMAT_ARGS"])
           appose_envs_dir = Path(os.environ["RUNNER_TEMP"]) / "appose-envs"
           env_dir = appose_envs_dir / format_args[0]
