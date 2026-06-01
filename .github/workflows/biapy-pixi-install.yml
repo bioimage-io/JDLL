@@ -32,7 +32,7 @@ jobs:
             template: ""
             environment: ""
             format_args: "[]"
-            unsupported_reason: "DLModelPytorchProtected.TOML_SUFFIX has no Linux aarch64/arm64 BiaPy entry and src/main/resources/tomls has no BiaPy linux-aarch64 manifest."
+            unsupported_reason: "BiaPy has no Linux aarch64/arm64 manifest or resolver branch; only Linux x86-64 is currently supported."
 
           - id: macos-arm64
             runner: macos-14
