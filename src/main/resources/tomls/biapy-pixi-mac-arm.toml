@@ -33,6 +33,9 @@ biapy = "==3.5.10"
 ultralytics = "==8.4.40"
 appose = "*"
 
+[feature.standard-packages.system-requirements]
+macos = "14.0"
+
 # -----------------------------------------------------------------------------
 # macOS < 14 package set.
 # Mirrors the special BIAPY_PIP_DEPS branch for old macOS.

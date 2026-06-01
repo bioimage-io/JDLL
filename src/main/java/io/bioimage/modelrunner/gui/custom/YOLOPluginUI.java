@@ -432,6 +432,7 @@ public class YOLOPluginUI extends YoloGUI implements ActionListener {
     private < T extends RealType< T > & NativeType< T > > void runYOLOOnOpenImage(String modelPath)
             throws RunModelException, LoadModelException, BuildException, IOException,
             ExecutionException, InterruptedException {
+    	consumer.notifyParams(null);
     	RandomAccessibleInterval<T> rai = consumer.getFocusedImageAsRai();
     	if (rai == null) {
     		JOptionPane.showMessageDialog(null, "Please open an image", "No image open", JOptionPane.ERROR_MESSAGE);

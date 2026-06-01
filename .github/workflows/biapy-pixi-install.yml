@@ -1,0 +1,178 @@
+name: biapy pixi install
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/biapy-pixi-install.yml"
+      - "src/main/resources/tomls/biapy-pixi-*.toml"
+  pull_request:
+    paths:
+      - ".github/workflows/biapy-pixi-install.yml"
+      - "src/main/resources/tomls/biapy-pixi-*.toml"
+
+jobs:
+  install:
+    name: ${{ matrix.id }}
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 120
+
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - id: linux-x86-64-no-cuda
+            runner: ubuntu-24.04
+            template: src/main/resources/tomls/biapy-pixi-lin-x86-no-cuda.toml
+            environment: default
+            format_args: '["biapy-lin-x86-no-cuda"]'
+
+          - id: macos-arm64
+            runner: macos-14
+            template: src/main/resources/tomls/biapy-pixi-mac-arm.toml
+            environment: macos-arm64
+            format_args: '["biapy"]'
+
+          - id: windows-x86-64-no-cuda
+            runner: windows-2022
+            template: src/main/resources/tomls/biapy-pixi-win-x86-no-cuda.toml
+            environment: default
+            format_args: '["biapy-win-x86-no-cuda"]'
+
+    env:
+      PIXI_VERSION: v0.58.0
+
+    steps:
+      - name: Check out
+        uses: actions/checkout@v4
+
+      - name: Set up Python for manifest rendering
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.x"
+
+      - name: Render Appose pixi.toml
+        env:
+          FORMAT_ARGS: ${{ matrix.format_args }}
+          PIXI_ENVIRONMENT: ${{ matrix.environment }}
+          TEMPLATE: ${{ matrix.template }}
+        shell: python
+        run: |
+          import json
+          import os
+          from pathlib import Path
+
+          template = os.environ["TEMPLATE"]
+          format_args = json.loads(os.environ["FORMAT_ARGS"])
+          appose_envs_dir = Path(os.environ["RUNNER_TEMP"]) / "appose-envs"
+          env_dir = appose_envs_dir / format_args[0]
+          env_dir.mkdir(parents=True, exist_ok=True)
+          manifest = env_dir / "pixi.toml"
+
+          content = Path(template).read_text(encoding="utf-8")
+          rendered = content % tuple(format_args)
+          manifest.write_text(rendered, encoding="utf-8")
+
+          with open(os.environ["GITHUB_ENV"], "a", encoding="utf-8") as github_env:
+              print(f"APPOSE_ENVS_DIR={appose_envs_dir}", file=github_env)
+              print(f"PIXI_PROJECT_DIR={env_dir}", file=github_env)
+              print(f"MANIFEST_PATH={manifest}", file=github_env)
+              print(f"PIXI_ENVIRONMENT={os.environ['PIXI_ENVIRONMENT']}", file=github_env)
+
+          print(f"Rendered {template} to {manifest}")
+          print(f"Selected environment: {os.environ['PIXI_ENVIRONMENT']}")
+
+      - name: Install Appose Pixi
+        if: runner.os != 'Windows' && matrix.template != ''
+        shell: bash
+        run: |
+          set -euxo pipefail
+
+          mkdir -p "$APPOSE_ENVS_DIR/.pixi/bin"
+
+          case "$(uname -s)-$(uname -m)" in
+            Linux-x86_64)
+              archive="pixi-x86_64-unknown-linux-musl.tar.gz"
+              ;;
+            Linux-aarch64|Linux-arm64)
+              archive="pixi-aarch64-unknown-linux-musl.tar.gz"
+              ;;
+            Darwin-arm64)
+              archive="pixi-aarch64-apple-darwin.tar.gz"
+              ;;
+            Darwin-x86_64)
+              archive="pixi-x86_64-apple-darwin.tar.gz"
+              ;;
+            *)
+              echo "::error::Unsupported Appose Pixi platform: $(uname -s)-$(uname -m)"
+              exit 1
+              ;;
+          esac
+
+          curl -fsSL \
+            "https://github.com/prefix-dev/pixi/releases/download/${PIXI_VERSION}/${archive}" \
+            -o "$RUNNER_TEMP/$archive"
+          tar -xzf "$RUNNER_TEMP/$archive" -C "$APPOSE_ENVS_DIR/.pixi/bin"
+          chmod +x "$APPOSE_ENVS_DIR/.pixi/bin/pixi"
+
+          echo "PIXI_EXE=$APPOSE_ENVS_DIR/.pixi/bin/pixi" >> "$GITHUB_ENV"
+          "$APPOSE_ENVS_DIR/.pixi/bin/pixi" --version
+
+      - name: Install Appose Pixi
+        if: runner.os == 'Windows' && matrix.template != ''
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = "Stop"
+
+          $pixiBin = Join-Path $env:APPOSE_ENVS_DIR ".pixi\bin"
+          New-Item -ItemType Directory -Force -Path $pixiBin | Out-Null
+
+          $archive = "pixi-x86_64-pc-windows-msvc.zip"
+          $archivePath = Join-Path $env:RUNNER_TEMP $archive
+          Invoke-WebRequest `
+            -Uri "https://github.com/prefix-dev/pixi/releases/download/$env:PIXI_VERSION/$archive" `
+            -OutFile $archivePath
+          Expand-Archive -Path $archivePath -DestinationPath $pixiBin -Force
+
+          $pixiExe = Join-Path $pixiBin "pixi.exe"
+          "PIXI_EXE=$pixiExe" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+          & $pixiExe --version
+
+      - name: Install BiaPy pixi environment
+        if: runner.os != 'Windows' && matrix.template != ''
+        shell: bash
+        run: |
+          set -euxo pipefail
+          cd "$APPOSE_ENVS_DIR"
+
+          echo "Appose command:"
+          printf '%q ' "$PIXI_EXE" install --manifest-path "$MANIFEST_PATH" --environment "$PIXI_ENVIRONMENT"
+          printf '\n'
+
+          "$PIXI_EXE" install --manifest-path "$MANIFEST_PATH" --environment "$PIXI_ENVIRONMENT"
+
+      - name: Install BiaPy pixi environment
+        if: runner.os == 'Windows' && matrix.template != ''
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = "Stop"
+          Set-Location $env:APPOSE_ENVS_DIR
+
+          $command = "$env:PIXI_EXE install --manifest-path $env:MANIFEST_PATH --environment $env:PIXI_ENVIRONMENT"
+          Write-Host "Appose command:"
+          Write-Host "cmd.exe /c $command"
+
+          & cmd.exe /c $command
+          if ($LASTEXITCODE -ne 0) {
+            exit $LASTEXITCODE
+          }
+
+      - name: Upload rendered manifest
+        if: always() && matrix.template != ''
+        uses: actions/upload-artifact@v4
+        with:
+          name: rendered-${{ matrix.id }}
+          if-no-files-found: ignore
+          path: |
+            ${{ runner.temp }}/appose-envs/*/pixi.toml
+            ${{ runner.temp }}/appose-envs/*/pixi.lock
