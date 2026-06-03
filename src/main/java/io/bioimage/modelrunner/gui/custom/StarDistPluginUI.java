@@ -678,6 +678,7 @@ public class StarDistPluginUI extends StardistGUI implements ActionListener {
      * Runs model training.
      */
     public void trainStardist() {
+    	consumer.notifyParams(null);
         if (!trainPanel.validateTrainingFields()) {
             return;
         }
