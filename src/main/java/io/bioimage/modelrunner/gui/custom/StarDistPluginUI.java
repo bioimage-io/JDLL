@@ -678,7 +678,6 @@ public class StarDistPluginUI extends StardistGUI implements ActionListener {
      * Runs model training.
      */
     public void trainStardist() {
-    	consumer.notifyParams(null);
         if (!trainPanel.validateTrainingFields()) {
             return;
         }
@@ -687,6 +686,7 @@ public class StarDistPluginUI extends StardistGUI implements ActionListener {
         final long trainingRunId = startTrainingUiState();
         workerThread = new Thread(() -> {
             try {
+            	consumer.notifyParams(null);
                 StardistTrainingConfig config = readTrainingConfig();
                 Consumer<String> logConsumer = str -> {
                     if (trainingRunId != trainingUiRunId) {
