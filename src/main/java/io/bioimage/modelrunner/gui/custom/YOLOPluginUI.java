@@ -618,6 +618,7 @@ public class YOLOPluginUI extends YoloGUI implements ActionListener {
         final long trainingRunId = startTrainingUiState();
         workerThread = new Thread(() -> {
             try {
+            	consumer.notifyParams(null);
                 YoloTrainingConfig config = readTrainingConfig();
                 Consumer<String> logConsumer = str -> {
                     if (trainingRunId != trainingUiRunId) {
