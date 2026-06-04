@@ -377,6 +377,9 @@ final class YoloDatasetPreparer {
         layouts.add(new SplitLayout(new File(root, splitName + "/images"), new File(root, splitName + "/labels")));
         layouts.add(new SplitLayout(new File(root, splitName), new File(root, "labels/" + splitName)));
         layouts.add(new SplitLayout(new File(root, splitName), new File(root, splitName + "/labels")));
+        if ("train".equals(splitName)) {
+            layouts.add(new SplitLayout(new File(root, "images"), new File(root, "labels")));
+        }
         return layouts;
     }
 
@@ -783,10 +786,33 @@ final class YoloDatasetPreparer {
 
     private static List<MaskSample> findMaskSamples(File root, String splitName) throws IOException {
         File splitDir = new File(root, splitName);
+        for (SplitLayout layout : candidateMaskLayouts(root, splitName)) {
+            List<MaskPair> pairs = findMaskPairs(layout.imageRoot, layout.labelRoot);
+            if (!pairs.isEmpty()) {
+                return readMaskSamples(pairs);
+            }
+        }
         if (!splitDir.isDirectory()) {
             return Collections.emptyList();
         }
         List<MaskPair> pairs = findMaskPairs(splitDir);
+        return readMaskSamples(pairs);
+    }
+
+    private static List<SplitLayout> candidateMaskLayouts(File root, String splitName) {
+        List<SplitLayout> layouts = new ArrayList<SplitLayout>();
+        if (splitName == null || splitName.isEmpty()) {
+            layouts.add(new SplitLayout(new File(root, "images"), new File(root, "labels")));
+            return layouts;
+        }
+        layouts.add(new SplitLayout(new File(root, "images/" + splitName), new File(root, "labels/" + splitName)));
+        layouts.add(new SplitLayout(new File(root, splitName + "/images"), new File(root, splitName + "/labels")));
+        layouts.add(new SplitLayout(new File(root, splitName), new File(root, "labels/" + splitName)));
+        layouts.add(new SplitLayout(new File(root, splitName), new File(root, splitName + "/labels")));
+        return layouts;
+    }
+
+    private static List<MaskSample> readMaskSamples(List<MaskPair> pairs) throws IOException {
         List<MaskSample> samples = new ArrayList<MaskSample>();
         for (MaskPair pair : pairs) {
             MaskSample sample = readMaskSample(pair.image, pair.mask);
@@ -819,6 +845,36 @@ final class YoloDatasetPreparer {
         }
         Collections.sort(pairs, Comparator.comparing(pair -> pair.image.getAbsolutePath()));
         return pairs;
+    }
+
+    private static List<MaskPair> findMaskPairs(File imageRoot, File maskRoot) throws IOException {
+        if (imageRoot == null || maskRoot == null || !imageRoot.isDirectory() || !maskRoot.isDirectory()) {
+            return Collections.emptyList();
+        }
+        Map<String, File> images = new HashMap<String, File>();
+        for (File file : collectImages(imageRoot)) {
+            images.put(normalizeImageCore(relativeStem(imageRoot, file)), file);
+        }
+        Map<String, File> masks = new HashMap<String, File>();
+        for (File file : collectImages(maskRoot)) {
+            String stem = relativeStem(maskRoot, file);
+            String core = maskCore(stem);
+            masks.put(core == null ? stem : core, file);
+        }
+        List<MaskPair> pairs = new ArrayList<MaskPair>();
+        for (Map.Entry<String, File> entry : masks.entrySet()) {
+            File image = images.get(entry.getKey());
+            if (image != null) {
+                pairs.add(new MaskPair(image, entry.getValue()));
+            }
+        }
+        Collections.sort(pairs, Comparator.comparing(pair -> pair.image.getAbsolutePath()));
+        return pairs;
+    }
+
+    private static String relativeStem(File root, File file) {
+        Path rel = root.toPath().toAbsolutePath().relativize(file.toPath().toAbsolutePath());
+        return removeExtension(rel.toString()).replace(File.separatorChar, '/');
     }
 
     private static String normalizeImageCore(String stem) {
