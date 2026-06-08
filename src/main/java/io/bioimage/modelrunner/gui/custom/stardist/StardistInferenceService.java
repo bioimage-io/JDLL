@@ -21,6 +21,7 @@ package io.bioimage.modelrunner.gui.custom.stardist;
 
 import java.awt.Rectangle;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 import java.util.function.Consumer;
@@ -36,6 +37,7 @@ import io.bioimage.modelrunner.tensor.Tensor;
 import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.type.NativeType;
 import net.imglib2.type.numeric.RealType;
+import net.imglib2.util.ConstantUtils;
 import net.imglib2.view.Views;
 
 public class StardistInferenceService {
@@ -292,10 +294,49 @@ public class StardistInferenceService {
 
     private <T extends RealType<T> & NativeType<T>, R extends RealType<R> & NativeType<R>>
     List<Tensor<R>> runLoadedModel(RandomAccessibleInterval<T> rai) throws RunModelException {
+        rai = normalizeChannelCount(rai);
         RandomAccessibleInterval<T> input = addDimsToInput(rai,
                 rai.dimensionsAsLongArray().length > 2 && rai.dimensionsAsLongArray()[2] == 3 ? 3 : 1);
         List<Tensor<R>> outTensor = model.inference(Tensor.build("input", "xycb", input));
         return outTensor;
+    }
+
+    private static <T extends RealType<T> & NativeType<T>>
+    RandomAccessibleInterval<T> normalizeChannelCount(RandomAccessibleInterval<T> rai) {
+        long[] dims = rai.dimensionsAsLongArray();
+        if (dims.length < 3) {
+            return rai;
+        }
+        if (dims[2] == 2) {
+            return appendBlankThirdChannel(rai);
+        }
+        if (dims[2] > 3) {
+            long[] min = new long[dims.length];
+            long[] max = new long[dims.length];
+            for (int i = 0; i < dims.length; i++) {
+                min[i] = rai.min(i);
+                max[i] = rai.max(i);
+            }
+            max[2] = min[2] + 2;
+            return Views.interval(rai, min, max);
+        }
+        return rai;
+    }
+
+    private static <T extends RealType<T> & NativeType<T>>
+    RandomAccessibleInterval<T> appendBlankThirdChannel(RandomAccessibleInterval<T> rai) {
+        List<RandomAccessibleInterval<T>> channels = new ArrayList<RandomAccessibleInterval<T>>();
+        RandomAccessibleInterval<T> first = Views.hyperSlice(rai, 2, rai.min(2));
+        channels.add(first);
+        channels.add(Views.hyperSlice(rai, 2, rai.min(2) + 1));
+        T zero = first.randomAccess().get().createVariable();
+        zero.setZero();
+        channels.add(ConstantUtils.constantRandomAccessibleInterval(zero, first));
+        RandomAccessibleInterval<T> stacked = Views.stack(channels);
+        for (int d = stacked.numDimensions() - 1; d > 2; d--) {
+            stacked = Views.permute(stacked, d, d - 1);
+        }
+        return stacked;
     }
 
     private static <R extends RealType<R> & NativeType<R>>
