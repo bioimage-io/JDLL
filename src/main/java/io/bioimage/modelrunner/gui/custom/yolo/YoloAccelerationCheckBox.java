@@ -32,7 +32,8 @@ final class YoloAccelerationCheckBox extends JCheckBox {
 
     YoloAccelerationCheckBox() {
         this(() -> DLModelPytorchProtected.resolvePytorchEnv()
-                .getSelectedEnvironment()
+        		.getEnvironmentDirectory()
+                .getName()
                 .toLowerCase()
                 .contains("cuda"));
     }
