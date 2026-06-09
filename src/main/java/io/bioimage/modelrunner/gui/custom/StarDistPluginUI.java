@@ -448,7 +448,9 @@ public class StarDistPluginUI extends StardistGUI implements ActionListener {
         try {
             List<Tensor<T>> detections = inferenceService.run(modelPath, rai, logConsumer, true,
                     selectedInferenceDevice());
-            consumer.displayImage(detections.get(0).getData(), detections.get(0).getAxesOrderString(), detections.get(0).getName());
+            for (int k = 0; k < detections.size(); k ++) {
+            	consumer.displayImage(detections.get(k).getData(), detections.get(k).getAxesOrderString(), detections.get(k).getName());
+            }
         } finally {
             SwingUtilities.invokeLater(() -> StarDistPluginUI.this.inferencePanel.getLogPanel().stopRunTimer());
         }
