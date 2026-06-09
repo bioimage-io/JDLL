@@ -51,6 +51,18 @@ public class PatchSpec
      * Name of the tensor to whom these specs correspond
      */
     private String tensorName;
+    /**
+     * Axes order followed by the patch grid.
+     */
+    private String axesOrder;
+    /**
+     * Axes order used to enumerate flat patch indices.
+     */
+    private String referenceAxesOrder;
+    /**
+     * Grid size used to enumerate flat patch indices.
+     */
+    private int[] referenceTileGrid;
 
     /**
      * Creates a patch size specification.
@@ -62,8 +74,28 @@ public class PatchSpec
      * @param nonTiledTensorDims the non tiled tensor dimensions.
      * @return the created patch spec.
      */
-    protected static PatchSpec create(String tensorName, long[] patchInputSize, int[] patchGridSize, 
-    		int[][] patchPaddingSize, long[] nonTiledTensorDims)
+    protected static PatchSpec create(String tensorName, long[] patchInputSize, int[] patchGridSize,
+            int[][] patchPaddingSize, long[] nonTiledTensorDims)
+    {
+        return create(tensorName, patchInputSize, patchGridSize, patchPaddingSize, nonTiledTensorDims, null, null, null);
+    }
+
+    /**
+     * Creates a patch size specification.
+     *
+     * @param tensorName the tensor name.
+     * @param patchInputSize the patch input size.
+     * @param patchGridSize the patch grid size.
+     * @param patchPaddingSize the patch padding size.
+     * @param nonTiledTensorDims the non tiled tensor dimensions.
+     * @param axesOrder axes order followed by the patch grid.
+     * @param referenceAxesOrder axes order used to enumerate flat patch indices.
+     * @param referenceTileGrid grid size used to enumerate flat patch indices.
+     * @return the created patch spec.
+     */
+    protected static PatchSpec create(String tensorName, long[] patchInputSize, int[] patchGridSize,
+            int[][] patchPaddingSize, long[] nonTiledTensorDims, String axesOrder, String referenceAxesOrder,
+            int[] referenceTileGrid)
     {
         PatchSpec ps = new PatchSpec();
         ps.patchInputSize = patchInputSize;
@@ -71,6 +103,9 @@ public class PatchSpec
         ps.patchPaddingSize = patchPaddingSize;
         ps.tensorName = tensorName;
         ps.nonTiledTensorDims = nonTiledTensorDims;
+        ps.axesOrder = normalizeAxesOrder(axesOrder);
+        ps.referenceAxesOrder = normalizeAxesOrder(referenceAxesOrder);
+        ps.referenceTileGrid = referenceTileGrid;
         return ps;
     }
 
@@ -120,6 +155,27 @@ public class PatchSpec
     }
 
     /**
+     * @return Axes order followed by the patch grid.
+     */
+    protected String getAxesOrder() {
+        return axesOrder;
+    }
+
+    /**
+     * @return Axes order used to enumerate flat patch indices.
+     */
+    protected String getReferenceAxesOrder() {
+        return referenceAxesOrder;
+    }
+
+    /**
+     * @return Grid size used to enumerate flat patch indices.
+     */
+    protected int[] getReferenceTileGrid() {
+        return referenceTileGrid;
+    }
+
+    /**
      * Executes to string.
      *
      * @return the resulting string.
@@ -137,6 +193,13 @@ public class PatchSpec
                 .append(", patchPaddingSize=").append(Arrays.toString(paddingStrArr))
                 .append("]");
         return builder.toString();
+    }
+
+    private static String normalizeAxesOrder(String axesOrder) {
+        if (axesOrder == null || axesOrder.trim().isEmpty()) {
+            return null;
+        }
+        return axesOrder.toLowerCase().replace(" ", "");
     }
 
 }

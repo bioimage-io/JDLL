@@ -140,7 +140,131 @@ public class IndexingUtils
 		}
 		return ind;
 	}
-	
+
+	/**
+	 * Obtain the multidimensional position corresponding to a flat position using
+	 * a reference axes order for the flat iteration.
+	 * <p>
+	 * The returned index follows {@code axesOrder}, but the flat index is decoded
+	 * as if the grid were ordered by {@code referenceAxesOrder}. This keeps tiled
+	 * input and output tensors aligned when their tensor axes differ, for example
+	 * input {@code xycb} and output {@code byx}.
+	 *
+	 * @param flat the flat index.
+	 * @param size the grid size following {@code axesOrder}.
+	 * @param axesOrder the axes order of {@code size} and of the returned index.
+	 * @param referenceAxesOrder the semantic axes order used to decode {@code flat}.
+	 * @return the multidimensional index following {@code axesOrder}.
+	 */
+	public static int[] flatIntoMultidimensionalIndex( int flat, int[] size,
+			String axesOrder, String referenceAxesOrder )
+	{
+		axesOrder = normalizeAxesOrder(axesOrder, "axesOrder");
+		referenceAxesOrder = normalizeAxesOrder(referenceAxesOrder, "referenceAxesOrder");
+		if (size.length != axesOrder.length()) {
+			throw new IllegalArgumentException("Size length (" + size.length
+					+ ") does not match axes order '" + axesOrder + "'.");
+		}
+		if (axesOrder.equals(referenceAxesOrder)) {
+			return flatIntoMultidimensionalIndex(flat, size);
+		}
+		String referenceOrder = commonReferenceOrder(axesOrder, referenceAxesOrder);
+		int[] referenceSize = new int[referenceOrder.length()];
+		for (int i = 0; i < referenceOrder.length(); i ++) {
+			referenceSize[i] = size[axesOrder.indexOf(referenceOrder.charAt(i))];
+		}
+		return flatIntoMultidimensionalIndex(flat, size, axesOrder, referenceOrder, referenceSize);
+	}
+
+	/**
+	 * Obtain the multidimensional position corresponding to a flat position using
+	 * a full reference grid for the flat iteration.
+	 * <p>
+	 * Missing local axes are ignored, so tensors without a reference axis are
+	 * reused across that axis. Local axes with grid size {@code 1} are also reused
+	 * across larger reference grids. Any other grid mismatch is rejected because
+	 * there is no unambiguous tile-to-tile mapping.
+	 *
+	 * @param flat the flat index.
+	 * @param size the local grid size following {@code axesOrder}.
+	 * @param axesOrder the axes order of {@code size} and of the returned index.
+	 * @param referenceAxesOrder the axes order of {@code referenceSize}.
+	 * @param referenceSize the grid size used to decode {@code flat}.
+	 * @return the multidimensional index following {@code axesOrder}.
+	 */
+	public static int[] flatIntoMultidimensionalIndex( int flat, int[] size,
+			String axesOrder, String referenceAxesOrder, int[] referenceSize )
+	{
+		axesOrder = normalizeAxesOrder(axesOrder, "axesOrder");
+		referenceAxesOrder = normalizeAxesOrder(referenceAxesOrder, "referenceAxesOrder");
+		if (size.length != axesOrder.length()) {
+			throw new IllegalArgumentException("Size length (" + size.length
+					+ ") does not match axes order '" + axesOrder + "'.");
+		}
+		if (referenceSize == null || referenceSize.length != referenceAxesOrder.length()) {
+			throw new IllegalArgumentException("Reference size length does not match axes order '"
+					+ referenceAxesOrder + "'.");
+		}
+		int[] referenceIndex = flatIntoMultidimensionalIndex(flat, referenceSize);
+		int[] index = new int[size.length];
+		for (int i = 0; i < axesOrder.length(); i ++) {
+			char axis = axesOrder.charAt(i);
+			int referenceAxisIndex = referenceAxesOrder.indexOf(axis);
+			if (referenceAxisIndex < 0) {
+				if (size[i] != 1) {
+					throw new IllegalArgumentException("Axis '" + axis + "' is tiled locally but absent from "
+							+ "reference axes order '" + referenceAxesOrder + "'.");
+				}
+				index[i] = 0;
+				continue;
+			}
+			int referenceAxisPosition = referenceIndex[referenceAxisIndex];
+			if (size[i] == 1) {
+				index[i] = 0;
+			} else if (referenceSize[referenceAxisIndex] != size[i]) {
+				throw new IllegalArgumentException("Cannot map tiled axis '" + axis + "' from reference grid "
+						+ referenceSize[referenceAxisIndex] + " to local grid " + size[i] + ".");
+			} else {
+				index[i] = referenceAxisPosition;
+			}
+		}
+		return index;
+	}
+
+	private static String commonReferenceOrder(String axesOrder, String referenceAxesOrder) {
+		StringBuilder order = new StringBuilder();
+		for (int i = 0; i < referenceAxesOrder.length(); i ++) {
+			char axis = referenceAxesOrder.charAt(i);
+			if (axesOrder.indexOf(axis) >= 0 && order.indexOf(String.valueOf(axis)) < 0) {
+				order.append(axis);
+			}
+		}
+		for (int i = 0; i < axesOrder.length(); i ++) {
+			char axis = axesOrder.charAt(i);
+			if (order.indexOf(String.valueOf(axis)) < 0) {
+				order.append(axis);
+			}
+		}
+		return order.toString();
+	}
+
+	private static String normalizeAxesOrder(String axesOrder, String name) {
+		if (axesOrder == null || axesOrder.trim().isEmpty()) {
+			throw new IllegalArgumentException(name + " cannot be null or empty.");
+		}
+		axesOrder = axesOrder.toLowerCase().replace(" ", "");
+		for (int i = 0; i < axesOrder.length(); i ++) {
+			char axis = axesOrder.charAt(i);
+			if (!Character.isLetter(axis)) {
+				throw new IllegalArgumentException(name + " must contain only letters, got '" + axesOrder + "'.");
+			}
+			if (axesOrder.indexOf(axis) != axesOrder.lastIndexOf(axis)) {
+				throw new IllegalArgumentException(name + " contains repeated axis '" + axis + "': '" + axesOrder + "'.");
+			}
+		}
+		return axesOrder;
+	}
+
     /**
      * Argsort method
      *

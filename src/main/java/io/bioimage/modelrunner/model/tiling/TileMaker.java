@@ -36,7 +36,6 @@ import io.bioimage.modelrunner.bioimageio.description.TensorSpec;
 import io.bioimage.modelrunner.tensor.Tensor;
 import io.bioimage.modelrunner.utils.CommonUtils;
 import io.bioimage.modelrunner.utils.Constants;
-import io.bioimage.modelrunner.utils.IndexingUtils;
 import net.imglib2.FinalInterval;
 import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.type.NativeType;
@@ -79,22 +78,27 @@ public class TileMaker {
 		this.descriptor = null;
 		List<TileInfo> combined = Stream.of(outputTiles, inputTiles).flatMap(List::stream).collect(Collectors.toList());;
 		TileInfo.adaptHalos(combined);
+		List<PatchSpec> localInputPatches = inputTileInfo.stream()
+				.map(tile -> createPatch(tile, null, null))
+				.collect(Collectors.toList());
+		String referenceAxesOrder = referenceAxesOrder(localInputPatches);
+		int[] referenceTileGrid = referenceTileGrid(localInputPatches, referenceAxesOrder);
 		for (TileInfo tile : inputTileInfo) {
-			PatchSpec patch = createPatch(tile);
+			PatchSpec patch = createPatch(tile, referenceAxesOrder, referenceTileGrid);
 			input.put(tile.getName(), patch);
 			inputGrid.put(tile.getName(), TileGrid.create(patch));
 		}
 		for (TileInfo tile : outputTileInfo) {
-			PatchSpec patch = createPatch(tile);
+			PatchSpec patch = createPatch(tile, referenceAxesOrder, referenceTileGrid);
 			output.put(tile.getName(), patch);
 			outputGrid.put(tile.getName(), TileGrid.create(patch));
 		}
 	}
 	
-	private PatchSpec createPatch(TileInfo tile) {
-    	long[] imSize = arrayToWantedAxesOrderAddOnes(tile.getImageDims(), 
-    			tile.getImageAxesOrder(), tile.getTileAxesOrder());
-    	long[] tileSize = tile.getTileDims();
+	private PatchSpec createPatch(TileInfo tile, String referenceAxesOrder, int[] referenceTileGrid) {
+        long[] imSize = arrayToWantedAxesOrderAddOnes(tile.getImageDims(),
+                tile.getImageAxesOrder(), tile.getTileAxesOrder());
+        long[] tileSize = tile.getTileDims();
     	int[][] paddingSize = new int[2][tileSize.length];
         // REgard that the input halo represents the output halo + offset 
         // and must be divisible by 0.5. 
@@ -123,7 +127,57 @@ public class TileMaker {
             .map(i -> (int) Math.max( paddingSize[1][i], 
             		tileSize[i] - imSize[i] - paddingSize[0][i])).toArray();
 
-        return PatchSpec.create(tile.getName(), tileSize, patchGridSize, paddingSize, imSize);
+        return PatchSpec.create(tile.getName(), tileSize, patchGridSize, paddingSize, imSize,
+                tile.getTileAxesOrder(), referenceAxesOrder, referenceTileGrid);
+	}
+
+	private static String referenceAxesOrder(List<PatchSpec> inputPatches) {
+		if (inputPatches == null || inputPatches.isEmpty()) {
+			return null;
+		}
+		StringBuilder axesOrder = new StringBuilder();
+		for (PatchSpec patch : inputPatches) {
+			String axes = patch.getAxesOrder();
+			if (axes == null) {
+				continue;
+			}
+			for (int i = 0; i < axes.length(); i ++) {
+				char axis = axes.charAt(i);
+				if (axesOrder.indexOf(String.valueOf(axis)) < 0) {
+					axesOrder.append(axis);
+				}
+			}
+		}
+		return axesOrder.length() == 0 ? null : axesOrder.toString();
+	}
+
+	private static int[] referenceTileGrid(List<PatchSpec> inputPatches, String referenceAxesOrder) {
+		if (referenceAxesOrder == null) {
+			return null;
+		}
+		int[] referenceGrid = new int[referenceAxesOrder.length()];
+		Arrays.fill(referenceGrid, 1);
+		for (PatchSpec patch : inputPatches) {
+			String axes = patch.getAxesOrder();
+			int[] grid = patch.getTileGrid();
+			if (axes == null || grid == null) {
+				continue;
+			}
+			for (int i = 0; i < axes.length(); i ++) {
+				int referenceAxis = referenceAxesOrder.indexOf(axes.charAt(i));
+				int localGrid = grid[i];
+				if (localGrid == 1 || referenceGrid[referenceAxis] == localGrid) {
+					continue;
+				}
+				if (referenceGrid[referenceAxis] == 1) {
+					referenceGrid[referenceAxis] = localGrid;
+					continue;
+				}
+				throw new IllegalArgumentException("Cannot combine tensors tiled along axis '" + axes.charAt(i)
+						+ "' with incompatible grid sizes " + referenceGrid[referenceAxis] + " and " + localGrid + ".");
+			}
+		}
+		return referenceGrid;
 	}
 	
 	/**
@@ -375,17 +429,25 @@ public class TileMaker {
 	}
 	
 	private void calculate() {
+		List<PatchSpec> localInputPatches = new ArrayList<PatchSpec>();
 		for (TensorSpec tt : this.descriptor.getInputTensors()) {
 			TileInfo tile = inputTileInfo.stream()
 					.filter(til -> til.getName().equals(tt.getName())).findFirst().orElse(null);
-			PatchSpec patch = computePatchSpecs(tt, tile);
+			localInputPatches.add(computePatchSpecs(tt, tile, null, null));
+		}
+		String referenceAxesOrder = referenceAxesOrder(localInputPatches);
+		int[] referenceTileGrid = referenceTileGrid(localInputPatches, referenceAxesOrder);
+		for (TensorSpec tt : this.descriptor.getInputTensors()) {
+			TileInfo tile = inputTileInfo.stream()
+					.filter(til -> til.getName().equals(tt.getName())).findFirst().orElse(null);
+			PatchSpec patch = computePatchSpecs(tt, tile, referenceAxesOrder, referenceTileGrid);
 			input.put(tt.getName(), patch);
 			inputGrid.put(tt.getName(), TileGrid.create(patch));
 		}
 		for (TensorSpec tt : this.descriptor.getOutputTensors()) {
 			TileInfo tile = outputTileInfo.stream()
 					.filter(til -> til.getName().equals(tt.getName())).findFirst().orElse(null);
-			PatchSpec patch = computePatchSpecs(tt, tile);
+			PatchSpec patch = computePatchSpecs(tt, tile, referenceAxesOrder, referenceTileGrid);
 			output.put(tt.getName(), patch);
 			outputGrid.put(tt.getName(), TileGrid.create(patch));
 		}
@@ -405,10 +467,10 @@ public class TileMaker {
      * 
      * @return an object containing the specs needed to perform patching for the particular tensor
      */
-    private PatchSpec computePatchSpecs(TensorSpec spec, TileInfo tile)
+    private PatchSpec computePatchSpecs(TensorSpec spec, TileInfo tile, String referenceAxesOrder, int[] referenceTileGrid)
     {
-    	long[] imSize = arrayToWantedAxesOrderAddOnes(tile.getImageDims(), 
-    			tile.getImageAxesOrder(), spec.getAxesInfo().getAxesOrder());
+        long[] imSize = arrayToWantedAxesOrderAddOnes(tile.getImageDims(),
+                tile.getImageAxesOrder(), spec.getAxesInfo().getAxesOrder());
     	long[] tileSize = arrayToWantedAxesOrderAddOnes(tile.getTileDims(), 
     			tile.getTileAxesOrder(), spec.getAxesInfo().getAxesOrder());
         int[][] paddingSize = new int[2][tileSize.length];
@@ -440,7 +502,8 @@ public class TileMaker {
             .map(i -> (int) Math.max( paddingSize[1][i], 
             		tileSize[i] - imSize[i] - paddingSize[0][i])).toArray();
 
-        return PatchSpec.create(spec.getName(), tileSize, patchGridSize, paddingSize, imSize);
+        return PatchSpec.create(spec.getName(), tileSize, patchGridSize, paddingSize, imSize,
+                spec.getAxesInfo().getAxesOrder(), referenceAxesOrder, referenceTileGrid);
     }
     
     /**

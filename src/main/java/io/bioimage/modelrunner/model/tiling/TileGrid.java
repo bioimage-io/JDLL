@@ -82,15 +82,28 @@ public class TileGrid
     {
         TileGrid ps = new TileGrid();
         ps.tensorName = tileSpecs.getTensorName();
-        long[] imageDims = tileSpecs.getNonTiledTensorDims();
-        int[] gridSize = tileSpecs.getTileGrid();
-        ps.tileSize = tileSpecs.getTileSize();
-        int tileCount = Arrays.stream(gridSize).reduce(1, (a, b) -> a * b);
+	        long[] imageDims = tileSpecs.getNonTiledTensorDims();
+	        int[] gridSize = tileSpecs.getTileGrid();
+	        int[] referenceGridSize = tileSpecs.getReferenceTileGrid();
+	        ps.tileSize = tileSpecs.getTileSize();
+	        int tileCount = Arrays.stream(referenceGridSize == null ? gridSize : referenceGridSize)
+	                .reduce(1, (a, b) -> a * b);
 
-        for (int j = 0; j < tileCount; j ++) {
-        	int[] patchIndex = IndexingUtils.flatIntoMultidimensionalIndex(j, gridSize);
-        	long[] patchSize = tileSpecs.getTileSize();
-        	int[][] padSize = tileSpecs.getPadding();
+	        for (int j = 0; j < tileCount; j ++) {
+	            int[] patchIndex;
+	            if (tileSpecs.getAxesOrder() != null && tileSpecs.getReferenceAxesOrder() != null
+	                    && referenceGridSize != null) {
+	                patchIndex = IndexingUtils.flatIntoMultidimensionalIndex(
+	                        j, gridSize, tileSpecs.getAxesOrder(),
+	                        tileSpecs.getReferenceAxesOrder(), referenceGridSize);
+	            } else if (tileSpecs.getAxesOrder() != null && tileSpecs.getReferenceAxesOrder() != null) {
+	                patchIndex = IndexingUtils.flatIntoMultidimensionalIndex(
+	                        j, gridSize, tileSpecs.getAxesOrder(), tileSpecs.getReferenceAxesOrder());
+	            } else {
+	                patchIndex = IndexingUtils.flatIntoMultidimensionalIndex(j, gridSize);
+	            }
+            long[] patchSize = tileSpecs.getTileSize();
+            int[][] padSize = tileSpecs.getPadding();
         	int[] roiSize = IntStream.range(0, patchIndex.length)
                     .map(i -> (int) patchSize[i] - padSize[0][i] - padSize[1][i]).toArray();
 			ps.roiSize = roiSize;
