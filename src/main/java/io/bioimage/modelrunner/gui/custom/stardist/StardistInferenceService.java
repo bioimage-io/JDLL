@@ -132,7 +132,7 @@ public class StardistInferenceService {
             ExecutionException, InterruptedException {
         ensureLoaded(modelPath, normalizeDevice(device), logConsumer, usePatchProgressBar);
         configureProgressLogging(logConsumer, usePatchProgressBar);
-        //model.setObjectSize(size);
+        model.setObjectSize(size);
         return runLoadedModel(rai);
     }
 
@@ -183,7 +183,7 @@ public class StardistInferenceService {
             throws RunModelException, LoadModelException, BuildException, IOException,
             ExecutionException, InterruptedException {
         ensureLoaded(modelPath, normalizeDevice(device), null, progressConsumer);
-        //model.setObjectSize(size);
+        model.setObjectSize(size);
         return runLoadedModel(rai);
     }
 

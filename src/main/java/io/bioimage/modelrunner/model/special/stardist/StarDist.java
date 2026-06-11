@@ -19,6 +19,7 @@
  */
 package io.bioimage.modelrunner.model.special.stardist;
 
+import java.awt.Rectangle;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -145,6 +146,7 @@ public final class StarDist extends DLModelPytorchProtected {
 	private final int nChannels;
 	private final Dimensionality dimensionality;
 	private final Map<String, Object> config;
+	protected Rectangle objectSize;
 
 	private Double threshold = null;
 	private StarDist(String modelIdentity, Map<String, Object> config,
@@ -358,6 +360,15 @@ public final class StarDist extends DLModelPytorchProtected {
 				Dimensionality.THREE_D, inferenceProgressConsumer, device);
 		model.loadModel();
 		return model;
+	}
+
+	/**
+	 * Sets the object size.
+	 *
+	 * @param size the size.
+	 */
+	public void setObjectSize(Rectangle size) {
+		this.objectSize = size;
 	}
 
 	/**
