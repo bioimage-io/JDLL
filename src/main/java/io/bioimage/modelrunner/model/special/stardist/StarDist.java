@@ -28,6 +28,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
+import java.util.stream.LongStream;
 
 import org.apposed.appose.Appose;
 import org.apposed.appose.BuildException;
@@ -58,13 +59,20 @@ import io.bioimage.modelrunner.system.GpuCompatibility;
 import io.bioimage.modelrunner.system.PlatformDetection;
 import io.bioimage.modelrunner.transformations.ScaleRangeTransformation;
 import io.bioimage.modelrunner.utils.JSONUtils;
+import net.imglib2.RandomAccess;
 import net.imglib2.RandomAccessibleInterval;
+import net.imglib2.RealRandomAccess;
+import net.imglib2.RealRandomAccessible;
+import net.imglib2.img.Img;
 import net.imglib2.img.array.ArrayImgs;
+import net.imglib2.img.array.ArrayImgFactory;
+import net.imglib2.interpolation.randomaccess.NLinearInterpolatorFactory;
 import net.imglib2.type.NativeType;
 import net.imglib2.type.numeric.IntegerType;
 import net.imglib2.type.numeric.RealType;
 import net.imglib2.type.numeric.real.FloatType;
 import net.imglib2.util.Util;
+import net.imglib2.view.Views;
 
 /**
  * Unified StarDist model entry point.
@@ -83,6 +91,9 @@ public final class StarDist extends DLModelPytorchProtected {
 	private static final long DEFAULT_DENSE_TILE_XY = 512L;
 	private static final long DEFAULT_DENSE_OUTPUT_HALO_XY = 96L;
 	private static final String DENSE_OUTPUT_AXES = "byxc";
+	private static final double MAX_OBJECT_TILE_AREA_RATIO = 0.1d;
+	private static final double MIN_OBJECT_TILE_AREA_RATIO = 0.00018692d;
+	private static final double IDEAL_OBJECT_TILE_AREA_RATIO = 0.04d;
 
 	private static final String LOAD_MODEL_CODE_2D = ""
 			+ "if 'os' not in globals().keys():" + System.lineSeparator()
@@ -516,19 +527,31 @@ public final class StarDist extends DLModelPytorchProtected {
 		if (inputs == null || inputs.isEmpty()) {
 			throw new IllegalArgumentException("StarDist tiling needs at least one input tensor.");
 		}
-		List<TileInfo> inputInfo = new ArrayList<TileInfo>();
-		Tensor<T> referenceInput = null;
-		for (Tensor<T> input : inputs) {
-			if (!hasSpatialAxes(input)) {
-				continue;
-			}
-			if (referenceInput == null) {
-				referenceInput = input;
-			}
-			inputInfo.add(createInputTileInfo(input));
-		}
+		List<Tensor<T>> tiledInputs = new ArrayList<Tensor<T>>(inputs);
+		Tensor<T> referenceInput = firstSpatialInput(tiledInputs);
 		if (referenceInput == null) {
 			throw new IllegalArgumentException("StarDist tiling needs one input tensor with x and y axes.");
+		}
+		String originalAxes = referenceInput.getAxesOrderString().toLowerCase();
+		long[] originalDims = referenceInput.getData().dimensionsAsLongArray();
+		long originalHeight = axisSize(originalDims, originalAxes, 'y');
+		long originalWidth = axisSize(originalDims, originalAxes, 'x');
+		double scale = objectScale(referenceInput);
+		if (needsResize(scale)) {
+			for (int i = 0; i < tiledInputs.size(); i ++) {
+				Tensor<T> input = tiledInputs.get(i);
+				if (hasSpatialAxes(input)) {
+					tiledInputs.set(i, resizeTensor(input, scale));
+				}
+			}
+			referenceInput = firstSpatialInput(tiledInputs);
+		}
+		applyInputNormalization(tiledInputs);
+		List<TileInfo> inputInfo = new ArrayList<TileInfo>();
+		for (Tensor<T> input : tiledInputs) {
+			if (hasSpatialAxes(input)) {
+				inputInfo.add(createInputTileInfo(input));
+			}
 		}
 		TileMaker tileMaker = TileMaker.build(inputInfo, createDenseOutputTileInfo(referenceInput));
 		DenseMerger<T, R> merger = new DenseMerger<T, R>(tileMaker);
@@ -537,8 +560,8 @@ public final class StarDist extends DLModelPytorchProtected {
 		long imageHeight = axisSize(referenceDims, referenceAxes, 'y');
 		long imageWidth = axisSize(referenceDims, referenceAxes, 'x');
 		merger.addCallback(reconstructed -> runStardistNms(reconstructed, imageHeight, imageWidth));
-		applyInputNormalization(inputs);
-		merger.configure(inputs);
+		merger.addCallback(reconstructed -> restoreOriginalScale(reconstructed, originalHeight, originalWidth));
+		merger.configure(tiledInputs);
 		return merger;
 	}
 
@@ -586,6 +609,145 @@ public final class StarDist extends DLModelPytorchProtected {
 		} catch (RunModelException e) {
 			throw new IllegalStateException("StarDist NMS failed after dense tile reconstruction.", e);
 		}
+	}
+
+	private static <T extends RealType<T> & NativeType<T>> Tensor<T> firstSpatialInput(final List<Tensor<T>> inputs) {
+		for (Tensor<T> input : inputs) {
+			if (hasSpatialAxes(input)) {
+				return input;
+			}
+		}
+		return null;
+	}
+
+	private <T extends RealType<T> & NativeType<T>> double objectScale(final Tensor<T> reference) {
+		if (objectSize == null || objectSize.width <= 0 || objectSize.height <= 0) {
+			return 1.0d;
+		}
+		String axes = reference.getAxesOrderString().toLowerCase();
+		long[] dims = reference.getData().dimensionsAsLongArray();
+		long x = axisSize(dims, axes, 'x');
+		long y = axisSize(dims, axes, 'y');
+		long tileX = Math.min(DEFAULT_DENSE_TILE_XY, x * 3L);
+		long tileY = Math.min(DEFAULT_DENSE_TILE_XY, y * 3L);
+		double objectArea = objectSize.getWidth() * objectSize.getHeight();
+		double tileArea = tileX * (double) tileY;
+		double ratio = objectArea / tileArea;
+		if (ratio >= MIN_OBJECT_TILE_AREA_RATIO && ratio <= MAX_OBJECT_TILE_AREA_RATIO) {
+			return 1.0d;
+		}
+		double scale = Math.sqrt((IDEAL_OBJECT_TILE_AREA_RATIO * tileArea) / objectArea);
+		long roiX = Math.max(1L, tileX - 2L * Math.min(DEFAULT_DENSE_OUTPUT_HALO_XY, Math.max(0L, (tileX - 1L) / 2L)));
+		long roiY = Math.max(1L, tileY - 2L * Math.min(DEFAULT_DENSE_OUTPUT_HALO_XY, Math.max(0L, (tileY - 1L) / 2L)));
+		double imageArea = x * (double) y;
+		return imageArea * scale * scale < roiX * (double) roiY * 0.9d
+				? Math.sqrt((roiX * (double) roiY) / imageArea)
+				: scale;
+	}
+
+	private static boolean needsResize(final double scale) {
+		return Double.isFinite(scale) && Math.abs(scale - 1.0d) > 1e-6d;
+	}
+
+	private static <T extends RealType<T> & NativeType<T>> Tensor<T> resizeTensor(
+			final Tensor<T> input, final double scale) {
+		String axes = input.getAxesOrderString().toLowerCase();
+		RandomAccessibleInterval<T> source = input.getData();
+		long[] sourceDims = source.dimensionsAsLongArray();
+		long[] targetDims = sourceDims.clone();
+		int xAxis = axisIndex(axes, 'x');
+		int yAxis = axisIndex(axes, 'y');
+		targetDims[xAxis] = Math.max(1L, Math.round(sourceDims[xAxis] * scale));
+		targetDims[yAxis] = Math.max(1L, Math.round(sourceDims[yAxis] * scale));
+		Img<T> target = new ArrayImgFactory<T>(Util.getTypeFromInterval(source)).create(targetDims);
+		RealRandomAccessible<T> interpolated = Views.interpolate(Views.extendBorder(source),
+				new NLinearInterpolatorFactory<T>());
+		double xRatio = sourceDims[xAxis] / (double) targetDims[xAxis];
+		double yRatio = sourceDims[yAxis] / (double) targetDims[yAxis];
+		LongStream.range(0L, lineCount(targetDims, xAxis)).parallel().forEach(line -> {
+			RandomAccess<T> targetAccess = target.randomAccess();
+			RealRandomAccess<T> sourceAccess = interpolated.realRandomAccess();
+			long[] targetPosition = linePosition(line, targetDims, xAxis);
+			double[] sourcePosition = new double[targetDims.length];
+			for (int d = 0; d < targetPosition.length; d ++) {
+				sourcePosition[d] = targetPosition[d];
+			}
+			sourcePosition[yAxis] = Math.max(0.0d, Math.min(sourceDims[yAxis] - 1.0d,
+					(targetPosition[yAxis] + 0.5d) * yRatio - 0.5d));
+			for (long x = 0L; x < targetDims[xAxis]; x ++) {
+				targetPosition[xAxis] = x;
+				sourcePosition[xAxis] = Math.max(0.0d, Math.min(sourceDims[xAxis] - 1.0d,
+						(x + 0.5d) * xRatio - 0.5d));
+				sourceAccess.setPosition(sourcePosition);
+				targetAccess.setPosition(targetPosition);
+				targetAccess.get().set(sourceAccess.get());
+			}
+		});
+		return Tensor.build(input.getName(), input.getAxesOrderString(), target);
+	}
+
+	private static <R extends RealType<R> & NativeType<R>> List<Tensor<R>> restoreOriginalScale(
+			final List<Tensor<R>> tensors, final long originalHeight, final long originalWidth) {
+		List<Tensor<R>> restored = new ArrayList<Tensor<R>>(tensors.size());
+		for (Tensor<R> tensor : tensors) {
+			restored.add(hasSpatialAxes(tensor) ? resizeTensorNearest(tensor, originalHeight, originalWidth) : tensor);
+		}
+		return restored;
+	}
+
+	private static <T extends RealType<T> & NativeType<T>> Tensor<T> resizeTensorNearest(
+			final Tensor<T> input, final long height, final long width) {
+		String axes = input.getAxesOrderString().toLowerCase();
+		RandomAccessibleInterval<T> source = input.getData();
+		long[] sourceDims = source.dimensionsAsLongArray();
+		long[] targetDims = sourceDims.clone();
+		int xAxis = axisIndex(axes, 'x');
+		int yAxis = axisIndex(axes, 'y');
+		targetDims[xAxis] = width;
+		targetDims[yAxis] = height;
+		if (Arrays.equals(sourceDims, targetDims)) {
+			return input;
+		}
+		Img<T> target = new ArrayImgFactory<T>(Util.getTypeFromInterval(source)).create(targetDims);
+		double xRatio = sourceDims[xAxis] / (double) targetDims[xAxis];
+		double yRatio = sourceDims[yAxis] / (double) targetDims[yAxis];
+		LongStream.range(0L, lineCount(targetDims, xAxis)).parallel().forEach(line -> {
+			RandomAccess<T> sourceAccess = source.randomAccess();
+			RandomAccess<T> targetAccess = target.randomAccess();
+			long[] targetPosition = linePosition(line, targetDims, xAxis);
+			long[] sourcePosition = targetPosition.clone();
+			sourcePosition[yAxis] = Math.min(sourceDims[yAxis] - 1L, (long) Math.floor(targetPosition[yAxis] * yRatio));
+			for (long x = 0L; x < targetDims[xAxis]; x ++) {
+				targetPosition[xAxis] = x;
+				sourcePosition[xAxis] = Math.min(sourceDims[xAxis] - 1L, (long) Math.floor(x * xRatio));
+				sourceAccess.setPosition(sourcePosition);
+				targetAccess.setPosition(targetPosition);
+				targetAccess.get().set(sourceAccess.get());
+			}
+		});
+		return Tensor.build(input.getName(), input.getAxesOrderString(), target);
+	}
+
+	private static long lineCount(final long[] dims, final int lineAxis) {
+		long count = 1L;
+		for (int d = 0; d < dims.length; d ++) {
+			if (d != lineAxis) {
+				count *= dims[d];
+			}
+		}
+		return count;
+	}
+
+	private static long[] linePosition(long line, final long[] dims, final int lineAxis) {
+		long[] position = new long[dims.length];
+		for (int d = 0; d < dims.length; d ++) {
+			if (d == lineAxis) {
+				continue;
+			}
+			position[d] = line % dims[d];
+			line /= dims[d];
+		}
+		return position;
 	}
 
 	private static <T extends RealType<T> & NativeType<T>> boolean hasSpatialAxes(final Tensor<T> tensor) {

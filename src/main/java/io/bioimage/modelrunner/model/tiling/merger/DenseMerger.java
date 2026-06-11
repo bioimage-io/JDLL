@@ -19,7 +19,6 @@
  */
 package io.bioimage.modelrunner.model.tiling.merger;
 
-import java.awt.Rectangle;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -42,20 +41,11 @@ public final class DenseMerger<T extends RealType<T> & NativeType<T>, R extends 
 extends Merger<Tensor<T>, Tensor<R>> {
 	
 	private final TileMaker tileMaker;
-	private final Rectangle objectSize;
-	private final double minRatio;
-	private final double maxRatio;
-	private final double idealObjectRatio;
-	private double scale = 1.0;
 
     private List<Tensor<T>> inputs = Collections.emptyList();
     private List<InputImage<T>> imageInputs = Collections.emptyList();
     private List<long[]> referenceWindows = Collections.emptyList();
     private List<Tensor<R>> reconstructed = Collections.emptyList();
-
-    public static final double MAX_TILE_ROI_AREA_RATIO = 0.8;
-    public static final double MIN_TILE_ROI_AREA_RATIO = 0.00018692;
-    public static final double IDEAL_OBJECT_TILE_RATIO = 0.04;
 
     /**
      * Creates a new DenseMerger instance.
@@ -63,54 +53,10 @@ extends Merger<Tensor<T>, Tensor<R>> {
      * @param tileMaker the tile maker.
      */
     public DenseMerger(final TileMaker tileMaker) {
-    	this(tileMaker, null, null, null);
-    }
-
-    /**
-     * Creates a new DenseMerger instance.
-     *
-     * @param tileMaker the tile maker.
-     */
-    public DenseMerger(final TileMaker tileMaker, Rectangle objectSize) {
-        this(tileMaker, objectSize, null, null);
-    }
-
-    /**
-     * Creates a new DenseMerger instance.
-     *
-     * @param tileMaker the tile maker.
-     */
-    public DenseMerger(final TileMaker tileMaker, Rectangle objectSize, Double minObjectTileRatio, Double maxObjectTileRatio) {
-    	this(tileMaker, objectSize, minObjectTileRatio, maxObjectTileRatio, null);
-    }
-
-    /**
-     * Creates a new DenseMerger instance.
-     *
-     * @param tileMaker the tile maker.
-     */
-    public DenseMerger(final TileMaker tileMaker, Rectangle objectSize, Double minObjectTileRatio, Double maxObjectTileRatio, Double idealObjectRatio) {
         if (tileMaker == null) {
             throw new IllegalArgumentException("TileMaker cannot be null.");
         }
         this.tileMaker = tileMaker;
-        
-        
-        this.objectSize = objectSize;
-        
-        if (minObjectTileRatio == null)
-        	this.minRatio = MIN_TILE_ROI_AREA_RATIO;
-        else
-        	this.minRatio = minObjectTileRatio;
-        if (maxObjectTileRatio == null)
-        	this.maxRatio = MAX_TILE_ROI_AREA_RATIO;
-        else
-        	this.maxRatio = maxObjectTileRatio;
-        
-        if (idealObjectRatio == null)
-        	this.idealObjectRatio = IDEAL_OBJECT_TILE_RATIO;
-    	else
-    		this.idealObjectRatio = idealObjectRatio;
     }
 
     /**
@@ -126,7 +72,6 @@ extends Merger<Tensor<T>, Tensor<R>> {
             throw new IllegalArgumentException("DenseMerger needs at least one input tensor with x and y axes.");
         }
         final InputImage<T> reference = imageInputs.get(0);
-        findScale(reference);
         this.referenceWindows = createReferenceWindows(reference);
 
         this.reconstructed = tileMaker.createOutputTensors((R) new net.imglib2.type.numeric.real.FloatType(0.0f));
@@ -216,36 +161,6 @@ extends Merger<Tensor<T>, Tensor<R>> {
         requireDigested();
         reconstructed = applyReconstructionCallbacks(reconstructed);
         return reconstructed;
-    }
-    
-    // TODO extend to 3D
-    private void findScale(InputImage<T> reference){
-    	if (this.objectSize == null)
-    		return;
-    	int objectArea = this.objectSize.width * this.objectSize.height;
-    	int[] redRoi = this.tileMaker.getInputRoiSize(reference.tensor.getName());
-    	long[] refTile = this.tileMaker.getInputTileSize(reference.tensor.getName());
-    	String refAxes = reference.tensor.getAxesOrderString();
-    	long roiArea = redRoi[refAxes.toLowerCase().indexOf("x")] * refTile[refAxes.toLowerCase().indexOf("y")];
-    	long tileArea = refTile[refAxes.toLowerCase().indexOf("x")] * refTile[refAxes.toLowerCase().indexOf("y")];
-    	double ratio = objectArea / (double) tileArea;
-    	if (ratio > this.minRatio && ratio < this.maxRatio){
-    		return;
-    	}
-    	
-    	double idealObjectArea = this.idealObjectRatio * tileArea;
-    	
-    	double proposedScale = idealObjectArea / objectArea;
-    	
-    	double newImW = proposedScale * reference.width();
-    	double newImH = proposedScale * reference.height();
-    	
-    	if (newImW * newImH > roiArea * 0.9) {
-    		this.scale = proposedScale;
-    		return;
-    	}
-    	
-    	this.scale = roiArea / (reference.width() * reference.height());
     }
 
     private void copyPatchIntoReconstruction(final Tensor<R> patchOutput,
