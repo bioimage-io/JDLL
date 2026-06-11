@@ -61,18 +61,14 @@ import io.bioimage.modelrunner.transformations.ScaleRangeTransformation;
 import io.bioimage.modelrunner.utils.JSONUtils;
 import net.imglib2.RandomAccess;
 import net.imglib2.RandomAccessibleInterval;
-import net.imglib2.RealRandomAccess;
-import net.imglib2.RealRandomAccessible;
 import net.imglib2.img.Img;
 import net.imglib2.img.array.ArrayImgs;
 import net.imglib2.img.array.ArrayImgFactory;
-import net.imglib2.interpolation.randomaccess.NLinearInterpolatorFactory;
 import net.imglib2.type.NativeType;
 import net.imglib2.type.numeric.IntegerType;
 import net.imglib2.type.numeric.RealType;
 import net.imglib2.type.numeric.real.FloatType;
 import net.imglib2.util.Util;
-import net.imglib2.view.Views;
 
 /**
  * Unified StarDist model entry point.
@@ -660,30 +656,71 @@ public final class StarDist extends DLModelPytorchProtected {
 		targetDims[xAxis] = Math.max(1L, Math.round(sourceDims[xAxis] * scale));
 		targetDims[yAxis] = Math.max(1L, Math.round(sourceDims[yAxis] * scale));
 		Img<T> target = new ArrayImgFactory<T>(Util.getTypeFromInterval(source)).create(targetDims);
-		RealRandomAccessible<T> interpolated = Views.interpolate(Views.extendBorder(source),
-				new NLinearInterpolatorFactory<T>());
-		double xRatio = sourceDims[xAxis] / (double) targetDims[xAxis];
-		double yRatio = sourceDims[yAxis] / (double) targetDims[yAxis];
+		LinearAxis xMap = new LinearAxis(sourceDims[xAxis], targetDims[xAxis]);
+		LinearAxis yMap = new LinearAxis(sourceDims[yAxis], targetDims[yAxis]);
 		LongStream.range(0L, lineCount(targetDims, xAxis)).parallel().forEach(line -> {
 			RandomAccess<T> targetAccess = target.randomAccess();
-			RealRandomAccess<T> sourceAccess = interpolated.realRandomAccess();
+			RandomAccess<T> sourceAccess = source.randomAccess();
 			long[] targetPosition = linePosition(line, targetDims, xAxis);
-			double[] sourcePosition = new double[targetDims.length];
-			for (int d = 0; d < targetPosition.length; d ++) {
-				sourcePosition[d] = targetPosition[d];
-			}
-			sourcePosition[yAxis] = Math.max(0.0d, Math.min(sourceDims[yAxis] - 1.0d,
-					(targetPosition[yAxis] + 0.5d) * yRatio - 0.5d));
-			for (long x = 0L; x < targetDims[xAxis]; x ++) {
+			long[] sourcePosition = targetPosition.clone();
+			int yy = Math.toIntExact(targetPosition[yAxis]);
+			for (int x = 0; x < xMap.length(); x ++) {
 				targetPosition[xAxis] = x;
-				sourcePosition[xAxis] = Math.max(0.0d, Math.min(sourceDims[xAxis] - 1.0d,
-						(x + 0.5d) * xRatio - 0.5d));
-				sourceAccess.setPosition(sourcePosition);
 				targetAccess.setPosition(targetPosition);
-				targetAccess.get().set(sourceAccess.get());
+				targetAccess.get().setReal(bilinear(sourceAccess, sourcePosition, xAxis, yAxis, xMap, yMap, x, yy));
 			}
 		});
 		return Tensor.build(input.getName(), input.getAxesOrderString(), target);
+	}
+
+	private static <T extends RealType<T> & NativeType<T>> double bilinear(
+			final RandomAccess<T> access, final long[] position, final int xAxis, final int yAxis,
+			final LinearAxis xMap, final LinearAxis yMap, final int x, final int y) {
+		position[xAxis] = xMap.low[x];
+		position[yAxis] = yMap.low[y];
+		access.setPosition(position);
+		double v00 = access.get().getRealDouble();
+		position[xAxis] = xMap.high[x];
+		access.setPosition(position);
+		double v10 = access.get().getRealDouble();
+		position[xAxis] = xMap.low[x];
+		position[yAxis] = yMap.high[y];
+		access.setPosition(position);
+		double v01 = access.get().getRealDouble();
+		position[xAxis] = xMap.high[x];
+		access.setPosition(position);
+		double v11 = access.get().getRealDouble();
+		return (v00 * xMap.lowWeight[x] + v10 * xMap.highWeight[x]) * yMap.lowWeight[y]
+				+ (v01 * xMap.lowWeight[x] + v11 * xMap.highWeight[x]) * yMap.highWeight[y];
+	}
+
+	private static final class LinearAxis {
+		private final long[] low;
+		private final long[] high;
+		private final double[] lowWeight;
+		private final double[] highWeight;
+
+		private LinearAxis(final long sourceSize, final long targetSize) {
+			int size = Math.toIntExact(targetSize);
+			this.low = new long[size];
+			this.high = new long[size];
+			this.lowWeight = new double[size];
+			this.highWeight = new double[size];
+			double ratio = sourceSize / (double) targetSize;
+			for (int i = 0; i < size; i ++) {
+				double source = Math.max(0.0d, Math.min(sourceSize - 1.0d, (i + 0.5d) * ratio - 0.5d));
+				long lo = (long) Math.floor(source);
+				long hi = Math.min(sourceSize - 1L, lo + 1L);
+				this.low[i] = lo;
+				this.high[i] = hi;
+				this.highWeight[i] = source - lo;
+				this.lowWeight[i] = 1.0d - this.highWeight[i];
+			}
+		}
+
+		private int length() {
+			return low.length;
+		}
 	}
 
 	private static <R extends RealType<R> & NativeType<R>> List<Tensor<R>> restoreOriginalScale(
