@@ -28,6 +28,8 @@ import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 
+import io.bioimage.modelrunner.gui.custom.gui.ThresholdSlider;
+
 public class YoloInferencePanel extends JPanel {
 
     private static final long serialVersionUID = 8213303922324227868L;
@@ -50,6 +52,7 @@ public class YoloInferencePanel extends JPanel {
     protected static final double ROW_UNIT_WARNING = 1.3;
     protected static final double ROW_UNIT_LOG = 2.94;
     protected static final int DRAW_ROW_FONT_BOOST = 2;
+    protected static final double THRESHOLD_LABEL_FONT_RATIO = 0.82;
 
     protected final YoloModelSelectionPanel modelSelectionPanel = new YoloModelSelectionPanel();
     protected final YoloImageSourcePanel imageSourcePanel = new YoloImageSourcePanel();
@@ -60,8 +63,11 @@ public class YoloInferencePanel extends JPanel {
     protected final YoloHelpIcon helpLabel = new YoloHelpIcon();
     protected final YoloHtmlLogPanel logPanel = new YoloHtmlLogPanel();
     protected final YoloActionPanel actionPanel = new YoloActionPanel();
+    protected final JLabel thresholdLabel = new JLabel("Probability threshold");
+    protected final ThresholdSlider thresholdSlider = new ThresholdSlider();
     protected final JLabel warningLabel = new JLabel(
             "<html><div style='text-align:center;'>&#9888; YOLO is optional third-party software, installed separately, and governed by its own license terms. See documentation for details.</div></html>");
+    private final boolean thresholdControls;
 
     /**
      * Creates a new YoloInferencePanel instance.
@@ -79,9 +85,13 @@ public class YoloInferencePanel extends JPanel {
         setLayout(null);
         setOpaque(true);
         setBackground(YoloUiUtils.PANEL_BG);
+        this.thresholdControls = !disclaimer;
         YoloUiUtils.alignLabel(drawLabel);
+        YoloUiUtils.alignLabel(thresholdLabel);
         YoloUiUtils.styleToggleButton(drawButton, false);
         YoloUiUtils.styleFlatSecondaryButton(refreshButton);
+        thresholdSlider.setOpaque(false);
+        thresholdSlider.getSlider().setOpaque(false);
         drawButton.setMargin(new java.awt.Insets(1, 6, 1, 6));
         refreshButton.setMargin(new java.awt.Insets(1, 4, 1, 4));
         drawButton.addActionListener(e -> setDrawModeEnabled(!drawButton.isSelected()));
@@ -160,6 +170,10 @@ public class YoloInferencePanel extends JPanel {
         add(helpLabel);
         add(logPanel);
         add(actionPanel);
+        if (thresholdControls) {
+            add(thresholdLabel);
+            add(thresholdSlider);
+        }
         warningLabel.setForeground(new java.awt.Color(170, 35, 35));
         if (disclaimer)
         	add(warningLabel);
@@ -249,6 +263,16 @@ public class YoloInferencePanel extends JPanel {
 
         int logW = Math.max(1, (int) Math.round(innerW * LOG_WIDTH_RATIO));
         int logX = x + (innerW - logW) / 2;
+        if (thresholdControls) {
+            int labelW = Math.max(1, (int) Math.round(logW * 0.28));
+            int sliderW = Math.max(1, logW - labelW - rowGap);
+            thresholdLabel.setBounds(logX, y, labelW, warningH);
+            thresholdSlider.setBounds(logX + labelW + rowGap, y, sliderW, warningH);
+            int thresholdLabelReferenceH = Math.max(1, (int) Math.round(modelH * THRESHOLD_LABEL_FONT_RATIO));
+            YoloUiUtils.applyResponsiveText(thresholdLabel, labelW - 4, thresholdLabelReferenceH);
+            y += warningH + rowGap;
+        }
+
         imageDisplayPanel.setBounds(logX, y, logW, previewH);
         y += previewH + previewToDrawGap;
 
@@ -273,7 +297,9 @@ public class YoloInferencePanel extends JPanel {
 
         actionPanel.setBounds(logX, y, logW, actionH);
         y += actionH + rowGap;
-        warningLabel.setBounds(logX, y, logW, warningH);
+        if (!thresholdControls) {
+            warningLabel.setBounds(logX, y, logW, warningH);
+        }
 
         YoloUiUtils.applyResponsiveText(drawLabel, drawLabelW - 4, drawH);
         YoloUiUtils.applyResponsiveText(drawButton, drawBtnW - 8, drawH);
@@ -351,5 +377,14 @@ public class YoloInferencePanel extends JPanel {
      */
     public YoloActionPanel getActionPanel() {
         return actionPanel;
+    }
+
+    /**
+     * Returns the threshold slider.
+     *
+     * @return the threshold slider.
+     */
+    public ThresholdSlider getThresholdSlider() {
+        return thresholdSlider;
     }
 }
