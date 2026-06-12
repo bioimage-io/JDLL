@@ -429,7 +429,9 @@ public final class StarDist extends DLModelPytorchProtected {
 	 * @param threshold the threshold.
 	 */
 	public void setThreshold(Double threshold) {
-		this.threshold = threshold;
+		this.threshold = threshold == null || !Double.isFinite(threshold)
+				? null
+				: Math.max(0.0d, Math.min(1.0d, threshold));
 	}
 
 
@@ -588,7 +590,7 @@ public final class StarDist extends DLModelPytorchProtected {
 					+ ", output_type='numpy', contiguous=False)" + System.lineSeparator();
 			code += "points, probi, disti = non_maximum_suppression(" + distName + ", " + probName
 					+ ", grid=" + MODEL_VAR_NAME + ".config.grid, "
-					+ "prob_thresh=" + MODEL_VAR_NAME + ".thresholds.prob, "
+					+ "prob_thresh=" + (threshold == null ? MODEL_VAR_NAME + ".thresholds.prob" : threshold.toString()) + ", "
 					+ "nms_thresh=" + MODEL_VAR_NAME + ".thresholds.nms, verbose=False)" + System.lineSeparator();
 			code += "labels = polygons_to_label(disti, points, prob=probi, shape=("
 					+ imageHeight + ", " + imageWidth + "))" + System.lineSeparator();

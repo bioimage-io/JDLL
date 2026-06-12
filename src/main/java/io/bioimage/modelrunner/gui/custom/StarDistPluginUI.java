@@ -44,6 +44,7 @@ import io.bioimage.modelrunner.gui.custom.yolo.YoloImageSourcePanel;
 import io.bioimage.modelrunner.model.InferenceProgress;
 import io.bioimage.modelrunner.model.special.stardist.StardistTrainingProgress;
 import io.bioimage.modelrunner.tensor.Tensor;
+import io.bioimage.modelrunner.utils.JSONUtils;
 import net.imglib2.RandomAccess;
 import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.type.NativeType;
@@ -68,6 +69,7 @@ import java.util.Deque;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ExecutionException;
 import java.util.function.Consumer;
 
@@ -84,6 +86,9 @@ public class StarDistPluginUI extends StardistGUI implements ActionListener {
     private static final Color PREVIEW_ERROR_COLOR = new Color(210, 40, 40);
     private static final String APPOSE_STREAM_CLOSED = "java.io.IOException: Stream closed";
     private static final String STARDIST_MASK_SUFFIX = "_stardist_labels";
+    private static final double DEFAULT_PROBABILITY_THRESHOLD = 0.5d;
+    private static final double FLUO_PROBABILITY_THRESHOLD = 0.479071463157368d;
+    private static final double HE_PROBABILITY_THRESHOLD = 0.6924782541382084d;
 
     private final ConsumerInterface consumer;
     private final StardistInstaller installer = new StardistInstaller();
@@ -125,6 +130,7 @@ public class StarDistPluginUI extends StardistGUI implements ActionListener {
     	LinkedHashMap<String, String> stardistModelEntries = StardistModelRegistry.buildModelEntries(modelsDir);
     	this.inferencePanel.getModelSelectionPanel().setModels(stardistModelEntries);
     	this.trainPanel.setBaseModels(stardistModelEntries);
+        installProbabilityThresholdListener();
         if (this.consumer == null) {
             return;
         }
@@ -143,6 +149,17 @@ public class StarDistPluginUI extends StardistGUI implements ActionListener {
         installInferenceSourceListeners();
         installTabLifecycleListener();
         consumer.updateGUI();
+    }
+
+    private void installProbabilityThresholdListener() {
+        inferencePanel.getModelSelectionPanel().getModelComboBox()
+                .addActionListener(e -> updateProbabilityThresholdFromSelectedModel());
+        updateProbabilityThresholdFromSelectedModel();
+    }
+
+    private void updateProbabilityThresholdFromSelectedModel() {
+        inferencePanel.getThresholdSlider().setThreshold(
+                probabilityThresholdForModel(inferencePanel.getModelSelectionPanel().getSelectedModelValue()));
     }
 
     /**
@@ -423,6 +440,7 @@ public class StarDistPluginUI extends StardistGUI implements ActionListener {
     		ExecutionException, InterruptedException {
     	saveParams();
     	String modelPath = this.inferencePanel.getModelSelectionPanel().getSelectedModelValue();
+        inferenceService.setThreshold(selectedProbabilityThreshold());
     	if (this.inferencePanel.getImageSourcePanel().getSystemImagesRadio().isSelected()) {
     		runStardistOnSystemImage(modelPath);
     		return;
@@ -533,6 +551,68 @@ public class StarDistPluginUI extends StardistGUI implements ActionListener {
         }
         String label = getAccelerationCheckBox().getText();
         return label != null && label.toLowerCase().contains("mps") ? "mps" : "cuda";
+    }
+
+    private double selectedProbabilityThreshold() {
+        return inferencePanel.getThresholdSlider().getThreshold();
+    }
+
+    private static double probabilityThresholdForModel(String modelPath) {
+        Double threshold = probabilityThresholdFromModelFiles(modelPath);
+        if (threshold != null) {
+            return threshold.doubleValue();
+        }
+        String lower = modelPath == null ? "" : modelPath.toLowerCase();
+        if (lower.contains("2d_versatile_fluo")) {
+            return FLUO_PROBABILITY_THRESHOLD;
+        }
+        if (lower.contains("2d_versatile_he")) {
+            return HE_PROBABILITY_THRESHOLD;
+        }
+        return DEFAULT_PROBABILITY_THRESHOLD;
+    }
+
+    private static Double probabilityThresholdFromModelFiles(String modelPath) {
+        if (modelPath == null || modelPath.trim().isEmpty()) {
+            return null;
+        }
+        File file = new File(modelPath);
+        File folder = file.isDirectory() ? file : file.getParentFile();
+        if (folder == null) {
+            return null;
+        }
+        Double threshold = probabilityThresholdFromJson(new File(folder, "thresholds.json"));
+        return threshold != null ? threshold : probabilityThresholdFromJson(new File(folder, "config.json"));
+    }
+
+    @SuppressWarnings("unchecked")
+    private static Double probabilityThresholdFromJson(File file) {
+        if (file == null || !file.isFile()) {
+            return null;
+        }
+        try {
+            Map<String, Object> values = JSONUtils.load(file.getAbsolutePath());
+            Double threshold = asProbability(values.get("prob"));
+            if (threshold != null) {
+                return threshold;
+            }
+            Object thresholds = values.get("thresholds");
+            if (thresholds instanceof Map<?, ?>) {
+                return asProbability(((Map<String, Object>) thresholds).get("prob"));
+            }
+            threshold = asProbability(values.get("prob_thresh"));
+            return threshold != null ? threshold : asProbability(values.get("probability_threshold"));
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    private static Double asProbability(Object value) {
+        if (!(value instanceof Number)) {
+            return null;
+        }
+        double threshold = ((Number) value).doubleValue();
+        return Double.isFinite(threshold) ? Math.max(0.0d, Math.min(1.0d, threshold)) : null;
     }
 
     private static List<File> systemInferenceImages(File source) {
@@ -886,6 +966,7 @@ public class StarDistPluginUI extends StardistGUI implements ActionListener {
     	LinkedHashMap<String, String> stardistModelEntries = StardistModelRegistry.buildModelEntries(modelsDir);
     	SwingUtilities.invokeLater(() -> {
     		inferencePanel.getModelSelectionPanel().setModels(stardistModelEntries);
+            updateProbabilityThresholdFromSelectedModel();
     		trainPanel.setBaseModels(stardistModelEntries);
     	});
     }

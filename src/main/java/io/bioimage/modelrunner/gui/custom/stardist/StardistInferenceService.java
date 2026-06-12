@@ -49,6 +49,7 @@ public class StardistInferenceService {
     private String loadedDevice;
     private StarDist model;
     private Rectangle size = null;
+    private Double threshold = null;
 
     /**
      * Creates a new StardistInferenceService instance.
@@ -133,6 +134,7 @@ public class StardistInferenceService {
         ensureLoaded(modelPath, normalizeDevice(device), logConsumer, usePatchProgressBar);
         configureProgressLogging(logConsumer, usePatchProgressBar);
         model.setObjectSize(size);
+        model.setThreshold(threshold);
         return runLoadedModel(rai);
     }
 
@@ -184,6 +186,7 @@ public class StardistInferenceService {
             ExecutionException, InterruptedException {
         ensureLoaded(modelPath, normalizeDevice(device), null, progressConsumer);
         model.setObjectSize(size);
+        model.setThreshold(threshold);
         return runLoadedModel(rai);
     }
 
@@ -380,4 +383,13 @@ public class StardistInferenceService {
 		else
 			size = null;
 	}
+
+    /**
+     * Sets the probability threshold.
+     *
+     * @param threshold the threshold.
+     */
+    public void setThreshold(Double threshold) {
+        this.threshold = threshold;
+    }
 }

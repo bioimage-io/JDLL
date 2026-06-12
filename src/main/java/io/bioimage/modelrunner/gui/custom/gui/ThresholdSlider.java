@@ -19,7 +19,6 @@
  */
 package io.bioimage.modelrunner.gui.custom.gui;
 
-import java.awt.BorderLayout;
 import java.awt.Font;
 import java.awt.FontMetrics;
 import java.awt.event.ComponentAdapter;
@@ -29,22 +28,18 @@ import java.awt.event.FocusEvent;
 import java.text.DecimalFormat;
 import java.text.NumberFormat;
 import java.text.ParseException;
-import java.util.Dictionary;
-import java.util.Hashtable;
 
 import javax.swing.JFormattedTextField;
 import javax.swing.JFrame;
-import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JSlider;
+import javax.swing.SwingConstants;
 import javax.swing.SwingUtilities;
 
 public class ThresholdSlider extends JPanel {
     private static final long serialVersionUID = 5613675572139011295L;
 	private final JSlider slider;
     private final JFormattedTextField valueField;
-    
-    private JLabel leftLabel, centreLabel, rightLabel;
 
     /**
      * Creates a new ThresholdSlider.
@@ -54,22 +49,9 @@ public class ThresholdSlider extends JPanel {
 
         // 1) Create a slider from 0–100 (we'll map that to 0.0–1.0)
         slider = new JSlider(0, 1000, 500);
-        slider.setPaintTicks(true);
-        slider.setPaintLabels(true);
-        slider.setMajorTickSpacing(500);    // 0, 50, 100
-        slider.setMinorTickSpacing(250);    // optional finer ticks
-
-        // custom labels at 0 -> "0", 50 -> "0.5", 100 -> "1"
-        Dictionary<Integer, JLabel> labels = new Hashtable<>();
-        leftLabel = new JLabel("<html><center>0<br>(more detections)</center></html>");
-        leftLabel = new JLabel("0 (more detections)");
-        centreLabel = new JLabel("0.5");
-        rightLabel = new JLabel("<html><center>1<br>(less detections)</center></html>");
-        rightLabel = new JLabel("1 (less detections)");
-        labels.put(0, leftLabel);
-        labels.put(500, centreLabel);
-        labels.put(1000, rightLabel);
-        slider.setLabelTable(labels);
+        slider.setPaintTicks(false);
+        slider.setPaintLabels(false);
+        slider.setToolTipText("Lower values allow more detections; higher values keep only stronger detections.");
 
         // 2) Create a formatted text field for doubles 0.00–1.00
         NumberFormat fmt = DecimalFormat.getNumberInstance();
@@ -77,6 +59,8 @@ public class ThresholdSlider extends JPanel {
         fmt.setMaximumFractionDigits(2);
         valueField = new JFormattedTextField(fmt);
         valueField.setColumns(4);
+        valueField.setHorizontalAlignment(SwingConstants.CENTER);
+        valueField.setToolTipText("Probability threshold");
         // initialize with the slider’s value
         valueField.setValue(slider.getValue() / 1000.0);
 
@@ -100,8 +84,8 @@ public class ThresholdSlider extends JPanel {
         });
 
         // 4) Layout
-        add(slider, BorderLayout.CENTER);
-        add(valueField, BorderLayout.EAST);
+        add(slider);
+        add(valueField);
 
         organiseComponents();
     }
@@ -117,41 +101,35 @@ public class ThresholdSlider extends JPanel {
             public void componentResized(ComponentEvent e) {
                 int rawW = getWidth();
                 int rawH = getHeight();
-                int inset = 3;
-                int textFieldInset = 5;
-                double percSlider = 0.90;
+                int inset = Math.max(2, Math.min(4, rawH / 18));
+                int textFieldInset = Math.max(1, Math.min(3, rawH / 12));
+                double percSlider = 0.84;
                 
-                int x = inset;
-                int sizeX = (int) Math.max((percSlider * (rawW - inset * 2 - inset)), 1);
-                int sizeY = Math.max(1, rawH - 2 * inset);
-                slider.setBounds(inset, inset, sizeX, sizeY);
-                x += inset + sizeX;
-                sizeX = (int) ( (1 - percSlider) * (rawW - inset * 2 - inset));
-                sizeY = Math.max(1, rawH - 2 * textFieldInset);
-                valueField.setBounds(x, textFieldInset, sizeX, sizeY);
-                float vFontSize = (rawH - 2 * inset) / 6f;
-                vFontSize = Math.min(Math.max(1, vFontSize), 18);
-                float wFontSize = (float) (((1 - percSlider) * (rawW - inset * 2 - inset)) / 3.3f);
-                wFontSize = Math.min(Math.max(1, wFontSize), 18);
-                float fontSize = Math.min(vFontSize, wFontSize);
-                Font font = slider.getFont().deriveFont(fontSize);
-                while (true && fontSize > 0) {
-                    int availableWidthLeft = leftLabel.getWidth()
-                            - leftLabel.getInsets().left
-                            - leftLabel.getInsets().right;
-                    FontMetrics fm = leftLabel.getFontMetrics(font);
-                    String text = leftLabel.getText();
-                    int textWidth = fm.stringWidth(text);
-                    if (availableWidthLeft > textWidth)
-                    	break;
-                    fontSize -= 0.5;
-                    font = slider.getFont().deriveFont(fontSize);
-                }
-                leftLabel.setFont(font);
-                centreLabel.setFont(font);
-                rightLabel.setFont(font);
+                int availableW = Math.max(1, rawW - inset * 3);
+                int sliderW = Math.max(1, (int) Math.round(percSlider * availableW));
+                int valueW = Math.max(1, availableW - sliderW);
+                int sliderH = Math.max(1, rawH - 2 * inset);
+                int valueH = Math.max(1, rawH - 2 * textFieldInset);
+                slider.setBounds(inset, inset, sliderW, sliderH);
+                valueField.setBounds(inset * 2 + sliderW, textFieldInset, valueW, valueH);
+
+                float valueFontSize = Math.max(9f, Math.min(17f, Math.min(valueH * 0.52f, valueW / 3.8f)));
+                Font valueFont = fittedValueFont(valueFontSize, Math.max(1, valueW - 4), Math.max(1, valueH - 4));
+                valueField.setFont(valueFont);
             }
         });
+    }
+
+    private Font fittedValueFont(float initialSize, int width, int height) {
+        float size = initialSize;
+        while (size > 6f) {
+            Font font = valueField.getFont().deriveFont(size);
+            FontMetrics fm = valueField.getFontMetrics(font);
+            if (fm.stringWidth("0.00") <= width && fm.getHeight() <= height)
+                return font;
+            size -= 0.5f;
+        }
+        return valueField.getFont().deriveFont(6f);
     }
     
     /**
@@ -160,6 +138,25 @@ public class ThresholdSlider extends JPanel {
      */
     public JSlider getSlider() {
     	return this.slider;
+    }
+
+    /**
+     * Returns the threshold value.
+     *
+     * @return the threshold value.
+     */
+    public double getThreshold() {
+        return slider.getValue() / 1000.0d;
+    }
+
+    /**
+     * Sets the threshold value.
+     *
+     * @param threshold the threshold.
+     */
+    public void setThreshold(double threshold) {
+        double value = Math.max(0.0d, Math.min(1.0d, threshold));
+        slider.setValue((int) Math.round(value * 1000.0d));
     }
 
     private void syncFieldToSlider() {
