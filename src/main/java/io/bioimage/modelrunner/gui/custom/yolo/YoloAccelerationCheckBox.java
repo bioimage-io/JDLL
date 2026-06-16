@@ -26,11 +26,11 @@ import java.util.function.Supplier;
 import io.bioimage.modelrunner.model.python.DLModelPytorchProtected;
 import io.bioimage.modelrunner.system.PlatformDetection;
 
-final class YoloAccelerationCheckBox extends JCheckBox {
+public final class YoloAccelerationCheckBox extends JCheckBox {
 
     private static final long serialVersionUID = 7698477740479444473L;
 
-    YoloAccelerationCheckBox() {
+    public YoloAccelerationCheckBox() {
         this(() -> DLModelPytorchProtected.resolvePytorchEnv()
         		.getEnvironmentDirectory()
                 .getName()
@@ -38,7 +38,7 @@ final class YoloAccelerationCheckBox extends JCheckBox {
                 .contains("cuda"));
     }
 
-    YoloAccelerationCheckBox(Supplier<Boolean> cudaAvailabilityCheck) {
+    public YoloAccelerationCheckBox(Supplier<Boolean> cudaAvailabilityCheck) {
         super(accelerationName() + " acceleration", false);
         setOpaque(true);
         setBackground(YoloUiUtils.PANEL_BG);

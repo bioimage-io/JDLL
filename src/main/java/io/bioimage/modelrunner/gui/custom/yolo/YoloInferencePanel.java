@@ -67,13 +67,14 @@ public class YoloInferencePanel extends JPanel {
     protected final ThresholdSlider thresholdSlider = new ThresholdSlider();
     protected final JLabel warningLabel = new JLabel(
             "<html><div style='text-align:center;'>&#9888; YOLO is optional third-party software, installed separately, and governed by its own license terms. See documentation for details.</div></html>");
+    private final boolean disclaimer;
     private final boolean thresholdControls;
 
     /**
      * Creates a new YoloInferencePanel instance.
      */
     protected YoloInferencePanel() {
-    	this(true);
+        this(true, false);
     }
     
     /**
@@ -82,10 +83,21 @@ public class YoloInferencePanel extends JPanel {
      * @param disclaimer the disclaimer.
      */
     protected YoloInferencePanel(boolean disclaimer) {
+        this(disclaimer, !disclaimer);
+    }
+
+    /**
+     * Creates a new YoloInferencePanel instance.
+     *
+     * @param disclaimer whether the YOLO disclaimer should be displayed.
+     * @param thresholdControls whether probability threshold controls should be displayed.
+     */
+    protected YoloInferencePanel(boolean disclaimer, boolean thresholdControls) {
         setLayout(null);
         setOpaque(true);
         setBackground(YoloUiUtils.PANEL_BG);
-        this.thresholdControls = !disclaimer;
+        this.disclaimer = disclaimer;
+        this.thresholdControls = thresholdControls;
         YoloUiUtils.alignLabel(drawLabel);
         YoloUiUtils.alignLabel(thresholdLabel);
         YoloUiUtils.styleToggleButton(drawButton, false);
@@ -226,7 +238,9 @@ public class YoloInferencePanel extends JPanel {
         int totalAvailH = Math.max(8, h - 2 * OUTER_PAD - extraBottomGap - totalGapH);
         int previewBaseH = Math.max(1, (int) Math.round(h * DISPLAY_BASE_HEIGHT_RATIO));
         int controlsAvailH = Math.max(4, totalAvailH - previewBaseH);
-        double totalUnits = ROW_UNIT_MODEL + ROW_UNIT_SOURCE + ROW_UNIT_DRAW + ROW_UNIT_LOG + ROW_UNIT_ACTION + ROW_UNIT_WARNING;
+        boolean extraRow = thresholdControls || disclaimer;
+        double totalUnits = ROW_UNIT_MODEL + ROW_UNIT_SOURCE + ROW_UNIT_DRAW + ROW_UNIT_LOG + ROW_UNIT_ACTION
+                + (extraRow ? ROW_UNIT_WARNING : 0);
         int rowUnitPx = Math.max(1, (int) Math.floor(controlsAvailH / totalUnits));
 
         int maxControlH = Math.max(1, YoloUiUtils.controlHeightForFontSize(YoloUiUtils.MAX_CONTROL_FONT_SIZE));
@@ -240,7 +254,9 @@ public class YoloInferencePanel extends JPanel {
         int drawH = Math.max(1, Math.min(maxDrawH, (int) Math.round(rowUnitPx * ROW_UNIT_DRAW)));
         int logH = Math.max(1, Math.min(maxLogH, (int) Math.round(rowUnitPx * ROW_UNIT_LOG)));
         int actionH = Math.max(1, Math.min(maxControlH, (int) Math.round(rowUnitPx * ROW_UNIT_ACTION)));
-        int warningH = Math.max(18, Math.min(maxWarningH, (int) Math.round(rowUnitPx * ROW_UNIT_WARNING)));
+        int warningH = extraRow
+                ? Math.max(18, Math.min(maxWarningH, (int) Math.round(rowUnitPx * ROW_UNIT_WARNING)))
+                : 0;
 
         int previewH = Math.max(1, totalAvailH - modelH - sourceH - drawH - logH - actionH - warningH);
         int displayMinH = Math.max(1, (int) Math.round(h * DISPLAY_MIN_HEIGHT_RATIO));
@@ -297,7 +313,7 @@ public class YoloInferencePanel extends JPanel {
 
         actionPanel.setBounds(logX, y, logW, actionH);
         y += actionH + rowGap;
-        if (!thresholdControls) {
+        if (!thresholdControls && disclaimer) {
             warningLabel.setBounds(logX, y, logW, warningH);
         }
 
@@ -307,7 +323,9 @@ public class YoloInferencePanel extends JPanel {
         boostDrawRowFont(drawLabel);
         boostDrawRowFont(drawButton);
         boostDrawRowFont(refreshButton);
-        warningLabel.setFont(actionPanel.getRunButton().getFont().deriveFont(Math.max((float) YoloUiUtils.MIN_FONT_SIZE, actionPanel.getRunButton().getFont().getSize2D() * 0.78f)));
+        if (disclaimer) {
+            warningLabel.setFont(actionPanel.getRunButton().getFont().deriveFont(Math.max((float) YoloUiUtils.MIN_FONT_SIZE, actionPanel.getRunButton().getFont().getSize2D() * 0.78f)));
+        }
     }
 
     private static void boostDrawRowFont(JComponent component) {

@@ -57,10 +57,10 @@ public class YoloTitlePanel extends JPanel {
      * @param rightString the right string.
      * @param adapter the adapter.
      */
-    protected YoloTitlePanel(String rightString, GuiAdapter adapter) {
+    public YoloTitlePanel(String rightString, GuiAdapter adapter) {
     	this.rightText = rightString;
-    	this.softwareName = adapter.getSoftwareName();
-    	softwareColor = adapter.getTitleColor();
+        this.softwareName = softwareName(adapter);
+        softwareColor = softwareColor(adapter);
         setOpaque(true);
         setBackground(BG_COLOR);
     }
@@ -70,12 +70,22 @@ public class YoloTitlePanel extends JPanel {
      *
      * @param adapter the adapter.
      */
-    protected YoloTitlePanel(GuiAdapter adapter) {
+    public YoloTitlePanel(GuiAdapter adapter) {
     	this.rightText = RIGHT_TEXT_DEFAULT;
-    	this.softwareName = adapter.getSoftwareName();
-    	softwareColor = adapter.getTitleColor();
+        this.softwareName = softwareName(adapter);
+        softwareColor = softwareColor(adapter);
         setOpaque(true);
         setBackground(BG_COLOR);
+    }
+
+    private static String softwareName(GuiAdapter adapter) {
+        String name = adapter == null ? null : adapter.getSoftwareName();
+        return name == null || name.trim().isEmpty() ? "JDLL" : name;
+    }
+
+    private static Color softwareColor(GuiAdapter adapter) {
+        Color color = adapter == null ? null : adapter.getTitleColor();
+        return color == null ? new Color(200, 100, 100) : color;
     }
 
     /**

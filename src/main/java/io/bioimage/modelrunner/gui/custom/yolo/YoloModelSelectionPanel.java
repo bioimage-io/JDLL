@@ -95,6 +95,41 @@ public class YoloModelSelectionPanel extends JPanel {
     }
 
     /**
+     * Sets the model label text.
+     *
+     * @param text the text.
+     */
+    public void setModelLabelText(String text) {
+        modelLabel.setText(text == null ? "" : text);
+        revalidate();
+        repaint();
+    }
+
+    /**
+     * Adds or selects a model entry.
+     *
+     * @param key the display key.
+     * @param value the model path.
+     */
+    public void addOrSelectModel(String key, String value) {
+        if (value == null || value.trim().isEmpty()) {
+            return;
+        }
+        String cleanValue = value.trim();
+        DefaultComboBoxModel<YoloModelSelectionEntry> model =
+                (DefaultComboBoxModel<YoloModelSelectionEntry>) modelComboBox.getModel();
+        for (int i = 0; i < model.getSize(); i++) {
+            if (cleanValue.equals(model.getElementAt(i).getValue())) {
+                modelComboBox.setSelectedIndex(i);
+                return;
+            }
+        }
+        model.addElement(new YoloModelSelectionEntry(key == null || key.trim().isEmpty() ? cleanValue : key,
+                cleanValue));
+        modelComboBox.setSelectedIndex(model.getSize() - 1);
+    }
+
+    /**
      * Returns the selected model key.
      *
      * @return the selected model key.
@@ -161,33 +196,10 @@ public class YoloModelSelectionPanel extends JPanel {
                     return false;
                 }
                 String path = files.get(0).getAbsolutePath();
-                DefaultComboBoxModel<YoloModelSelectionEntry> model =
-                        (DefaultComboBoxModel<YoloModelSelectionEntry>) modelComboBox.getModel();
-                boolean found = false;
-                for (int i = 0; i < model.getSize(); i++) {
-                    if (path.equals(model.getElementAt(i).getValue())) {
-                        found = true;
-                        break;
-                    }
-                }
-                if (!found) {
-                    model.addElement(new YoloModelSelectionEntry(path, path));
-                }
-                selectModelValue(path);
+                addOrSelectModel(path, path);
                 return true;
             } catch (Exception e) {
                 return false;
-            }
-        }
-    }
-
-    private void selectModelValue(String value) {
-        DefaultComboBoxModel<YoloModelSelectionEntry> model =
-                (DefaultComboBoxModel<YoloModelSelectionEntry>) modelComboBox.getModel();
-        for (int i = 0; i < model.getSize(); i++) {
-            if (value.equals(model.getElementAt(i).getValue())) {
-                modelComboBox.setSelectedIndex(i);
-                return;
             }
         }
     }
