@@ -56,6 +56,8 @@ final class YoloDatasetPreparer {
 
     private static final long SPLIT_SEED = 5489L;
     private static final double TRAIN_FRACTION = 0.8;
+    private static final double TINY_OBJECT_IMAGE_AREA_RATIO = 0.00005;
+    private static final double TINY_OBJECT_REFERENCE_FACTOR = 3.0;
     private static final double MIN_LABEL_RESIZED_SIDE_PX = 4.0;
     private static final double CRITICAL_OBJECT_RESIZED_SIDE_PX = 8.0;
     private static final double PREFERRED_CROP_RESIZED_SIDE_PX = 12.0;
@@ -608,12 +610,19 @@ final class YoloDatasetPreparer {
         }
         int yoloImageSize = Math.max(1, imageSize);
         int fullSampleSide = Math.max(width, height);
+        double imageArea = Math.max(1.0, width * (double) height);
+        double tinyObjectAreaReference = tinyObjectAreaReference(boxes);
+        List<Box> validBoxes = new ArrayList<Box>();
         List<Box> fullBoxes = new ArrayList<Box>();
         List<Box> criticalBoxes = new ArrayList<Box>();
         for (Box box : boxes) {
             if (!box.isValid()) {
                 continue;
             }
+            if (shouldIgnoreTinyObject(box, imageArea, tinyObjectAreaReference)) {
+                continue;
+            }
+            validBoxes.add(box);
             if (resizedMinSide(box, fullSampleSide, yoloImageSize) >= MIN_LABEL_RESIZED_SIDE_PX) {
                 fullBoxes.add(box);
             }
@@ -621,7 +630,7 @@ final class YoloDatasetPreparer {
                 criticalBoxes.add(box);
             }
         }
-        if (hasBoxWithResizedMinSide(boxes, fullSampleSide, yoloImageSize, CRITICAL_OBJECT_RESIZED_SIDE_PX)
+        if (hasBoxWithResizedMinSide(validBoxes, fullSampleSide, yoloImageSize, CRITICAL_OBJECT_RESIZED_SIDE_PX)
                 && !fullBoxes.isEmpty()) {
             generated.add(GeneratedSample.full(image, width, height, fullBoxes));
         }
@@ -631,7 +640,7 @@ final class YoloDatasetPreparer {
             CropCandidate best = null;
             for (Box target : uncovered) {
                 Rectangle crop = cropAround(target, width, height, yoloImageSize);
-                CropCandidate candidate = cropCandidate(crop, boxes, uncovered, yoloImageSize);
+                CropCandidate candidate = cropCandidate(crop, validBoxes, uncovered, yoloImageSize);
                 if (candidate.coveredCriticalBoxes.isEmpty()) {
                     continue;
                 }
@@ -656,6 +665,46 @@ final class YoloDatasetPreparer {
             }
         }
         return false;
+    }
+
+    private static boolean shouldIgnoreTinyObject(Box box, double imageArea, double tinyObjectAreaReference) {
+        return tinyObjectAreaReference >= 0.0
+                && box.objectArea() / imageArea < TINY_OBJECT_IMAGE_AREA_RATIO
+                && box.objectArea() < tinyObjectAreaReference;
+    }
+
+    private static double tinyObjectAreaReference(List<Box> boxes) {
+        if (boxes == null || boxes.size() < 2) {
+            return -1.0;
+        }
+        List<Double> areas = new ArrayList<Double>();
+        for (Box box : boxes) {
+            areas.add(box.objectArea());
+        }
+        Collections.sort(areas);
+        if (areas.size() == 2) {
+            return areas.get(1).doubleValue() / TINY_OBJECT_REFERENCE_FACTOR;
+        }
+        return percentile(areas, 3.0) / TINY_OBJECT_REFERENCE_FACTOR;
+    }
+
+    private static double percentile(List<Double> sortedValues, double percentile) {
+        if (sortedValues == null || sortedValues.isEmpty()) {
+            return Double.NaN;
+        }
+        if (sortedValues.size() == 1) {
+            return sortedValues.get(0).doubleValue();
+        }
+        double position = Math.max(0.0, Math.min(100.0, percentile)) / 100.0
+                * (sortedValues.size() - 1);
+        int lower = (int) Math.floor(position);
+        int upper = (int) Math.ceil(position);
+        if (lower == upper) {
+            return sortedValues.get(lower).doubleValue();
+        }
+        double fraction = position - lower;
+        return sortedValues.get(lower).doubleValue() * (1.0 - fraction)
+                + sortedValues.get(upper).doubleValue() * fraction;
     }
 
     private static CropCandidate cropCandidate(
@@ -925,6 +974,7 @@ final class YoloDatasetPreparer {
         }
         Raster raster = mask.getRaster();
         Map<Integer, int[]> bounds = new HashMap<Integer, int[]>();
+        Map<Integer, Integer> pixelAreas = new HashMap<Integer, Integer>();
         int width = Math.min(size.width, mask.getWidth());
         int height = Math.min(size.height, mask.getHeight());
         for (int y = 0; y < height; y++) {
@@ -933,6 +983,7 @@ final class YoloDatasetPreparer {
                 if (value <= 0) {
                     continue;
                 }
+                pixelAreas.put(value, pixelAreas.getOrDefault(value, 0) + 1);
                 int[] b = bounds.get(value);
                 if (b == null) {
                     b = new int[] {x, y, x, y};
@@ -947,8 +998,10 @@ final class YoloDatasetPreparer {
         }
         List<Box> boxes = new ArrayList<Box>();
         int objectIndex = 0;
-        for (int[] b : bounds.values()) {
-            Box box = new Box(0, b[0], b[1], b[2] + 1.0, b[3] + 1.0, objectIndex++);
+        for (Map.Entry<Integer, int[]> entry : bounds.entrySet()) {
+            int[] b = entry.getValue();
+            int pixelArea = pixelAreas.getOrDefault(entry.getKey(), 0);
+            Box box = new Box(0, b[0], b[1], b[2] + 1.0, b[3] + 1.0, objectIndex++, pixelArea);
             if (box.isValid()) {
                 boxes.add(box);
             }
@@ -1309,14 +1362,20 @@ final class YoloDatasetPreparer {
         private final double x2;
         private final double y2;
         private final int objectIndex;
+        private final int objectArea;
 
         private Box(int classId, double x1, double y1, double x2, double y2, int objectIndex) {
+            this(classId, x1, y1, x2, y2, objectIndex, -1);
+        }
+
+        private Box(int classId, double x1, double y1, double x2, double y2, int objectIndex, int objectArea) {
             this.classId = classId;
             this.x1 = x1;
             this.y1 = y1;
             this.x2 = x2;
             this.y2 = y2;
             this.objectIndex = objectIndex;
+            this.objectArea = objectArea;
         }
 
         private double width() {
@@ -1329,6 +1388,10 @@ final class YoloDatasetPreparer {
 
         private double area() {
             return width() * height();
+        }
+
+        private double objectArea() {
+            return objectArea > 0 ? objectArea : area();
         }
 
         private boolean isValid() {
@@ -1353,7 +1416,7 @@ final class YoloDatasetPreparer {
 
         private Box relativeTo(Rectangle rectangle) {
             return new Box(classId, x1 - rectangle.x, y1 - rectangle.y,
-                    x2 - rectangle.x, y2 - rectangle.y, objectIndex)
+                    x2 - rectangle.x, y2 - rectangle.y, objectIndex, objectArea)
                     .clamped(rectangle.width, rectangle.height);
         }
 
@@ -1363,7 +1426,8 @@ final class YoloDatasetPreparer {
                     Math.max(0.0, Math.min(height, y1)),
                     Math.max(0.0, Math.min(width, x2)),
                     Math.max(0.0, Math.min(height, y2)),
-                    objectIndex);
+                    objectIndex,
+                    objectArea);
         }
     }
 
