@@ -626,7 +626,8 @@ final class YoloDatasetPreparer {
             if (resizedMinSide(box, fullSampleSide, yoloImageSize) >= MIN_LABEL_RESIZED_SIDE_PX) {
                 fullBoxes.add(box);
             }
-            if (resizedMinSide(box, fullSampleSide, yoloImageSize) < CRITICAL_OBJECT_RESIZED_SIDE_PX) {
+            if (!touchesImageBorder(box, width, height)
+                    && resizedMinSide(box, fullSampleSide, yoloImageSize) < CRITICAL_OBJECT_RESIZED_SIDE_PX) {
                 criticalBoxes.add(box);
             }
         }
@@ -665,6 +666,10 @@ final class YoloDatasetPreparer {
             }
         }
         return false;
+    }
+
+    private static boolean touchesImageBorder(Box box, int width, int height) {
+        return box.x1 <= 0.0 || box.y1 <= 0.0 || box.x2 >= width || box.y2 >= height;
     }
 
     private static boolean shouldIgnoreTinyObject(Box box, double imageArea, double tinyObjectAreaReference) {
