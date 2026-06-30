@@ -64,7 +64,10 @@ final class YoloDatasetPreparer {
     private static final double MIN_OBJECT_CROP_OVERLAP_RATIO = 0.3;
     private static final double MAX_OBJECT_CROP_AREA_RATIO = 0.9;
     private static final double BORDER_OBJECT_MARGIN_PX = 2.0;
+    private static final int MAX_OBJECTS_PER_DENSITY_SAMPLE = 300;
+    private static final double DENSITY_TILE_FRACTION = 0.6;
     private static final int MIN_RESOLUTION_AWARE_CROP_SIDE_PX = 64;
+    private static final int MIN_DENSITY_TILE_SIDE_PX = 64;
     private static final String DEFAULT_CLASS_NAME = "object";
     private static final String GENERATED_YAML_NAME = "data.yaml";
 
@@ -543,13 +546,13 @@ final class YoloDatasetPreparer {
         List<GeneratedSample> trainGenerated = toGeneratedSamplesFromMasks(trainMasks, imageSize);
         List<GeneratedSample> valGenerated = toGeneratedSamplesFromMasks(valMasks, imageSize);
         writeGeneratedDataset(root, Collections.singletonList(DEFAULT_CLASS_NAME), trainGenerated, valGenerated,
-                splitTrainSamples, logConsumer);
+                splitTrainSamples, imageSize, logConsumer);
         return new File(root, GENERATED_YAML_NAME);
     }
 
     private static void writeGeneratedDataset(File root, List<String> names,
             List<GeneratedSample> trainGenerated, List<GeneratedSample> valGenerated,
-            boolean splitTrainSamples, Consumer<String> logConsumer) throws IOException {
+            boolean splitTrainSamples, int imageSize, Consumer<String> logConsumer) throws IOException {
         if (splitTrainSamples) {
             List<GeneratedSample> all = new ArrayList<GeneratedSample>(trainGenerated);
             Collections.shuffle(all, new Random(SPLIT_SEED));
@@ -560,6 +563,8 @@ final class YoloDatasetPreparer {
         if (trainGenerated.isEmpty() || valGenerated.isEmpty()) {
             throw new IllegalArgumentException("Could not create non-empty train and validation splits.");
         }
+        trainGenerated = refineDenseGeneratedSamples(trainGenerated, imageSize);
+        valGenerated = refineDenseGeneratedSamples(valGenerated, imageSize);
 
         File trainImages = new File(root, "images/train");
         File valImages = new File(root, "images/val");
@@ -657,6 +662,83 @@ final class YoloDatasetPreparer {
             removeCovered(uncovered, best.coveredCriticalBoxes);
         }
         return generated;
+    }
+
+    private static List<GeneratedSample> refineDenseGeneratedSamples(List<GeneratedSample> samples, int imageSize) {
+        List<GeneratedSample> refined = new ArrayList<GeneratedSample>();
+        for (GeneratedSample sample : samples) {
+            refineDenseGeneratedSample(sample, Math.max(1, imageSize), refined);
+        }
+        return refined;
+    }
+
+    private static void refineDenseGeneratedSample(GeneratedSample sample, int imageSize, List<GeneratedSample> refined) {
+        if (sample.boxes.size() <= MAX_OBJECTS_PER_DENSITY_SAMPLE) {
+            refined.add(sample);
+            return;
+        }
+        List<Rectangle> tiles = densityTiles(sample.width, sample.height);
+        if (tiles.isEmpty()) {
+            refined.add(sample);
+            return;
+        }
+        int before = refined.size();
+        for (Rectangle tile : tiles) {
+            List<Box> boxes = densityTileBoxes(sample.boxes, tile, imageSize);
+            if (!boxes.isEmpty()) {
+                refineDenseGeneratedSample(sample.densityTile(tile, boxes), imageSize, refined);
+            }
+        }
+        if (refined.size() == before) {
+            refined.add(sample);
+        }
+    }
+
+    private static List<Rectangle> densityTiles(int width, int height) {
+        List<Rectangle> tiles = new ArrayList<Rectangle>();
+        List<int[]> xSegments = densitySegments(width);
+        List<int[]> ySegments = densitySegments(height);
+        if (!xSegments.isEmpty() && !ySegments.isEmpty()) {
+            for (int[] y : ySegments) {
+                for (int[] x : xSegments) {
+                    tiles.add(new Rectangle(x[0], y[0], x[1] - x[0], y[1] - y[0]));
+                }
+            }
+        } else if (!xSegments.isEmpty() && height >= MIN_DENSITY_TILE_SIDE_PX) {
+            for (int[] x : xSegments) {
+                tiles.add(new Rectangle(x[0], 0, x[1] - x[0], height));
+            }
+        } else if (!ySegments.isEmpty() && width >= MIN_DENSITY_TILE_SIDE_PX) {
+            for (int[] y : ySegments) {
+                tiles.add(new Rectangle(0, y[0], width, y[1] - y[0]));
+            }
+        }
+        return tiles;
+    }
+
+    private static List<int[]> densitySegments(int size) {
+        List<int[]> segments = new ArrayList<int[]>();
+        int firstEnd = (int) Math.ceil(size * DENSITY_TILE_FRACTION);
+        int secondStart = (int) Math.floor(size * (1.0 - DENSITY_TILE_FRACTION));
+        if (firstEnd < MIN_DENSITY_TILE_SIDE_PX || size - secondStart < MIN_DENSITY_TILE_SIDE_PX) {
+            return segments;
+        }
+        segments.add(new int[] {0, firstEnd});
+        segments.add(new int[] {secondStart, size});
+        return segments;
+    }
+
+    private static List<Box> densityTileBoxes(List<Box> boxes, Rectangle tile, int imageSize) {
+        List<Box> tileBoxes = new ArrayList<Box>();
+        for (Box box : boxes) {
+            Box relative = box.relativeTo(tile);
+            if (relative.isValid()
+                    && resizedMinSide(relative, Math.max(tile.width, tile.height), imageSize)
+                            >= MIN_LABEL_RESIZED_SIDE_PX) {
+                tileBoxes.add(relative);
+            }
+        }
+        return tileBoxes;
     }
 
     private static boolean hasBoxWithResizedMinSide(
@@ -1336,6 +1418,13 @@ final class YoloDatasetPreparer {
 
         private static GeneratedSample crop(File sourceImage, Rectangle crop, List<Box> boxes) {
             return new GeneratedSample(sourceImage, crop, crop.width, crop.height, new ArrayList<Box>(boxes));
+        }
+
+        private GeneratedSample densityTile(Rectangle tile, List<Box> boxes) {
+            Rectangle sourceCrop = crop == null
+                    ? new Rectangle(tile)
+                    : new Rectangle(crop.x + tile.x, crop.y + tile.y, tile.width, tile.height);
+            return crop(sourceImage, sourceCrop, boxes);
         }
     }
 
