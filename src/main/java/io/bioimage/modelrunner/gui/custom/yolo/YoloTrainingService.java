@@ -71,7 +71,7 @@ public class YoloTrainingService {
             throws IOException, ExecutionException, InterruptedException, BuildException, TaskException {
         validate(config);
         File datasetYaml = YoloDatasetPreparer.prepare(config.getDatasetYamlPath(), config.getModelName(),
-                config.getModelsDir(), logConsumer);
+                config.getModelsDir(), config.getImageSize(), logConsumer);
         if (!installer.isEnvironmentInstalled()) {
             installer.installEnvironment(logConsumer);
         }

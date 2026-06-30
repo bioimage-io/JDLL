@@ -56,12 +56,12 @@ final class YoloDatasetPreparer {
 
     private static final long SPLIT_SEED = 5489L;
     private static final double TRAIN_FRACTION = 0.8;
-    private static final double SMALL_OBJECT_IMAGE_AREA_RATIO = 0.001;
-    private static final double TARGET_OBJECT_TILE_AREA_RATIO = 0.01;
+    private static final double MIN_LABEL_RESIZED_SIDE_PX = 4.0;
+    private static final double CRITICAL_OBJECT_RESIZED_SIDE_PX = 8.0;
+    private static final double PREFERRED_CROP_RESIZED_SIDE_PX = 12.0;
     private static final double MIN_OBJECT_CROP_OVERLAP_RATIO = 0.3;
     private static final double MAX_OBJECT_CROP_AREA_RATIO = 0.9;
-    private static final int MIN_OBJECT_VISIBILITY_PX = 64;
-    private static final int MIN_INSTANCE_MASK_AREA_PX = 10;
+    private static final int MIN_RESOLUTION_AWARE_CROP_SIDE_PX = 64;
     private static final String DEFAULT_CLASS_NAME = "object";
     private static final String GENERATED_YAML_NAME = "data.yaml";
 
@@ -77,6 +77,12 @@ final class YoloDatasetPreparer {
     private YoloDatasetPreparer() {}
 
     static File prepare(String datasetPath, String modelName, String modelsDir, Consumer<String> logConsumer)
+            throws IOException {
+        return prepare(datasetPath, modelName, modelsDir, YoloTrainingConfig.DEFAULT_IMAGE_SIZE, logConsumer);
+    }
+
+    static File prepare(String datasetPath, String modelName, String modelsDir, int imageSize,
+            Consumer<String> logConsumer)
             throws IOException {
         if (datasetPath == null || datasetPath.trim().isEmpty()) {
             throw new IllegalArgumentException("Please provide a YOLO training dataset path.");
@@ -132,7 +138,7 @@ final class YoloDatasetPreparer {
         if (!trainMasks.isEmpty()) {
             boolean splitTrain = valMasks.isEmpty();
             File generatedYaml = createGeneratedMaskDataset(input.getName(), modelName, modelsDir,
-                    trainMasks, valMasks, splitTrain, logConsumer);
+                    trainMasks, valMasks, splitTrain, imageSize, logConsumer);
             log(logConsumer, "Generated YOLO dataset from instance masks: " + generatedYaml.getAbsolutePath());
             return generatedYaml;
         }
@@ -529,10 +535,10 @@ final class YoloDatasetPreparer {
 
     private static File createGeneratedMaskDataset(String sourceName, String modelName, String modelsDir,
             List<MaskSample> trainMasks, List<MaskSample> valMasks, boolean splitTrainSamples,
-            Consumer<String> logConsumer) throws IOException {
+            int imageSize, Consumer<String> logConsumer) throws IOException {
         File root = createUniqueGeneratedRoot(sourceName, modelName, modelsDir);
-        List<GeneratedSample> trainGenerated = toGeneratedSamplesFromMasks(trainMasks);
-        List<GeneratedSample> valGenerated = toGeneratedSamplesFromMasks(valMasks);
+        List<GeneratedSample> trainGenerated = toGeneratedSamplesFromMasks(trainMasks, imageSize);
+        List<GeneratedSample> valGenerated = toGeneratedSamplesFromMasks(valMasks, imageSize);
         writeGeneratedDataset(root, Collections.singletonList(DEFAULT_CLASS_NAME), trainGenerated, valGenerated,
                 splitTrainSamples, logConsumer);
         return new File(root, GENERATED_YAML_NAME);
@@ -586,126 +592,142 @@ final class YoloDatasetPreparer {
         return trainCount;
     }
 
-    private static List<GeneratedSample> toGeneratedSamplesFromMasks(List<MaskSample> samples) {
+    private static List<GeneratedSample> toGeneratedSamplesFromMasks(List<MaskSample> samples, int imageSize) {
         List<GeneratedSample> generated = new ArrayList<GeneratedSample>();
         for (MaskSample sample : samples) {
-            generated.addAll(buildGeneratedSamples(sample.image, sample.width, sample.height, sample.boxes));
+            generated.addAll(buildGeneratedSamples(sample.image, sample.width, sample.height, sample.boxes, imageSize));
         }
         return generated;
     }
 
-    private static List<GeneratedSample> buildGeneratedSamples(File image, int width, int height, List<Box> boxes) {
+    private static List<GeneratedSample> buildGeneratedSamples(
+            File image, int width, int height, List<Box> boxes, int imageSize) {
         List<GeneratedSample> generated = new ArrayList<GeneratedSample>();
         if (boxes == null || boxes.isEmpty()) {
             return generated;
         }
-        double imageArea = Math.max(1.0, width * (double) height);
-        List<Box> validBoxes = new ArrayList<Box>();
-        List<Box> largeBoxes = new ArrayList<Box>();
-        List<Box> smallBoxes = new ArrayList<Box>();
+        int yoloImageSize = Math.max(1, imageSize);
+        int fullSampleSide = Math.max(width, height);
+        List<Box> fullBoxes = new ArrayList<Box>();
+        List<Box> criticalBoxes = new ArrayList<Box>();
         for (Box box : boxes) {
-            if (box.area() < MIN_INSTANCE_MASK_AREA_PX) {
+            if (!box.isValid()) {
                 continue;
             }
-            validBoxes.add(box);
-            if (box.area() < SMALL_OBJECT_IMAGE_AREA_RATIO * imageArea) {
-                smallBoxes.add(box);
-            } else {
-                largeBoxes.add(box);
+            if (resizedMinSide(box, fullSampleSide, yoloImageSize) >= MIN_LABEL_RESIZED_SIDE_PX) {
+                fullBoxes.add(box);
+            }
+            if (resizedMinSide(box, fullSampleSide, yoloImageSize) < CRITICAL_OBJECT_RESIZED_SIDE_PX) {
+                criticalBoxes.add(box);
             }
         }
-        if (validBoxes.isEmpty()) {
-            return generated;
+        if (hasBoxWithResizedMinSide(boxes, fullSampleSide, yoloImageSize, CRITICAL_OBJECT_RESIZED_SIDE_PX)
+                && !fullBoxes.isEmpty()) {
+            generated.add(GeneratedSample.full(image, width, height, fullBoxes));
         }
-        if (smallBoxes.isEmpty()) {
-            generated.add(GeneratedSample.full(image, width, height, validBoxes));
-            return generated;
-        }
-        if (!largeBoxes.isEmpty()) {
-            generated.add(GeneratedSample.full(image, width, height, largeBoxes));
-        }
-        Set<Integer> coveredSmallObjects = new HashSet<Integer>();
-        for (Box target : smallBoxes) {
-            if (coveredSmallObjects.contains(target.objectIndex)) {
-                continue;
-            }
-            Rectangle crop = cropAround(target, width, height);
-            List<Box> cropBoxes = new ArrayList<Box>();
-            for (Box candidate : validBoxes) {
-                if (shouldIncludeInCrop(candidate, crop, smallBoxes.contains(candidate))) {
-                    cropBoxes.add(candidate.relativeTo(crop));
+
+        List<Box> uncovered = new ArrayList<Box>(criticalBoxes);
+        while (!uncovered.isEmpty()) {
+            CropCandidate best = null;
+            for (Box target : uncovered) {
+                Rectangle crop = cropAround(target, width, height, yoloImageSize);
+                CropCandidate candidate = cropCandidate(crop, boxes, uncovered, yoloImageSize);
+                if (candidate.coveredCriticalBoxes.isEmpty()) {
+                    continue;
+                }
+                if (best == null || candidate.compareTo(best) > 0) {
+                    best = candidate;
                 }
             }
-            if (cropBoxes.isEmpty()) {
-                cropBoxes.add(target.relativeTo(crop));
+            if (best == null) {
+                break;
             }
-            for (Box cropBox : cropBoxes) {
-                coveredSmallObjects.add(cropBox.objectIndex);
-            }
-            generated.add(GeneratedSample.crop(image, crop, cropBoxes));
+            generated.add(GeneratedSample.crop(image, best.crop, best.labelBoxes));
+            removeCovered(uncovered, best.coveredCriticalBoxes);
         }
         return generated;
     }
 
-    private static boolean shouldIncludeInCrop(Box box, Rectangle crop, boolean requireFullContainment) {
-        if (requireFullContainment && !box.fullyInside(crop)) {
-            return false;
+    private static boolean hasBoxWithResizedMinSide(
+            List<Box> boxes, int sampleSide, int imageSize, double threshold) {
+        for (Box box : boxes) {
+            if (box.isValid() && resizedMinSide(box, sampleSide, imageSize) >= threshold) {
+                return true;
+            }
         }
-        return box.areaInside(crop) >= MIN_OBJECT_CROP_OVERLAP_RATIO * box.area()
-                && box.area() < MAX_OBJECT_CROP_AREA_RATIO * crop.width * (double) crop.height;
+        return false;
+    }
+
+    private static CropCandidate cropCandidate(
+            Rectangle crop, List<Box> boxes, List<Box> uncoveredCriticalBoxes, int imageSize) {
+        List<Box> labelBoxes = new ArrayList<Box>();
+        for (Box box : boxes) {
+            Box relative = box.relativeTo(crop);
+            if (!relative.isValid()
+                    || resizedMinSide(relative, Math.max(crop.width, crop.height), imageSize)
+                            < MIN_LABEL_RESIZED_SIDE_PX) {
+                continue;
+            }
+            if (uncoveredCriticalBoxes.contains(box)) {
+                labelBoxes.add(relative);
+            } else if (box.areaInside(crop) >= MIN_OBJECT_CROP_OVERLAP_RATIO * box.area()
+                    && box.area() < MAX_OBJECT_CROP_AREA_RATIO * crop.width * (double) crop.height) {
+                labelBoxes.add(relative);
+            }
+        }
+
+        List<Box> coveredCriticalBoxes = new ArrayList<Box>();
+        int sampleSide = Math.max(crop.width, crop.height);
+        for (Box box : uncoveredCriticalBoxes) {
+            if (box.fullyInside(crop)
+                    && resizedMinSide(box, sampleSide, imageSize) >= CRITICAL_OBJECT_RESIZED_SIDE_PX) {
+                coveredCriticalBoxes.add(box);
+            }
+        }
+        return new CropCandidate(crop, labelBoxes, coveredCriticalBoxes);
+    }
+
+    private static void removeCovered(List<Box> uncovered, List<Box> covered) {
+        Set<Integer> coveredIndices = new HashSet<Integer>();
+        for (Box box : covered) {
+            coveredIndices.add(box.objectIndex);
+        }
+        for (Iterator<Box> iterator = uncovered.iterator(); iterator.hasNext();) {
+            if (coveredIndices.contains(iterator.next().objectIndex)) {
+                iterator.remove();
+            }
+        }
+    }
+
+    private static double resizedMinSide(Box box, int sampleSide, int imageSize) {
+        if (sampleSide <= 0) {
+            return 0.0;
+        }
+        return Math.min(box.width(), box.height()) * imageSize / sampleSide;
     }
 
     private static Rectangle cropAround(
             Box box,
             int imageWidth,
-            int imageHeight
+            int imageHeight,
+            int imageSize
     ) {
-        Random random = new Random(63);
-        double targetArea = Math.max(
-                box.area() / TARGET_OBJECT_TILE_AREA_RATIO,
-                MIN_OBJECT_VISIBILITY_PX * (double) MIN_OBJECT_VISIBILITY_PX
-        );
-
-        int side = (int) Math.ceil(Math.sqrt(targetArea));
+        double minSide = Math.max(1.0, Math.min(box.width(), box.height()));
+        int side = (int) Math.ceil(minSide * imageSize / PREFERRED_CROP_RESIZED_SIDE_PX);
+        side = Math.max(side, MIN_RESOLUTION_AWARE_CROP_SIDE_PX);
         side = Math.max(side, (int) Math.ceil(Math.max(box.width(), box.height())));
-        side = Math.max(1, side);
-
-        int cropW = Math.min(imageWidth, side);
-        int cropH = Math.min(imageHeight, side);
-
-        int imageMinX = 0;
-        int imageMinY = 0;
-        int imageMaxX = Math.max(0, imageWidth - cropW);
-        int imageMaxY = Math.max(0, imageHeight - cropH);
-
-        // Crop must start early enough to include box.x1,
-        // but late enough that box.x2 is still inside the crop.
-        int objectMinX = (int) Math.ceil(box.x2 - cropW);
-        int objectMaxX = (int) Math.floor(box.x1);
-
-        int objectMinY = (int) Math.ceil(box.y2 - cropH);
-        int objectMaxY = (int) Math.floor(box.y1);
-
-        int minX = Math.max(imageMinX, objectMinX);
-        int maxX = Math.min(imageMaxX, objectMaxX);
-
-        int minY = Math.max(imageMinY, objectMinY);
-        int maxY = Math.min(imageMaxY, objectMaxY);
-
-        if (minX > maxX || minY > maxY) {
-            throw new IllegalArgumentException(
-                    "Cannot create crop: object does not fit inside crop or is outside image bounds"
-            );
-        }
-
-        int x = randomIntInclusive(random, minX, maxX);
-        int y = randomIntInclusive(random, minY, maxY);
-
+        side = Math.max(1, Math.min(side, Math.min(imageWidth, imageHeight)));
+        int cropW = side;
+        int cropH = side;
+        int x = centeredCropStart((box.x1 + box.x2) / 2.0, cropW, imageWidth);
+        int y = centeredCropStart((box.y1 + box.y2) / 2.0, cropH, imageHeight);
         return new Rectangle(x, y, cropW, cropH);
     }
 
-    private static int randomIntInclusive(Random random, int min, int max) {
-        return min + random.nextInt(max - min + 1);
+    private static int centeredCropStart(double center, int cropSize, int imageSize) {
+        int max = Math.max(0, imageSize - cropSize);
+        int start = (int) Math.round(center - cropSize / 2.0);
+        return Math.max(0, Math.min(max, start));
     }
 
     private static void writeSamples(List<GeneratedSample> samples, File imageDir, File labelDir)
@@ -1252,6 +1274,31 @@ final class YoloDatasetPreparer {
 
         private static GeneratedSample crop(File sourceImage, Rectangle crop, List<Box> boxes) {
             return new GeneratedSample(sourceImage, crop, crop.width, crop.height, new ArrayList<Box>(boxes));
+        }
+    }
+
+    private static final class CropCandidate implements Comparable<CropCandidate> {
+        private final Rectangle crop;
+        private final List<Box> labelBoxes;
+        private final List<Box> coveredCriticalBoxes;
+
+        private CropCandidate(Rectangle crop, List<Box> labelBoxes, List<Box> coveredCriticalBoxes) {
+            this.crop = crop;
+            this.labelBoxes = labelBoxes;
+            this.coveredCriticalBoxes = coveredCriticalBoxes;
+        }
+
+        @Override
+        public int compareTo(CropCandidate other) {
+            int covered = Integer.compare(coveredCriticalBoxes.size(), other.coveredCriticalBoxes.size());
+            if (covered != 0) {
+                return covered;
+            }
+            int labels = Integer.compare(labelBoxes.size(), other.labelBoxes.size());
+            if (labels != 0) {
+                return labels;
+            }
+            return Integer.compare(Math.max(other.crop.width, other.crop.height), Math.max(crop.width, crop.height));
         }
     }
 
