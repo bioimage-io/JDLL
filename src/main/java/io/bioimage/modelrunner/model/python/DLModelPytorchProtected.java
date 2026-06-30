@@ -222,6 +222,34 @@ public class DLModelPytorchProtected extends BaseModel {
             + "        pass" + System.lineSeparator()
             + SHMS_KEY + ".clear()" + System.lineSeparator();
 
+    private static final String CLEAN_PYTORCH_MEMORY_CODE = ""
+            + "try:" + System.lineSeparator()
+            + "  if 'gc' not in globals().keys():" + System.lineSeparator()
+            + "    import gc" + System.lineSeparator()
+            + "    task.export(gc=gc)" + System.lineSeparator()
+            + "  gc.collect()" + System.lineSeparator()
+            + "except Exception:" + System.lineSeparator()
+            + "  pass" + System.lineSeparator()
+            + "try:" + System.lineSeparator()
+            + "  _jdll_cleanup_torch = globals().get('torch', None)" + System.lineSeparator()
+            + "  if _jdll_cleanup_torch is not None:" + System.lineSeparator()
+            + "    try:" + System.lineSeparator()
+            + "      if hasattr(_jdll_cleanup_torch, 'cuda') and _jdll_cleanup_torch.cuda.is_available():" + System.lineSeparator()
+            + "        _jdll_cleanup_torch.cuda.empty_cache()" + System.lineSeparator()
+            + "        try:" + System.lineSeparator()
+            + "          _jdll_cleanup_torch.cuda.ipc_collect()" + System.lineSeparator()
+            + "        except Exception:" + System.lineSeparator()
+            + "          pass" + System.lineSeparator()
+            + "    except Exception:" + System.lineSeparator()
+            + "      pass" + System.lineSeparator()
+            + "    try:" + System.lineSeparator()
+            + "      if hasattr(_jdll_cleanup_torch, 'mps') and hasattr(_jdll_cleanup_torch.mps, 'empty_cache'):" + System.lineSeparator()
+            + "        _jdll_cleanup_torch.mps.empty_cache()" + System.lineSeparator()
+            + "    except Exception:" + System.lineSeparator()
+            + "      pass" + System.lineSeparator()
+            + "except Exception:" + System.lineSeparator()
+            + "  pass" + System.lineSeparator();
+
     private static final String CLEAN_SHM_CODE_WINDOWS = ""
             + "for s in " + SHMS_KEY + ":" + System.lineSeparator()
             + "    s.close()" + System.lineSeparator()
@@ -697,11 +725,27 @@ public class DLModelPytorchProtected extends BaseModel {
                 if (currentTask == task) {
                     currentTask = null;
                 }
+                cleanPythonMemory();
             }
         }
         throw new RunModelException(lastFailure == null
                 ? "Model execution failed."
                 : Messages.stackTrace(lastFailure));
+    }
+
+    /**
+     * Best-effort cleanup of Python and PyTorch allocator caches after task execution.
+     */
+    protected void cleanPythonMemory() {
+        if (python == null || !python.isAlive()) {
+            return;
+        }
+        try {
+            Task cleanupTask = python.task(CLEAN_PYTORCH_MEMORY_CODE);
+            cleanupTask.waitFor();
+        } catch (Throwable ignored) {
+            // Cleanup must never hide the real inference result or failure.
+        }
     }
 
     private void cleanShmAfterFailure(final Throwable original) throws RunModelException {

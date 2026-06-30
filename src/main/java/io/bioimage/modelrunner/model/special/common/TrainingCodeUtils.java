@@ -223,4 +223,39 @@ public final class TrainingCodeUtils {
 				+ "      out[str(k)] = sv" + nl
 				+ "  return out" + nl;
 	}
+
+	/**
+	 * Emits a best-effort cleanup function for Python GC and PyTorch CPU/CUDA/MPS allocator caches.
+	 *
+	 * @param functionName the function name.
+	 * @return the resulting string.
+	 */
+	public static String pytorchMemoryCleanupFunction(String functionName) {
+		String nl = System.lineSeparator();
+		return ""
+				+ "def " + functionName + "():" + nl
+				+ "  try:" + nl
+				+ "    import gc" + nl
+				+ "    gc.collect()" + nl
+				+ "  except Exception:" + nl
+				+ "    pass" + nl
+				+ "  try:" + nl
+				+ "    if 'torch' in globals():" + nl
+				+ "      try:" + nl
+				+ "        if hasattr(torch, 'cuda') and torch.cuda.is_available():" + nl
+				+ "          torch.cuda.empty_cache()" + nl
+				+ "          try:" + nl
+				+ "            torch.cuda.ipc_collect()" + nl
+				+ "          except Exception:" + nl
+				+ "            pass" + nl
+				+ "      except Exception:" + nl
+				+ "        pass" + nl
+				+ "      try:" + nl
+				+ "        if hasattr(torch, 'mps') and hasattr(torch.mps, 'empty_cache'):" + nl
+				+ "          torch.mps.empty_cache()" + nl
+				+ "      except Exception:" + nl
+				+ "        pass" + nl
+				+ "  except Exception:" + nl
+				+ "    pass" + nl;
+	}
 }

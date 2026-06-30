@@ -466,6 +466,7 @@ public class Yolo extends DLModelPytorchProtected {
 		return ""
 				+ "import contextlib, json, logging, os, random, shutil, sys" + nl
 				+ TrainingCodeUtils.apposeStdoutCapture()
+				+ "import torch" + nl
 				+ "from ultralytics import YOLO" + nl
 				+ "from ultralytics.utils import LOGGER" + nl
 				+ "model_source = r'" + TrainingCodeUtils.py(modelSource) + "'" + nl
@@ -503,6 +504,7 @@ public class Yolo extends DLModelPytorchProtected {
 				+ TrainingCodeUtils.taskUpdateFunction("_task_update")
 				+ TrainingCodeUtils.scalarFunction("_scalar", true)
 				+ TrainingCodeUtils.cleanDictFunction("_clean_dict", "_scalar")
+				+ TrainingCodeUtils.pytorchMemoryCleanupFunction("_jdll_cleanup_pytorch_memory")
 				+ "def _cancel_requested():" + nl
 				+ "  return bool(cancel_signal_path) and os.path.exists(cancel_signal_path)" + nl
 				+ "def _request_stop(trainer):" + nl
@@ -637,24 +639,39 @@ public class Yolo extends DLModelPytorchProtected {
 				+ "      json.dump(payload, f)" + nl
 				+ "  _task_update(message='YOLO validation preview epoch %d' % payload['epoch'], current=payload['epoch'], maximum=epochs, info={'type': 'preview', 'epoch': payload['epoch'], 'preview_path': epoch_preview_path})" + nl
 				+ "  state['capture_preview'] = False" + nl
-				+ "model = YOLO(model_source)" + nl
-				+ "model.add_callback('on_train_start', _emit_train_start)" + nl
-				+ "model.add_callback('on_train_batch_end', _emit_step_progress)" + nl
-				+ "model.add_callback('on_train_epoch_end', _prepare_preview_epoch)" + nl
-				+ "model.add_callback('on_val_start', _on_val_start)" + nl
-				+ "model.add_callback('on_val_end', _emit_preview_results)" + nl
-				+ "model.add_callback('on_fit_epoch_end', _emit_epoch_progress)" + nl
-				+ "with open(yolo_log_path, 'a', encoding='utf-8') as yolo_log, contextlib.redirect_stdout(yolo_log), contextlib.redirect_stderr(yolo_log):" + nl
-				+ "  results = model.train(data=dataset_yaml, epochs=epochs, imgsz=imgsz, batch=batch_size, project=project, name=run_name, exist_ok=True, verbose=False, plots=False, workers=0, device=train_device)" + nl
-				+ "trainer = getattr(model, 'trainer', None)" + nl
-				+ "best = str(getattr(trainer, 'best', '') if trainer is not None else '')" + nl
-				+ "last = str(getattr(trainer, 'last', '') if trainer is not None else '')" + nl
-				+ "source = best if best and os.path.isfile(best) else last" + nl
-				+ "if not source or not os.path.isfile(source):" + nl
-				+ "  raise RuntimeError('Could not find YOLO training checkpoint to save.')" + nl
-				+ "os.makedirs(os.path.dirname(output_weights), exist_ok=True)" + nl
-				+ "shutil.copy2(source, output_weights)" + nl
-				+ "task.outputs['result'] = output_weights" + nl;
+				+ "try:" + nl
+				+ "  model = YOLO(model_source)" + nl
+				+ "  model.add_callback('on_train_start', _emit_train_start)" + nl
+				+ "  model.add_callback('on_train_batch_end', _emit_step_progress)" + nl
+				+ "  model.add_callback('on_train_epoch_end', _prepare_preview_epoch)" + nl
+				+ "  model.add_callback('on_val_start', _on_val_start)" + nl
+				+ "  model.add_callback('on_val_end', _emit_preview_results)" + nl
+				+ "  model.add_callback('on_fit_epoch_end', _emit_epoch_progress)" + nl
+				+ "  with open(yolo_log_path, 'a', encoding='utf-8') as yolo_log, contextlib.redirect_stdout(yolo_log), contextlib.redirect_stderr(yolo_log):" + nl
+				+ "    results = model.train(data=dataset_yaml, epochs=epochs, imgsz=imgsz, batch=batch_size, project=project, name=run_name, exist_ok=True, verbose=False, plots=False, workers=0, device=train_device)" + nl
+				+ "  trainer = getattr(model, 'trainer', None)" + nl
+				+ "  best = str(getattr(trainer, 'best', '') if trainer is not None else '')" + nl
+				+ "  last = str(getattr(trainer, 'last', '') if trainer is not None else '')" + nl
+				+ "  source = best if best and os.path.isfile(best) else last" + nl
+				+ "  if not source or not os.path.isfile(source):" + nl
+				+ "    raise RuntimeError('Could not find YOLO training checkpoint to save.')" + nl
+				+ "  os.makedirs(os.path.dirname(output_weights), exist_ok=True)" + nl
+				+ "  shutil.copy2(source, output_weights)" + nl
+				+ "  task.outputs['result'] = output_weights" + nl
+				+ "finally:" + nl
+				+ "  try:" + nl
+				+ "    del results" + nl
+				+ "  except Exception:" + nl
+				+ "    pass" + nl
+				+ "  try:" + nl
+				+ "    del trainer" + nl
+				+ "  except Exception:" + nl
+				+ "    pass" + nl
+				+ "  try:" + nl
+				+ "    del model" + nl
+				+ "  except Exception:" + nl
+				+ "    pass" + nl
+				+ "  _jdll_cleanup_pytorch_memory()" + nl;
 	}
 
 	private static void handleTrainingEvent(TaskEvent event,
