@@ -104,6 +104,9 @@ final class YoloDatasetPreparer {
             YamlDataset dataset = readYamlDataset(yaml);
             if (dataset.hasTrainAndVal()) {
                 log(logConsumer, "Found YOLO train/validation splits. Using YAML: " + yaml.getAbsolutePath());
+                logYoloDatasetSummary(logConsumer, "reused existing YOLO YAML", yaml.getAbsoluteFile(),
+                        dataset.train.samples, dataset.val.samples,
+                        skippedImageCount(dataset.train), skippedImageCount(dataset.val), 0, 0);
                 return yaml.getAbsoluteFile();
             }
             if (dataset.hasTrainOnly()) {
@@ -131,6 +134,9 @@ final class YoloDatasetPreparer {
             log(logConsumer, "Found YOLO folder dataset with " + trainSplit.samples.size()
                     + " training and " + valSplit.samples.size() + " validation images.");
             log(logConsumer, "Created YOLO dataset YAML: " + generatedYaml.getAbsolutePath());
+            logYoloDatasetSummary(logConsumer, "reused YOLO folder dataset; generated YAML wrapper",
+                    generatedYaml, trainSplit.samples, valSplit.samples,
+                    skippedImageCount(trainSplit), skippedImageCount(valSplit), 0, 0);
             return generatedYaml;
         }
         if (trainSplit != null && !trainSplit.samples.isEmpty()) {
@@ -530,9 +536,12 @@ final class YoloDatasetPreparer {
         sortYoloSamples(valSamples);
         writeLinkedSamples(trainSamples, trainImages, trainLabels);
         writeLinkedSamples(valSamples, valImages, valLabels);
-        writeYaml(new File(root, GENERATED_YAML_NAME), root, "images/train", "images/val", names);
+        File yaml = new File(root, GENERATED_YAML_NAME);
+        writeYaml(yaml, root, "images/train", "images/val", names);
         log(logConsumer, "Prepared " + trainSamples.size() + " training and " + valSamples.size()
                 + " validation YOLO samples.");
+        logYoloDatasetSummary(logConsumer, "generated YOLO dataset from existing labels",
+                yaml, trainSamples, valSamples, 0, 0, 0, 0);
     }
 
     private static void sortYoloSamples(List<YoloSample> samples) {
@@ -555,18 +564,21 @@ final class YoloDatasetPreparer {
             List<MaskSample> trainMasks, List<MaskSample> valMasks, boolean splitTrainSamples,
             int imageSize, Consumer<String> logConsumer) throws IOException {
         File root = createUniqueGeneratedRoot(sourceName, modelName, modelsDir);
+        GenerationStats trainStats = new GenerationStats();
+        GenerationStats valStats = new GenerationStats();
         List<GeneratedSample> trainGenerated = toGeneratedSamplesFromMasks(trainMasks, imageSize,
-                logConsumer, "training");
+                logConsumer, "training", trainStats);
         List<GeneratedSample> valGenerated = toGeneratedSamplesFromMasks(valMasks, imageSize,
-                logConsumer, "validation");
+                logConsumer, "validation", valStats);
         writeGeneratedDataset(root, Collections.singletonList(DEFAULT_CLASS_NAME), trainGenerated, valGenerated,
-                splitTrainSamples, imageSize, logConsumer);
+                splitTrainSamples, imageSize, logConsumer, trainStats, valStats);
         return new File(root, GENERATED_YAML_NAME);
     }
 
     private static void writeGeneratedDataset(File root, List<String> names,
             List<GeneratedSample> trainGenerated, List<GeneratedSample> valGenerated,
-            boolean splitTrainSamples, int imageSize, Consumer<String> logConsumer) throws IOException {
+            boolean splitTrainSamples, int imageSize, Consumer<String> logConsumer,
+            GenerationStats trainStats, GenerationStats valStats) throws IOException {
         if (splitTrainSamples) {
             log(logConsumer, "Validation split is missing; creating an automatic "
                     + Math.round((1.0 - TRAIN_FRACTION) * 100.0) + "% validation split.");
@@ -595,9 +607,11 @@ final class YoloDatasetPreparer {
         sortBySource(valGenerated);
         writeSamples(trainGenerated, trainImages, trainLabels, logConsumer, "training");
         writeSamples(valGenerated, valImages, valLabels, logConsumer, "validation");
-        writeYaml(new File(root, GENERATED_YAML_NAME), root, "images/train", "images/val", names);
+        File yaml = new File(root, GENERATED_YAML_NAME);
+        writeYaml(yaml, root, "images/train", "images/val", names);
         log(logConsumer, "Prepared " + trainGenerated.size() + " training and " + valGenerated.size()
                 + " validation YOLO samples.");
+        logGeneratedDatasetSummary(logConsumer, yaml, trainGenerated, valGenerated, trainStats, valStats);
     }
 
     private static void sortBySource(List<GeneratedSample> samples) {
@@ -617,13 +631,19 @@ final class YoloDatasetPreparer {
     }
 
     private static List<GeneratedSample> toGeneratedSamplesFromMasks(List<MaskSample> samples, int imageSize,
-            Consumer<String> logConsumer, String splitName) {
+            Consumer<String> logConsumer, String splitName, GenerationStats stats) {
         List<GeneratedSample> generated = new ArrayList<GeneratedSample>();
         int total = samples == null ? 0 : samples.size();
         int every = progressInterval(total);
         for (int i = 0; i < total; i++) {
             MaskSample sample = samples.get(i);
-            generated.addAll(buildGeneratedSamples(sample.image, sample.width, sample.height, sample.boxes, imageSize));
+            stats.sourceImages++;
+            List<GeneratedSample> sampleGenerated = buildGeneratedSamples(sample.image, sample.width, sample.height,
+                    sample.boxes, imageSize, stats);
+            if (sampleGenerated.isEmpty()) {
+                stats.skippedImages++;
+            }
+            generated.addAll(sampleGenerated);
             if ((i + 1) == total || (i + 1) % every == 0) {
                 log(logConsumer, "Converted " + (i + 1) + "/" + total + " " + splitName
                         + " mask image(s) into YOLO samples.");
@@ -633,7 +653,7 @@ final class YoloDatasetPreparer {
     }
 
     private static List<GeneratedSample> buildGeneratedSamples(
-            File image, int width, int height, List<Box> boxes, int imageSize) {
+            File image, int width, int height, List<Box> boxes, int imageSize, GenerationStats stats) {
         List<GeneratedSample> generated = new ArrayList<GeneratedSample>();
         if (boxes == null || boxes.isEmpty()) {
             return generated;
@@ -647,9 +667,11 @@ final class YoloDatasetPreparer {
         List<Box> criticalBoxes = new ArrayList<Box>();
         for (Box box : boxes) {
             if (!box.isValid()) {
+                stats.ignoredObjects++;
                 continue;
             }
             if (shouldIgnoreTinyObject(box, imageArea, tinyObjectAreaReference)) {
+                stats.ignoredObjects++;
                 continue;
             }
             validBoxes.add(box);
@@ -685,6 +707,7 @@ final class YoloDatasetPreparer {
             generated.add(GeneratedSample.crop(image, best.crop, best.labelBoxes));
             removeCovered(uncovered, best.coveredCriticalBoxes);
         }
+        stats.ignoredObjects += ignoredValidObjectCount(validBoxes, generated);
         return generated;
     }
 
@@ -925,6 +948,142 @@ final class YoloDatasetPreparer {
 
     private static int progressInterval(int total) {
         return Math.max(1, total / 20);
+    }
+
+    private static int ignoredValidObjectCount(List<Box> sourceBoxes, List<GeneratedSample> generated) {
+        Set<Integer> labeled = new HashSet<Integer>();
+        for (GeneratedSample sample : generated) {
+            for (Box box : sample.boxes) {
+                labeled.add(box.objectIndex);
+            }
+        }
+        int ignored = 0;
+        for (Box box : sourceBoxes) {
+            if (!labeled.contains(box.objectIndex)) {
+                ignored++;
+            }
+        }
+        return ignored;
+    }
+
+    private static void logYoloDatasetSummary(Consumer<String> logConsumer, String source,
+            File yaml, List<YoloSample> trainSamples, List<YoloSample> valSamples,
+            int skippedTrainImages, int skippedValImages, int cropCount, int denseTileCount) throws IOException {
+        log(logConsumer, "Dataset source: " + source + ".");
+        log(logConsumer, "Final dataset YAML path: " + yaml.getAbsolutePath());
+        log(logConsumer, "Training split: images=" + trainSamples.size()
+                + ", label_files=" + labelFileCount(trainSamples)
+                + ", objects=" + yoloObjectCount(trainSamples)
+                + ", skipped_images=" + skippedTrainImages + ".");
+        log(logConsumer, "Validation split: images=" + valSamples.size()
+                + ", label_files=" + labelFileCount(valSamples)
+                + ", objects=" + yoloObjectCount(valSamples)
+                + ", skipped_images=" + skippedValImages + ".");
+        log(logConsumer, "Generated samples: crops=" + cropCount
+                + ", dense_tiles=" + denseTileCount
+                + ", ignored_objects=0.");
+    }
+
+    private static void logGeneratedDatasetSummary(Consumer<String> logConsumer, File yaml,
+            List<GeneratedSample> trainGenerated, List<GeneratedSample> valGenerated,
+            GenerationStats trainStats, GenerationStats valStats) {
+        int ignoredObjects = trainStats.ignoredObjects + valStats.ignoredObjects;
+        log(logConsumer, "Dataset source: generated from instance masks.");
+        log(logConsumer, "Final dataset YAML path: " + yaml.getAbsolutePath());
+        log(logConsumer, "Training split: source_images=" + distinctSourceImageCount(trainGenerated)
+                + ", yolo_samples=" + trainGenerated.size()
+                + ", objects=" + generatedObjectCount(trainGenerated)
+                + ", skipped_images=" + trainStats.skippedImages
+                + ", crops=" + generatedCropCount(trainGenerated)
+                + ", dense_tiles=" + generatedDensityTileCount(trainGenerated) + ".");
+        log(logConsumer, "Validation split: source_images=" + distinctSourceImageCount(valGenerated)
+                + ", yolo_samples=" + valGenerated.size()
+                + ", objects=" + generatedObjectCount(valGenerated)
+                + ", skipped_images=" + valStats.skippedImages
+                + ", crops=" + generatedCropCount(valGenerated)
+                + ", dense_tiles=" + generatedDensityTileCount(valGenerated) + ".");
+        log(logConsumer, "Ignored objects during mask conversion: " + ignoredObjects + ".");
+    }
+
+    private static int skippedImageCount(SplitData split) throws IOException {
+        if (split == null || split.imageRoot == null || !split.imageRoot.isDirectory()) {
+            return 0;
+        }
+        return Math.max(0, collectImages(split.imageRoot).size() - split.samples.size());
+    }
+
+    private static int labelFileCount(List<YoloSample> samples) {
+        int count = 0;
+        for (YoloSample sample : samples) {
+            if (sample.label != null && sample.label.isFile()) {
+                count++;
+            }
+        }
+        return count;
+    }
+
+    private static int yoloObjectCount(List<YoloSample> samples) throws IOException {
+        int count = 0;
+        for (YoloSample sample : samples) {
+            count += labelRowCount(sample.label);
+        }
+        return count;
+    }
+
+    private static int labelRowCount(File label) throws IOException {
+        if (label == null || !label.isFile()) {
+            return 0;
+        }
+        int count = 0;
+        try (BufferedReader reader = Files.newBufferedReader(label.toPath(), StandardCharsets.UTF_8)) {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                String clean = line.trim();
+                if (clean.isEmpty() || clean.startsWith("#")) {
+                    continue;
+                }
+                if (clean.split("\\s+").length >= 5) {
+                    count++;
+                }
+            }
+        }
+        return count;
+    }
+
+    private static int generatedObjectCount(List<GeneratedSample> samples) {
+        int count = 0;
+        for (GeneratedSample sample : samples) {
+            count += sample.boxes.size();
+        }
+        return count;
+    }
+
+    private static int generatedCropCount(List<GeneratedSample> samples) {
+        int count = 0;
+        for (GeneratedSample sample : samples) {
+            if (sample.crop != null && !sample.densityTile) {
+                count++;
+            }
+        }
+        return count;
+    }
+
+    private static int generatedDensityTileCount(List<GeneratedSample> samples) {
+        int count = 0;
+        for (GeneratedSample sample : samples) {
+            if (sample.densityTile) {
+                count++;
+            }
+        }
+        return count;
+    }
+
+    private static int distinctSourceImageCount(List<GeneratedSample> samples) {
+        Set<String> images = new HashSet<String>();
+        for (GeneratedSample sample : samples) {
+            images.add(sample.sourceImage.getAbsolutePath());
+        }
+        return images.size();
     }
 
     private static void writeCrop(File source, BufferedImage image, Rectangle crop, File output) throws IOException {
@@ -1437,29 +1596,39 @@ final class YoloDatasetPreparer {
         private final int width;
         private final int height;
         private final List<Box> boxes;
+        private final boolean densityTile;
 
-        private GeneratedSample(File sourceImage, Rectangle crop, int width, int height, List<Box> boxes) {
+        private GeneratedSample(File sourceImage, Rectangle crop, int width, int height,
+                List<Box> boxes, boolean densityTile) {
             this.sourceImage = sourceImage;
             this.crop = crop;
             this.width = width;
             this.height = height;
             this.boxes = boxes;
+            this.densityTile = densityTile;
         }
 
         private static GeneratedSample full(File sourceImage, int width, int height, List<Box> boxes) {
-            return new GeneratedSample(sourceImage, null, width, height, new ArrayList<Box>(boxes));
+            return new GeneratedSample(sourceImage, null, width, height, new ArrayList<Box>(boxes), false);
         }
 
         private static GeneratedSample crop(File sourceImage, Rectangle crop, List<Box> boxes) {
-            return new GeneratedSample(sourceImage, crop, crop.width, crop.height, new ArrayList<Box>(boxes));
+            return new GeneratedSample(sourceImage, crop, crop.width, crop.height, new ArrayList<Box>(boxes), false);
         }
 
         private GeneratedSample densityTile(Rectangle tile, List<Box> boxes) {
             Rectangle sourceCrop = crop == null
                     ? new Rectangle(tile)
                     : new Rectangle(crop.x + tile.x, crop.y + tile.y, tile.width, tile.height);
-            return crop(sourceImage, sourceCrop, boxes);
+            return new GeneratedSample(sourceImage, sourceCrop, sourceCrop.width, sourceCrop.height,
+                    new ArrayList<Box>(boxes), true);
         }
+    }
+
+    private static final class GenerationStats {
+        private int sourceImages;
+        private int skippedImages;
+        private int ignoredObjects;
     }
 
     private static final class CropCandidate implements Comparable<CropCandidate> {

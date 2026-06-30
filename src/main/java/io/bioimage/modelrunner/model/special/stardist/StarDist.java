@@ -1746,16 +1746,28 @@ public final class StarDist extends DLModelPytorchProtected {
 				+ "X_val, Y_val = _load_pairs(val_pairs)" + nl
 				+ "with open(stardist_log_path, 'a', encoding='utf-8') as stardist_log, contextlib.redirect_stdout(stardist_log), contextlib.redirect_stderr(stardist_log), tf.device(_jdll_tf_device):" + nl
 				+ "  model_config = Config2D(**config)" + nl
-				+ "  model = StarDist2D(model_config, name=output_dir.name, basedir=str(output_dir.parent))" + nl
-				+ "  model.prepare_for_training()" + nl
-				+ "  model.callbacks.append(JDLLProgressCallback(model, X_val))" + nl
-				+ "  history = model.train(X_train, Y_train, validation_data=(X_val, Y_val), epochs=int(config.get('train_epochs', 1)), steps_per_epoch=int(config.get('train_steps_per_epoch', 100)), workers=0)" + nl
-				+ "  try:" + nl
-				+ "    model.keras_model.save_weights(str(output_dir / str(config.get('train_checkpoint_last', 'weights_last.h5'))))" + nl
-				+ "  except Exception:" + nl
-				+ "    pass" + nl
-				+ "task.outputs['result'] = str(output_dir)" + nl;
-	}
+					+ "  model = StarDist2D(model_config, name=output_dir.name, basedir=str(output_dir.parent))" + nl
+					+ "  model.prepare_for_training()" + nl
+					+ "  model.callbacks.append(JDLLProgressCallback(model, X_val))" + nl
+					+ "  best_path = output_dir / str(config.get('train_checkpoint', 'weights_best.h5'))" + nl
+					+ "  last_path = output_dir / str(config.get('train_checkpoint_last', 'weights_last.h5'))" + nl
+					+ "  if best_path.exists():" + nl
+					+ "    _task_update(message='Overwriting StarDist best checkpoint during training: ' + str(best_path), info={'type': 'checkpoint', 'kind': 'best', 'path': str(best_path), 'overwrite': True})" + nl
+					+ "  if last_path.exists():" + nl
+					+ "    _task_update(message='Overwriting StarDist last checkpoint during training: ' + str(last_path), info={'type': 'checkpoint', 'kind': 'last', 'path': str(last_path), 'overwrite': True})" + nl
+					+ "  history = model.train(X_train, Y_train, validation_data=(X_val, Y_val), epochs=int(config.get('train_epochs', 1)), steps_per_epoch=int(config.get('train_steps_per_epoch', 100)), workers=0)" + nl
+					+ "  if best_path.exists():" + nl
+					+ "    _task_update(message='StarDist best checkpoint: ' + str(best_path), info={'type': 'checkpoint', 'kind': 'best', 'path': str(best_path)})" + nl
+					+ "  last_existed = last_path.exists()" + nl
+					+ "  _task_update(message=('%s StarDist last checkpoint: %s' % ('Overwriting' if last_existed else 'Saving', str(last_path))), info={'type': 'checkpoint', 'kind': 'last', 'path': str(last_path), 'overwrite': last_existed})" + nl
+					+ "  try:" + nl
+					+ "    model.keras_model.save_weights(str(last_path))" + nl
+					+ "    _task_update(message='StarDist last checkpoint: ' + str(last_path), info={'type': 'checkpoint', 'kind': 'last', 'path': str(last_path)})" + nl
+					+ "  except Exception as _jdll_save_error:" + nl
+					+ "    _task_update(message='Could not save StarDist last checkpoint: ' + str(_jdll_save_error), info={'type': 'warning', 'message': str(_jdll_save_error)})" + nl
+					+ "_task_update(message='Exported/final StarDist model directory: ' + str(output_dir), info={'type': 'checkpoint', 'kind': 'final', 'path': str(output_dir)})" + nl
+					+ "task.outputs['result'] = str(output_dir)" + nl;
+		}
 
 	private static void handleTrainingEvent(TaskEvent event,
 			Consumer<StardistTrainingProgress> progressConsumer,

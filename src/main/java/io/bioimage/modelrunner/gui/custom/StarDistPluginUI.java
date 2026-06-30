@@ -775,6 +775,11 @@ public class StarDistPluginUI extends StardistGUI implements ActionListener {
             try {
             	consumer.notifyParams(null);
                 StardistTrainingConfig config = readTrainingConfig();
+                trainPanel.getTrainingLogPanel().startDiskLog(new File(config.getOutputModelDir()));
+                File uiLog = trainPanel.getTrainingLogPanel().getLogFile();
+                if (uiLog != null) {
+                    appendTrainingLog("UI log file: " + uiLog.getAbsolutePath());
+                }
                 appendTrainingHeader("StarDist", config.getModelName(),
                         config.getOutputModelDir(), config.getDatasetPath(),
                         stardistConfigSummary(config));
@@ -808,13 +813,13 @@ public class StarDistPluginUI extends StardistGUI implements ActionListener {
                         }),
                         logConsumer);
                 if (trainingRunId == trainingUiRunId) {
-                    appendTrainingLog("Saved StarDist model at: " + config.getOutputModelDir());
-                    appendTrainingLog("Training finished.");
+                    appendTrainingLog("Exported/final StarDist model directory: " + config.getOutputModelDir());
+                    appendTrainingLog("Training finished successfully.");
                     refreshStardistModels();
                 }
             } catch (Exception | Error e) {
                 if (trainingRunId == trainingUiRunId && !cancelled) {
-                    appendTrainingLog("Training failed: " + errorMessage(e));
+                    appendTrainingLog(TrainingLogUtils.failureStatus(e) + ": " + errorMessage(e));
                     e.printStackTrace();
                 }
             } finally {
@@ -876,11 +881,12 @@ public class StarDistPluginUI extends StardistGUI implements ActionListener {
                 totalTrainingEpochs, elapsed, currentSecondsPerStep);
         trainPanel.getTrainingLogPanel().setTrainingStatus(false, currentTrainingStep, totalTrainingSteps,
                 totalTrainingEpochs, elapsed, currentSecondsPerStep);
+        trainPanel.getTrainingLogPanel().closeDiskLog();
     }
 
     private void finishCancelledTrainingUiState() {
         long runId = trainingUiRunId;
-        appendTrainingLog("Training stopped by user.");
+        appendTrainingLog("Training cancelled by user.");
         finishTrainingUiState(runId);
         trainingUiRunId++;
     }
@@ -1050,10 +1056,7 @@ public class StarDistPluginUI extends StardistGUI implements ActionListener {
     }
 
     private static String errorMessage(Throwable error) {
-        String message = error.getMessage();
-        return message == null || message.trim().isEmpty()
-                ? error.getClass().getSimpleName()
-                : message.trim();
+        return TrainingLogUtils.errorMessage(error);
     }
 
     private StardistTrainingConfig readTrainingConfig() {

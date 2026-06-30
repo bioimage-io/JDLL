@@ -593,6 +593,14 @@ public final class Unet extends DLModelPytorchProtected {
                 + "_jdll_unet_config = json.loads(r'''" + TrainingCodeUtils.toJson(config) + "''')" + nl
                 + "try:" + nl
                 + "  _jdll_unet_result = jdll_unet_train(_jdll_unet_config, task=task)" + nl
+                + "  for _jdll_kind, _jdll_key in (('last', 'last_checkpoint'), ('best', 'best_checkpoint')):" + nl
+                + "    _jdll_path = _jdll_unet_result.get(_jdll_key)" + nl
+                + "    if _jdll_path:" + nl
+                + "      task.update(message='UNet %s checkpoint: %s' % (_jdll_kind, _jdll_path), info={'type': 'checkpoint', 'kind': _jdll_kind, 'path': _jdll_path})" + nl
+                + "  if _jdll_unet_result.get('model_path'):" + nl
+                + "    task.update(message='Exported/final UNet model file: ' + str(_jdll_unet_result.get('model_path')), info={'type': 'checkpoint', 'kind': 'final', 'path': _jdll_unet_result.get('model_path')})" + nl
+                + "  if _jdll_unet_result.get('model_dir'):" + nl
+                + "    task.update(message='Exported/final UNet model directory: ' + str(_jdll_unet_result.get('model_dir')), info={'type': 'checkpoint', 'kind': 'final', 'path': _jdll_unet_result.get('model_dir')})" + nl
                 + "  task.outputs['result'] = _jdll_unet_result.get('model_path')" + nl
                 + "  task.outputs['model_dir'] = _jdll_unet_result.get('model_dir')" + nl
                 + "finally:" + nl

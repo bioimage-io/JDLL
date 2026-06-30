@@ -666,6 +666,11 @@ public class UNetPluginUI extends UnetGUI implements ActionListener {
                     consumer.notifyParams(null);
                 }
                 UnetTrainingConfig config = readTrainingConfig();
+                trainPanel.getTrainingLogPanel().startDiskLog(new File(config.getOutputModelDir()));
+                File uiLog = trainPanel.getTrainingLogPanel().getLogFile();
+                if (uiLog != null) {
+                    appendTrainingLog("UI log file: " + uiLog.getAbsolutePath());
+                }
                 appendTrainingHeader("UNet", config.getModelName(),
                         config.getOutputModelDir(), config.getDatasetPath(),
                         unetConfigSummary(config));
@@ -694,13 +699,13 @@ public class UNetPluginUI extends UnetGUI implements ActionListener {
                         }),
                         logConsumer);
                 if (trainingRunId == trainingUiRunId) {
-                    appendTrainingLog("Saved UNet model at: " + config.getOutputModelPath());
-                    appendTrainingLog("Training finished.");
+                    appendTrainingLog("Exported/final UNet model file: " + config.getOutputModelPath());
+                    appendTrainingLog("Training finished successfully.");
                     refreshUnetModels();
                 }
             } catch (Exception | Error ex) {
                 if (trainingRunId == trainingUiRunId && !cancelled) {
-                    appendTrainingLog("Training failed: " + errorMessage(ex));
+                    appendTrainingLog(TrainingLogUtils.failureStatus(ex) + ": " + errorMessage(ex));
                     ex.printStackTrace();
                 }
             } finally {
@@ -762,11 +767,12 @@ public class UNetPluginUI extends UnetGUI implements ActionListener {
                 totalTrainingEpochs, elapsed, currentSecondsPerStep);
         trainPanel.getTrainingLogPanel().setTrainingStatus(false, currentTrainingStep, totalTrainingSteps,
                 totalTrainingEpochs, elapsed, currentSecondsPerStep);
+        trainPanel.getTrainingLogPanel().closeDiskLog();
     }
 
     private void finishCancelledTrainingUiState() {
         long runId = trainingUiRunId;
-        appendTrainingLog("Training stopped by user.");
+        appendTrainingLog("Training cancelled by user.");
         finishTrainingUiState(runId);
         trainingUiRunId++;
     }
@@ -950,10 +956,7 @@ public class UNetPluginUI extends UnetGUI implements ActionListener {
     }
 
     private static String errorMessage(Throwable error) {
-        String message = error.getMessage();
-        return message == null || message.trim().isEmpty()
-                ? error.getClass().getSimpleName()
-                : message.trim();
+        return TrainingLogUtils.errorMessage(error);
     }
 
     private UnetTrainingConfig readTrainingConfig() {

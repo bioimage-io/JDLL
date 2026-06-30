@@ -25,15 +25,27 @@ import java.awt.FontMetrics;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.RenderingHints;
+import java.awt.Toolkit;
+import java.awt.datatransfer.StringSelection;
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.StandardOpenOption;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 
+import javax.swing.JButton;
 import javax.swing.JPanel;
 import javax.swing.JScrollBar;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 import javax.swing.SwingUtilities;
 import javax.swing.border.LineBorder;
+import javax.swing.text.BadLocationException;
+import javax.swing.text.Document;
+import javax.swing.text.Element;
 
 public class TrainingLogPanel extends JPanel {
 
@@ -41,15 +53,20 @@ public class TrainingLogPanel extends JPanel {
 
     private static final int PAD = 6;
     private static final int STATUS_H = 36;
+    private static final int MAX_UI_LINES = 2000;
     private static final DateTimeFormatter TIME_FORMAT = DateTimeFormatter.ofPattern("HH:mm:ss");
     private static final Color TEXT_COLOR = new Color(70, 78, 98);
 
     private final JTextArea textArea = new JTextArea();
     private final JScrollPane scrollPane = new JScrollPane(textArea);
+    private final JButton copyButton = new JButton("Copy");
     private final StatusPanel statusPanel = new StatusPanel();
     private boolean followTail = true;
     private boolean adjustingScroll;
     private boolean trainingActive;
+    private BufferedWriter diskWriter;
+    private File logFile;
+    private int uiLineCount;
     private int currentStep;
     private int totalSteps;
     private int currentEpoch;
@@ -81,9 +98,15 @@ public class TrainingLogPanel extends JPanel {
             }
         });
 
+        copyButton.setToolTipText("Copy the full training log to the clipboard");
+        YoloUiUtils.styleFlatSecondaryButton(copyButton);
+        copyButton.addActionListener(e -> copyLogToClipboard());
+
         statusPanel.setOpaque(false);
         add(scrollPane);
         add(statusPanel);
+        add(copyButton);
+        setComponentZOrder(copyButton, 0);
     }
 
     /**
@@ -95,9 +118,15 @@ public class TrainingLogPanel extends JPanel {
         if (message == null || message.trim().isEmpty()) {
             return;
         }
+        String line = "[" + LocalTime.now().format(TIME_FORMAT) + "] " + message.trim();
+        String diskError = writeDiskLine(line);
         Runnable append = () -> {
             boolean shouldFollow = followTail && isAtBottom();
-            textArea.append("[" + LocalTime.now().format(TIME_FORMAT) + "] " + message.trim() + System.lineSeparator());
+            appendUiLine(line);
+            if (diskError != null) {
+                appendUiLine("[" + LocalTime.now().format(TIME_FORMAT)
+                        + "] Could not write training UI log to disk: " + diskError);
+            }
             if (shouldFollow) {
                 scrollToBottom();
             }
@@ -115,6 +144,7 @@ public class TrainingLogPanel extends JPanel {
     public void clearLog() {
         Runnable clear = () -> {
             textArea.setText("");
+            uiLineCount = 0;
             followTail = true;
             setTrainingStatus(false, 0, 0, 0, 0L, Double.NaN);
         };
@@ -123,6 +153,61 @@ public class TrainingLogPanel extends JPanel {
         } else {
             SwingUtilities.invokeLater(clear);
         }
+    }
+
+    /**
+     * Starts persisting appended log lines to {@code training-ui.log} inside the output folder.
+     *
+     * @param outputDir the training output folder.
+     */
+    public void startDiskLog(File outputDir) {
+        closeDiskLog();
+        if (outputDir == null) {
+            return;
+        }
+        File target = outputDir.isDirectory() || !outputDir.getName().endsWith(".log")
+                ? new File(outputDir, "training-ui.log")
+                : outputDir;
+        try {
+            File parent = target.getParentFile();
+            if (parent != null) {
+                Files.createDirectories(parent.toPath());
+            }
+            diskWriter = Files.newBufferedWriter(target.toPath(), StandardCharsets.UTF_8,
+                    StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING, StandardOpenOption.WRITE);
+            logFile = target;
+        } catch (IOException e) {
+            diskWriter = null;
+            logFile = null;
+            appendLine("Could not create training UI log at " + target.getAbsolutePath() + ": "
+                    + e.getMessage());
+        }
+    }
+
+    /**
+     * Closes the disk log.
+     */
+    public synchronized void closeDiskLog() {
+        if (diskWriter == null) {
+            return;
+        }
+        try {
+            diskWriter.flush();
+            diskWriter.close();
+        } catch (IOException e) {
+            // The UI log has already been written; failing close should not affect training UI cleanup.
+        } finally {
+            diskWriter = null;
+        }
+    }
+
+    /**
+     * Gets the current disk log file.
+     *
+     * @return the disk log file, or null if disabled.
+     */
+    public File getLogFile() {
+        return logFile;
     }
 
     /**
@@ -174,8 +259,62 @@ public class TrainingLogPanel extends JPanel {
         int h = Math.max(0, getHeight());
         int statusH = trainingActive ? Math.max(YoloUiUtils.MIN_FONT_SIZE * 2, Math.min(STATUS_H, h / 5)) : 0;
         int scrollH = Math.max(1, h - 2 * PAD - statusH - (statusH > 0 ? PAD : 0));
+        int copyW = Math.max(44, Math.min(70, w / 7));
+        int copyH = Math.max(20, Math.min(26, scrollH / 8));
         scrollPane.setBounds(PAD, PAD, Math.max(1, w - 2 * PAD), scrollH);
+        copyButton.setBounds(Math.max(PAD, w - PAD - copyW), PAD, copyW, copyH);
         statusPanel.setBounds(PAD, PAD + scrollH + (statusH > 0 ? PAD : 0), Math.max(1, w - 2 * PAD), statusH);
+    }
+
+    private void appendUiLine(String line) {
+        textArea.append(line + System.lineSeparator());
+        uiLineCount++;
+        trimUiLog();
+    }
+
+    private void trimUiLog() {
+        Document document = textArea.getDocument();
+        while (uiLineCount > MAX_UI_LINES) {
+            Element root = document.getDefaultRootElement();
+            if (root.getElementCount() <= 1) {
+                uiLineCount = Math.min(uiLineCount, MAX_UI_LINES);
+                return;
+            }
+            try {
+                document.remove(0, root.getElement(0).getEndOffset());
+                uiLineCount--;
+            } catch (BadLocationException e) {
+                return;
+            }
+        }
+    }
+
+    private synchronized String writeDiskLine(String line) {
+        if (diskWriter == null) {
+            return null;
+        }
+        try {
+            diskWriter.write(line);
+            diskWriter.newLine();
+            diskWriter.flush();
+            return null;
+        } catch (IOException e) {
+            closeDiskLog();
+            return e.getMessage();
+        }
+    }
+
+    private void copyLogToClipboard() {
+        String text = textArea.getText();
+        File file = logFile;
+        if (file != null && file.isFile()) {
+            try {
+                text = new String(Files.readAllBytes(file.toPath()), StandardCharsets.UTF_8);
+            } catch (IOException e) {
+                text = textArea.getText();
+            }
+        }
+        Toolkit.getDefaultToolkit().getSystemClipboard().setContents(new StringSelection(text), null);
     }
 
     private boolean isAtBottom() {

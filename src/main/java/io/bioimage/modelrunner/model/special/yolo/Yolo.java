@@ -639,25 +639,38 @@ public class Yolo extends DLModelPytorchProtected {
 				+ "      json.dump(payload, f)" + nl
 				+ "  _task_update(message='YOLO validation preview epoch %d' % payload['epoch'], current=payload['epoch'], maximum=epochs, info={'type': 'preview', 'epoch': payload['epoch'], 'preview_path': epoch_preview_path})" + nl
 				+ "  state['capture_preview'] = False" + nl
-				+ "try:" + nl
-				+ "  model = YOLO(model_source)" + nl
-				+ "  model.add_callback('on_train_start', _emit_train_start)" + nl
-				+ "  model.add_callback('on_train_batch_end', _emit_step_progress)" + nl
-				+ "  model.add_callback('on_train_epoch_end', _prepare_preview_epoch)" + nl
-				+ "  model.add_callback('on_val_start', _on_val_start)" + nl
-				+ "  model.add_callback('on_val_end', _emit_preview_results)" + nl
-				+ "  model.add_callback('on_fit_epoch_end', _emit_epoch_progress)" + nl
-				+ "  with open(yolo_log_path, 'a', encoding='utf-8') as yolo_log, contextlib.redirect_stdout(yolo_log), contextlib.redirect_stderr(yolo_log):" + nl
-				+ "    results = model.train(data=dataset_yaml, epochs=epochs, imgsz=imgsz, batch=batch_size, project=project, name=run_name, exist_ok=True, verbose=False, plots=False, workers=0, device=train_device)" + nl
-				+ "  trainer = getattr(model, 'trainer', None)" + nl
-				+ "  best = str(getattr(trainer, 'best', '') if trainer is not None else '')" + nl
-				+ "  last = str(getattr(trainer, 'last', '') if trainer is not None else '')" + nl
-				+ "  source = best if best and os.path.isfile(best) else last" + nl
-				+ "  if not source or not os.path.isfile(source):" + nl
-				+ "    raise RuntimeError('Could not find YOLO training checkpoint to save.')" + nl
-				+ "  os.makedirs(os.path.dirname(output_weights), exist_ok=True)" + nl
-				+ "  shutil.copy2(source, output_weights)" + nl
-				+ "  task.outputs['result'] = output_weights" + nl
+					+ "try:" + nl
+					+ "  model = YOLO(model_source)" + nl
+					+ "  model.add_callback('on_train_start', _emit_train_start)" + nl
+					+ "  model.add_callback('on_train_batch_end', _emit_step_progress)" + nl
+					+ "  model.add_callback('on_train_epoch_end', _prepare_preview_epoch)" + nl
+					+ "  model.add_callback('on_val_start', _on_val_start)" + nl
+					+ "  model.add_callback('on_val_end', _emit_preview_results)" + nl
+					+ "  model.add_callback('on_fit_epoch_end', _emit_epoch_progress)" + nl
+					+ "  pre_last = os.path.join(run_dir, 'weights', 'last.pt')" + nl
+					+ "  pre_best = os.path.join(run_dir, 'weights', 'best.pt')" + nl
+					+ "  if os.path.isfile(pre_last):" + nl
+					+ "    _task_update(message='Overwriting YOLO last checkpoint during training: ' + pre_last, info={'type': 'checkpoint', 'kind': 'last', 'path': pre_last, 'overwrite': True})" + nl
+					+ "  if os.path.isfile(pre_best):" + nl
+					+ "    _task_update(message='Overwriting YOLO best checkpoint during training: ' + pre_best, info={'type': 'checkpoint', 'kind': 'best', 'path': pre_best, 'overwrite': True})" + nl
+					+ "  with open(yolo_log_path, 'a', encoding='utf-8') as yolo_log, contextlib.redirect_stdout(yolo_log), contextlib.redirect_stderr(yolo_log):" + nl
+					+ "    results = model.train(data=dataset_yaml, epochs=epochs, imgsz=imgsz, batch=batch_size, project=project, name=run_name, exist_ok=True, verbose=False, plots=False, workers=0, device=train_device)" + nl
+					+ "  trainer = getattr(model, 'trainer', None)" + nl
+					+ "  best = str(getattr(trainer, 'best', '') if trainer is not None else '')" + nl
+					+ "  last = str(getattr(trainer, 'last', '') if trainer is not None else '')" + nl
+					+ "  if last:" + nl
+					+ "    _task_update(message='YOLO last checkpoint: ' + last, info={'type': 'checkpoint', 'kind': 'last', 'path': last})" + nl
+					+ "  if best:" + nl
+					+ "    _task_update(message='YOLO best checkpoint: ' + best, info={'type': 'checkpoint', 'kind': 'best', 'path': best})" + nl
+					+ "  source = best if best and os.path.isfile(best) else last" + nl
+					+ "  if not source or not os.path.isfile(source):" + nl
+					+ "    raise RuntimeError('Could not find YOLO training checkpoint to save.')" + nl
+					+ "  os.makedirs(os.path.dirname(output_weights), exist_ok=True)" + nl
+					+ "  output_existed = os.path.isfile(output_weights)" + nl
+					+ "  _task_update(message=('%s exported/final YOLO model file: %s' % ('Overwriting' if output_existed else 'Saving', output_weights)), info={'type': 'checkpoint', 'kind': 'final', 'path': output_weights, 'overwrite': output_existed})" + nl
+					+ "  shutil.copy2(source, output_weights)" + nl
+					+ "  _task_update(message='Exported/final YOLO model file: ' + output_weights, info={'type': 'checkpoint', 'kind': 'final', 'path': output_weights})" + nl
+					+ "  task.outputs['result'] = output_weights" + nl
 				+ "finally:" + nl
 				+ "  try:" + nl
 				+ "    del results" + nl

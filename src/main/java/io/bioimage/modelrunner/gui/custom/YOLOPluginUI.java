@@ -625,6 +625,12 @@ public class YOLOPluginUI extends YoloGUI implements ActionListener {
             try {
             	consumer.notifyParams(null);
                 YoloTrainingConfig config = readTrainingConfig();
+                trainPanel.getTrainingLogPanel().startDiskLog(
+                        new File(config.getOutputWeightsPath()).getParentFile());
+                File uiLog = trainPanel.getTrainingLogPanel().getLogFile();
+                if (uiLog != null) {
+                    appendTrainingLog("UI log file: " + uiLog.getAbsolutePath());
+                }
                 appendTrainingHeader("YOLO", config.getModelName(),
                         new File(config.getOutputWeightsPath()).getParent(),
                         config.getDatasetYamlPath(), yoloConfigSummary(config));
@@ -658,13 +664,13 @@ public class YOLOPluginUI extends YoloGUI implements ActionListener {
                         }),
                         logConsumer);
                 if (trainingRunId == trainingUiRunId) {
-                    appendTrainingLog("Saved YOLO checkpoint to: " + config.getOutputWeightsPath());
-                    appendTrainingLog("Training finished.");
+                    appendTrainingLog("Exported/final YOLO model file: " + config.getOutputWeightsPath());
+                    appendTrainingLog("Training finished successfully.");
                     refreshYoloModels();
                 }
             } catch (Exception | Error e) {
                 if (trainingRunId == trainingUiRunId && !cancelled) {
-                    appendTrainingLog("Training failed: " + errorMessage(e));
+                    appendTrainingLog(TrainingLogUtils.failureStatus(e) + ": " + errorMessage(e));
                     e.printStackTrace();
                 }
             } finally {
@@ -726,11 +732,12 @@ public class YOLOPluginUI extends YoloGUI implements ActionListener {
                 totalTrainingEpochs, elapsed, currentSecondsPerStep);
         trainPanel.getTrainingLogPanel().setTrainingStatus(false, currentTrainingStep, totalTrainingSteps,
                 totalTrainingEpochs, elapsed, currentSecondsPerStep);
+        trainPanel.getTrainingLogPanel().closeDiskLog();
     }
 
     private void finishCancelledTrainingUiState() {
         long runId = trainingUiRunId;
-        appendTrainingLog("Training stopped by user.");
+        appendTrainingLog("Training cancelled by user.");
         finishTrainingUiState(runId);
         trainingUiRunId++;
     }
@@ -900,10 +907,7 @@ public class YOLOPluginUI extends YoloGUI implements ActionListener {
     }
 
     private static String errorMessage(Throwable error) {
-        String message = error.getMessage();
-        return message == null || message.trim().isEmpty()
-                ? error.getClass().getSimpleName()
-                : message.trim();
+        return TrainingLogUtils.errorMessage(error);
     }
 
     private YoloTrainingConfig readTrainingConfig() {
