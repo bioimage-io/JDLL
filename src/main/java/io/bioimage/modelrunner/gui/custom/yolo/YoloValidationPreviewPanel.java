@@ -261,12 +261,13 @@ public class YoloValidationPreviewPanel extends JPanel implements TrainingValida
 
     private void updateButtons() {
         boolean enabled = samples.size() > 1;
+        boolean hasBoxes = samplesHaveBoxes();
         previousButton.setEnabled(enabled);
         nextButton.setEnabled(enabled);
-        greenColorButton.setVisible(true);
-        darkColorButton.setVisible(true);
-        greenColorButton.setEnabled(true);
-        darkColorButton.setEnabled(true);
+        greenColorButton.setVisible(hasBoxes);
+        darkColorButton.setVisible(hasBoxes);
+        greenColorButton.setEnabled(hasBoxes);
+        darkColorButton.setEnabled(hasBoxes);
         repaintColorButtons();
     }
 
@@ -303,8 +304,6 @@ public class YoloValidationPreviewPanel extends JPanel implements TrainingValida
         button.setBorder(selected
                 ? javax.swing.BorderFactory.createLineBorder(Color.BLACK, 2)
                 : YoloUiUtils.BUTTON_BORDER);
-        button.setVisible(true);
-        button.setEnabled(true);
         button.repaint();
     }
 
@@ -357,10 +356,21 @@ public class YoloValidationPreviewPanel extends JPanel implements TrainingValida
     }
 
     private static List<PreviewSample> parseSamples(JsonObject root) {
-        JsonArray images = root == null ? null : root.getAsJsonArray("images");
-        if (images == null || images.size() == 0) {
+        if (root == null) {
             return Collections.emptyList();
         }
+        JsonArray images = root.getAsJsonArray("images");
+        if (images != null && images.size() > 0) {
+            return parseDetectionSamples(images);
+        }
+        JsonArray items = root.getAsJsonArray("items");
+        if (items != null && items.size() > 0) {
+            return parseImagePreviewSamples(items);
+        }
+        return Collections.emptyList();
+    }
+
+    private static List<PreviewSample> parseDetectionSamples(JsonArray images) {
         List<PreviewSample> result = new ArrayList<PreviewSample>();
         for (JsonElement element : images) {
             if (!element.isJsonObject()) {
@@ -377,6 +387,35 @@ public class YoloValidationPreviewPanel extends JPanel implements TrainingValida
                     parseBoxes(image.getAsJsonArray("boxes"))));
         }
         return result;
+    }
+
+    private static List<PreviewSample> parseImagePreviewSamples(JsonArray items) {
+        List<PreviewSample> result = new ArrayList<PreviewSample>();
+        for (JsonElement element : items) {
+            if (!element.isJsonObject()) {
+                continue;
+            }
+            JsonObject item = element.getAsJsonObject();
+            String path = firstNonEmpty(
+                    getString(item, "overlay_path"),
+                    getString(item, "prediction_path"),
+                    getString(item, "image_path"),
+                    getString(item, "target_path"));
+            if (path == null) {
+                continue;
+            }
+            result.add(new PreviewSample(path, new File(path).getName(), Collections.emptyList()));
+        }
+        return result;
+    }
+
+    private boolean samplesHaveBoxes() {
+        for (PreviewSample sample : samples) {
+            if (sample.boxes != null && !sample.boxes.isEmpty()) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private static List<Rectangle2D.Double> parseBoxes(JsonArray boxArray) {
@@ -421,6 +460,18 @@ public class YoloValidationPreviewPanel extends JPanel implements TrainingValida
     private static String getString(JsonObject object, String key) {
         JsonElement element = object == null ? null : object.get(key);
         return element == null || element.isJsonNull() ? null : element.getAsString();
+    }
+
+    private static String firstNonEmpty(String... values) {
+        if (values == null) {
+            return null;
+        }
+        for (String value : values) {
+            if (value != null && !value.trim().isEmpty()) {
+                return value;
+            }
+        }
+        return null;
     }
 
     private static int getInt(JsonObject object, String key, int fallback) {

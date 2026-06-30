@@ -68,6 +68,7 @@ import java.util.Deque;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
 import java.util.function.Consumer;
@@ -105,6 +106,10 @@ public class YOLOPluginUI extends YoloGUI implements ActionListener {
     private volatile boolean trainingRunning;
     private long trainingUiRunId;
     private boolean windowCloseHookInstalled;
+    private int lastLoggedEpochStart;
+    private int lastLoggedTrainEpoch;
+    private int lastLoggedValidationEpoch;
+    private int lastLoggedPreviewEpoch;
     
     private Runnable cancelCallback;
     Thread workerThread;
@@ -620,6 +625,9 @@ public class YOLOPluginUI extends YoloGUI implements ActionListener {
             try {
             	consumer.notifyParams(null);
                 YoloTrainingConfig config = readTrainingConfig();
+                appendTrainingHeader("YOLO", config.getModelName(),
+                        new File(config.getOutputWeightsPath()).getParent(),
+                        config.getDatasetYamlPath(), yoloConfigSummary(config));
                 Consumer<String> logConsumer = str -> {
                     if (trainingRunId != trainingUiRunId) {
                         return;
@@ -627,7 +635,10 @@ public class YOLOPluginUI extends YoloGUI implements ActionListener {
                     if (cancelled && isExpectedApposeStreamClosed(str)) {
                         return;
                     }
-                    SwingUtilities.invokeLater(() -> System.err.println(str));
+                    SwingUtilities.invokeLater(() -> {
+                        System.err.println(str);
+                        appendBackendTrainingLog(str);
+                    });
                 };
                 trainingService.train(config,
                         progress -> SwingUtilities.invokeLater(() -> {
@@ -642,16 +653,18 @@ public class YOLOPluginUI extends YoloGUI implements ActionListener {
                             }
                             if (preview.getPreviewJsonPath() != null) {
                                 trainPanel.getValidationPreviewPanel().loadPreview(preview.getPreviewJsonPath());
-                                logConsumer.accept("Validation preview epoch " + preview.getEpoch()
-                                        + ": " + preview.getPreviewJsonPath());
+                                logValidationPreview(preview.getEpoch(), preview.getPreviewJsonPath());
                             }
                         }),
                         logConsumer);
                 if (trainingRunId == trainingUiRunId) {
+                    appendTrainingLog("Saved YOLO checkpoint to: " + config.getOutputWeightsPath());
+                    appendTrainingLog("Training finished.");
                     refreshYoloModels();
                 }
             } catch (Exception | Error e) {
                 if (trainingRunId == trainingUiRunId && !cancelled) {
+                    appendTrainingLog("Training failed: " + errorMessage(e));
                     e.printStackTrace();
                 }
             } finally {
@@ -670,15 +683,21 @@ public class YOLOPluginUI extends YoloGUI implements ActionListener {
         totalTrainingSteps = 0;
         totalTrainingEpochs = 0;
         currentSecondsPerStep = Double.NaN;
+        lastLoggedEpochStart = 0;
+        lastLoggedTrainEpoch = 0;
+        lastLoggedValidationEpoch = 0;
+        lastLoggedPreviewEpoch = 0;
         secondsPerStepSamples.clear();
         trainingRunning = true;
         trainPanel.setTrainingRunning(true);
         trainPanel.getLossGraphPanel().clearValues();
         trainPanel.getMetricGraphPanel().clearValues();
+        trainPanel.getTrainingLogPanel().clearLog();
         trainPanel.getLossGraphPanel().setTrainingStatus(true, 0, 0, 0, 0L, Double.NaN);
         trainPanel.getMetricGraphPanel().setTrainingStatus(true, 0, 0, 0, 0L, Double.NaN);
         trainPanel.getValidationPreviewPanel().clearPreview();
         trainPanel.getValidationPreviewPanel().setTrainingStatus(true, 0, 0, 0, 0L, Double.NaN);
+        trainPanel.getTrainingLogPanel().setTrainingStatus(true, 0, 0, 0, 0L, Double.NaN);
         if (trainingTimer != null) {
             trainingTimer.stop();
         }
@@ -705,10 +724,13 @@ public class YOLOPluginUI extends YoloGUI implements ActionListener {
                 totalTrainingEpochs, elapsed, currentSecondsPerStep);
         trainPanel.getValidationPreviewPanel().setTrainingStatus(false, currentTrainingStep, totalTrainingSteps,
                 totalTrainingEpochs, elapsed, currentSecondsPerStep);
+        trainPanel.getTrainingLogPanel().setTrainingStatus(false, currentTrainingStep, totalTrainingSteps,
+                totalTrainingEpochs, elapsed, currentSecondsPerStep);
     }
 
     private void finishCancelledTrainingUiState() {
         long runId = trainingUiRunId;
+        appendTrainingLog("Training stopped by user.");
         finishTrainingUiState(runId);
         trainingUiRunId++;
     }
@@ -722,6 +744,7 @@ public class YOLOPluginUI extends YoloGUI implements ActionListener {
 
     private void handleTrainingProgress(YoloTrainingProgress progress) {
         updateTrainingProgressState(progress);
+        logYoloTrainingProgress(progress);
         Double trainLoss = progress.getTrainingTotalLoss();
         if (trainLoss != null) {
             trainPanel.getLossGraphPanel().addTrainValue(
@@ -792,6 +815,95 @@ public class YOLOPluginUI extends YoloGUI implements ActionListener {
                 totalTrainingEpochs, elapsed, currentSecondsPerStep);
         trainPanel.getValidationPreviewPanel().setTrainingStatus(true, currentTrainingStep, totalTrainingSteps,
                 totalTrainingEpochs, elapsed, currentSecondsPerStep);
+        trainPanel.getTrainingLogPanel().setTrainingStatus(true, currentTrainingStep, totalTrainingSteps,
+                totalTrainingEpochs, elapsed, currentSecondsPerStep);
+    }
+
+    private void appendTrainingHeader(String framework, String modelName, String outputDir,
+            String datasetPath, String configSummary) {
+        appendTrainingLog("Starting training for " + framework + " model \"" + modelName + "\".");
+        appendTrainingLog("Output directory: " + outputDir);
+        appendTrainingLog("Analyzing dataset: " + datasetPath);
+        appendTrainingLog("Training configuration: " + configSummary);
+    }
+
+    private void appendBackendTrainingLog(String message) {
+        if (message == null || message.trim().isEmpty() || isNoisyTrainingMessage(message)) {
+            return;
+        }
+        appendTrainingLog(message);
+    }
+
+    private void appendTrainingLog(String message) {
+        trainPanel.getTrainingLogPanel().appendLine(message);
+    }
+
+    private void logValidationPreview(int epoch, String previewPath) {
+        if (epoch > 0 && epoch == lastLoggedPreviewEpoch) {
+            return;
+        }
+        lastLoggedPreviewEpoch = Math.max(lastLoggedPreviewEpoch, epoch);
+        appendTrainingLog("Saved validation examples for epoch " + epoch + " at: " + previewPath);
+    }
+
+    private void logYoloTrainingProgress(YoloTrainingProgress progress) {
+        int epoch = progress.getEpoch();
+        if (epoch > 0 && epoch != lastLoggedEpochStart) {
+            lastLoggedEpochStart = epoch;
+            appendTrainingLog("Starting epoch " + epoch + "/" + progress.getTotalEpochs() + ".");
+        }
+        boolean epochSummary = progress.getValidationTotalLoss() != null
+                || progress.getPrimaryDetectionMetric() != null
+                || !progress.getMetrics().isEmpty();
+        if (!epochSummary || epoch <= 0) {
+            return;
+        }
+        Double trainLoss = progress.getTrainingTotalLoss();
+        if (trainLoss != null && epoch != lastLoggedTrainEpoch) {
+            lastLoggedTrainEpoch = epoch;
+            appendTrainingLog("Training loss of epoch " + epoch + ": " + formatNumber(trainLoss) + ".");
+        }
+        Double validationLoss = progress.getValidationTotalLoss();
+        if (validationLoss != null && epoch != lastLoggedValidationEpoch) {
+            lastLoggedValidationEpoch = epoch;
+            String metric = progress.getPrimaryDetectionMetric() == null ? ""
+                    : ", " + progress.getPrimaryDetectionMetricName() + "="
+                            + formatNumber(progress.getPrimaryDetectionMetric());
+            appendTrainingLog("Validation of epoch " + epoch + ": loss="
+                    + formatNumber(validationLoss) + metric + ".");
+        }
+    }
+
+    private static boolean isNoisyTrainingMessage(String message) {
+        String clean = message.trim();
+        return clean.startsWith("step ")
+                || clean.matches("^(YOLO|StarDist|UNet) training step .*")
+                || clean.matches("^(YOLO|StarDist|UNet) training epoch .*")
+                || clean.matches("^(YOLO|StarDist|UNet) validation preview epoch .*")
+                || clean.matches("^(YOLO|StarDist|UNet) training started.*");
+    }
+
+    private static String yoloConfigSummary(YoloTrainingConfig config) {
+        String start = config.isFineTune() ? "fine tune from " + config.getBaseModelPath()
+                : "train from scratch using " + config.getScratchArchitecture();
+        return "epochs=" + config.getEpochs()
+                + ", image_size=" + config.getImageSize()
+                + ", device=" + config.getDevice()
+                + ", starting_point=" + start;
+    }
+
+    private static String formatNumber(Double value) {
+        if (value == null || value.isNaN() || value.isInfinite()) {
+            return "--";
+        }
+        return String.format(Locale.US, "%.5f", value.doubleValue());
+    }
+
+    private static String errorMessage(Throwable error) {
+        String message = error.getMessage();
+        return message == null || message.trim().isEmpty()
+                ? error.getClass().getSimpleName()
+                : message.trim();
     }
 
     private YoloTrainingConfig readTrainingConfig() {

@@ -35,10 +35,7 @@ public final class UnetModelRegistry {
             {"Tiny 2D", "tiny-2d"},
             {"Tiny 2.5D", "tiny-2.5d"},
             {"Medium 2D", "medium-2d"},
-            {"Medium 2.5D", "medium-2.5d"},
-            {"Medium 3D", "medium-3d"},
-            {"Pro nnU-Net 2D", "pro-nnunet-2d"},
-            {"Pro nnU-Net 3D", "pro-nnunet-3d"}
+            {"Medium 2.5D", "medium-2.5d"}
     };
 
     private static final String[] PREFERRED_WEIGHTS = new String[] {

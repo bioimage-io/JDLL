@@ -86,10 +86,12 @@ public abstract class BaseTrainPanel extends JPanel {
     protected final JButton lossButton = new JButton("Loss");
     protected final JButton metricButton = new JButton("Metric");
     protected final JButton validationPreviewButton = new JButton("Validation preview");
+    protected final JButton logButton = new JButton("Log");
     protected final JPanel graphCardPanel = new JPanel(new CardLayout());
     protected final YoloGraphPlaceholderPanel lossGraphPanel = new YoloGraphPlaceholderPanel("Loss");
     protected final YoloGraphPlaceholderPanel metricGraphPanel = new YoloGraphPlaceholderPanel("Metric");
     protected final YoloValidationPreviewPanel validationPreviewPanel;
+    protected final TrainingLogPanel trainingLogPanel = new TrainingLogPanel();
     protected final YoloActionPanel trainActionPanel = new YoloActionPanel();
     private boolean trainingRunning;
 
@@ -140,6 +142,7 @@ public abstract class BaseTrainPanel extends JPanel {
         YoloUiUtils.styleFlatSecondaryButton(lossButton);
         YoloUiUtils.styleFlatSecondaryButton(metricButton);
         YoloUiUtils.styleFlatSecondaryButton(validationPreviewButton);
+        YoloUiUtils.styleFlatSecondaryButton(logButton);
         trainActionPanel.getRunButton().setText("Train");
         trainActionPanel.getCancelButton().setEnabled(false);
 
@@ -147,10 +150,12 @@ public abstract class BaseTrainPanel extends JPanel {
         graphCardPanel.add(lossGraphPanel, "loss");
         graphCardPanel.add(metricGraphPanel, "metric");
         graphCardPanel.add(validationPreviewPanel, "validationPreview");
+        graphCardPanel.add(trainingLogPanel, "log");
 
         lossButton.addActionListener(e -> showGraph("loss"));
         metricButton.addActionListener(e -> showGraph("metric"));
         validationPreviewButton.addActionListener(e -> showGraph("validationPreview"));
+        logButton.addActionListener(e -> showGraph("log"));
         datasetBrowseButton.addActionListener(e -> browseDataset());
         baseModelBrowseButton.addActionListener(e -> browseBaseModel());
 
@@ -170,6 +175,7 @@ public abstract class BaseTrainPanel extends JPanel {
         add(lossButton);
         add(metricButton);
         add(validationPreviewButton);
+        add(logButton);
         add(graphCardPanel);
         add(trainActionPanel);
 
@@ -304,11 +310,12 @@ public abstract class BaseTrainPanel extends JPanel {
         epochsErrorLabel.setBounds(epochsErrorX, y, Math.max(1, x + innerW - epochsErrorX), row5H);
         y += row5H + gap;
 
-        int totalSwitchW = 3 * switchBtnW + 2 * gap;
+        int totalSwitchW = 4 * switchBtnW + 3 * gap;
         int switchX = x + Math.max(0, (innerW - totalSwitchW) / 2);
         lossButton.setBounds(switchX, y, switchBtnW, row6H);
         metricButton.setBounds(lossButton.getX() + switchBtnW + gap, y, switchBtnW, row6H);
         validationPreviewButton.setBounds(metricButton.getX() + switchBtnW + gap, y, switchBtnW, row6H);
+        logButton.setBounds(validationPreviewButton.getX() + switchBtnW + gap, y, switchBtnW, row6H);
 
         int graphX = x + (innerW - graphW) / 2;
         int actionW = graphW;
@@ -333,6 +340,7 @@ public abstract class BaseTrainPanel extends JPanel {
         YoloUiUtils.applyResponsiveText(lossButton, switchBtnW - 8, row6H);
         YoloUiUtils.applyResponsiveText(metricButton, switchBtnW - 8, row6H);
         YoloUiUtils.applyResponsiveText(validationPreviewButton, switchBtnW - 8, row6H);
+        YoloUiUtils.applyResponsiveText(logButton, switchBtnW - 8, row6H);
         trainActionPanel.doLayout();
     }
 
@@ -695,6 +703,15 @@ public abstract class BaseTrainPanel extends JPanel {
     }
 
     /**
+     * Returns the log button.
+     *
+     * @return the log button.
+     */
+    public JButton getLogButton() {
+        return logButton;
+    }
+
+    /**
      * Returns the loss graph panel.
      *
      * @return the loss graph panel.
@@ -719,6 +736,15 @@ public abstract class BaseTrainPanel extends JPanel {
      */
     public YoloValidationPreviewPanel getValidationPreviewPanel() {
         return validationPreviewPanel;
+    }
+
+    /**
+     * Returns the training log panel.
+     *
+     * @return the training log panel.
+     */
+    public TrainingLogPanel getTrainingLogPanel() {
+        return trainingLogPanel;
     }
 
     /**

@@ -97,15 +97,17 @@ final class YoloDatasetPreparer {
         if (!input.exists()) {
             throw new IllegalArgumentException("The training dataset path does not exist: " + input);
         }
+        log(logConsumer, "Analyzing dataset at: " + input.getAbsolutePath());
 
         File yaml = input.isFile() && isYaml(input) ? input : findDatasetYaml(input);
         if (yaml != null) {
             YamlDataset dataset = readYamlDataset(yaml);
             if (dataset.hasTrainAndVal()) {
-                log(logConsumer, "Using YOLO dataset YAML: " + yaml.getAbsolutePath());
+                log(logConsumer, "Found YOLO train/validation splits. Using YAML: " + yaml.getAbsolutePath());
                 return yaml.getAbsoluteFile();
             }
             if (dataset.hasTrainOnly()) {
+                log(logConsumer, "YOLO validation split is missing; creating train/validation split.");
                 File generatedYaml = createGeneratedYoloDataset(dataset.sourceName(), modelName, modelsDir,
                         dataset.namesOrInferred(), dataset.train.samples, Collections.<YoloSample>emptyList(),
                         true, logConsumer);
@@ -126,10 +128,14 @@ final class YoloDatasetPreparer {
         if (trainSplit != null && !trainSplit.samples.isEmpty()
                 && valSplit != null && !valSplit.samples.isEmpty()) {
             File generatedYaml = writeFolderYaml(input, trainSplit, valSplit);
+            log(logConsumer, "Found YOLO folder dataset with " + trainSplit.samples.size()
+                    + " training and " + valSplit.samples.size() + " validation images.");
             log(logConsumer, "Created YOLO dataset YAML: " + generatedYaml.getAbsolutePath());
             return generatedYaml;
         }
         if (trainSplit != null && !trainSplit.samples.isEmpty()) {
+            log(logConsumer, "YOLO validation split is missing; creating train/validation split from "
+                    + trainSplit.samples.size() + " training images.");
             File generatedYaml = createGeneratedYoloDataset(input.getName(), modelName, modelsDir,
                     inferNamesFromLabelFiles(trainSplit.samples), trainSplit.samples, Collections.<YoloSample>emptyList(),
                     true, logConsumer);
@@ -143,6 +149,10 @@ final class YoloDatasetPreparer {
                 findMaskSamples(input, "valid"));
         if (!trainMasks.isEmpty()) {
             boolean splitTrain = valMasks.isEmpty();
+            log(logConsumer, "Dataset is not directly YOLO-compatible; converting instance masks to YOLO labels.");
+            log(logConsumer, "Found " + trainMasks.size() + " training mask image(s)"
+                    + (valMasks.isEmpty() ? " and no validation masks." : " and "
+                            + valMasks.size() + " validation mask image(s)."));
             File generatedYaml = createGeneratedMaskDataset(input.getName(), modelName, modelsDir,
                     trainMasks, valMasks, splitTrain, imageSize, logConsumer);
             log(logConsumer, "Generated YOLO dataset from instance masks: " + generatedYaml.getAbsolutePath());
@@ -495,6 +505,8 @@ final class YoloDatasetPreparer {
             List<YoloSample> trainSamples, List<YoloSample> valSamples,
             boolean splitTrainSamples, Consumer<String> logConsumer) throws IOException {
         if (splitTrainSamples) {
+            log(logConsumer, "Validation split is missing; creating an automatic "
+                    + Math.round((1.0 - TRAIN_FRACTION) * 100.0) + "% validation split.");
             List<YoloSample> all = new ArrayList<YoloSample>(trainSamples);
             Collections.shuffle(all, new Random(SPLIT_SEED));
             int trainCount = splitIndex(all.size());
@@ -543,8 +555,10 @@ final class YoloDatasetPreparer {
             List<MaskSample> trainMasks, List<MaskSample> valMasks, boolean splitTrainSamples,
             int imageSize, Consumer<String> logConsumer) throws IOException {
         File root = createUniqueGeneratedRoot(sourceName, modelName, modelsDir);
-        List<GeneratedSample> trainGenerated = toGeneratedSamplesFromMasks(trainMasks, imageSize);
-        List<GeneratedSample> valGenerated = toGeneratedSamplesFromMasks(valMasks, imageSize);
+        List<GeneratedSample> trainGenerated = toGeneratedSamplesFromMasks(trainMasks, imageSize,
+                logConsumer, "training");
+        List<GeneratedSample> valGenerated = toGeneratedSamplesFromMasks(valMasks, imageSize,
+                logConsumer, "validation");
         writeGeneratedDataset(root, Collections.singletonList(DEFAULT_CLASS_NAME), trainGenerated, valGenerated,
                 splitTrainSamples, imageSize, logConsumer);
         return new File(root, GENERATED_YAML_NAME);
@@ -554,6 +568,8 @@ final class YoloDatasetPreparer {
             List<GeneratedSample> trainGenerated, List<GeneratedSample> valGenerated,
             boolean splitTrainSamples, int imageSize, Consumer<String> logConsumer) throws IOException {
         if (splitTrainSamples) {
+            log(logConsumer, "Validation split is missing; creating an automatic "
+                    + Math.round((1.0 - TRAIN_FRACTION) * 100.0) + "% validation split.");
             List<GeneratedSample> all = new ArrayList<GeneratedSample>(trainGenerated);
             Collections.shuffle(all, new Random(SPLIT_SEED));
             int trainCount = splitIndex(all.size());
@@ -577,8 +593,8 @@ final class YoloDatasetPreparer {
 
         sortBySource(trainGenerated);
         sortBySource(valGenerated);
-        writeSamples(trainGenerated, trainImages, trainLabels);
-        writeSamples(valGenerated, valImages, valLabels);
+        writeSamples(trainGenerated, trainImages, trainLabels, logConsumer, "training");
+        writeSamples(valGenerated, valImages, valLabels, logConsumer, "validation");
         writeYaml(new File(root, GENERATED_YAML_NAME), root, "images/train", "images/val", names);
         log(logConsumer, "Prepared " + trainGenerated.size() + " training and " + valGenerated.size()
                 + " validation YOLO samples.");
@@ -600,10 +616,18 @@ final class YoloDatasetPreparer {
         return trainCount;
     }
 
-    private static List<GeneratedSample> toGeneratedSamplesFromMasks(List<MaskSample> samples, int imageSize) {
+    private static List<GeneratedSample> toGeneratedSamplesFromMasks(List<MaskSample> samples, int imageSize,
+            Consumer<String> logConsumer, String splitName) {
         List<GeneratedSample> generated = new ArrayList<GeneratedSample>();
-        for (MaskSample sample : samples) {
+        int total = samples == null ? 0 : samples.size();
+        int every = progressInterval(total);
+        for (int i = 0; i < total; i++) {
+            MaskSample sample = samples.get(i);
             generated.addAll(buildGeneratedSamples(sample.image, sample.width, sample.height, sample.boxes, imageSize));
+            if ((i + 1) == total || (i + 1) % every == 0) {
+                log(logConsumer, "Converted " + (i + 1) + "/" + total + " " + splitName
+                        + " mask image(s) into YOLO samples.");
+            }
         }
         return generated;
     }
@@ -870,11 +894,14 @@ final class YoloDatasetPreparer {
         return Math.max(0, Math.min(max, start));
     }
 
-    private static void writeSamples(List<GeneratedSample> samples, File imageDir, File labelDir)
+    private static void writeSamples(List<GeneratedSample> samples, File imageDir, File labelDir,
+            Consumer<String> logConsumer, String splitName)
             throws IOException {
         int index = 0;
         File cachedSource = null;
         BufferedImage cachedImage = null;
+        int total = samples == null ? 0 : samples.size();
+        int every = progressInterval(total);
         for (GeneratedSample sample : samples) {
             String stem = safeFileName(removeExtension(sample.sourceImage.getName())) + "_" + String.format("%05d", index++);
             File imageOut;
@@ -890,7 +917,14 @@ final class YoloDatasetPreparer {
                 writeCrop(sample.sourceImage, cachedImage, sample.crop, imageOut);
             }
             writeLabel(new File(labelDir, stem + ".txt"), sample.boxes, sample.width, sample.height);
+            if (index == total || index % every == 0) {
+                log(logConsumer, "Wrote " + index + "/" + total + " " + splitName + " YOLO sample(s).");
+            }
         }
+    }
+
+    private static int progressInterval(int total) {
+        return Math.max(1, total / 20);
     }
 
     private static void writeCrop(File source, BufferedImage image, Rectangle crop, File output) throws IOException {
