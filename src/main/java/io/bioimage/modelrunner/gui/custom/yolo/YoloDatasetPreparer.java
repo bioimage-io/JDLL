@@ -63,7 +63,7 @@ final class YoloDatasetPreparer {
     private static final double PREFERRED_CROP_RESIZED_SIDE_PX = 12.0;
     private static final double MIN_OBJECT_CROP_OVERLAP_RATIO = 0.3;
     private static final double MAX_OBJECT_CROP_AREA_RATIO = 0.9;
-    private static final double BORDER_OBJECT_MARGIN_PX = 1.0;
+    private static final double BORDER_OBJECT_MARGIN_PX = 2.0;
     private static final int MIN_RESOLUTION_AWARE_CROP_SIDE_PX = 64;
     private static final String DEFAULT_CLASS_NAME = "object";
     private static final String GENERATED_YAML_NAME = "data.yaml";
