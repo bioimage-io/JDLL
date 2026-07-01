@@ -115,6 +115,9 @@ public class UNetPluginUI extends UnetGUI implements ActionListener {
     private int lastLoggedTrainEpoch;
     private int lastLoggedValidationEpoch;
     private int lastLoggedPreviewEpoch;
+    private double bestValidationScore;
+    private boolean bestValidationUsesMetric;
+    private String bestValidationCheckpointPath;
 
     /**
      * Creates a new UNetPluginUI instance.
@@ -692,6 +695,8 @@ public class UNetPluginUI extends UnetGUI implements ActionListener {
                     consumer.notifyParams(null);
                 }
                 UnetTrainingConfig config = readTrainingConfig();
+                bestValidationCheckpointPath = new File(config.getOutputModelDir(), "weights_best.pt")
+                        .getAbsolutePath();
                 trainPanel.getTrainingLogPanel().startDiskLog(new File(config.getOutputModelDir()));
                 File uiLog = trainPanel.getTrainingLogPanel().getLogFile();
                 if (uiLog != null) {
@@ -724,7 +729,6 @@ public class UNetPluginUI extends UnetGUI implements ActionListener {
                         }),
                         logConsumer);
                 if (trainingRunId == trainingUiRunId) {
-                    appendTrainingLog("Exported/final UNet model file: " + config.getOutputModelPath());
                     appendTrainingLog("Training finished successfully.");
                     refreshUnetModels();
                 }
@@ -753,6 +757,9 @@ public class UNetPluginUI extends UnetGUI implements ActionListener {
         lastLoggedTrainEpoch = 0;
         lastLoggedValidationEpoch = 0;
         lastLoggedPreviewEpoch = 0;
+        bestValidationScore = Double.NaN;
+        bestValidationUsesMetric = false;
+        bestValidationCheckpointPath = null;
         secondsPerStepSamples.clear();
         trainingRunning = true;
         trainPanel.setTrainingRunning(true);
@@ -948,11 +955,27 @@ public class UNetPluginUI extends UnetGUI implements ActionListener {
         Double validationLoss = progress.getValidationTotalLoss();
         if (validationLoss != null && epoch != lastLoggedValidationEpoch) {
             lastLoggedValidationEpoch = epoch;
-            String metric = progress.getPrimaryMetric() == null ? ""
+            Double validationMetric = progress.getPrimaryMetric();
+            String metric = validationMetric == null ? ""
                     : ", " + progress.getPrimaryMetricName() + "="
-                            + formatNumber(progress.getPrimaryMetric());
+                            + formatNumber(validationMetric);
             appendTrainingLog("Validation of epoch " + epoch + ": loss="
                     + formatNumber(validationLoss) + metric + ".");
+            if (validationMetric != null) {
+                if (!bestValidationUsesMetric || Double.isNaN(bestValidationScore)
+                        || validationMetric.doubleValue() > bestValidationScore) {
+                    bestValidationUsesMetric = true;
+                    bestValidationScore = validationMetric.doubleValue();
+                    appendTrainingLog("New best validation model at epoch " + epoch + ": "
+                            + progress.getPrimaryMetricName() + "=" + formatNumber(validationMetric)
+                            + ". Saved at: " + bestValidationCheckpointPath);
+                }
+            } else if (!bestValidationUsesMetric
+                    && (Double.isNaN(bestValidationScore) || validationLoss.doubleValue() < bestValidationScore)) {
+                bestValidationScore = validationLoss.doubleValue();
+                appendTrainingLog("New best validation model at epoch " + epoch + ": val_loss="
+                        + formatNumber(validationLoss) + ". Saved at: " + bestValidationCheckpointPath);
+            }
         }
     }
 

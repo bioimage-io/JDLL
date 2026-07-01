@@ -117,6 +117,8 @@ public class StarDistPluginUI extends StardistGUI implements ActionListener {
     private int lastLoggedTrainEpoch;
     private int lastLoggedValidationEpoch;
     private int lastLoggedPreviewEpoch;
+    private double bestValidationScore;
+    private String bestValidationCheckpointPath;
     
     private Runnable cancelCallback;
     Thread workerThread;
@@ -801,6 +803,8 @@ public class StarDistPluginUI extends StardistGUI implements ActionListener {
             try {
             	consumer.notifyParams(null);
                 StardistTrainingConfig config = readTrainingConfig();
+                bestValidationCheckpointPath = new File(config.getOutputModelDir(), "weights_best.h5")
+                        .getAbsolutePath();
                 trainPanel.getTrainingLogPanel().startDiskLog(new File(config.getOutputModelDir()));
                 File uiLog = trainPanel.getTrainingLogPanel().getLogFile();
                 if (uiLog != null) {
@@ -838,7 +842,6 @@ public class StarDistPluginUI extends StardistGUI implements ActionListener {
                         }),
                         logConsumer);
                 if (trainingRunId == trainingUiRunId) {
-                    appendTrainingLog("Exported/final StarDist model directory: " + config.getOutputModelDir());
                     appendTrainingLog("Training finished successfully.");
                     refreshStardistModels();
                 }
@@ -867,6 +870,8 @@ public class StarDistPluginUI extends StardistGUI implements ActionListener {
         lastLoggedTrainEpoch = 0;
         lastLoggedValidationEpoch = 0;
         lastLoggedPreviewEpoch = 0;
+        bestValidationScore = Double.NaN;
+        bestValidationCheckpointPath = null;
         secondsPerStepSamples.clear();
         trainingRunning = true;
         trainPanel.setTrainingRunning(true);
@@ -1050,6 +1055,11 @@ public class StarDistPluginUI extends StardistGUI implements ActionListener {
                     : ", learning_rate=" + formatNumber(progress.getLearningRate());
             appendTrainingLog("Validation of epoch " + epoch + ": loss="
                     + formatNumber(validationLoss) + lr + ".");
+            if (Double.isNaN(bestValidationScore) || validationLoss.doubleValue() < bestValidationScore) {
+                bestValidationScore = validationLoss.doubleValue();
+                appendTrainingLog("New best validation model at epoch " + epoch + ": val_loss="
+                        + formatNumber(validationLoss) + ". Saved at: " + bestValidationCheckpointPath);
+            }
         }
     }
 

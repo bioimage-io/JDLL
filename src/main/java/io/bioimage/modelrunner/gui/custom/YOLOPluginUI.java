@@ -112,6 +112,8 @@ public class YOLOPluginUI extends YoloGUI implements ActionListener {
     private int lastLoggedTrainEpoch;
     private int lastLoggedValidationEpoch;
     private int lastLoggedPreviewEpoch;
+    private double bestValidationScore;
+    private String bestValidationCheckpointPath;
     
     private Runnable cancelCallback;
     Thread workerThread;
@@ -651,6 +653,8 @@ public class YOLOPluginUI extends YoloGUI implements ActionListener {
             try {
             	consumer.notifyParams(null);
                 YoloTrainingConfig config = readTrainingConfig();
+                bestValidationCheckpointPath = new File(new File(config.getOutputWeightsPath()).getParentFile(),
+                        "weights" + File.separator + "best.pt").getAbsolutePath();
                 trainPanel.getTrainingLogPanel().startDiskLog(
                         new File(config.getOutputWeightsPath()).getParentFile());
                 File uiLog = trainPanel.getTrainingLogPanel().getLogFile();
@@ -689,7 +693,6 @@ public class YOLOPluginUI extends YoloGUI implements ActionListener {
                         }),
                         logConsumer);
                 if (trainingRunId == trainingUiRunId) {
-                    appendTrainingLog("Exported/final YOLO model file: " + config.getOutputWeightsPath());
                     appendTrainingLog("Training finished successfully.");
                     refreshYoloModels();
                 }
@@ -718,6 +721,8 @@ public class YOLOPluginUI extends YoloGUI implements ActionListener {
         lastLoggedTrainEpoch = 0;
         lastLoggedValidationEpoch = 0;
         lastLoggedPreviewEpoch = 0;
+        bestValidationScore = Double.NaN;
+        bestValidationCheckpointPath = null;
         secondsPerStepSamples.clear();
         trainingRunning = true;
         trainPanel.setTrainingRunning(true);
@@ -899,11 +904,19 @@ public class YOLOPluginUI extends YoloGUI implements ActionListener {
         Double validationLoss = progress.getValidationTotalLoss();
         if (validationLoss != null && epoch != lastLoggedValidationEpoch) {
             lastLoggedValidationEpoch = epoch;
-            String metric = progress.getPrimaryDetectionMetric() == null ? ""
+            Double validationMetric = progress.getPrimaryDetectionMetric();
+            String metric = validationMetric == null ? ""
                     : ", " + progress.getPrimaryDetectionMetricName() + "="
-                            + formatNumber(progress.getPrimaryDetectionMetric());
+                            + formatNumber(validationMetric);
             appendTrainingLog("Validation of epoch " + epoch + ": loss="
                     + formatNumber(validationLoss) + metric + ".");
+            if (validationMetric != null
+                    && (Double.isNaN(bestValidationScore) || validationMetric.doubleValue() > bestValidationScore)) {
+                bestValidationScore = validationMetric.doubleValue();
+                appendTrainingLog("New best validation model at epoch " + epoch + ": "
+                        + progress.getPrimaryDetectionMetricName() + "=" + formatNumber(validationMetric)
+                        + ". Saved at: " + bestValidationCheckpointPath);
+            }
         }
     }
 

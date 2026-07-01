@@ -664,7 +664,8 @@ public class Yolo extends DLModelPytorchProtected {
 					+ "    raise RuntimeError('Could not find YOLO training checkpoint to save.')" + nl
 					+ "  os.makedirs(os.path.dirname(output_weights), exist_ok=True)" + nl
 					+ "  output_existed = os.path.isfile(output_weights)" + nl
-					+ "  _task_update(message=('%s exported/final YOLO model file: %s' % ('Overwriting' if output_existed else 'Saving', output_weights)), info={'type': 'checkpoint', 'kind': 'final', 'path': output_weights, 'overwrite': output_existed})" + nl
+					+ "  if output_existed:" + nl
+					+ "    _task_update(message='Overwriting exported/final YOLO model file: ' + output_weights, info={'type': 'checkpoint', 'kind': 'final', 'path': output_weights, 'overwrite': True})" + nl
 					+ "  shutil.copy2(source, output_weights)" + nl
 					+ "  _task_update(message='Exported/final YOLO model file: ' + output_weights, info={'type': 'checkpoint', 'kind': 'final', 'path': output_weights})" + nl
 					+ "  task.outputs['result'] = output_weights" + nl

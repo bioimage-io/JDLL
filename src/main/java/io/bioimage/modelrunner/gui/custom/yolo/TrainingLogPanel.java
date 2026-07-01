@@ -65,6 +65,7 @@ public class TrainingLogPanel extends JPanel {
     private static final int MAX_UI_LINES = 2000;
     private static final String PLACEHOLDER = "Nothing yet...";
     private static final String ACTIVITY_TEXT = "Working";
+    private static final String BEST_VALIDATION_PREFIX = "New best validation model";
     private static final DateTimeFormatter TIME_FORMAT = DateTimeFormatter.ofPattern("HH:mm:ss");
     private static final Color TEXT_COLOR = new Color(70, 78, 98);
 
@@ -77,6 +78,7 @@ public class TrainingLogPanel extends JPanel {
     private final Timer activityTimer;
     private final Style timestampStyle;
     private final Style messageStyle;
+    private final Style bestValidationStyle;
     private final Style placeholderStyle;
     private final Style activityStyle;
     private boolean followTail = true;
@@ -114,6 +116,12 @@ public class TrainingLogPanel extends JPanel {
         StyleConstants.setFontFamily(messageStyle, Font.MONOSPACED);
         StyleConstants.setFontSize(messageStyle, 12);
         StyleConstants.setForeground(messageStyle, new Color(31, 38, 54));
+
+        bestValidationStyle = logDocument.addStyle("bestValidation", null);
+        StyleConstants.setFontFamily(bestValidationStyle, Font.MONOSPACED);
+        StyleConstants.setFontSize(bestValidationStyle, 12);
+        StyleConstants.setBold(bestValidationStyle, true);
+        StyleConstants.setForeground(bestValidationStyle, new Color(93, 64, 142));
 
         placeholderStyle = logDocument.addStyle("placeholder", null);
         StyleConstants.setFontFamily(placeholderStyle, Font.MONOSPACED);
@@ -181,7 +189,8 @@ public class TrainingLogPanel extends JPanel {
         Runnable append = () -> {
             boolean shouldFollow = followTail && isAtBottom();
             withScrollTrackingSuppressed(() -> {
-                appendUiLine(timestamp, message.trim(), messageStyle);
+                String trimmedMessage = message.trim();
+                appendUiLine(timestamp, trimmedMessage, styleForMessage(trimmedMessage));
                 if (diskError != null) {
                     appendUiLine(LocalTime.now().format(TIME_FORMAT),
                             "Could not write training UI log to disk: " + diskError,
@@ -357,6 +366,12 @@ public class TrainingLogPanel extends JPanel {
         } catch (BadLocationException e) {
             // Ignore UI logging failures. The disk log remains the source of truth.
         }
+    }
+
+    private AttributeSet styleForMessage(String message) {
+        return message != null && message.startsWith(BEST_VALIDATION_PREFIX)
+                ? bestValidationStyle
+                : messageStyle;
     }
 
     private void trimUiLog() {
