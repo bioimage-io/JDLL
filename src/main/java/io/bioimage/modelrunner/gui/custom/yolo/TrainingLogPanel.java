@@ -40,12 +40,17 @@ import javax.swing.JButton;
 import javax.swing.JPanel;
 import javax.swing.JScrollBar;
 import javax.swing.JScrollPane;
-import javax.swing.JTextArea;
+import javax.swing.JTextPane;
 import javax.swing.SwingUtilities;
+import javax.swing.Timer;
 import javax.swing.border.LineBorder;
+import javax.swing.text.AttributeSet;
 import javax.swing.text.BadLocationException;
 import javax.swing.text.Document;
 import javax.swing.text.Element;
+import javax.swing.text.Style;
+import javax.swing.text.StyleConstants;
+import javax.swing.text.StyledDocument;
 
 public class TrainingLogPanel extends JPanel {
 
@@ -53,17 +58,30 @@ public class TrainingLogPanel extends JPanel {
 
     private static final int PAD = 6;
     private static final int STATUS_H = 36;
+    private static final int CONTROLS_H = 28;
     private static final int MAX_UI_LINES = 2000;
+    private static final String PLACEHOLDER = "Nothing yet...";
+    private static final String ACTIVITY_TEXT = "Working";
     private static final DateTimeFormatter TIME_FORMAT = DateTimeFormatter.ofPattern("HH:mm:ss");
     private static final Color TEXT_COLOR = new Color(70, 78, 98);
 
-    private final JTextArea textArea = new JTextArea();
-    private final JScrollPane scrollPane = new JScrollPane(textArea);
+    private final JTextPane textPane = new NoWrapTextPane();
+    private final StyledDocument logDocument = textPane.getStyledDocument();
+    private final JScrollPane scrollPane = new JScrollPane(textPane);
     private final JButton copyButton = new JButton("Copy");
+    private final JButton clearButton = new JButton("Clear");
     private final StatusPanel statusPanel = new StatusPanel();
+    private final Timer activityTimer;
+    private final Style timestampStyle;
+    private final Style messageStyle;
+    private final Style placeholderStyle;
+    private final Style activityStyle;
     private boolean followTail = true;
     private boolean adjustingScroll;
     private boolean trainingActive;
+    private boolean placeholderVisible;
+    private int activityLineStart = -1;
+    private int activityDots;
     private BufferedWriter diskWriter;
     private File logFile;
     private int uiLineCount;
@@ -81,15 +99,35 @@ public class TrainingLogPanel extends JPanel {
         setLayout(null);
         setOpaque(true);
         setBackground(Color.WHITE);
-        setBorder(new LineBorder(new Color(205, 210, 221)));
 
-        textArea.setEditable(false);
-        textArea.setLineWrap(false);
-        textArea.setWrapStyleWord(false);
-        textArea.setFont(new Font(Font.MONOSPACED, Font.PLAIN, 12));
-        textArea.setBackground(Color.WHITE);
-        textArea.setForeground(new Color(35, 42, 56));
-        scrollPane.setBorder(null);
+        timestampStyle = logDocument.addStyle("timestamp", null);
+        StyleConstants.setFontFamily(timestampStyle, Font.MONOSPACED);
+        StyleConstants.setFontSize(timestampStyle, 11);
+        StyleConstants.setBold(timestampStyle, true);
+        StyleConstants.setForeground(timestampStyle, new Color(104, 115, 138));
+
+        messageStyle = logDocument.addStyle("message", null);
+        StyleConstants.setFontFamily(messageStyle, Font.MONOSPACED);
+        StyleConstants.setFontSize(messageStyle, 12);
+        StyleConstants.setForeground(messageStyle, new Color(31, 38, 54));
+
+        placeholderStyle = logDocument.addStyle("placeholder", null);
+        StyleConstants.setFontFamily(placeholderStyle, Font.MONOSPACED);
+        StyleConstants.setFontSize(placeholderStyle, 12);
+        StyleConstants.setItalic(placeholderStyle, true);
+        StyleConstants.setForeground(placeholderStyle, new Color(138, 147, 166));
+
+        activityStyle = logDocument.addStyle("activity", null);
+        StyleConstants.setFontFamily(activityStyle, Font.MONOSPACED);
+        StyleConstants.setFontSize(activityStyle, 12);
+        StyleConstants.setItalic(activityStyle, true);
+        StyleConstants.setForeground(activityStyle, new Color(44, 111, 179));
+
+        textPane.setEditable(false);
+        textPane.setFont(new Font(Font.MONOSPACED, Font.PLAIN, 12));
+        textPane.setBackground(Color.WHITE);
+        textPane.setForeground(new Color(35, 42, 56));
+        scrollPane.setBorder(new LineBorder(new Color(205, 210, 221)));
         scrollPane.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
         scrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
         scrollPane.getVerticalScrollBar().addAdjustmentListener(e -> {
@@ -102,11 +140,20 @@ public class TrainingLogPanel extends JPanel {
         YoloUiUtils.styleFlatSecondaryButton(copyButton);
         copyButton.addActionListener(e -> copyLogToClipboard());
 
+        clearButton.setToolTipText("Clear the visible log");
+        YoloUiUtils.styleFlatSecondaryButton(clearButton);
+        clearButton.addActionListener(e -> clearVisibleLog());
+
+        activityTimer = new Timer(550, e -> updateActivityLine());
+
         statusPanel.setOpaque(false);
         add(scrollPane);
         add(statusPanel);
+        add(clearButton);
         add(copyButton);
         setComponentZOrder(copyButton, 0);
+        setComponentZOrder(clearButton, 0);
+        showPlaceholder();
     }
 
     /**
@@ -118,14 +165,16 @@ public class TrainingLogPanel extends JPanel {
         if (message == null || message.trim().isEmpty()) {
             return;
         }
-        String line = "[" + LocalTime.now().format(TIME_FORMAT) + "] " + message.trim();
+        String timestamp = LocalTime.now().format(TIME_FORMAT);
+        String line = "[" + timestamp + "] " + message.trim();
         String diskError = writeDiskLine(line);
         Runnable append = () -> {
             boolean shouldFollow = followTail && isAtBottom();
-            appendUiLine(line);
+            appendUiLine(timestamp, message.trim(), messageStyle);
             if (diskError != null) {
-                appendUiLine("[" + LocalTime.now().format(TIME_FORMAT)
-                        + "] Could not write training UI log to disk: " + diskError);
+                appendUiLine(LocalTime.now().format(TIME_FORMAT),
+                        "Could not write training UI log to disk: " + diskError,
+                        messageStyle);
             }
             if (shouldFollow) {
                 scrollToBottom();
@@ -143,9 +192,10 @@ public class TrainingLogPanel extends JPanel {
      */
     public void clearLog() {
         Runnable clear = () -> {
-            textArea.setText("");
+            clearVisibleDocument();
             uiLineCount = 0;
             followTail = true;
+            showPlaceholder();
             setTrainingStatus(false, 0, 0, 0, 0L, Double.NaN);
         };
         if (SwingUtilities.isEventDispatchThread()) {
@@ -247,6 +297,11 @@ public class TrainingLogPanel extends JPanel {
         this.totalEpochs = Math.max(0, totalEpochs);
         this.elapsedMillis = Math.max(0L, elapsedMillis);
         this.secondsPerStep = secondsPerStep;
+        if (active) {
+            startActivityTimer();
+        } else {
+            stopActivityTimer();
+        }
         statusPanel.repaint();
     }
 
@@ -258,22 +313,38 @@ public class TrainingLogPanel extends JPanel {
         int w = Math.max(0, getWidth());
         int h = Math.max(0, getHeight());
         int statusH = trainingActive ? Math.max(YoloUiUtils.MIN_FONT_SIZE * 2, Math.min(STATUS_H, h / 5)) : 0;
-        int scrollH = Math.max(1, h - 2 * PAD - statusH - (statusH > 0 ? PAD : 0));
-        int copyW = Math.max(44, Math.min(70, w / 7));
-        int copyH = Math.max(20, Math.min(26, scrollH / 8));
-        scrollPane.setBounds(PAD, PAD, Math.max(1, w - 2 * PAD), scrollH);
-        copyButton.setBounds(Math.max(PAD, w - PAD - copyW), PAD, copyW, copyH);
-        statusPanel.setBounds(PAD, PAD + scrollH + (statusH > 0 ? PAD : 0), Math.max(1, w - 2 * PAD), statusH);
+        int controlsH = Math.max(22, Math.min(CONTROLS_H, Math.max(1, h / 7)));
+        int scrollY = PAD + controlsH + PAD;
+        int scrollH = Math.max(1, h - scrollY - PAD - statusH - (statusH > 0 ? PAD : 0));
+        int buttonW = Math.max(48, Math.min(70, w / 7));
+        int buttonH = Math.max(20, Math.min(24, controlsH));
+        int copyX = Math.max(PAD, w - PAD - buttonW);
+        int clearX = Math.max(PAD, copyX - PAD - buttonW);
+        clearButton.setBounds(clearX, PAD, buttonW, buttonH);
+        copyButton.setBounds(copyX, PAD, buttonW, buttonH);
+        scrollPane.setBounds(PAD, scrollY, Math.max(1, w - 2 * PAD), scrollH);
+        statusPanel.setBounds(PAD, scrollY + scrollH + (statusH > 0 ? PAD : 0), Math.max(1, w - 2 * PAD), statusH);
     }
 
-    private void appendUiLine(String line) {
-        textArea.append(line + System.lineSeparator());
-        uiLineCount++;
-        trimUiLog();
+    private void appendUiLine(String timestamp, String message, AttributeSet style) {
+        try {
+            removeActivityLine();
+            if (placeholderVisible) {
+                clearVisibleDocument();
+            }
+            logDocument.insertString(logDocument.getLength(), "[" + timestamp + "] ", timestampStyle);
+            logDocument.insertString(logDocument.getLength(), message + System.lineSeparator(), style);
+            uiLineCount++;
+            trimUiLog();
+            appendActivityLine();
+        } catch (BadLocationException e) {
+            // Ignore UI logging failures. The disk log remains the source of truth.
+        }
     }
 
     private void trimUiLog() {
-        Document document = textArea.getDocument();
+        removeActivityLine();
+        Document document = textPane.getDocument();
         while (uiLineCount > MAX_UI_LINES) {
             Element root = document.getDefaultRootElement();
             if (root.getElementCount() <= 1) {
@@ -287,6 +358,7 @@ public class TrainingLogPanel extends JPanel {
                 return;
             }
         }
+        appendActivityLine();
     }
 
     private synchronized String writeDiskLine(String line) {
@@ -305,16 +377,118 @@ public class TrainingLogPanel extends JPanel {
     }
 
     private void copyLogToClipboard() {
-        String text = textArea.getText();
+        String text = textPane.getText();
         File file = logFile;
         if (file != null && file.isFile()) {
             try {
                 text = new String(Files.readAllBytes(file.toPath()), StandardCharsets.UTF_8);
             } catch (IOException e) {
-                text = textArea.getText();
+                text = textPane.getText();
             }
         }
         Toolkit.getDefaultToolkit().getSystemClipboard().setContents(new StringSelection(text), null);
+    }
+
+    private void clearVisibleLog() {
+        boolean active = trainingActive;
+        clearVisibleDocument();
+        uiLineCount = 0;
+        followTail = true;
+        if (active) {
+            appendActivityLine();
+            scrollToBottom();
+        } else {
+            showPlaceholder();
+        }
+    }
+
+    private void clearVisibleDocument() {
+        try {
+            activityLineStart = -1;
+            logDocument.remove(0, logDocument.getLength());
+            placeholderVisible = false;
+        } catch (BadLocationException e) {
+            textPane.setText("");
+            activityLineStart = -1;
+            placeholderVisible = false;
+        }
+    }
+
+    private void showPlaceholder() {
+        clearVisibleDocument();
+        try {
+            logDocument.insertString(0, PLACEHOLDER, placeholderStyle);
+            placeholderVisible = true;
+        } catch (BadLocationException e) {
+            textPane.setText(PLACEHOLDER);
+            placeholderVisible = true;
+        }
+    }
+
+    private void startActivityTimer() {
+        if (!activityTimer.isRunning()) {
+            activityTimer.start();
+        }
+        updateActivityLine();
+    }
+
+    private void stopActivityTimer() {
+        if (activityTimer.isRunning()) {
+            activityTimer.stop();
+        }
+        removeActivityLine();
+    }
+
+    private void updateActivityLine() {
+        if (!trainingActive) {
+            return;
+        }
+        boolean shouldFollow = followTail && isAtBottom();
+        activityDots = activityDots % 3 + 1;
+        removeActivityLine();
+        appendActivityLine();
+        if (shouldFollow) {
+            scrollToBottom();
+        }
+    }
+
+    private void appendActivityLine() {
+        if (!trainingActive || activityLineStart >= 0) {
+            return;
+        }
+        if (placeholderVisible) {
+            clearVisibleDocument();
+        }
+        StringBuilder dots = new StringBuilder();
+        int nDots = activityDots <= 0 ? 1 : activityDots;
+        for (int i = 0; i < nDots; i++) {
+            dots.append('.');
+        }
+        try {
+            activityLineStart = logDocument.getLength();
+            logDocument.insertString(logDocument.getLength(), "[" + LocalTime.now().format(TIME_FORMAT) + "] ",
+                    timestampStyle);
+            logDocument.insertString(logDocument.getLength(), ACTIVITY_TEXT + dots + System.lineSeparator(),
+                    activityStyle);
+        } catch (BadLocationException e) {
+            activityLineStart = -1;
+        }
+    }
+
+    private void removeActivityLine() {
+        if (activityLineStart < 0) {
+            return;
+        }
+        try {
+            int length = logDocument.getLength() - activityLineStart;
+            if (length > 0) {
+                logDocument.remove(activityLineStart, length);
+            }
+        } catch (BadLocationException e) {
+            // Ignore; the next append will reset the activity line.
+        } finally {
+            activityLineStart = -1;
+        }
     }
 
     private boolean isAtBottom() {
@@ -330,6 +504,16 @@ public class TrainingLogPanel extends JPanel {
             followTail = true;
             adjustingScroll = false;
         });
+    }
+
+    private static final class NoWrapTextPane extends JTextPane {
+
+        private static final long serialVersionUID = -7342380507971939122L;
+
+        @Override
+        public boolean getScrollableTracksViewportWidth() {
+            return false;
+        }
     }
 
     private static int deriveCurrentEpoch(int currentStep, int totalSteps, int totalEpochs) {

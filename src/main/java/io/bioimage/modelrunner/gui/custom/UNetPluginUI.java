@@ -107,6 +107,8 @@ public class UNetPluginUI extends UnetGUI implements ActionListener {
     private volatile boolean inferenceRunning;
     private volatile boolean trainingRunning;
     private long trainingUiRunId;
+    private int selectedTabIndex;
+    private boolean revertingTabSelection;
     private boolean windowCloseHookInstalled;
     private Thread workerThread;
     private int lastLoggedEpochStart;
@@ -164,6 +166,9 @@ public class UNetPluginUI extends UnetGUI implements ActionListener {
             trainingTimer.stop();
             trainingTimer = null;
         }
+        inferenceRunning = false;
+        trainingRunning = false;
+        updateTabLocks();
     }
 
     /**
@@ -209,15 +214,36 @@ public class UNetPluginUI extends UnetGUI implements ActionListener {
 
     private void installTabLifecycleListener() {
         tabs.addChangeListener(e -> {
-            if (tabs.getSelectedIndex() == 0) {
-                if (trainingRunning) {
-                    trainingService.requestCancel();
-                }
-                inferenceService.close();
-            } else if (tabs.getSelectedIndex() == 1) {
+            if (revertingTabSelection) {
+                return;
+            }
+            int selected = tabs.getSelectedIndex();
+            if ((trainingRunning && selected == 0) || (inferenceRunning && selected == 1)) {
+                revertingTabSelection = true;
+                tabs.setSelectedIndex(selectedTabIndex);
+                revertingTabSelection = false;
+                return;
+            }
+            selectedTabIndex = selected;
+            if (selected == 0 || selected == 1) {
                 inferenceService.close();
             }
         });
+    }
+
+    private void startInferenceUiState() {
+        inferenceRunning = true;
+        updateTabLocks();
+    }
+
+    private void finishInferenceUiState() {
+        inferenceRunning = false;
+        updateTabLocks();
+    }
+
+    private void updateTabLocks() {
+        tabs.setEnabledAt(0, !trainingRunning);
+        tabs.setEnabledAt(1, !inferenceRunning);
     }
 
     private void installInferenceSourceListeners() {
@@ -363,16 +389,16 @@ public class UNetPluginUI extends UnetGUI implements ActionListener {
     public void actionPerformed(ActionEvent e) {
         if (e.getSource() == this.inferencePanel.getActionPanel().getRunButton()) {
             cancelled = false;
+            startInferenceUiState();
             workerThread = new Thread(() -> {
                 try {
-                    inferenceRunning = true;
                     runUnet();
                 } catch (Exception e1) {
                     if (!cancelled) {
                         e1.printStackTrace();
                     }
                 } finally {
-                    inferenceRunning = false;
+                    SwingUtilities.invokeLater(this::finishInferenceUiState);
                 }
             }, "unet-inference");
             workerThread.start();
@@ -682,7 +708,6 @@ public class UNetPluginUI extends UnetGUI implements ActionListener {
                         return;
                     }
                     SwingUtilities.invokeLater(() -> {
-                        System.err.println(str);
                         appendBackendTrainingLog(str);
                     });
                 };
@@ -731,6 +756,7 @@ public class UNetPluginUI extends UnetGUI implements ActionListener {
         secondsPerStepSamples.clear();
         trainingRunning = true;
         trainPanel.setTrainingRunning(true);
+        updateTabLocks();
         trainPanel.getLossGraphPanel().clearValues();
         trainPanel.getMetricGraphPanel().clearValues();
         trainPanel.getTrainingLogPanel().clearLog();
@@ -757,7 +783,7 @@ public class UNetPluginUI extends UnetGUI implements ActionListener {
         }
         trainPanel.setTrainingRunning(false);
         trainingRunning = false;
-        tabs.setEnabledAt(0, true);
+        updateTabLocks();
         long elapsed = Math.max(0L, System.currentTimeMillis() - trainingStartMillis);
         trainPanel.getLossGraphPanel().setTrainingStatus(false, currentTrainingStep, totalTrainingSteps,
                 totalTrainingEpochs, elapsed, currentSecondsPerStep);
