@@ -615,11 +615,11 @@ public final class Unet extends DLModelPytorchProtected {
             Consumer<UnetTrainingProgress> progressConsumer,
             Consumer<UnetValidationPreview> previewConsumer,
             Consumer<String> logConsumer) {
-        if (event.message != null && logConsumer != null) {
-            logConsumer.accept(event.message);
-        }
         if (!event.responseType.equals(ResponseType.UPDATE) || event.info == null) {
             return;
+        }
+        if (event.message != null && logConsumer != null) {
+            logConsumer.accept(event.message);
         }
         Object type = event.info.get("type");
         if ("progress".equals(type) && progressConsumer != null) {

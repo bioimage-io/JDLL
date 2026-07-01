@@ -691,11 +691,11 @@ public class Yolo extends DLModelPytorchProtected {
 			Consumer<YoloTrainingProgress> progressConsumer,
 			Consumer<YoloValidationPreview> previewConsumer,
 			Consumer<String> logConsumer) {
-		if (event.message != null && logConsumer != null) {
-			logConsumer.accept(event.message);
-		}
 		if (!event.responseType.equals(ResponseType.UPDATE) || event.info == null) {
 			return;
+		}
+		if (event.message != null && logConsumer != null) {
+			logConsumer.accept(event.message);
 		}
 		Object type = event.info.get("type");
 		if ("progress".equals(type) && progressConsumer != null) {

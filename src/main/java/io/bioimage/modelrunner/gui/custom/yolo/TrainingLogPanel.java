@@ -20,6 +20,7 @@
 package io.bioimage.modelrunner.gui.custom.yolo;
 
 import java.awt.Color;
+import java.awt.Component;
 import java.awt.Font;
 import java.awt.FontMetrics;
 import java.awt.Graphics;
@@ -37,6 +38,7 @@ import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 
 import javax.swing.JButton;
+import javax.swing.Icon;
 import javax.swing.JPanel;
 import javax.swing.JScrollBar;
 import javax.swing.JScrollPane;
@@ -44,6 +46,7 @@ import javax.swing.JTextPane;
 import javax.swing.SwingUtilities;
 import javax.swing.Timer;
 import javax.swing.border.LineBorder;
+import javax.swing.text.DefaultCaret;
 import javax.swing.text.AttributeSet;
 import javax.swing.text.BadLocationException;
 import javax.swing.text.Document;
@@ -78,6 +81,7 @@ public class TrainingLogPanel extends JPanel {
     private final Style activityStyle;
     private boolean followTail = true;
     private boolean adjustingScroll;
+    private boolean suppressScrollTracking;
     private boolean trainingActive;
     private boolean placeholderVisible;
     private int activityLineStart = -1;
@@ -127,21 +131,26 @@ public class TrainingLogPanel extends JPanel {
         textPane.setFont(new Font(Font.MONOSPACED, Font.PLAIN, 12));
         textPane.setBackground(Color.WHITE);
         textPane.setForeground(new Color(35, 42, 56));
+        ((DefaultCaret) textPane.getCaret()).setUpdatePolicy(DefaultCaret.NEVER_UPDATE);
         scrollPane.setBorder(new LineBorder(new Color(205, 210, 221)));
         scrollPane.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
         scrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
         scrollPane.getVerticalScrollBar().addAdjustmentListener(e -> {
-            if (!adjustingScroll) {
+            if (!adjustingScroll && !suppressScrollTracking) {
                 followTail = isAtBottom();
             }
         });
 
+        copyButton.setText("");
+        copyButton.setIcon(new CopyIcon());
         copyButton.setToolTipText("Copy the full training log to the clipboard");
-        YoloUiUtils.styleFlatSecondaryButton(copyButton);
+        styleLogButton(copyButton);
         copyButton.addActionListener(e -> copyLogToClipboard());
 
+        clearButton.setText("");
+        clearButton.setIcon(new EraserIcon());
         clearButton.setToolTipText("Clear the visible log");
-        YoloUiUtils.styleFlatSecondaryButton(clearButton);
+        styleLogButton(clearButton);
         clearButton.addActionListener(e -> clearVisibleLog());
 
         activityTimer = new Timer(550, e -> updateActivityLine());
@@ -170,14 +179,18 @@ public class TrainingLogPanel extends JPanel {
         String diskError = writeDiskLine(line);
         Runnable append = () -> {
             boolean shouldFollow = followTail && isAtBottom();
-            appendUiLine(timestamp, message.trim(), messageStyle);
-            if (diskError != null) {
-                appendUiLine(LocalTime.now().format(TIME_FORMAT),
-                        "Could not write training UI log to disk: " + diskError,
-                        messageStyle);
-            }
+            withScrollTrackingSuppressed(() -> {
+                appendUiLine(timestamp, message.trim(), messageStyle);
+                if (diskError != null) {
+                    appendUiLine(LocalTime.now().format(TIME_FORMAT),
+                            "Could not write training UI log to disk: " + diskError,
+                            messageStyle);
+                }
+            });
             if (shouldFollow) {
                 scrollToBottom();
+            } else {
+                followTail = false;
             }
         };
         if (SwingUtilities.isEventDispatchThread()) {
@@ -314,16 +327,19 @@ public class TrainingLogPanel extends JPanel {
         int h = Math.max(0, getHeight());
         int statusH = trainingActive ? Math.max(YoloUiUtils.MIN_FONT_SIZE * 2, Math.min(STATUS_H, h / 5)) : 0;
         int controlsH = Math.max(22, Math.min(CONTROLS_H, Math.max(1, h / 7)));
-        int scrollY = PAD + controlsH + PAD;
-        int scrollH = Math.max(1, h - scrollY - PAD - statusH - (statusH > 0 ? PAD : 0));
-        int buttonW = Math.max(48, Math.min(70, w / 7));
+        int scrollY = PAD;
+        int scrollH = Math.max(1, h - 3 * PAD - controlsH - statusH - (statusH > 0 ? PAD : 0));
+        int controlsY = scrollY + scrollH + PAD;
+        int clearW = Math.max(28, Math.min(36, w / 12));
+        int copyW = Math.max(28, Math.min(36, w / 12));
         int buttonH = Math.max(20, Math.min(24, controlsH));
-        int copyX = Math.max(PAD, w - PAD - buttonW);
-        int clearX = Math.max(PAD, copyX - PAD - buttonW);
-        clearButton.setBounds(clearX, PAD, buttonW, buttonH);
-        copyButton.setBounds(copyX, PAD, buttonW, buttonH);
+        int copyX = Math.max(PAD, w - PAD - copyW);
+        int clearX = Math.max(PAD, copyX - PAD - clearW);
         scrollPane.setBounds(PAD, scrollY, Math.max(1, w - 2 * PAD), scrollH);
-        statusPanel.setBounds(PAD, scrollY + scrollH + (statusH > 0 ? PAD : 0), Math.max(1, w - 2 * PAD), statusH);
+        clearButton.setBounds(clearX, controlsY, clearW, buttonH);
+        copyButton.setBounds(copyX, controlsY, copyW, buttonH);
+        statusPanel.setBounds(PAD, controlsY + controlsH + (statusH > 0 ? PAD : 0),
+                Math.max(1, w - 2 * PAD), statusH);
     }
 
     private void appendUiLine(String timestamp, String message, AttributeSet style) {
@@ -391,14 +407,18 @@ public class TrainingLogPanel extends JPanel {
 
     private void clearVisibleLog() {
         boolean active = trainingActive;
-        clearVisibleDocument();
-        uiLineCount = 0;
-        followTail = true;
+        withScrollTrackingSuppressed(() -> {
+            clearVisibleDocument();
+            uiLineCount = 0;
+            followTail = true;
+            if (active) {
+                appendActivityLine();
+            } else {
+                showPlaceholder();
+            }
+        });
         if (active) {
-            appendActivityLine();
             scrollToBottom();
-        } else {
-            showPlaceholder();
         }
     }
 
@@ -445,10 +465,14 @@ public class TrainingLogPanel extends JPanel {
         }
         boolean shouldFollow = followTail && isAtBottom();
         activityDots = activityDots % 3 + 1;
-        removeActivityLine();
-        appendActivityLine();
+        withScrollTrackingSuppressed(() -> {
+            removeActivityLine();
+            appendActivityLine();
+        });
         if (shouldFollow) {
             scrollToBottom();
+        } else {
+            followTail = false;
         }
     }
 
@@ -496,6 +520,20 @@ public class TrainingLogPanel extends JPanel {
         return bar.getValue() + bar.getVisibleAmount() >= bar.getMaximum() - 4;
     }
 
+    private void withScrollTrackingSuppressed(Runnable runnable) {
+        boolean previous = suppressScrollTracking;
+        suppressScrollTracking = true;
+        try {
+            runnable.run();
+        } finally {
+            if (!previous) {
+                SwingUtilities.invokeLater(() -> suppressScrollTracking = false);
+            } else {
+                suppressScrollTracking = true;
+            }
+        }
+    }
+
     private void scrollToBottom() {
         adjustingScroll = true;
         SwingUtilities.invokeLater(() -> {
@@ -506,6 +544,15 @@ public class TrainingLogPanel extends JPanel {
         });
     }
 
+    private static void styleLogButton(JButton button) {
+        button.setOpaque(true);
+        button.setFocusPainted(false);
+        button.setBorder(new LineBorder(new Color(163, 176, 199)));
+        button.setBackground(new Color(242, 246, 252));
+        button.setForeground(new Color(40, 67, 105));
+        button.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 11));
+    }
+
     private static final class NoWrapTextPane extends JTextPane {
 
         private static final long serialVersionUID = -7342380507971939122L;
@@ -513,6 +560,65 @@ public class TrainingLogPanel extends JPanel {
         @Override
         public boolean getScrollableTracksViewportWidth() {
             return false;
+        }
+    }
+
+    private static final class CopyIcon implements Icon {
+
+        private static final int SIZE = 15;
+
+        @Override
+        public int getIconWidth() {
+            return SIZE;
+        }
+
+        @Override
+        public int getIconHeight() {
+            return SIZE;
+        }
+
+        @Override
+        public void paintIcon(Component c, Graphics g, int x, int y) {
+            Graphics2D g2 = (Graphics2D) g.create();
+            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+            g2.setColor(new Color(120, 142, 174));
+            g2.drawRoundRect(x + 2, y + 1, 8, 10, 2, 2);
+            g2.setColor(new Color(40, 67, 105));
+            g2.drawRoundRect(x + 5, y + 4, 8, 10, 2, 2);
+            g2.dispose();
+        }
+    }
+
+    private static final class EraserIcon implements Icon {
+
+        private static final int SIZE = 15;
+
+        @Override
+        public int getIconWidth() {
+            return SIZE;
+        }
+
+        @Override
+        public int getIconHeight() {
+            return SIZE;
+        }
+
+        @Override
+        public void paintIcon(Component c, Graphics g, int x, int y) {
+            Graphics2D g2 = (Graphics2D) g.create();
+            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+            g2.rotate(-0.55, x + SIZE / 2.0, y + SIZE / 2.0);
+            g2.setColor(new Color(245, 171, 145));
+            g2.fillRoundRect(x + 2, y + 5, 10, 6, 2, 2);
+            g2.setColor(new Color(40, 67, 105));
+            g2.drawRoundRect(x + 2, y + 5, 10, 6, 2, 2);
+            g2.setColor(new Color(250, 250, 250));
+            g2.fillRect(x + 8, y + 6, 3, 4);
+            g2.dispose();
+            Graphics2D line = (Graphics2D) g.create();
+            line.setColor(new Color(120, 142, 174));
+            line.drawLine(x + 3, y + 13, x + 12, y + 13);
+            line.dispose();
         }
     }
 
