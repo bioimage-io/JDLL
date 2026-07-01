@@ -1344,9 +1344,6 @@ public final class StarDist extends DLModelPytorchProtected {
 			serviceConsumer.accept(python);
 		}
 		python.init("import numpy as np");
-		if (logConsumer != null) {
-			python.debug(line -> TrainingCodeUtils.logTrainingDebug(line, logConsumer));
-		}
 		try {
 			Task task = python.task(buildTrainingCode(dataDir, gtDir, outputDir, normalizedDevice,
 					imageChannels, labelColorMode, validFraction, config, cancelSignalPath));

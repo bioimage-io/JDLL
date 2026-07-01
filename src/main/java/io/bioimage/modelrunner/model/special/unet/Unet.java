@@ -208,9 +208,6 @@ public final class Unet extends DLModelPytorchProtected {
         if (serviceConsumer != null) {
             serviceConsumer.accept(python);
         }
-        if (logConsumer != null) {
-            python.debug(line -> TrainingCodeUtils.logTrainingDebug(line, logConsumer));
-        }
         try {
             Task task = python.task(buildTrainingCode(config));
             task.listen(event -> handleTrainingEvent(event, progressConsumer, previewConsumer, logConsumer));

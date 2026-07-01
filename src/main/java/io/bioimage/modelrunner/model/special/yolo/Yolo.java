@@ -375,9 +375,6 @@ public class Yolo extends DLModelPytorchProtected {
 		if (serviceConsumer != null) {
 			serviceConsumer.accept(python);
 		}
-		if (logConsumer != null) {
-			python.debug(line -> TrainingCodeUtils.logTrainingDebug(line, logConsumer));
-		}
 		try {
 			Task task = python.task(buildTrainingCode(epochs, baseModelPath, normalizedScratchArchitecture,
 					datasetYamlPath,

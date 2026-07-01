@@ -132,6 +132,7 @@ public class TrainingLogPanel extends JPanel {
         textPane.setBackground(Color.WHITE);
         textPane.setForeground(new Color(35, 42, 56));
         ((DefaultCaret) textPane.getCaret()).setUpdatePolicy(DefaultCaret.NEVER_UPDATE);
+        scrollPane.getViewport().setBackground(Color.WHITE);
         scrollPane.setBorder(new LineBorder(new Color(205, 210, 221)));
         scrollPane.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
         scrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
