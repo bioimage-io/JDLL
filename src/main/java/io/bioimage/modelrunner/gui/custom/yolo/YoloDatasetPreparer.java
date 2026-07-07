@@ -87,6 +87,28 @@ final class YoloDatasetPreparer {
         return prepare(datasetPath, modelName, modelsDir, YoloTrainingConfig.DEFAULT_IMAGE_SIZE, logConsumer);
     }
 
+    static Map<String, Object> parameterSnapshot(int imageSize) {
+        Map<String, Object> params = new LinkedHashMap<String, Object>();
+        params.put("split_seed", SPLIT_SEED);
+        params.put("train_fraction", TRAIN_FRACTION);
+        params.put("image_size", imageSize);
+        params.put("tiny_object_image_area_ratio", TINY_OBJECT_IMAGE_AREA_RATIO);
+        params.put("tiny_object_reference_factor", TINY_OBJECT_REFERENCE_FACTOR);
+        params.put("min_label_resized_side_px", MIN_LABEL_RESIZED_SIDE_PX);
+        params.put("critical_object_resized_side_px", CRITICAL_OBJECT_RESIZED_SIDE_PX);
+        params.put("preferred_crop_resized_side_px", PREFERRED_CROP_RESIZED_SIDE_PX);
+        params.put("min_object_crop_overlap_ratio", MIN_OBJECT_CROP_OVERLAP_RATIO);
+        params.put("max_object_crop_area_ratio", MAX_OBJECT_CROP_AREA_RATIO);
+        params.put("border_object_margin_px", BORDER_OBJECT_MARGIN_PX);
+        params.put("max_objects_per_density_sample", MAX_OBJECTS_PER_DENSITY_SAMPLE);
+        params.put("density_tile_fraction", DENSITY_TILE_FRACTION);
+        params.put("min_resolution_aware_crop_side_px", MIN_RESOLUTION_AWARE_CROP_SIDE_PX);
+        params.put("min_density_tile_side_px", MIN_DENSITY_TILE_SIDE_PX);
+        params.put("default_class_name", DEFAULT_CLASS_NAME);
+        params.put("generated_yaml_name", GENERATED_YAML_NAME);
+        return params;
+    }
+
     static File prepare(String datasetPath, String modelName, String modelsDir, int imageSize,
             Consumer<String> logConsumer)
             throws IOException {

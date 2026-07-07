@@ -101,6 +101,17 @@ public class YoloTrainPanel extends BaseTrainPanel {
     }
 
     /**
+     * Refreshes scratch architectures, adding a matching custom config when available.
+     *
+     * @param modelsDir the models directory.
+     */
+    public void refreshScratchArchitectures(String modelsDir) {
+        String modelName = getModelNameField().getText();
+        String custom = YoloModelRegistry.customScratchConfigValue(modelsDir, modelName);
+        setScratchArchitectures(YoloModelRegistry.buildScratchArchitectureEntries(modelsDir, modelName), custom);
+    }
+
+    /**
      * Sets the base models.
      *
      * @param models the models.

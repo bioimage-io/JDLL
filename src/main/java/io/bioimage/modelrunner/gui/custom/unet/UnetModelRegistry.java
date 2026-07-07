@@ -24,6 +24,9 @@ import java.util.Arrays;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.Locale;
+import java.util.Map;
+
+import io.bioimage.modelrunner.gui.custom.training.TrainingConfigFiles;
 
 public final class UnetModelRegistry {
 
@@ -31,11 +34,28 @@ public final class UnetModelRegistry {
     public static final String UNET_WEIGHTS_EXTENSION = ".pt";
     public static final String UNET_PYTORCH_WEIGHTS_EXTENSION = ".pth";
 
-    private static final String[][] SCRATCH_ARCHITECTURES = new String[][] {
-            {"Tiny 2D", "tiny-2d"},
-            {"Tiny 2.5D", "tiny-2.5d"},
-            {"Medium 2D", "medium-2d"},
-            {"Medium 2.5D", "medium-2.5d"}
+    public static final String SMALL_2D = "tiny-2d";
+    public static final String MEDIUM_2D = "medium-2d";
+    public static final String SMALL_FAST_3D = "tiny-2.5d";
+    public static final String MEDIUM_FAST_3D = "medium-2.5d";
+    public static final String SMALL_TRUE_3D = "tiny-3d";
+    public static final String MEDIUM_TRUE_3D = "medium-3d";
+
+    private static final boolean TRUE_3D_SUPPORTED = true;
+
+    private static final String[][] PLANAR_SCRATCH_ARCHITECTURES = new String[][] {
+            {"Small", SMALL_2D},
+            {"Medium", MEDIUM_2D}
+    };
+
+    private static final String[][] FAST_3D_SCRATCH_ARCHITECTURES = new String[][] {
+            {"Small - Fast 3D", SMALL_FAST_3D},
+            {"Medium - Fast 3D", MEDIUM_FAST_3D}
+    };
+
+    private static final String[][] TRUE_3D_SCRATCH_ARCHITECTURES = new String[][] {
+            {"Small - True 3D", SMALL_TRUE_3D},
+            {"Medium - True 3D", MEDIUM_TRUE_3D}
     };
 
     private static final String[] PREFERRED_WEIGHTS = new String[] {
@@ -82,11 +102,78 @@ public final class UnetModelRegistry {
      * @return the created linked hash map.
      */
     public static LinkedHashMap<String, String> buildScratchArchitectureEntries() {
+        return buildPlanarScratchArchitectureEntries();
+    }
+
+    /**
+     * Builds the scratch architecture entries for 2D datasets.
+     *
+     * @return the created linked hash map.
+     */
+    public static LinkedHashMap<String, String> buildPlanarScratchArchitectureEntries() {
+        return buildPlanarScratchArchitectureEntries(null, null, false);
+    }
+
+    /**
+     * Builds the scratch architecture entries for 2D datasets.
+     *
+     * @param modelsDir the models directory.
+     * @param modelName the model name.
+     * @param includeCustom whether a compatible custom config may be added.
+     * @return the created linked hash map.
+     */
+    public static LinkedHashMap<String, String> buildPlanarScratchArchitectureEntries(String modelsDir,
+            String modelName, boolean includeCustom) {
         LinkedHashMap<String, String> architectures = new LinkedHashMap<String, String>();
-        for (String[] architecture : SCRATCH_ARCHITECTURES) {
-            architectures.put(architecture[0], architecture[1]);
+        String customName = normalizeModelName(modelName);
+        String customConfig = includeCustom ? customScratchConfigValue(modelsDir, modelName, false) : null;
+        if (customConfig != null) {
+            architectures.put("[Custom config] " + customName, customConfig);
+        }
+        addArchitectures(architectures, PLANAR_SCRATCH_ARCHITECTURES);
+        return architectures;
+    }
+
+    /**
+     * Builds the scratch architecture entries for datasets that look volumetric.
+     *
+     * @return the created linked hash map.
+     */
+    public static LinkedHashMap<String, String> buildVolumeScratchArchitectureEntries() {
+        return buildVolumeScratchArchitectureEntries(null, null, false);
+    }
+
+    /**
+     * Builds the scratch architecture entries for datasets that look volumetric.
+     *
+     * @param modelsDir the models directory.
+     * @param modelName the model name.
+     * @param includeCustom whether a compatible custom config may be added.
+     * @return the created linked hash map.
+     */
+    public static LinkedHashMap<String, String> buildVolumeScratchArchitectureEntries(String modelsDir,
+            String modelName, boolean includeCustom) {
+        LinkedHashMap<String, String> architectures = new LinkedHashMap<String, String>();
+        String customName = normalizeModelName(modelName);
+        String customConfig = includeCustom ? customScratchConfigValue(modelsDir, modelName, true) : null;
+        if (customConfig != null) {
+            architectures.put("[Custom config] " + customName, customConfig);
+        }
+        addArchitectures(architectures, FAST_3D_SCRATCH_ARCHITECTURES);
+        if (TRUE_3D_SUPPORTED) {
+            addArchitectures(architectures, TRUE_3D_SCRATCH_ARCHITECTURES);
         }
         return architectures;
+    }
+
+    /**
+     * Returns the default architecture for the detected dimensionality.
+     *
+     * @param volume true if dataset looks volumetric.
+     * @return the default architecture value.
+     */
+    public static String defaultScratchArchitecture(boolean volume) {
+        return volume ? SMALL_FAST_3D : SMALL_2D;
     }
 
     /**
@@ -99,12 +186,117 @@ public final class UnetModelRegistry {
         if (architecture == null) {
             return false;
         }
-        for (String[] candidate : SCRATCH_ARCHITECTURES) {
+        if (containsArchitecture(PLANAR_SCRATCH_ARCHITECTURES, architecture)
+                || containsArchitecture(FAST_3D_SCRATCH_ARCHITECTURES, architecture)) {
+            return true;
+        }
+        if (!TRUE_3D_SUPPORTED) {
+            return false;
+        }
+        return containsArchitecture(TRUE_3D_SCRATCH_ARCHITECTURES, architecture)
+                || isCustomScratchConfig(architecture);
+    }
+
+    /**
+     * Returns a custom scratch config value.
+     *
+     * @param modelsDir the models directory.
+     * @param modelName the model name.
+     * @param volume true for volumetric datasets.
+     * @return the config path, or null.
+     */
+    public static String customScratchConfigValue(String modelsDir, String modelName, boolean volume) {
+        File config = TrainingConfigFiles.configFileForModelName(modelsDir, UNET_MODELS_SUBDIR,
+                normalizeModelName(modelName));
+        return isCustomScratchConfigCompatible(config, volume) ? config.getAbsolutePath() : null;
+    }
+
+    /**
+     * Returns whether value points to a valid UNet scratch config.
+     *
+     * @param value the value.
+     * @return true if valid.
+     */
+    public static boolean isCustomScratchConfig(String value) {
+        return TrainingConfigFiles.isConfigPath(value) && isCustomScratchConfig(new File(value.trim()));
+    }
+
+    /**
+     * Loads a custom UNet config.
+     *
+     * @param value the value.
+     * @return the loaded config, or null.
+     */
+    public static Map<String, Object> loadCustomScratchConfig(String value) {
+        return isCustomScratchConfig(value) ? TrainingConfigFiles.load(value) : null;
+    }
+
+    /**
+     * Returns the architecture encoded by a UNet config.
+     *
+     * @param config the config.
+     * @return the architecture, or null.
+     */
+    public static String architectureFromConfig(Map<String, Object> config) {
+        String architecture = TrainingConfigFiles.stringAt(config, "architecture");
+        if (architecture == null || architecture.trim().isEmpty()) {
+            architecture = TrainingConfigFiles.stringAt(config, "training", "architecture");
+        }
+        return architecture;
+    }
+
+    private static boolean isCustomScratchConfigCompatible(File configFile, boolean volume) {
+        Map<String, Object> config = TrainingConfigFiles.load(configFile);
+        if (!isCustomScratchConfig(config)) {
+            return false;
+        }
+        String architecture = architectureFromConfig(config);
+        String lowerArchitecture = architecture == null ? "" : architecture.toLowerCase(Locale.ROOT);
+        boolean architectureVolume = lowerArchitecture.contains("2.5d") || lowerArchitecture.contains("3d");
+        return architectureVolume == volume;
+    }
+
+    private static boolean isCustomScratchConfig(File configFile) {
+        return isCustomScratchConfig(TrainingConfigFiles.load(configFile));
+    }
+
+    private static boolean isCustomScratchConfig(Map<String, Object> config) {
+        if (config == null) {
+            return false;
+        }
+        String format = TrainingConfigFiles.stringAt(config, "format");
+        String framework = TrainingConfigFiles.stringAt(config, "framework");
+        if (format != null && !"jdll-unet".equalsIgnoreCase(format)) {
+            return false;
+        }
+        if (framework != null && !"unet".equalsIgnoreCase(framework)) {
+            return false;
+        }
+        return isKnownBuiltInArchitecture(architectureFromConfig(config));
+    }
+
+    private static void addArchitectures(LinkedHashMap<String, String> target, String[][] architectures) {
+        for (String[] architecture : architectures) {
+            target.put(architecture[0], architecture[1]);
+        }
+    }
+
+    private static boolean containsArchitecture(String[][] architectures, String architecture) {
+        if (architecture == null) {
+            return false;
+        }
+        for (String[] candidate : architectures) {
             if (candidate[1].equalsIgnoreCase(architecture.trim())) {
                 return true;
             }
         }
         return false;
+    }
+
+    private static boolean isKnownBuiltInArchitecture(String architecture) {
+        return containsArchitecture(PLANAR_SCRATCH_ARCHITECTURES, architecture)
+                || containsArchitecture(FAST_3D_SCRATCH_ARCHITECTURES, architecture)
+                || (TRUE_3D_SUPPORTED && containsArchitecture(TRUE_3D_SCRATCH_ARCHITECTURES, architecture));
     }
 
     /**
@@ -171,6 +363,10 @@ public final class UnetModelRegistry {
             return fileName.substring(0, fileName.length() - UNET_PYTORCH_WEIGHTS_EXTENSION.length());
         }
         return fileName;
+    }
+
+    private static String normalizeModelName(String modelName) {
+        return removeWeightsExtension(modelName == null ? "" : modelName.trim()).trim();
     }
 
     private static boolean isModelDirectory(File file) {

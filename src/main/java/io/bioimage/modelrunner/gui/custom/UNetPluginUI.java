@@ -50,6 +50,8 @@ import javax.swing.JOptionPane;
 import javax.swing.SwingUtilities;
 import javax.swing.Timer;
 import javax.swing.WindowConstants;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
 import javax.swing.filechooser.FileNameExtensionFilter;
 
 import org.apposed.appose.BuildException;
@@ -58,6 +60,7 @@ import io.bioimage.modelrunner.exceptions.LoadModelException;
 import io.bioimage.modelrunner.exceptions.RunModelException;
 import io.bioimage.modelrunner.gui.adapter.GuiAdapter;
 import io.bioimage.modelrunner.gui.custom.unet.UnetGUI;
+import io.bioimage.modelrunner.gui.custom.unet.UnetDatasetInspector;
 import io.bioimage.modelrunner.gui.custom.unet.UnetInferenceService;
 import io.bioimage.modelrunner.gui.custom.unet.UnetInstaller;
 import io.bioimage.modelrunner.gui.custom.unet.UnetModelRegistry;
@@ -118,6 +121,8 @@ public class UNetPluginUI extends UnetGUI implements ActionListener {
     private double bestValidationScore;
     private boolean bestValidationUsesMetric;
     private String bestValidationCheckpointPath;
+    private Timer datasetReviewTimer;
+    private long datasetReviewRunId;
 
     /**
      * Creates a new UNetPluginUI instance.
@@ -133,6 +138,7 @@ public class UNetPluginUI extends UnetGUI implements ActionListener {
         LinkedHashMap<String, String> unetModelEntries = UnetModelRegistry.buildModelEntries(modelsDir);
         this.inferencePanel.getModelSelectionPanel().setModels(unetModelEntries);
         this.trainPanel.setBaseModels(unetModelEntries);
+        this.trainPanel.setModelsDir(modelsDir);
 
         this.inferencePanel.getModelSelectionPanel().getBrowseButton().addActionListener(e -> browseInferenceModel());
         this.inferencePanel.getActionPanel().getRunButton().addActionListener(this);
@@ -140,6 +146,8 @@ public class UNetPluginUI extends UnetGUI implements ActionListener {
         this.trainPanel.getTrainActionPanel().getRunButton().addActionListener(this);
         this.trainPanel.getTrainActionPanel().getCancelButton().addActionListener(this);
         installInferenceSourceListeners();
+        installTrainingScratchConfigListener();
+        installTrainingDatasetReviewListener();
         installTabLifecycleListener();
 
         if (this.consumer == null) {
@@ -168,6 +176,10 @@ public class UNetPluginUI extends UnetGUI implements ActionListener {
         if (trainingTimer != null) {
             trainingTimer.stop();
             trainingTimer = null;
+        }
+        if (datasetReviewTimer != null) {
+            datasetReviewTimer.stop();
+            datasetReviewTimer = null;
         }
         inferenceRunning = false;
         trainingRunning = false;
@@ -267,6 +279,108 @@ public class UNetPluginUI extends UnetGUI implements ActionListener {
         });
         sourcePanel.setSystemPathDropConsumer(file -> updateSystemPathPreview(file));
         sourcePanel.getBrowseButton().addActionListener(e -> browseSystemImagePath());
+    }
+
+    private void installTrainingDatasetReviewListener() {
+        datasetReviewTimer = new Timer(450, e -> reviewTrainingDataset());
+        datasetReviewTimer.setRepeats(false);
+        trainPanel.getDatasetField().getDocument().addDocumentListener(new DocumentListener() {
+            /**
+             * Executes insert update.
+             *
+             * @param e the document event.
+             */
+            @Override
+            public void insertUpdate(DocumentEvent e) {
+                scheduleTrainingDatasetReview();
+            }
+
+            /**
+             * Executes remove update.
+             *
+             * @param e the document event.
+             */
+            @Override
+            public void removeUpdate(DocumentEvent e) {
+                scheduleTrainingDatasetReview();
+            }
+
+            /**
+             * Executes changed update.
+             *
+             * @param e the document event.
+             */
+            @Override
+            public void changedUpdate(DocumentEvent e) {
+                scheduleTrainingDatasetReview();
+            }
+        });
+    }
+
+    private void installTrainingScratchConfigListener() {
+        trainPanel.getModelNameField().getDocument().addDocumentListener(new DocumentListener() {
+            /**
+             * Executes insert update.
+             *
+             * @param e the document event.
+             */
+            @Override
+            public void insertUpdate(DocumentEvent e) {
+                refreshTrainingScratchArchitectures();
+            }
+
+            /**
+             * Executes remove update.
+             *
+             * @param e the document event.
+             */
+            @Override
+            public void removeUpdate(DocumentEvent e) {
+                refreshTrainingScratchArchitectures();
+            }
+
+            /**
+             * Executes changed update.
+             *
+             * @param e the document event.
+             */
+            @Override
+            public void changedUpdate(DocumentEvent e) {
+                refreshTrainingScratchArchitectures();
+            }
+        });
+    }
+
+    private void refreshTrainingScratchArchitectures() {
+        if (trainingRunning) {
+            return;
+        }
+        trainPanel.refreshScratchArchitectures();
+    }
+
+    private void scheduleTrainingDatasetReview() {
+        if (datasetReviewTimer != null) {
+            datasetReviewTimer.restart();
+        }
+    }
+
+    private void reviewTrainingDataset() {
+        if (trainingRunning) {
+            return;
+        }
+        long runId = ++datasetReviewRunId;
+        String text = trainPanel.getDatasetField().getText();
+        final File datasetPath = text == null || text.trim().isEmpty() ? null : new File(text.trim());
+        Thread reviewer = new Thread(() -> {
+            UnetDatasetInspector.Dimensionality dimensionality = UnetDatasetInspector.inspect(datasetPath);
+            SwingUtilities.invokeLater(() -> {
+                if (runId == datasetReviewRunId) {
+                    trainPanel.setDatasetDimensionality(dimensionality);
+                }
+            });
+        }, "unet-dataset-review");
+        reviewer.setDaemon(true);
+        reviewer.start();
     }
 
     private void browseInferenceModel() {
@@ -1031,6 +1145,7 @@ public class UNetPluginUI extends UnetGUI implements ActionListener {
         SwingUtilities.invokeLater(() -> {
             inferencePanel.getModelSelectionPanel().setModels(unetModelEntries);
             trainPanel.setBaseModels(unetModelEntries);
+            trainPanel.setModelsDir(modelsDir);
         });
     }
 

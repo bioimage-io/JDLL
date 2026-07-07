@@ -33,17 +33,22 @@ import io.bioimage.modelrunner.gui.custom.yolo.YoloModelSelectionEntry;
 public class UnetTrainPanel extends BaseTrainPanel {
 
     private static final long serialVersionUID = 519461882197793765L;
+    private boolean volumeArchitectureMode;
+    private String modelsDir;
+    private UnetDatasetInspector.Dimensionality datasetDimensionality = UnetDatasetInspector.Dimensionality.UNKNOWN;
 
     /**
      * Creates a new UnetTrainPanel instance.
      */
     protected UnetTrainPanel() {
         super();
-        setScratchArchitectures(UnetModelRegistry.buildScratchArchitectureEntries());
+        setScratchArchitectures(UnetModelRegistry.buildPlanarScratchArchitectureEntries());
+        selectScratchArchitectureValue(UnetModelRegistry.defaultScratchArchitecture(false));
         scratchRadio.setSelected(true);
         baseModelComboBox.setEnabled(false);
         baseModelBrowseButton.setEnabled(false);
         scratchArchitectureComboBox.setEnabled(true);
+        scratchArchitectureComboBox.setToolTipText("Small and Medium train standard 2D UNet models.");
     }
 
     /**
@@ -103,6 +108,52 @@ public class UnetTrainPanel extends BaseTrainPanel {
     }
 
     /**
+     * Updates scratch architectures according to the reviewed dataset dimensionality.
+     *
+     * @param dimensionality the inferred dataset dimensionality.
+     */
+    public void setDatasetDimensionality(UnetDatasetInspector.Dimensionality dimensionality) {
+        boolean previousVolume = volumeArchitectureMode;
+        datasetDimensionality = dimensionality == null ? UnetDatasetInspector.Dimensionality.UNKNOWN : dimensionality;
+        boolean volume = dimensionality == UnetDatasetInspector.Dimensionality.THREE_D;
+        volumeArchitectureMode = volume;
+        refreshScratchArchitectures(volume != previousVolume);
+        scratchArchitectureComboBox.setToolTipText(volume
+                ? "Fast 3D trains with neighboring planes. True 3D trains on full volumetric patches."
+                : "Small and Medium train standard 2D UNet models.");
+    }
+
+    /**
+     * Sets the models directory used to discover custom scratch configs.
+     *
+     * @param modelsDir the models directory.
+     */
+    public void setModelsDir(String modelsDir) {
+        this.modelsDir = modelsDir;
+        refreshScratchArchitectures();
+    }
+
+    /**
+     * Refreshes the scratch architectures.
+     */
+    public void refreshScratchArchitectures() {
+        refreshScratchArchitectures(false);
+    }
+
+    private void refreshScratchArchitectures(boolean selectDefault) {
+        boolean volume = datasetDimensionality == UnetDatasetInspector.Dimensionality.THREE_D;
+        boolean reviewed = datasetDimensionality != UnetDatasetInspector.Dimensionality.UNKNOWN;
+        String modelName = getModelNameField().getText();
+        String custom = reviewed ? UnetModelRegistry.customScratchConfigValue(modelsDir, modelName, volume) : null;
+        setScratchArchitectures(volume
+                ? UnetModelRegistry.buildVolumeScratchArchitectureEntries(modelsDir, modelName, reviewed)
+                : UnetModelRegistry.buildPlanarScratchArchitectureEntries(modelsDir, modelName, reviewed), custom);
+        if (custom == null && selectDefault) {
+            selectScratchArchitectureValue(UnetModelRegistry.defaultScratchArchitecture(volume));
+        }
+    }
+
+    /**
      * Sets the base models.
      *
      * @param models the models.
@@ -118,4 +169,5 @@ public class UnetTrainPanel extends BaseTrainPanel {
         }
         baseModelComboBox.setModel(comboModel);
     }
+
 }

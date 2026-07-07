@@ -31,6 +31,8 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.stream.Stream;
 
+import io.bioimage.modelrunner.gui.custom.training.TrainingConfigFiles;
+
 public final class StardistModelRegistry {
 
     public static final String STARDIST_MODELS_SUBDIR = "stardist";
@@ -89,7 +91,23 @@ public final class StardistModelRegistry {
      * @return the created linked hash map.
      */
     public static LinkedHashMap<String, String> buildScratchArchitectureEntries() {
+        return buildScratchArchitectureEntries(null, null);
+    }
+
+    /**
+     * Builds the scratch architecture entries, adding a compatible custom config if present.
+     *
+     * @param modelsDir the models directory.
+     * @param modelName the model name.
+     * @return the created linked hash map.
+     */
+    public static LinkedHashMap<String, String> buildScratchArchitectureEntries(String modelsDir, String modelName) {
         LinkedHashMap<String, String> architectures = new LinkedHashMap<String, String>();
+        String customName = normalizeModelName(modelName);
+        String customConfig = customScratchConfigValue(modelsDir, modelName);
+        if (customConfig != null) {
+            architectures.put("[Custom config] " + customName, customConfig);
+        }
         for (String[] architecture : SCRATCH_ARCHITECTURES) {
             architectures.put(architecture[0], architecture[1]);
         }
@@ -111,7 +129,75 @@ public final class StardistModelRegistry {
                 return true;
             }
         }
-        return false;
+        return isCustomScratchConfig(architecture);
+    }
+
+    /**
+     * Returns the custom scratch config value for a model name.
+     *
+     * @param modelsDir the models directory.
+     * @param modelName the model name.
+     * @return the config path, or null.
+     */
+    public static String customScratchConfigValue(String modelsDir, String modelName) {
+        File config = TrainingConfigFiles.configFileForModelName(modelsDir, STARDIST_MODELS_SUBDIR,
+                normalizeModelName(modelName));
+        return isCustomScratchConfig(config) ? config.getAbsolutePath() : null;
+    }
+
+    /**
+     * Returns whether value points to a valid StarDist scratch config.
+     *
+     * @param value the value.
+     * @return true if valid.
+     */
+    public static boolean isCustomScratchConfig(String value) {
+        return TrainingConfigFiles.isConfigPath(value) && isCustomScratchConfig(new File(value.trim()));
+    }
+
+    /**
+     * Loads a custom StarDist config.
+     *
+     * @param value the config path.
+     * @return the loaded config, or null.
+     */
+    public static Map<String, Object> loadCustomScratchConfig(String value) {
+        return isCustomScratchConfig(value) ? TrainingConfigFiles.load(value) : null;
+    }
+
+    /**
+     * Returns the image channel mode for a scratch architecture.
+     *
+     * @param architecture the architecture or custom config path.
+     * @return "rgb" or "grayscale".
+     */
+    public static String imageChannelsForScratchArchitecture(String architecture) {
+        Map<String, Object> custom = loadCustomScratchConfig(architecture);
+        if (custom != null) {
+            Object channels = custom.get("n_channel_in");
+            if (channels != null && "3".equals(channels.toString())) {
+                return "rgb";
+            }
+        }
+        String arch = architecture == null ? "" : architecture.toLowerCase();
+        return arch.startsWith("color") ? "rgb" : "grayscale";
+    }
+
+    private static boolean isCustomScratchConfig(File configFile) {
+        Map<String, Object> config = TrainingConfigFiles.load(configFile);
+        if (config == null) {
+            return false;
+        }
+        String framework = TrainingConfigFiles.stringAt(config, "framework");
+        if (framework != null && !"stardist".equalsIgnoreCase(framework)) {
+            return false;
+        }
+        String axes = TrainingConfigFiles.stringAt(config, "axes");
+        if (axes != null && axes.toUpperCase().contains("Z")) {
+            return false;
+        }
+        return config.containsKey("n_rays") || config.containsKey("grid") || config.containsKey("backbone")
+                || config.containsKey("train_patch_size") || config.containsKey("train_batch_size");
     }
 
     /**
@@ -178,10 +264,17 @@ public final class StardistModelRegistry {
     }
 
     private static String removeWeightsExtension(String fileName) {
+        if (fileName == null) {
+            return "";
+        }
         if (fileName.toLowerCase().endsWith(STARDIST_KERAS_WEIGHTS_EXTENSION)) {
             return fileName.substring(0, fileName.length() - STARDIST_KERAS_WEIGHTS_EXTENSION.length());
         }
         return fileName;
+    }
+
+    private static String normalizeModelName(String modelName) {
+        return removeWeightsExtension(modelName == null ? "" : modelName.trim()).trim();
     }
 
     private static boolean isModelDirectory(File file) {

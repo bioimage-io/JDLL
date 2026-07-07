@@ -21,6 +21,8 @@ package io.bioimage.modelrunner.gui.custom.unet;
 
 import java.io.File;
 
+import io.bioimage.modelrunner.gui.custom.training.TrainingModelPaths;
+
 public final class UnetTrainingConfig {
 
     private final String modelName;
@@ -169,8 +171,10 @@ public final class UnetTrainingConfig {
         File unetDir = modelsDir == null
                 ? new File(UnetModelRegistry.UNET_MODELS_SUBDIR)
                 : new File(modelsDir, UnetModelRegistry.UNET_MODELS_SUBDIR);
-        File outputDir = new File(unetDir, normalizedName);
-        return new UnetTrainingConfig(normalizedName, datasetPath, epochs, fineTune,
+        File outputDir = TrainingModelPaths.uniqueModelDir(unetDir, normalizedName,
+                UnetModelRegistry.UNET_WEIGHTS_EXTENSION, UnetModelRegistry.UNET_PYTORCH_WEIGHTS_EXTENSION);
+        String actualName = outputDir.getName();
+        return new UnetTrainingConfig(actualName, datasetPath, epochs, fineTune,
                 fineTune ? baseModelPath : null, fineTune ? null : scratchArchitecture,
                 modelsDir, outputDir.getAbsolutePath(), device);
     }

@@ -72,6 +72,12 @@ public class YoloTrainingService {
         validate(config);
         File datasetYaml = YoloDatasetPreparer.prepare(config.getDatasetYamlPath(), config.getModelName(),
                 config.getModelsDir(), config.getImageSize(), logConsumer);
+        File configFile = config.writeConfig(datasetYaml);
+        log(logConsumer, "Config file saved at: " + configFile.getAbsolutePath());
+        log(logConsumer, "YOLO training parameters:");
+        for (String line : config.toLogLines(datasetYaml)) {
+            log(logConsumer, "  " + line);
+        }
         if (!installer.isEnvironmentInstalled()) {
             installer.installEnvironment(logConsumer);
         }
@@ -80,7 +86,8 @@ public class YoloTrainingService {
         }
         File cancelFile = beginCancelSignal();
         try {
-            Yolo.train(config.getEpochs(), config.getBaseModelPath(), config.getScratchArchitecture(),
+            Yolo.train(config.getEpochs(), config.getBaseModelPath(),
+                    config.isFineTune() ? null : config.getTrainingModelSource(),
                     datasetYaml.getAbsolutePath(),
                     config.getOutputWeightsPath(), config.getImageSize(), config.getPreviewEpochPeriod(),
                     progressConsumer, previewConsumer, logConsumer, config.getDevice(),
@@ -144,6 +151,12 @@ public class YoloTrainingService {
         }
         if (!config.isFineTune() && !YoloModelRegistry.isKnownScratchArchitecture(config.getScratchArchitecture())) {
             throw new IllegalArgumentException("Please select a valid YOLO architecture for training from scratch.");
+        }
+    }
+
+    private static void log(Consumer<String> logConsumer, String message) {
+        if (logConsumer != null) {
+            logConsumer.accept(message);
         }
     }
 

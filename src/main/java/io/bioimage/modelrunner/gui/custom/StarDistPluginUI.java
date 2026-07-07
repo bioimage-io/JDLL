@@ -25,6 +25,8 @@ import javax.swing.JFrame;
 import javax.swing.JOptionPane;
 import javax.swing.SwingUtilities;
 import javax.swing.Timer;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
 import javax.imageio.ImageIO;
 
 import org.apposed.appose.BuildException;
@@ -139,7 +141,9 @@ public class StarDistPluginUI extends StardistGUI implements ActionListener {
     	LinkedHashMap<String, String> stardistModelEntries = StardistModelRegistry.buildModelEntries(modelsDir);
     	this.inferencePanel.getModelSelectionPanel().setModels(stardistModelEntries);
     	this.trainPanel.setBaseModels(stardistModelEntries);
+        this.trainPanel.refreshScratchArchitectures(modelsDir);
         installProbabilityThresholdListener();
+        installTrainingScratchConfigListener();
         if (this.consumer == null) {
             return;
         }
@@ -226,6 +230,48 @@ public class StarDistPluginUI extends StardistGUI implements ActionListener {
         });
         sourcePanel.setSystemPathDropConsumer(file -> updateSystemPathPreview(file));
         sourcePanel.getBrowseButton().addActionListener(e -> browseSystemImagePath());
+    }
+
+    private void installTrainingScratchConfigListener() {
+        trainPanel.getModelNameField().getDocument().addDocumentListener(new DocumentListener() {
+            /**
+             * Executes insert update.
+             *
+             * @param e the event.
+             */
+            @Override
+            public void insertUpdate(DocumentEvent e) {
+                refreshTrainingScratchArchitectures();
+            }
+
+            /**
+             * Executes remove update.
+             *
+             * @param e the event.
+             */
+            @Override
+            public void removeUpdate(DocumentEvent e) {
+                refreshTrainingScratchArchitectures();
+            }
+
+            /**
+             * Executes changed update.
+             *
+             * @param e the event.
+             */
+            @Override
+            public void changedUpdate(DocumentEvent e) {
+                refreshTrainingScratchArchitectures();
+            }
+        });
+    }
+
+    private void refreshTrainingScratchArchitectures() {
+        if (trainingRunning) {
+            return;
+        }
+        String modelsDir = consumer == null ? null : consumer.getModelsDir();
+        trainPanel.refreshScratchArchitectures(modelsDir);
     }
 
     private void installTabLifecycleListener() {
@@ -1119,6 +1165,7 @@ public class StarDistPluginUI extends StardistGUI implements ActionListener {
     		inferencePanel.getModelSelectionPanel().setModels(stardistModelEntries);
             updateProbabilityThresholdFromSelectedModel();
     		trainPanel.setBaseModels(stardistModelEntries);
+            trainPanel.refreshScratchArchitectures(modelsDir);
     	});
     }
 

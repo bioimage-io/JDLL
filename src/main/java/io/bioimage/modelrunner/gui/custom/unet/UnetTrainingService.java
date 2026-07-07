@@ -31,6 +31,7 @@ import org.apposed.appose.Service;
 import org.apposed.appose.TaskException;
 
 import io.bioimage.modelrunner.gui.custom.interfaces.ModelInstaller;
+import io.bioimage.modelrunner.gui.custom.training.TrainingConfigFiles;
 import io.bioimage.modelrunner.model.special.unet.Unet;
 import io.bioimage.modelrunner.model.special.unet.UnetTrainingProgress;
 import io.bioimage.modelrunner.model.special.unet.UnetValidationPreview;
@@ -143,18 +144,6 @@ public class UnetTrainingService {
 
     private static Map<String, Object> toPythonConfig(UnetTrainingConfig config) {
         Map<String, Object> values = new LinkedHashMap<String, Object>();
-        values.put("model_name", config.getModelName());
-        values.put("output_dir", new File(config.getOutputModelDir()).getAbsolutePath());
-        values.put("dataset_path", new File(config.getDatasetPath()).getAbsolutePath());
-        values.put("starting_point", config.isFineTune() ? "fine_tune" : "scratch");
-        if (config.isFineTune()) {
-            values.put("base_model", new File(config.getBaseModelPath()).getAbsolutePath());
-        }
-        values.put("architecture", config.isFineTune()
-                ? architectureFromBaseModel(config.getBaseModelPath())
-                : config.getScratchArchitecture());
-        values.put("device", config.getDevice());
-        values.put("epochs", config.getEpochs());
         values.put("task", "auto");
         values.put("axes", "auto");
         values.put("input_channels", "auto");
@@ -166,7 +155,62 @@ public class UnetTrainingService {
         values.put("foreground_probability", "auto");
         values.put("augmentation_profile", "auto");
         values.put("mixed_precision", "auto");
+        if (!config.isFineTune()) {
+            applyCustomScratchConfig(values, config.getScratchArchitecture());
+        }
+        values.put("model_name", config.getModelName());
+        values.put("output_dir", new File(config.getOutputModelDir()).getAbsolutePath());
+        values.put("dataset_path", new File(config.getDatasetPath()).getAbsolutePath());
+        values.put("starting_point", config.isFineTune() ? "fine_tune" : "scratch");
+        if (config.isFineTune()) {
+            values.put("base_model", new File(config.getBaseModelPath()).getAbsolutePath());
+        }
+        values.put("architecture", config.isFineTune()
+                ? architectureFromBaseModel(config.getBaseModelPath())
+                : scratchArchitectureForTraining(config.getScratchArchitecture()));
+        values.put("device", config.getDevice());
+        values.put("epochs", config.getEpochs());
         return values;
+    }
+
+    private static void applyCustomScratchConfig(Map<String, Object> values, String scratchArchitecture) {
+        Map<String, Object> custom = UnetModelRegistry.loadCustomScratchConfig(scratchArchitecture);
+        if (custom == null) {
+            return;
+        }
+        Map<String, Object> training = TrainingConfigFiles.mapAt(custom, "training");
+        if (training != null) {
+            copyTrainingKeys(values, training);
+        }
+        copyTrainingKeys(values, custom);
+    }
+
+    private static void copyTrainingKeys(Map<String, Object> target, Map<String, Object> source) {
+        String[] keys = new String[] {
+                "architecture", "seed", "task", "axes", "input_channels", "output_classes",
+                "model_normalization", "patch_size", "batch_size", "learning_rate", "optimizer",
+                "weight_decay", "lr_scheduler", "validation_fraction", "foreground_oversampling",
+                "foreground_probability", "augmentation_profile", "num_workers", "mixed_precision",
+                "deep_supervision", "focal_gamma", "focal_alpha", "auto_focal",
+                "auto_focal_foreground_threshold", "auto_focal_boundary_threshold", "auto_focal_weight",
+                "auto_boundary_focal_weight", "auto_focal_sample_limit", "progress_update_interval",
+                "log_update_interval", "save_every_epoch", "preview_count", "normalization",
+                "postprocessing", "loss_weights", "augmentation"
+        };
+        for (String key : keys) {
+            if (source.containsKey(key)) {
+                target.put(key, source.get(key));
+            }
+        }
+    }
+
+    private static String scratchArchitectureForTraining(String scratchArchitecture) {
+        Map<String, Object> custom = UnetModelRegistry.loadCustomScratchConfig(scratchArchitecture);
+        if (custom == null) {
+            return scratchArchitecture;
+        }
+        String architecture = UnetModelRegistry.architectureFromConfig(custom);
+        return architecture == null || architecture.trim().isEmpty() ? scratchArchitecture : architecture;
     }
 
     private static String architectureFromBaseModel(String baseModelPath) {

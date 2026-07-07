@@ -84,6 +84,7 @@ public class StardistTrainingService {
         Map<String, Object> trainingConfig =
                 new LinkedHashMap<String, Object>(StarDist.defaultTrainingConfig(config.getEpochs()));
         applyArchitectureDefaults(trainingConfig, config.getScratchArchitecture());
+        trainingConfig.put("train_epochs", config.getEpochs());
         File cancelFile = beginCancelSignal();
         try {
             StarDist.train(datasetRoot.getAbsolutePath(), null,
@@ -157,6 +158,15 @@ public class StardistTrainingService {
         if (architecture == null) {
             return;
         }
+        Map<String, Object> customConfig = StardistModelRegistry.loadCustomScratchConfig(architecture);
+        if (customConfig != null) {
+            for (Map.Entry<String, Object> entry : customConfig.entrySet()) {
+                if (!isStardistMetadataKey(entry.getKey())) {
+                    trainingConfig.put(entry.getKey(), entry.getValue());
+                }
+            }
+            return;
+        }
         String arch = architecture.toLowerCase();
         if (arch.contains("small")) {
             trainingConfig.put("train_patch_size", java.util.Arrays.asList(192, 192));
@@ -166,6 +176,12 @@ public class StardistTrainingService {
             trainingConfig.put("train_batch_size", 2);
             trainingConfig.put("n_rays", 64);
         }
+    }
+
+    private static boolean isStardistMetadataKey(String key) {
+        return "framework".equals(key) || "format".equals(key) || "format_version".equals(key)
+                || "model".equals(key) || "dataset".equals(key) || "outputs".equals(key)
+                || "logging".equals(key);
     }
 
     private synchronized void setRunningPython(Service python) {

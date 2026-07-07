@@ -25,6 +25,8 @@ import javax.swing.JFrame;
 import javax.swing.JOptionPane;
 import javax.swing.SwingUtilities;
 import javax.swing.Timer;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
 import javax.imageio.ImageIO;
 
 import org.apposed.appose.BuildException;
@@ -41,6 +43,7 @@ import io.bioimage.modelrunner.gui.custom.yolo.YoloImageSourcePanel;
 import io.bioimage.modelrunner.gui.custom.yolo.YoloInferenceService;
 import io.bioimage.modelrunner.gui.custom.yolo.YoloInstaller;
 import io.bioimage.modelrunner.gui.custom.yolo.YoloModelRegistry;
+import io.bioimage.modelrunner.gui.custom.yolo.YoloTrainPanel;
 import io.bioimage.modelrunner.gui.custom.yolo.YoloTrainingConfig;
 import io.bioimage.modelrunner.gui.custom.yolo.YoloTrainingService;
 import io.bioimage.modelrunner.model.InferenceProgress;
@@ -134,6 +137,8 @@ public class YOLOPluginUI extends YoloGUI implements ActionListener {
     	LinkedHashMap<String, String> yoloModelEntries = YoloModelRegistry.buildModelEntries(modelsDir);
     	this.inferencePanel.getModelSelectionPanel().setModels(yoloModelEntries);
     	this.trainPanel.setBaseModels(yoloModelEntries);
+        yoloTrainPanel().refreshScratchArchitectures(modelsDir);
+        installTrainingScratchConfigListener();
         if (this.consumer == null) {
             return;
         }
@@ -209,6 +214,52 @@ public class YOLOPluginUI extends YoloGUI implements ActionListener {
         });
         sourcePanel.setSystemPathDropConsumer(file -> updateSystemPathPreview(file));
         sourcePanel.getBrowseButton().addActionListener(e -> browseSystemImagePath());
+    }
+
+    private void installTrainingScratchConfigListener() {
+        trainPanel.getModelNameField().getDocument().addDocumentListener(new DocumentListener() {
+            /**
+             * Executes insert update.
+             *
+             * @param e the event.
+             */
+            @Override
+            public void insertUpdate(DocumentEvent e) {
+                refreshTrainingScratchArchitectures();
+            }
+
+            /**
+             * Executes remove update.
+             *
+             * @param e the event.
+             */
+            @Override
+            public void removeUpdate(DocumentEvent e) {
+                refreshTrainingScratchArchitectures();
+            }
+
+            /**
+             * Executes changed update.
+             *
+             * @param e the event.
+             */
+            @Override
+            public void changedUpdate(DocumentEvent e) {
+                refreshTrainingScratchArchitectures();
+            }
+        });
+    }
+
+    private void refreshTrainingScratchArchitectures() {
+        if (trainingRunning) {
+            return;
+        }
+        String modelsDir = consumer == null ? null : consumer.getModelsDir();
+        yoloTrainPanel().refreshScratchArchitectures(modelsDir);
+    }
+
+    private YoloTrainPanel yoloTrainPanel() {
+        return (YoloTrainPanel) trainPanel;
     }
 
     private void installTabLifecycleListener() {
@@ -972,6 +1023,7 @@ public class YOLOPluginUI extends YoloGUI implements ActionListener {
     	SwingUtilities.invokeLater(() -> {
     		inferencePanel.getModelSelectionPanel().setModels(yoloModelEntries);
     		trainPanel.setBaseModels(yoloModelEntries);
+            yoloTrainPanel().refreshScratchArchitectures(modelsDir);
     	});
     }
 

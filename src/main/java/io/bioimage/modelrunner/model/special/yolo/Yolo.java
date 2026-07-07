@@ -72,9 +72,18 @@ public class Yolo extends DLModelPytorchProtected {
 	private Rectangle objectSize;
 		
 	private static final Map<String, Long> PRETRAINED_YOLO_MODELS;
-	private static final double VALIDATION_PREVIEW_CONFIDENCE = 0.25d;
+	public static final double DEFAULT_VALIDATION_PREVIEW_CONFIDENCE = 0.25d;
+	public static final int DEFAULT_VALIDATION_PREVIEW_SAMPLE_COUNT = 100;
+	public static final int DEFAULT_ACCELERATED_PROGRESS_EVERY_N_STEPS = 5;
+	public static final int DEFAULT_CPU_PROGRESS_EVERY_N_STEPS = 1;
+	public static final int DEFAULT_ACCELERATED_LOG_EVERY_N_STEPS = 50;
+	public static final int DEFAULT_CPU_LOG_EVERY_N_STEPS = 10;
+	public static final int DEFAULT_TRAIN_BATCH_SIZE = 16;
+	public static final int DEFAULT_TRAIN_WORKERS = 0;
+	public static final boolean DEFAULT_TRAIN_EXIST_OK = true;
+	public static final boolean DEFAULT_TRAIN_VERBOSE = false;
+	public static final boolean DEFAULT_TRAIN_PLOTS = false;
 	private static final String DEFAULT_SCRATCH_ARCHITECTURE = "yolo26n.yaml";
-	private static final int DEFAULT_TRAIN_BATCH_SIZE = 16;
 	private static final List<String> SCRATCH_ARCHITECTURES = Collections.unmodifiableList(Arrays.asList(
 			"yolo26n.yaml",
 			"yolo26s.yaml",
@@ -442,6 +451,10 @@ public class Yolo extends DLModelPytorchProtected {
 				imageSize, previewEpochPeriod, cancelSignalPath, "cpu");
 	}
 
+	private static String pyBool(boolean value) {
+		return value ? "True" : "False";
+	}
+
 	private static String buildTrainingCode(int epochs, String baseModelPath, String scratchArchitecture,
 			String datasetYamlPath,
 			String outputWeightsPath, int imageSize, int previewEpochPeriod, String cancelSignalPath, String device) {
@@ -489,14 +502,14 @@ public class Yolo extends DLModelPytorchProtected {
 				+ "imgsz = " + imageSize + nl
 				+ "batch_size = " + DEFAULT_TRAIN_BATCH_SIZE + nl
 				+ "preview_epoch_period = " + Math.max(1, previewEpochPeriod) + nl
-				+ "preview_sample_count = 100" + nl
-				+ "preview_confidence = " + VALIDATION_PREVIEW_CONFIDENCE + nl
+				+ "preview_sample_count = " + DEFAULT_VALIDATION_PREVIEW_SAMPLE_COUNT + nl
+				+ "preview_confidence = " + DEFAULT_VALIDATION_PREVIEW_CONFIDENCE + nl
 				+ "cancel_signal_path = r'" + TrainingCodeUtils.py(cancelSignalPath == null ? "" : cancelSignalPath) + "'" + nl
 				+ "requested_device = '" + TrainingCodeUtils.py(normalizedDevice) + "'" + nl
 				+ "train_device = 0 if requested_device == 'cuda' else requested_device" + nl
 				+ "is_accelerated = requested_device != 'cpu'" + nl
-				+ "progress_every_n_steps = 5 if is_accelerated else 1" + nl
-				+ "log_every_n_steps = 50 if is_accelerated else 10" + nl
+				+ "progress_every_n_steps = " + DEFAULT_ACCELERATED_PROGRESS_EVERY_N_STEPS + " if is_accelerated else " + DEFAULT_CPU_PROGRESS_EVERY_N_STEPS + nl
+				+ "log_every_n_steps = " + DEFAULT_ACCELERATED_LOG_EVERY_N_STEPS + " if is_accelerated else " + DEFAULT_CPU_LOG_EVERY_N_STEPS + nl
 				+ "state = {'step': 0, 'total_steps': 0, 'preview_paths': set(), 'preview_order': [], 'preview_results': {}, 'preview_epoch': 0, 'capture_preview': False}" + nl
 				+ TrainingCodeUtils.taskUpdateFunction("_task_update")
 				+ TrainingCodeUtils.scalarFunction("_scalar", true)
@@ -651,7 +664,7 @@ public class Yolo extends DLModelPytorchProtected {
 					+ "  if os.path.isfile(pre_best):" + nl
 					+ "    _task_update(message='Overwriting YOLO best checkpoint during training: ' + pre_best, info={'type': 'checkpoint', 'kind': 'best', 'path': pre_best, 'overwrite': True})" + nl
 					+ "  with open(yolo_log_path, 'a', encoding='utf-8') as yolo_log, contextlib.redirect_stdout(yolo_log), contextlib.redirect_stderr(yolo_log):" + nl
-					+ "    results = model.train(data=dataset_yaml, epochs=epochs, imgsz=imgsz, batch=batch_size, project=project, name=run_name, exist_ok=True, verbose=False, plots=False, workers=0, device=train_device)" + nl
+					+ "    results = model.train(data=dataset_yaml, epochs=epochs, imgsz=imgsz, batch=batch_size, project=project, name=run_name, exist_ok=" + pyBool(DEFAULT_TRAIN_EXIST_OK) + ", verbose=" + pyBool(DEFAULT_TRAIN_VERBOSE) + ", plots=" + pyBool(DEFAULT_TRAIN_PLOTS) + ", workers=" + DEFAULT_TRAIN_WORKERS + ", device=train_device)" + nl
 					+ "  trainer = getattr(model, 'trainer', None)" + nl
 					+ "  best = str(getattr(trainer, 'best', '') if trainer is not None else '')" + nl
 					+ "  last = str(getattr(trainer, 'last', '') if trainer is not None else '')" + nl

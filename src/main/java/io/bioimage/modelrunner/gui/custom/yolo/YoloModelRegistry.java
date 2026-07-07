@@ -26,6 +26,8 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
+import io.bioimage.modelrunner.gui.custom.training.TrainingConfigFiles;
+
 public final class YoloModelRegistry {
 
     public static final String YOLO_MODELS_SUBDIR = "yolo";
@@ -103,7 +105,23 @@ public final class YoloModelRegistry {
      * @return the created linked hash map.
      */
     public static LinkedHashMap<String, String> buildScratchArchitectureEntries() {
+        return buildScratchArchitectureEntries(null, null);
+    }
+
+    /**
+     * Builds the scratch architecture entries, adding a compatible custom config if present.
+     *
+     * @param modelsDir the models directory.
+     * @param modelName the requested model name.
+     * @return the created linked hash map.
+     */
+    public static LinkedHashMap<String, String> buildScratchArchitectureEntries(String modelsDir, String modelName) {
         LinkedHashMap<String, String> architectures = new LinkedHashMap<String, String>();
+        String customName = normalizeModelName(modelName);
+        String customConfig = customScratchConfigValue(modelsDir, modelName);
+        if (customConfig != null) {
+            architectures.put("[Custom config] " + customName, customConfig);
+        }
         for (String[] architecture : SCRATCH_ARCHITECTURES) {
             architectures.put(architecture[0], architecture[1]);
         }
@@ -117,6 +135,80 @@ public final class YoloModelRegistry {
      * @return true if known scratch architecture; false otherwise.
      */
     public static boolean isKnownScratchArchitecture(String architecture) {
+        if (architecture == null) {
+            return false;
+        }
+        for (String[] candidate : SCRATCH_ARCHITECTURES) {
+            if (candidate[1].equalsIgnoreCase(architecture.trim())) {
+                return true;
+            }
+        }
+        return isCustomScratchConfig(architecture);
+    }
+
+    /**
+     * Returns the custom scratch config value for a model name.
+     *
+     * @param modelsDir the models directory.
+     * @param modelName the model name.
+     * @return the config path, or null.
+     */
+    public static String customScratchConfigValue(String modelsDir, String modelName) {
+        File config = TrainingConfigFiles.configFileForModelName(modelsDir, YOLO_MODELS_SUBDIR,
+                normalizeModelName(modelName));
+        return isCustomScratchConfig(config) ? config.getAbsolutePath() : null;
+    }
+
+    /**
+     * Returns whether the value points to a valid YOLO scratch config.
+     *
+     * @param value the value.
+     * @return true if valid.
+     */
+    public static boolean isCustomScratchConfig(String value) {
+        return TrainingConfigFiles.isConfigPath(value) && isCustomScratchConfig(new File(value.trim()));
+    }
+
+    private static boolean isCustomScratchConfig(File configFile) {
+        Map<String, Object> config = TrainingConfigFiles.load(configFile);
+        if (config == null) {
+            return false;
+        }
+        String framework = TrainingConfigFiles.stringAt(config, "framework");
+        if (framework != null && !"yolo".equalsIgnoreCase(framework)) {
+            return false;
+        }
+        String architecture = rawScratchArchitecture(config);
+        return isBuiltInScratchArchitecture(architecture);
+    }
+
+    /**
+     * Resolves a scratch architecture value to the Ultralytics model source.
+     *
+     * @param architecture the selected scratch architecture or custom config path.
+     * @return the YOLO YAML architecture.
+     */
+    public static String resolveScratchArchitecture(String architecture) {
+        if (isBuiltInScratchArchitecture(architecture)) {
+            return architecture.trim();
+        }
+        Map<String, Object> config = TrainingConfigFiles.load(architecture);
+        String resolved = config == null ? null : rawScratchArchitecture(config);
+        if (isBuiltInScratchArchitecture(resolved)) {
+            return resolved.trim();
+        }
+        return architecture;
+    }
+
+    private static String rawScratchArchitecture(Map<String, Object> config) {
+        String architecture = TrainingConfigFiles.stringAt(config, "model", "scratch_architecture");
+        if (architecture == null || architecture.trim().isEmpty()) {
+            architecture = TrainingConfigFiles.stringAt(config, "model", "model_source");
+        }
+        return architecture;
+    }
+
+    private static boolean isBuiltInScratchArchitecture(String architecture) {
         if (architecture == null) {
             return false;
         }
@@ -194,11 +286,18 @@ public final class YoloModelRegistry {
         return String.format(PRETRAINED_URL_FORMAT, new File(modelPath).getName());
     }
 
-    private static String removeWeightsExtension(String fileName) {
+    public static String removeWeightsExtension(String fileName) {
+        if (fileName == null) {
+            return "";
+        }
         if (fileName.toLowerCase().endsWith(YOLO_WEIGHTS_EXTENSION)) {
             return fileName.substring(0, fileName.length() - YOLO_WEIGHTS_EXTENSION.length());
         }
         return fileName;
+    }
+
+    private static String normalizeModelName(String modelName) {
+        return removeWeightsExtension(modelName == null ? "" : modelName.trim()).trim();
     }
 
     private static boolean isModelDirectory(File file) {

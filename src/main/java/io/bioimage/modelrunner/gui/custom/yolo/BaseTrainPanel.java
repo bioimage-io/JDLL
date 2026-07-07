@@ -634,6 +634,17 @@ public abstract class BaseTrainPanel extends JPanel {
      * @param architectures the architectures.
      */
     public void setScratchArchitectures(LinkedHashMap<String, String> architectures) {
+        setScratchArchitectures(architectures, null);
+    }
+
+    /**
+     * Sets the scratch architectures.
+     *
+     * @param architectures the architectures.
+     * @param preferredValue the value to select after replacing the model.
+     */
+    public void setScratchArchitectures(LinkedHashMap<String, String> architectures, String preferredValue) {
+        String previousValue = preferredValue == null ? getSelectedScratchArchitectureValue() : preferredValue;
         DefaultComboBoxModel<YoloModelSelectionEntry> comboModel =
                 new DefaultComboBoxModel<YoloModelSelectionEntry>();
         if (architectures != null) {
@@ -642,6 +653,30 @@ public abstract class BaseTrainPanel extends JPanel {
             }
         }
         scratchArchitectureComboBox.setModel(comboModel);
+        if (!selectScratchArchitectureValue(previousValue) && comboModel.getSize() > 0) {
+            scratchArchitectureComboBox.setSelectedIndex(0);
+        }
+    }
+
+    /**
+     * Selects a scratch architecture by value.
+     *
+     * @param value the value.
+     * @return true if selected.
+     */
+    public boolean selectScratchArchitectureValue(String value) {
+        if (value == null) {
+            return false;
+        }
+        DefaultComboBoxModel<YoloModelSelectionEntry> comboModel =
+                (DefaultComboBoxModel<YoloModelSelectionEntry>) scratchArchitectureComboBox.getModel();
+        for (int i = 0; i < comboModel.getSize(); i++) {
+            if (value.equals(comboModel.getElementAt(i).getValue())) {
+                scratchArchitectureComboBox.setSelectedIndex(i);
+                return true;
+            }
+        }
+        return false;
     }
 
     /**

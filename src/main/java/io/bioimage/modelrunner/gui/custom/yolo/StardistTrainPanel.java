@@ -113,6 +113,17 @@ public class StardistTrainPanel extends BaseTrainPanel {
     }
 
     /**
+     * Refreshes scratch architectures, adding a matching custom config when available.
+     *
+     * @param modelsDir the models directory.
+     */
+    public void refreshScratchArchitectures(String modelsDir) {
+        String modelName = getModelNameField().getText();
+        String custom = StardistModelRegistry.customScratchConfigValue(modelsDir, modelName);
+        setScratchArchitectures(StardistModelRegistry.buildScratchArchitectureEntries(modelsDir, modelName), custom);
+    }
+
+    /**
      * Sets the training running.
      *
      * @param running the running.

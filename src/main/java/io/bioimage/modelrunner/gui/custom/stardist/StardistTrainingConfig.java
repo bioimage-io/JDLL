@@ -21,6 +21,8 @@ package io.bioimage.modelrunner.gui.custom.stardist;
 
 import java.io.File;
 
+import io.bioimage.modelrunner.gui.custom.training.TrainingModelPaths;
+
 public final class StardistTrainingConfig {
 
     public static final String DEFAULT_LABEL_COLOR_MODE = "grayscale";
@@ -209,8 +211,7 @@ public final class StardistTrainingConfig {
      * @return the image channels.
      */
     public String getImageChannels() {
-        String architecture = scratchArchitecture == null ? "" : scratchArchitecture.toLowerCase();
-        return architecture.startsWith("color") ? "rgb" : "grayscale";
+        return StardistModelRegistry.imageChannelsForScratchArchitecture(scratchArchitecture);
     }
 
     /**
@@ -249,8 +250,10 @@ public final class StardistTrainingConfig {
         File stardistDir = modelsDir == null
                 ? new File(StardistModelRegistry.STARDIST_MODELS_SUBDIR)
                 : new File(modelsDir, StardistModelRegistry.STARDIST_MODELS_SUBDIR);
-        File output = new File(stardistDir, normalizedName);
-        return new StardistTrainingConfig(normalizedName, datasetPath, epochs,
+        File output = TrainingModelPaths.uniqueModelDir(stardistDir, normalizedName,
+                StardistModelRegistry.STARDIST_KERAS_WEIGHTS_EXTENSION);
+        String actualName = output.getName();
+        return new StardistTrainingConfig(actualName, datasetPath, epochs,
                 fineTune, fineTune ? baseModelPath : null, fineTune ? null : scratchArchitecture,
                 modelsDir, output.getAbsolutePath(), device, DEFAULT_LABEL_COLOR_MODE,
                 DEFAULT_VALID_FRACTION);
