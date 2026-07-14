@@ -682,6 +682,7 @@ public class DLModelPytorchProtected extends BaseModel {
             try {
                 throwIfInferenceCancelled();
                 task = python.task(code);
+                configureTask(task);
                 currentTask = task;
                 python.debug((str) -> {});
                 task.waitFor();
@@ -709,6 +710,10 @@ public class DLModelPytorchProtected extends BaseModel {
                 break;
             } catch (TaskException | IOException e) {
                 lastFailure = e;
+                if (inferenceCancellationRequested) {
+                    cleanShmAfterFailure(e);
+                    throw new RunModelException("Inference cancelled.");
+                }
                 if (isApposeThreadDeath(e) && attempt < MAX_TRANSIENT_TASK_RETRIES) {
                     emitProgress(InferenceProgress.taskRetry("Appose thread death during inference; retrying task "
                             + (attempt + 1) + "/" + MAX_TRANSIENT_TASK_RETRIES + "."));
@@ -731,6 +736,15 @@ public class DLModelPytorchProtected extends BaseModel {
         throw new RunModelException(lastFailure == null
                 ? "Model execution failed."
                 : Messages.stackTrace(lastFailure));
+    }
+
+    /**
+     * Configures an inference task before it is started.
+     *
+     * @param task the task.
+     */
+    protected void configureTask(final Task task) {
+        // Optional hook for backends that report structured task updates.
     }
 
     /**

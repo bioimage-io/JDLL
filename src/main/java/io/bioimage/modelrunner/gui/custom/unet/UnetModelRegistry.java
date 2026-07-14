@@ -34,28 +34,40 @@ public final class UnetModelRegistry {
     public static final String UNET_WEIGHTS_EXTENSION = ".pt";
     public static final String UNET_PYTORCH_WEIGHTS_EXTENSION = ".pth";
 
-    public static final String SMALL_2D = "tiny-2d";
-    public static final String MEDIUM_2D = "medium-2d";
-    public static final String SMALL_FAST_3D = "tiny-2.5d";
-    public static final String MEDIUM_FAST_3D = "medium-2.5d";
-    public static final String SMALL_TRUE_3D = "tiny-3d";
-    public static final String MEDIUM_TRUE_3D = "medium-3d";
+    public static final String SMALL_2D = "resenc-tiny-2d";
+    public static final String MEDIUM_2D = "resenc-medium-2d";
+    public static final String BIG_2D = "resenc-big-2d";
+    public static final String LARGE_2D = "resenc-large-2d";
+    public static final String SMALL_FAST_3D = "resenc-tiny-2.5d";
+    public static final String MEDIUM_FAST_3D = "resenc-medium-2.5d";
+    public static final String BIG_FAST_3D = "resenc-big-2.5d";
+    public static final String LARGE_FAST_3D = "resenc-large-2.5d";
+    public static final String SMALL_TRUE_3D = "resenc-tiny-3d";
+    public static final String MEDIUM_TRUE_3D = "resenc-medium-3d";
+    public static final String BIG_TRUE_3D = "resenc-big-3d";
+    public static final String LARGE_TRUE_3D = "resenc-large-3d";
 
     private static final boolean TRUE_3D_SUPPORTED = true;
 
     private static final String[][] PLANAR_SCRATCH_ARCHITECTURES = new String[][] {
             {"Small", SMALL_2D},
-            {"Medium", MEDIUM_2D}
+            {"Medium", MEDIUM_2D},
+            {"Big", BIG_2D},
+            {"Large", LARGE_2D}
     };
 
     private static final String[][] FAST_3D_SCRATCH_ARCHITECTURES = new String[][] {
             {"Small - Fast 3D", SMALL_FAST_3D},
-            {"Medium - Fast 3D", MEDIUM_FAST_3D}
+            {"Medium - Fast 3D", MEDIUM_FAST_3D},
+            {"Big - Fast 3D", BIG_FAST_3D},
+            {"Large - Fast 3D", LARGE_FAST_3D}
     };
 
     private static final String[][] TRUE_3D_SCRATCH_ARCHITECTURES = new String[][] {
             {"Small - True 3D", SMALL_TRUE_3D},
-            {"Medium - True 3D", MEDIUM_TRUE_3D}
+            {"Medium - True 3D", MEDIUM_TRUE_3D},
+            {"Big - True 3D", BIG_TRUE_3D},
+            {"Large - True 3D", LARGE_TRUE_3D}
     };
 
     private static final String[] PREFERRED_WEIGHTS = new String[] {

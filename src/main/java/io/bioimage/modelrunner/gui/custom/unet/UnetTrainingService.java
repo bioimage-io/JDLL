@@ -31,6 +31,8 @@ import org.apposed.appose.Service;
 import org.apposed.appose.TaskException;
 
 import io.bioimage.modelrunner.gui.custom.interfaces.ModelInstaller;
+import io.bioimage.modelrunner.gui.custom.training.SegmentationDatasetPreparer;
+import io.bioimage.modelrunner.gui.custom.training.SegmentationDatasetPreparer.PreparedDataset;
 import io.bioimage.modelrunner.gui.custom.training.TrainingConfigFiles;
 import io.bioimage.modelrunner.model.special.unet.Unet;
 import io.bioimage.modelrunner.model.special.unet.UnetTrainingProgress;
@@ -95,7 +97,10 @@ public class UnetTrainingService {
         if (config.isFineTune() && !installer.isModelInstalled(config.getBaseModelPath())) {
             installer.installModelWeights(config.getBaseModelPath(), logConsumer);
         }
-        Unet.train(toPythonConfig(config), progressConsumer, previewConsumer, logConsumer, this::setRunningPython);
+        PreparedDataset dataset = SegmentationDatasetPreparer.prepare(config.getDatasetPath(), config.getModelName(),
+                config.getModelsDir(), 0.15d, SegmentationDatasetPreparer.Framework.UNET, logConsumer);
+        Unet.train(toPythonConfig(config, dataset.getDatasetRoot()), progressConsumer, previewConsumer,
+                logConsumer, this::setRunningPython);
     }
 
     /**
@@ -142,7 +147,7 @@ public class UnetTrainingService {
         }
     }
 
-    private static Map<String, Object> toPythonConfig(UnetTrainingConfig config) {
+    private static Map<String, Object> toPythonConfig(UnetTrainingConfig config, File datasetRoot) {
         Map<String, Object> values = new LinkedHashMap<String, Object>();
         values.put("task", "auto");
         values.put("axes", "auto");
@@ -155,12 +160,14 @@ public class UnetTrainingService {
         values.put("foreground_probability", "auto");
         values.put("augmentation_profile", "auto");
         values.put("mixed_precision", "auto");
+        values.put("deep_supervision", "auto");
+        values.put("context_slices", "auto");
         if (!config.isFineTune()) {
             applyCustomScratchConfig(values, config.getScratchArchitecture());
         }
         values.put("model_name", config.getModelName());
         values.put("output_dir", new File(config.getOutputModelDir()).getAbsolutePath());
-        values.put("dataset_path", new File(config.getDatasetPath()).getAbsolutePath());
+        values.put("dataset_path", datasetRoot.getAbsolutePath());
         values.put("starting_point", config.isFineTune() ? "fine_tune" : "scratch");
         if (config.isFineTune()) {
             values.put("base_model", new File(config.getBaseModelPath()).getAbsolutePath());
@@ -189,9 +196,13 @@ public class UnetTrainingService {
         String[] keys = new String[] {
                 "architecture", "seed", "task", "axes", "input_channels", "output_classes",
                 "model_normalization", "patch_size", "batch_size", "learning_rate", "optimizer",
-                "weight_decay", "lr_scheduler", "validation_fraction", "foreground_oversampling",
-                "foreground_probability", "augmentation_profile", "num_workers", "mixed_precision",
-                "deep_supervision", "focal_gamma", "focal_alpha", "auto_focal",
+                "weight_decay", "lr_scheduler", "instance_scale_normalization", "validation_fraction",
+                "foreground_oversampling", "foreground_probability", "skip_empty_images",
+                "skip_empty_patches", "empty_patch_max_retries", "include_empty_patches_after_max_retries",
+                "augmentation_profile", "num_workers", "mixed_precision", "deep_supervision",
+                "context_slices", "context", "spacing", "validation", "effective_batch_size",
+                "steps_per_epoch", "minimum_steps_per_epoch", "expected_patches_per_case",
+                "memory_fraction", "focal_gamma", "focal_alpha", "auto_focal",
                 "auto_focal_foreground_threshold", "auto_focal_boundary_threshold", "auto_focal_weight",
                 "auto_boundary_focal_weight", "auto_focal_sample_limit", "progress_update_interval",
                 "log_update_interval", "save_every_epoch", "preview_count", "normalization",
@@ -215,22 +226,22 @@ public class UnetTrainingService {
 
     private static String architectureFromBaseModel(String baseModelPath) {
         if (baseModelPath == null || baseModelPath.trim().isEmpty()) {
-            return "tiny-2d";
+            return UnetModelRegistry.SMALL_2D;
         }
         File path = new File(baseModelPath);
         File folder = path.isDirectory() ? path : path.getParentFile();
         File configFile = folder == null ? null : new File(folder, "config.json");
         if (configFile == null || !configFile.isFile()) {
-            return "tiny-2d";
+            return UnetModelRegistry.SMALL_2D;
         }
         try {
             Map<String, Object> config = JSONUtils.load(configFile.getAbsolutePath());
             Object architecture = config.get("architecture");
             return architecture == null || architecture.toString().trim().isEmpty()
-                    ? "tiny-2d"
+                    ? UnetModelRegistry.SMALL_2D
                     : architecture.toString();
         } catch (IOException e) {
-            return "tiny-2d";
+            return UnetModelRegistry.SMALL_2D;
         }
     }
 

@@ -19,6 +19,7 @@
  */
 package io.bioimage.modelrunner.gui.custom.unet;
 
+import java.awt.geom.Rectangle2D;
 import java.io.IOException;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
@@ -47,6 +48,7 @@ public class UnetInferenceService {
     private String loadedModelPath;
     private String loadedDevice;
     private Unet model;
+    private Rectangle2D.Double objectReference;
 
     /**
      * Creates a new UnetInferenceService instance.
@@ -82,6 +84,7 @@ public class UnetInferenceService {
             ExecutionException, InterruptedException {
         ensureLoaded(modelPath, normalizeDevice(device), logConsumer,
                 progress -> appendProgressLog(progress, logConsumer, usePatchProgressBar));
+        applyObjectSize();
         return runLoadedModel(rai);
     }
 
@@ -108,7 +111,18 @@ public class UnetInferenceService {
             throws RunModelException, LoadModelException, BuildException, IOException,
             ExecutionException, InterruptedException {
         ensureLoaded(modelPath, normalizeDevice(device), null, progressConsumer);
+        applyObjectSize();
         return runLoadedModel(rai);
+    }
+
+    /**
+     * Sets the reference object or semantic region drawn in the preview.
+     *
+     * @param boxes the preview boxes.
+     */
+    public void setObjectSize(List<Rectangle2D.Double> boxes) {
+        objectReference = boxes == null || boxes.isEmpty() ? null : boxes.get(0);
+        applyObjectSize();
     }
 
     /**
@@ -150,8 +164,25 @@ public class UnetInferenceService {
 
     private <T extends RealType<T> & NativeType<T>, R extends RealType<R> & NativeType<R>>
     List<Tensor<R>> runLoadedModel(RandomAccessibleInterval<T> rai) throws RunModelException {
+        if (model.isVolumeModel()) {
+            RandomAccessibleInterval<T> input = volumeInput(rai);
+            String axes = input.numDimensions() == 3 ? "xyz" : "xycz";
+            return model.inference(Tensor.build("input", axes, input));
+        }
         RandomAccessibleInterval<T> input = addDimsToInput(rai, model.getInputChannels());
         return model.inference(Tensor.build("input", "xycb", input));
+    }
+
+    private <T extends RealType<T> & NativeType<T>> RandomAccessibleInterval<T> volumeInput(
+            RandomAccessibleInterval<T> rai) {
+        if (rai.numDimensions() == 5) {
+            return Views.hyperSlice(rai, 4, rai.min(4));
+        }
+        if (rai.numDimensions() == 3 || rai.numDimensions() == 4) {
+            return rai;
+        }
+        throw new IllegalArgumentException("A " + model.getDimensions()
+                + " UNet expects a 3D volume with XYZ or XYCZ axes.");
     }
 
     private static <T extends RealType<T> & NativeType<T>>
@@ -168,9 +199,27 @@ public class UnetInferenceService {
             return rai;
         }
         if (dims.length == 5) {
-            return Views.hyperSlice(rai, 3, 0);
+            return Views.hyperSlice(rai, 3, rai.min(3));
         }
         throw new IllegalArgumentException("Unsupported dimensions for UNet model.");
+    }
+
+    private void applyObjectSize() {
+        if (model == null) {
+            return;
+        }
+        if (objectReference == null || objectReference.width <= 0.0 || objectReference.height <= 0.0) {
+            model.setObjectSize(null);
+            return;
+        }
+        if ("instance_friendly".equals(model.getTask())) {
+            double area = objectReference.width * objectReference.height;
+            model.setObjectSize(2.0 * Math.sqrt(area / Math.PI));
+        } else if (!"3d".equals(model.getDimensions())) {
+            model.setObjectSize(objectReference.width * objectReference.height);
+        } else {
+            model.setObjectSize(null);
+        }
     }
 
     private static <T extends RealType<T> & NativeType<T>>

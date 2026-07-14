@@ -32,6 +32,8 @@ import org.apposed.appose.Service;
 import org.apposed.appose.TaskException;
 
 import io.bioimage.modelrunner.gui.custom.interfaces.ModelInstaller;
+import io.bioimage.modelrunner.gui.custom.training.SegmentationDatasetPreparer;
+import io.bioimage.modelrunner.gui.custom.training.SegmentationDatasetPreparer.PreparedDataset;
 import io.bioimage.modelrunner.model.special.stardist.StarDist;
 import io.bioimage.modelrunner.model.special.stardist.StardistTrainingProgress;
 import io.bioimage.modelrunner.model.special.stardist.StardistValidationPreview;
@@ -72,7 +74,10 @@ public class StardistTrainingService {
             Consumer<String> logConsumer)
             throws IOException, ExecutionException, InterruptedException, BuildException, TaskException {
         validate(config);
-        File datasetRoot = new File(config.getDatasetPath());
+        PreparedDataset dataset = SegmentationDatasetPreparer.prepare(config.getDatasetPath(), config.getModelName(),
+                config.getModelsDir(), config.getValidFraction(), SegmentationDatasetPreparer.Framework.STARDIST,
+                logConsumer);
+        File datasetRoot = dataset.getDatasetRoot();
 
         if (!installer.isEnvironmentInstalled()) {
             installer.installEnvironment(logConsumer);

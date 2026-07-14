@@ -48,7 +48,7 @@ public class UnetTrainPanel extends BaseTrainPanel {
         baseModelComboBox.setEnabled(false);
         baseModelBrowseButton.setEnabled(false);
         scratchArchitectureComboBox.setEnabled(true);
-        scratchArchitectureComboBox.setToolTipText("Small and Medium train standard 2D UNet models.");
+        scratchArchitectureComboBox.setToolTipText("Choose model capacity for standard 2D training.");
     }
 
     /**
@@ -120,7 +120,7 @@ public class UnetTrainPanel extends BaseTrainPanel {
         refreshScratchArchitectures(volume != previousVolume);
         scratchArchitectureComboBox.setToolTipText(volume
                 ? "Fast 3D trains with neighboring planes. True 3D trains on full volumetric patches."
-                : "Small and Medium train standard 2D UNet models.");
+                : "Choose model capacity for standard 2D training.");
     }
 
     /**

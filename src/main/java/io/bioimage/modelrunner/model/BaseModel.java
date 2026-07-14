@@ -301,6 +301,16 @@ public abstract class BaseModel implements Closeable
         merger.configure(inputs);
         return merger;
     }
+
+    /**
+     * Returns whether the model backend reports its own inference phases and
+     * patch progress.
+     *
+     * @return true when progress is emitted by the backend.
+     */
+    protected boolean reportsOwnInferenceProgress() {
+        return false;
+    }
     
     private <T extends RealType<T> & NativeType<T>, R extends RealType<R> & NativeType<R>>
     List<Tensor<R>> backboneSingleInference(final List<Tensor<T>> inputs) throws RunModelException {
@@ -312,22 +322,33 @@ public abstract class BaseModel implements Closeable
         }
 
         int nPatches = merger.getNPatches();
-        tileCounter.acceptTotal((long) nPatches);
-        emitProgress(InferenceProgress.inferenceStart(nPatches));
+        boolean backendProgress = reportsOwnInferenceProgress();
+        if (!backendProgress) {
+            tileCounter.acceptTotal((long) nPatches);
+            emitProgress(InferenceProgress.inferenceStart(nPatches));
+        }
         for (int i = 0; i < nPatches; i ++) {
             throwIfInferenceCancelled();
-            emitProgress(InferenceProgress.patchStart(i + 1, nPatches));
+            if (!backendProgress) {
+                emitProgress(InferenceProgress.patchStart(i + 1, nPatches));
+            }
             List<Tensor<R>> tiledOutputs = backboneSingleInferenceTile(merger.get(i));
             throwIfInferenceCancelled();
             merger.digest(i, tiledOutputs);
-            tileCounter.acceptProgress((long) (i + 1));
-            emitProgress(InferenceProgress.patchEnd(i + 1, nPatches));
+            if (!backendProgress) {
+                tileCounter.acceptProgress((long) (i + 1));
+                emitProgress(InferenceProgress.patchEnd(i + 1, nPatches));
+            }
         }
         throwIfInferenceCancelled();
-        emitProgress(InferenceProgress.mergeStart());
+        if (!backendProgress) {
+            emitProgress(InferenceProgress.mergeStart());
+        }
         List<Tensor<R>> reconstructed = merger.getReconstructed();
         throwIfInferenceCancelled();
-        emitProgress(InferenceProgress.inferenceEnd());
+        if (!backendProgress) {
+            emitProgress(InferenceProgress.inferenceEnd());
+        }
         return reconstructed;
     }
 

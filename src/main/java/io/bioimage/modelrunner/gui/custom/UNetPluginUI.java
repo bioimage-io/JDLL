@@ -549,6 +549,7 @@ public class UNetPluginUI extends UnetGUI implements ActionListener {
             consumer.notifyParams(null);
         }
         String modelPath = this.inferencePanel.getModelSelectionPanel().getSelectedModelValue();
+        inferenceService.setObjectSize(inferencePanel.getImageDisplayPanel().getBoxes());
         if (this.inferencePanel.getImageSourcePanel().getSystemImagesRadio().isSelected()) {
             runUnetOnSystemImage(modelPath);
             return;
