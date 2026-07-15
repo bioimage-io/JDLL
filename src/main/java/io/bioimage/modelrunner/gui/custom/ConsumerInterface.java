@@ -122,6 +122,37 @@ public abstract class ConsumerInterface {
 	public abstract Integer getFocusedImageHeight();
 
 	/**
+	 * Returns the displayed channel position for a host image. Hosts that do not
+	 * expose viewer positions may keep the default first channel.
+	 *
+	 * @param image host image object.
+	 * @return zero-based channel position.
+	 */
+	public int getImageChannelPosition(Object image) {
+		return 0;
+	}
+
+	/**
+	 * Returns the displayed z position for a host image.
+	 *
+	 * @param image host image object.
+	 * @return zero-based z position.
+	 */
+	public int getImageZPosition(Object image) {
+		return 0;
+	}
+
+	/**
+	 * Returns the displayed time position for a host image.
+	 *
+	 * @param image host image object.
+	 * @return zero-based time position.
+	 */
+	public int getImageTimePosition(Object image) {
+		return 0;
+	}
+
+	/**
 	 * Gets focused image as rai.
 	 *
 	 * @param <T> the T type parameter.

@@ -61,11 +61,12 @@ public class YoloImageSourcePanel extends JPanel {
     protected final YoloHelpIcon systemPathHelpIcon = new YoloHelpIcon();
     private final FileDropHandler systemPathDropHandler;
     private boolean systemPathSelectionConfirmed;
+    private boolean interactionEnabled = true;
 
     /**
      * Creates a new YoloImageSourcePanel instance.
      */
-    protected YoloImageSourcePanel() {
+    public YoloImageSourcePanel() {
         setLayout(null);
         setOpaque(false);
         openImagesRadio.setSelected(true);
@@ -230,16 +231,18 @@ public class YoloImageSourcePanel extends JPanel {
         boolean openSelected = openImagesRadio.isSelected();
         boolean hasOpenImage = hasValidOpenImageSelection();
         boolean hasMultipleOpenImages = openImagesComboBox.getItemCount() > 1;
-        openImagesComboBox.setEnabled(openSelected);
-        previousImageButton.setEnabled(openSelected && hasOpenImage && hasMultipleOpenImages);
-        nextImageButton.setEnabled(openSelected && hasOpenImage && hasMultipleOpenImages);
-        focusButton.setEnabled(openSelected && hasOpenImage);
-        openImagesHelpIcon.setEnabled(openSelected);
+        openImagesRadio.setEnabled(interactionEnabled);
+        systemImagesRadio.setEnabled(interactionEnabled);
+        openImagesComboBox.setEnabled(interactionEnabled && openSelected);
+        previousImageButton.setEnabled(interactionEnabled && openSelected && hasOpenImage && hasMultipleOpenImages);
+        nextImageButton.setEnabled(interactionEnabled && openSelected && hasOpenImage && hasMultipleOpenImages);
+        focusButton.setEnabled(interactionEnabled && openSelected && hasOpenImage);
+        openImagesHelpIcon.setEnabled(interactionEnabled && openSelected);
 
         boolean systemSelected = systemImagesRadio.isSelected();
-        systemPathField.setEnabled(systemSelected);
-        browseButton.setEnabled(systemSelected);
-        systemPathHelpIcon.setEnabled(systemSelected);
+        systemPathField.setEnabled(interactionEnabled && systemSelected);
+        browseButton.setEnabled(interactionEnabled && systemSelected);
+        systemPathHelpIcon.setEnabled(interactionEnabled && systemSelected);
     }
 
     /**
@@ -365,6 +368,12 @@ public class YoloImageSourcePanel extends JPanel {
      */
     public void setSystemPathSelectionConfirmed(boolean confirmed) {
         systemPathSelectionConfirmed = confirmed;
+        updateEnabledState();
+    }
+
+    /** Enables or disables every source-selection control as one unit. */
+    public void setInteractionEnabled(boolean enabled) {
+        interactionEnabled = enabled;
         updateEnabledState();
     }
 

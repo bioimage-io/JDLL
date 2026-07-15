@@ -54,7 +54,7 @@ public class YoloHtmlLogPanel extends JPanel {
     /**
      * Creates a new YoloHtmlLogPanel instance.
      */
-    protected YoloHtmlLogPanel() {
+    public YoloHtmlLogPanel() {
         setLayout(null);
         setBorder(elapsedBorder);
         setOpaque(true);

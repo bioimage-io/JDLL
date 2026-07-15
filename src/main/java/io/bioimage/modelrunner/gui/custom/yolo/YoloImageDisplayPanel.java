@@ -40,6 +40,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.ExecutionException;
+import java.util.function.Consumer;
 
 import javax.imageio.ImageIO;
 import javax.imageio.ImageReadParam;
@@ -119,11 +120,13 @@ public class YoloImageDisplayPanel extends JPanel {
     private final Timer hintFadeTimer;
     private long hintShownAt;
     private float hintAlpha;
+    private Consumer<Viewport> viewportConsumer;
+    private boolean applyingViewport;
 
     /**
      * Creates a new YoloImageDisplayPanel instance.
      */
-    protected YoloImageDisplayPanel() {
+    public YoloImageDisplayPanel() {
         setLayout(null);
         setBorder(new LineBorder(Color.GRAY));
         setBackground(YoloUiUtils.INPUT_BG);
@@ -178,6 +181,7 @@ public class YoloImageDisplayPanel extends JPanel {
                     panX = panStartX + e.getX() - panStartScreen.x;
                     panY = panStartY + e.getY() - panStartScreen.y;
                     currentImageRect = computeCurrentImageRect(computeImageDrawArea());
+                    notifyViewportChanged();
                     repaint();
                     return;
                 }
@@ -235,6 +239,7 @@ public class YoloImageDisplayPanel extends JPanel {
                 double nextZoom = e.getWheelRotation() < 0 ? zoom * ZOOM_STEP : zoom / ZOOM_STEP;
                 zoom = clampZoom(nextZoom, imageDrawArea);
                 positionImagePointAtScreenPoint(zoomAnchorImageX, zoomAnchorImageY, zoomAnchorScreen);
+                notifyViewportChanged();
                 repaint();
             }
 
@@ -509,7 +514,74 @@ public class YoloImageDisplayPanel extends JPanel {
         cancelRenderWorker();
         clearRenderedViewport();
         updateExpandButtonState();
+        notifyViewportChanged();
         repaint();
+    }
+
+    /**
+     * Sets a callback invoked after user-driven viewport changes.
+     *
+     * @param consumer viewport callback, or {@code null}.
+     */
+    public void setViewportConsumer(Consumer<Viewport> consumer) {
+        this.viewportConsumer = consumer;
+    }
+
+    /**
+     * Returns the current zoom, pan, and fit state.
+     *
+     * @return current viewport.
+     */
+    public Viewport getViewport() {
+        return new Viewport(zoom, panX, panY, expandedToFill);
+    }
+
+    /**
+     * Applies a viewport without feeding it back to the synchronization callback.
+     *
+     * @param viewport viewport to apply.
+     */
+    public void setViewport(Viewport viewport) {
+        if (viewport == null) {
+            return;
+        }
+        applyingViewport = true;
+        try {
+            zoom = viewport.zoom;
+            panX = viewport.panX;
+            panY = viewport.panY;
+            expandedToFill = viewport.expandedToFill;
+            updateExpandButtonState();
+            repaint();
+        } finally {
+            applyingViewport = false;
+        }
+    }
+
+    private void notifyViewportChanged() {
+        if (!applyingViewport && viewportConsumer != null) {
+            viewportConsumer.accept(getViewport());
+        }
+    }
+
+    /** Immutable preview viewport. */
+    public static final class Viewport {
+        private final double zoom;
+        private final double panX;
+        private final double panY;
+        private final boolean expandedToFill;
+
+        public Viewport(double zoom, double panX, double panY, boolean expandedToFill) {
+            this.zoom = zoom;
+            this.panX = panX;
+            this.panY = panY;
+            this.expandedToFill = expandedToFill;
+        }
+
+        public double getZoom() { return zoom; }
+        public double getPanX() { return panX; }
+        public double getPanY() { return panY; }
+        public boolean isExpandedToFill() { return expandedToFill; }
     }
 
     /**

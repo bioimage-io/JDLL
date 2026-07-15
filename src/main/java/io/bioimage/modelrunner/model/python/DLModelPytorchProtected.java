@@ -362,6 +362,28 @@ public class DLModelPytorchProtected extends BaseModel {
     }
 
     /**
+     * Creates a package-backed Python operation that does not require a model
+     * file or weights. This is intended for operators such as denoisers whose
+     * implementation and transient models live entirely in a Python package.
+     *
+     * @param kwargs operation configuration.
+     * @param device requested execution device.
+     */
+    protected DLModelPytorchProtected(final Map<String, Object> kwargs, final String device) {
+        this.callable = null;
+        this.modelFile = null;
+        this.importModule = null;
+        this.weightsPath = "";
+        this.kwargs = kwargs == null ? new LinkedHashMap<String, Object>() : kwargs;
+        this.environmentSpec = resolvePytorchEnv();
+        this.envPath = environmentSpec.getEnvironmentDirectory().getAbsolutePath();
+        this.tileCounter = new TilingConsumer();
+        final String normalizedDevice = device == null ? "cpu" : device.trim().toLowerCase(Locale.ROOT);
+        this.device = "cuda".equals(normalizedDevice) || "mps".equals(normalizedDevice)
+                ? normalizedDevice : "cpu";
+    }
+
+    /**
      * Creates the Python service used to run the model.
      *
      * @throws LoadModelException if the model cannot be loaded.
