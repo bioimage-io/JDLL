@@ -21,6 +21,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import javax.swing.JComponent;
 import javax.swing.JFileChooser;
@@ -59,6 +60,7 @@ public final class DenoisingPluginUI extends DenoisingGUI {
     private final DenoisingService service = new DenoisingService(new DenoisingInstaller());
     private volatile boolean running;
     private volatile boolean cancelled;
+    private volatile String activeDevice;
     private Thread worker;
     private File selectedSystemPath;
     private File selectedSystemPreview;
@@ -260,12 +262,13 @@ public final class DenoisingPluginUI extends DenoisingGUI {
     private void start(boolean complete) {
         if (running || !hasSource()) return;
         cancelled = false;
+        activeDevice = selectedDevice();
         running = true;
         getStatusPanel().setIdle();
         startLogTimer();
         appendLog(complete ? "Starting denoising." : "Generating denoising preview.");
         appendLog("Method: " + getOptionsPanel().getMethod() + "; effort: "
-                + getOptionsPanel().getEffort() + "; device: " + selectedDevice()
+                + getOptionsPanel().getEffort() + "; device: " + activeDevice
                 + "; strength: " + String.format(java.util.Locale.US, "%.2f",
                         getStrengthPanel().getStrength()) + ".");
         updateActionState();
@@ -281,6 +284,7 @@ public final class DenoisingPluginUI extends DenoisingGUI {
             } finally {
                 stopLogTimer();
                 running = false;
+                activeDevice = null;
                 updateActionStateOnEdt();
             }
         }, complete ? "jdll-denoise-run" : "jdll-denoise-preview");
@@ -451,6 +455,13 @@ public final class DenoisingPluginUI extends DenoisingGUI {
     }
 
     private static String progressMessage(DenoisingProgress progress) {
+        if ("resolving_config".equals(progress.getPhase())) {
+            Map<?, ?> resolved = nestedMap(progress.getInfo(), "info", "resolved_config");
+            if (resolved != null) {
+                return "Resolved device: requested " + resolved.get("device_requested")
+                        + ", using " + resolved.get("device") + ".";
+            }
+        }
         if (progress.getMaximum() > 0L) {
             if ("optimization".equals(progress.getPhase())) {
                 return "Iteration " + progress.getCurrent() + "/" + progress.getMaximum() + " completed.";
@@ -462,6 +473,13 @@ public final class DenoisingPluginUI extends DenoisingGUI {
         String message = progress.getMessage();
         return message == null || message.trim().isEmpty()
                 ? "Denoising phase: " + progress.getPhase() + "." : message;
+    }
+
+    private static Map<?, ?> nestedMap(Map<String, Object> source, String outer, String inner) {
+        Object container = source.get(outer);
+        if (!(container instanceof Map)) return null;
+        Object value = ((Map<?, ?>) container).get(inner);
+        return value instanceof Map ? (Map<?, ?>) value : null;
     }
 
     private static String escapeHtml(String value) {
@@ -478,7 +496,8 @@ public final class DenoisingPluginUI extends DenoisingGUI {
     }
 
     private String selectedDevice() {
-        if (!getAccelerationCheckBox().isEnabled() || !getAccelerationCheckBox().isSelected()) return "cpu";
+        if (running && activeDevice != null) return activeDevice;
+        if (!getAccelerationCheckBox().isSelected()) return "cpu";
         String text = getAccelerationCheckBox().getText().toLowerCase();
         return text.contains("mps") ? "mps" : "cuda";
     }
