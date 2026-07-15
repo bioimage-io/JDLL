@@ -36,7 +36,7 @@ public class YoloHelpIcon extends JPanel {
     /**
      * Creates a new YoloHelpIcon instance.
      */
-    protected YoloHelpIcon() {
+    public YoloHelpIcon() {
         setOpaque(false);
         setToolTipText("Use Ctrl + mouse wheel to zoom the preview.");
     }

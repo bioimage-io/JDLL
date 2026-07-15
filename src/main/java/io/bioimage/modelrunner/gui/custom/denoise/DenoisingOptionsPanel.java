@@ -21,6 +21,7 @@ import javax.swing.JPanel;
 import javax.swing.JRadioButton;
 import javax.swing.SwingConstants;
 
+import io.bioimage.modelrunner.gui.custom.yolo.YoloHelpIcon;
 import io.bioimage.modelrunner.gui.custom.yolo.YoloUiUtils;
 
 /** Owns the three denoising option rows and their selected values. */
@@ -29,7 +30,8 @@ public final class DenoisingOptionsPanel {
     private final JLabel methodLabel = new JLabel("Method");
     private final JComboBox<DenoisingMethod> method =
             new JComboBox<DenoisingMethod>(DenoisingMethod.values());
-    private final JPanel methodRow = new LabelComboRow(methodLabel, method, 0.18d);
+    private final YoloHelpIcon methodHelp = new YoloHelpIcon();
+    private final JPanel methodRow = new LabelComboRow(methodLabel, method, 0.18d, methodHelp);
 
     private final JLabel effortLabel = new JLabel("Effort");
     private final JRadioButton quick = new JRadioButton(DenoisingEffort.QUICK.toString());
@@ -44,6 +46,12 @@ public final class DenoisingOptionsPanel {
 
     public DenoisingOptionsPanel(JComponent acceleration) {
         noiseRow = new NoiseRow(acceleration);
+        methodHelp.setToolTipText("<html>"
+                + "<b>Conservative - BM3D/BM4D:</b> classical CPU denoising for additive noise.<br>"
+                + "<b>Adaptive - ZS-N2N:</b> adapts a small zero-shot network to the current image.<br>"
+                + "<b>Fast - Noise2Fast:</b> quickly learns denoising from the noisy image itself.<br>"
+                + "<b>Correlated - StructN2V:</b> targets structured or correlated noise."
+                + "</html>");
         method.setSelectedItem(DenoisingMethod.FAST);
         balanced.setSelected(true);
         noise.setSelectedItem(DenoisingNoiseStructure.AUTO);
@@ -101,17 +109,25 @@ public final class DenoisingOptionsPanel {
         private final JLabel label;
         private final JComboBox<?> combo;
         private final double labelRatio;
+        private final JComponent trailing;
 
         private LabelComboRow(JLabel label, JComboBox<?> combo, double labelRatio) {
+            this(label, combo, labelRatio, null);
+        }
+
+        private LabelComboRow(JLabel label, JComboBox<?> combo, double labelRatio,
+                JComponent trailing) {
             this.label = label;
             this.combo = combo;
             this.labelRatio = labelRatio;
+            this.trailing = trailing;
             setLayout(null);
             setOpaque(false);
             YoloUiUtils.alignLabel(label);
             YoloUiUtils.styleInput(combo);
             add(label);
             add(combo);
+            if (trailing != null) add(trailing);
         }
 
         @Override
@@ -119,8 +135,15 @@ public final class DenoisingOptionsPanel {
             int w = Math.max(0, getWidth());
             int h = Math.max(0, getHeight());
             int labelW = Math.max(1, (int) Math.round(w * labelRatio));
+            int trailingSize = trailing == null ? 0 : Math.max(12, Math.min(h, (int) Math.round(w * 0.045d)));
+            int trailingGap = trailing == null ? 0 : GAP;
             label.setBounds(0, 0, labelW, h);
-            combo.setBounds(labelW + GAP, 0, Math.max(1, w - labelW - GAP), h);
+            combo.setBounds(labelW + GAP, 0,
+                    Math.max(1, w - labelW - GAP - trailingGap - trailingSize), h);
+            if (trailing != null) {
+                trailing.setBounds(w - trailingSize, Math.max(0, (h - trailingSize) / 2),
+                        trailingSize, trailingSize);
+            }
             YoloUiUtils.applyResponsiveText(label, labelW - 4, h);
             YoloUiUtils.applyResponsiveFont(combo, h);
         }

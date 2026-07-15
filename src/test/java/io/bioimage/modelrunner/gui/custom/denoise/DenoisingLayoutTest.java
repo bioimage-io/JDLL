@@ -29,6 +29,7 @@ public class DenoisingLayoutTest {
         layoutTree(gui);
 
         assertSame(gui.getOptionsPanel().getNoiseRow(), gui.getAccelerationCheckBox().getParent());
+        assertEquals(3, gui.getOptionsPanel().getMethodRow().getComponentCount());
         assertEquals(gui.getOptionsPanel().getMethodRow().getHeight() * 2,
                 gui.getImageSourcePanel().getHeight());
         assertTrue(gui.getStatusPanel().getHeight()
