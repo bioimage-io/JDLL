@@ -20,6 +20,9 @@ import java.awt.Container;
 
 import org.junit.Test;
 
+import io.bioimage.modelrunner.gui.custom.yolo.YoloHelpIcon;
+import io.bioimage.modelrunner.gui.custom.yolo.YoloImageSourcePanel;
+
 public class DenoisingLayoutTest {
 
     @Test
@@ -51,6 +54,27 @@ public class DenoisingLayoutTest {
         assertEquals(600, panel.getProgressBar().getWidth());
         assertEquals(3, panel.getProgressBar().getValue());
         assertEquals(10, panel.getProgressBar().getMaximum());
+    }
+
+    @Test
+    public void keepsImageSourceHelpIconsInsideTheirRowsWhenResized() {
+        YoloImageSourcePanel panel = new YoloImageSourcePanel();
+        assertResponsiveHelpIcons(panel, 900, 54);
+        assertResponsiveHelpIcons(panel, 360, 30);
+    }
+
+    private static void assertResponsiveHelpIcons(YoloImageSourcePanel panel, int width, int height) {
+        panel.setSize(width, height);
+        panel.doLayout();
+        int rowHeight = Math.max(1, (height - 6) / 2);
+        int helpIcons = 0;
+        for (Component child : panel.getComponents()) {
+            if (!(child instanceof YoloHelpIcon)) continue;
+            helpIcons++;
+            assertEquals(child.getWidth(), child.getHeight());
+            assertTrue(child.getHeight() <= rowHeight);
+        }
+        assertEquals(2, helpIcons);
     }
 
     private static void layoutTree(Container container) {

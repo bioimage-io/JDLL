@@ -165,7 +165,8 @@ public class YoloImageSourcePanel extends JPanel {
 
         int radioW = (int) Math.round(w * RADIO_WIDTH_RATIO);
         int radioGap = (int) Math.round(w * RADIO_LABEL_GAP_RATIO);
-        int helpW = Math.max(12, (int) Math.round(w * HELP_WIDTH_RATIO));
+        int helpW = Math.max(1,
+                Math.min(rowH, Math.max(12, (int) Math.round(w * HELP_WIDTH_RATIO))));
         int navH = Math.max(1, (int) Math.round(rowH * NAV_BUTTON_SIZE_RATIO));
         int navW = navH;
         int focusW = (int) Math.round(w * FOCUS_WIDTH_RATIO);
