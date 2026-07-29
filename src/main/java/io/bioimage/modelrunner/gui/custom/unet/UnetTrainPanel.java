@@ -22,6 +22,7 @@ package io.bioimage.modelrunner.gui.custom.unet;
 import java.io.File;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.function.Predicate;
 
 import javax.swing.DefaultComboBoxModel;
 import javax.swing.JFileChooser;
@@ -36,6 +37,11 @@ public class UnetTrainPanel extends BaseTrainPanel {
     private boolean volumeArchitectureMode;
     private String modelsDir;
     private UnetDatasetInspector.Dimensionality datasetDimensionality = UnetDatasetInspector.Dimensionality.UNKNOWN;
+    private Predicate<String> modelPathValidator = UnetModelRegistry::isModelPath;
+    private Predicate<String> scratchValidator = UnetModelRegistry::isKnownScratchArchitecture;
+    private String modelFileDescription = "UNet weights (*.pt, *.pth)";
+    private String[] modelFileExtensions = new String[] {"pt", "pth"};
+    private LinkedHashMap<String, String> fixedScratchArchitectures;
 
     /**
      * Creates a new UnetTrainPanel instance.
@@ -58,7 +64,7 @@ public class UnetTrainPanel extends BaseTrainPanel {
     protected void browseBaseModel() {
         JFileChooser chooser = new JFileChooser();
         chooser.setFileSelectionMode(JFileChooser.FILES_AND_DIRECTORIES);
-        chooser.setFileFilter(new FileNameExtensionFilter("UNet weights (*.pt, *.pth)", "pt", "pth"));
+        chooser.setFileFilter(new FileNameExtensionFilter(modelFileDescription, modelFileExtensions));
         if (chooser.showOpenDialog(this) != JFileChooser.APPROVE_OPTION) {
             return;
         }
@@ -94,7 +100,7 @@ public class UnetTrainPanel extends BaseTrainPanel {
      */
     @Override
     protected boolean isValidFineTuneBaseModel() {
-        return UnetModelRegistry.isModelPath(getSelectedBaseModelValue());
+        return modelPathValidator.test(getSelectedBaseModelValue());
     }
 
     /**
@@ -104,7 +110,7 @@ public class UnetTrainPanel extends BaseTrainPanel {
      */
     @Override
     protected boolean isValidScratchArchitecture() {
-        return UnetModelRegistry.isKnownScratchArchitecture(getSelectedScratchArchitectureValue());
+        return scratchValidator.test(getSelectedScratchArchitectureValue());
     }
 
     /**
@@ -113,6 +119,9 @@ public class UnetTrainPanel extends BaseTrainPanel {
      * @param dimensionality the inferred dataset dimensionality.
      */
     public void setDatasetDimensionality(UnetDatasetInspector.Dimensionality dimensionality) {
+        if (fixedScratchArchitectures != null) {
+            return;
+        }
         boolean previousVolume = volumeArchitectureMode;
         datasetDimensionality = dimensionality == null ? UnetDatasetInspector.Dimensionality.UNKNOWN : dimensionality;
         boolean volume = dimensionality == UnetDatasetInspector.Dimensionality.THREE_D;
@@ -140,7 +149,34 @@ public class UnetTrainPanel extends BaseTrainPanel {
         refreshScratchArchitectures(false);
     }
 
+    /**
+     * Configures this shared panel for a family with a fixed architecture list.
+     *
+     * @param architectures the available scratch architectures.
+     * @param defaultArchitecture the default architecture value.
+     * @param modelValidator model-path validation.
+     * @param architectureValidator scratch-architecture validation.
+     * @param fileDescription model chooser description.
+     * @param fileExtensions model chooser extensions.
+     */
+    public void configureFixedArchitectures(LinkedHashMap<String, String> architectures,
+            String defaultArchitecture, Predicate<String> modelValidator,
+            Predicate<String> architectureValidator, String fileDescription,
+            String... fileExtensions) {
+        fixedScratchArchitectures = new LinkedHashMap<String, String>(architectures);
+        modelPathValidator = modelValidator;
+        scratchValidator = architectureValidator;
+        modelFileDescription = fileDescription;
+        modelFileExtensions = fileExtensions.clone();
+        setScratchArchitectures(fixedScratchArchitectures, defaultArchitecture);
+        scratchArchitectureComboBox.setToolTipText("Cross-GOOSE currently provides one default architecture.");
+    }
+
     private void refreshScratchArchitectures(boolean selectDefault) {
+        if (fixedScratchArchitectures != null) {
+            setScratchArchitectures(fixedScratchArchitectures);
+            return;
+        }
         boolean volume = datasetDimensionality == UnetDatasetInspector.Dimensionality.THREE_D;
         boolean reviewed = datasetDimensionality != UnetDatasetInspector.Dimensionality.UNKNOWN;
         String modelName = getModelNameField().getText();

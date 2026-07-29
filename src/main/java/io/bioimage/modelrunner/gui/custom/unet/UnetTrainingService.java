@@ -39,7 +39,7 @@ import io.bioimage.modelrunner.model.special.unet.UnetTrainingProgress;
 import io.bioimage.modelrunner.model.special.unet.UnetValidationPreview;
 import io.bioimage.modelrunner.utils.JSONUtils;
 
-public class UnetTrainingService {
+public class UnetTrainingService implements DenseSegmentationTrainingService {
 
     private final ModelInstaller installer;
     private Service runningPython;
@@ -70,6 +70,18 @@ public class UnetTrainingService {
             Consumer<String> logConsumer)
             throws IOException, ExecutionException, InterruptedException, BuildException, TaskException {
         train(config, progressConsumer, null, logConsumer);
+    }
+
+    @Override
+    public void train(DenseSegmentationTrainingConfig config,
+            Consumer<UnetTrainingProgress> progressConsumer,
+            Consumer<UnetValidationPreview> previewConsumer,
+            Consumer<String> logConsumer)
+            throws IOException, ExecutionException, InterruptedException, BuildException, TaskException {
+        if (!(config instanceof UnetTrainingConfig)) {
+            throw new IllegalArgumentException("Expected a UNet training configuration.");
+        }
+        train((UnetTrainingConfig) config, progressConsumer, previewConsumer, logConsumer);
     }
 
     /**

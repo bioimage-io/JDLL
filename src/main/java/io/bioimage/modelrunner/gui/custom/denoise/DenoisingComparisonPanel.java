@@ -30,6 +30,7 @@ public final class DenoisingComparisonPanel extends JPanel {
         setOpaque(false);
         original.setDrawEnabled(false);
         denoised.setDrawEnabled(false);
+        denoised.setHintOnHoverOnly(true);
         original.setEmptyMessage("Original preview will appear here");
         denoised.setEmptyMessage("Generate a preview to compare denoising");
         original.setViewportConsumer(denoised::setViewport);

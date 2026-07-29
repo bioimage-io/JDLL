@@ -40,7 +40,7 @@ import net.imglib2.type.numeric.RealType;
 import net.imglib2.view.IntervalView;
 import net.imglib2.view.Views;
 
-public class UnetInferenceService {
+public class UnetInferenceService implements DenseSegmentationInferenceService {
 
     private static final int PATCH_PROGRESS_BAR_WIDTH = 20;
 

@@ -52,10 +52,20 @@ public class UnetGUI extends JPanel {
      * @param adapter the adapter.
      */
     protected UnetGUI(GuiAdapter adapter) {
+        this(adapter, "UNet");
+    }
+
+    /**
+     * Creates a dense-segmentation GUI with the shared UNet layout.
+     *
+     * @param adapter the adapter.
+     * @param title the model-family title.
+     */
+    protected UnetGUI(GuiAdapter adapter, String title) {
         setLayout(null);
         setOpaque(true);
         setBackground(YoloUiUtils.PANEL_BG);
-        this.titlePanel = new YoloTitlePanel("UNet", adapter);
+        this.titlePanel = new YoloTitlePanel(title, adapter);
         tabs.setBorder(BorderFactory.createEmptyBorder());
         tabs.setOpaque(true);
         tabs.setBackground(YoloUiUtils.PANEL_BG);

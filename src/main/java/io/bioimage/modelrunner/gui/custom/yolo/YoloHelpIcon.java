@@ -23,8 +23,11 @@ import java.awt.Color;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.RenderingHints;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 
 import javax.swing.JPanel;
+import javax.swing.ToolTipManager;
 
 public class YoloHelpIcon extends JPanel {
 
@@ -32,6 +35,8 @@ public class YoloHelpIcon extends JPanel {
 
     private static final Color BG = new Color(230, 238, 250);
     private static final Color FG = new Color(58, 91, 160);
+    private int previousDismissDelay = -1;
+    private MouseAdapter persistentToolTipListener;
 
     /**
      * Creates a new YoloHelpIcon instance.
@@ -39,6 +44,47 @@ public class YoloHelpIcon extends JPanel {
     public YoloHelpIcon() {
         setOpaque(false);
         setToolTipText("Use Ctrl + mouse wheel to zoom the preview.");
+    }
+
+    /**
+     * Keeps this icon's tooltip visible until the pointer leaves the icon.
+     *
+     * @param persistent whether to keep the tooltip visible while hovered.
+     */
+    public void setPersistentToolTip(boolean persistent) {
+        if (persistent == (persistentToolTipListener != null)) return;
+        if (!persistent) {
+            removeMouseListener(persistentToolTipListener);
+            persistentToolTipListener = null;
+            restoreDismissDelay();
+            return;
+        }
+        persistentToolTipListener = new MouseAdapter() {
+            @Override
+            public void mouseEntered(MouseEvent event) {
+                ToolTipManager manager = ToolTipManager.sharedInstance();
+                previousDismissDelay = manager.getDismissDelay();
+                manager.setDismissDelay(Integer.MAX_VALUE);
+            }
+
+            @Override
+            public void mouseExited(MouseEvent event) {
+                restoreDismissDelay();
+            }
+        };
+        addMouseListener(persistentToolTipListener);
+    }
+
+    @Override
+    public void removeNotify() {
+        restoreDismissDelay();
+        super.removeNotify();
+    }
+
+    private void restoreDismissDelay() {
+        if (previousDismissDelay < 0) return;
+        ToolTipManager.sharedInstance().setDismissDelay(previousDismissDelay);
+        previousDismissDelay = -1;
     }
 
     /**

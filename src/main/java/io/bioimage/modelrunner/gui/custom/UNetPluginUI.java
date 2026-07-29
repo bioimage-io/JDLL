@@ -60,12 +60,11 @@ import io.bioimage.modelrunner.exceptions.LoadModelException;
 import io.bioimage.modelrunner.exceptions.RunModelException;
 import io.bioimage.modelrunner.gui.adapter.GuiAdapter;
 import io.bioimage.modelrunner.gui.custom.unet.UnetGUI;
-import io.bioimage.modelrunner.gui.custom.unet.UnetDatasetInspector;
-import io.bioimage.modelrunner.gui.custom.unet.UnetInferenceService;
-import io.bioimage.modelrunner.gui.custom.unet.UnetInstaller;
-import io.bioimage.modelrunner.gui.custom.unet.UnetModelRegistry;
-import io.bioimage.modelrunner.gui.custom.unet.UnetTrainingConfig;
-import io.bioimage.modelrunner.gui.custom.unet.UnetTrainingService;
+import io.bioimage.modelrunner.gui.custom.unet.DenseSegmentationBackend;
+import io.bioimage.modelrunner.gui.custom.unet.DenseSegmentationInferenceService;
+import io.bioimage.modelrunner.gui.custom.unet.DenseSegmentationTrainingConfig;
+import io.bioimage.modelrunner.gui.custom.unet.DenseSegmentationTrainingService;
+import io.bioimage.modelrunner.gui.custom.unet.UnetBackend;
 import io.bioimage.modelrunner.gui.custom.yolo.YoloImageFiles;
 import io.bioimage.modelrunner.gui.custom.yolo.YoloImageSelectionEntry;
 import io.bioimage.modelrunner.gui.custom.yolo.YoloImageSourcePanel;
@@ -89,12 +88,11 @@ public class UNetPluginUI extends UnetGUI implements ActionListener {
     private static final String EMPTY_FOLDER_MESSAGE = "Folder does not contain valid images";
     private static final Color PREVIEW_ERROR_COLOR = new Color(210, 40, 40);
     private static final String APPOSE_STREAM_CLOSED = "java.io.IOException: Stream closed";
-    private static final String UNET_MASK_SUFFIX = "_unet_labels";
 
     private final ConsumerInterface consumer;
-    private final UnetInstaller installer = new UnetInstaller();
-    private final UnetInferenceService inferenceService = new UnetInferenceService(installer);
-    private final UnetTrainingService trainingService = new UnetTrainingService(installer);
+    private final DenseSegmentationBackend backend;
+    private final DenseSegmentationInferenceService inferenceService;
+    private final DenseSegmentationTrainingService trainingService;
     private volatile boolean cancelled;
     private Timer trainingTimer;
     private long trainingStartMillis;
@@ -131,14 +129,29 @@ public class UNetPluginUI extends UnetGUI implements ActionListener {
      * @param adapter the adapter.
      */
     public UNetPluginUI(ConsumerInterface consumer, GuiAdapter adapter) {
-        super(adapter);
+        this(consumer, adapter, new UnetBackend());
+    }
+
+    /**
+     * Creates the shared dense-segmentation interface for another model family.
+     *
+     * @param consumer the consumer callback.
+     * @param adapter the host adapter.
+     * @param backend family-specific model behavior.
+     */
+    protected UNetPluginUI(ConsumerInterface consumer, GuiAdapter adapter,
+            DenseSegmentationBackend backend) {
+        super(adapter, backend.getDisplayName());
         this.consumer = consumer;
+        this.backend = backend;
+        this.inferenceService = backend.createInferenceService();
+        this.trainingService = backend.createTrainingService();
 
         String modelsDir = consumer == null ? null : consumer.getModelsDir();
-        LinkedHashMap<String, String> unetModelEntries = UnetModelRegistry.buildModelEntries(modelsDir);
-        this.inferencePanel.getModelSelectionPanel().setModels(unetModelEntries);
-        this.trainPanel.setBaseModels(unetModelEntries);
-        this.trainPanel.setModelsDir(modelsDir);
+        LinkedHashMap<String, String> modelEntries = backend.buildModelEntries(modelsDir);
+        this.inferencePanel.getModelSelectionPanel().setModels(modelEntries);
+        this.trainPanel.setBaseModels(modelEntries);
+        backend.configureTrainingPanel(this.trainPanel, modelsDir);
 
         this.inferencePanel.getModelSelectionPanel().getBrowseButton().addActionListener(e -> browseInferenceModel());
         this.inferencePanel.getActionPanel().getRunButton().addActionListener(this);
@@ -355,7 +368,7 @@ public class UNetPluginUI extends UnetGUI implements ActionListener {
         if (trainingRunning) {
             return;
         }
-        trainPanel.refreshScratchArchitectures();
+        backend.refreshTrainingPanel(trainPanel, consumer == null ? null : consumer.getModelsDir());
     }
 
     private void scheduleTrainingDatasetReview() {
@@ -372,13 +385,13 @@ public class UNetPluginUI extends UnetGUI implements ActionListener {
         String text = trainPanel.getDatasetField().getText();
         final File datasetPath = text == null || text.trim().isEmpty() ? null : new File(text.trim());
         Thread reviewer = new Thread(() -> {
-            UnetDatasetInspector.Dimensionality dimensionality = UnetDatasetInspector.inspect(datasetPath);
+            Object review = backend.inspectDataset(datasetPath);
             SwingUtilities.invokeLater(() -> {
                 if (runId == datasetReviewRunId) {
-                    trainPanel.setDatasetDimensionality(dimensionality);
+                    backend.applyDatasetReview(trainPanel, review);
                 }
             });
-        }, "unet-dataset-review");
+        }, backend.getDisplayName().toLowerCase(Locale.ROOT).replace(' ', '-') + "-dataset-review");
         reviewer.setDaemon(true);
         reviewer.start();
     }
@@ -386,7 +399,8 @@ public class UNetPluginUI extends UnetGUI implements ActionListener {
     private void browseInferenceModel() {
         JFileChooser chooser = new JFileChooser();
         chooser.setFileSelectionMode(JFileChooser.FILES_AND_DIRECTORIES);
-        chooser.setFileFilter(new FileNameExtensionFilter("UNet weights (*.pt, *.pth)", "pt", "pth"));
+        chooser.setFileFilter(new FileNameExtensionFilter(backend.getModelFileDescription(),
+                backend.getModelFileExtensions()));
         if (chooser.showOpenDialog(this) != JFileChooser.APPROVE_OPTION) {
             return;
         }
@@ -394,9 +408,8 @@ public class UNetPluginUI extends UnetGUI implements ActionListener {
         if (selected == null) {
             return;
         }
-        File modelFile = selected.isDirectory() ? UnetModelRegistry.findModelFile(selected) : selected;
-        String label = selected.isDirectory() ? "[Custom] " + selected.getName()
-                : "[Custom] " + UnetModelRegistry.removeWeightsExtension(selected.getName());
+        File modelFile = backend.findModelFile(selected);
+        String label = backend.modelLabel(selected);
         inferencePanel.getModelSelectionPanel().addOrSelectModel(label,
                 modelFile == null ? selected.getAbsolutePath() : modelFile.getAbsolutePath());
     }
@@ -517,7 +530,7 @@ public class UNetPluginUI extends UnetGUI implements ActionListener {
                 } finally {
                     SwingUtilities.invokeLater(this::finishInferenceUiState);
                 }
-            }, "unet-inference");
+            }, backend.getDisplayName().toLowerCase(Locale.ROOT).replace(' ', '-') + "-inference");
             workerThread.start();
         } else if (e.getSource() == this.inferencePanel.getActionPanel().getCancelButton()) {
             cancel();
@@ -627,7 +640,8 @@ public class UNetPluginUI extends UnetGUI implements ActionListener {
                         }
                     }, selectedInferenceDevice());
                     if (outputs.isEmpty()) {
-                        throw new IOException("UNet did not return a labels image for " + imageFile.getName());
+                        throw new IOException(backend.getDisplayName()
+                                + " did not return a labels image for " + imageFile.getName());
                     }
                     File outputMask = maskOutputFileFor(imageFile);
                     writeLabelMask(outputs.get(0), outputMask);
@@ -646,7 +660,8 @@ public class UNetPluginUI extends UnetGUI implements ActionListener {
         if (cancelled || Thread.currentThread().isInterrupted()) {
             return;
         }
-        logConsumer.accept("Saved UNet label masks for " + savedMasks + " image(s).");
+        logConsumer.accept("Saved " + backend.getDisplayName() + " label masks for "
+                + savedMasks + " image(s).");
     }
 
     private String selectedInferenceDevice() {
@@ -690,13 +705,14 @@ public class UNetPluginUI extends UnetGUI implements ActionListener {
         return ArrayImgs.unsignedBytes(pixels, width, height, 3);
     }
 
-    private static File maskOutputFileFor(File imageFile) {
+    private File maskOutputFileFor(File imageFile) {
         String fileName = imageFile.getName();
         int dot = fileName.lastIndexOf('.');
         String baseName = dot > 0 ? fileName.substring(0, dot) : fileName;
         String extension = outputMaskExtension(fileName);
         File parent = imageFile.getParentFile();
-        return new File(parent == null ? new File(".") : parent, baseName + UNET_MASK_SUFFIX + "." + extension);
+        return new File(parent == null ? new File(".") : parent,
+                baseName + backend.getMaskSuffix() + "." + extension);
     }
 
     private static String outputMaskExtension(String fileName) {
@@ -809,17 +825,17 @@ public class UNetPluginUI extends UnetGUI implements ActionListener {
                 if (consumer != null) {
                     consumer.notifyParams(null);
                 }
-                UnetTrainingConfig config = readTrainingConfig();
-                bestValidationCheckpointPath = new File(config.getOutputModelDir(), "weights_best.pt")
+                DenseSegmentationTrainingConfig config = readTrainingConfig();
+                bestValidationCheckpointPath = new File(config.getOutputModelDir(), backend.bestCheckpointName())
                         .getAbsolutePath();
                 trainPanel.getTrainingLogPanel().startDiskLog(new File(config.getOutputModelDir()));
                 File uiLog = trainPanel.getTrainingLogPanel().getLogFile();
                 if (uiLog != null) {
                     appendTrainingLog("UI log file: " + uiLog.getAbsolutePath());
                 }
-                appendTrainingHeader("UNet", config.getModelName(),
+                appendTrainingHeader(backend.getDisplayName(), config.getModelName(),
                         config.getOutputModelDir(), config.getDatasetPath(),
-                        unetConfigSummary(config));
+                        backend.trainingConfigSummary(config));
                 Consumer<String> logConsumer = str -> {
                     if (trainingRunId != trainingUiRunId) {
                         return;
@@ -845,7 +861,7 @@ public class UNetPluginUI extends UnetGUI implements ActionListener {
                         logConsumer);
                 if (trainingRunId == trainingUiRunId) {
                     appendTrainingLog("Training finished successfully.");
-                    refreshUnetModels();
+                    refreshModels();
                 }
             } catch (Exception | Error ex) {
                 if (trainingRunId == trainingUiRunId && !cancelled) {
@@ -855,7 +871,7 @@ public class UNetPluginUI extends UnetGUI implements ActionListener {
             } finally {
                 SwingUtilities.invokeLater(() -> finishTrainingUiState(trainingRunId));
             }
-        }, "unet-training");
+        }, backend.getDisplayName().toLowerCase(Locale.ROOT).replace(' ', '-') + "-training");
         workerThread.start();
     }
 
@@ -1098,18 +1114,10 @@ public class UNetPluginUI extends UnetGUI implements ActionListener {
         String clean = message.trim();
         return clean.startsWith("step ")
                 || clean.startsWith("epoch ")
-                || clean.matches("^(YOLO|StarDist|UNet) training step .*")
-                || clean.matches("^(YOLO|StarDist|UNet) training epoch .*")
-                || clean.matches("^(YOLO|StarDist|UNet) validation preview epoch .*")
-                || clean.matches("^(YOLO|StarDist|UNet) training started.*");
-    }
-
-    private static String unetConfigSummary(UnetTrainingConfig config) {
-        String start = config.isFineTune() ? "fine tune from " + config.getBaseModelPath()
-                : "train from scratch using " + config.getScratchArchitecture();
-        return "epochs=" + config.getEpochs()
-                + ", device=" + config.getDevice()
-                + ", starting_point=" + start;
+                || clean.matches("^(YOLO|StarDist|UNet|Cross-GOOSE) training step .*")
+                || clean.matches("^(YOLO|StarDist|UNet|Cross-GOOSE) training epoch .*")
+                || clean.matches("^(YOLO|StarDist|UNet|Cross-GOOSE) validation preview epoch .*")
+                || clean.matches("^(YOLO|StarDist|UNet|Cross-GOOSE) training started.*");
     }
 
     private static String formatNumber(Double value) {
@@ -1123,30 +1131,22 @@ public class UNetPluginUI extends UnetGUI implements ActionListener {
         return TrainingLogUtils.errorMessage(error);
     }
 
-    private UnetTrainingConfig readTrainingConfig() {
+    private DenseSegmentationTrainingConfig readTrainingConfig() {
         String modelsDir = consumer == null ? null : consumer.getModelsDir();
-        return UnetTrainingConfig.fromUi(
-                trainPanel.getModelNameField().getText(),
-                trainPanel.getDatasetField().getText(),
-                Integer.parseInt(trainPanel.getEpochsField().getText().trim()),
-                trainPanel.getFineTuneRadio().isSelected(),
-                trainPanel.getSelectedBaseModelValue(),
-                trainPanel.getSelectedScratchArchitectureValue(),
-                modelsDir,
-                selectedTrainingDevice());
+        return backend.createTrainingConfig(trainPanel, modelsDir, selectedTrainingDevice());
     }
 
     private String selectedTrainingDevice() {
         return selectedInferenceDevice();
     }
 
-    private void refreshUnetModels() {
+    private void refreshModels() {
         String modelsDir = consumer == null ? null : consumer.getModelsDir();
-        LinkedHashMap<String, String> unetModelEntries = UnetModelRegistry.buildModelEntries(modelsDir);
+        LinkedHashMap<String, String> modelEntries = backend.buildModelEntries(modelsDir);
         SwingUtilities.invokeLater(() -> {
-            inferencePanel.getModelSelectionPanel().setModels(unetModelEntries);
-            trainPanel.setBaseModels(unetModelEntries);
-            trainPanel.setModelsDir(modelsDir);
+            inferencePanel.getModelSelectionPanel().setModels(modelEntries);
+            trainPanel.setBaseModels(modelEntries);
+            backend.refreshTrainingPanel(trainPanel, modelsDir);
         });
     }
 

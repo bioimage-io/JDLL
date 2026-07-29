@@ -23,7 +23,7 @@ import java.io.File;
 
 import io.bioimage.modelrunner.gui.custom.training.TrainingModelPaths;
 
-public final class UnetTrainingConfig {
+public final class UnetTrainingConfig implements DenseSegmentationTrainingConfig {
 
     private final String modelName;
     private final String datasetPath;

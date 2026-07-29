@@ -122,6 +122,8 @@ public class YoloImageDisplayPanel extends JPanel {
     private float hintAlpha;
     private Consumer<Viewport> viewportConsumer;
     private boolean applyingViewport;
+    private boolean hintOnHoverOnly;
+    private boolean mouseInside;
 
     /**
      * Creates a new YoloImageDisplayPanel instance.
@@ -140,6 +142,22 @@ public class YoloImageDisplayPanel extends JPanel {
         hintFadeTimer.setRepeats(true);
 
         MouseAdapter mouseAdapter = new MouseAdapter() {
+            @Override
+            public void mouseEntered(MouseEvent e) {
+                mouseInside = true;
+                if (hintOnHoverOnly && previewSource != null) {
+                    showHoverHint();
+                }
+            }
+
+            @Override
+            public void mouseExited(MouseEvent e) {
+                mouseInside = false;
+                if (hintOnHoverOnly) {
+                    hideHint();
+                }
+            }
+
             /**
              * Performs mouse pressed.
              *
@@ -374,8 +392,21 @@ public class YoloImageDisplayPanel extends JPanel {
         this.emptyMessageColor = HELP_TEXT;
         clearBoxes();
         updateExpandButtonState();
-        showDefaultHint();
+        updateHintVisibility(true);
         repaint();
+    }
+
+    /**
+     * Shows the zoom and pan hint only while the pointer is over this panel.
+     *
+     * @param hoverOnly whether to use hover-only hint visibility.
+     */
+    public void setHintOnHoverOnly(boolean hoverOnly) {
+        hintOnHoverOnly = hoverOnly;
+        if (hoverOnly) {
+            if (mouseInside && previewSource != null) showHoverHint();
+            else hideHint();
+        }
     }
 
     /**
@@ -420,9 +451,7 @@ public class YoloImageDisplayPanel extends JPanel {
         this.emptyMessageColor = HELP_TEXT;
         updateToolTip();
         updateExpandButtonState();
-        if (imageFile != null && showHint) {
-            showDefaultHint();
-        }
+        updateHintVisibility(imageFile != null && showHint);
         repaint();
     }
 
@@ -457,9 +486,7 @@ public class YoloImageDisplayPanel extends JPanel {
         this.emptyMessageColor = HELP_TEXT;
         updateToolTip();
         updateExpandButtonState();
-        if (image != null && showHint) {
-            showDefaultHint();
-        }
+        updateHintVisibility(image != null && showHint);
         repaint();
     }
 
@@ -673,6 +700,29 @@ public class YoloImageDisplayPanel extends JPanel {
         hintShownAt = System.currentTimeMillis();
         hintAlpha = 1.0f;
         hintFadeTimer.restart();
+    }
+
+    private void updateHintVisibility(boolean requested) {
+        if (!requested) {
+            hideHint();
+        } else if (hintOnHoverOnly) {
+            if (mouseInside) showHoverHint();
+            else hideHint();
+        } else {
+            showDefaultHint();
+        }
+    }
+
+    private void showHoverHint() {
+        hintFadeTimer.stop();
+        hintAlpha = 1.0f;
+        repaint();
+    }
+
+    private void hideHint() {
+        hintFadeTimer.stop();
+        hintAlpha = 0.0f;
+        repaint();
     }
 
     private void updateHintAlpha() {

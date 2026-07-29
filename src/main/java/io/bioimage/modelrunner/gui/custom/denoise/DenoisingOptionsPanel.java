@@ -52,6 +52,7 @@ public final class DenoisingOptionsPanel {
                 + "<b>Fast - Noise2Fast:</b> quickly learns denoising from the noisy image itself.<br>"
                 + "<b>Correlated - StructN2V:</b> targets structured or correlated noise."
                 + "</html>");
+        methodHelp.setPersistentToolTip(true);
         method.setSelectedItem(DenoisingMethod.FAST);
         balanced.setSelected(true);
         noise.setSelectedItem(DenoisingNoiseStructure.AUTO);
