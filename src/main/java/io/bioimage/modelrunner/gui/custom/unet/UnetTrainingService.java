@@ -37,7 +37,6 @@ import io.bioimage.modelrunner.gui.custom.training.TrainingConfigFiles;
 import io.bioimage.modelrunner.model.special.unet.Unet;
 import io.bioimage.modelrunner.model.special.unet.UnetTrainingProgress;
 import io.bioimage.modelrunner.model.special.unet.UnetValidationPreview;
-import io.bioimage.modelrunner.utils.JSONUtils;
 
 public class UnetTrainingService implements DenseSegmentationTrainingService {
 
@@ -159,7 +158,7 @@ public class UnetTrainingService implements DenseSegmentationTrainingService {
         }
     }
 
-    private static Map<String, Object> toPythonConfig(UnetTrainingConfig config, File datasetRoot) {
+    static Map<String, Object> toPythonConfig(UnetTrainingConfig config, File datasetRoot) {
         Map<String, Object> values = new LinkedHashMap<String, Object>();
         values.put("task", "auto");
         values.put("axes", "auto");
@@ -183,10 +182,9 @@ public class UnetTrainingService implements DenseSegmentationTrainingService {
         values.put("starting_point", config.isFineTune() ? "fine_tune" : "scratch");
         if (config.isFineTune()) {
             values.put("base_model", new File(config.getBaseModelPath()).getAbsolutePath());
+        } else {
+            values.put("architecture", scratchArchitectureForTraining(config.getScratchArchitecture()));
         }
-        values.put("architecture", config.isFineTune()
-                ? architectureFromBaseModel(config.getBaseModelPath())
-                : scratchArchitectureForTraining(config.getScratchArchitecture()));
         values.put("device", config.getDevice());
         values.put("epochs", config.getEpochs());
         return values;
@@ -234,27 +232,6 @@ public class UnetTrainingService implements DenseSegmentationTrainingService {
         }
         String architecture = UnetModelRegistry.architectureFromConfig(custom);
         return architecture == null || architecture.trim().isEmpty() ? scratchArchitecture : architecture;
-    }
-
-    private static String architectureFromBaseModel(String baseModelPath) {
-        if (baseModelPath == null || baseModelPath.trim().isEmpty()) {
-            return UnetModelRegistry.SMALL_2D;
-        }
-        File path = new File(baseModelPath);
-        File folder = path.isDirectory() ? path : path.getParentFile();
-        File configFile = folder == null ? null : new File(folder, "config.json");
-        if (configFile == null || !configFile.isFile()) {
-            return UnetModelRegistry.SMALL_2D;
-        }
-        try {
-            Map<String, Object> config = JSONUtils.load(configFile.getAbsolutePath());
-            Object architecture = config.get("architecture");
-            return architecture == null || architecture.toString().trim().isEmpty()
-                    ? UnetModelRegistry.SMALL_2D
-                    : architecture.toString();
-        } catch (IOException e) {
-            return UnetModelRegistry.SMALL_2D;
-        }
     }
 
     private synchronized void setRunningPython(Service python) {

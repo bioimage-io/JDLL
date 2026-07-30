@@ -580,6 +580,7 @@ public final class Unet extends DLModelPytorchProtected {
                 + ", accumulation_steps=" + plan.get("accumulation_steps")
                 + ", effective_batch=" + plan.get("effective_batch_size")
                 + ", steps_per_epoch=" + plan.get("steps_per_epoch"));
+        logFineTuningPlan(plan, logConsumer);
 
         Object memoryValue = plan.get("memory_plan");
         if (memoryValue instanceof Map) {
@@ -588,6 +589,39 @@ public final class Unet extends DLModelPytorchProtected {
                     + ", resolved_patch=" + memory.get("resolved_patch")
                     + ", budget_gb=" + memory.get("planning_budget_gb")
                     + ", reductions=" + memory.get("reductions"));
+        }
+    }
+
+    private static void logFineTuningPlan(Map<String, Object> plan, Consumer<String> logConsumer) {
+        Object startingPoint = plan.get("starting_point");
+        if ("fine_tune".equals(startingPoint)) {
+            logConsumer.accept("Resolved UNet fine-tuning source: model=" + plan.get("source_model")
+                    + ", architecture=" + plan.get("source_architecture")
+                    + ", input_channels=" + transition(plan, "source_input_channels", "target_input_channels")
+                    + ", output_channels=" + transition(plan, "source_output_channels", "target_output_channels"));
+            logAdaptation(plan.get("input_adaptation"), logConsumer);
+            logAdaptation(plan.get("output_adaptation"), logConsumer);
+        }
+        if (plan.get("backbone_learning_rate") != null) {
+            StringBuilder rates = new StringBuilder("Resolved UNet learning rates: backbone=")
+                    .append(plan.get("backbone_learning_rate"));
+            if (plan.get("adapted_layers_learning_rate") != null) {
+                rates.append(", adapted_layers=").append(plan.get("adapted_layers_learning_rate"));
+            }
+            if (plan.get("source_learning_rate") != null) {
+                rates.append(", source=").append(plan.get("source_learning_rate"));
+            }
+            logConsumer.accept(rates.toString());
+        }
+    }
+
+    private static String transition(Map<String, Object> plan, String sourceKey, String targetKey) {
+        return String.valueOf(plan.get(sourceKey)) + " -> " + String.valueOf(plan.get(targetKey));
+    }
+
+    private static void logAdaptation(Object value, Consumer<String> logConsumer) {
+        if (value != null && !value.toString().trim().isEmpty()) {
+            logConsumer.accept(value.toString());
         }
     }
 
