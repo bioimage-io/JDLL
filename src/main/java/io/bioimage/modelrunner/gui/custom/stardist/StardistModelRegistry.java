@@ -44,10 +44,19 @@ public final class StardistModelRegistry {
         {"2D_versatile_fluo", "2D_versatile_fluo" + File.separator + "weights_best.h5"},
         {"2D_versatile_he", "2D_versatile_he" + File.separator + "weights_best.h5"},
     };
-    private static final String[][] SCRATCH_ARCHITECTURES = new String[][] {
+    private static final String[][] SCRATCH_ARCHITECTURES_2D = new String[][] {
         {"small", "gray_small.json"},
         {"medium", "gray_medium.json"},
+        {"medium-big", "gray_medium_big.json"},
         {"big", "gray_big.json"},
+        {"large", "gray_large.json"},
+    };
+    private static final String[][] SCRATCH_ARCHITECTURES_3D = new String[][] {
+        {"small 3D", "gray_3d_small.json"},
+        {"medium 3D", "gray_3d_medium.json"},
+        {"medium-big 3D", "gray_3d_medium_big.json"},
+        {"big 3D", "gray_3d_big.json"},
+        {"large 3D", "gray_3d_large.json"},
     };
 
     private static final Map<String, Long> PRETRAINED_WEIGHTS_SIZE;
@@ -91,7 +100,7 @@ public final class StardistModelRegistry {
      * @return the created linked hash map.
      */
     public static LinkedHashMap<String, String> buildScratchArchitectureEntries() {
-        return buildScratchArchitectureEntries(null, null);
+        return buildScratchArchitectureEntries(null, null, false, false);
     }
 
     /**
@@ -102,13 +111,18 @@ public final class StardistModelRegistry {
      * @return the created linked hash map.
      */
     public static LinkedHashMap<String, String> buildScratchArchitectureEntries(String modelsDir, String modelName) {
+        return buildScratchArchitectureEntries(modelsDir, modelName, false, true);
+    }
+
+    public static LinkedHashMap<String, String> buildScratchArchitectureEntries(String modelsDir, String modelName,
+            boolean volume, boolean datasetReviewed) {
         LinkedHashMap<String, String> architectures = new LinkedHashMap<String, String>();
         String customName = normalizeModelName(modelName);
-        String customConfig = customScratchConfigValue(modelsDir, modelName);
+        String customConfig = datasetReviewed ? customScratchConfigValue(modelsDir, modelName, volume) : null;
         if (customConfig != null) {
             architectures.put("[Custom config] " + customName, customConfig);
         }
-        for (String[] architecture : SCRATCH_ARCHITECTURES) {
+        for (String[] architecture : volume ? SCRATCH_ARCHITECTURES_3D : SCRATCH_ARCHITECTURES_2D) {
             architectures.put(architecture[0], architecture[1]);
         }
         return architectures;
@@ -124,12 +138,27 @@ public final class StardistModelRegistry {
         if (architecture == null) {
             return false;
         }
-        for (String[] candidate : SCRATCH_ARCHITECTURES) {
+        for (String[][] architectures : new String[][][] {SCRATCH_ARCHITECTURES_2D, SCRATCH_ARCHITECTURES_3D}) {
+            for (String[] candidate : architectures) {
+                if (candidate[1].equalsIgnoreCase(architecture.trim())) {
+                    return true;
+                }
+            }
+        }
+        return isCustomScratchConfig(architecture);
+    }
+
+    public static boolean isArchitecture3D(String architecture) {
+        if (architecture == null) {
+            return false;
+        }
+        for (String[] candidate : SCRATCH_ARCHITECTURES_3D) {
             if (candidate[1].equalsIgnoreCase(architecture.trim())) {
                 return true;
             }
         }
-        return isCustomScratchConfig(architecture);
+        Map<String, Object> custom = loadCustomScratchConfig(architecture);
+        return custom != null && configDimensions(custom) == 3;
     }
 
     /**
@@ -140,9 +169,13 @@ public final class StardistModelRegistry {
      * @return the config path, or null.
      */
     public static String customScratchConfigValue(String modelsDir, String modelName) {
+        return customScratchConfigValue(modelsDir, modelName, false);
+    }
+
+    public static String customScratchConfigValue(String modelsDir, String modelName, boolean volume) {
         File config = TrainingConfigFiles.configFileForModelName(modelsDir, STARDIST_MODELS_SUBDIR,
                 normalizeModelName(modelName));
-        return isCustomScratchConfig(config) ? config.getAbsolutePath() : null;
+        return isCustomScratchConfig(config, volume) ? config.getAbsolutePath() : null;
     }
 
     /**
@@ -184,6 +217,10 @@ public final class StardistModelRegistry {
     }
 
     private static boolean isCustomScratchConfig(File configFile) {
+        return isCustomScratchConfig(configFile, null);
+    }
+
+    private static boolean isCustomScratchConfig(File configFile, Boolean volume) {
         Map<String, Object> config = TrainingConfigFiles.load(configFile);
         if (config == null) {
             return false;
@@ -192,8 +229,7 @@ public final class StardistModelRegistry {
         if (framework != null && !"stardist".equalsIgnoreCase(framework)) {
             return false;
         }
-        String axes = TrainingConfigFiles.stringAt(config, "axes");
-        if (axes != null && axes.toUpperCase().contains("Z")) {
+        if (volume != null && (configDimensions(config) == 3) != volume.booleanValue()) {
             return false;
         }
         return config.containsKey("n_rays") || config.containsKey("grid") || config.containsKey("backbone")
@@ -249,8 +285,15 @@ public final class StardistModelRegistry {
      * @return true if can download; false otherwise.
      */
     public static boolean canDownload(String modelPath) {
-    	String folderAndFile = new File(modelPath).getParentFile().getName() + File.separator + new File(modelPath).getName();
-        return modelPath != null && expectedPretrainedSize(folderAndFile) != null;
+        if (modelPath == null) {
+            return false;
+        }
+        File modelFile = new File(modelPath);
+        File parent = modelFile.getParentFile();
+        if (parent == null) {
+            return false;
+        }
+        return expectedPretrainedSize(parent.getName() + File.separator + modelFile.getName()) != null;
     }
 
     /**
@@ -310,6 +353,76 @@ public final class StardistModelRegistry {
 		}
     }
 
+    /**
+     * Resolves a model that can be used as a StarDist fine-tuning source.
+     *
+     * @param modelPath a model directory or HDF5 weights file.
+     * @return the resolved source, or {@code null} when it is incomplete or incompatible.
+     */
+    public static FineTuneSource resolveFineTuneSource(String modelPath) {
+        if (modelPath == null || modelPath.trim().isEmpty()) {
+            return null;
+        }
+        File selected = new File(modelPath.trim()).getAbsoluteFile();
+        File modelDir = selected.isDirectory() ? selected : selected.getParentFile();
+        if (modelDir == null) {
+            return null;
+        }
+        Path weights = selected.isFile() && isWeightsFile(selected.getName())
+                ? selected.toPath() : findModelFile(modelDir.getAbsolutePath());
+        File configFile = new File(modelDir, TrainingConfigFiles.CONFIG_FILE_NAME);
+        Map<String, Object> config = TrainingConfigFiles.load(configFile);
+        if (weights == null || !Files.isRegularFile(weights) || !isCompatibleConfig(config, null)) {
+            return null;
+        }
+        return new FineTuneSource(modelDir, weights.toFile(), configFile, config);
+    }
+
+    /**
+     * Returns whether a path is an installed or downloadable fine-tuning source.
+     *
+     * @param modelPath the model path.
+     * @return true when the source can be selected.
+     */
+    public static boolean isSelectableFineTuneSource(String modelPath) {
+        return resolveFineTuneSource(modelPath) != null || canDownload(modelPath);
+    }
+
+    public static boolean isSelectableFineTuneSource(String modelPath, int dimensions) {
+        FineTuneSource source = resolveFineTuneSource(modelPath);
+        if (source != null) {
+            return isCompatibleConfig(source.getConfig(), Integer.valueOf(dimensions));
+        }
+        return dimensions == 2 && canDownload(modelPath);
+    }
+
+    public static int configDimensions(Map<String, Object> config) {
+        if (config == null) {
+            return 2;
+        }
+        Object dimensions = config.get("n_dim");
+        if (dimensions != null && "3".equals(dimensions.toString())) {
+            return 3;
+        }
+        String axes = TrainingConfigFiles.stringAt(config, "axes");
+        return axes != null && axes.toUpperCase().contains("Z") ? 3 : 2;
+    }
+
+    private static boolean isCompatibleConfig(Map<String, Object> config, Integer dimensions) {
+        if (config == null) {
+            return false;
+        }
+        String framework = TrainingConfigFiles.stringAt(config, "framework");
+        if (framework != null && !"stardist".equalsIgnoreCase(framework)) {
+            return false;
+        }
+        return (dimensions == null || configDimensions(config) == dimensions.intValue())
+                && config.containsKey("n_channel_in")
+                && config.containsKey("n_rays")
+                && config.containsKey("grid")
+                && config.containsKey("backbone");
+    }
+
     private static int weightsPriority(Path path) {
         String name = path.getFileName().toString().toLowerCase();
         if ("weights_best.h5".equals(name)) {
@@ -330,5 +443,39 @@ public final class StardistModelRegistry {
         }
         String lower = fileName.toLowerCase();
         return lower.endsWith(STARDIST_KERAS_WEIGHTS_EXTENSION);
+    }
+
+    /**
+     * Resolved immutable StarDist fine-tuning source.
+     */
+    public static final class FineTuneSource {
+        private final File modelDirectory;
+        private final File weightsFile;
+        private final File configFile;
+        private final Map<String, Object> config;
+
+        private FineTuneSource(File modelDirectory, File weightsFile, File configFile,
+                Map<String, Object> config) {
+            this.modelDirectory = modelDirectory;
+            this.weightsFile = weightsFile;
+            this.configFile = configFile;
+            this.config = new LinkedHashMap<String, Object>(config);
+        }
+
+        public File getModelDirectory() {
+            return modelDirectory;
+        }
+
+        public File getWeightsFile() {
+            return weightsFile;
+        }
+
+        public File getConfigFile() {
+            return configFile;
+        }
+
+        public Map<String, Object> getConfig() {
+            return new LinkedHashMap<String, Object>(config);
+        }
     }
 }

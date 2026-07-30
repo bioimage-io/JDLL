@@ -297,33 +297,100 @@ public class StardistInferenceService {
 
     private <T extends RealType<T> & NativeType<T>, R extends RealType<R> & NativeType<R>>
     List<Tensor<R>> runLoadedModel(RandomAccessibleInterval<T> rai) throws RunModelException {
-        rai = normalizeChannelCount(rai);
-        RandomAccessibleInterval<T> input = addDimsToInput(rai,
-                rai.dimensionsAsLongArray().length > 2 && rai.dimensionsAsLongArray()[2] == 3 ? 3 : 1);
-        List<Tensor<R>> outTensor = model.inference(Tensor.build("input", "xycb", input));
-        return outTensor;
+        Tensor<T> input = model.is3D()
+                ? prepareVolumeInput(rai, model.getNChannels())
+                : preparePlanarInput(rai, model.getNChannels());
+        return model.inference(input);
     }
 
     private static <T extends RealType<T> & NativeType<T>>
-    RandomAccessibleInterval<T> normalizeChannelCount(RandomAccessibleInterval<T> rai) {
+    Tensor<T> preparePlanarInput(RandomAccessibleInterval<T> rai, int nChannels) {
+        if (rai.numDimensions() == 2 && nChannels == 3) {
+            rai = addRepeatedChannels(rai, 3);
+        } else {
+            rai = normalizeChannelCount(rai, nChannels);
+        }
+        return Tensor.build("input", "xycb", addDimsToInput(rai, nChannels));
+    }
+
+    private static <T extends RealType<T> & NativeType<T>>
+    Tensor<T> prepareVolumeInput(RandomAccessibleInterval<T> rai, int nChannels) {
+        while (rai.numDimensions() > 4) {
+            rai = Views.hyperSlice(rai, rai.numDimensions() - 1, rai.min(rai.numDimensions() - 1));
+        }
+        if (rai.numDimensions() == 2) {
+            rai = Views.addDimension(rai, 0, 0);
+        }
+        if (rai.numDimensions() == 3) {
+            if (rai.dimension(2) < 2) {
+                throw new IllegalArgumentException("StarDist3D requires an image volume with at least two Z planes.");
+            }
+            RandomAccessibleInterval<T> withChannels = nChannels == 1
+                    ? Views.addDimension(rai, 0, 0)
+                    : addRepeatedChannels(rai, nChannels);
+            return Tensor.build("input", "xyzcb", Views.addDimension(withChannels, 0, 0));
+        }
+        if (rai.numDimensions() != 4) {
+            throw new IllegalArgumentException("StarDist 3D expects XYZ or XYCZ image data.");
+        }
+        if (rai.dimension(3) < 2) {
+            throw new IllegalArgumentException("StarDist3D requires an image volume with at least two Z planes.");
+        }
+        rai = normalizeChannelCount(rai, nChannels);
+        return Tensor.build("input", "xyczb", Views.addDimension(rai, 0, 0));
+    }
+
+    private static <T extends RealType<T> & NativeType<T>>
+    RandomAccessibleInterval<T> normalizeChannelCount(RandomAccessibleInterval<T> rai, int wantedChannels) {
         long[] dims = rai.dimensionsAsLongArray();
         if (dims.length < 3) {
             return rai;
         }
-        if (dims[2] == 2) {
+        if (dims[2] == wantedChannels) {
+            return rai;
+        }
+        if (wantedChannels == 1) {
+            return firstChannels(rai, 1);
+        }
+        if (dims[2] == 1) {
+            return repeatExistingChannel(rai, wantedChannels);
+        }
+        if (dims[2] == 2 && wantedChannels == 3) {
             return appendBlankThirdChannel(rai);
         }
-        if (dims[2] > 3) {
-            long[] min = new long[dims.length];
-            long[] max = new long[dims.length];
-            for (int i = 0; i < dims.length; i++) {
-                min[i] = rai.min(i);
-                max[i] = rai.max(i);
-            }
-            max[2] = min[2] + 2;
-            return Views.interval(rai, min, max);
+        if (dims[2] > wantedChannels) {
+            return firstChannels(rai, wantedChannels);
         }
-        return rai;
+        throw new IllegalArgumentException("Expected " + wantedChannels + " image channels, got " + dims[2] + ".");
+    }
+
+    private static <T extends RealType<T> & NativeType<T>>
+    RandomAccessibleInterval<T> firstChannels(RandomAccessibleInterval<T> rai, int count) {
+        long[] min = new long[rai.numDimensions()];
+        long[] max = new long[rai.numDimensions()];
+        rai.min(min);
+        rai.max(max);
+        max[2] = min[2] + count - 1;
+        return Views.interval(rai, min, max);
+    }
+
+    private static <T extends RealType<T> & NativeType<T>>
+    RandomAccessibleInterval<T> addRepeatedChannels(RandomAccessibleInterval<T> rai, int count) {
+        List<RandomAccessibleInterval<T>> channels = new ArrayList<RandomAccessibleInterval<T>>();
+        for (int i = 0; i < count; i++) {
+            channels.add(rai);
+        }
+        return Views.stack(channels);
+    }
+
+    private static <T extends RealType<T> & NativeType<T>>
+    RandomAccessibleInterval<T> repeatExistingChannel(RandomAccessibleInterval<T> rai, int count) {
+        RandomAccessibleInterval<T> channel = Views.hyperSlice(rai, 2, rai.min(2));
+        RandomAccessibleInterval<T> stacked = addRepeatedChannels(channel, count);
+        for (int d = stacked.numDimensions() - 1; d > 2; d--) {
+            stacked = Views.permute(stacked, d, d - 1);
+        }
+        return stacked;
     }
 
     private static <T extends RealType<T> & NativeType<T>>

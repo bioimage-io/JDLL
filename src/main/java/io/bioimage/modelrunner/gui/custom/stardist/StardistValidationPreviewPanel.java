@@ -35,7 +35,10 @@ import java.util.Collections;
 import java.util.List;
 
 import javax.swing.JButton;
+import javax.swing.JComboBox;
+import javax.swing.JLabel;
 import javax.swing.JPanel;
+import javax.swing.JSlider;
 import javax.swing.border.LineBorder;
 
 import com.google.gson.JsonArray;
@@ -50,6 +53,7 @@ import io.bioimage.modelrunner.numpy.DecodeNumpy;
 import net.imglib2.RandomAccess;
 import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.type.numeric.RealType;
+import net.imglib2.view.Views;
 
 public class StardistValidationPreviewPanel extends YoloValidationPreviewPanel {
 
@@ -61,6 +65,7 @@ public class StardistValidationPreviewPanel extends YoloValidationPreviewPanel {
     private static final int ARROW_BUTTON_MIN_HEIGHT = 13;
     private static final int ARROW_BUTTON_MAX_HEIGHT = 21;
     private static final int STATUS_H = 36;
+    private static final int SLICE_CONTROLS_H = 22;
     private static final Color TEXT_COLOR = new Color(70, 78, 98);
     private static final Color PREDICTION_COLOR = new Color(230, 44, 140);
     private static final Color PROBABILITY_COLOR = new Color(255, 180, 0);
@@ -74,6 +79,9 @@ public class StardistValidationPreviewPanel extends YoloValidationPreviewPanel {
     private final TrainingStatusPanel statusPanel = new TrainingStatusPanel();
     private final JButton previousButton = new JButton(PREVIOUS_SYMBOL);
     private final JButton nextButton = new JButton(NEXT_SYMBOL);
+    private final JComboBox<String> planeCombo = new JComboBox<String>(new String[] {"XY", "XZ", "YZ"});
+    private final JSlider sliceSlider = new JSlider();
+    private final JLabel sliceLabel = new JLabel();
     private final List<PreviewSample> samples = new ArrayList<PreviewSample>();
 
     private int currentIndex;
@@ -85,6 +93,10 @@ public class StardistValidationPreviewPanel extends YoloValidationPreviewPanel {
     private long elapsedMillis;
     private double secondsPerIteration = Double.NaN;
     private boolean currentSampleUsesProbabilityOverlay;
+    private RandomAccessibleInterval<?> currentImage;
+    private RandomAccessibleInterval<?> currentPrediction;
+    private RandomAccessibleInterval<?> currentProbability;
+    private boolean updatingSliceControls;
 
     /**
      * Creates a new StardistValidationPreviewPanel instance.
@@ -102,8 +114,22 @@ public class StardistValidationPreviewPanel extends YoloValidationPreviewPanel {
         YoloUiUtils.styleFlatSecondaryButton(nextButton);
         previousButton.addActionListener(e -> showSample(currentIndex - 1));
         nextButton.addActionListener(e -> showSample(currentIndex + 1));
+        planeCombo.addActionListener(e -> {
+            if (!updatingSliceControls) {
+                configureSliceSlider(false);
+                renderCurrentSample();
+            }
+        });
+        sliceSlider.addChangeListener(e -> {
+            if (!updatingSliceControls) {
+                renderCurrentSample();
+            }
+        });
 
         add(imagePanel);
+        add(planeCombo);
+        add(sliceSlider);
+        add(sliceLabel);
         add(previousButton);
         add(nextButton);
         add(statusPanel);
@@ -123,6 +149,10 @@ public class StardistValidationPreviewPanel extends YoloValidationPreviewPanel {
         previewEpoch = 0;
         imagePanel.setEmptyMessage(WAITING_MESSAGE);
         imagePanel.clearImage();
+        currentImage = null;
+        currentPrediction = null;
+        currentProbability = null;
+        setSliceControlsVisible(false);
         updateStatusPanel();
         updateButtons();
     }
@@ -201,12 +231,24 @@ public class StardistValidationPreviewPanel extends YoloValidationPreviewPanel {
                 Math.min(ARROW_BUTTON_MAX_HEIGHT, Math.min(w, h) / 15));
         int statusH = Math.max(YoloUiUtils.MIN_FONT_SIZE * 2,
                 Math.min(STATUS_H, h / 5));
-        int bottomH = arrowH + VIEWER_TO_ARROWS_GAP + ARROWS_TO_STATUS_GAP + statusH;
+        boolean volume = sliceSlider.isVisible();
+        int controlsH = volume ? SLICE_CONTROLS_H + VIEWER_TO_ARROWS_GAP : 0;
+        int bottomH = controlsH + arrowH + VIEWER_TO_ARROWS_GAP + ARROWS_TO_STATUS_GAP + statusH;
         int imageH = Math.max(1, h - 2 * OUTER_PAD - bottomH);
         int y = OUTER_PAD;
 
         imagePanel.setBounds(OUTER_PAD, y, innerW, imageH);
         y += imageH + VIEWER_TO_ARROWS_GAP;
+
+        if (volume) {
+            int planeW = Math.max(42, innerW / 7);
+            int labelW = Math.max(44, innerW / 8);
+            planeCombo.setBounds(OUTER_PAD, y, planeW, SLICE_CONTROLS_H);
+            sliceSlider.setBounds(OUTER_PAD + planeW + 3, y,
+                    Math.max(1, innerW - planeW - labelW - 6), SLICE_CONTROLS_H);
+            sliceLabel.setBounds(OUTER_PAD + innerW - labelW, y, labelW, SLICE_CONTROLS_H);
+            y += SLICE_CONTROLS_H + VIEWER_TO_ARROWS_GAP;
+        }
 
         int leftArrowW = innerW / 2;
         previousButton.setBounds(OUTER_PAD, y, leftArrowW, arrowH);
@@ -229,10 +271,19 @@ public class StardistValidationPreviewPanel extends YoloValidationPreviewPanel {
         currentIndex = wrap(requestedIndex, samples.size());
         PreviewSample sample = samples.get(currentIndex);
         try {
-            currentSampleUsesProbabilityOverlay = false;
-            BufferedImage image = buildOverlay(sample);
-            imagePanel.setBufferedImage(image, buildImageTitle(sample), false);
-            imagePanel.setTitleColor(Color.WHITE);
+            currentImage = DecodeNumpy.loadNpy(sample.imagePath);
+            currentPrediction = sample.predictionPath == null ? null : DecodeNumpy.loadNpy(sample.predictionPath);
+            currentProbability = sample.probPath == null ? null : DecodeNumpy.loadNpy(sample.probPath);
+            setSliceControlsVisible(sample.dimensions == 3 && currentImage.numDimensions() >= 3);
+            if (sliceSlider.isVisible()) {
+                updatingSliceControls = true;
+                planeCombo.setSelectedItem("XY");
+                updatingSliceControls = false;
+                configureSliceSlider(true);
+                sliceSlider.setValue(Math.max(sliceSlider.getMinimum(),
+                        Math.min(sliceSlider.getMaximum(), sample.initialPlane)));
+            }
+            renderCurrentSample();
         } catch (Exception e) {
             currentSampleUsesProbabilityOverlay = false;
             imagePanel.setEmptyMessage(ERROR_MESSAGE, new Color(180, 30, 30));
@@ -242,21 +293,79 @@ public class StardistValidationPreviewPanel extends YoloValidationPreviewPanel {
         updateButtons();
     }
 
-    private BufferedImage buildOverlay(PreviewSample sample) throws IOException {
-        BufferedImage image = toBufferedImage(DecodeNumpy.loadNpy(sample.imagePath));
+    private void renderCurrentSample() {
+        if (currentImage == null || samples.isEmpty()) {
+            return;
+        }
+        try {
+            currentSampleUsesProbabilityOverlay = false;
+            BufferedImage image = buildOverlay();
+            imagePanel.setBufferedImage(image, buildImageTitle(samples.get(currentIndex)), false);
+            imagePanel.setTitleColor(Color.WHITE);
+            updateSliceLabel();
+        } catch (Exception e) {
+            imagePanel.setEmptyMessage(ERROR_MESSAGE, new Color(180, 30, 30));
+            imagePanel.clearImage();
+        }
+    }
+
+    private BufferedImage buildOverlay() throws IOException {
+        BufferedImage image = toBufferedImage(currentSlice(currentImage, true));
         boolean hasPrediction = false;
-        if (sample.predictionPath != null) {
-            RandomAccessibleInterval<?> prediction = DecodeNumpy.loadNpy(sample.predictionPath);
+        if (currentPrediction != null) {
+            RandomAccessibleInterval<?> prediction = currentSlice(currentPrediction, false);
             hasPrediction = hasPositiveValues(prediction);
             if (hasPrediction) {
                 drawMaskContours(image, prediction, PREDICTION_COLOR);
             }
         }
-        if (!hasPrediction && sample.probPath != null) {
-            drawProbabilityOverlay(image, DecodeNumpy.loadNpy(sample.probPath), PROBABILITY_COLOR);
+        if (!hasPrediction && currentProbability != null) {
+            drawProbabilityOverlay(image, currentSlice(currentProbability, false), PROBABILITY_COLOR);
             currentSampleUsesProbabilityOverlay = true;
         }
         return image;
+    }
+
+    private RandomAccessibleInterval<?> currentSlice(RandomAccessibleInterval<?> source, boolean image) {
+        if (!sliceSlider.isVisible() || source == null) {
+            return source;
+        }
+        String plane = String.valueOf(planeCombo.getSelectedItem());
+        int spatialAxis = "XY".equals(plane) ? 0 : "XZ".equals(plane) ? 1 : 2;
+        int axis = Math.min(spatialAxis, source.numDimensions() - (image ? 2 : 1));
+        long index = Math.max(source.min(axis), Math.min(source.max(axis), sliceSlider.getValue()));
+        return Views.hyperSlice(source, axis, index);
+    }
+
+    private void configureSliceSlider(boolean useSampleInitialPlane) {
+        if (currentImage == null || currentImage.numDimensions() < 3) {
+            return;
+        }
+        String plane = String.valueOf(planeCombo.getSelectedItem());
+        int axis = "XY".equals(plane) ? 0 : "XZ".equals(plane) ? 1 : 2;
+        int max = safeInt(currentImage.dimension(axis)) - 1;
+        int value = useSampleInitialPlane && "XY".equals(plane) && !samples.isEmpty()
+                ? samples.get(currentIndex).initialPlane : max / 2;
+        updatingSliceControls = true;
+        sliceSlider.setMinimum(0);
+        sliceSlider.setMaximum(Math.max(0, max));
+        sliceSlider.setValue(Math.max(0, Math.min(max, value)));
+        updatingSliceControls = false;
+        updateSliceLabel();
+    }
+
+    private void updateSliceLabel() {
+        if (sliceSlider.isVisible()) {
+            sliceLabel.setText((sliceSlider.getValue() + 1) + "/" + (sliceSlider.getMaximum() + 1));
+        }
+    }
+
+    private void setSliceControlsVisible(boolean visible) {
+        planeCombo.setVisible(visible);
+        sliceSlider.setVisible(visible);
+        sliceLabel.setVisible(visible);
+        revalidate();
+        repaint();
     }
 
     private void updateButtons() {
@@ -306,9 +415,17 @@ public class StardistValidationPreviewPanel extends YoloValidationPreviewPanel {
                     getExistingPath(sample, "label_path"),
                     getExistingPath(sample, "prediction_path"),
                     getExistingPath(sample, "prob_path"),
-                    "epoch " + getInt(root, "epoch", 0)));
+                    "epoch " + getInt(root, "epoch", 0),
+                    getInt(root, "n_dim", 2),
+                    getInitialPlane(sample)));
         }
         return result;
+    }
+
+    private static int getInitialPlane(JsonObject sample) {
+        JsonElement element = sample == null ? null : sample.get("initial_plane");
+        JsonObject plane = element != null && element.isJsonObject() ? element.getAsJsonObject() : null;
+        return getInt(plane, "index", 0);
     }
 
     private static String getExistingPath(JsonObject object, String key) {
@@ -748,14 +865,18 @@ public class StardistValidationPreviewPanel extends YoloValidationPreviewPanel {
         @SuppressWarnings("unused")
         private final String probPath;
         private final String title;
+        private final int dimensions;
+        private final int initialPlane;
 
         private PreviewSample(String imagePath, String labelPath, String predictionPath,
-                String probPath, String title) {
+                String probPath, String title, int dimensions, int initialPlane) {
             this.imagePath = imagePath;
             this.labelPath = labelPath;
             this.predictionPath = predictionPath;
             this.probPath = probPath;
             this.title = title;
+            this.dimensions = dimensions;
+            this.initialPlane = initialPlane;
         }
     }
 }

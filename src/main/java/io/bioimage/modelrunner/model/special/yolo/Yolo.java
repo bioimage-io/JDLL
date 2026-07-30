@@ -22,7 +22,9 @@ package io.bioimage.modelrunner.model.special.yolo;
 import java.awt.Rectangle;
 import java.io.File;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
+import java.util.Base64;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -38,6 +40,8 @@ import org.apposed.appose.Service.ResponseType;
 import org.apposed.appose.Service.Task;
 import org.apposed.appose.TaskEvent;
 import org.apposed.appose.TaskException;
+
+import com.google.gson.Gson;
 
 import io.bioimage.modelrunner.exceptions.LoadModelException;
 import io.bioimage.modelrunner.exceptions.RunModelException;
@@ -79,6 +83,9 @@ public class Yolo extends DLModelPytorchProtected {
 	public static final int DEFAULT_ACCELERATED_LOG_EVERY_N_STEPS = 50;
 	public static final int DEFAULT_CPU_LOG_EVERY_N_STEPS = 10;
 	public static final int DEFAULT_TRAIN_BATCH_SIZE = 16;
+	public static final int DEFAULT_TRAIN_SEED = 0;
+	public static final int DEFAULT_NOMINAL_BATCH_SIZE = 64;
+	public static final boolean DEFAULT_TRAIN_DETERMINISTIC = true;
 	public static final int DEFAULT_TRAIN_WORKERS = 0;
 	public static final boolean DEFAULT_TRAIN_EXIST_OK = true;
 	public static final boolean DEFAULT_TRAIN_VERBOSE = false;
@@ -90,6 +97,7 @@ public class Yolo extends DLModelPytorchProtected {
 			"yolo26m.yaml",
 			"yolo26l.yaml",
 			"yolo26x.yaml"));
+	private static final Gson TRAINING_GSON = new Gson();
 	static {
 		PRETRAINED_YOLO_MODELS = new HashMap<String, Long>();
 		PRETRAINED_YOLO_MODELS.put("YOLO26n", 5_544_453L);
@@ -400,6 +408,91 @@ public class Yolo extends DLModelPytorchProtected {
 		}
 	}
 
+	/**
+	 * Runs one isolated YOLO training attempt with an explicit physical batch request.
+	 *
+	 * @param epochs the epochs.
+	 * @param baseModelPath optional fine-tuning weights.
+	 * @param modelSource scratch YAML or built-in architecture.
+	 * @param datasetYamlPath dataset YAML.
+	 * @param outputWeightsPath attempt output weights.
+	 * @param imageSize training image size.
+	 * @param previewEpochPeriod validation preview period.
+	 * @param trainOptions validated Ultralytics training options.
+	 * @param batchRequest an integer batch or {@code "auto"}.
+	 * @param progressConsumer progress callback.
+	 * @param previewConsumer preview callback.
+	 * @param logConsumer log callback.
+	 * @param device requested device.
+	 * @param cancelSignalPath cancellation signal.
+	 * @param serviceConsumer service lifecycle callback.
+	 * @param attemptConsumer partially resolved attempt callback.
+	 * @return the completed attempt result.
+	 * @throws IOException if an I/O error occurs.
+	 * @throws BuildException if the environment cannot be built.
+	 * @throws InterruptedException if interrupted.
+	 * @throws TaskException if training fails.
+	 */
+	public static YoloTrainingAttemptResult trainAttempt(int epochs, String baseModelPath, String modelSource,
+			String datasetYamlPath, String outputWeightsPath, int imageSize, int previewEpochPeriod,
+			Map<String, Object> trainOptions, Object batchRequest,
+			Consumer<YoloTrainingProgress> progressConsumer,
+			Consumer<YoloValidationPreview> previewConsumer,
+			Consumer<String> logConsumer, String device, String cancelSignalPath,
+			Consumer<Service> serviceConsumer, Consumer<YoloTrainingAttemptResult> attemptConsumer)
+			throws IOException, BuildException, InterruptedException, TaskException {
+		validateTrainingArguments(epochs, datasetYamlPath, outputWeightsPath, imageSize);
+		String source = normalizeTrainingModelSource(baseModelPath, modelSource);
+		String normalizedDevice = normalizeDevice(device);
+		File outputFile = new File(outputWeightsPath);
+		File outputDir = outputFile.getParentFile();
+		if (outputDir != null && !outputDir.isDirectory() && !outputDir.mkdirs()) {
+			throw new IOException("Could not create YOLO output directory: " + outputDir.getAbsolutePath());
+		}
+
+		PixiEnvironmentSpec envSpec = resolvePytorchEnv();
+		Environment env = Appose.pixi()
+				.environment(envSpec.getSelectedEnvironment())
+				.wrap(envSpec.getEnvironmentDirectory());
+		Service python = env.python();
+		YoloTrainingAttemptResult result = new YoloTrainingAttemptResult();
+		if (serviceConsumer != null) {
+			serviceConsumer.accept(python);
+		}
+		try {
+			Task task = python.task(buildTrainingCode(epochs, source, datasetYamlPath, outputWeightsPath,
+					imageSize, previewEpochPeriod, cancelSignalPath, normalizedDevice,
+					trainOptions, batchRequest));
+			task.listen(event -> {
+				handleTrainingEvent(event, progressConsumer, previewConsumer, logConsumer);
+				if (event.responseType.equals(ResponseType.UPDATE) && event.info != null) {
+					Object type = event.info.get("type");
+					if ("runtime".equals(type)) {
+						result.updateRuntime(event.info);
+						if (attemptConsumer != null) {
+							attemptConsumer.accept(result);
+						}
+					} else if ("progress".equals(type)) {
+						result.updateProgress(event.info);
+					}
+				}
+			});
+			task.waitFor();
+			result.complete(task.outputs);
+			if (attemptConsumer != null) {
+				attemptConsumer.accept(result);
+			}
+			return result;
+		} finally {
+			if (python.isAlive()) {
+				python.close();
+			}
+			if (serviceConsumer != null) {
+				serviceConsumer.accept(null);
+			}
+		}
+	}
+
 	private static void validateTrainingArguments(int epochs, String datasetYamlPath,
 			String outputWeightsPath, int imageSize) {
 		if (epochs <= 0) {
@@ -427,6 +520,28 @@ public class Yolo extends DLModelPytorchProtected {
 			}
 		}
 		throw new IllegalArgumentException("Unsupported YOLO architecture for training from scratch: " + architecture);
+	}
+
+	private static String normalizeTrainingModelSource(String baseModelPath, String modelSource) {
+		if (baseModelPath != null && !baseModelPath.trim().isEmpty()) {
+			File weights = new File(baseModelPath.trim());
+			if (!weights.isFile()) {
+				throw new IllegalArgumentException("The YOLO fine-tuning weights do not exist: " + weights);
+			}
+			return weights.getAbsolutePath();
+		}
+		String source = modelSource == null || modelSource.trim().isEmpty()
+				? DEFAULT_SCRATCH_ARCHITECTURE : modelSource.trim();
+		for (String supported : SCRATCH_ARCHITECTURES) {
+			if (supported.equalsIgnoreCase(source)) {
+				return supported;
+			}
+		}
+		File yaml = new File(source);
+		if (yaml.isFile() && (source.toLowerCase().endsWith(".yaml") || source.toLowerCase().endsWith(".yml"))) {
+			return yaml.getAbsolutePath();
+		}
+		throw new IllegalArgumentException("Unsupported YOLO model source for training: " + source);
 	}
 
 	private static String normalizeDevice(String device) {
@@ -461,6 +576,14 @@ public class Yolo extends DLModelPytorchProtected {
 		String modelSource = baseModelPath == null || baseModelPath.trim().isEmpty()
 				? scratchArchitecture
 				: new File(baseModelPath).getAbsolutePath();
+		return buildTrainingCode(epochs, modelSource, datasetYamlPath, outputWeightsPath, imageSize,
+				previewEpochPeriod, cancelSignalPath, device, Collections.<String, Object>emptyMap(),
+				Integer.valueOf(DEFAULT_TRAIN_BATCH_SIZE));
+	}
+
+	private static String buildTrainingCode(int epochs, String modelSource, String datasetYamlPath,
+			String outputWeightsPath, int imageSize, int previewEpochPeriod, String cancelSignalPath, String device,
+			Map<String, Object> trainOptions, Object batchRequest) {
 		String normalizedDevice = normalizeDevice(device);
 		File outputFile = new File(outputWeightsPath);
 		File outputDir = outputFile.getParentFile();
@@ -473,10 +596,15 @@ public class Yolo extends DLModelPytorchProtected {
 			project = outputDir.getParentFile().getAbsolutePath();
 		}
 		String nl = System.lineSeparator();
+		String optionsJson = TRAINING_GSON.toJson(trainOptions == null
+				? Collections.<String, Object>emptyMap() : trainOptions);
+		String optionsBase64 = Base64.getEncoder().encodeToString(optionsJson.getBytes(StandardCharsets.UTF_8));
 		return ""
-				+ "import contextlib, json, logging, os, random, shutil, sys" + nl
+				+ "import base64, contextlib, json, logging, os, platform, random, shutil, sys" + nl
 				+ TrainingCodeUtils.apposeStdoutCapture()
 				+ "import torch" + nl
+				+ "import torchvision" + nl
+				+ "import ultralytics" + nl
 				+ "from ultralytics import YOLO" + nl
 				+ "from ultralytics.utils import LOGGER" + nl
 				+ "model_source = r'" + TrainingCodeUtils.py(modelSource) + "'" + nl
@@ -500,7 +628,8 @@ public class Yolo extends DLModelPytorchProtected {
 				+ "LOGGER.setLevel(logging.INFO)" + nl
 				+ "epochs = " + epochs + nl
 				+ "imgsz = " + imageSize + nl
-				+ "batch_size = " + DEFAULT_TRAIN_BATCH_SIZE + nl
+				+ "batch_size = " + batchLiteral(batchRequest, normalizedDevice, modelSource) + nl
+				+ "train_options = json.loads(base64.b64decode('" + optionsBase64 + "').decode('utf-8'))" + nl
 				+ "preview_epoch_period = " + Math.max(1, previewEpochPeriod) + nl
 				+ "preview_sample_count = " + DEFAULT_VALIDATION_PREVIEW_SAMPLE_COUNT + nl
 				+ "preview_confidence = " + DEFAULT_VALIDATION_PREVIEW_CONFIDENCE + nl
@@ -510,7 +639,7 @@ public class Yolo extends DLModelPytorchProtected {
 				+ "is_accelerated = requested_device != 'cpu'" + nl
 				+ "progress_every_n_steps = " + DEFAULT_ACCELERATED_PROGRESS_EVERY_N_STEPS + " if is_accelerated else " + DEFAULT_CPU_PROGRESS_EVERY_N_STEPS + nl
 				+ "log_every_n_steps = " + DEFAULT_ACCELERATED_LOG_EVERY_N_STEPS + " if is_accelerated else " + DEFAULT_CPU_LOG_EVERY_N_STEPS + nl
-				+ "state = {'step': 0, 'total_steps': 0, 'preview_paths': set(), 'preview_order': [], 'preview_results': {}, 'preview_epoch': 0, 'capture_preview': False}" + nl
+				+ "state = {'step': 0, 'total_steps': 0, 'preview_paths': set(), 'preview_order': [], 'preview_results': {}, 'preview_epoch': 0, 'capture_preview': False, 'completed_epochs': 0, 'best_epoch': 0, 'best_score': None, 'best_metrics': {}, 'final_metrics': {}, 'resolved_batch': None, 'resolved_device': None}" + nl
 				+ TrainingCodeUtils.taskUpdateFunction("_task_update")
 				+ TrainingCodeUtils.scalarFunction("_scalar", true)
 				+ TrainingCodeUtils.cleanDictFunction("_clean_dict", "_scalar")
@@ -540,13 +669,23 @@ public class Yolo extends DLModelPytorchProtected {
 				+ "    return _clean_dict(getattr(trainer, 'metrics', {}))" + nl
 				+ "  except Exception:" + nl
 				+ "    return {}" + nl
+				+ "def _runtime_info(trainer):" + nl
+				+ "  batch = int(getattr(trainer, 'batch_size', getattr(getattr(trainer, 'args', None), 'batch', 1)))" + nl
+				+ "  device = str(getattr(trainer, 'device', train_device))" + nl
+				+ "  state['resolved_batch'] = batch" + nl
+				+ "  state['resolved_device'] = device" + nl
+				+ "  return {'type': 'runtime', 'python_version': platform.python_version(), 'ultralytics_version': ultralytics.__version__, 'torch_version': torch.__version__, 'torchvision_version': torchvision.__version__, 'resolved_device': device, 'resolved_batch': batch}" + nl
+				+ "def _emit_runtime(trainer):" + nl
+				+ "  _task_update(info=_runtime_info(trainer))" + nl
 				+ "def _emit_train_start(trainer):" + nl
 				+ "  try:" + nl
 				+ "    nb = len(trainer.train_loader)" + nl
 				+ "  except Exception:" + nl
 				+ "    nb = 0" + nl
 				+ "  state['total_steps'] = int(getattr(trainer, 'epochs', epochs)) * int(nb)" + nl
-				+ "  info = {'type': 'progress', 'epoch': 0, 'step': 0, 'total_epochs': epochs, 'total_steps': state['total_steps'], 'losses': {}, 'metrics': {}}" + nl
+				+ "  runtime = _runtime_info(trainer)" + nl
+				+ "  _task_update(info=runtime)" + nl
+				+ "  info = {'type': 'progress', 'epoch': 0, 'step': 0, 'total_epochs': epochs, 'total_steps': state['total_steps'], 'losses': {}, 'metrics': {}, 'resolved_batch': runtime['resolved_batch'], 'resolved_device': runtime['resolved_device']}" + nl
 				+ "  _task_update(message='YOLO training started', current=0, maximum=state['total_steps'], info=info)" + nl
 				+ "def _emit_step_progress(trainer):" + nl
 				+ "  state['step'] += 1" + nl
@@ -559,7 +698,7 @@ public class Yolo extends DLModelPytorchProtected {
 				+ "    return" + nl
 				+ "  epoch = int(getattr(trainer, 'epoch', 0)) + 1" + nl
 				+ "  losses = _losses(trainer)" + nl
-				+ "  info = {'type': 'progress', 'epoch': epoch, 'step': state['step'], 'total_epochs': epochs, 'total_steps': total_steps, 'losses': losses, 'metrics': {}}" + nl
+				+ "  info = {'type': 'progress', 'epoch': epoch, 'step': state['step'], 'total_epochs': epochs, 'total_steps': total_steps, 'losses': losses, 'metrics': {}, 'resolved_batch': state.get('resolved_batch'), 'resolved_device': state.get('resolved_device')}" + nl
 				+ "  kwargs = {'current': state['step'], 'maximum': total_steps, 'info': info}" + nl
 				+ "  if should_log:" + nl
 				+ "    kwargs['message'] = 'YOLO training step %d/%d' % (state['step'], total_steps)" + nl
@@ -570,7 +709,15 @@ public class Yolo extends DLModelPytorchProtected {
 				+ "  if _cancel_requested():" + nl
 				+ "    _request_stop(trainer)" + nl
 				+ "  epoch = int(getattr(trainer, 'epoch', 0)) + 1" + nl
-				+ "  info = {'type': 'progress', 'epoch': epoch, 'step': state['step'], 'total_epochs': epochs, 'total_steps': state.get('total_steps', 0), 'losses': _losses(trainer), 'metrics': _metrics(trainer)}" + nl
+				+ "  metrics = _metrics(trainer)" + nl
+				+ "  state['completed_epochs'] = epoch" + nl
+				+ "  state['final_metrics'] = metrics" + nl
+				+ "  score = metrics.get('metrics/mAP50-95(B)')" + nl
+				+ "  if score is not None and (state['best_score'] is None or score > state['best_score']):" + nl
+				+ "    state['best_score'] = score" + nl
+				+ "    state['best_epoch'] = epoch" + nl
+				+ "    state['best_metrics'] = dict(metrics)" + nl
+				+ "  info = {'type': 'progress', 'epoch': epoch, 'epoch_complete': True, 'step': state['step'], 'total_epochs': epochs, 'total_steps': state.get('total_steps', 0), 'losses': _losses(trainer), 'metrics': metrics, 'resolved_batch': state.get('resolved_batch'), 'resolved_device': state.get('resolved_device')}" + nl
 				+ "  _task_update(message='YOLO training epoch %d/%d' % (epoch, epochs), current=state['step'], maximum=state.get('total_steps', 0), info=info)" + nl
 				+ "def _capture_epoch(epoch):" + nl
 				+ "  return epoch % preview_epoch_period == 0 or epoch == epochs" + nl
@@ -652,6 +799,7 @@ public class Yolo extends DLModelPytorchProtected {
 					+ "try:" + nl
 					+ "  model = YOLO(model_source)" + nl
 					+ "  model.add_callback('on_train_start', _emit_train_start)" + nl
+					+ "  model.add_callback('on_train_epoch_start', _emit_runtime)" + nl
 					+ "  model.add_callback('on_train_batch_end', _emit_step_progress)" + nl
 					+ "  model.add_callback('on_train_epoch_end', _prepare_preview_epoch)" + nl
 					+ "  model.add_callback('on_val_start', _on_val_start)" + nl
@@ -663,9 +811,14 @@ public class Yolo extends DLModelPytorchProtected {
 					+ "    _task_update(message='Overwriting YOLO last checkpoint during training: ' + pre_last, info={'type': 'checkpoint', 'kind': 'last', 'path': pre_last, 'overwrite': True})" + nl
 					+ "  if os.path.isfile(pre_best):" + nl
 					+ "    _task_update(message='Overwriting YOLO best checkpoint during training: ' + pre_best, info={'type': 'checkpoint', 'kind': 'best', 'path': pre_best, 'overwrite': True})" + nl
+					+ "  train_args = dict(train_options)" + nl
+					+ "  train_args.update(data=dataset_yaml, epochs=epochs, imgsz=imgsz, batch=batch_size, project=project, name=run_name, exist_ok=" + pyBool(DEFAULT_TRAIN_EXIST_OK) + ", verbose=" + pyBool(DEFAULT_TRAIN_VERBOSE) + ", plots=" + pyBool(DEFAULT_TRAIN_PLOTS) + ", workers=" + DEFAULT_TRAIN_WORKERS + ", device=train_device)" + nl
 					+ "  with open(yolo_log_path, 'a', encoding='utf-8') as yolo_log, contextlib.redirect_stdout(yolo_log), contextlib.redirect_stderr(yolo_log):" + nl
-					+ "    results = model.train(data=dataset_yaml, epochs=epochs, imgsz=imgsz, batch=batch_size, project=project, name=run_name, exist_ok=" + pyBool(DEFAULT_TRAIN_EXIST_OK) + ", verbose=" + pyBool(DEFAULT_TRAIN_VERBOSE) + ", plots=" + pyBool(DEFAULT_TRAIN_PLOTS) + ", workers=" + DEFAULT_TRAIN_WORKERS + ", device=train_device)" + nl
+					+ "    results = model.train(**train_args)" + nl
 					+ "  trainer = getattr(model, 'trainer', None)" + nl
+					+ "  if trainer is not None:" + nl
+					+ "    state['resolved_batch'] = int(getattr(trainer, 'batch_size', state.get('resolved_batch') or 1))" + nl
+					+ "    state['resolved_device'] = str(getattr(trainer, 'device', state.get('resolved_device') or train_device))" + nl
 					+ "  best = str(getattr(trainer, 'best', '') if trainer is not None else '')" + nl
 					+ "  last = str(getattr(trainer, 'last', '') if trainer is not None else '')" + nl
 					+ "  if last:" + nl
@@ -682,6 +835,16 @@ public class Yolo extends DLModelPytorchProtected {
 					+ "  shutil.copy2(source, output_weights)" + nl
 					+ "  _task_update(message='Exported/final YOLO model file: ' + output_weights, info={'type': 'checkpoint', 'kind': 'final', 'path': output_weights})" + nl
 					+ "  task.outputs['result'] = output_weights" + nl
+					+ "  task.outputs['python_version'] = platform.python_version()" + nl
+					+ "  task.outputs['ultralytics_version'] = ultralytics.__version__" + nl
+					+ "  task.outputs['torch_version'] = torch.__version__" + nl
+					+ "  task.outputs['torchvision_version'] = torchvision.__version__" + nl
+					+ "  task.outputs['resolved_device'] = state.get('resolved_device')" + nl
+					+ "  task.outputs['resolved_batch'] = state.get('resolved_batch')" + nl
+					+ "  task.outputs['completed_epochs'] = state.get('completed_epochs', 0)" + nl
+					+ "  task.outputs['best_epoch'] = state.get('best_epoch', 0)" + nl
+					+ "  task.outputs['best_metrics'] = state.get('best_metrics', {})" + nl
+					+ "  task.outputs['final_metrics'] = state.get('final_metrics', {})" + nl
 				+ "finally:" + nl
 				+ "  try:" + nl
 				+ "    del results" + nl
@@ -695,7 +858,30 @@ public class Yolo extends DLModelPytorchProtected {
 				+ "    del model" + nl
 				+ "  except Exception:" + nl
 				+ "    pass" + nl
-				+ "  _jdll_cleanup_pytorch_memory()" + nl;
+					+ "  _jdll_cleanup_pytorch_memory()" + nl;
+	}
+
+	private static String batchLiteral(Object request, String device, String modelSource) {
+		if (request instanceof Number) {
+			return Integer.toString(Math.max(1, ((Number) request).intValue()));
+		}
+		if ("auto".equalsIgnoreCase(String.valueOf(request)) && "cuda".equals(device)) {
+			return "-1";
+		}
+		String source = modelSource == null ? "" : modelSource.toLowerCase();
+		if (source.contains("yolo26x")) {
+			return "1";
+		}
+		if (source.contains("yolo26l")) {
+			return "1";
+		}
+		if (source.contains("yolo26m")) {
+			return "2";
+		}
+		if (source.contains("yolo26s")) {
+			return "4";
+		}
+		return "8";
 	}
 
 	private static void handleTrainingEvent(TaskEvent event,

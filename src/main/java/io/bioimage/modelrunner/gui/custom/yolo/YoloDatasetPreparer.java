@@ -112,6 +112,12 @@ final class YoloDatasetPreparer {
     static File prepare(String datasetPath, String modelName, String modelsDir, int imageSize,
             Consumer<String> logConsumer)
             throws IOException {
+        return prepareDetailed(datasetPath, modelName, modelsDir, imageSize, logConsumer).getYaml();
+    }
+
+    static YoloDatasetPreparationResult prepareDetailed(String datasetPath, String modelName,
+            String modelsDir, int imageSize, Consumer<String> logConsumer)
+            throws IOException {
         if (datasetPath == null || datasetPath.trim().isEmpty()) {
             throw new IllegalArgumentException("Please provide a YOLO training dataset path.");
         }
@@ -126,18 +132,21 @@ final class YoloDatasetPreparer {
             YamlDataset dataset = readYamlDataset(yaml);
             if (dataset.hasTrainAndVal()) {
                 log(logConsumer, "Found YOLO train/validation splits. Using YAML: " + yaml.getAbsolutePath());
-                logYoloDatasetSummary(logConsumer, "reused existing YOLO YAML", yaml.getAbsoluteFile(),
+                Map<String, Object> summary = logYoloDatasetSummary(logConsumer, "reused existing YOLO YAML",
+                        yaml.getAbsoluteFile(),
                         dataset.train.samples, dataset.val.samples,
                         skippedImageCount(dataset.train), skippedImageCount(dataset.val), 0, 0);
-                return yaml.getAbsoluteFile();
+                return new YoloDatasetPreparationResult(yaml, summary);
             }
             if (dataset.hasTrainOnly()) {
                 log(logConsumer, "YOLO validation split is missing; creating train/validation split.");
-                File generatedYaml = createGeneratedYoloDataset(dataset.sourceName(), modelName, modelsDir,
+                YoloDatasetPreparationResult generated = createGeneratedYoloDataset(dataset.sourceName(), modelName,
+                        modelsDir,
                         dataset.namesOrInferred(), dataset.train.samples, Collections.<YoloSample>emptyList(),
                         true, logConsumer);
-                log(logConsumer, "Generated train/validation YOLO dataset: " + generatedYaml.getAbsolutePath());
-                return generatedYaml;
+                log(logConsumer, "Generated train/validation YOLO dataset: "
+                        + generated.getYaml().getAbsolutePath());
+                return generated;
             }
             throw new IllegalArgumentException("The YOLO YAML must define at least a valid train split: " + yaml);
         }
@@ -156,19 +165,21 @@ final class YoloDatasetPreparer {
             log(logConsumer, "Found YOLO folder dataset with " + trainSplit.samples.size()
                     + " training and " + valSplit.samples.size() + " validation images.");
             log(logConsumer, "Created YOLO dataset YAML: " + generatedYaml.getAbsolutePath());
-            logYoloDatasetSummary(logConsumer, "reused YOLO folder dataset; generated YAML wrapper",
+            Map<String, Object> summary = logYoloDatasetSummary(logConsumer,
+                    "reused YOLO folder dataset; generated YAML wrapper",
                     generatedYaml, trainSplit.samples, valSplit.samples,
                     skippedImageCount(trainSplit), skippedImageCount(valSplit), 0, 0);
-            return generatedYaml;
+            return new YoloDatasetPreparationResult(generatedYaml, summary);
         }
         if (trainSplit != null && !trainSplit.samples.isEmpty()) {
             log(logConsumer, "YOLO validation split is missing; creating train/validation split from "
                     + trainSplit.samples.size() + " training images.");
-            File generatedYaml = createGeneratedYoloDataset(input.getName(), modelName, modelsDir,
+            YoloDatasetPreparationResult generated = createGeneratedYoloDataset(input.getName(), modelName, modelsDir,
                     inferNamesFromLabelFiles(trainSplit.samples), trainSplit.samples, Collections.<YoloSample>emptyList(),
                     true, logConsumer);
-            log(logConsumer, "Generated train/validation YOLO dataset: " + generatedYaml.getAbsolutePath());
-            return generatedYaml;
+            log(logConsumer, "Generated train/validation YOLO dataset: "
+                    + generated.getYaml().getAbsolutePath());
+            return generated;
         }
 
         List<MaskSample> trainMasks = firstNonEmpty(findMaskSamples(input, ""), findMaskSamples(input, "train"));
@@ -181,10 +192,11 @@ final class YoloDatasetPreparer {
             log(logConsumer, "Found " + trainMasks.size() + " training mask image(s)"
                     + (valMasks.isEmpty() ? " and no validation masks." : " and "
                             + valMasks.size() + " validation mask image(s)."));
-            File generatedYaml = createGeneratedMaskDataset(input.getName(), modelName, modelsDir,
+            YoloDatasetPreparationResult generated = createGeneratedMaskDataset(input.getName(), modelName, modelsDir,
                     trainMasks, valMasks, splitTrain, imageSize, logConsumer);
-            log(logConsumer, "Generated YOLO dataset from instance masks: " + generatedYaml.getAbsolutePath());
-            return generatedYaml;
+            log(logConsumer, "Generated YOLO dataset from instance masks: "
+                    + generated.getYaml().getAbsolutePath());
+            return generated;
         }
 
         throw new IllegalArgumentException("Could not recognize a YOLO dataset or an instance-mask dataset in: "
@@ -519,17 +531,17 @@ final class YoloDatasetPreparer {
         }
     }
 
-    private static File createGeneratedYoloDataset(String sourceName, String modelName, String modelsDir,
+    private static YoloDatasetPreparationResult createGeneratedYoloDataset(
+            String sourceName, String modelName, String modelsDir,
             List<String> names, List<YoloSample> trainSamples, List<YoloSample> valSamples,
             boolean splitTrainSamples, Consumer<String> logConsumer) throws IOException {
         File root = createUniqueGeneratedRoot(sourceName, modelName, modelsDir);
-        writeLinkedYoloDataset(root,
+        return writeLinkedYoloDataset(root,
                 names == null || names.isEmpty() ? inferNamesFromLabelFiles(trainSamples, valSamples) : names,
                 trainSamples, valSamples, splitTrainSamples, logConsumer);
-        return new File(root, GENERATED_YAML_NAME);
     }
 
-    private static void writeLinkedYoloDataset(File root, List<String> names,
+    private static YoloDatasetPreparationResult writeLinkedYoloDataset(File root, List<String> names,
             List<YoloSample> trainSamples, List<YoloSample> valSamples,
             boolean splitTrainSamples, Consumer<String> logConsumer) throws IOException {
         if (splitTrainSamples) {
@@ -562,8 +574,10 @@ final class YoloDatasetPreparer {
         writeYaml(yaml, root, "images/train", "images/val", names);
         log(logConsumer, "Prepared " + trainSamples.size() + " training and " + valSamples.size()
                 + " validation YOLO samples.");
-        logYoloDatasetSummary(logConsumer, "generated YOLO dataset from existing labels",
+        Map<String, Object> summary = logYoloDatasetSummary(logConsumer,
+                "generated YOLO dataset from existing labels",
                 yaml, trainSamples, valSamples, 0, 0, 0, 0);
+        return new YoloDatasetPreparationResult(yaml, summary);
     }
 
     private static void sortYoloSamples(List<YoloSample> samples) {
@@ -582,7 +596,8 @@ final class YoloDatasetPreparer {
         }
     }
 
-    private static File createGeneratedMaskDataset(String sourceName, String modelName, String modelsDir,
+    private static YoloDatasetPreparationResult createGeneratedMaskDataset(
+            String sourceName, String modelName, String modelsDir,
             List<MaskSample> trainMasks, List<MaskSample> valMasks, boolean splitTrainSamples,
             int imageSize, Consumer<String> logConsumer) throws IOException {
         File root = createUniqueGeneratedRoot(sourceName, modelName, modelsDir);
@@ -592,12 +607,12 @@ final class YoloDatasetPreparer {
                 logConsumer, "training", trainStats);
         List<GeneratedSample> valGenerated = toGeneratedSamplesFromMasks(valMasks, imageSize,
                 logConsumer, "validation", valStats);
-        writeGeneratedDataset(root, Collections.singletonList(DEFAULT_CLASS_NAME), trainGenerated, valGenerated,
+        return writeGeneratedDataset(root, Collections.singletonList(DEFAULT_CLASS_NAME),
+                trainGenerated, valGenerated,
                 splitTrainSamples, imageSize, logConsumer, trainStats, valStats);
-        return new File(root, GENERATED_YAML_NAME);
     }
 
-    private static void writeGeneratedDataset(File root, List<String> names,
+    private static YoloDatasetPreparationResult writeGeneratedDataset(File root, List<String> names,
             List<GeneratedSample> trainGenerated, List<GeneratedSample> valGenerated,
             boolean splitTrainSamples, int imageSize, Consumer<String> logConsumer,
             GenerationStats trainStats, GenerationStats valStats) throws IOException {
@@ -633,7 +648,9 @@ final class YoloDatasetPreparer {
         writeYaml(yaml, root, "images/train", "images/val", names);
         log(logConsumer, "Prepared " + trainGenerated.size() + " training and " + valGenerated.size()
                 + " validation YOLO samples.");
-        logGeneratedDatasetSummary(logConsumer, yaml, trainGenerated, valGenerated, trainStats, valStats);
+        Map<String, Object> summary = logGeneratedDatasetSummary(logConsumer, yaml,
+                trainGenerated, valGenerated, trainStats, valStats);
+        return new YoloDatasetPreparationResult(yaml, summary);
     }
 
     private static void sortBySource(List<GeneratedSample> samples) {
@@ -988,25 +1005,32 @@ final class YoloDatasetPreparer {
         return ignored;
     }
 
-    private static void logYoloDatasetSummary(Consumer<String> logConsumer, String source,
+    private static Map<String, Object> logYoloDatasetSummary(Consumer<String> logConsumer, String source,
             File yaml, List<YoloSample> trainSamples, List<YoloSample> valSamples,
             int skippedTrainImages, int skippedValImages, int cropCount, int denseTileCount) throws IOException {
+        int trainLabels = labelFileCount(trainSamples);
+        int valLabels = labelFileCount(valSamples);
+        int trainObjects = yoloObjectCount(trainSamples);
+        int valObjects = yoloObjectCount(valSamples);
         log(logConsumer, "Dataset source: " + source + ".");
         log(logConsumer, "Final dataset YAML path: " + yaml.getAbsolutePath());
         log(logConsumer, "Training split: images=" + trainSamples.size()
-                + ", label_files=" + labelFileCount(trainSamples)
-                + ", objects=" + yoloObjectCount(trainSamples)
+                + ", label_files=" + trainLabels
+                + ", objects=" + trainObjects
                 + ", skipped_images=" + skippedTrainImages + ".");
         log(logConsumer, "Validation split: images=" + valSamples.size()
-                + ", label_files=" + labelFileCount(valSamples)
-                + ", objects=" + yoloObjectCount(valSamples)
+                + ", label_files=" + valLabels
+                + ", objects=" + valObjects
                 + ", skipped_images=" + skippedValImages + ".");
         log(logConsumer, "Generated samples: crops=" + cropCount
                 + ", dense_tiles=" + denseTileCount
                 + ", ignored_objects=0.");
+        return summaryMap(source, source.startsWith("reused"), trainSamples.size(), valSamples.size(),
+                trainLabels, valLabels, trainObjects, valObjects,
+                skippedTrainImages + skippedValImages, 0, cropCount, denseTileCount);
     }
 
-    private static void logGeneratedDatasetSummary(Consumer<String> logConsumer, File yaml,
+    private static Map<String, Object> logGeneratedDatasetSummary(Consumer<String> logConsumer, File yaml,
             List<GeneratedSample> trainGenerated, List<GeneratedSample> valGenerated,
             GenerationStats trainStats, GenerationStats valStats) {
         int ignoredObjects = trainStats.ignoredObjects + valStats.ignoredObjects;
@@ -1025,6 +1049,32 @@ final class YoloDatasetPreparer {
                 + ", crops=" + generatedCropCount(valGenerated)
                 + ", dense_tiles=" + generatedDensityTileCount(valGenerated) + ".");
         log(logConsumer, "Ignored objects during mask conversion: " + ignoredObjects + ".");
+        return summaryMap("generated from instance masks", false,
+                trainGenerated.size(), valGenerated.size(), trainGenerated.size(), valGenerated.size(),
+                generatedObjectCount(trainGenerated), generatedObjectCount(valGenerated),
+                trainStats.skippedImages + valStats.skippedImages, ignoredObjects,
+                generatedCropCount(trainGenerated) + generatedCropCount(valGenerated),
+                generatedDensityTileCount(trainGenerated) + generatedDensityTileCount(valGenerated));
+    }
+
+    private static Map<String, Object> summaryMap(String source, boolean reused,
+            int trainImages, int valImages, int trainLabels, int valLabels,
+            int trainObjects, int valObjects, int skippedImages, int ignoredObjects,
+            int crops, int denseTiles) {
+        Map<String, Object> summary = new LinkedHashMap<String, Object>();
+        summary.put("source", source);
+        summary.put("reused", Boolean.valueOf(reused));
+        summary.put("train_images", Integer.valueOf(trainImages));
+        summary.put("validation_images", Integer.valueOf(valImages));
+        summary.put("train_label_files", Integer.valueOf(trainLabels));
+        summary.put("validation_label_files", Integer.valueOf(valLabels));
+        summary.put("train_objects", Integer.valueOf(trainObjects));
+        summary.put("validation_objects", Integer.valueOf(valObjects));
+        summary.put("skipped_images", Integer.valueOf(skippedImages));
+        summary.put("ignored_objects", Integer.valueOf(ignoredObjects));
+        summary.put("generated_crops", Integer.valueOf(crops));
+        summary.put("generated_dense_tiles", Integer.valueOf(denseTiles));
+        return summary;
     }
 
     private static int skippedImageCount(SplitData split) throws IOException {

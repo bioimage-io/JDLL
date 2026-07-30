@@ -25,14 +25,24 @@ import java.util.Map;
 
 import javax.swing.DefaultComboBoxModel;
 import javax.swing.JFileChooser;
+import javax.swing.SwingUtilities;
+import javax.swing.Timer;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
 import javax.swing.filechooser.FileNameExtensionFilter;
 
 import io.bioimage.modelrunner.gui.custom.stardist.StardistModelRegistry;
 import io.bioimage.modelrunner.gui.custom.stardist.StardistValidationPreviewPanel;
+import io.bioimage.modelrunner.gui.custom.unet.UnetDatasetInspector;
 
 public class StardistTrainPanel extends BaseTrainPanel {
     
     private static final long serialVersionUID = 3944729402784309789L;
+    private final Timer datasetReviewTimer;
+    private LinkedHashMap<String, String> availableBaseModels = new LinkedHashMap<String, String>();
+    private UnetDatasetInspector.Dimensionality datasetDimensionality = UnetDatasetInspector.Dimensionality.UNKNOWN;
+    private String modelsDir;
+    private long datasetReviewVersion;
 
     /**
      * Creates a new StardistTrainPanel instance.
@@ -41,11 +51,28 @@ public class StardistTrainPanel extends BaseTrainPanel {
     	super(new StardistValidationPreviewPanel());
         setScratchArchitectures(StardistModelRegistry.buildScratchArchitectureEntries());
         scratchRadio.setSelected(true);
-        fineTuneRadio.setText("Fine tune (soon)");
-        fineTuneRadio.setEnabled(false);
+        fineTuneRadio.setText("Fine tune");
         baseModelComboBox.setEnabled(false);
         baseModelBrowseButton.setEnabled(false);
         scratchArchitectureComboBox.setEnabled(true);
+        datasetReviewTimer = new Timer(350, e -> reviewDatasetDimensionality());
+        datasetReviewTimer.setRepeats(false);
+        datasetField.getDocument().addDocumentListener(new DocumentListener() {
+            @Override
+            public void insertUpdate(DocumentEvent e) {
+                datasetReviewTimer.restart();
+            }
+
+            @Override
+            public void removeUpdate(DocumentEvent e) {
+                datasetReviewTimer.restart();
+            }
+
+            @Override
+            public void changedUpdate(DocumentEvent e) {
+                datasetReviewTimer.restart();
+            }
+        });
     }
 
     /**
@@ -53,8 +80,8 @@ public class StardistTrainPanel extends BaseTrainPanel {
      */
     protected void browseBaseModel() {
         JFileChooser chooser = new JFileChooser();
-        chooser.setFileSelectionMode(JFileChooser.FILES_ONLY);
-        chooser.setFileFilter(new FileNameExtensionFilter("StarDist weights (*.mpk)", "mpk"));
+        chooser.setFileSelectionMode(JFileChooser.FILES_AND_DIRECTORIES);
+        chooser.setFileFilter(new FileNameExtensionFilter("StarDist weights (*.h5)", "h5"));
         if (chooser.showOpenDialog(this) != JFileChooser.APPROVE_OPTION) {
             return;
         }
@@ -92,15 +119,8 @@ public class StardistTrainPanel extends BaseTrainPanel {
      */
     protected boolean isValidFineTuneBaseModel() {
         String baseModel = getSelectedBaseModelValue();
-        if (baseModelComboBox.getSelectedItem() instanceof YoloModelSelectionEntry) {
-            return baseModel != null
-                    && (baseModel.toLowerCase().endsWith(StardistModelRegistry.STARDIST_KERAS_WEIGHTS_EXTENSION)
-                    || new File(baseModel).isDirectory());
-        }
-        return baseModel != null
-                && (baseModel.toLowerCase().endsWith(StardistModelRegistry.STARDIST_KERAS_WEIGHTS_EXTENSION)
-                || new File(baseModel).isDirectory())
-                && new File(baseModel).exists();
+        int dimensions = datasetDimensionality == UnetDatasetInspector.Dimensionality.THREE_D ? 3 : 2;
+        return StardistModelRegistry.isSelectableFineTuneSource(baseModel, dimensions);
     }
 
     /**
@@ -118,9 +138,14 @@ public class StardistTrainPanel extends BaseTrainPanel {
      * @param modelsDir the models directory.
      */
     public void refreshScratchArchitectures(String modelsDir) {
+        this.modelsDir = modelsDir;
         String modelName = getModelNameField().getText();
-        String custom = StardistModelRegistry.customScratchConfigValue(modelsDir, modelName);
-        setScratchArchitectures(StardistModelRegistry.buildScratchArchitectureEntries(modelsDir, modelName), custom);
+        boolean reviewed = datasetDimensionality != UnetDatasetInspector.Dimensionality.UNKNOWN;
+        boolean volume = datasetDimensionality == UnetDatasetInspector.Dimensionality.THREE_D;
+        String custom = reviewed
+                ? StardistModelRegistry.customScratchConfigValue(modelsDir, modelName, volume) : null;
+        setScratchArchitectures(
+                StardistModelRegistry.buildScratchArchitectureEntries(modelsDir, modelName, volume, reviewed), custom);
     }
 
     /**
@@ -131,9 +156,6 @@ public class StardistTrainPanel extends BaseTrainPanel {
     @Override
     public void setTrainingRunning(boolean running) {
         super.setTrainingRunning(running);
-        fineTuneRadio.setEnabled(false);
-        baseModelComboBox.setEnabled(false);
-        baseModelBrowseButton.setEnabled(false);
     }
 
     /**
@@ -142,14 +164,61 @@ public class StardistTrainPanel extends BaseTrainPanel {
      * @param models the models.
      */
     public void setBaseModels(LinkedHashMap<String, String> models) {
+        availableBaseModels = models == null
+                ? new LinkedHashMap<String, String>() : new LinkedHashMap<String, String>(models);
+        refreshBaseModels();
+    }
+
+    private void refreshBaseModels() {
         DefaultComboBoxModel<YoloModelSelectionEntry> comboModel =
                 new DefaultComboBoxModel<YoloModelSelectionEntry>();
-        if (models != null) {
-            for (Map.Entry<String, String> entry : models.entrySet()) {
+        int dimensions = datasetDimensionality == UnetDatasetInspector.Dimensionality.THREE_D ? 3 : 2;
+        if (availableBaseModels != null) {
+            for (Map.Entry<String, String> entry : availableBaseModels.entrySet()) {
+                if (datasetDimensionality != UnetDatasetInspector.Dimensionality.UNKNOWN
+                        && !StardistModelRegistry.isSelectableFineTuneSource(entry.getValue(), dimensions)) {
+                    continue;
+                }
                 comboModel.addElement(new YoloModelSelectionEntry(entry.getKey(), entry.getValue()));
             }
         }
         baseModelComboBox.setModel(comboModel);
+    }
+
+    private void reviewDatasetDimensionality() {
+        String path = datasetField.getText() == null ? "" : datasetField.getText().trim();
+        long version = ++datasetReviewVersion;
+        if (path.isEmpty()) {
+            applyDatasetDimensionality(version, UnetDatasetInspector.Dimensionality.UNKNOWN);
+            return;
+        }
+        Thread review = new Thread(() -> {
+            UnetDatasetInspector.Dimensionality dimensionality =
+                    UnetDatasetInspector.inspect(new File(path));
+            SwingUtilities.invokeLater(() -> applyDatasetDimensionality(version, dimensionality));
+        }, "stardist-dataset-dimensionality");
+        review.setDaemon(true);
+        review.start();
+    }
+
+    private void applyDatasetDimensionality(long version, UnetDatasetInspector.Dimensionality dimensionality) {
+        if (version != datasetReviewVersion) {
+            return;
+        }
+        boolean changed = datasetDimensionality != dimensionality;
+        datasetDimensionality = dimensionality;
+        refreshScratchArchitectures(modelsDir);
+        refreshBaseModels();
+        if (changed) {
+            scratchArchitectureComboBox.setToolTipText(
+                    dimensionality == UnetDatasetInspector.Dimensionality.THREE_D
+                            ? "The selected dataset contains volumes; only StarDist3D configurations are shown."
+                            : "Choose StarDist model capacity for 2D training.");
+        }
+    }
+
+    public int getDatasetDimensions() {
+        return datasetDimensionality == UnetDatasetInspector.Dimensionality.THREE_D ? 3 : 2;
     }
 
     /**

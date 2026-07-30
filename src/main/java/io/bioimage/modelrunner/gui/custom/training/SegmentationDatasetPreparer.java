@@ -43,6 +43,7 @@ import java.util.Set;
 import java.util.function.Consumer;
 
 import javax.imageio.ImageIO;
+import javax.imageio.ImageReadParam;
 import javax.imageio.ImageReader;
 import javax.imageio.stream.ImageInputStream;
 
@@ -60,11 +61,28 @@ public final class SegmentationDatasetPreparer {
         UNET
     }
 
+    public enum Dimensionality {
+        TWO_D(2),
+        THREE_D(3);
+
+        private final int dimensions;
+
+        Dimensionality(int dimensions) {
+            this.dimensions = dimensions;
+        }
+
+        public int getDimensions() {
+            return dimensions;
+        }
+    }
+
     private static final long SPLIT_SEED = 5489L;
     private static final double DEFAULT_VALID_FRACTION = 0.15d;
     private static final int MAX_REPORTED_ITEMS = 5;
     private static final int SUSPICIOUS_UNIQUE_LABEL_COUNT = 128;
     private static final double SUSPICIOUS_DENSE_LABEL_FRACTION = 0.85d;
+    private static final int CHANNEL_SAMPLE_PIXELS = 4096;
+    private static final double GRAYSCALE_CHANNEL_TOLERANCE = 0.001d;
     private static final String GENERATED_INFO_NAME = "dataset-links.txt";
 
     private static final Set<String> IMAGE_EXTENSIONS = new HashSet<String>();
@@ -139,13 +157,18 @@ public final class SegmentationDatasetPreparer {
         if (train.pairs.isEmpty()) {
             throw new IllegalArgumentException("No valid training image/mask pairs remain after dataset checks.");
         }
+        Dimensionality dimensionality = resolveDimensionality(train, val);
+        summary.dimensionality = dimensionality;
 
         boolean backendCanPairDirectly = backendCanPairDirectly(train, target)
                 && backendCanPairDirectly(val, target);
+        ChannelPlan channelPlan = channelPlan(train, val, target);
+        summary.targetImageChannels = channelPlan.targetChannels;
+        summary.channelNormalizationRequired = channelPlan.normalizationRequired;
         boolean needsGeneratedDataset = !discovery.directlyDigestible || !backendCanPairDirectly
-                || summary.requiresFilteredDataset();
+                || summary.requiresFilteredDataset() || channelPlan.normalizationRequired;
         if (needsGeneratedDataset && val.pairs.isEmpty() && train.pairs.size() > 1) {
-            SplitPair split = splitTrainVal(train.pairs, validFraction);
+            SplitPair split = splitTrainVal(train.pairs, validFraction, channelPlan.stratify);
             train = new Split("train", split.train);
             val = new Split("val", split.val);
             summary.generatedValidationSplit = !val.pairs.isEmpty();
@@ -154,11 +177,12 @@ public final class SegmentationDatasetPreparer {
         File datasetRoot = input;
         boolean generated = false;
         if (needsGeneratedDataset) {
-            datasetRoot = writeLinkedDataset(input.getName(), modelName, modelsDir, train, val, logConsumer);
+            datasetRoot = writeLinkedDataset(input.getName(), modelName, modelsDir, train, val,
+                    channelPlan, logConsumer);
             generated = true;
         }
         logSummary(logConsumer, datasetRoot, generated, summary, train, val);
-        return new PreparedDataset(datasetRoot, generated, summary);
+        return new PreparedDataset(datasetRoot, generated, summary, channelPlan.targetChannels, dimensionality);
     }
 
     private static Discovery discover(File root, Framework framework) throws IOException {
@@ -389,20 +413,26 @@ public final class SegmentationDatasetPreparer {
             }
             summary.sourceMasks++;
             summary.objects += stats.objectCount;
-            valid.add(new Pair(raw.image, raw.mask, raw.key, stats.objectCount));
+            summary.countImageChannels(stats.sourceImageChannels, stats.effectiveImageChannels);
+            valid.add(new Pair(raw.image, raw.mask, raw.key, stats.objectCount,
+                    stats.sourceImageChannels, stats.effectiveImageChannels, stats.depth));
         }
         return new Split(name, valid);
     }
 
     private static PairStats inspectPair(RawPair raw, Framework framework) throws IOException {
-        ImageSize imageSize = readImageSize(raw.image);
+        ImageInfo imageInfo = readImageInfo(raw.image);
         MaskStats maskStats = readMaskStats(raw.mask);
         PairStats stats = new PairStats();
-        if (imageSize == null || maskStats == null) {
+        if (imageInfo == null || maskStats == null) {
             stats.unreadable = true;
             return stats;
         }
-        stats.shapeMismatch = imageSize.width != maskStats.width || imageSize.height != maskStats.height;
+        stats.shapeMismatch = imageInfo.width != maskStats.width || imageInfo.height != maskStats.height
+                || imageInfo.depth != maskStats.depth;
+        stats.depth = imageInfo.depth;
+        stats.sourceImageChannels = imageInfo.sourceChannels;
+        stats.effectiveImageChannels = imageInfo.effectiveChannels;
         stats.unsupportedMask = maskStats.floatData;
         stats.emptyMask = maskStats.objectCount == 0;
         stats.objectCount = maskStats.objectCount;
@@ -412,53 +442,98 @@ public final class SegmentationDatasetPreparer {
     }
 
     private static MaskStats readMaskStats(File maskFile) throws IOException {
-        BufferedImage image = ImageIO.read(maskFile);
-        if (image == null) {
-            return null;
-        }
-        Raster raster = image.getRaster();
-        int dataType = raster.getTransferType();
-        MaskStats stats = new MaskStats();
-        stats.width = image.getWidth();
-        stats.height = image.getHeight();
-        stats.numBands = raster.getNumBands();
-        stats.floatData = dataType == DataBuffer.TYPE_FLOAT || dataType == DataBuffer.TYPE_DOUBLE;
-        if (stats.floatData) {
-            return stats;
-        }
-        Map<Integer, Integer> histogram = new HashMap<Integer, Integer>();
-        int min = Integer.MAX_VALUE;
-        int max = Integer.MIN_VALUE;
-        for (int y = 0; y < image.getHeight(); y++) {
-            for (int x = 0; x < image.getWidth(); x++) {
-                int value = raster.getSample(x, y, 0);
-                if (value <= 0) {
-                    continue;
+        try (ImageInputStream input = ImageIO.createImageInputStream(maskFile)) {
+            if (input == null) {
+                return null;
+            }
+            Iterator<ImageReader> readers = ImageIO.getImageReaders(input);
+            if (!readers.hasNext()) {
+                return null;
+            }
+            ImageReader reader = readers.next();
+            try {
+                reader.setInput(input);
+                int pages = Math.max(1, reader.getNumImages(true));
+                BufferedImage first = reader.read(0);
+                if (first == null) {
+                    return null;
                 }
-                histogram.put(value, histogram.getOrDefault(value, 0) + 1);
-                min = Math.min(min, value);
-                max = Math.max(max, value);
+                MaskStats stats = new MaskStats();
+                stats.width = first.getWidth();
+                stats.height = first.getHeight();
+                stats.depth = pages;
+                stats.numBands = first.getRaster().getNumBands();
+                Map<Integer, Integer> histogram = new HashMap<Integer, Integer>();
+                int min = Integer.MAX_VALUE;
+                int max = Integer.MIN_VALUE;
+                for (int page = 0; page < pages; page++) {
+                    BufferedImage image = page == 0 ? first : reader.read(page);
+                    if (image == null || image.getWidth() != stats.width || image.getHeight() != stats.height) {
+                        return null;
+                    }
+                    Raster raster = image.getRaster();
+                    int dataType = raster.getTransferType();
+                    stats.floatData |= dataType == DataBuffer.TYPE_FLOAT || dataType == DataBuffer.TYPE_DOUBLE;
+                    stats.numBands = Math.max(stats.numBands, raster.getNumBands());
+                    if (stats.floatData) {
+                        return stats;
+                    }
+                    for (int y = 0; y < image.getHeight(); y++) {
+                        for (int x = 0; x < image.getWidth(); x++) {
+                            int value = raster.getSample(x, y, 0);
+                            if (value <= 0) {
+                                continue;
+                            }
+                            histogram.put(value, histogram.getOrDefault(value, 0) + 1);
+                            min = Math.min(min, value);
+                            max = Math.max(max, value);
+                        }
+                    }
+                }
+                stats.objectCount = histogram.size();
+                if (!histogram.isEmpty()) {
+                    int valueRange = Math.max(1, max - min + 1);
+                    double denseFraction = histogram.size() / (double) valueRange;
+                    stats.suspiciousContinuousLike = histogram.size() >= SUSPICIOUS_UNIQUE_LABEL_COUNT
+                            && denseFraction >= SUSPICIOUS_DENSE_LABEL_FRACTION;
+                }
+                return stats;
+            } finally {
+                reader.dispose();
             }
         }
-        stats.objectCount = histogram.size();
-        if (!histogram.isEmpty()) {
-            int valueRange = Math.max(1, max - min + 1);
-            double denseFraction = histogram.size() / (double) valueRange;
-            stats.suspiciousContinuousLike = histogram.size() >= SUSPICIOUS_UNIQUE_LABEL_COUNT
-                    && denseFraction >= SUSPICIOUS_DENSE_LABEL_FRACTION;
+    }
+
+    private static Dimensionality resolveDimensionality(Split train, Split val) {
+        boolean has2d = false;
+        boolean has3d = false;
+        List<Pair> pairs = new ArrayList<Pair>(train.pairs);
+        pairs.addAll(val.pairs);
+        for (Pair pair : pairs) {
+            has2d |= pair.depth <= 1;
+            has3d |= pair.depth > 1;
         }
-        return stats;
+        if (has2d && has3d) {
+            throw new IllegalArgumentException(
+                    "StarDist/UNet training cannot mix 2D images and 3D volumes in the same dataset.");
+        }
+        return has3d ? Dimensionality.THREE_D : Dimensionality.TWO_D;
     }
 
     private static File writeLinkedDataset(String sourceName, String modelName, String modelsDir,
-            Split train, Split val, Consumer<String> logConsumer) throws IOException {
+            Split train, Split val, ChannelPlan channelPlan, Consumer<String> logConsumer) throws IOException {
         File root = createUniqueGeneratedRoot(sourceName, modelName, modelsDir);
         log(logConsumer, "Creating linked segmentation dataset at: " + root.getAbsolutePath());
         writeSplit(root, train);
         writeSplit(root, val);
-        Files.write(new File(root, GENERATED_INFO_NAME).toPath(), Arrays.asList(
+        List<String> info = new ArrayList<String>(Arrays.asList(
                 "This dataset contains links to the original images and masks.",
                 "Generated by JDLL to normalize a segmentation dataset layout."));
+        if (channelPlan.targetChannels > 0) {
+            info.add("Target image channels: " + channelPlan.targetChannels);
+            info.add("Channel normalization is applied while images are loaded for training.");
+        }
+        Files.write(new File(root, GENERATED_INFO_NAME).toPath(), info);
         return root;
     }
 
@@ -498,10 +573,36 @@ public final class SegmentationDatasetPreparer {
         }
     }
 
-    private static SplitPair splitTrainVal(List<Pair> pairs, double validFraction) {
+    private static SplitPair splitTrainVal(List<Pair> pairs, double validFraction, boolean stratifyChannels) {
         double fraction = validFraction > 0 && validFraction < 1 ? validFraction : DEFAULT_VALID_FRACTION;
+        if (!stratifyChannels) {
+            return splitGroup(pairs, fraction, SPLIT_SEED);
+        }
+        Map<Integer, List<Pair>> groups = new LinkedHashMap<Integer, List<Pair>>();
+        for (Pair pair : pairs) {
+            groups.computeIfAbsent(pair.sourceImageChannels, key -> new ArrayList<Pair>()).add(pair);
+        }
+        List<Pair> train = new ArrayList<Pair>();
+        List<Pair> val = new ArrayList<Pair>();
+        for (Map.Entry<Integer, List<Pair>> entry : groups.entrySet()) {
+            List<Pair> group = entry.getValue();
+            if (group.size() == 1) {
+                train.add(group.get(0));
+                continue;
+            }
+            SplitPair split = splitGroup(group, fraction, SPLIT_SEED + entry.getKey());
+            train.addAll(split.train);
+            val.addAll(split.val);
+        }
+        if (val.isEmpty() && train.size() > 1) {
+            return splitGroup(train, fraction, SPLIT_SEED);
+        }
+        return new SplitPair(train, val);
+    }
+
+    private static SplitPair splitGroup(List<Pair> pairs, double fraction, long seed) {
         List<Pair> shuffled = new ArrayList<Pair>(pairs);
-        Collections.shuffle(shuffled, new Random(SPLIT_SEED));
+        Collections.shuffle(shuffled, new Random(seed));
         int valCount = Math.max(1, (int) Math.round(shuffled.size() * fraction));
         valCount = Math.min(valCount, shuffled.size() - 1);
         List<Pair> val = new ArrayList<Pair>(shuffled.subList(0, valCount));
@@ -514,6 +615,10 @@ public final class SegmentationDatasetPreparer {
         log(logConsumer, "Segmentation dataset source: " + summary.sourceDescription
                 + (generated ? "; generated linked dataset." : "; reused original dataset."));
         log(logConsumer, "Final dataset path: " + datasetRoot.getAbsolutePath());
+        log(logConsumer, "Dataset dimensionality: " + summary.dimensionality.getDimensions() + "D"
+                + (summary.dimensionality == Dimensionality.THREE_D
+                        ? ", depth_range=" + minimumDepth(train, val) + "-" + maximumDepth(train, val) + " slices."
+                        : "."));
         log(logConsumer, "Training split: images=" + train.pairs.size()
                 + ", masks=" + train.pairs.size()
                 + ", objects=" + objectCount(train) + ".");
@@ -532,6 +637,17 @@ public final class SegmentationDatasetPreparer {
                 + ", unreadable_pairs=" + summary.unreadablePairs
                 + ", multichannel_masks=" + summary.multichannelMasks
                 + ", suspicious_integer_masks=" + summary.suspiciousMasks + ".");
+        if (summary.targetImageChannels > 0) {
+            log(logConsumer, "Image channels: one_channel=" + summary.oneChannelImages
+                    + ", two_channel=" + summary.twoChannelImages
+                    + ", three_or_more_channels=" + summary.threeOrMoreChannelImages
+                    + ", effective_grayscale_rgb=" + summary.effectiveGrayscaleRgbImages
+                    + ", training_channels=" + summary.targetImageChannels + ".");
+            if (summary.channelNormalizationRequired) {
+                log(logConsumer, "Mixed-channel normalization: one-channel images are repeated to RGB, "
+                        + "two-channel images receive an empty third channel, and extra channels are ignored.");
+            }
+        }
         logExamples(logConsumer, "Missing mask examples", summary.missingMaskExamples);
         logExamples(logConsumer, "Shape mismatch examples", summary.shapeMismatchExamples);
         logExamples(logConsumer, "Ambiguous mask examples", summary.ambiguousExamples);
@@ -548,6 +664,28 @@ public final class SegmentationDatasetPreparer {
             count += pair.objectCount;
         }
         return count;
+    }
+
+    private static int minimumDepth(Split train, Split val) {
+        int minimum = Integer.MAX_VALUE;
+        for (Pair pair : combinedPairs(train, val)) {
+            minimum = Math.min(minimum, pair.depth);
+        }
+        return minimum == Integer.MAX_VALUE ? 1 : minimum;
+    }
+
+    private static int maximumDepth(Split train, Split val) {
+        int maximum = 1;
+        for (Pair pair : combinedPairs(train, val)) {
+            maximum = Math.max(maximum, pair.depth);
+        }
+        return maximum;
+    }
+
+    private static List<Pair> combinedPairs(Split train, Split val) {
+        List<Pair> pairs = new ArrayList<Pair>(train.pairs);
+        pairs.addAll(val.pairs);
+        return pairs;
     }
 
     private static String validationSplitNote(Summary summary, Split val) {
@@ -615,7 +753,7 @@ public final class SegmentationDatasetPreparer {
         return null;
     }
 
-    private static ImageSize readImageSize(File imageFile) throws IOException {
+    private static ImageInfo readImageInfo(File imageFile) throws IOException {
         try (ImageInputStream input = ImageIO.createImageInputStream(imageFile)) {
             if (input == null) {
                 return null;
@@ -627,11 +765,76 @@ public final class SegmentationDatasetPreparer {
             ImageReader reader = readers.next();
             try {
                 reader.setInput(input);
-                return new ImageSize(reader.getWidth(0), reader.getHeight(0));
+                int width = reader.getWidth(0);
+                int height = reader.getHeight(0);
+                int depth = Math.max(1, reader.getNumImages(true));
+                ImageReadParam param = reader.getDefaultReadParam();
+                int step = Math.max(1, (int) Math.sqrt((width * (double) height) / CHANNEL_SAMPLE_PIXELS));
+                param.setSourceSubsampling(step, step, 0, 0);
+                BufferedImage sampled = reader.read(0, param);
+                if (sampled == null) {
+                    return null;
+                }
+                Raster raster = sampled.getRaster();
+                int sourceChannels = raster.getNumBands();
+                int effectiveChannels = sourceChannels >= 3 && channelsAreGrayscale(raster) ? 1
+                        : Math.min(3, sourceChannels);
+                return new ImageInfo(width, height, depth, sourceChannels, effectiveChannels);
             } finally {
                 reader.dispose();
             }
         }
+    }
+
+    private static boolean channelsAreGrayscale(Raster raster) {
+        if (raster.getNumBands() < 3) {
+            return false;
+        }
+        double min = Double.POSITIVE_INFINITY;
+        double max = Double.NEGATIVE_INFINITY;
+        for (int y = 0; y < raster.getHeight(); y++) {
+            for (int x = 0; x < raster.getWidth(); x++) {
+                for (int c = 0; c < 3; c++) {
+                    double value = raster.getSampleDouble(x, y, c);
+                    min = Math.min(min, value);
+                    max = Math.max(max, value);
+                }
+            }
+        }
+        double tolerance = Math.max(1d, (max - min) * GRAYSCALE_CHANNEL_TOLERANCE);
+        for (int y = 0; y < raster.getHeight(); y++) {
+            for (int x = 0; x < raster.getWidth(); x++) {
+                double first = raster.getSampleDouble(x, y, 0);
+                if (Math.abs(first - raster.getSampleDouble(x, y, 1)) > tolerance
+                        || Math.abs(first - raster.getSampleDouble(x, y, 2)) > tolerance) {
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
+
+    private static ChannelPlan channelPlan(Split train, Split val, Framework framework) {
+        if (framework != Framework.STARDIST) {
+            return new ChannelPlan(0, false, false);
+        }
+        List<Pair> pairs = new ArrayList<Pair>(train.pairs);
+        pairs.addAll(val.pairs);
+        boolean requiresRgb = false;
+        Set<Integer> sourceChannels = new HashSet<Integer>();
+        for (Pair pair : pairs) {
+            requiresRgb |= pair.effectiveImageChannels > 1;
+            sourceChannels.add(pair.sourceImageChannels);
+        }
+        int targetChannels = requiresRgb ? 3 : 1;
+        boolean normalizationRequired = false;
+        for (Pair pair : pairs) {
+            if (pair.sourceImageChannels != targetChannels) {
+                normalizationRequired = true;
+                break;
+            }
+        }
+        return new ChannelPlan(targetChannels, normalizationRequired, sourceChannels.size() > 1);
     }
 
     private static File createUniqueGeneratedRoot(String sourceName, String modelName, String modelsDir)
@@ -767,11 +970,16 @@ public final class SegmentationDatasetPreparer {
         private final File datasetRoot;
         private final boolean generated;
         private final Summary summary;
+        private final int targetImageChannels;
+        private final Dimensionality dimensionality;
 
-        private PreparedDataset(File datasetRoot, boolean generated, Summary summary) {
+        private PreparedDataset(File datasetRoot, boolean generated, Summary summary, int targetImageChannels,
+                Dimensionality dimensionality) {
             this.datasetRoot = datasetRoot;
             this.generated = generated;
             this.summary = summary;
+            this.targetImageChannels = targetImageChannels;
+            this.dimensionality = dimensionality;
         }
 
         public File getDatasetRoot() {
@@ -784,6 +992,33 @@ public final class SegmentationDatasetPreparer {
 
         public Summary getSummary() {
             return summary;
+        }
+
+        /**
+         * Returns the channel count selected for training, or zero when the
+         * target backend manages channels itself.
+         *
+         * @return the target image channel count.
+         */
+        public int getTargetImageChannels() {
+            return targetImageChannels;
+        }
+
+        /**
+         * Returns the image channel mode expected by StarDist.
+         *
+         * @return {@code rgb} for three channels, otherwise {@code grayscale}.
+         */
+        public String getImageChannels() {
+            return targetImageChannels == 3 ? "rgb" : "grayscale";
+        }
+
+        public Dimensionality getDimensionality() {
+            return dimensionality;
+        }
+
+        public boolean is3D() {
+            return dimensionality == Dimensionality.THREE_D;
         }
     }
 
@@ -800,9 +1035,16 @@ public final class SegmentationDatasetPreparer {
         private int unreadablePairs;
         private int multichannelMasks;
         private int suspiciousMasks;
+        private int oneChannelImages;
+        private int twoChannelImages;
+        private int threeOrMoreChannelImages;
+        private int effectiveGrayscaleRgbImages;
+        private int targetImageChannels;
         private long objects;
         private boolean generatedValidationSplit;
         private boolean explicitValidationSplit;
+        private boolean channelNormalizationRequired;
+        private Dimensionality dimensionality = Dimensionality.TWO_D;
         private final List<String> missingMaskExamples = new ArrayList<String>();
         private final List<String> shapeMismatchExamples = new ArrayList<String>();
         private final List<String> ambiguousExamples = new ArrayList<String>();
@@ -814,6 +1056,19 @@ public final class SegmentationDatasetPreparer {
         private boolean requiresFilteredDataset() {
             return shapeMismatches > 0 || ambiguousResolved > 0 || ambiguousDropped > 0
                     || unsupportedMasks > 0 || unreadablePairs > 0 || missingMasks > 0;
+        }
+
+        private void countImageChannels(int sourceChannels, int effectiveChannels) {
+            if (sourceChannels <= 1) {
+                oneChannelImages++;
+            } else if (sourceChannels == 2) {
+                twoChannelImages++;
+            } else {
+                threeOrMoreChannelImages++;
+                if (effectiveChannels == 1) {
+                    effectiveGrayscaleRgbImages++;
+                }
+            }
         }
     }
 
@@ -911,12 +1166,31 @@ public final class SegmentationDatasetPreparer {
         private final File mask;
         private final String key;
         private final int objectCount;
+        private final int sourceImageChannels;
+        private final int effectiveImageChannels;
+        private final int depth;
 
-        private Pair(File image, File mask, String key, int objectCount) {
+        private Pair(File image, File mask, String key, int objectCount,
+                int sourceImageChannels, int effectiveImageChannels, int depth) {
             this.image = image;
             this.mask = mask;
             this.key = key;
             this.objectCount = objectCount;
+            this.sourceImageChannels = sourceImageChannels;
+            this.effectiveImageChannels = effectiveImageChannels;
+            this.depth = depth;
+        }
+    }
+
+    private static final class ChannelPlan {
+        private final int targetChannels;
+        private final boolean normalizationRequired;
+        private final boolean stratify;
+
+        private ChannelPlan(int targetChannels, boolean normalizationRequired, boolean stratify) {
+            this.targetChannels = targetChannels;
+            this.normalizationRequired = normalizationRequired;
+            this.stratify = stratify;
         }
     }
 
@@ -950,24 +1224,34 @@ public final class SegmentationDatasetPreparer {
         private boolean multichannelMask;
         private boolean suspiciousContinuousMask;
         private int objectCount;
+        private int sourceImageChannels;
+        private int effectiveImageChannels;
+        private int depth;
     }
 
     private static final class MaskStats {
         private int width;
         private int height;
+        private int depth;
         private int numBands;
         private boolean floatData;
         private boolean suspiciousContinuousLike;
         private int objectCount;
     }
 
-    private static final class ImageSize {
+    private static final class ImageInfo {
         private final int width;
         private final int height;
+        private final int depth;
+        private final int sourceChannels;
+        private final int effectiveChannels;
 
-        private ImageSize(int width, int height) {
+        private ImageInfo(int width, int height, int depth, int sourceChannels, int effectiveChannels) {
             this.width = width;
             this.height = height;
+            this.depth = depth;
+            this.sourceChannels = sourceChannels;
+            this.effectiveChannels = effectiveChannels;
         }
     }
 }

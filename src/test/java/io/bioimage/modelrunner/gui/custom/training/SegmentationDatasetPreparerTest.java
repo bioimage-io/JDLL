@@ -24,15 +24,24 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
+import java.awt.Transparency;
+import java.awt.color.ColorSpace;
 import java.awt.image.BufferedImage;
+import java.awt.image.ComponentColorModel;
+import java.awt.image.DataBuffer;
+import java.awt.image.WritableRaster;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Arrays;
+import java.util.Iterator;
 import java.util.List;
 
+import javax.imageio.IIOImage;
 import javax.imageio.ImageIO;
+import javax.imageio.ImageWriter;
+import javax.imageio.stream.ImageOutputStream;
 
 import org.junit.Rule;
 import org.junit.Test;
@@ -202,10 +211,86 @@ public class SegmentationDatasetPreparerTest {
         }
     }
 
+    @Test
+    public void selectsStarDistChannelsFromImageContent() throws Exception {
+        File grayscale = temporaryFolder.newFolder("stardist-grayscale");
+        writePair(new File(grayscale, "images"), new File(grayscale, "masks"), "gray", "gray_mask");
+        PreparedDataset grayscalePrepared = prepareStarDist(grayscale, "gray");
+        assertEquals(1, grayscalePrepared.getTargetImageChannels());
+        assertEquals("grayscale", grayscalePrepared.getImageChannels());
+        assertFalse(grayscalePrepared.isGenerated());
+
+        File encodedGray = temporaryFolder.newFolder("stardist-rgb-gray");
+        writeRgbPair(encodedGray, "gray", true);
+        PreparedDataset encodedGrayPrepared = prepareStarDist(encodedGray, "encoded-gray");
+        assertEquals(1, encodedGrayPrepared.getTargetImageChannels());
+        assertTrue(encodedGrayPrepared.isGenerated());
+
+        File rgb = temporaryFolder.newFolder("stardist-rgb");
+        writeRgbPair(rgb, "rgb", false);
+        PreparedDataset rgbPrepared = prepareStarDist(rgb, "rgb");
+        assertEquals(3, rgbPrepared.getTargetImageChannels());
+        assertEquals("rgb", rgbPrepared.getImageChannels());
+        assertFalse(rgbPrepared.isGenerated());
+
+        File twoChannel = temporaryFolder.newFolder("stardist-two-channel");
+        writeTwoChannelPair(twoChannel, "two");
+        PreparedDataset twoChannelPrepared = prepareStarDist(twoChannel, "two");
+        assertEquals(3, twoChannelPrepared.getTargetImageChannels());
+        assertTrue(twoChannelPrepared.isGenerated());
+    }
+
+    @Test
+    public void createsChannelStratifiedSplitForMixedStarDistDataset() throws Exception {
+        File root = temporaryFolder.newFolder("stardist-mixed");
+        for (int i = 0; i < 4; i++) {
+            writePair(new File(root, "images"), new File(root, "masks"),
+                    "gray" + i, "gray" + i + "_mask");
+            writeRgbPair(root, "rgb" + i, false);
+        }
+
+        PreparedDataset prepared = prepareStarDist(root, "mixed");
+
+        assertEquals(3, prepared.getTargetImageChannels());
+        assertTrue(prepared.isGenerated());
+        assertEquals(2, countFiles(new File(prepared.getDatasetRoot(), "val/images")));
+        assertEquals(6, countFiles(new File(prepared.getDatasetRoot(), "train/images")));
+    }
+
+    @Test
+    public void detectsVolumesAndRejectsMixedDimensionality() throws Exception {
+        File volumeRoot = temporaryFolder.newFolder("stardist-volume");
+        for (int i = 0; i < 3; i++) {
+            writeVolume(new File(volumeRoot, "images/volume" + i + ".tif").toPath(), 8, 7, 4, i);
+            writeVolume(new File(volumeRoot, "masks/volume" + i + "_mask.tif").toPath(), 8, 7, 4, 1);
+        }
+        PreparedDataset volume = prepareStarDist(volumeRoot, "volume");
+        assertTrue(volume.is3D());
+        assertEquals(3, volume.getDimensionality().getDimensions());
+
+        File mixedRoot = temporaryFolder.newFolder("stardist-mixed-dimensionality");
+        writeVolume(new File(mixedRoot, "images/volume.tif").toPath(), 8, 7, 3, 0);
+        writeVolume(new File(mixedRoot, "masks/volume_mask.tif").toPath(), 8, 7, 3, 1);
+        writeImage(new File(mixedRoot, "images/plane.png").toPath(), 8, 7, 0);
+        writeImage(new File(mixedRoot, "masks/plane_mask.png").toPath(), 8, 7, 1);
+        try {
+            prepareStarDist(mixedRoot, "mixed-dimensionality");
+            fail("Mixed 2D and 3D datasets must be rejected");
+        } catch (IllegalArgumentException expected) {
+            assertTrue(expected.getMessage(), expected.getMessage().contains("mix 2D images and 3D volumes"));
+        }
+    }
+
     private PreparedDataset prepare(File root, String modelName) throws IOException {
         File models = new File(temporaryFolder.getRoot(), "models/unet");
         return SegmentationDatasetPreparer.prepare(root.getAbsolutePath(), modelName, models.getAbsolutePath(),
                 0.15d, Framework.UNET, null);
+    }
+
+    private PreparedDataset prepareStarDist(File root, String modelName) throws IOException {
+        File models = new File(temporaryFolder.getRoot(), "models/stardist");
+        return SegmentationDatasetPreparer.prepare(root.getAbsolutePath(), modelName, models.getAbsolutePath(),
+                0.15d, Framework.STARDIST, null);
     }
 
     private static void writePair(File imageDir, File maskDir, String imageStem, String maskStem)
@@ -230,6 +315,74 @@ public class SegmentationDatasetPreparerTest {
         if (!ImageIO.write(image, "png", path.toFile())) {
             throw new IOException("Could not write test PNG: " + path);
         }
+    }
+
+    private static void writeVolume(Path path, int width, int height, int depth, int value) throws IOException {
+        Files.createDirectories(path.getParent());
+        Iterator<ImageWriter> writers = ImageIO.getImageWritersByFormatName("TIFF");
+        if (!writers.hasNext()) {
+            throw new IOException("No TIFF writer available for tests.");
+        }
+        ImageWriter writer = writers.next();
+        try (ImageOutputStream output = ImageIO.createImageOutputStream(path.toFile())) {
+            writer.setOutput(output);
+            writer.prepareWriteSequence(null);
+            for (int z = 0; z < depth; z++) {
+                BufferedImage image = new BufferedImage(width, height, BufferedImage.TYPE_USHORT_GRAY);
+                for (int y = 0; y < height; y++) {
+                    for (int x = 0; x < width; x++) {
+                        image.getRaster().setSample(x, y, 0, value + z);
+                    }
+                }
+                writer.writeToSequence(new IIOImage(image, null, null), null);
+            }
+            writer.endWriteSequence();
+        } finally {
+            writer.dispose();
+        }
+    }
+
+    private static void writeRgbPair(File root, String stem, boolean grayscale) throws IOException {
+        Path imagePath = new File(root, "images/" + stem + ".png").toPath();
+        Files.createDirectories(imagePath.getParent());
+        BufferedImage image = new BufferedImage(8, 8, BufferedImage.TYPE_INT_RGB);
+        for (int y = 0; y < image.getHeight(); y++) {
+            for (int x = 0; x < image.getWidth(); x++) {
+                int red = 20 + x;
+                int green = grayscale ? red : 40 + y;
+                int blue = grayscale ? red : 80 + x + y;
+                image.setRGB(x, y, (red << 16) | (green << 8) | blue);
+            }
+        }
+        if (!ImageIO.write(image, "png", imagePath.toFile())) {
+            throw new IOException("Could not write test RGB PNG: " + imagePath);
+        }
+        writeImage(new File(root, "masks/" + stem + "_mask.png").toPath(), 8, 8, 1);
+    }
+
+    private static void writeTwoChannelPair(File root, String stem) throws IOException {
+        Path imagePath = new File(root, "images/" + stem + ".png").toPath();
+        Files.createDirectories(imagePath.getParent());
+        ComponentColorModel colorModel = new ComponentColorModel(
+                ColorSpace.getInstance(ColorSpace.CS_GRAY), new int[] {8, 8},
+                true, false, Transparency.TRANSLUCENT, DataBuffer.TYPE_BYTE);
+        WritableRaster raster = colorModel.createCompatibleWritableRaster(8, 8);
+        BufferedImage image = new BufferedImage(colorModel, raster, false, null);
+        for (int y = 0; y < image.getHeight(); y++) {
+            for (int x = 0; x < image.getWidth(); x++) {
+                raster.setSample(x, y, 0, x + y);
+                raster.setSample(x, y, 1, x * 2 + y);
+            }
+        }
+        if (!ImageIO.write(image, "png", imagePath.toFile())) {
+            throw new IOException("Could not write test two-channel PNG: " + imagePath);
+        }
+        writeImage(new File(root, "masks/" + stem + "_mask.png").toPath(), 8, 8, 1);
+    }
+
+    private static int countFiles(File folder) {
+        File[] files = folder.listFiles(File::isFile);
+        return files == null ? 0 : files.length;
     }
 
     private static void assertCanonicalPair(File root, String split, String stem) {

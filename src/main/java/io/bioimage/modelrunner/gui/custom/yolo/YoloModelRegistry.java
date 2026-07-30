@@ -179,7 +179,7 @@ public final class YoloModelRegistry {
             return false;
         }
         String architecture = rawScratchArchitecture(config);
-        return isBuiltInScratchArchitecture(architecture);
+        return resolveModelSource(configFile, architecture) != null;
     }
 
     /**
@@ -194,18 +194,38 @@ public final class YoloModelRegistry {
         }
         Map<String, Object> config = TrainingConfigFiles.load(architecture);
         String resolved = config == null ? null : rawScratchArchitecture(config);
-        if (isBuiltInScratchArchitecture(resolved)) {
-            return resolved.trim();
+        String source = resolveModelSource(architecture == null ? null : new File(architecture), resolved);
+        if (source != null) {
+            return source;
         }
         return architecture;
     }
 
     private static String rawScratchArchitecture(Map<String, Object> config) {
-        String architecture = TrainingConfigFiles.stringAt(config, "model", "scratch_architecture");
+        String architecture = TrainingConfigFiles.stringAt(config, "model", "source");
+        if (architecture == null || architecture.trim().isEmpty()) {
+            architecture = TrainingConfigFiles.stringAt(config, "model", "scratch_architecture");
+        }
         if (architecture == null || architecture.trim().isEmpty()) {
             architecture = TrainingConfigFiles.stringAt(config, "model", "model_source");
         }
         return architecture;
+    }
+
+    private static String resolveModelSource(File configFile, String source) {
+        if (isBuiltInScratchArchitecture(source)) {
+            return source.trim();
+        }
+        if (source == null || source.trim().isEmpty()) {
+            return null;
+        }
+        File yaml = new File(source.trim());
+        if (!yaml.isAbsolute() && configFile != null && configFile.getParentFile() != null) {
+            yaml = new File(configFile.getParentFile(), source.trim());
+        }
+        String lower = yaml.getName().toLowerCase();
+        return yaml.isFile() && (lower.endsWith(".yaml") || lower.endsWith(".yml"))
+                ? yaml.getAbsolutePath() : null;
     }
 
     private static boolean isBuiltInScratchArchitecture(String architecture) {

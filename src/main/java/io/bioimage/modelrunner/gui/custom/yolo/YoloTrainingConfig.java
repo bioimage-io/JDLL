@@ -23,8 +23,11 @@ import java.io.File;
 import java.io.IOException;
 import java.io.Writer;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.AtomicMoveNotSupportedException;
 import java.nio.file.Files;
+import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -32,8 +35,11 @@ import java.util.Map;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
+import io.bioimage.modelrunner.gui.custom.training.TrainingConfigFiles;
 import io.bioimage.modelrunner.gui.custom.training.TrainingModelPaths;
 import io.bioimage.modelrunner.model.special.yolo.Yolo;
+import io.bioimage.modelrunner.model.special.yolo.YoloTrainingAttemptResult;
+import io.bioimage.modelrunner.utils.Constants;
 
 public final class YoloTrainingConfig {
 
@@ -52,6 +58,16 @@ public final class YoloTrainingConfig {
     private final String outputWeightsPath;
     private final int previewEpochPeriod;
     private final String device;
+    private final Map<String, Object> trainingOptions;
+    private final Object requestedBatch;
+    private final boolean oomRetry;
+    private final int minimumBatch;
+    private String resolvedDevice;
+    private Integer resolvedBatch;
+    private String pythonVersion;
+    private String ultralyticsVersion;
+    private String torchVersion;
+    private String torchvisionVersion;
 
     /**
      * Creates a new YoloTrainingConfig instance.
@@ -92,10 +108,11 @@ public final class YoloTrainingConfig {
     public YoloTrainingConfig(String modelName, String datasetYamlPath, int epochs, int imageSize,
             boolean fineTune, String baseModelPath, String scratchArchitecture,
             String modelsDir, String outputWeightsPath, int previewEpochPeriod, String device) {
+        Map<String, Object> custom = fineTune ? null : TrainingConfigFiles.load(scratchArchitecture);
         this.modelName = modelName;
         this.datasetYamlPath = datasetYamlPath;
         this.epochs = epochs;
-        this.imageSize = imageSize;
+        this.imageSize = positiveInt(TrainingConfigFiles.objectAt(custom, "training", "imgsz"), imageSize);
         this.fineTune = fineTune;
         this.baseModelPath = baseModelPath;
         this.scratchArchitecture = scratchArchitecture;
@@ -103,6 +120,10 @@ public final class YoloTrainingConfig {
         this.outputWeightsPath = outputWeightsPath;
         this.previewEpochPeriod = previewEpochPeriod;
         this.device = normalizeDevice(device);
+        this.trainingOptions = buildTrainingOptions(custom, epochs, this.imageSize);
+        this.requestedBatch = customBatch(custom);
+        this.oomRetry = booleanValue(TrainingConfigFiles.objectAt(custom, "runtime", "oom_retry"), true);
+        this.minimumBatch = positiveInt(TrainingConfigFiles.objectAt(custom, "runtime", "minimum_batch"), 1);
     }
 
     /**
@@ -214,6 +235,57 @@ public final class YoloTrainingConfig {
     }
 
     /**
+     * Returns the Ultralytics options controlled by the training recipe.
+     *
+     * @return a defensive option copy.
+     */
+    public Map<String, Object> getBackendTrainingOptions() {
+        Map<String, Object> options = new LinkedHashMap<String, Object>();
+        for (Map.Entry<String, Object> entry : trainingOptions.entrySet()) {
+            if ("augmentations".equals(entry.getKey()) && entry.getValue() instanceof Map) {
+                options.putAll(copyMap(entry.getValue()));
+            } else if (!"epochs".equals(entry.getKey()) && !"imgsz".equals(entry.getKey())) {
+                options.put(entry.getKey(), entry.getValue());
+            }
+        }
+        return options;
+    }
+
+    /**
+     * Returns the requested physical batch or {@code "auto"}.
+     *
+     * @return the batch request.
+     */
+    public Object getRequestedBatch() {
+        return requestedBatch;
+    }
+
+    public boolean isOomRetryEnabled() {
+        return oomRetry;
+    }
+
+    public int getMinimumBatch() {
+        return minimumBatch;
+    }
+
+    /**
+     * Updates runtime values resolved by Python and persists them on the next write.
+     *
+     * @param result the attempt result.
+     */
+    public synchronized void updateRuntime(YoloTrainingAttemptResult result) {
+        if (result == null) {
+            return;
+        }
+        resolvedDevice = result.getResolvedDevice();
+        resolvedBatch = result.getResolvedBatch();
+        pythonVersion = result.getPythonVersion();
+        ultralyticsVersion = result.getUltralyticsVersion();
+        torchVersion = result.getTorchVersion();
+        torchvisionVersion = result.getTorchvisionVersion();
+    }
+
+    /**
      * Returns the output model directory.
      *
      * @return the output model directory.
@@ -233,6 +305,10 @@ public final class YoloTrainingConfig {
         return new File(getOutputModelDir(), "config.json");
     }
 
+    public File getTrainingResultsFile() {
+        return new File(getOutputModelDir(), "training_results.json");
+    }
+
     /**
      * Writes a JSON training config file.
      *
@@ -240,15 +316,17 @@ public final class YoloTrainingConfig {
      * @return the written config file.
      * @throws IOException if an I/O error occurs.
      */
-    public File writeConfig(File resolvedDatasetYaml) throws IOException {
+    public synchronized File writeConfig(File resolvedDatasetYaml) throws IOException {
         File configFile = getConfigFile();
         File parent = configFile.getParentFile();
         if (parent != null) {
             Files.createDirectories(parent.toPath());
         }
-        try (Writer writer = Files.newBufferedWriter(configFile.toPath(), StandardCharsets.UTF_8)) {
+        File temporary = new File(parent, configFile.getName() + ".tmp");
+        try (Writer writer = Files.newBufferedWriter(temporary.toPath(), StandardCharsets.UTF_8)) {
             CONFIG_GSON.toJson(toConfigMap(resolvedDatasetYaml), writer);
         }
+        replaceAtomically(temporary, configFile);
         return configFile;
     }
 
@@ -258,7 +336,7 @@ public final class YoloTrainingConfig {
      * @param resolvedDatasetYaml the actual data.yaml used by Ultralytics.
      * @return the formatted parameter lines.
      */
-    public List<String> toLogLines(File resolvedDatasetYaml) {
+    public synchronized List<String> toLogLines(File resolvedDatasetYaml) {
         List<String> lines = new ArrayList<String>();
         flatten("", toConfigMap(resolvedDatasetYaml), lines);
         return lines;
@@ -270,88 +348,55 @@ public final class YoloTrainingConfig {
      * @param resolvedDatasetYaml the actual data.yaml used by Ultralytics.
      * @return the config map.
      */
-    public Map<String, Object> toConfigMap(File resolvedDatasetYaml) {
+    public synchronized Map<String, Object> toConfigMap(File resolvedDatasetYaml) {
         Map<String, Object> root = new LinkedHashMap<String, Object>();
         root.put("framework", "yolo");
-        root.put("format_version", 1);
+        root.put("format_version", 0);
+        root.put("software", softwareMap());
         root.put("model", modelMap());
         root.put("dataset", datasetMap(resolvedDatasetYaml));
-        root.put("ultralytics_train", ultralyticsTrainMap(resolvedDatasetYaml));
-        root.put("validation_preview", validationPreviewMap());
-        root.put("logging", loggingMap());
-        root.put("outputs", outputsMap());
-        root.put("dataset_preparation", YoloDatasetPreparer.parameterSnapshot(imageSize));
+        root.put("training", new LinkedHashMap<String, Object>(trainingOptions));
+        root.put("runtime", runtimeMap());
         return root;
+    }
+
+    private Map<String, Object> softwareMap() {
+        Map<String, Object> map = new LinkedHashMap<String, Object>();
+        map.put("jdll", Constants.JDLL_VERSION);
+        map.put("deepicy", System.getProperty("jdll.deepicy.version", "unknown"));
+        map.put("python", pythonVersion);
+        map.put("ultralytics", ultralyticsVersion);
+        map.put("torch", torchVersion);
+        map.put("torchvision", torchvisionVersion);
+        return map;
     }
 
     private Map<String, Object> modelMap() {
         Map<String, Object> map = new LinkedHashMap<String, Object>();
         map.put("name", modelName);
+        map.put("task", "detect");
         map.put("start_mode", fineTune ? "fine_tune" : "from_scratch");
-        map.put("fine_tune", fineTune);
-        map.put("base_model_path", baseModelPath);
-        map.put("scratch_architecture", scratchArchitecture);
-        map.put("model_source", modelSource());
-        map.put("models_dir", modelsDir);
+        map.put("source", fineTune ? null : modelSource());
+        map.put("base_model", fineTune ? absolutePath(new File(baseModelPath)) : null);
         return map;
     }
 
     private Map<String, Object> datasetMap(File resolvedDatasetYaml) {
         Map<String, Object> map = new LinkedHashMap<String, Object>();
         map.put("requested_path", datasetYamlPath);
-        map.put("resolved_yaml_path", absolutePath(resolvedDatasetYaml));
+        map.put("resolved_yaml", absolutePath(resolvedDatasetYaml));
         return map;
     }
 
-    private Map<String, Object> ultralyticsTrainMap(File resolvedDatasetYaml) {
+    private synchronized Map<String, Object> runtimeMap() {
         Map<String, Object> map = new LinkedHashMap<String, Object>();
-        map.put("data", absolutePath(resolvedDatasetYaml));
-        map.put("epochs", epochs);
-        map.put("imgsz", imageSize);
-        map.put("batch", Yolo.DEFAULT_TRAIN_BATCH_SIZE);
-        map.put("project", projectDir().getAbsolutePath());
-        map.put("name", runName());
-        map.put("exist_ok", Yolo.DEFAULT_TRAIN_EXIST_OK);
-        map.put("verbose", Yolo.DEFAULT_TRAIN_VERBOSE);
-        map.put("plots", Yolo.DEFAULT_TRAIN_PLOTS);
-        map.put("workers", Yolo.DEFAULT_TRAIN_WORKERS);
         map.put("requested_device", device);
-        map.put("device", trainDevice());
-        return map;
-    }
-
-    private Map<String, Object> validationPreviewMap() {
-        Map<String, Object> map = new LinkedHashMap<String, Object>();
-        map.put("epoch_period", previewEpochPeriod);
-        map.put("sample_count", Yolo.DEFAULT_VALIDATION_PREVIEW_SAMPLE_COUNT);
-        map.put("confidence_threshold", Yolo.DEFAULT_VALIDATION_PREVIEW_CONFIDENCE);
-        map.put("directory", new File(runDir(), "validation_preview").getAbsolutePath());
-        map.put("latest_json", new File(new File(runDir(), "validation_preview"), "latest.json").getAbsolutePath());
-        return map;
-    }
-
-    private Map<String, Object> loggingMap() {
-        boolean accelerated = !"cpu".equals(device);
-        Map<String, Object> map = new LinkedHashMap<String, Object>();
-        map.put("progress_every_n_steps", accelerated
-                ? Yolo.DEFAULT_ACCELERATED_PROGRESS_EVERY_N_STEPS
-                : Yolo.DEFAULT_CPU_PROGRESS_EVERY_N_STEPS);
-        map.put("log_every_n_steps", accelerated
-                ? Yolo.DEFAULT_ACCELERATED_LOG_EVERY_N_STEPS
-                : Yolo.DEFAULT_CPU_LOG_EVERY_N_STEPS);
-        map.put("backend_log_path", new File(runDir(), "training.log").getAbsolutePath());
-        map.put("ui_log_path", new File(getOutputModelDir(), "training-ui.log").getAbsolutePath());
-        return map;
-    }
-
-    private Map<String, Object> outputsMap() {
-        Map<String, Object> map = new LinkedHashMap<String, Object>();
-        map.put("output_dir", getOutputModelDir().getAbsolutePath());
-        map.put("run_dir", runDir().getAbsolutePath());
-        map.put("config_file", getConfigFile().getAbsolutePath());
-        map.put("exported_model_file", new File(outputWeightsPath).getAbsoluteFile().getAbsolutePath());
-        map.put("best_checkpoint", new File(new File(runDir(), "weights"), "best.pt").getAbsolutePath());
-        map.put("last_checkpoint", new File(new File(runDir(), "weights"), "last.pt").getAbsolutePath());
+        map.put("resolved_device", resolvedDevice);
+        map.put("requested_batch", requestedBatch);
+        map.put("resolved_batch", resolvedBatch);
+        map.put("oom_retry", Boolean.valueOf(oomRetry));
+        map.put("minimum_batch", Integer.valueOf(minimumBatch));
+        map.put("workers", Yolo.DEFAULT_TRAIN_WORKERS);
         return map;
     }
 
@@ -361,29 +406,18 @@ public final class YoloTrainingConfig {
                 : YoloModelRegistry.resolveScratchArchitecture(scratchArchitecture);
     }
 
-    private Object trainDevice() {
-        return "cuda".equals(device) ? Integer.valueOf(0) : device;
-    }
-
-    private String runName() {
-        String name = new File(outputWeightsPath).getName();
-        return name.toLowerCase().endsWith(YoloModelRegistry.YOLO_WEIGHTS_EXTENSION)
-                ? name.substring(0, name.length() - YoloModelRegistry.YOLO_WEIGHTS_EXTENSION.length())
-                : name;
-    }
-
-    private File projectDir() {
-        File outputDir = getOutputModelDir();
-        File parent = outputDir.getParentFile();
-        return parent != null && outputDir.getName().equals(runName()) ? parent : outputDir;
-    }
-
-    private File runDir() {
-        return new File(projectDir(), runName()).getAbsoluteFile();
-    }
 
     private static String absolutePath(File file) {
         return file == null ? null : file.getAbsoluteFile().getAbsolutePath();
+    }
+
+    private static void replaceAtomically(File source, File target) throws IOException {
+        try {
+            Files.move(source.toPath(), target.toPath(), StandardCopyOption.REPLACE_EXISTING,
+                    StandardCopyOption.ATOMIC_MOVE);
+        } catch (AtomicMoveNotSupportedException e) {
+            Files.move(source.toPath(), target.toPath(), StandardCopyOption.REPLACE_EXISTING);
+        }
     }
 
     private static void flatten(String prefix, Object value, List<String> lines) {
@@ -396,6 +430,126 @@ public final class YoloTrainingConfig {
             return;
         }
         lines.add(prefix + "=" + String.valueOf(value));
+    }
+
+    private static Map<String, Object> buildTrainingOptions(Map<String, Object> custom,
+            int epochs, int imageSize) {
+        Map<String, Object> options = defaultTrainingOptions();
+        Map<String, Object> customTraining = TrainingConfigFiles.mapAt(custom, "training");
+        if (customTraining == null) {
+            customTraining = TrainingConfigFiles.mapAt(custom, "ultralytics_train");
+        }
+        merge(options, customTraining);
+        options.put("epochs", Integer.valueOf(epochs));
+        options.put("imgsz", Integer.valueOf(imageSize));
+        options.remove("batch");
+        for (String key : new String[] {
+                "data", "model", "project", "name", "device", "workers", "exist_ok",
+                "verbose", "plots", "resume", "save", "save_period"
+        }) {
+            options.remove(key);
+        }
+        return Collections.unmodifiableMap(options);
+    }
+
+    private static Map<String, Object> defaultTrainingOptions() {
+        Map<String, Object> options = new LinkedHashMap<String, Object>();
+        options.put("epochs", Integer.valueOf(100));
+        options.put("imgsz", Integer.valueOf(DEFAULT_IMAGE_SIZE));
+        options.put("seed", Integer.valueOf(Yolo.DEFAULT_TRAIN_SEED));
+        options.put("deterministic", Boolean.valueOf(Yolo.DEFAULT_TRAIN_DETERMINISTIC));
+        options.put("optimizer", "auto");
+        options.put("patience", Integer.valueOf(100));
+        options.put("lr0", Double.valueOf(0.01));
+        options.put("lrf", Double.valueOf(0.01));
+        options.put("momentum", Double.valueOf(0.937));
+        options.put("weight_decay", Double.valueOf(0.0005));
+        options.put("warmup_epochs", Double.valueOf(3.0));
+        options.put("warmup_momentum", Double.valueOf(0.8));
+        options.put("warmup_bias_lr", Double.valueOf(0.1));
+        options.put("nbs", Integer.valueOf(Yolo.DEFAULT_NOMINAL_BATCH_SIZE));
+        options.put("box", Double.valueOf(7.5));
+        options.put("cls", Double.valueOf(0.5));
+        options.put("cls_pw", Double.valueOf(0.0));
+        options.put("dfl", Double.valueOf(1.5));
+        options.put("amp", Boolean.TRUE);
+        options.put("cos_lr", Boolean.FALSE);
+        options.put("close_mosaic", Integer.valueOf(10));
+        options.put("cache", Boolean.FALSE);
+        options.put("rect", Boolean.FALSE);
+        options.put("multi_scale", Double.valueOf(0.0));
+        options.put("compile", Boolean.FALSE);
+        options.put("freeze", null);
+        options.put("fraction", Double.valueOf(1.0));
+        options.put("single_cls", Boolean.FALSE);
+        options.put("classes", null);
+        options.put("val", Boolean.TRUE);
+        options.put("split", "val");
+        options.put("conf", null);
+        options.put("iou", Double.valueOf(0.7));
+        options.put("max_det", Integer.valueOf(300));
+        Map<String, Object> augmentations = new LinkedHashMap<String, Object>();
+        augmentations.put("hsv_h", Double.valueOf(0.015));
+        augmentations.put("hsv_s", Double.valueOf(0.7));
+        augmentations.put("hsv_v", Double.valueOf(0.4));
+        augmentations.put("degrees", Double.valueOf(0.0));
+        augmentations.put("translate", Double.valueOf(0.1));
+        augmentations.put("scale", Double.valueOf(0.5));
+        augmentations.put("shear", Double.valueOf(0.0));
+        augmentations.put("perspective", Double.valueOf(0.0));
+        augmentations.put("flipud", Double.valueOf(0.0));
+        augmentations.put("fliplr", Double.valueOf(0.5));
+        augmentations.put("bgr", Double.valueOf(0.0));
+        augmentations.put("mosaic", Double.valueOf(1.0));
+        augmentations.put("mixup", Double.valueOf(0.0));
+        augmentations.put("cutmix", Double.valueOf(0.0));
+        augmentations.put("copy_paste", Double.valueOf(0.0));
+        options.put("augmentations", augmentations);
+        return options;
+    }
+
+    private static Object customBatch(Map<String, Object> custom) {
+        Object batch = TrainingConfigFiles.objectAt(custom, "runtime", "requested_batch");
+        if (batch == null) {
+            batch = TrainingConfigFiles.objectAt(custom, "training", "batch");
+        }
+        if (batch instanceof Number && ((Number) batch).intValue() > 0) {
+            return Integer.valueOf(((Number) batch).intValue());
+        }
+        return "auto";
+    }
+
+    private static int positiveInt(Object value, int fallback) {
+        if (value instanceof Number && ((Number) value).intValue() > 0) {
+            return ((Number) value).intValue();
+        }
+        return fallback;
+    }
+
+    private static boolean booleanValue(Object value, boolean fallback) {
+        return value instanceof Boolean ? ((Boolean) value).booleanValue() : fallback;
+    }
+
+    @SuppressWarnings("unchecked")
+    private static void merge(Map<String, Object> target, Map<String, Object> values) {
+        if (values == null) {
+            return;
+        }
+        for (Map.Entry<String, Object> entry : values.entrySet()) {
+            Object current = target.get(entry.getKey());
+            if (current instanceof Map && entry.getValue() instanceof Map) {
+                merge((Map<String, Object>) current, (Map<String, Object>) entry.getValue());
+            } else {
+                target.put(entry.getKey(), entry.getValue());
+            }
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    private static Map<String, Object> copyMap(Object value) {
+        return value instanceof Map
+                ? new LinkedHashMap<String, Object>((Map<String, Object>) value)
+                : Collections.<String, Object>emptyMap();
     }
 
     /**

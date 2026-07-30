@@ -28,6 +28,10 @@ import javax.swing.Timer;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 import javax.imageio.ImageIO;
+import javax.imageio.ImageReader;
+import javax.imageio.ImageWriter;
+import javax.imageio.stream.ImageInputStream;
+import javax.imageio.stream.ImageOutputStream;
 
 import org.apposed.appose.BuildException;
 
@@ -73,11 +77,12 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Iterator;
 import java.util.concurrent.ExecutionException;
 import java.util.function.Consumer;
 
 import net.imglib2.img.array.ArrayImgs;
-import net.imglib2.type.numeric.integer.UnsignedByteType;
+import net.imglib2.type.numeric.real.FloatType;
 
 public class StarDistPluginUI extends StardistGUI implements ActionListener {
 
@@ -583,7 +588,7 @@ public class StarDistPluginUI extends StardistGUI implements ActionListener {
                 final int totalImages = images.size();
                 final boolean[] emittedPatchProgress = new boolean[] {false};
                 try {
-                    RandomAccessibleInterval<UnsignedByteType> rai = readImageFileAsRai(imageFile);
+                    RandomAccessibleInterval<FloatType> rai = readImageFileAsRai(imageFile);
                     List<Tensor<T>> outputs = inferenceService.runWithProgress(modelPath, rai, progress -> {
                         if (progress == null) {
                             return;
@@ -707,24 +712,48 @@ public class StarDistPluginUI extends StardistGUI implements ActionListener {
         return Collections.emptyList();
     }
 
-    private static RandomAccessibleInterval<UnsignedByteType> readImageFileAsRai(File imageFile) throws IOException {
-        BufferedImage image = ImageIO.read(imageFile);
-        if (image == null) {
-            throw new IOException("Unsupported image file: " + imageFile);
-        }
-        int width = image.getWidth();
-        int height = image.getHeight();
-        byte[] pixels = new byte[width * height * 3];
-        int offset = 0;
-        for (int y = 0; y < height; y++) {
-            for (int x = 0; x < width; x++) {
-                int rgb = image.getRGB(x, y);
-                pixels[offset++] = (byte) ((rgb >> 16) & 0xff);
-                pixels[offset++] = (byte) ((rgb >> 8) & 0xff);
-                pixels[offset++] = (byte) (rgb & 0xff);
+    private static RandomAccessibleInterval<FloatType> readImageFileAsRai(File imageFile) throws IOException {
+        try (ImageInputStream input = ImageIO.createImageInputStream(imageFile)) {
+            Iterator<ImageReader> readers = input == null
+                    ? Collections.<ImageReader>emptyList().iterator()
+                    : ImageIO.getImageReaders(input);
+            if (!readers.hasNext()) {
+                throw new IOException("Unsupported image file: " + imageFile);
+            }
+            ImageReader reader = readers.next();
+            try {
+                reader.setInput(input, false, true);
+                int depth = Math.max(1, reader.getNumImages(true));
+                BufferedImage first = reader.read(0);
+                int width = first.getWidth();
+                int height = first.getHeight();
+                int channels = first.getRaster().getNumBands() == 1 ? 1 : 3;
+                float[] pixels = new float[Math.multiplyExact(
+                        Math.multiplyExact(width, height), Math.multiplyExact(channels, depth))];
+                for (int z = 0; z < depth; z++) {
+                    BufferedImage plane = z == 0 ? first : reader.read(z);
+                    if (plane.getWidth() != width || plane.getHeight() != height) {
+                        throw new IOException("TIFF planes have inconsistent dimensions: " + imageFile);
+                    }
+                    for (int y = 0; y < height; y++) {
+                        for (int x = 0; x < width; x++) {
+                            int base = x + width * (y + height * channels * z);
+                            if (channels == 1) {
+                                pixels[base] = plane.getRaster().getSampleFloat(x, y, 0);
+                            } else {
+                                int rgb = plane.getRGB(x, y);
+                                pixels[base] = (rgb >> 16) & 0xff;
+                                pixels[base + width * height] = (rgb >> 8) & 0xff;
+                                pixels[base + 2 * width * height] = rgb & 0xff;
+                            }
+                        }
+                    }
+                }
+                return ArrayImgs.floats(pixels, width, height, channels, depth);
+            } finally {
+                reader.dispose();
             }
         }
-        return ArrayImgs.unsignedBytes(pixels, width, height, 3);
     }
 
     private static File maskOutputFileFor(File imageFile) {
@@ -745,10 +774,37 @@ public class StarDistPluginUI extends StardistGUI implements ActionListener {
             throws IOException {
         RandomAccessibleInterval<T> labels = tensor.getData();
         String axes = tensor.getAxesOrderString();
-        BufferedImage image = labelMaskImage(labels, axes);
         String format = imageIoFormat(outputFile.getName());
-        if (!ImageIO.write(image, format, outputFile)) {
+        int zAxis = axes == null ? -1 : axes.toLowerCase().indexOf('z');
+        int depth = zAxis >= 0 ? Math.toIntExact(labels.dimension(zAxis)) : 1;
+        if (depth > 1) {
+            if (!"TIFF".equals(format)) {
+                throw new IOException("3D StarDist label images must be saved as TIFF.");
+            }
+            writeLabelVolume(labels, axes, zAxis, depth, outputFile);
+        } else if (!ImageIO.write(labelMaskImage(labels, axes, zAxis, 0), format, outputFile)) {
             throw new IOException("No ImageIO writer available for " + format + " masks.");
+        }
+    }
+
+    private static <T extends RealType<T> & NativeType<T>> void writeLabelVolume(
+            RandomAccessibleInterval<T> labels, String axes, int zAxis, int depth, File outputFile)
+            throws IOException {
+        Iterator<ImageWriter> writers = ImageIO.getImageWritersByFormatName("TIFF");
+        if (!writers.hasNext()) {
+            throw new IOException("No ImageIO writer available for TIFF masks.");
+        }
+        ImageWriter writer = writers.next();
+        try (ImageOutputStream output = ImageIO.createImageOutputStream(outputFile)) {
+            writer.setOutput(output);
+            writer.prepareWriteSequence(null);
+            for (int z = 0; z < depth; z++) {
+                writer.writeToSequence(new javax.imageio.IIOImage(
+                        labelMaskImage(labels, axes, zAxis, z), null, null), null);
+            }
+            writer.endWriteSequence();
+        } finally {
+            writer.dispose();
         }
     }
 
@@ -757,7 +813,7 @@ public class StarDistPluginUI extends StardistGUI implements ActionListener {
     }
 
     private static <T extends RealType<T> & NativeType<T>>
-    BufferedImage labelMaskImage(RandomAccessibleInterval<T> labels, String axes) {
+    BufferedImage labelMaskImage(RandomAccessibleInterval<T> labels, String axes, int zAxis, int z) {
         long[] dims = labels.dimensionsAsLongArray();
         int xAxis = axisIndex(axes, 'x', dims.length, dims.length > 1 ? 1 : 0);
         int yAxis = axisIndex(axes, 'y', dims.length, 0);
@@ -767,6 +823,9 @@ public class StarDistPluginUI extends StardistGUI implements ActionListener {
         WritableRaster raster = image.getRaster();
         RandomAccess<T> access = labels.randomAccess();
         long[] position = new long[dims.length];
+        if (zAxis >= 0) {
+            position[zAxis] = z;
+        }
         for (int y = 0; y < height; y++) {
             position[yAxis] = y;
             for (int x = 0; x < width; x++) {
@@ -1124,7 +1183,7 @@ public class StarDistPluginUI extends StardistGUI implements ActionListener {
                 : "train from scratch using " + config.getScratchArchitecture();
         return "epochs=" + config.getEpochs()
                 + ", device=" + config.getDevice()
-                + ", channels=" + config.getImageChannels()
+                + ", channels=automatic from dataset"
                 + ", labels=" + config.getLabelColorMode()
                 + ", validation_fraction=" + formatNumber(config.getValidFraction())
                 + ", starting_point=" + start;
