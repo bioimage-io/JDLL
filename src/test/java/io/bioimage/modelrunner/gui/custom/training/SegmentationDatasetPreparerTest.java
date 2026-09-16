@@ -41,6 +41,12 @@ import java.util.List;
 import javax.imageio.IIOImage;
 import javax.imageio.ImageIO;
 import javax.imageio.ImageWriter;
+import javax.imageio.ImageTypeSpecifier;
+import javax.imageio.metadata.IIOMetadata;
+import javax.imageio.plugins.tiff.BaselineTIFFTagSet;
+import javax.imageio.plugins.tiff.TIFFDirectory;
+import javax.imageio.plugins.tiff.TIFFField;
+import javax.imageio.plugins.tiff.TIFFTag;
 import javax.imageio.stream.ImageOutputStream;
 
 import org.junit.Rule;
@@ -49,6 +55,8 @@ import org.junit.rules.TemporaryFolder;
 
 import io.bioimage.modelrunner.gui.custom.training.SegmentationDatasetPreparer.Framework;
 import io.bioimage.modelrunner.gui.custom.training.SegmentationDatasetPreparer.PreparedDataset;
+import io.bioimage.modelrunner.gui.custom.training.SegmentationDatasetPreparer.Dimensionality;
+import io.bioimage.modelrunner.gui.custom.unet.UnetDatasetInspector;
 
 public class SegmentationDatasetPreparerTest {
 
@@ -100,6 +108,80 @@ public class SegmentationDatasetPreparerTest {
             assertTrue(prepared.isGenerated());
             assertCanonicalPair(prepared.getDatasetRoot(), "train", "sample");
         }
+    }
+
+    @Test
+    public void linksMetadataWithRenamedImagesAndMasks() throws Exception {
+        for (Framework framework : Framework.values()) {
+            File root = temporaryFolder.newFolder("metadata-" + framework);
+            writePair(new File(root, "images"), new File(root, "masks"),
+                    "sample_samples", "sample_segmentation");
+            String[] sourceNames = {"sample_samples", "sample_segmentation"};
+            String[] targetNames = {"sample", "sample_mask"};
+            String[] folders = {"images", "masks"};
+            for (int i = 0; i < folders.length; i++) {
+                for (String suffix : Arrays.asList(".json", ".png.json")) {
+                    Files.write(new File(root, folders[i] + "/" + sourceNames[i] + suffix).toPath(),
+                            Arrays.asList("{\"spacing\": [2, 1, 1]}"));
+                }
+            }
+
+            PreparedDataset prepared = SegmentationDatasetPreparer.prepare(root.getAbsolutePath(),
+                    "metadata", new File(temporaryFolder.getRoot(), "models").getAbsolutePath(),
+                    0.15d, framework, null);
+
+            assertTrue(prepared.isGenerated());
+            for (int i = 0; i < folders.length; i++) {
+                for (String suffix : Arrays.asList(".json", ".png.json")) {
+                    Path source = new File(root, folders[i] + "/" + sourceNames[i] + suffix).toPath();
+                    Path linked = new File(prepared.getDatasetRoot(),
+                            "train/" + folders[i] + "/" + targetNames[i] + suffix).toPath();
+                    assertTrue("Missing metadata link: " + linked, Files.isRegularFile(linked));
+                    assertTrue("Metadata must be linked, not copied", Files.isSameFile(source, linked));
+                }
+            }
+        }
+    }
+
+    @Test
+    public void linksMetadataIntoGeneratedTrainingAndValidationSplits() throws Exception {
+        File root = temporaryFolder.newFolder("metadata-splits");
+        for (int i = 0; i < 3; i++) {
+            writePair(root, root, "sample" + i, "sample" + i + "_mask");
+            Files.write(new File(root, "sample" + i + ".png.json").toPath(),
+                    Arrays.asList("{\"spacing\": [2, 1, 1]}"));
+        }
+
+        PreparedDataset prepared = prepareStarDist(root, "metadata-splits");
+
+        assertTrue(prepared.isGenerated());
+        int linkedSamples = 0;
+        for (String split : Arrays.asList("train", "val")) {
+            File[] images = new File(prepared.getDatasetRoot(), split + "/images")
+                    .listFiles(file -> file.getName().endsWith(".png"));
+            assertTrue("Missing images in " + split, images != null && images.length > 0);
+            for (File image : images) {
+                Path linked = image.toPath().resolveSibling(image.getName() + ".json");
+                assertTrue("Missing metadata link: " + linked, Files.isRegularFile(linked));
+                assertTrue(Files.isSameFile(new File(root, image.getName() + ".json").toPath(), linked));
+                linkedSamples++;
+            }
+        }
+        assertEquals(3, linkedSamples);
+    }
+
+    @Test
+    public void reusesCompatibleDatasetWithExistingMetadata() throws Exception {
+        File root = temporaryFolder.newFolder("metadata-reused");
+        writePair(new File(root, "images"), new File(root, "masks"), "sample", "sample_mask");
+        Path metadata = new File(root, "images/sample.json").toPath();
+        Files.write(metadata, Arrays.asList("{\"spacing\": [2, 1, 1]}"));
+
+        PreparedDataset prepared = prepare(root, "metadata-reused");
+
+        assertFalse(prepared.isGenerated());
+        assertEquals(root.getCanonicalFile(), prepared.getDatasetRoot().getCanonicalFile());
+        assertTrue(Files.isRegularFile(metadata));
     }
 
     @Test
@@ -281,6 +363,138 @@ public class SegmentationDatasetPreparerTest {
         }
     }
 
+    @Test
+    public void unetMixedDatasetsKeepAllSourcesAndLeaveSplittingToPython() throws Exception {
+        File root = temporaryFolder.newFolder("unet-mixed");
+        writePair(root, root, "plane", "plane_mask");
+        writeVolume(new File(root, "volume.tif").toPath(), 8, 8, 4, 1);
+        writeVolume(new File(root, "volume_mask.tif").toPath(), 8, 8, 4, 1);
+        Files.write(new File(root, "volume.tif.json").toPath(), Arrays.asList("{\"spacing\":[2,1,1]}"));
+
+        PreparedDataset prepared = prepare(root, "unet-mixed");
+
+        assertEquals(Dimensionality.MIXED, prepared.getDimensionality());
+        assertEquals(UnetDatasetInspector.Dimensionality.MIXED, UnetDatasetInspector.inspectPairedDataset(root));
+        assertTrue(prepared.isGenerated());
+        assertFalse(new File(prepared.getDatasetRoot(), "val").exists());
+        assertCanonicalPair(prepared.getDatasetRoot(), "train", "plane");
+        assertTrue(Files.isSameFile(new File(root, "volume.tif").toPath(),
+                new File(prepared.getDatasetRoot(), "train/images/volume.tif").toPath()));
+        assertTrue(Files.isSameFile(new File(root, "volume.tif.json").toPath(),
+                new File(prepared.getDatasetRoot(), "train/images/volume.tif.json").toPath()));
+    }
+
+    @Test
+    public void unetPreservesExplicitMixedSplitsAndMetadata() throws Exception {
+        File root = temporaryFolder.newFolder("unet-explicit-splits");
+        File train = new File(root, "train");
+        File val = new File(root, "valid");
+        writePair(train, train, "plane_raw", "plane_mask");
+        writeVolume(new File(val, "volume.tif").toPath(), 8, 8, 4, 1);
+        writeVolume(new File(val, "volume_mask.tif").toPath(), 8, 8, 4, 1);
+        Path metadata = new File(val, "volume_mask.json").toPath();
+        Files.write(metadata, Arrays.asList("{\"spacing\":[2,1,1]}"));
+
+        PreparedDataset prepared = prepare(root, "explicit");
+
+        assertEquals(Dimensionality.MIXED, prepared.getDimensionality());
+        assertCanonicalPair(prepared.getDatasetRoot(), "train", "plane");
+        assertEquals(1, countFiles(new File(prepared.getDatasetRoot(), "train/images")));
+        assertEquals(1, countFiles(new File(prepared.getDatasetRoot(), "val/images")));
+        assertTrue(Files.isSameFile(metadata,
+                new File(prepared.getDatasetRoot(), "val/masks/volume_mask.json").toPath()));
+    }
+
+    @Test
+    public void unetSingleVolumeIsNotReusedAsValidation() throws Exception {
+        File root = temporaryFolder.newFolder("single-unet-volume");
+        writeVolume(new File(root, "sample.tif").toPath(), 8, 8, 4, 1);
+        writeVolume(new File(root, "sample_mask.tif").toPath(), 8, 8, 4, 1);
+        PreparedDataset prepared = prepare(root, "single-volume");
+        assertEquals(Dimensionality.THREE_D, prepared.getDimensionality());
+        assertEquals(UnetDatasetInspector.Dimensionality.THREE_D, UnetDatasetInspector.inspectPairedDataset(root));
+        assertFalse(new File(prepared.getDatasetRoot(), "val").exists());
+        assertEquals(1, countFiles(new File(prepared.getDatasetRoot(), "train/images")));
+    }
+
+    @Test
+    public void unetRecognizesPlanarChannelStacksAndSingletonZ() throws Exception {
+        String[] descriptions = {
+                "ImageJ=1.54\nimages=3\nchannels=3\nslices=1\nframes=1\nhyperstack=true\n",
+                "<OME><Image><Pixels SizeX=\"8\" SizeY=\"8\" SizeZ=\"1\" SizeC=\"3\" SizeT=\"1\"/></Image></OME>",
+                "{\"shape\":[1,3,8,8],\"axes\":\"ZCYX\"}"
+        };
+        for (int i = 0; i < descriptions.length; i++) {
+            File root = temporaryFolder.newFolder("channel-stack-" + i);
+            writeVolume(new File(root, "images/sample.tif").toPath(), 8, 8, 3, 1, descriptions[i]);
+            writeImage(new File(root, "masks/sample_mask.png").toPath(), 8, 8, 1);
+            assertEquals(UnetDatasetInspector.Dimensionality.TWO_D, UnetDatasetInspector.inspectPairedDataset(root));
+            assertEquals(Dimensionality.TWO_D, prepare(root, "channel-stack").getDimensionality());
+        }
+    }
+
+    @Test
+    public void unetRecognizesMultichannelVolumesWithFewerMaskPages() throws Exception {
+        File root = temporaryFolder.newFolder("multichannel-volume");
+        writeVolume(new File(root, "images/sample.tif").toPath(), 8, 8, 12, 1,
+                "ImageJ=1.54\nimages=12\nchannels=3\nslices=4\nframes=1\nhyperstack=true\n");
+        writeVolume(new File(root, "masks/sample_mask.tif").toPath(), 8, 8, 4, 1);
+        assertEquals(UnetDatasetInspector.Dimensionality.THREE_D, UnetDatasetInspector.inspectPairedDataset(root));
+        assertEquals(Dimensionality.THREE_D, prepare(root, "multichannel-volume").getDimensionality());
+    }
+
+    @Test
+    public void unetUsesDeclaredSpatialAxesForChannelLastMasks() throws Exception {
+        File root = temporaryFolder.newFolder("channel-last-mask");
+        writeImage(new File(root, "images/sample.png").toPath(), 13, 12, 1);
+        // Non-RGB TIFF storage can encode YXC as Y pages of XC pixels.
+        writeVolume(new File(root, "masks/sample_mask.tif").toPath(), 2, 13, 12, 1,
+                "{\"shape\":[12,13,2],\"axes\":\"YXC\"}");
+        assertEquals(UnetDatasetInspector.Dimensionality.TWO_D, UnetDatasetInspector.inspectPairedDataset(root));
+        assertEquals(Dimensionality.TWO_D, prepare(root, "channel-last-mask").getDimensionality());
+    }
+
+    @Test
+    public void unetDefersAmbiguousPageCountsButDropsKnownSpatialMismatches() throws Exception {
+        File root = temporaryFolder.newFolder("ambiguous-unet");
+        writeVolume(new File(root, "images/sample.tif").toPath(), 8, 8, 3, 1);
+        writeImage(new File(root, "masks/sample_mask.png").toPath(), 8, 8, 1);
+        assertEquals(UnetDatasetInspector.Dimensionality.UNKNOWN, UnetDatasetInspector.inspectPairedDataset(root));
+        assertEquals(Dimensionality.UNKNOWN, prepare(root, "ambiguous").getDimensionality());
+
+        File mismatch = temporaryFolder.newFolder("explicit-unet-mismatch");
+        writeVolume(new File(mismatch, "images/bad.tif").toPath(), 8, 8, 3, 1,
+                "{\"shape\":[3,8,8],\"axes\":\"ZYX\"}");
+        writeImage(new File(mismatch, "masks/bad_mask.png").toPath(), 8, 8, 1);
+        writePair(new File(mismatch, "images"), new File(mismatch, "masks"), "good", "good_mask");
+        PreparedDataset prepared = prepare(mismatch, "mismatch");
+        assertEquals(Dimensionality.TWO_D, prepared.getDimensionality());
+        assertEquals(1, countFiles(new File(prepared.getDatasetRoot(), "train/images")));
+        assertEquals(UnetDatasetInspector.Dimensionality.TWO_D, UnetDatasetInspector.inspectPairedDataset(mismatch));
+    }
+
+    @Test
+    public void unetReviewFindsVolumeAfterFirst48ImagesAndIgnoresUnpairedNestedFiles() throws Exception {
+        File root = temporaryFolder.newFolder("many-unet-planes");
+        for (int i = 0; i < 50; i++) {
+            writePair(new File(root, "images"), new File(root, "masks"), "a" + i, "a" + i + "_mask");
+        }
+        writeVolume(new File(root, "images/nested/unused.tif").toPath(), 8, 8, 3, 1);
+        assertEquals(UnetDatasetInspector.Dimensionality.TWO_D, UnetDatasetInspector.inspectPairedDataset(root));
+        writeVolume(new File(root, "images/z.tif").toPath(), 8, 8, 3, 1);
+        writeVolume(new File(root, "masks/z_mask.tif").toPath(), 8, 8, 3, 1);
+        assertEquals(UnetDatasetInspector.Dimensionality.MIXED, UnetDatasetInspector.inspectPairedDataset(root));
+    }
+
+    @Test
+    public void unetDefersUnreadableAxesMetadataToPython() throws Exception {
+        File root = temporaryFolder.newFolder("invalid-axes-json");
+        writeVolume(new File(root, "images/sample.tif").toPath(), 8, 8, 3, 1, "{invalid json}");
+        writeVolume(new File(root, "masks/sample_mask.tif").toPath(), 8, 8, 3, 1);
+        assertEquals(UnetDatasetInspector.Dimensionality.UNKNOWN, UnetDatasetInspector.inspectPairedDataset(root));
+        assertEquals(Dimensionality.UNKNOWN, prepare(root, "invalid-metadata").getDimensionality());
+    }
+
     private PreparedDataset prepare(File root, String modelName) throws IOException {
         File models = new File(temporaryFolder.getRoot(), "models/unet");
         return SegmentationDatasetPreparer.prepare(root.getAbsolutePath(), modelName, models.getAbsolutePath(),
@@ -318,6 +532,11 @@ public class SegmentationDatasetPreparerTest {
     }
 
     private static void writeVolume(Path path, int width, int height, int depth, int value) throws IOException {
+        writeVolume(path, width, height, depth, value, null);
+    }
+
+    private static void writeVolume(Path path, int width, int height, int depth, int value, String description)
+            throws IOException {
         Files.createDirectories(path.getParent());
         Iterator<ImageWriter> writers = ImageIO.getImageWritersByFormatName("TIFF");
         if (!writers.hasNext()) {
@@ -334,7 +553,16 @@ public class SegmentationDatasetPreparerTest {
                         image.getRaster().setSample(x, y, 0, value + z);
                     }
                 }
-                writer.writeToSequence(new IIOImage(image, null, null), null);
+                IIOMetadata metadata = writer.getDefaultImageMetadata(
+                        new ImageTypeSpecifier(image), writer.getDefaultWriteParam());
+                if (z == 0 && description != null) {
+                    TIFFDirectory directory = TIFFDirectory.createFromMetadata(metadata);
+                    directory.addTIFFField(new TIFFField(BaselineTIFFTagSet.getInstance()
+                            .getTag(BaselineTIFFTagSet.TAG_IMAGE_DESCRIPTION), TIFFTag.TIFF_ASCII,
+                            1, new String[] {description}));
+                    metadata = directory.getAsMetadata();
+                }
+                writer.writeToSequence(new IIOImage(image, null, metadata), null);
             }
             writer.endWriteSequence();
         } finally {

@@ -36,6 +36,7 @@ public final class DenoisingOptionsPanel {
     private final JLabel effortLabel = new JLabel("Effort");
     private final JRadioButton quick = new JRadioButton(DenoisingEffort.QUICK.toString());
     private final JRadioButton balanced = new JRadioButton(DenoisingEffort.BALANCED.toString());
+    private final JRadioButton balancedHigh = new JRadioButton(DenoisingEffort.BALANCED_HIGH.toString());
     private final JRadioButton thorough = new JRadioButton(DenoisingEffort.THOROUGH.toString());
     private final JPanel effortRow = new EffortRow();
 
@@ -43,6 +44,7 @@ public final class DenoisingOptionsPanel {
     private final JComboBox<DenoisingNoiseStructure> noise =
             new JComboBox<DenoisingNoiseStructure>(DenoisingNoiseStructure.values());
     private final JPanel noiseRow;
+    private boolean interactionEnabled = true;
 
     public DenoisingOptionsPanel(JComponent acceleration) {
         noiseRow = new NoiseRow(acceleration);
@@ -59,8 +61,14 @@ public final class DenoisingOptionsPanel {
         ButtonGroup effortGroup = new ButtonGroup();
         effortGroup.add(quick);
         effortGroup.add(balanced);
+        effortGroup.add(balancedHigh);
         effortGroup.add(thorough);
-        method.addActionListener(e -> updateNoiseState());
+        balancedHigh.setToolTipText("Earlier, larger ZS-N2N Balanced preset, retained for comparison.");
+        method.addActionListener(e -> {
+            updateEffortState();
+            updateNoiseState();
+        });
+        updateEffortState();
         updateNoiseState();
     }
 
@@ -76,6 +84,8 @@ public final class DenoisingOptionsPanel {
 
     public DenoisingEffort getEffort() {
         if (quick.isSelected()) return DenoisingEffort.QUICK;
+        if (balancedHigh.isSelected() && getMethod() == DenoisingMethod.ADAPTIVE)
+            return DenoisingEffort.BALANCED_HIGH;
         if (thorough.isSelected()) return DenoisingEffort.THOROUGH;
         return DenoisingEffort.BALANCED;
     }
@@ -83,25 +93,37 @@ public final class DenoisingOptionsPanel {
     public void addEffortActionListener(ActionListener listener) {
         quick.addActionListener(listener);
         balanced.addActionListener(listener);
+        balancedHigh.addActionListener(listener);
         thorough.addActionListener(listener);
     }
 
     public void updateNoiseState() {
-        boolean enabled = getMethod() == DenoisingMethod.CORRELATED;
+        boolean enabled = interactionEnabled && getMethod() == DenoisingMethod.CORRELATED;
         noiseLabel.setEnabled(enabled);
         noise.setEnabled(enabled);
     }
 
     public void setInteractionEnabled(boolean enabled) {
+        interactionEnabled = enabled;
         methodLabel.setEnabled(enabled);
         method.setEnabled(enabled);
         effortLabel.setEnabled(enabled);
         quick.setEnabled(enabled);
         balanced.setEnabled(enabled);
+        balancedHigh.setEnabled(enabled && getMethod() == DenoisingMethod.ADAPTIVE);
         thorough.setEnabled(enabled);
         boolean noiseEnabled = enabled && getMethod() == DenoisingMethod.CORRELATED;
         noiseLabel.setEnabled(noiseEnabled);
         noise.setEnabled(noiseEnabled);
+    }
+
+    private void updateEffortState() {
+        boolean extended = getMethod() == DenoisingMethod.ADAPTIVE;
+        if (!extended && balancedHigh.isSelected()) balanced.setSelected(true);
+        balancedHigh.setVisible(extended);
+        balancedHigh.setEnabled(extended && interactionEnabled);
+        effortRow.revalidate();
+        effortRow.repaint();
     }
 
     private static final class LabelComboRow extends JPanel {
@@ -160,10 +182,12 @@ public final class DenoisingOptionsPanel {
             YoloUiUtils.alignLabel(effortLabel);
             quick.setOpaque(false);
             balanced.setOpaque(false);
+            balancedHigh.setOpaque(false);
             thorough.setOpaque(false);
             add(effortLabel);
             add(quick);
             add(balanced);
+            add(balancedHigh);
             add(thorough);
         }
 
@@ -171,18 +195,20 @@ public final class DenoisingOptionsPanel {
         public void doLayout() {
             int w = Math.max(0, getWidth());
             int h = Math.max(0, getHeight());
-            int quarter = Math.max(1, w / 4);
-            effortLabel.setBounds(0, 0, quarter, h);
-            JRadioButton[] options = {quick, balanced, thorough};
+            JRadioButton[] options = balancedHigh.isVisible()
+                    ? new JRadioButton[] {quick, balanced, balancedHigh, thorough}
+                    : new JRadioButton[] {quick, balanced, thorough};
+            int cell = Math.max(1, w / (options.length + 1));
+            effortLabel.setBounds(0, 0, cell, h);
             for (int i = 0; i < options.length; i++) {
-                int start = quarter * (i + 1);
-                int end = i == options.length - 1 ? w : quarter * (i + 2);
+                int start = cell * (i + 1);
+                int end = i == options.length - 1 ? w : cell * (i + 2);
                 options[i].setBounds(start + OPTION_PAD, 0,
                         Math.max(1, end - start - 2 * OPTION_PAD), h);
                 YoloUiUtils.applyResponsiveText(options[i],
                         options[i].getWidth() - 4, h);
             }
-            YoloUiUtils.applyResponsiveText(effortLabel, quarter - 4, h);
+            YoloUiUtils.applyResponsiveText(effortLabel, cell - 4, h);
         }
     }
 

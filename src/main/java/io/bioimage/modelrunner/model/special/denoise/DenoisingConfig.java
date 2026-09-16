@@ -36,7 +36,10 @@ public final class DenoisingConfig {
 
     private DenoisingConfig(Builder builder) {
         method = normalize(builder.method, "noise2fast");
-        effort = normalize(builder.effort, "balanced");
+        effort = normalize(builder.effort, "balanced").replace('-', '_');
+        if ("balanced_high".equals(effort) && !"zs_n2n".equals(method)) {
+            throw new IllegalArgumentException("Balanced-high effort is only supported for ZS-N2N.");
+        }
         device = normalizeDevice(builder.device);
         dimensions = normalize(builder.dimensions, "auto");
         axes = normalize(builder.axes, "yx");
@@ -86,8 +89,9 @@ public final class DenoisingConfig {
         config.put("seed", seed);
         Map<String, Object> normalization = new LinkedHashMap<String, Object>();
         normalization.put("mode", "percentile");
-        normalization.put("low", 0.1d);
-        normalization.put("high", 99.9d);
+        boolean zsN2N = "zs_n2n".equals(method);
+        normalization.put("low", zsN2N ? 0d : 0.1d);
+        normalization.put("high", zsN2N ? 100d : 99.9d);
         normalization.put("per_channel", true);
         normalization.put("clip", true);
         config.put("normalization", normalization);

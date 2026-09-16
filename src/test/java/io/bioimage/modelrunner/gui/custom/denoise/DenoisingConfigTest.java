@@ -44,4 +44,47 @@ public class DenoisingConfigTest {
         assertEquals("horizontal",
                 ((Map<?, ?>) config.toMap().get("method_config")).get("noise_structure"));
     }
+
+    @Test
+    public void forwardsAllZsN2NEffortsWithoutDuplicatingPythonPresets() {
+        for (DenoisingEffort effort : DenoisingEffort.values()) {
+            for (String device : new String[] {"cpu", "cuda", "mps"}) {
+                DenoisingConfig config = DenoisingConfig.builder()
+                        .method("zs_n2n").effort(effort.getId()).device(device).axes("xyc").build();
+                Map<String, Object> request = config.toMap();
+                assertEquals("zs_n2n", request.get("method"));
+                assertEquals(effort.getId(), request.get("effort"));
+                assertEquals(device, request.get("device"));
+                assertEquals("xyc", request.get("axes"));
+                assertTrue(((Map<?, ?>) request.get("method_config")).isEmpty());
+                Map<?, ?> normalization = (Map<?, ?>) request.get("normalization");
+                assertEquals(0d, normalization.get("low"));
+                assertEquals(100d, normalization.get("high"));
+            }
+        }
+    }
+
+    @Test
+    public void normalizesBalancedHighId() {
+        assertEquals("balanced_high", DenoisingConfig.builder()
+                .method("ZS_N2N").effort(" Balanced-High ").build().getEffort());
+    }
+
+    @Test
+    public void preservesOtherMethodsNormalization() {
+        for (String method : new String[] {"noise2fast", "structn2v", "bm3d_bm4d"}) {
+            Map<?, ?> normalization = (Map<?, ?>) DenoisingConfig.builder()
+                    .method(method).build().toMap().get("normalization");
+            assertEquals(0.1d, normalization.get("low"));
+            assertEquals(99.9d, normalization.get("high"));
+        }
+    }
+
+    @Test
+    public void rejectsBalancedHighForOtherMethods() {
+        for (String method : new String[] {"noise2fast", "structn2v", "bm3d_bm4d"}) {
+            org.junit.Assert.assertThrows(IllegalArgumentException.class,
+                    () -> DenoisingConfig.builder().method(method).effort("balanced_high").build());
+        }
+    }
 }

@@ -1796,7 +1796,7 @@ public final class StarDist extends DLModelPytorchProtected {
 		String safeImageChannels = imageChannels == null || imageChannels.trim().isEmpty()
 				? "grayscale" : imageChannels.trim();
 		String normalizedDevice = normalizeDevice(device);
-		return ""
+		String code = ""
 				+ "import contextlib, json, os, random, sys, xml.etree.ElementTree as ET" + nl
 				+ "from pathlib import Path" + nl
 				+ "import numpy as np" + nl
@@ -1828,11 +1828,8 @@ public final class StarDist extends DLModelPytorchProtected {
 				+ "  from tensorflow.keras.callbacks import Callback" + nl
 				+ "except Exception:" + nl
 				+ "  from keras.callbacks import Callback" + nl
-				+ "try:" + nl
-				+ "  from tifffile import TiffFile, imread" + nl
-				+ "except Exception:" + nl
-				+ "  TiffFile = None" + nl
-				+ "  from imageio.v3 import imread" + nl
+				+ "from PIL import Image" + nl
+				+ "from tifffile import TiffFile, TiffFileError" + nl
 				+ "data_dir = r'" + TrainingCodeUtils.py(new File(dataDir).getAbsolutePath()) + "'" + nl
 				+ gtDirCode
 				+ "output_dir = Path(r'" + TrainingCodeUtils.py(new File(outputDir).getAbsolutePath()) + "')" + nl
@@ -1877,7 +1874,7 @@ public final class StarDist extends DLModelPytorchProtected {
 				+ "  with open(tmp_path, 'wb') as f:" + nl
 				+ "    np.save(f, array)" + nl
 				+ "  os.replace(tmp_path, path)" + nl
-				+ "IMAGE_EXTS = {'.tif', '.tiff', '.png', '.jpg', '.jpeg'}" + nl
+				+ "IMAGE_EXTS = {'.tif', '.tiff', '.png', '.jpg', '.jpeg', '.bmp'}" + nl
 				+ "MASK_DIRS = ('masks', 'mask', 'labels', 'label', 'gt')" + nl
 				+ "IMAGE_DIRS = ('images', 'image', 'imgs', 'img', 'data')" + nl
 				+ "def _files(folder):" + nl
@@ -1903,13 +1900,63 @@ public final class StarDist extends DLModelPytorchProtected {
 				+ "      out.append((img, masks[key]))" + nl
 				+ "  return out" + nl
 				+ "def _split_pairs(folder):" + nl
-				+ "  return _pairs(_subdir(folder, IMAGE_DIRS), _subdir(folder, MASK_DIRS))" + nl
-				+ "def _read_array(path):" + nl
-				+ "  if TiffFile is not None and path.suffix.lower() in ('.tif', '.tiff'):" + nl
+				+ "  return _pairs(_subdir(folder, IMAGE_DIRS), _subdir(folder, MASK_DIRS))" + nl;
+		return code + "_reader_formats = {'.tif': 'TIFF', '.tiff': 'TIFF', '.png': 'PNG', '.jpg': 'JPEG', '.jpeg': 'JPEG', '.bmp': 'BMP'}" + nl
+				+ "_reader_preferences, _image_ome_metadata = {}, {}" + nl
+				+ "_reader_notices = set()" + nl
+				+ "def _signature_format(path):" + nl
+				+ "  with path.open('rb') as stream:" + nl
+				+ "    header = stream.read(8)" + nl
+				+ "  if header[:4] in (b'II\\x2a\\x00', b'MM\\x00\\x2a', b'II\\x2b\\x00', b'MM\\x00\\x2b'):" + nl
+				+ "    return 'TIFF'" + nl
+				+ "  if header == b'\\x89PNG\\r\\n\\x1a\\n':" + nl
+				+ "    return 'PNG'" + nl
+				+ "  if header[:3] == b'\\xff\\xd8\\xff':" + nl
+				+ "    return 'JPEG'" + nl
+				+ "  if header[:2] == b'BM':" + nl
+				+ "    return 'BMP'" + nl
+				+ "  return None" + nl
+				+ "def _read_format(path, file_format, is_mask):" + nl
+				+ "  if is_mask and file_format == 'JPEG':" + nl
+				+ "    raise ValueError('JPEG cannot be used as an instance-label mask')" + nl
+				+ "  if file_format == 'TIFF':" + nl
 				+ "    with TiffFile(str(path)) as tif:" + nl
+				+ "      if len(tif.series) != 1:" + nl
+				+ "        raise ValueError('Multiple TIFF series; export one image series for training')" + nl
 				+ "      series = tif.series[0]" + nl
-				+ "      return np.asarray(series.asarray()), str(series.axes).upper()" + nl
-				+ "  return np.asarray(imread(str(path))), None" + nl
+				+ "      array = np.asarray(series.asarray())" + nl
+				+ "      if n_dim == 3 and not is_mask:" + nl
+				+ "        _image_ome_metadata[str(path)] = tif.ome_metadata" + nl
+				+ "      return array, str(series.axes).upper()" + nl
+				+ "  with Image.open(path, formats=[file_format]) as image:" + nl
+				+ "    if getattr(image, 'n_frames', 1) != 1:" + nl
+				+ "      raise ValueError('Multiple raster frames; export a TIFF stack with explicit axes')" + nl
+				+ "    if image.mode == 'P' and not is_mask:" + nl
+				+ "      image = image.convert('RGB')" + nl
+				+ "    array = np.asarray(image)" + nl
+				+ "    return array, 'YX' if array.ndim == 2 else 'YXC'" + nl
+				+ "def _read_array(path, is_mask=False):" + nl
+				+ "  path = Path(path).absolute()" + nl
+				+ "  key = (str(path.parent), path.suffix.lower(), is_mask)" + nl
+				+ "  expected = _reader_preferences.get(key, _reader_formats.get(key[1]))" + nl
+				+ "  if expected is None:" + nl
+				+ "    raise ValueError('Unsupported image extension: ' + str(path))" + nl
+				+ "  try:" + nl
+				+ "    return _read_format(path, expected, is_mask)" + nl
+				+ "  except (OSError, ValueError, TiffFileError) as error:" + nl
+				+ "    actual = _signature_format(path)" + nl
+				+ "    if actual is None or actual == expected:" + nl
+				+ "      raise OSError('Cannot read %s as %s: %s' % (path, expected, error)) from error" + nl
+				+ "    try:" + nl
+				+ "      result = _read_format(path, actual, is_mask)" + nl
+				+ "    except (OSError, ValueError, TiffFileError) as format_error:" + nl
+				+ "      raise OSError('Cannot read %s as %s: %s' % (path, actual, format_error)) from format_error" + nl
+				+ "    _reader_preferences[key] = actual" + nl
+				+ "    notice = (key, actual)" + nl
+				+ "    if notice not in _reader_notices:" + nl
+				+ "      _reader_notices.add(notice)" + nl
+				+ "      _task_update(message='Detected %s data in %s files under %s; using the %s reader (each file is still validated).' % (actual, key[1], path.parent, actual), info={'type': 'warning', 'path': str(path)})" + nl
+				+ "    return result" + nl
 				+ "def _canonical_array(array, source_axes, is_mask):" + nl
 				+ "  array = np.asarray(array)" + nl
 				+ "  axes = list((source_axes or '').upper().replace('S', 'C'))" + nl
@@ -1940,11 +1987,10 @@ public final class StarDist extends DLModelPytorchProtected {
 				+ "  array = np.transpose(array, [axes.index(axis) for axis in target])" + nl
 				+ "  return array" + nl
 				+ "def _physical_spacing(path):" + nl
-				+ "  if n_dim != 3 or TiffFile is None or path.suffix.lower() not in ('.tif', '.tiff'):" + nl
+				+ "  if n_dim != 3:" + nl
 				+ "    return None" + nl
 				+ "  try:" + nl
-				+ "    with TiffFile(str(path)) as tif:" + nl
-				+ "      xml = tif.ome_metadata" + nl
+				+ "    xml = _image_ome_metadata.get(str(Path(path).absolute()))" + nl
 				+ "    if not xml:" + nl
 				+ "      return None" + nl
 				+ "    pixels = next(element for element in ET.fromstring(xml).iter() if element.tag.endswith('Pixels'))" + nl
@@ -1965,7 +2011,7 @@ public final class StarDist extends DLModelPytorchProtected {
 				+ "  n_channels = int(config.get('n_channel_in', 1))" + nl
 				+ "  for img_path, mask_path in pairs:" + nl
 				+ "    raw_x, x_axes = _read_array(img_path)" + nl
-				+ "    raw_y, y_axes = _read_array(mask_path)" + nl
+				+ "    raw_y, y_axes = _read_array(mask_path, is_mask=True)" + nl
 				+ "    x = _canonical_array(raw_x, x_axes, False)" + nl
 				+ "    y = _canonical_array(raw_y, y_axes, True).astype(np.int32, copy=False)" + nl
 				+ "    if n_channels == 1:" + nl

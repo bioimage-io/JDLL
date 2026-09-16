@@ -34,7 +34,6 @@ import io.bioimage.modelrunner.gui.custom.yolo.YoloModelSelectionEntry;
 public class UnetTrainPanel extends BaseTrainPanel {
 
     private static final long serialVersionUID = 519461882197793765L;
-    private boolean volumeArchitectureMode;
     private String modelsDir;
     private UnetDatasetInspector.Dimensionality datasetDimensionality = UnetDatasetInspector.Dimensionality.UNKNOWN;
     private Predicate<String> modelPathValidator = UnetModelRegistry::isModelPath;
@@ -100,7 +99,10 @@ public class UnetTrainPanel extends BaseTrainPanel {
      */
     @Override
     protected boolean isValidFineTuneBaseModel() {
-        return modelPathValidator.test(getSelectedBaseModelValue());
+        String path = getSelectedBaseModelValue();
+        return modelPathValidator.test(path) && (fixedScratchArchitectures != null
+                || UnetModelRegistry.isCompatibleWithDataset(
+                        UnetModelRegistry.architectureForModelPath(path), datasetDimensionality));
     }
 
     /**
@@ -122,10 +124,9 @@ public class UnetTrainPanel extends BaseTrainPanel {
         if (fixedScratchArchitectures != null) {
             return;
         }
-        boolean previousVolume = volumeArchitectureMode;
+        boolean previousVolume = datasetDimensionality.hasVolumes();
         datasetDimensionality = dimensionality == null ? UnetDatasetInspector.Dimensionality.UNKNOWN : dimensionality;
-        boolean volume = dimensionality == UnetDatasetInspector.Dimensionality.THREE_D;
-        volumeArchitectureMode = volume;
+        boolean volume = datasetDimensionality.hasVolumes();
         refreshScratchArchitectures(volume != previousVolume);
         scratchArchitectureComboBox.setToolTipText(volume
                 ? "Fast 3D trains with neighboring planes. True 3D trains on full volumetric patches."
@@ -177,13 +178,11 @@ public class UnetTrainPanel extends BaseTrainPanel {
             setScratchArchitectures(fixedScratchArchitectures);
             return;
         }
-        boolean volume = datasetDimensionality == UnetDatasetInspector.Dimensionality.THREE_D;
-        boolean reviewed = datasetDimensionality != UnetDatasetInspector.Dimensionality.UNKNOWN;
+        boolean volume = datasetDimensionality.hasVolumes();
         String modelName = getModelNameField().getText();
-        String custom = reviewed ? UnetModelRegistry.customScratchConfigValue(modelsDir, modelName, volume) : null;
-        setScratchArchitectures(volume
-                ? UnetModelRegistry.buildVolumeScratchArchitectureEntries(modelsDir, modelName, reviewed)
-                : UnetModelRegistry.buildPlanarScratchArchitectureEntries(modelsDir, modelName, reviewed), custom);
+        String custom = UnetModelRegistry.customScratchConfigValue(modelsDir, modelName, datasetDimensionality);
+        setScratchArchitectures(UnetModelRegistry.buildScratchArchitectureEntries(
+                modelsDir, modelName, datasetDimensionality), custom);
         if (custom == null && selectDefault) {
             selectScratchArchitectureValue(UnetModelRegistry.defaultScratchArchitecture(volume));
         }

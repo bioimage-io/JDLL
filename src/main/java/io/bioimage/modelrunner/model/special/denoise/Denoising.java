@@ -124,6 +124,7 @@ public final class Denoising extends DLModelPytorchProtected {
                 + addSourcePathCode()
                 + "from jdll_denoise import denoise as jdll_denoise_run" + nl
                 + "from jdll_denoise import preview as jdll_denoise_preview" + nl
+                + backendCompatibilityCode(config)
                 + "task.export(jdll_denoise_run=jdll_denoise_run)" + nl
                 + "task.export(jdll_denoise_preview=jdll_denoise_preview)" + nl;
     }
@@ -146,17 +147,7 @@ public final class Denoising extends DLModelPytorchProtected {
             code.append(codeToConvertShmaToPython(shma, names.get(i)));
             inShmaList.add(shma);
         }
-        String configJson = new Gson().toJson(config.toMap());
-        code.append("_jdll_denoise_config = __import__('json').loads(r''' ")
-                .append(TrainingCodeUtils.py(configJson)).append(" ''')").append(nl);
-        code.append("def _jdll_denoise_callback(event):").append(nl);
-        code.append("  task.update(message=str(event.get('message', '')), current=event.get('current'), ")
-                .append("maximum=event.get('maximum'), info=event)").append(nl);
-        code.append("  return True").append(nl);
-        code.append("_jdll_denoise_result = ")
-                .append(preview ? "jdll_denoise_preview" : "jdll_denoise_run")
-                .append("(").append(input).append(", _jdll_denoise_config, callbacks=_jdll_denoise_callback)")
-                .append(nl);
+        code.append(denoiseCallCode(input, config, preview));
         code.append("_jdll_denoise_metadata = dict(_jdll_denoise_result.get('metadata', {}))").append(nl);
         code.append("task.update(message='Denoising result ready', info={'type': 'result_metadata', ")
                 .append("'metadata': _jdll_denoise_metadata})").append(nl);
@@ -165,6 +156,32 @@ public final class Denoising extends DLModelPytorchProtected {
                 .append(DTYPES_KEY).append(", ").append(DIMS_KEY).append(")").append(nl);
         code.append(taskOutputsCode());
         return code.toString();
+    }
+
+    static String backendCompatibilityCode(DenoisingConfig config) {
+        if (!"zs_n2n".equals(config.getMethod())) return "";
+        String nl = System.lineSeparator();
+        // Older packages accept Quick/Balanced but resolve a different architecture.
+        return "from jdll_denoise import capabilities as _jdll_denoise_capabilities" + nl
+                + "_jdll_zs_capability = _jdll_denoise_capabilities().get('methods', {}).get('zs_n2n', {})" + nl
+                + "_jdll_zs_version = _jdll_zs_capability.get('effort_presets_version', 0)" + nl
+                + "if (not isinstance(_jdll_zs_version, int) or _jdll_zs_version < 1 or '"
+                + TrainingCodeUtils.py(config.getEffort()) + "' not in _jdll_zs_capability.get('efforts', [])):" + nl
+                + "  raise RuntimeError('Update jdll-denoise: ZS-N2N requires effort presets version 1 "
+                + "with Quick, Balanced, Balanced-high and Thorough support.')" + nl;
+    }
+
+    static String denoiseCallCode(String input, DenoisingConfig config, boolean preview) {
+        String nl = System.lineSeparator();
+        String configJson = new Gson().toJson(config.toMap());
+        return "_jdll_denoise_config = __import__('json').loads(r''' "
+                + TrainingCodeUtils.py(configJson) + " ''')" + nl
+                + "def _jdll_denoise_callback(event):" + nl
+                + "  task.update(message=str(event.get('message', '')), current=event.get('current'), "
+                + "maximum=event.get('maximum'), info=event)" + nl
+                + "  return True" + nl
+                + "_jdll_denoise_result = " + (preview ? "jdll_denoise_preview" : "jdll_denoise_run")
+                + "(" + input + ", _jdll_denoise_config, callbacks=_jdll_denoise_callback)" + nl;
     }
 
     @Override

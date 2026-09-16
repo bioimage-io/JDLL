@@ -19,273 +19,47 @@
  */
 package io.bioimage.modelrunner.gui.custom.gui;
 
-import javax.swing.JButton;
-import javax.swing.JCheckBox;
-import javax.swing.JComboBox;
-import javax.swing.JFrame;
-import javax.swing.JLabel;
-import javax.swing.JPanel;
-import javax.swing.SwingUtilities;
-import javax.swing.event.PopupMenuEvent;
-import javax.swing.event.PopupMenuListener;
+import io.bioimage.modelrunner.gui.adapter.GuiAdapter;
+import io.bioimage.modelrunner.gui.custom.cellpose.CellposeInferencePanel;
+import io.bioimage.modelrunner.gui.custom.yolo.YoloGUI;
 
-import java.awt.Dimension;
-import java.awt.event.ComponentAdapter;
-import java.awt.event.ComponentEvent;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-
-import io.bioimage.modelrunner.model.python.DLModelPytorchProtected;
-import io.bioimage.modelrunner.system.PlatformDetection;
-
-public class CellposeGUI extends JPanel {
+/**
+ * Standard inference-only Cellpose GUI.
+ */
+public class CellposeGUI extends YoloGUI {
 
     private static final long serialVersionUID = 5381352117710530216L;
 
-    protected JLabel modelLabel, customLabel, cytoplasmLabel, nucleiLabel, diameterLabel;
-	protected JComboBox<String> modelComboBox;
-	protected PlaceholderTextField customModelPathField;
-    protected JButton browseButton;
-	    protected IntegerTextField diameterField;
-	    protected JComboBox<String> cytoCbox, nucleiCbox;
-	    protected JCheckBox check, accelerationCheckBox;
-	    protected FooterPanel footer;
-
-    protected final String CUSTOM_STR = "your custom model";
-	    protected static final List<String> VAR_NAMES = Arrays.asList(new String[] {
-			"Select a model:", "Custom Model Path:", "Cytoplasm Color:", "Nuclei Color:", "Diameter:", "Hardware acceleration", "Display all outputs"
-	    });
-
-    public static final String[] RGB_LIST = new String[] {"red", "blue", "green"};
-    public static final String[] GRAYSCALE_LIST = new String[] {"gray"};
-    public static final String[] ALL_LIST = new String[] {"gray", "red", "blue", "green"};
-    public static final HashMap<String, Integer> CHANNEL_MAP;
-    static {
-	CHANNEL_MAP = new HashMap<String, Integer>();
-	CHANNEL_MAP.put("red", 1);
-	CHANNEL_MAP.put("green", 2);
-	CHANNEL_MAP.put("blue", 3);
-	CHANNEL_MAP.put("gray", 0);
-    }
-    private static final Dimension MIN_D = new Dimension(20, 40);
+    protected final CellposeInferencePanel cellposeInferencePanel;
 
     /**
-     * Creates a new CellposeGUI.
+     * Creates a standalone Cellpose GUI.
      */
     protected CellposeGUI() {
-        setLayout(null);
-
-        // --- Model Selection Panel ---
-        modelLabel = new JLabel(VAR_NAMES.get(0));
-        String[] models = {"cyto3", "cyto2", "cyto", "nuclei", CUSTOM_STR};
-        modelComboBox = new JComboBox<String>(models);
-
-        // Panel for custom model file path
-        customLabel = new JLabel(VAR_NAMES.get(1));
-        customLabel.setEnabled(false);
-        customModelPathField = new PlaceholderTextField("path to your custom model");
-        customModelPathField.setEnabled(false);
-        browseButton = new JButton("Browse");
-        browseButton.setEnabled(false);
-
-        // Channel selection
-        cytoplasmLabel = new JLabel(VAR_NAMES.get(2));
-        nucleiLabel = new JLabel(VAR_NAMES.get(3));
-        cytoCbox = new JComboBox<String>(RGB_LIST);
-        nucleiCbox = new JComboBox<String>(RGB_LIST);
-	        diameterLabel = new JLabel(VAR_NAMES.get(4));
-	        diameterField = new IntegerTextField("optional");
-	        accelerationCheckBox = new JCheckBox(accelerationName() + " acceleration");
-	        accelerationCheckBox.setSelected(false);
-	        configureAccelerationAvailability();
-	        check = new JCheckBox(VAR_NAMES.get(6));
-	        check.setSelected(false);
-
-        // --- Buttons Panel ---
-        footer = new FooterPanel();
-        add(footer);
-
-		add(modelLabel);
-        add(modelComboBox);
-        add(customLabel);
-        add(customModelPathField);
-        add(browseButton);
-        add(cytoplasmLabel);
-        add(cytoCbox);
-        add(nucleiLabel);
-	        add(nucleiCbox);
-	        add(diameterLabel);
-	        add(diameterField);
-	        add(accelerationCheckBox);
-	        add(check);
-
-        this.setMinimumSize(MIN_D);
-
-        organiseComponents();
-
-        // Enable when custom selected
-        modelComboBox.addPopupMenuListener(new PopupMenuListener() {
-            /**
-             * Executes popup menu will become visible.
-             *
-             * @param e the e parameter.
-             */
-            @Override
-            public void popupMenuWillBecomeVisible(PopupMenuEvent e) {}
-            /**
-             * Executes popup menu canceled.
-             *
-             * @param e the e parameter.
-             */
-            @Override
-            public void popupMenuCanceled(PopupMenuEvent e) {}
-
-            /**
-             * Executes popup menu will become invisible.
-             *
-             * @param e the e parameter.
-             */
-            @Override
-            public void popupMenuWillBecomeInvisible(PopupMenuEvent e) {
-	boolean enabled = modelComboBox.getSelectedItem().equals(CUSTOM_STR);
-                customLabel.setEnabled(enabled);
-                customModelPathField.setEnabled(enabled);
-                browseButton.setEnabled(enabled);
-            }
-
-        });
-
+        this(null);
     }
 
-    private void organiseComponents() {
-	addComponentListener(new ComponentAdapter() {
-            /**
-             * Executes component resized.
-             *
-             * @param e the e parameter.
-             */
-            @Override
-            public void componentResized(ComponentEvent e) {
-                int rawW = getWidth();
-                int rawH = getHeight();
-                int inset = 5;
-                int nParams = VAR_NAMES.size();
-                int nRows = nParams + 1;
-                int rowH = (rawH - (inset * nRows)) / nRows;
-
-                int y = inset;
-                int modelLabelW = (rawW - inset * 3) / 5;
-                modelLabel.setBounds(inset, y, modelLabelW, rowH);
-                int cboxW = rawW - inset * 3 - modelLabelW;
-                modelComboBox.setBounds(inset * 2 + modelLabelW, y, cboxW, rowH);
-                y += (inset + rowH);
-                int browseButtonW = modelLabelW / 1;
-                int textFieldW = rawW - inset * 4 - modelLabelW - browseButtonW;
-                customLabel.setBounds(inset, y, modelLabelW, rowH);
-                customModelPathField.setBounds(inset * 2 + modelLabelW, y, textFieldW, rowH);
-                browseButton.setBounds(inset * 3 + modelLabelW + textFieldW, y, browseButtonW, rowH);
-                y += (inset + rowH);
-                cytoplasmLabel.setBounds(inset, y, modelLabelW, rowH);
-                cytoCbox.setBounds(inset * 2 + modelLabelW, y, cboxW, rowH);
-                y += (inset + rowH);
-                nucleiLabel.setBounds(inset, y, modelLabelW, rowH);
-                nucleiCbox.setBounds(inset * 2 + modelLabelW, y, cboxW, rowH);
-                y += (inset + rowH);
-	                diameterLabel.setBounds(inset, y, modelLabelW, rowH);
-	                diameterField.setBounds(inset * 2 + modelLabelW, y, cboxW, rowH);
-	                y += (inset + rowH);
-	                accelerationCheckBox.setBounds(inset, y, rawW - 2 * inset, rowH);
-	                y += (inset + rowH);
-	                check.setBounds(inset, y, rawW - 2 * inset, rowH);
-	                y += (inset + rowH);
-	                footer.setBounds(inset, y, rawW - 2 * inset, rowH);
-            }
-        });
-    }
-
-    // For demonstration purposes: a main method to show the UI in a JFrame.
     /**
-     * Executes main.
+     * Creates a Cellpose GUI for a host application.
      *
-     * @param args the args parameter.
+     * @param adapter the host GUI adapter.
      */
-    public static void main(String[] args) {
-        SwingUtilities.invokeLater(new Runnable() {
-            /**
-             * Executes run.
-             */
-            public void run() {
-                JFrame frame = new JFrame("Cellpose Plugin");
-                frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-                frame.getContentPane().add(new CellposeGUI());
-                frame.pack();
-                frame.setLocationRelativeTo(null);
-                frame.setVisible(true);
-                frame.setSize(60, 100);
-            }
-        });
-	    }
+    protected CellposeGUI(GuiAdapter adapter) {
+        this(adapter, new CellposeInferencePanel());
+    }
 
-	    /**
-	     * Returns the acceleration check box.
-	     *
-	     * @return the acceleration check box.
-	     */
-	    public JCheckBox getAccelerationCheckBox() {
-		return accelerationCheckBox;
-	    }
+    private CellposeGUI(GuiAdapter adapter, CellposeInferencePanel inferencePanel) {
+        super(adapter, "Cellpose", inferencePanel, null);
+        this.cellposeInferencePanel = inferencePanel;
+    }
 
-	    /**
-	     * Returns whether acceleration enabled.
-	     *
-	     * @return true if acceleration enabled; false otherwise.
-	     */
-	    public boolean isAccelerationEnabled() {
-		return accelerationCheckBox.isVisible()
-				&& accelerationCheckBox.isSelected();
-	    }
-
-	    private static String accelerationName() {
-		return isAppleSilicon() ? "MPS" : "CUDA";
-	    }
-
-	    private void configureAccelerationAvailability() {
-		accelerationCheckBox.setEnabled(false);
-		if (isAppleSilicon()) {
-			accelerationCheckBox.setEnabled(true);
-			accelerationCheckBox.setVisible(true);
-			return;
-		}
-		if (PlatformDetection.isMacOS()) {
-			accelerationCheckBox.setVisible(false);
-			return;
-		}
-		accelerationCheckBox.setVisible(true);
-		Thread cudaCheck = new Thread(() -> {
-			boolean cudaAvailable = false;
-			try {
-				cudaAvailable = DLModelPytorchProtected.resolvePytorchEnv()
-						.getSelectedEnvironment()
-						.toLowerCase()
-						.contains("cuda");
-			} catch (Exception e) {
-				cudaAvailable = false;
-			}
-			final boolean enabled = cudaAvailable;
-			SwingUtilities.invokeLater(() -> {
-				accelerationCheckBox.setEnabled(enabled);
-				accelerationCheckBox.setSelected(false);
-				accelerationCheckBox.repaint();
-			});
-		}, "jdll-cellpose-cuda-compatibility-check");
-		cudaCheck.setDaemon(true);
-		cudaCheck.start();
-	    }
-
-	    private static boolean isAppleSilicon() {
-		return PlatformDetection.isMacOS()
-				&& (PlatformDetection.ARCH_ARM64.equals(PlatformDetection.getArch())
-				|| PlatformDetection.isUsingRosseta());
-	    }
-	}
+    /**
+     * Returns the Cellpose inference panel.
+     *
+     * @return the inference panel.
+     */
+    @Override
+    public CellposeInferencePanel getInferencePanel() {
+        return cellposeInferencePanel;
+    }
+}

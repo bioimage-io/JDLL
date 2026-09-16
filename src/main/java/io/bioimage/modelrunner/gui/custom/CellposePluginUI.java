@@ -20,525 +20,633 @@
 package io.bioimage.modelrunner.gui.custom;
 
 import java.awt.Color;
+import java.awt.Window;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.FocusAdapter;
+import java.awt.event.FocusEvent;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
+import java.awt.geom.Rectangle2D;
+import java.awt.image.BufferedImage;
+import java.awt.image.WritableRaster;
+import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.ExecutionException;
+import java.util.Map;
 import java.util.function.Consumer;
 
-import javax.swing.DefaultComboBoxModel;
+import javax.imageio.ImageIO;
+import javax.imageio.ImageReader;
+import javax.imageio.ImageWriter;
+import javax.imageio.stream.ImageInputStream;
+import javax.imageio.stream.ImageOutputStream;
 import javax.swing.JComponent;
-import javax.swing.JDialog;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JOptionPane;
 import javax.swing.SwingUtilities;
-import javax.swing.event.PopupMenuEvent;
-import javax.swing.event.PopupMenuListener;
 
-import org.apposed.appose.BuildException;
-
-import io.bioimage.modelrunner.exceptions.LoadModelException;
-import io.bioimage.modelrunner.exceptions.RunModelException;
-import io.bioimage.modelrunner.gui.EnvironmentInstaller;
+import io.bioimage.modelrunner.gui.adapter.GuiAdapter;
+import io.bioimage.modelrunner.gui.custom.cellpose.CellposeInferencePanel;
+import io.bioimage.modelrunner.gui.custom.cellpose.CellposeInferenceService;
+import io.bioimage.modelrunner.gui.custom.cellpose.CellposeInstaller;
 import io.bioimage.modelrunner.gui.custom.gui.CellposeGUI;
-import io.bioimage.modelrunner.gui.workers.InstallEnvWorker;
-import io.bioimage.modelrunner.model.special.cellpose.Cellpose;
+import io.bioimage.modelrunner.gui.custom.yolo.YoloImageFiles;
+import io.bioimage.modelrunner.gui.custom.yolo.YoloImageSelectionEntry;
+import io.bioimage.modelrunner.gui.custom.yolo.YoloImageSourcePanel;
 import io.bioimage.modelrunner.tensor.Tensor;
-import net.imglib2.Cursor;
+import net.imglib2.RandomAccess;
 import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.img.array.ArrayImgs;
 import net.imglib2.type.NativeType;
 import net.imglib2.type.numeric.RealType;
-import net.imglib2.util.Cast;
-import net.imglib2.view.Views;
+import net.imglib2.type.numeric.real.FloatType;
 
+/**
+ * Standard Cellpose inference GUI and host integration.
+ */
 public class CellposePluginUI extends CellposeGUI implements ActionListener {
 
-	private static final long serialVersionUID = 5381352117710530216L;
+    private static final long serialVersionUID = 5381352117710530216L;
+    private static final String DEFAULT_PREVIEW_MESSAGE = "Preview will appear here";
+    private static final String SYSTEM_PREVIEW_PROMPT =
+            "Please select an image/folder from the file system";
+    private static final String INVALID_IMAGE_MESSAGE = "Please provide a valid image file";
+    private static final String EMPTY_FOLDER_MESSAGE = "Folder does not contain valid images";
+    private static final Color PREVIEW_ERROR_COLOR = new Color(210, 40, 40);
+    private static final String CELLPOSE_MASK_SUFFIX = "_cellpose_labels";
 
-	private static boolean INSTALLED_ENV = false;
+    public static final String[] RGB_LIST = {"red", "green", "blue"};
+    public static final String[] GRAYSCALE_LIST = {"gray"};
+    public static final String[] ALL_LIST = {"gray", "red", "green", "blue"};
+    public static final Map<String, Integer> CHANNEL_MAP = channelMap();
 
-	private static HashMap<String, Boolean> INSTALLED_WEIGHTS;
+    private final ConsumerInterface consumer;
+    private final CellposeInferenceService inferenceService;
+    private volatile boolean cancelled;
+    private volatile boolean inferenceRunning;
+    private Thread workerThread;
+    private File selectedSystemPath;
+    private File selectedSystemImageFile;
+    private boolean windowCloseHookInstalled;
+    private boolean accelerationAvailableBeforeRun;
 
-	static {
-		INSTALLED_WEIGHTS = new HashMap<String, Boolean>();
-		INSTALLED_WEIGHTS.put("cyto3", false);
-		INSTALLED_WEIGHTS.put("cyto2", false);
-		INSTALLED_WEIGHTS.put("cyto", false);
-		INSTALLED_WEIGHTS.put("nuclei", false);
-	}
+    /**
+     * Creates a Cellpose GUI without host-specific title customization.
+     *
+     * @param consumer the host image consumer.
+     */
+    public CellposePluginUI(ConsumerInterface consumer) {
+        this(consumer, null);
+    }
 
-	private final ConsumerInterface consumer;
-	private String whichLoaded;
-	private String whichLoadedDevice;
-	private Cellpose model;
-	private String inputTitle;
-	private boolean cancelled = false;
+    /**
+     * Creates a Cellpose GUI.
+     *
+     * @param consumer the host image consumer.
+     * @param adapter the host GUI adapter.
+     */
+    public CellposePluginUI(ConsumerInterface consumer, GuiAdapter adapter) {
+        super(adapter);
+        this.consumer = consumer;
+        String modelsDirectory = consumer == null ? null : consumer.getModelsDir();
+        this.inferenceService = new CellposeInferenceService(new CellposeInstaller(modelsDirectory));
 
-	private Runnable cancelCallback;
-	private Thread workerThread;
+        LinkedHashMap<String, String> models = new LinkedHashMap<String, String>();
+        models.put("cyto3", "cyto3");
+        models.put("cyto2", "cyto2");
+        models.put("cyto", "cyto");
+        models.put("nuclei", "nuclei");
+        getInferencePanel().getModelSelectionPanel().setModels(models);
 
-	/**
-	 * Creates a new CellposePluginUI.
-	 *
-	 * @param consumer the consumer parameter.
-	 */
-	public CellposePluginUI(ConsumerInterface consumer) {
-		this.consumer = consumer;
-		List<JComponent> componentList = new ArrayList<JComponent>();
+        getInferencePanel().getModelSelectionPanel().getBrowseButton().addActionListener(this);
+        getInferencePanel().getActionPanel().getRunButton().addActionListener(this);
+        getInferencePanel().getActionPanel().getCancelButton().addActionListener(this);
+        getInferencePanel().getActionPanel().getCancelButton().setEnabled(false);
+        installInferenceSourceListeners();
 
-		if (consumer.getFocusedImageChannels() != null && consumer.getFocusedImageChannels() == 1) {
-			this.nucleiCbox.setModel(new DefaultComboBoxModel<>(GRAYSCALE_LIST));
-			this.cytoCbox.setModel(new DefaultComboBoxModel<>(GRAYSCALE_LIST));
-		} else if (consumer.getFocusedImageChannels() != null && consumer.getFocusedImageChannels() == 3) {
-			this.nucleiCbox.setModel(new DefaultComboBoxModel<>(RGB_LIST));
-			this.cytoCbox.setModel(new DefaultComboBoxModel<>(RGB_LIST));
-		} else {
-			this.nucleiCbox.setModel(new DefaultComboBoxModel<>(ALL_LIST));
-			this.cytoCbox.setModel(new DefaultComboBoxModel<>(ALL_LIST));
-		}
+        if (consumer != null) {
+            consumer.setVariableNames(null);
+            List<JComponent> components = new ArrayList<JComponent>();
+            components.add(getInferencePanel().getModelSelectionPanel().getModelComboBox());
+            components.add(getInferencePanel().getImageSourcePanel().getOpenImagesComboBox());
+            components.add(getInferencePanel().getImageSourcePanel().getFocusButton());
+            components.add(getInferencePanel().getImageDisplayPanel());
+            components.add(getInferencePanel().getOptionsPanel().getCytoplasmComboBox());
+            components.add(getInferencePanel().getOptionsPanel().getNucleiComboBox());
+            consumer.setComponents(components);
+            consumer.updateGUI();
+        }
+    }
 
-		this.consumer.setVariableNames(VAR_NAMES);
-		componentList.add(this.modelComboBox);
-		componentList.add(this.customModelPathField);
-		componentList.add(this.cytoCbox);
-		componentList.add(this.nucleiCbox);
-		componentList.add(this.diameterField);
-		componentList.add(this.accelerationCheckBox);
-		componentList.add(this.check);
-		this.consumer.setComponents(componentList);
-		this.footer.getButtons().getCancelButton().addActionListener(this);
-		this.footer.getButtons().getInstallButton().addActionListener(this);
-		this.footer.getButtons().getRunButton().addActionListener(this);
-		this.browseButton.addActionListener(this);
+    @Override
+    public void addNotify() {
+        super.addNotify();
+        installWindowCloseHook();
+    }
 
-		modelComboBox.addPopupMenuListener(new PopupMenuListener() {
+    /**
+     * Closes the active Cellpose Python service.
+     */
+    public void close() {
+        cancelled = true;
+        inferenceService.close();
+        if (workerThread != null && workerThread.isAlive()) {
+            workerThread.interrupt();
+        }
+        inferenceRunning = false;
+    }
 
-			/**
-			 * Performs popup menu will become visible.
-			 *
-			 * @param e the e.
-			 */
-			@Override
-			public void popupMenuWillBecomeVisible(PopupMenuEvent e) {
-			}
+    /**
+     * Retained for source compatibility with older host plugins.
+     *
+     * @param cancelCallback ignored; inference cancellation no longer closes the GUI.
+     */
+    public void setCancelCallback(Runnable cancelCallback) {
+        // Standard inference cancellation keeps the model and window available.
+    }
 
-			/**
-			 * Performs popup menu canceled.
-			 *
-			 * @param e the e.
-			 */
-			@Override
-			public void popupMenuCanceled(PopupMenuEvent e) {
-			}
+    @Override
+    public void actionPerformed(ActionEvent event) {
+        Object source = event.getSource();
+        if (source == getInferencePanel().getModelSelectionPanel().getBrowseButton()) {
+            browseModel();
+        } else if (source == getInferencePanel().getActionPanel().getRunButton()) {
+            startInference();
+        } else if (source == getInferencePanel().getActionPanel().getCancelButton()) {
+            cancelInference();
+        }
+    }
 
-			/**
-			 * Performs popup menu will become invisible.
-			 *
-			 * @param e the e.
-			 */
-			@Override
-			public void popupMenuWillBecomeInvisible(PopupMenuEvent e) {
-				boolean enabled = modelComboBox.getSelectedItem().equals(CUSTOM_STR);
-				customLabel.setEnabled(enabled);
-				customModelPathField.setEnabled(enabled);
-				browseButton.setEnabled(enabled);
-			}
-		});
-		consumer.updateGUI();
-	}
+    private void startInference() {
+        if (inferenceRunning) {
+            return;
+        }
+        cancelled = false;
+        setInferenceRunning(true);
+        getInferencePanel().getLogPanel().startRunTimer();
+        appendLog("Starting Cellpose inference.");
+        workerThread = new Thread(() -> {
+            try {
+                runCellpose();
+                if (!cancelled) {
+                    appendLog("Cellpose inference finished.");
+                }
+            } catch (Exception error) {
+                if (!cancelled) {
+                    appendLog("Cellpose inference failed: " + rootMessage(error));
+                    SwingUtilities.invokeLater(() -> JOptionPane.showMessageDialog(this,
+                            rootMessage(error), "Cellpose inference failed", JOptionPane.ERROR_MESSAGE));
+                }
+            } finally {
+                SwingUtilities.invokeLater(() -> {
+                    getInferencePanel().getLogPanel().stopRunTimer();
+                    setInferenceRunning(false);
+                });
+            }
+        }, "Cellpose inference");
+        workerThread.start();
+    }
 
-	/**
-	 * Sets cancel callback.
-	 *
-	 * @param cancelCallback the cancelCallback parameter.
-	 */
-	public void setCancelCallback(Runnable cancelCallback) {
-		this.cancelCallback = cancelCallback;
-	}
+    private void cancelInference() {
+        if (!inferenceRunning) {
+            return;
+        }
+        cancelled = true;
+        appendLog("Cellpose inference cancelled.");
+        inferenceService.cancelCurrentInference();
+        if (workerThread != null) {
+            workerThread.interrupt();
+        }
+    }
 
-	/**
-	 * Executes close.
-	 */
-	public void close() {
-		if (model != null && model.isLoaded())
-			model.close();
-	}
+    private void runCellpose() throws Exception {
+        saveParams();
+        String model = getInferencePanel().getModelSelectionPanel().getSelectedModelValue();
+        if (model == null || model.trim().isEmpty()) {
+            throw new IllegalArgumentException("Please select a Cellpose model.");
+        }
+        if (getInferencePanel().getImageSourcePanel().getSystemImagesRadio().isSelected()) {
+            runOnSystemImages(model);
+        } else {
+            runOnOpenImage(model);
+        }
+    }
 
-	/**
-	 * Runs this class from the command line.
-	 *
-	 * @param args command-line arguments.
-	 */
-	public static void main(String[] args) {
-		SwingUtilities.invokeLater(new Runnable() {
+    private <T extends RealType<T> & NativeType<T>> void runOnOpenImage(String model)
+            throws Exception {
+        Object selected = getInferencePanel().getImageSourcePanel()
+                .getOpenImagesComboBox().getSelectedItem();
+        if (!(selected instanceof YoloImageSelectionEntry)) {
+            throw new IllegalArgumentException("Please select an open image.");
+        }
+        YoloImageSelectionEntry entry = (YoloImageSelectionEntry) selected;
+        RandomAccessibleInterval<T> image = consumer.convertIntoRai(entry.getImage());
+        List<Tensor<T>> outputs = runModel(model, image);
+        displayOutputs(outputs, entry.getTitle());
+    }
 
-			/**
-			 * Runs the run.
-			 */
-			@Override
-			public void run() {
-				JFrame frame = new JFrame("Cellpose Plugin");
-				frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-				frame.getContentPane().add(new CellposePluginUI(null));
-				frame.pack();
-				frame.setLocationRelativeTo(null);
-				frame.setVisible(true);
-				frame.setResizable(true);
-				frame.setSize(400, 200);
-			}
-		});
-	}
+    private void runOnSystemImages(String model) throws Exception {
+        File source = selectedSystemPath == null ? selectedSystemImageFile : selectedSystemPath;
+        List<File> images = systemImages(source);
+        if (images.isEmpty()) {
+            throw new IllegalArgumentException(source != null && source.isDirectory()
+                    ? EMPTY_FOLDER_MESSAGE : INVALID_IMAGE_MESSAGE);
+        }
+        appendLog("Starting inference on " + images.size() + " image(s).");
+        int saved = 0;
+        for (int index = 0; index < images.size(); index++) {
+            if (cancelled || Thread.currentThread().isInterrupted()) {
+                return;
+            }
+            File imageFile = images.get(index);
+            appendLog("Processing image " + (index + 1) + "/" + images.size()
+                    + ": " + imageFile.getName());
+            List<Tensor<FloatType>> outputs = runModel(model, readImageFileAsRai(imageFile));
+            File outputFile = maskOutputFileFor(imageFile);
+            writeLabelMask(outputs.get(0), outputFile);
+            appendLog("Saved labels: " + outputFile.getAbsolutePath());
+            saved++;
+        }
+        appendLog("Saved Cellpose label masks for " + saved + " image(s).");
+    }
 
-	/**
-	 * Performs action performed.
-	 *
-	 * @param e the e.
-	 */
-	@Override
-	public void actionPerformed(ActionEvent e) {
-		if (e.getSource() == browseButton) {
-			browseFiles();
-		} else if (e.getSource() == this.footer.getButtons().getRunButton()) {
-			cancelled = false;
-			workerThread = new Thread(() -> {
-		    	consumer.notifyParams(null);
-				try {
-					runCellpose();
-					startModelInstallation(false);
-				} catch (Exception e1) {
-					if (cancelled)
-						return;
-					e1.printStackTrace();
-					startModelInstallation(false);
-					SwingUtilities.invokeLater(() -> this.footer.getBar().setString("Error running the model"));
-				}
-			});
-			workerThread.start();
-		} else if (e.getSource() == this.footer.getButtons().getInstallButton()) {
-			cancelled = false;
-			workerThread = new Thread(() -> installCellpose());
-			workerThread.start();
-		} else if (e.getSource() == this.footer.getButtons().getCancelButton()) {
-			cancel();
-		}
-	}
+    private <T extends RealType<T> & NativeType<T>,
+            R extends RealType<R> & NativeType<R>>
+    List<Tensor<R>> runModel(String model, RandomAccessibleInterval<T> image) throws Exception {
+        Consumer<String> log = this::appendLog;
+        return inferenceService.run(model, image, selectedChannels(), selectedDiameter(),
+                selectedInferenceDevice(), log);
+    }
 
-	private void cancel() {
-		cancelled = true;
-		if (workerThread != null && workerThread.isAlive())
-			workerThread.interrupt();
-		if (model != null)
-			model.close();
-		if (cancelCallback != null)
-			cancelCallback.run();
-	}
+    private <T extends RealType<T> & NativeType<T>> void displayOutputs(
+            List<Tensor<T>> outputs, String inputTitle) {
+        int count = getInferencePanel().getOptionsPanel()
+                .getDisplayIntermediateOutputsCheckBox().isSelected() ? outputs.size() : 1;
+        for (int index = 0; index < count; index++) {
+            Tensor<T> output = outputs.get(index);
+            consumer.displayImage(output.getData(), output.getAxesOrderString(),
+                    outputName(inputTitle, output.getName()));
+        }
+    }
 
-	private void saveParams() {
-		LinkedHashMap<String, String> map = new LinkedHashMap<String, String>();
-		String modelPath = (String) this.modelComboBox.getSelectedItem();
-		if (modelPath.equals(CUSTOM_STR))
-			map.put("model", this.customModelPathField.getText());
-		else
-			map.put("model", modelPath);
-		if (diameterField.getText() != null && !diameterField.getText().equals(""))
-			map.put("diameter", diameterField.getText());
-		map.put("cyto_color", (String) cytoCbox.getSelectedItem());
-		map.put("nuclei_color", (String) nucleiCbox.getSelectedItem());
-		map.put("display_all", "" + this.check.isSelected());
-		this.consumer.notifyParams(map);
-	}
+    private int[] selectedChannels() {
+        String cytoplasm = (String) getInferencePanel().getOptionsPanel()
+                .getCytoplasmComboBox().getSelectedItem();
+        String nuclei = (String) getInferencePanel().getOptionsPanel()
+                .getNucleiComboBox().getSelectedItem();
+        return new int[] {CHANNEL_MAP.get(cytoplasm), CHANNEL_MAP.get(nuclei)};
+    }
 
-	private <T extends RealType<T> & NativeType<T>> void runCellpose()
-			throws RunModelException, LoadModelException, BuildException, IOException {
-		saveParams();
-		startModelInstallation(true);
-		String modelPath = (String) this.modelComboBox.getSelectedItem();
-		if (!INSTALLED_ENV && INSTALLED_WEIGHTS.get(modelPath) != null && !INSTALLED_WEIGHTS.get(modelPath))
-			installCellpose(weightsInstalled(), (INSTALLED_ENV = Cellpose.isInstalled()));
-		else if (INSTALLED_WEIGHTS.get(modelPath) == null || !INSTALLED_WEIGHTS.get(modelPath) || !INSTALLED_ENV)
-			installCellpose(weightsInstalled(), INSTALLED_ENV);
-		if (INSTALLED_WEIGHTS.get(modelPath) == null || !INSTALLED_WEIGHTS.get(modelPath) || !INSTALLED_ENV)
-			return;
+    private Float selectedDiameter() {
+        List<Rectangle2D.Double> boxes = getInferencePanel().getImageDisplayPanel().getBoxes();
+        if (boxes.isEmpty()) {
+            return null;
+        }
+        Rectangle2D.Double box = boxes.get(0);
+        return (float) Math.sqrt(box.width * box.height);
+    }
 
-		RandomAccessibleInterval<T> rai = consumer.getFocusedImageAsRai();
-		if (rai == null) {
-			JOptionPane.showMessageDialog(null, "Please open an image", "No image open", JOptionPane.ERROR_MESSAGE);
-			return;
-		}
+    private String selectedInferenceDevice() {
+        if (!isAccelerationEnabled()) {
+            return "cpu";
+        }
+        String text = getAccelerationCheckBox().getText();
+        return text != null && text.toLowerCase().contains("mps") ? "mps" : "cuda";
+    }
 
-		this.inputTitle = consumer.getFocusedImageName();
-		SwingUtilities.invokeLater(() -> {
-			footer.getBar().setIndeterminate(true);
-			footer.getBar().setString("Loading model");
-		});
+    private void saveParams() {
+        if (consumer == null) {
+            return;
+        }
+        LinkedHashMap<String, String> parameters = new LinkedHashMap<String, String>();
+        parameters.put("model", getInferencePanel().getModelSelectionPanel().getSelectedModelValue());
+        Float diameter = selectedDiameter();
+        parameters.put("diameter", diameter == null ? "auto" : diameter.toString());
+        parameters.put("cyto_color", (String) getInferencePanel().getOptionsPanel()
+                .getCytoplasmComboBox().getSelectedItem());
+        parameters.put("nuclei_color", (String) getInferencePanel().getOptionsPanel()
+                .getNucleiComboBox().getSelectedItem());
+        parameters.put("display_all", Boolean.toString(getInferencePanel().getOptionsPanel()
+                .getDisplayIntermediateOutputsCheckBox().isSelected()));
+        consumer.notifyParams(parameters);
+    }
 
-		if (modelPath.equals(CUSTOM_STR))
-			modelPath = this.customModelPathField.getText();
-		else
-			modelPath = Cellpose.findPretrainedModelInstalled(modelPath, consumer.getModelsDir());
+    private void setInferenceRunning(boolean running) {
+        inferenceRunning = running;
+        CellposeInferencePanel panel = getInferencePanel();
+        if (running) {
+            accelerationAvailableBeforeRun = getAccelerationCheckBox().isEnabled();
+        }
+        panel.getModelSelectionPanel().getModelComboBox().setEnabled(!running);
+        panel.getModelSelectionPanel().getBrowseButton().setEnabled(!running);
+        panel.getOptionsPanel().getCytoplasmComboBox().setEnabled(!running);
+        panel.getOptionsPanel().getNucleiComboBox().setEnabled(!running);
+        panel.getOptionsPanel().getDisplayIntermediateOutputsCheckBox().setEnabled(!running);
+        getAccelerationCheckBox().setEnabled(!running && accelerationAvailableBeforeRun);
+        panel.getImageSourcePanel().setInteractionEnabled(!running);
+        panel.getActionPanel().getCancelButton().setEnabled(running);
+        panel.updateImageActionState();
+        if (running) {
+            panel.getActionPanel().getRunButton().setEnabled(false);
+            panel.getDrawButton().setEnabled(false);
+            panel.getRefreshButton().setEnabled(false);
+        }
+    }
 
-		String device = selectedInferenceDevice();
-		if (whichLoaded != null && (!whichLoaded.equals(modelPath) || !device.equals(whichLoadedDevice)) && model != null) {
-			model.close();
-			model = null;
-		}
-		if (model == null || !model.isLoaded()) {
-			model = Cellpose.init(modelPath, device);
-			model.loadModel();
-		}
-		whichLoaded = modelPath;
-		whichLoadedDevice = device;
+    private void installInferenceSourceListeners() {
+        YoloImageSourcePanel source = getInferencePanel().getImageSourcePanel();
+        source.getSystemImagesRadio().addActionListener(e -> showSystemPathPrompt());
+        source.getOpenImagesRadio().addActionListener(e -> showOpenImageSource());
+        source.getSystemPathField().addActionListener(e -> updateSystemPathPreviewFromField());
+        source.getSystemPathField().addFocusListener(new FocusAdapter() {
+            @Override
+            public void focusLost(FocusEvent event) {
+                updateSystemPathPreviewFromField();
+            }
+        });
+        source.setSystemPathDropConsumer(this::updateSystemPathPreview);
+        source.getBrowseButton().addActionListener(e -> browseSystemImagePath());
+    }
 
-		SwingUtilities.invokeLater(() -> footer.getBar().setString("Running the model"));
+    private void showSystemPathPrompt() {
+        selectedSystemPath = null;
+        selectedSystemImageFile = null;
+        getInferencePanel().getImageSourcePanel().setSystemPathSelectionConfirmed(false);
+        getInferencePanel().getImageDisplayPanel().setEmptyMessage(SYSTEM_PREVIEW_PROMPT);
+        getInferencePanel().getImageDisplayPanel().clearImage();
+        getInferencePanel().updateImageActionState();
+    }
 
-		Float diameter = null;
-		if (diameterField.getText() != null && !diameterField.getText().equals(""))
-			diameter = Float.parseFloat(diameterField.getText());
-		model.setChannels(new int[] {CHANNEL_MAP.get(cytoCbox.getSelectedItem()), CHANNEL_MAP.get(nucleiCbox.getSelectedItem())});
-		runCellposeOnFramesStack(rai, diameter);
-	}
+    private void showOpenImageSource() {
+        selectedSystemPath = null;
+        selectedSystemImageFile = null;
+        getInferencePanel().getImageSourcePanel().setSystemPathSelectionConfirmed(false);
+        getInferencePanel().getImageDisplayPanel().setEmptyMessage(DEFAULT_PREVIEW_MESSAGE);
+        if (consumer != null) {
+            consumer.updateGUI();
+        }
+        getInferencePanel().updateImageActionState();
+    }
 
-	private <T extends RealType<T> & NativeType<T>, R extends RealType<R> & NativeType<R>>
-	void runCellposeOnFramesStack(RandomAccessibleInterval<R> rai, Float diameter) throws RunModelException {
-		rai = addDimsToInput(rai, cytoCbox.getSelectedItem().equals("gray") ? 1 : 3);
-		long[] inDims = rai.dimensionsAsLongArray();
-		long[] outDims = new long[] {inDims[0], inDims[1], inDims[3]};
-		RandomAccessibleInterval<T> outMaskRai = Cast.unchecked(ArrayImgs.unsignedShorts(outDims));
-		RandomAccessibleInterval<T> output1 = Cast.unchecked(ArrayImgs.unsignedBytes(new long[] {inDims[0], inDims[1], 3, inDims[3]}));
-		RandomAccessibleInterval<T> output2 = Cast.unchecked(ArrayImgs.floats(new long[] {2, inDims[0], inDims[1], inDims[3]}));
-		RandomAccessibleInterval<T> output3 = Cast.unchecked(ArrayImgs.floats(new long[] {inDims[0], inDims[1], inDims[3]}));
-		RandomAccessibleInterval<T> output4 = Cast.unchecked(ArrayImgs.floats(new long[] {inDims[0], inDims[1], inDims[2] == 1 ? 1 : 2, inDims[3]}));
+    private void browseSystemImagePath() {
+        JFileChooser chooser = new JFileChooser();
+        chooser.setFileSelectionMode(JFileChooser.FILES_AND_DIRECTORIES);
+        if (chooser.showOpenDialog(this) == JFileChooser.APPROVE_OPTION) {
+            File selected = chooser.getSelectedFile();
+            getInferencePanel().getImageSourcePanel().getSystemImagesRadio().setSelected(true);
+            getInferencePanel().getImageSourcePanel().getSystemPathField()
+                    .setText(selected.getAbsolutePath());
+            updateSystemPathPreview(selected);
+        }
+    }
 
-		for (int i = 0; i < inDims[3]; i ++) {
-			String msg = "Running the model " + (i + 1) + "/" + inDims[3];
-			SwingUtilities.invokeLater(() -> footer.getBar().setString(msg));
+    private void updateSystemPathPreviewFromField() {
+        if (!getInferencePanel().getImageSourcePanel().getSystemImagesRadio().isSelected()) {
+            return;
+        }
+        String path = getInferencePanel().getImageSourcePanel().getSystemPathField().getText();
+        updateSystemPathPreview(path == null || path.trim().isEmpty() ? null : new File(path.trim()));
+    }
 
-			Tensor<R> inIm = Tensor.build("input", "xyc", Views.hyperSlice(rai, 3, i));
-			if (diameter != null)
-				model.setDiameter(diameter);
-			List<Tensor<T>> outputs = model.inference(inIm);
-			copyCellposeOutputs(outputs, outMaskRai, output1, output2, output3, output4, i);
-		}
+    private void updateSystemPathPreview(File path) {
+        selectedSystemPath = null;
+        selectedSystemImageFile = null;
+        getInferencePanel().getImageSourcePanel().setSystemPathSelectionConfirmed(false);
+        File preview = path != null && path.isDirectory()
+                ? YoloImageFiles.previewImageInDirectory(path) : path;
+        if (preview == null || !YoloImageFiles.canReadImage(preview)) {
+            showPreviewError(path != null && path.isDirectory()
+                    ? EMPTY_FOLDER_MESSAGE : INVALID_IMAGE_MESSAGE);
+            return;
+        }
+        selectedSystemPath = path;
+        try {
+            getInferencePanel().getImageDisplayPanel()
+                    .setImageFile(preview, preview.getName(), true);
+            selectedSystemImageFile = preview;
+            getInferencePanel().getImageSourcePanel().setSystemPathSelectionConfirmed(true);
+        } catch (IOException error) {
+            selectedSystemPath = null;
+            selectedSystemImageFile = null;
+            showPreviewError(INVALID_IMAGE_MESSAGE);
+        }
+        getInferencePanel().updateImageActionState();
+    }
 
-		consumer.displayImage(outMaskRai, "xyb", getOutputName("labels"));
-		if (!check.isSelected())
-			return;
-		consumer.displayImage(output1, "xycb", getOutputName("flows_0"));
-		consumer.displayImage(output2, "cxyb", getOutputName("flows_1"));
-		consumer.displayImage(output3, "xyb", getOutputName("flows_2"));
-		consumer.displayImage(output4, "xycb", getOutputName("image_dn"));
-	}
+    private void showPreviewError(String message) {
+        getInferencePanel().getImageDisplayPanel().setEmptyMessage(message, PREVIEW_ERROR_COLOR);
+        getInferencePanel().getImageDisplayPanel().clearImage();
+        getInferencePanel().updateImageActionState();
+    }
 
-	private static <T extends RealType<T> & NativeType<T>>
-	void copyCellposeOutputs(List<Tensor<T>> outputs, RandomAccessibleInterval<T> outMaskRai,
-			RandomAccessibleInterval<T> output1, RandomAccessibleInterval<T> output2,
-			RandomAccessibleInterval<T> output3, RandomAccessibleInterval<T> output4, int frame) {
-		if (outputs.size() != 6)
-			throw new IllegalArgumentException("Cellpose returned " + outputs.size() + " outputs instead of 6.");
-		copyOutput(outputs.get(0).getData(), Views.hyperSlice(outMaskRai, 2, frame));
-		copyOutput(outputs.get(1).getData(), Views.hyperSlice(output1, 3, frame));
-		copyOutput(outputs.get(2).getData(), Views.hyperSlice(output2, 3, frame));
-		copyOutput(outputs.get(3).getData(), Views.hyperSlice(output3, 2, frame));
-		copyOutput(outputs.get(5).getData(), Views.hyperSlice(output4, 3, frame));
-	}
+    private void browseModel() {
+        JFileChooser chooser = new JFileChooser();
+        chooser.setFileSelectionMode(JFileChooser.FILES_ONLY);
+        if (chooser.showOpenDialog(this) == JFileChooser.APPROVE_OPTION) {
+            File model = chooser.getSelectedFile();
+            getInferencePanel().getModelSelectionPanel()
+                    .addOrSelectModel(model.getName(), model.getAbsolutePath());
+        }
+    }
 
-	private static <S extends RealType<S> & NativeType<S>, T extends RealType<T> & NativeType<T>>
-	void copyOutput(RandomAccessibleInterval<S> source, RandomAccessibleInterval<T> target) {
-		if (!Arrays.equals(source.dimensionsAsLongArray(), target.dimensionsAsLongArray()))
-			throw new IllegalArgumentException("Cellpose output dimensions do not match the target tensor: "
-					+ Arrays.toString(source.dimensionsAsLongArray()) + " vs "
-					+ Arrays.toString(target.dimensionsAsLongArray()));
-		Cursor<S> src = Views.flatIterable(source).cursor();
-		Cursor<T> dst = Views.flatIterable(target).cursor();
-		while (src.hasNext()) {
-			S value = src.next();
-			dst.next().setReal(value.getRealDouble());
-		}
-	}
+    private void appendLog(String message) {
+        Runnable append = () -> getInferencePanel().getLogPanel().appendHtml(escapeHtml(message));
+        if (SwingUtilities.isEventDispatchThread()) {
+            append.run();
+        } else {
+            SwingUtilities.invokeLater(append);
+        }
+    }
 
-	private static <R extends RealType<R> & NativeType<R>>
-	RandomAccessibleInterval<R> addDimsToInput(RandomAccessibleInterval<R> rai, int nChannels) {
-		long[] dims = rai.dimensionsAsLongArray();
-		if (dims.length == 2 && nChannels == 1)
-			return Views.addDimension(Views.addDimension(rai, 0, 0), 0, 0);
-		else if (dims.length == 2)
-			throw new IllegalArgumentException("Cyto and nuclei specified for RGB image and image provided is grayscale.");
-		else if (dims.length == 3 && dims[2] == nChannels)
-			return Views.addDimension(rai, 0, 0);
-		else if (dims.length == 3 && nChannels == 1)
-			return Views.permute(Views.addDimension(rai, 0, 0), 2, 3);
-		else if (dims.length >= 3 && dims[2] == 1 && nChannels == 3)
-			throw new IllegalArgumentException("Expected RGB (3 channels) image and got instead grayscale image (1 channel).");
-		else if (dims.length == 4 && dims[2] == nChannels)
-			return rai;
-		else if (dims.length == 5 && dims[2] == nChannels && dims[4] != 1)
-			return Views.hyperSlice(rai, 3, 0);
-		else if (dims.length == 5 && dims[2] == nChannels && dims[4] == 1)
-			return Views.hyperSlice(Views.permute(rai, 3, 4), 3, 0);
-		else if (dims.length == 4 && dims[2] != nChannels && nChannels == 1) {
-			rai = Views.hyperSlice(rai, 2, 0);
-			rai = Views.addDimension(rai, 0, 0);
-			return Views.permute(rai, 2, 3);
-		} else if (dims.length == 5 && dims[2] != nChannels)
-			throw new IllegalArgumentException("Expected grayscale (1 channel) image and got instead RGB image (3 channels).");
-		else
-			throw new IllegalArgumentException("Unsupported dimensions for Cellpose model");
-	}
+    private void installWindowCloseHook() {
+        if (windowCloseHookInstalled) {
+            return;
+        }
+        Window window = SwingUtilities.getWindowAncestor(this);
+        if (window == null) {
+            return;
+        }
+        window.addWindowListener(new WindowAdapter() {
+            @Override
+            public void windowClosing(WindowEvent event) {
+                close();
+            }
 
-	private String getOutputName(String tensorName) {
-		String noExtension;
-		if (inputTitle.lastIndexOf(".") != -1)
-			noExtension = inputTitle.substring(0, inputTitle.lastIndexOf("."));
-		else
-			noExtension = inputTitle;
-		String extension = ".tif";
-		return noExtension + "_" + tensorName + extension;
-	}
+            @Override
+            public void windowClosed(WindowEvent event) {
+                close();
+            }
+        });
+        windowCloseHookInstalled = true;
+    }
 
-	private void installCellpose() {
-		startModelInstallation(true);
-		boolean envInstalled = Cellpose.isInstalled();
-		boolean wwInstalled = weightsInstalled();
-		if (envInstalled && wwInstalled) {
-			startModelInstallation(false);
-			return;
-		}
-		installCellpose(wwInstalled, envInstalled);
-	}
+    private static Map<String, Integer> channelMap() {
+        Map<String, Integer> channels = new HashMap<String, Integer>();
+        channels.put("gray", 0);
+        channels.put("red", 1);
+        channels.put("green", 2);
+        channels.put("blue", 3);
+        return Collections.unmodifiableMap(channels);
+    }
 
-	private void installCellpose(boolean wwInstalled, boolean envInstalled) {
-		if (wwInstalled && envInstalled)
-			return;
-		SwingUtilities.invokeLater(() -> footer.getBar().setString("Installing..."));
-		CountDownLatch latch = !wwInstalled && !envInstalled ? new CountDownLatch(2) : new CountDownLatch(1);
-		if (!wwInstalled)
-			installModelWeights(latch);
-		if (!envInstalled)
-			installEnv(latch);
-		try {
-			latch.await();
-		} catch (InterruptedException e) {
-			if (cancelled)
-				return;
-			e.printStackTrace();
-		}
-	}
+    private static String outputName(String inputTitle, String output) {
+        String title = inputTitle == null || inputTitle.trim().isEmpty() ? "image" : inputTitle;
+        int extension = title.lastIndexOf('.');
+        String base = extension > 0 ? title.substring(0, extension) : title;
+        return base + "_" + output + ".tif";
+    }
 
-	private boolean weightsInstalled() {
-		String model = (String) this.modelComboBox.getSelectedItem();
-		if (model.equals(CUSTOM_STR))
-			return true;
-		try {
-			String path = Cellpose.findPretrainedModelInstalled(model, consumer.getModelsDir());
-			if (path == null)
-				return false;
-		} catch (Exception e) {
-			return false;
-		}
-		INSTALLED_WEIGHTS.put(model, true);
-		return true;
-	}
+    private static String rootMessage(Throwable error) {
+        Throwable root = error;
+        while (root.getCause() != null && root.getCause() != root) {
+            root = root.getCause();
+        }
+        String message = root.getMessage();
+        return message == null || message.trim().isEmpty()
+                ? root.getClass().getSimpleName() : message;
+    }
 
-	private void installModelWeights(CountDownLatch latch) {
-		Consumer<Double> cons = (d) -> {
-			double perc = Math.round(d * 1000) / 10.0d;
-			SwingUtilities.invokeLater(() -> {
-				footer.getBar().setValue((int) Math.floor(perc));
-				footer.getBar().setString(perc + "% of weights");
-			});
-		};
-		SwingUtilities.invokeLater(() -> footer.getBar().setIndeterminate(false));
-		Thread dwnlThread = new Thread(() -> {
-			try {
-				Cellpose.donwloadPretrained((String) modelComboBox.getSelectedItem(), this.consumer.getModelsDir(), cons);
-				INSTALLED_WEIGHTS.put((String) modelComboBox.getSelectedItem(), true);
-			} catch (IOException | InterruptedException | ExecutionException e) {
-				if (cancelled)
-					return;
-				e.printStackTrace();
-			}
-			latch.countDown();
-			checkModelInstallationFinished(latch);
-		});
-		dwnlThread.start();
-	}
+    private static String escapeHtml(String text) {
+        return text == null ? "" : text.replace("&", "&amp;")
+                .replace("<", "&lt;").replace(">", "&gt;");
+    }
 
-	private void installEnv(CountDownLatch latch) {
-		JDialog installerFrame = new JDialog();
-		installerFrame.setTitle("Installing Cellpose");
-		installerFrame.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
-		Consumer<Boolean> callback = (bool) -> {
-			INSTALLED_ENV = bool;
-			checkModelInstallationFinished(latch);
-			if (installerFrame.isVisible())
-				installerFrame.dispose();
-		};
-		InstallEnvWorker worker = new InstallEnvWorker("Cellpose", latch, callback);
-		EnvironmentInstaller installerPanel = EnvironmentInstaller.create(worker);
-		Consumer<String> cons = (s) -> {
-			installerPanel.updateText(s, Color.black);
-			if (latch.getCount() != 1)
-				return;
-			SwingUtilities.invokeLater(() -> {
-				if (!footer.getBar().isIndeterminate()
-						|| (footer.getBar().isIndeterminate() && !footer.getBar().getString().equals("Installing Python"))) {
-					footer.getBar().setIndeterminate(true);
-					footer.getBar().setString("Installing Python");
-				}
-			});
-		};
-		worker.setConsumer(cons);
-		worker.execute();
-		installerPanel.addToFrame(installerFrame);
-		installerFrame.setSize(600, 300);
-	}
+    private static List<File> systemImages(File source) {
+        if (source == null) {
+            return Collections.emptyList();
+        }
+        if (source.isDirectory()) {
+            return YoloImageFiles.readableImagesInDirectory(source);
+        }
+        return YoloImageFiles.canReadImage(source)
+                ? Collections.singletonList(source) : Collections.emptyList();
+    }
 
-	private String selectedInferenceDevice() {
-		if (!isAccelerationEnabled())
-			return "cpu";
-		String label = getAccelerationCheckBox().getText();
-		return label != null && label.toLowerCase().contains("mps") ? "mps" : "cuda";
-	}
+    private static RandomAccessibleInterval<FloatType> readImageFileAsRai(File imageFile)
+            throws IOException {
+        try (ImageInputStream input = ImageIO.createImageInputStream(imageFile)) {
+            Iterator<ImageReader> readers = input == null
+                    ? Collections.<ImageReader>emptyList().iterator()
+                    : ImageIO.getImageReaders(input);
+            if (!readers.hasNext()) {
+                throw new IOException("Unsupported image file: " + imageFile);
+            }
+            ImageReader reader = readers.next();
+            try {
+                reader.setInput(input, false, true);
+                int depth = Math.max(1, reader.getNumImages(true));
+                BufferedImage first = reader.read(0);
+                int width = first.getWidth();
+                int height = first.getHeight();
+                int channels = first.getRaster().getNumBands() == 1 ? 1 : 3;
+                float[] pixels = new float[Math.multiplyExact(
+                        Math.multiplyExact(width, height), Math.multiplyExact(channels, depth))];
+                for (int z = 0; z < depth; z++) {
+                    BufferedImage plane = z == 0 ? first : reader.read(z);
+                    for (int y = 0; y < height; y++) {
+                        for (int x = 0; x < width; x++) {
+                            int base = x + width * (y + height * (channels * z));
+                            if (channels == 1) {
+                                pixels[base] = plane.getRaster().getSampleFloat(x, y, 0);
+                            } else {
+                                int rgb = plane.getRGB(x, y);
+                                pixels[base] = (rgb >> 16) & 0xff;
+                                pixels[base + width * height] = (rgb >> 8) & 0xff;
+                                pixels[base + 2 * width * height] = rgb & 0xff;
+                            }
+                        }
+                    }
+                }
+                return ArrayImgs.floats(pixels, width, height, channels, depth);
+            } finally {
+                reader.dispose();
+            }
+        }
+    }
 
-	private void checkModelInstallationFinished(CountDownLatch latch) {
-		if (latch.getCount() == 0)
-			startModelInstallation(false);
-	}
+    private static File maskOutputFileFor(File imageFile) {
+        String name = imageFile.getName();
+        int dot = name.lastIndexOf('.');
+        String base = dot > 0 ? name.substring(0, dot) : name;
+        String extension = name.toLowerCase().endsWith(".tif")
+                || name.toLowerCase().endsWith(".tiff") ? "tif" : "png";
+        return new File(imageFile.getParentFile(), base + CELLPOSE_MASK_SUFFIX + "." + extension);
+    }
 
-	private void startModelInstallation(boolean isStarting) {
-		SwingUtilities.invokeLater(() -> {
-			footer.getButtons().getRunButton().setEnabled(!isStarting);
-			footer.getButtons().getInstallButton().setEnabled(!isStarting);
-			modelComboBox.setEnabled(!isStarting);
-			diameterField.setEnabled(!isStarting);
-			cytoCbox.setEnabled(!isStarting);
-			nucleiCbox.setEnabled(!isStarting);
-			check.setEnabled(!isStarting);
-			accelerationCheckBox.setEnabled(!isStarting);
-			if (isStarting) {
-				footer.getBar().setString("Checking cellpose installed...");
-				footer.getBar().setIndeterminate(true);
-			} else {
-				footer.getBar().setIndeterminate(false);
-				footer.getBar().setValue(0);
-				footer.getBar().setString("");
-			}
-		});
-	}
+    private static <T extends RealType<T> & NativeType<T>> void writeLabelMask(
+            Tensor<T> tensor, File outputFile) throws IOException {
+        RandomAccessibleInterval<T> labels = tensor.getData();
+        String axes = tensor.getAxesOrderString();
+        int batchAxis = axes == null ? -1 : axes.toLowerCase().indexOf('b');
+        int depth = batchAxis >= 0 ? Math.toIntExact(labels.dimension(batchAxis)) : 1;
+        String format = outputFile.getName().toLowerCase().endsWith(".tif") ? "TIFF" : "png";
+        if (depth == 1) {
+            if (!ImageIO.write(labelImage(labels, axes, batchAxis, 0), format, outputFile)) {
+                throw new IOException("No ImageIO writer available for " + format + ".");
+            }
+            return;
+        }
+        if (!"TIFF".equals(format)) {
+            throw new IOException("Multi-frame Cellpose labels must be saved as TIFF.");
+        }
+        Iterator<ImageWriter> writers = ImageIO.getImageWritersByFormatName("TIFF");
+        if (!writers.hasNext()) {
+            throw new IOException("No TIFF writer is available.");
+        }
+        ImageWriter writer = writers.next();
+        try (ImageOutputStream output = ImageIO.createImageOutputStream(outputFile)) {
+            writer.setOutput(output);
+            writer.prepareWriteSequence(null);
+            for (int frame = 0; frame < depth; frame++) {
+                writer.writeToSequence(new javax.imageio.IIOImage(
+                        labelImage(labels, axes, batchAxis, frame), null, null), null);
+            }
+            writer.endWriteSequence();
+        } finally {
+            writer.dispose();
+        }
+    }
 
-	private void browseFiles() {
-		JFileChooser fileChooser = new JFileChooser();
-		fileChooser.setFileSelectionMode(JFileChooser.FILES_ONLY);
-		int option = fileChooser.showOpenDialog(CellposePluginUI.this);
-		if (option == JFileChooser.APPROVE_OPTION)
-			customModelPathField.setText(fileChooser.getSelectedFile().getAbsolutePath());
-	}
+    private static <T extends RealType<T> & NativeType<T>> BufferedImage labelImage(
+            RandomAccessibleInterval<T> labels, String axes, int batchAxis, int frame) {
+        int xAxis = axes == null ? 0 : axes.toLowerCase().indexOf('x');
+        int yAxis = axes == null ? 1 : axes.toLowerCase().indexOf('y');
+        int width = Math.toIntExact(labels.dimension(xAxis));
+        int height = Math.toIntExact(labels.dimension(yAxis));
+        BufferedImage image = new BufferedImage(width, height, BufferedImage.TYPE_USHORT_GRAY);
+        WritableRaster raster = image.getRaster();
+        RandomAccess<T> access = labels.randomAccess();
+        long[] position = new long[labels.numDimensions()];
+        if (batchAxis >= 0) {
+            position[batchAxis] = frame;
+        }
+        for (int y = 0; y < height; y++) {
+            position[yAxis] = y;
+            for (int x = 0; x < width; x++) {
+                position[xAxis] = x;
+                access.setPosition(position);
+                raster.setSample(x, y, 0, Math.max(0,
+                        Math.min(65535, (int) Math.round(access.get().getRealDouble()))));
+            }
+        }
+        return image;
+    }
+
+    public static void main(String[] args) {
+        SwingUtilities.invokeLater(() -> {
+            JFrame frame = new JFrame("Cellpose Plugin");
+            frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+            frame.setContentPane(new CellposePluginUI(null, null));
+            frame.setSize(550, 700);
+            frame.setLocationRelativeTo(null);
+            frame.setVisible(true);
+        });
+    }
 }

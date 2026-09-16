@@ -62,8 +62,10 @@ public final class SegmentationDatasetPreparer {
     }
 
     public enum Dimensionality {
+        UNKNOWN(0),
         TWO_D(2),
-        THREE_D(3);
+        THREE_D(3),
+        MIXED(0);
 
         private final int dimensions;
 
@@ -157,7 +159,7 @@ public final class SegmentationDatasetPreparer {
         if (train.pairs.isEmpty()) {
             throw new IllegalArgumentException("No valid training image/mask pairs remain after dataset checks.");
         }
-        Dimensionality dimensionality = resolveDimensionality(train, val);
+        Dimensionality dimensionality = resolveDimensionality(train, val, target);
         summary.dimensionality = dimensionality;
 
         boolean backendCanPairDirectly = backendCanPairDirectly(train, target)
@@ -167,7 +169,8 @@ public final class SegmentationDatasetPreparer {
         summary.channelNormalizationRequired = channelPlan.normalizationRequired;
         boolean needsGeneratedDataset = !discovery.directlyDigestible || !backendCanPairDirectly
                 || summary.requiresFilteredDataset() || channelPlan.normalizationRequired;
-        if (needsGeneratedDataset && val.pairs.isEmpty() && train.pairs.size() > 1) {
+        if (target == Framework.STARDIST && needsGeneratedDataset
+                && val.pairs.isEmpty() && train.pairs.size() > 1) {
             SplitPair split = splitTrainVal(train.pairs, validFraction, channelPlan.stratify);
             train = new Split("train", split.train);
             val = new Split("val", split.val);
@@ -183,6 +186,35 @@ public final class SegmentationDatasetPreparer {
         }
         logSummary(logConsumer, datasetRoot, generated, summary, train, val);
         return new PreparedDataset(datasetRoot, generated, summary, channelPlan.targetChannels, dimensionality);
+    }
+
+    /** Reviews paired headers without decoding masks or generating a dataset. */
+    public static Dimensionality inspectUnetDimensionality(File root) throws IOException {
+        Discovery discovery = discover(root, Framework.UNET);
+        List<RawPair> pairs = new ArrayList<RawPair>(discovery.train.rawPairs);
+        pairs.addAll(discovery.val.rawPairs);
+        boolean has2d = false;
+        boolean has3d = false;
+        boolean unresolved = false;
+        for (RawPair pair : pairs) {
+            if (pair.missingMask || pair.ambiguousMasks != null) {
+                continue;
+            }
+            try {
+                int depth = unetPairDepth(pair);
+                has2d |= depth == 1;
+                has3d |= depth > 1;
+                unresolved |= depth == 0;
+            } catch (IOException | RuntimeException e) {
+                unresolved = true;
+            }
+        }
+        return dimensionality(has2d, has3d, unresolved);
+    }
+
+    private static int unetPairDepth(RawPair pair) throws IOException {
+        return SegmentationImageGeometry.pairedDepth(SegmentationImageGeometry.read(pair.image),
+                SegmentationImageGeometry.read(pair.mask));
     }
 
     private static Discovery discover(File root, Framework framework) throws IOException {
@@ -431,6 +463,10 @@ public final class SegmentationDatasetPreparer {
         stats.shapeMismatch = imageInfo.width != maskStats.width || imageInfo.height != maskStats.height
                 || imageInfo.depth != maskStats.depth;
         stats.depth = imageInfo.depth;
+        if (framework == Framework.UNET) {
+            stats.depth = unetPairDepth(raw);
+            stats.shapeMismatch = stats.depth < 0;
+        }
         stats.sourceImageChannels = imageInfo.sourceChannels;
         stats.effectiveImageChannels = imageInfo.effectiveChannels;
         stats.unsupportedMask = maskStats.floatData;
@@ -504,18 +540,30 @@ public final class SegmentationDatasetPreparer {
         }
     }
 
-    private static Dimensionality resolveDimensionality(Split train, Split val) {
+    private static Dimensionality resolveDimensionality(Split train, Split val, Framework framework) {
         boolean has2d = false;
         boolean has3d = false;
+        boolean unresolved = false;
         List<Pair> pairs = new ArrayList<Pair>(train.pairs);
         pairs.addAll(val.pairs);
         for (Pair pair : pairs) {
-            has2d |= pair.depth <= 1;
+            has2d |= pair.depth == 1;
             has3d |= pair.depth > 1;
+            unresolved |= pair.depth == 0;
         }
-        if (has2d && has3d) {
+        if (has2d && has3d && framework == Framework.STARDIST) {
             throw new IllegalArgumentException(
-                    "StarDist/UNet training cannot mix 2D images and 3D volumes in the same dataset.");
+                    "StarDist training cannot mix 2D images and 3D volumes in the same dataset.");
+        }
+        return dimensionality(has2d, has3d, unresolved);
+    }
+
+    private static Dimensionality dimensionality(boolean has2d, boolean has3d, boolean unresolved) {
+        if (has2d && has3d) {
+            return Dimensionality.MIXED;
+        }
+        if (unresolved || (!has2d && !has3d)) {
+            return Dimensionality.UNKNOWN;
         }
         return has3d ? Dimensionality.THREE_D : Dimensionality.TWO_D;
     }
@@ -568,8 +616,21 @@ public final class SegmentationDatasetPreparer {
             String base = uniqueBaseName(safeFileName(pair.key), usedNames);
             File imageTarget = new File(imageRoot, base + extensionOrDefault(pair.image, ".tif"));
             File maskTarget = new File(maskRoot, base + "_mask" + extensionOrDefault(pair.mask, ".tif"));
-            linkOnly(pair.image.toPath(), imageTarget.toPath());
-            linkOnly(pair.mask.toPath(), maskTarget.toPath());
+            linkWithMetadata(pair.image, imageTarget);
+            linkWithMetadata(pair.mask, maskTarget);
+        }
+    }
+
+    private static void linkWithMetadata(File source, File target) throws IOException {
+        linkOnly(source.toPath(), target.toPath());
+        // Preserve both stem.json and filename.ext.json when sample names change.
+        String[] sourceNames = {removeExtension(source.getName()), source.getName()};
+        String[] targetNames = {removeExtension(target.getName()), target.getName()};
+        for (int i = 0; i < sourceNames.length; i++) {
+            Path metadata = new File(source.getParentFile(), sourceNames[i] + ".json").toPath();
+            if (Files.isRegularFile(metadata)) {
+                linkOnly(metadata, new File(target.getParentFile(), targetNames[i] + ".json").toPath());
+            }
         }
     }
 
@@ -615,7 +676,10 @@ public final class SegmentationDatasetPreparer {
         log(logConsumer, "Segmentation dataset source: " + summary.sourceDescription
                 + (generated ? "; generated linked dataset." : "; reused original dataset."));
         log(logConsumer, "Final dataset path: " + datasetRoot.getAbsolutePath());
-        log(logConsumer, "Dataset dimensionality: " + summary.dimensionality.getDimensions() + "D"
+        String dimensions = summary.dimensionality == Dimensionality.MIXED ? "mixed 2D/3D"
+                : summary.dimensionality == Dimensionality.UNKNOWN ? "pending Python geometry review"
+                : summary.dimensionality.getDimensions() + "D";
+        log(logConsumer, "Dataset dimensionality: " + dimensions
                 + (summary.dimensionality == Dimensionality.THREE_D
                         ? ", depth_range=" + minimumDepth(train, val) + "-" + maximumDepth(train, val) + " slices."
                         : "."));

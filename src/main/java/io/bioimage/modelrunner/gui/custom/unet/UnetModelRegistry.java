@@ -117,6 +117,53 @@ public final class UnetModelRegistry {
         return buildPlanarScratchArchitectureEntries();
     }
 
+    public static LinkedHashMap<String, String> buildScratchArchitectureEntries(String modelsDir,
+            String modelName, UnetDatasetInspector.Dimensionality dimensions) {
+        LinkedHashMap<String, String> entries = new LinkedHashMap<String, String>();
+        String custom = customScratchConfigValue(modelsDir, modelName, dimensions);
+        if (custom != null) {
+            entries.put("[Custom config] " + normalizeModelName(modelName), custom);
+        }
+        if (dimensions.allows2D()) {
+            entries.putAll(buildPlanarScratchArchitectureEntries());
+        }
+        if (dimensions.hasVolumes()) {
+            entries.putAll(buildVolumeScratchArchitectureEntries());
+        }
+        return entries;
+    }
+
+    public static String customScratchConfigValue(String modelsDir, String modelName,
+            UnetDatasetInspector.Dimensionality dimensions) {
+        if (dimensions == UnetDatasetInspector.Dimensionality.UNKNOWN) {
+            return null;
+        }
+        String custom = dimensions.allows2D() ? customScratchConfigValue(modelsDir, modelName, false) : null;
+        return custom == null && dimensions.hasVolumes()
+                ? customScratchConfigValue(modelsDir, modelName, true) : custom;
+    }
+
+    /** Unknown source architectures are left to Python's authoritative checkpoint inspection. */
+    static boolean isCompatibleWithDataset(String architecture, UnetDatasetInspector.Dimensionality dimensions) {
+        if (architecture == null || dimensions == UnetDatasetInspector.Dimensionality.UNKNOWN) {
+            return true;
+        }
+        String name = architecture.toLowerCase(Locale.ROOT);
+        if (name.endsWith("2.5d") || name.endsWith("3d")) {
+            return dimensions.hasVolumes();
+        }
+        return !name.endsWith("2d") || dimensions.allows2D();
+    }
+
+    static String architectureForModelPath(String path) {
+        if (path == null) {
+            return null;
+        }
+        File file = new File(path);
+        File directory = file.isDirectory() ? file : file.getParentFile();
+        return architectureFromConfig(TrainingConfigFiles.load(new File(directory, "config.json")));
+    }
+
     /**
      * Builds the scratch architecture entries for 2D datasets.
      *

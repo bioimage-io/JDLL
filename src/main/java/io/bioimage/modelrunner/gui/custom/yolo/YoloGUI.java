@@ -52,8 +52,8 @@ public class YoloGUI extends JPanel {
 
     protected final JTabbedPane tabs = new JTabbedPane();
     protected final YoloTitlePanel titlePanel;
-    protected final YoloInferencePanel inferencePanel = new YoloInferencePanel();
-    protected final BaseTrainPanel trainPanel = new YoloTrainPanel();
+    protected final YoloInferencePanel inferencePanel;
+    protected final BaseTrainPanel trainPanel;
     protected final YoloAccelerationCheckBox accelerationCheckBox = new YoloAccelerationCheckBox();
 
     /**
@@ -62,16 +62,33 @@ public class YoloGUI extends JPanel {
      * @param adapter the adapter.
      */
     protected YoloGUI(GuiAdapter adapter) {
+        this(adapter, "YOLO", new YoloInferencePanel(), new YoloTrainPanel());
+    }
+
+    /**
+     * Creates a GUI with the standard header and optional training tab.
+     *
+     * @param adapter the host GUI adapter.
+     * @param modelFamily the model family displayed in the header.
+     * @param inferencePanel the inference panel.
+     * @param trainPanel the training panel, or {@code null} for inference-only GUIs.
+     */
+    protected YoloGUI(GuiAdapter adapter, String modelFamily, YoloInferencePanel inferencePanel,
+            BaseTrainPanel trainPanel) {
         setLayout(null);
         setOpaque(true);
         setBackground(YoloUiUtils.PANEL_BG);
-        this.titlePanel = new YoloTitlePanel(adapter);
+        this.inferencePanel = inferencePanel;
+        this.trainPanel = trainPanel;
+        this.titlePanel = new YoloTitlePanel(modelFamily, adapter);
         tabs.setBorder(BorderFactory.createEmptyBorder());
         tabs.setOpaque(true);
         tabs.setBackground(YoloUiUtils.PANEL_BG);
         tabs.setUI(new FlatTabbedPaneUI());
         tabs.addTab("Inference", inferencePanel);
-        tabs.addTab("Train", trainPanel);
+        if (trainPanel != null) {
+            tabs.addTab("Train", trainPanel);
+        }
         tabs.addChangeListener(e -> tabs.repaint());
         add(titlePanel);
         add(tabs);

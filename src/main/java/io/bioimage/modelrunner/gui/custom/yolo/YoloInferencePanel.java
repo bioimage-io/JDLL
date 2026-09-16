@@ -69,6 +69,8 @@ public class YoloInferencePanel extends JPanel {
             "<html><div style='text-align:center;'>&#9888; YOLO is optional third-party software, installed separately, and governed by its own license terms. See documentation for details.</div></html>");
     private final boolean disclaimer;
     private final boolean thresholdControls;
+    private final JComponent optionsPanel;
+    private final double optionsRowUnits;
 
     /**
      * Creates a new YoloInferencePanel instance.
@@ -93,11 +95,26 @@ public class YoloInferencePanel extends JPanel {
      * @param thresholdControls whether probability threshold controls should be displayed.
      */
     protected YoloInferencePanel(boolean disclaimer, boolean thresholdControls) {
+        this(disclaimer, thresholdControls, null, 0.0);
+    }
+
+    /**
+     * Creates an inference panel with an optional model-specific controls area.
+     *
+     * @param disclaimer whether the YOLO disclaimer should be displayed.
+     * @param thresholdControls whether probability threshold controls should be displayed.
+     * @param optionsPanel optional controls displayed between image selection and preview.
+     * @param optionsRowUnits relative height allocated to the optional controls.
+     */
+    protected YoloInferencePanel(boolean disclaimer, boolean thresholdControls,
+            JComponent optionsPanel, double optionsRowUnits) {
         setLayout(null);
         setOpaque(true);
         setBackground(YoloUiUtils.PANEL_BG);
         this.disclaimer = disclaimer;
         this.thresholdControls = thresholdControls;
+        this.optionsPanel = optionsPanel;
+        this.optionsRowUnits = Math.max(0.0, optionsRowUnits);
         YoloUiUtils.alignLabel(drawLabel);
         YoloUiUtils.alignLabel(thresholdLabel);
         YoloUiUtils.styleToggleButton(drawButton, false);
@@ -186,6 +203,9 @@ public class YoloInferencePanel extends JPanel {
             add(thresholdLabel);
             add(thresholdSlider);
         }
+        if (optionsPanel != null) {
+            add(optionsPanel);
+        }
         warningLabel.setForeground(new java.awt.Color(170, 35, 35));
         if (disclaimer)
         	add(warningLabel);
@@ -234,13 +254,14 @@ public class YoloInferencePanel extends JPanel {
         int y = OUTER_PAD;
 
         int extraBottomGap = Math.max(0, (int) Math.round(rowGap * BOTTOM_GAP_EXTRA_RATIO));
-        int totalGapH = 4 * rowGap + previewToDrawGap + drawToLogGap;
+        int totalGapH = (4 + (optionsPanel == null ? 0 : 1)) * rowGap
+                + previewToDrawGap + drawToLogGap;
         int totalAvailH = Math.max(8, h - 2 * OUTER_PAD - extraBottomGap - totalGapH);
         int previewBaseH = Math.max(1, (int) Math.round(h * DISPLAY_BASE_HEIGHT_RATIO));
         int controlsAvailH = Math.max(4, totalAvailH - previewBaseH);
         boolean extraRow = thresholdControls || disclaimer;
         double totalUnits = ROW_UNIT_MODEL + ROW_UNIT_SOURCE + ROW_UNIT_DRAW + ROW_UNIT_LOG + ROW_UNIT_ACTION
-                + (extraRow ? ROW_UNIT_WARNING : 0);
+                + (extraRow ? ROW_UNIT_WARNING : 0) + optionsRowUnits;
         int rowUnitPx = Math.max(1, (int) Math.floor(controlsAvailH / totalUnits));
 
         int maxControlH = Math.max(1, YoloUiUtils.controlHeightForFontSize(YoloUiUtils.MAX_CONTROL_FONT_SIZE));
@@ -248,6 +269,7 @@ public class YoloInferencePanel extends JPanel {
         int maxDrawH = Math.max(1, (int) Math.round(maxControlH * 0.75));
         int maxLogH = Math.max(1, (int) Math.round(maxControlH * 5.5));
         int maxWarningH = maxControlH * 2;
+        int maxOptionsH = Math.max(1, (int) Math.round(maxControlH * optionsRowUnits));
 
         int modelH = Math.max(1, Math.min(maxControlH, (int) Math.round(rowUnitPx * ROW_UNIT_MODEL)));
         int sourceH = Math.max(1, Math.min(maxSourceH, modelH * 2));
@@ -257,14 +279,18 @@ public class YoloInferencePanel extends JPanel {
         int warningH = extraRow
                 ? Math.max(18, Math.min(maxWarningH, (int) Math.round(rowUnitPx * ROW_UNIT_WARNING)))
                 : 0;
+        int optionsH = optionsPanel == null ? 0
+                : Math.max(1, Math.min(maxOptionsH, (int) Math.round(rowUnitPx * optionsRowUnits)));
 
-        int previewH = Math.max(1, totalAvailH - modelH - sourceH - drawH - logH - actionH - warningH);
+        int previewH = Math.max(1,
+                totalAvailH - modelH - sourceH - drawH - logH - actionH - warningH - optionsH);
         int displayMinH = Math.max(1, (int) Math.round(h * DISPLAY_MIN_HEIGHT_RATIO));
         int displayMaxH = Math.max(displayMinH, (int) Math.round(h * DISPLAY_MAX_HEIGHT_RATIO));
         previewH = Math.max(displayMinH, previewH);
         previewH = Math.min(displayMaxH, previewH);
 
-        int usedH = modelH + sourceH + previewH + drawH + logH + actionH + warningH + totalGapH;
+        int usedH = modelH + sourceH + previewH + drawH + logH + actionH + warningH
+                + optionsH + totalGapH;
         int bottomGap = Math.max(0, h - OUTER_PAD - usedH);
         int reclaimedBottomGap = bottomGap - Math.max(0, bottomGap / 3);
         int drawBonus = reclaimedBottomGap / 2;
@@ -279,6 +305,10 @@ public class YoloInferencePanel extends JPanel {
 
         int logW = Math.max(1, (int) Math.round(innerW * LOG_WIDTH_RATIO));
         int logX = x + (innerW - logW) / 2;
+        if (optionsPanel != null) {
+            optionsPanel.setBounds(logX, y, logW, optionsH);
+            y += optionsH + rowGap;
+        }
         if (thresholdControls) {
             int labelW = Math.max(1, (int) Math.round(logW * 0.28));
             int sliderW = Math.max(1, logW - labelW - rowGap);
@@ -404,5 +434,14 @@ public class YoloInferencePanel extends JPanel {
      */
     public ThresholdSlider getThresholdSlider() {
         return thresholdSlider;
+    }
+
+    /**
+     * Sets the reference-object instruction shown beside the draw button.
+     *
+     * @param text the instruction text.
+     */
+    public void setDrawLabelText(String text) {
+        drawLabel.setText(text == null ? "" : text);
     }
 }

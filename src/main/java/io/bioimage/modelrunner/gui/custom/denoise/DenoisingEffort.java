@@ -12,7 +12,8 @@
 package io.bioimage.modelrunner.gui.custom.denoise;
 
 public enum DenoisingEffort {
-    QUICK("quick", "Quick"), BALANCED("balanced", "Balanced"), THOROUGH("thorough", "Thorough");
+    QUICK("quick", "Quick"), BALANCED("balanced", "Balanced"),
+    BALANCED_HIGH("balanced_high", "Balanced-high"), THOROUGH("thorough", "Thorough");
     private final String id;
     private final String label;
     DenoisingEffort(String id, String label) { this.id = id; this.label = label; }

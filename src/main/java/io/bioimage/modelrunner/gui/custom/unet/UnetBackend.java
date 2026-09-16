@@ -51,7 +51,7 @@ public final class UnetBackend implements DenseSegmentationBackend {
 
     @Override
     public Object inspectDataset(File datasetPath) {
-        return UnetDatasetInspector.inspect(datasetPath);
+        return UnetDatasetInspector.inspectPairedDataset(datasetPath);
     }
 
     @Override

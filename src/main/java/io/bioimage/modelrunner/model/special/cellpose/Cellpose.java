@@ -208,6 +208,14 @@ public class Cellpose extends BioimageIoModelPytorchProtected {
 	}
 
 	/**
+	 * Clears an explicitly configured diameter so Cellpose can estimate it.
+	 */
+	public void clearDiameter() {
+		this.diameter = null;
+		setDiameterCode = "diameter=None";
+	}
+
+	/**
 	 *
 	 * @return the diameter that has been set by the user. Cannot return the diameter calculated by the diameter model.
 	 */

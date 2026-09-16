@@ -110,6 +110,7 @@ public class UnetTrainingService implements DenseSegmentationTrainingService {
         }
         PreparedDataset dataset = SegmentationDatasetPreparer.prepare(config.getDatasetPath(), config.getModelName(),
                 config.getModelsDir(), 0.15d, SegmentationDatasetPreparer.Framework.UNET, logConsumer);
+        validateDatasetCompatibility(config, dataset);
         Unet.train(toPythonConfig(config, dataset.getDatasetRoot()), progressConsumer, previewConsumer,
                 logConsumer, this::setRunningPython);
     }
@@ -190,6 +191,20 @@ public class UnetTrainingService implements DenseSegmentationTrainingService {
         return values;
     }
 
+    static void validateDatasetCompatibility(UnetTrainingConfig config, PreparedDataset dataset) {
+        String architecture = config.isFineTune()
+                ? UnetModelRegistry.architectureForModelPath(config.getBaseModelPath())
+                : scratchArchitectureForTraining(config.getScratchArchitecture());
+        UnetDatasetInspector.Dimensionality dimensions =
+                UnetDatasetInspector.Dimensionality.valueOf(dataset.getDimensionality().name());
+        if (!UnetModelRegistry.isCompatibleWithDataset(architecture, dimensions)) {
+            throw new IllegalArgumentException("UNet architecture " + architecture + " requires "
+                    + (dimensions == UnetDatasetInspector.Dimensionality.THREE_D
+                            ? "at least one standalone 2D image/mask pair (a Z=1 stack also counts)."
+                            : "volumes with Z>1; the dataset only contains 2D image/mask pairs."));
+        }
+    }
+
     private static void applyCustomScratchConfig(Map<String, Object> values, String scratchArchitecture) {
         Map<String, Object> custom = UnetModelRegistry.loadCustomScratchConfig(scratchArchitecture);
         if (custom == null) {
@@ -209,6 +224,7 @@ public class UnetTrainingService implements DenseSegmentationTrainingService {
                 "weight_decay", "lr_scheduler", "instance_scale_normalization", "validation_fraction",
                 "foreground_oversampling", "foreground_probability", "skip_empty_images",
                 "skip_empty_patches", "empty_patch_max_retries", "include_empty_patches_after_max_retries",
+                "empty_plane_fraction", "max_padding_ratio",
                 "augmentation_profile", "num_workers", "mixed_precision", "deep_supervision",
                 "context_slices", "context", "spacing", "validation", "effective_batch_size",
                 "steps_per_epoch", "minimum_steps_per_epoch", "expected_patches_per_case",

@@ -357,8 +357,8 @@ public final class Unet extends DLModelPytorchProtected {
         code += "elif _jdll_unet_task == 'multiclass_semantic':" + nl;
         code += "  _jdll_unet_labels = _jdll_unet_outputs['mask']" + nl;
         code += "else:" + nl;
-        code += "  _jdll_unet_labels = _jdll_unet_outputs.get('labels', _jdll_unet_outputs['mask'])" + nl;
-        code += String.format("handle_output(np.asarray(_jdll_unet_labels), %s, %s, %s, %s)",
+        code += "  _jdll_unet_labels = (_jdll_unet_outputs['labels'] if 'labels' in _jdll_unet_outputs else _jdll_unet_outputs['mask'])" + nl;
+        code += String.format("handle_output(np.asarray(_jdll_unet_labels).astype('float32'), %s, %s, %s, %s)",
                 SHMS_KEY, SHM_NAMES_KEY, DTYPES_KEY, DIMS_KEY) + nl;
         code += taskOutputsCode();
         return code;

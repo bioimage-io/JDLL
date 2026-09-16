@@ -37,12 +37,23 @@ import javax.imageio.ImageIO;
 import javax.imageio.ImageReader;
 import javax.imageio.stream.ImageInputStream;
 
+import io.bioimage.modelrunner.gui.custom.training.SegmentationDatasetPreparer;
+
 public final class UnetDatasetInspector {
 
     public enum Dimensionality {
         UNKNOWN,
         TWO_D,
-        THREE_D
+        THREE_D,
+        MIXED;
+
+        public boolean hasVolumes() {
+            return this == THREE_D || this == MIXED;
+        }
+
+        public boolean allows2D() {
+            return this != THREE_D;
+        }
     }
 
     private static final int MAX_FILES_TO_REVIEW = 48;
@@ -51,6 +62,18 @@ public final class UnetDatasetInspector {
             ".tif", ".tiff", ".png", ".jpg", ".jpeg"));
 
     private UnetDatasetInspector() {}
+
+    /** Reviews paired headers using the same layouts and pairing rules as UNet training. */
+    public static Dimensionality inspectPairedDataset(File path) {
+        if (path == null || !path.isDirectory()) {
+            return Dimensionality.UNKNOWN;
+        }
+        try {
+            return Dimensionality.valueOf(SegmentationDatasetPreparer.inspectUnetDimensionality(path).name());
+        } catch (IOException | RuntimeException e) {
+            return Dimensionality.UNKNOWN;
+        }
+    }
 
     /**
      * Inspects a dataset path and returns whether it looks 2D or volumetric.

@@ -21,11 +21,21 @@ package io.bioimage.modelrunner.gui.custom.unet;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.assertThrows;
 
 import java.io.File;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.util.Map;
+import java.awt.image.BufferedImage;
+import javax.imageio.IIOImage;
+import javax.imageio.ImageIO;
+import javax.imageio.ImageWriter;
+import javax.imageio.stream.ImageOutputStream;
+
+import io.bioimage.modelrunner.gui.custom.training.SegmentationDatasetPreparer;
+import io.bioimage.modelrunner.gui.custom.training.SegmentationDatasetPreparer.PreparedDataset;
 
 import org.junit.Rule;
 import org.junit.Test;
@@ -65,6 +75,79 @@ public class UnetTrainingServiceTest {
         assertEquals(baseModel.getAbsolutePath(), request.get("base_model"));
         assertEquals("auto", request.get("learning_rate"));
         assertFalse(request.containsKey("architecture"));
+    }
+
+    @Test
+    public void forwardsGeometrySettingsAndNestedPoliciesWithoutResolvingThem() throws Exception {
+        File configFile = temporaryFolder.newFile("config.json");
+        Files.write(configFile.toPath(), ("{\"architecture\":\"resenc-medium-2d\","
+                + "\"training\":{\"empty_plane_fraction\":0.1,\"max_padding_ratio\":0.5,"
+                + "\"validation_fraction\":0.25,\"context\":{\"stride\":2}},"
+                + "\"empty_plane_fraction\":0.15}").getBytes(StandardCharsets.UTF_8));
+        Map<String, Object> request = UnetTrainingService.toPythonConfig(
+                config(false, null, configFile.getAbsolutePath()), temporaryFolder.getRoot());
+        assertEquals(0.15d, (Double) request.get("empty_plane_fraction"), 0);
+        assertEquals(0.5d, (Double) request.get("max_padding_ratio"), 0);
+        assertEquals(0.25d, (Double) request.get("validation_fraction"), 0);
+        assertEquals(2, ((Number) ((Map<?, ?>) request.get("context")).get("stride")).intValue());
+
+        Map<String, Object> fineTuneRequest = UnetTrainingService.toPythonConfig(
+                config(true, "model.pt", configFile.getAbsolutePath()), temporaryFolder.getRoot());
+        assertFalse(fineTuneRequest.containsKey("empty_plane_fraction"));
+        assertFalse(fineTuneRequest.containsKey("max_padding_ratio"));
+        assertEquals("auto", fineTuneRequest.get("learning_rate"));
+    }
+
+    @Test
+    public void checksDatasetCompatibilityForScratchCustomAndFineTuning() throws Exception {
+        File root = temporaryFolder.newFolder("dataset");
+        File images = new File(root, "images");
+        File masks = new File(root, "masks");
+        Files.createDirectories(images.toPath());
+        Files.createDirectories(masks.toPath());
+        for (File file : new File[] {new File(images, "volume.tif"), new File(masks, "volume_mask.tif")}) {
+            ImageWriter writer = ImageIO.getImageWritersByFormatName("TIFF").next();
+            try (ImageOutputStream output = ImageIO.createImageOutputStream(file)) {
+                writer.setOutput(output);
+                writer.prepareWriteSequence(null);
+                for (int z = 0; z < 4; z++) {
+                    writer.writeToSequence(new IIOImage(new BufferedImage(8, 8,
+                            BufferedImage.TYPE_BYTE_GRAY), null, null), null);
+                }
+                writer.endWriteSequence();
+            } finally {
+                writer.dispose();
+            }
+        }
+        PreparedDataset volume = prepare(root);
+        UnetTrainingConfig planar = config(false, null, UnetModelRegistry.SMALL_2D);
+        IllegalArgumentException error = assertThrows(IllegalArgumentException.class,
+                () -> UnetTrainingService.validateDatasetCompatibility(planar, volume));
+        assertTrue(error.getMessage().contains("standalone 2D"));
+        UnetTrainingService.validateDatasetCompatibility(config(false, null, UnetModelRegistry.SMALL_FAST_3D), volume);
+        UnetTrainingService.validateDatasetCompatibility(config(false, null, UnetModelRegistry.SMALL_TRUE_3D), volume);
+
+        File sourceConfig = temporaryFolder.newFile("config.json");
+        Files.write(sourceConfig.toPath(), "{\"architecture\":\"resenc-tiny-2d\"}".getBytes(StandardCharsets.UTF_8));
+        UnetTrainingConfig custom = config(false, null, sourceConfig.getAbsolutePath());
+        UnetTrainingConfig fineTune = config(true, temporaryFolder.newFile("model.pt").getAbsolutePath(), null);
+        assertThrows(IllegalArgumentException.class,
+                () -> UnetTrainingService.validateDatasetCompatibility(custom, volume));
+        assertThrows(IllegalArgumentException.class,
+                () -> UnetTrainingService.validateDatasetCompatibility(fineTune, volume));
+
+        ImageIO.write(new BufferedImage(8, 8, BufferedImage.TYPE_BYTE_GRAY), "png", new File(images, "plane.png"));
+        ImageIO.write(new BufferedImage(8, 8, BufferedImage.TYPE_BYTE_GRAY), "png", new File(masks, "plane_mask.png"));
+        PreparedDataset mixed = prepare(root);
+        UnetTrainingService.validateDatasetCompatibility(planar, mixed);
+        UnetTrainingService.validateDatasetCompatibility(custom, mixed);
+        UnetTrainingService.validateDatasetCompatibility(fineTune, mixed);
+        UnetTrainingService.validateDatasetCompatibility(config(false, null, UnetModelRegistry.SMALL_TRUE_3D), mixed);
+    }
+
+    private PreparedDataset prepare(File root) throws Exception {
+        return SegmentationDatasetPreparer.prepare(root.getAbsolutePath(), "test", temporaryFolder.getRoot().getAbsolutePath(),
+                0.15, SegmentationDatasetPreparer.Framework.UNET, null);
     }
 
     private UnetTrainingConfig config(boolean fineTune, String baseModel, String scratchArchitecture) {
