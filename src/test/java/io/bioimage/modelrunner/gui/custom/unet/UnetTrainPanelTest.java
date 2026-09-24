@@ -29,6 +29,7 @@ import java.nio.file.Files;
 import java.util.LinkedHashMap;
 
 import javax.swing.SwingUtilities;
+import javax.swing.JProgressBar;
 
 import org.junit.Rule;
 import org.junit.Test;
@@ -94,6 +95,41 @@ public class UnetTrainPanelTest {
             assertEquals(dimensions != Dimensionality.TWO_D,
                     UnetModelRegistry.isCompatibleWithDataset(UnetModelRegistry.SMALL_TRUE_3D, dimensions));
         }
+    }
+
+    @Test
+    public void metadataReviewShowsActivityAndLocksOnlyModelSelectionAndTraining() throws Exception {
+        SwingUtilities.invokeAndWait(() -> {
+            UnetTrainPanel panel = new UnetTrainPanel();
+            JProgressBar activity = (JProgressBar) java.util.Arrays.stream(panel.getComponents())
+                    .filter(component -> component instanceof JProgressBar).findFirst().get();
+            assertFalse(activity.isVisible());
+            panel.setDatasetReviewRunning(true);
+            panel.setSize(640, 600);
+            panel.doLayout();
+            assertTrue(activity.isVisible());
+            assertTrue(activity.isIndeterminate());
+            assertEquals("Analyzing dataset...", activity.getString());
+            assertTrue(activity.getX() > panel.getScratchArchitectureComboBox().getX()
+                    + panel.getScratchArchitectureComboBox().getWidth());
+            assertTrue(activity.getX() + activity.getWidth() <= panel.getWidth());
+            assertTrue(panel.getDatasetField().isEnabled());
+            assertFalse(panel.getFineTuneRadio().isEnabled());
+            assertFalse(panel.getScratchArchitectureComboBox().isEnabled());
+            assertFalse(panel.getTrainActionPanel().getRunButton().isEnabled());
+            panel.setDatasetReviewRunning(false);
+            assertFalse(activity.isVisible());
+            assertFalse(activity.isIndeterminate());
+            assertTrue(panel.getScratchArchitectureComboBox().isEnabled());
+            assertTrue(panel.getTrainActionPanel().getRunButton().isEnabled());
+            panel.getFineTuneRadio().doClick();
+            assertTrue(panel.getBaseModelComboBox().isEnabled());
+            assertFalse(panel.getScratchArchitectureComboBox().isEnabled());
+            panel.setTrainingRunning(true);
+            panel.setDatasetReviewRunning(false);
+            assertFalse(panel.getBaseModelComboBox().isEnabled());
+            assertFalse(panel.getTrainActionPanel().getRunButton().isEnabled());
+        });
     }
 
     @Test

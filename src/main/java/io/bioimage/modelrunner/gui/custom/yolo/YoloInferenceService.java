@@ -301,11 +301,11 @@ public class YoloInferenceService {
     }
 
     private <T extends RealType<T> & NativeType<T>>
-    List<Detection> runLoadedModel(RandomAccessibleInterval<T> rai) throws RunModelException {
+    List<Detection> runLoadedModel(RandomAccessibleInterval<T> rai) throws RunModelException, LoadModelException {
         RandomAccessibleInterval<T> input = addDimsToInput(rai,
                 rai.dimensionsAsLongArray().length > 2 && rai.dimensionsAsLongArray()[2] == 3 ? 3 : 1);
         List<Tensor<T>> outTensor = model.inference(Tensor.build("input", "xycb", input));
-        return Detection.fromBN6Tensor(outTensor.get(0));
+        return Detection.fromBN6Tensor(outTensor.get(0), model.getClassMappings());
     }
 
     private static <R extends RealType<R> & NativeType<R>>

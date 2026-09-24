@@ -28,6 +28,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.BitSet;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -478,62 +479,75 @@ public final class SegmentationDatasetPreparer {
     }
 
     private static MaskStats readMaskStats(File maskFile) throws IOException {
+
         try (ImageInputStream input = ImageIO.createImageInputStream(maskFile)) {
-            if (input == null) {
-                return null;
-            }
+            if (input == null) return null;
+
             Iterator<ImageReader> readers = ImageIO.getImageReaders(input);
-            if (!readers.hasNext()) {
-                return null;
-            }
+            if (!readers.hasNext()) return null;
+
             ImageReader reader = readers.next();
+
             try {
                 reader.setInput(input);
+
                 int pages = Math.max(1, reader.getNumImages(true));
                 BufferedImage first = reader.read(0);
-                if (first == null) {
-                    return null;
-                }
+                if (first == null) return null;
+
                 MaskStats stats = new MaskStats();
                 stats.width = first.getWidth();
                 stats.height = first.getHeight();
                 stats.depth = pages;
                 stats.numBands = first.getRaster().getNumBands();
-                Map<Integer, Integer> histogram = new HashMap<Integer, Integer>();
-                int min = Integer.MAX_VALUE;
-                int max = Integer.MIN_VALUE;
+
+                BitSet labels = new BitSet();
+                int[] row = new int[stats.width];
+
                 for (int page = 0; page < pages; page++) {
                     BufferedImage image = page == 0 ? first : reader.read(page);
-                    if (image == null || image.getWidth() != stats.width || image.getHeight() != stats.height) {
+
+                    if (image == null ||
+                            image.getWidth() != stats.width ||
+                            image.getHeight() != stats.height) {
                         return null;
                     }
+
                     Raster raster = image.getRaster();
                     int dataType = raster.getTransferType();
-                    stats.floatData |= dataType == DataBuffer.TYPE_FLOAT || dataType == DataBuffer.TYPE_DOUBLE;
+
+                    stats.floatData |= dataType == DataBuffer.TYPE_FLOAT ||
+                                       dataType == DataBuffer.TYPE_DOUBLE;
+
                     stats.numBands = Math.max(stats.numBands, raster.getNumBands());
-                    if (stats.floatData) {
-                        return stats;
-                    }
-                    for (int y = 0; y < image.getHeight(); y++) {
-                        for (int x = 0; x < image.getWidth(); x++) {
-                            int value = raster.getSample(x, y, 0);
-                            if (value <= 0) {
-                                continue;
-                            }
-                            histogram.put(value, histogram.getOrDefault(value, 0) + 1);
-                            min = Math.min(min, value);
-                            max = Math.max(max, value);
+
+                    if (stats.floatData) return stats;
+
+                    for (int y = 0; y < stats.height; y++) {
+                        raster.getSamples(0, y, stats.width, 1, 0, row);
+
+                        for (int value : row) {
+                            if (value > 0) labels.set(value);
                         }
                     }
                 }
-                stats.objectCount = histogram.size();
-                if (!histogram.isEmpty()) {
-                    int valueRange = Math.max(1, max - min + 1);
-                    double denseFraction = histogram.size() / (double) valueRange;
-                    stats.suspiciousContinuousLike = histogram.size() >= SUSPICIOUS_UNIQUE_LABEL_COUNT
-                            && denseFraction >= SUSPICIOUS_DENSE_LABEL_FRACTION;
+
+                stats.objectCount = labels.cardinality();
+
+                if (!labels.isEmpty()) {
+                    int min = labels.nextSetBit(1);
+                    int max = labels.length() - 1;
+                    long valueRange = (long) max - min + 1;
+
+                    double denseFraction = stats.objectCount / (double) valueRange;
+
+                    stats.suspiciousContinuousLike =
+                            stats.objectCount >= SUSPICIOUS_UNIQUE_LABEL_COUNT &&
+                            denseFraction >= SUSPICIOUS_DENSE_LABEL_FRACTION;
                 }
+
                 return stats;
+
             } finally {
                 reader.dispose();
             }

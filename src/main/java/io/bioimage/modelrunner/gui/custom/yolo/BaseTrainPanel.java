@@ -37,6 +37,7 @@ import javax.swing.JComponent;
 import javax.swing.JFileChooser;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
+import javax.swing.JProgressBar;
 import javax.swing.JRadioButton;
 import javax.swing.JTextField;
 import javax.swing.TransferHandler;
@@ -78,6 +79,7 @@ public abstract class BaseTrainPanel extends JPanel {
     protected final JRadioButton scratchRadio = new JRadioButton("Train from scratch");
     protected final JComboBox<YoloModelSelectionEntry> scratchArchitectureComboBox =
             new JComboBox<YoloModelSelectionEntry>();
+    private final JProgressBar datasetReviewProgress = new JProgressBar();
 
     protected final JLabel epochsLabel = new JLabel("Epochs");
     protected final YoloIntegerTextField epochsField = new YoloIntegerTextField("100");
@@ -94,6 +96,7 @@ public abstract class BaseTrainPanel extends JPanel {
     protected final TrainingLogPanel trainingLogPanel = new TrainingLogPanel();
     protected final YoloActionPanel trainActionPanel = new YoloActionPanel();
     private boolean trainingRunning;
+    private boolean datasetReviewRunning;
 
     protected static final Color ERROR_FG = new Color(255, 0, 0, 170);
     protected static final Pattern INVALID_MODEL_NAME_CHARS = Pattern.compile("[\\\\/:*?\"<>|]");
@@ -131,6 +134,10 @@ public abstract class BaseTrainPanel extends JPanel {
         YoloUiUtils.styleInput(baseModelComboBox);
         scratchArchitectureComboBox.setEditable(false);
         YoloUiUtils.styleInput(scratchArchitectureComboBox);
+        datasetReviewProgress.setString("Analyzing dataset...");
+        datasetReviewProgress.setStringPainted(true);
+        datasetReviewProgress.setBorderPainted(false);
+        datasetReviewProgress.setVisible(false);
         YoloUiUtils.styleInput(epochsField);
         datasetField.setTransferHandler(new PathDropHandler(path -> datasetField.setText(path)));
         TransferHandler baseModelDropHandler = new PathDropHandler(this::setSelectedBaseModelValue);
@@ -169,6 +176,7 @@ public abstract class BaseTrainPanel extends JPanel {
         add(baseModelBrowseButton);
         add(scratchRadio);
         add(scratchArchitectureComboBox);
+        add(datasetReviewProgress);
         add(epochsLabel);
         add(epochsField);
         add(epochsErrorLabel);
@@ -196,9 +204,23 @@ public abstract class BaseTrainPanel extends JPanel {
 
     private void updateMode() {
         boolean fineTune = fineTuneRadio.isSelected();
-        baseModelComboBox.setEnabled(!trainingRunning && fineTune);
-        baseModelBrowseButton.setEnabled(!trainingRunning && fineTune);
-        scratchArchitectureComboBox.setEnabled(!trainingRunning && !fineTune);
+        boolean available = !trainingRunning && !datasetReviewRunning;
+        fineTuneRadio.setEnabled(available);
+        scratchRadio.setEnabled(available);
+        baseModelComboBox.setEnabled(available && fineTune);
+        baseModelBrowseButton.setEnabled(available && fineTune);
+        scratchArchitectureComboBox.setEnabled(available && !fineTune);
+        trainActionPanel.getRunButton().setEnabled(available);
+    }
+
+    /** Shows metadata analysis activity and locks model selection until it completes. */
+    public void setDatasetReviewRunning(boolean running) {
+        datasetReviewRunning = running;
+        datasetReviewProgress.setVisible(running);
+        datasetReviewProgress.setIndeterminate(running);
+        updateMode();
+        revalidate();
+        repaint();
     }
 
     /**
@@ -211,11 +233,7 @@ public abstract class BaseTrainPanel extends JPanel {
         modelNameField.setEnabled(!running);
         datasetField.setEnabled(!running);
         datasetBrowseButton.setEnabled(!running);
-        fineTuneRadio.setEnabled(!running);
-        scratchRadio.setEnabled(!running);
-        scratchArchitectureComboBox.setEnabled(!running && scratchRadio.isSelected());
         epochsField.setEnabled(!running);
-        trainActionPanel.getRunButton().setEnabled(!running);
         trainActionPanel.getCancelButton().setEnabled(running);
         updateMode();
     }
@@ -298,10 +316,13 @@ public abstract class BaseTrainPanel extends JPanel {
         y += row3H + gap;
 
         int scratchRadioW = Math.max(radioW, (int) Math.round(innerW * SCRATCH_RADIO_WIDTH_RATIO));
+        int reviewW = datasetReviewRunning ? Math.min(220, (int) Math.round(innerW * 0.36)) : 0;
         int scratchFieldW = Math.max(1, Math.min(preferredComboWidth(scratchArchitectureComboBox),
-                innerW - scratchRadioW - gap));
+                innerW - scratchRadioW - gap - (datasetReviewRunning ? reviewW + gap : 0)));
         scratchRadio.setBounds(x, y, scratchRadioW, row4H);
         scratchArchitectureComboBox.setBounds(x + scratchRadioW + gap, y, scratchFieldW, row4H);
+        datasetReviewProgress.setBounds(scratchArchitectureComboBox.getX() + scratchFieldW + gap,
+                y, reviewW, row4H);
         y += row4H + gap;
 
         epochsLabel.setBounds(x, y, labelW, row5H);
@@ -334,6 +355,7 @@ public abstract class BaseTrainPanel extends JPanel {
         YoloUiUtils.applyResponsiveText(baseModelBrowseButton, browseW - 8, row3H);
         YoloUiUtils.applyResponsiveText(scratchRadio, scratchRadioW - 4, row4H);
         YoloUiUtils.applyResponsiveFont(scratchArchitectureComboBox, row4H);
+        datasetReviewProgress.setFont(scratchRadio.getFont().deriveFont(scratchRadio.getFont().getSize2D() * 0.85f));
         YoloUiUtils.applyResponsiveText(epochsLabel, labelW - 4, row5H);
         YoloUiUtils.applyResponsiveFont(epochsField, row5H);
         epochsErrorLabel.setFont(epochsLabel.getFont());

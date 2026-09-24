@@ -21,6 +21,7 @@ package io.bioimage.modelrunner.model.detection;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 
 import io.bioimage.modelrunner.tensor.Tensor;
@@ -39,6 +40,8 @@ public final class Detection {
     private final double y2;
     private final double confidence;
     private final int classId;
+    private String classString;
+    
 
     /**
      * Creates a new Detection instance.
@@ -62,6 +65,10 @@ public final class Detection {
         this.y2 = y2;
         this.confidence = confidence;
         this.classId = classId;
+    }
+    
+    public void setMappings(HashMap<String, String> mapping) {
+    	this.classString = mapping.get("" + this.classId);
     }
 
     /**
@@ -137,6 +144,17 @@ public final class Detection {
     }
 
     /**
+     * Returns the class String. If no mappings have been set, the class string will be: 'class_' + classId
+     *
+     * @return the class String.
+     */
+    public String getClassName() {
+    	if (this.classString == null)
+    		return "class_" + this.classId;
+        return this.classString;
+    }
+
+    /**
      * Decodes a tensor containing detections in {@code [batch, detections, 6]}
      * layout into a flat list of detections.
      * <p>
@@ -179,6 +197,57 @@ public final class Detection {
                     continue;
                 }
                 out.add(new Detection(parentName, b, x1, y1, x2, y2, confidence, (int) Math.round(classId)));
+            }
+        }
+        return out;
+    }
+
+    /**
+     * Decodes a tensor containing detections in {@code [batch, detections, 6]}
+     * layout into a flat list of detections.
+     * <p>
+     * The last dimension is expected to contain
+     * {@code x1, y1, x2, y2, confidence, classId}. Rows where all six values are
+     * zero are treated as padding and ignored. All detections keep
+     * {@link Tensor#getName()} as their parent name.
+     *
+     * @param detectionsTensor tensor with shape {@code [batch, detections, 6]}
+     * @param mappings mappings for each class
+     * @param <T> tensor data type
+     * @return flat list of detections, each carrying its batch index
+     */
+    public static <T extends RealType<T> & NativeType<T>>
+    List<Detection> fromBN6Tensor(final Tensor<T> detectionsTensor, HashMap<String, String> mappings) {
+        if (detectionsTensor == null) {
+            throw new IllegalArgumentException("Detections tensor cannot be null.");
+        }
+        final RandomAccessibleInterval<T> detections = detectionsTensor.getData();
+        final long[] dims = detections.dimensionsAsLongArray();
+        if (dims.length != 3 || dims[2] != 6) {
+            throw new IllegalArgumentException("Expected detection tensor with shape [batch, detections, 6]. Got "
+                    + Arrays.toString(dims) + ".");
+        }
+
+        final int batchSize = Math.toIntExact(dims[0]);
+        final int nDetections = Math.toIntExact(dims[1]);
+        final String parentName = detectionsTensor.getName();
+        final RandomAccess<T> access = detections.randomAccess();
+        final List<Detection> out = new ArrayList<Detection>();
+
+        for (int b = 0; b < batchSize; b++) {
+            for (int n = 0; n < nDetections; n++) {
+                double x1 = getValue(access, b, n, 0);
+                double y1 = getValue(access, b, n, 1);
+                double x2 = getValue(access, b, n, 2);
+                double y2 = getValue(access, b, n, 3);
+                double confidence = getValue(access, b, n, 4);
+                double classId = getValue(access, b, n, 5);
+                if (isZeroDetection(x1, y1, x2, y2, confidence, classId)) {
+                    continue;
+                }
+                Detection det = new Detection(parentName, b, x1, y1, x2, y2, confidence, (int) Math.round(classId));
+                det.setMappings(mappings);
+                out.add(det);
             }
         }
         return out;

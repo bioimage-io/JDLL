@@ -121,6 +121,8 @@ public class UNetPluginUI extends UnetGUI implements ActionListener {
     private String bestValidationCheckpointPath;
     private Timer datasetReviewTimer;
     private long datasetReviewRunId;
+    private String reviewedDatasetPath = "";
+    private boolean datasetReviewPending;
 
     /**
      * Creates a new UNetPluginUI instance.
@@ -181,6 +183,7 @@ public class UNetPluginUI extends UnetGUI implements ActionListener {
      */
     public void close() {
         cancelled = true;
+        datasetReviewRunId++;
         trainingService.close();
         inferenceService.close();
         if (workerThread != null && workerThread.isAlive()) {
@@ -194,6 +197,7 @@ public class UNetPluginUI extends UnetGUI implements ActionListener {
             datasetReviewTimer.stop();
             datasetReviewTimer = null;
         }
+        trainPanel.setDatasetReviewRunning(false);
         inferenceRunning = false;
         trainingRunning = false;
         updateTabLocks();
@@ -372,25 +376,58 @@ public class UNetPluginUI extends UnetGUI implements ActionListener {
     }
 
     private void scheduleTrainingDatasetReview() {
-        if (datasetReviewTimer != null) {
+        if (datasetReviewTimer == null) {
+            return;
+        }
+        // Invalidate old results immediately, including during the debounce delay.
+        datasetReviewRunId++;
+        datasetReviewTimer.stop();
+        datasetReviewPending = !trainingDatasetPath().equals(reviewedDatasetPath);
+        updateDatasetReviewState();
+        if (datasetReviewPending) {
             datasetReviewTimer.restart();
         }
     }
 
+    private String trainingDatasetPath() {
+        String text = trainPanel.getDatasetField().getText().trim();
+        return text.isEmpty() ? "" : new File(text).getAbsolutePath();
+    }
+
+    private void updateDatasetReviewState() {
+        trainPanel.setDatasetReviewRunning(datasetReviewPending);
+        trainPanel.getTrainActionPanel().getRunButton().setToolTipText(datasetReviewPending
+                ? "Reviewing dataset dimensions before training..." : null);
+    }
+
     private void reviewTrainingDataset() {
-        if (trainingRunning) {
+        if (trainingRunning || datasetReviewTimer == null || !datasetReviewPending) {
             return;
         }
         long runId = ++datasetReviewRunId;
-        String text = trainPanel.getDatasetField().getText();
-        final File datasetPath = text == null || text.trim().isEmpty() ? null : new File(text.trim());
+        String path = trainingDatasetPath();
+        final File datasetPath = path.isEmpty() ? null : new File(path);
         Thread reviewer = new Thread(() -> {
-            Object review = backend.inspectDataset(datasetPath);
-            SwingUtilities.invokeLater(() -> {
-                if (runId == datasetReviewRunId) {
+            try {
+                Object review = backend.inspectDataset(datasetPath);
+                SwingUtilities.invokeLater(() -> {
+                    if (runId != datasetReviewRunId || !path.equals(trainingDatasetPath())) {
+                        return;
+                    }
                     backend.applyDatasetReview(trainPanel, review);
-                }
-            });
+                    reviewedDatasetPath = path;
+                    datasetReviewPending = false;
+                    updateDatasetReviewState();
+                });
+            } catch (RuntimeException ex) {
+                SwingUtilities.invokeLater(() -> {
+                    if (runId == datasetReviewRunId) {
+                        datasetReviewPending = false;
+                        updateDatasetReviewState();
+                        appendTrainingLog("Dataset review failed: " + errorMessage(ex));
+                    }
+                });
+            }
         }, backend.getDisplayName().toLowerCase(Locale.ROOT).replace(' ', '-') + "-dataset-review");
         reviewer.setDaemon(true);
         reviewer.start();
@@ -814,7 +851,26 @@ public class UNetPluginUI extends UnetGUI implements ActionListener {
      * Runs model training.
      */
     public void trainUnet() {
+        if (!SwingUtilities.isEventDispatchThread()) {
+            SwingUtilities.invokeLater(this::trainUnet);
+            return;
+        }
+        if (trainingRunning || inferenceRunning || datasetReviewTimer == null || datasetReviewPending) {
+            return;
+        }
+        if (!trainingDatasetPath().equals(reviewedDatasetPath)) {
+            scheduleTrainingDatasetReview();
+            return;
+        }
         if (!trainPanel.validateTrainingFields()) {
+            return;
+        }
+        final DenseSegmentationTrainingConfig config;
+        try {
+            // Snapshot the reviewed selection on the EDT, not later in the worker.
+            config = readTrainingConfig();
+        } catch (RuntimeException ex) {
+            appendTrainingLog("Invalid training configuration: " + errorMessage(ex));
             return;
         }
         inferenceService.close();
@@ -825,7 +881,6 @@ public class UNetPluginUI extends UnetGUI implements ActionListener {
                 if (consumer != null) {
                     consumer.notifyParams(null);
                 }
-                DenseSegmentationTrainingConfig config = readTrainingConfig();
                 bestValidationCheckpointPath = new File(config.getOutputModelDir(), backend.bestCheckpointName())
                         .getAbsolutePath();
                 trainPanel.getTrainingLogPanel().startDiskLog(new File(config.getOutputModelDir()));
@@ -921,6 +976,7 @@ public class UNetPluginUI extends UnetGUI implements ActionListener {
         }
         trainPanel.setTrainingRunning(false);
         trainingRunning = false;
+        updateDatasetReviewState();
         updateTabLocks();
         long elapsed = Math.max(0L, System.currentTimeMillis() - trainingStartMillis);
         trainPanel.getLossGraphPanel().setTrainingStatus(false, currentTrainingStep, totalTrainingSteps,

@@ -468,6 +468,7 @@ public class DLModelPytorchProtected extends BaseModel {
             final Task task = python.task(code);
             task.waitFor();
             ensureTaskSucceeded(task);
+            postLoad(task);
             emitProgress(InferenceProgress.modelLoaded(weightsPath));
         } catch (IOException | InterruptedException | TaskException e) {
         	python.close();
@@ -476,6 +477,10 @@ public class DLModelPytorchProtected extends BaseModel {
         }
 
         loaded = true;
+    }
+    
+    protected void postLoad(Task task) {
+    	
     }
 
     /**
@@ -1475,7 +1480,7 @@ public class DLModelPytorchProtected extends BaseModel {
         return baos.toByteArray();
     }
 
-    private static void ensureTaskSucceeded(final Task task) {
+    protected static void ensureTaskSucceeded(final Task task) {
         if (task.status == TaskStatus.COMPLETE) {
             return;
         }

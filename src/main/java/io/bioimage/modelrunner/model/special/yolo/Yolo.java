@@ -73,6 +73,7 @@ import net.imglib2.view.Views;
  */
 public class Yolo extends DLModelPytorchProtected {
 	
+	private HashMap<String, String> mappings;
 	private Rectangle objectSize;
 		
 	private static final Map<String, Long> PRETRAINED_YOLO_MODELS;
@@ -123,7 +124,8 @@ public class Yolo extends DLModelPytorchProtected {
 			+ "task.export(torch=torch)" + System.lineSeparator()
 			+ "task.export(os=os)" + System.lineSeparator()
 			+ "task.export(device=device)" + System.lineSeparator()
-			+ "task.export(" + MODEL_VAR_NAME + "=" + MODEL_VAR_NAME +")" + System.lineSeparator();
+			+ "task.export(" + MODEL_VAR_NAME + "=" + MODEL_VAR_NAME +")" + System.lineSeparator()
+			+ "task.outputs['mappings'] = " + MODEL_VAR_NAME + ".names" + System.lineSeparator();
 
 	/**
 	 * Creates a new YOLO model.
@@ -170,6 +172,12 @@ public class Yolo extends DLModelPytorchProtected {
 			throw new IllegalArgumentException("Only 1 and 3 channel images supported. The provided input has " + dims[2]);
 		return inputTensors;
 	}
+	
+	public HashMap<String, String> getClassMappings() throws LoadModelException {
+		if (mappings == null)
+			this.loadModel();
+		return mappings;
+	}
 
     /**
      * Returns the output tensor axes.
@@ -194,6 +202,10 @@ public class Yolo extends DLModelPytorchProtected {
 				weightsPath);
 		return code;
 	}
+	
+	protected void postLoad(Task task) {
+    	this.mappings = (HashMap<String, String>) task.outputs.get("mappings");
+    }
 	
 	/**
 	 * Creates the inputs code.
