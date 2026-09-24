@@ -19,12 +19,14 @@
  */
 package io.bioimage.modelrunner.model.detection;
 
+import java.awt.Color;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 
 import io.bioimage.modelrunner.tensor.Tensor;
+import io.bioimage.modelrunner.utils.GlasbeyColors;
 import net.imglib2.RandomAccess;
 import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.type.NativeType;
@@ -141,6 +143,14 @@ public final class Detection {
      */
     public int getClassId() {
         return classId;
+    }
+    
+    /**
+     * 
+     * @return a unique color for the unique class ID using the Glasbey Look Up Table
+     */
+    public Color getColor() {
+    	return GlasbeyColors.getColor(classId);
     }
 
     /**
