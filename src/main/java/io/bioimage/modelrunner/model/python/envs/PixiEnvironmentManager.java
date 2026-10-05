@@ -108,7 +108,7 @@ public final class PixiEnvironmentManager {
 
         final boolean installed = isInstalled(spec);
         if (!installed) {
-            final Environment env = pixi.environment(spec.getSelectedEnvironment()).build();
+            final Environment env = pixi.build().activate(spec.getSelectedEnvironment());
 
             if (spec.getManualNoDeps().size() > 0) {
             	for (String pckge : spec.getManualNoDeps()) {
